@@ -116,6 +116,23 @@ bool gx_hld_saved_color_equal(const gx_hl_saved_color * psc1,
 }
 
 /*
+ * Check whether two saved colors have same color space.
+ */
+bool gx_hld_saved_color_same_cspace(const gx_hl_saved_color * psc1,
+			   const gx_hl_saved_color * psc2)
+{
+    if (psc1->color_space_id != psc2->color_space_id)
+	return false;
+    if (psc1->pattern_id != psc2->pattern_id)
+	return false;
+    if (psc1->ccolor_valid != psc2->ccolor_valid)
+	return false;
+    if (psc1->color_space_id != psc2->color_space_id)
+	return false;
+    return true;
+}
+
+/*
  * Get pointers to the current color space and client color.
  *
  * More description in src/gxhldevc.h
@@ -134,6 +151,7 @@ gx_hld_get_color_space_and_ccolor(const gs_imager_state * pis,
 	*ppcs = pcs;
 	*ppcc = &(pdevc->ccolor);
 	if (pdevc->type == gx_dc_type_pattern 
+	   || pdevc->type == &gx_dc_pure_masked
 	   || pdevc->type == gx_dc_type_pattern2)
             return pattern_color_sapce;
 	else {
@@ -158,8 +176,9 @@ gx_hld_get_number_color_components(const gs_imager_state * pis)
 
     if (pgs != NULL) {
         const gs_color_space * pcs = pgs->color_space;
-	
-        return any_abs(gs_color_space_num_components(pcs));
+	int n = gs_color_space_num_components(pcs);
+
+	return (n >= 0 ? n : -n - 1);
     } else
 	return -1;
 }

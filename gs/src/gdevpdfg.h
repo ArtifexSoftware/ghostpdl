@@ -92,6 +92,8 @@ int pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 /* Create colored and uncolored Pattern color spaces. */
 int pdf_cs_Pattern_colored(gx_device_pdf *pdev, cos_value_t *pvalue);
 int pdf_cs_Pattern_uncolored(gx_device_pdf *pdev, cos_value_t *pvalue);
+int pdf_cs_Pattern_uncolored_hl(gx_device_pdf *pdev, 
+	const gs_paint_color_space *base_space,	cos_value_t *pvalue);
 
 /* Set the ProcSets bits corresponding to an image color space. */
 void pdf_color_space_procsets(gx_device_pdf *pdev,
@@ -264,12 +266,24 @@ int pdf_choose_compression(pdf_image_writer * piw, bool end_binary);
 
 /* ---------------- Exported by gdevpdfv.c ---------------- */
 
-/* Write a color value. */
-int pdf_put_drawing_color(gx_device_pdf *pdev, const gx_drawing_color *pdc,
-			  const psdf_set_color_commands_t *ppscc);
-
 /* Store pattern 1 parameters to cos dictionary. */
 int pdf_store_pattern1_params(gx_device_pdf *pdev, pdf_resource_t *pres, 
 			gs_pattern1_instance_t *pinst);
+
+/* Write a colored Pattern color. */
+int pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
+			const psdf_set_color_commands_t *ppscc,
+			pdf_resource_t **ppres);
+
+/* Write an uncolored Pattern color. */
+int pdf_put_uncolored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
+			  const gs_paint_color_space *base_space,
+			  const psdf_set_color_commands_t *ppscc,
+			  pdf_resource_t **ppres);
+
+/* Write a PatternType 2 (shading pattern) color. */
+int pdf_put_pattern2(gx_device_pdf *pdev, const gx_drawing_color *pdc,
+		 const psdf_set_color_commands_t *ppscc,
+		 pdf_resource_t **ppres);
 
 #endif /* gdevpdfg_INCLUDED */

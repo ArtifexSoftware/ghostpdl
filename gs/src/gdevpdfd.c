@@ -71,7 +71,7 @@ private int
 pdf_can_handle_hl_color(gx_device_vector * vdev, const gs_imager_state * pis, 
 		 const gx_drawing_color * pdc)
 {
-    return false;  /* High level color is not implemented yet. */
+    return pis != NULL;
 }
 
 private int

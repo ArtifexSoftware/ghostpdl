@@ -162,23 +162,20 @@ pdf_store_pattern1_params(gx_device_pdf *pdev, pdf_resource_t *pres,
 }
 
 /* Write an uncolored Pattern color. */
-/* (Single-use procedure for readability.) */
-private int
+int
 pdf_put_uncolored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
+			  const gs_paint_color_space *base_space,
 			  const psdf_set_color_commands_t *ppscc,
 			  pdf_resource_t **ppres)
 {
     const gx_color_tile *m_tile = pdc->mask.m_tile;
-    gx_drawing_color dc_pure;
     cos_value_t v;
     stream *s = pdev->strm;
     int code;
-    static const psdf_set_color_commands_t no_scc = {0, 0, 0};
 
-    set_nonclient_dev_color(&dc_pure, gx_dc_pure_color(pdc));
     if (!tile_size_ok(pdev, NULL, m_tile))
 	return_error(gs_error_limitcheck);
-    code = pdf_cs_Pattern_uncolored(pdev, &v);
+    code = pdf_cs_Pattern_uncolored_hl(pdev, base_space, &v);
     if (code < 0)
 	return code;
     *ppres = pdf_find_resource_by_gs_id(pdev, resourcePattern, pdc->mask.id);
@@ -194,12 +191,11 @@ pdf_put_uncolored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
     }
     cos_value_write(&v, pdev);
     pprints1(s, " %s ", ppscc->setcolorspace);
-    return psdf_set_color((gx_device_vector *)pdev, &dc_pure, &no_scc);
+    return 0;
 }
 
 /* Write a colored Pattern color. */
-/* (Single-use procedure for readability.) */
-private int
+int
 pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 			const psdf_set_color_commands_t *ppscc,
 			pdf_resource_t **ppres)
@@ -458,7 +454,6 @@ put_float_mesh_data(cos_stream_t *pscs, shade_coord_stream_t *cs,
 }
 
 /* Write a mesh Shading. */
-/* (Single-use procedure for readability.) */
 private int
 pdf_put_mesh_shading(cos_stream_t *pscs, const gs_shading_t *psh,
 		     const gs_range_t *pranges)
@@ -616,8 +611,7 @@ pdf_put_mesh_shading(cos_stream_t *pscs, const gs_shading_t *psh,
 }
 
 /* Write a PatternType 2 (shading pattern) color. */
-/* (Single-use procedure for readability.) */
-private int
+int
 pdf_put_pattern2(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 		 const psdf_set_color_commands_t *ppscc,
 		 pdf_resource_t **ppres)
@@ -683,39 +677,3 @@ pdf_put_pattern2(gx_device_pdf *pdev, const gx_drawing_color *pdc,
     return 0;
 }
 
-/* ---------------- Public procedure ---------------- */
-
-/* Write a color value. */
-int
-pdf_put_drawing_color(gx_device_pdf *pdev, const gx_drawing_color *pdc,
-		      const psdf_set_color_commands_t *ppscc)
-{
-    if (gx_dc_is_pure(pdc))
-	return psdf_set_color((gx_device_vector *) pdev, pdc, ppscc);
-    else {
-	/* We never halftone, so this must be a Pattern. */
-	int code;
-	pdf_resource_t *pres;
-	cos_value_t v;
-
-	if (pdc->type == gx_dc_type_pattern)
-	    code = pdf_put_colored_pattern(pdev, pdc, ppscc, &pres);
-	else if (pdc->type == &gx_dc_pure_masked)
-	    code = pdf_put_uncolored_pattern(pdev, pdc, ppscc, &pres);
-	else if (pdc->type == &gx_dc_pattern2)
-	    code = pdf_put_pattern2(pdev, pdc, ppscc, &pres);
-	else
-	    return_error(gs_error_rangecheck);
-	if (code < 0)
-	    return code;
-	/*
-	 * Uncolored patterns equivalent to a solid color don't need an
-	 * associated resource, and set pres = 0.
-	 */
-	if (pres) {
-	    cos_value_write(cos_resource_value(&v, pres->object), pdev);
-	    pprints1(pdev->strm, " %s\n", ppscc->setcolorn);
-	}
-	return 0;
-    }
-}

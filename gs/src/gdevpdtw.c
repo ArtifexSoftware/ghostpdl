@@ -38,21 +38,6 @@ private const char *const encoding_names[] = {
 
 /* ---------------- Private ---------------- */
 
-private double 
-my_round(double v, int precision)
-{
-    double mul = 1;
-    double w = v;
-
-    if (w <= 0)
-	return w;
-    while (w < precision) {
-	w *= 10;
-	mul *= 10;
-    }
-    return (int)(w + 0.5) / mul;
-}
-
 /* Write the Widths for a font. */
 private int
 pdf_write_Widths(gx_device_pdf *pdev, int first, int last, const double *widths)
@@ -64,7 +49,7 @@ pdf_write_Widths(gx_device_pdf *pdev, int first, int last, const double *widths)
 	first = last = 0;
     pprintd2(s, "/FirstChar %d/LastChar %d/Widths[", first, last);
     for (i = first; i <= last; ++i)
-    	pprintg1(s, (i & 15 ? " %g" : "\n%g"), my_round(widths[i], 100));
+    	pprintg1(s, (i & 15 ? " %g" : "\n%g"), psdf_round(widths[i], 100, 10));
     stream_puts(s, "]\n");
     return 0;
 }

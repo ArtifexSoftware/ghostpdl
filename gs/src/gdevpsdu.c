@@ -184,6 +184,22 @@ psdf_adjust_color_index(gx_device_vector *vdev, gx_color_index color)
     return (color == (gx_no_color_index ^ 1) ? gx_no_color_index : color);
 }
 
+/* Round a double value to a specified precision. */
+double 
+psdf_round(double v, int precision, int radix)
+{
+    double mul = 1;
+    double w = v;
+
+    if (w <= 0)
+	return w;
+    while (w < precision) {
+	w *= radix;
+	mul *= radix;
+    }
+    return (int)(w + 0.5) / mul;
+}
+
 /*
  * Since we only have 8 bits of color to start with, round the
  * values to 3 digits for more compact output.

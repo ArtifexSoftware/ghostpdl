@@ -846,6 +846,7 @@ pdf_cs_Pattern_colored(gx_device_pdf *pdev, cos_value_t *pvalue)
 int
 pdf_cs_Pattern_uncolored(gx_device_pdf *pdev, cos_value_t *pvalue)
 {
+    /* Only for process colors. */
     int ncomp = pdev->color_info.num_components;
     static const char *const pcs_names[5] = {
 	0, "[/Pattern /DeviceGray]", 0, "[/Pattern /DeviceRGB]",
@@ -854,6 +855,27 @@ pdf_cs_Pattern_uncolored(gx_device_pdf *pdev, cos_value_t *pvalue)
 
     return pdf_pattern_space(pdev, pvalue, &pdev->cs_Patterns[ncomp],
 			     pcs_names[ncomp]);
+}
+int
+pdf_cs_Pattern_uncolored_hl(gx_device_pdf *pdev, 
+		const gs_paint_color_space *base_space, cos_value_t *pvalue)
+{
+    /* Only for high level colors. */
+    char buf[30], ps[] = "[/Pattern ";
+    int psl = sizeof(ps) - 1;
+    cos_value_t cs_value;
+    gs_string const *csv = &cs_value.contents.chars;
+    pdf_resource_t *pres = NULL;
+    int code = pdf_color_space(pdev, &cs_value, NULL,
+		(gs_color_space *)base_space, &pdf_color_space_names, true);
+
+    if (code < 0)
+	return code;
+    memcpy(buf, ps, psl);
+    memcpy(buf + psl, csv->data, csv->size);
+    buf[psl + csv->size] = ']';
+    /* fixme : find old resource pres */
+    return pdf_pattern_space(pdev, pvalue, &pres, buf);
 }
 
 /* Set the ProcSets bits corresponding to an image color space. */

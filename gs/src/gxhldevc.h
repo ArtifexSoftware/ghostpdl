@@ -110,6 +110,12 @@ bool gx_hld_saved_color_equal(const gx_hl_saved_color * psc1,
 			   const gx_hl_saved_color * psc2);
 
 /*
+ * Check whether two saved colors have same color space.
+ */
+bool gx_hld_saved_color_same_cspace(const gx_hl_saved_color * psc1,
+			   const gx_hl_saved_color * psc2);
+
+/*
  * Return status from get_color_space_and_ccolor.  See that routine for
  * more information.
  *

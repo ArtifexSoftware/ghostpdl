@@ -29,6 +29,9 @@
 #include "gxfmap.h"
 #include "gxht.h"
 #include "gxistate.h"
+#include "gxdcolor.h"
+#include "gxpcolor.h"
+#include "gsptype2.h"
 #include "gzht.h"
 #include "gdevpdfx.h"
 #include "gdevpdfg.h"
@@ -212,6 +215,21 @@ pdf_reset_graphics(gx_device_pdf * pdev)
     pdf_reset_text(pdev);
 }
 
+/* Write client color. */
+private int
+pdf_write_ccolor(gx_device_pdf * pdev, const gs_imager_state * pis, 
+	        const gs_client_color *pcc)
+{   
+    int i, n = gx_hld_get_number_color_components(pis);
+
+    pprintg1(pdev->strm, "%g", psdf_round(pcc->paint.values[0], 255, 255));
+    for (i = 1; i < n; i++) {
+	pprintg1(pdev->strm, " %g", psdf_round(pcc->paint.values[i], 255, 255));
+    }
+    return 0;
+}
+
+
 /* Set the fill or stroke color. */
 private int
 pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis, 
@@ -220,10 +238,15 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
 {
     int code;
     gx_hl_saved_color temp;
+    bool process_color;
+    const gs_color_space *pcs;
+    const gs_client_color *pcc; /* fixme: not needed due to gx_hld_get_color_component. */
+    cos_value_t cs_value;
+    const char *command;
 
     if (pdev->skip_colors)
 	return 0;
-    gx_hld_save_color(pis, pdc, &temp);
+    process_color = !gx_hld_save_color(pis, pdc, &temp);
     /* Since pdfwrite never applies halftones and patterns, but monitors
      * halftone/pattern IDs separately, we don't need to compare
      * halftone/pattern bodies here.
@@ -240,9 +263,70 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
     code = pdf_open_page(pdev, PDF_IN_STREAM);
     if (code < 0)
 	return code;
-    code = pdf_put_drawing_color(pdev, pdc, ppscc);
-    if (code < 0)
-	return code;
+    switch (gx_hld_get_color_space_and_ccolor(pis, pdc, &pcs, &pcc)) {
+	case non_pattern_color_space:
+	    switch (gs_color_space_get_index(pcs)) {
+		case gs_color_space_index_DeviceGray:
+		    command = ppscc->setgray; 
+		    break;
+		case gs_color_space_index_DeviceRGB:
+		    command = ppscc->setrgbcolor; 
+		    break;
+		case gs_color_space_index_DeviceCMYK:
+		    command = ppscc->setcmykcolor; 
+		    break;
+		default :
+		    command = ppscc->setcolorn;
+		    if (!gx_hld_saved_color_same_cspace(&temp, psc)) {
+			code = pdf_color_space(pdev, &cs_value, NULL, pcs,
+					&pdf_color_space_names, true);
+			/* fixme : creates redundant PDF objects. */
+			if (code == gs_error_rangecheck) {
+			    /* The color space can't write to PDF. */
+			    goto write_process_color;
+			}
+			if (code < 0)
+			    return code;
+			code = cos_value_write(&cs_value, pdev);
+			if (code < 0)
+			    return code;
+			pprints1(pdev->strm, " %s\n", ppscc->setcolorspace);
+		    }
+		    break;
+	    }
+	    code = pdf_write_ccolor(pdev, pis, pcc);
+	    if (code < 0)
+		return code;
+	    pprints1(pdev->strm, " %s\n", command);
+	    break;
+	default: /* must not happen. */
+	case pattern_color_sapce:
+	    {	pdf_resource_t *pres;
+
+		if (pdc->type == gx_dc_type_pattern)
+		    code = pdf_put_colored_pattern(pdev, pdc, ppscc, &pres);
+		else if (pdc->type == &gx_dc_pure_masked) {
+		    code = pdf_put_uncolored_pattern(pdev, pdc, 
+				&pcs->params.pattern.base_space, ppscc, &pres);
+		    if (code < 0)
+			return code;
+		    code = pdf_write_ccolor(pdev, pis, pcc);
+		} else if (pdc->type == &gx_dc_pattern2)
+		    code = pdf_put_pattern2(pdev, pdc, ppscc, &pres);
+		else
+		    return_error(gs_error_rangecheck);
+		if (code < 0)
+		    return code;
+		cos_value_write(cos_resource_value(&cs_value, pres->object), pdev);
+		pprints1(pdev->strm, " %s\n", ppscc->setcolorn);
+	    }
+	    break;
+	case use_process_color:
+	write_process_color:
+	    code = psdf_set_color((gx_device_vector *)pdev, pdc, ppscc);
+	    if (code < 0)
+		return code;
+    }
     *psc = temp;
     return 0;
 }
