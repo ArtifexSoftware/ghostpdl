@@ -37,10 +37,6 @@
 #endif
 #include "vdtrace.h"
 
-#ifndef LONG_MIN
-#define LONG_MIN (-1 - (long)((unsigned long)ARCH_MAX_ULONG>>1))
-#endif
-
 #define VD_SCALE 0.004
 #define VD_TRAP_COLOR RGB(0, 255, 255)
 #define VD_MARG_COLOR RGB(255, 0, 0)
@@ -793,7 +789,7 @@ init_line_list(ll_ptr ll, gs_memory_t * mem)
     ll->h_list0 = ll->h_list1 = 0;
     ll->margin_set0.margin_list = ll->margin_set1.margin_list = 0;
     ll->margin_set0.margin_touched = ll->margin_set1.margin_touched = 0;
-    ll->margin_set0.y = ll->margin_set1.y = LONG_MIN;
+    ll->margin_set0.y = ll->margin_set1.y = 0; /* A stub against indeterminism. Don't use it. */
     ll->free_margin_list = 0;
     ll->local_margin_alloc_count = 0;
     ll->margin_set0.sect = ll->local_section0;
@@ -1802,6 +1798,7 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
     ll->x_list = 0;
     ll->x_head.x_current = min_fixed;	/* stop backward scan */
     ll->margin_set0.y = fixed_pixround(y) - fixed_half;
+    ll->margin_set1.y = fixed_pixround(y) - fixed_1 - fixed_half;
     while (1) {
 	fixed y1;
 	active_line *endp, *alp, *stopx, *plp = NULL;
