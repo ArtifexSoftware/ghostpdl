@@ -303,6 +303,16 @@ end
 	%****** DOESN'T IMPLEMENT THE STREAM CASE YET ******
       resolvehalftone sethalftone
     } ifelse
+    % the transfer function may dependent on the halftone, so make sure
+    % it is set if included in the graphic state (otherwise this is
+    % subject to order of a dictionary forall, which is unpredictable)
+    dup /TR2 .knownget {
+      dup /Default eq { oforce gsparamdict /TR2 get exec } { pop } ifelse
+    } {
+      dup /TR .knownget {
+        /dup /Default eq { oforce gsparamdict /TR get exec } { pop } ifelse
+      } if
+    } ifelse
   }
   /HTP {
 	% HTP may be present even if this isn't a DPS interpreter.
