@@ -58,12 +58,14 @@ typedef struct pdf_color_space_s pdf_color_space_t;
 struct pdf_color_space_s {
     pdf_resource_common(pdf_color_space_t);
     const gs_range_t *ranges;
+    uint serialized_size;
+    byte *serialized;
 };
 /* The descriptor is public because it is for a resource type. */
 #define public_st_pdf_color_space()  /* in gdevpdfc.c */\
-  gs_public_st_suffix_add1(st_pdf_color_space, pdf_color_space_t,\
+  gs_public_st_suffix_add2(st_pdf_color_space, pdf_color_space_t,\
     "pdf_color_space_t", pdf_color_space_enum_ptrs,\
-    pdf_color_space_reloc_ptrs, st_pdf_resource, ranges)
+    pdf_color_space_reloc_ptrs, st_pdf_resource, ranges, serialized)
 
 /*
  * Create a local Device{Gray,RGB,CMYK} color space corresponding to the

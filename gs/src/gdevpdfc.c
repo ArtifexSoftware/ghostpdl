@@ -33,6 +33,7 @@
 #include "gdevpdfo.h"
 #include "strimpl.h"
 #include "sstring.h"
+#include "gxcspace.h"
 
 /*
  * PDF doesn't have general CIEBased color spaces.  However, it provides
@@ -476,6 +477,30 @@ pdf_indexed_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
     return 0;
 }
 
+/* 
+ * Find a color space resource by seriialized data. 
+ */
+private pdf_resource_t *
+pdf_find_cspace_resource(gx_device_pdf *pdev, const byte *serialized, uint serialized_size) 
+{
+    pdf_resource_t **pchain = pdev->resources[resourceColorSpace].chains;
+    pdf_resource_t *pres;
+    int i;
+    
+    for (i = 0; i < NUM_RESOURCE_CHAINS; i++) {
+	for (pres = pchain[i]; pres != 0; pres = pres->next) {
+	    const pdf_color_space_t *const ppcs =
+		(const pdf_color_space_t *)pres;
+	    if (ppcs->serialized_size != serialized_size)
+		continue;
+	    if (!memcmp(ppcs->serialized, serialized, ppcs->serialized_size))
+		return pres;
+	}
+    }
+    return NULL;
+}
+
+
 /*
  * Create a PDF color space corresponding to a PostScript color space.
  * For parameterless color spaces, set *pvalue to a (literal) string with
@@ -502,6 +527,9 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
     const gs_cie_common *pciec;
     gs_function_t *pfn;
     const gs_range_t *ranges = 0;
+    uint serialized_size;
+    byte *serialized = NULL, serialized0[100];
+    pdf_resource_t *pres = NULL;
     int code;
 
     if (ppranges)
@@ -540,19 +568,48 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
     }
 
     /* Check whether we already have a PDF object for this color space. */
-    if (pcs->id != gs_no_id) {
-	pdf_resource_t *pres =
-	    pdf_find_resource_by_gs_id(pdev, resourceColorSpace, pcs->id);
+    if (pcs->id != gs_no_id)
+	pres = pdf_find_resource_by_gs_id(pdev, resourceColorSpace, pcs->id);
+    if (pres == NULL) {
+	stream s;
 
-	if (pres) {
-	    const pdf_color_space_t *const ppcs =
-		(const pdf_color_space_t *)pres;
-
-	    if (ppranges != 0 && ppcs->ranges != 0)
-		*ppranges = ppcs->ranges;
-	    pca = (cos_array_t *)pres->object;
-	    goto ret;
+	swrite_position_only(&s);
+	code = cs_serialize(pcs, &s);
+	if (code < 0)
+	    return_error(gs_error_unregistered); /* Must not happen. */
+	serialized_size = stell(&s);
+	if (serialized_size <= sizeof(serialized0))
+	    serialized = serialized0;
+	else {
+	    serialized = gs_alloc_bytes(pdev->pdf_memory, serialized_size, "pdf_color_space");
+	    if (serialized == NULL)
+		return_error(gs_error_VMerror);
 	}
+	/*  fixme : optimize :
+	    It would be more effective to apply a "comparizing" stream
+	    (i.e. to comare during the serialization),
+	    but we haven't got such. So serialize and comapre. */
+	swrite_string(&s, serialized, serialized_size);
+	code = cs_serialize(pcs, &s);
+	if (code < 0)
+	    return_error(gs_error_unregistered); /* Must not happen. */
+	if (stell(&s) != serialized_size) 
+	    return_error(gs_error_unregistered); /* Must not happen. */
+	pres = pdf_find_cspace_resource(pdev, serialized, serialized_size);
+	if (pres != NULL) {
+	    if (serialized != serialized0)
+		gs_free_object(pdev->pdf_memory, serialized, "pdf_color_space");
+	    serialized = NULL;
+	}
+    }
+    if (pres) {
+	const pdf_color_space_t *const ppcs =
+	    (const pdf_color_space_t *)pres;
+
+	if (ppranges != 0 && ppcs->ranges != 0)
+	    *ppranges = ppcs->ranges;
+	pca = (cos_array_t *)pres->object;
+	goto ret;
     }
 
     /* Space has parameters -- create an array. */
@@ -784,6 +841,14 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	    return code;
 	}
 	ppcs = (pdf_color_space_t *)pres;
+	if (serialized == serialized0) {
+	    serialized = gs_alloc_bytes(pdev->pdf_memory, serialized_size, "pdf_color_space");
+	    if (serialized == NULL)
+		return_error(gs_error_VMerror);
+	    memcpy(serialized, serialized0, serialized_size);
+	}
+	ppcs->serialized = serialized;
+	ppcs->serialized_size = serialized_size;
 	if (ranges) {
 	    int num_comp = gs_color_space_num_components(pcs);
 	    gs_range_t *copy_ranges = (gs_range_t *)
@@ -833,7 +898,7 @@ pdf_pattern_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	pdf_end_resource(pdev);
 	(*ppres)->object->written = true; /* don't write at end */
 	((pdf_color_space_t *)*ppres)->ranges = 0;
-
+	((pdf_color_space_t *)*ppres)->serialized = 0;
     }
     code = pdf_add_resource(pdev, pdev->substream_Resources, "/ColorSpace", *ppres);
     if (code < 0)
