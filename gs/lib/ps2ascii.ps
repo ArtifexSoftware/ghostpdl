@@ -1187,6 +1187,15 @@ mark
     /cc X                           % char-data
     dup type /stringtype ne {]} if  % char-data
 
+    /ch-xoff where
+    { pop }
+    { dup /Cd exch def
+      /ch-width { Cw } def
+      /ch-height { Ch } def
+      /ch-xoff { Cx } def
+      /ch-yoff { Cy } def
+      /ch-dx { Cdx } def
+    } ifelse
     /ch-data X
     nn /base get cc ctr put     % (adds ctr to cc'th position of BASE)
     nn /BitMaps get
