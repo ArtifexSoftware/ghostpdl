@@ -97,13 +97,7 @@ typedef struct pcl_crd_s        pcl_crd_t;
  * are for the most part not a feature that can be controlled from the language.
  * Except for the white point, the parameters of a color rendering dictionary
  * are determined by the output device rather than the language.
- *
- * To accommodate this situation, the device-specific or default color
- * rendering dictionary is maintained as a global. When used to as part of a
- * palette, this global should be "copied" using the copy_from macro provided
- * below.
  */
-extern  pcl_crd_t * pcl_default_crd;
 
 /*
  * Build the default color rendering dictionary.
