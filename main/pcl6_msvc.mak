@@ -52,8 +52,8 @@ DD=$(GLGENDIR)
 TARGET_XE=$(GENDIR)\pcl6
 
 # Debugging options
-DEBUG=0
-TDEBUG=0
+DEBUG=1
+TDEBUG=1
 NOPRIVATE=0
 
 # Banding options
@@ -79,23 +79,26 @@ PCL_TOP_OBJ=$(PCLOBJDIR)\pctop.$(OBJ)
 PXL_TOP_OBJ=$(PXLOBJDIR)\pxtop.$(OBJ)
 TOP_OBJ=$(PCL_TOP_OBJ) $(PXL_TOP_OBJ)
 
+PCL_FONT_SCALER=afs
+PXL_FONT_SCALER=afs
+
 # Language and configuration.  These are actually platform-independent,
 # but we define them here just to keep all parameters in one place.
 TARGET_DEVS=$(PXLOBJDIR)\pjl.dev $(PXLOBJDIR)\pxl.dev $(PCLOBJDIR)\pcl5c.dev $(PCLOBJDIR)\hpgl2c.dev
 
-DEVICE_DEVS=$(DD)ljet4.dev\
- $(DD)bmpmono.dev $(DD)bmp16m.dev $(DD)bmp32b.dev\
- $(DD)bitcmyk.dev $(DD)bitrgb.dev $(DD)bit.dev\
- $(DD)pkmraw.dev $(DD)ppmraw.dev $(DD)pgmraw.dev $(DD)pbmraw.dev\
- $(DD)pcx16.dev $(DD)pcx256.dev $(DD)pcx24b.dev\
- $(DD)cljet5.dev\
- $(DD)pcxmono.dev $(DD)pcxcmyk.dev $(DD)pcxgray.dev\
- $(DD)pbmraw.dev $(DD)pgmraw.dev $(DD)ppmraw.dev $(DD)pkmraw.dev\
- $(DD)pxlmono.dev $(DD)pxlcolor.dev\
- $(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev\
- $(DD)tifflzw.dev $(DD)tiffpack.dev\
- $(DD)tiff12nc.dev $(DD)tiff24nc.dev \
- $(DD)pdfwrite2.dev $(DD)pswrite.dev
+DEVICE_DEVS=$(DD)\ljet4.dev\
+ $(DD)\bmpmono.dev $(DD)\bmp16m.dev $(DD)\bmp32b.dev\
+ $(DD)\bitcmyk.dev $(DD)\bitrgb.dev $(DD)\bit.dev\
+ $(DD)\pkmraw.dev $(DD)\ppmraw.dev $(DD)\pgmraw.dev $(DD)\pbmraw.dev\
+ $(DD)\pcx16.dev $(DD)\pcx256.dev $(DD)\pcx24b.dev\
+ $(DD)\cljet5.dev\
+ $(DD)\pcxmono.dev $(DD)\pcxcmyk.dev $(DD)\pcxgray.dev\
+ $(DD)\pbmraw.dev $(DD)\pgmraw.dev $(DD)\ppmraw.dev $(DD)\pkmraw.dev\
+ $(DD)\pxlmono.dev $(DD)\pxlcolor.dev\
+ $(DD)\tiffcrle.dev $(DD)\tiffg3.dev $(DD)\tiffg32d.dev $(DD)\tiffg4.dev\
+ $(DD)\tifflzw.dev $(DD)\tiffpack.dev\
+ $(DD)\tiff12nc.dev $(DD)\tiff24nc.dev \
+ $(DD)\pswrite.dev
 
 # GS options
 # Even though FEATURE_DEVS is defined in pcl_top.mak, define identically here
@@ -104,14 +107,15 @@ FEATURE_DEVS    = $(DD)\dps2lib.dev   \
                   $(DD)\path1lib.dev  \
                   $(DD)\patlib.dev    \
                   $(DD)\rld.dev       \
+                  $(DD)\psl2cs.dev    \
                   $(DD)\roplib.dev    \
                   $(DD)\ttflib.dev    \
                   $(DD)\colimlib.dev  \
                   $(DD)\cielib.dev    \
                   $(DD)\htxlib.dev    \
                   $(DD)\devcmap.dev   \
-                  $(DD)\gsnogc.dev    \
                   $(DD)\sdctd.dev
+
 
 
 default: $(TARGET_XE).exe
