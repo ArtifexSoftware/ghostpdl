@@ -67,7 +67,7 @@ ps_impl_characteristics(
     /* version and build date are not currently used */
 #define PSVERSION NULL
 #define PSBUILDDATE NULL
-  static pl_interp_characteristics_t ps_characteristics = {
+  static const pl_interp_characteristics_t ps_characteristics = {
     "PS",
     "%!",
     "Artifex",
@@ -75,6 +75,9 @@ ps_impl_characteristics(
     PSBUILDDATE,
     1				/* minimum input size to PostScript */
   };
+#undef PSVERSION
+#undef PSBUILDDATE
+
   return &ps_characteristics;
 }
 
@@ -245,11 +248,28 @@ ps_impl_init_job(
 	pl_interp_instance_t   *instance         /* interp instance to start job in */
 )
 {
-	int code = 0, exit_code;
+	int code = 0; 
+	int exit_code = 0;
+	ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
 
 	/* Insert job server encapsulation here */
+	byte buf[81];
+	stream_cursor_read cursor;		
 
-	return code;
+	/* false (bad password) startjob 
+	 * encapsulate the job
+	 */
+	sprintf(buf, "false () startjob pop");
+
+	cursor.ptr = buf - 1;
+	/* set the end of data pointer */
+	cursor.limit = cursor.ptr + strlen(buf);
+	
+	/* Send the buffer to Ghostscript */
+	code = gsapi_run_string_continue(psi->minst, (const char *)(cursor.ptr + 1),
+					 strlen(buf), 0, &exit_code);
+
+	return (code < 0) ? exit_code : 0;
 }
 
 private uint
@@ -345,6 +365,8 @@ ps_impl_dnit_job(
 	pl_interp_instance_t *instance         /* interp instance to wrap up job in */
 )
 {
+	int code = 0; 
+	int exit_code = 0;
 	ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
 
 	return 0;
@@ -374,6 +396,7 @@ ps_impl_deallocate_interp_instance(
 	
 	/* do total dnit of interp state */
 	code = gsapi_run_string_end(psi->minst, 0, &exit_code); 
+
 	gs_free_object(mem, psi, "ps_impl_deallocate_interp_instance(ps_interp_instance_t)");
 
 	return (code < 0) ? exit_code : 0;
