@@ -100,12 +100,6 @@ set_vm_threshold(i_ctx_t *i_ctx_p, long val)
     return 0;
 }
 
-/*
- * <int> .vmreclaim -
- *
- * This implements only immediate garbage collection: enabling and
- * disabling GC is implemented by calling setuserparams.
- */
 int
 set_vm_reclaim(i_ctx_t *i_ctx_p, long val)
 {
@@ -125,6 +119,13 @@ set_vm_reclaim(i_ctx_t *i_ctx_p, long val)
     } else
 	return_error(e_rangecheck);
 }
+
+/*
+ * <int> .vmreclaim -
+ *
+ * This implements only immediate garbage collection: enabling and
+ * disabling GC is implemented by calling setuserparams.
+ */
 private int
 zvmreclaim(i_ctx_t *i_ctx_p)
 {
