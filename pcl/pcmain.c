@@ -185,6 +185,9 @@ main(
     pl_main_init(&inst, mem);
     pl_main_process_options(&inst, &args, argv, argc);
 
+    /* call once to set up the free list handlers */
+    gs_reclaim(&inst.spaces, true);
+
     /* Insert a bounding box device so we can detect empty pages. */
     {
         gx_device_bbox *    bdev = gs_alloc_struct_immovable(
@@ -260,6 +263,9 @@ main(
 
     /* provide a graphic state we can return to */
     pcl_gsave(pcls);
+
+    /* call once more to get rid of any temporary objects */
+    gs_reclaim(&inst.spaces, true);
 
     while ((arg = arg_next(&args)) != 0) {
         /* Process one input file. */
@@ -345,8 +351,16 @@ process:
     gs_reclaim(&inst.spaces, true);
 
     if ( gs_debug_c(':') ) {
+        typedef struct dump_control_s   dump_control_t;
+        extern  const dump_control_t    dump_control_default;
+
+        extern  void    debug_dump_memory( gs_ref_memory_t *,
+                                           const dump_control_t *
+                                           );
+
         pl_print_usage(mem, &inst, "Final");
         dprintf1("%% Max allocated = %ld\n", gs_malloc_max);
+        debug_dump_memory(imem, &dump_control_default);
     }
 
     gs_lib_finit(0, 0);
