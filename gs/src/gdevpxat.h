@@ -119,6 +119,7 @@ typedef enum {
     pxaSymbolSet,
     pxaTextData,
     pxaCharSubModeArray,
+    pxaWritingMode,             /* 2.0 */
 
     pxaXSpacingData = 175,
     pxaYSpacingData,
