@@ -3387,9 +3387,13 @@ is_curve_y_monotonic(const gs_fixed_point *pole, int pole_step)
 	    pole[2 * pole_step].y >= pole[3 * pole_step].y);
 }
 
-private inline bool neqs(int a, int b)
+private inline bool neqs(int *a, int b)
 {   /* Unequal signs. Assuming -1, 0, 1 only. */
-    return a * b < 0;
+    if (*a * b < 0)
+	return true;
+    if (!*a)
+	*a = b;
+    return false;
 }
 
 private inline int
@@ -3406,38 +3410,38 @@ is_bended(const tensor_patch *p)
 {   
     int sign = vector_pair_orientation(&p->pole[0][0], &p->pole[0][1], &p->pole[1][0]);
 
-    if (neqs(sign, vector_pair_orientation(&p->pole[0][1], &p->pole[0][2], &p->pole[1][1])))
+    if (neqs(&sign, vector_pair_orientation(&p->pole[0][1], &p->pole[0][2], &p->pole[1][1])))
 	return true;
-    if (neqs(sign, vector_pair_orientation(&p->pole[0][2], &p->pole[0][3], &p->pole[1][2])))
+    if (neqs(&sign, vector_pair_orientation(&p->pole[0][2], &p->pole[0][3], &p->pole[1][2])))
 	return true;
-    if (neqs(sign, -vector_pair_orientation(&p->pole[0][3], &p->pole[0][2], &p->pole[1][3])))
-	return true;
-
-    if (neqs(sign, vector_pair_orientation(&p->pole[1][1], &p->pole[1][2], &p->pole[2][1])))
-	return true;
-    if (neqs(sign, vector_pair_orientation(&p->pole[1][1], &p->pole[1][2], &p->pole[2][1])))
-	return true;
-    if (neqs(sign, vector_pair_orientation(&p->pole[1][2], &p->pole[1][3], &p->pole[2][2])))
-	return true;
-    if (neqs(sign, -vector_pair_orientation(&p->pole[1][3], &p->pole[1][2], &p->pole[2][3])))
+    if (neqs(&sign, -vector_pair_orientation(&p->pole[0][3], &p->pole[0][2], &p->pole[1][3])))
 	return true;
 
-    if (neqs(sign, vector_pair_orientation(&p->pole[2][1], &p->pole[2][2], &p->pole[3][1])))
+    if (neqs(&sign, vector_pair_orientation(&p->pole[1][1], &p->pole[1][2], &p->pole[2][1])))
 	return true;
-    if (neqs(sign, vector_pair_orientation(&p->pole[2][1], &p->pole[2][2], &p->pole[3][1])))
+    if (neqs(&sign, vector_pair_orientation(&p->pole[1][1], &p->pole[1][2], &p->pole[2][1])))
 	return true;
-    if (neqs(sign, vector_pair_orientation(&p->pole[2][2], &p->pole[2][3], &p->pole[3][2])))
+    if (neqs(&sign, vector_pair_orientation(&p->pole[1][2], &p->pole[1][3], &p->pole[2][2])))
 	return true;
-    if (neqs(sign, -vector_pair_orientation(&p->pole[2][3], &p->pole[2][2], &p->pole[3][3])))
+    if (neqs(&sign, -vector_pair_orientation(&p->pole[1][3], &p->pole[1][2], &p->pole[2][3])))
 	return true;
 
-    if (neqs(sign, -vector_pair_orientation(&p->pole[3][1], &p->pole[3][2], &p->pole[2][1])))
+    if (neqs(&sign, vector_pair_orientation(&p->pole[2][1], &p->pole[2][2], &p->pole[3][1])))
 	return true;
-    if (neqs(sign, -vector_pair_orientation(&p->pole[3][1], &p->pole[3][2], &p->pole[2][1])))
+    if (neqs(&sign, vector_pair_orientation(&p->pole[2][1], &p->pole[2][2], &p->pole[3][1])))
 	return true;
-    if (neqs(sign, -vector_pair_orientation(&p->pole[3][2], &p->pole[3][3], &p->pole[2][2])))
+    if (neqs(&sign, vector_pair_orientation(&p->pole[2][2], &p->pole[2][3], &p->pole[3][2])))
 	return true;
-    if (neqs(sign, vector_pair_orientation(&p->pole[3][3], &p->pole[3][2], &p->pole[2][3])))
+    if (neqs(&sign, -vector_pair_orientation(&p->pole[2][3], &p->pole[2][2], &p->pole[3][3])))
+	return true;
+
+    if (neqs(&sign, -vector_pair_orientation(&p->pole[3][1], &p->pole[3][2], &p->pole[2][1])))
+	return true;
+    if (neqs(&sign, -vector_pair_orientation(&p->pole[3][1], &p->pole[3][2], &p->pole[2][1])))
+	return true;
+    if (neqs(&sign, -vector_pair_orientation(&p->pole[3][2], &p->pole[3][3], &p->pole[2][2])))
+	return true;
+    if (neqs(&sign, vector_pair_orientation(&p->pole[3][3], &p->pole[3][2], &p->pole[2][3])))
 	return true;
     return false;
 }
