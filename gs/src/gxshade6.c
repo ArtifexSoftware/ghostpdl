@@ -1725,7 +1725,7 @@ make_wedge_median(patch_fill_state_t *pfs, wedge_vertex_list_t *l,
 	const gs_fixed_point *p0, const gs_fixed_point *p1, const gs_fixed_point *pm)
 {
     l->divided_left = l->divided_right = false;
-    l->last_side = l0->last_side;
+    l->last_side = l->from_last_side = l0->last_side;
     if (!l->last_side ^ !forth) {
 	l->end = open_wedge_median(pfs, l0, p0, p1, pm);
 	l->beg = l0->beg;
@@ -1745,8 +1745,12 @@ close_wedge_median(patch_fill_state_t *pfs, wedge_vertex_list_t *l,
     if (!l->last_side)
 	return 0;
     if (l->divided_left != l->divided_right) {
-	int code = fill_wedge_from_list(pfs, l, c0, c1);
-
+	int code;
+	
+	if (l->from_last_side)
+	    code = fill_wedge_from_list(pfs, l, c1, c0);
+	else
+	    code = fill_wedge_from_list(pfs, l, c0, c1);
 	if (code < 0)
 	    return code;
     }
@@ -2595,13 +2599,13 @@ triangle_by_4(patch_fill_state_t *pfs,
     if (code < 0)
 	return code;
     if (LAZY_WEDGES) {
-	code = close_wedge_median(pfs, &L01, &p0->c, &p1->c);
+	code = close_wedge_median(pfs, l01, &p0->c, &p1->c);
 	if (code < 0)
 	    return code;
-	code = close_wedge_median(pfs, &L12, &p1->c, &p2->c);
+	code = close_wedge_median(pfs, l12, &p1->c, &p2->c);
 	if (code < 0)
 	    return code;
-	code = close_wedge_median(pfs, &L20, &p2->c, &p0->c);
+	code = close_wedge_median(pfs, l20, &p2->c, &p0->c);
 	if (code < 0)
 	    return code;
 	code = terminate_wedge_vertex_list(pfs, &L[0], &p01.c, &p20.c);
@@ -2938,10 +2942,10 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
 	if (LAZY_WEDGES) {
 	    if (code < 0)
 		return code;
-	    code = close_wedge_median(pfs, &l1, &p->p[0][1]->c, &p->p[1][1]->c);
+	    code = close_wedge_median(pfs, p->l0111, &p->p[0][1]->c, &p->p[1][1]->c);
 	    if (code < 0)
 		return code;
-	    code = close_wedge_median(pfs, &l2, &p->p[1][0]->c, &p->p[0][0]->c);
+	    code = close_wedge_median(pfs, p->l1000, &p->p[1][0]->c, &p->p[0][0]->c);
 	    if (code < 0)
 		return code;
 	    code = terminate_wedge_vertex_list(pfs, &l0, &s0.p[1][0]->c, &s0.p[1][1]->c);
@@ -2976,10 +2980,10 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
 	if (LAZY_WEDGES) {
 	    if (code < 0)
 		return code;
-	    code = close_wedge_median(pfs, &l1, &p->p[0][0]->c, &p->p[0][1]->c);
+	    code = close_wedge_median(pfs, p->l0001, &p->p[0][0]->c, &p->p[0][1]->c);
 	    if (code < 0)
 		return code;
-	    code = close_wedge_median(pfs, &l2, &p->p[1][1]->c, &p->p[1][0]->c);
+	    code = close_wedge_median(pfs, p->l1110, &p->p[1][1]->c, &p->p[1][0]->c);
 	    if (code < 0)
 		return code;
 	    code = terminate_wedge_vertex_list(pfs, &l0, &s0.p[0][1]->c, &s0.p[1][1]->c);

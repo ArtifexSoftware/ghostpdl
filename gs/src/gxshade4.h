@@ -87,7 +87,7 @@ struct wedge_vertex_list_elem_s {
     wedge_vertex_list_elem_t *next, *prev;
 };
 typedef struct {
-    bool last_side;
+    bool last_side, from_last_side;
     bool divided_left, divided_right;
     wedge_vertex_list_elem_t *beg, *end;    
 } wedge_vertex_list_t;
