@@ -629,6 +629,27 @@ start:
 
 }
 
+/* gl/2 vector filled objects always have a white background.  It can
+   be either a transparent or white.  In the former case we don't have
+   to do anything.  We expect the fill area of the object to already
+   be defined in the graphics state. */
+ private int
+hpgl_fill_polyfill_background(hpgl_state_t *pgls)
+{
+    /* if we are drawing on a transparent background */
+    if ( pgls->g.source_transparent )
+	return 0;
+    /* preserve the current foreground color */
+    hpgl_call(hpgl_gsave(pgls));
+    /* fill a white region.  NB have not experimented with different
+       rasterops and transparency. */
+    hpgl_call(gs_setgray(pgls->pgs, 1.0));
+    hpgl_call(gs_fill(pgls->pgs));
+    /* restore the foreground color */
+    hpgl_call(hpgl_grestore(pgls));
+    return 0;
+}
+    
  private int
 hpgl_polyfill_using_current_line_type(
     hpgl_state_t *        pgls,
@@ -643,6 +664,7 @@ hpgl_polyfill_using_current_line_type(
      * beginning at the anchor corner replicate lines
      */
     hpgl_call(gs_clip(pgls->pgs));
+    hpgl_call(hpgl_fill_polyfill_background(pgls));
     hpgl_call(hpgl_polyfill(pgls, render_mode));
     hpgl_call(hpgl_grestore(pgls));
     return 0;
@@ -1252,6 +1274,7 @@ hpgl_draw_current_path(
          */
 	if (pgls->g.pen.selected == 0)
 	    hpgl_call(gs_fill(pgls->pgs));
+	hpgl_call(hpgl_clear_current_path(pgls));
 	break;
 
     case hpgl_rm_vector:
