@@ -346,11 +346,15 @@ pdfdict begin
   Generations 2 index lget 1 sub 1 index eq {
     pop true
   } {
-    Generations 2 index lget 0 eq {
-      (Warning: reference to free object: )
+    QUIET not {
+      Generations 2 index lget 0 eq {
+	(Warning: reference to free object: )
+      } {
+	(Warning: wrong generation: )
+      } ifelse print 1 index =only ( ) print =only ( R) =
     } {
-      (Warning: wrong generation: )
-    } ifelse print 1 index =only ( ) print =only ( R) = false
+      pop
+    } ifelse false
   } ifelse
 } bind def
 /R {		% <object#> <generation#> R <object>
