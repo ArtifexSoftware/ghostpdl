@@ -113,22 +113,20 @@ struct shading_vertex_s {
     patch_color_t c;
 };
 
-#if TENSOR_SHADING_DEBUG
-    extern int triangle_cnt, patch_cnt;
-#endif
-
 /* Initialize the fill state for triangle shading. */
 void mesh_init_fill_state(mesh_fill_state_t * pfs,
 			  const gs_shading_mesh_t * psh,
 			  const gs_rect * rect,
 			  gx_device * dev, gs_imager_state * pis);
 
+#if !NEW_SHADINGS
 /* Fill one triangle in a mesh. */
 void mesh_init_fill_triangle(mesh_fill_state_t * pfs,
 			     const mesh_vertex_t *va,
 			     const mesh_vertex_t *vb,
 			     const mesh_vertex_t *vc, bool check_clipping);
 int mesh_fill_triangle(mesh_fill_state_t * pfs);
+#endif
 
 #if NEW_SHADINGS
 void init_patch_fill_state(patch_fill_state_t *pfs);

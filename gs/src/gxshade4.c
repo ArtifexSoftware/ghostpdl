@@ -71,7 +71,6 @@ shading_init_fill_triangle(mesh_fill_state_t * pfs,
     patch_set_color_values(pfs, pfs->frames[0].vc.cc, &vc->c);
     pfs->frames[0].check_clipping = check_clipping;
 }
-#endif
 void
 mesh_init_fill_triangle(mesh_fill_state_t * pfs,
   const mesh_vertex_t *va, const mesh_vertex_t *vb, const mesh_vertex_t *vc,
@@ -338,6 +337,7 @@ mesh_fill_triangle(mesh_fill_state_t *pfs)
 	fp = mesh_subdivide_triangle(pfs, fp);
     }
 }
+#endif
 
 /* ---------------- Gouraud triangle shadings ---------------- */
 
