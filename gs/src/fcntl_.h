@@ -37,6 +37,9 @@
 #if !defined(O_APPEND) && defined(_O_APPEND)
 #  define O_APPEND _O_APPEND
 #endif
+#if !defined(O_BINARY) && defined(_O_BINARY)
+#  define O_BINARY _O_BINARY
+#endif
 #if !defined(O_CREAT) && defined(_O_CREAT)
 #  define O_CREAT _O_CREAT
 #endif
