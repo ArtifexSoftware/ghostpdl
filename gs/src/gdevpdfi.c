@@ -629,27 +629,27 @@ pdf_image_end_image_data(gx_image_enum_common_t * info, bool draw_last,
 
     if (pie->writer.pres)
 	((pdf_x_object_t *)pie->writer.pres)->data_height = data_height;
-    else
-	pdf_put_image_matrix(pdev, &pie->mat,
-			     (height == 0 || data_height == 0 ? 1.0 :
-			      (double)data_height / height));
-    code = pdf_complete_image_data(pdev, &pie->writer, data_height,
+    else if (data_height > 0)
+	pdf_put_image_matrix(pdev, &pie->mat, (double)data_height / height);
+    if (data_height > 0) {
+	code = pdf_complete_image_data(pdev, &pie->writer, data_height,
 			pie->width, pie->bits_per_pixel);
-    if (code < 0)
-	return code;
-    code = pdf_end_image_binary(pdev, &pie->writer, data_height);
-    if (code < 0)
-	return code;
-    code = pdf_end_write_image(pdev, &pie->writer);
-    switch (code) {
-    default:
-	return code;	/* error */
-    case 1:
-	code = 0;
-	break;
-    case 0:
-	if (do_image)
-	    code = pdf_do_image(pdev, pie->writer.pres, &pie->mat, true);
+	if (code < 0)
+	    return code;
+	code = pdf_end_image_binary(pdev, &pie->writer, data_height);
+	if (code < 0)
+ 	    return code;
+	code = pdf_end_write_image(pdev, &pie->writer);
+	switch (code) {
+	default:
+	    return code;	/* error */
+	case 1:
+	    code = 0;
+	    break;
+	case 0:
+	    if (do_image)
+		code = pdf_do_image(pdev, pie->writer.pres, &pie->mat, true);
+	}
     }
     gs_free_object(pie->memory, pie, "pdf_end_image");
     return code;
