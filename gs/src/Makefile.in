@@ -201,7 +201,7 @@ CC=@CC@
 CCLD=$(CC)
 
 # Define the default gcc flags.
-GCFLAGS=@GCFLAGS@ @CFLAGS@
+GCFLAGS=@CPPFLAGS@ @GCFLAGS@ @CFLAGS@
 
 # Define the added flags for standard, debugging, profiling 
 # and shared object builds.
