@@ -790,7 +790,7 @@ typedef enum {
 /* Public: Parameter to get_luobj function */
 typedef enum {
     icmLuOrdNorm     = 0,  /* Normal profile preference: Lut, matrix, monochrome */
-    icmLuOrdRev      = 1,  /* Reverse profile preference: monochrome, matrix, monochrome */
+    icmLuOrdRev      = 1   /* Reverse profile preference: monochrome, matrix, monochrome */
 } icmLookupOrder;
 
 /* Public: Lookup algorithm object type */
