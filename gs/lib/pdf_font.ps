@@ -435,7 +435,6 @@ end readonly def
 	2 copy ne {
           (   **** Warning: Type 1 PFB segment length and Length 2 value do not match.\n)
           pdfformaterror
-	  dup =
 	  exch 		% keep the PFB length instead
 	} if
 	  pop
