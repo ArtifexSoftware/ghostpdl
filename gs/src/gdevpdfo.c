@@ -451,15 +451,15 @@ cos_array_write(const cos_object_t *pco, gx_device_pdf *pdev)
     cos_array_element_t *pcae;
     uint last_index = 0;
 
-    pputs(s, "[");
+    stream_puts(s, "[");
     for (pcae = first; pcae; ++last_index, pcae = pcae->next) {
 	for (; pcae->index > last_index; ++last_index)
-	    pputs(s, "null\n");
+	    stream_puts(s, "null\n");
 	cos_value_write(&pcae->value, pdev);
-	pputc(s, '\n');
+	stream_putc(s, '\n');
     }
     DISCARD(cos_array_reorder(pca, first));
-    pputs(s, "]");
+    stream_puts(s, "]");
     return 0;
 }
 
@@ -638,9 +638,9 @@ cos_elements_write(stream *s, const cos_dict_element_t *pcde,
     pdev->strm = s;
     for (; pcde; pcde = pcde->next) {
 	pdf_write_value(pdev, pcde->key.data, pcde->key.size);
-	pputc(s, ' ');
+	stream_putc(s, ' ');
 	cos_value_write(&pcde->value, pdev);
-	pputc(s, '\n');
+	stream_putc(s, '\n');
     }
     pdev->strm = save;
     return 0;
@@ -656,9 +656,9 @@ cos_dict_write(const cos_object_t *pco, gx_device_pdf *pdev)
 {
     stream *s = pdev->strm;
 
-    pputs(s, "<<");
+    stream_puts(s, "<<");
     cos_dict_elements_write((const cos_dict_t *)pco, pdev);
-    pputs(s, ">>");
+    stream_puts(s, ">>");
     return 0;
 }
 
@@ -1052,11 +1052,11 @@ cos_stream_write(const cos_object_t *pco, gx_device_pdf *pdev)
     const cos_stream_t *const pcs = (const cos_stream_t *)pco;
     int code;
 
-    pputs(s, "<<");
+    stream_puts(s, "<<");
     cos_elements_write(s, pcs->elements, pdev);
     pprintld1(s, "/Length %ld>>stream\n", cos_stream_length(pcs));
     code = cos_stream_contents_write(pcs, pdev);
-    pputs(s, "\nendstream\n");
+    stream_puts(s, "\nendstream\n");
 
     return code;
 }
@@ -1107,7 +1107,7 @@ cos_stream_add_since(cos_stream_t *pcs, long start_pos)
 int
 cos_stream_add_bytes(cos_stream_t *pcs, const byte *data, uint size)
 {
-    pwrite(pcs->pdev->streams.strm, data, size);
+    stream_write(pcs->pdev->streams.strm, data, size);
     return cos_stream_add(pcs, size);
 }
 
@@ -1136,7 +1136,7 @@ cos_write_stream_process(stream_state * st, stream_cursor_read * pr,
     long start_pos = stell(pdev->streams.strm);
     int code;
 
-    pwrite(target, pr->ptr + 1, count);
+    stream_write(target, pr->ptr + 1, count);
     pr->ptr = pr->limit;
     sflush(target);
     code = cos_stream_add_since(ss->pcs, start_pos);

@@ -642,37 +642,37 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
     else if (page->dsc_info.orientation >= 0)
 	pprintd1(s, "/Rotate %d", page->dsc_info.orientation * 90);
     pprintld1(s, "/Parent %ld 0 R\n", pdev->Pages->id);
-    pputs(s, "/Resources<</ProcSet[/PDF");
+    stream_puts(s, "/Resources<</ProcSet[/PDF");
     if (page->procsets & ImageB)
-	pputs(s, " /ImageB");
+	stream_puts(s, " /ImageB");
     if (page->procsets & ImageC)
-	pputs(s, " /ImageC");
+	stream_puts(s, " /ImageC");
     if (page->procsets & ImageI)
-	pputs(s, " /ImageI");
+	stream_puts(s, " /ImageI");
     if (page->procsets & Text)
-	pputs(s, " /Text");
-    pputs(s, "]\n");
+	stream_puts(s, " /Text");
+    stream_puts(s, "]\n");
     {
 	int i;
 
 	for (i = 0; i < countof(page->resource_ids); ++i)
 	    if (page->resource_ids[i]) {
-		pputs(s, pdf_resource_type_names[i]);
+		stream_puts(s, pdf_resource_type_names[i]);
 		pprintld1(s, " %ld 0 R\n", page->resource_ids[i]);
 	    }
     }
-    pputs(s, ">>\n");
+    stream_puts(s, ">>\n");
 
     /* Write out the annotations array if any. */
 
     if (page->Annots) {
-	pputs(s, "/Annots");
+	stream_puts(s, "/Annots");
 	COS_WRITE(page->Annots, pdev);
 	COS_FREE(page->Annots, "pdf_write_page(Annots)");
 	page->Annots = 0;
     }
     if (page->contents_id == 0)
-	pputs(s, "/Contents []\n");
+	stream_puts(s, "/Contents []\n");
     else
 	pprintld1(s, "/Contents %ld 0 R\n", page->contents_id);
 
@@ -680,7 +680,7 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
 
     cos_dict_elements_write(page->Page, pdev);
 
-    pputs(s, ">>\n");
+    stream_puts(s, ">>\n");
     pdf_end_obj(pdev);
     return 0;
 }
@@ -742,7 +742,7 @@ pdf_close(gx_device * dev)
 
     pdf_open_obj(pdev, Pages_id);
     s = pdev->strm;
-    pputs(s, "<< /Type /Pages /Kids [\n");
+    stream_puts(s, "<< /Type /Pages /Kids [\n");
     /* Omit the last page if it was incomplete. */
     if (partial_page)
 	--(pdev->next_page);
@@ -757,7 +757,7 @@ pdf_close(gx_device * dev)
 	pprintd1(s, "/Rotate %d\n",
 		 pdf_dominant_rotation(&pdev->text_rotation));
     cos_dict_elements_write(pdev->Pages, pdev);
-    pputs(s, ">>\n");
+    stream_puts(s, ">>\n");
     pdf_end_obj(pdev);
 
     /* Close outlines and articles. */
@@ -798,19 +798,19 @@ pdf_close(gx_device * dev)
 
 	Threads_id = pdf_begin_obj(pdev);
 	s = pdev->strm;
-	pputs(s, "[ ");
+	stream_puts(s, "[ ");
 	while ((part = pdev->articles) != 0) {
 	    pdev->articles = part->next;
 	    pprintld1(s, "%ld 0 R\n", part->contents->id);
 	    COS_FREE(part->contents, "pdf_close(article contents)");
 	    gs_free_object(mem, part, "pdf_close(article)");
 	}
-	pputs(s, "]\n");
+	stream_puts(s, "]\n");
 	pdf_end_obj(pdev);
     }
     pdf_open_obj(pdev, Catalog_id);
     s = pdev->strm;
-    pputs(s, "<<");
+    stream_puts(s, "<<");
     pprintld1(s, "/Type /Catalog /Pages %ld 0 R\n", Pages_id);
     if (pdev->outlines_id != 0)
 	pprintld1(s, "/Outlines %ld 0 R\n", pdev->outlines_id);
@@ -819,7 +819,7 @@ pdf_close(gx_device * dev)
     if (pdev->Dests)
 	pprintld1(s, "/Dests %ld 0 R\n", pdev->Dests->id);
     cos_dict_elements_write(pdev->Catalog, pdev);
-    pputs(s, ">>\n");
+    stream_puts(s, ">>\n");
     pdf_end_obj(pdev);
     if (pdev->Dests) {
 	COS_FREE(pdev->Dests, "pdf_close(Dests)");
@@ -882,16 +882,16 @@ pdf_close(gx_device * dev)
 	    if (pos & ASIDES_BASE_POSITION)
 		pos += resource_pos - ASIDES_BASE_POSITION;
 	    sprintf(str, "%010ld 00000 n \n", pos);
-	    pputs(s, str);
+	    stream_puts(s, str);
 	}
     }
 
     /* Write the trailer. */
 
-    pputs(s, "trailer\n");
+    stream_puts(s, "trailer\n");
     pprintld3(s, "<< /Size %ld /Root %ld 0 R /Info %ld 0 R\n",
 	      pdev->next_id, Catalog_id, Info_id);
-    pputs(s, ">>\n");
+    stream_puts(s, ">>\n");
     pprintld1(s, "startxref\n%ld\n%%%%EOF\n", xref);
 
     /* Release the resource records. */

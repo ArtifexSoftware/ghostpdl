@@ -385,13 +385,13 @@ assign_char_code(gx_device_pdf * pdev)
 	 * font in this case), Acrobat 2.1 gives an error if the
 	 * BaseEncoding key is present.
 	 */
-	pputs(s, "<</Type/Encoding/Differences[0");
+	stream_puts(s, "<</Type/Encoding/Differences[0");
 	for (i = 0; i < 256; ++i) {
 	    if (!(i & 15))
-		pputs(s, "\n");
+		stream_puts(s, "\n");
 	    pprintd1(s, "/a%d", i);
 	}
-	pputs(s, "\n] >>\n");
+	stream_puts(s, "\n] >>\n");
 	pdf_end_separate(pdev);
 	pdev->embedded_encoding_id = id;
     }
@@ -453,7 +453,7 @@ pdf_begin_char_proc(gx_device_pdf * pdev, int w, int h, int x_width,
 	 * definition we can handle.  (This used to be 10K, but there was
 	 * a real file that exceeded this limit.)
 	 */
-	pputs(s, "<</Length       >>stream\n");
+	stream_puts(s, "<</Length       >>stream\n");
 	ppos->start_pos = stell(s);
     }
     return 0;
@@ -473,7 +473,7 @@ pdf_end_char_proc(gx_device_pdf * pdev, pdf_stream_position_t * ppos)
     sseek(s, start_pos - 15);
     pprintd1(s, "%d", length);
     sseek(s, end_pos);
-    pputs(s, "endstream\n");
+    stream_puts(s, "endstream\n");
     pdf_end_separate(pdev);
     return 0;
 }

@@ -29,13 +29,13 @@ typedef struct stream_s stream;
 #endif
 
 /* Put a character on a stream. */
-#define pputc(s, c) spputc(s, c)
+#define stream_putc(s, c) spputc(s, c)
 
 /* Put a byte array on a stream. */
-int pwrite(P3(stream * s, const void *ptr, uint count));
+int stream_write(P3(stream * s, const void *ptr, uint count));
 
 /* Put a string on a stream. */
-int pputs(P2(stream * s, const char *str));
+int stream_puts(P2(stream * s, const char *str));
 
 /*
  * Print (a) floating point number(s) using a format.  This is needed

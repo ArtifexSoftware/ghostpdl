@@ -83,10 +83,10 @@ write_uid(stream *s, const gs_uid *puid)
     else if (uid_is_XUID(puid)) {
 	uint i, n = uid_XUID_size(puid);
 
-	pputs(s, "/XUID [");
+	stream_puts(s, "/XUID [");
 	for (i = 0; i < n; ++i)
 	    pprintld1(s, "%ld ", uid_XUID_values(puid)[i]);
-	pputs(s, "] readonly def\n");
+	stream_puts(s, "] readonly def\n");
     }
 }
 
@@ -96,9 +96,9 @@ write_font_name(stream *s, const gs_font_type1 *pfont,
 		const gs_const_string *alt_font_name)
 {
     if (alt_font_name)
-	pwrite(s, alt_font_name->data, alt_font_name->size);
+	stream_write(s, alt_font_name->data, alt_font_name->size);
     else
-	pwrite(s, pfont->font_name.chars, pfont->font_name.size);
+	stream_write(s, pfont->font_name.chars, pfont->font_name.size);
 }
 /*
  * Write the Encoding array.  This is a separate procedure only for
@@ -108,22 +108,22 @@ private int
 write_Encoding(stream *s, gs_font_type1 *pfont, int options,
 	      gs_glyph *subset_glyphs, uint subset_size, gs_glyph notdef)
 {
-    pputs(s, "/Encoding ");
+    stream_puts(s, "/Encoding ");
     switch (pfont->encoding_index) {
 	case ENCODING_INDEX_STANDARD:
-	    pputs(s, "StandardEncoding");
+	    stream_puts(s, "StandardEncoding");
 	    break;
 	case ENCODING_INDEX_ISOLATIN1:
 	    /* ATM only recognizes StandardEncoding. */
 	    if (options & WRITE_TYPE1_POSTSCRIPT) {
-		pputs(s, "ISOLatin1Encoding");
+		stream_puts(s, "ISOLatin1Encoding");
 		break;
 	    }
 	default:{
 		gs_char i;
 
-		pputs(s, "256 array\n");
-		pputs(s, "0 1 255 {1 index exch /.notdef put} for\n");
+		stream_puts(s, "256 array\n");
+		stream_puts(s, "0 1 255 {1 index exch /.notdef put} for\n");
 		for (i = 0; i < 256; ++i) {
 		    gs_glyph glyph =
 			(*pfont->procs.encode_char)
@@ -146,14 +146,14 @@ write_Encoding(stream *s, gs_font_type1 *pfont, int options,
 			 (glyph, &namelen)) != 0
 			) {
 			pprintd1(s, "dup %d /", (int)i);
-			pwrite(s, namestr, namelen);
-			pputs(s, " put\n");
+			stream_write(s, namestr, namelen);
+			stream_puts(s, " put\n");
 		    }
 		}
-		pputs(s, "readonly");
+		stream_puts(s, "readonly");
 	    }
     }
-    pputs(s, " def\n");
+    stream_puts(s, " def\n");
     return 0;
 }
 
@@ -177,10 +177,10 @@ write_Private(stream *s, gs_font_type1 *pfont,
 
     if (code < 0)
 	return 0;
-    pputs(s, "dup /Private 17 dict dup begin\n");
-    pputs(s, "/-|{string currentfile exch readstring pop}executeonly def\n");
-    pputs(s, "/|-{noaccess def}executeonly def\n");
-    pputs(s, "/|{noaccess put}executeonly def\n");
+    stream_puts(s, "dup /Private 17 dict dup begin\n");
+    stream_puts(s, "/-|{string currentfile exch readstring pop}executeonly def\n");
+    stream_puts(s, "/|-{noaccess def}executeonly def\n");
+    stream_puts(s, "/|{noaccess put}executeonly def\n");
     {
 	private const gs_param_item_t private_items[] = {
 	    {"BlueFuzz", gs_param_type_int,
@@ -234,8 +234,8 @@ write_Private(stream *s, gs_font_type1 *pfont,
 			  pdata->StemSnapV.count);
     }
     write_uid(s, &pfont->UID);
-    pputs(s, "/MinFeature{16 16} def\n");
-    pputs(s, "/password 5839 def\n");
+    stream_puts(s, "/MinFeature{16 16} def\n");
+    stream_puts(s, "/password 5839 def\n");
 
     /*
      * Write the Subrs.  We always write them all, even for subsets.
@@ -262,14 +262,14 @@ write_Private(stream *s, gs_font_type1 *pfont,
 		char buf[50];
 
 		sprintf(buf, "dup %d %u -| ", i, str.size);
-		pputs(s, buf);
+		stream_puts(s, buf);
 		write_CharString(s, str.data, str.size);
-		pputs(s, " |\n");
+		stream_puts(s, " |\n");
 		if (code > 0)
 		    gs_free_const_string(pfont->memory, str.data, str.size,
 					 "write_Private(Subrs)");
 	    }
-	pputs(s, "|-\n");
+	stream_puts(s, "|-\n");
     }
 
     /* We don't write OtherSubrs -- there had better not be any! */
@@ -309,11 +309,11 @@ write_Private(stream *s, gs_font_type1 *pfont,
 		const char *gstr =
 		    (*pfont->procs.callbacks.glyph_name)(glyph, &gssize);
 
-		pputs(s, "/");
-		pwrite(s, gstr, gssize);
+		stream_puts(s, "/");
+		stream_write(s, gstr, gssize);
 		pprintd1(s, " %d -| ", gdata.size);
 		write_CharString(s, gdata.data, gdata.size);
-		pputs(s, " |-\n");
+		stream_puts(s, " |-\n");
 		if (code > 0)
 		    gs_free_const_string(pfont->memory, gdata.data, gdata.size,
 					 "write_Private(CharStrings)");
@@ -322,14 +322,14 @@ write_Private(stream *s, gs_font_type1 *pfont,
 
     /* Wrap up. */
 
-    pputs(s, "end\nend\nreadonly put\nnoaccess put\n");
+    stream_puts(s, "end\nend\nreadonly put\nnoaccess put\n");
     s_release_param_printer(&rlist);
     return 0;
 }
 
 /* Encrypt and write a CharString. */
 private int
-pwrite_encrypted(stream *s, const void *ptr, uint count)
+stream_write_encrypted(stream *s, const void *ptr, uint count)
 {
     const byte *const data = ptr;
     crypt_state state = crypt_charstring_seed;
@@ -340,7 +340,7 @@ pwrite_encrypted(stream *s, const void *ptr, uint count)
     for (left = count; left > 0; left -= n) {
 	n = min(left, sizeof(buf));
 	gs_type1_encrypt(buf, data + count - left, n, &state);
-	code = pwrite(s, buf, n);
+	code = stream_write(s, buf, n);
     }
     return code;
 }
@@ -353,7 +353,7 @@ write_font_info(stream *s, const char *key, const gs_const_string *pvalue,
     if (do_write) {
 	pprints1(s, "\n/%s ", key);
 	s_write_ps_string(s, pvalue->data, pvalue->size, PRINT_HEX_NOT_OK);
-	pputs(s, " def");
+	stream_puts(s, " def");
     }
 }
 
@@ -376,7 +376,7 @@ psf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
     byte exE_buf[200];		/* arbitrary */
     psf_outline_glyphs_t glyphs;
     int lenIV = pfont->data.lenIV;
-    int (*write_CharString)(P3(stream *, const void *, uint)) = pwrite;
+    int (*write_CharString)(P3(stream *, const void *, uint)) = stream_write;
     int code = psf_get_type1_glyphs(&glyphs, pfont, orig_subset_glyphs,
 				     orig_subset_size);
 
@@ -396,13 +396,13 @@ psf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
 
     /* Write the font header. */
 
-    pputs(s, "%!FontType1-1.0: ");
+    stream_puts(s, "%!FontType1-1.0: ");
     write_font_name(s, pfont, alt_font_name);
-    pputs(s, "\n11 dict begin\n");
+    stream_puts(s, "\n11 dict begin\n");
 
     /* Write FontInfo. */
 
-    pputs(s, "/FontInfo 5 dict dup begin");
+    stream_puts(s, "/FontInfo 5 dict dup begin");
     {
 	gs_font_info_t info;
 	int code = pfont->procs.font_info((gs_font *)pfont, NULL,
@@ -421,13 +421,13 @@ psf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
 			    info.members & FONT_INFO_FULL_NAME);
 	}
     }
-    pputs(s, "\nend readonly def\n");
+    stream_puts(s, "\nend readonly def\n");
 
     /* Write the main font dictionary. */
 
-    pputs(s, "/FontName /");
+    stream_puts(s, "/FontName /");
     write_font_name(s, pfont, alt_font_name);
-    pputs(s, " def\n");
+    stream_puts(s, " def\n");
     code = write_Encoding(s, pfont, options, glyphs.subset_glyphs,
 			  glyphs.subset_size, glyphs.notdef);
     if (code < 0)
@@ -461,17 +461,17 @@ psf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
 	write_float_array(plist, "WeightVector", pdata->WeightVector.values,
 			  pdata->WeightVector.count);
     }
-    pputs(s, "currentdict end\n");
+    stream_puts(s, "currentdict end\n");
 
     /* Write the Private dictionary. */
 
     if (lenIV < 0 && (options & WRITE_TYPE1_WITH_LENIV)) {
 	/* We'll have to encrypt the CharStrings. */
 	lenIV = 0;
-	write_CharString = pwrite_encrypted;
+	write_CharString = stream_write_encrypted;
     }
     if (options & WRITE_TYPE1_EEXEC) {
-	pputs(s, "currentfile eexec\n");
+	stream_puts(s, "currentfile eexec\n");
 	lengths[0] = stell(s) - start;
 	start = stell(s);
 	if (options & WRITE_TYPE1_ASCIIHEX) {
@@ -492,17 +492,17 @@ psf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
 	 * Note: eexec encryption always writes/skips 4 initial bytes, not
 	 * the number of initial bytes given by pdata->lenIV.
 	 */
-	pputs(es, "****");
+	stream_puts(es, "****");
     }
     code = write_Private(es, pfont, glyphs.subset_glyphs, glyphs.subset_size,
 			 glyphs.notdef, lenIV, write_CharString, &ppp);
     if (code < 0)
 	return code;
-    pputs(es, "dup/FontName get exch definefont pop\n");
+    stream_puts(es, "dup/FontName get exch definefont pop\n");
     if (options & WRITE_TYPE1_EEXEC) {
 	if (options & (WRITE_TYPE1_EEXEC_PAD | WRITE_TYPE1_EEXEC_MARK))
-	    pputs(es, "mark ");
-	pputs(es, "currentfile closefile\n");
+	    stream_puts(es, "mark ");
+	stream_puts(es, "currentfile closefile\n");
 	s_close_filters(&es, s);
 	lengths[1] = stell(s) - start;
 	start = stell(s);
@@ -510,8 +510,8 @@ psf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
 	    int i;
 
 	    for (i = 0; i < 8; ++i)
-		pputs(s, "\n0000000000000000000000000000000000000000000000000000000000000000");
-	    pputs(s, "\ncleartomark\n");
+		stream_puts(s, "\n0000000000000000000000000000000000000000000000000000000000000000");
+	    stream_puts(s, "\ncleartomark\n");
 	}
 	lengths[2] = stell(s) - start;
     } else {

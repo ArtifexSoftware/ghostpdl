@@ -272,7 +272,7 @@ pdfmark_write_border(stream *s, const gs_param_string *str,
 	/* Handle a dash array.  This is tiresome. */
 	double v;
 
-	pputc(s, '[');
+	stream_putc(s, '[');
 	while (next != 0 && sscanf(++next, "%lg", &v) == 1) {
 	    gs_point vpt;
 
@@ -280,9 +280,9 @@ pdfmark_write_border(stream *s, const gs_param_string *str,
 	    pprintg1(s, "%g ", fabs(vpt.x + vpt.y));
 	    next = strchr(next, ' ');
 	}
-	pputc(s, ']');
+	stream_putc(s, ']');
     }
-    pputc(s, ']');
+    stream_putc(s, ']');
     return 0;
 }
 
@@ -631,7 +631,7 @@ pdfmark_write_outline(gx_device_pdf * pdev, pdf_outline_node_t * pnode,
 
     pdf_open_separate(pdev, pnode->id);
     s = pdev->strm;
-    pputs(s, "<< ");
+    stream_puts(s, "<< ");
     cos_dict_elements_write(pnode->action, pdev);
     if (pnode->count)
 	pprintd1(s, "/Count %d ", pnode->count);
@@ -643,7 +643,7 @@ pdfmark_write_outline(gx_device_pdf * pdev, pdf_outline_node_t * pnode,
     if (pnode->first_id)
 	pprintld2(s, "/First %ld 0 R /Last %ld 0 R\n",
 		  pnode->first_id, pnode->last_id);
-    pputs(s, ">>\n");
+    stream_puts(s, ">>\n");
     pdf_end_separate(pdev);
     COS_FREE(pnode->action, "pdfmark_write_outline");
     pnode->action = 0;
@@ -806,7 +806,7 @@ pdfmark_write_article(gx_device_pdf * pdev, const pdf_article_t * part)
     s = pdev->strm;
     pprintld1(s, "<</F %ld 0 R/I<<", art.first.id);
     cos_dict_elements_write(art.contents, pdev);
-    pputs(s, ">> >>\n");
+    stream_puts(s, ">> >>\n");
     return pdf_end_separate(pdev);
 }
 
@@ -976,8 +976,8 @@ pdfmark_write_ps(stream *s, const gs_param_string * psource)
     /****** REMOVE ESCAPES WITH PSSDecode, SEE gdevpdfr p. 2 ******/
     uint size = psource->size - 2;
 
-    pwrite(s, psource->data + 1, size);
-    pputc(s, '\n');
+    stream_write(s, psource->data + 1, size);
+    stream_putc(s, '\n');
     return size + 1;
 }
 
@@ -1006,8 +1006,8 @@ pdfmark_PS(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	if (code < 0)
 	    return code;
 	s = pdev->strm;
-	pwrite(s, source.data, source.size);
-	pputs(s, " PS\n");
+	stream_write(s, source.data, source.size);
+	stream_puts(s, " PS\n");
     } else {
 	/* Put the PostScript code in a resource. */
 	pdf_resource_t *pres;
@@ -1045,7 +1045,7 @@ pdfmark_PS(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	    s = pdev->strm;
 	    pprintld1(s, "<</Length %ld 0 R>>stream\n", length_id);
 	    size = pdfmark_write_ps(s, &level1);
-	    pputs(s, "endstream\n");
+	    stream_puts(s, "endstream\n");
 	    pdf_end_separate(pdev);
 	    pdf_open_separate(pdev, length_id);
 	    pprintld1(s, "%ld\n", (long)size);

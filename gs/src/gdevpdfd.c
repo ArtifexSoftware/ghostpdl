@@ -182,7 +182,7 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
     if (pcpath == NULL) {
 	if (pdev->clip_path_id == pdev->no_clip_path_id)
 	    return 0;
-	pputs(s, "Q\nq\n");
+	stream_puts(s, "Q\nq\n");
 	pdev->clip_path_id = pdev->no_clip_path_id;
     } else {
 	if (pdev->clip_path_id == pcpath->id)
@@ -193,7 +193,7 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
 	    ) {
 	    if (pdev->clip_path_id == pdev->no_clip_path_id)
 		return 0;
-	    pputs(s, "Q\nq\n");
+	    stream_puts(s, "Q\nq\n");
 	    pdev->clip_path_id = pdev->no_clip_path_id;
 	} else {
 	    gdev_vector_dopath_state_t state;
@@ -213,7 +213,7 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
 	    gx_cpath_enum_init(&cenum, (gx_clip_path *) pcpath);
 	    while ((pe_op = gx_cpath_enum_next(&cenum, vs)) > 0)
 		gdev_vector_dopath_segment(&state, pe_op, vs);
-	    pputs(s, "n\n");
+	    stream_puts(s, "n\n");
 	    if (pe_op < 0)
 		return pe_op;
 	    pdev->clip_path_id = pcpath->id;
@@ -332,9 +332,9 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 	gdev_vector_dopath((gx_device_vector *)pdev, ppath,
 			   gx_path_type_fill | gx_path_type_optimize,
 			   psmat);
-	pputs(s, (params->rule < 0 ? "f\n" : "f*\n"));
+	stream_puts(s, (params->rule < 0 ? "f\n" : "f*\n"));
 	if (psmat)
-	    pputs(s, "Q\n");
+	    stream_puts(s, "Q\n");
     }
     return 0;
 }
@@ -396,7 +396,7 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
     if (code < 0)
 	return code;
     s = pdev->strm;
-    pputs(s, (code ? "s" : "S"));
-    pputs(s, (set_ctm ? " Q\n" : "\n"));
+    stream_puts(s, (code ? "s" : "S"));
+    stream_puts(s, (set_ctm ? " Q\n" : "\n"));
     return 0;
 }

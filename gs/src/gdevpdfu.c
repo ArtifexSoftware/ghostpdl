@@ -84,7 +84,7 @@ pdf_open_document(gx_device_pdf * pdev)
 	pprintd2(s, "%%PDF-%d.%d\n", level / 10, level % 10);
 	pdev->binary_ok = !pdev->params.ASCII85EncodePages;
 	if (pdev->binary_ok)
-	    pputs(s, "%\307\354\217\242\n");
+	    stream_puts(s, "%\307\354\217\242\n");
     }
     /*
      * Determine the compression method.  Currently this does nothing.
@@ -173,7 +173,7 @@ pdf_begin_obj(gx_device_pdf * pdev)
 int
 pdf_end_obj(gx_device_pdf * pdev)
 {
-    pputs(pdev->strm, "endobj\n");
+    stream_puts(pdev->strm, "endobj\n");
     return 0;
 }
 
@@ -207,7 +207,7 @@ none_to_stream(gx_device_pdf * pdev)
     pprintld1(s, "<</Length %ld 0 R", pdev->contents_length_id);
     if (pdev->compression == pdf_compress_Flate)
 	pprints1(s, "/Filter /%s", compression_filter_name);
-    pputs(s, ">>\nstream\n");
+    stream_puts(s, ">>\nstream\n");
     pdev->contents_pos = pdf_stell(pdev);
     if (pdev->compression == pdf_compress_Flate) {	/* Set up the Flate filter. */
 	const stream_template *template = &compression_filter_template;
@@ -244,7 +244,7 @@ none_to_stream(gx_device_pdf * pdev)
 	}
     }
     /* Do a level of gsave for the clipping path. */
-    pputs(s, "q\n");
+    stream_puts(s, "q\n");
     return PDF_IN_STREAM;
 }
 /* Enter text context from stream context. */
@@ -272,7 +272,7 @@ private int
 string_to_text(gx_device_pdf * pdev)
 {
     pdf_put_string(pdev, pdev->text.buffer, pdev->text.buffer_count);
-    pputs(pdev->strm, (pdev->text.use_leading ? "'\n" : "Tj\n"));
+    stream_puts(pdev->strm, (pdev->text.use_leading ? "'\n" : "Tj\n"));
     pdev->text.use_leading = false;
     pdev->text.buffer_count = 0;
     return PDF_IN_TEXT;
@@ -281,7 +281,7 @@ string_to_text(gx_device_pdf * pdev)
 private int
 text_to_stream(gx_device_pdf * pdev)
 {
-    pputs(pdev->strm, "ET Q\n");
+    stream_puts(pdev->strm, "ET Q\n");
     pdf_reset_text(pdev);	/* because of Q */
     return PDF_IN_STREAM;
 }
@@ -301,7 +301,7 @@ stream_to_none(gx_device_pdf * pdev)
 	pdev->strm = s = fs;
     }
     length = pdf_stell(pdev) - pdev->contents_pos;
-    pputs(s, "endstream\n");
+    stream_puts(s, "endstream\n");
     pdf_end_obj(pdev);
     pdf_open_obj(pdev, pdev->contents_length_id);
     pprintld1(s, "%ld\n", length);
@@ -334,7 +334,7 @@ pdf_close_contents(gx_device_pdf * pdev, bool last)
 	return 0;
     if (last) {			/* Exit from the clipping path gsave. */
 	pdf_open_contents(pdev, PDF_IN_STREAM);
-	pputs(pdev->strm, "Q\n");
+	stream_puts(pdev->strm, "Q\n");
 	pdev->text.font = 0;
     }
     return pdf_open_contents(pdev, PDF_IN_NONE);
@@ -567,7 +567,7 @@ pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page)
 			if (s == 0) {
 			    page->resource_ids[i] = pdf_begin_separate(pdev);
 			    s = pdev->strm;
-			    pputs(s, "<<");
+			    stream_puts(s, "<<");
 			}
 			pprints1(s, "/%s\n", pres->rname);
 			pprintld1(s, "%ld 0 R", id);
@@ -576,7 +576,7 @@ pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page)
 		}
 	    }
 	    if (s) {
-		pputs(s, ">>\n");
+		stream_puts(s, ">>\n");
 		pdf_end_separate(pdev);
 		if (i != resourceFont)
 		    pdf_write_resource_objects(pdev, i);
@@ -599,7 +599,7 @@ pdf_copy_data(stream *s, FILE *file, long count)
 	uint copy = min(left, sbuf_size);
 
 	fread(buf, 1, sbuf_size, file);
-	pwrite(s, buf, copy);
+	stream_write(s, buf, copy);
 	left -= copy;
     }
 }
@@ -658,7 +658,7 @@ int
 pdf_write_saved_string(gx_device_pdf * pdev, gs_string * pstr)
 {
     if (pstr->data != 0) {
-	pwrite(pdev->strm, pstr->data, pstr->size);
+	stream_write(pdev->strm, pstr->data, pstr->size);
 	gs_free_string(pdev->pdf_memory, pstr->data, pstr->size,
 		       "pdf_write_saved_string");
 	pstr->data = 0;
@@ -697,11 +697,11 @@ pdf_put_matrix(gx_device_pdf * pdev, const char *before,
     stream *s = pdev->strm;
 
     if (before)
-	pputs(s, before);
+	stream_puts(s, before);
     pprintg6(s, "%g %g %g %g %g %g ",
 	     pmat->xx, pmat->xy, pmat->yx, pmat->yy, pmat->tx, pmat->ty);
     if (after)
-	pputs(s, after);
+	stream_puts(s, after);
 }
 
 /*
@@ -720,7 +720,7 @@ pdf_put_name_chars_1_1(stream *s, const byte *nstr, uint size)
 	switch (c) {
 	    default:
 		if (c >= 0x21 && c <= 0x7e) {
-		    pputc(s, c);
+		    stream_putc(s, c);
 		    break;
 		}
 		/* falls through */
@@ -731,7 +731,7 @@ pdf_put_name_chars_1_1(stream *s, const byte *nstr, uint size)
 	    case '{': case '}':
 	    case '/':
 	    case 0:
-		pputc(s, '?');
+		stream_putc(s, '?');
 	}
     }
     return 0;
@@ -748,7 +748,7 @@ pdf_put_name_chars_1_2(stream *s, const byte *nstr, uint size)
 	switch (c) {
 	    default:
 		if (c >= 0x21 && c <= 0x7e) {
-		    pputc(s, c);
+		    stream_putc(s, c);
 		    break;
 		}
 		/* falls through */
@@ -760,10 +760,10 @@ pdf_put_name_chars_1_2(stream *s, const byte *nstr, uint size)
 	    case '{': case '}':
 	    case '/':
 		sprintf(hex, "#%02x", c);
-		pputs(s, hex);
+		stream_puts(s, hex);
 		break;
 	    case 0:
-		pputc(s, '?');
+		stream_putc(s, '?');
 	}
     }
     return 0;
@@ -782,7 +782,7 @@ pdf_put_name_chars(const gx_device_pdf *pdev, const byte *nstr, uint size)
 void
 pdf_put_name(const gx_device_pdf *pdev, const byte *nstr, uint size)
 {
-    pputc(pdev->strm, '/');
+    stream_putc(pdev->strm, '/');
     pdf_put_name_chars(pdev, nstr, size);
 }
 
@@ -805,7 +805,7 @@ pdf_write_value(const gx_device_pdf * pdev, const byte * vstr, uint size)
     if (size > 0 && vstr[0] == '/')
 	pdf_put_name(pdev, vstr + 1, size - 1);
     else
-	pwrite(pdev->strm, vstr, size);
+	stream_write(pdev->strm, vstr, size);
 }
 
 /* Store filters for a stream. */
@@ -948,7 +948,7 @@ pdf_begin_data_binary(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
     }
     if (data_is_binary && !pdev->binary_ok)
 	filters |= USE_ASCII85;
-    pputs(s, fnames[filters]);
+    stream_puts(s, fnames[filters]);
     pprintld1(s, "/Length %ld 0 R>>stream\n", length_id);
     code = psdf_begin_binary((gx_device_psdf *)pdev, &pdw->binary);
     if (code < 0)
@@ -972,7 +972,7 @@ pdf_end_data(pdf_data_writer_t *pdw)
 
     if (code < 0)
 	return code;
-    pputs(pdev->strm, "\nendstream\n");
+    stream_puts(pdev->strm, "\nendstream\n");
     pdf_end_separate(pdev);
     pdf_open_separate(pdev, pdw->length_id);
     pprintld1(pdev->strm, "%ld\n", length);
@@ -1031,7 +1031,7 @@ pdf_function(gx_device_pdf *pdev, const gs_function_t *pfn,
 		count = min(sizeof(buf), info.data_size - pos);
 		data_source_access_only(info.DataSource, pos, count, buf,
 					&ptr);
-		pwrite(writer.strm, ptr, count);
+		stream_write(writer.strm, ptr, count);
 	    }
 	    code = psdf_end_binary(&writer);
 	    sclose(s);

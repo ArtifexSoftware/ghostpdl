@@ -48,8 +48,8 @@ private const cmap_operators_t
 private void
 pput_string_entry(stream *s, const char *prefix, const gs_const_string *pstr)
 {
-    pputs(s, prefix);
-    pwrite(s, pstr->data, pstr->size);
+    stream_puts(s, prefix);
+    stream_write(s, pstr->data, pstr->size);
 }
 
 /* Write a hex string. */
@@ -60,8 +60,8 @@ pput_hex(stream *s, const byte *pcid, int size)
     static const char *const hex_digits = "0123456789abcdef";
 
     for (i = 0; i < size; ++i) {
-	pputc(s, hex_digits[pcid[i] >> 4]);
-	pputc(s, hex_digits[pcid[i] & 0xf]);
+	stream_putc(s, hex_digits[pcid[i] >> 4]);
+	stream_putc(s, hex_digits[pcid[i] & 0xf]);
     }
 }
 
@@ -70,12 +70,12 @@ private void
 cmap_put_system_info(stream *s, const gs_cid_system_info_t *pcidsi)
 {
     if (cid_system_info_is_null(pcidsi)) {
-	pputs(s, " null ");
+	stream_puts(s, " null ");
     } else {
-	pputs(s, " 3 dict dup begin\n");
-	pputs(s, "/Registry ");
+	stream_puts(s, " 3 dict dup begin\n");
+	stream_puts(s, "/Registry ");
 	s_write_ps_string(s, pcidsi->Registry.data, pcidsi->Registry.size, 0);
-	pputs(s, " def\n/Ordering ");
+	stream_puts(s, " def\n/Ordering ");
 	s_write_ps_string(s, pcidsi->Ordering.data, pcidsi->Ordering.size, 0);
 	pprintd1(s, " def\n/Supplement %d def\nend ", pcidsi->Supplement);
     }
@@ -107,18 +107,18 @@ cmap_put_code_map(stream *s, const gx_code_map_t *pccmap,
 	    pprintd1(s, "%d ", ni - i);
 	    if (pclr->key_is_range) {
 		if (pclr->value_type == CODE_VALUE_CID) {
-		    pputs(s, pcmo->beginrange);
+		    stream_puts(s, pcmo->beginrange);
 		    end = pcmo->endrange;
 		} else {	/* must be def, not notdef */
-		    pputs(s, "beginbfrange\n");
+		    stream_puts(s, "beginbfrange\n");
 		    end = "endbfrange\n";
 		}
 	    } else {
 		if (pclr->value_type == CODE_VALUE_CID) {
-		    pputs(s, pcmo->beginchar);
+		    stream_puts(s, pcmo->beginchar);
 		    end = pcmo->endchar;
 		} else {	/* must be def, not notdef */
-		    pputs(s, "beginbfchar\n");
+		    stream_puts(s, "beginbfchar\n");
 		    end = "endbfchar\n";
 		}
 	    }
@@ -127,10 +127,10 @@ cmap_put_code_map(stream *s, const gx_code_map_t *pccmap,
 		long value;
 
 		for (j = 0; j <= pclr->key_is_range; ++j) {
-		    pputc(s, '<');
+		    stream_putc(s, '<');
 		    pput_hex(s, pclr->key_prefix, pclr->key_prefix_size);
 		    pput_hex(s, pkey, pclr->key_size);
-		    pputc(s, '>');
+		    stream_putc(s, '>');
 		    pkey += pclr->key_size;
 		}
 		for (j = 0, value = 0; j < pclr->value_size; ++j)
@@ -140,9 +140,9 @@ cmap_put_code_map(stream *s, const gx_code_map_t *pccmap,
 		    pprintld1(s, "%ld", value);
 		    break;
 		case CODE_VALUE_CHARS:
-		    pputc(s, '<');
+		    stream_putc(s, '<');
 		    pput_hex(s, pvalue - pclr->value_size, pclr->value_size);
-		    pputc(s, '>');
+		    stream_putc(s, '>');
 		    break;
 		case CODE_VALUE_GLYPH: {
 		    gs_const_string str;
@@ -151,7 +151,7 @@ cmap_put_code_map(stream *s, const gx_code_map_t *pccmap,
 
 		    if (code < 0)
 			return code;
-		    pputc(s, '/');
+		    stream_putc(s, '/');
 		    code = put_name_chars(s, str.data, str.size);
 		    if (code < 0)
 			return code;
@@ -160,9 +160,9 @@ cmap_put_code_map(stream *s, const gx_code_map_t *pccmap,
 		default:	/* not possible */
 		    return_error(gs_error_rangecheck);
 		}
-		pputc(s, '\n');
+		stream_putc(s, '\n');
 	    }
-	    pputs(s, end);
+	    stream_puts(s, end);
 	}
     }
     return 0;
@@ -189,24 +189,24 @@ psf_write_cmap(stream *s, const gs_cmap_t *pcmap,
 
     /* Write the header. */
 
-    pputs(s, "%!PS-Adobe-3.0 Resource-CMap\n");
-    pputs(s, "%%DocumentNeededResources: ProcSet (CIDInit)\n");
-    pputs(s, "%%IncludeResource: ProcSet (CIDInit)\n");
+    stream_puts(s, "%!PS-Adobe-3.0 Resource-CMap\n");
+    stream_puts(s, "%%DocumentNeededResources: ProcSet (CIDInit)\n");
+    stream_puts(s, "%%IncludeResource: ProcSet (CIDInit)\n");
     pput_string_entry(s, "%%BeginResource: CMap (", cmap_name);
     pput_string_entry(s, ")\n%%Title: (", cmap_name);
     pput_string_entry(s, " ", &pcidsi->Registry);
     pput_string_entry(s, " ", &pcidsi->Ordering);
     pprintd1(s, " %d)\n", pcidsi->Supplement);
     pprintg1(s, "%%%%Version: %g\n", pcmap->CMapVersion);
-    pputs(s, "/CIDInit /ProcSet findresource begin\n");
-    pputs(s, "12 dict begin\nbegincmap\n");
+    stream_puts(s, "/CIDInit /ProcSet findresource begin\n");
+    stream_puts(s, "12 dict begin\nbegincmap\n");
 
     /* Write the fixed entries. */
 
     pprintd1(s, "/CMapType %d def\n", pcmap->CMapType);
-    pputs(s, "/CMapName/");
+    stream_puts(s, "/CMapName/");
     put_name_chars(s, cmap_name->data, cmap_name->size);
-    pputs(s, " def\n/CIDSystemInfo");
+    stream_puts(s, " def\n/CIDSystemInfo");
     if (pcmap->num_fonts == 1) {
 	cmap_put_system_info(s, pcidsi);
     } else {
@@ -216,7 +216,7 @@ psf_write_cmap(stream *s, const gs_cmap_t *pcmap,
 	for (i = 0; i < pcmap->num_fonts; ++i) {
 	    pprintd1(s, "dup %d", i);
 	    cmap_put_system_info(s, pcidsi + i);
-	    pputs(s, "put\n");
+	    stream_puts(s, "put\n");
 	}
     }
     pprintg1(s, "def\n/CMapVersion %g def\n", pcmap->CMapVersion);
@@ -224,10 +224,10 @@ psf_write_cmap(stream *s, const gs_cmap_t *pcmap,
 	uint i, n = uid_XUID_size(&pcmap->uid);
 	const long *values = uid_XUID_values(&pcmap->uid);
 
-	pputs(s, "/XUID [");
+	stream_puts(s, "/XUID [");
 	for (i = 0; i < n; ++i)
 	    pprintld1(s, " %ld", values[i]);
-	pputs(s, "] def\n");
+	stream_puts(s, "] def\n");
     }
     pprintld1(s, "/UIDOffset %ld def\n", pcmap->UIDOffset);
     pprintd1(s, "/WMode %d def\n", pcmap->WMode);
@@ -243,13 +243,13 @@ psf_write_cmap(stream *s, const gs_cmap_t *pcmap,
 
 	    pprintd1(s, "%d begincodespacerange\n", ni - i);
 	    for (; i < ni; ++i, ++pcsr) {
-		pputs(s, "<");
+		stream_puts(s, "<");
 		pput_hex(s, pcsr->first, pcsr->size);
-		pputs(s, "><");
+		stream_puts(s, "><");
 		pput_hex(s, pcsr->last, pcsr->size);
-		pputs(s, ">\n");
+		stream_puts(s, ">\n");
 	    }
-	    pputs(s, "endcodespacerange\n");
+	    stream_puts(s, "endcodespacerange\n");
 	}
     }
 
@@ -266,10 +266,10 @@ psf_write_cmap(stream *s, const gs_cmap_t *pcmap,
 
     /* Write the trailer. */
 
-    pputs(s, "endcmap\n");
-    pputs(s, "CMapName currentdict /CMap defineresource pop\nend end\n");
-    pputs(s, "%%EndResource\n");
-    pputs(s, "%%EOF\n");
+    stream_puts(s, "endcmap\n");
+    stream_puts(s, "CMapName currentdict /CMap defineresource pop\nend end\n");
+    stream_puts(s, "%%EndResource\n");
+    stream_puts(s, "%%EOF\n");
 
     return 0;
 }

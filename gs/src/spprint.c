@@ -28,7 +28,7 @@
 
 /* Put a byte array on a stream. */
 int
-pwrite(stream * s, const void *ptr, uint count)
+stream_write(stream * s, const void *ptr, uint count)
 {
     uint used;
 
@@ -38,7 +38,7 @@ pwrite(stream * s, const void *ptr, uint count)
 
 /* Put a string on a stream. */
 int
-pputs(stream * s, const char *str)
+stream_puts(stream * s, const char *str)
 {
     uint len = strlen(str);
     uint used;
@@ -77,7 +77,7 @@ pprintd1(stream * s, const char *format, int v)
 	lprintf1("Bad format in pprintd1: %s\n", format);
 #endif
     sprintf(str, "%d", v);
-    pputs(s, str);
+    stream_puts(s, str);
     return pprintf_scan(s, fp + 2);
 }
 const char *
@@ -113,7 +113,7 @@ pprintg1(stream * s, const char *format, floatp v)
 	/* Bad news.  Try again using f-format. */
 	sprintf(str, (fabs(v) > 1 ? "%1.1f" : "%1.8f"), v);
     }
-    pputs(s, str);
+    stream_puts(s, str);
     return pprintf_scan(s, fp + 2);
 }
 const char *
@@ -151,7 +151,7 @@ pprintld1(stream * s, const char *format, long v)
 	lprintf1("Bad format in pprintld: %s\n", format);
 #endif
     sprintf(str, "%ld", v);
-    pputs(s, str);
+    stream_puts(s, str);
     return pprintf_scan(s, fp + 3);
 }
 const char *
@@ -175,7 +175,7 @@ pprints1(stream * s, const char *format, const char *str)
     if (*fp == 0 || fp[1] != 's')	/* shouldn't happen! */
 	lprintf1("Bad format in pprints: %s\n", format);
 #endif
-    pputs(s, str);
+    stream_puts(s, str);
     return pprintf_scan(s, fp + 2);
 }
 const char *

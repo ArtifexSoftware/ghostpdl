@@ -456,8 +456,8 @@ fail:
 private int
 zfcmap_put_name_default(stream *s, const byte *str, uint size)
 {
-    pputc(s, '/');
-    pwrite(s, str, size);
+    stream_putc(s, '/');
+    stream_write(s, str, size);
     return 0;
 }
 private int

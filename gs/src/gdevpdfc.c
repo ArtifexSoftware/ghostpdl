@@ -645,7 +645,7 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 		base_space = &cs_gray;
 	    }
 	}
-	pwrite(&es, palette, table_size);
+	stream_write(&es, palette, table_size);
 	gs_free_string(mem, palette, table_size, "pdf_color_space(palette)");
 	sclose(&es);
 	sflush(&s);

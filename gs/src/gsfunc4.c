@@ -585,10 +585,10 @@ calc_put_ops(stream *s, const byte *ops, uint size)
 	    break;
 	}
 	case PtCr_true:
-	    pputs(s, "true ");
+	    stream_puts(s, "true ");
 	    break;
 	case PtCr_false:
-	    pputs(s, "false ");
+	    stream_puts(s, "false ");
 	    break;
 	case PtCr_if: {
 	    int skip = (p[0] << 8) + p[1];
@@ -604,9 +604,9 @@ calc_put_ops(stream *s, const byte *ops, uint size)
 		p += skip;
 		if (code < 0)
 		    return code;
-		pputs(s, " ifelse ");
+		stream_puts(s, " ifelse ");
 	    } else
-		pputs(s, " if ");
+		stream_puts(s, " if ");
 	}
 	case PtCr_else:
 	    if (p != ops + size - 2)

@@ -437,16 +437,16 @@ psw_put_bits(stream * s, const byte * data, int data_x_bit, uint raster,
 
     for (y = 0; y < height; ++y, row += raster)
 	if (shift == 0)
-	    pwrite(s, row, (width_bits + 7) >> 3);
+	    stream_write(s, row, (width_bits + 7) >> 3);
 	else {
 	    const byte *src = row;
 	    int wleft = width_bits;
 	    int cshift = 8 - shift;
 
 	    for (; wleft + shift > 8; ++src, wleft -= 8)
-		pputc(s, (*src << shift) + (src[1] >> cshift));
+		stream_putc(s, (*src << shift) + (src[1] >> cshift));
 	    if (wleft > 0)
-		pputc(s, (*src << shift) & (byte)(0xff00 >> wleft));
+		stream_putc(s, (*src << shift) & (byte)(0xff00 >> wleft));
 	}
 }
 private int
@@ -510,7 +510,7 @@ psw_image_write(gx_device_pswrite * pdev, const char *imagestr,
 	    "@", "@X", "@F", "@C"
 	};
 
-	pputs(s, uncached[encode]);
+	stream_puts(s, uncached[encode]);
 	op = imagestr;
 	strcpy(endstr, "\n");
     } else {
@@ -520,7 +520,7 @@ psw_image_write(gx_device_pswrite * pdev, const char *imagestr,
 
 	index = image_cache_lookup(pdev, id, width_bits, height, true);
 	sprintf(str, "/%d%c", index / 26, index % 26 + 'A');
-	pputs(s, str);
+	stream_puts(s, str);
 	if (depth != 1)
 	    pprintld1(s, " %ld", ((width_bits + 7) >> 3) * (ulong) height);
 	op = cached[encode];
@@ -537,7 +537,7 @@ psw_image_write(gx_device_pswrite * pdev, const char *imagestr,
      */
     if (encode & 1) {
 	/* We're using ASCII encoding. */
-	pputc(s, '\n');
+	stream_putc(s, '\n');
 	code = psw_put_image(pdev, op, encode, data, data_x, raster,
 			     width, height, depth);
 	if (code < 0)
@@ -561,9 +561,9 @@ psw_image_write(gx_device_pswrite * pdev, const char *imagestr,
 			     width, height, depth);
 	if (code < 0)
 	    return code;
-	pputs(s, "\n%%EndData");
+	stream_puts(s, "\n%%EndData");
     }
-    pputs(s, endstr);
+    stream_puts(s, endstr);
     return 0;
 }
 
@@ -634,7 +634,7 @@ psw_setcolors(gx_device_vector * vdev, const gx_drawing_color * pdc)
 
 	if (r == g && g == b) {
 	    if (r == 0)
-		pputs(s, "K\n");
+		stream_puts(s, "K\n");
 	    else
 		pprintd1(s, "%d G\n", r);
 	} else if (r == g)
@@ -677,7 +677,7 @@ print_coord2(stream * s, floatp x, floatp y, const char *str)
 {
     pprintg2(s, "%g %g ", round_coord2(x), round_coord2(y));
     if (str != 0)
-	pputs(s, str);
+	stream_puts(s, str);
 }
 
 private int
@@ -702,7 +702,7 @@ psw_beginpath(gx_device_vector * vdev, gx_path_type_t type)
 	 */
 	stream *s = gdev_vector_stream(vdev);
 
-	pputs(s, "Q q\n");
+	stream_puts(s, "Q q\n");
 	gdev_vector_reset(vdev);
     }
     return 0;
@@ -716,13 +716,13 @@ psw_moveto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
     gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
 
     if (pdev->path_state.num_points > pdev->path_state.move)
-	pputs(s, (pdev->path_state.move ? "P\n" : "p\n"));
+	stream_puts(s, (pdev->path_state.move ? "P\n" : "p\n"));
     else if (pdev->path_state.move) {
 	/*
 	 * Two consecutive movetos -- possible only if a zero-length line
 	 * was discarded.
 	 */
-	pputs(s, "pop pop\n");
+	stream_puts(s, "pop pop\n");
     }
     print_coord2(s, x, y, NULL);
     pdev->path_state.num_points = 1;
@@ -747,12 +747,12 @@ psw_lineto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
 	if (pdev->path_state.num_points > 0 &&
 	    !(pdev->path_state.num_points & 7)
 	    )
-	    pputc(s, '\n');	/* limit line length for DSC compliance */
+	    stream_putc(s, '\n');	/* limit line length for DSC compliance */
 	if (pdev->path_state.num_points - pdev->path_state.move >= 2 &&
 	    dx == -pdev->path_state.dprev[1].x &&
 	    dy == -pdev->path_state.dprev[1].y
 	    )
-	    pputs(s, "^ ");
+	    stream_puts(s, "^ ");
 	else
 	    print_coord2(s, dx, dy, NULL);
 	pdev->path_state.num_points++;
@@ -775,7 +775,7 @@ psw_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
     gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
 
     if (pdev->path_state.num_points > 0)
-	pputs(s, (pdev->path_state.move ?
+	stream_puts(s, (pdev->path_state.move ?
 		  (pdev->path_state.num_points == 1 ? "m\n" : "P\n") :
 		  "p\n"));
     if (dx1 == 0 && dy1 == 0) {
@@ -800,7 +800,7 @@ psw_closepath(gx_device_vector * vdev, floatp x0, floatp y0,
 {
     gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
 
-    pputs(gdev_vector_stream(vdev),
+    stream_puts(gdev_vector_stream(vdev),
 	  (pdev->path_state.num_points > 0 && pdev->path_state.move ?
 	   "H\n" : "h\n"));
     pdev->path_state.num_points = 0;
@@ -816,7 +816,7 @@ psw_endpath(gx_device_vector * vdev, gx_path_type_t type)
     gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
 
     if (pdev->path_state.num_points > 0 && !pdev->path_state.move)
-	pputs(s, "p ");
+	stream_puts(s, "p ");
     if (type & gx_path_type_fill) {
 	if (type & (gx_path_type_stroke | gx_path_type_clip))
 	    pprints1(s, "q f%s Q ", star);
@@ -825,9 +825,9 @@ psw_endpath(gx_device_vector * vdev, gx_path_type_t type)
     }
     if (type & gx_path_type_stroke) {
 	if (type & gx_path_type_clip)
-	    pputs(s, "q S Q ");
+	    stream_puts(s, "q S Q ");
 	else
-	    pputs(s, "S\n");
+	    stream_puts(s, "S\n");
     }
     if (type & gx_path_type_clip)
 	pprints1(s, "Y%s\n", star);
@@ -1150,12 +1150,12 @@ psw_stroke_path(gx_device * dev, const gs_imager_state * pis,
 				   pdcolor, scale);
 	s = pdev->strm;
 	if (set_ctm) {
-	    pputs(s, "q");
+	    stream_puts(s, "q");
 	    if (is_fzero2(mat.xy, mat.yx) && is_fzero2(mat.tx, mat.ty))
 		pprintg2(s, " %g %g scale\n", mat.xx, mat.yy);
 	    else {
 		psw_put_matrix(s, &mat);
-		pputs(s, "concat\n");
+		stream_puts(s, "concat\n");
 	    }
 	}
 	code = gdev_vector_dopath(vdev, ppath, gx_path_type_stroke,
@@ -1163,7 +1163,7 @@ psw_stroke_path(gx_device * dev, const gs_imager_state * pis,
 	if (code < 0)
 	    return code;
 	if (set_ctm)
-	    pputs(s, "Q\n");
+	    stream_puts(s, "Q\n");
     }
     /* We must merge in the bounding box explicitly. */
     return (vdev->bbox_device == 0 ? 0 :
@@ -1358,7 +1358,7 @@ psw_begin_image(gx_device * dev,
 	gs_matrix imat;
 	const char *op;
 
-	pputs(s, "q");
+	stream_puts(s, "q");
 	(*dev_proc(dev, get_initial_matrix)) (dev, &imat);
 	gs_matrix_scale(&imat, 72.0 / dev->HWResolution[0],
 			72.0 / dev->HWResolution[1], &imat);
@@ -1367,9 +1367,9 @@ psw_begin_image(gx_device * dev,
 	psw_put_matrix(s, &imat);
 	pprintd2(s, "concat\n%d %d ", pie->width, pie->height);
 	if (pim->ImageMask) {
-	    pputs(s, (pim->Decode[0] == 0 ? "false" : "true"));
+	    stream_puts(s, (pim->Decode[0] == 0 ? "false" : "true"));
 	    psw_put_matrix(s, &pim->ImageMatrix);
-	    pputs(s, source);
+	    stream_puts(s, source);
 	    op = "imagemask";
 	} else {
 	    pprintd1(s, "%d", pim->BitsPerComponent);
@@ -1390,14 +1390,14 @@ psw_begin_image(gx_device * dev,
 			 (pim->Interpolate ? "true" : "false"), source);
 		op = "IC";
 	    } else if (index == gs_color_space_index_DeviceGray) {
-		pputs(s, source);
+		stream_puts(s, source);
 		op = "image";
 	    } else {
 		if (format == gs_image_format_chunky)
 		    pprints1(s, "%s false", source);
 		else {
 		    /* We have to use procedures. */
-		    pputs(s, source);
+		    stream_puts(s, source);
 		    pprintd2(s, " %d %d B",
 			     (pim->Width * pim->BitsPerComponent + 7) >> 3,
 			     num_components);
@@ -1406,7 +1406,7 @@ psw_begin_image(gx_device * dev,
 		op = "colorimage";
 	    }
 	}
-	pputc(s, '\n');
+	stream_putc(s, '\n');
 	pprints1((bs ? bs : s), "%s\n", op);
     }
     *pinfo = (gx_image_enum_common_t *) pie;
@@ -1475,12 +1475,12 @@ psw_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 
 	    pprintld1(s, "%%%%BeginData: %ld\n", len);
 	    sputs(s, buffer, (uint)len, &ignore);
-	    pputs(s, "\n%%EndData");
+	    stream_puts(s, "\n%%EndData");
 	    /* Free the buffer and its stream. */
 	    gs_free_object(mem, bs, "psw_image_end_image(buffer stream)");
 	    gs_free_object(mem, buffer, "psw_image_end_image(buffer)");
 	}
-	pputs(s, "\nQ\n");
+	stream_puts(s, "\nQ\n");
     }
     return code;
 }

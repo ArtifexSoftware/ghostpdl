@@ -48,25 +48,25 @@ s_write_ps_string(stream * s, const byte * str, uint size, int print_ok)
 
     if (print_ok & PRINT_BINARY_OK) {
 	/* Only need to escape (, ), \, CR, EOL. */
-	pputc(s, '(');
+	stream_putc(s, '(');
 	for (i = 0; i < size; ++i) {
 	    byte ch = str[i];
 
 	    switch (ch) {
 		case char_CR:
-		    pputs(s, "\\r");
+		    stream_puts(s, "\\r");
 		    continue;
 		case char_EOL:
-		    pputs(s, "\\n");
+		    stream_puts(s, "\\n");
 		    continue;
 		case '(':
 		case ')':
 		case '\\':
-		    pputc(s, '\\');
+		    stream_putc(s, '\\');
 	    }
-	    pputc(s, ch);
+	    stream_putc(s, ch);
 	}
-	pputc(s, ')');
+	stream_putc(s, ')');
 	return;
     }
     for (i = 0; i < size; ++i) {
@@ -83,13 +83,13 @@ s_write_ps_string(stream * s, const byte * str, uint size, int print_ok)
     if (added < size || (print_ok & PRINT_HEX_NOT_OK)) {
 	/* More efficient, or mandatory, to represent as PostScript string. */
 	template = &s_PSSE_template;
-	pputc(s, '(');
+	stream_putc(s, '(');
     } else {
 	/* More efficient, and permitted, to represent as hex string. */
 	template = &s_AXE_template;
 	st = (stream_state *) & state;
 	s_AXE_init_inline(&state);
-	pputc(s, '<');
+	stream_putc(s, '<');
     }
 
     {
@@ -105,7 +105,7 @@ s_write_ps_string(stream * s, const byte * str, uint size, int print_ok)
 	    /* One picky compiler complains if we initialize to buf - 1. */
 	    w.ptr = buf;  w.ptr--;
 	    status = (*template->process) (st, &r, &w, true);
-	    pwrite(s, buf, (uint) (w.ptr + 1 - buf));
+	    stream_write(s, buf, (uint) (w.ptr + 1 - buf));
 	}
 	while (status == 1);
     }
@@ -177,7 +177,7 @@ s_release_param_printer(printer_param_list_t *prlist)
 {
     if (prlist) {
 	if (prlist->any && prlist->params.suffix)
-	    pputs(prlist->strm, prlist->params.suffix);
+	    stream_puts(prlist->strm, prlist->params.suffix);
     }
 }
 void
@@ -200,18 +200,18 @@ param_print_typed(gs_param_list * plist, gs_param_name pkey,
 
     if (!prlist->any) {
 	if (prlist->params.prefix)
-	    pputs(s, prlist->params.prefix);
+	    stream_puts(s, prlist->params.prefix);
 	prlist->any = true;
     }
     if (prlist->params.item_prefix)
-	pputs(s, prlist->params.item_prefix);
+	stream_puts(s, prlist->params.item_prefix);
     pprints1(s, "/%s", pkey);
     switch (pvalue->type) {
 	case gs_param_type_null:
-	    pputs(s, " null");
+	    stream_puts(s, " null");
 	    break;
 	case gs_param_type_bool:
-	    pputs(s, (pvalue->value.b ? " true" : " false"));
+	    stream_puts(s, (pvalue->value.b ? " true" : " false"));
 	    break;
 	case gs_param_type_int:
 	    pprintd1(s, " %d", pvalue->value.i);
@@ -228,20 +228,20 @@ param_print_typed(gs_param_list * plist, gs_param_name pkey,
 	    break;
 	case gs_param_type_name:
 	    /****** SHOULD USE #-ESCAPES FOR PDF ******/
-	    pputc(s, '/');
-	    pwrite(s, pvalue->value.n.data, pvalue->value.n.size);
+	    stream_putc(s, '/');
+	    stream_write(s, pvalue->value.n.data, pvalue->value.n.size);
 	    break;
 	case gs_param_type_int_array:
 	    {
 		uint i;
 		char sepr = (pvalue->value.ia.size <= 10 ? ' ' : '\n');
 
-		pputc(s, '[');
+		stream_putc(s, '[');
 		for (i = 0; i < pvalue->value.ia.size; ++i) {
 		    pprintd1(s, "%d", pvalue->value.ia.data[i]);
-		    pputc(s, sepr);
+		    stream_putc(s, sepr);
 		}
-		pputc(s, ']');
+		stream_putc(s, ']');
 	    }
 	    break;
 	case gs_param_type_float_array:
@@ -249,12 +249,12 @@ param_print_typed(gs_param_list * plist, gs_param_name pkey,
 		uint i;
 		char sepr = (pvalue->value.fa.size <= 10 ? ' ' : '\n');
 
-		pputc(s, '[');
+		stream_putc(s, '[');
 		for (i = 0; i < pvalue->value.fa.size; ++i) {
 		    pprintg1(s, "%g", pvalue->value.fa.data[i]);
-		    pputc(s, sepr);
+		    stream_putc(s, sepr);
 		}
-		pputc(s, ']');
+		stream_putc(s, ']');
 	    }
 	    break;
 	    /*case gs_param_type_string_array: */
@@ -263,6 +263,6 @@ param_print_typed(gs_param_list * plist, gs_param_name pkey,
 	    return_error(gs_error_typecheck);
     }
     if (prlist->params.item_suffix)
-	pputs(s, prlist->params.item_suffix);
+	stream_puts(s, prlist->params.item_suffix);
     return 0;
 }

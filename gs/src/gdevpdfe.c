@@ -42,9 +42,9 @@ pdf_begin_fontfile(gx_device_pdf *pdev, long FontFile_id,
 
     pdf_open_separate(pdev, FontFile_id);
     s = pdev->strm;
-    pputs(s, "<<");
+    stream_puts(s, "<<");
     if (entries)
-	pputs(pdev->strm, entries);
+	stream_puts(pdev->strm, entries);
     if (len1 >= 0)
 	pprintld1(pdev->strm, "/Length1 %ld", len1);
     return pdf_begin_data(pdev, pdw);

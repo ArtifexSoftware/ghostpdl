@@ -48,15 +48,15 @@ put_pad(stream *s, uint length)
 {
     static const byte pad_to_4[3] = {0, 0, 0};
 
-    pwrite(s, pad_to_4, (uint)(-length & 3));
+    stream_write(s, pad_to_4, (uint)(-length & 3));
 }
 
 /* Put short and long values on a stream. */
 private void
 put_ushort(stream *s, uint v)
 {
-    pputc(s, (byte)(v >> 8));
-    pputc(s, (byte)v);
+    stream_putc(s, (byte)(v >> 8));
+    stream_putc(s, (byte)v);
 }
 private void
 put_ulong(stream *s, ulong v)
@@ -126,7 +126,7 @@ write_range(stream *s, gs_font_type42 *pfont, ulong start, uint length)
 		return code;
 	    size >>= 1;
 	}
-	pwrite(s, ptr, size);
+	stream_write(s, ptr, size);
 	base += size;
     }
     return 0;
@@ -281,7 +281,7 @@ write_cmap(stream *s, gs_font *font, uint first_code, int num_glyphs,
 	/* Use byte encoding format. */
 	memset(entries + 2 * num_glyphs, 0,
 	       sizeof(entries) - 2 * num_glyphs);
-	pwrite(s, cmap_initial_0, sizeof(cmap_initial_0));
+	stream_write(s, cmap_initial_0, sizeof(cmap_initial_0));
 	for (i = 0; i <= 0xff; ++i)
 	    sputc(s, (byte)entries[2 * i + 1]);
     } else if (can_use_trimmed) {
@@ -295,15 +295,15 @@ write_cmap(stream *s, gs_font *font, uint first_code, int num_glyphs,
 		U16(cmap_data + 22) + num_entries * 2);  /* length */
 	put_u16(cmap_data + 26, first_code + first_entry);
 	put_u16(cmap_data + 28, num_entries);
-	pwrite(s, cmap_data, sizeof(cmap_data));
-	pwrite(s, entries + first_entry * 2, num_entries * 2);
+	stream_write(s, cmap_data, sizeof(cmap_data));
+	stream_write(s, entries + first_entry * 2, num_entries * 2);
     } else {
 	/*
 	 * Punt.  Acrobat Reader 3 can't handle any other Mac table format.
 	 * (AR3 for Linux doesn't seem to be able to handle Windows format,
 	 * either, but maybe AR3 for Windows can.)
 	 */
-	pwrite(s, cmap_initial_4, sizeof(cmap_initial_4));
+	stream_write(s, cmap_initial_4, sizeof(cmap_initial_4));
     }
 
     /* Write the Windows sub-table. */
@@ -312,8 +312,8 @@ write_cmap(stream *s, gs_font *font, uint first_code, int num_glyphs,
     put_u16(cmap_sub + 2, U16(cmap_sub + 2) + num_entries * 2); /* length */
     put_u16(cmap_sub + 14, first_code + end_entry - 1); /* endCount[0] */
     put_u16(cmap_sub + 20, first_code + first_entry); /* startCount[0] */
-    pwrite(s, cmap_sub, sizeof(cmap_sub));
-    pwrite(s, entries + first_entry * 2, num_entries * 2);
+    stream_write(s, cmap_sub, sizeof(cmap_sub));
+    stream_write(s, entries + first_entry * 2, num_entries * 2);
     put_pad(s, cmap_length);
 }
 private uint
@@ -354,8 +354,8 @@ write_name(stream *s, const gs_const_string *font_name)
 
     memcpy(name_bytes, name_initial, sizeof(name_initial));
     put_u16(name_bytes + 14, font_name->size);
-    pwrite(s, name_bytes, sizeof(name_bytes));
-    pwrite(s, font_name->data, font_name->size);
+    stream_write(s, name_bytes, sizeof(name_bytes));
+    stream_write(s, font_name->data, font_name->size);
     put_pad(s, size_name(font_name));
 }
 
@@ -387,7 +387,7 @@ write_OS_2(stream *s, gs_font *font, uint first_glyph, int num_glyphs)
     update_OS_2(&os2, first_glyph, num_glyphs);
     if (first_glyph >= 0xf000)
 	os2.ulCodePageRanges[3] = 1; /* bit 31, symbolic */
-    pwrite(s, &os2, sizeof(os2));
+    stream_write(s, &os2, sizeof(os2));
     put_pad(s, sizeof(os2));
 }
 
@@ -469,7 +469,7 @@ write_post(stream *s, gs_font *font, post_t *post)
     memset(post_initial, 0, 32);
     put_u32(post_initial, 0x00020000);
     put_u16(post_initial + 32, post->glyph_count);
-    pwrite(s, post_initial, sizeof(post_initial));
+    stream_write(s, post_initial, sizeof(post_initial));
 
     /* Write the name index table. */
 
@@ -498,7 +498,7 @@ write_post(stream *s, gs_font *font, post_t *post)
 
 	if (mac_index < 0) {
 	    spputc(s, str.size);
-	    pwrite(s, str.data, str.size);
+	    stream_write(s, str.data, str.size);
 	}
     }
     put_pad(s, post->length);
@@ -770,7 +770,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
     {
 	static const byte version[4] = {0, 1, 0, 0};
 
-	pwrite(s, version, 4);
+	stream_write(s, version, 4);
     }
     put_ushort(s, numTables);
     for (i = 0; 1 << i <= numTables; ++i)
@@ -798,7 +798,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	} else {
 	    entry[8] -= 0x40;
 	}
-	pwrite(s, entry, 16);
+	stream_write(s, entry, 16);
     }
 
     /* Write tables other than the ones we generate here. */
@@ -828,7 +828,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	if ((code = pfont->data.get_outline(pfont, glyph - gs_min_cid_glyph,
 					    &glyph_string)) >= 0
 	    ) {
-	    pwrite(s, glyph_string.data, glyph_string.size);
+	    stream_write(s, glyph_string.data, glyph_string.size);
 	    offset += glyph_string.size;
 	    if_debug2('L', "[L]glyf index = %u, size = %u\n",
 		      i, glyph_string.size);
@@ -886,7 +886,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	ACCESS(OS_2_start, OS_2_length, pos2);
 	memcpy(&os2, pos2, min(OS_2_length, sizeof(os2)));
 	update_OS_2(&os2, 0xf000, 256);
-	pwrite(s, &os2, OS_2_length);
+	stream_write(s, &os2, OS_2_length);
 	put_pad(s, OS_2_length);
     } else if (!writing_cid) {
 	/* Just copy the existing OS/2 table. */
@@ -904,7 +904,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 
 	    memset(post_initial, 0, 32);
 	    put_u32(post_initial, 0x00030000);
-	    pwrite(s, post_initial, 32);
+	    stream_write(s, post_initial, 32);
 	}
     }
 
@@ -922,7 +922,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 #endif
     put_u32(head + 8, HEAD_MAGIC - file_checksum); /* per spec */
 #undef HEAD_MAGIC
-    pwrite(s, head, 56);
+    stream_write(s, head, 56);
 
     return 0;
 }

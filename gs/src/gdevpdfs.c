@@ -568,7 +568,7 @@ process_cmap_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
 	    s = pdev->strm;
 	    pprintd1(s, "/WMode %d/CMapName", pcmap->WMode);
 	    pdf_put_name(pdev, pcmap->CMapName.data, pcmap->CMapName.size);
-	    pputs(s, "/CIDSystemInfo");
+	    stream_puts(s, "/CIDSystemInfo");
 	    code = pdf_write_CMap_system_info(pdev, pcmap);
 	    if (code < 0)
 		return code;

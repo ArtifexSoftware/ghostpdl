@@ -91,7 +91,7 @@ pdf_copy_mask_data(gx_device_pdf * pdev, const byte * base, int sourcex,
      * middle of writing a Pattern resource.
      */
     if (for_pattern < 0)
-	pputs(pdev->strm, "q ");
+	stream_puts(pdev->strm, "q ");
     if ((code = pdf_begin_write_image(pdev, piw, id, w, h, NULL, in_line)) < 0 ||
 	(code = psdf_setup_lossless_filters((gx_device_psdf *) pdev,
 					    &piw->binary,
@@ -382,7 +382,7 @@ pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
      * middle of writing a Pattern resource.
      */
     if (for_pattern < 0)
-	pputs(pdev->strm, "q ");
+	stream_puts(pdev->strm, "q ");
     if ((code = pdf_begin_write_image(pdev, piw, id, w, h, NULL, in_line)) < 0 ||
 	(code = pdf_color_space(pdev, &cs_value, &cs,
 				&piw->pin->color_spaces, in_line)) < 0 ||
@@ -536,7 +536,7 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 	 * the natural BBox and Step here: they have to be 1.
 	 */
 	pprintg2(s, "/Matrix[%g 0 0 %g 0 0]", tw / xscale, th / yscale);
-	pputs(s, "/BBox[0 0 1 1]/XStep 1/YStep 1/Length ");
+	stream_puts(s, "/BBox[0 0 1 1]/XStep 1/YStep 1/Length ");
 	if (image_id) {
 	    char buf[MAX_REF_CHARS + 6 + 1]; /* +6 for /R# Do\n */
 
@@ -559,7 +559,7 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 		return_error(gs_error_Fatal);
 	    }
 	    end = pdf_stell(pdev);
-	    pputs(s, "\nendstream\n");
+	    stream_puts(s, "\nendstream\n");
 	    pdf_end_resource(pdev);
 	    pdf_open_separate(pdev, length_id);
 	    pprintld1(pdev->strm, "%ld\n", end - start);
@@ -583,7 +583,7 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 	 */
 	pprintg2(s, "q %g 0 0 %g 0 0 cm\n", xscale, yscale);
 	cos_value_write(&cs_value, pdev);
-	pputs(s, " cs");
+	stream_puts(s, " cs");
 	if (mask)
 	    pprintd3(s, " %d %d %d", (int)(color1 >> 16),
 		     (int)((color1 >> 8) & 0xff), (int)(color1 & 0xff));

@@ -458,10 +458,10 @@ pdf_write_spot_halftone(gx_device_pdf *pdev, const gs_spot_halftone *psht,
 	pprints1(s, "/SpotFunction/%s", ht_functions[i].fname);
     else
 	pprintld1(s, "/SpotFunction %ld 0 R", spot_id);
-    pputs(s, trs);
+    stream_puts(s, trs);
     if (psht->accurate_screens)
-	pputs(s, "/AccurateScreens true");
-    pputs(s, ">>\n");
+	stream_puts(s, "/AccurateScreens true");
+    stream_puts(s, ">>\n");
     return pdf_end_separate(pdev);
 }
 private int
@@ -519,11 +519,11 @@ pdf_write_threshold_halftone(gx_device_pdf *pdev,
     *pid = id;
     pprintd2(s, "<</Type/Halftone/HalftoneType 6/Width %d/Height %d",
 	     ptht->width, ptht->height);
-    pputs(s, trs);
+    stream_puts(s, trs);
     code = pdf_begin_data(pdev, &writer);
     if (code < 0)
 	return code;
-    pwrite(writer.binary.strm, ptht->thresholds.data, ptht->thresholds.size);
+    stream_write(writer.binary.strm, ptht->thresholds.data, ptht->thresholds.size);
     return pdf_end_data(&writer);
 }
 private int
@@ -545,13 +545,13 @@ pdf_write_threshold2_halftone(gx_device_pdf *pdev,
 	     ptht->width, ptht->height);
     if (ptht->width2 && ptht->height2)
 	pprintd2(s, "/Width2 %d/Height2 %d", ptht->width2, ptht->height2);
-    pputs(s, trs);
+    stream_puts(s, trs);
     code = pdf_begin_data(pdev, &writer);
     if (code < 0)
 	return code;
     s = writer.binary.strm;
     if (ptht->bytes_per_sample == 2)
-	pwrite(s, ptht->thresholds.data, ptht->thresholds.size);
+	stream_write(s, ptht->thresholds.data, ptht->thresholds.size);
     else {
 	/* Expand 1-byte to 2-byte samples. */
 	int i;
@@ -559,8 +559,8 @@ pdf_write_threshold2_halftone(gx_device_pdf *pdev,
 	for (i = 0; i < ptht->thresholds.size; ++i) {
 	    byte b = ptht->thresholds.data[i];
 
-	    pputc(s, b);
-	    pputc(s, b);
+	    stream_putc(s, b);
+	    stream_putc(s, b);
 	}
     }
     return pdf_end_data(&writer);
@@ -609,7 +609,7 @@ pdf_write_multiple_halftone(gx_device_pdf *pdev,
     }
     *pid = pdf_begin_separate(pdev);
     s = pdev->strm;
-    pputs(s, "<</Type/Halftone/HalftoneType 5\n");
+    stream_puts(s, "<</Type/Halftone/HalftoneType 5\n");
     for (i = 0; i < pmht->num_comp; ++i) {
 	const gs_halftone_component *const phtc = &pmht->components[i];
 	cos_value_t value;
@@ -623,7 +623,7 @@ pdf_write_multiple_halftone(gx_device_pdf *pdev,
 		       "pdf_write_multiple_halftone");
 	pprintld1(s, " %ld 0 R\n", ids[i]);
     }
-    pputs(s, ">>\n");
+    stream_puts(s, ">>\n");
     gs_free_object(mem, ids, "pdf_write_multiple_halftone");
     return pdf_end_separate(pdev);
 }
@@ -695,7 +695,7 @@ pdf_end_gstate(gx_device_pdf *pdev, pdf_resource_t *pres)
     if (pres) {
 	int code;
 
-	pputs(pdev->strm, ">>\n");
+	stream_puts(pdev->strm, ">>\n");
 	code = pdf_end_resource(pdev);
 	pres->object->written = true; /* don't write at end of page */
 	if (code < 0)
@@ -871,10 +871,10 @@ pdf_prepare_vector(gx_device_pdf *pdev, const gs_imager_state *pis,
 	    code = pdf_open_gstate(pdev, ppres);
 	    if (code < 0)
 		return code;
-	    pputs(pdev->strm, hts);
-	    pputs(pdev->strm, trs);
-	    pputs(pdev->strm, bgs);
-	    pputs(pdev->strm, ucrs);
+	    stream_puts(pdev->strm, hts);
+	    stream_puts(pdev->strm, trs);
+	    stream_puts(pdev->strm, bgs);
+	    stream_puts(pdev->strm, ucrs);
 	}
 	gs_currenthalftonephase((const gs_state *)pis, &phase);
 	gs_currenthalftonephase((const gs_state *)&pdev->state, &dev_phase);

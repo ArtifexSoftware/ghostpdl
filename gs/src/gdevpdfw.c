@@ -63,7 +63,7 @@ pdf_write_Widths(gx_device_pdf *pdev, int first, int last,
     pprintd2(s, "/FirstChar %d/LastChar %d/Widths[", first, last);
     for (i = first; i <= last; ++i)
 	pprintd1(s, (i & 15 ? " %d" : "\n%d"), widths[i]);
-    pputs(s, "]\n");
+    stream_puts(s, "]\n");
     return 0;
 }
 
@@ -98,7 +98,7 @@ pdf_write_synthesized_type3(gx_device_pdf *pdev, const pdf_font_t *pef)
 	const pdf_char_proc_t *pcp;
 	int w;
 
-	pputs(s, "<<");
+	stream_puts(s, "<<");
 	/* Write real characters. */
 	for (pcp = pef->char_procs; pcp; pcp = pcp->char_next) {
 	    bbox.p.y = min(bbox.p.y, pcp->y_offset);
@@ -118,13 +118,13 @@ pdf_write_synthesized_type3(gx_device_pdf *pdev, const pdf_font_t *pef)
 		widths[ch] = w + X_SPACE_MIN;
 	    }
 	}
-	pputs(s, ">>");
+	stream_puts(s, ">>");
     }
 
     pdf_write_font_bbox(pdev, &bbox);
-    pputs(s, "/FontMatrix[1 0 0 1 0 0]");
+    stream_puts(s, "/FontMatrix[1 0 0 1 0 0]");
     pdf_write_Widths(pdev, 0, pef->num_chars - 1, widths);
-    pputs(s, ">>\n");
+    stream_puts(s, ">>\n");
     pdf_end_separate(pdev);
     return 0;
 }
@@ -149,10 +149,10 @@ pdf_write_FontDescriptor(gx_device_pdf *pdev, const pdf_font_descriptor_t *pfd)
 
 	    cidset_id = pdf_begin_separate(pdev);
 	    s = pdev->strm;
-	    pputs(s, "<<");
+	    stream_puts(s, "<<");
 	    code = pdf_begin_data(pdev, &writer);
 	    if (code >= 0) {
-		pwrite(writer.binary.strm, pfd->chars_used.data,
+		stream_write(writer.binary.strm, pfd->chars_used.data,
 		       pfd->chars_used.size);
 		code = pdf_end_data(&writer);
 	    } else		/* code < 0 */
@@ -164,7 +164,7 @@ pdf_write_FontDescriptor(gx_device_pdf *pdev, const pdf_font_descriptor_t *pfd)
     }
     pdf_open_separate(pdev, pdf_font_descriptor_id(pfd));
     s = pdev->strm;
-    pputs(s, "<</Type/FontDescriptor/FontName");
+    stream_puts(s, "<</Type/FontDescriptor/FontName");
     pdf_put_name(pdev, pfd->FontName.chars, pfd->FontName.size);
     if (font) {		/* not a built-in font */
 	param_printer_params_t params;
@@ -225,7 +225,7 @@ pdf_write_FontDescriptor(gx_device_pdf *pdev, const pdf_font_descriptor_t *pfd)
 						     pfd->chars_used.data);
 		int i;
 
-		pputs(s, "/CharSet(");
+		stream_puts(s, "/CharSet(");
 		for (i = 0; i < subset_size; ++i) {
 		    uint len;
 		    const char *str = font->procs.callbacks.glyph_name
@@ -236,7 +236,7 @@ pdf_write_FontDescriptor(gx_device_pdf *pdev, const pdf_font_descriptor_t *pfd)
 				      (const byte *)".notdef", 7))
 			pdf_put_name(pdev, (const byte *)str, len);
 		}
-		pputs(s, ")\n");
+		stream_puts(s, ")\n");
 	    }
 	    default:
 		break;
@@ -264,11 +264,11 @@ pdf_write_FontDescriptor(gx_device_pdf *pdev, const pdf_font_descriptor_t *pfd)
 		FontFile_key = "/FontFile3";
 		break;
 	    }
-	    pputs(s, FontFile_key);
+	    stream_puts(s, FontFile_key);
 	    pprintld1(s, " %ld 0 R", pfd->FontFile_id);
 	}
     }
-    pputs(s, ">>\n");
+    stream_puts(s, ">>\n");
     pdf_end_separate(pdev);
     return code;
 }
@@ -280,10 +280,10 @@ pdf_write_cid_system_info(gx_device_pdf *pdev,
 {
     stream *s = pdev->strm;
 
-    pputs(s, "<<\n/Registry");
+    stream_puts(s, "<<\n/Registry");
     s_write_ps_string(s, pcidsi->Registry.data, pcidsi->Registry.size,
 		      PRINT_HEX_NOT_OK);
-    pputs(s, "\n/Ordering");
+    stream_puts(s, "\n/Ordering");
     s_write_ps_string(s, pcidsi->Ordering.data, pcidsi->Ordering.size,
 		      PRINT_HEX_NOT_OK);
     pprintd1(s, "\n/Supplement %d\n>>\n", pcidsi->Supplement);
@@ -376,15 +376,15 @@ pdf_write_CIDFont_widths(gx_device_pdf *pdev, const pdf_font_t *ppf)
 		continue;
 	    else {
 		if (prev >= 0)
-		    pputs(s, "]\n");
+		    stream_puts(s, "]\n");
 		else
-		    pputs(s, "/W[");
+		    stream_puts(s, "/W[");
 		pprintd2(s, "%d[%d", cid, width);
 	    }
 	    prev = cid;
 	}
 	if (prev >= 0)
-	    pputs(s, "]]");
+	    stream_puts(s, "]]");
     }    
 
     return 0;
@@ -422,7 +422,7 @@ pdf_write_CIDToGIDMap(gx_device_pdf *pdev, pdf_font_t *ppf,
 	}
     }
     /* All CIDs and GIDs match. */
-    pputs(s, "/CIDToGIDMap/Identity\n");
+    stream_puts(s, "/CIDToGIDMap/Identity\n");
     *pcidmap_id = 0;
     return 0;
 }
@@ -440,14 +440,14 @@ pdf_write_CIDMap(stream *s, pdf_font_t *ppf)
 	int gid = ppf->CIDToGIDMap[cid];
 
 	for (; next < cid; ++next) {
-	    pputc(s, 0); pputc(s, 0);
+	    stream_putc(s, 0); stream_putc(s, 0);
 	}
-	pputc(s, (byte)(gid >> 8));
-	pputc(s, (byte)gid);
+	stream_putc(s, (byte)(gid >> 8));
+	stream_putc(s, (byte)gid);
 	next = cid + 1;
     }
     for (; next < count; ++next) {
-	pputc(s, 0); pputc(s, 0);
+	stream_putc(s, 0); stream_putc(s, 0);
     }
     return 0;
 }
@@ -485,14 +485,14 @@ pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_t *pef,
 	byte *chars = pef->fname.chars;
 	uint size = pef->fname.size;
 
-	pputs(s, "<</Type/Font/Subtype/Type0/BaseFont");
+	stream_puts(s, "<</Type/Font/Subtype/Type0/BaseFont");
 	if (pdf_has_subset_prefix(chars, size))
 	    chars += SUBSET_PREFIX_SIZE, size -= SUBSET_PREFIX_SIZE;
 	pdf_put_name(pdev, chars, size);
 	if (pef->sub_font_type == ft_CID_encrypted &&
 	    pef->cmapname[0] == '/'
 	    ) {
-	    pputc(s, '-');
+	    stream_putc(s, '-');
 	    pdf_put_name_chars(pdev, (const byte*) (pef->cmapname + 1),
 			       strlen(pef->cmapname + 1));
 	}
@@ -512,17 +512,17 @@ pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_t *pef,
 	    /* Replace spaces in the name by underscores. */
 	    uint i;
 
-	    pputs(s, "<</Subtype/MMType1");
+	    stream_puts(s, "<</Subtype/MMType1");
 	    if (fname.size > sizeof(fnchars))
 		return_error(gs_error_rangecheck);
 	    for (i = 0; i < fname.size; ++i)
 		fnchars[i] = (fname.data[i] == ' ' ? '_' : fname.data[i]);
 	    fname.data = fnchars;
 	} else {
-	    pputs(s, "<</Subtype/Type1");
+	    stream_puts(s, "<</Subtype/Type1");
 	}
     bfname:
-	pputs(s, "/BaseFont");
+	stream_puts(s, "/BaseFont");
 	pdf_put_name(pdev, fname.data, fname.size);
 	break;
     case ft_CID_encrypted:
@@ -536,9 +536,9 @@ pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_t *pef,
 	write_Widths = -write_Widths;
 	goto ttname;
     case ft_TrueType:
-	pputs(s, "<</Subtype/TrueType");
+	stream_puts(s, "<</Subtype/TrueType");
     ttname:
-	pputs(s, "/BaseFont");
+	stream_puts(s, "/BaseFont");
 	pdf_put_name(pdev, fname.data, fname.size);
 	/****** WHAT ABOUT STYLE INFO? ******/
 	break;
@@ -569,10 +569,10 @@ pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_t *pef,
 	pdf_end_separate(pdev);
 	pdf_open_separate(pdev, diff_id);
 	s = pdev->strm;
-	pputs(s, "<</Type/Encoding");
+	stream_puts(s, "<</Type/Encoding");
 	if (pef->BaseEncoding != ENCODING_INDEX_UNKNOWN)
 	    pprints1(s, "/BaseEncoding/%s", encoding_names[pef->BaseEncoding]);
-	pputs(s, "/Differences[");
+	stream_puts(s, "/Differences[");
 	for (i = 0; i < 256; ++i)
 	    if (pef->Differences[i].str.data != 0) {
 		if (i != prev + 1)
@@ -581,23 +581,23 @@ pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_t *pef,
 			     pef->Differences[i].str.size);
 		prev = i;
 	    }
-	pputs(s, "]");
+	stream_puts(s, "]");
     } else if (pef->BaseEncoding != ENCODING_INDEX_UNKNOWN) {
 	pprints1(s, "/Encoding/%s", encoding_names[pef->BaseEncoding]);
     }
     if (cidmap_id) {
 	pdf_data_writer_t writer;
 
-	pputs(pdev->strm, ">>\n");
+	stream_puts(pdev->strm, ">>\n");
 	pdf_end_separate(pdev);
 	pdf_open_separate(pdev, cidmap_id);
-	pputs(pdev->strm, "<<");
+	stream_puts(pdev->strm, "<<");
 	pdf_begin_data(pdev, &writer);
 	pdf_write_CIDMap(writer.binary.strm, pef);
 	return pdf_end_data(&writer);
     }
  out:
-    pputs(s, ">>\n");
+    stream_puts(s, ">>\n");
     return pdf_end_separate(pdev);
 }
 

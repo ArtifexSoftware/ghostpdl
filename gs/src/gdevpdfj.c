@@ -333,9 +333,9 @@ pdf_end_write_image(gx_device_pdf * pdev, pdf_image_writer * piw)
     } else {			/* in-line image */
 	stream *s = pdev->strm;
 
-	pputs(s, "BI\n");
+	stream_puts(s, "BI\n");
 	cos_stream_elements_write(piw->data, pdev);
-	pputs(s, (pdev->binary_ok ? "ID " : "ID\n"));
+	stream_puts(s, (pdev->binary_ok ? "ID " : "ID\n"));
 	cos_stream_contents_write(piw->data, pdev);
 	pprints1(s, "\nEI%s\n", piw->end_string);
 	COS_FREE(piw->data, "pdf_end_write_image");

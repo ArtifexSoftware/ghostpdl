@@ -247,7 +247,7 @@ psw_write_page_header(stream *s, const gx_device *dev,
      * driver is page size, but there might be more in the future.
      */
     psw_put_procset_name(s, dev, pdpc);
-    pputs(s, " begin\n");
+    stream_puts(s, " begin\n");
     if (!pdpc->ProduceEPS) {
 	int width = (int)(dev->width * 72.0 / dev->HWResolution[0] + 0.5);
 	int height = (int)(dev->height * 72.0 / dev->HWResolution[1] + 0.5);
@@ -273,11 +273,11 @@ psw_write_page_header(stream *s, const gx_device *dev,
 	pprintd2(s, "%d %d ", width, height);
 	pprints1(s, "%s setpagesize\n", p->size_name);
     }
-    pputs(s, "/pagesave save store 100 dict begin\n");
+    stream_puts(s, "/pagesave save store 100 dict begin\n");
     if (do_scale)
 	pprintg2(s, "%g %g scale\n",
 		 72.0 / dev->HWResolution[0], 72.0 / dev->HWResolution[1]);
-    pputs(s, "%%EndPageSetup\ngsave mark\n");
+    stream_puts(s, "%%EndPageSetup\ngsave mark\n");
 }
 
 /*

@@ -88,7 +88,7 @@ psdf_setdash(gx_device_vector * vdev, const float *pattern, uint count,
     stream *s = gdev_vector_stream(vdev);
     int i;
 
-    pputs(s, "[ ");
+    stream_puts(s, "[ ");
     for (i = 0; i < count; ++i)
 	pprintg1(s, "%g ", pattern[i]);
     pprintg1(s, "] %g d\n", offset);
@@ -179,7 +179,7 @@ int
 psdf_closepath(gx_device_vector * vdev, floatp x0, floatp y0,
 	       floatp x_start, floatp y_start, gx_path_type_t type)
 {
-    pputs(gdev_vector_stream(vdev), "h\n");
+    stream_puts(gdev_vector_stream(vdev), "h\n");
     return 0;
 }
 
