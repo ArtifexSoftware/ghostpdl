@@ -130,7 +130,10 @@ gsSourceSets = [
     ]
 gsDoubleInclusionOK = [
     'src/gconf.h',
-    'src/gxdtfill.h'
+    'src/gxdtfill.h',
+    'src/gxfillsl.h',
+    'src/gxfilltr.h',
+    'src/gxfillts.h'
     ]
 
 # Add the tests defined in this file to a suite.
