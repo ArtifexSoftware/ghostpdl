@@ -384,7 +384,8 @@ gx_serialize_cie_cache(const cie_cache_floats *c, stream * s)
 	return code;
     return sputs(s, (const byte *)c->values, sizeof(c->values), &n);
 }
-private int 
+
+int 
 gx_serialize_cie_common_elements(const gs_color_space * pcs, stream * s)
 {
     const gs_cie_a * p = pcs->params.a;

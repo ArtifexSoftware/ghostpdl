@@ -38,6 +38,7 @@
 #include "gzstate.h"
 #include "gsimage.h"
 #include "gsiparm4.h"
+#include "stream.h"
 
 /* GC descriptors */
 public_st_pattern_template();
@@ -55,6 +56,7 @@ private cs_proc_install_cspace(gx_install_Pattern);
 private cs_proc_set_overprint(gx_set_overprint_Pattern);
 private cs_proc_adjust_cspace_count(gx_adjust_cspace_Pattern);
 private cs_proc_adjust_color_count(gx_adjust_color_Pattern);
+private cs_proc_serialize(gx_serialize_Pattern);
 const gs_color_space_type gs_color_space_type_Pattern = {
     gs_color_space_index_Pattern, false, false,
     &st_color_space_Pattern, gx_num_components_Pattern,
@@ -64,7 +66,8 @@ const gs_color_space_type gs_color_space_type_Pattern = {
     gx_no_concretize_color, NULL,
     gx_remap_Pattern, gx_install_Pattern,
     gx_set_overprint_Pattern,
-    gx_adjust_cspace_Pattern, gx_adjust_color_Pattern
+    gx_adjust_cspace_Pattern, gx_adjust_color_Pattern,
+    gx_serialize_Pattern
 };
 
 /* Initialize a generic pattern template. */
@@ -327,3 +330,22 @@ private RELOC_PTRS_WITH(cs_Pattern_reloc_ptrs, gs_color_space *pcs)
 		sizeof(gs_paint_color_space));
 }
 RELOC_PTRS_END
+
+/* ---------------- Serialization. -------------------------------- */
+
+private int 
+gx_serialize_Pattern(const gs_color_space * pcs, stream * s)
+{
+    const gs_pattern_params * p = &pcs->params.pattern;
+    uint n;
+    int code = gx_serialize_cspace_type(pcs, s);
+
+    if (code < 0)
+	return code;
+    code = sputs(s, (byte *)&p->has_base_space, sizeof(p->has_base_space), &n);
+    if (code < 0)
+	return code;
+    if (!p->has_base_space)
+	return 0;
+    return cs_serialize((const gs_color_space *)&p->has_base_space, s);
+}
