@@ -607,10 +607,10 @@ compute_subimage(int width, int height, int raster, byte *base,
 	max_subimage_width(width, base + y0 * raster, x0, MaxClipPathSize / 4, x1, &count);
 	*y1 = y0;
     } else {
-	int xx, y = y0;
+	int xx, y = y0, yy;
 	long count, count1 = MaxClipPathSize / 4;
 
-	for(; y < height && count1 > 0; y++) {
+	for(; y < height && count1 > 0; ) {
 	    max_subimage_width(width, base + y * raster, 0, count1, &xx, &count);
 	    if (xx < width) {
 		if (y == y0) {
@@ -624,6 +624,12 @@ compute_subimage(int width, int height, int raster, byte *base,
 		}
 	    }
 	    count1 -= count;
+	    yy = y + 1;
+	    for (; yy < height; yy++)
+		if (memcmp(base + raster * y, base + raster * yy, raster))
+		    break;
+	    y = yy;
+
 	}
 	*y1 = y;
 	*x1 = width;
@@ -631,7 +637,7 @@ compute_subimage(int width, int height, int raster, byte *base,
 }
 
 private int
-image_line_to_clip(gx_device_pdf *pdev, byte *base, int x0, int x1, int y, bool started)
+image_line_to_clip(gx_device_pdf *pdev, byte *base, int x0, int x1, int y0, int y1, bool started)
 {   /* returns the number of segments or error code. */
     int x = x0, xx;
     byte *q = base + (x / 8), m = 0x80 >> (x % 8);
@@ -662,12 +668,14 @@ image_line_to_clip(gx_device_pdf *pdev, byte *base, int x0, int x1, int y, bool 
 	    }
 	}
 	/* Found the interval [xx:x). */
-	if (!started)
+	if (!started) {
 	    stream_puts(pdev->strm, "n\n");
-	pprintld2(pdev->strm, "%ld %ld m ", xx, y);
-	pprintld2(pdev->strm, "%ld %ld l ", x, y);
-	pprintld2(pdev->strm, "%ld %ld l ", x, y + 1);
-	pprintld2(pdev->strm, "%ld %ld l h\n", xx, y + 1);
+	    started = true;
+	}
+	pprintld2(pdev->strm, "%ld %ld m ", xx, y0);
+	pprintld2(pdev->strm, "%ld %ld l ", x, y0);
+	pprintld2(pdev->strm, "%ld %ld l ", x, y1);
+	pprintld2(pdev->strm, "%ld %ld l h\n", xx, y1);
 	c += 4;
     }
     return c;
@@ -677,13 +685,20 @@ private int
 mask_to_clip(gx_device_pdf *pdev, int width, int height, 
 	     int raster, byte *base, int x0, int y0, int x1, int y1)
 {
-    int y, code = 0;
+    int y, yy, code = 0;
     bool has_segments = false;
 
-    for (y = y0; y < y1 && code >= 0; y++) {
-	code = image_line_to_clip(pdev, base + raster * y, x0, x1, y, has_segments);
+    for (y = y0; y < y1 && code >= 0;) {
+	yy = y + 1;
+	if (x0 == 0) {
+	for (; yy < y1; yy++)
+	    if (memcmp(base + raster * y, base + raster * yy, raster))
+		break;
+	}
+	code = image_line_to_clip(pdev, base + raster * y, x0, x1, y, yy, has_segments);
 	if (code > 0)
 	    has_segments = true;
+	y = yy;
     }
     if (has_segments)
 	stream_puts(pdev->strm, "W n\n");

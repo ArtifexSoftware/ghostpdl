@@ -346,6 +346,18 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	    pim3a = *pim3;
 	    gs_matrix_invert(&pim3a.ImageMatrix, &mi);
 	    gs_make_identity(&pim3a.ImageMatrix);
+	    if (pim3a.Width < pim3a.MaskDict.Width && pim3a.Width > 0) {
+		int sx = (pim3a.MaskDict.Width + pim3a.Width - 1) / pim3a.Width;
+		
+		gs_matrix_scale(&mi, 1.0 / sx, 1, &mi);
+		gs_matrix_scale(&pim3a.ImageMatrix, 1.0 / sx, 1, &pim3a.ImageMatrix);
+	    }
+	    if (pim3a.Height < pim3a.MaskDict.Height && pim3a.Height > 0) {
+		int sy = (pim3a.MaskDict.Height + pim3a.Height - 1) / pim3a.Height;
+
+		gs_matrix_scale(&mi, 1, 1.0 / sy, &mi);
+		gs_matrix_scale(&pim3a.ImageMatrix, 1, 1.0 / sy, &pim3a.ImageMatrix);
+	    }
 	    gs_matrix_multiply(&mi, &pim3a.MaskDict.ImageMatrix, &pim3a.MaskDict.ImageMatrix);
 	    pic1 = (gs_image_common_t *)&pim3a;
 	    /* Setting pdev->converting_image_matrix to communicate with pdf_image3_make_mcde. */
