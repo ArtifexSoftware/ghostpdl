@@ -34,7 +34,7 @@ GLJCC=$(CC_) $(I_)$(GLI_) $(II)$(JI_)$(_I) $(JCF_) $(GLF_)
 GLZCC=$(CC_) $(I_)$(GLI_) $(II)$(ZI_)$(_I) $(ZCF_) $(GLF_)
 GLCCLEAF=$(CC_LEAF) $(I_)$(GLI_)$(_I) $(GLF_)
 # All top-level makefiles define GLD.
-#GLD=$(GLGEN)
+GLD=$(GLGEN)
 
 # Define the name of this makefile.
 LIB_MAK=$(GLSRC)lib.mak
