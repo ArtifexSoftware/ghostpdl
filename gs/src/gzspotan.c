@@ -306,7 +306,7 @@ san_get_clipping_box(gx_device * dev, gs_fixed_rect * pbox)
 private inline void
 check_band_list(const gx_san_trap *list)
 {
-#if DEBUG
+#ifdef DEBUG
     if (list != NULL) {
 	const gx_san_trap *t = list;
 
@@ -354,6 +354,15 @@ trap_area(gx_san_trap *t)
     return (double)(t->xrbot - t->xlbot + t->xrtop - t->xltop) * (t->ytop - t->ybot) / 2;
 }
 
+private inline double 
+trap_axis_length(gx_san_trap *t)
+{
+    double xbot = (t->xlbot + t->xrbot) / 2.0;
+    double xtop = (t->xltop + t->xrtop) / 2.0;
+
+    return hypot(xtop - xbot, t->ytop - t->ybot);
+}
+
 private inline bool
 is_stem_boundaries(gx_san_trap *t)
 {
@@ -361,7 +370,7 @@ is_stem_boundaries(gx_san_trap *t)
     double dx = t->xltop - t->xlbot;
     double norm = hypot(dx, dy);
     double cosine = dx / norm;
-    double cosine_threshold = 0.5; /* Arbitrary */
+    double cosine_threshold = 0.9; /* Arbitrary */
 
     if (any_abs(cosine) > cosine_threshold)
 	return false;
@@ -521,31 +530,36 @@ gx_san_generate_stems_aux(gx_device_spot_analyzer *padev,
 	    if (is_stem_boundaries(t0)) {
 		gx_san_trap_contact *cont = t0->upper;
 		gx_san_trap *t1 = t0, *t;
-		double area = 0, height = 0, ave_width;
+		double area = 0, length = 0, ave_width;
 		
 		while(cont != NULL && cont->next == cont /* <= 1 descendent. */) {
-		    if (!is_stem_boundaries(cont->upper)) {
-			cont->lower->visited = true;
+		    gx_san_trap *t = cont->upper;
+
+		    if (!is_stem_boundaries(t)) {
+			t->visited = true;
 			break;
 		    }
-		    if (cont->upper->fork > 1)
+		    if (t->fork > 1)
 			break; /* > 1 accendents.  */
-		    t1 = cont->upper;
+		    if (t1->xltop != t->xlbot || t1->xrtop != t->xrbot)
+			break; /* Not a contigouos boundary. */
+		    t1 = t;
 		    cont = t1->upper;
 		    t1->visited = true;
 		}
-		/* We've got a stem suspection from t to t1. */
+		/* We've got a stem suspection from t0 to t1. */
 		vd_quad(t0->xlbot, t0->ybot, t0->xrbot, t0->ybot, 
 			t1->xrtop, t1->ytop, t1->xltop, t1->ytop, 1, VD_STEM_COLOR);
 		for (t = t0; ; t = t->upper->upper) {
-		    height += t->ytop - t->ybot;
+		    /* height += t->ytop - t->ybot; */
+		    length += trap_axis_length(t);
 		    area += trap_area(t);
 		    if (t == t1)
 			break;
 		}
-		ave_width = area / height;
-		if (height > ave_width / ( 2.0 /* arbitrary */)) {
-		    /* We've got a stem from t to t1. */
+		ave_width = area / length;
+		if (length > ave_width / ( 2.0 /* arbitrary */)) {
+		    /* We've got a stem from t0 to t1. */
 		    double w, wd, best_width_diff = ave_width * 10;
 		    gx_san_trap *best_trap = NULL;
 		    bool at_top = false;
@@ -570,7 +584,7 @@ gx_san_generate_stems_aux(gx_device_spot_analyzer *padev,
 			at_top = true;
 		    }
 		    if (best_trap != NULL) {
-			/* Make a stem section hint at_top of test_trap : */
+			/* Make a stem section hint at_top of best_trap : */
 			sect.y = at_top ? best_trap->ytop : best_trap->ybot; 
 			sect.xl = at_top ? best_trap->xltop : best_trap->xlbot; 
 			sect.xr = at_top ? best_trap->xrtop : best_trap->xrbot;
