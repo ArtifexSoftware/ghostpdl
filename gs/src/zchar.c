@@ -26,6 +26,7 @@
 #include "gxdevice.h"		/* for gxfont.h */
 #include "gxfont.h"
 #include "gxfont42.h"
+#include "gxfont0.h"
 #include "gzstate.h"
 #include "dstack.h"		/* for stack depth */
 #include "estack.h"
@@ -427,6 +428,13 @@ op_show_finish_setup(i_ctx_t *i_ctx_p, gs_text_enum_t * penum, int npop,
 	text.data.d_glyph = glyph;
 	text.size = 1;
 	gs_text_restart(penum, &text);
+    }
+    if (osenum && osenum->current_font->FontType == ft_user_defined &&
+	osenum->fstack.depth >= 1 &&
+	osenum->fstack.items[0].font->FontType == ft_composite &&
+	((const gs_font_type0 *)osenum->fstack.items[0].font)->data.FMapType == fmap_CMap) {
+	/* A special behavior defined in PLRM3 section 5.11 page 389. */
+	penum->outer_CID = osenum->returned.current_glyph;
     }
     make_mark_estack(ep - (snumpush - 1), es_show, op_show_cleanup);
     if (endproc == NULL)

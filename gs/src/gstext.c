@@ -155,6 +155,7 @@ gs_text_enum_init_dynamic(gs_text_enum_t *pte, gs_font *font)
     pte->FontBBox_as_Metrics2.x = pte->FontBBox_as_Metrics2.y = 0;
     pte->pair = 0;
     pte->device_disabled_grid_fitting = 0;
+    pte->outer_CID = GS_NO_GLYPH;
     return font->procs.init_fstack(pte, font);
 }
 int
@@ -204,6 +205,7 @@ gs_text_enum_copy_dynamic(gs_text_enum_t *pto, const gs_text_enum_t *pfrom,
     pto->FontBBox_as_Metrics2 = pfrom->FontBBox_as_Metrics2;
     pto->pair = pfrom->pair;
     pto->device_disabled_grid_fitting = pfrom->device_disabled_grid_fitting;
+    pto->outer_CID = pfrom->outer_CID;
     if (depth >= 0)
 	memcpy(pto->fstack.items, pfrom->fstack.items,
 	       (depth + 1) * sizeof(pto->fstack.items[0]));
@@ -627,7 +629,10 @@ gs_default_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
     if (pte->text.operation & (TEXT_FROM_STRING | TEXT_FROM_BYTES)) {
 	/* ordinary string */
 	*pchr = pte->text.data.bytes[pte->index];
-	*pglyph = gs_no_glyph;
+	if (pte->outer_CID != GS_NO_GLYPH)
+	    *pglyph = pte->outer_CID;
+	else
+	    *pglyph = gs_no_glyph;
     } else if (pte->text.operation & TEXT_FROM_SINGLE_GLYPH) {
 	/* glyphshow or glyphpath */
 	*pchr = gs_no_char;
