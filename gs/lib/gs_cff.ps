@@ -715,9 +715,10 @@ dup							% Format 2
     exec
   } loop
   offsets length 0 ne {
-    (Error: missing tables at ) print [ offsets { pop } forall ] ==
-    (Current position is ) print pos ==
-    flush stop
+    QUIET not {
+      (Error reading the CFF font ) print resname =string cvs print ( : missing tables at ) print [ offsets { pop } forall ] ==
+      (Current position is ) print pos ==
+    } if
   } if
 
 	% Process out-of-order tables.
