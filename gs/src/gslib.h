@@ -17,6 +17,11 @@
 #ifndef gslib_INCLUDED
 #  define gslib_INCLUDED
 
+#ifndef gs_main_instance_DEFINED
+# define gs_main_instance_DEFINED
+typedef struct gs_main_instance_s gs_main_instance;
+#endif
+
 /*
  * Initialize the library.  gs_lib_init does all of the initialization,
  * using the C heap for initial allocation; if a client wants the library to
@@ -24,10 +29,10 @@
  * gs_lib_init0 and then gs_lib_init1.
  */
 int gs_lib_init(P1(FILE * debug_out));
-gs_memory_t *gs_lib_init0(P1(FILE * debug_out));
+int gs_lib_init0(P2(gs_main_instance *minst, FILE * debug_out));
 int gs_lib_init1(P1(gs_memory_t *));
 
 /* Clean up after execution. */
-void gs_lib_finit(P2(int exit_status, int code));
+void gs_lib_finit(P3(gs_main_instance *minst, int exit_status, int code));
 
 #endif /* gslib_INCLUDED */

@@ -94,13 +94,13 @@ int
 gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
 	      int max_lib_paths)
 {
-    gs_memory_t *heap;
     ref *paths;
 
     /* Set our versions of stdin/out/err. */
     gs_stdin = minst->fstdin = in;
     gs_stdout = minst->fstdout = out;
     gs_stderr = minst->fstderr = err;
+
     /* Do platform-dependent initialization. */
     /* We have to do this as the very first thing, */
     /* because it detects attempts to run 80N86 executables (N>0) */
@@ -108,19 +108,19 @@ gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
     gp_init();
     gp_get_usertime(minst->base_time);
     /* Initialize the imager. */
-    heap = gs_lib_init0(gs_stdout);
-    if (heap == 0)
+    /* Initialize the large allocator, C heap */
+    if (gs_lib_init0(minst, gs_stdout))
 	return_error(e_VMerror);
-    minst->heap = heap;
+
     /* Initialize the file search paths. */
-    paths = (ref *) gs_alloc_byte_array(heap, max_lib_paths, sizeof(ref),
+    paths = (ref *) gs_alloc_byte_array(minst->heap, max_lib_paths, sizeof(ref),
 					"lib_path array");
     if (paths == 0) {
-	gs_lib_finit(1, e_VMerror);
+	gs_lib_finit(minst, 1, e_VMerror);
 	return_error(e_VMerror);
     }
     make_array(&minst->lib_path.container, avm_foreign, max_lib_paths,
-	       (ref *) gs_alloc_byte_array(heap, max_lib_paths, sizeof(ref),
+	       (ref *) gs_alloc_byte_array(minst->heap, max_lib_paths, sizeof(ref),
 					   "lib_path array"));
     make_array(&minst->lib_path.list, avm_foreign | a_readonly, 0,
 	       minst->lib_path.container.value.refs);
@@ -132,8 +132,10 @@ gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
     return 0;
 }
 
+#ifndef NO_GS_MEMORY_GLOBALS_BIND
 gs_memory_t *gs_memory_t_default;
 gs_malloc_memory_t *gs_malloc_memory_default;
+#endif
 
 /* Initialization to be done before constructing any objects. */
 int
@@ -774,7 +776,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
     /* This will release all memory, close all open files, etc. */
     if (minst->init_done >= 1)
 	alloc_restore_all(idmemory);
-    gs_lib_finit(exit_status, code);
+    gs_lib_finit(minst, exit_status, code);
 }
 void
 gs_exit_with_code(int exit_status, int code)
@@ -860,10 +862,9 @@ gs_debug_dump_stack(int code, ref * perror_object)
     gs_main_dump_stack(gs_main_instance_default(), code, perror_object);
 }
 
-#if 0
-/* stefan foo:
- * break the gsdll and gsapi interface for now
- */
+#if 0 /* stefan foo:
+       * break the gsdll and gsapi interface for now
+       */
 
 
 /* Provide a single point for all "C" stdout and stderr.

@@ -22,6 +22,11 @@
 typedef struct gs_main_instance_s gs_main_instance;
 #endif
 
+#ifndef NO_GS_MEMORY_GLOBALS
+#include "gsmemory.h"
+#include "gsmalloc.h"
+#endif
+
 /*
  * Define the structure of a search path.  Currently there is only one,
  * but there might be more someday.
@@ -63,8 +68,18 @@ struct gs_main_instance_s {
     FILE *fstdout;
     FILE *fstderr;
     bool stdin_is_interactive;
-    gs_memory_t *heap;		/* (C) heap allocator */
+
+    /** (C) heap allocator */
+    gs_memory_t *heap;		
+
+#ifndef NO_WRAPPED_MEMORY_BIND
+    /** private: unwrapped heap 
+     */
+    gs_malloc_memory_t *malloc_memory_default;         
+#endif 
+
     uint memory_chunk_size;	/* 'wholesale' allocation unit */
+
     ulong name_table_size;
     uint run_buffer_size;
     int init_done;		/* highest init done so far */
@@ -93,8 +108,13 @@ struct gs_main_instance_s {
  * Note that any file that uses the following definition of default values
  * must include gconfig.h, because of SEARCH_HERE_FIRST.
  */
-#define gs_main_instance_default_init_values\
+#ifndef NO_WRAPPED_MEMORY_BIND
+# define gs_main_instance_default_init_values\
+  0, 0, 0, 1 /*true*/, 0, 0, 20000, 0, 0, -1, 0, SEARCH_HERE_FIRST, 1
+#else 
+# define gs_main_instance_default_init_values\
   0, 0, 0, 1 /*true*/, 0, 20000, 0, 0, -1, 0, SEARCH_HERE_FIRST, 1
+#endif 
 extern const gs_main_instance gs_main_instance_init_values;
 
 #endif /* iminst_INCLUDED */

@@ -40,26 +40,52 @@ gs_malloc_memory_t *gs_malloc_memory_init(P0());
  * Define a default allocator that allocates from the C heap.
  * (We would really like to get rid of this.)
  */
+#ifndef NO_GS_MEMORY_GLOBALS
 extern gs_malloc_memory_t *gs_malloc_memory_default;
 extern gs_memory_t *gs_memory_t_default;  /* may be locked */
 #define gs_memory_default (*gs_memory_t_default)
+#endif
 
-/*
- * The following procedures are historical artifacts that we hope to
- * get rid of someday.
+/** initialize heap allocator
  */
-gs_memory_t * gs_malloc_init(P0());
-void gs_malloc_release(P0());
+int gs_malloc_init(P1(gs_memory_t **heap));
+
+/** free heap allocator
+ */
+void gs_malloc_release(P1(gs_memory_t **heap));
+
+
+#ifndef NO_GS_MEMORY_GLOBALS
+/** Now in  gsmalloc_dep.h */
+
 #define gs_malloc(nelts, esize, cname)\
   (void *)gs_alloc_byte_array(&gs_memory_default, nelts, esize, cname)
 #define gs_free(data, nelts, esize, cname)\
   gs_free_object(&gs_memory_default, data, cname)
+#endif 
 
-/* Define an accessor for the limit on the total allocated heap space. */
-#define gs_malloc_limit (gs_malloc_memory_default->limit)
+#ifndef NO_GS_MEMORY_GLOBALS
+/** public global variable accessors 
+ */
+# ifndef NO_WRAPPED_MEMORY_BIND
+   /* Define an accessor for the limit on the total allocated heap space. */
+#  define gs_malloc_limit (gs_malloc_memory_default->limit)
+   /* Define an accessor for the maximum amount ever allocated from the heap. */
+#  define gs_malloc_max (gs_malloc_memory_default->max_used)
+# else
+#  define gs_malloc_limit (((gs_malloc_memory_t *)gs_memory_t_default)->limit)
+#  define gs_malloc_max (((gs_malloc_memory_t *)gs_memory_t_default)->max_used)
+# endif
+#else
 
-/* Define an accessor for the maximum amount ever allocated from the heap. */
-#define gs_malloc_max (gs_malloc_memory_default->max_used)
+int get_gs_malloc_limit(gs_memory_t * mem);
+void set_gs_malloc_limit(gs_memory_t * mem, int limit);
+
+int get_gs_malloc_max(gs_memory_t * mem);
+void set_gs_malloc_max(gs_memory_t * mem, int limit);
+
+#endif
+
 
 /* ---------------- Locking ---------------- */
 

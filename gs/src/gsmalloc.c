@@ -475,23 +475,78 @@ gs_malloc_unwrap(gs_memory_t *wrapped)
     return (gs_malloc_memory_t *)contents;
 }
 
-/* ------ Historical single-instance artifacts ------ */
-
-/* Create the default allocator. */
-gs_memory_t *
-gs_malloc_init(void)
+/** Create the default heap allocator. 
+ *  pre conditions
+ *     ASSERT( heap != 0 ) 
+ *     ASSERT( *heap == 0 ) 
+ *     otherwize it assumed to be already initialized and will stop.
+ *     assumption may or may not be correct so call this once.
+ *  post conditions
+ *     heap pointer points to new default allocator. 
+ *     returns true on error, false on ok
+ *  usage:
+ *  gs_memory *heap = 0;
+ *  gs_malloc_init( &heap; )
+ */
+bool
+gs_malloc_init( gs_memory_t **heap )
 {
-    gs_malloc_memory_default = gs_malloc_memory_init();
-    gs_malloc_wrap(&gs_memory_t_default, gs_malloc_memory_default);
-    return gs_memory_t_default;
+    gs_malloc_memory_t *unwrapped_heap;
+
+    if ( *heap == 0 ) {
+	unwrapped_heap = gs_malloc_memory_init();
+
+#ifdef NO_WRAPPED_MEMORY_BIND
+	*heap = (gs_memory_t *) unwrapped_heap;
+#else
+	gs_malloc_wrap(heap, unwrapped_heap);
+#endif
+
+#ifndef NO_GS_MEMORY_GLOBALS_BIND
+	/*
+	 * foo get set globals 
+	 */
+
+# ifndef NO_WRAPPED_MEMORY_BIND 
+	gs_malloc_memory_default = unwrapped_heap;
+# endif
+	gs_memory_t_default = *heap;
+    }
+    else {
+        
+	*heap = gs_memory_t_default;
+#endif
+    }
+
+
+    return (*heap == 0);  /* true on error */
 }
 
-/* Release the default allocator. */
+/** Release the default allocator. 
+ */
 void
-gs_malloc_release(void)
+gs_malloc_release(gs_memory_t **heap)
 {
-    gs_malloc_unwrap(gs_memory_t_default);
-    gs_memory_t_default = 0;
-    gs_malloc_memory_release(gs_malloc_memory_default);
+
+#ifdef TESTING_MECH_BIND 
+    /* #error "def BIND" */
+#else 
+    /* #error "ndef BIND" */
+#endif
+
+#ifdef NO_WRAPPED_MEMORY_BIND 
+    gs_malloc_memory_release((gs_malloc_memory_t *) *heap);
+#else
+    gs_malloc_memory_release(gs_malloc_unwrap(*heap));
+#endif
+
+    *heap = 0;
+
+#ifndef NO_GS_MEMORY_GLOBALS_BIND
+# ifndef NO_WRAPPED_MEMORY_BIND 
     gs_malloc_memory_default = 0;
+# endif
+    gs_memory_t_default = 0;
+#endif
+
 }
