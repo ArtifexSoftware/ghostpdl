@@ -7,15 +7,12 @@ import java.awt.image.*;
  * @author Stefan Kemper
  * @version $Revision$
  */
-public class GpickleThread extends Object implements Runnable {
+public class GpickleThread extends Gpickle implements Runnable {
 
   /** debug printf control */
-  private final static boolean debug = true;
+  private final static boolean debug = false;
 
   private long gotItTime = 0;
-
-  /** my pickle is actually your Gpickle */
-  private Gpickle myPickle;
 
   /** call back for generated page */
   private GpickleObserver observer;
@@ -36,9 +33,8 @@ public class GpickleThread extends Object implements Runnable {
   * relationship.
   * PickleObserver.ImageIsReady() will be called with the generated images.
   */
-  GpickleThread( Gpickle yourPickle, GpickleObserver callme )
+  GpickleThread( GpickleObserver callme )
   {
-     myPickle = yourPickle;	
      observer = callme;
 
      myThread = new Thread( this );
@@ -61,7 +57,7 @@ public class GpickleThread extends Object implements Runnable {
           }
 
           // generate page and return it to the observer
-          observer.imageIsReady( myPickle.getPrinterOutputPage() );
+          observer.imageIsReady( getPrinterOutputPage() );
 
           if (debug) {
              gotItTime = System.currentTimeMillis() - gotItTime;	
@@ -101,7 +97,7 @@ public class GpickleThread extends Object implements Runnable {
         nextPage = pageNumber;
         return;
      }
-     myPickle.setPageNumber(pageNumber);
+     setPageNumber(pageNumber);
 
      if (debug) {
         gotItTime = System.currentTimeMillis();	
@@ -109,5 +105,10 @@ public class GpickleThread extends Object implements Runnable {
      }
 
      resume(); // kickStartTread
+  }
+  public boolean busy() {
+     if (nextPage > 0)
+        return true;
+     return false;
   }
 }

@@ -38,12 +38,12 @@ public class Gpickle {
 	   rtl = cRTLstr;
 	else
 	   rtl = "";
-    }	      
+    }	
     public boolean getRTL() {
        return( rtl.equals(cRTLstr) );
     }
-    
-    private String textAlpha = ""; //" -dTextAlphaBits=2"
+
+    private String textAlpha = " ";//" -dTextAlphaBits=2";
     private String deviceOptions =  " ";
 
     /**
@@ -53,7 +53,7 @@ public class Gpickle {
     private String runString()
     {
 
- 
+
 
 	return "pcl6"
 	    + deviceOptions
@@ -84,7 +84,7 @@ public class Gpickle {
     {
         int ch;
 	int i = 0;
-        Process p = null;
+        Process p = null;     
 
 	try {
 	    if (false && debug) System.out.println("runstring=" + runString());
@@ -122,6 +122,7 @@ public class Gpickle {
 
     /** NB needs error handling.
      * set x and y resolution.
+     * @param Positive between 5 and 5000
      */
     public void setRes(double xRes, double yRes)
     {
