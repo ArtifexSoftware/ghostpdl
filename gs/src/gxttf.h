@@ -87,7 +87,7 @@ typedef struct longHorMetric_s {
 
 typedef struct ttf_maxp_s {
     byte
-	version[2],		/* 1.0 */
+	version[4],		/* 1.0 */
 	numGlyphs[2],
 	maxPoints[2],
 	maxContours[2],
