@@ -121,7 +121,9 @@ pcl_init_state(
     pcs->pattern_transparent = true;
 
     pcs->logical_op = 252;
-    pcs->grid_adjust = 0.4;
+
+    pcs->monochrome_mode = false;
+    pcs->render_mode = 3;
 
     pcl_init_gstate_stk(pcs);
 
