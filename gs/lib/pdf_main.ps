@@ -231,6 +231,7 @@ pdfdict begin
    /PSLevel1 where { pop } { /PSLevel1 false def } ifelse
    cvlit /PDFfile exch def
    /PDFsource PDFfile def
+   /Repaired false def
    PDFfile dup 0 setfileposition pdfstring readstring 
    not {/pdfopen cvx /syntaxerror signalerror} if
    (%PDF-) search not {/pdfopen cvx /syntaxerror signalerror} if
@@ -245,6 +246,7 @@ pdfdict begin
    if
 	% Read any previous cross-reference tables.
    Trailer { /Prev .knownget not { exit } if readxref } loop
+   Repaired { printrepaired } if
    currentdict end
  } bind def
 
@@ -309,8 +311,33 @@ pdfdict begin
 } bind def
 /pdfformaterror {	% <string> pdfformaterror -
   stderrprint
+  /Repaired true store
+} bind def
+/printrepaired {
+  Trailer /Info knownoget {
+    /Producer knownoget not { null } if
+  } {
+    null
+  } ifelse
+  dup null eq {
+    pop (\
+   **** Please notify the author of the software that produced this file
+)
+  } {
+    (   **** The file was produced by ) stderrprint
+	% Handle a Unicode Producer.
+    (\376\377) anchorsearch {
+      pop dup length 2 idiv string 0 1 2 index length 1 sub {
+		% Stack: origstr newstr i
+	1 index exch 3 index 1 index 2 mul 1 add get put
+      } for exch pop
+    } if
+    stderrprint
+    (:
+   **** please notify the author of this software
+)
+  } ifelse stderrprint
 (\
-   **** Please notify the author of the software that produced the file
    **** that the file does not conform to Adobe's published PDF
    **** specification.  Processing of the file will continue normally.
 
