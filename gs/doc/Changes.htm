@@ -1,1027 +1,477 @@
 <html><head>
-<title>Ghostscript 6.20 change history as of 2000-04-06 22:26:58</title>
+<title>Ghostscript 6.21 change history as of 2000-04-19 23:37:40</title>
 </head><body>
 
 <blockquote><ul>
-<li><a href="#6.20 Documentation">Documentation</a>,
-    <a href="#6.20 Procedures">Procedures</a>,
-    <a href="#6.20 Utilities">Utilities</a>,
-    <a href="#6.20 Drivers">Drivers</a>,
-    <a href="#6.20 PDF writer">PDF writer</a>,
-    <a href="#6.20 Interpreter (PDF)">Interpreter (PDF)</a>,
-    <a href="#6.20 Interpreter">Interpreter</a>,
-    <a href="#6.20 Streams">Streams</a>,
-    <a href="#6.20 Library">Library</a>
+<li><a href="#6.21 Documentation">Documentation</a>,
+    <a href="#6.21 Procedures">Procedures</a>,
+    <a href="#6.21 Utilities">Utilities</a>,
+    <a href="#6.21 Drivers">Drivers</a>,
+    <a href="#6.21 PDF writer">PDF writer</a>,
+    <a href="#6.21 Interpreter (PDF)">Interpreter (PDF)</a>,
+    <a href="#6.21 Interpreter">Interpreter</a>,
+    <a href="#6.21 Streams">Streams</a>,
+    <a href="#6.21 Library">Library</a>
 </ul>
 </ul></blockquote>
 
-<h2><a name="6.20 Documentation"></a>Documentation</h2><pre>
+<h2><a name="6.21 Documentation"></a>Documentation</h2><pre>
 
 Fixes problems:
-	- If log2_transfer_map_size > 8, identity transfer functions
-returned garbage. The fix requires that if a client wants to set a transfer
-function to the identity mapping, it must call gx_set_identity_transfer
-rather than simply setting the procedure to gs_identity_transfer.
-(doc/News.htm [1.13]: 2000/03/19 17:14:47 lpd)
-	- In PDF files, the page CropBox was not being used to clip the
-output. (doc/News.htm [1.18]: 2000/03/21 23:08:32 lpd)
-	- Fixes several problems in resourceforall and resource loading: the
-operands of resourceforall were restored even in the case of an error in the
-client's procedure; the name Instances had special meaning for some Adobe
-code; resourceforall caused an invalidaccess error if an operand was in
-local VM but the current VM was global; loading a resource from a file could
-cause a typecheck error if the file left values on the operand stack.
-(doc/News.htm [1.25]: 2000/04/04 22:26:02 lpd)
-	- The location of the lists of supported and unsupported drivers was
-incorrect. (doc/Bug-info.htm [1.2]: 2000/04/07 03:01:52 lpd)
+	- The PDF writer could get an ioerror when downsampling images whose
+size wasn't an exact multiple of the downsampling factor.
+(doc/News.htm [1.31]: 2000/04/13 16:44:59 lpd)
+	- When processing a PDF file, the font substitution heuristic based
+on the FontName sometimes overrode the Flags information in the
+FontDescriptor. (doc/News.htm [1.34]: 2000/04/20 06:36:02 lpd)
 
-Undoes an accidental RCS ID substitution in what was supposed to be literal
-text. (doc/Htmstyle.htm [1.2]: 2000/03/18 22:29:03 lpd)
+Adds projects related to SVG and to pswrite image compression.
+(doc/Projects.htm [1.4]: 2000/04/07 18:39:12 lpd)
 
-Increments the version number to 6.20, in anticipation of the next release.
-(We do this at the beginning of the development for a release, not the end.)
-(doc/History6.htm [1.4], doc/News.htm [1.6]: 2000/03/19 00:27:22 lpd)
+Makes the ps2pdf scripts replace a .eps extension with .pdf, as they do with
+.ps. (doc/Ps2pdf.htm [1.7], man/ps2pdf.1 [1.5], man/ps2pdfwr.1 [1.2]:
+2000/04/07 19:28:14 lpd)
 
-Splits out the [T]BCP filter interface into a separate file.
-(doc/News.htm [1.7]: 2000/03/19 02:40:18 lpd)
+Completely redesigns the representation of CMaps, to reduce space
+requirements and make comparing them more reasonable, changing gs_cmap to
+gs_cmap_t and gx_code_map to gx_code_map_t. (****** NOTE ****** The
+PostScript code currently only handles a few well-behaved CMap structures.)
+(doc/News.htm [1.27]: 2000/04/08 03:54:38 lpd)
 
-Documents the fact that ImageType 4 images now cause an error for
-out-of-range MaskColor values. (doc/News.htm [1.8]: 2000/03/19 04:32:09 lpd)
+Documents the need to set SYNC=nosync on NextStep / OpenStep systems.
+(doc/Make.htm [1.10]: 2000/04/10 04:45:37 lpd)
 
-Updates the change log with recent changes. (doc/Changes.htm [1.4]:
-2000/03/19 05:39:58 lpd)
+Overhauls font embedding in the PDF writer: splits off the code into a new
+file (gdevpdfe.c), writes embedded Type 1 fonts as Type 1C (CFF Type 2), and
+adds a little bit of code for future support of Type 0 and CID-keyed fonts.
+(doc/News.htm [1.28]: 2000/04/10 07:48:37 lpd)
 
-Adds a new document listing projects with which we are seeking help. Also
-makes the description of Changes.htm and News.htm more accurate.
-(doc/New-user.htm [1.2], doc/Projects.htm [1.1], doc/Readme.htm [1.3]:
-2000/03/19 06:07:15 lpd)
+Documents the fact that building on NeXTSTEP 3.3 systems requires removing
+-Wmissing-declarations from GCFLAGS. (doc/Make.htm [1.11]: 2000/04/11
+14:06:54 lpd)
 
-Changes the default value of BufferSpace to 4 Mb. In desktop applications,
-this is a reasonable value that can substantially improve performance
-(especially for color printers); embedded applications will want to set
-BufferSpace themselves in any case. (doc/News.htm [1.9]: 2000/03/19 06:51:13
-lpd)
+Enhances pdf2ps to allow defaulting the output file name.
+(man/pdf2ps.1 [1.2]: 2000/04/11 14:23:24 lpd)
 
-Changes the key type returned by parameter list enumeration to include a
-persistence flag, makes C parameter lists support non-persistent keys, and
-upgrades GC descriptors so that parameter lists can be used non-transiently;
-updates implementors of parameter lists to call gs_param_list_init to
-initialize the common members, which is now required. (doc/News.htm [1.10]:
-2000/03/19 15:16:11 lpd)
+Factors out code for writing functions and for adding filter-related entries
+to a stream dictionary; implements the DefaultRenderingIntent distiller
+parameter. (doc/Ps2pdf.htm [1.8]: 2000/04/11 16:06:57 lpd)
 
-Documents the fact that drivers that device halftone order implementations
-must now provide the new bit_index procedure. (This should have been
-documented when bit_index was introduced!) (doc/News.htm [1.11]: 2000/03/19
-15:47:47 lpd)
+Implements additional distiller parameters: PreserveHalftoneInfo,
+PreserveOverprintSetting, TransferFunctionInfo (except for Apply vs.
+Remove), UCRandBGInfo. Splits off graphics state management into separate
+files. Implements the remaining graphics state parameters (halftone,
+transfer function, black generation, undercolor removal, halftone phase,
+smoothness, overprint, stroke adjustment) ****** EXCEPT FOR IMAGES ******.
+In anticipation of handling more general colors, renames pdf_set_color as
+pdf_set_pure_color, and adds pdf_set_drawing_color. (doc/News.htm [1.29]:
+2000/04/11 18:31:32 lpd)
 
-Makes st_indexed_map private. Clients must now use the constructor procedure
-alloc_indexed_map rather than allocating instances directly.
-(doc/News.htm [1.12]: 2000/03/19 16:37:28 lpd)
+Updates documentation to match recent changes in the pdfwrite driver.
+(doc/Ps2pdf.htm [1.9]: 2000/04/11 22:56:17 lpd)
 
-Update the date and change log for the latest batches of checked-in changes.
-(doc/Changes.htm [1.5]: 2000/03/19 17:29:57 lpd)
+Makes the second argument of the pfbtopfa script optional, so 'pfbtopfa
+dir/x.pfb' is equivalent to 'pfbtopfa dir/x.pfb x.pfa'.
+(man/pfbtopfa.1 [1.2]: 2000/04/12 17:41:41 lpd)
 
-Adds a PDF linearizer ("optimizer"). This is a separate utility (not
-integrated with the pdfwrite driver), written in PostScript.
-(doc/Psfiles.htm [1.2]: 2000/03/20 04:31:22 lpd)
+In pdfwrite, rewrites the image writing code to use Cos objects rather than
+direct printing, and splits off the creation of image dictionaries into a
+new file; adds support for tiling with uncolored Patterns; implements
+converting ImageType 4 images to their PDF 1.3 counterpart; starts to do the
+same for ImageType 3. This code is "in progress" and likely to have problems
+for a while. (doc/News.htm [1.30]: 2000/04/12 18:44:35 lpd)
 
-Adds parsing for the remaining Acrobat Distiller 4 parameters. Implements
-the LockDistillerParams, xxxDownsampleThreshold, xxxImageDict, and
-xxxACSImageDict distiller parameters. Implements DCTEncode as an
-xxxImageFilter option (it used to cause a crash). Makes the
-AutoFilterxxxImages distiller parameters select JPEG encoding (with ACSDict)
-if the image has 8 bits per component and is not Indexed, and LZW/Flate
-otherwise: this still isn't right, but it's closer. Implementation changes:
-Changes the implementation of distiller parameter dictionaries from stream
-states to parameter lists; changes the test for masks in
-psdf_setup_image_filters, and changes the image argument from gs_image_t to
-gs_pixel_image_t. (doc/News.htm [1.14]: 2000/03/20 05:40:04 lpd)
+Implements pdfwrite compression for mask images, using the same parameters
+as for monochrome images. (doc/News.htm [1.32]: 2000/04/13 18:40:23 lpd)
 
-Moves font-writing support into a new module (gdevpsf*), changing the source
-file names. Adds the ability to write CFF fonts, with either Type 1 or Type
-2 CharStrings; unfortunately, Acrobat Reader appears not to accept CFF fonts
-with Type 1 CharStrings. Adds the ability to convert Type 1 CharStrings to
-Type 2, including optimizing sequences of Type 1 operators into a single
-Type 2 operator. Implements writing CIDFontType 0 CFF fonts (CIDFonts) [NOT
-TESTED]. Starts (just barely) to remove more unneeded information from
-embedded TrueType fonts. (doc/News.htm [1.15]: 2000/03/20 07:02:12 lpd)
+Adds user-contributed uniprint parameter files for the Canon BJC-8200,
+including an addition for the Red Hat printer data base.
+(doc/Devices.htm [1.4]: 2000/04/14 03:59:57 lpd)
 
-Updates the consolidated change log with today's changes.
-(doc/Changes.htm [1.6]: 2000/03/20 07:18:38 lpd)
+Slightly updates the user-contributed documentation on the new BJC-8200
+uniprint parameters. (doc/Devices.htm [1.5]: 2000/04/15 00:20:54 lpd)
 
-Starts to move support for CIDFontType 0 and 2 into C code, needed by the
-PDF writer for handling CID-keyed fonts. Implements GlyphDirectory for
-CIDFonts. Makes GDBytes and CIDMapOffset optional for CIDFontType 0 fonts
-that have a GlyphDirectory (not documented in the PLRM, but clearly
-correct). Implements Adobe 3011 features: integer and dictionary CIDMaps,
-and the MetricsCount entry, in CIDFontType 2 fonts (but only in the C code,
-which isn't hooked in yet, not in the PostScript code in gs_cidfn.ps.)
-(doc/News.htm [1.16]: 2000/03/20 19:53:06 lpd)
+Completes code for reading and writing CMaps. (doc/News.htm [1.33]:
+2000/04/16 03:05:29 lpd)
 
-Notes that the argument list for the internal build_gs_TrueType_font
-procedure has changed, as part of the CIDFont migration to C code.
-(doc/News.htm [1.17]: 2000/03/20 20:04:20 lpd)
+Clarifies some details of posting releases on SourceForge.
+(doc/Release.htm [1.9]: 2000/04/17 22:59:24 lpd)
 
-Adds invocation scripts and documentation for the PDF "optimizer".
-(man/pdfopt.1 [1.1]: 2000/03/21 17:01:33 lpd)
+Converts the ps2epsi documentation to HTML. (doc/Ps2epsi.htm [1.1],
+doc/Readme.htm [1.6], doc/ps2epsi.txt [1.2]: 2000/04/18 17:59:13 lpd)
 
-Updates information about reporting problems when using Ghostview or GSview.
-(doc/Bug-form.htm [1.3], doc/New-user.htm [1.3]: 2000/03/22 22:13:49 lpd)
+Adds a couple of graphics library optimization projects.
+(doc/Projects.htm [1.5]: 2000/04/19 04:05:11 lpd)
 
-Checks in the latest consolidated change log. (doc/Changes.htm [1.7]:
-2000/03/24 05:04:55 lpd)
+Adds a project for creating an OutputDevice resource instance for each
+device. (doc/Projects.htm [1.6]: 2000/04/19 21:37:47 lpd)
 
-Substantially enhances the Cos object machinery. Interface: Adds a few more
-procedures, including a procedure to create a stream that writes directly
-into a Cos stream object, procedures for putting more kinds of values into
-arrays and dictionaries, and a param_list interface. Changes Cos objects to
-store a reference to the PDF device, and removes the device argument from
-all Cos procedures other than object creation. Replaces the Boolean
-is_object member of Cos values by a value_type enum: clients must now use
-COS_VALUE_IS_OBJECT() to test whether a value is an object reference. To
-reduce allocator overhead, makes the Cos procedures that take C strings no
-longer copy the string. Records whether each Cos object has been written
-into the output, so that in the future (but not in this batch of changes)
-resource definitions can be copied at the end of each page. Implementation:
-Moves more of the implementation of Cos objects to the .c file.
-(doc/News.htm [1.19]: 2000/03/24 06:12:52 lpd)
-
-Adds parsing for the remaining Acrobat Distiller 4 parameters, although most
-of them don't have any effect yet; brings documentation up to date.
-(doc/Ps2pdf.htm [1.3]: 2000/03/28 07:36:58 lpd)
-
-Implements LockDistillerParams; completes the StartPage/EndPage fix checked
-in just before. (doc/Ps2pdf.htm [1.4]: 2000/03/28 07:52:06 lpd)
-
-Changes the default value of FPU_TYPE in all Windows and OS/2 makefiles from
-0 to 387, since all current desktop CPUs include floating point hardware.
-(doc/News.htm [1.20]: 2000/03/28 17:03:48 lpd)
-
-Changes the get_outline / glyph_data procedure for getting encoded font
-outline data to return an indication of whether the outline data were just
-allocated and can be freed by the client. (This is a possibly
-non-backward-compatible change.) (doc/News.htm [1.21]: 2000/03/28 18:47:02
-lpd)
-
-Adds a note about bogus "ANSI aliasing" warnings from the DEC C compiler.
-(doc/Make.htm [1.8]: 2000/03/29 19:29:08 lpd)
-
-Changes the procs structure of gs_type1_data to an in-line structure rather
-than a pointer to a const structure. (Needed for moving CIDFontType 0
-support into C.) (doc/News.htm [1.22]: 2000/03/29 22:10:31 lpd)
-
-Updates the change log with recent changes. (doc/Changes.htm [1.8]:
-2000/03/30 07:59:39 lpd)
-
-Creates a real list of projects on which help would be appreciated.
-(doc/Projects.htm [1.2]: 2000/04/01 00:43:11 lpd)
-
-Finishes implementing the ability to write CIDFontType 0 CFFs. This involved
-a surprising number of changes in other font-related files.
-(doc/News.htm [1.23]: 2000/04/02 07:38:46 lpd)
-
-Updates the documentation on preparing releases to reflect the addition of
-the toolbin directory. (doc/Release.htm [1.7]: 2000/04/02 18:56:58 lpd)
-
-Implements the AutoRotatePages distiller parameter. (doc/Ps2pdf.htm [1.5]:
-2000/04/03 02:54:41 lpd)
-
-Updates the problem reporting procedure to use SourceForge; separates the
-description of the procedure from the reporting form.
-(doc/Bug-form.htm [1.4], doc/Bug-info.htm [1.1], doc/New-user.htm [1.4],
-doc/News.htm [1.24], doc/Readme.htm [1.4]: 2000/04/04 04:14:02 lpd)
-
-Updates release dates and version numbers. (doc/Bug-form.htm [1.5],
-doc/Bug-info.htm [1.3], doc/Htmstyle.htm [1.3], doc/Make.htm [1.9],
-doc/New-user.htm [1.5], doc/Projects.htm [1.3], doc/Ps2pdf.htm [1.6],
-doc/Psfiles.htm [1.3], doc/Readme.htm [1.5], man/ps2pdf.1 [1.4],
-man/ps2ps.1 [1.4]: 2000/04/07 05:21:45 lpd)
-
-Removes redundant material, and the www.aladdin.com distribution point, from
-the release procedure documentation. (doc/Release.htm [1.8]: 2000/04/07
-05:24:29 lpd)
-
-</pre><h2><a name="6.20 Procedures"></a>Procedures</h2><pre>
+</pre><h2><a name="6.21 Procedures"></a>Procedures</h2><pre>
 
 Fixes problems:
-	- pdfread.dev incorrectly depended on dpsnext_. (int.mak [1.4]:
-2000/03/19 02:00:09 lpd)
-	- The referenced libpng version hadn't been updated to 1.0.5.
-(openvms.mmk [1.3]: 2000/03/20 16:38:46 lpd)
-	- The MSVC++ 6 compiler no longer recognizes the /FPi87 switch.
-(msvccmd.mak [1.2]: 2000/03/31 05:06:53 lpd)
-	- MSVC versions before 5, not before 6, recognize /FPi87.
-(msvccmd.mak [1.3]: 2000/03/31 05:50:33 lpd)
-	- Removes some occurrences of $,I,d,: that shouldn't be substituted.
-(toolbin/pre [1.2]: 2000/04/07 05:20:35 lpd)
+	- Some makefile macros were used before being defined.
+(devs.mak [1.9], lib.mak [1.9]: 2000/04/07 16:02:03 lpd)
+	- `make install-data' didn't install lib/gs_frsd.ps or
+lib/pdfopt.ps. (unixinst.mak [1.7]: 2000/04/07 19:17:48 lpd)
+	- gsmake would get into a loop if the makefile was not a symbolic
+link; `gsmake check' didn't accept a makefile name on the command line.
+(toolbin/gsmake.tcl [1.2]: 2000/04/07 19:37:21 lpd)
+	- `makemaster' referred to an undefined variable. (How could it ever
+have worked?) (toolbin/makeset.tcl [1.3]: 2000/04/07 19:39:27 lpd)
+	- A dependency wasn't updated when moving the gdevpsf* rules from
+devs.mak to lib.mak. (lib.mak [1.10]: 2000/04/07 19:40:25 lpd)
+	- The dependencies in the makefile weren't updated for the pdfwrite
+font embedding overhaul. (devs.mak [1.11]: 2000/04/10 18:57:33 lpd)
+	- Once again, the dependencies hadn't been updated. (int.mak [1.17]:
+2000/04/11 15:59:42 lpd)
+	- Setting pdfwrite parameters for a DCTEncode filter could cause a
+crash (memory fault). (devs.mak [1.16]: 2000/04/13 01:53:07 lpd)
+	- `make install' didn't install all the documentation files.
+(unixinst.mak [1.9]: 2000/04/14 04:06:13 lpd)
 
-Increments the version number to 6.20, in anticipation of the next release.
-(We do this at the beginning of the development for a release, not the end.)
-(version.mak [1.6]: 2000/03/19 00:27:22 lpd)
+Completely redesigns the representation of CMaps, to reduce space
+requirements and make comparing them more reasonable, changing gs_cmap to
+gs_cmap_t and gx_code_map to gx_code_map_t. (****** NOTE ****** The
+PostScript code currently only handles a few well-behaved CMap structures.)
+(int.mak [1.16]: 2000/04/08 03:54:38 lpd)
 
-Adds a pseudo-encoding for the CFF StandardStrings that represent
-characters. (devs.mak [1.3], int.mak [1.3], unixinst.mak [1.5]: 2000/03/19
-00:38:50 lpd)
+Updates version #s to 6.21. (We should have done this earlier.)
+(version.mak [1.12]: 2000/04/10 04:46:36 lpd)
 
-Updates makefiles with dependencies for recent changes. (int.mak [1.5],
-lib.mak [1.3]: 2000/03/19 05:37:38 lpd)
+Overhauls font embedding in the PDF writer: splits off the code into a new
+file (gdevpdfe.c), writes embedded Type 1 fonts as Type 1C (CFF Type 2), and
+adds a little bit of code for future support of Type 0 and CID-keyed fonts.
+(devs.mak [1.10]: 2000/04/10 07:48:37 lpd)
 
-Adds dependencies for the new implementation of FunctionType 4 functions.
-(int.mak [1.6]: 2000/03/19 07:03:53 lpd)
+Adds Function-based tint_transform procedures for Separation and DeviceN
+color spaces. (lib.mak [1.11]: 2000/04/10 19:02:19 lpd)
 
-Splits off "vanilla" Functions into separate files, in anticipation of
-removing them (they were only used to implement PostScript Calculator
-Functions). (lib.mak [1.4]: 2000/03/19 07:33:08 lpd)
+Factors out code for writing functions and for adding filter-related entries
+to a stream dictionary; implements the DefaultRenderingIntent distiller
+parameter. (devs.mak [1.12]: 2000/04/11 16:06:57 lpd)
 
-Update the date and change log for the latest batches of checked-in changes.
-(version.mak [1.7]: 2000/03/19 17:29:57 lpd)
+Implements additional distiller parameters: PreserveHalftoneInfo,
+PreserveOverprintSetting, TransferFunctionInfo (except for Apply vs.
+Remove), UCRandBGInfo. Splits off graphics state management into separate
+files. Implements the remaining graphics state parameters (halftone,
+transfer function, black generation, undercolor removal, halftone phase,
+smoothness, overprint, stroke adjustment) ****** EXCEPT FOR IMAGES ******.
+In anticipation of handling more general colors, renames pdf_set_color as
+pdf_set_pure_color, and adds pdf_set_drawing_color. (devs.mak [1.13]:
+2000/04/11 18:31:32 lpd)
 
-Moves font-writing support into a new module (gdevpsf*), changing the source
-file names. Adds the ability to write CFF fonts, with either Type 1 or Type
-2 CharStrings; unfortunately, Acrobat Reader appears not to accept CFF fonts
-with Type 1 CharStrings. Adds the ability to convert Type 1 CharStrings to
-Type 2, including optimizing sequences of Type 1 operators into a single
-Type 2 operator. Implements writing CIDFontType 0 CFF fonts (CIDFonts) [NOT
-TESTED]. Starts (just barely) to remove more unneeded information from
-embedded TrueType fonts. (devs.mak [1.4], lib.mak [1.5]: 2000/03/20 07:02:12
-lpd)
+Splits off creation and writing of color spaces, and writing color values,
+into a separate file. Adds support for (Function-based) Separation and
+DeviceN color spaces, general Pattern color spaces, and procedure-based
+Indexed color spaces. Adds some code to support Pattern colors, but stubs it
+out because it depends on changes in the image writing code that haven't
+been integrated yet. In fact, most of the new code isn't called yet, either.
+(devs.mak [1.14]: 2000/04/11 19:10:13 lpd)
 
-Updates dependencies to reflect today's batches of checked-in changes.
-(devs.mak [1.5], int.mak [1.7], lib.mak [1.6]: 2000/03/20 07:16:35 lpd)
+In pdfwrite, rewrites the image writing code to use Cos objects rather than
+direct printing, and splits off the creation of image dictionaries into a
+new file; adds support for tiling with uncolored Patterns; implements
+converting ImageType 4 images to their PDF 1.3 counterpart; starts to do the
+same for ImageType 3. This code is "in progress" and likely to have problems
+for a while. (devs.mak [1.15]: 2000/04/12 18:44:35 lpd)
 
-Updates the makefile for the renaming of gdevpsdf.c => gdevpsdu.c.
-(devs.mak [1.6]: 2000/03/20 19:30:35 lpd)
+Adds user-contributed uniprint parameter files for the Canon BJC-8200,
+including an addition for the Red Hat printer data base.
+(unixinst.mak [1.8]: 2000/04/14 03:59:57 lpd)
 
-Starts to move support for CIDFontType 0 and 2 into C code, needed by the
-PDF writer for handling CID-keyed fonts. Implements GlyphDirectory for
-CIDFonts. Makes GDBytes and CIDMapOffset optional for CIDFontType 0 fonts
-that have a GlyphDirectory (not documented in the PLRM, but clearly
-correct). Implements Adobe 3011 features: integer and dictionary CIDMaps,
-and the MetricsCount entry, in CIDFontType 2 fonts (but only in the C code,
-which isn't hooked in yet, not in the PostScript code in gs_cidfn.ps.)
-(int.mak [1.8], lib.mak [1.7]: 2000/03/20 19:53:06 lpd)
+Adds code to write out CMaps, similar to the code for writing fonts, for
+eventual embedding in PDF output. (int.mak [1.18], lib.mak [1.12]:
+2000/04/14 07:17:24 lpd)
 
-Extends the C support for CIDFontType 0 fonts to include those with FontType
-2 subfonts in the FDArray (an Adobe 3011 addition, specifically for CFF
-fonts). (int.mak [1.9]: 2000/03/21 07:43:42 lpd)
+Completes code for reading and writing CMaps. (int.mak [1.19],
+lib.mak [1.13]: 2000/04/16 03:05:29 lpd)
 
-Adds invocation scripts and documentation for the PDF "optimizer".
-(unixinst.mak [1.6]: 2000/03/21 17:01:33 lpd)
+Adds a user-contributed driver for the Epson Stylus (Color) Photo printers.
+(contrib.mak [1.6]: 2000/04/18 06:34:26 lpd)
 
-Splits off the ReusableStreamDecode filter as a separate module, since
-CIDFontType 0 fonts will use it even in LanguageLevels below 3.
-(int.mak [1.10]: 2000/03/21 21:34:57 lpd)
+Converts the ps2epsi documentation to HTML. (unixinst.mak [1.10]: 2000/04/18
+17:59:13 lpd)
 
-Makes file streams remember the file name, needed for efficiently
-implementing reusable streams. (int.mak [1.11]: 2000/03/23 02:13:40 lpd)
-
-Checks in the latest consolidated change log. (version.mak [1.8]: 2000/03/24
-05:04:55 lpd)
-
-Changes the implementation of incrementally loaded CIDFontType 0 fonts to
-use a ReusableStreamDecode filter, in anticipation of moving the BuildGlyph
-procedure for these fonts from PostScript to C. (int.mak [1.12],
-version.mak [1.9]: 2000/03/27 16:36:24 lpd)
-
-Changes the default value of FPU_TYPE in all Windows and OS/2 makefiles from
-0 to 387, since all current desktop CPUs include floating point hardware.
-(msvc32.mak [1.3], msvclib.mak [1.3], os2.mak [1.4], watcw32.mak [1.3]:
-2000/03/28 17:03:48 lpd)
-
-Updates the change log with recent changes. (version.mak [1.10]: 2000/03/30
-07:59:39 lpd)
-
-Cleans up some dependencies missed at the last checkin. (devs.mak [1.7],
-int.mak [1.13]: 2000/03/31 05:03:30 lpd)
-
-Finishes implementing the ability to write CIDFontType 0 CFFs. This involved
-a surprising number of changes in other font-related files. (int.mak [1.14]:
-2000/04/02 07:38:46 lpd)
-
-Adds a variety of tools used to build and distribute Ghostscript releases.
-The only documentation is comments in the files themselves, and there isn't
-much of it. All aspects of these tools are subject to change without notice.
-(toolbin/3way.tcl [1.1], toolbin/cvs2hist.py [1.1],
-toolbin/errlist.tcl [1.1], toolbin/gsmake.tcl [1.1],
-toolbin/headers.tcl [1.1], toolbin/leaks.tcl [1.1],
-toolbin/makeset.tcl [1.1], toolbin/package.tcl [1.1], toolbin/pre [1.1],
-toolbin/pre.chk [1.1], toolbin/precheck.tcl [1.1], toolbin/smoke.ps [1.1],
-toolbin/suite.tcl [1.1], toolbin/tmake.tcl [1.1]: 2000/04/02 18:44:27 lpd)
-
-Moves gsindent from src to toolbin. (toolbin/gsindent [1.1]: 2000/04/02
-18:56:25 lpd)
-
-Adds an #include required by the Watcom compiler. (devs.mak [1.8]:
-2000/04/05 19:51:54 lpd)
-
-Adds a missing dependency. (lib.mak [1.8]: 2000/04/07 03:00:56 lpd)
-
-Updates a few dependencies for the release. (int.mak [1.15]: 2000/04/07
-05:23:12 lpd)
-
-Updates the build date for the release. (version.mak [1.11]: 2000/04/07
-05:25:18 lpd)
-
-Adds .cvsignore files, to prevent bogus warnings on cvs update.
-(.cvsignore [1.1], src/.cvsignore [1.1]: 2000/04/05 19:46:04 lpd)
-
-</pre><h2><a name="6.20 Utilities"></a>Utilities</h2><pre>
+</pre><h2><a name="6.21 Utilities"></a>Utilities</h2><pre>
 
 Fixes problems:
-	- A couple of places in the Windows code didn't correctly handle
-Ghostscript version numbers of the form #.0#. (gp_wgetv.c [1.2]: 2000/03/22
-21:45:03 lpd)
-	- Replaces a final exit() with a return, to avoid a compiler
-warning. (genconf.c [1.2]: 2000/04/05 19:53:27 lpd)
+	- The e-mail address for reporting problems was out of date.
+(lib/ps2epsi.ps [1.2]: 2000/04/10 02:27:21 lpd)
+	- If a font didn't have a FontName (which is the case for bitmap
+fonts produced by recent versions of dvips), ps2epsi caused an error.
+(lib/ps2epsi.ps [1.3]: 2000/04/11 16:32:51 lpd)
+	- Backs out contributed changes of 2000-03-05 because of bugs.
+(ansi2knr.c [1.3]: 2000/04/13 03:41:48 lpd)
 
-Makes geninit remove whitespace adjacent to hex and base-85 string literals.
-(geninit.c [1.2]: 2000/03/18 22:51:24 lpd)
+Makes the ps2pdf scripts replace a .eps extension with .pdf, as they do with
+.ps. (lib/ps2pdfwr [1.2], lib/ps2pdfxx.bat [1.2]: 2000/04/07 19:28:14 lpd)
 
-Adds a PDF linearizer ("optimizer"). This is a separate utility (not
-integrated with the pdfwrite driver), written in PostScript.
-(lib/pdfopt.ps [1.1], lib/pdfwrite.ps [1.1]: 2000/03/20 04:31:22 lpd)
+Enhances pdf2ps to allow defaulting the output file name. (lib/pdf2ps [1.2]:
+2000/04/11 14:23:24 lpd)
 
-Replaces the O(N^2) sorting algorithm for printing unencoded characters with
-a O(N log N) algorithm, which makes printing Unicode and Chinese/Japanese
-fonts practical. (lib/prfont.ps [1.2]: 2000/03/21 06:39:49 lpd)
+Makes the second argument of the pfbtopfa script optional, so 'pfbtopfa
+dir/x.pfb' is equivalent to 'pfbtopfa dir/x.pfb x.pfa'. (lib/pfbtopfa [1.2]:
+2000/04/12 17:41:41 lpd)
 
-Adds invocation scripts and documentation for the PDF "optimizer".
-(lib/pdfopt [1.1], lib/pdfopt.bat [1.1], lib/pdfopt.ps [1.2]: 2000/03/21
-17:01:33 lpd)
+Adds user-contributed uniprint parameter files for the Canon BJC-8200,
+including an addition for the Red Hat printer data base. (lib/bj8.rpd [1.1]:
+2000/04/14 03:59:57 lpd)
 
-Splits off the ReusableStreamDecode filter as a separate module, since
-CIDFontType 0 fonts will use it even in LanguageLevels below 3.
-(zfreuse.c [1.2]: 2000/03/21 21:34:57 lpd)
+Increases the VMThreshold when converting PostScript to PDF, to reduce
+garbage collection overhead. (lib/ps2pdfwr [1.3]: 2000/04/17 19:06:58 lpd)
 
-Adds a variety of tools used to build and distribute Ghostscript releases.
-The only documentation is comments in the files themselves, and there isn't
-much of it. All aspects of these tools are subject to change without notice.
-(gsindent [1.2]: 2000/04/02 18:44:27 lpd)
+Moves the optimization prologue for ps2pdf from the command line to a
+procedure, to avoid shell length limits. (lib/ps2pdfwr [1.4],
+lib/ps2pdfxx.bat [1.3]: 2000/04/18 16:40:14 lpd)
 
-</pre><h2><a name="6.20 Drivers"></a>Drivers</h2><pre>
-
-Fixes problems:
-	- The color_info member of the Windows and OS/2 printer devices (and
-other devices using PC-style palettes) wasn't initialized properly, causing
-improper behavior. (gdevos2p.c [1.2], gdevpccm.h [1.2], gdevwpr2.c [1.3]:
-2000/03/20 21:05:11 lpd)
-	- Fixes a bug in the mswinpr2 driver in the handling of
-BitsPerPixel. (gdevwpr2.c [1.4]: 2000/03/22 17:08:33 lpd)
-	- In PCL XL output (pxl* drivers), if a PostScript image didn't
-provide enough source data, the remainder of the output image was
-erroneously filled with pixel value 0 (typically black or the foreground
-color). (gdevpx.c [1.2]: 2000/03/22 20:55:21 lpd)
-	- In the output of the pswrite driver (pdf2ps, ps2ps), the showpage
-for each page occurred before, not after, the restore that ended the page
-contents. This contradicted Adobe's documentation, and made utilities like
-N-up printing not work properly. (gdevps.c [1.4]: 2000/03/28 00:52:46 lpd)
-	- The PCL XL 2.0 value for sRGB color space was wrong, and the
-attribute for writing mode was missing. (gdevpxat.h [1.2], gdevpxen.h [1.2]:
-2000/03/29 18:19:44 lpd)
-	- When printing on monochrome LaserJet/DeskJet printers, the driver
-didn't set the number of copies to 1; on the LJ 4si, this sometimes caused
-double printing. (gdevdjet.c [1.2]: 2000/04/03 14:36:12 lpd)
-	- Updates clients for the change in the last argument of
-cff_string_index from uint * to int *. (gdevpsf2.c [1.4]: 2000/04/05
-19:55:29 lpd)
-
-Adds parsing for the remaining Acrobat Distiller 4 parameters. Implements
-the LockDistillerParams, xxxDownsampleThreshold, xxxImageDict, and
-xxxACSImageDict distiller parameters. Implements DCTEncode as an
-xxxImageFilter option (it used to cause a crash). Makes the
-AutoFilterxxxImages distiller parameters select JPEG encoding (with ACSDict)
-if the image has 8 bits per component and is not Indexed, and LZW/Flate
-otherwise: this still isn't right, but it's closer. Implementation changes:
-Changes the implementation of distiller parameter dictionaries from stream
-states to parameter lists; changes the test for masks in
-psdf_setup_image_filters, and changes the image argument from gs_image_t to
-gs_pixel_image_t. (gdevpsdf.h [1.4], gdevpsdi.c [1.3], gdevpsdp.c [1.3]:
-2000/03/20 05:40:04 lpd)
-
-Moves font-writing support into a new module (gdevpsf*), changing the source
-file names. Adds the ability to write CFF fonts, with either Type 1 or Type
-2 CharStrings; unfortunately, Acrobat Reader appears not to accept CFF fonts
-with Type 1 CharStrings. Adds the ability to convert Type 1 CharStrings to
-Type 2, including optimizing sequences of Type 1 operators into a single
-Type 2 operator. Implements writing CIDFontType 0 CFF fonts (CIDFonts) [NOT
-TESTED]. Starts (just barely) to remove more unneeded information from
-embedded TrueType fonts. (gdevpsd1.c [1.2], gdevpsdf.c [1.3],
-gdevpsdf.h [1.5], gdevpsdt.c [1.2], gdevpsf.h [1.1], gdevpsf1.c [1.1],
-gdevpsf2.c [1.1], gdevpsft.c [1.1], gdevpsfu.c [1.1], gdevpsfx.c [1.1]:
-2000/03/20 07:02:12 lpd)
-
-Renames an inappropriately named file. (gdevpsdf.c [1.4], gdevpsdf.h [1.6],
-gdevpsdu.c [1.1]: 2000/03/20 19:03:43 lpd)
-
-Extends the C support for CIDFontType 0 fonts to include those with FontType
-2 subfonts in the FDArray (an Adobe 3011 addition, specifically for CFF
-fonts). (gdevpsf.h [1.2]: 2000/03/21 07:43:42 lpd)
-
-Changes the procs structure of gs_type1_data to an in-line structure rather
-than a pointer to a const structure. (Needed for moving CIDFontType 0
-support into C.) (gdevpsf1.c [1.2], gdevpsf2.c [1.2], gdevpsfx.c [1.2]:
-2000/03/29 22:10:31 lpd)
-
-Finishes implementing the ability to write CIDFontType 0 CFFs. This involved
-a surprising number of changes in other font-related files.
-(gdevpsf2.c [1.3], gdevpsfu.c [1.2]: 2000/04/02 07:38:45 lpd)
-
-Slightly simplifies the output of the psmono and psgray drivers.
-(gdevpsim.c [1.2]: 2000/04/02 19:57:37 lpd)
-
-Adds an #include required by the Watcom compiler. (gdevpsf1.c [1.3]:
-2000/04/05 19:51:54 lpd)
-
-</pre><h2><a name="6.20 PDF writer"></a>PDF writer</h2><pre>
+</pre><h2><a name="6.21 Drivers"></a>Drivers</h2><pre>
 
 Fixes problems:
-	- The pointer enumeration procedure for pdf_image_enum was wrong,
-possibly producing a mangled pointer and a memory access error if a garbage
-collection occured while writing an image in a PDF file. (gdevpdfi.c [1.5]:
-2000/03/20 05:54:13 lpd)
-	- The computation for testing whether a tiled pattern could be
-represented in line, and whether it exceeded Acrobat Reader's size limit,
-was wrong, causing some patterns not to be represented as Patterns.
-(gdevpdfi.c [1.6]: 2000/03/20 05:58:15 lpd)
-	- When ProcessColorModel=/DeviceCMYK, if the first object on a page
-or after changing the clipping path was white, the PDF writer would write it
-as black. (gdevpdfu.c [1.3]: 2000/03/21 18:36:36 lpd)
-	- If a page ended with an incomplete outline tree, an invalid memory
-access occurred. (gdevpdf.c [1.3], gdevpdfm.c [1.2]: 2000/03/24 05:09:56
-lpd)
-	- The SP pdfmark didn't check that its argument was a graphics
-stream. (gdevpdfm.c [1.4]: 2000/03/24 06:18:39 lpd)
-	- The name of the EndPage Distiller parameter collided with the
-EndPage page device parameter. (gdevpdfp.c [1.4]: 2000/03/28 07:45:25 lpd)
-	- If two embedded fonts had the same base font, the PDF file could
-wind up with an invalid entry in the xref table. (gdevpdft.c [1.4]:
-2000/04/01 01:18:32 lpd)
+	- The pdfwrite driver sometimes compressed images in an Indexed
+color space with the DCTEncode filter, producing garbage. (gdevpsdi.c [1.4]:
+2000/04/12 19:25:56 lpd)
+	- Setting pdfwrite parameters for a DCTEncode filter could cause a
+crash (memory fault). (gdevpsdf.h [1.7], gdevpsdi.c [1.5], gdevpsdp.c [1.4],
+gdevpsdu.c [1.2]: 2000/04/13 01:53:07 lpd)
+	- Compressing with DCTEncode tried to add the compression filter
+twice. (gdevpsdi.c [1.6]: 2000/04/13 04:52:38 lpd)
+	- The PDF writer could get an ioerror when downsampling images whose
+size wasn't an exact multiple of the downsampling factor. (gdevpsdi.c [1.7],
+gdevpsds.c [1.2], gdevpsds.h [1.2]: 2000/04/13 16:44:59 lpd)
+	- Downsampled mask images could cause a memory access error.
+(gdevpsdi.c [1.9]: 2000/04/18 16:37:04 lpd)
 
-Adds parsing for the remaining Acrobat Distiller 4 parameters. Implements
-the LockDistillerParams, xxxDownsampleThreshold, xxxImageDict, and
-xxxACSImageDict distiller parameters. Implements DCTEncode as an
-xxxImageFilter option (it used to cause a crash). Makes the
-AutoFilterxxxImages distiller parameters select JPEG encoding (with ACSDict)
-if the image has 8 bits per component and is not Indexed, and LZW/Flate
-otherwise: this still isn't right, but it's closer. Implementation changes:
-Changes the implementation of distiller parameter dictionaries from stream
-states to parameter lists; changes the test for masks in
-psdf_setup_image_filters, and changes the image argument from gs_image_t to
-gs_pixel_image_t. (gdevpdfi.c [1.4]: 2000/03/20 05:40:04 lpd)
+Implements pdfwrite compression for mask images, using the same parameters
+as for monochrome images. (gdevpsdi.c [1.8]: 2000/04/13 18:40:23 lpd)
 
-Moves font-writing support into a new module (gdevpsf*), changing the source
-file names. Adds the ability to write CFF fonts, with either Type 1 or Type
-2 CharStrings; unfortunately, Acrobat Reader appears not to accept CFF fonts
-with Type 1 CharStrings. Adds the ability to convert Type 1 CharStrings to
-Type 2, including optimizing sequences of Type 1 operators into a single
-Type 2 operator. Implements writing CIDFontType 0 CFF fonts (CIDFonts) [NOT
-TESTED]. Starts (just barely) to remove more unneeded information from
-embedded TrueType fonts. (gdevpdff.c [1.2], gdevpdfw.c [1.2]: 2000/03/20
-07:02:12 lpd)
+Adds user-contributed uniprint parameter files for the Canon BJC-8200,
+including an addition for the Red Hat printer data base.
+(lib/bj8gc12f.upp [1.1], lib/bj8hg12f.upp [1.1], lib/bj8oh06n.upp [1.1],
+lib/bj8pa06n.upp [1.1], lib/bj8pp12f.upp [1.1], lib/bj8ts06n.upp [1.1]:
+2000/04/14 03:59:57 lpd)
 
-Substantially enhances the Cos object machinery. Interface: Adds a few more
-procedures, including a procedure to create a stream that writes directly
-into a Cos stream object, procedures for putting more kinds of values into
-arrays and dictionaries, and a param_list interface. Changes Cos objects to
-store a reference to the PDF device, and removes the device argument from
-all Cos procedures other than object creation. Replaces the Boolean
-is_object member of Cos values by a value_type enum: clients must now use
-COS_VALUE_IS_OBJECT() to test whether a value is an object reference. To
-reduce allocator overhead, makes the Cos procedures that take C strings no
-longer copy the string. Records whether each Cos object has been written
-into the output, so that in the future (but not in this batch of changes)
-resource definitions can be copied at the end of each page. Implementation:
-Moves more of the implementation of Cos objects to the .c file.
-(gdevpdf.c [1.4], gdevpdfi.c [1.7], gdevpdfm.c [1.3], gdevpdfo.c [1.2],
-gdevpdfo.h [1.2], gdevpdfr.c [1.2], gdevpdfu.c [1.4], gdevpdfx.h [1.3]:
-2000/03/24 06:12:52 lpd)
+Adds a user-contributed driver for the Epson Stylus (Color) Photo printers.
+(gdevphex.c [1.1]: 2000/04/18 06:34:26 lpd)
 
-Changes a few initializations to suppress warnings from one picky compiler
-that doesn't like ptr = buf - 1 where buf is an array. (gdevpdfr.c [1.3]:
-2000/03/28 02:01:34 lpd)
-
-Adds parsing for the remaining Acrobat Distiller 4 parameters, although most
-of them don't have any effect yet; brings documentation up to date.
-(gdevpdf.c [1.5], gdevpdfp.c [1.3], gdevpdfx.h [1.4]: 2000/03/28 07:36:58
-lpd)
-
-Implements LockDistillerParams; completes the StartPage/EndPage fix checked
-in just before. (gdevpdf.c [1.6], gdevpdfp.c [1.5], gdevpdfx.h [1.5]:
-2000/03/28 07:52:06 lpd)
-
-Changes the initial values of the "job control" parameters to match Acrobat
-Distiller 4. (gdevpdf.c [1.7], gdevpdfp.c [1.6], gdevpdfx.h [1.6]:
-2000/03/28 07:57:14 lpd)
-
-Implements the AutoRotatePages distiller parameter. (gdevpdf.c [1.8],
-gdevpdft.c [1.5], gdevpdfu.c [1.5], gdevpdfx.h [1.7]: 2000/04/03 02:54:41
-lpd)
-
-</pre><h2><a name="6.20 Interpreter (PDF)"></a>Interpreter (PDF)</h2><pre>
+</pre><h2><a name="6.21 PDF writer"></a>PDF writer</h2><pre>
 
 Fixes problems:
-	- Reading embedded compressed CIDFonts wasn't implemented.
-(lib/pdf_font.ps [1.3]: 2000/03/19 01:28:59 lpd)
-	- PDF images with DeviceN color spaces caused an error.
-(lib/pdf_draw.ps [1.2]: 2000/03/19 01:44:53 lpd)
-	- PDF images with a Mask ignored the mask. (lib/pdf_draw.ps [1.3]:
-2000/03/19 01:46:27 lpd)
-	- the PDF interpreter hadn't been updated for the move to
-library-based FunctionType 4 Functions, and still tried to bind the names
-true and false to the no longer existing operators .true and .false.
-(lib/pdf_draw.ps [1.5]: 2000/03/19 07:37:03 lpd)
-	- FunctionType 2 and 3 functions didn't work.
-(lib/pdf_draw.ps [1.6]: 2000/03/19 15:23:10 lpd)
-	- In PDF files, the page CropBox was not being used to clip the
-output. (lib/pdf_main.ps [1.4], lib/pdf_ops.ps [1.3]: 2000/03/21 23:08:32
+	- The Cos objects of resources not shared between pages weren't
+freed at the end of each page. (gdevpdf.c [1.9]: 2000/04/10 04:17:56 lpd)
+	- gdevpdfe.c was omitted from the check-in for the overhaul of
+pdfwrite font embedding. (gdevpdfe.c [1.1]: 2000/04/10 16:01:29 lpd)
+	- pdfwrite output could contain commands to set the line width to a
+negative value, which PostScript allows but PDF doesn't. (gdevpdfd.c [1.6]:
+2000/04/12 19:51:14 lpd)
+	- The changes for the new color handling code caused stroked
+graphics not to output the line width. (new bug since 6.20)
+(gdevpdfd.c [1.7]: 2000/04/13 03:47:21 lpd)
+	- Pattern resources were written with incorrectly scaled XStep and
+YStep, and without a Type entry. (gdevpdfc.c [1.3], gdevpdfi.c [1.10]:
+2000/04/13 04:12:33 lpd)
+	- The PDF writer could get an ioerror when downsampling images whose
+size wasn't an exact multiple of the downsampling factor.
+(gdevpdfi.c [1.11]: 2000/04/13 16:44:59 lpd)
+	- Bitmapped characters weren't written properly on the output file
+(new bug since 6.20). (gdevpdfg.h [1.4], gdevpdfi.c [1.12],
+gdevpdfj.c [1.2]: 2000/04/13 17:24:54 lpd)
+	- gxdcolor.h was required for gxpcolor.h, but wasn't included.
+(gdevpdfc.c [1.4]: 2000/04/18 17:42:55 lpd)
+
+Overhauls font embedding in the PDF writer: splits off the code into a new
+file (gdevpdfe.c), writes embedded Type 1 fonts as Type 1C (CFF Type 2), and
+adds a little bit of code for future support of Type 0 and CID-keyed fonts.
+(gdevpdff.c [1.3], gdevpdff.h [1.2], gdevpdft.c [1.6], gdevpdfw.c [1.3]:
+2000/04/10 07:48:37 lpd)
+
+Factors out code for writing functions and for adding filter-related entries
+to a stream dictionary; implements the DefaultRenderingIntent distiller
+parameter. (gdevpdf.c [1.10], gdevpdfu.c [1.6], gdevpdfx.h [1.8]: 2000/04/11
+16:06:57 lpd)
+
+Adds ExtGState resources. These should be written and freed at the end of
+each page, but they aren't yet. (gdevpdfx.h [1.9]: 2000/04/11 16:38:14 lpd)
+
+Implements additional distiller parameters: PreserveHalftoneInfo,
+PreserveOverprintSetting, TransferFunctionInfo (except for Apply vs.
+Remove), UCRandBGInfo. Splits off graphics state management into separate
+files. Implements the remaining graphics state parameters (halftone,
+transfer function, black generation, undercolor removal, halftone phase,
+smoothness, overprint, stroke adjustment) ****** EXCEPT FOR IMAGES ******.
+In anticipation of handling more general colors, renames pdf_set_color as
+pdf_set_pure_color, and adds pdf_set_drawing_color. (gdevpdf.c [1.11],
+gdevpdfd.c [1.4], gdevpdfg.c [1.1], gdevpdfg.h [1.1], gdevpdfi.c [1.8],
+gdevpdft.c [1.7], gdevpdfu.c [1.7], gdevpdfx.h [1.10]: 2000/04/11 18:31:32
 lpd)
-	- The "fix" for FunctionTypes 2 and 3 in PDF files had made things
-worse, because the code didn't distinguish between resolving to a PostScript
-function (for shadings) and resolving to a PostScript procedure (for
-halftones, BG/UCR, alternate color space mapping, etc.)
-(lib/pdf_draw.ps [1.7]: 2000/03/23 18:31:46 lpd)
-	- Text with a Pattern color scaled the pattern according to the text
-matrix, not the default matrix of the marking context.
-(lib/pdf_base.ps [1.6], lib/pdf_main.ps [1.5], lib/pdf_ops.ps [1.4]:
-2000/03/30 18:01:58 lpd)
-	- Resolving a Shading didn't create a reusable stream for the
-shading data; since the data was then read at unpredictable times, the
-shading or other constructs in the PDF file could read incorrect data.
-(lib/pdf_draw.ps [1.8]: 2000/04/03 06:01:25 lpd)
 
-Adds a lforall procedure for the PDF linearizer. (lib/pdf_base.ps [1.3]:
-2000/03/19 01:50:05 lpd)
-
-Changes the PDF interpreter so that following an object reference doesn't
-store the result back into the referring slot, and so that # # R always
-creates an indirect object. This is necessary for the PDF linearizer. It
-shouldn't have any visible effect (other than a possible small performance
-cost). (lib/pdf_base.ps [1.4], lib/pdf_draw.ps [1.4]: 2000/03/19 01:53:58
+Splits off creation and writing of color spaces, and writing color values,
+into a separate file. Adds support for (Function-based) Separation and
+DeviceN color spaces, general Pattern color spaces, and procedure-based
+Indexed color spaces. Adds some code to support Pattern colors, but stubs it
+out because it depends on changes in the image writing code that haven't
+been integrated yet. In fact, most of the new code isn't called yet, either.
+(gdevpdf.c [1.12], gdevpdfc.c [1.1], gdevpdfd.c [1.5], gdevpdfg.c [1.2],
+gdevpdfg.h [1.2], gdevpdft.c [1.8], gdevpdfx.h [1.11]: 2000/04/11 19:10:13
 lpd)
 
-Refactors some code to make it usable by the PDF linearizer.
-(lib/pdf_main.ps [1.3]: 2000/03/19 17:26:42 lpd)
+Integrates a couple of minor overlooked changes in the text-writing code.
+(gdevpdf.c [1.13], gdevpdft.c [1.9], gdevpdfx.h [1.12]: 2000/04/11 19:20:56
+lpd)
 
-Speeds up loading embedded Type 1 fonts a little. (lib/pdf_base.ps [1.5],
-lib/pdf_font.ps [1.4]: 2000/03/24 07:42:16 lpd)
+In pdfwrite, rewrites the image writing code to use Cos objects rather than
+direct printing, and splits off the creation of image dictionaries into a
+new file; adds support for tiling with uncolored Patterns; implements
+converting ImageType 4 images to their PDF 1.3 counterpart; starts to do the
+same for ImageType 3. This code is "in progress" and likely to have problems
+for a while. (gdevpdf.c [1.14], gdevpdfc.c [1.2], gdevpdfg.c [1.3],
+gdevpdfg.h [1.3], gdevpdfi.c [1.9], gdevpdfj.c [1.1], gdevpdfx.h [1.13]:
+2000/04/12 18:44:35 lpd)
 
-Speeds up reading embedded Type 1 fonts a little more.
-(lib/pdf_font.ps [1.5]: 2000/03/24 16:28:26 lpd)
+Tweaks the PDF writer to use the ' command for positioning text when
+possible (small optimization only). (gdevpdfg.c [1.4], gdevpdft.c [1.10],
+gdevpdfu.c [1.8], gdevpdfx.h [1.14]: 2000/04/18 16:08:16 lpd)
 
-</pre><h2><a name="6.20 Interpreter"></a>Interpreter</h2><pre>
+</pre><h2><a name="6.21 Interpreter (PDF)"></a>Interpreter (PDF)</h2><pre>
 
 Fixes problems:
-	- Font substitution was broken. (lib/gs_fonts.ps [1.3]: 2000/03/19
-00:22:05 lpd)
-	- The CFF reader gave an error if a font included any Subrs (it's
-very surprising that this hasn't surfaced before, but apparently Acrobat
-Distiller always produces CFF fonts with no Subrs); the CFF reader didn't
-default lenIV to -1 for Type 1 CharStrings; the CFF reader wasn't able to
-read CIDFonts. (lib/gs_cff.ps [1.3], lib/gs_cidfn.ps [1.4]: 2000/03/19
-00:45:40 lpd)
-	- EXTEND_NAMES had stopped working, because not all places that
-needed the index of a name ref used name_index rather than r_size
-(ilocate.c), and because the high_index value in the name sub-table was set
-incorrectly (iname.c). (ilocate.c [1.2], iname.c [1.2]: 2000/03/19 01:33:23
-lpd)
-	- The attribute check for Functions being executed was incorrect
-(always succeeded). (zfunc.c [1.2]: 2000/03/19 02:12:37 lpd)
-	- s_add_filter didn't ensure enough buffering. This entailed moving
-the NullEncode/Decode filters to stream.[hc]. (sfilter1.c [1.2]: 2000/03/19
-03:15:02 lpd)
-	- The parameters of SubFileDecode filters weren't initialized fully
-(required by a change in this version). (zfilter.c [1.3]: 2000/03/19
-04:03:45 lpd)
-	- The AutoPositionEPSFiles Distiller parameter was misspelled
-AutoPositionEPSFile. (lib/gs_pdfwr.ps [1.2]: 2000/03/19 05:03:31 lpd)
-	- Enumerating the elements of a dictionary-based parameter list
-returned garbage for the keys. (iparam.c [1.2]: 2000/03/19 15:13:13 lpd)
-	- .buildfont0 should not check CIDSystemInfo compatibility. The
-PLRM3 says PostScript interpreters do not make this check, even though the
-PLRM2 says compatibility is required (!). (zfcmap.c [1.2]: 2000/03/19
-16:53:50 lpd)
-	- If log2_transfer_map_size > 8, identity transfer functions
-returned garbage. The fix requires that if a client wants to set a transfer
-function to the identity mapping, it must call gx_set_identity_transfer
-rather than simply setting the procedure to gs_identity_transfer.
-(zcolor.c [1.2]: 2000/03/19 17:14:47 lpd)
-	- Separation color spaces didn't store the separation name.
-(zcssepr.c [1.2]: 2000/03/19 17:21:36 lpd)
-	- The addition of the dummy cid_Setup procedure in gs 6.01 was
-accidentally commented out. (lib/gs_cidfn.ps [1.5]: 2000/03/21 00:11:55 lpd)
-	- The test for whether an CIDFontType 2 outline string was large
-enough to include prefixed metrics was backwards, which would have caused
-problems with any font that used MetricsCount. (zfcid.c [1.3]: 2000/03/21
-00:43:17 lpd)
-	- A couple of places in the Windows code didn't correctly handle
-Ghostscript version numbers of the form #.0#. (dwsetup.cpp [1.2]: 2000/03/22
-21:45:03 lpd)
-	- In some cases, re-registering an existing font or CIDFont with
-definefont would cause an invalidfont error. (zbfont.c [1.4],
-zfont42.c [1.3]: 2000/03/28 18:20:39 lpd)
-	- Re-registering a CIDFont with definefont, or defining a CIDFont
-with definefont instead of /CIDFont defineresource, caused an invalidfont
-error or a crash. (lib/gs_cidfn.ps [1.9], lib/gs_fonts.ps [1.4]: 2000/03/28
-18:21:50 lpd)
-	- The new C BuildGlyph code for CIDFontType 0 fonts didn't handle
-GlyphDirectory or Type 2 CharStrings correctly. (lib/gs_cidfn.ps [1.12],
-zfcid.c [1.8]: 2000/03/31 23:21:57 lpd)
-	- The internaldict "operator" was allocated in local VM, preventing
-it from being bound into procedures allocated in global VM.
-(lib/gs_init.ps [1.6]: 2000/04/04 22:16:02 lpd)
-	- If there was a CIDInit ProcSet defined in the filesystem, the code
-for initializing the built-in CIDInit ProcSet became confused.
-(lib/gs_cidfn.ps [1.13]: 2000/04/04 22:17:33 lpd)
-	- Fixes several problems in resourceforall and resource loading: the
-operands of resourceforall were restored even in the case of an error in the
-client's procedure; the name Instances had special meaning for some Adobe
-code; resourceforall caused an invalidaccess error if an operand was in
-local VM but the current VM was global; loading a resource from a file could
-cause a typecheck error if the file left values on the operand stack.
-(interp.c [1.3], lib/gs_ccfnt.ps [1.2], lib/gs_res.ps [1.3]: 2000/04/04
-22:26:02 lpd)
-	- resourceforall didn't enumerate external (loadable) instances, and
-would enumerate an instance twice if it had both a local and a global
-definition. (lib/gs_res.ps [1.4]: 2000/04/05 21:07:02 lpd)
-	- The implementation of resourcestatus wasn't compatible with some
-badly written code in an Adobe font downloader that assumes that the
-implementation of resourcestatus in Generic and Font is the same.
-(lib/gs_res.ps [1.5]: 2000/04/05 21:20:07 lpd)
-	- The just-checked-in fixed for resourceforall didn't work properly
-for the IdiomSet category. (They probably failed for other categories that
-had no instances, but we didn't check this.) (lib/gs_res.ps [1.6]:
-2000/04/05 21:51:43 lpd)
-	- Some Adobe font downloading code assumed that loading a resource
-file would never leave extra values on the stack; our implementation didn't
-ensure this (by popping them if needed). (lib/gs_res.ps [1.8]: 2000/04/06
-04:50:28 lpd)
-	- If an alphabetic font defined and used a .notdef character,
-pdfwrite always converted it to a bitmap. (lib/gs_lgo_e.ps [1.2]: 2000/04/07
-02:48:23 lpd)
+	- Embedded subset CFF fonts in PDF files were defined using the name
+in the font data rather than the font name in the PDF resource object. (bug
+#102901) (lib/pdf_ops.ps [1.5]: 2000/04/11 05:33:13 lpd)
+	- When processing a PDF file, the font substitution heuristic based
+on the FontName sometimes overrode the Flags information in the
+FontDescriptor. (lib/pdf_font.ps [1.6]: 2000/04/20 06:36:02 lpd)
 
-Provides a gs_atan2_degrees procedure to parallel sin and cos.
-(zmath.c [1.2]: 2000/03/18 23:10:39 lpd)
+Makes undefined XObject resources for the Do operator produce a warning
+rather than an error, to parallel Acrobat Reader. (lib/pdf_draw.ps [1.9]:
+2000/04/16 07:48:23 lpd)
 
-Speeds up string garbage collection by scanning unmodified string regions
-faster. (igcstr.c [1.2]: 2000/03/18 23:29:32 lpd)
+Tweaks up the performance of the PDF interpreter loop slightly.
+(lib/pdf_base.ps [1.7]: 2000/04/18 05:45:49 lpd)
 
-Adds the ImagemaskTrapping parameter to the trapping state.
-(lib/gs_trap.ps [1.2]: 2000/03/18 23:35:53 lpd)
-
-Increments the version number to 6.20, in anticipation of the next release.
-(We do this at the beginning of the development for a release, not the end.)
-(lib/gs_init.ps [1.4]: 2000/03/19 00:27:22 lpd)
-
-Adds a pseudo-encoding for the CFF StandardStrings that represent
-characters. (lib/gs_cff.ps [1.2], lib/gs_css_e.ps [1.1]: 2000/03/19 00:38:50
-lpd)
-
-Refactors the code for getting Type 1/2/4 font parameters so it can be used
-for FDArray entries of CIDFontType 0 fonts. (ifont1.h [1.2], zfont1.c [1.2]:
-2000/03/19 02:07:45 lpd)
-
-Speeds up Function evaluation slightly, by preallocating space for a
-reasonable number of operands and results on the C stack rather than always
-allocating it on the heap. (zfunc.c [1.3]: 2000/03/19 02:16:58 lpd)
-
-Adds a public procedure for determining whether a PostScript object is a
-Function, and if so, returning the pointer to the gs_function_t structure.
-(ifunc.h [1.2], zfunc.c [1.4]: 2000/03/19 02:22:01 lpd)
-
-Splits out the [T]BCP filter interface into a separate file. (zfbcp.c [1.2]:
-2000/03/19 02:40:18 lpd)
-
-Adds a skip_count parameter to the SubFileDecode filter, giving the number
-of initial bytes or records to skip over. (Needed for printing FunctionType
-4 functions, possibly useful for other things.) (sfilter1.c [1.3]:
-2000/03/19 03:20:18 lpd)
-
-Replaces the implementation of FunctionType 4 functions at the PostScript
-language level with one that uses the new library-based facilities.
-(zdevice2.c [1.2], zfunc4.c [1.2]: 2000/03/19 06:56:23 lpd)
-
-Changes the key type returned by parameter list enumeration to include a
-persistence flag, makes C parameter lists support non-persistent keys, and
-upgrades GC descriptors so that parameter lists can be used non-transiently;
-updates implementors of parameter lists to call gs_param_list_init to
-initialize the common members, which is now required. (iparam.c [1.3]:
-2000/03/19 15:16:11 lpd)
-
-Makes Separation and DeviceN color spaces convert their tint transform
-function to a FunctionType 4 Function if possible, for better accuracy and
-to allow writing in PDF files. (lib/gs_lev2.ps [1.2], lib/gs_ll3.ps [1.2]:
-2000/03/19 15:28:34 lpd)
-
-Makes st_indexed_map private. Clients must now use the constructor procedure
-alloc_indexed_map rather than allocating instances directly.
-(zcsindex.c [1.2]: 2000/03/19 16:37:28 lpd)
-
-Refactors the code for building fonts so it can be used for FDArray entries
-of CIDFontType 0 fonts. (bfont.h [1.2], zbfont.c [1.2]: 2000/03/19 16:45:47
-lpd)
-
-Adds a .fileposition operator that will read the position even of
-non-positionable streams, needed for the PDF linearizer. (zfileio.c [1.3]:
-2000/03/20 04:30:49 lpd)
-
-Starts to move support for CIDFontType 0 and 2 into C code, needed by the
-PDF writer for handling CID-keyed fonts. Implements GlyphDirectory for
-CIDFonts. Makes GDBytes and CIDMapOffset optional for CIDFontType 0 fonts
-that have a GlyphDirectory (not documented in the PLRM, but clearly
-correct). Implements Adobe 3011 features: integer and dictionary CIDMaps,
-and the MetricsCount entry, in CIDFontType 2 fonts (but only in the C code,
-which isn't hooked in yet, not in the PostScript code in gs_cidfn.ps.)
-(icid.h [1.1], ifont.h [1.2], ifont42.h [1.1], zcid.c [1.2], zfcid.c [1.1],
-zfcmap.c [1.3], zfont42.c [1.2]: 2000/03/20 19:53:06 lpd)
-
-Hooks the new CIDMap code into the BuildGlyph procedure for CIDFontType 2
-fonts. (Contrary to a previous log comment, MetricsCount is already hooked
-in.) Support for CIDFontType 2 fonts is now implemented entirely in C, as
-for Type 42 fonts. (lib/gs_cidfn.ps [1.6], zfcid.c [1.2]: 2000/03/21
-00:32:15 lpd)
-
-Extends the C support for CIDFontType 0 fonts to include those with FontType
-2 subfonts in the FDArray (an Adobe 3011 addition, specifically for CFF
-fonts). (ifont2.h [1.1], zfcid.c [1.4], zfont2.c [1.2]: 2000/03/21 07:43:42
-lpd)
-
-Changes Subr loading for CIDFontType 0 fonts from lazy to immediate, so that
-C code can be guaranteed access to the Subrs. (In every CIDFontType 0 font
-that we have seen, SubrCount is 5, so this has no significant time or space
-cost.) Also adds support for FDBytes > 1 in GlyphDirectory definitions.
-(lib/gs_cidfn.ps [1.7]: 2000/03/21 20:06:44 lpd)
-
-Splits off the ReusableStreamDecode filter as a separate module, since
-CIDFontType 0 fonts will use it even in LanguageLevels below 3.
-(lib/gs_frsd.ps [1.1], lib/gs_ll3.ps [1.3], zfrsd.c [1.1]: 2000/03/21
-21:34:57 lpd)
-
-Makes file streams remember the file name, needed for efficiently
-implementing reusable streams. (zfile.c [1.3], zfileio.c [1.4]: 2000/03/23
-02:13:40 lpd)
-
-Changes the new .filename operator to return true/false rather than causing
-an error; redefines findlibfile in terms of a simpler .libfile operator +
-.filename. (lib/gs_init.ps [1.5], zfile.c [1.4], zfileio.c [1.5]: 2000/03/23
-18:47:17 lpd)
-
-Finishes implementing the file case of ReusableStreamDecode. This required
-adding the ability to restrict file-reading streams to a subfile.
-(lib/gs_frsd.ps [1.2], sfilter1.c [1.4], zfileio.c [1.6], zfrsd.c [1.2]:
-2000/03/24 03:59:42 lpd)
-
-Changes the implementation of incrementally loaded CIDFontType 0 fonts to
-use a ReusableStreamDecode filter, in anticipation of moving the BuildGlyph
-procedure for these fonts from PostScript to C. (lib/gs_cidfn.ps [1.8],
-zbfont.c [1.3], zfcid.c [1.5]: 2000/03/27 16:36:24 lpd)
-
-Changes the get_outline / glyph_data procedure for getting encoded font
-outline data to return an indication of whether the outline data were just
-allocated and can be freed by the client. (This is a possibly
-non-backward-compatible change.) (zfcid.c [1.6]: 2000/03/28 18:47:02 lpd)
-
-Changes the procs structure of gs_type1_data to an in-line structure rather
-than a pointer to a const structure. (Needed for moving CIDFontType 0
-support into C.) (zfont1.c [1.3]: 2000/03/29 22:10:31 lpd)
-
-Finishes moving support for CIDFontType 0 fonts from PostScript to C.
-(ifont.h [1.3], ifont42.h [1.2], lib/gs_cidfn.ps [1.10], zfcid.c [1.7],
-zfont42.c [1.4]: 2000/03/31 04:55:18 lpd)
-
-Allows dictionaries as the value of CIDMap resources. (Also removes an
-unrelated obsolete comment.) (lib/gs_cidfn.ps [1.11]: 2000/03/31 05:11:30
-lpd)
-
-Finishes implementing the ability to write CIDFontType 0 CFFs. This involved
-a surprising number of changes in other font-related files. (ichar1.h [1.2],
-ifcid.h [1.1], zchar1.c [1.2], zfcid.c [1.9], zfcid0.c [1.1],
-zfcid1.c [1.1], zfont1.c [1.4]: 2000/04/02 07:38:46 lpd)
-
-Makes the .writefont9 operator (used only for testing) available in both
-DEBUG and PROFILE configurations. (zfcid0.c [1.2]: 2000/04/03 02:37:55 lpd)
-
-Extends .forceput to handle arrays as well as dictionaries, required to fix
-a bug with internaldict. (zdict.c [1.2], zgeneric.c [1.2]: 2000/04/04
-22:13:23 lpd)
-
-Works around an Adobe code assumption that the default FindResource
-procedure does *not* call the ResourceStatus procedure if the requested
-instance is already defined in VM. (lib/gs_res.ps [1.7]: 2000/04/05 23:31:54
-lpd)
-
-Implements the framework for superexec (but none of the actual access check
-bypasses). (icontext.c [1.2], icstate.h [1.2], zcontrol.c [1.2]: 2000/04/06
-04:40:06 lpd)
-
-Extends the undocumented CCRun procedure to take an additional argument, a
-Private dictionary, required by some Adobe font downloading code.
-(lib/gs_type1.ps [1.3]: 2000/04/06 05:25:10 lpd)
-
-</pre><h2><a name="6.20 Streams"></a>Streams</h2><pre>
+</pre><h2><a name="6.21 Interpreter"></a>Interpreter</h2><pre>
 
 Fixes problems:
-	- s_add_filter didn't ensure enough buffering. This entailed moving
-the NullEncode/Decode filters to stream.[hc]. (sfilter.h [1.3],
-stream.c [1.3], stream.h [1.3]: 2000/03/19 03:15:02 lpd)
-	- When FPU_TYPE <= 0, the image interpolation code lost too much
-accuracy, producing color streaks in the output. (Fix by DanCoby.)
-(siscale.c [1.2]: 2000/03/29 20:34:45 lpd)
-	- Fixes a couple of typos in the recently checked-in image
-interpolation fix. (siscale.c [1.3]: 2000/03/30 06:55:26 lpd)
+	- Fixes some signed/unsigned char * mismatches. (zfrsd.c [1.3]:
+2000/04/07 15:27:14 lpd)
+	- Automatic loading of fonts from resource files didn't work
+(usually caused an unmatchedmark or typecheck error).
+(lib/gs_fonts.ps [1.5], lib/gs_res.ps [1.9]: 2000/04/08 03:45:41 lpd)
+	- A -> should have been a . (only shows up on 64-bit systems).
+(zfunc4.c [1.3]: 2000/04/09 20:04:00 lpd)
+	- the most recent 'fixes' for loading font resources caused all
+built-in fonts to be returned as null. (lib/gs_res.ps [1.10]: 2000/04/09
+22:51:01 lpd)
+	- /Category defineresource didn't make the category definition
+dictionary read-only. (lib/gs_res.ps [1.11]: 2000/04/10 18:29:04 lpd)
+	- Attempting to build an invalid FunctionType 4 function could cause
+a memory access error. (zfunc4.c [1.4]: 2000/04/10 19:38:53 lpd)
+	- Embedded subset CFF fonts in PDF files were defined using the name
+in the font data rather than the font name in the PDF resource object. (bug
+#102901) (lib/gs_cff.ps [1.4]: 2000/04/11 05:33:13 lpd)
+	- CMaps with more than one code space range weren't converted to the
+internal form correctly; begincidchar and beginnotdefchar caused errors.
+(lib/gs_cmap.ps [1.3], zfcmap.c [1.6]: 2000/04/14 07:53:10 lpd)
+	- flushfile and closefile didn't properly flush streams whose final
+target was a procedure, and closefile didn't actually close them. (This is a
+very old bug.) (zfproc.c [1.2]: 2000/04/18 05:50:15 lpd)
+	- CIDFontType 0 CIDFonts in which some FDArray element had no Subrs
+caused an error. (lib/gs_cidfn.ps [1.14]: 2000/04/18 05:58:08 lpd)
+	- Attempting to set a PageSize with 4 elements actually set the
+PageSize (to the first 2 elements), rather than ignoring the attempt. (This
+is just a patch to prevent some PageMaker files from being thrown off by the
+4-element PageSizes in Input Attributes.) (lib/gs_setpd.ps [1.2]: 2000/04/19
+06:01:19 lpd)
+	- When choosing a substituted font, 'Serif' had priority over
+'Sans', so unknown fonts with 'SansSerif' in their name would have a serif
+font substituted. (lib/gs_fonts.ps [1.6]: 2000/04/19 13:48:48 lpd)
+	- The fix to make setpagedevice ignore 4-element PageSizes in
+InputAttributes was broken. (It's impossible that it could ever have worked,
+despite the fact that we tested it.) (lib/gs_setpd.ps [1.3]: 2000/04/20
+06:24:39 lpd)
+	- When processing a PDF file, the font substitution heuristic based
+on the FontName sometimes overrode the Flags information in the
+FontDescriptor. (lib/gs_fonts.ps [1.7]: 2000/04/20 06:36:02 lpd)
 
-Splits out the [T]BCP filter interface into a separate file. (sbcp.c [1.2],
-sbcp.h [1.1], sfilter.h [1.2]: 2000/03/19 02:40:18 lpd)
+Adds a workaround for misnamed glyphs in some Microsoft TrueType font 'post'
+tables. (lib/gs_mgl_e.ps [1.2], lib/gs_ttf.ps [1.4]: 2000/04/08 01:53:16
+lpd)
 
-Adds a skip_count parameter to the SubFileDecode filter, giving the number
-of initial bytes or records to skip over. (Needed for printing FunctionType
-4 functions, possibly useful for other things.) (sfilter.h [1.4]: 2000/03/19
-03:20:18 lpd)
+Completely redesigns the representation of CMaps, to reduce space
+requirements and make comparing them more reasonable, changing gs_cmap to
+gs_cmap_t and gx_code_map to gx_code_map_t. (****** NOTE ****** The
+PostScript code currently only handles a few well-behaved CMap structures.)
+(lib/gs_cmap.ps [1.2], zfcmap.c [1.4], zfont0.c [1.2]: 2000/04/08 03:54:38
+lpd)
 
-Changes the key type returned by parameter list enumeration to include a
-persistence flag, makes C parameter lists support non-persistent keys, and
-upgrades GC descriptors so that parameter lists can be used non-transiently;
-updates implementors of parameter lists to call gs_param_list_init to
-initialize the common members, which is now required. (spsdf.c [1.2]:
-2000/03/19 15:16:11 lpd)
+Updates version #s to 6.21. (We should have done this earlier.)
+(lib/gs_init.ps [1.7]: 2000/04/10 04:46:36 lpd)
 
-Makes file streams remember the file name, needed for efficiently
-implementing reusable streams. (stream.c [1.4], stream.h [1.4]: 2000/03/23
-02:13:40 lpd)
+Makes Separation and DeviceN color spaces detect that their tint transform
+procedure is a Function, and call it rather than using its cached values.
+(zcsdevn.c [1.2], zcssepr.c [1.3]: 2000/04/10 19:39:44 lpd)
 
-Finishes implementing the file case of ReusableStreamDecode. This required
-adding the ability to restrict file-reading streams to a subfile.
-(sfxfd.c [1.2], sfxstdio.c [1.2], stream.c [1.5], stream.h [1.5]: 2000/03/24
-03:59:42 lpd)
+Adds code to write out CMaps, similar to the code for writing fonts, for
+eventual embedding in PDF output. (zfcmap.c [1.5]: 2000/04/14 07:17:24 lpd)
 
-Changes a few initializations to suppress warnings from one picky compiler
-that doesn't like ptr = buf - 1 where buf is an array. (spsdf.c [1.3]:
-2000/03/28 02:01:34 lpd)
+Completes code for reading and writing CMaps. (lib/gs_cmap.ps [1.4],
+zfcmap.c [1.7]: 2000/04/16 03:05:29 lpd)
 
-</pre><h2><a name="6.20 Library"></a>Library</h2><pre>
+Works around a bug in the AdobePS5 Windows driver, which emits CMaps lacking
+the required CMapName entry. (lib/gs_cidfn.ps [1.15], lib/gs_cmap.ps [1.5]:
+2000/04/18 07:18:42 lpd)
+
+Moves the optimization prologue for ps2pdf from the command line to a
+procedure, to avoid shell length limits. (lib/gs_pdfwr.ps [1.3]: 2000/04/18
+16:40:14 lpd)
+
+</pre><h2><a name="6.21 Streams"></a>Streams</h2><pre>
 
 Fixes problems:
-	- Two comments in the file were incorrect. (gsiparm3.h [1.2]:
-2000/03/19 02:46:11 lpd)
-	- param_coerce_typed, which works with any parameter list
-implementation, was incorrectly described as associated with the default
-implementation. (gsparam.h [1.2]: 2000/03/19 03:37:08 lpd)
-	- TrueType fonts didn't use vhea/vmtx if WMode = 1. Also makes
-gs_font_type42 subclassable, for implementing CIDFontType 2 fonts, and makes
-its procedure for getting a glyph's side bearing and width virtual, required
-to support MetricsCount in CIDFontType 2 fonts. (gstype42.c [1.3],
-gxfont42.h [1.2]: 2000/03/19 03:58:51 lpd)
-	- ImageType 4 images didn't give an error for out-of-range MaskColor
-values. The file also had an unnecessary #include. (gximage4.c [1.2]:
-2000/03/19 04:10:09 lpd)
-	- If log2_transfer_map_size > 8, identity transfer functions
-returned garbage. The fix requires that if a client wants to set a transfer
-function to the identity mapping, it must call gx_set_identity_transfer
-rather than simply setting the procedure to gs_identity_transfer.
-(gxclrast.c [1.3], gxcmap.c [1.2], gxfmap.h [1.2]: 2000/03/19 17:14:47 lpd)
-	- Fixes a warning about aliasing produced by one extremely picky
-compiler. (gsnogc.c [1.2]: 2000/03/22 21:39:32 lpd)
-	- Filling or clipping with ridiculously large (out-of-bounds)
-coordinates could cause an internal overflow that produced incorrect
-results. (This is probably not the last such bug.) (gxfill.c [1.2]:
-2000/03/30 07:03:59 lpd)
+	- FILE_IMPLEMENTATION=both was broken (by the introduction of
+sread_subfile). (sfxfd.c [1.3]: 2000/04/10 02:41:48 lpd)
+	- flushfile and closefile didn't properly flush streams whose final
+target was a procedure, and closefile didn't actually close them. (This is a
+very old bug.) (stream.c [1.6]: 2000/04/18 05:50:15 lpd)
 
-Provides a gs_atan2_degrees procedure to parallel sin and cos.
-(gsmisc.c [1.2], gxfarith.h [1.2]: 2000/03/18 23:10:39 lpd)
+Enhances the ASCII85Encode filter to avoid %! at the beginning of a line of
+output, in addition to avoiding %% which it did already. (sa85x.h [1.2],
+sfilter2.c [1.2]: 2000/04/08 01:30:36 lpd)
 
-Improves the 8x8 bitmap "flipping" procedure to take advantage of 32-bit
-ints. (gsutil.c [1.2]: 2000/03/18 23:16:16 lpd)
+</pre><h2><a name="6.21 Library"></a>Library</h2><pre>
 
-Adds a public procedure for restricting a color to its legal range.
-(gscspace.c [1.2], gscspace.h [1.2], gxcspace.h [1.2]: 2000/03/18 23:19:17
-lpd)
+Fixes problems:
+	- Fixes some signed/unsigned char * mismatches. (gdevpsf2.c [1.5]:
+2000/04/07 15:27:14 lpd)
+	- Writing a Type 2 CFF with multiply-encoded glyphs produced an
+incorrect Encoding. Also, when producing output for PDF 1.2 files, no longer
+emits certain opcodes that cause an (unjustified) error in Acrobat Reader 3
+for Linux. (gdevpsf.h [1.3], gdevpsf2.c [1.6]: 2000/04/10 07:42:31 lpd)
+	- gsmisc.c didn't compile in DEBUG mode on systems with a
+non-standard prototype for the sqrt function. (gsmisc.c [1.3]: 2000/04/10
+16:00:31 lpd)
+	- One picky compiler complained about (1L << 31). (gsmisc.c [1.4]:
+2000/04/10 17:21:41 lpd)
+	- putdeviceparams allowed a PageSize or .MediaSize value with the
+wrong number of elements to take effect. (gsdparam.c [1.2]: 2000/04/19
+05:59:05 lpd)
 
-Adds the new ImagemaskTrapping parameter to the trapping state.
-(gstrap.c [1.2], gstrap.h [1.2]: 2000/03/18 23:26:17 lpd)
+Completely redesigns the representation of CMaps, to reduce space
+requirements and make comparing them more reasonable, changing gs_cmap to
+gs_cmap_t and gx_code_map to gx_code_map_t. (****** NOTE ****** The
+PostScript code currently only handles a few well-behaved CMap structures.)
+(gsfcmap.c [1.4], gsfcmap.h [1.2], gxfcmap.h [1.3], gxfont0.h [1.2]:
+2000/04/08 03:54:38 lpd)
 
-Increments the version number to 6.20, in anticipation of the next release.
-(We do this at the beginning of the development for a release, not the end.)
-(gscdef.c [1.2]: 2000/03/19 00:27:22 lpd)
+Adds Function-based tint_transform procedures for Separation and DeviceN
+color spaces. (gscdevn.c [1.3], gscdevn.h [1.2], gscsepr.c [1.3],
+gscsepr.h [1.2]: 2000/04/10 19:02:19 lpd)
 
-Adds a pseudo-encoding for the CFF StandardStrings that represent
-characters. (gsccode.h [1.2]: 2000/03/19 00:38:50 lpd)
+Adds code to write out CMaps, similar to the code for writing fonts, for
+eventual embedding in PDF output. (gdevpsf.h [1.4], gdevpsfm.c [1.1]:
+2000/04/14 07:17:24 lpd)
 
-Adds a bit_index procedure to the implementation of device halftones,
-required for writing halftones in PDF files. (The only implementors are
-internal ones.) (gxdht.h [1.2], gxhtbit.c [1.2]: 2000/03/19 05:10:55 lpd)
-
-Adds a public procedure for getting a palette entry of an Indexed color
-space, used when writing Indexed color spaces in PDF files.
-(gscindex.h [1.1], gscolor2.c [1.2], gscolor2.h [1.2]: 2000/03/19 05:20:28
-lpd)
-
-Reimplements "PostScript calculator" (FunctionType 4) functions entirely in
-C, to allow them to be written out in PDF files. (gsfunc4.c [1.1],
-gsfunc4.h [1.1], gsstruct.h [1.2]: 2000/03/19 05:25:53 lpd)
-
-Moves gx_device_color_equal to the public API, for detecting redundant color
-setting when writing PDF files. (gsdcolor.h [1.2], gxdcolor.c [1.2],
-gxdcolor.h [1.2]: 2000/03/19 06:46:08 lpd)
-
-Changes the default value of BufferSpace to 4 Mb. In desktop applications,
-this is a reasonable value that can substantially improve performance
-(especially for color printers); embedded applications will want to set
-BufferSpace themselves in any case. (gdevprn.h [1.2]: 2000/03/19 06:51:13
-lpd)
-
-Adds virtual procedures for Functions to write their parameters to a
-parameter list, and to access their data source and subfunctions. This is
-needed for writing Functions in PDF files. This change is also a
-prerequisite for the C implemention of FunctionType 4 functions, even though
-it appears later in the change log. (gsdsrc.h [1.2], gsfunc.c [1.2],
-gsfunc.h [1.2], gsfunc0.c [1.2], gsfunc3.c [1.2], gsparam.c [1.2],
-gsparam.h [1.3], gxfunc.h [1.2]: 2000/03/19 07:24:53 lpd)
-
-Splits off "vanilla" Functions into separate files, in anticipation of
-removing them (they were only used to implement PostScript Calculator
-Functions). (gsfunc.c [1.3], gsfunc.h [1.3], gsfuncv.c [1.1],
-gsfuncv.h [1.1]: 2000/03/19 07:33:08 lpd)
-
-Adds a procedure for allocating a C parameter list. (gscparam.c [1.2],
-gsparam.h [1.4]: 2000/03/19 15:00:05 lpd)
-
-Undoes a premature change that depends on an update not yet checked in.
-(gscparam.c [1.3]: 2000/03/19 15:07:59 lpd)
-
-Changes the key type returned by parameter list enumeration to include a
-persistence flag, makes C parameter lists support non-persistent keys, and
-upgrades GC descriptors so that parameter lists can be used non-transiently;
-updates implementors of parameter lists to call gs_param_list_init to
-initialize the common members, which is now required. (gscparam.c [1.4],
-gsparam.c [1.3], gsparam.h [1.5]: 2000/03/19 15:16:11 lpd)
-
-Adds a procedure for copying one parameter list to another.
-(gsparamx.c [1.2], gsparamx.h [1.2]: 2000/03/19 15:35:31 lpd)
-
-Records the CTM used for sampling HalftoneType 1 spot functions. This is
-needed for recognizing the standard spot functions when producing PDF
-output. Also factors the code for initializing spot functions for the
-benefit of the PDF writer. (gshtscr.c [1.2], gxdht.h [1.3], gzht.h [1.2]:
-2000/03/19 15:43:36 lpd)
-
-Adds a proc_data member to the map for Separation and Indexed color spaces.
-(gscolor2.c [1.3], gxcolor2.h [1.2]: 2000/03/19 16:23:46 lpd)
-
-Makes st_indexed_map private. Clients must now use the constructor procedure
-alloc_indexed_map rather than allocating instances directly.
-(gscolor2.c [1.4], gscsepr.c [1.2], gxclrast.c [1.2], gxcolor2.h [1.3]:
-2000/03/19 16:37:28 lpd)
-
-Adds procedures for building and accessing DeviceN color spaces.
-(gscdevn.c [1.2], gscdevn.h [1.1]: 2000/03/19 17:02:37 lpd)
-
-Exports the 'blend' operators of the Type 1 interpreter, for use by the Type
-1 / Type 2 font writer. (gstype1.c [1.3], gxtype1.c [1.2], gxtype1.h [1.3]:
-2000/03/19 18:46:44 lpd)
-
-Starts to move support for CIDFontType 0 and 2 fonts into C code. (These
-header files are the ones needed to compile the new gdevpsf* files; they
-don't interact with any existing code.) (gxcid.h [1.1], gxfcid.h [1.1]:
-2000/03/20 06:40:22 lpd)
-
-Moves font-writing support into a new module (gdevpsf*), changing the source
-file names. Adds the ability to write CFF fonts, with either Type 1 or Type
-2 CharStrings; unfortunately, Acrobat Reader appears not to accept CFF fonts
-with Type 1 CharStrings. Adds the ability to convert Type 1 CharStrings to
-Type 2, including optimizing sequences of Type 1 operators into a single
-Type 2 operator. Implements writing CIDFontType 0 CFF fonts (CIDFonts) [NOT
-TESTED]. Starts (just barely) to remove more unneeded information from
-embedded TrueType fonts. (gxttf.h [1.1]: 2000/03/20 07:02:12 lpd)
-
-Starts to move support for CIDFontType 0 and 2 into C code, needed by the
-PDF writer for handling CID-keyed fonts. Implements GlyphDirectory for
-CIDFonts. Makes GDBytes and CIDMapOffset optional for CIDFontType 0 fonts
-that have a GlyphDirectory (not documented in the PLRM, but clearly
-correct). Implements Adobe 3011 features: integer and dictionary CIDMaps,
-and the MetricsCount entry, in CIDFontType 2 fonts (but only in the C code,
-which isn't hooked in yet, not in the PostScript code in gs_cidfn.ps.)
-(gsfcid.c [1.1], gsfcmap.c [1.3], gxfcmap.h [1.2], gxfont1.h [1.2]:
-2000/03/20 19:53:06 lpd)
-
-Changes a few initializations to suppress warnings from one picky compiler
-that doesn't like ptr = buf - 1 where buf is an array. (gxclpath.c [1.2]:
-2000/03/28 02:01:34 lpd)
-
-Changes the get_outline / glyph_data procedure for getting encoded font
-outline data to return an indication of whether the outline data were just
-allocated and can be freed by the client. (This is a possibly
-non-backward-compatible change.) (gxfcid.h [1.2], gxfont42.h [1.3]:
-2000/03/28 18:47:02 lpd)
-
-Changes the procs structure of gs_type1_data to an in-line structure rather
-than a pointer to a const structure. (Needed for moving CIDFontType 0
-support into C.) (gstype1.c [1.4], gstype2.c [1.3], gxfont1.h [1.3],
-gxtype1.c [1.3]: 2000/03/29 22:10:31 lpd)
-
-Finishes moving support for CIDFontType 0 fonts from PostScript to C.
-(gxfcid.h [1.3]: 2000/03/31 04:55:18 lpd)
-
-Finishes implementing the ability to write CIDFontType 0 CFFs. This involved
-a surprising number of changes in other font-related files. (gsfcid.c [1.2],
-gxfcid.h [1.4]: 2000/04/02 07:38:46 lpd)
+Completes code for reading and writing CMaps. (gdevpsf.h [1.5],
+gdevpsfm.c [1.2], gsccode.h [1.3], gsfcid.c [1.3], gsfcmap.c [1.5],
+gxcid.h [1.2], gxfcmap.h [1.4]: 2000/04/16 03:05:29 lpd)
 
 </pre></body></html>
