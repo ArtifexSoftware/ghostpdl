@@ -53,6 +53,7 @@
 #define PCL_END_GRAPHICS_DOES_RESET 32	/* <esc>*rB resets all parameters */
 #define PCL_HAS_DUPLEX              64	/* <esc>&l<duplex>S supported */
 #define PCL_CAN_SET_PAPER_SIZE     128	/* <esc>&l<sizecode>A supported */
+#define PCL_CAN_PRINT_COPIES       256  /* <esc>&l<copies>X supported */
 
 /* Shorthands for the most common spacing/compression combinations. */
 #define PCL_MODE0 PCL3_SPACING
@@ -77,7 +78,7 @@
      /* Kyocera FS-600 */
 #define PCL_FS600_FEATURES\
   (PCL_MODE3 |\
-   PCL_CAN_SET_PAPER_SIZE)
+   PCL_CAN_SET_PAPER_SIZE | PCL_CAN_PRINT_COPIES)
 
      /* H-P original LaserJet */
 #define PCL_LJ_FEATURES\
@@ -95,22 +96,22 @@
      /* H-P LaserJet III* */
 #define PCL_LJ3_FEATURES\
   (PCL_MODE3 |\
-   PCL_CAN_SET_PAPER_SIZE)
+   PCL_CAN_SET_PAPER_SIZE | PCL_CAN_PRINT_COPIES)
 
      /* H-P LaserJet IIId */
 #define PCL_LJ3D_FEATURES\
   (PCL_MODE3 |\
-   PCL_HAS_DUPLEX | PCL_CAN_SET_PAPER_SIZE)
+   PCL_HAS_DUPLEX | PCL_CAN_SET_PAPER_SIZE | PCL_CAN_PRINT_COPIES)
 
      /* H-P LaserJet 4 */
 #define PCL_LJ4_FEATURES\
   (PCL_MODE3 |\
-   PCL_CAN_SET_PAPER_SIZE)
+   PCL_CAN_SET_PAPER_SIZE | PCL_CAN_PRINT_COPIES)
 
      /* H-P LaserJet 4d */
 #define PCL_LJ4D_FEATURES\
   (PCL_MODE3 |\
-   PCL_HAS_DUPLEX | PCL_CAN_SET_PAPER_SIZE)
+   PCL_HAS_DUPLEX | PCL_CAN_SET_PAPER_SIZE | PCL_CAN_PRINT_COPIES)
 
      /* H-P 2563B line printer */
 #define PCL_LP2563B_FEATURES\
@@ -131,6 +132,14 @@ int dljet_mono_print_page(P5(
 	int dots_per_inch,		/* may be a multiple of y resolution */
 	int features,			/* as defined above */
 	const char *page_init		/* page initialization string */
+			     ));
+int dljet_mono_print_page_copies(P6(
+	gx_device_printer * pdev,
+	FILE * prn_stream,
+	int num_copies,
+	int dots_per_inch,
+	int features,
+	const char *page_init
 			     ));
 
 #endif /* gdevdljm_INCLUDED */
