@@ -5,7 +5,8 @@ rem Convert PostScript to PDF 1.3 (Acrobat 4-and-later compatible).
 rem The PDF compatibility level may change in the future:
 rem use ps2pdf12 or ps2pdf13 if you want a specific level.
 
-rem >_.at
+rem Create an empty file.
+type NUL: >_.at
 goto bot
 
 rem Pass arguments through a file to avoid overflowing the command line.

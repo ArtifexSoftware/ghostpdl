@@ -46,7 +46,10 @@ echo    or: ps2pdf [options...] input.[e]ps output.pdf
 goto end
 
 :nooutfile
-ps2pdfxx %1 %1:.PS=.PDF%
+rem We don't know why the circumlocution with _1 is needed....
+set _1=%1
+ps2pdfxx %1 %_1:.PS=.PDF%
+set _1=
 
 :end
 rem	Clean up.
