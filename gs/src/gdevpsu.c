@@ -233,12 +233,12 @@ psw_end_file(FILE *f, const gx_device *dev,
  */
 void
 psw_write_page_header(stream *s, const gx_device *dev,
-		      const gx_device_pswrite_common_t *pdpc,
-		      bool do_scale)
+                      const gx_device_pswrite_common_t *pdpc,
+                      bool do_scale, long page_ord)
 {
     long page = dev->PageCount + 1;
 
-    pprintld2(s, "%%%%Page: %ld %ld\n%%%%BeginPageSetup\n", page, page);
+    pprintld2(s, "%%%%Page: %ld %ld\n%%%%BeginPageSetup\n", page, page_ord);
     /*
      * Adobe's documentation says that page setup must be placed outside the
      * save/restore that encapsulates the page contents, and that the
