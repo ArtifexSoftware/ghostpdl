@@ -1019,6 +1019,9 @@ typedef struct {
     FMFontIterator Iterator;
     char *name;
     char *path;
+    FSSpec last_container;
+    char *last_container_path;
+    fond_table *last_table;
 } fontenum_t;
                                                                                 
 void *gp_enumerate_fonts_init(gs_memory_t *mem)
@@ -1035,9 +1038,28 @@ void *gp_enumerate_fonts_init(gs_memory_t *mem)
 		result = FMCreateFontIterator(NULL, NULL,
 			kFMLocalIterationScope, Iterator);
 		if (result != noErr) return NULL;
+		memset(&state->last_container, 0, sizeof(FSSpec));
+		state->last_container_path = NULL;
+		state->last_table = NULL;
     }
 
     return (void *)state;
+}
+
+void gp_enumerate_fonts_free(void *enum_state)
+{
+    fontenum_t *state = (fontenum_t *)enum_state;
+	FMFontIterator *Iterator = &state->Iterator;
+	
+	FMDisposeFontIterator(Iterator);
+	
+    /* free any gs_malloc() stuff here */
+    if (state->name) free(state->name);
+    if (state->path) free(state->path);
+    if (state->last_container_path) free(state->last_container_path);
+    if (state->last_table) fond_table_free(state->last_table);
+    /* the garbage collector will take care of the struct itself */
+    
 }
                                    
 int gp_enumerate_fonts_next(void *enum_state, char **fontname, char **path)
@@ -1076,13 +1098,26 @@ int gp_enumerate_fonts_next(void *enum_state, char **fontname, char **path)
 	}
     	
 	result = FMGetFontContainer(Font, &FontContainer);
+	if (!memcmp(&FontContainer, &state->last_container, sizeof(FSSpec))) {
+		/* we have cached data on this file */
+		strncpy(fontpath, state->last_container_path, 256);
+		table = state->last_table;
+	} else {
+		convertSpecToPath(&FontContainer, fontpath, 256);
+		if (!is_ttf_file(fontpath) && !is_otf_file(fontpath))
+	    	table = parse_fond(&FontContainer);
+	    /* cache data on the new font file */
+	    memcpy(&state->last_container, &FontContainer, sizeof(FSSpec));
+	    if (state->last_container_path) free (state->last_container_path);
+		state->last_container_path = strdup(fontpath);
+		if (state->last_table) fond_table_free(state->last_table);
+		state->last_table = table;
+	}
+	
 	if (state->path) {
 		free(state->path);
 		state->path = NULL;
 	}
-	convertSpecToPath(&FontContainer, fontpath, 256);
-	if (!is_ttf_file(fontpath) && !is_otf_file(fontpath))
-	    table = parse_fond(&FontContainer);
     if (table != NULL) {
     	int i;
     	for (i = 0; i < table->entries; i++) {
@@ -1096,14 +1131,22 @@ int gp_enumerate_fonts_next(void *enum_state, char **fontname, char **path)
                 }
             }
         }
-        fond_table_free(table);
-        if (state->path == NULL) dlprintf1("couldn't find resource matching font '%s'\n",
-        	state->name);
     } else {
         /* regular font file */
         state->path = strdup(fontpath);
     }
-    
+    if (state->path == NULL) {
+    	/* no matching font was found in the FOND resource table. this usually */
+    	/* means an LWFN file, which we don't handle yet. */
+    	/* we still specify these with a %macresource% path, but no res id */
+    	/* TODO: check file type */
+    	int len = strlen(fontpath) + strlen("%macresource%#POST") + 1;
+    	state->path = malloc(len);
+    	snprintf(state->path, len, "%%macresource%%%s#POST", fontpath);
+    }
+#if DEBUG
+    dlprintf2("fontenum: returning '%s' in '%s'\n", state->name, state->path);
+#endif
     *fontname = state->name;
     *path = state->path;
 
@@ -1111,16 +1154,3 @@ int gp_enumerate_fonts_next(void *enum_state, char **fontname, char **path)
 	return 1;
 }
                                                                                 
-void gp_enumerate_fonts_free(void *enum_state)
-{
-    fontenum_t *state = (fontenum_t *)enum_state;
-	FMFontIterator *Iterator = &state->Iterator;
-	
-	FMDisposeFontIterator(Iterator);
-	
-    /* free any gs_malloc() stuff here */
-    if (state->name) free(state->name);
-    if (state->path) free(state->path);
-    /* the garbage collector will take care of the struct itself */
-    
-}
