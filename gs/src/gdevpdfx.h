@@ -84,6 +84,7 @@ typedef enum {
      */
     resourceCharProc,
     resourceFontDescriptor,
+    resourceFunction,
     NUM_RESOURCE_TYPES
 } pdf_resource_type_t;
 
@@ -96,7 +97,8 @@ typedef enum {
   &st_pdf_x_object,		/* see below */\
   &st_pdf_font,			/* gdevpdff.h / gdevpdff.c */\
   &st_pdf_char_proc,		/* gdevpdff.h / gdevpdff.c */\
-  &st_pdf_font_descriptor	/* gdevpdff.h / gdevpdff.c */
+  &st_pdf_font_descriptor,	/* gdevpdff.h / gdevpdff.c */\
+  &st_pdf_resource
 
 #define pdf_resource_common(typ)\
     typ *next;			/* next resource of this type */\
@@ -495,21 +497,6 @@ int pdf_set_color(P4(gx_device_pdf *pdev, gx_color_index color,
 		     gx_drawing_color *pdcolor,
 		     const psdf_set_color_commands_t *ppscc));
 
-/* Write matrix values. */
-void pdf_put_matrix(P4(gx_device_pdf *pdev, const char *before,
-		       const gs_matrix *pmat, const char *after));
-
-/* Write a name, with escapes for unusual characters. */
-void pdf_put_name_escaped(P4(stream *s, const byte *nstr, uint size,
-			     bool escape));
-void pdf_put_name(P3(const gx_device_pdf *pdev, const byte *nstr, uint size));
-
-/* Write a string in its shortest form ( () or <> ). */
-void pdf_put_string(P3(const gx_device_pdf *pdev, const byte *str, uint size));
-
-/* Write a value, treating names specially. */
-void pdf_write_value(P3(const gx_device_pdf *pdev, const byte *vstr, uint size));
-
 /* ------ Page contents ------ */
 
 /* Open a page contents part. */
@@ -595,6 +582,76 @@ bool pdf_must_put_clip_path(P2(gx_device_pdf * pdev, const gx_clip_path * pcpath
 
 /* Write and update the clip path. */
 int pdf_put_clip_path(P2(gx_device_pdf * pdev, const gx_clip_path * pcpath));
+
+/* ------ Miscellaneous output ------ */
+
+/* Define the strings for filter names and parameters. */
+typedef struct pdf_filter_names_s {
+    const char *ASCII85Decode;
+    const char *ASCIIHexDecode;
+    const char *CCITTFaxDecode;
+    const char *DCTDecode;
+    const char *DecodeParms;
+    const char *Filter;
+    const char *FlateDecode;
+    const char *LZWDecode;
+    const char *RunLengthDecode;
+} pdf_filter_names_t;
+#define PDF_FILTER_NAMES\
+  "/ASCII85Decode", "/ASCIIHexDecode", "/CCITTFaxDecode",\
+  "/DCTDecode",  "/DecodeParms", "/Filter", "/FlateDecode",\
+  "/LZWDecode", "/RunLengthDecode"
+#define PDF_FILTER_NAMES_SHORT\
+  "/A85", "/AHx", "/CCF", "/DCT", "/DP", "/F", "/Fl", "/LZW", "/RL"
+
+/* Write matrix values. */
+void pdf_put_matrix(P4(gx_device_pdf *pdev, const char *before,
+		       const gs_matrix *pmat, const char *after));
+
+/* Write a name, with escapes for unusual characters. */
+void pdf_put_name_escaped(P4(stream *s, const byte *nstr, uint size,
+			     bool escape));
+void pdf_put_name(P3(const gx_device_pdf *pdev, const byte *nstr, uint size));
+
+/* Write a string in its shortest form ( () or <> ). */
+void pdf_put_string(P3(const gx_device_pdf *pdev, const byte *str, uint size));
+
+/* Write a value, treating names specially. */
+void pdf_write_value(P3(const gx_device_pdf *pdev, const byte *vstr, uint size));
+
+/* Store filters for a stream. */
+int pdf_put_filters(P4(cos_dict_t *pcd, gx_device_pdf *pdev, stream *s,
+		       const pdf_filter_names_t *pfn));
+
+/* Define a possibly encoded and compressed data stream. */
+typedef struct pdf_data_writer_s {
+    psdf_binary_writer binary;
+    long start;
+    long length_id;
+} pdf_data_writer_t;
+/*
+ * Begin a Function or halftone data stream.  The client has opened the
+ * object and written the << and any desired dictionary keys.
+ */
+int pdf_begin_data(P2(gx_device_pdf *pdev, pdf_data_writer_t *pdw));
+
+/* End a data stream. */
+int pdf_end_data(P1(pdf_data_writer_t *pdw));
+
+/* Define the maximum size of a Function reference. */
+#define MAX_REF_CHARS ((sizeof(long) * 8 + 2) / 3)
+
+/* Create a Function object. */
+#ifndef gs_function_DEFINED
+typedef struct gs_function_s gs_function_t;
+#  define gs_function_DEFINED
+#endif
+int pdf_function(P3(gx_device_pdf *pdev, const gs_function_t *pfn,
+		    cos_value_t *pvalue));
+
+/* Write a Function object, returning its object ID. */
+int pdf_write_function(P3(gx_device_pdf *pdev, const gs_function_t *pfn,
+			  long *pid));
 
 /* ---------------- Exported by gdevpdfm.c ---------------- */
 

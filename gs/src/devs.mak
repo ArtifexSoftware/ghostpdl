@@ -785,13 +785,12 @@ $(GLOBJ)gdevpdft.$(OBJ) : $(GLSRC)gdevpdft.c\
  $(scommon_h)
 	$(GLCC) $(GLO_)gdevpdft.$(OBJ) $(C_) $(GLSRC)gdevpdft.c
 
-$(GLOBJ)gdevpdfu.$(OBJ) : $(GLSRC)gdevpdfu.c $(GDEVH)\
- $(math__h) $(memory__h) $(string__h) $(time__h)\
- $(gp_h)\
+$(GLOBJ)gdevpdfu.$(OBJ) : $(GLSRC)gdevpdfu.c $(GXERR)\
+ $(jpeglib__h) $(memory__h) $(string__h)\
  $(gdevpdfo_h) $(gdevpdfx_h)\
- $(gxfixed_h) $(gxistate_h) $(gxpaint_h)\
- $(gzcpath_h) $(gzpath_h)\
- $(scanchar_h) $(scfx_h) $(slzwx_h) $(sstring_h) $(strimpl_h) $(szlibx_h)
+ $(gsdsrc_h) $(gsfunc_h)\
+ $(sa85x_h) $(scanchar_h) $(scfx_h) $(sdct_h) $(slzwx_h) $(spngpx_h)\
+ $(srlx_h) $(sstring_h) $(strimpl_h) $(szlibx_h)
 	$(GLCC) $(GLO_)gdevpdfu.$(OBJ) $(C_) $(GLSRC)gdevpdfu.c
 
 $(GLOBJ)gdevpdfw.$(OBJ) : $(GLSRC)gdevpdfw.c\

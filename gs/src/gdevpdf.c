@@ -570,6 +570,10 @@ pdf_close_page(gx_device_pdf * pdev)
 	}
     }
 
+    /* Write out Functions. */
+
+    pdf_write_resource_objects(pdev, resourceFunction);
+
     /* Record references to just those fonts used on this page. */
 
     {
