@@ -29,6 +29,7 @@ pl_get_real_stdio(FILE **in, FILE **out, FILE **err)
 #include "gstypes.h"
 #include "gserrors.h"
 #include "gsmemory.h"
+#include "plalloc.h"
 #include "gsmalloc.h"
 #include "gsstruct.h"
 #include "gxalloc.h"
@@ -73,7 +74,7 @@ extern pl_interp_implementation_t const * const pdl_implementation[];	/* zero-te
 /* Define the usage message. */
 private const char *pl_usage = "\
 Usage: %s [option* file]+...\n\
-Options: -dNOPAUSE -E[#] -h -L<PCL|PCLXL> -K<maxK> -P<PCL5C|PCL5E|RTL> -Z...\n\
+Options: -dNOPAUSE -E[#] -h -C -L<PCL|PCLXL> -K<maxK> -P<PCL5C|PCL5E|RTL> -Z...\n\
          -sDEVICE=<dev> -g<W>x<H> -r<X>[x<Y>] -d{First|Last}Page=<#>\n\
 	 -sOutputFile=<file> (-s<option>=<string> | -d<option>[=<value>])*\n\
 ";
@@ -176,6 +177,51 @@ long pl_main_cursor_position(P1(pl_top_cursor_t *cursor));
 void pl_main_cursor_close(P1(pl_top_cursor_t *cursor));
 
 
+/* return index in gs device list -1 if not found */
+private inline int
+get_device_index(char *value)
+{
+    gx_device **dev_list;
+    int num_devs = gs_lib_device_list(&dev_list, NULL);
+    int di;
+
+    for ( di = 0; di < num_devs; ++di )
+	if ( !strcmp(gs_devicename(dev_list[di]), value) )
+	    break;
+    if ( di == num_devs ) {
+	fprintf(gs_stderr, "Unknown device name %s.\n", value);
+	return -1;
+    }
+    return di;
+}
+
+/* determine if the device is a high level device */
+private bool
+high_level_device(gx_device *device)
+{
+    /* this is a hack, there is not a nice way to determine if the
+       device is a high level device at this time */
+    if ( strcmp(gs_devicename(device), "pdfwrite" ) == 0 )
+	return true;
+    else
+	return false;
+}
+
+/* high level devices are closed at end job time because they depend
+   on memory owned by the language possibly freed before the high
+   level device requires the memory */
+private int
+close_job(pl_main_universe_t *universe)
+{
+    if ( high_level_device(universe->curr_device) ) {
+	 if (gs_closedevice(universe->curr_device) < 0)
+	     return -1;
+	 if (gs_opendevice(universe->curr_device) < 0)
+	     return -1;
+    }
+    return pl_dnit_job(universe->curr_instance);
+}
+
 /* ----------- Command-line driver for pl_interp's  ------ */
 /* 
  * Here is the real main program.
@@ -186,11 +232,10 @@ main(
     char **             argv
 )
 {
-    gs_ref_memory_t *       imem;
-#define mem ((gs_memory_t *)imem)
-    pl_main_instance_t       inst;
+    gs_memory_t *           mem;
+    pl_main_instance_t      inst;
     arg_list                args;
-    const char *            arg;
+    const char *             arg;
     char                    err_buf[256];
     pl_main_universe_t      universe;
     pl_interp_t *           pjl_interp;
@@ -203,13 +248,13 @@ main(
 
     /* Initialize the platform. */
     pl_platform_init(gs_stderr);
+
+    /* set debug options up front.   */
 #ifdef DEBUG
     gs_debug_out = gs_stdout;
 #endif
     /* Create a memory allocator to allocate various states from */
-    imem = ialloc_alloc_state((gs_raw_memory_t *)&gs_memory_default, 20000);
-    imem->space = 0;		/****** WRONG ******/
-
+    mem = pl_get_allocator();
     {
 	/*
 	 * gs_iodev_init has to be called here (late), rather than
@@ -339,10 +384,7 @@ main(
 		code = pl_process(curr_instance, &r.cursor);
     	        if (code == e_ExitLanguage) {
     	            in_pjl = true;
-                    /* Really should switch back to language auto-sense,*/
-		    /* but don't have one...*/
-		    /* Select desired language & device */
-                    if ( pl_dnit_job(curr_instance) < 0 ) {
+                    if ( close_job(&universe) < 0 ) {
 			fprintf(gs_stderr, "Unable to deinit PDL job.\n");
 			exit(1);
 		    }
@@ -377,19 +419,19 @@ next:	if (code < 0)
 	    pl_process_eof(curr_instance);
 	    pl_report_errors(curr_instance, code, pl_main_cursor_position(&r),
 			     inst.error_report > 0, gs_stdout);
-	    if ( pl_dnit_job(curr_instance) < 0 ) {
+	    if ( close_job(&universe) < 0 ) {
 		fprintf(gs_stderr, "Unable to deinit PDL job.\n");
 		exit(1);
 	    }
         } else {
 	    pl_process_eof(pjl_instance);
-	    if ( pl_dnit_job(pjl_instance) < 0 ) {
+	    if ( close_job(&universe) < 0 ) {
 		fprintf(gs_stderr, "Unable to deinit PJL.\n");
 		exit(1);
 	    }
         }
         /* close input file */
-        pl_dnit_job(pjl_instance);
+        close_job(&universe);
         pl_main_cursor_close(&r);
     }
 
@@ -413,8 +455,6 @@ next:	if (code < 0)
         pl_print_usage(mem, &inst, "Final");
         dprintf1("%% Max allocated = %ld\n", gs_malloc_max);
     }
-    if (gs_debug_c('!'))
-        debug_dump_memory(imem, &dump_control_default);
 #endif
 
     /* release param list */
@@ -640,6 +680,7 @@ pl_main_init_instance(pl_main_instance_t *pti, gs_memory_t *mem)
 	pti->first_page = 1;
 	pti->last_page = max_int;
 	pti->page_count = 0;
+	pti->print_page_count = false;
 	strcpy(&pti->pcl_personality, "PCL");
 }
 
@@ -648,15 +689,18 @@ pl_main_init_instance(pl_main_instance_t *pti, gs_memory_t *mem)
 /* Create a default device if not already defined. */
 int
 pl_top_create_device(pl_main_instance_t *pti, int index, bool is_default)
-{	int code = 0;
-	if ( !is_default || !pti->device )
-	  { const gx_device **list;
-
-	    gs_lib_device_list((const gx_device * const **)&list, NULL);
-	    code = gs_copydevice(&pti->device, list[index], pti->memory);
-	  }
-	return code;
+{	
+    int code = 0;
+    if ( index < 0 )
+	return -1;
+    if ( !is_default || !pti->device ) { 
+	const gx_device **list;
+	gs_lib_device_list((const gx_device * const **)&list, NULL);
+	code = gs_copydevice(&pti->device, list[index], pti->memory);
+    }
+    return code;
 }
+
 
 /* Process the options on the command line. */
 private FILE *
@@ -668,8 +712,7 @@ pl_main_arg_fopen(const char *fname, void *ignore_data)
 int
 pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
  gs_c_param_list *params, pl_interp_implementation_t const * const impl_array[])
-{	const gx_device **dev_list;
-	int num_devs = gs_lib_device_list((const gx_device * const **)&dev_list, NULL);
+{	
 	int code = 0;
 	bool help = false;
 	const char *arg;
@@ -689,6 +732,10 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 	      case '\0':
 		  /* read from stdin - must be last arg */
 		  continue;
+	      case 'c':
+	      case 'C':
+		  pmi->print_page_count = true;
+		  break;
 	      case 'd':
 	      case 'D':
 		if ( !strcmp(arg, "BATCH") )
@@ -710,8 +757,9 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 		  else
 		    value = "true";
 		  if ( sscanf(value, "%d", &vi) != 1 )
-		    { fputs("Usage for -d is -d<option>=<integer>\n", gs_stderr);
-		      return -1;
+		    { 
+			fputs("Usage for -d is -d<option>=<integer>\n", gs_stderr);
+			continue;
 		    }
 		  if ( !strcmp(arg, "FirstPage") )
 		    pmi->first_page = max(vi, 1);
@@ -799,17 +847,10 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 		      return -1;
 		    }
 		  eqchar = *eqp, *eqp = 0, value = eqp + 1;
-		  if ( !strcmp(arg, "DEVICE") )
-		  { int di;
-
-		    for ( di = 0; di < num_devs; ++di )
-		      if ( !strcmp(gs_devicename(dev_list[di]), value) )
-			break;
-		    if ( di == num_devs )
-		      { fprintf(gs_stderr, "Unknown device name %s.\n", value);
-		        return -1;
-		      }
-		    pl_top_create_device(pmi, di, false);
+		  if ( !strcmp(arg, "DEVICE") ) { 
+		      int code = 
+			  pl_top_create_device(pmi, get_device_index(value), false);
+		      if ( code < 0 ) return code;
 		  }
 		  else
 		    { param_string_from_string(str, value);
@@ -946,6 +987,9 @@ pl_pre_finish_page(pl_interp_instance_t *interp, void *closure)
 {
 	pl_main_instance_t *pti = (pl_main_instance_t *)closure;
 	++(pti->page_count);
+	/* print the page number to stderr */
+	if ( pti->print_page_count )
+	    fprintf(gs_stderr, "Printing page %d\n", pti->page_count);
 	if ( pti->page_count >= pti->first_page &&
 	     pti->page_count <= pti->last_page
 	   )
