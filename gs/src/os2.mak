@@ -37,7 +37,7 @@ GLSRCDIR=src
 GLGENDIR=obj
 GLOBJDIR=obj
 PSSRCDIR=src
-PSLIBDIR=src
+PSLIBDIR=lib
 PSGENDIR=obj
 PSOBJDIR=obj
 
@@ -524,6 +524,8 @@ $(ECHOGS_XE): $(GLSRCDIR)\echogs.c
 !endif
 
 $(GENARCH_XE): $(GLSRCDIR)\genarch.c $(GENARCH_DEPS)
+	-mkdir $(GLGENDIR)
+	-mkdir $(BINDIR)
 !if $(EMX)
 	$(CCAUX) -o $(AUXGEN)genarch $(GLSRCDIR)\genarch.c
 	$(COMPDIR)\emxbind $(EMXPATH)/bin/emxl.exe $(AUXGEN)genarch $(GENARCH_XE)
