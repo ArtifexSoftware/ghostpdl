@@ -45,6 +45,7 @@ else
     ENUM_RETURN(st->cbuf);
 ENUM_PTR3(1, stream, strm, prev, next);
 ENUM_PTR(4, stream, state);
+case 5: return ENUM_CONST_STRING(&st->file_name);
 ENUM_PTRS_END
 private RELOC_PTRS_WITH(stream_reloc_ptrs, stream *st)
 {
@@ -68,6 +69,7 @@ private RELOC_PTRS_WITH(stream_reloc_ptrs, stream *st)
     RELOC_VAR(st->prev);
     RELOC_VAR(st->next);
     RELOC_VAR(st->state);
+    RELOC_CONST_STRING_VAR(st->file_name);
 }
 RELOC_PTRS_END
 /* Finalize a stream by closing it. */
@@ -106,6 +108,7 @@ s_init(stream *s, gs_memory_t * mem)
     s->report_error = s_no_report_error;
     s->error_string[0] = 0;
     s->prev = s->next = 0;	/* clean for GC */
+    s->file_name.data = 0;	/* ibid. */
     s->close_strm = false;	/* default */
     s->close_at_eod = true;	/* default */
 }
@@ -166,8 +169,31 @@ s_std_init(register stream * s, byte * ptr, uint len, const stream_procs * pp,
     s->procs = *pp;
     s->state = (stream_state *) s;	/* hack to avoid separate state */
     s->file = 0;
+    s->file_name.data = 0;	/* in case stream is on stack */
     if_debug4('s', "[s]init 0x%lx, buf=0x%lx, len=%u, modes=%d\n",
 	      (ulong) s, (ulong) ptr, len, modes);
+}
+
+
+/* Set the file name of a stream, copying the name. */
+/* Return <0 if the copy could not be allocated. */
+int
+ssetfilename(stream *s, const byte *data, uint size)
+{
+    byte *fname =
+	(s->file_name.data == 0 ?
+	 gs_alloc_string(s->memory, size, "ssetfilename") :
+	 gs_resize_string(s->memory,
+			  (byte *)s->file_name.data,	/* break const */
+			  s->file_name.size,
+			  size, "ssetfilename"));
+
+    if (fname == 0)
+	return -1;
+    memcpy(fname, data, size);
+    s->file_name.data = fname;
+    s->file_name.size = size;
+    return 0;
 }
 
 /* Implement a stream procedure as a no-op. */
@@ -259,6 +285,12 @@ s_disable(register stream * s)
     s->strm = 0;
     s->state = (stream_state *) s;
     s->template = &s_no_template;
+    /* Free the file name. */
+    if (s->file_name.data) {
+	gs_free_const_string(s->memory, s->file_name.data, s->file_name.size,
+			     "s_disable(file_name)");
+	s->file_name.data = 0;
+    }
     /****** SHOULD DO MORE THAN THIS ******/
     if_debug1('s', "[s]disable 0x%lx\n", (ulong) s);
 }

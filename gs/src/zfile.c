@@ -189,6 +189,11 @@ zfile(i_ctx_t *i_ctx_p)
     }
     if (code < 0)
 	return code;
+    code = ssetfilename(s, op[-1].value.const_bytes, r_size(op - 1));
+    if (code < 0) {
+	sclose(s);
+	return_error(e_VMerror);
+    }
     make_stream_file(op - 1, s, file_access);
     pop(1);
     return code;
@@ -472,6 +477,13 @@ zfindlibfile(i_ctx_t *i_ctx_p)
 	pname.iodev = iodev_default;
     if (pname.iodev != iodev_default) {		/* Non-OS devices don't have search paths (yet). */
 	code = zopen_file(&pname, "r", &s, imemory);
+	if (code >= 0) {
+	    code = ssetfilename(s, op->value.const_bytes, r_size(op));
+	    if (code < 0) {
+		sclose(s);
+		return_error(e_VMerror);
+	    }
+	}
 	if (code < 0) {
 	    push(1);
 	    make_false(op);
@@ -483,6 +495,14 @@ zfindlibfile(i_ctx_t *i_ctx_p)
 
 	code = lib_file_open(pname.fname, pname.len, cname, MAX_CNAME,
 			     &clen, op + 1, imemory);
+	if (code >= 0) {
+	    s = fptr(op + 1);
+	    code = ssetfilename(s, cname, clen);
+	    if (code < 0) {
+		sclose(s);
+		return_error(e_VMerror);
+	    }
+	}
 	if (code == e_VMerror)
 	    return code;
 	if (code < 0) {

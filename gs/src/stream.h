@@ -175,6 +175,7 @@ struct stream_s {
      * we put their state here.
      */
     FILE *file;			/* file handle for C library */
+    gs_const_string file_name;	/* file name (optional) */
     uint file_modes;		/* access modes for the file, */
 				/* may be a superset of modes */
     int (*save_close)(P1(stream *));	/* save original close proc */
@@ -185,7 +186,7 @@ extern_st(st_stream);
 #define public_st_stream()	/* in stream.c */\
   gs_public_st_composite_final(st_stream, stream, "stream",\
     stream_enum_ptrs, stream_reloc_ptrs, stream_finalize)
-#define STREAM_NUM_PTRS 5
+#define STREAM_NUM_PTRS 6
 
 /* Initialize the checking IDs of a stream. */
 #define s_init_ids(s) ((s)->read_id = (s)->write_id = 1)
@@ -333,6 +334,10 @@ void sread_string(P3(stream *, const byte *, uint)),
 void sread_file(P4(stream *, FILE *, byte *, uint)),
     swrite_file(P4(stream *, FILE *, byte *, uint)),
     sappend_file(P4(stream *, FILE *, byte *, uint));
+
+/* Set the file name of a stream, copying the name. */
+/* Return <0 if the copy could not be allocated. */
+int ssetfilename(P3(stream *, const byte *, uint));
 
 /* Create a stream that tracks the position, */
 /* for calculating how much space to allocate when actually writing. */

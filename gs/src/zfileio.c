@@ -18,6 +18,7 @@
 
 /*$Id$ */
 /* File I/O operators */
+#include "memory_.h"
 #include "ghost.h"
 #include "gp.h"
 #include "oper.h"
@@ -619,6 +620,25 @@ zsetfileposition(i_ctx_t *i_ctx_p)
 
 /* ------ Non-standard extensions ------ */
 
+/* <file> .filename <string> */
+private int
+zfilename(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    stream *s;
+    byte *str;
+
+    check_file(s, op);
+    if (s->file_name.data == 0)
+	return_error(e_rangecheck);
+    str = ialloc_string(s->file_name.size, "filename");
+    if (str == 0)
+	return_error(e_VMerror);
+    memcpy(str, s->file_name.data, s->file_name.size);
+    make_const_string(op, a_all, s->file_name.size, str);
+    return 0;
+}
+
 /* <file> .isprocfilter <bool> */
 private int
 zisprocfilter(i_ctx_t *i_ctx_p)
@@ -734,6 +754,7 @@ const op_def zfileio1_op_defs[] = {
     {"1closefile", zclosefile},
 		/* currentfile is in zcontrol.c */
     {"1echo", zecho},
+    {"1.filename", zfilename},
     {"1.fileposition", zxfileposition},
     {"1fileposition", zfileposition},
     {"0flush", zflush},
