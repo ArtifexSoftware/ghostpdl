@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2_priv.h,v 1.12 2002/07/07 20:38:26 giles Exp $
+    $Id: jbig2_priv.h,v 1.13 2002/07/08 19:23:11 giles Exp $
     
     shared library internals
 */
@@ -49,10 +49,10 @@ struct _Jbig2Ctx {
   byte file_header_flags;
   int32_t n_pages;
 
-  int n_segments;
   int n_segments_max;
   Jbig2Segment **segments;
-  int segment_index;
+  int n_segments;	/* index of last segment header parsed */
+  int segment_index;    /* index of last segment body parsed */
   
   /* list of decoded pages, including the one in progress,
      currently stored as a contiguous, 0-indexed array. */
