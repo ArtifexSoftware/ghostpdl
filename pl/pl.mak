@@ -181,7 +181,8 @@ $(PLOBJ)plplatf.$(OBJ): $(PLSRC)plplatf.c $(AK) $(string__h)\
 plftable_h=$(PLSRC)plftable.h
 
 # hack - need AGFA included for -DAGFA_FONT_TABLE
-$(PLOBJ)plftable.$(OBJ): $(PLSRC)plftable.c $(AK) $(plftable_h)
+$(PLOBJ)plftable.$(OBJ): $(PLSRC)plftable.c $(AK) $(plftable_h)\
+  $(gstype_h) $(plfont_h)
 	$(PLCCC) $(AGFA_INCLUDES) $(PLSRC)plftable.c $(PLO_)plftable.$(OBJ)
 
 $(PLOBJ)pltop.$(OBJ): $(PLSRC)pltop.c $(AK) $(string__h)\
