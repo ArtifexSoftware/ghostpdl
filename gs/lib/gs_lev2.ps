@@ -730,9 +730,14 @@ end def
 currentdict /.devcs .undef
 
 /setcolorspace {		% <name|array> setcolorspace -
-  dup dup dup type /nametype ne { 0 get } if
-  //colorspacedict exch get exec
-  dup null eq { pop } { .setcolorspace } ifelse pop
+  currentcolorspace 1 index ne {
+    dup dup dup type /nametype ne { 0 get } if
+    //colorspacedict exch get exec
+    dup null eq { pop } { .setcolorspace } ifelse pop
+  } { 
+    pop		% skip the setcolorspace in case it is expensive
+  }
+  ifelse
 } odef
 
 colorspacedict
