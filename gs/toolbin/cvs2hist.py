@@ -230,7 +230,7 @@ def BuildLog(log_date_command):
     reading_tags = 0
     description = []
     log = []
-    tag_pattern = re.compile("^	\([^:]+\): \([0-9.]+\)\n$")
+    tag_pattern = re.compile("^	([^:]+): ([0-9.]+)\n$")
 
     for line in os.popen(log_date_command, 'r').readlines():
 	if line[:5] == '=====' or line[:5] == '-----':
@@ -244,19 +244,24 @@ def BuildLog(log_date_command):
 	    description = []
             continue
 	if reading_description:
+            # Omit initial empty description lines.
+            if line == '\n' and description == []:
+                continue
 	    description.append(line)
             continue
         if reading_tags:
-            if tag_pattern.match(line) > 0:
-                tag = tag_pattern.group(1)
-                revs = string.splitfields(tag_pattern.group(2), ", ")
-                for rev in revs:
-                    try:
-                        tags[rev].append(tag)
-                    except KeyError:
-                        tags[rev] = [tag]
+            match = tag_pattern.match(line)
+            if match == None:
+                reading_tags = 0
                 continue
-            reading_tags = 0
+            tag = match.group(1)
+            revs = string.splitfields(match.group(2), ", ")
+            for rev in revs:
+                try:
+                    tags[rev].append(tag)
+                except KeyError:
+                    tags[rev] = [tag]
+            continue
 	if line[:len("Working file: ")] == "Working file: ":
 	    rcs_file = line[len("Working file: "):-1]
             tags = {}
@@ -269,6 +274,11 @@ def BuildLog(log_date_command):
 	    reading_description = 1
         elif line[:len("symbolic names:")] == "symbolic names:":
             reading_tags = 1
+
+    for entry in log:
+        print entry
+    print '----------------------------------------------------------------'
+
     return log
 
 # ---------------- Main program ---------------- #
@@ -382,9 +392,10 @@ def main():
             text_lines[:1] = []
         if merge:
             group = "(all)"
-        elif group_pattern.match(text_lines[0]) > 0:
-            group = group_pattern.group(1)
-            text_lines[0] = text_lines[0][len(group_pattern.group(0)):]
+        elif group_pattern.match(text_lines[0]) != None:
+            match = group_pattern.match(text_lines[0])
+            group = match.group(1)
+            text_lines[0] = text_lines[0][len(match.group(0)):]
         else:
             group = SourceFileGroup(file, sources)
         try:
