@@ -67,8 +67,8 @@ GX_FILL_TRAPEZOID(gx_device * dev, const gs_fixed_edge * left,
 	int max_rect_height = 1;  /* max height to do fill as rectangle */
 	int code;
 #if CONTIGUOUS_FILL
-	const bool peak0 = (flags & 1 != 0);
-	const bool peak1 = (flags & 2 != 0);
+	const bool peak0 = ((flags & 1) != 0);
+	const bool peak1 = ((flags & 2) != 0);
 	int peak_y0 = ybot + fixed_half;
 	int peak_y1 = ytop - fixed_half;
 #endif

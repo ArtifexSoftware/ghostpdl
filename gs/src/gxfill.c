@@ -1709,7 +1709,7 @@ private int fill_slant_adjust(fixed, fixed, fixed, fixed, fixed,
 	     const gx_device_color *, gx_device *, gs_logical_operation_t);
 private void resort_x_line(active_line *);
 
-/****** PATCH ******/
+private int
 loop_fill_trap(gx_device * dev, fixed fx0, fixed fw0, fixed fy0,
 	       fixed fx1, fixed fw1, fixed fh, const gs_fixed_rect * pbox,
 	       const gx_device_color * pdevc, gs_logical_operation_t lop,
@@ -1736,7 +1736,6 @@ loop_fill_trap(gx_device * dev, fixed fx0, fixed fw0, fixed fy0,
     return (*fill_trap)
 	(dev, &left, &right, ybot, ytop, false, pdevc, lop);
 }
-/****** END PATCH ******/
 
 /* Main filling loop.  Takes lines off of y_list and adds them to */
 /* x_list as needed.  band_mask limits the size of each band, */
