@@ -37,8 +37,11 @@ struct gs_type42_data_s {
     /* The following are set by the client. */
     int (*string_proc) (P4(gs_font_type42 *, ulong, uint, const byte **));
     void *proc_data;		/* data for procedures */
-    /* The following are initialized by ...font_init, */
-    /* but may be reset by the client. */
+    /*
+     * The following are initialized by ...font_init, but may be reset by
+     * the client.  get_outline returns 1 if the string is newly allocated
+     * (using the font's allocator) and can be freed by the client.
+     */
     int (*get_outline)(P3(gs_font_type42 *pfont, uint glyph_index,
 			  gs_const_string *pgstr));
     int (*get_metrics)(P4(gs_font_type42 *pfont, uint glyph_index, int wmode,

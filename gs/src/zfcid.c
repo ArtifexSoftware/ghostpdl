@@ -287,10 +287,25 @@ z11_get_outline(gs_font_type42 * pfont, uint glyph_index,
     int code = pfcid->cidata.orig_procs.get_outline(pfont, glyph_index, pgstr);
 
     if (code >= 0) {
-	if (pgstr->size <= skip)
+	byte *data = (byte *)pgstr->data;  /* break const */
+	uint size = pgstr->size;
+
+	if (size <= skip) {
+	    if (code > 0 && size != 0)
+		gs_free_string(pfont->memory, data, size, "z11_get_outline");
 	    pgstr->data = 0, pgstr->size = 0;
-	else
-	    pgstr->data += skip, pgstr->size -= skip;
+	} else {
+	    if (code > 0) {
+		/* Newly allocated, freeble string. */
+		memmove(data, data + skip, size - skip);
+		pgstr->data = gs_resize_string(pfont->memory, data,
+					       size, size - skip,
+					       "z11_get_outline");
+	    } else {
+		pgstr->data += skip;
+	    }
+	    pgstr->size = size - skip;
+	}
     }
     return code;
 }

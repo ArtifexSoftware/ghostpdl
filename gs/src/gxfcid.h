@@ -74,8 +74,9 @@ typedef struct gs_font_cid0_data_s {
     uint FDArray_size;
     int FDBytes;		/* optional, for standard glyph_data */
     /*
-     * The third argument of glyph_data may be NULL if only the font
-     * number is wanted.
+     * The third argument of glyph_data may be NULL if only the font number
+     * is wanted.  glyph_data returns 1 if the string is newly allocated
+     * (using the font's allocator) and can be freed by the client.
      */
     int (*glyph_data)(P4(gs_font_base *, gs_glyph, gs_const_string *,
 			 int *));

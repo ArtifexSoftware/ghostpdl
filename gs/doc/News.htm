@@ -104,6 +104,9 @@ this structure must now call alloc_indexed_map.
 	- Setting a transfer map as the identity mapping now requires
 calling gx_set_identity_transfer.
 	- gs_cid_system_info is renamed gs_cid_system_info_t.
+	- The get_outline procedure of a Type 42 or Type 11 (CIDFontType 0)
+font now returns 1 if the string was newly allocated and can be freed by the
+client.
 
 </pre>
 
