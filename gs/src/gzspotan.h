@@ -56,6 +56,7 @@ struct gx_san_trap_s {
     gx_san_trap_contact *upper; /* Neighbours of the upper band. */
     const segment *l; /* Outline pointer : left boundary. */
     const segment *r; /* Outline pointer : right boundary. */
+    int dir_l, dir_r; /* Outline direction : left, right. */
     /* The topology reconstrustor work data : */
     gx_san_trap *next; /* Next with same ytop. */
     gx_san_trap *prev; /* Prev with same ytop. */
@@ -125,7 +126,7 @@ void gx_san_begin(gx_device_spot_analyzer *padev);
 /* Assumes an Y-band scanning order with increasing X inside a band. */
 int gx_san_trap_store(gx_device_spot_analyzer *padev, 
     fixed ybot, fixed ytop, fixed xlbot, fixed xrbot, fixed xltop, fixed xrtop,
-    const segment *l, const segment *r);
+    const segment *l, const segment *r, int dir_l, int dir_r);
 
 /* Finish accumulating a path. */
 void gx_san_end(const gx_device_spot_analyzer *padev);

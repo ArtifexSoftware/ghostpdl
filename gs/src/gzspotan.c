@@ -447,7 +447,7 @@ gx_san_begin(gx_device_spot_analyzer *padev)
 int
 gx_san_trap_store(gx_device_spot_analyzer *padev, 
     fixed ybot, fixed ytop, fixed xlbot, fixed xrbot, fixed xltop, fixed xrtop,
-    const segment *l, const segment *r)
+    const segment *l, const segment *r, int dir_l, int dir_r)
 {
     gx_san_trap *last;
 
@@ -477,6 +477,8 @@ gx_san_trap_store(gx_device_spot_analyzer *padev,
     last->xrtop = xrtop;
     last->l = l;
     last->r = r;
+    last->dir_l = dir_l;
+    last->dir_r = dir_r;
     last->upper = 0;
     last->fork = 0;
     last->visited = false;
@@ -599,20 +601,26 @@ hint_by_tangent(void *client_data, gx_san_trap *t0, gx_san_trap *t1, double ave_
 {   gx_san_trap *t;
     gx_san_sect sect;
     double slope0 = 1, slope1 = 1;
-    const segment *s0 = NULL, *p0 = NULL, *s1 = NULL, *p1 = NULL;
+    const segment *s0 = NULL, *s1 = NULL, *s, *p;
     int code;
     
     sect.l = sect.r = NULL;
     for (t = t0; ; t = t->upper->upper) {
-	if (t->r != s0) {
-	    p0 = t->l;
-	    s0 = p0->next;
-	    choose_by_tangent(p0, s0, &slope0, &sect.l, &sect.xl, &sect.yl);
+	s = t->l;
+	if (t->dir_l < 0)
+	    s = (s->type == s_line_close ? ((const line_close_segment *)s)->sub->next : s->next);
+	p = (s->type == s_start ? ((const subpath *)s)->last->prev : s->prev);
+	if (s != s0) {
+	    s0 = s;
+	    choose_by_tangent(p, s0, &slope0, &sect.l, &sect.xl, &sect.yl);
 	}
-	if (t->l != s1) {
-	    s1 = t->r;
-	    p1 = s1->prev;
-	    choose_by_tangent(p1, s1, &slope1, &sect.r, &sect.xr, &sect.yr);
+	s = t->r;
+	if (t->dir_r < 0)
+	    s = (s->type == s_line_close ? ((const line_close_segment *)s)->sub->next : s->next);
+	p = (s->type == s_start ? ((const subpath *)s)->last->prev : s->prev);
+	if (s != s1) {
+	    s1 = s;
+	    choose_by_tangent(p, s1, &slope1, &sect.r, &sect.xr, &sect.yr);
 	}
 	if (t == t1)
 	    break;

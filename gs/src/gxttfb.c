@@ -520,11 +520,11 @@ int stem_hint_handler(void *client_data, gx_san_sect *ss)
 {
     t1_hinter *h = (t1_hinter *)client_data;
 
-    return t1_hinter__hstem(h, ss->xl, ss->xl);
+    return t1_hinter__vstem(h, ss->xl, ss->xl);
 }
 
 private int grid_fit(gx_device_spot_analyzer *padev, gx_path *path, 
-	gs_font_type42 *pfont, const gs_log2_scale_point *pscale, gx_ttfExport *e)
+	gs_font_type42 *pfont, const gs_log2_scale_point *pscale, gx_ttfExport *e, ttfOutliner *o)
 {
     /* Not completed yet. */
     gs_imager_state is_stub;
@@ -532,51 +532,76 @@ private int grid_fit(gx_device_spot_analyzer *padev, gx_path *path,
     gx_device_color devc_stub;
     int code;
     t1_hinter h;
-    gs_matrix m;
+    gs_matrix m, fm, fmb;
     gs_matrix_fixed ctm_temp;
     bool atp = gs_currentaligntopixels(pfont->dir);
-    fixed origin_x = 0, origin_y = 0; /* fixme */
     int FontType = 1; /* Will apply Type 1 hinter. */
     fixed sbx = 0, sby = 0; /* fixme */
+    double scale = 1.0 / o->pFont->nUnitsPerEm;
 
-    gs_make_identity(&m);
+    m.xx = o->post_transform.a;
+    m.xy = o->post_transform.b;
+    m.yx = o->post_transform.c;
+    m.yy = o->post_transform.d;
+    m.tx = o->post_transform.tx;
+    m.ty = o->post_transform.ty;
     code = gs_matrix_fixed_from_matrix(&ctm_temp, &m);
+    if (code < 0)
+	return code;
+    code = gs_matrix_scale(&pfont->FontMatrix, scale, scale, &fm);
+    if (code < 0)
+	return code;
+    code = gs_matrix_scale(&pfont->base->FontMatrix, scale, scale, &fmb);
     if (code < 0)
 	return code;
     t1_hinter__init(&h, path); /* Will export to */
     code = t1_hinter__set_mapping(&h, &ctm_temp,
-			&pfont->FontMatrix, &pfont->base->FontMatrix,
+			&fm, &fmb,
 			pscale->x, pscale->x,
 			atp ? 0 : pscale->x, atp ? 0 : pscale->y, /* Not sure */
-			origin_x, origin_y, atp);
+			ctm_temp.tx_fixed, ctm_temp.ty_fixed, atp);
     if (code < 0)
 	return code;
-    code = t1_hinter__set_font42_data(&h, FontType, &pfont->data, false);
-    if (code < 0)
-	return code;
-    memset(&is_stub, 0, sizeof(is_stub));
-    set_nonclient_dev_color(&devc_stub, 1);
-    params.rule = gx_rule_winding_number;
-    params.adjust.x = params.adjust.y = 0;
-    params.flatness = (float)0.2;
-    params.fill_zero_width = false;
-    gx_san_begin(padev);
-    code = dev_proc(padev, fill_path)((gx_device *)padev, 
-		    &is_stub, path, &params, &devc_stub, NULL);
-    gx_san_end(padev);
-    code = gx_san_generate_stems(padev, &h, stem_hint_handler);
-    if (code < 0)
-	return code;
-    code = t1_hinter__sbw(&h, sbx, sby, e->w.x, e->w.y);
-    if (code < 0)
-	return code;
-    code = path_to_hinter(&h, path);
-    if (code < 0)
-	return code;
-    code = gx_path_new(path);
-    if (code < 0)
-	return code;
-    code = t1_hinter__endglyph(&h);
+    if (!h.disable_hinting) {
+	o->post_transform.a = o->post_transform.d = 1;
+	o->post_transform.b = o->post_transform.c = 0;
+	o->post_transform.tx = o->post_transform.ty = 0;
+	ttfOutliner__DrawGlyphOutline(o);
+	if (e->error)
+	    return e->error;
+	code = t1_hinter__set_font42_data(&h, FontType, &pfont->data, false);
+	if (code < 0)
+	    return code;
+	memset(&is_stub, 0, sizeof(is_stub));
+	set_nonclient_dev_color(&devc_stub, 1);
+	params.rule = gx_rule_winding_number;
+	params.adjust.x = params.adjust.y = 0;
+	params.flatness = (float)0.2;
+	params.fill_zero_width = false;
+	gx_san_begin(padev);
+	code = dev_proc(padev, fill_path)((gx_device *)padev, 
+			&is_stub, path, &params, &devc_stub, NULL);
+	gx_san_end(padev);
+	if (code < 0)
+	    return code;
+	code = gx_san_generate_stems(padev, &h, stem_hint_handler);
+	if (code < 0)
+	    return code;
+	code = t1_hinter__sbw(&h, sbx, sby, e->w.x, e->w.y);
+	if (code < 0)
+	    return code;
+	code = path_to_hinter(&h, path);
+	if (code < 0)
+	    return code;
+	code = gx_path_new(path);
+	if (code < 0)
+	    return code;
+	code = t1_hinter__endglyph(&h);
+    } else {
+	ttfOutliner__DrawGlyphOutline(o);
+	if (e->error)
+	    return e->error;
+    }
     return code;
 }
 #endif
@@ -617,24 +642,29 @@ int gx_ttf_outline(ttfFont *ttf, gx_ttfReader *r, gs_font_type42 *pfont, int gly
     gx_ttfReader__Reset(r);
     ttfOutliner__init(&o, ttf, &r->super, &e.super, true, false, pfont->WMode != 0);
     switch(ttfOutliner__Outline(&o, glyph_index, subpix_origin.x, subpix_origin.y, &m1)) {
+	case fPatented:
+	    /* The returned outline did not apply a bytecode (it is not grid-fitted). */
+	    WarnPatented(pfont, ttf, "Some glyphs of the font");
+	    /* Fall through. */
 	case fNoError:
 #	    if TT_GRID_FITTING
 		if (!gs_currentgridfittt(pfont->dir))
-		    return grid_fit(pfont->dir->san, path, pfont, pscale, &e);
+		    return grid_fit(pfont->dir->san, path, pfont, pscale, &e, &o);
+		else {
+		    ttfOutliner__DrawGlyphOutline(&o);
+		    if (e.error)
+			return e.error;
+		}
+#	    else
+		ttfOutliner__DrawGlyphOutline(&o);
+		if (e.error)
+		    return e.error;
 #	    endif
 	    return 0;
 	case fMemoryError:
 	    return_error(gs_error_VMerror);
 	case fUnimplemented:
 	    return_error(gs_error_unregistered);
-	case fPatented:
-	    /* The returned outline did not apply a bytecode (it is not grid-fitted). */
-	    WarnPatented(pfont, ttf, "Some glyphs of the font");
-#	    if TT_GRID_FITTING
-		if (!gs_currentgridfittt(pfont->dir))
-		    return grid_fit(pfont->dir->san, path, pfont, pscale, &e);
-#	    endif
-	    return 0;
 	default:
 	    {	int code = r->super.Error(&r->super);
 

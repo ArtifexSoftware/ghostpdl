@@ -2083,9 +2083,8 @@ private int t1_hinter__export(t1_hinter * this)
 	    return code;
 	if (i >= this->contour_count)
 	    break;
-	 vd_setcolor(RGB(255,0,0)); 
-           vd_moveto(fx,fy);
-	
+	vd_setcolor(RGB(255,0,0)); 
+        vd_moveto(fx,fy);
         for(j = beg_pole + 1; j <= end_pole; j++) {
             pole = & this->pole[j];
             g2d(this, pole->ax, pole->ay, &fx, &fy);
@@ -2093,9 +2092,8 @@ private int t1_hinter__export(t1_hinter * this)
                 code = gx_path_add_line(this->output_path, fx, fy);
 		if (code < 0)
 		    return code;
-                 vd_setcolor(RGB(255,0,0));
-                   vd_lineto(fx,fy);
-		
+                vd_setcolor(RGB(255,0,0));
+                vd_lineto(fx,fy);
             } else {
                 int j1 = j + 1, j2 = (j + 2 > end_pole ? beg_pole : j + 2);
                 fixed fx1, fy1, fx2, fy2;
@@ -2105,9 +2103,8 @@ private int t1_hinter__export(t1_hinter * this)
                 code = gx_path_add_curve(this->output_path, fx, fy, fx1, fy1, fx2, fy2);
 		if (code < 0)
 		    return code;
-                 vd_setcolor(RGB(255,0,0));
-                   vd_curveto(fx,fy,fx1,fy1,fx2,fy2);
-		
+                vd_setcolor(RGB(255,0,0));
+                vd_curveto(fx,fy,fx1,fy1,fx2,fy2);
                 j+=2;
             }
         }

@@ -54,6 +54,11 @@ typedef struct {
 
 typedef signed long F26Dot6;
 
+typedef struct { 
+    F26Dot6 x;
+    F26Dot6 y;
+} F26Dot6Point;
+
 /* Define an abstract class for accessing memory managers from the TT interpreter. */
 typedef struct ttfMemory_s ttfMemory;
 struct ttfMemory_s {   
@@ -165,6 +170,16 @@ struct ttfExport_s {
 int ttfInterpreter__obtain(ttfMemory *mem, ttfInterpreter **ptti);
 void ttfInterpreter__release(ttfInterpreter **ptti);
 
+/* Define an class for outline description. */
+typedef struct { 
+    bool    bCompound;
+    int     contourCount;
+    uint    pointCount;
+    F26Dot6Point  advance;
+    F26Dot6 sideBearing;
+    F26Dot6   xMinB, yMinB, xMaxB, yMaxB;
+} ttfGlyphOutline;
+
 /* Define an class for generating TT outlines. */
 typedef struct {
     bool bOutline;
@@ -176,11 +191,14 @@ typedef struct {
     ttfReader *r;
     ttfExport *exp;
     ttfFont *pFont;
+    ttfGlyphOutline out;
+    FloatMatrix post_transform;
 } ttfOutliner;
 
 void ttfOutliner__init(ttfOutliner *, ttfFont *f, ttfReader *r, ttfExport *exp, 
 			bool bOutline, bool bFirst, bool bVertical);
 FontError ttfOutliner__Outline(ttfOutliner *this, int glyphIndex,
 	float orig_x, float orig_y, FloatMatrix *m1);
+void ttfOutliner__DrawGlyphOutline(ttfOutliner *this);
 
 #endif

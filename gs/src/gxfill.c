@@ -475,6 +475,10 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	)
 	pfpath = ppath;
     else {
+#	if TT_GRID_FITTING
+	    if (is_spotan_device(dev))
+		return_error(gs_error_unregistered); /* Must not happen. */
+#	endif
 	gx_path_init_local(&ffpath, ppath->memory);
 	code = gx_path_copy_reducing(ppath, &ffpath, 
 #		    if CURVED_TRAPEZOID_FILL
@@ -1825,7 +1829,8 @@ fill_trap_or_rect(gx_device * dev, const gs_fixed_rect * pbox,
        we need to pass segment pointers. We're unhappy of that. */
     if (is_spotan_device(dev)) {
 	return gx_san_trap_store((gx_device_spot_analyzer *)dev, 
-	    y, y1, xlbot, xbot, xltop, xtop, flp->pseg, alp->pseg);
+	    y, y1, xlbot, xbot, xltop, xtop, flp->pseg, alp->pseg, 
+	    flp->direction, alp->direction);
     }
 #endif
 
