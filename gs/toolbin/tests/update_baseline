@@ -41,6 +41,8 @@ def make_entry(ifile, device, dpi, band):
     
     gs = gstestgs.Ghostscript()
     gs.command = gsconf.comparegs
+    gs.log_stdout = gsconf.log_stdout
+    gs.log_stderr = gsconf.log_stderr
     gs.infile = gsconf.comparefiledir + ifile
     gs.outfile = ofile
     gs.device = device
