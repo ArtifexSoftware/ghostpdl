@@ -75,6 +75,7 @@ set_type(byte *bptr, gs_memory_type_ptr_t type)
 typedef struct pl_mem_node_s {
     byte *address;
     struct pl_mem_node_s *next;
+    char *cname;
 } pl_mem_node_t;
 
 /* head of global free list */
@@ -82,7 +83,7 @@ private pl_mem_node_t *head = NULL;
 
 /* return -1 on error, 0 on success */
 int 
-pl_mem_node_add(byte *add)
+pl_mem_node_add(byte *add, char *cname)
 {
   if( PL_KEEP_GLOBAL_FREE_LIST ) {
     pl_mem_node_t *node = (pl_mem_node_t *)malloc(sizeof(pl_mem_node_t));
@@ -96,6 +97,7 @@ pl_mem_node_add(byte *add)
         head = node;
     }
     head->address = add;
+    head->cname = cname;
   }
   return 0;
 }
@@ -160,7 +162,7 @@ pl_mem_node_free_all_remaining()
 	       ptr = ((byte*)current->address) + (2 * round_up_to_align(1));
 	       size = get_size(ptr);
 	       total_size += size;
-	       dprintf2("Recovered %x size %d\n", ptr, size);
+	       dprintf3("Recovered %x size %d client %s\n", ptr, size, current->cname);
 	    }
 	    free(current->address);
 	    free(current);
@@ -206,7 +208,7 @@ pl_alloc(gs_memory_t * mem, uint size, gs_memory_type_ptr_t type, client_name_t 
 	if ( gs_debug_c('@') )
 	    memset(&ptr[minsize * 2], 0xff, get_size(&ptr[minsize * 2]));
 #endif
-	if ( pl_mem_node_add(ptr) ) { 
+	if ( pl_mem_node_add(ptr, cname) ) { 
 	   free( ptr );
 	   return NULL;
 	}
@@ -284,7 +286,7 @@ pl_resize_object(gs_memory_t * mem, void *obj, uint new_num_elements, client_nam
     /* replace the size field */
     pl_mem_node_remove(&bptr[-header_size]);
     ptr = (byte *)realloc(&bptr[-header_size], new_size);
-    if ( !ptr || pl_mem_node_add(ptr) )
+    if ( !ptr || pl_mem_node_add(ptr, cname) )
 	return NULL;
     /* da for debug allocator - so scripts can parse the trace */
     if_debug2('A', "[da]:realloc:%x:%s\n", ptr, cname );
