@@ -17,6 +17,9 @@
 /* $Id$ */
 /* Configurable algorithm for decompozing a spot into trapezoids. */
 
+#ifndef gxfilltr_INCLUDED
+#  define gxfilltr_INCLUDED
+
 /*
  * Since we need several statically defined variants of this algorithm,
  * we store it in .h file and include it several times into gxfill.c .
@@ -337,3 +340,5 @@ TEMPLATE_spot_into_trapezoids (line_list *ll, fixed band_mask)
     } 
     return 0;
 }
+
+#endif /* gxfilltr_INCLUDED */

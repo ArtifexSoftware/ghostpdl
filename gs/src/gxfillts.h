@@ -17,6 +17,9 @@
 /* $Id$ */
 /* Configurable algorithm for filling a slanted trapezoid. */
 
+#ifndef gxfillts_INCLUDED
+#  define gxfillts_INCLUDED
+
 /*
  * Since we need several statically defined variants of this agorithm,
  * we store it in .h file and include it several times into gxfill.c .
@@ -119,3 +122,5 @@ TEMPLATE_slant_into_trapezoids (const line_list *ll,
     }
     return code;
 }
+
+#endif /* gxfillts_INCLUDED */

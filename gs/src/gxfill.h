@@ -174,6 +174,6 @@ extern stats_fill_t stats_fill;
 #  define INCR_BY(x,n) DO_NOTHING
 #endif
 
-#endif /* gxfdrop_INCLUDED */
+#endif /* gxfill_INCLUDED */
 
 
