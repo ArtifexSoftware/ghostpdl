@@ -77,6 +77,8 @@ int gs_type42_append(P7(uint glyph_index, gs_imager_state * pis,
 /* Get the metrics of a TrueType character. */
 int gs_type42_get_metrics(P3(gs_font_type42 * pfont, uint glyph_index,
 			     float psbw[4]));
+int gs_type42_default_get_metrics(P4(gs_font_type42 * pfont, uint glyph_index,
+                                     int wmode, float sbw[4]));
 int gs_type42_wmode_metrics(P4(gs_font_type42 * pfont, uint glyph_index,
 			       int wmode, float psbw[4]));
 
