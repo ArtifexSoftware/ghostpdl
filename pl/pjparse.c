@@ -132,6 +132,25 @@ unsigned char pjl_permanent_soft_fonts[MAX_PERMANENT_FONTS / 8];
 
 /* ----- private functions and definitions ------------ */
 
+/* forward declaration */
+private int pjl_set(P4(pjl_parser_state_t *pst, char *variable, char *value, bool defaults));
+
+/* handle pjl variables which affect the state of other variables - we
+   don't handle all of these yet.  NB not complete. */
+
+ void
+pjl_side_effects(pjl_parser_state_t *pst, char *variable, char *value, bool defaults)
+{
+    /* default formlines to 45 if the orientation is set to landscape.
+       We assume the side effect will not affect itself so we can call
+       the caller. */
+    if ( !pjl_compare(variable, "ORIENTATION") &&
+	 !pjl_compare(value, "LANDSCAPE") )
+	pjl_set(pst, "FORMLINES", "45", defaults);
+    /* fill in other side effects here */
+    return;
+}
+
 /* set a pjl environment or default variable. */
  private int
 pjl_set(pjl_parser_state_t *pst, char *variable, char *value, bool defaults)
@@ -141,7 +160,10 @@ pjl_set(pjl_parser_state_t *pst, char *variable, char *value, bool defaults)
 
     for (i = 0; table[i].var[0]; i++)
 	if (!pjl_compare(table[i].var, variable)) {
+	    /* set the value */
 	    strcpy(table[i].value, value);
+	    /* set any side effects of setting the value */
+	    pjl_side_effects(pst, variable, value, defaults);
 	    return 1;
 	}
     /* didn't find variable */
