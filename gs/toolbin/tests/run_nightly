@@ -172,12 +172,13 @@ p = os.popen(gsconf.regression_script + " --track 2>&1")
 if p == None:
     die("Could not open and run the regression script.")
 
+regout = '\n\nThe complete list of regressions for today:\n'
 pattern = 'ok$'
 msg = ''
 for line in p.readlines():
     if re.search(pattern, line):
         continue
-    msg = msg + line
+    regout += line
 	
 p.close()
 
@@ -190,11 +191,6 @@ if p:
         diff = diff + line
     p.close()
 
-# include the main body only on Mondays
-if time.gmtime()[6] == 0:
-    diff = diff + "\n\nThe complete list of regressions for today:\n"
-    msg = diff + msg
-
 # Get updated baselines
 baselines = 'The following files had their baselines updated:\n'
 p = Popen4(gsconf.get_baselines + " '" + YESTERDAY_CTIME + "'", 1)
@@ -203,14 +199,18 @@ if p:
         baselines = baselines + line
     p.wait()
 
-baselines = baselines + "\n\n"
-msg = baselines + msg
-  
+baselines += "\n\n"
+
 # Prepend checkout times
 times = "CVS checkout for this report started at " + time.strftime("%a, %d %b %Y %H:%M:%S %Z", time.localtime(starttime)) + "\n"
 times = times + "CVS checkout ended at " + time.strftime("%a, %d %b %Y %H:%M:%S %Z", time.localtime(endtime)) + "\n\n"
 
-msg = times + msg
+# Build the report
+msg = times + baselines + diff
+
+# include the main body only on Mondays
+if time.gmtime()[6] == 0:
+    msg += regout
 
 retry = 1
 while retry:
