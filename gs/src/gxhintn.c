@@ -38,7 +38,6 @@
     - Diagonal stems are not hinted;
     - Some fonts have no StdHW, StdWW. Adobe appears to autohint them.
     - Measure Adobe's flattness parameter.
-    - Adobe looks adjusting the relative stem length.
     - Test Adobe compatibility for rotated/skewed glyphs.
  */
 
@@ -48,7 +47,7 @@
     (See the glyph AE in Times-Roman by Adobe.)
 
     0. This supposes that glyph is transformed to device space
-       with random matrix.
+       with a random matrix.
 
        All outline poles and all hint commands are stored in arrays
        before staring the exact processing.
@@ -63,25 +62,27 @@
     2. The range of secondary stem command is from its HR pole to next HR pole.
        The range of primary stem command is entire glyph.
 
-    3. If a stem boundary corresponds to a pole aligned with alignment zone,
+    3. The TT interpreter aligned stem3 with centering the middle stem.
+
+    4. If a stem boundary corresponds to a pole aligned with an alignment zone,
        pass aligned coordinate to the stem command. 
-       Use stem boundary longitude middle point for alignment with
+       Use the stem boundary longitude middle point for alignment with
        skewed or rotated matrix. Use standard stem width for computing 
        opposite coordinates.
 
-    4. Considering each set of repeating stem commands as stem complex, pass
-       alignment coordinates to opposite boundaries of stem commands.
+    5. If several stems have a same boundary coordinate,
+       this boundary gets more priority when aligned.
 
-    5. Align stem3 stems each to another.
+    6. Considering each set of repeating stem commands as a stem complex, pass
+       aligned coordinates to opposite boundaries of stem commands.
 
-    6. Pass aligned boundary coordinate to poles within stem command range.
+    7. Pass aligned boundary coordinate to poles within stem command range.
        Note that this will pass aligned coordinates back to poles,
-       from which stem alignment was taken, meanwhile
-       stem3 alignment may change them.
+       from which stem alignment was taken.
 
-    7. Interpolate unaligned poles.
+    8. Interpolate unaligned poles.
 
-    8. After alignment is done, it is desirable to check for 
+    9. After the alignment is done, it is desirable to check for 
        anomalous negative contours and fix them, but we have no
        good algorithm for this. The rasterizer must be tolerant
        to such contours (which may have self-crosses, self-contacts,
@@ -95,7 +96,7 @@
     To check this properly, we test whether extremal poles of contour 
     were actually aligned with stem hints.
 
-    If contour was aligned with stem hints by both X and Y,
+    If a contour was aligned with stem hints by both X and Y,
     no special processing required.
 
     Otherwise if dotsection center falls near vstem axis,
@@ -103,7 +104,6 @@
     it by X to half-pixel. Then we align the center by Y to
     half-pixel, and shift entire contour to satisfy 
     the alignment of the center.
-
 */
 
 /*  vstem3/hstem3 processing basics :
@@ -345,6 +345,15 @@ private inline void o2g_float(t1_hinter * h, t1_hinter_space_coord ox, t1_hinter
 private void t1_hint__set_aligned_coord(t1_hint * this, t1_glyph_space_coord gc, t1_pole * pole, enum t1_align_type align)
 {   t1_glyph_space_coord g = (this->type == hstem ? pole->gy : pole->gx); 
 
+#if FINE_STEM_COMPLEXES
+    if (any_abs(this->g0 - g) < any_abs(this->g1 - g)) {
+        if (this->aligned0 <= align)
+            this->ag0 = gc, this->aligned0 = align;
+    } else {
+        if (this->aligned1 <= align)
+            this->ag1 = gc, this->aligned1 = align;
+    }
+#else
     if (any_abs(this->g0 - g) < any_abs(this->g1 - g)) {
         if (this->aligned0 < align)
             this->ag0 = gc, this->aligned0 = align;
@@ -352,6 +361,7 @@ private void t1_hint__set_aligned_coord(t1_hint * this, t1_glyph_space_coord gc,
         if (this->aligned1 < align)
             this->ag1 = gc, this->aligned1 = align;
     }
+#endif
 }
 
 /* --------------------- t1_hinter class members - debug graphics --------------------*/
@@ -1222,6 +1232,7 @@ private inline int t1_hinter__stem(t1_hinter * this, enum t1_hint_type type, uns
 	hint->g0 = hint->ag0 = g0;
 	hint->g1 = hint->ag1 = g1;
 	hint->aligned0 = hint->aligned1 = unaligned;
+	hint->b0 = hint->b1 = false;
 	hint->stem3_index = stem3_index;
 	hint->range_index = -1;
 	hint->side_mask = side_mask;
@@ -1476,22 +1487,29 @@ private void t1_hinter__compute_type2_stem_ranges(t1_hinter * this)
 	    this->hint_range[i].end_pole = this->pole_count - 2;
 }
 
-
-private bool t1_hinter__is_stem_hint_applicable(t1_hinter * this, t1_hint *hint, int pole_index)
-{   /* We don't check hint->side_mask because the unused coord should be outside the design bbox. */
+private bool t1_hinter__is_stem_boundary_near(t1_hinter * this, const t1_hint *hint, 
+		t1_glyph_space_coord g, int boundary)
+{
     t1_glyph_space_coord const fuzz = this->blue_fuzz; /* comparefiles/tpc2.ps */
 
+    return any_abs(g - (boundary ? hint->g1 : hint->g0)) <= fuzz;
+}
+
+private int t1_hinter__is_stem_hint_applicable(t1_hinter * this, t1_hint *hint, int pole_index)
+{   /* We don't check hint->side_mask because the unused coord should be outside the design bbox. */
+    int k;
+
     if (hint->type == hstem 
-            && (any_abs(this->pole[pole_index].gy - hint->g0) <= fuzz || 
-	        any_abs(this->pole[pole_index].gy - hint->g1) <= fuzz )
+	    && ((k = 1, t1_hinter__is_stem_boundary_near(this, hint, this->pole[pole_index].gy, 0)) ||
+	        (k = 2, t1_hinter__is_stem_boundary_near(this, hint, this->pole[pole_index].gy, 1)))
             && t1_hinter__is_good_tangent(this, pole_index, 1, 0))
-        return true;
+        return k;
     if (hint->type == vstem  
-            && (any_abs(this->pole[pole_index].gx - hint->g0) <= fuzz || 
-	        any_abs(this->pole[pole_index].gx - hint->g1) <= fuzz)
+	    && ((k = 1, t1_hinter__is_stem_boundary_near(this, hint, this->pole[pole_index].gx, 0)) ||
+	        (k = 2, t1_hinter__is_stem_boundary_near(this, hint, this->pole[pole_index].gx, 1)))
             && t1_hinter__is_good_tangent(this, pole_index, 0, 1)) 
-        return true;
-    return false;
+        return k;
+    return 0;
 }
 
 private t1_zone * t1_hinter__find_zone(t1_hinter * this, t1_glyph_space_coord pole_y, bool curve, bool convex, bool concave)
@@ -1509,43 +1527,182 @@ private t1_zone * t1_hinter__find_zone(t1_hinter * this, t1_glyph_space_coord po
     /*todo: optimize narrowing the search range */
 }
 
+private void t1_hinter__align_to_grid__general(t1_hinter * this, int32 unit,
+	    t1_glyph_space_coord gx, t1_glyph_space_coord gy, 
+	    t1_hinter_space_coord *pdx, t1_hinter_space_coord *pdy, 
+	    bool align_to_pixels, bool absolute)
+{   
+    long div_x = rshift(unit, (align_to_pixels ? (int)this->log2_pixels_x : this->log2_subpixels_x));
+    long div_y = rshift(unit, (align_to_pixels ? (int)this->log2_pixels_y : this->log2_subpixels_y));
+    t1_hinter_space_coord ox, oy, dx, dy;
+
+    g2o(this, gx, gy, &ox, &oy);
+    if (absolute) {
+	ox += this->orig_ox;
+	oy += this->orig_oy;
+    }
+    dx = ox % div_x;
+    dy = oy % div_y; /* So far dx and dy are 19 bits */
+    if (dx > div_x / 2 )
+        dx = - div_x + dx;
+    else if (dx < - div_x / 2)
+        dx = div_x + dx;
+    if (dy > div_y / 2)
+        dy = - div_y + dy;
+    else if (dy < - div_y / 2)
+        dy = div_y + dy;
+    *pdx = dx;
+    *pdy = dy;
+}
+
+private void t1_hinter__align_to_grid__final(t1_hinter * this,
+	    t1_glyph_space_coord *x, t1_glyph_space_coord *y, 
+	    t1_hinter_space_coord dx, t1_hinter_space_coord dy)
+{
+    t1_glyph_space_coord gxd, gyd;
+
+    o2g(this, dx, dy, &gxd, &gyd);
+    if (this->grid_fit_x) {
+	*x -= gxd;
+	*x = (*x + 7) & ~15; /* Round to suppress small noise : */
+    }
+    if (this->grid_fit_y) {
+	*y -= gyd;
+	*y = (*y + 7) & ~15; /* Round to suppress small noise : */
+    }
+}
+
+private int t1_hinter__find_best_standard_width(t1_hinter * this, t1_glyph_space_coord w, bool horiz)
+{   int k = (horiz ? 0 : 1), m = 0, i;
+    long d = any_abs(this->stem_snap[k][0] - w);
+
+    for (i = 1; i < this->stem_snap_count[k]; i++) {
+        long dd = any_abs(this->stem_snap[k][i] - w);
+
+        if(d > dd) {
+            d = dd;
+            m = i;
+        }
+    }
+    return 0;   
+}
+
 private void t1_hinter__align_to_grid(t1_hinter * this, int32 unit, 
 	    t1_glyph_space_coord *x, t1_glyph_space_coord *y, bool align_to_pixels)
 {   if (unit > 0) {
-	long div_x = rshift(unit, (align_to_pixels ? (int)this->log2_pixels_x : this->log2_subpixels_x));
-	long div_y = rshift(unit, (align_to_pixels ? (int)this->log2_pixels_y : this->log2_subpixels_y));
-        t1_glyph_space_coord gx = *x, gy = *y;
-        t1_hinter_space_coord ox, oy;
-        int32 dx, dy;
+        t1_hinter_space_coord dx, dy;
 
-        g2o(this, gx, gy, &ox, &oy);
-	if (align_to_pixels) {
-	    ox += this->orig_ox;
-	    oy += this->orig_oy;
-	}
-        dx = ox % div_x;
-        dy = oy % div_y; /* So far dx and dy are 19 bits */
-        if (dx > div_x / 2 )
-            dx = - div_x + dx;
-        else if (dx < - div_x / 2)
-            dx = div_x + dx;
-        if (dy > div_y / 2)
-            dy = - div_y + dy;
-        else if (dy < - div_y / 2)
-            dy = div_y + dy;
-        {   t1_glyph_space_coord gxd, gyd;
+	t1_hinter__align_to_grid__general(this, unit, *x, *y, &dx, &dy, align_to_pixels, align_to_pixels);
+	t1_hinter__align_to_grid__final(this, x, y, dx, dy);
+    }
+}
 
-            o2g(this, dx, dy, &gxd, &gyd);
-	    if (this->grid_fit_x)
-		*x -= gxd;
-	    if (this->grid_fit_y)
-		*y -= gyd;
-            /* Round to suppress small noise : */
-	    if (this->grid_fit_x)
-		*x = (*x + 7) & ~15;
-	    if (this->grid_fit_y)
-		*y = (*y + 7) & ~15;
+private void t1_hinter__align_stem_width(t1_hinter * this, t1_glyph_space_coord *pgw, const t1_hint *hint)
+{   /* fixme : optimize : move pixel_o_x, pixel_o_y, pixel_gw, pixel_gh to t1_hinter_s. */
+    int32 pixel_o_x = rshift(this->g2o_fraction, (this->align_to_pixels ? (int)this->log2_pixels_x : this->log2_subpixels_x));
+    int32 pixel_o_y = rshift(this->g2o_fraction, (this->align_to_pixels ? (int)this->log2_pixels_y : this->log2_subpixels_y));
+#if OPPOSITE_STEM_COORD_BUG_FIX
+    t1_glyph_space_coord pixel_gw = any_abs(o2g_dist(this, pixel_o_x, this->heigt_transform_coef_inv));
+    t1_glyph_space_coord pixel_gh = any_abs(o2g_dist(this, pixel_o_y, this->width_transform_coef_inv));
+#else
+    t1_glyph_space_coord pixel_gh = any_abs(o2g_dist(this, pixel_o_x, this->heigt_transform_coef_inv));
+    t1_glyph_space_coord pixel_gw = any_abs(o2g_dist(this, pixel_o_y, this->width_transform_coef_inv));
+#endif
+    bool horiz = (hint->type == hstem);
+    t1_glyph_space_coord pixel_g = (horiz ? pixel_gh : pixel_gw);
+    int19 cf = (horiz ? this->heigt_transform_coef_rat : this->width_transform_coef_rat);
+    int19 ci = (horiz ? this->heigt_transform_coef_inv : this->width_transform_coef_inv);
+    /* Note : cf, ci ignore the sign of the transform. */
+    t1_glyph_space_coord gw = *pgw;
+    int j;
+
+    if (this->keep_stem_width && cf != 0 && ci != 0) {
+	fixed pixel_o = (this->transposed ^ horiz ? pixel_o_y : pixel_o_x);
+        t1_hinter_space_coord ow = g2o_dist(gw, cf);
+        int19 e = ow % pixel_o; /* Pixel rounding error */
+        t1_glyph_space_coord ge0 = o2g_dist(this, -e, ci);
+        t1_glyph_space_coord ge1 = o2g_dist(this, pixel_o - e, ci);
+        t1_glyph_space_coord ww;
+
+        if (ow < pixel_o)
+            ge0 = ge1; /* Never round to zero */
+        ww = gw + (e < pixel_o / 2 ? ge0 : ge1);
+        if (this->stem_snap_count[horiz ? 0 : 1] != 0) {
+            /* Try choosing standard stem width : */
+            /* todo: optimize: sort StdW for faster search; don't lookup StdW if obviousely inapplicable. */
+            t1_glyph_space_coord d = pixel_g;
+            int stdw_index0 = t1_hinter__find_best_standard_width(this, gw + ge0, horiz);
+            int stdw_index1 = t1_hinter__find_best_standard_width(this, gw + ge1, horiz);
+            t1_glyph_space_coord w0 = this->stem_snap[horiz ? 0 : 1][stdw_index0];
+            t1_glyph_space_coord w1 = this->stem_snap[horiz ? 0 : 1][stdw_index1];
+            t1_glyph_space_coord thr0 = pixel_g * 70 / 100, thr1 = pixel_g * 35 / 100;
+            t1_glyph_space_coord  W[4];
+            t1_hinter_space_coord E[4];
+            int k = 0;
+
+            if (gw - thr0 <= w0 && w0 <= gw + thr1) {
+                t1_hinter_space_coord ow0 = g2o_dist(w0, cf);
+                int19 e0 = ow0 % pixel_o;
+
+                W[0] = w0, W[1] = w0;
+                E[0]= - e0, E[1] = pixel_o - e0;
+                k=2; 
+            }
+            if (stdw_index0 != stdw_index1 && gw - thr0 <= w1 && w1 <= gw + thr1) {
+                t1_hinter_space_coord ow1 = g2o_dist(w1, cf);
+                int19 e1 = ow1 % pixel_o;
+
+                W[k] = w1, W[k + 1] = w1;
+                E[k]= - e1, E[k + 1] = pixel_o - e1;
+                k+=2; 
+            }
+            for (j = 0; j < k; j++) {
+                t1_glyph_space_coord D = o2g_dist(this, E[j], ci), DD = any_abs(D);
+
+                if (d >= DD && W[j] + D >= pixel_g) {
+                    d = DD;
+                    ww = W[j] + D;
+                }
+            }
         }
+        *pgw = ww;
+    }
+}
+
+private void t1_hinter__align_stem_to_grid(t1_hinter * this, int32 unit, 
+	    t1_glyph_space_coord *x0, t1_glyph_space_coord *y0, 
+	    t1_glyph_space_coord  x1, t1_glyph_space_coord  y1, 
+	    bool align_to_pixels, const t1_hint *hint)
+{   /* Implemented for Bug 687578 "T1 hinter disturbs stem width". */
+    /* fixme: optimize. */
+    if (unit > 0) {
+	bool horiz = (hint->type == hstem);
+	t1_glyph_space_coord gw = (horiz ? y1 - *y0 : x1 - *x0);
+	t1_glyph_space_coord GW = any_abs(gw), GW0 = GW;
+	bool positive = (gw >= 0);
+	int19 cf = (horiz ? this->heigt_transform_coef_rat : this->width_transform_coef_rat);
+        t1_hinter_space_coord dx0, dy0, dx1, dy1, dgw;
+
+	t1_hinter__align_to_grid__general(this, unit, *x0, *y0, &dx0, &dy0, align_to_pixels, align_to_pixels);
+	t1_hinter__align_to_grid__general(this, unit,  x1,  y1, &dx1, &dy1, align_to_pixels, align_to_pixels);
+	t1_hinter__align_stem_width(this, &GW, hint);
+	dgw = g2o_dist(GW - GW0, cf);
+	if ((horiz ? this->ctmf.yy : this->ctmf.xx) < 0)
+	    dgw = - dgw;
+	if (horiz) {
+	    t1_hinter_space_coord ddy1 = (positive ? dy0 - dgw : dy0 + dgw);
+	    t1_hinter_space_coord ddy0 = (positive ? dy1 + dgw : dy1 - dgw);
+
+	    if (any_abs(dy0 + ddy1) > any_abs(dy1 + ddy0))
+		dy0 = ddy0;
+	} else {
+	    t1_hinter_space_coord ddx1 = (positive ? dx0 - dgw : dx0 + dgw);
+	    t1_hinter_space_coord ddx0 = (positive ? dx1 + dgw : dx1 - dgw);
+
+	    if (any_abs(dx0 + ddx1) > any_abs(dx1 + ddx0))
+		dx0 = ddx0;
+	}
+	t1_hinter__align_to_grid__final(this, x0, y0, dx0, dy0);
     }
 }
 
@@ -1570,13 +1727,24 @@ private void t1_hinter__add_overshoot(t1_hinter * this, t1_zone * zone, t1_glyph
 }
 #endif
 
-private enum t1_align_type t1_hinter__compute_aligned_coord(t1_hinter * this, t1_glyph_space_coord * gc, int segment_index, fixed t, bool horiz)
+private enum t1_align_type t1_hinter__compute_aligned_coord(t1_hinter * this, 
+	    t1_glyph_space_coord * gc, int segment_index, fixed t, const t1_hint *hint,
+	    enum t1_align_type align0)
 {   /* Returns true, if alignment zone is applied. */
     /* t is 0 or 0.5, and it is always 0 for curves. */
-    enum t1_align_type align = unaligned;
+    bool horiz = (hint->type == hstem);
+    enum t1_align_type align = align0;
     t1_glyph_space_coord gx = this->pole[segment_index].gx, gx0;
     t1_glyph_space_coord gy = this->pole[segment_index].gy, gy0;
     t1_glyph_space_coord gc0 = (horiz ? gy : gx);
+    bool align_by_stem = ALIGN_BY_STEM_MIDDLE 
+		&& align0 == unaligned	 /* Force aligning outer boundaries 
+					    from the TT spot analyzer. */ 
+		&& hint->b0 && hint->b1; /* It's a real stem. Contrary 
+					    033-52-5873.pdf uses single hint boundaries
+					    to mark top|bottom sides of a glyph,
+					    but their opposite boundaries are dummy coordinates,
+					    which don't correspond to poles. */
 
     /*  Compute point of specified segment by parameter t : */
     if (t) {
@@ -1640,11 +1808,43 @@ private enum t1_align_type t1_hinter__compute_aligned_coord(t1_hinter * this, t1
 		    }
                 }
                 align = (zone->type == topzone ? topzn : botzn);
+		align_by_stem = false;
             }
         }
     }
     vd_circle(gx, gy, 7, RGB(0,255,0));
-    t1_hinter__align_to_grid(this, this->g2o_fraction, &gx, &gy, 
+    if (align_by_stem) {
+	t1_glyph_space_coord gx1, gy1;
+
+	if (horiz) {
+	    bool b0 = t1_hinter__is_stem_boundary_near(this, hint, gy, 0);
+	    bool b1 = t1_hinter__is_stem_boundary_near(this, hint, gy, 1);
+
+	    gx1 = gx;
+	    if (b0 && !b1)
+		gy1 = hint->g1, align_by_stem = true;
+	    else if (!b0 && b1)
+		gy1 = hint->g0, align_by_stem = true;
+	    else
+		gy1 = 0; /* Quiet the compiler. */
+	} else {
+	    bool b0 = t1_hinter__is_stem_boundary_near(this, hint, gx, 0);
+	    bool b1 = t1_hinter__is_stem_boundary_near(this, hint, gx, 1);
+
+	    gy1 = gy;
+	    if (b0 && !b1)
+		gx1 = hint->g1, align_by_stem = true;
+	    else if (!b0 && b1)
+		gx1 = hint->g0, align_by_stem = true;
+	    else
+		gx1 = 0; /* Quiet the compiler. */
+	} 
+	if (align_by_stem)
+	    t1_hinter__align_stem_to_grid(this, this->g2o_fraction, &gx, &gy, gx1, gy1, 
+		    CONTRAST_STEMS || this->align_to_pixels, hint);
+    }
+    if (!align_by_stem)
+	t1_hinter__align_to_grid(this, this->g2o_fraction, &gx, &gy, 
 			    CONTRAST_STEMS || this->align_to_pixels);
     vd_circle(gx, gy, 7, RGB(0,0,255));
     *gc = gc0 + (horiz ? gy - gy0 : gx - gx0);
@@ -1684,6 +1884,39 @@ private int t1_hinter__skip_stem(t1_hinter * this, int pole_index, bool horiz)
     return i;
 }
 
+private void t1_hinter__mark_existing_stems(t1_hinter * this)
+{   /* fixme: Duplicated code with t1_hinter__align_stem_commands. */
+    int i, j, jj, k;
+
+    for(i = 0; i < this->hint_count; i++) 
+        if (this->hint[i].type == vstem || this->hint[i].type == hstem) 
+	    for (k = this->hint[i].range_index; k != -1; k = this->hint_range[k].next) {
+		int beg_range_pole = this->hint_range[k].beg_pole;        
+		int end_range_pole = this->hint_range[k].end_pole;
+
+		if (this->pole[beg_range_pole].type == closepath) {
+		    /* A workaround for a buggy font from the Bug 687393,
+		       which defines a range with 'closepath' only. */
+		    beg_range_pole++;
+		    if (beg_range_pole > end_range_pole)
+			continue;
+		}
+		for (j = beg_range_pole; j <= end_range_pole;) {
+		    int k = t1_hinter__is_stem_hint_applicable(this, &this->hint[i], j);
+		    if (k == 1)
+			this->hint[i].b0 = true;
+		    else if (k == 2)
+			this->hint[i].b1 = true;
+		    {   /* Step to the next pole in the range : */
+			jj = j;
+			j = t1_hinter__segment_end(this, j);
+			if (j <= jj) /* Rolled over contour end ? */
+			    j = this->contour[this->pole[j].contour_index + 1]; /* Go to the next contour. */
+		    }
+		}
+	    }
+}
+
 private void t1_hinter__align_stem_commands(t1_hinter * this)
 {   int i, j, jj, k;
 
@@ -1706,15 +1939,21 @@ private void t1_hinter__align_stem_commands(t1_hinter * this)
 			fixed t; /* Type 1 spec implies that it is 0 for curves, 0.5 for bars */
 			int segment_index = t1_hinter__find_stem_middle(this, &t, j, horiz);
 			t1_glyph_space_coord gc;
-			enum t1_align_type align = t1_hinter__compute_aligned_coord(this, &gc, segment_index, t, horiz);
-
+			enum t1_align_type align = unaligned;
+			
 			if (this->hint[i].side_mask != 3) {
 			    /* An overal hint from the True Type autohinter. */
 			    align = (this->hint[i].side_mask & 2 ? topzn : botzn);
 			} else if (this->autohinting && horiz) {
 			    if (this->pole[segment_index].gy == this->hint[i].g0)
-				align = (this->hint[i].g0 > this->hint[i].g0 ? topzn : botzn);
+#				if TT_AUTOHINT_TOPZONE_BUG_FIX
+				    align = (this->hint[i].g0 > this->hint[i].g1 ? topzn : botzn);
+#				else
+				    align = (this->hint[i].g0 > this->hint[i].g0 ? topzn : botzn);
+#				endif
 			}
+			align = t1_hinter__compute_aligned_coord(this, &gc, 
+				    segment_index, t, &this->hint[i], align);
 			vd_square(this->pole[segment_index].gx, this->pole[segment_index].gy, 
 				    (horiz ? 7 : 9), (i < this->primary_hint_count ? RGB(0,0,255) : RGB(0,255,0)));
 			/* todo: optimize: primary commands don't need to align, if suppressed by secondary ones. */
@@ -1736,92 +1975,79 @@ private void t1_hinter__align_stem_commands(t1_hinter * this)
 	    }
 }
 
-private int t1_hinter__find_best_standard_width(t1_hinter * this, t1_glyph_space_coord w, bool horiz)
-{   int k = (horiz ? 0 : 1), m = 0, i;
-    long d = any_abs(this->stem_snap[k][0] - w);
+private void t1_hinter__unfix_opposite_to_common(t1_hinter * this)
+{    /* Implemented for Bug 687578 "T1 hinter disturbs stem width". */
+    int i, j, k, m, n;
+    t1_glyph_space_coord d, md;
+    t1_glyph_space_coord *p_ci, *p_cj, *p_agj, agm;
+    enum t1_align_type *p_aj, *p_ai, *p_oi, *p_oj, am;
 
-    for (i = 1; i < this->stem_snap_count[k]; i++) {
-        long dd = any_abs(this->stem_snap[k][i] - w);
-
-        if(d > dd) {
-            d = dd;
-            m = i;
-        }
+    for (k = 0; k < 2; k++) { /* g0, g1 */
+	/* Since the number of stems in a complex is usually small,
+	   we don't care about redundant computations. */
+	for(i = 0; i < this->hint_count; i++) {
+	    if (this->hint[i].type == vstem || this->hint[i].type == hstem) {
+		p_ai = (!k ? &this->hint[i].aligned0 : &this->hint[i].aligned1);
+		p_oi = (!k ? &this->hint[i].aligned1 : &this->hint[i].aligned0);
+		if (*p_ai > weak && *p_ai == *p_oi) {
+		    p_ci = (!k ? &this->hint[i].g0 : &this->hint[i].g1);
+		    md = any_abs(this->hint[i].g1 - this->hint[i].g0);
+		    m = i;
+		    am = *p_ai;
+		    agm = (!k ? this->hint[m].ag0 : this->hint[m].ag1);
+		    n = 0;
+		    for(j = 0; j < this->hint_count; j++) {
+			if (j != i && this->hint[i].type == this->hint[j].type) {
+			    p_cj = (!k ? &this->hint[j].g0 : &this->hint[j].g1);
+			    if (*p_ci == *p_cj) {
+				n++;
+				p_aj = (!k ? &this->hint[j].aligned0 : &this->hint[j].aligned1);
+				d = any_abs(this->hint[j].g1 - this->hint[j].g0);
+				if (am < *p_aj) {
+				    md = d;
+				    m = j;
+				    am = *p_aj;
+				    agm = (!k ? this->hint[m].ag0 : this->hint[m].ag1);
+				} if (md < d) {
+				    md = d;
+				    m = j;
+				}
+			    }
+			}
+		    }
+		    if (n) {
+			for(j = 0; j < this->hint_count; j++) {
+			    p_cj = (!k ? &this->hint[j].g0 : &this->hint[j].g1);
+			    if (*p_ci == *p_cj) {
+				p_aj = (!k ? &this->hint[j].aligned0 : &this->hint[j].aligned1);
+				p_oj = (!k ? &this->hint[j].aligned1 : &this->hint[j].aligned0);
+				p_agj = (!k ? &this->hint[j].ag0 : &this->hint[j].ag1);
+				*p_aj = am;
+				if (*p_oj > weak)
+				    *p_oj = weak;
+				*p_agj = agm;
+			    }
+			}
+		    }
+		}
+	    }
+	}
     }
-    return 0;   
 }
 
 private void t1_hinter__compute_opposite_stem_coords(t1_hinter * this)
-{   int32 pixel_o_x = rshift(this->g2o_fraction, (this->align_to_pixels ? (int)this->log2_pixels_x : this->log2_subpixels_x));
-    int32 pixel_o_y = rshift(this->g2o_fraction, (this->align_to_pixels ? (int)this->log2_pixels_y : this->log2_subpixels_y));
-    t1_glyph_space_coord pixel_gh = any_abs(o2g_dist(this, pixel_o_x, this->heigt_transform_coef_inv));
-    t1_glyph_space_coord pixel_gw = any_abs(o2g_dist(this, pixel_o_y, this->width_transform_coef_inv));
-    int i, j;
+{   int i;
 
     for (i = 0; i < this->hint_count; i++)
         if ((this->hint[i].type == vstem || this->hint[i].type == hstem)) {
-            bool horiz = (this->hint[i].type == hstem);
-            t1_glyph_space_coord pixel_g = (horiz ? pixel_gh : pixel_gw);
             t1_glyph_space_coord ag0 = this->hint[i].ag0;
             t1_glyph_space_coord ag1 = this->hint[i].ag1;
             enum t1_align_type aligned0 = this->hint[i].aligned0;
             enum t1_align_type aligned1 = this->hint[i].aligned1;
             t1_glyph_space_coord gw;
-            int19 cf = (horiz ? this->heigt_transform_coef_rat : this->width_transform_coef_rat);
-            int19 ci = (horiz ? this->heigt_transform_coef_inv : this->width_transform_coef_inv);
 
             gw = any_abs(this->hint[i].g1 - this->hint[i].g0);
-            if (this->keep_stem_width && cf != 0 && ci != 0) {
-		fixed pixel_o = (this->transposed ^ horiz ? pixel_o_y : pixel_o_x);
-                t1_hinter_space_coord ow = g2o_dist(gw, cf);
-                int19 e = ow % pixel_o; /* Pixel rounding error */
-                t1_glyph_space_coord ge0 = o2g_dist(this, -e, ci);
-                t1_glyph_space_coord ge1 = o2g_dist(this, pixel_o - e, ci);
-                t1_glyph_space_coord ww;
-
-                if (ow < pixel_o)
-                    ge0 = ge1; /* Never round to zero */
-                ww = gw + (e < pixel_o / 2 ? ge0 : ge1);
-                if (this->stem_snap_count[horiz ? 0 : 1] != 0) {
-                    /* Try choosing standard stem width : */
-                    /* todo: optimize: sort StdW for faster search; don't lookup StdW if obviousely inapplicable. */
-                    t1_glyph_space_coord d = pixel_g;
-                    int stdw_index0 = t1_hinter__find_best_standard_width(this, gw + ge0, horiz);
-                    int stdw_index1 = t1_hinter__find_best_standard_width(this, gw + ge1, horiz);
-                    t1_glyph_space_coord w0 = this->stem_snap[horiz ? 0 : 1][stdw_index0];
-                    t1_glyph_space_coord w1 = this->stem_snap[horiz ? 0 : 1][stdw_index1];
-                    t1_glyph_space_coord thr0 = pixel_g * 70 / 100, thr1 = pixel_g * 35 / 100;
-                    t1_glyph_space_coord  W[4];
-                    t1_hinter_space_coord E[4];
-                    int k = 0;
-
-                    if (gw - thr0 <= w0 && w0 <= gw + thr1) {
-                        t1_hinter_space_coord ow0 = g2o_dist(w0, cf);
-                        int19 e0 = ow0 % pixel_o;
-
-                        W[0] = w0, W[1] = w0;
-                        E[0]= - e0, E[1] = pixel_o - e0;
-                        k=2; 
-                    }
-                    if (stdw_index0 != stdw_index1 && gw - thr0 <= w1 && w1 <= gw + thr1) {
-                        t1_hinter_space_coord ow1 = g2o_dist(w1, cf);
-                        int19 e1 = ow1 % pixel_o;
-
-                        W[k] = w1, W[k + 1] = w1;
-                        E[k]= - e1, E[k + 1] = pixel_o - e1;
-                        k+=2; 
-                    }
-                    for (j = 0; j < k; j++) {
-                        t1_glyph_space_coord D = o2g_dist(this, E[j], ci), DD = any_abs(D);
-
-                        if (d >= DD && W[j] + D >= pixel_g) {
-                            d = DD;
-                            ww = W[j] + D;
-                        }
-                    }
-                }
-                gw = ww;
-            }
+	    t1_hinter__align_stem_width(this, &gw, &this->hint[i]);
             if (this->hint[i].g1 - this->hint[i].g0 < 0)
                 gw = -gw;
             if (aligned0 > aligned1)
@@ -2248,9 +2474,13 @@ int t1_hinter__endglyph(t1_hinter * this)
 	    t1_hinter__compute_type1_stem_ranges(this);
 	else
 	    t1_hinter__compute_type2_stem_ranges(this);
+	if (FINE_STEM_COMPLEXES)
+	    t1_hinter__mark_existing_stems(this);
         t1_hinter__align_stem_commands(this);
+	if (FINE_STEM_COMPLEXES)
+	    t1_hinter__unfix_opposite_to_common(this);
         t1_hinter__compute_opposite_stem_coords(this);
-        /* todo :  t1_hinter__align_stem3(this); */
+        /* stem3 was processed in the Type 1 interpreter. */
         t1_hinter__align_stem_poles(this);
         t1_hinter__process_dotsections(this);
         t1_hinter__interpolate_other_poles(this);

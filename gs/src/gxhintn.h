@@ -15,10 +15,16 @@
 */
 
 /* $Id$ */
-/* Type 1 hinter, a new algorithm, prototypes */
+/* Type 1 hinter, prototypes */
 
 #ifndef gxhintn_INCLUDED
 #  define gxhintn_INCLUDED
+
+#define FINE_STEM_COMPLEXES 0		/* A temporary development purpose. */
+#define ALIGN_BY_STEM_MIDDLE 0		/* A temporary development purpose. */
+#define OPPOSITE_STEM_COORD_BUG_FIX 0	/* A temporary development purpose. */
+#define TT_AUTOHINT_TOPZONE_BUG_FIX 0	/* A temporary development purpose. */
+
 
 #ifndef gs_type1_data_DEFINED
 #define gs_type1_data_DEFINED
@@ -34,7 +40,6 @@ typedef struct gs_type42_data_s gs_type42_data;
 #  define gx_path_DEFINED
 typedef struct gx_path_s gx_path;
 #endif
-
 
 #define T1_MAX_STEM_SNAPS 12
 #define T1_MAX_ALIGNMENT_ZONES 6
@@ -60,7 +65,10 @@ enum t1_zone_type
 };
 
 enum t1_align_type
-{   unaligned, aligned, topzn, botzn
+{   unaligned, weak, aligned, topzn, botzn
+#if !FINE_STEM_COMPLEXES
+    /* 'weak' is never used. Defined to simplify a compatibility testing. */
+#endif
 };
 
 typedef struct {
@@ -86,6 +94,10 @@ typedef struct t1_hint_s
 {   enum t1_hint_type type;
     t1_glyph_space_coord g0, g1; /* starting and ending transversal coord of the stem */
     t1_glyph_space_coord ag0, ag1; /* starting and ending transversal aligned coord of the stem */
+    bool b0, b1;  /* g0, g1 correspond to a real stem. */
+#if !FINE_STEM_COMPLEXES
+    /* b0, b1 are unused. Defined to simplify a compatibility testing. */
+#endif
     enum t1_align_type aligned0, aligned1; /* ag0, ag1 is aligned */
     unsigned int stem3_index; /* 1,2,3 for stem3 (not used yet), 0 for other types */
     int range_index; /* type 2 only */
