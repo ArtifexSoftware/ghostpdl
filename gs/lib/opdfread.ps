@@ -81,6 +81,7 @@ true setglobal
 /PDFR_DEBUG DefaultSwitch
 /PDFR_DUMP DefaultSwitch
 /PDFR_STREAM DefaultSwitch
+/TTFDEBUG DefaultSwitch
 
 /error	%  mark <object> .... error -
 { % A stub for a while.
@@ -572,7 +573,7 @@ currentdict end readonly def
 /TypeDaemons <<  % <id> <obj> proc <id> <obj>
   /Page 
   { //PDFR_DEBUG {
-      (Recognized a page.)=
+      (Recognized a page.) =
     } if
     dup /Contents //knownget exec {			% id obj c
     0 get //DoNothing exch				% id obj dn id1
@@ -586,7 +587,7 @@ currentdict end readonly def
   } bind
   /FontDescriptor
   { //PDFR_DEBUG {
-      (Recognized a font descriptor.)=
+      (Recognized a font descriptor.) =
     } if
     {
       dup dup /FontFile known {/FontFile} {/FontFile2} ifelse 
@@ -604,7 +605,7 @@ currentdict end readonly def
   } bind
   /Font
   { //PDFR_DEBUG {
-      (Recognized a font resource.)=
+      (Recognized a font resource.) =
     } if
     dup /FontDescriptor //knownget exec {		% id obj fd
       0 get 						% id obj id1
@@ -706,7 +707,7 @@ end
 /MakeType42 % <FontFile_object> <font_descriptor> MakeType42 <FontFile_object> <font_descriptor> <font>
 {
   //PDFR_DEBUG {
-    (MakeType42 beg)=
+    (MakeType42 beg) =
   } if
   1 index 2 known {
     % The font exceeds the stream buffer.
@@ -723,7 +724,7 @@ end
     /PaintType 0 def
   currentdict end
   //PDFR_DEBUG {
-    (MakeType42 end)=
+    (MakeType42 end) =
   } if
 } bind def
 
@@ -885,6 +886,28 @@ end
   end % font
 } bind def
 
+/printdict % <dict> printdict -
+{ (<<) =
+  { exch = == } forall
+  (>>) =
+} bind def
+
+/printfont % <dict> printfont -
+{
+  dup {
+    exch dup =
+    dup /Encoding eq {
+      pop =
+    } {
+      dup /FontInfo eq exch /Private eq or {
+        //printdict exec
+      } {
+        ==
+      } ifelse
+    } ifelse
+  } forall
+} bind def
+
 /ResolveAndSetFontAux  % <resource_name> <size> ResolveAndSetFont -
 { exch dup						% s rn rn
   //PDFReader /CurrentObject get /Context get /Resources get 
@@ -898,7 +921,7 @@ end
 							% s rn fr
 	//ObtainEncoding exec
 	//ObtainMetrics exec
-        (Underimplemented SetFont)=
+        (Underimplemented SetFont) =
         exch pop					% s fr
         dup /BaseFont get 				% s fr n
         //RemoveFontNamePrefix exec			% s fr n
@@ -929,7 +952,10 @@ end
 	  1 index exch /Metrics exch put		% s fr f
         } if
         1 index /BaseFont get				% s fr f n
-        exch definefont					% s fr f
+        exch
+        dup /FID undef
+        dup /UniqueID undef
+        definefont					% s fr f
         dup 3 1 roll					% s f fr f
         /Font exch put					% s f
 	exit
@@ -1414,7 +1440,7 @@ end
 
 /GetTTEncoding   % <file> <TTcmapHeader> <platformIDspecificID> GetTTEncoding <array>
 { //PDFR_DEBUG {
-    (GetTTEncoding beg)=
+    (GetTTEncoding beg) =
   } if
   1 index exch get					% f c []
   aload pop						% f c o l
@@ -1430,7 +1456,7 @@ end
     //cmaparray exec
   end
   //PDFR_DEBUG {
-    (GetTTEncoding end)=
+    (GetTTEncoding end) =
     dup ==
   } if
 } bind def
@@ -1865,7 +1891,7 @@ end
   } if
   dup /Order //knownget exec {
     1 ne {
-      (Underimplemented function Type 0 Order 3.)=
+      (Underimplemented function Type 0 Order 3.) =
     } if
   } if
   dup //StreamToArray exec				% f
@@ -1926,7 +1952,7 @@ end
 
 
 /FunctionToProc4 % <function_dict> FunctionToProc4 <proc>
-{ //MakeStreamReader exec cvx run
+{ //MakeStreamReader exec cvx exec
   //PDFR_DEBUG {
     (FunctionType4Proc : ) print dup == 
   } if
@@ -2723,3 +2749,4 @@ currentdict end def
 % Leaving the procset on the dictionary stack to provide 
 % definitions of obj, endobj, stream, endstream, R, xref.
 %%EndPrologue
+
