@@ -18,7 +18,7 @@
 
 /*$Id$ */
 /* ImageType 3x image implementation */
-/****** THE REAL WORK IS STUBBED ******/
+/****** THE REAL WORK IS NYI ******/
 #include "math_.h"		/* for ceil, floor */
 #include "memory_.h"
 #include "gx.h"
@@ -31,6 +31,7 @@
 #include "gxdevmem.h"
 #include "gximag3x.h"
 #include "gxistate.h"
+#include "gdevbbox.h"
 
 extern_st(st_color_space);
 
@@ -529,12 +530,33 @@ make_mcdex_default(gx_device *dev, const gs_imager_state *pis,
 		   const gs_int_point origin[2],
 		   const gs_image3x_t *pim)
 {
+    /**************** NYI ****************/
     /*
      * There is no soft-mask analogue of make_mcde_default, because
      * soft-mask clipping is a more complicated operation, implemented
-     * by the general transparency code.  Punt for now.
+     * by the general transparency code.  As a default, we simply ignore
+     * the soft mask.  However, we have to create an intermediate device
+     * that can be freed at the end and that simply forwards all calls.
+     * The most convenient device for this purpose is the bbox device.
      */
-    return_error(gs_error_unregistered);
+    gx_device_bbox *bbdev =
+	gs_alloc_struct_immovable(mem, gx_device_bbox, &st_device_bbox,
+				  "make_mcdex_default");
+    int code;
+
+    if (bbdev == 0)
+	return_error(gs_error_VMerror);
+    gx_device_bbox_init(bbdev, dev);
+    gx_device_bbox_fwd_open_close(bbdev, false);
+    code = dev_proc(bbdev, begin_typed_image)
+	((gx_device *)bbdev, pis, pmat, pic, prect, pdcolor, pcpath, mem,
+	 pinfo);
+    if (code < 0) {
+	gs_free_object(mem, bbdev, "make_mcdex_default");
+	return code;
+    }
+    *pmcdev = (gx_device *)bbdev;
+    return 0;
 }
 private int
 gx_begin_image3x(gx_device * dev,
@@ -802,7 +824,7 @@ gx_image3x_planes_wanted(const gx_image_enum_common_t * info, byte *wanted)
     }
 }
 
-/* Clean up after processing an ImageType 3 image. */
+/* Clean up after processing an ImageType 3x image. */
 private int
 gx_image3x_end_image(gx_image_enum_common_t * info, bool draw_last)
 {
