@@ -1,5 +1,5 @@
 <html><head>
-<title>Ghostscript 6.20 change history as of 2000-03-19 23:24:13</title>
+<title>Ghostscript 6.20 change history as of 2000-03-23 21:10:56</title>
 </head><body>
 
 <blockquote><ul>
@@ -11,7 +11,8 @@
     <a href="#6.20 Interpreter (PDF)">Interpreter (PDF)</a>,
     <a href="#6.20 Interpreter">Interpreter</a>,
     <a href="#6.20 Streams">Streams</a>,
-    <a href="#6.20 Library">Library</a>
+    <a href="#6.20 Library">Library</a>,
+    <a href="#6.20 ???Other???">???Other???</a>
 </ul>
 </ul></blockquote>
 
@@ -23,6 +24,8 @@ returned garbage. The fix requires that if a client wants to set a transfer
 function to the identity mapping, it must call gx_set_identity_transfer
 rather than simply setting the procedure to gs_identity_transfer.
 (doc/News.htm [1.13]: 2000/03/19 17:14:47 lpd)
+	- In PDF files, the page CropBox was not being used to clip the
+output. (doc/News.htm [1.18]: 2000/03/21 23:08:32 lpd)
 
 Undoes an accidental RCS ID substitution in what was supposed to be literal
 text. (doc/Htmstyle.htm [1.2]: 2000/03/18 22:29:03 lpd)
@@ -95,11 +98,35 @@ Type 2 operator. Implements writing CIDFontType 0 CFF fonts (CIDFonts) [NOT
 TESTED]. Starts (just barely) to remove more unneeded information from
 embedded TrueType fonts. (doc/News.htm [1.15]: 2000/03/20 07:02:12 lpd)
 
+Updates the consolidated change log with today's changes.
+(doc/Changes.htm [1.6]: 2000/03/20 07:18:38 lpd)
+
+Starts to move support for CIDFontType 0 and 2 into C code, needed by the
+PDF writer for handling CID-keyed fonts. Implements GlyphDirectory for
+CIDFonts. Makes GDBytes and CIDMapOffset optional for CIDFontType 0 fonts
+that have a GlyphDirectory (not documented in the PLRM, but clearly
+correct). Implements Adobe 3011 features: integer and dictionary CIDMaps,
+and the MetricsCount entry, in CIDFontType 2 fonts (but only in the C code,
+which isn't hooked in yet, not in the PostScript code in gs_cidfn.ps.)
+(doc/News.htm [1.16]: 2000/03/20 19:53:06 lpd)
+
+Notes that the argument list for the internal build_gs_TrueType_font
+procedure has changed, as part of the CIDFont migration to C code.
+(doc/News.htm [1.17]: 2000/03/20 20:04:20 lpd)
+
+Adds invocation scripts and documentation for the PDF "optimizer".
+(man/pdfopt.1 [1.1]: 2000/03/21 17:01:33 lpd)
+
+Updates information about reporting problems when using Ghostview or GSview.
+(doc/Bug-form.htm [1.3], doc/New-user.htm [1.3]: 2000/03/22 22:13:49 lpd)
+
 </pre><h2><a name="6.20 Procedures"></a>Procedures</h2><pre>
 
 Fixes problems:
 	- pdfread.dev incorrectly depended on dpsnext_. (int.mak [1.4]:
 2000/03/19 02:00:09 lpd)
+	- The referenced libpng version hadn't been updated to 1.0.5.
+(openvms.mmk [1.3]: 2000/03/20 16:38:46 lpd)
 
 Increments the version number to 6.20, in anticipation of the next release.
 (We do this at the beginning of the development for a release, not the end.)
@@ -135,7 +162,38 @@ lpd)
 Updates dependencies to reflect today's batches of checked-in changes.
 (devs.mak [1.5], int.mak [1.7], lib.mak [1.6]: 2000/03/20 07:16:35 lpd)
 
+Updates the makefile for the renaming of gdevpsdf.c => gdevpsdu.c.
+(devs.mak [1.6]: 2000/03/20 19:30:35 lpd)
+
+Starts to move support for CIDFontType 0 and 2 into C code, needed by the
+PDF writer for handling CID-keyed fonts. Implements GlyphDirectory for
+CIDFonts. Makes GDBytes and CIDMapOffset optional for CIDFontType 0 fonts
+that have a GlyphDirectory (not documented in the PLRM, but clearly
+correct). Implements Adobe 3011 features: integer and dictionary CIDMaps,
+and the MetricsCount entry, in CIDFontType 2 fonts (but only in the C code,
+which isn't hooked in yet, not in the PostScript code in gs_cidfn.ps.)
+(int.mak [1.8], lib.mak [1.7]: 2000/03/20 19:53:06 lpd)
+
+Extends the C support for CIDFontType 0 fonts to include those with FontType
+2 subfonts in the FDArray (an Adobe 3011 addition, specifically for CFF
+fonts). (int.mak [1.9]: 2000/03/21 07:43:42 lpd)
+
+Adds invocation scripts and documentation for the PDF "optimizer".
+(unixinst.mak [1.6]: 2000/03/21 17:01:33 lpd)
+
+Splits off the ReusableStreamDecode filter as a separate module, since
+CIDFontType 0 fonts will use it even in LanguageLevels below 3.
+(int.mak [1.10]: 2000/03/21 21:34:57 lpd)
+
+Makes file streams remember the file name, needed for efficiently
+implementing reusable streams. (int.mak [1.11]: 2000/03/23 02:13:40 lpd)
+
 </pre><h2><a name="6.20 Utilities"></a>Utilities</h2><pre>
+
+Fixes problems:
+	- A couple of places in the Windows code didn't correctly handle
+Ghostscript version numbers of the form #.0#. (gp_wgetv.c [1.2]: 2000/03/22
+21:45:03 lpd)
 
 Makes geninit remove whitespace adjacent to hex and base-85 string literals.
 (geninit.c [1.2]: 2000/03/18 22:51:24 lpd)
@@ -144,7 +202,31 @@ Adds a PDF linearizer ("optimizer"). This is a separate utility (not
 integrated with the pdfwrite driver), written in PostScript.
 (lib/pdfopt.ps [1.1], lib/pdfwrite.ps [1.1]: 2000/03/20 04:31:22 lpd)
 
+Replaces the O(N^2) sorting algorithm for printing unencoded characters with
+a O(N log N) algorithm, which makes printing Unicode and Chinese/Japanese
+fonts practical. (lib/prfont.ps [1.2]: 2000/03/21 06:39:49 lpd)
+
+Adds invocation scripts and documentation for the PDF "optimizer".
+(lib/pdfopt [1.1], lib/pdfopt.bat [1.1], lib/pdfopt.ps [1.2]: 2000/03/21
+17:01:33 lpd)
+
+Splits off the ReusableStreamDecode filter as a separate module, since
+CIDFontType 0 fonts will use it even in LanguageLevels below 3.
+(zfreuse.c [1.2]: 2000/03/21 21:34:57 lpd)
+
 </pre><h2><a name="6.20 Drivers"></a>Drivers</h2><pre>
+
+Fixes problems:
+	- The color_info member of the Windows and OS/2 printer devices (and
+other devices using PC-style palettes) wasn't initialized properly, causing
+improper behavior. (gdevos2p.c [1.2], gdevpccm.h [1.2], gdevwpr2.c [1.3]:
+2000/03/20 21:05:11 lpd)
+	- Fixes a bug in the mswinpr2 driver in the handling of
+BitsPerPixel. (gdevwpr2.c [1.4]: 2000/03/22 17:08:33 lpd)
+	- In PCL XL output (pxl* drivers), if a PostScript image didn't
+provide enough source data, the remainder of the output image was
+erroneously filled with pixel value 0 (typically black or the foreground
+color). (gdevpx.c [1.2]: 2000/03/22 20:55:21 lpd)
 
 Adds parsing for the remaining Acrobat Distiller 4 parameters. Implements
 the LockDistillerParams, xxxDownsampleThreshold, xxxImageDict, and
@@ -171,6 +253,13 @@ gdevpsdf.h [1.5], gdevpsdt.c [1.2], gdevpsf.h [1.1], gdevpsf1.c [1.1],
 gdevpsf2.c [1.1], gdevpsft.c [1.1], gdevpsfu.c [1.1], gdevpsfx.c [1.1]:
 2000/03/20 07:02:12 lpd)
 
+Renames an inappropriately named file. (gdevpsdf.c [1.4], gdevpsdf.h [1.6],
+gdevpsdu.c [1.1]: 2000/03/20 19:03:43 lpd)
+
+Extends the C support for CIDFontType 0 fonts to include those with FontType
+2 subfonts in the FDArray (an Adobe 3011 addition, specifically for CFF
+fonts). (gdevpsf.h [1.2]: 2000/03/21 07:43:42 lpd)
+
 </pre><h2><a name="6.20 PDF writer"></a>PDF writer</h2><pre>
 
 Fixes problems:
@@ -182,6 +271,9 @@ collection occured while writing an image in a PDF file. (gdevpdfi.c [1.5]:
 represented in line, and whether it exceeded Acrobat Reader's size limit,
 was wrong, causing some patterns not to be represented as Patterns.
 (gdevpdfi.c [1.6]: 2000/03/20 05:58:15 lpd)
+	- When ProcessColorModel=/DeviceCMYK, if the first object on a page
+or after changing the clipping path was white, the PDF writer would write it
+as black. (gdevpdfu.c [1.3]: 2000/03/21 18:36:36 lpd)
 
 Adds parsing for the remaining Acrobat Distiller 4 parameters. Implements
 the LockDistillerParams, xxxDownsampleThreshold, xxxImageDict, and
@@ -220,6 +312,14 @@ true and false to the no longer existing operators .true and .false.
 (lib/pdf_draw.ps [1.5]: 2000/03/19 07:37:03 lpd)
 	- FunctionType 2 and 3 functions didn't work.
 (lib/pdf_draw.ps [1.6]: 2000/03/19 15:23:10 lpd)
+	- In PDF files, the page CropBox was not being used to clip the
+output. (lib/pdf_main.ps [1.4], lib/pdf_ops.ps [1.3]: 2000/03/21 23:08:32
+lpd)
+	- The "fix" for FunctionTypes 2 and 3 in PDF files had made things
+worse, because the code didn't distinguish between resolving to a PostScript
+function (for shadings) and resolving to a PostScript procedure (for
+halftones, BG/UCR, alternate color space mapping, etc.)
+(lib/pdf_draw.ps [1.7]: 2000/03/23 18:31:46 lpd)
 
 Adds a lforall procedure for the PDF linearizer. (lib/pdf_base.ps [1.3]:
 2000/03/19 01:50:05 lpd)
@@ -273,6 +373,15 @@ rather than simply setting the procedure to gs_identity_transfer.
 (zcolor.c [1.2]: 2000/03/19 17:14:47 lpd)
 	- Separation color spaces didn't store the separation name.
 (zcssepr.c [1.2]: 2000/03/19 17:21:36 lpd)
+	- The addition of the dummy cid_Setup procedure in gs 6.01 was
+accidentally commented out. (lib/gs_cidfn.ps [1.5]: 2000/03/21 00:11:55 lpd)
+	- The test for whether an CIDFontType 2 outline string was large
+enough to include prefixed metrics was backwards, which would have caused
+problems with any font that used MetricsCount. (zfcid.c [1.3]: 2000/03/21
+00:43:17 lpd)
+	- A couple of places in the Windows code didn't correctly handle
+Ghostscript version numbers of the form #.0#. (dwsetup.cpp [1.2]: 2000/03/22
+21:45:03 lpd)
 
 Provides a gs_atan2_degrees procedure to parallel sin and cos.
 (zmath.c [1.2]: 2000/03/18 23:10:39 lpd)
@@ -339,6 +448,52 @@ Adds a .fileposition operator that will read the position even of
 non-positionable streams, needed for the PDF linearizer. (zfileio.c [1.3]:
 2000/03/20 04:30:49 lpd)
 
+Starts to move support for CIDFontType 0 and 2 into C code, needed by the
+PDF writer for handling CID-keyed fonts. Implements GlyphDirectory for
+CIDFonts. Makes GDBytes and CIDMapOffset optional for CIDFontType 0 fonts
+that have a GlyphDirectory (not documented in the PLRM, but clearly
+correct). Implements Adobe 3011 features: integer and dictionary CIDMaps,
+and the MetricsCount entry, in CIDFontType 2 fonts (but only in the C code,
+which isn't hooked in yet, not in the PostScript code in gs_cidfn.ps.)
+(icid.h [1.1], ifont.h [1.2], zcid.c [1.2], zfcid.c [1.1], zfcmap.c [1.3],
+zfont42.c [1.2]: 2000/03/20 19:53:06 lpd)
+
+Hooks the new CIDMap code into the BuildGlyph procedure for CIDFontType 2
+fonts. (Contrary to a previous log comment, MetricsCount is already hooked
+in.) Support for CIDFontType 2 fonts is now implemented entirely in C, as
+for Type 42 fonts. (lib/gs_cidfn.ps [1.6], zfcid.c [1.2]: 2000/03/21
+00:32:15 lpd)
+
+Extends the C support for CIDFontType 0 fonts to include those with FontType
+2 subfonts in the FDArray (an Adobe 3011 addition, specifically for CFF
+fonts). (ifont2.h [1.1], zfcid.c [1.4], zfont2.c [1.2]: 2000/03/21 07:43:42
+lpd)
+
+Changes Subr loading for CIDFontType 0 fonts from lazy to immediate, so that
+C code can be guaranteed access to the Subrs. (In every CIDFontType 0 font
+that we have seen, SubrCount is 5, so this has no significant time or space
+cost.) Also adds support for FDBytes > 1 in GlyphDirectory definitions.
+(lib/gs_cidfn.ps [1.7]: 2000/03/21 20:06:44 lpd)
+
+Splits off the ReusableStreamDecode filter as a separate module, since
+CIDFontType 0 fonts will use it even in LanguageLevels below 3.
+(lib/gs_frsd.ps [1.1], lib/gs_ll3.ps [1.3], zfrsd.c [1.1]: 2000/03/21
+21:34:57 lpd)
+
+Makes file streams remember the file name, needed for efficiently
+implementing reusable streams. (zfile.c [1.3], zfileio.c [1.4]: 2000/03/23
+02:13:40 lpd)
+
+Changes the new .filename operator to return true/false rather than causing
+an error; redefines findlibfile in terms of a simpler .libfile operator +
+.filename. (lib/gs_init.ps [1.5], zfile.c [1.4], zfileio.c [1.5]: 2000/03/23
+18:47:17 lpd)
+
+Finishes implementing the file case of ReusableStreamDecode. This required
+adding the ability to restrict file-reading streams to a subfile.
+(lib/gs_frsd.ps [1.2], sfilter1.c [1.4], zfileio.c [1.6], zfrsd.c [1.2]:
+2000/03/24 03:59:42 lpd)
+
 </pre><h2><a name="6.20 Streams"></a>Streams</h2><pre>
 
 Fixes problems:
@@ -361,6 +516,15 @@ updates implementors of parameter lists to call gs_param_list_init to
 initialize the common members, which is now required. (spsdf.c [1.2]:
 2000/03/19 15:16:11 lpd)
 
+Makes file streams remember the file name, needed for efficiently
+implementing reusable streams. (stream.c [1.4], stream.h [1.4]: 2000/03/23
+02:13:40 lpd)
+
+Finishes implementing the file case of ReusableStreamDecode. This required
+adding the ability to restrict file-reading streams to a subfile.
+(sfxfd.c [1.2], sfxstdio.c [1.2], stream.c [1.5], stream.h [1.5]: 2000/03/24
+03:59:42 lpd)
+
 </pre><h2><a name="6.20 Library"></a>Library</h2><pre>
 
 Fixes problems:
@@ -382,6 +546,8 @@ returned garbage. The fix requires that if a client wants to set a transfer
 function to the identity mapping, it must call gx_set_identity_transfer
 rather than simply setting the procedure to gs_identity_transfer.
 (gxclrast.c [1.3], gxcmap.c [1.2], gxfmap.h [1.2]: 2000/03/19 17:14:47 lpd)
+	- Fixes a warning about aliasing produced by one extremely picky
+compiler. (gsnogc.c [1.2]: 2000/03/22 21:39:32 lpd)
 
 Provides a gs_atan2_degrees procedure to parallel sin and cos.
 (gsmisc.c [1.2], gxfarith.h [1.2]: 2000/03/18 23:10:39 lpd)
@@ -489,5 +655,26 @@ Type 2, including optimizing sequences of Type 1 operators into a single
 Type 2 operator. Implements writing CIDFontType 0 CFF fonts (CIDFonts) [NOT
 TESTED]. Starts (just barely) to remove more unneeded information from
 embedded TrueType fonts. (gxttf.h [1.1]: 2000/03/20 07:02:12 lpd)
+
+Starts to move support for CIDFontType 0 and 2 into C code, needed by the
+PDF writer for handling CID-keyed fonts. Implements GlyphDirectory for
+CIDFonts. Makes GDBytes and CIDMapOffset optional for CIDFontType 0 fonts
+that have a GlyphDirectory (not documented in the PLRM, but clearly
+correct). Implements Adobe 3011 features: integer and dictionary CIDMaps,
+and the MetricsCount entry, in CIDFontType 2 fonts (but only in the C code,
+which isn't hooked in yet, not in the PostScript code in gs_cidfn.ps.)
+(gsfcid.c [1.1], gsfcmap.c [1.3], gxfcmap.h [1.2], gxfont1.h [1.2]:
+2000/03/20 19:53:06 lpd)
+
+</pre><h2><a name="6.20 ???Other???"></a>???Other???</h2><pre>
+
+Starts to move support for CIDFontType 0 and 2 into C code, needed by the
+PDF writer for handling CID-keyed fonts. Implements GlyphDirectory for
+CIDFonts. Makes GDBytes and CIDMapOffset optional for CIDFontType 0 fonts
+that have a GlyphDirectory (not documented in the PLRM, but clearly
+correct). Implements Adobe 3011 features: integer and dictionary CIDMaps,
+and the MetricsCount entry, in CIDFontType 2 fonts (but only in the C code,
+which isn't hooked in yet, not in the PostScript code in gs_cidfn.ps.)
+(ifont42.h [1.1]: 2000/03/20 19:53:06 lpd)
 
 </pre></body></html>
