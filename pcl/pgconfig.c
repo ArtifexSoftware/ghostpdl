@@ -247,6 +247,9 @@ hpgl_IP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int32 ptxy[4];
 	int i;
 	gs_int_rect win;
+
+	/* draw the current path */
+	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 	/* get the default picture frame coordinates */
 	hpgl_call(hpgl_picture_frame_coords(pgls, &win));
 
