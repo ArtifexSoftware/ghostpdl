@@ -396,6 +396,56 @@ pdf_write_FontFile_entry(gx_device_pdf *pdev, pdf_base_font_t *pbfont)
 }
 
 /*
+ * Adjust font name for Acrobat Reader 3.
+ */
+private int
+pdf_adjust_font_name(gx_device_pdf *pdev, long id, pdf_base_font_t *pbfont)
+{
+    /*
+     * In contradiction with previous version of pdfwrite,
+     * this always adds a suffix. We don't check the original name
+     * for uniquity bacause the layered architecture
+     * (see gdevpdtx.h) doesn't provide an easy access for
+     * related information.
+     */
+    int i;
+    byte *chars = (byte *)pbfont->font_name.data; /* break 'const' */
+    byte *data;
+    uint size = pbfont->font_name.size;
+    char suffix[sizeof(long) * 2 + 2];
+    uint suffix_size;
+
+#define SUFFIX_CHAR '~'
+    /*
+     * If the name looks as though it has one of our unique suffixes,
+     * remove the suffix.
+     */
+    for (i = size;
+	 i > 0 && isxdigit(chars[i - 1]);
+	 --i)
+	DO_NOTHING;
+    if (i < size && i > 0 && chars[i - 1] == SUFFIX_CHAR) {
+	do {
+	    --i;
+	} while (i > 0 && chars[i - 1] == SUFFIX_CHAR);
+	size = i + 1;
+    }
+    /* Create a unique name. */
+    sprintf(suffix, "%c%lx", SUFFIX_CHAR, id);
+    suffix_size = strlen(suffix);
+    data = gs_resize_string(pdev->pdf_memory, chars, size,
+				  size + suffix_size,
+				  "pdf_adjust_font_name");
+    if (data == 0)
+	return_error(gs_error_VMerror);
+    memcpy(data + size, (const byte *)suffix, suffix_size);
+    pbfont->font_name.data = data;
+    pbfont->font_name.size = size + suffix_size;
+#undef SUFFIX_CHAR
+    return 0;
+}
+
+/*
  * Write an embedded font.
  */
 int
@@ -415,9 +465,22 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
     if (pbfont->FontFile_id == 0)
 	pbfont->FontFile_id = pdf_obj_ref(pdev);
     FontFile_id = pbfont->FontFile_id;
+    if (pdev->CompatibilityLevel == 1.2 &&
+	!do_subset && !pbfont->is_complete ) {
+	/*
+	 * Due to a bug in Acrobat Reader 3, we need to generate
+	 * unique font names, except base 14 fonts being not embedded.
+	 * To recognize base 14 fonts here we used the knowledge 
+	 * that pbfont->is_complete is true for base 14 fonts only.
+	 * Note that subsetted fonts already have an unique name
+	 * due to subset prefix.
+	 */
+	 int code = pdf_adjust_font_name(pdev, FontFile_id, pbfont);
+	 if (code < 0)
+	    return code;
+    }
     fnstr.data = pbfont->font_name.data;
     fnstr.size = pbfont->font_name.size;
-
     /* Now write the font (or subset). */
     switch (out_font->FontType) {
 
