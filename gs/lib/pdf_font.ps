@@ -83,17 +83,11 @@ pdfdict begin
    if
  } bdef
 
-% Rename a font with a generated name.
-/renamefont {		% <fontdict> renamefont <font'>
-  dup /FontName 2 copy get genfontname
-  4 index exch /FontNameSuffix exch put
-  dup 5 1 roll put definefont
-} bind def
-
+% Define a font using it's FontName as the key.
 % Adjust a font according to the Encoding and Widths in the font resource.
 /adjustfont {		% <font-resource> <font> adjustfont <font'>
   getfontencoding
-  getfontmetrics 4 -1 roll pop .updatefont { renamefont } if
+  getfontmetrics 4 -1 roll pop .updatefont { dup /FontName get exch definefont } if
 } bind def
 
 % Get the (possibly modified) encoding of a font.
@@ -252,18 +246,7 @@ currentdict /match_in_diff undef
 
 % ---------------- Utilities ---------------- %
 
-% Fabricate a font name by adding ?'s on the end.
-/genfontname		% <name> genfontname <name'> <namesuffixstring>
- { dup length string cvs () 
-    { (?) concatstrings 1 index 1 index concatstrings
-      cvn FontDirectory exch known not { 
-        dup 3 -1 roll exch concatstrings cvn exch exit
-      } if
-    }
-   loop
- } bdef
-
-% Find a font, and adjust its encoding if necessary.
+% Find a font (except for embedded ones), and adjust its encoding if necessary.
 /.pdfdfndict mark
   /defaultfontname /Helvetica
 .dicttomark readonly def
@@ -304,12 +287,12 @@ currentdict /match_in_diff undef
 		% No available good substitution, use the standard one.
 	pop 1 index .substitutefont
       } if
-      QUIET not {
+      dup 3 index ne QUIET not and {
 	(Substituting font ) print dup =only
 	( for ) print 2 index =only (.) = flush
       } if
-      3 -1 roll pop findfont
-		% Stack: font-res fontdesc font
+      findfont
+		% Stack: font-res fontname fontdesc font
 		% If this is a small-caps font, replace the CharString
 		% entries for a..z.
       exch /Flags oget 16#20000 and 0 ne {
@@ -331,8 +314,12 @@ currentdict /match_in_diff undef
 	    0.7 dup scale 0 0 moveto show
 	  } /exec cvx 4 packedarray cvx put
 	} for put
-	renamefont
       } if
+      dup /FontName get 2 index ne {
+        true .copyfontdict
+        2 copy exch /FontName exch put
+      } if
+      definefont
     } {
 		% No descriptor available, use the default algorithm.
       findfont
@@ -584,7 +571,7 @@ readonly def
       /FirstChar 1 index /FirstChar oget def
       /LastChar 1 index /LastChar oget def
     } if
-    /FontName 1 index /Name get genfontname /FontNameSuffix exch def def
+    /FontName 1 index /Name get def
     /Encoding .notdefEncoding 2 index getencoding def
 		% We have to define BuildChar rather than BuildGlyph:
 		% there is no PDF equivalent of glyphshow, and we need
@@ -644,8 +631,13 @@ readonly def
       (Substituting font ) print dup =only
       ( for ) print 1 index =only (.) = flush
     } if
-    exch pop
-  } if pdffindfont
+    exch 3 1 roll pdffindfont
+    true .copyfontdict
+    2 copy exch /FontName exch put
+    definefont
+  } {
+    pdffindfont
+  } ifelse
 } bdef
 
 % Read an embedded TrueType font.
