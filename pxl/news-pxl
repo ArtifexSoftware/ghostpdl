@@ -6,6 +6,97 @@
 This file, NEWS-XL, describes the changes in the most recent releases of
 Aladdin's PCL XL code, in reverse chronological order.
 
+Version 1.30 (08/25/99)
+=======================
+
+Wed Aug 25 17:00:00 1999 GMT        Marcos H. Woehrmann    marcos@artifex.com
+
+        * pxl.mak [1.12]:
+        changed version number.
+        
+
+Thu Jun 17 20:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pxstate.c [1.3], pxfont.c [1.3], pxffont.c [1.5], pxerrors.c [1.3]:
+        releases pxl error page font and enumeration when shutting down an
+        interpreter instance.  This required adding support to pl_font_t for
+        fonts with permenent data (data that should not be freed).
+        
+
+Sun Jun  6 04:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pxfont.c [1.2]:
+        removes obsolete comment.
+        
+
+Wed Jun  2 03:00:00 1999 GMT            johnd@artifex.com
+
+        * pxtop.c [1.1], pxstate.h [1.4], pxstate.c [1.2], pxsessio.c [1.6], 
+        pxparse.h [1.2], pxparse.c [1.4], pxmain.c [1.8], pxl_ugcc.mak [1.13], 
+        pxl_top.mak [1.10], pxl_msvc.mak [1.4], pxl.mak [1.11], 
+        pximpl.c [1.1], pxffont.c [1.4]:
+        Initial checkin for multiple language support, shared devices,
+        interpreter instances, interpreter initialization/de-initialization,
+        etc.  A todo list of unfinished work is in pctop.c and pxtop.c.
+        
+
+Thu May 27 07:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pxmain.c [1.7], pxl_top.mak [1.9]:
+        replace gsgc.h include with gsnogc.h.
+        
+
+Wed May 26 06:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pxgstate.c [1.5]:
+        color space type was not initialized correctly.  Problem introduced with
+        changes to support gs5.84.
+        
+        * pxgstate.c [1.6]:
+        removes unused variable.
+        
+
+Tue May 25 08:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pxl_top.mak [1.8], pxl_msvc.mak [1.3]:
+        gs5.84 integration.  Initialization of DD macro, initializes directory
+        location for device (.dev) files.  Changes default gs directory
+        locations, also.
+        
+
+Mon May 24 20:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pxparse.c [1.3], pxl_ugcc.mak [1.12], pxink.c [1.4]:
+        initial gs5.84 checkin with pcl and xl compiling.
+        
+
+Mon May 24 05:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pxffont.c [1.3]:
+        "arch_is_big_endian" from generated arch.h is now uppercase.
+        
+        * pxmain.c [1.6]:
+        modified to use gs_nogc_reclaim() instead of gs_reclaim().
+        
+        * pximage.c [1.2]:
+        adds gxcolor2.h and gxdcolor.h, needed by gxpcolor.h
+        
+        * pxl_top.mak [1.7]:
+        Adds directory definition for creation of .dev files.  These are no
+        longer built in the current source directory.
+        
+        * pxgstate.c [1.4]:
+        adds gdebug.h, indirectly needed by reference counting code.
+        Modification for gs5.84 color space interface.
+        
+
+Sun Mar 21 06:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
+
+        * pxsessio.c [1.5]:
+        adds initialization for media type and duplex back side.
+        
+
+
 Version 1.22 (03/04/99)
 =======================
 
