@@ -196,14 +196,16 @@ step_gradient(trap_gradient *g, int num_components)
     int i;
 
     for (i = 0; i < num_components; i++) {
-	long fc = g->f[i] + g->num[i];
+	/* fixme: optimize. */
+	int64_t fc = g->f[i] + (int64_t)g->num[i] * fixed_1;
 
+	g->c[i] += (int32_t)(fc / g->den);
+	fc -=  fc / g->den * g->den;
 	if (fc < 0) {
 	    fc += g->den;
 	    g->c[i]--;
 	}
-	g->c[i] += fc / g->den;
-	g->c[i] = fc % g->den;
+	g->f[i] = (int32_t)fc;
     }
 }
 
@@ -211,36 +213,21 @@ private inline bool
 check_gradient_overflow(const gs_linear_color_edge *le, const gs_linear_color_edge *re,
 		int num_components)
 {
-    /* Check whether set_x_gradient can overflow. */
-    const int32_t mul_limit = (int32_t)(((uint64_t)1 << 31) - 1 - 2);
-    int32_t hl = le->end.y - le->start.y;
-    int32_t hr = re->end.y - re->start.y;
-    int32_t h = max(hl, hr);
-    int64_t xl1 = ((uint64_t)le->start.x * h);
-    int64_t xl2 = ((uint64_t)le->end.x * h);
-    int64_t xl = min(xl1, xl2);
-    int64_t xr1 = ((uint64_t)re->start.x * h);
-    int64_t xr2 = ((uint64_t)re->end.x * h);
-    int64_t xr = max(xr1, xr2);
-    int i;
+    /* Check whether set_x_gradient, fill_linear_color_scanline can overflow. 
 
-    if (xr - xl >= mul_limit - 2)
-	return true;
-    for (i = 0; i < num_components; i++) {
-	int64_t c0 = (int64_t)le->c0[i] * h;
-	int64_t c1 = (int64_t)re->c0[i] * h;
-	int64_t c = c1 - c0;
+       dev_proc(dev, fill_linear_color_scanline) can perform its computation in 32-bit fractions,
+       so we assume it never overflows. Devices which implement it with no this
+       assumption must implement the check in gx_default_fill_linear_color_trapezoid,
+       gx_default_fill_linear_color_triangle with a function other than this one.
 
-	if (c <= -mul_limit || c >= mul_limit)
-	    return true;
-	c0 = (int64_t)le->c1[i] * h;
-	c1 = (int64_t)re->c1[i] * h;
-	c = c1 - c0;
-
-	if (c <= -mul_limit || c >= mul_limit)
-	    return true;
-    }
-    return false;
+       Since set_x_gradient perform computations in int64_t, which provides 63 bits
+       while multiplying a 32-bits color value to a coordinate,
+       we must restrict the X span with 63 - 32 = 31 bits.
+     */
+    int32_t xl = min(le->start.x, le->end.x);
+    int32_t xr = min(re->start.x, re->end.x);
+    /* The pixel span boundaries : */
+    return arith_rshift_1(xr) - arith_rshift_1(xl) >= 0x3FFFFFFE;
 }
 
 
@@ -248,44 +235,39 @@ private inline int
 set_x_gradient(trap_gradient *xg, const trap_gradient *lg, const trap_gradient *rg, 
 	     const trap_line *l, const trap_line *r, int il, int ir, int num_components)
 {
-    const int32_t mul_limit = (int32_t)(((uint64_t)1 << 31) - 1 - 2);
-    int32_t h = max(l->h, r->h);
-    /* Approximatively convert coordinates to a common denominator : */
-    uint32_t fxl = (uint32_t)((uint64_t)l->xf * h / l->h);
-    uint32_t fxr = (uint32_t)((uint64_t)r->xf * h / r->h);
-    int64_t xl = (int64_t)l->x * h + fxl;
-    int64_t xr = (int64_t)r->x * h + fxr;
-    int64_t x0 = (int64_t)int2fixed(il) * h + 0;
+    /* Ignoring the ending coordinats fractions, 
+       so the gridient is slightly shifted to the left (in <1 'fixed' unit). */
+    int32_t xl = l->x - (l->xf == -l->h ? 1 : 0) - fixed_half; /* Revert the GX_FILL_TRAPEZOID shift. */
+    int32_t xr = r->x - (r->xf == -r->h ? 1 : 0) - fixed_half; /* Revert the GX_FILL_TRAPEZOID shift. */
+    /* The pixel span boundaries : */
+    int32_t x0 = int2fixed(il) + fixed_half;     /* Shift to the pixel center. */
+    int32_t x1 = int2fixed(ir - 1) + fixed_half; /* Shift to the pixel center. */
     int i;
 
-    if (xr - xl >= mul_limit) {
-	/* check_gradient_overflow isn't consistent. */
-	/* Must not happen. */
-	return_error(gs_error_unregistered);
-    }
-    assert(lg->den == l->h);
-    assert(rg->den == r->h);
-    xg->den = max(lg->den, rg->den);
+#   ifdef DEBUG
+	if (arith_rshift_1(xr) - arith_rshift_1(xl) >= 0x3FFFFFFE) /* Can overflow ? */
+	    return_error(gs_error_unregistered); /* Must not happen. */
+#   endif
+    xg->den = x1 - x0;
     for (i = 0; i < num_components; i++) {
-	/* Approximatively convert fractions to a common denominator : */
-	uint32_t fcl = (uint32_t)((uint64_t)lg->c[i] * xg->den / lg->den);
-	uint32_t fcr = (uint32_t)((uint64_t)rg->c[i] * xg->den / rg->den);
-	uint64_t cl = (int64_t)lg->c[i] * xg->den + fcl;
-	uint64_t cr = (int64_t)lg->c[i] * xg->den + fcr;
-	uint64_t cd, c0;
+	/* Ignoring the ending colors fractions, 
+	   so the color gets a slightly smaller value
+	   (in <1 'frac32' unit), but it's not important due to 
+	   the further conversion to [0, 1 << cinfo->comp_bits[j]], 
+	   which drops the fraction anyway. */
+	uint32_t cl = lg->c[i];
+	uint32_t cr = rg->c[i];
+	uint32_t c0 = (int32_t)(cl + ((int64_t)cr - cl) * (x0 - xl) / (xr - xl));
+	uint32_t c1 = (int32_t)(cl + ((int64_t)cr - cl) * (x1 - xl) / (xr - xl));
 
-	if (cr - cl <= mul_limit || cr - cl >= mul_limit) {
-	    /* check_gradient_overflow isn't consistent. */
-	    /* Must not happen. */
-	    return_error(gs_error_unregistered);
-	}
-	/* Initial color in xg->den units : */
-	cd = (cr - cl) * (x0 - xl) / (xr - xl);
-	c0 = (int64_t)lg->c[i] * xg->den + (int64_t)fcl + cd;
-	/* Gradient parameters in xg->den units : */
-	xg->c[i] = (int32_t)(c0 / xg->den);
-	xg->f[i] = (uint32_t)(c0 - (int64_t)xg->c[i] * xg->den);
-	xg->num[i] = (int32_t)((cr - cl) / xg->den);
+	xg->c[i] = c0;
+	xg->f[i] = 0; /* Insufficient bits to compute it better. 
+	                 The color so the color gets a slightly smaller value
+			 (in <1 'frac32' unit), but it's not important due to 
+			 the further conversion to [0, 1 << cinfo->comp_bits[j]], 
+			 which drops the fraction anyway. 
+			 So setting 0 appears pretty good and fast. */
+	xg->num[i] = c1 - c0;
     }
     return 0;
 }
@@ -432,7 +414,7 @@ fill_linear_color_trapezoid_nocheck(const gs_fill_attributes *fa,
     int code;
 
     code = (fa->swap_axes ? gx_fill_trapezoid_as_lc : gx_fill_trapezoid_ns_lc)(fa->pdev, 
-	    le, re, ymin, ymax, 0, NULL, 0);
+	    le, re, ymin, ymax, 0, NULL, fa);
     if (code < 0)
 	return code;
     return !code;

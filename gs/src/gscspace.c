@@ -585,15 +585,13 @@ gx_cspace_is_linear_default(gs_direct_color_space *cs, const gs_imager_state * p
     /* With nc == 4 assuming a convex plain quadrangle in the client color space. */
     int code;
 
-    if (c0->pattern != 0)
-	return_error(gs_error_rangecheck);
     if (dev->color_info.separable_and_linear != GX_CINFO_SEP_LIN)
 	return_error(gs_error_rangecheck);
     code = gx_cspace_is_linear_in_triangle(cs, pis, dev, c0, c1, c2, smoothness);
-    if (code < 0)
+    if (code <= 0)
 	return code;
     if (c3 == NULL)
-	return 0;
+	return 1;
     return gx_cspace_is_linear_in_triangle(cs, pis, dev, c1, c2, c3, smoothness);
 }
 

@@ -21,6 +21,7 @@
 #include "gserrors.h"
 #include "gxdevice.h"
 #include "gxcindex.h"
+#include "vdtrace.h"
 
 int 
 gx_default_fill_linear_color_scanline(const gs_fill_attributes *fa,
@@ -49,7 +50,7 @@ gx_default_fill_linear_color_scanline(const gs_fill_attributes *fa,
 
 	c[k] = c0[k];
 	f[k] = c0f[k];
-	ci0 |= ((gx_color_index)(c[k] >> (sizeof(c[k]) * 8 - bits)) << shift);
+	ci0 |= (gx_color_index)(c[k] >> (sizeof(c[k]) * 8 - bits)) << shift;
     }
     for (i = i0 + 1; i < i1; i++) {
 	ci1 = 0;
@@ -60,12 +61,13 @@ gx_default_fill_linear_color_scanline(const gs_fill_attributes *fa,
 
 	    f[k] = m % cg_den;
 	    c[k] += m / cg_den;
-	    ci1 |= ((gx_color_index)(c[k] >> (sizeof(c[k]) * 8 - bits)) << shift);
+	    ci1 |= (gx_color_index)(c[k] >> (sizeof(c[k]) * 8 - bits)) << shift;
 	}
 	if (ci1 != ci0) {
 	    si = max(bi, fa->clip->p.x);
 	    ei = min(i, fa->clip->q.x);
 	    if (si < ei) {
+		vd_rect(int2fixed(bi), int2fixed(j), int2fixed(i), int2fixed(j + 1), 1, (ulong)ci0);
 		if (fa->swap_axes)
 		    code = dev_proc(fa->pdev, fill_rectangle)(fa->pdev, j, bi, 1, i - bi, ci0);
 		else
@@ -79,6 +81,7 @@ gx_default_fill_linear_color_scanline(const gs_fill_attributes *fa,
     }
     si = max(bi, fa->clip->p.x);
     ei = min(i, fa->clip->q.x);
+    vd_rect(int2fixed(bi), int2fixed(j), int2fixed(i), int2fixed(j + 1), 1, (ulong)ci0);
     if (si < ei) {
 	if (fa->swap_axes)
 	    return dev_proc(fa->pdev, fill_rectangle)(fa->pdev, j, bi, 1, i - bi, ci0);

@@ -2326,7 +2326,7 @@ dc2fc(const patch_fill_state_t *pfs, gx_color_index c,
 	    int shift = cinfo->comp_shift[j];
 	    int bits = cinfo->comp_bits[j];
 
-	    fc[j] = (gx_color_index)(c >> shift) & ((1 << bits) - 1);
+	    fc[j] = ((c >> shift) & ((1 << bits) - 1)) << (sizeof(frac32) * 8 - bits);
     }
 }
 
@@ -2351,40 +2351,43 @@ triangle_by_4(patch_fill_state_t *pfs,
 	if (1 /* fixme: pfs->dev->color_info.separable_and_linear == GX_CINFO_SEP_LIN) 
 		    doesn't work with 'display'. */
 		&& 1 /* fixme: pfs->pis->halftone->type == ht_type_none
-		    doesn't work: with display it appears ht_type_screen. */
-		&& cs_is_linear(cs, pfs->pis, pfs->dev, &p0->c.cc, 
-			    &p1->c.cc, &p2->c.cc, NULL, pfs->smoothness)) {
-	    gx_device *pdev = pfs->dev;
-	    frac32 fc[3][GX_DEVICE_COLOR_MAX_COMPONENTS];
-	    gs_fill_attributes fa;
-	    gx_device_color dc[3];
+		    doesn't work: with display it appears ht_type_screen. */) {
+	    if (cs_is_linear(cs, pfs->pis, pfs->dev, &p0->c.cc, 
+				&p1->c.cc, &p2->c.cc, NULL, pfs->smoothness) > 0) {
+		gx_device *pdev = pfs->dev;
+		frac32 fc[3][GX_DEVICE_COLOR_MAX_COMPONENTS];
+		gs_fill_attributes fa;
+		gx_device_color dc[3];
 
-	    fa.pdev = pdev;
-	    fa.clip = &pfs->rect;
-	    fa.ht = NULL; /* fixme */
-	    fa.swap_axes = false;
-	    fa.lop = 0; /* fixme */
-	    code = patch_color_to_device_color(pfs, &p0->c, &dc[0]);
-	    if (code < 0)
-		return code;
-	    code = patch_color_to_device_color(pfs, &p1->c, &dc[1]);
-	    if (code < 0)
-		return code;
-	    code = patch_color_to_device_color(pfs, &p2->c, &dc[2]);
-	    if (code < 0)
-		return code;
-	    if (dc[0].type == &gx_dc_type_data_pure) {
-		dc2fc(pfs, dc[0].colors.pure, fc[0]);
-		dc2fc(pfs, dc[1].colors.pure, fc[1]);
-		dc2fc(pfs, dc[2].colors.pure, fc[2]);
-		code = dev_proc(pdev, fill_linear_color_triangle)(&fa, 
-				&p0->p, &p1->p, &p2->p, fc[0], fc[1], fc[2]);
-		if (code == 1)
-		    return 0;
+		fa.pdev = pdev;
+		fa.clip = &pfs->rect;
+		fa.ht = NULL; /* fixme */
+		fa.swap_axes = false;
+		fa.lop = 0; /* fixme */
+		code = patch_color_to_device_color(pfs, &p0->c, &dc[0]);
 		if (code < 0)
 		    return code;
-		subdivide_to_constant_color = false;
-	    }
+		code = patch_color_to_device_color(pfs, &p1->c, &dc[1]);
+		if (code < 0)
+		    return code;
+		code = patch_color_to_device_color(pfs, &p2->c, &dc[2]);
+		if (code < 0)
+		    return code;
+		if (dc[0].type == &gx_dc_type_data_pure) {
+		    dc2fc(pfs, dc[0].colors.pure, fc[0]);
+		    dc2fc(pfs, dc[1].colors.pure, fc[1]);
+		    dc2fc(pfs, dc[2].colors.pure, fc[2]);
+		    draw_triangle(&p0->p, &p1->p, &p2->p, RGB(255, 0, 0));
+		    code = dev_proc(pdev, fill_linear_color_triangle)(&fa, 
+				    &p0->p, &p1->p, &p2->p, fc[0], fc[1], fc[2]);
+		    if (code == 1)
+			return 0;
+		    if (code < 0)
+			return code;
+		    subdivide_to_constant_color = false;
+		}
+	    } else
+    		subdivide_to_constant_color = false;
 	}
 #   endif
     if (subdivide_to_constant_color)

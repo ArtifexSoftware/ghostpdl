@@ -199,7 +199,7 @@ GX_FILL_TRAPEZOID (gx_device * dev, const EDGE_TYPE * left,
 
 #if LINEAR_COLOR
 #   define FILL_TRAP_RECT(x,y,w,h)\
-	(!w ? 0 : dev_proc(dev, fill_linear_color_scanline)(fa, x, y, w, xg.c, xg.f, xg.num, xg.den))
+	(!(w) ? 0 : dev_proc(dev, fill_linear_color_scanline)(fa, x, y, w, xg.c, xg.f, xg.num, xg.den))
 #else
 #   define FILL_TRAP_RECT(x,y,w,h)\
 	(FILL_DIRECT ? FILL_TRAP_RECT_DIRECT(x,y,w,h) : FILL_TRAP_RECT_INDIRECT(x,y,w,h))
@@ -338,25 +338,29 @@ GX_FILL_TRAPEZOID (gx_device * dev, const EDGE_TYPE * left,
 	rxl = rational_floor(l);
 	rxr = rational_floor(r);
 	SET_MINIMAL_WIDTH(rxl, rxr, l, r);
-	while (++iy != iy1) {
+	while (LINEAR_COLOR ? 1 : ++iy != iy1) {
 	    register int ixl, ixr;
 
-	    STEP_LINE(ixl, l);
-	    STEP_LINE(ixr, r);
-	    SET_MINIMAL_WIDTH(ixl, ixr, l, r);
 #	    if LINEAR_COLOR
-		if (ixl != ixl) {
-		    code = set_x_gradient(&xg, &lg, &rg, &l, &r, ixl, ixr, num_components);
+		if (rxl != rxr) {
+		    code = set_x_gradient(&xg, &lg, &rg, &l, &r, rxl, rxr, num_components);
 		    if (code < 0)
 			goto xit;
-		    VD_RECT_SWAPPED(ixl, ry, ixr, iy);
-		    code = FILL_TRAP_RECT(ixl, ry, ixr - ixl, iy - ry);
+		    VD_RECT_SWAPPED(rxl, iy, rxr, iy + 1);
+		    code = FILL_TRAP_RECT(rxl, iy, rxr - rxl, 1);
 		    if (code < 0)
 			goto xit;
 		}
+		if (++iy == iy1)
+		    break;
+		STEP_LINE(rxl, l);
+		STEP_LINE(rxr, r);
 		step_gradient(&lg, num_components);
 		step_gradient(&rg, num_components);
 #	    else
+		STEP_LINE(ixl, l);
+		STEP_LINE(ixr, r);
+		SET_MINIMAL_WIDTH(ixl, ixr, l, r);
 		if (ixl != rxl || ixr != rxr) {
 		    CONNECT_RECTANGLES(ixl, ixr, rxl, rxr, iy, ry, rxr, ixl, FILL_TRAP_RECT);
 		    CONNECT_RECTANGLES(ixl, ixr, rxl, rxr, iy, ry, ixr, rxl, FILL_TRAP_RECT);
