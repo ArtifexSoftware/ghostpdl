@@ -308,10 +308,10 @@ JPXDEVS=''
 if test x$with_jasper != xno; then
   AC_MSG_CHECKING([for local jasper library source])
   for d in jasper jasper-1.7*; do
-    test -d "$d" && JBIG2DIR=$d && break
+    test -d "$d" && JASPERDIR=$d && break
   done
   if test "x$JASPERDIR" != xsrc; then
-    AC_MSG_RESULT([$JASPER])
+    AC_MSG_RESULT([$JASPERDIR])
     AC_MSG_WARN([Direct compilation of jasper into ghostscript is not 
 supported. You'll need to compile the source yourself and install the 
 library.])
