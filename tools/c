@@ -1,0 +1,1 @@
+-dNOPAUSE -sOutputFile=|sum -sDEVICE=ljet4

@@ -1,0 +1,1 @@
+-Z@ -dNOPAUSE -sOutputFile=/dev/lp1 -sDEVICE=ljet4
