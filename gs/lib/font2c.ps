@@ -24,11 +24,11 @@
 % independent and has no external references, so it can be put into
 % a sharable library even on VMS.
 
+/font2cdict 100 dict dup begin
+
 % Define the maximum string length that all compilers will accept.
 % This must be approximately
 %	min(max line length, max string literal length) / 4 - 5.
-
-/font2cdict 100 dict dup begin
 
 /max_wcs 50 def
 
@@ -651,7 +651,12 @@ readonly def
  { counttomark dup 2 eq exch 3 eq or
     { counttomark -1 roll cvn
       (Converting ) print dup =only ( font.\n) print flush
-      dup FontDirectory exch known { dup FontDirectory exch undef } if
+		% Ensure that we get a clean copy of the font from the
+		% file system.
+      2 {	% do both local and global
+	currentglobal not setglobal
+	dup undefinefont
+      } repeat
       findfont setfont
       (FontName is ) print currentfont /FontName get ==only (.\n) print flush
       counttomark 1 eq
