@@ -379,7 +379,7 @@ $(DD)coslw2p.dev : $(coslw_) $(DD)page.dev
 	$(SETPDEV) $(DD)coslw2p $(coslw_)
 
 $(DD)coslwxl.dev : $(coslw_) $(DD)page.dev
-	$(SETPDEV) ($DD)coslwxl $(coslw_)
+	$(SETPDEV) $(DD)coslwxl $(coslw_)
 
 $(GLOBJ)gdevcslw.$(OBJ) : $(GLSRC)gdevcslw.c $(PDEVH)
 	$(GLCC) $(GLO_)gdevcslw.$(OBJ) $(C_) $(GLSRC)gdevcslw.c
