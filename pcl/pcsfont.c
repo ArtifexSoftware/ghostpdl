@@ -141,7 +141,7 @@ private int /* ESC ) s <count> W */
 pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcls)
 {	uint count = uint_arg(pargs);
 	const byte *data = arg_data(pargs);
-#define pfh ((const pcl_font_header_t *)data)
+	pcl_font_header_t *pfh = (const pcl_font_header_t *)data;
 	uint desc_size;
 	pl_font_scaling_technology_t fst;
 	gs_memory_t *mem = pcls->memory;
@@ -285,6 +285,19 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcls)
 	    if ( code < 0 )
 	      return code;
 	    pl_fill_in_intelli_font(pfont, gs_next_ids(1));
+ 	    if ( pfh->HeaderFormat == pcfh_intellifont_unbound ) {
+		bool zero_complement = true;
+		int i;
+ 		memcpy(plfont->character_complement, &data[78], 8);
+		for (i = 0; i < sizeof(plfont->character_complement); i++)
+		    if (plfont->character_complement[i] != 0x0) {
+			zero_complement = false;
+			break;
+		    }
+		if ( zero_complement ) 
+		    plfont->character_complement[7] = 0x7;
+ 	    }
+
 	    /* pfh->Pitch is design unit width for scalable fonts. */
 	    { uint pitch_cp =
 		pl_get_uint16(pfh->Pitch) * 100 * pfont->FontMatrix.xx;

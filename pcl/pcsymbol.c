@@ -46,7 +46,8 @@ pcl_define_symbol_set(pcl_args_t *pargs, pcl_state_t *pcls)
 	pcl_symbol_set_t *symsetp;
 	pl_glyph_vocabulary_t gv;
 
-#define psm_header_size offset_of(pl_symbol_map_t, codes)
+	/* argh */
+#define psm_header_size offset_of(pl_symbol_map_t, mapping_type)
 	if ( count < psm_header_size )
 	  return e_Range;
 	header_size = pl_get_uint16(psm->header_size);
@@ -269,15 +270,17 @@ bool
 pcl_check_symbol_support(const byte *symset_req, const byte *font_sup)
 {	int i;
 
-	/* bottom 3 bits (of 64) have special interpretation */
-	if ( (~font_sup[7] & 07) != (symset_req[7] & 07) )
-  	  return false;		/* wrong glyph vocabulary */
 	/* if glyph vocabularies match, following will work on the
 	 * last 3 bits of last byte.  Note that the font-support bits
-	 * are inverted (0 means available). */
+	 * are inverted (0 means available). 
+	 */
 	for ( i = 0; i < 7; i++ )
 	  if ( symset_req[i] & font_sup[i] )
 	    return false;		/* something needed, not present */
+	/* check the last byte but not the glyph vocabularies. */
+	if ((symset_req[7] >> 3) & (font_sup[7] >> 3))
+	    return false;
+
 	return true;
 }
 
@@ -290,17 +293,32 @@ pcl_check_symbol_support(const byte *symset_req, const byte *font_sup)
 pl_symbol_map_t *
 pcl_find_symbol_map(const pcl_state_t *pcls, const byte *id,
   pl_glyph_vocabulary_t gv)
-{	pcl_symbol_set_t *setp;
+{	
+    pcl_symbol_set_t *setp;
 	
-	if ( pl_dict_find((pl_dict_t *)&pcls->soft_symbol_sets,
-                          id, 2, (void **)&setp) &&
-	    setp->maps[gv] != NULL )
-	  return setp->maps[gv];
-	if ( pl_dict_find((pl_dict_t *)&pcls->built_in_symbol_sets,
-                          id, 2, (void**)&setp) &&
-	    setp->maps[gv] != NULL )
-	  return setp->maps[gv];
-	return NULL;
+    if ( pl_dict_find((pl_dict_t *)&pcls->soft_symbol_sets,
+		      id, 2, (void **)&setp) &&
+	 setp->maps[gv] != NULL )
+	return setp->maps[gv];
+    if ( pl_dict_find((pl_dict_t *)&pcls->built_in_symbol_sets,
+		      id, 2, (void**)&setp) ) {
+	/* simple case we found a matching symbol set */
+	if ( setp->maps[gv] != NULL )
+	    return setp->maps[gv];
+	/* we requested a unicode symbol set and found an msl
+	   symbol set that can be mapped to unicode */
+	if ( (gv == plgv_Unicode)  &&
+	     (setp->maps[plgv_MSL]) &&
+	     ((setp->maps[plgv_MSL])->mapping_type == PLGV_M2U_MAPPING) )
+	    return setp->maps[plgv_MSL];
+	/* we requested an msl symbol set and found a unicode
+	   symbol set that can be mapped to msl */
+	if ( (gv == plgv_MSL) &&
+	     (setp->maps[plgv_Unicode]) &&
+	     ((setp->maps[plgv_Unicode])->mapping_type == PLGV_U2M_MAPPING) )
+	    return setp->maps[plgv_Unicode];
+    }
+    return NULL;
 }
 
 const pcl_init_t pcsymbol_init = {

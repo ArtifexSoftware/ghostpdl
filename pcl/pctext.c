@@ -23,6 +23,7 @@
 #include "gx.h"
 #include "gsimage.h"
 #include "plvalue.h"
+#include "plvocab.h"
 #include "pcommand.h"
 #include "pcstate.h"
 #include "pcdraw.h"
@@ -116,8 +117,38 @@ map_symbol(
      */
     if ((chr < first_code) || (chr > last_code))
 	return ((last_code <= 0xff) && (chr > 0xff) ? chr : 0xffff);
-    else
-	return psm->codes[chr - first_code];
+    else {
+	pl_glyph_vocabulary_t fgv =  /* font glyph vocabulary */
+	    (pl_glyph_vocabulary_t)(~pfont->character_complement[7] & 07);
+	gs_char code = psm->codes[chr - first_code];
+	/* simple common case - the glyph vocabs match */
+	if ( pl_symbol_map_vocabulary(psm) == fgv )
+	    return code;
+	/* font wants unicode and we have mapped an msl symbol set */
+	if ( ( pl_symbol_map_vocabulary(psm) == plgv_MSL ) &&
+	     ( fgv == plgv_Unicode ) ) {
+	    if ( psm->mapping_type != PLGV_M2U_MAPPING ) {
+		/* font selection should not have given us this */
+		gs_note_error(gs_error_invalidfont);
+		return code;
+	    } else
+		return pl_map_MSL_to_Unicode(code,
+     		         (psm->id[0] << 8) + psm->id[1]);
+	}
+	/* font wants msl coding we have mapped unicode */
+	if ( ( pl_symbol_map_vocabulary(psm) == plgv_Unicode ) &&
+	     ( fgv == plgv_MSL ) ) {
+	    if ( psm->mapping_type != PLGV_U2M_MAPPING ) {
+		/* symbol set doesn't support the mapping - should not happen */
+		gs_note_error(gs_error_invalidfont);
+		return code;
+	    } else
+		return pl_map_Unicode_to_MSL(code,
+        		 (psm->id[0] << 8) + psm->id[1]);
+		    
+	}
+    }
+    return 0xffff;
 }
 
 /*

@@ -737,6 +737,7 @@ $(PCLOBJ)pctext.$(OBJ): $(PCLSRC)pctext.c   \
                         $(gx_h)             \
                         $(gsimage_h)        \
                         $(plvalue_h)        \
+			$(plvocab_h)	    \
                         $(pcommand_h)       \
                         $(pcstate_h)        \
                         $(pcdraw_h)         \
