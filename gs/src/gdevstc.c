@@ -279,11 +279,11 @@ stc_print_setup(stcolor_device *sd)
             sd->stc.escp_init.size       = need;
             sd->stc.escp_init.persistent = false;
          }  else {                                             /* Replace */
-             return_error(gs_error_VMerror);
+             return_error(sd->memory, gs_error_VMerror);
          }
       }
 
-      if(need != 39) return_error(gs_error_unregistered);
+      if(need != 39) return_error(sd->memory, gs_error_unregistered);
 
       memcpy(bp,
 /*                       1 1 11  1 11  1   1 1  2 22 2  2 22  2 22 3  3 3333  3 33*/
@@ -324,11 +324,11 @@ stc_print_setup(stcolor_device *sd)
             sd->stc.escp_release.size       = need;
             sd->stc.escp_release.persistent = false;
          }  else {                                             /* Replace */
-             return_error(gs_error_VMerror);
+             return_error(sd->memory, gs_error_VMerror);
          }
       }
 
-      if(need != 3) return_error(gs_error_unregistered);
+      if(need != 3) return_error(sd->memory, gs_error_unregistered);
 
       memcpy(bp,"\033@\f",need);
 
@@ -363,7 +363,7 @@ stc_print_page(gx_device_printer * pdev, FILE * prn_stream)
 #define OK4GO        ((flags &   STCOK4GO)              != 0)
 #define SORRY        ( flags &= ~STCOK4GO)
 
-   if(0 > (npass = stc_print_setup(sd))) return_error(npass);
+   if(0 > (npass = stc_print_setup(sd))) return_error(sd->memory, npass);
 
    npass = sd->stc.escp_v / sd->stc.escp_u;
 
@@ -1897,7 +1897,7 @@ stc_open(gx_device *pdev) /* setup margins & arrays */
 
       stc_freedata(&sd->stc);
 
-      return_error(code);
+      return_error(sd->memory, code);
    }
 
 }

@@ -974,7 +974,7 @@ bjc_get_params(gx_device *pdev, gs_param_list *plist)
     gs_param_string pquality;
     gs_param_string dithering;
 
-    if (code < 0) return_error(code);
+    if (code < 0) return_error(pdev->memory, code);
 
     if ((ncode = param_write_bool(plist, BJC_OPTION_MANUALFEED,
 	&bjcparams.manualFeed)) < 0) {
@@ -1811,7 +1811,7 @@ private int ep_num_comps, ep_plane_size, img_rows=BJC_HEAD_ROWS;
 
 
 private int
-ep_print_image(FILE *prn_stream, char cmd, byte *data, int size)
+ep_print_image(const gs_memory_t *mem, FILE *prn_stream, char cmd, byte *data, int size)
 {
   static int ln_idx=0, vskip1=0, vskip2=0, real_rows;
   int i;
@@ -1831,7 +1831,7 @@ ep_print_image(FILE *prn_stream, char cmd, byte *data, int size)
     } else if (size >= img_rows - (ln_idx+vskip2) || ln_idx+vskip2 >= min_rows) {
       /* The 'I' cmd must precede 'B' cmd! */
       vskip2 += size;
-      ep_print_image(prn_stream, 'F', 0, 0); /* flush and reset status */
+      ep_print_image(mem, prn_stream, 'F', 0, 0); /* flush and reset status */
     } else {
       vskip2 += size;
     }
@@ -1941,7 +1941,7 @@ ep_print_image(FILE *prn_stream, char cmd, byte *data, int size)
 	p0 = p2;
       }
     }
-    return ep_print_image(prn_stream, 'R', 0, vskip2 + ln_idx); 
+    return ep_print_image(mem, prn_stream, 'R', 0, vskip2 + ln_idx); 
   case 'R':			/* Reset status */
     ln_idx = 0;
     vskip1 = size;
@@ -1949,7 +1949,7 @@ ep_print_image(FILE *prn_stream, char cmd, byte *data, int size)
     memset(ep_storage, 0, ep_storage_size_words * W);
     return 0;
   default:			/* This should not happen */
-    errprintf("ep_print_image: illegal command character `%c'.\n", cmd);
+    errprintf(mem, "ep_print_image: illegal command character `%c'.\n", cmd);
     return 1;
   }
 
@@ -2063,7 +2063,7 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
    */
 
   if (storage == 0 || ep_storage == 0) /* can't allocate working area */
-    return_error(gs_error_VMerror);
+    return_error(pdev->memory, gs_error_VMerror);
   else {
     int i, j;
     byte *p = out_data = out_row = (byte *)storage;
@@ -2357,7 +2357,7 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
       /* Skip blank lines if any */
       if (num_blank_lines > 0) {
 	if (ptype == ESC_P) {
-	  ep_print_image(prn_stream, 'B', 0, num_blank_lines);
+	  ep_print_image(pdev->memory, prn_stream, 'B', 0, num_blank_lines);
 	} else if (ptype == BJC600 || ptype == BJC800) {
 	    bjc_v_skip(num_blank_lines, pdev, prn_stream);
 	} else if (num_blank_lines < this_pass) {
@@ -2617,7 +2617,8 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
 				out_count, out_data, pdev, prn_stream);
 	      if (i == 0) bjc_v_skip(1, pdev, prn_stream);
 	    } else if (ptype == ESC_P)
-		ep_print_image(prn_stream, (char)i, plane_data[scan][i], plane_size);
+		ep_print_image(pdev->memory, 
+			       prn_stream, (char)i, plane_data[scan][i], plane_size);
 	    else
 	      fprintf(prn_stream, "\033*b%d%c", out_count, "WVVV"[i]);
 	    if (ptype < ESC_P)
@@ -2626,7 +2627,8 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
 	  
 	} /* Transfer Raster Graphics ... */
 	if (ptype == ESC_P)
-	    ep_print_image(prn_stream, 'I', 0, 0); /* increment line index */
+	    ep_print_image(pdev->memory, 
+			   prn_stream, 'I', 0, 0); /* increment line index */
 	scan = 1 - scan;          /* toggle scan direction */
       }	  /* Printing non-blank lines */
     }     /* for lnum ... */
@@ -2650,7 +2652,7 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
   else if (ptype == BJC600 || ptype == BJC800)
       ;				/* Already done */
   else if (ptype == ESC_P) {
-    ep_print_image(prn_stream, 'F', 0, 0); /* flush print buffer */
+    ep_print_image(pdev->memory, prn_stream, 'F', 0, 0); /* flush print buffer */
     fputs("\014\033@", prn_stream);	/* reset after eject page */
   } else 
     fputs("\033&l0H", prn_stream);
@@ -3442,7 +3444,7 @@ cdj_param_check_bytes(gs_param_list *plist, gs_param_name pname,
                              size)
                    )
                   break;
-                code = gs_note_error(gs_error_rangecheck);
+                code = gs_note_error(plist->memory, gs_error_rangecheck);
                 goto e;
           default:
                 if ( param_read_null(plist, pname) == 0 )
@@ -3466,7 +3468,7 @@ cdj_param_check_float(gs_param_list *plist, gs_param_name pname, floatp fval,
           case 0:
                 if ( is_defined && new_value == fval)
                   break;
-                code = gs_note_error(gs_error_rangecheck);
+                code = gs_note_error(plist->memory, gs_error_rangecheck);
                 goto e;
           default:
                 if ( param_read_null(plist, pname) == 0 )

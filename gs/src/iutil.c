@@ -343,7 +343,7 @@ obj_cvp(const ref * op, byte * str, uint len, uint * prlen,
 
 		    w.ptr = (byte *)buf - 1;
 		    w.limit = w.ptr + min(skip + len1, sizeof(buf));
-		    status = s_PSSE_template.process(NULL, &r, &w, false);
+		    status = s_PSSE_template.process(mem, NULL, &r, &w, false);
 		    written = w.ptr - ((byte *)buf - 1);
 		    if (written > skip) {
 			written -= skip;
@@ -368,7 +368,7 @@ obj_cvp(const ref * op, byte * str, uint len, uint * prlen,
 		w.ptr = wstr - 1;
 		w.limit = str - 1 + len;
 		if (status == 1)
-		    status = s_PSSE_template.process(NULL, &r, &w, false);
+		    status = s_PSSE_template.process(mem, NULL, &r, &w, false);
 		*prlen = w.ptr - (str - 1);
 		if (status != 0)
 		    return 1;

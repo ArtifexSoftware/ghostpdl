@@ -153,7 +153,8 @@ sread_proc(ref * sop, stream ** psstrm, gs_ref_memory_t *imem)
 
 /* Handle an input request. */
 private int
-s_proc_read_process(stream_state * st, stream_cursor_read * ignore_pr,
+s_proc_read_process(const gs_memory_t *mem,
+		    stream_state * st, stream_cursor_read * ignore_pr,
 		    stream_cursor_write * pw, bool last)
 {
     /* Move data from the string returned by the procedure */
@@ -267,7 +268,8 @@ swrite_proc(ref * sop, stream ** psstrm, gs_ref_memory_t *imem)
 
 /* Handle an output request. */
 private int
-s_proc_write_process(stream_state * st, stream_cursor_read * pr,
+s_proc_write_process(const gs_memory_t *mem,
+		     stream_state * st, stream_cursor_read * pr,
 		     stream_cursor_write * ignore_pw, bool last)
 {
     /* Move data from the stream buffer to the string */

@@ -756,7 +756,8 @@ in:				/* Initialize for a new page. */
 				    clist_rld_init(&sstate);
 				    /* The process procedure can't fail. */
 				    (*s_RLD_template.process)
-					((stream_state *)&sstate, &r, &w, true);
+					(s->memory, 
+					 (stream_state *)&sstate, &r, &w, true);
 				}
 				break;
 			    case cmd_compress_cfe:
@@ -768,7 +769,8 @@ in:				/* Initialize for a new page. */
 						   state.rect.height, mem);
 				    /* The process procedure can't fail. */
 				    (*s_CFD_template.process)
-					((stream_state *)&sstate, &r, &w, true);
+					(s->memory,
+					 (stream_state *)&sstate, &r, &w, true);
 				    (*s_CFD_template.release)
 					((stream_state *)&sstate);
 				}
@@ -1638,7 +1640,7 @@ read_set_bits(command_buf_t *pcb, tile_slot *bits, int compress,
 
 		clist_rld_init(&sstate);
 		(*s_RLD_template.process)
-		    ((stream_state *)&sstate, &r, &w, true);
+		    (mem, (stream_state *)&sstate, &r, &w, true);
 	    }
 	    break;
 	case cmd_compress_cfe:
@@ -1649,7 +1651,7 @@ read_set_bits(command_buf_t *pcb, tile_slot *bits, int compress,
 			       width_bytes << 3 /*width_bits */ ,
 			       rep_height, mem);
 		(*s_CFD_template.process)
-		    ((stream_state *)&sstate, &r, &w, true);
+		    (mem, (stream_state *)&sstate, &r, &w, true);
 		(*s_CFD_template.release)
 		    ((stream_state *)&sstate);
 	    }

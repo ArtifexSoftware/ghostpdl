@@ -179,7 +179,7 @@ eps_print_page(gx_device_printer *pdev, FILE *prn_stream, int y_9pin_high,
 		  gs_free((char *)buf1, in_size, 1, "eps_print_page(buf1)");
 		if ( buf2 ) 
 		  gs_free((char *)buf2, in_size, 1, "eps_print_page(buf2)");
-		return_error(gs_error_VMerror);
+		return_error(pdev->memory, gs_error_VMerror);
 	}
 
 	/* Initialize the printer and reset the margins. */

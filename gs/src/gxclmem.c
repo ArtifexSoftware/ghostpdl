@@ -455,7 +455,7 @@ compress_log_blk(MEMFILE * f, LOG_MEMFILE_BLK * bp)
     compressed_size = 0;
 
     start_ptr = f->wt.ptr;
-    status = (*f->compress_state->template->process)(f->compress_state,
+    status = (*f->compress_state->template->process)(f->memory, f->compress_state,
 						     &(f->rd), &(f->wt), true);
     bp->phys_blk->data_limit = (char *)(f->wt.ptr);
 
@@ -476,7 +476,7 @@ compress_log_blk(MEMFILE * f, LOG_MEMFILE_BLK * bp)
 
 	start_ptr = f->wt.ptr;
 	status =
-	    (*f->compress_state->template->process)(f->compress_state,
+	    (*f->compress_state->template->process)(f->memory, f->compress_state,
 						    &(f->rd), &(f->wt), true);
 	if (status != 0) {
 	    /*
@@ -764,7 +764,7 @@ memfile_get_pdata(MEMFILE * f)
 	    decomp_rd_limit0 = f->rd.limit;
 #endif
 	    status = (*f->decompress_state->template->process)
-		(f->decompress_state, &(f->rd), &(f->wt), true);
+		(f->memory, f->decompress_state, &(f->rd), &(f->wt), true);
 	    if (status == 0) {	/* More input data needed */
 		/* switch to next block and continue decompress             */
 		int back_up = 0;	/* adjust pointer backwards     */
@@ -784,7 +784,7 @@ memfile_get_pdata(MEMFILE * f)
 		decomp_rd_limit1 = f->rd.limit;
 #endif
 		status = (*f->decompress_state->template->process)
-		    (f->decompress_state, &(f->rd), &(f->wt), true);
+		    (f->memory, f->decompress_state, &(f->rd), &(f->wt), true);
 		if (status == 0) {
 		    eprintf(f->memory, "Decompression required more than one full block!\n");
 		    return_error(f->memory, gs_error_Fatal);

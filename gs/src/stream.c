@@ -786,7 +786,7 @@ sreadbuf(stream * s, stream_cursor_write * pbuf)
 		      (ulong) curr, (uint) (pr->limit - pr->ptr),
 		      (uint) (pw->limit - pw->ptr), eof);
 	    oldpos = pw->ptr;
-	    status = (*curr->procs.process) (curr->state, pr, pw, eof);
+	    status = (*curr->procs.process) (strm->memory, curr->state, pr, pw, eof);
 	    pr->limit += left;
 	    if_debug4(strm->memory, 's', "[s]after read 0x%lx, nr=%u, nw=%u, status=%d\n",
 		      (ulong) curr, (uint) (pr->limit - pr->ptr),
@@ -869,7 +869,7 @@ swritebuf(stream * s, stream_cursor_read * pbuf, bool last)
 		      (uint)(pw->limit - pw->ptr), end);
 	    status = curr->end_status;
 	    if (status >= 0) {
-		status = (*curr->procs.process)(curr->state, pr, pw, end);
+		status = (*curr->procs.process)(curr->memory, curr->state, pr, pw, end);
 		if_debug5(curr->memory, 's',
 			  "[s]after write 0x%lx, nr=%u, nw=%u, end=%d, status=%d\n",
 			  (ulong) curr, (uint) (pr->limit - pr->ptr),
@@ -967,9 +967,9 @@ private int
     s_string_available(stream *, long *),
     s_string_read_seek(stream *, long),
     s_string_write_seek(stream *, long),
-    s_string_read_process(stream_state *, stream_cursor_read *,
+    s_string_read_process(const gs_memory_t *, stream_state *, stream_cursor_read *,
 			  stream_cursor_write *, bool),
-    s_string_write_process(stream_state *, stream_cursor_read *,
+    s_string_write_process(const gs_memory_t *, stream_state *, stream_cursor_read *,
 			   stream_cursor_write *, bool);
 
 /* Initialize a stream for reading a string. */
@@ -1072,7 +1072,8 @@ s_string_write_seek(register stream * s, long pos)
 /* to contain all of the data in the string, if we are ever asked */
 /* to refill the buffer, we should signal EOF. */
 private int
-s_string_read_process(stream_state * st, stream_cursor_read * ignore_pr,
+s_string_read_process(const gs_memory_t *mem, 
+		      stream_state * st, stream_cursor_read * ignore_pr,
 		      stream_cursor_write * pw, bool last)
 {
     return EOFC;
@@ -1080,7 +1081,8 @@ s_string_read_process(stream_state * st, stream_cursor_read * ignore_pr,
 /* Similarly, if we are ever asked to empty the buffer, it means that */
 /* there has been an overrun (unless we are closing the stream). */
 private int
-s_string_write_process(stream_state * st, stream_cursor_read * pr,
+s_string_write_process(const gs_memory_t *mem,
+		       stream_state * st, stream_cursor_read * pr,
 		       stream_cursor_write * ignore_pw, bool last)
 {
     return (last ? EOFC : ERRC);
@@ -1089,7 +1091,8 @@ s_string_write_process(stream_state * st, stream_cursor_read * pr,
 /* ------ Position-tracking stream ------ */
 
 private int
-    s_write_position_process(stream_state *, stream_cursor_read *,
+    s_write_position_process(const gs_memory_t *, 
+			     stream_state *, stream_cursor_read *,
 			     stream_cursor_write *, bool);
 
 /* Set up a write stream that just keeps track of the position. */
@@ -1103,7 +1106,8 @@ swrite_position_only(stream *s)
 }
 
 private int
-s_write_position_process(stream_state * st, stream_cursor_read * pr,
+s_write_position_process(const gs_memory_t *mem, 
+			 stream_state * st, stream_cursor_read * pr,
 			 stream_cursor_write * ignore_pw, bool last)
 {
     pr->ptr = pr->limit;	/* discard data */
@@ -1206,7 +1210,8 @@ s_close_filters(stream **ps, stream *target)
 
 /* Process a buffer */
 private int
-s_Null_process(stream_state * st, stream_cursor_read * pr,
+s_Null_process(const gs_memory_t *mem, 
+	       stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
     return stream_move(pr, pw);

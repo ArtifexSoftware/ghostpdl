@@ -34,7 +34,7 @@ s_AXE_init(stream_state * st)
 
 /* Process a buffer */
 private int
-s_AXE_process(stream_state * st, stream_cursor_read * pr,
+s_AXE_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {
     stream_AXE_state *const ss = (stream_AXE_state *) st;
@@ -86,7 +86,7 @@ s_AXD_init(stream_state * st)
 
 /* Process a buffer */
 private int
-s_AXD_process(stream_state * st, stream_cursor_read * pr,
+s_AXD_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {
     stream_AXD_state *const ss = (stream_AXD_state *) st;
@@ -143,7 +143,7 @@ const stream_template s_AXD_template =
 
 /* Process a buffer */
 private int
-s_PSSE_process(stream_state * st, stream_cursor_read * pr,
+s_PSSE_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
     const byte *p = pr->ptr;
@@ -228,7 +228,7 @@ s_PSSD_init(stream_state * st)
 
 /* Process a buffer */
 private int
-s_PSSD_process(stream_state * st, stream_cursor_read * pr,
+s_PSSD_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
     stream_PSSD_state *const ss = (stream_PSSD_state *) st;

@@ -542,7 +542,7 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 		w.ptr = da.next - 1;
 		w.limit = da.limit - 1;
 		status = (*sstate.s_ss.st.template->process)
-		    (&sstate.s_ss.st, &s->cursor.r, &w,
+		    (s->memory, &sstate.s_ss.st, &s->cursor.r, &w,
 		     s->end_status == EOFC);
 		if (!check_only)
 		    da.next = w.ptr + 1;

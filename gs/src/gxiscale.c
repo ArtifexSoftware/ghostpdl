@@ -272,7 +272,7 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 	    w.ptr = w.limit - width * c * sizeofPixelOut;
 	    psrc = (const frac *)(w.ptr + 1);
 	    status = (*pss->template->process)
-		((stream_state *) pss, &r, &w, h == 0);
+		(penum->memory, (stream_state *) pss, &r, &w, h == 0);
 	    if (status < 0 && status != EOFC)
 		return_error(penum->memory, gs_error_ioerror);
 	    if (w.ptr == w.limit) {

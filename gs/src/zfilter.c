@@ -328,7 +328,8 @@ filter_write_simple(i_ctx_t *i_ctx_p, const stream_template * template)
 /* Define a byte-at-a-time NullDecode filter for intermediate buffers. */
 /* (The standard NullDecode filter can read ahead too far.) */
 private int
-s_Null1D_process(stream_state * st, stream_cursor_read * pr,
+s_Null1D_process(const gs_memory_t *mem, 
+		 stream_state * st, stream_cursor_read * pr,
 		 stream_cursor_write * pw, bool last)
 {
     if (pr->ptr >= pr->limit)
@@ -346,7 +347,8 @@ private const stream_template s_Null1D_template = {
 /* any data from its source. Used by PDF interpreter for unknown    */
 /* filter types.                                                    */
 private int
-s_EOFD_process(stream_state * st, stream_cursor_read * pr,
+s_EOFD_process(const gs_memory_t *mem, 
+	       stream_state * st, stream_cursor_read * pr,
 		 stream_cursor_write * pw, bool last)
 {
     return EOFC;

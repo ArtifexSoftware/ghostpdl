@@ -116,7 +116,7 @@ ljet5_print_page(gx_device_printer * pdev, FILE * prn_stream)
     byte buf[200];		/* arbitrary */
 
     if (line == 0 || out == 0) {
-	code = gs_note_error(gs_error_VMerror);
+	code = gs_note_error(mem, gs_error_VMerror);
 	goto done;
     }
     swrite_file(s, prn_stream, buf, sizeof(buf));

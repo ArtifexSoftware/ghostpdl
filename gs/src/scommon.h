@@ -109,7 +109,7 @@ typedef union stream_cursor_s {
 
 /* Process a buffer.  See strimpl.h for details. */
 #define stream_proc_process(proc)\
-  int proc(stream_state *, stream_cursor_read *,\
+  int proc(const gs_memory_t *, stream_state *, stream_cursor_read *,\
     stream_cursor_write *, bool)
 
 /* Release the stream state when closing. */
