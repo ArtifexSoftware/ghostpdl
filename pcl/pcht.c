@@ -1435,7 +1435,6 @@ alloc_pcl_ht(
     pht->render_method = 3;     /* HP specified default value */
     pht->pfg_ht = 0;
     pht->pim_ht = 0;
-    pht->id = pcl_next_id();
 
     for (i = 0; i < 3; i++) {
         pht->client_data[i].comp_indx = i;
@@ -1481,7 +1480,6 @@ unshare_pcl_ht(
     /* check if there is anything to do */
     if (pht->rc.ref_count == 1) {
         free_gs_hts(pht);
-        pht->id = pcl_next_id();
         return 0;
     }
     rc_decrement(pht, "unshare pcl halftone object");
@@ -1565,6 +1563,7 @@ pcl_ht_set_gamma(
     for (i = 0; i < 3; i++) {
         pht->client_data[i].inv_gamma = inv_gamma;
         pcl_lookup_tbl_release(pht->client_data[i].plktbl);
+        pht->client_data[i].plktbl = 0;
     }
 
     return 0;
@@ -1698,7 +1697,6 @@ transfer_proc(
     ptbl = pcl_lookup_tbl_get_tbl(pdata->plktbl, pdata->comp_indx);
     return (float)(ptbl[(int)floor(255.0 * val + 0.5)]) / 255.0;
 }
-
 
 /*
  * Get the rendering information corresponding to a given rendering method.
@@ -1882,7 +1880,7 @@ pcl_ht_set_halftone(
     }
 
     /* see if the halftone is already set */
-    if (pcs->ids.ht_id == pht->id)
+    if (pcs->pids->pht == pht)
         return 0;
 
     /* see if we need to create a halftone object */
@@ -1893,6 +1891,6 @@ pcl_ht_set_halftone(
 
     /* install the halftone object */
     if ((code = gs_ht_install(pcs->pgs, pgsht)) >= 0)
-        pcs->ids.ht_id = pht->id;
+        pcl_ht_copy_from(pcs->pids->pht, pht);
     return code;
 }

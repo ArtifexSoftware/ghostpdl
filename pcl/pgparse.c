@@ -369,3 +369,10 @@ hpgl_arg_units(hpgl_args_t *pargs, hpgl_real_t *pu)
 {	/****** PROBABLY WRONG ******/
 	return hpgl_arg_real(pargs, pu);
 }
+
+/* initialize the HPGL command counter (for uninitialized BSS) */
+void
+hpgl_init_command_index(void)
+{
+    hpgl_command_next_index = 0;
+}

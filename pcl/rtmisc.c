@@ -123,7 +123,6 @@ rtl_enter_pcl_mode(
 	 * and conditionally copy back the cursor position.
          */
         gx_path_new(&(pcls->g.polygon.buffer.path));
-        /* gx_path_release(&(pcls->g.polygon.buffer.path)); */
 	if (b != 0) {
             /* the usual user -> device -> user dance. */
 	    gs_point    pt, dev_pt;

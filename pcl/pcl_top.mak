@@ -41,6 +41,7 @@ $(PCLOBJ)pcmain.$(OBJ): $(PCLSRC)pcmain.c           \
                         $(scommon_h)                \
                         $(pcparse_h)                \
                         $(pcstate_h)                \
+                        $(pcpage_h)                 \
                         $(pcident_h)                \
                         $(gdebug_h)                 \
                         $(gp_h)                     \
@@ -54,12 +55,14 @@ $(PCLOBJ)pcmain.$(OBJ): $(PCLSRC)pcmain.c           \
                         $(gsparam_h)                \
                         $(gsstate_h)                \
                         $(gscoord_h)                \
+                        $(gsrop_h)                  \
                         $(gspath_h)                 \
                         $(gxalloc_h)                \
                         $(gxdevice_h)               \
                         $(gxstate_h)                \
                         $(gdevbbox_h)               \
                         $(pjparse_h)                \
+                        $(pgmand_h)                 \
                         $(plmain_h)                 \
                         $(PCLGEN)pconf$(CONFIG).h
 	$(CP_) $(PCLGEN)pconf$(CONFIG).h $(PCLGEN)pconfig.h

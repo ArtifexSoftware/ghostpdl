@@ -191,6 +191,10 @@ private int (*const build_cid_longform[])( pcl_cid_data_t *, const byte * ) = {
 /*
  * Check the configure image data short form structure.
  *
+ * Because of the #%&&!!! confounded idiocy of causing e_Range to be ignored in
+ * the parser by seeting it to be a non-error (0), we must use literal -1 here
+ * to indicate that a palette is not acceptable.
+ *
  * Returns 0 on success, < 0 in case of an error.
  */
   private int
@@ -201,7 +205,7 @@ check_cid_hdr(
     int             i;
 
     if ((pcid->cspace >= pcl_cspace_num) || (pcid->encoding >= pcl_penc_num))
-        return e_Range;
+        return -1;
 
     /*
      * Map zero values. Zero bits per index is equivalent to one bit per index;
@@ -218,29 +222,29 @@ check_cid_hdr(
 
       case pcl_penc_indexed_by_pixel:
         if ((pcid->bits_per_index & (pcid->bits_per_index - 1)) != 0)
-            return e_Range;
+            return -1;
         /* fall through */
 
       case pcl_penc_indexed_by_plane:
         if (pcid->bits_per_index > 8)
-            return e_Range;
+            return -1;
         break;
 
       case pcl_penc_direct_by_plane:
         /* must be device-specific color space */
         if ((pcid->cspace != pcl_cspace_RGB) && (pcid->cspace != pcl_cspace_CMY))
-            return e_Range;
+            return -1;
         if ( (pcid->bits_per_primary[0] != 1) ||
              (pcid->bits_per_primary[1] != 1) ||
              (pcid->bits_per_primary[2] != 1)   )
-            return e_Range;
+            return -1;
         break;
 
       case pcl_penc_direct_by_pixel:
         if ( (pcid->bits_per_primary[0] != 8) ||
              (pcid->bits_per_primary[1] != 8) ||
              (pcid->bits_per_primary[2] != 8)   )
-            return e_Range;
+            return -1;
         break;
     }
 
@@ -270,9 +274,11 @@ install_cid_data(
     memcpy(&(cid.u.hdr), pbuff, sizeof(pcl_cid_hdr_t));
     if ( ((code = check_cid_hdr(&(cid.u.hdr))) >= 0) && (len > 6) )
         code = build_cid_longform[pbuff[0]](&cid, pbuff);
-    if (code < 0)
+    if (code < 0) {
+        if (code == -1)
+            code = e_Range;     /* handle idiocy in pcommand.h */
         return code;
-    else
+    } else
         return pcl_palette_set_cid(pcs, &cid, fixed, gl2);
 }
 

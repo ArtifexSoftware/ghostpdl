@@ -868,11 +868,16 @@ palette_do_reset(
         /* set up the built-in render methods and dithers matrices */
         pcl_ht_init_render_methods(pcs, pcs->memory);
         palette_stack = 0;
-    }
 
-    /* clear the palette stack and store */
-    clear_palette_stack(pcs->memory);
-    clear_palette_store(pcs);
+        /* handle possible non-initialization of BSS */
+        pcl_default_crd = 0;
+
+    } else {
+
+        /* clear the palette stack and store */
+        clear_palette_stack(pcs->memory);
+        clear_palette_store(pcs);
+    }
 
     /* select and control palette ID's must be set back to 0 */
     pcs->sel_palette_id = 0;
@@ -886,7 +891,7 @@ palette_do_reset(
 /*
  * The copy function for palettes.
  *
- * This procedure implements to the two most unusual features of the palette
+ * This procedure implements the two most unusual features of the palette
  * object:
  *
  *     The palette pointer becomes a reference on the palette when the

@@ -23,8 +23,6 @@
 #ifndef pcpattyp_INCLUDED
 #define pcpattyp_INCLUDED
 
-#include "pcident.h"
-
 /*
  * Pattern source identifiers. There are three of these, one for PCL and two
  * for GL (one for FT, the other for SV). Though GL types are not usually
@@ -37,7 +35,8 @@ typedef enum {
     pcl_pattern_shading,
     pcl_pattern_cross_hatch,
     pcl_pattern_user_defined,
-    pcl_pattern_current_pattern    /* for rectangle fill only */
+    pcl_pattern_current_pattern,   /* for rectangle fill only */
+    pcl_pattern_raster_cspace      /* internal - used for rasters only */
 } pcl_pattern_source_t;
 
 typedef enum {
@@ -61,7 +60,8 @@ typedef enum {
     
 
 /*
- * Opaque definitions of palettes and foregrounds.
+ * Opaque definitions of palettes, foregrounds, client colors, halftones,
+ * and backgrounds.
  */
 #ifndef pcl_palette_DEFINED
 #define pcl_palette_DEFINED
@@ -73,32 +73,47 @@ typedef struct pcl_palette_s    pcl_palette_t;
 typedef struct pcl_frgrnd_s     pcl_frgrnd_t;
 #endif
 
+#ifndef pcl_ccolor_DEFINED
+#define pcl_ccolor_DEFINED
+typedef struct pcl_ccolor_s     pcl_ccolor_t;
+#endif
+
+#ifndef pcl_ht_DEFINED
+#define pcl_ht_DEFINED
+typedef struct pcl_ht_s         pcl_ht_t;
+#endif
+
+#ifndef pcl_crd_DEFINED
+#define pcl_crd_DEFINED
+typedef struct pcl_crd_s        pcl_crd_t;
+#endif
+
 /*
  * Structure to track what has been installed in the graphic state. This is
- * used to avoid unnecessary re-installation, which can be quite costly when
- * dealing with large halftones or device-independent color spaces.
+ * used to avoid unnecessary re-installation, and to avoid memory handling
+ * problems that would arise if various objects were released while the
+ * graphic state still retained pointes to them.
  *
- *     pattern_id is the identifier of the currently installed pattern color
- *         (this is not the PCL id. for this pattern, which refers to the
- *         source form); if the current color space is not a pattern space
- *         this will be 0.
- *
- *     cspace_id is the identifier of the currently installed color space; if
- *         a pattern color space is currently isntalled, this will be 0.
- *
- *     ht_id is the identifier of the currently installed halftone; at present,
- *         all PCL halftones are threshold-array based.
- *
- *     crd_id is the identifier of the currently installed color rendering
- *         dictionary; the only language-modifiable feature of this dictionary
- *         space is the viewing illuminant.
- * 
+ * The PCL client color structure (pcl_ccolor_t) incorporates both color and
+ * color space information.
  */
 typedef struct pcl_gstate_ids_s {
-    pcl_gsid_t   pattern_id;
-    pcl_gsid_t   cspace_id;
-    pcl_gsid_t   ht_id;
-    pcl_gsid_t   crd_id;
+    struct pcl_gstate_ids_s *   prev;       /* stack back pointer */
+    pcl_ccolor_t *              pccolor;
+    pcl_ht_t *                  pht;
+    pcl_crd_t *                 pcrd;
 } pcl_gstate_ids_t;
+
+#define private_st_gstate_ids_t()   /* in pcdraw.c */   \
+    gs_private_st_ptrs4( st_gstate_ids_t,               \
+                         pcl_gstate_ids_t,              \
+                         "PCL graphics state tracker",  \
+                         gstate_ids_enum_ptrs,          \
+                         gstate_ids_reloc_ptrs,         \
+                         prev,                          \
+                         pccolor,                       \
+                         pht,                           \
+                         pcrd                           \
+                         )
 
 #endif			/* pcpattyp_INCLUDED */

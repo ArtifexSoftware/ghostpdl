@@ -979,6 +979,7 @@ alloc_base_cspace(
     pcl_cs_base_t *     pbase = 0;
     int                 code;
 
+    *ppbase = 0;
     rc_alloc_struct_1( pbase,
                        pcl_cs_base_t,
                        &st_cs_base_t,
@@ -987,13 +988,14 @@ alloc_base_cspace(
                        "allocate pcl base color space"
                        );
     pbase->rc.free = free_base_cspace;
-    pbase->id = pcl_next_id();
     pbase->type = type;
     pbase->client_data.plktbl1 = 0;
     pbase->client_data.plktbl2 = 0;
     pbase->pcspace = 0;
 
-    if (type <= pcl_cspace_CMY)
+    if (type == pcl_cspace_White)
+        code = gs_cspace_build_DeviceGray(&(pbase->pcspace), pmem);
+    else if (type <= pcl_cspace_CMY)
         code = gs_cspace_build_DeviceRGB(&(pbase->pcspace), pmem);
     else
         code = gs_cspace_build_CIEABC( &(pbase->pcspace),
@@ -1025,10 +1027,6 @@ alloc_base_cspace(
  * library color space after the PCL base color space has been released (the
  * graphic library color space will still be present in this case, but its
  * client data may have been changed).
- *
- * For simplicity of the remaining code, an "unshared" base color space is
- * assigned a new identifier, even if the unshare operation itself does
- * nothing.
  */
   private int
 unshare_base_cspace(
@@ -1040,10 +1038,8 @@ unshare_base_cspace(
     int                 code;
 
     /* check if there is anything to do */
-    if (pbase->rc.ref_count == 1) {
-        pbase->id = pcl_next_id();
+    if (pbase->rc.ref_count == 1)
         return 0;
-    }
     rc_decrement(pbase, "unshare PCL base color space");
 
     /* allocate a new gs_color_space */
@@ -1104,6 +1100,22 @@ pcl_cs_base_build_cspace(
          ((code = finish_cspace[type](pbase->pcspace, pcid)) < 0)  )
         free_base_cspace(pmem, pbase, "build base pcl color space");
     return code;
+}
+
+/*
+ * Build a special base color space, used for setting the color white.
+ * This base space is unique in that it uses the DeviceGray graphic library
+ * color space.
+ *
+ * This routine is usually called once at initialization.
+ */
+  int
+pcl_cs_base_build_white_cspace(
+    pcl_cs_base_t **        ppbase,
+    gs_memory_t *           pmem
+)
+{
+    return alloc_base_cspace(ppbase, pcl_cspace_White, pmem);
 }
 
 /*
@@ -1188,14 +1200,5 @@ pcl_cs_base_install(
     pcl_state_t *       pcs
 )
 {
-    pcl_cs_base_t *     pbase = *ppbase;
-    int                 code = 0;
-
-    /* check if there is anything to do */
-    if (pcs->ids.cspace_id == pbase->id)
-        return 0;
-
-    if ((code = gs_setcolorspace(pcs->pgs, pbase->pcspace)) >= 0)
-        pcs->ids.cspace_id = pbase->id;
-    return code;
+    return gs_setcolorspace(pcs->pgs, (*ppbase)->pcspace);
 }

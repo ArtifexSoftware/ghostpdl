@@ -30,7 +30,13 @@
  * "non-const" structures, to facilitate working with systems that install all
  * initialized global data in ROM.
  */
-extern  void    pcl_pattern_init_bi_patterns( void );
+extern  void    pcl_pattern_init_bi_patterns( gs_memory_t * pmem );
+
+/*
+ * Clear the renderings of the built-in patterns. This may be called during
+ * a reset to conserve memory.
+ */
+extern  void    pcl_pattern_clear_bi_patterns( void );
 
 /*
  * For a given intensity value, return the corresponding shade pattern. A

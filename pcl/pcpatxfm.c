@@ -220,14 +220,17 @@ pcl_xfm_get_pat_xfm(
     pmat->tx = pcs->pat_ref_pt.x;
     pmat->ty = pcs->pat_ref_pt.y;
 
+    /* record the referenc point used in the rendering structure */
+    pptrn->ref_pt = pcs->pat_ref_pt;
+
     /* rotate as necessar */
     if (rot != 0)
         gs_matrix_multiply(&(rot_mtx[rot]), pmat, pmat);
 
     /* scale to the appropriate resolution (before print direction rotation) */
     gs_matrix_scale( pmat,
-                     inch2coord(1.0 / (floatp)pptrn->xres),
-                     inch2coord(1.0 / (floatp)pptrn->yres),
+                     inch2coord(1.0 / (floatp)pptrn->ppat_data->xres),
+                     inch2coord(1.0 / (floatp)pptrn->ppat_data->yres),
                      pmat
                      );
 

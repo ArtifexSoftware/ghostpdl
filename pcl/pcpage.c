@@ -296,7 +296,15 @@ new_page_size(
     pcs->overlay_enabled = false;
     update_xfm_state(pcs);
     reset_margins(pcs);
+
+    /* 
+     * If this is an initial reset, make sure underlining is disabled (homing
+     * the cursor may cause an underline to be put out.
+     */
+    if (reset_initial)
+        pcs->underline_enabled = false;
     pcl_home_cursor(pcs);
+
     pcl_xfm_reset_pcl_pat_ref_pt(pcs);
 
     /* the following sometimes erroneosuly sets have_page */
@@ -414,8 +422,9 @@ pcl_end_page(
 
     /* output the page */
     (*end_page)(pcs, pcs->num_copies, true);
-    pcs->have_page = false;
+    pcl_set_drawing_color(pcs, pcl_pattern_solid_white, 0, false);
     code = gs_erasepage(pcs->pgs);
+    pcs->have_page = false;
 
     /*
      * Advance of a page may move from a page front to a page back. This may
@@ -530,6 +539,7 @@ set_left_offset_registration(
 )
 {
     pcs->xfm_state.left_offset_cp = float_arg(pargs) * 10.0;
+    update_xfm_state(pcs);
     return 0;
 }
 
@@ -546,6 +556,7 @@ set_top_offset_registration(
 )
 {
     pcs->xfm_state.top_offset_cp = float_arg(pargs) * 10;
+    update_xfm_state(pcs);
     return 0;
 }
 
@@ -884,7 +895,8 @@ pcpage_do_reset(
 	pcs->perforation_skip = 1;
         new_logical_page( pcs,
                           0,
-                          DFLT_PAPER_PTR, (type & pcl_reset_initial) != 0
+                          DFLT_PAPER_PTR,
+                          (type & pcl_reset_initial) != 0
                           );
 	pcs->have_page = false;
     }

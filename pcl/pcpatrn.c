@@ -18,7 +18,7 @@
  * all copies.
  */
 
-/* pcpatrn.c - code for PCL and GL/2 patterns, including color */
+/* xxx.c - code for PCL and GL/2 patterns, including color */
 
 #include "gx.h"
 #include "gsuid.h"
@@ -36,87 +36,50 @@
 #include "pcpatxfm.h"
 
 
+
 /*
- * Allocate a 6-byte string for use with a 2-entry palette. This is needed
- * because "uncolored" PCL patterns must be rendered as colored patterns in
- * the graphic library so than may be make opaque when necessary.
+ * The base color space for setting the color white. Unlike all other color
+ * spaces in PCL, this uses the DeviceGray color space in the graphic library.
  *
- * The first entry of the palette, which consists of the first three bytes
- * of the string, is always set to { 255, 255, 255 }, which is canonical
- * white in all color spaces. This may, of course, not actually be white,
- * due to the use of lookup tables, but currently we can't deal with that
- * problem.
- *
- * Returns 0 on success, < 0 in the event of an error.
+ * A copy of the default halftone is also maintained for setting the color
+ * "white". Since the halftone carries the device-specific color lookup tables,
+ * a non-standard halftone might end up mapping white to black (definitely
+ * undesirable).
  */
-  private int
-alloc_palette(
-    pcl_pattern_t * pptrn,
-    gs_memory_t *   pmem
+private pcl_cs_base_t *         pwhite_cs;
+private const gs_paint_color    white_paint = {{ 1.0, 0.0, 0.0, 0.0 }};
+private pcl_ht_t *              pdflt_ht;
+
+/* GC routines */
+private_st_ccolor_t();
+
+
+/*
+ * Convert a color value specified as a three-element byte array, or an index
+ * to a palette, into a gs_paint_color structure.
+ */
+  private void
+convert_color_to_paint(
+    const byte *        pcomp,
+    gs_paint_color *    ppaint
 )
 {
-    pptrn->palette.data = gs_alloc_string(pmem, 6, "allocate 2-entry palette");
-
-    if (pptrn->palette.data == 0)
-        return e_Memory;
-
-    pptrn->palette.size = 6;
-    pptrn->palette.data[0] = 255;
-    pptrn->palette.data[1] = 255;
-    pptrn->palette.data[2] = 255;
-    return 0;
+    ppaint->values[0] = (float)pcomp[0] / 255.0;
+    ppaint->values[1] = (float)pcomp[1] / 255.0;
+    ppaint->values[2] = (float)pcomp[2] / 255.0;
+    ppaint->values[3] = 0.0;
 }
 
-/*
- * Install a pattern in the graphic state, if necessary. The pattern is assumed
- * have been properly rendered by the time this procedure is called.
- *
- * Returns 0 on success, < 0 in the event of an error.
- */
-  private int
-install_pattern(
-    pcl_state_t *   pcs,
-    pcl_pattern_t * pptrn
+  private void
+convert_index_to_paint(
+    int                 indx,
+    gs_paint_color *    ppaint
 )
 {
-    if (pptrn->ccolor_id == pcs->ids.pattern_id)
-        return 0;
-    else {
-        int     code = gs_setpattern(pcs->pgs, &(pptrn->ccolor));
-
-        if (code >= 0) {
-            pcs->ids.pattern_id = pptrn->ccolor_id;
-            pcs->ids.cspace_id = 0L;
-            code = 0;
-        }
-        return code;
-    }
-}
-
-/*
- * Check if a pattern has been rendered in the current environment. The second
- * and third operands  are the pen number and cache_id to be checked against,
- * respectively.
- *
- * If the pattern has appropriately rendered, install it if it is not already
- * installed in the graphic state.
- */
-  private bool
-check_pattern_rendered(
-    pcl_state_t *   pcs,
-    pcl_pattern_t * pptrn,
-    pcl_gsid_t      cache_id,
-    int             pen_num
-)
-{
-    if ( (pptrn->orient != pcs->pat_orient)     ||
-         (pptrn->pen_num != pen_num)            ||
-         (pptrn->ref_pt.x != pcs->pat_ref_pt.x) ||
-         (pptrn->ref_pt.y != pcs->pat_ref_pt.y) ||
-         (pptrn->cache_id != cache_id)            )
-        return false;
-    else
-        return (install_pattern(pcs, pptrn) == 0);
+    ppaint->values[0] = indx;
+    ppaint->values[1] = 0.0;
+    ppaint->values[2] = 0.0;
+    ppaint->values[3] = 0.0;
 }
 
 /*
@@ -167,70 +130,337 @@ set_ht_crd_from_foreground(
     return code;
 }
 
+
 /*
- * Render a PCL uncolored pattern, and install it. If we have gotten this
- * far, assume the pattern needs to be rendered.
- *
- * The operand color space is the base color space to be used for rendering.
- *
- * Returns 0 on success, < 0 in the event of an error.
+ * Free a PCL client color structure.
  */
-  private int
-render_uncolored_pattern(
-    pcl_state_t *       pcs,
-    pcl_pattern_t *     pptrn,
-    gs_color_space *    pbase_cspace,
-    pcl_gsid_t          id,
-    int                 pen_num
+  private void
+free_ccolor(
+    gs_memory_t *   pmem,
+    void *          pvccolor,
+    client_name_t   cname
 )
 {
-    int                 code = 0;
-    gs_matrix           mat;
+    pcl_ccolor_t *  pccolor = (pcl_ccolor_t *)pvccolor;
 
-    /* release the existing 2-entry color space, if present */
-    if (pptrn->pcspace != 0) {
-        gs_cspace_release(pptrn->pcspace);
-        gs_free_object( pcs->memory,
-                        (void *)pptrn->pcspace,
-                        "render uncolored pattern"
-                        );
-        pptrn->pcspace = 0;
+    pcl_pattern_data_release(pccolor->ppat_data);
+    pcl_cs_indexed_release(pccolor->pindexed);
+    pcl_cs_base_release(pccolor->pbase);
+    if (pccolor->prast != 0)
+        gs_free_object(pmem, (void *)pccolor->prast, cname);
+    gs_pattern_reference(&(pccolor->ccolor), -1);
+    gs_free_object(pmem, pvccolor, cname);
+}
+
+/*
+ * Make a unique copy of a PCL client color structure. This function also
+ * serves as the allocator function.
+ *
+ * Because the byte array pointed to by the prast structure is not reference
+ * counted, the "copy" of the client color created this procedure will always
+ * have this pointer set to NULL. This is unfortunate and ugly, as it implies
+ * the copy cannot be used immediately as a client color, but it causes no
+ * trouble in the current context because:
+ *
+ *     prast is non-null only for colored patterns
+ *     the client color for a colored pattern would only be unshared
+ *         if it was about to be rendered, in which case the prast
+ *         array would need to be recreated.
+ *
+ * Newly created colors are solid white.
+ */
+  private int
+unshare_ccolor(
+    pcl_ccolor_t ** ppccolor,
+    gs_memory_t *   pmem
+)
+{
+    pcl_ccolor_t *  pold = *ppccolor;
+    pcl_ccolor_t *  pnew = 0;
+
+    if ((pold != NULL) && (pold->rc.ref_count == 1)) {
+        if (pold->prast != 0)
+            gs_free_object( pmem,
+                            (void *)pold->prast,
+                            "unshared PCL client color"
+                            );
+        pold->prast = 0;
+        return 0;
+    }
+    rc_decrement(pold, "unshare PCL client color object");
+
+    rc_alloc_struct_1( pnew,
+                       pcl_ccolor_t,
+                       &st_ccolor_t,
+                       pmem,
+                       return e_Memory,
+                       "allocate PCL client color"
+                       );
+    pnew->rc.free = free_ccolor;
+    pnew->prast = 0;
+
+    if (pold != 0) {
+        pnew->type = pold->type;
+        pcl_pattern_data_init_from(pnew->ppat_data, pold->ppat_data);
+        pcl_cs_indexed_init_from(pnew->pindexed, pold->pindexed);
+        pcl_cs_base_init_from(pnew->pbase, pold->pbase);
+        pnew->ccolor = pold->ccolor;
+        gs_pattern_reference(&(pnew->ccolor), 1);
+    } else {
+
+        /* build the pure white color space if necessary */
+        if (pwhite_cs == 0)
+            (void)pcl_cs_base_build_white_cspace(&pwhite_cs, pmem);
+
+        pnew->type = pcl_ccolor_unpatterned;
+        pnew->ppat_data = 0;
+        pnew->pindexed = 0;
+        pcl_cs_base_init_from(pnew->pbase, pwhite_cs);
+        pnew->ccolor.paint = white_paint;
+        pnew->ccolor.pattern = 0;
     }
 
-    /* build the 2-entry color space */
-    code = gs_cspace_build_Indexed( &(pptrn->pcspace),
-                                    pbase_cspace,
-                                    2,
-                                    (gs_const_string *)&(pptrn->palette),
-                                    pcs->memory
-                                    );
+    *ppccolor = pnew;
+    return 0;
+}
+
+/*
+ * Set a solid color (unpattered) color. This is handled separately from 
+ * patterns as it will usually not be necessary to build a PCL client color
+ * structure in this case.
+ *
+ * Exactly one of the pair of operands pbase and pindex shoud be non-null.
+ */
+  private int
+set_unpatterned_color(
+    pcl_state_t *           pcs,
+    pcl_cs_indexed_t *      pindexed,
+    pcl_cs_base_t *         pbase,
+    const gs_paint_color *  ppaint
+)
+{
+    pcl_ccolor_t *          pcur = pcs->pids->pccolor;
+    pcl_ccolor_type_t       type = (pcur != 0 ? pcur->type
+                                              : pcl_ccolor_unpatterned);
+    int                     code = 0;
+
+    if ( (pcur != 0)                                         &&
+         (type == pcl_ccolor_unpatterned)                    &&
+         (pcur->pindexed == pindexed)                        &&
+         (pcur->pbase == pbase)                              &&
+         (pcur->ccolor.paint.values[0] == ppaint->values[0]) &&
+         (pcur->ccolor.paint.values[1] == ppaint->values[1]) &&
+         (pcur->ccolor.paint.values[2] == ppaint->values[2])   )
+        return 0;
+
+    if ( (code = unshare_ccolor(&(pcs->pids->pccolor), pcs->memory)) < 0 )
+        return code;
+    pcur = pcs->pids->pccolor;
+
+    pcur->type = pcl_ccolor_unpatterned;
+    if (pcur->ppat_data != 0) {
+        pcl_pattern_data_release(pcur->ppat_data);
+        pcur->ppat_data = 0;
+    }
+
+    if (pindexed != 0) {
+        if ((type != pcl_ccolor_unpatterned) || (pcur->pindexed != pindexed))
+             code = pcl_cs_indexed_install(&pindexed, pcs);
+    } else {    /* pbase != 0 */
+        if ((type != pcl_ccolor_unpatterned) || (pcur->pbase != pbase))
+            code = pcl_cs_base_install(&pbase, pcs);
+    }
+    if (code < 0)
+        return code;
+    pcl_cs_indexed_copy_from(pcur->pindexed, pindexed);
+    pcl_cs_base_copy_from(pcur->pbase, pbase);
+
+    gs_pattern_reference(&(pcur->ccolor), -1);
+    pcur->ccolor.pattern = 0;
+    pcur->ccolor.paint = *ppaint;
+    return gs_setcolor(pcs->pgs, &(pcur->ccolor));
+}
+
+/*
+ * Set a patterned color space. Note that this is a substantially different
+ * operation from setting a solid (unpatterned) color.
+ */
+  private int
+set_patterned_color(
+    pcl_state_t *       pcs,
+    pcl_ccolor_t *      pnew
+)
+{
+    pcl_ccolor_t *      pcur = pcs->pids->pccolor;
+    int                 code = 0;
+
+    /* check if already set */
+    if (pcur == pnew)
+        return 0;
+
+    /* set a base color space for the pattern, if necessary */
+    if (pnew->type == pcl_ccolor_mask_pattern) {
+
+        if ( (pnew->pindexed != 0)                              &&
+             ((pcur == 0) || (pcur->pindexed != pnew->pindexed))  )
+            code = pcl_cs_indexed_install(&(pnew->pindexed), pcs);
+             
+        if ( (pnew->pbase != 0)                           &&
+             ((pcur == 0) || (pcur->pbase != pnew->pbase))  )
+            code = pcl_cs_base_install(&(pnew->pbase), pcs);
+    }
     if (code < 0)
         return code;
 
-    /* set up the transformation and cache key */
+    /* set the pattern instance */
+    if ((code = gs_setpattern(pcs->pgs, &(pnew->ccolor))) >= 0)
+        pcl_ccolor_copy_from(pcs->pids->pccolor, pnew);
+    return code;
+}
+
+/*
+ * Check if the pattern pointed to by pptrn has a rendering and, if so, whether
+ * or not that rendering is appropriate for the curren environment.
+ *
+ * If the rendering is appropriate, install the conrresponding color; otherwise
+ * return false.
+ *
+ * The case of GL uncolored patterns rendered with patterns opaque is unique.
+ * In this case the pattern must be generated as a colored pattern (mask
+ * patterns are always transparent), with a specially generated 2-entry
+ * indexed color space. The cache_id field identifies the palette that gave
+ * rise to this pattern, but not the entry from that palette that was used
+ * as the foreground color. Hence, for this case alone there must be a match
+ * on the pen number key. To avoid the need for a much qualified check in this
+ * case, we use the convention that the pen number field is zero in all but
+ * this case.
+ *
+ * Note that a difference in the paint color does not require re-rendering;
+ * these fields are ignored for colored patterns, and for mask patterns changes
+ * only require another call to gs_setpattern.
+ */
+  private bool
+check_pattern_rendering(
+    pcl_state_t *           pcs,
+    pcl_pattern_t *         pptrn,
+    pcl_gsid_t              cache_id,
+    uint                    pen_num,
+    const gs_paint_color *  ppaint
+)
+{
+    pcl_ccolor_t *          pccolor = pptrn->pccolor;
+    bool                    transp = pcs->pattern_transparent;
+
+    /* see comment above for the reasoning behind this step */
+    if (transp)
+        pen_num = 0;
+
+    if ( (pccolor == 0)                              ||
+         (pptrn->transp != pcs->pattern_transparent) ||
+         (pptrn->orient != pcs->pat_orient)          ||
+         (pptrn->cache_id != cache_id)               ||
+         (pptrn->pen != pen_num)                     ||
+         (pptrn->ref_pt.x != pcs->pat_ref_pt.x)      ||
+         (pptrn->ref_pt.y != pcs->pat_ref_pt.y)        )
+        return false;
+
+    /* handle changes in foreground color */
+    if ( (pccolor->type == pcl_ccolor_mask_pattern)                 &&
+         ((pccolor->ccolor.paint.values[0] != ppaint->values[0]) ||
+          (pccolor->ccolor.paint.values[1] != ppaint->values[1]) ||
+          (pccolor->ccolor.paint.values[2] != ppaint->values[2])   )  ) {
+
+        /* get a unique copy */
+        if (unshare_ccolor(&(pptrn->pccolor), pcs->memory) < 0)
+            return false;
+
+        pccolor->ccolor.paint = *ppaint;
+    }
+
+    return set_patterned_color(pcs, pptrn->pccolor);
+}
+
+/*
+ * Render and set a pattern.
+ *
+ * In a somewhat unfortunate division of labor, this code sets some but not
+ * all of the cache keys in the pattern. The fields set are transparency,
+ * orientation, and reference point. The caller is responsible for setting
+ * the cache_id and pen number.
+ *
+ * If this routine is called, it may be assumed that the pattern needs to be
+ * rendered.
+ *
+ */
+  private int
+render_pattern(
+    pcl_state_t *           pcs,
+    pcl_pattern_t *         pptrn,
+    pcl_ccolor_type_t       type,
+    pcl_cs_indexed_t *      pindexed,
+    pcl_cs_base_t *         pbase,
+    const gs_paint_color *  ppaint,
+    int                     wht_indx,
+    bool                    remap
+)
+{
+    int                     code = 0;
+    pcl_ccolor_t *          pccolor = 0;
+    int                     wht_index = 0;
+    gs_color_space *        pcspace;
+    gs_matrix               mat;
+    gs_depth_bitmap         pixinfo;
+
+    pcspace = (type == pcl_ccolor_colored_pattern ? pindexed->pcspace : 0);
+
+    /* allocate or make unique the rendered color */
+    if ((code = unshare_ccolor(&(pptrn->pccolor), pcs->memory)) < 0)
+        return code;
+    pccolor = pptrn->pccolor;
+    pccolor->type = type;
+    pcl_pattern_data_copy_from(pccolor->ppat_data, pptrn->ppat_data);
+
+    /* set up the transformation and transparency information */
     pcl_xfm_get_pat_xfm(pcs, pptrn, &mat);
-    pptrn->pen_num = pen_num;
-    pptrn->cache_id = id;
-    pptrn->ccolor_id = pcl_next_id();
+    pptrn->transp = pcs->pattern_transparent;
+
+    /* set up the white index and remap as necessary */
+    if (remap) {
+        code = pcl_cmap_map_raster( pindexed,
+                                    &wht_indx,
+                                    &(pptrn->ppat_data->pixinfo),
+                                    &pixinfo,
+                                    true,
+                                    pcs->memory
+                                    );
+        if (code < 0)
+            return code;
+        pcspace = pindexed->pcspace;
+        if (pixinfo.data != pptrn->ppat_data->pixinfo.data)
+            pccolor->prast = pixinfo.data;
+    } else
+        pixinfo = pptrn->ppat_data->pixinfo;
 
     /* render the pattern */
-    code = gs_makepixmappattern( &(pptrn->ccolor),
-                                 &(pptrn->pixinfo),
-                                 false,
+    code = gs_makepixmappattern( &(pccolor->ccolor),
+                                 &pixinfo,
+                                 (pcspace == 0),
                                  &mat,
                                  no_UniqueID,
-                                 pptrn->pcspace,
-                                 0,         /* foreground always opaque */
+                                 pcspace,
+                                 wht_indx,
                                  pcs->pgs,
                                  pcs->memory
                                  );
 
     /* if all is OK, install the pattern; otherwise clear the pattern */
-    if (code >= 0)
-        code = install_pattern(pcs, pptrn);
-    else
-        pptrn->orient = -1;
-
+    if (code >= 0) {
+        pcl_cs_indexed_copy_from(pccolor->pindexed, pindexed);
+        pcl_cs_base_copy_from(pccolor->pbase, pbase);
+        if (type == pcl_ccolor_mask_pattern)
+            pccolor->ccolor.paint = *ppaint;
+        code = set_patterned_color(pcs, pccolor);
+    }
     return code;
 }
 
@@ -245,31 +475,56 @@ set_frgrnd_pattern(
     pcl_pattern_t *     pptrn
 )
 {
-    int                 code = 0;
+    pcl_frgrnd_t *      pfrgrnd = pcs->pfrgrnd;
+    pcl_gsid_t          cache_id = pfrgrnd->id;
+    pcl_cs_base_t *     pbase = pfrgrnd->pbase;
+    pcl_cs_indexed_t *  pindexed = 0;
+    pcl_ccolor_type_t   type = pcl_ccolor_mask_pattern;
+    gs_paint_color      paint;
+    int                 code = set_ht_crd_from_foreground(pcs);
+    int                 wht_indx = 0;
 
-    if (check_pattern_rendered(pcs, pptrn, pcs->pfrgrnd->id, -1))
-        return 0;
-
-    /* if necessary, allocate the 2-entry palette */
-    if ( (pptrn->palette.data == 0)                      &&
-         ((code = alloc_palette(pptrn, pcs->memory)) < 0)  )
+    if (code < 0)
         return code;
 
-    /* the second entry of the palette is the foreground color */
-    pptrn->palette.data[3] = pcs->pfrgrnd->color[0];
-    pptrn->palette.data[4] = pcs->pfrgrnd->color[1];
-    pptrn->palette.data[5] = pcs->pfrgrnd->color[2];
+    convert_color_to_paint(pfrgrnd->color, &paint);
+    if (check_pattern_rendering(pcs, pptrn, cache_id, 0, &paint))
+        return 0;
 
-    /* set the current halftone and crd from the foreground */
-    set_ht_crd_from_foreground(pcs);
+    /* build the two-entry palette if necessary */
+    if (!pcs->pattern_transparent) {
+        code = pcl_cs_indexed_build_special( &pindexed,
+                                             pbase,
+                                             pfrgrnd->color,
+                                             pcs->memory
+                                             );
+        if (code < 0)
+            return code;
+        pbase = 0;
+        type = pcl_ccolor_colored_pattern;
+        wht_indx = 2;
+    }
 
-    /* render the uncolored pattern */
-    return render_uncolored_pattern( pcs,
-                                     pptrn,
-                                     pcs->pfrgrnd->pbase->pcspace,
-                                     pcs->pfrgrnd->id,
-                                     -1
-                                     );
+    code = render_pattern( pcs,
+                           pptrn,
+                           type,
+                           pindexed,
+                           pbase,
+                           &paint,
+                           wht_indx,
+                           false
+                           );
+
+    /* release the extra reference to the indexed color space */
+    if (type == pcl_ccolor_colored_pattern)
+        pcl_cs_indexed_release(pindexed);
+
+    if (code >= 0) {
+        pptrn->pen = 0;
+        pptrn->cache_id = cache_id;
+    }
+
+    return code;
 }
 
 /*
@@ -282,35 +537,46 @@ set_frgrnd_pattern(
 set_uncolored_palette_pattern(
     pcl_state_t *       pcs,
     pcl_pattern_t *     pptrn,
-    int                 pen_num
+    int                 pen
 )
 {
-    int                 code;
+    pcl_cs_indexed_t *  pindexed = pcs->ppalet->pindexed;
+    pcl_gsid_t          cache_id = pcs->ppalet->id;
+    pcl_ccolor_type_t   type = pcl_ccolor_mask_pattern;
+    gs_paint_color      paint;
+    int                 code = set_ht_crd_from_palette(pcs);
 
-    if (check_pattern_rendered(pcs, pptrn, pcs->ppalet->id, pen_num))
-        return 0;
-
-    /* if necessary, allocate the 2-entry palette */
-    if ( (pptrn->palette.data == 0)                      &&
-         ((code = alloc_palette(pptrn, pcs->memory)) < 0)  )
+    if (code < 0)
         return code;
 
-    /* the second entry of the palette is the foreground color */
-    pptrn->palette.data[3] = pcs->pfrgrnd->color[pen_num];
-    pptrn->palette.data[4] = pcs->pfrgrnd->color[pen_num];
-    pptrn->palette.data[5] = pcs->pfrgrnd->color[pen_num];
+    convert_index_to_paint(pen, &paint);
+    if (check_pattern_rendering(pcs, pptrn, cache_id, pen, &paint))
+        return 0;
 
-    /* set the current halftone and crd from the foreground */
-    set_ht_crd_from_palette(pcs);
+    /* build the two-entry palette if necessary */
+    if (!pcs->pattern_transparent) {
+        code = pcl_cs_indexed_build_special( &pindexed,
+                                             pindexed->pbase,
+                                             &(pindexed->palette.data[3 * pen]),
+                                             pcs->memory
+                                             );
+        if (code < 0)
+            return code;
+        type = pcl_ccolor_colored_pattern;
+    }
 
-    /* render the uncolored pattern */
-    return render_uncolored_pattern( pcs,
-                                     pptrn,
-                                     pcs->ppalet->pindexed->pbase->pcspace,
-                                     pcs->ppalet->id,
-                                     pen_num
-                                     );
-    
+    code = render_pattern(pcs, pptrn, type, pindexed, NULL, &paint, 0, false);
+
+    /* release the extra reference to the indexed color space */
+    if (type == pcl_ccolor_colored_pattern)
+        pcl_cs_indexed_release(pindexed);
+
+    if (code >= 0) {
+        pptrn->pen = pen;
+        pptrn->cache_id = cache_id;
+    }
+
+    return code;
 }
 
 /*
@@ -324,65 +590,33 @@ set_colored_pattern(
     pcl_pattern_t *     pptrn
 )
 {
-    int                 code = 0;
-    int                 wht_indx;
-    gs_matrix           mat;
-    gs_depth_bitmap     pixinfo;
+    pcl_cs_indexed_t *  pindexed = pcs->ppalet->pindexed;
+    pcl_gsid_t          cache_id = pcs->ppalet->id;
+    bool                remap = pcs->pattern_transparent;
+    int                 code = set_ht_crd_from_palette(pcs);
 
-    if (check_pattern_rendered(pcs, pptrn, pcs->ppalet->id, -1))
-        return 0;
-
-    /* release any copy of the render information, if applicable */
-    if (pptrn->prast != 0) {
-        gs_free_object( pcs->memory,
-                        (void *)pptrn->prast,
-                        "render colored pattern"
-                        );
-        pptrn->prast = 0;
-    }
-
-    /* find the white index, modifying the pattern pximap if necessary */
-    code = pcl_cmap_map_raster( pcs->ppalet->pindexed,
-                                &wht_indx,
-                                &(pptrn->pixinfo),
-                                &pixinfo,
-                                true,
-                                pcs->memory
-                                );
     if (code < 0)
         return code;
-    if (pixinfo.data != pptrn->pixinfo.data)
-        pptrn->prast = pixinfo.data;
 
-    /* set up the transformation and cache key */
-    pcl_xfm_get_pat_xfm(pcs, pptrn, &mat);
-    pptrn->pen_num = -1;
-    pptrn->cache_id = pcs->ppalet->id;
-    pptrn->ccolor_id = pcl_next_id();
+    if (check_pattern_rendering(pcs, pptrn, cache_id, 0, &white_paint))
+        return 0;
 
-    /* set the current halftone and crd from the foreground */
-    set_ht_crd_from_palette(pcs);
+    code = render_pattern( pcs,
+                           pptrn,
+                           pcl_ccolor_colored_pattern,
+                           pindexed,
+                           NULL,
+                           &white_paint,
+                           (remap ? 0 : pindexed->num_entries),
+                           remap
+                           );
+    if (code >= 0) {
+        pptrn->pen = 0;
+        pptrn->cache_id = cache_id;
+    }
 
-    /* render the colored pattern */
-    code = gs_makepixmappattern( &(pptrn->ccolor),
-                                 &pixinfo,
-                                 false,
-                                 &mat,
-                                 pptrn->ccolor_id,
-                                 pcs->ppalet->pindexed->pcspace,
-                                 wht_indx,
-                                 pcs->pgs,
-                                 pcs->memory
-                                 );
-
-    if (code < 0)
-        pptrn->orient = -1;
-    else
-        code = install_pattern(pcs, pptrn);
     return code;
 }
-
-
 
 /*
  * Routines to set the current color space to a specific pattern. Since patterns
@@ -524,70 +758,62 @@ set_colored_pattern(
  * foreground into an uncolored pattern which happens to be "on" everywhere, it
  * is possible to achieve the desired result. For performance reasons, this
  * should be done only when necessary.
+ *
+ * Still not handled correctly is the case in which the current pattern type
+ * is solid white, and a raster is being generated. This case is, however, so
+ * rare as to not be of concern.
  */
+
   private int
 pattern_set_white(
-    pcl_state_t *                   pcs,
-    int                             arg1,   /* ignored */
-    int                             arg2    /* ignored */
+    pcl_state_t *   pcs,
+    int             arg1,   /* ignored */
+    int             arg2    /* ignored */
 )
 {
-    static gs_color_space *         pdevgray;
-    static const gs_client_color    white = { { { 1.0, 0.0, 0.0, 0.0 } }, 0 };
-    static pcl_ht_t *               pdflt_ht;
-    int                             code = 0;
+    int             code = set_ht_crd_from_foreground(pcs);
+
+    if (code < 0)
+        return code;
+
+    /* build the pure white color space and default halftone if necessary */
+    if (pwhite_cs == 0)
+        code = pcl_cs_base_build_white_cspace(&pwhite_cs, pcs->memory);
+    if ((pdflt_ht == 0) && (code >= 0))
+        code = pcl_ht_build_default_ht(&pdflt_ht, pcs->memory);
 
     /* set the default halftone; build it first if required */
-    if (pdflt_ht == 0)
-        code = pcl_ht_build_default_ht(&pdflt_ht, pcs->memory);
-    if (code == 0)
+    if (code >= 0)
         code = pcl_ht_set_halftone(&pdflt_ht, pcl_cspace_RGB, false, pcs);
-
-    /* set device gray color space; build it first if required */
-    if ((code == 0) && (pdevgray == 0))
-        code = gs_cspace_build_DeviceGray(&pdevgray, pcs->memory);
-    if (code == 0)
-        code = gs_setcolorspace(pcs->pgs, pdevgray);
-
-    /* set the color to white */
-    if (code == 0)
-        code = gs_setcolor(pcs->pgs, &white);
-
+    if (code >= 0)
+        code = set_unpatterned_color(pcs, NULL, pwhite_cs, &white_paint);
     return code;
 }
 
   private int
 pattern_set_pen(
-    pcl_state_t *   pcs,
-    int             pen,
-    int             arg2    /* ignored */
+    pcl_state_t *       pcs,
+    int                 pen,
+    int                 arg2    /* ignored */
 )
 {
-    gs_client_color ccol;
-    int             num_entries = 0;
-    pcl_palette_t * ppalet = 0;
-    int             code = 0;
+    pcl_cs_indexed_t *  pindexed = pcs->ppalet->pindexed;
+    int                 num_entries = pindexed->num_entries;
+    int                 code = 0;
+
+    /* put the pen number in the proper range */
+    if (pen >= num_entries)
+        pen = (pen % (num_entries - 1)) + 1;
 
     /* set halftone and crd from the palette */
     code = set_ht_crd_from_palette(pcs);
 
-    /* put the pen number in the proper range */
-    ppalet = pcs->ppalet;
-    num_entries = ppalet->pindexed->num_entries;
-    if (pen > num_entries)
-        pen = (pen % (num_entries - 1)) + 1;
+    if (code >= 0) {
+        gs_paint_color  paint;
 
-    /* set the indexed color space from the current palette */
-    if (code == 0)
-        code = pcl_cs_indexed_install(&(ppalet->pindexed), pcs);
-
-    /* set the proper color */
-    ccol.paint.values[0] = pen;
-    if (code == 0) {
-        code = gs_setcolor(pcs->pgs, &ccol);
-        pcs->ids.pattern_id = 0L;
+        convert_index_to_paint(pen, &paint);
+        code = set_unpatterned_color(pcs, pindexed, NULL, &paint);
     }
-
     return code;
 }
 
@@ -598,39 +824,26 @@ pattern_set_frgrnd(
     int             for_image
 )
 {
-    gs_client_color ccol;
-    int             code = 0;
     pcl_frgrnd_t *  pfrgrnd = pcs->pfrgrnd;
     pcl_palette_t * ppalet = pcs->ppalet;
+    int             code = set_ht_crd_from_foreground(pcs);
 
+    if (code < 0)
+        return code;
 
     /* check if a solid pattern should be substituted */
-    if ( for_image                                                         &&
-         ((pfrgrnd->pht != ppalet->pht) || (pfrgrnd->pcrd != ppalet->pcrd))  )
-        code = set_frgrnd_pattern(pcs, pcl_pattern_get_solid_pattern());
-    else {
+    if ( for_image                          &&
+         ((pfrgrnd->pht != ppalet->pht)  ||
+          (pfrgrnd->pcrd != ppalet->pcrd)  )  ) {
+        code = set_frgrnd_pattern(pcs, pcl_pattern_get_solid_pattern()); 
+        if (code >= 0)
+            code = set_ht_crd_from_palette(pcs);
+    } else {
+        gs_paint_color  paint;
 
-        /* set the halftone and crd from the foreground */
-        code = set_ht_crd_from_foreground(pcs);
-        pfrgrnd = pcs->pfrgrnd;
-
-        /* install the base color space */
-        if (code == 0)
-            code = pcl_cs_base_install(&(pfrgrnd->pbase), pcs);
-
-        /* set the current color */
-        ccol.paint.values[0] = (floatp)(pfrgrnd->color[0]) / 255.0;
-        ccol.paint.values[1] = (floatp)(pfrgrnd->color[1]) / 255.0;
-        ccol.paint.values[2] = (floatp)(pfrgrnd->color[2]) / 255.0;
- 
-        if (code == 0) {
-            code = gs_setcolor(pcs->pgs, &ccol);
-            pcs->ids.pattern_id = 0L;
-        }
+        convert_color_to_paint(pfrgrnd->color, &paint);
+        code = set_unpatterned_color(pcs, NULL, pfrgrnd->pbase, &paint);
     }
-
-    if (for_image && (code >= 0))
-        code = set_ht_crd_from_palette(pcs);
 
     return code;
 }
@@ -645,13 +858,14 @@ pattern_set_shade_pcl(
     pcl_pattern_t * pptrn = pcl_pattern_get_shade(inten);
 
     if (pptrn == 0)
-        return ( inten <= 0 ? pattern_set_frgrnd(pcs, 0, 0)
+        return ( inten > 0 ? pattern_set_frgrnd(pcs, 0, for_image)
                             : pattern_set_white(pcs, 0, 0) );
     else {
         int     code = 0;
 
         pcl_xfm_pcl_set_pat_ref_pt(pcs);
         code = set_frgrnd_pattern(pcs, pptrn);
+    
         if (for_image && (code >= 0))
             code = set_ht_crd_from_palette(pcs);
         return code;
@@ -686,7 +900,7 @@ pattern_set_hatch_pcl(
     pcl_pattern_t * pptrn = pcl_pattern_get_cross(indx);
 
     if (pptrn == 0)
-        return pattern_set_frgrnd(pcs, 0, 0);
+        return pattern_set_frgrnd(pcs, 0, for_image);
     else {
         int     code = 0;
 
@@ -725,10 +939,10 @@ pattern_set_user_pcl(
     pcl_pattern_t * pptrn = pcl_pattern_get_pcl_uptrn(id);
 
     if (pptrn == 0)
-        return pattern_set_frgrnd(pcs, 0, 0);
+        return pattern_set_frgrnd(pcs, 0, for_image);
     else {
         pcl_xfm_pcl_set_pat_ref_pt(pcs);
-        if (pptrn->type == pcl_pattern_uncolored) {
+        if (pptrn->ppat_data->type == pcl_pattern_uncolored) {
             int     code = set_frgrnd_pattern(pcs, pptrn);
 
             if (for_image && (code >= 0))
@@ -752,7 +966,7 @@ pattern_set_user_gl(
         return pattern_set_pen(pcs, 0, 0);
     else {
         pcl_xfm_gl_set_pat_ref_pt(pcs);
-        if (pptrn->type == pcl_pattern_uncolored)
+        if (pptrn->ppat_data->type == pcl_pattern_uncolored)
             return set_uncolored_palette_pattern(pcs, pptrn, pen);
         else
             return set_colored_pattern(pcs, pptrn);
@@ -790,7 +1004,8 @@ pcl_pattern_get_proc_PCL(
                                                         pattern_set_shade_pcl,
                                                         pattern_set_hatch_pcl,
                                                         pattern_set_user_pcl,
-                                                        0 };
+                                                        0,
+                                                        pattern_set_pen };
 
     return procs[(int)pattern_source];
 }
@@ -972,8 +1187,13 @@ pattern_do_reset(
                                  | pcl_reset_printer );
 
     if ((type & mask) != 0) {
-        if ((type  & pcl_reset_initial) != 0)
-            pcl_pattern_init_bi_patterns();
+        if ((type  & pcl_reset_initial) != 0) {
+            pcl_pattern_init_bi_patterns(pcs->memory);
+
+            /* handle potential non-initialization of BSS */
+            pdflt_ht = 0;
+            pwhite_cs = 0;
+        }
         pcs->pattern_transparent = true;
         pcs->source_transparent = true;
         pcs->pattern_id = 0;
@@ -983,3 +1203,4 @@ pattern_do_reset(
 }
 
 const pcl_init_t    pcl_pattern_init = { pattern_do_init, pattern_do_reset, 0 };
+    

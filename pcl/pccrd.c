@@ -152,7 +152,6 @@ alloc_crd(
                        "pcl allocate CRD"
                        );
     pcrd->rc.free = free_crd;
-    pcrd->id = pcl_next_id();
     pcrd->is_dflt_illum = true;
     pcrd->pgscrd = 0;
 
@@ -287,8 +286,7 @@ pcl_crd_set_view_illuminant(
         if ((code = alloc_crd(ppcrd, pcrd->rc.memory)) < 0)
             return code;
         pcrd = *ppcrd;
-    } else
-        pcrd->id = pcl_next_id();
+    }
     pcrd->is_dflt_illum = false;
 
     /* if no previous CRD, use the default settings */
@@ -355,13 +353,13 @@ pcl_crd_set_crd(
     }
 
     /* see if there is anything to do */
-    if (pcs->ids.crd_id == pcrd->id)
+    if (pcs->pids->pcrd == pcrd)
         return 0;
 
     gs_cie_render_init(pcrd->pgscrd);
     gs_cie_render_sample(pcrd->pgscrd);
 
     if ((code = gs_setcolorrendering(pcs->pgs, pcrd->pgscrd)) >= 0)
-        pcs->ids.crd_id = pcrd->id;
+        pcl_crd_copy_from(pcs->pids->pcrd, pcrd);
     return code;
 }

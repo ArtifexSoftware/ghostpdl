@@ -100,16 +100,15 @@ typedef struct pcl_ht_client_data_s {
  * the halftone changes. This is used to indicate when structures that depend
  * on the halftone must be updated.
  */
-typedef struct pcl_ht_s {
+struct pcl_ht_s {
     rc_header               rc;
-    pcl_gsid_t              id;
     pcl_ht_client_data_t    client_data[3];
     pcl_udither_t *         pdither;
     gs_string               thresholds[3];
     int                     render_method;
     gs_ht *                 pfg_ht;
     gs_ht *                 pim_ht;
-} pcl_ht_t;
+};
 
 #define private_st_ht_t()                           \
     gs_private_st_composite( st_ht_t,               \
@@ -118,6 +117,11 @@ typedef struct pcl_ht_s {
                              ht_enum_ptrs,          \
                              ht_reloc_ptrs          \
                              )
+
+#ifndef pcl_ht_DEFINED
+#define pcl_ht_DEFINED
+typedef struct pcl_ht_s         pcl_ht_t;
+#endif
 
 /*
  * The usual init, copy,and release macros.

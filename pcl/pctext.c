@@ -148,7 +148,6 @@ map_symbol(
 		    
 	}
     }
-    return 0xffff;
 }
 
 /*
@@ -310,10 +309,15 @@ char_width(
  * source to achive the desired result. In principle, the S = 1 porition of
  * the background rop should be set to the no-op rop, but this is not necessary
  * as the source is a mask.
+ *
+ * An additional complication arises from the specification provided by HP for
+ * handling the source opaque, pattern transparent situation. In this case,
+ * the pattern affects only for the foreground pixels of the source; the back-
+ * ground must be rendered as a solid, opaque white.
  */
   private int
 show_char_background(
-    const pcl_state_t * pcs,
+    pcl_state_t *       pcs,
     const char *        pbuff
 )
 {
@@ -326,7 +330,9 @@ show_char_background(
     int                 code = 0;
 
     /* save the graphic state and set the background raster operation */
-    gs_gsave(pgs);
+    pcl_gsave(pcs);
+    if (pcs->pattern_transparent)
+        pcl_set_drawing_color(pcs, pcl_pattern_solid_white, 0, false);
     gs_setrasterop(pgs, (gs_rop3_t)rop3_know_S_1((int)rop));
     gs_currentpoint(pgs, &pt);
 
@@ -341,14 +347,14 @@ show_char_background(
 
         /* empty characters have no background */
 	if (cdata == 0) {
-            gs_grestore(pgs);
+            pcl_grestore(pcs);
             return 0;
         }
 
         /* allocate the image enumerator */
         pen = gs_image_enum_alloc(gs_state_memory(pgs), "bitmap font background");
         if (pen == 0) {
-            gs_grestore(pgs);
+            pcl_grestore(pcs);
             return e_Memory;
         }
 
@@ -382,18 +388,16 @@ show_char_background(
 
         /* get the character path */
 	gs_charpath_n_init(penum, pgs, pbuff, 2, true);
-	if ((code = gs_show_next(penum)) < 0) {
-           gs_grestore(pgs);
-	   return code;
-	}
+	if ((code = gs_show_next(penum)) >= 0) {
 
-	/* append the characters bounding box and use eofill */
-	gs_pathbbox(pgs, &bbox);
-	gs_rectappend(pgs, &bbox, 1);
-	gs_eofill(pgs);
+	    /* append the characters bounding box and use eofill */
+	    gs_pathbbox(pgs, &bbox);
+	    gs_rectappend(pgs, &bbox, 1);
+	    gs_eofill(pgs);
+        }
     }
 
-    gs_grestore(pgs);
+    pcl_grestore(pcs);
     return code;
 }
 

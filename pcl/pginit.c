@@ -105,15 +105,19 @@ hpgl_do_reset(
 
     if ((type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_cold)) != 0 ) {
         if ((type & (pcl_reset_initial | pcl_reset_cold)) != 0) {
-	    hpgl_default_all_fill_patterns(pcls);
-	    gx_path_init_local(&pcls->g.polygon.buffer.path, pcls->memory);
+            gx_path_alloc_contained( &pcls->g.polygon.buffer.path,
+                                     pcls->memory,
+                                     "hpgl_do_reset"
+                                     );
 
 	    /*
              * HAS This is required for GL/2 but probably should
              * be maintained locally in gl/2's state machinery
              */
 	    gs_setlimitclamp(pcls->pgs, true);
-	}
+	} else
+            gx_path_new(&pcls->g.polygon.buffer.path);
+
 	/* provide default anchor point, plot size and picture frame size */
 	hpgl_default_coordinate_system(pcls);
 

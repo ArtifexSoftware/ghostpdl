@@ -107,7 +107,8 @@ pcl_fill_rect_area(
     } else if (type == pcl_pattern_current_pattern) {
         type = pcls->pattern_type;
         id = pcls->current_pattern_id;
-    }
+    } else if (type != pcl_pattern_shading)
+        return 0;
 
     /* set up the graphic state; render the rectangle */
     if ( ((code = pcl_set_drawing_color(pcls, type, id, false)) >= 0) &&

@@ -30,7 +30,7 @@
 #include "gscoord.h"
 #include "gspath.h"
 #include "gspaint.h"
-#include "gsrop.h"		/* for gs_setsourcetransparent */
+#include "gsrop.h"		/* for gs_setrasterop */
 #include "gxfarith.h"		/* for sincos */
 #include "gxfixed.h"
 #include "pgmand.h"
@@ -552,8 +552,7 @@ hpgl_polyfill(
         hpgl_call(hpgl_compute_user_units_to_plu_ctm(pgls, &mat));
         line_width /= min(fabs(mat.xx), fabs(mat.yy));
 	if (line_width >= spacing) {
-	    hpgl_call(gs_setgray(pgls->pgs, 0.0));
-	    hpgl_call(gs_fill(pgls->pgs));
+            hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_polygon));
 	    return 0;
 	}
     }
@@ -829,9 +828,8 @@ fill:
 
 set:
     if (code >= 0) {
+        /* PCL and GL/2 no longer use graphic library transparency */
         gs_setrasterop(pgls->pgs, (gs_rop3_t)pgls->logical_op);
-        gs_setsourcetransparent(pgls->pgs, pgls->g.source_transparent);
-        gs_settexturetransparent(pgls->pgs, pgls->g.source_transparent);
         gs_setfilladjust(pgls->pgs, pgls->grid_adjust, pgls->grid_adjust);
     }
 
@@ -1296,24 +1294,6 @@ hpgl_copy_current_path_to_polygon_buffer(
 
     gx_path_new(&pgls->g.polygon.buffer.path);
     gx_path_copy(ppath, &pgls->g.polygon.buffer.path);
-    return 0;
-}
-
- int
-hpgl_gsave(
-    hpgl_state_t *  pgls
-)
-{
-    hpgl_call(gs_gsave(pgls->pgs));
-    return 0;
-}
-
- int
-hpgl_grestore(
-    hpgl_state_t *  pgls
-)
-{
-    hpgl_call(gs_grestore(pgls->pgs));
     return 0;
 }
 

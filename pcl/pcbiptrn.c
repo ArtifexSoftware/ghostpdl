@@ -21,166 +21,119 @@
 /* pcbiptrn.c - code for PCL built-in patterns */
 
 #include "pcpatrn.h"
+#include "pcuptrn.h"
 #include "pcbiptrn.h"
 
 /*
- * Macro for convenient creation of static patterns.
- *
- * Note that the built-in patterns cannot be const because their render
- * information may be changed. To support environments in which all
- * initialized globals are in ROM, two copies of each built-in pattern
- * are created: a prototype (qualified as const), and the actual copy.
+ * Bitmap arrays for the built-in patterns.
  */
-#define make_static_pattern(name, name_proto, data)                     \
-    private const pcl_pattern_t name_proto = {                          \
-        { (byte *)data, 2, {16, 16}, 0, 1, 1 }, /* pixmap information */\
-        pcds_permanent,                         /* storage - ignored */ \
-        pcl_pattern_uncolored,                  /* type */              \
-        300, 300,                               /* resolution */        \
-        -1,                                     /* orient */            \
-        -1,                                     /* pen number */        \
-        { 0.0, 0.0 },                           /* reference point */   \
-        0UL,                                    /* cache_id */          \
-        { 0, 0 },                               /* palette */           \
-        0,                                      /* pcspace */           \
-        0,                                      /* prast */             \
-        0UL,                                    /* ccolor_id */         \
-        { { { 0.0, 0.0, 0.0, 0.0 } }, 0 }       /* ccolor structure */  \
-    };                                                                  \
-    private pcl_pattern_t   name
+private const byte  bi_data_array[ (7 + 6) * 2 * 16 ] = {
 
-/*
- * PCL shade patterns.
- */
-private const byte  shade_01_02_data[2 * 16] = {
+    /* shade 1% to 2% */
     0x80, 0x80,   0x00, 0x00,   0x00, 0x00,   0x00, 0x00,
     0x00, 0x00,   0x00, 0x00,   0x00, 0x00,   0x00, 0x00,
     0x08, 0x08,   0x00, 0x00,   0x00, 0x00,   0x00, 0x00,
-    0x00, 0x00,   0x00, 0x00,   0x00, 0x00,   0x00, 0x00
-};
-make_static_pattern(shade_01_02, shade_01_02_proto, shade_01_02_data);
+    0x00, 0x00,   0x00, 0x00,   0x00, 0x00,   0x00, 0x00,
 
-private const byte  shade_03_10_data[2 * 16] = {
+    /* shade 3% to 10% */
     0x80, 0x80,   0x00, 0x00,   0x00, 0x00,   0x00, 0x00,
     0x08, 0x08,   0x00, 0x00,   0x00, 0x00,   0x00, 0x00,
     0x80, 0x80,   0x00, 0x00,   0x00, 0x00,   0x00, 0x00,
-    0x08, 0x08,   0x00, 0x00,   0x00, 0x00,   0x00, 0x00
-};
-make_static_pattern(shade_03_10, shade_03_10_proto, shade_03_10_data);
+    0x08, 0x08,   0x00, 0x00,   0x00, 0x00,   0x00, 0x00,
 
-private const byte  shade_11_20_data[2 * 16] = {
+    /* shade 11% to 20% */
     0xc0, 0xc0,   0xc0, 0xc0,   0x00, 0x00,   0x00, 0x00,
     0x00, 0x00,   0x00, 0x00,   0xc0, 0xc0,   0xc0, 0xc0,
     0x00, 0x00,   0x00, 0x00,   0x00, 0x00,   0x00, 0x00,
-    0x00, 0x00,   0x00, 0x00,   0x00, 0x00,   0x00, 0x00
-};
-make_static_pattern(shade_11_20, shade_11_20_proto, shade_11_20_data);
+    0x00, 0x00,   0x00, 0x00,   0x00, 0x00,   0x00, 0x00,
 
-private const byte  shade_21_35_data[2 * 16] = {
+    /* shade 21% to 35% */
     0xc1, 0xc1,   0xc1, 0xc1,   0x80, 0x80,   0x08, 0x08,
     0x1c, 0x1c,   0x1c, 0x1c,   0x08, 0x08,   0x80, 0x80,
     0xc1, 0xc1,   0xc1, 0xc1,   0x80, 0x80,   0x08, 0x08,
-    0x1c, 0x1c,   0x1c, 0x1c,   0x08, 0x08,   0x80, 0x80
-};
-make_static_pattern(shade_21_35, shade_21_35_proto, shade_21_35_data);
+    0x1c, 0x1c,   0x1c, 0x1c,   0x08, 0x08,   0x80, 0x80,
 
-private const byte  shade_36_55_data[2 * 16] = {
+    /* shade 36% to 55% */
     0xc1, 0xc1,   0xeb, 0xeb,   0xc1, 0xc1,   0x88, 0x88,
     0x1c, 0x1c,   0xbe, 0xbe,   0x1c, 0x1c,   0x88, 0x88,
     0xc1, 0xc1,   0xeb, 0xeb,   0xc1, 0xc1,   0x88, 0x88,
-    0x1c, 0x1c,   0xbe, 0xbe,   0x1c, 0x1c,   0x88, 0x88
-};
-make_static_pattern(shade_36_55, shade_36_55_proto, shade_36_55_data);
+    0x1c, 0x1c,   0xbe, 0xbe,   0x1c, 0x1c,   0x88, 0x88,
 
-private const byte  shade_56_80_data[2 * 16] = {
+    /* shade 56% to 80% */
     0xe3, 0xe3,   0xe3, 0xe3,   0xe3, 0xe3,   0xdd, 0xdd,
     0x3e, 0x3e,   0x3e, 0x3e,   0x3e, 0x3e,   0xdd, 0xdd,
     0xe3, 0xe3,   0xe3, 0xe3,   0xe3, 0xe3,   0xdd, 0xdd,
-    0x3e, 0x3e,   0x3e, 0x3e,   0x3e, 0x3e,   0xdd, 0xdd
-};
-make_static_pattern(shade_56_80, shade_56_80_proto, shade_56_80_data);
+    0x3e, 0x3e,   0x3e, 0x3e,   0x3e, 0x3e,   0xdd, 0xdd,
 
-private const byte  shade_81_99_data[2 * 16] = {
+    /* shade 81% to 99% */
     0xf7, 0xf7,   0xe3, 0xe3,   0xf7, 0xf7,   0xff, 0xff,
     0x7f, 0x7f,   0x3e, 0x3e,   0x7f, 0x7f,   0xff, 0xff,
     0xf7, 0xf7,   0xe3, 0xe3,   0xf7, 0xf7,   0xff, 0xff,
-    0x7f, 0x7f,   0x3e, 0x3e,   0x7f, 0x7f,   0xff, 0xff
-};
-make_static_pattern(shade_81_99, shade_81_99_proto, shade_81_99_data);
+    0x7f, 0x7f,   0x3e, 0x3e,   0x7f, 0x7f,   0xff, 0xff,
 
-/*
- * Data for cross-hatch patterns
- */
-private const byte  cross_1_data[2 * 16] = {
+    /* cross-hatch 1 (horizontal stripes) */
     0x00, 0x00,   0x00, 0x00,   0x00, 0x00,   0x00, 0x00,
     0x00, 0x00,   0x00, 0x00,   0x00, 0x00,   0xff, 0xff,
     0xff, 0xff,   0x00, 0x00,   0x00, 0x00,   0x00, 0x00,
-    0x00, 0x00,   0x00, 0x00,   0x00, 0x00,   0x00, 0x00
-};
-make_static_pattern(cross_1, cross_1_proto, cross_1_data);
+    0x00, 0x00,   0x00, 0x00,   0x00, 0x00,   0x00, 0x00,
 
-private const byte cross_2_data[2 * 16] = {
+    /* cross-hatch 2 (vertical stripes) */
     0x01, 0x80,   0x01, 0x80,   0x01, 0x80,   0x01, 0x80,
     0x01, 0x80,   0x01, 0x80,   0x01, 0x80,   0x01, 0x80,
     0x01, 0x80,   0x01, 0x80,   0x01, 0x80,   0x01, 0x80,
-    0x01, 0x80,   0x01, 0x80,   0x01, 0x80,   0x01, 0x80
-};
-make_static_pattern(cross_2, cross_2_proto, cross_2_data);
+    0x01, 0x80,   0x01, 0x80,   0x01, 0x80,   0x01, 0x80,
 
-private const byte cross_3_data[2 * 16] = {
+    /* cross-hatch 3 (upper right/lower left diagonal stripes) */
     0x80, 0x03,   0x00, 0x07,   0x00, 0x0e,   0x00, 0x1c,
     0x00, 0x38,   0x00, 0x70,   0x00, 0xe0,   0x01, 0xc0,
     0x03, 0x80,   0x07, 0x00,   0x0e, 0x00,   0x1c, 0x00,
-    0x38, 0x00,   0x70, 0x00,   0xe0, 0x00,   0xc0, 0x01
-};
-make_static_pattern(cross_3, cross_3_proto, cross_3_data);
+    0x38, 0x00,   0x70, 0x00,   0xe0, 0x00,   0xc0, 0x01,
 
-private const byte cross_4_data[2 * 16] = {
+    /* cross-hatch 4 (upper left/lower right diagonal stripes) */
     0xc0, 0x01,   0xe0, 0x00,   0x70, 0x00,   0x38, 0x00,
     0x1c, 0x00,   0x0e, 0x00,   0x07, 0x00,   0x03, 0x80,
     0x01, 0xc0,   0x00, 0xe0,   0x00, 0x70,   0x00, 0x38,
-    0x00, 0x1c,   0x00, 0x0e,   0x00, 0x07,   0x80, 0x03
-};
-make_static_pattern(cross_4, cross_4_proto, cross_4_data);
+    0x00, 0x1c,   0x00, 0x0e,   0x00, 0x07,   0x80, 0x03,
 
-private const byte cross_5_data[2 * 16] = {
+    /* cross-hatch 5 (aligned cross-hatch) */
     0x01, 0x80,   0x01, 0x80,   0x01, 0x80,   0x01, 0x80,
     0x01, 0x80,   0x01, 0x80,   0x01, 0x80,   0xff, 0xff,
     0xff, 0xff,   0x01, 0x80,   0x01, 0x80,   0x01, 0x80,
-    0x01, 0x80,   0x01, 0x80,   0x01, 0x80,   0x01, 0x80
-};
-make_static_pattern(cross_5, cross_5_proto, cross_5_data);
+    0x01, 0x80,   0x01, 0x80,   0x01, 0x80,   0x01, 0x80,
 
-private const byte cross_6_data[2 * 16] = {
+    /* cross-hatch 6 (diagnoal cross-hatch) */
     0xc0, 0x03,   0xe0, 0x07,   0x70, 0x0e,   0x38, 0x1c,
     0x1c, 0x38,   0x0e, 0x70,   0x07, 0xe0,   0x03, 0xc0,
     0x03, 0xc0,   0x07, 0xe0,   0x0e, 0x70,   0x1c, 0x38,
     0x38, 0x1c,   0x70, 0x0e,   0xe0, 0x07,   0xc0, 0x03
 };
-make_static_pattern(cross_6, cross_6_proto, cross_6_data);
 
 
-private const pcl_pattern_t *const  bi_pattern_proto_array[] = {
-    &shade_01_02_proto, &shade_03_10_proto,
-    &shade_11_20_proto, &shade_21_35_proto,
-    &shade_36_55_proto, &shade_56_80_proto,
-    &shade_81_99_proto,
-    &cross_1_proto,     &cross_2_proto,
-    &cross_3_proto,     &cross_4_proto,
-    &cross_5_proto,     &cross_6_proto
+#define make_pixmap(indx)                                           \
+    { (byte *)(bi_data_array + indx * 2 * 16), 2, {16, 16}, 0, 1, 1 }
+
+private const gs_depth_bitmap   bi_pixmap_array[7 + 6] = {
+    make_pixmap(0),
+    make_pixmap(1),
+    make_pixmap(2),
+    make_pixmap(3),
+    make_pixmap(4),
+    make_pixmap(5),
+    make_pixmap(6),
+    make_pixmap(7),
+    make_pixmap(8),
+    make_pixmap(9),
+    make_pixmap(10),
+    make_pixmap(11),
+    make_pixmap(12)
 };
 
-private pcl_pattern_t *const    bi_pattern_array[] = {
-    &shade_01_02, &shade_03_10, &shade_11_20, &shade_21_35,
-    &shade_36_55, &shade_56_80, &shade_81_99,
-    &cross_1,     &cross_2,     &cross_3,     &cross_4,
-    &cross_5,     &cross_6
-};
+private pcl_pattern_t * bi_pattern_array[countof(bi_pixmap_array)];
 
-#define bi_cross_array  (bi_pattern_array + 7)
+#define bi_cross_offset 7
 
 /*
- * A special array, used for rendering images that interact with solid
+ * A special pattern, used for rendering images that interact with solid
  * foregrounds.
  *
  * Handling the interaction of rasters and foregrounds in PCL is tricky. PCL
@@ -202,37 +155,89 @@ private pcl_pattern_t *const    bi_pattern_array[] = {
  * (qualified as const) and the pattern actually used.
  */
 private const byte solid_pattern_data = 0xff;
-
-private const pcl_pattern_t solid_pattern_proto = {
-    { (byte *)&solid_pattern_data, 1, {1, 1}, 0, 1, 1 },
-    pcds_permanent,                         /* storage - ignored */
-    pcl_pattern_uncolored,                  /* type */
-    300, 300,                               /* resolution - NA */
-    -1,                                     /* orient */
-    -1,                                     /* pen number */
-    { 0.0, 0.0 },                           /* reference point */
-    0UL,                                    /* cache_id */
-    { 0, 0 },                               /* palette */
-    0,                                      /* pcspace */
-    0,                                      /* prast */
-    0UL,                                    /* ccolor_id */
-    { { { 0.0, 0.0, 0.0, 0.0 } }, 0 }       /* ccolor structure */
+private const gs_depth_bitmap   solid_pattern_pixmap = {
+    (byte *)&solid_pattern_data, 1, {1, 1}, 0, 1, 1
 };
 
-private pcl_pattern_t   solid_pattern;
+private pcl_pattern_t * psolid_pattern;
+
+/*
+ * The following where originally local statics, but were moved to top level
+ * so as to work on systems that do not re-initialize BSS at each startup.
+ */
+private int             last_inten;
+private pcl_pattern_t * plast_shade;
+
+/* a pointer to the memory structure to be used for building built-in patterns */
+private gs_memory_t *   pbi_mem;
 
 
 /*
  * Initialize the built-in patterns
  */
   void
-pcl_pattern_init_bi_patterns(void)
+pcl_pattern_init_bi_patterns(
+    gs_memory_t *   pmem
+)
+{
+    memset(bi_pattern_array, 0, sizeof(bi_pattern_array));
+    psolid_pattern = 0;
+    last_inten = 0;
+    plast_shade = 0;
+    pbi_mem = pmem;
+}
+
+/*
+ * Clear all built-in patterns. This is normally called during a reset, to
+ * conserve memory.
+ */
+  void
+pcl_pattern_clear_bi_patterns(void)
 {
     int     i;
 
-    for (i = 0; i < countof(bi_pattern_proto_array); i++)
-        *(bi_pattern_array[i]) = *(bi_pattern_proto_array[i]);
-    solid_pattern = solid_pattern_proto;
+    for (i = 0; i < countof(bi_pattern_array); i++) {
+        if (bi_pattern_array[i] != 0) {
+            pcl_pattern_free_pattern( pbi_mem,
+                                      bi_pattern_array[i],
+                                      "clear PCL built-in patterns"
+                                      );
+            bi_pattern_array[i] = 0;
+        }
+    }
+
+    last_inten = 0;
+    plast_shade = 0;
+
+    if (psolid_pattern != 0) {
+        pcl_pattern_free_pattern( pbi_mem,
+                                  psolid_pattern,
+                                  "clear PCL built-in patterns"
+                                  );
+
+        psolid_pattern = 0;
+    }
+}
+
+/*
+ * Return the pointer to a built-in pattern, building it if inecessary.
+ */
+  private pcl_pattern_t *
+get_bi_pattern(
+    int             indx
+)
+{
+    if (bi_pattern_array[indx] == 0) {
+        (void)pcl_pattern_build_pattern( &(bi_pattern_array[indx]),
+                                         &(bi_pixmap_array[indx]),
+                                         pcl_pattern_uncolored,
+                                         300,
+                                         300,
+                                         pbi_mem
+                                         );
+        bi_pattern_array[indx]->ppat_data->storage = pcds_internal;
+    }
+    return bi_pattern_array[indx];
 }
 
 /*
@@ -242,30 +247,27 @@ pcl_pattern_init_bi_patterns(void)
  */
   pcl_pattern_t *
 pcl_pattern_get_shade(
-    int                     inten
+    int             inten
 )
 {
-    static int              last_inten;
-    static pcl_pattern_t *  plast_shade;
-
     if (inten != last_inten) {
         last_inten = inten;
         if (inten <= 0)
             plast_shade = 0;
         else if (inten <= 2)
-            plast_shade = &shade_01_02;
+            plast_shade = get_bi_pattern(0);
         else if (inten <= 10)
-            plast_shade = &shade_03_10;
+            plast_shade = get_bi_pattern(1);
         else if (inten <= 20)
-            plast_shade = &shade_11_20;
+            plast_shade = get_bi_pattern(2);
         else if (inten <= 35)
-            plast_shade = &shade_21_35;
+            plast_shade = get_bi_pattern(3);
         else if (inten <= 55)
-            plast_shade = &shade_36_55;
+            plast_shade = get_bi_pattern(4);
         else if (inten <= 80)
-            plast_shade = &shade_56_80;
+            plast_shade = get_bi_pattern(5);
         else if (inten <= 99)
-            plast_shade = &shade_81_99;
+            plast_shade = get_bi_pattern(6);
         else 
             plast_shade = 0;
     }
@@ -279,13 +281,13 @@ pcl_pattern_get_shade(
  */
   pcl_pattern_t *
 pcl_pattern_get_cross(
-    int     indx
+    int             indx
 )
 {
     if ((indx < 1) || (indx > 6))
         return 0;
     else
-        return bi_cross_array[indx - 1];
+        return get_bi_pattern(indx + bi_cross_offset - 1);
 }
 
 /*
@@ -294,5 +296,15 @@ pcl_pattern_get_cross(
   pcl_pattern_t *
 pcl_pattern_get_solid_pattern(void)
 {
-    return &solid_pattern;
+    if (psolid_pattern == 0) {
+        (void)pcl_pattern_build_pattern( &(psolid_pattern),
+                                         &solid_pattern_pixmap,
+                                         pcl_pattern_uncolored,
+                                         300,
+                                         300,
+                                         pbi_mem
+                                         );
+        psolid_pattern->ppat_data->storage = pcds_internal;
+    }
+    return psolid_pattern;
 }

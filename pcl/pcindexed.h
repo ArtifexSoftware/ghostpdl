@@ -137,7 +137,6 @@ typedef struct pcl_cs_indexed_norm_s {
 typedef struct pcl_cs_indexed_s {
     rc_header               rc;
     bool                    fixed;
-    pcl_gsid_t              id;
     pcl_cid_hdr_t           cid;
     pcl_cs_base_t *         pbase;
     gs_color_space *        pcspace;
@@ -309,8 +308,23 @@ extern  int     pcl_cs_indexed_build_cspace(
  * Returns 0 on success, < 0 
  */
 extern  int     pcl_cs_indexed_build_default_cspace(
-    pcl_cs_indexed_t **         ppindexed,
-    gs_memory_t *               pmem
+    pcl_cs_indexed_t ** ppindexed,
+    gs_memory_t *       pmem
+);
+
+/*
+ * Special indexed color space constructor, for building a 2 entry indexed color
+ * space based on an existing base color space. The first color is always set
+ * to white, while the second entry takes the value indicated by pcolor1.
+ *
+ * This reoutine is used to build the two-entry indexed color spaces required
+ * for creating opaque "uncolored" patterns.
+ */
+extern  int     pcl_cs_indexed_build_special(
+    pcl_cs_indexed_t ** ppindexed,
+    pcl_cs_base_t *     pbase,
+    byte *              pcolor1,
+    gs_memory_t *       pmem
 );
 
 /*

@@ -65,11 +65,9 @@ int hpgl_add_bezier_to_path(P10(hpgl_state_t *pgls, floatp x1,
 int hpgl_draw_current_path(P2(hpgl_state_t *pgls,
 			      hpgl_rendering_mode_t render_mode));
 
-/* save gs graphics state + HPGL/2's first moveto state */
-int hpgl_gsave(P1(hpgl_state_t *pgls));
-
-/* restore gs graphics state + HPGL/2's first moveto state */
-int hpgl_grestore(P1(hpgl_state_t *pgls));
+/* save/restore gs graphics state + HPGL/2's first moveto state */
+#define hpgl_gsave(pgls)    pcl_gsave(pgls)
+#define hpgl_grestore(pgls) pcl_grestore(pgls)
 
 /* path copying for polygons rendering */
 int hpgl_copy_polygon_buffer_to_current_path(P1(hpgl_state_t *pgls));

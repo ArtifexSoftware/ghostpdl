@@ -231,7 +231,7 @@ create_image_enumerator(
         /* avoid unnecessary transparency mask in the by-plane case */
         if (prast->wht_indx >= 1 << (nplanes * b_per_p))
             image.MaskColor[0] = (1 << image.BitsPerComponent);
-        else
+	else
             image.MaskColor[0] = prast->wht_indx;
         image.Decode[0] = 0.0;
         image.Decode[1] = (1 << image.BitsPerComponent) - 1;
@@ -242,14 +242,11 @@ create_image_enumerator(
             image.Decode[2 * i] = prast->pindexed->Decode[2 * i];
             image.Decode[2 * i + 1] = prast->pindexed->Decode[2 * i + 1];
 
-	    /* TEMPORARY HACK - put mask color out of range */
-#if 0
             if (image.Decode[2 * i] == 1.0)
                 image.MaskColor[i] = 0;
             else if (image.Decode[2 * i + 1] == 1.0)
                 image.MaskColor[i] = (1 << image.BitsPerComponent) - 1;
             else
-#endif
                 image.MaskColor[i] = (1 << image.BitsPerComponent);
         }
     }
@@ -445,19 +442,15 @@ process_row(
     int             i;
     int             code = 0;
 
+    /* check if there is anything to do */
+    if (prast->rows_rendered >= prast->src_height)
+        return 0;
+
     /* create the image enumerator if it does not already exist */
     if (pen == 0) {
         if ((code = create_image_enumerator(prast)) < 0)
             return code;
         pen = prast->pen;
-    }
-
-    /* clear any rows that have not been provided */
-    for (i = prast->plane_index; i < nplanes; i++) {
-        if (!prast->pseed_rows[i].is_blank) {
-            memset(prast->pseed_rows[i].pdata, 0, prast->pseed_rows[i].size);
-            prast->pseed_rows[i].is_blank = true;
-        }
     }
 
     /* update the raster parameters */
@@ -632,11 +625,7 @@ add_raster_plane(
             (void)pcl_decomp_proc[comp_mode](pseed, pdata, nbytes);
     }
 
-    /* render this row if necessary */
-    if (end_row)
-        return process_row(prast);
-    else
-        return 0;
+    return 0;
 }
 
 /*
@@ -847,8 +836,23 @@ transfer_raster_row(
     pcl_state_t *   pcs
 )
 {
+    const byte *    pdata = arg_data(pargs);
+    int             code = 0;
+
     pcs->have_page = true;  /* conservative */
-    return add_raster_plane(arg_data(pargs), arg_data_size(pargs), true, pcs);
+    code = add_raster_plane(pdata, arg_data_size(pargs), true, pcs);
+
+    /* process any planes that have not been provided; complete the row */
+    if (code >= 0) {
+        int     i, nplanes = pcur_raster->nplanes;
+
+        for (i = pcur_raster->plane_index; (i < nplanes) && (code >= 0); i++)
+            code = add_raster_plane(pdata, 0, false, pcs);
+    }
+    if (code >= 0)
+        code = process_row(pcur_raster);
+
+    return code;
 }
 
 /*

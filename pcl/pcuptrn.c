@@ -24,6 +24,7 @@
 #include "pldict.h"
 #include "pcindexed.h"
 #include "pcpatrn.h"
+#include "pcbiptrn.h"
 #include "pcuptrn.h"
 
 /* dictionaries to hold patterns */
@@ -46,32 +47,88 @@ private pcl_pattern_t *  plast_gl2_uptrn;
 /*
  * GC routines.
  */
-  private
-ENUM_PTRS_BEGIN(pattern_enum_ptrs)
-        return 0;
-    ENUM_PTR(0, pcl_pattern_t, pixinfo.data);
-    ENUM_STRING_PTR(1, pcl_pattern_t, palette);
-    ENUM_PTR(2, pcl_pattern_t, pcspace);
-    ENUM_PTR(3, pcl_pattern_t, prast);
-    ENUM_PTR(4, pcl_pattern_t, ccolor.pattern);
-ENUM_PTRS_END
-
-  private
-RELOC_PTRS_BEGIN(pattern_reloc_ptrs)
-    RELOC_PTR(pcl_pattern_t, pixinfo.data);
-    RELOC_STRING_PTR(pcl_pattern_t, palette);
-    RELOC_PTR(pcl_pattern_t, pcspace);
-    RELOC_PTR(pcl_pattern_t, prast);
-    RELOC_PTR(pcl_pattern_t, ccolor.pattern);
-RELOC_PTRS_END
-
+private_st_pattern_data_t();
 private_st_pattern_t();
 
 /*
- * Free routine for patterns.
+ * Free routine for pattern data structure.
  */
   private void
-free_pattern(
+free_pattern_data(
+    gs_memory_t *           pmem,
+    void *                  pvpat_data,
+    client_name_t           cname
+)
+{
+    pcl_pattern_data_t *    ppat_data = (pcl_pattern_data_t *)pvpat_data;
+
+    if ((ppat_data->storage != pcds_internal) && (ppat_data->pixinfo.data != 0))
+        gs_free_object(pmem, ppat_data->pixinfo.data, cname);
+    gs_free_object(pmem, pvpat_data, cname);
+}
+
+/*
+ * Build a pattern data structure. This routine is private as pattern data
+ * structures may only be built as part of a pattern.
+ *
+ * All pattern data structure are built as "temporary". Routines that build
+ * internal patterns should modify this as soon as the pattern is built.
+ *
+ * Returns 0 on success, < 0 in the event of an error. In the latter case,
+ * *pppat_data will be set to NULL.
+ */
+  private int
+build_pattern_data(
+    pcl_pattern_data_t **   pppat_data,
+    const gs_depth_bitmap * ppixinfo,
+    pcl_pattern_type_t      type,
+    int                     xres,
+    int                     yres,
+    gs_memory_t *           pmem
+)
+{
+    pcl_pattern_data_t *    ppat_data = 0;
+
+    *pppat_data = 0;
+    rc_alloc_struct_1( ppat_data,
+                       pcl_pattern_data_t,
+                       &st_pattern_data_t,
+                       pmem,
+                       return e_Memory,
+                       "allocate PCL pattern data"
+                       );
+    ppat_data->rc.free = free_pattern_data;
+
+    ppat_data->pixinfo = *ppixinfo;
+    ppat_data->storage = pcds_temporary;
+    ppat_data->type = type;
+    ppat_data->xres = xres;
+    ppat_data->yres = yres;
+
+    *pppat_data = ppat_data;
+    return 0;
+}
+
+/*
+ * Free the rendered portion of a pattern.
+ */
+  private void
+free_pattern_rendering(
+    pcl_pattern_t * pptrn
+)
+{
+    if (pptrn->pccolor != 0) {
+        pcl_ccolor_release(pptrn->pccolor);
+        pptrn->pccolor = 0;
+    }
+}
+
+/*
+ * Free routine for patterns. This is exported for the benefit of the code
+ * that handles PCL built-in patterns.
+ */
+  void
+pcl_pattern_free_pattern(
     gs_memory_t *   pmem,
     void *          pvptrn,
     client_name_t   cname
@@ -79,19 +136,58 @@ free_pattern(
 {
     pcl_pattern_t * pptrn = (pcl_pattern_t *)pvptrn;
 
-    if (pptrn->pixinfo.data != 0)
-        gs_free_object(pmem, pptrn->pixinfo.data, cname);
-    if (pptrn->palette.data != 0)
-        gs_free_string(pmem, pptrn->palette.data, pptrn->palette.size, cname);
-    if (pptrn->pcspace != 0) {
-        gs_cspace_release(pptrn->pcspace);
-        gs_free_object(pmem, (void *)pptrn->pcspace, cname);
-    }
-    if (pptrn->prast != 0)
-        gs_free_object(pmem, (void *)pptrn->prast, cname);
-    if (pptrn->ccolor.pattern != 0)
-        gs_free_object(pmem, pptrn->ccolor.pattern, cname);
+    free_pattern_rendering(pptrn);
+    if (pptrn->ppat_data != 0)
+        pcl_pattern_data_release(pptrn->ppat_data);
     gs_free_object(pmem, pvptrn, cname);
+}
+
+/*
+ * Build a PCL pattern.
+ *
+ * This is expoorted for use by the routines that create the "built in"
+ * patterns.
+ *
+ * Returns 0 if successful, < 0 in the event of an error. In the latter case,
+ * *ppptrn will be set to null.
+ */
+  int
+pcl_pattern_build_pattern(
+    pcl_pattern_t **        ppptrn,
+    const gs_depth_bitmap * ppixinfo,
+    pcl_pattern_type_t      type,
+    int                     xres,
+    int                     yres,
+    gs_memory_t *           pmem
+)
+{
+    pcl_pattern_t *         pptrn = 0;
+    int                     code = 0;
+
+    *ppptrn = 0;
+    pptrn = gs_alloc_struct( pmem,
+                             pcl_pattern_t,
+                             &st_pattern_t,
+                             "create PCL pattern"
+                             );
+    if (pptrn == 0)
+        return e_Memory;
+
+    pptrn->pccolor = 0;
+    code = build_pattern_data( &(pptrn->ppat_data),
+                               ppixinfo,
+                               type,
+                               xres,
+                               yres,
+                               pmem
+                               );
+    if (code < 0) {
+        pcl_pattern_free_pattern(pmem, pptrn, "create PCL pattern");
+        return code;
+    }
+
+    *ppptrn = pptrn;
+    return 0;
 }
 
 /*
@@ -151,14 +247,10 @@ define_pcl_ptrn(
 /*
  * Delete all temporary patterns or all patterns, based on the value of
  * the operand.
- *
- * Because the current color in the graphic state will contain an "uncounted"
- * reference to the current patter in the event that a patterned color space
- * is being used, routines that delete the current patter will always set
- * the color space to be DeviceGray before proceeding.
  */
   private void
 delete_all_pcl_ptrns(
+    bool            renderings,
     bool            tmp_only,
     pcl_state_t *   pcs
 )
@@ -167,15 +259,15 @@ delete_all_pcl_ptrns(
     pl_dict_enum_t  denum;
     gs_const_string plkey;
 
-    (pcl_pattern_get_proc_PCL(pcl_pattern_solid_white))(pcs, 0, 0);
     pl_dict_enum_begin(&pcl_patterns, &denum);
     while (pl_dict_enum_next(&denum, &plkey, (void **)&pptrn)) {
-        if (!tmp_only || (pptrn->storage == pcds_temporary)) {
+        if (!tmp_only || (pptrn->ppat_data->storage == pcds_temporary)) {
             pcl_id_t    key;
 
             id_set_key(key, plkey.data);
             define_pcl_ptrn(id_value(key), NULL);
-        }
+        } else if (renderings)
+            free_pattern_rendering(pptrn);
     }
 }
 
@@ -207,62 +299,9 @@ pcl_pattern_get_gl_uptrn(
 }
 
 /*
- * Allocate a pattern object.
- *
- * Returns 0 on success, < 0 in the event of an error.
- */
-  private int
-allocate_pattern(
-    pcl_pattern_t **    ppptrn,
-    gs_memory_t *       pmem
-)
-{
-    pcl_pattern_t *     pptrn;
-
-    pptrn = gs_alloc_struct( pmem,
-                             pcl_pattern_t,
-                             &st_pattern_t,
-                             "create pattern"
-                             );
-    if (pptrn == 0)
-        return e_Memory;
-
-    pptrn->pixinfo.data = 0;
-    pptrn->pixinfo.raster = 0;
-    pptrn->pixinfo.size.x = 0;
-    pptrn->pixinfo.size.y = 0;
-    pptrn->pixinfo.id = 0;              /* ignored */
-    pptrn->pixinfo.pix_depth = 0;
-    pptrn->pixinfo.num_comps = 1;
-    pptrn->storage = pcds_temporary;
-    pptrn->type = pcl_pattern_colored;  /* place holder */
-    pptrn->xres = 300;
-    pptrn->yres = 300;
-    pptrn->orient = -1;
-    pptrn->pen_num = -1;
-    pptrn->ref_pt.x = 0.0;              /* place holder */
-    pptrn->ref_pt.y = 0.0;              /* place holder */
-    pptrn->cache_id = 0L;
-    pptrn->palette.data = 0;
-    pptrn->palette.size = 0;
-    pptrn->pcspace = 0;
-    pptrn->prast = 0;
-    pptrn->ccolor_id = 0L;
-    pptrn->ccolor.pattern = 0;
-
-    *ppptrn = pptrn;
-    return 0;
-}
-
-/*
  * Create and define a GL/2 user-define pattern. This is the only pattern-
  * control like facility provided for GL/2. To undefine patterns, use null
  * as the second operand. See pcpatrn.h for further information.
- *
- * Because the current color in the graphic state will contain an "uncounted"
- * reference to the current patter in the event that a patterned color space
- * is being used, routines that delete the current patter will always set
- * the color space to be DeviceGray before proceeding.
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
@@ -274,29 +313,33 @@ pcl_pattern_RF(
 )
 {
     pcl_id_t                key;
-    pcl_pattern_t *         pptrn;
+    pcl_pattern_t *         pptrn = 0;
 
     id_set_value(key, indx);
 
-    (pcl_pattern_get_proc_PCL(pcl_pattern_solid_white))(pcs, 0, 0);
     if (ppixmap != 0) {
-        int     code = allocate_pattern(&pptrn, pcs->memory);
+        int     code = pcl_pattern_build_pattern( &pptrn,
+                                                  ppixmap,
+                                                  pcl_pattern_colored,
+                                                  300,
+                                                  300,
+                                                  pcs->memory
+                                                  );
 
         if (code < 0)
             return code;
 
-        pptrn->pixinfo = *ppixmap;
-        pptrn->type = pcl_pattern_colored;
         if (pl_dict_put(&gl_patterns, id_key(key), 2, pptrn) < 0) {
-            gs_free_object(pcs->memory, pptrn, "create GL/2 RF pattern");
+            pcl_pattern_free_pattern( pcs->memory,
+                                      pptrn,
+                                      "create GL/2 RF pattern"
+                                      );
             return e_Memory;
         }
 
-    } else {
-        pptrn = 0;
+    } else
         pl_dict_undef(&gl_patterns, id_key(key), 2);
-    }
-    
+
     if (last_gl2_RF_indx == indx)
         plast_gl2_uptrn = pptrn;
 
@@ -349,8 +392,9 @@ download_pcl_pattern(
 {
     uint                    count = arg_data_size(pargs);
     const pcl_upattern0_t * puptrn0 = (pcl_upattern0_t *)arg_data(pargs);
-    uint                    format, height, width, depth, byte_wid, rsize;
-    byte *                  pb = 0;
+    uint                    format, depth, rsize;
+    gs_depth_bitmap         pixinfo;
+    int                     xres = 300, yres = 300;
     pcl_pattern_t *         pptrn = 0;
     int                     code = 0;
 
@@ -358,54 +402,68 @@ download_pcl_pattern(
 	return e_Range;
 
     format = puptrn0->format;
+    pixinfo.num_comps = 1;
+    pixinfo.size.x = (((uint)puptrn0->width[0]) << 8) + puptrn0->width[1];
+    pixinfo.size.y = (((uint)puptrn0->height[0]) << 8) + puptrn0->height[1];
     depth = puptrn0->depth & 0xf;
-    height = (((uint)puptrn0->height[0]) << 8) + puptrn0->height[1];
-    width = (((uint)puptrn0->width[0]) << 8) + puptrn0->width[1];
+    pixinfo.pix_depth = depth;
+    pixinfo.raster = (pixinfo.size.x * depth + 7) / 8;
+    rsize = pixinfo.raster * pixinfo.size.y;
 
+    /* check for legitimate format */
     if (format == 0) {
         if (depth != 1)
             return e_Range;
-    } else if ( (format != 1) || ((depth != 1) && (depth != 8)) )
+    } else if ( (format != 1)                  ||
+                ((depth != 1) && (depth != 8)) ||
+                (pixinfo.size.x == 0)          ||
+                (pixinfo.size.y == 0)            )
         return e_Range;
 
-    byte_wid = (width * depth + 7) / 8;
-    rsize = byte_wid * height;
-
-    /* note: HPS allows count < rsize + 8 */
-
-    pb = gs_alloc_bytes(pcs->memory, byte_wid * height, "download pcl pattern");
-    if (pb == 0)
+    /* allocate space for the array */
+    pixinfo.data = gs_alloc_bytes(pcs->memory, rsize, "download PCL pattern");
+    if (pixinfo.data == 0)
         return e_Memory;
-    if ((code = allocate_pattern(&pptrn, pcs->memory)) < 0) {
-        gs_free_object(pcs->memory, pb, "download pcl pattern");
-        return code;
-    }
 
-    pptrn->pixinfo.data = pb;
-    pptrn->pixinfo.raster = byte_wid;
-    pptrn->pixinfo.size.x = width;
-    pptrn->pixinfo.size.y = height;
-    pptrn->pixinfo.pix_depth = depth;
-
-    pptrn->type = (format == 1 ? pcl_pattern_colored : pcl_pattern_uncolored);
-
+    /* check for resolution fields; note that HP allows count < rsize + 8 */
     if (count >= rsize + 12) {
         pcl_upattern1_t *   puptrn1 = (pcl_upattern1_t *)puptrn0;
 
-        pptrn->xres = (((uint)puptrn1->xres[0]) << 8) + puptrn1->xres[1];
-        pptrn->yres = (((uint)puptrn1->yres[0]) << 8) + puptrn1->yres[1];
-        memcpy(pb, puptrn1->data, rsize);
+        xres = (((uint)puptrn1->xres[0]) << 8) + puptrn1->xres[1];
+        yres = (((uint)puptrn1->yres[0]) << 8) + puptrn1->yres[1];
+        memcpy(pixinfo.data, puptrn1->data, rsize);
+
     } else {
         uint    tmp_cnt = min(count - 8, rsize);
 
-        memcpy(pb, puptrn0->data, tmp_cnt);
+        memcpy(pixinfo.data, puptrn0->data, tmp_cnt);
         if (tmp_cnt < rsize)
-            memset(pb, 0, rsize - tmp_cnt);
+            memset(pixinfo.data + tmp_cnt, 0, rsize - tmp_cnt);
     }
 
-    /* this may release a pattern: clear current color in gstate */
-    (pcl_pattern_get_proc_PCL(pcl_pattern_solid_white))(pcs, 0, 0);
-    return define_pcl_ptrn(pcs->pattern_id, pptrn);
+    /* build the pattern */
+    code = pcl_pattern_build_pattern( &(pptrn),
+                                      &pixinfo,
+                                      (format == 1 ? pcl_pattern_colored 
+                                                   : pcl_pattern_uncolored),
+                                      xres,
+                                      yres,
+                                      pcs->memory
+                                      );
+
+    /* place the pattern into the pattern dictionary */
+    if ( (code < 0)                                            ||
+         ((code = define_pcl_ptrn(pcs->pattern_id, pptrn)) < 0)  ) {
+        if (pptrn != 0)
+            pcl_pattern_free_pattern(pcs->memory, pptrn, "download PCL pattern");
+        else
+            gs_free_object( pcs->memory,
+                            (void *)pixinfo.data,
+                            "download PCL pattern"
+                            );
+    }
+
+    return code;
 }
 
 /*
@@ -425,32 +483,30 @@ pattern_control(
 
         /* delete all patterns */
       case 0:
-        delete_all_pcl_ptrns(false, pcs);
+        delete_all_pcl_ptrns(false, false, pcs);
         break;
 
         /* delete all temporary patterns */
       case 1:
-        delete_all_pcl_ptrns(true, pcs);
+        delete_all_pcl_ptrns(false, true, pcs);
         break;
 
         /* delete last specified pattern */
       case 2:
-        /* this may release a pattern: clear current color in gstate */
-        (pcl_pattern_get_proc_PCL(pcl_pattern_solid_white))(pcs, 0, 0);
         define_pcl_ptrn(pcs->pattern_id, NULL);
 
         /* make last specified pattern temporary */
       case 4:
         pptrn = pcl_pattern_get_pcl_uptrn(pcs->pattern_id);
         if (pptrn != 0)
-            pptrn->storage = pcds_temporary;
+            pptrn->ppat_data->storage = pcds_temporary;
         break;
 
         /* make last specified pattern permanent */
       case 5:
         pptrn = pcl_pattern_get_pcl_uptrn(pcs->pattern_id);
         if (pptrn != 0)
-            pptrn->storage = pcds_permanent;
+            pptrn->ppat_data->storage = pcds_permanent;
         break;
 
       default:
@@ -491,16 +547,18 @@ upattern_do_reset(
 )
 {
     if ((type & pcl_reset_initial) != 0) {
-        pl_dict_init(&pcl_patterns, pcs->memory, free_pattern);
-        pl_dict_init(&gl_patterns, pcs->memory, free_pattern);
+        pl_dict_init(&pcl_patterns, pcs->memory, pcl_pattern_free_pattern);
+        pl_dict_init(&gl_patterns, pcs->memory, pcl_pattern_free_pattern);
         last_pcl_uptrn_id = -1;
         plast_pcl_uptrn = 0;
         last_gl2_RF_indx = -1;
         plast_gl2_uptrn = 0;
-    }
-    else if ((type & (pcl_reset_cold | pcl_reset_printer)) != 0)
-        delete_all_pcl_ptrns(true, pcs);
+
+    } else if ((type & (pcl_reset_cold | pcl_reset_printer)) != 0) {
+        delete_all_pcl_ptrns(true, true, pcs);
+        pcl_pattern_clear_bi_patterns();
         /* GL's IN command takes care of the GL patterns */
+    }
 }
 
 const pcl_init_t    pcl_upattern_init = { upattern_do_init, upattern_do_reset };

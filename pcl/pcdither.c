@@ -85,11 +85,11 @@ download_dither_matrix(
     nplanes = ptbl->nplanes;
     h = (ptbl->height[0] << 8) + ptbl->height[1];
     w = (ptbl->width[0] << 8) + ptbl->width[1];
-    rlen = nplanes * h * w + 7;
+    rlen = nplanes * h * w + 6;
     if ( ((nplanes != 1) && (nplanes != 3)) ||
          (h == 0)                           ||
          (w == 0)                           ||
-         (len < nplanes * h * w + 6)          )
+         (len < rlen)                         )
         return e_Range;
 
     rc_alloc_struct_1( pdither,

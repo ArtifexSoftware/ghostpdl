@@ -18,17 +18,16 @@
  * all copies.
  */
 
-/* pcpatrn.h - code for PCL and GL/2 patterns, including color */
+/* pcpatrn.h - PCL/GL client color and pattern code */
 
 #ifndef pcpatrn_INCLUDED
 #define pcpatrn_INCLUDED
 
 #include "gx.h"
 #include "gsstruct.h"
-#include "gsbitmap.h"
-#include "gscspace.h"
-#include "pcstate.h"
-#include "pcommand.h"
+#include "gsrefct.h"
+#include "pcindexed.h"
+#include "pccsbase.h"
 
 /*
  * PCL pattern types.
@@ -55,101 +54,225 @@ typedef enum {
 } pcl_pattern_type_t;
 
 /*
- * The PCL pattern structure as used by the drawing code. These objects 
- * are not reference counted as they are either statically allocated (the 
- * PCL built-in patterns) or held only by one of the pattern dictionaries 
- * (GL/2 or PCL).
+ * The pattern data structure. This includes the pattern data, dimensions,
+ * type, and implied resolution.
  *
- * The pcl_entity_common field is a temporary/permanent indicator. Such an
- * indicator occurs in all "conventional" PCL resource types.
- *
- * The type field indicates the PCL pattern type: colored or uncolored (both
- * are implemented as colored patterns; see comment above);
- *
- * The pxinfo field is a graphic library client-bitmap structure (i.e.:
- * scanlines are only byte-aligned). This structure is passed to
- * gs_makepixmappattern to build the pattern representation.
- *
- * The orient flag indicates the orientation (0 to 3) for which the pattern was
- * rendered;* a value of -1 indicates that the pattern has never been rendered,
- * and hence the remaining rendering-specific parameters are irrelevant.
- *
- * The palette string holds the 2-entry palette that is required for rendering
- * uncolored patterns. This will always be a zero-length string for colored
- * patterns.
- *
- * The pcspace field is a pointer to the indexed color space used to render
- * this pattern. This is needed only for the 2-entry color space required for
- * uncolored patterns, as otherwise the color space might be deleted before
- * the pattern is rendered.
- *
- * The prast field is used only for colored patterns, and holds a copy of the
- * pixmap raster data if one was required for the rendered version of the
- * pattern. This handles the unusual case in which the raster data for a
- * colored pattern had to be copied because the palette it was being rendered
- * with had more than one white entry.
- *
- * The pen_num field indicates if the pattern was last rendered for GL/2 and,
- * if so, which pen (palette entry) is to be considered the foreground color.
- * If its value is -1, it indicates that the pattern was last rendered for
- * PCL. If it is >= 0, it is the pen number that was current the last time
- * the pattern was rendered. This is significant for uncolored patterns, which
- * adopt the foreground color when rendered in PCL, but the current pen when
- * rendered in GL/2. The variable is ignored for colored patterns
- *
- * The interpretation of cache_id varies based on the pattern type, and whether
- * penum is -1 or >= 0:
- *
- *     For uncolored patterns rendered in PCL, it is the identifier of the
- *         foreground whose attributes were used in the rendering
- *
- *     For colored patterns and uncolored patterns rendered in GL/2, it is
- *         the identifier of the palette for which the pattern was rendered;
- *
- * The ccolor_id field is the identifier assigned to the rendered pattern
- * itself. Once the accuracy of the rendered pattern has been established
- * via the other parameters, this parameter can be checked against the
- * pattern_id field of the PCL state to see if the pattern must be re-inserted
- * into the graphic state.
+ * It is not strictly necessary that this structure be reference counted, as
+ * there is no chance that any unrendered objects will make use of the deleted
+ * pattern. The use of reference counts makes for a more consistent
+ * implementation, however, and leaves open the possibility of subsequent
+ * implementations that may involve delayed rendering.
  */
-typedef struct pcl_pattern_s {
+typedef struct pcl_pattern_data_s {
     gs_depth_bitmap     pixinfo;    /* pixmap information; must be first */
-    pcl_entity_common;              /* temporary/permanent flag */
+    pcl_entity_common;              /* temporary/permanent/internal flag */
+    rc_header           rc;
     pcl_pattern_type_t  type;       /* pattern type */
     int                 xres;       /* intended resolution for pattern */
     int                 yres;
+} pcl_pattern_data_t;
 
-    /* the following paramters refer to renderings of the pattern */
-    short               orient;     /* orientation for rendering [0, 3], or -1 */
-    short               pen_num;    /* GL/2 pen for rendering, or -1 */
-    gs_point            ref_pt;     /* reference point (device space) */
-    pcl_gsid_t          cache_id;   /* palette or foreground id. */
-    gs_string           palette;    /* 2-entry palette for uncolored patterns */
-    gs_color_space *    pcspace;    /* 2-entry color space for pattern */
-    const byte *        prast;      /* copy of raster (colored patterns) */
-    pcl_gsid_t          ccolor_id;  /* id of the pattern, as a color */
-    gs_client_color     ccolor;     /* the rendered pattern, as a color */
-} pcl_pattern_t;
-    
-#define private_st_pattern_t()                          \
-    gs_private_st_composite( st_pattern_t,              \
-                             pcl_pattern_t,             \
-                             "PCL-GL/2 pattern object", \
-                             pattern_enum_ptrs,         \
-                             pattern_reloc_ptrs         \
-                             )
+#define private_st_pattern_data_t() /* in pcuptrn.c */  \
+    gs_private_st_suffix_add0( st_pattern_data_t,       \
+                               pcl_pattern_data_t,      \
+                               "PCL/GL pattern data",   \
+                               pattern_data_enum_ptrs,  \
+                               pattern_data_reloc_ptrs, \
+                               st_gs_depth_bitmap       \
+                               )
 
 /*
- * The usual copy, init, and release macros. Note that since the object is
- * not reference counted, the release operation does nothing: a pattern may
- * only be released by undefining (or redefining) the entry with the
- * associated pattern id in the user defined pattern dictionary. Hence,
- * statically defined patterns are never released, which is the desired
- * result.
+ * The usual copy, init, and release macros.
  */
-#define pcl_pattern_init_from(pto, pfrom)   (pto) = (pfrom)
-#define pcl_pattern_copy_from(pto, pfrom)   (pto) = (pfrom)
-#define pcl_pattern_release(ppatrn)
+#define pcl_pattern_data_init_from(pto, pfrom)  \
+    BEGIN                                       \
+    rc_increment(pfrom);                        \
+    (pto) = (pfrom);                            \
+    END
+
+#define pcl_pattern_data_copy_from(pto, pfrom)          \
+    BEGIN                                               \
+    if ((pto) != (pfrom)) {                             \
+        rc_increment(pfrom);                            \
+        rc_decrement(pto, "pcl_pattern_data_copy_from");\
+        (pto) = (pfrom);                                \
+    }                                                   \
+    END
+
+#define pcl_pattern_data_release(ppat_data)             \
+    rc_decrement(ppat_data, "pcl_pattern_data_release")
+
+
+
+/* forward declaration */
+#ifndef pcl_ccolor_DEFINED
+#define pcl_ccolor_DEFINED
+typedef struct pcl_ccolor_s     pcl_ccolor_t;
+#endif
+
+/*
+ * The pattern structure. This is not reference counted, as the only place it
+ * is referred to is the pattern dictionary.
+ *
+ * The primary purpose for this structure is to handle cahcing of pattern
+ * instances. The various "render key" field values are used to identify
+ * the environment for which the client color pointed to by pccolor is
+ * rendered for:
+ *
+ *    The transp bit indicates the transparency of the render (pattern
+ *        transparent (true) or pattern opaque (false).
+ *
+ *    The orient field indicates the orientation of the rendering, in
+ *        the range 0 to 3.
+ *
+ *    The pen field is used only for uncolored patterns rendered in GL/2;
+ *        it indicates the palette entry to be used as the foreground
+ *        color. For color patterns or uncolored patterns rendered in PCL,
+ *        this field will be 0. The value 0 is also valid for GL/2, but
+ *        this causesno difficulty as uncolored patterns rendered in GL/2
+ *        use the current palette, while those rendered in PCL use the
+ *        current foreground. Hence, the cache_id will never be the same
+ *        for both cases.
+ *
+ *    cache_id is the identifier of either the foreground or palette used
+ *        to render the pattern. The foreground is used for uncolored patterns
+ *        rendered in PCL, while the palette is used for uncolored patterns
+ *        rendered in GL/2 and all colored patterns. Because foregrounds and
+ *        palettes are never given the same identifier, there is no need to
+ *        distinguish gave rise to the cache_id value.
+ */
+typedef struct pcl_pattern_t {
+    pcl_pattern_data_t *    ppat_data;
+
+    /* rendering information */
+    pcl_ccolor_t *          pccolor;   /* rendered instance, if any */
+
+    /* "rendered key" */
+    uint                    transp:1;  /* transparency of rendering */
+    uint                    orient:2;  /* orientation of rendering */
+    uint                    pen:8;     /* 0 for PCL or colored patterns */
+    pcl_gsid_t              cache_id;  /* foreground or palette */
+    gs_point                ref_pt;    /* referenc point (device space) */
+} pcl_pattern_t;
+
+#define private_st_pattern_t()  /* in pcuptrn.c */  \
+    gs_private_st_ptrs2( st_pattern_t,              \
+                         pcl_pattern_t,             \
+                         "PCL/GL pattern",          \
+                         pattern_enum_ptrs,         \
+                         pattern_reloc_ptrs,        \
+                         ppat_data,                 \
+                         pccolor                    \
+                         )
+
+
+/*
+ * The PCL structure corresponding to the graphic library's client color
+ * structure. The latter potentially contains a client data structure pointer
+ * (for pattern colors) which it does not (an cannot) take ownership of. To
+ * release the associated memory at the correct time, it is necessary to build
+ * a parallel structure which has ownership of the client data, and which
+ * can be kept in a one-to-one relationship with the graphic library client
+ * color structure.
+ *
+ * The interpretation of the various fields varies by color type:
+ *
+ *    For pcl_ccolor_unpatterned:
+ *
+ *      ppat_data == NULL,
+ *
+ *      one of pindexed or pbase points to the current color space (the other
+ *          is NULL)
+ *
+ *      ccolor.paint.values[0] or ccolor.paint.values[0..2] holds the
+ *          color component values
+ *
+ *      ccolor.pattern == NULL
+ *
+ *    For pcl_ccolor_mask_pattern:
+ *
+ *      ppat_data points to the pattern data
+ *
+ *      one of pindexed or pbase points to the base color space of the
+ *          pattern color space (the other is NULL)
+ * 
+ *      ccolor.paint.values[0] or ccolor.paint.values[0..2] holds the
+ *         color values to be use for the pattern foreground
+ *
+ *      ccolor.pattern points to the pattern instance
+ *
+ *    For pcl_ccolor_colored_pattern
+ *
+ *      ppat_data points to the pattern data
+ *
+ *      pindexed points to the base color space of the pattern
+ *
+ *      pbase == NULL,
+ *
+ *      ccolor.paint is ignored
+ *
+ *      ccolor.pattern points to the pattern instance
+ *
+ * Not that exactly one of pbase or pindexed will ever be non-NULL.
+ *
+ * The prast data is used only for colored patterns. When these are rendered
+ * with transparency on, difficulties might arise because there is more than
+ * one "white" value in the palette of the indexed color space pointed to by
+ * pindexed. Since the ImageType 4 rendering mechanism used to implement
+ * transaprent colored patterns cannot accommodate multiple non-contiguous
+ * while values, the pattern data must be copied and all white values mapped
+ * to a unique white value. The prast pointer points to this remapped array.
+ */
+
+typedef enum {
+    pcl_ccolor_unpatterned = 0,
+    pcl_ccolor_mask_pattern,
+    pcl_ccolor_colored_pattern
+} pcl_ccolor_type_t;
+
+struct  pcl_ccolor_s {
+    rc_header               rc;
+    pcl_ccolor_type_t       type;
+    pcl_pattern_data_t *    ppat_data;  
+    pcl_cs_indexed_t *      pindexed;
+    pcl_cs_base_t *         pbase;
+    const byte *            prast;
+    gs_client_color         ccolor;
+};
+
+#define private_st_ccolor_t()               \
+    gs_private_st_ptrs4( st_ccolor_t,       \
+                         pcl_ccolor_t,      \
+                         "PCL client color",\
+                         ccolor_enum_ptrs,  \
+                         ccolor_reloc_ptrs, \
+                         ppat_data,         \
+                         pindexed,          \
+                         pbase,             \
+                         ccolor.pattern     \
+                         )
+
+/*
+ * The usual copy, init, and release macros.
+ */
+#define pcl_ccolor_init_from(pto, pfrom)    \
+    BEGIN                                   \
+    rc_increment(pfrom);                    \
+    (pto) = (pfrom);                        \
+    END
+
+#define pcl_ccolor_copy_from(pto, pfrom)            \
+    BEGIN                                           \
+    if ((pto) != (pfrom)) {                         \
+        rc_increment(pfrom);                        \
+        rc_decrement(pto, "pcl_ccolor_copy_from");  \
+        (pto) = (pfrom);                            \
+    }                                               \
+    END
+
+#define pcl_ccolor_release(pccolor)             \
+    rc_decrement(pccolor, "pcl_ccolor_release")
+
 
 /*
  * Create a colored pcl_pattern_t object from a gs_depth_bitmap object. This

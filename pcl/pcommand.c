@@ -13,6 +13,7 @@
 #include "pcommand.h"
 #include "pcstate.h"
 #include "pcparam.h"
+#include "pcident.h"
 
 /* Get the command argument as an int, uint, or float. */
 int
@@ -85,4 +86,45 @@ pcl_do_resets(pcl_state_t *pcls, pcl_reset_type_t type)
 	  if ( (*init)->do_reset )
 	    (*(*init)->do_reset)(pcls, type);
 	return code;
+}
+
+
+/*
+ * "Cold start" initialization of the graphic state. This is provided as a
+ * special routine to avoid (as much as possible) order depedencies in the
+ * various reset routines used by individual modules. Some of the values
+ * selected may be subsequently overridden by the reset routines; this code
+ * just attempts to set them to reasonable values.
+ */
+  void
+pcl_init_state(
+    pcl_state_t *   pcs,
+    gs_memory_t *   pmem
+)
+{
+    /* start off setting everything to 0 */
+    memset(pcs, 0, sizeof(pcl_state_t));
+
+    /* some elementary fields */
+    pcs->memory = pmem;
+    pcs->num_copies = 1;
+    pcs->output_bin = 1;
+    pcs->uom_cp = 7200L / 300L;
+
+    pcs->perforation_skip = 1;
+
+    pcs->font_id_type = numeric_id;
+    pcs->macro_id_type = numeric_id;
+
+    pcs->rotate_patterns = true;
+    pcs->source_transparent = true;
+    pcs->pattern_transparent = true;
+
+    pcs->logical_op = 252;
+    pcs->grid_adjust = 0.4;
+
+    pcl_init_gstate_stk(pcs);
+
+    /* the PCL identifier mechanism is not strictly part of the state */
+    pcl_init_id();
 }

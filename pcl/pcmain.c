@@ -48,12 +48,14 @@
 #include "gsparam.h"
 #include "gsstate.h"
 #include "gscoord.h"
+#include "gsrop.h"
 #include "gspath.h"
 #include "gxalloc.h"
 #include "gxdevice.h"
 #include "gxstate.h"
 #include "gdevbbox.h"
 #include "pjparse.h"
+#include "pgmand.h"
 #include "plmain.h"
 
 /*#define BUFFER_SIZE 1024*/	/* minimum is 17 */
@@ -199,17 +201,15 @@ main(
 
     pl_main_make_gstate(&inst, &pgs);
 
-    /* initialize the pcl identifier mechanism */
-    pcl_init_id();
-
     /****** SHOULD HAVE A STRUCT DESCRIPTOR ******/
     pcls = (pcl_state_t *)gs_alloc_bytes( mem,
                                           sizeof(pcl_state_t),
     				          "main(pcl_state_t)"
                                           );
+    pcl_init_state(pcls, mem);
     gs_state_set_client(pgs, pcls, &pcl_gstate_procs);
 
-    /* Set the default CTM for H-P coordinates. */
+    /* Set the default CTM for H-P coordinates (centi-points, 7200 per inch. */
     gs_clippath(pgs);
     {
         gs_rect bbox;
@@ -227,20 +227,17 @@ main(
         gs_setdefaultmatrix(pgs, &mat);
     }
 
+    /* PCL no longer uses the graphic library transparency mechanism */
+    gs_setsourcetransparent(pgs, false);
+    gs_settexturetransparent(pgs, false);
+
     gs_gsave(pgs);
 
     /* We want all gstates to share the same "client data".... */
     gs_state_set_client(pgs, pcls, &pcl_gstate_procs);
     gs_erasepage(pgs);
-    pcls->memory = mem;
     pcls->client_data = &inst;
     pcls->pgs = pgs;
-
-    /* clear the graphic state color, color space, halftone and CRD id.'s */
-    pcls->ids.pattern_id = 0L;
-    pcls->ids.cspace_id = 0L;
-    pcls->ids.ht_id = 0L;
-    pcls->ids.crd_id = 0L;
 
     /* assume no appletalk configuration routine */
     pcls->configure_appletalk = 0;
@@ -249,6 +246,7 @@ main(
     {
         const pcl_init_t ** init;
 
+        hpgl_init_command_index();
         for (init = pcl_init_table; *init; ++init) {
             if ( (*init)->do_init ) {
                 int     code = (*(*init)->do_init)(mem);

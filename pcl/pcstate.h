@@ -62,6 +62,23 @@ typedef struct pcl_state_s  pcl_state_t;
 typedef struct gs_state_s   gs_state;
 #endif
 
+/*
+ * The routines pcl_gsave and pcl_grestore should be used instead of
+ * gs_gsave and gs_grestore. See the comment in pcdraw.c for details.
+ *
+ * The routine pcl_init_gstate_stk must be called once a boot time to
+ * intialize PCL graphics state stack tracking mechanism.
+ */
+extern  int     pcl_gsave( pcl_state_t * pcs );
+extern  int     pcl_grestore( pcl_state_t * pcs );
+extern  void    pcl_init_gstate_stk( pcl_state_t * pcs );
+
+/*
+ * "Cold start" initialization for the graphic state.
+ */
+extern  void    pcl_init_state( pcl_state_t * pcs, gs_memory_t * pmem );
+
+
 #include "pgstate.h"	    /* HP-GL/2 state */
 
 /*
@@ -70,6 +87,9 @@ typedef struct gs_state_s   gs_state;
  * poorly organized.  In order to have a ghost (:-)) of a chance of being
  * able to think about it as a whole, we've organized it here by
  * documentation chapter, just as we did the .c files.
+ *
+ * NB: If you modify this structure, be sure to also modify the routine
+ *     pcl_init_state in pcommand.c.
  */
 struct pcl_state_s {
 
@@ -227,7 +247,7 @@ struct pcl_state_s {
     int                 ctrl_palette_id;
     pcl_palette_t *     ppalet;
     pcl_frgrnd_t *      pfrgrnd;
-    pcl_gstate_ids_t    ids;
+    pcl_gstate_ids_t *  pids;
 
     /* Chapter C5 (pccprint.c) */
     byte            logical_op;	    /* (also in graphics state) */

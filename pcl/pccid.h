@@ -39,6 +39,7 @@ typedef unsigned short  uint16;
  * These values are defined by HP.
  */
 typedef enum {
+    pcl_cspace_White = -1,
     pcl_cspace_RGB = 0,
     pcl_cspace_CMY = 1,
     pcl_cspace_Colorimetric = 2,

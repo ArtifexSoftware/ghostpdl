@@ -73,13 +73,9 @@ typedef struct pcl_cs_client_data_s {
  * (there is no particular reason it could not be a separation of DeviceN
  * color space, but these are not required by the current PCL 5c
  * specification.)
- *
- * The identifier field is used to determine if a base color space has changed,
- * and thus if items dependent on that color space have changed.
  */
 typedef struct pcl_cs_base_s {
     rc_header               rc;
-    pcl_gsid_t              id;
     pcl_cspace_type_t       type;
     pcl_cs_client_data_t    client_data;
     gs_color_space *        pcspace;
@@ -130,6 +126,18 @@ extern  int     pcl_cs_base_build_cspace(
     pcl_cs_base_t **        ppbase,
     const pcl_cid_data_t *  pcid,
     gs_memory_t *           pmem
+);
+
+/*
+ * Build a special base color space, used for setting the color white.
+ * This base space is unique in that it uses the DeviceGray graphic library
+ * color space.
+ *
+ * This routine is usually called once at initialization.
+ */
+extern  int     pcl_cs_base_build_white_cspace(
+    pcl_cs_base_t **    ppbase,
+    gs_memory_t *       pmem
 );
 
 /*

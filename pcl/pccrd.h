@@ -58,12 +58,11 @@
  * already uses the default view illuminant is once again set to use this 
  * view illuminant.
  */
-typedef struct pcl_crd_s {
+struct pcl_crd_s {
     rc_header         rc;
     bool              is_dflt_illum;
-    pcl_gsid_t        id;             
     gs_cie_render *   pgscrd;
-} pcl_crd_t;
+};
 
 #define private_st_crd_t()                                  \
     gs_private_st_ptrs1( st_crd_t,                          \
@@ -73,6 +72,11 @@ typedef struct pcl_crd_s {
                          crd_reloc_ptrs,                    \
                          pgscrd                             \
                          )
+
+#ifndef pcl_crd_DEFINED
+#define pcl_crd_DEFINED
+typedef struct pcl_crd_s        pcl_crd_t;
+#endif
 
 /*
  * The usual copy, init, and release macros.

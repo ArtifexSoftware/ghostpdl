@@ -4,19 +4,24 @@
 # pcl_sgi.mak
 # Top-level makefile for PCL5* on Silicon Graphics Irix 6.x platforms.
 
-# Define the name of this makefile.
-MAKEFILE    = ../pcl/pcl_sgi.mak
-
 # Directories
-GSDIR       = ../gs528
-GSSRCDIR    = ../gs528
+GLSRCDIR    = ../gs
+GLGENDIR    = $(GLSRCDIR)
+GLOBJDIR    = $(GLSRCDIR)
+
 PLSRCDIR    = ../pl
-PLGENDIR    = ../pl
-PLOBJDIR    = ../pl
-PCLSRCDIR   = ../pcl_new
-PCLGENDIR   = ../pcl_new
-PCLOBJDIR   = ../pcl_new
+PLGENDIR    = $(PLSRCDIR)
+PLOBJDIR    = $(PLSRCDIR)
+
+PCLSRCDIR   = ../pcl
+PCLGENDIR   = $(PCLSRCDIR)
+PCLOBJDIR   = $(PCLSRCDIR)
+GENDIR      = $(PCLSRCDIR)
+
 COMMONDIR   = ../common
+
+# Define the name of this makefile.
+MAKEFILE    = $(PCLSRCDIR)/pcl_sgi.mak
 
 # Language and configuration.  These are actually platform-independent,
 # but we define them here just to keep all parameters in one place.
@@ -36,14 +41,13 @@ MAIN_OBJ    = $(PCLOBJDIR)/pcmain.$(OBJ)
 #     1506 - loss of precision on implicit rounding
 #
 CDEFS       = -DSYSV
-SGICFLAGS   = -mips4 -n32 -fullwarn             \
-              -woff 1506 -woff 1174 -woff 1209  \
-              $(CDEFS) $(XCFLAGS)
-CFLAGS      = -g $(SGICFLAGS) $(XCFLAGS)
+XCFLAGS     =
+SGICFLAGS   = -mips4 -n32 -fullwarn -woff 1506 -woff 1174 -woff 1209
+CFLAGS      = -g $(CDEFS) $(SGICFLAGS) $(XCFLAGS)
 LDFLAGS     = -n32 -mips4 $(XLDFLAGS)
 EXTRALIBS   =
 XINCLUDE    = -I/usr/include
-XLIBDIRS    = -L/usr/lib32
+XLIBDIRS    =
 XLIBDIR     =
 XLIBS       = Xt SM ICE X11
 
@@ -54,6 +58,7 @@ DEVICE_DEVS = x11mono.dev   \
               x11alpha.dev  \
               x11cmyk.dev   \
               ljet4.dev     \
+              paintjet.dev  \
               pbmraw.dev
 
 

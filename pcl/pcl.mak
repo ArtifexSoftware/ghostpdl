@@ -3,8 +3,6 @@
 
 # makefile for PCL5*, HP RTL, and HP-GL/2 interpreters
 # Users of this makefile must define the following:
-#	GLSRCDIR - the GS library source directory
-#	GLGENDIR - the GS library generated file directory
 #	GSSRCDIR - the GS library source directory
 #	PLSRCDIR - the PCL* support library source directory
 #	PLOBJDIR - the object directory for the PCL support library
@@ -46,7 +44,7 @@ PCLGEN      = $(PCLGENDIR)$(D)
 PCLOBJ      = $(PCLOBJDIR)$(D)
 PCLO_       = $(O_)$(PCLOBJ)
 
-PCLCCC  = $(CCC) -I$(PCLSRCDIR) -I$(PCLGENDIR) -I$(PLSRCDIR) -I$(GLSRCDIR) -I$(GLGENDIR) $(C_)
+PCLCCC  = $(CCC) -I$(PCLSRCDIR) -I$(PCLGENDIR) -I$(PLSRCDIR) -I$(GLSRCDIR) $(C_)
 
 # Define the name of this makefile.
 PCL_MAK     = $(PCLSRC)pcl.mak
@@ -56,11 +54,8 @@ pcl.clean: pcl.config-clean pcl.clean-not-config-clean
 pcl.clean-not-config-clean:
 	$(RM_) $(PCLOBJ)*.$(OBJ)
 
-#devices are still created in the current directory.  Until that is
-#fixed we will have to remove them from both directores.
 pcl.config-clean:
 	$(RM_) $(PCLOBJ)*.dev
-	$(RM_) *.dev
 
 ################ Remaining task list:
 # PCL5C drawing commands
@@ -90,14 +85,13 @@ pcfontst_h  = $(PCLSRC)pcfontst.h \
               $(gx_h)             \
               $(plfont_h)
 
-pctmp_h     = $(PCLSRC)pctpm.h    \
+pctpm_h     = $(PCLSRC)pctpm.h    \
               $(gx_h)
 
 pcident_h   = $(PCLSRC)pcident.h  \
               $(gx_h)
 
-pcpattyp_h  = $(PCLSRC)pcpattyp.h \
-              $(pcident_h)
+pcpattyp_h  = $(PCLSRC)pcpattyp.h
 
 pcdict_h    = $(PCLSRC)pcdict.h   \
               $(gx_h)
@@ -162,6 +156,7 @@ pcdraw_h    = $(PCLSRC)pcdraw.h   \
               $(pcstate_h)
 
 pcfont_h    = $(PCLSRC)pcfont.h   \
+              $(pcstate_h)        \
               $(plfont_h)
 
 pclookup_h  = $(PCLSRC)pclookup.h \
@@ -230,7 +225,7 @@ pcfrgrnd_h  = $(PCLSRC)pcfrgrnd.h \
               $(pccrd_h)          \
               $(pcpalet_h)
 
-pcpage_h    = $(PCLSRC)pcpage.h  \
+pcpage_h    = $(PCLSRC)/pcpage.h  \
               $(pcstate_h)        \
               $(pcommand_h)
 
@@ -244,10 +239,9 @@ pcparse_h   = $(PCLSRC)pcparse.h  \
 pcpatrn_h   = $(PCLSRC)pcpatrn.h  \
               $(gx_h)             \
               $(gsstruct_h)       \
-              $(gsbitmap_h)       \
-              $(gscspace_h)       \
-              $(pcstate_h)        \
-              $(pcommand_h)
+              $(gsrefct_h)        \
+              $(pcindexed_h)      \
+              $(pccsbase_h)
 
 pcbiptrn_h  = $(PCLSRC)pcbiptrn.h \
               $(pcpatrn_h)
@@ -276,6 +270,7 @@ pcwhtindx_h = $(PCLSRC)pcwhtindx.h\
               $(pcindexed_h)
 
 rtgmode_h   = $(PCLSRC)rtgmode.h  \
+              $(rtrstst_h)        \
               $(pcstate_h)        \
               $(pcommand_h)
 
@@ -297,16 +292,20 @@ $(PCLOBJ)pcommand.$(OBJ): $(PCLSRC)pcommand.c   \
                           $(gxstate_h)          \
                           $(pcommand_h)         \
                           $(pcstate_h)          \
-                          $(pcparam_h)
+                          $(pcparam_h)          \
+                          $(pcident_h)
 	$(PCLCCC) $(PCLSRC)pcommand.c $(PCLO_)pcommand.$(OBJ)
 
 $(PCLOBJ)pcdraw.$(OBJ): $(PCLSRC)pcdraw.c   \
                         $(gx_h)             \
                         $(gsmatrix_h)       \
+                        $(gscoord_h)        \
                         $(gsstate_h)        \
                         $(gsrop_h)          \
                         $(gxfixed_h)        \
                         $(pcstate_h)        \
+                        $(pcht_h)           \
+                        $(pccrd_h)          \
                         $(pcpatrn_h)        \
                         $(pcdraw_h)
 	$(PCLCCC) $(PCLSRC)pcdraw.c $(PCLO_)pcdraw.$(OBJ)
@@ -353,7 +352,9 @@ pgmand_h    = $(PCLSRC)pgmand.h   \
 #### Monochrome commands
 # These are organized by chapter # in the PCL 5 Technical Reference Manual.
 
-rtraster_h  = $(PCLSRC)rtraster.h
+rtraster_h  = $(PCLSRC)rtraster.h   \
+              $(pcstate_h)          \
+              $(pcommand_h)
 
 # Chapters 4, 13, 18, and Comparison Guide
 $(PCLOBJ)rtmisc.$(OBJ): $(PCLSRC)rtmisc.c   \
@@ -413,6 +414,7 @@ $(PCLOBJ)rtlbase.dev: $(PCL_MAK) $(ECHOGS_XE) $(rtlbase_) $(PCLOBJ)pcl5base.dev
 # Chapter 2, 3, 4, 5
 $(PCLOBJ)pcbiptrn.$(OBJ): $(PCLSRC)pcbiptrn.c   \
                           $(pcpatrn_h)          \
+                          $(pcuptrn_h)          \
                           $(pcbiptrn_h)
 	$(PCLCCC) $(PCLSRC)pcbiptrn.c $(PCLO_)pcbiptrn.$(OBJ)
 
@@ -553,6 +555,7 @@ $(PCLOBJ)pcuptrn.$(OBJ): $(PCLSRC)pcuptrn.c \
                          $(pldict_h)        \
                          $(pcindexed_h)     \
                          $(pcpatrn_h)       \
+                         $(pcbiptrn_h)      \
                          $(pcuptrn_h)
 	$(PCLCCC) $(PCLSRC)pcuptrn.c $(PCLO_)pcuptrn.$(OBJ)
 
@@ -633,7 +636,8 @@ $(PCLOBJ)hprtlc.dev: $(PCL_MAK) $(ECHOGS_XE) $(PCLOBJ)rtlbasec.dev
 
 #### Shared support
 
-pcfsel_h    = $(PCLSRC)pcfsel.h
+pcfsel_h    = $(PCLSRC)pcfsel.h   \
+              $(pcstate_h)
 
 pcsymbol_h  = $(PCLSRC)pcsymbol.h \
               $(plsymbol_h)
@@ -737,7 +741,6 @@ $(PCLOBJ)pctext.$(OBJ): $(PCLSRC)pctext.c   \
                         $(gx_h)             \
                         $(gsimage_h)        \
                         $(plvalue_h)        \
-			$(plvocab_h)	    \
                         $(pcommand_h)       \
                         $(pcstate_h)        \
                         $(pcdraw_h)         \
@@ -769,6 +772,7 @@ $(PCLOBJ)pcsymbol.$(OBJ): $(PCLSRC)pcsymbol.c   \
 $(PCLOBJ)pcsfont.$(OBJ): $(PCLSRC)pcsfont.c \
                          $(memory__h)       \
                          $(stdio__h)        \
+                         $(math__h)         \
                          $(pcommand_h)      \
                          $(pcfont_h)        \
                          $(pcstate_h)       \
@@ -998,7 +1002,7 @@ $(PCLOBJ)pgframe.$(OBJ): $(PCLSRC)pgframe.c \
                          $(gsmatrix_h)      \
                          $(gsmemory_h)      \
                          $(gsstate_h)       \
-                         $(pgdraw_h)        \
+                         $(pcdraw_h)        \
                          $(pcfont_h)        \
                          $(pcstate_h)
 	$(PCLCCC) $(PCLSRC)pgframe.c $(PCLO_)pgframe.$(OBJ)
@@ -1015,7 +1019,7 @@ $(PCLOBJ)pgconfig.$(OBJ): $(PCLSRC)pgconfig.c \
                           $(pginit_h)         \
                           $(pggeom_h)         \
                           $(pgmisc_h)         \
-                          $(pcpale_h)         \
+                          $(pcpalet_h)        \
                           $(pcdraw_h)
 	$(PCLCCC) $(PCLSRC)pgconfig.c $(PCLO_)pgconfig.$(OBJ)
 

@@ -120,7 +120,6 @@ alloc_indexed_cspace(
                        );
     pindexed->rc.free = free_indexed_cspace;
     pindexed->fixed = false;
-    pindexed->id = pcl_next_id();
     pcl_cs_base_init_from(pindexed->pbase, pbase);
     pindexed->pcspace = 0;
     pindexed->num_entries = 0;
@@ -161,9 +160,6 @@ alloc_indexed_cspace(
  * shared in tandem, which would require common reference counting between the
  * pair, which would require yet another PCL object, and so on.
  *
- * To simplify other code, any "unshared" color spaces are always given new
- * identifiers, even if the unsharing operation itself has no effect.
- *
  * Returns 0 on success, < 0 in the event of an error.
  */
   private int
@@ -177,10 +173,8 @@ unshare_indexed_cspace(
     int                 num_entries = pindexed->num_entries;
 
     /* check if there is anything to do */
-    if (pindexed->rc.ref_count == 1) {
-        pindexed->id = pcl_next_id();
+    if (pindexed->rc.ref_count == 1)
         return 0;
-    }
     rc_decrement(pindexed, "unshare PCL indexed color space");
 
     /* allocate a new indexed color space */
@@ -590,6 +584,10 @@ pcl_cs_indexed_set_norm_and_Decode(
     if (pindexed->fixed)
         return 0;
 
+    /* check for singularity */
+    if ((wht0 == blk0) || (wht1 == blk1) || (wht2 == blk2))
+        return 0;
+
     /* get a unique copy of the color space */
     if ((code = unshare_indexed_cspace(ppindexed)) < 0)
         return code;
@@ -603,16 +601,6 @@ pcl_cs_indexed_set_norm_and_Decode(
     pnorm[1].inv_range = 255.0 / (wht1 - blk1);
     pnorm[2].blkref = blk2;
     pnorm[2].inv_range = 255.0 / (wht2 - blk2);
-
-    /* reverse for the CMY color space */
-    if (type == pcl_cspace_CMY) {
-        int     i;
-
-        for (i = 0; i < 3; i++) {
-            pnorm[i].blkref +=  255.0 / pnorm[i].inv_range;
-            pnorm[i].inv_range = -pnorm[i].inv_range;
-        }
-    }
 
     /*
      * Build the Decode array to be used with images.
@@ -663,6 +651,9 @@ pcl_cs_indexed_set_norm_and_Decode(
             pdecode[2 * i + 1] = ((float)((1L << nbits) - 1) - pnorm[i].blkref)
                                     * pnorm[i].inv_range / 255.0;
         }
+    } else {
+        pindexed->Decode[0] = 0.0;
+        pindexed->Decode[1] = 0.0;  /* modified subsequently */
     }
     return 0;
 }
@@ -867,10 +858,6 @@ pcl_cs_indexed_set_default_palette_entry(
 /*
  * Set a pen width in a palette. Units used are still TBD.
  *
- * Note that an indexed color space retains its identifier, even if pen widths
- * are modified. This is because pen widths are not cached anywhere in the
- * system.
- *
  * Returns 0 if successful, < 0 in case of error.
  */
   int
@@ -881,7 +868,6 @@ pcl_cs_indexed_set_pen_width(
 )
 {
     pcl_cs_indexed_t *  pindexed = *ppindexed;
-    pcl_gsid_t          id = pindexed->id;
     int                 code;
     int                 i;
 
@@ -891,8 +877,6 @@ pcl_cs_indexed_set_pen_width(
 
     if ((code = unshare_indexed_cspace(ppindexed)) < 0)
         return code;
-    if (*ppindexed = pindexed)
-        (*ppindexed)->id = id;
     pindexed = *ppindexed;
 
     pindexed->pen_widths[pen] = width;
@@ -968,6 +952,18 @@ pcl_cs_indexed_build_cspace(
             wht_ref[i] = (1L << pcl_cid_get_bits_per_primary(pcid, i)) - 1; 
             blk_ref[i] = 0.0;
         }
+
+        /* reverse for the CMY color space */
+        if (type == pcl_cspace_CMY) {
+            int     i;
+
+            for (i = 0; i < 3; i++) {
+                floatp  ftmp = wht_ref[i];
+
+                wht_ref[i] = blk_ref[i];
+                blk_ref[i] = ftmp;
+            }
+        }
     }
     pcl_cs_indexed_set_norm_and_Decode( ppindexed,
                                         wht_ref[0], wht_ref[1], wht_ref[2],
@@ -1012,6 +1008,59 @@ pcl_cs_indexed_build_default_cspace(
 }
 
 /*
+ * Special indexed color space constructor, for building a 2 entry indexed color
+ * space based on an existing base color space. The first color is always set
+ * to white, while the second entry takes the value indicated by pcolor1.
+ *
+ * This reoutine is used to build the two-entry indexed color spaces required
+ * for creating opaque "uncolored" patterns.
+ */
+  int
+pcl_cs_indexed_build_special(
+    pcl_cs_indexed_t **         ppindexed,
+    pcl_cs_base_t *             pbase,
+    byte *                      pcolor1,
+    gs_memory_t *               pmem
+)
+{
+    static const pcl_cid_hdr_t  cid = { pcl_cspace_White, /* ignored */
+                                        pcl_penc_indexed_by_pixel,
+                                        1,
+                                        { 8, 8, 8}        /* ignored */ };
+    static const floatp         wht_ref[3] = { 255.0, 255.0, 255.0 };
+    static const floatp         blk_ref[3] = { 0.0, 0.0, 0.0 };
+
+    pcl_cs_indexed_t *          pindexed;
+    int                         i, code = 0;
+
+    /* build the indexed color space */
+    if ((code = alloc_indexed_cspace(ppindexed, pbase, pmem)) < 0)
+        return code;
+    pindexed = *ppindexed;
+    pindexed->fixed = false;
+    pindexed->cid = cid;
+    pindexed->num_entries = 2;
+
+    /* set up the normalization information - not strictly necessary */
+    pcl_cs_indexed_set_norm_and_Decode( ppindexed,
+                                        wht_ref[0], wht_ref[1], wht_ref[2],
+                                        blk_ref[0], blk_ref[1], blk_ref[2]
+                                        );
+    pindexed->Decode[1] = 1;
+
+    for (i = 0; i < 3; i++) {
+        pindexed->palette.data[i] = 255;
+        pindexed->palette.data[i + 3] = pcolor1[i];
+    }
+
+    /* the latter are not strictly necessary */
+    pindexed->pen_widths[0] = 0.35;
+    pindexed->pen_widths[1] = 0.35;
+
+    return 0;
+}
+
+/*
  * Install an indexed color space into the graphic state. If no indexed color
  * space exists yet, build a default color space.
  *
@@ -1033,13 +1082,7 @@ pcl_cs_indexed_install(
         pindexed = *ppindexed;
     }
 
-    /* check if there is anything to do */
-    if (pcs->ids.cspace_id == pindexed->id)
-        return 0;
-
-    if ((code = gs_setcolorspace(pcs->pgs, pindexed->pcspace)) >= 0)
-        pcs->ids.cspace_id = pindexed->id;
-    return code;
+    return gs_setcolorspace(pcs->pgs, pindexed->pcspace);
 }
 
 /*
