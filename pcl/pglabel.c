@@ -31,6 +31,18 @@
 
 #define STICK_FONT_TYPEFACE 48
 
+/* convert points 2 plu - agfa uses 72.307 points per inch */
+private floatp
+hpgl_points_2_plu(hpgl_state_t *pgls, floatp points)
+{	
+    const pcl_font_selection_t *pfs =
+	&pgls->g.font_selection[pgls->g.font_selected];
+    floatp ppi = 72.0;
+    if ( pfs->font->scaling_technology == plfst_Intellifont )
+	ppi = 72.307;
+    return points * (1016.0 / ppi);
+}
+
 /* ------ Next-character procedure ------ */
 
 /*
@@ -125,7 +137,6 @@ hpgl_ensure_font(hpgl_state_t *pgls)
 {
     if ( ( pgls->g.font == 0 ) || ( pgls->g.font->pfont == 0 ) )
 	hpgl_call(hpgl_recompute_font(pgls));
-    
     return 0;
 }
 
@@ -251,12 +262,12 @@ hpgl_get_char_width(const hpgl_state_t *pgls, uint ch, hpgl_real_t *width)
 	if ( pfs->params.proportional_spacing ) {
 	    code = pl_font_char_width(pfs->font, glyph, &gs_width);
 	    if ( code >= 0 ) {
-		*width = gs_width.x * points_2_plu(pfs->params.height_4ths / 4.0);
+		*width = gs_width.x * hpgl_points_2_plu(pgls, pfs->params.height_4ths / 4.0);
 		goto add;
 	    }
 	    code = 1;
 	}
-	*width = points_2_plu(pl_fp_pitch_cp(&pfs->params) / 100.0);
+	*width = hpgl_points_2_plu(pgls, pl_fp_pitch_cp(&pfs->params) / 100.0);
     } else {
 	*width = pgls->g.character.size.x;
 	if (pgls->g.character.size_mode == hpgl_size_relative)
@@ -274,9 +285,9 @@ hpgl_get_char_width(const hpgl_state_t *pgls, uint ch, hpgl_real_t *width)
 	    hpgl_real_t extra;
 
 	    if ( scode >= 0 )
-		extra = gs_width.x * points_2_plu(pfs->params.height_4ths / 4.0);
+		extra = gs_width.x * hpgl_points_2_plu(pgls, pfs->params.height_4ths / 4.0);
 	    else
-		extra = points_2_plu(pl_fp_pitch_cp(&pfs->params) / 100.0);
+		extra = hpgl_points_2_plu(pgls, (pl_fp_pitch_cp(&pfs->params)) / 100.0);
 	    *width += extra * pgls->g.character.extra_space.x;
 	} else {
 	    /* All characters have the same width, */
@@ -298,7 +309,7 @@ hpgl_get_current_cell_height(const hpgl_state_t *pgls, hpgl_real_t *height,
 	if ( pgls->g.character.size_mode == hpgl_size_not_set ) {
 	    *height =
 		(pfs->params.proportional_spacing ?
-		 points_2_plu(pfs->params.height_4ths / 4.0) :
+		 hpgl_points_2_plu(pgls, pfs->params.height_4ths / 4.0) :
 		 1.667 * inches_2_plu(pl_fp_pitch_cp(&pfs->params) / 7200.0));
 	    if ( !cell_height )
 		*height *= 0.75;	/****** HACK ******/
@@ -616,7 +627,7 @@ hpgl_print_char(
             /* Scale fixed-width fonts by pitch, variable-width by height. */
 	    if (pfs->params.proportional_spacing) {
 	        if (pl_font_is_scalable(font)) {
-		    scale.x = points_2_plu(pfs->params.height_4ths / 4.0);
+		    scale.x = hpgl_points_2_plu(pgls, pfs->params.height_4ths / 4.0);
                     scale.y = scale.x;
 		} else {
                     double  ratio = (double)pfs->params.height_4ths
@@ -631,8 +642,8 @@ hpgl_print_char(
 		    scale.y = -(ratio * inches_2_plu(1.0 / font->resolution.y));
 		}
             } else {
-		scale.x = points_2_plu( pl_fp_pitch_cp(&pfs->params) /
-					pl_fp_pitch_cp(&pfs->font->params) );
+		scale.x = hpgl_points_2_plu(pgls, pl_fp_pitch_cp(&pfs->params) /
+					    pl_fp_pitch_cp(&pfs->font->params) );
                 scale.y = scale.x;
 	    }
 
@@ -1144,15 +1155,15 @@ acc_ht:	      hpgl_call(hpgl_get_current_cell_height(pgls, &height, vertical));
 			      /* Scale fixed-width fonts by pitch, variable-width by height. */
 			      if (pfs->params.proportional_spacing) {
 				  if (pl_font_is_scalable(pfs->font))
-				      label_advance = points_2_plu(pfs->params.height_4ths / 4.0);
+				      label_advance = hpgl_points_2_plu(pgls, pfs->params.height_4ths / 4.0);
 				  else {
 				      double  ratio = (double)pfs->params.height_4ths
 					  / pfs->font->params.height_4ths;
 				      label_advance = ratio * inches_2_plu(1.0 / pfs->font->resolution.x);
 				  }
 			      } else
-				  label_advance = points_2_plu( pl_fp_pitch_cp(&pfs->params) /
-								pl_fp_pitch_cp(&pfs->font->params) );
+  				  label_advance = hpgl_points_2_plu(pgls, pl_fp_pitch_cp(&pfs->params) /
+								    pl_fp_pitch_cp(&pfs->font->params) );
 			  } else {
 			      /*
 			       * Note that the CTM takes P1/P2 into account unless
