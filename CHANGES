@@ -6,3 +6,5 @@ Version 0.1
  * decodes artithmetic text regions
  * successfully decodes ubc test streams 042_1,2,4,5 and 10.
  * successfully decodes CVision embedded bitstream str-p39
+ * regression testing harness based on SHA-1 hashes of known files
+
