@@ -98,10 +98,12 @@ private int execfile_cleanup(P1(i_ctx_t *));
  * Define the default stream buffer sizes.  For file streams,
  * this is arbitrary, since the C library or operating system
  * does its own buffering in addition.
- * However, the buffer size for eexec decoding is NOT arbitrary:
- * it must be at most 512.
+ * However, a buffer size of at least 2K bytes is necessary to prevent
+ * JPEG decompression from running very slow. When less than 2K, an
+ * intermediate filter is installed that transfers 1 byte at a time
+ * causing many aborted roundtrips through the JPEG filter code.
  */
-#define DEFAULT_BUFFER_SIZE 512
+#define DEFAULT_BUFFER_SIZE 2048
 const uint file_default_buffer_size = DEFAULT_BUFFER_SIZE;
 
 /* An invalid file object */
