@@ -817,11 +817,11 @@ pdf_write_font_resources(gx_device_pdf *pdev)
 	     pfd != 0; pfd = pfd->next
 	     ) {
 	    if (!pfd->written) {
-		pdf_finalize_font_descriptor(pdev, pfd);
 		if (pfd->base_font)
 		    gs_notify_unregister_calling(&pfd->base_font->notify_list,
 						 pdf_font_notify_proc, NULL,
 						 pdf_font_unreg_proc);
+		pdf_finalize_font_descriptor(pdev, pfd);
 	    }
 	}
 
