@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -38,16 +38,33 @@ private bool param_HWColorMap(P2(gx_device *, byte *));
 
 /* Get the device parameters. */
 int
-gs_get_device_or_hw_params(gx_device * dev, gs_param_list * plist,
+gs_get_device_or_hw_params(gx_device * orig_dev, gs_param_list * plist,
 			   bool is_hardware)
 {
+    /*
+     * We must be prepared to copy the device if it is the read-only
+     * prototype.
+     */
+    gx_device *dev;
+    int code;
+
+    if (orig_dev->memory)
+	dev = orig_dev;
+    else {
+	code = gs_copydevice(&dev, orig_dev, plist->memory);
+	if (code < 0)
+	    return code;
+    }
     gx_device_set_procs(dev);
     fill_dev_proc(dev, get_params, gx_default_get_params);
     fill_dev_proc(dev, get_page_device, gx_default_get_page_device);
     fill_dev_proc(dev, get_alpha_bits, gx_default_get_alpha_bits);
-    return (is_hardware ?
+    code = (is_hardware ?
 	    (*dev_proc(dev, get_hardware_params)) (dev, plist) :
 	    (*dev_proc(dev, get_params)) (dev, plist));
+    if (dev != orig_dev)
+	gx_device_retain(dev, false);  /* frees the copy */
+    return code;
 }
 
 /* Standard ProcessColorModel values. */
