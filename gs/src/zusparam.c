@@ -451,6 +451,18 @@ set_AccurateScreens(i_ctx_t *i_ctx_p, bool val)
     gs_setaccuratescreens(val);
     return 0;
 }
+/* Boolean values */
+private bool
+current_UseWTS(i_ctx_t *i_ctx_p)
+{
+    return gs_currentusewts();
+}
+private int
+set_UseWTS(i_ctx_t *i_ctx_p, bool val)
+{
+    gs_setusewts(val);
+    return 0;
+}
 private bool
 current_LockFilePermissions(i_ctx_t *i_ctx_p)
 {
@@ -468,6 +480,7 @@ set_LockFilePermissions(i_ctx_t *i_ctx_p, bool val)
 private const bool_param_def_t user_bool_params[] =
 {
     {"AccurateScreens", current_AccurateScreens, set_AccurateScreens},
+    {"UseWTS", current_UseWTS, set_UseWTS},
     {"LockFilePermissions", current_LockFilePermissions, set_LockFilePermissions}
 };
 

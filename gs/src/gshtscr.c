@@ -59,8 +59,9 @@ private RELOC_PTRS_WITH(screen_enum_reloc_ptrs, gs_screen_enum *eptr)
 }
 RELOC_PTRS_END
 
-/* Define the default value of AccurateScreens that affects */
-/* setscreen and setcolorscreen. */
+/* Define the default value of AccurateScreens that affects setscreen
+   and setcolorscreen. Note that this is effectively a global, and
+   thus gets in the way of reentrancy. We'll want to fix that. */
 private bool screen_accurate_screens;
 
 /* Default AccurateScreens control */
@@ -73,6 +74,21 @@ bool
 gs_currentaccuratescreens(void)
 {
     return screen_accurate_screens;
+}
+
+/* As with AccurateScreens, this is also effectively a global. However,
+   it is going away soon. */
+private bool screen_use_wts;
+
+void
+gs_setusewts(bool use_wts)
+{
+    screen_use_wts = use_wts;
+}
+bool
+gs_currentusewts(void)
+{
+    return screen_use_wts;
 }
 
 /* Define the MinScreenLevels user parameter similarly. */

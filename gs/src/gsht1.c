@@ -174,11 +174,8 @@ gs_sethalftone_prepare(gs_state * pgs, gs_halftone * pht,
     gx_ht_order_component *pocs = 0;
     int code = 0;
 
-/* #define USE_WTS */
-#ifdef USE_WTS
-    if (gs_sethalftone_try_wts(pht, pgs, pdht) == 0)
+    if (gs_currentusewts() && gs_sethalftone_try_wts(pht, pgs, pdht) == 0)
 	return 0;
-#endif
 
     switch (pht->type) {
 	case ht_type_colorscreen:
@@ -574,19 +571,19 @@ gs_sethalftone_try_wts(gs_halftone *pht, gs_state *pgs,
     int num_comps = dev->color_info.num_components;
     int depth = dev->color_info.depth;
 
-    /* todo: we probably want to fail if AccurateScreens is false */
-
     if (pht->type != ht_type_multiple)
 	/* Only work with Type 5 halftones. todo: we probably want
 	   to relax this. */
 	return 1;
 
-#if 0
+    if_debug2('h', "[h]%s, num_comp = %d\n",
+	      dev->color_info.separable_and_linear == GX_CINFO_SEP_LIN ? "Separable and linear" : "Not separable and linear!",
+	      pht->params.multiple.num_comp);
+
     if (dev->color_info.separable_and_linear != GX_CINFO_SEP_LIN &&
 	pht->params.multiple.num_comp > 1)
 	/* WTS is only enabled for separable or monochrome devices. */
 	return 1;
-#endif
 
     /* only work with bilevel (not multilevel) devices */
     if (depth > num_comps) {
@@ -610,6 +607,11 @@ gs_sethalftone_try_wts(gs_halftone *pht, gs_state *pgs,
 	for (i = 0; i < num_comp; i++) {
 	    if (components[i].type != ht_type_spot)
 		return 1;
+	    else {
+		gs_spot_halftone *spot = &components[i].params.spot;
+		if (!spot->accurate_screens)
+		    return 1;
+	    }
 	}
 
 	pocs = gs_alloc_struct_array( pgs->memory,
