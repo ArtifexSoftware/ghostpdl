@@ -1278,6 +1278,7 @@ retry_oversampling:
     /* Prepare font data : */
     if (dict_find_string(pdr, "SubfontId", &SubfontId) > 0 && r_has_type(SubfontId, t_integer))
         subfont = SubfontId->value.intval;
+    ff.memory = pbfont->memory;
     ff.font_file_path = font_file_path;
     ff.client_font_data = pbfont;
     ff.client_font_data2 = pdr;
