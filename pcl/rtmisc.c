@@ -4,11 +4,15 @@
 
 /* rtmisc.c */
 /* Miscellanous HP RTL commands */
-#include "std.h"
-#include "gsmemory.h"
+/* HAS the order of these are jumbled because of dependencies */
+#include "math_.h"
 #include "pgmand.h"
-#include "gsrop.h"
 #include "pgdraw.h" /* for hpgl_add_pcl_point_to_path() */
+#include "pgmisc.h" /* for hpgl_call */
+#include "gsmemory.h"
+#include "gsrop.h" 
+#include "gscoord.h"
+#include "pcdraw.h"
 
 /* ---------------- Chapter 4 ---------------- */
 
@@ -87,11 +91,23 @@ rtl_enter_pcl_mode(pcl_args_t *pargs, pcl_state_t *pcls)
 	if ( pcls->parse_data )
 	  { /* We were in HP-GL/2 mode.  Destroy the gl/2 polygon path
 	    and conditionally copy back the cursor position. */
-	    gx_path_release(&(pcls->g.polygon_buffer.path));
+	    gx_path_release(&(pcls->g.polygon.buffer.path));
 	    if ( b )
-	      { /****** WRONG, COORDINATE SYSTEMS ARE DIFFERENT ******/
-		pcls->cap.x = pcls->g.pos.x;
-	        pcls->cap.y = pcls->g.pos.y;
+	      { /* the usual user -> device -> user dance.  HAS This is
+		done frequently enough that it should be separated
+		out into a separate function */
+		gs_point pt, dev_pt;
+		hpgl_call(hpgl_set_ctm(pcls));
+		hpgl_call(hpgl_get_current_position(pcls, &pt));
+		hpgl_call(gs_transform(pcls->pgs, pt.x, pt.y, &dev_pt));
+		hpgl_call(pcl_set_ctm(pcls, false));
+		hpgl_call(gs_itransform(pcls->pgs, dev_pt.x, dev_pt.y, &pt));
+		/* HPGL/2 uses floats for coordinates */
+/* HAS have not checked if this is properly rounded or truncated */
+#define round(x) (((x) < 0.0) ? (ceil ((x) - 0.5)) : (floor ((x) + 0.5)))
+		pcls->cap.x = round(pt.x);
+	        pcls->cap.y = round(pt.y);
+#undef round
 	      }
 	    gs_free_object(pcls->memory, pcls->parse_data,
 			   "hpgl parser data(enter pcl mode)");

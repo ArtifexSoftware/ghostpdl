@@ -6,6 +6,71 @@
 This file, NEWS-PCL, describes the changes in the most recent releases of
 Aladdin's PCL5 code, in reverse chronological order.
 
+Version 0.29 (6/30/97)
+======================
+
+More bug fixes, mostly in the GL/2 code.
+
+(LPD) Fixes bugs:
+	- The top-level makefile didn't include the .exe extension in
+some places.  (pcl_top.mak)
+	- The parameter list of hpgl_stick_append_char wasn't
+consistent with its prototype.  (pgfont.c)
+	- Some places used NULL, which isn't always defined by all
+compilers, instead of 0.  (pcdraw.c, pcfsel.c)
+
+Updates a file to track changes in the definition of the polygon
+buffer.  (rtmisc.c)
+
+Fri Jun 27 20:45:34 1997  Henry Stiles  <henrys@meerkat.dimensional.com>
+
+	* pcparse.c (pcl_process): modified to not look ahead for plain
+	text while in macro mode.
+
+	* pcmacros.c (pcl_execute_macro): updated to decrement pointer to
+	buffer stream before passing the pointer to pcl process.
+
+	* rtmisc.c (rtl_enter_pcl_mode): updated so that pcl properly
+	inherits hpgl/2 position for <ESC>%1A.
+
+	* pcursor.c (pcl_do_FF): updated FF to place cap at top margin +
+	75% of vmi.
+
+	* pcpage.c (pcl_perforation_skip): updated to reset text length
+	and top margin when perforation state modified as per PCLTRM.
+
+	* pgdraw.c (hpgl_set_plu_to_device_ctm): proper translations for
+	rotation. 
+
+	* pgdraw.c (hpgl_polyfill_bbox): temporarily set the origin of the
+	bounding box to the minimum of bbox's origin and anchor corner.
+	FTS 1472 sets AC ahead of the bbox's origin.  This will have to be
+	revisited.
+
+	* pgconfig.c (hpgl_BP): added breakpoint mneumonic for debugging
+	systems.
+
+	* pglfill.c (hpgl_PW): dirty details of HPGL/2 pen widths.
+
+	* pgdraw.c (hpgl_polyfill): added save and restore of pen state.
+	(hpgl_polyfill): now uses straight black fill if the current
+	spacing is smaller than the current line width.  
+
+	* pgvector.c (hpgl_RT): not updated to use hpgl_draw_arc_along
+	with other arc functions.
+
+	* pgdraw.c (hpgl_add_point_to_path): pgls->g.first_point was being
+	set to the point from the current state position instead of the
+	point being passed to hpgl_add_point_to_path().  This fixes most
+	of the missing joins in the FTS tests.
+
+	* pglfill.c (hpgl_LT): added hpgl_draw_current_path() to LT.
+	Oddly the HP code creates a new subpath even if the LT does not
+	change the current state.  This fixes most of the line cap
+	problems in the fts as the path was not being stroked when the
+	attibutes changed.
+
+
 Version 0.28 (6/20/97)
 ======================
 

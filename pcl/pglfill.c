@@ -14,7 +14,7 @@
 #include "pgdraw.h"
 #include "pgmisc.h"
 
-/* AC [x,y]; Anchor corner for fill offsets, not that this is
+/* AC [x,y]; Anchor corner for fill offsets, note that this is
    different than the anchor corner of the pcl picture frame. */
 
 int
@@ -164,7 +164,7 @@ hpgl_LA(hpgl_args_t *pargs, hpgl_state_t *pgls)
 		return e_Range;
 	      }
 	  }
-
+	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 	/* LA1,1,2,1,3,5 is the same as LA */
 	if (no_args)
 	  {
@@ -217,6 +217,10 @@ hpgl_LT(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
 	int type = 0;
 
+	/* Draw the current path for any LT command irrespective if
+           the LT changes anything */
+	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
+
 	if ( hpgl_arg_c_int(pargs, &type) )
 	  { 
 	    /* restore old saved line if we have a solid line,
@@ -266,30 +270,43 @@ hpgl_LT(hpgl_args_t *pargs, hpgl_state_t *pgls)
 /* PW [width[,pen]]; */
 int
 hpgl_PW(hpgl_args_t *pargs, hpgl_state_t *pgls)
-{	hpgl_real_t width;
+{	
+	hpgl_real_t width = 
+	  ((pgls->g.pen.width_relative) ? 
+	   (0.01 * hpgl_compute_distance(pgls->g.P1.x, pgls->g.P1.y,
+					 pgls->g.P2.x, pgls->g.P2.y)):
+	   (0.35));
 	int pmin = 0, pmax = pgls->g.number_of_pens - 1;
 
 	/* we maintain the line widths in plotter units, irrespective
            of current units (WU) */
 	if ( hpgl_arg_c_real(pargs, &width) )
-	  { if ( hpgl_arg_c_int(pargs, &pmin) ) 
-		 if ( pmin < 0 || pmin >= pmax ) 
-		   return e_Range;
-		 else 
-		   pmax = pmin;
+	  { 
+	    if ( hpgl_arg_c_int(pargs, &pmin) ) 
+	      if ( pmin < 0 || pmin >= pmax ) 
+		return e_Range;
+	      else 
+		pmax = pmin;
 	  }
-	else
-	  /* default arrangement */
-	  width = (pgls->g.pen.width_relative ? (0.001) : (0.35));
-	{ int i;
+
+	/* PCLTRM 22-38 metric widths scaled scaled by the ratio of
+           the picture frame to plot size.  Note that we always store
+           the line width in PU not MM. */
+	if ( !pgls->g.pen.width_relative ) 
+	  {
+	    width = width * (min((hpgl_real_t)pgls->g.picture_frame_height /
+				 (hpgl_real_t)pgls->g.plot_height,
+				 ((hpgl_real_t)pgls->g.picture_frame_width /
+				  (hpgl_real_t)pgls->g.plot_width)));
+	    width = mm_2_plu(width);
+	  }
+	
+	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
+	
+	{ 
+	  int i;
 	  for ( i = pmin; i <= pmax; ++i )
-	    pgls->g.pen.width[i] = 
-	      ((pgls->g.pen.width_relative) ? 
-	       (width * hpgl_compute_distance(pgls->g.P1.x,
-					      pgls->g.P1.y,
-					      pgls->g.P2.x,
-					      pgls->g.P2.y)) :
-	       mm_2_plu(width));
+	    pgls->g.pen.width[i] = width;
 	}
 	return 0;
 }

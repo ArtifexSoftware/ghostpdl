@@ -376,7 +376,7 @@ pcl_makebitmappattern(gs_client_color *pcc, const gx_tile_bitmap *tile,
 	if ( smat.yy > 0 )
 	  mat.yy = -mat.yy, angle = -angle;
 	gs_matrix_rotate(&mat, angle, &mat);
-	gs_makepattern(pcc, &pat, &mat, pgs, NULL);
+	gs_makepattern(pcc, &pat, &mat, pgs, (gs_memory_t *)0);
 	gs_setmatrix(pgs, &smat);
 	return 0;
 }

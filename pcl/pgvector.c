@@ -556,7 +556,9 @@ hpgl_PU(hpgl_args_t *pargs, hpgl_state_t *pgls)
 int
 hpgl_RT(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	return hpgl_arc_3_point(pargs, pgls, true);
+	hpgl_call(hpgl_arc_3_point(pargs, pgls, true));
+	hpgl_call(hpgl_draw_arc(pgls));
+	return 0;
 }
 
 /* Initialization */

@@ -131,9 +131,10 @@ pgmand_h=$(PCLSRC)pgmand.h $(stdio__h) $(gdebug_h) $(pcommand_h) $(pcstate_h)
 rtraster_h=$(PCLSRC)rtraster.h
 
 # Chapters 4, 13, 18, and Comparison Guide
-$(PCLOBJ)rtmisc.$(OBJ): $(PCLSRC)rtmisc.c $(std_h)\
- $(gsmemory_h) $(gsrop_h)\
- $(pgdraw_h) $(pgmand_h)
+$(PCLOBJ)rtmisc.$(OBJ): $(PCLSRC)rtmisc.c $(math__h)\
+ $(gscoord_h) $(gsmemory_h) $(gsrop_h)\
+ $(pcdraw_h)\
+ $(pgdraw_h) $(pgmand_h) $(pgmisc_h)
 	$(PCLCCC) $(PCLSRC)rtmisc.c $(PCLO_)rtmisc.$(OBJ)
 
 # Chapter 6

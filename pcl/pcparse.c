@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -473,6 +473,7 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcls, stream_cursor_read *pr)
 				  pcl_control_command_indices[1]];
 				if ( (cdefn == 0 ||
 				      cdefn->proc == pcl_plain_char) &&
+				     !in_macro &&
 				     !pcls->parse_other &&
 				     !pcls->raster.graphics_mode
 				   )

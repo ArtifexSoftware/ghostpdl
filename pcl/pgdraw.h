@@ -9,7 +9,7 @@
 #  define pgdraw_INCLUDED
 
 /* set ctm global for SC command only */
-int hpgl_set_ctm(hpgl_state_t *pgls);
+int hpgl_set_ctm(P1(hpgl_state_t *pgls));
 
 /* function to get the current hpgl/2 state position */
 int hpgl_get_current_position(P2(hpgl_state_t *pgls, gs_point *pt));

@@ -275,10 +275,24 @@ pcl_text_length(pcl_args_t *pargs, pcl_state_t *pcls)
 
 private int /* ESC & l <enable> L */
 pcl_perforation_skip(pcl_args_t *pargs, pcl_state_t *pcls)
-{	uint i = uint_arg(pargs);
-	if ( i > 1 )
-	  return 0;
-	pcls->perforation_skip = i != 0;
+{	bool new_skip;
+
+	switch ( uint_arg(pargs) )
+	{
+	case 0 /* disable */: new_skip = false; break;
+	case 1 /* enable */: new_skip = true; break;
+	default: return 0;
+	}
+	/* PCLTRM 5-21 - changing skip mode restores top margin, page
+           length and text length and margins to their defaults */
+	if ( new_skip != pcls->perforation_skip )
+	  {
+	    pcls->top_margin = 
+	      (top_margin_default > pcls->rotated_page_height ? 0 : 
+	       top_margin_default);
+	    reset_text_length(pcls);
+	    pcls->perforation_skip = new_skip;
+	  }
 	return 0;
 }
 

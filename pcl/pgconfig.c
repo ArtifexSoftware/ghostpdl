@@ -15,6 +15,7 @@
 #include "pginit.h"
 #include "pggeom.h"
 #include "pgmisc.h"
+#include "pcdraw.h"
 
 /* CO"text" */
 int
@@ -91,9 +92,6 @@ hpgl_DF(hpgl_args_t *pargs, hpgl_state_t *pgls)
 
 	/* we do this instead of calling SC directly */
 	pgls->g.scaling_type = hpgl_scaling_none;
-
-	hpgl_args_set_real2(&args, 0.0, 0.0);
-	hpgl_PA(&args, pgls);
 
 	hpgl_args_set_int(&args,0);
 	hpgl_PM(&args, pgls);
@@ -176,34 +174,50 @@ hpgl_IN(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	hpgl_args_set_int(&args,2);
 	hpgl_NP(&args, pgls);
 #endif
-	/* pen up position */
+	/* pen up-absolute position and set gl/2 current positon to
+	   0,0 or the lower left of the picture frame.  Simply sets
+	   the gl/2 state, we subsequently clear the path because we
+	   do not want to create a live gs path. */
+
 	hpgl_args_setup(&args);
 	hpgl_PU(&args, pgls);
-	
-	/* absolute positioning at the lower left of the picture frame */
 	hpgl_args_set_real2(&args, 0.0, 0.0);
 	hpgl_PA(&args, pgls);
-
+	hpgl_call(hpgl_clear_current_path(pgls));
 	return 0;
 }
 
 /* derive the current picture frame coordinates */
 
-private void 
-hpgl_picture_frame_coords(hpgl_state_t *pgls, hpgl_real_t *coords)
+ private int 
+hpgl_picture_frame_coords(hpgl_state_t *pgls, gs_rect *gl2_win)
 {
-#define x1 coords[0]
-#define y1 coords[1]
-#define x2 coords[2]
-#define y2 coords[3]
-  	x1 = coord_2_plu(0.0);
-	y1 = coord_2_plu(0.0);
-	x2 = coord_2_plu(pgls->g.picture_frame_width);
-	y2 = coord_2_plu(pgls->g.picture_frame_height);
-#undef x1
-#undef y1
-#undef x2
-#undef y2
+	gs_rect dev_win; /* device window */
+	gs_rect pcl_win; /* pcl window -- upper left and lower right */
+	hpgl_real_t x1 = pgls->g.picture_frame.anchor_point.x;
+	hpgl_real_t y1 = pgls->g.picture_frame.anchor_point.y;
+	hpgl_real_t x2 = x1 + pgls->g.picture_frame_width;
+	hpgl_real_t y2 = y1 + pgls->g.picture_frame_height;
+	pcl_set_ctm(pgls, false);
+	hpgl_call(gs_transform(pgls->pgs, x1, y1, &dev_win.p));
+	hpgl_call(gs_transform(pgls->pgs, x2, y2, &dev_win.q));
+	hpgl_call(hpgl_set_ctm(pgls));
+	hpgl_call(gs_itransform(pgls->pgs, 
+			       dev_win.p.x,
+			       dev_win.p.y,
+			       &pcl_win.p));
+	hpgl_call(gs_itransform(pgls->pgs, 
+			       dev_win.q.x,
+			       dev_win.q.y,
+			       &pcl_win.q));
+	/* now win.p is the upper left and win.q the lower right, gl/2
+           likes to use the lower left and upper right for boxes */
+	gl2_win->p.x = pcl_win.p.x;
+	gl2_win->p.y = pcl_win.q.y; /* !! */
+	gl2_win->q.x = pcl_win.q.x;
+	gl2_win->q.y = pcl_win.p.y; /* !! */
+	
+	return 0;
 }
 	
   
@@ -211,20 +225,20 @@ hpgl_picture_frame_coords(hpgl_state_t *pgls, hpgl_real_t *coords)
 /* IP; */
 int
 hpgl_IP(hpgl_args_t *pargs, hpgl_state_t *pgls)
-{	hpgl_real_t pic_coords[4];
-        int32 ptxy[4];
+{	int32 ptxy[4];
 	int i;
-
+	gs_rect win;
 	/* get the default picture frame coordinates */
-	hpgl_picture_frame_coords(pgls, pic_coords);
+	hpgl_call(hpgl_picture_frame_coords(pgls, &win));
 
 /* HAS have not checked if this is properly rounded or truncated */
 #define round(x) (((x) < 0.0) ? (ceil ((x) - 0.5)) : (floor ((x) + 0.5)))
 
 	/* round the picture frame coordinates */
-	for ( i = 0; i < 4; i++ )
-	  ptxy[i] = round(pic_coords[i]);
-
+	ptxy[0] = round(win.p.x);
+	ptxy[1] = round(win.p.y);
+	ptxy[2] = round(win.q.x);
+	ptxy[3] = round(win.q.y);
 #undef round
 
 	for ( i = 0; i < 4 && hpgl_arg_int(pargs, &ptxy[i]); ++i )
@@ -301,10 +315,13 @@ int
 hpgl_IW(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	hpgl_real_t wxy[4];
 	int i;
-
+	gs_rect win;
 	/* get the default picture frame coordinates */
-	hpgl_picture_frame_coords(pgls, wxy);
-
+	hpgl_call(hpgl_picture_frame_coords(pgls, &win));
+	wxy[0] = win.p.x;
+	wxy[1] = win.p.y;
+	wxy[2] = win.q.x;
+	wxy[3] = win.q.y;
 	for ( i = 0; i < 4 && hpgl_arg_units(pargs, &wxy[i]); ++i )
 	  ;
 	if ( i & 3 )
@@ -356,10 +373,14 @@ hpgl_RO(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	    
 	    hpgl_pen_state_t saved_pen_state;
 	    hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_down);
-	    hpgl_call(hpgl_clear_current_path(pgls));
-	    hpgl_call(hpgl_set_ctm(pgls));
-	    hpgl_call(gs_itransform(pgls->pgs, dev_pt.x, dev_pt.y, &point));
+	    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 	    pgls->g.rotation = angle;
+	    hpgl_call(hpgl_set_ctm(pgls));
+	    /* set up a new clipping window */
+	    hpgl_args_setup(&args);
+	    hpgl_IW(&args, pgls);
+
+	    hpgl_call(gs_itransform(pgls->pgs, dev_pt.x, dev_pt.y, &point));
 	    /* now add a moveto the using the current ctm */
 	    hpgl_args_set_real(&args, point.x);
 	    hpgl_args_add_real(&args, point.y);
@@ -471,6 +492,17 @@ pxy:		scale_params.pmin.x = xy[0];
 	return 0;
 }
 
+/* BP - BreakPoint - add this to the HPGL stream and set a breakpoint
+   on this function.  This function is only defined for debugging
+   system. */
+#ifdef DEBUG
+ private int
+hpgl_BP(hpgl_args_t *pargs, hpgl_state_t *pgls)
+{
+	return 0;
+}
+#endif
+
 /* Initialization */
 private int
 pgconfig_do_init(gs_memory_t *mem)
@@ -488,10 +520,12 @@ pgconfig_do_init(gs_memory_t *mem)
 	  HPGL_COMMAND('R', 'O', hpgl_RO, 0),
 	  HPGL_COMMAND('R', 'P', hpgl_RP, 0),
 	  HPGL_COMMAND('S', 'C', hpgl_SC, 0),
+#ifdef DEBUG
+	  HPGL_COMMAND('B', 'P', hpgl_BP, 0),
+#endif
 	END_HPGL_COMMANDS
 	return 0;
 }
 const pcl_init_t pgconfig_init = {
   pgconfig_do_init, 0
 };
-

@@ -56,7 +56,7 @@ hpgl_arc_char_width(uint char_index, floatp *escapement)
 
 /* Append a symbol to the GL/2 path. */
 int
-hpgl_stick_append_char(hpgl_state_t *pgls, uint char_index, floatp chord_angle)
+hpgl_stick_append_char(hpgl_state_t *pgls, uint char_index)
 {	return hpgl_arc_append_char(pgls, char_index, 22.5);
 }
 int

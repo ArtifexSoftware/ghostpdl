@@ -27,7 +27,7 @@ hpgl_rectangle(hpgl_args_t *pargs, hpgl_state_t *pgls, int flags)
 	    x2 += pgls->g.pos.x;
 	    y2 += pgls->g.pos.y;
 	  }
-	      
+	
 	hpgl_args_setup(pargs);
 	/* enter polygon mode. */
 	hpgl_call(hpgl_PM(pargs, pgls));
@@ -36,17 +36,20 @@ hpgl_rectangle(hpgl_args_t *pargs, hpgl_state_t *pgls, int flags)
 	{
 	  hpgl_real_t x1 = pgls->g.pos.x; 
 	  hpgl_real_t y1 = pgls->g.pos.y;
+	  gs_point p1, p2;
 
-	  hpgl_args_set_real2(pargs, x1, y2);
+	  hpgl_call(gs_point_transform(x1, y1, &pgls->g.polygon.ctm, &p1));
+	  hpgl_call(gs_point_transform(x2, y2, &pgls->g.polygon.ctm, &p2));
+	  hpgl_args_set_real2(pargs, p1.x, p2.y);
 	  hpgl_call(hpgl_PD(pargs, pgls));
 
-	  hpgl_args_set_real2(pargs, x2, y2);
+	  hpgl_args_set_real2(pargs, p2.x, p2.y);
 	  hpgl_call(hpgl_PD(pargs, pgls));
 
-	  hpgl_args_set_real2(pargs, x2, y1);
+	  hpgl_args_set_real2(pargs, p2.x, p1.y);
 	  hpgl_call(hpgl_PD(pargs, pgls));
 
-	  hpgl_args_set_real2(pargs, x1, y1);
+	  hpgl_args_set_real2(pargs, p1.x, p1.y);
 	  hpgl_call(hpgl_PD(pargs, pgls));
 	}
 
@@ -78,8 +81,7 @@ hpgl_wedge(hpgl_args_t *pargs, hpgl_state_t *pgls)
            for the vectors and the arc endpoints are coincident. */
 	{
 	  hpgl_real_t x1, y1, x2, y2, x3, y3;
-	  hpgl_real_t startx = pgls->g.pos.x;
-	  hpgl_real_t starty = pgls->g.pos.y;
+	  gs_point p1, p2, p3;
 
 	  hpgl_compute_vector_endpoints(radius, pgls->g.pos.x, pgls->g.pos.y,
 				        start, &x1, &y1);
@@ -90,17 +92,18 @@ hpgl_wedge(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	  hpgl_compute_vector_endpoints(radius, pgls->g.pos.x, pgls->g.pos.y,
 				        (start + sweep), &x3, &y3);
 
-	  hpgl_args_set_real2(pargs, x1, y1);
+	  hpgl_call(gs_point_transform(x1, y1, &pgls->g.polygon.ctm, &p1));
+	  hpgl_call(gs_point_transform(x2, y2, &pgls->g.polygon.ctm, &p2));
+	  hpgl_call(gs_point_transform(x3, y3, &pgls->g.polygon.ctm, &p3));
+	  hpgl_args_set_real2(pargs, p1.x, p1.y);
 	  hpgl_call(hpgl_PD(pargs, pgls));
 	  
-	  hpgl_args_set_real2(pargs, x2, y2);
-	  hpgl_args_add_real(pargs, x3);
-	  hpgl_args_add_real(pargs, y3);
+	  hpgl_args_set_real2(pargs, p2.x, p2.y);
+	  hpgl_args_add_real(pargs, p3.x);
+	  hpgl_args_add_real(pargs, p3.y);
 	  hpgl_args_add_real(pargs, chord);
 	  hpgl_call(hpgl_AT(pargs, pgls));
 
-	  hpgl_args_set_real2(pargs, startx, starty);
-	  hpgl_call(hpgl_PD(pargs, pgls));
 	}
 	  
 	/* exit polygon mode */
@@ -117,12 +120,9 @@ int
 hpgl_EA(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
 	
-	hpgl_pen_state_t saved_pen_state;
-	hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
 	hpgl_call(hpgl_rectangle(pargs, pgls, DO_EDGE));
 	hpgl_call(hpgl_copy_polygon_buffer_to_current_path(pgls));
 	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
-	hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
 	return 0;
 }
 
@@ -130,15 +130,12 @@ hpgl_EA(hpgl_args_t *pargs, hpgl_state_t *pgls)
 int
 hpgl_EP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	hpgl_pen_state_t saved_pen_state;
-	hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
 	/* preserve the current path and copy the polygon buffer to
            the current path */
 	hpgl_call(hpgl_gsave(pgls));
 	hpgl_call(hpgl_copy_polygon_buffer_to_current_path(pgls));
 	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 	hpgl_call(hpgl_grestore(pgls));
-	hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
 	return 0;
 }
 
@@ -146,12 +143,9 @@ hpgl_EP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 int
 hpgl_ER(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	hpgl_pen_state_t saved_pen_state;
-	hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
 	hpgl_call(hpgl_rectangle(pargs, pgls, DO_RELATIVE));
 	hpgl_call(hpgl_copy_polygon_buffer_to_current_path(pgls));
 	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
-	hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
 	return 0;
 }
 
@@ -159,12 +153,9 @@ hpgl_ER(hpgl_args_t *pargs, hpgl_state_t *pgls)
 int
 hpgl_EW(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	hpgl_pen_state_t saved_pen_state;
-	hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
 	hpgl_call(hpgl_wedge(pargs, pgls));
 	hpgl_call(hpgl_copy_polygon_buffer_to_current_path(pgls));
 	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
-	hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
 	return 0;
 }
 
@@ -182,16 +173,12 @@ hpgl_get_poly_render_mode(hpgl_state_t *pgls)
 int
 hpgl_FP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int method = 0;
-	hpgl_pen_state_t saved_pen_state;
 
 	if ( hpgl_arg_c_int(pargs, &method) && (method & ~1) )
 	  return e_Range;
 
 	pgls->g.fill_type = (method == 0) ? 
 	  hpgl_even_odd_rule : hpgl_winding_number_rule;
-
-
-	hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
 	/* preserve the current path and copy the polygon buffer to
            the current path */
 	hpgl_call(hpgl_gsave(pgls));
@@ -199,15 +186,30 @@ hpgl_FP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	hpgl_call(hpgl_draw_current_path(pgls, 
 					 hpgl_get_poly_render_mode(pgls)));
 	hpgl_call(hpgl_grestore(pgls));
-	hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
 	return 0;
 }
 
+/* polygon points are rotated separately (ARGH) */
+ int private
+hpgl_set_polygon_ctm(hpgl_state_t *pgls)
+{
+	gs_matrix mat;
+	gs_make_identity(&mat);
+	if ( pgls->g.rotation == 600 )
+	  {
+	    gs_point pos;
+	    hpgl_call(hpgl_get_current_position(pgls, &pos));
+	    hpgl_call(gs_matrix_translate(&mat, -pos.x, -pos.y, &mat));
+	    hpgl_call(gs_matrix_rotate(&mat, pgls->g.rotation, &mat));
+	  }
+	pgls->g.polygon.ctm = mat;
+	return 0;
+}
 /* PM op; */
 int
 hpgl_PM(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int op;
-  
+
 	if ( hpgl_arg_c_int(pargs, &op) == 0 )
 	  op = 0;
 
@@ -216,16 +218,12 @@ hpgl_PM(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	  case 0 : 
 	    /* clear the current path if there is one */
 	    hpgl_call(hpgl_clear_current_path(pgls));
-	    /* a side affect of polygon mode is to add the current
-               state position to the polygon buffer.  We do a PU to
-               guarantee the first point is a moveto.  HAS not sure if
-               this is correct. */
 	    pgls->g.polygon_mode = true;
-	    {
-	      hpgl_args_t args;
-	      hpgl_args_setup(&args);
-	      hpgl_call(hpgl_PU(&args, pgls));
-	    }
+	    /* save the pen state, to be restored by PM2 */
+	    hpgl_save_pen_state(pgls, 
+				&pgls->g.polygon.pen_state,
+				hpgl_pen_all);
+	    hpgl_call(hpgl_set_polygon_ctm(pgls));
 	    break;
 	  case 1 :
 	    hpgl_call(hpgl_close_current_path(pgls));
@@ -239,6 +237,10 @@ hpgl_PM(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	    hpgl_call(hpgl_clear_current_path(pgls));
 	    /* return to vector mode */
 	    pgls->g.polygon_mode = false;
+	    /* restore the pen state */
+	    hpgl_restore_pen_state(pgls,
+				   &pgls->g.polygon.pen_state,
+				   hpgl_pen_all);
 	    break;
 	  default:
 	    return e_Range;
@@ -250,13 +252,10 @@ hpgl_PM(hpgl_args_t *pargs, hpgl_state_t *pgls)
 int
 hpgl_RA(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	hpgl_pen_state_t saved_pen_state;
-	hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
 	hpgl_call(hpgl_rectangle(pargs, pgls, 0));
 	hpgl_call(hpgl_copy_polygon_buffer_to_current_path(pgls));
 	hpgl_call(hpgl_draw_current_path(pgls, 
 					 hpgl_get_poly_render_mode(pgls)));
-	hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
 	return 0;
 }
 
@@ -264,13 +263,10 @@ hpgl_RA(hpgl_args_t *pargs, hpgl_state_t *pgls)
 int
 hpgl_RR(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {		
-	hpgl_pen_state_t saved_pen_state;
-	hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
 	hpgl_call(hpgl_rectangle(pargs, pgls, DO_RELATIVE));
 	hpgl_call(hpgl_copy_polygon_buffer_to_current_path(pgls));
 	hpgl_call(hpgl_draw_current_path(pgls,
 					 hpgl_get_poly_render_mode(pgls)));
-	hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
 	return 0;
 }
 
@@ -278,13 +274,10 @@ hpgl_RR(hpgl_args_t *pargs, hpgl_state_t *pgls)
 int
 hpgl_WG(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	hpgl_pen_state_t saved_pen_state;
-	hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
 	hpgl_call(hpgl_wedge(pargs, pgls));
 	hpgl_call(hpgl_copy_polygon_buffer_to_current_path(pgls));
 	hpgl_call(hpgl_draw_current_path(pgls,
 					 hpgl_get_poly_render_mode(pgls)));
-	hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
 	return 0;
 }
 

@@ -9,7 +9,7 @@ MAKEFILE=..\pcl\pcl_watc.mak
 
 # Directories
 GSDIR=\gs
-GSSRCDIR=..\gs
+GSSRCDIR=\gs
 PLSRCDIR=..\pl
 PLGENDIR=..\pl
 PLOBJDIR=..\pl
@@ -27,7 +27,7 @@ MAIN_OBJ=$(PCLOBJDIR)\pcmain.$(OBJ)
 
 # Debugging options
 DEBUG=1
-TDEBUG=0
+TDEBUG=1
 NOPRIVATE=0
 
 # Target options

@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -20,7 +20,6 @@
 #include "gsuid.h"		/* for gxbitmap.h */
 #include "gstypes.h"		/* for gxbitmap.h */
 #include "gxbitmap.h"
-/*#include "gzpath.h"*/		/* for gx_path_s */
 #include "gxfixed.h"
 #ifndef gs_imager_state_DEFINED
 #  define gs_imager_state_DEFINED
@@ -156,18 +155,18 @@ typedef struct pcl_hpgl_state_s {
   
 	int move_or_draw;	/* hpgl_plot_move/draw */
 	int relative_coords;	/* hpgl_plot_absolute/relative */
-	bool have_first_moveto;  
-	bool saved_have_first_moveto; /* used with gsave and grestore */
         gs_point pos;
         /* used to track the line drawing state in hpgl */
         gs_point first_point;
 	hpgl_rendering_mode_t current_render_mode; /* HAS revisit */
 
 		/* Chapter 21 (pgpoly.c) */
-
-	hpgl_path_state_t polygon_buffer;
+	struct polygon_ {
+	  hpgl_path_state_t buffer; /* path for polygon buffer */
+	  hpgl_pen_state_t pen_state; /* save pen state during polygon mode */
+	  gs_matrix ctm; /* matrix to handle rotation of the polygon buffer */
+	} polygon;
 	bool polygon_mode;
-
 		/* Chapter 22 (pglfill.c) */
 
 	struct lp_ {
@@ -246,7 +245,7 @@ typedef struct pcl_hpgl_state_s {
 	int font_selected;	/* 0 or 1 */
 	pl_font_t *font;	/* 0 means recompute from params */
 	pl_symbol_map_t *map;	/* map for current font */
-	pl_font_t stick_font[2];	/* stick font, if currently selected */
+	pl_font_t stick_font[2];  /* stick font, if currently selected */
 	struct ch_ {
 	  gs_point direction;
 	  bool direction_relative;

@@ -44,7 +44,7 @@ hpgl_default_pen_color(hpgl_state_t *pgls, int pen)
 
 /* the following is not consistant with the general model as we
    usually depend upon calling the commands directly to update
-   appropriate state variables, unfortunately we must guarantee a
+   appropriate qtate variables, unfortunately we must guarantee a
    reasonable picture frame, anchor point, and plot size for the rest
    of the hpgl/2 code to function properly, and they must be provided
    all at once.  For example documented side effects of changing the
@@ -106,11 +106,15 @@ hpgl_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 	  {
 
 	    hpgl_clear_state(pcls);
-	    gx_path_init(&pcls->g.polygon_buffer.path,
+	    gx_path_init(&pcls->g.polygon.buffer.path,
 			 pcls->memory);
 	    /* provide default anchor point, plot size and picture
                frame size */
 	    hpgl_default_coordinate_system(pcls);
+	    /* HAS clear the current gs path if there is one.  This
+               needs investigation since we should not have a path at
+               the end of gl/2 invocation.  */
+	    hpgl_clear_current_path(pcls);
 	    /* set rendering mode to default */
 	    hpgl_default_render_mode(pcls);
 	    /* execute IN */

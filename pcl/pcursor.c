@@ -29,7 +29,7 @@ pcl_do_FF(pcl_state_t *pcls)
 	code = pcl_end_page_always(pcls);
 	if ( code < 0 )
 	  return code;
-	pcls->cap.y = pcls->top_margin;
+	pcls->cap.y = pcls->top_margin + (0.75 * pcls->vmi);
 	pcl_continue_underline(pcls);	/* (after adjusting y!) */
 	return 0;
 }

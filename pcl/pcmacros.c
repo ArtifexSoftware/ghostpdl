@@ -41,8 +41,9 @@ pcl_execute_macro(const pcl_macro_t *pmac, pcl_state_t *pcls,
 	if ( reset )
 	  pcl_do_resets(pcls, reset);
 	pcl_process_init(&state);
-	r.ptr = (const byte *)(pmac + 1);
-	r.limit = (const byte*)pmac + (gs_object_size(pcls->memory, pmac) - 1);
+	r.ptr = (const byte *)(pmac + 1) - 1;
+	r.limit =
+	  (const byte *)pmac + (gs_object_size(pcls->memory, pmac) - 1);
 	pcls->macro_level++;
 	code = pcl_process(&state, pcls, &r);
 	pcls->macro_level--;

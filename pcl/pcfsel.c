@@ -43,7 +43,7 @@ check_support(const pcl_state_t *pcls, uint symbol_set, pl_font_t *fp,
 
 	id[0] = symbol_set >> 8;
 	id[1] = symbol_set;
-	if ( (map = pcl_find_symbol_map(pcls, id, gv)) == NULL )
+	if ( (map = pcl_find_symbol_map(pcls, id, gv)) == 0 )
 	  return false;
 	if ( pcl_check_symbol_support(map->character_requirements,
 	    fp->character_complement) )
@@ -71,7 +71,7 @@ score_match(const pcl_state_t *pcls, const pcl_font_selection_t *pfs,
 	    score[score_symbol_set] =
 		pfs->params.symbol_set == fp->params.symbol_set? 2:
 		    (fp->params.symbol_set == pcl_default_symbol_set_value);
-	    *mapp = NULL;	/* bound fonts have no map */
+	    *mapp = 0;		/* bound fonts have no map */
 	  }
 	else
 	  score[score_symbol_set] =
