@@ -338,6 +338,17 @@ gs_image_planes_wanted(gs_image_enum *penum)
     return penum->client_wanted;
 }
 
+/*
+ * Return the enumerator memory used for allocating the row buffers.
+ * Because some PostScript files use save/restore within an image data
+ * reading procedure, this must be a stable allocator.
+ */
+private gs_memory_t *
+gs_image_row_memory(const gs_image_enum *penum)
+{
+    return gs_memory_stable(penum->memory);
+}
+
 /* Free the row buffers when cleaning up. */
 private void
 free_row_buffers(gs_image_enum *penum, int num_planes, client_name_t cname)
@@ -345,7 +356,10 @@ free_row_buffers(gs_image_enum *penum, int num_planes, client_name_t cname)
     int i;
 
     for (i = num_planes - 1; i >= 0; --i) {
-	gs_free_string(penum->memory, penum->planes[i].row.data,
+	if_debug3('b', "[b]free plane %d row (0x%lx,%u)\n",
+		  i, (ulong)penum->planes[i].row.data,
+		  penum->planes[i].row.size);
+	gs_free_string(gs_image_row_memory(penum), penum->planes[i].row.data,
 		       penum->planes[i].row.size, cname);
 	penum->planes[i].row.data = 0;
 	penum->planes[i].row.size = 0;
@@ -426,15 +440,18 @@ gs_image_next_planes(gs_image_enum * penum,
 
 		    /* Make sure the row buffer is fully allocated. */
 		    if (raster > old_size) {
+			gs_memory_t *mem = gs_image_row_memory(penum);
 			byte *old_data = penum->planes[i].row.data;
 			byte *row =
 			    (old_data == 0 ?
-			     gs_alloc_string(penum->memory, raster,
+			     gs_alloc_string(mem, raster,
 					     "gs_image_next(row)") :
-			     gs_resize_string(penum->memory, old_data,
-					      old_size, raster,
+			     gs_resize_string(mem, old_data, old_size, raster,
 					      "gs_image_next(row)"));
 
+			if_debug5('b', "[b]plane %d row (0x%lx,%u) => (0x%lx,%u)\n",
+				  i, (ulong)old_data, old_size,
+				  (ulong)row, raster);
 			if (row == 0) {
 			    code = gs_note_error(gs_error_VMerror);
 			    free_row_buffers(penum, i, "gs_image_next(row)");
