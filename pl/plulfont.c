@@ -48,8 +48,8 @@ private SW16  fcHndlAry[16];
 const char *UFSTFONTDIR="/usr/local/fontdata/";
 
 /* default list of fcos and plugins - relative to UFSTFONTDIR */
-const char *UFSTFCOS="mtfonts/pclps2/mt1/pclp2__g.fco";
-const char *UFSTPLUGINS="mtfonts/pcl45/mt1/wd_____g.fco";
+const char *UFSTFCOS="mtfonts/pclps2/mt1/pclp2__g.fco:mtfonts/pcl45/mt1/wd_____g.fco";
+const char *UFSTPLUGINS="mtfonts/pcl45/mt1/plug___g.fco";
 
 /* return a null terminated array of strings on the heap from
    str0:str1:str:.  Use gs separator */

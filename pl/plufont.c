@@ -38,8 +38,7 @@
 private_st_pl_font();
 
 /* Imported procedures */
-int gs_type42_get_metrics(P3(gs_font_type42 *pfont, uint glyph_index,
-  float psbw[4]));
+int gs_type42_get_metrics(gs_font_type42 *pfont, uint glyph_index, float psbw[4]);
 
 /* Define accessors for unaligned, big-endian quantities. */
 #define u16(bptr) pl_get_uint16(bptr)
@@ -328,8 +327,8 @@ pl_fill_in_font(gs_font *pfont, pl_font_t *plfont, gs_font_dir *pdir,
 	pfont->StrokeWidth = 0;
 	pfont->procs.init_fstack = gs_default_init_fstack;
 	pfont->procs.next_char_glyph = gs_default_next_char_glyph;
-	pfont->procs.callbacks.glyph_name = pl_glyph_name;
-	pfont->procs.callbacks.known_encode = pl_known_encode;
+        // NB NB	pfont->procs.callbacks.glyph_name = pl_glyph_name;
+	// pfont->procs.callbacks.known_encode = pl_known_encode;
 	pfont->procs.define_font = gs_no_define_font;
 	pfont->procs.make_font = gs_no_make_font;
 	pfont->procs.font_info = gs_default_font_info;

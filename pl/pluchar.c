@@ -1210,11 +1210,11 @@ typedef struct gx_path_s gx_path;
 #endif
 
 /* Imported procedures */
-int gs_type42_append(P7(uint glyph_index, gs_imager_state *pis,
+int gs_type42_append(uint glyph_index, gs_imager_state *pis,
   gx_path *ppath, const gs_log2_scale_point *pscale, bool charpath_flag,
-  int paint_type, gs_font_type42 *pfont));
-int gs_type42_get_metrics(P3(gs_font_type42 *pfont, uint glyph_index,
-  float psbw[4]));
+  int paint_type, gs_font_type42 *pfont);
+int gs_type42_get_metrics(gs_font_type42 *pfont, uint glyph_index,
+  float psbw[4]);
 
 /*
  * Map a key through a cmap sub-table.  We export this so we can use
