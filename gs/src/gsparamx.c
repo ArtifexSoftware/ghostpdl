@@ -116,3 +116,60 @@ param_put_long(gs_param_list * plist, gs_param_name param_name,
     }
     return ecode;
 }
+
+/* Copy one parameter list to another, recursively if necessary. */
+int
+param_list_copy(gs_param_list *plto, gs_param_list *plfrom)
+{
+    gs_param_enumerator_t key_enum;
+    gs_param_key_t key;
+    int code;
+
+    param_init_enumerator(&key_enum);
+    while ((code = param_get_next_key(plfrom, &key_enum, &key)) == 0) {
+	char string_key[256];	/* big enough for any reasonable key */
+	gs_param_typed_value value;
+	gs_param_collection_type_t coll_type;
+	gs_param_typed_value copy;
+
+	if (key.size > sizeof(string_key) - 1) {
+	    code = gs_note_error(gs_error_rangecheck);
+	    break;
+	}
+	memcpy(string_key, key.data, key.size);
+	string_key[key.size] = 0;
+	if ((code = param_read_typed(plfrom, string_key, &value)) != 0) {
+	    code = (code > 0 ? gs_note_error(gs_error_unknownerror) : code);
+	    break;
+	}
+	gs_param_list_set_persistent_keys(plto, key.persistent);
+	switch (value.type) {
+	case gs_param_type_dict:
+	    coll_type = gs_param_collection_dict_any;
+	    goto cc;
+	case gs_param_type_dict_int_keys:
+	    coll_type = gs_param_collection_dict_int_keys;
+	    goto cc;
+	case gs_param_type_array:
+	    coll_type = gs_param_collection_array;
+	cc:
+	    copy.value.d.size = value.value.d.size;
+	    if ((code = param_begin_write_collection(plto, string_key,
+						     &copy.value.d,
+						     coll_type)) < 0 ||
+		(code = param_list_copy(copy.value.d.list,
+					value.value.d.list)) < 0 ||
+		(code = param_end_write_collection(plto, string_key,
+						   &copy.value.d)) < 0)
+		break;
+	    code = param_end_read_collection(plfrom, string_key,
+					     &value.value.d);
+	    break;
+	default:
+	    code = param_write_typed(plto, string_key, &value);
+	}
+	if (code < 0)
+	    break;
+    }
+    return code;
+}
