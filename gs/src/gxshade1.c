@@ -250,7 +250,7 @@ Fb_fill_region_with_constant_color(const Fb_fill_state_t * pfs, const Fb_frame_t
 	gx_path_add_point(ppath, pts[0].x, pts[0].y);
 	gx_path_add_lines(ppath, pts + 1, 3);
 	code = shade_fill_path((const shading_fill_state_t *)pfs,
-			       ppath, &dev_color);
+			       ppath, &dev_color, &pfs->pis->fill_adjust);
 	gx_path_free(ppath, "Fb_fill");
     }
     return code;
@@ -498,7 +498,7 @@ A_fill_stripe(const A_fill_state_t * pfs, gs_client_color *pcc,
 	gx_path_add_point(ppath, pts[0].x, pts[0].y);
 	gx_path_add_lines(ppath, pts + 1, 3);
 	code = shade_fill_path((const shading_fill_state_t *)pfs,
-			       ppath, &dev_color);
+			       ppath, &dev_color, &pfs->pis->fill_adjust);
 	gx_path_free(ppath, "A_fill");
 	return code;
     }
@@ -730,7 +730,7 @@ typedef struct R_fill_state_s {
 
 private int
 R_fill_annulus(const R_fill_state_t * pfs, gs_client_color *pcc,
-	       floatp t0, floatp t1, floatp r0, floatp r1)
+	       floatp t0, floatp t1, floatp r0, floatp r1, const gs_fixed_point *fill_adjust)
 {
     const gs_shading_R_t * const psh = pfs->psh;
     gx_device_color dev_color;
@@ -754,7 +754,7 @@ R_fill_annulus(const R_fill_state_t * pfs, gs_client_color *pcc,
 				  360.0, 0.0, false)) >= 0
 	) {
 	code = shade_fill_path((const shading_fill_state_t *)pfs,
-			       ppath, &dev_color);
+			       ppath, &dev_color, fill_adjust);
     }
     gx_path_free(ppath, "R_fill");
     return code;
@@ -784,7 +784,7 @@ R_fill_triangle(const R_fill_state_t * pfs, gs_client_color *pcc,
     gx_path_add_lines(ppath, pts+1, 2);
 
     code = shade_fill_path((const shading_fill_state_t *)pfs,
-			   ppath, &dev_color);
+			   ppath, &dev_color, &pfs->pis->fill_adjust);
 
     gx_path_free(ppath, "R_fill");
     return code;
@@ -796,7 +796,19 @@ R_fill_region(R_fill_state_t * pfs)
     const gs_shading_R_t * const psh = pfs->psh;
     gs_function_t *pfn = psh->params.Function;
     R_frame_t *fp = &pfs->frames[pfs->depth - 1];
+    gs_fixed_point zero = {0, 0};
+    int code;
 
+    code = R_fill_annulus(pfs, &fp->cc[0], fp->t0, fp->t0,
+			      psh->params.Coords[2] + pfs->dr * fp->t0,
+			      psh->params.Coords[2] + pfs->dr * fp->t0, &pfs->pis->fill_adjust);
+    if (code < 0)
+	return code;
+    code = R_fill_annulus(pfs, &fp->cc[0], fp->t1, fp->t1,
+			      psh->params.Coords[2] + pfs->dr * fp->t1,
+			      psh->params.Coords[2] + pfs->dr * fp->t1, &pfs->pis->fill_adjust);
+    if (code < 0)
+	return code;
     for (;;) {
 	double t0 = fp->t0, t1 = fp->t1;
 	float ft0, ft1;
@@ -825,10 +837,9 @@ R_fill_region(R_fill_state_t * pfs)
 	    ++fp;
 	} else {
 	    /* Fill the region with the color. */
-	    int code = R_fill_annulus(pfs, &fp->cc[0], t0, t1,
+	    code = R_fill_annulus(pfs, &fp->cc[0], t0, t1,
 				      psh->params.Coords[2] + pfs->dr * t0,
-				      psh->params.Coords[2] + pfs->dr * t1);
-
+				      psh->params.Coords[2] + pfs->dr * t1, &zero);
 	    if (code < 0 || fp == &pfs->frames[0])
 		return code;
 	    --fp;
@@ -989,6 +1000,12 @@ gs_shading_R_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 
     state.dd = dd;
 
+    /*
+	For a faster painting, we apply fill adjustment to outer annula only.
+	Inner annula are painted with no fill adjustment.
+	It can't cause a dropout, because the outer side of an annulus
+	gets same flattening as the inner side of the neighbour outer annulus.
+     */
     if (psh->params.Extend[0]) {
 	floatp max_extension;
 	gs_point p, q;
@@ -1007,7 +1024,7 @@ gs_shading_R_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 					coord[0][0], coord[0][1], 
 					coord[2][0], coord[2][1]);
 	    } else {
-		code = R_fill_annulus(&state, &rcc[0], 0.0, 0.0, 0.0, r0);
+		code = R_fill_annulus(&state, &rcc[0], 0.0, 0.0, 0.0, r0, &pis->fill_adjust);
 	    }
 	}
 	else if (r0 > r1) {
@@ -1025,7 +1042,7 @@ gs_shading_R_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 					coord[6][0], coord[6][1]);
 	    } else {
 		code = R_fill_annulus(&state, &rcc[0], 0.0, 0.0, r0,
-				      R_compute_radius(x0, y0, rect));
+				      R_compute_radius(x0, y0, rect), &pis->fill_adjust);
 	    }
 	} else { /* equal radii */
 	    floatp coord[4][2];
@@ -1068,10 +1085,10 @@ gs_shading_R_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 					coord[3][0], coord[3][1], 
 					coord[5][0], coord[5][1], 
 					coord[6][0], coord[6][1]);
-		code = R_fill_annulus(&state, &rcc[1], 1.0, 1.0, 0.0, r1);
+		code = R_fill_annulus(&state, &rcc[1], 1.0, 1.0, 0.0, r1, &pis->fill_adjust);
 	    } else {
 		code = R_fill_annulus(&state, &rcc[1], 1.0, 1.0, r1,
-				      R_compute_radius(x1, y1, rect));
+				      R_compute_radius(x1, y1, rect), &pis->fill_adjust);
 	    }
 	}
 	else if (r0 > r1)
@@ -1087,7 +1104,7 @@ gs_shading_R_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 					coord[0][0], coord[0][1], 
 					coord[2][0], coord[2][1]);
 	    }
-	    code = R_fill_annulus(&state, &rcc[1], 1.0, 1.0, 0.0, r1);
+	    code = R_fill_annulus(&state, &rcc[1], 1.0, 1.0, 0.0, r1, &pis->fill_adjust);
 	} else { /* equal radii */
 	    floatp coord[4][2];
 	    R_compute_extension_bar(x1, y1, x0, y0, r0, max_extension, coord);
@@ -1099,7 +1116,7 @@ gs_shading_R_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 				    coord[2][0], coord[2][1], 
 				    coord[3][0], coord[3][1], 
 				    coord[1][0], coord[1][1]);
-	    code = R_fill_annulus(&state, &rcc[1], 1.0, 1.0, 0.0, r1);
+	    code = R_fill_annulus(&state, &rcc[1], 1.0, 1.0, 0.0, r1, &pis->fill_adjust);
 	}
     }
     return code;

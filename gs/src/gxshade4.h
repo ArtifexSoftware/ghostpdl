@@ -27,8 +27,10 @@
 /* The code QUADRANGLES 1 appears a dead branch.
    We keep it because it stores a valuable code for constant_color_quadrangle,
    which decomposes a random quadrangle into 3 or 4 trapezoids.
+   We don't use it because the color approximation looks
+   worse than with triangles, and works some slower.
  */
-#define DIVIDE_BY_PARALLELS 0 /* 1 - divide a triangle by parallels, 0 - in 4 triangles.  */
+#define DIVIDE_BY_PARALLELS 1 /* 1 - divide a triangle by parallels, 0 - in 4 triangles.  */
 /* The code DIVIDE_BY_PARALLELS 1 appears faster due to a smaller decomposition,
    because it is optimized for constant color areas.
    When smoothness is smaller than the device color resolution,

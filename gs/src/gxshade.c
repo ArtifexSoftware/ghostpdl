@@ -347,12 +347,12 @@ shade_bbox_transform2fixed(const gs_rect * rect, const gs_imager_state * pis,
 /* Fill one piece of a shading. */
 int
 shade_fill_path(const shading_fill_state_t * pfs, gx_path * ppath,
-		gx_device_color * pdevc)
+		gx_device_color * pdevc, const gs_fixed_point *fill_adjust)
 {
     gx_fill_params params;
 
     params.rule = -1;		/* irrelevant */
-    params.adjust = pfs->pis->fill_adjust;
+    params.adjust = *fill_adjust;
     params.flatness = 0;	/* irrelevant */
     params.fill_zero_width = false;
     return (*dev_proc(pfs->dev, fill_path)) (pfs->dev, pfs->pis, ppath,

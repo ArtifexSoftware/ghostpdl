@@ -287,7 +287,7 @@ mesh_fill_triangle(mesh_fill_state_t *pfs)
 		if (!VD_TRACE_DOWN)
 		    vd_disable;
 		code = shade_fill_path((const shading_fill_state_t *)pfs,
-				       ppath, &dev_color);
+				       ppath, &dev_color, &pfs->pis->fill_adjust);
 		vd_restore;
 		gx_path_free(ppath, "Gt_fill");
 	    } else {
