@@ -410,7 +410,7 @@ true setglobal
 	  //PDFR_STREAM {
         /dup load
         /print load
-	    (>\n)
+	    (>)
 	    /print load
 	  } if
 	  ( end of stream proc.\n)
@@ -592,6 +592,57 @@ true setglobal
   end % font
 } bind def
 
+/ResolveAndSetFont  % <resource_name> <size> ResolveAndSetFont -
+{ exch dup															% s rn rn
+  //PDFReader /CurrentObject get /Context get /Resources get 
+  /Font //DoNothing //ResolveD exec
+  exch //CheckFont //ResolveD exec									% s rn fr
+  dup /Font //knownget exec {										% s rn fr f
+    exch pop exch pop
+  } {
+    //ObtainEncoding exec
+    //ObtainMetrics exec
+    dup /Subtype get /Type3 eq {									% s rn fr
+	  2 copy exch /FontName exch put
+	  dup /CharProcs get //ResolveDict exec
+	  dup /FontType 3 put
+	  dup /BuildChar //BuildChar put
+	  dup dup /Font exch put
+	  % Ignore Metrics because pdfwrite duplicates it 
+	  % from setcharwidth/setcachedevice.
+	  dup 3 1 roll													% s fr rn fr
+	  definefont													% s fr f
+	  2 copy ne { 
+	    % The interpreter copied the font dictionary while 'definefont'
+		% Need to update the font pointer in the resource.
+		2 copy /Font exch put										% s fr f
+	  } if
+	  exch pop														% s f
+    } {																% s rn fr
+      (Underimplemented SetFont)=
+	  exch pop														% s fr
+      dup /BaseFont get												% s fr n
+	  //RemoveFontNamePrefix exec									% s fr n
+	  //PDFR_DEBUG {
+	    (Font ) print dup =
+	  } if															% s fr n
+	  //GetInstalledFont exec										% s fr f
+	  dup length dict copy											% s fr f
+	  dup 2 index /Encoding get										% s fr f f e
+	  /Encoding exch put											% s fr f
+	  1 index /Metrics //knownget exec {							% s fr f M
+	    1 index exch /Metrics exch put								% s fr f
+	  } if
+	  % todo: set Metrics here
+	  1 index /BaseFont get											% s fr f n
+	  exch definefont												% s fr f
+	  dup 3 1 roll													% s f fr f
+	  /Font exch put												% s f
+	} ifelse
+  } ifelse
+  exch scalefont setfont
+} bind def
+
 % ===================== Interpret Data Streams ===============
 
 /TempMatrix matrix def
@@ -614,54 +665,7 @@ currentdict end def
 
 /SetFont  % <resource_name> <size> SetFont -
 { dup //GraphicState exch /FontSize exch put
-  exch dup															% s rn rn
-  //PDFReader /CurrentObject get /Context get /Resources get 
-  /Font //DoNothing //ResolveD exec
-  exch //CheckFont //ResolveD exec									% s rn fr
-  dup /Font //knownget exec {										% s rn fr f
-    exch pop exch pop
-  } {
-    (Underimplemented SetFont)=
-    //ObtainEncoding exec
-    //ObtainMetrics exec
-    dup /Subtype get /Type3 eq {									% s rn fr
-	  2 copy exch /FontName exch put
-	  dup /CharProcs get //ResolveDict exec
-	  dup /FontType 3 put
-	  dup /BuildChar //BuildChar put
-	  dup dup /Font exch put
-	  % Ignore Metrics because pdfwrite duplicates it 
-	  % from setcharwidth/setcachedevice.
-	  dup 3 1 roll													% s fr rn fr
-	  definefont													% s fr f
-	  2 copy ne { 
-	    % The interpreter copied the font dictionary while 'definefont'
-		% Need to update the font pointer in the resource.
-		2 copy /Font exch put										% s fr f
-	  } if
-	  exch pop														% s f
-    } {																% s rn fr
-	  exch pop														% s fr
-      dup /BaseFont get												% s fr n
-	  //RemoveFontNamePrefix exec									% s fr n
-	  //PDFR_DEBUG {
-	    (Font ) print dup =
-	  } if															% s fr n
-	  //GetInstalledFont exec										% s fr f
-	  dup length dict copy											% s fr f
-	  dup 2 index /Encoding get										% s fr f f e
-	  /Encoding exch put											% s fr f
-	  1 index /Metrics //knownget exec {							% s fr f M
-	    1 index exch /Metrics exch put								% s fr f
-	  } if
-	  % todo: set Metrics here
-	  1 index /BaseFont get											% s fr f n
-	  exch definefont												% s fr f
-	  dup 3 1 roll													% s f fr f
-	  /Font exch put												% s f
-	} ifelse
-  } ifelse
-  exch scalefont setfont
+  //ResolveAndSetFont exec
 } bind def
 
 /ShowText  % <string> ShowText -
