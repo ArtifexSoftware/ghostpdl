@@ -69,7 +69,8 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
 	return 0;
     if (penum->use_mask_color || penum->posture != image_portrait ||
     	penum->masked || penum->alpha ||
-	penum->dev->color_info.max_gray < 15 ||
+	(penum->dev->color_info.num_components == 1 &&
+	 penum->dev->color_info.max_gray < 15) ||
         (penum->dev->color_info.num_components > 1 &&
          penum->dev->color_info.max_color < 15)
        ) {
