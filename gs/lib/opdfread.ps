@@ -114,11 +114,11 @@ true setglobal
 {
   exch dup															% d obj id id
   //PDFReader /ObjectRegistry get length gt {
-	//PDFReader /ObjectRegistry get length dup dup 2 div add array	% d obj id length []
-	dup 3 1 roll													% d obj id [] length []
-	exch 0 exch getinterval 										% d obj id [] []
-	//PDFReader /ObjectRegistry get exch copy pop					% d obj id []
-	//PDFReader /ObjectRegistry exch put							% d obj id
+	dup dup 2 idiv add array dup									% d obj id [n] [n]
+	//PDFReader /ObjectRegistry get dup	length						% d obj id [n] [n] [o] l
+	3 2 roll exch													% d obj id [n] [o] [n] l
+	0 exch getinterval copy pop										% d obj id [n]
+	//PDFReader exch /ObjectRegistry exch put						% d obj id
   } if
   exch //PDFReader /ObjectRegistry get								% d id obj r
   3 1 roll															% d r id obj
