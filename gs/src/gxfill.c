@@ -1480,7 +1480,7 @@ private int margin_boundary(line_list * ll, margin_set * set, active_line * alp,
     fixed x0, x1, xmin, xmax;
     int xp0, xp;
     int i0, i;
-#   if CHECK_SPOT_CONTIGUITY
+#   if !CHECK_SPOT_CONTIGUITY
     int i1;
 #   endif
 
@@ -1599,11 +1599,7 @@ private int add_margin(line_list * ll, active_line * flp, active_line * alp, fix
 }
 
 private int add_horiz_margin(line_list * ll, active_line * alp)
-{   fixed x0 = alp->start.x, x1 = alp->end.x;
-    int ix0 = fixed2int_var_pixround(x0) - ll->bbox_left;
-    int ix1 = fixed2int_var_pixround(x1) - ll->bbox_left;
-
-    vd_bar(alp->start.x, alp->start.y, alp->end.x, alp->end.y, 1, RGB(128, 0, 255));
+{   vd_bar(alp->start.x, alp->start.y, alp->end.x, alp->end.y, 1, RGB(128, 0, 255));
     return margin_boundary(ll, &ll->margin_set0, alp, alp->start.y, alp->start.y, -1);
 }
 
