@@ -1355,7 +1355,8 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
 		 * are different, so checking it here.
 		 */
 		if (info.v.x != v.x || info.v.y != v.y) {
-		    pwidths->Width.v = pwidths->real_width.v = info.v;
+		    pwidths->Width.v = v;
+		    pwidths->real_width.v = info.v;
 		} else {
 		    /* 
 		     * Probably there is no Metrics2, use zero shift.
