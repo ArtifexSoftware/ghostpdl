@@ -140,8 +140,6 @@ sread_fileno(register stream * s, FILE * file, byte * buf, uint len)
     s->file = file;
     s->file_modes = s->modes;
     s->file_offset = 0;
-    s->file_limit = -1;
-    s->file_offset = 0;
     s->file_limit = max_long;
 }
 
@@ -283,7 +281,7 @@ swrite_fileno(register stream * s, FILE * file, byte * buf, uint len)
     s->file = file;
     s->file_modes = s->modes;
     s->file_offset = 0;		/* in case we switch to reading later */
-    s->file_limit = -1;		/* ibid. */
+    s->file_limit = max_long;	/* ibid. */
 }
 /* Initialize for appending to an OS file. */
 void

@@ -191,6 +191,8 @@ swrite_file(register stream * s, FILE * file, byte * buf, uint len)
     if_debug1('s', "[s]write file=0x%lx\n", (ulong) file);
     s->file = file;
     s->file_modes = s->modes;
+    s->file_offset = 0;		/* in case we switch to reading later */
+    s->file_limit = max_long;	/* ibid. */
 }
 /* Initialize for appending to an OS file. */
 void
