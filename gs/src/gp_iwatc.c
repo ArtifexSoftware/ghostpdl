@@ -65,7 +65,6 @@ gp_exit(int exit_status, int code)
 void
 gp_do_exit(int exit_status)
 {
-    exit(exit_status);
 }
 
 /* ------ Printer accessing ------ */

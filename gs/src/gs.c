@@ -64,8 +64,7 @@ main(int argc, char *argv[])
 	    fflush(stdout);
 	    if (code < 0) {
 		gs_exit(1);
-		/* NOTREACHED */
-		return 1;	/* pacify compilers */
+		return 1;
 	    }
 	}
     }
