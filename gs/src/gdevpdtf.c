@@ -640,7 +640,7 @@ pdf_font_std_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 	(code = pdf_base_font_alloc(pdev, &pdfont->base_font, pfont, true)) < 0
 	)
 	return code;
-    pdfont->BaseFont.data = (const byte *)psfi->fname;
+    pdfont->BaseFont.data = (byte *)psfi->fname;
     pdfont->BaseFont.size = strlen(psfi->fname);
     pdfont->copied_font = pdf_base_font_font(pdfont->base_font);
     set_is_MM_instance(pdfont, pfont);
