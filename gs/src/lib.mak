@@ -2000,7 +2000,7 @@ $(GLOBJ)gdevpsfx.$(OBJ) : $(GLSRC)gdevpsfx.c $(GXERR)\
 # only by pdfwrite.
 
 fcopy_=$(GLOBJ)gxfcopy.$(OBJ)
-$(GLD)fcopy.dev : $(DEVS_MAK) $(ECHOGS_MAK) $(fcopy_)
+$(GLD)fcopy.dev : $(DEVS_MAK) $(ECHOGS_XE) $(fcopy_)
 	$(SETMOD) $(GLD)fcopy $(fcopy_)
 
 $(GLOBJ)gxfcopy.$(OBJ) : $(GLSRC)gxfcopy.c $(memory__h) $(GXERR)\

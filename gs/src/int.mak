@@ -813,7 +813,7 @@ $(PSOBJ)zfont42.$(OBJ) : $(PSSRC)zfont42.c $(OP) $(memory__h)\
 # Testing-specific operators for fcopy.  This should only be included in
 # debugging builds.
 fctest_=$(PSOBJ)zfctest.$(OBJ)
-$(PSD)fctest.dev : $(DEVS_MAK) $(ECHOGS_MAK) $(fctest_) $(GLD)fcopy.dev
+$(PSD)fctest.dev : $(DEVS_MAK) $(ECHOGS_XE) $(fctest_) $(GLD)fcopy.dev
 	$(SETMOD) $(PSD)fctest $(fctest_)
 	$(ADDMOD) $(PSD)fctest -oper zfctest
 	$(ADDMOD) $(PSD)fctest -include $(GLD)fcopy

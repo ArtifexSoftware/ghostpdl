@@ -861,7 +861,7 @@ $(GLOBJ)gdevpdfv.$(OBJ) : $(GLSRC)gdevpdfv.c $(GXERR) $(math__h) $(string__h)\
 # we give them their own module name and (for the new code) file name prefix.
 # However, logically they are part of pdfwrite and cannot be used separately.
 
-$(DD)pdtext.dev : $(DEVS_MAK) $(ECHOGS_MAK) $(DD)pdxtext.dev
+$(DD)pdtext.dev : $(DEVS_MAK) $(ECHOGS_XE) $(DD)pdxtext.dev
 	$(SETMOD) $(DD)pdtext -include $(DD)pdxtext
 
 # For a code roadmap, see gdevpdtx.h.
@@ -889,7 +889,7 @@ pdxtext_xyz=
 pdxtext_=$(pdxtext_ab) $(pdxtext_cde) $(pdxtext_fgh) $(pdxtext_ijk)\
  $(pdxtext_lmn) $(pdxtext_opq) $(pdxtext_rst) $(pdxtext_uvw) $(pdxtext_xyz)\
  $(GLOBJ)gsfont0c.$(OBJ)
-$(DD)pdxtext.dev : $(DEVS_MAK) $(ECHOGS_MAK) $(pdxtext_)\
+$(DD)pdxtext.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pdxtext_)\
  $(GLD)fcopy.dev $(GLD)psf.dev
 	$(SETMOD) $(DD)pdxtext $(pdxtext_ab)
 	$(ADDMOD) $(DD)pdxtext $(pdxtext_cde)
