@@ -62,7 +62,7 @@ extern stream_state_proc_get_params(s_CF_get_params, stream_CF_state);
 
 /* GC descriptors */
 extern_st(st_pdf_color_space);
-extern_st(st_pdf_font);
+extern_st(st_pdf_font_resource);
 extern_st(st_pdf_char_proc);
 extern_st(st_pdf_font_descriptor);
 public_st_pdf_resource();

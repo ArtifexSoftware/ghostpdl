@@ -254,7 +254,7 @@ struct pdf_font_s {
 
 /* The descriptor is public for pdf_resource_type_structs. */
 #define public_st_pdf_font()\
-  gs_public_st_suffix_add10(st_pdf_font, pdf_font_t, "pdf_font_t",\
+  gs_public_st_suffix_add10(st_pdf_font_resource, pdf_font_t, "pdf_font_t",\
     pdf_font_enum_ptrs, pdf_font_reloc_ptrs, st_pdf_resource,\
     font, FontDescriptor, Widths, real_widths, widths_known, Differences, DescendantFont,\
     glyphshow_font, CIDToGIDMap, char_procs)
