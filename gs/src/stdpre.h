@@ -284,13 +284,16 @@ typedef int bool;
 #endif
 #endif
 /*
- * MetroWerks CodeWarrior predefines true and false, probably as 1 and 0.
- * We need to cancel those definitions for our own code.
+ * Older versions of MetroWerks CodeWarrior defined true and false, but they're now
+ * an enum in the (MacOS) Universal Interfaces. The only way around this is to escape
+ * our own definitions wherever MacTypes.h is included.
  */
+#ifndef __MACOS__
 #undef false
 #define false ((bool)0)
 #undef true
 #define true ((bool)1)
+#endif __MACOS__
 
 /*
  * Compilers disagree as to whether macros used in macro arguments

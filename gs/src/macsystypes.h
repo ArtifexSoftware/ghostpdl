@@ -22,7 +22,6 @@
 #include <MacTypes.h>
 #include <unix.h>
 #define CHECK_INTERRUPTS
-#define HAVE_SYS_TIME_H
 
 /* use a 64 bit type for color vectors. (from MacTypes.h)
    this is important for devicen support, but can be safely

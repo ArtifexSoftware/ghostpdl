@@ -37,6 +37,7 @@
 #include <StringCompare.h>
 #include <Gestalt.h>
 #include <Folders.h>
+#include <Files.h>
 #include <Fonts.h>
 #include <FixMath.h>
 #include <Resources.h>
@@ -47,7 +48,6 @@
 //#include <stdio.h>
 //#include <cstdio.h>
 
-#include "sys/stat.h"
 #include "stdio_.h"
 #include <stdlib.h>
 #include "gx.h"

@@ -19,6 +19,15 @@
 #ifndef gdevmac_INCLUDED
 #  define gdevmac_INCLUDED
 
+#include <stdlib.h>
+#include "math_.h"
+#include "string_.h"
+
+#include "gdevmacpictop.h"
+
+#include <Fonts.h>
+#include <FixMath.h>
+#include <Resources.h>
 
 #include "gx.h"
 #include "gxdevice.h"
@@ -30,14 +39,6 @@
 #include "gxxfont.h"
 #include "gsstruct.h"
 #include "gserrors.h"
-
-#include "gdevmacpictop.h"
-#include <Fonts.h>
-#include <FixMath.h>
-#include <Resources.h>
-#include "math_.h"
-#include <string.h>
-#include <stdlib.h>
 
 
 

@@ -22,7 +22,13 @@
 
 /* We must include std.h before any file that includes sys/types.h. */
 #include "std.h"
+
+/* Metrowerks Standard Library doesn't use subdirs */
+#ifdef __MWERKS__
+#include <stat.h>
+#else
 #include <sys/stat.h>
+#endif
 
 /*
  * Many environments, including the MS-DOS compilers, don't define

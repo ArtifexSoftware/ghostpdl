@@ -16,6 +16,7 @@
 
 /* $Id$ */
 
+#ifndef __CARBON__
 #include <Palettes.h>
 #include <Aliases.h>
 #include <Quickdraw.h>
@@ -25,6 +26,7 @@
 #include <Controls.h>
 #include <Script.h>
 #include <Timer.h>
+#include <Time.h>
 #include <Folders.h>
 #include <Resources.h>
 #include <Sound.h>
@@ -37,44 +39,34 @@
 #include <Fonts.h>
 #include <FixMath.h>
 #include <Resources.h>
-#include "math_.h"
-#include <string.h>
+#else
+#include <Carbon.h>
+#endif
+
 #include <stdlib.h>
-
-
-#include <Time.h>
-#include <sys/types.h>
+#include "math_.h"
+#include "string_.h"
 #include "time_.h"
 #include "memory_.h"
 #include "string_.h"
+
 #include "gx.h"
 #include "gp.h"
 #include "gsdll.h"
 #include "gpcheck.h"
 #include "gp_mac.h"
 #include "gdebug.h"
-#include "sys/stat.h"
-#include <stdarg.h>
 /*#include "gpgetenv.h"*/
 #include "gsexit.h"
 
 HWND hwndtext;	/* used as identifier for the dll instance */
 
 
-void
-noMemoryExit(void)
-{
-	Alert(307, NULL);
-	ExitToShell();
-}
-
 char *
 mygetenv(const char * env)
 {
 	return (NULL);	
 }
-
-
 
 void
 gp_init (void)
@@ -332,33 +324,14 @@ gp_console_puts (const char *str, uint size)
 	return;
 }
 
-/* Make the console current on the screen. */
-/*
-int
-gp_make_console_current (gx_device *dev)
-{
-	return 0;
-}
-*/
-
-/* Make the graphics current on the screen. */
-/*
-int
-gp_make_graphics_current (gx_device *dev)
-{
-	return 0;
-}
-*/
-
 const char *
 gp_getenv_display(void)
 {
 	return NULL;
 }
 
-
-int
-gp_check_interrupts(void)
+#ifdef CHECK_INTERRUPTS
+int gp_check_interrupts(void)
 {
 	static unsigned long	lastYieldTicks = 0;
 	
@@ -372,4 +345,4 @@ gp_check_interrupts(void)
 		return 0;
 	}
 }
-
+#endif

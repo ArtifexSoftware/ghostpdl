@@ -44,11 +44,10 @@
 #  endif
 #else
 #  include <time.h>
-#  ifndef __DECC
+#  if !defined(__DECC) && !defined(__MWERKS__)
 struct timeval {
     long tv_sec, tv_usec;
 };
-
 #  endif
 struct timezone {
     int tz_minuteswest, tz_dsttime;

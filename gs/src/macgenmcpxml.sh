@@ -146,15 +146,16 @@ WriteSETTINGLIST()
         
         echo "<!-- Settings for "Access Paths" panel -->"
         WriteValueSetting AlwaysSearchUserPaths false
-        WriteValueSetting InterpretDOSAndUnixPaths false
+        WriteValueSetting InterpretDOSAndUnixPaths true
         echo "<SETTING><NAME>UserSearchPaths</NAME>"
             WritePathSetting SearchPath ":src:" MacOS Project
             WritePathSetting SearchPath ":obj:" MacOS Project
             WritePathSetting SearchPath ":" MacOS Project
         echo "</SETTING>"
         echo "<SETTING><NAME>SystemSearchPaths</NAME>"
+            WritePathSetting SearchPath ":obj:" MacOS Project
             WritePathSetting SearchPath ":MacOS Support:" MacOS CodeWarrior
-            WritePathSetting SearchPath ":MSL:" MacOS CodeWarrior
+            WritePathSetting SearchPath ":MSL:MSL_C" MacOS CodeWarrior
             WritePathSetting SearchPath ":" MacOS CodeWarrior
             WritePathSetting SearchPath ":" MacOS Project
         echo "</SETTING>"
@@ -167,7 +168,7 @@ WriteSETTINGLIST()
         
 	echo "<!-- Settings for "PPC Project" panel -->"
 	WriteValueSetting MWProject_PPC_type SharedLibrary
-	WriteValueSetting MWProject_PPC_outfile "GhostScriptLib PPC"
+	WriteValueSetting MWProject_PPC_outfile "GhostscriptLib PPC"
 	WriteValueSetting MWProject_PPC_filecreator 1061109567
 	WriteValueSetting MWProject_PPC_filetype 1936223330
 	WriteValueSetting MWProject_PPC_size 0

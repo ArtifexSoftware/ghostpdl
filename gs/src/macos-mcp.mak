@@ -330,22 +330,11 @@ gconfig_h=$(GLOBJ)gconfig.h
 gconfigv_h=$(GLOBJ)gconfigv.h
 
 macsystypes_h=$(GLSRC)macsystypes.h
-macsysstat_h=$(GLSRC)macsysstat.h
-systypes_h=$(GLOBJ)sys\:types.h
-systime_h=$(GLOBJ)sys\:time.h
-sysstat_h=$(GLOBJ)sys\:stat.h
+systypes_h=$(GLOBJ)sys/types.h
 
 $(GLOBJ)gp_mac.$(OBJ): $(GLSRC)gp_mac.c
 $(GLOBJ)gp_macio.$(OBJ): $(GLSRC)gp_macio.c
 $(GLOBJ)gp_stdin.$(OBJ): $(GLSRC)gp_stdin.c $(AK) $(stdio__h) $(gx_h) $(gp_h)
-
-# does not work for systime_h?!?!
-#$(systypes_h):
-#	$(CP_) $(macsystypes_h) $(systypes_h)
-#$(systime_h):
-#	echo "/* This file deliberately left blank. */" > $(systime_h)
-#$(sysstat_h):
-#	$(CP_) $(macsysstat_h) $(sysstat_h)
 
 # ------------------------------------------------------------------- #
 
@@ -390,9 +379,8 @@ ldt_tr=$(PSOBJ)ldt.tr
 CWPROJ_XML=./ghostscript.mcp.xml
 
 $(CWPROJ_XML):
+	-mkdir -p obj/sys
 	$(CP_) $(macsystypes_h) $(systypes_h)
-	echo "/* This file deliberately left blank. */" > $(systime_h)
-	$(CP_) $(macsysstat_h) $(sysstat_h)
 	$(SH) $(GLSRC)macgenmcpxml.sh `$(CAT) $(ld_tr)` >  $(CWPROJ_XML)
 	$(CP_) $(GLSRC)gconf.c $(GLOBJ)gconfig.c
 	$(CP_) $(GLSRC)iconf.c $(GLOBJ)iconfig.c
