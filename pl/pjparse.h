@@ -106,4 +106,8 @@ int pjl_register_permanent_soft_font_deletion(P2(pjl_parser_state *pst, int font
    the font.   */
 int pjl_register_permanent_soft_font_addition(P1(pjl_parser_state *pst));
 
+/* set the initial environment to the default environment, this should
+   be done at the beginning of each job */
+void pjl_set_init_from_defaults(P1(pjl_parser_state *pst));
+
 #endif				/* pjparse_INCLUDED */

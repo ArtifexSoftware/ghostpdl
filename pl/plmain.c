@@ -24,6 +24,7 @@ pl_get_real_stdio(FILE **in, FILE **out, FILE **err)
 #include "gp.h"
 #include "gsdevice.h"
 #include "gsparam.h"
+#include "pjtop.h"
 #include "plparse.h"
 #include "plplatf.h"
 #include "pltop.h"
@@ -75,7 +76,7 @@ extern pl_interp_implementation_t const * const pdl_implementation[];	/* zero-te
 /* Define the usage message. */
 private const char *pl_usage = "\
 Usage: %s [option* file]+...\n\
-Options: -dNOPAUSE -E[#] -h -L<PCL5|PCL/XL> -K<maxK> -Z...\n\
+Options: -dNOPAUSE -E[#] -h -L<PCL|PCLXL> -K<maxK> -Z...\n\
          -sDEVICE=<dev> -g<W>x<H> -r<X>[x<Y>] -d{First|Last}Page=<#>\n\
 	 -sOutputFile=<file> (-s<option>=<string> | -d<option>[=<value>])*\n\
 ";
@@ -116,7 +117,8 @@ pl_auto_sense(P3(
 ));
 
 private pl_interp_implementation_t const *
-pl_select_implementation(P2(
+pl_select_implementation(P3(
+  pl_interp_instance_t *pjl_instance,
   pl_main_instance_t *pmi, 
   pl_top_cursor_t r
 ));
@@ -144,6 +146,10 @@ int pl_main_process_options(P4(pl_main_instance_t *pmi, arg_list *pal,
 /* Find default language implementation */
 pl_interp_implementation_t const *
 pl_auto_sense(P3(const char* buf, int buf_len, pl_interp_implementation_t const * const impl_array[]));
+
+private pl_interp_implementation_t const *
+pl_pjl_select(P2(pl_interp_instance_t *pjl_instance,
+	      pl_interp_implementation_t const * const impl_array[]));
 
 /* Pre-page portion of page finishing routine */
 int	/* ret 0 if page should be printed, 1 if no print, else -ve error */
@@ -310,14 +316,14 @@ main(
     	    } else {
 		if ( new_job ) {
 		    if ( (curr_instance = pl_main_universe_select(&universe, err_buf,
-							      pl_select_implementation(&inst, r),
-							      inst.device, (gs_param_list *)&params)) == 0) {
+								  pl_select_implementation(pjl_instance, &inst, r),
+								  inst.device, (gs_param_list *)&params)) == 0) {
 			fputs(err_buf, gs_stderr);
 			exit(1);
 		    }
 
 		    if ( pl_init_job(curr_instance) < 0 ) {
-			fprintf(gs_stderr, "Unable to init PJL job.\n");
+			fprintf(gs_stderr, "Unable to init PDL job.\n");
 			exit(1);
 		    }
 		    new_job = false;
@@ -330,6 +336,10 @@ main(
 		    /* Select desired language & device */
                     if ( pl_dnit_job(curr_instance) < 0 ) {
 			fprintf(gs_stderr, "Unable to deinit PDL job.\n");
+			exit(1);
+		    }
+		    if ( pl_init_job(pjl_instance) < 0 ) {
+			fprintf(gs_stderr, "Unable to init PJL job.\n");
 			exit(1);
                     }
 		}
@@ -805,17 +815,39 @@ out:	if ( help )
 	return 0;
 }
 
-/* either the implementation has been selected on the command line or
-   we need to auto-sense from the stream */
+/* either the (1) implementation has been selected on the command line or
+   (2) it has been selected in PJL or (3) we need to auto sense. */
 private pl_interp_implementation_t const *
-pl_select_implementation(pl_main_instance_t *pmi, pl_top_cursor_t r)
+pl_select_implementation(pl_interp_instance_t *pjl_instance, pl_main_instance_t *pmi, pl_top_cursor_t r)
 {
     /* Determine language of file to interpret. We're making the incorrect */
     /* assumption that any file only contains jobs in one PDL. The correct */
     /* way to implement this would be to have a language auto-detector. */
+    pl_interp_implementation_t const *impl;
     if (pmi->implementation)
 	return pmi->implementation;  /* was specified as cmd opt */
+    /* select implementation */
+    if ( (impl = pl_pjl_select(pjl_instance, pdl_implementation)) != 0 )
+	return impl;
+    /* lookup string in name field for each implementation */
     return pl_auto_sense(r.cursor.ptr + 1, (r.cursor.limit - r.cursor.ptr), pdl_implementation);
+}
+
+/* Find default language implementation */
+private pl_interp_implementation_t const *
+pl_pjl_select(pl_interp_instance_t *pjl_instance,
+	      pl_interp_implementation_t const * const impl_array[] /* implementations to choose from */
+)
+{
+    pjl_envvar_t *language;
+    pl_interp_implementation_t const * const * impl;
+    language = pjl_proc_get_envvar(pjl_instance, "language");
+    for (impl = impl_array; *impl != 0; ++impl) {
+	if ( !strcmp(pl_characteristics(*impl)->language, language) )
+	    return *impl;
+    }
+    /* Defaults to NULL */
+    return 0;
 }
 
 /* Find default language implementation */

@@ -149,6 +149,8 @@ pjl_impl_init_job(
 	pjl_interp_instance_t *pjli = (pjl_interp_instance_t *)instance;
 	if (pjli->state == 0)
 	  code = gs_error_VMerror;
+	/* copy the default state to the initial state */
+	pjl_set_init_from_defaults(pjli->state);
 	return code;
 }
 

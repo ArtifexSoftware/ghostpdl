@@ -195,7 +195,7 @@ pcl_impl_characteristics(
 )
 {
   static pl_interp_characteristics_t pcl_characteristics = {
-    "PCL5",
+    "PCL",
     "\033E",
     "Artifex",
     PCLVERSION,

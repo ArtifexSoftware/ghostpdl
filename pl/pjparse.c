@@ -67,6 +67,7 @@ private const pjl_envir_var_t pjl_factory_defaults[] = {
     {"fontsource", "I"},
     {"fontnumber", "0"},
     {"personality", "pcl5c"},
+    {"language", "auto"},
     /*    {"personality", "rtl"}, */
     {"", ""}
 };
@@ -107,6 +108,8 @@ typedef enum {
     RESET,
     INQUIRE,
     DINQUIRE,
+    ENTER,
+    LANGUAGE
 } pjl_token_type_t;
 
 /* lookup table to map strings to pjl tokens */
@@ -123,6 +126,7 @@ private const pjl_lookup_table_t pjl_table[] = {
     { "=", EQUAL },
     { "DINQUIRE", DINQUIRE },
     { "INQUIRE", INQUIRE },
+    { "ENTER", ENTER },
     { "", (pjl_token_type_t)0 /* don't care */ }
 };
 
@@ -311,7 +315,8 @@ pjl_parse_and_process_line(pjl_parser_state_t *pst)
 	case SET:
 	case DEFAULT:
 	    {
-		bool defaults = (tok == DEFAULT);
+		bool defaults;
+var:            defaults = (tok == DEFAULT); 
 		/* NB we skip over lparm and search for the variable */
 		while( (tok = pjl_get_token(pst, token)) != DONE )
 		    if ( tok == VARIABLE ) {
@@ -337,11 +342,23 @@ pjl_parse_and_process_line(pjl_parser_state_t *pst)
 	    memcpy(pst->envir, pst->defaults, sizeof(pjl_factory_defaults));
 	    memcpy(pst->font_envir, pst->font_defaults, sizeof(pjl_fontsource_table));
 	    return 0;
+	case ENTER:
+	    /* there is no setting for the default language */
+	    tok = SET;
+	    goto var;
 	default:
 	    return -1;
 	}
     }
     return (tok == DONE ? 0 : -1);
+}
+/* set the initial environment to the default environment, this should
+   be done at the beginning of each job */
+ void
+pjl_set_init_from_defaults(pjl_parser_state_t *pst)
+{
+    memcpy(pst->envir, pst->defaults, sizeof(pjl_factory_defaults));
+    memcpy(pst->font_envir, pst->font_defaults, sizeof(pjl_fontsource_table));
 }
 
 /* sets fontsource to the next priority resource containing fonts */

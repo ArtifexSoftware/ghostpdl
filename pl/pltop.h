@@ -36,7 +36,8 @@ typedef int (*pl_page_action_t)(P2(pl_interp_instance_t *, void *));
  * Implementation characteristics descriptor
  */
 typedef struct pl_interp_characteristics_s {
-  const char*                 language;          /* generic language e.g. "PCL5c" */
+  const char*                 language;          /* generic language should correspond with
+						    HP documented PJL name */
   const char*                 auto_sense_string;  /* string used to detect language */
   const char*                 manufacturer;      /* manuf str */
   const char*                 version;           /* version str */

@@ -178,7 +178,7 @@ pxl_impl_characteristics(
 )
 {
   static pl_interp_characteristics_t pxl_characteristics = {
-    "PCL/XL",
+    "PCLXL",
     ") HP-PCL XL;1;1",
     "Artifex",
     PXLVERSION,
