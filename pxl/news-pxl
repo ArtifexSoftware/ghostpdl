@@ -1,0 +1,843 @@
+   Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+   Unauthorized use, copying, and/or distribution prohibited.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+This file, NEWS-XL, describes the changes in the most recent releases of
+Aladdin's PCL XL code, in reverse chronological order.
+
+Version 1.15 (8/6/98)
+=====================
+
+Procedures
+----------
+
+Updates all makefiles to work with the new directory structure in the
+makefiles for library version 5.30.  (pxl.mak, pxl_ugcc.mak)
+
+Interpreter
+-----------
+
+Updates GC procedures to work with the new interfaces in gsstruct.h.
+(pxgstate.c, pxparse.c, pxstate.c)
+
+Removes a few const-breaking casts.  (pxffont.c)
+
+Updates image initialization to work with a change in the library's
+image_t_init_color procedure.  (pxgstate.h, pxgstate.c, pximage.c, pxink.c)
+
+Version 1.14 (8/6/98)
+=====================
+
+Procedures
+----------
+
+Changes the compilation flags for gcc to assume that the version being used
+doesn't have the const code generation bug.  (pxl_ugcc.mak)
+
+Utilities
+---------
+
+Makes the assembler produce a UEL, a PJL ENTER LANGUAGE, and a PCL XL header
+at the beginning of the output.  (pxasm.ps)
+
+Version 1.13 (6/20/97)
+======================
+
+This is just a checkpoint for copying onto LPD's laptop.
+
+This version requires graphics library version 4.80 or later.
+
+Interpreter
+-----------
+
+Fixes bugs:
+	- In the case of an error, the parser still tried to save any
+remaining input data in its internal 17-byte buffer, signalling an
+InternalOverflow error if this failed.  NOTE: this fix was delivered to our
+first major OEM customer by e-mail on 6/9/97.  (pxparse.c)
+
+Factors out the table of paper sizes, which is now in a header file in the
+graphics library.  (pxsessio.c)
+
+Updates uses of rc_adjust_only and rc_decrement to match a change in the
+graphics library.  (pxgstate.c, pximage.c)
+
+Version 1.12 (3/26/97)
+======================
+
+Procedures
+----------
+
+Restructures the makefiles in preparation for the move to CVS.  (pxl.mak,
+pxl_top.mak, pxl_ugcc.mak, pxl_watc.mak)
+
+Version 1.11 (2/27/97)
+======================
+
+Procedures
+----------
+
+Updates the non-Unix makefiles to include the new version.mak file.  (This
+change is not needed for Unix makefiles.)  (bcpcl.mak, watcpcl.mak)
+
+Interpreter
+-----------
+
+Fixes bugs:
+	- A failure when initializing to render a pattern could cause an
+invalid memory access.  (pxink.c)
+
+Changes the parser so that it always reads all the input data (except in the
+case of an error or UEL).  (pxparse.h, pxparse.c)
+
+Version 1.10 (2/10/97)
+============
+
+This version is the first one delivered to a customer as "final" code.
+It requires library version 4.51 or later.
+
+Known problems:
+	- If an error occurs while downloading data in parts, the partially
+loaded data isn't freed.
+	- The Borland makefile (bcpcl.mak) doesn't work.
+
+Interpreter
+-----------
+
+Fixes bugs:
+	- The page buffer wasn't cleared properly when the media size
+changed.  (pxerrors.c, pxmain.c, pxsessio.c)
+	- In downloaded fonts with more than about 300 characters, some
+characters could get lost.  (pxfont.c)
+	- Rectangles and ellipses weren't always drawn with the same
+starting point and direction as in H-P printers.  (pxpaint.c)
+	- The computation of arc endpoints was slightly inaccurate.  (It's
+still slightly inaccurate, but less so.)  (pxpaint.c)
+	- PopGS popped one graphics state too many from the stack.
+(pxsessio.c)
+
+Increases the thickness of very thin lines slightly, to match the behavior
+of H-P printers more closely.  (pxpaint.c)
+
+Changes the default halftone to one that matches the H-P printers more
+closely.  It still doesn't have exactly the right behavior under 'or'ing,
+but it's closer.  (pxink.c)
+
+Version 1.09 (1/31/97)
+============
+
+This version requires library version 4.50 or later.
+
+Procedures
+----------
+
+Adds a MS-DOS batch file for printing.  (pxprint.bat)
+
+Changes the buffer size in the printing script from 500K to 200K, to match
+all other scripts.  (pxprint.tcl)
+
+Changes the makefile to match changes in the library's method for selecting
+the options for band lists, and to explicitly include color image
+capability.  (pclxl.mak, ugccpcl.mak, watcpcl.mak)
+
+Adds the pcxgray device to the default set of devices.  (ugccpcl.mak,
+watcpcl.mak)
+
+Utilities
+---------
+
+Updates the assembler to reflect the move of the language definition header
+files to the graphics library.  (pxasm.ps)
+
+Interpreter
+-----------
+
+Fixes bugs:
+	- The base font set by SetFont wasn't saved and restored with the
+graphics state.  (pxgstate.h, pxstate.h, pxfont.c, pxgstate.c)
+	- Bitmap fonts weren't scaled correctly to match the device
+resolution.  (pxfont.c)
+	- An error occurring outside a session or a page caused a crash.
+(pxerrors.c, pxgstate.c, pxmain.c)
+	- Very shallow or narrow gray-scale patterns didn't render properly,
+because they are halftoned before being cached.  (pxgstate.h, pxgstate.c,
+pxink.c)
+	- ReadRastPattern with a block height of zero gave an error.
+(pximage.c)
+	- Scan line painting used the dash pattern, which it shouldn't.  We
+rewrote scan line painting to use rectfill instead of stroke.  (pxgstate.h,
+pximage.c)
+	- The size of indexed RGB pattern data wasn't computed correctly.
+(pximage.c, pxink.c)
+	- The deferred setting of the halftone didn't work properly.
+(pxink.c)
+
+Removes the clip_region from the state, since it is only relevant for the
+current command.  (pxgstate.h, pxgstate.c)
+
+Resets the GC trigger at the end of each file, so that a very large file
+doesn't leave the trigger set to a high level.  (pxmain.c)
+
+Includes the time and memory printing code even in non-DEBUG configurations.
+(pxmain.c)
+
+Adds recognition of @-files on the command line.  (pxmain.c)
+
+Version 1.08 (1/21/97)
+============
+
+This version fixes a couple more problems.  It requires library version 4.41
+or later.
+
+Documentation
+-------------
+
+Creates a new document that describes the additions to the graphics library
+that were required to handle the PCL XL graphics model.  (pxlib.txt)
+
+Procedures
+----------
+
+Changes the makefile to match a change in the library's method for selecting
+the compression filter for RAM-based band lists.  (ugccpcl.mak)
+
+Utilities
+---------
+
+Adds ESC as an assembler command to generate a UEL.  (pxasm.ps)
+
+Interpreter
+-----------
+
+Fixes bugs:
+	- The allocator didn't start using string freelists early enough,
+leading to memory leaks.  (pxmain.c)
+	- Images with non-default RasterOps didn't render correctly, because
+a recent change overlooked the need to call gx_set_dev_color.  (pldraw.c)
+	- Our model of character transformation was wrong.  Apparently only
+the most recent rotation, shearing, and scaling are applied, but they are
+applied in the order in which they were specified, not in a fixed order.
+(pxgstate.h, pxfont.c, pxgstate.c)
+
+Cleans up data structures earlier at the end of a page, and more thoroughly
+at the end of a session.  (pxsessio.c)
+
+Moves the header files defining tag, attribute, and enumeration values for
+the PCL XL syntax to a device driver in the graphics library.  (pclxl.mak,
+pxattr.h, pxenum.h, pxtag.h)
+
+Version 1.07 (1/13/97)
+============
+
+This version fixes the last known graphics model incompatibilities between
+PCL XL and our graphics library.  It requires library version 4.40 or later.
+
+Procedures
+----------
+
+Always includes the debugging code for printing time and memory usage.
+(pxmain.c)
+
+Interpreter
+-----------
+
+Fixes bugs:
+	- Because of a missing #include, memmove was undefined on systems
+that didn't include it in the library.  (pxerrors.c)
+	- Curves drawn with no join and with butt caps were "bristly"
+instead of smooth.  (pxgstate.h, pxgstate.c, pxmain.c, pxsessio.c)
+	- Some other objects like rounded rectangles and ellipses had gaps
+in them when using no join and butt caps.  (pxpaint.c)
+	- The flatness was set too large.  (pxsessio.c)
+
+Invokes the garbage collector at the end of each page where more than a
+given cumulative amount of memory (currently 250K) has been allocated since
+the last garbage collection.  (pxmain.c)
+
+Increases the input buffer size to 1K to reduce breakage, primarily for
+images.  (pxmain.c)
+
+Removes some unnecessary buffering and processing from images and raster
+patterns.  (pximage.c)
+
+Removes some code that has been moved to the library.  (pxmain.c)
+
+Library
+-------
+
+Splits off the library news into a separate file.  (NEWS-PL)
+
+Version 1.06 (1/1/97)
+============
+
+This version is the first one that merits an "official" run of the Genoa
+suite.  It requires graphics library version 4.39 or later.
+
+Utilities
+---------
+
+Enhances the assembler so it can process trace output.  (pxasm.ps)
+
+Interpreter
+-----------
+
+Fixes bugs:
+	- Font names in error and warning messages weren't terminated
+properly, leading to garbage characters on output.  (pxfont.c)
+	- The error page font was much too large.  (pxerrors.c)
+	- Unique IDs were only unique within a session, which confused the
+library.  (pxfont.h, pxstate.h, pxffont.c, pxerrors.c, pxfont.c, pximage.c,
+pxsessio.c)
+	- Pies were drawn in the order arc, line, close, rather than the
+correct order line, arc, close.  (pxpaint.c)
+	- pxtSetPaintTxMode was incorrectly named pxtSetPatternTxMode.
+(pxtag.h)
+	- When substituting fonts, serif and weight properties weren't given
+priority over the fixed-spacing property.  (pxffont.c)
+	- Setting a halftone shouldn't affect the rendering of the current
+pen or brush.  We can't implement this exactly right with a reasonable
+amount of work; instead, we simply defer setting the halftone until the next
+SetBrushSource or SetPenSource that requires it.  (pxgstate.h, pxgstate.c)
+	- If an input buffer boundary fell after the very first byte of a
+RLE-compressed bitmap, a spurious error (MissingData or ExtraData) could
+occur.  (pximage.c)
+	- Setting the miter limit to 0 should be equivalent to setting it to
+its default value of 10.  (pxgstate.c)
+
+Removes recognition of @PJL commands in PCL XL context, since this isn't
+appropriate.  (pxparse.c, pxptable.c)
+
+Changes the tracing output slightly so it can serve as input to the
+assembler.  (pxmain.c, pxparse.c)
+
+Speeds up painting by eliminating the gsave and grestore used to preserve
+the path.  (pxpaint.c)
+
+Removes some redundant code in setting up bounding boxes.  (pxvalue.h,
+pxpaint.c)
+
+Speeds up drawing of rectangles.  (pxpaint.c)
+
+Makes the default CTM values integers if this is possible without
+introducing inaccuracies.  (pxsessio.c)
+
+Library
+-------
+
+Removes some inefficiency in freeing fonts.  (plfont.c)
+
+Speeds up rendering of pseudo-bold characters.  (plchar.c)
+
+Version 1.05 (12/19/96)
+============
+
+This version is the first one that runs the Genoa CET without crashing.  (In
+fact, it runs most of the CET correctly, as well as most of the FTS.)
+
+This release requires graphics library version 4.37 or later.
+
+Documentation
+-------------
+
+Updates the discrepancy report: Rectangles are drawn clockwise.
+(pxspec.txt)
+
+Adds a report on the Genoa PCL6 CET.  (pxcet.txt)
+
+Sanitizes the reports to confine Aladdin's name to a separate cover page.
+(pxspec.txt, pxfts.txt)
+
+Procedures
+----------
+
+Fixes bugs:
+	- The Watcom makefile didn't allocate a large enough stack.
+(watcpcl.mak)
+
+PJL
+---
+
+Adds the ability to discard the remainder of a job (through a UEL).
+(pjparse.h, pjparse.c)
+
+Interpreter
+-----------
+
+Fixes bugs:
+	- Setting character properties before setting a font caused an
+invalid memory access.  (pxgstate.c)
+	- The state wasn't cleaned up properly after an error or UEL.
+(pxstate.h, pxmain.c, pxsessio.c)
+	- The code didn't skip to a UEL and continue after an error.
+(pxmain.c)
+	- Very large arrays caused a memory access error.  (pxoper.h,
+pxparse.c)
+	- Contrary to the documentation, CharShear allows values of -32768
+and 32767 (i.e., the endpoints are included, not excluded).  (pxptable.c)
+	- Specifying the same attribute twice was considered an error.
+(This is legal; the last value has priority.)  (pxparse.c)
+	- An out-of-range MediaSize or MediaSource was considered an error;
+it should be ignored.  (pxptable.c, pxsessio.c)
+	- Chord, Arc, and Pie operators didn't allow degenerate boxes (with
+zero width or height).  (pxpaint.c)
+	- Apparently, Ellipse[Path] starts and ends at what the library
+considers the 180 degree point, not the 0 degree point.  (pxpaint.c)
+	- Contrary to the specification, Rectangles should be drawn
+clockwise.  (pxpaint.c)
+	- Default error reporting wasn't initialized properly (eErrorPage
+beforethe first BeginSession, eNoReporting within a session).  (pxsessio.c,
+pxstate.c)
+	- Bitmap fonts weren't immune to scaling, rotation, and shearing.
+(pxgstate.c)
+	- The recorded list of warnings wasn't reset after producing the
+error page.  (pxerrors.h, pxerrors.c, pxmain.c)
+	- Apparently, printers only remember the most recent warning of each
+type from pxRemoveFont.  (pxerrors.h, pxerrors.c, pxfont.c)
+	- Univers CdMd was omitted from the list of built-in fonts.
+(pxffont.c)
+	- Bitmaps weren't scaled to match their resolution to the device
+resolution.  (pxgstate.c)
+	- Only stroking with a zero-width pen if the brush is null was
+wrong.  We instituted this in 1.04 to get around a problem with stroking the
+result of SetPathToClip, but now that we've fixed the underlying problem,
+we've gone back to doing what the spec says, namely, always stroking unless
+the pen is null.  (pxpaint.c)
+	- Attempting to rotate, shear, or scale a bitmap font should cause
+the Text and TextPath operators to report an IllegalFontData error, but it
+didn't.  (pxgstate.h, pxfont.c, pxgstate.c)
+	- If the path wasn't empty, ScanLineRel would stroke the path
+instead of ignoring it.  (pximage.c)
+	- Compressed bitmap data could be parsed incorrectly, leading to
+spurious MissingData or ExtraData errors.  (pximage.c)
+	- Scan lines were painted with an unpredictable color (usually
+black) instead of the current brush.  (pximage.c)
+	- 8- and 16-bit stream names could be confused with each other.
+(pxstate.h, pxstream.c)
+	- The flatness was set too small, leading to occasional anomalies.
+(pxsessio.c)
+	- Apparently, text transforms *objects*, whereas images and paths
+transform *coordinates*.  This requires applying transformations in the
+opposite order, which in turn requires keeping two separate transformation
+matrices.  (pxgstate.h, pxfont.c, pxgstate.c)
+	- If the coordinates of an arc, pie or wedge were specified in a
+non-standard order, the wrong part of the arc was drawn.  (pxpaint.c)
+	- Apparently SetColorSpace doesn't ever set the brush or pen to
+black.  (pxgstate.c)
+	- A palette could be freed while it was still in use by another
+state on the graphics stack, leading to memory corruption.  (pxgstate.c)
+	- The "margins" (the offset on the page) weren't set to zero.  (This
+isn't right, but it's better than a non-zero value.)  (pxsessio.c)
+	- The IllegalTag error message printed the last operator name rather
+than the tag in question.  (pxparse.c)
+	- SetPaintTxMode was incorrectly named SetPatternTxMode.
+(pxgstate.c, pxptable.c)
+	- Occasionally a PJL command was incorrectly processed as PCL XL.
+(pxmain.c)
+	- Some other errors detected by the parser were incorrectly reported
+as IllegalTag errors.  (pxparse.c)
+	- If both MissingAttribute and IllegalAttribute errors could be
+generated, IllegalAttribute should take priority.  (pxparse.c)
+	- IllegalAttributeDataType errors were reported when the attribute
+was read, not at the next operator.  (pxparse.c)
+	- Some errors occurring during Text and TextPath were ignored.
+(pxfont.c)
+	- Errors occurring within user-defined streams weren't reported
+properly.  (pxoper.h, pxparse.c, pxstream.c)
+	- An illegal Orientation value produced an error rather than a
+warning.  (pxptable.c, pxsessio.c)
+	- Built-in fonts weren't marked as "internal", so they could be
+removed.  (pxffont.c)
+	- The warning message for attempting to remove an internal font was
+incorrect.  (pxfont.c)
+	- Arial, rather than Courier, was the default font if no better
+substitute was found.  (pxffont.c)
+	- The operator count for IllegalOperatorSequence errors was off by
+1.  (pxparse.c)
+	- An attempt was made to find a substitute font even when no known
+font had a compatible symbol set.  (pxfont.h, pxffont.c, pxfont.c)
+	- Some errors didn't include relevant additional information.
+(pxerrors.h, pxfont.h, pxstate.h, pxerrors.c, pxffont.c, pxfont.c, pxmain.c)
+	- ReadFontHeader didn't check the font header fields for legality.
+(pxfont.c)
+
+Revises the warning messages to look more like those from H-P printers.
+(pxerrors.h, pxfont.h, pxerrors.c, pxffont.c, pxfont.c)
+
+Increases the maximum number of dash pattern elements to match the
+(apparent) value of 20 in the H-P printers.  (pxgstate.c)
+
+Changes the handling of font substitution so that if the requested font was
+one of the built-in set, we don't produce a warning message, even if we had
+to substitute another (Windows) font for it.  (pxfont.h, pxffont.c,
+pxfont.c)
+
+Changes the computation of the char_matrix to be lazy.  (pxgstate.h,
+pxfont.c, pxgstate.c)
+
+Changes the subsystem name in error messages from N/A to either MAIN or
+GRAPHICS.  (pxmain.c, pxparse.c)
+
+Library
+-------
+
+Fixes bugs:
+	- The character count in the header of downloaded fonts was taken as
+a hard limit rather than a hint.  (plfont.h, plchar.c)
+	- The rehashing algorithm for looking up downloaded characters could
+get into an endless loop.  (plfont.h, plchar.c)
+	- Attempting to free a partially-constructed font caused a memory
+access error.  (plfont.c)
+	- The segments of downloaded fonts weren't checked carefully enough.
+(plfont.h, plfont.c)
+
+Version 1.04 (12/10/96)
+============
+
+We thought 1.03 ran over 90% of the Genoa FTS, but when we re-ran the full
+test, we discovered that we'd broken some things in the course of fixing
+others.  This release fixes them all.  This release also fixes all memory
+leaks on the Genoa FTS except for one.
+
+This release requires graphics library version 4.37 or later.
+
+Documentation
+-------------
+
+Adds a report on the PCL XL specification and its relationship to the LJ 6MP
+printer.  (pxspec.txt)
+
+Adds a report on the Genoa PCL6 FTS.  (pxfts.txt)
+
+Procedures
+----------
+
+Removes -O (optimization) from the default configuration in the PCL
+makefile, because it creates too many problems for debugging.  (ugccpcl.mak)
+
+Changes the gcc makefile to offer the option of using emulated floating
+point when profiling, to get more realistic timings for embedded systems.
+(ugccpcl.mak)
+
+Fonts
+-----
+
+Fixes bugs:
+	- The italic and bold-italic variants of the built-in fonts were
+interchanged.  (pxffont.c)
+
+Interpreter
+-----------
+
+Fixes bugs:
+	- If a "known" font file couldn't be opened, the result was a crash
+rather than an error.  (pxffont.c)
+	- Stroking with a zero-width pen was suppressed, which is wrong.  We
+think a better approach is to stroke with a zero-width pen only if the brush
+is null, but we aren't sure this is right either.  (pxpaint.c)
+	- A non-const pointer was declared as const, upsetting some
+compilers.  (pxgstate.c)
+	- We thought that SetClipIntersect intersects the interior of the
+clipping region and the interior of the current region, even if the clipping
+mode is exterior, but apparently it intersects the effective clipping region
+(interior or exterior according to the most recently set clipping region)
+with either the interior or the exterior of the current region.
+(pxgstate.c)
+	- If the current brush or pen was a raster pattern, SetColorSpace
+didn't decrement its reference count properly, causing a memory leak.
+(pxgstate.c)
+	- Setting a user-defined dither matrix didn't reset the transfer
+function to the identity function.  (pxgstate.c)
+	- An unused label appeared in the source code, preventing a clean
+compilation.  (pxpaint.c)
+	- If SetHalftoneMethod didn't provide a DitherMatrixOrigin, the
+origin wasn't reset to (0,0).  (pxgstate.c)
+	- User-defined dither matrices were never freed. causing a memory
+leak.  (pxgstate.h, pxgstate.c)
+
+Changes the single-object drawing operators (Chord, Ellipse, Pie, Rectangle,
+and RoundRectangle) so that they clear the path (but preserve the cursor
+position) instead of leaving it set to the object.  This matches the
+LaserJet 5/6 implementation, but is different from the published
+specification.  (pxpaint.c)
+
+Modifies the transfer function slightly to match the LJ 6MP output better.
+(pxmain.c)
+
+Restructures the set_source procedure slightly to avoid a compiler complaint
+about an uninitialized variable.  (pxgstate.c)
+
+Makes the default halftone method use an ordered dither, and offsets the
+source and paint screens from each other in order to match the observed
+behavior of the LaserJet 5 and 6 printers.  (pxgstate.c)
+
+Library
+-------
+
+Fixes bugs:
+	- The tilde character position was mapped incorrectly in many symbol
+sets.  (plsymbol.c)
+
+Version 1.03 (12/3/96)
+============
+
+This release runs a substantial fraction of the Genoa ATS correctly, as well
+as over 90% of the FTS.
+
+This release requires library version 4.36 or later.
+
+Utilities
+---------
+
+Removes the extra \n that pxasm used to produce after each operator.
+(pxasm.ps)
+
+Interpreter
+-----------
+
+Fixes bugs:
+	- If the current brush was null, images didn't appear.  (pximage.c)
+	- Font UniqueIDs were reused for each session, causing confusion in
+the character cache.  (pxfont.h, pxsessio.c, pxffont.c, pxfont.c)
+	- Synthetic bolding wasn't implemented.  (pxfont.c)
+	- Downloaded fonts weren't registered properly with the library.
+(pxfont.c)
+	- After defining a stream, one copy of the stream name wasn't freed.
+(pxvalue.h, pxstream.c)
+	- The graphics state stack and path weren't cleared at the end of
+each page.  (pxsessio.c)
+	- Color palettes were never freed.  (pxgstate.h, pxgstate.c)
+	- A bookkeeping structure wasn't freed after rendering an image.
+(pximage.c)
+	- The decision of whether or not to use gamma correction was made
+incorrectly, so printers didn't get gamma-corrected.  (pxmain.c)
+	- Because a variable wasn't initialized, BeginPage could signal a
+non-existent error.  (pxsessio.c)
+	- Patterns were never released.  (pxgstate.c, pximage.c)
+	- Patterns weren't given a unique ID, so they couldn't be cached
+effectively.  (pxgstate.h, pxstate.h, pxfont.c, pxgstate.c, pximage.c,
+pxsessio.c)
+	- Patterns only kept a single pointer to their instantiation,
+causing both memory management and output problems.  (pxgstate.h,
+pxgstate.c, pximage.c)
+
+Changes the interpreter so that user-defined streams do *not* persist past
+the end of the session.  We think this is the normal behavior for printers.
+(pxstate.c, pxsessio.c)
+
+Changes the -ZI debugging switch so it prints out the contents of arrays and
+data streams as well as tags and scalar values; -Zi continues to print out
+only tags and scalars.  (pxparse.c)
+
+Adds /win95/fonts as a third possible directory for fonts.  (pxffont.c)
+
+Library
+-------
+
+Fixes bugs:
+	- Empty TrueType glyphs (with no outline data at all) caused an
+error.  (plfont.c)
+	- "Built-in" fonts weren't registered properly with the library.
+(plfont.c)
+
+Adds support for synthetic bolding, indicated by the top 7 bits of WMode.
+(plfont.h, plchar.c, plfont.c)
+
+Splits font-level procedures from character-level procedures, since plfont.c
+was getting too large.  (plchar.c, plfont.c)
+
+Adds a preliminary map from MSL to Unicode.  THIS MAP HAS MANY BUGS IN IT
+AND SHOULD NOT BE USED YET.  (plvocab.h, plvocab.c)
+
+Version 1.02 (11/24/96)
+============
+
+This version produces correct output for 67 of the 76 files of the Genoa
+PCL6 FTS (except for the image bug introduced in 1.02 and fixed in 1.03),
+and runs at least part of the ATS without crashing or producing
+inappropriate error messages.
+
+Procedures
+----------
+
+Adds ljet4 and pcxmono to the list of compiled-in drivers.  (ugccpcl.mak,
+watcpcl.mak, bcpcl.mak)
+
+Interpreter
+-----------
+
+Fixes bugs:
+	- All RGB color values except black were interpreted as white.
+(pxgstate.c)
+	- Rounded rectangles were drawn with incorrect corner radii.
+(pxpaint.c)
+	- Ellipses and circles weren't drawn at all.  (pxpaint.c)
+	- Real-valued data weren't printed properly when tracing.
+(pxparse.c)
+	- UnitsPerMeasure weren't interpreted properly if they were real
+values rather than integers.  (pxstate.h, pxsessio.c)
+	- SetPageRotation rotated the page in the opposite direction of the
+intended one.  (pxgstate.c)
+	- A blank page was always produced before an error page.
+(pxstate.h, pxerrors.c, pximage.c, pxpaint.c, pxsessio.c)
+	- The error page could be blank if an unusual Unit of Measure was in
+use.  (pxerrors.c)
+	- Character shearing had no effect.  (pxgstate.c)
+	- Characters on the error page were piled on top of each other.
+(pxbfont.ps, pxerrors.c)
+	- The error page was printed upside-down.  (pxerrors.c)
+	- The size and spacing of error messages weren't consistent.
+(pxbfont.ps, pxbfont.h, pxerrors.c)
+	- SetClipToPage didn't reset the current path.  (pxgstate.c)
+	- Arcs, chords, and pies with equal starting and ending points were
+drawn as 0 degrees rather than 360 degrees.  (pxpaint.c)
+	- Ellipse[Path] and Rectangle[Path] didn't leave the cursor in the
+correct position.  (pxpaint.c)
+	- Apparently, SetMiterLimit with a parameter of 0 means always
+miter, rather than never miter.  (pxgstate.c)
+	- Text didn't get painted with the correct color.  (pxpaint.c)
+	- 16-bit characters weren't implemented.  (They still probably
+aren't implemented quite right.)  (pxfont.c)
+	- Vertical character substitution wasn't implemented.  (pxgstate.h,
+pxfont.c, pxgstate.c)
+	- Text with a null brush caused an error.  (pxpaint.c)
+	- If a raster pattern was downloaded in multiple blocks, blocks
+other than the first overwrote the first block.  (pximage.c)
+	- Raster patterns that weren't a multiple of 4 bytes wide produced
+incorrect output.  (pximage.c)
+	- Ellipses and 360 degree arcs weren't closed.  (pxpaint.c)
+	- Text with a non-invertible combined CTM and text matrix (e.g., a
+shear of (1,1)) didn't work.  (pxfont.c)
+	- Rectangles were drawn clockwise rather than counter-clockwise.
+(pxpaint.c)
+	- SetClipIntersect didn't construct the correct clipping region if
+outside clipping was selected.  (pxgstate.c) ****** STILL NOT CORRECT ******
+	- Stroking with a zero-width pen wasn't a no-op.  (pxpaint.c)
+	- RasterOp with images didn't use the current color/pattern.
+(pxgstate.h, pxgstate.c, pximage.c, pxpaint.c)
+	- Downloaded dither matrices could have garbage interspersed.
+(pxgstate.c)
+	- Galley character substitution wasn't implemented.  (plfont.h,
+plfont.c)
+	- Font substitution didn't take family names or modifiers into
+account properly.  (pxffont.c)
+	- Some procedures weren't declared (prototyped) at all points of
+use.  (pxgstate.c, pximage.c, pxmain.c, pxpaint.c, pxsessio.c)
+	- Images with zero width or height followed by a zero-length
+embedded data block caused a syntax error.  (pxparse.c)
+	- The character size and symbol set weren't saved and restored by
+Push/PopGS.  (pxgstate.h, pxstate.h, pxfont.c)
+	- The cmap table for TrueType fonts wasn't interpreted correctly,
+causing incorrect output.  (plfont.c)
+
+Allows specifying a list of directories, rather than a single directory, for
+loading known fonts.  (pxfont.c)
+
+Improves the interpreter tracing output.  (pxparse.c, pxptable.c)
+
+Splits off font definition and lookup into a separate module.  (pxfont.h,
+pxffont.c, pxfont.c)
+
+Adapts some code to the new access procedures.  (pxfont.c)
+
+Moves SetFont to a more appropriate file.  (pxgstate.h, pxfont.c,
+pxgstate.c)
+
+Adapts code to the new library design for fonts and characters.  (pxfont.h,
+pxerrors.c, pxffont.c, pxfont.c, pxgstate.c)
+
+Adds the ability to request printing/displaying only a selected range of
+pages.  (pxstate.h, pxmain.c)
+
+Library
+-------
+
+Fixes bugs:
+	- Replacing a character in a downloaded font didn't remove the old
+definition from the character cache.  (plfont.c)
+
+Adds definitions for a substantial number of the built-in symbol sets.
+(plsymbol.h, plsymbol.c)
+
+Redesigns the library procedures associated with fonts and characters,
+including the pl_font_t structure.  This is a fairly massive change.
+(plfont.h, plfont.c)
+
+Adds a procedure for obtaining the vertical substitute for a TrueType glyph.
+(plfont.h, plfont.c)
+
+Defines common accessor procedures for big-endian multi-byte values.
+(pcllib.mak, plvalue.h, plfont.c, plvalue.c)
+
+Adds the ability to request printing/displaying of only a selected range of
+pages.  (plmain.h, plmain.c)
+
+Version 1.01 (11/11/96)
+============
+
+This version runs the Genoa PCL6 FTS without crashing or producing
+inappropriate error messages.
+
+Procedures
+----------
+
+Fixes bugs:
+	- The Watcom makefile didn't work.  (watcpcl.mak)
+
+Interpreter
+-----------
+
+Fixes bugs:
+	- We were using a fill adjustment of 0.25 rather than 0.0
+(center-of-pixel rule).  (pximage.c, pxmain.c)
+	- The graphics state was initialized in a way that didn't work
+properly if the input file did an extra PopGS.  (pxgstate.h, pxgstate.c,
+pxsessio.c)
+	- If a BeginSession didn't have an ErrorReport attribute, a memory
+access error occurred.  (pxsessio.c)
+	- When stroking, PaintPath didn't set the raster op to 240 and the
+paint transparency to true, per documentation.  (pxpaint.c)
+	- CloseDataSource incorrectly indicated an error if no data source
+was open.  (pxsessio.c)
+	- Bezier[Rel]Path incorrectly attempted to read too much data from
+the data source.  (pxpaint.c)
+	- The CharShear attribute was incorrectly tagged as taking a scalar
+value rather than an X/Y pair.  (pxptable.c)
+	- SetMiterLimit didn't handle values less than 1, which the graphics
+library considers illegal.  (pxgstate.c)
+	- Ellipse[Path] incorrectly indicated an error if the bounding box
+had zero width and/or height.  (pxpaint.c)
+	- Apparently, PopGS with an empty stack should nothing, even though
+the documentation says this is illegal.  (pxgstate.h, pxgstate.c)
+	- Set(Brush|Pen)Source apparently should allow setting patterns
+defined in other than the current color space (the documentation is unclear
+about this, but generally suggests that this is not allowed).  (pxgstate.c)
+	- EndSession stopped execution if there were any warnings associated
+with the session.  (pxmain.c)
+	- The bitmap font used for printing the error page wasn't
+initialized correctly.  (pxfont.c, pxsessio.c)
+	- If the Measure for a session was specified as millimeters or
+tenths of a millimeter, the scale was set up incorrectly.  (pxenum.h)
+	- SetColorSpace apparently should *not* set the pen or brush to
+black if it was previously null.  (pxgstate.c)
+	- Apparently the X pair values in ScanLineRel are (x, dx) and not
+(x0, x1).  (The documentation is very poorly written, but it definitely
+suggests the latter rather than the former.)  (pximage.c)
+
+Rewrites the main program to start in PJL mode, and to handle multiple input
+files.  (pxmain.c, pxparse.c)
+
+Removes waiting for a typed character after each operator when -ZI is
+selected.  (pxparse.c)
+
+Library
+-------
+
+Moves PJL processing into the library.  (pcllib.mak, pclxl.mak, plparse.h)
+
+Recognizes UEL in PJL mode.  (pjparse.c)
+
+Version 1.0 (11/7/96)
+===========
+
+This is the first version to be archived.

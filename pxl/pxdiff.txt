@@ -1,0 +1,315 @@
+
+    Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
+    Unauthorized use, copying, and/or distribution prohibited.
+
+This document presents known discrepancies between Aladdin's PCL XL
+interpreter and the output of the Genoa LaserJet 5 PCL6 FTS and CET.
+
+		Discrepancies from Genoa LaserJet 5 PCL6 Output
+
+Introduction
+============
+
+This document presents discrepancies between our interpreter and the output
+of individual Genoa tests due to any of the following:
+
+	A) Residual problems in our code.
+
+	B) Differences in halftone screen.
+
+	C) Differences in TrueType font rasterizer.
+
+	D) Different implementation choices that we believe will be fully
+	acceptable to customers.
+
+	E) [2] Implementation shortcuts that are visible to customers but
+	that are too much work to change unless we receive an explicit
+	request to do so.
+
+	F) Likely H-P firmware bugs.
+
+We will fix category (A) to the best of our ability in the initial product
+code release, with some additional fixes likely to be required in later
+releases.  [4] We will fix category (B) when we have been able to analyze
+the H-P screen in complete detail, which we have not yet been able to do.
+We do not plan to do anything about (C) or (D).  We are willing to discuss
+items in (E) individually.
+
+Some discrepancies are inevitable given that our interpreter is designed to
+meet the following not always consistent specifications:
+
+	1) The published "PCL XL Feature Reference Protocol Class 1.1"
+	document from Hewlett-Packard.
+
+	2) The printed output provided by Genoa with their LaserJet 5
+	PCL6 test suites.
+
+[4]	3) The printed output we obtained from a LaserJet 6MP.
+
+	4) In a few cases, primarily where #1 is silent or ambiguous
+	or where #1 and #2 disagree, our best guess as to H-P's
+	intentions.
+
+In general, when we could find an interpretation of the H-P document that
+was consistent with the Genoa output, we have followed it in our
+implementation, even if that interpretation is not the most obvious one.
+[4] In the few cases of discrepancies between the LJ5 and the LJ6MP, we have
+followed the latter, since in all such cases the 6MP agrees with our
+understanding of the specification.
+
+Changes in a given revision of this document are marked with the revision
+number in [brackets].  Revision history:
+		first issued January 1, 1997
+		rev. [1] January 11, 1997
+		rev. [2] January 15, 1997
+		rev. [3] January 23, 1997
+		rev. [4] February 9, 1997
+
+Code problems
+=============
+
+Page shifting
+-------------
+
+We do not currently handle discrepancies between the printer's (0,0) point
+and the physical page corner correctly.  For example, when printing to the
+LaserJet 4/5/6, all pages are shifted down and to the right by approximately
+1/4".  (This should not affect OEM customers.)
+
+Memory management
+-----------------
+
+If an error occurs in the middle of downloading an object like a font or a
+pattern, the current code does not free the partially-built structure.
+
+We have not attempted to exhaustively test graceful recovery from
+out-of-memory conditions; it is likely that such conditions may, at least
+under some circumstances, require reinitializing the interpreter.  [4] The
+interpreter does not store any state in global variables, so simply
+releasing all memory acquired by the interpreter and reinitializing the
+interpreter is always safe.
+
+Miscellaneous
+-------------
+
+Our current implementation of pseudo-bold characters requires a large amount
+of buffer space, which causes a memory overflow error on the following
+files:
+	CET c309
+
+[4] Our current implementation of elliptical arcs has a slight rounding
+inaccuracy that produces an inappropriate visible hairline in 4 of the 5
+images in the rightmost column of the bottom half of
+	CET c404 p. 25
+This inaccuracy may affect other CET pages where the closing lines of two
+chords whose bounding boxes have different aspect ratios are supposed to
+coincide.
+
+[4] In our current implementation, reading back the clipping path as the
+current path may produce a path that covers a region as much as 1 pixel
+larger all the way around as the original path that was specified for
+clipping.  This produces an inappropriate hairline border around the objects
+in image 02 of
+	FTS t324
+
+Halftone screen
+===============
+
+We have not yet been able to duplicate the behavior of H-P's carefully
+designed halftone screen, which produces striking and unusual effects when
+ORing together different source and paint gray shades using RasterOp.  Many
+of the Genoa tests do this, even though this is not something that we expect
+to occur frequently (or perhaps at all) in application output.
+Unfortunately, the visible effects are not subtle (they arise from something
+similar to Moire' patterns).  We can't give an exhaustive list of the test
+pages that this affects, since many pages on many tests do this.  [4] One
+unobvious result of this is that certain objects simply disappear: for
+example, some gray-shaded rectangles in
+	CET c420 pp. 5-14
+
+TrueType rasterizer
+===================
+
+Our current TrueType font rasterizer is not of production quality: it
+disregards the hinting instructions and does not handle correctly multi-part
+characters where one part is offset with respect to another.  This causes
+many differences in the output, mostly minor.  We plan to offer a
+commercial-quality rasterizer at some time in the future; however, our PCL
+XL interpreter is an OEM product for which our customers are expected to
+provide their own rasterizers.
+
+Implementation choices
+======================
+
+Range of coordinates
+--------------------
+
+Our interpreter uses a fixed-point representation for device coordinates (20
+bits of integer, 12 bits of fraction) and keeps all coordinates in this
+form, including the cursor position.  Thus, any operation that sends the
+cursor outside this range will cause an InternalOverflow error.  At 600 dpi,
+this corresponds to positioning the cursor more than about 72 feet outside
+the page.  A number of the CET files do this, to exercise the full range of
+possible parameter values.  We recognize this is a limitation, but we do not
+currently intend to do anything about it, since it is extremely unlikely to
+cause problems in practice.  The files on which this causes an error are:
+	CET c309, c310
+
+Line Printer font implementation
+--------------------------------
+
+Our interpreter implements the Line Printer fonts as aliases for Courier,
+unlike the H-P printers which apparently implement them using bitmaps.  As a
+result, attempting to scale, rotate, or shear them does not produce an error
+in our implementation.  This causes an output difference in:
+	CET e104
+
+Graphics state storage management
+---------------------------------
+
+Our interpreter allocates graphics states from the main storage pool, rather
+than imposing a fixed limit on the number of PushGS levels.  As a result,
+our implementation does not report an error, even though the H-P printer
+produces one, in:
+	CET e112
+
+Downloaded font checking
+------------------------
+
+Our interpreter defers almost all of its checking of downloaded font headers
+until it receives the EndFontHeader command.  Because of this, many of the
+errors associated with font downloading occur on an EndFontHeader instead of
+a ReadFontHeader, at a slightly later position in the file.  This affects
+the output from:
+	CET e114
+Also, our implementation does not produce the very first error from this
+file (the "InternalError 0x50").
+
+Byte order support
+------------------
+
+The H-P implementation apparently supports only the little-endian binary
+binding; our interpreter supports both big- and little-endian binary
+bindings.  The only file that tests this is:
+	CET e120
+Because our interpreter supports both bindings, this file should produce at
+least one fewer error than the H-P printers.  However, there is an error in
+the file itself: at byte position 101 in the big-endian section (counting
+the first byte of PCL XL data after the stream header as byte 0), the length
+of the font name "Courier" is incorrectly coded as (16,0) (little-endian)
+rather than (0,16) (big-endian).  The resulting 4096-byte count causes the
+entire remainder of the file to be interpreted as a data stream; since this
+exceeds the length of the file, the test terminates.
+
+[2] Implementation shortcuts
+============================
+
+[1] Negative dash pattern elements
+----------------------------------
+
+SetLineDash allows negative dash pattern elements, but the H-P documentation
+gives no clue about what these are supposed to do.  The H-P printers
+apparently interpret it as drawing a line backwards in the current direction
+(which may extend outside the original subpath) with no visible caps; a dash
+pattern with a negative total length crashed the LJ 6MP firmware so badly
+the printer had to be power cycled!  We have chosen to take a different
+approach: we compensate for negative elements by propagating them to
+adjacent positive ones.  This doesn't produce quite the same output as the
+H-P printers do (segments drawn in the reverse direction do have caps, and
+if the line is shorter than one complete cycle of the pattern, some parts of
+the line may be stroked that the H-P printers skip), but this is such an
+obscure feature that we don't think it's worth the trouble to emulate
+exactly.  The difference affects:
+	CET c318
+
+Rounding
+--------
+
+On the page:
+	FTS t421 p. 4
+our implementation shows faint vertical "seams" on the two left-hand
+patterns in image 09.  While the Genoa output doesn't have a seam, a test we
+made using H-P's default halftone does show a seam.  We conclude that our
+implementation and H-P's both have some rounding sensitivities, and they
+simply happen to show up on slightly different input values.  [2] Matching
+H-P's implementation at this level of detail would be extremely onerous.
+
+[3] A similar seam occurs in the lower image on the page:
+	CET c422 p. 38
+
+[4] For a similar reason, in image 06 of
+	FTS t315 p. 2
+our implementation does not produce either bevels or miters.  The reason is
+that the line join point coincides exactly with the end of an "ink off" dash
+segment: H-P's implementation has a rounding inaccuracy that causes it to
+produce a vertical hairline as the last segment of the horizontal line
+(which is drawn in the -X direction), and then join this hairline with the
+first segment of the diagonal line.
+
+H-P firmware bugs
+=================
+
+[4] Except for the instances mentioned here, our implementation emulates
+behavior of the H-P printers that we have stated elsewhere we believe result
+from firmware bugs.
+
+Changing destination size of raster patterns is permanent
+---------------------------------------------------------
+
+Specifying a NewDestinationSize for a raster pattern in the SetBrushSource
+or SetPenSource command apparently changes the destination size permanently,
+or at least for a subsequent SetBrush/PenSource command that doesn't specify
+a NewDestinationSize.  This is tested explicitly (and the H-P printers fail
+the test) in:
+	CET c306 p. 43, c307 p. 44
+
+Mysterious missing character
+----------------------------
+
+In:
+	CET c330 last page
+a partial 'B' should appear in portrait orientation to the left of the
+partial 'A'.  The input data read as follows (slightly abridged):
+
+	0 6600 usp @PageOrigin SetPageOrigin
+	90 ss @PageAngle SetPageRotation
+	PushGS
+	-2300 1900 ssp @PageOrigin SetPageOrigin
+	2.23 1.1 rp @PageScale SetPageScale
+	(Courier       Bd) ba @FontName 1000 us @CharSize
+	  629 us @SymbolSet SetFont
+	0 b @NullBrush SetBrushSource
+	NewPath
+	1500 0 3500 1200 usq @BoundingBox
+	2100 0 ssp @StartPoint
+	2600 0 ssp @EndPoint
+	PiePath PaintPath
+	0 b @ClipRegion SetClipReplace
+	<79 7b 7d> ba @RGBColor SetBrushSource
+	2500 900 ssp @PageOrigin SetPageOrigin
+	0 0 usp @Point SetCursor
+	-180 ss @PageAngle SetPageRotation
+	(A) ba @TextData Text
+	SetPageDefaultCTM
+	2100 3600 usp @Point SetCursor
+	(B) ba @TextData Text
+
+Even when we modified the test data to paint an entire page of 'B' at this
+point, no characters appeared.  We assume this results from a firmware bug,
+but we have no theories as to its nature.
+
+[2] Characters transformed in wrong order
+-----------------------------------------
+
+In
+	CET c333 p. 16	
+in the "Effect on CharAngle" and "Effect on CharShear" lines, the character
+appears to be scaled by the page scale before being rotated by the character
+angle or sheared, rather than vice versa.  We believe this is a firmware bug
+because we verified, by testing all 125 possible sequences of 3 operations
+chosen from the set {SetCharAngle, SetCharScale, SetCharShear,
+SetPageRotation, SetPageScale}, that the character transformations uniformly
+occur before the page transformations.  (We have identified two other
+firmware bugs relating to character transformations, one of which is present
+in the LJ5 but not the LJ6MP: see our separate report on the CET for
+details.)

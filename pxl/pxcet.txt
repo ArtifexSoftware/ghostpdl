@@ -1,0 +1,170 @@
+
+    Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+    Unauthorized use, copying, and/or distribution prohibited.
+
+This document presents the results of Aladdin's investigation of
+discrepancies between the Genoa LaserJet 5 PCL6 Command-Level Emulation
+Test, the published PCL XL Feature Reference Protocol Class 1.1
+specification, and the behavior of the H-P LaserJet 6MP printer.
+
+		Report on Genoa LaserJet 5 PCL6 CET and LaserJet 6MP
+
+Introduction
+============
+
+In the course of validating our PCL XL interpreter using the Genoa LaserJet
+5 PCL6 Command-Level Emulation Test (CET), we observed a number of
+discrepancies that, after careful investigation, we concluded were due to
+problems in the CET and/or the printer firmware.  In this document, we
+present these in detail.
+
+This document should be read in conjunction with our separate report on
+discrepancies between the specification and the firmware independent of the
+Genoa tests.
+
+Changes in a given revision of this document are marked with the revision
+number in [brackets].  Revision history:
+		first issued December 12, 1996
+		rev. [1] December 13, 1996
+		rev. [2] December 19, 1996
+		rev. [3] January 1, 1997
+		rev. [4] January 17, 1997
+		rev. [5] January 29, 1997
+
+Command emulation tests
+=======================
+
+c101
+----
+
+On the pages that include both a UnitsOfMeasure command setting different
+units for the X and Y axes and a PageScale command, text scaling appears to
+be affected only by one of these and not the other.  (We didn't analyze the
+output carefully enough to determine which one.)  This affects pages 16
+through 19 of c101.  This is apparently caused by a LJ5 firmware bug that
+has been corrected in the LJ6MP: the 6MP agrees with our reading of the
+specification.
+
+This bug affects other tests as well; we have tried to note every instance
+of it below.
+
+c102
+----
+
+The bug noted under c101 also affects page 4 of c102.
+
+c302
+----
+
+The bug noted under c101 also affects pages 3 and 6 of c302.
+
+c306
+----
+
+[5] On page 8 of c306, the patterns with an origin of -32767 in X or Y are
+apparently incorrect: they appear as though the origin were +32767.
+
+Specifying a NewDestinationSize for a raster pattern in the SetBrushSource
+or SetPenSource command apparently changes the destination size permanently,
+or at least for a subsequent SetBrush/PenSource command that doesn't specify
+a NewDestinationSize.  Page 43 of c306 tests for this explicitly, and the
+LJ5 fails the test.  This apparent firmware bug has [not] been fixed in the
+LJ6MP.
+
+c307
+----
+
+The bug affecting page 43 of c306 also affects page 44 of c307.
+
+[1] c308
+--------
+
+[1] The text on page 23 says that "Printing a bitmap font at an angle
+produces an error."  However, no error occurs.  By experiment, we have
+determined that rotating the *page* causes bitmaps to rotate appropriately,
+but setting the character angle, scale, or shear factor to a non-default
+value causes an IllegalFontData error.
+
+[2] c319
+--------
+
+The "PenWidth_UI = 600" shape on page 37 is actually created from a
+lower-case 'e' in the Arial font, so it may appear different depending on
+the details of the font and the rasterizer.
+
+[1] c321
+--------
+
+[1] It appears that if the current clip mode is even/odd, SetClipIntersect
+with an exterior clip region disregards the previous clip path and does the
+equivalent of SetClipReplace.  The first, and simplest, example of this is
+the upper right figure on page 3: the "intersection" clip region is simply
+the exterior of the two lightly-drawn rectangles, with no relationship to
+the darker-drawn rectangle which is the original clipping region.  This bug
+shows up in the Genoa printouts and has also been observed on the LJ6MP.
+
+[1] This bug also affects many other pages in this test.
+
+[2] c330
+--------
+
+On the last page of this test, a partial 'B' should appear in portrait
+orientation to the left of the partial 'A'.  The input data read as follows
+(slightly abridged):
+
+	0 6600 usp @PageOrigin SetPageOrigin
+	90 ss @PageAngle SetPageRotation
+	PushGS
+	-2300 1900 ssp @PageOrigin SetPageOrigin
+	2.23 1.1 rp @PageScale SetPageScale
+	(Courier       Bd) ba @FontName 1000 us @CharSize
+	  629 us @SymbolSet SetFont
+	0 b @NullBrush SetBrushSource
+	NewPath
+	1500 0 3500 1200 usq @BoundingBox
+	2100 0 ssp @StartPoint
+	2600 0 ssp @EndPoint
+	PiePath PaintPath
+	0 b @ClipRegion SetClipReplace
+	<79 7b 7d> ba @RGBColor SetBrushSource
+	2500 900 ssp @PageOrigin SetPageOrigin
+	0 0 usp @Point SetCursor
+	-180 ss @PageAngle SetPageRotation
+	(A) ba @TextData Text
+	SetPageDefaultCTM
+	2100 3600 usp @Point SetCursor
+	(B) ba @TextData Text
+
+Even when we modified the test data to paint an entire page of 'B' at this
+point, no characters appeared.  We assume this results from a firmware bug,
+but we have no theories as to its nature.
+
+[4] c333
+--------
+
+In the "Effect on CharAngle" and "Effect on CharShear" lines of page 16, the
+character appears to be scaled by the page scale before being rotated by the
+character angle or sheared, rather than vice versa.  We believe this is a
+firmware bug because we verified, by testing all 125 possible sequences of 3
+operations chosen from the set {SetCharAngle, SetCharScale, SetCharShear,
+SetPageRotation, SetPageScale}, that the character transformations uniformly
+occur before the page transformations.
+
+The bug noted under c101 also affects pages 18 through 20 of c333.
+
+Error emulation tests
+=====================
+
+[2] e120
+--------
+
+The H-P implementation apparently supports only the little-endian binary
+binding: [3] an "unavailable binding" error occurs when the file attempts to
+start an input stream with big-endian binding.  Furthermore, there is an
+apparent data error in the subsequent big-endian data: at byte position 101
+in the big-endian section (counting the first byte of PCL XL data after the
+stream header as byte 0), the length of the font name "Courier" is
+incorrectly coded as (16,0) (little-endian) rather than (0,16) (big-endian).
+The resulting 4096-byte count causes the entire remainder of the file to be
+interpreted as a data stream; since this exceeds the length of the file, the
+test terminates.

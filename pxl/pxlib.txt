@@ -1,0 +1,222 @@
+
+    Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+    Unauthorized use, copying, and/or distribution prohibited.
+
+This document describes the additions to Aladdin's PostScript-oriented
+graphics library that were required to handle the full PCL graphics model.
+
+	    Graphics model extensions from PostScript to PCL
+
+Introduction
+============
+
+The PCL XL graphics model is very close to the PostScript model, but it is
+not identical, and it includes several features that are difficult or
+impossible to emulate using the PostScript concepts.  This document presents
+the additions we made to our PostScript-oriented graphics library in order
+to implement the full PCL XL graphics model.  We have noted the places where
+we did this only for efficiency, and where we saw no alternative.
+
+PCL5 (including HP-GL/2) also requires a very small number of additions
+beyond PCL XL.  We have included these in this document as well.
+
+Changes in a given revision of this document are marked with the revision
+number in [brackets].  Revision history:
+		first issued January 18, 1997
+
+Both PCL5 and PCL XL
+====================
+
+RasterOp and transparency
+-------------------------
+
+All drawing operations must be capable of incorporating an arbitrary 3-input
+Boolean operation (RasterOp).  With the RasterOp extension, imaging
+operations compute a function D = F(D,S,T), where F is an arbitrary 3-input
+Boolean function, D is the destination (frame buffer or print buffer), S is
+the source (described below), and T is the texture (always the current
+PostScript color, which may be a pattern).  The source and texture depend on
+the PostScript imaging operation:
+
+	- For fill and stroke, the source is solid black, covering the
+	region to be painted.
+
+	- For *show and imagemask, the source is solid black, covering the
+	pixels to be painted.
+
+	- For image and colorimage, the source is the image data.
+
+On black-and-white devices, D, S, and T are considered to be 1-bit values in
+RGB space; this require modifying F if the device actually uses 0 = white, 1
+= black.  (Our library handles this automatically.)  On such devices, F is
+applied directly to the rendered bits, i.e. after transfer function and
+halftoning.  On color (even non-contone) or gray-scale devices, D, S, and T
+are considered to be N-bit RGB values, and F is applied before any color
+realization.
+
+The source and destination each also have a "transparent" flag: if the
+corresponding flag is set, then white pixels in the source or destination
+respectively suppress writing into the frame buffer, regardless of what F
+may othewise compute.  For black-and-white devices, transparency can be
+implemented by modifying F; for gray-scale or color devices, an explicit
+additional test is required.
+
+We see no reasonable way for clients to implement RasterOp, or transparency
+on non-black-and-white devices.
+
+Triangular caps
+---------------
+
+PCL supports triangular caps.  If the square cap looks like this:
+
+	________
+	|      |
+	|      |
+	|      |
+
+then the triangular cap looks like this:
+
+	  /  \
+	/      \
+	|      |
+
+i.e. its lines meet the ends of the stroke at 135 degrees, and each other at
+90 degrees.
+
+If the library provides a way for clients to get the result of applying the
+current dash pattern to a path (similar in spirit to flattenpath), clients
+could in principle implement triangular caps.
+
+Null joins
+----------
+
+PCL supports a join style called null joins, in which a pair of caps is used
+instead of a join.  I.e., with null joins, each line, curve, or arc is
+considered to be a separate subpath.  Null join style does not affect the
+junctures between the line segments produced by flattening curves or arcs:
+these are always "smooth".  (When null joins are selected, our library uses
+bevel joins between curve and arc segments.)
+
+While in principle clients could implement null joins, it would require
+extra work because it is the join style in effect at path painting time, not
+at path construction time, that determines the output; thus the client
+cannot use the obvious approach of breaking the path up as it is being
+constructed.  Instead, the client must record the sequence of path drawing
+operations and replay them in modified form if the join style at painting
+time is different from the join style at construction time.
+
+Dots
+----
+
+When a dash pattern includes zero-length drawn segments, PostScript
+interpreters produce a dot if round caps are in effect, and nothing
+otherwise.  H-P's PCL XL interpreters, however, always draw a pair of caps
+(including a hairline for butt caps); something similar happens in PCL5.
+
+We thought clients could implement this by replacing zero-length drawn
+elements of the dash pattern with tiny nearly-zero-length elements.
+However, this doesn't work:
+
+	- If the tiny element shortens the following skipped distance, then
+no dot will get drawn at the very end of a line that is an exact multiple of
+the pattern length.
+
+	- If the tiny element shortens the previous skipped distance (or a
+final skip if it is the first element of the pattern), the entire pattern
+will be displaced slightly, leading to other problems at points that exactly
+line up with the boundaries of pattern elements.
+
+	- If the tiny element shortens both the previous and following
+distance, then if it falls exactly on a corner, the caps will not be at 180
+degrees to each other, leading to visual anomalies.
+
+We verified through experimentation that all these problems do occur with a
+client-side implementation, and that they do not occur in H-P's printers.
+We still suspect there is a way for clients to implement this behavior,
+especially if the library can deliver the dash expansion as noted for
+triangular caps above.
+
+Accurate curves
+---------------
+
+The curve flattening method implied by the PostScript Language Reference
+Manual always uses chords to approximate curves.  As a result, the last
+chord is not quite a segment of the tangent, and so a butt or square cap is
+not quite perpendicular to the tangent.  In PostScript, this is usually not
+a problem, because line joining takes care of filling the small wedge-shaped
+gap that would otherwise occur between the end of an arc and an adjacent
+line continuing in the same direction.  However, with null joins, the wedge
+becomes visible.  Also, with a wide brush, the discrepancy from horizontal
+or vertical at the ends of semicircles becomes visually noticeable.  Our
+library provides a flag that creates a very short tangent segment as the
+first and last line of a flattened curve, thereby avoiding this problem.
+
+In principle, clients could create accurate curve ends by adding the short
+tangent lines explicitly (and adjusting the end parameters of the curve
+appropriately), but it would be quite a nuisance.
+
+Character bolding
+-----------------
+
+PCL supports pseudo-bolding for characters.  This is defined as "smearing"
+the filled region to the right and upward before imaging it onto the page.
+In particular, smearing happens before RasterOp.
+
+We don't implement this directly in our graphics library; however, our PCL
+interpreters implement it in the callback for rendering characters that are
+not yet in the cache.  A client could implement it by asking for the bitmap
+of the character and then doing the smearing, but this would prevent the
+smeared character from being cached.  (This may not be important in
+practice.)
+
+PCL5 only
+=========
+
+Triangular joins
+----------------
+
+PCL5 supports triangular joins.  The triangular "spike" is the reflection of
+filling the outside "notch" where the lines meet.  The spike is not affected
+by the miter limit.
+
+As with triangular caps, clients could implement triangular joins (with a
+bit of trouble) if the library did the dash pattern expansion first.
+
+PCL XL only
+===========
+
+Negative dash pattern elements
+------------------------------
+
+PCL XL allows negative lengths in dash patterns.  What this appears to mean
+is that a negative segment is drawn backwards from the current point at the
+time it is encountered, with no caps (or perhaps the caps are reflected 180
+degrees so they are actually inside the segment -- we didn't experiment with
+segments short enough to test this), and also skips over an equal amount of
+following positive pattern elements.  What seems bizarre to us is that the
+negative segment is not drawn back along the line: it is drawn in a straight
+line in a direction 180 degrees from the current line segment.  If this
+occurs just after a corner, for example, the drawn segment sticks out in a
+direction far off the actual path.
+
+Our PCL XL interpreter currently handles negative lengths in the client, by
+transforming the pattern, but the results are not correct if the line is
+shorter than one full pattern repetition or if the line has sharp corners.
+Clients could handle the former if dash patterns were generalized so that
+instead of an offset, they had a separate initial part, i.e., if they could
+be of the form A B C D E D E D E...; but we don't see how clients could
+handle the odd H-P interpretation of the latter.  (We doubt that it needs to
+be handled in practice.)
+
+Dual halftones
+--------------
+
+By default, source and texture (i.e., colors/patterns and images) use
+slightly different halftones.  We think they are the same halftone with
+slightly different phase, but we aren't sure of this yet.  This is required
+in order to produce certain subtle (but highly visible) interaction effects
+when combining halftoned source and texture with RasterOp.
+
+We don't see any way for clients to implement dual halftones when RasterOp
+is involved, because not all 3-input Boolean functions can be handled by
+performing two 2-input operations with a change of halftone in between.
