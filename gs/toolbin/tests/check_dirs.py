@@ -109,8 +109,7 @@ class GSCheckDirectoryMatchesCVS(GSTestCase):
 
 gsFilesInTopDirectory = ['autogen.sh']
 gsDirectories = [
-    'doc', 'examples', 'lib', 'src', 'toolbin', 'toolbin/tests',
-    'toolbin/regression'
+    'doc', 'examples', 'lib', 'src', 'toolbin', 'toolbin/tests'
     ]
 
 # Add the tests defined in this file to a suite.
