@@ -32,7 +32,7 @@
 #include "math_.h"
 #include "vdtrace.h"
 
-#define VD_TRACE_TENSOR_PATCH 0
+#define VD_TRACE_TENSOR_PATCH 1
 
 #if TENSOR_SHADING_DEBUG
 static int patch_cnt = 0; /* Temporary for a debug purpose.*/
@@ -135,7 +135,7 @@ typedef struct patch_fill_state_s {
     const gs_function_t *Function;
 #if NEW_SHADINGS
     bool vectorization;
-#   if QUADRANGLES
+#   if POLYGONAL_WEDGES
     gs_fixed_point *wedge_buf;
 #   endif
     gs_client_color color_domain;
@@ -161,7 +161,7 @@ init_patch_fill_state(patch_fill_state_t *pfs)
     for (i = 0; i < pfs->num_components; i++)
 	pfs->color_domain.paint.values[i] = max(fcc1.paint.values[i] - fcc0.paint.values[i], 1);
     pfs->vectorization = false; /* A stub for a while. Will use with pclwrite. */
-#   if QUADRANGLES
+#   if POLYGONAL_WEDGES
 	pfs->wedge_buf = NULL;
 #   endif
     pfs->fixed_flat = float2fixed(pfs->pis->flatness);
@@ -844,6 +844,8 @@ draw_triangle(const gs_fixed_point *p0, const gs_fixed_point *p1,
 		const gs_fixed_point *p2, ulong rgbcolor)
 {
 #ifdef DEBUG
+    if (!vd_enabled)
+	return;
 #   if TENSOR_SHADING_DEBUG
     if (dbg_nofill) /* A switch for a better view with a specific purpose. 
 	    Feel free to change the condition if needed. */
@@ -1338,7 +1340,7 @@ fill_wedge(patch_fill_state_t *pfs, int ka,
     bool swap_axes;
     int k1 = ka + 1, i, code;
     gs_fixed_point q[2];
-#   if QUADRANGLES
+#   if POLYGONAL_WEDGES
 	gs_fixed_point *p = pfs->wedge_buf;
 #   else
 	gs_fixed_point *p = NULL; /* never executes. */
@@ -1376,8 +1378,9 @@ fill_wedge(patch_fill_state_t *pfs, int ka,
 
 private inline int 
 fill_triangle_wedge(patch_fill_state_t *pfs, gs_fixed_point q[3], 
-		    const patch_color_t *c0, const patch_color_t *c1)
-{
+		    const patch_color_t *c0, const patch_color_t *c1, double t)
+{   /* fixme: the interface isn't optimal : decompose the array and 
+	pass the interpolated color. */
     patch_color_t c;
     int code;
     fixed dx = any_abs(q[0].x - q[1].x), dy = any_abs(q[0].y - q[1].y);
@@ -1396,7 +1399,7 @@ fill_triangle_wedge(patch_fill_state_t *pfs, gs_fixed_point q[3],
 	c0 = c1; 
 	c1 = cc;
     }
-    patch_interpolate_color(&c, c0, c1, pfs, 0.5);
+    patch_interpolate_color(&c, c0, c1, pfs, t);
     code = fill_wedge_trap(pfs, &q[0], &q[2], q, c0, &c, swap_axes);
     if (code < 0)
 	return code;
@@ -1416,7 +1419,8 @@ wedge_by_triangles(patch_fill_state_t *pfs, int ka,
     p[0] = pole[0]; /* fixme: Improve fill_triangle_wedge prototype. */
     p[1] = pole[3];
     p[2] = q[0][3];
-    code = fill_triangle_wedge(pfs, p, c0, &c);
+    draw_wedge(p, 3);
+    code = fill_triangle_wedge(pfs, p, c0, &c, 0.5);
     if (code < 0)
 	return code;
     if (ka == 2)
@@ -1431,14 +1435,26 @@ private inline int
 triangles(patch_fill_state_t *pfs, const tensor_patch *p)
 {
     int code;
+    double d0011 = color_span(pfs, &p->c[0][0], &p->c[1][1]);
+    double d0110 = color_span(pfs, &p->c[0][1], &p->c[1][0]);
 
     draw_quadrangle(p, RGB(0, 255, 0));
-    code = triangle(pfs, &p->pole[0][0], &p->pole[0][3], &p->pole[3][3], 
-			    &p->c[0][0], &p->c[0][1], &p->c[1][1]);
-    if (code < 0)
-	return code;
-    return triangle(pfs, &p->pole[0][0], &p->pole[3][3], &p->pole[3][0], 
-			    &p->c[0][0], &p->c[1][1], &p->c[1][0]);
+    /* Divide at the smaller color variation to reduce the number of costant color areas. */
+    if (d0011 < d0110) {
+	code = triangle(pfs, &p->pole[0][0], &p->pole[0][3], &p->pole[3][3], 
+				&p->c[0][0], &p->c[0][1], &p->c[1][1]);
+	if (code < 0)
+	    return code;
+	return triangle(pfs, &p->pole[0][0], &p->pole[3][3], &p->pole[3][0], 
+				&p->c[0][0], &p->c[1][1], &p->c[1][0]);
+    } else {
+	code = triangle(pfs, &p->pole[0][0], &p->pole[0][3], &p->pole[3][0], 
+				&p->c[0][0], &p->c[0][1], &p->c[1][0]);
+	if (code < 0)
+	    return code;
+	return triangle(pfs, &p->pole[0][3], &p->pole[3][3], &p->pole[3][0], 
+				&p->c[0][1], &p->c[1][1], &p->c[1][0]);
+    }
 }
 
 int
@@ -1903,8 +1919,8 @@ is_patch_color_linear(const patch_fill_state_t * pfs, const tensor_patch *p, boo
 	patch_interpolate_color(&d0, &p->c[0][0], &p->c[1][1], pfs, 0.5); /* diagonal 1 */
 	patch_interpolate_color(&d1, &p->c[0][1], &p->c[1][0], pfs, 0.5); /* diagonal 2 */
 	D = color_span(pfs, &d0, &d1);
-	if (D <= pfs->pis->smoothness * 2)
-	    return false;
+	if (D <= pfs->pis->smoothness)
+	    return true;
     }
 #   else
     {	/* fixme : is this same as above ? */
@@ -1919,7 +1935,7 @@ is_patch_color_linear(const patch_fill_state_t * pfs, const tensor_patch *p, boo
 	D0 = color_span(pfs, &d0, &c);
 	D1 = color_span(pfs, &d1, &c);
 	if (D0 <= pfs->pis->smoothness && D1 <= pfs->pis->smoothness)
-	    return false;
+	    return true;
     }
 #   endif
     {	double d0001 = color_span(pfs, &p->c[0][0], &p->c[0][1]);
@@ -2000,26 +2016,124 @@ quadrangle_bbox_covers_pixel_centers(const tensor_patch *p)
 }
 
 private inline int 
-divide_triangle(patch_fill_state_t *pfs, 
-	const gs_fixed_point *p0, const gs_fixed_point *p1, const gs_fixed_point *p2, 
-	const patch_color_t *c0, const patch_color_t *c1, const patch_color_t *c2)
+divide_quadrangle_by_parallels(patch_fill_state_t *pfs, 
+	const gs_fixed_point *p0, const gs_fixed_point *p1, const gs_fixed_point *p2, const gs_fixed_point *p3,
+	const patch_color_t *c0, const patch_color_t *c1, const patch_color_t *c2, const patch_color_t *c3,
+	double d01)
 {
-    gs_fixed_point p;
-    patch_color_t c;
-    gs_fixed_point q[3]; /* fixme : optimize. */
+    if (d01 < pfs->pis->smoothness ||
+	    (any_abs(p1->x - p0->x) < fixed_1 && any_abs(p1->y - p0->y) < fixed_1 &&
+	     any_abs(p3->x - p2->x) < fixed_1 && any_abs(p3->y - p2->y) < fixed_1)) {
+	tensor_patch p;
+	
+	p.pole[0][0] = *p0;
+	p.pole[0][3] = *p1;
+	p.pole[3][3] = *p2;
+	p.pole[3][0] = *p3;
+	p.c[0][0] = *c0;
+	p.c[0][1] = *c1;
+	p.c[1][1] = *c2;
+	p.c[1][0] = *c3;
+	return constant_color_quadrangle(pfs, &p);
+	/* fixme: this quadrangle isn't self-intersecting, so we could use a simpler function. */
+    } else {
+	gs_fixed_point q[4], q0, q1;
+	patch_color_t d0, d1;
+	int code;
+
+	q[0] = *p0;
+	q[1] = *p1;
+	q[2].x = (p0->x + p1->x) / 2;
+	q[2].y = (p0->y + p1->y) / 2;
+	q0 = q[2];
+	code = fill_triangle_wedge(pfs, q, c0, c1, 0.5);
+	if (code < 0)
+	    return code;
+	q[0] = *p3;
+	q[1] = *p2;
+	q[2].x = (p3->x + p2->x) / 2;
+	q[2].y = (p3->y + p2->y) / 2;
+	q1 = q[2];
+	code = fill_triangle_wedge(pfs, q, c3, c2, 0.5);
+	if (code < 0)
+	    return code;
+	patch_interpolate_color(&d0, c0, c1, pfs, 0.5);
+	patch_interpolate_color(&d1, c3, c2, pfs, 0.5);
+	code = divide_quadrangle_by_parallels(pfs, p0, &q0, &q1, p3, c0, &d0, &d1, c3, d01 / 2);
+	if (code < 0)
+	    return code;
+	return divide_quadrangle_by_parallels(pfs, &q0, p1, p2, &q1, &d0, c1, c2, &d1, d01 / 2);
+    }
+}
+
+private int 
+divide_triangle_by_parallels(patch_fill_state_t *pfs, 
+	const gs_fixed_point *p0, const gs_fixed_point *p1, const gs_fixed_point *p2, 
+	const patch_color_t *c0, const patch_color_t *c1, const patch_color_t *c2,
+	double d01)
+{
+    /* fixme : clone the case of small triangles. */
+    int n = (int)ceil(d01 / pfs->pis->smoothness), i;
+    gs_fixed_point q[3], q0, q1;
+    patch_color_t d0, d1;
+    double t = 1.0 / n;
     int code;
 
-    p.x = (p0->x + p1->x) / 2;
-    p.y = (p0->y + p1->y) / 2;
-    patch_interpolate_color(&c, c0, c1, pfs, 0.5);
-    q[0] = *p0; q[1] = *p1; q[2] = p;
-    code = fill_triangle_wedge(pfs, q, c0, c1);
+    if (n == 1)
+	return constant_color_triangle(pfs, p0, p1, p2, c0, c1, c2);
+    if (any_abs(p1->x - p2->x) < fixed_1 && any_abs(p1->y - p2->y) < fixed_1 &&
+	any_abs(p0->x - p2->x) < fixed_1 && any_abs(p0->y - p2->y) < fixed_1)
+	return constant_color_triangle(pfs, p0, p1, p2, c0, c1, c2);
+    q[0] = *p2; 
+    q[1] = *p0;
+    q[2].x = (fixed)((int64_t)p2->x * (n - 1) + p0->x) / n;
+    q[2].y = (fixed)((int64_t)p2->y * (n - 1) + p0->y) / n;
+    q0 = q[2];
+    code = fill_triangle_wedge(pfs, q, c2, c0, 1.0 / n);
     if (code < 0)
 	return code;
-    code = triangle(pfs, p0, &p, p2, c0, &c, c2);
+    q[0] = *p2; 
+    q[1] = *p1;
+    q[2].x = (fixed)((int64_t)p2->x * (n - 1) + p1->x) / n;
+    q[2].y = (fixed)((int64_t)p2->y * (n - 1) + p1->y) / n;
+    q1 = q[2];
+    code = fill_triangle_wedge(pfs, q, c2, c1, t);
     if (code < 0)
 	return code;
-    return triangle(pfs, &p, p1, p2, &c, c1, c2);
+    patch_interpolate_color(&d0, c2, c0, pfs, t);
+    patch_interpolate_color(&d1, c2, c1, pfs, t);
+    code = divide_quadrangle_by_parallels(pfs, &q0, p0, p1, &q1, 
+					       &d0, c0, c1, &d1, d01 * (n - 1) / n);
+    if (code < 0)
+	return code;
+    return constant_color_triangle(pfs, p2, &q0, &q1, c2, &d0, &d1);
+}
+
+private inline int 
+divide_triangle(patch_fill_state_t *pfs, 
+	const gs_fixed_point *p0, const gs_fixed_point *p1, const gs_fixed_point *p2, 
+	const patch_color_t *c0, const patch_color_t *c1, const patch_color_t *c2,
+	double d01, double d12, double d20)
+{
+    gs_fixed_point q[3], q0;
+    patch_color_t c;
+    int code;
+    double t0 = d20 / (d12 + d20);
+
+    draw_triangle(p0, p1, p2, RGB(255, 0, 0));
+    patch_interpolate_color(&c, c0, c1, pfs, t0);
+    q[0] = *p0;
+    q[1] = *p1;
+    q[2].x = (fixed)((p0->x * d12 + p1->x * d20) / (d12 + d20)); /* Don't need rounding due to wedges. */
+    q[2].y = (fixed)((p0->y * d12 + p1->y * d20) / (d12 + d20)); /* A rounding runs out the interval. */
+    q0 = q[2];
+    code = fill_triangle_wedge(pfs, q, c0, c1, t0);
+    if (code < 0)
+	return code;
+    code = triangle(pfs, &q0, p2, p0, &c, c2, c0);
+    if (code < 0)
+	return code;
+    return triangle(pfs, p2, &q0, p1, c2, &c, c1);
 }
 
 int 
@@ -2031,15 +2145,27 @@ triangle(patch_fill_state_t *pfs,
     double d12 = color_span(pfs, c2, c1);
     double d20 = color_span(pfs, c0, c2);
 
-    if (d01 >= d12 && d01 >= d20 && d01 > pfs->pis->smoothness &&
-	(any_abs(p1->x - p0->x) > fixed_1 || any_abs(p1->y - p0->y) > fixed_1))
-	return divide_triangle(pfs, p0, p1, p2, c0, c1, c2);
-    if (d12 >= d20 && d12 >= d01 && d12 > pfs->pis->smoothness &&
-	(any_abs(p1->x - p2->x) > fixed_1 || any_abs(p1->y - p2->y) > fixed_1))
-	return divide_triangle(pfs, p1, p2, p0, c1, c2, c0);
-    if (d20 >= d12 && d20 >= d01 && d20 > pfs->pis->smoothness &&
-	(any_abs(p2->x - p0->x) > fixed_1 || any_abs(p2->y - p0->y) > fixed_1))
-	return divide_triangle(pfs, p1, p2, p0, c1, c2, c0);
+    draw_triangle(p0, p1, p2, RGB(255, 0, 0));
+    if (d01 < pfs->pis->smoothness && d12 < pfs->pis->smoothness && d20 < pfs->pis->smoothness)
+	return constant_color_triangle(pfs, p0, p1, p2, c0, c1, c2);
+    if (d01 < pfs->pis->smoothness)
+	return divide_triangle_by_parallels(pfs, p0, p1, p2, c0, c1, c2, (d12 + d20) / 2);
+    if (d12 < pfs->pis->smoothness)
+	return divide_triangle_by_parallels(pfs, p1, p2, p0, c1, c2, c0, (d20 + d01) / 2);
+    if (d20 < pfs->pis->smoothness)
+	return divide_triangle_by_parallels(pfs, p2, p0, p1, c2, c0, c1, (d01 + d12) / 2);
+    if (any_abs(p1->x - p0->x) < fixed_1 && any_abs(p1->y - p0->y) < fixed_1)
+	return divide_triangle_by_parallels(pfs, p0, p1, p2, c0, c1, c2, (d12 + d20) / 2);
+    if (any_abs(p2->x - p1->x) < fixed_1 && any_abs(p2->y - p1->y) < fixed_1)
+	return divide_triangle_by_parallels(pfs, p1, p2, p0, c1, c2, c0, (d20 + d01) / 2);
+    if (any_abs(p1->x - p0->x) < fixed_1 && any_abs(p1->y - p0->y) < fixed_1)
+	return divide_triangle_by_parallels(pfs, p2, p0, p1, c2, c0, c1, (d01 + d12) / 2);
+    if (d01 >= d12 && d01 >= d20 && d01 > pfs->pis->smoothness)
+	return divide_triangle(pfs, p0, p1, p2, c0, c1, c2, d01, d12, d20);
+    if (d12 >= d20 && d12 >= d01 && d12 > pfs->pis->smoothness)
+	return divide_triangle(pfs, p1, p2, p0, c1, c2, c0, d12, d20, d01);
+    if (d20 >= d12 && d20 >= d01 && d20 > pfs->pis->smoothness)
+	return divide_triangle(pfs, p2, p0, p1, c2, c0, c1, d20, d01, d12);
     return constant_color_triangle(pfs, p0, p1, p2, c0, c1, c2);
 }
 
@@ -2050,7 +2176,7 @@ fill_quadrangle(patch_fill_state_t *pfs, const tensor_patch *p)
     tensor_patch s0, s1;
     int code;
     bool is_big_u = false, is_big_v = false;
-    bool color_big, color_u;
+    bool divide, color_u;
     gs_fixed_point q[3];
 
     if (!pfs->vectorization && !quadrangle_bbox_covers_pixel_centers(p))
@@ -2068,35 +2194,36 @@ fill_quadrangle(patch_fill_state_t *pfs, const tensor_patch *p)
 	    return (QUADRANGLES ? constant_color_quadrangle : triangles)(pfs, p);
 	is_big_v = true;
     }
-    color_big = !is_patch_color_monotonic(pfs, p, &color_u) || 
+    divide = !is_patch_color_monotonic(pfs, p, &color_u) || 
 		(QUADRANGLES ? is_patch_color_span_big(pfs, p, &color_u)
-		            : is_patch_color_linear(pfs, p, &color_u));
-    if (is_big_v && color_big && !color_u) {
+		            : !is_patch_color_linear(pfs, p, &color_u));
+    if (!divide)
+	return (QUADRANGLES ? constant_color_quadrangle : triangles)(pfs, p);
+    if (!color_u && is_big_v || color_u && !is_big_u) {
 	divide_quadrangle_by_v(pfs, &s0, &s1, p);
 	q[0] = s0.pole[0][0], q[2] = s0.pole[3][0], q[1] = s1.pole[3][0];
-	fill_triangle_wedge(pfs, q, &p->c[0][0], &p->c[1][0]); /* smashes q. */
+	fill_triangle_wedge(pfs, q, &p->c[0][0], &p->c[1][0], 0.5); /* smashes q. */
 	q[0] = s0.pole[0][3], q[2] = s0.pole[3][3], q[1] = s1.pole[3][3];
-	fill_triangle_wedge(pfs, q, &p->c[0][1], &p->c[1][1]); /* smashes q. */
+	fill_triangle_wedge(pfs, q, &p->c[0][1], &p->c[1][1], 0.5); /* smashes q. */
 	/* draw_quadrangle(&s0, RGB(255, 0, 0)); */
 	/* draw_quadrangle(&s1, RGB(255, 0, 0)); */
 	code = fill_quadrangle(pfs, &s0);
 	if (code < 0)
 	    return code;
 	return fill_quadrangle(pfs, &s1);
-    } else if (is_big_u && color_big && color_u) {
+    } else {
 	divide_quadrangle_by_u(pfs, &s0, &s1, p);
 	q[0] = s0.pole[0][0], q[2] = s0.pole[0][3], q[1] = s1.pole[0][3];
-	fill_triangle_wedge(pfs, q, &p->c[0][0], &p->c[0][1]); /* smashes q. */
+	fill_triangle_wedge(pfs, q, &p->c[0][0], &p->c[0][1], 0.5); /* smashes q. */
 	q[0] = s0.pole[3][0], q[2] = s0.pole[3][3], q[1] = s1.pole[3][3];
-	fill_triangle_wedge(pfs, q, &p->c[1][0], &p->c[1][1]); /* smashes q. */
+	fill_triangle_wedge(pfs, q, &p->c[1][0], &p->c[1][1], 0.5); /* smashes q. */
 	/* draw_quadrangle(&s0, RGB(255, 0, 0)); */
 	/* draw_quadrangle(&s1, RGB(255, 0, 0)); */
 	code = fill_quadrangle(pfs, &s0);
 	if (code < 0)
 	    return code;
 	return fill_quadrangle(pfs, &s1);
-    } else
-	return (QUADRANGLES ? constant_color_quadrangle : triangles)(pfs, p);
+    }
 }
 
 private inline void
@@ -2317,8 +2444,12 @@ fill_patch(patch_fill_state_t * pfs, const tensor_patch *p, int kv)
 	int code;
 
 	if (kv <= 1) {
-	    fill_wedges(pfs, 2, 1, &p->pole[0][0], 4, &p->c[0][0], &p->c[1][0], 0);
-	    fill_wedges(pfs, 2, 1, &p->pole[0][3], 4, &p->c[0][1], &p->c[1][1], 0);
+	    code = fill_wedges(pfs, 2, 1, &p->pole[0][0], 4, &p->c[0][0], &p->c[1][0], inpatch_wedge);
+	    if (code < 0)
+		return code;
+	    code = fill_wedges(pfs, 2, 1, &p->pole[0][3], 4, &p->c[0][1], &p->c[1][1], inpatch_wedge);
+	    if (code < 0)
+		return code;
 	} else {
 	    /* Nothing to do, because patch_fill processed wedges over kvm. */
 	    /* The wedges over kvm are not processed here,
@@ -2436,13 +2567,13 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
     tensor_patch p;
     int kv[4], kvm, ku[4], kum, km;
     int code = 0;
-#   if QUADRANGLES
+#   if POLYGONAL_WEDGES
     gs_fixed_point buf[33];
     gs_memory_t *memory = pfs->pis->memory;
 #   endif
 
-#   if 0 /*TENSOR_SHADING_DEBUG*/
-	if (patch_cnt != 363 && patch_cnt != 364) 
+#   if TENSOR_SHADING_DEBUG
+	if (patch_cnt != 2 && patch_cnt != 3) 
 	    return 0;
 #   endif
     /* We decompose the patch into tiny quadrangles,
@@ -2458,8 +2589,8 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
     ku[3] = curve_samples(p.pole[0], 1, pfs->fixed_flat);
     kum = max(ku[0], ku[3]);
     km = max(kvm, kum);
-#   if QUADRANGLES
-	if (QUADRANGLES && km + 1 > count_of(buf)) {
+#   if POLYGONAL_WEDGES
+	if ((POLYGONAL_WEDGES) && km + 1 > count_of(buf)) {
 	    /* km may be randomly big with a patch which looks as a triangle in XY. */
 	    pfs->wedge_buf = (gs_fixed_point *)gs_alloc_bytes(memory, 
 		    sizeof(gs_fixed_point) * (km + 1), "patch_fill");
@@ -2496,7 +2627,7 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 #	endif
 	code = fill_patch(pfs, &p, kvm);
     }
-#   if QUADRANGLES
+#   if POLYGONAL_WEDGES
 	if (km + 1 > count_of(buf))
 	    gs_free_object(memory, pfs->wedge_buf, "patch_fill");
 	pfs->wedge_buf = NULL;

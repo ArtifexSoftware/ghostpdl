@@ -63,7 +63,7 @@ typedef struct patch_fill_state_s {
     const gs_function_t *Function;
 #if NEW_SHADINGS
     bool vectorization;
-#   if QUADRANGLES
+#   if POLYGONAL_WEDGES
     gs_fixed_point *wedge_buf;
 #   endif
     gs_client_color color_domain;

@@ -31,6 +31,8 @@
 #include "gxshade4.h"
 #include "vdtrace.h"
 
+#define VD_TRACE_TRIANGLE_PATCH 0
+
 /* ---------------- Triangle mesh filling ---------------- */
 
 /* Initialize the fill state for triangle shading. */
@@ -425,7 +427,7 @@ gs_shading_LfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     int per_row = psh->params.VerticesPerRow;
     int i, code = 0;
 
-    if (vd_allowed('s')) {
+    if (VD_TRACE_TRIANGLE_PATCH && vd_allowed('s')) {
 	vd_get_dc('s');
 	vd_set_shift(0, 0);
 	vd_set_scale(0.01);
@@ -462,7 +464,7 @@ gs_shading_LfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 	vertex[per_row - 1] = next;
     }
 out:
-    if (vd_allowed('s'))
+    if (VD_TRACE_TRIANGLE_PATCH && vd_allowed('s'))
 	vd_release_dc;
     gs_free_object(pis->memory, vertex, "gs_shading_LfGt_render");
     return code;
