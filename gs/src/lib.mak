@@ -79,7 +79,7 @@ gscdefs_h=$(GLSRC)gscdefs.h $(gconfigv_h)
 
 vmsmath_h=$(GLSRC)vmsmath.h
 
-close__h=$(GLSRC)close_.h
+close__h=$(GLSRC)close_.h $(std_h)
 dos__h=$(GLSRC)dos_.h
 ctype__h=$(GLSRC)ctype_.h $(std_h)
 dirent__h=$(GLSRC)dirent_.h $(std_h) $(gconfig__h)
