@@ -277,7 +277,10 @@ pdf_write_transfer(gx_device_pdf *pdev, const gx_transfer_map *map,
 #define HT_FUNC(name, expr)\
   private floatp name(x, y) floatp x, y; { return expr; }
 #endif
-#define M_2PI (2 * M_PI)
+/* Some systems define M_2PI, M_2_PI, ... */
+#ifndef M_2PI
+#  define M_2PI (2 * M_PI)
+#endif
 HT_FUNC(ht_EllipseA, 1 - (x * x + 0.9 * y * y))
 HT_FUNC(ht_InvertedEllipseA, x * x + 0.9 * y * y - 1)
 HT_FUNC(ht_EllipseB, 1 - sqrt(x * x + 0.625 * y * y))
