@@ -51,8 +51,6 @@ hpgl_set_picture_frame_scaling(hpgl_state_t *pgls)
  	     (hpgl_real_t)pgls->g.plot_width) :
  	    1.0;
 	hpgl_call(gs_scale(pgls->pgs, horz_scale, vert_scale));
-	dprintf1("horizontal scaling -> %f\n", horz_scale);
-	dprintf1("vertical scaling scaling -> %f\n", vert_scale);
     }
     return 0;
 
