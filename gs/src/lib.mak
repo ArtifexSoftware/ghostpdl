@@ -389,6 +389,7 @@ gxclipm_h=$(GLSRC)gxclipm.h $(gxmclip_h)
 gxctable_h=$(GLSRC)gxctable.h $(gxfixed_h) $(gxfrac_h)
 gxfcache_h=$(GLSRC)gxfcache.h $(gsuid_h) $(gsxfont_h)\
  $(gxbcache_h) $(gxftype_h)
+gxfcopy_h=$(GLSRC)gxfcopy.h
 gxfont_h=$(GLSRC)gxfont.h\
  $(gsccode_h) $(gsfont_h) $(gsgdata_h) $(gsmatrix_h) $(gsnotify_h)\
  $(gsstype_h) $(gsuid_h)\
@@ -1766,6 +1767,23 @@ $(GLOBJ)gsfont0.$(OBJ) : $(GLSRC)gsfont0.c $(GXERR) $(memory__h)\
 $(GLOBJ)gsfont0c.$(OBJ) : $(GLSRC)gsfont0c.c $(GXERR) $(memory__h)\
  $(gxfont_h) $(gxfont0_h) $(gxfont0c_h) $(gxfcid_h) $(gxfcmap_h)
 	$(GLCC) $(GLO_)gsfont0c.$(OBJ) $(C_) $(GLSRC)gsfont0c.c
+
+# ---------------- Font copying ---------------- #
+
+# This facility is not included in the core library.  Currently it is used
+# only by pdfwrite.
+
+fcopy_=$(GLOBJ)gxfcopy.$(OBJ)
+$(GLD)fcopy.dev : $(DEVS_MAK) $(ECHOGS_MAK) $(fcopy_)
+	$(SETMOD) $(GLD)fcopy $(fcopy_)
+
+$(GLOBJ)gxfcopy.$(OBJ) : $(GLSRC)gxfcopy.c $(memory__h) $(GXERR)\
+ $(gsline_h) $(gspaint_h) $(gspath_h) $(gsstruct_h)\
+ $(gxfont_h) $(gxfont1_h) $(gxfont42_h) $(gxfcid_h) $(gxfcopy_h)\
+ $(gxistate_h) $(gxtext_h) $(gxtype1_h)\
+ $(gzstate_h)\
+ $(gdevpsf_h) $(stream_h)
+	$(GLCC) $(GLO_)gxfcopy.$(OBJ) $(C_) $(GLSRC)gxfcopy.c
 
 # ---------------- Pattern color ---------------- #
 
