@@ -223,6 +223,12 @@ hpgl_IN_implicit(
     /* restore defaults */
     hpgl_DF(&args, pgls);
 
+    /* if in RTL mode provided initial values for PS */
+    if ( pgls->personality == rtl ) {
+        hpgl_args_setup(&args);
+        hpgl_PS(&args, pgls);
+    }
+            
     /* defaults P1 and P2 */
     hpgl_args_setup(&args);
     hpgl_IP(&args, pgls);
@@ -453,6 +459,10 @@ hpgl_PS(hpgl_args_t *pargs, hpgl_state_t *pgls)
     if ( pgls->personality != rtl )
 	return 0;
 
+    /* PS return an error if the page is dirty */
+    if ( pcl_page_marked(pgls) )
+        return e_Range;
+    
     /* check for pjl override of the arguments - this is custom code
        for a customer and is not the normal interaction between PCL &
        PJL */
