@@ -105,30 +105,15 @@ hpgl_is_printable(
 /*
  * Map a character through the symbol set, if needed.
  */
-private uint
+private gs_char
 hpgl_map_symbol(uint chr, const hpgl_state_t *pgls)
-{	const pcl_font_selection_t *pfs =
-	  &pgls->g.font_selection[pgls->g.font_selected];
-	const pl_symbol_map_t *psm = pfs->map;
-
-	if ( psm == 0 )
-	  { /* Hack: bound TrueType fonts are indexed from 0xf000. */
-	    if ( pfs->font->scaling_technology == plfst_TrueType )
-	      return chr + 0xf000;
-	    return chr;
-	  }
-	{ uint first_code = pl_get_uint16(psm->first_code);
-	  uint last_code = pl_get_uint16(psm->last_code);
-
-	  /*
-	   * If chr is double-byte but the symbol map is only
-	   * single-byte, just return chr.
-	   */
-	  if ( chr < first_code || chr > last_code )
-	    return (last_code <= 0xff && chr > 0xff ? chr : 0xffff);
-	  else
-	    return psm->codes[chr - first_code];
-	}
+{	
+    const pcl_font_selection_t *pfs =
+        &pgls->g.font_selection[pgls->g.font_selected];
+    const pl_symbol_map_t *psm = pfs->map;
+    
+    return pl_map_symbol(psm, chr,
+                         pfs->font->storage == pcds_internal);
 }
 
 /* Next-character procedure for fonts in GL/2 mode. NB.  this need to

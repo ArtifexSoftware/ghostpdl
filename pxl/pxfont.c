@@ -575,26 +575,10 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
 /* Next-character procedures, with symbol mapping. */
 private gs_char
 map_symbol(uint chr, const gs_text_enum_t *penum)
-{	/* NB * the gs_show_enum cast is not appropriate.  Map symbol
-           should need the gs anyway */
-        px_gstate_t *pxgs = gs_state_client_data(((gs_show_enum *)penum)->pgs);
-	const pl_symbol_map_t *psm = pxgs->symbol_map;
-	uint first_code;
-
-	if ( psm == 0 ) { /* wingdings and symbol fonts.  NB comment
-                             is not accurate... psm can be zero for a
-                             few ill-defined reasons. */
-	    if ( (pxgs->base_font->scaling_technology == plfst_TrueType) &&
-		 (pxgs->base_font->storage == pxfsInternal) )
-	        return chr + 0xf000;  
-	    else
-	        return chr;
-        }
-
-	first_code = pl_get_uint16(psm->first_code);
-	if ( chr < first_code || chr > pl_get_uint16(psm->last_code) )
-	  return 0xffff;
-	return psm->codes[chr - first_code];
+{	
+    px_gstate_t *pxgs = gs_state_client_data(((gs_show_enum *)penum)->pgs);
+    const pl_symbol_map_t *psm = pxgs->symbol_map;
+    return pl_map_symbol(psm, chr, pxgs->base_font->storage == pxfsInternal);
 }
 
 private int
