@@ -185,6 +185,12 @@ else
 fi
 AC_SUBST(X11DEVS)
 
+dnl executible name
+AC_ARG_WITH(gs, AC_HELP_STRING([--with-gs=NAME],
+	[name of the ghostscript executible [[gs]]]),
+	[GS="$with_gs"],[GS='gs'])
+AC_SUBST(GS)
+
 dnl do we compile the postscript initialization files into Ghostscript?
 COMPILE_INITS="0"
 AC_ARG_ENABLE(compile-inits, AC_HELP_STRING([--enable-compile-inits],

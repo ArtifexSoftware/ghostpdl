@@ -110,7 +110,7 @@ CAPOPT= @HAVE_MKSTEMP@
 
 # Define the name of the executable file.
 
-GS=gs
+GS=@GS@@EXEEXT@
 
 # Define the name of a pre-built executable that can be invoked at build
 # time.  Currently, this is only needed for compiled fonts.  The usual
