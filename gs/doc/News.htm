@@ -78,6 +78,12 @@ The following projects are in a partially completed state in the PDF writer:
 
 <h2><a name="6.24_Incompatible_changes"></a>Incompatible changes</h2>
 
+(Drivers)
+	- The X driver now implements sync_output using XSync(False) rather
+than XFlush().
+(Library)
+	- gdev_vector_dopath now never returns 1.
+
 </pre>
 
 <!-- [2.0 end contents] ==================================================== -->
