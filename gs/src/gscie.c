@@ -74,7 +74,7 @@ extern_st(st_imager_state);
 	    gs_sample_loop_params_t lp;\
 \
 	    gs_cie_cache_init(&pcf->params, &lp, &(domains)[j], cname);\
-	    for (i = 0; i < lp.N; ++i) {\
+	    for (i = 0; i <= lp.N; ++i) {\
 		float v = SAMPLE_LOOP_VALUE(i, lp);\
 		pcf->values[i] = (*(rprocs)->procs[j])(v, pcie);\
 		if_debug5('C', "[C]%s[%d,%d] = %g => %g\n",\
@@ -454,7 +454,7 @@ gx_install_CIEA(const gs_color_space * pcs, gs_state * pgs)
 
     gs_cie_cache_init(&pcie->caches.DecodeA.floats.params, &lp,
 		      &pcie->RangeA, "DecodeA");
-    for (i = 0; i < lp.N; ++i) {
+    for (i = 0; i <= lp.N; ++i) {
 	float in = SAMPLE_LOOP_VALUE(i, lp);
 
 	pcie->caches.DecodeA.floats.values[i] = (*pcie->DecodeA)(in, pcie);
@@ -1228,7 +1228,7 @@ cie_joint_caches_init(gx_cie_joint_caches * pjc,
 
 	gs_cie_cache_init(&pjc->TransformPQR.caches[j].floats.params, &lp,
 			  &pcrd->RangePQR.ranges[j], "TransformPQR");
-	for (i = 0; i < lp.N; ++i) {
+	for (i = 0; i <= lp.N; ++i) {
 	    float in = SAMPLE_LOOP_VALUE(i, lp);
 	    float out;
 	    int code = (*pcrd->TransformPQR.proc)(j, in, &pjc->points_sd,
