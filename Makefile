@@ -32,7 +32,7 @@ ls_profile:
 	make -C language_switch -f pspcl6_gcc.mak pg-fp
 
 ls_product:
-	make -C language_switch -f pspcl6_gcc.mak	# build PCL and PCLXL. 
+	make -C language_switch -f pspcl6_gcc.mak product # build PCL and PCLXL. 
 
 ls_debug: 
 	make -C language_switch -f pspcl6_gcc.mak debug
