@@ -21,6 +21,9 @@ private int /* ESC E */
 pcl_printer_reset(pcl_args_t *pargs, pcl_state_t *pcs)
 {	if ( pcs->macro_level )
 	  return e_Range;	/* not allowed inside macro */
+        /* reset the other parser in case we have gotten the
+           pcl_printer_reset while in gl/2 mode. */
+        pcs->parse_other = 0;
 	/* Print any partial page. */
 	{ int code = pcl_end_page_if_marked(pcs);
 	  if ( code < 0 )
