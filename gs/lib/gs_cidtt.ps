@@ -109,18 +109,22 @@ currentdict /super.complete_instance currentdict /complete_instance get put
 /load_sfnts  % <FontDict> load_sfnts <FontDict> 
 { % Read the True Type file from the path /Path, and buld /sfnts,
   % skipping glyf and loca. 
-  % The following code is a temporary implementation,
-  % which loads entire font.
-  dup /Path get (r) file dup                               % <font> file file
+  dup /Path get                                            % <font> (path)
+  QUIET not {
+    (Loading a TT font from ) print dup print 
+    ( to emulate a CID font ) print 1 index /CIDFontName get =only ( ... ) print
+  } if
+  (r) file dup                                             % <font> file file
   3 1 roll                                                 % file <font> file
   1 index /SubfontID .knownget not { 0 } if                % file <font> file SubfontID
   .load_tt_font_stripped exch copy                         % file <font>
+  QUIET not {
+    (Done.) =
+  } if
   dup 3 1 roll                                             % <font> file <font>
   exch /File exch put                                      % <font>
   dup dup /CIDSystemInfo get /Ordering get (.)             % <font> () ()
-  (Unicode) % fixme : Compute from the cmap of the font 
-            % using the dictionary .xlatmap_dict defined 
-            % in systemdict.
+  2 index /Decoding get =string cvs                        % <font> () () ()
   concatstrings concatstrings cvn /Decoding exch put       % <font>
   //ChooseDecoding exec                                    % <font>
   //GenerateCIDMap exec                                    % <font>

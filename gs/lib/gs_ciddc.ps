@@ -168,7 +168,7 @@ begin
   /.MakeInstance    % <name> .MakeInstance <inst>
   { dup                                              % /Name /Name
     //.CMapChooser exch .knownget not {
-      (Can't build /) print =string cvs print ( /CIDDecoding. ) =
+      (Can't build /) print =string cvs print ( /CIDDecoding resource. See gs_ciddc.ps . ) =
       /findresource cvx /undefinedresource signalerror
     } if                                             % /Name [CMaps]
     exch pop                                         % [CMaps]

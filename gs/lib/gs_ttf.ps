@@ -641,8 +641,13 @@ mark
 	% Skip data between the end of the previous table and
 	% the beginning of this one, if any.
     tpos fpos gt {
-      f tpos fpos sub () /SubFileDecode filter dup flushfile closefile
-      /fpos tpos def
+      load_stripped {
+        % 'setfileposition' is faster for skipping a big data.
+        f tpos setfileposition
+      } {
+        f tpos fpos sub () /SubFileDecode filter dup flushfile closefile
+        /fpos tpos def
+      } ifelse
     } if
     f tlen readtables tname get exec
     tabdict tname 3 -1 roll put
@@ -833,9 +838,9 @@ mark
 
 % ---------------- Standard TrueType font loading ---------------- %
 
-% - .pickcmap -
+% - .pickcmap_with_no_xlatmap -
 % Defines cmapsub, cmaptab
-/.pickcmap {
+/.pickcmap_with_no_xlatmap {
   tabdict /cmap get
 		% The Apple cmap format is no help in determining the encoding.
 		% Look for a Microsoft table.  If we can't find one,
@@ -853,6 +858,84 @@ mark
   /cmapsub 2 index def
   exch 4 getu32 1 index length 1 index sub getinterval
   /cmaptab exch def
+} bind def
+
+% - .pickcmap_with_xlatmap -
+% Defines cmapsub, cmaptab
+/.pickcmap_with_xlatmap {
+  .xlatmap_dict /TrueType known not {
+    (Configuration error : Emulating a CID font with a True Type file, ) print
+    (the file gs/lib/xlatmap must contain /TrueType key.) =
+    /.pickcmap_with_xlatmap cvx /invalidfont signalerror
+  } if
+  false
+  .xlatmap_dict /TrueType get 
+  dup length 2 sub 0 exch 2 exch {                       % bool [] i
+    2 copy get                                           % bool [] i ()
+    (.) search {                                         % bool [] i post match pre
+      cvi exch pop exch cvi                              % bool [] i PlatID SpecID
+    } {
+      (Configuration error : gs/lib/xlatmap containg a record with an invalid (PlatformID.SpecificID)) =
+      /.pickcmap_with_xlatmap cvx /invalidfont signalerror
+    } ifelse
+    DEBUG {
+      (Seeking a cmap for platform=) print 1 index =only ( encoding=) print dup =
+    } if
+    tabdict /cmap get                                    % bool [] i PlatID SpecID (cmap)
+    dup /cmaptab exch def % temporary
+    0 1 2 index 2 getu16 1 sub {                         % bool [] i PlatID SpecID (cmap) j
+      8 mul 4 add 1 index exch 8 getinterval             % bool [] i PlatID SpecID (cmap) (cmapsub)
+      DEBUG {
+        (cmap: platform ) print dup 0 getu16 =only
+        ( encoding ) print dup 2 getu16 = flush
+      } if
+      dup 0 getu16 4 index eq {
+        dup 2 getu16 3 index eq {                        % bool [] i PlatID SpecID (cmap) (cmapsub)
+          DEBUG {
+            (Choosen a cmap for platform=) print 3 index =only
+            ( encoding=) print 2 index =
+          } if
+          /cmapsub 1 index def
+          dup 4 getu32                                   % bool [] i PlatID SpecID (cmap) (cmapsub) p
+          cmaptab length 1 index sub                     % bool [] i PlatID SpecID (cmap) (cmapsub) p l
+          cmaptab 3 1 roll getinterval
+          /cmaptab exch def                              % bool [] i PlatID SpecID (cmap) (cmapsub)
+          5 index 5 index 1 add get                      % bool [] i PlatID SpecID (cmap) (cmapsub) /Decoding
+          /Decoding exch def                             % bool [] i PlatID SpecID (cmap) (cmapsub)
+          7 -1 roll pop true 7 1 roll                    % true [] i PlatID SpecID (cmap) (cmapsub)
+        } if
+      } if
+      pop                                                % true [] i PlatID SpecID (cmap)
+      5 index { exit } if
+    } for                                                % bool [] i PlatID SpecID (cmap)
+    pop pop pop pop                                      % bool []
+    1 index { exit } if
+  } for                                                  % bool []
+  pop                                                    % bool
+  not { 
+    QUIET not { (True Type font doesn't contain a charset listed in gs/lib/xlatmap.) = } if
+    /.pickcmap_with_xlatmap cvx /invalidfont signalerror
+  } if                                                   %
+} bind def
+
+% - .pickcmap -
+% Defines cmapsub, cmaptab
+/.pickcmap {
+  % Currently we use xlatmap only for emulation CIDFontType 2 with
+  % a disk True Type font files, and use load_stripped
+  % to check this regime. We would like to do so
+  % while emulating a Type 42, but first the old code
+  % about handling them to be changed 
+  % with adding a handling of a Decoding.
+  % fixme : A correct way to fix this is to implenent 
+  % the Type 42 emulation with gs_fntem.ps .
+  % Also note that PDF embedded fonts probably don't need a xlatmap -
+  % see PDF spec, "Encodings for True Type fonts".
+  load_stripped {
+    //.pickcmap_with_xlatmap exec
+  } {
+    //.pickcmap_with_no_xlatmap exec
+  } ifelse
 } bind def
 
 % <glyph> .nname <_name>
@@ -993,12 +1076,9 @@ mark
 } bind def
 
 % <file> <SubfontID> .load_tt_font_stripped <font_data>
-% The font_data includes sfnts, NumGlyphs, TT_cmap.
+% The font_data includes sfnts, NumGlyphs, TT_cmap, file_table_pos, Decoding.
 % CIDMap to be created later from TT_cmap.
 /.load_tt_font_stripped {
-  (.load_tt_font_stripped : Incomplete implementation. See lib/gs_ttf.ps .) =
-  % fixme : Choose a cmap with using .xlatmap_dict .
-  .xlatmap_dict pop    % just check that it presents.
   //true exch .loadttfonttables
   .makesfnts
   .pickcmap
@@ -1007,6 +1087,7 @@ mark
   /NumGlyphs numloca
   /TT_cmap cmaptab cmaparray
   /file_table_pos file_table_pos
+  /Decoding Decoding
   .dicttomark
   end end 
 } bind def
