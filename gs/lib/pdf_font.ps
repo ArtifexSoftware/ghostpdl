@@ -319,11 +319,12 @@ setglobal
       exch /Flags oget 16#20000 and 0 ne {
 	true .copyfontdict
 	dup /CharStrings 2 copy get dup length dict .copydict
-	4 index /FirstChar get 97 .max
-	5 index /LastChar get 122 .min 1 exch {
-		% Stack: font-res font' font' /CharStrings charstrings code
+	% stack: font-res fontname font font /CharStrings CharStringsdict
+	5 index /FirstChar get 97 .max
+	6 index /LastChar get 122 .min 1 exch {
+		% Stack: font-res fontname font' font' /CharStrings charstrings code
 		% Note that this only remaps a-z, not accented characters.
-	  5 index /Widths oget 1 index 7 index /FirstChar get sub oget
+	  6 index /Widths oget 1 index 8 index /FirstChar get sub oget
 	  1 string dup 0 5 -1 roll put
 		% Stack: font-res font' font' /CharStrings charstrings code
 		%   width (x)
