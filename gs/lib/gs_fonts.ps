@@ -371,6 +371,7 @@ false .setnativefontmapbuilt
   } if
   .getnativefonts dup
   {
+    exch
     {
       % stack: [ (name) (path) ]
       % verify the font name ourselves
@@ -384,7 +385,7 @@ false .setnativefontmapbuilt
         not { dup 0 get } if  % stack: (newname) [ (name) (path) ]
         % DEBUG { (  found ) print dup print (\n) print flush } if 
         % add entry to the fontmap
-        1 index exch 0 exch cvn put
+        1 index exch 0 exch dup type /nametype ne {cvn} if put
         aload pop .definefontmap
       } ifelse
     } forall
