@@ -57,9 +57,9 @@ gs_lib_init1(gs_memory_t * mem)
 
 /* Clean up after execution. */
 void
-gs_lib_finit(int exit_status, int code)
+gs_lib_finit(int exit_status, int code, gs_memory_t *mem)
 {
     /* Do platform-specific cleanup. */
     gp_exit(exit_status, code);
-    gs_malloc_release();
+    gs_malloc_release(mem);
 }

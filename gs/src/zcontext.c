@@ -602,7 +602,7 @@ do_fork(i_ctx_t *i_ctx_p, os_ptr op, const ref * pstdin, const ref * pstdout,
 	/* Share global VM, private local VM. */
 	ref *puserdict;
 	uint userdict_size;
-	gs_memory_t *parent = iimemory_local->parent;
+	gs_memory_t *parent = iimemory_local->non_gc_memory;
 	gs_ref_memory_t *lmem;
 	gs_ref_memory_t *lmem_stable;
 

@@ -124,7 +124,7 @@ cmd_put_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     clist_bitmap_bytes(width_bits, height, compression_mask,
 		       &uncompressed_raster, &full_raster);
     uint max_size = cbuf_size - op_size;
-    gs_memory_t *mem = (cldev->memory ? cldev->memory : &gs_memory_default);
+    gs_memory_t *mem = cldev->memory;
     byte *dp;
     int compress = 0;
 

@@ -317,7 +317,6 @@ typedef struct ref_s ref;
 struct gs_ref_memory_s {
     /* The following are set at initialization time. */
     gs_memory_common;
-    gs_memory_t *parent;	/* for allocating chunks */
     uint chunk_size;
     uint large_size;		/* min size to give large object */
 				/* its own chunk: must be */

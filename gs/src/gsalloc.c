@@ -195,7 +195,7 @@ ialloc_alloc_state(gs_memory_t * parent, uint chunk_size)
     iimem->stable_memory = (gs_memory_t *)iimem;
     iimem->procs = gs_ref_memory_procs;
     iimem->gs_lib_ctx = parent->gs_lib_ctx;
-    iimem->parent = parent;
+    iimem->non_gc_memory = parent;
     iimem->chunk_size = chunk_size;
     iimem->large_size = ((chunk_size / 4) & -obj_align_mod) + 1;
     iimem->is_controlled = false;
@@ -1539,7 +1539,7 @@ i_register_root(gs_memory_t * mem, gs_gc_root_t * rp, gs_ptr_type_t ptype,
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
 
     if (rp == NULL) {
-	rp = gs_raw_alloc_struct_immovable(imem->parent, &st_gc_root_t,
+	rp = gs_raw_alloc_struct_immovable(imem->non_gc_memory, &st_gc_root_t,
 					   "i_register_root");
 	if (rp == 0)
 	    return_error(mem, gs_error_VMerror);
@@ -1568,7 +1568,7 @@ i_unregister_root(gs_memory_t * mem, gs_gc_root_t * rp, client_name_t cname)
 	rpp = &(*rpp)->next;
     *rpp = (*rpp)->next;
     if (rp->free_on_unregister)
-	gs_free_object(imem->parent, rp, "i_unregister_root");
+	gs_free_object(imem->non_gc_memory, rp, "i_unregister_root");
 }
 
 /* ================ Chunks ================ */
@@ -1638,7 +1638,7 @@ private chunk_t *
 alloc_acquire_chunk(gs_ref_memory_t * mem, ulong csize, bool has_strings,
 		    client_name_t cname)
 {
-    gs_memory_t *parent = mem->parent;
+    gs_memory_t *parent = mem->non_gc_memory;
     chunk_t *cp;
     byte *cdata;
 
@@ -1808,7 +1808,7 @@ alloc_unlink_chunk(chunk_t * cp, gs_ref_memory_t * mem)
 void
 alloc_free_chunk(chunk_t * cp, gs_ref_memory_t * mem)
 {
-    gs_memory_t *parent = mem->parent;
+    gs_memory_t *parent = mem->non_gc_memory;
     byte *cdata = (byte *)cp->chead;
     ulong csize = (byte *)cp->cend - cdata;
 

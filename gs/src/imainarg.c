@@ -109,7 +109,8 @@ private FILE *
 gs_main_arg_fopen(const char *fname, void *vminst)
 {
     gs_main_set_lib_paths((gs_main_instance *) vminst);
-    return lib_fopen(((gs_main_instance *)vminst)->heap, fname);
+    return lib_fopen(&((gs_main_instance *)vminst)->lib_path, 
+		     ((gs_main_instance *)vminst)->heap, fname);
 }
 private void
 set_debug_flags(const char *arg, char *flags)
@@ -119,7 +120,7 @@ set_debug_flags(const char *arg, char *flags)
     while (*arg)
 	flags[*arg++ & 127] = value;
 }
-#define arg_heap_copy(str) arg_copy(str, &gs_memory_default)
+
 int
 gs_main_init_with_args(gs_main_instance * minst, int argc, char *argv[])
 {
@@ -265,7 +266,7 @@ run_stdin:
 	    code = gs_main_init2(minst);	/* Finish initialization */
 	    if (code < 0)
 		return code;
-	    gs_stdin_is_interactive = minst->heap->gs_lib_ctx->stdin_is_interactive;
+
 	    code = run_string(minst, ".runstdin", runFlush);
 	    if (code < 0)
 		return code;
@@ -284,7 +285,7 @@ run_stdin:
 		    arg_finit(pal);
 		    return e_Fatal;
 		}
-		psarg = arg_heap_copy(psarg);
+		psarg = arg_copy(psarg, minst->heap);
 		if (psarg == NULL)
 		    return e_Fatal;
 		code = gs_main_init2(minst);
@@ -294,7 +295,7 @@ run_stdin:
 		if (code < 0)
 		    return code;
 		while ((arg = arg_next(minst->heap, pal, &code)) != 0) {
-		    char *fname = arg_heap_copy(arg);
+		    char *fname = arg_copy(arg, minst->heap);
 		    if (fname == NULL)
 			return e_Fatal;
 		    code = runarg(minst, "", fname, "", runInit);
@@ -351,7 +352,7 @@ run_stdin:
 			(arg[0] == '-' && !isdigit(arg[1]))
 			)
 			break;
-		    sarg = arg_heap_copy(arg);
+		    sarg = arg_copy(arg, minst->heap);
 		    if (sarg == NULL)
 			return e_Fatal;
 		    code = runarg(minst, "", sarg, ".runstring", 0);
@@ -361,7 +362,7 @@ run_stdin:
 		if (code < 0)
 		    return e_Fatal;
 		if (arg != 0) {
-		    char *p = arg_heap_copy(arg);
+		    char *p = arg_copy(arg, minst->heap);
 		    if (p == NULL)
 			return e_Fatal;
 		    arg_push_string(minst->heap, pal, p);
@@ -422,7 +423,7 @@ run_stdin:
 	    return e_Info;	/* show usage info on exit */
 	case 'I':		/* specify search path */
 	    {
-		char *path = arg_heap_copy(arg);
+		char *path = arg_copy(arg, minst->heap);
 		if (path == NULL)
 		    return e_Fatal;
 		gs_main_add_lib_path(minst, path);
@@ -431,6 +432,7 @@ run_stdin:
 	case 'K':		/* set malloc limit */
 	    {
 		long msize = 0;
+		gs_malloc_memory_t *rawheap = gs_malloc_wrapped_contents(minst->heap);
 
 		sscanf((const char *)arg, "%ld", &msize);
 		if (msize <= 0 || msize > max_long >> 10) {
@@ -438,7 +440,7 @@ run_stdin:
 			      max_long >> 10);
 		    return e_Fatal;
 		}
-		gs_malloc_limit = msize << 10;
+	        rawheap->limit = msize << 10;
 	    }
 	    break;
 	case 'M':		/* set memory allocation increment */
@@ -511,7 +513,7 @@ run_stdin:
 	case 'S':		/* define name as string */
 	case 's':
 	    {
-		char *adef = arg_heap_copy(arg);
+		char *adef = arg_copy(arg, minst->heap);
 		char *eqp;
 		bool isd = (sw == 'D' || sw == 'd');
 		ref value;
@@ -684,7 +686,7 @@ argproc(gs_main_instance * minst, const char *arg)
 
     if (code < 0)
         return code;
-    filearg = arg_heap_copy(arg);
+    filearg = arg_copy(arg, minst->heap);
     if (filearg == NULL)
         return e_Fatal;
 #if !NEW_COMBINE_PATH
@@ -954,7 +956,7 @@ print_devices(const gs_main_instance *minst)
 		outprintf(minst->heap, " %s", names[i]);
 		pos += 1 + len;
 	    }
-	    gs_free((char *)names, ndev * sizeof(const char*), 1, "print_devices");
+	    gs_free(minst->heap, (char *)names, ndev * sizeof(const char*), 1, "print_devices");
 	}
     }
     outprintf(minst->heap, "\n");

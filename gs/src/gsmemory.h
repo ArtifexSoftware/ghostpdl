@@ -443,13 +443,25 @@ typedef struct pl_mem_node_s pl_mem_node_t;
 
 /*
  * Define an abstract allocator instance.
- * Subclasses may have state as well.
+ * Subclasses may have state as well
+ *
+ * stable_memory: no save or restore, maybe gc-ed
+ *                non-gc allocators stable_memory == this 
+ *
+ * gs_lib_ctx: pointer to a library context 
+ *
+ * head: is only used by pl_alloc in a pcl/pxl only system to track memory
+ *
+ * non_gc_memory: a garabge collecting allocator requires a "parent" who doesn't gc
+ *                non-gc allocators non_gc_memory == this 
  */
 #define gs_memory_common\
 	gs_memory_t *stable_memory;\
 	gs_memory_procs_t procs;\
         gs_lib_ctx_t *gs_lib_ctx;\
-        pl_mem_node_t *head
+        pl_mem_node_t *head;\
+        gs_memory_t *non_gc_memory;
+
 
 
 struct gs_memory_s {

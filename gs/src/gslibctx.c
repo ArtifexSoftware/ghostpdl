@@ -122,3 +122,4 @@ void errflush(const gs_memory_t *mem)
     /* else nothing to flush */
 }
 
+

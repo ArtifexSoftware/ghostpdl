@@ -890,7 +890,7 @@ display_free_bitmap(gx_device_display * ddev)
 		ddev->pBitmap);
 	}
 	else {
-	    gs_free_object(&gs_memory_default,
+	    gs_free_object(ddev->memory->non_gc_memory,
 		ddev->pBitmap, "display_free_bitmap");
 	}
 	ddev->pBitmap = NULL;
@@ -950,7 +950,7 @@ display_alloc_bitmap(gx_device_display * ddev, gx_device * param_dev)
 	    ddev, ddev->ulBitmapSize);
     }
     else {
-	ddev->pBitmap = gs_alloc_byte_array_immovable(&gs_memory_default,
+	ddev->pBitmap = gs_alloc_byte_array_immovable(ddev->memory->non_gc_memory,
 		(uint)ddev->ulBitmapSize, 1, "display_alloc_bitmap");
     }
 

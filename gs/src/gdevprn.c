@@ -137,7 +137,7 @@ open_c:
     clist_init_params(pclist_dev, base, space, pdev,
 		      ppdev->printer_procs.buf_procs,
 		      space_params->band, ppdev->is_async_renderer,
-		      (ppdev->bandlist_memory == 0 ? &gs_memory_default :
+		      (ppdev->bandlist_memory == 0 ? pdev->memory->non_gc_memory:
 		       ppdev->bandlist_memory),
 		      ppdev->free_up_bandlist_memory,
 		      ppdev->clist_disable_mask);
@@ -222,7 +222,7 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
     int ecode = 0;
     int pass;
     gs_memory_t *buffer_memory =
-	(ppdev->buffer_memory == 0 ? &gs_memory_default :
+	(ppdev->buffer_memory == 0 ? pdev->memory->non_gc_memory :
 	 ppdev->buffer_memory);
 
     /* If reallocate, find allocated memory & tear down buffer device */
@@ -302,7 +302,7 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
 		the_memory = base;
 	}
 	if (!is_command_list && pass == 1 && PRN_MIN_MEMORY_LEFT != 0
-	    && buffer_memory == &gs_memory_default) {
+	    && buffer_memory == pdev->memory->non_gc_memory) {
 	    /* before using full memory buffer, ensure enough working mem left */
 	    byte * left = gs_alloc_bytes( buffer_memory,
 					  PRN_MIN_MEMORY_LEFT, "printer mem left");
@@ -422,7 +422,7 @@ gdev_prn_free_memory(gx_device *pdev)
     gx_device_printer * const ppdev = (gx_device_printer *)pdev;
     byte *the_memory = 0;
     gs_memory_t *buffer_memory =
-	(ppdev->buffer_memory == 0 ? &gs_memory_default :
+	(ppdev->buffer_memory == 0 ? pdev->memory->non_gc_memory :
 	 ppdev->buffer_memory);
 
     gdev_prn_tear_down(pdev, &the_memory);

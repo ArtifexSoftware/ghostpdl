@@ -318,7 +318,8 @@ zoutputpage(i_ctx_t *i_ctx_p)
     check_type(imemory, op[-1], t_integer);
     check_type(imemory, *op, t_boolean);
 #ifdef PSI_INCLUDED
-    code = ps_end_page_top((int)op[-1].value.intval, op->value.boolval);
+    code = ps_end_page_top(imemory,
+			   (int)op[-1].value.intval, op->value.boolval);
 #else
     code = gs_output_page(igs, (int)op[-1].value.intval,
 			  op->value.boolval);

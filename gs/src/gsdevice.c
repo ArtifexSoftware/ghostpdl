@@ -49,7 +49,7 @@ gx_device_finalize(void *vptr)
 	dev->finalize(dev);
     discard(gs_closedevice(dev));
     if (dev->stype_is_dynamic)
-	gs_free_const_object(&gs_memory_default, dev->stype,
+	gs_free_const_object(dev->memory->non_gc_memory, dev->stype,
 			     "gx_device_finalize");
 }
 
@@ -247,7 +247,7 @@ gs_copydevice2(gx_device ** pnew_dev, const gx_device * dev, bool keep_open,
 	 * Just allocate a new stype and copy the old one into it.
 	 */
 	a_std = (gs_memory_struct_type_t *)
-	    gs_alloc_bytes_immovable(&gs_memory_default, sizeof(*std),
+	    gs_alloc_bytes_immovable(mem->non_gc_memory, sizeof(*std),
 				     "gs_copydevice(stype)");
 	if (!a_std)
 	    return_error(mem, gs_error_VMerror);
@@ -259,7 +259,7 @@ gs_copydevice2(gx_device ** pnew_dev, const gx_device * dev, bool keep_open,
     } else {
 	/* We need to figure out or adjust the stype. */
 	a_std = (gs_memory_struct_type_t *)
-	    gs_alloc_bytes_immovable(&gs_memory_default, sizeof(*std),
+	    gs_alloc_bytes_immovable(mem->non_gc_memory, sizeof(*std),
 				     "gs_copydevice(stype)");
 	if (!a_std)
 	    return_error(mem, gs_error_VMerror);
@@ -291,7 +291,7 @@ gs_copydevice2(gx_device ** pnew_dev, const gx_device * dev, bool keep_open,
     if (code < 0) {
 	gs_free_object(mem, new_dev, "gs_copydevice(device)");
 	if (a_std)
-	    gs_free_object(&gs_memory_default, a_std, "gs_copydevice(stype)");
+	    gs_free_object(dev->memory->non_gc_memory, a_std, "gs_copydevice(stype)");
 	return code;
     }
     *pnew_dev = new_dev;

@@ -470,8 +470,7 @@ clist_playback_file_bands(clist_playback_action action,
     bool opened_cfile = false;
 
     /* We have to pick some allocator for rendering.... */
-    gs_memory_t *mem =
-	(cdev->memory != 0 ? cdev->memory : &gs_memory_default);
+    gs_memory_t *mem =cdev->memory;
  
     stream_band_read_state rs;
 

@@ -24,7 +24,6 @@
 #include "stream.h"		/* for files.h */
 #include "files.h"		/* for e-stack processing */
 #include "store.h"
-#include "gsmalloc.h"		/* for gs_memory_default */
 #include "gsmatrix.h"		/* for gsstate.h */
 #include "gsstate.h"
 
@@ -332,7 +331,7 @@ zvmstatus(i_ctx_t *i_ctx_p)
 	mstat.allocated += sstat.allocated;
 	mstat.used += sstat.used;
     }
-    gs_memory_status(&gs_memory_default, &dstat);
+    gs_memory_status(imemory->non_gc_memory, &dstat);
     push(imemory, 3);
     make_int(op - 2, imemory_save_level(iimemory_local));
     make_int(op - 1, mstat.used);

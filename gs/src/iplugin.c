@@ -43,7 +43,7 @@ void i_plugin_make_memory(i_plugin_client_memory *mem, gs_memory_t *mem_raw)
 }
 
 int i_plugin_init(i_ctx_t *i_ctx_p)
-{   gs_memory_t *mem_raw = i_ctx_p->memory.current->parent;
+{   gs_memory_t *mem_raw = i_ctx_p->memory.current->non_gc_memory;
     const i_plugin_instantiation_proc *p = i_plugin_table;
     i_plugin_holder *h;
     int code;

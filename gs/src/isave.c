@@ -384,7 +384,7 @@ alloc_save_space(gs_ref_memory_t * mem, gs_dual_memory_t * dmem, ulong sid)
 	if (cp->ctop - cp->cbot > min_inner_chunk_space) {
 	    /* Create an inner chunk to cover only the unallocated part. */
 	    chunk_t *inner =
-		gs_raw_alloc_struct_immovable(mem->parent, &st_chunk,
+		gs_raw_alloc_struct_immovable(mem->non_gc_memory, &st_chunk,
 					      "alloc_save_space(inner)");
 
 	    if (inner == 0)
@@ -949,7 +949,7 @@ combine_space(gs_ref_memory_t * mem)
 	    outer->rtop = cp->rtop;
 	    outer->ctop = cp->ctop;
 	    outer->has_refs |= cp->has_refs;
-	    gs_free_object(mem->parent, cp,
+	    gs_free_object(mem->non_gc_memory, cp,
 			   "combine_space(inner)");
 	}
     }

@@ -59,16 +59,6 @@ typedef struct gs_file_path_s {
  */
 struct gs_main_instance_s {
     /* The following are set during initialization. */
-#if 0
-    FILE *fstdin;
-    FILE *fstdout;
-    FILE *fstderr;
-    FILE *fstdout2;		/* for redirecting %stdout and diagnostics */
-    bool stdout_is_redirected;	/* to stderr or fstdout2 */
-    bool stdout_to_stderr;
-    bool stdin_is_interactive;
-#endif
-
     gs_memory_t *heap;		/* (C) heap allocator */
     uint memory_chunk_size;	/* 'wholesale' allocation unit */
     ulong name_table_size;
@@ -85,15 +75,8 @@ struct gs_main_instance_s {
     char stdout_buf[STDOUT_BUF_SIZE];	/* for e_NeedStdout callout */
     char stderr_buf[STDERR_BUF_SIZE];	/* for e_NeedStderr callout */
     ref error_object;		/* Use by gsapi_*() */
-#if 0
-    void *caller_handle;	/* identifies caller of GS DLL/shared object */
-    int (GSDLLCALL *stdin_fn)(void *caller_handle, char *buf, int len);
-    int (GSDLLCALL *stdout_fn)(void *caller_handle, const char *str, int len);
-    int (GSDLLCALL *stderr_fn)(void *caller_handle, const char *str, int len);
-    int (GSDLLCALL *poll_fn)(void *caller_handle);
-#endif
 #if 1
-
+    /* needs to be removed */
     display_callback *display;	/* callback structure for display device */
 #endif
     /* The following are updated dynamically. */

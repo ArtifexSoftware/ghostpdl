@@ -22,9 +22,9 @@
 /* ---------------- Utilities ---------------- */
 
 private void
-gs_x_free(void *obj, client_name_t cname)
+gs_x_free(gs_memory_t *mem, void *obj, client_name_t cname)
 {
-    gs_free(obj, 0 /*ignored*/, 0 /*ignored*/, cname);
+    gs_free(mem, obj, 0 /*ignored*/, 0 /*ignored*/, cname);
 }
 
 /* ---------------- Color mapping setup / cleanup ---------------- */
@@ -132,7 +132,7 @@ alloc_dynamic_colors(gx_device_X * xdev, int num_colors)
 {
     if (num_colors > 0) {
 	xdev->cman.dynamic.colors = (x11_color_t **)
-	    gs_malloc(sizeof(x11_color_t *), xdev->cman.num_rgb,
+	    gs_malloc(xdev->memory, sizeof(x11_color_t *), xdev->cman.num_rgb,
 		      "x11 cman.dynamic.colors");
 	if (xdev->cman.dynamic.colors) {
 	    int i;
@@ -188,7 +188,7 @@ free_ramp(gx_device_X * xdev, int num_used, int size)
 {
     if (num_used - 1 > 0)
 	x_free_colors(xdev, xdev->cman.dither_ramp + 1, num_used - 1);
-    gs_x_free(xdev->cman.dither_ramp, "x11_setup_colors");
+    gs_x_free(xdev->memory, xdev->cman.dither_ramp, "x11_setup_colors");
     xdev->cman.dither_ramp = NULL;
 }
 
@@ -212,7 +212,7 @@ setup_cube(gx_device_X * xdev, int ramp_size, bool colors)
     }
 
     xdev->cman.dither_ramp =
-	(x_pixel *) gs_malloc(sizeof(x_pixel), num_entries,
+	(x_pixel *) gs_malloc(xdev->memory, sizeof(x_pixel), num_entries,
 			      "gdevx setup_cube");
     if (xdev->cman.dither_ramp == NULL)
 	return false;
@@ -311,7 +311,7 @@ gdev_x_setup_colors(gx_device_X * xdev)
 	int count = 1 << min(xdev->color_info.depth, 8);
 
 	xdev->cman.color_to_rgb.values =
-	    (x11_rgb_t *)gs_malloc(sizeof(x11_rgb_t), count,
+	    (x11_rgb_t *)gs_malloc(xdev->memory, sizeof(x11_rgb_t), count,
 				   "gdevx color_to_rgb");
 	if (xdev->cman.color_to_rgb.values) {
 	    int i;
@@ -433,7 +433,7 @@ monochrome:
     default:
 	eprintf1(xdev->memory, "Unknown palette: %s\n", xdev->palette);
 	if (xdev->cman.color_to_rgb.values) {
-	    gs_x_free(xdev->cman.color_to_rgb.values, "gdevx color_to_rgb");
+	    gs_x_free(xdev->memory, xdev->cman.color_to_rgb.values, "gdevx color_to_rgb");
 	    xdev->cman.color_to_rgb.values = 0;
 	}
 	return_error(xdev->memory, gs_error_rangecheck);
@@ -474,7 +474,7 @@ gdev_x_free_dynamic_colors(gx_device_X *xdev)
 		next = xcp->next;
 		if (xcp->color.pad)
 		    x_free_colors(xdev, &xcp->color.pixel, 1);
-		gs_x_free(xcp, "x11_dynamic_color");
+		gs_x_free(xdev->memory, xcp, "x11_dynamic_color");
 	    }
 	    xdev->cman.dynamic.colors[i] = NULL;
 	}
@@ -497,14 +497,14 @@ gdev_x_free_colors(gx_device_X *xdev)
     }
     xdev->cman.std_cmap.map = 0;
     if (xdev->cman.dither_ramp)
-	gs_x_free(xdev->cman.dither_ramp, "x11 dither_colors");
+	gs_x_free(xdev->memory, xdev->cman.dither_ramp, "x11 dither_colors");
     if (xdev->cman.dynamic.colors) {
 	gdev_x_free_dynamic_colors(xdev);
-	gs_x_free(xdev->cman.dynamic.colors, "x11 cman.dynamic.colors");
+	gs_x_free(xdev->memory, xdev->cman.dynamic.colors, "x11 cman.dynamic.colors");
 	xdev->cman.dynamic.colors = NULL;
     }
     if (xdev->cman.color_to_rgb.values) {
-	gs_x_free(xdev->cman.color_to_rgb.values, "x11 color_to_rgb");
+	gs_x_free(xdev->memory, xdev->cman.color_to_rgb.values, "x11 color_to_rgb");
 	xdev->cman.color_to_rgb.values = NULL;
 	xdev->cman.color_to_rgb.size = 0;
     }
@@ -736,7 +736,7 @@ gdev_x_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 	    return gx_no_color_index;
 	}
 	xcp = (x11_color_t *)
-	    gs_malloc(sizeof(x11_color_t), 1, "x11_dynamic_color");
+	    gs_malloc(xdev->memory, sizeof(x11_color_t), 1, "x11_dynamic_color");
 	if (!xcp)
 	    return gx_no_color_index;
 	xc.red = xcp->color.red = dr;

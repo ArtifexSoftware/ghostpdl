@@ -41,6 +41,11 @@ typedef struct gs_main_instance_s gs_main_instance;
 
 /* ================ Exported procedures from imain.c ================ */
 
+/* get minst from memory is a hack to allow parts of the system 
+ * to reach minst, slightly better than a global
+ */
+gs_main_instance* get_minst_from_memory(const gs_memory_t *mem);
+
 /* ---------------- Instance creation ---------------- */
 
 /*

@@ -116,6 +116,7 @@ gs_malloc_memory_init(void)
     mem->used = 0;
     mem->max_used = 0;
     mem->gs_lib_ctx = 0;
+    mem->non_gc_memory = (gs_memory_t *)mem;
 
     return mem;
 }
@@ -484,34 +485,28 @@ gs_malloc_unwrap(gs_memory_t *wrapped)
     return (gs_malloc_memory_t *)contents;
 }
 
-/* ------ Historical single-instance artifacts ------ */
 
-/* Define the default allocator. */
-gs_malloc_memory_t *gs_malloc_memory_default;
-gs_memory_t *gs_memory_t_default;
-
-/* Create the default allocator. */
+/* Create the default allocator, and return it. */
 gs_memory_t *
 gs_malloc_init(const gs_memory_t *parent)
 {
-    gs_malloc_memory_default = gs_malloc_memory_init();
+    gs_malloc_memory_t *malloc_memory_default = gs_malloc_memory_init();
+    gs_memory_t *memory_t_default;
 
     if (parent)
-	gs_malloc_memory_default->gs_lib_ctx = parent->gs_lib_ctx;
+	malloc_memory_default->gs_lib_ctx = parent->gs_lib_ctx;
     else 
-        gs_lib_ctx_init(gs_malloc_memory_default);
+        gs_lib_ctx_init((gs_memory_t *)malloc_memory_default);
 
-    gs_malloc_wrap(&gs_memory_t_default, gs_malloc_memory_default);
-    gs_memory_t_default->stable_memory = gs_memory_t_default;
-    return gs_memory_t_default;
+    gs_malloc_wrap(&memory_t_default, malloc_memory_default);
+    memory_t_default->stable_memory = memory_t_default;
+    return memory_t_default;
 }
 
 /* Release the default allocator. */
 void
-gs_malloc_release(void)
+gs_malloc_release(gs_memory_t *mem)
 {
-    gs_malloc_unwrap(gs_memory_t_default);
-    gs_memory_t_default = 0;
-    gs_malloc_memory_release(gs_malloc_memory_default);
-    gs_malloc_memory_default = 0;
+    gs_malloc_memory_t * malloc_memory_default = gs_malloc_unwrap(mem);
+    gs_malloc_memory_release(malloc_memory_default);
 }

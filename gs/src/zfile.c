@@ -723,7 +723,8 @@ zlibfile(i_ctx_t *i_ctx_p)
 		    return_error(e_invalidfileaccess);
 	}
 #	endif
-	code = lib_file_open(i_ctx_p, pname.fname, pname.len, cname, MAX_CNAME,
+	code = lib_file_open(i_ctx_p->lib_path, 
+			     i_ctx_p, pname.fname, pname.len, cname, MAX_CNAME,
 			     &clen, &fref, imemory);
 	if (code >= 0) {
 	    s = fptr(&fref);
@@ -1069,12 +1070,15 @@ check_file_permissions_aux(i_ctx_t *i_ctx_p, char *fname, uint flen)
 
 /* The startup code calls this to open @-files. */
 private int
-lib_fopen_with_libpath(const gs_memory_t *mem,
+lib_fopen_with_libpath(gs_file_path_ptr  lib_path,
+		       const gs_memory_t *mem,
 		       i_ctx_t *i_ctx_p,      
 		       gx_io_device *iodev, 
 		       const char *fname, uint flen, char fmode[4], char *buffer, int blen,
 		       FILE **file)
-{   /* i_ctx_p is NULL running init files. */
+{   /* i_ctx_p is NULL running init files. 
+     * lib_path and mem are never NULL 
+     */
     bool starting_arg_file = false;
     bool search_with_no_combine = false;
     bool search_with_combine = false;
@@ -1132,10 +1136,7 @@ lib_fopen_with_libpath(const gs_memory_t *mem,
 #endif
     } 
     if (search_with_combine) {
-	// global access to gs_lib_path in minst
-	extern gs_main_instance *gs_main_instance_default(void);
-	const gs_file_path *pfpath = &(gs_main_instance_default()->lib_path);
-	// backpointer from interp to main_instance ? 
+	const gs_file_path *pfpath = lib_path;
 	uint pi;
 
 	for (pi = 0; pi < r_size(&pfpath->list); ++pi) {
@@ -1164,7 +1165,7 @@ lib_fopen_with_libpath(const gs_memory_t *mem,
 
 /* The startup code calls this to open @-files. */
 FILE *
-lib_fopen(const gs_memory_t *mem, const char *fname)
+lib_fopen(const gs_file_path_ptr pfpath, const gs_memory_t *mem, const char *fname)
 {
     /* We need a buffer to hold the expanded file name. */
     char buffer[gp_file_name_sizeof];
@@ -1175,7 +1176,7 @@ lib_fopen(const gs_memory_t *mem, const char *fname)
     FILE *file = NULL;
 
     strcat(fmode, gp_fmode_binary_suffix);
-    lib_fopen_with_libpath(mem, NULL, &iodev_default_copy, fname, strlen(fname), 
+    lib_fopen_with_libpath(pfpath, mem, NULL, &iodev_default_copy, fname, strlen(fname), 
 			    fmode, buffer, sizeof(buffer), &file);
     return file;
 }
@@ -1184,7 +1185,8 @@ lib_fopen(const gs_memory_t *mem, const char *fname)
 /* using the search paths. */
 /* The startup code calls this to open the initialization file gs_init.ps. */
 int
-lib_file_open(i_ctx_t *i_ctx_p, const char *fname, uint len, byte * cname, uint max_clen,
+lib_file_open(const gs_file_path_ptr pfpath, 
+	      i_ctx_t *i_ctx_p, const char *fname, uint len, byte * cname, uint max_clen,
 	      uint * pclen, ref * pfile, gs_memory_t *mem)
 {   /* i_ctx_p is NULL running init files. */
     stream *s;
@@ -1202,7 +1204,8 @@ lib_file_open(i_ctx_t *i_ctx_p, const char *fname, uint len, byte * cname, uint 
     if (fname == 0)
 	return 0;
     buffer = (char *)s->cbuf;
-    code = lib_fopen_with_libpath(mem, i_ctx_p, iodev, fname, len, fmode, buffer, s->bsize, &file);
+    code = lib_fopen_with_libpath(pfpath, mem, i_ctx_p, 
+				  iodev, fname, len, fmode, buffer, s->bsize, &file);
     if (code < 0) {
 	s->cbuf = NULL;
 	s->bsize = s->cbsize = 0;

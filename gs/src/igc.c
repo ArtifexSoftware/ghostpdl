@@ -226,7 +226,7 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
     state.spaces = spaces;
     state.min_collect = min_collect_vm_space << r_space_shift;
     state.relocating_untraced = false;
-    state.heap = state.loc.memory->parent;
+    state.heap = state.loc.memory->non_gc_memory;
     state.ntable = the_gs_name_table;
 
     /* Register the allocators themselves as roots, */

@@ -41,6 +41,9 @@ typedef struct gs_lib_ctx_s
     int (GSDLLCALL *stderr_fn)(void *caller_handle, const char *str, int len);
     int (GSDLLCALL *poll_fn)(void *caller_handle);  
     ulong gs_next_id; /* gs_id initialized here, private variable of gs_next_ids() */
+    void *top_of_system;  /* use accessor functions to walk down the system 
+			   * to the desired structure gs_lib_ctx_get_*()
+			   */
 } gs_lib_ctx_t;
 
 /** initializes and stores itself in the given gs_memory_t pointer.
@@ -49,5 +52,6 @@ typedef struct gs_lib_ctx_s
  */
 int gs_lib_ctx_init( gs_memory_t *mem ); 
 
-
+void *gs_lib_ctx_get_interp_instance( gs_memory_t *mem );
+ 
 #endif /* GSLIBCTX_H */

@@ -112,13 +112,18 @@ int file_switch_to_write(const gs_memory_t *mem, const ref *);
 	/* for zfilter.c and ziodev.c */
 extern const uint file_default_buffer_size;
 
+#ifndef gs_file_path_ptr_DEFINED
+#  define gs_file_path_ptr_DEFINED
+typedef struct gs_file_path_s *gs_file_path_ptr;
+#endif
+
 /* Procedures exported by zfile.c. */
 	/* for imainarg.c */
-FILE *lib_fopen(const gs_memory_t *mem, const char *);
+FILE *lib_fopen(const gs_file_path_ptr pfpath, const gs_memory_t *mem, const char *);
 
 	/* for imain.c */
-int lib_file_open(i_ctx_t *, const char *, uint, byte *, uint, 
-		    uint *, ref *, gs_memory_t *);
+int lib_file_open(const gs_file_path_ptr pfpath, i_ctx_t *, const char *, uint, byte *, uint, 
+		  uint *, ref *, gs_memory_t *);
 
 	/* for imain.c */
 #ifndef gs_ref_memory_DEFINED

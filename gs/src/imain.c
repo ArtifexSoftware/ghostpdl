@@ -53,24 +53,26 @@
 /* the places that need to take an explicit instance argument don't. */
 
 // globals 
-
-// hack need to decide access and ownership for lib_path
-// currently points into main_instance 
-// zfile.c has &(gs_main_instance_default()->lib_path)
-
 /* Define the interpreter's name table.  We'll move it somewhere better */
 /* eventually.... */
 name_table *the_gs_name_table;
 
-#if 1 // hack it out only used for lib_path 
-private gs_main_instance* the_gs_main_instance_ptr = 0;
-gs_main_instance *
-gs_main_instance_default(void)
-{
-    return the_gs_main_instance_ptr;
-}
-#endif
 
+/** using backpointers retrieve minst from any memory pointer 
+ * 
+ */
+gs_main_instance* 
+get_minst_from_memory(const gs_memory_t *mem)
+{
+#ifdef PSI_INCLUDED
+    extern gs_main_instance *ps_impl_get_minst( const gs_memory_t *mem );
+    return ps_impl_get_minst(mem);
+#else
+    return (gs_main_instance*)mem->gs_lib_ctx->top_of_system;  
+#endif
+}
+
+/** construct main instance caller needs to retain */
 gs_main_instance *
 gs_main_alloc_instance(gs_memory_t *mem)
 {
@@ -82,14 +84,12 @@ gs_main_alloc_instance(gs_memory_t *mem)
 	memcpy(minst, &gs_main_instance_init_values, sizeof(gs_main_instance_init_values));
 	minst->heap = mem;
 	
-	// hack pointer into global for gs_lib_path
-	if (the_gs_main_instance_ptr == 0)
-	    the_gs_main_instance_ptr = minst;
-	else
-	    dprintf(mem, "the hacking failed\n"); 
+#       ifndef PSI_INCLUDED
+	mem->gs_lib_ctx->top_of_system = minst;
+        /* else top of system is pl_universe */
+#       endif
     }
     return minst;
-	
 }
 
 /* ------ Forward references ------ */
@@ -105,7 +105,6 @@ int
 gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
 	      int max_lib_paths)
 {
-    gs_memory_t *heap;
     ref *paths;
 
     /* Do platform-dependent initialization. */
@@ -115,32 +114,23 @@ gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
     gp_init();
 
     /* Initialize the imager. */     
-    if (1) // hack 
-    {   
-	/* Reset debugging flags */
-	// really should let pl_main set this 
-	// memset(gs_debug, 0, 128);
-	// gs_log_errors = 0;  /* gs_debug['#'] = 0 */ 
-	heap = minst->heap;
-	gp_get_usertime(heap, minst->base_time);
-    }
-    else {
-	heap = gs_lib_init0(out);
-	if (heap == 0)
-	    return_error(heap, e_VMerror);
-	minst->heap = heap;
-    }
+#   ifndef PSI_INCLUDED
+       /* Reset debugging flags */
+       memset(gs_debug, 0, 128);
+       gs_log_errors = 0;  /* gs_debug['#'] = 0 */ 
+#   else
+       /* plmain settings remain in effect */
+#   endif
+    gp_get_usertime(minst->heap, minst->base_time);
 
     /* Initialize the file search paths. */
-    paths = (ref *) gs_alloc_byte_array(heap, max_lib_paths, sizeof(ref),
+    paths = (ref *) gs_alloc_byte_array(minst->heap, max_lib_paths, sizeof(ref),
 					"lib_path array");
     if (paths == 0) {
-	gs_lib_finit(1, e_VMerror);
-	return_error(heap, e_VMerror);
+	gs_lib_finit(1, e_VMerror, minst->heap);
+	return_error(minst->heap, e_VMerror);
     }
-    make_array(&minst->lib_path.container, avm_foreign, max_lib_paths,
-	       (ref *) gs_alloc_byte_array(heap, max_lib_paths, sizeof(ref),
-					   "lib_path array"));
+    make_array(&minst->lib_path.container, avm_foreign, max_lib_paths, paths);
     make_array(&minst->lib_path.list, avm_foreign | a_readonly, 0,
 	       minst->lib_path.container.value.refs);
     minst->lib_path.env = 0;
@@ -221,6 +211,9 @@ gs_main_interpret(gs_main_instance *minst, ref * pref, int user_errors,
     ref refnul;
     ref refpop;
     int code;
+
+    /* set interpreter pointer to lib_path */
+    minst->i_ctx_p->lib_path = &minst->lib_path;
 
     code = gs_interpret(&minst->i_ctx_p, pref, 
 		user_errors, pexit_code, perror_object);
@@ -484,10 +477,11 @@ gs_main_lib_open(gs_main_instance * minst, const char *file_name, ref * pfile)
     byte fn[maxfn];
     uint len;
 
-    return lib_file_open(NULL /* Don't check permissions here, because permlist 
-                                 isn't ready running init files. */
-			 , file_name, strlen(file_name), fn, maxfn,
-			 &len, pfile, imemory);
+    return lib_file_open( &minst->lib_path,
+			  NULL /* Don't check permissions here, because permlist 
+				  isn't ready running init files. */
+			  , file_name, strlen(file_name), fn, maxfn,
+			  &len, pfile, imemory);
 }
 
 /* Open and execute a file. */
@@ -525,6 +519,7 @@ gs_run_init_file(gs_main_instance * minst, int *pexit_code, ref * perror_object)
     scanner_state state;
 
     gs_main_set_lib_paths(minst);
+
     if (gs_init_string_sizeof == 0) {	/* Read from gs_init_file. */
 	code = gs_main_run_file_open(minst, gs_init_file, &ifile);
     } else {			/* Read from gs_init_string. */
@@ -856,7 +851,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
     /* Do the equivalent of a restore "past the bottom". */
     /* This will release all memory, close all open files, etc. */
     if (minst->init_done >= 1) {
-        gs_memory_t *mem_raw = i_ctx_p->memory.current->parent;
+        gs_memory_t *mem_raw = i_ctx_p->memory.current->non_gc_memory;
         i_plugin_holder *h = i_ctx_p->plugin_list;
         alloc_restore_all(idmemory);
         i_plugin_finit(mem_raw, h);
@@ -879,7 +874,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
 	}
 	free(tempnames);
     }
-    gs_lib_finit(exit_status, code);
+    gs_lib_finit(exit_status, code, minst->heap);
 }
 void
 gs_to_exit_with_code(int exit_status, int code)

@@ -36,30 +36,13 @@ gs_malloc_memory_t *gs_malloc_memory_init(void);
   gs_memory_free_all((gs_memory_t *)mem, FREE_ALL_EVERYTHING,\
 		     "gs_malloc_memory_release")
 
-/*
- * Define a default allocator that allocates from the C heap.
- * (We would really like to get rid of this.)
- */
-extern gs_malloc_memory_t *gs_malloc_memory_default;
-extern gs_memory_t *gs_memory_t_default;  /* may be locked */
-#define gs_memory_default (*gs_memory_t_default)
-
-/*
- * The following procedures are historical artifacts that we hope to
- * get rid of someday.
- */
 gs_memory_t * gs_malloc_init(const gs_memory_t *parent);
-void gs_malloc_release(void);
-#define gs_malloc(nelts, esize, cname)\
-  (void *)gs_alloc_byte_array(&gs_memory_default, nelts, esize, cname)
-#define gs_free(data, nelts, esize, cname)\
-  gs_free_object(&gs_memory_default, data, cname)
+void gs_malloc_release(gs_memory_t *mem);
 
-/* Define an accessor for the limit on the total allocated heap space. */
-#define gs_malloc_limit (gs_malloc_memory_default->limit)
-
-/* Define an accessor for the maximum amount ever allocated from the heap. */
-#define gs_malloc_max (gs_malloc_memory_default->max_used)
+#define gs_malloc(mem, nelts, esize, cname)\
+  (void *)gs_alloc_byte_array(mem->non_gc_memory, nelts, esize, cname)
+#define gs_free(mem, data, nelts, esize, cname)\
+  gs_free_object(mem->non_gc_memory, data, cname)
 
 /* ---------------- Locking ---------------- */
 

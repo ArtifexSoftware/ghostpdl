@@ -45,11 +45,6 @@ orig_sqrt(double x)
 #include "gxfarith.h"
 #include "gxfixed.h"
 
-/* Define private replacements for stdin, stdout, and stderr. */
-FILE *gs_stdio[3];
-
-
-/* ------ Redirected stdout and stderr  ------ */
 
 #include <stdarg.h>
 #define PRINTF_BUF_LENGTH 1024

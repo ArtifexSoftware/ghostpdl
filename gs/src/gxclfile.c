@@ -33,7 +33,7 @@ clist_fopen(char fname[gp_file_name_sizeof], const char *fmode,
 {
     if (*fname == 0) {
 	if (fmode[0] == 'r')
-	    return_error(gs_error_invalidfileaccess);
+	    return_error(mem, gs_error_invalidfileaccess);
 	*pcf =
 	    (clist_file_ptr) gp_open_scratch_file(mem, gp_scratch_file_name_prefix,
 						  fname, fmode);
@@ -41,23 +41,24 @@ clist_fopen(char fname[gp_file_name_sizeof], const char *fmode,
 	*pcf = gp_fopen(fname, fmode);
     if (*pcf == NULL) {
 	eprintf1(mem, "Could not open the scratch file %s.\n", fname);
-	return_error(gs_error_invalidfileaccess);
+	return_error(mem, gs_error_invalidfileaccess);
     }
     return 0;
 }
 
 int
-clist_fclose(clist_file_ptr cf, const char *fname, bool delete)
+clist_fclose(const gs_memory_t *mem, 
+	     clist_file_ptr cf, const char *fname, bool delete)
 {
-    return (fclose((FILE *) cf) != 0 ? gs_note_error(gs_error_ioerror) :
-	    delete ? clist_unlink(fname) :
+    return (fclose((FILE *) cf) != 0 ? gs_note_error(mem, gs_error_ioerror) :
+	    delete ? clist_unlink(mem, fname) :
 	    0);
 }
 
 int
-clist_unlink(const char *fname)
+clist_unlink(const gs_memory_t *mem, const char *fname)
 {
-    return (unlink(fname) != 0 ? gs_note_error(gs_error_ioerror) : 0);
+    return (unlink(fname) != 0 ? gs_note_error(mem, gs_error_ioerror) : 0);
 }
 
 /* ------ Writing ------ */

@@ -360,7 +360,7 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
 	    if (code >= 0)
 		return_check_interrupt(0);
 	    /* copy_alpha failed, construct a monobit mask. */
-	    bits = compress_alpha_bits(cc, &gs_memory_default);
+	    bits = compress_alpha_bits(cc, penum->memory->non_gc_memory);
 	    if (bits == 0)
 		return 1;	/* VMerror, but recoverable */
 	}
@@ -371,12 +371,12 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
     }
     if (depth > 1) {		/* Complex color or fill_mask / copy_alpha failed, */
 	/* construct a monobit mask. */
-	bits = compress_alpha_bits(cc, &gs_memory_default);
+	bits = compress_alpha_bits(cc, penum->memory->non_gc_memory);
 	if (bits == 0)
 	    return 1;		/* VMerror, but recoverable */
 
     } {				/* Use imagemask to render the character. */
-	gs_memory_t *mem = &gs_memory_default;
+	gs_memory_t *mem = penum->memory->non_gc_memory;
 	gs_image_enum *pie =
 	    gs_image_enum_alloc(mem, "image_char(image_enum)");
 	gs_image_t image;
@@ -387,7 +387,7 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
 
 	if (pie == 0) {
 	    if (bits != cc_bits(cc))
-		gs_free_object(&gs_memory_default, bits,
+		gs_free_object(mem, bits,
 			       "compress_alpha_bits");
 	    return 1;		/* VMerror, but recoverable */
 	}
@@ -418,7 +418,7 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
 	gs_free_object(mem, pie, "image_char(image_enum)");
     }
   done:if (bits != cc_bits(cc))
-	gs_free_object(&gs_memory_default, bits, "compress_alpha_bits");
+	gs_free_object(penum->memory->non_gc_memory, bits, "compress_alpha_bits");
     if (code > 0)
 	code = 0;
     return_check_interrupt(code);
