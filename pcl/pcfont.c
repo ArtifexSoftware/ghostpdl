@@ -659,21 +659,28 @@ pcfont_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 	gx_purge_selected_cached_chars(pcs->font_dir,
 				       purge_all,
 				       (void *)NULL);
+        /* free character cache machinery */
         gs_free_object(pcs->memory, pcs->font_dir->fmcache.mdata, "pcsfont_do_reset");
-        /* free the blasted chunks */
         {
+            /* free the circular list of memory chunks first */
             gx_bits_cache_chunk *chunk = pcs->font_dir->ccache.chunks;
-            gx_bits_cache_chunk *tmp_chunk = chunk;
-	    while( pcs->font_dir->ccache.chunks != chunk->next ) {
-	        tmp_chunk = chunk->next;
-		gs_free_object(pcs->memory, chunk->data, "pcfont_do_reset");
-		gs_free_object(pcs->memory, chunk, "pcfont_do_reset");
-		chunk = tmp_chunk;
-	    }
-	    gs_free_object(pcs->memory, chunk, "pcfont_do_reset");
+            gx_bits_cache_chunk *start_chunk = chunk;
+            gx_bits_cache_chunk *prev_chunk;
+            while (1) {
+                if (start_chunk == chunk->next) {
+                    gs_free_object(pcs->memory, chunk->data, "pcsfont_do_reset");
+                    gs_free_object(pcs->memory, chunk, "pcsfont_do_reset");
+                    break;
+                }
+                prev_chunk = chunk;
+                chunk = chunk->next;
+                gs_free_object(pcs->memory, prev_chunk->data, "pcsfont_do_reset");
+                gs_free_object(pcs->memory, prev_chunk, "pcsfont_do_reset");
+            }
+
+            gs_free_object(pcs->memory, pcs->font_dir->ccache.table, "pcfont_do_reset");
+            gs_free_object(pcs->memory, pcs->font_dir, "pcfont_do_reset");
         }
-        gs_free_object(pcs->memory, pcs->font_dir->ccache.table, "pcfont_do_reset");
-	gs_free_object(pcs->memory, pcs->font_dir, "pcfont_do_reset");
     }
 }
 

@@ -557,7 +557,6 @@ pxl_impl_remove_device(
 	/* Deselect device */
 	/* NB */
 	error = gs_nulldevice(pxli->pgs);
-	px_dict_release(&pxli->pxs->font_dict);
 	if (code >= 0)
 	  code = error;
 
@@ -573,6 +572,7 @@ pxl_impl_deallocate_interp_instance(
 	pxl_interp_instance_t *pxli = (pxl_interp_instance_t *)instance;
 	gs_memory_t *mem = pxli->memory;
 	
+	px_dict_release(&pxli->pxs->font_dict);
 	px_dict_release(&pxli->pxs->builtin_font_dict);
 	/* do total dnit of interp state */
 	px_state_finit(pxli->pxs);

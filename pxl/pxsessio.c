@@ -193,9 +193,14 @@ px_end_session_cleanup(px_state_t *pxs)
 	px_purge_character_cache(pxs);
 	px_dict_release(&pxs->session_pattern_dict);
         if (gstate_pattern_cache(pxs->pgs)) {
-            (gstate_pattern_cache(pxs->pgs)->free_all)(gstate_pattern_cache(pxs->pgs));
-            gs_free_object(pxs->memory, gstate_pattern_cache(pxs->pgs)->tiles, "px_end_session_cleanup(tiles)");
-            gs_free_object(pxs->memory, gstate_pattern_cache(pxs->pgs), "px_end_session_cleanup(struct)");
+            (gstate_pattern_cache(pxs->pgs)->free_all)
+                (gstate_pattern_cache(pxs->pgs));
+            gs_free_object(pxs->memory,
+                           gstate_pattern_cache(pxs->pgs)->tiles,
+                           "px_end_session_cleanup(tiles)");
+            gs_free_object(pxs->memory,
+                           gstate_pattern_cache(pxs->pgs),
+                           "px_end_session_cleanup(struct)");
             {
                 gs_state *pgs = pxs->pgs;
                 while (pgs) {

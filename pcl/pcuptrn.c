@@ -543,6 +543,8 @@ upattern_do_copy(pcl_state_t *psaved, const pcl_state_t *pcs,
        pcl_pattern_clear_bi_patterns() below */
     for(i = 0; i < countof(pcs->bi_pattern_array); i++)
 	psaved->bi_pattern_array[i] = pcs->bi_pattern_array[i];
+    psaved->gl_patterns = pcs->gl_patterns;
+    psaved->pcl_patterns = pcs->pcl_patterns;
     return 0;
 }
 

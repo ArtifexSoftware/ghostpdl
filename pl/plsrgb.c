@@ -208,6 +208,10 @@ private const gs_cie_render_proc3 pl_EncodeABC_procs = {
  *
  */
 
+/* comment this define out to enable reading crd's from devices - the current implementation suffers from memory leaks */
+
+#define DISABLE_DEVICE_CRD
+
 private bool
 pl_read_device_CRD(gs_cie_render *pcrd, gs_state *pgs)
 {
@@ -217,6 +221,9 @@ pl_read_device_CRD(gs_cie_render *pcrd, gs_state *pgs)
     char            nbuff[64];  /* ample size */
     int             code = 0;
 
+#ifdef DISABLE_DEVICE_CRD
+    return false;
+#endif
     /*get the CRDName parameter from the device */
     gs_c_param_list_write(&list, gs_state_memory(pgs));
     if (param_request((gs_param_list *)&list, "CRDName") < 0)
