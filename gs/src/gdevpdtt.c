@@ -946,6 +946,16 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 	    pdfont->u.simple.s.type3.FontBBox.q.x = (int)bfont->FontBBox.q.x;
 	    pdfont->u.simple.s.type3.FontBBox.q.y = (int)bfont->FontBBox.q.y;
 	    pdfont->u.simple.s.type3.FontMatrix = bfont->FontMatrix;
+	    /* Adobe viewers have a precision problem with small font matrices : */
+	    while (any_abs(pdfont->u.simple.s.type3.FontMatrix.xx) < 0.001 &&
+		   any_abs(pdfont->u.simple.s.type3.FontMatrix.xy) < 0.001 &&
+		   any_abs(pdfont->u.simple.s.type3.FontMatrix.yx) < 0.001 &&
+		   any_abs(pdfont->u.simple.s.type3.FontMatrix.yy) < 0.001) {
+		pdfont->u.simple.s.type3.FontMatrix.xx *= 10;
+		pdfont->u.simple.s.type3.FontMatrix.xy *= 10;
+		pdfont->u.simple.s.type3.FontMatrix.yx *= 10;
+		pdfont->u.simple.s.type3.FontMatrix.yy *= 10;
+	    }
 	    *ppdfont = pdfont;
 	    return 1;
 	}
@@ -1013,6 +1023,16 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 
     *ppdfont = pdfont;
     return 1;
+}
+
+/* Get a synthesized Type 3 font scale. */
+void 
+pdf_font3_scale(gx_device_pdf *pdev, gs_font *font, double *scale)
+{
+    pdf_font_resource_t *pdfont;
+
+    pdf_attached_font_resource(pdev, font, &pdfont, NULL, NULL, NULL, NULL);
+    *scale = pdfont->u.simple.s.type3.FontMatrix.xx;
 }
 
 /*
@@ -1523,7 +1543,9 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
     {
 	gs_font_base *cfont = pdf_font_resource_font(pdfont, false);
 
-	if (cfont != 0) {
+	if (pdfont->FontType == ft_user_defined)
+	    orig_matrix = pdfont->u.simple.s.type3.FontMatrix;
+	else if (cfont != 0) {
 	    /*
 	     * The text matrix to be computed relatively to the 
 	     * embedded font matrix.

@@ -236,6 +236,10 @@ bool pdf_is_simple_font(gs_font *font);
  */
 bool pdf_is_CID_font(gs_font *font);
 
+/* Get a synthesized Type 3 font scale. */
+void pdf_font3_scale(gx_device_pdf *pdev, gs_font *font, double *scale);
+
+
 /* ------ gdevpdtc.c ------ */
 
 PROCESS_TEXT_PROC(process_composite_text);

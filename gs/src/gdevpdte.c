@@ -641,9 +641,9 @@ process_text_return_width(const pdf_text_enum_t *pte, gs_font_base *font,
     int widths_differ = 0, code;
 
     if (font->FontType == ft_user_defined) {
-	code = font_orig_scale((gs_font *)font, &scale);
-	if (code < 0)
-	    return code;
+	gx_device_pdf *pdev = (gx_device_pdf *)pte->dev;
+
+	pdf_font3_scale(pdev, (gs_font *)font, &scale);
 	scale *= ppts->values.size;
     } else
 	scale = 0.001 * ppts->values.size;
@@ -736,9 +736,9 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
     bool composite = (ppts->values.pdfont->FontType == ft_composite);
 
     if (font->FontType == ft_user_defined) {
-	code = font_orig_scale((gs_font *)font, &scale);
-	if (code < 0)
-	    return code;
+	gx_device_pdf *pdev = (gx_device_pdf *)pte->dev;
+
+	pdf_font3_scale(pdev, font, &scale);
 	scale *= ppts->values.size;
     } else
 	scale = 0.001 * ppts->values.size;
