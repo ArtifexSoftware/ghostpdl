@@ -45,7 +45,7 @@ pdf_reset_graphics(gx_device_pdf * pdev)
         gx_color_value cv[4];
         cv[0] = cv[1] = cv[2] = frac2cv(frac_0);
         cv[3] = frac2cv(frac_1);
-        color = dev_proc(pdev, map_cmyk_color)(pdev, cv);
+        color = dev_proc(pdev, map_cmyk_color)((gx_device *)pdev, cv);
     }
     color_set_pure(&pdev->fill_color, color);
     color_set_pure(&pdev->stroke_color, color);
@@ -129,6 +129,7 @@ int
 pdf_separation_name(gx_device_pdf *pdev, cos_value_t *pvalue,
 		    gs_separation_name sname)
 {
+    dprintf( "pdf_separation_name() unimplemented\n");
 #ifdef TO_DO_DEVICEN
     static const char *const snames[] = {
 	gs_ht_separation_name_strings
@@ -245,7 +246,7 @@ pdf_write_transfer_map(gx_device_pdf *pdev, const gx_transfer_map *map,
     params.m = 1;
     params.Domain = domain01;
     params.n = 1;
-    range01[0] = range0, range01[1] = 1;
+    range01[0] = range0, range01[1] = 1.0;
     params.Range = range01;
     params.Order = 1;
     params.DataSource.access =
@@ -692,9 +693,7 @@ pdf_write_multiple_halftone(gx_device_pdf *pdev,
 	const gs_halftone_component *const phtc = &pmht->components[i];
 	cos_value_t value;
 
-#ifdef TO_DO_DEVICEN
 	code = pdf_separation_name(pdev, &value, phtc->cname);
-#endif
 	if (code < 0)
 	    return code;
 	cos_value_write(&value, pdev);
@@ -796,25 +795,31 @@ private int
 pdf_update_transfer(gx_device_pdf *pdev, const gs_imager_state *pis,
 		    char *trs)
 {
-    int i;
+    int i, pi = -1;
     bool multiple = false, update = false;
     gs_id transfer_ids[4];
     int code = 0;
+    const gx_transfer_map *tm[4];
 
-    dprintf( "pdf_update_transfer() unimplemented\n");
-#ifdef TO_DO_DEVICEN
-    for (i = 0; i < 4; ++i) {
-	transfer_ids[i] = pis->set_transfer.indexed[i]->id;
-	if (pdev->transfer_ids[i] != transfer_ids[i])
-	    update = true;
-	if (transfer_ids[i] != transfer_ids[0])
-	    multiple = true;
-    }
+    tm[0] = pis->set_transfer.red;
+    tm[1] = pis->set_transfer.green;
+    tm[2] = pis->set_transfer.blue;
+    tm[3] = pis->set_transfer.gray;
+    for (i = 0; i < 4; ++i) 
+	if (tm[i] != NULL) {
+	    transfer_ids[i] = tm[i]->id;
+	    if (pdev->transfer_ids[i] != tm[i]->id)
+		update = true;
+	    if (pi != -1 && transfer_ids[i] != transfer_ids[pi])
+		multiple = true;
+	    pi = i;
+	} else 
+	    transfer_ids[i] = -1;
     if (update) {
 	int mask;
 
 	if (!multiple) {
-	    code = pdf_write_transfer(pdev, pis->set_transfer.indexed[0],
+	    code = pdf_write_transfer(pdev, tm[pi],
 				      "/TR", trs);
 	    if (code < 0)
 		return code;
@@ -822,20 +827,20 @@ pdf_update_transfer(gx_device_pdf *pdev, const gs_imager_state *pis,
 	} else {
 	    strcpy(trs, "/TR[");
 	    mask = 0;
-	    for (i = 0; i < 4; ++i) {
-		code = pdf_write_transfer_map(pdev,
-					      pis->set_transfer.indexed[i],
-					      0, false, "", trs + strlen(trs));
-		if (code < 0)
-		    return code;
-		mask |= (code == 0) << i;
-	    }
+	    for (i = 0; i < 4; ++i) 
+		if (tm[i] != NULL) {
+		    code = pdf_write_transfer_map(pdev,
+						  tm[i],
+						  0, false, "", trs + strlen(trs));
+		    if (code < 0)
+			return code;
+		    mask |= (code == 0) << i;
+		}
 	    strcat(trs, "]");
 	}
 	memcpy(pdev->transfer_ids, transfer_ids, sizeof(pdev->transfer_ids));
 	pdev->transfer_not_identity = mask;
     }
-#endif
     return code;
 }
 
