@@ -412,7 +412,8 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		    code = t1_hinter__endglyph(h);
 		    if (code < 0)
 			return code;
-		}
+		} else
+		    t1_hinter__setcurrentpoint(h, pcis->save_adxy.x, pcis->save_adxy.y);
 #	    endif
 		code = gs_type1_endchar(pcis);
 		if (code == 1) {

@@ -925,14 +925,20 @@ void t1_hinter__setcurrentpoint(t1_hinter * this, fixed xx, fixed yy)
     t1_glyph_space_coord gx = import_shift(xx, this->import_shift);
     t1_glyph_space_coord gy = import_shift(yy, this->import_shift);
 
-    if (this->cx != gx || this->cy != gy) {
+    if (this->FontType != 2) {
+	/* We use this function to set a subglyph origin
+	   for composite glyphs in Type 2 fonts.
+	 */
+	this->cx = gx;
+	this->cy = gy;
+    } else if (this->cx != gx || this->cy != gy) {
 	/* Type 1 spec reads : "The setcurrentpoint command is used only 
 	   in conjunction with results from OtherSubrs procedures."
 	   We guess that such cases don't cause a real coordinate change
 	   (our testbase shows that). But we met a font 
 	   (see comparefiles/type1-ce1_setcurrentpoint.ps) which use 
 	   setcurrentpoint immediately before moveto, with no conjunction 
-	   with OtherSubrs.
+	   with OtherSubrs. (The check above is debug purpose only.)
 	 */
 	this->cx = gx;
 	this->cy = gy;
