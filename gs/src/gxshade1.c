@@ -35,6 +35,7 @@
 #include "vdtrace.h"
 
 #define VD_TRACE_AXIAL_PATCH 1
+#define VD_TRACE_RADIAL_PATCH 1
 #define VD_TRACE_FUNCTIONAL_PATCH 1
 
 
@@ -781,6 +782,9 @@ typedef struct R_fill_state_s {
     gs_point delta;
     double dr, width, dd;
     int depth;
+#   if NEW_RADIAL_SHADINGS
+    float t0, t1;
+#   endif
     R_frame_t frames[R_max_depth];
 } R_fill_state_t;
 /****** NEED GC DESCRIPTOR ******/
@@ -906,6 +910,122 @@ R_fill_region(R_fill_state_t * pfs)
     }
 }
 
+private int 
+R_tensor_patches_aux(R_fill_state_t *pfs, const gs_rect *rect)
+{
+    const gs_shading_R_t * const psh = pfs->psh;
+    float x0 = psh->params.Coords[0], y0 = psh->params.Coords[1];
+    floatp r0 = psh->params.Coords[2];
+    float x1 = psh->params.Coords[3], y1 = psh->params.Coords[4];
+    floatp r1 = psh->params.Coords[5];
+    double dx = x1 - x0, dy = y1 - y0;
+    double d = sqrt(dx * dx + dy * dy);
+    gs_point p0, p1, pc0, pc1;
+    int k, kk = 0, j, code;
+    patch_fill_state_t pfs1;
+
+    memcpy(&pfs1, (shading_fill_state_t *)pfs, sizeof(shading_fill_state_t));
+    pfs1.Function = pfs->psh->params.Function;
+    code = init_patch_fill_state(&pfs1);
+    if (code < 0)
+	return code;
+    shade_bbox_transform2fixed(rect, pfs->pis, &pfs1.rect);
+    pfs1.maybe_self_intersecting = false;
+    pc0.x = x0, pc0.y = y0; 
+    pc1.x = x1, pc1.y = y1;
+    if (r0 + d <= r1 || r1 + d <= r0) {
+	/* One circle is inside another one. 
+	   All 4 patches are visible.
+	   Use any subdivision, 
+	   but don't depend on dx, dy, which may be too small. */
+	p0.x = 0, p0.y = -1;
+    } else {
+        /* Use the dx, dy direction for the proper subdivision. */
+	double dd = sqrt(dx * dx + dy * dy);
+
+	p0.x = - dy / dd, p0.y = dx / dd;
+	if (psh->params.Extend[1] && r0 == r1) {
+	    /* 2 patches are invisible. */
+	    kk = 2;
+	} else {
+	    /* All 4 patches are visible. */
+	    kk = 0; 
+	    /* We could shorten 2 partially hidden patches,
+	       but we haven't done yet. */
+	}
+    }
+    for (k = 0; k < 4; k++, p0 = p1) {
+	gs_point p[12];
+	patch_curve_t curve[4];
+
+	p1.x = p0.y; p1.y = - p0.x;
+	if (k < kk)
+	    continue;
+	if ((k & 1) == k >> 1) {
+	    make_quadrant_arc(p + 0, &pc0, &p1, &p0, r0);
+	    make_quadrant_arc(p + 6, &pc1, &p0, &p1, r1);
+	} else {
+	    make_quadrant_arc(p + 0, &pc0, &p0, &p1, r0);
+	    make_quadrant_arc(p + 6, &pc1, &p1, &p0, r1);
+	}
+	p[4].x = (p[3].x * 2 + p[6].x) / 3;
+	p[4].y = (p[3].y * 2 + p[6].y) / 3;
+	p[5].x = (p[3].x + p[6].x * 2) / 3;
+	p[5].y = (p[3].y + p[6].y * 2) / 3;
+	p[10].x = (p[9].x * 2 + p[0].x) / 3;
+	p[10].y = (p[9].y * 2 + p[0].y) / 3;
+	p[11].x = (p[9].x + p[0].x * 2) / 3;
+	p[11].y = (p[9].y + p[0].y * 2) / 3;
+	/* fixme : truncate by 'rect'. */
+	for (j = 0; j < 4; j++) {
+	    code = gs_point_transform2fixed(&pfs->pis->ctm, 
+			p[j * 3 + 0].x, p[j * 3 + 0].y, &curve[j].vertex.p);
+	    if (code < 0)
+		return code;
+	    code = gs_point_transform2fixed(&pfs->pis->ctm, 
+			p[j * 3 + 1].x, p[j * 3 + 1].y, &curve[j].control[0]);
+	    if (code < 0)
+		return code;
+	    code = gs_point_transform2fixed(&pfs->pis->ctm, 
+			p[j * 3 + 2].x, p[j * 3 + 2].y, &curve[j].control[1]);
+	    if (code < 0)
+		return code;
+	}
+#	if NEW_RADIAL_SHADINGS
+	    curve[0].vertex.cc[0] = curve[1].vertex.cc[0] = pfs->t0;
+	    curve[2].vertex.cc[0] = curve[3].vertex.cc[0] = pfs->t1;
+#	else
+	    curve[0].vertex.cc[0] = curve[1].vertex.cc[0] = 0; /* stub. */
+	    curve[2].vertex.cc[0] = curve[3].vertex.cc[0] = 0; /* stub. */
+#	endif
+	curve[0].vertex.cc[1] = curve[1].vertex.cc[1] = 0; /* Initialize against FPE. */
+	curve[2].vertex.cc[1] = curve[3].vertex.cc[1] = 0; /* Initialize against FPE. */
+	code = patch_fill(&pfs1, curve, NULL, NULL);
+	if (code < 0)
+	    return code;
+    }
+    return 0;
+}
+
+
+private int 
+R_tensor_patches(R_fill_state_t *pfs, const gs_rect *rect)
+{
+    int code;
+
+    if (VD_TRACE_RADIAL_PATCH && vd_allowed('s')) {
+	vd_get_dc('s');
+	vd_set_shift(0, 0);
+	vd_set_scale(0.01);
+	vd_set_origin(0, 0);
+    }
+    code = R_tensor_patches_aux(pfs, rect);
+    if (VD_TRACE_FUNCTIONAL_PATCH && vd_allowed('s'))
+	vd_release_dc;
+    return code;
+}
+
+
 private double
 R_compute_radius(floatp x, floatp y, const gs_rect *rect)
 {
@@ -1010,8 +1130,8 @@ R_compute_extension_bar(floatp x0, floatp y0, floatp x1,
     coord[3][1] = coord[2][1] + (y0-y1) / dis * max_ext;
 }
 
-int
-gs_shading_R_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
+private int
+gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
 			    gx_device * dev, gs_imager_state * pis)
 {
     const gs_shading_R_t *const psh = (const gs_shading_R_t *)psh0;
@@ -1039,6 +1159,10 @@ gs_shading_R_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     for (i = 0; i < 2; ++i)
 	gs_function_evaluate(psh->params.Function, &t[i],
 			     rcc[i].paint.values);
+#   if NEW_RADIAL_SHADINGS
+	state.t0 = d0;
+	state.t1 = d1;
+#   endif    
     memcpy(state.frames[0].cc, rcc, sizeof(rcc[0]) * 2);
     state.delta.x = x1 - x0;
     state.delta.y = y1 - y0;
@@ -1079,6 +1203,8 @@ gs_shading_R_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 		code = R_fill_triangle(&state, &rcc[0], x1, y1, 
 					coord[0][0], coord[0][1], 
 					coord[1][0], coord[1][1]);
+		if (code < 0)
+		    return code;
 		code = R_fill_triangle(&state, &rcc[0], x1, y1, 
 					coord[0][0], coord[0][1], 
 					coord[2][0], coord[2][1]);
@@ -1095,6 +1221,8 @@ gs_shading_R_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 					coord[3][0], coord[3][1], 
 					coord[4][0], coord[4][1], 
 					coord[6][0], coord[6][1]);
+		if (code < 0)
+		    return code;
 		code = R_fill_triangle(&state, &rcc[0], 
 					coord[3][0], coord[3][1], 
 					coord[5][0], coord[5][1], 
@@ -1110,6 +1238,8 @@ gs_shading_R_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 				    coord[0][0], coord[0][1], 
 				    coord[1][0], coord[1][1], 
 				    coord[2][0], coord[2][1]);
+	    if (code < 0)
+		return code;
 	    code = R_fill_triangle(&state, &rcc[0], 
 				    coord[2][0], coord[2][1], 
 				    coord[3][0], coord[3][1], 
@@ -1122,7 +1252,10 @@ gs_shading_R_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     state.depth = 1;
     state.frames[0].t0 = (t[0] - d0) / dd;
     state.frames[0].t1 = (t[1] - d0) / dd;
-    code = R_fill_region(&state);
+    if (NEW_RADIAL_SHADINGS)
+	code = R_tensor_patches(&state, rect);
+    else
+	code = R_fill_region(&state);
     if (psh->params.Extend[1]) {
 	floatp max_extension;
 	gs_point p, q;
@@ -1140,10 +1273,14 @@ gs_shading_R_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 					coord[3][0], coord[3][1], 
 					coord[4][0], coord[4][1], 
 					coord[6][0], coord[6][1]);
+		if (code < 0)
+		    return code;
 		code = R_fill_triangle(&state, &rcc[1], 
 					coord[3][0], coord[3][1], 
 					coord[5][0], coord[5][1], 
 					coord[6][0], coord[6][1]);
+		if (code < 0)
+		    return code;
 		code = R_fill_annulus(&state, &rcc[1], 1.0, 1.0, 0.0, r1, &pis->fill_adjust);
 	    } else {
 		code = R_fill_annulus(&state, &rcc[1], 1.0, 1.0, r1,
@@ -1159,6 +1296,8 @@ gs_shading_R_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 		code = R_fill_triangle(&state, &rcc[1], x1, y1, 
 					coord[0][0], coord[0][1], 
 					coord[1][0], coord[1][1]);
+		if (code < 0)
+		    return code;
 		code = R_fill_triangle(&state, &rcc[1], x1, y1, 
 					coord[0][0], coord[0][1], 
 					coord[2][0], coord[2][1]);
@@ -1171,12 +1310,35 @@ gs_shading_R_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 				    coord[0][0], coord[0][1], 
 				    coord[1][0], coord[1][1], 
 				    coord[2][0], coord[2][1]);
+	    if (code < 0)
+		return code;
 	    code = R_fill_triangle(&state, &rcc[1], 
 				    coord[2][0], coord[2][1], 
 				    coord[3][0], coord[3][1], 
 				    coord[1][0], coord[1][1]);
+	    if (code < 0)
+		return code;
 	    code = R_fill_annulus(&state, &rcc[1], 1.0, 1.0, 0.0, r1, &pis->fill_adjust);
 	}
     }
+    return code;
+}
+
+int
+gs_shading_R_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
+			    gx_device * dev, gs_imager_state * pis)
+{   
+    int code;
+
+#   if NEW_RADIAL_SHADINGS
+	gs_fixed_point fill_adjust = {INTERPATCH_PADDING, INTERPATCH_PADDING};
+	gs_fixed_point fill_adjust0 = pis->fill_adjust;
+
+	pis->fill_adjust = fill_adjust;
+#   endif
+    code = gs_shading_R_fill_rectangle_aux(psh0, rect, dev, pis);
+#   if NEW_RADIAL_SHADINGS
+        pis->fill_adjust = fill_adjust0;
+#   endif
     return code;
 }

@@ -431,6 +431,21 @@ add:
 				   arc->notes | sn_from_arc);
 }
 
+void
+make_quadrant_arc(gs_point *p, const gs_point *c, 
+	const gs_point *p0, const gs_point *p1, double r)
+{
+    p[0].x = c->x + p0->x * r;
+    p[0].y = c->y + p0->y * r;
+    p[1].x = c->x + p0->x * r + p1->x * r * quarter_arc_fraction;
+    p[1].y = c->y + p0->y * r + p1->y * r * quarter_arc_fraction;
+    p[2].x = c->x + p0->x * r * quarter_arc_fraction + p1->x * r;
+    p[2].y = c->y + p0->y * r * quarter_arc_fraction + p1->y * r;
+    p[3].x = c->x + p1->x * r;
+    p[3].y = c->y + p1->y * r;
+}
+
+
 /* ------ Path transformers ------ */
 
 int

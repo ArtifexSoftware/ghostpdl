@@ -60,6 +60,8 @@ int gs_imager_arc_add(gx_path * ppath, gs_imager_state * pis,
 		      bool clockwise, floatp axc, floatp ayc,
 		      floatp arad, floatp aang1, floatp aang2,
 		      bool add_line);
+void make_quadrant_arc(gs_point *p, const gs_point *c, 
+	const gs_point *p0, const gs_point *p1, double r);
 
 /* Add the current path to the path in the previous graphics state. */
 int gs_upmergepath(gs_state *);
