@@ -96,8 +96,8 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
 	(pdev->params.UseFlateCompression &&
 	 pdev->version >= psdf_version_ll3 ?
 	 &s_zlibE_template : &s_LZWE_template);
-    int Colors = (pim->ColorSpace ?
-		  gs_color_space_num_components(pim->ColorSpace) : 0);
+    const gs_color_space *pcs = pim->ColorSpace; /* null if mask */
+    int Colors = (pcs ? gs_color_space_num_components(pcs) : 0);
     gs_c_param_list *dict = pdip->Dict;
     stream_state *st;
     int code;
@@ -121,15 +121,18 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
 	return 0;
     if (pim->Width * pim->Height <= 16)	/* not worth compressing */
 	return 0;
-    /* Only use DCTE for 8-bit data. */
-    if (template == &s_DCTE_template &&
-	!(pdip->Downsample ?
-	  pdip->Depth == 8 ||
-	  (pdip->Depth == -1 && pim->BitsPerComponent == 8) :
-	  pim->BitsPerComponent == 8)
-	) {
-	/* Use LZW/Flate instead. */
-	template = lossless_template;
+    /* Only use DCTE for 8-bit, non-Indexed data. */
+    if (template == &s_DCTE_template) {
+	if (!(pdip->Downsample ?
+	      pdip->Depth == 8 ||
+	      (pdip->Depth == -1 && pim->BitsPerComponent == 8) :
+	      pim->BitsPerComponent == 8) ||
+	    (pcs != 0 &&
+	     gs_color_space_get_index(pcs) == gs_color_space_index_Indexed)
+	    ) {
+	    /* Use LZW/Flate instead. */
+	    template = lossless_template;
+	}
     }
     st = s_alloc_state(mem, template->stype, "setup_image_compression");
     if (st == 0)
