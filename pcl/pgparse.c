@@ -359,4 +359,5 @@ hpgl_init_command_index(hpgl_parser_state_t *pgl_parser_state)
        cleared to zero. */
     memset(pgl_parser_state->hpgl_command_indices, 0,
 	   sizeof(pgl_parser_state->hpgl_command_indices));
+    hpgl_process_init(pgl_parser_state);
 }
