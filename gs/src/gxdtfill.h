@@ -25,7 +25,6 @@
  *   GX_FILL_TRAPEZOID - a name of method
  *   CONTIGUOUS_FILL   - prevent dropouts in narrow trapezoids
  *   SWAP_AXES         - assume swapped axes
- *   STATIC_FILL_DIRECT - FILL_DIRECT is statically defined.
  *   FILL_DIRECT       - See LOOP_FILL_RECTANGLE_DIRECT.
  */
 
