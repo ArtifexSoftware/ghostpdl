@@ -25,6 +25,7 @@
 #include "gdevpdfo.h"
 #include "gxcspace.h"
 #include "gsiparm4.h"
+#include "gdevpsds.h"
 
 #define CHECK(expr)\
   BEGIN if ((code = (expr)) < 0) return code; END
@@ -294,6 +295,7 @@ pdf_begin_write_image(gx_device_pdf * pdev, pdf_image_writer * piw,
 /*
  *  Make alternative stream for image compression choice.
  */
+int
 pdf_make_alt_stream(gx_device_pdf * pdev, psdf_binary_writer * pbw)
 {
     cos_stream_t *pcos = cos_stream_alloc(pdev, "pdf_make_alt_stream");
@@ -306,7 +308,7 @@ pdf_make_alt_stream(gx_device_pdf * pdev, psdf_binary_writer * pbw)
     pbw->strm = cos_write_stream_alloc(pcos, pdev, "pdf_make_alt_stream");
     if (pbw->strm == 0)
         return_error(gs_error_VMerror);
-    pbw->dev = pdev;
+    pbw->dev = (gx_device_psdf *)pdev;
     pbw->memory = pdev->memory;
     return 0;
 }
@@ -341,7 +343,7 @@ pdf_end_image_binary(gx_device_pdf *pdev, pdf_image_writer *piw, int data_h)
     if (piw->alt_writer_count > 1)
 	code = pdf_choose_compression(piw, true);
     else
-	code = psdf_end_binary(&piw->binary);
+	code = psdf_end_binary(&piw->binary[0]);
     if (code < 0)
 	return code;
     /* If the image ended prematurely, update the Height. */
@@ -463,11 +465,11 @@ pdf_choose_compression_cos(pdf_image_writer *piw, cos_stream_t *s[2], bool force
 {   /*	Assume s[0] is Flate, s[1] is DCT, s[2] is chooser. */
     long l0, l1;
     int k0, k1;
-    cos_stream_t *pcs;
 
     l0 = cos_stream_length(s[0]);
     l1 = cos_stream_length(s[1]);
-    k0 = s_compr_chooser__get_choice(piw->binary[2].strm->state, force);
+    k0 = s_compr_chooser__get_choice(
+	(stream_compr_chooser_state *)piw->binary[2].strm->state, force);
     if (k0)
 	k0--;
     else if (much_bigger__DL(l0, l1))

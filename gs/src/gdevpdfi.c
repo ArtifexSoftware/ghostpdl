@@ -16,6 +16,7 @@
 
 /* $Id$ */
 /* Image handling for PDF-writing driver */
+#include "memory_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsdevice.h"
@@ -509,7 +510,6 @@ pdf_image_plane_data_alt(gx_image_enum_common_t * info,
 		     const gx_image_plane_t * planes, int height,
 		     int *rows_used, int alt_writer_index)
 {
-    gx_device_pdf *pdev = (gx_device_pdf *)info->dev;
     pdf_image_enum *pie = (pdf_image_enum *) info;
     int h = height;
     int y;
@@ -519,7 +519,6 @@ pdf_image_plane_data_alt(gx_image_enum_common_t * info,
     uint bcount = (width_bits + 7) >> 3;
     uint ignore;
     int nplanes = pie->num_planes;
-    stream *s = pdev->streams.strm;
     int status = 0;
 
     if (h > pie->rows_left)

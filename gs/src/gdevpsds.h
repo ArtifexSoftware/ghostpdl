@@ -149,8 +149,6 @@ extern const stream_template s_Average_template;
 
 /* ---------------- Image compression chooser ---------------- */
 
-typedef struct cos_stream_s cos_stream_t;
-
 typedef struct stream_compr_chooser_state_s {
     stream_state_common;
     uint choice;
