@@ -149,8 +149,11 @@ pcl_grestore(
     if ((code = gs_grestore(pcs->pgs)) >= 0) {
         pcs->pids->prev = pids->prev;
         pcl_ccolor_copy_from(pcs->pids->pccolor, pids->pccolor);
+        pcl_ccolor_release(pids->pccolor);
         pcl_ht_copy_from(pcs->pids->pht, pids->pht);
+        pcl_ht_release(pids->pht);
         pcl_crd_copy_from(pcs->pids->pcrd, pids->pcrd);
+        pcl_crd_release(pids->pcrd);
         gs_free_object(pcs->memory, pids, "PCL grestore");
     }
 
