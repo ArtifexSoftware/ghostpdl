@@ -80,18 +80,12 @@ A million repetitions of "a"
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#include "config_types.h"
-#elif defined(_WIN32)
-#include "config_win32.h"
 #endif
 
 #include <stdio.h>
 #include <string.h>
 
-#ifdef HAVE_STDINT_H
-#include <stdint.h>
-#endif
-
+#include "os_types.h"
 #include "sha1.h"
 
 void SHA1_Transform(uint32_t state[5], const uint8_t buffer[64]);

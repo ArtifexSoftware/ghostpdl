@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2_generic.c,v 1.12 2002/07/08 14:54:01 giles Exp $
+    $Id: jbig2_generic.c,v 1.13 2002/07/20 17:23:15 giles Exp $
 */
 
 /**
@@ -17,13 +17,8 @@
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#include "config_types.h"
-#elif _WIN32
-#include "config_win32.h"
-#endif
-#ifdef HAVE_STDINT_H
-#include <stdint.h>
-#endif
+#endif 
+#include "os_types.h"
 
 #include <stddef.h>
 #include <string.h> /* memcpy(), memset() */

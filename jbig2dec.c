@@ -8,17 +8,11 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.c,v 1.36 2002/07/20 16:02:24 giles Exp $
+    $Id: jbig2dec.c,v 1.37 2002/07/20 17:23:15 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
-#include "config_types.h"
-#elif _WIN32
-#include "config_win32.h"
-#endif
-#ifdef HAVE_STDINT_H
-#include <stdint.h>
 #endif
 
 #include <stdio.h>
@@ -26,16 +20,17 @@
 #include <stddef.h>
 #include <string.h>
 
-#include "jbig2.h"
-#include "jbig2_image.h"
-
 #ifdef HAVE_GETOPT_H
 # include <getopt.h>
 #else
 # include "getopt.h"
 #endif
 
+#include "os_types.h"
 #include "sha1.h"
+
+#include "jbig2.h"
+#include "jbig2_image.h"
 
 typedef enum {
     usage,dump,render
