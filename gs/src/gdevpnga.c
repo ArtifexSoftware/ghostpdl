@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2001 artofcode LLC.
+  Copyright (C) 2001-2004 artofcode LLC. All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -16,6 +16,7 @@
 
   Author: Raph Levien <raph@artofcode.com>
 */
+
 /* $Id$ */
 /* Test driver for PDF 1.4 transparency stuff */
 
@@ -642,13 +643,20 @@ pnga_output_page(gx_device *dev, int num_copies, int flush)
     const char *software_key = "Software";
     char software_text[256];
     png_text text_png;
+    char prefix[] = "pnga_png";
+    char fname[gp_file_name_sizeof];
     FILE *file;
 
     pdf14_buf *buf = pdev->ctx->stack;
     int planestride = buf->planestride;
     byte *buf_ptr = buf->data;
 
-    file = fopen ("/tmp/tmp.png", "wb"); /* todo: suck from OutputFile */
+    file = gp_open_scratch_file(prefix, fname, "wb");
+    if (file == NULL) {
+	code = gs_note_error(gs_error_invalidfileaccess);
+	goto done;
+    }
+    /* todo: suck from OutputFile instead */
 
     if_debug0('v', "[v]pnga_output_page\n");
 
