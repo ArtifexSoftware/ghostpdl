@@ -43,7 +43,7 @@
 PCLSRC      = $(PCLSRCDIR)$(D)
 PCLGEN      = $(PCLGENDIR)$(D)
 PCLOBJ      = $(PCLOBJDIR)$(D)
-PCLO_       = $(O_)$(PCLOBJ)
+PCLO_       = $(O_) $(PCLOBJ)
 
 PCLCCC  = $(CC_) -I$(PCLSRCDIR) -I$(PCLGENDIR) -I$(PLSRCDIR) -I$(GLSRCDIR) $(C_)
 
