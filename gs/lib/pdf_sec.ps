@@ -53,6 +53,11 @@ pdfdict begin
   16 string dup /MD5Encode filter dup 4 3 roll writestring closefile
 } bind def
 
+/md5_trunk {
+  md5 pdf_key_length 0 exch getinterval
+} bind def
+
+
 /pdf_padding_string
    <28bf4e5e4e758a41 64004e56fffa0108
     2e2e00b6d0683e80 2f0ca9fe6453697a>
@@ -104,15 +109,14 @@ def
     ()
     (   **** ID key in the trailer is required for encrypted files.\n) pdfformaterror
   } ifelse
-  3 { concatstrings } repeat md5
+  3 { concatstrings } repeat md5_trunk
 
   % Step 6.
   Trailer /Encrypt oget /R oget 3 eq {
-     50 { md5 } repeat
+     50 { md5_trunk } repeat
   } if
 
-  % Step 7.
-  0 pdf_key_length getinterval
+  % Step 7 - Done in md5_trunk.
 } bind def
 
 % Algorithm 3.4
@@ -186,15 +190,14 @@ def
   pdf_pad_key
 
   % Step 2.
-  md5
+  md5_trunk
 
   % 3.3 Step 3.
   Trailer /Encrypt oget /R oget 3 eq {
-    50 { md5 } repeat
+    50 { md5_trunk } repeat
   } if
 
-  % Step 4.
-  0 pdf_key_length getinterval
+  % Step 4 - Done in md5_trunk.
 } bind def
 
 % Algorithm 3.7
