@@ -322,13 +322,10 @@ class pxl_dis:
         if self.binding not in ['(', ')', '`']:
             raise(SyntaxError)
 
+        # save the what we skipped over so we can record file offsets
+        self.skipped_over = index
         # pointer to data
         self.index = 0
-
-        # skip over protocol and revision
-        while( data[self.index] != '\n' ):
-            self.index = self.index + 1
-        self.index = self.index + 1
 
         # print out ascii protocol and revision.  NB should check
         # revisions are the same.
@@ -337,6 +334,11 @@ class pxl_dis:
         self.size_of_element = -1;
         self.size_of_array = -1;
         self.unpack_string = ""
+
+        # skip over protocol and revision
+        while( data[self.index] != '\n' ):
+            self.index = self.index + 1
+        self.index = self.index + 1
 
         # dictionary of streams keyed by stream name
 	self.user_defined_streams = {}
@@ -385,7 +387,7 @@ class pxl_dis:
         tag = unpack('B', self.data[self.index] )[0]
         for k in pxl_tags_dict.keys():
             if ( pxl_tags_dict[k] == tag ):
-                print "// Operator Position: %d Operator File Offset: %d Operator Hex Code: %X" % (self.operator_position, self.begin_attribute_pos, tag)
+                print "// Operator Position: %d Operator File Offset: %d Operator Hex Code: %X" % (self.operator_position, self.index + self.skipped_over, tag)
                 print k
                 self.index = self.index + 1
                 # handle special cases
