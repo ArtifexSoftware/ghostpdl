@@ -189,7 +189,7 @@ pl_mem_node_free_all_remaining(gs_memory_t *mem)
 #endif
                        ;
 	    }
-            if (current->address != mem->pl_stdio)
+            if (current->address != mem->gs_lib_ctx)
 		free(current->address);
 	    free(current);
 	    current = next;
@@ -576,7 +576,7 @@ pl_alloc_init()
     if ( pl_malloc_init() ==  NULL )
 	return NULL;
 
-    pl_stdio_init(&pl_mem);
+    gs_lib_ctx_init(&pl_mem);
 
     pl_mem.head = 0;
 

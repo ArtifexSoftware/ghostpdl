@@ -38,7 +38,7 @@
 #include "pltop.h"
 #include "pltoputl.h"
 #include "plapi.h"
-#include "pl_stdio.h"
+#include "gslibctx.h"
 
 
 /*
@@ -216,7 +216,7 @@ pl_main(
     gs_c_param_list         params;
 
     mem = pl_alloc_init();
-    pl_platform_init(mem->pl_stdio->fstdout);
+    pl_platform_init(mem->gs_lib_ctx->fstdout);
 
 
     pjl_mem = mem;
@@ -1070,7 +1070,7 @@ pl_log_string(const gs_memory_t *mem, const char *str, int wait_for_key)
 {
     errwrite(mem, str, strlen(str)); 
     if (wait_for_key)
-	fgetc(mem->pl_stdio->fstdin);
+	fgetc(mem->gs_lib_ctx->fstdin);
 }
 
 /* Pre-page portion of page finishing routine */
@@ -1164,7 +1164,7 @@ pl_main_cursor_open(const gs_memory_t *mem,
 {
 	/* try to open file */
         if (fname[0] == '-' && fname[1] == 0)
-	    cursor->strm = mem->pl_stdio->fstdin;
+	    cursor->strm = mem->gs_lib_ctx->fstdin;
 	else
 	    cursor->strm = fopen(fname, "rb");
 	if (!cursor->strm)

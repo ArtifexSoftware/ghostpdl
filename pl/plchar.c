@@ -563,7 +563,6 @@ pl_tt_get_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
 	}
     }
     /* else call default implementation for tt class 0, incomplete font */
-
     /* first check for a vertical substitute if writing mode is
       vertical.  We unpleasantly replace the glyph_index parameter
       passed to procedure to be consist with the pl_tt_build_char()
