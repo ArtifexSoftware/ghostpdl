@@ -837,8 +837,17 @@ end
     pop pdfopdict .pdfruncontext
   } ifelse
 } bdef
+
 /DoForm {
-  dup length dict copy
+  dup length
+  1 index /Matrix known
+    { dict
+    }
+    { 1 add dict
+      dup /Matrix { 1 0 0 1 0 0 } cvlit put
+    }
+  ifelse
+  copy
   dup [ 2 index /Resources knownoget { oforce } { 0 dict } ifelse
   3 index false /resolvestream cvx
   /.paintform cvx
@@ -912,16 +921,23 @@ drawopdict begin
 	% The Adobe documentation says that the data following ID
 	% consists of "lines", and some PDF files (specifically, some files
 	% produced by PCL2PDF from Visual Software) contain garbage bytes
-	% between the last byte of valid data and an EOL.  Therefore, we
-	% skip such garbage bytes here.
-    {
-      PDFsource read {
-	dup 10 eq exch 13 eq or { exit } if
-      } {
-        exit
-      } ifelse
-    } loop
-    PDFsource token pop /EI ne { /ID cvx /syntaxerror signalerror } if
+	% between the last byte of valid data and an EOL.
+        % Some files (PDFOUT v3.8d by GenText) have EI immediately following
+        % the stream. Some have no EOL and garbage bytes.
+        % Therefore, we skip all bytes before EI or EOL 
+    0
+      { PDFsource read not { //true exit } if
+        dup 10 eq 1 index 13 eq or
+          { pop PDFsource token pop /EI ne exit
+          }
+        if
+        exch 69 eq 1 index 73 eq and { //false exit } if  % 'EI'
+      }
+    loop
+    exch pop
+      { /ID cvx /syntaxerror signalerror
+      }
+    if
   } bdef
 end
 
@@ -1045,13 +1061,13 @@ end
       } if
 		% Acrobat Distiller produces files in which this Form
 		% XObject lack FormType and Matrix keys.  This is illegal,
-		% but Acrobat Reader accepts it.  Patch this up now.
+		% but Acrobat Reader accepts it. DoForm can cope with
+                % missing Matrix key.
+
       dup /FormType known not  {
 	dup length 1 add dict copy dup /FormType 1 put
       } if
-      dup /Matrix known not  {
-	dup length 1 add dict copy dup /Matrix matrix put
-      } if
+
     1 index annotrect pop pop translate
     2 index dup scale		% Apply scale factor
       DoForm
