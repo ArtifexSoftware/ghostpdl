@@ -25,7 +25,7 @@
 int 
 gx_default_fill_linear_color_scanline(const gs_fill_attributes *fa,
 	int i0, int j, int w,
-	const frac32 *c0, const long *addx, const long *mulx, const ulong *divx)
+	const frac32 *c0, const long *c0f, const long *cg_num, ulong cg_den)
 {
     /* This default implementation decomposes the area into constant color rectangles.
        Devices may supply optimized implementations with
@@ -48,7 +48,7 @@ gx_default_fill_linear_color_scanline(const gs_fill_attributes *fa,
 	int bits = cinfo->comp_bits[k];
 
 	c[k] = c0[k];
-	f[k] = addx[k];
+	f[k] = c0f[k];
 	ci0 |= ((gx_color_index)(c[k] >> (sizeof(c[k]) * 8 - bits)) << shift);
     }
     for (i = i0 + 1; i < i1; i++) {
@@ -56,10 +56,10 @@ gx_default_fill_linear_color_scanline(const gs_fill_attributes *fa,
 	for (k = 0; k < n; k++) {
 	    int shift = cinfo->comp_shift[k];
 	    int bits = cinfo->comp_bits[k];
-	    long m = f[k] + mulx[k];
+	    long m = f[k] + cg_num[k];
 
-	    f[k] = m % divx[k];
-	    c[k] += m / divx[k];
+	    f[k] = m % cg_den;
+	    c[k] += m / cg_den;
 	    ci1 |= ((gx_color_index)(c[k] >> (sizeof(c[k]) * 8 - bits)) << shift);
 	}
 	if (ci1 != ci0) {
@@ -88,21 +88,3 @@ gx_default_fill_linear_color_scanline(const gs_fill_attributes *fa,
     return 0;
 }
 
-int 
-gx_default_fill_linear_color_trapezoid(const gs_fill_attributes *fa,
-	const gs_fixed_point *p0, const gs_fixed_point *p1,
-	const gs_fixed_point *p2, const gs_fixed_point *p3,
-	const frac32 *c0, const frac32 *c1,
-	const frac32 *c2, const frac32 *c3)
-{
-    return_error(gs_error_unregistered); /* Unimplemented. */
-}
-
-int 
-gx_default_fill_linear_color_triangle(const gs_fill_attributes *fa,
-	const gs_fixed_point *p0, const gs_fixed_point *p1,
-	const gs_fixed_point *p2,
-	const frac32 *c0, const frac32 *c1, const frac32 *c2)
-{
-    return_error(gs_error_unregistered); /* Unimplemented. */
-}

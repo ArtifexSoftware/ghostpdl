@@ -186,6 +186,16 @@ typedef struct gx_device_anti_alias_info_s {
     int graphics_bits;		/* ditto */
 } gx_device_anti_alias_info;
 
+typedef ulong frac32; /* A fraction value from [0,1]. Represents a color in shadings. */
+
+/* Define an edge of a linear color trapezoid.  Requirement: end.y >= start.y. */
+typedef struct gs_linear_color_edge_s {
+    gs_fixed_point start;
+    gs_fixed_point end;
+    const frac32 *c0, *c1;
+    fixed clip_x;
+} gs_linear_color_edge;
+
 
 /*
  * Possible values for the separable_and_linear flag in the
@@ -1222,8 +1232,6 @@ typedef enum {
 
 		/* Shading support. */
 
-typedef ulong frac32; /* A fraction value from [0,1]. */
-
 typedef struct {
       gx_device *pdev; 
       const gs_fixed_rect *clip;
@@ -1237,10 +1245,10 @@ typedef struct {
 #define dev_t_proc_fill_linear_color_scanline(proc, dev_t)\
   int proc(const gs_fill_attributes *fa,\
 	int i, int j, int w, /* scanline coordinates and width */\
-	const frac32 *c, /* initial color for the pixel (i,j), the integer part */\
-	const long *addx, /* initial color for the pixel (i,j), the fraction part numerator */\
-	const long *mulx, /* color gradient numerator */\
-	const ulong *divx /* color gradient denominator */)
+	const frac32 *c0, /* initial color for the pixel (i,j), the integer part */\
+	const long *c0_f, /* initial color for the pixel (i,j), the fraction part numerator */\
+	const long *cg_num, /* color gradient numerator */\
+	ulong cg_den /* color gradient denominator */)
 #define dev_proc_fill_linear_color_scanline(proc)\
   dev_t_proc_fill_linear_color_scanline(proc, gx_device)
 

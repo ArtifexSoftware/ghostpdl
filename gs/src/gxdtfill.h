@@ -26,6 +26,9 @@
  *   CONTIGUOUS_FILL   - prevent dropouts in narrow trapezoids
  *   SWAP_AXES         - assume swapped axes
  *   FILL_DIRECT       - See LOOP_FILL_RECTANGLE_DIRECT.
+ *   LINEAR_COLOR      - Fill with a linear color.
+ *   EDGE_TYPE	       - a type of edge structure.
+ *   FILL_ATTRS        - operation attributes. 
  */
 
 /*
@@ -51,6 +54,9 @@
  * adding a minimal number of pixels outside the trapezoid.
  * Particularly it may paint pixels on the right and on the top sides,
  * if they are necessary for the contiguity.
+ *
+ * With LINEAR_COLOR may return the number of unfilled scanlines. 
+ * In such case the client must subdivide the unfilled part of the trapezoid.
  */
 
 /*
@@ -125,9 +131,9 @@ It is computed with the macro 'rational_floor'.
 
 */
 
-GX_FILL_TRAPEZOID(gx_device * dev, const gs_fixed_edge * left,
-    const gs_fixed_edge * right, fixed ybot, fixed ytop, int flags,
-    const gx_device_color * pdevc, gs_logical_operation_t lop)
+GX_FILL_TRAPEZOID (gx_device * dev, const EDGE_TYPE * left,
+    const EDGE_TYPE * right, fixed ybot, fixed ytop, int flags,
+    const gx_device_color * pdevc, FILL_ATTRS fa)
 {
     const fixed ymin = fixed_pixround(ybot) + fixed_half;
     const fixed ymax = fixed_pixround(ytop);
@@ -147,15 +153,23 @@ GX_FILL_TRAPEZOID(gx_device * dev, const gs_fixed_edge * left,
 	    ysl = ymin - left->start.y, ysr = ymin - right->start.y;
 	fixed fxl;
 	int code;
-#if CONTIGUOUS_FILL
-	const bool peak0 = ((flags & 1) != 0);
-	const bool peak1 = ((flags & 2) != 0);
-	int peak_y0 = ybot + fixed_half;
-	int peak_y1 = ytop - fixed_half;
-#endif
-	gx_color_index cindex = pdevc->colors.pure;
-	dev_proc_fill_rectangle((*fill_rect)) =
-	    dev_proc(dev, fill_rectangle);
+#	if CONTIGUOUS_FILL
+	    const bool peak0 = ((flags & 1) != 0);
+	    const bool peak1 = ((flags & 2) != 0);
+	    int peak_y0 = ybot + fixed_half;
+	    int peak_y1 = ytop - fixed_half;
+#	endif
+#	if LINEAR_COLOR
+	    int num_components = dev->color_info.num_components;
+	    frac32 xgc[GX_DEVICE_COLOR_MAX_COMPONENTS];
+	    long xgf[GX_DEVICE_COLOR_MAX_COMPONENTS];
+	    long xgnum[GX_DEVICE_COLOR_MAX_COMPONENTS];
+	    trap_gradient lg, rg, xg;
+#	else
+	    gx_color_index cindex = pdevc->colors.pure;
+	    dev_proc_fill_rectangle((*fill_rect)) =
+		dev_proc(dev, fill_rectangle);
+#	endif
 
 	if_debug2('z', "[z]y=[%d,%d]\n", iy, iy1);
 
@@ -167,18 +181,24 @@ GX_FILL_TRAPEZOID(gx_device * dev, const gs_fixed_edge * left,
 
 /*
  * Free variables of FILL_TRAP_RECT:
- *	SWAP_AXES, pdevc, dev, lop
+ *	SWAP_AXES, pdevc, dev, fa
  * Free variables of FILL_TRAP_RECT_DIRECT:
  *	SWAP_AXES, fill_rect, dev, cindex
  */
 #define FILL_TRAP_RECT_INDIRECT(x,y,w,h)\
-  (SWAP_AXES ? gx_fill_rectangle_device_rop(y, x, h, w, pdevc, dev, lop) :\
-   gx_fill_rectangle_device_rop(x, y, w, h, pdevc, dev, lop))
+  (SWAP_AXES ? gx_fill_rectangle_device_rop(y, x, h, w, pdevc, dev, fa) :\
+   gx_fill_rectangle_device_rop(x, y, w, h, pdevc, dev, fa))
 #define FILL_TRAP_RECT_DIRECT(x,y,w,h)\
   (SWAP_AXES ? (*fill_rect)(dev, y, x, h, w, cindex) :\
    (*fill_rect)(dev, x, y, w, h, cindex))
-#define FILL_TRAP_RECT(x,y,w,h)\
-    (FILL_DIRECT ? FILL_TRAP_RECT_DIRECT(x,y,w,h) : FILL_TRAP_RECT_INDIRECT(x,y,w,h))
+
+#if LINEAR_COLOR
+#   define FILL_TRAP_RECT(x,y,w,h)\
+	(!w ? 0 : dev_proc(dev, fill_linear_color_scanline)(fa, x, y, w, xg.c, xg.f, xg.num, xg.den))
+#else
+#   define FILL_TRAP_RECT(x,y,w,h)\
+	(FILL_DIRECT ? FILL_TRAP_RECT_DIRECT(x,y,w,h) : FILL_TRAP_RECT_INDIRECT(x,y,w,h))
+#endif
 
 #define VD_RECT_SWAPPED(rxl, ry, rxr, iy)\
     vd_rect(int2fixed(SWAP_AXES ? ry : rxl), int2fixed(SWAP_AXES ? rxl : ry),\
@@ -245,14 +265,16 @@ GX_FILL_TRAPEZOID(gx_device * dev, const gs_fixed_edge * left,
 	if (fixed_floor(r.x) == fixed_pixround(x1r)) {
 	    /* Right edge is vertical.  If both are vertical, */
 	    /* we have a rectangle. */
-	    if (l.di == 0 && l.df == 0) {
-		rxl = fixed2int_var(l.x);
-		rxr = fixed2int_var(r.x);
-		SET_MINIMAL_WIDTH(rxl, rxr, l, r);
-		VD_RECT_SWAPPED(rxl, ry, rxr, iy1);
-		code = FILL_TRAP_RECT(rxl, ry, rxr - rxl, iy1 - ry);
-		goto xit;
-	    }
+#	    if !LINEAR_COLOR
+		if (l.di == 0 && l.df == 0) {
+		    rxl = fixed2int_var(l.x);
+		    rxr = fixed2int_var(r.x);
+		    SET_MINIMAL_WIDTH(rxl, rxr, l, r);
+		    VD_RECT_SWAPPED(rxl, ry, rxr, iy1);
+		    code = FILL_TRAP_RECT(rxl, ry, rxr - rxl, iy1 - ry);
+		    goto xit;
+		}
+#	    endif
 	    r.di = 0, r.df = 0;
 	}
 	/*
@@ -279,6 +301,13 @@ GX_FILL_TRAPEZOID(gx_device * dev, const gs_fixed_edge * left,
 	   when the rational part is zero. Now add it back to get xl', xr' */
 	l.x += fixed_epsilon;
 	r.x += fixed_epsilon;
+#	if LINEAR_COLOR
+	    xg.c = xgc;
+	    xg.f = xgf;
+	    xg.num = xgnum;
+	    init_gradient(&lg, left, ymin, num_components);
+	    init_gradient(&rg, right, ymin, num_components);
+#	endif
 
 #define rational_floor(tl)\
   fixed2int_var(fixed_is_int(tl.x) && tl.xf == -tl.h ? tl.x - fixed_1 : tl.x)
@@ -296,18 +325,35 @@ GX_FILL_TRAPEZOID(gx_device * dev, const gs_fixed_edge * left,
 	    STEP_LINE(ixl, l);
 	    STEP_LINE(ixr, r);
 	    SET_MINIMAL_WIDTH(ixl, ixr, l, r);
-	    if (ixl != rxl || ixr != rxr) {
-		CONNECT_RECTANGLES(ixl, ixr, rxl, rxr, iy, ry, rxr, ixl, FILL_TRAP_RECT);
-		CONNECT_RECTANGLES(ixl, ixr, rxl, rxr, iy, ry, ixr, rxl, FILL_TRAP_RECT);
-		VD_RECT_SWAPPED(rxl, ry, rxr, iy);
-		code = FILL_TRAP_RECT(rxl, ry, rxr - rxl, iy - ry);
-		if (code < 0)
-		    goto xit;
-		rxl = ixl, rxr = ixr, ry = iy;
-	    }
+#	    if LINEAR_COLOR
+		if (ixl != ixl) {
+		    if (set_x_gradient(&xg, &lg, &rg, &l, &r, ixl, ixr, num_components) < 0)
+			return iy1 - iy; /* Unfilled scanlines. */
+		    VD_RECT_SWAPPED(ixl, ry, ixr, iy);
+		    code = FILL_TRAP_RECT(ixl, ry, ixr - ixl, iy - ry);
+		    if (code < 0)
+			goto xit;
+		}
+		step_gradient(&lg, num_components);
+		step_gradient(&rg, num_components);
+#	    else
+		if (ixl != rxl || ixr != rxr) {
+		    CONNECT_RECTANGLES(ixl, ixr, rxl, rxr, iy, ry, rxr, ixl, FILL_TRAP_RECT);
+		    CONNECT_RECTANGLES(ixl, ixr, rxl, rxr, iy, ry, ixr, rxl, FILL_TRAP_RECT);
+		    VD_RECT_SWAPPED(rxl, ry, rxr, iy);
+		    code = FILL_TRAP_RECT(rxl, ry, rxr - rxl, iy - ry);
+		    if (code < 0)
+			goto xit;
+		    rxl = ixl, rxr = ixr, ry = iy;
+		}
+#	    endif
 	}
-	VD_RECT_SWAPPED(rxl, ry, rxr, iy);
-	code = FILL_TRAP_RECT(rxl, ry, rxr - rxl, iy - ry);
+#	if !LINEAR_COLOR
+	    VD_RECT_SWAPPED(rxl, ry, rxr, iy);
+	    code = FILL_TRAP_RECT(rxl, ry, rxr - rxl, iy - ry);
+#	else
+	    code = 0;
+#	endif
 #undef STEP_LINE
 #undef SET_MINIMAL_WIDTH
 #undef CONNECT_RECTANGLES
