@@ -585,6 +585,7 @@ gx_cpath_intersect(gx_clip_path *pcpath, /*const*/ gx_path *ppath_orig,
 	}
 	/* Release the existing path. */
 	rc_decrement(pcpath->path_list, "gx_cpath_intersect");
+	pcpath->path_list = NULL;
 	gx_path_new(&pcpath->path);
 	ppath->bbox = new_box;
 	cpath_set_rectangle(pcpath, &new_box);
