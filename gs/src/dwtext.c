@@ -446,7 +446,8 @@ int n;
     while (cnt>0) {
 	p = tw->ScreenBuffer + tw->CursorPos.y*tw->ScreenSize.x + tw->CursorPos.x;
 	limit = tw->ScreenSize.x - tw->CursorPos.x;
-	for (count=0; (count < limit) && (cnt>0) && (isprint(*str) || *str=='\t'); count++) {
+	for (count=0; (count < limit) && (cnt>0) && 
+	    (isprint((unsigned char)(*str)) || *str=='\t'); count++) {
 	    if (*str=='\t') {
 		for (n = 8 - ((tw->CursorPos.x+count) % 8); (count < limit) & (n>0); n--, count++ )
 		    *p++ = ' ';
@@ -467,7 +468,7 @@ int n;
 		str++;
 		cnt--;
 	    }
-	    else if (!isprint(*str) && *str!='\t') {
+	    else if (!isprint((unsigned char)(*str)) && *str!='\t') {
 		text_putch(tw, *str++);
 		cnt--;
 	    }
