@@ -543,6 +543,22 @@ readonly def
 		% Stack: filepos fontres stream
   1 index /Subtype get /CIDFontType2 eq {
     .loadttcidfont
+		% Stack: filepos fontres cidfont
+    1 index /CIDToGIDMap knownoget {
+      dup /Identity eq {
+	pop
+      } {
+	true resolvestream
+		% The following doesn't work for CIDToGIDMaps with more
+		% than 32K-1 entries.  We'll fix it later if necessary.
+		% Stack: filepos fontres font mapstream
+	dup 2 index /CIDCount oget 2 mul string readstring pop exch closefile
+	exch dup length 5 add dict .copydict
+	dup /FID undef
+	dup /CIDMap 4 -1 roll put
+	dup /CIDFontName get exch /CIDFont defineresource
+      } ifelse
+    } if
   } {
     null 2 index getencoding .loadpdfttfont
   } ifelse
@@ -672,9 +688,7 @@ readonly def
 
 /buildCIDType2 {	% <CIDFontType2-font-resource> buildCIDType2 <font>
   dup /BaseFont get /CIDFont findresource
-  addCIDmetrics
-	%****** Handle CIDToGIDMap ******
-  dup /BaseFont get exch /CIDFont defineresource
+  addCIDmetrics dup /BaseFont get exch /CIDFont defineresource
 } bdef
 
 % ---------------- Other embedded fonts ---------------- %
