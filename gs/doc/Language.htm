@@ -1975,12 +1975,12 @@ errors just as for the string case.
 
 <p>
 <b><tt>Decoding</tt></b> is a Ghostscript-specific resource category. It contains
-various resources for emulating Postscript fonts with other font technologies.
-Instances of the <tt>Decoding</tt> category are tables which map Postscript glyph 
+various resources for emulating PostScript fonts with other font technologies.
+Instances of the <tt>Decoding</tt> category are tables which map PostScript glyph 
 names to character codes used with TrueType, Intellifont, Microtype and other font formats.
 
 <p>
-Currently Ghostscript is capable of Postscript font emulation in 2 ways :
+Currently Ghostscript is capable of PostScript font emulation in 2 ways :
 <li>
 1. Through <a href="./Use.htm#FAPI_run">FAPI</a> plugins, and
 </li>
@@ -1993,7 +1993,7 @@ specifying TrueType font names or files in <a href="../lib/Fontmap">lib/Fontmap<
 
 <p>
 An instance of the <b><tt>Decoding</tt></b> resource category is
-a dictionary. The dictionary keys are Postscript glyph names and the
+a dictionary. The dictionary keys are PostScript glyph names and the
 values are character codes. The name of the resource instance should
 reflect the character set for which it maps. For example,
 <b><tt>/Unicode</tt></b> <b><tt>/Decoding</tt></b> resource maps to
@@ -2007,7 +2007,7 @@ information.
 
 <p>
 The file format for <b><tt>Decoding</tt></b> resource files is
-generic Postscript.
+generic PostScript.
 Users may want to define custom <b><tt>Decoding</tt></b> resources.
 The <b><tt>ParseDecoding</tt></b> procset defined in 
 <a href="../lib/gs_ciddc.ps">lib/gs_ciddc.ps</a> allows representation
@@ -2044,14 +2044,14 @@ GB1213, ShiftJIS, Johab and Wansung.
 
 <p>
 The file format for <b><tt>CIDDecoding</tt></b> resource file is
-generic Postscript.
+generic PostScript.
 Users may want to define custom resources to <b><tt>CIDDecoding</tt></b>
 resource category. 
 
 <h3><a name="GlyphNames2Unicode"></a>GlyphNames2Unicode</h3>
 <p>
 <b><tt>GlyphNames2Unicode</tt></b> is an undocumented dictionary which Adobe 
-Postscript printer driver uses to communicate with Adobe Distiller.
+PostScript printer driver uses to communicate with Adobe Distiller.
 In this dictionary the keys are glyph names, the values are Unicode UTF-16 codes for them.
 The dictionaly is stored in the <b><tt>FontInfo</tt></b> dictionary under
 the key <b><tt>GlyphNames2Unicode</tt></b>. Ghostscript recognises it and uses
@@ -2089,7 +2089,7 @@ where a resource file to be installed. In this case
 Ghostscript to be invoked with <b><tt>-sGenericResourceDir=path</b></tt>,
 specifying an absolute path. The default value for
 <b><tt>GenericResourceDir</b></tt> is a relative path. Therefore
-a default invocation with a Postscript installer
+a default invocation with a PostScript installer
 will install resource files into <b><tt>/gs/Resource</tt></b>.
 
 <p>

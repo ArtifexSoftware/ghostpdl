@@ -957,7 +957,7 @@ Finding a resource file while executing findresource or resourcestatus,
 Ghostscript does not call ResourceFileName. Instead that, it searches directories
 with an extended method explained in How Ghostscript finds files.
 
-ResourceFileName may be called from a Postscript program such as a resource installer.
+ResourceFileName may be called from a PostScript program such as a resource installer.
 The default implementation for ResourceFileName first checks whether
 GenericResourceDir specifies an absolute path. If so, ResourceFileName uses its value
 to generate the result. Otherwise, it tries to find an existing resource file with
@@ -1179,7 +1179,7 @@ With NEW_COMBINE_PATH 1 the patch defines a new logic for
    this tradition to resource files, we get a conflict.
    To resolve the conflict, we allow GenericResourceDir
    to be a relative path, which is being concatenated with
-   LIBPATH items. Thus we provide an extension of Postscript.
+   LIBPATH items. Thus we provide an extension of PostScript.
 
 4. When a LIBPATH item is being concatenated with GenericResourceDir,
    an abnormal behavior appears when GenericResourceDir references parent.
@@ -1961,7 +1961,7 @@ DETAILS:
 This patch improves the previous one.
 It generalizes the GlyphNames2Unicode processing for any simple font.
 
-GlyphNames2Unicode is an undocumented facility, which Adobe Postscript
+GlyphNames2Unicode is an undocumented facility, which Adobe PostScript
 printer driver PScript5.dll Version 5.2 uses to communicate with
 Adobe Distiller. Adobe applies it to Type 3 and Type 42 fonts.
 
@@ -2002,7 +2002,7 @@ for Type 42 fonts.
 
 DETAILS:
 
-GlyphNames2Unicode is an undocumented facility, which Adobe Postscript
+GlyphNames2Unicode is an undocumented facility, which Adobe PostScript
 printer driver PScript5.dll Version 5.2 uses to communicate with
 Adobe Distiller. Adobe applies it to Type 3 and Type 42 fonts.
 
@@ -2499,7 +2499,7 @@ TTC format is implemented for disk files only,
 because embedded fonts never use it.
 
 To provide the on-demand access, the patch introduces a special
-extension of the Postscript language.
+extension of the PostScript language.
 A CIDFontType 2 dictionary may contain /File with a file value.
 It should be a positionable file of the TTF or TTC format.
 When it presents, the dictionary must contain /file_table_pos,
