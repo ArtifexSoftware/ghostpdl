@@ -151,6 +151,14 @@ ZSRCDIR=sys$library:
 ZSRCDIR=[--.zlib-1_1_4]
 .endif
 
+# Define the directory where the jbig2dec library sources are stored.
+# See jbig2.mak for more information
+.ifdef SYSLIB
+JBIG2SRCDIR=sys$library:
+.else
+JBIG2SRCDIR=[--.jbig2dec-0_2]
+.endif
+
 # Define the directory where the icclib source are stored.
 # See icclib.mak for more information
 
@@ -172,6 +180,7 @@ ICCSRCDIR=[.icclib]
 SHARE_JPEG=0
 SHARE_LIBPNG=0
 SHARE_ZLIB=0
+SHARE_JBIG2=0
 
 # Define the path to X11 include files
 
@@ -444,6 +453,7 @@ all : macro [.lib]Fontmap. $(GS_XE)
 # zlib.mak must precede libpng.mak
 .include $(GLSRCDIR)zlib.mak
 .include $(GLSRCDIR)libpng.mak
+include $(GLSRCDIR)/jbig2.mak
 .include $(GLSRCDIR)icclib.mak
 .include $(GLSRCDIR)devs.mak
 .include $(GLSRCDIR)contrib.mak

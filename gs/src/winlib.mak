@@ -26,6 +26,7 @@
 SHARE_JPEG=0
 SHARE_LIBPNG=0
 SHARE_ZLIB=0
+SHARE_JBIG2=0
 
 # Define the platform name.
 
@@ -106,6 +107,7 @@ BEGINFILES=$(GLGENDIR)\ccf32.tr\
 # zlib.mak must precede libpng.mak
 !include $(GLSRCDIR)\zlib.mak
 !include $(GLSRCDIR)\libpng.mak
+!include $(GLSRCDIR)\jbig2.mak
 !include $(GLSRCDIR)\icclib.mak
 !include $(GLSRCDIR)\ijs.mak
 !include $(GLSRCDIR)\devs.mak

@@ -139,6 +139,11 @@ PVERSION=10204
 
 ZSRCDIR=zlib
 
+# Define the jbig2dec library source location.
+# See jbig2.mak for more information.
+
+JBIG2SRCDIR=jbig2dec
+
 # Define the directory where the icclib source are stored.
 # See icclib.mak for more information
 
@@ -237,6 +242,7 @@ SYNC=winsync
 SHARE_JPEG=0
 SHARE_LIBPNG=0
 SHARE_ZLIB=0
+SHARE_JBIG2=0
 
 # Swapping `make' out of memory makes linking much faster.
 # only used by Borland MAKER.EXE
@@ -506,6 +512,7 @@ DEVICE_DEVS20=$(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev
 # zlib.mak must precede libpng.mak
 !include "$(GLSRCDIR)\zlib.mak"
 !include "$(GLSRCDIR)\libpng.mak"
+!include "$(GLSRCDIR)\jbig2.mak"
 !include "$(GLSRCDIR)\icclib.mak"
 !include "$(GLSRCDIR)\devs.mak"
 !include "$(GLSRCDIR)\pcwin.mak"

@@ -95,6 +95,7 @@ PLATFORM=macos_
 SHARE_LIBPNG=0
 SHARE_JPEG=0
 SHARE_ZLIB=0
+SHARE_JBIG2=0
 
 # Define the directory where the IJG JPEG library sources are stored,
 # and the major version of the library that is stored there.
@@ -116,6 +117,11 @@ PVERSION=10204
 # See zlib.mak for more information.
 
 ZSRCDIR=zlib
+
+# Define the jbig2dec library source location.
+# See jbig2.mak for more information.
+
+JBIG2SRCDIR=jbig2dec
 
 # Define the directory where the icclib source are stored.
 # See icclib.mak for more information
@@ -293,6 +299,7 @@ include $(GLSRCDIR)/jpeg.mak
 # zlib.mak must precede libpng.mak
 include $(GLSRCDIR)/zlib.mak
 include $(GLSRCDIR)/libpng.mak
+include $(GLSRCDIR)/jbig2.mak
 include $(GLSRCDIR)/icclib.mak
 include $(GLSRCDIR)/devs.mak
 include $(GLSRCDIR)/contrib.mak

@@ -131,6 +131,13 @@ PVERSION=10204
 
 ZSRCDIR=zlib
 
+# Define the jbig2dec library source location.
+# See jbig2.mak for more information.
+
+!ifndef JBIG2SRCDIR
+JBIG2SRCDIR=jbig2dec
+!endif
+
 # Define the directory where the icclib source are stored.
 # See icclib.mak for more information
 

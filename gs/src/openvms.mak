@@ -127,13 +127,18 @@ JVERSION=6
 # You may need to change this if the libpng version changes.
 # See libpng.mak for more information.
 
-PSRCDIR=[.libpng-1_2_4]
+PSRCDIR=[.libpng-1_2_5]
 PVERSION=10204
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
 
 ZSRCDIR=[.zlib-1_1_4]
+
+# Define the jbig2dec library source location.
+# See jbig2.mak for more information.
+
+JBIG2SRCDIR=[.jbig2dec-0_2]
 
 # Define the directory where the icclib source are stored.
 # See icclib.mak for more information
@@ -156,6 +161,7 @@ ICCSRCDIR=[.icclib]
 SHARE_JPEG=0
 SHARE_LIBPNG=0
 SHARE_ZLIB=0
+SHARE_JBIG2=0
 
 # Define the path to X11 include files
 
@@ -421,6 +427,7 @@ include $(GLSRCDIR)jpeg.mak
 # zlib.mak must precede libpng.mak
 include $(GLSRCDIR)zlib.mak
 include $(GLSRCDIR)libpng.mak
+include $(GLSRCDIR)jbig2.mak
 include $(GLSRCDIR)icclib.mak
 include $(GLSRCDIR)devs.mak
 include $(GLSRCDIR)contrib.mak
