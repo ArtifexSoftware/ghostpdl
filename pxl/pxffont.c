@@ -305,7 +305,7 @@ private const px_font_desc_t subst_font_attributes[] = {
 #define s16(ptr) sint16at(ptr, true)
 #define u32(ptr) uint32at(ptr, true)
 
-#if arch_is_big_endian
+#if ARCH_IS_BIG_ENDIAN
 #  define pxd_native_byte_order pxd_big_endian
 #else
 #  define pxd_native_byte_order 0
