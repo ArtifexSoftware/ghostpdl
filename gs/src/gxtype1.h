@@ -313,6 +313,9 @@ void gs_type1_finish_init(P2(gs_type1_state * pcis, is_ptr ps));
 int gs_type1_sbw(P5(gs_type1_state * pcis, fixed sbx, fixed sby,
 		    fixed wx, fixed wy));
 
+/* blend returns the number of values to pop. */
+int gs_type1_blend(P3(gs_type1_state *pcis, fixed *csp, int num_results));
+
 int gs_type1_seac(P4(gs_type1_state * pcis, const fixed * cstack,
 		     fixed asb_diff, ip_state * ipsp));
 

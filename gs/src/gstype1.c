@@ -500,27 +500,12 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 				    cnext;
 				case 14:
 				    num_results = 1;
-				  blend:{
-					int num_values = fixed2int_var(csp[-1]);
-					int k1 = num_values / num_results - 1;
-					int i, j;
-					cs_ptr base, deltas;
-
-					if (num_values < num_results ||
-					    num_values % num_results != 0
-					    )
-					    return_error(gs_error_invalidfont);
-					base = csp - 1 - num_values;
-					deltas = base + num_results - 1;
-					for (j = 0; j < num_results;
-					     j++, base++, deltas += k1
-					    )
-					    for (i = 1; i <= k1; i++)
-						*base += deltas[i] *
-						    pdata->WeightVector.values[i];
-					csp = base - 1;
-				    }
-				    pcis->ignore_pops = num_results;
+				  blend:
+				    code = gs_type1_blend(pcis, csp,
+							  num_results);
+				    if (code < 0)
+					return code;
+				    csp -= code;
 				    inext;
 				case 15:
 				    num_results = 2;

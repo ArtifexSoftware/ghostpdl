@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -245,9 +245,6 @@ gs_type1_finish_init(gs_type1_state * pcis, gs_op1_state * ps)
 
 /* ------ Operator procedures ------ */
 
-/* We put these before the interpreter to save having to write */
-/* prototypes for all of them. */
-
 int
 gs_op1_closepath(register is_ptr ps)
 {				/* Note that this does NOT reset the current point! */
@@ -323,6 +320,34 @@ gs_type1_sbw(gs_type1_state * pcis, fixed lsbx, fixed lsby, fixed wx, fixed wy)
 	      fixed2float(pcis->lsb.x), fixed2float(pcis->lsb.y),
 	      fixed2float(pcis->width.x), fixed2float(pcis->width.y));
     return 0;
+}
+
+/* Blend values for a Multiple Master font instance. */
+/* The stack holds values ... K*N othersubr#. */
+int
+gs_type1_blend(gs_type1_state *pcis, fixed *csp, int num_results)
+{
+    gs_type1_data *pdata = &pcis->pfont->data;
+    int num_values = fixed2int_var(csp[-1]);
+    int k1 = num_values / num_results - 1;
+    int i, j;
+    fixed *base;
+    fixed *deltas;
+
+    if (num_values < num_results ||
+	num_values % num_results != 0
+	)
+	return_error(gs_error_invalidfont);
+    base = csp - 1 - num_values;
+    deltas = base + num_results - 1;
+    for (j = 0; j < num_results;
+	 j++, base++, deltas += k1
+	 )
+	for (i = 1; i <= k1; i++)
+	    *base += deltas[i] *
+		pdata->WeightVector.values[i];
+    pcis->ignore_pops = num_results;
+    return num_values - num_results + 2;
 }
 
 /*
