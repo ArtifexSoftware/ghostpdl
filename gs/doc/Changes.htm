@@ -1,16 +1,17 @@
 <html><head>
-<title>Ghostscript 6.20 change history as of 2000-03-19 09:36:09</title>
+<title>Ghostscript 6.20 change history as of 2000-03-19 23:24:13</title>
 </head><body>
 
 <blockquote><ul>
 <li><a href="#6.20 Documentation">Documentation</a>,
     <a href="#6.20 Procedures">Procedures</a>,
     <a href="#6.20 Utilities">Utilities</a>,
+    <a href="#6.20 Drivers">Drivers</a>,
+    <a href="#6.20 PDF writer">PDF writer</a>,
     <a href="#6.20 Interpreter (PDF)">Interpreter (PDF)</a>,
     <a href="#6.20 Interpreter">Interpreter</a>,
     <a href="#6.20 Streams">Streams</a>,
-    <a href="#6.20 Library">Library</a>,
-    <a href="#6.20 ???Other???">???Other???</a>
+    <a href="#6.20 Library">Library</a>
 </ul>
 </ul></blockquote>
 
@@ -66,6 +67,34 @@ Makes st_indexed_map private. Clients must now use the constructor procedure
 alloc_indexed_map rather than allocating instances directly.
 (doc/News.htm [1.12]: 2000/03/19 16:37:28 lpd)
 
+Update the date and change log for the latest batches of checked-in changes.
+(doc/Changes.htm [1.5]: 2000/03/19 17:29:57 lpd)
+
+Adds a PDF linearizer ("optimizer"). This is a separate utility (not
+integrated with the pdfwrite driver), written in PostScript.
+(doc/Psfiles.htm [1.2]: 2000/03/20 04:31:22 lpd)
+
+Adds parsing for the remaining Acrobat Distiller 4 parameters. Implements
+the LockDistillerParams, xxxDownsampleThreshold, xxxImageDict, and
+xxxACSImageDict distiller parameters. Implements DCTEncode as an
+xxxImageFilter option (it used to cause a crash). Makes the
+AutoFilterxxxImages distiller parameters select JPEG encoding (with ACSDict)
+if the image has 8 bits per component and is not Indexed, and LZW/Flate
+otherwise: this still isn't right, but it's closer. Implementation changes:
+Changes the implementation of distiller parameter dictionaries from stream
+states to parameter lists; changes the test for masks in
+psdf_setup_image_filters, and changes the image argument from gs_image_t to
+gs_pixel_image_t. (doc/News.htm [1.14]: 2000/03/20 05:40:04 lpd)
+
+Moves font-writing support into a new module (gdevpsf*), changing the source
+file names. Adds the ability to write CFF fonts, with either Type 1 or Type
+2 CharStrings; unfortunately, Acrobat Reader appears not to accept CFF fonts
+with Type 1 CharStrings. Adds the ability to convert Type 1 CharStrings to
+Type 2, including optimizing sequences of Type 1 operators into a single
+Type 2 operator. Implements writing CIDFontType 0 CFF fonts (CIDFonts) [NOT
+TESTED]. Starts (just barely) to remove more unneeded information from
+embedded TrueType fonts. (doc/News.htm [1.15]: 2000/03/20 07:02:12 lpd)
+
 </pre><h2><a name="6.20 Procedures"></a>Procedures</h2><pre>
 
 Fixes problems:
@@ -90,10 +119,91 @@ Splits off "vanilla" Functions into separate files, in anticipation of
 removing them (they were only used to implement PostScript Calculator
 Functions). (lib.mak [1.4]: 2000/03/19 07:33:08 lpd)
 
+Update the date and change log for the latest batches of checked-in changes.
+(version.mak [1.7]: 2000/03/19 17:29:57 lpd)
+
+Moves font-writing support into a new module (gdevpsf*), changing the source
+file names. Adds the ability to write CFF fonts, with either Type 1 or Type
+2 CharStrings; unfortunately, Acrobat Reader appears not to accept CFF fonts
+with Type 1 CharStrings. Adds the ability to convert Type 1 CharStrings to
+Type 2, including optimizing sequences of Type 1 operators into a single
+Type 2 operator. Implements writing CIDFontType 0 CFF fonts (CIDFonts) [NOT
+TESTED]. Starts (just barely) to remove more unneeded information from
+embedded TrueType fonts. (devs.mak [1.4], lib.mak [1.5]: 2000/03/20 07:02:12
+lpd)
+
+Updates dependencies to reflect today's batches of checked-in changes.
+(devs.mak [1.5], int.mak [1.7], lib.mak [1.6]: 2000/03/20 07:16:35 lpd)
+
 </pre><h2><a name="6.20 Utilities"></a>Utilities</h2><pre>
 
 Makes geninit remove whitespace adjacent to hex and base-85 string literals.
 (geninit.c [1.2]: 2000/03/18 22:51:24 lpd)
+
+Adds a PDF linearizer ("optimizer"). This is a separate utility (not
+integrated with the pdfwrite driver), written in PostScript.
+(lib/pdfopt.ps [1.1], lib/pdfwrite.ps [1.1]: 2000/03/20 04:31:22 lpd)
+
+</pre><h2><a name="6.20 Drivers"></a>Drivers</h2><pre>
+
+Adds parsing for the remaining Acrobat Distiller 4 parameters. Implements
+the LockDistillerParams, xxxDownsampleThreshold, xxxImageDict, and
+xxxACSImageDict distiller parameters. Implements DCTEncode as an
+xxxImageFilter option (it used to cause a crash). Makes the
+AutoFilterxxxImages distiller parameters select JPEG encoding (with ACSDict)
+if the image has 8 bits per component and is not Indexed, and LZW/Flate
+otherwise: this still isn't right, but it's closer. Implementation changes:
+Changes the implementation of distiller parameter dictionaries from stream
+states to parameter lists; changes the test for masks in
+psdf_setup_image_filters, and changes the image argument from gs_image_t to
+gs_pixel_image_t. (gdevpsdf.h [1.4], gdevpsdi.c [1.3], gdevpsdp.c [1.3]:
+2000/03/20 05:40:04 lpd)
+
+Moves font-writing support into a new module (gdevpsf*), changing the source
+file names. Adds the ability to write CFF fonts, with either Type 1 or Type
+2 CharStrings; unfortunately, Acrobat Reader appears not to accept CFF fonts
+with Type 1 CharStrings. Adds the ability to convert Type 1 CharStrings to
+Type 2, including optimizing sequences of Type 1 operators into a single
+Type 2 operator. Implements writing CIDFontType 0 CFF fonts (CIDFonts) [NOT
+TESTED]. Starts (just barely) to remove more unneeded information from
+embedded TrueType fonts. (gdevpsd1.c [1.2], gdevpsdf.c [1.3],
+gdevpsdf.h [1.5], gdevpsdt.c [1.2], gdevpsf.h [1.1], gdevpsf1.c [1.1],
+gdevpsf2.c [1.1], gdevpsft.c [1.1], gdevpsfu.c [1.1], gdevpsfx.c [1.1]:
+2000/03/20 07:02:12 lpd)
+
+</pre><h2><a name="6.20 PDF writer"></a>PDF writer</h2><pre>
+
+Fixes problems:
+	- The pointer enumeration procedure for pdf_image_enum was wrong,
+possibly producing a mangled pointer and a memory access error if a garbage
+collection occured while writing an image in a PDF file. (gdevpdfi.c [1.5]:
+2000/03/20 05:54:13 lpd)
+	- The computation for testing whether a tiled pattern could be
+represented in line, and whether it exceeded Acrobat Reader's size limit,
+was wrong, causing some patterns not to be represented as Patterns.
+(gdevpdfi.c [1.6]: 2000/03/20 05:58:15 lpd)
+
+Adds parsing for the remaining Acrobat Distiller 4 parameters. Implements
+the LockDistillerParams, xxxDownsampleThreshold, xxxImageDict, and
+xxxACSImageDict distiller parameters. Implements DCTEncode as an
+xxxImageFilter option (it used to cause a crash). Makes the
+AutoFilterxxxImages distiller parameters select JPEG encoding (with ACSDict)
+if the image has 8 bits per component and is not Indexed, and LZW/Flate
+otherwise: this still isn't right, but it's closer. Implementation changes:
+Changes the implementation of distiller parameter dictionaries from stream
+states to parameter lists; changes the test for masks in
+psdf_setup_image_filters, and changes the image argument from gs_image_t to
+gs_pixel_image_t. (gdevpdfi.c [1.4]: 2000/03/20 05:40:04 lpd)
+
+Moves font-writing support into a new module (gdevpsf*), changing the source
+file names. Adds the ability to write CFF fonts, with either Type 1 or Type
+2 CharStrings; unfortunately, Acrobat Reader appears not to accept CFF fonts
+with Type 1 CharStrings. Adds the ability to convert Type 1 CharStrings to
+Type 2, including optimizing sequences of Type 1 operators into a single
+Type 2 operator. Implements writing CIDFontType 0 CFF fonts (CIDFonts) [NOT
+TESTED]. Starts (just barely) to remove more unneeded information from
+embedded TrueType fonts. (gdevpdff.c [1.2], gdevpdfw.c [1.2]: 2000/03/20
+07:02:12 lpd)
 
 </pre><h2><a name="6.20 Interpreter (PDF)"></a>Interpreter (PDF)</h2><pre>
 
@@ -224,6 +334,10 @@ alloc_indexed_map rather than allocating instances directly.
 Refactors the code for building fonts so it can be used for FDArray entries
 of CIDFontType 0 fonts. (bfont.h [1.2], zbfont.c [1.2]: 2000/03/19 16:45:47
 lpd)
+
+Adds a .fileposition operator that will read the position even of
+non-positionable streams, needed for the PDF linearizer. (zfileio.c [1.3]:
+2000/03/20 04:30:49 lpd)
 
 </pre><h2><a name="6.20 Streams"></a>Streams</h2><pre>
 
@@ -356,11 +470,24 @@ alloc_indexed_map rather than allocating instances directly.
 2000/03/19 16:37:28 lpd)
 
 Adds procedures for building and accessing DeviceN color spaces.
-(gscdevn.c [1.2]: 2000/03/19 17:02:37 lpd)
+(gscdevn.c [1.2], gscdevn.h [1.1]: 2000/03/19 17:02:37 lpd)
 
-</pre><h2><a name="6.20 ???Other???"></a>???Other???</h2><pre>
+Exports the 'blend' operators of the Type 1 interpreter, for use by the Type
+1 / Type 2 font writer. (gstype1.c [1.3], gxtype1.c [1.2], gxtype1.h [1.3]:
+2000/03/19 18:46:44 lpd)
 
-Adds procedures for building and accessing DeviceN color spaces.
-(gscdevn.h [1.1]: 2000/03/19 17:02:37 lpd)
+Starts to move support for CIDFontType 0 and 2 fonts into C code. (These
+header files are the ones needed to compile the new gdevpsf* files; they
+don't interact with any existing code.) (gxcid.h [1.1], gxfcid.h [1.1]:
+2000/03/20 06:40:22 lpd)
+
+Moves font-writing support into a new module (gdevpsf*), changing the source
+file names. Adds the ability to write CFF fonts, with either Type 1 or Type
+2 CharStrings; unfortunately, Acrobat Reader appears not to accept CFF fonts
+with Type 1 CharStrings. Adds the ability to convert Type 1 CharStrings to
+Type 2, including optimizing sequences of Type 1 operators into a single
+Type 2 operator. Implements writing CIDFontType 0 CFF fonts (CIDFonts) [NOT
+TESTED]. Starts (just barely) to remove more unneeded information from
+embedded TrueType fonts. (gxttf.h [1.1]: 2000/03/20 07:02:12 lpd)
 
 </pre></body></html>
