@@ -48,6 +48,7 @@
   (#define N_OFFSET(e) ((e) >> NUM_LEN_BITS)) =
   () =
   (extern const char gs_c_known_encoding_chars[];) =
+  (extern const int gs_c_known_encoding_total_chars;) =
   (extern const int gs_c_known_encoding_max_length;) =
   (extern const ushort gs_c_known_encoding_offsets[];) =
   (extern const int gs_c_known_encoding_count;) =
@@ -93,6 +94,9 @@ const char gs_c_known_encoding_chars[] = {) =
     /offset offset noff add def
   } for
   (0};) =
+(
+const int gs_c_known_encoding_total_chars = ) print
+  offset =only (;) =
 
 	% Write the starting offsets of the names of each length.
   /numchars 0 estrs { pop length add } forall def

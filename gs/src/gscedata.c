@@ -817,6 +817,8 @@ const char gs_c_known_encoding_chars[] = {
 't','h','r','e','e','q','u','a','r','t','e','r','s','e','m','d','a','s','h',  /*N(19,0)*/
 0};
 
+const int gs_c_known_encoding_total_chars = 5483;
+
 const int gs_c_known_encoding_max_length = 19;
 
 const ushort gs_c_known_encoding_offsets[] = {

@@ -21,6 +21,7 @@
 #define N_OFFSET(e) ((e) >> NUM_LEN_BITS)
 
 extern const char gs_c_known_encoding_chars[];
+extern const int gs_c_known_encoding_total_chars;
 extern const int gs_c_known_encoding_max_length;
 extern const ushort gs_c_known_encoding_offsets[];
 extern const int gs_c_known_encoding_count;

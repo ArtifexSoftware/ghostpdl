@@ -87,6 +87,17 @@ gs_c_glyph_name(gs_glyph glyph, gs_const_string *pstr)
 }
 
 /*
+ * Test whether a string is one that was returned by gs_c_glyph_name.
+ */
+bool
+gs_is_c_glyph_name(const byte *str, uint len)
+{
+    return (str >= (const byte *)gs_c_known_encoding_chars &&
+	    (str - (const byte *)gs_c_known_encoding_chars) <
+	      gs_c_known_encoding_total_chars);
+}
+
+/*
  * Return the glyph number corresponding to a string (the inverse of
  * gs_c_glyph_name), or gs_no_glyph if the glyph name is not known.
  */
