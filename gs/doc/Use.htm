@@ -104,6 +104,7 @@
 </ul>
 <li><a href="#OpenWindows_fonts">Sun OpenWindows</a>
 </ul>
+<li><a href="#UFST_run">Appendix: Running Ghostscript with UFST</a>
 </ul></blockquote>
 
 <!-- [1.2 end table of contents] =========================================== -->
@@ -2809,6 +2810,112 @@ Ghostscript.dingbatFonts: \
 Ghostscript.symbolFonts: \
     Symbol:                       --symbol-medium-r-normal--
 </pre>
+
+
+<h2><a name="UFST_run"></a>Running Ghostscript with UFST</h2>
+
+<p>
+<em>Note: This section is only for customers who have licensed Agfa's UFST.
+Other users please skip this section.
+</em>
+
+<p>
+To run Ghostscript with UFST, you first need to build Ghostscript
+with the UFST bridge. Refer <a href="Make.htm#UFST_build">How to build Ghostscript with UFST</a>.
+
+<p>
+Then you need to obtain the Decoding resources from Artifex Software Inc. and install them with Ghostscript.
+Just copy the files to the Resource/Decoding directory.
+
+<p>
+Then you need to decide where to place fonts being handled with UFST.
+It may be a new directory, or a directory existing in your system 
+(such as the system font directory).
+
+<p>
+All resident fonts, being handled with UFST, must be listed
+in new font map file "extfont.map". The format of "extfont.map"
+is explained below. Put "extfont.map" to any directory and specify path to
+the directory on the Ghostscript command line like this :
+
+<blockquote>
+<b><tt>-sGS_EXTFONTPATH=/gs/efonts</tt></b>
+</blockquote>
+
+<p>
+Note that the name "extfont.map" is not a part of the value of GS_EXTFONTPATH.
+The value of GS_EXTFONTPATH is also used for resolving relative paths,
+which may appear in "extfont.map".
+
+<p>
+You may prefer to put "extfont.map" to same directory as fonts,
+but this may cause problems if you use the system font directory,
+and the system doesn't allow foreign files in there.
+
+<p>
+The file "extfont.map" is actually special PostScript code. It contains an entry
+for each font being rendered by UFST.  Each entry is a pair.
+The first element of the pair is the font name (the name that PostScript
+documents use to access the font, which may differ
+from real name of the font which the font file defines).
+The second element is a dictionary with entries :
+
+<table cellpadding=0 cellspacing=10>
+
+<tr>	<th>Key
+	<th>Type
+	<th>Description
+<tr>	<td>Path
+        <td>string
+        <td>Absolute path to font file, or relative path to font file from the GS_EXTFONTPATH value.
+<tr>    <td>FontType
+        <td>interger
+        <td>PostScript type for this font. Only 1 and 42 are currently allowed.
+            Note that this is unrelated to the real type of the font file -
+            the bridge will perform format conversion.
+<tr>	<td>/FAPI
+        <td>name
+        <td>Name of the renderer to be used with the font.
+            Only /UFST is now allowed.
+<tr>	<td>/Subfont
+        <td>integer
+        <td>(optional) Index of the font in font collection, such as FCO or TTC.
+            It is being ignored if /Path doesn't specify a collection.
+            Default value is 0.
+<tr>	<td>/Decoding
+        <td>name
+        <td>(optional) The name of a Decoding resource to be used with the font.
+            If specified, "xlatmap" doesn't work for this font.
+</table>
+
+<p>
+Example of external font mapping table entry :
+<blockquote>
+<b><tt>
+/FCO0        &lt&lt /Path (F:/AFPL/Agfa/fontdata/MTFONTS/PCLPS3/MT1/PCLP3__F.fco) /FontType 1 /FAPI /AgfaUFST &gt&gt
+</tt></b>
+</blockquote>
+
+
+<p>
+You may need to customize the file gs/lib/xlatmap . Follow instructions in it.
+
+<p>
+As an option, you can force Ghostscript to use UFST to handle all fonts, including the ones distributed with Ghostscript.
+To do this you need to modify gs/lib/gs_fapi.ps .
+Find the name FAPI_force_hook_installed_fonts in this file, and change its
+value to "false".
+
+<p>
+Note that UFST cannot handle some Ghostscript fonts because
+UFST does not include a PostScript interpreter and therefore has stronger restrictions on font formats than Ghostscript itself does.
+If FAPI_force_hook_installed_fonts is true, Ghostscript
+loads Ghostscript fonts as PS files, then serializes them into RAM buffer and
+passes to UFST as PCLEOs.
+
+<p>
+
+
 
 <!-- [2.0 end contents] ==================================================== -->
 

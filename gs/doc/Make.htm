@@ -116,6 +116,7 @@
 <li><a href="#Plan_9">Plan 9</a>
 <li><a href="#QNX">QNX</a>
 </ul>
+<li><a href="#UFST_build">How to build Ghostscript with UFST</a>
 </ul></blockquote>
 
 <!-- [1.2 end table of contents] =========================================== -->
@@ -636,7 +637,11 @@ include comments describing all these except the
 <b><tt>DEVICE_DEVS</tt></b> options.  These are described in
 <b><tt>devs.mak</tt></b> and <b><tt>contrib.mak</tt></b>, even though the
 file that must be edited to select them is the <a
-href="#Platform-specific_makefiles">platform-specific makefile</a>.
+href="#Platform-specific_makefiles">platform-specific makefile</a>.  Check
+also the <b><tt>JVERSION</tt></b> and <b><tt>PVERSION</tt></b> macros in
+the platform-specific makefile, and adjust them if they don't match the
+JPEG and PNG library versions you're using: see <b><tt>jpeg.mak</tt></b>
+and <b><tt>libpng.mak</tt></b> for more information.
 
 <p>
 Some platform-specific options are described in the sections for individual
@@ -2820,6 +2825,56 @@ to begin
         dv=/dev/par2
 </pre></blockquote>
 </dl>
+
+
+<h2><a name="UFST_build"></a>How to build Ghostscript with UFST</h2>
+
+<p>
+<em>Note: This section is only for customers who have licensed Agfa's UFST.
+Other users please skip this section.
+</em>
+
+<p>
+Ghostscript sources do not include UFST sources. You need to obtain them from Agfa.
+Ghostscript includes only some source modules that provide a bridge to UFST.
+
+<p>
+Ghostscript makefiles do not include any script for building UFST libraries.
+Refer to Agfa's manual how to build them. UFST object libraries must be built
+before building Ghostscript with the UFST bridge.
+
+<p>
+To build Ghostscript with UFST, specify additional options for "make":
+
+<blockquote>
+<b><tt>UFST_BRIDGE=1</tt></b>
+</blockquote>
+<dd><dd> - forces the UFST bridge to build.
+
+<blockquote>
+<b><tt>UFST_ROOT=path</tt></b>
+</blockquote>
+<dd><dd> - specifies the path to UFST root directory or folder.
+
+<blockquote>
+<b><tt>UFST_CFLAG=options</tt></b>
+</blockquote>
+<dd><dd> - specifies C compiler options for UFST library. Refer to Agfa's manual for information about them.
+
+<blockquote>
+<b><tt>UFST_LIB_EXT=extension</tt></b>
+</blockquote>
+<dd><dd> - sets the file name extension for object libraries. You must use the appropriate one for your platform and linker.
+
+<p>An example for Unix/GCC :
+<blockquote>
+<b><tt>UFST_BRIDGE=1 UFST_ROOT=../Agfa UFST_CFLAG=-DGCCx86 UFST_LIB_EXT=.a</tt></b>
+</blockquote>
+
+<p>For Windows/MSVC you need only specify UFST_ROOT.
+msvc32.mak sets the other options automatically.
+
+<p>
 
 <!-- [2.0 end contents] ==================================================== -->
 
