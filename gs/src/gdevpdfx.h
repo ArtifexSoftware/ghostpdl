@@ -307,7 +307,7 @@ typedef struct gx_device_pdf_s gx_device_pdf;
  * Define the structure for PDF font cache element.
  */
 typedef struct pdf_font_cache_elem_s pdf_font_cache_elem_t;
-typedef struct pdf_font_cache_elem_s {
+struct pdf_font_cache_elem_s {
     pdf_font_cache_elem_t *next;
     gs_id font_id;
     int num_chars;		/* safety purpose only */
@@ -315,7 +315,7 @@ typedef struct pdf_font_cache_elem_s {
     byte *glyph_usage;
     int *real_widths;		/* [count] (not used for Type 0) */
     gx_device_pdf *pdev;	/* For pdf_remove_font_cache_elem */
-} pdf_font_cache_elem_t;
+};
 
 #define private_st_pdf_font_cache_elem()\
     gs_private_st_ptrs5(st_pdf_font_cache_elem, pdf_font_cache_elem_t,\
