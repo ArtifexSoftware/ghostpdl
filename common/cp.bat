@@ -1,11 +1,11 @@
 @rem $Id$
 @echo off
 if "%2"=="." goto ne
-erase _.tmp
-rem >_.tmp
-copy /B %1+_.tmp %2
-erase _.tmp
+   if exist _.tmp erase _.tmp
+   rem >_.tmp
+   copy /B %1+_.tmp %2
+   erase _.tmp
 goto x
 :ne
-copy /B %1 %2
+   copy /B %1 %2
 :x
