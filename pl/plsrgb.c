@@ -149,7 +149,7 @@ private const gs_range3 pl_RangePQR = {
 /* tranform pqr */
 
 private int
-pl_TransformPQR_proc(int indx, floatp val, const gs_cie_wbsd *cs_wbsd,
+pl_TransformPQR_proc(const gs_memory_t *mem, int indx, floatp val, const gs_cie_wbsd *cs_wbsd,
                   gs_cie_render *pcrd, float *pnew_val)
 {
     const float *pcrd_wht = (float *)&(cs_wbsd->wd.pqr);

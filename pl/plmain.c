@@ -151,7 +151,7 @@ pl_post_finish_page(pl_interp_instance_t *interp, void *closure);
 
       /* -------------- Read file cursor operations ---------- */
 /* Open a read cursor w/specified file */
-int pl_main_cursor_open(pl_top_cursor_t *, const char *, byte *, unsigned);
+int pl_main_cursor_open(const gs_memory_t *, pl_top_cursor_t *, const char *, byte *, unsigned);
 
 #ifdef DEBUG
 /* Refill from input, avoid extra call level for efficiency */
@@ -169,7 +169,7 @@ void pl_main_cursor_close(pl_top_cursor_t *cursor);
 
 /* return index in gs device list -1 if not found */
 private inline int
-get_device_index(const char *value)
+get_device_index(const gs_memory_t *mem, const char *value)
 {
     const gx_device *const *dev_list;
     int num_devs = gs_lib_device_list(&dev_list, NULL);
@@ -179,7 +179,7 @@ get_device_index(const char *value)
 	if ( !strcmp(gs_devicename(dev_list[di]), value) )
 	    break;
     if ( di == num_devs ) {
-	fprintf(gs_stderr, "Unknown device name %s.\n", value);
+	errprintf(mem, "Unknown device name %s.\n", value);
 	return -1;
     }
     return di;
@@ -245,14 +245,14 @@ pl_main(
     /* Create PJL instance */
     if ( pl_allocate_interp(&pjl_interp, &pjl_implementation, pjl_mem) < 0
 	 || pl_allocate_interp_instance(&pjl_instance, pjl_interp, pjl_mem) < 0 ) {
-	dprintf(mem, "Unable to create PJL interpreter");
+	errprintf(mem, "Unable to create PJL interpreter");
 	return -1;
     }
 
     /* Create PDL instances, etc */
     if (pl_main_universe_init(&universe, err_buf, mem, pdl_implementation,
 			      pjl_instance, &inst, &pl_pre_finish_page, &pl_post_finish_page) < 0) {
-	dprintf(mem, err_buf);
+	errprintf(mem, err_buf);
 	return -1;
     }
 
@@ -278,7 +278,7 @@ pl_main(
 	bool                new_job = false;
 
         if ( pl_init_job(pjl_instance) < 0 ) {
-            dprintf(mem, "Unable to init PJL job.\n");
+            errprintf(mem, "Unable to init PJL job.\n");
             return -1;
         }
 
@@ -293,19 +293,19 @@ pl_main(
 	    const gx_device **dev_list;
 	    int num_devs = gs_lib_device_list((const gx_device * const **)&dev_list, NULL);
 
-	    fprintf(gs_stderr, pl_usage, argv[0]);
+	    errprintf(mem, pl_usage, argv[0]);
 
 	    if (pl_characteristics(&pjl_implementation)->version)
-		fprintf(gs_stderr, "Version: %s\n", pl_characteristics(&pjl_implementation)->version);
+		errprintf(mem, "Version: %s\n", pl_characteristics(&pjl_implementation)->version);
 	    if (pl_characteristics(&pjl_implementation)->build_date)
-		fprintf(gs_stderr, "Build date: %s\n", pl_characteristics(&pjl_implementation)->build_date);
-	    fputs("Devices:", gs_stderr);
+		errprintf(mem, "Build date: %s\n", pl_characteristics(&pjl_implementation)->build_date);
+	    errprintf(mem, "Devices:");
 	    for ( i = 0; i < num_devs; ++i ) {
 		if ( ( (i + 1) )  % 9 == 0 )
-		    fputs("\n", gs_stderr);
-		fprintf(gs_stderr, " %s", gs_devicename(dev_list[i]));
+		    errprintf(mem, "\n");
+		errprintf(mem, " %s", gs_devicename(dev_list[i]));
 	    }
-	    fputs("\n", gs_stderr);
+	    errprintf(mem, "\n");
 
 	    return -1;
 	}
@@ -317,7 +317,7 @@ pl_main(
             arg = arg_next(mem, &args, &code);
             /* not sure what to do about this stupidity right now */
             if (code < 0)
-                fprintf(gs_stderr, "arg_next failed\n");
+                errprintf(mem, "arg_next failed\n");
             if (!arg)
                 break;  /* no nore files to process */
         }
@@ -325,8 +325,8 @@ pl_main(
 	/* open file for reading - NB we should respect the minimum
            requirements specified by each implementation in the
            characteristics structure */
-        if (pl_main_cursor_open(&r, arg, buf, sizeof(buf)) < 0) {
-            dprintf1(mem, "Unable to open %s for reading.\n", arg);
+        if (pl_main_cursor_open(mem, &r, arg, buf, sizeof(buf)) < 0) {
+            errprintf(mem, "Unable to open %s for reading.\n", arg);
             return -1;
         }
 
@@ -407,8 +407,9 @@ pl_main(
                             break;
                         }
                     }
-                    pl_report_errors(curr_instance, code, pl_main_cursor_position(&r),
-                                     inst.error_report > 0, gs_stdout);
+                    pl_report_errors(curr_instance, code, 
+				     pl_main_cursor_position(&r),
+                                     inst.error_report > 0);
                     if ( close_job(&universe, &inst) < 0 ) {
                         dprintf(mem, "Unable to deinit PJL.\n");
                         return -1;
@@ -938,7 +939,9 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 		value = eqp + 1;
 		if ( !strncmp(arg, "DEVICE", 6) ) { 
 		    int code = 
-			pl_top_create_device(pmi, get_device_index(value), false);
+			pl_top_create_device(pmi, 
+					     get_device_index(pmi->memory, value), 
+					     false);
 		    if ( code < 0 ) return code;
 		}
 		else { 
@@ -1063,9 +1066,9 @@ pl_print_usage(const gs_memory_t *mem, const pl_main_instance_t *pti,
 
 /* Log a string to console, optionally wait for input */
 void
-pl_log_string(const gs_memory_t *mem, gs_char *str, int wait_for_key)
+pl_log_string(const gs_memory_t *mem, const char *str, int wait_for_key)
 {
-    errwrite(mem, str, strlen((char*)str)); 
+    errwrite(mem, str, strlen(str)); 
     if (wait_for_key)
 	fgetc(mem->pl_stdio->fstdin);
 }
@@ -1152,16 +1155,16 @@ pl_exit(int exit_status)
 /* -------------- Read file cursor operations ---------- */
 /* Open a read cursor w/specified file */
 int	/* returns 0 ok, else -ve error code */
-pl_main_cursor_open(
-	pl_top_cursor_t  *cursor,        /* cursor to init/open */
-   const char       *fname,         /* name of file to open */
-	byte             *buffer,        /* buffer to use for reading */
-   unsigned         buffer_length   /* length of *buffer */
+pl_main_cursor_open(const gs_memory_t *mem,
+		    pl_top_cursor_t   *cursor,        /* cursor to init/open */
+		    const char        *fname,         /* name of file to open */
+		    byte              *buffer,        /* buffer to use for reading */
+		    unsigned          buffer_length   /* length of *buffer */
 )
 {
 	/* try to open file */
         if (fname[0] == '-' && fname[1] == 0)
-	    cursor->strm = gs_stdin;
+	    cursor->strm = mem->pl_stdio->fstdin;
 	else
 	    cursor->strm = fopen(fname, "rb");
 	if (!cursor->strm)

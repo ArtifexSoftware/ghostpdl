@@ -169,16 +169,14 @@ pl_process_eof(
 
 /* Report any errors after running a job */
 int   /* ret 0 ok, else -ve error code */
-pl_report_errors(
-	pl_interp_instance_t *instance,         /* interp instance to wrap up job in */
-   int                  code,              /* prev termination status */
-   long                 file_position,     /* file position of error, -1 if unknown */
-	bool                 force_to_cout,     /* force errors to cout */
-   FILE                 *cout              /* stream for back-channel reports */
+pl_report_errors(pl_interp_instance_t *instance,         /* interp instance to wrap up job in */
+		 int                  code,              /* prev termination status */
+		 long                 file_position,     /* file position of error, -1 if unknown */
+		 bool                 force_to_cout     /* force errors to cout */
 )
 {
 	return instance->interp->implementation->proc_report_errors
-	 (instance, code, file_position, force_to_cout, cout);
+	 (instance, code, file_position, force_to_cout);
 }
 
 /* Wrap up interp instance after a "job" */

@@ -39,7 +39,8 @@ pl_platform_init(FILE *debug_out)
 void
 pl_platform_dnit(int exit_status)
 {
-    fflush(gs_stderr);		/* in case of error exit */
+    // hack 
+    // fflush(gs_stderr);		/* in case of error exit */
     /* Do platform-specific cleanup. */
     gp_exit(exit_status, 0);
 }

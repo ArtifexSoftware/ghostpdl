@@ -139,8 +139,8 @@ typedef int (*pl_interp_proc_flush_to_eoj_t)(pl_interp_instance_t *,  stream_cur
 int pl_process_eof(pl_interp_instance_t *);
 typedef int (*pl_interp_proc_process_eof_t)(pl_interp_instance_t *);
 
-int pl_report_errors(pl_interp_instance_t *, int, long, bool, FILE *);
-typedef int (*pl_interp_proc_report_errors_t)(pl_interp_instance_t *, int, long, bool, FILE *);
+int pl_report_errors(pl_interp_instance_t *, int, long, bool);
+typedef int (*pl_interp_proc_report_errors_t)(pl_interp_instance_t *, int, long, bool);
 
 int pl_dnit_job(pl_interp_instance_t *);
 typedef int (*pl_interp_proc_dnit_job_t)(pl_interp_instance_t *);
