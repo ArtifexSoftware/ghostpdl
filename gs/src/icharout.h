@@ -50,8 +50,7 @@ int /*metrics_present*/
 int zchar_set_cache(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
 		    const ref * pcnref, const double psb[2],
 		    const double pwidth[2], const gs_rect * pbbox,
-		    int (*cont_fill) (i_ctx_t *),
-		    int (*cont_stroke) (i_ctx_t *),
+    		    op_proc_t cont, op_proc_t *exec_cont,
 		    const double Metrics2_sbw_default[4]);
 
 /*

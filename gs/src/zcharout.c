@@ -146,12 +146,13 @@ zchar_get_metrics2(const gs_font_base * pbfont, const ref * pcnref,
  * Consult Metrics2 and CDevProc, and call setcachedevice[2].  Return
  * o_push_estack if we had to call a CDevProc, or if we are skipping the
  * rendering process (only getting the metrics).
+ * Returns exec_cont - a function, which must be called by caller after this function.
  */
 int
 zchar_set_cache(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
 		const ref * pcnref, const double psb[2],
 		const double pwidth[2], const gs_rect * pbbox,
-		op_proc_t cont_fill, op_proc_t cont_stroke,
+		op_proc_t cont, op_proc_t *exec_cont,
 		const double Metrics2_sbw_default[4])
 {
     os_ptr op = osp;
@@ -161,7 +162,6 @@ zchar_set_cache(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
     ref rpop;
     bool metrics2;
     bool metrics2_use_default = false;
-    op_proc_t cont;
     double w2[10];
     gs_text_enum_t *penum = op_show_find(i_ctx_p);
 
@@ -171,15 +171,12 @@ zchar_set_cache(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
 
     w2[2] = pbbox->p.x, w2[3] = pbbox->p.y;
     w2[4] = pbbox->q.x, w2[5] = pbbox->q.y;
-    if (pbfont->PaintType == 0)
-	cont = cont_fill;
-    else {
+    if (pbfont->PaintType != 0) {
 	double expand = max(1.415, gs_currentmiterlimit(igs)) *
 	gs_currentlinewidth(igs) / 2;
 
 	w2[2] -= expand, w2[3] -= expand;
 	w2[4] += expand, w2[5] += expand;
-	cont = cont_stroke;
     }
 
     /* Check for Metrics2. */
@@ -269,7 +266,8 @@ zchar_set_cache(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
 	make_real(op - 1, psb[0]);
 	make_real(op, psb[1]);
     }
-    return cont(i_ctx_p);
+    *exec_cont = cont;
+    return 0;
 }
 
 /*

@@ -1155,6 +1155,7 @@ private int FAPI_do_char(i_ctx_t *i_ctx_p, gs_font_base *pbfont, gx_device *dev,
     double sbw[4] = {0, 0, 0, 0};
     double em_scale_x, em_scale_y;
     gs_rect char_bbox;
+    op_proc_t exec_cont = 0;
     int code;
     enum {
 	SBW_DONE,
@@ -1510,7 +1511,9 @@ retry_oversampling:
      */
     code = zchar_set_cache(i_ctx_p, pbfont, &char_name,
 		           NULL, sbw + 2, &char_bbox,
-			   fapi_finish_render, fapi_finish_render, sbw);
+			   fapi_finish_render, &exec_cont, sbw);
+    if (code >= 0 && exec_cont != 0)
+	code = (*exec_cont)(i_ctx_p);
     if (code != 0) {
         if (code < 0) {
             /* An error */

@@ -144,7 +144,7 @@ private void op_type1_free(i_ctx_t *);
 private void
      type1_cis_get_metrics(const gs_type1_state * pcis, double psbw[4]);
 private int bbox_getsbw_continue(i_ctx_t *);
-private int type1exec_bbox(i_ctx_t *, gs_type1exec_state *, gs_font *);
+private int type1exec_bbox(i_ctx_t *, gs_type1exec_state *, gs_font *, op_proc_t *exec_cont);
 private int bbox_finish_fill(i_ctx_t *);
 private int bbox_finish_stroke(i_ctx_t *);
 private int bbox_fill(i_ctx_t *);
@@ -238,8 +238,13 @@ charstring_execchar(i_ctx_t *i_ctx_p, int font_type_mask)
 	pfont1->FontBBox.q.y > pfont1->FontBBox.p.y
 	) {
 	/* The FontBBox appears to be valid. */
+	op_proc_t exec_cont = 0;
+
 	cxs.char_bbox = pfont1->FontBBox;
-	return type1exec_bbox(i_ctx_p, &cxs, pfont);
+	code = type1exec_bbox(i_ctx_p, &cxs, pfont, &exec_cont);
+	if (code >= 0 && exec_cont != 0)
+	    code = (*exec_cont)(i_ctx_p);
+	return code;
     } else {
 	/*
 	 * The FontBBox is not valid.  In this case,
@@ -286,13 +291,16 @@ charstring_execchar(i_ctx_t *i_ctx_p, int font_type_mask)
 /* -------- bbox case -------- */
 
 /* Do all the work for the case where we have a bounding box. */
+/* Returns exec_cont - a function, which must be called by caller after this function. */
 private int
 type1exec_bbox(i_ctx_t *i_ctx_p, gs_type1exec_state * pcxs,
-	       gs_font * pfont)
+	       gs_font * pfont, op_proc_t *exec_cont)
 {
     os_ptr op = osp;
     gs_type1_state *const pcis = &pcxs->cis;
     gs_font_base *const pbfont = (gs_font_base *) pfont;
+    op_proc_t cont = (pbfont->PaintType == 0 ? bbox_finish_fill : bbox_finish_stroke);
+
 
     /*
      * We appear to have a valid bounding box.  If we don't have Metrics for
@@ -326,7 +334,7 @@ type1exec_bbox(i_ctx_t *i_ctx_p, gs_type1exec_state * pcxs,
 	return zchar_set_cache(i_ctx_p, pbfont, &cnref,
 			       NULL, pcxs->sbw + 2,
 			       &pcxs->char_bbox,
-			       bbox_finish_fill, bbox_finish_stroke, NULL);
+			       cont, exec_cont, NULL);
     } else {
 	/* We have the width and bounding box: */
 	/* set up the cache device now. */
@@ -336,7 +344,7 @@ type1exec_bbox(i_ctx_t *i_ctx_p, gs_type1exec_state * pcxs,
 			        pcxs->sbw : NULL),
 			       pcxs->sbw + 2,
 			       &pcxs->char_bbox,
-			       bbox_finish_fill, bbox_finish_stroke, 
+			       cont, exec_cont, 
 			       (pcxs->use_FontBBox_as_Metrics2 ? pcxs->sbw : NULL));
     }
 }
@@ -365,33 +373,50 @@ bbox_getsbw_continue(i_ctx_t *i_ctx_p)
 	    const gs_font_base *const pbfont =
 		(const gs_font_base *)pcis->pfont;
 	    gs_rect bbox;
+	    op_proc_t cont = (pbfont->PaintType == 0 ? bbox_finish_fill : bbox_finish_stroke), exec_cont = 0;
 
 	    /* Get the metrics before freeing the state. */
 	    type1_cis_get_metrics(pcis, sbw);
 	    bbox = pcxs->char_bbox;
 	    op_type1_free(i_ctx_p);
-	    return zchar_set_cache(i_ctx_p, pbfont, op, sbw, sbw + 2, &bbox,
-				   bbox_finish_fill, bbox_finish_stroke, NULL);
+	    code = zchar_set_cache(i_ctx_p, pbfont, op, sbw, sbw + 2, &bbox,
+				   cont, &exec_cont, NULL);
+	    if (code >= 0 && exec_cont != 0)
+		code = (*exec_cont)(i_ctx_p);
+	    return code;
 	}
     }
 }
 
 /* <font> <code|name> <name> <charstring> <sbx> <sby> %bbox_{fill|stroke} - */
 /* <font> <code|name> <name> <charstring> %bbox_{fill|stroke} - */
-private int bbox_finish(i_ctx_t *, int (*)(i_ctx_t *));
+private int bbox_finish(i_ctx_t *i_ctx_p, op_proc_t cont, op_proc_t *exec_cont);
 private int
 bbox_finish_fill(i_ctx_t *i_ctx_p)
 {
-    return bbox_finish(i_ctx_p, bbox_fill);
+    op_proc_t exec_cont = 0;
+    int code;
+
+    code = bbox_finish(i_ctx_p, bbox_fill, &exec_cont);
+    if (code >= 0 && exec_cont != 0)
+	code = exec_cont(i_ctx_p);
+    return code;
 }
 private int
 bbox_finish_stroke(i_ctx_t *i_ctx_p)
 {
-    return bbox_finish(i_ctx_p, bbox_stroke);
+    op_proc_t exec_cont = 0;
+    int code;
+
+    code = bbox_finish(i_ctx_p, bbox_stroke, &exec_cont);
+    if (code >= 0 && exec_cont != 0)
+	code = exec_cont(i_ctx_p);
+    return code;
 }
+
 private int
-bbox_finish(i_ctx_t *i_ctx_p, int (*cont) (i_ctx_t *))
-{
+bbox_finish(i_ctx_t *i_ctx_p, op_proc_t cont, op_proc_t *exec_cont)
+{   /* Returns exec_cont - a function, which must be called by caller after this function. */
     os_ptr op = osp;
     gs_font *pfont;
     int code;
@@ -444,7 +469,8 @@ bbox_finish(i_ctx_t *i_ctx_p, int (*cont) (i_ctx_t *))
 	    /* Call the continuation now. */
 	    if (psbpt)
 		pop(2);
-	    return (*cont)(i_ctx_p);
+	    *exec_cont = cont;
+	    return 0;
 	case type1_result_callothersubr:	/* unknown OtherSubr */
 	    push_op_estack(cont);	/* call later */
 	    return type1_call_OtherSubr(i_ctx_p, &cxs, bbox_continue,
@@ -477,9 +503,10 @@ bbox_continue(i_ctx_t *i_ctx_p)
 /*
  * Check the path against FontBBox before drawing.  The original operands
  * of type1execchar are still on the o-stack.
+ * Returns exec_cont - a function, which must be called by caller after this function.
  */
 private int
-bbox_draw(i_ctx_t *i_ctx_p, int (*draw)(gs_state *))
+bbox_draw(i_ctx_t *i_ctx_p, int (*draw)(gs_state *), op_proc_t *exec_cont)
 {
     os_ptr op = osp;
     gs_rect bbox;
@@ -543,18 +570,31 @@ bbox_draw(i_ctx_t *i_ctx_p, int (*draw)(gs_state *))
     if (code < 0)
 	return code;
     cxs.char_bbox = pfont1->FontBBox;
-    return type1exec_bbox(i_ctx_p, &cxs, pfont);
+    code = type1exec_bbox(i_ctx_p, &cxs, pfont, exec_cont);
+    return code;
 }
 private int
 bbox_fill(i_ctx_t *i_ctx_p)
 {
+    op_proc_t exec_cont = 0;
+    int code;
+
     /* See above re GS_CHAR_FILL. */
-    return bbox_draw(i_ctx_p, GS_CHAR_FILL);
+    code = bbox_draw(i_ctx_p, GS_CHAR_FILL, &exec_cont);
+    if (code >= 0 && exec_cont != 0)
+	code = (*exec_cont)(i_ctx_p);
+    return code;
 }
 private int
 bbox_stroke(i_ctx_t *i_ctx_p)
 {
-    return bbox_draw(i_ctx_p, gs_stroke);
+    op_proc_t exec_cont = 0;
+    int code;
+
+    code = bbox_draw(i_ctx_p, gs_stroke, &exec_cont);
+    if (code >= 0 && exec_cont != 0)
+	code = (*exec_cont)(i_ctx_p);
+    return code;
 }
 
 /* -------- Common code -------- */
@@ -753,6 +793,7 @@ nobbox_finish(i_ctx_t *i_ctx_p, gs_type1exec_state * pcxs)
     {
 	gs_font_base *const pbfont = (gs_font_base *) pfont;
 	gs_font_type1 *const pfont1 = (gs_font_type1 *) pfont;
+	op_proc_t cont, exec_cont = 0;
 
 	if (pcxs->present == metricsNone) {
 	    gs_point endpt;
@@ -773,13 +814,18 @@ nobbox_finish(i_ctx_t *i_ctx_p, gs_type1exec_state * pcxs)
 	    code = type1_exec_init(&pcxs->cis, penum, igs, pfont1);
 	    if (code < 0)
 		return code;
-	    return type1exec_bbox(i_ctx_p, pcxs, pfont);
+	    code = type1exec_bbox(i_ctx_p, pcxs, pfont, &exec_cont);
+	} else {
+	    cont = (pbfont->PaintType == 0 ? nobbox_fill : nobbox_stroke), exec_cont = 0;
+	    code = zchar_set_cache(i_ctx_p, pbfont, op, NULL,
+				   pcxs->sbw + 2,
+				   &pcxs->char_bbox,
+				   cont, &exec_cont,
+				   (pcxs->use_FontBBox_as_Metrics2 ? pcxs->sbw : NULL));
 	}
-	return zchar_set_cache(i_ctx_p, pbfont, op, NULL,
-	                       pcxs->sbw + 2,
-			       &pcxs->char_bbox,
-			       nobbox_fill, nobbox_stroke,
-			       (pcxs->use_FontBBox_as_Metrics2 ? pcxs->sbw : NULL));
+	if (code >= 0 && exec_cont != 0)
+	    code = (*exec_cont)(i_ctx_p);
+	return code;
     }
 }
 /* Finish by popping the operands and filling or stroking. */

@@ -42,4 +42,8 @@ int zcharstring_outline(gs_font_type1 *pfont, const ref *pgref,
 			const gs_glyph_data_t *pgd,
 			const gs_matrix *pmat, gx_path *ppath);
 
+int
+z1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
+	      int members, gs_glyph_info_t *info);
+
 #endif /* ichar1_INCLUDED */

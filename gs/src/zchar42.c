@@ -50,6 +50,7 @@ ztype42execchar(i_ctx_t *i_ctx_p)
     int present;
     double sbw[4];
     double w[2];
+    op_proc_t cont, exec_cont = 0;
 
     if (code < 0)
 	return code;
@@ -122,12 +123,16 @@ ztype42execchar(i_ctx_t *i_ctx_p)
         w[0] = sbw[2];
         w[1] = sbw[3];
     }
-    return zchar_set_cache(i_ctx_p, pbfont, op - 1,
+    cont = (pbfont->PaintType == 0 ? type42_fill : type42_stroke), exec_cont = 0;
+    code = zchar_set_cache(i_ctx_p, pbfont, op - 1,
 			   (present == metricsSideBearingAndWidth ?
 			    sbw : NULL),
 			   w, &pbfont->FontBBox,
-			   type42_fill, type42_stroke,
+			   cont, &exec_cont,
 			   gs_rootfont(igs)->WMode ? sbw : NULL);
+    if (code >= 0 && exec_cont != 0)
+	code = (*exec_cont)(i_ctx_p);
+    return code;
 }
 
 /* Continue after a CDevProc callout. */
