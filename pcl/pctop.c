@@ -265,7 +265,7 @@ pcl_impl_allocate_interp_instance(
     /* provide an end page procedure */
     pcli->pcs.end_page = pcl_end_page_top;
     /* Init gstate to point to pcl state */
-    gs_state_set_client(pgs, &pcli->pcs, &pcl_gstate_procs);
+    gs_state_set_client(pgs, &pcli->pcs, &pcl_gstate_procs, false);
     /* register commands */
     {
 	int code = pcl_do_registrations(&pcli->pcs, &pcli->pst);
