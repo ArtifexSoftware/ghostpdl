@@ -175,7 +175,6 @@ typedef struct pxl_interp_instance_s {
   void                     *pre_page_closure; /* closure to call pre_page_action with */
   pl_page_action_t         post_page_action;  /* action before page out */
   void                     *post_page_closure;/* closure to call post_page_action with */
-  long                     prev_allocated;    /* memory allocated as of startup or last GC */
   enum {PSHeader, PSXL, PSDone}
                            processState;      /* interp's processing state */
   px_stream_header_process_t
@@ -381,10 +380,6 @@ pxl_impl_init_job(
 	gs_memory_status_t status;
 	px_reset_errors(pxli->pxs);
 	px_process_init(pxli->st, true);
-
-	/* record GC trigger */
-	gs_memory_status(pxli->memory, &status);
-	pxli->prev_allocated = status.allocated;
 
 	/* set input status to: expecting stream header */
 	px_stream_header_init(&pxli->headerState, pxli->st, pxli->pxs);
