@@ -17,7 +17,7 @@ OBJS=getopt$(OBJ) getopt1$(OBJ) jbig2$(OBJ) jbig2_arith$(OBJ) \
 
 HDRS=getopt.h jbig2.h jbig2_arith.h jbig2_arith_iaid.h jbig2_arith_int.h \
  jbig2_generic.h jbig2_huffman.h jbig2_hufftab.h jbig2_image.h \
- jbig2_mmr.h jbig2_priv.h jbig2_symbol_dict.h stdint_.h
+ jbig2_mmr.h jbig2_priv.h jbig2_symbol_dict.h config_win32.h
 
 all: jbig2dec$(EXE)
 
