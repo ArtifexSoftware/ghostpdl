@@ -274,15 +274,10 @@
     counttomark -3 roll		% process in correct order
 		% Construct prefix, params, key_lo, key_hi, value, font_index
     3 1 roll dup length 1 eq {
-      exch 0 get exch 0 get 1 exch {
-		% Stack: cid code
-	1 string dup 0 4 -1 roll put	% prefix
-	<00 00 00 02> ()	% params, keys
-	3 index .endmapvalue
-	6 -1 roll
-		% cidchars increment the CID, but notdefchars do not.
-	counttomark 1 add index 1 eq { 1 add } if
-      } for pop
+      () 3 1 roll	% prefix
+      <01 01 00 02>	% params
+      3 1 roll		% keys
+      concatstrings 4 -1 roll .endmapvalue
     } {
 		% Stack: cid_base code_lo code_hi
 		% Hack: handle 16-bit single-range mappings specially.
