@@ -531,6 +531,10 @@ pdf_compute_encryption_data(gx_device_pdf * pdev)
 	eprintf("Encryption revisions 2 and 3 are only supported.");
 	return_error(gs_error_rangecheck);
     }
+    if (pdev->EncryptionR > 2 && pdev->CompatibilityLevel < 1.4) {
+	eprintf("PDF 1.3 only supports the encryption revision 2.");
+	return_error(gs_error_rangecheck);
+    }
     if (pdev->KeyLength > 128) {
 	eprintf("The maximal length of PDF encryption key is 128 bits.");
 	return_error(gs_error_rangecheck);
