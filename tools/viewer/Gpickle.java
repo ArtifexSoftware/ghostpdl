@@ -52,8 +52,8 @@ public class Gpickle {
        return( rtl.equals(cRTLstr) );
     }
 
-    private boolean bTextAlpha = false;
-    private String textAlphaOptStr = " ";
+    private boolean bTextAlpha = true;
+    private String textAlphaOptStr = " -dTextAlphaBits=2";
     public boolean getTextAlpha() {
 	return bTextAlpha;
     }
@@ -67,8 +67,42 @@ public class Gpickle {
 
     private String deviceOptions =  " ";
 
-    private String ghostAppStr =  "../../language_switch/obj/pspcl6";
-    //private String ghostAppStr =  "../../main/obj/pcl6";
+    /** GhostPrinter application path */ 
+    private String ghostAppStr;
+
+    /** look for relative path executable first */
+    private String ghostAppRelStr =  "../../main/obj/pcl6";
+    //private String ghostAppStr =  "../../language_switch/obj/pspcl6";
+
+    /** look for executable in path next */
+    private String ghostAppPathStr =  "pcl6";
+    //private String ghostAppPathStr =  "pspcl6";
+
+    /** find the GhostPrinter application
+     * first relative path
+     * then system path
+     * adds .exe for windows executables
+     */
+    private void setGhostApp() {
+        ghostAppStr = ghostAppRelStr;
+	File testIt = new File(ghostAppStr);
+	if (!testIt.exists()) {
+            ghostAppStr = ghostAppRelStr + ".exe";
+	    testIt = new File(ghostAppStr);
+	    if (!testIt.exists()) {
+		ghostAppStr = ghostAppPathStr;
+                testIt = new File(ghostAppStr);
+	        if (!testIt.exists()) {  
+		    ghostAppStr = ghostAppPathStr + ".exe";
+		    testIt = new File(ghostAppStr);
+		    if (!testIt.exists()) {  
+			System.out.println("Missing file " + ghostAppStr);
+			System.exit(1);
+		    }
+		}
+            }   
+	}
+    }
 
     /**
      * "command line" used to run interpreter.
@@ -93,7 +127,8 @@ public class Gpickle {
      */
     private String pageCountString()
     {
-	return "pcl6 -C -r25 -dNOPAUSE -sDEVICE=nullpage "
+	return ghostAppStr 
+	    + " -C -r25 -dNOPAUSE -sDEVICE=nullpage "
             + jobList;
     }
 
@@ -222,6 +257,11 @@ public class Gpickle {
     public int getImgWidth()
     {
 	return width;
+    }
+
+    public Gpickle() 
+    {
+	setGhostApp();
     }
 
     /** main for test purposes */
