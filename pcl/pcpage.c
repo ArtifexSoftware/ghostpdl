@@ -183,17 +183,23 @@ update_xfm_state(
     } else
         pxfmst->pd_size = pxfmst->lp_size;
 
-    /* calculate the device space clipping window */
-    print_rect.p.x = PRINTABLE_MARGIN_CP;
-    print_rect.p.y = PRINTABLE_MARGIN_CP;
-    print_rect.q.x = psize->width - PRINTABLE_MARGIN_CP;
-    print_rect.q.y = psize->height - PRINTABLE_MARGIN_CP;
-    pcl_transform_rect(&print_rect, &dev_rect, &pg2dev);
-    pxfmst->dev_print_rect.p.x = float2fixed(dev_rect.p.x);
-    pxfmst->dev_print_rect.p.y = float2fixed(dev_rect.p.y);
-    pxfmst->dev_print_rect.q.x = float2fixed(dev_rect.q.x);
-    pxfmst->dev_print_rect.q.y = float2fixed(dev_rect.q.y);
-
+    {
+	gx_device *pdev = gs_currentdevice(pcs->pgs);
+	/* We must not set up a clipping region beyond the hardware margins of
+	   the device, but the pcl language definition requires hardware
+	   margins to be 1/6".  We set all margins to the the maximum of the
+	   PCL language defined 1/6" and the actual hardware margin.  If 1/6"
+	   is not available pcl will not work correctly all of the time. */
+	print_rect.p.x = max(PRINTABLE_MARGIN_CP, inch2coord(pdev->HWMargins[0] / 72.0));
+	print_rect.p.y = max(PRINTABLE_MARGIN_CP, inch2coord(pdev->HWMargins[1]) / 72.0);
+	print_rect.q.x = psize->width - max(PRINTABLE_MARGIN_CP, inch2coord(pdev->HWMargins[2] / 72.0));
+	print_rect.q.y = psize->height - max(PRINTABLE_MARGIN_CP, inch2coord(pdev->HWMargins[3] / 72.0));
+	pcl_transform_rect(&print_rect, &dev_rect, &pg2dev);
+	pxfmst->dev_print_rect.p.x = float2fixed(dev_rect.p.x);
+	pxfmst->dev_print_rect.p.y = float2fixed(dev_rect.p.y);
+	pxfmst->dev_print_rect.q.x = float2fixed(dev_rect.q.x);
+	pxfmst->dev_print_rect.q.y = float2fixed(dev_rect.q.y);
+    }
     pcl_invert_mtx(&(pxfmst->lp2pg_mtx), &pg2lp);
     pcl_transform_rect(&print_rect, &(pxfmst->lp_print_rect), &pg2lp);
 
