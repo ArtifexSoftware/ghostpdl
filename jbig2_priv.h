@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2_priv.h,v 1.14 2002/07/09 09:45:32 giles Exp $
+    $Id: jbig2_priv.h,v 1.15 2002/07/09 10:39:08 giles Exp $
     
     shared library internals
 */
@@ -16,8 +16,12 @@
 typedef uint8_t byte;
 typedef int bool;
 
+#ifndef TRUE
 #define TRUE 1
+#endif
+#ifndef FALSE
 #define FALSE 0
+#endif
 
 #ifndef NULL
 #define NULL ((void*)0)
