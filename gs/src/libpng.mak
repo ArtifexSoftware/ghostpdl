@@ -1,4 +1,4 @@
-#    Copyright (C) 1995, 2001 artofcode LLC.  All rights reserved.
+#    Copyright (C) 1995-2002 artofcode LLC. All rights reserved.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -23,7 +23,7 @@
 #	PNGGENDIR - the generated intermediate file directory
 #	PNGOBJDIR - the object directory
 #	PNGVERSION - the library version number ("90", "95", "96",
-#	  and "10001" through "10012").
+#	  and "10001" through "10012" and "10201").
 #	  For historical reasons, "101" and "102" are also acceptable,
 #	  even though they don't match libpng's numbering scheme
 #	  (see png.h for more details).
