@@ -1,0 +1,360 @@
+<html>
+<head>
+<title>Information for Ghostscript developers</title>
+<!-- $Id$ -->
+</head>
+
+<body>
+<!-- [1.0 begin visible header] ============================================ -->
+
+<!-- [1.1 begin headline] ================================================== -->
+
+<table width="100%" border="0">
+<tr><th align="center" bgcolor="#CCCC00"><font size=6>
+Information for Ghostscript developers
+</font>
+</table>
+
+<!-- [1.1 end headline] ==================================================== -->
+
+<!-- [1.2 begin table of contents] ========================================= -->
+
+<h2>Table of contents</h2>
+
+<blockquote><ul>
+<li><a href="#Introduction">Introduction</a>
+<li><a href="#File_roadmap">File roadmap</a>
+<ul>
+<li><a href="#Layer_architecture">Layer architecture</a>
+<li><a href="#Plumbing">Plumbing</a>
+<li><a href="#Graphics_library">Graphics library</a>
+<ul>
+<li><a href="#Graphics_library_support">Support</a>,
+    <a href="#Graphics_model">Graphics model</a>,
+    <a href="#Driver_support">Driver support</a>,
+    <a href="#Graphics_library_miscellaneous">Miscellaneous</a>
+</ul>
+<li><a href="#PostScript_interpreter">PostScript interpreter</a>
+<ul>
+<li><a href="#PostScript_interpreter_support">Support</a>,
+    <a href="#Scanning_parsing">Scanning/parsing</a>,
+    <a href="#Standard_operators">Standard operators</a>,
+    <a href="#Non_standard_operators">Non-standard operators</a>,
+    <a href="#PostScript_code">PostScript code</a>
+</ul>
+<li><a href="#PDF_interpreter">PDF interpreter</a>
+<li><a href="#Build_support">Build support</a>
+<li><a href="#Utilities_in_PostScript">Utilities (in PostScript)</a>
+</ul>
+<li><a href="#Memory_management">Memory management</a>
+<ul>
+<li><a href="#Memory_manager_architecture">Memory manager architecture</a>
+<ul>
+<li><a href="#Allocator_objects">Allocator objects</a>,
+    <a href="#Objects_vs_strings">Objects vs strings</a>,
+    <a href="#Movability_and_GC">Movability and GC</a>,
+    <a href="#Stable_allocators">Stable_allocators</a>
+</ul>
+<li><a href="#Standard_implementation">Standard implementation</a>
+<li><a href="#Special_implementations">Special implementations</a>
+<ul>
+<li><a href="#malloc">malloc</a>,
+    <a href="#Locking">Locking</a>,
+    <a href="#Retrying">Retrying</a>
+</ul>
+<li><a href="#Modalities_of_freeing">Modalities of freeing</a>
+<ul>
+<li><a href="#Explicit_freeing">Explicit freeing</a>,
+    <a href="#Reference_counting">Reference counting</a>,
+    <a href="#Garbage_collection">Garbage collection</a>,
+    <a href="#Merge_only_GC">Merge-only "GC"</a>
+</ul>
+<li><a href="#PostScript_interpreter_extensions">PostScript interpreter extensions</a>
+<ul>
+<li><a href="#Refs_and_ref_objects">Refs and ref objects</a>,
+    <a href="#save_forgetsave_restore">save/.forgetsave/restore</a>,
+</ul>
+</ul>
+<li><a href="#Portability">Portability</a>
+<ul>
+<li><a href="#Structural">Structural</a>
+<ul>
+<li><a href="#Makefiles">Makefiles</a>,
+    <a href="#Other_files">Other files</a>
+</ul>
+<li><a href="#Coding">Coding</a>
+</ul>
+<li><a href="#Adding_features_and_options">Adding features and options</a>
+</ul></blockquote>
+
+<!-- [1.2 end table of contents] =========================================== -->
+
+<!-- [1.3 begin hint] ====================================================== -->
+
+<p>For other information, see the <a href="Readme.htm">Ghostscript
+overview</a> and the documentation related to <a
+href="Maintain.htm">maintaining Ghostscript</a>.
+
+<!-- [1.3 end hint] ======================================================== -->
+
+<hr>
+
+<!-- [1.0 end visible header] ============================================== -->
+
+<!-- [2.0 begin contents] ================================================== -->
+
+<h1><a name="Introduction"></a>Introduction</h1>
+
+<p>
+This document provides a wealth of information about Ghostscript's
+internals, primarily for developers actively working on Ghostscript.
+
+<p>
+THIS FILE IS MOSTLY A SKELETON.  IT WILL BE A WORK IN PROGRESS THROUGH THE
+END OF 2000.
+
+<hr>
+
+<h1><a name="File_roadmap"></a>File roadmap</h1>
+
+<p>
+This section of the document provides a roadmap to all of the Ghostscript
+source files.
+
+<h2><a name="Layer_architecture"></a>Layer architecture</h2>
+
+<h2><a name="Plumbing"></a>Plumbing</h2>
+
+<p>
+Memory manager
+
+<p>
+Stream package
+	Framework, files, strings
+	Filters
+
+<p>
+Platform-specific code
+
+<p>
+Miscellaneous
+
+<h2><a name="Graphics_library"></a>Graphics library</h2>
+
+<h3><a name="Graphics_library_support"></a>Support</h3>
+
+<h3><a name="Graphics_model"></a>Graphics model</h3>
+
+<p>
+Coordinate transformation
+
+<p>
+Path building + rendering
+
+<p>
+Clipping
+
+<p>
+Color spaces + color mapping
+
+<p>
+Halftoning
+
+<p>
+Character rendering + font cache
+
+<p>
+Images
+
+<h3><a name="Driver_support"></a>Driver support</h3>
+
+<p>
+Low-level driver support
+
+<p>
+High-level driver support
+
+<p>
+Banding
+
+<p>
+Built-in devices
+
+<h3><a name="Graphics_library_miscellaneous"></a>Miscellaneous</h3>
+
+<h2><a name="PostScript_interpreter"></a>PostScript interpreter</h2>
+
+<h3><a name="PostScript_interpreter_support"></a>Support</h3>
+
+<p>
+Memory management (refs, GC, save/restore)
+
+<p>
+Data structures (stacks, names, dicts, contexts)
+
+<p>
+Files/streams
+
+<p>
+Miscellaneous
+
+<h3><a name="Scanning_parsing"></a>Scanning/parsing</h3>
+
+<h3><a name="Standard operators"></a>Standard operators</h3>
+
+<h3><a name="Non-standard operators"></a>Non-standard operators</h3>
+
+<h3><a name="PostScript_code"></a>PostScript code</h3>
+
+<p>
+Resources
+
+<p>
+setpagedevice
+
+<p>
+Font loading
+
+<p>
+Encodings
+
+<p>
+Miscellaneous
+
+<h2><a name="PDF_interpreter"></a>PDF interpreter</h2>
+
+<h2><a name="Build_support"></a>Build support</h2>
+
+<h2><a name="Utilities_in_PostScript"></a>Utilities (in PostScript)</h2>
+
+<hr>
+
+<h1><a name="Memory_management"></a>Memory management</h1>
+
+<p>
+This section of the document covers the design and coding of the memory
+managers.
+
+<h2><a name="Memory_manager_architecture"></a>Memory manager architecture</h2>
+
+<h3><a name="Allocator_objects"></a>Allocator objects</h3>
+
+<p>
+Can be cascaded
+
+<h3><a name="Objects_vs_strings"></a>Objects vs strings</h3>
+
+<p>
+    Type + size tagging
+
+<h3><a name="Movability_and_GC"></a>Movability + GC</h3>
+
+<h3><a name="Stable_allocators"></a>Stable allocators</h3>
+
+<h2><a name="Standard_implementation"></a>Standard implementation</h2>
+
+<p>
+Chunks
+
+<p>
+Free list management
+
+<h2><a name="Special_implementations"></a>Special implementations</h2>
+
+<h3><a name="malloc"></a>malloc</h3>
+
+<h3><a name="Locking"></a>Locking</h3>
+
+<h3><a name="Retrying"></a>Retrying</h3>
+
+<h2><a name="Modalities_of_freeing"></a>Modalities of freeing</h2>
+
+<p>
+Explicit
+
+<p>
+Reference-counted
+
+<p>
+GC (interpreter only)
+	Merge-only "GC"
+
+<p>
+When to use which one
+
+<h2><a name="PostScript_interpreter_extensions"></a>PostScript interpreter extensions</h2>
+
+<h3><a name="Refs_and_ref_objects"></a>Refs and ref objects</h3>
+
+<h3><a name="save_forgetsave_restore"></a>save/.forgetsave/restore</h3>
+
+<p>
+Stable allocators + when to use them
+
+<hr>
+
+<h1><a name="Portability"></a>Portability</h1>
+
+<p>
+This section of the document discusses the mechanisms for supporting
+portability of the code across CPUs, compilers, and operating systems.
+
+<h2><a name="Structural"></a>Structural</h2>
+
+<h3><a name="makefiles"></a>makefiles</h3>
+
+<p>
+*.mak files
+
+<h3><a name="Other_files"></a>Other files</h3>
+
+<p>
+*_.h files
+
+<p>
+arch.h
+
+<p>
+gp*.h, gp_*.c
+
+<h2><a name="Coding"></a>Coding</h2>
+
+<p>
+#ifdefs - logical, not concrete
+
+<p>
+Byte order
+
+<p>
+Word size
+
+<hr>
+
+<h1><a name="Adding_features_and_options"></a>Adding features and options</h1>
+
+<p>
+[Ray, please supply more information about what you want here]
+
+<!-- [2.0 end contents] ==================================================== -->
+
+<!-- [3.0 begin visible trailer] =========================================== -->
+<hr>
+
+<font size=2>
+
+<p>Copyright &copy; 2000 artofcode LLC.  All rights reserved.
+
+<p>This file is part of AFPL Ghostscript.  See the <a
+href="Public.htm">Aladdin Free Public License</a> (the "License") for full
+details of the terms of using, copying, modifying, and redistributing
+AFPL Ghostscript.
+
+<p>
+Ghostscript version 6.60, 16 October 2000
+
+</font>
+
+<!-- [3.0 end visible trailer] ============================================= -->
+
+</body>
+</html>
