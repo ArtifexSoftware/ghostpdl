@@ -36,6 +36,15 @@ pltoputl_h=$(PLSRC)pltoputl.h $(scommon_h)
 
 PJLVERSION=1.34_Ricoh
 
+# Translate pjl file system volume "0:" to a directory of your choice 
+# Use forward slash '/' not '\\'; no trailing slash 
+# PJL_VOLUME_0=./foo
+# PJL_VOLUME_0=/tmp/pjl0
+# PJL_VOLUME_0=c:/pjl_volume_0  		
+
+PJL_VOLUME_0=/tmp/pjl0
+PJL_VOLUME_1=/tmp/pjl1
+
 plver_h=$(PLSRC)plver.h
 
 $(PLSRC)plver.h: $(PLSRC)pl.mak
@@ -43,6 +52,10 @@ $(PLSRC)plver.h: $(PLSRC)pl.mak
 	$(GLGEN)echogs$(XE) -e .h -a $(PLSRC)plver -s -x 22 $(PJLVERSION) -x 22
 	$(GLGEN)echogs$(XE) -e .h -a $(PLSRC)plver -n -x 23 "define PJLBUILDDATE"
 	$(GLGEN)echogs$(XE) -e .h -a $(PLSRC)plver -s -x 22 -d -x 22
+	$(GLGEN)echogs$(XE) -e .h -a $(PLSRC)plver -n -x 23 "define PJL_VOLUME_0"
+	$(GLGEN)echogs$(XE) -e .h -a $(PLSRC)plver -s -x 22 $(PJL_VOLUME_0) -x 22
+	$(GLGEN)echogs$(XE) -e .h -a $(PLSRC)plver -n -x 23 "define PJL_VOLUME_1"
+	$(GLGEN)echogs$(XE) -e .h -a $(PLSRC)plver -s -x 22 $(PJL_VOLUME_1) -x 22
 
 # Currently we only parse PJL enough to detect UELs.
 
@@ -56,7 +69,8 @@ $(PLOBJ)pjparse.$(OBJ): $(PLSRC)pjparse.c\
         $(gdebug_h)  \
         $(gp_h)      \
         $(pjparse_h) \
-        $(plfont_h)
+        $(plfont_h)  \
+        $(plver_h)
 	$(PLCCC) $(PLSRC)pjparse.c $(PLO_)pjparse.$(OBJ)
 
 $(PLOBJ)pjparsei.$(OBJ): $(PLSRC)pjparsei.c \
