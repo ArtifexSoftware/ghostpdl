@@ -73,6 +73,7 @@ type1_next_init(gs_type1_state *pcis, const gs_const_string *pstr,
     pcis->flex_count = flex_max;
     pcis->dotsection_flag = dotsection_out;
     pcis->ipstack[0].char_string = *pstr;
+    pcis->ipstack[0].free_char_string = 0;
     skip_iv(pcis);
 }
 
@@ -88,11 +89,13 @@ private int
 type1_callsubr(gs_type1_state *pcis, int index)
 {
     gs_font_type1 *pfont = pcis->pfont;
+    ip_state_t *ipsp1 = &pcis->ipstack[pcis->ips_count];
     int code = pfont->data.procs.subr_data(pfont, index, false,
-			&pcis->ipstack[pcis->ips_count].char_string);
+					   &ipsp1->char_string);
 
     if (code < 0)
 	return_error(code);
+    ipsp1->free_char_string = code;
     pcis->ips_count++;
     skip_iv(pcis);
     return code;
@@ -205,7 +208,6 @@ type1_next(gs_type1_state *pcis)
 	    if (code < 0)
 		return_error(code);
 	    ipsp->ip = cip, ipsp->dstate = state;
-	    ipsp->free_char_string = code;
 	    --csp;
 	    ++ipsp;
 	    goto load;
