@@ -5,18 +5,23 @@
 % Written in BOP s.c., Gda\'nsk, Poland
 % e-mail contact: B.Jackowski@GUST.ORG.PL
 % version 0.5 (18 XII 1997)
+% version 0.55 (11 III 1998) -- unlimited number of chars in a font
+% version 1.00 (27 III 1998) -- scanning PFM subdirectory added,
+%                               code improved; version sent to LPD
+% version 1.01 (1 II 2000)   -- message changed
 
 % Usage:
-%   gs [-sDEVICE=nullpage] -- pf2afm.ps disk_font_name
+%   gs [-dNODISPLAY] -- pf2afm.ps disk_font_name
 %
 % The result is written to the file disk_font_name.afm, provided such
 % a file does not exist; otherwise program quits.
 %
-% The font can be either *.pfa or *.pfb; if no extension is supplied, first
-% disk_font_name.pfb is examined, then disk_font_name.pfa. Moreover, if there
-% is a *.pfm file in the same directory, i.e., disk_font_name.pfm, kern pairs
-% from it are extracted, as well as additional font parameters,
-% usually absent from Type 1 fonts.
+% The font can be either *.pfa or *.pfb; if no extension is supplied,
+% first disk_font_name.pfb is examined, then disk_font_name.pfa.
+% Moreover, if there is a *.pfm file in the same directory or in the
+% subdirectory PFM, i.e., disk_font_name.pfm or PFM/disk_font_name.pfm,
+% kern pairs from it are extracted, as well as additional font
+% parameters, usually absent from Type 1 fonts.
 
 % Tribute:
 % The program is based on James Clark's <jjc@jclark.uucp> printafm.ps
@@ -24,6 +29,7 @@
 % Ghostscript 5.10 distribution.
 
 /onechar 1 string def
+/edef {exch def} def
 
 % charnumber print-charname -
 % prints the name of the encoded character
@@ -101,11 +107,11 @@
   % -------------
   skipw-p % PFMEX: SizeFields
   readd-p % PFMEX: ExtMetricOffset
-    /PFMExtMetricOffset exch def
+    /PFMExtMetricOffset edef
   skipd-p % PFMEX: ExtentTable
   skipd-p % PFMEX: OriginTable
   readd-p % PFMEX: PairKernTable
-    /PFMPairKernTableOffset exch def
+    /PFMPairKernTableOffset edef
   skipd-p % PFMEX: TrackKernTable
   skipd-p % PFMEX: DriverInfo
   skipd-p % PFMEX: Reserved
@@ -125,13 +131,13 @@
   skips-p % EXTT: MaxScale
   skips-p % EXTT: MasterUnit
   reads-p % EXTT: CapHeight
-   /PFMCapHeight exch def
+   /PFMCapHeight edef
   reads-p % EXTT: XHeight
-   /PFMXHeight exch def
+   /PFMXHeight edef
   reads-p % EXTT: LowerCaseAscent
-   /PFMLowerCaseAscent exch def
+   /PFMLowerCaseAscent edef
   reads-p % EXTT: LowerCaseDescent
-   neg /PFMLowerCaseDescent exch def
+   neg /PFMLowerCaseDescent edef
   skips-p % EXTT: Slant
   skips-p % EXTT: SuperScript
   skips-p % EXTT: SubScript
@@ -146,7 +152,7 @@
   skips-p % EXTT: StrikeOutOffset
   skips-p % EXTT: StrikeOutWidth
   readw-p % EXTT: KernPairs
-    /PFMNumberofKernPairs exch def
+    /PFMNumberofKernPairs edef
   skipw-p % EXTT: KernTracks
 } def
 
@@ -203,17 +209,17 @@
   (StartCharMetrics ) print.to.ofi
   /PFBencoding currfont /Encoding get dup length array copy def
   /PFBcharstrings currfont /CharStrings get def
-  PFBcharstrings length  
+  PFBcharstrings length
   PFBcharstrings /.notdef known { 1 sub } if =to.ofi
   currfont 1000 scalefont setfont
-  % checking Encoding array and CharStrings dictionary for 
+  % checking Encoding array and CharStrings dictionary for
   % the consistency of names
   /was.inconsitent false def
   0 1 255 {
-    dup PFBencoding exch get 
+    dup PFBencoding exch get
     PFBcharstrings exch known {
-      pop 
-    } {
+      pop
+    }{
 %     dup PFBencoding exch get =
       PFBencoding exch /.notdef put % fix Encoding array
       /was.inconsitent true def
@@ -227,60 +233,72 @@
     dup PFBencoding exch get
     dup /.notdef ne {
       exch dup printmetric
-    } {
+    }{
       pop pop
     } ifelse
   } for
   % xPFBencoding contains an entry for each name in the original
   % encoding vector
-  /xPFBencoding 256 dict def
+  /xPFBencoding PFBcharstrings length dict def
   PFBencoding {
     xPFBencoding exch true put
   } forall
-  % NewPFBencoding is the new encoding vector
-  /NewPFBencoding 256 array def
-  0 1 255 {
-    NewPFBencoding exch /.notdef put
-  } for
-  % fill up NewPFBencoding with names from CharStrings dictionary that 
-  % are not used in the original PFBencoding (only up to 256 not encoded 
-  % characters)
-  /i 0 def
-  PFBcharstrings {
-    pop
-    i 255 le {
-      dup xPFBencoding exch known not {
-        NewPFBencoding i 3 -1 roll put
-        /i i 1 add def
-      } {
-        pop
-      } ifelse
-    } {
+
+  /fontiter 0 def
+  /TMPFontTemplate (TMP_FONT#000) def
+  {
+    % NewPFBencoding is the new encoding vector
+    /NewPFBencoding 256 array def
+    0 1 255 {
+      NewPFBencoding exch /.notdef put
+    } for
+    % fill up NewPFBencoding with names from CharStrings dictionary that
+    % are not encoded so far
+    /i 0 def
+    PFBcharstrings {
       pop
-    } ifelse
-  } forall
-  % define a new font with NewPFBencoding as its encoding vector
-  currfont maxlength dict /NewTMPfont exch def
-  currfont {
-    exch dup dup /FID ne exch /Encoding ne and {
-      exch NewTMPfont 3 1 roll put
-    } {
-      pop pop
-    } ifelse
-  } forall
-  NewTMPfont /Encoding NewPFBencoding put
-  NewTMPfont /FontName /TMPFontName put
-  % make this new font the current font
-  /TMPFontName NewTMPfont definefont 1000 scalefont setfont
-  % print metric data for each character in the newly created encoding vector
-  0 1 255 {
-    dup NewPFBencoding exch get
-    dup /.notdef ne {
-      exch -1 printmetric
-    } {
-      pop pop
-    } ifelse
-  } for
+      i 255 le {
+        dup xPFBencoding exch known not {
+          dup xPFBencoding exch true put
+          NewPFBencoding i 3 -1 roll put
+          /i i 1 add def
+        }{
+          pop
+        } ifelse
+      }{
+        pop exit
+      } ifelse
+    } forall
+    i 0 eq {exit} if
+    % define a new font with NewPFBencoding as its encoding vector
+    currfont maxlength dict /NewTMPfont edef
+    currfont {
+      exch dup dup /FID ne exch /Encoding ne and {
+        exch NewTMPfont 3 1 roll put
+      }{
+        pop pop
+      } ifelse
+    } forall
+    % compute a unique name for a font to be registered
+    /fontiter fontiter 1 add def
+    TMPFontTemplate fontiter (000) cvs
+    dup length TMPFontTemplate length exch sub exch putinterval
+    /TMPFontName TMPFontTemplate cvn def
+    NewTMPfont /FontName TMPFontName put
+    NewTMPfont /Encoding NewPFBencoding put
+    % make this new font the current font
+    TMPFontName NewTMPfont definefont 1000 scalefont setfont
+    % print metric data for each character in the newly created encoding vector
+    0 1 255 {
+      dup NewPFBencoding exch get
+      dup /.notdef ne {
+        exch -1 printmetric
+      }{
+        pop pop exit
+      } ifelse
+    } for
+  i 255 lt {exit} if
+  } loop
   (EndCharMetrics) =to.ofi
 } def
 
@@ -296,8 +314,8 @@
   newpath 0 0 moveto
   onechar false charpath flattenpath pathbbox
   newpath
-  round cvi /ury exch def round cvi /urx exch def
-  round cvi /lly exch def round cvi /llx exch def
+  round cvi /ury edef round cvi /urx edef
+  round cvi /lly edef round cvi /llx edef
   ury lly eq {/ury 0 def /lly 0 def} if % normalize degenrated BB
   urx llx eq {/urx 0 def /llx 0 def} if %
   llx =only.to.ofi ( ) print.to.ofi lly =only.to.ofi ( ) print.to.ofi
@@ -309,7 +327,7 @@
   3 1 roll 2 copy known {
     get =string cvs exch
     print.to.ofi ( ) print.to.ofi =to.ofi
-  } {
+  }{
     pop pop pop
   } ifelse
 } def
@@ -352,7 +370,7 @@
   isPFB {% defined in `makeafm'
     (r) file true /PFBDecode filter cvx % true is better (see gs_type1.ps)
     mark exch exec
-  } {
+  }{
     (r) file mark exch run
   } ifelse
   cleartomark
@@ -360,19 +378,22 @@
   /newFontDirectory FontDirectory dup length dict copy def
   % spot the added font:
   oldFontDirectory  {pop newFontDirectory exch undef} forall
-  newFontDirectory length 1 ne {(Weird PFB file?) printquit} if
+  newFontDirectory length 1 ne {
+    newFontDirectory length =
+    (Weird PFB file?) printquit
+  } if
   newFontDirectory {pop} forall
-  findfont /currfont exch def
+  findfont /currfont edef
 } def
 
 /readPFMfile {
   dup () ne {
-    (r) file /currPFMfile exch def
-    10 dict dup /PFMdict exch def begin
+    (r) file /currPFMfile edef
+    10 dict dup /PFMdict edef begin
     readPFMheader
     readPFMExtMetric
     end
-  } {
+  }{
     pop /currPFMfile () def
   } ifelse
 } def
@@ -394,7 +415,7 @@
 
 /makeafm {
   count 0 eq {(Missing font file name) printquit} if
-  /ifn exch def
+  /ifn edef
   ifn length 0 eq {(Empty font file name) printquit} if
 % the following piece of the code does, in fact, the job of a system shell,
 % i.e., it analyses the supplied names, appends extensions if needed,
@@ -402,52 +423,60 @@
   /pfbn () def /pfan () def /pfmn () def % initialisation
   ifn (.pfb) search {
     3 -1 roll length 0 eq {% file name extension = ".pfb"
-      ifn dup length string copy /pfbn exch def
-      /ifn exch def
-    } {pop} ifelse
+      ifn dup length string copy /pfbn edef
+      /ifn edef
+    }{pop} ifelse
   } if pop
   ifn (.pfa) search {
     3 -1 roll length 0 eq {% file name extension = ".pfa"
-      ifn dup length string copy /pfan exch def
-      /ifn exch def
-    } {pop} ifelse
+      ifn dup length string copy /pfan edef
+      /ifn edef
+    }{pop} ifelse
   } if pop
   pfbn () eq pfan () eq and dup {% no extension was supplied, try ".pfb"
-    /pfbn ifn length 4 add string def
-    pfbn 0 ifn putinterval pfbn ifn length (.pfb) putinterval
+    /pfbn ifn (.pfb) concatstrings def
   } if
   pfbn () ne {% check whether "filename.pfb" exists
-    pfbn status {pop pop pop pop /isPFB true def} {/pfbn () def} ifelse
+    pfbn status {pop pop pop pop /isPFB true def}{/pfbn () def} ifelse
   } if
   pfbn () eq and {% checking "filename.pfb" unsuccessful, try ".pfa"
-    /pfan ifn length 4 add string def
-    pfan 0 ifn putinterval pfan ifn length (.pfa) putinterval
+    /pfan ifn (.pfa) concatstrings def
   } if
   pfan () ne {% check whether "filename.pfa" exists
-    pfan status {pop pop pop pop /isPFB false def} {/pfan () def} ifelse
+    pfan status {pop pop pop pop /isPFB false def}{/pfan () def} ifelse
   } if
 
   pfbn () eq pfan () eq and {
     (Neither pfa nor pfb found) printquit
   } if
 
-  /ofn ifn length 4 add string def
-  ofn 0 ifn putinterval ofn ifn length (.afm) putinterval
+  /ofn ifn (.afm) concatstrings def
   ofn status {
     pop pop pop pop (Resulting file exists) printquit
   } if
   /ofi ofn (w) file def
 
-  /pfmn ifn length 4 add string def
-  pfmn 0 ifn putinterval pfmn ifn length (.pfm) putinterval
+  /pfmn ifn (.pfm) concatstrings def
   pfmn status {
     pop pop pop pop
-  } {
-    /pfmn () def (pfm file not found -- ignored) print
+  }{
+    () pfmn {
+      (/) search {
+        4 -1 roll exch concatstrings exch concatstrings exch
+      }{
+        exit
+      } ifelse
+    } loop
+    (pfm/) exch concatstrings concatstrings
+    dup status {
+      pop pop pop pop /pfmn edef
+    }{
+      pop /pfmn () def (pfm file not found -- ignored) print
+    } ifelse
   } ifelse
 
   pfmn
-  isPFB {pfbn} {pfan} ifelse
+  isPFB {pfbn}{pfan} ifelse
   printafm
 
 } def
@@ -456,9 +485,9 @@
 [ shellarguments
   { ] dup length 1 eq {
        0 get makeafm
-     } {
-       (Usage: gs [-sDEVICE=nullpage] -- pf2afm.ps disk_font_name\n)
-       printquit
+     }{
+       (This is PF2AFM -- AFM generator \(ver. 1.00\)\n)
+       (Usage: gs [-dNODISPLAY] -- pf2afm.ps disk_font_name\n) printquit
      } ifelse
   }
   {pop}
