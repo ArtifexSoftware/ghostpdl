@@ -173,6 +173,7 @@ int psf_write_type1_font(P7(stream *s, gs_font_type1 *pfont, int options,
  */
 #define WRITE_TYPE2_NO_LENIV 1	/* always use lenIV = -1 */
 #define WRITE_TYPE2_CHARSTRINGS 2 /* convert T1 charstrings to T2 */
+#define WRITE_TYPE2_AR3 4	/* work around bugs in Acrobat Reader 3 */
 int psf_write_type2_font(P6(stream *s, gs_font_type1 *pfont, int options,
 			    gs_glyph *subset_glyphs, uint subset_size,
 			    const gs_const_string *alt_font_name));

@@ -514,7 +514,6 @@ cff_write_Top_common(cff_writer_t *pcw, gs_font_base *pbfont,
 			(FONT_INFO_COPYRIGHT | FONT_INFO_NOTICE |
 			 FONT_INFO_FAMILY_NAME | FONT_INFO_FULL_NAME),
 				  &info);
-
     /* (version) */
     if (info.members & FONT_INFO_NOTICE)
 	cff_put_string_value(pcw, info.Notice.data, info.Notice.size,
@@ -542,19 +541,25 @@ cff_write_Top_common(cff_writer_t *pcw, gs_font_base *pbfont,
 	    cff_put_int(pcw, uid_XUID_values(&pbfont->UID)[j]);
 	cff_put_op(pcw, TOP_XUID);
     }
-    if (info.members & FONT_INFO_COPYRIGHT)
-	cff_put_string_value(pcw, info.Copyright.data, info.Copyright.size,
-			     TOP_Copyright);
-    if (info.Flags & info.Flags_returned & FONT_IS_FIXED_WIDTH)
-	cff_put_bool_value(pcw, true, TOP_isFixedPitch);
-    cff_put_real_if_ne(pcw, info.ItalicAngle, ItalicAngle_DEFAULT,
-		       TOP_ItalicAngle);
-    cff_put_int_if_ne(pcw, info.UnderlinePosition, UnderlinePosition_DEFAULT,
-		      TOP_UnderlinePosition);
-    cff_put_int_if_ne(pcw, info.UnderlineThickness, UnderlineThickness_DEFAULT,
-		      TOP_UnderlineThickness);
-    cff_put_int_if_ne(pcw, pbfont->PaintType, PaintType_DEFAULT,
-		      TOP_PaintType);
+    /*
+     * Acrobat Reader 3 gives an error if a CFF font includes any of the
+     * following opcodes.
+     */
+    if (!(pcw->options & WRITE_TYPE2_AR3)) {
+	if (info.members & FONT_INFO_COPYRIGHT)
+	    cff_put_string_value(pcw, info.Copyright.data, info.Copyright.size,
+				 TOP_Copyright);
+	if (info.Flags & info.Flags_returned & FONT_IS_FIXED_WIDTH)
+	    cff_put_bool_value(pcw, true, TOP_isFixedPitch);
+	cff_put_real_if_ne(pcw, info.ItalicAngle, ItalicAngle_DEFAULT,
+			   TOP_ItalicAngle);
+	cff_put_int_if_ne(pcw, info.UnderlinePosition,
+			  UnderlinePosition_DEFAULT, TOP_UnderlinePosition);
+	cff_put_int_if_ne(pcw, info.UnderlineThickness,
+			  UnderlineThickness_DEFAULT, TOP_UnderlineThickness);
+	cff_put_int_if_ne(pcw, pbfont->PaintType, PaintType_DEFAULT,
+			  TOP_PaintType);
+    }
     {
 	static const gs_matrix fm_default = {
 	    constant_matrix_body(0.001, 0, 0, 0.001, 0, 0)
@@ -927,11 +932,13 @@ cff_write_Encoding(cff_writer_t *pcw, cff_glyph_subset_t *pgsub)
 	/* Write supplementary entries for multiply-encoded glyphs. */
 	sputc(s, nsupp);
 	for (j = 0; j < nsupp; ++j) {
-	    sputc(s, supplement[j]);
+	    byte chr = supplement[j];
+
+	    sputc(s, chr);
 	    put_card16(pcw,
 		cff_glyph_sid(pcw,
 			      pfont->procs.encode_char((gs_font *)pfont,
-						       (gs_char)j,
+						       (gs_char)chr,
 						       GLYPH_SPACE_NAME)));
 	}
     }
@@ -1183,6 +1190,9 @@ psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
     }
     cff_string_table_init(&writer.strings, string_items,
 			  countof(string_items));
+
+    /* Enter miscellaneous strings in the string table. */
+    cff_write_Top_font(&writer, 0, 0, 0, 0, 0);
 
     /* Enter the glyph names in the string table. */
     /* (Note that we have changed the glyph list.) */
