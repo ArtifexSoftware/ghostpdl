@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995-2004 artofcode LLC. All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -16,8 +16,10 @@
 
 /* $Id$ */
 /* 'echo'-like utility */
+
 #include "stdpre.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 #if defined(__sun__) && !defined(const)
 /* Apparently, there are archaic Sun platforms which don't include
@@ -33,9 +35,6 @@ extern int fputc(int, FILE *), fputs(const char *, FILE *);
 #include <ctype.h>
 #include <string.h>
 #include <time.h>		/* for ctime */
-#ifdef VMS
-#include <stdlib.h>
-#endif
 
 /*
  * This program exists solely to get around omissions, problems, and
