@@ -47,30 +47,38 @@ typedef struct gx_san_trap_contact_s gx_san_trap_contact;
 
 /* A trapezoid. */
 struct gx_san_trap_s {
+    /* Buffer link : */
+    gx_san_trap *link; /* Buffer link. */
     /* The geometry : */
     fixed ybot, ytop;
     fixed xlbot, xrbot, xltop, xrtop;
     /* The spot topology representation : */
-    gx_san_trap_contact *lower; /* Neighbours of the upper band. */
+    gx_san_trap_contact *upper; /* Neighbours of the upper band. */
     const segment *l; /* Outline pointer : left boundary. */
     const segment *r; /* Outline pointer : right boundary. */
     /* The topology reconstrustor work data : */
     gx_san_trap *next; /* Next with same ytop. */
     gx_san_trap *prev; /* Prev with same ytop. */
     /* The stem recognizer work data : */
+    bool visited;
+    int fork;
 };
-#define private_st_san_trap()	/* No GC invocations */\
-  gs_private_st_simple(st_san_trap, gx_san_trap, "gx_san_trap")
+#define private_st_san_trap() /* When GC is invoked, only the buffer link is valid. */\
+  gs_private_st_ptrs1(st_san_trap, gx_san_trap, "gx_san_trap", \
+    san_trap_enum_ptrs, san_trap_reloc_ptrs, link)
 
 /* A contact of 2 trapezoids. */
 /* Represents a neighbourship through a band boundary. */
 struct gx_san_trap_contact_s {
+    /* Buffer link : */
+    gx_san_trap_contact *link; /* Buffer link. */
     gx_san_trap_contact *next; /* Next element of the same relation, a cyclic list. */
     gx_san_trap_contact *prev; /* Prev element of the same relation, a cyclic list. */
     gx_san_trap *upper, *lower; /* A contacting pair. */
 };
-#define private_st_san_trap_contact()	/* No GC invocations */\
-  gs_private_st_simple(st_san_trap_contact, gx_san_trap_contact, "gx_san_trap")
+#define private_st_san_trap_contact() /* When GC is invoked, only the buffer link is valid. */\
+  gs_private_st_ptrs1(st_san_trap_contact, gx_san_trap_contact, "gx_san_trap_contact",\
+  san_trap_contact_enum_ptrs, san_trap_contact_reloc_ptrs, link)
 
 /* A stem section. */
 typedef struct gx_san_sect_s gx_san_sect;
@@ -83,10 +91,11 @@ struct gx_san_sect_s {
 struct gx_device_spot_analyzer_s {
     gx_device_common;
     int lock;
-    gx_san_trap *trap_buffer;
-    gx_san_trap_contact *cont_buffer;
-    int trap_buffer_count, trap_buffer_max;
-    int cont_buffer_count, cont_buffer_max;
+    /* Buffers : */
+    gx_san_trap *trap_buffer, *trap_buffer_last, *trap_free;
+    gx_san_trap_contact *cont_buffer, *cont_buffer_last, *cont_free;
+    int trap_buffer_count;
+    int cont_buffer_count;
     /* The topology reconstrustor work data (no GC invocations) : */
     gx_san_trap *bot_band;
     gx_san_trap *top_band;
@@ -95,11 +104,11 @@ struct gx_device_spot_analyzer_s {
 };
 
 extern_st(st_device_spot_analyzer);
-#define public_st_device_spot_analyzer()\
-    gs_public_st_suffix_add2_final(st_device_spot_analyzer, gx_device_spot_analyzer,\
+#define public_st_device_spot_analyzer() /* When GC is invoked, only the buffer links are valid. */\
+    gs_public_st_suffix_add4_final(st_device_spot_analyzer, gx_device_spot_analyzer,\
 	    "gx_device_spot_analyzer", device_spot_analyzer_enum_ptrs,\
 	    device_spot_analyzer_reloc_ptrs, gx_device_finalize, st_device,\
-	    trap_buffer, cont_buffer)
+	    trap_buffer, cont_buffer_last, cont_buffer, cont_buffer_last)
 
 /* -------------- Interface methods ----------------------------- */
 

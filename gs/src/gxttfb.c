@@ -469,6 +469,13 @@ private void gx_ttfExport__DebugPaint(ttfExport *this)
 /*----------------------------------------------*/
 
 #if TT_GRID_FITTING
+
+int stem_hint_handler(void *client_data, gx_san_sect *ss)
+{
+    /* Not completed yet. */
+    return 0;
+}
+
 private int grid_fit(gx_device_spot_analyzer *padev, 
 	    gx_path *path, const gs_log2_scale_point *pscale)
 {
@@ -476,6 +483,7 @@ private int grid_fit(gx_device_spot_analyzer *padev,
     gs_imager_state is_stub;
     gx_fill_params params;
     gx_device_color devc_stub;
+    void *client_data = NULL; /* stub */
     int code;
 
     memset(&is_stub, 0, sizeof(is_stub));
@@ -488,6 +496,7 @@ private int grid_fit(gx_device_spot_analyzer *padev,
     code = dev_proc(padev, fill_path)((gx_device *)padev, 
 		    &is_stub, path, &params, &devc_stub, NULL);
     gx_san_end(padev);
+    code = gx_san_generate_stems(padev, client_data, stem_hint_handler);
     return code;
 }
 #endif

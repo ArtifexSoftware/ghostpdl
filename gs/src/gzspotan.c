@@ -22,13 +22,17 @@
 #include "gzspotan.h"
 #include "gxfixed.h"
 #include "gxdevice.h"
+#include "gxfdrop.h" /* Only for VD_* constants. */
 #include "memory_.h"
+#include "math_.h"
 #include "vdtrace.h"
 #include <assert.h>
 
 #define VD_TRAP_N_COLOR RGB(128, 128, 0)
 #define VD_TRAP_U_COLOR RGB(0, 0, 255)
 #define VD_CONT_COLOR RGB(0, 255, 0)
+#define VD_STEM_COLOR RGB(255, 255, 255)
+#define VD_HINT_COLOR RGB(255, 0, 0)
 
 public_st_device_spot_analyzer();
 private_st_san_trap();
@@ -38,155 +42,99 @@ private dev_proc_open_device(san_open);
 private dev_proc_close_device(san_close);
 private dev_proc_get_clipping_box(san_get_clipping_box);
 
-/* The device descriptor */
-/* Many of these procedures won't be called; they are set to NULL. */
-private const gx_device_spot_analyzer gx_spot_analyzer_device =
-{std_device_std_body(gx_device_spot_analyzer, 0, "spot analyzer",
-		     0, 0, 1, 1),
- {san_open,
-  NULL,
-  NULL,
-  NULL,
-  san_close,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  gx_default_fill_path,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  san_get_clipping_box,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  gx_default_finish_copydevice,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL
- }
-};
 
-private int
-san_open(register gx_device * dev)
-{
-    gx_device_spot_analyzer * const padev = (gx_device_spot_analyzer *)dev;
-
-    padev->trap_buffer = 0;
-    padev->cont_buffer = 0;
-    padev->trap_buffer_count = padev->trap_buffer_max = 0;
-    padev->cont_buffer_count = padev->cont_buffer_max = 0;
-    return 0;
-}
-
-private int
-san_close(gx_device * dev)
-{
-    gx_device_spot_analyzer * const padev = (gx_device_spot_analyzer *)dev;
-
-    gs_free_object(padev->memory, padev->trap_buffer, "san_close");
-    padev->trap_buffer = 0;
-    gs_free_object(padev->memory, padev->cont_buffer, "san_close");
-    padev->cont_buffer = 0;
-    return 0;
-}
-
-void
-san_get_clipping_box(gx_device * dev, gs_fixed_rect * pbox)
-{
-    pbox->p.x = min_int;
-    pbox->p.y = min_int;
-    pbox->q.x = max_int;
-    pbox->q.y = max_int;
-}
-
-/* --------------------- Utilities ------------------------- */
+/* --------------------- List management ------------------------- */
 /* fixme : use something like C++ patterns to generate same functions for various types. */
 
-private const int buf_increment = 100;
+
+private inline void
+free_trap_list(gs_memory_t *mem, gx_san_trap **list)
+{
+    gx_san_trap *t = *list, *t1;
+
+    for (t = *list; t != NULL; t = t1) {
+	t1 = t->link;
+	gs_free_object(mem, t, "free_trap_list");
+    }
+    *list = 0;
+}
+
+private inline void
+free_cont_list(gs_memory_t *mem, gx_san_trap_contact **list)
+{
+    gx_san_trap_contact *t = *list, *t1;
+
+    for (t = *list; t != NULL; t = t1) {
+	t1 = t->link;
+	gs_free_object(mem, t, "free_trap_list");
+    }
+    *list = 0;
+}
 
 private inline gx_san_trap *
 trap_reserve(gx_device_spot_analyzer *padev)
 {
-    if (padev->trap_buffer_count == padev->trap_buffer_max) {
-	gx_san_trap *buf = gs_alloc_struct_array(padev->memory, 
-		padev->trap_buffer_max + buf_increment, gx_san_trap, 
-		&st_san_trap, "trap_reserve");
-	if (buf == NULL)
+    gx_san_trap *t = padev->trap_free;
+
+    if (t != NULL) {
+	padev->trap_free = t->link;
+    } else {
+	if (padev->trap_buffer_count > 1000)
 	    return NULL;
-	if (padev->trap_buffer != NULL) {
-	    memcpy(buf, padev->trap_buffer, sizeof(buf[0]) * padev->trap_buffer_max);
-	    gs_free_object(padev->memory, padev->trap_buffer, "trap_reserve");
-	}
-	padev->trap_buffer = buf;
-	padev->trap_buffer_max += buf_increment;
+	t = gs_alloc_struct(padev->memory, gx_san_trap, 
+		&st_san_trap, "trap_reserve");
+	if (t == NULL)
+	    return NULL;
+	t->link = NULL;
+	if (padev->trap_buffer_last == NULL)
+	    padev->trap_buffer = t;
+	else
+	    padev->trap_buffer_last->link = t;
+	padev->trap_buffer_last = t;
+	padev->trap_buffer_count++;
     }
-    return &padev->trap_buffer[padev->trap_buffer_count++];
+    return t;
 }
 
 private inline gx_san_trap_contact *
 cont_reserve(gx_device_spot_analyzer *padev)
 {
-    if (padev->cont_buffer_count == padev->cont_buffer_max) {
-	gx_san_trap_contact *buf = gs_alloc_struct_array(padev->memory, 
-		padev->cont_buffer_max + buf_increment, gx_san_trap_contact, 
-		&st_san_trap_contact, "cont_reserve");
-	if (buf == NULL)
+    gx_san_trap_contact *t = padev->cont_free;
+
+    if (t != NULL) {
+	padev->cont_free = t->link;
+    } else {
+	if (padev->cont_buffer_count > 1000)
 	    return NULL;
-	if (padev->cont_buffer != NULL) {
-	    memcpy(buf, padev->cont_buffer, sizeof(buf[0]) * padev->cont_buffer_max);
-	    gs_free_object(padev->memory, padev->cont_buffer, "cont_reserve");
-	}
-	padev->cont_buffer = buf;
-	padev->cont_buffer_max += buf_increment;
+	t = gs_alloc_struct(padev->memory, gx_san_trap_contact, 
+		&st_san_trap_contact, "cont_reserve");
+	if (t == NULL)
+	    return NULL;
+	t->link = NULL;
+	if (padev->cont_buffer_last == NULL)
+	    padev->cont_buffer = t;
+	else
+	    padev->cont_buffer_last->link = t;
+	padev->cont_buffer_last = t;
+	padev->cont_buffer_count++;
     }
-    return &padev->cont_buffer[padev->cont_buffer_count++];
+    return t;
 }
 
 private inline void
 trap_unreserve(gx_device_spot_analyzer *padev, gx_san_trap *t)
 {
-    assert(t == &padev->trap_buffer[padev->trap_buffer_count - 1]);
-    padev->trap_buffer_count--;
+    /* Assuming the last reserved one. */
+    assert(t->link == padev->trap_free);
+    padev->trap_free = t;
 }
 
 private inline void
 cont_unreserve(gx_device_spot_analyzer *padev, gx_san_trap_contact *t)
 {
-    assert(t == &padev->cont_buffer[padev->cont_buffer_count - 1]);
-    padev->cont_buffer_count--;
+    /* Assuming the last reserved one. */
+    assert(t->link == padev->cont_free);
+    padev->cont_free = t;
 }
 
 private inline gx_san_trap *
@@ -257,6 +205,104 @@ trap_is_last(const gx_san_trap *list, const gx_san_trap *t)
     return t->next == list; 
 }
 
+/* ---------------------The device ---------------------------- */
+
+/* The device descriptor */
+/* Many of these procedures won't be called; they are set to NULL. */
+private const gx_device_spot_analyzer gx_spot_analyzer_device =
+{std_device_std_body(gx_device_spot_analyzer, 0, "spot analyzer",
+		     0, 0, 1, 1),
+ {san_open,
+  NULL,
+  NULL,
+  NULL,
+  san_close,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  gx_default_fill_path,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  san_get_clipping_box,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  gx_default_finish_copydevice,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL
+ }
+};
+
+private int
+san_open(register gx_device * dev)
+{
+    gx_device_spot_analyzer * const padev = (gx_device_spot_analyzer *)dev;
+
+    padev->trap_buffer = padev->trap_buffer_last = NULL;
+    padev->cont_buffer = padev->cont_buffer_last = NULL;
+    padev->trap_buffer_count = 0;
+    padev->cont_buffer_count = 0;
+    return 0;
+}
+
+private int
+san_close(gx_device * dev)
+{
+    gx_device_spot_analyzer * const padev = (gx_device_spot_analyzer *)dev;
+
+    free_trap_list(padev->memory, &padev->trap_buffer);
+    free_cont_list(padev->memory, &padev->cont_buffer);
+    padev->trap_buffer_last = NULL;
+    padev->cont_buffer_last = NULL;
+    return 0;
+}
+
+void
+san_get_clipping_box(gx_device * dev, gs_fixed_rect * pbox)
+{
+    pbox->p.x = min_int;
+    pbox->p.y = min_int;
+    pbox->q.x = max_int;
+    pbox->q.y = max_int;
+}
+
+/* --------------------- Utilities ------------------------- */
+
 private inline void
 check_band_list(const gx_san_trap *list)
 {
@@ -277,19 +323,17 @@ try_unite_last_trap(gx_device_spot_analyzer *padev, fixed xlbot)
 {
     if (padev->bot_band != NULL && padev->top_band != NULL) {
 	gx_san_trap *last = band_list_last(padev->top_band);
+	gx_san_trap *t = padev->bot_current;
 	/* If the last trapeziod is a prolongation of its bottom contact, 
 	   unite it and release the last trapezoid and the last contact. */
-	if (last->lower != NULL && last->xrbot < xlbot && 
+	if (t != NULL && t->upper != NULL && last->xrbot < xlbot && 
 		(last->prev == last || last->prev->xrbot < last->xlbot)) {
-	    gx_san_trap *t = last->lower->lower;
-
-	    if (last->lower->next == last->lower &&
+	    if (t->upper->next == t->upper &&
 		    t->l == last->l && t->r == last->r) {
 		if (padev->bot_current == t)
 		    padev->bot_current = (t == band_list_last(padev->bot_band) ? NULL : t->next);
 		band_list_remove(&padev->top_band, last);
 		band_list_remove(&padev->bot_band, t);
-		check_band_list(padev->bot_band);
 		band_list_insert_last(&padev->top_band, t);
 		t->ytop = last->ytop;
 		t->xltop = last->xltop;
@@ -297,12 +341,36 @@ try_unite_last_trap(gx_device_spot_analyzer *padev, fixed xlbot)
 		vd_quad(t->xlbot, t->ybot, t->xrbot, t->ybot, 
 			t->xrtop, t->ytop, t->xltop, t->ytop, 1, VD_TRAP_U_COLOR);
 		trap_unreserve(padev, last);
-		cont_unreserve(padev, last->lower);
-		check_band_list(padev->top_band);
-		check_band_list(padev->bot_band);
+		cont_unreserve(padev, t->upper);
+		t->upper = NULL;
 	    }
 	}
     }
+}
+
+private inline double 
+trap_area(gx_san_trap *t)
+{
+    return (double)(t->xrbot - t->xlbot + t->xrtop - t->xltop) * (t->ytop - t->ybot) / 2;
+}
+
+private inline bool
+is_stem_boundaries(gx_san_trap *t)
+{
+    double dy = t->ytop - t->ybot;
+    double dx = t->xltop - t->xlbot;
+    double norm = hypot(dx, dy);
+    double cosine = dx / norm;
+    double cosine_threshold = 0.5; /* Arbitrary */
+
+    if (any_abs(cosine) > cosine_threshold)
+	return false;
+    dx = t->xrtop - t->xrbot;
+    norm = hypot(dx, dy);
+    cosine = dx / norm;
+    if (any_abs(cosine) > cosine_threshold)
+	return false;
+    return true;
 }
 
 /* --------------------- Accessories ------------------------- */
@@ -360,8 +428,8 @@ gx_san_begin(gx_device_spot_analyzer *padev)
     padev->bot_band = NULL;
     padev->top_band = NULL;
     padev->bot_current = NULL;
-    padev->trap_buffer_count = 0;
-    padev->cont_buffer_count = 0;
+    padev->trap_free = padev->trap_buffer;
+    padev->cont_free = padev->cont_buffer;
 }
 
 /* Store a tarpezoid. */
@@ -399,7 +467,9 @@ gx_san_trap_store(gx_device_spot_analyzer *padev,
     last->xrtop = xrtop;
     last->l = l;
     last->r = r;
-    last->lower = 0;
+    last->upper = 0;
+    last->fork = 0;
+    last->visited = false;
     vd_quad(last->xlbot, last->ybot, last->xrbot, last->ybot, 
 	    last->xrtop, last->ytop, last->xltop, last->ytop, 1, VD_TRAP_N_COLOR);
     band_list_insert_last(&padev->top_band, last);
@@ -421,7 +491,8 @@ gx_san_trap_store(gx_device_spot_analyzer *padev,
 	    vd_bar((t->xltop + t->xrtop + t->xlbot + t->xrbot) / 4, (t->ytop + t->ybot) / 2,
 		   (last->xltop + last->xrtop + last->xlbot + last->xrbot) / 4, 
 		   (last->ytop + last->ybot) / 2, 0, VD_CONT_COLOR);
-	    cont_list_insert_last(&last->lower, cont);
+	    cont_list_insert_last(&t->upper, cont);
+	    last->fork++;
 	    if (t == bot_last)
 		break;
 	    t = t->next;
@@ -438,10 +509,98 @@ gx_san_end(const gx_device_spot_analyzer *padev)
 }
 
 /* Generate stems. */
+private int 
+gx_san_generate_stems_aux(gx_device_spot_analyzer *padev, 
+		void *client_data,
+		int (*handler)(void *client_data, gx_san_sect *ss))
+{
+    gx_san_trap *t0 = padev->trap_buffer;
+
+    for (; t0 != padev->trap_free; t0 = t0->link) {
+	if (!t0->visited) {
+	    if (is_stem_boundaries(t0)) {
+		gx_san_trap_contact *cont = t0->upper;
+		gx_san_trap *t1 = t0, *t;
+		double area = 0, height = 0, ave_width;
+		
+		while(cont != NULL && cont->next == cont /* <= 1 descendent. */) {
+		    if (!is_stem_boundaries(cont->upper)) {
+			cont->lower->visited = true;
+			break;
+		    }
+		    if (cont->upper->fork > 1)
+			break; /* > 1 accendents.  */
+		    t1 = cont->upper;
+		    cont = t1->upper;
+		    t1->visited = true;
+		}
+		/* We've got a stem suspection from t to t1. */
+		vd_quad(t0->xlbot, t0->ybot, t0->xrbot, t0->ybot, 
+			t1->xrtop, t1->ytop, t1->xltop, t1->ytop, 1, VD_STEM_COLOR);
+		for (t = t0; ; t = t->upper->upper) {
+		    height += t->ytop - t->ybot;
+		    area += trap_area(t);
+		    if (t == t1)
+			break;
+		}
+		ave_width = area / height;
+		if (height > ave_width / ( 2.0 /* arbitrary */)) {
+		    /* We've got a stem from t to t1. */
+		    double w, wd, best_width_diff = ave_width * 10;
+		    gx_san_trap *best_trap = NULL;
+		    bool at_top = false;
+		    gx_san_sect sect;
+		    int code;
+
+		    for (t = t0; ; t = t->upper->upper) {
+			w = t->xrbot - t->xlbot;
+			wd = any_abs(w - ave_width);
+			if (w > 0 && wd < best_width_diff) {
+			    best_width_diff = wd;
+			    best_trap = t;
+			}
+			if (t == t1)
+			    break;
+		    }
+		    w = t->xrtop - t->xltop;
+		    wd = any_abs(w - ave_width);
+		    if (w > 0 && wd < best_width_diff) {
+			best_width_diff = wd;
+			best_trap = t;
+			at_top = true;
+		    }
+		    if (best_trap != NULL) {
+			/* Make a stem section hint at_top of test_trap : */
+			sect.y = at_top ? best_trap->ytop : best_trap->ybot; 
+			sect.xl = at_top ? best_trap->xltop : best_trap->xlbot; 
+			sect.xr = at_top ? best_trap->xrtop : best_trap->xrbot;
+			sect.l = best_trap->l; 
+			sect.r = best_trap->r;
+			vd_bar(sect.xl, sect.y, sect.xr, sect.y, 0, VD_HINT_COLOR);
+			code = handler(client_data, &sect);
+			if (code < 0)
+			    return code;
+		    }
+		}
+	    }
+	}
+	t0->visited = true;
+    }
+    return 0;
+}
+
 int 
 gx_san_generate_stems(gx_device_spot_analyzer *padev, 
 		void *client_data,
 		int (*handler)(void *client_data, gx_san_sect *ss))
 {
-    return 0;
+    int code;
+
+    vd_get_dc('f');
+    vd_set_shift(0, 0);
+    vd_set_scale(VD_SCALE);
+    vd_set_origin(0, 0);
+    code = gx_san_generate_stems_aux(padev, client_data, handler);
+    vd_release_dc;
+    return code;
 }

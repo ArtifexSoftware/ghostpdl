@@ -1849,8 +1849,9 @@ $(GLOBJ)gxttfb.$(OBJ) : $(GLSRC)gxttfb.c $(GXERR) \
 	$(GLCC) $(GLO_)gxttfb.$(OBJ) $(C_) $(GLSRC)gxttfb.c
 
 $(GLOBJ)gzspotan.$(OBJ) : $(GLSRC)gzspotan.c $(GXERR)\
- $(gx_h) $(gserrors_h) $(gsdevice_h) $(gsfixed_h) $(gxdevice_h)\
- $(gzspotan_h) $(memory__h) $(vdtrace_h)
+ $(gx_h) $(gserrors_h) $(gsdevice_h) $(gzspotan_h)\
+ $(gsfixed_h) $(gxdevice_h) $(gxfdrop_h)\
+ $(memory__h) $(math__h) $(vdtrace_h)
 	$(GLCC) $(GLO_)gzspotan.$(OBJ) $(C_) $(GLSRC)gzspotan.c
 
 
