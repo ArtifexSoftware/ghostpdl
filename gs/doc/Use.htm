@@ -412,6 +412,26 @@ just described, and also include the
 <a href="#FIXEDMEDIA"><b><tt>-dFIXEDMEDIA</tt></b> switch</a> on the
 command line.
 
+<p>
+The default set of paper sizes will be included in the <b><tt>currentpagedevice</tt></b>
+in the <b><tt>InputAttributes</tt></b> dictionary with each paper size as
+one of the entries. The last entry in the dictionary (which has numeric keys)
+is a non-standard (Ghostscript extension) type of PageSize where the array
+has four elements rather than the standard two elements. This four element
+array represents a page size range where the first two elements are the lower
+bound of the range and the second two are the upper bound. By default these
+are [0, 0] for the lower bound and [16#fffff, 16#fffff] for the upper bound.
+<br>
+The range type of PageSize is intended to allow flexible page size sepcification
+for non-printer file formats such as JPEG, PNG, TIFF, EPS, ...
+<br>
+For actual printers, either the entire <b><tt>InputAttributes</tt></b> dictionary
+should be replaced or the range type entry should not be included. To simplify
+using the default page sizes in the <b><tt>InputAttributes</tt></b> dictionary,
+the command line option <b><tt>-dNORANGEPAGESIZE</tt></b> can be used. Using
+this option will result in automatic rotation of the document page if the requested
+page size matches one of the default page sizes.
+
 <h3><a name="Change_default_size"></a>Changing the installed default paper size</h3>
 
 <p>
