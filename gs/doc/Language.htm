@@ -1968,7 +1968,7 @@ a dictionary. The dictionary keys are Postscript glyph names and the
 values are character codes. The name of the resource instance should
 reflect the character set for which it maps. For example,
 <b><tt>/Unicode</tt></b> <b><tt>/Decoding</tt></b> resource maps to
-Unicode UTC-16.
+Unicode UTF-16.
 
 <p>
 The rules for using <b><tt>Decoding</tt></b> resources in particular
@@ -2010,7 +2010,7 @@ resources  are provided. See the table <b><tt>.CMapChooser</tt></b> in
 <a href="../lib/gs_ciddc.ps">lib/gs_ciddc.ps</a>
 for the names of automatically gerenated resources and associated <b><tt>CMap</tt></b>s.
 They allow to mapping CNS1, GB1, Japan1, Japan2 and Korea1 CID sets to TrueType
-character sets known as Unicode (exactly UTC-16), Big5, 
+character sets known as Unicode (exactly UTF-16), Big5, 
 GB1213, ShiftJIS, Johab and Wansung.
 
 <p>
@@ -2023,7 +2023,7 @@ resource category.
 <p>
 <b><tt>GlyphNames2Unicode</tt></b> is an undocumented dictionary which Adobe 
 Postscript printer driver uses to communicate with Adobe Distiller.
-In this dictionary the keys are glyph names, the values are Unicode UTC-16 codes for them.
+In this dictionary the keys are glyph names, the values are Unicode UTF-16 codes for them.
 The dictionaly is stored in the <b><tt>FontInfo</tt></b> dictionary under
 the key <b><tt>GlyphNames2Unicode</tt></b>. Ghostscript recognises it and uses
 to generate <b><tt>ToUnicode</tt></b> CMaps with pdfwrite.

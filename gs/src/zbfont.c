@@ -120,7 +120,7 @@ gs_font_map_glyph_by_dict(const ref *map, gs_glyph glyph)
     return GS_NO_CHAR; /* Absent in the map. */
 }
 
-/* Get Unicode UTC-16 code for a glyph. */
+/* Get Unicode UTF-16 code for a glyph. */
 gs_char 
 gs_font_map_glyph_to_unicode(gs_font *font, gs_glyph glyph)
 {

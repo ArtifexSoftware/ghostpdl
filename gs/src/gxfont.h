@@ -222,7 +222,7 @@ typedef struct gs_font_procs_s {
   gs_glyph proc(gs_font *, gs_char, gs_glyph_space_t)
     font_proc_encode_char((*encode_char));
 
-    /* Map a glyph name to Unicode UTC-16.
+    /* Map a glyph name to Unicode UTF-16.
      */
 
 #define font_proc_decode_glyph(proc)\
