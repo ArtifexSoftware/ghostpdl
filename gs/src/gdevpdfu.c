@@ -282,6 +282,8 @@ text_to_stream(gx_device_pdf * pdev)
 {
     pputs(pdev->strm, "ET Q\n");
     pdev->text.font = 0;	/* because of Q */
+    pdev->text.leading = 0;	/* ibid. */
+    pdev->text.use_leading = false;  /* ibid. */
     return PDF_IN_STREAM;
 }
 /* Exit stream context. */
