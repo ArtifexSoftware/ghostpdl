@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1992, 1993, 1994, 1995, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989-2003 artofcode LLC. All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -15,7 +15,7 @@
 */
 
 /* $Id$ */
-/* Standard definitions for Aladdin Enterprises code */
+/* Standard definitions for Ghostscript code */
 
 #ifndef std_INCLUDED
 #  define std_INCLUDED
@@ -66,9 +66,11 @@
 #define arch_align_memory_mod ARCH_ALIGN_MEMORY_MOD
 
 /* Define integer data type sizes in terms of log2s. */
+#define ARCH_SIZEOF_CHAR (1 << ARCH_LOG2_SIZEOF_CHAR)
 #define ARCH_SIZEOF_SHORT (1 << ARCH_LOG2_SIZEOF_SHORT)
 #define ARCH_SIZEOF_INT (1 << ARCH_LOG2_SIZEOF_INT)
 #define ARCH_SIZEOF_LONG (1 << ARCH_LOG2_SIZEOF_LONG)
+#define ARCH_SIZEOF_LONG_LONG (1 << ARCH_LOG2_SIZEOF_LONG_LONG)
 #define ARCH_INTS_ARE_SHORT (ARCH_SIZEOF_INT == ARCH_SIZEOF_SHORT)
 /* Backward compatibility */
 #define arch_sizeof_short ARCH_SIZEOF_SHORT
@@ -94,6 +96,56 @@ typedef uint bits32;
 typedef ulong bits32;
 # endif
 #endif
+
+/* define some of the stdint.h types if they haven't been set by stdpre.h */
+#ifndef STDINT_TYPES_DEFINED
+/* 8 bit types */
+# if ARCH_SIZEOF_CHAR == 1
+typedef signed char int8_t;
+typedef unsigned char uint8_t;
+# endif
+/* 16 bit types */
+# if ARCH_SIZEOF_SHORT == 2
+typedef signed short int16_t;
+typedef unsigned short uint16_t;
+# else
+#  if ARCH_SIZEOF_INT == 2
+typedef signed int int16_t;
+typedef unsigned int uint16_t;
+#  endif
+# endif
+/* 32 bit types */
+# if ARCH_SIZEOF_INT == 4
+typedef signed int int32_t;
+typedef unsigned int uint32_t;
+# else
+#  if ARCH_SIZEOF_LONG == 4
+typedef signed long int32_t;
+typedef unsigned long uint32_t;
+#  else
+#   if ARCH_SIZEOF_SHORT == 4
+typedef signed short int32_t;
+typedef unsigned short uint32_t;
+#   endif
+#  endif
+# endif
+/* 64 bit types */
+# if ARCH_SIZEOF_INT == 8
+typedef signed int int64_t;
+typedef unsigned int uint64_t;
+# else
+#  if ARCH_SIZEOF_LONG == 8
+typedef signed long int64_t;
+typedef unsigned long uint64_t;
+#  else
+#   if ARCH_SIZEOF_LONG_LONG == 8
+typedef signed long long int64_t;
+typedef unsigned long long uint64_t;
+#   endif
+#  endif
+# endif
+#  define STDINT_TYPES_DEFINED
+#endif /* STDINT_TYPES_DEFINED */
 
 /* Minimum and maximum values for the signed types. */
 /* Avoid casts, to make them acceptable to strict ANSI compilers. */

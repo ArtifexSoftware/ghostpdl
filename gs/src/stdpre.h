@@ -15,7 +15,7 @@
 */
 
 /* $Id$ */
-/* Standard definitions for Aladdin Enterprises code not needing arch.h */
+/* Standard definitions for Ghostscript code not needing arch.h */
 
 #ifndef stdpre_INCLUDED
 #  define stdpre_INCLUDED
@@ -264,6 +264,7 @@ typedef unsigned long ulong;
  */
 #ifdef HAVE_STDINT_H
 # include <stdint.h>
+# define STDINT_TYPES_DEFINED
 #else
 # ifdef __WIN32__ /* MSVC currently doesn't proved C99 headers */
    typedef signed char             int8_t;
@@ -274,11 +275,14 @@ typedef unsigned long ulong;
    typedef unsigned short int      uint16_t;
    typedef unsigned int            uint32_t;
    /* no uint64_t */
+#  define STDINT_TYPES_DEFINED
 # endif
 # if defined(__VMS) /* OpenVMS provides these types in inttypes.h */
 #  include <inttypes.h>
+#  define STDINT_TYPES_DEFINED
 # endif
-   /* other archs may want to add defines here */
+   /* other archs may want to add defines here, 
+      or use the fallbacks in std.h */
 #endif /* STDINT_H */
 
 /* Since sys/types.h may define one or more of these (depending on
