@@ -1128,11 +1128,14 @@ end
   dup /AP knownoget {
     false
     [/N /R /D] {
+	% stack: scale annot appearance false key
       dup 3 index exch known {
-        exch pop true exit
+	exch pop true exit 
       } if
       pop
     } forall
+	% stack: scale annot appearance key true
+	% stack: scale annot appearance false
     dup {
       pop
       oget
@@ -1155,7 +1158,9 @@ end
 	  knownoget
         } ifelse
       } ifelse
-    } if
+    } {
+      exch pop	% discard useless AP dictionary
+    } ifelse
 
 		% Stack: scale annot appearance true
 		% Stack: scale annot false
