@@ -129,8 +129,9 @@ ifelse
     } if
   end
 } bind def
-% CCRun is an undocumented procedure provided for Type 4 and Type 0 fonts.
+
 1183615869 internaldict begin
+% CCRun is an undocumented procedure provided for Type 4 and Type 0 fonts.
 % Apparently there are two different argument lists for CCRun.
 % Handling the one with the extra Private dictionary requires fabricating
 % a Type 1 font on the fly, since we aren't currently prepared to parse the
@@ -160,6 +161,22 @@ ifelse
     3 index /Encoding get exch get
   } if exch .type1execchar
 } bind def
+
+% setweightvector is an undocumented procedure that force writes
+% weight vector to the font. Do extra checks for safety.
+/setweightvector { % <font> <vector> setweightvector -
+  dup type dup /arraytype ne exch /packedarraytype ne and
+  2 index type /dicttype ne or {
+    /setweightvector cvx /typecheck signalerror
+  } if
+  1 index /FontType known not {
+    /setweightvector cvx /invalidfont signalerror
+  } if
+  dup gcheck 2 index gcheck not and {
+    /setweightvector cvx /invalidaccess signalerror
+  } if
+  /WeightVector exch .forceput
+} bind executeonly def 
 end
 
 % Register the font types for definefont.
