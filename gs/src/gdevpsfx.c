@@ -214,6 +214,10 @@ type1_next(gs_type1_state *pcis)
 	    pcis->ips_count--;
 	    --ipsp;
 	    goto load;
+	case c_undoc15:
+	    /* See gstype1.h for information on this opcode. */
+	    CLEAR;
+	    continue;
 	case cx_escape:
 	    charstring_next(*cip, state, c, encrypted);
 	    ++cip;
