@@ -354,16 +354,10 @@ pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
     if (pdfont->ToUnicode)
 	pprintld1(s, "/ToUnicode %ld 0 R",
 		  pdf_resource_id((const pdf_resource_t *)pdfont->ToUnicode));
-    /*
-     * The PDF Reference says that the /Name entry is obsolescent and
-     * should no longer be used, but the Ghostscript PDF interpreter
-     * currently requires it.
-     */
-#if 0
-    stream_puts(s, "/Type/Font\n");
-#else
-    pprintld1(s, "/Type/Font/Name/R%ld\n", pdf_font_id(pdfont));
-#endif
+    if (pdev->CompatibilityLevel > 1.0)
+	stream_puts(s, "/Type/Font\n");
+    else
+	pprintld1(s, "/Type/Font/Name/R%ld\n", pdf_font_id(pdfont));
     return pdfont->write_contents(pdev, pdfont);
 }
 
