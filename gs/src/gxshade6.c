@@ -1442,7 +1442,7 @@ fill_wedge(patch_fill_state_t *pfs, int ka,
 }
 
 private inline int 
-fill_triangle_wedge(patch_fill_state_t *pfs,
+fill_triangle_wedge_aux(patch_fill_state_t *pfs,
 	    const shading_vertex_t *q0, const shading_vertex_t *q1, const shading_vertex_t *q2)
 {   int code;
     const gs_fixed_point *p0, *p1, *p2;
@@ -1478,6 +1478,16 @@ fill_triangle_wedge(patch_fill_state_t *pfs,
 	    return code;
 	return fill_wedge_trap(pfs, p2, p1, p1, p0, &q2->c, &q1->c, swap_axes, false);
     }
+}
+
+private inline int 
+fill_triangle_wedge(patch_fill_state_t *pfs,
+	    const shading_vertex_t *q0, const shading_vertex_t *q1, const shading_vertex_t *q2)
+{
+    if ((int64_t)(q1->p.x - q0->p.x) * (q2->p.y - q0->p.y) == 
+	(int64_t)(q1->p.y - q0->p.y) * (q2->p.x - q0->p.x))
+	return 0; /* Zero area. */
+    return fill_triangle_wedge_aux(pfs, q0, q1, q2);
 }
 
 private int
@@ -2037,7 +2047,7 @@ quadrangle_bbox_covers_pixel_centers(const quadrangle_patch *p)
     return false;
 }
 
-inline void
+private inline void
 divide_bar(patch_fill_state_t *pfs, 
 	const shading_vertex_t *p0, const shading_vertex_t *p1, int radix, shading_vertex_t *p)
 {
@@ -2068,6 +2078,15 @@ triangle_by_4(patch_fill_state_t *pfs,
     divide_bar(pfs, p0, p1, 2, &p01);
     divide_bar(pfs, p1, p2, 2, &p12);
     divide_bar(pfs, p2, p0, 2, &p20);
+    code = fill_triangle_wedge(pfs, p0, p1, &p01);
+    if (code < 0)
+	return code;
+    code = fill_triangle_wedge(pfs, p1, p2, &p12);
+    if (code < 0)
+	return code;
+    code = fill_triangle_wedge(pfs, p2, p0, &p20);
+    if (code < 0)
+	return code;
     code = triangle_by_4(pfs, p0, &p01, &p20);
     if (code < 0)
 	return code;
@@ -2078,6 +2097,7 @@ triangle_by_4(patch_fill_state_t *pfs,
     if (code < 0)
 	return code;
     return triangle_by_4(pfs, &p01, &p12, &p20);
+
 }
 
 private inline int 
@@ -2120,9 +2140,8 @@ divide_triangle_by_parallels(patch_fill_state_t *pfs,
 	double d01)
 {
     /* fixme : clone the case of small triangles. */
-    int n = (int)ceil(d01 / (pfs->smoothness / COLOR_CONTIGUITY)), i;
+    int n = (int)ceil(d01 / (pfs->smoothness / COLOR_CONTIGUITY));
     shading_vertex_t q0, q1;
-    double t = 1.0 / n;
     int code;
 
     if (n == 1)

@@ -31,7 +31,7 @@
 #include "gxshade4.h"
 #include "vdtrace.h"
 
-#define VD_TRACE_TRIANGLE_PATCH 0
+#define VD_TRACE_TRIANGLE_PATCH 1
 
 /* ---------------- Triangle mesh filling ---------------- */
 
@@ -54,6 +54,7 @@ mesh_init_fill_state(mesh_fill_state_t * pfs, const gs_shading_mesh_t * psh,
 }
 
 /* Initialize the recursion state for filling one triangle. */
+#if !NEW_SHADINGS 
 private void
 shading_init_fill_triangle(mesh_fill_state_t * pfs,
   const shading_vertex_t *va, const shading_vertex_t *vb, const shading_vertex_t *vc,
@@ -68,6 +69,7 @@ shading_init_fill_triangle(mesh_fill_state_t * pfs,
     patch_set_color_values(pfs, pfs->frames[0].vc.cc, &vc->c);
     pfs->frames[0].check_clipping = check_clipping;
 }
+#endif
 void
 mesh_init_fill_triangle(mesh_fill_state_t * pfs,
   const mesh_vertex_t *va, const mesh_vertex_t *vb, const mesh_vertex_t *vc,
@@ -375,6 +377,11 @@ Gt_fill_triangle(mesh_fill_state_t * pfs, const shading_vertex_t * va,
 	patch_fill_state_t pfs1;
 	int code;
 
+#	if TENSOR_SHADING_DEBUG
+	    patch_cnt ++;
+	    if (patch_cnt != -1)
+		return 0;
+#	endif
  	memcpy(&pfs1, (shading_fill_state_t *)pfs, sizeof(shading_fill_state_t));
 	pfs1.Function = pfs->pshm->params.Function;
 	init_patch_fill_state(&pfs1);
