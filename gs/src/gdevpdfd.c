@@ -249,9 +249,6 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 	if (box.p.x >= box.q.x || box.p.y >= box.q.y)
 	    return 0;		/* empty clipping path */
     }
-    if (!gx_dc_is_pure(pdcolor))
-	return gx_default_fill_path(dev, pis, ppath, params, pdcolor,
-				    pcpath);
     code = pdf_prepare_fill(pdev, pis);
     if (code < 0)
 	return code;

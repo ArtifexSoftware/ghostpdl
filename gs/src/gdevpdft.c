@@ -221,7 +221,6 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
 	   TEXT_ADD_TO_ALL_WIDTHS | TEXT_ADD_TO_SPACE_WIDTH |
 	   TEXT_REPLACE_WIDTHS |
 	   TEXT_DO_DRAW | TEXT_RETURN_WIDTH)) != 0 ||
-	!gx_dc_is_pure(pdcolor) ||
 	gx_path_current_point(path, &cpt) < 0
 	)
 	return gx_default_text_begin(dev, pis, text, font, path, pdcolor,

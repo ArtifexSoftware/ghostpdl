@@ -225,6 +225,7 @@ const gx_device_pdf gs_pdfwrite_device =
      {
 	 {0}}},			/* resources */
  0,				/* cs_Pattern */
+ 0,				/* cs_PatternRGB */
  0,				/* last_resource */
  {
      {

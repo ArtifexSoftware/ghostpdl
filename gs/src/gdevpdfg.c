@@ -36,20 +36,6 @@
 #include "gdevpdfo.h"
 #include "szlibx.h"
 
-/**************** WILL MOVE TO gdevpdfc.c ****************/
-
-/* Write a color value. */
-int
-pdf_put_drawing_color(gx_device_pdf *pdev, const gx_drawing_color *pdc,
-		      const psdf_set_color_commands_t *ppscc)
-{
-    if (gx_dc_is_pure(pdc))
-	return psdf_set_color((gx_device_vector *) pdev, pdc, ppscc);
-    /* We never halftone, so this must be a Pattern. */
-    /**************** NOT IMPLEMENTED YET ****************/
-    return_error(gs_error_rangecheck);
-}
-
 /* ---------------- Miscellaneous ---------------- */
 
 /* Reset the graphics state parameters to initial values. */

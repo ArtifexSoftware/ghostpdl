@@ -25,7 +25,6 @@
 #include "gscspace.h"		/* for gs_separation_name */
 
 /* ---------------- Exported by gdevpdfc.c ---------------- */
-/**************** gdevpdfc.c DOES NOT EXIST YET, SEE gdevpdfg.c ****************/
 
 /* Define standard and short color space names. */
 /*
