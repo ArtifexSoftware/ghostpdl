@@ -353,7 +353,6 @@ repack_bit_planes(const gx_image_plane_t *src_planes, const ulong *offsets,
 }
 
 /* Clean up by releasing the buffers. */
-/* Currently we ignore draw_last. */
 int
 gx_image1_end_image(gx_device *ignore_dev, gx_image_enum_common_t * info,
 		    bool draw_last)
@@ -361,6 +360,9 @@ gx_image1_end_image(gx_device *ignore_dev, gx_image_enum_common_t * info,
     gx_image_enum *penum = (gx_image_enum *) info;
     gs_memory_t *mem = penum->memory;
     stream_IScale_state *scaler = penum->scaler;
+
+    if (draw_last)
+        gx_image1_flush(info);
 
     if_debug2('b', "[b]%send_image, y=%d\n",
 	      (penum->y < penum->rect.h ? "premature " : ""), penum->y);
