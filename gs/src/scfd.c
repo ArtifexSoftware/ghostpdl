@@ -1,22 +1,9 @@
 /* Copyright (C) 1992, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* CCITTFax decoding filter */
 #include "stdio_.h"		/* includes std.h */
 #include "memory_.h"
@@ -487,7 +474,7 @@ cf_decode_1d(stream_CFD_state * ss, stream_cursor_read * pr)
     }
     run_color = 1;
   db:				/* Decode a black run. */
-    get_run(cf_black_decode, cfd_black_initial_bits, cfd_black_initial_bits,
+    get_run(cf_black_decode, cfd_black_initial_bits, cfd_black_min_bits,
 	    bcnt, "[w1]black", dbl, out1);
     if (bcnt < 0) {		/* All exceptional codes are invalid here. */
 /****** WRONG, uncompressed IS ALLOWED ******/

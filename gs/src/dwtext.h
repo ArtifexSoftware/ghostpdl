@@ -17,7 +17,7 @@
  */
 
 
-
+// $RCSfile$ $Revision$
 // Text Window class
 
 

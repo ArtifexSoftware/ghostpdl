@@ -1,22 +1,9 @@
 /* Copyright (C) 1991, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Type 1 and Type 4 font creation operators */
 #include "ghost.h"
 #include "oper.h"
@@ -37,6 +24,9 @@
 /* Type 1 font procedures (defined in zchar1.c) */
 extern const gs_type1_data_procs_t z1_data_procs;
 font_proc_glyph_outline(zcharstring_glyph_outline);
+/* Font procedures defined here */
+private font_proc_font_info(z1_font_info);
+private font_proc_same_font(z1_same_font);
 
 /* Default value of lenIV */
 #define DEFAULT_LENIV_1 4
@@ -190,6 +180,9 @@ build_charstring_font(i_ctx_t *i_ctx_p, os_ptr op, build_proc_refs *pbuild,
     ref_assign(&pdata->u.type1.GlobalSubrs, pfr->GlobalSubrs);
     pfont->data.procs = &z1_data_procs;
     pfont->data.proc_data = (char *)pdata;
+    pfont->procs.font_info = z1_font_info;
+    pfont->procs.same_font = z1_same_font;
+    pfont->procs.glyph_info = gs_type1_glyph_info;
     pfont->procs.enumerate_glyph = z1_enumerate_glyph;
     pfont->procs.glyph_outline = zcharstring_glyph_outline;
     return define_gs_font((gs_font *)pfont);
@@ -253,3 +246,116 @@ const op_def zfont1_op_defs[] =
     {"2.buildfont4", zbuildfont4},
     op_def_end(0)
 };
+
+/* ------ Font procedures for Type 1 fonts ------ */
+
+/* font_info procedure */
+private bool
+z1_font_info_has(const ref *pfidict, const char *key, gs_const_string *pmember)
+{
+    ref *pvalue;
+
+    if (dict_find_string(pfidict, key, &pvalue) > 0 &&
+	r_has_type(pvalue, t_string)
+	) {
+	pmember->data = pvalue->value.const_bytes;
+	pmember->size = r_size(pvalue);
+	return true;
+    }
+    return false;
+}
+private int
+z1_font_info(gs_font *font, const gs_point *pscale, int members,
+	     gs_font_info_t *info)
+{
+    const gs_font_type1 *const pfont1 = (const gs_font_type1 *)font;
+    int code = gs_default_font_info(font, pscale, members &
+		    ~(FONT_INFO_COPYRIGHT | FONT_INFO_NOTICE |
+		      FONT_INFO_FAMILY_NAME | FONT_INFO_FULL_NAME),
+				    info);
+    const ref *pfdict;
+    ref *pfontinfo;
+
+    if (code < 0)
+	return code;
+    pfdict = &pfont_data(pfont1)->dict;
+    if (dict_find_string(pfdict, "FontInfo", &pfontinfo) <= 0 ||
+	!r_has_type(pfontinfo, t_dictionary))
+	return 0;
+    if ((members & FONT_INFO_COPYRIGHT) &&
+	z1_font_info_has(pfontinfo, "Copyright", &info->Copyright))
+	info->members |= FONT_INFO_COPYRIGHT;
+    if ((members & FONT_INFO_NOTICE) &&
+	z1_font_info_has(pfontinfo, "Notice", &info->Notice))
+	info->members |= FONT_INFO_NOTICE;
+    if ((members & FONT_INFO_FAMILY_NAME) &&
+	z1_font_info_has(pfontinfo, "FamilyName", &info->FamilyName))
+	info->members |= FONT_INFO_FAMILY_NAME;
+    if ((members & FONT_INFO_FULL_NAME) &&
+	z1_font_info_has(pfontinfo, "FullName", &info->FullName))
+	info->members |= FONT_INFO_FULL_NAME;
+    return code;
+}
+
+/* same_font procedure */
+private bool
+same_font_dict(const font_data *pdata, const font_data *podata,
+	       const char *key)
+{
+    ref *pvalue;
+    bool present = dict_find_string(&pdata->dict, key, &pvalue) > 0;
+    ref *povalue;
+    bool opresent = dict_find_string(&podata->dict, key, &povalue) > 0;
+
+    return (present == opresent &&
+	    (present <= 0 || obj_eq(pvalue, povalue)));
+}
+private int
+z1_same_font(const gs_font *font, const gs_font *ofont, int mask)
+{
+    if (ofont->FontType != font->FontType)
+	return 0;
+    while (font->base != font)
+	font = font->base;
+    while (ofont->base != ofont)
+	ofont = ofont->base;
+    if (ofont == font)
+	return mask;
+    {
+	int same = gs_base_same_font(font, ofont, mask);
+	int check = mask & ~same;
+	const gs_font_type1 *const pfont1 = (const gs_font_type1 *)font;
+	const font_data *const pdata = pfont_data(pfont1);
+	const gs_font_type1 *pofont1 = (const gs_font_type1 *)ofont;
+	const font_data *const podata = pfont_data(pofont1);
+
+	if ((check & (FONT_SAME_OUTLINES | FONT_SAME_OUTLINES)) &&
+	    pofont1->data.procs == &z1_data_procs &&
+	    obj_eq(&pdata->CharStrings, &podata->CharStrings) &&
+	    /*
+	     * We use same_font_dict for convenience: we know that
+	     * both fonts do have Private dictionaries.
+	     */
+	    same_font_dict(pdata, podata, "Private")
+	    )
+	    same |= FONT_SAME_OUTLINES;
+
+	if ((check & FONT_SAME_METRICS) && (same & FONT_SAME_OUTLINES) &&
+	    pofont1->data.procs == &z1_data_procs &&
+	    /* Metrics may be affected by CDevProc, Metrics, Metrics2. */
+	    same_font_dict(pdata, podata, "Metrics") &&
+	    same_font_dict(pdata, podata, "Metrics2") &&
+	    same_font_dict(pdata, podata, "CDevProc")
+	    )
+	    same |= FONT_SAME_METRICS;
+
+	if ((check & FONT_SAME_ENCODING) &&
+	    pofont1->procs.same_font == z1_same_font &&
+	    obj_eq(&pdata->Encoding, &podata->Encoding)
+	    )
+	    same |= FONT_SAME_ENCODING;
+
+	return same;
+    }
+}
+

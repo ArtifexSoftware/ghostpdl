@@ -1,21 +1,8 @@
 #    Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-# 
-# This file is part of Aladdin Ghostscript.
-# 
-# Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-# or distributor accepts any responsibility for the consequences of using it,
-# or for whether it serves any particular purpose or works at all, unless he
-# or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-# License (the "License") for full details.
-# 
-# Every copy of Aladdin Ghostscript must include a copy of the License,
-# normally in a plain ASCII text file named PUBLIC.  The License grants you
-# the right to copy, modify and redistribute Aladdin Ghostscript, but only
-# under certain conditions described in the License.  Among other things, the
-# License requires that the copyright notice and this notice be preserved on
-# all copies.
+# This software is licensed to a single customer by Artifex Software Inc.
+# under the terms of a specific OEM agreement.
 
-
+# $RCSfile$ $Revision$
 # (Platform-independent) makefile for Ghostscript graphics library
 # and other support code.
 # Users of this makefile must define the following:
@@ -176,7 +163,8 @@ $(GLOBJ)gsmemret.$(OBJ) : $(GLSRC)gsmemret.c $(GXERR) $(gsmemret_h)
 	$(GLCC) $(GLO_)gsmemret.$(OBJ) $(C_) $(GLSRC)gsmemret.c
 
 # gsnogc is not part of the base configuration.
-# This is available as a .dev so it can be used by non PS parsers
+# We make it available as a .dev so it can be used in configurations that
+# don't include the garbage collector, as well as by the "async" logic.
 gsnogc_=$(GLOBJ)gsnogc.$(OBJ)
 $(GLD)gsnogc.dev : $(LIB_MAK) $(ECHOGS_XE) $(gsnogc_)
 	$(SETMOD) $(GLD)gsnogc $(gsnogc_)
@@ -502,7 +490,7 @@ $(GLOBJ)gxdither.$(OBJ) : $(GLSRC)gxdither.c $(GX)\
  $(gxcmap_h) $(gxdevice_h) $(gxdither_h) $(gxlum_h) $(gzht_h)
 	$(GLCC) $(GLO_)gxdither.$(OBJ) $(C_) $(GLSRC)gxdither.c
 
-$(GLOBJ)gxfill.$(OBJ) : $(GLSRC)gxfill.c $(GXERR) $(math__h)\
+$(GLOBJ)gxfill.$(OBJ) : $(GLSRC)gxfill.c $(GXERR)\
  $(gsstruct_h)\
  $(gxdcolor_h) $(gxdevice_h) $(gxfixed_h) $(gxhttile_h)\
  $(gxistate_h) $(gxpaint_h)\
@@ -1068,6 +1056,10 @@ $(GLOBJ)sjpege.$(OBJ) : $(GLSRC)sjpege.c $(AK)\
 
 # sdeparam is used by the filter operator and the PS/PDF writer.
 # It is not included automatically in sdcte.
+sdeparam_=$(GLOBJ)sdeparam.$(OBJ) $(GLOBJ)sdcparam.$(OBJ)
+$(GLD)sdeparam.dev : $(LIB_MAK) $(ECHOGS_XE) $(sdeparam_)
+	$(SETMOD) $(GLD)sdeparam $(sdeparam_)
+
 $(GLOBJ)sdeparam.$(OBJ) : $(GLSRC)sdeparam.c $(AK) $(memory__h)\
  $(jpeglib__h)\
  $(gserror_h) $(gserrors_h) $(gsmemory_h) $(gsparam_h) $(gstypes_h)\
@@ -1095,6 +1087,10 @@ $(GLOBJ)sjpegd.$(OBJ) : $(GLSRC)sjpegd.c $(AK)\
 
 # sddparam is used by the filter operator.
 # It is not included automatically in sdctd.
+sddparam_=$(GLOBJ)sddparam.$(OBJ) $(GLOBJ)sdcparam.$(OBJ)
+$(GLD)sddparam.dev : $(LIB_MAK) $(ECHOGS_XE) $(sddparam_)
+	$(SETMOD) $(GLD)sddparam $(sddparam_)
+
 $(GLOBJ)sddparam.$(OBJ) : $(GLSRC)sddparam.c $(AK) $(std_h)\
  $(jpeglib__h)\
  $(gserror_h) $(gserrors_h) $(gsmemory_h) $(gsparam_h) $(gstypes_h)\
@@ -1104,9 +1100,7 @@ $(GLOBJ)sddparam.$(OBJ) : $(GLSRC)sddparam.c $(AK) $(std_h)\
 # ---------------- LZW filters ---------------- #
 # These are used by Level 2 in general.
 
-slzwe_=slzwce
-#slzwe_=slzwe
-lzwe_=$(GLOBJ)$(slzwe_).$(OBJ) $(GLOBJ)slzwc.$(OBJ)
+lzwe_=$(GLOBJ)slzwce.$(OBJ) $(GLOBJ)slzwc.$(OBJ)
 $(GLD)lzwe.dev : $(LIB_MAK) $(ECHOGS_XE) $(lzwe_)
 	$(SETMOD) $(GLD)lzwe $(lzwe_)
 
@@ -1117,10 +1111,6 @@ $(GLD)slzwe.dev : $(GLD)lzwe.dev
 $(GLOBJ)slzwce.$(OBJ) : $(GLSRC)slzwce.c $(AK) $(stdio__h) $(gdebug_h)\
  $(slzwx_h) $(strimpl_h)
 	$(GLCC) $(GLO_)slzwce.$(OBJ) $(C_) $(GLSRC)slzwce.c
-
-$(GLOBJ)slzwe.$(OBJ) : $(GLSRC)slzwe.c $(AK) $(stdio__h) $(gdebug_h)\
- $(slzwx_h) $(strimpl_h)
-	$(GLCC) $(GLO_)slzwe.$(OBJ) $(C_) $(GLSRC)slzwe.c
 
 $(GLOBJ)slzwc.$(OBJ) : $(GLSRC)slzwc.c $(AK) $(std_h)\
  $(slzwx_h) $(strimpl_h)
@@ -1537,7 +1527,7 @@ gxpageq_h=$(GLSRC)gxpageq.h $(gsmemory_h) $(gxband_h) $(gxsync_h)
 gdevprna_h=$(GLSRC)gdevprna.h $(gdevprn_h) $(gxsync_h)
 
 async_=$(GLOBJ)gdevprna.$(OBJ) $(GLOBJ)gxpageq.$(OBJ)
-async_inc=$(GLD)clist.dev $(GLD)$(SYNC).dev $(GLD)gsnogc.dev
+async_inc=$(GLD)clist.dev $(GLD)gsnogc.dev $(GLD)$(SYNC).dev
 $(GLD)async.dev : $(LIB_MAK) $(ECHOGS_XE) $(async_) $(async_inc)
 	$(SETMOD) $(GLD)async $(async_)
 	$(ADDMOD) $(GLD)async -include $(async_inc)
@@ -1647,7 +1637,7 @@ $(GLOBJ)gxhint2.$(OBJ) : $(GLSRC)gxhint2.c $(GXERR) $(memory__h)\
  $(gxfont_h) $(gxfont1_h) $(gxtype1_h)
 	$(GLCC) $(GLO_)gxhint2.$(OBJ) $(C_) $(GLSRC)gxhint2.c
 
-$(GLOBJ)gxhint3.$(OBJ) : $(GLSRC)gxhint3.c $(GXERR) $(math__h)\
+$(GLOBJ)gxhint3.$(OBJ) : $(GLSRC)gxhint3.c $(GXERR)\
  $(gxarith_h) $(gxfixed_h) $(gxmatrix_h)\
  $(gxfont_h) $(gxfont1_h) $(gxtype1_h)\
  $(gzpath_h)
@@ -1690,7 +1680,7 @@ $(GLD)ttflib.dev : $(LIB_MAK) $(ECHOGS_XE) $(ttflib_)
 gxfont42_h=$(GLSRC)gxfont42.h
 
 $(GLOBJ)gstype42.$(OBJ) : $(GLSRC)gstype42.c $(GXERR) $(memory__h)\
- $(gsccode_h) $(gsmatrix_h) $(gsstruct_h)\
+ $(gsccode_h) $(gsmatrix_h) $(gsstruct_h) $(gsutil_h)\
  $(gxfixed_h) $(gxfont_h) $(gxfont42_h) $(gxistate_h) $(gxpath_h)
 	$(GLCC) $(GLO_)gstype42.$(OBJ) $(C_) $(GLSRC)gstype42.c
 
@@ -2093,6 +2083,11 @@ $(GLOBJ)gp_posem.$(OBJ) : $(GLSRC)gp_posem.c $(AK) $(std_h)\
  $(gpsync_h) $(gserror_h) $(gserrors_h)
 	$(GLCC) $(GLO_)gp_posem.$(OBJ) $(C_) $(GLSRC)gp_posem.c
 
+# (POSIX) pthreads semaphores.  DOESN'T WORK.
+$(GLOBJ)gp_ptsem.$(OBJ) : $(GLSRC)gp_ptsem.c $(AK) $(std_h)\
+ $(gpsync_h) $(gserror_h) $(gserrors_h)
+	$(GLCC) $(GLO_)gp_ptsem.$(OBJ) $(C_) $(GLSRC)gp_ptsem.c
+
 # Monitors built out of semaphores.
 $(GLOBJ)gp_semon.$(OBJ) : $(GLSRC)gp_semon.c $(AK) $(std_h)\
  $(gpsync_h) $(gserror_h) $(gserrors_h)
@@ -2103,7 +2098,7 @@ pthreads_=$(GLOBJ)gp_pthr.$(OBJ)
 $(GLD)pthreads.dev : $(LIB_MAK) $(ECHOGS_XE) $(pthreads_)
 	$(SETMOD) $(GLD)pthreads $(pthreads_) -lib pthread
 
-$(GLOBJ)gp_pthr.$(OBJ) : $(GLSRC)gp_pthr.c $(AK) $(std_h)\
+$(GLOBJ)gp_pthr.$(OBJ) : $(GLSRC)gp_pthr.c $(AK) $(malloc__h) $(std_h)\
  $(gpsync_h) $(gserror_h) $(gserrors_h)
 	$(GLCC) $(GLO_)gp_pthr.$(OBJ) $(C_) $(GLSRC)gp_pthr.c
 
@@ -2112,6 +2107,11 @@ posync_=$(GLOBJ)gp_posem.$(OBJ) $(GLOBJ)gp_semon.$(OBJ)
 $(GLD)posync.dev : $(LIB_MAK) $(ECHOGS_XE) $(posync_) $(GLD)pthreads.dev
 	$(SETMOD) $(GLD)posync $(posync_) -include $(GLD)pthreads
 	$(ADDMOD) $(GLD)posync -replace $(GLD)nosync
+
+# FreeBSD has its own, idiosyncratic pthreads implementation.
+$(GLD)fbsdsync.dev : $(LIB_MAK) $(ECHOGS_XE) $(posync_)
+	$(SETMOD) $(GLD)fbsdsync $(posync_) -lib c_r
+	$(ADDMOD) $(GLD)fbsdsync -replace $(GLD)nosync
 
 # Other stuff.
 

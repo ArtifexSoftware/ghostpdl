@@ -1,22 +1,9 @@
 /* Copyright (C) 1993, 1994, 1996, 1998 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* IODevice implementation for Ghostscript */
 #include "errno_.h"
 #include "string_.h"
@@ -243,7 +230,7 @@ gs_findiodevice(const byte * str, uint len)
 	gx_io_device *iodev = io_device_table[i];
 	const char *dname = iodev->dname;
 
-	if (strlen(dname) == len + 1 && !memcmp(str, dname, len))
+	if (dname && strlen(dname) == len + 1 && !memcmp(str, dname, len))
 	    return iodev;
     }
     return 0;

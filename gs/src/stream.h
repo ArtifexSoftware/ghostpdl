@@ -1,22 +1,9 @@
 /* Copyright (C) 1989, 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Definitions for Ghostscript stream package */
 /* Requires stdio.h */
 
@@ -266,10 +253,13 @@ int spseek(P2(stream *, long));
 /*
  * Define the minimum amount of data that must be left in an input buffer
  * after a read operation to handle filter read-ahead.  This is 1 byte for
- * filters (including procedure data sources), 0 for files.
+ * filters (including procedure data sources) that haven't reached EOD,
+ * 0 for files.
  */
 #define max_min_left 1
-#define sbuf_min_left(s) (s->strm == 0 && s->end_status != CALLC ? 0 : 1)
+#define sbuf_min_left(s)\
+  (s->strm == 0 ? (s->end_status != CALLC ? 0 : 1) :\
+   s->end_status == EOFC || s->end_status == ERRC ? 0 : 1)
 
 /* The following are for very high-performance clients of read streams, */
 /* who unpack the stream state into local variables. */

@@ -1,22 +1,9 @@
 /* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Internal definitions for PDF-writing driver. */
 
 #ifndef gdevpdfx_INCLUDED
@@ -98,19 +85,26 @@ struct pdf_resource_s {
 /* ------ Fonts ------ */
 
 /*
- * The PDF writer creates 3 different kinds of font resources:
+ * The PDF writer creates several different kinds of font resources.
+ * The key differences between them are the values of num_chars, index,
+ * and descriptor.
  *
- *	- Synthesized Type 3 bitmap fonts, identified by num_chars != 0
- *	(or equivalently PDF_FONT_IS_SYNTHESIZED = true).
+ *	- Synthesized Type 3 bitmap fonts are identified by num_chars != 0 (or
+ *	equivalently PDF_FONT_IS_SYNTHESIZED = true).  They have index < 0,
+ *	descriptor == 0.  All other fonts have num_chars == 0.
  *
- *	- Non-embedded Type 1 or TrueType fonts, identified by num_chars == 0,
- *	descriptor != 0, descriptor->FontFile_id == 0.  A font is in the
- *	base 14 iff index >= 0.
+ *	- The base 14 fonts have num_chars == 0, index >= 0, descriptor ==
+ *	0.  All other fonts have index < 0.
  *
- *	- Embedded Type 1 or TrueType fonts, identified by num_chars == 0,
- *	descriptor != 0, descriptor->FontFile_id != 0.
+ *	- All other fonts (Type 1 or TrueType, embedded or not) have
+ *	num_chars == 0, index < 0, descriptor != 0.  A font is embedded
+ *	iff descriptor->FontFile_id != 0.
+ *
+ * For non-synthesized fonts, the structure representation is designed to
+ * represent directly the information that will be written in the font
+ * resource, Encoding, and FontDescriptor dictionaries.  See the comments
+ * on the pdf_font_t structure below for more detail.
  */
-
 #define PDF_NUM_STD_FONTS 14
 #define pdf_do_std_fonts(m)\
   m("Courier", ENCODING_INDEX_STANDARD)\
@@ -136,7 +130,7 @@ typedef struct pdf_font_descriptor_s {
     gs_int_rect FontBBox;
     uint Flags;
     /* Optional elements (default to 0) */
-    long FontFile_id;
+    long FontFile_id;		/* non-0 iff the font is embedded */
     int AvgWidth, Leading, MaxWidth, MissingWidth, StemH, XHeight;
 } pdf_font_descriptor_t;
 /* Flag bits */
@@ -180,20 +174,25 @@ struct pdf_font_s {
     font_type FontType;
     gs_font *font;		/* non-0 iff font will notify us; */
 				/* should be a weak pointer */
-    int index;			/* in pdf_standard_fonts */
+    int index;			/* in pdf_standard_fonts, -1 if not base 14 */
     gs_matrix orig_matrix;	/* FontMatrix of unscaled font for embedding */
     /*
      * For synthesized fonts, frname is A, B, ...; for other fonts,
      * frname is R<id>.  The string is null-terminated.
      */
     char frname[1/*R*/ + (sizeof(long) * 8 / 3 + 1) + 1/*\0*/];
-    /* Encoding differences for base fonts. */
+    /* Encoding for base fonts. */
+    int BaseEncoding;		/* if not -1, will be written as the */
+				/* BaseEncoding of the Encoding dict */
     byte chars_used[32];	/* 1 bit per character code */
-    pdf_encoding_element_t *differences; /* [256] */
-    long diff_id;
+    pdf_encoding_element_t *differences; /* [256] if not 0, will be written */
+				/* as the Differences of the Encoding dict */
     /* Bookkeeping for non-synthesized fonts. */
-    pdf_font_descriptor_t *descriptor;
-    int Widths[256];
+    pdf_font_descriptor_t *descriptor;  /* if not 0, will be written as */
+				/* the FontDescriptor dict */
+    int Widths[256];		/* if index >= 0 or differences != 0, */
+				/* will be written as the Widths in the */
+				/* font resource dict */
     byte widths_known[32];	/* 1 bit per character code */
     bool skip;			/* font was already written, skip it */
     /* Bookkeeping for synthesized fonts. */
@@ -286,8 +285,9 @@ struct pdf_article_s {
 
 /* Text state */
 typedef struct pdf_std_font_s {
+    gs_font *font;		/* weak pointer, may be 0 */
     gs_matrix orig_matrix;
-    gs_uid uid;
+    gs_uid uid;			/* UniqueID, not XUID */
 } pdf_std_font_t;
 typedef struct pdf_text_state_s {
     /* State parameters */
@@ -295,7 +295,6 @@ typedef struct pdf_text_state_s {
     pdf_font_t *font;
     floatp size;
     float word_spacing;
-    float horizontal_scaling;
     /* Bookkeeping */
     gs_matrix matrix;		/* relative to device space, not user space */
     gs_point line_start;
@@ -303,11 +302,10 @@ typedef struct pdf_text_state_s {
 #define max_text_buffer 200	/* arbitrary, but overflow costs 5 chars */
     byte buffer[max_text_buffer];
     int buffer_count;
-    pdf_std_font_t std_fonts[PDF_NUM_STD_FONTS];  /* must be last (can't initialize) */
 } pdf_text_state_t;
 
 #define pdf_text_state_default\
-  0, NULL, 0, 0, 100,\
+  0, NULL, 0, 0,\
   { identity_matrix_body }, { 0, 0 }, { 0, 0 }, { 0 }, 0
 
 /* Resource lists */
@@ -375,7 +373,18 @@ typedef struct gx_device_pdf_s gx_device_pdf_t;
 struct gx_device_pdf_s {
     gx_device_psdf_common;
     /* PDF-specific distiller parameters */
-    float CompatibilityLevel;
+    double CompatibilityLevel;
+#ifdef POST60
+    bool Optimize;
+    bool ParseDSCCommentsForDocInfo;
+    bool ParseDSCComments;
+    bool EmitDSCWarnings;
+    bool CreateJobTicket;
+    bool PreserveEPSInfo;
+    bool AutoPositionEPSFile;
+    bool PreserveCopyPage;
+    bool UsePrologue;
+#endif
     /* End of distiller parameters */
     /* Other parameters */
     bool ReAssignCharacters;
@@ -434,13 +443,8 @@ struct gx_device_pdf_s {
     long contents_length_id;
     long contents_pos;
     pdf_procset procsets;	/* used on this page */
-    float flatness;
-/****** SHOULD USE state ******/
-    /* The line width, dash offset, and dash pattern */
-    /* are in default user space units. */
-    gx_line_params line_params;	/* current values */
-/****** SHOULD USE state ******/
     pdf_text_state_t text;
+    pdf_std_font_t std_fonts[PDF_NUM_STD_FONTS];
     long space_char_ids[X_SPACE_MAX - X_SPACE_MIN + 1];
 #define initial_num_pages 50
     pdf_page_t *pages;
@@ -470,16 +474,17 @@ struct gx_device_pdf_s {
  m(5,pictures.strm) m(6,pictures.strm_buf) m(7,pictures.save_strm)\
  m(8,open_font)\
  m(9,Catalog) m(10,Info) m(11,Pages)\
- m(12,line_params.dash.pattern) m(13,text.font) m(14,pages)\
- m(15,cs_Pattern) m(16,last_resource)\
- m(17,articles) m(18,Dests) m(19,named_objects) m(20,open_graphics)
-#define gx_device_pdf_num_ptrs 21
+ m(12,text.font) m(13,pages)\
+ m(14,cs_Pattern) m(15,last_resource)\
+ m(16,articles) m(17,Dests) m(18,named_objects) m(19,open_graphics)
+#define gx_device_pdf_num_ptrs 20
 #define gx_device_pdf_do_strings(m) /* do nothing */
 #define gx_device_pdf_num_strings 0
 #define st_device_pdf_max_ptrs\
   (st_device_psdf_max_ptrs + gx_device_pdf_num_ptrs +\
-   gx_device_pdf_num_strings + NUM_RESOURCE_TYPES * NUM_RESOURCE_CHAINS +\
-   MAX_OUTLINE_DEPTH * 2)
+   gx_device_pdf_num_strings + PDF_NUM_STD_FONTS /* std_fonts[].font */ +\
+   NUM_RESOURCE_TYPES * NUM_RESOURCE_CHAINS /* resources[].chains[] */ +\
+   MAX_OUTLINE_DEPTH * 2 /* outline_levels[].{first,last}.action */
 
 #define private_st_device_pdfwrite()	/* in gdevpdf.c */\
   gs_private_st_composite_final(st_device_pdfwrite, gx_device_pdf,\
@@ -536,24 +541,26 @@ int pdf_end_obj(P1(gx_device_pdf * pdev));
 /* ------ Graphics ------ */
 
 /* Reset the graphics state parameters to initial values. */
-void pdf_reset_graphics(P1(gx_device_pdf * pdev));
+void pdf_reset_graphics(P1(gx_device_pdf *pdev));
 
 /* Set the fill or stroke color. */
-int pdf_set_color(P4(gx_device_pdf * pdev, gx_color_index color,
-		     gx_drawing_color * pdcolor, const char *rgs));
+int pdf_set_color(P4(gx_device_pdf *pdev, gx_color_index color,
+		     gx_drawing_color *pdcolor, const char *rgs));
 
 /* Write matrix values. */
-void pdf_put_matrix(P4(gx_device_pdf * pdev, const char *before,
-		       const gs_matrix * pmat, const char *after));
+void pdf_put_matrix(P4(gx_device_pdf *pdev, const char *before,
+		       const gs_matrix *pmat, const char *after));
 
 /* Write a name, with escapes for unusual characters. */
-void pdf_put_name(P3(const gx_device_pdf * pdev, const byte * nstr, uint size));
+void pdf_put_name_escaped(P4(stream *s, const byte *nstr, uint size,
+			     bool escape));
+void pdf_put_name(P3(const gx_device_pdf *pdev, const byte *nstr, uint size));
 
 /* Write a string in its shortest form ( () or <> ). */
-void pdf_put_string(P3(const gx_device_pdf * pdev, const byte * str, uint size));
+void pdf_put_string(P3(const gx_device_pdf *pdev, const byte *str, uint size));
 
 /* Write a value, treating names specially. */
-void pdf_write_value(P3(const gx_device_pdf * pdev, const byte * vstr, uint size));
+void pdf_write_value(P3(const gx_device_pdf *pdev, const byte *vstr, uint size));
 
 /* ------ Page contents ------ */
 
@@ -748,6 +755,7 @@ int pdf_do_char_image(P3(gx_device_pdf * pdev, const pdf_char_proc_t * pcp,
 
 typedef enum {
     FONT_EMBED_BASE14,
+    FONT_EMBED_UNKNOWN,		/* neither AlwaysEmbed nor NeverEmbed */
     FONT_EMBED_NO,
     FONT_EMBED_YES
 } pdf_font_embed_t;
@@ -764,10 +772,11 @@ bool pdf_find_orig_font(P4(gx_device_pdf *pdev, gs_font *font,
 
 /*
  * Determine the embedding status of a font.  If the font is in the base
- * 14, store its index (0..13) in *pindex.
+ * 14, store its index (0..13) in *pindex and its similarity to the base
+ * font (as determined by the font's same_font procedure) in *psame.
  */
-pdf_font_embed_t pdf_font_embed_status(P3(gx_device_pdf *pdev, gs_font *font,
-					  int *pindex));
+pdf_font_embed_t pdf_font_embed_status(P4(gx_device_pdf *pdev, gs_font *font,
+					  int *pindex, int *psame));
 
 /* Allocate a font resource. */
 int pdf_alloc_font(P4(gx_device_pdf *pdev, gs_id rid, pdf_font_t **ppfres,
@@ -778,8 +787,8 @@ int pdf_add_encoding_difference(P5(gx_device_pdf *pdev, pdf_font_t *ppf, int chr
 				   const gs_font_base *bfont, gs_glyph glyph));
 
 /* Get the width of a given character in a (base) font. */
-int pdf_char_width(P5(pdf_font_t *ppf, int ch, gs_font *font,
-		      const gs_matrix *pmat, int *pwidth /* may be NULL */));
+int pdf_char_width(P4(pdf_font_t *ppf, int ch, gs_font *font,
+		      int *pwidth /* may be NULL */));
 
 /* Compute the FontDescriptor for a font or a font subset. */
 int pdf_compute_font_descriptor(P4(gx_device_pdf *pdev,

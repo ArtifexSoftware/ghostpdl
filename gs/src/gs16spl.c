@@ -16,7 +16,7 @@
    all copies.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* 16-bit access to print spooler from Win32s */
 /* by Russell Lang */
 /* 1995-11-23 */

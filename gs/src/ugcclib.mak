@@ -1,21 +1,8 @@
 #    Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-# 
-# This file is part of Aladdin Ghostscript.
-# 
-# Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-# or distributor accepts any responsibility for the consequences of using it,
-# or for whether it serves any particular purpose or works at all, unless he
-# or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-# License (the "License") for full details.
-# 
-# Every copy of Aladdin Ghostscript must include a copy of the License,
-# normally in a plain ASCII text file named PUBLIC.  The License grants you
-# the right to copy, modify and redistribute Aladdin Ghostscript, but only
-# under certain conditions described in the License.  Among other things, the
-# License requires that the copyright notice and this notice be preserved on
-# all copies.
+# This software is licensed to a single customer by Artifex Software Inc.
+# under the terms of a specific OEM agreement.
 
-
+# $RCSfile$ $Revision$
 # makefile for Unix / gcc library testing.
 
 BINDIR=./libobj
@@ -66,6 +53,7 @@ XCFLAGS=
 CFLAGS=-g -O $(GCFLAGS) $(XCFLAGS)
 CFLAGS_NO_WARN=-g -O $(GCFLAGS_NO_WARN) $(XCFLAGS)
 LDFLAGS=$(XLDFLAGS)
+STDLIBS=-lm
 EXTRALIBS=
 XINCLUDE=-I/usr/local/X/include
 XLIBDIRS=-L/usr/X11/lib
@@ -78,7 +66,7 @@ SYNC=posync
 FEATURE_DEVS=$(GLD)dps2lib.dev $(GLD)psl2cs.dev $(GLD)cielib.dev\
  $(GLD)imasklib.dev $(GLD)patlib.dev $(GLD)htxlib.dev $(GLD)roplib.dev\
  $(GLD)devcmap.dev
-COMPILE_INITS=0
+COMPILE_INITS=1
 BAND_LIST_STORAGE=file
 BAND_LIST_COMPRESSOR=zlib
 FILE_IMPLEMENTATION=stdio
@@ -134,10 +122,10 @@ include $(GLSRCDIR)/unix-aux.mak
 LIB_ONLY=$(GLOBJ)gslib.$(OBJ) $(GLOBJ)gsnogc.$(OBJ) $(GLOBJ)gconfig.$(OBJ) $(GLOBJ)gscdefs.$(OBJ)
 ldt_tr=$(GLOBJ)ldt.tr
 $(GS_XE): $(ld_tr) $(ECHOGS_XE) $(LIB_ALL) $(DEVS_ALL) $(LIB_ONLY)
-	$(ECHOGS_XE) -w $(ldt_tr) -n - $(CCLD) $(LDFLAGS) $(XLIBDIRS) -o $(GS_XE)
+	$(ECHOGS_XE) -w $(ldt_tr) -n - $(CCLD) $(LDFLAGS) -o $(GS_XE)
 	$(ECHOGS_XE) -a $(ldt_tr) -n -s $(LIB_ONLY) -s
 	cat $(ld_tr) >>$(ldt_tr)
-	$(ECHOGS_XE) -a $(ldt_tr) -s - $(EXTRALIBS) -lm
+	$(ECHOGS_XE) -a $(ldt_tr) -s - $(EXTRALIBS) $(STDLIBS)
 	LD_RUN_PATH=$(XLIBDIR); export LD_RUN_PATH; $(SH) <$(ldt_tr)
 
 include $(GLSRCDIR)/unix-end.mak

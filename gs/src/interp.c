@@ -1,22 +1,9 @@
 /* Copyright (C) 1989, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Ghostscript language interpreter */
 #include "memory_.h"
 #include "string_.h"
@@ -423,6 +410,7 @@ interp_reclaim(i_ctx_t **pi_ctx_p, int space)
  *      (This will eventually result in a fatal error if no 'stopped'
  *      is active.)
  * In case of a quit or a fatal error, also store the exit code.
+ * Set *perror_object to null or the error object.
  */
 private int gs_call_interp(P5(i_ctx_t **, ref *, int, int *, ref *));
 int
@@ -435,8 +423,6 @@ gs_interpret(i_ctx_t **pi_ctx_p, ref * pref, int user_errors, int *pexit_code,
 
     gs_register_ref_root(imemory_system, &error_root,
 			 (void **)&perror_object, "gs_interpret");
-    /* Initialize the error object in case of GC. */
-    make_null(perror_object);
     code = gs_call_interp(pi_ctx_p, pref, user_errors, pexit_code,
 			  perror_object);
     i_ctx_p = *pi_ctx_p;
@@ -461,6 +447,8 @@ gs_call_interp(i_ctx_t **pi_ctx_p, ref * pref, int user_errors,
     *pexit_code = 0;
     ialloc_reset_requested(idmemory);
 again:
+    /* Avoid a dangling error object that might get traced by a future GC. */
+    make_null(perror_object);
     o_stack.requested = e_stack.requested = d_stack.requested = 0;
     while (gc_signal) {		/* Some routine below triggered a GC. */
 	gs_gc_root_t epref_root;
@@ -469,11 +457,11 @@ again:
 	/* Make sure that doref will get relocated properly if */
 	/* a garbage collection happens with epref == &doref. */
 	gs_register_ref_root(imemory_system, &epref_root,
-			     (void **)&epref, "gs_call_interpret(epref)");
+			     (void **)&epref, "gs_call_interp(epref)");
 	code = interp_reclaim(pi_ctx_p, -1);
 	i_ctx_p = *pi_ctx_p;
 	gs_unregister_root(imemory_system, &epref_root,
-			   "gs_call_interpret(epref)");
+			   "gs_call_interp(epref)");
 	if (code < 0)
 	    return code;
     }

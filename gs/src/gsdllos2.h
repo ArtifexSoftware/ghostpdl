@@ -16,7 +16,7 @@
    all copies.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* gsdll extension for OS/2 platforms */
 
 #ifndef gsdllos2_INCLUDED

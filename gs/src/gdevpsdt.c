@@ -1,22 +1,9 @@
 /* Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Write an embedded TrueType font */
 #include "memory_.h"
 #include <stdlib.h>		/* for qsort */
@@ -72,11 +59,7 @@ put_loca(stream *s, ulong offset, int indexToLocFormat)
 #define S8(p) (int)((U8(p) ^ 0x80) - 0x80)
 #define U16(p) (((uint)((p)[0]) << 8) + (p)[1])
 #define S16(p) (int)((U16(p) ^ 0x8000) - 0x8000)
-private ulong
-u32(const byte *p)
-{
-    return ((ulong)U16(p) << 16) + U16((p) + 2);
-}
+#define u32(p) get_u32_msb(p)
 private void
 put_u16(byte *p, uint v)
 {
@@ -170,26 +153,57 @@ mac_glyph_index(gs_font *font, int ch, gs_const_string *pstr)
 }
 
 /* Write a generated cmap table. */
-static const byte cmap_initial[] = {
+static const byte cmap_initial_0[] = {
     0, 0,		/* table version # = 0 */
     0, 2,		/* # of encoding tables = 2 */
 
+	/* First table, Macintosh */
     0, 1,		/* platform ID = Macintosh */
     0, 0,		/* platform encoding ID = ??? */
     0, 0, 0, 4+8+8,	/* offset to table start */
-
+	/* Second table, Windows */
     0, 3,		/* platform ID = Microsoft */
     0, 0,		/* platform encoding ID = unknown */
-    0, 0, 0, 4+8+8+6,	/* offset to table start */
-			/****** VARIABLE, add 2 x # of glyphs ******/
+    0, 0, 1, 4+8+8+6,	/* offset to table start */
 
+	/* Start of Macintosh format 0 table */
     0, 0,		/* format = 0, byte encoding table */
-    0, 6,		/****** VARIABLE, add 2 x # of glyphs ******/
-    0, 0
+    1, 6,		/* length */
+    0, 0		/* version number */
+};
+static const byte cmap_initial_6[] = {
+    0, 0,		/* table version # = 0 */
+    0, 2,		/* # of encoding tables = 2 */
+
+	/* First table, Macintosh */
+    0, 1,		/* platform ID = Macintosh */
+    0, 0,		/* platform encoding ID = ??? */
+    0, 0, 0, 4+8+8,	/* offset to table start */
+	/* Second table, Windows */
+    0, 3,		/* platform ID = Microsoft */
+    0, 0,		/* platform encoding ID = unknown */
+    0, 0, 0, 4+8+8+10,	/* offset to table start */
+			/****** VARIABLE, add 2 x # of entries ******/
+
+	/* Start of Macintosh format 6 table */
+    0, 6,		/* format = 6, trimmed table mapping */
+    0, 10,		/* length ****** VARIABLE, add 2 x # of entries ******/
+    0, 0,		/* version number */
+    0, 0,		/* first character code */
+    0, 0		/* # of entries ****** VARIABLE ****** */
+};
+static const byte cmap_initial_4[] = {
+    0, 0,		/* table version # = 0 */
+    0, 1,		/* # of encoding tables = 2 */
+
+	/* Single table, Windows */
+    0, 3,		/* platform ID = Microsoft */
+    0, 0,		/* platform encoding ID = unknown */
+    0, 0, 0, 4+8	/* offset to table start */
 };
 static const byte cmap_sub_initial[] = {
     0, 4,		/* format = 4, segment mapping */
-    0, 32,		/* length **VARIABLE, add 2 x # of glyphs ** */
+    0, 32,		/* length ** VARIABLE, add 2 x # of glyphs ** */
     0, 0,		/* version # */
     0, 4,		/* 2 x segCount */
     0, 4,		/* searchRange = 2 x 2 ^ floor(log2(segCount)) */
@@ -206,18 +220,16 @@ static const byte cmap_sub_initial[] = {
     0, 4,		/* idRangeOffset[0] */
     0, 0		/* idRangeOffset[1] */
 };
-private uint
-size_cmap(int num_glyphs)
-{
-    return sizeof(cmap_initial) + sizeof(cmap_sub_initial) + num_glyphs * 4;
-}
 private void
-write_cmap(stream *s, gs_font *font, uint first_glyph, int num_glyphs,
-	   gs_glyph max_glyph)
+write_cmap(stream *s, gs_font *font, uint first_code, int num_glyphs,
+	   gs_glyph max_glyph, int options, uint cmap_length)
 {
-    byte cmap[sizeof(cmap_initial)];
     byte cmap_sub[sizeof(cmap_sub_initial)];
     byte entries[256 * 2];
+    int first_entry = 0, end_entry = num_glyphs;
+    bool can_use_trimmed = !(options & WRITE_TRUETYPE_NO_TRIMMED_TABLE);
+    uint merge = 0;
+    uint num_entries;
     int i;
 
     /* Collect the table entries. */
@@ -225,32 +237,71 @@ write_cmap(stream *s, gs_font *font, uint first_glyph, int num_glyphs,
     for (i = 0; i < num_glyphs; ++i) {
 	gs_glyph glyph =
 	    font->procs.encode_char(font, (gs_char)i, GLYPH_SPACE_INDEX);
+	uint glyph_index;
 
 	if (glyph == gs_no_glyph || glyph < gs_min_cid_glyph ||
 	    glyph > max_glyph
 	    )
 	    glyph = gs_min_cid_glyph;
-	put_u16(entries + 2 * i, (uint)(glyph - gs_min_cid_glyph));
+	glyph_index = (uint)(glyph - gs_min_cid_glyph);
+	merge |= glyph_index;
+	put_u16(entries + 2 * i, glyph_index);
     }
+    while (end_entry > first_entry && !U16(entries + 2 * end_entry - 2))
+	--end_entry;
+    while (first_entry < end_entry && !U16(entries + 2 * first_entry))
+	++first_entry;
+    num_entries = end_entry - first_entry;
 
-    /* Write the table header and Macintosh sub-table. */
+    /* Write the table header and Macintosh sub-table (if any). */
+    if (merge == (byte)merge && (num_entries <= 127 || !can_use_trimmed)) {
+	/* Use byte encoding format. */
+	memset(entries + 2 * num_glyphs, 0,
+	       sizeof(entries) - 2 * num_glyphs);
+	pwrite(s, cmap_initial_0, sizeof(cmap_initial_0));
+	for (i = 0; i <= 0xff; ++i)
+	    sputc(s, (byte)entries[2 * i + 1]);
+    } else if (can_use_trimmed) {
+	/* Use trimmed table format. */
+	byte cmap_data[sizeof(cmap_initial_6)];
 
-    memcpy(cmap, cmap_initial, sizeof(cmap_initial));
-    put_u16(cmap + 18, U16(cmap + 18) + num_glyphs * 2); /* length */
-    put_u16(cmap + 22, U16(cmap + 22) + num_glyphs * 2); /* length */
-    pwrite(s, cmap, sizeof(cmap));
-    pwrite(s, entries, num_glyphs * 2);
+	memcpy(cmap_data, cmap_initial_6, sizeof(cmap_initial_6));
+	put_u16(cmap_data + 18,
+		U16(cmap_data + 18) + num_entries * 2);  /* offset */
+	put_u16(cmap_data + 22,
+		U16(cmap_data + 22) + num_entries * 2);  /* length */
+	put_u16(cmap_data + 26, first_code + first_entry);
+	put_u16(cmap_data + 28, num_entries);
+	pwrite(s, cmap_data, sizeof(cmap_data));
+	pwrite(s, entries + first_entry * 2, num_entries * 2);
+    } else {
+	/*
+	 * Punt.  Acrobat Reader 3 can't handle any other Mac table format.
+	 * (AR3 for Linux doesn't seem to be able to handle Windows format,
+	 * either, but maybe AR3 for Windows can.)
+	 */
+	pwrite(s, cmap_initial_4, sizeof(cmap_initial_4));
+    }
 
     /* Write the Windows sub-table. */
 
     memcpy(cmap_sub, cmap_sub_initial, sizeof(cmap_sub_initial));
-    put_u16(cmap_sub + 2, U16(cmap_sub + 2) + num_glyphs * 2); /* length */
-    put_u16(cmap_sub + 14, first_glyph + num_glyphs - 1); /* endCount[0] */
-    put_u16(cmap_sub + 20, first_glyph); /* startCount[0] */
+    put_u16(cmap_sub + 2, U16(cmap_sub + 2) + num_entries * 2); /* length */
+    put_u16(cmap_sub + 14, first_code + end_entry - 1); /* endCount[0] */
+    put_u16(cmap_sub + 20, first_code + first_entry); /* startCount[0] */
     pwrite(s, cmap_sub, sizeof(cmap_sub));
-    pwrite(s, entries, num_glyphs * 2);
+    pwrite(s, entries + first_entry * 2, num_entries * 2);
+    put_pad(s, cmap_length);
+}
+private uint
+size_cmap(gs_font *font, uint first_code, int num_glyphs, gs_glyph max_glyph,
+	  int options)
+{
+    stream poss;
 
-    put_pad(s, size_cmap(num_glyphs));
+    swrite_position_only(&poss);
+    write_cmap(&poss, font, first_code, num_glyphs, max_glyph, options, 0);
+    return stell(&poss);
 }
 
 /* Write a generated name table. */
@@ -286,7 +337,7 @@ write_name(stream *s, const gs_const_string *font_name)
 /* Write a generated OS/2 table. */
 typedef struct OS_2_s {
     byte
-	version[2],		/* version 0, see below */
+	version[2],		/* version 1 */
 	xAvgCharWidth[2],
 	usWeightClass[2],
 	usWidthClass[2],
@@ -314,10 +365,16 @@ typedef struct OS_2_s {
 	sTypoDescender[2],
 	sTypoLineGap[2],
 	usWinAscent[2],
-	usWinDescent[2];
-    /*ulCodePageRanges[8];*/	/* not used in OS/2 version 0 */
+	usWinDescent[2],
+	ulCodePageRanges[8];
 } OS_2_t;
 #define OS_2_LENGTH sizeof(OS_2_t)
+private void
+update_OS_2(OS_2_t *pos2, uint first_glyph, int num_glyphs)
+{
+    put_u16(pos2->usFirstCharIndex, first_glyph);
+    put_u16(pos2->usLastCharIndex, first_glyph + num_glyphs - 1);
+}
 private void
 write_OS_2(stream *s, gs_font *font, uint first_glyph, int num_glyphs)
 {
@@ -328,8 +385,8 @@ write_OS_2(stream *s, gs_font *font, uint first_glyph, int num_glyphs)
      * ones, which affect character mapping, are usFirst/LastCharIndex.
      */
     memset(&os2, 0, sizeof(os2));
-    put_u16(os2.usFirstCharIndex, first_glyph);
-    put_u16(os2.usLastCharIndex, first_glyph + num_glyphs - 1);
+    put_u16(os2.version, 1);
+    update_OS_2(&os2, first_glyph, num_glyphs);
     pwrite(s, &os2, sizeof(os2));
     put_pad(s, sizeof(os2));
 }
@@ -457,7 +514,7 @@ compare_table_tags(const void *pt1, const void *pt2)
 }
 int
 psdf_write_truetype_font(stream *s, gs_font_type42 *pfont, int options,
-			 gs_glyph *subset_glyphs, uint subset_size,
+			 gs_glyph *orig_subset_glyphs, uint orig_subset_size,
 			 const gs_const_string *alt_font_name)
 {
     gs_font *const font = (gs_font *)pfont;
@@ -475,6 +532,7 @@ psdf_write_truetype_font(stream *s, gs_font_type42 *pfont, int options,
     ulong max_glyph;
     uint glyf_length, glyf_checksum = 0 /****** BOGUS ******/;
     uint loca_length, loca_checksum[2];
+    uint numGlyphs;		/* original value from maxp */
     byte head[56];		/* 0 mod 4 */
     post_t post;
     ulong head_checksum, file_checksum = 0;
@@ -483,6 +541,12 @@ psdf_write_truetype_font(stream *s, gs_font_type42 *pfont, int options,
 	have_name = !(options & WRITE_TRUETYPE_NAME),
 	have_OS_2 = false,
 	have_post = false;
+    uint cmap_length;
+    ulong OS_2_start;
+    uint OS_2_length = OS_2_LENGTH;
+    gs_glyph subset_data[256 * 3];  /* *3 for composites */
+    gs_glyph *subset_glyphs = orig_subset_glyphs;
+    uint subset_size = orig_subset_size;
     int code;
 
     if (alt_font_name)
@@ -493,8 +557,19 @@ psdf_write_truetype_font(stream *s, gs_font_type42 *pfont, int options,
 
     /* Sort the subset glyphs, if any. */
 
-    if (subset_glyphs)
+    if (subset_glyphs) {
+	/* Add the component glyphs for composites. */
+	memcpy(subset_data, orig_subset_glyphs,
+	       sizeof(gs_glyph) * subset_size);
+	subset_glyphs = subset_data;
+	code = psdf_add_subset_pieces(subset_glyphs, &subset_size,
+				      countof(subset_data),
+				      countof(subset_data),
+				      font);
+	if (code < 0)
+	    return code;
 	subset_size = psdf_sort_glyphs(subset_glyphs, subset_size);
+    }
 
     /*
      * Count the number of tables, including the eventual glyf and loca
@@ -506,16 +581,18 @@ psdf_write_truetype_font(stream *s, gs_font_type42 *pfont, int options,
     numTables_stored = U16(OffsetTable + 4);
     for (i = numTables = 0; i < numTables_stored; ++i) {
 	const byte *tab;
+	const byte *data;
+	ulong start;
+	uint length;
 
 	ACCESS(12 + i * 16, 16, tab);
+	start = u32(tab + 8);
+	length = u32(tab + 12);
 	if (!memcmp(tab, "head", 4)) {
-	    const byte *head_data;
-	    uint length = u32(tab + 12);
-
 	    if (length != 54)
 		return_error(gs_error_invalidfont);
-	    ACCESS(u32(tab + 8), length, head_data);
-	    memcpy(head, head_data, length);
+	    ACCESS(start, length, data);
+	    memcpy(head, data, length);
 	} else if (
 	    !memcmp(tab, "gly", 3) /*glyf=synthesized, glyx=Adobe bogus*/ ||
 	    !memcmp(tab, "loc", 3) /*loca=synthesized, locx=Adobe bogus*/ ||
@@ -526,15 +603,23 @@ psdf_write_truetype_font(stream *s, gs_font_type42 *pfont, int options,
 	else {
 	    if (numTables == MAX_NUM_TABLES)
 		return_error(gs_error_limitcheck);
-	    memcpy(&tables[numTables++ * 16], tab, 16);
 	    if (!memcmp(tab, "cmap", 4))
 		have_cmap = true;
-	    else if (!memcmp(tab, "name", 4))
+	    else if (!memcmp(tab, "maxp", 4)) {
+		ACCESS(start, length, data);
+		numGlyphs = U16(data + 4);
+	    } else if (!memcmp(tab, "name", 4))
 		have_name = true;
-	    else if (!memcmp(tab, "OS/2", 4))
+	    else if (!memcmp(tab, "OS/2", 4)) {
 		have_OS_2 = true;
-	    else if (!memcmp(tab, "post", 4))
+		if (length > OS_2_LENGTH)
+		    return_error(gs_error_invalidfont);
+		OS_2_start = start;
+		OS_2_length = length;
+		continue;
+	    } else if (!memcmp(tab, "post", 4))
 		have_post = true;
+	    memcpy(&tables[numTables++ * 16], tab, 16);
 	}
     }
 
@@ -565,15 +650,22 @@ psdf_write_truetype_font(stream *s, gs_font_type42 *pfont, int options,
     }
     if_debug2('l', "[l]max_glyph = %lu, glyf_length = %lu\n",
 	      (ulong)max_glyph, (ulong)glyf_length);
-    loca_length = (max_glyph + 2) << 2;
+    /*
+     * For subset fonts, we should trim the loca table so that it only
+     * contains entries through max_glyph.  Unfortunately, this would
+     * require changing numGlyphs in maxp, which in turn would affect hdmx,
+     * hhea, hmtx, vdmx, vhea, vmtx, and possibly other tables.  This is way
+     * more work than we want to do right now.
+     */
+    /*loca_length = (max_glyph + 2) << 2;*/
+    loca_length = (numGlyphs + 1) << 2;
     indexToLocFormat = (glyf_length > 0x1fffc);
     if (!indexToLocFormat)
 	loca_length >>= 1;
 
     /*
      * If necessary, compute the length of the post table.  Note that we
-     * only generate post entries for characters in the Encoding.
-     */
+     * only generate post entries for characters in the Encoding.  */
 
     if (!have_post) {
 	memset(&post, 0, sizeof(post));
@@ -592,13 +684,13 @@ psdf_write_truetype_font(stream *s, gs_font_type42 *pfont, int options,
 	head_checksum += u32(&head[i]);
 
     /*
-     * Construct the table directory, except for glyf, loca, and head,
-     * and, if necessary, generated cmap, name, OS/2, and post tables.
+     * Construct the table directory, except for glyf, loca, head, OS/2,
+     * and, if necessary, generated cmap, name, and post tables.
      * Note that the existing directory is already sorted by tag.
      */
 
-    numTables_out = numTables + 3 +
-	!have_cmap + !have_name + !have_OS_2 + !have_post;
+    numTables_out = numTables + 4 +
+	!have_cmap + !have_name + !have_post;
     offset = 12 + numTables_out * 16;
     for (i = 0; i < numTables; ++i) {
 	byte *tab = &tables[i * 16];
@@ -620,8 +712,8 @@ psdf_write_truetype_font(stream *s, gs_font_type42 *pfont, int options,
 	tab += 16;
 
 	if (!have_cmap) {
-	    uint cmap_length = size_cmap(256);
-
+	    cmap_length = size_cmap(font, 0xf000, 256,
+				    gs_min_cid_glyph + max_glyph, options);
 	    offset = put_table(tab, "cmap", 0L /****** NO CHECKSUM ******/,
 			       offset, cmap_length);
 	    tab += 16;
@@ -633,11 +725,9 @@ psdf_write_truetype_font(stream *s, gs_font_type42 *pfont, int options,
 	    tab += 16;
 	}
 
-	if (!have_OS_2) {
-	    offset = put_table(tab, "OS/2", 0L /****** NO CHECKSUM ******/,
-			       offset, OS_2_LENGTH);
-	    tab += 16;
-	}
+	offset = put_table(tab, "OS/2", 0L /****** NO CHECKSUM ******/,
+			   offset, OS_2_length);
+	tab += 16;
 
 	if (!have_post) {
 	    offset = put_table(tab, "post", 0L /****** NO CHECKSUM ******/,
@@ -692,9 +782,10 @@ psdf_write_truetype_font(stream *s, gs_font_type42 *pfont, int options,
 	const byte *tab = &tables[i * 16];
 
 	if (tab[8] < 0x40) {
+	    ulong start = u32(tab + 8);
 	    uint length = u32(tab + 12);
 
-	    write_range(s, pfont, u32(tab + 8), length);
+	    write_range(s, pfont, start, length);
 	    put_pad(s, length);
 	}
     }
@@ -729,18 +820,38 @@ psdf_write_truetype_font(stream *s, gs_font_type42 *pfont, int options,
 	if (pfont->data.get_outline(pfont, glyph, &glyph_string) >= 0)
 	    offset += glyph_string.size;
     }
-    /* Write the trailing loca entry. */
-    put_loca(s, offset, indexToLocFormat);
+    /* Pad to numGlyphs + 1 entries (including the trailing entry). */
+    for (; glyph_prev <= gs_min_cid_glyph + numGlyphs; ++glyph_prev)
+	put_loca(s, offset, indexToLocFormat);
     put_pad(s, loca_length);
 
     /* If necessary, write cmap, name, and OS/2. */
 
     if (!have_cmap)
-	write_cmap(s, font, 0xf000, 256, gs_min_cid_glyph + max_glyph);
+	write_cmap(s, font, 0xf000, 256, gs_min_cid_glyph + max_glyph,
+		   options, cmap_length);
     if (!have_name)
 	write_name(s, &font_name);
     if (!have_OS_2)
 	write_OS_2(s, font, 0xf000, 256);
+    else if (!have_cmap) {
+	/*
+	 * Adjust the first and last character indices in the OS/2 table
+	 * to reflect the values in the generated cmap.
+	 */
+	const byte *pos2;
+	OS_2_t os2;
+
+	ACCESS(OS_2_start, OS_2_length, pos2);
+	memcpy(&os2, pos2, min(OS_2_length, sizeof(os2)));
+	update_OS_2(&os2, 0xf000, 256);
+	pwrite(s, &os2, OS_2_length);
+	put_pad(s, OS_2_length);
+    } else {
+	/* Just copy the existing OS/2 table. */
+	write_range(s, pfont, OS_2_start, OS_2_length);
+	put_pad(s, OS_2_length);
+    }
 
     /* If necessary, write post. */
 

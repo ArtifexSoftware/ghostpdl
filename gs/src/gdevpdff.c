@@ -1,22 +1,9 @@
 /* Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Font handling for pdfwrite driver. */
 #include "math_.h"
 #include "memory_.h"
@@ -60,6 +47,8 @@ const pdf_standard_font_t pdf_standard_fonts[] = {
     {0}
 };
 
+/* ---------------- Standard fonts ---------------- */
+
 /* Return the index of a standard font name, or -1 if missing. */
 private int
 pdf_find_standard_font(const byte *str, uint size)
@@ -75,19 +64,73 @@ pdf_find_standard_font(const byte *str, uint size)
 }
 
 /*
- * Return the index of a standard font with the same UID as a given font,
- * or -1 if missing.
+ * Return the index of a standard font with the same appearance
+ * (CharStrings, Private, WeightVector) as a given font, or -1 if missing.
  */
 private int
-find_std_uid(const gx_device_pdf *pdev, const gs_font_base *bfont)
+find_std_appearance(const gx_device_pdf *pdev, const gs_font_base *bfont,
+		    int *psame)
 {
+    bool has_uid = uid_is_UniqueID(&bfont->UID) && bfont->UID.id != 0;
+    const pdf_std_font_t *psf = pdev->std_fonts;
     int i;
 
-    for (i = 0; i < PDF_NUM_STD_FONTS; ++i)
-	if (uid_equal(&bfont->UID, &pdev->text.std_fonts[i].uid)) {
-	    return i;
+    for (i = 0; i < PDF_NUM_STD_FONTS; ++psf, ++i) {
+	if (has_uid) {
+	    if (uid_equal(&bfont->UID, &psf->uid)) {
+		return i;
+	    }
+	} else if (psf->font) {
+	    int same = *psame =
+		bfont->procs.same_font((const gs_font *)bfont, psf->font,
+				       FONT_SAME_OUTLINES | FONT_SAME_METRICS |
+				       FONT_SAME_ENCODING);
+
+	    if (same & FONT_SAME_OUTLINES)
+		return i;
 	}
+    }
     return -1;
+}
+
+/*
+ * We register the fonts in pdev->std_fonts so that the pointers can
+ * be weak (get set to 0 when the font is freed).
+ */
+private GS_NOTIFY_PROC(pdf_std_font_notify_proc);
+typedef struct pdf_std_font_notify_s {
+    gx_device_pdf *pdev;
+    int index;			/* in std_fonts */
+    gs_font *font;	/* for checking */
+} pdf_std_font_notify_t;
+gs_private_st_ptrs2(st_pdf_std_font_notify, pdf_std_font_notify_t,
+		    "pdf_std_font_notify_t",
+		    pdf_std_font_notify_enum_ptrs,
+		    pdf_std_font_notify_reloc_ptrs,
+		    pdev, font);
+private int
+pdf_std_font_notify_proc(void *vpsfn /*proc_data*/, void *event_data)
+{
+    pdf_std_font_notify_t *const psfn = vpsfn;
+    gx_device_pdf *const pdev = psfn->pdev;
+    gs_font *const font = psfn->font;
+
+    if (event_data)
+	return 0;		/* unknown event */
+    if_debug3('_',
+	      "[_]  notify 0x%lx: gs_font 0x%lx, index=%d\n",
+	      (ulong)psfn, (ulong)font, psfn->index);
+#ifdef DEBUG
+    if (pdev->std_fonts[psfn->index].font != font)
+	lprintf3("pdf_std_font_notify font = 0x%lx, std_fonts[%d] = 0x%lx\n",
+		 (ulong)font, psfn->index,
+		 (ulong)pdev->std_fonts[psfn->index].font);
+    else
+#endif
+	pdev->std_fonts[psfn->index].font = 0;
+    gs_font_notify_unregister(font, pdf_std_font_notify_proc, vpsfn);
+    gs_free_object(pdev->pdf_memory, vpsfn, "pdf_std_font_notify_proc");
+    return 0;
 }
 
 /*
@@ -98,23 +141,36 @@ private bool
 scan_for_standard_fonts(gx_device_pdf *pdev, const gs_font_dir *dir)
 {
     bool found = false;
-    const gs_font *orig = dir->orig_fonts;
+    gs_font *orig = dir->orig_fonts;
 
     for (; orig; orig = orig->next) {
-	const gs_font_base *obfont;
+	gs_font_base *obfont;
 
-	if (orig->FontType == ft_composite)
+	if (orig->FontType == ft_composite || !orig->is_resource)
 	    continue;
-	obfont = (const gs_font_base *)orig;
-	if (uid_is_valid(&obfont->UID)) {
+	obfont = (gs_font_base *)orig;
+	if (uid_is_UniqueID(&obfont->UID)) {
 	    /* Is it one of the standard fonts? */
 	    int i = pdf_find_standard_font(orig->key_name.chars,
 					   orig->key_name.size);
 
-	    if (i >= 0 && !uid_equal(&pdev->text.std_fonts[i].uid,
-				     &obfont->UID)) {
-		pdev->text.std_fonts[i].uid = obfont->UID;
-		pdev->text.std_fonts[i].orig_matrix = obfont->FontMatrix;
+	    if (i >= 0 && pdev->std_fonts[i].font == 0) {
+		pdf_std_font_notify_t *psfn =
+		    gs_alloc_struct(pdev->pdf_memory, pdf_std_font_notify_t,
+				    &st_pdf_std_font_notify,
+				    "scan_for_standard_fonts");
+
+		if (psfn == 0)
+		    continue;	/* can't register */
+		psfn->pdev = pdev;
+		psfn->index = i;
+		psfn->font = orig;
+		if_debug3('_', "[_]register 0x%lx: gs_font 0x%lx, index=%d\n",
+			  (ulong)psfn, (ulong)orig, i);
+		gs_font_notify_register(orig, pdf_std_font_notify_proc, psfn);
+		pdev->std_fonts[i].uid = obfont->UID;
+		pdev->std_fonts[i].orig_matrix = obfont->FontMatrix;
+		pdev->std_fonts[i].font = orig;
 		found = true;
 	    }
 	}
@@ -137,23 +193,22 @@ pdf_find_orig_font(gx_device_pdf *pdev, gs_font *font, gs_const_string *pfname,
 	return false;
     for (;; font = font->base) {
 	gs_font_base *bfont = (gs_font_base *)font;
+	int same;
 
-	if (uid_is_valid(&bfont->UID) && bfont->UID.id != 0) {
-	    /* Look for a standard font with the same UID. */
-	    i = find_std_uid(pdev, bfont);
-	    if (i >= 0)
-		goto ret;
-	    if (scan) {
-		/* Scan for fonts with any of the standard names that */
-		/* have a UID. */
-		bool found = scan_for_standard_fonts(pdev, font->dir);
+	/* Look for a standard font with the same appearance. */
+	i = find_std_appearance(pdev, bfont, &same);
+	if (i >= 0)
+	    goto ret;
+	if (scan) {
+	    /* Scan for fonts with any of the standard names that */
+	    /* have a UID. */
+	    bool found = scan_for_standard_fonts(pdev, font->dir);
 
-		scan = false;
-		if (found) {
-		    i = find_std_uid(pdev, bfont);
-		    if (i >= 0)
-			goto ret;
-		}
+	    scan = false;
+	    if (found) {
+		i = find_std_appearance(pdev, bfont, &same);
+		if (i >= 0)
+		    goto ret;
 	    }
 	}
 	if (font->base == font)
@@ -162,13 +217,13 @@ pdf_find_orig_font(gx_device_pdf *pdev, gs_font *font, gs_const_string *pfname,
  ret:
     pfname->data = (const byte *)pdf_standard_fonts[i].fname;
     pfname->size = strlen((const char *)pfname->data);
-    *pfmat = pdev->text.std_fonts[i].orig_matrix;
+    *pfmat = pdev->std_fonts[i].orig_matrix;
     return true;
 }
 
 /*
  * Determine the embedding status of a font.  If the font is in the base
- * 14, store its index (0..13) in *pindex.
+ * 14, store its index (0..13) in *pindex, otherwise store -1 there.
  */
 private bool
 font_is_symbolic(const gs_font *font)
@@ -179,6 +234,7 @@ font_is_symbolic(const gs_font *font)
     case ENCODING_INDEX_STANDARD:
     case ENCODING_INDEX_ISOLATIN1:
     case ENCODING_INDEX_WINANSI:
+    case ENCODING_INDEX_MACROMAN:
 	return false;
     default:
 	return true;
@@ -196,24 +252,35 @@ embed_list_includes(const gs_param_string_array *psa, const byte *chars,
     return false;
 }
 pdf_font_embed_t
-pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex)
+pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
+		      int *psame)
 {
     const byte *chars = font->font_name.chars;
     uint size = font->font_name.size;
+    /* Check whether the font is in the base 14. */
     int index = pdf_find_standard_font(chars, size);
 
-    /* Check whether the font is in the base 14. */
     if (index >= 0) {
 	*pindex = index;
-	return FONT_EMBED_BASE14;
+	if (font->is_resource) {
+	    *psame = ~0;
+	    return FONT_EMBED_BASE14;
+	} else if (font->FontType != ft_composite &&
+		   find_std_appearance(pdev, (gs_font_base *)font,
+				       psame) == index)
+	    return FONT_EMBED_BASE14;
     }
+    *pindex = -1;
     /* Check the Embed lists. */
-    if ((pdev->params.EmbedAllFonts || font_is_symbolic(font) ||
-	 embed_list_includes(&pdev->params.AlwaysEmbed, chars, size)) &&
-	!embed_list_includes(&pdev->params.NeverEmbed, chars, size))
+    if (embed_list_includes(&pdev->params.NeverEmbed, chars, size))
+	return FONT_EMBED_NO;
+    if (pdev->params.EmbedAllFonts || font_is_symbolic(font) ||
+	embed_list_includes(&pdev->params.AlwaysEmbed, chars, size))
 	return FONT_EMBED_YES;
-    return FONT_EMBED_NO;
+    return FONT_EMBED_UNKNOWN;
 }
+
+/* ---------------- Everything else ---------------- */
 
 /* Allocate a font resource. */
 int
@@ -244,6 +311,8 @@ pdf_alloc_font(gx_device_pdf *pdev, gs_id rid, pdf_font_t **ppfres,
     memset((byte *)pfres + sizeof(pdf_resource_t), 0,
 	   sizeof(*pfres) - sizeof(pdf_resource_t));
     sprintf(pfres->frname, "R%ld", pfres->object->id);
+    pfres->index = -1;
+    pfres->BaseEncoding = ENCODING_INDEX_UNKNOWN; /* -1 */
     pfres->differences = 0;
     pfres->descriptor = pfd;
     pfres->char_procs = 0;
@@ -259,7 +328,6 @@ pdf_add_encoding_difference(gx_device_pdf *pdev, pdf_font_t *ppf, int chr,
     pdf_encoding_element_t *pdiff = ppf->differences;
 
     if (pdiff == 0) {
-	ppf->diff_id = pdf_obj_ref(pdev);
 	pdiff = gs_alloc_struct_array(pdev->pdf_memory, 256,
 				      pdf_encoding_element_t,
 				      &st_pdf_encoding_element,
@@ -277,43 +345,51 @@ pdf_add_encoding_difference(gx_device_pdf *pdev, pdf_font_t *ppf, int chr,
 
 /* Get the width of a given character in a (base) font. */
 int
-pdf_char_width(pdf_font_t *ppf, int ch, gs_font *font, const gs_matrix *pmat,
+pdf_char_width(pdf_font_t *ppf, int ch, gs_font *font,
 	       int *pwidth /* may be NULL */)
 {
     if (ch < 0 || ch > 255)
 	return_error(gs_error_rangecheck);
     if (!(ppf->widths_known[ch >> 3] & (1 << (ch & 7)))) {
-	pdf_font_descriptor_t *pfd = ppf->descriptor;
+	gs_font_base *bfont = (gs_font_base *)font;
+	gs_glyph glyph = bfont->procs.encode_char(font, (gs_char)ch,
+						  GLYPH_SPACE_INDEX);
+	int wmode = font->WMode;
+	gs_glyph_info_t info;
+	double w, v;
+	int code;
 
-	if (pfd == 0)
-	    return_error(gs_error_rangecheck);
-	ppf->Widths[ch] = pfd->MissingWidth;
-	if (!(pfd->Flags & FONT_IS_FIXED_WIDTH)) {
-	    gs_font_base *bfont = (gs_font_base *)font;
-	    gs_glyph glyph = bfont->procs.encode_char(font, (gs_char)ch,
-						      GLYPH_SPACE_INDEX);
-
-	    if (glyph != gs_no_glyph) {
-		int wmode = font->WMode;
-		gs_matrix smat;
-		gs_glyph_info_t info;
-		int code;
-
-		/* See above re the following. */
-		if (font->FontType == ft_TrueType) {
-		    gs_make_scaling(1000.0, 1000.0, &smat);
-		    pmat = &smat;
-		}
-		code = font->procs.glyph_info(font, glyph, pmat,
-					      GLYPH_INFO_WIDTH0 << wmode,
-					      &info);
-
-		if (code < 0)
-		    return code;
-		if (info.width[wmode].y != 0)
-		    return_error(gs_error_rangecheck);
-		ppf->Widths[ch] = info.width[wmode].x;
+	if (glyph != gs_no_glyph &&
+	    (code = font->procs.glyph_info(font, glyph, NULL,
+					   GLYPH_INFO_WIDTH0 << wmode,
+					   &info)) >= 0
+	    ) {
+	    if (wmode && (w = info.width[wmode].y) != 0)
+		v = info.width[wmode].x;
+	    else
+		w = info.width[wmode].x, v = info.width[wmode].y;
+	    if (v != 0)
+		return_error(gs_error_rangecheck);
+	    if (font->FontType == ft_TrueType) {
+		/* TrueType fonts have 1 unit per em, we want 1000. */
+		w *= 1000;
 	    }
+	    ppf->Widths[ch] = (int)w;
+	} else {
+	    /* Try for MissingWidth. */
+	    static const gs_point tt_scale = {1000, 1000};
+	    const gs_point *pscale = 0;
+	    gs_font_info_t finfo;
+
+	    if (font->FontType == ft_TrueType) {
+		/* TrueType fonts have 1 unit per em, we want 1000. */
+		pscale = &tt_scale;
+	    }
+	    code = font->procs.font_info(font, pscale, FONT_INFO_MISSING_WIDTH,
+					 &finfo);
+	    if (code < 0)
+		return code;
+	    ppf->Widths[ch] = finfo.MissingWidth;
 	}
 	ppf->widths_known[ch >> 3] |= 1 << (ch & 7);
     }
@@ -662,10 +738,13 @@ pdf_embed_font_type42(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd,
     long length_id;
     long start;
     psdf_binary_writer writer;
+    /* Acrobat Reader 3 doesn't handle cmap format 6 correctly. */
+    const int options = WRITE_TRUETYPE_CMAP | WRITE_TRUETYPE_NAME |
+	(pdev->CompatibilityLevel <= 1.2 ?
+	 WRITE_TRUETYPE_NO_TRIMMED_TABLE : 0);
 
     swrite_position_only(&poss);
-#define TRUETYPE_OPTIONS (WRITE_TRUETYPE_CMAP | WRITE_TRUETYPE_NAME)
-    code = psdf_write_truetype_font(&poss, font, TRUETYPE_OPTIONS,
+    code = psdf_write_truetype_font(&poss, font, options,
 				    subset_glyphs, subset_size, pfname);
     if (code < 0)
 	return code;
@@ -677,50 +756,13 @@ pdf_embed_font_type42(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd,
     code = psdf_begin_binary((gx_device_psdf *)pdev, &writer);
     if (code < 0)
 	return code;
-    psdf_write_truetype_font(pdev->strm, font, TRUETYPE_OPTIONS,
+    psdf_write_truetype_font(writer.strm, font, options,
 			     subset_glyphs, subset_size, pfname);
-#undef TRUETYPE_OPTIONS
     psdf_end_binary(&writer);
     pdf_end_fontfile(pdev, start, length_id);
     return 0;
 }
 
-/*
- * Write out the CharProcs for a synthesized font.
- * We thought that Acrobat 2.x required this to be an indirect object,
- * but we were wrong.
- */
-private int
-pdf_write_char_procs(gx_device_pdf * pdev, const pdf_font_t * pef,
-		     gs_int_rect * pbbox, int widths[256])
-{
-    stream *s = pdev->strm;
-    const pdf_char_proc_t *pcp;
-    int w;
-
-    pputs(s, "<<");
-    /* Write real characters. */
-    for (pcp = pef->char_procs; pcp; pcp = pcp->char_next) {
-	pbbox->p.y = min(pbbox->p.y, pcp->y_offset);
-	pbbox->q.x = max(pbbox->q.x, pcp->width);
-	pbbox->q.y = max(pbbox->q.y, pcp->height + pcp->y_offset);
-	widths[pcp->char_code] = pcp->x_width;
-	pprintld2(s, "/a%ld\n%ld 0 R", (long)pcp->char_code,
-		  pcp->object->id);
-    }
-    /* Write space characters. */
-    for (w = 0; w < countof(pef->spaces); ++w) {
-	byte ch = pef->spaces[w];
-
-	if (ch) {
-	    pprintld2(s, "/a%ld\n%ld 0 R", (long)ch,
-		      pdev->space_char_ids[w]);
-	    widths[ch] = w + X_SPACE_MIN;
-	}
-    }
-    pputs(s, ">>");
-    return 0;
-}
 
 /* Write out the Widths for an embedded or synthesized font. */
 private int
@@ -730,7 +772,7 @@ pdf_write_widths(gx_device_pdf *pdev, int first, int last,
     stream *s = pdev->strm;
     int i;
 
-    pputs(s, "[");
+    pprintd2(s, "/FirstChar %d/LastChar %d/Widths[", first, last);
     for (i = first; i <= last; ++i)
 	pprintd1(s, (i & 15 ? " %d" : ("\n%d")), widths[i]);
     pputs(s, "]\n");
@@ -761,21 +803,106 @@ pdf_write_synthesized_type3(gx_device_pdf *pdev, const pdf_font_t *pef)
     pdf_open_separate(pdev, pef->object->id);
     s = pdev->strm;
     pprints1(s, "<</Type/Font/Name/%s/Subtype/Type3", pef->frname);
-    pprintld1(s, "/Encoding %ld 0 R", pdev->embedded_encoding_id);
-    pprintd1(s, "/FirstChar 0/LastChar %d/CharProcs",
-	     pef->num_chars - 1);
-    pdf_write_char_procs(pdev, pef, &bbox, widths);
+    pprintld1(s, "/Encoding %ld 0 R/CharProcs", pdev->embedded_encoding_id);
+
+    /* Write the CharProcs. */
+    {
+	const pdf_char_proc_t *pcp;
+	int w;
+
+	pputs(s, "<<");
+	/* Write real characters. */
+	for (pcp = pef->char_procs; pcp; pcp = pcp->char_next) {
+	    bbox.p.y = min(bbox.p.y, pcp->y_offset);
+	    bbox.q.x = max(bbox.q.x, pcp->width);
+	    bbox.q.y = max(bbox.q.y, pcp->height + pcp->y_offset);
+	    widths[pcp->char_code] = pcp->x_width;
+	    pprintld2(s, "/a%ld\n%ld 0 R", (long)pcp->char_code,
+		      pcp->object->id);
+	}
+	/* Write space characters. */
+	for (w = 0; w < countof(pef->spaces); ++w) {
+	    byte ch = pef->spaces[w];
+
+	    if (ch) {
+		pprintld2(s, "/a%ld\n%ld 0 R", (long)ch,
+			  pdev->space_char_ids[w]);
+		widths[ch] = w + X_SPACE_MIN;
+	    }
+	}
+	pputs(s, ">>");
+    }
+
     pdf_write_font_bbox(pdev, &bbox);
-    pputs(s, "/FontMatrix[1 0 0 1 0 0]/Widths");
+    pputs(s, "/FontMatrix[1 0 0 1 0 0]");
     pdf_write_widths(pdev, 0, pef->num_chars - 1, widths);
     pputs(s, ">>\n");
     pdf_end_separate(pdev);
     return 0;
 }
 
+/* Write a font descriptor. */
+private int
+pdf_write_font_descriptor(gx_device_pdf *pdev,
+			  const pdf_font_descriptor_t *pfd, int Flags,
+			  const gs_const_string *pfname,
+			  const char *FontFile_key)
+{
+#define DESC_INT(str, memb)\
+ {str, gs_param_type_int, offset_of(pdf_font_descriptor_t, memb)}
+    static const gs_param_item_t required_items[] = {
+	DESC_INT("Ascent", Ascent),
+	DESC_INT("CapHeight", CapHeight),
+	DESC_INT("Descent", Descent),
+	DESC_INT("ItalicAngle", ItalicAngle),
+	DESC_INT("StemV", StemV),
+	gs_param_item_end
+    };
+    static const gs_param_item_t optional_items[] = {
+	DESC_INT("AvgWidth", AvgWidth),
+	DESC_INT("Leading", Leading),
+	DESC_INT("MaxWidth", MaxWidth),
+	DESC_INT("MissingWidth", MissingWidth),
+	DESC_INT("StemH", StemH),
+	DESC_INT("XHeight", XHeight),
+	gs_param_item_end
+    };
+#undef DESC_INT
+    param_printer_params_t params;
+    static const param_printer_params_t ppp_defaults = {
+	param_printer_params_default_values
+    };
+    printer_param_list_t rlist;
+    gs_param_list *const plist = (gs_param_list *)&rlist;
+    
+    pdf_font_descriptor_t defaults;
+    stream *s;
+    int code;
+
+    pdf_open_separate(pdev, pfd->id);
+    params = ppp_defaults;
+    s = pdev->strm;
+    code = s_init_param_printer(&rlist, &params, s);
+    pputs(s, "<</Type/FontDescriptor/FontName");
+    pdf_put_name(pdev, pfname->data, pfname->size);
+    gs_param_write_items(plist, pfd, NULL, required_items);
+    param_write_int(plist, "Flags", &Flags);
+    pdf_write_font_bbox(pdev, &pfd->FontBBox);
+    memset(&defaults, 0, sizeof(defaults));
+    gs_param_write_items(plist, pfd, &defaults, optional_items);
+    s_release_param_printer(&rlist);
+    if (pfd->FontFile_id) {
+	pputs(s, FontFile_key);
+	pprintld1(s, " %ld 0 R", pfd->FontFile_id);
+    }
+    pputs(s, ">>\n");
+    pdf_end_separate(pdev);
+    return 0;
+}
+
 /*
- * Write a Type 1 or TrueType font resource, including any encoding
- * differences and/or descriptor.
+ * Write a Type 1 or TrueType font resource, including Widths, Encoding,
+ * and/or FontDescriptor.
  */
 private int
 pdf_write_font_resource(gx_device_pdf *pdev, const pdf_font_t *pef,
@@ -783,23 +910,14 @@ pdf_write_font_resource(gx_device_pdf *pdev, const pdf_font_t *pef,
 {
     stream *s;
     const pdf_font_descriptor_t *pfd = pef->descriptor;
-    long widths_id = 0;
-    int first = 0, last = 255;
-    /*
-     * For embedded TrueType fonts, the PDF documentation doesn't specify
-     * how the Encoding interacts with the post and cmap tables.  Macduff
-     * Hughes of Adobe says the only reliable way to get the desired output
-     * is not to use Encoding at all, but even this isn't adequate for
-     * non-Unicode-based fonts: right now it appears there is *no* way to
-     * get Acrobat to do the right thing.
-     */
-    bool write_differences =
-	pef->differences != 0 &&
-	(pfd == 0 || pfd->FontFile_id == 0 || pef->FontType != ft_TrueType);
     const char *FontFile_key;
+    int Flags;
+    int code;
 
     pdf_open_separate(pdev, pef->object->id);
     s = pdev->strm;
+    if (pfd)
+	Flags = pfd->Flags;
     switch (pef->FontType) {
     case ft_encrypted:
 	pputs(s, "<</Subtype/Type1/BaseFont");
@@ -811,101 +929,104 @@ pdf_write_font_resource(gx_device_pdf *pdev, const pdf_font_t *pef,
 	/****** WHAT ABOUT STYLE INFO? ******/
 	pdf_put_name(pdev, pfname->data, pfname->size);
 	FontFile_key = "/FontFile2";
+	/*
+	 * Hack: make all embedded subset TrueType fonts "symbolic" to work
+	 * around undocumented assumptions in Acrobat Reader.
+	 */
+	if (has_subset_prefix(pfname->data, pfname->size))
+	    Flags = (Flags & ~(FONT_IS_ADOBE_ROMAN)) |
+		FONT_IS_SYMBOLIC;
 	break;
     default:
 	return_error(gs_error_rangecheck);
     }
     pprintld1(s, "/Type/Font/Name/R%ld", pef->object->id);
-    if (write_differences)
-	pprintld1(s, "/Encoding %ld 0 R", pef->diff_id);
-    if (pfd) {
-	while (first < last && pef->Widths[first] == pfd->MissingWidth)
-	    ++first;
-	while (last > first && pef->Widths[last] == pfd->MissingWidth)
-	    --last;
-	widths_id = pdf_obj_ref(pdev);
-	pprintld2(s, "/FontDescriptor %ld 0 R/Widths %ld 0 R",
-		  pfd->id, widths_id);
-	pprintd2(s, "/FirstChar %d/LastChar %d", first, last);
+    if (pfd)
+	pprintld1(s, "/FontDescriptor %ld 0 R", pfd->id);
+    if (pef->index < 0 || pef->differences) {
+	/*
+	 * Among the many problems in the PDF 1.3 documentation is the
+	 * omission of the following interesting fact: FirstChar and
+	 * LastChar are *not* simply a way to strip off initial and final
+	 * entries in the Widths array that are equal to MissingWidth.
+	 * Acrobat Reader assumes that characters with codes less than
+	 * FirstChar or greater than LastChar are undefined, without
+	 * bothering to consult the Encoding.  Therefore, the implicit value
+	 * of MissingWidth is pretty useless, because there must be explicit
+	 * Width entries for every character in the font that is every used.
+	 */
+	int first = 0, last = 248;
+	byte first_byte, last_byte;
+
+	while (first <= last && (first_byte = pef->chars_used[first >> 3]) == 0)
+	    first += 8;
+	while (last >= first && (last_byte = pef->chars_used[last >> 3]) == 0)
+	    last -= 8;
+	/*
+	 * At this point, either first > last, which indicates that none of
+	 * the characters in the font were used (unusual to say the least,
+	 * but must be handled correctly), or first_byte and last_byte are
+	 * both non-zero.
+	 */
+	if (first > last) {
+	    /*
+	     * None of the characters in the font were used.  This is
+	     * unusual, to say the least, but must be handled correctly.
+	     */
+	    first = last = 0;
+	} else {
+	    while (!(first_byte & 1))
+		first_byte >>= 1, ++first;
+	    for (last += 7; !(last_byte & 0x80);)
+		last_byte <<= 1, --last;
+	}
+	pdf_write_widths(pdev, first, last, pef->Widths);
+    }
+    if (pef->BaseEncoding >= 0 || pef->differences) {
+	long diff_id = pdf_obj_ref(pdev);
+
+	pprintld1(s, "/Encoding %ld 0 R>>\n", diff_id);
+	pdf_end_separate(pdev);
+	pdf_open_separate(pdev, diff_id);
+	s = pdev->strm;
+	pputs(s, "<</Type/Encoding");
+	if (pef->BaseEncoding >= 0) {
+	    static const char *const encoding_names[] = {
+		KNOWN_REAL_ENCODING_NAMES
+	    };
+
+	    pprints1(s, "/BaseEncoding/%s", encoding_names[pef->BaseEncoding]);
+	}
+	if (pef->differences) {
+	    int prev = 256;
+	    int i;
+
+	    pputs(s, "/Differences[");
+	    for (i = 0; i < 256; ++i)
+		if (pef->differences[i].str.data != 0) {
+		    if (i != prev + 1)
+			pprintd1(s, "\n%d", i);
+		    pdf_put_name(pdev,
+				 pef->differences[i].str.data,
+				 pef->differences[i].str.size);
+		    prev = i;
+		}
+	    pputs(s, "]");
+	}
     }
     pputs(s, ">>\n");
-    if (write_differences) {
-	int prev = 256;
-	int i;
-
-	pdf_end_separate(pdev);
-	pdf_open_separate(pdev, pef->diff_id);
-	pputs(s, "<</Type/Encoding/Differences[");
-	for (i = 0; i < 256; ++i)
-	    if (pef->differences[i].str.data != 0) {
-		if (i != prev + 1)
-		    pprintd1(s, "\n%d", i);
-		pdf_put_name(pdev,
-			     pef->differences[i].str.data,
-			     pef->differences[i].str.size);
-		prev = i;
-	    }
-	pputs(s, "]>>\n");
-    }
-    if (pfd) {
-#define DESC_INT(str, memb)\
-  {str, gs_param_type_int, offset_of(pdf_font_descriptor_t, memb)}
-	static const gs_param_item_t required_items[] = {
-	    DESC_INT("Ascent", Ascent),
-	    DESC_INT("CapHeight", CapHeight),
-	    DESC_INT("Descent", Descent),
-	    DESC_INT("ItalicAngle", ItalicAngle),
-	    DESC_INT("StemV", StemV),
-	    DESC_INT("Flags", Flags),
-	    gs_param_item_end
-	};
-	static const gs_param_item_t optional_items[] = {
-	    DESC_INT("AvgWidth", AvgWidth),
-	    DESC_INT("Leading", Leading),
-	    DESC_INT("MaxWidth", MaxWidth),
-	    DESC_INT("MissingWidth", MissingWidth),
-	    DESC_INT("StemH", StemH),
-	    DESC_INT("XHeight", XHeight),
-	    gs_param_item_end
-	};
-#undef DESC_INT
-	param_printer_params_t params;
-	static const param_printer_params_t ppp_defaults = {
-	    param_printer_params_default_values
-	};
-	printer_param_list_t rlist;
-	gs_param_list *const plist = (gs_param_list *)&rlist;
-	pdf_font_descriptor_t defaults;
-	int code;
-
-	pdf_end_separate(pdev);
-	pdf_open_separate(pdev, widths_id);
-	pdf_write_widths(pdev, first, last, pef->Widths);
-	pdf_end_separate(pdev);
-	pdf_open_separate(pdev, pfd->id);
-	params = ppp_defaults;
-	code = s_init_param_printer(&rlist, &params, pdev->strm);
-	pputs(s, "<</Type/FontDescriptor/FontName");
-	pdf_put_name(pdev, pfname->data, pfname->size);
-	gs_param_write_items(plist, pfd, NULL, required_items);
-	pdf_write_font_bbox(pdev, &pfd->FontBBox);
-	memset(&defaults, 0, sizeof(defaults));
-	gs_param_write_items(plist, pfd, &defaults, optional_items);
-	s_release_param_printer(&rlist);
-	if (pfd->FontFile_id) {
-	    pputs(s, FontFile_key);
-	    pprintld1(s, " %ld 0 R", pfd->FontFile_id);
-	}
-	pputs(s, ">>\n");
-    }
     pdf_end_separate(pdev);
+    if (pfd) {
+	code = pdf_write_font_descriptor(pdev, pfd, Flags, pfname, FontFile_key);
+	if (code < 0)
+	    return code;
+    }
     return 0;
 }
 
 /*
  * Write the FontFile* data for an embedded font.
- * Return a rangecheck error if the font can't be embedded.
- */
+ * Return a rangecheck error if the font can't be embedded.  */
 private int
 pdf_write_embedded_font(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd,
 			pdf_font_t *ppf, gs_font *font)
@@ -931,8 +1052,7 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd,
 					  &ignore_glyph), index != 0);
 	     )
 	    ++total;
-	/* Test used / total >= MaxSubsetPct / 100 */
-	if (used * 100 >= pdev->params.MaxSubsetPct * total)
+	if ((double)used / total >= pdev->params.MaxSubsetPct / 100.0)
 	    do_subset = false;
 	else {
 	    subset_size = psdf_subset_glyphs(subset_glyphs, font,
@@ -996,6 +1116,8 @@ pdf_register_font(gx_device_pdf *pdev, gs_font *font, pdf_font_t *ppf)
 	return_error(gs_error_VMerror);
     pfn->pdev = pdev;
     pfn->pdfont = ppf;
+    if_debug3('_', "[_]register 0x%lx: pdf_font_t 0x%lx, gs_font 0x%lx\n",
+	      (ulong)pfn, (ulong)ppf, (ulong)font);
     ppf->font = font;
     return gs_font_notify_register(font, pdf_font_notify_proc, pfn);
 }
@@ -1013,6 +1135,9 @@ pdf_font_notify_proc(void *vpfn /*proc_data*/, void *event_data)
 
     if (event_data)
 	return 0;		/* unknown event */
+    if_debug4('_',
+	      "[_]  notify 0x%lx: pdf_font_t 0x%lx, gs_font 0x%lx, skip=%d\n",
+	      (ulong)pfn, (ulong)ppf, (ulong)font, ppf->skip);
     /*
      * HACK: temporarily patch the font's memory to one that we know is
      * available even during GC or restore.  (Eventually we need to fix

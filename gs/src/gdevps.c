@@ -1,22 +1,9 @@
 /* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* PostScript-writing driver */
 #include "math_.h"
 #include "memory_.h"
@@ -989,6 +976,9 @@ psw_copy_mono(gx_device * dev, const byte * data,
     }
     if (code < 0)
 	return 0;
+    code = gdev_vector_update_clip_path(vdev, NULL);
+    if (code < 0)
+	return code;
     return psw_image_write(pdev, op, data, data_x, raster, id,
 			   x, y, w, h, 1);
 }
@@ -1002,6 +992,7 @@ psw_copy_color(gx_device * dev,
     int depth = dev->color_info.depth;
     const byte *bits = data + data_x * 3;
     char op[6];
+    int code;
 
     if (w <= 0 || h <= 0)
 	return 0;
@@ -1017,6 +1008,9 @@ psw_copy_color(gx_device * dev,
 	    (dev, x, y, w, h, (bits[0] << 16) + (bits[1] << 8) + bits[2]);
     }
     sprintf(op, "%d Ic", depth / 3);	/* RGB */
+    code = gdev_vector_update_clip_path(vdev, NULL);
+    if (code < 0)
+	return code;
     return psw_image_write(pdev, op, data, data_x, raster, id,
 			   x, y, w, h, depth);
 }

@@ -1,22 +1,9 @@
 /* Copyright (C) 1993, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Color halftone rendering for Ghostscript imaging library */
 #include "memory_.h"
 #include "gx.h"
@@ -143,8 +130,9 @@ gx_dc_ht_colored_load(gx_device_color * pdevc, const gs_imager_state * pis,
 		      gx_device * ignore_dev, gs_color_select_t select)
 {
     gx_device_halftone *pdht = pdevc->colors.colored.c_ht;
-    gx_ht_order *porder = &pdht->components[0].corder;
     gx_ht_cache *pcache = pis->ht_cache;
+    gx_ht_order *porder =
+	(pdht->components ? &pdht->components[0].corder : &pdht->order);
 
     if (pcache->order.bit_data != porder->bit_data)
 	gx_ht_init_cache(pcache, porder);
@@ -168,11 +156,23 @@ gx_dc_ht_colored_fill_rectangle(const gx_device_color * pdevc,
     const gx_device_halftone *pdht = pdevc->colors.colored.c_ht;
     int depth = dev->color_info.depth;
     int nplanes = dev->color_info.num_components;
+    SET_HT_COLORS_PROC((*set_ht_colors)) =
+	(
+#if USE_SLOW_CODE
+	 set_ht_colors_gt_4
+#else
+	 dev_proc(dev, map_cmyk_color) == cmyk_1bit_map_cmyk_color ?
+	   set_cmyk_1bit_colors :
+	 nplanes < 4 ? set_ht_colors_le_4 :
+	 set_ht_colors_gt_4
+#endif
+	 );
     SET_COLOR_HT_PROC((*set_color_ht)) =
 	(
 #if !USE_SLOW_CODE
-	 !(pdevc->colors.colored.plane_mask & ~(gx_color_index)15) ?
-	 set_color_ht_le_4 :
+	 !(pdevc->colors.colored.plane_mask & ~(gx_color_index)15) &&
+	  set_ht_colors != set_ht_colors_gt_4 ?
+	   set_color_ht_le_4 :
 #endif
 	 set_color_ht_gt_4);
     color_values_pair_t vp;
@@ -229,16 +229,7 @@ gx_dc_ht_colored_fill_rectangle(const gx_device_color * pdevc,
 	for (i = 4; i < nplanes; ++i)
 	    caches[i] = pocs[pdht->color_indices[i]].corder.cache;
     }
-    special =
-#if USE_SLOW_CODE
-	set_ht_colors_gt_4
-#else
-	(dev_proc(dev, map_cmyk_color) == cmyk_1bit_map_cmyk_color ?
-	   set_cmyk_1bit_colors :
-	 nplanes < 4 ? set_ht_colors_le_4 :
-	 set_ht_colors_gt_4)
-#endif
-	(&vp, colors, sbits, pdevc, dev, caches, nplanes);
+    special = set_ht_colors(&vp, colors, sbits, pdevc, dev, caches, nplanes);
     no_rop = source == NULL && lop_no_S_is_T(lop);
     /*
      * If the LCM of the plane cell sizes is smaller than the rectangle
@@ -410,7 +401,9 @@ private const gx_const_strip_bitmap ht_no_bitmap = {
     } else {                                                        \
 	const gx_device_halftone *pdht = pdc->colors.colored.c_ht;  \
 	int nlevels =\
-	    pdht->components[pdht->color_indices[i]].corder.num_levels;\
+	    (pdht->components ?\
+	     pdht->components[pdht->color_indices[i]].corder.num_levels :\
+	     pdht->order.num_levels);\
 \
 	pvp->values[1][i] = pvp->values[0][i];                   \
 	pvp->values[0][i] = fractional_color(q + 1, max_color);   \
@@ -585,7 +578,9 @@ set_cmyk_1bit_colors(color_values_pair_t *ignore_pvp,
 	sbits[3 - i] = &ht_no_bitmap;\
     } else {\
 	int nlevels =\
-	    pdht->components[pdht->color_indices[i]].corder.num_levels;\
+	    (pdht->components ?\
+	     pdht->components[pdht->color_indices[i]].corder.num_levels :\
+	     pdht->order.num_levels);\
 \
 	mask0 |= mask;\
 	sbits[3 - i] = (const gx_const_strip_bitmap *)\
@@ -926,7 +921,7 @@ set_color_ht_le_4(byte *dest_data, uint dest_raster, int px, int py,
  */
 private void
 set_color_ht_gt_4(byte *dest_data, uint dest_raster, int px, int py,
-		  int w, int h, int depth, int special, int nplanes,
+		  int w, int h, int depth, int special, int num_planes,
 		  gx_color_index plane_mask, gx_device *dev,
 		  const color_values_pair_t *pvp,
 		  gx_color_index colors[1 << MAX_DCC],
@@ -937,10 +932,18 @@ set_color_ht_gt_4(byte *dest_data, uint dest_raster, int px, int py,
     int dbytes = depth >> 3;
     byte *dest_row =
 	dest_data + dest_raster * (h - 1) + (w * depth) / 8;
+    int pmin, pmax;
+    gx_color_value cv[MAX_DCC];
 
-    /* Compute the number of active planes. */
-    for (nplanes = 0; (plane_mask >> nplanes) != 0; )
-	++nplanes;
+    /* Compute the range of active planes. */
+    if (plane_mask == 0)
+	pmin = 0, pmax = -1;
+    else {
+	for (pmin = 0; !((plane_mask >> pmin) & 1); )
+	    ++pmin;
+	for (pmax = 0; (plane_mask >> pmax) > 1; )
+	    ++pmax;
+    }
 
     /* Do one-time cursor initialization. */
     {
@@ -948,9 +951,19 @@ set_color_ht_gt_4(byte *dest_data, uint dest_raster, int px, int py,
 	int lasty = h - 1 + py;
 	int i;
 
-	for (i = 0; i < nplanes; ++i)
+	for (i = pmin; i <= pmax; ++i)
 	    if ((plane_mask >> i) & 1)
 		init_tile_cursor(i, &cursor[i], sbits[i], endx, lasty);
+    }
+
+    /* Pre-load the color value for the unchanging planes. */
+    {
+	int i;
+
+	for (i = 0; i < pmin; ++i)
+	    cv[i] = pvp->values[0][i];
+	for (i = pmax + 1; i < num_planes; ++i)
+	    cv[i] = pvp->values[0][i];
     }
 
     /* Now compute the actual tile. */
@@ -963,7 +976,7 @@ set_color_ht_gt_4(byte *dest_data, uint dest_raster, int px, int py,
 	    gx_color_index index = 0;
 	    gx_color_index tcolor;
 
-	    for (i = 0; i < nplanes; ++i)
+	    for (i = pmin; i <= pmax; ++i)
 		if ((plane_mask >> i) & 1) {
 		    /* Get the next bit from an individual mask. */
 		    tile_cursor_t *ptc = &cursor[i];
@@ -985,10 +998,9 @@ b:		    if (ptc->bit_shift < 8)
 	    tcolor = colors[index];
 	    if (tcolor == gx_no_color_index) {
 		/* Map the color value now. */
-		gx_color_value cv[MAX_DCC];
 		int i;
 
-		for (i = 0; i < nplanes; ++i)
+		for (i = pmin; i <= pmax; ++i)
 		    cv[i] = pvp->values[(index >> i) & 1][i];
 		/****** HACK -- NO WAY TO MAP GENERAL COLORS ******/
 		tcolor = colors[index] =
@@ -1017,7 +1029,7 @@ b:		    if (ptc->bit_shift < 8)
 	}
 	if (y == 0)
 	    break;
-	for (i = 0; i < nplanes; ++i)
+	for (i = pmin; i <= pmax; ++i)
 	    if ((plane_mask >> i) & 1)
 		STEP_ROW(cursor[i], i);
     }

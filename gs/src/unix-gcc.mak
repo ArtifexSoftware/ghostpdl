@@ -1,21 +1,8 @@
 #    Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-# 
-# This file is part of Aladdin Ghostscript.
-# 
-# Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-# or distributor accepts any responsibility for the consequences of using it,
-# or for whether it serves any particular purpose or works at all, unless he
-# or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-# License (the "License") for full details.
-# 
-# Every copy of Aladdin Ghostscript must include a copy of the License,
-# normally in a plain ASCII text file named PUBLIC.  The License grants you
-# the right to copy, modify and redistribute Aladdin Ghostscript, but only
-# under certain conditions described in the License.  Among other things, the
-# License requires that the copyright notice and this notice be preserved on
-# all copies.
+# This software is licensed to a single customer by Artifex Software Inc.
+# under the terms of a specific OEM agreement.
 
-
+# $RCSfile$ $Revision$
 # makefile for Unix/gcc/X11 configuration.
 
 # ------------------------------- Options ------------------------------- #
@@ -107,6 +94,16 @@ GENOPT=
 
 GS=gs
 
+# Define the name of a pre-built executable that can be invoked at build
+# time.  Currently, this is only needed for compiled fonts.  The usual
+# alternatives are:
+#   - the standard name of Ghostscript on your system (typically `gs'):
+BUILD_TIME_GS=gs
+#   - the name of the executable you are building now.  If you choose this
+# option, then you must build the executable first without compiled fonts,
+# and then again with compiled fonts.
+#BUILD_TIME_GS=$(BINDIR)/$(GS) -I$(PSLIBDIR)
+
 # Define the directories for debugging and profiling binaries, relative to
 # the standard binaries.
 
@@ -186,7 +183,8 @@ GCFLAGS=-Wall -Wstrict-prototypes -Wmissing-declarations -Wmissing-prototypes -W
 
 # Define the added flags for standard, debugging, and profiling builds.
 
-CFLAGS_STANDARD=-O2
+#CFLAGS_STANDARD=-O2
+CFLAGS_STANDARD=-O
 CFLAGS_DEBUG=-g -O
 CFLAGS_PROFILE=-pg -O2
 
@@ -224,6 +222,12 @@ LDFLAGS=$(XLDFLAGS) -fno-common
 # (Libraries required by individual drivers are handled automatically.)
 
 EXTRALIBS=
+
+# Define the standard libraries to search at the end of linking.
+# All reasonable platforms require -lm, but Rhapsody and perhaps one or
+# two others fold libm into libc and require STDLIBS to be empty.
+
+STDLIBS=-lm
 
 # Define the include switch(es) for the X11 header files.
 # This can be null if handled in some other way (e.g., the files are
@@ -264,30 +268,25 @@ XLIBS=Xt Xext X11
 FPU_TYPE=1
 
 # Define the .dev module that implements thread and synchronization
-# primitives for this platform.  Don't change this unless you really know
-# what you're doing.
+# primitives for this platform.  On FreeBSD, change posync to fbsdsync.
+# Otherwise, don't change this unless you really know what you're doing.
 
 SYNC=posync
 
 # ------ Devices and features ------ #
 
 # Choose the language feature(s) to include.  See gs.mak for details.
-# Note that there is one feature that requires a GNU library:
-# $(PSD)gnrdline.dev, which adds support for GNU readline, including
-# on-the-fly name completion and evaluation.  For details, including
-# licensing problems that will arise if you add this feature to Aladdin
-# Ghostscript releases, see gp_gnrdl.c.
 
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)pipe.dev
-#FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)pipe.dev $(PSD)rasterop.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(GLD)pipe.dev
+#FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)rasterop.dev $(GLD)pipe.dev
 # The following is strictly for testing.
-FEATURE_DEVS_ALL=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)pipe.dev $(PSD)rasterop.dev $(PSD)double.dev $(PSD)trapping.dev $(PSD)compht.dev $(PSD)gnrdline.dev
+FEATURE_DEVS_ALL=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)rasterop.dev $(PSD)double.dev $(PSD)trapping.dev $(PSD)compht.dev $(GLD)pipe.dev
 #FEATURE_DEVS=$(FEATURE_DEVS_ALL)
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
 
-COMPILE_INITS=0
+COMPILE_INITS=1
 
 # Choose whether to store band lists on files or in memory.
 # The choices are 'file' or 'memory'.
@@ -351,7 +350,7 @@ DEVICE_DEVS16=
 DEVICE_DEVS17=
 DEVICE_DEVS18=
 DEVICE_DEVS19=
-DEVICE_DEVS20=
+DEVICE_DEVS20=$(DD)cljet5.dev $(DD)cljet5pr.dev
 
 # ---------------------------- End of options --------------------------- #
 

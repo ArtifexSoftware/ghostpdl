@@ -1,22 +1,9 @@
 /* Copyright (C) 1991, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Command list definitions for Ghostscript. */
 /* Requires gxdevice.h and gxdevmem.h */
 
@@ -197,6 +184,11 @@ typedef struct gx_device_clist_common_s {
 #define cmd_max_dash 11
 
 /* Define the state of a band list when writing. */
+typedef struct clist_color_space_s {
+    byte byte1;			/* see cmd_opv_set_color_space in gxclpath.h */
+    gs_id id;			/* space->id for comparisons */
+    const gs_color_space *space;
+} clist_color_space_t;
 typedef struct gx_device_clist_writer_s {
     gx_device_clist_common_members;	/* (must be first) */
     int error_code;		/* error returned by cmd_put_op */
@@ -221,13 +213,11 @@ typedef struct gx_device_clist_writer_s {
      */
     gs_imager_state imager_state;	/* current values of imager params */
     float dash_pattern[cmd_max_dash];	/* current dash pattern */
-    const gx_clip_path *clip_path;	/* current clip path */
+    const gx_clip_path *clip_path;	/* current clip path, */
+				/* only non-transient for images */
     gs_id clip_path_id;		/* id of current clip path */
-    byte color_space;		/* current color space identifier */
-				/* (only used for images) */
-    gs_id color_space_id;	/* ditto */
-    gs_indexed_params indexed_params;	/* current indexed space parameters */
-    /* (ditto) */
+    clist_color_space_t color_space;	/* current color space, */
+				/* only used for images */
     gs_id transfer_ids[4];	/* ids of transfer maps */
     gs_id black_generation_id;	/* id of black generation map */
     gs_id undercolor_removal_id;	/* id of u.c.r. map */

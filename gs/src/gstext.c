@@ -1,22 +1,9 @@
 /* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Driver text interface support */
 #include "memory_.h"
 #include "gstypes.h"
@@ -402,7 +389,15 @@ gs_text_current_char(const gs_text_enum_t *pte)
 gs_char
 gs_text_next_char(const gs_text_enum_t *pte)
 {
-    return pte->returned.current_char; /****** WRONG ******/
+    const uint operation = pte->text.operation;
+
+    if (pte->index >= pte->text.size)
+	return gs_no_char;	/* rangecheck */
+    if (operation & (TEXT_FROM_STRING | TEXT_FROM_BYTES))
+	return pte->text.data.bytes[pte->index];
+    if (operation & TEXT_FROM_CHARS)
+	return pte->text.data.chars[pte->index];
+    return gs_no_char;		/* rangecheck */
 }
 gs_glyph
 gs_text_current_glyph(const gs_text_enum_t *pte)

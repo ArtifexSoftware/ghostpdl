@@ -1,24 +1,12 @@
 /* Copyright (C) 1992, 1993, 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /*
  * OS/2 Presentation manager driver
+ *
  * By Russell Lang (based on gdevmswn.c and gdevwdib.c)
  *
  * If Ghostscript is a PM application, stdin/stdout are not
@@ -63,7 +51,7 @@
 #include "gdevpm.h"
 #ifdef __DLL__
 #include "gsdll.h"
-#include "gsdllwin.h"
+#include "gsdllos2.h"
 #endif
 
 #define MIN_COMMIT 4096		/* memory is committed in these size chunks */
@@ -170,7 +158,6 @@ gx_device_pm far_data gs_os2pm_device =
 			INITIAL_RESOLUTION, INITIAL_RESOLUTION),
     {0},			/* std_procs */
     8,				/* BitsPerPixel */
-    1, 1,			/* alpha */
     5000,			/* UpdateInterval */
     "\0",			/* GSVIEW */
     0				/* is not DLL device */

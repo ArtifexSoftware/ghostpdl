@@ -1,22 +1,9 @@
 /* Copyright (C) 1994, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Procedure-based filter stream support */
 #include "memory_.h"
 #include "ghost.h"
@@ -358,6 +345,16 @@ s_proc_write_continue(i_ctx_t *i_ctx_p)
     ss->index = 0;
     pop(2);
     return 0;
+}
+
+/* ------ More generic ------ */
+
+/* Test whether a stream is procedure-based. */
+bool
+s_is_proc(const stream *s)
+{
+    return (s->procs.process == s_proc_read_process ||
+	    s->procs.process == s_proc_write_process);
 }
 
 /* ------ Initialization procedure ------ */

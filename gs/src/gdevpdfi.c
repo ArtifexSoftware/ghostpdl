@@ -1,22 +1,9 @@
 /* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Image handling for PDF-writing driver */
 #include "math_.h"
 #include "memory_.h"
@@ -45,6 +32,8 @@ extern const gs_color_space_type gs_color_space_type_Indexed;
 /* Import procedures for writing filter parameters. */
 extern stream_state_proc_get_params(s_DCTE_get_params, stream_DCT_state);
 extern stream_state_proc_get_params(s_CF_get_params, stream_CF_state);
+
+#define MAX_INLINE_IMAGE_BYTES 4000
 
 /* ---------------- Utilities ---------------- */
 
@@ -483,7 +472,8 @@ typedef struct pdf_image_writer_s {
 
 /* Begin writing an image. */
 private int
-pdf_begin_write_image(gx_device_pdf * pdev, pdf_image_writer * piw, bool in_line)
+pdf_begin_write_image(gx_device_pdf * pdev, pdf_image_writer * piw,
+		      gx_bitmap_id id, bool in_line)
 {
     if (in_line) {
 	stream *s = pdev->strm;
@@ -493,14 +483,14 @@ pdf_begin_write_image(gx_device_pdf * pdev, pdf_image_writer * piw, bool in_line
 	piw->pin = &image_names_short;
 	piw->begin_data = (pdev->binary_ok ? "ID " : "ID\n");
     } else {
-	int code = pdf_begin_resource(pdev, resourceXObject, gs_no_id,
-				      &piw->pres);
+	int code = pdf_begin_resource(pdev, resourceXObject, id, &piw->pres);
 	stream *s = pdev->strm;
 
 	if (code < 0)
 	    return code;
+	piw->pres->rid = id;
 	piw->length_id = pdf_obj_ref(pdev);
-	pprintld1(s, " /Subtype /Image /Length %ld 0 R\n",
+	pprintld1(s, "/Subtype/Image/Length %ld 0 R\n",
 		  piw->length_id);
 	piw->pin = &image_names_full;
 	piw->begin_data = ">>\nstream\n";
@@ -551,12 +541,14 @@ pdf_end_write_image(gx_device_pdf * pdev, pdf_image_writer * piw)
 /* Put out a reference to an image resource. */
 private int
 pdf_do_image(gx_device_pdf * pdev, const pdf_resource_t * pres,
-	     const gs_matrix * pimat)
+	     const gs_matrix * pimat, bool in_contents)
 {
-    int code = pdf_open_contents(pdev, PDF_IN_STREAM);
+    if (in_contents) {
+	int code = pdf_open_contents(pdev, PDF_IN_STREAM);
 
-    if (code < 0)
-	return code;
+	if (code < 0)
+	    return code;
+    }
     if (pimat)
 	pdf_put_image_matrix(pdev, pimat);
     pprintld1(pdev->strm, "/R%ld Do\nQ\n", pres->object->id);
@@ -628,7 +620,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
 			 w, h + y_offset);
 		pprintd3(pdev->strm, "%d 0 0 %d 0 %d cm\n", w, h,
 			 y_offset);
-		code = pdf_begin_write_image(pdev, &writer, true);
+		code = pdf_begin_write_image(pdev, &writer, gs_no_id, true);
 		if (code < 0)
 		    return code;
 		pcp->rid = id;
@@ -669,27 +661,28 @@ pdf_copy_mono(gx_device_pdf *pdev,
     pdf_make_bitmap_image(&image, x, y, w, h);
     {
 	ulong nbytes = (ulong) ((w + 7) >> 3) * h;
-	bool in_line = nbytes <= 4000;
+	bool in_line = nbytes <= MAX_INLINE_IMAGE_BYTES;
 
 	if (in_line)
 	    pdf_put_image_matrix(pdev, &image.ImageMatrix);
 	code = pdf_open_page(pdev, PDF_IN_STREAM);
 	if (code < 0)
 	    return code;
-	code = pdf_begin_write_image(pdev, &writer, in_line);
+	code = pdf_begin_write_image(pdev, &writer, gs_no_id, in_line);
 	if (code < 0)
 	    return code;
     }
-  wr:				/*
-				 * There are 3 different cases at this point:
-				 *      - Writing an in-line image (pres == 0, writer.pres == 0);
-				 *      - Writing an XObject image (pres == 0, writer.pres != 0);
-				 *      - Writing the image for a CharProc (pres != 0).
-				 * We handle them with in-line code followed by a switch,
-				 * rather than making the shared code into a procedure,
-				 * simply because there would be an awful lot of parameters
-				 * that would need to be passed.
-				 */
+  wr:
+    /*
+     * There are 3 different cases at this point:
+     *      - Writing an in-line image (pres == 0, writer.pres == 0);
+     *      - Writing an XObject image (pres == 0, writer.pres != 0);
+     *      - Writing the image for a CharProc (pres != 0).
+     * We handle them with in-line code followed by a switch,
+     * rather than making the shared code into a procedure,
+     * simply because there would be an awful lot of parameters
+     * that would need to be passed.
+     */
     psdf_begin_binary((gx_device_psdf *) pdev, &writer.binary);
     if (pres) {
 	/* Always use CCITTFax 2-D for character bitmaps. */
@@ -731,7 +724,8 @@ pdf_copy_mono(gx_device_pdf *pdev,
 	    case 1:
 		return 0;
 	    case 0:
-		return pdf_do_image(pdev, writer.pres, &image.ImageMatrix);
+		return pdf_do_image(pdev, writer.pres, &image.ImageMatrix,
+				    true);
 	}
     }
     pputs(pdev->strm, "\nEI\n");
@@ -763,11 +757,13 @@ gdev_pdf_copy_mono(gx_device * dev,
 			 zero, one, NULL);
 }
 
-/* Copy a color bitmap. */
+/* Copy a color bitmap.  for_pattern = -1 means put the image in-line, */
+/* 1 means put the image in a resource. */
 private int
 pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
-		    int raster, int x, int y, int w, int h,
-		    gs_image_t *pim, pdf_image_writer *piw, bool for_pattern)
+		    int raster, gx_bitmap_id id, int x, int y, int w, int h,
+		    gs_image_t *pim, pdf_image_writer *piw,
+		    int for_pattern)
 {
     int depth = pdev->color_info.depth;
     int bytes_per_pixel = depth >> 3;
@@ -777,6 +773,7 @@ pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
     int code;
     const byte *row_base;
     int row_step;
+    bool in_line;
 
     switch(bytes_per_pixel) {
     case 3: gs_cspace_init_DeviceRGB(&cs); break;
@@ -795,13 +792,28 @@ pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
 	 */
 	row_base = base + (h - 1) * raster;
 	row_step = -raster;
-	pputs(pdev->strm, "q ");
+	in_line = for_pattern < 0;
     } else {
 	row_base = base;
 	row_step = raster;
+	in_line = nbytes <= MAX_INLINE_IMAGE_BYTES;
 	pdf_put_image_matrix(pdev, &pim->ImageMatrix);
+	/*
+	 * Check whether we've already made an XObject resource for this
+	 * image.
+	 */
+	if (id != gx_no_bitmap_id) {
+	    piw->pres = pdf_find_resource_by_gs_id(pdev, resourceXObject, id);
+	    if (piw->pres)
+		return 0;
+	}
     }
-    code = pdf_begin_write_image(pdev, piw, nbytes <= 4000);
+    /*
+     * We have to be able to control whether to put Pattern images in line,
+     * to avoid trying to create an XObject resource while we're in the
+     * middle of writing a Pattern resource.
+     */
+    code = pdf_begin_write_image(pdev, piw, id, in_line);
     if (code < 0)
 	return code;
     psdf_begin_binary((gx_device_psdf *) pdev, &piw->binary);
@@ -839,15 +851,15 @@ gdev_pdf_copy_color(gx_device * dev, const byte * base, int sourcex,
 	return code;
     /* Make sure we aren't being clipped. */
     pdf_put_clip_path(pdev, NULL);
-    code = pdf_copy_color_data(pdev, base, sourcex, raster, x, y, w, h,
-			       &image, &writer, false);
+    code = pdf_copy_color_data(pdev, base, sourcex, raster, id, x, y, w, h,
+			       &image, &writer, 0);
     switch (code) {
 	default:
 	    return code;	/* error */
 	case 1:
 	    return 0;
 	case 0:
-	    return pdf_do_image(pdev, writer.pres, &image.ImageMatrix);
+	    return pdf_do_image(pdev, writer.pres, NULL, true);
     }
 }
 
@@ -881,6 +893,8 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 {
     gx_device_pdf *const pdev = (gx_device_pdf *) dev;
     int tw = tiles->rep_width, th = tiles->rep_height;
+    double xscale = pdev->HWResolution[0] / 72.0,
+	yscale = pdev->HWResolution[1] / 72.0;
     pdf_resource_t *pres;
 
     if (tiles->id == gx_no_bitmap_id || tiles->shift != 0 ||
@@ -903,33 +917,66 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
     pres = pdf_find_resource_by_gs_id(pdev, resourcePattern, tiles->id);
     if (!pres) {
 	/* Create the Pattern resource. */
-	int code = pdf_begin_resource(pdev, resourcePattern, tiles->id, &pres);
-	long length_id, start, end;
+	int code;
+	long image_id, length_id, start, end;
 	stream *s;
 	gs_image_t image;
 	pdf_image_writer writer;
+	long image_bytes = (long)tw * th * pdev->color_info.depth;
+	bool in_line = image_bytes <= MAX_INLINE_IMAGE_BYTES;
+	ulong tile_id =
+	    (tw == tiles->size.x && th == tiles->size.y ? tiles->id :
+	     gx_no_bitmap_id);
 
+	if (in_line)
+	    image_id = 0;
+	else if (image_bytes > 65500) {
+	    /*
+	     * Acrobat Reader can't handle image Patterns with more than
+	     * 64K of data.  :-(
+	     */
+	    goto use_default;
+	} else {
+	    /* Write out the image as an XObject resource now. */
+	    code = pdf_copy_color_data(pdev, tiles->data, 0, tiles->raster,
+				       tile_id, 0, 0, tw, th, &image, &writer,
+				       1);
+	    if (code < 0)
+		goto use_default;
+	    image_id = writer.pres->object->id;
+	}
+	code = pdf_begin_resource(pdev, resourcePattern, tiles->id, &pres);
 	if (code < 0)
 	    goto use_default;
 	s = pdev->strm;
 	length_id = pdf_obj_ref(pdev);
-	pputs(s, "/PatternType 1/PaintType 1/TilingType 1\n");
-	pputs(s, "/Resources<</ProcSet[/PDF/ImageC]>>\n");
+	pputs(s, "/PatternType 1/PaintType 1/TilingType 1/Resources<<\n");
+	if (image_id)
+	    pprintld2(s, "/XObject<</R%ld %ld 0 R>>", image_id, image_id);
+	pputs(s, "/ProcSet[/PDF/ImageC]>>\n");
 	/*
 	 * Because of bugs in Acrobat Reader's Print function, we can't use
 	 * the natural BBox and Step here: they have to be 1.
 	 */
-	pprintld1(s, "/BBox[0 0 1 1]/XStep 1/YStep 1/Length %ld 0 R>>stream\n", length_id);
+	pprintg6(s, "/Matrix[%g %g %g %g %g %g]", xscale, 0.0, 0.0,
+		 yscale, 0.0, 0.0);
+	pprintld1(s, "/BBox[0 0 1 1]/XStep 1/YStep 1/Length %ld 0 R>>stream\n",
+		  length_id);
 	start = pdf_stell(pdev);
-	code = pdf_copy_color_data(pdev, tiles->data, 0, tiles->raster,
-				   0, 0, tw, th, &image, &writer, true);
-	switch (code) {
-	default:
-	    return code;	/* error */
-	case 1:
-	    break;
-	case 0:
-	    pdf_do_image(pdev, writer.pres, &image.ImageMatrix);
+	if (image_id)
+	    pprintld1(s, "/R%ld Do\n", image_id);
+	else {
+	    code = pdf_copy_color_data(pdev, tiles->data, 0, tiles->raster,
+				       tile_id, 0, 0, tw, th, &image, &writer,
+				       -1);
+	    switch (code) {
+	    default:
+		return code;	/* error */
+	    case 1:
+		break;
+	    case 0:			/* not possible */
+		return_error(gs_error_Fatal);
+	    }
 	}
 	end = pdf_stell(pdev);
 	pputs(s, "endstream\n");
@@ -941,12 +988,12 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
     /* Fill the rectangle with the Pattern. */
     {
 	int code = pdf_open_page(pdev, PDF_IN_STREAM);
-	double xscale = pdev->HWResolution[0] / 72.0,
-	    yscale = pdev->HWResolution[1] / 72.0;
 	stream *s;
 
 	if (code < 0)
 	    goto use_default;
+	/* Make sure we aren't being clipped. */
+	pdf_put_clip_path(pdev, NULL);
 	s = pdev->strm;
 	/*
 	 * Because of bugs in Acrobat Reader's Print function, we can't
@@ -1117,7 +1164,8 @@ gdev_pdf_begin_image(gx_device * dev,
     }
     nbytes = (((ulong) pie->width * pie->bits_per_pixel + 7) >> 3) *
 	pie->rows_left;
-    code = pdf_begin_write_image(pdev, &pie->writer, nbytes <= 4000);
+    code = pdf_begin_write_image(pdev, &pie->writer, gs_no_id,
+				 nbytes <= MAX_INLINE_IMAGE_BYTES);
     if (code < 0)
 	return code;
     psdf_begin_binary((gx_device_psdf *) pdev, &pie->writer.binary);
@@ -1219,7 +1267,7 @@ pdf_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 	return 0;
     case 0:;
     }
-    code = pdf_do_image(pdev, pie->writer.pres, NULL);
+    code = pdf_do_image(pdev, pie->writer.pres, NULL, true);
     gs_free_object(pie->memory, pie, "pdf_end_image");
     return code;
 }

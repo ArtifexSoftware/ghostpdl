@@ -1,24 +1,10 @@
-/* Copyright (C) 1994, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+/* Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Apply hints for Type 1 fonts. */
-#include "math_.h"		/* for floor in fixed_mult_quo */
 #include "gx.h"
 #include "gserrors.h"
 #include "gxarith.h"
@@ -56,8 +42,11 @@ private void
 #define HINT_HORZ_LOWER 4
 #define HINT_HORZ_UPPER 8	/* must be > lower */
 #define HINT_HORZ (HINT_HORZ_LOWER | HINT_HORZ_UPPER)
-#define NEARLY_AXIAL(dmajor, dminor)\
-  ((dminor) <= (dmajor) >> 4)
+private inline bool
+nearly_axial(fixed dmajor, fixed dminor)
+{
+    return (dminor <= dmajor >> 4);
+}
 
 /*
  * Determine which types of hints, if any, are applicable to a given
@@ -105,11 +94,11 @@ line_hints(const gs_type1_state * pcis, const gs_fixed_point * p0,
      * Note that since upper/lower refer to device space, we must
      * interchange them if the corresponding axis is inverted.
      */
-    if (dy != 0 && NEARLY_AXIAL(ady, adx)) {
+    if (dy != 0 && nearly_axial(ady, adx)) {
 	hints = (dy > 0 ? HINT_VERT_UPPER : HINT_VERT_LOWER);
 	if (xi)
 	    hints ^= (HINT_VERT_LOWER | HINT_VERT_UPPER);
-    } else if (dx != 0 && NEARLY_AXIAL(adx, ady)) {
+    } else if (dx != 0 && nearly_axial(adx, ady)) {
 	hints = (dx < 0 ? HINT_HORZ_UPPER : HINT_HORZ_LOWER);
 	if (yi)
 	    hints ^= (HINT_HORZ_LOWER | HINT_HORZ_UPPER);
@@ -213,11 +202,11 @@ adjust_curve_start(curve_segment * pcseg, const gs_fixed_point * pdiff)
     fixed lx = end_x - (prev->pt.x - dx), ly = end_y - (prev->pt.y - dy);
     gs_fixed_point delta;
 
-    delta.x = scale_delta(end_x - pcseg->p1.x, dx, lx, true);
-    delta.y = scale_delta(end_y - pcseg->p1.y, dy, ly, true);
+    delta.x = scale_delta(dx, end_x - pcseg->p1.x, lx, true);
+    delta.y = scale_delta(dy, end_y - pcseg->p1.y, ly, true);
     add_hint_diff(&pcseg->p1, delta);
-    delta.x = scale_delta(end_x - pcseg->p2.x, dx, lx, false);
-    delta.y = scale_delta(end_y - pcseg->p2.y, dy, ly, false);
+    delta.x = scale_delta(dx, end_x - pcseg->p2.x, lx, false);
+    delta.y = scale_delta(dy, end_y - pcseg->p2.y, ly, false);
     add_hint_diff(&pcseg->p2, delta);
 }
 private void
@@ -229,11 +218,11 @@ adjust_curve_end(curve_segment * pcseg, const gs_fixed_point * pdiff)
     fixed lx = pcseg->pt.x - dx - start_x, ly = pcseg->pt.y - dy - start_y;
     gs_fixed_point delta;
 
-    delta.x = scale_delta(pcseg->p1.x - start_x, dx, lx, false);
-    delta.y = scale_delta(pcseg->p1.y - start_y, dy, ly, false);
+    delta.x = scale_delta(dx, pcseg->p1.x - start_x, lx, false);
+    delta.y = scale_delta(dy, pcseg->p1.y - start_y, ly, false);
     add_hint_diff(&pcseg->p1, delta);
-    delta.x = scale_delta(pcseg->p2.x - start_x, dx, lx, true);
-    delta.y = scale_delta(pcseg->p2.y - start_y, dy, ly, true);
+    delta.x = scale_delta(dx, pcseg->p2.x - start_x, lx, true);
+    delta.y = scale_delta(dy, pcseg->p2.y - start_y, ly, true);
     add_hint_diff(&pcseg->p2, delta);
 }
 

@@ -1,21 +1,8 @@
 #    Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-# 
-# This file is part of Aladdin Ghostscript.
-# 
-# Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-# or distributor accepts any responsibility for the consequences of using it,
-# or for whether it serves any particular purpose or works at all, unless he
-# or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-# License (the "License") for full details.
-# 
-# Every copy of Aladdin Ghostscript must include a copy of the License,
-# normally in a plain ASCII text file named PUBLIC.  The License grants you
-# the right to copy, modify and redistribute Aladdin Ghostscript, but only
-# under certain conditions described in the License.  Among other things, the
-# License requires that the copyright notice and this notice be preserved on
-# all copies.
+# This software is licensed to a single customer by Artifex Software Inc.
+# under the terms of a specific OEM agreement.
 
-
+# $RCSfile$ $Revision$
 # Common interpreter makefile section for 32-bit MS Windows.
 
 # This makefile must be acceptable to Microsoft Visual C++, Watcom C++,
@@ -36,6 +23,28 @@ PSCCWIN=$(CC_WX) $(CCWINFLAGS) $(I_)$(PSI_)$(_I) $(PSF_)
 
 # Define the name of this makefile.
 WININT_MAK=$(PSSRC)winint.mak
+
+# Define the location of the WinZip self-extracting-archive-maker.
+!ifndef WINZIPSE_XE
+WINZIPSE_XE="C:\Program Files\WinZip Self-Extractor\WZIPSE32.EXE"
+!endif
+
+# Define the setup and install programs, which are only suitable
+# for the DLL build.
+!if $(MAKEDLL)
+!ifndef SETUP_XE_NAME
+SETUP_XE_NAME=setupgs.exe
+!endif
+!ifndef SETUP_XE
+SETUP_XE=$(BINDIR)\$(SETUP_XE_NAME)
+!endif
+!ifndef UNINSTALL_XE_NAME
+UNINSTALL_XE_NAME=uninstgs.exe
+!endif
+!ifndef UNINSTALL_XE
+UNINSTALL_XE=$(BINDIR)\$(UNINSTALL_XE_NAME)
+!endif
+!endif
 
 # ----------------------------- Main program ------------------------------ #
 
@@ -120,5 +129,108 @@ $(GLOBJ)dwdllc.obj: $(GLSRC)dwdll.cpp $(AK) $(dwdll_h) $(gsdll_h)
 
 $(GLOBJ)dwnodllc.obj: $(GLSRC)dwnodll.cpp $(AK) $(dwdll_h) $(gsdll_h)
 	$(GLCPP) $(COMPILE_FOR_CONSOLE_EXE) $(GLO_)dwnodllc.obj $(C_) $(GLSRC)dwnodll.cpp
+
+
+# ---------------------- Setup and uninstall program ---------------------- #
+
+!if $(MAKEDLL)
+
+# Modules for setup program
+
+$(GLOBJ)dwsetup.res: $(GLSRC)dwsetup.rc $(GLSRC)dwsetup.h $(GLGEN)gstext.ico
+	$(RCOMP) -I$(GLSRCDIR) -i$(GLOBJDIR) -i$(INCDIR)$(_I) -r $(RO_)$(GLOBJ)dwsetup.res $(GLSRC)dwsetup.rc
+
+$(GLOBJ)dwsetup.obj: $(GLSRC)dwsetup.cpp $(GLSRC)dwsetup.h $(GLSRC)dwinst.h
+	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwsetup.obj $(C_) $(GLSRC)dwsetup.cpp
+
+$(GLOBJ)dwinst.obj: $(GLSRC)dwinst.cpp $(GLSRC)dwinst.h
+	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwinst.obj $(C_) $(GLSRC)dwinst.cpp
+
+# Modules for uninstall program
+
+$(GLOBJ)dwuninst.res: $(GLSRC)dwuninst.rc $(GLSRC)dwuninst.h $(GLGEN)gstext.ico
+	$(RCOMP) -I$(GLSRCDIR) -i$(GLOBJDIR) -i$(INCDIR)$(_I) -r $(RO_)$(GLOBJ)dwuninst.res $(GLSRC)dwuninst.rc
+
+$(GLOBJ)dwuninst.obj: $(GLSRC)dwuninst.cpp $(GLSRC)dwuninst.h
+	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwuninst.obj $(C_) $(GLSRC)dwuninst.cpp
+
+!endif
+
+
+# ------------------------- Distribution archive -------------------------- #
+
+# Create a self-extracting archive with setup program.
+# This assumes that the current directory is named gs#.## relative to its
+# parent, where #.## is the Ghostscript version, and that the files and
+# directories listed in ZIPTEMPFILE and ZIPFONTFILES are the complete list
+# of needed files and directories.
+
+ZIPTEMPFILE=gs$(GS_DOT_VERSION)\obj\dwfiles.rsp
+ZIPPROGFILE1=gs$(GS_DOT_VERSION)\bin\gsdll32.dll
+ZIPPROGFILE2=gs$(GS_DOT_VERSION)\bin\gswin32.exe
+ZIPPROGFILE3=gs$(GS_DOT_VERSION)\bin\gswin32c.exe
+ZIPPROGFILE4=gs$(GS_DOT_VERSION)\bin\gs16spl.exe
+ZIPPROGFILE5=gs$(GS_DOT_VERSION)\doc
+ZIPPROGFILE6=gs$(GS_DOT_VERSION)\examples
+ZIPPROGFILE7=gs$(GS_DOT_VERSION)\lib
+ZIPFONTFILES=fonts
+
+# Make the zip archive.
+FILELIST_TXT=filelist.txt
+FONTLIST_TXT=fontlist.txt
+zip: $(SETUP_XE) $(UNINSTALL_XE)
+	cd ..
+	copy gs$(GS_DOT_VERSION)\$(SETUP_XE) .
+	copy gs$(GS_DOT_VERSION)\$(UNINSTALL_XE) .
+	echo $(ZIPPROGFILE1) >  $(ZIPTEMPFILE)
+	echo $(ZIPPROGFILE2) >> $(ZIPTEMPFILE)
+	echo $(ZIPPROGFILE3) >> $(ZIPTEMPFILE)
+	echo $(ZIPPROGFILE4) >> $(ZIPTEMPFILE)
+	echo $(ZIPPROGFILE5) >> $(ZIPTEMPFILE)
+	echo $(ZIPPROGFILE6) >> $(ZIPTEMPFILE)
+	echo $(ZIPPROGFILE7) >> $(ZIPTEMPFILE)
+	$(SETUP_XE_NAME) -title "Aladdin Ghostscript $(GS_DOT_VERSION)" -dir "gs$(GS_DOT_VERSION)" -list "$(FILELIST_TXT)" @$(ZIPTEMPFILE)
+	$(SETUP_XE_NAME) -title "Aladdin Ghostscript Fonts" -dir "fonts" -list "$(FONTLIST_TXT)" $(ZIPFONTFILES)
+	-del gs$(GS_VERSION)w32.zip
+	zip -9 -r gs$(GS_VERSION)w32.zip $(SETUP_XE_NAME) $(UNINSTALL_XE_NAME) $(FILELIST_TXT) $(FONTLIST_TXT)
+	zip -9 -r gs$(GS_VERSION)w32.zip $(ZIPFONTFILES)
+	zip -9 -r gs$(GS_VERSION)w32.zip $(ZIPPROGFILE1)
+	zip -9 -r gs$(GS_VERSION)w32.zip $(ZIPPROGFILE2)
+	zip -9 -r gs$(GS_VERSION)w32.zip $(ZIPPROGFILE3)
+	rem Don't flag error if Win32s spooler file is missing.
+	rem This occurs when using MSVC++.
+	-zip -9 -r gs$(GS_VERSION)w32.zip $(ZIPPROGFILE4)
+	zip -9 -r gs$(GS_VERSION)w32.zip $(ZIPPROGFILE5)
+	zip -9 -r gs$(GS_VERSION)w32.zip $(ZIPPROGFILE6)
+	zip -9 -r gs$(GS_VERSION)w32.zip $(ZIPPROGFILE7)
+	-del $(ZIPTEMPFILE)
+	-del $(SETUP_XE_NAME)
+	-del $(UNINSTALL_XE_NAME)
+	-del $(FILELIST_TXT)
+	-del $(FONTLIST_TXT)
+	cd gs$(GS_DOT_VERSION)
+
+# Now convert to a self extracting archive.
+# This involves making a few temporary files.
+ZIP_RSP = $(GLOBJ)setupgs.rsp
+# Note that we use ECHOGS_XE rather than echo for the .txt files
+# to avoid ANSI/OEM character mapping.
+archive: zip $(GLOBJ)gstext.ico $(ECHOGS_XE)
+	$(ECHOGS_XE) -w $(ZIP_RSP) -q "-win32 -setup"
+	$(ECHOGS_XE) -a $(ZIP_RSP) -q -st -x 22 Aladdin Ghostscript $(GS_DOT_VERSION) for Win32 -x 22
+	$(ECHOGS_XE) -a $(ZIP_RSP) -q -i -s $(GLOBJ)gstext.ico
+	$(ECHOGS_XE) -a $(ZIP_RSP) -q -a -s $(GLOBJ)about.txt
+	$(ECHOGS_XE) -a $(ZIP_RSP) -q -t -s $(GLOBJ)dialog.txt
+	$(ECHOGS_XE) -a $(ZIP_RSP) -q -c -s $(SETUP_XE_NAME)
+	$(ECHOGS_XE) -w $(GLOBJ)about.txt "Aladdin Ghostscript is Copyright " -x A9 " 1999 Aladdin Enterprises."
+	$(ECHOGS_XE) -a $(GLOBJ)about.txt See license in gs$(GS_DOT_VERSION)\doc\PUBLIC.
+	$(ECHOGS_XE) -a $(GLOBJ)about.txt See gs$(GS_DOT_VERSION)\doc\Commprod.htm regarding commercial distribution.
+	$(ECHOGS_XE) -w $(GLOBJ)dialog.txt This installs Aladdin Ghostscript $(GS_DOT_VERSION).
+	$(ECHOGS_XE) -a $(GLOBJ)dialog.txt Aladdin Ghostscript displays, prints and converts PostScript and PDF files.
+	$(WINZIPSE_XE) ..\gs$(GS_VERSION)w32 @$(GLOBJ)setupgs.rsp
+	-del $(ZIP_RSP)
+	-del $(GLOBJ)about.txt
+	-del $(GLOBJ)dialog.txt
+
 
 # end of winint.mak

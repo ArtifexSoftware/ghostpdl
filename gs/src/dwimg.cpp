@@ -16,7 +16,7 @@
   all copies.
 */
 
-
+// $RCSfile$ $Revision$
 
 
 #define STRICT

@@ -1,22 +1,9 @@
 /* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Implementation of LL3 Functions */
 #include "math_.h"
 #include "gx.h"
@@ -24,8 +11,9 @@
 #include "gsfunc3.h"
 #include "gxfunc.h"
 
-
 /* ---------------- Utilities ---------------- */
+
+#define MASK1 ((uint)(~0) / 3)
 
 /*
  * Free an array of subsidiary Functions.  Note that this may be called
@@ -96,32 +84,28 @@ fn_ElIn_is_monotonic(const gs_function_t * pfn_common,
 {
     const gs_function_ElIn_t *const pfn =
 	(const gs_function_ElIn_t *)pfn_common;
-    int i;
-    int dir = 0;
+    int i, result;
 
     if (lower[0] > pfn->params.Domain[1] ||
 	upper[0] < pfn->params.Domain[0]
 	)
 	return_error(gs_error_rangecheck);
-    if (pfn->params.C0 == 0 && pfn->params.C1 == 0)
-	return FN_MONOTONIC_INCREASING;
-    if (effort <= EFFORT_EASY)
-	return gs_error_undefined;
-    for (i = 0; i < pfn->params.n; ++i) {
-	double diff = pfn->params.C1[i] - pfn->params.C0[i];
-	int code;
+    for (i = 0, result = 0; i < pfn->params.n; ++i) {
+	double diff =
+	    (pfn->params.C1 == 0 ? 1.0 : pfn->params.C1[i]) -
+	    (pfn->params.C0 == 0 ? 0.0 : pfn->params.C0[i]);
 
-	if (diff == 0)
-	    continue;
-	code = (diff > 0 ? FN_MONOTONIC_INCREASING : FN_MONOTONIC_DECREASING);
-	if (code <= 0)
-	    return code;
-	if (dir == 0)
-	    dir = code;
-	else if (dir != code)
-	    return 0;
+	if (pfn->params.N < 0)
+	    diff = -diff;
+	else if (pfn->params.N == 0)
+	    diff = 0;
+	result |=
+	    (diff < 0 ? FN_MONOTONIC_DECREASING :
+	     diff > 0 ? FN_MONOTONIC_INCREASING :
+	     FN_MONOTONIC_DECREASING | FN_MONOTONIC_INCREASING) <<
+	    (2 * i);
     }
-    return dir;
+    return result;
 }
 
 /* Free the parameters of an Exponential Interpolation function. */
@@ -234,7 +218,7 @@ fn_1ItSg_is_monotonic(const gs_function_t * pfn_common,
     float d0 = pfn->params.Domain[0], d1 = pfn->params.Domain[1];
     int k = pfn->params.k;
     int i;
-    int dir = 0;
+    int result = 0;
 
     if (v0 > d1 || v1 < d0)
 	return_error(gs_error_rangecheck);
@@ -258,27 +242,29 @@ fn_1ItSg_is_monotonic(const gs_function_t * pfn_common,
 	/* Note that w0 > w1 is now possible if e0 > e1. */
 	if (w0 > w1) {
 	    code = gs_function_is_monotonic(pfn->params.Functions[i],
-					    &w0, &w1, effort);
-	    switch (code) {
-	    case FN_MONOTONIC_INCREASING:
-		code = FN_MONOTONIC_DECREASING; break;
-	    case FN_MONOTONIC_DECREASING:
-		code = FN_MONOTONIC_INCREASING; break;
-	    default:
-		break;
-	    }
+					    &w1, &w0, effort);
+	    if (code <= 0)
+		return code;
+	    /* Swap the INCREASING and DECREASING flags. */
+	    code = ((code & MASK1) << 1) | ((code & (MASK1 << 1)) >> 1);
 	} else {
 	    code = gs_function_is_monotonic(pfn->params.Functions[i],
 					    &w0, &w1, effort);
+	    if (code <= 0)
+		return code;
 	}
-	if (code <= 0)
-	    return code;
-	if (dir == 0)
-	    dir = code;
-	else if (dir != code)
-	    return 0;
+	if (result == 0)
+	    result = code;
+	else {
+	    result &= code;
+	    /* Check that result is still monotonic in every position. */
+	    code = result | ((result & MASK1) << 1) |
+		((result & (MASK1 << 1)) >> 1);
+	    if (code != (1 << (2 * pfn->params.n)) - 1)
+		return 0;
+	}
     }
-    return dir;
+    return result;
 }
 
 /* Free the parameters of a 1-Input Stitching function. */
@@ -383,22 +369,18 @@ fn_AdOt_is_monotonic(const gs_function_t * pfn_common,
 {
     const gs_function_AdOt_t *const pfn =
 	(const gs_function_AdOt_t *)pfn_common;
-    int i;
-    int dir = 0;
+    int i, result;
 
-    for (i = 0; i < pfn->params.n; ++i) {
+    for (i = 0, result = 0; i < pfn->params.n; ++i) {
 	int code =
 	    gs_function_is_monotonic(pfn->params.Functions[i], lower, upper,
 				     effort);
 
 	if (code <= 0)
 	    return code;
-	if (dir == 0)
-	    dir = code;
-	else if (dir != code)
-	    return 0;
+	result |= code << (2 * i);
     }
-    return dir;
+    return result;
 }
 
 /* Free the parameters of an Arrayed Output function. */

@@ -1,22 +1,9 @@
 /* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Font creation utilities */
 #include "memory_.h"
 #include "string_.h"
@@ -213,6 +200,7 @@ build_gs_primitive_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base ** ppfont,
     int painttype;
     float strokewidth;
     ref *pcharstrings = 0;
+    ref CharStrings;
     gs_font_base *pfont;
     font_data *pdata;
     int code;
@@ -235,6 +223,11 @@ build_gs_primitive_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base ** ppfont,
 	    dict_find_string(pcharstrings, ".notdef", &ignore) <= 0
 	    )
 	    return_error(e_invalidfont);
+	/*
+	 * Since build_gs_simple_font may resize the dictionary and cause
+	 * pointers to become invalid, save CharStrings.
+	 */
+	CharStrings = *pcharstrings;
     }
     code = build_gs_simple_font(i_ctx_p, op, &pfont, ftype, pstype, pbuild,
 				options);
@@ -244,7 +237,7 @@ build_gs_primitive_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base ** ppfont,
     pfont->StrokeWidth = strokewidth;
     pdata = pfont_data(pfont);
     if (pcharstrings)
-	ref_assign(&pdata->CharStrings, pcharstrings);
+	ref_assign(&pdata->CharStrings, &CharStrings);
     else
 	make_null(&pdata->CharStrings);
     /* Check that the UniqueIDs match.  This is part of the */
@@ -307,7 +300,7 @@ lookup_gs_simple_font_encoding(gs_font_base * pfont)
     const ref *pfe = &pfont_data(pfont)->Encoding;
     int index;
 
-    for (index = registered_Encodings_countof; --index >= 0;)
+    for (index = NUM_KNOWN_REAL_ENCODINGS; --index >= 0;)
 	if (obj_eq(pfe, &registered_Encoding(index)))
 	    break;
     pfont->encoding_index = index;
@@ -316,7 +309,7 @@ lookup_gs_simple_font_encoding(gs_font_base * pfont)
 	uint esize = r_size(pfe);
 	uint best = esize / 3;	/* must match at least this many */
 
-	for (index = registered_Encodings_countof; --index >= 0;) {
+	for (index = NUM_KNOWN_REAL_ENCODINGS; --index >= 0;) {
 	    const ref *pre = &registered_Encoding(index);
 	    bool r_packed = r_has_type(pre, t_shortarray);
 	    bool f_packed = !r_has_type(pfe, t_array);

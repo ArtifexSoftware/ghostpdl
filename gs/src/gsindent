@@ -1,5 +1,5 @@
 #!/bin/sh
-
+# $RCSfile$ $Revision$
 # This script formats C source code per the Ghostscript C style guide.
 # The perl invocations work around a bug in GNU indent.
 if [ $# -ne 0 ]; then

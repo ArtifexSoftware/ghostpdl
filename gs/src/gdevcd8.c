@@ -27,13 +27,12 @@
    copyright notice and this notice be preserved on all copies.
  */
 
+/*$RCSfile$ $Revision$*/
 
-/* gdevcd8.c */
-
-/*----------------------------------------------------------------
-
+/*
    A printer driver for the HP670, HP690, HP850, HP855
    HP870, HP890, HP1100 and HP1600 color printers. 
+
    To be used with the Ghostscript printing system.
    Please report all problems to uliw@erdw.ethz.ch 
 
@@ -42,8 +41,7 @@
 	    
 	    The support for the hp670, hp690, hp890
 	    and hp1600 was added by Martin Gerbershagen.
-
--------------------------------------------------------------------*/
+*/
 
 /* Note: Depending on how you transfered the files, 
    you might need to remove some CR-codes used on intel-based machines:

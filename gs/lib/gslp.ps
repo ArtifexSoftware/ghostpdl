@@ -1,21 +1,8 @@
-%    Copyright (C) 1991, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
-% 
-% This file is part of Aladdin Ghostscript.
-% 
-% Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-% or distributor accepts any responsibility for the consequences of using it,
-% or for whether it serves any particular purpose or works at all, unless he
-% or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-% License (the "License") for full details.
-% 
-% Every copy of Aladdin Ghostscript must include a copy of the License,
-% normally in a plain ASCII text file named PUBLIC.  The License grants you
-% the right to copy, modify and redistribute Aladdin Ghostscript, but only
-% under certain conditions described in the License.  Among other things, the
-% License requires that the copyright notice and this notice be preserved on
-% all copies.
+%    Copyright (C) 1991, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+% This software is licensed to a single customer by Artifex Software Inc.
+% under the terms of a specific OEM agreement.
 
-
+% $RCSfile$ $Revision$
 % gslp.ps - format and print text
 
 % This utility provides functionality approximately equivalent to the Unix
@@ -78,8 +65,12 @@ lpdict begin
 /AddToSpace 0 def
 /AddToWidth 0 def
 /BodyFont null def		% use default
+  /defaultBodyFontPortrait
+    /Courier find-latin-font 10 scalefont def
+  /defaultBodyFontLandscape
+    /Courier find-latin-font 7 scalefont def
   /defaultBodyFont
-    { /Courier find-latin-font Landscape { 7 } { 10 } ifelse scalefont } def
+    { Landscape { defaultBodyFontLandscape } { defaultBodyFontPortrait } ifelse } def
 /Columns 1 def
 /DetectFileType false def
 /EjectEOF true def
@@ -94,7 +85,7 @@ lpdict begin
 /HeadingRight (page ) PageNumberString concatstrings def
 /HeadingFont null def		% use default
   /defaultHeadingFont
-    { /Courier-Bold find-latin-font 10 scalefont } def
+    /Courier-Bold find-latin-font 10 scalefont def
 /Kern 0 dict def		% no kerning
 /Landscape false def
 /MarginBottom 36 def		% 1/2"
@@ -116,46 +107,53 @@ lpdict begin
 % lpexec provides for all this.
 
 /lpdef {	% <name> <value> lpdef -
-  OutFile null ne {
-    1 index wosp dup wosp OutFile ( def\n) writestring
-  } if def
+  /def 2 true lpexec
 } def
 
-/lpexec		% <arg1> ... <argn> </op> <n> <do_always> lpexec -
- { OutFile null eq
-    { pop 1 add true
-    }
-    { /t exch def 1 add /n exch def cvx
-      n { n -1 roll dup wosp } repeat
-      OutFile (\n) writestring
-      n t
-    }
-   ifelse
+/lpexec {	% <arg1> ... <argn> </op> <n> <do_always> lpexec -
+  OutFile null eq {
+    pop 1 add true
+  } {
+    /t exch def 1 add /n exch def cvx
+    n -1 roll dup wo
+    n 1 sub { n -1 roll dup wosp } repeat
+    (\n) ws n t
+  } ifelse
     { pop load exec }
     { { pop } repeat }
-   ifelse
- } def
-
-/lpmoveto {
-  /moveto 2 true lpexec
+  ifelse
 } def
-/lpshow {
+
+/lpmoveto {	% <x> <y> lpmoveto -
+	% Round the coordinates for smaller output.
+  2 {
+    exch 100 mul round 100 div
+    dup dup cvi eq { cvi } if
+  } repeat
+  1 index X eq { neg exch pop /V 1 } { neg /M 2 } ifelse true lpexec
+} def
+/lpshow {	% <string> lpshow -
   dup length 0 ne {
     addspace 0 ne {
       addspace 0 32 
       addwidth 0 ne {
-	addwidth 0 6 -1 roll /awidthshow 6
+	addwidth 0 6 -1 roll /awidthshow 6 true lpexec
       } {
-	4 -1 roll /widthshow 4
+	4 -1 roll /widthshow 4 true lpexec
       } ifelse
     } {
       addwidth 0 ne {
-	addwidth 0 3 -1 roll /ashow 3
+	addwidth 0 3 -1 roll /ashow 3 true lpexec
       } {
-	/show 1
+	OutFile null ne {
+	  dup dup length =string length gt {
+	    /show 1 false lpexec
+	  } {
+	    (S ) ws ws (\n) ws
+	  } ifelse
+	} if show 
       } ifelse
     } ifelse
-    true lpexec
   } {
     pop
   } ifelse
@@ -192,28 +190,34 @@ lpdict begin
 /beginpage
  { /lindex 0 def
    /skipping pindex PageFirst ge pindex PageLast le and not def
-   /save 0 true lpexec /pagesave exch def
+   pagex pagey Landscape {/BL} {/B} ifelse 2 true lpexec
+   /pagesave exch def
    skipping { nulldevice   /OutFile null def } if
    Headers
     { lheight hdescent add
       HeadingLeft HeadingCenter HeadingRight banner
     } if
    /BFont lpsetmyfont
-   /addspace AddToSpace lpdef /addwidth AddToWidth lpdef
    /pairkern Kern def
+   /addspace AddToSpace def /addwidth AddToWidth def
+   pairkern length 0 ne {
+     /addspace AddToSpace lpdef /addwidth AddToWidth lpdef
+   } if
  } def
 
-/endpage
- { lindex 0 ne
-    { Footers
-       { topskip plength sub hdescent add
-         FootingLeft FootingCenter FootingRight banner
-       } if
-      /showpage 0 false lpexec
+/endpage {
+  lindex 0 ne {
+    Footers {
+      topskip plength sub hdescent add
+      FootingLeft FootingCenter FootingRight banner
     } if
-   pagesave /restore 0 true lpexec
-   /pindex pindex 1 add def
- } def
+    /E
+  } {
+    /restore
+  } ifelse
+  pagesave exch 0 true lpexec
+  /pindex pindex 1 add def
+} def
 
 /endcolumn
  { lindex colines 1 sub add colines idiv colines mul
@@ -232,32 +236,25 @@ lpdict begin
   dup length wosp ( dict\n) ws
   { (dup) ws exch wosp wosp ( put\n) ws } forall
 } def
-/wosp {
-  ( ) ws
+/wosp { ( ) ws wo } def
+/wo {
   dup type /dicttype eq { wdict } { OutFile exch write==only } ifelse
 } def
 /ws {
   OutFile exch writestring
 } def
 
-/outfont		% name font ->
- { OutFile null ne
-    { exch wosp
-      dup /FontName get 
-      dup wosp OutFile ( findfont) writestring
-      %% reencode for iso latin1; from the 2nd edition red book, sec 5.6.1
-      OutFile ( 
-	dup length dict begin {1 index /FID ne {def} {pop pop} ifelse} forall
-	/Encoding ISOLatin1Encoding def currentdict end
-      ) writestring
-      wosp OutFile (-ISOLatin1 exch definefont) writestring
-      /FontMatrix get 0 get 1000 mul round cvi wosp
-      OutFile ( scalefont def\n) writestring
-    }
-    { pop pop
-    }
-   ifelse
- } def
+/outfont {		% <name> <font> outfont -
+  OutFile null ne {
+    exch wo
+    dup /FontName get 
+    dup wosp (-ISOLatin1) ws wosp ( RE) ws
+    /FontMatrix get 0 get 1000 mul round cvi wosp
+    ( scalefont def\n) ws
+  } {
+    pop pop
+  }ifelse
+} def
 
 /StringFF (\f) def
 /CharFF StringFF 0 get def
@@ -282,33 +279,41 @@ lpdict begin
    /lindex lindex 1 add def
  } def
 
-/showline2	% string x y xlimit -> leftover_string (handles tabs)
- { 2 index exch 5 2 roll lpmoveto	% xinit xlimit string
-    { showline3 dup length 0 eq { exit } if
-      dup 0 get CharTAB ne { exit } if
-      currentpoint exch 4 index sub tabwx div
-	0.05 add ceiling tabwx mul 4 index add exch lpmoveto
-      skip1
-      currentpoint pop 2 index ge { exit } if
-    }
-   loop exch pop exch pop
- } def
+/setxy {
+  /ty exch def /tx exch def
+} def
 
-/showline3	% xlimit string -> xlimit leftover_string
+/showline2 {	% string x y xlimit -> leftover_string (handles tabs)
+  2 index exch 5 2 roll setxy {
+		% Stack: xinit xlimit string
+    showline3 dup length 0 eq { exit } if
+    dup 0 get CharTAB ne { exit } if
+    tx 3 index sub tabwx div
+      0.05 add ceiling tabwx mul 3 index add ty setxy
+    skip1
+    tx 2 index ge { exit } if
+  } loop exch pop exch pop
+} def
+
+/showline3 {	% xlimit string -> xlimit leftover_string
 		% (finds line break / tab / formfeed)
- { currentpoint pop 2 index exch sub
-     cwx div 0.1 add cvi 0 max 1 index length min
-   1 index 0 3 -1 roll getinterval
+  1 index tx sub
+    cwx div 0.1 add cvi 0 max 1 index length min
+  1 index 0 3 -1 roll getinterval
 	% look for \f or \t
-   StringFF search { exch pop exch pop } if
-   StringTAB search { exch pop exch pop } if
-   dup pairkern length 0 eq {
-     lpshow
-   } {
-     { kproc } exch /kshow 2 true lpexec
-   } ifelse
-   length dup 2 index length exch sub getinterval
- } def
+  StringFF search { exch pop exch pop } if
+  StringTAB search { exch pop exch pop } if
+  dup length 0 ne {
+    tx ty lpmoveto
+    dup pairkern length 0 eq {
+      lpshow
+    } {
+      { kproc } exch /kshow 2 true lpexec
+    } ifelse
+    currentpoint setxy
+  } if
+  length dup 2 index length exch sub getinterval
+} def
 
 /kproc {	% <char1> <char2> kproc -
   pairkern currentfont /Encoding get 3 index get
@@ -372,25 +377,54 @@ lpdict begin
 
 % The main printing procedure
 
-/lp		% file initial_chars ->
- { /lpline exch def
-   /lpfile exch def
-   /save 0 true lpexec
+/doFirst true def
+/prevBFont null def
+/prevHFont null def
+
+/lpfirst {	% - lpfirst -
+% Define some abbreviating procedures.
+  /B {save 3 1 roll translate /X 0 def} lpdef
+  /BL {save 3 1 roll 90 rotate translate /X 0 def} lpdef
+  /E {showpage restore} lpdef
+  /V {neg X exch moveto} lpdef
+  /M {/X 2 index def neg moveto} lpdef
+  /S {currentfile =string readline pop show} lpdef
+  /RE {		% <isoname> <fontname> RE <font>
+    findfont
+	%% reencode for iso latin1; from the 2nd edition red book, sec 5.6.1
+    dup length dict begin {1 index /FID ne {def} {pop pop} ifelse} forall
+    /Encoding ISOLatin1Encoding def currentdict end
+    definefont
+  } lpdef
+} def
+
+/lp {		% file initial_chars ->
+  /lpline exch def
+  /lpfile exch def
+
+  doFirst { lpfirst /doFirst false def } if
 
 % Initialize the device and fonts.
-   /BFont
-     BodyFont null eq { defaultBodyFont } { BodyFont } ifelse def
-   /BFont BFont outfont
-   Headers Footers or
-    { /HFont
-	HeadingFont null eq { defaultHeadingFont } { HeadingFont } ifelse def
+  /BFont
+    BodyFont null eq { defaultBodyFont } { BodyFont } ifelse def
+  BFont prevBFont ne {
+    /BFont BFont outfont
+    /prevBFont BFont def
+  } if
+  Headers Footers or {
+    /HFont
+      HeadingFont null eq { defaultHeadingFont } { HeadingFont } ifelse def
+    HFont prevHFont ne {
       /HFont HFont outfont
-    }
-   if
+      /prevHFont HFont def
+    } if
+  } if
+  save
 
 % Get the layout parameters.
    clippath
-   Landscape { 90 /rotate 1 true lpexec } if
+   gsave	% for possible rotation
+   Landscape { 90 rotate } if
    BFont setfont ( ) stringwidth pop /cwx exch def
      cwx Tab mul /tabwx exch def
    BFont fontheight /fheight exch def /fascent exch def
@@ -411,10 +445,11 @@ lpdict begin
      pwidth Columns div /cowidth exch def
      exch MarginLeft add
      exch MarginBottom add plength add topskip sub
-     /translate 2 true lpexec
+     /pagey exch def /pagex exch def
    plength pskip sub lheight div cvi MaxLines min
      dup /colines exch def
      Columns mul /llength exch def
+   grestore
    OutFile null ne { nulldevice } if
 
 % Print layout
@@ -462,9 +497,9 @@ lpdict begin
 %**************** WHY IS THIS COMMENTED OUT? ****************
 %   EjectEOF { endpage } { endcolumn } ifelse
    endpage
-   /restore 0 true lpexec
+   restore
 
- } def
+} def
 
 end
 

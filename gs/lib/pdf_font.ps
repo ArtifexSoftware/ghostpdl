@@ -1,21 +1,8 @@
 %    Copyright (C) 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-% 
-% This file is part of Aladdin Ghostscript.
-% 
-% Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-% or distributor accepts any responsibility for the consequences of using it,
-% or for whether it serves any particular purpose or works at all, unless he
-% or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-% License (the "License") for full details.
-% 
-% Every copy of Aladdin Ghostscript must include a copy of the License,
-% normally in a plain ASCII text file named PUBLIC.  The License grants you
-% the right to copy, modify and redistribute Aladdin Ghostscript, but only
-% under certain conditions described in the License.  Among other things, the
-% License requires that the copyright notice and this notice be preserved on
-% all copies.
+% This software is licensed to a single customer by Artifex Software Inc.
+% under the terms of a specific OEM agreement.
 
-
+% $RCSfile$ $Revision$
 % pdf_font.ps
 % PDF font operations.
 
@@ -256,20 +243,24 @@ pdfdict begin
 % When the procedure is executing, this dictionary is current.
 % leftstr and sectionstr are strings so that we can change their values
 % reliably in case the font executes a restore!
+% We also have to do something special about embedded fonts that
+% execute definefont more than once -- that is the function of topFontDict.
 
 % Read an embedded Type 1 font.
-/readfontfilter		% <proc> readfontfilter <filter>
- {	% We make this a separate procedure so that we can
-	% redefine it when we're writing PostScript.
-   0 () /SubFileDecode filter
- } bdef
+/readfontfilter {	% <proc> readfontfilter <filter>
+  0 () /SubFileDecode filter
+} bdef
 /readtype1dict 5 dict dup begin
   /definefont {
-    dup wcheck not { dup length dict copy } if
-    exch pop savedFontName exch
+    dup topFontDict eq topFontDict null eq or {
+      dup wcheck not { dup length dict copy } if
+      exch pop savedFontName exch
+    } if
     //systemdict /definefont get exec
   } bdef
   /eexec {
+		% Assume the font dictionary is on the top of the stack.
+    count 0 gt { /topFontDict 1 index cvlit store } if
     55665 /eexecDecode filter
     //systemdict begin readtype1dictcopy begin cvx stopped
     currentdict readtype1dictcopy eq { end } if
@@ -297,16 +288,20 @@ end readonly def
 		% so we have to make a closure that records the stack depth
 		% in a fail-safe way.
    //systemdict begin
-		% Rebind definefont so we can substitute the FontName
-		% from the descriptor.
-   //readtype1dict dup length 2 add dict copy begin
-   1 index /FontDescriptor oget /FontName oget /savedFontName exch def
+		% The PDF specification is somewhat muddy about whether
+		% an embedded font's name is supposed to be the BaseFont
+		% from the Font object or the FontName from the descriptor.
+		% Acrobat Distiller requires the former.  Save away the
+		% name so we can substitute it at definefont time.
+   //readtype1dict dup length 3 add dict copy begin
+   1 index /BaseFont oget /savedFontName exch def
+   /topFontDict null def
    /readtype1dictcopy currentdict def
     { run } aload pop count 1 sub 2 packedarray cvx exec
    end end
    count exch sub { pop } repeat
    PDFfile 3 -1 roll setfileposition
-   /FontDescriptor oget /FontName oget findfont
+   /BaseFont oget findfont
  } bdef
 
 % Execute the appropriate reading procedure.
@@ -470,13 +465,15 @@ readonly def
     /CMapVersion 1 def
     /CMapType 1 def
     %/WMode ... def
+	% The PDF documentation says that these CMaps map CIDs
+	% "1 to 65,536".  We think this is a misprint for 0 to 65,535.
     2 begincodespacerange
-      <0001> <00ff>
-      <0100> <ffff>
+	% <0001> <00ff>  <0100> <ffff>
+      <0000> <ffff>
     endcodespacerange
     2 begincidrange
-      <0001> <00ff> 1
-      <0100> <ffff> 256
+	% <0001> <00ff> 1   <0100> <ffff> 256
+      <0000> <ffff> 0
     endcidrange
     endcmap
     CMapName currentdict /CMap defineresource

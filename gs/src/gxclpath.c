@@ -1,22 +1,9 @@
 /* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Higher-level path operations for band lists */
 #include "math_.h"
 #include "memory_.h"
@@ -130,10 +117,10 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	     color0 == gx_no_color_index ?
 	     cldev->color_info.depth : 1);
 
-	    if (tile->id == gx_no_bitmap_id )
-	        return_error(-1);	/* can't cache */
+	    if (tile->id == gx_no_bitmap_id)
+		return_error(-1);	/* can't cache tile */
 	    if ((code = clist_change_tile(cldev, pcls, tile, depth)) < 0)
-		return code;	/* caching of tile unsuccesful */
+		return code;
 	}
 	if (color1 != pcls->tile_colors[1] ||
 	    color0 != pcls->tile_colors[0]
@@ -196,7 +183,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	memcpy(dp + 1, buf, bp - buf);
 	type = cmd_dc_type_color;
     } else
-	return_error(-1);
+	return_error(-1);	/* the color type was not known - unknown error */
     /* Any non-pure color will require the phase. */
     {
 	int px = pdcolor->phase.x, py = pdcolor->phase.y;
@@ -465,34 +452,35 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     if (unknown & color_space_known) {
 	byte *dp;
 
-	if (cldev->color_space & 8) {	/* indexed */
-	    uint num_values = (cldev->indexed_params.hival + 1) *
+	if (cldev->color_space.byte1 & 8) {	/* indexed */
+	    const gs_color_space *pcs = cldev->color_space.space;
+	    int hival = pcs->params.indexed.hival;
+	    uint num_values = (hival + 1) *
 		gs_color_space_num_components(
-		    (const gs_color_space *)&cldev->indexed_params.base_space);
-	    bool use_proc = cldev->color_space & 4;
+		    (const gs_color_space *)&pcs->params.indexed.base_space);
+	    bool use_proc = cldev->color_space.byte1 & 4;
 	    const void *map_data;
 	    uint map_size;
 
 	    if (use_proc) {
-		map_data = cldev->indexed_params.lookup.map->values;
+		map_data = pcs->params.indexed.lookup.map->values;
 		map_size = num_values *
-		    sizeof(cldev->indexed_params.lookup.map->values[0]);
+		    sizeof(pcs->params.indexed.lookup.map->values[0]);
 	    } else {
-		map_data = cldev->indexed_params.lookup.table.data;
+		map_data = pcs->params.indexed.lookup.table.data;
 		map_size = num_values;
 	    }
 	    code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_color_space,
-		     2 + cmd_sizew(cldev->indexed_params.hival) + map_size);
+				  2 + cmd_sizew(hival) + map_size);
 	    if (code < 0)
 		return code;
-	    memcpy(cmd_put_w(cldev->indexed_params.hival, dp + 2),
-		   map_data, map_size);
+	    memcpy(cmd_put_w(hival, dp + 2), map_data, map_size);
 	} else {
 	    code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_color_space, 2);
 	    if (code < 0)
 		return code;
 	}
-	dp[1] = cldev->color_space;
+	dp[1] = cldev->color_space.byte1;
 	pcls->known |= color_space_known;
     }
     return 0;
@@ -734,15 +722,18 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	     * outside the clipping region, because that would throw off
 	     * the pattern.
 	     */
-	    if (pattern_size == 0)
-		ymin = int2fixed(max(y - adjust_y, y0)),
-		    ymax = int2fixed(min(y + height + adjust_y, y1));
-	    else
-		ymin = min_fixed,
-		    ymax = max_fixed;
+	    if (pattern_size == 0) {
+		fixed expand = adjust_y + expansion.y;
+
+		ymin = int2fixed(max(y - expand, y0));
+		ymax = int2fixed(min(y + height + expand, y1));
+	    } else {
+		ymin = min_fixed;
+		ymax = max_fixed;
+	    }
 	    code = cmd_put_path(cdev, pcls, ppath, ymin, ymax,
 				cmd_opv_stroke + code,	/* cmd_dc_type */
-				false, (segment_notes) ~ 0);
+				false, (segment_notes)~0);
 	    if (code < 0)
 		return code;
 	}
@@ -1302,7 +1293,8 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 			    ((prev.A == 0 &&
 			      A == prev.E && C == prev.C && E == prev.A &&
 			      B == -prev.F && D == -prev.D && F == -prev.B) ||
-			     (A == -prev.E && C == -prev.C && E == -prev.A &&
+			     (prev.A != 0 &&
+			      A == -prev.E && C == -prev.C && E == -prev.A &&
 			      B == prev.F && D == prev.D && F == prev.B))
 			    )
 			    op = cmd_opv_scurveto;

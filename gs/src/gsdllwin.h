@@ -16,7 +16,7 @@
    all copies.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* gsdll extension for Microsoft Windows platforms */
 
 #ifndef gsdllwin_INCLUDED

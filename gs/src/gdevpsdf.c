@@ -1,22 +1,9 @@
 /* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Common utilities for PostScript and PDF writers */
 #include "memory_.h"
 #include <stdlib.h>		/* for qsort */
@@ -362,6 +349,43 @@ psdf_subset_glyphs(gs_glyph glyphs[256], gs_font *font, const byte used[32])
 }
 
 /*
+ * Add composite glyph pieces to a list of glyphs.  Does not sort or
+ * remove duplicates.  max_pieces is the maximum number of pieces that a
+ * single glyph can have: if this value is not known, the caller should
+ * use max_count.
+ */
+int
+psdf_add_subset_pieces(gs_glyph *glyphs, uint *pcount, uint max_count,
+		       uint max_pieces, gs_font *font)
+{
+    uint i;
+    uint count = *pcount;
+
+    for (i = 0; i < count; ++i) {
+	gs_glyph_info_t info;
+	int code;
+
+	if (count + max_pieces > max_count) {
+	    /* Check first to make sure there is enough room. */
+	    code = font->procs.glyph_info(font, glyphs[i], NULL,
+					  GLYPH_INFO_NUM_PIECES, &info);
+	    if (code < 0)
+		continue;
+	    if (count + info.num_pieces > max_count)
+		return_error(gs_error_rangecheck);
+	}
+	info.pieces = &glyphs[count];
+	code = font->procs.glyph_info(font, glyphs[i], NULL,
+				      GLYPH_INFO_NUM_PIECES |
+				      GLYPH_INFO_PIECES, &info);
+	if (code >= 0)
+	    count += info.num_pieces;
+    }
+    *pcount = count;
+    return 0;
+}
+
+/*
  * Sort a list of glyphs and remove duplicates.  Return the number of glyphs
  * in the result.
  */
@@ -382,4 +406,27 @@ psdf_sort_glyphs(gs_glyph *glyphs, int count)
 	if (i == 0 || glyphs[i] != glyphs[i - 1])
 	    glyphs[n++] = glyphs[i];
     return n;
+}
+
+/* Determine whether a sorted list of glyphs includes a given glyph. */
+bool
+psdf_sorted_glyphs_include(const gs_glyph *glyphs, int count, gs_glyph glyph)
+{
+    int lo = 0, hi = count - 1;
+
+    if (glyph < glyphs[0] || glyph > glyphs[count - 1])
+	return false;
+    /*
+     * Loop invariants: hi > lo;
+     * glyphs[lo] <= glyph <= glyphs[hi].
+     */
+    while (hi - lo > 1) {
+	int mid = (lo + hi) >> 1;
+
+	if (glyph >= glyphs[mid])
+	    lo = mid;
+	else
+	    hi = mid;
+    }
+    return (glyph == glyphs[lo] || glyph == glyphs[hi]);
 }

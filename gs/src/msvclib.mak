@@ -1,21 +1,8 @@
 #    Copyright (C) 1991-1999 Aladdin Enterprises.  All rights reserved.
-# 
-# This file is part of Aladdin Ghostscript.
-# 
-# Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-# or distributor accepts any responsibility for the consequences of using it,
-# or for whether it serves any particular purpose or works at all, unless he
-# or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-# License (the "License") for full details.
-# 
-# Every copy of Aladdin Ghostscript must include a copy of the License,
-# normally in a plain ASCII text file named PUBLIC.  The License grants you
-# the right to copy, modify and redistribute Aladdin Ghostscript, but only
-# under certain conditions described in the License.  Among other things, the
-# License requires that the copyright notice and this notice be preserved on
-# all copies.
+# This software is licensed to a single customer by Artifex Software Inc.
+# under the terms of a specific OEM agreement.
 
-
+# $RCSfile$ $Revision$
 # makefile for Microsoft Visual C++ 4.1 or later, Windows NT or Windows 95 LIBRARY.
 #
 # All configurable options are surrounded by !ifndef/!endif to allow 
@@ -27,10 +14,19 @@
 
 # ------ Generic options ------ #
 
+# Define the root directory for Ghostscript installation.
+
+!ifndef AROOTDIR
+AROOTDIR=c:/Aladdin
+!endif
+!ifndef GSROOTDIR
+GSROOTDIR=$(AROOTDIR)/gs$(GS_DOT_VERSION)
+!endif
+
 # Define the directory that will hold documentation at runtime.
 
 !ifndef GS_DOCDIR
-GS_DOCDIR=c:/gs
+GS_DOCDIR=$(GSROOTDIR)/doc
 !endif
 
 # Define the default directory/ies for the runtime initialization and
@@ -40,7 +36,7 @@ GS_DOCDIR=c:/gs
 # illegal escape.
 
 !ifndef GS_LIB_DEFAULT
-GS_LIB_DEFAULT=.;c:/gs/lib;c:/gs/fonts
+GS_LIB_DEFAULT=$(GSROOTDIR)/lib;$(AROOTDIR)/fonts
 !endif
 
 # Define whether or not searching for initialization files should always
@@ -251,7 +247,7 @@ FEATURE_DEVS=dps2lib.dev psl2cs.dev cielib.dev imasklib.dev patlib.dev htxlib.de
 # See gs.mak for details.
 
 !ifndef COMPILED_INITS
-COMPILE_INITS=0
+COMPILE_INITS=1
 !endif
 
 # Choose whether to store band lists on files or in memory.

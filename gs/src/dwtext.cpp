@@ -17,7 +17,7 @@
 */
 
 
-
+// $RCSfile$ $Revision$
 
 
 // Microsoft Windows 3.n text window for Ghostscript.

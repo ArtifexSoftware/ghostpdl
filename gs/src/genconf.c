@@ -1,22 +1,9 @@
 /* Copyright (C) 1993, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Generate configuration files */
 #include "stdpre.h"
 #include <assert.h>
@@ -50,7 +37,7 @@ mrealloc(void *old_ptr, size_t old_size, size_t new_size)
  *      genconf [-Z] [-e escapechar] [-n [name_prefix | -]] [@]xxx.dev*
  *        [-f gconfigf.h] [-h gconfig.h]
  *        [-p[l|L][u][e] pattern] [-l|o|lo|ol out.tr]
- * The default escape character is &.  When this character appears in the
+ * The default escape character is &.  When this character appears in a
  * pattern, it acts as follows:
  *	&p produces a %;
  *	&s produces a space;
@@ -114,11 +101,13 @@ typedef struct config_s {
 	    string_list libs;
 #define c_libs lists.named.libs
 	    string_list libpaths;
+#define c_links lists.named.links
+	    string_list links;
 #define c_libpaths lists.named.libpaths
 	    string_list objs;
 #define c_objs lists.named.objs
 	} named;
-#define NUM_RESOURCE_LISTS 7
+#define NUM_RESOURCE_LISTS 8
 	string_list indexed[NUM_RESOURCE_LISTS];
     } lists;
     string_pattern lib_p;
@@ -145,6 +134,7 @@ static const string_list init_config_lists[] =
     {"-font", 50, uniq_first},
     {"-lib", 20, uniq_last},
     {"-libpath", 10, uniq_first},
+    {"-link", 10, uniq_first},
     {"-obj", 500, uniq_first}
 };
 
@@ -331,7 +321,9 @@ main(int argc, char *argv[])
 		}
 		if (lib) {
 		    sort_uniq(&conf.c_libs, true);
+		    sort_uniq(&conf.c_links, true);
 		    write_list_pattern(out, &conf.c_libpaths, &conf.libpath_p);
+		    write_list_pattern(out, &conf.c_links, &conf.obj_p);
 		    write_list_pattern(out, &conf.c_libs, &conf.lib_p);
 		}
 		break;
@@ -548,7 +540,7 @@ read_token(char *token, int max_len, const char **pin)
 int
 add_entry(config * pconf, char *category, const char *item, int file_index)
 {
-    if (item[0] == '-') {	/* set category */
+    if (item[0] == '-' && islower(item[1])) {	/* set category */
 	strcpy(category, item + 1);
 	return 0;
     } else {			/* add to current category */
@@ -617,9 +609,11 @@ pre:		sprintf(template, pat, pconf->name_prefix);
 		if (IS_CAT("lib")) {
 		    list = &pconf->c_libs;
 		    break;
-		}
-		if (IS_CAT("libpath")) {
+		} else if (IS_CAT("libpath")) {
 		    list = &pconf->c_libpaths;
+		    break;
+		} else if (IS_CAT("link")) {
+		    list = &pconf->c_links;
 		    break;
 		}
 		goto err;

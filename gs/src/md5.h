@@ -21,18 +21,24 @@
   ghost@aladdin.com
 
  */
+/*$RCSfile$ $Revision$ */
 /*
+  Independent implementation of MD5 (RFC 1321).
+
   This code implements the MD5 Algorithm defined in RFC 1321.
   It is derived directly from the text of the RFC and not from the
   reference implementation.
 
-  The original and principal author of ansi2knr is L. Peter Deutsch
+  The original and principal author of md5.h is L. Peter Deutsch
   <ghost@aladdin.com>.  Other authors are noted in the change history
   that follows (in reverse chronological order):
 
+  1999-11-04 lpd Edited comments slightly for automatic TOC extraction.
+  1999-10-18 lpd Fixed typo in header comment (ansi2knr rather than md5);
+	added conditionalization for C++ compilation from Martin
+	Purschke <purschke@bnl.gov>.
   1999-05-03 lpd Original version.
  */
-
 
 #ifndef md5_INCLUDED
 #  define md5_INCLUDED
@@ -55,6 +61,11 @@ typedef struct md5_state_s {
     md5_byte_t buf[64];		/* accumulate block */
 } md5_state_t;
 
+#ifdef __cplusplus
+extern "C" 
+{
+#endif
+
 /* Initialize the algorithm. */
 #ifdef P1
 void md5_init(P1(md5_state_t *pms));
@@ -74,6 +85,10 @@ void md5_append(md5_state_t *pms, const md5_byte_t *data, int nbytes);
 void md5_finish(P2(md5_state_t *pms, md5_byte_t digest[16]));
 #else
 void md5_finish(md5_state_t *pms, md5_byte_t digest[16]);
+#endif
+
+#ifdef __cplusplus
+}  /* end extern "C" */
 #endif
 
 #endif /* md5_INCLUDED */

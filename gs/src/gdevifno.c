@@ -11,10 +11,13 @@
  * OF THIS SOFTWARE OR ITS FITNESS FOR ANY PARTICULAR PURPOSE.
  */
 
+/* $RCSfile$ $Revision$ */
 /*
- * gdevifno.c: gs device to generate inferno bitmaps
+ * gs device to generate inferno bitmaps
+ *
  * Russ Cox <rsc@plan9.bell-labs.com>, 3/25/98
  * Updated to fit in the standard GS distribution, 5/14/98
+ * Comments edited for automatic TOC generation, 11/4/99
  */
 
 #include "gdevprn.h"

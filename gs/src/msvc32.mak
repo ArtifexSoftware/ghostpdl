@@ -1,21 +1,8 @@
 #    Copyright (C) 1991-1999 Aladdin Enterprises.  All rights reserved.
-# 
-# This file is part of Aladdin Ghostscript.
-# 
-# Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-# or distributor accepts any responsibility for the consequences of using it,
-# or for whether it serves any particular purpose or works at all, unless he
-# or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-# License (the "License") for full details.
-# 
-# Every copy of Aladdin Ghostscript must include a copy of the License,
-# normally in a plain ASCII text file named PUBLIC.  The License grants you
-# the right to copy, modify and redistribute Aladdin Ghostscript, but only
-# under certain conditions described in the License.  Among other things, the
-# License requires that the copyright notice and this notice be preserved on
-# all copies.
+# This software is licensed to a single customer by Artifex Software Inc.
+# under the terms of a specific OEM agreement.
 
-
+# $RCSfile$ $Revision$
 # makefile for 32-bit Microsoft Visual C++, Windows NT or Windows 95 platform.
 #
 # All configurable options are surrounded by !ifndef/!endif to allow 
@@ -34,10 +21,48 @@
 
 # ------ Generic options ------ #
 
+# Define the directory for the final executable, and the
+# source, generated intermediate file, and object directories
+# for the graphics library (GL) and the PostScript/PDF interpreter (PS).
+
+!ifndef BINDIR
+BINDIR=.\bin
+!endif
+!ifndef GLSRCDIR
+GLSRCDIR=.\src
+!endif
+!ifndef GLGENDIR
+GLGENDIR=.\obj
+!endif
+!ifndef GLOBJDIR
+GLOBJDIR=.\obj
+!endif
+!ifndef PSSRCDIR
+PSSRCDIR=.\src
+!endif
+!ifndef PSLIBDIR
+PSLIBDIR=.\lib
+!endif
+!ifndef PSGENDIR
+PSGENDIR=.\obj
+!endif
+!ifndef PSOBJDIR
+PSOBJDIR=.\obj
+!endif
+
+# Define the root directory for Ghostscript installation.
+
+!ifndef AROOTDIR
+AROOTDIR=c:/Aladdin
+!endif
+!ifndef GSROOTDIR
+GSROOTDIR=$(AROOTDIR)/gs$(GS_DOT_VERSION)
+!endif
+
 # Define the directory that will hold documentation at runtime.
 
 !ifndef GS_DOCDIR
-GS_DOCDIR=c:/gs
+GS_DOCDIR=$(GSROOTDIR)/doc
 !endif
 
 # Define the default directory/ies for the runtime initialization and
@@ -47,7 +72,7 @@ GS_DOCDIR=c:/gs
 # illegal escape.
 
 !ifndef GS_LIB_DEFAULT
-GS_LIB_DEFAULT=.;c:/gs/lib;c:/gs/fonts
+GS_LIB_DEFAULT=$(GSROOTDIR)/lib;$(AROOTDIR)/fonts
 !endif
 
 # Define whether or not searching for initialization files should always
@@ -108,40 +133,23 @@ GSCONSOLE=gswin32c
 GSDLL=gsdll32
 !endif
 
+!ifndef BUILD_TIME_GS
+# Define the name of a pre-built executable that can be invoked at build
+# time.  Currently, this is only needed for compiled fonts.  The usual
+# alternatives are:
+#   - the standard name of Ghostscript on your system (typically `gs'):
+BUILD_TIME_GS=gswin32c
+#   - the name of the executable you are building now.  If you choose this
+# option, then you must build the executable first without compiled fonts,
+# and then again with compiled fonts.
+#BUILD_TIME_GS=$(BINDIR)\$(GS) -I$(PSLIBDIR)
+!endif
+
 # To build two small executables and a large DLL use MAKEDLL=1
 # To build two large executables use MAKEDLL=0
 
 !ifndef MAKEDLL
 MAKEDLL=1
-!endif
-
-# Define the directory for the final executable, and the
-# source, generated intermediate file, and object directories
-# for the graphics library (GL) and the PostScript/PDF interpreter (PS).
-
-!ifndef BINDIR
-BINDIR=.\bin
-!endif
-!ifndef GLSRCDIR
-GLSRCDIR=.\src
-!endif
-!ifndef GLGENDIR
-GLGENDIR=.\obj
-!endif
-!ifndef GLOBJDIR
-GLOBJDIR=.\obj
-!endif
-!ifndef PSSRCDIR
-PSSRCDIR=.\src
-!endif
-!ifndef PSLIBDIR
-PSLIBDIR=.\lib
-!endif
-!ifndef PSGENDIR
-PSGENDIR=.\obj
-!endif
-!ifndef PSOBJDIR
-PSOBJDIR=.\obj
 !endif
 
 # Define the directory where the IJG JPEG library sources are stored,
@@ -300,14 +308,14 @@ SYNC=winsync
 # Choose the language feature(s) to include.  See gs.mak for details.
 
 !ifndef FEATURE_DEVS
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)mshandle.dev $(PSD)pipe.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)mshandle.dev $(GLD)pipe.dev
 !endif
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
 
 !ifndef COMPILE_INITS
-COMPILE_INITS=0
+COMPILE_INITS=1
 !endif
 
 # Choose whether to store band lists on files or in memory.
@@ -385,7 +393,7 @@ TOP_MAKEFILES=$(MAKEFILE) $(GLSRCDIR)\msvccmd.mak $(GLSRCDIR)\msvctail.mak $(GLS
 # nmake expands macros when encountered, not when used,
 # so this must precede the !include statements.
 
-BEGINFILES2=$(GLOBJDIR)\gs*32*.exp $(GLOBJDIR)\gs*32*.ilk $(GLOBJDIR)\gs*32*.pdb $(GLOBJDIR)\gs*32*.lib $(GLGENDIR)\lib32.rsp
+BEGINFILES2=$(GLOBJDIR)\*.exp $(GLOBJDIR)\*.ilk $(GLOBJDIR)\*.pdb $(GLOBJDIR)\*.lib $(GLGENDIR)\lib32.rsp $(GLOBJDIR)\dw*.res $(SETUP_XE) $(UNINSTALL_XE) $(BINDIR)\*.exp $(BINDIR)\*.ilk $(BINDIR)\*.pdb $(BINDIR)\*.lib
 
 !include $(GLSRCDIR)\msvccmd.mak
 !include $(GLSRCDIR)\winlib.mak
@@ -403,7 +411,7 @@ $(GLGEN)lib32.rsp: $(TOP_MAKEFILES)
 
 !if $(MAKEDLL)
 # The graphical small EXE loader
-$(GS_XE): $(GSDLL_DLL)  $(DWOBJ) $(GSCONSOLE_XE)
+$(GS_XE): $(GSDLL_DLL)  $(DWOBJ) $(GSCONSOLE_XE) $(SETUP_XE) $(UNINSTALL_XE)
 	echo /SUBSYSTEM:WINDOWS > $(GLGEN)gswin32.rsp
 	echo /DEF:$(GLSRCDIR)\dwmain32.def /OUT:$(GS_XE) >> $(GLGEN)gswin32.rsp
         $(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(DWOBJ) @$(LIBCTR) $(GS_OBJ).res
@@ -450,5 +458,34 @@ $(GSCONSOLE_XE): $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ) $(OBJCNO) $(GS_OBJ).
 	del $(GLGEN)gswin32.rsp
 	del $(GLGEN)gswin32c.tr
 !endif
+
+# ---------------------- Setup and uninstall programs ---------------------- #
+
+!if $(MAKEDLL)
+
+$(SETUP_XE): $(GLOBJ)dwsetup.obj $(GLOBJ)dwinst.obj $(GLOBJ)dwsetup.res $(GLSRC)dwsetup.def
+	echo /DEF:$(GLSRC)dwsetup.def /OUT:$(SETUP_XE) > $(GLGEN)dwsetup.rsp
+	echo $(GLOBJ)dwsetup.obj $(GLOBJ)dwinst.obj >> $(GLGEN)dwsetup.rsp
+	copy $(LIBCTR) $(GLGEN)dwsetup.tr
+        echo $(LIBDIR)\ole32.lib >> $(GLGEN)dwsetup.tr
+        echo $(LIBDIR)\uuid.lib >> $(GLGEN)dwsetup.tr
+	$(LINK_SETUP)
+        $(LINK) $(LCT) @$(GLGEN)dwsetup.rsp @$(GLGEN)dwsetup.tr $(GLOBJ)dwsetup.res
+	del $(GLGEN)dwsetup.rsp
+	del $(GLGEN)dwsetup.tr
+
+$(UNINSTALL_XE): $(GLOBJ)dwuninst.obj $(GLOBJ)dwuninst.res $(GLSRC)dwuninst.def
+	echo /DEF:$(GLSRC)dwuninst.def /OUT:$(UNINSTALL_XE) > $(GLGEN)dwuninst.rsp
+	echo $(GLOBJ)dwuninst.obj >> $(GLGEN)dwuninst.rsp
+	copy $(LIBCTR) $(GLGEN)dwuninst.tr
+        echo $(LIBDIR)\ole32.lib >> $(GLGEN)dwuninst.tr
+        echo $(LIBDIR)\uuid.lib >> $(GLGEN)dwuninst.tr
+	$(LINK_SETUP)
+        $(LINK) $(LCT) @$(GLGEN)dwuninst.rsp @$(GLGEN)dwuninst.tr $(GLOBJ)dwuninst.res
+	del $(GLGEN)dwuninst.rsp
+	del $(GLGEN)dwuninst.tr
+
+!endif
+
 
 # end of makefile

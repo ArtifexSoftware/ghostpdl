@@ -1,22 +1,9 @@
 /* Copyright (C) 1990, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Adobe Type 1 charstring interpreter */
 #include "math_.h"
 #include "memory_.h"
@@ -306,6 +293,7 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_const_string * str,
 		goto cc;
 	    case c1_hsbw:
 		gs_type1_sbw(pcis, cs0, fixed_0, cs1, fixed_0);
+		cs1 = fixed_0;
 rsbw:		/* Give the caller the opportunity to intervene. */
 		pcis->os_count = 0;	/* clear */
 		ipsp->ip = cip, ipsp->dstate = state;
@@ -316,9 +304,29 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 		    /* Finish init when we return. */
 		    pcis->init_done = 0;
 		} else {
-		    /* Accumulate the side bearing now, but don't do it */
-		    /* a second time for the base character of a seac. */
-		    if (pcis->seac_accent < 0)
+		    /*
+		     * Accumulate the side bearing now, but don't do it
+		     * a second time for the base character of a seac.
+		     */
+		    if (pcis->seac_accent >= 0) {
+			/*
+			 * As a special hack to work around a bug in
+			 * Fontographer, we deal with the (illegal)
+			 * situation in which the side bearing of the
+			 * accented character (save_lsbx) is different from
+			 * the side bearing of the base character (cs0/cs1).
+			 */
+			fixed dsbx = cs0 - pcis->save_lsb.x;
+			fixed dsby = cs1 - pcis->save_lsb.y;
+
+			if (dsbx | dsby) {
+			    accum_xy(dsbx, dsby);
+			    pcis->lsb.x += dsbx;
+			    pcis->lsb.y += dsby;
+			    pcis->save_adxy.x -= dsbx;
+			    pcis->save_adxy.y -= dsby;
+			}
+		    } else
 			accum_xy(pcis->lsb.x, pcis->lsb.y);
 		    pcis->position.x = ptx;
 		    pcis->position.y = pty;

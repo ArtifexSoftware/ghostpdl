@@ -1,22 +1,9 @@
 /* Copyright (C) 1991, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Command list document- and page-level code. */
 #include "memory_.h"
 #include "string_.h"
@@ -46,9 +33,11 @@ ENUM_PTRS_WITH(device_clist_enum_ptrs, gx_device_clist *cdev)
     switch (index) {
     case 0: return ENUM_OBJ((cdev->writer.image_enum_id != gs_no_id ?
 			     cdev->writer.clip_path : 0));
+    case 1: return ENUM_OBJ((cdev->writer.image_enum_id != gs_no_id ?
+			     cdev->writer.color_space.space : 0));
     default:
 	return ENUM_USING(st_imager_state, &cdev->writer.imager_state,
-			  sizeof(gs_imager_state), index - 1);
+			  sizeof(gs_imager_state), index - 2);
     }
 ENUM_PTRS_END
 private
@@ -57,8 +46,10 @@ RELOC_PTRS_WITH(device_clist_reloc_ptrs, gx_device_clist *cdev)
     RELOC_PREFIX(st_device_forward);
     if (!CLIST_IS_WRITER(cdev))
 	return;
-    if (cdev->writer.image_enum_id != gs_no_id)
+    if (cdev->writer.image_enum_id != gs_no_id) {
 	RELOC_VAR(cdev->writer.clip_path);
+	RELOC_VAR(cdev->writer.color_space.space);
+    }
     RELOC_USING(st_imager_state, &cdev->writer.imager_state,
 		sizeof(gs_imager_state));
 } RELOC_PTRS_END
@@ -372,8 +363,9 @@ clist_reset(gx_device * dev)
     cdev->imager_state = clist_imager_state_initial;
     cdev->clip_path = NULL;
     cdev->clip_path_id = gs_no_id;
-    cdev->color_space = 0;
-    cdev->color_space_id = gs_no_id;
+    cdev->color_space.byte1 = 0;
+    cdev->color_space.id = gs_no_id;
+    cdev->color_space.space = 0;
     {
 	int i;
 

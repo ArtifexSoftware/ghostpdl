@@ -1,22 +1,9 @@
 /* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Shading rendering support */
 #include "math_.h"
 #include "gx.h"
@@ -29,6 +16,10 @@
 #include "gxdht.h"		/* for computing # of different colors */
 #include "gxpaint.h"
 #include "gxshade.h"
+
+/* Define a maximum smoothness value. */
+/* smoothness > 0.2 produces severely blocky output. */
+#define MAX_SMOOTHNESS 0.2
 
 /* ================ Packed coordinate streams ================ */
 
@@ -235,7 +226,7 @@ shade_init_fill_state(shading_fill_state_t * pfs, const gs_shading_t * psh,
 		      gx_device * dev, gs_imager_state * pis)
 {
     const gs_color_space *pcs = psh->params.ColorSpace;
-    float max_error = pis->smoothness;
+    float max_error = min(pis->smoothness, MAX_SMOOTHNESS);
     /*
      * There's no point in trying to achieve smoothness beyond what
      * the device can implement, i.e., the number of representable

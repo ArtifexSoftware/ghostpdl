@@ -1,22 +1,9 @@
 /* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Text handling for PDF-writing driver. */
 #include "math_.h"
 #include "memory_.h"
@@ -34,12 +21,19 @@
 #include "scommon.h"
 
 /*
- * When a base font is selected, we have several alternatives for how to
- * handle characters whose encoding doesn't match their encoding in the base
- * font's built-in encoding.  If a character's glyph doesn't match the
- * character's glyph in the encoding built up so far, we check if the font
- * has that glyph at all; if not, we fall back to a bitmap.  Otherwise, we
- * use one or both of the following algorithms:
+ * The PDF documentation does a pretty shoddy job of specifying use of fonts
+ * beyond the base 14, and on top of that, Acrobat Reader has some serious
+ * bugs.  Specifically, Acrobat Reader 3's Print function has a bug that
+ * make re-encoded characters print as blank if the font is substituted (not
+ * embedded or one of the base 14).
+ *
+ * We do have to handle re-encoded Type 1 fonts, because TeX output makes
+ * constant use of them.  We have several alternatives for how to handle
+ * characters whose encoding doesn't match their encoding in the base font's
+ * built-in encoding.  If a character's glyph doesn't match the character's
+ * glyph in the encoding built up so far, we check if the font has that
+ * glyph at all; if not, we fall back to a bitmap.  Otherwise, we use one or
+ * both of the following algorithms:
  *
  *      1. If this is the first time a character at this position has been
  *      seen, assign its glyph to that position in the encoding.
@@ -59,11 +53,9 @@
  * it is important that strings be searchable, but some non-searchable
  * strings can be tolerated, the defaults are appropriate.  If searchability
  * is not important, set ReAssignCharacters to false.
- *
- * Acrobat Reader 3's Print function has a bug that make re-encoded
- * characters print as blank if the font is substituted (not embedded).
- * Therefore, if CompatibilityLevel <= 1.2, for non-embedded fonts, no
- * substitutions or re-encodings are allowed.
+ * 
+ * Because of the AR3 printing bug, if CompatibilityLevel <= 1.2, for
+ * non-embedded non-base fonts, no substitutions or re-encodings are allowed.
  */
 
 /* Forward references */
@@ -95,10 +87,6 @@ typedef struct pdf_text_process_state_s {
     gs_matrix text_matrix;	/* normalized FontMatrix * CTM for Tm */
     pdf_font_t *pdfont;
 } pdf_text_process_state_t;
-
-/* Forward references */
-private int pdf_encode_char(P4(gx_device_pdf *pdev, int chr,
-			       gs_font_base *bfont, pdf_font_t *ppf));
 
 /* Define the auxiliary procedures for text processing. */
 private int
@@ -273,7 +261,7 @@ pdf_update_text_state(pdf_text_process_state_t *ppts, const pdf_text_enum_t *pen
     /* Compute the scaling matrix and combined matrix. */
 
     gs_matrix_invert(&orig_matrix, &smat);
-    gs_matrix_multiply(&font->FontMatrix, &smat, &smat);
+    gs_matrix_multiply(&smat, &font->FontMatrix, &smat);
     tmat = ctm_only(penum->pis);
     tmat.tx = tmat.ty = 0;
     gs_matrix_multiply(&smat, &tmat, &tmat);
@@ -319,20 +307,74 @@ pdf_update_text_state(pdf_text_process_state_t *ppts, const pdf_text_enum_t *pen
     if (ppf == 0 || ppf->skip) {
 	int index = -1;
 	pdf_font_t ftemp;
+	int BaseEncoding = ENCODING_INDEX_UNKNOWN; /* -1 */
+	int same = 0;
+	pdf_font_embed_t embed =
+	    pdf_font_embed_status(pdev, font, &index, &same);
+	bool have_widths = false;
 
-	switch (pdf_font_embed_status(pdev, font, &index)) {
+	/*
+	 * Compute the font descriptor now, to ensure that all the widths
+	 * are available.
+	 */
+	switch (embed) {
 	case FONT_EMBED_YES:
+	    /*
+	     * HACK: Acrobat Reader 3 has a bug that makes cmap formats 4
+	     * and 6 not work in embedded TrueType fonts.  Consequently, it
+	     * can only handle embedded TrueType fonts if all the glyphs
+	     * referenced by the Encoding have numbers 0-255.  Check for
+	     * this now.
+	     */
+	    if (font->FontType == ft_TrueType &&
+		pdev->CompatibilityLevel <= 1.2
+		) {
+		int i;
+
+		for (i = 0; i <= 0xff; ++i) {
+		    gs_glyph glyph =
+			font->procs.encode_char(font, (gs_char)i,
+						GLYPH_SPACE_INDEX);
+
+		    if (glyph == gs_no_glyph ||
+			(glyph >= gs_min_cid_glyph &&
+			 glyph <= gs_min_cid_glyph + 0xff)
+			)
+			continue;
+		    /* Can't embed, punt. */
+		    if (embed == FONT_EMBED_UNKNOWN)
+			goto no;	/* OK not to embed */
+		    return_error(gs_error_rangecheck);
+		}
+	    }
 	    code = pdf_compute_font_descriptor(pdev, &fdesc, font, NULL);
 	    if (code < 0)
 		return code;
 	    fdesc.FontFile_id = pdf_obj_ref(pdev);
 	    goto wf;
+	case FONT_EMBED_UNKNOWN:  /* default is not to embed */
 	case FONT_EMBED_NO:
+no:	    /*
+	     * Per the PDF 1.3 documentation, there are only 3 BaseEncoding
+	     * values allowed for non-embedded fonts.  Pick one here.
+	     */
+	    BaseEncoding =
+		((const gs_font_base *)base_font)->nearest_encoding_index;
+	    switch (BaseEncoding) {
+	    default:
+		BaseEncoding = ENCODING_INDEX_WINANSI;
+	    case ENCODING_INDEX_WINANSI:
+	    case ENCODING_INDEX_MACROMAN:
+	    case ENCODING_INDEX_MACEXPERT:
+		break;
+	    }
 	    code = pdf_compute_font_descriptor(pdev, &fdesc, font, NULL);
 	    if (code < 0)
 		return code;
 wf:	    fdesc.id = pdf_obj_ref(pdev);
-	    {
+	    /* falls through */
+	case FONT_EMBED_BASE14:
+	    if (~same & (FONT_SAME_METRICS | FONT_SAME_ENCODING)) {
 		/*
 		 * Before allocating the font resource, check that we can
 		 * get all the widths.
@@ -340,15 +382,13 @@ wf:	    fdesc.id = pdf_obj_ref(pdev);
 		int i;
 
 		memset(&ftemp, 0, sizeof(ftemp));
-		ftemp.descriptor = &fdesc;
 		for (i = 0; i <= 255; ++i) {
-		    code = pdf_char_width(&ftemp, i, font, NULL, NULL);
+		    code = pdf_char_width(&ftemp, i, font, NULL);
 		    if (code < 0 && code != gs_error_undefined)
 			return code;
 		}
+		have_widths = true;
 	    }
-	    /* falls through */
-	case FONT_EMBED_BASE14:
 	    /*
 	     * Allocate the font resource, but don't write it yet,
 	     * because we don't know yet whether it will need
@@ -361,10 +401,13 @@ wf:	    fdesc.id = pdf_obj_ref(pdev);
 	    ppf->fname.size = font_name.size;
 	    ppf->FontType = font->FontType;
 	    ppf->index = index;
+	    ppf->BaseEncoding = BaseEncoding;
 	    if (index < 0) {
 		*ppf->descriptor = fdesc;
 		ppf->font = font;
 		ppf->orig_matrix = orig_matrix;
+	    }
+	    if (have_widths) {
 		/*
 		 * C's bizarre coercion rules make us use memcpy here
 		 * rather than direct assignments, even though sizeof()
@@ -397,33 +440,80 @@ wf:	    fdesc.id = pdf_obj_ref(pdev);
     return 0;
 }
 
+/* Check whether a glyph exists in a (pseudo-)encoding. */
+private bool
+encoding_has_glyph(gs_font_base *bfont, gs_glyph font_glyph,
+		   gs_encoding_index_t index)
+{
+    int ch;
+    gs_glyph glyph;
+
+    for (ch = 0;
+	 (glyph = bfont->procs.callbacks.known_encode((gs_char)ch, index)) !=
+	     gs_no_glyph;
+	 ++ch)
+	if (glyph == font_glyph)
+	    return true;
+    return false;
+}
+
 /*
  * For a given character, check whether the encodings are compatible, and if
  * not, whether we can re-encode the character using the base encoding.
  * Return the (possibly re-encoded) character if successful.
+ * This procedure should only be called when ppf->index >= 0.
  */
 private int
 try_encode_char(gx_device_pdf *pdev, int chr, gs_font_base *bfont,
 		pdf_font_t *ppf)
 {
-    /* Note: ei, but not bei, may be ENCODING_INDEX_UNKNOWN. */
+    /*
+     * bfont is the current font in which the text is being shown.
+     * ei is its encoding_index.
+     */
     gs_encoding_index_t ei = bfont->encoding_index;
-    gs_encoding_index_t bei = pdf_standard_fonts[ppf->index].base_encoding;
+    /*
+     * ppf->font is the font that underlies this PDF font (i.e., this PDF
+     * font is ppf->font plus some possible Encoding differences).
+     * ppf->font is 0 iff this PDF font is one of the standard 14 (i.e.,
+     * ppf->index >= 0).  bei is the encoding index that will be written in
+     * the PDF file: it is NOT necessarily the same as
+     * ppf->font->encoding_index, or even ppf->font->nearest_encoding_index.
+     */
+    bool have_font = ppf->font && ppf->font->FontType != ft_composite;
+    bool is_standard = ppf->index >= 0;
+    gs_encoding_index_t bei =
+	(ppf->BaseEncoding >= 0 ? ppf->BaseEncoding :
+	 is_standard ? pdf_standard_fonts[ppf->index].base_encoding :
+	 /*
+	  * Despite what seems like a clear statement in the PDF
+	  * specification to the contrary, experimentation with Acrobat
+	  * seems to indicate that the default encoding for embedded fonts
+	  * is StandardEncoding, not the (arbitrary) encoding built into the
+	  * font itself.
+	  */
+	 ENCODING_INDEX_STANDARD);
     pdf_encoding_element_t *pdiff = ppf->differences;
+    /*
+     * If set, font_glyph is the glyph currently associated with chr in
+     * ppf + bei; glyph is the glyph corresponding to chr in bfont.
+     */
     gs_glyph font_glyph, glyph;
 
-    if (ei == bei && pdiff == 0) {
+    if (ei == bei && ei != ENCODING_INDEX_UNKNOWN && pdiff == 0) {
 	/*
 	 * Just note that the character has been used with its original
 	 * encoding.
 	 */
 	return chr;
     }
+    if (!is_standard && !have_font)
+	return_error(gs_error_undefined); /* can't encode */
 
 #define ENCODE(ch)\
-  (pdiff != 0 && pdiff[ch].str.data != 0 ?\
-   pdiff[ch].glyph :\
-   bfont->procs.callbacks.known_encode((gs_char)(ch), bei))
+  (pdiff != 0 && pdiff[ch].str.data != 0 ? pdiff[ch].glyph :\
+   bei >= 0 ? bfont->procs.callbacks.known_encode((gs_char)(ch), bei) :\
+   /* have_font */ bfont->procs.encode_char(ppf->font, chr, GLYPH_SPACE_NAME))
 
     font_glyph = ENCODE(chr);
     glyph =
@@ -443,6 +533,32 @@ try_encode_char(gx_device_pdf *pdev, int chr, gs_font_base *bfont,
 	 * print as blank.
 	 */
 	return_error(gs_error_undefined);
+    }
+
+    /*
+     * If the base font is a TrueType font, punt.  See comments at the
+     * beginning of this file for more information.
+     */
+    if (bfont->FontType == ft_TrueType)
+	return_error(gs_error_undefined);
+
+    /*
+     * Check whether this glyph is available in the base font's glyph set
+     * at all.
+     */
+    switch (bei) {
+    case ENCODING_INDEX_STANDARD:
+    case ENCODING_INDEX_ISOLATIN1:
+    case ENCODING_INDEX_WINANSI:
+    case ENCODING_INDEX_MACROMAN:
+	/* Check the full Adobe glyph set(s). */
+	if (!encoding_has_glyph(bfont, glyph, ENCODING_INDEX_ALOGLYPH) &&
+	    (pdev->CompatibilityLevel < 1.3 ||
+	     !encoding_has_glyph(bfont, glyph, ENCODING_INDEX_ALXGLYPH))
+	    )
+	    return_error(gs_error_undefined);
+    default:
+	break;
     }
 
     if (pdev->ReAssignCharacters) {
@@ -695,7 +811,7 @@ pdf_text_process(gs_text_enum_t *pte)
     goto top;
 }
 
-/* ---------------- Font utilities ---------------- */
+/* ---------------- Text and font utilities ---------------- */
 
 /* Forward declarations */
 private int assign_char_code(P1(gx_device_pdf * pdev));

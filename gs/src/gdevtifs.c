@@ -1,22 +1,9 @@
 /* Copyright (C) 1994, 1995 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* TIFF-writing substructure */
 #include "stdio_.h"
 #include "time_.h"
@@ -113,7 +100,7 @@ gdev_tiff_begin_page(gx_device_printer * pdev, gdev_tiff_state * tifs, FILE * fp
 		     const byte * values, int value_size)
 {
     TIFF_std_directory_entries std_entries;
-    const TIFF_dir_entry *pse = (TIFF_dir_entry *) & std_entries;
+    const TIFF_dir_entry *pse;
     const TIFF_dir_entry *pce;
     TIFF_dir_entry entry;
 
@@ -149,7 +136,7 @@ gdev_tiff_begin_page(gx_device_printer * pdev, gdev_tiff_state * tifs, FILE * fp
     /* We're going to shuffle the two tag lists together. */
     /* Both lists are sorted; entries in the client list */
     /* replace entries with the same tag in the standard list. */
-    for (ntags = 0, pse = (const TIFF_dir_entry *)&std_entries,
+    for (ntags = 0, pse = (const TIFF_dir_entry *)&std_entries_initial,
 	 nse = std_entry_count, pce = entries, nce = entry_count;
 	 nse && nce; ++ntags
 	) {

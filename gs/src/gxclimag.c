@@ -1,22 +1,9 @@
 /* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Higher-level image operations for band lists */
 #include "math_.h"
 #include "memory_.h"
@@ -214,8 +201,8 @@ typedef struct clist_image_enum_s {
     gx_image_enum_common;
     /* Arguments of begin_image */
     gs_memory_t *memory;
-    gs_pixel_image_t image;
-    gx_drawing_color dcolor;
+    gs_pixel_image_t image;	/* only uses Width, Height, Interpolate */
+    gx_drawing_color dcolor;	/* only pure right now */
     gs_int_rect rect;
     const gs_imager_state *pis;
     const gx_clip_path *pcpath;
@@ -225,8 +212,7 @@ typedef struct clist_image_enum_s {
     int bits_per_plane;		/* bits per pixel per plane */
     gs_matrix matrix;		/* image space -> device space */
     bool uses_color;
-    byte color_space;
-    gs_id color_space_id;
+    clist_color_space_t color_space;
     int ymin, ymax;
     bool map_rgb_to_cmyk;
     gx_colors_used_t colors_used;
@@ -249,10 +235,10 @@ typedef struct clist_image_enum_s {
     int y;
     bool color_map_is_known;
 } clist_image_enum;
-
-/* We can disregard the pointers in the writer by allocating */
-/* the image enumerator as immovable.  This is a hack, of course. */
-gs_private_st_simple(st_clist_image_enum, clist_image_enum, "clist_image_enum");
+gs_private_st_suffix_add3(st_clist_image_enum, clist_image_enum,
+			  "clist_image_enum", clist_image_enum_enum_ptrs,
+			  clist_image_enum_reloc_ptrs, st_gx_image_enum_common,
+			  pis, pcpath, color_space.space);
 
 private image_enum_proc_plane_data(clist_image_plane_data);
 private image_enum_proc_end_image(clist_image_end_image);
@@ -266,12 +252,12 @@ private bool image_band_box(P5(gx_device * dev, const clist_image_enum * pie,
 			       int y, int h, gs_int_rect * pbox));
 private int begin_image_command(P3(byte *buf, uint buf_size,
 				   const gs_image_common_t *pic));
-private int cmd_image_plane_data(P7(gx_device_clist_writer * cldev,
+private int cmd_image_plane_data(P8(gx_device_clist_writer * cldev,
 				    gx_clist_state * pcls,
 				    const gx_image_plane_t * planes,
 				    const gx_image_enum_common_t * pie,
 				    uint bytes_per_plane,
-				    const uint * offsets, int h));
+				    const uint * offsets, int dx, int h));
 private uint clist_image_unknowns(P2(gx_device *dev,
 				     const clist_image_enum *pie));
 private int write_image_end_all(P2(gx_device *dev,
@@ -418,9 +404,16 @@ clist_begin_typed_image(gx_device * dev,
 	pie->bits_per_plane = bits_per_pixel / pie->num_planes;
 	pie->matrix = mat;
 	pie->uses_color = uses_color;
-	pie->color_space = (base_index << 4) |
-	    (indexed ? (pim->ColorSpace->params.indexed.use_proc ? 12 : 8) : 0);
-	pie->color_space_id = (masked ? gs_no_id : pim->ColorSpace->id);
+	if (masked) {
+	    pie->color_space.byte1 = 0;  /* arbitrary */
+	    pie->color_space.space = 0;
+	    pie->color_space.id = gs_no_id;
+	} else {
+	    pie->color_space.byte1 = (base_index << 4) |
+		(indexed ? (pim->ColorSpace->params.indexed.use_proc ? 12 : 8) : 0);
+	    pie->color_space.id =
+		(pie->color_space.space = pim->ColorSpace)->id;
+	}
 	pie->y = pie->rect.p.y;
 
 	/* Image row has to fit in cmd writer's buffer */
@@ -467,13 +460,14 @@ clist_begin_typed_image(gx_device * dev,
 	if (bits_per_pixel > 4 || pim->Interpolate || num_components > 1)
 	    colors_used = all;
 	else {
+	    int max_value = (1 << bits_per_pixel) - 1;
 	    float dmin = pim->Decode[0], dmax = pim->Decode[1];
 	    float dtemp;
 
 	    if (dmax < dmin)
 		dtemp = dmax, dmax = dmin, dmin = dtemp;
 	    if (dmin != 0 ||
-		dmax != (indexed ? (1 << bits_per_pixel) - 1 : 1)
+		dmax != (indexed ? max_value : 1)
 		) {
 		colors_used = all;
 	    } else {
@@ -483,11 +477,10 @@ clist_begin_typed_image(gx_device * dev,
 		gs_client_color cc;
 		gx_drawing_color dcolor;
 		int i;
-		int max_value = (1 << bits_per_pixel) - 1;
 		double denom = (indexed ? 1 : max_value);
 
 		for (i = 0; i <= max_value; ++i) {
-		    cc.paint.values[0] = ((double)i) / denom;
+		    cc.paint.values[0] = (double)i / denom;
 		    remap_color(&cc, pcs, &dcolor, pis, dev,
 				gs_color_select_source);
 		    colors_used |= cmd_drawing_colors_used(cdev, &dcolor);
@@ -612,28 +605,26 @@ clist_image_plane_data(gx_image_enum_common_t * info,
 	 * Note that y and height always define a complete band.
 	 */
 	gs_int_rect ibox;
-	int bpp = pie->bits_per_plane;
-	int num_planes = pie->num_planes;
-	uint offsets[gs_image_max_planes];
-	int i, iy, ih, xskip, nrows;
-	uint bytes_per_plane, bytes_per_row, rows_per_cmd;
-	int band_ymax, band_ymin;
 	gs_int_rect entire_box;
 
 	if (!image_band_box(dev, pie, y, height, &ibox))
 	    continue;
-	pcls->colors_used.or |= pie->colors_used.or;
-	pcls->colors_used.slow_rop |= pie->colors_used.slow_rop;
 	/*
 	 * The transmitted subrectangle has to be computed at the time
 	 * we write the begin_image command; this in turn controls how
 	 * much of each scan line we write out.
 	 */
-	band_ymax = min(band_end, pie->ymax);
-	band_ymin = max(band_end - band_height, pie->ymin);
-	if (!image_band_box(dev, pie, band_ymin,
-			    band_ymax - band_ymin, &entire_box))
-	    continue;
+	{
+	    int band_ymax = min(band_end, pie->ymax);
+	    int band_ymin = max(band_end - band_height, pie->ymin);
+
+	    if (!image_band_box(dev, pie, band_ymin,
+				band_ymax - band_ymin, &entire_box))
+		continue;
+	}
+
+	pcls->colors_used.or |= pie->colors_used.or;
+	pcls->colors_used.slow_rop |= pie->colors_used.slow_rop;
 
 	/* Write out begin_image & its preamble for this band */
 	if (!(pcls->known & begin_image_known)) {
@@ -684,49 +675,58 @@ clist_image_plane_data(gx_image_enum_common_t * info,
 	}
 
 	/*
-	 * The actual data that we write out must use the X values
-	 * set by begin_image, which may be larger than the ones
-	 * actually needed for this particular scan line if the image
-	 * is rotated.
+	 * The data that we write out must use the X values set by
+	 * begin_image, which may cover a larger interval than the ones
+	 * actually needed for these particular scan lines if the image is
+	 * rotated.
 	 */
-#define bx0 entire_box.p.x
-#define by0 ibox.p.y
-#define bx1 entire_box.q.x
-#define by1 ibox.q.y
-	if (by0 < y0)
-	    by0 = y0;
-	if (by1 > y1)
-	    by1 = y1;
-	/*
-	 * Make sure we're skipping an integral number of pixels, by
-	 * truncating the initial X coordinate to the next lower
-	 * value that is an exact multiple of a byte.
-	 */
-	xskip = bx0 & -(int)"\001\010\004\010\002\010\004\010"[bpp & 7];
-	for (i = 0; i < num_planes; ++i)
-	    offsets[i] = (by0 - y0) * planes[i].raster + ((xskip * bpp) >> 3);
-	xskip = bx0 - xskip;
-	bytes_per_plane = ((xskip + bx1 - bx0) * bpp + 7) >> 3;
-	bytes_per_row = bytes_per_plane * pie->num_planes;
-	rows_per_cmd =
-	    (cbuf_size - cmd_largest_size) / max(bytes_per_row, 1);
+	{
+	    /*
+	     * image_band_box ensures that b{x,y}{0,1} fall within 
+	     * pie->rect.
+	     */
+	    int bx0 = entire_box.p.x, bx1 = entire_box.q.x;
+	    int by0 = ibox.p.y, by1 = ibox.q.y;
+	    int bpp = pie->bits_per_plane;
+	    int num_planes = pie->num_planes;
+	    uint offsets[gs_image_max_planes];
+	    int i, iy, ih, xskip, xoff, nrows;
+	    uint bytes_per_plane, bytes_per_row, rows_per_cmd;
 
-	if (rows_per_cmd == 0) {	/* The reader will have to buffer a row separately. */
-	    rows_per_cmd = 1;
-	}
-	for (iy = by0, ih = by1 - by0; ih > 0; iy += nrows, ih -= nrows) {
-	    nrows = min(ih, rows_per_cmd);
-	    TRY_RECT {
-		code = cmd_image_plane_data(cdev, pcls, planes, info,
-					    bytes_per_plane, offsets, nrows);
-	    } HANDLE_RECT(code);
+	    if (by0 < y0)
+		by0 = y0;
+	    if (by1 > y1)
+		by1 = y1;
+	    /*
+	     * Make sure we're skipping an integral number of pixels, by
+	     * truncating the initial X coordinate to the next lower
+	     * value that is an exact multiple of a byte.
+	     */
+	    xoff = bx0 - pie->rect.p.x;
+	    xskip = xoff & -(int)"\001\010\004\010\002\010\004\010"[bpp & 7];
 	    for (i = 0; i < num_planes; ++i)
-		offsets[i] += planes[i].raster * nrows;
+		offsets[i] =
+		    (by0 - y0) * planes[i].raster + ((xskip * bpp) >> 3);
+	    bytes_per_plane = ((bx1 - (pie->rect.p.x + xskip)) * bpp + 7) >> 3;
+	    bytes_per_row = bytes_per_plane * pie->num_planes;
+	    rows_per_cmd =
+		(cbuf_size - cmd_largest_size) / max(bytes_per_row, 1);
+
+	    if (rows_per_cmd == 0) {
+		/* The reader will have to buffer a row separately. */
+		rows_per_cmd = 1;
+	    }
+	    for (iy = by0, ih = by1 - by0; ih > 0; iy += nrows, ih -= nrows) {
+		nrows = min(ih, rows_per_cmd);
+		TRY_RECT {
+		    code = cmd_image_plane_data(cdev, pcls, planes, info,
+						bytes_per_plane, offsets,
+						xoff - xskip, nrows);
+		} HANDLE_RECT(code);
+		for (i = 0; i < num_planes; ++i)
+		    offsets[i] += planes[i].raster * nrows;
+	    }
 	}
-#undef bx0
-#undef by0
-#undef bx1
-#undef by1
     } END_RECTS_ON_ERROR(
 	BEGIN
 	    ++cdev->ignore_lo_mem_warnings;
@@ -804,16 +804,21 @@ private int
 cmd_put_set_data_x(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		   int data_x)
 {
-    int dx_msb = data_x >> 5;
     byte *dp;
-    int code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_misc,
-			      2 + cmd_size_w(dx_msb));
+    int code;
 
-    if (code >= 0) {
-	if (dx_msb) {
+    if (data_x > 0x1f) {
+	int dx_msb = data_x >> 5;
+
+	code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_misc,
+			      2 + cmd_size_w(dx_msb));
+	if (code >= 0) {
 	    dp[1] = cmd_set_misc_data_x + 0x20 + (data_x & 0x1f);
 	    cmd_put_w(dx_msb, dp + 2);
-	} else
+	}
+    } else {
+	code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_misc, 2);
+	if (code >= 0)
 	    dp[1] = cmd_set_misc_data_x + data_x;
     }
     return code;
@@ -1027,7 +1032,8 @@ image_band_box(gx_device * dev, const clist_image_enum * pie, int y, int h,
     fixed by0 = int2fixed(y);
     fixed by1 = int2fixed(y + h);
     int
-        px = pie->rect.p.x, py = pie->rect.p.y, qx = pie->rect.q.x, qy = pie->rect.q.y;
+        px = pie->rect.p.x, py = pie->rect.p.y,
+	qx = pie->rect.q.x, qy = pie->rect.q.y;
     gs_fixed_rect cbox;		/* device clipping box */
     gs_rect bbox;		/* cbox intersected with band */
 
@@ -1198,13 +1204,10 @@ clist_image_unknowns(gx_device *dev, const clist_image_enum *pie)
 	unknown |= ctm_known;
 	cdev->imager_state.ctm = pis->ctm;
     }
-    if (pie->color_space_id != gs_no_id /* i.e., not masked */) {
-	if (cdev->color_space_id != pie->color_space_id) {
+    if (pie->color_space.id != gs_no_id /* i.e., not masked */) {
+	if (cdev->color_space.id != pie->color_space.id) {
 	    unknown |= color_space_known;
 	    cdev->color_space = pie->color_space;
-	    cdev->color_space_id = pie->color_space_id;
-	    if (cdev->color_space & 8)
-		cdev->indexed_params = pie->image.ColorSpace->params.indexed;
 	}
     }
     if (cmd_check_clip_path(cdev, pie->pcpath))
@@ -1236,10 +1239,12 @@ begin_image_command(byte *buf, uint buf_size, const gs_image_common_t *pic)
 /* Write data for a partial image. */
 private int
 cmd_image_plane_data(gx_device_clist_writer * cldev, gx_clist_state * pcls,
-	const gx_image_plane_t * planes, const gx_image_enum_common_t * pie,
-		     uint bytes_per_plane, const uint * offsets, int h)
+		     const gx_image_plane_t * planes,
+		     const gx_image_enum_common_t * pie,
+		     uint bytes_per_plane, const uint * offsets,
+		     int dx, int h)
 {
-    int data_x = planes[0].data_x;
+    int data_x = planes[0].data_x + dx;
     uint nbytes = bytes_per_plane * pie->num_planes * h;
     uint len = 1 + cmd_size2w(h, bytes_per_plane) + nbytes;
     byte *dp;

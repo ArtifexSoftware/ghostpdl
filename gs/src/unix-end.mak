@@ -1,21 +1,8 @@
-#    Copyright (C) 1994, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
-# 
-# This file is part of Aladdin Ghostscript.
-# 
-# Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-# or distributor accepts any responsibility for the consequences of using it,
-# or for whether it serves any particular purpose or works at all, unless he
-# or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-# License (the "License") for full details.
-# 
-# Every copy of Aladdin Ghostscript must include a copy of the License,
-# normally in a plain ASCII text file named PUBLIC.  The License grants you
-# the right to copy, modify and redistribute Aladdin Ghostscript, but only
-# under certain conditions described in the License.  Among other things, the
-# License requires that the copyright notice and this notice be preserved on
-# all copies.
+#    Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+# This software is licensed to a single customer by Artifex Software Inc.
+# under the terms of a specific OEM agreement.
 
-
+# $RCSfile$ $Revision$
 # Partial makefile common to all Unix and Desqview/X configurations.
 # This is the next-to-last part of the makefile for these configurations.
 
@@ -42,10 +29,10 @@ PGDEFS=GENOPT='-DPROFILE' CFLAGS='$(CFLAGS_PROFILE) $(GCFLAGS) $(XCFLAGS)'\
  PSGENDIR=$(PSGENDIR)/$(PGRELDIR) PSOBJDIR=$(PSOBJDIR)/$(PGRELDIR)
 
 pg: PGDIRS
-	make $(PGDEFS) default
+	$(MAKE) $(PGDEFS) default
 
 pgclean: PGDIRS
-	make $(PGDEFS) clean
+	$(MAKE) $(PGDEFS) clean
 
 # Define a rule for building debugging configurations.
 DEBUGDIRS: STDDIRS
@@ -61,10 +48,10 @@ DEBUGDEFS=GENOPT='-DDEBUG' CFLAGS='$(CFLAGS_DEBUG) $(GCFLAGS) $(XCFLAGS)'\
  PSGENDIR=$(PSGENDIR)/$(DEBUGRELDIR) PSOBJDIR=$(PSOBJDIR)/$(DEBUGRELDIR)
 
 debug: DEBUGDIRS
-	make $(DEBUGDEFS) default
+	$(MAKE) $(DEBUGDEFS) default
 
 debugclean: DEBUGDIRS
-	make $(DEBUGDEFS) clean
+	$(MAKE) $(DEBUGDEFS) clean
 
 # The rule for gconfigv.h is here because it is shared between Unix and
 # DV/X environments.

@@ -1,24 +1,10 @@
 /* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Lower-level path filling procedures */
-#include "math_.h"		/* for floor in fixed_mult_quo */
 #include "gx.h"
 #include "gserrors.h"
 #include "gsstruct.h"
@@ -45,17 +31,34 @@ struct active_line_s {
 #define al_dx(alp) ((alp)->diff.x)
 #define al_dy(alp) ((alp)->diff.y)
     fixed y_fast_max;		/* can do x_at_y in fixed point */
-    /* if y <= y_fast_max */
+				/* if y <= y_fast_max */
+    fixed num_adjust;		/* 0 if diff.x >= 0, -diff.y + epsilon if */
+				/* diff.x < 0 and division truncates */
+#if ARCH_DIV_NEG_POS_TRUNCATES
+    /* neg/pos truncates, we must bias the numberator. */
+#  define SET_NUM_ADJUST(alp) \
+    (alp)->num_adjust =\
+      ((alp)->diff.x >= 0 ? 0 : -(alp)->diff.y + fixed_epsilon)
+#  define ADD_NUM_ADJUST(num, alp) ((num) + (alp)->num_adjust)
+#else
+    /* neg/pos takes the floor, no special action is needed. */
+#  define SET_NUM_ADJUST(alp) DO_NOTHING
+#  define ADD_NUM_ADJUST(num, alp) (num)
+#endif
 #define set_al_points(alp, startp, endp)\
-  (alp)->diff.x = (endp).x - (startp).x,\
-  (alp)->y_fast_max = max_fixed /\
-    (((alp)->diff.x >= 0 ? (alp)->diff.x : -(alp)->diff.x) | 1) + (startp).y,\
-  (alp)->diff.y = (endp).y - (startp).y,\
-  (alp)->start = startp, (alp)->end = endp
+  BEGIN\
+    (alp)->diff.y = (endp).y - (startp).y;\
+    (alp)->diff.x = (endp).x - (startp).x;\
+    SET_NUM_ADJUST(alp);\
+    (alp)->y_fast_max = max_fixed /\
+      (((alp)->diff.x >= 0 ? (alp)->diff.x : -(alp)->diff.x) | 1) +\
+      (startp).y;\
+    (alp)->start = startp, (alp)->end = endp;\
+  END
 #define al_x_at_y(alp, yv)\
   ((yv) == (alp)->end.y ? (alp)->end.x :\
    ((yv) <= (alp)->y_fast_max ?\
-    ((yv) - (alp)->start.y) * al_dx(alp) / al_dy(alp) :\
+    ADD_NUM_ADJUST(((yv) - (alp)->start.y) * al_dx(alp), alp) / al_dy(alp) :\
     (INCR_EXPR(slow_x),\
      fixed_mult_quo(al_dx(alp), (yv) - (alp)->start.y, al_dy(alp)))) +\
    (alp)->start.x)
@@ -190,8 +193,9 @@ private fill_loop_proc(fill_loop_by_trapezoids);
 #ifdef DEBUG
 struct stats_fill_s {
     long
-         fill, fill_alloc, y_up, y_down, horiz, x_step, slow_x, iter, find_y,
-         band, band_step, band_fill, afill, slant, slant_shallow, sfill;
+	fill, fill_alloc, y_up, y_down, horiz, x_step, slow_x, iter, find_y,
+	band, band_step, band_fill, afill, slant, slant_shallow, sfill,
+	mq_cross;
 } stats_fill;
 
 #  define INCR(x) (++(stats_fill.x))
@@ -228,14 +232,20 @@ struct stats_fill_s {
 void
 gx_adjust_if_empty(const gs_fixed_rect * pbox, gs_fixed_point * adjust)
 {
+    /*
+     * For extremely large coordinates, the obvious subtractions could
+     * overflow.  We can work around this easily by noting that since
+     * we know q.{x,y} >= p.{x,y}, the subtraction overflows iff the
+     * result is negative.
+     */
     const fixed
           dx = pbox->q.x - pbox->p.x, dy = pbox->q.y - pbox->p.y;
 
-    if (dx < fixed_half && dy >= int2fixed(2)) {
+    if (dx < fixed_half && dx > 0 && (dy >= int2fixed(2) || dy < 0)) {
 	adjust->x = arith_rshift_1(fixed_1 + fixed_epsilon - dx);
 	if_debug1('f', "[f]thin adjust_x=%g\n",
 		  fixed2float(adjust->x));
-    } else if (dy < fixed_half && dx >= int2fixed(2)) {
+    } else if (dy < fixed_half && dy > 0 && (dx >= int2fixed(2) || dx < 0)) {
 	adjust->y = arith_rshift_1(fixed_1 + fixed_epsilon - dy);
 	if_debug1('f', "[f]thin adjust_y=%g\n",
 		  fixed2float(adjust->y));
@@ -1209,7 +1219,7 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 		y_new =
 		    ((dy | dx_old) < 1L << (size_of(fixed) * 4 - 1) ?
 		     dy * dx_old / dx_den :
-		     fixed_mult_quo(dy, dx_old, dx_den))
+		     (INCR_EXPR(mq_cross), fixed_mult_quo(dy, dx_old, dx_den)))
 		    + y;
 		/* The crossing value doesn't have to be */
 		/* very accurate, but it does have to be */

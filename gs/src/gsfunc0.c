@@ -1,22 +1,9 @@
 /* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Implementation of FunctionType 0 (Sampled) Functions */
 #include "math_.h"
 #include "gx.h"
@@ -30,7 +17,28 @@ typedef struct gs_function_Sd_s {
     gs_function_Sd_params_t params;
 } gs_function_Sd_t;
 
+/* GC descriptor */
 private_st_function_Sd();
+private
+ENUM_PTRS_WITH(function_Sd_enum_ptrs, gs_function_Sd_t *pfn)
+{
+    index -= 3;
+    if (index < st_data_source_max_ptrs)
+	return ENUM_USING(st_data_source, &pfn->params.DataSource,
+			  sizeof(pfn->params.DataSource), index);
+    return ENUM_USING_PREFIX(st_function, st_data_source_max_ptrs);
+}
+ENUM_PTR3(0, gs_function_Sd_t, params.Encode, params.Decode, params.Size);
+ENUM_PTRS_END
+private
+RELOC_PTRS_WITH(function_Sd_reloc_ptrs, gs_function_Sd_t *pfn)
+{
+    RELOC_PREFIX(st_function);
+    RELOC_USING(st_data_source, &pfn->params.DataSource,
+		sizeof(pfn->params.DataSource));
+    RELOC_PTR3(gs_function_Sd_t, params.Encode, params.Decode, params.Size);
+}
+RELOC_PTRS_END
 
 /* Define the maximum plausible number of inputs and outputs */
 /* for a Sampled function. */
@@ -231,7 +239,7 @@ fn_Sd_evaluate(const gs_function_t * pfn_common, const float *in, float *out)
 
     /* Encode the output values. */
 
-    for (i = 0; i < pfn->params.n; offset += bps, ++i) {
+    for (i = 0; i < pfn->params.n; ++i) {
 	float d0, d1, r0, r1, value;
 
 	if (pfn->params.Range)
@@ -267,8 +275,7 @@ fn_Sd_is_monotonic(const gs_function_t * pfn_common,
     float v0 = lower[0], v1 = upper[0];
     float e0, e1, w0, w1;
     float r0[max_Sd_n], r1[max_Sd_n];
-    int dir = 0;
-    int i, code;
+    int code, i, result;
 
     /*
      * Testing this in general is very time-consuming, so we don't bother.
@@ -282,6 +289,8 @@ fn_Sd_is_monotonic(const gs_function_t * pfn_common,
 	upper[0] < pfn->params.Domain[0]
 	)
 	return gs_error_rangecheck;
+    if (pfn->params.n > sizeof(int) * 4 - 1)
+	return 0;		/* can't represent result */
     if (pfn->params.Encode)
 	e0 = pfn->params.Encode[0], e1 = pfn->params.Encode[1];
     else
@@ -304,19 +313,16 @@ fn_Sd_is_monotonic(const gs_function_t * pfn_common,
     gs_function_evaluate(pfn_common, upper, r1);
     if (code < 0)
 	return code;
-    for (i = 0; i < pfn->params.n; ++i) {
-	float diff = r1[i] - r0[i];
-	int code;
+    for (i = 0, result = 0; i < pfn->params.n; ++i) {
+	double diff = r1[i] - r0[i];
 
-	if (diff == 0)
-	    continue;
-	code = (diff < 0 ? FN_MONOTONIC_DECREASING : FN_MONOTONIC_INCREASING);
-	if (dir == 0)
-	    dir = code;
-	else if (dir != code)
-	    return 0;
+	result |=
+	    (diff < 0 ? FN_MONOTONIC_DECREASING :
+	     diff > 0 ? FN_MONOTONIC_INCREASING :
+	     FN_MONOTONIC_DECREASING | FN_MONOTONIC_INCREASING) <<
+	    (2 * i);
     }
-    return dir;
+    return result;
 }
 
 /* Free the parameters of a Sampled function. */

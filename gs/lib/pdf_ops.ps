@@ -1,22 +1,8 @@
 %    Copyright (C) 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-% 
-% This file is part of Aladdin Ghostscript.
-% 
-% Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-% or distributor accepts any responsibility for the consequences of using it,
-% or for whether it serves any particular purpose or works at all, unless he
-% or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-% License (the "License") for full details.
-% 
-% Every copy of Aladdin Ghostscript must include a copy of the License,
-% normally in a plain ASCII text file named PUBLIC.  The License grants you
-% the right to copy, modify and redistribute Aladdin Ghostscript, but only
-% under certain conditions described in the License.  Among other things, the
-% License requires that the copyright notice and this notice be preserved on
-% all copies.
+% This software is licensed to a single customer by Artifex Software Inc.
+% under the terms of a specific OEM agreement.
 
-
-% pdf_ops.ps
+% $RCSfile$ $Revision$
 % Definitions for most of the PDF operators.
 
 .currentglobal true .setglobal
@@ -42,7 +28,6 @@ userdict /GS_PDF_ProcSet 127 dict dup begin
 % The keys in this dictionary are as follows:
 %	self			% identifies the dictionary as one of ours
 %	Show
-%	TextOrigin		% origin of current line, in text space
 %	TextSaveMatrix		% matrix at time of BT
 % (The following correspond directly to PDF state parameters.)
 %	FillColor
@@ -53,6 +38,7 @@ userdict /GS_PDF_ProcSet 127 dict dup begin
 %	TextHScaling
 %	Leading
 %	TextFont
+%	TextLineMatrix
 %	TextMatrix
 %	TextRise
 %	TextRenderingMode
@@ -111,9 +97,9 @@ nodict readonly pop
 % Each entry in the color space dictionary is a procedure of the form
 %	<cspace> -proc- <cspace> <initial-color>
 /CSdict mark
-  /DeviceGray { 0 } bind
-  /DeviceRGB { [0 0 0] cvx } bind
-  /DeviceCMYK { [0 0 0 1] cvx } bind
+  /DeviceGray { pop //csdevgray 0 } bind
+  /DeviceRGB { pop //csdevrgb [0 0 0] cvx } bind
+  /DeviceCMYK { pop //csdevcmyk [0 0 0 1] cvx } bind
   /CIEBasedA { 0 } bind
   /CIEBasedABC { [0 0 0] cvx } bind
   /Separation { 1 } bind
@@ -233,44 +219,40 @@ end readonly def
 % the text state is saved and restored like the rest of the extended
 % graphics state.
 
-/settextmatrix
- { TextMatrix concat
-   TextHScaling 1 ne { TextHScaling 1 scale } if
-   TextRise 0 ne { 0 TextRise translate } if
- } bdef
+/settextmatrix {
+  TextMatrix concat
+  TextHScaling 1 ne { TextHScaling 1 scale } if
+  TextRise 0 ne { 0 TextRise translate } if
+  TextFont dup null eq { pop } { setfont } ifelse
+} bdef
 /settextstate { TextSaveMatrix setmatrix settextmatrix } bdef
 
-/BT
- { currentdict /TextMatrix .knownget
-    { identmatrix pop }
-    { matrix /TextMatrix gput }
-   ifelse
-   currentdict /TextOrigin .knownget
-    { dup 0 0 put 1 0 put }
-    { [0 0] cvx /TextOrigin gput }
-   ifelse
+/BT {
+  currentdict /TextLineMatrix .knownget
+    { identmatrix pop TextMatrix identmatrix pop }
+    { matrix /TextLineMatrix gput matrix /TextMatrix gput }
+  ifelse
     { showfirst } /Show gput
-   currentdict /TextSaveMatrix .knownget not
+  currentdict /TextSaveMatrix .knownget not
     { matrix dup /TextSaveMatrix gput }
-   if currentmatrix pop settextmatrix 0 0 moveto
-   TextFont dup null eq { pop } { setfont } ifelse
- } bdef
-/ET
- { TextSaveMatrix setmatrix
- } bdef
+  if currentmatrix pop settextmatrix 0 0 moveto
+} bdef
+/ET {
+  TextSaveMatrix setmatrix
+} bdef
 /Tc { /TextSpacing gput { showfirst } /Show gput } bdef
 /TL { /TextLeading gput } bdef
 /Tr { /TextRenderingMode gput { showfirst } /Show gput } bdef
 /Ts { /TextRise gput settextstate } bdef
 /Tw { /WordSpacing gput { showfirst } /Show gput } bdef
-/Tz { 100 div /TextHScaling gput settextstate } bdef
+/Tz { 100 div /TextHScaling gput settextstate} bdef
 
 % ---------------- Font control ---------------- %
 
-/Tf		% <font> <scale> Tf -
- { dup 1 eq { pop } { scalefont } ifelse
-   dup setfont /TextFont gput
- } bdef
+/Tf {		% <font> <scale> Tf -
+  dup 1 eq { pop } { scalefont } ifelse
+  /TextFont gput settextstate
+} bdef
 
 % Read a CFF font.
 /FRD		% <resdict> <file> FRD -
@@ -299,32 +281,36 @@ end readonly def
 % Insert a new Encoding or Metrics into a font if necessary.
 % Return a possibly updated font, and a flag to indicate whether
 % the font was actually copied.
-/.updatefont		% <font> <Encoding|null> <Metrics|null> .updatefont
+/.updatefont {		% <font> <Encoding|null> <Metrics|null> .updatefont
 			%   <font'> <copied>
- { 2 index 4 1 roll
-   dup null ne
-    { 3 -1 roll true .copyfontdict dup /Metrics 4 -1 roll put exch }
-    { pop }
-   ifelse
-   dup null ne { 1 index 3 index /Encoding get ne } { false } ifelse
-    { exch false .copyfontdict dup /Encoding 4 -1 roll put }
-    { pop }
-   ifelse exch 1 index ne
- } bdef
+  2 index 4 1 roll
+  dup null ne {
+    3 -1 roll true .copyfontdict dup /Metrics 4 -1 roll put exch
+  } {
+    pop
+  } ifelse
+  dup null ne { 1 index 3 index /Encoding get ne } { false } ifelse {
+    exch false .copyfontdict
+			% Stack: Encoding font'
+    dup /Encoding 4 -1 roll put
+  } {
+    pop
+  } ifelse exch 1 index ne
+} bdef
 
 % ---------------- Text positioning ---------------- %
 
-/Td
- { TextOrigin exch 4 -1 roll add 3 1 roll add
-   2 copy /TextOrigin load astore pop moveto
- } bdef
+/Td {
+  TextLineMatrix transform TextLineMatrix 4 2 getinterval astore pop
+  TextLineMatrix TextMatrix copy pop settextstate
+  0 0 moveto
+} bdef
 /TD { dup neg /TextLeading gput Td } bdef
 /T* { 0 TextLeading neg Td } bdef
-/Tm
- { TextMatrix astore pop settextstate
-   0 0 /TextOrigin load astore pop
-   0 0 moveto
- } bdef
+/Tm {
+  TextLineMatrix astore TextMatrix copy pop settextstate
+  0 0 moveto
+} bdef
 
 % ---------------- Text painting ---------------- %
 
@@ -369,12 +355,18 @@ end readonly def
  } bdef
 /showfirst { setshowstate Show } def
 
-/Tj { Show } bdef
-/' { T* Show } bdef
-/" { exch Tc exch Tw T* Show } bdef
+/Tj {
+  Show
+		% Update the TextMatrix translation.
+  gsave TextSaveMatrix setmatrix
+  currentpoint TextMatrix 4 2 getinterval astore pop
+  grestore
+} bdef
+/' { T* Tj } bdef
+/" { exch Tc exch Tw T* Tj } bdef
 /TJ
  {  { dup type /stringtype eq
-       { Show
+       { Tj
        }
        { -1000 div
 	 currentfont /ScaleMatrix .knownget { 0 get mul } if

@@ -1,22 +1,9 @@
 /* Copyright (C) 1989, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Name lookup for Ghostscript interpreter */
 #include "memory_.h"
 #include "string_.h"
@@ -52,6 +39,7 @@ gs_private_st_composite(st_name_table, name_table, "name_table",
 
 /* Forward references */
 private int name_alloc_sub(P1(name_table *));
+private void name_free_sub(P2(name_table *, uint));
 private void name_scan_sub(P3(name_table *, uint, bool));
 
 /* Debugging printout */
@@ -89,6 +77,8 @@ names_init(ulong count, gs_ref_memory_t *imem)
     else if (count - 1 > max_name_count)
 	return 0;
     nt = gs_alloc_struct(mem, name_table, &st_name_table, "name_init(nt)");
+    if (nt == 0)
+	return 0;
     memset(nt, 0, sizeof(name_table));
     nt->max_sub_count =
 	((count - 1) | nt_sub_index_mask) >> nt_log2_sub_size;
@@ -96,8 +86,16 @@ names_init(ulong count, gs_ref_memory_t *imem)
     nt->memory = mem;
     /* Initialize the one-character names. */
     /* Start by creating the necessary sub-tables. */
-    for (i = 0; i < NT_1CHAR_FIRST + NT_1CHAR_SIZE; i += nt_sub_size)
-	name_alloc_sub(nt);
+    for (i = 0; i < NT_1CHAR_FIRST + NT_1CHAR_SIZE; i += nt_sub_size) {
+	int code = name_alloc_sub(nt);
+
+	if (code < 0) {
+	    while (nt->sub_next > 0)
+		name_free_sub(nt, --(nt->sub_next));
+	    gs_free_object(mem, nt, "name_init(nt)");
+	    return 0;
+	}
+    }
     for (i = -1; i < NT_1CHAR_SIZE; i++) {
 	uint ncnt = NT_1CHAR_FIRST + i;
 	uint nidx = name_count_to_index(ncnt);
@@ -523,6 +521,18 @@ name_alloc_sub(name_table * nt)
     return 0;
 }
 
+/* Free a sub-table. */
+private void
+name_free_sub(name_table * nt, uint sub_index)
+{
+    gs_free_object(nt->memory, nt->sub[sub_index].strings,
+		   "name_free_sub(string sub-table)");
+    gs_free_object(nt->memory, nt->sub[sub_index].names,
+		   "name_free_sub(sub-table)");
+    nt->sub[sub_index].names = 0;
+    nt->sub[sub_index].strings = 0;
+}
+
 /* Scan a sub-table and add unmarked entries to the free list. */
 /* We add the entries in decreasing count order, so the free list */
 /* will stay sorted.  If all entries are unmarked and free_empty is true, */
@@ -557,11 +567,7 @@ name_scan_sub(name_table * nt, uint sub_index, bool free_empty)
 	nt->free = free;
     else {
 	/* No marked entries, free the sub-table. */
-	gs_free_object(nt->memory, ssub, "name_scan_sub(string sub-table)");
-	gs_free_object(nt->memory, nt->sub[sub_index].names,
-		       "name_scan_sub(sub-table)");
-	nt->sub[sub_index].names = 0;
-	nt->sub[sub_index].strings = 0;
+	name_free_sub(nt, sub_index);
 	if (sub_index == nt->sub_count - 1) {
 	    /* Back up over a final run of deleted sub-tables. */
 	    do {

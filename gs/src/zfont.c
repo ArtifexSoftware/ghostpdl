@@ -1,22 +1,9 @@
 /* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Generic font operators */
 #include "ghost.h"
 #include "oper.h"
@@ -182,6 +169,21 @@ zcurrentcacheparams(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+/* <font> .registerfont - */
+private int
+zregisterfont(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    gs_font *pfont;
+    int code = font_param(op, &pfont);
+
+    if (code < 0)
+	return code;
+    pfont->is_resource = true;
+    pop(1);
+    return 0;
+}
+
 /* ------ Initialization procedure ------ */
 
 const op_def zfont_op_defs[] =
@@ -194,6 +196,7 @@ const op_def zfont_op_defs[] =
     {"1setcachelimit", zsetcachelimit},
     {"1setcacheparams", zsetcacheparams},
     {"0currentcacheparams", zcurrentcacheparams},
+    {"1.registerfont", zregisterfont},
     op_def_end(zfont_init)
 };
 

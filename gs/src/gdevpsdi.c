@@ -1,22 +1,9 @@
 /* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Image compression for PostScript and PDF writers */
 #include "math_.h"
 #include "jpeglib_.h"		/* for sdct.h */
@@ -32,6 +19,14 @@
 #include "spngpx.h"
 #include "srlx.h"
 #include "szlibx.h"
+
+/******
+ ****** HACK: The DCTEncode filter causes a crash, because of its
+ ****** complex initialization requirements.  Substitute FlateEncode
+ ****** if available, otherwise don't compress.
+ ******/
+/* Define whether to substitute for the DCTEncode filter. */
+#define SUBSTITUTE_FOR_DCT_ENCODE
 
 /* ---------------- Image compression ---------------- */
 
@@ -113,6 +108,13 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
 	/* Use LZW instead. */
 	template = &s_LZWE_template;
     }
+#ifdef SUBSTITUTE_FOR_DCT_ENCODE
+    if (template == &s_DCTE_template) {
+	if (pdev->version < psdf_version_ll3)
+	    return 0;		/* FlateEncode is not available */
+	template = &s_zlibE_template;
+    }
+#endif
     st = s_alloc_state(pdev->v_memory, template->stype,
 		       "setup_image_compression");
     if (st == 0)
@@ -159,7 +161,8 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
 	}
     } else if (template == &s_DCTE_template) {
 	/****** ADD PARAMETERS FROM pdip->Dict ******/
-    } {
+    }
+    {
 	int code = psdf_encode_binary(pbw, template, st);
 
 	if (code < 0) {

@@ -1,5 +1,6 @@
-/* pop (%!) .skipeof */
-/* Copyright (C) 1989, 1995 Aladdin Enterprises.  All rights reserved.
+/* pop (%!) .skipeof
+
+   Copyright (C) 1989, 1995 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -17,7 +18,7 @@
    all copies.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Simple hardware benchmarking suite (C and PostScript) */
 #include <stdio.h>
 #include <stdlib.h>

@@ -1,22 +1,9 @@
 /* Copyright (C) 1989, 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Generate a header file (arch.h) with parameters */
 /* reflecting the machine architecture and compiler characteristics. */
 
@@ -54,20 +41,13 @@ time_clear(char *buf, int bsize, int nreps)
 private void
 define(FILE *f, const char *str)
 {
-    char upstr[50];
-    int i, c;
-
-    for (i = 0; (c = str[i]) != 0; ++i)
-	upstr[i] = toupper(str[i]);
-    upstr[i] = 0;
-    fprintf(f, "#define %s ", upstr);
+    fprintf(f, "#define %s ", str);
 }
 
 private void
 define_int(FILE *f, const char *str, int value)
 {
-    define(f, str);
-    fprintf(f, "%d\n", value);
+    fprintf(f, "#define %s %d\n", str, value);
 }
 
 const char ff_str[] = "ffffffffffffffff";	/* 8 bytes */
@@ -139,25 +119,25 @@ main(int argc, char *argv[])
     section(f, "Scalar alignments");
 
 #define OFFSET_IN(s, e) (int)((char *)&s.e - (char *)&s)
-    define_int(f, "arch_align_short_mod", OFFSET_IN(ss, s));
-    define_int(f, "arch_align_int_mod", OFFSET_IN(si, i));
-    define_int(f, "arch_align_long_mod", OFFSET_IN(sl, l));
-    define_int(f, "arch_align_ptr_mod", OFFSET_IN(sp, p));
-    define_int(f, "arch_align_float_mod", OFFSET_IN(sf, f));
-    define_int(f, "arch_align_double_mod", OFFSET_IN(sd, d));
+    define_int(f, "ARCH_ALIGN_SHORT_MOD", OFFSET_IN(ss, s));
+    define_int(f, "ARCH_ALIGN_INT_MOD", OFFSET_IN(si, i));
+    define_int(f, "ARCH_ALIGN_LONG_MOD", OFFSET_IN(sl, l));
+    define_int(f, "ARCH_ALIGN_PTR_MOD", OFFSET_IN(sp, p));
+    define_int(f, "ARCH_ALIGN_FLOAT_MOD", OFFSET_IN(sf, f));
+    define_int(f, "ARCH_ALIGN_DOUBLE_MOD", OFFSET_IN(sd, d));
 #undef OFFSET_IN
 
     section(f, "Scalar sizes");
 
-    define_int(f, "arch_log2_sizeof_short", log2s[size_of(short)]);
-    define_int(f, "arch_log2_sizeof_int", log2s[size_of(int)]);
-    define_int(f, "arch_log2_sizeof_long", log2s[size_of(long)]);
-    define_int(f, "arch_sizeof_ptr", size_of(char *));
-    define_int(f, "arch_sizeof_float", size_of(float));
-    define_int(f, "arch_sizeof_double", size_of(double));
+    define_int(f, "ARCH_LOG2_SIZEOF_SHORT", log2s[size_of(short)]);
+    define_int(f, "ARCH_LOG2_SIZEOF_INT", log2s[size_of(int)]);
+    define_int(f, "ARCH_LOG2_SIZEOF_LONG", log2s[size_of(long)]);
+    define_int(f, "ARCH_SIZEOF_PTR", size_of(char *));
+    define_int(f, "ARCH_SIZEOF_FLOAT", size_of(float));
+    define_int(f, "ARCH_SIZEOF_DOUBLE", size_of(double));
     if (floats_are_IEEE) {
-	define_int(f, "arch_float_mantissa_bits", 24);
-	define_int(f, "arch_double_mantissa_bits", 53);
+	define_int(f, "ARCH_FLOAT_MANTISSA_BITS", 24);
+	define_int(f, "ARCH_DOUBLE_MANTISSA_BITS", 53);
     } else {
 	/*
 	 * There isn't any general way to compute the number of mantissa
@@ -165,8 +145,8 @@ main(int argc, char *argv[])
 	 * than binary exponents.  Use conservative values, assuming
 	 * the exponent is stored in a 16-bit word of its own.
 	 */
-	define_int(f, "arch_float_mantissa_bits", sizeof(float) * 8 - 17);
-	define_int(f, "arch_double_mantissa_bits", sizeof(double) * 8 - 17);
+	define_int(f, "ARCH_FLOAT_MANTISSA_BITS", sizeof(float) * 8 - 17);
+	define_int(f, "ARCH_DOUBLE_MANTISSA_BITS", sizeof(double) * 8 - 17);
     }
 
     section(f, "Unsigned max values");
@@ -175,17 +155,16 @@ main(int argc, char *argv[])
   define(f, str);\
   fprintf(f, "((%s)0x%s%s + (%s)0)\n",\
     tstr, ff_str + ff_strlen - size_of(typ) * 2, l, tstr)
-    PRINT_MAX("arch_max_uchar", unsigned char, "unsigned char", "");
-    PRINT_MAX("arch_max_ushort", unsigned short, "unsigned short", "");
+    PRINT_MAX("ARCH_MAX_UCHAR", unsigned char, "unsigned char", "");
+    PRINT_MAX("ARCH_MAX_USHORT", unsigned short, "unsigned short", "");
     /*
      * For uint and ulong, a different approach is required to keep gcc
      * with -Wtraditional from spewing out pointless warnings.
      */
-    define(f, "arch_max_uint");
+    define(f, "ARCH_MAX_UINT");
     fprintf(f, "((unsigned int)~0 + (unsigned int)0)\n");
-    define(f, "arch_max_ulong");
+    define(f, "ARCH_MAX_ULONG");
     fprintf(f, "((unsigned long)~0L + (unsigned long)0)\n");
-
 #undef PRINT_MAX
 
     section(f, "Cache sizes");
@@ -228,7 +207,7 @@ main(int argc, char *argv[])
 	    if (nreps == 0)
 		nreps = 1, t <<= 1;
 	}
-	define_int(f, "arch_cache1_size", bsize >> 1);
+	define_int(f, "ARCH_CACHE1_SIZE", bsize >> 1);
 	/*
 	 * Do the same thing a second time for the secondary cache.
 	 */
@@ -246,28 +225,37 @@ main(int argc, char *argv[])
 	    if (nreps == 0)
 		nreps = 1, t <<= 1;
 	}
-	define_int(f, "arch_cache2_size", bsize >> 1);
+	define_int(f, "ARCH_CACHE2_SIZE", bsize >> 1);
     }
 
     section(f, "Miscellaneous");
 
-    define_int(f, "arch_is_big_endian", 1 - *(char *)&one);
+    define_int(f, "ARCH_IS_BIG_ENDIAN", 1 - *(char *)&one);
     pl0.l = 0;
     pl1.l = -1;
-    define_int(f, "arch_ptrs_are_signed", (pl1.p < pl0.p));
-    define_int(f, "arch_floats_are_IEEE", (floats_are_IEEE ? 1 : 0));
+    define_int(f, "ARCH_PTRS_ARE_SIGNED", (pl1.p < pl0.p));
+    define_int(f, "ARCH_FLOATS_ARE_IEEE", (floats_are_IEEE ? 1 : 0));
 
-    /* There are three cases for arithmetic right shift: */
-    /* always correct, correct except for right-shifting a long by 1 */
-    /* (a bug in some versions of the Turbo C compiler), and */
-    /* never correct. */
+    /*
+     * There are three cases for arithmetic right shift:
+     * always correct, correct except for right-shifting a long by 1
+     * (a bug in some versions of the Turbo C compiler), and
+     * never correct.
+     */
     ars = (lr2 != -1 || ir1 != -1 || ir2 != -1 ? 0 :
 	   lr1 != -1 ? 1 :	/* Turbo C problem */
 	   2);
-    define_int(f, "arch_arith_rshift", ars);
-    /* Some machines can't handle a variable shift by */
-    /* the full width of a long. */
-    define_int(f, "arch_can_shift_full_long", um1 >> lwidth == 0);
+    define_int(f, "ARCH_ARITH_RSHIFT", ars);
+    /*
+     * Some machines can't handle a variable shift by
+     * the full width of a long.
+     */
+    define_int(f, "ARCH_CAN_SHIFT_FULL_LONG", um1 >> lwidth == 0);
+    /*
+     * Determine whether dividing a negative integer by a positive one
+     * takes the floor or truncates toward zero.
+     */
+    define_int(f, "ARCH_DIV_NEG_POS_TRUNCATES", im1 / 2 == 0);
 
 /* ---------------- Done. ---------------- */
 

@@ -17,7 +17,7 @@
 */
 
 
-
+// $RCSfile$ $Revision$
 // Ghostscript DLL loader for Windows
 
 #define STRICT

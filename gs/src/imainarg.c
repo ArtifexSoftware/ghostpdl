@@ -1,22 +1,9 @@
 /* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Command line parsing and dispatching */
 #include "ctype_.h"
 #include "memory_.h"
@@ -792,7 +779,12 @@ print_emulators(void)
 	for (pes = gs_emulator_name_array;
 	     pes->value.const_bytes != 0; pes++
 	    )
-	    fprintf(stdout, " %s", pes->value.const_bytes);
+	    /*
+	     * Even though gs_emulator_name_array is declared and used as
+	     * an array of string refs, each string is actually a
+	     * (null terminated) C string.
+	     */
+	    fprintf(stdout, " %s", (const char *)pes->value.const_bytes);
     }
     fprintf(stdout, "\n");
 }

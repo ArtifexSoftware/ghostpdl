@@ -1,22 +1,9 @@
 /* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Default device bitmap copying implementation */
 #include "gx.h"
 #include "gpcheck.h"
@@ -413,6 +400,7 @@ gx_default_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
     int rwidth = tiles->rep_width;
     int rheight = tiles->rep_height;
     int shift = tiles->shift;
+    gs_id tile_id = tiles->id;
 
     fit_fill_xy(dev, x, y, w, h);
 
@@ -421,8 +409,8 @@ gx_default_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 	int ptx, pty;
 	const byte *ptp = tiles->data;
 
-	dlprintf3("[t]tile %dx%d raster=%d;",
-		  tiles->size.x, tiles->size.y, tiles->raster);
+	dlprintf4("[t]tile %dx%d raster=%d id=%lu;",
+		  tiles->size.x, tiles->size.y, tiles->raster, tiles->id);
 	dlprintf6(" x,y=%d,%d w,h=%d,%d p=%d,%d\n",
 		  x, y, w, h, px, py);
 	dlputs("");
@@ -481,53 +469,59 @@ gx_default_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 	else
 	    proc_color = 0, proc_mono = dev_proc(dev, copy_mono);
 
-/****** SHOULD ALSO PASS id IF COPYING A FULL TILE ******/
-#define real_copy_tile(srcx, tx, ty, tw, th)\
+#define real_copy_tile(srcx, tx, ty, tw, th, id)\
   code =\
     (proc_color != 0 ?\
-     (*proc_color)(dev, row, srcx, raster, gx_no_bitmap_id, tx, ty, tw, th) :\
-     (*proc_mono)(dev, row, srcx, raster, gx_no_bitmap_id, tx, ty, tw, th, color0, color1));\
-  if ( code < 0 ) return_error(code);\
+     (*proc_color)(dev, row, srcx, raster, id, tx, ty, tw, th) :\
+     (*proc_mono)(dev, row, srcx, raster, id, tx, ty, tw, th, color0, color1));\
+  if (code < 0) return_error(code);\
   return_if_interrupt()
 #ifdef DEBUG
-#define copy_tile(srcx, tx, ty, tw, th)\
-  if_debug5('t', "   copy sx=%d => x=%d y=%d w=%d h=%d\n",\
-	    srcx, tx, ty, tw, th);\
-  real_copy_tile(srcx, tx, ty, tw, th)
+#define copy_tile(srcx, tx, ty, tw, th, tid)\
+  if_debug6('t', "   copy id=%lu sx=%d => x=%d y=%d w=%d h=%d\n",\
+	    tid, srcx, tx, ty, tw, th);\
+  real_copy_tile(srcx, tx, ty, tw, th, tid)
 #else
-#define copy_tile(srcx, tx, ty, tw, th)\
-  real_copy_tile(srcx, tx, ty, tw, th)
+#define copy_tile(srcx, tx, ty, tw, th, id)\
+  real_copy_tile(srcx, tx, ty, tw, th, id)
 #endif
 	if (ch >= h) {		/* Shallow operation */
 	    if (icw >= w) {	/* Just one (partial) tile to transfer. */
-		copy_tile(irx, x, y, w, h);
+		copy_tile(irx, x, y, w, h,
+			  (w == width && h == height ? tile_id :
+			   gs_no_bitmap_id));
 	    } else {
 		int ex = x + w;
 		int fex = ex - width;
 		int cx = x + icw;
+		ulong id = (h == height ? tile_id : gs_no_bitmap_id);
 
-		copy_tile(irx, x, y, icw, h);
+		copy_tile(irx, x, y, icw, h, gs_no_bitmap_id);
 		while (cx <= fex) {
-		    copy_tile(0, cx, y, width, h);
+		    copy_tile(0, cx, y, width, h, id);
 		    cx += width;
 		}
 		if (cx < ex) {
-		    copy_tile(0, cx, y, ex - cx, h);
+		    copy_tile(0, cx, y, ex - cx, h, gs_no_bitmap_id);
 		}
 	    }
-	} else if (icw >= w && shift == 0) {	/* Narrow operation, no shift */
+	} else if (icw >= w && shift == 0) {
+	    /* Narrow operation, no shift */
 	    int ey = y + h;
 	    int fey = ey - height;
 	    int cy = y + ch;
+	    ulong id = (w == width ? tile_id : gs_no_bitmap_id);
 
-	    copy_tile(irx, x, y, w, ch);
+	    copy_tile(irx, x, y, w, ch, (ch == height ? id : gs_no_bitmap_id));
 	    row = tiles->data;
 	    do {
 		ch = (cy > fey ? ey - cy : height);
-		copy_tile(irx, x, cy, w, ch);
+		copy_tile(irx, x, cy, w, ch,
+			  (ch == height ? id : gs_no_bitmap_id));
 	    }
 	    while ((cy += ch) < ey);
-	} else {		/* Full operation.  If shift != 0, some scan lines */
+	} else {
+	    /* Full operation.  If shift != 0, some scan lines */
 	    /* may be narrow.  We could test shift == 0 in advance */
 	    /* and use a slightly faster loop, but right now */
 	    /* we don't bother. */
@@ -536,17 +530,20 @@ gx_default_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 	    int cx, cy;
 
 	    for (cy = y;;) {
+		ulong id = (ch == height ? tile_id : gs_no_bitmap_id);
+
 		if (icw >= w) {
-		    copy_tile(irx, x, cy, w, ch);
+		    copy_tile(irx, x, cy, w, ch,
+			      (w == width ? id : gs_no_bitmap_id));
 		} else {
-		    copy_tile(irx, x, cy, icw, ch);
+		    copy_tile(irx, x, cy, icw, ch, gs_no_bitmap_id);
 		    cx = x + icw;
 		    while (cx <= fex) {
-			copy_tile(0, cx, cy, width, ch);
+			copy_tile(0, cx, cy, width, ch, id);
 			cx += width;
 		    }
 		    if (cx < ex) {
-			copy_tile(0, cx, cy, ex - cx, ch);
+			copy_tile(0, cx, cy, ex - cx, ch, gs_no_bitmap_id);
 		    }
 		}
 		if ((cy += ch) >= ey)

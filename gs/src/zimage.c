@@ -1,22 +1,9 @@
 /* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Image operators */
 #include "ghost.h"
 #include "oper.h"
@@ -368,26 +355,22 @@ image_file_continue(i_ctx_t *i_ctx_p)
 	    if (num_aliases <= 0)
 		continue;	/* this is an alias for an earlier file */
 	    while ((avail = sbufavailable(s)) < min_left + num_aliases) {
-		/****** REFILL BUFFER, NOT sgetc ******/
-		int next = sgetc(s);
+		int next = s->end_status;
 
-		if (next >= 0) {
-		    sputback(s);
-		    if (s->end_status == EOFC || s->end_status == ERRC)
-			min_left = 0;
-		    continue;
-		}
 		switch (next) {
-		    case EOFC:
-			break;	/* with avail = 0 */
-		    case INTC:
-		    case CALLC:
-			return
-			    s_handle_read_exception(i_ctx_p, next, pp,
-					      NULL, 0, image_file_continue);
-		    default:
-			/* case ERRC: */
-			return_error(e_ioerror);
+		case 0:
+		    s_process_read_buf(s);
+		    continue;
+		case EOFC:
+		    break;	/* with avail < min_left */
+		case INTC:
+		case CALLC:
+		    return
+			s_handle_read_exception(i_ctx_p, next, pp,
+						NULL, 0, image_file_continue);
+		default:
+		    /* case ERRC: */
+		    return_error(e_ioerror);
 		}
 		break;		/* for EOFC */
 	    }

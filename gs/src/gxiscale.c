@@ -1,22 +1,9 @@
 /* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Interpolated image procedures */
 #include "gx.h"
 #include "math_.h"
@@ -75,14 +62,14 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
 	return 0;
     }
     /*
-     * We used to interpolate using a digital filter, rather than Adobe's
-     * spatial interpolation algorithm: this produced very bad-looking
-     * results if the input resolution was close to the output resolution,
-     * especially if the input had low color resolution, and we resorted to
+     * We interpolate using a digital filter, rather than Adobe's
+     * spatial interpolation algorithm: this produces very bad-looking
+     * results if the input resolution is close to the output resolution,
+     * especially if the input has low color resolution, so we resort to
      * some hack tests on the input color resolution and scale to suppress
-     * interpolation if we thought the result would look especially bad.
-     * If we use Adobe's spatial interpolation approach, we don't need
-     * to do this.
+     * interpolation if we think the result would look especially bad.
+     * If we used Adobe's spatial interpolation approach, we wouldn't need
+     * to do this, but the spatial interpolation filter doesn't work yet.
      */
 #ifdef USE_MITCHELL_FILTERX
     if (penum->bps < 4 || penum->bps * penum->spp < 8 ||
@@ -106,7 +93,10 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     if (penum->bps <= 8 && penum->device_color) {
 	iss.BitsPerComponentIn = 8;
 	iss.MaxValueIn = 0xff;
-	in_size = 0;
+	in_size =
+	    (penum->matrix.xx < 0 ?
+	     /* We need a buffer for reversing each scan line. */
+	     iss.WidthIn * iss.Colors : 0);
     } else {
 	iss.BitsPerComponentIn = sizeof(frac) * 8;
 	iss.MaxValueIn = frac_1;
@@ -179,7 +169,20 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 
 	if (sizeofPixelIn == 1) {
 	    /* Easy case: 8-bit device color values. */
-	    r.ptr = bdata - 1;
+	    if (penum->matrix.xx >= 0) {
+		/* Use the input data directly. */
+		r.ptr = bdata - 1;
+	    } else {
+		/* Mirror the data in X. */
+		const byte *p = bdata + row_size - c;
+		byte *q = out;
+		int i;
+
+		for (i = 0; i < pss->params.WidthIn; p -= c, q += c, ++i)
+		    memcpy(q, p, c);
+		r.ptr = out - 1;
+		out = q;
+	    }
 	} else {
 	    /* Messy case: concretize each sample. */
 	    int bps = penum->bps;
@@ -243,7 +246,7 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 	    int x;
 	    const frac *psrc;
 	    gx_device_color devc;
-	    int code;
+	    int status, code;
 
 	    DECLARE_LINE_ACCUM_COPY(out, bpp, xo);
 
@@ -251,9 +254,9 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 		max(c * sizeofPixelOut, sizeof(gx_color_index)) - 1;
 	    w.ptr = w.limit - width * c * sizeofPixelOut;
 	    psrc = (const frac *)(w.ptr + 1);
-	    code = (*pss->template->process)
+	    status = (*pss->template->process)
 		((stream_state *) pss, &r, &w, h == 0);
-	    if (code < 0 && code != EOFC)
+	    if (status < 0 && status != EOFC)
 		return_error(gs_error_ioerror);
 	    if (w.ptr == w.limit) {
 		int xe = xo + width;
@@ -307,7 +310,7 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 		penum->line_xy++;
 		if_debug0('B', "\n");
 	    }
-	    if ((code == 0 && r.ptr == r.limit) || code == EOFC)
+	    if ((status == 0 && r.ptr == r.limit) || status == EOFC)
 		break;
 	}
     }

@@ -1,22 +1,10 @@
 /* Copyright (C) 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
+/* Structure definitions for standard allocator */
 /* Requires gsmemory.h, gsstruct.h */
 
 #ifndef gxalloc_INCLUDED
@@ -450,7 +438,10 @@ void debug_print_chunk(P1(const chunk_t * cp));	/* default options */
 /* Print the contents of all chunks managed by an allocator. */
 /* Relevant options: all. */
 void debug_dump_memory(P2(const gs_ref_memory_t * mem,
-    const dump_control_t * control));
+			  const dump_control_t * control));
+
+/* Find all the objects that contain a given pointer. */
+void debug_find_pointers(P2(const gs_ref_memory_t *mem, const void *target));
 
 #endif /* DEBUG */
 

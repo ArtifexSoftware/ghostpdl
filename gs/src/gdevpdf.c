@@ -1,22 +1,9 @@
 /* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* PDF-writing driver */
 #include "memory_.h"
 #include "string_.h"
@@ -25,6 +12,11 @@
 #include "gscdefs.h"
 #include "gxdevice.h"
 #include "gdevpdfx.h"
+
+/* Define the default language level and PDF compatibility level. */
+/* Acrobat 3 (PDF 1.2) is the default. */
+#define PSDF_VERSION_INITIAL psdf_version_level2
+#define PDF_COMPATIBILITY_LEVEL_INITIAL 1.2
 
 /* Define the names of the resource types. */
 private const char *const resource_type_names[] = {
@@ -47,6 +39,9 @@ private
 ENUM_PTRS_WITH(device_pdfwrite_enum_ptrs, gx_device_pdf *pdev)
 {
     index -= gx_device_pdf_num_ptrs + gx_device_pdf_num_strings;
+    if (index < PDF_NUM_STD_FONTS)
+	ENUM_RETURN(pdev->std_fonts[index].font);
+    index -= PDF_NUM_STD_FONTS;
     if (index < NUM_RESOURCE_TYPES * NUM_RESOURCE_CHAINS)
 	ENUM_RETURN(pdev->resources[index / NUM_RESOURCE_CHAINS].chains[index % NUM_RESOURCE_CHAINS]);
     index -= NUM_RESOURCE_TYPES * NUM_RESOURCE_CHAINS;
@@ -77,6 +72,8 @@ private RELOC_PTRS_WITH(device_pdfwrite_reloc_ptrs, gx_device_pdf *pdev)
     {
 	int i, j;
 
+	for (i = 0; i < PDF_NUM_STD_FONTS; ++i)
+	    RELOC_PTR(gx_device_pdf, std_fonts[i].font);
 	for (i = 0; i < NUM_RESOURCE_TYPES; ++i)
 	    for (j = 0; j < NUM_RESOURCE_CHAINS; ++j)
 		RELOC_PTR(gx_device_pdf, resources[i].chains[j]);
@@ -157,10 +154,27 @@ const gx_device_pdf gs_pdfwrite_device =
   NULL,				/* map_color_rgb_alpha */
   NULL,				/* create_compositor */
   NULL,				/* get_hardware_params */
-  gdev_pdf_text_begin
+  /****************************************************************
+   *
+   * Temporarily disable text handling in the PDF writer.  We will
+   * re-enable it in the next beta release.
+   *
+   ****************************************************************/
+  0 /****** gdev_pdf_text_begin ******/
  },
- psdf_initial_values(psdf_version_ll3, 0 /*false */ ),	/* (!ASCII85EncodePages) */
- 1.3,				/* CompatibilityLevel */
+ psdf_initial_values(PSDF_VERSION_INITIAL, 0 /*false */ ),  /* (!ASCII85EncodePages) */
+ PDF_COMPATIBILITY_LEVEL_INITIAL,  /* CompatibilityLevel */
+#ifdef POST60
+ 0 /*false*/,			/* Optimize */
+ 0 /*false*/,			/* ParseDSCCommentsForDocInfo */
+ 0 /*false*/,			/* ParseDSCComments */
+ 0 /*false*/,			/* EmitDSCWarnings */
+ 0 /*false*/,			/* CreateJobTicket */
+ 0 /*false*/,			/* PreserveEPSInfo */
+ 0 /*false*/,			/* AutoPositionEPSFile */
+ 0 /*false*/,			/* PreserveCopyPage */
+ 0 /*false*/,			/* UsePrologue */
+#endif
  1 /*true */ ,			/* ReAssignCharacters */
  1 /*true */ ,			/* ReEncodeCharacters */
  1,				/* FirstObjectNumber */
@@ -182,9 +196,8 @@ const gx_device_pdf gs_pdfwrite_device =
  0,				/* contents_length_id */
  0,				/* contents_pos */
  NoMarks,			/* procsets */
- -1,				/* flatness */
- {gx_line_params_initial},	/* line_params */
  {pdf_text_state_default},	/* text */
+ {{0}},				/* std_fonts */
  {0},				/* space_char_ids */
  0,				/* pages */
  0,				/* num_pages */
@@ -567,19 +580,20 @@ pdf_close(gx_device * dev)
     long resource_pos;
     long Catalog_id = pdev->Catalog->id, Info_id = pdev->Info->id,
 	Pages_id = pdev->Pages->id;
+    long Threads_id = 0;
+    bool partial_page = (pdev->contents_id != 0 && pdev->next_page != 0);
 
     /*
-     * If this is an EPS file, or if the file has produced no marks
-     * at all, we need to tidy up a little so as not to produce
-     * illegal PDF.  We recognize EPS files as having some contents
-     * but no showpage.
+     * If this is an EPS file, or if the file didn't end with a showpage for
+     * some other reason, or if the file has produced no marks at all, we
+     * need to tidy up a little so as not to produce illegal PDF.  However,
+     * if there is at least one complete page, we discard any leftover
+     * marks.
      */
-    if (pdev->next_page == 0) {
+    if (pdev->next_page == 0)
 	pdf_open_document(pdev);
-	if (pdev->contents_id != 0) {
-	    pdf_close_page(pdev);
-	}
-    }
+    if (pdev->contents_id != 0)
+	pdf_close_page(pdev);
 
     /* Write the page objects. */
 
@@ -599,6 +613,9 @@ pdf_close(gx_device * dev)
     pdf_open_obj(pdev, Pages_id);
     s = pdev->strm;
     pputs(s, "<< /Type /Pages /Kids [\n");
+    /* Omit the last page if it was incomplete. */
+    if (partial_page)
+	--(pdev->next_page);
     {
 	int i;
 
@@ -636,16 +653,16 @@ pdf_close(gx_device * dev)
 
     /* Write the Catalog. */
 
-    pdf_open_obj(pdev, Catalog_id);
-    s = pdev->strm;
-    pputs(s, "<<");
-    pprintld1(s, "/Type /Catalog /Pages %ld 0 R\n", Pages_id);
-    if (pdev->outlines_id != 0)
-	pprintld1(s, "/Outlines %ld 0 R\n", pdev->outlines_id);
+    /*
+     * The PDF specification requires Threads to be an indirect object.
+     * Write the threads now, if any.
+     */
     if (pdev->articles != 0) {
 	pdf_article_t *part;
 
-	pputs(s, "/Threads [ ");
+	Threads_id = pdf_begin_obj(pdev);
+	s = pdev->strm;
+	pputs(s, "[ ");
 	while ((part = pdev->articles) != 0) {
 	    pdev->articles = part->next;
 	    pprintld1(s, "%ld 0 R\n", part->contents->id);
@@ -653,7 +670,16 @@ pdf_close(gx_device * dev)
 	    gs_free_object(mem, part, "pdf_close(article)");
 	}
 	pputs(s, "]\n");
+	pdf_end_obj(pdev);
     }
+    pdf_open_obj(pdev, Catalog_id);
+    s = pdev->strm;
+    pputs(s, "<<");
+    pprintld1(s, "/Type /Catalog /Pages %ld 0 R\n", Pages_id);
+    if (pdev->outlines_id != 0)
+	pprintld1(s, "/Outlines %ld 0 R\n", pdev->outlines_id);
+    if (Threads_id)
+	pprintld1(s, "/Threads %ld 0 R\n", Threads_id);
     if (pdev->Dests)
 	pprintld1(s, "/Dests %ld 0 R\n", pdev->Dests->id);
     cos_dict_elements_write(pdev->Catalog, pdev);

@@ -1,22 +1,9 @@
 /* Copyright (C) 1989, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Stream package for Ghostscript interpreter */
 #include "stdio_.h"		/* includes std.h */
 #include "memory_.h"
@@ -712,15 +699,20 @@ sreadbuf(stream * s, stream_cursor_write * pbuf)
 	    stream_cursor_read cr;
 	    stream_cursor_read *pr;
 	    stream_cursor_write *pw;
+	    int left;
 	    bool eof;
 
 	    strm = curr->strm;
 	    if (strm == 0) {
 		cr.ptr = 0, cr.limit = 0;
 		pr = &cr;
+		left = 0;
 		eof = false;
 	    } else {
 		pr = &strm->cursor.r;
+		left = sbuf_min_left(strm);
+		left = min(left, pr->limit - pr->ptr);
+		pr->limit -= left;
 		eof = strm->end_status == EOFC;
 	    }
 	    pw = (prev == 0 ? pbuf : &curr->cursor.w);
@@ -728,6 +720,7 @@ sreadbuf(stream * s, stream_cursor_write * pbuf)
 		      (ulong) curr, (uint) (pr->limit - pr->ptr),
 		      (uint) (pw->limit - pw->ptr), eof);
 	    status = (*curr->procs.process) (curr->state, pr, pw, eof);
+	    pr->limit += left;
 	    if_debug4('s', "[s]after read 0x%lx, nr=%u, nw=%u, status=%d\n",
 		      (ulong) curr, (uint) (pr->limit - pr->ptr),
 		      (uint) (pw->limit - pw->ptr), status);

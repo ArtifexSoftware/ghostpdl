@@ -1,7 +1,7 @@
 <html>
 <head>
 <title>ps2pdf: PostScript-to-PDF converter</title>
-
+<!-- $RCSfile$ $Revision$ -->
 <!-- Originally: ps2pdf.txt -->
 </head>
 
@@ -107,35 +107,42 @@ set PS2PDFGS=gs386
 </tt></b></blockquote>
 
 <p>
-Note that to run <b><tt>ps2pdf</tt></b> on MS Windows, you need the DOS executable: the
-Windows Program Manager's "<b><tt>run</tt></b> command doesn't allow you to run <b><tt>.bat</tt></b> files.
-Alternatively you can run the "console mode" Windows executable by changing
-the line above to
+Note that to run <b><tt>ps2pdf</tt></b> on MS Windows, you need the DOS
+executable: the Windows Program Manager's "<b><tt>run</tt></b>" command
+doesn't allow you to run <b><tt>.bat</tt></b> files.  Alternatively you can
+run the "console mode" Windows executable by changing the line above to
 
 <blockquote><b><tt>
 set PS2PDFGS=gswin32c
 </tt></b></blockquote>
+
+<p>
+By default, <b><tt>ps2pdf</tt></b> produces PDF 1.2 output (compatible with
+Acrobat 3 and later).  To produce PDF 1.3 output (compatible only with
+Acrobat 4 and later), specify <b><tt>-dCompatibilityLevel=1.3</tt></b> in
+the list of options.
 
 <hr>
 
 <h1><a name="Limitations"></a>Limitations</h1>
 
 <p>
-In a few situations, <b><tt>ps2pdf</tt></b> will convert text to
+In some situations, <b><tt>ps2pdf</tt></b> will convert text to
 high-resolution bitmapped fonts rather than to embedded outline fonts.  This
 may occur when the PostScript file uses embedded Multiple Master or
 CID-keyed fonts, or in some cases if it uses fonts with non-standard
 encodings.
 
 <p>
-The PDF output always represents colors and images in DeviceGray or
-DeviceRGB color space.  All other color spaces are converted to these.
+The PDF output always represents the colors of text and graphics in
+DeviceGray or DeviceRGB color space; all other color spaces are converted to
+these.  However, it correctly retains the original color space for images.
 
 <p>
 <b><tt>ps2pdf</tt></b> implements <b><tt>setdistillerparams</tt></b>, and
-recognizes all of the parameters documented in Adobe Technical Note #5151
-except for the <b><tt>ImageDict</tt></b> parameters, but only a subset have
-an effect:
+recognizes all of the Acrobat Distiller 3 parameters documented in Adobe
+Technical Note #5151 except for the <b><tt>ImageDict</tt></b> parameters,
+but only a subset have an effect:
 
 <blockquote><table cellpadding=0 cellspacing=0>
 <tr valign=bottom>
@@ -207,6 +214,11 @@ document content structure: <b><tt>StRoleMap</tt></b>,
 omitted from the output file, the displayed and printed output are normally
 not affected.
 
+<p>
+<b><tt>ps2pdf</tt></b> does not implement the Acrobat Distiller 4
+parameters.  Settings for these parameters will be ignored, except that
+setting the <b><tt>EndPage</tt></b> parameter will cause an error.
+
 <hr>
 
 <h1><a name="Problems"></a>Known problems</h1>
@@ -221,8 +233,9 @@ Amber.  (Adobe may have fixed this problem by now.)
 
 <p>
 There appear to be bugs in all versions of Acrobat Reader that cause them to
-process some embedded TrueType fonts incorrectly.  <b><tt>ps2pdf</tt></b>
-does not yet work around these bugs.
+process some embedded fonts incorrectly, especially if the original input
+file contained multiple different fonts with the same name.
+<b><tt>ps2pdf</tt></b> does not yet work around these bugs.
 
 <hr>
 
@@ -252,7 +265,7 @@ as a post-processor during routine document creation."]
 <h1><a name="Acknowledgments"></a>Acknowledgments</h1>
 
 <p>
-Thanks to George N. White III &lt;aa056@chebucto.ns.ca&gt; of the Ocean
+Thanks to George N. White III &lt;<a href="mailto:aa056@chebucto.ns.ca">aa056@chebucto.ns.ca</a>&gt; of the Ocean
 Sciences Division of the Bedford Institute of Oceanography in Dartmouth,
 Nova Scotia for extensive testing of early versions of
 <b><tt>ps2pdf</tt></b>, and for contributing most of this writeup.
@@ -272,7 +285,7 @@ full details of the terms of using, copying, modifying, and redistributing
 Aladdin Ghostscript.
 
 <p>
-Ghostscript version 5.91, 30 August 1999
+Ghostscript version 5.96, 12 November 1999
 
 </font>
 

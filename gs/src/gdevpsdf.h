@@ -1,22 +1,9 @@
 /* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Common output syntax and parameters for PostScript and PDF writers */
 
 #ifndef gdevpsdf_INCLUDED
@@ -29,6 +16,8 @@
 #include "scfx.h"
 #include "spsdf.h"
 
+/*#define POST60*/
+
 extern const stream_template s_DCTE_template; /* don't want all of sdct.h */
 
 /*
@@ -39,6 +28,12 @@ extern const stream_template s_DCTE_template; /* don't want all of sdct.h */
 
 /* ---------------- Distiller parameters ---------------- */
 
+#ifdef POST60
+#define POST60_VALUE(v) v,
+#else
+#define POST60_VALUE(v) /* */
+#endif
+
 /* Parameters for controlling distillation of images. */
 typedef struct psdf_image_params_s {
     stream_state *ACSDict;	/* JPEG */
@@ -47,8 +42,14 @@ typedef struct psdf_image_params_s {
     int Depth;
     stream_state *Dict;		/* JPEG or CCITTFax */
     bool Downsample;
+#ifdef POST60
+    float DownsampleThreshold;
+#endif
     enum psdf_downsample_type {
 	ds_Average,
+#ifdef POST60
+	ds_Bicubic,
+#endif
 	ds_Subsample
     } DownsampleType;
     bool Encode;
@@ -57,9 +58,9 @@ typedef struct psdf_image_params_s {
     const stream_template *filter_template;
 } psdf_image_params;
 
-#define psdf_image_param_defaults(af, res, f, ft)\
+#define psdf_image_param_defaults(af, res, dst, f, ft)\
   NULL/*ACSDict*/, 0/*false*/, af, -1, NULL/*Dict*/, 0/*false*/,\
-  ds_Subsample, 1/*true*/, f, res, ft
+  POST60_VALUE(dst) ds_Subsample, 1/*true*/, f, res, ft
 
 /* Declare templates for default image compression filters. */
 extern const stream_template s_CFE_template;
@@ -75,12 +76,39 @@ typedef struct psdf_distiller_params_s {
 	arp_All,
 	arp_PageByPage
     } AutoRotatePages;
+#ifdef POST60
+    enum psdf_binding {
+	binding_Left,
+	binding_Right
+    } Binding;
+#endif
     bool CompressPages;
+#ifdef POST60
+    enum psdf_default_rendering_intent {
+	ri_Default,
+	ri_Perceptual,
+	ri_Saturation,
+	ri_RelativeColorimetric,
+	ri_AbsoluteColorimetric
+    } DefaultRenderingIntent;
+    bool DetectBlends;
+    bool DoThumbnails;
+    int EndPage;
+#endif
     long ImageMemory;
+#ifdef POST60
+    bool LockDistillerParams;
+#endif
     bool LZWEncodePages;
+#ifdef POST60
+    int OPM;
+#endif
     bool PreserveHalftoneInfo;
     bool PreserveOPIComments;
     bool PreserveOverprintSettings;
+#ifdef POST60
+    int StartPage;
+#endif
     enum psdf_transfer_function_info {
 	tfi_Preserve,
 	tfi_Apply,
@@ -92,45 +120,69 @@ typedef struct psdf_distiller_params_s {
     } UCRandBGInfo;
     bool UseFlateCompression;
 #define psdf_general_param_defaults(ascii)\
-  ascii, arp_None, 1/*true*/, 250000, 0/*false*/,\
-  0/*false*/, 0/*false*/, 0/*false*/, tfi_Apply, ucrbg_Remove, 1	/*true */
+  ascii, arp_None, POST60_VALUE(binding_Left) 1/*true*/,\
+  POST60_VALUE(ri_Default) POST60_VALUE(0 /*false*/)\
+  POST60_VALUE(0 /*false*/) POST60_VALUE(-1)\
+  250000, POST60_VALUE(0 /*false*/) 0/*false*/, POST60_VALUE(0)\
+  0/*false*/, 0/*false*/, 0/*false*/, POST60_VALUE(-1)\
+  tfi_Apply, ucrbg_Remove, 1 /*true*/
 
     /* Color sampled image parameters */
 
     psdf_image_params ColorImage;
+#ifdef POST60
+    /* We're guessing that the xxxProfile parameters are ICC profiles. */
+    gs_const_string CalCMYKProfile;
+    gs_const_string CalGrayProfile;
+    gs_const_string CalRGBProfile;
+    gs_const_string sRGBProfile;
+#endif
     enum psdf_color_conversion_strategy {
 	ccs_LeaveColorUnchanged,
+#ifdef POST60
+	ccs_UseDeviceIndependentColor,
+	ccs_UseDeviceIndependentColorForImages,
+	ccs_sRGB
+#else
 	ccs_UseDeviceDependentColor,
 	ccs_UseDeviceIndependentColor
+#endif
     } ColorConversionStrategy;
     bool ConvertCMYKImagesToRGB;
     bool ConvertImagesToIndexed;
 #define psdf_color_image_param_defaults\
-  { psdf_image_param_defaults(1/*true*/, 72, 0/*"DCTEncode"*/, 0/*&s_DCTE_template*/) },\
+  { psdf_image_param_defaults(1/*true*/, 72, 1.5, 0/*"DCTEncode"*/, 0/*&s_DCTE_template*/) },\
+  POST60_VALUE({0}) POST60_VALUE({0}) POST60_VALUE({0}) POST60_VALUE({0})\
   ccs_LeaveColorUnchanged, 1/*true*/, 0/*false */
 
     /* Grayscale sampled image parameters */
 
     psdf_image_params GrayImage;
 #define psdf_gray_image_param_defaults\
-  { psdf_image_param_defaults(1/*true*/, 72, 0/*"DCTEncode"*/, 0/*&s_DCTE_template*/) }
+  { psdf_image_param_defaults(1/*true*/, 72, 2.0, 0/*"DCTEncode"*/, 0/*&s_DCTE_template*/) }
 
     /* Monochrome sampled image parameters */
 
     psdf_image_params MonoImage;
 #define psdf_mono_image_param_defaults\
-  { psdf_image_param_defaults(0/*false*/, 300, "CCITTFaxEncode", &s_CFE_template) }
+  { psdf_image_param_defaults(0/*false*/, 300, 2.0, "CCITTFaxEncode", &s_CFE_template) }
 
     /* Font embedding parameters */
 
     gs_param_string_array AlwaysEmbed;
     gs_param_string_array NeverEmbed;
+#ifdef POST60
+    enum psdf_cannot_embed_font_policy {
+	cefp_OK,
+	cefp_Warning,
+	cefp_Error
+    } CannotEmbedFontPolicy;
+#endif
     bool EmbedAllFonts;
-    bool SubsetFonts;
     int MaxSubsetPct;
+    bool SubsetFonts;
 #define psdf_font_param_defaults\
-  	    { 0, 0, 1/*true*/ }, { 0, 0, 1/*true*/ },\
-	   1/*true*/, 1/*true*/, 20
+  {0}, {0}, POST60_VALUE(cefp_OK) 1/*true*/, 35, 1/*true*/
 
 } psdf_distiller_params;
 
@@ -168,10 +220,24 @@ typedef struct gx_device_psdf_s {
 /* extern its descriptor for the sake of subclasses. */
 extern_st(st_device_psdf);
 #define public_st_device_psdf()	/* in gdevpsdf.c */\
-  gs_public_st_suffix_add0_final(st_device_psdf, gx_device_psdf,\
-    "gx_device_psdf", device_psdf_enum_ptrs,\
-    device_psdf_reloc_ptrs, gx_device_finalize, st_device_vector)
-#define st_device_psdf_max_ptrs (st_device_vector_max_ptrs)
+  BASIC_PTRS(device_psdf_ptrs) {\
+    GC_OBJ_ELT2(gx_device_psdf, params.ColorImage.ACSDict,\
+		params.ColorImage.Dict),\
+    POST60_VALUE(GC_CONST_STRING_ELT(gx_device_psdf, CalCMYKProfile))\
+    POST60_VALUE(GC_CONST_STRING_ELT(gx_device_psdf, CalGrayProfile))\
+    POST60_VALUE(GC_CONST_STRING_ELT(gx_device_psdf, CalRGBProfile))\
+    POST60_VALUE(GC_CONST_STRING_ELT(gx_device_psdf, sRGBProfile))\
+    GC_OBJ_ELT2(gx_device_psdf, params.GrayImage.ACSDict,\
+		params.GrayImage.Dict),\
+    GC_OBJ_ELT2(gx_device_psdf, params.MonoImage.ACSDict,\
+		params.MonoImage.Dict),\
+    GC_OBJ_ELT2(gx_device_psdf, params.AlwaysEmbed.data,\
+		params.NeverEmbed.data)\
+  };\
+  gs_public_st_basic_super_final(st_device_psdf, gx_device_psdf,\
+    "gx_device_psdf", device_psdf_ptrs, device_psdf_data,\
+    &st_device_vector, 0, gx_device_finalize)
+#define st_device_psdf_max_ptrs (st_device_vector_max_ptrs + 12)
 
 /* Get/put parameters. */
 dev_proc_get_params(gdev_psdf_get_params);
@@ -275,11 +341,15 @@ void psdf_enumerate_glyphs_begin(P5(psdf_glyph_enum_t *ppge, gs_font *font,
 				    uint subset_size,
 				    gs_glyph_space_t glyph_space));
 
-/* Reset a glyph enumeration. */
+/*
+ * Reset a glyph enumeration.
+ */
 void psdf_enumerate_glyphs_reset(P1(psdf_glyph_enum_t *ppge));
 
-/* Enumerate the next glyph in a font or a font subset. */
-/* Return 0 if more glyphs, 1 if done, <0 if error. */
+/*
+ * Enumerate the next glyph in a font or a font subset.
+ * Return 0 if more glyphs, 1 if done, <0 if error.
+ */
 int psdf_enumerate_glyphs_next(P2(psdf_glyph_enum_t *ppge, gs_glyph *pglyph));
 
 /*
@@ -290,10 +360,25 @@ int psdf_subset_glyphs(P3(gs_glyph glyphs[256], gs_font *font,
 			  const byte used[32]));
 
 /*
+ * Add composite glyph pieces to a list of glyphs.  Does not sort or
+ * remove duplicates.  max_pieces is the maximum number of pieces that a
+ * single glyph can have: if this value is not known, the caller should
+ * use max_count.
+ */
+int psdf_add_subset_pieces(P5(gs_glyph *glyphs, uint *pcount, uint max_count,
+			      uint max_pieces, gs_font *font));
+
+/*
  * Sort a list of glyphs and remove duplicates.  Return the number of glyphs
  * in the result.
  */
 int psdf_sort_glyphs(P2(gs_glyph *glyphs, int count));
+
+/*
+ * Determine whether a sorted list of glyphs includes a given glyph.
+ */
+bool psdf_sorted_glyphs_include(P3(const gs_glyph *glyphs, int count,
+				   gs_glyph glyph));
 
 /* ------ Exported by gdevpsd1.c ------ */
 
@@ -328,6 +413,7 @@ typedef struct gs_font_type42_s gs_font_type42;
 #define WRITE_TRUETYPE_CMAP 1	/* generate cmap from the Encoding */
 #define WRITE_TRUETYPE_NAME 2	/* generate name if missing */
 #define WRITE_TRUETYPE_POST 4	/* generate post if missing */
+#define WRITE_TRUETYPE_NO_TRIMMED_TABLE 8  /* not OK to use cmap format 6 */
 int psdf_write_truetype_font(P6(stream *s, gs_font_type42 *pfont, int options,
 				gs_glyph *subset_glyphs, uint subset_size,
 				const gs_const_string *alt_font_name));

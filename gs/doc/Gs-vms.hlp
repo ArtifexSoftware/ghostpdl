@@ -1,7 +1,7 @@
 1 gs
  gs - Aladdin Ghostscript interpreter/previewer
-
-! Ghostscript version 5.91, 30 August 1999
+! $RCSfile$ $Revision$
+! Ghostscript version 5.96, 12 November 1999
   Usage:
    $ gs [options] [file ...]
 

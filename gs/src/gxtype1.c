@@ -1,22 +1,9 @@
 /* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Adobe Type 1 font interpreter support */
 #include "math_.h"
 #include "gx.h"
@@ -377,7 +364,8 @@ gs_type1_seac(gs_type1_state * pcis, const fixed * cstack, fixed asb,
 
     /* Save away all the operands. */
     pcis->seac_accent = fixed2int_var(cstack[3]);
-    pcis->save_asb = asb - pcis->lsb.x;
+    pcis->save_asb = asb;
+    pcis->save_lsb = pcis->lsb;
     pcis->save_adxy.x = cstack[0];
     pcis->save_adxy.y = cstack[1];
     pcis->os_count = 0;		/* clear */
@@ -416,11 +404,11 @@ gs_type1_endchar(gs_type1_state * pcis)
 	/* Reset the coordinate system origin */
 	sfc = pcis->fc;
 	ptx = pcis->origin.x, pty = pcis->origin.y;
-	pcis->asb_diff = pcis->save_asb;
+	pcis->asb_diff = pcis->save_asb - pcis->save_lsb.x;
 	pcis->adxy = pcis->save_adxy;
 	/*
-	 * We're going to add in the lsb of the base character / accented
-	 * character (*not* the lsb of the accent) when we encounter the
+	 * We're going to add in the lsb of the accented character
+	 * (*not* the lsb of the accent) when we encounter the
 	 * [h]sbw of the accent, so ignore the lsb for now.
 	 */
 	accum_xy(pcis->adxy.x, pcis->adxy.y);
@@ -490,4 +478,158 @@ gs_type1_endchar(gs_type1_state * pcis)
     if (!pcis->charpath_flag)
 	gs_imager_setflat(pis, pcis->flatness);
     return 0;
+}
+
+/* ------ Font procedures ------ */
+
+int
+gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
+		    int members, gs_glyph_info_t *info)
+{
+    gs_font_type1 *const pfont = (gs_font_type1 *)font;
+    int piece_members = members & (GLYPH_INFO_NUM_PIECES | GLYPH_INFO_PIECES);
+    int default_members = members - piece_members;
+    int code = 0;
+
+    if (default_members) {
+	code = gs_default_glyph_info(font, glyph, pmat, default_members, info);
+
+	if (code < 0)
+	    return code;
+    } else
+	info->members = 0;
+    if (piece_members) {
+	gs_glyph *pieces =
+	    (members & GLYPH_INFO_PIECES ? info->pieces : (gs_glyph *)0);
+	/*
+	 * Decode the CharString looking for seac.  We have to process
+	 * callsubr, callothersubr, and return operators, but if we see
+	 * any other operators other than [h]sbw, pop, or hint operators,
+	 * we can return immediately.  This includes all Type 2 operators,
+	 * since Type 2 CharStrings don't use seac.
+	 *
+	 * It's really unfortunate that we have to duplicate so much parsing
+	 * code, but factoring out the parser from the interpreter would
+	 * involve more restructuring than we're prepared to do right now.
+	 */
+	gs_type1_data *const pdata = &pfont->data;
+	bool encrypted = pdata->lenIV >= 0;
+	gs_const_string str;
+	fixed cstack[ostack_size];
+	fixed *csp = cstack - 1;
+	ip_state ipstack[ipstack_size + 1];
+	ip_state *ipsp = &ipstack[0];
+	const byte *cip;
+	crypt_state state;
+	int c;
+    
+	if ((code = pdata->procs->glyph_data(pfont, glyph, &str)) < 0)
+	    return code;		/* non-existent glyph */
+	info->members |= piece_members;
+	info->num_pieces = 0;	/* default */
+	cip = str.data;
+    call:
+	state = crypt_charstring_seed;
+	if (encrypted) {
+	    int skip = pdata->lenIV;
+
+	    /* Skip initial random bytes */
+	    for (; skip > 0; ++cip, --skip)
+		decrypt_skip_next(*cip, state);
+	}
+    top:
+	for (;;) {
+	    uint c0 = *cip++;
+
+	    charstring_next(c0, state, c, encrypted);
+	    if (c >= c_num1) {
+		/* This is a number, decode it and push it on the stack. */
+		if (c < c_pos2_0) {	/* 1-byte number */
+		    decode_push_num1(csp, c);
+		} else if (c < cx_num4) {	/* 2-byte number */
+		    decode_push_num2(csp, c, cip, state, encrypted);
+		} else if (c == cx_num4) {	/* 4-byte number */
+		    long lw;
+
+		    decode_num4(lw, cip, state, encrypted);
+		    *++csp = int2fixed(lw);
+		} else		/* not possible */
+		    return_error(gs_error_invalidfont);
+		continue;
+	    }
+#define cnext csp = cstack - 1; goto top
+	    switch ((char_command) c) {
+	    default:
+		goto out;
+	    case c_callsubr:
+		c = fixed2int_var(*csp);
+		code = pdata->procs->subr_data
+		    (pfont, c, false, &ipsp[1].char_string);
+		if (code < 0)
+		    return_error(code);
+		--csp;
+		ipsp->ip = cip, ipsp->dstate = state;
+		++ipsp;
+		cip = ipsp->char_string.data;
+		goto call;
+	    case c_return:
+		--ipsp;
+		cip = ipsp->ip, state = ipsp->dstate;
+		goto top;
+	    case cx_hstem:
+	    case cx_vstem:
+	    case c1_hsbw:
+		cnext;
+	    case cx_escape:
+		charstring_next(*cip, state, c, encrypted);
+		++cip;
+		switch ((char1_extended_command) c) {
+		default:
+		    goto out;
+		case ce1_vstem3:
+		case ce1_hstem3:
+		case ce1_sbw:
+		    cnext;
+		case ce1_pop:
+		    /*
+		     * pop must do nothing, since it is used after
+		     * subr# 1 3 callothersubr.
+		     */
+		    goto top;
+		case ce1_seac:
+		    /* This is the payoff for all this code! */
+		    if (pieces) {
+			gs_char bchar = fixed2int(csp[-1]);
+			gs_char achar = fixed2int(csp[0]);
+
+			pieces[0] = font->procs.encode_char(font, bchar,
+							    GLYPH_SPACE_NAME);
+			pieces[1] = font->procs.encode_char(font, achar,
+							    GLYPH_SPACE_NAME);
+		    }
+		    info->num_pieces = 2;
+		    goto out;
+		case ce1_callothersubr:
+		    switch (fixed2int_var(*csp)) {
+		    default:
+			goto out;
+		    case 3:
+			csp -= 2;
+			goto top;
+		    case 12:
+		    case 13:
+		    case 14:
+		    case 15:
+		    case 16:
+		    case 17:
+		    case 18:
+			cnext;
+		    }
+		}
+	    }
+#undef cnext
+	}
+    }
+ out:
+    return code;
 }

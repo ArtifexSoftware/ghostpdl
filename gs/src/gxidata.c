@@ -1,22 +1,9 @@
 /* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Generic image enumeration and cleanup */
 #include "gx.h"
 #include "memory_.h"
@@ -30,6 +17,7 @@ private void repack_bit_planes(P7(const gx_image_plane_t *src_planes,
 				  const ulong *offsets, int num_planes,
 				  byte *buffer, int width,
 				  const sample_lookup_t * ptab, int spread));
+private gx_device *setup_image_device(P1(const gx_image_enum *penum));
 
 /* Process the next piece of an ImageType 1 image. */
 int
@@ -37,8 +25,8 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
 		     const gx_image_plane_t * planes, int height,
 		     int *rows_used)
 {
-    gx_device *dev = info->dev;
     gx_image_enum *penum = (gx_image_enum *) info;
+    gx_device *dev;
     const int y = penum->y;
     int y_end = min(y + height, penum->rect.h);
     int width_spp = penum->rect.w * penum->spp;
@@ -58,21 +46,8 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
 	*rows_used = 0;
 	return 0;
     }
+    dev = setup_image_device(penum);
 
-    /* Set up the clipping and/or RasterOp device if needed. */
-
-    if (penum->clip_dev) {
-	gx_device_clip *cdev = penum->clip_dev;
-
-	gx_device_set_target((gx_device_forward *)cdev, dev);
-	dev = (gx_device *) cdev;
-    }
-    if (penum->rop_dev) {
-	gx_device_rop_texture *rtdev = penum->rop_dev;
-
-	gx_device_set_target((gx_device_forward *)rtdev, dev);
-	dev = (gx_device *) rtdev;
-    }
     /* Now render complete rows. */
 
     if (penum->used.y) {
@@ -284,7 +259,8 @@ gx_image1_flush(gx_image_enum_common_t * info)
     dda_translate(penum->dda.pixel0.x, penum->cur.x - penum->prev.x);
     dda_translate(penum->dda.pixel0.y, penum->cur.y - penum->prev.y);
     penum->prev = penum->cur;
-    return (*penum->render)(penum, NULL, 0, width_spp, 0, penum->dev);
+    return (*penum->render)(penum, NULL, 0, width_spp, 0,
+			    setup_image_device(penum));
 }
 
 /*
@@ -392,6 +368,27 @@ repack_bit_planes(const gx_image_plane_t *src_planes, const ulong *offsets,
 #undef MAP_BYTE
 	}
     }
+}
+
+/* Set up the device for drawing an image. */
+private gx_device *
+setup_image_device(const gx_image_enum *penum)
+{
+    gx_device *dev = penum->dev;
+
+    if (penum->clip_dev) {
+	gx_device_clip *cdev = penum->clip_dev;
+
+	gx_device_set_target((gx_device_forward *)cdev, dev);
+	dev = (gx_device *) cdev;
+    }
+    if (penum->rop_dev) {
+	gx_device_rop_texture *rtdev = penum->rop_dev;
+
+	gx_device_set_target((gx_device_forward *)rtdev, dev);
+	dev = (gx_device *) rtdev;
+    }
+    return dev;
 }
 
 /* Clean up by releasing the buffers. */

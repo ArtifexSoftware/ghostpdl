@@ -1,21 +1,8 @@
 #    Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-# 
-# This file is part of Aladdin Ghostscript.
-# 
-# Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-# or distributor accepts any responsibility for the consequences of using it,
-# or for whether it serves any particular purpose or works at all, unless he
-# or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-# License (the "License") for full details.
-# 
-# Every copy of Aladdin Ghostscript must include a copy of the License,
-# normally in a plain ASCII text file named PUBLIC.  The License grants you
-# the right to copy, modify and redistribute Aladdin Ghostscript, but only
-# under certain conditions described in the License.  Among other things, the
-# License requires that the copyright notice and this notice be preserved on
-# all copies.
+# This software is licensed to a single customer by Artifex Software Inc.
+# under the terms of a specific OEM agreement.
 
-
+# $RCSfile$ $Revision$
 # Partial makefile common to all Unix and Desqview/X configurations,
 # containing the `install' targets.
 # This is the very last part of the makefile for these configurations.
@@ -46,32 +33,36 @@ gsbj gsdj gsdj500 gslj gslp gsnd \
 bdftops dvipdf font2c \
 pdf2dsc pdf2ps pf2afm pfbtopfa printafm \
 ps2ascii ps2epsi ps2pdf ps2ps wftopfa ;\
-	do if ( test -f lib/$$f ); then $(INSTALL_PROGRAM) lib/$$f $(scriptdir)/$$f; fi;\
+	do if ( test -f $(PSLIBDIR)/$$f ); then $(INSTALL_PROGRAM) $(PSLIBDIR)/$$f $(scriptdir); fi;\
 	done'
+
+PSDOCDIR=$(PSLIBDIR)/../doc
+PSEXDIR=$(PSLIBDIR)/../examples
+PSMANDIR=$(PSLIBDIR)/../man
 
 MAN1_PAGES=gs pdf2dsc pdf2ps ps2ascii ps2epsi ps2pdf ps2ps
 install-data: man/gs.1
 	-mkdir $(mandir)
 	-mkdir $(man1dir)
-	cd man; $(SH) -c 'for f in $(MAN1_PAGES) ;\
-	do if ( test -f $$f.1 ); then $(INSTALL_DATA) $$f.1 $(man1dir)/$$f.$(man1ext); fi;\
+	$(SH) -c 'for f in $(MAN1_PAGES) ;\
+	do if ( test -f $(PSMANDIR)/$$f.1 ); then $(INSTALL_DATA) $(PSMANDIR)/$$f.1 $(man1dir)/$$f.$(man1ext); fi;\
 	done'
 	-mkdir $(datadir)
 	-mkdir $(gsdir)
 	-mkdir $(gsdatadir)
 	-mkdir $(gsdatadir)/lib
-	cd lib; $(SH) -c 'for f in \
+	$(SH) -c 'for f in \
 Fontmap Fontmap.GS \
-cbjc600.ppd cbjc800.ppd *.upp \
 gs_init.ps gs_btokn.ps gs_ccfnt.ps gs_cff.ps gs_cidfn.ps gs_cmap.ps \
 gs_diskf.ps gs_dpnxt.ps gs_dps.ps gs_dps1.ps gs_dps2.ps gs_epsf.ps \
 gs_fonts.ps gs_kanji.ps gs_lev2.ps gs_ll3.ps \
 gs_pfile.ps gs_rdlin.ps gs_res.ps gs_setpd.ps gs_statd.ps \
 gs_trap.ps gs_ttf.ps gs_typ32.ps gs_typ42.ps gs_type1.ps \
-gs_dbt_e.ps gs_il1_e.ps gs_il2_e.ps gs_ksb_e.ps gs_std_e.ps gs_sym_e.ps \
+gs_ce_e.ps gs_dbt_e.ps gs_il1_e.ps gs_il2_e.ps gs_ksb_e.ps \
+gs_std_e.ps gs_sym_e.ps \
 ht_ccbnm.ps \
 acctest.ps align.ps bdftops.ps caption.ps cid2code.ps decrypt.ps docie.ps \
-errpage.ps font2c.ps font2pcl.ps gslp.ps impath.ps \
+errpage.ps font2c.ps font2pcl.ps gslp.ps gsnup.ps impath.ps \
 landscap.ps level1.ps lines.ps markhint.ps markpath.ps \
 packfile.ps pcharstr.ps pf2afm.ps ppath.ps prfont.ps printafm.ps \
 ps2ai.ps ps2ascii.ps ps2epsi.ps quit.ps rollconv.ps \
@@ -86,10 +77,13 @@ pdf_base.ps pdf_draw.ps pdf_font.ps pdf_main.ps pdf_ops.ps pdf_sec.ps \
 gs_lgo_e.ps gs_lgx_e.ps gs_mex_e.ps gs_mgl_e.ps gs_mro_e.ps \
 gs_pdf_e.ps gs_wan_e.ps \
 gs_pdfwr.ps ;\
-	do if ( test -f $$f ); then $(INSTALL_DATA) $$f $(gsdatadir)/lib/$$f; fi;\
+	do if ( test -f $(PSLIBDIR)/$$f ); then $(INSTALL_DATA) $(PSLIBDIR)/$$f $(gsdatadir)/lib; fi;\
+	done'
+	$(SH) -c 'for f in $(PSLIBDIR)/*.ppd $(PSLIBDIR)/*.upp $(PSLIBDIR)/*.xbm $(PSLIBDIR)/*.xpm;\
+	do $(INSTALL_DATA) $$f $(gsdatadir)/lib ;\
 	done'
 	-mkdir $(docdir)
-	cd doc; $(SH) -c 'for f in \
+	$(SH) -c 'for f in \
 PUBLIC README \
 ps2epsi.txt \
 Bug-form.htm C-style.htm Commprod.htm Copying.htm Current.htm \
@@ -99,12 +93,12 @@ History1.htm History2.htm History3.htm History4.htm History5.htm \
 Htmstyle.htm Humor.htm Install.htm Language.htm Lib.htm Make.htm New-user.htm \
 News.htm Ps2pdf.htm Psfiles.htm Public.htm Readme.htm Release.htm \
 Source.htm Tester.htm Unix-lpr.htm Use.htm Xfonts.htm ;\
-	do if ( test -f $$f ); then $(INSTALL_DATA) $$f $(docdir)/$$f; fi;\
+	do if ( test -f $(PSDOCDIR)/$$f ); then $(INSTALL_DATA) $(PSDOCDIR)/$$f $(docdir); fi;\
 	done'
 	-mkdir $(exdir)
-	cd examples; for f in \
+	for f in \
 alphabet.ps chess.ps cheq.ps colorcir.ps escher.ps golfer.ps \
 grayalph.ps snowflak.ps tiger.ps vasarely.ps waterfal.ps \
 ridt91.eps ;\
-	do $(INSTALL_DATA) $$f $(exdir)/$$f ;\
+	do $(INSTALL_DATA) $(PSEXDIR)/$$f $(exdir) ;\
 	done

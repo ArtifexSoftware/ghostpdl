@@ -17,7 +17,7 @@
 */
 
 
-
+// $RCSfile$ $Revision$
 
 // gsdll class  for MS-Windows
 

@@ -1,22 +1,9 @@
 /* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Device for tracking bounding box */
 #include "math_.h"
 #include "memory_.h"
@@ -89,7 +76,7 @@ gx_device_bbox gs_bbox_device =
 			MAX_RESOLUTION, MAX_RESOLUTION,
 			1, 8, 255, 0, 256, 1),
     {bbox_open_device,
-     NULL,			/* get_initial_matrix */
+     gx_upright_get_initial_matrix,
      NULL,			/* sync_output */
      bbox_output_page,
      bbox_close_device,
@@ -877,7 +864,6 @@ typedef struct bbox_image_enum_s {
     int y, height;
 } bbox_image_enum;
 
-extern_st(st_gx_image_enum_common);
 gs_private_st_suffix_add2(st_bbox_image_enum, bbox_image_enum,
   "bbox_image_enum", bbox_image_enum_enum_ptrs, bbox_image_enum_reloc_ptrs,
   st_gx_image_enum_common, pcpath, target_info);

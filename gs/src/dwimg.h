@@ -17,7 +17,9 @@
  */
 
 
+// $RCSfile$ $Revision$
 
+// Image Window class
 
 class ImageWindow {
     static ImageWindow *first;

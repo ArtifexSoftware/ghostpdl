@@ -1,22 +1,9 @@
 /* Copyright (C) 1991, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Implementation of clipping paths, other than actual clipping */
 #include "gx.h"
 #include "gserrors.h"
@@ -515,9 +502,9 @@ gx_cpath_intersect(gx_clip_path *pcpath, /*const*/ gx_path *ppath_orig,
 		/* Use the user space origin (arbitrarily). */
 		new_box.p.x = float2fixed(pis->ctm.tx);
 		new_box.p.y = float2fixed(pis->ctm.ty);
-		changed = true;
 	    }
 	    new_box.q = new_box.p;
+	    changed = true;
 	} else {
 	    /* Intersect the two rectangles if necessary. */
 	    if (old_box.p.x > new_box.p.x)
@@ -529,10 +516,8 @@ gx_cpath_intersect(gx_clip_path *pcpath, /*const*/ gx_path *ppath_orig,
 	    if (old_box.q.y < new_box.q.y)
 		new_box.q.y = old_box.q.y, changed = true;
 	    /* Check for a degenerate rectangle. */
-	    if (new_box.q.x < new_box.p.x)
-		new_box.q.x = new_box.p.x;
-	    if (new_box.q.y < new_box.p.y)
-		new_box.q.y = new_box.p.y;
+	    if (new_box.q.x < new_box.p.x || new_box.q.y < new_box.p.y)
+		new_box.p = new_box.q, changed = true;
 	}
 	if (changed) {
 	    /* Defer constructing the path. */
@@ -637,8 +622,13 @@ gx_clip_list_from_rectangle(register gx_clip_list * clp,
     }
     clp->single.xmin = clp->xmin = fixed2int_var(rp->p.x);
     clp->single.ymin = fixed2int_var(rp->p.y);
-    clp->single.xmax = clp->xmax = fixed2int_var_ceiling(rp->q.x);
-    clp->single.ymax = fixed2int_var_ceiling(rp->q.y);
+    /* Handle degenerate rectangles specially. */
+    clp->single.xmax = clp->xmax =
+	(rp->q.x == rp->p.x ? clp->single.xmin :
+	 fixed2int_var_ceiling(rp->q.x));
+    clp->single.ymax =
+	(rp->q.y == rp->p.y ? clp->single.ymin :
+	 fixed2int_var_ceiling(rp->q.y));
     clp->count = 1;
 }
 

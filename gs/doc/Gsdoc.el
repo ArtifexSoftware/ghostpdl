@@ -521,14 +521,14 @@ properly placed markers, but that's history."
 ;; Replace the RCS $Id if one can be found in exactly the right format, and
 ;; otherwise insert one just after the title, along with a warning message.
 
-
+(if (re-search-forward "<!-- $RCSfile$ $Revision$ -->" nil t)
     (progn
       (setq Original (buffer-substring (match-beginning 1) (match-end 1)))
       (replace-match g~thisfile t t nil 1)
       )
     (progn
       (search-forward "</title>" nil t) (end-of-line)
-
+      (insert (concat "\n<!-- $Id: " g~thisfile " $ -->"))
       (setq Original "(UNSET by gs-structure)")
       )
     )

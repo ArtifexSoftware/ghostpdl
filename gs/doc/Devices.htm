@@ -1,7 +1,7 @@
 <html>
 <head>
 <title>Details of Ghostscript output devices</title>
-
+<!-- $RCSfile$ $Revision$ -->
 <!-- Originally: devices.txt -->
 </head>
 
@@ -324,130 +324,178 @@ The source module <b><tt>gdevcd8.c</tt></b> contains four generic drivers:
 
 <h2><a name="HP8_further_documentation"></a>Further documentation</h2>
 
-<pre>
+<p>
+<b>Credits:</b> Much of the driver is based on ideas derived from the
+cdj550 driver of George Cameron. The support for the hp670, hp690, hp890
+and hp1600 was added by Martin Gerbershagen.
 
-   CREDITS: Much of the driver is based on ideas derived
-            from the cdj550 driver of George Cameron.
-	    
-	    The support for the hp670, hp690, hp890
-	    and hp1600 was added by Martin Gerbershagen.
 
-   ----------------------------------------------------------------
 
-   11.11.96. Initial release of the driver 
+<blockquote><table cellpadding=0 cellspacing=0>
+<tr valign=top>	<td>11.11.96
+	<td>&nbsp;&nbsp;&nbsp;
+	<td>Version 1.0
+	<td>&nbsp;&nbsp;&nbsp;
+	<td>&nbsp;
+<tr valign=top>	<td>25.08.97
+	<td>&nbsp;
+	<td>Version 1.2
+	<td>&nbsp;
+	<td>Resolved all but one of the known bugs, introduced a couple of
+	perfomance improvements. Complete new color-transfer-function
+	handling (see gamma).
+<tr valign=top>	<td>01.06.98
+	<td>&nbsp;
+	<td>Version 1.3
+	<td>&nbsp;
+	<td>Due to the most welcome contribution of Martin Gerbershagen
+	(ger@ulm.temic.de), support for the hp670, hp690 and hp890 and
+	hp1600 has been added. Martin has also resolved all known bugs.
+<tr valign=top> <td>&nbsp;
+	<td>&nbsp;
+	<td>&nbsp;
+	<td>&nbsp;
+	<td>Problems:Dark colors are still pale.
+</table></blockquote>
 
-   25.08.97  Version 1.2. Resolved all but one of the 
-                          known bugs, introduced a couple
-			  of perfomance improvements. Complete
-			  new color-transfer-function handling.
-			  (see gamma).
+<p>
+The hp690 is supported through the hp670 device, the hp855, hp870 and the
+hp1100 through the hp850 device.  The driver needs no longer special
+switches to be invoked except <b><tt>-sDEVICE=cdj850</tt></b>,
+<b><tt>-sDEVICE=CDJ890</tt></b>, <b><tt>-sDEVICE=CDJ670</tt></b>, or
+<b><tt>-sDevice=CDJ1600</tt></b>.  The following switches are supported.
 
-  01.06.98   Version 1.3  Due to the most welcome contribution
-                          of Martin Gerbershagen (ger@ulm.temic.de),
-                          support for the hp670, hp690 and hp890
-			  and hp1600 has been added. Martin has also
-			  resolved all known bugs.
+<blockquote><table cellpadding=0 cellspacing=0>
+<tr valign=top>	<td><b><tt>-dPapertype=</tt></b>
+	<td>&nbsp;&nbsp;&nbsp;
+	<td>0
+	<td>&nbsp;&nbsp;&nbsp;
+	<td>plain paper [default]
+<tr valign=top>	<td>
+	<td>&nbsp;
+	<td>1
+	<td>&nbsp;
+	<td>bond paper
+<tr valign=top>	<td>
+	<td>&nbsp;
+	<td>2
+	<td>&nbsp;
+	<td>special paper
+<tr valign=top>	<td>
+	<td>&nbsp;
+	<td>3
+	<td>&nbsp;
+	<td>glossy film
+<tr valign=top>	<td>
+	<td>&nbsp;
+	<td>4
+	<td>&nbsp;
+	<td>transparency film
+<tr valign=top>	<td>
+	<td>&nbsp;
+	<td>&nbsp;
+	<td>&nbsp;
+	<td>Currently the lookup tables are unsuited for printing on
+	special paper or transparencies. For these please revert to the
+	gamma functions.
+<tr valign=top>	<td><b><tt>-dQuality=</tt></b>
+	<td>&nbsp;
+	<td>-1
+	<td>&nbsp;
+	<td>draft     
+<tr valign=top>	<td>
+	<td>&nbsp;
+	<td>0
+	<td>&nbsp;
+	<td>normal [default]
+<tr valign=top>	<td>
+	<td>&nbsp;
+	<td>1
+	<td>&nbsp;
+	<td>presentation 
+<tr valign=top>	<td><b><tt>-dRetStatus=</tt></b>
+	<td>&nbsp;
+	<td>0
+	<td>&nbsp;
+	<td>C-RET off
+<tr valign=top>	<td>
+	<td>&nbsp;
+	<td>1
+	<td>&nbsp;
+	<td>C-RET on [default]
+<tr valign=top>	<td><b><tt>-dMasterGamma=</tt></b>
+	<td>&nbsp;
+	<td>3.0
+	<td>&nbsp;
+	<td>[default = 1.0]
+</table></blockquote>
 
-	     Problems  :  Dark colors are still pale.
-	                  
 
-  The driver needs no longer special switches to be invoked
-  except -sDEVICE=cdj850, or -sDEVICE=CDJ890, or sDEVICE=CDJ670
-  or -sDevice=CDJ1600
+<blockquote>
+<b>Note:</b> To take advantage of the calibrated color-transfer functions,
+be sure not to have any gamma statements left! If you need to (i.e., for
+overhead transparencies), you still can use the gamma functions, but they
+will override the built-in calibration. To use gamma in the traditional
+way, set MasterGamma to any value greater than 1.0 and less than 10.0. To
+adjust individual gamma values, you have to additionally set MasterGamma to
+a value greater than 1.0 and less than 10.0.  With the next release, gamma
+functions will be dropped.
+</blockquote>
 
-  The hp690 is supported through the hp670 device, the hp855, hp870 
-  and the hp1100 through the hp850 device.
+<p>
+When using the driver, be aware that printing at 600dpi involves
+processing large amounts of data (&gt; 188MB !). Therefore the
+driver is not what you would expect to be a fast driver ;-)
+This is no problem when printing a full-sized color page (because
+printing itself is slow), but it's really annoying if you print only
+text pages. Maybe I can optimize the code for text-only pages in a
+later release. Right now, it is recommended to use the highest
+possible optimisation level your compiler offers.
+For the time being, use the cdj550 device with <b><tt>-sBitsPerPixel=3</tt></b>
+for fast proof prints. If you simply want to print 600dpi BW data,
+use the cdj550 device with <b><tt>-sBitsPerPixel=8</tt></b> (or 1).
 
-  The following switches are supported.
+<p>
+Since the printer itself is slow, it may help to set the process priority
+of the gs process to "regular" or even less. On a 486/100MHz this is still
+sufficient to maintain a continuous data flow.  Note to OS/2 users: simply
+put the gs window into the background or minimize it. Also make sure that
+<b><tt>print01.sys</tt></b> is invoked without the <b><tt>/irq</tt></b>
+switch (great speed improvement under Warp4).
 
-   -dPapertype= 0  plain paper [default]
-                1  bond paper
-		2  special paper
-		3  glossy film
-		4  transparency film
+<p>
+The printer default settings compensate for dot-gain by a calibrated
+color-transfer function. If this appears to be too light for your business
+graphs, or for overhead transparencies, feel free to set
+<b><tt>-dMasterGamma=1.7</tt></b>.  Furthermore, you may tweak the gamma
+values independently by setting <b><tt>-dGammaValC</tt></b>,
+<b><tt>-dGammaValM</tt></b>, <b><tt>-dGammaValY</tt></b> or
+<b><tt>-dGammaValK</tt></b> (if not set, the values default to
+<b><tt>MasterGamma</tt></b>). This will only work when
+<b><tt>-dMasterGamma</tt></b> is set to a value greater than 1.0.
 
-		Note, currently the lookuptables are not suited
-		for printing on special paper or transperencies.
-		Please revert to the gamma functions in this case.
+<p>
+Further information, bugs, tips etc, can be found at my website.  To learn
+more about gamma, see
+<a href="ftp://ftp.igd.fhg.de/pub/doc/colour/GammaFAQ.pdf">ftp://ftp.igd.fhg.de/pub/doc/colour/GammaFAQ.pdf</a>.
 
-   -dQuality=  -1 draft     
-                0 normal       [default]
-                1 presentation 
+<p>
+Depending on how you transfer the files, under UNIX you may need to remove
+the CRs of the CR-LF sequence used for end-of-line on DOS-based (MS
+Windows-based) systems.  You can do this in unpacking the files with <b><tt>unzip&nbsp;-a&nbsp;hp850.zip</tt></b>.
 
-   -dRetStatus= 0 C-RET off
-                1 C-RET on [default]
+<p>
+To compile with gs5.x or later, simply add to your makefile
+<blockquote>
+DEVICE_DEVS4=cdj850.dev cdj670.dev cdj890.dev cdj1600.dev
+</blockquote>
 
-   -dMasterGamma= 3.0 [default = 1.0]
-    __Note__: To take advantage of the calibrated color-transfer
-              functions, be sure not to have any Gamma-Statements
-	      left! If you need to (i.e. overhead sheets), 
-	      you still can use the gamma-functions, but they will 
-	      override the built-in calibration. To use gamma in the 
-	      traditional way, set MasterGamma to any value greater
-	      1.0 and less 10.0. To adjust individual gamma-values,
-	      you have to additionally set MasterGamma to a value
-	      greater 1.0 and less 10.0
-	      
-	      With the next release, gamma functions will be dropped.
+<p>
+Have fun!
 
-   When using the driver, be aware that printing in 600dpi involves
-   processing of large amounts of data (> 188MB !). Therefore, the
-   driver is not what you would expect to be a fast driver ;-)
-   This is no problem when printing a full sized color page (because
-   printing itself is slow), but it's really annoying if yoy print only
-   text pages. Maybe I can optimize the code for text-only pages in a
-   later release. Right now, it is recommended to use the highest
-   possible optimisation level your compiler offers....
-   For the time beeing, use the cdj550 device with -sBitsPerPixel=3
-   for fast proof-prints. If you simply want to print 600dpi b/w data,
-   use the cdj550 device with -sBitsPerPixel=8 (or 1).
-   
-   Since the printer itself is slow, it may help to set the
-   process-priority of the gs-process to regular or even less. On a
-   486/100MHZ this is still sufficient to maintain a continuos
-   data-flow.
-   Note to OS/2 users: Simply put the gs-window into the background,
-   or minimize it. Also make sure, that print01.sys is invoked without
-   the /irq switch (great speed improvement under warp4).
-
-   The printer default settings compensate for dot-gain by a
-   calibrated color-transfer function. If this appears to be to light
-   for your business-graphs, or for overhead-sheets, feel free to set
-   -dMasterGamma=1.7.
-
-   Furthermore, you may tweak the gammavalues independently by setting
-   -dGammaValC, -dGammaValM, -dGammaValY or -dGammaValK (if not set,
-   the values default to MasterGamma). This will only work, when
-   -dMasterGamma is set to a value greater than 1.0.
-
-   If you want to learn more about gamma, see:
-              
-       <a href="ftp://ftp.igd.fhg.de/pub/doc/colour/GammaFAQ.pdf">ftp://ftp.igd.fhg.de/pub/doc/colour/GammaFAQ.pdf</a>
-
-       Further information, bugs, tips etc, can be found
-       at my website.
-
-   Have fun!
-
-	Uli
-
-	<a href="mailto:uliw@erdw.ethz.ch">uliw@erdw.ethz.ch</a>
-	<a href="http://www.erdw.ethz.ch/~bonk/">http://www.erdw.ethz.ch/~bonk/</a>
-
-   Note: Depending on how you transfered the files, 
-   you might need to remove some CR-codes used on intel-based machines:
-
-   simply type:  unzip -a hp850.zip
-
-   to compile with gs5.x, simply add 
-
-             DEVICE_DEVS4=cdj850.dev cdj670.dev cdj890.dev cdj1600.dev
-
-   to your makefile. 
-
-   BTW, it is always a good idea to read <a href="Make.htm">Make.htm</a>
-   before attempting to recompile.....
-</pre>
+<p>
+Uli &lt;<a href="mailto:uliw@erdw.ethz.ch">uliw@erdw.ethz.ch</a>&gt;
+<br><a href="http://www.erdw.ethz.ch/~bonk/">http://www.erdw.ethz.ch/~bonk/</a>
 
 <hr>
 
@@ -456,7 +504,7 @@ The source module <b><tt>gdevcd8.c</tt></b> contains four generic drivers:
 <p>
 This section, written by George Cameron, deals with the DeskJet 500C,
 DeskJet 550C, PaintJet, PaintJet XL, PaintJet XL300, the DEC LJ250
-operating in Paintjet-compatible mode.
+operating in PaintJet-compatible mode.
 
 <h2><a name="HP_gdevcdj"></a>Drivers contained in <b><tt>gdevcdj.c</tt></b></h2>
 
@@ -491,14 +539,14 @@ colour and mono drivers.  It is also possible to set various
 printer-specific parameters from the command line, for example
 
 <blockquote><b><tt>
-gs&nbsp;-sDEVICE=cdeskjet&nbsp;-dBitsPerPixel=16&nbsp;-dDepletion=1&nbsp;-dShingling=2&nbsp;tiger.ps
+gs&nbsp;-sDEVICE=cDeskJet&nbsp;-dBitsPerPixel=16&nbsp;-dDepletion=1&nbsp;-dShingling=2&nbsp;tiger.ps
 </tt></b></blockquote>
 
 <p>
-<b>Note:</b> the old names <b><tt>cdeskjet</tt></b>,
+<b>Note:</b> the old names <b><tt>cDeskJet</tt></b>,
 <b><tt>cdjcolor</tt></b> and <b><tt>cdjmono</tt></b> drivers have been
 retained; however, their functionality duplicates that available using the
-drivers above (and <b><tt>cdeskjet</tt></b> is identical to
+drivers above (and <b><tt>cDeskJet</tt></b> is identical to
 <b><tt>cdj500</tt></b>).  That is, we can use
 
 <blockquote><table cellpadding=0 cellspacing=0>
@@ -520,10 +568,10 @@ documentation).  You can <a href="Use#Paper_size">specify other paper
 sizes</a> on the command line, including A3 for the PaintJet XL and
 PaintJet XL300, as also explained in the usage documentation.
 
-<h2><a name="HP_limits"></a>Deskjet physical limits</h2>
+<h2><a name="HP_limits"></a>DeskJet physical limits</h2>
 
 <p>
-The Deskjet's maximum printing width is 2400 dots, or 8 inches
+The DeskJet's maximum printing width is 2400 dots, or 8 inches
 (20.32cm). The printer manuals say that the maximum recommended printing
 height on the page is 10.3 inches (26.16cm), but since this is obviously
 not true for A4 paper, and I have been unable to detect any problems in
@@ -531,7 +579,7 @@ printing longer page lengths, this would seem to be a rather artificial
 restriction.
 
 <p>
-All Deskjets have 0.5 inches (1.27cm) of unprintable bottom margin, due to the mechanical
+All DeskJets have 0.5 inches (1.27cm) of unprintable bottom margin, due to the mechanical
 arrangement used to grab the paper.  Side margins are approximately 0.25 inches (0.64cm)
 for U.S. letter paper, and 0.15 inches (0.38cm) for A4.
 
@@ -558,7 +606,7 @@ integer (see below for the range of allowable values), that number defines
 the default bits per pixel (bit depth) for the generic drivers.  If the
 symbol is undefined, the default is 24 bits per pixel.  It is, of course,
 still possible to specify the value from the command line as described
-below.  Note also that the <b><tt>cdeskjet</tt></b>,
+below.  Note also that the <b><tt>cDeskJet</tt></b>,
 <b><tt>cdjcolor</tt></b> and <b><tt>cdjmono</tt></b> drivers are unaffected
 by setting this symbol, as their default settings are predefined to be 1, 3
 and 24 respectively.
@@ -608,7 +656,7 @@ on this printer, and uses less memory.  Any differences between 24-bit and
 32-bit should be small.)
 </dl></blockquote>
 
-<h3><a name="HP_deskjet_properties"></a>Deskjet properties</h3>
+<h3><a name="HP_DeskJet_properties"></a>DeskJet properties</h3>
 
 <blockquote><table cellpadding=0 cellspacing=0>
 <tr valign=bottom>
@@ -635,7 +683,7 @@ on this printer, and uses less memory.  Any differences between 24-bit and
 	<td>"Intelligent" dot-removal: 0 = none, 1 = 25%, 2 = 50%, 1 best for graphics? Use 0 for transparencies.
 </table></blockquote>
 
-<h3><a name="HP_paintjet_properties"></a>Paintjet XL300 / Paintjet XL properties</h3>
+<h3><a name="HP_PaintJet_properties"></a>PaintJet XL300 / PaintJet XL properties</h3>
 
 <blockquote>
 <table cellpadding=0 cellspacing=0>
@@ -671,7 +719,7 @@ on this printer, and uses less memory.  Any differences between 24-bit and
 </table>
 
 <p>
-The Paintjet (non-XL) has no additional properties.
+The PaintJet (non-XL) has no additional properties.
 
 </blockquote>
 
@@ -736,8 +784,8 @@ reasonably well in practice.
 
 <p>
 This feature is available on HP's more recent inkjet printers, including
-the Deskjet 520 (mono), 540 (mono or colour) and 560C (mono and colour).
-The colour and monochrome drivers for the HP deskjet 550c are (probably)
+the DeskJet 520 (mono), 540 (mono or colour) and 560C (mono and colour).
+The colour and monochrome drivers for the HP DeskJet 550c are (probably)
 the best you will get for use with Ghostscript, for the following reasons.
 
 <p>
@@ -908,7 +956,7 @@ the Ghostscript command line (using the <b><tt>-d</tt></b> and
 <b><tt>-s</tt></b> switches or other predetermined switches if they have an
 effect on the driver) or using the PostScript Level 2
 <b><tt>setpagedevice</tt></b> operator if Ghostscript has been compiled
-with the <b><tt>level2</tt></b> device (which it should
+with the <b><tt>level2</tt></b> or <b><tt>level3</tt></b> device (which it should
 <b><tt>;-)</tt></b>). There are <b>no</b> special-purpose operators such as
 one was able to find in Level 1 printers.
 
@@ -3465,7 +3513,7 @@ At the time of this writing uniprint drives:
 <ul>
 <li>NEC Pinwriter P2X (24-pin monochrome impact printer, ESC/P style)
 <li>Several Epson Stylus Color models (ESC/P2 style)
-<li>HP-Deskjet 550c (basic HP-RTL)
+<li>HP-DeskJet 550c (basic HP-RTL)
 <li>Canon BJC 610
 </ul>
 
@@ -3588,7 +3636,7 @@ gs @stc.upp -sOutputFile=/dev/lp1 tiger.ps -c quit
 	<td>&nbsp;
 	<td>high resolution paper
 <tr>	<td>&nbsp;
-<tr>	<th align=left colspan=6>HP Deskjet 550C
+<tr>	<th align=left colspan=6>HP DeskJet 550C
 <tr valign=top>	<td>&nbsp;
 	<td><b><tt>cdj550.upp</tt></b>
 	<td>&nbsp;
@@ -3788,7 +3836,7 @@ into <b><tt>uniprint</tt></b>: <b><tt>cdj850</tt></b> by Uli Wortmann
 Helmut Riegler.
 
 <p>
-Uli addresses features of the more recent Deskjet models that will not be
+Uli addresses features of the more recent DeskJet models that will not be
 available in <b><tt>uniprint</tt></b> soon. Martin taught me a lesson on
 HP-PCL3 headers that will be available soon in <b><tt>uniprint</tt></b>
 soon. Helmut in turn followed an almost similar idea, but targetted
@@ -3801,7 +3849,7 @@ with version 1.68 of uniprint, BJC support is available. Work on the
 <p>
 <b><tt>uniprint</tt></b> is actually an update of <b><tt>stcolor</tt></b>,
 but much more versatile than its predecessor; <b><tt>stcolor</tt></b>, in
-its turn, started as a clone of the color Deskjet family of drivers
+its turn, started as a clone of the color DeskJet family of drivers
 (<b><tt>cdj</tt></b>*). Finally, <b><tt>cdj</tt></b>* can be considered an
 addition of features to the simpler monochrome drivers of Ghostscript. This
 addition of features is useful to get an idea of the functionality of
@@ -4532,7 +4580,7 @@ here for <b><tt>uniprint</tt></b>:
 <dt>Scott F. Johnston and Scott J. Kramer
 <dd>for testing the <b><tt>stc800</tt></b> modes
 <dt>Martin Lottermoser
-<dd>for his great commented H-P Deskjet driver
+<dd>for his great commented H-P DeskJet driver
 <dt>Helmut Riegler
 <dd>for the BJC extension
 <dt>Hans-Gerd Straeter
@@ -4667,7 +4715,7 @@ full details of the terms of using, copying, modifying, and redistributing
 Aladdin Ghostscript.
 
 <p>
-Ghostscript version 5.91, 30 August 1999
+Ghostscript version 5.96, 12 November 1999
 
 </font>
 

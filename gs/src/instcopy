@@ -1,31 +1,44 @@
 #!/bin/sh
-
+# $RCSfile$ $Revision$
 #
 # Implement a uniform 'install' syntax independent of which of the two
 # "standard" install programs is installed.  Based on ideas in, but not
 # copied from, the GNU fileutils install-sh script.  Usage:
-#	instcopy -c [-m <mode>] <file> <dir>
+#	instcopy -c [-m <mode>] <srcfile> (<dstdir>|<dstfile>)
 
-c=$1
+doit=""
+# Uncomment the following line for testing
+#doit="echo "
+
 mode=""
 
-    if [ "$2" = "-m" ]; then mode=$3; shift; shift; else true; fi
+    while true; do
+	case "$1" in
+	    -c) ;;
+	    -m) mode=$2; shift ;;
+	    *) break ;;
+        esac
+    shift; done
 
-src=$2
-dst=$3
+src=$1
+dst=$2
 
-    if [ x"$c" = x-c -a -f $src -a -d $dst ]; then true; else
-	echo "Usage: instcopy -c [-m <mode>] <file> <dir>"
+    if [ $# = 2 -a -f $src ]; then true; else
+	echo "Usage: instcopy -c [-m <mode>] <srcfile> (<dstdir>|<dstfile>)"
 	exit 1
     fi
 
-dstdir=`echo $dst | sed -e 's,/$,,'`
+if [ -d $dst ]; then
+    dstdir=`echo $dst | sed -e 's,/$,,'`
+    dst="$dstdir"/`basename $src`
+else
+    dstdir=`echo $dst | sed -e 's,/[^/]*$,,'`
+fi
 dsttmp=$dstdir/#inst.$$#
-dst="$dstdir"/`basename $src`
 
-cp $src $dsttmp &&
-trap "rm -f $dsttmp" 0 &&
-if [ x"$mode" != x ]; then chmod $mode $dsttmp; else true; fi &&
-rm -f $dst &&
-mv $dsttmp $dst &&
+$doit cp $src $dsttmp &&
+$doit trap "rm -f $dsttmp" 0 &&
+if [ x"$mode" != x ]; then $doit chmod $mode $dsttmp; else true; fi &&
+$doit rm -f $dst &&
+$doit mv $dsttmp $dst &&
 exit 0

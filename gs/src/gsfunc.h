@@ -1,22 +1,9 @@
 /* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Generic definitions for Functions */
 
 #ifndef gsfunc_INCLUDED
@@ -73,7 +60,7 @@ typedef struct gs_function_procs_s {
 typedef struct gs_function_head_s {
     gs_function_type_t type;
     gs_function_procs_t procs;
-    bool is_monotonic;		/* cached when function is created */
+    int is_monotonic;		/* cached when function is created */
 } gs_function_head_t;
 struct gs_function_s {
     gs_function_head_t head;
@@ -126,14 +113,14 @@ void gs_function_XxYy_free_params(P2(gs_function_XxYy_params_t *params,
  * gs_error_undefined; normally, it returns 0 for false, >0 for true,
  * gs_error_rangecheck if any part of the interval is outside the function's
  * domain.  If lower[i] > upper[i], the result is not defined.
- *
- * Note that this is a very unsophisticated test: it returns false for
- * situations where a function is monotonic in individual inputs and/or
- * outputs but not for all inputs and/or outputs in the same direction.  We
- * only use it for fast checks.
  */
 #define gs_function_is_monotonic(pfn, lower, upper, effort)\
   (*(pfn)->head.procs.is_monotonic)(pfn, lower, upper, effort)
+/*
+ * If the function is monotonic, is_monotonic returns the direction of
+ * monotonicity for output value N in bits 2N and 2N+1.  (Functions with
+ * more than sizeof(int) * 4 - 1 outputs are never identified as monotonic.)
+ */
 #define FN_MONOTONIC_INCREASING 1
 #define FN_MONOTONIC_DECREASING 2
 
@@ -158,7 +145,7 @@ typedef struct gs_function_Va_params_s {
     gs_function_params_common;
     fn_evaluate_proc_t eval_proc;
     void *eval_data;
-    bool is_monotonic;
+    int is_monotonic;
 } gs_function_Va_params_t;
 
 typedef struct gs_function_Va_s {

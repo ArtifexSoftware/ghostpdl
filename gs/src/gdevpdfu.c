@@ -1,22 +1,9 @@
 /* Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Output utilities for PDF-writing driver */
 #include "math_.h"
 #include "memory_.h"
@@ -175,13 +162,18 @@ pdf_reset_graphics(gx_device_pdf * pdev)
 {
     color_set_pure(&pdev->fill_color, 0);	/* black */
     color_set_pure(&pdev->stroke_color, 0);	/* ditto */
-    pdev->flatness = -1;
+    pdev->state.flatness = -1;
     {
-	static const gx_line_params lp_initial =
-	{gx_line_params_initial};
+	static const gx_line_params lp_initial = {
+	    gx_line_params_initial
+	};
 
-	pdev->line_params = lp_initial;
+	pdev->state.line_params = lp_initial;
     }
+    pdev->text.character_spacing = 0;
+    pdev->text.font = NULL;
+    pdev->text.size = 0;
+    pdev->text.word_spacing = 0;
 }
 
 /* Set the fill or stroke color. */
@@ -244,27 +236,37 @@ pdf_put_matrix(gx_device_pdf * pdev, const char *before,
  * use an escape sequence for anything except a null <00>.
  */
 void
-pdf_put_name(const gx_device_pdf * pdev, const byte * nstr, uint size)
+pdf_put_name_escaped(stream *s, const byte *nstr, uint size, bool escape)
 {
-    stream *s = pdev->strm;
     uint i;
-    bool escape = pdev->CompatibilityLevel >= 1.2;
-    char hex[4];
 
     pputc(s, '/');
     for (i = 0; i < size; ++i) {
 	uint c = nstr[i];
+	char hex[4];
 
 	switch (c) {
+	    case '#':
+		/* These are valid in 1.1, but must be escaped in 1.2. */
+		if (escape) {
+		    sprintf(hex, "#%02x", c);
+		    pputs(s, hex);
+		    break;
+		}
+		/* falls through */
+	    default:
+		if (c >= 0x21 && c <= 0x7e) {
+		    /* These are always valid. */
+		    pputc(s, c);
+		    break;
+		}
+		/* falls through */
 	    case '%':
-	    case '(':
-	    case ')':
-	    case '<':
-	    case '>':
-	    case '[':
-	    case ']':
-	    case '{':
-	    case '}':
+	    case '(': case ')':
+	    case '<': case '>':
+	    case '[': case ']':
+	    case '{': case '}':
+	    case '/':
 		/* These characters are invalid in both 1.1 and 1.2, */
 		/* but can be escaped in 1.2. */
 		if (escape) {
@@ -276,20 +278,14 @@ pdf_put_name(const gx_device_pdf * pdev, const byte * nstr, uint size)
 	    case 0:
 		/* This is invalid in 1.1 and 1.2, and cannot be escaped. */
 		pputc(s, '?');
-		break;
-	    case '/':
-	    case '#':
-		/* These are valid in 1.1, but must be escaped in 1.2. */
-		if (escape) {
-		    sprintf(hex, "#%02x", c);
-		    pputs(s, hex);
-		    break;
-		}
-		/* falls through */
-	    default:
-		pputc(s, c);
 	}
     }
+}
+void
+pdf_put_name(const gx_device_pdf *pdev, const byte *nstr, uint size)
+{
+    pdf_put_name_escaped(pdev->strm, nstr, size,
+			 pdev->CompatibilityLevel >= 1.2);
 }
 
 /*

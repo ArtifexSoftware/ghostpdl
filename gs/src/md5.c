@@ -21,18 +21,22 @@
   ghost@aladdin.com
 
  */
+/*$RCSfile$ $Revision$ */
 /*
+  Independent implementation of MD5 (RFC 1321).
+
   This code implements the MD5 Algorithm defined in RFC 1321.
   It is derived directly from the text of the RFC and not from the
   reference implementation.
 
-  The original and principal author of ansi2knr is L. Peter Deutsch
+  The original and principal author of md5.c is L. Peter Deutsch
   <ghost@aladdin.com>.  Other authors are noted in the change history
   that follows (in reverse chronological order):
 
+  1999-11-04 lpd Edited comments slightly for automatic TOC extraction.
+  1999-10-18 lpd Fixed typo in header comment (ansi2knr rather than md5).
   1999-05-03 lpd Original version.
  */
-
 
 #include "md5.h"
 

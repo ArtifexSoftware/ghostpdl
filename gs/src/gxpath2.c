@@ -1,22 +1,9 @@
 /* Copyright (C) 1989, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Path tracing procedures for Ghostscript library */
 #include "math_.h"
 #include "gx.h"
@@ -328,20 +315,14 @@ gx_path_copy_reversed(const gx_path * ppath_old, gx_path * ppath)
 	    (pseg == (const segment *)psub ? sn_none :
 	     psub->next->notes);
 	segment_notes notes;
+	int code;
 
 	if (!psub->is_closed) {
-	    int code = gx_path_add_point(ppath, pseg->pt.x, pseg->pt.y);
-
+	    code = gx_path_add_point(ppath, pseg->pt.x, pseg->pt.y);
 	    if (code < 0)
 		return code;
 	}
-	/*
-	 * The odd '1' in the next statement suppresses a "statement not
-	 * reached" warning at the end of the loop from certain compilers.
-	 */
 	for (; 1; pseg = prev, prev_notes = notes) {
-	    int code;
-
 	    prev = pseg->prev;
 	    notes = pseg->notes;
 	    prev_notes = (prev_notes & sn_not_first) |
@@ -351,8 +332,7 @@ gx_path_copy_reversed(const gx_path * ppath_old, gx_path * ppath)
 		    /* Finished subpath */
 		    if (psub->is_closed) {
 			code =
-			    gx_path_close_subpath_notes(ppath,
-							prev_notes);
+			    gx_path_close_subpath_notes(ppath, prev_notes);
 			if (code < 0)
 			    return code;
 		    }
@@ -382,9 +362,9 @@ gx_path_copy_reversed(const gx_path * ppath_old, gx_path * ppath)
 		    return_error(gs_error_Fatal);
 	    }
 	    if (code < 0)
-		return code;
+		break;
 	}
-	/* not reached */
+	return code;		/* only reached if code < 0 */
     }
 #undef sn_not_end
     /*

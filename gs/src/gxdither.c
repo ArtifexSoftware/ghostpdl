@@ -1,22 +1,9 @@
-/* Copyright (C) 1989, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+/* Copyright (C) 1989, 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 #include "gx.h"
 #include "gsstruct.h"
 #include "gsdcolor.h"
@@ -27,6 +14,8 @@
 #include "gzht.h"
 
 /*
+ * Binary halftoning algorithms.
+ *
  * The procedures in this file use halftoning (if necessary)
  * to implement a given device color that has already gone through
  * the transfer function.  There are two major cases: gray and color.
@@ -314,12 +303,11 @@ gx_render_device_color(frac red, frac green, frac blue, frac white, bool cmyk,
 
     /* Dithering is required.  Choose between two algorithms. */
 
-    if (pdht->components != 0 && dev->color_info.depth >= 4) {
-	/* Someone went to the trouble of setting different */
-	/* screens for the different components. */
+    if (dev->color_info.num_components >= 4) {
+	/* This is a CMYK device. */
 	/* Use the slow, general colored halftone algorithm. */
 #define RGB_REM(rem_v, i)\
-  (rem_v * (ulong)(pdht->components[pdht->color_indices[i]].corder.num_levels) / frac_1)
+  (rem_v * (ulong)(pdht->components ? pdht->components[pdht->color_indices[i]].corder.num_levels : num_levels) / frac_1)
 	uint lr = RGB_REM(rem_r, 0), lg = RGB_REM(rem_g, 1),
 	    lb = RGB_REM(rem_b, 2);
 
@@ -376,7 +364,7 @@ gx_render_device_color(frac red, frac green, frac blue, frac white, bool cmyk,
 	if (cmyk) {
 	    if (rem_w > half)
 		rem_w = frac_1 - rem_w,
-		    adjust_w = -1, b++, lum_invert += lum_white_weight * 2;
+		    adjust_w = -1, w++, lum_invert += lum_white_weight * 2;
 	    else
 		adjust_w = 1;
 	    vw = fractional_color(w, max_value);

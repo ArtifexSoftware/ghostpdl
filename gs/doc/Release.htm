@@ -1,7 +1,7 @@
 <html>
 <head>
 <title>How to prepare an Aladdin Ghostscript release</title>
-
+<!-- $RCSfile$ $Revision$ -->
 <!-- Originally: make.txt -->
 </head>
 
@@ -65,23 +65,31 @@ Ghostscript distribution.  In the course of time, these scripts will become
 part of the distribution, probably in a new subdirectory.
 
 <p>
+File names below that don't include an explicit subdirectory name are in the
+<b><tt>src</tt></b> subdirectory.
+
+<p>
 Anyone is welcome to prepare and distribute releases, but we would call your
 attention to some items you will want to change.
 
 <ul>
 
-<li>If you make any significant changes, please change the name of the
-program (in <b><tt>gscdef.c</tt></b>) from Aladdin Ghostscript to something
-else, in order to avoid confusion with Aladdin's releases.
+<li>If you make any significant changes, please edit
+<b><tt>gscdef.c</tt></b> to change <b><tt>GS_PRODUCTFAMILY</tt></b> and
+<b><tt>GS_PRODUCT</tt></b> from "Aladdin Ghostscript" to something else, in
+order to avoid confusion with Aladdin's releases.
 
-<li>You may also want to change the copyright notice (in the same file) to
-add your own copyright (although you must not remove Aladdin's copyright).
+<li>In the same file, you may also want to edit <b><tt>GS_COPYRIGHT</tt></b>
+to add your own copyright notice (although you must not remove Aladdin's
+notice).
 
-<li>You will almost certainly want to change the release date in
-<b><tt>version.mak</tt></b>.
+<li>You will almost certainly want to edit <b><tt>version.mak</tt></b> to
+change the revision date, <b><tt>GS_REVISIONDATE</tt></b>.
 
 <li>If you want to change the version number, you must change it in both
-<b><tt>version.mak</tt></b> and <b><tt>lib/gs_init.ps</tt></b>.
+<b><tt>version.mak</tt></b> (<b><tt>GS_VERSION_</tt></b>*) and
+<b><tt>lib/gs_init.ps</tt></b> (the integer on a line by itself near the
+beginning of the file).
 
 </ul>
 
@@ -112,6 +120,9 @@ When adding or changing fonts, update <b><tt>Fontmap.GS</tt></b>,
 <p>
 When adding or changing filters, update <b><tt>doc/Language.htm</tt></b>.
 
+<p>
+When adding .ps files, update <b><tt>doc/Psfiles.htm</tt></b>.
+
 <h1><a name="Making_distributions"></a>Making distributions</h1>
 
 <p>
@@ -132,19 +143,29 @@ You will need the following tools:
 <h2><a name="General_procedure"></a>General procedure</h2>
 
 <p>
+Make sure the release date and version number are up to date in
+<b><tt>version.mak</tt></b> and <b><tt>lib/gs_init.ps</tt></b>.
+
+<p>
 Edit the makefile (presumably <b><tt>unix-gcc.mak</tt></b>) to set
 FEATURE_DEVS=$(FEATURE_DEVS_ALL), to help catch compilation problems.
 
 <p>
-Run <b><tt>make -j2</tt></b> (not <b><tt>tmake</tt></b>, and without
-<b><tt>debug</tt></b>).
+Run
+<blockquote><pre>
+rm obj/*
+make -j2 >& t.log
+</pre></blockquote>
+
+<p>
+and look for warnings and errors in the log file.
 
 <p>
 Do a smoke test:
 <blockquote><pre>
-gs @b master/smoke.ps
+bin/gs @b master/smoke.ps
 export TEMP=/gs/tmp
-gs @b -sDEVICE=bitcmyk -sOutputFile=/dev/null -r600 -dMaxBitmap=1000000 master/smoke.ps
+bin/gs @b -sDEVICE=bitcmyk -sOutputFile=/dev/null -r600 -dMaxBitmap=1000000 master/smoke.ps
 </pre></blockquote>
 
 <p>
@@ -154,9 +175,9 @@ Undo the FEATURE_DEVS edit.
 Update the release date in <b><tt>doc/News.htm</tt></b>.
 
 <p>
-Check that the appropriate one of "TESTER RELEASE", "BETA RELEASE", or
-neither is included in the definition of GS_PRODUCT in
-<b><tt>gscdef.c</tt></b>.
+Check in <b><tt>gscdef.c</tt></b> that the definition of
+<b><tt>GS_PRODUCT</tt></b> includes the appropriate one of "TESTER RELEASE",
+"BETA RELEASE", or neither.
 
 <p>
 Check for patched configuration parameters, #define TESTs, version/date
@@ -205,7 +226,7 @@ put-gs-c
 <p>
 Clean up the directories with
 <blockquote><pre>
-rm -f src/*~ doc/*~ lib/*~ man/*~ examples/*~ src/*.bak src/*.orig src/*.mak.tcl
+rm -f src/*~ src/*.bak src/*.orig src/*.mak.tcl doc/*~ doc/*.orig lib/*~ man/*~ examples/*~ gnu/src/*~ gnu/src/*.bak gnu/src/*.orig
 </pre></blockquote>
 
 <p>
@@ -219,9 +240,6 @@ where #.## is the release number (e.g., 5.90).  This creates the files
 <blockquote>
 	<b><tt>ghostscript-#.##.tar.gz</tt></b> (main archive)<br>
 	<b><tt>ghostscript-#.##.tar.bz2</tt></b> (main archive)<br>
-</blockquote>
-It should, but doesn't, create
-<blockquote>
 	<b><tt>ghostscript-#.##gnu.tar.gz</tt></b> (GPL'ed files)<br>
 </blockquote>
 
@@ -265,17 +283,14 @@ Boot back into Linux.  If testing in Windows revealed problems, edit the
 source files as necessary, and go back to "Check the consistency of the
 source code."  If everything was OK, make the PC executable archive with
 <blockquote><pre>
-master/makeset --exe #.##
+master/makeset --win #.##
 </pre></blockquote>
 
 <p>
-This creates the file
+This creates the files
 <blockquote>
-	<b><tt>gs###run.zip</tt></b> (MS Windows run-time archive)
-</blockquote>
-It should, but doesn't, create
-<blockquote>
-	<b><tt>ghostscript-#.##pc.tar.gz</tt></b> (main archive - sources + PC executables)
+	<b><tt>gs###w32.zip</tt></b> (MS Windows run-time archive, including fonts and documentation)
+	<b><tt>gs###src.zip</tt></b> (src and man directories)
 </blockquote>
 
 <p>
@@ -292,7 +307,7 @@ to it.
 Do the steps for distributions in general.
 
 <p>
-FTP <b><tt>ghostscript-#.##.tar.*</tt></b> and <b><tt>gs###run.zip</tt></b>
+FTP <b><tt>ghostscript-#.##.tar.*</tt></b> and <b><tt>gs###*.zip</tt></b>
 to the Wisconsin server (aladdin/test directory).
 
 <p>
@@ -318,11 +333,11 @@ and "new features" and "known problems" lists in
 <b><tt>doc/Current.htm</tt></b>.
 
 <p>
-Do the steps for distributions in general.  Remake the PC archive after
-doing the PC compilations, so it contains the real executables.
+Do the steps for distributions in general.
 
 <p>
-FTP the GNU and PC archives to the Wisconsin server.
+FTP the archives, including the GNU archive if relevant, to the Wisconsin
+server.
 
 <p>
 Unpack the distribution on a Sun at Wisconsin and run 'make' to make sure
@@ -379,7 +394,7 @@ full details of the terms of using, copying, modifying, and redistributing
 Aladdin Ghostscript.
 
 <p>
-Ghostscript version 5.91, 30 August 1999
+Ghostscript version 5.96, 12 November 1999
 
 </font>
 

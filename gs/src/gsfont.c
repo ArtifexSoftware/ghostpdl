@@ -1,22 +1,9 @@
 /* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Font operators for Ghostscript library */
 #include "gx.h"
 #include "memory_.h"
@@ -53,6 +40,7 @@ const gs_font_procs gs_font_procs_default = {
     gs_no_define_font,		/* (actually a default) */
     gs_no_make_font,		/* (actually a default) */
     gs_default_font_info,
+    gs_default_same_font,
     gs_no_encode_char,
     gs_no_enumerate_glyph,
     gs_default_glyph_info,
@@ -281,6 +269,7 @@ gs_font_alloc(gs_memory_t *mem, gs_memory_type_ptr_t pstype,
     pfont->next = pfont->prev = 0;
     pfont->memory = mem;
     pfont->dir = dir;
+    pfont->is_resource = false;
     gs_notify_init(&pfont->notify_list, gs_memory_stable(mem));
     pfont->id = gs_next_ids(1);
     pfont->base = pfont;
@@ -435,6 +424,7 @@ gs_makefont(gs_font_dir * pdir, const gs_font * pfont,
     if (!pf_out)
 	return_error(gs_error_VMerror);
     memcpy(pf_out, pfont, gs_object_size(mem, pfont));
+    gs_notify_init(&pf_out->notify_list, gs_memory_stable(mem));
     pf_out->FontMatrix = newmat;
     pf_out->client_data = 0;
     pf_out->dir = pdir;
@@ -713,8 +703,67 @@ gs_default_font_info(gs_font *font, const gs_point *pscale, int members,
 	    info->AvgWidth = info->MaxWidth = info->MissingWidth = fixed_width;
 	}
 	info->Flags_returned |= FONT_IS_FIXED_WIDTH;
+    } else if (members & FONT_INFO_MISSING_WIDTH) {
+	gs_glyph glyph;
+	int index, code;
+
+	for (index = 0;
+	     (code = font->procs.enumerate_glyph(font, &index, GLYPH_SPACE_NAME, &glyph)) >= 0 &&
+		 index != 0;
+	     ) {
+	    gs_const_string gnstr;
+
+	    gnstr.data = (const byte *)
+		bfont->procs.callbacks.glyph_name(glyph, &gnstr.size);
+	    if (gnstr.size == 7 && !memcmp(gnstr.data, ".notdef", 7)) {
+		gs_glyph_info_t glyph_info;
+		int code = font->procs.glyph_info(font, glyph, pmat,
+						  (GLYPH_INFO_WIDTH0 << wmode),
+						  &glyph_info);
+
+		if (code < 0)
+		    return code;
+		info->MissingWidth = glyph_info.width[wmode].x;
+		info->members |= FONT_INFO_MISSING_WIDTH;
+		break;
+	    }
+	}
     }
     return 0;
+}
+
+/* Default font similarity testing procedure */
+int
+gs_default_same_font(const gs_font *font, const gs_font *ofont, int mask)
+{
+    while (font->base != font)
+	font = font->base;
+    while (ofont->base != ofont)
+	ofont = ofont->base;
+    if (ofont == font)
+	return mask;
+    /* In general, we can't determine similarity. */
+    return 0;
+}
+int
+gs_base_same_font(const gs_font *font, const gs_font *ofont, int mask)
+{
+    int same = gs_default_same_font(font, ofont, mask);
+
+    if (!same) {
+	const gs_font_base *const bfont = (const gs_font_base *)font;
+	const gs_font_base *const obfont = (const gs_font_base *)ofont;
+
+	if (mask & FONT_SAME_ENCODING) {
+	    if (bfont->encoding_index != ENCODING_INDEX_UNKNOWN ||
+		obfont->encoding_index != ENCODING_INDEX_UNKNOWN
+		) {
+		if (bfont->encoding_index == obfont->encoding_index)
+		    same |= FONT_SAME_ENCODING;
+	    }
+	}
+    }
+    return same;
 }
 
 /* ------ Glyph-level procedures ------ */

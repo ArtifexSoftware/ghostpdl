@@ -1,22 +1,9 @@
 /* Copyright (C) 1990, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Private Adobe Type 1 / Type 2 charstring interpreter definitions */
 
 #ifndef gxtype1_INCLUDED
@@ -178,33 +165,31 @@ struct gs_type1_state_s {
     ip_state ipstack[ipstack_size + 1];		/* control stack */
     int ips_count;		/* # of occupied entries */
     int init_done;		/* -1 if not done & not needed, */
-    /* 0 if not done & needed, 1 if done */
+				/* 0 if not done & needed, 1 if done */
     bool sb_set;		/* true if lsb is preset */
-    bool width_set;		/* true if width is set (for */
-    /* seac components) */
+    bool width_set;		/* true if width is set (for seac parts) */
     bool have_hintmask;		/* true if using a hint mask */
     /* (Type 2 charstrings only) */
     int num_hints;		/* number of hints (Type 2 only) */
     gs_fixed_point lsb;		/* left side bearing (char coords) */
     gs_fixed_point width;	/* character width (char coords) */
-    int seac_accent;		/* accent character code for seac, */
-    /* or -1 */
+    int seac_accent;		/* accent character code for seac, or -1 */
     fixed save_asb;		/* save seac asb */
+    gs_fixed_point save_lsb;	/* save seac accented lsb */
     gs_fixed_point save_adxy;	/* save seac adx/ady */
-    fixed asb_diff;		/* seac asb - accented char lsb.x, */
-    /* needed to adjust Flex endpoint */
+    fixed asb_diff;		/* save_asb - save_lsb.x, */
+				/* needed to adjust Flex endpoint */
     gs_fixed_point adxy;	/* seac accent displacement, */
-    /* needed to adjust currentpoint */
+				/* needed to adjust currentpoint */
     gs_fixed_point position;	/* save unadjusted position */
-    /* when returning temporarily */
-    /* to caller */
+				/* when returning temporarily to caller */
     int flex_path_state_flags;	/* record whether path was open */
-    /* at start of Flex section */
+				/* at start of Flex section */
 #define flex_max 8
     gs_fixed_point flex_points[flex_max];	/* points for Flex */
     int flex_count;
     int ignore_pops;		/* # of pops to ignore (after */
-    /* a known othersubr call) */
+				/* a known othersubr call) */
     /* The following are set dynamically. */
 #define dotsection_in 0
 #define dotsection_out (-1)

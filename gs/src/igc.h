@@ -1,22 +1,9 @@
 /* Copyright (C) 1994, 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Internal interfaces in Ghostscript GC */
 
 #ifndef igc_INCLUDED
@@ -83,9 +70,9 @@ void ialloc_validate_object(P3(const obj_header_t *, const chunk_t *,
 			       gc_state_t *));
 
 /* Macro for returning a relocated pointer */
-#ifdef DEBUG
 const void *print_reloc_proc(P3(const void *obj, const char *cname,
 				const void *robj));
+#ifdef DEBUG
 #  define print_reloc(obj, cname, nobj)\
 	(gs_debug_c('9') ? print_reloc_proc(obj, cname, nobj) : nobj)
 #else

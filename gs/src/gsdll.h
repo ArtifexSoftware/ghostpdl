@@ -18,7 +18,7 @@
  */
 
 
-
+/*$RCSfile$ $Revision$ */
 
 #ifndef gsdll_INCLUDED
 #  define gsdll_INCLUDED

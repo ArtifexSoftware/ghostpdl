@@ -1,21 +1,8 @@
 #    Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-# 
-# This file is part of Aladdin Ghostscript.
-# 
-# Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-# or distributor accepts any responsibility for the consequences of using it,
-# or for whether it serves any particular purpose or works at all, unless he
-# or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-# License (the "License") for full details.
-# 
-# Every copy of Aladdin Ghostscript must include a copy of the License,
-# normally in a plain ASCII text file named PUBLIC.  The License grants you
-# the right to copy, modify and redistribute Aladdin Ghostscript, but only
-# under certain conditions described in the License.  Among other things, the
-# License requires that the copyright notice and this notice be preserved on
-# all copies.
+# This software is licensed to a single customer by Artifex Software Inc.
+# under the terms of a specific OEM agreement.
 
-
+# $RCSfile$ $Revision$
 # makefile for DesqView/X/gcc/X11 configuration.
 
 #include $(COMMONDIR)/gccdefs.mak
@@ -28,6 +15,19 @@ include $(GLSRCDIR)/version.mak
 ####### The following are the only parts of the file you should need to edit.
 
 # ------ Generic options ------ #
+
+# Define the directory for the final executable, and the
+# source, generated intermediate file, and object directories
+# for the graphics library (GL) and the PostScript/PDF interpreter (PS).
+
+BINDIR=bin
+GLSRCDIR=src
+GLGENDIR=obj
+GLOBJDIR=obj
+PSSRCDIR=src
+PSLIBDIR=lib
+PSGENDIR=obj
+PSOBJDIR=obj
 
 # Define the installation commands and target directories for
 # executables and files.  The commands are only relevant to `make install';
@@ -83,18 +83,15 @@ GENOPT=
 
 GS=gs
 
-# Define the directory for the final executable, and the
-# source, generated intermediate file, and object directories
-# for the graphics library (GL) and the PostScript/PDF interpreter (PS).
-
-BINDIR=bin
-GLSRCDIR=src
-GLGENDIR=obj
-GLOBJDIR=obj
-PSSRCDIR=src
-PSLIBDIR=lib
-PSGENDIR=obj
-PSOBJDIR=obj
+# Define the name of a pre-built executable that can be invoked at build
+# time.  Currently, this is only needed for compiled fonts.  The usual
+# alternatives are:
+#   - the standard name of Ghostscript on your system (typically `gs'):
+BUILD_TIME_GS=gs
+#   - the name of the executable you are building now.  If you choose this
+# option, then you must build the executable first without compiled fonts,
+# and then again with compiled fonts.
+#BUILD_TIME_GS=$(BINDIR)/$(GS) -I$(PSLIBDIR)
 
 # Define the directory where the IJG JPEG library sources are stored,
 # and the major version of the library that is stored there.
@@ -177,6 +174,12 @@ LDFLAGS=$(XLDFLAGS)
 
 EXTRALIBS=-lsys -lc
 
+# Define the standard libraries to search at the end of linking.
+# All reasonable platforms require -lm, but Rhapsody and perhaps one or
+# two others fold libm into libc and require STDLIBS to be empty.
+
+STDLIBS=-lm
+
 # Define the include switch(es) for the X11 header files.
 # This can be null if handled in some other way (e.g., the files are
 # in /usr/include, or the directory is supplied by an environment variable);
@@ -229,12 +232,12 @@ SYNC=posync
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)pipe.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(GLD)pipe.dev
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
 
-COMPILE_INITS=0
+COMPILE_INITS=1
 
 # Choose whether to store band lists on files or in memory.
 # The choices are 'file' or 'memory'.

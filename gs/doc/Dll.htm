@@ -1,7 +1,7 @@
 <html>
 <head>
 <title>How to use the Ghostscript Dynamic Link Library (DLL)</title>
-
+<!-- $RCSfile$ $Revision$ -->
 <!-- Originally: dll.txt -->
 </head>
 
@@ -94,7 +94,7 @@ simultaneously.
 
 <li>The <a href="#Win_device">Win32 DLL <b><tt>GSDLL32.DLL</tt></b></a> has
 MULTIPLE NONSHARED data segments.  Under Win32s it can be used by only one
-program at a time, but under Windows 95 or Windows NT it can be called by
+program at a time, but under Windows 95/98 or Windows NT it can be called by
 multiple programs simultaneously.
 
 <li>The <a href="#Win16">Win16 DLL <b><tt>GSDLL16.DLL</tt></b></a> is a
@@ -320,7 +320,7 @@ locked by the caller, but locking the device prevents the Ghostscript DLL
 from closing the device or changing its size or depth.
 
 <p>
-Under OS/2, Windows 95 and Windows NT, this lock is implemented using a
+Under OS/2, Windows 95/98 and Windows NT, this lock is implemented using a
 mutual exclusion semaphore (mutex).  The return value is the lock count,
 which is either 0 ("unlocked") or 1 ("locked").  The function blocks until
 the device is locked by the caller.
@@ -692,7 +692,7 @@ full details of the terms of using, copying, modifying, and redistributing
 Aladdin Ghostscript.
 
 <p>
-Ghostscript version 5.91, 30 August 1999
+Ghostscript version 5.96, 12 November 1999
 
 </font>
 

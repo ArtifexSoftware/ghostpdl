@@ -1,21 +1,8 @@
 #    Copyright (C) 1991-1999 Aladdin Enterprises.  All rights reserved.
-# 
-# This file is part of Aladdin Ghostscript.
-# 
-# Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-# or distributor accepts any responsibility for the consequences of using it,
-# or for whether it serves any particular purpose or works at all, unless he
-# or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-# License (the "License") for full details.
-# 
-# Every copy of Aladdin Ghostscript must include a copy of the License,
-# normally in a plain ASCII text file named PUBLIC.  The License grants you
-# the right to copy, modify and redistribute Aladdin Ghostscript, but only
-# under certain conditions described in the License.  Among other things, the
-# License requires that the copyright notice and this notice be preserved on
-# all copies.
+# This software is licensed to a single customer by Artifex Software Inc.
+# under the terms of a specific OEM agreement.
 
-
+# $RCSfile$ $Revision$
 # watcw32.mak
 # makefile for Watcom C++ v??, Windows NT or Windows 95 platform.
 #   Does NOT build gs16spl.exe, which is 16-bit and is used under Win32s.
@@ -30,15 +17,33 @@
 
 # ------ Generic options ------ #
 
+# Define the directory for the final executable, and the
+# source, generated intermediate file, and object directories
+# for the graphics library (GL) and the PostScript/PDF interpreter (PS).
+
+BINDIR=bin
+GLSRCDIR=src
+GLGENDIR=obj
+GLOBJDIR=obj
+PSSRCDIR=src
+PSLIBDIR=lib
+PSGENDIR=obj
+PSOBJDIR=obj
+
+# Define the root directory for Ghostscript installation.
+
+AROOTDIR=c:/Aladdin
+GSROOTDIR=$(AROOTDIR)/gs$(GS_DOT_VERSION)
+
 # Define the directory that will hold documentation at runtime.
 
-GS_DOCDIR=c:/gs
+GS_DOCDIR=$(GSROOTDIR)/doc
 
 # Define the default directory/ies for the runtime
 # initialization and font files.  Separate multiple directories with \;.
 # Use / to indicate directories, not a single \.
 
-GS_LIB_DEFAULT=.;c:/gs/lib\;c:/gs/fonts
+GS_LIB_DEFAULT=$(GSROOTDIR)/lib\;$(AROOTDIR)/fonts
 
 # Define whether or not searching for initialization files should always
 # look in the current directory first.  This leads to well-known security
@@ -79,23 +84,20 @@ GS=gswin32
 GSCONSOLE=gswin32c
 GSDLL=gsdll32
 
+# Define the name of a pre-built executable that can be invoked at build
+# time.  Currently, this is only needed for compiled fonts.  The usual
+# alternatives are:
+#   - the standard name of Ghostscript on your system (typically `gs'):
+BUILD_TIME_GS=gswin32c
+#   - the name of the executable you are building now.  If you choose this
+# option, then you must build the executable first without compiled fonts,
+# and then again with compiled fonts.
+#BUILD_TIME_GS=$(BINDIR)\$(GS) -I$(PSLIBDIR)
+
 # To build two small executables and a large DLL use MAKEDLL=1
 # To build two large executables use MAKEDLL=0
 
 MAKEDLL=1
-
-# Define the directory for the final executable, and the
-# source, generated intermediate file, and object directories
-# for the graphics library (GL) and the PostScript/PDF interpreter (PS).
-
-BINDIR=bin
-GLSRCDIR=src
-GLGENDIR=obj
-GLOBJDIR=obj
-PSSRCDIR=src
-PSLIBDIR=lib
-PSGENDIR=obj
-PSOBJDIR=obj
 
 # Define the directory where the IJG JPEG library sources are stored,
 # and the major version of the library that is stored there.
@@ -186,7 +188,7 @@ FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
 
-COMPILE_INITS=0
+COMPILE_INITS=1
 
 # Choose whether to store band lists on files or in memory.
 # The choices are 'file' or 'memory'.

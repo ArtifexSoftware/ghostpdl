@@ -1,22 +1,9 @@
 /* Copyright (C) 1993, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Pattern color mapping for Ghostscript library */
 #include "math_.h"
 #include "memory_.h"
@@ -81,10 +68,8 @@ private const gx_device_pattern_accum gs_pattern_accum_device =
 {std_device_std_body_open(gx_device_pattern_accum, 0,
 			  "pattern accumulator",
 			  0, 0, 72, 72),
- {				/*
-				 * NOTE: all drawing procedures must be defaulted,
-				 * not forwarded.
-				 */
+ {
+     /* NOTE: all drawing procedures must be defaulted, not forwarded. */
      pattern_accum_open,
      NULL,
      NULL,
@@ -97,7 +82,7 @@ private const gx_device_pattern_accum gs_pattern_accum_device =
      pattern_accum_copy_mono,
      pattern_accum_copy_color,
      NULL,
-     NULL,
+     gx_default_get_bits,
      NULL,
      NULL,
      NULL,
@@ -336,8 +321,10 @@ pattern_accum_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 {
     gx_device_pattern_accum *const padev = (gx_device_pattern_accum *) dev;
 
-    return (*dev_proc(padev->target, get_bits_rectangle))
-	(padev->target, prect, params, unread);
+    if (padev->bits)
+	return (*dev_proc(padev->target, get_bits_rectangle))
+	    (padev->target, prect, params, unread);
+    return_error(gs_error_Fatal); /* can't happen */
 }
 
 /* ------ Color space implementation ------ */

@@ -1,22 +1,9 @@
 /* Copyright (C) 1992, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Path copying and flattening */
 #include "math_.h"
 #include "gx.h"
@@ -544,17 +531,24 @@ gx_curve_x_at_y(curve_cursor * prc, fixed y)
     /*
      * Compute in fixed point if possible.
      */
-#define half_fixed_bits ((fixed)1 << (sizeof(fixed) * 4))
-    if (yrel < half_fixed_bits) {
+#define HALF_FIXED_BITS ((fixed)1 << (sizeof(fixed) * 4))
+    if (yrel < HALF_FIXED_BITS) {
 	if (xd >= 0) {
-	    if (xd < half_fixed_bits)
-		return (ufixed) xd *(ufixed) yrel / (ufixed) yd + xl;
+	    if (xd < HALF_FIXED_BITS)
+		return (ufixed)xd * (ufixed)yrel / (ufixed)yd + xl;
 	} else {
-	    if (xd > -half_fixed_bits)
-		return -(fixed) ((ufixed) (-xd) * (ufixed) yrel / (ufixed) yd) + xl;
+	    if (xd > -HALF_FIXED_BITS) {
+		/* Be careful to take the floor of the result. */
+		ufixed num = (ufixed)(-xd) * (ufixed)yrel;
+		ufixed quo = num / (ufixed)yd;
+
+		if (quo * (ufixed)yd != num)
+		    quo += fixed_epsilon;
+		return xl - (fixed)quo;
+	    }
 	}
     }
-#undef half_fixed_bits
+#undef HALF_FIXED_BITS
     return fixed_mult_quo(xd, yrel, yd) + xl;
 }
 

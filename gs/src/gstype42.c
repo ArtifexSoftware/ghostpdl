@@ -1,22 +1,9 @@
 /* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Type 42 (TrueType) font library routines */
 #include "memory_.h"
 #include "gx.h"
@@ -24,6 +11,7 @@
 #include "gsstruct.h"
 #include "gsccode.h"
 #include "gsmatrix.h"
+#include "gsutil.h"
 #include "gxfixed.h"		/* for gxpath.h */
 #include "gxpath.h"
 #include "gxfont.h"
@@ -50,11 +38,7 @@ private int append_outline(P4(uint glyph_index, const gs_matrix_fixed * pmat,
 #define S8(p) (int)((U8(p) ^ 0x80) - 0x80)
 #define U16(p) (((uint)((p)[0]) << 8) + (p)[1])
 #define S16(p) (int)((U16(p) ^ 0x8000) - 0x8000)
-private ulong
-u32(const byte *p)
-{
-    return ((ulong)U16(p) << 16) + U16((p) + 2);
-}
+#define u32(p) get_u32_msb(p)
 
 /* Define the bits in the component glyph flags. */
 #define cg_argsAreWords 1

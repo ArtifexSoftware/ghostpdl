@@ -1,22 +1,10 @@
 /* Copyright (C) 1989, 1995, 1996, 1997, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
+/* Font object structure */
 /* Requires gsmatrix.h, gxdevice.h */
 
 #ifndef gxfont_INCLUDED
@@ -59,6 +47,9 @@ typedef struct gx_path_s gx_path;
  */
 typedef struct gs_font_info_s {
     int members;
+
+    /* The following members exactly parallel the PDF FontDescriptor flags. */
+
 #define FONT_INFO_ASCENT 0x0001
     int Ascent;
 #define FONT_INFO_AVG_WIDTH 0x0002
@@ -91,6 +82,18 @@ typedef struct gs_font_info_s {
     int UnderlineThickness;
 #define FONT_INFO_X_HEIGHT 0x00100000
     int XHeight;
+
+    /* The following members do NOT appear in the PDF FontDescriptor. */
+
+#define FONT_INFO_COPYRIGHT 0x0040
+    gs_const_string Copyright;
+#define FONT_INFO_NOTICE 0x0080
+    gs_const_string Notice;
+#define FONT_INFO_FAMILY_NAME 0x1000
+    gs_const_string FamilyName;
+#define FONT_INFO_FULL_NAME 0x2000
+    gs_const_string FullName;
+
 } gs_font_info_t;
 
 /*
@@ -149,6 +152,22 @@ typedef struct gs_font_procs_s {
   int proc(P4(gs_font *font, const gs_point *pscale, int members,\
 	      gs_font_info_t *info))
     font_proc_font_info((*font_info));
+
+    /*
+     * Determine whether this font is the "same as" another font in the ways
+     * specified by the mask.  The returned value is a subset of the mask.
+     * This procedure is allowed to be conservative (return false in cases
+     * of uncertainty).  Note that this procedure does not test the UniqueID
+     * or FontMatrix.
+     */
+
+#define FONT_SAME_OUTLINES 1
+#define FONT_SAME_METRICS 2
+#define FONT_SAME_ENCODING 4
+
+#define font_proc_same_font(proc)\
+  int proc(P3(const gs_font *font, const gs_font *ofont, int mask))
+    font_proc_same_font((*same_font));
 
     /* ------ Glyph-level procedures ------ */
 
@@ -252,6 +271,8 @@ font_proc_define_font(gs_no_define_font);
 font_proc_make_font(gs_no_make_font);
 font_proc_make_font(gs_base_make_font);
 font_proc_font_info(gs_default_font_info);
+font_proc_same_font(gs_default_same_font);
+font_proc_same_font(gs_base_same_font);
 /* Default glyph-level font procedures in gsfont.c */
 font_proc_encode_char(gs_no_encode_char);
 font_proc_enumerate_glyph(gs_no_enumerate_glyph);
@@ -285,6 +306,7 @@ typedef struct gs_font_name_s {
 					/* scaled font cache */\
 	gs_memory_t *memory;		/* allocator for this font */\
 	gs_font_dir *dir;		/* directory where registered */\
+	bool is_resource;\
 	gs_notify_list_t notify_list;	/* clients to notify when freeing */\
 	gs_id id;			/* internal ID (no relation to UID) */\
 	gs_font *base;			/* original (unscaled) base font */\

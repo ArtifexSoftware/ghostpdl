@@ -1,7 +1,7 @@
 <html>
 <head>
 <title>How to use Ghostscript</title>
-
+<!-- $RCSfile$ $Revision$ -->
 <!-- Originally: use.txt -->
 </head>
 
@@ -36,6 +36,7 @@ How to use Ghostscript
 <li><a href="#One_page_per_file">One page per file</a>
 <li><a href="#Pipe_output">Output to a pipe</a>
 <li><a href="#Output_to_graphics">Output to graphics file formats</a>
+<li><a href="#Bounding_box_output">Bounding box output</a>
 </ul>
 <li><a href="#Paper_size">Choosing paper size</a>
 <li><a href="#Change_default_size">Changing the installed default paper size</a>
@@ -146,9 +147,9 @@ Ghostscript on Unix:
 	<td>&nbsp;<td><b><tt>gs</tt></b>
 <tr>	<td>DOS &amp; MS Windows 3
 	<td>&nbsp;<td><b><tt>gs386</tt></b>
-<tr>	<td>MS Windows 95
+<tr>	<td>MS Windows 95/98
 	<td>&nbsp;<td><b><tt>gswin32</tt></b>
-<tr>	<td>MS Windows 95 command line
+<tr>	<td>MS Windows 95/98 command line
 	<td>&nbsp;<td><b><tt>gswin32c</tt></b>
 <tr>	<td>OS/2
 	<td>&nbsp;<td><b><tt>gsos2</tt></b>
@@ -394,7 +395,7 @@ gs -sOutputFile=ABC.xyz
 <p>
 The file name follows the PostScript convention that if a name begins with
 <b><tt>%</tt></b>, the name must be in the form <b><tt>%</tt></b>filedevice
-or <b><tt>%</tt></b>filedevice<tt><b>%</tt></b>file.  The legal values of
+or <b><tt>%</tt></b>filedevice<b><tt>%</tt></b>file.  The legal values of
 filedevice are system-dependent, but the following have consistent meanings
 across systems:
 
@@ -506,12 +507,47 @@ Here, as with printable files, you can use "<b><tt>%d</tt></b>"
 ("<b><tt>%%d</tt></b>" on DOS and MS Windows) to specify <a
 href="#One_page_per_file">one page per output file</a>.
 
+<h3><a name="Bounding_box_output"></a>Bounding box output</h3>
+
+<p>
+There is a special <b><tt>bbox</tt></b> "device" that just prints the
+bounding box of each page.  You select it in the usual way:
+
+<blockquote><b><tt>
+gs -dNOPAUSE -dBATCH -sDEVICE=bbox
+</tt></b></blockquote>
+
+<p>
+It prints the output in a format like this:
+
+<blockquote>
+<pre><b><tt>%%BoundingBox: 14 37 570 719
+%%HiResBoundingBox: 14.308066 37.547999 569.495061 718.319158
+</tt></b></pre></blockquote>
+
+<p>
+Currently, it always prints the bounding box on <b><tt>stderr</tt></b>;
+eventually, it should also recognize <b><tt>-sOutputFile=</tt></b>.
+
+<p>
+Note that this device, like other devices, has a resolution and a (maximum)
+page size.  As for other devices, the product (resolution x page size) is
+limited to approximately 500K pixels.  By default, the resolution is 4000
+DPI and the maximum page size is approximately 125", or approximately 9000
+default (1/72") user coordinate units.  If you need to measure larger pages
+than this, you must reset <em>both</em> the resolution and the page size in
+pixels, e.g.,
+
+<blockquote><b><tt>
+gs -dNOPAUSE -dBATCH -sDEVICE=bbox -r100 -g500000x500000
+</tt></b></blockquote>
+
 <h2><a name="Paper_size"></a>Choosing paper size</h2>
 
 <p>
 Ghostscript is distributed configured to use U.S. letter paper as its
 default page size, but it knows about many others, listed by name and size
-in the section on <a href="#Paper sizes">paper sizes known to
+in the section on <a href="#Known_paper_sizes">paper sizes known to
 Ghostscript</a>.  To select one of these as the default paper size for a
 single invocation of Ghostscript, you can use the
 <b><tt>-sPAPERSIZE=</tt></b> switch, for instance
@@ -552,7 +588,7 @@ this to
 
 <p>
 For <b><tt>a4</tt></b> you can substitute any
-<a href="#Paper sizes">paper size Ghostscript knows</a>.
+<a href="#Known_paper_sizes">paper size Ghostscript knows</a>.
 
 <h1><a name="Finding_files"></a>How Ghostscript finds files</h1>
 
@@ -658,9 +694,8 @@ next section</a>, it concatenates together
 
 <p>
 Note that even though the system parameters are named "somethingDir", they
-are not just plain directory names: they have
-"<b><tt>/</tt></b>" on the end, so that they can be
-concatenated with the category name or font name.
+are not just plain directory names: they have "<b><tt>/</tt></b>" on the
+end, so that they can be concatenated with the category name or font name.
 
 <h2><a name="Font_lookup"></a>Font lookup</h2>
 
@@ -675,20 +710,50 @@ additional list of directories which is the value of the
 with the <b><tt>-sFONTPATH=</tt></b> switch, if present).
 
 <p>
-When Ghostscript needs to find a font that isn't already loaded into
-memory, it begins by looking for <b><tt>Fontmap</tt></b>
-files in every directory on the search path: these files are catalogs of
-fonts and the files that contain them.  (See
-<a href="Fonts.htm#Fontmap">the documentation of fonts</a> for details.)
-If it can't find a font in any Fontmap file in the search path (or in the
-list provided with the <b><tt>-sFONTMAP=</tt></b> switch, if
-present), it looks at the <b><tt>GS_FONTPATH</tt></b>
+At startup time, Ghostscript reads in the <b><tt>Fontmap</tt></b> files in
+every directory on the search path (or in the list provided with the
+<b><tt>-sFONTMAP=</tt></b> switch, if present): these files are catalogs of
+fonts and the files that contain them.  (See <a href="Fonts.htm#Fontmap">the
+documentation of fonts</a> for details.)  Then, when Ghostscript needs to
+find a font that isn't already loaded into memory, it goes through a series
+of steps.
+
+<ul>
+
+<li>
+First, it looks up the font name in the combined Fontmaps.  If there is an
+entry for the desired font name, and the file named in the entry can be
+found in some directory on the general search path (defined by
+<b><tt>-I</tt></b>, <b><tt>GS_LIB</tt></b>, and
+<b><tt>GS_LIB_DEFAULT</tt></b>), and the file is loaded successfully, and
+loading it defines a font of the desired name, that is the end of the
+process.
+
+<li>
+If this process fails at any step, Ghostscript then looks for a file on the
+general search path whose name is the desired font name, with no extension.
+If such a file exists, can be loaded, and defines a font of the desired
+name, that again is the end.
+
+<li>
+If that too fails, Ghostscript looks at the <b><tt>GS_FONTPATH</tt></b>
 environment variable (or the value provided with the
-<b><tt>-sFONTPATH=</tt></b> switch, if present), which is
-also a list of directories.  It goes to those directories one by one
-looking for all files that appear to contain PostScript fonts; it then
-effectively adds all those files and fonts to its internal copy of the
-Fontmap.
+<b><tt>-sFONTPATH=</tt></b> switch, if present), which is also a list of
+directories.  It goes to the first directory on the list, looking for all
+files that appear to contain PostScript fonts; it then adds all those files
+and fonts to the combined Fontmaps, and starts over.
+
+<li>
+If scanning the first FONTPATH directory doesn't produce a file that
+provides the desired font, it adds the next directory on the FONTPATH list,
+and so on until either the font is defined successfully or the list is
+exhausted.
+
+<li>
+Finally, if all else fails, it will try to find a substitute for the font
+from among the standard 35 fonts.
+
+</ul>
 
 <blockquote><table cellpadding=0 cellspacing=0>
 <tr><th colspan=3 bgcolor="#CCCC00"><hr><font size="+1">Differences between search path and font path</font><hr>
@@ -703,8 +768,7 @@ Fontmap.
 <tr>	<td><b><tt>GS_LIB</tt></b> and <b><tt>GS_LIB_DEFAULT</tt></b>
 	    environment variables
 	<td>&nbsp;
-	<td><b><tt>-sFONTPATH=</tt></b> and the <b><tt>GS_FONTPATH</tt></b>
-	    environment variable
+	<td><b><tt>GS_FONTPATH</tt></b> environment variable
 <tr>	<td>&nbsp;
 <tr>	<td valign=top>Consulted first
 	<td>&nbsp;
@@ -768,7 +832,7 @@ notes on systems marked with "*"):
 	<td valign=top>NeXT
 	<td>&nbsp;
 	<td><b><tt>/NextLibrary/Fonts/outline</tt></b>
-<tr>	<td>&nbsp;
+<tr>	<td>*
 	<td>&nbsp;
 	<td valign=top>SGI IRIX
 	<td>&nbsp;
@@ -779,12 +843,12 @@ notes on systems marked with "*"):
 	<td valign=top>SunOS 4.x<br>(NeWSprint only)
 	<td>&nbsp;
 	<td valign=top><b><tt>newsprint_2.5/SUNWsteNP/reloc/$BASEDIR/NeWSprint/<br>&nbsp;&nbsp;&nbsp;&nbsp;small_openwin/lib/fonts</tt></b>
-<tr>	<td>*
+<tr>	<td>**
 	<td>&nbsp;
 	<td valign=top>SunOS 4.x
 	<td>&nbsp;
 	<td><b><tt>/usr/openwin/lib/X11/fonts/Type1/outline</tt></b>
-<tr>	<td>*
+<tr>	<td>**
 	<td>&nbsp;
 	<td valign=top>Solaris 2.x
 	<td>&nbsp;
@@ -796,10 +860,18 @@ notes on systems marked with "*"):
 	<td><b><tt>SYS$COMMON:[SYSFONT.XDPS.OUTLINE]</tt></b>
 </table>
 
-<hr align=left width="25%"><b>*</b> On Solaris systems simply setting
-<b><tt>GS_FONTPATH</tt></b> or using <b><tt>-sFONTPATH=</tt></b> may not
-work, because for some reason some versions of Ghostscript can't seem to
-find any of the Type1 fonts in
+<hr align=left width="25%">
+
+<p>
+<b>*</b> On SGI IRIX systems, you must use <b><tt>Fontmap.SGI</tt></b> in
+place of <b><tt>Fontmap</tt></b> or <b><tt>Fontmap.GS</tt></b>, because
+otherwise the entries in <b><tt>Fontmap</tt></b> will take precedence over
+the fonts in the FONTPATH directories.
+
+<p>
+<b>**</b> On Solaris systems simply setting <b><tt>GS_FONTPATH</tt></b> or
+using <b><tt>-sFONTPATH=</tt></b> may not work, because for some reason some
+versions of Ghostscript can't seem to find any of the Type1 fonts in
 <b><tt>/usr/openwin/lib/X11/fonts/Type1/outline</tt></b>. (It says: "15
 files, 15 scanned, 0 new fonts". We think this problem has been fixed in
 Ghostscript version 6.0, but we aren't sure because we've never been able to
@@ -828,12 +900,12 @@ to find these fonts.
 <p>
 Adobe Acrobat comes with a set of fourteen Type 1 fonts, on Unix typically
 in a directory called ...<b><tt>/Acrobat3/Fonts</tt></b>.  There is no
-particular reason to use these instead of the corresponding professional
-fonts in the Ghostscript distribution, except to save about a megabyte of
-disk space, but the installation documentation explains how to do it
-<a href="Install.htm#Use_Acrobat_fonts_Unix">on Unix</a> and
-<a href="Install.htm#Use_platform_fonts_DOS">on DOS</a> (where you can also
-use Adobe Type Manager fonts).
+particular reason to use these instead of the corresponding fonts in the
+Ghostscript distribution (which are of just as good quality), except to save
+about a megabyte of disk space, but the installation documentation explains
+how to do it <a href="Install.htm#Use_Acrobat_fonts_Unix">on Unix</a> and <a
+href="Install.htm#Use_platform_fonts_DOS">on DOS</a> (where you can also use
+Adobe Type Manager fonts).
 
 <h2><a name="Temp_files"></a>Temporary files</h2>
 
@@ -2284,6 +2356,7 @@ usage.
 <dt><b><tt>'</tt></b><dd>contexts, create/destroy
 <dt>&nbsp;&nbsp;&nbsp;<b><tt>"</tt></b><dd>contexts, every operation
 <dt><b><tt>^</tt></b><dd>reference counting
+<dt><b><tt>_</tt></b><dd>high-level output
 <dt><b><tt>|</tt></b><dd>(reserved for experimental code)
 </dl>
 
@@ -2592,7 +2665,7 @@ full details of the terms of using, copying, modifying, and redistributing
 Aladdin Ghostscript.
 
 <p>
-Ghostscript version 5.91, 30 August 1999
+Ghostscript version 5.96, 12 November 1999
 
 </font>
 

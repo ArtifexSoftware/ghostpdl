@@ -1,22 +1,9 @@
 /* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Rendering for Coons and tensor patch shadings */
 #include "memory_.h"
 #include "gx.h"
@@ -120,19 +107,23 @@ typedef struct patch_fill_state_s {
     const gs_function_t *Function;
 } patch_fill_state_t;
 
-/* Calculate the interpolated color at a given point. */
-/* Note that we must do this twice for bilinear interpolation. */
+/*
+ * Calculate the interpolated color at a given point.
+ * Note that we must do this twice for bilinear interpolation.
+ * We use the name ppcr rather than ppc because an Apple compiler defines
+ * ppc when compiling on PowerPC systems (!).
+ */
 private void
-patch_interpolate_color(patch_color_t * ppc, const patch_color_t * ppc0,
+patch_interpolate_color(patch_color_t * ppcr, const patch_color_t * ppc0,
        const patch_color_t * ppc1, const patch_fill_state_t * pfs, floatp t)
 {
     if (pfs->Function)
-	ppc->t = ppc0->t + t * (ppc1->t - ppc0->t);
+	ppcr->t = ppc0->t + t * (ppc1->t - ppc0->t);
     else {
 	int ci;
 
 	for (ci = pfs->num_components - 1; ci >= 0; --ci)
-	    ppc->cc.paint.values[ci] =
+	    ppcr->cc.paint.values[ci] =
 		ppc0->cc.paint.values[ci] +
 		t * (ppc1->cc.paint.values[ci] - ppc0->cc.paint.values[ci]);
     }
@@ -140,33 +131,35 @@ patch_interpolate_color(patch_color_t * ppc, const patch_color_t * ppc0,
 
 /* Resolve a patch color using the Function if necessary. */
 private void
-patch_resolve_color(patch_color_t * ppc, const patch_fill_state_t * pfs)
+patch_resolve_color(patch_color_t * ppcr, const patch_fill_state_t * pfs)
 {
     if (pfs->Function)
-	gs_function_evaluate(pfs->Function, &ppc->t, ppc->cc.paint.values);
+	gs_function_evaluate(pfs->Function, &ppcr->t, ppcr->cc.paint.values);
 }
 
 /* ================ Specific shadings ================ */
 
 /*
  * The curves are stored in a clockwise or counter-clockwise order that maps
- * to the patch definition in a non-intuitive way:
+ * to the patch definition in a non-intuitive way.  The documentation
+ * (pp. 277-281 of the PostScript Language Reference Manual, Third Edition)
+ * says that the curves are in the order D1, C2, D2, C1.
  */
 /* The starting points of the curves: */
-#define C1START 0
 #define D1START 0
-#define C2START 3
-#define D2START 1
+#define C2START 1
+#define D2START 3
+#define C1START 0
 /* The control points of the curves (x means reversed order): */
-#define C1CTRL 0
-#define D1XCTRL 3
-#define C2XCTRL 2
-#define D2CTRL 1
+#define D1CTRL 0
+#define C2CTRL 1
+#define D2XCTRL 2
+#define C1XCTRL 3
 /* The end points of the curves: */
-#define C1END 1
-#define D1END 3
+#define D1END 1
 #define C2END 2
 #define D2END 2
+#define C1END 3
 
 /* ---------------- Common code ---------------- */
 
@@ -221,37 +214,39 @@ merge_splits(double *out, const double *a1, int n1, const double *a2, int n2)
     return p - out;
 }
 
-/* Split a curve in both X and Y.  Return the number of split points. */
+/*
+ * Split a curve in both X and Y.  Return the number of split points.
+ * swap = 0 if the control points are in order, 1 if reversed.
+ */
 private int
-split_xy(double out[4], const patch_curve_t * curve, const gs_fixed_point * p3)
+split_xy(double out[4], const gs_fixed_point *p0, const gs_fixed_point *p1,
+	 const gs_fixed_point *p2, const gs_fixed_point *p3)
 {
     double tx[2], ty[2];
 
     return merge_splits(out, tx,
-			gx_curve_monotonic_points(curve->vertex.p.x,
-						  curve->control[0].x,
-						  curve->control[1].x,
-						  p3->x, tx),
+			gx_curve_monotonic_points(p0->x, p1->x, p2->x, p3->x,
+						  tx),
 			ty,
-			gx_curve_monotonic_points(curve->vertex.p.y,
-						  curve->control[0].y,
-						  curve->control[1].y,
-						  p3->y, ty));
+			gx_curve_monotonic_points(p0->y, p1->y, p2->y, p3->y,
+						  ty));
 }
 
 /*
  * Compute the joint split points of 2 curves.
+ * swap = 0 if the control points are in order, 1 if reversed.
  * Return the number of split points.
  */
-private int
-split2_xy(double out[8], const patch_curve_t * curve1,
-	  const gs_fixed_point * p31, const patch_curve_t * curve2,
-	  const gs_fixed_point * p32)
+inline private int
+split2_xy(double out[8], const gs_fixed_point *p10, const gs_fixed_point *p11,
+	  const gs_fixed_point *p12, const gs_fixed_point *p13,
+	  const gs_fixed_point *p20, const gs_fixed_point *p21,
+	  const gs_fixed_point *p22, const gs_fixed_point *p23)
 {
     double t1[4], t2[4];
 
-    return merge_splits(out, t1, split_xy(t1, curve1, p31),
-			t2, split_xy(t2, curve2, p32));
+    return merge_splits(out, t1, split_xy(t1, p10, p11, p12, p13),
+			t2, split_xy(t2, p20, p21, p22, p23));
 }
 
 private int
@@ -270,22 +265,20 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 	 * with respect to all 4 edges.  Since each edge has no more than
 	 * 2 X and 2 Y split points (for a total of 4), taking both edges
 	 * together we have a maximum of 8 split points for each axis.
-	 *
-	 * The current documentation doesn't say how the 4 curves
-	 * correspond to the 'u' or 'v' edges.  Pending clarification from
-	 * Adobe, we assume the 1st and 3rd are the 'u' edges and the
-	 * 2nd and 4th are the 'v' edges.
-	 ****** CHECK AGAINST UPDATED DOC ******
 	 */
-    double u[9], v[9];
-    int nu = split2_xy(u, &curve[0], &curve[1].vertex.p,
-		       &curve[2], &curve[3].vertex.p);
-    int nv = split2_xy(v, &curve[1], &curve[2].vertex.p,
-		       &curve[3], &curve[0].vertex.p);
+    double su[9], sv[9];
+    int nu = split2_xy(su, &curve[C1START].vertex.p,&curve[C1XCTRL].control[1],
+		       &curve[C1XCTRL].control[0], &curve[C1END].vertex.p,
+		       &curve[C2START].vertex.p, &curve[C2CTRL].control[0],
+		       &curve[C2CTRL].control[1], &curve[C2END].vertex.p);
+    int nv = split2_xy(sv, &curve[D1START].vertex.p, &curve[D1CTRL].control[0],
+		       &curve[D1CTRL].control[1], &curve[D1END].vertex.p,
+		       &curve[D2START].vertex.p, &curve[D2XCTRL].control[1],
+		       &curve[D2XCTRL].control[0], &curve[D2END].vertex.p);
     int iu, iv, ju, jv, ku, kv;
     double du, dv;
     double v0, v1, vn, u0, u1, un;
-    patch_color_t c0, c1, c2, c3;
+    patch_color_t c00, c01, c10, c11;
     /*
      * At some future time, we should set check = false if the curves
      * fall entirely within the bounding rectangle.  (Only a small
@@ -307,11 +300,23 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 		     fixed2float(curve[k].control[0].y),
 		     fixed2float(curve[k].control[1].x),
 		     fixed2float(curve[k].control[1].y));
+	if (nu > 1) {
+	    dlputs("[2]Splitting u");
+	    for (k = 0; k < nu; ++k)
+		dprintf1(", %g", su[k]);
+	    dputs("\n");
+	}
+	if (nv > 1) {
+	    dlputs("[2]Splitting v");
+	    for (k = 0; k < nv; ++k)
+		dprintf1(", %g", sv[k]);
+	    dputs("\n");
+	}
     }
 #endif
     /* Add boundary values to simplify the iteration. */
-    u[nu] = 1;
-    v[nv] = 1;
+    su[nu] = 1;
+    sv[nv] = 1;
 
     /*
      * We're going to fill the curves by flattening them and then filling
@@ -333,9 +338,23 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 		gx_curve_log2_samples(curve[i].vertex.p.x, curve[i].vertex.p.y,
 				      &cseg, flatness);
 	}
-	ku = 1 << max(log2_k[0], log2_k[2]);
-	kv = 1 << max(log2_k[1], log2_k[3]);
+	ku = 1 << max(log2_k[1], log2_k[3]);
+	kv = 1 << max(log2_k[0], log2_k[2]);
     }
+
+    /* Precompute the colors at the corners. */
+
+#define PATCH_SET_COLOR(c, v)\
+  if ( pfs->Function ) c.t = v.cc[0];\
+  else memcpy(c.cc.paint.values, v.cc, sizeof(c.cc.paint.values))
+
+    PATCH_SET_COLOR(c00, curve[D1START].vertex); /* = C1START */
+    PATCH_SET_COLOR(c01, curve[D1END].vertex); /* = C2START */
+    PATCH_SET_COLOR(c11, curve[C2END].vertex); /* = D2END */
+    PATCH_SET_COLOR(c10, curve[C1END].vertex); /* = D2START */
+
+#undef PATCH_SET_COLOR
+
     /*
      * Since ku and kv are powers of 2, and since log2(k) is surely less
      * than the number of bits in the mantissa of a double, 1/k ...
@@ -344,22 +363,9 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
     du = 1.0 / ku;
     dv = 1.0 / kv;
 
-    /* Precompute the colors at the corners. */
-
-#define PATCH_SET_COLOR(c, v)\
-  if ( pfs->Function ) c.t = v.cc[0];\
-  else memcpy(c.cc.paint.values, v.cc, sizeof(c.cc.paint.values))
-
-	PATCH_SET_COLOR(c0, curve[0].vertex);
-	PATCH_SET_COLOR(c1, curve[1].vertex);
-	PATCH_SET_COLOR(c2, curve[2].vertex);
-	PATCH_SET_COLOR(c3, curve[3].vertex);
-
-#undef PATCH_SET_COLOR
-
     /* Now iterate over the sub-patches. */
     for (iv = 0, jv = 0, v0 = 0, v1 = vn = dv; jv < kv; v0 = v1, v1 = vn) {
-	patch_color_t cv[4];
+	patch_color_t c0v0, c0v1, c1v0, c1v1;
 
 	/* Subdivide the interval if it crosses a split point. */
 
@@ -373,51 +379,57 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 	  ix++;\
   }
 
-	CHECK_SPLIT(iv, jv, v1, vn, dv, v);
+	CHECK_SPLIT(iv, jv, v1, vn, dv, sv);
 
-	patch_interpolate_color(&cv[0], &c0, &c3, pfs, v0);
-	patch_interpolate_color(&cv[1], &c0, &c3, pfs, v1);
-	patch_interpolate_color(&cv[2], &c1, &c2, pfs, v0);
-	patch_interpolate_color(&cv[3], &c1, &c2, pfs, v1);
+	patch_interpolate_color(&c0v0, &c00, &c01, pfs, v0);
+	patch_interpolate_color(&c0v1, &c00, &c01, pfs, v1);
+	patch_interpolate_color(&c1v0, &c10, &c11, pfs, v0);
+	patch_interpolate_color(&c1v1, &c10, &c11, pfs, v1);
 
 	for (iu = 0, ju = 0, u0 = 0, u1 = un = du; ju < ku; u0 = u1, u1 = un) {
-	    patch_color_t cu[4];
+	    patch_color_t cu0v0, cu1v0, cu0v1, cu1v1;
 	    int code;
 
-	    CHECK_SPLIT(iu, ju, u1, un, du, u);
+	    CHECK_SPLIT(iu, ju, u1, un, du, su);
 
 #undef CHECK_SPLIT
 
-	    patch_interpolate_color(&cu[0], &cv[0], &cv[2], pfs, u0);
-	    patch_resolve_color(&cu[0], pfs);
-	    patch_interpolate_color(&cu[1], &cv[0], &cv[2], pfs, u1);
-	    patch_resolve_color(&cu[1], pfs);
-	    patch_interpolate_color(&cu[2], &cv[1], &cv[3], pfs, u1);
-	    patch_resolve_color(&cu[2], pfs);
-	    patch_interpolate_color(&cu[3], &cv[1], &cv[3], pfs, u0);
-	    patch_resolve_color(&cu[3], pfs);
-	    if_debug6('2', "[2]u[%d]=(%g,%g), v[%d]=(%g,%g)\n",
+	    patch_interpolate_color(&cu0v0, &c0v0, &c1v0, pfs, u0);
+	    patch_resolve_color(&cu0v0, pfs);
+	    patch_interpolate_color(&cu1v0, &c0v0, &c1v0, pfs, u1);
+	    patch_resolve_color(&cu1v0, pfs);
+	    patch_interpolate_color(&cu0v1, &c0v1, &c1v1, pfs, u0);
+	    patch_resolve_color(&cu0v1, pfs);
+	    patch_interpolate_color(&cu1v1, &c0v1, &c1v1, pfs, u1);
+	    patch_resolve_color(&cu1v1, pfs);
+	    if_debug6('2', "[2]u[%d]=[%g .. %g], v[%d]=[%g .. %g]\n",
 		      iu, u0, u1, iv, v0, v1);
 
 	    /* Fill the sub-patch given by ((u0,v0),(u1,v1)). */
 	    {
-		mesh_vertex_t mv[4];
+		mesh_vertex_t mu0v0, mu1v0, mu1v1, mu0v1;
 
-		(*transform)(&mv[0].p, curve, interior, u0, v0);
-		(*transform)(&mv[1].p, curve, interior, u1, v0);
-		(*transform)(&mv[2].p, curve, interior, u1, v1);
-		(*transform)(&mv[3].p, curve, interior, u0, v1);
-		memcpy(mv[0].cc, cu[0].cc.paint.values, sizeof(mv[0].cc));
-		memcpy(mv[1].cc, cu[1].cc.paint.values, sizeof(mv[1].cc));
-		memcpy(mv[2].cc, cu[2].cc.paint.values, sizeof(mv[2].cc));
-		memcpy(mv[3].cc, cu[3].cc.paint.values, sizeof(mv[3].cc));
+		(*transform)(&mu0v0.p, curve, interior, u0, v0);
+		(*transform)(&mu1v0.p, curve, interior, u1, v0);
+		(*transform)(&mu1v1.p, curve, interior, u1, v1);
+		(*transform)(&mu0v1.p, curve, interior, u0, v1);
+		if_debug4('2', "[2]  => (%g,%g), (%g,%g),\n",
+			  fixed2float(mu0v0.p.x), fixed2float(mu0v0.p.y),
+			  fixed2float(mu1v0.p.x), fixed2float(mu1v0.p.y));
+		if_debug4('2', "[2]     (%g,%g), (%g,%g)\n",
+			  fixed2float(mu1v1.p.x), fixed2float(mu1v1.p.y),
+			  fixed2float(mu0v1.p.x), fixed2float(mu0v1.p.y));
+		memcpy(mu0v0.cc, cu0v0.cc.paint.values, sizeof(mu0v0.cc));
+		memcpy(mu1v0.cc, cu1v0.cc.paint.values, sizeof(mu1v0.cc));
+		memcpy(mu1v1.cc, cu1v1.cc.paint.values, sizeof(mu1v1.cc));
+		memcpy(mu0v1.cc, cu0v1.cc.paint.values, sizeof(mu0v1.cc));
 		mesh_init_fill_triangle((mesh_fill_state_t *)pfs,
-					&mv[0], &mv[1], &mv[2], check);
+					&mu0v0, &mu1v1, &mu1v0, check);
 		code = mesh_fill_triangle((mesh_fill_state_t *)pfs);
 		if (code < 0)
 		    return code;
 		mesh_init_fill_triangle((mesh_fill_state_t *)pfs,
-					&mv[2], &mv[3], &mv[0], check);
+					&mu0v0, &mu1v1, &mu0v1, check);
 		code = mesh_fill_triangle((mesh_fill_state_t *)pfs);
 		if (code < 0)
 		    return code;
@@ -438,16 +450,16 @@ Cp_transform(gs_fixed_point * pt, const patch_curve_t curve[4],
     gs_fixed_point c1u, d1v, c2u, d2v;
 
     curve_eval(&c1u, &curve[C1START].vertex.p,
-	       &curve[C1CTRL].control[0], &curve[C1CTRL].control[1],
+	       &curve[C1XCTRL].control[1], &curve[C1XCTRL].control[0],
 	       &curve[C1END].vertex.p, u);
     curve_eval(&d1v, &curve[D1START].vertex.p,
-	       &curve[D1XCTRL].control[1], &curve[D1XCTRL].control[0],
+	       &curve[D1CTRL].control[0], &curve[D1CTRL].control[1],
 	       &curve[D1END].vertex.p, v);
     curve_eval(&c2u, &curve[C2START].vertex.p,
-	       &curve[C2XCTRL].control[1], &curve[C2XCTRL].control[0],
+	       &curve[C2CTRL].control[0], &curve[C2CTRL].control[1],
 	       &curve[C2END].vertex.p, u);
     curve_eval(&d2v, &curve[D2START].vertex.p,
-	       &curve[D2CTRL].control[0], &curve[D2CTRL].control[1],
+	       &curve[D2XCTRL].control[1], &curve[D2XCTRL].control[0],
 	       &curve[D2END].vertex.p, v);
 #define COMPUTE_COORD(xy)\
     pt->xy = (fixed)\
@@ -496,7 +508,7 @@ Tpp_transform(gs_fixed_point * pt, const patch_curve_t curve[4],
     double Bu[4], Bv[4];
     gs_fixed_point pts[4][4];
     int i, j;
-    fixed x = 0, y = 0;
+    double x = 0, y = 0;
 
     /* Compute the Bernstein polynomials of u and v. */
     {
@@ -511,17 +523,17 @@ Tpp_transform(gs_fixed_point * pt, const patch_curve_t curve[4],
 
     /* Arrange the points into an indexable order. */
     pts[0][0] = curve[0].vertex.p;
-    pts[1][0] = curve[0].control[0];
-    pts[2][0] = curve[0].control[1];
-    pts[3][0] = curve[1].vertex.p;
-    pts[3][1] = curve[1].control[0];
-    pts[3][2] = curve[1].control[1];
+    pts[0][1] = curve[0].control[0];
+    pts[0][2] = curve[0].control[1];
+    pts[0][3] = curve[1].vertex.p;
+    pts[1][3] = curve[1].control[0];
+    pts[2][3] = curve[1].control[1];
     pts[3][3] = curve[2].vertex.p;
-    pts[2][3] = curve[2].control[0];
-    pts[1][3] = curve[2].control[1];
-    pts[0][3] = curve[3].vertex.p;
-    pts[0][2] = curve[3].control[0];
-    pts[0][1] = curve[3].control[1];
+    pts[3][2] = curve[2].control[0];
+    pts[3][1] = curve[2].control[1];
+    pts[3][0] = curve[3].vertex.p;
+    pts[2][0] = curve[3].control[0];
+    pts[1][0] = curve[3].control[1];
     pts[1][1] = interior[0];
     pts[2][1] = interior[1];
     pts[2][2] = interior[2];
@@ -534,7 +546,7 @@ Tpp_transform(gs_fixed_point * pt, const patch_curve_t curve[4],
 
 	    x += pts[i][j].x * coeff, y += pts[i][j].y * coeff;
 	}
-    pt->x = x, pt->y = y;
+    pt->x = (fixed)x, pt->y = (fixed)y;
 }
 
 int
@@ -554,9 +566,20 @@ gs_shading_Tpp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     shade_next_init(&cs, (const gs_shading_mesh_params_t *)&psh->params,
 		    pis);
     while ((code = shade_next_patch(&cs, psh->params.BitsPerFlag,
-				    curve, interior)) == 0 &&
-	   (code = patch_fill(&state, curve, interior, Tpp_transform)) >= 0
-	)
-	DO_NOTHING;
+				    curve, interior)) == 0) {
+	/*
+	 * The order of points appears to be consistent with that for Coons
+	 * patches, which is different from that documented in Red Book 3.
+	 */
+	gs_fixed_point swapped_interior[4];
+
+	swapped_interior[0] = interior[0];
+	swapped_interior[1] = interior[3];
+	swapped_interior[2] = interior[2];
+	swapped_interior[3] = interior[1];
+	code = patch_fill(&state, curve, swapped_interior, Tpp_transform);
+	if (code < 0)
+	    break;
+    }
     return min(code, 0);
 }

@@ -1,21 +1,8 @@
 #    Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-# 
-# This file is part of Aladdin Ghostscript.
-# 
-# Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-# or distributor accepts any responsibility for the consequences of using it,
-# or for whether it serves any particular purpose or works at all, unless he
-# or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-# License (the "License") for full details.
-# 
-# Every copy of Aladdin Ghostscript must include a copy of the License,
-# normally in a plain ASCII text file named PUBLIC.  The License grants you
-# the right to copy, modify and redistribute Aladdin Ghostscript, but only
-# under certain conditions described in the License.  Among other things, the
-# License requires that the copyright notice and this notice be preserved on
-# all copies.
+# This software is licensed to a single customer by Artifex Software Inc.
+# under the terms of a specific OEM agreement.
 
-
+# $RCSfile$ $Revision$
 # (Platform-independent) makefile for PostScript and PDF language
 # interpreters.
 # Users of this makefile must define the following:
@@ -279,27 +266,6 @@ $(PSOBJ)iscannum.$(OBJ) : $(PSSRC)iscannum.c $(GH) $(math__h)\
 $(PSOBJ)sfilter1.$(OBJ) : $(PSSRC)sfilter1.c $(AK) $(stdio__h) $(memory__h)\
  $(sfilter_h) $(strimpl_h)
 	$(PSCC) $(PSO_)sfilter1.$(OBJ) $(C_) $(PSSRC)sfilter1.c
-
-# GNU readline.  This code was contributed by a user: please contact
-# Alexey Subbotin <A.Subbotin@lpi.ru> if you have questions.
-# The references from a gp_ module to the interpreter are a bug,
-# but they are intrinsic to what this implementation does.
-# NOTE: please see gp_gnrdl.c for information about licensing problems
-# that will arise if you add this feature to Aladdin Ghostscript.
-gnrdline_=$(PSOBJ)gp_gnrdl.$(OBJ)
-$(PSD)gnrdline.dev : $(INT_MAK) $(ECHOGS_XE) $(gnrdline_)
-	$(SETMOD) $(PSD)gnrdline $(gnrdline_)
-	$(ADDMOD) $(PSD)gnrdline -lib readline termcap
-	$(ADDMOD) $(PSD)gnrdline -replace $(GLD)strdline
-	$(ADDMOD) $(PSD)gnrdline -ps gs_rdlin
-
-$(PSOBJ)gp_gnrdl.$(OBJ) : $(PSSRC)gp_gnrdl.c $(AK)\
- $(ctype__h) $(malloc__h) $(memory__h) $(string__h)\
- $(gp_h) $(gscdefs_h) $(gsmalloc_h) $(gsmemory_h) $(gsstruct_h)\
- $(gxiodev_h) $(stream_h)\
- $(ghost_h) $(dstack_h) $(errors_h) $(ialloc_h) $(idict_h) $(iname_h) $(iutil_h)\
- $(ostack_h)
-	$(PSCC) $(PSO_)gp_gnrdl.$(OBJ) $(C_) $(PSSRC)gp_gnrdl.c
 
 ###### Operators
 
@@ -1380,14 +1346,14 @@ $(PSOBJ)zfunc0.$(OBJ) : $(PSSRC)zfunc0.c $(OP) $(memory__h)\
 # ---------------- DCT filters ---------------- #
 # The definitions for jpeg*.dev are in jpeg.mak.
 
-$(PSD)dct.dev : $(INT_MAK) $(ECHOGS_XE) $(GLD)dcte.dev $(GLD)dctd.dev
-	$(SETMOD) $(PSD)dct -include $(GLD)dcte $(GLD)dctd
+$(PSD)dct.dev : $(INT_MAK) $(ECHOGS_XE) $(PSD)dcte.dev $(PSD)dctd.dev
+	$(SETMOD) $(PSD)dct -include $(PSD)dcte $(PSD)dctd
 
 # Encoding (compression)
 
-dcte_=$(PSOBJ)zfdcte.$(OBJ) $(GLOBJ)sdeparam.$(OBJ) $(GLOBJ)sdcparam.$(OBJ)
-$(PSD)dcte.dev : $(INT_MAK) $(ECHOGS_XE) $(GLD)sdcte.dev $(dcte_)
-	$(SETMOD) $(PSD)dcte -include $(GLD)sdcte
+dcte_=$(PSOBJ)zfdcte.$(OBJ)
+$(PSD)dcte.dev : $(INT_MAK) $(ECHOGS_XE) $(GLD)sdcte.dev $(GLD)sdeparam.dev $(dcte_)
+	$(SETMOD) $(PSD)dcte -include $(GLD)sdcte $(GLD)sdeparam
 	$(ADDMOD) $(PSD)dcte -obj $(dcte_)
 	$(ADDMOD) $(PSD)dcte -oper zfdcte
 
@@ -1400,9 +1366,9 @@ $(PSOBJ)zfdcte.$(OBJ) : $(PSSRC)zfdcte.c $(OP)\
 
 # Decoding (decompression)
 
-dctd_=$(PSOBJ)zfdctd.$(OBJ) $(GLOBJ)sddparam.$(OBJ) $(GLOBJ)sdcparam.$(OBJ)
-$(PSD)dctd.dev : $(INT_MAK) $(ECHOGS_XE) $(GLD)sdctd.dev $(dctd_)
-	$(SETMOD) $(PSD)dctd -include $(GLD)sdctd
+dctd_=$(PSOBJ)zfdctd.$(OBJ)
+$(PSD)dctd.dev : $(INT_MAK) $(ECHOGS_XE) $(GLD)sdctd.dev $(GLD)sddparam.dev $(dctd_)
+	$(SETMOD) $(PSD)dctd -include $(GLD)sdctd $(GLD)sddparam
 	$(ADDMOD) $(PSD)dctd -obj $(dctd_)
 	$(ADDMOD) $(PSD)dctd -oper zfdctd
 

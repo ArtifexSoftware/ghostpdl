@@ -1,22 +1,9 @@
 /* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* pdfmark processing for PDF-writing driver */
 #include "memory_.h"
 #include "string_.h"
@@ -255,6 +242,8 @@ pdfmark_make_rect(char str[MAX_RECT_STRING], const gs_rect * prect)
  *       /A << /S /Thread /D yyy' >>
  *     /Action /GoTo => drop the Action key
  * Also, \n in Contents strings must be replaced with \r.
+ * Note that for Thread actions, the Dest is not a real destination,
+ * and must not be processed as one.
  *
  * We always treat /A and /F as equivalent to /Action and /File
  * respectively.  The pdfmark and PDF documentation is so confused on the
@@ -281,6 +270,7 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
     uint i;
     int code;
     char dest[MAX_DEST_STRING];
+    bool coerce_dest = false;
 
     Dest.data = 0;
     if (!for_outline) {
@@ -315,7 +305,7 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
 	    File = pair;
 	else if (pdf_key_eq(pair, "/Dest")) {
 	    Dest = pair[1];
-	    pdfmark_coerce_dest(&Dest, dest);
+	    coerce_dest = true;
 	}
 	else if (pdf_key_eq(pair, "/Page") || pdf_key_eq(pair, "/View")) {
 	    /* Make a destination even if this is for an outline. */
@@ -325,6 +315,7 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
 		if (code < 0)
 		    return code;
 		param_string_from_string(Dest, dest);
+		coerce_dest = false;
 	    }
 	} else if (pdf_key_eq(pair, "/Subtype"))
 	    Subtype = pair[1];
@@ -403,11 +394,15 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
 		/* We aren't sure whether this is really needed.... */
 		cos_dict_put_c_strings(adict, pdev, "/Type", "/Action");
 	    }
-	    if (pdf_key_eq(Action + 1, "/Article"))
+	    if (pdf_key_eq(Action + 1, "/Article")) {
 		cos_dict_put_c_strings(adict, pdev, "/S", "/Thread");
+		coerce_dest = false; /* Dest is not a real destination */
+	    }
 	    else
 		pdfmark_put_c_pair(pdev, adict, "/S", Action + 1);
 	    if (Dest.data) {
+		if (coerce_dest)
+		    pdfmark_coerce_dest(&Dest, dest);
 		pdfmark_put_c_pair(pdev, adict, "/D", &Dest);
 		Dest.data = 0;	/* so we don't write it again */
 	    }
@@ -418,7 +413,7 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
 	    cos_dict_put(pcd, pdev, (const byte *)"/A", 2,
 			 COS_OBJECT_VALUE(&avalue, adict));
 	} else if (asize >= 4 && !memcmp(astr, "<<", 2)) {
-	    /* Replace occurrences of /Dest, /File, /Subtype. */
+	    /* Replace occurrences of /Dest, /File, and /Subtype. */
 	    const byte *scan = astr + 2;
 	    const byte *end = astr + asize;
 	    gs_param_string key, value;
@@ -459,8 +454,11 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
      * simply write it at the top level.  This doesn't seem right,
      * but I'm not sure what else to do.
      */
-    if (Dest.data)
+    if (Dest.data) {
+	if (coerce_dest)
+	    pdfmark_coerce_dest(&Dest, dest);
 	pdfmark_put_c_pair(pdev, pcd, "/Dest", &Dest);
+    }
     if (File)
 	pdfmark_put_pair(pdev, pcd, File);
     if (Subtype.data)
@@ -730,14 +728,16 @@ pdfmark_ARTICLE(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     bead_id = pdf_obj_ref(pdev);
 
     /* Find the article with this title, or create one. */
-#if 0	/****** FIX THIS ******/
-    for (part = pdev->articles; part != 0; part = part->next)
-	if (!bytes_compare(part->title.data, part->title.size,
+    for (part = pdev->articles; part != 0; part = part->next) {
+	const cos_value_t *a_title =
+	    cos_dict_find(part->contents, (const byte *)"/Title", 6);
+
+	if (a_title != 0 && !a_title->is_object &&
+	    !bytes_compare(a_title->contents.chars.data,
+			   a_title->contents.chars.size,
 			   title.data, title.size))
 	    break;
-#else	/****** FIX THIS ******/
-    part = 0;
-#endif	/****** FIX THIS ******/
+    }
     if (part == 0) {		/* Create the article. */
 	cos_dict_t *contents =
 	    cos_dict_alloc(mem, "pdfmark_ARTICLE(contents)");
@@ -854,7 +854,9 @@ ps_source_ok(const gs_param_string * psource)
 	)
 	return true;
     else {
-	lprintf1("bad PS passthrough: %s\n", psource->data);
+	lprintf("bad PS passthrough: ");
+	fwrite(psource->data, 1, psource->size, estderr);
+	fputs("\n", estderr);
 	return false;
     }
 }
@@ -1225,7 +1227,7 @@ pdfmark_PUTSTREAM(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     cos_object_t *pco;
     int code, i;
 
-    if (count != 2)
+    if (count < 2)
 	return_error(gs_error_rangecheck);
     if ((code = pdf_get_named(pdev, &pairs[0], cos_type_stream, &pco)) < 0)
 	return code;

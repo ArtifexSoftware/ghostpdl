@@ -1,5 +1,5 @@
 #!/bin/sh
-
+# $RCSfile$ $Revision$
 # Convert PDF to PostScript.
 
 OPTIONS=""

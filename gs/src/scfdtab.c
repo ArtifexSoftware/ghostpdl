@@ -1,11 +1,11 @@
 /* Copyright (C) 1992, 1993, 1998, 1999 Aladdin Enterprises.  All rights reserved. */
 
+/* $RCSfile$ $Revision$ */
+/* Tables for CCITTFaxDecode filter. */
+
 /* This file was generated automatically.  It is governed by the same terms */
 /* as the files scfetab.c and scfdgen.c from which it was derived. */
 /* Consult those files for the licensing terms and conditions. */
-
-/* scfdtab.c */
-/* Tables for CCITTFaxDecode filter. */
 
 #include "std.h"
 #include "scommon.h"		/* for scf.h */

@@ -1,7 +1,7 @@
 <html>
 <head>
 <title>The relationship between Ghostscript and PostScript</title>
-
+<!-- $RCSfile$ $Revision$ -->
 <!-- Originally: language.txt -->
 </head>
 
@@ -27,7 +27,7 @@ The relationship between Ghostscript and PostScript
 <li><a href="#Implementation_limits">Implementation limits</a>
 <ul>
 <li><a href="#Architectural_limits">Architectural limits</a>
-<li><a href="#Typical_memory_limits">Typical memory limits in Level 1</a>
+<li><a href="#Typical_memory_limits">Typical memory limits in LanguageLevel 1</a>
 <li><a href="#VM_consumption">Other differences in VM consumption</a>
 </ul>
 <li><a href="#Additional_operators">Additional operators in Ghostscript</a>
@@ -74,8 +74,8 @@ overview</a>.
 
 <p>
 The Ghostscript interpreter, except as noted below, is intended to execute
-properly any source program written in the (Level 2) <b>PostScript</b>
-language as defined in the <a
+properly any source program written in the (LanguageLevel 3)
+<b>PostScript</b> language as defined in the <a
 href="http://cseng.awl.com/bookdetail.qry?ISBN=0-201-37922-8&ptype=0"><em>PostScript
 Language Reference, Third Edition</em> (ISBN 0-201-37922-8)</a> published by
 Addison-Wesley in mid-1999.  However, the interpreter is configurable in
@@ -176,6 +176,9 @@ Ghostscript currently does not implement the following PDF 1.3 facilities:
 
 <li>Native <b><tt>Separation</tt></b> and <b><tt>DeviceN</tt></b> color
 spaces, as noted above for PostScript.
+
+<li>Native <b><tt>ICCBased</tt></b> color spaces -- these too always use the
+alternate space.
 </ul>
 
 <p>
@@ -189,101 +192,181 @@ are not in the PostScript language defined by Adobe.
 
 <p>
 The implementation limits show here correspond to those in Tables B.1 and
-B.2 of the Second Edition.  Asterisks (*) mark the ones different from the
-limits in the Second Edition.
+B.2 of the Second and Third Editions, which describe the quantities fully.
+Where Ghostscript's limits are different from those of Adobe's
+implementations (as shown in the Third Edition), Adobe's limits are also
+shown.
 
 <h2><a name="Architectural_limits"></a>Architectural limits</h2>
 
 <blockquote><table cellpadding=0 cellspacing=0>
+<tr><th colspan=7 bgcolor="#CCCC00"><hr><font size="+1">Architectural limits (corresponds to Adobe table B.1)</font><hr>
+<tr valign=bottom>
+	<th align=left>Quantity
+	<td>&nbsp;&nbsp;
+	<th align=left>Limit
+	<td>&nbsp;&nbsp;
+	<th align=left>Type
+	<td>&nbsp;&nbsp;
+	<th align=left>Adobe
+<tr>	<td colspan=7><hr>
 <tr valign=top>	<td>integer
-	<td>&nbsp;&nbsp;&nbsp;
 	<td>&nbsp;
-	<td>32-bit twos complement integer
+	<td>32-bit
+	<td>&nbsp;
+	<td>twos complement integer
+	<td>&nbsp;
+	<td>&nbsp;
 <tr valign=top>	<td>real
 	<td>&nbsp;
+	<td>single-precision
 	<td>&nbsp;
-	<td>single-precision IEEE float
+	<td>IEEE float
+	<td>&nbsp;
+	<td>&nbsp;
 <tr valign=top>	<td>array
 	<td>&nbsp;
+	<td>65535
 	<td>&nbsp;
-	<td>65535 elements
+	<td>elements
+	<td>&nbsp;
+	<td>&nbsp;
 <tr valign=top>	<td>dictionary
 	<td>&nbsp;
+	<td>65534
 	<td>&nbsp;
-	<td>65534 elements
+	<td>elements
+	<td>&nbsp;
+	<td>65535
 <tr valign=top>	<td>string
 	<td>&nbsp;
-	<td>*
-	<td>65535 characters
+	<td>65535
+	<td>&nbsp;
+	<td>characters
+	<td>&nbsp;
+	<td>&nbsp;
 <tr valign=top>	<td>name
 	<td>&nbsp;
-	<td>*
-	<td>16383 characters
+	<td>16383
+	<td>&nbsp;
+	<td>characters
+	<td>&nbsp;
+	<td>127
 <tr valign=top>	<td>filename
 	<td>&nbsp;
+	<td>100
 	<td>&nbsp;
-	<td>100 characters
-<tr valign=top>	<td>save level
+	<td>characters
 	<td>&nbsp;
-	<td>*
-	<td>none (capacity of memory)
-<tr valign=top>	<td>gsave level
 	<td>&nbsp;
-	<td>*
-	<td>none (capacity of memory)
+<tr valign=top>	<td><b><tt>save</tt></b> level
+	<td>&nbsp;
+	<td>none
+	<td>&nbsp;
+	<td>(capacity of memory)
+	<td>&nbsp;
+	<td>15
+<tr valign=top>	<td><b><tt>gsave</tt></b> level
+	<td>&nbsp;
+	<td>none
+	<td>&nbsp;
+	<td>(capacity of memory)
+	<td>&nbsp;
+	<td>13
 </table></blockquote>
 
-<h2><a name="Typical_memory_limits"></a>Typical memory limits in Level 1</h2>
+<h2><a name="Typical_memory_limits"></a>Typical memory limits in LanguageLevel 1</h2>
 
 <blockquote><table cellpadding=0 cellspacing=0>
+
+<tr><th colspan=7 bgcolor="#CCCC00"><hr><font size="+1">Memory limits (corresponds to Adobe table B.2)</font><hr>
+<tr valign=bottom>
+	<th align=left>Quantity
+	<td>&nbsp;&nbsp;
+	<th align=left>Limit
+	<td>&nbsp;&nbsp;
+	<th align=left>Type
+	<td>&nbsp;&nbsp;
+	<th align=left>Adobe
+<tr>	<td colspan=7><hr>
 <tr valign=top>	<td><b><tt>userdict</tt></b>
-	<td>&nbsp;&nbsp;&nbsp;
 	<td>&nbsp;
 	<td>200
+	<td>&nbsp;
+	<td>&nbsp;
+	<td>&nbsp;
+	<td>&nbsp;
 <tr valign=top>	<td><b><tt>FontDirectory</tt></b>
 	<td>&nbsp;
-	<td>&nbsp;
 	<td>100
+	<td>&nbsp;
+	<td>&nbsp;
+	<td>&nbsp;
+	<td>&nbsp;
 <tr valign=top>	<td>operand stack
 	<td>&nbsp;
-	<td>*
 	<td>800
+	<td>&nbsp;
+	<td>&nbsp;
+	<td>&nbsp;
+	<td>500
 <tr valign=top>	<td>dictionary stack
 	<td>&nbsp;
-	<td>&nbsp;
 	<td>20
+	<td>&nbsp;
+	<td>&nbsp;
 <tr valign=top>	<td>execution stack
 	<td>&nbsp;
-	<td>&nbsp;
 	<td>250
+	<td>&nbsp;
+	<td>&nbsp;
 <tr valign=top>	<td>interpreter level
 	<td>&nbsp;
-	<td>*
-	<td>none (capacity of memory)
+	<td>none
+	<td>&nbsp;
+	<td>(capacity of memory)
+	<td>&nbsp;
+	<td>10
 <tr valign=top>	<td>path
 	<td>&nbsp;
-	<td>*
-	<td>none (capacity of memory)
+	<td>none
+	<td>&nbsp;
+	<td>(capacity of memory)
+	<td>&nbsp;
+	<td>1500
 <tr valign=top>	<td>dash
 	<td>&nbsp;
-	<td>&nbsp;
 	<td>11
+	<td>&nbsp;
+	<td>&nbsp;
 <tr valign=top>	<td>VM
 	<td>&nbsp;
-	<td>*
-	<td>capacity of memory
+	<td>none
+	<td>&nbsp;
+	<td>(capacity of memory)
+	<td>&nbsp;
+	<td>240000
 <tr valign=top>	<td>file
 	<td>&nbsp;
-	<td>*
-	<td>determined by operating system
+	<td>none
+	<td>&nbsp;
+	<td>(determined by operating system)
+	<td>&nbsp;
+	<td>6
 <tr valign=top>	<td>image
 	<td>&nbsp;
-	<td>*
-	<td>65535 values (samples &times; components) for 1-, 2-, 4-, or 8-bit samples
+	<td>65535
+	<td>&nbsp;
+	<td>values (samples × components)<br>for1-, 2-, 4-, or 8-bit samples
+	<td>&nbsp;
+	<td>3300
 <tr valign=top>	<td>&nbsp;
 	<td>&nbsp;
+	<td>32767
 	<td>&nbsp;
-	<td>32767 values for 12-bit samples
+	<td>values for 12-bit samples
+	<td>&nbsp;
+	<td>3300
 </table></blockquote>
 
 <h2><a name="VM_consumption"></a>Other differences in VM consumption</h2>
@@ -1179,7 +1262,7 @@ full details of the terms of using, copying, modifying, and redistributing
 Aladdin Ghostscript.
 
 <p>
-Ghostscript version 5.91, 30 August 1999
+Ghostscript version 5.96, 12 November 1999
 
 </font>
 

@@ -1,22 +1,9 @@
 /* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Default and device-independent RasterOp algorithms */
 #include "memory_.h"
 #include "gx.h"
@@ -134,10 +121,11 @@ gx_default_strip_copy_rop(gx_device * dev,
     if (max_height == 0)
 	max_height = 1;
     block_height = min(height, max_height);
-    gs_make_mem_device(&mdev, mdproto, 0, -1, dev);
+    gs_make_mem_device(&mdev, mdproto, mem, -1, dev);
+    gx_device_retain((gx_device *)&mdev, true);	/* prevent freeing */
     mdev.width = width;
     mdev.height = block_height;
-    mdev.bitmap_memory = mdev.memory = mem;
+    mdev.bitmap_memory = mem;
     mdev.color_info = dev->color_info;
     code = (*dev_proc(&mdev, open_device))((gx_device *)&mdev);
     if (code < 0)
@@ -446,7 +434,8 @@ mem_default_strip_copy_rop(gx_device * dev,
 	if (textures->size.y < block_height)
 	    block_height = textures->size.y;
     }
-    gs_make_mem_device(&mdev, mdproto, 0, -1, NULL);
+    gs_make_mem_device(&mdev, mdproto, mem, -1, NULL);
+    gx_device_retain((gx_device *)&mdev, true);	/* prevent freeing */
     mdev.width = width;
     mdev.height = block_height;
     mdev.color_info.num_components = rop_depth >> 3;

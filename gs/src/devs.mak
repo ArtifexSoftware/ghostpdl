@@ -1,21 +1,8 @@
 #    Copyright (C) 1989, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-# 
-# This file is part of Aladdin Ghostscript.
-# 
-# Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-# or distributor accepts any responsibility for the consequences of using it,
-# or for whether it serves any particular purpose or works at all, unless he
-# or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-# License (the "License") for full details.
-# 
-# Every copy of Aladdin Ghostscript must include a copy of the License,
-# normally in a plain ASCII text file named PUBLIC.  The License grants you
-# the right to copy, modify and redistribute Aladdin Ghostscript, but only
-# under certain conditions described in the License.  Among other things, the
-# License requires that the copyright notice and this notice be preserved on
-# all copies.
+# This software is licensed to a single customer by Artifex Software Inc.
+# under the terms of a specific OEM agreement.
 
-
+# $RCSfile$ $Revision$
 # makefile for Aladdin's device drivers.
 
 # Define the name of this makefile.
@@ -396,12 +383,13 @@ x__h=$(GLSRC)x_.h
 gdevxcmp_h=$(GLSRC)gdevxcmp.h
 gdevx_h=$(GLSRC)gdevx.h $(gdevbbox_h) $(gdevxcmp_h)
 
-# See the main makefile for the definition of XLIBS.
+# See the main makefile for the definition of XLIBDIRS and XLIBS.
 x11_=$(GLOBJ)gdevx.$(OBJ) $(GLOBJ)gdevxcmp.$(OBJ) $(GLOBJ)gdevxini.$(OBJ)\
  $(GLOBJ)gdevxres.$(OBJ) $(GLOBJ)gdevxxf.$(OBJ)\
  $(GLOBJ)gdevemap.$(OBJ) $(GLOBJ)gsparamx.$(OBJ)
 $(DD)x11_.dev : $(DEVS_MAK) $(x11_) $(GLD)bbox.dev
 	$(SETMOD) $(DD)x11_ $(x11_)
+	$(ADDMOD) $(DD)x11_ -link $(XLIBDIRS)
 	$(ADDMOD) $(DD)x11_ -lib $(XLIBS)
 	$(ADDMOD) $(DD)x11_ -include $(GLD)bbox
 
@@ -552,8 +540,15 @@ $(DD)oce9050.dev : $(DEVS_MAK) $(HPMONO) $(GLD)page.dev
 ###	Henry Stiles <henrys@meerkat.dimensional.com>
 
 cljet5_=$(GLOBJ)gdevclj.$(OBJ) $(HPPCL)
+
+# The cljet5 driver is well-behaved.
 $(DD)cljet5.dev : $(DEVS_MAK) $(cljet5_) $(GLD)page.dev
 	$(SETPDEV) $(DD)cljet5 $(cljet5_)
+
+# The cljet5pr driver has hacks for trying to handle page rotation.
+# The hacks only work with one special PCL interpreter.  Don't use it!
+$(DD)cljet5pr.dev : $(DEVS_MAK) $(cljet5_) $(GLD)page.dev
+	$(SETPDEV) $(DD)cljet5pr $(cljet5_)
 
 $(GLOBJ)gdevclj.$(OBJ) : $(GLSRC)gdevclj.c $(math__h) $(PDEVH)\
  $(gx_h) $(gsparam_h) $(gdevpcl_h)
@@ -668,9 +663,7 @@ $(GLOBJ)gdevps.$(OBJ) : $(GLSRC)gdevps.c $(GDEV)\
 
 # PDF writer
 # Note that gs_pdfwr.ps will only actually be loaded if the configuration
-# includes a PostScript interpreter.  gs_mgl_e requires gs_mro_e and should
-# always be loaded: guaranteeing this will require moving the Encodings
-# into C code.
+# includes a PostScript interpreter.
 
 pdfwrite1_=$(GLOBJ)gdevpdf.$(OBJ) $(GLOBJ)gdevpdfd.$(OBJ)
 pdfwrite2_=$(GLOBJ)gdevpdff.$(OBJ) $(GLOBJ)gdevpdfi.$(OBJ) $(GLOBJ)gdevpdfm.$(OBJ)
@@ -680,8 +673,8 @@ pdfwrite5_=$(GLOBJ)gsflip.$(OBJ) $(GLOBJ)gsparamx.$(OBJ)
 pdfwrite6_=$(GLOBJ)scantab.$(OBJ) $(GLOBJ)sfilter2.$(OBJ) $(GLOBJ)sstring.$(OBJ)
 pdfwrite_=$(pdfwrite1_) $(pdfwrite2_) $(pdfwrite3_) $(pdfwrite4_) $(pdfwrite5_)
 $(DD)pdfwrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pdfwrite_)\
- $(GLD)cmyklib.dev $(GLD)cfe.dev $(GLD)dcte.dev $(GLD)lzwe.dev\
- $(GLD)rle.dev $(GLD)szlibe.dev $(GLD)psdf.dev
+ $(GLD)cmyklib.dev $(GLD)cfe.dev $(GLD)lzwe.dev $(GLD)rle.dev\
+ $(GLD)sdcte.dev $(GLD)sdeparam.dev $(GLD)szlibe.dev $(GLD)psdf.dev
 	$(SETDEV2) $(DD)pdfwrite $(pdfwrite1_)
 	$(ADDMOD) $(DD)pdfwrite $(pdfwrite2_)
 	$(ADDMOD) $(DD)pdfwrite $(pdfwrite3_)
@@ -689,10 +682,11 @@ $(DD)pdfwrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pdfwrite_)\
 	$(ADDMOD) $(DD)pdfwrite $(pdfwrite5_)
 	$(ADDMOD) $(DD)pdfwrite $(pdfwrite6_)
 	$(ADDMOD) $(DD)pdfwrite -ps gs_pdfwr
-	$(ADDMOD) $(DD)pdfwrite -ps gs_lgo_e gs_lgx_e gs_mgl_e gs_mro_e
-	$(ADDMOD) $(DD)pdfwrite -include $(GLD)cmyklib $(GLD)cfe $(GLD)dcte
-	$(ADDMOD) $(DD)pdfwrite -include $(GLD)lzwe $(GLD)rle $(GLD)szlibe
-	$(ADDMOD) $(DD)pdfwrite -include $(GLD)psdf
+	$(ADDMOD) $(DD)pdfwrite -ps gs_lgo_e gs_lgx_e gs_mex_e
+	$(ADDMOD) $(DD)pdfwrite -ps gs_mgl_e gs_mro_e gs_wan_e
+	$(ADDMOD) $(DD)pdfwrite -include $(GLD)cmyklib $(GLD)cfe $(GLD)lzwe
+	$(ADDMOD) $(DD)pdfwrite -include $(GLD)rle $(GLD)sdcte $(GLD)sdeparam
+	$(ADDMOD) $(DD)pdfwrite -include $(GLD)szlibe $(GLD)psdf
 
 gdevpdfo_h=$(GLSRC)gdevpdfo.h
 gdevpdfx_h=$(GLSRC)gdevpdfx.h\
@@ -738,7 +732,7 @@ $(GLOBJ)gdevpdfo.$(OBJ) : $(GLSRC)gdevpdfo.c $(memory__h) $(string__h)\
  $(sstring_h) $(strimpl_h)
 	$(GLCC) $(GLO_)gdevpdfo.$(OBJ) $(C_) $(GLSRC)gdevpdfo.c
 
-$(GLOBJ)gdevpdfp.$(OBJ) : $(GLSRC)gdevpdfp.c $(gx_h)\
+$(GLOBJ)gdevpdfp.$(OBJ) : $(GLSRC)gdevpdfp.c $(memory__h) $(gx_h)\
  $(gdevpdfx_h) $(gserrors_h) $(gsparamx_h)
 	$(GLCC) $(GLO_)gdevpdfp.$(OBJ) $(C_) $(GLSRC)gdevpdfp.c
 

@@ -1,22 +1,9 @@
 /* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* Write an embedded Type 1 font */
 #include "memory_.h"
 #include "gx.h"
@@ -32,6 +19,7 @@
 #include "spprint.h"
 #include "gdevpsdf.h"
 
+/* Write a (named) array of floats. */
 private int
 write_float_array(gs_param_list *plist, const char *key, const float *values,
 		  int count)
@@ -46,6 +34,7 @@ write_float_array(gs_param_list *plist, const char *key, const float *values,
     return 0;
 }
 
+/* Write a UniqueID and/or XUID. */
 private void
 write_uid(stream *s, const gs_uid *puid)
 {
@@ -57,8 +46,75 @@ write_uid(stream *s, const gs_uid *puid)
 	pputs(s, "/XUID [");
 	for (i = 0; i < n; ++i)
 	    pprintld1(s, "%ld ", uid_XUID_values(puid)[i]);
-	pputs(s, "] def\n");
+	pputs(s, "] readonly def\n");
     }
+}
+
+/* Write the font name. */
+private void
+write_font_name(stream *s, const gs_font_type1 *pfont,
+		const gs_const_string *alt_font_name)
+{
+    if (alt_font_name)
+	pwrite(s, alt_font_name->data, alt_font_name->size);
+    else
+	pwrite(s, pfont->font_name.chars, pfont->font_name.size);
+}
+/*
+ * Write the Encoding array.  This is a separate procedure only for
+ * readability.
+ */
+private int
+write_Encoding(stream *s, gs_font_type1 *pfont, int options,
+	      gs_glyph *subset_glyphs, uint subset_size, gs_glyph notdef)
+{
+    pputs(s, "/Encoding ");
+    switch (pfont->encoding_index) {
+	case ENCODING_INDEX_STANDARD:
+	    pputs(s, "StandardEncoding");
+	    break;
+	case ENCODING_INDEX_ISOLATIN1:
+	    /* ATM only recognizes StandardEncoding. */
+	    if (options & WRITE_TYPE1_POSTSCRIPT) {
+		pputs(s, "ISOLatin1Encoding");
+		break;
+	    }
+	default:{
+		gs_char i;
+
+		pputs(s, "256 array\n");
+		pputs(s, "0 1 255 {1 index exch /.notdef put} for\n");
+		for (i = 0; i < 256; ++i) {
+		    gs_glyph glyph =
+			(*pfont->procs.encode_char)
+			((gs_font *)pfont, (gs_char)i, GLYPH_SPACE_NAME);
+		    const char *namestr;
+		    uint namelen;
+
+		    if (subset_glyphs && subset_size) {
+			/*
+			 * Only write Encoding entries for glyphs in the
+			 * subset.  Use binary search to check each glyph,
+			 * since subset_glyphs are sorted.
+			 */
+			if (!psdf_sorted_glyphs_include(subset_glyphs,
+							subset_size, glyph))
+			    continue;
+		    }
+		    if (glyph != gs_no_glyph && glyph != notdef &&
+			(namestr = (*pfont->procs.callbacks.glyph_name)
+			 (glyph, &namelen)) != 0
+			) {
+			pprintd1(s, "dup %d /", (int)i);
+			pwrite(s, namestr, namelen);
+			pputs(s, " put\n");
+		    }
+		}
+		pputs(s, "readonly");
+	    }
+    }
+    pputs(s, " def\n");
+    return 0;
 }
 
 /*
@@ -72,7 +128,7 @@ write_Private(stream *s, gs_font_type1 *pfont,
 {
     const gs_type1_data *const pdata = &pfont->data;
     printer_param_list_t rlist;
-    gs_param_list *plist = (gs_param_list *)&rlist;
+    gs_param_list *const plist = (gs_param_list *)&rlist;
     int code = s_init_param_printer(&rlist, ppp, s);
 
     if (code < 0)
@@ -137,7 +193,10 @@ write_Private(stream *s, gs_font_type1 *pfont,
     pputs(s, "/MinFeature{16 16} def\n");
     pputs(s, "/password 5839 def\n");
 
-    /* Write the Subrs.  We always write them all, even for subsets. */
+    /*
+     * Write the Subrs.  We always write them all, even for subsets.
+     * (We will fix this someday.)
+     */
 
     {
 	int n, i;
@@ -205,6 +264,18 @@ write_Private(stream *s, gs_font_type1 *pfont,
     return 0;
 }
 
+/* Write one FontInfo entry. */
+private void
+write_font_info(stream *s, const char *key, const gs_const_string *pvalue,
+		int do_write)
+{
+    if (do_write) {
+	pprints1(s, "\n/%s ", key);
+	s_write_ps_string(s, pvalue->data, pvalue->size, 0);
+	pputs(s, " def");
+    }
+}
+
 /* Write the definition of a Type 1 font. */
 int
 psdf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
@@ -215,6 +286,7 @@ psdf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
     long start = stell(s);
     param_printer_params_t ppp;
     printer_param_list_t rlist;
+    gs_param_list *const plist = (gs_param_list *)&rlist;
     stream AXE_stream;
     stream_AXE_state AXE_state;
     byte AXE_buf[200];		/* arbitrary */
@@ -222,7 +294,7 @@ psdf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
     stream_exE_state exE_state;
     byte exE_buf[200];		/* arbitrary */
     gs_glyph notdef = gs_no_glyph;
-    gs_glyph subset_data[256+1]; /* +1 for .notdef */
+    gs_glyph subset_data[256 * 3 + 1]; /* *3 for seac, +1 for .notdef */
     gs_glyph *subset_glyphs = orig_subset_glyphs;
     uint subset_size = orig_subset_size;
     int code;
@@ -298,6 +370,16 @@ psdf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
 	}
     }
     if (subset_glyphs) {
+	/*
+	 * For subset fonts, we must ensure that characters referenced
+	 * by seac are also included.  Note that seac creates at most
+	 * 2 pieces.
+	 */
+	code = psdf_add_subset_pieces(subset_glyphs, &subset_size,
+				      countof(subset_data) - 1, 2,
+				      (gs_font *)pfont);
+	if (code < 0)
+	    return code;
 	/* Subset fonts require .notdef. */
 	if (notdef == gs_no_glyph)
 	    return_error(gs_error_rangecheck);
@@ -319,87 +401,41 @@ psdf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
     /* Write the font header. */
 
     pputs(s, "%!FontType1-1.0: ");
-    pwrite(s, pfont->font_name.chars, pfont->font_name.size);
+    write_font_name(s, pfont, alt_font_name);
     pputs(s, "\n11 dict begin\n");
 
-    /* Write FontInfo.  Currently we don't write anything there. */
+    /* Write FontInfo. */
 
-    pputs(s, "/FontInfo 1 dict dup begin\n");
-    /****** SHOULD USE param_list API FOR ADDITIONAL ELEMENTS ******/
-    pputs(s, "end readonly def\n");
+    pputs(s, "/FontInfo 5 dict dup begin");
+    {
+	gs_font_info_t info;
+	int code = pfont->procs.font_info((gs_font *)pfont, NULL,
+			(FONT_INFO_COPYRIGHT | FONT_INFO_NOTICE |
+			 FONT_INFO_FAMILY_NAME | FONT_INFO_FULL_NAME),
+					  &info);
+
+	if (code >= 0) {
+	    write_font_info(s, "Copyright", &info.Copyright,
+			    info.members & FONT_INFO_COPYRIGHT);
+	    write_font_info(s, "Notice", &info.Notice,
+			    info.members & FONT_INFO_NOTICE);
+	    write_font_info(s, "FamilyName", &info.FamilyName,
+			    info.members & FONT_INFO_FAMILY_NAME);
+	    write_font_info(s, "FullName", &info.FullName,
+			    info.members & FONT_INFO_FULL_NAME);
+	}
+    }
+    pputs(s, "\nend readonly def\n");
 
     /* Write the main font dictionary. */
 
     pputs(s, "/FontName /");
-    if (alt_font_name)
-	pwrite(s, alt_font_name->data, alt_font_name->size);
-    else
-	pwrite(s, pfont->font_name.chars, pfont->font_name.size);
+    write_font_name(s, pfont, alt_font_name);
     pputs(s, " def\n");
-    pputs(s, "/Encoding ");
-    switch (pfont->encoding_index) {
-	case ENCODING_INDEX_STANDARD:
-	    pputs(s, "StandardEncoding");
-	    break;
-	case ENCODING_INDEX_ISOLATIN1:
-	    /* ATM only recognizes StandardEncoding. */
-	    if (options & WRITE_TYPE1_POSTSCRIPT) {
-		pputs(s, "ISOLatin1Encoding");
-		break;
-	    }
-	default:{
-		gs_char i;
-
-		pputs(s, "256 array\n");
-		pputs(s, "0 1 255 {1 index exch /.notdef put} for\n");
-		for (i = 0; i < 256; ++i) {
-		    gs_glyph glyph =
-			(*pfont->procs.encode_char)
-			((gs_font *)pfont, (gs_char)i, GLYPH_SPACE_NAME);
-		    const char *namestr;
-		    uint namelen;
-
-		    if (subset_glyphs && subset_size) {
-			/*
-			 * Only write Encoding entries for glyphs in the
-			 * subset.  Use binary search to check each glyph,
-			 * since subset_glyphs are sorted.
-			 */
-			int lo = 0, hi = subset_size - 1;
-
-			if (glyph < subset_glyphs[0] ||
-			    glyph > subset_glyphs[subset_size - 1]
-			    )
-			    continue;
-			/*
-			 * Loop invariants: hi > lo;
-			 * subset_glyphs[lo] <= glyph <= subset_glyphs[hi].
-			 */
-			while (hi - lo > 1) {
-			    int mid = (lo + hi) >> 1;
-			    if (glyph >= subset_glyphs[mid])
-				lo = mid;
-			    else
-				hi = mid;
-			}
-			if (glyph != subset_glyphs[lo] &&
-			    glyph != subset_glyphs[hi]
-			    )
-			    continue;
-		    }
-		    if (glyph != gs_no_glyph && glyph != notdef &&
-			(namestr = (*pfont->procs.callbacks.glyph_name)
-			 (glyph, &namelen)) != 0
-			) {
-			pprintd1(s, "dup %d /", (int)i);
-			pwrite(s, namestr, namelen);
-			pputs(s, " put\n");
-		    }
-		}
-		pputs(s, "readonly");
-	    }
-    }
-    pputs(s, " def\n");
+    code = write_Encoding(s, pfont, options, subset_glyphs, subset_size,
+			  notdef);
+    if (code < 0)
+	return code;
     pprintg6(s, "/FontMatrix [%g %g %g %g %g %g] readonly def\n",
 	     pfont->FontMatrix.xx, pfont->FontMatrix.xy,
 	     pfont->FontMatrix.yx, pfont->FontMatrix.yy,
@@ -409,8 +445,7 @@ psdf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
 	     pfont->FontBBox.p.x, pfont->FontBBox.p.y,
 	     pfont->FontBBox.q.x, pfont->FontBBox.q.y);
     {
-	private const gs_param_item_t font_items[] =
-	{
+	private const gs_param_item_t font_items[] = {
 	    {"FontType", gs_param_type_int,
 	     offset_of(gs_font_type1, FontType)},
 	    {"PaintType", gs_param_type_int,
@@ -420,10 +455,15 @@ psdf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
 	    gs_param_item_end
 	};
 
-	code = gs_param_write_items((gs_param_list *)&rlist, pfont, NULL,
-				    font_items);
+	code = gs_param_write_items(plist, pfont, NULL, font_items);
 	if (code < 0)
 	    return code;
+    }
+    {
+	const gs_type1_data *const pdata = &pfont->data;
+
+	write_float_array(plist, "WeightVector", pdata->WeightVector.values,
+			  pdata->WeightVector.count);
     }
     pputs(s, "currentdict end\n");
 

@@ -17,7 +17,7 @@
 */
 
 
-
+/*$RCSfile$ $Revision$*/
 #include <windows.h>
 #include "dwmain.h"
 

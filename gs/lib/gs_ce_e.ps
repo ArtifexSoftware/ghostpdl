@@ -1,0 +1,36 @@
+%    Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
+% This software is licensed to a single customer by Artifex Software Inc.
+% under the terms of a specific OEM agreement.
+
+% $RCSfile$ $Revision$
+% Define the Adobe CE (Central European) encoding vector.
+% We define it by differences from the ISOLatin1Encoding vector.
+/CEEncoding
+ISOLatin1Encoding 0 39 getinterval aload pop
+% 047
+    /quotesingle
+ISOLatin1Encoding 40 56 getinterval aload pop
+% 140
+    /grave
+ISOLatin1Encoding 97 31 getinterval aload pop
+% 20x
+  /.notdef /.notdef /quotesinglbase /.notdef /quotedblbase /ellipsis /dagger /daggerdbl
+  /.notdef /perthousand /Scaron /guilsinglleft /Sacute /Tcaron /Zcaron /Zacute
+  /.notdef /grave /acute /circumflex /tilde /bullet /endash /emdash
+  /.notdef /trademark /scaron /guilsinglright /sacute /tcaron /zcaron /zacute
+% 24x
+  /space /caron /breve /Lslash /currency /Aogonek /brokenbar /section
+  /dieresis /copyright /Scommaaccent /guillemotleft /logicalnot /hyphen /registered /Zdotaccent
+  /degree /plusminus /ogonek /lslash /acute /mu /paragraph /periodcentered
+  /cedilla /aogonek /scommaaccent /guillemotright /Lcaron /hungarumlaut /lcaron /zdotaccent
+% 30x
+  /Racute /Aacute /Acircumflex /Abreve /Adieresis /Lacute /Cacute /Ccedilla
+  /Ccaron /Eacute /Eogonek /Edieresis /Ecaron /Iacute /Icircumflex /Dcaron
+  /Dcroat /Nacute /Ncaron /Oacute /Ocircumflex /Ohungarumlaut /Odieresis /multiply
+  /Rcaron /Uring /Uacute /Uhungarumlaut /Udieresis /Yacute /Tcommaaccent /germandbls
+% 34x
+  /racute /aacute /acircumflex /abreve /adieresis /lacute /cacute /ccedilla
+  /ccaron /eacute /eogonek /edieresis /ecaron /iacute /icircumflex /dcaron
+  /dcroat /nacute /ncaron /oacute /ocircumflex /ohungarumlaut /odieresis /divide
+  /rcaron /uring /uacute /uhungarumlaut /udieresis /yacute /tcommaaccent /dotaccent
+256 packedarray .defineencoding

@@ -1,28 +1,17 @@
 #    Copyright (C) 1991, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-# 
-# This file is part of Aladdin Ghostscript.
-# 
-# Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-# or distributor accepts any responsibility for the consequences of using it,
-# or for whether it serves any particular purpose or works at all, unless he
-# or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-# License (the "License") for full details.
-# 
-# Every copy of Aladdin Ghostscript must include a copy of the License,
-# normally in a plain ASCII text file named PUBLIC.  The License grants you
-# the right to copy, modify and redistribute Aladdin Ghostscript, but only
-# under certain conditions described in the License.  Among other things, the
-# License requires that the copyright notice and this notice be preserved on
-# all copies.
+# This software is licensed to a single customer by Artifex Software Inc.
+# under the terms of a specific OEM agreement.
 
-
+# $RCSfile$ $Revision$
 # makefile for MS-DOS / Watcom C/C++ library testing.
 
 libdefault: $(GLOBJ)gslib.exe
 	$(NO_OP)
 
-GS_DOCDIR=c:/gs
-GS_LIB_DEFAULT=.;c:/gs/lib\;c:/gs/fonts
+AROOTDIR=c:/Aladdin
+GSROOTDIR=$(AROOTDIR)/gs$(GS_DOT_VERSION)
+GS_DOCDIR=$(GSROOTDIR)/doc
+GS_LIB_DEFAULT=$(GSROOTDIR)/lib\;$(AROOTDIR)/fonts
 SEARCH_HERE_FIRST=1
 GS_INIT=gs_init.ps
 
@@ -39,16 +28,16 @@ NOPRIVATE=1
 GS=gslib
 
 !ifndef BINDIR
-BINDIR=.\obj
+BINDIR=.\debugobj
 !endif
 !ifndef GLSRCDIR
 GLSRCDIR=.\src
 !endif
 !ifndef GLGENDIR
-GLGENDIR=.\obj
+GLGENDIR=.\debugobj
 !endif
 !ifndef GLOBJDIR
-GLOBJDIR=.\obj
+GLOBJDIR=.\debugobj
 !endif
 
 # Do not edit the next group of lines.
@@ -107,7 +96,7 @@ FEATURE_DEVS=$(GLD)patlib.dev $(GLD)path1lib.dev $(GLD)hsblib.dev
 DEVICE_DEVS=$(DD)vga.dev
 !endif
 !ifndef COMPILE_INITS
-COMPILE_INITS=0
+COMPILE_INITS=1
 !endif
 !ifndef BAND_LIST_STORAGE
 BAND_LIST_STORAGE=file

@@ -1,23 +1,12 @@
 /* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /* PNG (Portable Network Graphics) Format.  Pronounced "ping". */
+/* lpd 1999-09-24: changes PNG_NO_STDIO to PNG_NO_CONSOLE_IO for libpng
+   versions 1.0.3 and later. */
 /* lpd 1999-07-01: replaced remaining uses of gs_malloc and gs_free with
    gs_alloc_bytes and gs_free_object. */
 /* lpd 1999-03-08: changed png.h to png_.h to allow compiling with only
@@ -39,7 +28,20 @@
 #include "gscdefs.h"
 
 #define PNG_INTERNAL
-#define PNG_NO_STDIO
+/*
+ * libpng versions 1.0.3 and later allow disabling access to the stdxxx
+ * files while retaining support for FILE * I/O.
+ */
+#define PNG_NO_CONSOLE_IO
+/*
+ * Earlier libpng versions require disabling FILE * I/O altogether.
+ * This produces a compiler warning about no prototype for png_init_io.
+ * The right thing will happen at link time, since the library itself
+ * is compiled with stdio support.  Unfortunately, we can't do this
+ * conditionally depending on PNG_LIBPNG_VER, because this is defined
+ * in png.h.
+ */
+/*#define PNG_NO_STDIO*/
 #include "png_.h"
 
 /* ------ The device descriptors ------ */

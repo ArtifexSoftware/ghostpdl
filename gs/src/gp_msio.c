@@ -1,24 +1,12 @@
 /* Copyright (C) 1992, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+ * This software is licensed to a single customer by Artifex Software Inc.
+ * under the terms of a specific OEM agreement.
  */
 
-
+/*$RCSfile$ $Revision$ */
 /*
  * Streams for Windows text window
+ *
  * Original version by Russell Lang and Maurice Castro with help from
  * Programming Windows, 2nd Ed., Charles Petzold, Microsoft Press;
  * initially created from gp_dosfb.c and gp_itbc.c 5th June 1992.
@@ -69,9 +57,9 @@ private stream_proc_available(win_std_available);
 /* Use a pseudo IODevice to get win_stdio_init called at the right time. */
 /* This is bad architecture; we'll fix it later. */
 private iodev_proc_init(win_stdio_init);
-const gx_io_device gs_iodev_wstdio =
-{
-    "wstdio", "Special",
+const gx_io_device gs_iodev_wstdio = {
+    /* The name is null to keep this from showing up as a resource. */
+    0, "Special",
     {win_stdio_init, iodev_no_open_device,
      iodev_no_open_file, iodev_no_fopen, iodev_no_fclose,
      iodev_no_delete_file, iodev_no_rename_file,

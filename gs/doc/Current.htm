@@ -1,7 +1,7 @@
 <html>
 <head>
 <title>Information specifically about the current release</title>
-
+<!-- $RCSfile$ $Revision$ -->
 <!-- Originally: current.txt -->
 </head>
 
@@ -85,13 +85,6 @@ code, if you want to use precompiled versions of the jpeg, libpng, or zlib
 libraries.
 
 <p>
-GNU readline is supported (as a build-time option).  However, because of the
-"viral" nature of the GNU License, you are not allowed to distribute Aladdin
-Ghostscript if you compile it with GNU readline support.  See <a
-href="../src/gp_gnrdl.c"> the <b><tt>gp_gnrdl.c</tt></b> source file</a> for
-more information.
-
-<p>
 The syntax
 <b><tt>%</tt></b><em>iodevice</em><b><tt>%</tt></b><em>filename</em> is now
 supported with the <b><tt>-sOutputFile=</tt></b> switch, allowing you to
@@ -116,6 +109,12 @@ documentation</a> for details.
 Ghostscript as a dynamically linked library is now supported on the Mac as
 well as on Windows.
 
+<p>
+GNU readline was supported in most of the beta distributions for 6.0, but
+was removed at the last minute because of objections from the Free Software
+Foundation.  Please see <a href="Make.htm#GNU_readline">here</a> for more
+information.
+
 <h1><a name="Changes"></a>Changes (since release 5.50)</h1>
 
 <h2>Directories and build procedure</h2>
@@ -132,7 +131,7 @@ other than MS Windows, the build procedure does not write into this
 directory.
 
 <p>
-The files included in the Ghostscript release now are divided into 5
+The files included in the Ghostscript release now are found in five
 subdirectories.
 
 <ul>
@@ -158,7 +157,7 @@ PDF files.  Copied by <b><tt>make install</tt></b>.
 </ul>
 
 <p>
-The build procedure creates 2 additional subdirectories,
+The build procedure creates two additional subdirectories,
 <em>top</em><b><tt>/obj/</tt></b> (or <b><tt>debugobj</tt></b> or
 <b><tt>pgobj</tt></b>) and <em>top</em><b><tt>/bin/</tt></b>.  See the
 documentation on <a href="Make.htm">how to build Ghostscript</a> for more
@@ -175,13 +174,7 @@ information.
 <h1><a name="Known_problems"></a>Known problems</h1>
 
 <p>
-On MS Windows, trying to execute <b><tt>setfileposition</tt></b> or
-<b><tt>bytesavailable</tt></b> on the standard input file crashes
-Ghostscript.
-
-<p>
-(This is not a complete list of known problems: see the <a href="News.htm">
-release news</a> for details.)
+See the <a href="News.htm">release news</a> for details.
 
 <h2><a name="Usage"></a>Usage</h2>
 
@@ -272,7 +265,7 @@ full details of the terms of using, copying, modifying, and redistributing
 Aladdin Ghostscript.
 
 <p>
-Ghostscript version 5.91, 30 August 1999
+Ghostscript version 5.96, 12 November 1999
 
 </font>
 
