@@ -115,6 +115,8 @@ gs_malloc_memory_init(void)
     mem->limit = max_long;
     mem->used = 0;
     mem->max_used = 0;
+    mem->pl_stdio = 0;
+
     return mem;
 }
 /*
