@@ -888,7 +888,7 @@ pdxtext_uvw=$(GLOBJ)gdevpdtw.$(OBJ)
 pdxtext_xyz=
 pdxtext_=$(pdxtext_ab) $(pdxtext_cde) $(pdxtext_fgh) $(pdxtext_ijk)\
  $(pdxtext_lmn) $(pdxtext_opq) $(pdxtext_rst) $(pdxtext_uvw) $(pdxtext_xyz)\
- $(pdftext10_) $(GLOBJ)gsfont0c.$(OBJ)
+ $(GLOBJ)gsfont0c.$(OBJ)
 $(DD)pdxtext.dev : $(DEVS_MAK) $(ECHOGS_MAK) $(pdxtext_)\
  $(GLD)fcopy.dev $(GLD)psf.dev
 	$(SETMOD) $(DD)pdxtext $(pdxtext_ab)
@@ -900,7 +900,6 @@ $(DD)pdxtext.dev : $(DEVS_MAK) $(ECHOGS_MAK) $(pdxtext_)\
 	$(ADDMOD) $(DD)pdxtext $(pdxtext_rst)
 	$(ADDMOD) $(DD)pdxtext $(pdxtext_uvw)
 	$(ADDMOD) $(DD)pdxtext $(pdxtext_xyz)
-	$(ADDMOD) $(DD)pdxtext $(pdftext10_)
 	$(ADDMOD) $(DD)pdxtext $(GLOBJ)gsfont0c.$(OBJ)
 	$(ADDMOD) $(DD)pdxtext -include $(GLD)fcopy $(GLD)psf
 
@@ -949,7 +948,7 @@ $(GLOBJ)gdevpdts.$(OBJ) : $(GLSRC)gdevpdts.c $(gx_h) $(math__h) $(memory__h)\
 	$(GLCC) $(GLO_)gdevpdts.$(OBJ) $(C_) $(GLSRC)gdevpdts.c
 
 $(GLOBJ)gdevpdtt.$(OBJ) : $(GLSRC)gdevpdtt.c $(gx_h) $(math__h) $(string__h)\
- $(gserrors_h) $(gsfcache_h) $(gxfont_h) $(gxfont0_h) $(gxfcid_h) $(gxfcopy_h)\
+ $(gserrors_h) $(gxfcache_h) $(gxfont_h) $(gxfont0_h) $(gxfcid_h) $(gxfcopy_h)\
  $(gxfcmap_h) $(gxpath_h) $(gdevpdfx_h) $(gdevpdfg_h)\
  $(gdevpdtx_h) $(gdevpdtd_h) $(gdevpdtf_h) $(gdevpdts_h) $(gdevpdtt_h)
 	$(GLCC) $(GLO_)gdevpdtt.$(OBJ) $(C_) $(GLSRC)gdevpdtt.c

@@ -1,4 +1,4 @@
-#    Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1995-2002 artofcode LLC. All rights reserved.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -154,6 +154,7 @@ gxrplane_h=$(GLSRC)gxrplane.h
 gsrect_h=$(GLSRC)gsrect.h $(gxfixed_h)
 gxalloc_h=$(GLSRC)gxalloc.h $(gsalloc_h) $(gxobj_h)
 gxbitops_h=$(GLSRC)gxbitops.h $(gsbitops_h)
+gxcindex_h=$(GLSRC)gxcindex.h $(gsbitops_h)
 
 # Streams
 scommon_h=$(GLSRC)scommon.h $(gsmemory_h) $(gstypes_h) $(gsstype_h)
@@ -314,6 +315,7 @@ gsjconf_h=$(GLSRC)gsjconf.h $(arch_h) $(stdpre_h)
 gslib_h=$(GLSRC)gslib.h
 gslparam_h=$(GLSRC)gslparam.h
 gsmatrix_h=$(GLSRC)gsmatrix.h
+gsovrc_h=$(GLSRC)gsovrc.h $(gsstype_h) $(gscompt_h)
 gspaint_h=$(GLSRC)gspaint.h
 gsparam_h=$(GLSRC)gsparam.h $(gsstype_h)
 gsparams_h=$(GLSRC)gsparams.h $(gsparam_h) $(stream_h)
@@ -337,7 +339,6 @@ gstparam_h=$(GLSRC)gstparam.h $(gsccolor_h) $(gsrefct_h)
 gxalpha_h=$(GLSRC)gxalpha.h
 gxbcache_h=$(GLSRC)gxbcache.h $(gxbitmap_h)
 gxbitfmt_h=$(GLSRC)gxbitfmt.h
-gxcindex_h=$(GLSRC)gxcindex.h $(gsbitops_h)
 gxcvalue_h=$(GLSRC)gxcvalue.h
 gxclio_h=$(GLSRC)gxclio.h $(gp_h)
 gxclip_h=$(GLSRC)gxclip.h
@@ -383,6 +384,7 @@ gsdcolor_h=$(GLSRC)gsdcolor.h $(gsccolor_h)\
 gxdcolor_h=$(GLSRC)gxdcolor.h\
  $(gscsel_h) $(gsdcolor_h) $(gsropt_h) $(gsstruct_h)
 gscspace_h=$(GLSRC)gscspace.h $(gsmemory_h)
+gscssub_h=$(GLSRC)gscssub.h $(gscspace_h)
 gxdevcli_h=$(GLSRC)gxdevcli.h $(std_h)\
  $(gscompt_h) $(gsdcolor_h) $(gsiparam_h) $(gsmatrix_h)\
  $(gsrefct_h) $(gsropt_h) $(gsstruct_h) $(gstparam_h) $(gsxfont_h)\
@@ -1816,23 +1818,6 @@ $(GLOBJ)gsfont0c.$(OBJ) : $(GLSRC)gsfont0c.c $(GXERR) $(memory__h)\
  $(gxfont_h) $(gxfont0_h) $(gxfont0c_h) $(gxfcid_h) $(gxfcmap_h)
 	$(GLCC) $(GLO_)gsfont0c.$(OBJ) $(C_) $(GLSRC)gsfont0c.c
 
-# ---------------- Font copying ---------------- #
-
-# This facility is not included in the core library.  Currently it is used
-# only by pdfwrite.
-
-fcopy_=$(GLOBJ)gxfcopy.$(OBJ)
-$(GLD)fcopy.dev : $(DEVS_MAK) $(ECHOGS_MAK) $(fcopy_)
-	$(SETMOD) $(GLD)fcopy $(fcopy_)
-
-$(GLOBJ)gxfcopy.$(OBJ) : $(GLSRC)gxfcopy.c $(memory__h) $(GXERR)\
- $(gscencs_h) $(gsline_h) $(gspaint_h) $(gspath_h) $(gsstruct_h) $(gsutil_h)\
- $(gxfont_h) $(gxfont1_h) $(gxfont42_h) $(gxfcid_h) $(gxfcopy_h)\
- $(gxistate_h) $(gxtext_h) $(gxtype1_h)\
- $(gzstate_h)\
- $(gdevpsf_h) $(stream_h)
-	$(GLCC) $(GLO_)gxfcopy.$(OBJ) $(C_) $(GLSRC)gxfcopy.c
-
 # ---------------- Pattern color ---------------- #
 
 patlib_1=$(GLOBJ)gspcolor.$(OBJ) $(GLOBJ)gsptype1.$(OBJ) $(GLOBJ)gxclip2.$(OBJ)
@@ -2008,6 +1993,23 @@ $(GLOBJ)gdevpsfx.$(OBJ) : $(GLSRC)gdevpsfx.c $(GXERR)\
  $(stream_h)\
  $(gdevpsf_h)
 	$(GLCC) $(GLO_)gdevpsfx.$(OBJ) $(C_) $(GLSRC)gdevpsfx.c
+
+# ---------------- Font copying ---------------- #
+
+# This facility is not included in the core library.  Currently it is used
+# only by pdfwrite.
+
+fcopy_=$(GLOBJ)gxfcopy.$(OBJ)
+$(GLD)fcopy.dev : $(DEVS_MAK) $(ECHOGS_MAK) $(fcopy_)
+	$(SETMOD) $(GLD)fcopy $(fcopy_)
+
+$(GLOBJ)gxfcopy.$(OBJ) : $(GLSRC)gxfcopy.c $(memory__h) $(GXERR)\
+ $(gscencs_h) $(gsline_h) $(gspaint_h) $(gspath_h) $(gsstruct_h) $(gsutil_h)\
+ $(gxfont_h) $(gxfont1_h) $(gxfont42_h) $(gxfcid_h) $(gxfcopy_h)\
+ $(gxistate_h) $(gxtext_h) $(gxtype1_h)\
+ $(gzstate_h)\
+ $(gdevpsf_h) $(stream_h)
+	$(GLCC) $(GLO_)gxfcopy.$(OBJ) $(C_) $(GLSRC)gxfcopy.c
 
 # -------- Level 1 color extensions (CMYK color and colorimage) -------- #
 
@@ -2316,6 +2318,7 @@ gstrans_h=$(GLSRC)gstrans.h $(gstparam_h)
 gsipar3x_h=$(GLSRC)gsipar3x.h $(gsiparam_h) $(gsiparm3_h)
 gximag3x_h=$(GLSRC)gximag3x.h $(gsipar3x_h) $(gxiparam_h)
 gxblend_h=$(GLSRC)gxblend.h
+gdevp14_h=$(GLSRC)gdevp14.h
 
 $(GLOBJ)gstrans.$(OBJ) : $(GLSRC)gstrans.c $(GXERR)\
  $(gstrans_h) $(gsutil_h) $(gxdevcli_h) $(gzstate_h)
