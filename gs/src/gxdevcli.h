@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -817,7 +817,8 @@ void gx_device_init(P4(gx_device * dev, const gx_device * proto,
 /* Make a null device. */
 /* The gs_memory_t argument is 0 if the device is temporary and local, */
 /* or the allocator that was used to allocate it if it is a real object. */
-void gs_make_null_device(P2(gx_device_null *, gs_memory_t *));
+void gs_make_null_device(P3(gx_device_null *, const gx_device *,
+			    gs_memory_t *));
 
 /* Calculate the raster (number of bytes in a scan line), */
 /* with byte or word padding. */

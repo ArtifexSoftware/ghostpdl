@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -344,10 +344,14 @@ gx_device_init(gx_device * dev, const gx_device * proto, gs_memory_t * mem,
 
 /* Make a null device. */
 void
-gs_make_null_device(gx_device_null * dev, gs_memory_t * mem)
+gs_make_null_device(gx_device_null *dev_null, const gx_device *dev,
+		    gs_memory_t * mem)
 {
-    gx_device_init((gx_device *) dev, (const gx_device *)&gs_null_device,
+    gx_device_init((gx_device *)dev_null, (const gx_device *)&gs_null_device,
 		   mem, true);
+    dev_null->target = dev;
+    if (dev)
+	gx_device_copy_color_params(dev_null, dev);
 }
 
 /* Select a null device. */
@@ -506,6 +510,20 @@ gx_device_copy_color_procs(gx_device *dev, const gx_device *target)
     }
 }
 
+#define COPY_PARAM(p) dev->p = target->p
+
+/*
+ * Copy the color-related device parameters back from the target:
+ * color_info and color mapping procedures.
+ */
+void
+gx_device_copy_color_params(gx_device *dev, const gx_device *target)
+{
+	COPY_PARAM(color_info);
+	COPY_PARAM(cached_colors);
+	gx_device_copy_color_procs(dev, target);
+}
+
 /*
  * Copy device parameters back from a target.  This copies all standard
  * parameters related to page size and resolution, plus color_info
@@ -514,7 +532,6 @@ gx_device_copy_color_procs(gx_device *dev, const gx_device *target)
 void
 gx_device_copy_params(gx_device *dev, const gx_device *target)
 {
-#define COPY_PARAM(p) dev->p = target->p
 #define COPY_ARRAY_PARAM(p) memcpy(dev->p, target->p, sizeof(dev->p))
 	COPY_PARAM(width);
 	COPY_PARAM(height);
@@ -526,12 +543,11 @@ gx_device_copy_params(gx_device *dev, const gx_device *target)
 	COPY_ARRAY_PARAM(Margins);
 	COPY_ARRAY_PARAM(HWMargins);
 	COPY_PARAM(PageCount);
-	COPY_PARAM(color_info);
-	COPY_PARAM(cached_colors);
-#undef COPY_PARAM
 #undef COPY_ARRAY_PARAM
-	gx_device_copy_color_procs(dev, target);
+	gx_device_copy_color_params(dev, target);
 }
+
+#undef COPY_PARAM
 
 /* Open the output file for a device. */
 int

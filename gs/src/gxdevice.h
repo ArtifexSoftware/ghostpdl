@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -313,6 +313,12 @@ void gx_device_copy_color_procs(P2(gx_device *dev, const gx_device *target));
 
 /* Clear the black/white pixel cache. */
 void gx_device_decache_colors(P1(gx_device *dev));
+
+/*
+ * Copy the color-related device parameters back from the target:
+ * color_info and color mapping procedures.
+ */
+void gx_device_copy_color_params(P2(gx_device *dev, const gx_device *target));
 
 /*
  * Copy device parameters back from a target.  This copies all standard
