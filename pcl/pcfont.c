@@ -524,25 +524,19 @@ pcl_set_current_font_environment(pcl_state_t *pcls)
 		pcls->font_selection[0].params = params;
 		pcls->default_symbol_set_value = pcls->font_selection[0].params.symbol_set;
 		/* NB: The fontsource and fontnumber selection
-                   parameters would be stepped on if we allowed pcl to
-                   use the default pjl values for symbol set, pitch,
-                   and ptsize.  PJL updates these values as a side
-                   effect of changing font source and font number.
-                   Our pjl interpreter does not have that capability.
-                   As a workaround, We only set these if font source
-                   and font number have not been set.  This should be
-                   unnecessary for a fully functional pjl interpreter.  */
-		if ( (pjl_vartoi(pjl_get_envvar(pcls->pjls, "fontnumber")) == 0) &&
-		     (pjl_get_envvar(pcls->pjls, "fontsource")[0] == 'I') ) {
-		    pcls->default_symbol_set_value = pcls->font_selection[0].params.symbol_set =
+                   parameters get stepped on next, unless pjl symset,
+                   pitch and ptsize are properly updated by the PJL
+                   interpreter when the font changes.  Our pjl
+                   interpreter does not currently do this.
+                   Consequently wrong selections are possible. */
+		pcls->default_symbol_set_value = pcls->font_selection[0].params.symbol_set =
 		    pjl_map_pjl_sym_to_pcl_sym(pjl_get_envvar(pcls->pjls, "symset"));
-		    pl_fp_set_pitch_per_inch(&pcls->font_selection[0].params,
-					     pjl_vartof(pjl_get_envvar(pcls->pjls, "pitch")));
-		    pcls->font_selection[0].params.height_4ths = pjl_vartof(pjl_get_envvar(pcls->pjls, "ptsize")) * 4.0;
-		    pcls->font_selection[1] = pcls->font_selection[0];
-		    pcls->font_selected = primary;
-		    pcls->font = 0;
-		}
+		pl_fp_set_pitch_per_inch(&pcls->font_selection[0].params,
+					 pjl_vartof(pjl_get_envvar(pcls->pjls, "pitch")));
+		pcls->font_selection[0].params.height_4ths = pjl_vartof(pjl_get_envvar(pcls->pjls, "ptsize")) * 4.0;
+		pcls->font_selection[1] = pcls->font_selection[0];
+		pcls->font_selected = primary;
+		pcls->font = 0;
 	    }
 	    else {
 		/* no resouce found - Note for everything but 'S' this
