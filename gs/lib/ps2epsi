@@ -56,26 +56,20 @@ rm -f $tmpfile
 
 (
 cat << BEGINEPS
-save
-countdictstack
-mark
-newpath
-/showpage {} def
-/setpagedevice {pop} def
+save countdictstack mark newpath /showpage {} def /setpagedevice {pop} def
 %%EndProlog
 %%Page 1 1
 BEGINEPS
 
 cat ${infile} |
-tr -d '\015' |
-sed -e '/^%%BeginPreview:/,/%%EndPreview$/d' -e '/^%!PS-Adobe/d'\
-	-e '/^%%[A-Za-z][A-Za-z]*$/d' -e '/^%%[A-Za-z][A-Za-z]*: /d'
+sed -e '/^%%BeginPreview:/,/^%%EndPreview[
+]*$/d' -e '/^%!PS-Adobe/d'\
+	-e '/^%%[A-Za-z][A-Za-z]*[
+]*$/d' -e '/^%%[A-Za-z][A-Za-z]*: /d'
 
 cat << ENDEPS
 %%Trailer
-cleartomark
-countdictstack exch sub { end } repeat
-restore
+cleartomark countdictstack exch sub { end } repeat restore
 %%EOF
 ENDEPS
 
