@@ -787,7 +787,7 @@ pcursor_do_reset(
 
     pcs->line_termination = 0;
     pcs->hmi_cp = HMI_DEFAULT;
-    pcs->vmi_cp = VMI_DEFAULT;
+    pcs->vmi_cp = pcs->margins.length / atoi(pjl_get_envvar(pcs->pjls, "formlines"));
 
     if ( (type & pcl_reset_overlay) == 0 ) {
         cursor_stk_size = 0;
