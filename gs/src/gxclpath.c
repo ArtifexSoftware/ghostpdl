@@ -144,7 +144,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	type = cmd_dc_type_ht;
     } else if (gx_dc_is_colored_halftone(pdcolor)) {
 	const gx_device_halftone *pdht = pdcolor->colors.colored.c_ht;
-	int num_comp = pdht->num_comp;
+	int num_comp = cldev->color_info.num_components;
 	byte buf[4 + 4 * cmd_max_intsize(sizeof(pdcolor->colors.colored.c_level[0]))];
 	byte *bp = buf;
 	int i;

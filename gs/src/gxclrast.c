@@ -1185,7 +1185,7 @@ idata:			data_size = 0;
 setcc:			{
 			    int i;
 
-			    for (i = 0; i < imager_state.dev_ht->num_comp; ++i)
+			    for (i = 0; i < cdev->color_info.num_components; ++i)
 				if (op & (0x80 >> i))
 				    cmd_getw(dcl[i], cbp);
 				else
