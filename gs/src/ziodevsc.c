@@ -78,6 +78,16 @@ const gx_io_device gs_iodev_stderr =
  * read_id or write_id).
  */
 
+private int
+stdio_close(stream *s)
+{
+    int code = (*s->save_close)(s);
+    if (code)
+	return code;
+    /* Increment the IDs to prevent further access. */
+    s->read_id = s->write_id = (s->read_id | s->write_id) + 1;
+    return 0;
+}
 
 private int
 stdin_init(gx_io_device * iodev, gs_memory_t * mem)
@@ -111,6 +121,8 @@ stdin_open(gx_io_device * iodev, const char *access, stream ** ps,
 	code = sread_proc(&rint, &s, imem);
 	if (code < 0)
 	    return code;
+	s->save_close = s_std_null;
+	s->procs.close = stdio_close;
 	/* allocate buffer */
 	if (s->cbuf == 0) {
 	    int len = STDIN_BUF_SIZE;
@@ -189,6 +201,8 @@ stdout_open(gx_io_device * iodev, const char *access, stream ** ps,
 	code = swrite_proc(&rint, &s, imem);
 	if (code < 0)
 	    return code;
+	s->save_close = s->procs.flush;
+	s->procs.close = stdio_close;
 	/* allocate buffer */
 	if (s->cbuf == 0) {
 	    int len = STDOUT_BUF_SIZE;
@@ -251,6 +265,8 @@ stderr_open(gx_io_device * iodev, const char *access, stream ** ps,
 	code = swrite_proc(&rint, &s, imem);
 	if (code < 0)
 	    return code;
+	s->save_close = s->procs.flush;
+	s->procs.close = stdio_close;
 	/* allocate buffer */
 	if (s->cbuf == 0) {
 	    int len = STDERR_BUF_SIZE;
