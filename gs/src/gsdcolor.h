@@ -315,9 +315,10 @@ struct gx_device_color_s {
      */
     bool ccolor_valid;
     /*
-     * For non-pattern colors, ccolors contains the original paint values.
-     * For pattern colors, ccolors contains information required for remapping.
-     * the pattern.  See ccolor_valid.
+     * 'ccolor' (a "client color") is valid iff 'ccolor_valid' is true.
+     * For non-pattern colors, it contains the original paint values.
+     * For pattern colors, it contains information required for remapping
+     * the pattern.
      */
     gs_client_color ccolor;
 
