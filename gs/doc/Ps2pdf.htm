@@ -221,18 +221,14 @@ except as noted:
 <tr valign=top><td><b><tt>MonoImageFilter</tt></b><td><td>/CCITTFaxEncode
 <tr valign=top><td><b><tt>MonoImageResolution</tt></b><td><td>300
 <tr valign=top><td><b><tt>NeverEmbed</tt></b><td><td>[]
-<tr valign=top><td><b><tt>OPM</tt></b><td><td>0<td><td>N
-<tr valign=top><td><b><tt>PreserveHalftoneInfo</tt></b><td><td>false<td><td>N
-<tr valign=top><td><b><tt>PreserveOverprintSettings</tt></b><td><td>false<td><td>N
-<tr valign=top><td><b><tt>TransferFunctionInfo</tt></b><td><td>/Apply<td><td>N
+<tr valign=top><td><b><tt>OPM</tt></b><td><td>0
+<tr valign=top><td><b><tt>PreserveHalftoneInfo</tt></b><td><td>false
+<tr valign=top><td><b><tt>PreserveOverprintSettings</tt></b><td><td>false
+<tr valign=top><td><b><tt>TransferFunctionInfo</tt></b><td><td>/Apply<td><td>4
 <tr valign=top><td><b><tt>SubsetFonts</tt></b><td><td>true
-<tr valign=top><td><b><tt>UCRandBGInfo</tt></b><td><td>/Remove<td><td>N
+<tr valign=top><td><b><tt>UCRandBGInfo</tt></b><td><td>/Remove
 <tr valign=top><td><b><tt>UseFlateCompression</tt></b><td><td>true
 </table></blockquote>
-
-<p>
-(note N) These parameters are implemented in development code that hasn't
-been checked into the CVS repository yet.
 
 <p>
 (note 1) <b><tt>AutoFilterxxxImages</tt></b> doesn't examine the image to
@@ -251,6 +247,11 @@ treats all requests for LZW compression as calling for Flate compression if
 (note 3) The <b><tt>xxxDownsampleType</tt></b> parameters can also have the
 value /Bicubic (a Distiller 4 feature), which is currently treated as
 equivalent to /Average.
+
+<p>
+(note 4) Currently, the transfer function is always applied.  If the
+corresponding parameter is set to <b><tt>/Preserve</tt></b>, the function
+setting is also copied into the PDF file.
 
 <p>
 The following are defined and can be set and queried, but do not have any
@@ -278,14 +279,14 @@ effect:
 <tr valign=top><td><b><tt>DoThumbnails</tt></b><td><td>false
 <tr valign=top><td><b><tt>EndPage</tt></b><td><td>-1
 <tr valign=top><td><b><tt>ImageMemory</tt></b><td><td>500000
-<tr valign=top><td><b><tt>Optimize</tt></b><td><td>false<td><td>4
+<tr valign=top><td><b><tt>Optimize</tt></b><td><td>false<td><td>5
 <tr valign=top><td><b><tt>PreserveOPIComments</tt></b><td><td>false
 <tr valign=top><td><b><tt>sRGBProfile</tt></b><td><td>()
 <tr valign=top><td><b><tt>StartPage</tt></b><td><td>1
 </table></blockquote>
 
 <p>
-(note 4) Optimization (linearization) is implemented with a separate
+(note 5) Optimization (linearization) is implemented with a separate
 program, <b><tt>pdfopt</tt></b> <em>input.pdf</em> <em>output.pdf</em>.
 
 <p>
@@ -315,15 +316,18 @@ The following "job control" parameters are recognized, but have no effect:
 In some situations, <b><tt>ps2pdf</tt></b> will convert text to
 high-resolution bitmapped fonts rather than to embedded outline fonts.
 Currently, this will always occur when the PostScript file uses CID-keyed or
-double-byte fonts, or in some cases if it uses fonts with non-standard
-encodings; it may occur in other cases as well.
+double-byte fonts, when the input file uses <b><tt>kshow</tt></b>, or in
+some cases if it uses fonts with non-standard encodings; it may occur in
+other cases as well.
 
 <p>
 The PDF output always represents the colors of text and graphics in
-DeviceGray or DeviceRGB color space; all other color spaces are converted to
-these.  However, for images, it will retain the original color space for
-DeviceGray, DeviceRGB, DeviceCMYK, certain CIEBased spaces, and Indexed
-spaces based on these.
+DeviceGray or DeviceRGB color space (or DeviceCMYK if the
+<b><tt>ProcessColorModel</tt></b> parameter has been set to
+<b><tt>/DeviceCMYK</tt></b>); all other color spaces are converted to these.
+However, for images, it will retain the original color space for DeviceGray,
+DeviceRGB, DeviceCMYK, certain CIEBased spaces, and Indexed spaces based on
+these.
 
 <p>
 <b><tt>ps2pdf</tt></b> will sometimes convert PostScript constructs to
@@ -445,7 +449,7 @@ full details of the terms of using, copying, modifying, and redistributing
 Aladdin Ghostscript.
 
 <p>
-Ghostscript version 6.20, 6 April 2000
+Ghostscript version 6.21, 11 April 2000
 
 </font>
 
