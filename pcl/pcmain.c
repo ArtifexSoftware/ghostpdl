@@ -305,16 +305,8 @@ process:
         pl_print_usage(mem, &inst, "Final");
         dprintf1("%% Max allocated = %ld\n", gs_malloc_max);
     }
-    if (gs_debug_c('!')) {
-        typedef struct dump_control_s   dump_control_t;
-        extern  const dump_control_t    dump_control_default;
-
-        extern  void    debug_dump_memory( gs_ref_memory_t *,
-                                           const dump_control_t *
-                                           );
-
+    if (gs_debug_c('!'))
         debug_dump_memory(imem, &dump_control_default);
-    }
 #endif
 
     gs_closedevice(pcl_get_target_device(pcs));
