@@ -44,7 +44,8 @@ LIB_LIST = [
 TEST_LIST = [
     '+from', 'doc/Testing.htm',
     '+to', 'toolbin/tests/*',
-    '-to', 'toolbin/tests/check*.py', 'toolbin/tests/test*.py'
+    '-to', 'toolbin/tests/check_*.py', 'toolbin/tests/gscheck_*.py',
+    '-to', 'toolbin/tests/*.pyc', 'toolbin/tests/CVS/*'
 ]
 
 import glob, os.path, re, sys
