@@ -470,13 +470,14 @@ typedef struct gx_device_color_info_s {
 #define dci_std_gray_index(nc)    \
     ((nc) == 3 ? GX_CINFO_COMP_NO_INDEX : (nc) - 1)
 
-#define dci_alpha_values(nc, depth, mg, mc, dg, dc, ta, ga) \
-    dci_extended_alpha_values(nc, nc,			    \
-                              dci_std_polarity(nc),         \
-                              depth,                        \
-                              dci_std_gray_index(nc),       \
-                              mg, mc, dg, dc, ta, ga,       \
-                              GX_CINFO_UNKNOWN_SEP_LIN,     \
+#define dci_alpha_values(nc, depth, mg, mc, dg, dc, ta, ga)             \
+    dci_extended_alpha_values(nc, nc,			                \
+                              dci_std_polarity(nc),                     \
+                              depth,                                    \
+                              dci_std_gray_index(nc),                   \
+                              mg, mc, dg, dc, ta, ga,                   \
+                              (depth >= 16 ? GX_CINFO_SEP_LIN           \
+                                           : GX_CINFO_UNKNOWN_SEP_LIN), \
 			      dci_std_cm_name(nc) )
 
 
