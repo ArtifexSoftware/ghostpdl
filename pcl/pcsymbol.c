@@ -202,7 +202,7 @@ pcsymbol_dict_value_free(gs_memory_t *mem, void *value, client_name_t cname)
 
 private void
 pcsymbol_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
-{	if ( type & (pcl_reset_initial | pcl_reset_printer) )
+{	if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay) )
 	  { id_set_value(pcls->symbol_set_id, 0);
 	    if ( type & pcl_reset_initial )
 	      {
@@ -215,7 +215,7 @@ pcsymbol_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 	      pl_dict_init(&pcls->built_in_symbol_sets, pcls->memory,
 		  pcsymbol_dict_value_free);
 	      }
-	    else
+	    else if ( type & pcl_reset_printer )
 	      { pcl_args_t args;
 	        arg_set_uint(&args, 1);	/* delete temporary symbol sets */
 		pcl_symbol_set_control(&args, pcls);
