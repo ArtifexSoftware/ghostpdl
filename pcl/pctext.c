@@ -455,6 +455,7 @@ pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 	  }
 	code = pcl_set_drawing_color(pcls, pcls->pattern_type,
 				     &pcls->current_pattern_id);
+	
 	if ( code < 0 )
 	  return code;
 	pcl_set_gs_font(pcls);
@@ -659,7 +660,7 @@ pcl_text_path_direction(pcl_args_t *pargs, pcl_state_t *pcls)
 	    return e_Range;
 	  }
 	pcls->text_path = direction;
-	return e_Unimplemented;
+	return 0;
 }
 
 /* ------ Initialization ------ */
