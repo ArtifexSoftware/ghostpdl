@@ -783,8 +783,8 @@ private inline int t1_hinter__add_pole(t1_hinter * this, t1_glyph_space_coord xx
 int t1_hinter__sbw(t1_hinter * this, fixed sbx, fixed sby, fixed wx,  fixed wy)
 {   this->cx = this->orig_gx = this->subglyph_orig_gx = import_shift(sbx, this->import_shift);
     this->cy = this->orig_gy = this->subglyph_orig_gy = import_shift(sby, this->import_shift);
-    this->width_gx = wx;
-    this->width_gy = wy;
+    this->width_gx = import_shift(wx, this->import_shift);
+    this->width_gy = import_shift(wy, this->import_shift);
     return 0;
 }
 
@@ -1367,7 +1367,7 @@ private void t1_hinter__align_to_grid(t1_hinter * this, int32 unit, t1_glyph_spa
 	}
         dx = ox % div_x;
         dy = oy % div_y; /* So far dx and dy are 19 bits */
-        if (dx > div_x /2 )
+        if (dx > div_x / 2 )
             dx = - div_x + dx;
         else if (dx < - div_x / 2)
             dx = div_x + dx;
@@ -1382,7 +1382,7 @@ private void t1_hinter__align_to_grid(t1_hinter * this, int32 unit, t1_glyph_spa
 		*x -= gxd;
 	    if (this->grid_fit_y)
 		*y -= gyd;
-            /* hack: round to suppress small noise : */
+            /* Round to suppress small noise : */
 	    if (this->grid_fit_x)
 		*x = (*x + 7) & ~15;
 	    if (this->grid_fit_y)
@@ -2029,7 +2029,9 @@ private int t1_hinter__export(t1_hinter * this)
 private int t1_hinter__add_trailing_moveto(t1_hinter * this)
 {   t1_glyph_space_coord gx = this->width_gx, gy = this->width_gy;
 
-    t1_hinter__align_to_grid(this, this->g2o_fraction, &gx, &gy);
+#   if 0 /* Don't align because the old code desn't. Not sure though. */
+	t1_hinter__align_to_grid(this, this->g2o_fraction, &gx, &gy);
+#   endif
     return t1_hinter__rmoveto(this, gx - this->cx, gy - this->cy);
 }
 
