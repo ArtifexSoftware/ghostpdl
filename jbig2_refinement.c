@@ -46,7 +46,7 @@ jbig2_decode_refinement_template0(Jbig2Ctx *ctx,
                               const Jbig2RefinementRegionParams *params,
                               Jbig2ArithState *as,
                               Jbig2Image *image,
-                              Jbig2ArithCx *GB_stats)
+                              Jbig2ArithCx *GR_stats)
 {
   return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
     "refinement region template 0 NYI");
@@ -58,10 +58,10 @@ jbig2_decode_refinement_template0_unopt(Jbig2Ctx *ctx,
                               const Jbig2RefinementRegionParams *params,
                               Jbig2ArithState *as,
                               Jbig2Image *image,
-                              Jbig2ArithCx *GB_stats)
+                              Jbig2ArithCx *GR_stats)
 {
-  const int GBW = image->width;
-  const int GBH = image->height;
+  const int GRW = image->width;
+  const int GRH = image->height;
   const int dx = params->DX;
   const int dy = params->DY;
   Jbig2Image *ref = params->reference;
@@ -69,8 +69,8 @@ jbig2_decode_refinement_template0_unopt(Jbig2Ctx *ctx,
   int x,y;
   bool bit;
 
-  for (y = 0; y < GBH; y++) {
-    for (x = 0; x < GBW; x++) {
+  for (y = 0; y < GRH; y++) {
+    for (x = 0; x < GRW; x++) {
       CONTEXT = 0;
       CONTEXT |= jbig2_image_get_pixel(image, x - 1, y + 0) << 0; 
       CONTEXT |= jbig2_image_get_pixel(image, x + 1, y - 1) << 1; 
@@ -87,7 +87,7 @@ jbig2_decode_refinement_template0_unopt(Jbig2Ctx *ctx,
       CONTEXT |= jbig2_image_get_pixel(ref, x-dx+0, y-dy-1) << 11;
       CONTEXT |= jbig2_image_get_pixel(ref, x-dx+params->grat[2], 
 	y-dy+params->grat[3]) << 12;
-      bit = jbig2_arith_decode(as, &GB_stats[CONTEXT]);
+      bit = jbig2_arith_decode(as, &GR_stats[CONTEXT]);
       jbig2_image_set_pixel(image, x, y, bit);
     }
   }
@@ -113,10 +113,10 @@ jbig2_decode_refinement_template1_unopt(Jbig2Ctx *ctx,
                               const Jbig2RefinementRegionParams *params,
                               Jbig2ArithState *as,
                               Jbig2Image *image,
-                              Jbig2ArithCx *GB_stats)
+                              Jbig2ArithCx *GR_stats)
 {
-  const int GBW = image->width;
-  const int GBH = image->height;
+  const int GRW = image->width;
+  const int GRH = image->height;
   const int dx = params->DX;
   const int dy = params->DY;
   Jbig2Image *ref = params->reference;
@@ -124,8 +124,8 @@ jbig2_decode_refinement_template1_unopt(Jbig2Ctx *ctx,
   int x,y;
   bool bit;
 
-  for (y = 0; y < GBH; y++) {
-    for (x = 0; x < GBW; x++) {
+  for (y = 0; y < GRH; y++) {
+    for (x = 0; x < GRW; x++) {
       CONTEXT = 0;
       CONTEXT |= jbig2_image_get_pixel(image, x - 1, y + 0) << 0; 
       CONTEXT |= jbig2_image_get_pixel(image, x + 1, y - 1) << 1; 
@@ -137,7 +137,7 @@ jbig2_decode_refinement_template1_unopt(Jbig2Ctx *ctx,
       CONTEXT |= jbig2_image_get_pixel(ref, x-dx+0, y-dy+0) << 7;
       CONTEXT |= jbig2_image_get_pixel(ref, x-dx-1, y-dy+0) << 8;
       CONTEXT |= jbig2_image_get_pixel(ref, x-dx+0, y-dy-1) << 9;
-      bit = jbig2_arith_decode(as, &GB_stats[CONTEXT]);
+      bit = jbig2_arith_decode(as, &GR_stats[CONTEXT]);
       jbig2_image_set_pixel(image, x, y, bit);
     }
   }
@@ -163,10 +163,10 @@ jbig2_decode_refinement_template1(Jbig2Ctx *ctx,
                               const Jbig2RefinementRegionParams *params,
                               Jbig2ArithState *as,
                               Jbig2Image *image,
-                              Jbig2ArithCx *GB_stats)
+                              Jbig2ArithCx *GR_stats)
 {
-  const int GBW = image->width;
-  const int GBH = image->height;
+  const int GRW = image->width;
+  const int GRH = image->height;
   const int stride = image->stride;
   const int refstride = params->reference->stride;
   const int dx = params->DX;
@@ -175,8 +175,8 @@ jbig2_decode_refinement_template1(Jbig2Ctx *ctx,
   byte *grref_line = (byte *)params->reference->data;
   int x,y;
 
-  for (y = 0; y < GBH; y++) {
-    const int padded_width = (GBW + 7) & -8;
+  for (y = 0; y < GRH; y++) {
+    const int padded_width = (GRW + 7) & -8;
     uint32_t CONTEXT;
     uint32_t refline_m1; /* previous line of the reference bitmap */
     uint32_t refline_0;  /* current line of the reference bitmap */
@@ -185,8 +185,8 @@ jbig2_decode_refinement_template1(Jbig2Ctx *ctx,
 
     line_m1 = (y >= 1) ? grreg_line[-stride] : 0;
     refline_m1 = ((y-dy) >= 1) ? grref_line[(-1-dy)*stride] << 2: 0;
-    refline_0  = (((y-dy) > 0) && ((y-dy) < GBH)) ? grref_line[(0-dy)*stride] << 4 : 0;
-    refline_1  = (y < GBH - 1) ? grref_line[(+1-dy)*stride] << 7 : 0;
+    refline_0  = (((y-dy) > 0) && ((y-dy) < GRH)) ? grref_line[(0-dy)*stride] << 4 : 0;
+    refline_1  = (y < GRH - 1) ? grref_line[(+1-dy)*stride] << 7 : 0;
     CONTEXT = ((line_m1 >> 5) & 0x00e) |
 	      ((refline_1 >> 5) & 0x030) |
 	      ((refline_0 >> 5) & 0x1c0) |
@@ -195,21 +195,21 @@ jbig2_decode_refinement_template1(Jbig2Ctx *ctx,
     for (x = 0; x < padded_width; x += 8) {
       byte result = 0;
       int x_minor;
-      const int minor_width = GBW - x > 8 ? 8 : GBW - x;
+      const int minor_width = GRW - x > 8 ? 8 : GRW - x;
 
       if (y >= 1) {
 	line_m1 = (line_m1 << 8) | 
-	  (x + 8 < GBW ? grreg_line[-stride + (x >> 3) + 1] : 0);
+	  (x + 8 < GRW ? grreg_line[-stride + (x >> 3) + 1] : 0);
 	refline_m1 = (refline_m1 << 8) | 
-	  (x + 8 < GBW ? grref_line[-refstride + (x >> 3) + 1] << 2 : 0);
+	  (x + 8 < GRW ? grref_line[-refstride + (x >> 3) + 1] << 2 : 0);
       }
 
       refline_0 = (refline_0 << 8) |
-	  (x + 8 < GBW ? grref_line[(x >> 3) + 1] << 4 : 0);
+	  (x + 8 < GRW ? grref_line[(x >> 3) + 1] << 4 : 0);
 
-      if (y < GBH - 1)
+      if (y < GRH - 1)
 	refline_1 = (refline_1 << 8) |
-	  (x + 8 < GBW ? grref_line[+refstride + (x >> 3) + 1] << 7 : 0);
+	  (x + 8 < GRW ? grref_line[+refstride + (x >> 3) + 1] << 7 : 0);
       else
 	refline_1 = 0;
 
@@ -217,7 +217,7 @@ jbig2_decode_refinement_template1(Jbig2Ctx *ctx,
       for (x_minor = 0; x_minor < minor_width; x_minor++) {
 	bool bit;
 
-	bit = jbig2_arith_decode(as, &GB_stats[CONTEXT]);
+	bit = jbig2_arith_decode(as, &GR_stats[CONTEXT]);
 	result |= bit << (7 - x_minor);
 	CONTEXT = ((CONTEXT & 0x0d6) << 1) | bit |
 	  ((line_m1 >> (9 - x_minor)) & 0x002) |
@@ -247,7 +247,7 @@ jbig2_decode_refinement_template1(Jbig2Ctx *ctx,
  * @params: Decoding parameter set.
  * @as: Arithmetic decoder state.
  * @image: Where to store the decoded image.
- * @GB_stats: Arithmetic stats.
+ * @GR_stats: Arithmetic stats.
  *
  * Decodes a generic refinement region, according to section 6.3.
  * an already allocated Jbig2Image object in @image for the result.
@@ -263,7 +263,7 @@ jbig2_decode_refinement_region(Jbig2Ctx *ctx,
 			    const Jbig2RefinementRegionParams *params,
 			    Jbig2ArithState *as,
 			    Jbig2Image *image,
-			    Jbig2ArithCx *GB_stats)
+			    Jbig2ArithCx *GR_stats)
 {
   {
     jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
@@ -277,10 +277,10 @@ jbig2_decode_refinement_region(Jbig2Ctx *ctx,
         "decode_refinement_region: typical prediction coding NYI");
   if (params->GRTEMPLATE)
     return jbig2_decode_refinement_template1_unopt(ctx, segment, params, 
-                                             as, image, GB_stats);
+                                             as, image, GR_stats);
   else
     return jbig2_decode_refinement_template0_unopt(ctx, segment, params,
-                                             as, image, GB_stats);
+                                             as, image, GR_stats);
 }
 
 /**
@@ -400,7 +400,7 @@ jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
   {
     Jbig2WordStream *ws;
     Jbig2ArithState *as;
-    Jbig2ArithCx *GB_stats = NULL;
+    Jbig2ArithCx *GR_stats = NULL;
     int stats_size;
     Jbig2Image *image;
     int code;
@@ -414,17 +414,17 @@ jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
           rsi.width, rsi.height);
 
     stats_size = params.GRTEMPLATE ? 1 << 10 : 1 << 13;
-    GB_stats = jbig2_alloc(ctx->allocator, stats_size);
-    memset(GB_stats, 0, stats_size);
+    GR_stats = jbig2_alloc(ctx->allocator, stats_size);
+    memset(GR_stats, 0, stats_size);
 
     ws = jbig2_word_stream_buf_new(ctx, segment_data + offset,
            segment->data_length - offset);
     as = jbig2_arith_new(ctx, ws);
     code = jbig2_decode_refinement_region(ctx, segment, &params,
-                              as, image, GB_stats);
+                              as, image, GR_stats);
 
     /* TODO: free ws, as */
-    jbig2_free(ctx->allocator, GB_stats);
+    jbig2_free(ctx->allocator, GR_stats);
 
     if ((segment->flags & 63) == 40) {
         /* intermediate region. save the result for later */
