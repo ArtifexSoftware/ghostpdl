@@ -1,3 +1,11 @@
+/* Portions Copyright (C) 2001 Artifex Software Inc.
+   
+   This software is distributed under license and may not be copied, modified
+   or distributed except as expressly authorized under the terms of that
+   license.  Refer to licensing information at http://www.artifex.com/ or
+   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
+   San Rafael, CA  94903, (415)492-9861, for further information. */
+
 import java.awt.*;
 import java.awt.image.*;
 import java.awt.event.*;
@@ -27,21 +35,16 @@ public class Nav extends Gview  {
 	pageView = new Gview();
     }
 
-    protected void runMain(String[] args) {
-	// NB no error checking.
-	pickle.setJob(args[0]);
-	origRes = desiredRes = startingRes / zoomWindowRatio;
-	pickle.setRes(desiredRes, desiredRes);
-	pageNumber = 1;
-	pickle.setPageNumber(pageNumber);
-	currentPage = pickle.getPrinterOutputPage();
-	setSize(pickle.getImgWidth(), pickle.getImgHeight());
-	origW = pickle.getImgWidth();
-	origH = pickle.getImgHeight();
-	show();
+    public void runMain(String[] args) {
 
-	pageView.runMain(args);
-	repaint();
+	// this window is smaller/lower res, don't count pages now.
+	runJob(args, startingRes / zoomWindowRatio, false);
+
+	// zoom window is higher res, count pages now.
+	pageView.runJob(args, startingRes, true);
+
+	// set the total page count based on pageView.
+        setPageCount(pageView.totalPageCount);
     }
 
     /** main program */

@@ -1,3 +1,11 @@
+/* Portions Copyright (C) 2001 Artifex Software Inc.
+   
+   This software is distributed under license and may not be copied, modified
+   or distributed except as expressly authorized under the terms of that
+   license.  Refer to licensing information at http://www.artifex.com/ or
+   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
+   San Rafael, CA  94903, (415)492-9861, for further information. */
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -48,7 +56,7 @@ public class Gview
     // Non configurable members below 
 
     protected int pageNumber = 1;
-    protected int totalPageCount;
+    protected int totalPageCount = 1;
     protected BufferedImage currentPage;
     protected GpickleThread pickle;
     protected double desiredRes;
@@ -438,6 +446,7 @@ public class Gview
 	        tx = e.getX();
 	        ty = e.getY();
 	        drag = true;
+		setCursor( new Cursor(Cursor.MOVE_CURSOR) );
 	    }
 	}
     }
@@ -447,6 +456,7 @@ public class Gview
         if (e.isControlDown() == false && drag) {
            translate(tx - e.getX(), ty - e.getY());
            drag = false;
+	   setCursor( Cursor.getDefaultCursor() );
 	}
     }
 
@@ -591,19 +601,38 @@ public class Gview
 	return str;
     }
 
-    protected void runMain(String[] args) {
-	// NB no error checking.
-	pickle.setJob(args[0]);
-        // get the total page count for the job
-        totalPageCount = pickle.getPrinterPageCount();
-	origRes = desiredRes = startingRes;
+    /** defaults settings for runJob, override for different defaults.
+     */
+    public void runMain( String[] args ) {
+	runJob(args, startingRes, true);
+    }
+
+    /** setting page count so that multiple views can share the same page count result
+     */
+    protected void setPageCount( int pageCount ) {
+	totalPageCount = pageCount;
+	menuPageNum.setLabel("page# " + pageNumber + " of " + totalPageCount);
+    }
+
+    /** Sets the job, opening/reopening the window based on resolution.
+     *  @param getPageCount determines if the page count should be computed.  
+     */
+    protected void runJob(String[] args, double resolution, boolean getPageCount) {	
+	pickle.setJob(args[0]);  
+        origRes = desiredRes = resolution;
 	pickle.setRes(desiredRes, desiredRes);
+
+	if (getPageCount == true) {
+	    // get the total page count for the job
+	    setPageCount(pickle.getPrinterPageCount());
+	}
+
 	pageNumber = 1;
 	pickle.setPageNumber(pageNumber);
 	currentPage = pickle.getPrinterOutputPage();
 	setSize(pickle.getImgWidth(), pickle.getImgHeight());
 	origW = pickle.getImgWidth();
-	origH = pickle.getImgHeight();
+	origH = pickle.getImgHeight();    
 	show();
 	repaint();
     }
