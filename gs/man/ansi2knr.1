@@ -1,5 +1,5 @@
 .\" $Id$
-.TH ANSI2KNR 1 "9 September 1998" \" -*- nroff -*-
+.TH ANSI2KNR 1 "8 March 2000" \" -*- nroff -*-
 .SH NAME
 ansi2knr \- convert ANSI C to Kernighan & Ritchie C
 .SH SYNOPSIS
@@ -24,12 +24,19 @@ multi-line header provided that no intervening line ends with a left or right
 brace or a semicolon.  These algorithms ignore whitespace and comments, except
 that the function name must be the first thing on the line.
 .sp
+\fBansi2knr\fP
+also recognizes adjacent string literals and concatenates them.
+.sp
 The following constructs will confuse it:
 .br
      - Any other construct that starts at the left margin and follows the
 above syntax (such as a macro or function call).
 .br
      - Some macros that tinker with the syntax of the function header.
+.br
+     - String literals whose concatenation requires rewriting
+their contents; e.g. "ab\0" "07c" is concatenated to "ab\007c",
+which is not correct.
 .sp
 The --varargs switch is obsolete, and is recognized only for
 backwards compatibility.  The present version of
@@ -39,4 +46,5 @@ will always attempt to convert a ... argument to va_alist and va_dcl.
 L. Peter Deutsch <ghost@aladdin.com> wrote the original ansi2knr and
 continues to maintain the current version; most of the code in the current
 version is his work.  ansi2knr also includes contributions by Francois
-Pinard <pinard@iro.umontreal.ca> and Jim Avera <jima@netcom.com>.
+Pinard <pinard@iro.umontreal.ca>, Jim Avera <jima@netcom.com>, and Paul
+Eggert <eggert@twinsun.com>.

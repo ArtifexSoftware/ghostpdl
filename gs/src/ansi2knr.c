@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved. */
+/* Copyright (C) 1989, 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved. */
 
 /*$Id$*/
 /* Convert ANSI C function definitions to K&R ("traditional C") syntax */
@@ -61,6 +61,19 @@ program under the GPL.
  * The original and principal author of ansi2knr is L. Peter Deutsch
  * <ghost@aladdin.com>.  Other authors are noted in the change history
  * that follows (in reverse chronological order):
+
+	2000-03-05  Paul Eggert  <eggert@twinsun.com>
+
+	Add support for concatenated string literals.
+	* ansi2knr.c (concatlits): New decl.
+	(main): Invoke concatlits to concatenate string literals.
+	(scanstring): Handle backslash-newline correctly.  Work with
+	character constants.  Fix bug when scanning backwards through
+	backslash-quote.  Check for unterminated strings.
+	(convert1): Parse character constants, too.
+	(appendline, concatlits): New functions.
+	* ansi2knr.1: Document this.
+
 	lpd 1999-08-17 added code to allow preprocessor directives
 		wherever comments are allowed
 	lpd 1999-04-12 added minor fixes from Pavel Roskin
@@ -205,6 +218,7 @@ char *scanstring();
 int writeblanks();
 int test1();
 int convert1();
+int concatlits();
 
 /* The main program */
 int
@@ -328,6 +342,7 @@ f:			if ( line >= buf + (bufsize - 1) ) /* overflow check */
 			  continue;
 			/* falls through */
 		default:		/* not a function */
+			concatlits(buf, line, buf + bufsize, in);
 wl:			fputs(buf, out);
 			break;
 		   }
@@ -387,10 +402,7 @@ ppdirbackward(p, limit)
     }
 }
 
-/*
- * Skip over whitespace, comments, and preprocessor directives,
- * in either direction.
- */
+/* Skip over whitespace and comments, in either direction. */
 char *
 skipspace(p, dir)
     char *p;
@@ -418,9 +430,24 @@ scanstring(p, dir)
     char *p;
     int dir;
 {
-    for (p += dir; ; p += dir)
-	if (*p == '"' && p[-dir] != '\\')
-	    return p + dir;
+    char quote = *p;
+
+    for (p += dir; *p; p += dir) {
+	if (*p == quote) {
+	    char *q = p;
+	    int backslashed;
+
+	    for (backslashed = 0; ; backslashed ^= 1) {
+		for (q--; *q == '\n' && q[-1] == '\\'; q -= 2)
+		    continue;
+		if (*q != '\\')
+		    break;
+	    }
+	    if (!backslashed)
+		return p + dir;
+	}
+    }
+    return p; /* unterminated string */
 }
 
 /*
@@ -431,11 +458,13 @@ int
 writeblanks(start, end)
     char *start;
     char *end;
-{	char *p;
-	for ( p = start; p < end; p++ )
-	  if ( *p != '\r' && *p != '\n' )
+{
+    char *p;
+
+    for ( p = start; p < end; p++ )
+	if ( *p != '\r' && *p != '\n' )
 	    *p = ' ';
-	return 0;
+    return 0;
 }
 
 /*
@@ -600,7 +629,7 @@ top:	p = endfn;
 				if (p[1] == '*')
 				    p = skipspace(p, 1) - 1;
 				break;
-			   case '"':
+			   case '"': case '\'':
 			       p = scanstring(p, 1) - 1;
 			       break;
 			   default:
@@ -634,7 +663,7 @@ top:	p = endfn;
 				       if (p > buf && p[-1] == '*')
 					   p = skipspace(p, -1) + 1;
 				       break;
-				   case '"':
+				   case '"': case '\'':
 				       p = scanstring(p, -1) + 1;
 				       break;
 				   default: ;
@@ -717,4 +746,69 @@ found:		if ( *p == '.' && p[-1] == '.' && p[-2] == '.' )
 	  }
 	free((char *)breaks);
 	return 0;
+}
+
+/* Append a line to a buffer.  Return the end of the appended line.  */
+char *
+appendline(lineend, bufend, in)
+    char *lineend;
+    char *bufend;
+    FILE *in;
+{
+    if (bufend == lineend)
+	return NULL;
+    if (fgets(lineend, (unsigned)(bufend - lineend), in) == NULL)
+	return NULL;
+    return lineend + strlen(lineend);
+}
+
+/*
+ * Concatenate string literals in a non-function line, appending
+ * new lines if a string literal crosses a line boundary or ends a line.
+ */ 
+int
+concatlits(line, lineend, bufend, in)
+    char *line;
+    char *lineend;
+    FILE *in;
+{
+    char *d = line;
+    char *s = line;
+    char *s1;
+    int pending_newlines = 0;
+
+    if (lineend[-1] != '\n')
+	return 0;
+    if (*skipspace(s, 1) == '#')
+	return 0;
+    while (*s) {
+	switch ((*d++ = *s++))
+	  {
+	  case '"': case '\'':
+	      for (;;) {
+		  while ((s1 = scanstring(s - 1, 1)) == lineend)
+		      if (!(lineend = appendline(lineend, bufend, in)))
+			  goto finish;
+		  do {
+		      *d++ = *s++;
+		  } while (s != s1);
+		  if (s[-1] != '"')
+		      break;
+		  while ((s1 = skipspace(s, 1)) == lineend)
+		      if (!(lineend = appendline(lineend, bufend, in)))
+			  goto finish;
+		  if (*s1 != '"')
+		      break;
+		  d--;
+		  do {
+		      pending_newlines += *s++ == '\n';
+		  } while (s <= s1);
+	      }
+	  }
+    }
+    while (pending_newlines--)
+	*d++ = '\n';
+finish:
+    strcpy(d, s);
+    return 0;
 }
