@@ -615,7 +615,7 @@ pdf_exit_substream(gx_device_pdf *pdev)
     return code;
 }
 
-private int 
+private bool 
 pdf_is_same_charproc1(gx_device_pdf * pdev, pdf_char_proc_t *pcp0, pdf_char_proc_t *pcp1)
 {
     if (pcp0->char_code != pcp1->char_code)
@@ -639,7 +639,7 @@ pdf_is_same_charproc1(gx_device_pdf * pdev, pdf_char_proc_t *pcp0, pdf_char_proc
     if (memcmp(&pcp0->font->u.simple.s.type3.FontMatrix, &pcp1->font->u.simple.s.type3.FontMatrix,
 		sizeof(pcp0->font->u.simple.s.type3.FontMatrix)))
 	return false;
-    return true;
+    return pdf_check_encoding_compatibility(pcp1->font, pdev->cgp->s, pdev->cgp->num_all_chars);
 }
 
 private int 
@@ -650,19 +650,23 @@ pdf_is_same_charproc(gx_device_pdf * pdev, pdf_resource_t *pres0, pdf_resource_t
 
 private int 
 pdf_find_same_charproc(gx_device_pdf *pdev, 
-	    pdf_font_resource_t *pdfont, pdf_char_proc_t **ppcp)
+	    pdf_font_resource_t *pdfont, const pdf_char_glyph_pairs_t *cgp, 
+	    pdf_char_proc_t **ppcp)
 {
     pdf_char_proc_t *pcp;
     int code;
 
+    pdev->cgp = cgp;
     for (pcp = pdfont->u.simple.s.type3.char_procs; pcp != NULL; pcp = pcp->char_next) {
-	if (*ppcp != pcp && pdf_is_same_charproc1(pdev, pcp, *ppcp)) {
+	if (*ppcp != pcp && pdf_is_same_charproc1(pdev, *ppcp, pcp)) {
 	    *ppcp = pcp;
+	    pdev->cgp = NULL;
 	    return 1;
 	}
     }
     pcp = *ppcp;
     code = pdf_find_same_resource(pdev, resourceCharProc, (pdf_resource_t **)ppcp, pdf_is_same_charproc);
+    pdev->cgp = NULL;
     if (code <= 0)
 	return code;
     /* fixme : do we need more checks here ? */
@@ -686,7 +690,7 @@ pdf_is_charproc_defined(gx_device_pdf *pdev, pdf_font_resource_t *pdfont, gs_cha
  * Complete charproc accumulation for a Type 3 font.
  */
 int
-pdf_end_charproc_accum(gx_device_pdf *pdev, gs_font *font) 
+pdf_end_charproc_accum(gx_device_pdf *pdev, gs_font *font, const pdf_char_glyph_pairs_t *cgp) 
 {
     int code;
     pdf_resource_t *pres = (pdf_resource_t *)pdev->accumulating_substream_resource;
@@ -718,7 +722,7 @@ pdf_end_charproc_accum(gx_device_pdf *pdev, gs_font *font)
     if (pdfont->used[ch >> 3] & (0x80 >> (ch & 7))) {
 	if (!(pdfont->u.simple.s.type3.cached[ch >> 3] & (0x80 >> (ch & 7)))) {
 	    checking_glyph_variation = true;
-	    code = pdf_find_same_charproc(pdev, pdfont, &pcp);
+	    code = pdf_find_same_charproc(pdev, pdfont, cgp, &pcp);
 	    if (code < 0)
 		return code;
 	    if (code != 0) {

@@ -88,14 +88,19 @@
 typedef struct pdf_char_glyph_pair_s pdf_char_glyph_pair_t;
 #endif
 
+#ifndef pdf_char_glyph_pairs_DEFINED
+#  define pdf_char_glyph_pairs_DEFINED
+typedef struct pdf_char_glyph_pairs_s pdf_char_glyph_pairs_t;
+#endif
+
 /* Define a structure for a text characters list. */
 /* It must not contain pointers due to variable length. */
-typedef struct pdf_char_glyph_pairs_s {
+struct pdf_char_glyph_pairs_s {
     int num_all_chars;
     int num_unused_chars;
     int unused_offset;  /* The origin of the unused character table.*/
     pdf_char_glyph_pair_t s[1];  /* Variable length. */
-} pdf_char_glyph_pairs_t;
+};
 
 /* Define the text enumerator. */
 typedef struct pdf_text_enum_s {
@@ -159,6 +164,12 @@ typedef struct pdf_glyph_widths_s {
  */
 int pdf_font_orig_matrix(const gs_font *font, gs_matrix *pmat);
 int font_orig_scale(const gs_font *font, double *sx);
+
+/* 
+ * Check the Encoding compatibility 
+ */
+bool pdf_check_encoding_compatibility(const pdf_font_resource_t *pdfont, 
+		const pdf_char_glyph_pair_t *pairs, int num_chars);
 
 /*
  * Create or find a font resource object for a text.

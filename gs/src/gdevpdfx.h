@@ -87,6 +87,12 @@ typedef const cos_object_procs_t *cos_type_t;
 typedef struct pdf_text_state_s pdf_text_state_t;
 #endif
 
+#ifndef pdf_char_glyph_pairs_DEFINED
+#  define pdf_char_glyph_pairs_DEFINED
+typedef struct pdf_char_glyph_pairs_s pdf_char_glyph_pairs_t;
+#endif
+
+
 /* ---------------- Resources ---------------- */
 
 typedef enum {
@@ -616,6 +622,10 @@ struct gx_device_pdf_s {
     bool charproc_just_accumulated; /* A flag for controlling 
 			the glyph variation recognition. 
 			Used only with uncached charprocs. */
+    const pdf_char_glyph_pairs_t *cgp; /* A temporary pointer 
+			for pdf_is_same_charproc1.
+			Must be NULL when the garbager is invoked, 
+			because it points from global to local memory. */
 };
 
 #define is_in_page(pdev)\
@@ -1114,7 +1124,8 @@ int pdf_start_charproc_accum(gx_device_pdf *pdev);
 int pdf_set_charproc_attrs(gx_device_pdf *pdev, gs_font *font, const double *pw, int narg,
 		gs_text_cache_control_t control, gs_char ch, gs_const_string *gnstr);
 /* Complete charproc accumulation for aType 3 font. */
-int pdf_end_charproc_accum(gx_device_pdf *pdev, gs_font *font);
+int pdf_end_charproc_accum(gx_device_pdf *pdev, gs_font *font, 
+		const pdf_char_glyph_pairs_t *cgp);
 
 /* Open a stream object in the temporary file. */
 int pdf_open_aside(gx_device_pdf *pdev, pdf_resource_type_t rtype, 

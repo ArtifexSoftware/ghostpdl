@@ -715,16 +715,34 @@ font_orig_scale(const gs_font *font, double *sx)
     return 0;
 }
 
+/* 
+ * Check the Encoding compatibility 
+ */
+bool
+pdf_check_encoding_compatibility(const pdf_font_resource_t *pdfont, 
+	    const pdf_char_glyph_pair_t *pairs, int num_chars)
+{
+    int i;
+
+    for (i = 0; i < num_chars; ++i) {
+	gs_char ch = pairs[i].chr;
+	pdf_encoding_element_t *pet = &pdfont->u.simple.Encoding[ch];
+
+	if (pairs[i].glyph == pet->glyph)
+	    continue;
+	if (pet->glyph != GS_NO_GLYPH) /* encoding conflict */
+	    return false;
+    }
+    return true;
+}
 
 /*
  * Check font resource for encoding compatibility.
  */
 private bool
 pdf_is_compatible_encoding(gx_device_pdf *pdev, pdf_font_resource_t *pdfont,
-			   gs_font *font, pdf_char_glyph_pair_t *pairs, int num_chars)
+			   gs_font *font, const pdf_char_glyph_pair_t *pairs, int num_chars)
 {   
-    int i;
-
     /*
      * This crude version of the code ignores
      * the possibility of re-encoding characters.
@@ -759,16 +777,7 @@ pdf_is_compatible_encoding(gx_device_pdf *pdev, pdf_font_resource_t *pdfont,
     case ft_encrypted:
     case ft_encrypted2:
     case ft_TrueType:
-	for (i = 0; i < num_chars; ++i) {
-	    gs_char ch = pairs[i].chr;
-	    pdf_encoding_element_t *pet = &pdfont->u.simple.Encoding[ch];
-
-	    if (pairs[i].glyph == pet->glyph)
-		continue;
-	    if (pet->glyph != GS_NO_GLYPH) /* encoding conflict */
-		return false;
-	}
-	return true;
+	return pdf_check_encoding_compatibility(pdfont, pairs, num_chars);
     case ft_CID_encrypted:
     case ft_CID_TrueType:
 	{
@@ -1986,7 +1995,7 @@ pdf_text_process(gs_text_enum_t *pte)
     pte_default = penum->pte_default;
     if (pte_default) {
 	if (penum->charproc_accum) {
-	    code = pdf_end_charproc_accum(pdev, penum->current_font);
+	    code = pdf_end_charproc_accum(pdev, penum->current_font, penum->cgp);
 	    if (code < 0)
 		return code;
 	    penum->charproc_accum = false;
