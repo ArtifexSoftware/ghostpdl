@@ -1,6 +1,9 @@
 # Define the name of this makefile.
 MAKEFILE=../main/pcl6_gcc.mak
 
+# define if this is a cygwin system.
+CYGWIN=
+
 # The build process will put all of its output in this directory:
 GENDIR=./obj
 
@@ -107,11 +110,10 @@ CCLD=gcc
 
 DD='$(GLGENDIR)$(D)'
 
-DEVICE_DEVS=$(DD)x11.dev $(DD)x11mono.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev\
- $(DD)djet500.dev $(DD)ljet4.dev $(DD)cljet5pr.dev $(DD)cljet5c.dev $(DD)bitcmyk.dev\
- $(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcxcmyk.dev $(DD)pswrite.dev $(DD)pdfwrite2.dev\
- $(DD)pxlmono.dev $(DD)pxlcolor.dev\
- $(DD)bmpmono.dev $(DD)bmpamono.dev $(DD)pbmraw.dev $(DD)pgmraw.dev $(DD)ppmraw.dev $(DD)jpeg.dev
+DEVICES_DEVS=$(DD)ljet4.dev $(DD)djet500.dev $(DD)cljet5pr.dev $(DD)cljet5c.dev $(DD)bitcmyk.dev\
+   $(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcxcmyk.dev $(DD)pswrite.dev $(DD)pdfwrite2.dev\
+   $(DD)pxlmono.dev $(DD)pxlcolor.dev\
+   $(DD)bmpmono.dev $(DD)pbmraw.dev $(DD)pgmraw.dev $(DD)ppmraw.dev $(DD)jpeg.dev
 
 FEATURE_DEVS=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev\
 	     $(DD)patlib.dev $(DD)psl2cs.dev $(DD)rld.dev $(DD)roplib.dev\
@@ -120,8 +122,19 @@ FEATURE_DEVS=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev\
 	     $(DD)psl3lib.dev $(DD)seprlib.dev $(DD)translib.dev\
 	     $(DD)cidlib.dev $(DD)psf1lib.dev $(DD)psf0lib.dev
 
+# cygwin does not have threads at this time, so we don't include the
+# thread library or asyncronous devices.  Also cygwin does not include
+# X by default so we do not include the X devices either.
+
+ifeq ($(CYGWIN), TRUE)
+SYNC=
+STDLIBS=-lm
+DEVICE_DEVS=$(DEVICES_DEVS)
+else
 SYNC=posync
 STDLIBS=-lm -lpthread
+DEVICE_DEVS=$(DD)x11.dev $(DD)x11mono.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev $(DEVICES_DEVS) $(DD)bmpamono.dev
+endif
 
 # Generic makefile
 include $(COMMONDIR)/ugcc_top.mak
