@@ -1,5 +1,5 @@
 <html><head>
-<title>Ghostscript 6.20 change history as of 2000-03-18 21:45:33</title>
+<title>Ghostscript 6.20 change history as of 2000-03-19 09:36:09</title>
 </head><body>
 
 <blockquote><ul>
@@ -9,11 +9,19 @@
     <a href="#6.20 Interpreter (PDF)">Interpreter (PDF)</a>,
     <a href="#6.20 Interpreter">Interpreter</a>,
     <a href="#6.20 Streams">Streams</a>,
-    <a href="#6.20 Library">Library</a>
+    <a href="#6.20 Library">Library</a>,
+    <a href="#6.20 ???Other???">???Other???</a>
 </ul>
 </ul></blockquote>
 
 <h2><a name="6.20 Documentation"></a>Documentation</h2><pre>
+
+Fixes problems:
+	- If log2_transfer_map_size > 8, identity transfer functions
+returned garbage. The fix requires that if a client wants to set a transfer
+function to the identity mapping, it must call gx_set_identity_transfer
+rather than simply setting the procedure to gs_identity_transfer.
+(doc/News.htm [1.13]: 2000/03/19 17:14:47 lpd)
 
 Undoes an accidental RCS ID substitution in what was supposed to be literal
 text. (doc/Htmstyle.htm [1.2]: 2000/03/18 22:29:03 lpd)
@@ -27,6 +35,36 @@ Splits out the [T]BCP filter interface into a separate file.
 
 Documents the fact that ImageType 4 images now cause an error for
 out-of-range MaskColor values. (doc/News.htm [1.8]: 2000/03/19 04:32:09 lpd)
+
+Updates the change log with recent changes. (doc/Changes.htm [1.4]:
+2000/03/19 05:39:58 lpd)
+
+Adds a new document listing projects with which we are seeking help. Also
+makes the description of Changes.htm and News.htm more accurate.
+(doc/New-user.htm [1.2], doc/Projects.htm [1.1], doc/Readme.htm [1.3]:
+2000/03/19 06:07:15 lpd)
+
+Changes the default value of BufferSpace to 4 Mb. In desktop applications,
+this is a reasonable value that can substantially improve performance
+(especially for color printers); embedded applications will want to set
+BufferSpace themselves in any case. (doc/News.htm [1.9]: 2000/03/19 06:51:13
+lpd)
+
+Changes the key type returned by parameter list enumeration to include a
+persistence flag, makes C parameter lists support non-persistent keys, and
+upgrades GC descriptors so that parameter lists can be used non-transiently;
+updates implementors of parameter lists to call gs_param_list_init to
+initialize the common members, which is now required. (doc/News.htm [1.10]:
+2000/03/19 15:16:11 lpd)
+
+Documents the fact that drivers that device halftone order implementations
+must now provide the new bit_index procedure. (This should have been
+documented when bit_index was introduced!) (doc/News.htm [1.11]: 2000/03/19
+15:47:47 lpd)
+
+Makes st_indexed_map private. Clients must now use the constructor procedure
+alloc_indexed_map rather than allocating instances directly.
+(doc/News.htm [1.12]: 2000/03/19 16:37:28 lpd)
 
 </pre><h2><a name="6.20 Procedures"></a>Procedures</h2><pre>
 
@@ -45,6 +83,13 @@ characters. (devs.mak [1.3], int.mak [1.3], unixinst.mak [1.5]: 2000/03/19
 Updates makefiles with dependencies for recent changes. (int.mak [1.5],
 lib.mak [1.3]: 2000/03/19 05:37:38 lpd)
 
+Adds dependencies for the new implementation of FunctionType 4 functions.
+(int.mak [1.6]: 2000/03/19 07:03:53 lpd)
+
+Splits off "vanilla" Functions into separate files, in anticipation of
+removing them (they were only used to implement PostScript Calculator
+Functions). (lib.mak [1.4]: 2000/03/19 07:33:08 lpd)
+
 </pre><h2><a name="6.20 Utilities"></a>Utilities</h2><pre>
 
 Makes geninit remove whitespace adjacent to hex and base-85 string literals.
@@ -59,6 +104,12 @@ Fixes problems:
 (lib/pdf_draw.ps [1.2]: 2000/03/19 01:44:53 lpd)
 	- PDF images with a Mask ignored the mask. (lib/pdf_draw.ps [1.3]:
 2000/03/19 01:46:27 lpd)
+	- the PDF interpreter hadn't been updated for the move to
+library-based FunctionType 4 Functions, and still tried to bind the names
+true and false to the no longer existing operators .true and .false.
+(lib/pdf_draw.ps [1.5]: 2000/03/19 07:37:03 lpd)
+	- FunctionType 2 and 3 functions didn't work.
+(lib/pdf_draw.ps [1.6]: 2000/03/19 15:23:10 lpd)
 
 Adds a lforall procedure for the PDF linearizer. (lib/pdf_base.ps [1.3]:
 2000/03/19 01:50:05 lpd)
@@ -69,6 +120,9 @@ creates an indirect object. This is necessary for the PDF linearizer. It
 shouldn't have any visible effect (other than a possible small performance
 cost). (lib/pdf_base.ps [1.4], lib/pdf_draw.ps [1.4]: 2000/03/19 01:53:58
 lpd)
+
+Refactors some code to make it usable by the PDF linearizer.
+(lib/pdf_main.ps [1.3]: 2000/03/19 17:26:42 lpd)
 
 </pre><h2><a name="6.20 Interpreter"></a>Interpreter</h2><pre>
 
@@ -96,6 +150,19 @@ the NullEncode/Decode filters to stream.[hc]. (sfilter1.c [1.2]: 2000/03/19
 04:03:45 lpd)
 	- The AutoPositionEPSFiles Distiller parameter was misspelled
 AutoPositionEPSFile. (lib/gs_pdfwr.ps [1.2]: 2000/03/19 05:03:31 lpd)
+	- Enumerating the elements of a dictionary-based parameter list
+returned garbage for the keys. (iparam.c [1.2]: 2000/03/19 15:13:13 lpd)
+	- .buildfont0 should not check CIDSystemInfo compatibility. The
+PLRM3 says PostScript interpreters do not make this check, even though the
+PLRM2 says compatibility is required (!). (zfcmap.c [1.2]: 2000/03/19
+16:53:50 lpd)
+	- If log2_transfer_map_size > 8, identity transfer functions
+returned garbage. The fix requires that if a client wants to set a transfer
+function to the identity mapping, it must call gx_set_identity_transfer
+rather than simply setting the procedure to gs_identity_transfer.
+(zcolor.c [1.2]: 2000/03/19 17:14:47 lpd)
+	- Separation color spaces didn't store the separation name.
+(zcssepr.c [1.2]: 2000/03/19 17:21:36 lpd)
 
 Provides a gs_atan2_degrees procedure to parallel sin and cos.
 (zmath.c [1.2]: 2000/03/18 23:10:39 lpd)
@@ -134,6 +201,30 @@ of initial bytes or records to skip over. (Needed for printing FunctionType
 4 functions, possibly useful for other things.) (sfilter1.c [1.3]:
 2000/03/19 03:20:18 lpd)
 
+Replaces the implementation of FunctionType 4 functions at the PostScript
+language level with one that uses the new library-based facilities.
+(zdevice2.c [1.2], zfunc4.c [1.2]: 2000/03/19 06:56:23 lpd)
+
+Changes the key type returned by parameter list enumeration to include a
+persistence flag, makes C parameter lists support non-persistent keys, and
+upgrades GC descriptors so that parameter lists can be used non-transiently;
+updates implementors of parameter lists to call gs_param_list_init to
+initialize the common members, which is now required. (iparam.c [1.3]:
+2000/03/19 15:16:11 lpd)
+
+Makes Separation and DeviceN color spaces convert their tint transform
+function to a FunctionType 4 Function if possible, for better accuracy and
+to allow writing in PDF files. (lib/gs_lev2.ps [1.2], lib/gs_ll3.ps [1.2]:
+2000/03/19 15:28:34 lpd)
+
+Makes st_indexed_map private. Clients must now use the constructor procedure
+alloc_indexed_map rather than allocating instances directly.
+(zcsindex.c [1.2]: 2000/03/19 16:37:28 lpd)
+
+Refactors the code for building fonts so it can be used for FDArray entries
+of CIDFontType 0 fonts. (bfont.h [1.2], zbfont.c [1.2]: 2000/03/19 16:45:47
+lpd)
+
 </pre><h2><a name="6.20 Streams"></a>Streams</h2><pre>
 
 Fixes problems:
@@ -148,6 +239,13 @@ Adds a skip_count parameter to the SubFileDecode filter, giving the number
 of initial bytes or records to skip over. (Needed for printing FunctionType
 4 functions, possibly useful for other things.) (sfilter.h [1.4]: 2000/03/19
 03:20:18 lpd)
+
+Changes the key type returned by parameter list enumeration to include a
+persistence flag, makes C parameter lists support non-persistent keys, and
+upgrades GC descriptors so that parameter lists can be used non-transiently;
+updates implementors of parameter lists to call gs_param_list_init to
+initialize the common members, which is now required. (spsdf.c [1.2]:
+2000/03/19 15:16:11 lpd)
 
 </pre><h2><a name="6.20 Library"></a>Library</h2><pre>
 
@@ -165,6 +263,11 @@ gxfont42.h [1.2]: 2000/03/19 03:58:51 lpd)
 	- ImageType 4 images didn't give an error for out-of-range MaskColor
 values. The file also had an unnecessary #include. (gximage4.c [1.2]:
 2000/03/19 04:10:09 lpd)
+	- If log2_transfer_map_size > 8, identity transfer functions
+returned garbage. The fix requires that if a client wants to set a transfer
+function to the identity mapping, it must call gx_set_identity_transfer
+rather than simply setting the procedure to gs_identity_transfer.
+(gxclrast.c [1.3], gxcmap.c [1.2], gxfmap.h [1.2]: 2000/03/19 17:14:47 lpd)
 
 Provides a gs_atan2_degrees procedure to parallel sin and cos.
 (gsmisc.c [1.2], gxfarith.h [1.2]: 2000/03/18 23:10:39 lpd)
@@ -198,5 +301,66 @@ lpd)
 Reimplements "PostScript calculator" (FunctionType 4) functions entirely in
 C, to allow them to be written out in PDF files. (gsfunc4.c [1.1],
 gsfunc4.h [1.1], gsstruct.h [1.2]: 2000/03/19 05:25:53 lpd)
+
+Moves gx_device_color_equal to the public API, for detecting redundant color
+setting when writing PDF files. (gsdcolor.h [1.2], gxdcolor.c [1.2],
+gxdcolor.h [1.2]: 2000/03/19 06:46:08 lpd)
+
+Changes the default value of BufferSpace to 4 Mb. In desktop applications,
+this is a reasonable value that can substantially improve performance
+(especially for color printers); embedded applications will want to set
+BufferSpace themselves in any case. (gdevprn.h [1.2]: 2000/03/19 06:51:13
+lpd)
+
+Adds virtual procedures for Functions to write their parameters to a
+parameter list, and to access their data source and subfunctions. This is
+needed for writing Functions in PDF files. This change is also a
+prerequisite for the C implemention of FunctionType 4 functions, even though
+it appears later in the change log. (gsdsrc.h [1.2], gsfunc.c [1.2],
+gsfunc.h [1.2], gsfunc0.c [1.2], gsfunc3.c [1.2], gsparam.c [1.2],
+gsparam.h [1.3], gxfunc.h [1.2]: 2000/03/19 07:24:53 lpd)
+
+Splits off "vanilla" Functions into separate files, in anticipation of
+removing them (they were only used to implement PostScript Calculator
+Functions). (gsfunc.c [1.3], gsfunc.h [1.3], gsfuncv.c [1.1],
+gsfuncv.h [1.1]: 2000/03/19 07:33:08 lpd)
+
+Adds a procedure for allocating a C parameter list. (gscparam.c [1.2],
+gsparam.h [1.4]: 2000/03/19 15:00:05 lpd)
+
+Undoes a premature change that depends on an update not yet checked in.
+(gscparam.c [1.3]: 2000/03/19 15:07:59 lpd)
+
+Changes the key type returned by parameter list enumeration to include a
+persistence flag, makes C parameter lists support non-persistent keys, and
+upgrades GC descriptors so that parameter lists can be used non-transiently;
+updates implementors of parameter lists to call gs_param_list_init to
+initialize the common members, which is now required. (gscparam.c [1.4],
+gsparam.c [1.3], gsparam.h [1.5]: 2000/03/19 15:16:11 lpd)
+
+Adds a procedure for copying one parameter list to another.
+(gsparamx.c [1.2], gsparamx.h [1.2]: 2000/03/19 15:35:31 lpd)
+
+Records the CTM used for sampling HalftoneType 1 spot functions. This is
+needed for recognizing the standard spot functions when producing PDF
+output. Also factors the code for initializing spot functions for the
+benefit of the PDF writer. (gshtscr.c [1.2], gxdht.h [1.3], gzht.h [1.2]:
+2000/03/19 15:43:36 lpd)
+
+Adds a proc_data member to the map for Separation and Indexed color spaces.
+(gscolor2.c [1.3], gxcolor2.h [1.2]: 2000/03/19 16:23:46 lpd)
+
+Makes st_indexed_map private. Clients must now use the constructor procedure
+alloc_indexed_map rather than allocating instances directly.
+(gscolor2.c [1.4], gscsepr.c [1.2], gxclrast.c [1.2], gxcolor2.h [1.3]:
+2000/03/19 16:37:28 lpd)
+
+Adds procedures for building and accessing DeviceN color spaces.
+(gscdevn.c [1.2]: 2000/03/19 17:02:37 lpd)
+
+</pre><h2><a name="6.20 ???Other???"></a>???Other???</h2><pre>
+
+Adds procedures for building and accessing DeviceN color spaces.
+(gscdevn.h [1.1]: 2000/03/19 17:02:37 lpd)
 
 </pre></body></html>
