@@ -120,6 +120,7 @@ adjust_render_rectangle(
     gs_make_identity(&ident_mtx);
     gs_setmatrix(pgs, &ident_mtx);
     code = gs_rectfill(pgs, &rect, 1);
+    pcs->page_marked = true;
     gs_setmatrix(pgs, &save_mtx);
     return code;
 }
