@@ -10,6 +10,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.*;
+import java.awt.print.*;
 import java.io.File;
 import javax.swing.filechooser.*;
 /**
@@ -27,7 +28,7 @@ import javax.swing.filechooser.*;
  */
 public class Gview 
     extends JFrame 
-    implements KeyListener, MouseListener, MouseMotionListener, GpickleObserver 
+    implements KeyListener, MouseListener, MouseMotionListener, GpickleObserver, Printable
 {
 
     /** enables printfs */
@@ -79,6 +80,7 @@ public class Gview
     private java.awt.PopupMenu      popup;
     private java.awt.Menu             menuFile;
     private java.awt.MenuItem           menuFileOpen;
+    private java.awt.MenuItem           menuFilePrintPage;
     private java.awt.MenuItem           menuFileQuit;
     private java.awt.Menu             menuOpt;
     private java.awt.Menu               menuOptRes;
@@ -149,6 +151,16 @@ public class Gview
 	    }
 				       );
 	menuFile.add(menuFileOpen);
+
+	menuFilePrintPage = new java.awt.MenuItem();
+	menuFilePrintPage.setLabel("Print Page (alpha)");
+	menuFilePrintPage.addActionListener(new java.awt.event.ActionListener() {
+		public void actionPerformed(java.awt.event.ActionEvent evt) {
+		    filePrintPage();
+		}
+	    }
+				       );
+	menuFile.add(menuFilePrintPage);
 
         menuFileQuit = new java.awt.MenuItem();
 	menuFileQuit.setLabel("Quit");
@@ -537,6 +549,24 @@ public class Gview
         }
     }
 
+    void filePrintPage() {
+        PrinterJob job = PrinterJob.getPrinterJob();
+        PageFormat pf = job.pageDialog(job.defaultPage());
+        job.setPrintable(this, pf);
+        job.setJobName( "New Fangled Pickle Job Pg #" + pageNumber );
+        if (job.printDialog()) {
+            // Print the job if the user didn't cancel printing
+            try { 
+                job.print();
+            }
+            catch (Exception e) {
+                System.out.println(e.getMessage());
+                e.printStackTrace();
+            }
+        }
+    }
+            
+
    /**
      * Unused required by KeyListener
      */
@@ -585,6 +615,16 @@ public class Gview
 	    g.drawImage(currentPage, 0, 0, this);
 	}
     }	
+    
+    public int print( Graphics g, PageFormat pf, int PageIndex ) throws PrinterException
+    {
+        // just printing the current page.
+        if ( PageIndex > 0 )
+            return Printable.NO_SUCH_PAGE;
+        Graphics2D g2 = (Graphics2D) g;
+        g2.drawImage(currentPage, 0, 0, this);
+        return Printable.PAGE_EXISTS;
+    }
 
     /** callback from PickleObserver occurs when Image is complete. */
     public void imageIsReady( BufferedImage newImage ) {

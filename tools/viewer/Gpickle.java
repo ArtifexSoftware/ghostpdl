@@ -72,11 +72,11 @@ public class Gpickle {
 
     /** look for relative path executable first */
     //private String ghostAppRelStr =  "../../main/obj/pcl6";
-    private String ghostAppRelStr =  "../../language_switch/obj/pspcl6";
+    private String ghostAppRelStr =  "../../main/obj/pcl6";
 
     /** look for executable in path next */
     //private String ghostAppPathStr =  "pcl6";
-    private String ghostAppPathStr =  "pspcl6";
+    private String ghostAppPathStr =  "pcl6";
 
     /** find the GhostPrinter application
      * first relative path
