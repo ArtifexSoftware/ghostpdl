@@ -142,7 +142,7 @@ LCT=
 # We believe the following list of optimizations works around this bug.
 COMPILE_FULL_OPTIMIZED=/GF /Ot /Oi /Ob2 /Oy /Oa- /Ow-
 !else
-COMPILE_FULL_OPTIMIZED=/GF /O2
+COMPILE_FULL_OPTIMIZED=/GF /O2 /Ob2
 !endif
 COMPILE_WITH_FRAMES=
 COMPILE_WITHOUT_FRAMES=/Oy
