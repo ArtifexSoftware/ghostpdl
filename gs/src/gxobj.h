@@ -100,6 +100,10 @@ typedef struct obj_header_data_s {
  * alignment values are powers of 2; we can avoid nested 'max'es that way.
  * The final | is because back pointer values are divided by obj_back_scale,
  * so objects must be aligned at least 0 mod obj_back_scale.
+ *
+ * Note: OBJECTS ARE NOT GUARANTEED to be aligned any more strictly than
+ * required by the hardware, regardless of the value of obj_align_mod.
+ * See gsmemraw.h for more information about this.
  */
 #define obj_align_mod\
   (((arch_align_memory_mod - 1) |\

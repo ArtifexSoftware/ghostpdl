@@ -63,6 +63,30 @@ typedef struct gs_raw_memory_s gs_raw_memory_t;
  * responsible for calling its superclass' initialization code first.
  * Similarly, each implementation's destructor (release) must first take
  * care of its own cleanup and then call the superclass' release.
+ *
+ * The allocation procedures must align objects as strictly as malloc.
+ * Formerly, the procedures were required to align objects as strictly
+ * as the compiler aligned structure members.  However, the ANSI C standard
+ * does not require this -- it only requires malloc to align blocks
+ * strictly enough to prevent hardware access faults.  Thus, for example,
+ * on the x86, malloc need not align blocks at all.  And in fact, we have
+ * found one compiler (Microsoft VC 6) that 8-byte aligns 'double' members
+ * of structure, but whose malloc only 4-byte aligns its blocks.
+ * Ghostscript allocators could enforce the stricter alignment, but the
+ * few dozen lines of code required to implement this were rejected during
+ * code review as introducing too much risk for too little payoff.  As a
+ * consequence of this,
+ *
+ *	CLIENTS CANNOT ASSUME THAT BLOCKS RETURNED BY ANY OF THE ALLOCATION
+ *	PROCEDURES ARE ALIGNED ANY MORE STRICTLY THAN IS REQUIRED BY THE
+ *	HARDWARE.
+ *
+ * In particular, clients cannot assume that blocks returned by an allocator
+ * can be processed efficiently in any unit larger than a single byte: there
+ * is no guarantee that accessing any larger quantity will not require two
+ * memory accesses at the hardware level.  Clients that want to process data
+ * efficiently in larger units must use ALIGNMENT_MOD to determine the
+ * actual alignment of the data in memory.
  */
 
 		/*

@@ -177,13 +177,13 @@ gs_heap_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname)
 	else {
 	    gs_malloc_block_t *bp = (gs_malloc_block_t *) ptr;
 
-#ifdef DEBUG
-	    /* malloc must align at least as strictly as the compiler! */
-	    if (ALIGNMENT_MOD(ptr, arch_align_memory_mod) != 0)
-		set_msg("malloc alignment failed!");
-	    else
-#endif
-		set_msg(ok_msg);
+	    /*
+	     * We would like to check that malloc aligns blocks at least as
+	     * strictly as the compiler (as defined by arch_align_memory_mod).
+	     * However, Microsoft VC 6 does not satisfy this requirement.
+	     * See gsmemraw.h for more explanation.
+	     */
+	    set_msg(ok_msg);
 	    if (mmem->allocated)
 		mmem->allocated->prev = bp;
 	    bp->next = mmem->allocated;

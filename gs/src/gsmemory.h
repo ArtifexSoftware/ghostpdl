@@ -24,6 +24,13 @@
  * aligned and cannot have pointers to their interior, and strings, which
  * are not aligned and which can have interior references.
  *
+ * Note: OBJECTS ARE NOT GUARANTEED to be aligned any more strictly than
+ * required by the hardware, regardless of the value of obj_align_mod.  In
+ * other words, whether ALIGNMENT_MOD(ptr, obj_align_mod) will be zero
+ * depends on the alignment provided by the underlying allocator.
+ * Most systems ensure this, but Microsoft VC 6 in particular does not.
+ * See gsmemraw.h for more information about this.
+ *
  * The standard allocator is designed to interface to a garbage collector,
  * although it does not include or call one.  The allocator API recognizes
  * that the garbage collector may move objects, relocating pointers to them;

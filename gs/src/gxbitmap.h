@@ -36,6 +36,10 @@ typedef gs_bitmap_id gx_bitmap_id;
  * boundary, and hence is padded to a word boundary, although this should
  * rarely be of concern, since the raster and width are specified
  * individually.
+ *
+ * Note: BITMAPS ARE NOT GUARANTEED to be aligned any more strictly than
+ * required by the hardware, regardless of the value of bitmap_align_mod.
+ * See gsmemraw.h for more information about this.
  */
 /* We assume arch_align_long_mod is 1-4 or 8. */
 #if arch_align_long_mod <= 4
