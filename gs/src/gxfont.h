@@ -380,6 +380,7 @@ typedef struct gs_font_name_s {
 	gs_font *base;			/* original (unscaled) base font */\
 	void *client_data;		/* additional client data */\
 	gs_matrix FontMatrix;\
+	gs_matrix orig_FontMatrix;      /* The original font matrix or zeros. */\
 	font_type FontType;\
 	bool BitmapWidths;\
 	fbit_type ExactSize, InBetweenSize, TransformedChar;\

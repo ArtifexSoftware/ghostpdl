@@ -476,15 +476,22 @@ lookup_gs_simple_font_encoding(gs_font_base * pfont)
 
 /* Get FontMatrix and FontName parameters. */
 private int
-sub_font_params(const ref *op, gs_matrix *pmat, ref *pfname)
+sub_font_params(const ref *op, gs_matrix *pmat, gs_matrix *pomat, ref *pfname)
 {
     ref *pmatrix;
     ref *pfontname;
+    ref *porigfont;
 
     if (dict_find_string(op, "FontMatrix", &pmatrix) <= 0 ||
 	read_matrix(pmatrix, pmat) < 0
 	)
 	return_error(e_invalidfont);
+    if (pomat!= NULL && dict_find_string(op, ".OrigFont", &porigfont) > 0) {
+	if (dict_find_string(porigfont, "FontMatrix", &pmatrix) <= 0 ||
+	    read_matrix(pmatrix, pomat) < 0
+	    )
+	    memset(pomat, 0, sizeof(*pomat));
+    }
     if (dict_find_string(op, "FontName", &pfontname) > 0)
 	get_font_name(pfname, pfontname);
     else
@@ -563,7 +570,7 @@ build_gs_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font ** ppfont, font_type ftype,
 	    gs_matrix mat;
 	    ref fname;			/* t_string */
 
-	    code = sub_font_params(op, &mat, &fname);
+	    code = sub_font_params(op, &mat, NULL, &fname);
 	    if (code < 0)
 		return code;
 	    code = 1;
@@ -613,7 +620,7 @@ build_gs_sub_font(i_ctx_t *i_ctx_p, const ref *op, gs_font **ppfont,
 		  const build_proc_refs * pbuild, const ref *pencoding,
 		  ref *fid_op)
 {
-    gs_matrix mat;
+    gs_matrix mat, omat;
     ref fname;			/* t_string */
     gs_font *pfont;
     font_data *pdata;
@@ -622,7 +629,7 @@ build_gs_sub_font(i_ctx_t *i_ctx_p, const ref *op, gs_font **ppfont,
      * in the same VM as the font dictionary.
      */
     uint space = ialloc_space(idmemory);
-    int code = sub_font_params(op, &mat, &fname);
+    int code = sub_font_params(op, &mat, &omat, &fname);
 
     if (code < 0)
 	return code;
@@ -650,6 +657,7 @@ build_gs_sub_font(i_ctx_t *i_ctx_p, const ref *op, gs_font **ppfont,
     pfont->client_data = pdata;
     pfont->FontType = ftype;
     pfont->FontMatrix = mat;
+    pfont->orig_FontMatrix = omat;
     pfont->BitmapWidths = false;
     pfont->ExactSize = fbit_use_bitmaps;
     pfont->InBetweenSize = fbit_use_outlines;

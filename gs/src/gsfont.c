@@ -291,6 +291,7 @@ gs_font_alloc(gs_memory_t *mem, gs_memory_type_ptr_t pstype,
     pfont->PaintType = 0;
     pfont->StrokeWidth = 0;
     pfont->procs = *procs;
+    memset(&pfont->orig_FontMatrix, 0, sizeof(pfont->orig_FontMatrix));
     /* not key_name, font_name */
     return pfont;
 }

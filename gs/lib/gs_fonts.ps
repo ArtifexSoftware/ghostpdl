@@ -455,6 +455,9 @@ buildfontdict 3 /.buildfont3 cvx put
         /FontEmulationProcs /ProcSet findresource
         /ProvideUnicodeDecoding get exec
       } if
+      dup /.OrigFont known not {
+        dup dup /.OrigFont exch .growput
+      } if
       readonly          % stack: name fontdict
   } stopped { /invalidfont signalerror } if
 } bind odef

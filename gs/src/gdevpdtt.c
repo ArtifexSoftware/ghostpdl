@@ -544,23 +544,40 @@ pdf_font_orig_matrix(const gs_font *font, gs_matrix *pmat)
          * Such fonts are their own "base font", but the orig_matrix
          * must still be set to 0.001, not 0.012 .
          *
-         * Detect and correct for this here.
+         * The old code used a heuristic to detect and correct for this here.
+	 * Unfortunately it doesn't work properly when it meets a font 
+	 * with FontMatrix like this : 
+	 *
+	 *   /FontMatrix [1 2288 div 0 0 1 2288 div 0 0 ] def
+	 *
+	 * (the bug 686970). Also comparefiles\455690.pdf appears to
+	 * have similar problem. Therefore we added a support to lib/gs_fonts.ps,
+	 * src/zbfont.c, src/gsfont.c that provides an acces to the original
+	 * font via a special key .OrigFont added to the font dictionary while definefont.
+	 * Now we work through this access with PS interpreter, 
+	 * but keep the old heuristic for other clients.
 	 */
 	{
 	    const gs_font *base_font = font;
 
 	    while (base_font->base != base_font)
 		base_font = base_font->base;
-	    if (font->FontType == ft_user_defined)
+	    if (base_font->orig_FontMatrix.xx != 0 || base_font->orig_FontMatrix.xy != 0 ||
+	        base_font->orig_FontMatrix.yx != 0 || base_font->orig_FontMatrix.yy != 0)
 		*pmat = base_font->FontMatrix;
-	    else if (base_font->FontMatrix.xx == 1.0/2048 &&
-		base_font->FontMatrix.xy == 0 &&
-		base_font->FontMatrix.yx == 0 &&
-		any_abs(base_font->FontMatrix.yy) == 1.0/2048
-		)
-		*pmat = base_font->FontMatrix;
-	    else
-		gs_make_scaling(0.001, 0.001, pmat);
+	    else {
+		/*  Must not happen with PS interpreter. 
+		    Provide a hewuristic for other clients.
+		*/
+		if (base_font->FontMatrix.xx == 1.0/2048 &&
+		    base_font->FontMatrix.xy == 0 &&
+		    base_font->FontMatrix.yx == 0 &&
+		    any_abs(base_font->FontMatrix.yy) == 1.0/2048
+		    )
+		    *pmat = base_font->FontMatrix;
+		else
+		    gs_make_scaling(0.001, 0.001, pmat);
+	    }
 	}
 	return 0;
     default:
