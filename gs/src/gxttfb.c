@@ -290,7 +290,7 @@ ttfFont *ttfFont__create(gs_font_dir *dir)
 void ttfFont__destroy(ttfFont *this, gs_font_dir *dir)
 {   
 #if NEW_TT_INTERPRETER 
-    ttfMemory *mem = this->ttf_memory;
+    ttfMemory *mem = this->tti->ttf_memory;
 
     ttfFont__finit(this);
     mem->free(mem, this, "ttfFont__destroy");

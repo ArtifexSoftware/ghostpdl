@@ -51,6 +51,17 @@ struct ttfMemory_s {
     void (*free)(ttfMemory *, void *p,  const char *cname);
 } ;
 
+typedef struct ttfSubGlyphUsage_s ttfSubGlyphUsage;
+
+struct ttfInterpreter_s {
+    TExecution_Context *exec;
+    ttfSubGlyphUsage *usage;
+    int usage_size;
+    int usage_top;
+    int lock;
+    ttfMemory *ttf_memory;
+};
+
 typedef struct {
     double a, b, c, d, tx, ty;
 } FloatMatrix;
@@ -106,8 +117,6 @@ struct ttfFont_s {
     unsigned short nUnitsPerEm;
     unsigned int nFlags;
     unsigned int nNumGlyphs;
-    unsigned int nMaxPoints;
-    unsigned int nMaxContours;
     unsigned int nMaxComponents;
     unsigned int nLongMetricsVert;
     unsigned int nLongMetricsHorz;
@@ -116,7 +125,7 @@ struct ttfFont_s {
     TFace *face;
     TInstance *inst;
     TExecution_Context  *exec;
-    ttfMemory *ttf_memory;
+    ttfInterpreter *tti;
     void (*DebugRepaint)(ttfFont *);
     void (*DebugPrint)(ttfFont *, const char *s, ...);
 };
@@ -137,12 +146,6 @@ struct ttfExport_s {
     void (*Point)(ttfExport *, FloatPoint*, bool bOnCurve, bool bNewPath);
     void (*SetWidth)(ttfExport *, FloatPoint*);
     void (*DebugPaint)(ttfExport *);
-};
-
-struct ttfInterpreter_s {
-    TExecution_Context *exec;
-    int lock;
-    ttfMemory *ttf_memory;
 };
 
 int ttfInterpreter__obtain(ttfMemory *mem, ttfInterpreter **ptti);

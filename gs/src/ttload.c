@@ -123,7 +123,7 @@
 
     ttfReader *r = face->r;
     ttfFont *font = face->font;
-    ttfMemory *mem = font->ttf_memory;
+    ttfMemory *mem = font->tti->ttf_memory;
     r->Seek(r, font->t_cvt_.nPos);
 
 
@@ -171,7 +171,7 @@
   {
     ttfReader *r = face->r;
     ttfFont *font = face->font;
-    ttfMemory *mem = font->ttf_memory;
+    ttfMemory *mem = font->tti->ttf_memory;
 
     face->fontProgram = NULL;
     face->cvtProgram = NULL;

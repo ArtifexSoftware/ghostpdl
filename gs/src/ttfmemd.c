@@ -130,17 +130,17 @@ ENUM_PTRS_BEGIN(ttfFont_enum_ptrs) return 0;
     ENUM_PTR(0, ttfFont, face);
     ENUM_PTR(1, ttfFont, inst);
     ENUM_PTR(2, ttfFont, exec);
-    ENUM_PTR(3, ttfFont, ttf_memory);
+    ENUM_PTR(3, ttfFont, tti);
 ENUM_PTRS_END
 
 private RELOC_PTRS_WITH(ttfFont_reloc_ptrs, ttfFont *mptr)
     RELOC_PTR(ttfFont, face);
     RELOC_PTR(ttfFont, inst);
     RELOC_PTR(ttfFont, exec);
-    RELOC_PTR(ttfFont, ttf_memory);
+    RELOC_PTR(ttfFont, tti);
     DISCARD(mptr);
 RELOC_PTRS_END
 
-gs_public_st_ptrs2(st_ttfInterpreter, ttfInterpreter, "ttfInterpreter", 
+gs_public_st_ptrs3(st_ttfInterpreter, ttfInterpreter, "ttfInterpreter", 
     st_ttfInterpreter_enum_ptrs, st_ttfInterpreter_reloc_ptrs, 
-    exec, ttf_memory);
+    exec, usage, ttf_memory);

@@ -5021,7 +5021,7 @@ static int nInstrCount=0;
     PCallRecord  WITH1;
     bool bFirst = true;
 #   ifdef DEBUG
-	ttfMemory *mem = exc->current_face->font->ttf_memory;
+	ttfMemory *mem = exc->current_face->font->tti->ttf_memory;
 	F26Dot6 *save_ox, *save_oy, *save_cx, *save_cy;
 
 	DBG_PRINT("\n%% *** Entering RunIns ***");

@@ -266,7 +266,7 @@ static int free_aux(ttfMemory *mem, void *ptr)
    if (--exec->lock)
      return TT_Err_Ok; /* Still in use */
 
-   mem = exec->current_face->font->ttf_memory;
+   mem = exec->current_face->font->tti->ttf_memory;
 
    /* points zone */
    FREE( exec->pts.cur_y );
@@ -324,7 +324,7 @@ static int free_aux(ttfMemory *mem, void *ptr)
    PExecution_Context  exec = (PExecution_Context)_context;
 
    PFace        face = (PFace)_face;
-   ttfMemory   *mem = face->font->ttf_memory;
+   ttfMemory   *mem = face->font->tti->ttf_memory;
    TMaxProfile *maxp = &face->maxProfile;
    Int          n_points, n_twilight;
    Int          callSize, stackSize;
@@ -547,7 +547,7 @@ static int free_aux(ttfMemory *mem, void *ptr)
       */
       return TT_Err_Out_Of_Memory;
     }
-    mem = ins->face->font->ttf_memory;
+    mem = ins->face->font->tti->ttf_memory;
 
     FREE( ins->cvt );
     ins->cvtSize = 0;
@@ -584,7 +584,7 @@ static int free_aux(ttfMemory *mem, void *ptr)
   {
     PInstance ins  = (PInstance)_instance;
     PFace     face = (PFace)_face;
-    ttfMemory *mem = face->font->ttf_memory;
+    ttfMemory *mem = face->font->tti->ttf_memory;
     PMaxProfile  maxp = &face->maxProfile;
     Int       i;
 
@@ -857,7 +857,7 @@ static int free_aux(ttfMemory *mem, void *ptr)
 
   TT_Error  Face_Destroy( PFace face )
   {
-    ttfMemory *mem = face->font->ttf_memory;
+    ttfMemory *mem = face->font->tti->ttf_memory;
     if ( !face )
       return TT_Err_Ok;
 
