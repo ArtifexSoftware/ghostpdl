@@ -1323,14 +1323,13 @@ retry_oversampling:
     } 
 
     /* Provide glyph data for renderer : */
-    if (ff.is_type1 && ff.is_cid)
-        ff.char_data = charstring;
-    else {
+    if (!ff.is_cid) {
 	ref sname;
 	name_string_ref(&char_name, &sname);
         ff.char_data = sname.value.const_bytes;
 	ff.char_data_len = r_size(&sname);
-    }
+    } else if (ff.is_type1)
+        ff.char_data = charstring;
 
     /* Compute the metrics replacement : */
 
