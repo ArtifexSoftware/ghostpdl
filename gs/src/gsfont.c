@@ -66,6 +66,7 @@ private_st_font_dir();
 private struct_proc_enum_ptrs(font_enum_ptrs);
 private struct_proc_reloc_ptrs(font_reloc_ptrs);
 
+public_st_gs_font_info();
 public_st_gs_font();
 public_st_gs_font_base();
 private_st_gs_font_ptr();

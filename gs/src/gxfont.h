@@ -109,6 +109,16 @@ typedef struct gs_font_info_s {
 
 } gs_font_info_t;
 
+#define public_st_gs_font_info() /* in gsfont.c */\
+  BASIC_PTRS(gs_font_info_ptrs) {\
+    GC_CONST_STRING_ELT(gs_font_info_t, Copyright),\
+    GC_CONST_STRING_ELT(gs_font_info_t, Notice),\
+    GC_CONST_STRING_ELT(gs_font_info_t, FamilyName),\
+    GC_CONST_STRING_ELT(gs_font_info_t, FullName)\
+  };\
+  gs_public_st_basic(st_gs_font_info, gs_font_info_t, "gs_font_info_t",\
+		     gs_font_info_ptrs, gs_font_info_data)
+
 /*
  * Define the structure used to return information about a glyph.
  *
