@@ -549,15 +549,6 @@ Such fonts cannot load into global VM due to internal usage of <I>save/restore</
 Hybrid fonts can be recognized by the appearance of the word 'hires' with
 a pre-scan over the font, the same way that .findfontvalue works now.
 
-<h3>Job server loop isn't implemented.</h3>
-
-Rather <I>startjob</I> and <I>exitserver</I> are stubbed in lib/gs_lev2.ps,
-it appears insufficietly compartible with Adobe interpreters.
-Particularly the outermost <I>restore</I> unwinds global VM while interpreting a
-document specified in command line argument. Perhaps global VM should not unwind
-during a document interpretation. A compatible change should introduce a new command
-line option for etablishing a job server loop around douments.
-
 <!-- [2.0 end contents] ==================================================== -->
 
 <!-- [3.0 begin visible trailer] =========================================== -->
