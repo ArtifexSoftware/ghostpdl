@@ -119,6 +119,16 @@ fonts.
 </dl>
 
 <dl>
+<dt><a href="../lib/gs_fntem.ps"><tt>gs_fntem.ps</tt></a>
+<dd>Code for emulating Postscript fonts with non-Postscript font technologies.
+</dl>
+
+<dl>
+<dt><a href="../lib/gs_cidtt.ps"><tt>gs_cidtt.ps</tt></a>
+<dd>Code for emulating CID fonts with True Type fonts.
+</dl>
+
+<dl>
 <dt><a href="../lib/gs_cidcm.ps"><tt>gs_cidcm.ps</tt></a>
 <dd>Code for recognizing font names of the form CIDFont-CMap (or
 CIDFont--CMap) and creating the font automatically.
@@ -127,6 +137,7 @@ CIDFont--CMap) and creating the font automatically.
 <dl>
 <dt><a href="../lib/gs_ciddc.ps"><tt>gs_ciddc.ps</tt></a>
 <dd>Defines Decoding and CIDDecoding resource categories and related procsets.
+Used for for emulating Postscript fonts with non-Postscript font technologies.
 </dl>
 
 <dl>
@@ -316,6 +327,12 @@ to configure Ghostscript.
 <dl>
 <dt><a href="../lib/Fontmap"><tt>Fontmap</tt></a>
 <dd>Font mapping table.
+</dl>
+
+<dl>
+<dt><a href="../lib/cidfmap"><tt>cidfmap</tt></a>
+<dd>CID font mapping table. Allows to substitute a CID font to another CID font or
+a True Type font to a CID font.
 </dl>
 
 <dl>

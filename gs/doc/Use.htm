@@ -986,7 +986,11 @@ Another method is based on the operator <b><tt>composefont</tt></b>.
 <p>
 For substituting CID font resources Ghostscript provides the control file
 <b><tt>gs/lib/cidfmap</tt></b>, which defines a CID font resource map.
-The file forms a table of records, each of which is a simple pair of names :
+The file forms a table of records, each of which should use one of two formats,
+explained below.
+
+<p> For substituting a CID font resource to another CID font resource
+a record is a simple pair of names :
 
 <blockquote><b><tt>
 /Substituted /Original
@@ -998,6 +1002,44 @@ designed for same character collection. In other words, you
 cannot substitute Japanese CID font resource to Korean CID font resource,
 etc. Also please pay attention that CMap resource names must not appear in
 <b><tt>gs/lib/cidfmap</tt></b>.
+
+<p>
+
+For substituting a True Type font to a CID font one should use format explained
+in the table below.
+
+
+<table cellpadding=0 cellspacing=10>
+
+<tr>	<th>Key
+	<th>Type
+	<th>Description
+<tr>	<td>Path
+        <td>string
+        <td>A path to a True Type font file.
+<tr>	<td>FileType
+        <td>name
+        <td>Must be <b><tt>/TrueType</tt></b>.
+<tr>	<td>SubfontId
+        <td>integer
+        <td>(optional) Index of the font in font collection, such as TTC.
+            It is being ignored if Path doesn't specify a collection.
+            Default value is 0.
+<tr>	<td>CSI
+        <td>array of 2 elements
+        <td>(required) Information for building <b><tt>CIDSystemInfo</tt></b>.
+            The first element is a string, which specifies <b><tt>Ordering</tt></b>.
+            The second element is a number, which specifies <b><tt>Supplement</tt></b>.
+</table>
+
+<p>
+Now only CIDFontType 2 can be emulated with a True Type font.
+The True Type font must contain enough charasters to cover an
+Adobe character collection, which is specified in <b><tt>Ordering</tt></b>.
+
+<p>
+See a comment in <b><tt>gs/lib/cidfmap</tt></b> for examples of records.
+
 
 <hr>
 
@@ -2763,7 +2805,7 @@ The second element is a dictionary with entries :
 <tr>	<td>FAPI
         <td>name
         <td>Name of the renderer to be used with the font.
-            Only <b><tt>AgfaUFST</tt></b> and <b><tt>FreeType</tt></b> are now allowed.
+            Only <b><tt>/AgfaUFST</tt></b> and <b><tt>/FreeType</tt></b> are now allowed.
 <tr>	<td>SubfontId
         <td>integer
         <td>(optional) Index of the font in font collection, such as FCO or TTC.
@@ -2811,7 +2853,7 @@ but dictionaries must contain few different entries :
 <tr>	<td>FAPI
         <td>name
         <td>Name of the renderer to be used with the font.
-            Only AgfaUFST is now allowed.
+            Only <b><tt>/AgfaUFST</tt></b> and <b><tt>/FreeType</tt></b> are now allowed.
 <tr>	<td>SubfontId
         <td>integer
         <td>(optional) Index of the font in font collection, such as FCO or TTC.
@@ -2819,7 +2861,7 @@ but dictionaries must contain few different entries :
             Default value is 0.
 <tr>	<td>CSI
         <td>array of 2 elements
-        <td>(required) Information for building <b><tt>CIDFontSystemInfo</tt></b>.
+        <td>(required) Information for building <b><tt>CIDSystemInfo</tt></b>.
             The first element is a string, which specifies <b><tt>Ordering</tt></b>.
             The second element is a number, which specifies <b><tt>Supplement</tt></b>.
 </table>
