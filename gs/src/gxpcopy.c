@@ -587,7 +587,7 @@ gx_curve_x_at_y(curve_cursor * prc, fixed y)
 /* Test whether a path is free of non-monotonic curves. */
 bool
 #if CURVED_TRAPEZOID_FILL
-gx_path__check_curves(const gx_path * ppath, bool small_curves, fixed fixed_flat)
+gx_path__check_curves(const gx_path * ppath, gx_path_copy_options options, fixed fixed_flat)
 #else
 gx_path_is_monotonic(const gx_path * ppath)
 #endif
@@ -609,18 +609,21 @@ gx_path_is_monotonic(const gx_path * ppath)
 	    case s_curve:
 		{
 		    const curve_segment *pc = (const curve_segment *)pseg;
-		    double t[2];
-		    int nz = gx_curve_monotonic_points(pt0.y,
-					   pc->p1.y, pc->p2.y, pc->pt.y, t);
 
-		    if (nz != 0)
-			return false;
-		    nz = gx_curve_monotonic_points(pt0.x,
-					   pc->p1.x, pc->p2.x, pc->pt.x, t);
-		    if (nz != 0)
-			return false;
+		    if (!CURVED_TRAPEZOID_FILL || (options & pco_monotonize)) {
+			double t[2];
+			int nz = gx_curve_monotonic_points(pt0.y,
+					       pc->p1.y, pc->p2.y, pc->pt.y, t);
+
+			if (nz != 0)
+			    return false;
+			nz = gx_curve_monotonic_points(pt0.x,
+					       pc->p1.x, pc->p2.x, pc->pt.x, t);
+			if (nz != 0)
+			    return false;
+		    }
 #		    if CURVED_TRAPEZOID_FILL
-			if (small_curves) {
+			if (options & pco_small_curves) {
 			    fixed ax, bx, cx, ay, by, cy; 
 			    int k = gx_curve_log2_samples(pt0.x, pt0.y, pc, fixed_flat);
 

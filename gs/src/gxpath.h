@@ -178,6 +178,16 @@ bool gx_path_is_drawing(gx_path *ppath);
 #define gx_path_pop_close_subpath(ppath)\
   gx_path_pop_close_notes(ppath, sn_none)
 
+typedef enum {
+    pco_none = 0,
+    pco_monotonize = 1,		/* make curves monotonic */
+    pco_accurate = 2,		/* flatten with accurate tangents at ends */
+    pco_for_stroke = 4		/* flatten taking line width into account */
+#if CURVED_TRAPEZOID_FILL
+    , pco_small_curves = 8	/* make curves small */
+#endif
+} gx_path_copy_options;
+
 /* Path accessors */
 
 gx_path *gx_current_path(const gs_state *);
@@ -189,7 +199,7 @@ bool gx_path_has_curves(const gx_path *),
     gx_path_is_void(const gx_path *),	/* no segments */
     gx_path_is_null(const gx_path *),	/* nothing at all */
 #if CURVED_TRAPEZOID_FILL
-    gx_path__check_curves(const gx_path * ppath, bool small_curves, fixed fixed_flat);
+    gx_path__check_curves(const gx_path * ppath, gx_path_copy_options options, fixed fixed_flat);
 #else
     gx_path_is_monotonic(const gx_path * ppath);
 #endif
@@ -211,16 +221,6 @@ gx_path_is_rectangular(const gx_path *, gs_fixed_rect *);
 
 /* Path transformers */
 
-/* gx_path_copy_reducing is internal. */
-typedef enum {
-    pco_none = 0,
-    pco_monotonize = 1,		/* make curves monotonic */
-    pco_accurate = 2,		/* flatten with accurate tangents at ends */
-    pco_for_stroke = 4		/* flatten taking line width into account */
-#if CURVED_TRAPEZOID_FILL
-    , pco_small_curves = 8	/* make curves small */
-#endif
-} gx_path_copy_options;
 /* The imager state is only needed when flattening for stroke. */
 #ifndef gs_imager_state_DEFINED
 #  define gs_imager_state_DEFINED

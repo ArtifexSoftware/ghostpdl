@@ -523,6 +523,8 @@ private FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *this, int glyph
 	return fGlyphNotFound;
     if (r->Eof(r)) {
 	r->ReleaseGlyph(r, glyphIndex);
+	gOutline->xMinB = gOutline->yMinB = 0;
+	gOutline->xMaxB = gOutline->yMaxB = 0;
 	return fNoError;
     }
     if (r->Error(r))

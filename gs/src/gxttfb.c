@@ -538,6 +538,7 @@ private int grid_fit(gx_device_spot_analyzer *padev, gx_path *path,
     int FontType = 1; /* Will apply Type 1 hinter. */
     fixed sbx = 0, sby = 0; /* fixme */
     double scale = 1.0 / o->pFont->nUnitsPerEm;
+    gs_fixed_rect bbox;
 
     m.xx = o->post_transform.a;
     m.xy = o->post_transform.b;
@@ -572,11 +573,14 @@ private int grid_fit(gx_device_spot_analyzer *padev, gx_path *path,
 	code = t1_hinter__set_font42_data(&h, FontType, &pfont->data, false);
 	if (code < 0)
 	    return code;
+	gx_path_bbox(path, &bbox);
+	if (code < 0)
+	    return code;
 	memset(&is_stub, 0, sizeof(is_stub));
 	set_nonclient_dev_color(&devc_stub, 1);
 	params.rule = gx_rule_winding_number;
 	params.adjust.x = params.adjust.y = 0;
-	params.flatness = (float)0.2;
+	params.flatness = fixed2float(max(bbox.q.x - bbox.p.x, bbox.q.y - bbox.p.y)) / 100.0;
 	params.fill_zero_width = false;
 	gx_san_begin(padev);
 	code = dev_proc(padev, fill_path)((gx_device *)padev, 

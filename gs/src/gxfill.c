@@ -468,7 +468,8 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 #  endif
     if (
 #   if CURVED_TRAPEZOID_FILL
-	gx_path__check_curves(ppath, fill_by_trapezoids, lst.fixed_flat)
+	gx_path__check_curves(ppath, (!fill_by_trapezoids ? pco_monotonize : pco_none)
+					| pco_small_curves, lst.fixed_flat)
 #   else
 	gx_path_is_monotonic(ppath)
 #   endif
@@ -614,7 +615,7 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
     } else {
 	vd_get_dc( (params->adjust.x | params->adjust.y)  ? 'F' : 'f');
 	if (vd_enabled) {
-	    vd_set_shift(0, 0);
+	    vd_set_shift(0, 100);
 	    vd_set_scale(VD_SCALE);
 	    vd_set_origin(0, 0);
 	    vd_erase(RGB(192, 192, 192));
