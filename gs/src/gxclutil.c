@@ -330,9 +330,6 @@ cmd_put_w(register uint w, register byte * dp)
     return dp + 1;
 }
 
-#ifndef sizeof_gx_color_index
-#define sizeof_gx_color_index 8
-#endif
 
 /*
  * This next two arrays are used for the 'delta' mode of placing a color
@@ -350,34 +347,39 @@ cmd_put_w(register uint w, register byte * dp)
  * maximizes the chance that the 'delta' mode can be used for placing
  * colors in the clist.
  */
+/*
+ * Depending upon the compiler and user choices, the size of a gx_color_index
+ * may be 4 to 8 bytes.  We will define table entries for up to 8 bytes.
+ * This macro is being used to prevent compiler warnings if gx_color_index is
+ * only 4 bytes.
+ */
+#define tab_entry(x) ((x) & (~((gx_color_index) 0)))
+
 const gx_color_index cmd_delta_offsets[] = {
-	0,
-	0,
-	0x0808,
-	0x102010,
-	0x08080808,
-#if sizeof_gx_color_index > 4
-	0x1020100808,
-	0x080808080808,
-	0x10201008080808,
-	0x0808080808080808,
-#endif
-	0};
+	tab_entry(0),
+	tab_entry(0),
+	tab_entry(0x0808),
+	tab_entry(0x102010),
+	tab_entry(0x08080808),
+	tab_entry(0x1020100808),
+	tab_entry(0x080808080808),
+	tab_entry(0x10201008080808),
+	tab_entry(0x0808080808080808),
+	};
 
 private const gx_color_index cmd_delta_masks[] = {
-	0,
-	0,
-	0x0f0f,
-	0x1f3f1f,
-	0x0f0f0f0f,
-#if sizeof_gx_color_index > 4
-	0x1f3f1f0f0f,
-	0x0f0f0f0f0f0f,
-	0x1f3f1f0f0f0f0f,
-	0x0f0f0f0f0f0f0f0f,
-#endif
-	0};
+	tab_entry(0),
+	tab_entry(0),
+	tab_entry(0x0f0f),
+	tab_entry(0x1f3f1f),
+	tab_entry(0x0f0f0f0f),
+	tab_entry(0x1f3f1f0f0f),
+	tab_entry(0x0f0f0f0f0f0f),
+	tab_entry(0x1f3f1f0f0f0f0f),
+	tab_entry(0x0f0f0f0f0f0f0f0f),
+	};
 
+#undef tab_entry
 
 /*
  * There are currently only four different color "types" that can be placed
