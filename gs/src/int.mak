@@ -1061,7 +1061,7 @@ iodevice_=$(PSOBJ)ziodev2.$(OBJ) $(PSOBJ)zdevcal.$(OBJ)
 $(PSD)iodevice.dev : $(INT_MAK) $(ECHOGS_XE) $(iodevice_)
 	$(SETMOD) $(PSD)iodevice $(iodevice_)
 	$(ADDMOD) $(PSD)iodevice -oper ziodev2_l2
-	$(ADDMOD) $(PSD)iodevice -iodev null ram calendar
+	$(ADDMOD) $(PSD)iodevice -iodev null calendar
 
 $(PSOBJ)ziodev2.$(OBJ) : $(PSSRC)ziodev2.c $(OP) $(string__h) $(gp_h)\
  $(gxiodev_h) $(stream_h)\

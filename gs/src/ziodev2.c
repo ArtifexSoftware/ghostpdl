@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1994, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -35,7 +35,7 @@
 /* This represents the null output file. */
 private iodev_proc_open_device(null_open);
 const gx_io_device gs_iodev_null = {
-    "%null%", "FileSystem",
+    "%null%", "Special",
     {
 	iodev_no_init, null_open, iodev_no_open_file,
 	iodev_os_fopen, iodev_os_fclose,
@@ -56,20 +56,6 @@ null_open(gx_io_device * iodev, const char *access, stream ** ps,
 			    access, 256 /* arbitrary */ , ps,
 			    iodev->procs.fopen, mem);
 }
-
-/* ------ %ram% ------ */
-
-/* This is an IODevice with no interesting parameters for the moment. */
-const gx_io_device gs_iodev_ram = {
-    "%ram%", "Special",
-    {
-	iodev_no_init, iodev_no_open_device, iodev_no_open_file,
-	iodev_no_fopen, iodev_no_fclose,
-	iodev_no_delete_file, iodev_no_rename_file, iodev_no_file_status,
-	iodev_no_enumerate_files, NULL, NULL,
-	iodev_no_get_params, iodev_no_put_params
-    }
-};
 
 /* ------ Operators ------ */
 
