@@ -30,7 +30,7 @@
  * Many environments, including the MS-DOS compilers, don't define
  * the st_blocks member of a stat structure.
  */
-#if defined(__SVR3) || defined(__EMX__) || defined(__DVX__) || defined(OSK) || defined(__MSDOS__) || defined(__QNX__) || defined(VMS) || defined(__WIN32__) || defined(__IBMC__) || defined(__BEOS__) || defined(Plan9)
+#if defined(__SVR3) || defined(__EMX__) || defined(__DVX__) || defined(OSK) || defined(__MSDOS__) || defined(__QNX__) || defined(VMS) || defined(__WIN32__) || defined(__IBMC__) || defined(__BEOS__) || defined(Plan9) || defined(__WATCOMC__)
 #  define stat_blocks(psbuf) (((psbuf)->st_size + 1023) >> 10)
 #else
 #  define stat_blocks(psbuf) ((psbuf)->st_blocks)
