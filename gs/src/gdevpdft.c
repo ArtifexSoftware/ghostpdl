@@ -585,20 +585,20 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
     case ft_TrueType:
     case ft_CID_TrueType:
 	/*
-	 * ****** HACK ALERT ******
-	 *
 	 * The code above that calls pdf_find_char_range does so the first
-	 * time the font is used.  This causes an incorrect (too small)
-	 * Widths array to be written if the font is downloaded
-	 * incrementally.  In practice, this appears only to be a problem
-	 * for TrueType fonts written by certain Windows drivers
-	 * (including AdobePS5 for Windows NT).  Fortunately, it is easy
-	 * to determine whether the font is an incremental one: this is
-	 * the case iff the font doesn't have glyf and loca entries.
-	 * In this case, we punt and treat the font as bitmaps.
+	 * time the font is used.  If the font is downloaded incrementally,
+	 * we formerly believed that this caused pdf_find_char_range to
+	 * return a range that was too small.  However, it is only the
+	 * GlyphDirectory, not the CharStrings, that can be filled
+	 * incrementally, and pdf_find_char_range only looks at the Encoding
+	 * and the CharStrings.  Therefore, we believe (and have verified
+	 * using the files available to us) that the right thing will happen
+	 * even in the incremental case.
+	 *
+	 * For the record, we note that the font is an incremental one
+	 * iff the font doesn't have glyf and loca entries, i.e., if
+	 * ((const gs_font_type42 *)font)->data.glyf == 0.
 	 */
-	if (((const gs_font_type42 *)font)->data.glyf == 0)
-	    return_error(gs_error_rangecheck); /* incremental */
 	/* The TrueType FontMatrix is 1 unit per em, which is what we want. */
 	gs_make_identity(&orig_matrix);
 	break;
