@@ -102,8 +102,6 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
     FT_Face  face;  /* face handle */
     FT_Error error;
     const font_resident_t *residentp;
-    pl_font_t *font_found[pl_resident_font_table_count];
-
     /* get rid of this should be keyed by pjl font number */
     byte key[3];
     bool one_font_found = false;
@@ -116,8 +114,6 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
     if (pl_dict_length(pfontdict, true) > 0 ) {
 	return true;
     }
-
-    memset(font_found, 0, sizeof(font_found));
 
     error = FT_Init_FreeType( &library );
     if ( error ) {
@@ -214,10 +210,6 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
 		if ( !strlen(residentp->full_font_name) )
 		    continue;
 
-		/* this font is already loaded, must be a duplicate */
-		if ( font_found[residentp - resident_table] )
-		    continue;
-
 		if ( pl_load_ft_font(face, pdir, mem, residentp - resident_table, &plfont) < 0 )  {
 		    /* vm error but we continue anyway */
 		    dprintf1("Failed loading font %s\n", tmp_path_copy);
@@ -250,15 +242,9 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
 		    continue;
 		}
 		/* mark the font as found */
-		font_found[residentp - resident_table] = plfont;
                 one_font_found = true;
 	    } /* next file */
 	} /* next directory */
-	/* error message if font is missing. */
-	for ( residentp = resident_table; strlen(residentp->full_font_name); ++residentp )
-	    if ( !font_found[residentp - resident_table] ) {
-		dprintf1( "Could not load resident font: %s\n", residentp->full_font_name );
-	    }
     }
     if ( one_font_found )
         return true;

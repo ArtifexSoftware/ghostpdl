@@ -21,8 +21,3 @@ typedef struct font_resident {
 } font_resident_t;
 
 extern const font_resident_t resident_table[];
-
-/* number of elements in the resident font table */
-enum {
-    pl_resident_font_table_count = 54
-};

@@ -157,8 +157,6 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
                        int storage, bool use_unicode_names_for_keys)
 {	
     const font_resident_t *residentp;
-    pl_font_t *font_found[pl_resident_font_table_count];
-
     /* get rid of this should be keyed by pjl font number */
     byte key[3];
     bool one_font_found = false;
@@ -172,7 +170,6 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
 	return true;
     }
 
-    memset(font_found, 0, sizeof(font_found));
     /* Enumerate through the files in the path */
     {
 	/* max pathname of 1024 including pattern */
@@ -251,10 +248,6 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
 		if ( !strlen(residentp->full_font_name) )
 		    continue;
 
-		/* this font is already loaded, must be a duplicate */
-		if ( font_found[residentp - resident_table] )
-		    continue;
-
 		/* load the font file into memory.  NOTE: this closes the file - argh... */
 		if ( pl_load_tt_font(in, pdir, mem,
 				     gs_next_id(), &plfont,
@@ -303,15 +296,9 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
 		    continue;
 		}
 		/* mark the font as found */
-		font_found[residentp - resident_table] = plfont;
                 one_font_found = true;
 	    } /* next file */
 	} /* next directory */
-	/* we need to have *all* of the resident entries accounted for */
-	for ( residentp = resident_table; strlen(residentp->full_font_name); ++residentp )
-	    if ( !font_found[residentp - resident_table] ) {
-		dprintf1( "Could not load resident font: %s\n", residentp->full_font_name );
-	    }
     }
     if ( one_font_found )
         return true;

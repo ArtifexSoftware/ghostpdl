@@ -94,8 +94,6 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
     byte                key[3];
     UB8                 pthnm[1024];
     UB8                 ufst_root_dir[1024];
-
-    pl_font_t *font_found[pl_resident_font_table_count];
     /* don't load fonts more than once */
     if (pl_dict_length(pfontdict, true) > 0)
 	return true;
@@ -187,12 +185,12 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
                     continue;
                 }
 
-                for ( j = 0; 
-                      j < pl_resident_font_table_count &&
+                for ( j = 0;
+                      strlen(resident_table[j].full_font_name) &&
                       strcmp(resident_table[j].full_font_name, pname) != 0;
                       j++ )
                     ;
-                if (j < pl_resident_font_table_count) {
+                if ( strlen(resident_table[j].full_font_name) ) {
                     pl_font_t * plfont;
                     int         err_cd = pl_load_mt_font( fcHndlAry[k],
                                                           pdir,
@@ -252,8 +250,6 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
 			    key[0] = key[1] = 0;
 			    pl_dict_put( pfontdict, key, sizeof(key), plfont );
 			}
-			/* mark the font as found */
-			font_found[j] = plfont;
                     }
                 } else
                     dprintf1("No resident table entry for font %s\n", pname);

@@ -18,7 +18,7 @@
 #include "plfont.h"
 #include "plftable.h"
 #ifndef AGFA_FONT_TABLE
-const font_resident_t resident_table[pl_resident_font_table_count] = {
+const font_resident_t resident_table[] = {
 #define C(b) ((byte)((b) ^ 0xff))
 #define cc_alphabetic\
 	  { C(0), C(0), C(0), C(0), C(0xff), C(0xc0), C(0), C(plgv_Unicode) }
@@ -210,7 +210,7 @@ const font_resident_t resident_table[pl_resident_font_table_count] = {
 };
 
 #else /* agfa table */
-const font_resident_t resident_table[pl_resident_font_table_count] = {
+const font_resident_t resident_table[] = {
     /*
      * Symbol sets, typeface family values, and character complements
      * are faked; they do not (necessarily) match the actual fonts.  */
