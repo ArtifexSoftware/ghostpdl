@@ -57,12 +57,17 @@ colored_halftone_colors_used(gx_device_clist_writer *cldev,
      */
     if (dev_proc(cldev, map_cmyk_color) != cmyk_1bit_map_cmyk_color)
 	return ((gx_color_index)1 << cldev->color_info.depth) - 1;
+     /*
+      * Note that c_base[0], and the low-order bit of plane_mask,
+      * correspond to cyan: this requires reversing the bit order of
+      * the plane mask.
+      */
     return
 	((pdcolor->colors.colored.c_base[0] << 3) |
 	 (pdcolor->colors.colored.c_base[1] << 2) |
 	 (pdcolor->colors.colored.c_base[2] << 1) |
 	 (pdcolor->colors.colored.c_base[3]) |
-	 pdcolor->colors.colored.plane_mask);
+	 (byte_reverse_bits[pdcolor->colors.colored.plane_mask] >> 4));
 }
 
 /* Write out the color for filling, stroking, or masking. */

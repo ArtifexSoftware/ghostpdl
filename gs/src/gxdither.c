@@ -526,7 +526,7 @@ gx_reduce_colored_dither(gx_device_color *pdevc, gx_device *dev, bool cmyk)
     b[2] = pdevc->colors.colored.c_base[2];
     v[2] = fractional_color(b[2], max_color);
     if (cmyk) {
-	b[3] = pdevc->colors.colored.c_base[0];
+	b[3] = pdevc->colors.colored.c_base[3];
 	v[3] = fractional_color(b[3], max_color);
 	c0 = dev_proc(dev, map_cmyk_color)(dev, v[0], v[1], v[2], v[3]);
     } else
