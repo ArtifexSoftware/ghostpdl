@@ -35,8 +35,6 @@ private int append_outline(P4(uint glyph_index, const gs_matrix_fixed * pmat,
 			      gx_path * ppath, gs_font_type42 * pfont));
 private int default_get_outline(P3(gs_font_type42 *pfont, uint glyph_index,
 				   gs_const_string *pgstr));
-private int default_get_metrics(P4(gs_font_type42 *pfont, uint glyph_index,
-				   int wmode, float sbw[4]));
 
 /* Set up a pointer to a substring of the font data. */
 /* Free variables: pfont, string_proc. */
