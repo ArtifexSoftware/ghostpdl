@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/* $Id: gdevpdft.h */
+/* $Id$ */
 /* Text definitions and state for pdfwrite. */
 
 #ifndef gdevpdft_INCLUDED
