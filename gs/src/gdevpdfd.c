@@ -324,12 +324,12 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
      */
     code = pdf_open_contents(pdev, PDF_IN_STREAM);
     if (code < 0)
-	return 0;
+	return code;
     /* Use Q to unwind the old clipping path. */
     if (pdev->vgstack_depth > pdev->vgstack_bottom) {
 	code = pdf_restore_viewer_state(pdev, s);
 	if (code < 0)
-	    return 0;
+	    return code;
     }
     if (new_id != pdev->no_clip_path_id) {
 	gdev_vector_dopath_state_t state;
@@ -339,7 +339,7 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
 	/* Use q to allow the new clipping path to unwind.  */
 	code = pdf_save_viewer_state(pdev, s);
 	if (code < 0)
-	    return 0;
+	    return code;
 	gdev_vector_dopath_init(&state, (gx_device_vector *)pdev,
 				gx_path_type_fill, NULL);
 	if (pcpath->path_list == NULL) {

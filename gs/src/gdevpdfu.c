@@ -389,7 +389,7 @@ text_to_stream(gx_device_pdf * pdev)
     stream_puts(pdev->strm, "ET\n");
     code = pdf_restore_viewer_state(pdev, pdev->strm);
     if (code < 0)
-	return 0;
+	return code;
     pdf_reset_text(pdev);	/* because of Q */
     return PDF_IN_STREAM;
 }
@@ -994,7 +994,15 @@ pdf_open_page(gx_device_pdf * pdev, pdf_context_t context)
 int
 pdf_unclip(gx_device_pdf * pdev)
 {
-    if (pdev->sbstack_depth == 0) {
+#if PS2WRITE
+    const int bottom = (pdev->OrderResources ? 1 : 0);
+    /* When OrderResources != 0, one sbstack element 
+       appears from the page contents stream. */
+#else
+    const int bottom = 0;
+#endif
+
+    if (pdev->sbstack_depth == bottom) {
 	int code = pdf_open_page(pdev, PDF_IN_STREAM);
 
 	if (code < 0)
