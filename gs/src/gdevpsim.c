@@ -134,11 +134,11 @@ private const char *const psmono_setup[] = {
     "  2 index read pop dup .ImageProcs exch get exec",
     "} bind def",
 		/* Read and print an entire compressed image. */
-    "/.ImageRead {"	/* <xres> <yres> <width> <height> <bpc> .ImageRead - */
+    "/.ImageRead {"	/* <width> <height> <bpc> .ImageRead - */
     "  gsave [",
-	/* Stack: xres yres width height bpc -mark- */
-    "    6 -2 roll exch 72 div 0 0 4 -1 roll -72 div 0 7 index",
-	/* Stack: width height bpc -mark- xres/72 0 0 -yres/72 0 height */
+      /* Stack: width height bpc -mark- */
+    "    1 0 0 -1 0 7 index",
+      /* Stack: width height bpc -mark- 1 0 0 -1 0 height */
     "  ] { .ImageItem }",
 	/* Stack: width height bpc <matrix> <proc> */
     "  4 index 3 index mul 7 add 8 idiv string currentfile 0 ()",
@@ -180,8 +180,7 @@ psmono_print_page(gx_device_printer * pdev, FILE * prn_stream)
 
     /* Write the .ImageRead command. */
     fprintf(prn_stream,
-	    "%g %g %d %d %d .ImageRead\n",
-	    pdev->HWResolution[0], pdev->HWResolution[1],
+	    "%d %d %d .ImageRead\n",
 	    pdev->width, pdev->height, pdev->color_info.depth);
 
     /* Compress each scan line in turn. */
