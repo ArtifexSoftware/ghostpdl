@@ -563,7 +563,17 @@ pl_tt_get_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
 	}
     }
     /* else call default implementation for tt class 0, incomplete font */
-    return gs_type42_default_get_metrics(pfont, glyph_index, wmode, sbw);
+
+    /* first check for a vertical substitute if writing mode is
+      vertical.  We unpleasantly replace the glyph_index parameter
+      passed to procedure to be consist with the pl_tt_build_char()
+      debacle */
+    if ( pfont->WMode & 1 ) {
+        gs_glyph vertical = pl_font_vertical_glyph(glyph_index, plfont);
+        if ( vertical != gs_no_glyph )
+            glyph_index = vertical;
+    }
+    return gs_type42_default_get_metrics(pfont, glyph_index, 0, sbw);
 }
 
 
@@ -942,20 +952,6 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 	/* undefined */
 	if ( glyph == gs_no_glyph )
 	    return 0;
-	/* Check for a vertical substitute. */
-	if ( pfont->WMode & 1 )
-	  { pl_font_t *plfont = pfont->client_data;
-	    gs_glyph vertical = pl_font_vertical_glyph(glyph, plfont);
-
-	    if ( vertical != gs_no_glyph )
-	      glyph = vertical;
-	  }
-
-	/* Establish a current point. */
-
-	if ( (code = gs_moveto(pgs, 0.0, 0.0)) < 0 )
-	  return code;
-
 	/* Get the metrics and set the cache device. */
 	code = gs_type42_get_metrics(pfont42, glyph, sbw);
 	if ( code < 0 )
@@ -976,6 +972,21 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 		w2[4] += expand, w2[5] += expand;
 	    }
 	}
+
+	/* Check for a vertical substitute. */
+	if ( pfont->WMode & 1 )
+	  { pl_font_t *plfont = pfont->client_data;
+	    gs_glyph vertical = pl_font_vertical_glyph(glyph, plfont);
+
+	    if ( vertical != gs_no_glyph )
+	      glyph = vertical;
+	  }
+
+	/* Establish a current point. */
+
+	if ( (code = gs_moveto(pgs, 0.0, 0.0)) < 0 )
+	  return code;
+
 
 	/*
 	 * If we want pseudo-bold, render untransformed to an intermediate
