@@ -83,8 +83,7 @@ FPU_TYPE=1
 SYNC=posync
 
 FEATURE_DEVS=$(GLD)dps2lib.dev $(GLD)psl2cs.dev $(GLD)cielib.dev\
- $(GLD)imasklib.dev $(GLD)patlib.dev $(GLD)htxlib.dev $(GLD)roplib.dev\
- $(GLD)devcmap.dev
+ $(GLD)imasklib.dev $(GLD)patlib.dev $(GLD)htxlib.dev $(GLD)roplib.dev
 COMPILE_INITS=0
 BAND_LIST_STORAGE=file
 BAND_LIST_COMPRESSOR=zlib

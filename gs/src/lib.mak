@@ -866,18 +866,6 @@ $(GLOBJ)gdevhit.$(OBJ) : $(GLSRC)gdevhit.c $(std_h)\
   $(gserror_h) $(gserrors_h) $(gsmemory_h) $(gstypes_h) $(gxdevice_h)
 	$(GLCC) $(GLO_)gdevhit.$(OBJ) $(C_) $(GLSRC)gdevhit.c
 
-# Define a device that implements the PCL 5 special color mapping
-# algorithms.  This is not included in any PostScript or PDF system.
-
-$(GLD)devcmap.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLOBJ)gdevcmap.$(OBJ)
-	$(SETMOD) $(GLD)devcmap $(GLOBJ)gdevcmap.$(OBJ)
-
-gdevcmap_h=$(GLSRC)gdevcmap.h
-
-$(GLOBJ)gdevcmap.$(OBJ) : $(GLSRC)gdevcmap.c $(GXERR)\
- $(gxdcconv_h) $(gxdevice_h) $(gxfrac_h) $(gxlum_h) $(gdevcmap_h)
-	$(GLCC) $(GLO_)gdevcmap.$(OBJ) $(C_) $(GLSRC)gdevcmap.c
-
 # A device that stores its data using run-length encoding.
 
 $(GLOBJ)gdevmrun.$(OBJ) : $(GLSRC)gdevmrun.c $(GXERR) $(memory__h)\
@@ -2371,5 +2359,5 @@ $(GLOBJ)gslib.$(OBJ) : $(GLSRC)gslib.c $(AK)\
  $(gshtx_h) $(gsiparm3_h) $(gsiparm4_h) $(gslib_h) $(gsparam_h)\
  $(gspaint_h) $(gspath_h) $(gspath2_h) $(gsstruct_h) $(gsutil_h)\
  $(gxalloc_h) $(gxdcolor_h) $(gxdevice_h) $(gxht_h)\
- $(gdevbbox_h) $(gdevcmap_h)
+ $(gdevbbox_h) 
 	$(GLCC) $(GLO_)gslib.$(OBJ) $(C_) $(GLSRC)gslib.c
