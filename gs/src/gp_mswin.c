@@ -33,6 +33,7 @@
 #include "stdio_.h"
 #include "string_.h"
 #include "memory_.h"
+#include "pipe_.h"
 #include <stdlib.h>
 #include <stdarg.h>
 #include "ctype_.h"
@@ -112,7 +113,9 @@ gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
 	pfile = gp_open_scratch_file(gp_scratch_file_name_prefix,
 				     win_prntmp, "wb");
 	return pfile;
-    } else
+    } else if (fname[0] == '|') 	/* pipe */
+	return popen(fname + 1, (binary_mode ? "wb" : "w"));
+    else
 	return fopen(fname, (binary_mode ? "wb" : "w"));
 }
 
@@ -552,6 +555,116 @@ gp_printfile_gs16spl(const char *filename, const char *port)
 }
 
 
+/******************************************************************/
+/* MS Windows has popen and pclose in stdio.h, but under different names.
+ * Unfortunately MSVC5 and 6 have a broken implementation of _popen, 
+ * so we use own.  Our implementation only supports mode "wb".
+ */
+FILE *mswin_popen(const char *cmd, const char *mode)
+{
+    SECURITY_ATTRIBUTES saAttr;
+    STARTUPINFO siStartInfo;
+    PROCESS_INFORMATION piProcInfo;
+    HANDLE hPipeTemp = INVALID_HANDLE_VALUE;
+    HANDLE hChildStdinRd = INVALID_HANDLE_VALUE;
+    HANDLE hChildStdinWr = INVALID_HANDLE_VALUE;
+    HANDLE hChildStdoutWr = INVALID_HANDLE_VALUE;
+    HANDLE hChildStderrWr = INVALID_HANDLE_VALUE;
+    HANDLE hProcess = GetCurrentProcess();
+    int handle = 0;
+    char *command = NULL;
+    FILE *pipe = NULL;
+
+    if (strcmp(mode, "wb") != 0)
+	return NULL;
+
+    /* Set the bInheritHandle flag so pipe handles are inherited. */
+    saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
+    saAttr.bInheritHandle = TRUE;
+    saAttr.lpSecurityDescriptor = NULL;
+
+    /* Create anonymous inheritable pipes for STDIN for child. 
+     * First create a noninheritable duplicate handle of our end of 
+     * the pipe, then close the inheritable handle.
+     */
+    if (handle == 0)
+        if (!CreatePipe(&hChildStdinRd, &hPipeTemp, &saAttr, 0))
+	    handle = -1;
+    if (handle == 0) {
+	if (!DuplicateHandle(hProcess, hPipeTemp, 
+	    hProcess, &hChildStdinWr, 0, FALSE /* not inherited */,
+	    DUPLICATE_SAME_ACCESS))
+	    handle = -1;
+        CloseHandle(hPipeTemp);
+    }
+    /* Create inheritable duplicate handles for our stdout/err */
+    if (handle == 0)
+	if (!DuplicateHandle(hProcess, GetStdHandle(STD_OUTPUT_HANDLE),
+	    hProcess, &hChildStdoutWr, 0, TRUE /* inherited */,
+	    DUPLICATE_SAME_ACCESS))
+	    handle = -1;
+    if (handle == 0)
+        if (!DuplicateHandle(hProcess, GetStdHandle(STD_ERROR_HANDLE),
+            hProcess, &hChildStderrWr, 0, TRUE /* inherited */, 
+	    DUPLICATE_SAME_ACCESS))
+	    handle = -1;
+
+    /* Set up members of STARTUPINFO structure. */
+    memset(&siStartInfo, 0, sizeof(STARTUPINFO));
+    siStartInfo.cb = sizeof(STARTUPINFO);
+    siStartInfo.dwFlags = STARTF_USESTDHANDLES;
+    siStartInfo.hStdInput = hChildStdinRd;
+    siStartInfo.hStdOutput = hChildStdoutWr;
+    siStartInfo.hStdError = hChildStderrWr;
+
+    if (handle == 0) {
+	command = (char *)malloc(strlen(cmd)+1);
+	if (command)
+	    strcpy(command, cmd);
+	else
+	    handle = -1;
+    }
+
+    if (handle == 0)
+	if (!CreateProcess(NULL,
+	    command,  	   /* command line                       */
+	    NULL,          /* process security attributes        */
+	    NULL,          /* primary thread security attributes */
+	    TRUE,          /* handles are inherited              */
+	    0,             /* creation flags                     */
+	    NULL,          /* environment                        */
+	    NULL,          /* use parent's current directory     */
+	    &siStartInfo,  /* STARTUPINFO pointer                */
+	    &piProcInfo))  /* receives PROCESS_INFORMATION  */ 
+	{
+	    handle = -1;
+	}
+	else {
+	    CloseHandle(piProcInfo.hProcess);
+	    CloseHandle(piProcInfo.hThread);
+	    handle = _open_osfhandle((long)hChildStdinWr, 0);
+	}
+
+    if (hChildStdinRd != INVALID_HANDLE_VALUE)
+	CloseHandle(hChildStdinRd);	/* close our copy */
+    if (hChildStdoutWr != INVALID_HANDLE_VALUE)
+	CloseHandle(hChildStdoutWr);	/* close our copy */
+    if (hChildStderrWr != INVALID_HANDLE_VALUE)
+	CloseHandle(hChildStderrWr);	/* close our copy */
+    if (command)
+	free(command);
+
+    if (handle < 0) {
+	if (hChildStdinWr != INVALID_HANDLE_VALUE)
+	    CloseHandle(hChildStdinWr);
+    }
+    else {
+	pipe = _fdopen(handle, "wb");
+	if (pipe == NULL)
+	    _close(handle);
+    }
+    return pipe;
+}
 
 
 /* ------ File naming and accessing ------ */

@@ -25,8 +25,12 @@
 #ifdef __WIN32__
 /*
  * MS Windows has popen and pclose in stdio.h, but under different names.
+ * Unfortunately MSVC5 and 6 have a broken implementation of _popen, 
+ * so we use own.  Our implementation only supports mode "wb".
  */
-#  define popen(cmd, mode) _popen(cmd, mode)
+extern FILE *mswin_popen(const char *cmd, const char *mode);
+#  define popen(cmd, mode) mswin_popen(cmd, mode)
+/* #  define popen(cmd, mode) _popen(cmd, mode) */
 #  define pclose(file) _pclose(file)
 #else  /* !__WIN32__ */
 /*
