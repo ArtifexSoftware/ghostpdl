@@ -121,10 +121,10 @@ DEBUG=0
 # and also enables stack checking.  Code is substantially slower and larger.
 
 # NOTE: The MSVC++ 5.0 compiler produces incorrect output code with TDEBUG=0.
-# Leave TDEBUG set to 1.
-
+# Also MSVC 6 must be service pack >= 3 to prevent INTERNAL COMPILER ERROR
+# Default to 0 anyway since the execution times are so much better.
 !ifndef TDEBUG
-TDEBUG=1
+TDEBUG=0
 !endif
 
 # Setting NOPRIVATE=1 makes private (static) procedures and variables public,
