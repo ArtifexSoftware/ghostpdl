@@ -22,6 +22,10 @@
 #include "gxdcconv.h"
 #include "gdevpsds.h"
 #include "gxbitmap.h"
+#include "gxcspace.h"
+#include "gsdcolor.h"
+#include "gscspace.h"
+#include "gxdevcli.h"
 
 /* ---------------- Convert between 1/2/4/12 and 8 bits ---------------- */
 
@@ -1021,11 +1025,15 @@ s_image_colors_init(stream_state * st)
     ss->input_component_index = 0;
     ss->input_bits_buffer = 0;
     ss->input_bits_buffered = 0;
+    ss->convert_color = 0;
+    ss->pcs = 0;
+    ss->pdev = 0;
+    ss->pis = 0;
     return 0;
 }
 
 private int 
-s_image_colors_convert_color(stream_image_colors_state *ss)
+s_image_colors_convert_color_to_mask(stream_image_colors_state *ss)
 {
     int i, ii;
 
@@ -1037,11 +1045,44 @@ s_image_colors_convert_color(stream_image_colors_state *ss)
     return 0;
 }
 
+private int
+s_image_colors_convert_to_device_color(stream_image_colors_state * ss)
+{
+    gs_client_color cc;
+    gx_device_color dc;
+    int i, code;
+    double v0 = (1 << ss->bits_per_sample) - 1;
+    double v1 = (1 << ss->output_bits_per_sample) - 1;
+
+    for (i = 0; i < ss->depth; i++)
+	cc.paint.values[i] = ss->input_color[i] * 
+		(ss->Decode[i * 2 + 1] - ss->Decode[i * 2]) / v0 + ss->Decode[i * 2];
+
+    code = ss->pcs->type->remap_color(&cc, ss->pcs, &dc, ss->pis,
+			      ss->pdev, gs_color_select_texture);
+    if (code < 0)
+	return code;
+    for (i = 0; i < ss->output_depth; i++) {
+	uint m = (1 << ss->pdev->color_info.comp_bits[i]) - 1;
+	uint w = (dc.colors.pure >> ss->pdev->color_info.comp_shift[i]) & m;
+
+	ss->output_color[i] = (uint)(v1 * w / m + 0.5);
+    }
+    return 0;
+}
+
+/* Set masc colors dimensions. */
+void
+s_image_colors_set_mask_colors(stream_image_colors_state * ss, uint *MaskColor)
+{
+    ss->convert_color = s_image_colors_convert_color_to_mask;
+    memcpy(ss->MaskColor, MaskColor, ss->depth * sizeof(MaskColor[0]) * 2);
+}
+
 /* Set image dimensions. */
 void
 s_image_colors_set_dimensions(stream_image_colors_state * ss, 
-			       int width, int height, int depth, int bits_per_sample, 
-			       uint *MaskColor)
+			       int width, int height, int depth, int bits_per_sample)
 {
     ss->width = width;
     ss->height = height;
@@ -1050,9 +1091,23 @@ s_image_colors_set_dimensions(stream_image_colors_state * ss,
     ss->row_bits = bits_per_sample * depth * width;
     ss->raster = bitmap_raster(ss->row_bits);
     ss->row_alignment_bytes = 0; /* (ss->raster * 8 - ss->row_bits) / 8) doesn't work. */
-    ss->convert_color = s_image_colors_convert_color;
-    memcpy(ss->MaskColor, MaskColor, ss->depth * sizeof(MaskColor[0]) * 2);
 }
+
+void
+s_image_colors_set_color_space(stream_image_colors_state * ss, gx_device *pdev,
+			       const gs_color_space *pcs, const gs_imager_state *pis,
+			       float *Decode)
+{
+    ss->output_depth = pdev->color_info.num_components;
+    ss->output_component_index = ss->output_depth;
+    ss->output_bits_per_sample = pdev->color_info.comp_bits[0]; /* Same precision for all components. */
+    ss->convert_color = s_image_colors_convert_to_device_color;
+    ss->pdev = pdev;
+    ss->pcs = pcs;
+    ss->pis = pis;
+    memcpy(ss->Decode, Decode, ss->depth * sizeof(Decode[0]) * 2);
+}
+
 
 /* Process a buffer. */
 private int

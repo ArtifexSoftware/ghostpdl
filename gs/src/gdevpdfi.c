@@ -276,7 +276,6 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     const gs_range_t *pranges = 0;
     const pdf_color_space_names_t *names;
     bool convert_to_process_colors = false;
-    gs_color_space_index output_cspace_index = gs_color_space_index_DeviceGray;
 
     /*
      * Pop the image name from the NI stack.  We must do this, to keep the
@@ -517,8 +516,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	    if (!PS2WRITE || !pdev->OrderResources)
 		goto fail;
 	    convert_to_process_colors = true;
-	    output_cspace_index = gs_color_space_index_DeviceGray;/*fixme : pdev->pcm_color_info_index*/
-	    switch (output_cspace_index) {
+	    switch (pdev->pcm_color_info_index) {
 		case gs_color_space_index_DeviceGray: sname = names->DeviceGray; break;
 		case gs_color_space_index_DeviceRGB:  sname = names->DeviceRGB;  break;
 		case gs_color_space_index_DeviceCMYK: sname = names->DeviceCMYK; break;
@@ -551,7 +549,8 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	goto fail;
     if (convert_to_process_colors) {
 	code = psdf_setup_image_colors_filter(&pie->writer.binary[0], 
-		    (gx_device_psdf *)pdev, &image[0].pixel, output_cspace_index);
+		    (gx_device_psdf *)pdev, &image[0].pixel, pis,
+		    pdev->pcm_color_info_index);
 	if (code < 0)
   	    goto fail;
     }
@@ -571,7 +570,8 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	    goto fail;
 	else if (convert_to_process_colors) {
 	    code = psdf_setup_image_colors_filter(&pie->writer.binary[1], 
-		    (gx_device_psdf *)pdev, &image[1].pixel, output_cspace_index);
+		    (gx_device_psdf *)pdev, &image[1].pixel, pis,
+		    pdev->pcm_color_info_index);
 	    if (code < 0)
   		goto fail;
 	}

@@ -741,7 +741,8 @@ $(GLOBJ)gdevpsdp.$(OBJ) : $(GLSRC)gdevpsdp.c $(GDEVH)\
 	$(GLJCC) $(GLO_)gdevpsdp.$(OBJ) $(C_) $(GLSRC)gdevpsdp.c
 
 $(GLOBJ)gdevpsds.$(OBJ) : $(GLSRC)gdevpsds.c $(GX) $(memory__h)\
- $(gserrors_h) $(gxdcconv_h) $(gdevpsds_h) $(gxbitmap_h)
+ $(gserrors_h) $(gxdcconv_h) $(gdevpsds_h) $(gxbitmap_h)\
+ $(gxcspace_h) $(gsdcolor_h) $(gscspace_h) $(gxdevcli_h)
 	$(GLCC) $(GLO_)gdevpsds.$(OBJ) $(C_) $(GLSRC)gdevpsds.c
 
 $(GLOBJ)gdevpsdu.$(OBJ) : $(GLSRC)gdevpsdu.c $(GXERR)\

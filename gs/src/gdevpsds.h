@@ -178,6 +178,11 @@ uint s_compr_chooser__get_choice(stream_compr_chooser_state *st, bool force);
 
 /* ---------------- Am image color conversion filter ---------------- */
 
+#ifndef gx_device_DEFINED
+#  define gx_device_DEFINED
+typedef struct gx_device_s gx_device;
+#endif
+
 typedef struct stream_image_colors_state_s stream_image_colors_state;
 
 struct stream_image_colors_state_s {
@@ -199,19 +204,28 @@ struct stream_image_colors_state_s {
     uint input_color[GS_IMAGE_MAX_COLOR_COMPONENTS];
     uint output_color[GS_IMAGE_MAX_COLOR_COMPONENTS];
     uint MaskColor[GS_IMAGE_MAX_COLOR_COMPONENTS * 2];
+    float Decode[GS_IMAGE_MAX_COLOR_COMPONENTS * 2];
+    const gs_color_space *pcs;
+    gx_device *pdev;
+    const gs_imager_state *pis;
     int (*convert_color)(stream_image_colors_state *);
 };
 
 #define private_st_image_colors_state()	/* in gdevpsds.c */\
-  gs_private_st_simple(st_stream_image_colors_state, stream_image_colors_state,\
-    "stream_image_colors_state")
+  gs_private_st_ptrs3(st_stream_image_colors_state, stream_image_colors_state,\
+    "stream_image_colors_state", stream_image_colors_enum_ptrs,\
+    stream_image_colors_reloc_ptrs, pcs, pdev, pis)
 
 extern const stream_template s_image_colors_template;
 
-/* Set image dimensions. */
 void s_image_colors_set_dimensions(stream_image_colors_state * st, 
-			       int width, int height, int depth, int bits_per_sample, 
-			       uint *MaskColor);
+			       int width, int height, int depth, int bits_per_sample);
+
+void s_image_colors_set_mask_colors(stream_image_colors_state * ss, uint *MaskColor);
+
+void s_image_colors_set_color_space(stream_image_colors_state * ss, gx_device *pdev,
+			       const gs_color_space *pcs, const gs_imager_state *pis,
+			       float *Decode);
 
 extern const stream_template s__image_colors_template;
 
