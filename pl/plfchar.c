@@ -134,7 +134,7 @@ pl_bitmap_char_width(const pl_font_t *plfont, const void *pgs, uint char_code, g
 	const byte *params = cdata + 6;
 	pwidth->x = (plfont->header[13] ? /* variable pitch */
 		     s16(params + 8) * 0.25 :
-		     s16(params) /*lsb*/ + u16(params + 4) /*width*/);
+		     s16(params) /*lsb*/ + s16(params + 4) /*width*/);
     }
     return 0;
 }
@@ -404,7 +404,7 @@ pl_bitmap_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 	      bitmap_data = cdata + 16;
 	      delta_x = (plfont->header[13] ? /* variable pitch */
 			 s16(params + 8) * 0.25 :
-			 s16(params) /*lsb*/ + u16(params + 4) /*width*/);
+			 s16(params) /*lsb*/ + s16(params + 4) /*width*/);
 	      lsb = s16(params);
 	      ascent = s16(params + 2);
 	    }
@@ -1430,7 +1430,6 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 	  return code;
 
 	/* Get the metrics and set the cache device. */
-
 	code = gs_type42_get_metrics(pfont42, glyph, sbw);
 	if ( code < 0 )
 	  return code;

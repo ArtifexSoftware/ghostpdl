@@ -133,7 +133,7 @@ pl_bitmap_char_width(const pl_font_t *plfont, const void *pgs, uint char_code, g
 	const byte *params = cdata + 6;
 	pwidth->x = (plfont->header[13] ? /* variable pitch */
 		     s16(params + 8) * 0.25 :
-		     s16(params) /*lsb*/ + u16(params + 4) /*width*/);
+		     s16(params) /*lsb*/ + s16(params + 4) /*width*/);
     }
     return 0;
 }
@@ -403,7 +403,7 @@ pl_bitmap_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 	      bitmap_data = cdata + 16;
 	      delta_x = (plfont->header[13] ? /* variable pitch */
 			 s16(params + 8) * 0.25 :
-			 (short)(s16(params) /*lsb*/ + u16(params + 4)) /*width*/);
+			 (short)(s16(params) /*lsb*/ + s16(params + 4)) /*width*/);
 	      lsb = s16(params);
 	      ascent = s16(params + 2);
 	    }
@@ -515,7 +515,8 @@ extern int default_get_metrics(gs_font_type42 * pfont, uint glyph_index, int wmo
 /* get metrics with support for XL tt class 1 and 2 
  * pl overrides gstype42_default_get_metrics   
  */
-private int
+
+int
 pl_tt_get_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
 		    float sbw[4])
 {    
@@ -538,7 +539,7 @@ pl_tt_get_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
 #           define U16(p) (((uint)((p)[0]) << 8) + (p)[1])
 #           define S16(p) (int)((U16(p) ^ 0x8000) - 0x8000)
 
-	    lsb = U16(cdata + 4);
+	    lsb = S16(cdata + 4);
 	    width = S16(cdata + 6);
 
 #           undef U16
@@ -944,7 +945,6 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 	  return code;
 
 	/* Get the metrics and set the cache device. */
-
 	code = gs_type42_get_metrics(pfont42, glyph, sbw);
 	if ( code < 0 )
 	  return code;

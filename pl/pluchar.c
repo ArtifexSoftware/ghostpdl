@@ -912,7 +912,7 @@ pl_bitmap_char_width(const pl_font_t *plfont, const void *pgs, uint char_code, g
           floatp wx =
             (plfont->header[13] ? /* variable pitch */
              s16(params + 8) * 0.25 :
-             s16(params) /*lsb*/ + u16(params + 4) /*width*/);
+             s16(params) /*lsb*/ + s16(params + 4) /*width*/);
 
           return gs_distance_transform(wx, 0.0, &pl_identmtx, pwidth);
         }
@@ -1106,7 +1106,7 @@ pl_tt_get_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
 #           define U16(p) (((uint)((p)[0]) << 8) + (p)[1])
 #           define S16(p) (int)((U16(p) ^ 0x8000) - 0x8000)
 
-	    lsb = U16(cdata + 4);
+	    lsb = S16(cdata + 4);
 	    width = S16(cdata + 6);
 
 #           undef U16
