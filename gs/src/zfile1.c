@@ -99,20 +99,6 @@ zfile_name_parent(i_ctx_t *i_ctx_p)
 {   return push_string(i_ctx_p, gp_file_name_parent());
 }
 
-/* <string> .file_name_parents <integer> */
-private int
-zfile_name_parents(i_ctx_t *i_ctx_p)
-{
-    os_ptr op = osp;
-    uint plen;
-
-    check_read_type(*op, t_string);
-    plen = gp_file_name_parents((const char *)op->value.const_bytes,
-				   r_size(op));
-    make_int(op, plen);
-    return 0;
-}
-
 #endif
 
 const op_def zfile1_op_defs[] =
@@ -122,7 +108,6 @@ const op_def zfile1_op_defs[] =
     {"0.file_name_separator", zfile_name_separator},
     {"0.file_name_directory_separator", zfile_name_directory_separator},
     {"0.file_name_parent", zfile_name_parent},
-    {"0.file_name_parents", zfile_name_parents},
 #endif
     op_def_end(0)
 };
