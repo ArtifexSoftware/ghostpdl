@@ -478,10 +478,26 @@ end readonly def
 ] readonly def
 /setshowstate
  { WordSpacing 0 eq TextSpacing 0 eq and
-    { TextRenderingMode 0 eq
-       { { setfillstate show } }
-       { { false charpath textrenderingprocs TextRenderingMode get exec } }
-      ifelse
+    { TextRenderingMode 0 eq {
+        { setfillstate show }
+      } {
+        TextRenderingMode 3 eq {
+          { 	% Some PDF files execute 'tm' with a singular matrix,
+		% and then use this text rendering mode.
+		% The graphics library currently cannot handle text
+		% operations when the CTM is singular.
+		% Work around this here.
+	    matrix currentmatrix
+	    {1 0 0 1 0 0} setmatrix
+	    exch stringwidth
+	    3 -1 roll setmatrix
+	    rmoveto
+
+          }
+        } {
+          { false charpath textrenderingprocs TextRenderingMode get exec }
+        } ifelse
+      } ifelse
     }
     { TextRenderingMode 0 eq
        { WordSpacing 0 eq
