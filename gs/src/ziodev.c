@@ -26,6 +26,7 @@
 #include "gpcheck.h"
 #include "oper.h"
 #include "stream.h"
+#include "istream.h"
 #include "ialloc.h"
 #include "iscan.h"
 #include "ivmspace.h"
@@ -103,6 +104,10 @@ zgetiodevice(i_ctx_t *i_ctx_p)
  *  file is stdin
  * Output:
  *  file is a string based stream
+ * We store the line being read in a PostScript string.
+ * This limits the size to max_string_size (64k).
+ * This could be increased by storing the input line in something 
+ * other than a PostScript string.
  */
 int
 zfilelineedit(i_ctx_t *i_ctx_p)
@@ -134,6 +139,8 @@ zfilelineedit(i_ctx_t *i_ctx_p)
 
     /* extend string */
     initial_buf_size = statement ? STATEMENTEDIT_BUF_SIZE : LINEEDIT_BUF_SIZE;
+    if (initial_buf_size > max_string_size)
+	return_error(e_limitcheck);
     if (!buf->data || (buf->size < initial_buf_size)) {
 	count = 0;
 	buf->data = gs_alloc_string(imemory, initial_buf_size, 
@@ -145,13 +152,21 @@ zfilelineedit(i_ctx_t *i_ctx_p)
     }
 
 rd:
-    /*
-     * We have to stop 1 character short of the buffer size,
-     * because %statementedit must append an EOL.
-     */
-    buf->size--;
     code = zreadline_from(ins, buf, imemory, &count, &in_eol);
-    buf->size++;		/* restore correct size */
+    if (buf->size > max_string_size) {
+	/* zreadline_from reallocated the buffer larger than
+	 * is valid for a PostScript string.
+	 * Return an error, but first realloc the buffer
+	 * back to a legal size.
+	 */
+	byte *nbuf = gs_resize_string(imemory, buf->data, buf->size, 
+		max_string_size, "zfilelineedit(shrink buffer)");
+	if (nbuf == 0)
+	    return_error(e_VMerror);
+	op->value.bytes = buf->data = nbuf;
+	op->tas.rsize = buf->size = max_string_size;
+	return_error(e_limitcheck);
+    }
 
     op->value.bytes = buf->data; /* zreadline_from sometimes resizes the buffer. */
     op->tas.rsize = buf->size;
@@ -177,17 +192,16 @@ rd:
 	    break;
 	case 1:		/* filled buffer */
 	    {
-		uint nsize;
+		uint nsize = buf->size;
 		byte *nbuf;
 
-#if arch_ints_are_short
-		if (nsize == max_uint) {
+		if (nsize >= max_string_size) {
 		    code = gs_note_error(e_limitcheck);
 		    break;
-		} else if (nsize >= max_uint / 2)
-		    nsize = max_uint;
+		}
+		else if (nsize >= max_string_size / 2)
+		    nsize= max_string_size;
 		else
-#endif
 		    nsize = buf->size * 2;
 		nbuf = gs_resize_string(imemory, buf->data, buf->size, nsize,
 					"zfilelineedit(grow buffer)");
@@ -212,6 +226,25 @@ rd:
 	int code;
 
 	/* Add a terminating EOL. */
+	if (count + 1 > buf->size) {
+	    uint nsize;
+	    byte *nbuf;
+
+	    nsize = buf->size + 1;
+	    if (nsize > max_string_size) {
+		return_error(gs_note_error(e_limitcheck));
+	    }
+	    else {
+		nbuf = gs_resize_string(imemory, buf->data, buf->size, nsize,
+					"zfilelineedit(grow buffer)");
+		if (nbuf == 0) {
+		    code = gs_note_error(e_VMerror);
+		    return_error(code);
+		}
+		op->value.bytes = buf->data = nbuf;
+		op->tas.rsize = buf->size = nsize;
+	    }
+	}
 	buf->data[count++] = char_EOL;
 	sread_string(ts, buf->data, count);
 sc:

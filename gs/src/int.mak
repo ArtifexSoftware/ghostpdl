@@ -342,7 +342,7 @@ $(PSOBJ)ziodev.$(OBJ) : $(PSSRC)ziodev.c $(OP)\
  $(gp_h) $(gpcheck_h)\
  $(gxiodev_h)\
  $(files_h) $(ialloc_h) $(iscan_h) $(ivmspace_h)\
- $(scanchar_h) $(store_h) $(stream_h)
+ $(scanchar_h) $(store_h) $(stream_h) $(istream_h)
 	$(PSCC) $(PSO_)ziodev.$(OBJ) $(C_) $(PSSRC)ziodev.c
 
 $(PSOBJ)ziodevs$(STDIO_IMPLEMENTATION).$(OBJ) : $(PSSRC)ziodevs$(STDIO_IMPLEMENTATION).c $(OP) $(stdio__h)\

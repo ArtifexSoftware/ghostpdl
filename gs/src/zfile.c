@@ -178,7 +178,7 @@ zfile(i_ctx_t *i_ctx_p)
 	    make_stream_file(op - 3, ins, file_access);
 	    make_bool(op-2, statement);
 	    make_int(op-1, 0);
-	    make_string(op, 0, 0, NULL);
+	    make_string(op, icurrent_space, 0, NULL);
 	    return zfilelineedit(i_ctx_p);
 	}
 	pname.iodev->state = i_ctx_p;
