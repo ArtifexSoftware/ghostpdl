@@ -79,11 +79,17 @@ RMN_=call rm.bat
 
 # Define the arguments for genconf.
 
-CONFILES=-p FILE&s&ps
+CONFILES=-e ^ -p FILE^s^ps
 CONFLDTR=-ol
 
 # Define the names of the Watcom C files.
 # See the comments in watc.mak and watcwin.mak regarding WCVERSION.
+
+# Set some reasonable defaults
+COMP=$(%WATCOM)\bin\wcc386p
+LINK=$(%WATCOM)\bin\wlinkp
+STUB=$(%WATCOM)\binb\wstub.exe
+WRC=$(%WATCOM)\binb\rc.exe
 
 !ifeq WCVERSION 11.0
 # 11.0 is currently the same as 10.5.
@@ -91,33 +97,37 @@ COMP=$(%WATCOM)\binw\wcc386
 LINK=$(%WATCOM)\binw\wlink
 STUB=$(%WATCOM)\binw\wstub.exe
 WRC=$(%WATCOM)\binw\wrc.exe
-!else
+!endif	# version 11.0
+
 !ifeq WCVERSION 10.5
 COMP=$(%WATCOM)\binw\wcc386
 LINK=$(%WATCOM)\binw\wlink
 STUB=$(%WATCOM)\binw\wstub.exe
 WRC=$(%WATCOM)\binw\wrc.exe
-!else
+!endif	# version 10.5
+
 !ifeq WCVERSION 10.0
 COMP=$(%WATCOM)\binb\wcc386
 LINK=$(%WATCOM)\bin\wlink
 STUB=$(%WATCOM)\binb\wstub.exe
 WRC=$(%WATCOM)\binb\wrc.exe
-!else
+!endif	# version 10.0
+
 !ifeq WCVERSION 9.5
 COMP=$(%WATCOM)\bin\wcc386
 LINK=$(%WATCOM)\bin\wlinkp
 STUB=$(%WATCOM)\binb\wstub.exe
 WRC=$(%WATCOM)\binb\wrc.exe
-!else
-COMP=$(%WATCOM)\bin\wcc386p
-LINK=$(%WATCOM)\bin\wlinkp
-STUB=$(%WATCOM)\binb\wstub.exe
-WRC=$(%WATCOM)\binb\rc.exe
-!endif
-!endif
-!endif
-!endif
+!endif	# version 9.5
+
+# 	95/NT Watcom compiler versions
+!ifeq WCVERSION 10.695
+COMP=$(%WATCOM)\binnt\wcc386
+LINK=$(%WATCOM)\binnt\wlink
+STUB=$(%WATCOM)\binw\wstub.exe
+WRC=$(%WATCOM)\binnt\wrc.exe
+!endif	# 10.6 under Windows 95 or NT (32 bit hosted tools)
+
 INCDIR=$(%WATCOM)\h
 WBIND=$(%WATCOM)\binb\wbind.exe
 
