@@ -545,10 +545,14 @@ pcl_set_current_font_environment(pcl_state_t *pcs)
                    interpreter does not currently do this.
                    Consequently wrong selections are possible. */
 		pcs->default_symbol_set_value = pcs->font_selection[0].params.symbol_set =
-		    pjl_proc_map_pjl_sym_to_pcl_sym(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "symset"));
+		    pjl_proc_map_pjl_sym_to_pcl_sym(pcs->pjls,
+                         pjl_proc_get_envvar(pcs->pjls, "symset"));
 		pl_fp_set_pitch_per_inch(&pcs->font_selection[0].params,
-					 pjl_proc_vartof(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "pitch")));
-		pcs->font_selection[0].params.height_4ths = pjl_proc_vartof(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "ptsize")) * 4.0;
+		    pjl_proc_vartof(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "pitch")));
+		pcs->font_selection[0].params.height_4ths =
+                    pjl_proc_vartof(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "ptsize")) * 4.0;
+		pcs->font_selection[0].font = 0;
+		pcs->font_selection[0].selected_id = 0;
 		pcs->font_selection[1] = pcs->font_selection[0];
 		pcs->font_selected = primary;
 		pcs->font = 0;
