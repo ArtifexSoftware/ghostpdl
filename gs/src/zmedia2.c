@@ -55,6 +55,7 @@ zmatchmedia(i_ctx_t *i_ctx_p)
     os_ptr pkeys = op;		/* *const */
     int policy_default;
     float best_mismatch = (float)max_long;	/* adhoc */
+    float mepos_penalty;
     float mbest = best_mismatch;
     match_record_t match;
     ref no_priority;
@@ -120,8 +121,7 @@ zmatchmedia(i_ctx_t *i_ctx_p)
 	 ) {
 	if (r_has_type(&aelt.dict, t_dictionary) &&
 	    r_has_attr(dict_access_ref(&aelt.dict), a_read) &&
-	    r_has_type(&aelt.key, t_integer) &&
-	    (mepos < 0 || aelt.key.value.intval == mepos)
+	    r_has_type(&aelt.key, t_integer)
 	    ) {
 	    bool match_all;
 	    uint ki, pi;
@@ -179,6 +179,10 @@ zmatchmedia(i_ctx_t *i_ctx_p)
 		} else if (!obj_eq(imemory, prvalue, pmvalue))
 		    goto no;
 	    }
+
+	    mepos_penalty = (mepos < 0 || aelt.key.value.intval == mepos) ?
+		0 : .001;
+
 	    /* We have a match. Save the match in case no better match is found */
 	    if (r_has_type(&match.match_key, t_null)) 
 		match.match_key = aelt.key;
@@ -187,13 +191,13 @@ zmatchmedia(i_ctx_t *i_ctx_p)
 	     * regardless of priority. If the match is the same, then update 
 	     * to the current only if the key value is lower.
 	     */
-	    if (best_mismatch <= mbest) {
-		if (best_mismatch < mbest  ||
+	    if (best_mismatch + mepos_penalty <= mbest) {
+		if (best_mismatch + mepos_penalty < mbest  ||
 		    (r_has_type(&match.match_key, t_integer) &&
 		     match.match_key.value.intval > aelt.key.value.intval)) {
 		    reset_match(&match);
 		    match.match_key = aelt.key;
-		    mbest = best_mismatch;
+		    mbest = best_mismatch + mepos_penalty;
 		}
 	    }
 	    /* In case of a tie, see if the new match has priority. */

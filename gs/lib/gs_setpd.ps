@@ -373,8 +373,6 @@ level2dict begin
        { dup length dict }
       ifelse copy readonly
     } bind
-  % Ignore MediaPostition when merging (Adobe CPSI does).
-  /MediaPosition { dup //null ne { pop //null } if } bind
 .dicttomark readonly def
 
 % Define the keys used in input attribute matching.
