@@ -353,7 +353,7 @@ hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
 		hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 	    return 0;
 	case ':':
-	    if_debug0('I', "\n  :");
+	    if_debug0('I', "\n  PE SP");
 	    {
 		int32 pen;
 		if ( !pe_args(pargs, &pen, 1) )
@@ -371,11 +371,11 @@ hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	    p = pargs->source.ptr;
 	    continue;
 	case '<':
-	    if_debug0('I', "\n  <");
+	    if_debug0('I', "\n  PE PU");
 	    pargs->phase |= pe_pen_up;
 	    continue;
 	case '>':
-	    if_debug0('I', "\n  >");
+	    if_debug0('I', "\n  PE PD");
 	    { 
 		int32 fbits;
 		if ( !pe_args(pargs, &fbits, 1) )
@@ -392,11 +392,11 @@ hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	    p = pargs->source.ptr;
 	    continue;
 	case '=':
-	    if_debug0('I', "  =");
+	    if_debug0('I', "  PE ABS");
 	    pargs->phase |= pe_absolute;
 	    continue;
 	case '7':
-	    if_debug0('I', "\n  7");
+	    if_debug0('I', "\n  PE 7bit");
 	    pargs->phase |= pe_7bit;
 	    continue;
 	case ESC:
@@ -425,11 +425,10 @@ hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
 		hpgl_args_t     args;
 		if ( !pe_args(pargs, xy, 2) )
 		    break;
-		hpgl_args_setup(&args);
 		if ( pargs->phase & pe_absolute )
-		    hpgl_PA(&args, pgls);
+		    pgls->g.relative_coords = hpgl_plot_absolute;
 		else
-		    hpgl_PR(&args, pgls);
+		    pgls->g.relative_coords = hpgl_plot_relative;
 		hpgl_args_set_real2(&args, (floatp)xy[0], (floatp)xy[1]);
 		if ( pargs->phase & pe_pen_up )
 		    hpgl_PU(&args, pgls);
