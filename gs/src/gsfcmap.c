@@ -392,7 +392,7 @@ code_map_decode_next_multidim_regime(const gx_code_map_t * pcmap,
         {
             const byte *key = pclr->keys.data;
             int step = key_size;
-            int k, l, m;
+            int k, l;
             const byte *pvalue = NULL;
 
 	    /* when range is "range", 2 keys for lo-end and hi-end
