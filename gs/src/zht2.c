@@ -124,7 +124,8 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 	code = gs_get_colorname_string(cname, &pname, &name_size);
 	if (code < 0)
 	    break;
-	colorant_number = gs_cname_to_colorant_number(pgs, cname, halftonetype);
+	colorant_number = gs_cname_to_colorant_number(pgs, pname, name_size,
+						halftonetype);
 	if (colorant_number < 0)
 	    continue;
 	else if (colorant_number == GX_DEVICE_COLOR_MAX_COMPONENTS) {
@@ -178,7 +179,8 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 	    code = gs_get_colorname_string(cname, &pname, &name_size);
 	    if (code < 0)
 	        break;
-	    colorant_number = gs_cname_to_colorant_number(pgs, cname, halftonetype);
+	    colorant_number = gs_cname_to_colorant_number(pgs, pname, name_size,
+						halftonetype);
 	    if (colorant_number < 0)
 		continue;		/* Do not use this component */
 	    pc->comp_number = colorant_number;
@@ -241,7 +243,8 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 	    code = gs_get_colorname_string(cname, &pname, &name_size);
 	    if (code < 0)
 	        break;
-	    colorant_number = gs_cname_to_colorant_number(pgs, cname, halftonetype);
+	    colorant_number = gs_cname_to_colorant_number(pgs, pname, name_size,
+						halftonetype);
 	    if (colorant_number < 0)
 		continue;
 
