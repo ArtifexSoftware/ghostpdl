@@ -352,7 +352,7 @@ FONTPATH length 0 eq { (%END FONTPATH) .skipeof } if
 % and the access path.
 /.setnativefontmapbuilt { % set whether we've been run
   systemdict exch /.nativefontmapbuilt exch .forceput 
-} bind def
+} .bind executeonly def
 false .setnativefontmapbuilt
 /.buildnativefontmap {
   QUIET not {
