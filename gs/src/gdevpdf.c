@@ -174,7 +174,6 @@ const gx_device_pdf gs_pdfwrite_device =
  },
  psdf_initial_values(PSDF_VERSION_INITIAL, 0 /*false */ ),  /* (!ASCII85EncodePages) */
  PDF_COMPATIBILITY_LEVEL_INITIAL,  /* CompatibilityLevel */
-#ifdef POST60
  0 /*false*/,			/* Optimize */
  0 /*false*/,			/* ParseDSCCommentsForDocInfo */
  0 /*false*/,			/* ParseDSCComments */
@@ -184,7 +183,6 @@ const gx_device_pdf gs_pdfwrite_device =
  0 /*false*/,			/* AutoPositionEPSFile */
  0 /*false*/,			/* PreserveCopyPage */
  0 /*false*/,			/* UsePrologue */
-#endif
  1 /*true */ ,			/* ReAssignCharacters */
  1 /*true */ ,			/* ReEncodeCharacters */
  1,				/* FirstObjectNumber */

@@ -18,13 +18,11 @@
 
 /*$Id$ */
 /* Get/put parameters for PDF-writing driver */
+#include "memory_.h"		/* should be first */
 #include "gx.h"
 #include "gserrors.h"
 #include "gdevpdfx.h"
 #include "gsparamx.h"
-#ifdef POST60
-#include "memory_.h"		/* should be first */
-#endif
 
 /*
  * The pdfwrite device supports the following "real" parameters:
@@ -39,7 +37,6 @@
  *      pdfmark - see gdevpdfm.c
  */
 
-#ifdef POST60
 private const int CoreDistVersion = 4000;	/* Distiller 4.0 */
 private const gs_param_item_t pdf_param_items[] = {
 #define pi(key, type, memb) { key, type, offset_of(gx_device_pdf, memb) }
@@ -61,9 +58,6 @@ private const gs_param_item_t pdf_param_items[] = {
 #undef pi
     gs_param_item_end
 };
-#else
-private const int CoreDistVersion = 3000;	/* Distiller 3.0 */
-#endif
 
 /* ---------------- Get parameters ---------------- */
 
@@ -79,16 +73,7 @@ gdev_pdf_get_params(gx_device * dev, gs_param_list * plist)
     if (code < 0 ||
 	(code = param_write_int(plist, "CoreDistVersion", &cdv)) < 0 ||
 	(code = param_write_float(plist, "CompatibilityLevel", &cl)) < 0 ||
-#ifdef POST60
 	(code = gs_param_write_items(plist, pdev, NULL, pdf_param_items)) < 0
-#else
-	(code = param_write_bool(plist, "ReAssignCharacters",
-				 &pdev->ReAssignCharacters)) < 0 ||
-	(code = param_write_bool(plist, "ReEncodeCharacters",
-				 &pdev->ReEncodeCharacters)) < 0 ||
-	(code = param_write_long(plist, "FirstObjectNumber",
-				 &pdev->FirstObjectNumber)) < 0
-#endif
 	);
     return code;
 }
@@ -103,13 +88,7 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
     int ecode = 0;
     int code;
     gx_device_pdf save_dev;
-#ifndef POST60
     float cl = (float)pdev->CompatibilityLevel;
-    bool rac = pdev->ReAssignCharacters;
-    bool rec = pdev->ReEncodeCharacters;
-    long fon = pdev->FirstObjectNumber;
-    psdf_version save_version = pdev->version;
-#endif
     gs_param_name param_name;
 
     /*
@@ -147,7 +126,16 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
     }
 
     save_dev = *pdev;
-#ifdef POST60
+
+    switch (code = param_read_float(plist, (param_name = "CompatibilityLevel"), &cl)) {
+	default:
+	    ecode = code;
+	    param_signal_error(plist, param_name, ecode);
+	case 0:
+	case 1:
+	    break;
+    }
+
     code = gs_param_read_items(plist, pdev, pdf_param_items);
     if (code < 0)
 	ecode = code;
@@ -169,72 +157,6 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 		param_signal_error(plist, "FirstObjectNumber", ecode);
 	    }
 	}
-    }
-    if (ecode < 0)
-	goto fail;
-    /*
-     * We have to set version to the new value, because the set of
-     * legal parameter values for psdf_put_params varies according to
-     * the version.
-     */
-    pdev->version =
-	(pdev->CompatibilityLevel < 1.2 ? psdf_version_level2 :
-	 psdf_version_ll3);
-    ecode = gdev_psdf_put_params(dev, plist);
-    if (ecode < 0)
-	goto fail;
-    if (pdev->FirstObjectNumber != save_dev.FirstObjectNumber) {
-	if (pdev->xref.file != 0) {
-	    fseek(pdev->xref.file, 0L, SEEK_SET);
-	    pdf_initialize_ids(pdev);
-	}
-    }
-    return 0;
- fail:
-    /* Restore all the parameters to their original state. */
-    pdev->version = save_dev.version;
-    {
-	const gs_param_item_t *ppi = pdf_param_items;
-
-	for (; ppi->key; ++ppi)
-	    memcpy((char *)pdev + ppi->offset,
-		   (char *)&save_dev + ppi->offset,
-		   gs_param_type_sizes[ppi->type]);
-    }
-    return ecode;
-#else
-    switch (code = param_read_float(plist, (param_name = "CompatibilityLevel"), &cl)) {
-	default:
-	    ecode = code;
-	    param_signal_error(plist, param_name, ecode);
-	case 0:
-	case 1:
-	    break;
-    }
-    ecode = param_put_bool(plist, "ReAssignCharacters", &rac, ecode);
-    ecode = param_put_bool(plist, "ReEncodeCharacters", &rec, ecode);
-    switch (code = param_read_long(plist, (param_name = "FirstObjectNumber"), &fon)) {
-	case 0:
-	    /*
-	     * Setting this parameter is only legal if the file
-	     * has just been opened and nothing has been written,
-	     * or if we are setting it to the same value.
-	     */
-	    if (fon == pdev->FirstObjectNumber)
-		break;
-	    if (fon <= 0 || fon > 0x7fff0000 ||
-		(pdev->next_id != 0 &&
-		 pdev->next_id !=
-		 pdev->FirstObjectNumber + pdf_num_initial_ids)
-		)
-		ecode = gs_error_rangecheck;
-	    else
-		break;
-	default:
-	    ecode = code;
-	    param_signal_error(plist, param_name, ecode);
-	case 1:
-	    break;
     }
     {
 	/*
@@ -258,24 +180,17 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 	    pdf_set_process_color_model(pdev);
 	}
     }
-
     if (ecode < 0)
-	return ecode;
+	goto fail;
     /*
      * We have to set version to the new value, because the set of
      * legal parameter values for psdf_put_params varies according to
      * the version.
      */
-    pdev->version =
-	(cl < 1.2 ? psdf_version_level2 : psdf_version_ll3);
-    code = gdev_psdf_put_params(dev, plist);
-    if (code < 0) {
-	pdev->version = save_version;
-	pdev->color_info = save_dev.color_info;
-	pdf_set_process_color_model(pdev);
-	return code;
-    }
-
+    pdev->version = (cl < 1.2 ? psdf_version_level2 : psdf_version_ll3);
+    ecode = gdev_psdf_put_params(dev, plist);
+    if (ecode < 0)
+	goto fail;
     /*
      * Acrobat Reader 4.0 and earlier don't handle user-space coordinates
      * larger than 32K.  To compensate for this, reduce the resolution until
@@ -291,18 +206,27 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 	gx_device_set_resolution(dev, dev->HWResolution[0] / 2,
 				 dev->HWResolution[1] / 2);
     }
-
-    /* Handle the float/double mismatch. */
-    pdev->CompatibilityLevel = (int)(cl * 10 + 0.5) / 10.0;
-    pdev->ReAssignCharacters = rac;
-    pdev->ReEncodeCharacters = rec;
-    if (fon != pdev->FirstObjectNumber) {
-	pdev->FirstObjectNumber = fon;
+    if (pdev->FirstObjectNumber != save_dev.FirstObjectNumber) {
 	if (pdev->xref.file != 0) {
 	    fseek(pdev->xref.file, 0L, SEEK_SET);
 	    pdf_initialize_ids(pdev);
 	}
     }
+    /* Handle the float/double mismatch. */
+    pdev->CompatibilityLevel = (int)(cl * 10 + 0.5) / 10.0;
     return 0;
-#endif
+ fail:
+    /* Restore all the parameters to their original state. */
+    pdev->version = save_dev.version;
+    pdev->color_info = save_dev.color_info;
+    pdf_set_process_color_model(pdev);
+    {
+	const gs_param_item_t *ppi = pdf_param_items;
+
+	for (; ppi->key; ++ppi)
+	    memcpy((char *)pdev + ppi->offset,
+		   (char *)&save_dev + ppi->offset,
+		   gs_param_type_sizes[ppi->type]);
+    }
+    return ecode;
 }

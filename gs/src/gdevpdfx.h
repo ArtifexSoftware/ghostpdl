@@ -304,7 +304,6 @@ struct gx_device_pdf_s {
     gx_device_psdf_common;
     /* PDF-specific distiller parameters */
     double CompatibilityLevel;
-#ifdef POST60
     bool Optimize;
     bool ParseDSCCommentsForDocInfo;
     bool ParseDSCComments;
@@ -314,7 +313,6 @@ struct gx_device_pdf_s {
     bool AutoPositionEPSFile;
     bool PreserveCopyPage;
     bool UsePrologue;
-#endif
     /* End of distiller parameters */
     /* Other parameters */
     bool ReAssignCharacters;
