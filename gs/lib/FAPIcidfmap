@@ -5,7 +5,7 @@
 %
 % The map is a set of records like this :
 %
-%  /CIDfont_name options_dict
+%  /CIDfont_name options_dict ;
 %
 % where options_dict is a dictionary with the following entries :
 %
