@@ -32,11 +32,15 @@
 <li><a href="#Overview">Overview</a>
 <li><a href="#C_features">Use of C language features</a>
 <ul>
-<li><a href="#Conditionals">Preprocessor Conditionals</a>
-<li><a href="#Macros">Preprocessor Macros</a>
-<li><a href="#Pointers_structures">Pointers and structures</a>
-<li><a href="#Scalars">Scalars</a>
-<li><a href="#Static_extern_scoping"><b><tt>static</tt></b> and <b><tt>extern</tt></b> scoping</a>
+<li>Preprocessor:
+    <a href="#Conditionals">Conditionals</a>,
+    <a href="#Macros">Macros</a>
+<li>Scoping:
+    <a href="#Static_extern_scoping"><b><tt>static</tt></b> and <b><tt>extern</tt></b></a>
+<li>Data types:
+    <a href="#Scalars">Scalars</a>,
+    <a href="#Pointers">Pointers</a>,
+    <a href="#Structures">Structures</a>
 <li><a href="#Standard_library">Standard library features</a>
 <li><a href="#Other">Miscellany</a>
 </ul>
@@ -64,7 +68,7 @@
 <li><a href="#Local_variables">Local variables</a>
 <li><a href="#Compiler_warnings">Compiler warnings</a>
 </ul>
-<li><a href="#Conventions">Conventions</a>
+<li><a href="#Conventions">Ghostscript conventions</a>
 <ul>
 <li><a href="#Specific_names">Specific names</a>
 <ul>
@@ -314,72 +318,22 @@ defined.
 <p>
 Preferably <b><tt>CAPITALIZE</tt></b> macro names.
 
-<h3><a name="Pointers_structures"></a>Pointers and structures</h3>
+<h3><a name="Static_extern_scoping"></a>Static and extern scoping</h3>
 
 <p>
-Use <b><tt>const</tt></b> for pointer referents (that is,
-<b><tt>const&nbsp;T&nbsp;*</tt></b>) wherever possible and appropriate.
-Don't bother using it for anything else, except as described above for
-casted pointers.
+Use "<b><tt>private</tt></b>" instead of "<b><tt>static</tt></b>" for
+constructs (procedures and variables) declared at the outermost scope of a
+file.  This allows making such constructs either visible or invisible to
+profilers with a single changed <b><tt>#define</tt></b>.
 
 <p>
-If you find yourself wanting to use <b><tt>void&nbsp;*</tt></b>, try to
-find an alternative using unions or (in the case of super- and subclasses)
-casts, unless you're writing something like a memory manager that really
-treats memory as opaque.
+Don't create any new non-<b><tt>const</tt></b> static variables (whether
+exported or local to a file): they are incompatible with reentrancy, and
+we're in the process of eliminating all of them.
 
 <p>
-Don't use anonymous structures if you can possibly avoid it, except perhaps
-as components of other structures. Ideally, use the
-"<b><tt>struct</tt></b>" keyword only for declaring named structure types,
-like this:
-
-<blockquote>
-<b><tt>typedef struct xxx_yyy_s {</tt></b><br>
-&nbsp;&nbsp;&nbsp;... members ...<br>
-<b><tt>} xxx_yyy_t;</tt></b>
-</blockquote>
-
-<p>
-Declare structure types that contain pointers to other instances of
-themselves like this:
-
-<blockquote>
-<b><tt>typedef struct xxx_yyy_s xxx_yyy_t;</tt></b><br>
-<b><tt>struct xxx_yyy_s {</tt></b><br>
-&nbsp;&nbsp;&nbsp;... members ...<br>
-&nbsp;&nbsp;&nbsp;<b><tt>xxx_yyy_t *</tt></b>ptr_member_name;<br>
-&nbsp;&nbsp;&nbsp;... members ...<br>
-<b><tt>};</tt></b>
-</blockquote>
-
-<p>
-Many older structure names don't have <b><tt>_t</tt></b> on the end, but it
-should be used in all new code.  (The <b><tt>_s</tt></b> name is needed
-only to satisfy some debuggers.  No code should use it.)
-
-<p>
-Don't assume that the compiler will (or won't) insert padding in structures
-to align members for best performance.  To preserve alignment, only declare
-structure members that are narrower than an <b><tt>int</tt></b> if there
-will be a lot of instances of that structure in memory.  For such
-structures, insert <b><tt>byte</tt></b> and/or <b><tt>short</tt></b> padding
-members as necessary to re-establish <b><tt>int</tt></b> alignment.
-
-<p>
-If a procedure parameter is itself a procedure, do list its
-parameter types rather than just using <b><tt>()</tt></b>.  For example,
-
-<blockquote><b><tt>
-int foo(P1(int (*callback)(P2(int, int))));
-</tt></b></blockquote>
-
-<p>
-rather than just
-
-<blockquote><b><tt>
-int foo(P1(int (*callback)()));
-</tt></b></blockquote>
+Avoid <b><tt>extern</tt></b> in <b><tt>.c</tt></b> files: put it in header
+files.
 
 <h3><a name="Scalars"></a>Scalars</h3>
 
@@ -419,26 +373,145 @@ Unless there's a good reason for doing otherwise, return
 in double precision internally and has to do extra work to convert between
 double and single precision.
 
-<h3><a name="Static_extern_scoping"></a>Static and extern scoping</h3>
+<h3><a name="Pointers"></a>Pointers</h3>
 
 <p>
-Use "<b><tt>private</tt></b>" instead of "<b><tt>static</tt></b>" for
-constructs (procedures and variables) declared at the outermost scope of a
-file.  This allows making such constructs either visible or invisible to
-profilers with a single changed <b><tt>#define</tt></b>.
+Use <b><tt>const</tt></b> for pointer referents (that is,
+<b><tt>const&nbsp;T&nbsp;*</tt></b>) wherever possible and appropriate.
 
 <p>
-Don't create any new non-<b><tt>const</tt></b> static variables (whether
-exported or local to a file): they are incompatible with reentrancy, and
-we're in the process of eliminating all of them.
+If you find yourself wanting to use <b><tt>void&nbsp;*</tt></b>, try to
+find an alternative using unions or (in the case of super- and subclasses)
+casts, unless you're writing something like a memory manager that really
+treats memory as opaque.
 
 <p>
-Avoid <b><tt>static const</tt></b> data, but don't knock yourself out over
-it, especially if it's local to a file.
+If a procedure parameter is itself a procedure, do list its
+parameter types rather than just using <b><tt>()</tt></b>.  For example,
+
+<blockquote><b><tt>
+int foo(P1(int (*callback)(P2(int, int))));
+</tt></b></blockquote>
 
 <p>
-Avoid <b><tt>extern</tt></b> in <b><tt>.c</tt></b> files: put it in header
-files.
+rather than just
+
+<blockquote><b><tt>
+int foo(P1(int (*callback)()));
+</tt></b></blockquote>
+
+<h3><a name="Structures"></a>Structures</h3>
+
+<p>
+Don't use anonymous structures if you can possibly avoid it, except
+occasionally as components of other structures. Ideally, use the
+<b><tt>struct</tt></b> keyword only for declaring named structure types,
+like this:
+
+<blockquote>
+<b><tt>typedef struct xxx_s {</tt></b><br>
+&nbsp;&nbsp;&nbsp;... members ...<br>
+<b><tt>} xxx_t;</tt></b>
+</blockquote>
+
+<p>
+In any case, use <b><tt>struct</tt></b> only when declaring structure types,
+never for referring to them (e.g., never declare a variable as type
+<b><tt>struct&nbsp;xxx_s&nbsp;*</tt></b>).
+
+<p>
+Many older structure names don't have <b><tt>_t</tt></b> on the end, but
+this suffix should be used in all new code.  (The <b><tt>_s</tt></b>
+structure name is needed only to satisfy some debuggers.  No code other than
+the structure declaration should refer to it.)
+
+<p>
+Don't assume that the compiler will (or won't) insert padding in structures
+to align members for best performance.  To preserve alignment, only declare
+structure members that are narrower than an <b><tt>int</tt></b> if there
+will be a lot of instances of that structure in memory.  For such
+structures, insert <b><tt>byte</tt></b> and/or <b><tt>short</tt></b> padding
+members as necessary to re-establish <b><tt>int</tt></b> alignment.
+
+<p>
+Declare structure types that contain pointers to other instances of
+themselves like this:
+
+<blockquote>
+<b><tt>typedef struct xxx_s xxx_t;</tt></b><br>
+<b><tt>struct xxx_s {</tt></b><br>
+&nbsp;&nbsp;&nbsp;... members ...<br>
+&nbsp;&nbsp;&nbsp;<b><tt>xxx_t *</tt></b>ptr_member_name;<br>
+&nbsp;&nbsp;&nbsp;... members ...<br>
+<b><tt>};</tt></b>
+</blockquote>
+
+<p>
+If, to maintain data abstraction and avoid including otherwise unnecessary
+header files, you find that you want the type <b><tt>xxx_t</tt></b> to be
+available in a header file that doesn't include the definition of the
+structure <b><tt>xxx_s</tt></b>, use this approach:
+
+<blockquote>
+<b><tt>#ifndef xxx_DEFINED</tt></b><br>
+<b><tt>#&nbsp;&nbsp;define xxx_DEFINED</tt></b><br>
+<b><tt>typedef struct xxx_s xxx_t;</tt></b><br>
+<b><tt>#endif</tt></b><br>
+<b><tt>struct xxx_s {</tt></b><br>
+&nbsp;&nbsp;&nbsp;... members ...<br>
+<b><tt>};</tt></b>
+</blockquote>
+
+<p>
+You can then copy the first 4 lines in other header files.  (Don't ever
+include them in an executable code file.)
+
+<p>
+The Ghostscript memory manager requires run-time type information for every
+structure.  (We don't document this here: see the <a
+href="Develop.htm#Structure_descriptors">Structure descriptors</a> section
+of the developer documentation for details.)  Putting the descriptor for a
+structure next to the structure definition will help keep the two
+consistent, so immediately after the definition of a structure
+<b><tt>xxx_s</tt></b>, define its structure descriptor:
+
+<blockquote>
+<b><tt>struct xxx_s {</tt></b><br>
+&nbsp;&nbsp;&nbsp;... members ...<br>
+<b><tt>};</tt></b><br>
+<b><tt>#define private_st_xxx()&nbsp;&nbsp;/* in </tt></b>&lt;filename&gt;<tt><b>.c */\</tt></b><br>
+<b><tt>&nbsp;&nbsp;gs_private_st_</tt></b>&lt;whatever&gt;<b><tt>(st_xxx, xxx_t,\</tt></b><br>
+<b><tt>&nbsp;&nbsp;&nbsp;&nbsp;"xxx_t", xxx_enum_ptrs, xxx_reloc_ptrs,\</tt></b><br>
+<b><tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt></b>... additional parameters as needed ...<b><tt>)</tt></b>
+</blockquote>
+
+<p>
+The file that implements operations on this structure
+(&lt;filename&gt;<b><tt>.c</tt></b>) should then include, near the
+beginning, the line:
+
+<blockquote>
+<b><tt>private_st_xxx();</tt></b>
+</blockquote>
+
+<p>
+In much existing code, structure descriptors are declared as
+<b><tt>public</tt></b>, which allows clients to allocate instances of the
+structure directly.  We now consider this bad design.  Instead, structure
+descriptors should always be <b><tt>private</tt></b>; the implementation
+file should provide one or more procedures for allocating instances, e.g.,
+
+<blockquote>
+<b><tt>xxx_t *gs_xxx_alloc(P1(gs_memory_t *mem));</tt></b>
+</blockquote>
+
+<p>
+If it is necessary to make a structure descriptor public, it should be
+declared in its clients as
+
+<blockquote>
+<b><tt>extern_st(st_xxx);</tt></b>
+</blockquote>
 
 <h3><a name="Standard_library"></a>Standard library features</h3>
 
@@ -472,6 +545,13 @@ function nesting (the arguments of a function must be evaluated before the
 function is called).  In particular, don't assume that the arguments of a
 function will be evaluated left-to-right, or that the left side of an
 assignment will be evaluated before the right.
+
+<p>
+Don't bother using <b><tt>const</tt></b> for anything other than with
+pointers as described above.  However, in those places where it is necessary
+to cast a pointer of type <b><tt>const&nbsp;T&nbsp;*</tt></b> to type
+<b><tt>T&nbsp;*</tt></b>, always include a comment that explains why you are
+"breaking const".
 
 <hr>
 
@@ -929,7 +1009,7 @@ by using explicit casts.
 
 <hr>
 
-<h2><a name="Conventions"></a>Conventions</h2>
+<h2><a name="Conventions"></a>Ghostscript conventions</h2>
 
 <h3><a name="Specific_names"></a>Specific names</h3>
 
@@ -1004,8 +1084,7 @@ dynamically.
 <p>
 The source code representation of a class is simply a
 <b><tt>typedef</tt></b> for a C <b><tt>struct</tt></b>.  See <a
-href="C-style.htm#Pointers_structures">Pointers and structures</a>, above,
-for details.
+href="C-style.htm#Structures">Structures</a>, above, for details.
 
 <h4>Procedures</h4>
 
@@ -1076,7 +1155,10 @@ Since C doesn't support subclassing, we use a convention to accomplish it.
 In the example below, <b><tt>gx_device</tt></b> is the root class; it has a
 subclass <b><tt>gx_device_forward</tt></b>, which in turn has a subclass
 <b><tt>gx_device_null</tt></b>.  First we define a macro for all the members
-of the root class, and the root class type.
+of the root class, and the root class type.  (As for structures in general,
+classes need a structure descriptor, as discussed in <a
+href="#Structures">Structures</a> above: we include these in the examples
+below.)
 
 <blockquote><b><tt>
 #define gx_device_common\<br>
@@ -1086,7 +1168,12 @@ of the root class, and the root class type.
 <br>
 typedef struct gx_device_s {<br>
 &nbsp;&nbsp;&nbsp;&nbsp;gx_device_common;<br>
-} gx_device;
+} gx_device;<br>
+<br>
+#define private_st_gx_device()&nbsp;&nbsp;/* in gsdevice.c */\<br>
+&nbsp;&nbsp;gs_private_st_</tt></b>&lt;whatever&gt;<b><tt>(st_gx_device, gx_device,\<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"gx_device", device_enum_ptrs, device_reloc_ptrs,\<br>
+&nbsp;&nbsp;&nbsp;&nbsp;</tt></b>... additional parameters as needed ...<b><tt>)</tt></b>
 </tt></b></blockquote>
 
 <p>
@@ -1100,6 +1187,11 @@ We then define a similar macro and type for the subclass.
 typedef struct gx_device_forward_s {<br>
 &nbsp;&nbsp;&nbsp;&nbsp;gx_device_forward_common;<br>
 } gx_device_forward;<br>
+<br>
+#define private_st_device_forward()&nbsp;&nbsp;/* in gsdevice.c */\<br>
+&nbsp;&nbsp;gs_private_st_suffix_add1(st_device_forward, gx_device_forward,\<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"gx_device_forward", device_forward_enum_ptrs, device_forward_reloc_ptrs,\<br>
+&nbsp;&nbsp;&nbsp;&nbsp;gx_device, target)
 </tt></b></blockquote>
 
 <p>
@@ -1111,16 +1203,30 @@ additional data members, but it could have some.
 <blockquote><b><tt>
 typedef struct gx_device_null_s {<br>
 &nbsp;&nbsp;&nbsp;&nbsp;gx_device_forward_common;<br>
-};
+};<br>
+<br>
+#define private_st_device_null()&nbsp;&nbsp;/* in gsdevice.c */\<br>
+&nbsp;&nbsp;gs_private_st_suffix_add0_local(st_device_null, gx_device_null,\<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"gx_device_null", device_null_enum_ptrs, device_null_reloc_ptrs,\<br>
+&nbsp;&nbsp;&nbsp;&nbsp;gx_device_forward)
 </tt></b></blockquote>
 
-<h4>Run-time type information</h4>
+<p>
+Note that the above example is <strong>not</strong> the actual definition of
+the <b><tt>gx_device</tt></b> structure type: the actual type has some
+additional complications because it has a finalization procedure.  See <a
+href="../src/gxdevcli.h">src/gxdevcli.h</a> for the details.
 
 <p>
-Run-time type information is associated with the memory manager, and we
-don't document it here: see the <a
-href="Develop.htm#Structure_descriptors">Structure descriptors</a> section
-of the developer documentation for details.
+If you add members to a root class (such as <b><tt>gx_device</tt></b> in
+this example), or change existing members, do this in the
+<b><tt>gx_device_common</tt></b> macro, not the <b><tt>gx_device</tt></b>
+structure definition.  Similarly, to change the
+<b><tt>gx_device_forward</tt></b> class, modify the
+<b><tt>gx_device_forward_common</tt></b> macro, not the structure
+definition.  Only change the structure definition if the class is a leaf
+class (one with no <b><tt>_common</tt></b> macro and no possibility of
+subclassing), like <b><tt>gx_device_null</tt></b>.
 
 <h3><a name="Error_handling"></a>Error handling</h3>
 
