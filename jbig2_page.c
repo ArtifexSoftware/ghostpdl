@@ -27,6 +27,7 @@
 #include "jbig2_priv.h"
 
 #ifdef OUTPUT_PBM
+#inclue <stdio.h>
 #include "jbig2_image.h"
 #endif
 
