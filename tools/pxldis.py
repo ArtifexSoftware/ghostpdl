@@ -95,6 +95,7 @@ pxl_tags_dict = {
     'SetColorTreatment' :       0x58,
     'SetCursor' :               0x6b,
     'SetCursorRel' :            0x6c,
+    'SetDefaultGS' :            0x57,
     'SetHalftoneMethod' :       0x6d,
     'SetFillMode' :             0x6e,
     'SetFont' :                 0x6f,
