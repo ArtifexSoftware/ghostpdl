@@ -324,6 +324,10 @@ process:
 
 #ifdef DEBUG
     if ( gs_debug_c(':') ) {
+        pl_print_usage(mem, &inst, "Final");
+        dprintf1("%% Max allocated = %ld\n", gs_malloc_max);
+    }
+    if (gs_debug_c('!')) {
         typedef struct dump_control_s   dump_control_t;
         extern  const dump_control_t    dump_control_default;
 
@@ -331,8 +335,6 @@ process:
                                            const dump_control_t *
                                            );
 
-        pl_print_usage(mem, &inst, "Final");
-        dprintf1("%% Max allocated = %ld\n", gs_malloc_max);
         debug_dump_memory(imem, &dump_control_default);
     }
 #endif
