@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_image_png.c,v 1.8 2002/08/06 11:31:53 giles Exp $
+    $Id: jbig2_image_png.c,v 1.9 2002/08/07 12:50:33 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -25,6 +25,26 @@
 #include "jbig2_image.h"
 
 /* take an image structure and write it out in png format */
+
+static void
+jbig2_png_write_data(png_structp png_ptr, png_bytep data, png_size_t length)
+{
+    png_size_t check;
+
+    check = fwrite(data, 1, length, (png_FILE_p)png_ptr->io_ptr);
+    if (check != length) {
+      png_error(png_ptr, "Write Error");
+    }
+}
+
+static void
+jbig2_png_flush(png_structp png_ptr)
+{
+    png_FILE_p io_ptr;
+    io_ptr = (png_FILE_p)CVT_PTR((png_ptr->io_ptr));
+    if (io_ptr != NULL)
+        fflush(io_ptr);
+}
 
 int jbig2_image_write_png_file(Jbig2Image *image, char *filename)
 {
@@ -73,11 +93,13 @@ int jbig2_image_write_png(Jbig2Image *image, FILE *out)
 		return 4;
 	}
 
-        /* note that this doesn't work linking dynamically to libpng on win32
+        /* png_init_io() doesn't work linking dynamically to libpng on win32
            one has to either link statically or use callbacks because of runtime
            variations */
-	png_init_io(png, out);
-   
+	/* png_init_io(png, out); */
+        png_set_write_fn(png, (png_voidp)out, jbig2_png_write_data,
+            jbig2_png_flush);
+        
 	/* now we fill out the info structure with our format data */
 	png_set_IHDR(png, info, image->width, image->height,
 		1, PNG_COLOR_TYPE_GRAY, PNG_INTERLACE_NONE,
