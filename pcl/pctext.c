@@ -121,6 +121,7 @@ map_symbol(
 	pl_glyph_vocabulary_t fgv =  /* font glyph vocabulary */
 	    (pl_glyph_vocabulary_t)(~pfont->character_complement[7] & 07);
 	gs_char code = psm->codes[chr - first_code];
+
 	/* simple common case - the glyph vocabs match */
 	if ( pl_symbol_map_vocabulary(psm) == fgv )
 	    return code;
@@ -146,7 +147,8 @@ map_symbol(
 		return pl_map_Unicode_to_MSL(code,
         		 (psm->id[0] << 8) + psm->id[1]);
 		    
-	}
+	} else
+            return 0xffff;
     }
 }
 
