@@ -249,6 +249,12 @@ I_=/INCLUDE=(
 II=,
 _I=)
 
+# Define the syntax for compile command line defines
+# such as defining XYZZY to 0-1: 	 $(D_)XYZZY$(_D_)0-1$(_D)
+D_=/DEFINE="
+_D_=$(NULL)=
+_D="
+
 # Define the string for specifying the output file from the C compiler.
 
 O_=/OBJECT=
