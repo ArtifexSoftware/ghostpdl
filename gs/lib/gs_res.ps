@@ -80,7 +80,7 @@ setglobal
 %			<key> <value> .CheckResource <key> <value> <ok>
 %			  (or may give an error if not OK)
 %		.DoLoadResource
-%			<key> .DoLoadResource - (may give an error)
+%			<key> .DoLoadResource <key> (may give an error)
 %		.LoadResource
 %			<key> .LoadResource - (may give an error)
 %		.ResourceFile
@@ -430,17 +430,23 @@ end
 	{ true
 	} bind
 /.DoLoadResource {
-	dup vmstatus pop exch pop
-		% .LoadResource may push entries on the operand stack,
-		% so we must use .execn to preserve the values we need.
-		% Stack: key key memused
-	exch cvlit exch {.LoadResource} 3 1 roll 3 .execn
+		% .LoadResource may push entries on the operand stack.
+		% It is an undocumented feature of Adobe implementations,
+		% which we must match for the sake of some badly written
+		% font downloading code, that such entries are popped
+		% automatically.
+	count 1 index cvlit vmstatus pop exch pop
+		% Stack: key count litkey memused
+	{.LoadResource} 4 1 roll 4 .execn
+		% Stack: ... count key memused
 	vmstatus pop exch pop exch sub
 	1 index .GetInstance not {
 	  pop dup /undefinedresource signalerror	% didn't load
 	} if
 	dup 1 1 put
 	2 3 -1 roll put
+		% Stack: ... count key
+	exch count 1 sub exch sub {exch pop} repeat
 } bind
 /.LoadResource
 	{ dup .ResourceFile
