@@ -1488,6 +1488,9 @@ pl_font_remove_glyph(pl_font_t *plfont, gs_glyph glyph)
 	    ptcg->glyph = 1;	/* mark as deleted */
 	    plfont->char_glyphs.used--;
 	  }
+	/* may not have a glyph table in case of cloned resident */
+	if ( plfont->glyphs.table == 0 )
+	    return 0;
 	pfg = pl_font_lookup_glyph(plfont, key);
 	if ( pfg->data == 0 )
 	  return 0;		/* character not defined */
