@@ -437,6 +437,7 @@ scan_cmap_text(pdf_text_enum_t *pte)
 	    gs_matrix m0, m1, m2, m3;
 	    int xy_index_step = (pte->text.x_widths != NULL && /* see gs_text_replaced_width */
 				 pte->text.x_widths == pte->text.y_widths ? 2 : 1);
+	    gs_const_string save_text;
 
 	    code = pdf_font_orig_matrix(subfont0, &m0);
 	    if (code < 0)
@@ -469,6 +470,11 @@ scan_cmap_text(pdf_text_enum_t *pte)
 	    code = pdf_update_text_state(&text_state, (pdf_text_enum_t *)pte, pdfont, &m3);
 	    if (code < 0)
 		return code;
+	    /* process_text_modify_width breaks text parameters. 
+	       We would like to improve it someday. 
+	       Now save them locally and restore after the call. */
+	    save_text.data = pte->text.data.bytes;
+	    save_text.size = pte->text.size;
 	    str.data = scan.text.data.bytes + index;
 	    str.size = break_index - index;
 	    if (pte->text.x_widths != NULL)
@@ -482,6 +488,8 @@ scan_cmap_text(pdf_text_enum_t *pte)
 		pte->text.x_widths -= xy_index * xy_index_step;
 	    if (pte->text.y_widths != NULL)
 		pte->text.y_widths -= xy_index * xy_index_step;
+	    pte->text.data.bytes = save_text.data;
+	    pte->text.size = save_text.size;
 	    if (code < 0) {
 		pte->index = index;
 		pte->xy_index = xy_index;
