@@ -1,3 +1,5 @@
+I modified this one for henry's testing.  You'll know if it worked and you
+try to build it because these first two lines aren't very good C.
 /* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
