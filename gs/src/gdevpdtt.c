@@ -292,7 +292,7 @@ pdf_prepare_text_drawing(gx_device_pdf *const pdev, gs_text_enum_t *pte)
     bool new_clip = false; /* Quiet compiler. */
     int code;
 
-    if (!(text->operation & TEXT_DO_NONE)) {
+    if (!(text->operation & TEXT_DO_NONE) || pis->text_rendering_mode == 3) {
 	new_clip = pdf_must_put_clip_path(pdev, pcpath);
 	if (new_clip)
 	    code = pdf_unclip(pdev);
