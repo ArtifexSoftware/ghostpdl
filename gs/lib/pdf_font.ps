@@ -668,11 +668,25 @@ readonly def
 	pop
       } {
 	true resolvestream
-		% The following doesn't work for CIDToGIDMaps with more
-		% than 32K-1 entries.  We'll fix it later if necessary.
 		% Stack: filepos fontres font mapstream
-	dup 2 index /CIDCount oget 2 mul string readstring pop exch closefile
-	exch dup length 5 add dict .copydict
+	dup 2 index /CIDCount oget dup 32767 le {
+          2 mul string readstring pop
+        } {
+	  % Length exceeded max string size, use an array of two strings
+          % stack: filepos fontres font mapstream mapstream CIDCount
+          1 index 32767 string readstring not {
+            (   **** Warning: CIDToGIDMap length of ) pdfformaterror
+            dup length 2 div cvi =string cvs pdfformaterror
+            (, expected length of ) pdfformaterror
+            exch =string cvs pdfformaterror
+            (.\n) pdfformaterror
+            exch pop
+          } {
+	    3 1 roll 32767 sub string readstring pop 
+	    2 array astore
+          } ifelse
+        } ifelse
+	exch closefile exch dup length 5 add dict .copydict
 	dup /FID undef
 	dup /CIDMap 4 -1 roll put
 	dup /CIDFontName get exch /CIDFont defineresource
