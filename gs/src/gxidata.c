@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -273,7 +273,8 @@ gx_image1_flush(gx_image_enum_common_t * info)
 }
 
 /* Update the strip DDA when moving to a new row. */
-private void update_strip(gx_image_enum *penum)
+private void
+update_strip(gx_image_enum *penum)
 {
     dda_translate(penum->dda.strip.x, penum->cur.x - penum->prev.x);
     dda_translate(penum->dda.strip.y, penum->cur.y - penum->prev.y);
