@@ -547,7 +547,7 @@ struct gx_device_pdf_s {
     pdf_substream_save *sbstack;
     cos_dict_t *substream_Resources;     /* Substream resources */
     int pcm_color_info_index;    /* Index to pcm_color_info. */
-    bool skip_colors; /* Skip colors while a pattern accumulation with PaintType 2. */
+    bool skip_colors; /* Skip colors while a pattern/charproc accumulation. */
     bool AR4_save_bug; /* See pdf_put_uncolored_pattern */
 };
 

@@ -423,6 +423,7 @@ pdf_install_charproc_accum(gx_device_pdf *pdev, gs_font *font, const double *pw,
     pdfont->u.simple.s.type3.char_procs = pcp;
     pcp->char_code = ch;
     pcp->char_name = *gnstr;
+    pdev->skip_colors = true;
     if (control == TEXT_SET_CHAR_WIDTH)
 	pprintg2(pdev->strm, "%g %g d0\n", (float)pw[0], (float)pw[1]);
     else
