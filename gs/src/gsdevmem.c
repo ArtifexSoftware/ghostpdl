@@ -180,6 +180,11 @@ gs_initialize_wordimagedevice(gx_device_memory * new_dev, const gs_matrix * pmat
 	    new_dev->color_info.gray_index = 0;
 	}
     }
+    /* Memory defice is always initialised as an internal device but */
+    /* this is an external device */
+    new_dev->retained = true;
+    rc_init(new_dev, new_dev->memory, 1);
+
     new_dev->initial_matrix = *pmat;
     new_dev->MarginsHWResolution[0] = new_dev->HWResolution[0] =
 	fabs(x_pixels_per_unit) * 72;
