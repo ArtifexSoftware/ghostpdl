@@ -106,6 +106,7 @@ pdf_default_text_begin(gs_text_enum_t *pte, const gs_text_params_t *text,
 				 pte->path, pte->pdcolor, pte->pcpath,
 				 pte->memory, ppte);
 }
+
 int
 pdf_text_process(gs_text_enum_t *pte)
 {
@@ -219,13 +220,26 @@ process_plain_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
     byte *const buf = vbuf;
     uint operation = pte->text.operation;
     pdf_text_enum_t *const penum = (pdf_text_enum_t *)pte;
-    int index = 0, code;
+    int index = 0; 
+    int code = 0;
     gs_string str;
     bool encoded;
     pdf_text_process_state_t text_state;
+    int i;
 
     if (operation & (TEXT_FROM_STRING | TEXT_FROM_BYTES)) {
-	memcpy(buf, (const byte *)vdata + pte->index, size);
+	/* stefan foo: skip non-unicode safe pdf code 
+	 * text.size is num elements, element size is NOT stored.
+	 * This is only an issue with pdfwrite, other places use a correct int get_char(); 
+	 * how do I discover if non single byte encoding is being used? 
+	 */
+	if ( ((const char *)(vdata + pte->index))[0] == 0 ) {
+	    for (i = 0; i < pte->text.size; i += 2) {
+		buf[i >> 1] = ((const char *)(vdata + pte->index))[i + 1];
+	    }	    
+	}
+	else
+	    memcpy(buf, (const byte *)vdata + pte->index, size);
 	encoded = false;
     } else if (operation & (TEXT_FROM_CHARS | TEXT_FROM_SINGLE_CHAR)) {
 	/* Check that all chars fit in a single byte. */
@@ -317,7 +331,7 @@ process_composite_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
     /* Scan runs of characters in the same leaf font. */
     for ( ; ; ) {
 	int font_code, buf_index;
-	gs_font *new_font;
+	gs_font *new_font = 0;
 
 	for (buf_index = 0; ; ++buf_index) {
 	    gs_char chr;
