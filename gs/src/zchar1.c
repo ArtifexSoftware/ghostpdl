@@ -42,6 +42,15 @@
 #include "iname.h"
 #include "store.h"
 
+/*
+ * Properly designed fonts, which have no self-intersecting outlines
+ * and in which outer and inner outlines are drawn in opposite
+ * directions, aren't affected by choice of filling rule; but some
+ * badly designed fonts in the Genoa test suite seem to require
+ * using the even-odd rule to match Adobe interpreters.
+ */
+#define GS_CHAR_FILL gs_eofill	/* gs_fill or gs_eofill */
+
 /* ---------------- Utilities ---------------- */
 
 /* Test whether a font is a CharString font. */
@@ -522,8 +531,8 @@ bbox_draw(i_ctx_t *i_ctx_p, int (*draw)(P1(gs_state *)))
 private int
 bbox_fill(i_ctx_t *i_ctx_p)
 {
-    /* See nobbox_fill for why we use eofill here. */
-    return bbox_draw(i_ctx_p, gs_eofill);
+    /* See above re GS_CHAR_FILL. */
+    return bbox_draw(i_ctx_p, GS_CHAR_FILL);
 }
 private int
 bbox_stroke(i_ctx_t *i_ctx_p)
@@ -769,14 +778,8 @@ nobbox_draw(i_ctx_t *i_ctx_p, int (*draw)(P1(gs_state *)))
 private int
 nobbox_fill(i_ctx_t *i_ctx_p)
 {
-    /*
-     * Properly designed fonts, which have no self-intersecting outlines
-     * and in which outer and inner outlines are drawn in opposite
-     * directions, aren't affected by choice of filling rule; but some
-     * badly designed fonts in the Genoa test suite seem to require
-     * using the even-odd rule to match Adobe interpreters.
-     */
-    return nobbox_draw(i_ctx_p, gs_eofill);
+    /* See above re GS_CHAR_FILL. */
+    return nobbox_draw(i_ctx_p, GS_CHAR_FILL);
 }
 private int
 nobbox_stroke(i_ctx_t *i_ctx_p)
