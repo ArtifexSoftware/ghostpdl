@@ -354,7 +354,7 @@ s_proc_write_continue(i_ctx_t *i_ctx_p)
 
     check_file(ps, op);
     check_write_type(*opbuf, t_string);
-    while (ps->strm != 0)
+    while ((ps->end_status = 0, ps->strm) != 0)
 	ps = ps->strm;
     ps->end_status = 0;
     ss = (stream_proc_state *) ps->state;
