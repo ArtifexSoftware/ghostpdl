@@ -46,6 +46,7 @@ private dev_color_proc_get_nonzero_comps(gx_dc_wts_get_nonzero_comps);
 const gx_device_color_type_t gx_dc_type_data_wts = {
     &st_dc_wts,
     gx_dc_wts_save_dc, gx_dc_wts_get_dev_halftone,
+    gx_dc_ht_get_phase,
     gx_dc_wts_load, gx_dc_wts_fill_rectangle,
     gx_dc_default_fill_masked, gx_dc_wts_equal,
     gx_dc_wts_write, gx_dc_wts_read,

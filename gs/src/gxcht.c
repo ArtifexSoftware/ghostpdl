@@ -63,6 +63,7 @@ private dev_color_proc_read(gx_dc_ht_colored_read);
 const gx_device_color_type_t gx_dc_type_data_ht_colored = {
     &st_dc_ht_colored,
     gx_dc_ht_colored_save_dc, gx_dc_ht_colored_get_dev_halftone,
+    gx_dc_ht_get_phase,
     gx_dc_ht_colored_load, gx_dc_ht_colored_fill_rectangle,
     gx_dc_default_fill_masked, gx_dc_ht_colored_equal,
     gx_dc_ht_colored_write, gx_dc_ht_colored_read,
@@ -136,7 +137,6 @@ private const int   dc_ht_colored_has_base = 0x01;
 private const int   dc_ht_colored_has_level = 0x02;
 private const int   dc_ht_colored_has_alpha = 0x04;
 private const int   dc_ht_colored_alpha_is_max = 0x08;
-private const int   dc_ht_colored_has_phase = 0x10;
 
 /*
  * Serialize a device color that uses a traditional colored halftone.
@@ -254,20 +254,6 @@ gx_dc_ht_colored_write(
         }
     }
 
-    /*
-     * Moderate hack: the phase can be retrieved from either a binary or a
-     * colored halftone.
-     */
-    if ( psdc0 == 0                               ||
-         (psdc0->type != gx_dc_type_ht_binary &&
-          psdc0->type != gx_dc_type_ht_colored  ) ||
-         pdevc->phase.x != psdc0->phase.x         ||
-         pdevc->phase.y != psdc0->phase.y           ) {
-        flag_bits |= dc_ht_colored_has_phase;
-        /* the phases are known to be positive */
-        req_size += enc_u_sizexy(pdevc->phase);
-    }
-
     /* see if there is anything to do */
     if (flag_bits == 0) {
         *psize = 0;
@@ -327,9 +313,6 @@ gx_dc_ht_colored_write(
     if ((flag_bits & dc_ht_colored_has_alpha) != 0)
         enc_u_putw(alpha, pdata);
 
-    if ((flag_bits & dc_ht_colored_has_phase) != 0)
-        enc_u_putxy(pdevc->phase, pdata);
-
     *psize = pdata - pdata0;
     return 0;
 }
@@ -381,12 +364,9 @@ gx_dc_ht_colored_read(
     int                     flag_bits;
 
     /* if prior information is available, use it */
-    if (prior_devc != 0) {
-        if (prior_devc->type == gx_dc_type_ht_colored)
-            devc = *prior_devc;
-        else if (prior_devc->type == gx_dc_type_ht_binary)
-            devc.phase = prior_devc->phase;
-    } else
+    if (prior_devc != 0 && prior_devc->type == gx_dc_type_ht_colored)
+        devc = *prior_devc;
+    else
         memset(&devc, 0, sizeof(devc));   /* clear pointers */
     devc.type = gx_dc_type_ht_colored;
 
@@ -468,11 +448,12 @@ gx_dc_ht_colored_read(
         size -= pdata - pdata_start;
     }
 
-    if ((flag_bits & dc_ht_colored_has_phase) != 0) {
-        if (size < 2)
-            return_error(gs_error_rangecheck);
-        enc_u_getxy(devc.phase, pdata);
-    }
+    /* set the phase as required (select value is arbitrary) */
+    color_set_phase_mod( &devc,
+                         pis->screen_phase[0].x,
+                         pis->screen_phase[0].y,
+                         pis->dev_ht->lcm_width,
+                         pis->dev_ht->lcm_height );
 
     /* everything looks OK */
     *pdevc = devc;

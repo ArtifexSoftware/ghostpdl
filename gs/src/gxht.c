@@ -52,6 +52,7 @@ const gx_device_color_type_t
       gx_dc_type_data_ht_binary =
 {&st_dc_ht_binary,
  gx_dc_ht_binary_save_dc, gx_dc_ht_binary_get_dev_halftone,
+ gx_dc_ht_get_phase,
  gx_dc_ht_binary_load, gx_dc_ht_binary_fill_rectangle,
  gx_dc_default_fill_masked, gx_dc_ht_binary_equal,
  gx_dc_ht_binary_write, gx_dc_ht_binary_read,
@@ -245,32 +246,14 @@ gx_check_tile_cache(const gs_imager_state * pis)
  * (non-strip) tile. If so, return the byte offset of the appropriate row
  * from the beginning of the tile, and set *ppx to the x phase offset
  * within the tile; if not, return -1.
+ *
+ * This routine cannot be supported in the DeviceN code.
  */
 int
 gx_check_tile_size(const gs_imager_state * pis, int w, int y, int h,
 		   gs_color_select_t select, int *ppx)
 {
-#ifdef TO_DO_DEVICEN
-    int tsy;
-    const gx_strip_bitmap *ptile0;
-
-    if (pis->ht_cache == 0)
-	return -1;		/* no halftone cache */
-    ptile0 = &pis->ht_cache->ht_tiles[0].tiles;		/* a typical tile */
-    if (h > ptile0->rep_height || w > ptile0->rep_width ||
-	ptile0->shift != 0
-	)
-	return -1;
-    tsy = (y + imod(-pis->screen_phase[select].y, ptile0->rep_height)) %
-	ptile0->rep_height;
-    if (tsy + h > ptile0->size.y)
-	return -1;
-    /* Tile fits in Y, might fit in X. */
-    *ppx = imod(-pis->screen_phase[select].x, ptile0->rep_width);
-    return tsy * ptile0->raster;
-#else
     return -1;
-#endif
 }
 
 /* Render a given level into a halftone cache. */
@@ -441,7 +424,6 @@ private const int   dc_ht_binary_has_color0 = 0x01;
 private const int   dc_ht_binary_has_color1 = 0x02;
 private const int   dc_ht_binary_has_level = 0x04;
 private const int   dc_ht_binary_has_index = 0x08;
-private const int   dc_ht_binary_has_phase = 0x10;
 
 
 /*
@@ -527,20 +509,6 @@ gx_dc_ht_binary_write(
         req_size += 1;
     }
 
-    /*
-     * Moderate hack: the phase can be retrieved from either a binary or a
-     * colored halftone.
-     */
-    if ( psdc0 == 0                               ||
-         (psdc0->type != gx_dc_type_ht_binary &&
-          psdc0->type != gx_dc_type_ht_colored  ) ||
-         pdevc->phase.x != psdc0->phase.x          ||
-         pdevc->phase.y != psdc0->phase.y            ) {
-        flag_bits |= dc_ht_binary_has_phase;
-        /* the phases are known to be positive */
-        req_size += enc_u_sizexy(pdevc->phase);
-    }
-
     /* check if there is anything to be done */
     if (flag_bits == 0) {
         *psize = 0;
@@ -581,8 +549,6 @@ gx_dc_ht_binary_write(
         enc_u_putw(pdevc->colors.binary.b_level, pdata);
     if ((flag_bits & dc_ht_binary_has_index) != 0)
         *pdata++ = pdevc->colors.binary.b_index;
-    if ((flag_bits & dc_ht_binary_has_phase) != 0)
-        enc_u_putxy(pdevc->phase, pdata);
 
     *psize = pdata - pdata0;
     return 0;
@@ -633,12 +599,9 @@ gx_dc_ht_binary_read(
     int                     code, flag_bits;
 
     /* if prior information is available, use it */
-    if (prior_devc != 0) {
-        if (prior_devc->type == gx_dc_type_ht_binary)
-            devc = *prior_devc;
-        else if (prior_devc->type == gx_dc_type_ht_colored)
-            devc.phase = prior_devc->phase;
-    } else
+    if (prior_devc != 0 && prior_devc->type == gx_dc_type_ht_binary)
+        devc = *prior_devc;
+    else
         memset(&devc, 0, sizeof(devc));   /* clear pointers */
     devc.type = gx_dc_type_ht_binary;
 
@@ -687,12 +650,14 @@ gx_dc_ht_binary_read(
             return_error(gs_error_rangecheck);
         devc.colors.binary.b_index = *pdata++;
     }
-    if ((flag_bits & dc_ht_binary_has_phase) != 0) {
-        /* we know the phase contains at least two bytes */
-        if (size < 2)
-            return_error(gs_error_rangecheck);
-        enc_u_getxy(devc.phase, pdata);
-    }
+
+    /* set the phase as required (select value is arbitrary) */
+    /* set the phase as required (select value is arbitrary) */
+    color_set_phase_mod( &devc,
+                         pis->screen_phase[0].x,
+                         pis->screen_phase[0].y,
+                         pis->dev_ht->lcm_width,
+                         pis->dev_ht->lcm_height );
 
     /* everything looks good */
     *pdevc = devc;

@@ -106,14 +106,25 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     gx_device_color_saved *    psdc = &pcls->sdc;
     byte *                     dp;
     byte *                     dp0;
+    gs_int_point               color_phase;
 
     /* see if the halftone must be inserted in the command list */
     if ( pdht != NULL                          &&
          pdht->id != cldev->device_halftone_id   ) {
         if ((code = cmd_put_halftone(cldev, pdht)) < 0)
             return code;
-        psdc = 0;
+        color_unset(psdc);
     }
+
+    /* see if phase informaiton must be inserted in the command list */
+    if ( pdcolor->type->get_phase(pdcolor, &color_phase) &&
+         (color_phase.x != pcls->tile_phase.x ||
+          color_phase.y != pcls->tile_phase.y   )        &&
+	 (code = cmd_set_tile_phase( cldev,
+                                     pcls,
+                                     color_phase.x,
+                                     color_phase.y )) < 0  )
+        return code;
 
     /*
      * Get the device color type index and the required size.
@@ -1217,6 +1228,10 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		     * ends.
 		     */
 		    set_first_point();
+		    if (side != 0) {
+			open = 0;
+			continue;
+		    }
 		}
 		open = 0;
 		px = first.x, py = first.y;

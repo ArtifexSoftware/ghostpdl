@@ -352,6 +352,7 @@ in:				/* Initialize for a new page. */
     fill_params.fill_zero_width = false;
     gs_cspace_init_DeviceGray(&cs);
     pcs = &cs;
+    color_unset(&dev_color);
     color_space.params.indexed.use_proc = 0;
     color_space.params.indexed.lookup.table.size = 0;
     data_bits = gs_alloc_bytes(mem, data_bits_size,

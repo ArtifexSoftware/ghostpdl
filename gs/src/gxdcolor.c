@@ -37,7 +37,7 @@ private dev_color_proc_read(gx_dc_no_read);
 private dev_color_proc_get_nonzero_comps(gx_dc_no_get_nonzero_comps);
 const gx_device_color_type_t gx_dc_type_data_none = {
     &st_bytes,
-    gx_dc_no_save_dc, gx_dc_no_get_dev_halftone,
+    gx_dc_no_save_dc, gx_dc_no_get_dev_halftone, gx_dc_no_get_phase,
     gx_dc_no_load, gx_dc_no_fill_rectangle, gx_dc_no_fill_masked,
     gx_dc_no_equal, gx_dc_no_write, gx_dc_no_read, gx_dc_no_get_nonzero_comps
 };
@@ -53,7 +53,7 @@ private dev_color_proc_equal(gx_dc_null_equal);
 private dev_color_proc_read(gx_dc_null_read);
 const gx_device_color_type_t gx_dc_type_data_null = {
     &st_bytes,
-    gx_dc_no_save_dc, gx_dc_no_get_dev_halftone,
+    gx_dc_no_save_dc, gx_dc_no_get_dev_halftone, gx_dc_no_get_phase,
     gx_dc_null_load, gx_dc_null_fill_rectangle, gx_dc_null_fill_masked,
     gx_dc_null_equal, gx_dc_no_write, gx_dc_null_read, gx_dc_no_get_nonzero_comps
 };
@@ -70,7 +70,7 @@ private dev_color_proc_write(gx_dc_pure_write);
 private dev_color_proc_read(gx_dc_pure_read);
 const gx_device_color_type_t gx_dc_type_data_pure = {
     &st_bytes,
-    gx_dc_pure_save_dc, gx_dc_no_get_dev_halftone,
+    gx_dc_pure_save_dc, gx_dc_no_get_dev_halftone, gx_dc_no_get_phase,
     gx_dc_pure_load, gx_dc_pure_fill_rectangle, gx_dc_pure_fill_masked,
     gx_dc_pure_equal, gx_dc_pure_write, gx_dc_pure_read,
     gx_dc_pure_get_nonzero_comps
@@ -208,6 +208,20 @@ gx_get_dc_type_from_index(int i)
         return dc_color_type_table[i];
     else
         return 0;
+}
+
+/* ------ Canonical get_phase methods ------ */
+bool
+gx_dc_no_get_phase(const gx_device_color * pdevc, gs_int_point * pphase)
+{
+    return false;
+}
+
+bool
+gx_dc_ht_get_phase(const gx_device_color * pdevc, gs_int_point * pphase)
+{
+    *pphase = pdevc->phase;
+    return true;
 }
 
 /* ------ Undefined color ------ */

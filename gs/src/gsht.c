@@ -1046,7 +1046,7 @@ gx_imager_dev_ht_install(
             else
                 porder->wts = wts;
         } else {
-            uint   w = porder->width, h = porder->height;
+            uint   w = porder->width, h = porder->full_height;
             int    dw = igcd(lcm_width, w), dh = igcd(lcm_height, h);
 
             lcm_width /= dw;

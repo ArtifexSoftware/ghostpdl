@@ -124,6 +124,7 @@ private dev_color_proc_equal(gx_dc_pattern2_equal);
 const gx_device_color_type_t gx_dc_pattern2 = {
     &st_dc_pattern2,
     gx_dc_pattern_save_dc, gx_dc_pattern2_get_dev_halftone,
+    gx_dc_ht_get_phase,
     gx_dc_pattern2_load, gx_dc_pattern2_fill_rectangle,
     gx_dc_default_fill_masked, gx_dc_pattern2_equal,
     gx_dc_pattern_write, gx_dc_pattern_read,
