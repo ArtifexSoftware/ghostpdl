@@ -297,9 +297,9 @@ private void dw_gt_wait(vd_trace_interface *I)
 
 
 #ifdef __WIN32__
-    #define SET_CALLBACK(I,a) I.a = dw_gt_##a
+#    define SET_CALLBACK(I,a) I.a = dw_gt_##a
 #else
-    #define SET_CALLBACK(I,a) I.a = 0
+#    define SET_CALLBACK(I,a) I.a = 0
 #endif
 
 void visual_tracer_init(void)

@@ -59,8 +59,6 @@ gs_private_st_suffix_add0_final(st_device_X_wrapper, gx_device_X_wrapper,
 /* Forward declarations */
 private int get_dev_target(P2(gx_device **, gx_device *));
 
-#define set_dev_target(tdev, dev)\
-  return_if_error(get_dev_target(&tdev, dev))
 private int get_target_info(P1(gx_device *));
 private gx_color_index x_alt_map_color(P2(gx_device *, gx_color_index));
 
@@ -84,7 +82,8 @@ x_wrap_open(gx_device * dev)
     gx_device *tdev;
     int rcode, code;
 
-    set_dev_target(tdev, dev);
+    if ((code = get_dev_target(&tdev, dev)) < 0)
+        return code;
     rcode = (*dev_proc(tdev, open_device)) (tdev);
     if (rcode < 0)
 	return rcode;
@@ -97,8 +96,10 @@ private int
 x_forward_sync_output(gx_device * dev)
 {
     gx_device *tdev;
+    int code;
 
-    set_dev_target(tdev, dev);
+    if ((code = get_dev_target(&tdev, dev)) < 0)
+        return code;
     return (*dev_proc(tdev, sync_output)) (tdev);
 }
 
@@ -106,8 +107,10 @@ private int
 x_forward_output_page(gx_device * dev, int num_copies, int flush)
 {
     gx_device *tdev;
+    int code;
 
-    set_dev_target(tdev, dev);
+    if ((code = get_dev_target(&tdev, dev)) < 0)
+        return code;
     return (*dev_proc(tdev, output_page)) (tdev, num_copies, flush);
 }
 
@@ -129,8 +132,10 @@ x_wrap_map_color_rgb(gx_device * dev, gx_color_index color,
 		     gx_color_value prgb[3])
 {
     gx_device *tdev;
+    int code;
 
-    set_dev_target(tdev, dev);
+    if ((code = get_dev_target(&tdev, dev)) < 0)
+        return code;
     return (*dev_proc(tdev, map_color_rgb)) (tdev,
 					     x_alt_map_color(dev, color),
 					     prgb);
@@ -141,8 +146,10 @@ x_wrap_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 		      gx_color_index color)
 {
     gx_device *tdev;
+    int code;
 
-    set_dev_target(tdev, dev);
+    if ((code = get_dev_target(&tdev, dev)) < 0)
+        return code;
     return (*dev_proc(tdev, fill_rectangle)) (tdev, x, y, w, h,
 					      x_alt_map_color(dev, color));
 }
@@ -154,8 +161,10 @@ x_wrap_copy_mono(gx_device * dev,
 		 gx_color_index zero, gx_color_index one)
 {
     gx_device *tdev;
+    int code;
 
-    set_dev_target(tdev, dev);
+    if ((code = get_dev_target(&tdev, dev)) < 0)
+        return code;
     return (*dev_proc(tdev, copy_mono)) (tdev, base, sourcex, raster, id,
 					 x, y, w, h,
 					 x_alt_map_color(dev, zero),
@@ -174,9 +183,11 @@ x_wrap_copy_color(gx_device * dev, const byte * base, int sourcex,
     int block_w, block_h;
     int xblock, yblock;
     byte mapped[mapped_bytes];
+    int code;
 
     fit_copy(dev, base, sourcex, raster, id, x, y, w, h);
-    set_dev_target(tdev, dev);
+    if ((code = get_dev_target(&tdev, dev)) < 0)
+        return code;
     /* Device pixels must be an integral number of bytes. */
     if (tdev->color_info.depth & 7)
 	return gx_default_copy_color(dev, base, sourcex, raster, id,
@@ -237,8 +248,10 @@ x_forward_copy_color(gx_device * dev, const byte * base, int sourcex,
 		     int raster, gx_bitmap_id id, int x, int y, int w, int h)
 {
     gx_device *tdev;
+    int code;
 
-    set_dev_target(tdev, dev);
+    if ((code = get_dev_target(&tdev, dev)) < 0)
+        return code;
     return (*dev_proc(tdev, copy_color)) (tdev, base, sourcex, raster, id,
 					  x, y, w, h);
 }
@@ -247,8 +260,10 @@ private int
 x_forward_get_bits(gx_device * dev, int y, byte * str, byte ** actual_data)
 {
     gx_device *tdev;
+    int code;
 
-    set_dev_target(tdev, dev);
+    if ((code = get_dev_target(&tdev, dev)) < 0)
+        return code;
     return (*dev_proc(tdev, get_bits)) (tdev, y, str, actual_data);
 }
 
@@ -279,7 +294,8 @@ x_wrap_get_bits(gx_device * dev, int y, byte * str, byte ** actual_data)
 
     DECLARE_LINE_ACCUM(str, depth, 0);
 
-    set_dev_target(tdev, dev);
+    if ((code = get_dev_target(&tdev, dev)) < 0)
+        return code;
     width = tdev->width;
     sdepth = tdev->color_info.depth;
     smask = (sdepth <= 8 ? (1 << sdepth) - 1 : 0xff);
@@ -335,8 +351,10 @@ x_wrap_get_params(gx_device * dev, gs_param_list * plist)
     /* We assume that a get_params call has no side effects.... */
     gx_device_X save_dev;
     int ecode;
+    int code;
 
-    set_dev_target(tdev, dev);
+    if ((code = get_dev_target(&tdev, dev)) < 0)
+        return code;
     save_dev = *(gx_device_X *) tdev;
     if (tdev->is_open)
 	tdev->color_info = dev->color_info;
@@ -354,7 +372,8 @@ x_wrap_put_params(gx_device * dev, gs_param_list * plist)
     const char *dname;
     int rcode, code;
 
-    set_dev_target(tdev, dev);
+    if ((code = get_dev_target(&tdev, dev)) < 0)
+        return code;
     /*
      * put_params will choke if we simply feed it the output of
      * get_params; we have to substitute color_info the same way.
@@ -400,8 +419,10 @@ private int
 get_target_info(gx_device * dev)
 {
     gx_device *tdev;
+    int code;
 
-    set_dev_target(tdev, dev);
+    if ((code = get_dev_target(&tdev, dev)) < 0)
+        return code;
 
 #define copy(m) dev->m = tdev->m;
 #define copy2(m) copy(m[0]); copy(m[1])
@@ -442,6 +463,7 @@ x_alt_map_color(gx_device * dev, gx_color_index color)
     gx_color_value rgb[3];
     gx_color_index cindex;
     int result;
+    int code;
 
     if (color == gx_no_color_index)
 	return color;
@@ -450,7 +472,8 @@ x_alt_map_color(gx_device * dev, gx_color_index color)
 	if (cindex != gx_no_color_index)
 	    return cindex;
     }
-    set_dev_target(tdev, dev);
+    if ((code = get_dev_target(&tdev, dev)) < 0)
+        return code;
     result = xdev->alt_map_color(dev, color, rgb);
     if (result >= 0)
 	cindex = result;
@@ -791,6 +814,7 @@ x_alpha_copy_alpha(gx_device * dev, const unsigned char *base, int sourcex,
     int xi, yi;
     const byte *row = base;
     gx_color_index base_color = color & 0xffffff;
+    int code;
 
     /* We fake alpha by interpreting it as saturation, i.e., */
     /* alpha = 0 is white, alpha = 15/15 is the full color. */
@@ -798,7 +822,8 @@ x_alpha_copy_alpha(gx_device * dev, const unsigned char *base, int sourcex,
     gx_color_index shades[16];
     int i;
 
-    set_dev_target(tdev, dev);
+    if ((code = get_dev_target(&tdev, dev)) < 0)
+        return code;
     for (i = 0; i < 15; ++i)
 	shades[i] = gx_no_color_index;
     shades[15] = base_color;

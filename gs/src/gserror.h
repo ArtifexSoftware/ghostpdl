@@ -26,7 +26,5 @@ int gs_log_error(P3(int, const char *, int));
 #endif
 #define gs_note_error(err) gs_log_error(err, __FILE__, __LINE__)
 #define return_error(err) return gs_note_error(err)
-#define return_if_error(expr)\
-  BEGIN int code_ = (expr); if ( code_ < 0 ) return code_; END
 
 #endif /* gserror_INCLUDED */
