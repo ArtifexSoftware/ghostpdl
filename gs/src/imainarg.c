@@ -760,6 +760,10 @@ print_help(gs_main_instance * minst)
     print_emulators(minst);
     print_devices(minst);
     print_paths(minst);
+    if (gs_init_string_sizeof > 0) {
+        fprintf(minst->fstdout,
+		"Initialization files are compiled into the executable.\n");
+    }
     print_help_trailer(minst);
 }
 
