@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -27,6 +27,7 @@
  * Modified by Pierre Arnaud 1999-10-03 (accept b&w printing on color printers).
  * Modified by Pierre Arnaud 1999-11-20 (accept lower resolution)
  * Bug fixed by Pierre Arnaud 2000-03-09 (win_pr2_put_params error when is_open)
+ * Bug fixed by Pierre Arnaud 2000-03-20 (win_pr2_set_bpp did not set anti_alias)
  */
 
 /* This driver uses the printer default size and resolution and
@@ -690,8 +691,7 @@ win_pr2_set_bpp(gx_device * dev, int depth)
 	/* 3 plane printer */
 	/* suitable for impact dot matrix CMYK printers */
 	/* create 4-bit bitmap, but only use 8 colors */
-	static const gx_device_color_info win_pr2_4color =
-	{3, 4, 1, 1, 2, 2};
+	static const gx_device_color_info win_pr2_4color = dci_values(3, 4, 1, 1, 2, 2);
 
 	dev->color_info = win_pr2_4color;
     } else {			/* default is black_and_white */

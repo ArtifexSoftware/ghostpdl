@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -22,6 +22,8 @@
  *
  * By Russell Lang, derived from mswinpr2 device by Russell Lang and
  * L. Peter Deutsch, Aladdin Enterprises.
+ *
+ * Bug fixed by Pierre Arnaud 2000-03-20 (os2prn_set_bpp did not set anti_alias)
  */
 
 /* This device works when GS is a DLL loaded by a PM program */
@@ -626,8 +628,7 @@ os2prn_set_bpp(gx_device * dev, int depth)
 	/* 3 plane printer */
 	/* suitable for impact dot matrix CMYK printers */
 	/* create 4-bit bitmap, but only use 8 colors */
-	static const gx_device_color_info os2prn_4color =
-	{3, 4, 1, 1, 2, 2};
+	static const gx_device_color_info os2prn_4color = dci_values(3, 4, 1, 1, 2, 2);
 
 	dev->color_info = os2prn_4color;
     } else {			/* default is black_and_white */
