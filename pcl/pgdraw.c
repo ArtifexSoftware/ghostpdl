@@ -415,17 +415,24 @@ hpgl_set_clipping_region(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 	    pcl_clip_box.p.y = pgls->g.picture_frame.anchor_point.y;
 	    pcl_clip_box.q.x = pcl_clip_box.p.x + pgls->g.picture_frame_width;
 	    pcl_clip_box.q.y = pcl_clip_box.p.y + pgls->g.picture_frame_height;
+	    
 	    hpgl_call(gs_bbox_transform(&pcl_clip_box,
 					&pcl_ctm,
 					&dev_clip_box));
-
+	    /* the clip box defined by the picture frame appears to be
+               open and the clip box defined by IW is closed */
+	    dev_clip_box.q.x += 1.0;
+	    dev_clip_box.q.y += 1.0;
+	    if ( gs_debug_c('P') )
+		dprintf4("gl/2 device picture frame: p.x=%f p.y=%f q.x=%f q.y=%f\n",
+			 dev_clip_box.p.x, dev_clip_box.p.y,
+			 dev_clip_box.q.x, dev_clip_box.q.y);
 	    /* if the clipping window is active calculate the new clip
                box derived from IW and the intersection of the device
                space boxes replace the current box.  Note that IW
                coordinates are in current units and and the picture
                frame in pcl coordinates. */
-	    if ( pgls->g.soft_clip_window.state == active )
-	      {
+	    if ( pgls->g.soft_clip_window.state == active ) {
 		gs_rect dev_soft_window_box;
 		gs_matrix ctm;
 		hpgl_call(gs_currentmatrix(pgls->pgs, &ctm));
@@ -436,19 +443,25 @@ hpgl_set_clipping_region(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 		dev_clip_box.p.y = max(dev_clip_box.p.y, dev_soft_window_box.p.y);
 	    	dev_clip_box.q.x = min(dev_clip_box.q.x, dev_soft_window_box.q.x);
 		dev_clip_box.q.y = min(dev_clip_box.q.y, dev_soft_window_box.q.y);
-	      }
-
+		if ( gs_debug_c('P') )
+		    dprintf4("gl/2 device soft clip region: p.x=%f p.y=%f q.x=%f q.y=%f\n",
+			     dev_soft_window_box.p.x, dev_soft_window_box.p.y,
+			     dev_soft_window_box.q.x, dev_soft_window_box.q.y);
+	    }
 	    /* convert intersection box to fixed point and clip */
 	    fixed_box.p.x = float2fixed(round(dev_clip_box.p.x));
 	    fixed_box.p.y = float2fixed(round(dev_clip_box.p.y));
-	    fixed_box.q.x = float2fixed(round(dev_clip_box.q.x+1.0));
-	    fixed_box.q.y = float2fixed(round(dev_clip_box.q.y+1.0));
+	    fixed_box.q.x = float2fixed(round(dev_clip_box.q.x));
+	    fixed_box.q.y = float2fixed(round(dev_clip_box.q.y));
 	    /* intersect with pcl clipping region */
 	    fixed_box.p.x = max(fixed_box.p.x, pgls->xfm_state.dev_print_rect.p.x);
 	    fixed_box.p.y = max(fixed_box.p.y, pgls->xfm_state.dev_print_rect.p.y);
 	    fixed_box.q.x = min(fixed_box.q.x, pgls->xfm_state.dev_print_rect.q.x);
 	    fixed_box.q.y = min(fixed_box.q.y, pgls->xfm_state.dev_print_rect.q.y);
-
+	    if ( gs_debug_c('P') )
+		dprintf4("gl/2 device clip region: p.x=%f p.y=%f q.x=%f q.y=%f\n",
+			 fixed2float(fixed_box.p.x), fixed2float(fixed_box.p.y),
+			 fixed2float(fixed_box.q.x), fixed2float(fixed_box.q.y));
 	    hpgl_call(gx_clip_to_rectangle(pgls->pgs, &fixed_box)); 
 	  }
 	return 0;
@@ -937,7 +950,7 @@ hpgl_set_current_position(
 {
     pgls->g.pos = *pt;
     if ( gs_debug_c('P') )
-	dprintf2("setting hpgl/2 position: x=%f y=%f\n", pt->x, pt->y);
+	dprintf2("gl/2 setting position: x=%f y=%f\n", pt->x, pt->y);
     return 0;
 }
 
@@ -970,6 +983,19 @@ hpgl_add_point_to_path(
     }
     {
         int     code = (*gs_procs[func])(pgls->pgs, x, y);
+	if ( gs_debug_c('P') ) {
+	    static const char *hpgl_draw_func[] = {
+		"hpgl_plot_move_absolute",
+		"hpgl_plot_move_relative",
+		"hpgl_plot_draw_absolute",
+		"hpgl_plot_draw_relative" 
+	    };
+	    gs_point dev_pt;
+	    hpgl_call(gs_transform(pgls->pgs, x, y, &dev_pt));
+	    dprintf1("gl/2 plot function=%s\t", hpgl_draw_func[func]);
+	    dprintf2("gl/2 user coord: x=%f y=%f\t", x, y);
+	    dprintf2("gl/2 device coord: x=%f y=%f\n", dev_pt.x, dev_pt.y);
+    	}
 	if (code < 0) {
             hpgl_call_note_error(code);
 	    if (code == gs_error_limitcheck)
