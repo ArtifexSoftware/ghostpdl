@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -443,6 +443,14 @@ int gs_param_write_items(P4(gs_param_list * plist, const void *obj,
 			    const void *default_obj,
 			    const gs_param_item_t * items));
 
+/*
+ * Internal procedure to read a value, with coercion if requested, needed,
+ * and possible.  If mem != 0, we can coerce int arrays to float arrays, and
+ * possibly do other coercions later.
+ */
+int param_coerce_typed(P3(gs_param_typed_value * pvalue,
+			  gs_param_type req_type, gs_memory_t * mem));
+
 /* ---------------- Default implementation ---------------- */
 
 /*
@@ -499,13 +507,5 @@ void gs_c_param_list_write(P2(gs_c_param_list *, gs_memory_t *));
 void gs_c_param_list_write_more(P1(gs_c_param_list *)); /* switch back to writing, no init */
 void gs_c_param_list_read(P1(gs_c_param_list *));	/* switch to reading */
 void gs_c_param_list_release(P1(gs_c_param_list *));
-
-/*
- * Internal procedure to read a value, with coercion if requested, needed,
- * and possible.  If mem != 0, we can coerce int arrays to float arrays, and
- * possibly do other coercions later.
- */
-int param_coerce_typed(P3(gs_param_typed_value * pvalue,
-			  gs_param_type req_type, gs_memory_t * mem));
 
 #endif /* gsparam_INCLUDED */
