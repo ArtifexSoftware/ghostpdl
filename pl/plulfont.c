@@ -27,6 +27,8 @@
 #include "shareinc.h"
 /* set to 1 to display UFST debugging statements */
 SW16 trace_sw = 0;
+IF_STATE IFS;
+PIF_STATE pIFS = &IFS;
 
 /*
  * NB NB NB The root of the directory tree containing UFST fonts, plugins, and symbol
@@ -290,15 +292,15 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
     config_block.bit_map_width = BITMAP_WIDTH;    /* bitmap width 1, 2 or 4 */
 
     /* the following part should be called only once at the beginning */
-    if ((status = CGIFinit()) != 0) {
+    if ((status = CGIFinit(FSA0)) != 0) {
         dprintf1 ("CGIFinit() error: %d\n", status);
         return TRUE;
     }
-    if ((status = CGIFconfig(&config_block)) != 0) {
+    if ((status = CGIFconfig(FSA &config_block)) != 0) {
         dprintf1 ("CGIFconfig() error: %d\n", status);
         return TRUE;
     }
-    if ((status = CGIFenter()) != 0) {
+    if ((status = CGIFenter(FSA0)) != 0) {
         dprintf1 ("CGIFenter() error: %u\n",status);
         return TRUE;
     }
@@ -306,11 +308,11 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
     /* open and register the plug-in font collection object */
     strcpy((char *)pthnm, UFST_DATA_ROOT);
     strcat((char *)pthnm, fcNmPl);
-    if ((status = CGIFfco_Open(pthnm,(LPSW16)&fcHndlPl)) != 0) {
+    if ((status = CGIFfco_Open(FSA pthnm,(LPSW16)&fcHndlPl)) != 0) {
         dprintf2("CGIFfco_Open error %d for %s\n", status, pthnm);
         return TRUE;
     }
-    if ((status = CGIFfco_Plugin(fcHndlPl)) != 0) {
+    if ((status = CGIFfco_Plugin(FSA fcHndlPl)) != 0) {
         dprintf1("CGIFfco_Plugin error %d\n", status);
         return TRUE;
     }
@@ -329,13 +331,13 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
 
         strcpy((char *)pthnm, UFST_DATA_ROOT);
         strcat((char *)pthnm, (const char *)fcNmAry[k]);
-        if ((status = CGIFfco_Open(pthnm, &fcHndlAry[k])) != 0) {
+        if ((status = CGIFfco_Open(FSA pthnm, &fcHndlAry[k])) != 0) {
             dprintf2("CGIFfco_Open error %d for %s\n", status, pthnm);
             continue;
         }
 
         for ( i = 0;
-              CGIFfco_Access(pthnm, i, TFATRIB_KEY, &bSize, NULL) == 0;
+              CGIFfco_Access(FSA pthnm, i, TFATRIB_KEY, &bSize, NULL) == 0;
               i++, key[2] += 1 ) {
             LPSB8   pBuffer = (LPSB8)gs_alloc_bytes( mem,
                                                      bSize,
@@ -345,7 +347,8 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
                 dprintf1("VM error for built-in font %d", i);
                 continue;
             }
-            status = CGIFfco_Access( pthnm,
+            status = CGIFfco_Access( FSA
+                                     pthnm,
                                      i,
                                      TFATRIB_KEY,
                                      &bSize,
@@ -452,12 +455,12 @@ pl_close_built_in_fonts(void)
     int     i;
 
     if (fcHndlPl != -1)
-        CGIFfco_Close(fcHndlPl);
+        CGIFfco_Close(FSA fcHndlPl);
     for (i = 0; i < sizeof(fcNmAry) / sizeof(fcNmAry[0]); i++) {
         if (fcHndlAry[i] != -1)
-            CGIFfco_Close(fcHndlAry[i]);
+            CGIFfco_Close(FSA fcHndlAry[i]);
     }
-    CGIFexit();
+    CGIFexit(FSA0);
 }
 
 /* These are not implemented */

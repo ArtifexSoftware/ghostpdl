@@ -322,6 +322,8 @@ image_bitmap_char(gs_image_enum *ienum, const gs_image_t *pim,
 private const pl_font_t *   plfont_last;    /* last selected font */
 static  const gs_matrix     pl_identmtx = { identity_matrix_body };
 
+extern IF_STATE if_state;
+extern PIF_STATE pIFS;
 /*
  * Set up a generic FONTCONTEXT structure.
  *
@@ -397,7 +399,7 @@ pl_init_fc(
 private int
 pl_set_ufst_font(const pl_font_t * plfont, FONTCONTEXT * pfc)
 {
-    uint    status = CGIFfont(pfc);
+    uint    status = CGIFfont(FSA pfc);
 
     if (status != 0)
         dprintf1 ("CGIFfont error %d\n", status);
@@ -429,7 +431,7 @@ pl_purge_ufst_font(const pl_font_t * plfont)
         fc.format |= FC_TT_TYPE;
     else
         fc.format |= FC_IF_TYPE;
-    CGIFfont_purge(&fc);
+    CGIFfont_purge(FSA &fc);
 }
 
 /*
@@ -511,8 +513,8 @@ pl_ufst_char_width(
     if (pwidth != NULL)
         pwidth->x = pwidth->y = 0;
 
-    CGIFchIdptr((VOID *)&chIdloc, NULL);
-    if ((status = CGIFwidth(char_code, 1, 4, fontWidth)) != 0) {
+    CGIFchIdptr(FSA (VOID *)&chIdloc, NULL);
+    if ((status = CGIFwidth(FSA char_code, 1, 4, fontWidth)) != 0) {
         dprintf1 ("CGIFwidth error %d\n", status);
         return status;
     }
@@ -556,16 +558,16 @@ pl_ufst_make_char(
     if (chr == 0xffff)
         return 0;
 
-    CGIFchIdptr((VOID *)&chIdloc, NULL);
-    if ( (status = CGIFchar_handle(chr, &memhdl, 0)) != 0 &&
+    CGIFchIdptr(FSA (VOID *)&chIdloc, NULL);
+    if ( (status = CGIFchar_handle(FSA chr, &memhdl, 0)) != 0 &&
          status != ERR_fixed_space                          ) {
 
         /* if too large for a bitmap, try an outline */
         if (status >= ERR_bm_gt_oron && status <= ERRdu_pix_range) {
             pfc->format = (pfc->format & ~FC_BITMAP_TYPE) | FC_LINEAR_TYPE;
-            if ((status = CGIFfont(pfc)) == 0) {
-                CGIFchIdptr((VOID *)&chIdloc, NULL);
-                status = CGIFchar_handle(chr, &memhdl, 0);
+            if ((status = CGIFfont(FSA pfc)) == 0) {
+                CGIFchIdptr(FSA (VOID *)&chIdloc, NULL);
+                status = CGIFchar_handle(FSA chr, &memhdl, 0);
             }
         }
         if (status != 0) {
@@ -602,12 +604,12 @@ pl_ufst_make_char(
         wbox[4] = psbm->black_width + wbox[2];
         wbox[5] = psbm->black_depth + wbox[3];
         if (status == ERR_fixed_space) {
-            MEMfree(CACHE_POOL, memhdl);
+            MEMfree(FSA CACHE_POOL, memhdl);
             code = gs_setcharwidth(penum, pgs, wbox[0], wbox[1]);
             gs_setmatrix(pgs, &sv_ctm);
             return code;
         } else if ((code = gs_setcachedevice(penum, pgs, wbox)) < 0) {
-            MEMfree(CACHE_POOL, memhdl);
+            MEMfree(FSA CACHE_POOL, memhdl);
             gs_setmatrix(pgs, &sv_ctm);
             return code;
         }
@@ -615,7 +617,7 @@ pl_ufst_make_char(
         /* set up the image */
         ienum = gs_image_enum_alloc(pgs->memory, "pl_ufst_make_char");
         if (ienum == 0) {
-            MEMfree(CACHE_POOL, memhdl);
+            MEMfree(FSA CACHE_POOL, memhdl);
             gs_setmatrix(pgs, &sv_ctm);
             return_error(gs_error_VMerror);
         }
@@ -634,7 +636,7 @@ pl_ufst_make_char(
                                   NULL,
                                   pgs );
         gs_free_object(pgs->memory, ienum, "pl_ufst_make_char");
-        MEMfree(CACHE_POOL, memhdl);
+        MEMfree(FSA CACHE_POOL, memhdl);
         gs_setmatrix(pgs, &sv_ctm);
         return (code < 0 ? code : 0);
 
@@ -657,12 +659,12 @@ pl_ufst_make_char(
         wbox[4] = scale * pols->right;
         wbox[5] = scale * pols->top;
         if (status == ERR_fixed_space) {
-            MEMfree(CACHE_POOL, memhdl);
+            MEMfree(FSA CACHE_POOL, memhdl);
             code = gs_setcharwidth(penum, pgs, wbox[0], wbox[1]);
             gs_setmatrix(pgs, &sv_ctm);
             return code;
         } else if ((code = gs_setcachedevice(penum, pgs, wbox)) < 0) {
-            MEMfree(CACHE_POOL, memhdl);
+            MEMfree(FSA CACHE_POOL, memhdl);
             gs_setmatrix(pgs, &sv_ctm);
             return code;
         }
@@ -674,7 +676,7 @@ pl_ufst_make_char(
             else
                 code = gs_eofill(pgs);  /* for MT and IF we use eofill */
         }
-        MEMfree(CACHE_POOL, memhdl);
+        MEMfree(FSA CACHE_POOL, memhdl);
         gs_setmatrix(pgs, &sv_ctm);
         return (code < 0 ? code : 0);
     }    
