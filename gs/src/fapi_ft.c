@@ -549,7 +549,7 @@ static FAPI_retcode get_scaled_font(FAPI_server* a_server,FAPI_font* a_font,int 
 
 			if (ft_inc_int)
 				{
-				open_args.flags = (FT_Open_Flags)(open_args.flags | FT_OPEN_PARAMS);
+				open_args.flags = (FT_UInt)(open_args.flags | FT_OPEN_PARAMS);
 				ft_param.tag = FT_PARAM_TAG_INCREMENTAL;
 				ft_param.data = ft_inc_int;
 				open_args.num_params = 1;
