@@ -55,8 +55,8 @@ pcl.clean-not-config-clean:
 	$(RM_) $(PCLOBJ)*.$(OBJ)
 
 # due to a deficiency of the current make system devices are built in
-# the current working directory (HAS).  Also (TODO) all of the gs
-# generated files are not "cleaned".
+# the current working directory.  Also all of the gs generated files
+# are not "cleaned" we hack around that problem here.
 pcl.config-clean:
 	$(RM_) $(PCLOBJ)*.dev
 	$(RM_) $(PCLOBJ)devs.tr5
