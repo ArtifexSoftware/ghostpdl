@@ -144,7 +144,7 @@ install-man: $(PSMANDIR)/gs.1
 install-examples:
 	-mkdir $(exdir)
 	for f in \
-alphabet.ps chess.ps cheq.ps colorcir.ps doretree.ps escher.ps \
+alphabet.ps chess.ps colorcir.ps doretree.ps escher.ps \
 golfer.ps grayalph.ps snowflak.ps tiger.ps vasarely.ps waterfal.ps \
 ridt91.eps ;\
 	do $(INSTALL_DATA) $(PSEXDIR)/$$f $(exdir) ;\
