@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_symbol_dict.c,v 1.7 2002/06/21 22:56:54 giles Exp $
+    $Id: jbig2_symbol_dict.c,v 1.8 2002/06/21 23:11:29 giles Exp $
 */
 
 #include <stddef.h>
@@ -20,6 +20,11 @@
 #include "jbig2_arith_int.h"
 #include "jbig2_generic.h"
 #include "jbig2_symbol_dict.h"
+
+#ifdef OUTPUT_PBM
+#include <stdio.h>
+#include "jbig2_image.h"
+#endif
 
 
 /* Table 13 */
@@ -145,8 +150,10 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 						     as,
 						     image, GB_stats);
 		  /* todo: handle errors */
-		  /* todo: stash gbreg in SDNEWSYMS */
-						     
+		  /* todo: stash image in SDNEWSYMS */
+#ifdef OUTPUT_PBM
+                  jbig2_image_write_pbm(image, stdout);
+#endif
 		}
 	    }
 
