@@ -47,7 +47,7 @@ XLIBS=Xt SM ICE Xext X11
 CCLD=gcc
 
 DEVICE_DEVS=x11mono.dev x11.dev x11alpha.dev x11cmyk.dev\
- djet500.dev ljet4.dev cljet5c.dev\
+ djet500.dev ljet4.dev cljet5.dev cljet5c.dev\
  pcx16.dev pcx256.dev\
  pcxmono.dev pcxcmyk.dev pcxgray.dev\
  pbmraw.dev pgmraw.dev ppmraw.dev pkmraw.dev\
@@ -55,6 +55,7 @@ DEVICE_DEVS=x11mono.dev x11.dev x11alpha.dev x11cmyk.dev\
  tiffcrle.dev tiffg3.dev tiffg32d.dev tiffg4.dev\
  tifflzw.dev tiffpack.dev\
  tiff12nc.dev tiff24nc.dev\
+ bit.dev bitrgb.dev bitcmyk.dev\
  bmpmono.dev bmpamono.dev posync.dev
 
 # Generic makefile
