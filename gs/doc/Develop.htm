@@ -197,7 +197,7 @@ and a commercial licensing business.
 <li>Other
 <ul>
 <li>Easy source portability to any platform (CPU, operating system, and
-development tools) that has an ANSI or K&amp;R C compiler.
+development tools) that has an ANSI C compiler.
 <li>Support for writing new interpreters and new drivers with no change to
 any existing code; specifically, ability to support PCL 5e, PCL 5c, and PCL
 XL interpreters, and the ever-changing roster of inkjet printers.
@@ -2904,8 +2904,8 @@ Source generators:
 <dt>
 <a href="../src/ansi2knr.c">src/ansi2knr.c</a>
 <dd>
-Converts ANSI C source to traditional (also known as "K&amp;R") C.  Used if
-and only if compiling with a pre-ANSI C compiler.
+Converts ANSI C source to traditional (also known as "K&amp;R") C. Used historically
+when compiling with a pre-ANSI C compiler. This is no longer supported.
 
 <dt>
 <a href="../src/genarch.c">src/genarch.c</a>
