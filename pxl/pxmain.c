@@ -79,7 +79,7 @@ pause_end_page(px_state_t *pxs, int num_copies, int flush)
 	  if ( status.allocated > pmi->prev_allocated + 250000 ) {
 	    if_debug2(':', "[:]%lu > %lu + 250K, garbage collecting\n",
 		      (ulong)status.allocated, (ulong)pmi->prev_allocated);
-	    gs_reclaim(&pmi->spaces, true);
+	    gs_nogc_reclaim(&pmi->spaces, true);
 	    gs_memory_status(mem, &status);
 	    pmi->prev_allocated = status.allocated;
 	  }
@@ -146,7 +146,7 @@ main(int argc, char *argv[])
 
 	/* gs_reclaim may change some procedures in the allocator; */
 	/* get them set up now. */
-	gs_reclaim(&inst.spaces, true);
+	gs_nogc_reclaim(&inst.spaces, true);
 
 	while ( (arg = arg_next(&args)) != 0 )
 	  { /* Process one input file. */
@@ -282,7 +282,7 @@ move:	      /* Move unread data to the start of the buffer. */
 		memmove(buf, r.ptr + 1, len);
 	      r.limit = buf + (len - 1);
 	    }
-	  gs_reclaim(&inst.spaces, true);
+	  gs_nogc_reclaim(&inst.spaces, true);
 	  pjl_process_destroy(pxs->pjls, mem);
 	  /* Reset the GC trigger. */
 	  { gs_memory_status_t status;
