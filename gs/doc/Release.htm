@@ -750,53 +750,49 @@ In <b><tt>gscdef.c</tt></b>, edit the definition of
 <p>
 Edit <b><tt>doc/News.htm</tt></b> to remove all the content.
 
+
+
+
 <h2><a name="GNU_releases"></a>GNU Ghostscript releases</h2>
 
 <p>
-artofcode LLC re-releases each tested AFPL Ghostscript version with
-the GPL, as GNU Ghostscript, when the next tested AFPL Ghostscript
-version comes out.
+artofcode LLC re-releases each tested AFPL Ghostscript version under
+the GPL--as GNU Ghostscript--when the next major stable AFPL 
+version comes out, or after one calendar year, whichever comes first.
 
 <h3><a name="GNU_code"></a>GNU code</h3>
 
 <p>
-To make a GNU Ghostscript release from AFPL Ghostscript release #.##, run
-
-<blockquote><pre>
-toolbin/makegnu #.##
-</pre></blockquote>
-
-<p>
-This reads the files 
-
-<blockquote><pre>
-/gs/master/#.##/ghostscript-#.##.tar.gz
-/gs/master/#.##/ghostscript-#.##gnu.tar.gz
-</pre></blockquote>
+To make a GNU Ghostscript release from AFPL Ghostscript, update the
+LICENCE file to reflect the new status of the code. In general there can
+be no recipe for this as it depends on the niceties of ownership and
+permisison attached to each piece of code. However, a previous GNU
+release can serve as a guide.
 
 <p>
-and creates the file
+There are also generally some portions of code (usually drivers) which
+are limited to GNU Ghostscript only. These may want porting to the new
+version before release.
 
-<blockquote><pre>
-/tmp/gnu-gs-#.##.tar.gz
-</pre></blockquote>
-
-<p>
-Note that the <b><tt>makegnu</tt></b> script uses a program called
-<b><tt>copyrite</tt></b> that rewrites the copyright notices.  The
-<b><tt>copyrite</tt></b> program is intentionally not distributed with
-Ghostscript.
-
-<p>
-Upload the file <b><tt>/tmp/gnu-gs-#.##.tar.gz</tt></b> to
-<b><tt>ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/gnu/gs#.##/</tt></b>.  Delete the file
-after uploading.
+<p>Once the license change is complete and the codebase has been updated
+to satifaction, follow the release process as described for AFPL
+Ghostscript above to test and package the new version. The distribution
+methods are parallel to those for the AFPL, with the GPL releases
+generally going under a separate header. For example, on the wisc
+ftp site upload the file to 
+<tt>ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/gnu/gs#.##/</tt>.
 
 <h3><a name="GNU_after_releasing"></a>After releasing (GNU)</h3>
 
 <p>
 E-mail the full URL and the <b><tt>md5sum</tt></b> of the new archive(s) to
 <a href="mailto:ftp-upload@gnu.org"><tt>ftp-upload@gnu.org</tt></a>.
+
+<p>
+It may also be helpful to have the Free Software Foundation review the
+code before release to see whether it meets their standards for
+distribution from the gnu.org website.
+
 
 <h2><a name="Fonts"></a>Fonts</h2>
 
@@ -838,8 +834,8 @@ release, also see <a href="#GNU_after_releasing">"After releasing
 <hr>
 
 <p>
-<small>Copyright &copy; 1999, 2000 Aladdin Enterprises.  All rights
-reserved.</small>
+Copyright &copy; 1999-2002 artofcode LLC. All rights
+reserved.
 
 <p>
 This software is provided AS-IS with no warranty, either express or
@@ -856,7 +852,7 @@ contact Artifex Software, Inc., 101 Lucas Valley Road #110,
 San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
 <p>
-<small>Ghostscript version 7.20, 29 March 2002
+Ghostscript version 7.20, 29 March 2002
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
