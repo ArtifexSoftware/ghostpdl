@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -69,7 +69,7 @@ typedef enum {
     eNoColorSpace = 0,		/* Note: for this enumeration, 0 is not a valid value */
     eGray,
     eRGB,
-    eSRGB,			/* 2.0 */
+    eSRGB = 6,		/* 2.0, Note: HP's value is 6 not the expected 3 */
     pxeColorSpace_next
 } pxeColorSpace_t;
 
