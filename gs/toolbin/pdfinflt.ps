@@ -1,0 +1,120 @@
+%    Copyright (C) 1992, 1993, 1994, 1995, 1999 Aladdin Enterprises.  All rights reserved.
+% 
+% This file is part of AFPL Ghostscript.
+% 
+% AFPL Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author or
+% distributor accepts any responsibility for the consequences of using it, or
+% for whether it serves any particular purpose or works at all, unless he or
+% she says so in writing.  Refer to the Aladdin Free Public License (the
+% "License") for full details.
+% 
+% Every copy of AFPL Ghostscript must include a copy of the License, normally
+% in a plain ASCII text file named PUBLIC.  The License grants you the right
+% to copy, modify and redistribute AFPL Ghostscript, but only under certain
+% conditions described in the License.  Among other things, the License
+% requires that the copyright notice and this notice be preserved on all
+% copies.
+
+% $Id$
+% pdfinflt.ps
+% 
+% Try to decompress any FlateDecode streams in the input file.
+% 
+% Usage: gs -- toolbin/pdfinflt.ps infile outfile
+%
+% Requires: lib/pdfwrite.ps.
+% 
+% 
+% It is not yet ready for prime time, but it is available for anyone wants
+% to fix it.
+% 
+% The main problems are:
+% 
+% 1. It doesn't work for files that use chained filters such as
+%    [ /ASCII85Decode /FlateDecode ]
+% 
+% 2. Sometimes the PDF files that are written are broken. When they are
+%    broken, GS gets an xref problem.
+% 
+%    This second problem is actually due to lib/pdfwrite.ps since even
+%    when no conversion is done, the file is may be bad.
+
+% Check to make sure both input and output filename was specified.
+[ shellarguments
+  { counttomark 2 eq {
+      % Arguments ok
+      /OutFileName exch def
+      /InFileName exch def
+   
+      (pdfwrite.ps) runlibfile
+   
+      /justcopy /pdfcopystream load def
+      /pdfcopystream {		% <newstreamdict> <file> pdfcopystream -
+				%   (file has been positioned)
+        1 index /Filter knownoget {
+          dup type /arraytype eq {
+	    % fails for chained filters like [ /ASCII85Decode /FlateDecode ]
+            dup length 1 eq { 0 get } if
+          } if 
+	    /FlateDecode eq {
+      		% Decompress the data.  To avoid doing a first pass just to
+      		% find its length, we create an indirect object.
+            10 dict begin
+            /infile exch def /sdict exch def
+            RMap length neg omapnew pop /lenobj exch def
+            sdict dup length dict copy
+            dup /Filter undef dup /DecodeParms undef
+            dup /Length lenobj /O cvx 2 packedarray cvx put
+            pdfwritevalue (stream\n) ows
+            /opos OFile fileposition def
+            infile sdict /Length oget () /SubFileDecode filter
+            sdict /DecodeParms knownoget pop /FlateDecode filter
+            dup OFile 16#7fffffff pdfcopybytes closefile
+            /len OFile fileposition opos sub def
+            (endstream\nendobj\n) ows
+            lenobj pdfwriteobjheader len pdfwritevalue
+            end
+          } {
+            justcopy
+          } ifelse
+        } {
+          justcopy
+        } ifelse
+      } def
+   
+      { InFileName (r) file } stopped
+      { (\n*** Cannot open input file: ) print InFileName print ( ***\n\n) print flush
+        quit
+      }
+      if
+      pdfdict begin pdfopen begin
+      
+      { OutFileName (w) file } stopped
+      { (\n*** Cannot open output file: ) print OutFileName print ( ***\n\n) print flush
+        quit
+      }
+      if
+      (Converting ) print InFileName print ( to ) print OutFileName = flush
+      currentdict /Trailer get
+      pdfwrite
+      end end
+      (Done.\n) print flush
+      cleartomark
+      true		% success
+    }
+    {
+      (\n*** Incorrect number of file name arguments. ***\n\n) print
+      cleartomark false			% incorrect number of arguments
+    }
+    ifelse
+  }
+  {
+    (\n*** Missing '--' preceding toolbin/pdfinflt.ps ***\n\n) print
+    cleartomark false			% not in shell arguments mode (missing -- )
+  }
+ifelse 
+not {
+   (Usage: gs -- toolbin/pdfinflt.ps infile outfile\n\n) print flush
+}
+if
+quit
