@@ -1,5 +1,5 @@
 *PPD-Adobe: "4.3"
-*FileVersion: "0.1003"
+*FileVersion: "1.0"
 *FormatVersion: "4.3" 
 *LanguageEncoding: "ISOLatin1"
 *LanguageVersion: "English"
@@ -45,7 +45,7 @@
 *%  in all copies or substantial portions of the Software.
 
 *% There is an accompanying file ghostpdf.inf that is used to 
-*% install this PPD on Windows NT/2k/XP.
+*% install this PPD on Windows 2k/XP.
 *% This PPD includes configuration items specific to generating
 *% PDF files with ghostscript.
 *% If you are not using the ghostscript pdfwrite device,
@@ -60,8 +60,9 @@
 *Extensions: CMYK FileSystem Composite
 *TTRasterizer: Type42
 *FreeVM: "10000000"
-*PrintPSErrors: False
+*PrintPSErrors: True
 *ContoneOnly: True
+*% AccurateScreensSupport: True
 
 *% order dependency
 *%  10 HWResolution
@@ -89,6 +90,35 @@
 
 *% == Paper stuff
 *% Page sizes taken from ghostscript gs_statd.ps.
+*% Ghostscript pdfwrite ignores Orientation, so set the
+*% custom page width/height and then use an Install procedure
+*% to rotate the image.
+
+*HWMargins: 0 0 0 0
+*ParamCustomPageSize Width: 1 points 1 5670
+*ParamCustomPageSize Height: 2 points 1 5670
+*ParamCustomPageSize WidthOffset/Width Margin: 3 points 0 5670
+*ParamCustomPageSize HeightOffset/Height Margin: 4 points 0 5670
+*ParamCustomPageSize Orientation: 5 int 0 3
+*NonUIOrderDependency: 20 AnySetup *CustomPageSize
+*CustomPageSize True: "
+  5 -2 roll exch 5 2 roll
+  3 -2 roll exch 3 2 roll
+  [ {}
+    {90 rotate 0 currentpagedevice /PageSize get 0 get neg translate}
+    {180 rotate currentpagedevice /PageSize get 
+     dup 0 get neg exch 1 get neg translate}
+    {270 rotate currentpagedevice /PageSize get 1 get neg 0 translate}
+  ] exch get
+  4 dict dup begin 6 1 roll
+  /Install exch def
+  2 array astore /PageOffset exch def
+  2 array astore /PageSize exch def
+  /ImagingBBox null def
+  end setpagedevice"
+*End
+*MaxMediaWidth: "5670"
+*MaxMediaHeight: "5670"
 
 *LandscapeOrientation: Any
 
