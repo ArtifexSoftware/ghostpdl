@@ -487,7 +487,7 @@ gs_function_1ItSg_init(gs_function_t ** ppfn,
 	    return_error(gs_error_rangecheck);
 	/* There are only k - 1 Bounds, not k. */
 	if (i < params->k - 1) {
-	    if (params->Bounds[i] < prev) /* if (params->Bounds[i] <= prev) */
+	    if (params->Bounds[i] < prev)
 		return_error(gs_error_rangecheck);
 	    prev = params->Bounds[i];
 	}
