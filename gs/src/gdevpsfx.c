@@ -560,11 +560,8 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
 	    HINTS_CHANGED();
 	    continue;
 	case c1_closepath:
-	    continue;
 	case CE_OFFSET + ce1_setcurrentpoint:
-	    mx = csp[-1], my = *csp;
-	    POP(2);
-	    goto move;
+	    continue;
 	case cx_vmoveto:
 	    mx = 0, my = *csp;
 	    POP(1); goto move;

@@ -917,8 +917,8 @@ int t1_hinter__rcurveto(t1_hinter * this, fixed xx0, fixed yy0, fixed xx1, fixed
 }
 
 void t1_hinter__setcurrentpoint(t1_hinter * this, fixed xx, fixed yy)
-{   this->cx += import_shift(xx, this->import_shift);
-    this->cy += import_shift(yy, this->import_shift);
+{   this->cx = import_shift(xx, this->import_shift);
+    this->cy = import_shift(yy, this->import_shift);
 }
 
 int t1_hinter__closepath(t1_hinter * this)
