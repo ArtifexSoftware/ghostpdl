@@ -1,0 +1,25 @@
+   Copyright (C) 2000 Aladdin Enterprises.  All rights reserved.
+   Unauthorized use, copying, and/or distribution prohibited.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+This file, NEWS-MAN, describes changes in the main component in
+reverse chronological order.
+
+Version 1.33 (04/22/00)
+=======================
+
+Wed Mar 15 06:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * pcl6_gcc.mak [1.2]:
+        adds jpeg and pswrite device.  The pswrite device has not been heavily
+        tested with either pxl or pcl.
+        
+
+Thu Feb 17 05:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * pcl6_gcc.mak [1.1]:
+        new makefile for building pcl and pxl as one executable.
+        
+
+

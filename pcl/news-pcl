@@ -10,6 +10,89 @@ generated from the revision control logs.  The dates provided for each
 entry are the dates the sources were committed to the source code
 repository.
 
+Version 1.33 (04/22/00)
+=======================
+
+Mon Apr  3 05:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * pgdraw.c [1.52]:
+        emulation of unusual hp characteristic.  Angles of vector line fills
+        are always relative to the plotter unit coordinates system not the
+        current user coordinate system.  This fixes the angles and spacing
+        discrepancy in fts.2360.
+        
+
+Wed Mar 15 07:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * pctext.c [1.27]:
+        fixes a typo in the previous intellifont spacing fix - see last log
+        for this file.
+        
+
+Tue Mar 14 19:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * pctext.c [1.26]:
+        Account for the fact that agfa intellifonts assume 72.307 points per
+        inch.  This fixes a long standing spacing problem in the legacy test
+        file MC508WW2.BIN.
+        
+
+Fri Feb 18 03:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * pctop.c [1.13]:
+        Adds pjl "ENTER LANGUAGE" functionality.  PCL or XL can now be
+        selected on the command line with the -L switch, through the PJL enter
+        language command or by auto sensing.  The command line switch
+        overrides the PJL ENTER LANGUAGE command which overrides auto sensing.
+        
+
+Thu Feb 17 05:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * pgmand.h [1.10], pglabel.c [1.28], pginit.c [1.14], pcuptrn.c [1.17], 
+        pctop.c [1.12], pcpalet.c [1.17], pcl_watc.mak [1.9], pcl_ugcc.mak [1.27], 
+        pcl_sgi.mak [1.9], pcl_msvc.mak [1.8], pcl.mak [1.35], pcindxed.c [1.5], 
+        pcfrgrnd.c [1.8], pcfont.c [1.24], pcdraw.c [1.11], pcbiptrn.c [1.8]:
+        Changes for language switching, auto sensing, better memory
+        management, and simpler build system.  This code is ALPHA and is
+        expected to change a bit over the next few weeks.
+        
+
+Fri Feb 11 19:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * Anomalies.txt [1.17]:
+        adds anomaly.
+        
+
+Fri Feb  4 05:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * pgconfig.c [1.19]:
+        The SC command anticipated the current transformation matrix was the
+        current gl/2 matrix.  In one twisted and strange file (120pg.pcl) the
+        user had managed to bypass reasonable hpgl/2 initialization resulting
+        in the pcl matrix being the current ctm.  This resulted in a problem
+        showing up around 40 pages into the job because each time SC executed
+        the pattern anchor corner changed slightly.
+        
+        * pcpage.c [1.34]:
+        The y cap is updated when the top margin changes.  The pcl manual
+        implies the cursor is only adjusted for the first line of text.  We
+        approximate this by checking if the page is blank before before
+        adjusting the cursor.
+        
+        * rtmisc.c [1.12]:
+        Entering gl/2 should not exit macro collecting.
+        
+        * pcl_ugcc.mak [1.26]:
+        modifications to support the FreeBSD platform.  Setting of SYNC
+        variable so the graphics library links in the BSD reentrant c lib
+        (c_r) and changes 'make' to '$(MAKE)'.
+        
+
+Tue Jan 11 06:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * pcl.mak [1.34], NEWS-PCL [1.18]:
+        Updated for pcl and XL release 1.32.
+        
 Version 1.32 (01/12/00)
 =======================
 

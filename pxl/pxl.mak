@@ -44,7 +44,7 @@ pxl.config-clean:
 #### Other stuff:
 #	Free subsidiary objects when freeing patterns
 
-PXLVERSION=1.32
+PXLVERSION=1.33
 
 pxattr_h=$(PXLSRC)pxattr.h $(gdevpxat_h)
 pxbfont_h=$(PXLSRC)pxbfont.h

@@ -7,10 +7,66 @@ This file, NEWS-TLS (tools), describes the changes in the most recent
 releases of Aladdin's utility tools directory in reverse chronological
 order.
 
+Version 1.33 (04/22/00)
+=======================
+
+Mon Apr  3 02:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * cvs2log.py [1.12]:
+        cvs2log.py can now be run with filename arguments on the command line,
+        instead of processing all files in the current working directory.
+        
+
+Wed Mar 29 06:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * pcldocs/index.html [1.5]:
+        fixes typos...  2 examples specified the wrong directory for test
+        files, the wording of the location of the font file names was screwy
+        and the last line of the table of directory names was not inside
+        the html table.
+        
+
+Mon Mar 20 00:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * cat_url.py [1.1]:
+        script to print the contents of any url to stdout.
+        
+
+Wed Mar 15 04:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * pcldocs/index.html [1.4]:
+        The documentation did not clearly explain how to install the HP demo
+        truetype fonts.
+        
+
+Fri Mar 10 18:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * notify.py [1.2], notify.pl [1.1]:
+        Adds perl notification script that emails change logs.  Removes an
+        incomplete python script which was supposed to do the same thing.
+        
+
+Thu Feb 17 05:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * pcldocs/index.html [1.3]:
+        reworked to document new language switching code.
+        
+
+Fri Feb  4 06:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * TAGS [1.4]:
+        updated emacs tags table.
+        
+
+Tue Jan 11 06:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * NEWS-TLS [1.8]:
+        Updated for pcl and XL release 1.32.
+        
+
 Version 1.32 (01/11/00)
 =======================
 
-../tools/cvs2log.py -h artifex.com
 Mon Dec 13 04:00:00 1999 GMT        Henry Stiles    henrys@artifex.com
 
         * grid.pcl [1.1]:

@@ -7,6 +7,51 @@ This file, NEWS-PL, describes the changes in the most recent releases of
 Aladdin's library code that is shared between PCL5, HP-GL/2, HP RTL, and PCL
 XL, in reverse chronological order.
 
+Version 1.33 (04/22/00)
+=======================
+
+Sat Apr 22 07:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * plmain.c [1.23]:
+        did not properly return to pjl and stdin was not handled properly.
+        
+
+Tue Mar 14 19:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * plmain.c [1.22]:
+        flushing to end of job was not working correctly.
+        
+
+Fri Feb 18 03:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * pltop.h [1.3], plmain.c [1.21], pjparsei.c [1.4], pjparse.h [1.8], 
+        pjparse.c [1.11]:
+        Adds pjl "ENTER LANGUAGE" functionality.  PCL or XL can now be
+        selected on the command line with the -L switch, through the PJL enter
+        language command or by auto sensing.  The command line switch
+        overrides the PJL ENTER LANGUAGE command which overrides auto sensing.
+        
+
+Thu Feb 17 05:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * pltop.h [1.2], pltop.c [1.3], plmain.c [1.20], pjparsei.c [1.3]:
+        Changes for language switching, auto sensing, better memory
+        management, and simpler build system.  This code is ALPHA and is
+        expected to change a bit over the next few weeks.
+        
+
+Fri Feb  4 06:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * plmain.c [1.19]:
+        removes obsolete comment.
+        
+
+Tue Jan 11 06:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * NEWS-PL [1.12]:
+        Updated for pcl and XL release 1.32.
+        
+
 Version 1.32 (01/11/00)
 =======================
 

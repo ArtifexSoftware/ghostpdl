@@ -6,6 +6,66 @@
 This file, NEWS-XL, describes the changes in the most recent releases of
 Aladdin's PCL XL code, in reverse chronological order.
 
+Version 1.33 (04/22/00)
+=======================
+
+Fri Feb 18 03:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * pxtop.c [1.6]:
+        Adds pjl "ENTER LANGUAGE" functionality.  PCL or XL can now be
+        selected on the command line with the -L switch, through the PJL enter
+        language command or by auto sensing.  The command line switch
+        overrides the PJL ENTER LANGUAGE command which overrides auto sensing.
+        
+
+Thu Feb 17 06:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * pxtop.c [1.5], pxl_ugcc.mak [1.17], pxl_top.mak [1.13], 
+        pxl_msvc.mak [1.6], pxl.mak [1.16]:
+        Changes for language switching, auto sensing, better memory
+        management, and simpler build system.  This code is ALPHA and is
+        expected to change a bit over the next few weeks.
+        
+
+Fri Feb  4 06:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * pxpaint.c [1.7]:
+        From what I can gather...  pxl treats ellipses as degenerate if both
+        width and height are 0 and other objects are degenerate if either the
+        width or the height are 0.  This fixes the missing lines CET 328
+        SetRop 0x7B Special Test A.
+        
+
+Fri Feb  4 05:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * pxl_ugcc.mak [1.16]:
+        modifications to support the FreeBSD platform.  Setting of SYNC
+        variable so the graphics library links in the BSD reentrant c lib
+        (c_r) and changes 'make' to '$(MAKE)'.
+        
+
+Thu Jan 27 03:00:00 2000 GMT        August Daniel Coby    dan@artifex.com
+
+        * pxpaint.c [1.6]:
+        Correct problem with drawing ellipses in a counterclockwise direction.
+        We were drawing a 'zero angle' arec instead of 360 degrees. in this case.
+        
+        * pxl_msvc.mak [1.5]:
+        Added $(DD)gsnogc.dev to the FEATURE_DEV list to clear a problem
+        with not having gs_nogc.c included in the build.
+        
+
+Thu Jan 13 19:00:00 2000 GMT        Raymond Johnston    ray@artifex.com
+
+        * pxl.mak [1.15]:
+        Fix to use -x 23 instead of '#' character (for Watcom wmake)
+        
+
+Tue Jan 11 06:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * pxl.mak [1.14], NEWS-PXL [1.12]:
+        Updated for pcl and XL release 1.32.
+
 Version 1.32 (01/11/00)
 =======================
 

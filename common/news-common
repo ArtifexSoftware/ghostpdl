@@ -7,6 +7,36 @@ This file, NEWS-COM, describes the changes in the most recent releases of
 Aladdin's library code that is shared between all Aladdin products, in
 reverse chronological order.
 
+Version 1.33 (04/22/00)
+=======================
+
+Thu Feb 17 06:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * ugcc_top.mak [1.21]:
+        modifications to support graphics libraries new handling of linking in
+        the pthread library.
+        
+
+Fri Feb  4 05:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * ugcc_top.mak [1.20]:
+        modifications to support the FreeBSD platform.  Setting of SYNC
+        variable so the graphics library links in the BSD reentrant c lib
+        (c_r) and changes 'make' to '$(MAKE)'.
+        
+
+Wed Jan 19 22:00:00 2000 GMT        August Daniel Coby    dan@artifex.com
+
+        * msvcdefs.mak [1.6]:
+        Updated directory definitions for MS Visual C++.
+        
+
+Tue Jan 11 06:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * NEWS-COM [1.11]:
+        Updated for pcl and XL release 1.32.
+        
+
 Version 1.32 (01/11/99)
 =======================
 
