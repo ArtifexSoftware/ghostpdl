@@ -5,7 +5,6 @@
 /* plmain.c */
 /* Main program command-line interpreter for PCL interpreters */
 #undef DEBUG
-#define DEBUG			/* always enable debug output */
 #include "stdio_.h"
 /* get stdio values before they get redefined */
  private void
