@@ -1211,9 +1211,14 @@ psw_fill_mask(gx_device * dev,
     CHECK_BEGIN_PAGE(pdev);
     if (w <= 0 || h <= 0)
 	return 0;
+
+    /* gdev_vector_update_clip_path may output a grestore and gsave,
+     * causing the setting of the color to be lost.  Therefore, we
+     * must update the clip path first.
+     */
     if (depth > 1 ||
-	gdev_vector_update_fill_color(vdev, pdcolor) < 0 ||
 	gdev_vector_update_clip_path(vdev, pcpath) < 0 ||
+	gdev_vector_update_fill_color(vdev, pdcolor) < 0 ||
 	gdev_vector_update_log_op(vdev, lop) < 0
 	)
 	return gx_default_fill_mask(dev, data, data_x, raster, id,
