@@ -17,7 +17,10 @@
 */
 
 /* $Id$ */
-
+/* MacOS bitmap output device. This code is superceeded by
+   the newer gsapi_* interface and the DISPLAY device. Please
+   use that instead. See doc/API.htm for more information */
+   
 #include "gdevmac.h"
 #include "gsparam.h"
 #include "gsdll.h"
