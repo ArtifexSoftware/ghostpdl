@@ -746,7 +746,7 @@ pdf_open(gx_device * dev)
     } else if(pdev->UserPassword.size > 0) {
 	eprintf("User password is specified. Need an Owner password or both.\n");
 	return_error(gs_error_rangecheck);
-    } else if (pdev->KeyLength || pdev->Permissions || pdev->EncryptionR) {
+    } else if (pdev->KeyLength) {
 	eprintf("Can't accept encryption options without a password.\n");
 	return_error(gs_error_rangecheck);
     }
