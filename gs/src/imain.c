@@ -44,15 +44,13 @@
 #include "isave.h"		/* for prototypes */
 #include "interp.h"
 #include "ivmspace.h"
-#include "idisp.h"		/* for setting display device callback */
 #include "iplugin.h"
 
 /* ------ Exported data ------ */
 
-/* Define the default instance of the interpreter. */
-/* Currently, this is the *only possible* instance, because most of */
-/* the places that need to take an explicit instance argument don't. */
-private gs_main_instance the_gs_main_instance;
+/** using backpointers retrieve minst from any memory pointer 
+ * 
+ */
 gs_main_instance* 
 get_minst_from_memory(const gs_memory_t *mem)
 {
@@ -123,7 +121,7 @@ gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
 	return_error(minst->heap, e_VMerror);
     }
     make_array(&minst->lib_path.container, avm_foreign, max_lib_paths,
-	       (ref *) gs_alloc_byte_array(heap, max_lib_paths, sizeof(ref),
+	       (ref *) gs_alloc_byte_array(minst->heap, max_lib_paths, sizeof(ref),
 					   "lib_path array"));
     make_array(&minst->lib_path.list, avm_foreign | a_readonly, 0,
 	       minst->lib_path.container.value.refs);

@@ -440,8 +440,8 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		    if (c == c2_cntrmask) {
 			/****** NYI ******/
 		    } else {	/* hintmask or equivalent */
-			if_debug0('1', "[1]hstem hints:\n");
-			if_debug0('1', "[1]vstem hints:\n");
+			if_debug0(pfont->memory, '1', "[1]hstem hints:\n");
+			if_debug0(pfont->memory, '1', "[1]vstem hints:\n");
 			code = t1_hinter__hint_mask(h, mask);
 			if (code < 0)
 			    return code;

@@ -235,7 +235,9 @@ z42_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph)
  * the glyph is missing or out of range.
  */
 int
-font_gdir_get_outline(const ref *pgdir, long glyph_index,
+font_gdir_get_outline(const gs_memory_t *mem, 
+		      const ref *pgdir, 
+		      long glyph_index,
 		      gs_glyph_data_t *pgd)
 {
     ref iglyph;
@@ -311,7 +313,7 @@ z42_gdir_enumerate_glyph(gs_font *font, int *pindex,
     } else
 	pgdict = &pfont_data(font)->CharStrings;
     /* A trick : use zchar_enumerate_glyph to enumerate GIDs : */
-    code = zchar_enumerate_glyph(pgdict, pindex, pglyph);
+    code = zchar_enumerate_glyph(font->memory, pgdict, pindex, pglyph);
     if (*pindex != 0 && *pglyph >= gs_min_cid_glyph)
 	*pglyph	= *pglyph - gs_min_cid_glyph + GS_MIN_GLYPH_INDEX;
     return code;

@@ -41,19 +41,19 @@ bool
 zfont_mark_glyph_name(const gs_memory_t *mem, gs_glyph glyph, void *ignore_data)
 {
     return (glyph >= gs_min_cid_glyph || glyph == gs_no_glyph ? false :
-	    name_mark_index((uint) glyph));
+	    name_mark_index(mem, (uint) glyph));
 }
 
 /* Get a global glyph code.  */
 private int 
-zfont_global_glyph_code(gs_const_string *gstr, gs_glyph *pglyph)
+zfont_global_glyph_code(const gs_memory_t *mem, gs_const_string *gstr, gs_glyph *pglyph)
 {
     ref v;
-    int code = name_ref(gstr->data, gstr->size, &v, 0);
+    int code = name_ref(mem, gstr->data, gstr->size, &v, 0);
 
     if (code < 0)
 	return code;
-    *pglyph = (gs_glyph)name_index(&v);
+    *pglyph = (gs_glyph)name_index(mem, &v);
     return 0;
 }
 

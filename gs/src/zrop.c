@@ -29,7 +29,7 @@ zsetrasterop(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     int param;
-    int code = int_param(op, 0xff, &param);
+    int code = int_param(imemory, op, 0xff, &param);
 
     if (code < 0)
 	return code;
@@ -44,7 +44,7 @@ zcurrentrasterop(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(1);
+    push(imemory, 1);
     make_int(op, (int)gs_currentrasterop(igs));
     return 0;
 }
@@ -55,7 +55,7 @@ zsetsourcetransparent(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_type(*op, t_boolean);
+    check_type(imemory, *op, t_boolean);
     gs_setsourcetransparent(igs, op->value.boolval);
     pop(1);
     return 0;
@@ -67,7 +67,7 @@ zcurrentsourcetransparent(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(1);
+    push(imemory, 1);
     make_bool(op, gs_currentsourcetransparent(igs));
     return 0;
 }
@@ -78,7 +78,7 @@ zsettexturetransparent(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_type(*op, t_boolean);
+    check_type(imemory, *op, t_boolean);
     gs_settexturetransparent(igs, op->value.boolval);
     pop(1);
     return 0;
@@ -90,7 +90,7 @@ zcurrenttexturetransparent(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(1);
+    push(imemory, 1);
     make_bool(op, gs_currenttexturetransparent(igs));
     return 0;
 }

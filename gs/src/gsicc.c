@@ -330,7 +330,7 @@ gx_adjust_cspace_CIEICC(const gs_color_space * pcs, int delta)
 {
     const gs_icc_params *picc_params = &pcs->params.icc;
 
-    rc_adjust_const(picc_params->picc_info, delta, "gx_adjust_cspace_CIEICC");
+    rc_adjust_const(pcs->pmem, picc_params->picc_info, delta, "gx_adjust_cspace_CIEICC");
     picc_params->alt_space.type->adjust_cspace_count(
             (const gs_color_space *)&picc_params->alt_space, delta );
 }
@@ -670,9 +670,9 @@ gx_serialize_CIEICC(const gs_color_space * pcs, stream * s)
     if (code < 0)
 	return code;
     if (sseek(picc->instrp, 0) < 0)
-	return_error(gs_error_unregistered); /* Unimplemented. */
+	return_error(s->memory, gs_error_unregistered); /* Unimplemented. */
     if (savailable(picc->instrp, &avail) != 0)
-	return_error(gs_error_unregistered); /* Unimplemented. */
+	return_error(s->memory, gs_error_unregistered); /* Unimplemented. */
     code = sputs(s, (byte *)&avail, sizeof(avail), &n);
     if (code < 0)
 	return code;

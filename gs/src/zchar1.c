@@ -948,9 +948,9 @@ z1_seac_data(gs_font_type1 *pfont, int ccode, gs_glyph *pglyph,
     ref rglyph;
 
     if (glyph == GS_NO_GLYPH)
-	return_error(e_rangecheck);
-    if ((code = gs_c_glyph_name(glyph, gstr)) < 0 ||
-	(code = name_ref(gstr->data, gstr->size, &rglyph, 0)) < 0
+	return_error(pfont->memory, e_rangecheck);
+    if ((code = gs_c_glyph_name(pfont->memory, glyph, gstr)) < 0 ||
+	(code = name_ref(pfont->memory, gstr->data, gstr->size, &rglyph, 0)) < 0
 	)
 	return code;
     if (pglyph)
@@ -1132,12 +1132,12 @@ z1_glyph_info_generic(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	done_members |= GLYPH_INFO_CDEVPROC;
 	if (members & GLYPH_INFO_CDEVPROC) {
 	    info->members = done_members;
-	    return_error(e_rangecheck);
+	    return_error(font->memory, e_rangecheck);
 	} else {
 	    /* Ignore CDevProc. Used to compure MissingWidth.*/
 	}
     }
-    glyph_ref(glyph, &gref);
+    glyph_ref(font->memory, glyph, &gref);
     if (width_members == GLYPH_INFO_WIDTH1) {
 	double wv[4];
 	code = zchar_get_metrics2(pbfont, &gref, wv);

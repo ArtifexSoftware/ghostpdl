@@ -23,6 +23,7 @@
 #include "idparam.h"
 #include "ifont1.h"
 #include "ifont2.h"
+#include "ialloc.h"
 
 /* Private utilities */
 private uint

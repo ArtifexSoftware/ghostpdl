@@ -61,7 +61,7 @@ cid_font_data_param(const gs_memory_t *mem, os_ptr op, gs_font_cid_data *pdata, 
     if (r_has_type(pgdir, t_dictionary) || r_is_array(pgdir)) {
 	/* GlyphDirectory, GDBytes is optional. */
 	*pGlyphDirectory = *pgdir;
-	code = dict_int_param(op, "GDBytes", 0, MAX_GDBytes, 0,
+	code = dict_int_param(mem, op, "GDBytes", 0, MAX_GDBytes, 0,
 			      &pdata->GDBytes);
 	return code;
     } else {

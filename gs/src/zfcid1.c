@@ -327,7 +327,7 @@ zbuildfont11(i_ctx_t *i_ctx_p)
     pfont->procs.glyph_info = z11_glyph_info;
     pfont->procs.glyph_outline = z11_glyph_outline;
     pfont->data.get_glyph_index = z11_get_glyph_index;
-    get_font_name(&cfnstr, CIDFontName);
+    get_font_name(pfont->memory, &cfnstr, CIDFontName);
     copy_font_name(&pfcid->font_name, &cfnstr);
     if (MetricsCount) {
 	/* "Wrap" the glyph accessor procedures. */

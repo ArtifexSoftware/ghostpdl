@@ -129,8 +129,8 @@ ztype42execchar(i_ctx_t *i_ctx_p)
      * The definition must be a Type 42 glyph index.
      * Note that we do not require read access: this is deliberate.
      */
-    check_type(*op, t_integer);
-    check_ostack(3);		/* for lsb values */
+    check_type(pfont->memory, *op, t_integer);
+    check_ostack(pfont->memory, 3);		/* for lsb values */
     /* Establish a current point. */
     code = gs_moveto(igs, 0.0, 0.0);
     if (code < 0)

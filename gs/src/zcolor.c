@@ -123,13 +123,13 @@ zcurrentcolorspace(i_ctx_t * i_ctx_p)
 {
     os_ptr  op = osp;   /* required by "push" macro */
 
-    push(1);
+    push(imemory, 1);
     if ( gs_color_space_get_index(igs->color_space) == gs_color_space_index_DeviceGray ) {
         ref gray, graystr;
         ref csa = istate->colorspace.array; 
-        if (array_get(&csa, 0, &gray) >= 0 && 
+        if (array_get(imemory, &csa, 0, &gray) >= 0 && 
             r_has_type(&gray, t_name) && 
-	    (name_string_ref(&gray, &graystr),
+	    (name_string_ref(imemory, &gray, &graystr),
 	    r_size(&graystr) == 10 &&
 	    !memcmp(graystr.value.bytes, "DeviceGray", 10))) {
             
@@ -138,7 +138,7 @@ zcurrentcolorspace(i_ctx_t * i_ctx_p)
 	int code = ialloc_ref_array(op, a_all, 1, "currentcolorspace");
 	if (code < 0)
 	    return code;
-	    return name_enter_string("DeviceGray", op->value.refs);
+	    return name_enter_string(imemory, "DeviceGray", op->value.refs);
         }
     } else
         *op = istate->colorspace.array;
@@ -268,8 +268,8 @@ zincludecolorspace(i_ctx_t * i_ctx_p)
     ref nsref;
     int code;
 
-    check_type(*op, t_name);
-    name_string_ref(op, &nsref);
+    check_type(imemory, *op, t_name);
+    name_string_ref(imemory, op, &nsref);
     code =  gs_includecolorspace(igs, nsref.value.const_bytes, r_size(&nsref));
     if (!code)
 	pop(1);

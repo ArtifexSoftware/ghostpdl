@@ -67,7 +67,7 @@ ztoken(i_ctx_t *i_ctx_p)
 		    return code;
 	    }
 	    }
-	    push(2);
+	    push(imemory, 2);
 	    op[-1] = token;
 	    make_true(op);
 	    return 0;

@@ -72,7 +72,7 @@ zset_uint(i_ctx_t *i_ctx_p, void (*set_proc)(gs_state *, uint))
 {
     os_ptr op = osp;
 
-    check_type(*op, t_integer);
+    check_type(imemory, *op, t_integer);
     set_proc(igs, op->value.intval);
     pop(1);
     return 0;
@@ -83,7 +83,7 @@ zcurrent_uint(i_ctx_t *i_ctx_p, uint (*current_proc)(const gs_state *))
 {
     os_ptr op = osp;
 
-    push(1);
+    push(imemory, 1);
     make_int(op, current_proc(igs));
     return 0;
 }

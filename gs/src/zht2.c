@@ -159,7 +159,7 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 	j = 0; /* Quiet the compiler: 
 	          gs_note_error isn't necessarily identity, 
 		  so j could be left ununitialized. */
-	code = gs_note_error(e_VMerror);
+	code = gs_note_error(mem, e_VMerror);
     } else {
         dict_enum = dict_first(op);
 	for (j = 0, pc = phtc; ;) {
