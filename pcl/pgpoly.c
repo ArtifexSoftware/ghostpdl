@@ -211,11 +211,34 @@ hpgl_PM(hpgl_args_t *pargs, hpgl_state_t *pgls)
 				hpgl_pen_down | hpgl_pen_pos);
 	    break;
 	  case 1 :
+	      {
+	      gs_point first;
+	      gs_point point;
+	      gs_fixed_point first_device;
+	      bool have_sub_path = false;
+
+	      if ( gx_path_subpath_start_point(gx_current_path(pgls->pgs),
+					       &first_device) >= 0 ) {
+		  have_sub_path = true;
+		  first.x = fixed2float(first_device.x);
+		  first.y = fixed2float(first_device.y);		  
+	      }
+	      
 	      hpgl_call(hpgl_close_current_path(pgls));
 	      /* remain in poly mode, this shouldn't be necessary */
 	      pgls->g.polygon_mode = true;
 	      pgls->g.subpolygon_started = true;
+	      if ( have_sub_path ) { 
+		  /* update current position to the first point in sub-path, 
+		   * should be the same as last point after close path
+		   * needed for relative moves after close of unclosed polygon
+		   */ 
+		  hpgl_call(gs_itransform(pgls->pgs, first.x, first.y, &point));
+		  hpgl_call(hpgl_set_current_position(pgls, &point)); 
+		  hpgl_call(hpgl_update_carriage_return_pos(pgls));
+	      }
 	      break;
+	      }
 	  case 2 :
 	      if ( pgls->g.polygon_mode ) {
 		  /* explicitly close the path if the pen is down */

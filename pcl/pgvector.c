@@ -180,36 +180,29 @@ hpgl_plot(hpgl_args_t *pargs, hpgl_state_t *pgls, hpgl_plot_function_t func)
      * we reset the argument bookkeeping after each group.
      */
     hpgl_real_t x, y;
-    if ( hpgl_plot_is_move(func) )
+    if ( hpgl_plot_is_move(func) || pgls->g.subpolygon_started )
 	hpgl_call(hpgl_close_path(pgls));
 
     while ( hpgl_arg_units(pargs, &x) && hpgl_arg_units(pargs, &y) ) {
 	pargs->phase = 1;	/* we have arguments */
 	/* first point of a subpolygon is a pen up - absurd */
 	if ( pgls->g.subpolygon_started ) {
-	    hpgl_pen_state_t pen;
-	    hpgl_args_t args;
+	    hpgl_pen_state_t pen;	    
 	    pgls->g.subpolygon_started = false;
+	    
 	    hpgl_save_pen_state(pgls,
 				&pen,
-				hpgl_pen_down|hpgl_pen_relative);
-	    /* if we are relative we have to get the current
-	       position, set absolute position, pu to the new
-	       pos */
-	    if ( hpgl_plot_is_relative(func) ) {
-		pgls->g.relative_coords = hpgl_plot_absolute;
-		/* should use hgpl_get_current_position() accessor */
-		hpgl_args_set_real2(&args,
-				    pgls->g.pos.x, pgls->g.pos.y);
-	    } else
-		hpgl_args_set_real2(&args, x, y);
-
-	    hpgl_PU(&args, pgls);
+				hpgl_pen_down);
+	    pgls->g.move_or_draw = hpgl_plot_move;
+	    hpgl_call(hpgl_add_point_to_path(pgls, x, y, 
+					     hpgl_plot_move | pgls->g.relative_coords, 
+					     true));
 	    hpgl_restore_pen_state(pgls,
 				   &pen,
-				   hpgl_pen_down|hpgl_pen_relative);
+				   hpgl_pen_down);	
 	}
-	hpgl_call(hpgl_add_point_to_path(pgls, x, y, func, true));
+	else 
+	    hpgl_call(hpgl_add_point_to_path(pgls, x, y, func, true));
 	/* Prepare for the next set of points. */
 	if ( pgls->g.symbol_mode != 0 )
 	    hpgl_call(hpgl_print_symbol_mode_char(pgls));
@@ -218,11 +211,6 @@ hpgl_plot(hpgl_args_t *pargs, hpgl_state_t *pgls, hpgl_plot_function_t func)
 
     /* check for no argument case */
     if ( !pargs->phase) {
-	/* if the first plotted point has no arguments we don't
-	   have to worry about adding a PU (see above) */
-	if ( pgls->g.subpolygon_started )
-	    pgls->g.subpolygon_started = false;
-
 	if ( hpgl_plot_is_relative(func) )
 	    /*hpgl_call(hpgl_add_point_to_path(pgls, 0.0, 0.0, func, true)) */;
 	else {
