@@ -461,6 +461,7 @@ bbox_draw(i_ctx_t *i_ctx_p, int (*draw)(P1(gs_state *)))
 	 * straight line.  Don't bother rendering the character at all.
 	 */
 	if (code == e_undefinedresult) {
+	    pop(4);
 	    gs_newpath(igs);
 	    return 0;
 	}
