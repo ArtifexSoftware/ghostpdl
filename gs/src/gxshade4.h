@@ -24,7 +24,7 @@
 #define NEW_SHADINGS 1 /* Old code = 0, new code = 1. */
 
 #define QUADRANGLES 0 /* 0 = decompose by triangles, 1 = by quadrangles. */
-/* The code QUADRANGLES 0 appears a dead branch.
+/* The code QUADRANGLES 1 appears a dead branch.
    We keep it because it stores a valuable code for constant_color_quadrangle,
    which decomposes a random quadrangle into 3 or 4 trapezoids.
  */
@@ -96,6 +96,7 @@ typedef struct patch_fill_state_s {
     gs_client_color color_domain;
     fixed fixed_flat;
     double smoothness;
+    bool maybe_self_intersecting;
 #endif
 } patch_fill_state_t;
 
@@ -112,6 +113,12 @@ struct shading_vertex_s {
     gs_fixed_point p;
     patch_color_t c;
 };
+
+/* Define one segment (vertex and next control points) of a curve. */
+typedef struct patch_curve_s {
+    mesh_vertex_t vertex;
+    gs_fixed_point control[2];
+} patch_curve_t;
 
 /* Initialize the fill state for triangle shading. */
 void mesh_init_fill_state(mesh_fill_state_t * pfs,
@@ -136,6 +143,11 @@ int mesh_triangle(patch_fill_state_t *pfs,
 
 int mesh_padding(patch_fill_state_t *pfs, const gs_fixed_point *p0, const gs_fixed_point *p1, 
 	    const patch_color_t *c0, const patch_color_t *c1);
+
+int patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
+	   const gs_fixed_point interior[4],
+	   void (*transform) (gs_fixed_point *, const patch_curve_t[4],
+			      const gs_fixed_point[4], floatp, floatp));
 #endif
 
 #endif /* gxshade4_INCLUDED */

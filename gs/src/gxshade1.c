@@ -30,7 +30,12 @@
 #include "gxistate.h"
 #include "gxpath.h"
 #include "gxshade.h"
+#include "gxshade4.h"
 #include "gxdevcli.h"
+#include "vdtrace.h"
+
+#define VD_TRACE_AXIAL_PATCH 1
+
 
 /* ================ Utilities ================ */
 
@@ -408,12 +413,18 @@ typedef struct A_fill_state_s {
     gs_point delta;
     double length, dd;
     int depth;
+#   if NEW_SHADINGS
+    double t0, t1;
+    double v0, v1, u0, u1;
+#   else
     A_frame_t frames[A_max_depth];
+#   endif
 } A_fill_state_t;
 /****** NEED GC DESCRIPTOR ******/
 
 /* Note t0 and t1 vary over [0..1], not the Domain. */
 
+#if !NEW_SHADINGS
 private int
 A_fill_stripe(const A_fill_state_t * pfs, gs_client_color *pcc,
 	      floatp t0, floatp t1)
@@ -542,23 +553,66 @@ A_fill_region(A_fill_state_t * pfs)
 	}
     }
 }
+#else
+private int
+A_fill_region(A_fill_state_t * pfs)
+{
+    const gs_shading_A_t * const psh = pfs->psh;
+    gs_function_t * const pfn = psh->params.Function;
+    double x0 = psh->params.Coords[0] + pfs->delta.x * pfs->v0;
+    double y0 = psh->params.Coords[1] + pfs->delta.y * pfs->v0;
+    double x1 = psh->params.Coords[0] + pfs->delta.x * pfs->v1;
+    double y1 = psh->params.Coords[1] + pfs->delta.y * pfs->v1;
+    double h0 = pfs->u0, h1 = pfs->u1;
+    patch_curve_t curve[4];
+    patch_fill_state_t pfs1;
+    int i, j;
 
-int
-gs_shading_A_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
+    memcpy(&pfs1, (shading_fill_state_t *)pfs, sizeof(shading_fill_state_t));
+    pfs1.Function = pfn;
+    init_patch_fill_state(&pfs1);
+    pfs1.maybe_self_intersecting = false;
+    gs_point_transform2fixed(&pfs->pis->ctm, x0 + pfs->delta.y * h0, y0 - pfs->delta.x * h0, &curve[0].vertex.p);
+    gs_point_transform2fixed(&pfs->pis->ctm, x0 + pfs->delta.y * h1, y0 - pfs->delta.x * h1, &curve[1].vertex.p);
+    gs_point_transform2fixed(&pfs->pis->ctm, x1 + pfs->delta.y * h1, y1 - pfs->delta.x * h1, &curve[2].vertex.p);
+    gs_point_transform2fixed(&pfs->pis->ctm, x1 + pfs->delta.y * h0, y1 - pfs->delta.x * h0, &curve[3].vertex.p);
+    curve[0].vertex.cc[0] = pfs->t0;
+    curve[1].vertex.cc[0] = pfs->t0;
+    curve[2].vertex.cc[0] = pfs->t1;
+    curve[3].vertex.cc[0] = pfs->t1;
+    for (i = 0; i < 4; i++) {
+	j = (i + 1) % 4;
+	curve[i].control[0].x = (curve[i].vertex.p.x * 2 + curve[j].vertex.p.x) / 3;
+	curve[i].control[0].y = (curve[i].vertex.p.y * 2 + curve[j].vertex.p.y) / 3;
+	curve[i].control[1].x = (curve[i].vertex.p.x + curve[j].vertex.p.x * 2) / 3;
+	curve[i].control[1].y = (curve[i].vertex.p.y + curve[j].vertex.p.y * 2) / 3;
+    }
+    return patch_fill(&pfs1, curve, NULL, NULL);
+}
+#endif
+
+private inline int
+gs_shading_A_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
 			    gx_device * dev, gs_imager_state * pis)
 {
     const gs_shading_A_t *const psh = (const gs_shading_A_t *)psh0;
     gs_matrix cmat;
     gs_rect t_rect;
     A_fill_state_t state;
+#   if !NEW_SHADINGS
     gs_client_color rcc[2];
+#   endif
     float d0 = psh->params.Domain[0], d1 = psh->params.Domain[1];
     float dd = d1 - d0;
     float t0, t1;
+#   if !NEW_SHADINGS
     float t[2];
+#   endif
     gs_point dist;
+#   if !NEW_SHADINGS
     int i;
-    int code;
+#   endif
+    int code = 0;
 
     shade_init_fill_state((shading_fill_state_t *)&state, psh0, dev, pis);
     state.psh = psh;
@@ -578,21 +632,52 @@ gs_shading_A_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     cmat.xx = cmat.yy;
     cmat.xy = -cmat.yx;
     gs_bbox_transform_inverse(rect, &cmat, &t_rect);
-    state.frames[0].t0 = t0 = max(t_rect.p.y, 0);
-    t[0] = t0 * dd + d0;
-    state.frames[0].t1 = t1 = min(t_rect.q.y, 1);
-    t[1] = t1 * dd + d0;
-    for (i = 0; i < 2; ++i) {
-	gs_function_evaluate(psh->params.Function, &t[i],
-			     rcc[i].paint.values);
-    }
-    memcpy(state.frames[0].cc, rcc, sizeof(rcc[0]) * 2);
+#   if NEW_SHADINGS
+	t0 = max(t_rect.p.y, 0);
+	t1 = min(t_rect.q.y, 1);
+	state.v0 = t0;
+	state.v1 = t1;
+	state.u0 = t_rect.p.x;
+	state.u1 = t_rect.q.x;
+	state.t0 = t0 * dd + d0;
+	state.t1 = t1 * dd + d0;
+#   else
+	state.frames[0].t0 = t0 = max(t_rect.p.y, 0);
+	t[0] = t0 * dd + d0;
+	state.frames[0].t1 = t1 = min(t_rect.q.y, 1);
+	t[1] = t1 * dd + d0;
+	for (i = 0; i < 2; ++i) {
+	    gs_function_evaluate(psh->params.Function, &t[i],
+				 rcc[i].paint.values);
+	}
+	memcpy(state.frames[0].cc, rcc, sizeof(rcc[0]) * 2);
+#   endif
     gs_distance_transform(state.delta.x, state.delta.y, &ctm_only(pis),
 			  &dist);
     state.length = hypot(dist.x, dist.y);	/* device space line length */
     state.dd = dd;
     state.depth = 1;
     code = A_fill_region(&state);
+#   if NEW_SHADINGS
+    if (psh->params.Extend[0] && t0 > t_rect.p.y) {
+	if (code < 0)
+	    return code;
+	/* Use the general algorithm, because we need the trapping. */
+	state.v0 = t_rect.p.y;
+	state.v1 = t0;
+	state.t0 = state.t1 = t0 * dd + d0;
+	code = A_fill_region(&state);
+    }
+    if (psh->params.Extend[1] && t1 < t_rect.q.y) {
+	if (code < 0)
+	    return code;
+	/* Use the general algorithm, because we need the trapping. */
+	state.v0 = t1;
+	state.v1 = t_rect.q.y;
+	state.t0 = state.t1 = t1 * dd + d0;
+	code = A_fill_region(&state);
+    }
+#   else
     if (psh->params.Extend[0] && t0 > t_rect.p.y) {
 	if (code < 0)
 	    return code;
@@ -603,6 +688,25 @@ gs_shading_A_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 	    return code;
 	code = A_fill_stripe(&state, &rcc[1], t1, t_rect.q.y);
     }
+#   endif
+    return code;
+}
+
+int
+gs_shading_A_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
+			    gx_device * dev, gs_imager_state * pis)
+{
+    int code;
+
+    if (VD_TRACE_AXIAL_PATCH && vd_allowed('s')) {
+	vd_get_dc('s');
+	vd_set_shift(0, 0);
+	vd_set_scale(0.01);
+	vd_set_origin(0, 0);
+    }
+    code = gs_shading_A_fill_rectangle_aux(psh0, rect, dev, pis);
+    if (VD_TRACE_AXIAL_PATCH && vd_allowed('s'))
+	vd_release_dc;
     return code;
 }
 
