@@ -58,7 +58,18 @@ overview</a>.
 <h3><a name="Version8.11"></a>Version 8.11 (2003-08-16)</h3>
 
 <p>
-This an unreleased development snapshot of AFPL Ghostscript.
+Ghostscript 8.11 is the first stable release since 8.00,
+building on the features in the 8.10 beta, and with numerous 
+additional fixes and improvements.
+In particular, font rendering is greatly improved (thanks to Igor
+Melichev's new hinting code), PDF 1.4 transparency rendering is much
+more likely to be correct, and there is better support for CID font
+substitution. Processing of incorrect and broken PDF files is also
+improved, including files corrupted xref tables and non-ASCII font
+names. Many other smaller fixes are included.
+<p>
+Users may want to experiment with the new -dAlignToPixels=0 setting,
+which enables subpixel positioning for antialiased font rendering.
 
 <p>
 The following <a href="http://bugs.ghostscript.com/">bugs.ghostscript.com</a> numbers were open at
@@ -154,7 +165,6 @@ the time of this release:
 686819,
 686822,
 686824,
-686827,
 686833,
 686834,
 686837,
@@ -168,7 +178,6 @@ the time of this release:
 686852,
 686853,
 686860,
-686861,
 686863,
 686865,
 686867,
@@ -183,21 +192,17 @@ the time of this release:
 686902,
 686903,
 686904,
-686907,
 686908,
 686909,
 686919,
-686922,
 686930,
 686931,
-686932,
 686933,
 686936,
 686937,
 686938,
 686943,
 686944,
-686945,
 686946,
 686947,
 686948,
@@ -214,13 +219,15 @@ the time of this release:
 686961,
 686963,
 686966,
-686970,
 686975,
-686976,
-686977,
 686978,
 686980,
-686981
+686981,
+686990,
+686996,
+686998,
+686999,
+687000.
 </blockquote>
 
 <h3><a name="8.11_Incompatible_changes"></a>Incompatible changes</h3>
@@ -231,9 +238,6 @@ href="Use.htm#Finding_files">usage documentation</a> for details of the new mech
 <p>Ghostscript now runs in save level 1 by default, which has changed since
 8.10.  Jobservers will need to use the -dNOOUTERSAVE option to restore the
 old behavior.
-
-<pre>
-</pre>
 
 <!-- [2.0 end contents] ==================================================== -->
 

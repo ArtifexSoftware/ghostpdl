@@ -1,12 +1,267 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"   "http://www.w3.org/TR/html4/strict.dtd">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-<title>Ghostscript change history (detailed)</title></title>
+<title>Detailed History of Ghostscript versions 8.n</title>
+<!-- $Id$ -->
+<!--
+	WARNING: do not use Pete Kaiser's emacs function "gs-toc" alone to
+	re-create the table of contents here, because it will replace the
+	hand-edited TOC subheads with a separate subhead for each H2 in
+	the body of the file.  Or if you do, first look at the original
+	TOC to see how to edit it for visual conciseness.
+-->
+<link rel="stylesheet" type="text/css" href="gs.css" title="Ghostscript Style">
+</head>
+
+<body>
+<!-- [1.0 begin visible header] ============================================ -->
+
+<!-- [1.1 begin headline] ================================================== -->
+
+<table width="100%" border="0">
+<tr><th align="center" bgcolor="#CCCC00"><font size=6>Detailed History of Ghostscript versions 8.xx</font>
+</table>
+
+<!-- [1.1 end headline] ==================================================== -->
+
+<!-- [1.2 begin table of contents] ========================================= -->
+
+<h2>Table of contents</h2>
+
+<blockquote><ul>
+<li><a href="#Version8.11">Version 8.11 (2003-08-16)</a>
+<li><a href="#Version8.10">Version 8.10 (2003-05-21)</a>
+<li><a href="#Version8.00">Version 8.00 (2002-11-21)</a>
+<ul>
+<li><a href="#8.00_Incompatible_changes">Incompatible changes</a>,
+    <a href="#8.00-Documentation">Documentation</a>,
+    <a href="#8.00-Procedures">Procedures</a>,
+    <a href="#8.00-Utilities">Utilities</a>,
+    <a href="#8.00-Drivers">Drivers</a>,
+    <a href="#8.00-PDF_writer">PDF writer</a>,
+    <a href="#8.00-PDF_Interpreter">PDF Interpreter</a>,
+    <a href="#8.00-Interpreter">Interpreter</a>,
+    <a href="#8.00-Library">Library</a>
+</ul>
+</ul></blockquote>
+
+<!-- [1.2 end table of contents] =========================================== -->
+
+<!-- [1.3 begin hint] ====================================================== -->
+
+<p>
+This document is a record of changes in Ghostscript releases numbered 8.xx.
+For earlier versions, see the the history documents:
+
+<blockquote>
+<a href="History7.htm">History of Ghostscript versions 7.n</a><br>
+<a href="History6.htm">History of Ghostscript versions 6.n</a><br>
+<a href="History5.htm">History of Ghostscript versions 5.n</a><br>
+<a href="History4.htm">History of Ghostscript versions 4.n</a><br>
+<a href="History3.htm">History of Ghostscript versions 3.n</a><br>
+<a href="History2.htm">History of Ghostscript versions 2.n</a><br>
+<a href="History1.htm">History of Ghostscript versions 1.n</a>
+</blockquote>
+
+<p>For other information, see the <a href="Readme.htm">Ghostscript
+overview</a>.
+
+<!-- [1.3 end hint] ======================================================== -->
+
+<hr>
+
+<!-- [1.0 end visible header] ============================================== -->
+
+<!-- [2.0 begin contents] ================================================== -->
+
+<h3><a name="Version8.11"></a>Version 8.11 (2003-08-16)</h3>
+
+<p>
+Ghostscript 8.11 is the first stable release since 8.00,
+building on the features in the 8.10 beta, and with numerous 
+additional fixes and improvements.
+In particular, font rendering is greatly improved (thanks to Igor
+Melichev's new hinting code), PDF 1.4 transparency rendering is much
+more likely to be correct, and there is better support for CID font
+substitution. Processing of incorrect and broken PDF files is also
+improved, including files corrupted xref tables and non-ASCII font
+names. Many other smaller fixes are included.
+<p>
+Users may want to experiment with the new -dAlignToPixels=0 setting,
+which enables subpixel positioning for antialiased font rendering.
+
+<p>
+The following <a href="http://bugs.ghostscript.com/">bugs.ghostscript.com</a> numbers were open at
+the time of this release:
+<blockquote>
+405501,
+406273,
+414947,
+430175,
+446344,
+456692,
+458261,
+458775,
+458780,
+459647,
+463688,
+465936,
+487460,
+487953,
+493348,
+509829,
+526099,
+526491,
+530011,
+535366,
+535932,
+542629,
+553187,
+555072,
+558151,
+558435,
+563287,
+572865,
+578865,
+592160,
+592837,
+595760,
+600288,
+601336,
+602263,
+603934,
+604722,
+605830,
+607425,
+607850,
+610478,
+611898,
+614298,
+617077,
+617523,
+624515,
+626295,
+628110,
+629335,
+634036,
+634358,
+636210,
+645316,
+651644,
+656414,
+656510,
+664484,
+667301,
+669654,
+674241,
+674417,
+674418,
+677324,
+677383,
+677430,
+680301,
+681469,
+684778,
+684866,
+685335,
+686746,
+686747,
+686750,
+686752,
+686765,
+686770,
+686778,
+686779,
+686782,
+686788,
+686789,
+686796,
+686803,
+686813,
+686815,
+686816,
+686817,
+686819,
+686822,
+686824,
+686833,
+686834,
+686837,
+686839,
+686841,
+686842,
+686843,
+686844,
+686845,
+686850,
+686852,
+686853,
+686860,
+686863,
+686865,
+686867,
+686873,
+686877,
+686883,
+686885,
+686889,
+686892,
+686896,
+686897,
+686902,
+686903,
+686904,
+686908,
+686909,
+686919,
+686930,
+686931,
+686933,
+686936,
+686937,
+686938,
+686943,
+686944,
+686946,
+686947,
+686948,
+686949,
+686950,
+686951,
+686952,
+686953,
+686954,
+686956,
+686957,
+686958,
+686959,
+686961,
+686963,
+686966,
+686975,
+686978,
+686980,
+686981,
+686990,
+686996,
+686998,
+686999,
+687000.
+</blockquote>
+
+<h3><a name="8.11_Incompatible_changes"></a>Incompatible changes</h3>
+
+<p>The mechanism for locating resources has changed since 8.00. See the <a
+href="Use.htm#Finding_files">usage documentation</a> for details of the new mechanism.
+
+<p>Ghostscript now runs in save level 1 by default, which has changed since
+8.10.  Jobservers will need to use the -dNOOUTERSAVE option to restore the
+old behavior.
+
+<h3>Changelog</h3>
+
 <!-- generated by split_changelog.py from the output of cvs2cl.pl -->
 <!-- $Id$ -->
-<link rel=stylesheet type="text/css" href="gs.css">
-</head>
-<body>
 
 <p><strong><a name="2003-08-16_1952"></a>
 2003-08-16 19:52 giles</strong></p>
@@ -2333,5 +2588,982 @@ Bump version number after the 8.10 release.
 </pre>
 <p>[doc/News.htm 1.130, lib/gs_init.ps 1.91, src/gscdef.c 1.36, src/version.mak 1.63]</p>
 </blockquote>
+
+
+
+
+
+<h3><a name="Version8.10"></a>Version 8.10 (2003-05-21)</h3>
+
+<p>
+The 8.10 release is an incremental release from 8.00. It contains
+some fairly substantial reworking of important modules, most notably
+in the font rendering. Because of the extent of the changes, we're
+labelling this as a beta release. It should be quite usable, but
+it hasn't been as thoroughly wrung out as our production releases.
+<p>
+The major new feature improved font rendering by Igor Melichev. The
+new font renderer prevents dropouts intelligently rather than relying
+on "fill_adjust" (which has the side effect of making the font
+bolder).
+<p>
+In addition, pdfwrite continues to evolve and improve. Most patterns
+and type 3 fonts are now output as high-level objects rather 
+than being rasterized.
+<p>
+This is our first release with support for JBIG2 encoded images, using
+our jbig2dec library. This decoder is not yet complete, but
+successfully decodes many PDF files containing JBIG2 images.
+<p>
+This release also contains an important security fix. If you are using
+Ghostscript in a security-critical application, we recommend you
+upgrade now.
+<p>
+Finally, we include the usual bug fixes and improvements. Please
+exercise this release thoroughly, so we can make the next release
+rock-solid.
+
+<p>
+The following <a href="http://bugs.ghostscript.com/">bugs.ghostscript.com</a> numbers were open at
+the time of this release:
+<blockquote>
+405501,
+406273,
+414947,
+414985,
+430175,
+446344,
+456692,
+458261,
+458775,
+458780,
+459647,
+463688,
+465936,
+487460,
+487953,
+493348,
+505429,
+509829,
+526099,
+526491,
+530011,
+535366,
+535752,
+535932,
+538033,
+542629,
+553187,
+555072,
+558151,
+558435,
+563287,
+570772,
+572865,
+578838,
+578865,
+592160,
+592837,
+592841,
+592930,
+595760,
+600288,
+601336,
+602263,
+603934,
+604722,
+605830,
+607425,
+607850,
+610478,
+611898,
+614298,
+617077,
+617523,
+621267,
+623292,
+624515,
+626059,
+626295,
+628110,
+629335,
+633299,
+634036,
+634358,
+636210,
+637850,
+645316,
+651644,
+654532,
+656414,
+656510,
+664484,
+667301,
+669654,
+674241,
+674390,
+674417,
+674418,
+677324,
+677383,
+677430,
+677573,
+680301,
+681469,
+684778,
+684866,
+685335,
+686746,
+686747,
+686750,
+686752,
+686768,
+686770,
+686777,
+686778,
+686779,
+686782,
+686784,
+686785,
+686788,
+686789,
+686791,
+686796,
+686803,
+686805,
+686813,
+686815,
+686816,
+686817,
+686819,
+686821,
+686822,
+686823,
+686824,
+686827,
+686829,
+686833,
+686834,
+686837,
+686839,
+686841,
+686842,
+686843,
+686844,
+686845,
+686850,
+686852,
+686853,
+686859,
+686860,
+686861,
+686863,
+686865,
+686867,
+686869,
+686871,
+686873,
+686876,
+686877,
+686878,
+686880,
+686881.
+</blockquote>
+
+<h2><a name="8.10_Incompatible_changes"></a>Incompatible changes</h2>
+
+<p>The mechanism for locating resources has changed. See the <a href="Use.htm#Finding_files">usage
+documentation</a> for details of the new mechanism.
+
+<h2><a name="8.10_changelog"></a>Changelog</h2>
+
+<!-- generated by split_changelog.py from the output of cvs2cl.pl -->
+<!-- $Id$ -->
+
+<p><strong><a name="2003-06-10_1429"></a>
+2003-06-10 14:29 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix : (type 1 interpreter) : ce1_setcurrentpoint was wrong.
+</pre>
+<p>[src/gdevpsfx.c 1.18, src/gstype1.c 1.23]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-09_2225"></a>
+2003-06-09 22:25 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Edited to reflect new capabilities of Bugzilla and current bug reporting
+practices.
+</pre>
+<p>[doc/Bug-form.htm 1.37]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-09_2216"></a>
+2003-06-09 22:16 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Change links from SourceForge bug tracker,
+http://sourceforge.net/bugs/?group_id=1897
+to Ghostscript Bugzilla, http://bugs.ghostscript.com
+Fix bug #686888
+</pre>
+<p>[doc/Bug-info.htm 1.35, doc/Make.htm 1.67]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-09_2155"></a>
+2003-06-09 21:55 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Add hyperlinks to Ghostscript Bugzilla bug entries.
+</pre>
+<p>[doc/Devices.htm 1.67, doc/Issues.htm 1.37, doc/Projects.htm 1.52]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-09_1358"></a>
+2003-06-09 13:58 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Permit explicit specification of /GDBytes equal to 0 for incrementally
+downloadable CIDFonts.
+Fixes bug 686890 from customer 131.
+
+DETAILS:
+Incrementally downloadable CIDFont has GlyphDirectory key. According to
+PLRM3 p. 376 "The binary data section of a CIDFont with a GlyphDirectory entry
+does not need a charstring offset table or charstrings; if present, they will
+be ignored". PLRM3 says nothing about GDBytes entry but it seems logical that
+the entry is no longer needed when the structure it describes is ignored.
+
+Old code used 0 as a default GDBytes value but required explicit specification
+to be > 0. New code permits explicit 0 value because "Acrobat PDFMaker 5.0 for
+Word" generates it.
+</pre>
+<p>[src/zfcid.c 1.14]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-08_1359"></a>
+2003-06-08 13:59 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix : Removing an unused code.
+</pre>
+<p>[src/gdevbit.c 1.8]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-08_0330"></a>
+2003-06-08 03:30 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix : Completing the extended semantics of gs_glyph.
+
+DETAILS :
+
+The extended semantics was introduced with the patch
+http://www.ghostscript.com/pipermail/gs-cvs/2003-June/003354.html
+That patch appears incomplete. Hopely this one completes it.
+Also it fixes the bug #686910, which was not detected with comparefiles.
+</pre>
+<p>[src/zfont42.c 1.16]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-07_2117"></a>
+2003-06-07 21:17 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+pdfwrite : Write Encoding for True Type fonts.
+
+DETAILS :
+
+See comment in code.
+</pre>
+<p>[src/gdevpdtt.c 1.48]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-07_2114"></a>
+2003-06-07 21:14 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (PDF interpreter) : Account Encoding while building CharStrings for TrueType fonts.
+
+DETAILS :
+
+If an Encoding is specified with a symbolic TrueType font,
+its character names to be used for generating CharStrings.
+The old code uses SymbolEncoding instead, missing some characters.
+
+Fixes the bug 686912 "PDF interpreter problem with True Type & Encoding".
+</pre>
+<p>[lib/gs_ttf.ps 1.30, lib/pdf_font.ps 1.56]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-06_1750"></a>
+2003-06-06 17:50 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Convert Type 0 fonts with multiple CID font descendents into
+Type 0 fonts with single CID font descendents (the part 3).
+
+DETAILS :
+
+At last we got a non-degenerate test for multiple CID font descendents
+and could debug this stuff with a real document.
+
+This patch mixes several changes :
+
+- In some cases CIDFontType 2 fonts wrongly computed glyph indices ignoring GlyphDirectory.
+  The new function z11_glyph_info works for it.
+
+- The text decomposition in gdevpdtc.c mixed font indices of various font descendents.
+
+- font->procs.get_glyph_info sometimes received glyph indices
+  instead glyph names or CIDs. This happened with subglyphs of a CIDFontType 2 glyph.
+  This patch improves the semantics of gs_glyph with distinguishing
+  CIDs and GIDs with a new tag in the 2nd high order bit.
+  The new macro GS_MAX_GLYPH_INDEX and related stuff
+  works for it.
+
+- gdevpdtd.c tried to compute CID font features using glyph names,
+  which don't exist in this case. Replaced with CIDs.
+
+- In gdevtrac.c a wrong glyph space was specified enumerating glyphs
+  (a minor change, since gdevtrac.c is almost an example).
+
+- Fixed a compiler warning in gdevdevn.c .
+
+Working on this patch, we can see rudiments
+in pdfwrite code, which are inherited from pre-8.00 code
+(before stable font copies are implemented), which to be fixed someday :
+
+- subset_glyphs arguments in gdevpsft.c looks always NULL
+  and probably to be removed;
+
+- COPY_GLYPH_BY_INDEX is now obsolete and to be removed;
+
+- glyph enumeration procedures (*enumerate_glyph*) sometimes retrieve
+  a wrong tag in gs_glyph values. The new macro GS_GLYPH_TAG works against it,
+  rather an improvement to enumeration procedures would be useful.
+
+The patch is debugged with korea.ps from the bug #686894.
+After this change the embedded composite font with 2 CIDFontType 2
+descendents is correctly decomposed into 2 Type 0 fonts with
+single descendents (the old (gs8.10) code converts it into a Type 3
+with outlines). The generated PDF satisfies the PDF specification
+and Ghostscript can handle it. Meanwhile Acrobat Reader 4,5,6
+fails with it. It appears an old known problem :
+if a Type 42 font and a CIDFontType 2 with a non-standard CMap
+appear in same PDF document, Acrobat Reader fails.
+We believe it's a bug in Acrobat reader, because if we
+modify the document with removing portions of text so that
+only one of the 2 fonts is really used, Acrobat Reader renders it fine.
+It fails only when both things are really used for rendering.
+A workaround for this problem to do separately.
+</pre>
+<p>[src/gdevdevn.c 1.7, src/gdevpdtc.c 1.22, src/gdevpdtd.c 1.12, src/gdevpdtf.c 1.29, src/gdevpdtt.c 1.47, src/gdevpsf.h 1.24, src/gdevpsft.c 1.30, src/gdevpsfu.c 1.11, src/gdevtrac.c 1.5, src/gsccode.h 1.10, src/gstype42.c 1.31, src/gxfcopy.c 1.27, src/gxfont42.h 1.15, src/zfcid1.c 1.17, src/zfont42.c 1.15]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-06_1629"></a>
+2003-06-06 16:29 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Process encryption dictionary after reading all parts of xref. Old code
+resolved encryption dictionary after reading the latest part of xref only
+and returned null instead of the dictionary for some files.
+Fixes bug 686907 from customer 1060.
+</pre>
+<p>[lib/pdf_main.ps 1.75]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-03_0731"></a>
+2003-06-03 07:31 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+pdfwrite : Don't add subset prefix when a font doesn't embeed.
+Ghostscript Bug 686893  NeverEmbed for Japanese CID fonts doesn't work correctly
+Patch from Koji Nakamaru.
+</pre>
+<p>[src/gdevpdtf.c 1.28]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-03_0626"></a>
+2003-06-03 06:26 Dan Coby</strong></p>
+<blockquote>
+<pre>
+Fix for 686785 segfault with PDF 1.4.  The PDF interpreter was calling
+PDF 1.4 transparency features (begin_trasnparency_group) even though
+the alpha involved was 1.0.  THe fix is to set a flag when the need
+for transparency is done at the start of a page and then testing it
+when transparency may be needed durng the page.
+</pre>
+<p>[lib/pdf_draw.ps 1.70, lib/pdf_main.ps 1.74]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-03_0530"></a>
+2003-06-03 05:30 Dan Coby</strong></p>
+<blockquote>
+<pre>
+This fix corrects a recursion loop that exists with PDF form objects
+with a transparency group.
+</pre>
+<p>[lib/pdf_draw.ps 1.69]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-02_1952"></a>
+2003-06-02 19:52 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Count 1st page objects as shared objects. This is the 1st version that
+generates files compatible with AR5 used as a browser plug-in.
+Earlier versions of Acrobat ignore malformed hint tables. All versions
+ignore the tables when they read the file from disk.
+Fixes bug 592841
+</pre>
+<p>[lib/pdfopt.ps 1.20]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-02_1621"></a>
+2003-06-02 16:21 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+pdfwrite : Glyph indices were wrongly computed with copied FontType 11.
+Ghostscript Bug 686894 "Corrupted CMap".
+</pre>
+<p>[src/gxfcopy.c 1.26]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-02_1335"></a>
+2003-06-02 13:35 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add standard banner and (unnecessary) double include protection to satisfy policy tests.
+</pre>
+<p>[src/macos_carbon_pre.h 1.2]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-02_1329"></a>
+2003-06-02 13:29 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Correct listing of MacOS platform-specific source files.
+</pre>
+<p>[doc/Develop.htm 1.116]</p>
+</blockquote>
+
+<p><strong><a name="2003-05-31_0010"></a>
+2003-05-31 00:10 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Previous commit was from a bad version of the file (prior to a local
+correction in a different directory). This fix is the correct fix for
+embedded fonts that have Length 0 for customer #590.
+</pre>
+<p>[lib/pdf_font.ps 1.55]</p>
+</blockquote>
+
+<p><strong><a name="2003-05-30_2328"></a>
+2003-05-30 23:28 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Some PDF files have embedded fonts with Length == 0. These should default
+to the same handling as when there is no embedded font. Fix for customer
+#590.
+</pre>
+<p>[lib/pdf_font.ps 1.54]</p>
+</blockquote>
+
+<p><strong><a name="2003-05-29_1928"></a>
+2003-05-29 19:28 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add an example library client for MacOS, comparable to dxmain and dwmain for other platforms. This
+implementation is specific to Metrowerk CodeWarrior, relying on the MSL/SIOUX stdio implementation
+for the interactive window. No project file support at the moment.
+
+Code contributed by Nigel Hathaway.
+</pre>
+<p>[src/dmmain.c 1.1, src/dmmain.r 1.1]</p>
+</blockquote>
+
+<p><strong><a name="2003-05-29_1911"></a>
+2003-05-29 19:11 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add a prefix header file for the MacOS Carbon build to enable target-specific settings.
+
+DETAILS:
+
+Metrowerks CodeWarrior doesn't really have an equivalent of the -D commandline option to set CPP
+defines at compile time. This makes it difficult to set target-specific #ifdef's, for example the
+__CARBON__ switches used in the MacOS support code. The closest thing offered is a hook in the
+project file for a 'prefix' header file that will be prepended to each source file as it is fed to
+the preprocessor. We add such a file for the carbon build, and enable it in the project file xml.
+
+The conditional in macgenmcpxml.sh is a direct comparison for the Ghostscript carbon shlib name,
+which is excessively brittle. Something like perl's =~ /carbon/i on the target name would be
+preferable, but I couldn't figure out how to do that reliably in sh.
+</pre>
+<p>[src/macgenmcpxml.sh 1.10, src/macos_carbon_pre.h 1.1]</p>
+</blockquote>
+
+<p><strong><a name="2003-05-29_1902"></a>
+2003-05-29 19:02 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Check for a valid filter name before trying to parse jbig2 global context streams.
+Fixes bug 686829.
+
+DETAILS:
+
+The expansion of abbreviated filter names and check for supported filters was
+happening after the special-case handling of JBIG2Decode parameters, resulting
+is an '/undefined in /.jbig2makeglobalctx' error if Ghostscript was compiled
+without jbig2 support, rather than the usual 'Unable to process' warnings for
+files containing JBIG2Decode data.
+</pre>
+<p>[lib/pdf_base.ps 1.38]</p>
+</blockquote>
+
+<p><strong><a name="2003-05-29_1638"></a>
+2003-05-29 16:38 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Remove spurious '-c' options to install. Closes bug 686895.
+</pre>
+<p>[ijs/Makefile.in 1.2]</p>
+</blockquote>
+
+<p><strong><a name="2003-05-27_1610"></a>
+2003-05-27 16:10 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Initialize current color value as null when pattern color space is set.
+Fixes bug 686805
+</pre>
+<p>[src/zpcolor.c 1.10]</p>
+</blockquote>
+
+<p><strong><a name="2003-05-24_2241"></a>
+2003-05-24 22:41 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix : Don't fail when GlyphNames2Unicode can't be provided for a CID font.
+</pre>
+<p>[lib/gs_fntem.ps 1.6]</p>
+</blockquote>
+
+<p><strong><a name="2003-05-24_1719"></a>
+2003-05-24 17:19 Dan Coby</strong></p>
+<blockquote>
+<pre>
+A pair of fixes for Bug 686791   Device bitcmyk produces wrong output
+The bitcmyk device produce the wrong output if GrayValues=8.  In this
+case the pixel size is 32 bits.  The encode_color procedure was sign
+extending the  MSB into the upper 32 bits of 64 bit gx_color_indexes.
+The fix in gdevbit.c prevents this from happening.  The fix in gdevm32.c
+makes it so that it does not matter.  I am including both for
+completeness.  The bitcmyk device should not produce garbage in the
+remaining bits.  Thus the first fix.  However there may be other
+devices with this problem so I am including the fix in gdevm32.c.
+There was a recent report from an AIX system with a similar problem
+</pre>
+<p>[src/gdevbit.c 1.7, src/gdevm32.c 1.5]</p>
+</blockquote>
+
+<p><strong><a name="2003-05-23_0957"></a>
+2003-05-23 09:57 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Provide a trial support for converting a text to Unicode.
+</pre>
+<p>[lib/gs_cidfn.ps 1.27, lib/gs_fntem.ps 1.5, lib/gs_fonts.ps 1.30, lib/gs_pdfwr.ps 1.33, src/gdevpdtc.c 1.21, src/zbfont.c 1.19]</p>
+</blockquote>
+
+<p><strong><a name="2003-05-23_0153"></a>
+2003-05-23 01:53 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Stream 'position' was not update correctly under some conditions.
+Fixes Bug #686859 for customer #600.
+
+DETAILS:
+
+The stream position was not updated if the buffer was emptied by
+sgets, which then called to spgetcc. The latter would reset the
+read pointers needed in order to account for the empty buffer.
+</pre>
+<p>[src/stream.c 1.22]</p>
+</blockquote>
+
+<p><strong><a name="2003-05-22_2337"></a>
+2003-05-22 23:37 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+pdfwrite : Convert Type 0 fonts with multiple CID font descendents into
+Type 0 fonts with single CID font descendents (part 2).
+
+DETAILS :
+
+The previous patch appears wrong for the case when same CID font is used with
+different CMaps. Creating multiple Type 0 fonts for this case,
+assigning them a composite font name with CMap name.
+
+Minor changes :
+
+- a compiler warning in gdevpdfv.c .
+
+- a wrong error code was returned from zfcid0.c .
+</pre>
+<p>[src/gdevpdfv.c 1.26, src/gdevpdtc.c 1.20, src/gdevpdtf.c 1.27, src/gdevpdtf.h 1.18, src/gdevpdtt.c 1.46, src/gdevpdtt.h 1.17, src/zfcid0.c 1.20]</p>
+</blockquote>
+
+<p><strong><a name="2003-05-22_2257"></a>
+2003-05-22 22:57 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Double-equals ('==') for string comparison is not portable shell. Thanks
+to Nelson Beebe for pointing out the issue.
+</pre>
+<p>[src/configure.ac 1.29]</p>
+</blockquote>
+
+<p><strong><a name="2003-05-22_2027"></a>
+2003-05-22 20:27 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix : Removed a debug hack.
+</pre>
+<p>[src/gsfcmap1.c 1.6]</p>
+</blockquote>
+
+<p><strong><a name="2003-05-22_1551"></a>
+2003-05-22 15:51 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+PDF Forms that contained indirect objects need to be resolved prior to
+processing with 'execform'. Bug #686884 for customer #150.
+</pre>
+<p>[lib/pdf_draw.ps 1.68]</p>
+</blockquote>
+
+<p><strong><a name="2003-05-22_1541"></a>
+2003-05-22 15:41 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Convert Type 0 fonts with multiple CID font descendents into
+Type 0 fonts with single CID font descendents.
+
+DETAILS :
+
+Bug 686869 "Rasterized characters".
+
+Our testbase doesn't test this case. Rather the test file for 686869
+contains a font with 2 CID descendents, it actually uses only the 1st
+descendent, so it's not a complete test.
+
+The new code fails with 401-01.ps . This test file is buggy and
+requires a special workaround, which should be a separate patch.
+
+The main change is gdevpdtc.c, gdevpdtf.h .
+
+Minor changes :
+
+- added a new argument to a set of CMap management functions to access a
+  submap corresponding to a specified font index;
+
+- gs_cmap_init now reserves so many gs_id numbers,
+  as many fonts it refer;
+
+- removed some unused variables (gdevpdfm.c, gdevpdfv.c, gdevpdtb.c).
+</pre>
+<p>[src/gdevpdfm.c 1.31, src/gdevpdfv.c 1.25, src/gdevpdtb.c 1.19, src/gdevpdtc.c 1.19, src/gdevpdtf.c 1.26, src/gdevpdtf.h 1.17, src/gdevpdtt.c 1.45, src/gdevpdtt.h 1.16, src/gdevpdtw.c 1.18, src/gdevpdtw.h 1.3, src/gdevpsf.h 1.23, src/gdevpsfm.c 1.14, src/gsfcmap.c 1.22, src/gxfcmap.h 1.15, src/zcidtest.c 1.3]</p>
+</blockquote>
+
+<p><strong><a name="2003-05-22_0602"></a>
+2003-05-22 06:02 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Removing the 'vdata' argument to simplify internal interfaces.
+
+DETAILS :
+
+This change is algorithmically equivalent.
+
+Note that 'size' argument is replaced with 'bsize', which now passes the
+buffer size rather than text size. Added some dynamical checks to ensure the
+buffer size is enough.
+</pre>
+<p>[src/gdevpdtc.c 1.18, src/gdevpdte.c 1.36, src/gdevpdtt.c 1.44, src/gdevpdtt.h 1.15]</p>
+</blockquote>
+
+<p><strong><a name="2003-05-21_1750"></a>
+2003-05-21 17:50 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Bump version number after the 8.10 release.
+</pre>
+<p>[doc/News.htm 1.130, lib/gs_init.ps 1.91, src/gscdef.c 1.36, src/version.mak 1.63]</p>
+</blockquote>
+
+
+<h1><a name="Version8.00"></a>Version 8.00 (2002-11-21)</h1>
+
+<p>
+This is the 8.00 release of AFPL Ghostscript. The most significant new
+feature since 7.0x is support for DeviceN colorspaces, up to 8
+colorants total at 8 bits per component. Also, pdfwrite has seen
+considerable improvement in font handling, and many other bug fixes.
+
+<p>
+The following SourceForge bug numbers were open at the time of this release:
+405342,
+407342,
+414947,
+414985,
+446344,
+458261,
+458775,
+458780,
+459647,
+465936,
+484752,
+484753,
+487953,
+493348,
+505429,
+510808,
+526099,
+526491,
+530011,
+535366,
+535752,
+535836,
+538033,
+539239,
+546823,
+554076,
+558151,
+558435,
+563287,
+569573,
+570772,
+573744,
+578838,
+578865,
+584990,
+592160,
+592837,
+592841,
+592925,
+592930,
+595760,
+596009,
+600288,
+601255,
+601336,
+601694,
+603934,
+605830,
+607425,
+607850,
+610356,
+610478,
+610727,
+611694,
+611701,
+611727,
+611898,
+612801,
+614298,
+615165,
+616970,
+616976,
+617077,
+617523,
+621246,
+623292,
+624515,
+625085,
+626059,
+626295,
+626358,
+626419,
+626464,
+627545,
+628110,
+629335,
+633299,
+634036,
+634358,
+634514,
+636210,
+640159,
+641278,
+641280,
+641283,
+641296,
+641490.
+
+<h3><a name="8.00_Incompatible_changes"></a>Incompatible changes</h3>
+
+<p>No incompatible changes in this release.
+
+<pre>
+</pre>
+
+
+<h2><a name="8.00-Documentation"></a>Documentation</h2><pre>
+
+First commit of 8.0 process: update versions and dates, update to News.htm.
+(doc/API.htm [1.29], doc/Bug-form.htm [1.33], doc/Bug-info.htm [1.32],
+doc/C-style.htm [1.39], doc/Commprod.htm [1.26], doc/Copying.htm [1.25],
+doc/DLL.htm [1.27], doc/Deprecated.htm [1.6], doc/Develop.htm [1.101],
+doc/Devices.htm [1.58], doc/Drivers.htm [1.37], doc/Fonts.htm [1.35],
+doc/Helpers.htm [1.29], doc/History1.htm [1.25], doc/History2.htm [1.25],
+doc/History3.htm [1.25], doc/History4.htm [1.25], doc/History5.htm [1.27],
+doc/History6.htm [1.42], doc/History7.htm [1.29], doc/Htmstyle.htm [1.30],
+doc/Install.htm [1.39], doc/Issues.htm [1.33], doc/Language.htm [1.58],
+doc/Lib.htm [1.27], doc/Maintain.htm [1.36], doc/Make.htm [1.62],
+doc/New-user.htm [1.44], doc/News.htm [1.121], doc/Projects.htm [1.49],
+doc/Ps-style.htm [1.23], doc/Ps2epsi.htm [1.27], doc/Ps2pdf.htm [1.49],
+doc/Psfiles.htm [1.40], doc/Readme.htm [1.47], doc/Release.htm [1.74],
+doc/Source.htm [1.25], doc/Tester.htm [1.24], doc/Testing.htm [1.14],
+doc/Unix-lpr.htm [1.25], doc/Use.htm [1.71], doc/Xfonts.htm [1.25],
+doc/gs-vms.hlp [1.24], man/dvipdf.1 [1.22], man/font2c.1 [1.22],
+man/gs.1 [1.23], man/gslp.1 [1.22], man/gsnd.1 [1.22], man/pdf2dsc.1 [1.21],
+man/pdf2ps.1 [1.23], man/pdfopt.1 [1.21], man/pf2afm.1 [1.22],
+man/pfbtopfa.1 [1.23], man/printafm.1 [1.22], man/ps2ascii.1 [1.21],
+man/ps2epsi.1 [1.20], man/ps2pdf.1 [1.27], man/ps2pdfwr.1 [1.26],
+man/ps2ps.1 [1.29], man/wftopfa.1 [1.22]: 2002/11/21 07:12:16 raph)
+
+</pre><h2><a name="8.00-Procedures"></a>Procedures</h2><pre>
+
+First commit of 8.0 process: update versions and dates, update to News.htm.
+(version.mak [1.58]: 2002/11/21 07:12:17 raph)
+
+</pre><h2><a name="8.00-Utilities"></a>Utilities</h2><pre>
+
+Fixes problems:
+	- Don't overwrite source file when ps2pdf.bat is used with 1
+argument and the argument has no ".ps" extension. (Fixed by Moritz Barsnick)
+Bug #631974 (lib/ps2pdfxx.bat [1.13]: 2002/11/20 03:01:23 alexcher)
+
+</pre><h2><a name="8.00-Drivers"></a>Drivers</h2><pre>
+
+Documents the old macos output device as deprecated. This is superceeded by
+the gdevdsp. (gdevmac.c [1.7]: 2002/11/20 18:24:44 giles)
+
+</pre><h2><a name="8.00-PDF_writer"></a>PDF writer</h2><pre>
+
+Fixes problems:
+	- Fix (pdfwrite) : pdf_put_colored_pattern wrongly accessed pattern
+mask. SourceForge bugs "[ 623989 ] (pdfwrite) wrong colors with 269-01.ps",
+"[ 602995 ] (pdfwrite) 269-01.ps limitcheck". (gdevpdfv.c [1.20]: 2002/11/18
+22:23:40 igor)
+	- Fix (pdfwrite) : Providing additional documentation about embedded
+fonts. (gdevpdtb.c [1.12]: 2002/11/20 10:21:15 igor)
+	- Fix (pdfwrite) : Encoding Differences were not written for
+embedded Type 1,2 fonts that have a very instandard Encoding. Discovered
+with SF bug "[ 641296 ] acrobat generates bad ps from gs pdf".
+(gdevpdtt.c [1.24]: 2002/11/21 00:05:06 igor)
+	- Fix (pdfwrite) : The previous patch about Encoding Differences was
+inaccurate about True Types and CID fonts. Improving it with a better
+condition. (gdevpdtt.c [1.25]: 2002/11/21 03:44:11 igor)
+
+</pre><h2><a name="8.00-PDF_Interpreter"></a>PDF Interpreter</h2><pre>
+
+Fixes problems:
+	- Pattern stream was copied to the string failing with rangecheck
+for long streams. The patch uses strings when possible and switches to
+reusable streams for longer streams. Bug #634080, customer #561
+(lib/pdf_draw.ps [1.63]: 2002/11/21 01:29:07 alexcher)
+
+</pre><h2><a name="8.00-Interpreter"></a>Interpreter</h2><pre>
+
+Fixes problems:
+	- Correction for 637954 dina3_watermark.pdf fails on GS 7.33. This
+forces the color space to /DeviceGray whenever the initgraphics operator is
+called. Previously if color space substitution was active and the last
+colorspace was /DeviceGray then its substituted colorspace would remain
+active. (lib/gs_cspace.ps [1.5]: 2002/11/18 23:42:18 dan)
+	- Packed array is accepted now as an encoded user path in insideness
+testing operators. Bug #640855 (zupath.c [1.7]: 2002/11/20 18:17:28
+alexcher)
+	- Fix : (1) gc_status.requested was not initialized for stable
+memories, but used by alloc_acquire_chunk. (2) setting
+gc_status.vm_threshold and gc_status.enabled for stable memories
+synchronously with non-stable ones. This allows to control stable memories
+with setvmthreshold and vmreclaim. With default settings pdfwrite now works
+faster. SourceForge bug "[ 621243 ] (pdfwrite) slow mahle.pdf"
+(zvmem2.c [1.7]: 2002/11/20 18:56:56 igor)
+	- Bring /SubstituteFont procedure prototype up to the standard:
+&lt;name&gt; SubstituteFont &lt;name&gt; . Do traditional GS font
+substitution after the standard font substitution. Use no-op standard font
+substitution for backward compatibility. Bug #637424 Customer #71
+(lib/gs_fonts.ps [1.24]: 2002/11/21 04:43:58 alexcher)
+
+When processing multiple EPS files, call showpage if necessary for
+subsequent files. (lib/gs_epsf.ps [1.10]: 2002/11/19 20:14:01 ghostgum)
+
+Corrects a small typo in the api documentation. (gdevdsp.h [1.7]: 2002/11/20
+17:46:26 giles)
+
+First commit of 8.0 process: update versions and dates, update to News.htm.
+(lib/gs_init.ps [1.74]: 2002/11/21 07:12:17 raph)
+
+</pre><h2><a name="8.00-Library"></a>Library</h2><pre>
+
+Fixes problems:
+	- Fix : lsb must not apply to True Type subglyphs. The offset to be
+taken from composite only. SourceForge bugs "[ 623122 ] component shift in
+TrueType composites", "[ 536863 ] Type11 layout bugs". (gstype42.c [1.25]:
+2002/11/20 09:55:26 igor)
+	- Fix : (1) gc_status.requested was not initialized for stable
+memories, but used by alloc_acquire_chunk. (2) setting
+gc_status.vm_threshold and gc_status.enabled for stable memories
+synchronously with non-stable ones. This allows to control stable memories
+with setvmthreshold and vmreclaim. With default settings pdfwrite now works
+faster. SourceForge bug "[ 621243 ] (pdfwrite) slow mahle.pdf"
+(gsalloc.c [1.18]: 2002/11/20 18:56:43 igor)
+	- Fix : (1) gc_status.requested was not initialized for stable
+memories, but used by alloc_acquire_chunk. (2) setting
+gc_status.vm_threshold and gc_status.enabled for stable memories
+synchronously with non-stable ones. This allows to control stable memories
+with setvmthreshold and vmreclaim. With default settings pdfwrite now works
+faster. SourceForge bug "[ 621243 ] (pdfwrite) slow mahle.pdf"
+(gsalloc.h [1.6]: 2002/11/20 18:57:10 igor)
+
+First commit of 8.0 process: update versions and dates, update to News.htm.
+(gscdef.c [1.32]: 2002/11/21 07:12:17 raph)
+
+</pre>
+
+<!-- [2.0 end contents] ==================================================== -->
+
+<!-- [3.0 begin visible trailer] =========================================== -->
+<hr>
+
+<p>
+<small>Copyright &copy; 2003 artofcode LLC.
+All rights reserved.</small>
+
+<p>
+This software is provided AS-IS with no warranty, either express or
+implied.
+
+This software is distributed under license and may not be copied,
+modified or distributed except as expressly authorized under the terms
+of the license contained in the file LICENSE in this distribution.
+
+For more information about licensing, please refer to
+http://www.ghostscript.com/licensing/. For information on
+commercial licensing, go to http://www.artifex.com/licensing/ or
+contact Artifex Software, Inc., 101 Lucas Valley Road #110,
+San Rafael, CA  94903, U.S.A., +1(415)492-9861.
+
+<p>
+<small>Ghostscript version 8.11, 16 August 2003
+
+<!-- [3.0 end visible trailer] ============================================= -->
+
 </body>
 </html>

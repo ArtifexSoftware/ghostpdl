@@ -8,8 +8,1344 @@
 </head>
 <body>
 
+<p><strong><a name="2003-08-16_1952"></a>
+2003-08-16 19:52 giles</strong></p>
+<blockquote>
+<pre>
+Correct the release date in the documentation footer and increment the version number for release.
+</pre>
+<p>[doc/API.htm 1.36, doc/Bug-form.htm 1.38, doc/Bug-info.htm 1.37, doc/C-style.htm 1.43, doc/Commprod.htm 1.29, doc/Copying.htm 1.28, doc/DLL.htm 1.32, doc/Deprecated.htm 1.9, doc/Develop.htm 1.119, doc/Devices.htm 1.69, doc/Drivers.htm 1.40, doc/Fonts.htm 1.38, doc/Helpers.htm 1.32, doc/History1.htm 1.28, doc/History2.htm 1.28, doc/History3.htm 1.28, doc/History4.htm 1.28, doc/History5.htm 1.30, doc/History6.htm 1.45, doc/History7.htm 1.33, doc/History8.htm 1.5, doc/Htmstyle.htm 1.33, doc/Install.htm 1.43, doc/Issues.htm 1.38, doc/Language.htm 1.75, doc/Lib.htm 1.31, doc/Maintain.htm 1.39, doc/Make.htm 1.69, doc/New-user.htm 1.48, doc/Projects.htm 1.53, doc/Ps-style.htm 1.26, doc/Ps2epsi.htm 1.30, doc/Ps2pdf.htm 1.55, doc/Psfiles.htm 1.49, doc/Readme.htm 1.51, doc/Source.htm 1.28, doc/Tester.htm 1.28, doc/Testing.htm 1.22, doc/Unix-lpr.htm 1.28, doc/Use.htm 1.88, doc/Xfonts.htm 1.28, doc/gs-vms.hlp 1.27]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-16_1948"></a>
+2003-08-16 19:48 giles</strong></p>
+<blockquote>
+<pre>
+Bump the release date for Ghostscript 8.11.
+</pre>
+<p>[doc/News.htm 1.134, doc/Release.htm 1.80, man/dvipdf.1 1.26, man/font2c.1 1.26, man/gs.1 1.27, man/gslp.1 1.26, man/gsnd.1 1.26, man/pdf2dsc.1 1.25, man/pdf2ps.1 1.27, man/pdfopt.1 1.25, man/pf2afm.1 1.26, man/pfbtopfa.1 1.27, man/printafm.1 1.26, man/ps2ascii.1 1.25, man/ps2epsi.1 1.24, man/ps2pdf.1 1.31, man/ps2pdfwr.1 1.30, man/ps2ps.1 1.33, man/wftopfa.1 1.26, src/version.mak 1.65]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-16_1943"></a>
+2003-08-16 19:43 giles</strong></p>
+<blockquote>
+<pre>
+Document testing.cfg as well as testing.cfg.example.
+</pre>
+<p>[doc/Testing.htm 1.21]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-16_0753"></a>
+2003-08-16 07:53 raph</strong> (<a href="Details.htm#2003-08-16_0753">details</a>)</p>
+<blockquote>
+<pre>
+Cleans up the behavior of the .tempfile operator, primarily making it
+consistent across all the platforms, ensuring that the TMPDIR and TEMP
+environment variables are effective, the system temp directory is used
+when these are not specified, and the permissions for tempfile
+creation work as expected (allowed in the simple case, but closing off
+potential vulnerabilities in other cases. Intended as a final fix for
+bug #686922.
+
+</pre>
+<p>[doc/Language.htm 1.74, src/gp.h 1.25, src/gp_mswin.c 1.22, src/gp_vms.c 1.32, src/gpmisc.h 1.12, src/lib.mak 1.131, src/zfile.c 1.36]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-16_0651"></a>
+2003-08-16 06:51 ray</strong> (<a href="Details.htm#2003-08-16_0651">details</a>)</p>
+<blockquote>
+<pre>
+Convert ASCII range font names found during the FONTPATH scanning to
+simole ASCII aliases (original Unicode names preserved). Fixes bug 686861
+for customer 131.
+
+</pre>
+<p>[lib/gs_fonts.ps 1.41]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-16_0042"></a>
+2003-08-16 00:42 ray</strong> (<a href="Details.htm#2003-08-16_0042">details</a>)</p>
+<blockquote>
+<pre>
+Pass path across grestore using base "identity" coordinates to prevent
+limitcheck errors. The upath operator returns coordinates in the current
+user space, but these are no longer valid across a CTM change such as
+"grestore" or "setgstate" causes. Fixes SF bug #687001 for customers
+580 and 590.
+
+</pre>
+<p>[lib/pdf_ops.ps 1.31]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-15_2232"></a>
+2003-08-15 22:32 raph</strong> (<a href="Details.htm#2003-08-15_2232">details</a>)</p>
+<blockquote>
+<pre>
+Fixes two pointers to freed objects that were left dangling
+in the PDF 1.4 transparency logic. Fixes bug #686994.
+
+</pre>
+<p>[src/gdevp14.c 1.19, src/gsdfilt.c 1.8, src/gsdfilt.h 1.9, src/gsstate.c 1.21, src/gzstate.h 1.9]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-15_2023"></a>
+2003-08-15 20:23 giles</strong></p>
+<blockquote>
+<pre>
+Correct a typo in the previous commit.
+</pre>
+<p>[src/gp_macio.c 1.29]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-15_2019"></a>
+2003-08-15 20:19 giles</strong></p>
+<blockquote>
+<pre>
+Remove redunant prototypes from gp_mac.h and modernise the implementation
+of gp_open_scratch_file on MacOS to match the updated prototype in gp.h.
+Also adds some limit checking in that implementation.
+
+Note that gp_mac.h is now empty. I've left it in the build in expectation of
+future usefulness.
+</pre>
+<p>[src/gp_mac.h 1.5, src/gp_macio.c 1.28]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-14_2228"></a>
+2003-08-14 22:28 ghostgum</strong> (<a href="Details.htm#2003-08-14_2228">details</a>)</p>
+<blockquote>
+<pre>
+Update DSC parser to latest version from GSview.
+
+</pre>
+<p>[src/dscparse.c 1.13, src/dscparse.h 1.12]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-14_1956"></a>
+2003-08-14 19:56 alexcher</strong></p>
+<blockquote>
+<pre>
+Fix make files and portability layer to compile on Borland 5.5
+freeware compiler.
+</pre>
+<p>[src/bcwin32.mak 1.29, src/unistd_.h 1.9, src/winint.mak 1.20]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-14_1752"></a>
+2003-08-14 17:52 alexcher</strong></p>
+<blockquote>
+<pre>
+Include time.h and sys/time.h on Intel compiler as requested by Duraid Madina.
+Fix bug 686984
+</pre>
+<p>[src/time_.h 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-14_1732"></a>
+2003-08-14 17:32 alexcher</strong></p>
+<blockquote>
+<pre>
+Update non-DLL version to support visual tracer.
+Fix bug 686993
+</pre>
+<p>[src/dwdll.c 1.6, src/dwnodll.c 1.5, src/msvc32.mak 1.47]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-13_1604"></a>
+2003-08-13 16:04 alexcher</strong></p>
+<blockquote>
+<pre>
+Fix portability issues: add a portable header for sscanf() and
+use specific handle HDROP instead of generic HANDLE.
+</pre>
+<p>[src/dwimg.c 1.9, src/winint.mak 1.19]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-13_1556"></a>
+2003-08-13 15:56 alexcher</strong></p>
+<blockquote>
+<pre>
+Don't rely on MS linker merging global variables defined multiple times.
+</pre>
+<p>[src/dwtrace.h 1.5]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-13_1554"></a>
+2003-08-13 15:54 alexcher</strong></p>
+<blockquote>
+<pre>
+Update GS icon file by re-saving it in MSVC 6. Old icon file was incompatible
+with OpenWatcom resource compiler.
+</pre>
+<p>[src/gswin.icx 1.2]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-13_1549"></a>
+2003-08-13 15:49 alexcher</strong></p>
+<blockquote>
+<pre>
+Remove comma from the linker command line because the following indirect
+file contains keyword-value pairs, not a list of values.
+</pre>
+<p>[src/watcw32.mak 1.27]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-13_1514"></a>
+2003-08-13 15:14 alexcher</strong></p>
+<blockquote>
+<pre>
+OpenWatcom doesn't define LPRGBQUAD. Add the corresponding typedef.
+Partial fix for 686816
+</pre>
+<p>[src/windows_.h 1.5]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-12_1413"></a>
+2003-08-12 14:13 ray</strong></p>
+<blockquote>
+<pre>
+Add the headers ($Id$ line and copyright notices).
+</pre>
+<p>[toolbin/genfontmap.ps 1.2]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-12_1332"></a>
+2003-08-12 13:32 igor</strong></p>
+<blockquote>
+<pre>
+Fix : The condition for empty environment string was wrong in ztempfile.
+Bug 686922 "no default temp dir"
+</pre>
+<p>[src/zfile.c 1.35]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-11_1914"></a>
+2003-08-11 19:14 igor</strong> (<a href="Details.htm#2003-08-11_1914">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : The default implementation of stringwidth is incompatible with Type 3 font processing.
+
+</pre>
+<p>[src/gdevpdte.c 1.43, src/gdevpdtt.c 1.54, src/gxchar.c 1.30, src/gxchar.h 1.14]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-11_1742"></a>
+2003-08-11 17:42 ray</strong></p>
+<blockquote>
+<pre>
+Correct offsets into .bigstring (broken when string size changed from 1000).
+</pre>
+<p>[lib/gs_frsd.ps 1.8]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-11_1150"></a>
+2003-08-11 11:50 igor</strong> (<a href="Details.htm#2003-08-11_1150">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Don't write OP into charprocs.
+
+</pre>
+<p>[src/gdevpdfg.c 1.34]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-11_1144"></a>
+2003-08-11 11:44 igor</strong> (<a href="Details.htm#2003-08-11_1144">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Check a run out charstring while converting Type 1 font into Type2.
+
+</pre>
+<p>[src/gdevpdtb.c 1.21, src/gdevpsf2.c 1.27, src/gdevpsfx.c 1.22]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-10_0633"></a>
+2003-08-10 06:33 dan</strong> (<a href="Details.htm#2003-08-10_0633">details</a>)</p>
+<blockquote>
+<pre>
+Fix for Bug 686991  Memory leak in CET test file 12-07.ps.
+
+</pre>
+<p>[src/zimage.c 1.12]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-08_1845"></a>
+2003-08-08 18:45 ray</strong> (<a href="Details.htm#2003-08-08_1845">details</a>)</p>
+<blockquote>
+<pre>
+Adjust internal string lengths to allow for long path/filenames such as
+for Resource paths. OS limits may be shorter than the 8192 length allowed
+for after this changes, but now interpreter internals won't cause a failure.
+Customer 590 found this with a long GenericResourceDir. Bug #686989.
+
+</pre>
+<p>[lib/gs_cidcm.ps 1.11, lib/gs_diskn.ps 1.5, lib/gs_fntem.ps 1.7, lib/gs_fonts.ps 1.40, lib/gs_frsd.ps 1.7, lib/gs_pdfwr.ps 1.36, lib/gs_pfile.ps 1.5, lib/gs_res.ps 1.34, lib/gs_resst.ps 1.3, lib/gs_statd.ps 1.12, lib/gslp.ps 1.6, lib/pdf_main.ps 1.76, lib/pphs.ps 1.6, lib/wftopfa.ps 1.5]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-07_1819"></a>
+2003-08-07 18:19 ray</strong></p>
+<blockquote>
+<pre>
+Add a utility to create a Fontmap format file after forcing a scan of all
+FONTPATH directories. The created Fontmap file will contain direct links
+to all fonts found, so that subsequent runs of Ghostscript that use this
+Fontmap won't need to perform the time consuming scan of the FONTPATH.
+</pre>
+<p>[toolbin/genfontmap.ps 1.1]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-07_1709"></a>
+2003-08-07 17:09 igor</strong> (<a href="Details.htm#2003-08-07_1709">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Widths were computed wrongly with Type 3 fonts.
+
+</pre>
+<p>[src/gdevpdte.c 1.42, src/gdevpdtw.c 1.23]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-06_1705"></a>
+2003-08-06 17:05 alexcher</strong></p>
+<blockquote>
+<pre>
+Allocate larger buffer for generated charstrings. Old allocation was
+insufficient for gray block characters. (Unicode 2591, 2592, 2593).
+Fix bug 686987.
+</pre>
+<p>[lib/bdftops.ps 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-06_1624"></a>
+2003-08-06 16:24 giles</strong></p>
+<blockquote>
+<pre>
+Disable the legacy macstdio device in the default Codewarrior build. It conflicts
+with and is obsoleted by the modern Metrowerks Standard Library and our default
+Carbon build, which most users are now using.
+</pre>
+<p>[src/macos-mcp.mak 1.21]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-06_1613"></a>
+2003-08-06 16:13 giles</strong></p>
+<blockquote>
+<pre>
+Remove an unused local variable
+</pre>
+<p>[src/gdevpdtw.c 1.22]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-06_1550"></a>
+2003-08-06 15:50 giles</strong></p>
+<blockquote>
+<pre>
+Fix incorrect line endings.
+</pre>
+<p>[src/gdevpdtw.c 1.21]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-04_1351"></a>
+2003-08-04 13:51 giles</strong></p>
+<blockquote>
+<pre>
+Document adding the jbig2dec source to the source release.
+</pre>
+<p>[doc/Release.htm 1.79]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-02_2250"></a>
+2003-08-02 22:50 igor</strong> (<a href="Details.htm#2003-08-02_2250">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Providing an access to the original font matrix via a special
+font dictionary key /.OrigFont (part 2).
+
+</pre>
+<p>[src/gdevpdtt.c 1.53, src/zbfont.c 1.23]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-02_1552"></a>
+2003-08-02 15:52 igor</strong> (<a href="Details.htm#2003-08-02_1552">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : A workaround for Type 3 fonts with instandard BuildChar.
+
+</pre>
+<p>[src/gdevpdti.c 1.18, src/gsccode.h 1.12, src/zbfont.c 1.22]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-02_1200"></a>
+2003-08-02 12:00 igor</strong> (<a href="Details.htm#2003-08-02_1200">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : xshow, xyshow array index was wrong.
+
+</pre>
+<p>[src/gdevpdtc.c 1.26, src/gdevpdte.c 1.41]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-02_0954"></a>
+2003-08-02 09:54 igor</strong> (<a href="Details.htm#2003-08-02_0954">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : gs_copied_can_copy_glyphs used glyph names instead glyph indices with Type 42.
+
+</pre>
+<p>[src/gxfcopy.c 1.31]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-01_2037"></a>
+2003-08-01 20:37 igor</strong> (<a href="Details.htm#2003-08-01_2037">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Providing an access to the original font matrix via a special
+font dictionary key /.OrigFont .
+
+</pre>
+<p>[lib/gs_fonts.ps 1.39, src/gdevpdtt.c 1.52, src/gsfont.c 1.21, src/gxfont.h 1.20, src/zbfont.c 1.21]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-01_1650"></a>
+2003-08-01 16:50 jack</strong></p>
+<blockquote>
+<pre>
+Update News.htm with current open bugs and incompatible changes.
+</pre>
+<p>[doc/News.htm 1.133]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-01_1553"></a>
+2003-08-01 15:53 giles</strong></p>
+<blockquote>
+<pre>
+Remove a redundant dependency definition.
+</pre>
+<p>[src/lib.mak 1.130]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-01_1540"></a>
+2003-08-01 15:40 giles</strong></p>
+<blockquote>
+<pre>
+Set release dates on the documenation.
+</pre>
+<p>[doc/News.htm 1.132, man/dvipdf.1 1.25, man/font2c.1 1.25, man/gs.1 1.26, man/gslp.1 1.25, man/gsnd.1 1.25, man/pdf2dsc.1 1.24, man/pdf2ps.1 1.26, man/pdfopt.1 1.24, man/pf2afm.1 1.25, man/pfbtopfa.1 1.26, man/printafm.1 1.25, man/ps2ascii.1 1.24, man/ps2epsi.1 1.23, man/ps2pdf.1 1.30, man/ps2pdfwr.1 1.29, man/ps2ps.1 1.32, man/wftopfa.1 1.25]</p>
+</blockquote>
+
+<p><strong><a name="2003-08-01_1521"></a>
+2003-08-01 15:21 giles</strong></p>
+<blockquote>
+<pre>
+Update release date for stable 8.11 release.
+</pre>
+<p>[doc/News.htm 1.131, src/gscdef.c 1.37, src/version.mak 1.64]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-31_2014"></a>
+2003-07-31 20:14 alexcher</strong></p>
+<blockquote>
+<pre>
+Create a table that decides whether the glyph index belongs to
+[WinAnsiEncoding, StandardEncoding, MacExpertEncoding], or SymbolEncoding,
+or none of them. Use this table instead of searching the encoding vectors
+for every glyph.
+Fix bug 686929
+</pre>
+<p>[doc/Develop.htm 1.118, src/devs.mak 1.93, src/gdevpdtv.c 1.1, src/gdevpdtv.h 1.1, src/gdevpdtw.c 1.20, toolbin/encs2c.ps 1.4]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-31_1215"></a>
+2003-07-31 12:15 igor</strong> (<a href="Details.htm#2003-07-31_1215">details</a>)</p>
+<blockquote>
+<pre>
+Fix (the new Type 1 hinter) : Accent was misplaced in composite Type 2 glyphs.
+
+</pre>
+<p>[src/gstype2.c 1.27, src/gxhintn.c 1.29]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-30_2024"></a>
+2003-07-30 20:24 giles</strong></p>
+<blockquote>
+<pre>
+Document the .bindnow operator and the need to rebind bind to .bind after
+calling it with -dDELAYBIND. Closes bug 633299.
+</pre>
+<p>[doc/Language.htm 1.73, doc/Use.htm 1.87]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-30_1548"></a>
+2003-07-30 15:48 ray</strong></p>
+<blockquote>
+<pre>
+Remove superfluous 'save pop' from .setpdfwrite definition since gs_init.ps
+now performs the outer level save which addresses the font loading issue
+.setpdfwrite was solving.
+</pre>
+<p>[lib/gs_pdfwr.ps 1.35]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-30_1335"></a>
+2003-07-30 13:35 ray</strong></p>
+<blockquote>
+<pre>
+Add -dNOOUTERSAVE when -c false 0 startjob pop is used to set up a job
+server environment so that Genoa tests will operate as if under a job
+server and so that global VM will be restored when Genoa tests check the
+exitserver operation.
+</pre>
+<p>[toolbin/tests/gstestgs.py 1.20]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-30_0726"></a>
+2003-07-30 07:26 ray</strong> (<a href="Details.htm#2003-07-30_0726">details</a>)</p>
+<blockquote>
+<pre>
+Add an initial outermost save unless -dNOOUTERSAVE option is specified.
+Fixes Bug #686972 and others that were closed with the instructions to
+use -c "save pop" prior to the file.
+
+</pre>
+<p>[doc/Use.htm 1.86, lib/gs_init.ps 1.93]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-30_0025"></a>
+2003-07-30 00:25 giles</strong> (<a href="Details.htm#2003-07-30_0025">details</a>)</p>
+<blockquote>
+<pre>
+Properly handle the absence of a parameter dictionary in the JBIG2Decode
+filter implementation. Closes bug 686979.
+
+</pre>
+<p>[src/zfjbig2.c 1.3]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-29_1224"></a>
+2003-07-29 12:24 giles</strong></p>
+<blockquote>
+<pre>
+Correct capitalization of the -d parameter in the IJS examples.
+</pre>
+<p>[doc/Devices.htm 1.68]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-26_1923"></a>
+2003-07-26 19:23 dan</strong></p>
+<blockquote>
+<pre>
+Correct a problem which was created when the SeparationOrder parameter
+was implemented.  The usual symptom was an uninitialized value left in
+the cyan component for a gray color space.
+</pre>
+<p>[src/gdevdevn.c 1.9]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-25_1408"></a>
+2003-07-25 14:08 giles</strong></p>
+<blockquote>
+<pre>
+Build fix of the jbig2 makefile. OOur portable (v)snprintf implementation is
+in snprintf.c, notvsnprintf.c. Reported in but 686966.
+</pre>
+<p>[src/jbig2.mak 1.6]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-25_0005"></a>
+2003-07-25 00:05 giles</strong></p>
+<blockquote>
+<pre>
+Record that .buildnativefontmap has been run even if .getnativefonts returns
+false (unimplemented). This was causing an endless loop if a font was not
+found as dofindfont tried to call the native font enumeration code over and
+over.
+</pre>
+<p>[lib/gs_fonts.ps 1.38]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-24_1522"></a>
+2003-07-24 15:22 ray</strong> (<a href="Details.htm#2003-07-24_1522">details</a>)</p>
+<blockquote>
+<pre>
+Fix a SEGV that could occur during 'shfill' if a GC occurred between the
+.buildhading and the .shfill internal operators.
+
+</pre>
+<p>[src/gsshade.c 1.9, src/gsshade.h 1.7, src/gsstruct.h 1.16]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-24_0025"></a>
+2003-07-24 00:25 giles</strong></p>
+<blockquote>
+<pre>
+Fix security issue with .setnativefontmapbuilt. Procedures that change the
+systemdict must be execute-only so the .forceput cannot be extracted and
+used to change other parameters. Thanks to Russell Lang for this.
+</pre>
+<p>[lib/gs_fonts.ps 1.37]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-24_0007"></a>
+2003-07-24 00:07 giles</strong></p>
+<blockquote>
+<pre>
+Since globaldict isn't always available and userdict is subject to save/restore,
+keep /.nativefontmapbuilt in systemdict, with an accompanying procedure to set
+its value since systemdict is read-only from the normal runlevel.
+</pre>
+<p>[lib/gs_fonts.ps 1.36]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-23_2331"></a>
+2003-07-23 23:31 giles</strong></p>
+<blockquote>
+<pre>
+Record whether the .buildnativefontmap has been run as a boolean under
+the key /.nativefontmapbuilt in userdict, instead of the array hack
+used previously.
+
+A better choice would be globaldict which is less susceptible to save/restore
+but this is a language level 2 feature and not defined with gs_fonts.ps is
+run.
+</pre>
+<p>[lib/gs_fonts.ps 1.35]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-23_2127"></a>
+2003-07-23 21:27 raph</strong></p>
+<blockquote>
+<pre>
+More transparency fixes: set color space when computing /BC in soft-mask
+transparency groups. Implement /TR transfer function in soft-mask groups.
+</pre>
+<p>[lib/pdf_draw.ps 1.73, src/gdevp14.c 1.18]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-23_1720"></a>
+2003-07-23 17:20 giles</strong> (<a href="Details.htm#2003-07-23_1720">details</a>)</p>
+<blockquote>
+<pre>
+Enable native font enumeration by default. This change also corrects some
+flaws in the search logic. Like with the FONTPATH directory scanning,
+.buildnativefontmap will only be called the first time a font cannot be found.
+However, it can still be run manually to update the in-memory Fontmap.
+
+</pre>
+<p>[lib/gs_fonts.ps 1.34]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-19_0613"></a>
+2003-07-19 06:13 raph</strong></p>
+<blockquote>
+<pre>
+More transparency fixes: fix broken remapping of Separation and DeviceN
+colorspaces in PDF 1.4 mode. Convert background color for soft mask
+groups to DeviceGray colorspace using PostScript code (currentgray).
+</pre>
+<p>[lib/pdf_draw.ps 1.72, src/gdevp14.c 1.17, src/ztrans.c 1.20]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-18_2140"></a>
+2003-07-18 21:40 raph</strong></p>
+<blockquote>
+<pre>
+Draws the alpha plane of PDF 1.4 SMask images as a soft masked group.
+</pre>
+<p>[lib/pdf_draw.ps 1.71]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-17_1349"></a>
+2003-07-17 13:49 giles</strong></p>
+<blockquote>
+<pre>
+Speed up native font enumeration on MacOS by caching the results of parsing the FOND resource
+table.
+
+Also return paths of the from '%macresource%path:to:file#POST' for resource files without
+FOND tables, on the assumption these are LWFN files. The font loading machinery doesn't yet
+support such paths, and they are simply skipped without being added to the in-memory font map.
+</pre>
+<p>[src/gp_macio.c 1.27]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-15_1647"></a>
+2003-07-15 16:47 giles</strong></p>
+<blockquote>
+<pre>
+Rename reftable to fond_table, etc. to avoid confusion with postscript references.
+</pre>
+<p>[src/gp_macio.c 1.26]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-15_0105"></a>
+2003-07-15 01:05 giles</strong> (<a href="Details.htm#2003-07-15_0105">details</a>)</p>
+<blockquote>
+<pre>
+Improve native font enumeration on MacOS. This feature is still not enabled.
+
+</pre>
+<p>[src/gp_macio.c 1.25]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-14_1932"></a>
+2003-07-14 19:32 ray</strong> (<a href="Details.htm#2003-07-14_1932">details</a>)</p>
+<blockquote>
+<pre>
+Read a PostScript embedded ICC input profile into a bytestring (.bigstring)
+rather than a temp file. This is faster and doesn't leave the temp file
+laying around. Bug #686926 for Artifex customer #1110.
+
+</pre>
+<p>[lib/gs_icc.ps 1.10]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-14_0720"></a>
+2003-07-14 07:20 ghostgum</strong></p>
+<blockquote>
+<pre>
+Exclude NT file attributes when building zip file of sources.
+</pre>
+<p>[doc/Release.htm 1.78]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-11_1518"></a>
+2003-07-11 15:18 giles</strong></p>
+<blockquote>
+<pre>
+Have configure define DONT_HAVE_JMEMSYS_H is appropriate, is support of the eventual generation of gconfig_.h by the configure script rather than unix-aux.mak.
+</pre>
+<p>[src/configure.ac 1.32]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-10_2232"></a>
+2003-07-10 22:32 dan</strong></p>
+<blockquote>
+<pre>
+Added casts to remove some warning messages from MSVC.  Partial fix for
+bug #686592.
+</pre>
+<p>[src/gdevdevn.c 1.8, src/gdevpsd.c 1.5]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-10_1921"></a>
+2003-07-10 19:21 ray</strong></p>
+<blockquote>
+<pre>
+Comment out the #define for the DUMP_TO_PNG debug mode (it will need make
+file changes to compile correctly since png.h may not be on standard
+include paths.
+</pre>
+<p>[src/gdevp14.c 1.16]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-10_1842"></a>
+2003-07-10 18:42 raph</strong></p>
+<blockquote>
+<pre>
+First batch of transparency improvments. With these changes,
+ChineseOpera.ai and a number of other files using soft mask groups
+should render correctly.
+</pre>
+<p>[src/gdevp14.c 1.15, src/gstrans.c 1.17, src/gxblend.c 1.5]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-10_1834"></a>
+2003-07-10 18:34 raph</strong></p>
+<blockquote>
+<pre>
+A code clarity change only. Make the value of 1-input stitching function
+more explicit in the degenerate case.
+</pre>
+<p>[src/gsfunc3.c 1.15]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-10_1807"></a>
+2003-07-10 18:07 giles</strong></p>
+<blockquote>
+<pre>
+Update version information and links to the web and bts sites, after a patch from Ambrose Li. Bug 686939.
+</pre>
+<p>[doc/Bug-info.htm 1.36, doc/New-user.htm 1.47]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-10_1755"></a>
+2003-07-10 17:55 giles</strong></p>
+<blockquote>
+<pre>
+Generate the list of X11 libraries we need to link to in configure. Previously this was hardwired, but some systems do require the addition of the X_PRE_LIBS and X_EXTRA_LIBS discovered by the configure macro. Closes bug 686938.
+</pre>
+<p>[src/Makefile.in 1.26, src/configure.ac 1.31]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-10_1746"></a>
+2003-07-10 17:46 ray</strong></p>
+<blockquote>
+<pre>
+Prevent divide by zero when invalid Bounds arrays are encountered. Earlier
+we allowed invalid Bounds to be compatible with Adobe, but did not supply
+a non-zero denominator value. Fix required for ChineseOpera.ai
+</pre>
+<p>[src/gsfunc3.c 1.14]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-10_1711"></a>
+2003-07-10 17:11 giles</strong></p>
+<blockquote>
+<pre>
+Recognize the 0.3 source release jbig2dec.
+</pre>
+<p>[src/configure.ac 1.30]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-10_1708"></a>
+2003-07-10 17:08 giles</strong></p>
+<blockquote>
+<pre>
+Improve a comment in the generated gconfig_.h on unix.
+</pre>
+<p>[src/unix-aux.mak 1.10]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-10_0256"></a>
+2003-07-10 02:56 ray</strong></p>
+<blockquote>
+<pre>
+Add some casts to prevent excessive warnings when compiling C fonts with
+MSVC 6. This only affects the syntax of the generated fonts.
+</pre>
+<p>[lib/font2c.ps 1.6]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-09_2355"></a>
+2003-07-09 23:55 igor</strong> (<a href="Details.htm#2003-07-09_2355">details</a>)</p>
+<blockquote>
+<pre>
+Fix: Cygwin/gcc warnings.
+
+</pre>
+<p>[src/gxtype1.c 1.26, src/zchar1.c 1.31]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-09_2346"></a>
+2003-07-09 23:46 igor</strong> (<a href="Details.htm#2003-07-09_2346">details</a>)</p>
+<blockquote>
+<pre>
+pdfwrite : Improving the font metrics handling.
+
+</pre>
+<p>[src/gdevpdtc.c 1.25, src/gdevpdte.c 1.40, src/gdevpdtt.c 1.51, src/gstype42.c 1.32, src/gxfcopy.c 1.30, src/gxtype1.c 1.25, src/ichar1.h 1.10, src/int.mak 1.114, src/zchar1.c 1.30, src/zfcid1.c 1.18]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-09_1403"></a>
+2003-07-09 14:03 igor</strong></p>
+<blockquote>
+<pre>
+Fixing a C++ style comment in fapi_ft.c.
+</pre>
+<p>[src/fapi_ft.c 1.10]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-08_2103"></a>
+2003-07-08 21:03 giles</strong></p>
+<blockquote>
+<pre>
+Don't redefine _Windows, since msvctail.mak passes it on the command line. Fixes a warning under
+MSVC reported by Igor Melichev.
+</pre>
+<p>[src/iapi.h 1.10]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-08_1731"></a>
+2003-07-08 17:31 giles</strong></p>
+<blockquote>
+<pre>
+Use 'fontname' instead of 'name' as an argument to gp_enumerate_fonts_next()
+to avoid a warning on MSVC. Thanks to Igor for pointing out the issue.
+</pre>
+<p>[src/gp.h 1.24, src/gp_dvx.c 1.10, src/gp_iwatc.c 1.15, src/gp_macio.c 1.24, src/gp_mswin.c 1.21, src/gp_os2.c 1.28, src/gp_os9.c 1.11, src/gp_unix.c 1.12, src/gp_vms.c 1.31, src/zfontenum.c 1.3]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-08_1502"></a>
+2003-07-08 15:02 giles</strong></p>
+<blockquote>
+<pre>
+Add dmmain.c to the list of (platform-specific) source files exempt from the C++ comment policy.
+</pre>
+<p>[toolbin/tests/check_comments.py 1.2]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-08_1458"></a>
+2003-07-08 14:58 giles</strong></p>
+<blockquote>
+<pre>
+Remove some C++ style comments.
+</pre>
+<p>[src/gsiomacres.c 1.4]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-08_1456"></a>
+2003-07-08 14:56 giles</strong></p>
+<blockquote>
+<pre>
+Remove some C++ style comments and correct formatting.
+</pre>
+<p>[src/zfontenum.c 1.2]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-08_1451"></a>
+2003-07-08 14:51 giles</strong></p>
+<blockquote>
+<pre>
+Add zfontenum.c to the file listing in the documentation.
+</pre>
+<p>[doc/Develop.htm 1.117]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-08_1326"></a>
+2003-07-08 13:26 igor</strong> (<a href="Details.htm#2003-07-08_1326">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Enlarge font resource arrays on demand.
+
+</pre>
+<p>[src/gdevpdtc.c 1.24, src/gdevpdtf.c 1.31, src/gdevpdtf.h 1.20]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-07_2154"></a>
+2003-07-07 21:54 jack</strong></p>
+<blockquote>
+<pre>
+Implement C++ style comment checking.  Partially fixes bug #538033.
+</pre>
+<p>[toolbin/tests/check_comments.py 1.1]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-07_2153"></a>
+2003-07-07 21:53 jack</strong></p>
+<blockquote>
+<pre>
+Require python2.2 now, since the new C++ style comment checking requires it.
+</pre>
+<p>[toolbin/tests/check_all.py 1.4, toolbin/tests/check_dirs.py 1.7, toolbin/tests/check_docrefs.py 1.8, toolbin/tests/check_source.py 1.6, toolbin/tests/dump_testdb 1.5, toolbin/tests/get_baselines 1.2, toolbin/tests/gscheck_all.py 1.4, toolbin/tests/gscheck_fuzzypdf.py 1.6, toolbin/tests/gscheck_pdfwrite.py 1.14, toolbin/tests/gscheck_raster.py 1.5, toolbin/tests/make_testdb 1.11, toolbin/tests/make_two_pdfversions 1.7, toolbin/tests/make_two_versions 1.11, toolbin/tests/revert_baseline 1.11, toolbin/tests/revert_pdfbaseline 1.9, toolbin/tests/run_nightly 1.19, toolbin/tests/run_regression 1.12, toolbin/tests/testdiff 1.3, toolbin/tests/update_baseline 1.12, toolbin/tests/update_pdfbaseline 1.8]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-04_1931"></a>
+2003-07-04 19:31 giles</strong> (<a href="Details.htm#2003-07-04_1931">details</a>)</p>
+<blockquote>
+<pre>
+Initial check in of the native font enumeration mechanism with an implementation for MacOS. The
+code is currently disabled pending resolution of bugs regarding some font files.
+
+</pre>
+<p>[lib/gs_fonts.ps 1.33, src/gp.h 1.23, src/gp_dvx.c 1.9, src/gp_iwatc.c 1.14, src/gp_macio.c 1.23, src/gp_mswin.c 1.20, src/gp_os2.c 1.27, src/gp_os9.c 1.10, src/gp_unix.c 1.11, src/gp_vms.c 1.30, src/int.mak 1.113, src/zfontenum.c 1.1]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-04_1508"></a>
+2003-07-04 15:08 giles</strong></p>
+<blockquote>
+<pre>
+Apparently Metrowerks CodeWarrior defines _WINDOWS_ instead of the normal __WINDOWS__. Support both for determining the calling conventions of the client api. Problem reported by Des Courtney as bug 686934.
+</pre>
+<p>[src/iapi.h 1.9]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-04_1302"></a>
+2003-07-04 13:02 giles</strong></p>
+<blockquote>
+<pre>
+Add the new get_baselines script to the regression test documentation.
+</pre>
+<p>[doc/Testing.htm 1.20]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-03_1220"></a>
+2003-07-03 12:20 igor</strong> (<a href="Details.htm#2003-07-03_1220">details</a>)</p>
+<blockquote>
+<pre>
+Fix (Type 1 hinter) : -dAlignToPixels=0 was ignored with -dNOCACHE.
+
+</pre>
+<p>[src/gdevpsfx.c 1.21, src/gstype1.c 1.24, src/gstype1.h 1.7, src/gstype2.c 1.26, src/gxfcopy.c 1.29, src/gxhintn.c 1.28, src/gxhintn.h 1.13, src/gxtype1.c 1.24, src/gxtype1.h 1.13, src/zchar1.c 1.29]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-02_2341"></a>
+2003-07-02 23:41 jack</strong></p>
+<blockquote>
+<pre>
+Report upgraded baselines in the last 24 hours. Closes bug #654532.
+</pre>
+<p>[toolbin/tests/get_baselines 1.1, toolbin/tests/gscheck_raster.py 1.4, toolbin/tests/run_nightly 1.18, toolbin/tests/testing.cfg.example 1.3]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-02_1435"></a>
+2003-07-02 14:35 giles</strong></p>
+<blockquote>
+<pre>
+Change the release instructions to refer to GPL Ghostscript rather than GNU Ghostscript. We're no longer part of the GNU project. Closes bug 686913.
+</pre>
+<p>[doc/Release.htm 1.77]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-02_1316"></a>
+2003-07-02 13:16 giles</strong></p>
+<blockquote>
+<pre>
+Document passing -DGX_COLOR_INDEX_TYPE in unixansi.mak in response to the confusion reported in bug 686876.
+</pre>
+<p>[src/unixansi.mak 1.32]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-01_1501"></a>
+2003-07-01 15:01 giles</strong></p>
+<blockquote>
+<pre>
+Correct a bug with zero-length files in .findfontvalue, used by .findfonttype and .findfontname.
+</pre>
+<p>[lib/gs_fonts.ps 1.32, lib/gs_ttf.ps 1.31]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-01_1441"></a>
+2003-07-01 14:41 giles</strong></p>
+<blockquote>
+<pre>
+Document the need to set /OutputFile to a valid filename before calling 'setdevice' with the pdfwrite device. Closes bug 686784.
+</pre>
+<p>[doc/Language.htm 1.72]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-01_1000"></a>
+2003-07-01 10:00 igor</strong></p>
+<blockquote>
+<pre>
+Fix : merge Adobe Glyph List to gs/Resource/Decoding/Unicode.
+</pre>
+<p>[Resource/Decoding/Unicode 1.3]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-01_0437"></a>
+2003-07-01 04:37 alexcher</strong></p>
+<blockquote>
+<pre>
+Fix premature increment of a nested string counter.
+Skip white space characters before '(' on 0 level.
+</pre>
+<p>[src/geninit.c 1.8]</p>
+</blockquote>
+
+<p><strong><a name="2003-07-01_0419"></a>
+2003-07-01 04:19 alexcher</strong></p>
+<blockquote>
+<pre>
+Include default font map into compiled initialization files but use it only
+if the default font map file fails to open at run time.
+Fix bug 414985.
+</pre>
+<p>[lib/Fontmap 1.2, lib/gs_fonts.ps 1.31, doc/Make.htm 1.68]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-30_1623"></a>
+2003-06-30 16:23 alexcher</strong></p>
+<blockquote>
+<pre>
+Fix a typo in a comment.
+</pre>
+<p>[lib/gs_stres.ps 1.5]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-26_2242"></a>
+2003-06-26 22:42 dan</strong></p>
+<blockquote>
+<pre>
+Fix for 686927  Bug in implementation of .hsb2rgb (gs_cspace.ps).
+This is a bug report, fix, and a test file from Heiko Oberdiek.
+I love it when the bug reporter also includes an analysis, a fix and a
+test file.  The problem was an error in the calculations for an HSB (hue,
+saturation, brightness) color to RGB when the hue was 1.  The only change
+that I made in Heiko's fix was to change a few more comments.
+</pre>
+<p>[lib/gs_cspace.ps 1.6]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-26_2220"></a>
+2003-06-26 22:20 alexcher</strong></p>
+<blockquote>
+<pre>
+PDF fonts can have different widths assigned to character codes corresponding
+to the same glyph. There is no equivalent feature in PostScript. In this case
+we define a new entry in CharString dictionary, and change Encoding vector and
+Metrics accordingly. Currently the font adjustment is applied to Type1,
+MMType1, and TrueType font resources as defined in adjustfonttypes dictionary.
+Fixes bug 623292
+</pre>
+<p>[lib/pdf_font.ps 1.57, lib/pdf_ops.ps 1.30]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-26_1559"></a>
+2003-06-26 15:59 alexcher</strong></p>
+<blockquote>
+<pre>
+Don't oversample characters for rendering in non-pure color. Search the
+character cache for the exact match -- don't do routine downsampling.
+Move cached image depth calculations to compute_glyph_raster_params().
+Fix downsampling depth calculation although it is not expected to be used
+in normal operation. Leave the downsampling code intact because it is also
+used for error recovery.
+Fix bug 570772 from customer 1.
+</pre>
+<p>[src/gxccache.c 1.17, src/gxccman.c 1.8, src/gxchar.c 1.29]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-26_0914"></a>
+2003-06-26 09:14 igor</strong></p>
+<blockquote>
+<pre>
+Fix : Improving an error message.
+</pre>
+<p>[src/imain.c 1.32]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-24_1057"></a>
+2003-06-24 10:57 igor</strong></p>
+<blockquote>
+<pre>
+Fix : gs/Resource/Decoding/Unicode contained wrong codes for Cyrillic and Herbrew.
+</pre>
+<p>[Resource/Decoding/Unicode 1.2]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-22_1115"></a>
+2003-06-22 11:15 igor</strong></p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : pdev->black and pdev->white were not set when ProcessColorModel changes.
+Bug 686921 "/ProcessColorModel /DeviceCMYK causes black page".
+</pre>
+<p>[src/gdevpdfg.c 1.33]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-21_1516"></a>
+2003-06-21 15:16 igor</strong></p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Improving the condition for writing ToUnicode CMap for simple fonts.
+</pre>
+<p>[src/gdevpdte.c 1.39, src/gdevpdtw.c 1.19]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-21_1212"></a>
+2003-06-21 12:12 igor</strong></p>
+<blockquote>
+<pre>
+Fix : Remove LONG_MIN from gxfill.c for a better portability.
+</pre>
+<p>[src/gxfill.c 1.38]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-20_1552"></a>
+2003-06-20 15:52 giles</strong></p>
+<blockquote>
+<pre>
+Give the explicit maximum buffer size in bytes. Suggestion by Ray re bug
+686925.
+</pre>
+<p>[doc/API.htm 1.35, doc/DLL.htm 1.31]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-20_1432"></a>
+2003-06-20 14:32 giles</strong></p>
+<blockquote>
+<pre>
+Document the 64 KB length limit on input data passed through the
+gsapi_run_string* and gsdll_run_cont() calls. Fixes bug 686925.
+</pre>
+<p>[doc/API.htm 1.34, doc/DLL.htm 1.30]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-20_1320"></a>
+2003-06-20 13:20 giles</strong> (<a href="Details.htm#2003-06-20_1320">details</a>)</p>
+<blockquote>
+<pre>
+Remove <limit.h> inclusions as it defines types that conflict with our
+std*.h on HPUX and probably other systems. Fix for bug 686920.
+
+Also correct the copyright dates for gxhintn.c.
+
+</pre>
+<p>[src/gxfill.c 1.37, src/gxhintn.c 1.27]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-20_1123"></a>
+2003-06-20 11:23 giles</strong></p>
+<blockquote>
+<pre>
+Declare zimage_data_setup() as private to match its prototype. Corrects
+a warning on the HPUX native compiler.
+</pre>
+<p>[src/zimage.c 1.11]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-19_1538"></a>
+2003-06-19 15:38 igor</strong> (<a href="Details.htm#2003-06-19_1538">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : FontMatrix was wrong when a standard font is used
+with various encodings.
+
+</pre>
+<p>[src/gdevpdtb.c 1.20, src/gdevpdtd.c 1.13, src/gdevpdtf.c 1.30, src/gdevpdtt.c 1.50, src/gxfcopy.c 1.28, src/gdevpdtb.h 1.9, src/gdevpdtf.h 1.19, src/gxfcopy.h 1.9]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-18_2051"></a>
+2003-06-18 20:51 alexcher</strong></p>
+<blockquote>
+<pre>
+Windows 2000 driver includes PJL into %%BeginFeature block.
+Identify this from the operand stack pattern: countdictstack lucas mark
+and fail the feature request.
+Fix bug 686916
+</pre>
+<p>[lib/gs_init.ps 1.92]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-18_2001"></a>
+2003-06-18 20:01 alexcher</strong></p>
+<blockquote>
+<pre>
+Use single '%' in a comment.
+</pre>
+<p>[lib/gs_stres.ps 1.4]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-18_1958"></a>
+2003-06-18 19:58 alexcher</strong></p>
+<blockquote>
+<pre>
+Activate DSC parser only after all prologue files are read to
+prevent spurious comments starting with '%%' from disturbing the parser.
+</pre>
+<p>[lib/gs_pdfwr.ps 1.34]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-18_1956"></a>
+2003-06-18 19:56 alexcher</strong></p>
+<blockquote>
+<pre>
+Fix mis-identificaion of every DSC-conforming file as EPS.
+</pre>
+<p>[src/gdevpdfp.c 1.32]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-18_1953"></a>
+2003-06-18 19:53 alexcher</strong></p>
+<blockquote>
+<pre>
+Add a paragraph documenting current page orientation options,
+document limitations on ps2pdf options, and show a work-around.
+Fixes bug 592930
+</pre>
+<p>[doc/Ps2pdf.htm 1.54]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-18_1330"></a>
+2003-06-18 13:30 igor</strong> (<a href="Details.htm#2003-06-18_1330">details</a>)</p>
+<blockquote>
+<pre>
+pdfwrite : Generate ToUnicode CMaps for CID fonts.
+
+</pre>
+<p>[src/gdevpdf.c 1.69, src/gdevpdtc.c 1.23, src/gdevpdte.c 1.38, src/zbfont.c 1.20]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-17_1341"></a>
+2003-06-17 13:41 igor</strong> (<a href="Details.htm#2003-06-17_1341">details</a>)</p>
+<blockquote>
+<pre>
+Fix (type 1 hinter) : Don't apply alignment zone to horizontal stems
+when the shift is bigger than half pixel.
+
+</pre>
+<p>[src/gxhintn.c 1.26]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-17_1210"></a>
+2003-06-17 12:10 giles</strong></p>
+<blockquote>
+<pre>
+Clarify a comment.
+</pre>
+<p>[src/macos-mcp.mak 1.20]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-17_0942"></a>
+2003-06-17 09:42 igor</strong> (<a href="Details.htm#2003-06-17_0942">details</a>)</p>
+<blockquote>
+<pre>
+Implementing the text rendering mode 3 with graphics library
+to allowing PDF interpreter with pdfwrite to pass invisible text (continued).
+
+</pre>
+<p>[src/gsstate.c 1.20, src/gxistate.h 1.16]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-16_1504"></a>
+2003-06-16 15:04 igor</strong> (<a href="Details.htm#2003-06-16_1504">details</a>)</p>
+<blockquote>
+<pre>
+Implementing the text rendering mode 3 with graphics library
+to allowing PDF interpreter with pdfwrite to pass invisible text.
+
+</pre>
+<p>[src/gdevpdte.c 1.37, src/gdevpdtt.c 1.49, src/gsstate.h 1.9, src/gstext.c 1.12, src/int.mak 1.112, src/zchar.c 1.11, src/zgstate.c 1.8, lib/pdf_ops.ps 1.29]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-16_1046"></a>
+2003-06-16 10:46 igor</strong> (<a href="Details.htm#2003-06-16_1046">details</a>)</p>
+<blockquote>
+<pre>
+Fix : (type 1 interpreter) : ce1_setcurrentpoint was wrong (3nd attempt).
+
+</pre>
+<p>[src/gdevpsfx.c 1.20, src/gxhintn.c 1.25]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-11_1949"></a>
+2003-06-11 19:49 igor</strong> (<a href="Details.htm#2003-06-11_1949">details</a>)</p>
+<blockquote>
+<pre>
+Fix : (type 1 interpreter) : ce1_setcurrentpoint was wrong (2nd attempt).
+
+</pre>
+<p>[src/gdevpsfx.c 1.19, src/gxhintn.c 1.24]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-11_1202"></a>
+2003-06-11 12:02 igor</strong></p>
+<blockquote>
+<pre>
+Fix : Errors in a comment documenting gs_glyph.
+</pre>
+<p>[src/gsccode.h 1.11]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-11_0135"></a>
+2003-06-11 01:35 giles</strong></p>
+<blockquote>
+<pre>
+Print out modified file names and versions when generating the html changelog. Update the current
+versions of Changes.html and Details.html as an example.
+</pre>
+<p>[doc/Changes.htm 1.47, doc/Details.htm 1.6]</p>
+</blockquote>
+
+<p><strong><a name="2003-06-11_0131"></a>
+2003-06-11 01:31 giles</strong></p>
+<blockquote>
+<pre>
+Print out modified filenames and versions when generating the html changelog.
+</pre>
+<p>[toolbin/split_changelog.py 1.5]</p>
+</blockquote>
+
 <p><strong><a name="2003-06-10_1429"></a>
-2003-06-10 14:29 Igor Melichev</strong></p>
+2003-06-10 14:29 igor</strong></p>
 <blockquote>
 <pre>
 Fix : (type 1 interpreter) : ce1_setcurrentpoint was wrong.
@@ -18,7 +1354,7 @@ Fix : (type 1 interpreter) : ce1_setcurrentpoint was wrong.
 </blockquote>
 
 <p><strong><a name="2003-06-09_2225"></a>
-2003-06-09 22:25 Alex Cherepanov</strong></p>
+2003-06-09 22:25 alexcher</strong></p>
 <blockquote>
 <pre>
 Edited to reflect new capabilities of Bugzilla and current bug reporting
@@ -28,7 +1364,7 @@ practices.
 </blockquote>
 
 <p><strong><a name="2003-06-09_2216"></a>
-2003-06-09 22:16 Alex Cherepanov</strong></p>
+2003-06-09 22:16 alexcher</strong></p>
 <blockquote>
 <pre>
 Change links from SourceForge bug tracker,
@@ -40,7 +1376,7 @@ Fix bug #686888
 </blockquote>
 
 <p><strong><a name="2003-06-09_2155"></a>
-2003-06-09 21:55 Alex Cherepanov</strong></p>
+2003-06-09 21:55 alexcher</strong></p>
 <blockquote>
 <pre>
 Add hyperlinks to Ghostscript Bugzilla bug entries.
@@ -49,7 +1385,7 @@ Add hyperlinks to Ghostscript Bugzilla bug entries.
 </blockquote>
 
 <p><strong><a name="2003-06-09_1358"></a>
-2003-06-09 13:58 Alex Cherepanov</strong> (<a href="Details.htm#2003-06-09_1358">details</a>)</p>
+2003-06-09 13:58 alexcher</strong> (<a href="Details.htm#2003-06-09_1358">details</a>)</p>
 <blockquote>
 <pre>
 Permit explicit specification of /GDBytes equal to 0 for incrementally
@@ -61,7 +1397,7 @@ Fixes bug 686890 from customer 131.
 </blockquote>
 
 <p><strong><a name="2003-06-08_1359"></a>
-2003-06-08 13:59 Igor Melichev</strong></p>
+2003-06-08 13:59 igor</strong></p>
 <blockquote>
 <pre>
 Fix : Removing an unused code.
@@ -70,7 +1406,7 @@ Fix : Removing an unused code.
 </blockquote>
 
 <p><strong><a name="2003-06-08_0330"></a>
-2003-06-08 03:30 Igor Melichev</strong> (<a href="Details.htm#2003-06-08_0330">details</a>)</p>
+2003-06-08 03:30 igor</strong> (<a href="Details.htm#2003-06-08_0330">details</a>)</p>
 <blockquote>
 <pre>
 Fix : Completing the extended semantics of gs_glyph.
@@ -80,7 +1416,7 @@ Fix : Completing the extended semantics of gs_glyph.
 </blockquote>
 
 <p><strong><a name="2003-06-07_2117"></a>
-2003-06-07 21:17 Igor Melichev</strong> (<a href="Details.htm#2003-06-07_2117">details</a>)</p>
+2003-06-07 21:17 igor</strong> (<a href="Details.htm#2003-06-07_2117">details</a>)</p>
 <blockquote>
 <pre>
 pdfwrite : Write Encoding for True Type fonts.
@@ -90,7 +1426,7 @@ pdfwrite : Write Encoding for True Type fonts.
 </blockquote>
 
 <p><strong><a name="2003-06-07_2114"></a>
-2003-06-07 21:14 Igor Melichev</strong> (<a href="Details.htm#2003-06-07_2114">details</a>)</p>
+2003-06-07 21:14 igor</strong> (<a href="Details.htm#2003-06-07_2114">details</a>)</p>
 <blockquote>
 <pre>
 Fix (PDF interpreter) : Account Encoding while building CharStrings for TrueType fonts.
@@ -100,7 +1436,7 @@ Fix (PDF interpreter) : Account Encoding while building CharStrings for TrueType
 </blockquote>
 
 <p><strong><a name="2003-06-06_1750"></a>
-2003-06-06 17:50 Igor Melichev</strong> (<a href="Details.htm#2003-06-06_1750">details</a>)</p>
+2003-06-06 17:50 igor</strong> (<a href="Details.htm#2003-06-06_1750">details</a>)</p>
 <blockquote>
 <pre>
 Fix (pdfwrite) : Convert Type 0 fonts with multiple CID font descendents into
@@ -111,7 +1447,7 @@ Type 0 fonts with single CID font descendents (the part 3).
 </blockquote>
 
 <p><strong><a name="2003-06-06_1629"></a>
-2003-06-06 16:29 Alex Cherepanov</strong></p>
+2003-06-06 16:29 alexcher</strong></p>
 <blockquote>
 <pre>
 Process encryption dictionary after reading all parts of xref. Old code
@@ -123,7 +1459,7 @@ Fixes bug 686907 from customer 1060.
 </blockquote>
 
 <p><strong><a name="2003-06-03_0731"></a>
-2003-06-03 07:31 Igor Melichev</strong></p>
+2003-06-03 07:31 igor</strong></p>
 <blockquote>
 <pre>
 pdfwrite : Don't add subset prefix when a font doesn't embeed.
@@ -134,7 +1470,7 @@ Patch from Koji Nakamaru.
 </blockquote>
 
 <p><strong><a name="2003-06-03_0626"></a>
-2003-06-03 06:26 Dan Coby</strong></p>
+2003-06-03 06:26 dan</strong></p>
 <blockquote>
 <pre>
 Fix for 686785 segfault with PDF 1.4.  The PDF interpreter was calling
@@ -147,7 +1483,7 @@ when transparency may be needed durng the page.
 </blockquote>
 
 <p><strong><a name="2003-06-03_0530"></a>
-2003-06-03 05:30 Dan Coby</strong></p>
+2003-06-03 05:30 dan</strong></p>
 <blockquote>
 <pre>
 This fix corrects a recursion loop that exists with PDF form objects
@@ -157,7 +1493,7 @@ with a transparency group.
 </blockquote>
 
 <p><strong><a name="2003-06-02_1952"></a>
-2003-06-02 19:52 Alex Cherepanov</strong></p>
+2003-06-02 19:52 alexcher</strong></p>
 <blockquote>
 <pre>
 Count 1st page objects as shared objects. This is the 1st version that
@@ -170,7 +1506,7 @@ Fixes bug 592841
 </blockquote>
 
 <p><strong><a name="2003-06-02_1621"></a>
-2003-06-02 16:21 Igor Melichev</strong></p>
+2003-06-02 16:21 igor</strong></p>
 <blockquote>
 <pre>
 pdfwrite : Glyph indices were wrongly computed with copied FontType 11.
@@ -180,7 +1516,7 @@ Ghostscript Bug 686894 "Corrupted CMap".
 </blockquote>
 
 <p><strong><a name="2003-06-02_1335"></a>
-2003-06-02 13:35 Ralph Giles</strong></p>
+2003-06-02 13:35 giles</strong></p>
 <blockquote>
 <pre>
 Add standard banner and (unnecessary) double include protection to satisfy policy tests.
@@ -189,7 +1525,7 @@ Add standard banner and (unnecessary) double include protection to satisfy polic
 </blockquote>
 
 <p><strong><a name="2003-06-02_1329"></a>
-2003-06-02 13:29 Ralph Giles</strong></p>
+2003-06-02 13:29 giles</strong></p>
 <blockquote>
 <pre>
 Correct listing of MacOS platform-specific source files.
@@ -198,7 +1534,7 @@ Correct listing of MacOS platform-specific source files.
 </blockquote>
 
 <p><strong><a name="2003-05-31_0010"></a>
-2003-05-31 00:10 Ray Johnston</strong></p>
+2003-05-31 00:10 ray</strong></p>
 <blockquote>
 <pre>
 Previous commit was from a bad version of the file (prior to a local
@@ -209,7 +1545,7 @@ embedded fonts that have Length 0 for customer #590.
 </blockquote>
 
 <p><strong><a name="2003-05-30_2328"></a>
-2003-05-30 23:28 Ray Johnston</strong></p>
+2003-05-30 23:28 ray</strong></p>
 <blockquote>
 <pre>
 Some PDF files have embedded fonts with Length == 0. These should default
@@ -220,7 +1556,7 @@ to the same handling as when there is no embedded font. Fix for customer
 </blockquote>
 
 <p><strong><a name="2003-05-29_1928"></a>
-2003-05-29 19:28 Ralph Giles</strong></p>
+2003-05-29 19:28 giles</strong></p>
 <blockquote>
 <pre>
 Add an example library client for MacOS, comparable to dxmain and dwmain for other platforms. This
@@ -233,7 +1569,7 @@ Code contributed by Nigel Hathaway.
 </blockquote>
 
 <p><strong><a name="2003-05-29_1911"></a>
-2003-05-29 19:11 Ralph Giles</strong> (<a href="Details.htm#2003-05-29_1911">details</a>)</p>
+2003-05-29 19:11 giles</strong> (<a href="Details.htm#2003-05-29_1911">details</a>)</p>
 <blockquote>
 <pre>
 Add a prefix header file for the MacOS Carbon build to enable target-specific settings.
@@ -243,7 +1579,7 @@ Add a prefix header file for the MacOS Carbon build to enable target-specific se
 </blockquote>
 
 <p><strong><a name="2003-05-29_1902"></a>
-2003-05-29 19:02 Ralph Giles</strong> (<a href="Details.htm#2003-05-29_1902">details</a>)</p>
+2003-05-29 19:02 giles</strong> (<a href="Details.htm#2003-05-29_1902">details</a>)</p>
 <blockquote>
 <pre>
 Check for a valid filter name before trying to parse jbig2 global context streams.
@@ -254,7 +1590,7 @@ Fixes bug 686829.
 </blockquote>
 
 <p><strong><a name="2003-05-29_1638"></a>
-2003-05-29 16:38 Ralph Giles</strong></p>
+2003-05-29 16:38 giles</strong></p>
 <blockquote>
 <pre>
 Remove spurious '-c' options to install. Closes bug 686895.
@@ -263,7 +1599,7 @@ Remove spurious '-c' options to install. Closes bug 686895.
 </blockquote>
 
 <p><strong><a name="2003-05-27_1610"></a>
-2003-05-27 16:10 Alex Cherepanov</strong></p>
+2003-05-27 16:10 alexcher</strong></p>
 <blockquote>
 <pre>
 Initialize current color value as null when pattern color space is set.
@@ -273,7 +1609,7 @@ Fixes bug 686805
 </blockquote>
 
 <p><strong><a name="2003-05-24_2241"></a>
-2003-05-24 22:41 Igor Melichev</strong></p>
+2003-05-24 22:41 igor</strong></p>
 <blockquote>
 <pre>
 Fix : Don't fail when GlyphNames2Unicode can't be provided for a CID font.
@@ -282,7 +1618,7 @@ Fix : Don't fail when GlyphNames2Unicode can't be provided for a CID font.
 </blockquote>
 
 <p><strong><a name="2003-05-24_1719"></a>
-2003-05-24 17:19 Dan Coby</strong></p>
+2003-05-24 17:19 dan</strong></p>
 <blockquote>
 <pre>
 A pair of fixes for Bug 686791   Device bitcmyk produces wrong output
@@ -300,7 +1636,7 @@ There was a recent report from an AIX system with a similar problem
 </blockquote>
 
 <p><strong><a name="2003-05-23_0957"></a>
-2003-05-23 09:57 Igor Melichev</strong></p>
+2003-05-23 09:57 igor</strong></p>
 <blockquote>
 <pre>
 Provide a trial support for converting a text to Unicode.
@@ -309,7 +1645,7 @@ Provide a trial support for converting a text to Unicode.
 </blockquote>
 
 <p><strong><a name="2003-05-23_0153"></a>
-2003-05-23 01:53 Ray Johnston</strong> (<a href="Details.htm#2003-05-23_0153">details</a>)</p>
+2003-05-23 01:53 ray</strong> (<a href="Details.htm#2003-05-23_0153">details</a>)</p>
 <blockquote>
 <pre>
 Stream 'position' was not update correctly under some conditions.
@@ -320,7 +1656,7 @@ Fixes Bug #686859 for customer #600.
 </blockquote>
 
 <p><strong><a name="2003-05-22_2337"></a>
-2003-05-22 23:37 Igor Melichev</strong> (<a href="Details.htm#2003-05-22_2337">details</a>)</p>
+2003-05-22 23:37 igor</strong> (<a href="Details.htm#2003-05-22_2337">details</a>)</p>
 <blockquote>
 <pre>
 pdfwrite : Convert Type 0 fonts with multiple CID font descendents into
@@ -331,7 +1667,7 @@ Type 0 fonts with single CID font descendents (part 2).
 </blockquote>
 
 <p><strong><a name="2003-05-22_2257"></a>
-2003-05-22 22:57 Ralph Giles</strong></p>
+2003-05-22 22:57 giles</strong></p>
 <blockquote>
 <pre>
 Double-equals ('==') for string comparison is not portable shell. Thanks
@@ -341,7 +1677,7 @@ to Nelson Beebe for pointing out the issue.
 </blockquote>
 
 <p><strong><a name="2003-05-22_2027"></a>
-2003-05-22 20:27 Igor Melichev</strong></p>
+2003-05-22 20:27 igor</strong></p>
 <blockquote>
 <pre>
 Fix : Removed a debug hack.
@@ -350,7 +1686,7 @@ Fix : Removed a debug hack.
 </blockquote>
 
 <p><strong><a name="2003-05-22_1551"></a>
-2003-05-22 15:51 Ray Johnston</strong></p>
+2003-05-22 15:51 ray</strong></p>
 <blockquote>
 <pre>
 PDF Forms that contained indirect objects need to be resolved prior to
@@ -360,7 +1696,7 @@ processing with 'execform'. Bug #686884 for customer #150.
 </blockquote>
 
 <p><strong><a name="2003-05-22_1541"></a>
-2003-05-22 15:41 Igor Melichev</strong> (<a href="Details.htm#2003-05-22_1541">details</a>)</p>
+2003-05-22 15:41 igor</strong> (<a href="Details.htm#2003-05-22_1541">details</a>)</p>
 <blockquote>
 <pre>
 Fix (pdfwrite) : Convert Type 0 fonts with multiple CID font descendents into
@@ -371,7 +1707,7 @@ Type 0 fonts with single CID font descendents.
 </blockquote>
 
 <p><strong><a name="2003-05-22_0602"></a>
-2003-05-22 06:02 Igor Melichev</strong> (<a href="Details.htm#2003-05-22_0602">details</a>)</p>
+2003-05-22 06:02 igor</strong> (<a href="Details.htm#2003-05-22_0602">details</a>)</p>
 <blockquote>
 <pre>
 Fix (pdfwrite) : Removing the 'vdata' argument to simplify internal interfaces.
@@ -381,7 +1717,7 @@ Fix (pdfwrite) : Removing the 'vdata' argument to simplify internal interfaces.
 </blockquote>
 
 <p><strong><a name="2003-05-21_1750"></a>
-2003-05-21 17:50 Ralph Giles</strong></p>
+2003-05-21 17:50 giles</strong></p>
 <blockquote>
 <pre>
 Bump version number after the 8.10 release.
