@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_segment.c,v 1.19 2003/02/07 05:14:09 raph Exp $
+    $Id: jbig2_segment.c,v 1.20 2003/03/04 17:29:24 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -43,12 +43,12 @@ jbig2_parse_segment_header (Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size,
 					     sizeof(Jbig2Segment));
 
   /* 7.2.2 */
-  result->number = jbig2_get_int32 (buf);
+  result->number = jbig2_get_int32(buf);
 
   /* 7.2.3 */
   result->flags = buf[4];
 
-  /* 7.2.4 */
+  /* 7.2.4 referred-to segments */
   rtscarf = buf[5];
   if ((rtscarf & 0xe0) == 0xe0)
     {
@@ -63,13 +63,23 @@ jbig2_parse_segment_header (Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size,
     }
   result->referred_to_segment_count = referred_to_segment_count;
 
+  /* we now have enough information to compute the full header length */
+  referred_to_segment_size = result->number <= 256 ? 1:
+        result->number <= 65536 ? 2 : 4;  /* 7.2.5 */
+  pa_size = result->flags & 0x40 ? 4 : 1; /* 7.2.6 */
+  if (offset + referred_to_segment_count*referred_to_segment_size + pa_size + 4 > buf_size)
+    {
+      jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, result->number, 
+        "jbig2_parse_segment_header() called with insufficient data", -1);
+      jbig2_free (ctx->allocator, result);
+      return NULL;
+    }
+    
   /* 7.2.5 */
   if (referred_to_segment_count)
     {
       int i;
 
-      referred_to_segment_size = result->number <= 256 ? 1:
-        result->number <= 65536 ? 2 : 4;
       referred_to_segments = jbig2_alloc(ctx->allocator, referred_to_segment_count * referred_to_segment_size);
     
       for (i = 0; i < referred_to_segment_count; i++) {
@@ -90,14 +100,6 @@ jbig2_parse_segment_header (Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size,
     }
   
   /* 7.2.6 */
-  pa_size = result->flags & 0x40 ? 4 : 1;
-
-  if (offset + pa_size + 4 > buf_size)
-    {
-      jbig2_free (ctx->allocator, result);
-      return NULL;
-    }
-  
   if (result->flags & 0x40) {
 	result->page_association = jbig2_get_int32(buf + offset);
 	offset += 4;
