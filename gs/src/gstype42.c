@@ -247,12 +247,13 @@ private int
 total_points(gs_font_type42 *pfont, uint glyph_index)
 {
     gs_const_string glyph_string;
-    int code = pfont->data.get_outline(pfont, glyph_index, &glyph_string);
+    int code;
+    int ocode = pfont->data.get_outline(pfont, glyph_index, &glyph_string);
     const byte *gdata = glyph_string.data;
     int total;
 
-    if (code < 0)
-	return code;
+    if (ocode < 0)
+	return ocode;
     if (glyph_string.size == 0)
 	return 0;
     if (S16(gdata) != -1) {
@@ -279,7 +280,7 @@ total_points(gs_font_type42 *pfont, uint glyph_index)
 	}
 	while (flags & cg_moreComponents);
     }
-    if (code > 0)
+    if (ocode > 0)
 	gs_free_const_string(pfont->memory, gdata, glyph_string.size,
 			     "total_points");
     return total;
