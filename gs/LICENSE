@@ -3,6 +3,12 @@
   directories (folders) and any subdirectories (sub-folders)
   thereof are part of AFPL Ghostscript.
 
+  The files in the Resource directory and any subdirectories thereof
+  are also part of AFPL Ghostscript, with the explicit exception of
+  the files in the CMap subdirectory. The CMap files are copyright
+  Adobe Systems Incorporated and covered by a separate license
+  which permits only verbatim distribution.
+
   AFPL Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author or
   distributor accepts any responsibility for the consequences of using it, or
   for whether it serves any particular purpose or works at all, unless he or
