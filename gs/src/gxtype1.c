@@ -319,6 +319,16 @@ gs_type1_endchar(gs_type1_state * pcis)
     return 0;
 }
 
+/* Get the metrics (l.s.b. and width) from the Type 1 interpreter. */
+void
+type1_cis_get_metrics(const gs_type1_state * pcis, double psbw[4])
+{
+    psbw[0] = fixed2float(pcis->lsb.x);
+    psbw[1] = fixed2float(pcis->lsb.y);
+    psbw[2] = fixed2float(pcis->width.x);
+    psbw[3] = fixed2float(pcis->width.y);
+}
+
 /* ------ Font procedures ------ */
 
 
