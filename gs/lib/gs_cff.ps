@@ -181,12 +181,23 @@ mark
 % ------ Utilities ------ %
 
 /advance {	% <n> advance -
-  f cff eq { /pos pos 3 -1 roll add store } { pop } ifelse
+  f cff eq { pos add /pos exch store } { pop } ifelse
 } bind def
 /next {		% - next <byte>
   f read {
     1 advance
     DEBUG { (  ) print dup = } if
+  } if
+} bind def
+/next2 {	% - next2 <byte1> <byte2>
+  f read {
+    f read {
+      2 advance
+      DEBUG { (  ) print 1 index =only (,) print dup = } if
+    } {
+      1 advance
+      DEBUG { (  ) print dup = } if
+    } ifelse
   } if
 } bind def
 /nextstring {	% <length> nextstring <string>
@@ -201,22 +212,30 @@ mark
  /next load
 def
 /card16 {	% - card16 <card16>
-  card8 8 bitshift card8 add
+  next2 exch 8 bitshift add
 } bind def
 /card32 {	% - card32 <card32>
-	% Not used by CFF, only by the OpenType loader.
   card16 16 bitshift card16 add
 } bind def
+/offsetprocs [
+  /card8 load
+  /card16 load
+  { card8 16 bitshift card16 add } bind
+  /card32 load
+] readonly def
+/offsetproc {	% <offsize> offsetproc <proc>
+  1 sub //offsetprocs exch get
+} bind def
 /offset {	% <offsize> offset <offset>
-  0 exch { 8 bitshift next add } repeat
+  offsetproc exec
 } bind def
 /sid		% - <sid> sid
   /card16 load
 def
 /Index {	% - Index <array>
   mark card16 dup 0 ne {
-    1 exch next dup offset pop exch {
-      dup offset dup 4 -1 roll sub 3 1 roll exch
+    1 exch next offsetproc dup exec pop exch {
+      dup exec dup 4 -1 roll sub 3 1 roll exch
     } repeat pop
   } if pop .packtomark
   [ exch { nextstring } forall ] readonly
@@ -282,7 +301,7 @@ def
   } loop cleartomark
 } bind def
 /idstring {	% <sid> idstring <string|name>
-  dup 391 lt { StandardStrings } { 391 sub strings } ifelse exch get
+  dup 391 lt { //StandardStrings } { 391 sub strings } ifelse exch get
 } bind def
 /idname {	% <sid> idname <name>
   idstring dup type /nametype ne { cvn } if
@@ -406,17 +425,17 @@ def
 } bind def
 /charsetformats [
 { [ 0 3 -1 roll charsetcount { sid } repeat ]
-}
+} bind
 { [ 0 3 -1 roll charsetcount {
     dup 0 eq { pop exit } if
     sid card8 1 add 2 index .min { exch 1 sub 1 index 1 add } repeat pop
   } loop ]
-}
+} bind
 { [ 0 3 -1 roll charsetcount {
     dup 0 eq { pop exit } if
     sid card16 1 add 2 index .min { exch 1 sub 1 index 1 add } repeat pop
   } loop ]
-}
+} bind
 ] readonly def
 /queuecharset {		% <font> queuecharset -
   { readcharset } queueput
@@ -428,7 +447,7 @@ def
 
 /encodingformats [
 { 1 1 next { next exch Encoding 3 1 roll put } for
-}
+} bind
 { 1 next {
     next next 1 add {
 			% Stack: gid code
@@ -436,7 +455,7 @@ def
       exch 1 add exch 1 add
     } repeat pop
   } repeat pop
-}
+} bind
 ] readonly def
 /queueEncoding {	% <font> queueEncoding -
   { readEncoding } queueput
@@ -472,8 +491,8 @@ def
 % Note: this implementation can overflow the operand stack.
 % We'll fix this if it ever becomes necessary.
 /fdselectformats [
-{ [ exch charstringcount pop { card8 } repeat ] }
-{ /FDSelect cvx /invalidfont signalerror }
+{ [ exch charstringcount pop { card8 } repeat ] } bind
+{ /FDSelect cvx /invalidfont signalerror } bind
 dup
 { pop [ card16 card16 exch {
 		% Stack: previndex
@@ -481,7 +500,7 @@ dup
       exch 1 index
     } repeat exch
   } repeat pop ]
-}
+} bind
 ] readonly def
 
 /readFDSelect {		% <font> readFDSelect -
@@ -621,6 +640,7 @@ dup
   /cff exch def
   /pos 0 def
   /resname exch cvlit def
+  /DEBUG DEBUG def	% bring the binding closer
 
 	% Read the header.
 
