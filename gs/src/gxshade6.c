@@ -1996,18 +1996,23 @@ wedge_by_triangles(patch_fill_state_t *pfs, int ka,
 private inline bool
 unlinear(const patch_fill_state_t *pfs, const patch_color_t *c)
 {
+    int i, code;
+    gx_device_color dc;
+
     if (!USE_LINEAR_COLOR_PROCS)
 	return true;
     if (pfs->dev->color_info.separable_and_linear != GX_CINFO_SEP_LIN)
 	return true;
-    else {	
-	gx_device_color dc;
-	int code = patch_color_to_device_color(pfs, c, &dc);
-
-	if (code < 0)
-	    return true; /* Don't know, disable linear color. */
-	return dc.type != gx_dc_type_pure;
-    }
+    /* Hack : a check for halftoning : */
+    for (i = 0; i < pfs->dev->color_info.num_components; i++)
+	if ((i == pfs->dev->color_info.gray_index ? pfs->dev->color_info.max_gray 
+					          : pfs->dev->color_info.max_color)
+		< 128)
+	    return true;
+    code = patch_color_to_device_color(pfs, c, &dc);
+    if (code < 0)
+	return true; /* Don't know, disable linear color. */
+    return dc.type != gx_dc_type_pure;
 }
 
 int
