@@ -128,11 +128,16 @@ gs_cmap_create_identity(gs_cmap_t **ppcmap, int num_bytes, int wmode,
     lookup->key_size = num_bytes;
     lookup->num_keys = 1;
     lookup->key_is_range = true;
-    lookup->keys.data = key_data + 4 - num_bytes;
+    /*
+     * It's OK to break const here, because the strings are never
+     * freed, and the GC can handle strings outside the heap.
+     */
+    lookup->keys.data = (byte*) (key_data + 4 - num_bytes);
     lookup->keys.size = num_bytes * 2;
     lookup->value_type = CODE_VALUE_CID;
     lookup->value_size = num_bytes;
-    lookup->values.data = key_data;
+    /* ditto */
+    lookup->values.data = (byte*) key_data;
     lookup->values.size = num_bytes;
     pcmap->def.lookup = lookup;
     pcmap->def.num_lookup = 1;

@@ -493,7 +493,7 @@ pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_t *pef,
 	    pef->cmapname[0] == '/'
 	    ) {
 	    pputc(s, '-');
-	    pdf_put_name_chars(pdev, pef->cmapname + 1,
+	    pdf_put_name_chars(pdev, (const byte*) (pef->cmapname + 1),
 			       strlen(pef->cmapname + 1));
 	}
 	pprints1(s, "/Encoding %s", pef->cmapname);

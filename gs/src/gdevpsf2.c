@@ -999,7 +999,7 @@ cff_write_cidset(cff_writer_t *pcw, psf_glyph_enum_t *penum)
 
 /* Determine the size of FDSelect. */
 private uint
-cff_FDSelect_size(cff_writer_t *pcw, psf_glyph_enum_t *penum, int *pformat)
+cff_FDSelect_size(cff_writer_t *pcw, psf_glyph_enum_t *penum, uint *pformat)
 {
     gs_font_cid0 *const pfont = (gs_font_cid0 *)pcw->pfont;
     gs_font_base *const pbfont = (gs_font_base *)pfont;
