@@ -681,8 +681,8 @@ hpgl_print_char(hpgl_state_t *pgls, uint ch)
 	  else
 	    { if ( use_show )
 	      {
-	        code = gs_show_n_init(penum, pgs, str, 1);
 		hpgl_call(hpgl_set_drawing_color(pgls, hpgl_rm_character));
+	        code = gs_show_n_init(penum, pgs, str, 1);
 	      }
 	      else
 		code = gs_charpath_n_init(penum, pgs, str, 1, true);
