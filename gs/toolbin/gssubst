@@ -1,0 +1,45 @@
+#!/usr/bin/tclsh
+
+#    Copyright (C) 1996, 2000 Aladdin Enterprises.  All rights reserved.
+# 
+# This file is part of AFPL Ghostscript.
+# 
+# AFPL Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author or
+# distributor accepts any responsibility for the consequences of using it, or
+# for whether it serves any particular purpose or works at all, unless he or
+# she says so in writing.  Refer to the Aladdin Free Public License (the
+# "License") for full details.
+# 
+# Every copy of AFPL Ghostscript must include a copy of the License, normally
+# in a plain ASCII text file named PUBLIC.  The License grants you the right
+# to copy, modify and redistribute AFPL Ghostscript, but only under certain
+# conditions described in the License.  Among other things, the License
+# requires that the copyright notice and this notice be preserved on all
+# copies.
+
+# $Id$
+
+# Replace one word by another in a set of files.  This is just a front end
+# to a simple Perl invocation.
+
+if {$argc < 2} {
+    puts stderr "Usage: $argv0 (-t type | -u word | fromword toword) file ..."
+    puts stderr "  -t word = word word_t"
+    puts stderr "  -u word = word WORD"
+    exit 1
+}
+set a0 [lindex $argv 0]
+set a1 [lindex $argv 1]
+switch -- $a0 {
+    -t {set from $a1; set to ${from}_t}
+    -u {set from $a1; set to [string toupper ${from}]}
+    default {set from $a0; set to $a1}
+}
+puts "$from => $to"
+flush stdout
+set tmp /tmp/[pid]
+foreach f [lreplace $argv 0 1] {
+    if {![file exists $f~]} {exec cp -p $f $f~}
+    exec perl -pe "s\{\\b${from}\\b\}\{${to}\}g" < $f > $tmp
+    exec mv $tmp $f
+}
