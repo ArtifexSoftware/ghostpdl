@@ -183,7 +183,10 @@ hpgl_do_copy(
 )
 {
     if ((operation & pcl_copy_after) != 0) {
-         /* Don't restore the polygon buffer. (Copy from pcs to psaved.) */
+	/* Don't restore the polygon buffer. (Copy from pcs to psaved.) 
+	 * path->segments is reference counted! 
+	 */
+	memcpy(&psaved->g.polygon.buffer.path, &pcs->g.polygon.buffer.path, sizeof(gx_path));
     }
     return 0;
 }
