@@ -168,7 +168,7 @@ void gx_curve_split(fixed, fixed, const curve_segment *, double,
 /* Flatten a partial curve by sampling (internal procedure). */
 int gx_subdivide_curve(gx_path *, int, curve_segment *, segment_notes);
 #if FLATTENED_CURVE_ITERATOR0_COMPATIBLE
-bool gx_check_nearly_collinear(fixed x0, fixed y0, fixed x1, fixed y1, fixed x2, fixed y2);
+bool gx_check_nearly_collinear(fixed *x0, fixed *y0, fixed *x1, fixed *y1, fixed *x2, fixed *y2);
 #endif
 
 /* Initialize a cursor for rasterizing a monotonic curve. */
@@ -410,15 +410,12 @@ struct gx_flattened_curve_iterator_s {
     fixed idx, idy, id2x, id2y, id3x, id3y;	/* I */
     uint rx, ry, rdx, rdy, rd2x, rd2y, rd3x, rd3y;	/* R */
     segment_notes notes;
-    /* public : */
-#if FLATTENED_CURVE_ITERATOR0_COMPATIBLE 
-#if CURVED_TRAPEZOID_FILL_SCANS_BACK
-    fixed x, y;
-    bool curve;
-#else
+#if CURVED_TRAPEZOID_FILL
+#if FLATTENED_CURVE_ITERATOR0_COMPATIBLE
     bool reverse;
 #endif
 #endif
+    /* public : */
     fixed lx0, ly0, lx1, ly1;
 };
 
@@ -427,10 +424,6 @@ bool gx_flattened_curve_iterator__init(gx_flattened_curve_iterator *this,
 bool gx_flattened_curve_iterator__init_line(gx_flattened_curve_iterator *this, 
 	    fixed x0, fixed y0, const line_segment *pc, segment_notes notes);
 bool gx_flattened_curve_iterator__next(gx_flattened_curve_iterator *this);
-#if CURVED_TRAPEZOID_FILL_SCANS_BACK
-bool gx_flattened_curve_iterator__prev(gx_flattened_curve_iterator *this);
-bool gx_flattened_check_near(fixed x0, fixed y0, fixed x1, fixed y1);
-#endif
 
 bool curve_coeffs_ranged(fixed x0, fixed x1, fixed x2, fixed x3, 
 		    fixed y0, fixed y1, fixed y2, fixed y3, 

@@ -35,9 +35,6 @@
 #if TT_GRID_FITTING
 #   include "gzspotan.h" /* Only for gx_san_trap_store. */
 #endif
-#if CURVED_TRAPEZOID_FILL_SCANS_BACK
-#include "memory_.h"
-#endif
 #include "vdtrace.h"
 #include <assert.h>
 
@@ -803,72 +800,44 @@ add_y_list(gx_path * ppath, line_list *ll, fixed adjust_below, fixed adjust_abov
 }
 
 #if CURVED_TRAPEZOID_FILL
-
 private void 
-step_al(active_line *alp, bool move_iterator)
+step_al(active_line *alp)
 {
-#if CURVED_TRAPEZOID_FILL_SCANS_BACK
-    bool forth = (alp->direction == DIR_UP || !alp->fi.curve);
-
-    if (move_iterator) {
-	if (forth)
-	    alp->more_flattened = gx_flattened_curve_iterator__next(&alp->fi);
-	else
-	    alp->more_flattened = gx_flattened_curve_iterator__prev(&alp->fi);
-    } else
-	vd_bar(alp->fi.lx0, alp->fi.ly0, alp->fi.lx1, alp->fi.ly1, 1, RGB(0, 0, 255));
-#else
-    const bool forth = true;
-
     alp->more_flattened = gx_flattened_curve_iterator__next(&alp->fi);
-#endif
     /* Note that we can get alp->fi.ly0 == alp->fi.ly1 
        with the first or the last piece of the line. */
-    alp->start.x = (forth ? alp->fi.lx0 : alp->fi.lx1);
-    alp->start.y = (forth ? alp->fi.ly0 : alp->fi.ly1);
-#   if FLATTENED_CURVE_ITERATOR0_COMPATIBLE 
-	if (move_iterator) {
-	    if (forth) {
-		gx_flattened_curve_iterator fi = alp->fi;
+    alp->start.x = alp->fi.lx0;
+    alp->start.y = alp->fi.ly0;
+#if FLATTENED_CURVE_ITERATOR0_COMPATIBLE
+    /* We can't provide a full compatibility because
+       the new code flattens DIR_DOWN curves in the reverse direction. 
+       (Division points may be shifted due to the numeric errors difference,
+       and MERGE_COLLINEAR_SEGMENTS drops different points.) 
+       But this shouldn't cause a difference for monotonic curves. */
+    if (alp->direction == DIR_UP && alp->first_flattened) {
+	/* The old code isn't symmetric : it always yields the first point. */
+    } else {
+	/* fixme: optimize. */
+	while (alp->more_flattened) {
+	    bool more;
+	    gx_flattened_curve_iterator fi = alp->fi;
 
-		while (alp->more_flattened) {
-		    bool more;
-
-		    if (alp->first_flattened)
-			break;
-		    more = gx_flattened_curve_iterator__next(&fi);
-		    if (!more ||
-			!gx_check_nearly_collinear(alp->start.x, alp->start.y, 
-			    fi.lx0, fi.ly0, fi.lx1, fi.ly1)) 
-			break;
-		    alp->more_flattened = more;
-		    alp->fi = fi;
-		}
-	    } else {
-#		if CURVED_TRAPEZOID_FILL_SCANS_BACK
-		    while (alp->more_flattened && 
-		           (alp->fi.i + 1) <= sizeof(alp->skip_points) * 8 &&
-			   !(alp->skip_points[(alp->fi.i + 1) >> 3] & (1 << ((alp->fi.i + 1) & 7)))) {
-			alp->more_flattened = gx_flattened_curve_iterator__prev(&alp->fi);
-		    }
-		    /* CAUTION: if skip_points array is smaller than the
-		       nomber of points, the flattening isn't equal to one
-		       generated with the old code. The maximal necessary array
-		       length is 128 = (1 << k_sample_max) / 8.
-		     */
-		    DO_NOTHING; /* Just a place for a debugger breakpoint. */
-#		else
-		    /* We can't provide a full compatibility because
-		       the new code flattens DIR_DOWN curves in the reverse direction.
-		       The reason is the point filtering applied in gx_subdivide_curve_rec.
-		       That filtering is not reversible. */
-#		endif
+	    more = gx_flattened_curve_iterator__next(&fi);
+	    if (alp->direction == DIR_DOWN && !more) {
+		/* The old code isn't symmetric : it always yields the last point. */
+		break;
 	    }
-	    alp->first_flattened = false;
+	    if (!gx_check_nearly_collinear(&alp->start.x, &alp->start.y, 
+		    &fi.lx0, &fi.ly0, &fi.lx1, &fi.ly1)) 
+		break;
+	    alp->more_flattened = more;
+	    alp->fi = fi;
 	}
-#   endif
-    alp->end.x = (forth ? alp->fi.lx1 : alp->fi.lx0);
-    alp->end.y = (forth ? alp->fi.ly1 : alp->fi.ly0);
+    }
+    alp->first_flattened = false;
+#endif
+    alp->end.x = alp->fi.lx1;
+    alp->end.y = alp->fi.ly1;
     alp->diff.x = alp->end.x - alp->start.x;
     alp->diff.y = alp->end.y - alp->start.y;
     SET_NUM_ADJUST(alp);
@@ -880,64 +849,28 @@ private void
 init_al(active_line *alp, const segment *s0, const segment *s1, fixed fixed_flat)
 {
     /* Warning : p0 may be equal to &alp->end. */
-    bool curve = ((alp->direction == DIR_UP ? s1 : s0)->type == s_curve);
 
-#if FLATTENED_CURVE_ITERATOR0_COMPATIBLE
-    alp->first_flattened = true;
-#endif
-    if (curve) {
+    if ((alp->direction == DIR_UP ? s1 : s0)->type == s_curve) {
 	if (alp->direction == DIR_UP) {
 	    int k = gx_curve_log2_samples(s0->pt.x, s0->pt.y, (curve_segment *)s1, fixed_flat);
 
 	    assert(gx_flattened_curve_iterator__init(&alp->fi, 
 		s0->pt.x, s0->pt.y, (curve_segment *)s1, k, false, 0));
-	    step_al(alp, true);
 	} else {
 	    int k = gx_curve_log2_samples(s1->pt.x, s1->pt.y, (curve_segment *)s0, fixed_flat);
 
-#	    if CURVED_TRAPEZOID_FILL_SCANS_BACK
-		bool more, first = true;
-		gx_flattened_curve_iterator fi;
-
-		memset(alp->skip_points, 0, sizeof(alp->skip_points));
-		assert(gx_flattened_curve_iterator__init(&alp->fi, 
-		    s1->pt.x, s1->pt.y, (curve_segment *)s0, k, false, 0));
-		alp->more_flattened = false;
-		do {
-		    fixed x = alp->fi.lx1, y = alp->fi.ly1;
-
-		    more = gx_flattened_curve_iterator__next(&alp->fi);
-		    alp->more_flattened |= more;
-		    if (!first) {
-			fi = alp->fi;
-			while (more) {
-			    more = gx_flattened_curve_iterator__next(&fi);
-			    if (!more) {
-				more = true;
-				break;
-			    }
-			    if (!gx_check_nearly_collinear(x, y, fi.lx0, fi.ly0, fi.lx1, fi.ly1)) 
-				break;
-			    alp->fi = fi;
-			}
-		    }
-		    if (alp->fi.i <= sizeof(alp->skip_points) * 8)
-			alp->skip_points[alp->fi.i >> 3] |= 1 << (alp->fi.i & 7);
-		    first = false;
-		} while(more);
-		step_al(alp, false);
-#	    else
-		assert(gx_flattened_curve_iterator__init(&alp->fi, 
-		    s1->pt.x, s1->pt.y, (curve_segment *)s0, k, true, 0));
-		step_al(alp, true);
-#	    endif
+	    assert(gx_flattened_curve_iterator__init(&alp->fi, 
+		s1->pt.x, s1->pt.y, (curve_segment *)s0, k, true, 0));
 	}
     } else {
 	assert(gx_flattened_curve_iterator__init_line(&alp->fi, 
 		s0->pt.x, s0->pt.y, (line_segment *)s1, 0));
-	step_al(alp, true);
     }
     alp->pseg = s1;
+#if FLATTENED_CURVE_ITERATOR0_COMPATIBLE
+    alp->first_flattened = true;
+#endif
+    step_al(alp);
 }
 #endif
 
@@ -1317,7 +1250,7 @@ move_al_by_y(line_list *ll, fixed y1)
     for (alp = ll->x_list; alp != 0; alp = alp->next) {
 	if (alp->end.y == y1)
 	    if (alp->more_flattened)
-		step_al(alp, true);
+		step_al(alp);
     }
 #   endif
     for (x = min_fixed, alp = ll->x_list; alp != 0; alp = nlp) {
