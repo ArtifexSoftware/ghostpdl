@@ -348,6 +348,7 @@ gxxfont_h=$(GLSRC)gxxfont.h $(gsccode_h) $(gsmatrix_h) $(gsuid_h) $(gsxfont_h)
 gxband_h=$(GLSRC)gxband.h $(gxclio_h)
 gxcdevn_h=$(GLSRC)gxcdevn.h $(gsrefct_h) $(gxcindex_h)
 gxchar_h=$(GLSRC)gxchar.h $(gschar_h) $(gxtext_h)
+gxchrout_h=$(GLSRC)gxchrout.h
 gsdcolor_h=$(GLSRC)gsdcolor.h $(gsccolor_h)\
  $(gxarith_h) $(gxbitmap_h) $(gxcindex_h) $(gxhttile_h)
 gxdcolor_h=$(GLSRC)gxdcolor.h\
@@ -494,6 +495,10 @@ $(GLOBJ)gxchar.$(OBJ) : $(GLSRC)gxchar.c $(GXERR) $(memory__h) $(string__h)\
  $(gxfixed_h) $(gxarith_h) $(gxmatrix_h) $(gxcoord_h) $(gxdevice_h) $(gxdevmem_h)\
  $(gxfont_h) $(gxfont0_h) $(gxchar_h) $(gxfcache_h) $(gzpath_h) $(gzstate_h)
 	$(GLCC) $(GLO_)gxchar.$(OBJ) $(C_) $(GLSRC)gxchar.c
+
+$(GLOBJ)gxchrout.$(OBJ) : $(GLSRC)gxchrout.c $(GX) $(math__h)\
+ $(gxchrout_h) $(gxfarith_h) $(gxistate_h)
+	$(GLCC) $(GLO_)gxchrout.$(OBJ) $(C_) $(GLSRC)gxchrout.c
 
 $(GLOBJ)gxcht.$(OBJ) : $(GLSRC)gxcht.c $(GXERR) $(memory__h)\
  $(gsutil_h)\
@@ -1601,7 +1606,7 @@ $(GLOBJ)gxpageq.$(OBJ) : $(GLSRC)gxpageq.c $(GXERR)\
 
 # ---------------- TrueType and PostScript Type 42 fonts ---------------- #
 
-ttflib_=$(GLOBJ)gstype42.$(OBJ)
+ttflib_=$(GLOBJ)gstype42.$(OBJ) $(GLOBJ)gxchrout.$(OBJ)
 $(GLD)ttflib.dev : $(LIB_MAK) $(ECHOGS_XE) $(ttflib_)
 	$(SETMOD) $(GLD)ttflib $(ttflib_)
 
@@ -1609,8 +1614,8 @@ gxfont42_h=$(GLSRC)gxfont42.h
 gxttf_h=$(GLSRC)gxttf.h
 
 $(GLOBJ)gstype42.$(OBJ) : $(GLSRC)gstype42.c $(GXERR) $(memory__h)\
- $(gsccode_h) $(gsmatrix_h) $(gsstruct_h) $(gsutil_h)\
- $(gxfixed_h) $(gxfont_h) $(gxfont42_h) $(gxistate_h) $(gxpath_h)
+ $(gsccode_h) $(gsline_h) $(gsmatrix_h) $(gsstruct_h) $(gsutil_h)\
+ $(gxchrout_h) $(gxfixed_h) $(gxfont_h) $(gxfont42_h) $(gxistate_h) $(gxpath_h)
 	$(GLCC) $(GLO_)gstype42.$(OBJ) $(C_) $(GLSRC)gstype42.c
 
 # -------- Composite (PostScript Type 0) font support -------- #
@@ -1696,7 +1701,7 @@ $(GLOBJ)gxpcmap.$(OBJ) : $(GLSRC)gxpcmap.c $(GXERR) $(math__h) $(memory__h)\
 
 # ---------------- PostScript Type 1 (and Type 4) fonts ---------------- #
 
-type1lib_=$(GLOBJ)gxtype1.$(OBJ) $(GLOBJ)gxhint1.$(OBJ) $(GLOBJ)gxhint2.$(OBJ) $(GLOBJ)gxhint3.$(OBJ) $(GLOBJ)gscrypt1.$(OBJ)
+type1lib_=$(GLOBJ)gxtype1.$(OBJ) $(GLOBJ)gxhint1.$(OBJ) $(GLOBJ)gxhint2.$(OBJ) $(GLOBJ)gxhint3.$(OBJ) $(GLOBJ)gscrypt1.$(OBJ) $(GLOBJ)gxchrout.$(OBJ)
 
 gscrypt1_h=$(GLSRC)gscrypt1.h
 gstype1_h=$(GLSRC)gstype1.h
@@ -1706,7 +1711,7 @@ gxtype1_h=$(GLSRC)gxtype1.h $(gscrypt1_h) $(gstype1_h) $(gxop1_h)
 
 $(GLOBJ)gxtype1.$(OBJ) : $(GLSRC)gxtype1.c $(GXERR) $(math__h)\
  $(gsccode_h) $(gsline_h) $(gsstruct_h)\
- $(gxarith_h) $(gxcoord_h) $(gxfixed_h) $(gxmatrix_h)\
+ $(gxarith_h) $(gxchrout_h) $(gxcoord_h) $(gxfixed_h) $(gxmatrix_h)\
  $(gxfont_h) $(gxfont1_h) $(gxistate_h) $(gxtype1_h)\
  $(gzpath_h)
 	$(GLCC) $(GLO_)gxtype1.$(OBJ) $(C_) $(GLSRC)gxtype1.c

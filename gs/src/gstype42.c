@@ -23,8 +23,10 @@
 #include "gserrors.h"
 #include "gsstruct.h"
 #include "gsccode.h"
+#include "gsline.h"		/* for gs_imager_setflat */
 #include "gsmatrix.h"
 #include "gsutil.h"
+#include "gxchrout.h"
 #include "gxfixed.h"		/* for gxpath.h */
 #include "gxpath.h"
 #include "gxfont.h"
@@ -551,7 +553,12 @@ gs_type42_append(uint glyph_index, gs_imager_state * pis,
 		 gx_path * ppath, const gs_log2_scale_point * pscale,
 		 bool charpath_flag, int paint_type, gs_font_type42 * pfont)
 {
-    return append_outline(glyph_index, &pis->ctm, ppath, NULL, 0, pfont);
+    int code = append_outline(glyph_index, &pis->ctm, ppath, NULL, 0, pfont);
+
+    if (code < 0)
+	return code;
+    /* Set the flatness for curve rendering. */
+    return gs_imager_setflat(pis, gs_char_flatness(pis, 1.0));
 }
 
 /*
