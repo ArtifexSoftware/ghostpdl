@@ -875,6 +875,7 @@ show_proceed(gs_show_enum * penum)
     gs_glyph glyph;
     int code;
     cached_char *cc;
+    gs_log2_scale_point log2_scale;
 
     if (penum->charpath_flag == cpm_show && SHOW_USES_OUTLINE(penum)) {
 	code = gs_state_color_load(pgs);
@@ -935,7 +936,6 @@ show_proceed(gs_show_enum * penum)
 				 */
 		    {
 			int alpha_bits, depth;
-			gs_log2_scale_point log2_scale;
 			gs_fixed_point subpix_origin;
 
 			code = compute_glyph_raster_params(penum, false, 
@@ -956,6 +956,10 @@ show_proceed(gs_show_enum * penum)
 			/* Character is not in cache. */
 			/* If possible, try for an xfont before */
 			/* rendering from the outline. */
+
+		        /* If antialiasing is in effect, don't use xfont */
+		        if (log2_scale.x + log2_scale.y > 0)
+			    goto no_cache;
 			if (pfont->ExactSize == fbit_use_outlines ||
 			    pfont->PaintType == 2
 			    )
