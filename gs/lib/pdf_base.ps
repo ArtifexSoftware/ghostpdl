@@ -93,11 +93,28 @@ pdfdict begin
 % to the operand stack.
 /.pdftokenerror {		% <count> <opdict> <errtoken> .pdftokenerror -
   BXlevel 0 le {
-    (%stderr) (w) file
-    dup (****************Unknown operator: ) writestring
-    dup 2 index .writecvs dup (\n) writestring flushfile
-  } if pop pop
-  count exch sub { pop } repeat	% pop all the operands
+    (   **** Unknown operator: ') pdfformaterror
+    dup =string cvs pdfformaterror 
+    % Attempt a retry scan of the element after changing to PDFScanRules
+    << /PDFScanRules true >> setuserparams
+    =string cvs
+    token pop exch pop dup type
+    dup /integertype eq exch /realtype eq or {
+      exch pop exch pop
+      (', processed as number, value: ) pdfformaterror
+      dup =string cvs pdfformaterror (\n) pdfformaterror
+      false 	% suppress any stack cleanup
+    } {
+      % error was non-recoverable with modified scanning rules
+      (\n) pdfformaterror
+      true
+    } ifelse
+  } {
+    true
+  } ifelse
+  { % clean up the operand stack if this was non-recoverable
+    pop pop count exch sub { pop } repeat	% pop all the operands
+  } if
 } bind def
 /.pdfexectoken {		% <count> <opdict> <exectoken> .pdfexectoken ?
   DEBUG { dup == flush } if
