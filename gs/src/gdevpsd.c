@@ -26,6 +26,7 @@
 #include "gdevdcrd.h"
 #include "gstypes.h"
 #include "icc.h"
+#include "gxdcconv.h"
 
 /* Define the device parameters. */
 #ifndef X_DPI
@@ -216,7 +217,7 @@ const psd_device gs_psdrgb_device =
 	 24, 0,			/* Depth, Gray_index, */
 	 255, 255, 1, 1,	/* MaxGray, MaxColor, DitherGray, DitherColor */
 	 GX_CINFO_SEP_LIN,      /* Linear & Seperable */
-	 "DeviceN",		/* Process color model name */
+	 "DeviceRGB",		/* Process color model name */
 	 psd_print_page),	/* Printer page print routine */
     /* DeviceN device specific parameters */
     psd_DEVICE_RGB,		/* Color model */
@@ -241,7 +242,7 @@ const psd_device gs_psdcmyk_device =
 	 32, 0,			/* Depth, Gray_index, */
 	 255, 255, 1, 1,	/* MaxGray, MaxColor, DitherGray, DitherColor */
 	 GX_CINFO_SEP_LIN,      /* Linear & Separable */
-	 "DeviceN",		/* Process color model name */
+	 "DeviceCMYK",		/* Process color model name */
 	 psd_print_page),	/* Printer page print routine */
     /* DeviceN device specific parameters */
     psd_DEVICE_CMYK,		/* Color model */
@@ -634,7 +635,7 @@ private int
 psd_get_params(gx_device * pdev, gs_param_list * plist)
 {
     psd_device *xdev = (psd_device *)pdev;
-    int code, ecode;
+    int code;
     bool seprs = false;
     gs_param_string_array scna;
     gs_param_string pos;
@@ -770,9 +771,6 @@ param_string_eq(const gs_param_string *pcs, const char *str)
 private int
 psd_set_color_model(psd_device *xdev, psd_color_model color_model)
 {
-    int components;	/* 1=gray, 3=RGB, 4=CMYK */
-    int maxvalue;
-
     xdev->color_model = color_model;
     if (color_model == psd_DEVICE_GRAY) {
 	xdev->std_colorant_names = &DeviceGrayComponents;
@@ -809,12 +807,9 @@ psd_put_params(gx_device * pdev, gs_param_list * plist)
     gx_device_color_info save_info;
     gs_param_name param_name;
     int npcmcolors;
-    int bpc = pdevn->bitspercomponent;
     int num_spot = pdevn->separation_names.num_names;
-    int v;
     int ecode = 0;
     int code;
-    const char *vname;
     gs_param_string_array scna;
     gs_param_string po;
     gs_param_string prgb;
@@ -826,29 +821,7 @@ psd_put_params(gx_device * pdev, gs_param_list * plist)
 	break;
     } END_ARRAY_PARAM(scna, scne);
 
-
-    if ((code = param_read_int(plist, (vname = "GrayValues"), &v)) != 1 ||
-	(code = param_read_int(plist, (vname = "RedValues"), &v)) != 1 ||
-	(code = param_read_int(plist, (vname = "GreenValues"), &v)) != 1 ||
-	(code = param_read_int(plist, (vname = "BlueValues"), &v)) != 1
-	) {
-	if (code < 0)
-	    ecode = code;
-	else
-	    switch (v) {
-		case   2: bpc = 1; break;
-		case   4: bpc = 2; break;
-		case  16: bpc = 4; break;
-		case  32: bpc = 5; break;
-		case 256: bpc = 8; break;
-		default:
-		    param_signal_error(plist, vname,
-				       ecode = gs_error_rangecheck);
-	    }
-    }
-
-    if (code >= 0)
-	code = psd_param_read_fn(plist, "ProfileOut", &po,
+    code = psd_param_read_fn(plist, "ProfileOut", &po,
 				 sizeof(pdevn->profile_out_fn));
     if (code >= 0)
 	code = psd_param_read_fn(plist, "ProfileRgb", &prgb,
@@ -888,44 +861,43 @@ psd_put_params(gx_device * pdev, gs_param_list * plist)
 	pdevn->color_info = save_info;
 	return ecode;
     }
-    /*
-     * Process the separation color names.  Remove any names that already match
-     * the process color model colorant names for the device.
-     */
-    if (scna.data != 0) {
-	int i;
-	int num_names = scna.size;
-	const fixed_colorant_names_list * pcomp_names = 
-	    ((psd_device *)pdev)->std_colorant_names;
 
-	for (i = num_spot = 0; i < num_names; i++) {
-	    if (!check_process_color_names(pcomp_names, &scna.data[i]))
-	        pdevn->separation_names.names[num_spot++] = &scna.data[i];
-	}
-	pdevn->separation_names.num_names = num_spot;
-	if (pdevn->is_open)
+    /* Separations are only valid with a subrtractive color model */
+    if (pdev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
+        /*
+         * Process the separation color names.  Remove any names that already match
+         * the process color model colorant names for the device.
+         */
+        if (scna.data != 0) {
+	    int i;
+	    int num_names = scna.size;
+	    const fixed_colorant_names_list * pcomp_names = 
+	        ((psd_device *)pdev)->std_colorant_names;
+
+	    for (i = num_spot = 0; i < num_names; i++) {
+	        if (!check_process_color_names(pcomp_names, &scna.data[i]))
+	            pdevn->separation_names.names[num_spot++] = &scna.data[i];
+	    }
+	    pdevn->separation_names.num_names = num_spot;
+	    if (pdevn->is_open)
+	        gs_closedevice(pdev);
+        }
+
+        npcmcolors = pdevn->num_std_colorant_names;
+        pdevn->color_info.num_components = npcmcolors + num_spot;
+        /* 
+         * The DeviceN device can have zero components if nothing has been specified.
+         * This causes some problems so force at least one component until something
+         * is specified.
+         */
+        if (!pdevn->color_info.num_components)
+	    pdevn->color_info.num_components = 1;
+        pdevn->color_info.depth = bpc_to_depth(pdevn->color_info.num_components,
+    						pdevn->bitspercomponent);
+        if (pdevn->color_info.depth != save_info.depth) {
 	    gs_closedevice(pdev);
+        }
     }
-    pdevn->bitspercomponent = bpc;
-
-    npcmcolors = pdevn->num_std_colorant_names;
-    pdevn->color_info.num_components = npcmcolors + num_spot;
-    /* 
-     * The DeviceN device can have zero components if nothing has been specified.
-     * This causes some problems so force at least one component until something
-     * is specified.
-     */
-    if (!pdevn->color_info.num_components)
-	pdevn->color_info.num_components = 1;
-    pdevn->color_info.depth = bpc_to_depth(pdevn->color_info.num_components, bpc);
-    pdevn->color_info.max_gray = pdevn->color_info.max_color =
-	(pdevn->color_info.dither_grays =
-	 pdevn->color_info.dither_colors =
-	 (1 << bpc)) - 1;
-    if (pdevn->color_info.depth != save_info.depth) {
-	gs_closedevice(pdev);
-    }
-
     if (po.data != 0) {
 	memcpy(pdevn->profile_out_fn, po.data, po.size);
 	pdevn->profile_out_fn[po.size] = 0;

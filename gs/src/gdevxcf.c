@@ -865,37 +865,41 @@ xcf_put_params(gx_device * pdev, gs_param_list * plist)
 	pdevn->color_info = save_info;
 	return ecode;
     }
-    /*
-     * Process the separation color names.  Remove any names that already match
-     * the process color model colorant names for the device.
-     */
-    if (scna.data != 0) {
-	int i;
-	int num_names = scna.size;
-	const fixed_colorant_names_list * pcomp_names = 
-	    ((xcf_device *)pdev)->std_colorant_names;
 
-	for (i = num_spot = 0; i < num_names; i++) {
-	    if (!check_process_color_names(pcomp_names, &scna.data[i]))
-	        pdevn->separation_names.names[num_spot++] = &scna.data[i];
-	}
-	pdevn->separation_names.num_names = num_spot;
-	if (pdevn->is_open)
-	    gs_closedevice(pdev);
-    }
-    npcmcolors = pdevn->num_std_colorant_names;
-    pdevn->color_info.num_components = npcmcolors + num_spot;
-    /* 
-     * The DeviceN device can have zero components if nothing has been specified.
-     * This causes some problems so force at least one component until something
-     * is specified.
-     */
-    if (!pdevn->color_info.num_components)
-	pdevn->color_info.num_components = 1;
-    pdevn->color_info.depth = bpc_to_depth(pdevn->color_info.num_components, 
+    /* Separations are only valid with a subrtractive color model */
+    if (pdev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
+        /*
+         * Process the separation color names.  Remove any names that already
+	 * match the process color model colorant names for the device.
+         */
+        if (scna.data != 0) {
+	    int i;
+	    int num_names = scna.size;
+	    const fixed_colorant_names_list * pcomp_names = 
+	    			((xcf_device *)pdev)->std_colorant_names;
+
+	    for (i = num_spot = 0; i < num_names; i++) {
+	        if (!check_process_color_names(pcomp_names, &scna.data[i]))
+	            pdevn->separation_names.names[num_spot++] = &scna.data[i];
+	    }
+	    pdevn->separation_names.num_names = num_spot;
+	    if (pdevn->is_open)
+	        gs_closedevice(pdev);
+        }
+        npcmcolors = pdevn->num_std_colorant_names;
+        pdevn->color_info.num_components = npcmcolors + num_spot;
+        /* 
+         * The DeviceN device can have zero components if nothing has been
+	 * specified.  This causes some problems so force at least one
+	 * component until something is specified.
+         */
+        if (!pdevn->color_info.num_components)
+	    pdevn->color_info.num_components = 1;
+        pdevn->color_info.depth = bpc_to_depth(pdevn->color_info.num_components,
 						pdevn->bitspercomponent);
-    if (pdevn->color_info.depth != save_info.depth) {
-	gs_closedevice(pdev);
+        if (pdevn->color_info.depth != save_info.depth) {
+	    gs_closedevice(pdev);
+        }
     }
 
     if (po.data != 0) {
