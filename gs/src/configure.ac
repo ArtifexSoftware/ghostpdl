@@ -313,7 +313,7 @@ if test x$with_jasper != xno; then
   if test "x$JASPERDIR" != xsrc; then
     AC_MSG_RESULT([$JASPERDIR])
     AC_MSG_CHECKING([for local jasper config header])
-    if test -r $JASPERDIR/src/libjasper/include/jasper/jas_config.h; then
+    if test -r $JASPERDIR/src/libjasper/include/jasper/jas_config_ac.h; then
       AC_MSG_RESULT([yes])
     else
       AC_MSG_RESULT([no])
