@@ -240,6 +240,7 @@ PDEVH=$(AK) $(gdevprn_h)
 gdev8bcm_h=$(GLSRC)gdev8bcm.h
 gdevcbjc_h=$(GLSRC)gdevcbjc.h $(stream_h)
 gdevdcrd_h=$(GLSRC)gdevdcrd.h
+gdevdevn_h=$(GLSRC)gdevdevn.h
 gdevpccm_h=$(GLSRC)gdevpccm.h
 gdevpcfb_h=$(GLSRC)gdevpcfb.h $(dos__h)
 gdevpcl_h=$(GLSRC)gdevpcl.h
@@ -1125,7 +1126,7 @@ $(DD)devicen.dev : $(DEVS_MAK) $(devn_) $(GLD)page.dev
 
 $(GLOBJ)gdevdevn.$(OBJ) : $(GLSRC)gdevdevn.c $(PDEVH) $(math__h)\
  $(gdevprn_h) $(gsparam_h) $(gscrd_h) $(gscrdp_h) $(gxlum_h) $(gdevdcrd_h)\
- $(gstypes_h) $(gxdcconv_h)
+ $(gstypes_h) $(gxdcconv_h) $(gdevdevn_h)
 	$(GLCC) $(GLO_)gdevdevn.$(OBJ) $(C_) $(GLSRC)gdevdevn.c
 
 ### --------------------------- The XCF device ------------------------- ###
