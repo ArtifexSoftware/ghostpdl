@@ -178,17 +178,24 @@ zmatchmedia(i_ctx_t *i_ctx_p)
 		} else if (!obj_eq(prvalue, pmvalue))
 		    goto no;
 	    }
-	    /* We have a match.  If it is a better match */
-	    /* than the current best one, it supersedes it */
-	    /* regardless of priority. */
-	    if (best_mismatch < mbest) {
-		mbest = best_mismatch;
-		reset_match(&match);
-		/* Save the match in case no match has priority. */
+	    /* We have a match. Save the match in case no better match is found */
+	    if (r_has_type(&match.match_key, t_null)) 
 		match.match_key = aelt.key;
+	    /*
+	     * If it is a better match than the current best it supersedes it 
+	     * regardless of priority. If the match is the same, then update 
+	     * to the current only if the key value is lower.
+	     */
+	    if (best_mismatch <= mbest) {
+		if (best_mismatch < mbest  ||
+		    (r_has_type(&match.match_key, t_integer) &&
+		     match.match_key.value.intval > aelt.key.value.intval)) {
+		    reset_match(&match);
+		    match.match_key = aelt.key;
+		    mbest = best_mismatch;
+		}
 	    }
-	    /* In case of a tie, see if the new match has */
-	    /* priority. */
+	    /* In case of a tie, see if the new match has priority. */
 	    for (pi = match.priority; pi > 0;) {
 		ref pri;
 
