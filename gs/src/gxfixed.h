@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -29,6 +29,7 @@
  */
 typedef long fixed;
 typedef ulong ufixed;		/* only used in a very few places */
+#define ARCH_SIZEOF_FIXED ARCH_SIZEOF_LONG
 
 #define max_fixed max_long
 #define min_fixed min_long
