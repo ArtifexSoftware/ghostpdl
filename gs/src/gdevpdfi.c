@@ -27,6 +27,7 @@
 #include "gsflip.h"
 #include "gdevpdfx.h"
 #include "gdevpdff.h"		/* for synthesized bitmap fonts */
+#include "gdevpdfg.h"
 #include "gdevpdfo.h"		/* for data stream */
 #include "gxcspace.h"
 #include "gscolor2.h"		/* for gscie.h */
@@ -133,62 +134,31 @@ cie_vector_cache_is_exponential(const gx_cie_vector_cache * pc, float *pexpt)
 #undef a
 #undef b
 
-/* Define the long and short versions of the keys in an image dictionary, */
-/* and other strings for images. */
-typedef struct pdf_image_names_s {
-    const char *ASCII85Decode;
-    const char *ASCIIHexDecode;
-    const char *BitsPerComponent;
-    const char *CalCMYK;
-    const char *CalGray;
-    const char *CalRGB;
-    const char *CCITTFaxDecode;
-    const char *ColorSpace;
-    const char *DCTDecode;
-    const char *Decode;
-    const char *DecodeParms;
-    const char *DeviceCMYK;
-    const char *DeviceGray;
-    const char *DeviceRGB;
-    const char *Filter;
-    const char *FlateDecode;
-    const char *Height;
-    const char *ImageMask;
-    const char *Indexed;
-    const char *Interpolate;
-    const char *LZWDecode;
-    const char *RunLengthDecode;
-    const char *Width;
-} pdf_image_names;
-private const pdf_image_names image_names_full =
-{
-    "/ASCII85Decode", "/ASCIIHexDecode", "/BitsPerComponent",
-    "/CalCMYK", "/CalGray", "/CalRGB", "/CCITTFaxDecode", "/ColorSpace",
-    "/DCTDecode", "/Decode", "/DecodeParms",
-    "/DeviceCMYK", "/DeviceGray", "/DeviceRGB",
-    "/Filter", "/FlateDecode", "/Height", "/ImageMask", "/Indexed",
-    "/Interpolate", "/LZWDecode", "/RunLengthDecode", "/Width"
+/*
+ * Define the long and short versions of the keys in an image dictionary,
+ * and other strings for images.
+ */
+/*
+ * Based on Adobe's published PDF documentation, it appears that the
+ * abbreviations for the calibrated color spaces were introduced in
+ * PDF 1.1 (added to Table 7.3) and removed in PDF 1.2 (Table 8.1)!
+ */
+const pdf_image_names_t pdf_image_names_full = {
+    { PDF_COLOR_SPACE_NAMES },
+    { PDF_FILTER_NAMES },
+    PDF_IMAGE_PARAM_NAMES
 };
-private const pdf_image_names image_names_short =
-{
-    "/A85", "/AHx", "/BPC",
-	/*
-	 * Based on Adobe's published PDF documentation, it appears that the
-	 * abbreviations for the calibrated color spaces were introduced in
-	 * PDF 1.1 (added to Table 7.3) and removed in PDF 1.2 (Table 8.1)!
-	 */
-"/CalCMYK" /*CC */ , "/CalGray" /*CG */ , "/CalRGB" /*CR */ , "/CCF", "/CS",
-    "/DCT", "/D", "/DP",
-    "/CMYK", "/G", "/RGB",
-    "/F", "/Fl", "/H", "/IM", "/I",
-    "/I", "/LZW", "/RL", "/W"
+const pdf_image_names_t pdf_image_names_short = {
+    { PDF_COLOR_SPACE_NAMES_SHORT },
+    { PDF_FILTER_NAMES_SHORT },
+    PDF_IMAGE_PARAM_NAMES_SHORT
 };
 
 /* Write out the values of image parameters other than filters. */
 /* pdev is used only for updating procsets. */
 private int
 pdf_write_image_values(stream *s, gx_device_pdf * pdev, const gs_image_t * pim,
-		       const pdf_image_names * pin, long *phpos)
+		       const pdf_image_names_t * pin, long *phpos)
 {
     const gs_color_space *pcs = pim->ColorSpace;
     const char *cs_name;
@@ -209,19 +179,19 @@ pdf_write_image_values(stream *s, gx_device_pdf * pdev, const gs_image_t * pim,
       csw:switch (gs_color_space_get_index(pbcs)) {
 	    case gs_color_space_index_DeviceGray:
 		pdev->procsets |= ImageB;
-		cs_name = pin->DeviceGray;
+		cs_name = pin->color_spaces.DeviceGray;
 		break;
 	    case gs_color_space_index_DeviceRGB:
 		pdev->procsets |= ImageC;
-		cs_name = pin->DeviceRGB;
+		cs_name = pin->color_spaces.DeviceRGB;
 		break;
 	    case gs_color_space_index_DeviceCMYK:
 		pdev->procsets |= ImageC;
-		cs_name = pin->DeviceCMYK;
+		cs_name = pin->color_spaces.DeviceCMYK;
 		break;
 	    case gs_color_space_index_CIEA:
 		pdev->procsets |= ImageB;
-		pprints1(s, "[%s<<", pin->CalGray);
+		pprints1(s, "[%s<<", "/CalGray");
 		{
 		    const gs_cie_a *pcie = pbcs->params.a;
 		    float expts[3];
@@ -251,7 +221,7 @@ pdf_write_image_values(stream *s, gx_device_pdf * pdev, const gs_image_t * pim,
 		break;
 	    case gs_color_space_index_CIEABC:
 		pdev->procsets |= ImageC;
-		pprints1(s, "[%s<<", pin->CalRGB);
+		pprints1(s, "[%s<<", "/CalRGB");
 		{
 		    const gs_cie_abc *pcie = pbcs->params.abc;
 		    const gs_matrix3 *pmat;
@@ -281,7 +251,7 @@ pdf_write_image_values(stream *s, gx_device_pdf * pdev, const gs_image_t * pim,
 		goto cal;
 	    case gs_color_space_index_Indexed:
 		pdev->procsets |= ImageI;
-		pprints1(s, "[%s", pin->Indexed);
+		pprints1(s, "[%s", pin->color_spaces.Indexed);
 		pip = &pcs->params.indexed;
 		pbcs = (const gs_color_space *)&pip->base_space;
 		indexed_decode[0] = 0;
@@ -347,7 +317,7 @@ pdf_write_image_values(stream *s, gx_device_pdf * pdev, const gs_image_t * pim,
 private int
 pdf_write_image_filters(stream *s, gs_memory_t *mem,
 			const psdf_binary_writer * pbw,
-			const pdf_image_names * pin)
+			const pdf_image_names_t * pin)
 {
     const char *filter_name = 0;
     bool binary_ok = true;
@@ -387,13 +357,13 @@ pdf_write_image_filters(stream *s, gs_memory_t *mem,
 	    psdf_free_param_printer(printer);
 	    if (code < 0)
 		return code;
-	    filter_name = pin->CCITTFaxDecode;
+	    filter_name = pin->filter_names.CCITTFaxDecode;
 	} else if (TEMPLATE_IS(s_DCTE_template))
-	    filter_name = pin->DCTDecode;
+	    filter_name = pin->filter_names.DCTDecode;
 	else if (TEMPLATE_IS(s_zlibE_template))
-	    filter_name = pin->FlateDecode;
+	    filter_name = pin->filter_names.FlateDecode;
 	else if (TEMPLATE_IS(s_LZWE_template))
-	    filter_name = pin->LZWDecode;
+	    filter_name = pin->filter_names.LZWDecode;
 	else if (TEMPLATE_IS(s_PNGPE_template)) {
 	    /* This is a predictor for FlateDecode or LZWEncode. */
 	    const stream_PNGP_state *const ss =
@@ -407,23 +377,25 @@ pdf_write_image_filters(stream *s, gs_memory_t *mem,
 		pprintd1(&s_parms, "/BitsPerComponent %d", ss->BitsPerComponent);
 	    pputs(&s_parms, ">>");
 	} else if (TEMPLATE_IS(s_RLE_template))
-	    filter_name = pin->RunLengthDecode;
+	    filter_name = pin->filter_names.RunLengthDecode;
 #undef TEMPLATE_IS
     }
     spputc(&s_parms, 0);	/* null terminator */
     sclose(&s_parms);
     if (filter_name) {
 	if (binary_ok)
-	    pprints2(s, "%s%s", pin->Filter, filter_name);
+	    pprints2(s, "%s%s", pin->filter_names.Filter, filter_name);
 	else
-	    pprints3(s, "%s[%s%s]", pin->Filter, pin->ASCII85Decode,
-		     filter_name);
+	    pprints3(s, "%s[%s%s]", pin->filter_names.Filter,
+		     pin->filter_names.ASCII85Decode, filter_name);
 	if (decode_parms[0])
 	    pprints2(s,
 		     (binary_ok ? "%s%s" : "%s[null%s]"),
-		     pin->DecodeParms, (const char *)decode_parms);
+		     pin->filter_names.DecodeParms,
+		     (const char *)decode_parms);
     } else if (!binary_ok)
-	pprints2(s, "%s%s", pin->Filter, pin->ASCII85Decode);
+	pprints2(s, "%s%s", pin->filter_names.Filter,
+		 pin->filter_names.ASCII85Decode);
     return 0;
 }
 
@@ -432,7 +404,7 @@ pdf_write_image_filters(stream *s, gs_memory_t *mem,
 private int
 pdf_write_image_params(stream *s, gx_device_pdf * pdev, const gs_image_t * pim,
 		       const psdf_binary_writer * pbw,
-		       const pdf_image_names * pin, long *phpos)
+		       const pdf_image_names_t * pin, long *phpos)
 {
     int code = pdf_write_image_values(s, pdev, pim, pin, phpos);
 
@@ -489,7 +461,7 @@ private const gx_image_enum_procs_t pdf_image_enum_procs =
 /* Define the structure for writing an image. */
 typedef struct pdf_image_writer_s {
     psdf_binary_writer binary;
-    const pdf_image_names *pin;
+    const pdf_image_names_t *pin;
     const char *begin_data;
     pdf_resource_t *pres;	/* XObject resource iff not in-line */
     long length_id;		/* id of length object (forward reference) */
@@ -511,7 +483,7 @@ pdf_begin_write_image(gx_device_pdf * pdev, pdf_image_writer * piw,
 {
     if (in_line) {
 	piw->pres = 0;
-	piw->pin = &image_names_short;
+	piw->pin = &pdf_image_names_short;
 	piw->begin_data = (pdev->binary_ok ? "ID " : "ID\n");
     } else {
 	int code = pdf_begin_resource(pdev, resourceXObject, id, &piw->pres);
@@ -523,7 +495,7 @@ pdf_begin_write_image(gx_device_pdf * pdev, pdf_image_writer * piw,
 	piw->length_id = pdf_obj_ref(pdev);
 	pprintld1(s, "/Subtype/Image/Length %ld 0 R\n",
 		  piw->length_id);
-	piw->pin = &image_names_full;
+	piw->pin = &pdf_image_names_full;
 	piw->begin_data = ">>\nstream\n";
     }
     return 0;
@@ -697,8 +669,8 @@ pdf_copy_mono(gx_device_pdf *pdev,
 	    return 0;
 	/* If a mask has an id, assume it's a character. */
 	if (id != gx_no_bitmap_id && sourcex == 0) {
-	    pdf_set_color(pdev, one, &pdev->fill_color,
-			  &psdf_set_fill_color_commands);
+	    pdf_set_pure_color(pdev, one, &pdev->fill_color,
+			       &psdf_set_fill_color_commands);
 	    pres = pdf_find_resource_by_gs_id(pdev, resourceCharProc, id);
 	    if (pres == 0) {	/* Define the character in an embedded font. */
 		pdf_char_proc_t *pcp;
@@ -739,14 +711,14 @@ pdf_copy_mono(gx_device_pdf *pdev,
 	    pdf_make_bitmap_matrix(&image.ImageMatrix, x, y, w, h, h);
 	    goto rx;
 	}
-	pdf_set_color(pdev, one, &pdev->fill_color,
-		      &psdf_set_fill_color_commands);
+	pdf_set_pure_color(pdev, one, &pdev->fill_color,
+			   &psdf_set_fill_color_commands);
 	gs_image_t_init_mask(&image, false);
 	invert = 0xff;
     } else if (one == gx_no_color_index) {
 	gs_image_t_init_mask(&image, false);
-	pdf_set_color(pdev, zero, &pdev->fill_color,
-		      &psdf_set_fill_color_commands);
+	pdf_set_pure_color(pdev, zero, &pdev->fill_color,
+			   &psdf_set_fill_color_commands);
     } else if (zero == pdev->black && one == pdev->white) {
 	gs_cspace_init_DeviceGray(&cs);
 	gs_image_t_init(&image, &cs);
@@ -1311,8 +1283,8 @@ gdev_pdf_begin_image(gx_device * dev,
     pie->rows_left = rect.q.y - rect.p.y;
     pdf_put_clip_path(pdev, pcpath);
     if (pim->ImageMask)
-	pdf_set_color(pdev, gx_dc_pure_color(pdcolor), &pdev->fill_color,
-		      &psdf_set_fill_color_commands);
+	pdf_set_pure_color(pdev, gx_dc_pure_color(pdcolor), &pdev->fill_color,
+			   &psdf_set_fill_color_commands);
     {
 	gs_matrix mat;
 	gs_matrix bmat;

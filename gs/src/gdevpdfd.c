@@ -27,6 +27,7 @@
 #include "gzpath.h"
 #include "gzcpath.h"
 #include "gdevpdfx.h"
+#include "gdevpdfg.h"
 
 /* ---------------- Drawing ---------------- */
 
@@ -47,8 +48,8 @@ gdev_pdf_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 	return code;
     /* Make sure we aren't being clipped. */
     pdf_put_clip_path(pdev, NULL);
-    pdf_set_color(pdev, color, &pdev->fill_color,
-		  &psdf_set_fill_color_commands);
+    pdf_set_pure_color(pdev, color, &pdev->fill_color,
+		       &psdf_set_fill_color_commands);
     pprintd4(pdev->strm, "%d %d %d %d re f\n", x, y, w, h);
     return 0;
 }
@@ -101,8 +102,26 @@ pdf_endpath(gx_device_vector * vdev, gx_path_type_t type)
 {
     return 0;			/* always handled by caller */
 }
-private const gx_device_vector_procs pdf_vector_procs =
+
+private int
+pdf_setfillcolor(gx_device_vector * vdev, const gx_drawing_color * pdc)
 {
+    gx_device_pdf *const pdev = (gx_device_pdf *)vdev;
+
+    return pdf_set_drawing_color(pdev, pdc, &pdev->fill_color,
+				 &psdf_set_fill_color_commands);
+}
+
+private int
+pdf_setstrokecolor(gx_device_vector * vdev, const gx_drawing_color * pdc)
+{
+    gx_device_pdf *const pdev = (gx_device_pdf *)vdev;
+
+    return pdf_set_drawing_color(pdev, pdc, &pdev->stroke_color,
+				 &psdf_set_stroke_color_commands);
+}
+
+private const gx_device_vector_procs pdf_vector_procs = {
 	/* Page management */
     NULL,
 	/* Imager state */
@@ -114,8 +133,8 @@ private const gx_device_vector_procs pdf_vector_procs =
     psdf_setflat,
     psdf_setlogop,
 	/* Other state */
-    psdf_setfillcolor,
-    psdf_setstrokecolor,
+    pdf_setfillcolor,
+    pdf_setstrokecolor,
 	/* Paths */
     psdf_dopath,
     pdf_dorect,
@@ -233,12 +252,17 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
     if (!gx_dc_is_pure(pdcolor))
 	return gx_default_fill_path(dev, pis, ppath, params, pdcolor,
 				    pcpath);
-    /*
-     * Make a special check for the initial fill with white,
-     * which shouldn't cause the page to be opened.
-     */
-    if (gx_dc_pure_color(pdcolor) == pdev->white && !is_in_page(pdev))
-	return 0;
+    code = pdf_prepare_fill(pdev, pis);
+    if (code < 0)
+	return code;
+    if (gx_dc_is_pure(pdcolor)) {
+	/*
+	 * Make a special check for the initial fill with white,
+	 * which shouldn't cause the page to be opened.
+	 */
+	if (gx_dc_pure_color(pdcolor) == pdev->white && !is_in_page(pdev))
+	    return 0;
+    }
     have_path = !gx_path_is_void(ppath);
     if (have_path || pdev->context == PDF_IN_NONE ||
 	pdf_must_put_clip_path(pdev, pcpath)
@@ -248,8 +272,9 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 	    return code;
     }
     pdf_put_clip_path(pdev, pcpath);
-    pdf_set_color(pdev, gx_dc_pure_color(pdcolor), &pdev->fill_color,
-		  &psdf_set_fill_color_commands);
+    if (pdf_setfillcolor((gx_device_vector *)pdev, pdcolor) < 0)
+	return gx_default_fill_path(dev, pis, ppath, params, pdcolor,
+				    pcpath);
     if (have_path) {
 	stream *s = pdev->strm;
 
@@ -279,13 +304,19 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
 
     if (gx_path_is_void(ppath))
 	return 0;		/* won't mark the page */
-    if (!gx_dc_is_pure(pdcolor))
-	return gx_default_stroke_path(dev, pis, ppath, params, pdcolor,
-				      pcpath);
+    code = pdf_prepare_stroke(pdev, pis);
+    if (code < 0)
+	return code;
     pdev->vec_procs = &pdf_vector_procs;
     code = pdf_open_page(pdev, PDF_IN_STREAM);
     if (code < 0)
 	return code;
+    code = gdev_vector_prepare_stroke((gx_device_vector *)pdev, pis, params,
+				      pdcolor, scale);
+    if (code < 0)
+	return gx_default_stroke_path(dev, pis, ppath, params, pdcolor,
+				      pcpath);
+
     /*
      * If the CTM is not uniform, stroke width depends on angle.
      * We'd like to avoid resetting the CTM, so we check for uniform
@@ -299,8 +330,6 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
     set_ctm = (bool)gdev_vector_stroke_scaling((gx_device_vector *)pdev,
 					       pis, &scale, &mat);
     pdf_put_clip_path(pdev, pcpath);
-    gdev_vector_prepare_stroke((gx_device_vector *)pdev, pis, params,
-			       pdcolor, scale);
     if (set_ctm)
 	pdf_put_matrix(pdev, "q ", &mat, "cm\n");
     code = gdev_vector_dopath((gx_device_vector *)pdev, ppath,

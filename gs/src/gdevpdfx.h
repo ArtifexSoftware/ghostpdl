@@ -336,6 +336,12 @@ struct gx_device_pdf_s {
     bool ReEncodeCharacters;
     long FirstObjectNumber;
     /* End of parameters */
+    /* Additional graphics state */
+    bool fill_overprint, stroke_overprint;
+    int overprint_mode;
+    gs_id halftone_id;
+    gs_id transfer_ids[4];
+    gs_id black_generation_id, undercolor_removal_id;
     /* Following are set when device is opened. */
     enum {
 	pdf_compress_none,
@@ -487,16 +493,6 @@ long pdf_begin_obj(P1(gx_device_pdf * pdev));
 
 /* End an object. */
 int pdf_end_obj(P1(gx_device_pdf * pdev));
-
-/* ------ Graphics ------ */
-
-/* Reset the graphics state parameters to initial values. */
-void pdf_reset_graphics(P1(gx_device_pdf *pdev));
-
-/* Set the fill or stroke color. */
-int pdf_set_color(P4(gx_device_pdf *pdev, gx_color_index color,
-		     gx_drawing_color *pdcolor,
-		     const psdf_set_color_commands_t *ppscc));
 
 /* ------ Page contents ------ */
 

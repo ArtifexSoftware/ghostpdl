@@ -689,7 +689,7 @@ $(GLOBJ)gdevps.$(OBJ) : $(GLSRC)gdevps.c $(GDEV)\
 # includes a PostScript interpreter.
 
 pdfwrite1_=$(GLOBJ)gdevpdf.$(OBJ) $(GLOBJ)gdevpdfd.$(OBJ)
-pdfwrite2_=$(GLOBJ)gdevpdfe.$(OBJ) $(GLOBJ)gdevpdff.$(OBJ)
+pdfwrite2_=$(GLOBJ)gdevpdfe.$(OBJ) $(GLOBJ)gdevpdff.$(OBJ) $(GLOBJ)gdevpdfg.$(OBJ)
 pdfwrite3_=$(GLOBJ)gdevpdfi.$(OBJ) $(GLOBJ)gdevpdfm.$(OBJ)
 pdfwrite4_=$(GLOBJ)gdevpdfo.$(OBJ) $(GLOBJ)gdevpdfp.$(OBJ) $(GLOBJ)gdevpdfr.$(OBJ)
 pdfwrite5_=$(GLOBJ)gdevpdft.$(OBJ) $(GLOBJ)gdevpdfu.$(OBJ) $(GLOBJ)gdevpdfw.$(OBJ)
@@ -715,6 +715,7 @@ $(DD)pdfwrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pdfwrite_)\
 	$(ADDMOD) $(DD)pdfwrite -include $(GLD)szlibe $(GLD)psdf $(GLD)psf
 
 gdevpdff_h=$(GLSRC)gdevpdff.h
+gdevpdfg_h=$(GLSRC)gdevpdfg.h $(gscspace_h)
 gdevpdfo_h=$(GLSRC)gdevpdfo.h $(gsparam_h)
 gdevpdfx_h=$(GLSRC)gdevpdfx.h\
  $(gsparam_h) $(gsuid_h) $(gxdevice_h) $(gxfont_h) $(gxline_h)\
@@ -722,11 +723,11 @@ gdevpdfx_h=$(GLSRC)gdevpdfx.h\
 
 $(GLOBJ)gdevpdf.$(OBJ) : $(GLSRC)gdevpdf.c $(GDEVH)\
  $(memory__h) $(string__h)\
- $(gscdefs_h) $(gdevpdff_h) $(gdevpdfo_h) $(gdevpdfx_h)
+ $(gscdefs_h) $(gdevpdff_h) $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h)
 	$(GLCC) $(GLO_)gdevpdf.$(OBJ) $(C_) $(GLSRC)gdevpdf.c
 
 $(GLOBJ)gdevpdfd.$(OBJ) : $(GLSRC)gdevpdfd.c $(math__h)\
- $(gdevpdfx_h)\
+ $(gdevpdfg_h) $(gdevpdfx_h)\
  $(gx_h) $(gxdevice_h) $(gxfixed_h) $(gxistate_h) $(gxpaint_h)\
  $(gzcpath_h) $(gzpath_h)
 	$(GLCC) $(GLO_)gdevpdfd.$(OBJ) $(C_) $(GLSRC)gdevpdfd.c
@@ -747,9 +748,16 @@ $(GLOBJ)gdevpdff.$(OBJ) : $(GLSRC)gdevpdff.c\
  $(scommon_h)
 	$(GLCC) $(GLO_)gdevpdff.$(OBJ) $(C_) $(GLSRC)gdevpdff.c
 
+$(GLOBJ)gdevpdfg.$(OBJ) : $(GLSRC)gdevpdfg.c $(GXERR) $(math__h) $(string__h)\
+ $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h)\
+ $(gsfunc0_h) $(gsstate_h)\
+ $(gxbitmap_h) $(gxdht_h) $(gxfmap_h) $(gxht_h) $(gxistate_h) $(gzht_h)\
+ $(szlibx_h)
+	$(GLCC) $(GLO_)gdevpdfg.$(OBJ) $(C_) $(GLSRC)gdevpdfg.c
+
 $(GLOBJ)gdevpdfi.$(OBJ) : $(GLSRC)gdevpdfi.c\
  $(math__h) $(memory__h) $(string__h) $(jpeglib__h) $(gx_h)\
- $(gdevpdff_h) $(gdevpdfo_h) $(gdevpdfx_h)\
+ $(gdevpdff_h) $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h)\
  $(gscie_h) $(gscolor2_h) $(gserrors_h) $(gsflip_h)\
  $(gxcspace_h) $(gxistate_h)\
  $(sa85x_h) $(scfx_h) $(sdct_h) $(slzwx_h) $(spngpx_h) $(srlx_h) $(strimpl_h)\
@@ -779,7 +787,8 @@ $(GLOBJ)gdevpdfr.$(OBJ) : $(GLSRC)gdevpdfr.c $(memory__h) $(string__h)\
 
 $(GLOBJ)gdevpdft.$(OBJ) : $(GLSRC)gdevpdft.c\
  $(math__h) $(memory__h) $(string__h) $(gx_h)\
- $(gdevpdff_h) $(gdevpdfx_h) $(gserrors_h) $(gsmatrix_h) $(gsutil_h)\
+ $(gdevpdff_h) $(gdevpdfg_h) $(gdevpdfx_h)\
+ $(gserrors_h) $(gsmatrix_h) $(gsutil_h)\
  $(gxfcache_h) $(gxfcid_h) $(gxfixed_h) $(gxfont_h) $(gxfont0_h) $(gxfont1_h)\
  $(gxfont42_h) $(gxpath_h)\
  $(scommon_h)

@@ -26,6 +26,7 @@
 #include "gxdevice.h"
 #include "gdevpdfx.h"
 #include "gdevpdff.h"
+#include "gdevpdfg.h"		/* only for pdf_reset_graphics */
 #include "gdevpdfo.h"
 
 /* Define the default language level and PDF compatibility level. */
@@ -188,6 +189,13 @@ const gx_device_pdf gs_pdfwrite_device =
  1 /*true*/,			/* ReAssignCharacters */
  1 /*true*/,			/* ReEncodeCharacters */
  1,				/* FirstObjectNumber */
+ 0 /*false*/,			/* fill_overprint */
+ 0 /*false*/,			/* stroke_overprint */
+ 0,				/* overprint_mode */
+ gs_no_id,			/* halftone_id */
+ {gs_no_id, gs_no_id, gs_no_id, gs_no_id}, /* transfer_ids */
+ gs_no_id,			/* black_generation_id */
+ gs_no_id,			/* undercolor_removal_id */
  pdf_compress_none,		/* compression */
  {{0}},				/* xref */
  {{0}},				/* asides */
