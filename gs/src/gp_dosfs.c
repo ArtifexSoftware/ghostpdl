@@ -20,6 +20,7 @@
 #include "dos_.h"
 #include "gx.h"
 #include "gp.h"
+#include "gpmisc.h"
 
 /* ------ Printer accessing ------ */
 

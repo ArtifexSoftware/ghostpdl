@@ -340,7 +340,7 @@ macsystypes_h=$(GLSRC)macsystypes.h
 systypes_h=$(GLOBJ)sys/types.h
 
 $(GLOBJ)gp_mac.$(OBJ): $(GLSRC)gp_mac.c
-$(GLOBJ)gp_macio.$(OBJ): $(GLSRC)gp_macio.c
+$(GLOBJ)gp_macio.$(OBJ): $(GLSRC)gp_macio.c $(gx_h) $(gp_h) $(gpmisc_h)
 $(GLOBJ)gp_stdin.$(OBJ): $(GLSRC)gp_stdin.c $(AK) $(stdio__h) $(gx_h) $(gp_h)
 
 # ------------------------------------------------------------------- #

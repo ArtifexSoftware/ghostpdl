@@ -28,7 +28,7 @@ $(GLD)winplat.dev : $(WINPLAT_MAK) $(ECHOGS_XE) $(winplat_)
 
 $(GLOBJ)gp_ntfs.$(OBJ): $(GLSRC)gp_ntfs.c $(AK)\
  $(dos__h) $(memory__h) $(stdio__h) $(string__h) $(windows__h)\
- $(gp_h) $(gsmemory_h) $(gsstruct_h) $(gstypes_h) $(gsutil_h)
+ $(gp_h) $(gpmisc_h) $(gsmemory_h) $(gsstruct_h) $(gstypes_h) $(gsutil_h)
 	$(GLCCWIN) $(GLO_)gp_ntfs.$(OBJ) $(C_) $(GLSRC)gp_ntfs.c
 
 $(GLOBJ)gp_win32.$(OBJ): $(GLSRC)gp_win32.c $(AK)\

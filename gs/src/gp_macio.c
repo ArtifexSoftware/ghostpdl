@@ -56,6 +56,7 @@
 
 #include "gx.h"
 #include "gp.h"
+#include "gpmisc.h"
 #include "gxdevice.h"
 
 #include "gp_mac.h"

@@ -21,6 +21,7 @@
 #include "memory_.h"
 #include "gx.h"
 #include "gp.h"
+#include "gpmisc.h"
 #include "gsstruct.h"
 #include <stat.h>
 #include <stdlib.h>		/* for exit() with some compiler versions */

@@ -18,10 +18,12 @@
 /* Non-I/O file operators */
 #include "memory_.h"
 #include "string_.h"
+#include "unistd_.h"
 #include "ghost.h"
 #include "gscdefs.h"		/* for gx_io_device_table */
 #include "gsutil.h"		/* for bytes_compare */
 #include "gp.h"
+#include "gpmisc.h"
 #include "gsfname.h"
 #include "gsstruct.h"		/* for registering root */
 #include "gxalloc.h"		/* for streams */

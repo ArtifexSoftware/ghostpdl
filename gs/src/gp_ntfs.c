@@ -28,6 +28,7 @@
 #include "gsmemory.h"
 #include "gsstruct.h"
 #include "gp.h"
+#include "gpmisc.h"
 #include "gsutil.h"
 #include "windows_.h"
 

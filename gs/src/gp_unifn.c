@@ -18,6 +18,7 @@
 /* Unix-like file name syntax platform routines for Ghostscript */
 #include "gx.h"
 #include "gp.h"
+#include "gpmisc.h"
 #include "gsutil.h"
 
 /* Define the character used for separating file names in a list. */

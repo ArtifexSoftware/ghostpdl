@@ -69,7 +69,8 @@ int unlink(const char *);
 #endif
 
 #if defined(_MSC_VER)
-#define fdopen(handle,mode) _fdopen(handle,mode)
+#  define fdopen(handle,mode) _fdopen(handle,mode)
+#  define fileno(file) _fileno(file)
 #endif
 
 #endif /* stdio__INCLUDED */
