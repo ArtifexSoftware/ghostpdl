@@ -386,7 +386,7 @@ pjl_parsed_filename_to_string(char *fnamep, char *pathname)
 	/* else it is a quote skip it */
     }
     /* NULL terminate */
-    *fnamep = NULL;
+    *fnamep = '\0';
 }
 
 /* Verify a file write operation is ok.  The filesystem must be 0: or
@@ -538,7 +538,7 @@ pjl_search_for_file(pjl_parser_state_t *pst, char *pathname, char *filename, cha
 	    /* done */
 	    if ( fstatus == ~(uint)0 )
 		return 0;
-	    fontfilename[fstatus] = (char)NULL;
+	    fontfilename[fstatus] = '\0';
 	    /* a directory */
 	    if ( ( stat(fontfilename, &stbuf) >= 0 ) && stat_is_dir(stbuf) )
 		pjl_search_for_file(pst, fontfilename, filename, result);
@@ -567,7 +567,7 @@ pjl_fsdirlist(pjl_parser_state_t *pst, char *pathname, int entry, int count)
 	    /* done */
 	    if ( fstatus == ~(uint)0 )
 		return 0;
-	    fontfilename[fstatus] = (char)NULL;
+	    fontfilename[fstatus] = '\0';
 	    /* NB - debugging output only */
 	    dprintf1("%s\n", fontfilename);
 	} while (1);
@@ -868,8 +868,8 @@ pjl_get_envvar(pjl_parser_state *pst, const char *pjl_var)
  int
 pjl_process(pjl_parser_state* pst, void *pstate, stream_cursor_read * pr)
 {
-    const byte *p = pr->ptr;
-    const byte *rlimit = pr->limit;
+    byte *p = pr->ptr;
+    byte *rlimit = pr->limit;
     int code = 0;
     /* first check if we are writing data to a file as part of the
        file system commands */
@@ -1002,7 +1002,7 @@ pjl_map_pjl_sym_to_pcl_sym(const char *symname)
 	    strcpy(pcl_symbol, symbol_sets[i].pcl_selectcode);
 	    char_pos = strlen(pcl_symbol) - 1;
 	    chr = pcl_symbol[char_pos];
-	    pcl_symbol[char_pos] = (char)NULL;
+	    pcl_symbol[char_pos] = '\0';
 	    return (atoi(pcl_symbol) << 5) + chr - 64;
 	}
     return -1;
@@ -1292,8 +1292,8 @@ pjl_register_permanent_soft_font_deletion(pjl_parser_state *pst, int font_number
 		}
 	    if ( is_S && ((highest_fontnumber == current_fontnumber) || empty) ) {
 #define SINDEX 4
-		pst->font_defaults[SINDEX].fontnumber[0] = (char)NULL;
-		pst->font_envir[SINDEX].fontnumber[0] = (char)NULL;
+		pst->font_defaults[SINDEX].fontnumber[0] = '\0';
+		pst->font_envir[SINDEX].fontnumber[0] = '\0';
 		return 1;
 #undef SINDEX
 	    }

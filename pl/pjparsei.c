@@ -186,7 +186,6 @@ pjl_impl_flush_to_eoj(
 	stream_cursor_read   *cursor           /* data to process */
 )
 {
-	pjl_interp_instance_t *pjli = (pjl_interp_instance_t *)instance;
 	return pjl_skip_to_uel(cursor) ? 1 : 0;
 }
 
@@ -196,8 +195,6 @@ pjl_impl_process_eof(
 	pl_interp_instance_t *instance        /* interp instance to process data job in */
 )
 {
-	pjl_interp_instance_t *pjli = (pjl_interp_instance_t *)instance;
-	/*@@@ do something here???*/
 	return 0;
 }
 
@@ -211,8 +208,6 @@ pjl_impl_report_errors(
    FILE                 *cout              /* stream for back-channel reports */
 )
 {
-	pjl_interp_instance_t *pjli = (pjl_interp_instance_t *)instance;
-	/* @@@ report status here */
 	return 0;
 }
 
@@ -223,8 +218,6 @@ pjl_impl_dnit_job(
 )
 {
 	int code = 0;
-	pjl_interp_instance_t *pjli = (pjl_interp_instance_t *)instance;
-
 	return code;
 }
 
@@ -284,7 +277,6 @@ pjl_impl_compare(
   const char             *s2
 )
 {
-	pjl_interp_instance_t *pjli = (pjl_interp_instance_t *)pli;
 	return pjl_compare(s1, s2);
 }
 
@@ -295,7 +287,6 @@ pjl_impl_map_pjl_sym_to_pcl_sym(
   const pjl_envvar_t     *symname
 )
 {
-	pjl_interp_instance_t *pjli = (pjl_interp_instance_t *)pli;
 	return pjl_map_pjl_sym_to_pcl_sym(symname);
 }
 
@@ -306,7 +297,6 @@ pjl_impl_vartoi(
   const pjl_envvar_t     *s
 )
 {
-	pjl_interp_instance_t *pjli = (pjl_interp_instance_t *)pli;
 	return pjl_vartoi(s);
 }
 
@@ -317,7 +307,6 @@ pjl_impl_vartof(
   const pjl_envvar_t     *s
 )
 {
-	pjl_interp_instance_t *pjli = (pjl_interp_instance_t *)pli;
 	return pjl_vartof(s);
 }
 
