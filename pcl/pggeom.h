@@ -18,6 +18,7 @@
  * (1 plu = 1/40 mm = 1/1016 inch).
  */
 #define coord_2_plu(a) ((a) * (1016.0 / 7200.0))
+#define plu_2_coord(a) ((a) * (7200.0 / 1016.0))
 #define points_2_plu(a) ((a) * (1016.0 / 72.0))
 #define mm_2_plu(a) ((a) * 40.0)
 #define inches_2_plu(a) ((a) * 1016.0)

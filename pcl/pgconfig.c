@@ -354,6 +354,28 @@ hpgl_PG(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	return e_Unimplemented;
 }
 
+#ifdef FUTURE_RTL_CONFIGURATION
+/* PS;  NB this is only a partial implementation. */
+int
+hpgl_PS(hpgl_args_t *pargs, hpgl_state_t *pgls)
+{
+    hpgl_real_t page_dims[2];
+    /* we use the pcl paper handling machinery to set the plot size */
+    pcl_paper_size_t paper;
+    int i;
+    for ( i = 0; i < 2 && hpgl_arg_real(pargs, &page_dims[i]); ++i )
+	; /* NOTHING */
+    if ( i != 2 )
+	return e_Range;
+    paper.width = plu_2_coord(page_dims[0]);
+    paper.height = plu_2_coord(page_dims[1]);
+    paper.offset_portrait = 0; 
+    paper.offset_landscape = 0;
+    new_page_size(pgls, &paper, false);
+    return 0;
+}
+
+#endif /* FUTURE_RTL_CONFIGURATION */
 /* RO angle; */
 /* RO; */
 int
@@ -498,6 +520,9 @@ pgconfig_do_init(gs_memory_t *mem)
 	  HPGL_COMMAND('I', 'R', hpgl_IR, 0),
 	  HPGL_COMMAND('I', 'W', hpgl_IW, 0),
 	  HPGL_COMMAND('P', 'G', hpgl_PG, 0),
+#ifdef FUTURE_RTL_CONFIGURATION
+	  HPGL_COMMAND('P', 'S', hpgl_PS, 0),
+#endif /* FUTURE_RTL_CONFIGURATION */
 	  HPGL_COMMAND('R', 'O', hpgl_RO, 0),
 	  HPGL_COMMAND('R', 'P', hpgl_RP, 0),
 	  HPGL_COMMAND('S', 'C', hpgl_SC, 0),
