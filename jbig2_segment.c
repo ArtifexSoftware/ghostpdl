@@ -80,7 +80,7 @@ jbig2_parse_segment_header (Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size,
     {
       int i;
 
-      referred_to_segments = jbig2_alloc(ctx->allocator, referred_to_segment_count * referred_to_segment_size);
+      referred_to_segments = jbig2_alloc(ctx->allocator, referred_to_segment_count * referred_to_segment_size * sizeof(uint32_t));
     
       for (i = 0; i < referred_to_segment_count; i++) {
         referred_to_segments[i] = 
