@@ -160,8 +160,9 @@ bytes_compare(const byte * s1, uint len1, const byte * s2, uint len2)
 
 /* Test whether a string matches a pattern with wildcards. */
 /* '*' = any substring, '?' = any character, '\' quotes next character. */
-private const string_match_params smp_default =
-{'*', '?', '\\', false};
+const string_match_params string_match_params_default = {
+    '*', '?', '\\', false
+};
 
 bool
 string_match(const byte * str, uint len, const byte * pstr, uint plen,
@@ -173,7 +174,7 @@ string_match(const byte * str, uint len, const byte * pstr, uint plen,
     const byte *sp = str, *spend = str + len;
 
     if (psmp == 0)
-	psmp = &smp_default;
+	psmp = &string_match_params_default;
   again:while (p < pend) {
 	register byte ch = *p;
 

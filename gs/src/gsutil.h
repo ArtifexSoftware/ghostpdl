@@ -57,6 +57,7 @@ typedef struct string_match_params_s {
     int quote_next;		/* '\\' */
     bool ignore_case;
 } string_match_params;
+extern const string_match_params string_match_params_default;
 bool string_match(P5(const byte * str, uint len,
 		     const byte * pstr, uint plen,
 		     const string_match_params * psmp));
