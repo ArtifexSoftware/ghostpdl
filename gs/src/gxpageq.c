@@ -90,7 +90,6 @@ gx_page_queue_entry_alloc(
     if (entry != 0) {
 	entry->next = 0;
 	entry->queue = queue;
-	entry->page_info = null_page_info;
     }
     return entry;
 }
@@ -168,7 +167,6 @@ gx_page_queue_dnit(
 	queue->render_done_sema = 0;
     }
     if (queue->reserve_entry) {
-	gx_page_queue_entry_free_page_info(queue->reserve_entry);
 	gx_page_queue_entry_free(queue->reserve_entry);
 	queue->reserve_entry = 0;
     }
