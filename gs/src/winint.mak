@@ -1,4 +1,4 @@
-#    Copyright (C) 1997, 2002 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1997, 2003 Aladdin Enterprises.  All rights reserved.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -42,7 +42,7 @@ WINZIPSE_XE="C:\Program Files\WinZip Self-Extractor\WZIPSE32.EXE"
 
 # Define the name and location of the zip archive maker.
 !ifndef ZIP_XE
-ZIP_XE="zip.exe"
+ZIP_XE="zip.exe" -X
 !endif
 
 # Define the setup and install programs, which are only suitable
@@ -227,6 +227,7 @@ ZIPPROGFILE5=gs$(GS_DOT_VERSION)\bin\gs16spl.exe
 ZIPPROGFILE6=gs$(GS_DOT_VERSION)\doc
 ZIPPROGFILE7=gs$(GS_DOT_VERSION)\examples
 ZIPPROGFILE8=gs$(GS_DOT_VERSION)\lib
+ZIPPROGFILE9=gs$(GS_DOT_VERSION)\Resource
 ZIPFONTDIR=fonts
 ZIPFONTFILES=$(ZIPFONTDIR)\*.*
 
@@ -245,6 +246,7 @@ zip: $(SETUP_XE) $(UNINSTALL_XE)
 	echo $(ZIPPROGFILE6) >> $(ZIPTEMPFILE)
 	echo $(ZIPPROGFILE7) >> $(ZIPTEMPFILE)
 	echo $(ZIPPROGFILE8) >> $(ZIPTEMPFILE)
+	echo $(ZIPPROGFILE9) >> $(ZIPTEMPFILE)
 	$(SETUP_XE_NAME) -title "AFPL Ghostscript $(GS_DOT_VERSION)" -dir "gs$(GS_DOT_VERSION)" -list "$(FILELIST_TXT)" @$(ZIPTEMPFILE)
 	$(SETUP_XE_NAME) -title "AFPL Ghostscript Fonts" -dir "fonts" -list "$(FONTLIST_TXT)" $(ZIPFONTFILES)
 	-del gs$(GS_VERSION)w32.zip
@@ -262,6 +264,7 @@ zip: $(SETUP_XE) $(UNINSTALL_XE)
 	$(ZIP_XE) -9 -r gs$(GS_VERSION)w32.zip $(ZIPPROGFILE6)
 	$(ZIP_XE) -9 -r gs$(GS_VERSION)w32.zip $(ZIPPROGFILE7)
 	$(ZIP_XE) -9 -r gs$(GS_VERSION)w32.zip $(ZIPPROGFILE8)
+	$(ZIP_XE) -9 -r gs$(GS_VERSION)w32.zip $(ZIPPROGFILE9)
 	-del $(ZIPTEMPFILE)
 	-del $(SETUP_XE_NAME)
 	-del $(UNINSTALL_XE_NAME)
@@ -283,7 +286,7 @@ archive: zip $(PSOBJ)gswin16.ico $(ECHOGS_XE)
 	$(ECHOGS_XE) -a $(ZIP_RSP) -q -a -s $(PSOBJ)about.txt
 	$(ECHOGS_XE) -a $(ZIP_RSP) -q -t -s $(PSOBJ)dialog.txt
 	$(ECHOGS_XE) -a $(ZIP_RSP) -q -c -s $(SETUP_XE_NAME)
-	$(ECHOGS_XE) -w $(PSOBJ)about.txt "AFPL Ghostscript is Copyright " -x A9 " 2002 artofcode LLC."
+	$(ECHOGS_XE) -w $(PSOBJ)about.txt "AFPL Ghostscript is Copyright " -x A9 " 2003 artofcode LLC."
 	$(ECHOGS_XE) -a $(PSOBJ)about.txt See license in gs$(GS_DOT_VERSION)\doc\PUBLIC.
 	$(ECHOGS_XE) -a $(PSOBJ)about.txt See gs$(GS_DOT_VERSION)\doc\Commprod.htm regarding commercial distribution.
 	$(ECHOGS_XE) -w $(PSOBJ)dialog.txt This installs AFPL Ghostscript $(GS_DOT_VERSION).
