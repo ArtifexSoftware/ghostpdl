@@ -248,6 +248,14 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_const_string * str,
 	    case cx_vstem:
 		goto vstem;
 	    case cx_vmoveto:
+		/*
+		 * Type 2 CharStrings, unlike Type 1, insert an explicit
+		 * closepath before a moveto rather than an implicit one.
+		 * (This makes a difference for charpath.)
+		 */
+		code = gx_path_close_subpath(sppath);
+		if (code < 0)
+		    return code;
 		check_first_operator(csp > cstack);
 		accum_y(*csp);
 	      move:if ((pcis->hint_next != 0 || path_is_drawing(sppath)))
@@ -290,6 +298,10 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_const_string * str,
 		}
 		goto pp;
 	    case cx_endchar:
+		/* See vmoveto above re closing the subpath. */
+		code = gx_path_close_subpath(sppath);
+		if (code < 0)
+		    return code;
 		/*
 		 * It is an undocumented (!) feature of Type 2 CharStrings
 		 * that if endchar is invoked with 4 or 5 operands, it is
@@ -328,10 +340,18 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_const_string * str,
 		}
 		return code;
 	    case cx_rmoveto:
+		/* See vmoveto above re closing the subpath. */
+		code = gx_path_close_subpath(sppath);
+		if (code < 0)
+		    return code;
 		check_first_operator(csp > cstack + 1);
 		accum_xy(csp[-1], *csp);
 		goto move;
 	    case cx_hmoveto:
+		/* See vmoveto above re closing the subpath. */
+		code = gx_path_close_subpath(sppath);
+		if (code < 0)
+		    return code;
 		check_first_operator(csp > cstack);
 		accum_x(*csp);
 		goto move;
