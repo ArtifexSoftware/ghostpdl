@@ -145,7 +145,7 @@ hpgl_next_char_proc(gs_show_enum *penum, gs_char *pchr, gs_glyph *pglyph)
 	    pcl_font_selection_t *pfs =
 		&pgls->g.font_selection[pgls->g.font_selected];
 
-	    if ( ((pfs->params.typeface_family & 0xfff) != STICK_FONT_TYPEFACE) )
+	    if ( ((pfs->font->params.typeface_family & 0xfff) != STICK_FONT_TYPEFACE) )
 		*pchr = hpgl_map_symbol(*pchr, pgls);
 	}
 #undef pgls
