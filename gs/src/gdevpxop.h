@@ -44,7 +44,7 @@ typedef enum {
     pxt4c, pxt4d, pxt4e, pxtBeginFontHeader,
 /*5x */
     pxtReadFontHeader, pxtEndFontHeader, pxtBeginChar, pxtReadChar,
-    pxtEndChar, pxtRemoveFont, pxtSetCharAttributes /*2.0 */ , pxt57,
+    pxtEndChar, pxtRemoveFont, pxtSetCharAttributes /*2.0 */, pxSetDefaultGS,
     pxtSetColorTreatment, pxt59, pxt5a, pxtBeginStream,
     pxtReadStream, pxtEndStream, pxtExecStream, pxtRemoveStream /*2.0 */ ,
 /*6x */
