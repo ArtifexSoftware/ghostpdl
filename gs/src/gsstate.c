@@ -252,6 +252,7 @@ gs_state_alloc(gs_memory_t * mem)
     pgs->effective_clip_shared = true;
     /* Initialize things so that gx_remap_color won't crash. */
     gs_cspace_init_DeviceGray(pgs->color_space);
+    pgs->in_cachedevice = 0;
     gx_set_device_color_1(pgs); /* sets colorspace and client color */
     pgs->device = 0;		/* setting device adjusts refcts */
     gs_nulldevice(pgs);
@@ -264,7 +265,6 @@ gs_state_alloc(gs_memory_t * mem)
     pgs->font = 0;		/* Not right, but acceptable until the */
     /* PostScript code does the first setfont. */
     pgs->root_font = 0;		/* ditto */
-    pgs->in_cachedevice = 0;
     pgs->in_charpath = (gs_char_path_mode) 0;
     pgs->show_gstate = 0;
     pgs->level = 0;
