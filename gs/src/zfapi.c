@@ -57,32 +57,39 @@
 typedef struct FAPI_outline_handler_s {
     struct gx_path_s *path;
     fixed x0, y0;
+    bool close_path, need_close; /* This stuff fixes unclosed paths being rendered with UFST */
 } FAPI_outline_handler;
 
 private inline int import_shift(int x, int n)
 {   return n > 0 ? x << n : x >> -n;
 }
 
+private int add_closepath(FAPI_path *I)
+{   FAPI_outline_handler *olh = (FAPI_outline_handler *)I->olh;
+    olh->need_close = false;
+    return gx_path_close_subpath_notes(olh->path, 0);
+}
+
 private int add_move(FAPI_path *I, FracInt x, FracInt y)
 {   FAPI_outline_handler *olh = (FAPI_outline_handler *)I->olh;
+    if (olh->need_close && olh->close_path)
+        CheckRET(add_closepath(I));
+    olh->need_close = false;
     return gx_path_add_point(olh->path, import_shift(x, I->shift) + olh->x0, -import_shift(y, I->shift) + olh->y0);
 }
 
 private int add_line(FAPI_path *I, FracInt x, FracInt y)
 {   FAPI_outline_handler *olh = (FAPI_outline_handler *)I->olh;
+    olh->need_close = true;
     return gx_path_add_line_notes(olh->path, import_shift(x, I->shift) + olh->x0, -import_shift(y, I->shift) + olh->y0, 0);
 }
 
 private int add_curve(FAPI_path *I, FracInt x0, FracInt y0, FracInt x1, FracInt y1, FracInt x2, FracInt y2)
 {   FAPI_outline_handler *olh = (FAPI_outline_handler *)I->olh;
+    olh->need_close = true;
     return gx_path_add_curve_notes(olh->path, import_shift(x0, I->shift) + olh->x0, -import_shift(y0, I->shift) + olh->y0, 
 					      import_shift(x1, I->shift) + olh->x0, -import_shift(y1, I->shift) + olh->y0, 
 					      import_shift(x2, I->shift) + olh->x0, -import_shift(y2, I->shift) + olh->y0, 0);
-}
-
-private int add_closepath(FAPI_path *I)
-{   FAPI_outline_handler *olh = (FAPI_outline_handler *)I->olh;
-    return gx_path_close_subpath_notes(olh->path, 0);
 }
 
 private FAPI_path path_interface_stub = { NULL, 0, add_move, add_line, add_curve, add_closepath };
@@ -751,15 +758,20 @@ private int fapi_finish_dummy(i_ctx_t *i_ctx_p)
 {   return 0;
 }
 
-private int outline_char(i_ctx_t *i_ctx_p, FAPI_server *I, FAPI_font *ff, FAPI_char_ref *cr, FAPI_metrics *metrics, int import_shift_v, gs_show_enum *penum_s)
+private int outline_char(i_ctx_t *i_ctx_p, FAPI_server *I, FAPI_font *ff, FAPI_char_ref *cr, FAPI_metrics *metrics, int import_shift_v, gs_show_enum *penum_s, struct gx_path_s *path, bool close_path)
 {   FAPI_path path_interface = path_interface_stub;
     FAPI_outline_handler olh;
-    olh.path = penum_s->pgs->show_gstate->path;
+    olh.path = path;
     olh.x0 = penum_s->pgs->ctm.tx_fixed;
     olh.y0 = penum_s->pgs->ctm.ty_fixed;
+    olh.close_path = close_path;
+    olh.need_close = false;
     path_interface.olh = &olh;
     path_interface.shift = import_shift_v;
-    return renderer_retcode(i_ctx_p, I, I->outline_char(I, ff, cr, &path_interface, metrics));
+    CheckRET(renderer_retcode(i_ctx_p, I, I->outline_char(I, ff, cr, &path_interface, metrics)));
+    if (olh.need_close && olh.close_path)
+        CheckRET(add_closepath(&path_interface));
+    return 0;
 }
 
 private int FAPI_do_char(i_ctx_t *i_ctx_p, gx_device *dev, char *font_file_path)
@@ -889,7 +901,7 @@ private int FAPI_do_char(i_ctx_t *i_ctx_p, gx_device *dev, char *font_file_path)
     if (SHOW_IS(penum, TEXT_DO_NONE)) {
 	CheckRET(renderer_retcode(i_ctx_p, I, I->get_char_width(I, &ff, &cr, &metrics.esc_x, &metrics.esc_y)));
     } else if (igs->in_charpath) {
-        CheckRET(outline_char(i_ctx_p, I, &ff, &cr, &metrics, import_shift_v, penum_s));
+        CheckRET(outline_char(i_ctx_p, I, &ff, &cr, &metrics, import_shift_v, penum_s, penum_s->pgs->show_gstate->path, !pbfont->PaintType));
     } else {
         double sbw[4] = {0, 0}; /* Rather we use only 2 elements, we keep it similar to the old code. */
         gs_rect char_bbox;
@@ -900,9 +912,12 @@ private int FAPI_do_char(i_ctx_t *i_ctx_p, gx_device *dev, char *font_file_path)
 	code1 = I->get_char_raster_metrics(I, &ff, &cr, &metrics);
         if (code1 == e_limitcheck) {
             gs_imager_state *pis = (gs_imager_state *)igs;
-            CheckRET(outline_char(i_ctx_p, I, &ff, &cr, &metrics, import_shift_v, penum_s));
+            CheckRET(outline_char(i_ctx_p, I, &ff, &cr, &metrics, import_shift_v, penum_s, igs->path, !pbfont->PaintType));
             CheckRET(gs_imager_setflat(pis, gs_char_flatness(pis, 1.0)));
-            CheckRET(gs_fill(igs));
+            if (pbfont->PaintType) {
+                CheckRET(gs_stroke(igs));
+            } else
+                CheckRET(gs_fill(igs));
         } else {
             CheckRET(renderer_retcode(i_ctx_p, I, code1));
             if (metrics.bbox_x0 <= metrics.bbox_x1) { /* Isn't a space character. */

@@ -775,7 +775,7 @@ private FAPI_retcode get_char(fapi_ufst_server *r, FAPI_font *ff, FAPI_char_ref 
     SL32 design_bbox[4];
     SW16 design_escapement;
     char PSchar_name[MAX_CHAR_NAME_LENGTH];
-    char *result;
+    MEM_HANDLE result;
     memset(metrics, 0, sizeof(*metrics));
     metrics->bbox_x1 = -1;
     make_asciiz_char_name(PSchar_name, sizeof(PSchar_name), c);
@@ -803,6 +803,7 @@ private FAPI_retcode get_char(fapi_ufst_server *r, FAPI_font *ff, FAPI_char_ref 
         set_metrics(r, code, metrics, design_bbox, design_escapement, pol->escapement, pol->du_emx, pol->du_emy, 
                     0, 0);
 	CheckRET(export_outline(r, pol, p));
+        CHARfree(&r->IFS, result);
     }
     return 0;
 }
@@ -815,7 +816,7 @@ private FAPI_retcode outline_char(FAPI_server *server, FAPI_font *ff, FAPI_char_
 private FAPI_retcode get_char_raster_metrics(FAPI_server *server, FAPI_font *ff, FAPI_char_ref *c, FAPI_metrics *metrics)
 {   fapi_ufst_server *r = If_to_I(server);
     int code = get_char(r, ff, c, NULL, metrics, FC_BITMAP_TYPE);
-    if (code == ERR_bm_buff) /* Too big character ? */
+    if (code == ERR_bm_buff || code == ERR_bm_too_big) /* Too big character ? */
         return e_limitcheck;
     return code;
     /*	UFST cannot render enough metrics information
@@ -836,9 +837,7 @@ private FAPI_retcode get_char_raster(FAPI_server *server, FAPI_font *ff, FAPI_ch
 
 private FAPI_retcode release_char_raster(FAPI_server *server, FAPI_font *ff, FAPI_char_ref *c)
 {   fapi_ufst_server *r = If_to_I(server);
-    #if CACHE
-    CHARfree(&r->IFS, r->pbm);
-    #endif
+    CHARfree(&r->IFS, (MEM_HANDLE)r->pbm);
     r->pbm = 0;
     return 0;
 }
