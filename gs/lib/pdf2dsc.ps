@@ -120,7 +120,8 @@ systemdict /.setsafe known { .setsafe } if
    (%%EndProlog\n) puts
    (%%BeginSetup\n) puts
    DSCfile PDFname write==only
-   ( \(r\) file pdfopen begin\n) puts
+   ( \(r\) file { DELAYSAFER { .setsafe } if } stopped pop\n) puts
+   ( pdfopen begin\n) puts
    (%%EndSetup\n) puts
    % process each page
    FirstPage 1 LastPage {
