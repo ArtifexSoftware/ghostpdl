@@ -185,8 +185,25 @@ pdfdict begin
  } bind def
 
 % Open a PDF file and read the header, trailer, and cross-reference.
-/pdfopen		% <file> pdfopen <dict>
- { pdfdict readonly pop		% can't do it any earlier than this
+/pdfopen {		% <file> pdfopen <dict>
+  pdfopenfile begin
+  pdfopencache
+	% Copy bookmarks (outline) to the output.
+  Trailer /Root oget /Outlines knownoget {
+    /First knownoget {
+      { dup writeoutline /Next knownoget not { exit } if } loop
+    } if
+  } if
+  currentdict end
+} bind def
+/pdfopencache {		% - pdfopencache -
+	% Create and initialize some caches.
+  /PageCount pdfpagecount def
+  /PageNumbers PageCount dict def
+  /PageIndex PageCount array def
+} bind def
+/pdfopenfile {		% <file> pdfopenfile <dict>
+   pdfdict readonly pop		% can't do it any earlier than this
    15 dict begin
    /LocalResources 0 dict def
    /PSLevel1 where { pop } { /PSLevel1 false def } ifelse
@@ -206,16 +223,6 @@ pdfdict begin
    if
 	% Read any previous cross-reference tables.
    Trailer { /Prev .knownget not { exit } if readxref } loop
-	% Create and initialize some caches.
-   /PageCount pdfpagecount def
-   /PageNumbers PageCount dict def
-   /PageIndex PageCount array def
-	% Copy bookmarks (outline) to the output.
-   Trailer /Root oget /Outlines knownoget
-    { /First knownoget
-      { { dup writeoutline /Next knownoget not { exit } if } loop } if
-    }
-   if
    currentdict end
  } bind def
 
@@ -339,38 +346,40 @@ pdfdict begin
 
 % Find the N'th page of the document by iterating through the Pages tree.
 % The first page is numbered 1.
-/pdffindpage		% <int> pdffindpage <pagedict>
- { dup Trailer /Root oget /Pages oget
+/pdffindpageref {		% <int> pdffindpage <objref>
+  dup Trailer /Root oget /Pages get
     {		% We should be able to tell when we reach a leaf
 		% by finding a Type unequal to /Pages.  Unfortunately,
 		% some files distributed by Adobe lack the Type key
 		% in some of the Pages nodes!  Instead, we check for Kids.
-      dup /Kids knownoget not { exit } if
+      dup oforce /Kids knownoget not { exit } if
       exch pop null
-      0 1 3 index length 1 sub
-       { 2 index exch oget
-	 dup /Kids known { dup /Count oget } { 1 } ifelse
-		% Stack: index kids null node count
+      0 1 3 index length 1 sub {
+         2 index exch get
+	 dup oforce dup /Kids known { /Count oget } { pop 1 } ifelse
+		% Stack: index kids null noderef count
 	 dup 5 index ge { pop exch pop exit } if
 	 5 -1 roll exch sub 4 1 roll pop
-       }
-      for exch pop
+      } for exch pop
+		% Stack: index null|noderef
       dup null eq { pop pop 1 null exit } if
-    }
-   loop
-		% Stack: index countleft node
+    } loop
+		% Stack: index countleft noderef
    1 index 1 ne { pop pop /pdffindpage cvx /rangecheck signalerror } if
    exch pop
-   PageIndex 2 index 1 sub 2 index put
-   PageNumbers 1 index 3 index put
+   PageIndex 2 index 1 sub 2 index oforce put
+   PageNumbers 1 index oforce 3 index put
    exch pop
- } bind def
+} bind def
+/pdffindpage {		% <int> pdffindpage <pagedict>
+  pdffindpageref oforce
+} bind def
 
 % Find the N'th page of the document.
 % The first page is numbered 1.
 /pdfgetpage		% <int> pdfgetpage <pagedict>
  { PageIndex 1 index 1 sub get dup null ne
-    { exch pop }
+    { exch pop oforce }
     { pop pdffindpage }
    ifelse
  } bind def
