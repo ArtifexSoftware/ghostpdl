@@ -2050,6 +2050,7 @@ pl_tt_init_procs(gs_font_type42 *pfont)
     pfont->data.string_proc = pl_tt_string_proc;
 #define plfont ((pl_font_t *)pfont->client_data)
     plfont->char_width = pl_tt_char_width;
+    plfont->char_metrics = pl_tt_char_metrics;
 #undef plfont
 }
 
