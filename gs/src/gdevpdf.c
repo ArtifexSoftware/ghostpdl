@@ -193,6 +193,7 @@ const gx_device_pdf gs_pdfwrite_device =
  1 /*true*/,			/* ReAssignCharacters */
  1 /*true*/,			/* ReEncodeCharacters */
  1,				/* FirstObjectNumber */
+ 1 /*true*/,			/* CompressFonts */
  0 /*false*/,			/* is_EPS */
  {-1, -1},			/* doc_dsc_info */
  {-1, -1},			/* page_dsc_info */

@@ -74,6 +74,7 @@ private const gs_param_item_t pdf_param_items[] = {
     pi("ReAssignCharacters", gs_param_type_bool, ReAssignCharacters),
     pi("ReEncodeCharacters", gs_param_type_bool, ReEncodeCharacters),
     pi("FirstObjectNumber", gs_param_type_long, FirstObjectNumber),
+    pi("CompressFonts", gs_param_type_bool, CompressFonts),
 #undef pi
     gs_param_item_end
 };

@@ -575,7 +575,9 @@ process_cmap_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
 	    code = pdf_write_CMap_system_info(pdev, pcmap);
 	    if (code < 0)
 		return code;
-	    code = pdf_begin_data_binary(pdev, &writer, false);
+	    code = pdf_begin_data_stream(pdev, &writer,
+					 DATA_STREAM_NOT_BINARY |
+					 DATA_STREAM_COMPRESS);
 	    if (code < 0)
 		return code;
 	    code = psf_write_cmap(writer.binary.strm, pcmap,

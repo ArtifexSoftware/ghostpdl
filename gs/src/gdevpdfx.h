@@ -375,6 +375,7 @@ struct gx_device_pdf_s {
     bool ReAssignCharacters;
     bool ReEncodeCharacters;
     long FirstObjectNumber;
+    bool CompressFonts;
     /* End of parameters */
     /* Values derived from DSC comments */
     bool is_EPS;
@@ -711,9 +712,13 @@ typedef struct pdf_data_writer_s {
  * Begin a data stream.  The client has opened the object and written
  * the << and any desired dictionary keys.
  */
-int pdf_begin_data_binary(P3(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
-			     bool data_is_binary));
-#define pdf_begin_data(pdev, pdw) pdf_begin_data_binary(pdev, pdw, true)
+#define DATA_STREAM_NOT_BINARY 0  /* data are text, not binary */
+#define DATA_STREAM_BINARY 1	/* data are binary */
+#define DATA_STREAM_COMPRESS 2	/* OK to compress data */
+int pdf_begin_data_stream(P3(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
+			     int options));
+/* begin_data = begin_data_binary with both options = true. */
+int pdf_begin_data(P2(gx_device_pdf *pdev, pdf_data_writer_t *pdw));
 
 /* End a data stream. */
 int pdf_end_data(P1(pdf_data_writer_t *pdw));

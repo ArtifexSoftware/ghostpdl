@@ -47,7 +47,9 @@ pdf_begin_fontfile(gx_device_pdf *pdev, long FontFile_id,
 	stream_puts(pdev->strm, entries);
     if (len1 >= 0)
 	pprintld1(pdev->strm, "/Length1 %ld", len1);
-    return pdf_begin_data(pdev, pdw);
+    return pdf_begin_data_stream(pdev, pdw, DATA_STREAM_BINARY |
+				 (pdev->CompressFonts ?
+				  DATA_STREAM_COMPRESS : 0));
 }
 
 /* Finish writing FontFile* data. */

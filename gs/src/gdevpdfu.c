@@ -930,11 +930,18 @@ pdf_flate_binary(gx_device_pdf *pdev, psdf_binary_writer *pbw)
  * the << and any desired dictionary keys.
  */
 int
-pdf_begin_data_binary(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
-		      bool data_is_binary)
+pdf_begin_data(gx_device_pdf *pdev, pdf_data_writer_t *pdw)
+{
+    return pdf_begin_data_stream(pdev, pdw,
+				 DATA_STREAM_BINARY | DATA_STREAM_COMPRESS);
+}
+int
+pdf_begin_data_stream(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
+		      int orig_options)
 {
     long length_id = pdf_obj_ref(pdev);
     stream *s = pdev->strm;
+    int options = orig_options;
 #define USE_ASCII85 1
 #define USE_FLATE 2
     static const char *const fnames[4] = {
@@ -944,11 +951,11 @@ pdf_begin_data_binary(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
     int filters = 0;
     int code;
 
-    if (pdev->CompatibilityLevel >= 1.2) {
+    if (pdev->CompatibilityLevel >= 1.2 && (options & DATA_STREAM_COMPRESS)) {
 	filters |= USE_FLATE;
-	data_is_binary = true;
+	options |= DATA_STREAM_BINARY;
     }
-    if (data_is_binary && !pdev->binary_ok)
+    if ((options & DATA_STREAM_BINARY) && !pdev->binary_ok)
 	filters |= USE_ASCII85;
     stream_puts(s, fnames[filters]);
     pprintld1(s, "/Length %ld 0 R>>stream\n", length_id);
