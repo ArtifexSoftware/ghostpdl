@@ -41,6 +41,7 @@
 #include "gzstate.h"
 #include "gsimage.h"
 #include "gsiparm4.h"
+#include "gscssub.h"
 
 /* GC descriptors */
 private_st_pattern1_template();
@@ -530,10 +531,16 @@ gs_makepixmappattern(
 
 	if (!mask && (white_index >= (1 << pbitmap->pix_depth)))
 	    pinst->uses_mask = false;
+	/* 
+	 * Since the PaintProcs don't reference the saved color space or
+	 * color, reset these so that there isn't an extra retained
+	 * reference to the Pattern object.
+	 */
+	gs_setcolorspace(pinst->saved, gs_current_DeviceGray_space(pinst->saved));
 
         /* overwrite the free procedure for the pattern instance */
-        ppmap->free_proc = pinst->rc.free;
-        pinst->rc.free = free_pixmap_pattern;
+	ppmap->free_proc = pinst->rc.free;
+	pinst->rc.free = free_pixmap_pattern;
     }
     gs_setmatrix(pgs, &smat);
     return code;
