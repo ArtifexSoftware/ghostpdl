@@ -671,18 +671,16 @@ end
 		% Stack: datasource imagemask(false) maskstreamdict
       PDFfile fileposition exch
       dup length dict makeimagedict pop
-		% Stack: datasource imagemask(false) savedpos
-		% maskdict is currentdict
-      DataSource 3 index eq {
 		% In order to prevent the two data sources from being
 		% aliased, we need to make at least one a reusable stream.
 		% We pick the mask, since it's smaller (in case we need to
 		% read all its data now).
-	/DataSource DataSource mark
-	  /Intent 1
-	  /AsyncRead true
-	.dicttomark .reusablestreamdecode def
-      } if
+		% Stack: datasource imagemask(false) savedpos
+		% maskdict is currentdict
+      /DataSource DataSource mark
+	/Intent 1
+	/AsyncRead true
+      .dicttomark .reusablestreamdecode def
       PDFfile exch setfileposition
       currentdict end currentdict end
       5 dict begin
