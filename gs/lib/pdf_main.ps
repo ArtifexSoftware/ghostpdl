@@ -801,23 +801,21 @@ end readonly def
 % ------ Transparency support ------ %
 
 % Determine whether a page might invoke any transparency features:
-%	- Group in the page dictionary
-%	- Non-default ca, CA, or SMask in an ExtGState
-%	- Form XObject with Group
+%	- Non-default BM, ca, CA, or SMask in an ExtGState
 %	- Image XObject with SMask
-% ****** DO WE NEED TO LOOK IN RESOURCE DICTS OF OTHER CONTENT STREAMS? ******
+% Note: we deliberately don't check to see whether a Group is defined,
+% because Adobe Illustrator 10 (and possibly other applications) define
+% a page-level group whether transparency is actually used or not.
+% Ignoring the presence of Group is justified because, in the absence
+% of any other transparency features, they have no effect.
 /pageusestransparency {		% <pagedict> pageusestransparency <bool>
   PDFversion 1.4 lt NOTRANSPARENCY or {
     pop false
   } {
-    dup /Group known {
-      pop true
-    } {
-      false exch {
-	dup resourceusestransparency { pop not exit } if
-	/Parent knownoget not { exit } if
-      } loop
-    } ifelse
+    false exch {
+      dup resourceusestransparency { pop not exit } if
+      /Parent knownoget not { exit } if
+    } loop
   } ifelse
 } bind def
 % Check the Resources of a page or Form.
@@ -827,6 +825,9 @@ end readonly def
     dup /ExtGState knownoget {
       false exch {
 	exch pop oforce
+	dup /BM knownoget { dup /Normal ne exch /Compatible ne and
+	                    { pop not exit } if
+                          } if
 	dup /ca knownoget { 1 ne { pop not exit } if } if
 	dup /CA knownoget { 1 ne { pop not exit } if } if
 	dup /SMask knownoget { /None ne { pop not exit } if } if
@@ -838,7 +839,6 @@ end readonly def
 	exch pop oforce dup /Subtype get
 	dup /Image eq { 1 index /SMask known { pop pop not exit } if } if
 	/Form eq {
-	  dup /Group known { pop not exit } if
 	  resourceusestransparency { not exit } if
 	} {
 	  pop
