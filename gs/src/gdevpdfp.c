@@ -68,6 +68,124 @@ private const gs_param_item_t pdf_param_items[] = {
 #undef pi
     gs_param_item_end
 };
+  
+/*
+  Notes on implementing the remaining Distiller functionality
+  ===========================================================
+
+  Architectural issues
+  --------------------
+
+  Must disable all color conversions, so that driver gets original color
+    and color space -- needs "protean" device color space
+  Must optionally disable application of TR, BG, UCR similarly.  Affects:
+    PreserveHalftoneInfo
+    PreserveOverprintSettings
+    TransferFunctionInfo
+    UCRandBGInfo
+
+  * = requires architectural change to complete
+
+  Current limitations
+  -------------------
+
+  FunctionType 4 is not supported
+  Non-primary elements in HalftoneType 5 are not written correctly
+  Doesn't recognize Default TR/HT/BG/UCR
+  Optimization is a separate program
+
+  Optimizations
+  -------------
+
+  Create shared resources for Indexed (and other) color spaces
+  Remember image XObject IDs for sharing
+  Remember image and pattern MD5 fingerprints for sharing
+  Merge font subsets?  (k/ricktest.ps, from rick@dgii.com re file output
+    size ps2pdf vs. pstoedit)
+  Convert DeviceRGB or DeviceCMYK images to DeviceGray if all gray?
+    (see k/gomez/mmtp*.ps -- does AD really do this?)
+  Minimize tables for embedded TT fonts (requires renumbering glyphs)
+
+  Acrobat Distiller 3
+  -------------------
+
+  ---- Other functionality ----
+
+  Embed CID fonts
+  Compress TT, CFF, CID, and Type 1 fonts (with lenIV = -1) if CompressPages
+  Compress forms, patterns, Type 3 fonts, and Cos streams
+  Compress/encode/downsample masks like mono images (see k/gomez/mmtp*.ps)
+  Pattern fill/stroke/text/imagemask
+
+  ---- Image parameters ----
+
+  AntiAlias{Color,Gray,Mono}Images
+  AutoFilter{Color,Gray}Images
+    Needs to scan image
+  Convert CIE images to Device if can't represent color space
+
+  ---- Other parameters ----
+
+  CompressPages
+    Compress things other than page contents
+  * PreserveHalftoneInfo
+  PreserveOPIComments
+    ? see OPI spec?
+  * PreserveOverprintSettings
+  * TransferFunctionInfo
+  * UCRandBGInfo
+  ColorConversionStrategy
+    Select color space for drawing commands
+  ConvertImagesToIndexed
+    Postprocess image data *after* downsampling (requires an extra pass)
+
+  Acrobat Distiller 4
+  -------------------
+
+  ---- Other functionality ----
+
+  Document structure pdfmarks
+  ImageType 3 images
+  Shading color
+  Cubic interpolation in FunctionType 0 functions
+
+  ---- Parameters ----
+
+  xxxDownsampleType = /Bicubic
+    Add new filter (or use siscale?) & to setup (gdevpsdi.c)
+  Binding
+    ? not sure where this goes (check with AD4)
+  DetectBlends
+    Idiom recognition?  PatternType 2 patterns / shfill?  (see AD4)
+  DoThumbnails
+    Also output to memory device -- resolution issue
+  EndPage / StartPage
+    Only affects AR? -- see what AD4 produces
+  ###Profile
+    Output in ICCBased color spaces
+  ColorConversionStrategy
+  * Requires suppressing CIE => Device color conversion
+    Convert other CIE spaces to ICCBased
+  CannotEmbedFontPolicy
+    Check when trying to embed font -- how to produce warning?
+
+  ---- Job-level control ----
+
+  ParseDSCComments
+  ParseDSCCommentsForDocInfo
+  EmitDSCWarnings
+    Require DSC parser / interceptor
+  CreateJobTicket
+    ?
+  PreserveEPSInfo
+  AutoPositionEPSFiles
+    Require DSC parsing
+  PreserveCopyPage
+    Concatenate Contents streams
+  UsePrologue
+    Needs hack in top-level control?
+
+*/
 
 /* ---------------- Get parameters ---------------- */
 
@@ -95,10 +213,10 @@ int
 gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 {
     gx_device_pdf *pdev = (gx_device_pdf *) dev;
-    int ecode = 0;
-    int code;
+    int ecode, code;
     gx_device_pdf save_dev;
     float cl = (float)pdev->CompatibilityLevel;
+    bool locked = pdev->params.LockDistillerParams;
     gs_param_name param_name;
 
     /*
@@ -124,6 +242,12 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 		break;
 	}
     }
+  
+    /* Check for LockDistillerParams before doing anything else. */
+
+    ecode = code = param_read_bool(plist, "LockDistillerParams", &locked);
+    if (locked && pdev->params.LockDistillerParams)
+	return ecode;
 
     /* General parameters. */
 
@@ -204,10 +328,10 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
     /*
      * Acrobat Reader 4.0 and earlier don't handle user-space coordinates
      * larger than 32K.  To compensate for this, reduce the resolution until
-     * the page size in device space (which we equate to user space)
-     * is significantly less than 32K.  Note
-     * that this still does not protect us against input files that use
-     * coordinates far outside the page boundaries.
+     * the page size in device space (which we equate to user space) is
+     * significantly less than 32K.  Note that this still does not protect
+     * us against input files that use coordinates far outside the page
+     * boundaries.
      */
     /* Changing resolution or page size requires closing the device, */
     while (dev->height > 16000 || dev->width > 16000) {

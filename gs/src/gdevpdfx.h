@@ -304,6 +304,8 @@ struct gx_device_pdf_s {
     gx_device_psdf_common;
     /* PDF-specific distiller parameters */
     double CompatibilityLevel;
+    int EndPage;
+    int StartPage;
     bool Optimize;
     bool ParseDSCCommentsForDocInfo;
     bool ParseDSCComments;

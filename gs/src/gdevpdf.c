@@ -174,6 +174,8 @@ const gx_device_pdf gs_pdfwrite_device =
  },
  psdf_initial_values(PSDF_VERSION_INITIAL, 0 /*false */ ),  /* (!ASCII85EncodePages) */
  PDF_COMPATIBILITY_LEVEL_INITIAL,  /* CompatibilityLevel */
+ -1,				/* EndPage */
+ 1,				/* StartPage */
  0 /*false*/,			/* Optimize */
  0 /*false*/,			/* ParseDSCCommentsForDocInfo */
  0 /*false*/,			/* ParseDSCComments */
