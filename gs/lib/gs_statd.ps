@@ -107,6 +107,8 @@ STRICT { (%END SIZES) .skipeof } if
  /flsa {612 936 //.setpagesize exec} bind def  % U.S. foolscap
  /flse {612 936 //.setpagesize exec} bind def  % European foolscap
  /halfletter {396 612 //.setpagesize exec} bind def
+	% minimum of a4 and letter (a4 width, letter length)
+ /pa4 {595 792 //.setpagesize exec} bind def
 % /tabloid {792 1224 //.setpagesize exec} bind def  % 11x17 portrait
 % /csheet {1224 1584 //.setpagesize exec} bind def % ANSI C 17x22
 % /dsheet {1584 2448 //.setpagesize exec} bind def % ANSI D 22x34
@@ -132,6 +134,7 @@ STRICT { (%END SIZES) .skipeof } if
    /flsa /flse /halfletter
    /isob0 /isob1 /isob2 /isob3 /isob4 /isob5 /isob6
    /jisb0 /jisb1 /jisb2 /jisb3 /jisb4 /jisb5 /jisb6
+   /pa4
 %END SIZES
  ] cvlit readonly def
 
