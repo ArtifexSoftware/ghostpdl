@@ -318,14 +318,15 @@ pdf14_buf_new(gs_int_rect *rect, bool has_alpha_g, bool has_shape,
 {
     pdf14_buf *result;
     int rowstride = (rect->q.x - rect->p.x + 3) & -4;
-    int planestride = rowstride * (rect->q.y - rect->p.y);
+    int height = (rect->q.y - rect->p.y);
     int n_planes = n_chan + (has_shape ? 1 : 0) + (has_alpha_g ? 1 : 0);
+    int planestride;
+    double dsize = (((double) rowstride) * height) * n_planes;
 
-    result = gs_alloc_struct(memory, pdf14_buf, &st_pdf14_buf,
-			     "pdf14_buf_new");
-    if (result == NULL)
-	return result;
-
+    if (dsize > (double)max_uint ||
+        (result = gs_alloc_struct(memory, pdf14_buf, &st_pdf14_buf,
+				"pdf14_buf_new")) == NULL)
+	return NULL;
     result->isolated = false;
     result->knockout = false;
     result->has_alpha_g = has_alpha_g;
@@ -334,6 +335,7 @@ pdf14_buf_new(gs_int_rect *rect, bool has_alpha_g, bool has_shape,
     result->n_chan = n_chan;
     result->n_planes = n_planes;
     result->rowstride = rowstride;
+    planestride = rowstride * height;
     result->planestride = planestride;
     result->data = gs_alloc_bytes(memory, planestride * n_planes,
 				  "pdf14_buf_new");
@@ -361,11 +363,10 @@ pdf14_ctx_new(gs_int_rect *rect, int n_chan, gs_memory_t *memory)
     pdf14_ctx *result;
     pdf14_buf *buf;
 
-    result = gs_alloc_struct(memory, pdf14_ctx, &st_pdf14_ctx,
-			     "pdf14_ctx_new");
-
-    buf = pdf14_buf_new(rect, false, false, n_chan, memory);
-    if (buf == NULL) {
+    if ((result = gs_alloc_struct(memory, pdf14_ctx, &st_pdf14_ctx,
+			     "pdf14_ctx_new")) == NULL) 
+    	return NULL;
+    if ((buf = pdf14_buf_new(rect, false, false, n_chan, memory)) == NULL) {
 	gs_free_object(memory, result, "pdf14_ctx_new");
 	return NULL;
     }
@@ -374,8 +375,6 @@ pdf14_ctx_new(gs_int_rect *rect, int n_chan, gs_memory_t *memory)
     result->n_chan = n_chan;
     result->memory = memory;
     result->rect = *rect;
-    if (result == NULL)
-	return result;
     return result;
 }
 
@@ -1175,9 +1174,9 @@ gs_pdf14_device_filter_push(gs_device_filter_t *self, gs_memory_t *mem,
 
     rc_assign(p14dev->target, target, "gs_pdf14_device_filter_push");
 
-    dev_proc((gx_device *) p14dev, open_device) ((gx_device *) p14dev);
+    code = dev_proc((gx_device *) p14dev, open_device) ((gx_device *) p14dev);
     *pdev = (gx_device *) p14dev;
-    return 0;
+    return code;
 }
 
 private int
