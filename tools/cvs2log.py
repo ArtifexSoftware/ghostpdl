@@ -27,7 +27,7 @@ def GetCVSRootDirName():
 # figure out what day it is given year month and day
 def weekday(year, month, day):
     import time
-    seconds = time.mktime(year, month, day, 0, 0, 0, 0, 0, 0)
+    seconds = time.mktime((year, month, day, 0, 0, 0, 0, 0, 0))
     tm = time.localtime(seconds)
     return tm[6]
 
@@ -145,8 +145,8 @@ def BuildLog(log_date_command):
 	if line[:5] == '=====' or line[:5] == '-----':
 	    if description != []:
 		# append these items in the sort order we'll want later on.
-		log.append(RcsDate2CtimeTuple(date), author, description,
-			   rcs_file[:-1], revision[:-1])
+		log.append((RcsDate2CtimeTuple(date), author, description,
+			   rcs_file[:-1], revision[:-1]))
 	    reading_description = 0
 	    description = []
 	elif not reading_description and line[:len("Working file: ")] == "Working file: ":
@@ -257,7 +257,7 @@ def main():
 	# put the revisions and rcs files in decription-keyed
 	# dictionary.
 	if entry_dict.has_key(description_data):
-	    entry_dict[description_data].append(revision, rcs_file)
+	    entry_dict[description_data].append((revision, rcs_file))
 	else:
 	    entry_dict[description_data] = [(revision, rcs_file)]
 
