@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1996, 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -18,6 +18,7 @@
 
 /*$Id$ */
 /* Dictionary implementation */
+#include "math_.h"		/* for frexp */
 #include "string_.h"		/* for strlen */
 #include "ghost.h"
 #include "gxalloc.h"		/* for accessing masks */
@@ -281,38 +282,58 @@ dict_find(const ref * pdref, const ref * pkey,
     /* Compute hash.  The only types we bother with are strings, */
     /* names, and (unlikely, but worth checking for) integers. */
     switch (r_type(pkey)) {
-	case t_name:
-	    nidx = name_index(pkey);
-	  nh:hash = dict_name_index_hash(nidx);
-	    kpack = packed_name_key(nidx);
-	    ktype = t_name;
-	    break;
-	case t_string:		/* convert to a name first */
-	    {
-		ref nref;
-		int code;
+    case t_name:
+	nidx = name_index(pkey);
+    nh:
+	hash = dict_name_index_hash(nidx);
+	kpack = packed_name_key(nidx);
+	ktype = t_name;
+	break;
+    case t_string:		/* convert to a name first */
+	{
+	    ref nref;
+	    int code;
 
-		if (!r_has_attr(pkey, a_read))
-		    return_error(e_invalidaccess);
-		code = name_ref(pkey->value.bytes, r_size(pkey), &nref, 1);
-		if (code < 0)
-		    return code;
-		nidx = name_index(&nref);
-	    }
-	    goto nh;
-	case t_integer:
-	    hash = (uint) pkey->value.intval * 30503;
-	    kpack = packed_key_impossible;
-	    ktype = -1;
-	    nidx = 0;		/* only to pacify gcc */
-	    break;
-	case t_null:		/* not allowed as a key */
-	    return_error(e_typecheck);
-	default:
-	    hash = r_btype(pkey) * 99;	/* yech */
-	    kpack = packed_key_impossible;
-	    ktype = -1;
-	    nidx = 0;		/* only to pacify gcc */
+	    if (!r_has_attr(pkey, a_read))
+		return_error(e_invalidaccess);
+	    code = name_ref(pkey->value.bytes, r_size(pkey), &nref, 1);
+	    if (code < 0)
+		return code;
+	    nidx = name_index(&nref);
+	}
+	goto nh;
+    case t_real:
+	/*
+	 * Make sure that equal reals and integers hash the same.
+	 */
+	{
+	    int expt;
+	    double mant = frexp(pkey->value.realval, &expt);
+	    /*
+	     * The value is mant * 2^expt, where 0.5 <= mant < 1,
+	     * or else expt == mant == 0.
+	     */
+
+	    if (expt < sizeof(long) * 8 || pkey->value.realval == min_long)
+		hash = (uint)(int)pkey->value.realval * 30503;
+	    else
+		hash = (uint)(int)(mant * min_long) * 30503;
+	}
+	goto ih;
+    case t_integer:
+	hash = (uint)pkey->value.intval * 30503;
+    ih:
+	kpack = packed_key_impossible;
+	ktype = -1;
+	nidx = 0;		/* only to pacify gcc */
+	break;
+    case t_null:		/* not allowed as a key */
+	return_error(e_typecheck);
+    default:
+	hash = r_btype(pkey) * 99;	/* yech */
+	kpack = packed_key_impossible;
+	ktype = -1;
+	nidx = 0;		/* only to pacify gcc */
     }
     /* Search the dictionary */
     if (dict_is_packed(pdict)) {
