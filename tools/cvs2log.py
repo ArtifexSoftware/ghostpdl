@@ -49,9 +49,11 @@ def LastLogDate2CtimeTuple(filename):
     day_abbr = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
     month_abbr = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
     date_tuple = (1970, 1, 1, 0, 0, 0, 0, 0, 0)
+    print filename
     try:
 	fp = open(filename, 'r')
     except:
+	print "couldn't open log file: " + filename
 	return date_tuple
     while 1:
 	line = fp.readline()
@@ -175,12 +177,8 @@ def main():
     tabwidth=8
     rlog_options=0
     diffs=1
-    logfile="ChangeLog"
-
-    # set up the cvs log command arguments.  If a logfile is specified
-    # we get all dates later than the logfile.
-    date_option = "'" + "-d" + time.asctime(LastLogDate2CtimeTuple(logfile)) + "'"
-
+    logfile=None
+    date_option = ""
     # override defaults if specified on the command line
     for o, a in opts:
 	if o == '-h' : hostname = a
@@ -194,6 +192,11 @@ def main():
 	elif o == '-D' : diffs = 0
 	elif o == '-L' : logfile = a
 	else: print "getopt should have failed already"
+
+    # set up the cvs log command arguments.  If a logfile is specified
+    # we get all dates later than the logfile.
+    if logfile:
+	date_option = "'" + "-d>" + time.asctime(LastLogDate2CtimeTuple(logfile)) + "'"
 
     log_date_command= 'cvs -d ' + GetCVSRepository() + ' -Q log -N ' + date_option
     # build the logs.
