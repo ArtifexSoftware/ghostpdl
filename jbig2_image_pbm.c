@@ -8,8 +8,16 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_image_pbm.c,v 1.7 2002/07/04 13:34:29 giles Exp $
+    $Id: jbig2_image_pbm.c,v 1.8 2002/07/08 14:26:03 giles Exp $
 */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#include "config_types.h"
+#endif
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
 
 #include <stdio.h>
 #include <ctype.h>

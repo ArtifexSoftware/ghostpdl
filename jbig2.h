@@ -8,14 +8,12 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2.h,v 1.12 2002/07/04 16:33:44 giles Exp $
+    $Id: jbig2.h,v 1.13 2002/07/08 14:26:02 giles Exp $
 */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdint.h>	// for C99 types -- need a more portable sol'n
 
 /* warning levels */
 typedef enum {
