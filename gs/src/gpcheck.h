@@ -54,7 +54,7 @@ int gp_check_interrupts(mem);
 #  define return_if_interrupt(mem)	DO_NOTHING
 #  define return_check_interrupt(mem, code)	\
     return (code)
-#  define set_code_on_interrupt(mepcode) DO_NOTHING
+#  define set_code_on_interrupt(mem, code) DO_NOTHING
 #endif
 
 #endif /* gpcheck_INCLUDED */
