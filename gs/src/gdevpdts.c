@@ -70,7 +70,7 @@ typedef struct pdf_text_buffer_s {
 struct pdf_text_state_s {
     /* State as seen by client */
     pdf_text_state_values_t in; /* see above */
-    gs_point position;
+    gs_point start;		/* in.txy as of start of buffer */
     pdf_text_buffer_t buffer;
     int wmode;			/* WMode of in.font */
     /* State relative to content stream */
@@ -84,7 +84,7 @@ struct pdf_text_state_s {
 private const pdf_text_state_t ts_default = {
     /* State as seen by client */
     { TEXT_STATE_VALUES_DEFAULT },	/* in */
-    { 0, 0 },			/* position */
+    { 0, 0 },			/* start */
     { TEXT_BUFFER_DEFAULT },	/* buffer */
     0,				/* wmode */
     /* State relative to content stream */
@@ -125,48 +125,61 @@ append_text_move(pdf_text_state_t *pts, floatp dw)
 }
 
 /*
- * Set the text matrix for writing text.  The translation component of the
- * matrix is the text origin.  If the non-translation components of the
- * matrix differ from the current ones, write a Tm command; if there is only
- * a Y translation, set use_leading so the next text string will be written
- * with ' rather than Tj; if there is only a writing-direction movement and
- * we are already accumulating text, buffer the movement and use TJ later;
- * otherwise, write either a Td command or a Tj command using space
- * pseudo-characters.
- *
- * NOTE: This procedure assumes that pts->out.{pdfont,size} ==
- * pts->in.{pdfont,size}, and that the output is in text context.
+ * Set *pdist to the distance (dx,dy), in the space defined by *pmat.
  */
-private int set_text_distance(gs_point *pdist, floatp x, floatp y,
-			      const gs_matrix *pmat);
 private int
-pdf_set_text_matrix(gx_device_pdf * pdev)
+set_text_distance(gs_point *pdist, floatp dx, floatp dy, const gs_matrix *pmat)
 {
-    pdf_text_state_t *pts = pdev->text->text_state;
-    pdf_font_resource_t *pdfont = pts->in.pdfont; /* == out.pdfont, see above */
-    stream *s = pdev->strm;
-    int code;
+    int code = gs_distance_transform_inverse(dx, dy, pmat, pdist);
+    double rounded;
 
-    pts->use_leading = false;
-    if (pts->out.matrix.xx == pts->in.matrix.xx &&
-	pts->out.matrix.xy == pts->in.matrix.xy &&
-	pts->out.matrix.yx == pts->in.matrix.yx &&
-	pts->out.matrix.yy == pts->in.matrix.yy
-	) {
+    if (code < 0)
+	return code;
+    /* If the distance is very close to integers, round it. */
+    if (fabs(pdist->x - (rounded = floor(pdist->x + 0.5))) < 0.0005)
+	pdist->x = rounded;
+    if (fabs(pdist->y - (rounded = floor(pdist->y + 0.5))) < 0.0005)
+	pdist->y = rounded;
+    return 0;
+}
+
+/*
+ * Test whether the transformation parts of two matrices are compatible.
+ */
+private bool
+matrix_is_compatible(const gs_matrix *pmat1, const gs_matrix *pmat2)
+{
+    return (pmat2->xx == pmat1->xx && pmat2->xy == pmat1->xy &&
+	    pmat2->yx == pmat1->yx && pmat2->yy == pmat1->yy);
+}
+
+/*
+ * Try to handle a change of text position with TJ or a space
+ * character.  If successful, return >=0, if not, return <0.
+ */
+private int
+add_text_delta_move(gx_device_pdf *pdev, const gs_matrix *pmat)
+{
+    pdf_text_state_t *const pts = pdev->text->text_state;
+
+    if (matrix_is_compatible(pmat, &pts->in.matrix)) {
+	pdf_font_resource_t *const pdfont = pts->in.pdfont; /* == out.pdfont, see above */
 	gs_point dist;
-	double dw, dnotw;
+	double dw, dnotw, tdw;
 
-	set_text_distance(&dist, pts->out.matrix.tx, pts->out.matrix.ty,
-			  &pts->in.matrix);
+	set_text_distance(&dist, pmat->tx - pts->in.matrix.tx,
+			  pmat->ty - pts->in.matrix.ty, pmat);
 	if (pts->wmode)
 	    dw = dist.y, dnotw = dist.x;
 	else
 	    dw = dist.x, dnotw = dist.y;
-	if (dnotw == 0 && pdfont != 0 && pdfont->FontType == ft_user_defined) {
+	if (dnotw == 0 && dw == (int)dw && pdfont != 0 &&
+	    pdfont->FontType == ft_user_defined
+	    ) {
 	    /* Use a pseudo-character. */
 	    int dspace = (int)dw;
+	    int code = pdf_space_char(pdev, pdfont, dspace);
 
-	    code = pdf_space_char(pdev, pdfont, dspace);
 	    if (code >= 0) {
 		byte space_char = (byte)code;
 
@@ -181,14 +194,48 @@ pdf_set_text_matrix(gx_device_pdf * pdev)
 		goto finish;
 	    }
 	}
-	if (dnotw == 0 && pts->buffer.count_chars > 0) {
+	if (dnotw == 0 && pts->buffer.count_chars > 0 &&
+	    /*
+	     * Work around the Acrobat Reader limitation of approximately
+	     * 14 bits for numeric values.
+	     */
+	    (tdw = dw * -1000.0 / pts->in.size, fabs(tdw) <= MAX_USER_COORD)
+	    ) {
 	    /* Use TJ. */
-	    code = append_text_move(pts, dw * -1000.0 / pts->in.size);
+	    int code = append_text_move(pts, tdw);
+
 	    if (code >= 0)
 		goto finish;
 	}
-	set_text_distance(&dist, pts->line_start.x, pts->line_start.y,
-			  &pts->in.matrix);
+    }
+    return -1;
+ finish:
+    pts->in.matrix = *pmat;
+    return 0;
+}
+
+/*
+ * Set the text matrix for writing text.  The translation component of the
+ * matrix is the text origin.  If the non-translation components of the
+ * matrix differ from the current ones, write a Tm command; if there is only
+ * a Y translation, set use_leading so the next text string will be written
+ * with ' rather than Tj; otherwise, write a Td command.
+ *
+ * NOTE: This procedure assumes that pts->out.{pdfont,size} ==
+ * pts->in.{pdfont,size}, and that the output is in text context.
+ */
+private int
+pdf_set_text_matrix(gx_device_pdf * pdev)
+{
+    pdf_text_state_t *pts = pdev->text->text_state;
+    stream *s = pdev->strm;
+
+    pts->use_leading = false;
+    if (matrix_is_compatible(&pts->out.matrix, &pts->in.matrix)) {
+	gs_point dist;
+
+	set_text_distance(&dist, pts->start.x - pts->line_start.x,
+			  pts->start.y - pts->line_start.y, &pts->in.matrix);
 	if (dist.x == 0 && dist.y < 0) {
 	    /* Use TL, if needed, and T* or '. */
 	    float dist_y = (float)-dist.y;
@@ -213,31 +260,11 @@ pdf_set_text_matrix(gx_device_pdf * pdev)
 	pprintg6(s, "%g %g %g %g %g %g Tm\n",
 		 pts->in.matrix.xx * sx, pts->in.matrix.xy * sy,
 		 pts->in.matrix.yx * sx, pts->in.matrix.yy * sy,
-		 pts->in.matrix.tx * sx, pts->in.matrix.ty * sy);
+		 pts->start.x * sx, pts->start.y * sy);
     }
-    pts->line_start.x = pts->in.matrix.tx;
-    pts->line_start.y = pts->in.matrix.ty;
- finish:
+    pts->line_start.x = pts->start.x;
+    pts->line_start.y = pts->start.y;
     pts->out.matrix = pts->in.matrix;
-    pts->out.matrix.tx = pts->position.x;
-    pts->out.matrix.ty = pts->position.y;
-    return 0;
-}
-/*
- * Set *pdist to the distance from (x,y) to pmat->t, in the space
- * defined by *pmat.
- */
-private int
-set_text_distance(gs_point *pdist, floatp x, floatp y, const gs_matrix *pmat)
-{
-    double rounded;
-
-    gs_distance_transform_inverse(pmat->tx - x, pmat->ty - y, pmat, pdist);
-    /* If the distance is very close to integers, round it. */
-    if (fabs(pdist->x - (rounded = floor(pdist->x + 0.5))) < 0.0005)
-	pdist->x = rounded;
-    if (fabs(pdist->y - (rounded = floor(pdist->y + 0.5))) < 0.0005)
-	pdist->y = rounded;
     return 0;
 }
 
@@ -301,12 +328,10 @@ private int
 sync_text_state(gx_device_pdf *pdev)
 {
     pdf_text_state_t *pts = pdev->text->text_state;
-    int count_chars = pts->buffer.count_chars;
-    int count_moves = pts->buffer.count_moves;
     stream *s = pdev->strm;
     int code;
 
-    if (count_chars == 0)
+    if (pts->buffer.count_chars == 0)
 	return 0;		/* nothing to output */
 
     /* Bring text state parameters up to date. */
@@ -344,6 +369,9 @@ sync_text_state(gx_device_pdf *pdev)
 	    pts->members -= TEXT_STATE_SET_FONT_AND_SIZE;
 	}
 	if (pts->members & TEXT_STATE_SET_MATRIX) {
+	    /*
+	     * NOTE: pdf_set_text_matrix may add characters to the buffer.
+	     */
 	    code = pdf_set_text_matrix(pdev);
 	    if (code < 0)
 		return code;
@@ -367,25 +395,25 @@ sync_text_state(gx_device_pdf *pdev)
 	}
     }
 
-    if (count_moves > 0) {
+    if (pts->buffer.count_moves > 0) {
 	int i, cur = 0;
 
 	if (pts->use_leading)
 	    stream_puts(s, "T*");
 	stream_puts(s, "[");
-	for (i = 0; i < count_moves; ++i) {
+	for (i = 0; i < pts->buffer.count_moves; ++i) {
 	    int next = pts->buffer.moves[i].index;
 
 	    pdf_put_string(pdev, pts->buffer.chars + cur, next - cur);
 	    pprintg1(s, "%g", pts->buffer.moves[i].amount);
 	    cur = next;
 	}
-	if (count_chars > cur)
+	if (pts->buffer.count_chars > cur)
 	    pdf_put_string(pdev, pts->buffer.chars + cur,
-			   count_chars - cur);
+			   pts->buffer.count_chars - cur);
 	stream_puts(s, "]TJ\n");
     } else {
-	pdf_put_string(pdev, pts->buffer.chars, count_chars);
+	pdf_put_string(pdev, pts->buffer.chars, pts->buffer.count_chars);
 	stream_puts(s, (pts->use_leading ? "'\n" : "Tj\n"));
     }
     pts->buffer.count_chars = 0;
@@ -437,12 +465,17 @@ pdf_set_text_state_values(gx_device_pdf *pdev,
     pdf_text_state_t *pts = pdev->text->text_state;
     int skip = 0;
 
+    if (members & TEXT_STATE_SET_MATRIX) {
+	int code = add_text_delta_move(pdev, &ptsv->matrix);
+
+	if (code >= 0)
+	    members &= ~TEXT_STATE_SET_MATRIX;
+    }
+
     if (pts->in.character_spacing == ptsv->character_spacing)
 	skip |= TEXT_STATE_SET_CHARACTER_SPACING;
     if (pts->in.pdfont == ptsv->pdfont && pts->in.size == ptsv->size)
 	skip |= TEXT_STATE_SET_FONT_AND_SIZE;
-    if (!memcmp(&pts->in.matrix, &ptsv->matrix, sizeof(gs_matrix)))
-	skip |= TEXT_STATE_SET_MATRIX;
     if (pts->in.render_mode == ptsv->render_mode)
 	skip |= TEXT_STATE_SET_RENDER_MODE;
     if (pts->in.word_spacing == ptsv->word_spacing)
@@ -489,7 +522,8 @@ pdf_text_position(const gx_device_pdf *pdev, gs_point *ppt)
 {
     pdf_text_state_t *pts = pdev->text->text_state;
 
-    *ppt = pts->position;
+    ppt->x = pts->in.matrix.tx;
+    ppt->y = pts->in.matrix.ty;
 }
 
 /*
@@ -503,9 +537,9 @@ pdf_append_chars(gx_device_pdf * pdev, const byte * str, uint size,
     const byte *p = str;
     uint left = size;
 
-    if (pts->buffer.count_chars == 0) {
-	pts->position.x = pts->in.matrix.tx;
-	pts->position.y = pts->in.matrix.ty;
+    if (pts->buffer.count_chars == 0 && pts->buffer.count_moves == 0) {
+	pts->start.x = pts->in.matrix.tx;
+	pts->start.y = pts->in.matrix.ty;
     }
     while (left)
 	if (pts->buffer.count_chars == MAX_TEXT_BUFFER_CHARS) {
@@ -525,7 +559,7 @@ pdf_append_chars(gx_device_pdf * pdev, const byte * str, uint size,
 	    p += copy;
 	    left -= copy;
 	}
-    pts->position.x += wx;
-    pts->position.y += wy;
+    pts->in.matrix.tx += wx;
+    pts->in.matrix.ty += wy;
     return 0;
 }

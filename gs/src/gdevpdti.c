@@ -132,11 +132,9 @@ write_contents_bitmap(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 	for (w = 0; w < countof(pdfont->u.simple.s.type3.spaces); ++w) {
 	    byte ch = pdfont->u.simple.s.type3.spaces[w];
 
-	    if (ch) {
+	    if (ch)
 		pprintld2(s, "/a%ld\n%ld 0 R", (long)ch,
 			  pbfs->space_char_ids[w]);
-		pdfont->Widths[ch] = w + X_SPACE_MIN;
-	    }
 	}
 	stream_puts(s, ">>");
     }

@@ -458,6 +458,10 @@ pdf_compute_BaseFont(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
     uint size, extra = 0;
     byte *data;
 
+    if (pdfont->FontDescriptor == 0) {
+	/* Type 3 font, or has its BaseFont computed in some other way. */
+	return 0;
+    }
     if (pdfont->FontType == ft_composite) {
 	int code;
 
