@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1992, 1993, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -104,15 +104,9 @@ zatan(i_ctx_t *i_ctx_p)
 
     if (code < 0)
 	return code;
-    if (args[0] == 0) {		/* on X-axis, special case */
-	if (args[1] == 0)
-	    return_error(e_undefinedresult);
-	result = (args[1] < 0 ? 180 : 0);
-    } else {
-	result = atan2(args[0], args[1]) * radians_to_degrees;
-	if (result < 0)
-	    result += 360;
-    }
+    code = gs_atan2_degrees(args[0], args[1], &result);
+    if (code < 0)
+	return code;
     make_real(op - 1, result);
     pop(1);
     return 0;

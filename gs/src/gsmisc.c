@@ -1085,3 +1085,25 @@ gs_sincos_degrees(double ang, gs_sincos_t * psincos)
 }
 
 #endif /* USE_FPU */
+
+/*
+ * Define an atan2 function that returns an angle in degrees and uses
+ * the PostScript quadrant rules.  Note that it may return
+ * gs_error_undefinedresult.
+ */
+int
+gs_atan2_degrees(double y, double x, double *pangle)
+{
+    if (y == 0) {	/* on X-axis, special case */
+	if (x == 0)
+	    return_error(gs_error_undefinedresult);
+	*pangle = (x < 0 ? 180 : 0);
+    } else {
+	double result = atan2(y, x) * radians_to_degrees;
+
+	if (result < 0)
+	    result += 360;
+	*pangle = result;
+    }
+    return 0;
+}
