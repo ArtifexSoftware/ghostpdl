@@ -564,6 +564,7 @@ $(GS_XE): $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(DWOBJNO) $(GSDLL
 	echo $(GLOBJ)dwimg.obj >> $(GLGEN)gswin32.tr
 	echo $(GLOBJ)dwmain.obj >> $(GLGEN)gswin32.tr
 	echo $(GLOBJ)dwtext.obj >> $(GLGEN)gswin32.tr
+	echo $(GLOBJ)dwreg.obj >> $(GLGEN)gswin32.tr
 	echo /DEF:$(GLSRCDIR)\dwmain32.def /OUT:$(GS_XE) > $(GLGEN)gswin32.rsp
         $(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(GLOBJ)gsdll @$(GLGEN)gswin32.tr @$(LIBCTR) $(INTASM) @$(GLGEN)lib.tr @$(GLGEN)lib32.rsp $(GSDLL_OBJ).res
 	del $(GLGEN)gswin32.tr
@@ -573,7 +574,9 @@ $(GS_XE): $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(DWOBJNO) $(GSDLL
 $(GSCONSOLE_XE): $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(OBJCNO) $(GS_OBJ).res $(GLSRCDIR)\dw32c.def $(GLGEN)lib32.rsp
 	copy $(ld_tr) $(GLGEN)gswin32c.tr
 	echo $(GLOBJ)dwnodllc.obj >> $(GLGEN)gswin32c.tr
+	echo $(GLOBJ)dwimg.obj >> $(GLGEN)gswin32c.tr
 	echo $(GLOBJ)dwmainc.obj >> $(GLGEN)gswin32c.tr
+	echo $(GLOBJ)dwreg.obj >> $(GLGEN)gswin32c.tr
 	echo /SUBSYSTEM:CONSOLE > $(GLGEN)gswin32.rsp
 	echo /DEF:$(GLSRCDIR)\dw32c.def /OUT:$(GSCONSOLE_XE) >> $(GLGEN)gswin32.rsp
         $(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(GLOBJ)gsdll @$(GLGEN)gswin32c.tr @$(LIBCTR) $(INTASM) @$(GLGEN)lib.tr @$(GLGEN)lib32.rsp $(GS_OBJ).res
