@@ -90,12 +90,12 @@ COMPILE_INITS=0
 # afs - artifex font scaler.
 # 3 mutually exclusive choices follow, pick one.
 
-PL_SCALER=fts
+PL_SCALER=afs
 PCL_FONT_SCALER=$(PL_SCALER)
 PXL_FONT_SCALER=$(PL_SCALER)
 
 ifeq ($(PL_SCALER), ufst)
-LDFLAGS=-Xlinker -L../pl/agfa/rts/lib/
+XLDFLAGS=-Xlinker -L../pl/agfa/rts/lib/
 # agfa does not use normalized library names (ie we expect libif.a not
 # agfa's if_lib.a)
 EXTRALIBS=-lif -lfco -ltt
@@ -103,7 +103,7 @@ AGFA_INCLUDES=-I../pl/agfa/rts/inc/ -I../pl/agfa/sys/inc/ -I../pl/agfa/rts/fco/ 
 endif
 
 ifeq ($(PL_SCALER), fts)
-LDFLAGS=
+XLDFLAGS=
 EXTRALIBS=-lfreetype
 # the second include is to find ftbuild.h referenced in the FT
 # tutorial.
