@@ -1,4 +1,4 @@
-#    Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -230,8 +230,8 @@ EXTRALIBS=
 
 # Define the standard libraries to search at the end of linking.
 # Most platforms require -lpthread for the POSIX threads library;
-# FreeBSD requires -lc_r instead, BSDI and perhaps some others include
-# pthreads in libc and don't require any additional library.
+# on FreeBSD, change -lpthread to -lc_r; BSDI and perhaps some others
+# include pthreads in libc and don't require any additional library.
 # All reasonable platforms require -lm, but Rhapsody and perhaps one or
 # two others fold libm into libc and don't require any additional library.
 
@@ -275,8 +275,8 @@ XLIBS=Xt Xext X11
 FPU_TYPE=1
 
 # Define the .dev module that implements thread and synchronization
-# primitives for this platform.  On FreeBSD, change posync to fbsdsync.
-# Otherwise, don't change this unless you really know what you're doing.
+# primitives for this platform.  Don't change this unless you really know
+# what you're doing.
 
 SYNC=posync
 
