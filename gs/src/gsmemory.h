@@ -460,7 +460,7 @@ typedef struct pl_mem_node_s pl_mem_node_t;
 	gs_memory_procs_t procs;\
         gs_lib_ctx_t *gs_lib_ctx;\
         pl_mem_node_t *head;\
-        gs_memory_t *non_gc_memory;
+        gs_memory_t *non_gc_memory
 
 
 
