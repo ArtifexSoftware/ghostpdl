@@ -949,7 +949,7 @@ zcharstring_outline(gs_font_type1 *pfont1, const ref *pgref,
     ref *pcdevproc;
     int value;
     gs_imager_state gis;
-    double sbw[4];
+    double sbw[4], wv[4];
     gs_point mpt;
 
     pdata = &pfont1->data;
@@ -960,7 +960,11 @@ zcharstring_outline(gs_font_type1 *pfont1, const ref *pgref,
 	return_error(e_rangecheck); /* can't call CDevProc from here */
     switch (pfont1->WMode) {
     default:
-	code = zchar_get_metrics2((gs_font_base *)pfont1, pgref, sbw);
+	code = zchar_get_metrics2((gs_font_base *)pfont1, pgref, wv);
+	sbw[0] = wv[2];
+	sbw[1] = wv[3];
+	sbw[2] = wv[0];
+	sbw[3] = wv[1];
 	if (code)
 	    break;
 	/* falls through */
@@ -1029,7 +1033,6 @@ z1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
     gs_font_base *const pbfont = (gs_font_base *)font;
     int wmode = pfont->WMode;
     const ref *pfdict = &pfont_data(pbfont)->dict;
-    double sbw[4];
     int width_members = members & (GLYPH_INFO_WIDTH0 << wmode);
     int outline_widths = members & GLYPH_INFO_OUTLINE_WIDTHS;
     bool modified_widths = false;
@@ -1041,16 +1044,18 @@ z1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	return gs_type1_glyph_info(font, glyph, pmat, members, info);
     glyph_ref(glyph, &gref);
     if (width_members == GLYPH_INFO_WIDTH1) {
-	code = zchar_get_metrics2(pbfont, &gref, sbw);
+	double wv[4];
+	code = zchar_get_metrics2(pbfont, &gref, wv);
 	if (code > 0) {
 	    modified_widths = true;
-	    info->width[1].x = sbw[2];
-	    info->width[1].y = sbw[3];
+	    info->width[1].x = wv[0];
+	    info->width[1].y = wv[1];
 	    done_members = width_members;
 	    width_members = 0;
 	}
     }
     if (width_members) {
+	double sbw[4];
 	code = zchar_get_metrics(pbfont, &gref, sbw);
 	if (code > 0) {
 	    modified_widths = true;
