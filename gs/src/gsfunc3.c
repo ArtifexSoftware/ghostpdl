@@ -335,6 +335,9 @@ fn_1ItSg_is_monotonic(const gs_function_t * pfn_common,
     int k = pfn->params.k;
     int i;
 
+    if (v0 > v1) {
+	v0 = v1; v1 = lower[0];
+    }
     if (v0 > d1 || v1 < d0)
 	return_error(gs_error_rangecheck);
     if (v0 < d0)
@@ -344,17 +347,27 @@ fn_1ItSg_is_monotonic(const gs_function_t * pfn_common,
     for (i = 0; i < pfn->params.k; ++i) {
 	float b0 = (i == 0 ? d0 : pfn->params.Bounds[i - 1]);
 	float b1 = (i == k - 1 ? d1 : pfn->params.Bounds[i]);
+	const float small = 0.0000001 * (b1 - b0);
 	float e0, e1;
 	float w0, w1;
+	float vv0, vv1;
 
 	if (v0 >= b1)
 	    continue;
-	if (v0 < b1 && v1 > b1)
+	if (v0 >= b1 - small)
+	    continue; /* Ignore a small noize */
+	vv0 = max(b0, v0);
+	vv1 = v1;
+	if (vv1 > b1 && v1 < b1 + small)
+	    vv1 = b1; /* Ignore a small noize */
+	if (vv0 == vv1)
+	    return 1;
+	if (vv0 < b1 && vv1 > b1)
 	    return 0; /* Consider stitches as monotonity beraks. */
 	e0 = pfn->params.Encode[2 * i];
 	e1 = pfn->params.Encode[2 * i + 1];
-	w0 = (max(v0, b0) - b0) * (e1 - e0) / (b1 - b0) + e0;
-	w1 = (min(v1, b1) - b0) * (e1 - e0) / (b1 - b0) + e0;
+	w0 = (max(vv0, b0) - b0) * (e1 - e0) / (b1 - b0) + e0;
+	w1 = (min(vv1, b1) - b0) * (e1 - e0) / (b1 - b0) + e0;
 	/* Note that w0 > w1 is now possible if e0 > e1. */
 	if (w0 > w1)
 	    return gs_function_is_monotonic(pfn->params.Functions[i],
