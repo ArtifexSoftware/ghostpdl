@@ -220,10 +220,18 @@
  TT_Error  Context_Destroy( void*  _context )
  {
    PExecution_Context  exec = (PExecution_Context)_context;
-   ttfMemory *mem = exec->owner->font->ttf_memory;
+   ttfMemory *mem;
 
    if ( !exec )
      return TT_Err_Ok;
+   if ( !exec->owner ) {
+     /* This may happen while closing a high level device, when allocator runs out of memory. 
+        A test case is 01_001.pdf with pdfwrite and a small vmthreshold.
+     */
+     return TT_Err_Out_Of_Memory;
+   }
+
+   mem = exec->owner->font->ttf_memory;
 
    /* points zone */
    FREE( exec->pts.cur_y );
@@ -273,6 +281,8 @@
    ttfMemory   *mem = face->font->ttf_memory;
    TMaxProfile *maxp = &face->maxProfile;
    Int          n_points, n_twilight;
+
+   exec->owner    = face;
 
    exec->glyphIns=NULL;
    exec->callStack=NULL;
@@ -332,7 +342,6 @@
 
      exec->twilight.n_points = n_twilight;
 
-     exec->owner    = face;
      exec->instance = (PInstance)NULL;
 
      return TT_Err_Ok;
@@ -496,10 +505,17 @@
   TT_Error  Instance_Destroy( void* _instance )
   {
     PInstance  ins = (PInstance)_instance;
-    ttfMemory *mem = ins->owner->font->ttf_memory;
+    ttfMemory *mem;
 
     if ( !_instance )
       return TT_Err_Ok;
+    if ( !ins->owner ) {
+      /* This may happen while closing a high level device, when allocator runs out of memory. 
+         A test case is 01_001.pdf with pdfwrite and a small vmthreshold.
+      */
+      return TT_Err_Out_Of_Memory;
+    }
+    mem = ins->owner->font->ttf_memory;
 
     FREE( ins->cvt );
     ins->cvtSize = 0;

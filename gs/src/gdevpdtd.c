@@ -387,6 +387,8 @@ pdf_compute_font_descriptor(pdf_font_descriptor_t *pfd)
 	gs_const_string gname;
 
 	code = bfont->procs.glyph_info((gs_font *)bfont, glyph, pmat, members, &info);
+	if (code == gs_error_VMerror)
+	    return code;
 	if (code < 0) {
 	    /*
 	     * Since this function may be indirtectly called from gx_device_finalize,

@@ -362,14 +362,20 @@ FontError ttfFont__Open(ttfFont *this, ttfReader *r, unsigned int nTTC)
 	return fMemoryError;
     memset(this->exec, 0, sizeof(*this->exec));
     code = Context_Create(this->exec, this->face);
+    if (code == TT_Err_Out_Of_Memory)
+	return fMemoryError;
     if (code)
 	return fBadFontData;
     code = Instance_Create(this->inst, this->face);
+    if (code == TT_Err_Out_Of_Memory)
+	return fMemoryError;
     if (code)
 	return fBadFontData;
     for(k = 0; k < this->face->cvtSize; k++)
 	this->inst->cvt[k] = shortToF26Dot6(this->face->cvt[k]);
     code = Instance_Init(this->inst);
+    if (code == TT_Err_Out_Of_Memory)
+	return fMemoryError;
     if (code)
 	return fBadFontData;
     I.z = this->inst;
