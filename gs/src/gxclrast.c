@@ -1194,7 +1194,11 @@ setcc:			{
 				       imager_state.dev_ht->num_comp,
 				       dcb[0], dcb[1], dcb[2], dcb[3],
 				       dcl[0], dcl[1], dcl[2], dcl[3]);
-			    color_finish_set_cmyk_halftone(&dev_color,
+			    if (cdev->color_info.num_components == 3)
+			        color_finish_set_rgb_halftone(&dev_color,
+						       imager_state.dev_ht);
+			    else
+			        color_finish_set_cmyk_halftone(&dev_color,
 						       imager_state.dev_ht);
 #undef dcb
 #undef dcl

@@ -77,7 +77,12 @@ typedef struct gx_device_halftone_s gx_device_halftone;
 #define gx_dc_is_colored_halftone(pdc)\
   ((pdc)->type == gx_dc_type_ht_colored)
 
-/* Test device colors for equality. */
+/*
+ * Test device colors for equality.  Testing for equality is done
+ * for determining when cache values, etc. can be used.  Thus these
+ * routines should err toward false responses if there is any question
+ * about the equality of the two device colors.
+ */
 bool gx_device_color_equal(P2(const gx_device_color *pdevc1,
 			      const gx_device_color *pdevc2));
 
@@ -136,12 +141,15 @@ bool gx_device_color_equal(P2(const gx_device_color *pdevc1,
    (pdc)->colors.colored.c_level[i] = (l))
 void gx_complete_rgb_halftone(P2(gx_device_color *pdevc,
 				 gx_device_halftone *pdht));
+/* Some special clients set the individual components separately. */
+#define color_finish_set_rgb_halftone(pdc, ht)\
+  gx_complete_rgb_halftone(pdc, ht)
 #define color_set_rgb_halftone(pdc, ht, br, lr, bg, lg, bb, lb, a)\
   (_color_set_c(pdc, 0, br, lr),\
    _color_set_c(pdc, 1, bg, lg),\
    _color_set_c(pdc, 2, bb, lb),\
    (pdc)->colors.colored.alpha = (a),\
-   gx_complete_rgb_halftone(pdc, ht))
+   color_finish_set_rgb_halftone(pdc, ht))
 /* Some special clients set the individual components separately. */
 void gx_complete_cmyk_halftone(P2(gx_device_color *pdevc,
 				  gx_device_halftone *pdht));
@@ -273,6 +281,7 @@ struct gx_device_color_s {
 	} binary;
 	struct _col {
 	    gx_device_halftone *c_ht; /* non-const for setting cache ptr */
+	    ushort num_components;
 	    byte c_base[GX_DEVICE_COLOR_MAX_COMPONENTS];
 	    uint c_level[GX_DEVICE_COLOR_MAX_COMPONENTS];
 	    ushort /*gx_color_value */ alpha;

@@ -132,7 +132,12 @@ top:
     }
 }
 
-/* Test device colors for equality. */
+/*
+ * Test device colors for equality.  Testing for equality is done
+ * for determining when cache values, etc. can be used.  Thus these
+ * routines should err toward false responses if there is any question
+ * about the equality of the two device colors.
+ */
 bool
 gx_device_color_equal(const gx_device_color *pdevc1,
 		      const gx_device_color *pdevc2)
@@ -292,6 +297,7 @@ gx_complete_rgb_halftone(gx_device_color *pdevc, gx_device_halftone *pdht)
 {
     pdevc->type = gx_dc_type_ht_colored;
     pdevc->colors.colored.c_ht = pdht;
+    pdevc->colors.colored.num_components = 3;
     pdevc->colors.colored.plane_mask =
 	(pdevc->colors.colored.c_level[0] != 0) |
 	((pdevc->colors.colored.c_level[1] != 0) << 1) |
@@ -309,6 +315,7 @@ gx_complete_cmyk_halftone(gx_device_color *pdevc, gx_device_halftone *pdht)
 {
     pdevc->type = gx_dc_type_ht_colored;
     pdevc->colors.colored.c_ht = pdht;
+    pdevc->colors.colored.num_components = 4;
     pdevc->colors.colored.alpha = max_ushort;
     pdevc->colors.colored.plane_mask =
 	(pdevc->colors.colored.c_level[0] != 0) |
