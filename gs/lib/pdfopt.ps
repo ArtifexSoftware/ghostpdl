@@ -1,4 +1,4 @@
-%    Copyright (C) 2000 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 2000, 2001 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of AFPL Ghostscript.
 % 
@@ -82,6 +82,26 @@ pdfoptdict begin
     ifdaelse
   } {
     pop
+  } ifelse
+} bind def
+% Visit a tree, stopping at references to Page objects.
+% (This is only needed for the OpenAction in the Catalog.)
+/omvisitnopage {	% <obj> omvisitnopage -
+  dup oforce dup type /dicttype eq {
+    /Type .knownget { /Page eq } { false } ifelse
+  } {
+    pop false
+  } ifelse {
+    pop		% Page reference
+  } {
+    omforcenew {
+      { { omvisitnopage omvisitnopage } forall }
+      { { omvisitnopage } forall }
+      { pop }
+      ifdaelse
+    } {
+      pop
+    } ifelse
   } ifelse
 } bind def
 
@@ -356,7 +376,8 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
   {
     Trailer /Root omget
     dup /PageMode .knownget { omvisit } if
-    dup /OpenAction .knownget { omvisit } if
+	% Don't allow omvisit to trace references to Page objects.
+    dup /OpenAction .knownget { omvisitnopage } if
     Trailer /Encrypt .knownget { omvisit } if
     dup /Threads .knownget {
       omforce { omforce } forall
@@ -572,7 +593,6 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
 % Write the linearization parameters dictionary.
 /writePart2 {		% - writePart2 -
   {
-(LPDict: ) print LPDict ===
     LPDictN writeobjn
   } (part2) writePart
 } bind def
@@ -663,20 +683,24 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
 % Find the start and end of objects in the output.
 /omstart {		% <obj#> omstart <pos>
   PDEBUG { (start\() print dup =only } if
-  omap XRef exch get
-  PDEBUG { (\)=) print dup = } if
+  omap
+  PDEBUG { (=>) print dup =only } if
+  XRef exch get
+  PDEBUG { (\) = ) print dup = } if
 } bind def
 /omend {		% <obj#> omend <pos>
 	% The end of an object is the start of the next object.
 	% The caller must be sure that this object is not the last one
 	% in part 9.
   PDEBUG { (end\() print dup =only } if
-  omap 1 add
+  omap
+  PDEBUG { (=>) print dup =only } if
+  1 add
 	% Check that the requested object wasn't the last one in part 6:
 	% the next object in the output file is the first in part 7.
   PHSN omap 1 index eq { pop 1 } if
   XRef exch get
-  PDEBUG { (\)=) print dup = } if
+  PDEBUG { (\) = ) print dup = } if
 } bind def
 /omlength {		% <obj#> omlength <length>
   dup omend exch omstart sub
@@ -874,6 +898,7 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
   [LPDict PHS] createObjects
   /LPDictN 1 index def 1 add
   /PHSN exch def
+  PDEBUG { << /LPDictN LPDictN /PHSN PHSN >> === } if
 
 	% Count the number of objects in the output.
 
