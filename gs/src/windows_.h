@@ -24,6 +24,7 @@
 #include <windows.h>
 
 #ifdef __WATCOMC__
+typedef RGBQUAD FAR * LPRGBQUAD;
 	/* Watcom's _beginthread takes an extra stack_bottom argument. */
 #  define BEGIN_THREAD(proc, stksize, data)\
      _beginthread(proc, NULL, stksize, data)
