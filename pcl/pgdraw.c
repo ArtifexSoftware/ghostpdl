@@ -1,6 +1,15 @@
-/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights
-   reserved.  Unauthorized use, copying, and/or distribution
-   prohibited.  */
+/* Portions Copyright (C) 2001 artofcode LLC.
+   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
+   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
+   This software is based in part on the work of the Independent JPEG Group.
+   All Rights Reserved.
+
+   This software is distributed under license and may not be copied, modified
+   or distributed except as expressly authorized under the terms of that
+   license.  Refer to licensing information at http://www.artifex.com/ or
+   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
+   San Rafael, CA  94903, (415)492-9861, for further information. */
+/*$Id$ */
 
 /* pgdraw.c - HP-GL/2 line drawing/path building routines. */
 
@@ -1382,9 +1391,11 @@ hpgl_close_path(
 
 
 /* To implement centered we move the points in the path to a pixel boundary.
-   The double translate effectively rounds to pixels location to a pel.
-   Note this routine is sensitive to the orientation of the
-   device */
+   Note this routine is sensitive to the orientation of the device.
+   Since rounding 0.5 is used here and 0.5 fill adjust this can fail to reduce and
+   object in size by 1 pixel left/bottom for some user scale factors.  This is not a 
+   grave concern as the objects will still seam together. */
+
 int
 hpgl_set_special_pixel_placement(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 {
@@ -1400,16 +1411,10 @@ hpgl_set_special_pixel_placement(hpgl_state_t *pgls, hpgl_rendering_mode_t rende
 	/* determine the adjustment in device space */
 	hpgl_call(gs_defaultmatrix(pgls->pgs, &default_matrix));
 	hpgl_call(gs_distance_transform(adjust.x, adjust.y, &default_matrix, &distance));
-	/* translate all points in the path by the adjustment.  The
-           1.5 is a hack, it should be 1
-	   Removed 1.5 hack Stefan 20010314
-	*/
+	/* translate all points in the path by the adjustment.  */
 	hpgl_call(gx_path_translate(ppath,
-		   float2fixed(1.0 * (distance.x / fabs(distance.x))), 
-		   float2fixed(1.0 * (distance.y / fabs(distance.y)))));
-	hpgl_call(gx_path_translate(ppath,
-		   float2fixed(-1.0 * (distance.x / fabs(distance.x))), 
-		   float2fixed(-1.0 * (distance.y / fabs(distance.y)))));
+		   float2fixed(0.5 * (distance.x / fabs(distance.x))), 
+		   float2fixed(0.5 * (distance.y / fabs(distance.y)))));
     }
     return 0;
 }
