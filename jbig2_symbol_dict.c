@@ -387,6 +387,10 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 		          code = jbig2_arith_int_decode(IARDY, as, &RDY);
 		      }
 
+		      if (ID >= ninsyms+NSYMSDECODED)
+			return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+			  "refinement references unknown symbol %d", ID);
+   
 		      jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
 			"symbol is a refinement of id %d with the refinement applied at (%d,%d)",
 			ID, RDX, RDY);
@@ -395,7 +399,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
 		      /* Table 18 */
 		      rparams.GRTEMPLATE = params->SDRTEMPLATE;
-		      rparams.reference = (ninsyms > ID) ? 
+		      rparams.reference = (ninsyms >= ID) ? 
 					params->SDINSYMS->glyphs[ID] :
 					SDNEWSYMS->glyphs[ID-ninsyms];
 		      rparams.DX = RDX;
