@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_symbol_dict.c,v 1.16 2002/07/08 14:54:01 giles Exp $
+    $Id: jbig2_symbol_dict.c,v 1.17 2002/07/09 10:13:13 giles Exp $
     
     symbol dictionary segment decode and support
 */
@@ -33,7 +33,7 @@
 #include "jbig2_generic.h"
 #include "jbig2_symbol_dict.h"
 
-#if OUTPUT_PBM || HAVE_LIBPNG
+#if defined(OUTPUT_PBM) || defined(HAVE_LIBPNG)
 #include <stdio.h>
 #include "jbig2_image.h"
 #endif
