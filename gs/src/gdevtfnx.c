@@ -139,7 +139,7 @@ tiff12_print_page(gx_device_printer * pdev, FILE * file)
 		dest[1] = (src[2] & 0xf0) | (src[3] >> 4);
 		dest[2] = (src[4] & 0xf0) | (src[5] >> 4);
 	    }
-	    fwrite(line, 1, dest - line, file);
+	    fwrite(line, 1, (pdev->width * 3 + 1) >> 1, file);
 	}
 
 	gdev_tiff_end_strip(&tfdev->tiff, file);
