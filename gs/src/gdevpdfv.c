@@ -100,7 +100,7 @@ tile_size_ok(const gx_device_pdf *pdev, const gx_color_tile *p_tile,
      * 64K of data.  :-(
      */
     uint p_size =
-	(p_tile == 0 ? 0 : tile_size(&p_tile->tbits, pdev->color_info.depth));
+	(p_tile == 0 ? 0 : tile_size(&p_tile->tbits, p_tile->depth));
     uint m_size =
 	(m_tile == 0 ? 0 : tile_size(&m_tile->tmask, 1));
     return (max(p_size, m_size) <= 65500);
@@ -305,9 +305,9 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 	    gx_color_index color = 0; /* init is arbitrary if not empty */
 	    bool first = true;
 
-	    for (i = 0, bp = p_tile->tbits.data, mp = m_tile->tbits.data;
+	    for (i = 0, bp = p_tile->tbits.data, mp = p_tile->tmask.data;
 		 i < p_tile->tbits.rep_height;
-		 ++i, bp += skip, mp += m_tile->tbits.raster) {
+		 ++i, bp += skip, mp += p_tile->tmask.raster) {
 
 		for (j = 0; j < width; ++j) {
 		    if (mp[j >> 3] & (0x80 >> (j & 7))) {
