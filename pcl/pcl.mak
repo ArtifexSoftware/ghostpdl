@@ -45,7 +45,7 @@ PCLGEN      = $(PCLGENDIR)$(D)
 PCLOBJ      = $(PCLOBJDIR)$(D)
 PCLO_       = $(O_)$(PCLOBJ)
 
-PCLCCC  = $(CC_) -I$(PCLSRCDIR) -I$(PCLGENDIR) -I$(PLSRCDIR) -I$(GLSRCDIR) $(C_)
+PCLCCC  = $(CC_) $(I_)$(PCLSRCDIR)$(_I) $(I_)$(PCLGENDIR)$(_I) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(C_)
 
 # Define the name of this makefile.
 PCL_MAK     = $(PCLSRC)pcl.mak
