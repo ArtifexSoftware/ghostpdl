@@ -692,6 +692,7 @@ gp_open_scratch_file(const char *prefix, char *fname, const char *mode)
     } else {
 	strncpy(sTempDir, prefix, sizeof(sTempDir));
 	prefix = "";
+        l = strlen(sTempDir);
     }
     if (l <= sizeof(sTempDir)) {
 	n = GetTempFileName(sTempDir, prefix, 0, sTempFileName);
