@@ -104,18 +104,21 @@ pcl_font_control(pcl_args_t *pargs, pcl_state_t *pcs)
 	pl_dict_release(&pcs->soft_fonts);
 	break;
     case 1:
-	/* Delete all temporary soft fonts. */
-	pl_dict_enum_stack_begin(&pcs->soft_fonts, &denum, false);
-	while ( pl_dict_enum_next(&denum, &key, &value) )
-	    if ( ((pl_font_t *)value)->storage == pcds_temporary )
-		pcl_delete_soft_font(pcs, key.data, key.size, value);
+        if ( !high_level_device(pcs->ptarget_device) ) {
+	    /* Delete all temporary soft fonts. */
+	    pl_dict_enum_stack_begin(&pcs->soft_fonts, &denum, false);
+	    while ( pl_dict_enum_next(&denum, &key, &value) )
+		if ( ((pl_font_t *)value)->storage == pcds_temporary )
+		    pcl_delete_soft_font(pcs, key.data, key.size, value);
+	}
 	break;
     case 2:
-	/* Delete soft font <font_id>. */
-	pcl_delete_soft_font(pcs, current_font_id, current_font_id_size, NULL);
-	/* decache the currently selected font in case we deleted it. */
-	pcl_decache_font(pcs, -1);
-
+        if ( !high_level_device(pcs->ptarget_device) ) {
+	    /* Delete soft font <font_id>. */
+	    pcl_delete_soft_font(pcs, current_font_id, current_font_id_size, NULL);
+	    /* decache the currently selected font in case we deleted it. */
+	    pcl_decache_font(pcs, -1);
+	}
 	break;
     case 3:
 	/* Delete character <font_id, character_code>. */
