@@ -858,16 +858,16 @@ cff_write_CharStrings(cff_writer_t *pcw, psf_glyph_enum_t *penum,
     }
 }
 
-/* ------ Subrs Index ------ */
+/* ------ [G]Subrs Index ------ */
 
 /*
  * Currently, we always write all the Subrs, even for subsets.
  * We will fix this someday.
  */
 
-/* These are separate procedures only for readability. */
 private uint
-cff_write_Subrs_offsets(cff_writer_t *pcw, uint *pcount, gs_font_type1 *pfont)
+cff_write_Subrs_offsets(cff_writer_t *pcw, uint *pcount, gs_font_type1 *pfont,
+			bool global)
 {
     int extra_lenIV = cff_extra_lenIV(pcw, pfont);
     int j, offset;
@@ -875,7 +875,7 @@ cff_write_Subrs_offsets(cff_writer_t *pcw, uint *pcount, gs_font_type1 *pfont)
     gs_glyph_data_t gdata;
 
     for (j = 0, offset = 1;
-	 (code = pfont->data.procs.subr_data(pfont, j, false, &gdata)) !=
+	 (code = pfont->data.procs.subr_data(pfont, j, global, &gdata)) !=
 	     gs_error_rangecheck;
 	 ++j) {
 	if (code >= 0 && gdata.bits.size >= extra_lenIV)
@@ -886,9 +886,10 @@ cff_write_Subrs_offsets(cff_writer_t *pcw, uint *pcount, gs_font_type1 *pfont)
     *pcount = j;
     return offset - 1;
 }
+
 private void
 cff_write_Subrs(cff_writer_t *pcw, uint subrs_count, uint subrs_size,
-		gs_font_type1 *pfont)
+		gs_font_type1 *pfont, bool global)
 {
     int j;
     uint ignore_count;
@@ -896,9 +897,9 @@ cff_write_Subrs(cff_writer_t *pcw, uint subrs_count, uint subrs_size,
     int code;
 
     cff_put_Index_header(pcw, subrs_count, subrs_size);
-    cff_write_Subrs_offsets(pcw, &ignore_count, pfont);
+    cff_write_Subrs_offsets(pcw, &ignore_count, pfont, global);
     for (j = 0;
-	 (code = pfont->data.procs.subr_data(pfont, j, false, &gdata)) !=
+	 (code = pfont->data.procs.subr_data(pfont, j, global, &gdata)) !=
 	     gs_error_rangecheck;
 	 ++j) {
 	if (code >= 0) {
@@ -1110,13 +1111,14 @@ psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
     stream poss;
     uint charstrings_count, charstrings_size;
     uint subrs_count, subrs_size;
-    uint encoding_size, charset_size;
+    uint gsubrs_count, gsubrs_size, encoding_size, charset_size;
     /*
      * Set the offsets and sizes to the largest reasonable values
      * (see below).
      */
     uint
 	Top_size = 0x7fffff,
+	GSubrs_offset,
 	Encoding_offset,
 	charset_offset,
 	CharStrings_offset,
@@ -1268,6 +1270,17 @@ psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
      */
 
     /*
+     * Compute the size of the GSubrs Index, if not omitted.
+     */
+    if ((options & WRITE_TYPE2_NO_GSUBRS) != 0 ||
+	cff_convert_charstrings(&writer, pbfont) /* we expand all Subrs */
+	)
+	gsubrs_count = 0, gsubrs_size = 0;
+    else
+	gsubrs_size = cff_write_Subrs_offsets(&writer, &gsubrs_count,
+					      pfont, true);
+
+    /*
      * Compute the size of the Encoding.  For simplicity, we currently
      * always store the Encoding explicitly.  Note that because CFF stores
      * the Encoding in an "inverted" form, we need to count the number of
@@ -1290,11 +1303,11 @@ psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
 #ifdef SKIP_EMPTY_SUBRS
     subrs_size =
 	(cff_convert_charstrings(&writer, pbfont) ? 0 :
-	 cff_write_Subrs_offsets(&writer, &subrs_count, pfont));
+	 cff_write_Subrs_offsets(&writer, &subrs_count, pfont, false));
 #else
     if (cff_convert_charstrings(&writer, pbfont))
 	subrs_count = 0;	/* we expand all Subrs */
-    subrs_size = cff_write_Subrs_offsets(&writer, &subrs_count, pfont);
+    subrs_size = cff_write_Subrs_offsets(&writer, &subrs_count, pfont, false);
 #endif
 
     /*
@@ -1315,10 +1328,11 @@ psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
     writer.strm = &poss;
 
     /* Compute the offsets. */
-    Encoding_offset = 4 + cff_Index_size(1, font_name.size) +
+    GSubrs_offset = 4 + cff_Index_size(1, font_name.size) +
 	cff_Index_size(1, Top_size) +
-	cff_Index_size(writer.strings.count, writer.strings.total) +
-	cff_Index_size(0, 0);
+	cff_Index_size(writer.strings.count, writer.strings.total);
+    Encoding_offset = GSubrs_offset +
+	cff_Index_size(gsubrs_count, gsubrs_size);
     charset_offset = Encoding_offset + encoding_size;
     CharStrings_offset = charset_offset + charset_size;
     Private_offset = CharStrings_offset +
@@ -1347,8 +1361,16 @@ psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
     /* Write the strings Index. */
     cff_put_Index(&writer, &writer.strings);
 
-    /* Write the (empty) gsubrs Index. */
-    cff_put_Index_header(&writer, 0, 0);
+    /* Write the GSubrs Index, if any, checking the offset. */
+    offset = stell(writer.strm) - start_pos;
+    if_debug2('l', "[l]GSubrs = %u => %u\n", GSubrs_offset, offset);
+    if (offset > GSubrs_offset)
+	return_error(gs_error_rangecheck);
+    GSubrs_offset = offset;
+    if (gsubrs_count == 0 || cff_convert_charstrings(&writer, pbfont))
+	cff_put_Index_header(&writer, 0, 0);
+    else
+	cff_write_Subrs(&writer, gsubrs_count, gsubrs_size, pfont, true);
 
     /* Write the Encoding. */
     cff_write_Encoding(&writer, &subset);
@@ -1380,7 +1402,7 @@ psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
     if (cff_convert_charstrings(&writer, pbfont))
 	cff_put_Index_header(&writer, 0, 0);
     else if (subrs_size != 0)
-	cff_write_Subrs(&writer, subrs_count, subrs_size, pfont);
+	cff_write_Subrs(&writer, subrs_count, subrs_size, pfont, false);
 
     /* Check the final offset. */
     offset = stell(writer.strm) - start_pos;
@@ -1452,6 +1474,7 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
     gs_const_string font_name;
     stream poss;
     uint charstrings_count, charstrings_size;
+    uint gsubrs_count, gsubrs_size;
     uint charset_size, fdselect_size, fdselect_format;
     uint subrs_count[256], subrs_size[256];
     /*
@@ -1460,6 +1483,7 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
      */
     uint
 	Top_size = 0x7fffff,
+	GSubrs_offset = 0x7fffff,
 	charset_offset = 0x7fffff,
 	FDSelect_offset = 0x7fffff,
 	CharStrings_offset = 0x7fffff,
@@ -1535,6 +1559,21 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
 	    0x7effffff / num_fonts * j + 0x1000000;
 
     /*
+     * Compute the size of the GSubrs Index, if not omitted.
+     * Arbitrarily use FDArray[0] to access the GSubrs and to determine
+     * the CharString type.
+     */
+    if ((options & WRITE_TYPE2_NO_GSUBRS) != 0 ||
+	cff_convert_charstrings(&writer,
+			(const gs_font_base *)pfont->cidata.FDArray[0])
+				/* we expand all Subrs */
+	)
+	gsubrs_count = 0, gsubrs_size = 0;
+    else
+	gsubrs_size = cff_write_Subrs_offsets(&writer, &gsubrs_count,
+					      pfont->cidata.FDArray[0], true);
+
+    /*
      * Compute the size of the charset.  For simplicity, we currently
      * always store the charset explicitly.
      */
@@ -1556,11 +1595,11 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
 #ifdef SKIP_EMPTY_SUBRS
 	subrs_size[j] =
 	    (cff_convert_charstrings(&writer, (gs_font_base *)pfd) ? 0 :
-	     cff_write_Subrs_offsets(&writer, &subrs_count[j], pfd));
+	     cff_write_Subrs_offsets(&writer, &subrs_count[j], pfd, false));
 #else
 	if (cff_convert_charstrings(&writer, (gs_font_base *)pfd))
 	    subrs_count[j] = 0;  /* we expand all Subrs */
-	subrs_size[j] = cff_write_Subrs_offsets(&writer, &subrs_count[j], pfd);
+	subrs_size[j] = cff_write_Subrs_offsets(&writer, &subrs_count[j], pfd, false);
 #endif
     }
 
@@ -1585,14 +1624,15 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
     writer.strm = &poss;
 
     /* Compute the offsets. */
-    charset_offset = 4 + cff_Index_size(1, font_name.size) +
+    GSubrs_offset = 4 + cff_Index_size(1, font_name.size) +
 	cff_Index_size(1, Top_size) +
-	cff_Index_size(writer.strings.count, writer.strings.total) +
-	cff_Index_size(0, 0);
+	cff_Index_size(writer.strings.count, writer.strings.total);
+    charset_offset = GSubrs_offset +
+	cff_Index_size(gsubrs_count, gsubrs_size);
     FDSelect_offset = charset_offset + charset_size;
     CharStrings_offset = FDSelect_offset + fdselect_size;
-    if_debug3('l', "[l]charset at %u, FDSelect at %u, CharStrings at %u\n",
-	      charset_offset, FDSelect_offset, CharStrings_offset);
+    if_debug4('l', "[l]GSubrs at %u, charset at %u, FDSelect at %u, CharStrings at %u\n",
+	      GSubrs_offset, charset_offset, FDSelect_offset, CharStrings_offset);
 
  write:
     start_pos = stell(writer.strm);
@@ -1617,10 +1657,23 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
     /* Write the strings Index. */
     cff_put_Index(&writer, &writer.strings);
 
-    /* Write the (empty) gsubrs Index. */
-    cff_put_Index_header(&writer, 0, 0);
+    /* Write the GSubrs Index, if any, checking the offset. */
+    offset = stell(writer.strm) - start_pos;
+    if_debug2('l', "[l]GSubrs = %u => %u\n", GSubrs_offset, offset);
+    if (offset > GSubrs_offset)
+	return_error(gs_error_rangecheck);
+    GSubrs_offset = offset;
+    if (gsubrs_count == 0 ||
+	cff_convert_charstrings(&writer,
+			(const gs_font_base *)pfont->cidata.FDArray[0])
+	)
+	cff_put_Index_header(&writer, 0, 0);
+    else
+	cff_write_Subrs(&writer, gsubrs_count, gsubrs_size,
+			pfont->cidata.FDArray[0], true);
 
     /* Write the charset. */
+    if_debug1('l', "[l]charset = %u\n", stell(writer.strm) - start_pos);
     cff_write_cidset(&writer, &genum);
 
     /* Write the FDSelect structure, checking the offset. */
@@ -1704,7 +1757,7 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
 	if (cff_convert_charstrings(&writer, (gs_font_base *)pfd))
 	    cff_put_Index_header(&writer, 0, 0);
 	else if (subrs_size[j] != 0)
-	    cff_write_Subrs(&writer, subrs_count[j], subrs_size[j], pfd);
+	    cff_write_Subrs(&writer, subrs_count[j], subrs_size[j], pfd, false);
     }
 
     /* Check the final offset. */
