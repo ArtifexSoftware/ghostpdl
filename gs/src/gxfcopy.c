@@ -1982,7 +1982,7 @@ gs_copy_glyph_options(gs_font *font, gs_glyph glyph, gs_font *copied,
 		      int options)
 {
     int code;
-#define MAX_GLYPH_PIECES 32	/* arbitrary, but 10 is too small */
+#define MAX_GLYPH_PIECES 64	/* arbitrary, but 32 is too small - bug 687698. */
     gs_glyph glyphs[MAX_GLYPH_PIECES];
     uint count = 1, i;
 
@@ -1993,8 +1993,10 @@ gs_copy_glyph_options(gs_font *font, gs_glyph glyph, gs_font *copied,
 	return code;
     /* Copy any sub-glyphs. */
     glyphs[0] = glyph;
-    psf_add_subset_pieces(glyphs, &count, MAX_GLYPH_PIECES, MAX_GLYPH_PIECES,
+    code = psf_add_subset_pieces(glyphs, &count, MAX_GLYPH_PIECES, MAX_GLYPH_PIECES,
 			  font);
+    if (code < 0)
+	return code;
     if (count > MAX_GLYPH_PIECES)
 	return_error(gs_error_limitcheck);
     for (i = 1; i < count; ++i) {
