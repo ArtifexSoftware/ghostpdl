@@ -292,9 +292,8 @@ end
 /this currentdict def
 
 /FAPI_hook_debug   % <proc> FAPI_hook_debug -
-{ exec 
-  % pop
-} bind def
+DEBUG { {exec} } { {pop} } ifelse
+bind def
  
 /FAPI_force_hook_installed_fonts false def
 

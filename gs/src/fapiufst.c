@@ -19,7 +19,6 @@
 /*$Id$ */
 /* Agfa UFST plugin */
 
-#include <assert.h>
 /* GS includes : */
 #include "stdio_.h"
 #include "memory_.h"
@@ -47,7 +46,8 @@ typedef enum {
     UFST_ERROR_success = 0,
     UFST_ERROR_memory = -1,
     UFST_ERROR_file = -2,
-    UFST_ERROR_unimplemented = -3
+    UFST_ERROR_unimplemented = -3,
+    UFST_ERROR_invalidfont = -4
 } UFST_ERROR;
 
 typedef struct pcleo_glyph_list_elem_s pcleo_glyph_list_elem;
@@ -217,6 +217,10 @@ private LPUB8 get_TT_glyph(fapi_ufst_server *r, FAPI_font *ff, UW16 chId)
     ufst_common_font_data *d = (ufst_common_font_data *)r->fc.font_hdr - 1;
     LPUB8 q;
     ushort glyph_length = ff->get_glyph(ff, chId, 0, 0);
+    if (glyph_length < 0) {
+        renderer->callback_error = UFST_ERROR_invalidfont;
+        return 0;
+    }
     g = (pcleo_glyph_list_elem *)r->client_mem.alloc(&r->client_mem, sizeof(pcleo_glyph_list_elem) + sizeof(PCLETTO_CHDR) + glyph_length + 2, "PCLETTO char");
     if (g == 0) {
         renderer->callback_error = UFST_ERROR_memory;
@@ -237,7 +241,10 @@ private LPUB8 get_TT_glyph(fapi_ufst_server *r, FAPI_font *ff, UW16 chId)
     q = (LPUB8)&h->glyphID;
     q[0] = chId / 256;
     q[1] = chId % 256;
-    ff->get_glyph(ff, chId, (LPUB8)(h + 1), glyph_length);
+    if (ff->get_glyph(ff, chId, (LPUB8)(h + 1), glyph_length) < 0) {
+        renderer->callback_error = UFST_ERROR_invalidfont;
+        return 0;
+    }
     q = (LPUB8)(h + 1) + glyph_length;
     q[0] = 0;
     q[1] = 0; /* checksum */
@@ -491,6 +498,8 @@ private FAPI_retcode make_font_data(fapi_ufst_server *r, const char *font_file_p
             area_length += 360 + subrs_area_size; /* some inprecise - see pack_pseo_fhdr */
         } else {
             tt_size  = ff->get_long(ff, FAPI_FONT_FEATURE_TT_size, 0);
+            if (tt_size == 0)
+                return UFST_ERROR_invalidfont;
             area_length += tt_size + 4 + 4 + 2;
         }
     } else
@@ -574,7 +583,8 @@ private FAPI_retcode make_font_data(fapi_ufst_server *r, const char *font_file_p
             pseg[3] = tt_size % 256;
             fontdata = pseg + 4;
             d->tt_font_body_offset = (LPUB8)fontdata - (LPUB8)d;
-            ff->serialize_tt_font(ff, fontdata, tt_size);
+            if (ff->serialize_tt_font(ff, fontdata, tt_size))
+                return UFST_ERROR_invalidfont;
             *(fontdata + tt_size    ) = 255;
             *(fontdata + tt_size + 1) = 255;
             *(fontdata + tt_size + 2) = 0;
@@ -875,7 +885,7 @@ private FAPI_retcode release_font_data(FAPI_server *server, void *font_data)
         code = CGIFhdr_font_purge(&r->IFS, &r->fc);
     else
         code = CGIFfont_purge(&r->IFS, &r->fc);
-    assert(code == 0); /* development purpose only */
+    (void)code; /* development purpose only */
     release_glyphs(r, d);
     release_fco(r, (SW16)(d->font_id >> 16));
     r->client_mem.free(&r->client_mem, font_data, "ufst font data");
@@ -927,7 +937,8 @@ int gs_fapiufst_instantiate(i_ctx_t *i_ctx_p, i_plugin_client_memory *client_mem
 
 private void gs_fapiufst_finit(i_plugin_instance *this, i_plugin_client_memory *mem)
 {   fapi_ufst_server *I = (fapi_ufst_server *)this;
-    assert(I->If.ig.d == &ufst_descriptor); /* development purpose only */
+    if (I->If.ig.d != &ufst_descriptor)
+        return; /* safety */
     if (I->bInitialized) {
         CGIFexit(&I->IFS);
     }

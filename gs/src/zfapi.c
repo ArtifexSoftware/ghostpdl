@@ -19,7 +19,6 @@
 /*$Id$ */
 /* Font API client */
 
-#include <assert.h>
 #include "memory_.h"
 #include "math_.h"
 #include "ghost.h"
@@ -49,11 +48,6 @@
 #define CheckRET(a) { int x = a; if(x < 0) return x; }
 
 private const int bCacheFonts = 1;
-
-/*  fixme : this code uses 'assert' in some places.
-    Need to provide safe error processing instead, 
-    because with some compilers 'assert' may compile to no-op.
- */
 
 /* -------------------------------------------------------- */
 
@@ -95,6 +89,7 @@ struct sfnts_reader_s {
     long index;
     uint offset;
     uint length;
+    bool error;
     byte (*rbyte)(sfnts_reader *r);
     ushort (*rword)(sfnts_reader *r);
     ulong (*rlong)(sfnts_reader *r);
@@ -104,8 +99,12 @@ struct sfnts_reader_s {
 
 private void sfnts_next_elem(sfnts_reader *r)
 {   ref s;
+    if (r->error)
+        return;
     r->index++;
-    assert(array_get(r->sfnts, r->index, &s) >= 0);
+    r->error |= (array_get(r->sfnts, r->index, &s) < 0);
+    if (r->error)
+        return;
     r->p = s.value.const_bytes;
     r->length = r_size(&s);
     r->offset = 0;
@@ -114,7 +113,7 @@ private void sfnts_next_elem(sfnts_reader *r)
 private inline byte sfnts_reader_rbyte_inline(sfnts_reader *r)
 {   if (r->offset >= r->length)
         sfnts_next_elem(r);
-    return r->p[r->offset++];
+    return (r->error ? 0 : r->p[r->offset++]);
 }
 
 private byte sfnts_reader_rbyte(sfnts_reader *r) /* old compiler compatibility */
@@ -131,7 +130,9 @@ private ulong sfnts_reader_rlong(sfnts_reader *r)
 }
 
 private void sfnts_reader_rstring(sfnts_reader *r, byte *v, int length)
-{   for(;;) {
+{   if (length < 0)
+        return;
+    while (!r->error) {
         int l = min(length, r->length - r->offset);
         memcpy(v, r->p + r->offset, l);
         r->p += l;
@@ -147,7 +148,7 @@ private void sfnts_reader_seek(sfnts_reader *r, ulong pos)
     ulong skipped = 0;
     r->index = -1;
     sfnts_next_elem(r);
-    while (skipped + r->length < pos) {
+    while (skipped + r->length < pos && !r->error) {
         skipped += r->length;
         sfnts_next_elem(r);
     }
@@ -155,14 +156,16 @@ private void sfnts_reader_seek(sfnts_reader *r, ulong pos)
 }
 
 private void sfnts_reader_init(sfnts_reader *r, ref *pdr)
-{   assert(r_type(pdr) == t_dictionary);
-    assert(dict_find_string(pdr, "sfnts", &r->sfnts) >= 0); /* fixme : error processing */
-    r->rbyte = sfnts_reader_rbyte;
+{   r->rbyte = sfnts_reader_rbyte;
     r->rword = sfnts_reader_rword;
     r->rlong = sfnts_reader_rlong;
     r->rstring = sfnts_reader_rstring;
     r->seek = sfnts_reader_seek;
     r->index = -1;
+    r->error = false;
+    if (r_type(pdr) != t_dictionary ||
+        dict_find_string(pdr, "sfnts", &r->sfnts) < 0)
+        r->error = true;
     sfnts_next_elem(r);
 }
 
@@ -179,20 +182,23 @@ struct sfnts_writer_s {
 };
 
 private void sfnts_writer_wbyte(sfnts_writer *w, byte v)
-{   assert(w->buf + w->buf_size >= w->p + 1); /* fixme : error processing */
+{   if (w->buf + w->buf_size < w->p + 1)
+        return; /* safety */
     w->p[0] = v;
     w->p++;
 }
 
 private void sfnts_writer_wword(sfnts_writer *w, ushort v)
-{   assert(w->buf + w->buf_size >= w->p + 2);
+{   if (w->buf + w->buf_size < w->p + 2)
+        return; /* safety */
     w->p[0] = v / 256;
     w->p[1] = v % 256;
     w->p += 2;
 }
 
 private void sfnts_writer_wlong(sfnts_writer *w, ulong v)
-{   assert(w->buf + w->buf_size >= w->p + 4);
+{   if (w->buf + w->buf_size < w->p + 4)
+        return; /* safety */
     w->p[0] = v >> 24;
     w->p[1] = (v >> 16) & 0xFF;
     w->p[2] = (v >>  8) & 0xFF;
@@ -201,7 +207,8 @@ private void sfnts_writer_wlong(sfnts_writer *w, ulong v)
 }
 
 private void sfnts_writer_wstring(sfnts_writer *w, byte *v, int length)
-{   assert(w->buf + w->buf_size >= w->p + length);
+{   if (w->buf + w->buf_size < w->p + length)
+        return; /* safety */
     memcpy(w->p, v, length);
     w->p += length;
 }
@@ -226,7 +233,7 @@ private inline bool sfnts_need_copy_table(byte *tag)
 
 private void sfnt_copy_table(sfnts_reader *r, sfnts_writer *w, int length)
 {   byte buf[1024];
-    while (length > 0) {
+    while (length > 0 && !r->error) {
         int l = min(length, sizeof(buf));
         r->rstring(r, buf, l);
         w->wstring(w, buf, l);
@@ -251,6 +258,8 @@ private ulong sfnts_copy_except_glyf(sfnts_reader *r, sfnts_writer *w)
     r->rword(r); /* entrySelector */
     r->rword(r); /* rangeShift */
     for (i = 0; i < num_tables; i++) {
+        if (r->error)
+            return 0;
         r->rstring(r, tables[i].tag, 4);
         tables[i].checkSum = r->rlong(r);
         tables[i].offset = r->rlong(r);
@@ -290,7 +299,10 @@ private ulong sfnts_copy_except_glyf(sfnts_reader *r, sfnts_writer *w)
         if (sfnts_need_copy_table(tables[i].tag)) {
             int k = tables[i].length;
             r->seek(r, tables[i].offset);
-            assert(w->p - w->buf == tables[i].offset_new + num_tables_new * 16);
+            if (r->error)
+                return 0;
+            if (w->p - w->buf != tables[i].offset_new + num_tables_new * 16)
+                return 0; /* the algorithm consistency check */
             sfnt_copy_table(r, w, tables[i].length);
             for (; k & (alignment - 1); k++)
                 w->wbyte(w, 0);
@@ -304,14 +316,16 @@ private ulong true_type_size(ref *pdr)
     return sfnts_copy_except_glyf(&r, 0);
 }
 
-private void FAPI_FF_serialize_tt_font(FAPI_font *ff, void *buf, int buf_size)
+private ushort FAPI_FF_serialize_tt_font(FAPI_font *ff, void *buf, int buf_size)
 {   ref *pdr = (ref *)ff->client_font_data2;
     sfnts_reader r;
     sfnts_writer w = sfnts_writer_stub;
     w.buf_size = buf_size;
     w.buf = w.p = buf;
     sfnts_reader_init(&r, pdr);
-    sfnts_copy_except_glyf(&r, &w);
+    if(!sfnts_copy_except_glyf(&r, &w))
+        return 1;
+    return r.error;
 }
 
 private inline ushort float_to_ushort(float v)
@@ -445,7 +459,7 @@ private ushort FAPI_FF_get_subr(FAPI_font *ff, int index, byte *buf, ushort buf_
     return get_type1_data(ff, &subr, buf, buf_length);
 }
 
-private void sfnt_get_glyph_offset(ref *pdr, int index, ulong *offset0, ulong *offset1)
+private bool sfnt_get_glyph_offset(ref *pdr, int index, ulong *offset0, ulong *offset1)
 {   /* Note : TTC is not supported and probably is unuseful for Type 42. */
     sfnts_reader r;
     struct {
@@ -476,6 +490,7 @@ private void sfnt_get_glyph_offset(ref *pdr, int index, ulong *offset0, ulong *o
         *offset1 = tables[iglyf].offset + tables[iglyf].length;
     else
         *offset1 = tables[iglyf].offset + (glyf_elem_size == 2 ? r.rword(&r) : r.rlong(&r)) * 2;
+    return r.error;
 }
 
 private ushort FAPI_FF_get_glyph(FAPI_font *ff, int char_code, byte *buf, ushort buf_length)
@@ -485,18 +500,11 @@ private ushort FAPI_FF_get_glyph(FAPI_font *ff, int char_code, byte *buf, ushort
     ushort glyph_length;
     if (ff->is_type1) {
         ref *CharStrings, *Encoding, char_name, *glyph;
-        #if 0
-            if (dict_find_string(pdr, "Encoding", &Encoding) < 0)
-                return 0;
-            if (array_get(Encoding, char_code, &char_name) < 0)
-                return 0;
-        #else
-            char_name = *(ref *)ff->client_char_data;
-        #endif
+        char_name = *(ref *)ff->client_char_data;
         if (dict_find_string(pdr, "CharStrings", &CharStrings) < 0)
-            return 0;
+            return -1;
         if (dict_find(CharStrings, &char_name, &glyph) < 0)
-            return 0;
+            return -1;
         glyph_length = get_type1_data(ff, glyph, buf, buf_length);
     } else { /* type 42 */
         ref *GlyphDirectory, glyph0, *glyph = &glyph0, glyph_index;
@@ -508,17 +516,19 @@ private ushort FAPI_FF_get_glyph(FAPI_font *ff, int char_code, byte *buf, ushort
               array_get(GlyphDirectory, char_code, &glyph0) >= 0) &&
              r_type(glyph) == t_string)) {
             glyph_length = r_size(glyph);
-            if (buf != 0)
+            if (buf != 0 && glyph_length > 0)
                 memcpy(buf, glyph->value.const_bytes, min(glyph_length, buf_length)/* safety */);
         } else {
             ulong offset0, offset1;
-            sfnt_get_glyph_offset(pdr, char_code, &offset0, &offset1);
-            glyph_length = offset1 - offset0;
-            if (buf != 0) {
+            bool error = sfnt_get_glyph_offset(pdr, char_code, &offset0, &offset1);
+            glyph_length = (error ? -1 : offset1 - offset0);
+            if (buf != 0 && !error) {
                 sfnts_reader r;
                 sfnts_reader_init(&r, pdr);
                 r.seek(&r, offset0);
                 r.rstring(&r, buf, min(glyph_length, buf_length)/* safety */);
+                if (r.error)
+                    glyph_length = -1;
             }
         }
     }
@@ -719,6 +729,17 @@ private int zFAPIrebuildfont(i_ctx_t *i_ctx_p)
     return code;
 }
 
+private ulong array_find(ref *Encoding, ref *char_name) {
+    ulong n = r_size(Encoding), i;
+    ref v;
+    for (i = 0; i < n; i++)
+        if (array_get(Encoding, i, &v) < 0)
+            break;
+        else if(r_type(char_name) == r_type(&v) && char_name->value.const_pname == v.value.const_pname)
+            return i;
+    return 0;
+}
+
 private int FAPI_do_char(i_ctx_t *i_ctx_p, gx_device *dev, char *font_file_path)
 {   /* Stack : <font> <code|name> --> - */
     os_ptr op = osp;
@@ -811,8 +832,14 @@ private int FAPI_do_char(i_ctx_t *i_ctx_p, gx_device *dev, char *font_file_path)
         */
         if (r_has_type(op, t_integer))
             cr.char_code = client_char_code;
-        else
-            assert(0); /* Need to reverse Encoding here, because it is incrementatl. */
+        else {
+            /* Reverse Encoding here, because it is incrementatl. */
+            ref *Encoding;
+            if (dict_find_string(osp - 1, "Encoding", &Encoding) >= 0)
+                cr.char_code = (uint)array_find(Encoding, op);
+            else
+                return_error(e_invalidfont);
+        }
     } else { /* a non-embedded font, i.e. a disk font */
         bool can_retrieve_char_by_name = false;
         CheckRET(renderer_retcode(i_ctx_p, I, (I->can_retrieve_char_by_name)(I, &ff, &can_retrieve_char_by_name)));

@@ -87,7 +87,7 @@ struct FAPI_font_s { /* fixme : bad name */
     float          (*get_float)(FAPI_font *ff, fapi_font_feature var_id, int index);
     unsigned short (*get_subr) (FAPI_font *ff, int index,     byte *buf, ushort buf_length);
     unsigned short (*get_glyph)(FAPI_font *ff, int char_code, byte *buf, ushort buf_length);
-    void           (*serialize_tt_font)(FAPI_font *ff, void *buf, int buf_size);
+    unsigned short (*serialize_tt_font)(FAPI_font *ff, void *buf, int buf_size);
 };
 
 typedef struct FAPI_path_s FAPI_path;
