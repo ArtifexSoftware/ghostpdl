@@ -763,7 +763,7 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 		else
 		    value = "true";
                 /* search for an int (no decimal), if fail try a float */
-                if ( ( !index(value, '.' ) ) &&
+                if ( ( !strchr(value, '.' ) ) &&
                        ( sscanf(value, "%d", &vi) == 1 ) ) {
                     if ( !strncmp(arg, "FirstPage", 9) )
                         pmi->first_page = max(vi, 1);
