@@ -1196,5 +1196,5 @@ HPGL2C_OPS  = $(PCLOBJ)pgcolor.$(OBJ)
 $(PCLOBJ)hpgl2c.dev: $(PCL_MAK) $(ECHOGS_XE) $(HPGL2C_OPS) $(PCLOBJ)hpgl2.dev
 	$(SETMOD) $(PCLOBJ)hpgl2c $(HPGL2C_OPS)
 	$(ADDMOD) $(PCLOBJ)hpgl2c -include $(PCLOBJ)hpgl2
-	$(ADDMOD) $(PCLOBJ)hpgl2cc -init pgcolor
+	$(ADDMOD) $(PCLOBJ)hpgl2c -init pgcolor
 
