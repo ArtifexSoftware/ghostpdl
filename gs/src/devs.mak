@@ -681,6 +681,7 @@ $(GLOBJ)gdevps.$(OBJ) : $(GLSRC)gdevps.c $(GDEV)\
 
 # We reserve slots here for gdevpdfa...z, just in case we need them.
 pdfwrite1_=$(GLOBJ)gdevpdf.$(OBJ) $(GLOBJ)gdevpdfb.$(OBJ)
+pdfwrite21_=$(GLOBJ)gdevpdf2.$(OBJ) $(GLOBJ)gdevpdfb.$(OBJ)
 pdfwrite2_=$(GLOBJ)gdevpdfc.$(OBJ) $(GLOBJ)gdevpdfd.$(OBJ) $(GLOBJ)gdevpdfe.$(OBJ)
 pdfwrite3_=$(GLOBJ)gdevpdff.$(OBJ) $(GLOBJ)gdevpdfg.$(OBJ)
 pdfwrite4_=$(GLOBJ)gdevpdfi.$(OBJ) $(GLOBJ)gdevpdfj.$(OBJ)
@@ -694,6 +695,12 @@ pdfwrite11_=$(GLOBJ)scantab.$(OBJ) $(GLOBJ)sfilter2.$(OBJ)
 pdfwrite_=$(pdfwrite1_) $(pdfwrite2_) $(pdfwrite3_) $(pdfwrite4_)\
  $(pdfwrite5_) $(pdfwrite6_) $(pdfwrite7_) $(pdfwrite8_) $(pdfwrite9_)\
  $(pdfwrite10_) $(pdfwrite11_)
+
+pdfwritetwo_=$(pdfwrite21_) $(pdfwrite2_) $(pdfwrite3_) $(pdfwrite4_)\
+ $(pdfwrite5_) $(pdfwrite6_) $(pdfwrite7_) $(pdfwrite8_) $(pdfwrite9_)\
+ $(pdfwrite10_) $(pdfwrite11_)
+
+
 $(DD)pdfwrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pdfwrite_)\
  $(GLD)cmyklib.dev $(GLD)cfe.dev $(GLD)lzwe.dev\
  $(GLD)rle.dev $(GLD)sdcte.dev $(GLD)sdeparam.dev $(GLD)smd5.dev\
@@ -717,6 +724,29 @@ $(DD)pdfwrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pdfwrite_)\
 	$(ADDMOD) $(DD)pdfwrite -include $(GLD)smd5 $(GLD)szlibe
 	$(ADDMOD) $(DD)pdfwrite -include $(GLD)psdf $(GLD)psf $(PSD)macglyph
 
+$(DD)pdfwrite2.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pdfwritetwo_)\
+ $(GLD)cmyklib.dev $(GLD)cfe.dev $(GLD)lzwe.dev\
+ $(GLD)rle.dev $(GLD)sdcte.dev $(GLD)sdeparam.dev $(GLD)smd5.dev\
+ $(GLD)szlibe.dev $(GLD)psdf.dev $(GLD)psf.dev 
+	$(SETDEV2) $(DD)pdfwrite2 $(pdfwrite21_)
+	$(ADDMOD) $(DD)pdfwrite2 $(pdfwrite2_)
+	$(ADDMOD) $(DD)pdfwrite2 $(pdfwrite3_)
+	$(ADDMOD) $(DD)pdfwrite2 $(pdfwrite4_)
+	$(ADDMOD) $(DD)pdfwrite2 $(pdfwrite5_)
+	$(ADDMOD) $(DD)pdfwrite2 $(pdfwrite6_)
+	$(ADDMOD) $(DD)pdfwrite2 $(pdfwrite7_)
+	$(ADDMOD) $(DD)pdfwrite2 $(pdfwrite8_)
+	$(ADDMOD) $(DD)pdfwrite2 $(pdfwrite9_)
+	$(ADDMOD) $(DD)pdfwrite2 $(pdfwrite10_)
+	$(ADDMOD) $(DD)pdfwrite2 $(pdfwrite11_)
+	$(ADDMOD) $(DD)pdfwrite2 -ps gs_pdfwr
+	$(ADDMOD) $(DD)pdfwrite2 -ps gs_css_e gs_lgo_e gs_lgx_e gs_mex_e
+	$(ADDMOD) $(DD)pdfwrite2 -ps gs_wan_e
+	$(ADDMOD) $(DD)pdfwrite2 -include $(GLD)cmyklib $(GLD)cfe $(GLD)lzwe
+	$(ADDMOD) $(DD)pdfwrite2 -include $(GLD)rle $(GLD)sdcte $(GLD)sdeparam
+	$(ADDMOD) $(DD)pdfwrite2 -include $(GLD)smd5 $(GLD)szlibe
+	$(ADDMOD) $(DD)pdfwrite2 -include $(GLD)psdf $(GLD)psf
+
 gdevpdff_h=$(GLSRC)gdevpdff.h
 gdevpdfg_h=$(GLSRC)gdevpdfg.h $(gscspace_h)
 gdevpdfo_h=$(GLSRC)gdevpdfo.h $(gsparam_h)
@@ -728,6 +758,11 @@ $(GLOBJ)gdevpdf.$(OBJ) : $(GLSRC)gdevpdf.c $(GDEVH)\
  $(memory__h) $(string__h)\
  $(gscdefs_h) $(gdevpdff_h) $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h)
 	$(GLCC) $(GLO_)gdevpdf.$(OBJ) $(C_) $(GLSRC)gdevpdf.c
+
+$(GLOBJ)gdevpdf2.$(OBJ) : $(GLSRC)gdevpdf2.c $(GDEVH)\
+ $(memory__h) $(string__h)\
+ $(gscdefs_h) $(gdevpdff_h) $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h)
+	$(GLCC) $(GLO_)gdevpdf2.$(OBJ) $(C_) $(GLSRC)gdevpdf2.c
 
 $(GLOBJ)gdevpdfb.$(OBJ) : $(GLSRC)gdevpdfb.c\
  $(string__h) $(gx_h)\
