@@ -338,19 +338,21 @@ end
 	   }
 	  if .LocalInstances exch exec
 	} bind
-/FindResource
-	{ dup ResourceStatus
-	   { pop 1 gt			% not in VM
-	      { .DoLoadResource
-	      }
-	     if
-	     .GetInstance pop		% can't fail
-	     0 get
-	   }
-	   { /findresource load /undefinedresource signalerror
-	   }
-	  ifelse
-	} bind
+% Because of some badly designed code in Adobe's CID font downloader, which
+% makes findresource and resourcestatus deliberately inconsistent with each
+% other, the default FindResource must not call ResourceStatus if there is
+% an instance of the desired name already defined in VM.
+/FindResource {
+	dup .GetInstance {
+	  exch pop 0 get
+	} {
+	  dup ResourceStatus {
+	    pop 1 gt { .DoLoadResource } if .GetInstance pop 0 get
+	  } {
+	   /findresource load /undefinedresource signalerror
+	  } ifelse
+	} ifelse
+} bind
 % Because of some badly designed code in Adobe's CID font downloader, the
 % definition of ResourceStatus for Generic and Font must be the same (!).
 % We patch around this by using an intermediate .ResourceFileStatus procedure.
