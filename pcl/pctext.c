@@ -96,8 +96,7 @@ map_symbol(
      * implicitly indexes the font.
      */
     if (psm == 0) {
-	if ( (pfont->scaling_technology == plfst_TrueType) &&
-	     (pfont->storage == pcds_internal)               )
+	if ( pfont->storage == pcds_internal )
 	    return chr + 0xf000;
 	return chr;
     }
