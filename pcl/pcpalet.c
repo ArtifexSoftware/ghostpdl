@@ -13,6 +13,7 @@
 
 /* GC routines */
 private_st_palette_t();
+private_st_pstack_entry_t();
 
 /*
  * Free a PCL palette.
