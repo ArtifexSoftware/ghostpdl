@@ -118,7 +118,8 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
      * whether all tiles fit in the cache.  We may bypass the latter check
      * for masked images with a pure color.
      */
-    bool tiles_fit = (pis ? gx_check_tile_cache(pis) : false);
+    bool tiles_fit =
+	(pis && penum->device_color ? gx_check_tile_cache(pis) : false);
     uint mask_base = penum->mask_color.values[0];
     uint mask_limit =
 	(penum->use_mask_color ?
@@ -442,11 +443,12 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
 	int bstart;
 	int phase_x;
 	int tile_offset =
-	((*dev_proc(dev, get_band)) (dev, yt, &bstart) == 0 ?
-	 gx_check_tile_size(pis,
-			    fixed2int_ceiling(any_abs(dxx) + (xa << 1)),
-			    yt, iht, gs_color_select_source, &phase_x) :
-	 -1);
+	    (penum->device_color &&
+	     (*dev_proc(dev, get_band)) (dev, yt, &bstart) == 0 ?
+	     gx_check_tile_size(pis,
+				fixed2int_ceiling(any_abs(dxx) + (xa << 1)),
+				yt, iht, gs_color_select_source, &phase_x) :
+	     -1);
 	int xmin = fixed2int_pixround(penum->clip_outer.p.x);
 	int xmax = fixed2int_pixround(penum->clip_outer.q.x);
 

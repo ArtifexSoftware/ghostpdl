@@ -87,7 +87,7 @@ gx_begin_image1(gx_device * dev,
     penum->use_mask_color = false;
     penum->masked = pim->ImageMask;
     penum->adjust =
-	(pim->ImageMask && pim->adjust ? float2fixed(0.5) : fixed_0);
+	(pim->ImageMask && pim->adjust ? float2fixed(0.25) : fixed_0);
     code = gx_image_enum_begin(dev, pis, pmat, pic, pdcolor, pcpath, mem,
 			       penum);
     if (code >= 0)
