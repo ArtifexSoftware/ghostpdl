@@ -38,6 +38,7 @@
 #include "sfilter.h"		/* for iscan.h */
 #include "ostack.h"		/* must precede iscan.h */
 #include "iscan.h"
+#include "iconf.h"
 #include "imain.h"
 #include "imainarg.h"
 #include "iminst.h"
@@ -81,11 +82,6 @@ fpputs(const gs_main_instance *minst, const char *str)
     fprintf(minst->fstdout, "%s\n", str);
 }
 #define puts(str) fpputs(minst, str)
-
-/* Other imported data */
-extern const char *const gs_doc_directory;
-extern const char *const gs_lib_default_path;
-extern const ref gs_emulator_name_array[];
 
 /* Forward references */
 #define runInit 1

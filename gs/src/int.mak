@@ -47,6 +47,7 @@ INT_MAK=$(PSSRC)int.mak
 # depend on anything outside itself.
 
 errors_h=$(PSSRC)errors.h
+iconf_h=$(PSSRC)iconf.h
 idebug_h=$(PSSRC)idebug.h
 # Having iddstack.h at this level is unfortunate, but unavoidable.
 iddstack_h=$(PSSRC)iddstack.h
@@ -1698,16 +1699,16 @@ $(PSOBJ)imainarg.$(OBJ) : $(PSSRC)imainarg.c $(GH)\
  $(gsargs_h) $(gscdefs_h) $(gsdevice_h) $(gsmalloc_h) $(gsmdebug_h)\
  $(gxdevice_h) $(gxdevmem_h)\
  $(errors_h) $(estack_h) $(files_h)\
- $(ialloc_h) $(imain_h) $(imainarg_h) $(iminst_h)\
+ $(ialloc_h) $(iconf_h) $(imain_h) $(imainarg_h) $(iminst_h)\
  $(iname_h) $(interp_h) $(iscan_h) $(iutil_h) $(ivmspace_h)\
  $(ostack_h) $(sfilter_h) $(store_h) $(stream_h) $(strimpl_h)
 	$(PSCC) $(PSO_)imainarg.$(OBJ) $(C_) $(PSSRC)imainarg.c
 
 $(PSOBJ)imain.$(OBJ) : $(PSSRC)imain.c $(GH) $(memory__h) $(string__h)\
- $(gp_h) $(gslib_h) $(gsmatrix_h) $(gsutil_h) $(gxdevice_h)\
+ $(gp_h) $(gscdefs_h) $(gslib_h) $(gsmatrix_h) $(gsutil_h) $(gxdevice_h)\
  $(dstack_h) $(errors_h) $(estack_h) $(files_h)\
- $(ialloc_h) $(idebug_h) $(idict_h) $(iinit_h) $(iname_h) $(interp_h)\
- $(isave_h) $(iscan_h) $(ivmspace_h)\
+ $(ialloc_h) $(iconf_h) $(idebug_h) $(idict_h) $(iinit_h) $(iname_h)\
+ $(interp_h) $(isave_h) $(iscan_h) $(ivmspace_h)\
  $(main_h) $(oper_h) $(ostack_h)\
  $(sfilter_h) $(store_h) $(stream_h) $(strimpl_h)
 	$(PSCC) $(PSO_)imain.$(OBJ) $(C_) $(PSSRC)imain.c
