@@ -53,6 +53,7 @@ bool pcl_page_marked(P1(
 ));;
 
 void pcl_mark_page_for_path(pcl_state_t *pcs);
+void pcl_mark_page_for_current_pos(pcl_state_t *pcs);
 
 #define pcl_end_page_always(pcs)    pcl_end_page((pcs), pcl_print_always)
 #define pcl_end_page_if_marked(pcs) pcl_end_page((pcs), pcl_print_if_marked)
