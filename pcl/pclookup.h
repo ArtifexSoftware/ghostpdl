@@ -202,6 +202,6 @@ typedef struct pcl_lookup_tbl_s {
 /*
  * External access to the color lookup table/gamma correction code.
  */
-const pcl_init_t    pcl_lookup_tbl_init;
+extern const pcl_init_t   pcl_lookup_tbl_init;
 
 #endif      /* pclookup_INCLUDED */
