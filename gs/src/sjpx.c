@@ -55,11 +55,12 @@ s_jpxd_init(stream_state * ss)
     state->stream = NULL;
     state->image = NULL;
     state->offset = 0;
+    state->jpx_memory = ss->memory ? ss->memory->non_gc_memory : gs_lib_ctx_get_non_gc_memory_t();
             
     status = jas_init();
 
     if (!status) {
-	state->buffer = gs_malloc(4096, 1, "JPXDecode temp buffer");
+	state->buffer = gs_malloc(state->jpx_memory, 4096, 1, "JPXDecode temp buffer");
         status = (state->buffer == NULL);
     }
     if (!status)
@@ -261,12 +262,12 @@ s_jpxd_buffer_input(stream_jpxd_state *const state, stream_cursor_read *pr,
         unsigned char *newbuf = NULL;
         while (newsize - state->buffill < bytes)
             newsize <<= 1;
-        newbuf = (unsigned char *)gs_malloc(newsize, 1, 
-						"JPXDecode temp buffer");
+        newbuf = (unsigned char *)gs_malloc(state->jpx_memory, newsize, 1, 
+					    "JPXDecode temp buffer");
         /* TODO: check for allocation failure */
         memcpy(newbuf, state->buffer, state->buffill);
-        gs_free(state->buffer, state->bufsize, 1,
-					"JPXDecode temp buffer");
+        gs_free(state->jpx_memory, state->buffer, state->bufsize, 1,
+		"JPXDecode temp buffer");
         state->buffer = newbuf;
         state->bufsize = newsize;
     }
@@ -407,7 +408,7 @@ s_jpxd_release(stream_state *ss)
     if (state) {
         if (state->image) jas_image_destroy(state->image);
     	if (state->stream) jas_stream_close(state->stream);
-	if (state->buffer) gs_free(state->buffer, state->bufsize, 1,
+	if (state->buffer) gs_free(state->jpx_memory, state->buffer, state->bufsize, 1,
 				"JPXDecode temp buffer");
     }
 }

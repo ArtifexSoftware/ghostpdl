@@ -43,6 +43,7 @@ z_jpx_decode(i_ctx_t * i_ctx_p)
     ref *sop = NULL;
     stream_jpxd_state state;
 
+    state.jpx_memory = imemory->non_gc_memory;
     if (r_has_type(op, t_dictionary)) {
         check_dict_read(*op);
         if ( dict_find_string(op, "Colorspace", &sop) > 0) {

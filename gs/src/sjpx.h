@@ -38,7 +38,7 @@ typedef struct stream_jpxd_state_s
     jas_stream_t *stream;
     long offset; /* offset into the image bitmap of the next
                     byte to be returned */
-
+    gs_memory_t *jpx_memory;
     unsigned char *buffer; /* temporary buffer for compressed data */
     long bufsize; /* total size of the buffer */
     long buffill; /* number of bytes written into the buffer */
