@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -85,7 +85,7 @@ zexecfunction(i_ctx_t *i_ctx_p)
 	 * its type.
 	 */
     if (!r_is_struct(op) ||
-	r_has_masked_attrs(op, a_executable | a_execute, a_all)
+	!r_has_masked_attrs(op, a_executable | a_execute, a_executable | a_all)
 	)
 	return_error(e_typecheck);
     {
