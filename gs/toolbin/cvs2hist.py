@@ -23,6 +23,11 @@
 # History.htm file format.  Based on cvs2log.py by Henry Stiles
 # <henrys@artifex.com>.
 
+# Typical usage is: cvs2hist.py -j gs7_03 -v 7.04 > doc/Changes.htm.
+# The -j argument specifies a reference revision tag. This selects
+# log messages on the current branch (as determined by cvs status)
+# that are more recent than the reference tag.
+
 # ---------------- Generic utilities ---------------- #
 
 # Convert a date/time string in RCS format (yyyy/mm/dd hh:mm:ss) to
@@ -219,11 +224,45 @@ def ChangeLogEntry(cvs_command, author, date, rev_files, description_lines, pref
                 entry = entry + patch_line
     return entry
 
+# Find the current revision for each file in the current local copy.
+def GetCurrentRevisions(status_command, cvs_repository):
+    import os, re, string
+
+    cvs_path = string.split(cvs_repository, ':')[-1]
+    cvs_dir_n = len(string.split(cvs_path, '/')) + 1
+    status_file = os.popen(status_command, 'r')
+    rev_re = re.compile(r'\s*Repository revision:\s+(\S+)\s+(\S+),v')
+    current_revisions = {}
+    while 1:
+        line = status_file.readline()
+        if line == '': break
+        m = rev_re.match(line)
+        if m:
+            rev = m.group(1)
+            fn = string.join(string.split(m.group(2), '/')[cvs_dir_n:], '/')
+            current_revisions[fn] = rev
+    status_file.close()
+    return current_revisions
+
+# Return value: true if rev2 is a later revision derived from rev1.
+def RevisionLater(rev1, rev2):
+    import string
+    rev1_l = string.split(rev1, '.')
+    rev2_l = string.split(rev2, '.')
+
+    if len(rev2_l) < len(rev1_l):
+        return 0
+    for i in range(len(rev1_l)):
+        if i == len(rev2_l): return 1
+        if int(rev2_l[i]) < int(rev1_l[i]): return 0
+        if int(rev2_l[i]) > int(rev1_l[i]): return i == len(rev1_l) - 1
+    return 1
+
 # Build the combined CVS log.  We return an array of tuples of
-# (date, author, description, rcs_file, revision, tags).
+# (date, author, description, rcs_file, revision, tags, ref_rev).
 # The date is just a string in RCS format (yyyy/mm/dd hh:mm:ss).
 # The description is a sequence of text lines, each terminated with \n.
-def BuildLog(log_date_command):
+def BuildLog(log_date_command, ref_tag):
     import os, re, string
 
     reading_description = 0
@@ -231,21 +270,25 @@ def BuildLog(log_date_command):
     description = []
     log = []
     tag_pattern = re.compile("^	([^:]+): ([0-9.]+)\n$")
+    branches_re = re.compile("^branches:")
 
-    for line in os.popen(log_date_command, 'r').readlines():
+    log_file = os.popen(log_date_command, 'r')
+    while 1:
+        line = log_file.readline()
+        if line == '': break
 	if line[:5] == '=====' or line[:5] == '-----':
 	    if description != []:
                 try:
                     my_tags = tags[revision]
                 except KeyError:
                     my_tags = []
-		log.append((date, author, description, rcs_file, revision, my_tags))
+		log.append((date, author, description, rcs_file, revision, my_tags, ref_rev))
 	    reading_description = 0
 	    description = []
             continue
 	if reading_description:
-            # Omit initial empty description lines.
-            if line == '\n' and description == []:
+            # Omit initial empty description lines and branches info.
+            if description == [] and (line == '\n' or branches_re.match(line)):
                 continue
 	    description.append(line)
             continue
@@ -256,6 +299,8 @@ def BuildLog(log_date_command):
                 continue
             tag = match.group(1)
             revs = string.splitfields(match.group(2), ", ")
+            if tag == ref_tag:
+                ref_rev = revs[0]
             for rev in revs:
                 try:
                     tags[rev].append(tag)
@@ -265,6 +310,7 @@ def BuildLog(log_date_command):
 	if line[:len("Working file: ")] == "Working file: ":
 	    rcs_file = line[len("Working file: "):-1]
             tags = {}
+            ref_rev = None
 	elif line[:len("revision ")] == "revision ":
 	    revision = line[len("revision "):-1]
 	elif line[:len("date: ")] == "date: ":
@@ -274,6 +320,7 @@ def BuildLog(log_date_command):
 	    reading_description = 1
         elif line[:len("symbolic names:")] == "symbolic names:":
             reading_tags = 1
+    log_file.close()
 
     return log
 
@@ -299,7 +346,7 @@ GroupOrder = {
 def main():
     import sys, getopt, time, string, re
     try:
-	opts, args = getopt.getopt(sys.argv[1:], "C:d:Hi:l:Mptr:v:",
+	opts, args = getopt.getopt(sys.argv[1:], "C:d:Hi:l:Mptr:v:j:",
 				   ["CVS_command",
 				    "date",
                                     "indent",
@@ -317,6 +364,7 @@ def main():
 	print "Usage: cvs2hist ...options..."
 	print "Options: [-C CVS_command] [-d rcs_date] [-i indent] [-l length]"
 	print "         [-M] [-p] [-t] [-r rlog_options] [-v version]"
+        print "         [-j tag]"
 	sys.exit(2)
 
     # Set up defaults for all of the command line options.
@@ -332,6 +380,7 @@ def main():
     patches = 0
     rlog_options = ""
     text_option = 0;
+    ref_tag = None;
     version = "CVS"
     # override defaults if specified on the command line
     for o, a in opts:
@@ -344,23 +393,15 @@ def main():
 	elif o == '-t' : text_option = 1
 	elif o == '-r' : rlog_options = a
 	elif o == '-v' : version = a
+        elif o == '-j' : ref_tag = a
 	else: print "getopt should have failed already"
 
-    # return only messages on the default branch, unless told otherwise
-    if rlog_options == "":
-	rlog_options = '-b'
+    status_command = cvs_command + ' -d ' + cvs_repository + ' -Q status'
+    cur_revisions = GetCurrentRevisions(status_command, cvs_repository)
     # set up the cvs log command arguments.
     log_date_command = cvs_command + ' -d ' + cvs_repository +' -Q log ' + date_option + ' ' + rlog_options
     # Acquire the log data.
-    log = BuildLog(log_date_command)
-    # By default, if no date option is specified, produce output for
-    # changes since the most recent tagged version.  To avoid a second
-    # pass over the CVS repository, we do the filtering locally.
-    min_date = '0000/00/00 00:00:00'
-    if date_option == "":
-        for date, author, text_lines, file, revision, tags in log:
-            if len(tags) != 0 and date > min_date:
-                min_date = date
+    log = BuildLog(log_date_command, ref_tag)
     # Scan the makefiles to find source file names.
     sources = {}
     sources = ScanMakefileForSources('src/lib.mak', sources, "Library")
@@ -377,8 +418,12 @@ def main():
     # description (to group logically connected files together).
     sorter = []
     group_pattern = re.compile("^(\([^)]+\))[ ]+")
-    for date, author, text_lines, file, revision, tags in log:
-        if date <= min_date:
+    for date, author, text_lines, file, revision, tags, ref_rev in log:
+        if not cur_revisions.has_key(file):
+            continue
+        if not RevisionLater(revision, cur_revisions[file]):
+            continue
+        if ref_rev and (ref_rev == revision or not RevisionLater(ref_rev, revision)):
             continue
         line = ''
         while len(text_lines) > 0:
