@@ -1580,6 +1580,10 @@ private int t1_hinter__skip_stem(t1_hinter * this, int pole_index, bool horiz)
     while (t1_hinter__is_small_angle(this, i, next_pole, tan_x, tan_y, 1000) && /* The threshold is taken from scratch. */
            t1_hinter__is_small_angle(this, i, next_segm, tan_x, tan_y, 1000)) {
         i = t1_hinter__segment_end(this, i);
+	if (i == pole_index) {
+	    /* An invalid glyph with <=2 segments in the contour with no angles. */
+	    break;
+	}
         next_pole = t1_hinter__next_contour_pole(this, i);
         next_segm = t1_hinter__segment_end(this, i);
     }
