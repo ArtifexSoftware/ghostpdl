@@ -27,9 +27,9 @@ debug:
 
 # Configure for profiling
 pg-fp:
-	make -f $(MAKEFILE) GENOPT='' CFLAGS='-pg -O2 $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg'
+	make -f $(MAKEFILE) GENOPT='' CFLAGS='-g -pg -O2 $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg'
 pg-nofp:
-	make -f $(MAKEFILE) GENOPT='' GCFLAGS='-msoft-float $(GCFLAGS)' CFLAGS='-pg -O2 -msoft-float $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg' FPU_TYPE=-1 XOBJS='$(GLOBJDIR)/gsfemu.o'
+	make -f $(MAKEFILE) GENOPT='' GCFLAGS='-msoft-float $(GCFLAGS)' CFLAGS='-g -pg -O2 -msoft-float $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg' FPU_TYPE=-1 XOBJS='$(GLOBJDIR)/gsfemu.o'
 
 # Configure for debugging and no FPU (crude timing configuration)
 nofp:
