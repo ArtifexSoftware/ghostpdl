@@ -99,7 +99,7 @@ assign_char_code(gx_device_pdf * pdev, int width)
 	pbfs->use_open_font = true;
     }
     c = ++(font->u.simple.LastChar);
-    font->Widths[c] = width;
+    font->Widths[c] = pdev->char_width.x;
     if (c > pbfs->max_embedded_code)
 	pbfs->max_embedded_code = c;
     return c;

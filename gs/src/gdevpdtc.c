@@ -206,7 +206,8 @@ scan_cmap_text(gs_text_enum_t *pte, gs_font_type0 *font /*fmap_CMap*/,
 	    gx_device_pdf *const pdev = (gx_device_pdf *)pte->dev;
 	    pdf_font_resource_t *pdsubf1;
 	    byte *glyph_usage;
-	    int *real_widths, char_cache_size;
+	    double *real_widths;
+	    int char_cache_size;
 
 	    pdf_attached_font_resource(pdev, (gs_font *)subfont, &pdsubf1, 
 				       &glyph_usage, &real_widths, &char_cache_size);

@@ -280,7 +280,8 @@ pdf_char_widths(gx_device_pdf *const pdev,
     pdf_glyph_widths_t widths;
     int code;
     byte *glyph_usage;
-    int *real_widths, char_cache_size;
+    double *real_widths;
+    int char_cache_size;
     pdf_font_resource_t *pdfont1;
 
     pdf_attached_font_resource(pdev, (gs_font *)font, &pdfont1, 

@@ -173,6 +173,7 @@ private int
 add_text_delta_move(gx_device_pdf *pdev, const gs_matrix *pmat)
 {
     pdf_text_state_t *const pts = pdev->text->text_state;
+    const double precis = 0.001;
 
     if (matrix_is_compatible(pmat, &pts->in.matrix)) {
 	pdf_font_resource_t *const pdfont = pts->in.pdfont;
@@ -186,9 +187,9 @@ add_text_delta_move(gx_device_pdf *pdev, const gs_matrix *pmat)
 	    dw = dist.y, dnotw = dist.x;
 	else
 	    dw = dist.x, dnotw = dist.y;
-	if (dnotw == 0 && dw == pts->in.character_spacing)
+	if (dnotw == 0 && any_abs(dw - pts->in.character_spacing) < precis)
 	    goto finish;
-	if (dnotw == 0 && dw == (int)dw && pdfont != 0 &&
+	if (dnotw == 0 && any_abs(dw - (int)dw) < precis && pdfont != 0 &&
 	    pdfont->FontType == ft_user_defined
 	    ) {
 	    /* Use a pseudo-character. */

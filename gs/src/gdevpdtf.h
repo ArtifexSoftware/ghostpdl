@@ -158,7 +158,7 @@ struct pdf_font_resource_s {
     pdf_base_font_t *base_font;	/* == FontDescriptor->base_font */
     gs_font_base *copied_font;	/* == base_font->copied */
     uint count;			/* # of chars/CIDs */
-    int *Widths;		/* [count] (not used for Type 0) */
+    double *Widths;		/* [count] (not used for Type 0) */
     byte *used;			/* [ceil(count/8)] bitmap of chars/CIDs used */
 				/* (not used for Type 0 or Type 3) */
     pdf_resource_t *ToUnicode;	/* CMap (not used for CIDFonts) */

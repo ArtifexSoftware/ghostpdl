@@ -313,7 +313,7 @@ struct pdf_font_cache_elem_s {
     int num_chars;		/* safety purpose only */
     struct pdf_font_resource_s *pdfont;
     byte *glyph_usage;
-    int *real_widths;		/* [count] (not used for Type 0) */
+    double *real_widths;	/* [count] (not used for Type 0) */
     gx_device_pdf *pdev;	/* For pdf_remove_font_cache_elem */
 };
 
@@ -451,6 +451,11 @@ struct gx_device_pdf_s {
     cos_array_t *Namespace_stack;
     pdf_graphics_save_t *open_graphics;
     pdf_font_cache_elem_t *font_cache;
+    /* 
+     * char_width is used by pdf_text_set_cache to communicate 
+     * with assign_char_code around gdev_pdf_fill_mask. 
+     */
+    gs_point char_width; 
 };
 
 #define is_in_page(pdev)\

@@ -114,7 +114,7 @@ typedef struct pdf_text_process_state_s {
  * valid.
  */
 typedef struct pdf_glyph_width_s {
-    int w;
+    double w;
     gs_point xy;
 } pdf_glyph_width_t;
 typedef struct pdf_glyph_widths_s {
@@ -154,7 +154,7 @@ pdf_obtain_font_resource(const gs_text_enum_t *penum,
 int
 pdf_attached_font_resource(gx_device_pdf *pdev, gs_font *font,  
 			   pdf_font_resource_t **pdfont, byte **glyph_usage,
-			   int **real_widths, int *num_chars);
+			   double **real_widths, int *num_chars);
 
 /*
  * Attach font resource to a font.

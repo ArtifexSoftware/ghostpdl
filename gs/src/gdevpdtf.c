@@ -293,14 +293,14 @@ font_resource_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 {
     gs_memory_t *mem = pdev->pdf_memory;
     pdf_font_resource_t *pfres;
-    int *widths = 0;
+    double *widths = 0;
     byte *used = 0;
     int code;
 
     if (chars_count != 0) {
 	uint size = (chars_count + 7) / 8;
 
-	widths = (void *)gs_alloc_byte_array(mem, chars_count, sizeof(int),
+	widths = (void *)gs_alloc_byte_array(mem, chars_count, sizeof(*widths),
 					     "font_resource_alloc(Widths)");
 	used = gs_alloc_bytes(mem, size, "font_resource_alloc(used)");
 	if (widths == 0 || used == 0) {
@@ -338,7 +338,7 @@ font_resource_simple_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 
     if (code < 0)
 	return code;
-    pfres->u.simple.FirstChar = 256;
+    pfres->u.simple.FirstChar = 0;
     pfres->u.simple.LastChar = -1;
     pfres->u.simple.BaseEncoding = -1;
     *ppfres = pfres;

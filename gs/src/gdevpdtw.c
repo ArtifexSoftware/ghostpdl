@@ -34,7 +34,7 @@
 
 /* Write the Widths for a font. */
 private int
-pdf_write_Widths(gx_device_pdf *pdev, int first, int last, const int *widths)
+pdf_write_Widths(gx_device_pdf *pdev, int first, int last, const double *widths)
 {
     stream *s = pdev->strm;
     int i;
@@ -43,7 +43,7 @@ pdf_write_Widths(gx_device_pdf *pdev, int first, int last, const int *widths)
 	first = last = 0;
     pprintd2(s, "/FirstChar %d/LastChar %d/Widths[", first, last);
     for (i = first; i <= last; ++i)
-	pprintd1(s, (i & 15 ? " %d" : "\n%d"), widths[i]);
+	pprintd1(s, (i & 15 ? " %d" : "\n%d"), (int)(widths[i] + 0.5));
     stream_puts(s, "]\n");
     return 0;
 }
@@ -128,7 +128,7 @@ pdf_write_CIDFont_widths(gx_device_pdf *pdev,
 
 	memset(counts, 0, sizeof(counts));
 	while (!psf_enumerate_glyphs_next(&genum, &glyph)) {
-	    int width = pdfont->Widths[glyph - GS_MIN_CID_GLYPH];
+	    int width = (int)(pdfont->Widths[glyph - GS_MIN_CID_GLYPH] + 0.5);
 
 	    counts[min(width, countof(counts) - 1)]++;
 	}
@@ -150,7 +150,7 @@ pdf_write_CIDFont_widths(gx_device_pdf *pdev,
 
 	while (!psf_enumerate_glyphs_next(&genum, &glyph)) {
 	    int cid = glyph - GS_MIN_CID_GLYPH;
-	    int width = pdfont->Widths[cid];
+	    int width = (int)(pdfont->Widths[cid] + 0.5);
 
 	    if (cid == prev + 1)
 		pprintd1(s, "\n%d", width);
@@ -204,7 +204,8 @@ pdf_finish_write_contents_type3(gx_device_pdf *pdev,
     stream *s = pdev->strm;
 
     pdf_write_font_bbox(pdev, &pdfont->u.simple.s.type3.FontBBox);
-    pdf_write_Widths(pdev, 0, pdfont->u.simple.LastChar, pdfont->Widths);
+    pdf_write_Widths(pdev, pdfont->u.simple.FirstChar, 
+		    pdfont->u.simple.LastChar, pdfont->Widths);
     stream_puts(s, "/Subtype/Type3>>\n");
     pdf_end_separate(pdev);
     return 0;

@@ -81,7 +81,27 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 		   gs_text_cache_control_t control)
 {
     pdf_text_enum_t *const penum = (pdf_text_enum_t *)pte;
+    gx_device_pdf *pdev = (gx_device_pdf *)pte->dev;
 
+    switch (control) {
+    case TEXT_SET_CHAR_WIDTH:
+    case TEXT_SET_CACHE_DEVICE:
+	pdev->char_width.x = pw[0];
+	pdev->char_width.y = pw[1];
+	break;
+    case TEXT_SET_CACHE_DEVICE2:
+	/*
+	 * pdev->char_width is used with synthesized Type 3 fonts only.
+	 * Since they are simple fonts, we only need the horisontal
+	 * width for Widths array. Therefore we don't check 
+	 * gs_rootfont(pgs)->WMode and don't use pw[6:7].
+	 */
+	pdev->char_width.x = pw[0];
+	pdev->char_width.y = pw[1];
+	break;
+    default:
+	return_error(gs_error_rangecheck);
+    }
     if (penum->pte_default)
 	return gs_text_set_cache(penum->pte_default, pw, control);
     return_error(gs_error_rangecheck); /* can't happen */
@@ -302,7 +322,7 @@ alloc_font_cache_elem_arrays(gx_device_pdf *pdev, pdf_font_cache_elem_t *e,
     len = (num_chars + 7) / 8;
     e->glyph_usage = gs_alloc_bytes(pdev->memory->stable_memory, 
 			len, "alloc_font_cache_elem_arrays");
-    e->real_widths = (int *)gs_alloc_bytes(pdev->memory->stable_memory, 
+    e->real_widths = (double *)gs_alloc_bytes(pdev->memory->stable_memory, 
 			num_widths * sizeof(*e->real_widths), 
 			"alloc_font_cache_elem_arrays");
     if (e->glyph_usage == NULL || e->real_widths == NULL) {
@@ -325,7 +345,7 @@ alloc_font_cache_elem_arrays(gx_device_pdf *pdev, pdf_font_cache_elem_t *e,
 int
 pdf_attached_font_resource(gx_device_pdf *pdev, gs_font *font, 
 			    pdf_font_resource_t **pdfont, byte **glyph_usage, 
-			    int **real_widths, int *num_chars)
+			    double **real_widths, int *num_chars)
 {
     pdf_font_cache_elem_t **e = pdf_locate_font_cache_elem(pdev, font);
 
@@ -854,7 +874,8 @@ pdf_obtain_font_resource(const gs_text_enum_t *penum,
     gs_glyph glyphs0[200], *glyphs = glyphs0;
     gs_char *chars;
     byte *glyph_usage = 0;
-    int *real_widths = 0, char_cache_size = 0;
+    double *real_widths;
+    int char_cache_size;
     gs_char char_code, cid;
     gs_glyph glyph;
     gs_text_enum_t scan;
@@ -1297,12 +1318,12 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, gs_glyph glyph,
 	    pwidths->Width.xy.y = pwidths->real_width.xy.y =
 		    finfo.MissingWidth * pscale->y;
 	    pwidths->Width.w = pwidths->real_width.w =
-		    (int)pwidths->Width.xy.y;
+		    pwidths->Width.xy.y;
 	} else {
 	    pwidths->Width.xy.x = pwidths->real_width.xy.x =
 		    finfo.MissingWidth * pscale->x;
 	    pwidths->Width.w = pwidths->real_width.w =
-		    (int)pwidths->Width.xy.x;
+		    pwidths->Width.xy.x;
 	    pwidths->Width.xy.y = pwidths->real_width.xy.y = 0;
 	}
 	/*
@@ -1318,15 +1339,15 @@ store_glyph_width(pdf_glyph_width_t *pwidth, int wmode, double scale,
 {
     double w, v;
 
-    pwidth->xy.x = (int)(pinfo->width[wmode].x * scale);
-    pwidth->xy.y = (int)(pinfo->width[wmode].y * scale);
+    pwidth->xy.x = pinfo->width[wmode].x * scale;
+    pwidth->xy.y = pinfo->width[wmode].y * scale;
     if (wmode)
 	w = pwidth->xy.y, v = pwidth->xy.x;
     else
 	w = pwidth->xy.x, v = pwidth->xy.y;
     if (v != 0)
 	return 1;
-    pwidth->w = (int)w;
+    pwidth->w = w;
     return 0;
 }
 
