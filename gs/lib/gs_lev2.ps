@@ -599,44 +599,10 @@ currentdict end
 
 % Define the setcolorspace procedures:
 %	<colorspace> proc <colorspace'|null>
-/colorspacedict mark
-  /DeviceGray { pop 0 setgray null } bind
-  /DeviceRGB { pop 0 0 0 setrgbcolor null } bind
-  /setcmykcolor where
-   { pop /DeviceCMYK { pop 0 0 0 1 setcmykcolor null } bind
-   } if
-  /.setcieaspace where
-   { pop /CIEBasedA { NOCIE { pop 0 setgray null } { dup 1 get .setcieaspace } ifelse } bind
-   } if
-  /.setcieabcspace where
-   { pop /CIEBasedABC { NOCIE { pop 0 0 0 setrgbcolor null } { dup 1 get .setcieabcspace } ifelse } bind
-   } if
-  /.setciedefspace where
-   { pop /CIEBasedDEF { NOCIE { pop 0 0 0 setrgbcolor null } { dup 1 get .setciedefspace } ifelse } bind
-   } if
-  /.setciedefgspace where
-   { pop /CIEBasedDEFG { NOCIE { pop 0 0 0 1 setcmykcolor null } { dup 1 get .setciedefgspace } ifelse } bind
-   } if
-  /.setseparationspace where
-   { pop /Separation { dup 2 get setcolorspace dup 1 .converttinttransform .setseparationspace } bind
-   } if
-  /.setindexedspace where
-   { pop /Indexed { dup 1 get setcolorspace dup .setindexedspace } bind
-   } if
-  /.nullpatternspace [/Pattern] readonly def
-  /.setpatternspace where
-   { pop /Pattern
-      { dup type /nametype eq { pop //.nullpatternspace } if
-	dup length 1 gt { dup 1 get setcolorspace } if
-        dup .setpatternspace
-      } bind
-   } if
-	% If DeviceN space is included, gs_ll3.ps registers it.
-  /.setdevicepixelspace where
-   { pop /DevicePixel { dup .setdevicepixelspace } bind
-   } if
-  currentdict /.nullpatternspace .undef
-.dicttomark def
+% We have to define the dictionary first, so it can be bound into the
+% implementation procedure, but we can't populate it until the procedure
+% has been defined, so that the procedure can get bound into recursive calls.
+/colorspacedict 20 dict def
 
 /.devcs [
   /DeviceGray /DeviceRGB /DeviceCMYK /DevicePixel
@@ -653,6 +619,45 @@ currentdict /.devcs .undef
   //colorspacedict exch get exec
   dup null eq { pop } { .setcolorspace } ifelse pop
 } odef
+
+colorspacedict
+  dup /DeviceGray { pop 0 setgray null } bind put
+  dup /DeviceRGB { pop 0 0 0 setrgbcolor null } bind put
+  /setcmykcolor where
+   { pop dup /DeviceCMYK { pop 0 0 0 1 setcmykcolor null } bind put
+   } if
+  /.setcieaspace where
+   { pop dup /CIEBasedA { NOCIE { pop 0 setgray null } { dup 1 get .setcieaspace } ifelse } bind put
+   } if
+  /.setcieabcspace where
+   { pop dup /CIEBasedABC { NOCIE { pop 0 0 0 setrgbcolor null } { dup 1 get .setcieabcspace } ifelse } bind put
+   } if
+  /.setciedefspace where
+   { pop dup /CIEBasedDEF { NOCIE { pop 0 0 0 setrgbcolor null } { dup 1 get .setciedefspace } ifelse } bind put
+   } if
+  /.setciedefgspace where
+   { pop dup /CIEBasedDEFG { NOCIE { pop 0 0 0 1 setcmykcolor null } { dup 1 get .setciedefgspace } ifelse } bind put
+   } if
+  /.setseparationspace where
+   { pop dup /Separation { dup 2 get setcolorspace dup 1 .converttinttransform .setseparationspace } bind put
+   } if
+  /.setindexedspace where
+   { pop dup /Indexed { dup 1 get setcolorspace dup .setindexedspace } bind put
+   } if
+  /.nullpatternspace [/Pattern] readonly def
+  /.setpatternspace where
+   { pop dup /Pattern
+      { dup type /nametype eq { pop //.nullpatternspace } if
+	dup length 1 gt { dup 1 get setcolorspace } if
+        dup .setpatternspace
+      } bind put
+   } if
+	% If DeviceN space is included, gs_ll3.ps registers it.
+  /.setdevicepixelspace where
+   { pop dup /DevicePixel { dup .setdevicepixelspace } bind put
+   } if
+  currentdict /.nullpatternspace .undef
+pop
 
 % ------ CIE color rendering ------ %
 
