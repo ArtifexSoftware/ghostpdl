@@ -575,7 +575,7 @@ const char *gp_file_name_directory_separator(void)
 }
 
 const char *gp_file_name_parent(void)
-{   return ".";
+{   return "-";
 }
 
 const char *gp_file_name_current(void)
