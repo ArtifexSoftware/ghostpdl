@@ -102,8 +102,6 @@ private const gs_param_item_t pdf_param_items[] = {
     CD-ROM from dhoff@margnat.com
   Merge font subsets?  (k/ricktest.ps, from rick@dgii.com re file output
     size ps2pdf vs. pstoedit)
-  Convert DeviceRGB or DeviceCMYK images to DeviceGray if all gray?
-    (see k/gomez/mmtp*.ps -- does AD really do this?)
   Minimize tables for embedded TT fonts (requires renumbering glyphs)
   Clip off image data outside bbox of clip path?
 
@@ -113,7 +111,7 @@ private const gs_param_item_t pdf_param_items[] = {
   ---- Other functionality ----
 
   Embed CID fonts
-  Compress TT, CFF, CID, and Type 1 fonts (with lenIV = -1) if CompressPages
+  Compress TT, CFF, CID/TT, and CID/CFF if CompressPages
   Compress forms, Type 3 fonts, and Cos streams
 
   ---- Image parameters ----
@@ -144,9 +142,6 @@ private const gs_param_item_t pdf_param_items[] = {
   ---- Other functionality ----
 
   Document structure pdfmarks
-  ImageType 3 images
-  Shading color
-  Cubic interpolation in FunctionType 0 functions
 
   ---- Parameters ----
 
