@@ -30,7 +30,7 @@
  * the interpreter.
  */
 
-// comment out the entire file
+/* conditional out the entire file */
 #if 0 
 
 
@@ -105,6 +105,6 @@ void gs_debug_dump_stack(int code, ref * perror_object);
 /* ---------------- Termination ---------------- */
 
 
-#endif // disable file
+#endif /* full file conditional */
 
 #endif /* main_INCLUDED */
