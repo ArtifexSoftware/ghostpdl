@@ -373,6 +373,13 @@ PDF is able to express clipping with text.  This is only a performance
 issue, and will be improved incrementally over time.
 
 <p>
+Some applications, such as HIGZ, produce PostScript files that use
+ridiculously large coordinates.  On such files, <b><tt>ps2pdf</tt></b> may
+cause a <b><tt>limitcheck</tt></b> error.  If this occurs, try reducing the
+default internal resolution of 720 dpi by using the <b><tt>-r</tt></b>
+switch, e.g., <b><tt>ps2pdf&nbsp;-r300&nbsp;somefile.ps</tt></b>.
+
+<p>
 <b><tt>ps2pdf</tt></b> ignores the PDF 1.3 (Acrobat 4.x) pdfmarks related to
 document content structure: <b><tt>StRoleMap</tt></b>,
 <b><tt>StClassMap</tt></b>, <b><tt>StPNE</tt></b>,
