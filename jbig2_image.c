@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_image.c,v 1.2 2001/08/13 20:31:59 giles Exp $
+    $Id: jbig2_image.c,v 1.3 2002/05/08 02:36:04 giles Exp $
 */
 
 #include <stdio.h>
@@ -22,7 +22,7 @@
 Jbig2Image* jbig2_image_new(int width, int height)
 {
 	Jbig2Image	*image;
-	int			stride;
+	int		stride;
 	
 	image = malloc(sizeof(*image));
 	if (image == NULL) {

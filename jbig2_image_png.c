@@ -1,14 +1,14 @@
 /*
     jbig2dec
     
-    Copyright (c) 2001 artofcode LLC.
+    Copyright (c) 2002 artofcode LLC.
     
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: png_image.c,v 1.3 2001/08/13 20:31:59 giles Exp $
+    $Id: jbig2_image_png.c,v 1.1 2002/05/08 02:36:04 giles Exp $
 */
 
 #include <stdio.h>
@@ -18,42 +18,51 @@
 #include "jbig2dec.h"
 #include "jbig2_image.h"
 
-/* take and image structure and write it out in png format */
+/* take an image structure and write it out in png format */
 
-int jbig2_image_write_png(Jbig2Image *image, char *filename)
+int jbig2_image_write_png_file(Jbig2Image *image, char *filename)
 {
-	FILE	*out;
-	int		i;
-	png_structp		png;
-	png_infop		info;
-	png_bytep		rowpointer;
-	
-	if ((out = fopen(filename, "wb")) == NULL) {
+    FILE *out;
+    int	error;
+    
+    if ((out = fopen(filename, "wb")) == NULL) {
 		fprintf(stderr, "unable to open '%s' for writing\n", filename);
 		return 1;
-	}
+    }
+    
+    error = jbig2_image_write_png(image, out);
+    
+    fclose(out);
+    return (error);
+}
+
+/* write out an image struct in png format to an open file pointer */
+
+int jbig2_image_write_png(Jbig2Image *image, FILE *out)
+{
+	int		i;
+	png_structp	png;
+	png_infop	info;
+	png_bytep	rowpointer;
 	
 	png = png_create_write_struct(PNG_LIBPNG_VER_STRING,
 		NULL, NULL, NULL);
 	if (png == NULL) {
 		fprintf(stderr, "unable to create png structure\n");
-		fclose(out);
 		return 2;
 	}
 	
 	info = png_create_info_struct(png);
 	if (info == NULL) {
-	  fprintf(stderr, "unable to create png info structure\n");
-      fclose(out);
-      png_destroy_write_struct(&png,  (png_infopp)NULL);
-      return 3;
+            fprintf(stderr, "unable to create png info structure\n");
+            png_destroy_write_struct(&png,  (png_infopp)NULL);
+            return 3;
 	}
 
 	/* set/check error handling */
 	if (setjmp(png_jmpbuf(png))) {
 		/* we've returned here after an internal error */
 		fprintf(stderr, "internal error in libpng saving file\n");
-		fclose(out);
 		png_destroy_write_struct(&png, &info);
 		return 4;
 	}
@@ -79,9 +88,7 @@ int jbig2_image_write_png(Jbig2Image *image, char *filename)
 	/* finish and clean up */
 	png_write_end(png, info);
 	png_destroy_write_struct(&png, &info);
-	
-	fclose(out);
-	
+		
 	return 0;
 }
 
