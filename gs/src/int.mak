@@ -412,7 +412,7 @@ $(PSOBJ)zvmem.$(OBJ) : $(PSSRC)zvmem.c $(OP)\
 $(PSOBJ)zbfont.$(OBJ) : $(PSSRC)zbfont.c $(OP) $(memory__h) $(string__h)\
  $(gscencs_h) $(gsmatrix_h) $(gxdevice_h) $(gxfixed_h) $(gxfont_h)\
  $(bfont_h) $(ialloc_h) $(idict_h) $(idparam_h) $(ilevel_h)\
- $(iname_h) $(interp_h) $(istruct_h) $(ipacked_h) $(store_h)
+ $(iname_h) $(inamedef_h) $(interp_h) $(istruct_h) $(ipacked_h) $(store_h)
 	$(PSCC) $(PSO_)zbfont.$(OBJ) $(C_) $(PSSRC)zbfont.c
 
 $(PSOBJ)zchar.$(OBJ) : $(PSSRC)zchar.c $(OP)\
