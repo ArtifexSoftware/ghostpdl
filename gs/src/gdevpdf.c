@@ -818,7 +818,7 @@ private int
 pdf_dominant_rotation(const pdf_text_rotation_t *ptr)
 {
     int i, imax = -1;
-    long max_count = -1;
+    long max_count = 0;
     static const int angles[] = { pdf_text_rotation_angle_values };
 
     for (i = 0; i < countof(ptr->counts); ++i) {
