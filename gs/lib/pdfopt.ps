@@ -213,7 +213,7 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
   } {
     dup xcheck {
 		% Executable array, must be an indirect object.
-      dup 0 get unresolved? { oforce touch } { pop } ifelse
+      dup 0 get resolved? { pop pop } { oforce touch } ifelse
     } {
       { touch } forall
     } ifelse
