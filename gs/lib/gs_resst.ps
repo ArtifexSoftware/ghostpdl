@@ -50,10 +50,10 @@ languagelevel 2 .setlanguagelevel
   /MakeInstance   % <Name> <record> MakeInstance <Name> <Instance> <size>
   {
     begin
-      DEBUG { (Loading a static resource ) print dup = } if
+      STRESDEBUG { (Loading a static resource ) print dup = } if
       255 string 2 index 2 index //GetFilePath exec
       (r) file run
-      DEBUG { (Completed loading the static resource ) print dup = } if
+      STRESDEBUG { (Completed loading the static resource ) print dup = } if
       StaticFileEnd StaticFilePos sub
     end
     1 index Category findresource
@@ -81,11 +81,11 @@ mark
 /.StaticResourcesBeg % <end_string> <no_of_resources> <category_name> .StaticResourcesBeg <category_name>
 %     Puts .map dictionary to dstack.
 {
-  DEBUG { (Starting static resources for category ) print dup = } if
+  STRESDEBUG { (Starting static resources for category ) print dup = } if
   dup /Category resourcestatus {
     pop pop exch dict begin exch pop
   } {
-    DEBUG { (Skipping the resources because the category isn't defined.) = } if
+    STRESDEBUG { (Skipping the resources because the category isn't defined.) = } if
     pop pop .skipeof
   } ifelse
 } bind
@@ -93,7 +93,7 @@ mark
 /.StaticResourcesEnd % <category_name> .StaticResourcesEnd -
 %     Removes .map dictionary from dstack.
 {
-  DEBUG { (Completting static resources for category ) print dup = } if
+  STRESDEBUG { (Completting static resources for category ) print dup = } if
   currentdict end dup                                      % /CatName <map> <map>
   systemdict /.io_static_root .knownget not {
     10 dict                                                % /CatName <map> <map> <dir>
@@ -123,7 +123,7 @@ end  % the temporary dictionary for local binding.
 /.BeginResource  % <instance_name> BeginResource <instance_name> 
 %     Puts a record dictionary to dstack.
 {
-  DEBUG { (Static resource ) print dup =string cvs print } if
+  STRESDEBUG { (Static resource ) print dup =string cvs print } if
   currentfile fileposition
   currentfile =string readline pop dup length 0 exch 10 .min getinterval (%% Replace) ne {
     % We are in COMPILE_INITS=1 .
@@ -143,11 +143,11 @@ end  % the temporary dictionary for local binding.
     /StaticFileEnd currentfile fileposition
     (.EndResource) length sub
     def
-    DEBUG { ( from position ) print StaticFilePos =string cvs print ( to position ) print StaticFileEnd = } if
+    STRESDEBUG { ( from position ) print StaticFilePos =string cvs print ( to position ) print StaticFileEnd = } if
     currentdict end def
   } {
     pop
-    DEBUG { ( ignored with COMPILE_INITS=0. ) = } if
+    STRESDEBUG { ( ignored with COMPILE_INITS=0. ) = } if
   } ifelse
 } bind
 

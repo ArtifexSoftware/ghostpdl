@@ -49,7 +49,7 @@
 
 % Rescale and translate to fit the BoundingBox on the page
 /EPSBoundingBoxFitPage { % llx lly urx ury --
-  DEBUG { (gs_epsf.ps: Rescaling EPS to fit page\n) print flush } if
+  EPSDEBUG { (gs_epsf.ps: Rescaling EPS to fit page\n) print flush } if
   clippath pathbbox newpath
   % translate to new origin at lower left of clippath
   3 index 3 index translate
@@ -67,7 +67,7 @@
 
 % Crop the page to the BoundingBox
 /EPSBoundingBoxCrop { % llx lly urx ury --
-  DEBUG { 
+  EPSDEBUG { 
     (gs_epsf.ps: Setting pagesize from EPS bounding box\n) print flush 
   } if
   exch 3 index sub exch 2 index sub % stack: llx lly urx-llx ury-lly
@@ -121,12 +121,12 @@
     } {
       (%%BoundingBox:) anchorsearch {
 	pop 
-	DEBUG { (gs_epsf.ps: found %%BoundingBox\n) print flush } if
+	EPSDEBUG { (gs_epsf.ps: found %%BoundingBox\n) print flush } if
 	1 EPSBoundingBoxProcess
       } {
 	(%%HiResBoundingBox:) anchorsearch {
 	  pop 
-	  DEBUG { (gs_epsf.ps: found %%HiResBoundingBox\n) print flush } if
+	  EPSDEBUG { (gs_epsf.ps: found %%HiResBoundingBox\n) print flush } if
 	2 EPSBoundingBoxProcess
 	} { 
 	  pop % Not interested in this DSC comment
@@ -171,29 +171,29 @@
       dup (%!PS-Adobe-X.X EPSF-X.X) .peekstring {
       (EPSF) search {
         pop pop pop
-        DEBUG {(runEPS: Found EPS\n) print flush} if
+        EPSDEBUG {(runEPS: Found EPS\n) print flush} if
         systemdict /NOEPS known {
           cvx .runNoEPS
         } {
           cvx .runEPS
         } ifelse
       } {
-        DEBUG {(runEPS: Normal DSC\n) print flush} if
+        EPSDEBUG {(runEPS: Normal DSC\n) print flush} if
         pop
           cvx .runNoEPS
 
       } ifelse
       } {
-        DEBUG {(runEPS: Short DSC\n) print flush} if
+        EPSDEBUG {(runEPS: Short DSC\n) print flush} if
       pop
         cvx .runNoEPS
       } ifelse
     } {
-      DEBUG {(runEPS: Not DSC\n) print flush} if
+      EPSDEBUG {(runEPS: Not DSC\n) print flush} if
       cvx .runNoEPS
     } ifelse
   } {
-    DEBUG {(runEPS: Short non-DSC\n) print flush} if
+    EPSDEBUG {(runEPS: Short non-DSC\n) print flush} if
     pop
     cvx .runNoEPS
   } ifelse

@@ -109,7 +109,7 @@ pdfdict begin
 
 /resolvefunction {	% <fndict> resolvefunction <function>
   .resolvefn
-  DEBUG { (%Function: ) print dup === flush } if
+  PDFDEBUG { (%Function: ) print dup === flush } if
 } bdef
 
 /resolvefnproc {	% <fndict> resolvefnproc <proc>
@@ -655,7 +655,7 @@ end
 } bdef
 
 /.pdfpaintproc {         % <patdict> <resdict> .pdfpaintproc -
-  DEBUG { (%Begin PaintProc) = flush } if
+  PDFDEBUG { (%Begin PaintProc) = flush } if
 	% For uncolored patterns, we have to unbind the current
 	% color and color space before running the PaintProc.
 	% There's no harm in doing this for colored patterns,
@@ -671,7 +671,7 @@ end
   /pdfemptycount exch def
 
   Q
-  DEBUG { (%End PaintProc) = flush } if
+  PDFDEBUG { (%End PaintProc) = flush } if
   PDFfile exch setfileposition
 } bdef
 
@@ -703,7 +703,7 @@ end
     2 index /Resources knownoget { oforce } { 0 dict } ifelse
     /.pdfpaintproc cvx
   ] cvx put
-  DEBUG {
+  PDFDEBUG {
     (%Pattern: ) print dup === flush
   } if
 } bdef

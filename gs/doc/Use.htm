@@ -2285,8 +2285,39 @@ The information here describing is probably interesting only to developers.
 
 <h4><a name="Debug_switches"></a>Debug switches</h4>
 
-The <b><tt>-Z</tt></b> and <b><tt>-T</tt></b>
-! switches apply only
+There are several debugging switches that are detected by the interpreter.
+These switches are available whether or not Ghostscript was built with the
+DEBUG macro defined to the compiler (refer to <a href="Make.htm#Debugging">
+building a debugging configuration</a>). 
+
+<p>Previous to 8.10, there was a single DEBUG flag, enabled with <b><tt>-dDEBUG
+</tt></b> on the command line. Now there are several debugging flags to allow
+more selective debugging information to be printed containing only what is
+needed to investigate particular areas. For backward compatibilty, the
+<b><tt>-dDEBUG</tt></b> option will set all of the subset switches.
+
+<ul>
+<table cellpadding=0 cellspacing=0>
+  <tr><td><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<td>&nbsp;
+  <tr><td><b><tt>-dCCFONTDEBUG</tt></b><td><td>Compiled Fonts
+  <tr><td><b><tt>-dCFFDEBUG</tt></b><td><td>CFF Fonts
+  <tr><td><b><tt>-dCMAPDEBUG</tt></b><td><td>CMAP 
+  <tr><td><b><tt>-dDOCIEDEBUG</tt></b><td><td>CIE color
+  <tr><td><b><tt>-dEPSDEBUG</tt></b><td><td>EPS handling
+  <tr><td><b><tt>-dFAPIDEBUG</tt></b><td><td>Font API
+  <tr><td><b><tt>-dINITDEBUG</tt></b><td><td>Initialization
+  <tr><td><b><tt>-dPDFDEBUG</tt></b><td><td>PDF Interpreter
+  <tr><td><b><tt>-dPDFOPTDEBUG</tt></b><td><td>PDF Optimizer (Linearizer)
+  <tr><td><b><tt>-dPDFWRDEBUG</tt></b><td><td>PDF Writer
+  <tr><td><b><tt>-dSETPDDEBUG</tt></b><td><td>setpagedevice
+  <tr><td><b><tt>-dSTRESDEBUG</tt></b><td><td>Static Resources
+  <tr><td><b><tt>-dTTFDEBUG</tt></b><td><td>TTF Fonts
+  <tr><td><b><tt>-dVGIFDEBUG</tt></b><td><td>ViewGIF
+  <tr><td><b><tt>-dVJPGDEBUG</tt></b><td><td>ViewJPEG
+</table></ul>
+
+<p><p>
+The <b><tt>-Z</tt></b> and <b><tt>-T</tt></b> switches apply only
 if the interpreter was <a href="Make.htm#Debugging">built for a debugging
 configuration</a>.  In the table below, the first column is a debugging
 switch, the second is an equivalent switch (if any) and the third is its

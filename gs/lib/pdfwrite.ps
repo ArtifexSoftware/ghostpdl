@@ -29,7 +29,7 @@
 /.setlanguagelevel where { pop 2 .setlanguagelevel } if
 .currentglobal true .setglobal
 
-/PDEBUG where { pop } { /PDEBUG false def } ifelse
+/PDFWRDEBUG where { pop } { /PDFWRDEBUG false def } ifelse
 
 % ================ Object mapping ================ %
 
@@ -37,7 +37,7 @@
 /omapinit {		% - omapinit -
   /RMap 100 dict def
   /XRef 100 dict def
-  PDEBUG { (omapinit) = } if
+  PDFWRDEBUG { (omapinit) = } if
 } def
 
 % Map an object number.
@@ -45,9 +45,9 @@
   RMap 1 index .knownget {
     exch pop false
   } {
-    PDEBUG { (omap\() print dup =only } if
+    PDFWRDEBUG { (omap\() print dup =only } if
     RMap dup length 1 add 2 index exch dup 5 1 roll put pop true
-    PDEBUG { (\) = ) print 1 index = } if
+    PDFWRDEBUG { (\) = ) print 1 index = } if
   } ifelse
 } def
 /omap {			% <oldobj#> omap <newobj#>
@@ -65,7 +65,7 @@
 } bind def
 /setomap {		% <omap> setomap -
   aload pop /XRef exch def /RMap exch def
-  PDEBUG {
+  PDFWRDEBUG {
     (setomap: #Xref = ) print XRef length =only
     (, #RMap = ) print RMap length =
   } if
@@ -192,14 +192,14 @@ readonly def
 .dicttomark readonly def
 
 /pdfwritevalue {	% <obj> pdfwritevalue -
-  PDEBUG { (****Writing: ) print dup === flush } if
+  PDFWRDEBUG { (****Writing: ) print dup === flush } if
   //pdfwritetypes 1 index type get exec
 } def
 
 % We make pdfwriteobjdef a separate procedure for external use.
 /pdfwriteobjheader {	% <newobj#> pdfwriteobjheader -
   XRef 1 index OFile .fileposition put
-  PDEBUG { (XRef\() print dup =only (\) = ) print XRef 1 index get = } if
+  PDFWRDEBUG { (XRef\() print dup =only (\) = ) print XRef 1 index get = } if
   OFile exch write=only ( 0 obj\n) ows
 } def
 /pdfwriteobjdef {	% <newobj#> <value> pdfwriteobjdef -

@@ -278,7 +278,7 @@ def
    2 index cvlit mark mark 5 2 roll
     { .pdftoken not { (%%EOF) cvn cvx } if
       dup xcheck
-       { DEBUG { dup == flush } if
+       { PDFDEBUG { dup == flush } if
 	 3 -1 roll pop
 	 2 copy .knownget
 	  { exch pop exch pop exec
@@ -305,10 +305,10 @@ def
 	  }
 	 ifelse
        }
-       { exch pop DEBUG { dup ==only ( ) print flush } if
+       { exch pop PDFDEBUG { dup ==only ( ) print flush } if
 	 dup type /stringtype eq
 	  { 1 index arc4decode
-	    DEBUG { (%Decrypted: ) print dup == flush } if
+	    PDFDEBUG { (%Decrypted: ) print dup == flush } if
 	  }
 	 if
 	 exch pop

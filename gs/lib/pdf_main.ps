@@ -686,19 +686,19 @@ end readonly def
   % stack: [<prevproc>] <pagedict> <Crop|Media Box>
   exch pop			% done with the pagedict
   systemdict /PDFFitPage known {
-    DEBUG { (Fiting PDF to imageable area of the page.) = flush } if
+    PDFDEBUG { (Fiting PDF to imageable area of the page.) = flush } if
     currentpagedevice /.HWMargins get aload pop
     currentpagedevice /PageSize get aload pop
     3 -1 roll sub 3 1 roll exch sub exch
     % stack: [<prevproc>] <pagedict> <Crop|Media Box> Xmin Ymin Xmax Ymax
-    DEBUG { (    Translate up by [ ) print 3 index =print (, ) print 2 index =print ( ]) = flush } if
+    PDFDEBUG { (    Translate up by [ ) print 3 index =print (, ) print 2 index =print ( ]) = flush } if
     3 index 3 index translate		% move origin up to imageable area
     2 index sub exch 3 index sub exch 4 2 roll pop pop
 	    % stack: [Box] XImageable YImageable
     2 index aload pop 2 index sub exch 3 index sub exch 4 2 roll pop pop
 	    % stack: [Box] XImageable YImageable XBox YBox
     3 -1 roll exch div 3 1 roll div .min
-    DEBUG { (    Scale by ) print dup = flush } if
+    PDFDEBUG { (    Scale by ) print dup = flush } if
     dup scale
   } if
   % Now translate to the origin given in the Crop|Media Box

@@ -32,19 +32,19 @@
   % we need to replace dst type codes in the notdef map with the value 3,
   % which corresponds to CODE_VALUE_NOTDEF, see gxfcmap.h .
   %
-  DEBUG { (rewriting TempMapsNotDef\n) print flush } if
+  CMAPDEBUG { (rewriting TempMapsNotDef\n) print flush } if
   .TempMaps 2 get
   dup length 0 gt {
     0 get
-    DEBUG { (...original...\n) print flush } if
+    CMAPDEBUG { (...original...\n) print flush } if
     1 5 2 index length 1 sub {
       { 1 index exch get 2 3 put } stopped
-      { DEBUG { (cannot rewrite\n) print flush } if }
-      { DEBUG { (rewrite\n) print flush } if } ifelse
+      { CMAPDEBUG { (cannot rewrite\n) print flush } if }
+      { CMAPDEBUG { (rewrite\n) print flush } if } ifelse
     } for
   } if
   pop
-  DEBUG { (...FINISHED...\n) print } if
+  CMAPDEBUG { (...FINISHED...\n) print } if
 } bind def
 
 % composefont doesn't appear in CMap files -- it's documented in
@@ -114,7 +114,7 @@
 } bind def
 /endcmap {		% - endcmap -
   .rewriteTempMapsNotDef
-  DEBUG {
+  CMAPDEBUG {
     (*** defined charmap ***\n) print
     .TempMaps 1 get {exch == (\t) print ==} forall
     (*** undefined charmap ***\n) print
@@ -125,7 +125,7 @@
 		% Append data from .TempMaps to .CodeMapData.
     /t .TempMaps i get def
     .CodeMapData i get length t { exch pop length add } forall
-    DEBUG { (requested array size ) print dup == } if
+    CMAPDEBUG { (requested array size ) print dup == } if
     array /a exch def
     a 0 .CodeMapData i get .putmore
     0 1 t length 1 sub {
@@ -337,7 +337,7 @@
        4 index 10 index eq and  % compare params
        1 index 7 index eq and   % compare fontindex
         {
-          DEBUG { (merge! char\n) print } if
+          CMAPDEBUG { (merge! char\n) print } if
           pop 4 2 roll pop pop
            % prefix params keys value fontindex keys2 value2
           5 -1 roll 3 -1 roll concatstrings
@@ -450,7 +450,7 @@
        4 index 10 index eq and	% compare params
        1 index 7 index eq and	% compare fontindex
 	{
-          DEBUG { (merge!\n) print } if
+          CMAPDEBUG { (merge!\n) print } if
 	  pop 4 2 roll pop pop
            % prefix params keys value fontindex keys2 value2
 	  5 -1 roll 3 -1 roll concatstrings

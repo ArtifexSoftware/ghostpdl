@@ -109,10 +109,10 @@
    /ImageOutFile where { /ImageOut ImageOutFile (w) file def } if
    F readGIFheader /Header exch def
      currentdict Header end begin begin
-   DEBUG { Header { exch == == } forall (----------------\n) print flush } if
+   VGIFDEBUG { Header { exch == == } forall (----------------\n) print flush } if
    F readGIFimageHeader /ImageHeader exch def
      currentdict ImageHeader end begin begin
-   DEBUG { ImageHeader { exch == == } forall (----------------\n) print flush } if
+   VGIFDEBUG { ImageHeader { exch == == } forall (----------------\n) print flush } if
    /D F
    <<	/InitialCodeLength F read1
 	/FirstBitLowOrder true

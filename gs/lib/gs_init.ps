@@ -76,8 +76,29 @@ true setpacking
 
 % Acquire the debugging flags.
 currentdict /DEBUG known   /DEBUG exch def
+
+% if DEBUG is set, set ALL of the subset debugging flags
+mark	% '[' isn't defined yet
+  /CCFONTDEBUG		% Compiled Fonts
+  /CFFDEBUG		% CFF Fonts
+  /CMAPDEBUG		% CMAP 
+  /DOCIEDEBUG		% CIE color
+  /EPSDEBUG		% EPS handling
+  /FAPIDEBUG		% Font API
+  /INITDEBUG		% Initialization
+  /PDFDEBUG		% PDF Interpreter
+  /PDFOPTDEBUG		% PDF Optimizer (Linearizer)
+  /PDFWRDEBUG		% PDF Writer
+  /SETPDDEBUG		% setpagedevice
+  /STRESDEBUG		% Static Resources
+  /TTFDEBUG		% TTF Fonts
+  /VGIFDEBUG		% ViewGIF
+  /VJPGDEBUG		% ViewJPEG
+counttomark array astore exch pop % ']' isn't defined yet
+{ dup currentdict exch known DEBUG or def } forall
+
   /VMDEBUG
-    DEBUG {{print mark
+    INITDEBUG {{print mark
             systemdict /level2dict known
 	     { .currentglobal dup false .setglobal vmstatus
 	       true .setglobal vmstatus 3 -1 roll pop
@@ -1697,7 +1718,7 @@ ifelse
 % If the initial device parameters are invalid, the setdevice may fail.
 % Trap this and produce a reasonable error message.
 { setdevice }		% does an erasepage
-DEBUG { exec false } { .internalstopped } ifelse {
+INITDEBUG { exec false } { .internalstopped } ifelse {
   (**** Unable to open the initial device, quitting.) = flush 1 .quit
 } if
 

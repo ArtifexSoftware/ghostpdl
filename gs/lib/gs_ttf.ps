@@ -198,7 +198,7 @@
 % <nametable> <nameid> findname <string> true
 % <nametable> <nameid> findname false
 /findname {
-  DEBUG { (findname: ) print dup =only  } if
+  TTFDEBUG { (findname: ) print dup =only  } if
   false 3 1 roll 0 1 3 index 2 getu16 1 sub {
 		% Stack: false table id index
     12 mul 6 add 2 index exch 12 getinterval
@@ -213,7 +213,7 @@
       is2byte { string2to1 } if true null 4 -1 roll exit
     } if pop
   } for pop pop
-  DEBUG {
+  TTFDEBUG {
     dup { ( = ) print 1 index == } { ( not found) = } ifelse
   } if
 } bind def
@@ -368,7 +368,7 @@
       exch sub 0 .max dup { 0 putglyph } repeat
       ecode scode sub 1 add add numcodes add /numcodes exch def
       /delta iddelta i2 gets16 def
-      DEBUG {
+      TTFDEBUG {
 	(scode=) print scode =only
 	( ecode=) print ecode =only
 	( delta=) print delta =only
@@ -404,14 +404,14 @@
 % <cmaptab> cmaparray <glypharray>
 /cmaparray {
   dup 0 getu16 cmapformats exch .knownget {
-    DEBUG {
+    TTFDEBUG {
       (cmap: format ) print 1 index 0 getu16 = flush
     } if exec
   } {
     (Can't handle format ) print 0 getu16 = flush
     0 1 255 { } for 256 packedarray
   } ifelse
-  DEBUG {
+  TTFDEBUG {
     (cmap: length=) print dup length = dup ==
   } if
 } bind def
@@ -424,7 +424,7 @@
   }
   16#00020000  {	% Detailed map, required by Microsoft fonts.
     dup length 36 lt {
-      DEBUG { (post format 2.0 invalid.) = flush } if
+      TTFDEBUG { (post format 2.0 invalid.) = flush } if
       pop [ ]
     } {
     /postglyphs exch def
@@ -447,7 +447,7 @@
 	      % Some badly formed TT fonts have glyph index values past the end
 	      % of the 'post' table.
               1 index length 1 index le {
-	        DEBUG { (   *** warning: glyph index past end of 'post' table) = flush } if
+	        TTFDEBUG { (   *** warning: glyph index past end of 'post' table) = flush } if
                 exit
               } if
               get 1 add add
@@ -455,7 +455,7 @@
 	    1 add postglyphs exch
             1 index length 1 index
             lt {
-	      DEBUG { (   *** warning: glyph index past end of 'post' table) = flush } if
+	      TTFDEBUG { (   *** warning: glyph index past end of 'post' table) = flush } if
               % extend the postglyphs string by 1 byte of 0x00
 	      exch (\000) concatstrings /postglyphs exch def postglyphs exch
 	    } if
@@ -591,7 +591,7 @@ end readonly def                % .loadttfontdict
 	% tabs = tables we want to keep, sorted by file position.
   /tabs [ 0 16 tables length 1 sub {
     tables exch 16 getinterval
-    DEBUG { dup .printtab } if
+    TTFDEBUG { dup .printtab } if
     dup 0 4 getinterval readtables_ 1 index known {
       tabdict exch 2 index put
     } {
@@ -782,16 +782,16 @@ mark
 % Uses post, defines glyphencoding
 /.getpost {
   /glyphencoding post null eq {
-    DEBUG { (post missing) = flush } if [ ]
+    TTFDEBUG { (post missing) = flush } if [ ]
   } {
     postformats post 0 getu32 .knownget {
-      DEBUG {
+      TTFDEBUG {
 	(post: format ) print
 	post 0 getu16 =only (,) print post 2 getu16 = flush
       } if
       post exch exec
     } {
-      DEBUG { (post: unknown format ) print post 0 getu32 = flush } if [ ]
+      TTFDEBUG { (post: unknown format ) print post 0 getu32 = flush } if [ ]
     } ifelse
   } ifelse def
 } bind def
@@ -828,7 +828,7 @@ mark
   } if
   counttomark 0 ne { .dicttomark } { pop pop } ifelse
   /XUID [orgXUID 42 curxuid]
-  DEBUG {
+  TTFDEBUG {
     tabs { .printtab } forall
     [ sfnts { length } forall ] ==
     count ttkeycount sub array astore dup { == } forall aload pop
@@ -848,7 +848,7 @@ mark
   dup 4 8 getinterval exch             % the default
   0 1 2 index 2 getu16 1 sub {
     8 mul 4 add 1 index exch 8 getinterval
-    DEBUG {
+    TTFDEBUG {
       (cmap: platform ) print dup 0 getu16 =only
       ( encoding ) print dup 2 getu16 = flush
     } if
@@ -878,20 +878,20 @@ mark
       (gs/lib/xlatmap containg a record with an invalid (PlatformID.SpecificID)) =
       /.pickcmap_with_xlatmap cvx /configurationerror signalerror
     } ifelse
-    DEBUG {
+    TTFDEBUG {
       (Seeking a cmap for platform=) print 1 index =only ( encoding=) print dup =
     } if
     tabdict /cmap get                                    % bool [] i PlatID SpecID (cmap)
     dup /cmaptab exch def % temporary
     0 1 2 index 2 getu16 1 sub {                         % bool [] i PlatID SpecID (cmap) j
       8 mul 4 add 1 index exch 8 getinterval             % bool [] i PlatID SpecID (cmap) (cmapsub)
-      DEBUG {
+      TTFDEBUG {
         (cmap: platform ) print dup 0 getu16 =only
         ( encoding ) print dup 2 getu16 = flush
       } if
       dup 0 getu16 4 index eq {
         dup 2 getu16 3 index eq {                        % bool [] i PlatID SpecID (cmap) (cmapsub)
-          DEBUG {
+          TTFDEBUG {
             (Choosen a cmap for platform=) print 3 index =only
             ( encoding=) print 2 index =
           } if
@@ -946,7 +946,7 @@ mark
 % - .charkeys /CharStrings <charstrings> /Encoding <encoding>
 % Resets glyphencoding
 /.charkeys {
-  DEBUG {
+  TTFDEBUG {
     (glyphencoding: length=) print glyphencoding dup length = === flush
   } if
 		% Hack: if there is no usable post table but the cmap uses
@@ -992,14 +992,14 @@ mark
     [ cmaptab cmaparray dup length 256 gt { 0 256 getinterval } if
     { glyphencoding exch get } forall
     counttomark 256 exch sub { /.notdef } repeat ]
-  DEBUG { (Encoding: ) print dup === flush } if
+  TTFDEBUG { (Encoding: ) print dup === flush } if
 } bind def
 
 % -mark- <key> <value> ... .definettfont <font>
 /.definettfont {
   /FontType 42
   /PaintType 0
-  DEBUG {
+  TTFDEBUG {
     (numloca=) print numloca =
   } if
   .dicttomark

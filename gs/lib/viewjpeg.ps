@@ -88,7 +88,7 @@ JPEGdict begin
 		/width NextByte 8 bitshift NextByte add def
 		/colors NextByte def
 
-		DEBUG { currentdict { exch == == } forall flush } if
+		VJPGDEBUG { currentdict { exch == == } forall flush } if
 		exit
 	    } if
 

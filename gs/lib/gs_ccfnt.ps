@@ -17,7 +17,7 @@
 % Find and register all the precompiled font operators in systemdict.
 
 /registerfont			% <fontname> <fontdict> registerfont <font>
- { DEBUG { (Registering ) print 1 index = } if
+ { CCFONTDEBUG { (Registering ) print 1 index = } if
    dup begin
      Encoding type /nametype eq
       { Encoding .findencoding /Encoding exch def

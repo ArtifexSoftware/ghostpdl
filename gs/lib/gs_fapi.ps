@@ -181,7 +181,7 @@ currentdict end Redefine
 %    with .FAPIrebuildfont . Otherwise the font is handled with the native GS font renderer.
 
 /FAPI_hook_debug   % <proc> FAPI_hook_debug -
-DEBUG { {exec} } { {pop} } ifelse
+FAPIDEBUG { {exec} } { {pop} } ifelse
 bind def
  
 /FAPI_hook_warn   % <proc> FAPI_hook_debug -

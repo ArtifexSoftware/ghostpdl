@@ -100,7 +100,7 @@ level2dict begin
    dup type /booleantype eq
     { pop pop }
     {		% This should never happen!
-      DEBUG { (Error in .trysetparams!) = pstack flush } if
+      SETPDDEBUG { (Error in .trysetparams!) = pstack flush } if
       cleartomark pop pop pop
       /.installpagedevice cvx /rangecheck signalerror
     }
@@ -475,7 +475,7 @@ level2dict begin
 	/setpagedevice load /configurationerror signalerror
   } bind
   1 {		% Roll back the failed request to its previous status.
-DEBUG { (Rolling back.) = pstack flush } if
+SETPDDEBUG { (Rolling back.) = pstack flush } if
 	3 index 2 index 3 -1 roll put
 	4 index 1 index .knownget
 	 { 4 index 3 1 roll put }
@@ -544,9 +544,9 @@ DEBUG { (Rolling back.) = pstack flush } if
 			%   -mark- key1 value1 ...
    counttomark 5 add index .computemediasize
    exch pop exch pop /.MediaSize exch
-DEBUG { (Putting.) = pstack flush } if
+SETPDDEBUG { (Putting.) = pstack flush } if
    .putdeviceparamsonly
-DEBUG { (Result of putting.) = pstack flush } if
+SETPDDEBUG { (Result of putting.) = pstack flush } if
  } bind def
 
 % Compute the media size and initial matrix from a merged request (after
@@ -582,7 +582,7 @@ DEBUG { (Result of putting.) = pstack flush } if
 		% also handle the case where the current device
 		% is not a page device.
 		% Stack: mark <request> <current>
-DEBUG { (Checking.) = pstack flush } if
+SETPDDEBUG { (Checking.) = pstack flush } if
 
    dup /OutputDevice .knownget
     {		% Current device is a page device.
@@ -624,7 +624,7 @@ DEBUG { (Checking.) = pstack flush } if
 		% Construct a merged request from the actual request plus
 		% any keys that should always be propagated.
 		% Stack: mark <request> <orig>
-DEBUG { (Merging.) = pstack flush } if
+SETPDDEBUG { (Merging.) = pstack flush } if
 
    exch 1 index length 1 index length add dict
    .copiedkeys
@@ -660,7 +660,7 @@ DEBUG { (Merging.) = pstack flush } if
 
 		% Select input and output media.
 		% Stack: mark <orig> <request> <merged>
-DEBUG { (Selecting.) = pstack flush } if
+SETPDDEBUG { (Selecting.) = pstack flush } if
 
    0 dict	% <failed>
    1 index /InputAttributes .knownget
@@ -677,7 +677,7 @@ DEBUG { (Selecting.) = pstack flush } if
 
 		% Construct the new device, and attempt to set its attributes.
 		% Stack: mark <orig> <request> <merged> <failed>
-DEBUG { (Constructing.) = pstack flush } if
+SETPDDEBUG { (Constructing.) = pstack flush } if
 
    currentdevice .devicename 2 index /OutputDevice get eq
     { currentdevice }
@@ -693,7 +693,7 @@ DEBUG { (Constructing.) = pstack flush } if
     {		% The request failed.
 		% Stack: ... <orig> <request> <merged> <failed> <device>
 		%   <Policies> true mark <name> <errorname> ...
-DEBUG { (Recovering.) = pstack flush } if
+SETPDDEBUG { (Recovering.) = pstack flush } if
       counttomark 4 add index
       counttomark 2 idiv { dup 4 -2 roll put } repeat
       pop pop pop
@@ -713,7 +713,7 @@ DEBUG { (Recovering.) = pstack flush } if
 
 		% The attempt succeeded.  Install the new device.
 		% Stack: mark ... <merged> <failed> <device> <eraseflag>
-DEBUG { (Installing.) = pstack flush } if
+SETPDDEBUG { (Installing.) = pstack flush } if
 
    pop 2 .endpage
     { 1 //true .outputpage
@@ -815,7 +815,7 @@ DEBUG { (Installing.) = pstack flush } if
 
 		% Clean up, calling PolicyReport if needed.
 		% Stack: mark ... <failed> <merged>
-DEBUG { (Finishing.) = pstack flush } if
+SETPDDEBUG { (Finishing.) = pstack flush } if
 
    exch dup length 0 ne
     { 1 index /Policies get /PolicyReport get

@@ -167,7 +167,7 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
   currentdict end
 } bind def
 /bitwrite {		% <bstream> <value> <width> bitwrite -
-  PDEBUG { ( ) print 1 index =only (:) print dup = } if
+  PDFOPTDEBUG { ( ) print 1 index =only (:) print dup = } if
   3 -1 roll begin
   N exch sub dup 0 ge {
     /N exch def N bitshift B add
@@ -269,7 +269,7 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
 		% Delete replaced objects.
   0 1 Objects llength 1 sub {
     Objects 1 index lget replaceable? {
-      PDEBUG { (Deleting ) print dup = } if
+      PDFOPTDEBUG { (Deleting ) print dup = } if
       Generations 1 index 0 lput
     } if pop
   } for
@@ -408,7 +408,7 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
 % Collect all the objects referenced from a page.  The first object number
 % (which may not be the smallest one) is that of the page object itself.
 /identifyPageObjects {	% <extra> <page#> identifyPageObjects <obj#s>
-  PDEBUG {
+  PDFOPTDEBUG {
     (%Objects for page: ) print dup =
   } if
   pdffindpageref
@@ -468,7 +468,7 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
   [ 3 1 roll {
     2 copy eq { pop } { exch } ifelse
   } forall counttomark 1 roll ]
-  PDEBUG {
+  PDFOPTDEBUG {
     (%Objects = ) print dup === flush
   } if
 } bind def
@@ -593,7 +593,7 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
 
 % Write a part of the output file.
 /writePart {		% <proc> <label> writePart -
-  PDEBUG {
+  PDFOPTDEBUG {
     dup print ( count=) print count =only ( start=) print
     OFile { .fileposition } stopped { pop (???) } if =
     2 .execn
@@ -703,25 +703,25 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
 
 % Find the start and end of objects in the output.
 /omstart {		% <obj#> omstart <pos>
-  PDEBUG { (start\() print dup =only } if
+  PDFOPTDEBUG { (start\() print dup =only } if
   omap
-  PDEBUG { (=>) print dup =only } if
+  PDFOPTDEBUG { (=>) print dup =only } if
   XRef exch get
-  PDEBUG { (\) = ) print dup = } if
+  PDFOPTDEBUG { (\) = ) print dup = } if
 } bind def
 /omend {		% <obj#> omend <pos>
 	% The end of an object is the start of the next object.
 	% The caller must be sure that this object is not the last one
 	% in part 9.
-  PDEBUG { (end\() print dup =only } if
+  PDFOPTDEBUG { (end\() print dup =only } if
   omap
-  PDEBUG { (=>) print dup =only } if
+  PDFOPTDEBUG { (=>) print dup =only } if
   1 add
 	% Check that the requested object wasn't the last one in part 6:
 	% the next object in the output file is the first in part 7.
   PHSN omap 1 index eq { pop 1 } if
   XRef exch get
-  PDEBUG { (\) = ) print dup = } if
+  PDFOPTDEBUG { (\) = ) print dup = } if
 } bind def
 /omlength {		% <obj#> omlength <length>
   dup omend exch omstart sub
@@ -751,7 +751,7 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
 
 
 /writePageOffsetHints {
-  PDEBUG { /writePageOffsetHints == } if
+  PDFOPTDEBUG { /writePageOffsetHints == } if
   20 dict begin
   /bits OFile bitstream def
   /bwn { bits 3 1 roll bitwrite } def
@@ -851,7 +851,7 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
 } bind def
 
 /writeSharedObjectHints {
-  PDEBUG { /writeSharedObjectHints == } if
+  PDFOPTDEBUG { /writeSharedObjectHints == } if
   20 dict begin
   /bits OFile bitstream def
   /bwn { bits 3 1 roll bitwrite } def
@@ -935,7 +935,7 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
   [LPDict PHS] createObjects
   /LPDictN 1 index def 1 add
   /PHSN exch def
-  PDEBUG { << /LPDictN LPDictN /PHSN PHSN >> === } if
+  PDFOPTDEBUG { << /LPDictN LPDictN /PHSN PHSN >> === } if
 
 	% Count the number of objects in the output.
 

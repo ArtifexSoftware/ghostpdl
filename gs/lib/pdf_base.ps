@@ -121,7 +121,7 @@ pdfdict begin
   } if
 } bind def
 /.pdfexectoken {		% <count> <opdict> <exectoken> .pdfexectoken ?
-  DEBUG { dup == flush } if
+  PDFDEBUG { dup == flush } if
   2 copy .knownget {
     exch pop exch pop exch pop exec
   } {
@@ -151,10 +151,10 @@ pdfdict begin
 	  .pdfexectoken
 	} {
 	  .pdffixname
-	  exch pop exch pop DEBUG { dup ==only ( ) print flush } if
+	  exch pop exch pop PDFDEBUG { dup ==only ( ) print flush } if
 	} ifelse
       } {
-	exch pop exch pop DEBUG { dup ==only ( ) print flush } if
+	exch pop exch pop PDFDEBUG { dup ==only ( ) print flush } if
       } ifelse
     } {
       (%%EOF) cvn cvx .pdfexectoken
@@ -342,7 +342,7 @@ pdfdict begin
 	pop false
       } {
 		% Update Objects from GlobalObjects
-	DEBUG { (%Global=>local: ) print dup == } if
+	PDFDEBUG { (%Global=>local: ) print dup == } if
 	GlobalObjects 1 index get dup Objects 4 1 roll lput true
       } ifelse
     } {
@@ -425,7 +425,7 @@ pdfdict begin
 		% The only global objects we bother to save are
 		% (resource) dictionaries.
     1 index dup gcheck exch type /dicttype eq and {
-      DEBUG { (%Local=>global: ) print dup == } if
+      PDFDEBUG { (%Local=>global: ) print dup == } if
       GlobalObjects 1 index 3 index put
       IsGlobal 1 index 1 put
     } if
@@ -444,7 +444,7 @@ pdfdict begin
   /obj { pop pop endobj exit } bind
 .dicttomark readonly def
 /resolveR {		% <object#> <generation#> resolveR <object>
-  DEBUG { (%Resolving: ) print 2 copy 2 array astore == } if
+  PDFDEBUG { (%Resolving: ) print 2 copy 2 array astore == } if
   1 index resolved? {
     exch pop exch pop
   } {
@@ -515,7 +515,7 @@ pdfdict begin
 	10 eq { exit } if
       } loop	% scan past \n
       dup /FilePosition PDFfile fileposition put
-      DEBUG { (%FilePosition: ) print dup /FilePosition get == } if
+      PDFDEBUG { (%FilePosition: ) print dup /FilePosition get == } if
     } if
     % Some (bad) PDf files have invalid stream lengths.  This causes problems
     % if we reposition beyond the end of the file.  So we compare the given

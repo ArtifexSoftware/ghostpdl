@@ -448,7 +448,7 @@ end readonly def
 		% an empty string.  Work around this nonsense here.
    dup length 0 ne { data exch readstring pop } if
    dup length 3 -1 roll exch sub
-   DEBUG
+   PDFDEBUG
     { dup =only ( read ) print
       1 index length =only (: ) print
       1 index == flush
@@ -462,11 +462,11 @@ end readonly def
   1 index 0 get 16#80 eq {
     (   **** Warning: Embedded Type1 font in PFB format is not valid PDF.\n)
     pdfformaterror
-    DEBUG { (skipping PFB header) = flush } if
+    PDFDEBUG { (skipping PFB header) = flush } if
     exch pop buffer 0 5 getinterval type1readdata exch
     dup 4 get 256 mul 1 index 3 get add 256 mul
     1 index 2 get add 256 mul 1 index 1 get add
-    DEBUG { (PFB segment length = ) print dup = } if
+    PDFDEBUG { (PFB segment length = ) print dup = } if
     exch pop  % discard the string keeping the PFB segment length
     2 copy ne {
       (   **** Warning: Type 1 PFB segment length and Length 1 value do not match.\n)
@@ -481,7 +481,7 @@ end readonly def
 
 % Read the next block of the initial text portion.
 /type1read1 {		% <left> type1read1 <string> <left'>
-  DEBUG { (read1 ) print } if
+  PDFDEBUG { (read1 ) print } if
   dup 0 eq {
     pop sectionstr 0 2 put
     stream /Length2 oget
@@ -489,14 +489,14 @@ end readonly def
     dup 8 lt {
       type1read2	% Hexify.
     } {
-      DEBUG { (read2 ) print } if
+      PDFDEBUG { (read2 ) print } if
       pfbhdr 0 get 16#80 eq {
         % eat 6 more bytes of PFB junk before proceeding
-	DEBUG { (skipping PFB header in segment 2) = flush } if
+	PDFDEBUG { (skipping PFB header in segment 2) = flush } if
 	buffer 0 6 getinterval type1readdata exch
         dup 5 get 256 mul 1 index 4 get add 256 mul
 	1 index 3 get add 256 mul 1 index 2 get add
-        DEBUG { (PFB segment length = ) print dup = } if
+        PDFDEBUG { (PFB segment length = ) print dup = } if
 	exch pop  % discard the string keeping the PFB segment length
 	2 copy ne {
           (   **** Warning: Type 1 PFB segment length and Length 2 value do not match.\n)
@@ -539,22 +539,22 @@ end readonly def
 cleartomark\n)
 readonly def
 /type1read2 {		% <left> type1read2 <string> <left'>
-  DEBUG { (read2 ) print } if
+  PDFDEBUG { (read2 ) print } if
    dup 0 eq
     { pop sectionstr 0 3 put
       stream /Length3 oget
       dup 0 eq
-       { DEBUG { (trailer ) print } if
+       { PDFDEBUG { (trailer ) print } if
 	 type1trailer exch
        }
        { 
          pfbhdr 0 get 16#80 eq {
            % eat 6 more bytes of PFB junk before proceeding
-	   DEBUG { (skipping PFB header in segment 3) = flush } if
+	   PDFDEBUG { (skipping PFB header in segment 3) = flush } if
 	   buffer 0 6 getinterval type1readdata exch
            dup 5 get 256 mul 1 index 4 get add 256 mul
 	   1 index 3 get add 256 mul 1 index 2 get add
-           DEBUG { (PFB segment length = ) print dup = } if
+           PDFDEBUG { (PFB segment length = ) print dup = } if
 	   exch pop  % discard the string keeping the PFB segment length
 	   2 copy ne {
            (   **** Warning: Type 1 PFB segment length and Length 3 value do not match.\n)
@@ -575,7 +575,7 @@ readonly def
 % Read the next block of the final text portion.
 % When finished, this procedure returns an empty string.
 /type1read3		% <left> type1read3 <string> <left'>
- { DEBUG { (read3 ) print } if
+ { PDFDEBUG { (read3 ) print } if
    buffer type1readdata
  } bdef
 
