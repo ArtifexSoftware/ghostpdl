@@ -166,10 +166,18 @@ gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
 							  ppath->position.y,
 					    pseg->notes | sn_not_first)) < 0)
 				break;
-			    adjust_point_to_tangent(start, start->next,
-						    &pc->p1);
-			    adjust_point_to_tangent(end, end->prev,
-						    &pc->p2);
+			    if (start->next->pt.x != pc->p1.x || start->next->pt.y != pc->p1.y)
+				adjust_point_to_tangent(start, start->next, &pc->p1);
+			    else if (start->next->pt.x != pc->p2.x || start->next->pt.y != pc->p2.y)
+				adjust_point_to_tangent(start, start->next, &pc->p2);
+			    else
+				adjust_point_to_tangent(start, start->next, &end->prev->pt);
+			    if (end->prev->pt.x != pc->p2.x || end->prev->pt.y != pc->p2.y)
+				adjust_point_to_tangent(end, end->prev, &pc->p2);
+			    else if (end->prev->pt.x != pc->p1.x || end->prev->pt.y != pc->p1.y)
+				adjust_point_to_tangent(end, end->prev, &pc->p1);
+			    else
+				adjust_point_to_tangent(end, end->prev, &start->pt);
 			} else {
 			    cseg = *pc;
 			    code = gx_subdivide_curve(ppath, k, &cseg, notes);
@@ -267,7 +275,7 @@ adjust_point_to_tangent(segment * pseg, const segment * next,
 		  C, D, T);
 	if (T > 0) {
 	    if (T > 1) {
-		/* Don't go outside the path bounding box. */
+		/* Don't go outside the curve bounding box. */
 		T = 1;
 	    }
 	    pseg->pt.x = arith_rshift((fixed) (C * T), 2) + x0;
