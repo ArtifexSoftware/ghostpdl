@@ -22,6 +22,32 @@ extern pcl_command_proc(rtl_enter_pcl_mode);
 /* Even though these are PCL commands, */
 /* they are only relevant to HPGL. */
 
+/* side effects resulting from a change in picture frame size or
+   anchor point position */
+ private int
+pcl_set_picture_frame_side_effects(pcl_state_t *pcls)
+{
+    hpgl_args_t args;
+    /* default P1 and P2 */
+    hpgl_args_setup(&args);
+    hpgl_IP(&args, pcls);
+    
+    /* default the clipping window */
+    hpgl_args_setup(&args);
+    hpgl_IW(&args, pcls);
+    
+    /* clear the polygon buffer */
+    hpgl_args_set_int(&args,0);
+    hpgl_PM(&args, pcls);
+    
+    hpgl_args_set_int(&args,2);
+    hpgl_PM(&args, pcls);
+
+    /* NB according to spec should move pen to P1. */
+    return 0;
+}
+    
+
 int /* ESC * c <w_dp> X */ 
 pcl_horiz_pic_frame_size_decipoints(pcl_args_t *pargs, pcl_state_t *pcls)
 {
@@ -31,21 +57,7 @@ pcl_horiz_pic_frame_size_decipoints(pcl_args_t *pargs, pcl_state_t *pcls)
 	  pcls->g.picture_frame_width = pcls->xfm_state.lp_size.x;
 	else
 	  pcls->g.picture_frame_width = size;
-
-	{
-	  hpgl_args_t args;
-	  hpgl_args_setup(&args);
-	  hpgl_IP(&args, pcls);
-	
-	  hpgl_args_setup(&args);
-	  hpgl_IW(&args, pcls);
-	
-	  hpgl_args_set_int(&args,0);
-	  hpgl_PM(&args, pcls);
-
-	  hpgl_args_set_int(&args,2);
-	  hpgl_PM(&args, pcls);
-	}
+	pcl_set_picture_frame_side_effects(pcls);
 	return 0;
 }
 
@@ -56,23 +68,11 @@ pcl_vert_pic_frame_size_decipoints(pcl_args_t *pargs, pcl_state_t *pcls)
 	
 	/* default to pcl logical page */
 	if ( size == 0 )
-          size = pcls->xfm_state.lp_size.y - inch2coord(1.0);
-	pcls->g.picture_frame_height = size;
-
-	{
-	  hpgl_args_t args;
-	  hpgl_args_setup(&args);
-	  hpgl_IP(&args, pcls);
-	
-	  hpgl_args_setup(&args);
-	  hpgl_IW(&args, pcls);
-	
-	  hpgl_args_set_int(&args,0);
-	  hpgl_PM(&args, pcls);
-
-	  hpgl_args_set_int(&args,2);
-	  hpgl_PM(&args, pcls);
-	}
+	    size = pcls->xfm_state.lp_size.y - inch2coord(1.0);
+	else
+	    pcls->g.picture_frame_height = size;
+	pcls->g.plot_size_vertical_specified = false;
+	pcl_set_picture_frame_side_effects(pcls);
 	return 0;
 }
 
@@ -97,23 +97,7 @@ pcl_set_pic_frame_anchor_point(
     pcl_xfm_to_logical_page_space(pcls, &tmp_pt);
     pcls->g.picture_frame.anchor_point.x = tmp_pt.x;
     pcls->g.picture_frame.anchor_point.y = tmp_pt.y;
-
-    {
-	hpgl_args_t    args;
-
-	hpgl_args_setup(&args);
-	hpgl_IP(&args, pcls);
-	
-	hpgl_args_setup(&args);
-	hpgl_IW(&args, pcls);
-	
-        hpgl_args_set_int(&args,0);
-        hpgl_PM(&args, pcls);
-
-        hpgl_args_set_int(&args,2);
-        hpgl_PM(&args, pcls);
-    }
-
+    pcl_set_picture_frame_side_effects(pcls);
     return 0;
 }
 
