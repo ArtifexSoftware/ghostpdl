@@ -794,7 +794,7 @@ private char *gs_main_tempnames(gs_main_instance *minst)
 }
 
 /* Free all resources and return. */
-void
+int
 gs_main_finit(gs_main_instance * minst, int exit_status, int code)
 {
     i_ctx_t *i_ctx_p = minst->i_ctx_p;
@@ -819,7 +819,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
 	    
 	    if (code < 0)
 		eprintf2("ERROR %d closing the device. See gs/src/ierrors.h for code explanation.\n", code, i_ctx_p->pgs->device->dname);
-	    if (exit_status == 0)
+	    if (exit_status == 0 || exit_status == e_Quit)
 		exit_status = code;
 	}
     }
@@ -858,16 +858,17 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
 	free(tempnames);
     }
     gs_lib_finit(exit_status, code);
+    return exit_status;
 }
-void
+int
 gs_to_exit_with_code(int exit_status, int code)
 {
-    gs_finit(exit_status, code);
+    return gs_finit(exit_status, code);
 }
-void
+int
 gs_to_exit(int exit_status)
 {
-    gs_to_exit_with_code(exit_status, 0);
+    return gs_to_exit_with_code(exit_status, 0);
 }
 void
 gs_abort(void)

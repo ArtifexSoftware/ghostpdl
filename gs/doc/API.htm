@@ -449,7 +449,7 @@ gs_main_instance *minst;
 
 int main(int argc, char *argv[])
 {
-    int code;
+    int code, code1;
     const char * gsargv[10];
     int gsargc;
     gsargv[0] = "ps2pdf";	/* actual value doesn't matter */
@@ -468,7 +468,9 @@ int main(int argc, char *argv[])
     if (code &lt; 0)
 	return 1;
     code = gsapi_init_with_args(minst, gsargc, gsargv);
-    gsapi_exit(minst);
+    code1 = gsapi_exit(minst);
+    if ((code == 0) || (code == e_Quit))
+	code = code1;
 
     gsapi_delete_instance(minst);
 
@@ -535,7 +537,7 @@ const char start_string[] = "systemdict /start get exec\n";
 
 int main(int argc, char *argv[])
 {
-    int code;
+    int code, code1;
     int exit_code;
 
     code = gsapi_new_instance(&minst, NULL);
@@ -545,7 +547,9 @@ int main(int argc, char *argv[])
     code = gsapi_init_with_args(minst, argc, argv);
     if (code == 0)
 	code = gsapi_run_string(minst, start_string, 0, &exit_code);
-    gsapi_exit(minst);
+    code1 = gsapi_exit(minst);
+    if ((code == 0) || (code == e_Quit))
+	code = code1;
 
     gsapi_delete_instance(minst);
 
@@ -564,7 +568,7 @@ const char *command = "1 2 add == flush\n";
 
 int main(int argc, char *argv[])
 {
-    int code;
+    int code, code1;
     int exit_code;
 
     code = gsapi_new_instance(&minst, NULL);
@@ -580,7 +584,9 @@ int main(int argc, char *argv[])
 	gsapi_run_string_end(minst, 0, &exit_code);
     }
 
-    gsapi_exit(minst);
+    code1 = gsapi_exit(minst);
+    if ((code == 0) || (code == e_Quit))
+	code = code1;
 
     gsapi_delete_instance(minst);
 

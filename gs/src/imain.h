@@ -260,6 +260,6 @@ int gs_main_errwrite(gs_main_instance *minst, const char *str, int len);
  * Note that calling gs_to_exit (defined in gsexit.h) automatically calls
  * gs_main_finit for the default instance.
  */
-void gs_main_finit(gs_main_instance * minst, int exit_status, int code);
+int gs_main_finit(gs_main_instance * minst, int exit_status, int code);
 
 #endif /* imain_INCLUDED */
