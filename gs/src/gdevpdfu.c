@@ -49,7 +49,6 @@
 #  define compression_filter_template s_zlibE_template
 #  define compression_filter_state stream_zlib_state
 #else
-#  include "slzwx.h"
 #  define compression_filter_name "LZWDecode"
 #  define compression_filter_template s_LZWE_template
 #  define compression_filter_state stream_LZW_state
@@ -91,17 +90,14 @@ pdf_open_document(gx_device_pdf * pdev)
      * It also isn't clear whether the compression method can now be
      * changed in the course of the document.
      *
-     * The following algorithm is per an update to TN # 5151 by
-     * Adobe Developer Support.
+     * Flate compression is available starting in PDF 1.2.  Since we no
+     * longer support any older PDF versions, we ignore UseFlateCompression
+     * and always use Flate compression.
      */
     if (!pdev->params.CompressPages)
 	pdev->compression = pdf_compress_none;
-    else if (pdev->CompatibilityLevel < 1.2)
-	pdev->compression = pdf_compress_LZW;
-    else if (pdev->params.UseFlateCompression)
-	pdev->compression = pdf_compress_Flate;
     else
-	pdev->compression = pdf_compress_LZW;
+	pdev->compression = pdf_compress_Flate;
 }
 
 /* ------ Objects ------ */

@@ -42,7 +42,7 @@
 private int pdf_dsc_process(P2(gx_device_pdf * pdev,
 			       const gs_param_string_array * pma));
 
-private const int CoreDistVersion = 4000;	/* Distiller 4.0 */
+private const int CoreDistVersion = 5000;	/* Distiller 5.0 */
 private const gs_param_item_t pdf_param_items[] = {
 #define pi(key, type, memb) { key, type, offset_of(gx_device_pdf, memb) }
 
@@ -64,6 +64,10 @@ private const gs_param_item_t pdf_param_items[] = {
     pi("AutoPositionEPSFiles", gs_param_type_bool, AutoPositionEPSFiles),
     pi("PreserveCopyPage", gs_param_type_bool, PreserveCopyPage),
     pi("UsePrologue", gs_param_type_bool, UsePrologue),
+
+	/* Acrobat Distiller 5 parameters */
+
+    pi("OffOptimizations", gs_param_type_int, OffOptimizations),
 
 	/* Ghostscript-specific parameters */
 
@@ -172,7 +176,6 @@ private const gs_param_item_t pdf_param_items[] = {
     Require DSC parser / interceptor
   CreateJobTicket
     ?
-  PreserveEPSInfo
   AutoPositionEPSFiles
     Require DSC parsing
   PreserveCopyPage
@@ -281,6 +284,16 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 	    ecode = code;
 	    param_signal_error(plist, param_name, ecode);
 	case 0:
+	    /*
+	     * Must be 1.2, 1.3, or 1.4.  Per Adobe documentation, substitute
+	     * the nearest achievable value.
+	     */
+	    if (cl < (float)1.25)
+		cl = 1.2;
+	    else if (cl >= (float)1.35)
+		cl = 1.4;
+	    else
+		cl = 1.3;
 	case 1:
 	    break;
     }
@@ -399,16 +412,31 @@ pdf_dsc_process(gx_device_pdf * pdev, const gs_param_string_array * pma)
     int code = 0;
     int i;
 
+    /*
+     * If ParseDSCComments is false, all DSC comments are ignored, even if
+     * ParseDSCComentsForDocInfo or PreserveEPSInfo is true.
+     */
+    if (!pdev->ParseDSCComments)
+	return 0;
+
     for (i = 0; i + 1 < pma->size && code >= 0; i += 2) {
 	const gs_param_string *pkey = &pma->data[i];
 	const gs_param_string *pvalue = &pma->data[i + 1];
 	const char *key;
 	int code;
 
+	/*
+	 * %%For, %%Creator, and %%Title are recognized only if either
+	 * ParseDSCCommentsForDocInfo or PreserveEPSInfo is true.
+	 * The other DSC comments are always recognized.
+	 *
+	 * Acrobat Distiller sets CreationDate and ModDate to the current
+	 * time, not the value of %%CreationDate.  We think this is wrong,
+	 * but we do the same -- we ignore %%CreationDate here.
+	 */
+
 	if (pdf_key_eq(pkey, "Creator"))
 	    key = "/Creator";
-	else if (pdf_key_eq(pkey, "CreationDate"))
-	    key = "/CreationDate";
 	else if (pdf_key_eq(pkey, "Title"))
 	    key = "/Title";
 	else if (pdf_key_eq(pkey, "For"))
@@ -416,8 +444,6 @@ pdf_dsc_process(gx_device_pdf * pdev, const gs_param_string_array * pma)
 	else {
 	    pdf_page_dsc_info_t *ppdi;
 
-	    if (!pdev->ParseDSCComments)
-		continue;
 	    if ((ppdi = &pdev->doc_dsc_info,
 		 pdf_key_eq(pkey, "Orientation")) ||
 		(ppdi = &pdev->page_dsc_info,
@@ -457,7 +483,6 @@ pdf_dsc_process(gx_device_pdf * pdev, const gs_param_string_array * pma)
 		    continue;
 		}
 		/*
-		 *
 		 * We only parse the BoundingBox for the sake of
 		 * AutoPositionEPSFiles.
 		 */
@@ -472,11 +497,11 @@ pdf_dsc_process(gx_device_pdf * pdev, const gs_param_string_array * pma)
 		    )
 		    continue;	/* error */
 		ppdi->bounding_box = box;
-		continue;
 	    }
 	    continue;
 	}
-	if (pdev->ParseDSCCommentsForDocInfo)
+
+	if (pdev->ParseDSCCommentsForDocInfo || pdev->PreserveEPSInfo)
 	    code = cos_dict_put_c_key_string(pdev->Info, key,
 					     pvalue->data, pvalue->size);
     }

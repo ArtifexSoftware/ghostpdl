@@ -57,6 +57,75 @@ pdf_end_fontfile(gx_device_pdf *pdev, pdf_data_writer_t *pdw)
     return pdf_end_data(pdw);
 }
 
+/* Decide whether a font should be embedded. */
+private bool
+pdf_do_subset_font(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
+{
+    gs_font *font = pfd->base_font;
+    bool do_subset;
+
+    /*
+     * Adobe's Distiller Parameters documentation for Acrobat Distiller 5
+     * says that all fonts other than Type 1 are always subsetted.  We can't
+     * do this, because of the encoding issues described in
+     * pdf_encode_glyph: the best we can do is use the font type as long as
+     * do_subset is not FONT_SUBSET_NO.
+     */
+    switch (font->FontType) {
+    case ft_encrypted:
+    case ft_disk_based:
+	break;
+    default:
+	if (pfd->do_subset != FONT_SUBSET_NO)
+	    return true;
+    }
+
+    switch (pfd->do_subset) {
+    case FONT_SUBSET_OK:
+	do_subset = pdev->params.SubsetFonts && pdev->params.MaxSubsetPct > 0;
+	break;
+    case FONT_SUBSET_YES:
+	do_subset = true;
+	break;
+    case FONT_SUBSET_NO:
+	do_subset = false;
+	break;
+    }
+
+    if (do_subset) {
+	int max_pct = pdev->params.MaxSubsetPct;
+	int used, i;
+
+	for (i = 0, used = 0; i < pfd->chars_used.size; ++i)
+	    used += byte_count_bits[pfd->chars_used.data[i]];
+	/*
+	 * We want to subset iff used / total <= MaxSubsetPct / 100, i.e.,
+	 * iff total >= used * 100 / MaxSubsetPct.  This observation
+	 * allows us to stop the enumeration loop early.
+	 */
+	if (max_pct < 100) {
+	    do_subset = false;
+	    if (max_pct > 0) {
+		int max_total = used * 100 / max_pct;
+		int index, total;
+		gs_glyph ignore_glyph;
+
+		for (index = 0, total = 0;
+		     (font->procs.enumerate_glyph(font, &index,
+						  GLYPH_SPACE_INDEX,
+						  &ignore_glyph), index != 0);
+		     )
+		    if (++total >= max_total) {
+			do_subset = true;
+			break;
+		    }
+	    }
+	}
+    }
+    return do_subset;
+}
+
+
 /* ---------------- Individual font types ---------------- */
 
 /* ------ Type 1 family ------ */
@@ -242,7 +311,7 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
     gs_const_string font_name;
     byte *fnchars = pfd->FontName.chars;
     uint fnsize = pfd->FontName.size;
-    bool do_subset;
+    bool do_subset = pdf_do_subset_font(pdev, pfd);
     long FontFile_id = pfd->FontFile_id;
     gs_glyph subset_glyphs[256];
     gs_glyph *subset_list = 0;	/* for non-CID fonts */
@@ -250,49 +319,6 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
     uint subset_size = 0;
     gs_matrix save_mat;
     int code;
-
-    /* Determine whether to subset the font. */
-    switch (pfd->do_subset) {
-    case FONT_SUBSET_OK:
-	do_subset = pdev->params.SubsetFonts && pdev->params.MaxSubsetPct > 0;
-	break;
-    case FONT_SUBSET_YES:
-	do_subset = true;
-	break;
-    case FONT_SUBSET_NO:
-	do_subset = false;
-	break;
-    }
-    if (do_subset) {
-	int max_pct = pdev->params.MaxSubsetPct;
-	int used, i;
-
-	for (i = 0, used = 0; i < pfd->chars_used.size; ++i)
-	    used += byte_count_bits[pfd->chars_used.data[i]];
-	/*
-	 * We want to subset iff used / total <= MaxSubsetPct / 100, i.e.,
-	 * iff total >= used * 100 / MaxSubsetPct.  This observation
-	 * allows us to stop the enumeration loop early.
-	 */
-	if (max_pct < 100) {
-	    do_subset = false;
-	    if (max_pct > 0) {
-		int max_total = used * 100 / max_pct;
-		int index, total;
-		gs_glyph ignore_glyph;
-
-		for (index = 0, total = 0;
-		     (font->procs.enumerate_glyph(font, &index,
-						  GLYPH_SPACE_INDEX,
-						  &ignore_glyph), index != 0);
-		     )
-		    if (++total >= max_total) {
-			do_subset = true;
-			break;
-		    }
-	    }
-	}
-    }
 
     /* Generate an appropriate font name. */
     if (pdf_has_subset_prefix(fnchars, fnsize)) {

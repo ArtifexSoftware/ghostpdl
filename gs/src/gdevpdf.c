@@ -18,10 +18,11 @@
 
 /*$Id$ */
 /* PDF-writing driver */
+#include "fcntl_.h"
 #include "memory_.h"
 #include "string_.h"
+#include "time_.h"
 #include "unistd_.h"
-#include "fcntl_.h"
 #include "gx.h"
 #include "gp.h"			/* for gp_get_realtime */
 #include "gserrors.h"
@@ -188,6 +189,7 @@ const gx_device_pdf gs_pdfwrite_device =
  1 /*true*/,			/* AutoPositionEPSFiles */
  1 /*true*/,			/* PreserveCopyPage */
  0 /*false*/,			/* UsePrologue */
+ 0,				/* OffOptimizations */
  1 /*true*/,			/* ReAssignCharacters */
  1 /*true*/,			/* ReEncodeCharacters */
  1,				/* FirstObjectNumber */
@@ -353,7 +355,6 @@ void
 pdf_initialize_ids(gx_device_pdf * pdev)
 {
     gs_param_string nstr;
-    char buf[PDF_MAX_PRODUCER];
 
     pdev->next_id = pdev->FirstObjectNumber;
 
@@ -366,9 +367,34 @@ pdf_initialize_ids(gx_device_pdf * pdev)
 
     param_string_from_string(nstr, "{DocInfo}");
     pdf_create_named_dict(pdev, &nstr, &pdev->Info, 0L);
-    pdf_store_default_Producer(buf);
-    cos_dict_put_c_key_string(pdev->Info, "/Producer", (byte *)buf,
-			      strlen(buf));
+    {
+	char buf[PDF_MAX_PRODUCER];
+
+	pdf_store_default_Producer(buf);
+	cos_dict_put_c_key_string(pdev->Info, "/Producer", (byte *)buf,
+				  strlen(buf));
+    }
+    /*
+     * Acrobat Distiller sets CreationDate and ModDate to the current
+     * date and time, rather than (for example) %%CreationDate from the
+     * PostScript file.  We think this is wrong, but we do the same.
+     */
+    {
+	struct tm tms;
+	time_t t;
+	char buf[1+2+4+2+2+2+2+2+2+1+1]; /* (D:yyyymmddhhmmss)\0 */
+
+	time(&t);
+	tms = *localtime(&t);
+	sprintf(buf,
+		"(D:%04d%02d%02d%02d%02d%02d)",
+		tms.tm_year + 1900, tms.tm_mon + 1, tms.tm_mday,
+		tms.tm_hour, tms.tm_min, tms.tm_sec);
+	cos_dict_put_c_key_string(pdev->Info, "/CreationDate", (byte *)buf,
+				  strlen(buf));
+	cos_dict_put_c_key_string(pdev->Info, "/ModDate", (byte *)buf,
+				  strlen(buf));
+    }
 
     /* Allocate the root of the pages tree. */
 

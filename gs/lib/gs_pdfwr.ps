@@ -23,28 +23,44 @@
 
 % ---------------- Predefined configurations ---------------- %
 
-% These correspond to the 3 predefined settings in Acrobat Distiller 4,
-% plus a "default" setting.
+% These correspond to the 4 predefined settings in Acrobat Distiller 5,
+% plus a "default" setting that doesn't downsample images.
 
-% Parameters common to all configurations.
-% Note that we don't set AlwaysEmbed or NeverEmbed, since the default values
-% depend on the CompatibilityLevel and are initialized internally.
+/.a2112 [2 1 1 2] readonly def
+/.a1111 [1 1 1 1] readonly def
+/.standardfonts [
+  /Courier /Courier-Bold /Courier-Oblique /Courier-BoldOblique
+  /Helvetica /Helvetica-Bold /Helvetica-Oblique /Helvetica-BoldOblique
+  /Times-Roman /Times-Bold /Times-Italic /Times-BoldItalic
+  /Symbol /ZapfDingbats
+] readonly def
+% **************** PATCH **************** %
+% Explicitly adding the standard fonts to NeverEmbed produces broken
+% PDF files, containing non-embedded fonts with names like /Times-Roman~1c.
+% (We have been struggling with this problem for literally years.)
+% Disable setting NeverEmbed until the problem is fixed.
+/.standardfonts [] def
+% **************** END PATCH **************** %
+
+% Parameters common to all non-default configurations.
+% Note that the default configuration overrides a few of these.
 /.defaultImageDict mark
   /QFactor 0.9 /Blend 1
-  /HSamples [2 1 1 2] /VSamples [2 1 1 2]
+  /HSamples .a2112 /VSamples .a2112
 .dicttomark readonly def
 /.distillercommon mark
-  /ASCII85EncodePages false
+  /AlwaysEmbed []
   /AntiAliasColorImages false
   /AntiAliasGrayImages false
   /AntiAliasMonoImages false
+  /ASCII85EncodePages false
   /AutoFilterColorImages true
   /AutoFilterGrayImages true
-  /AutoFilterMonoImages true
   /AutoPositionEPSFiles true
   /Binding /Left
-	% What to do about the CalxxxProfiles?
-  /ColorACSImageDict .defaultImageDict
+  /CalCMYKProfile (None)		% (U.S. Web Coated (SWOP) v2)
+  /CalGrayProfile (None)		% (Dot Gain 20%)  
+  /CalRGBProfile (None)			% (sRGB IEC61966-2.1)
   /ColorImageDepth -1
   /ColorImageDict .defaultImageDict
   /ColorImageDownsampleThreshold 1.5
@@ -61,12 +77,11 @@
   /EncodeGrayImages true
   /EncodeMonoImages true
   /EndPage -1
-  /GrayACSImageDict .defaultImageDict
   /GrayImageDepth -1
   /GrayImageDict .defaultImageDict
   /GrayImageDownsampleThreshold 1.5
   /GrayImageFilter /DCTEncode
-  /ImageMemory 500000
+  /ImageMemory 524288
   /LockDistillerParams false
   /MaxSubsetPct 100
   /MonoImageDepth -1
@@ -75,13 +90,14 @@
   .dicttomark readonly
   /MonoImageDownsampleThreshold 1.5
   /MonoImageFilter /CCITTFaxEncode
+  /OffOptimizations 0
   /OPM 1
   /Optimize true
   /ParseDSCComments true
   /ParseDSCCommentsForDocInfo true
   /PreserveCopyPage true
-  /PreserveEPSInfo true
   /PreserveHalftoneInfo false
+  /sRGBProfile (None)			% (sRGB IEC61966-2.1)
   /StartPage 1
   /SubsetFonts true
   /TransferFunctionInfo /Preserve
@@ -94,41 +110,89 @@
 /default mark
   /AutoRotatePages /PageByPage
   /CannotEmbedFontPolicy /Warning
-  /DownsampleColorImages false
-  /DownsampleGrayImages false
-  /DownsampleMonoImages false
-  /Optimize false
+  /ColorACSImageDict .defaultImageDict
+  /ColorConversionStrategy /LeaveColorUnchanged
+%  /ColorImageDownsampleType
+%  /ColorImageResolution
+%  /CompatibilityLevel
+  /CreateJobTicket false
+  /DoThumbnails false
+  /DownsampleColorImages false		% override
+  /DownsampleGrayImages false		% override
+  /DownsampleMonoImages false		% override
+  /EmbedAllFonts true
+  /GrayACSImageDict .defaultImageDict
+%  /GrayImageDownsampleType
+%  /GrayImageResolution
+%  /MonoImageDownsampleType
+%  /MonoImageResolution
+  /NeverEmbed .standardfonts
+  /Optimize false			% override
+  /PreserveEPSInfo true
+  /PreserveOPIComments true
+  /PreserveOverprintSettings true
+  /UCRandBGInfo /Preserve
 .dicttomark readonly
 
+/.screenACSImageDict mark
+  /QFactor 0.76 /Blend 1 /ColorTransform 1
+  /HSamples .a2112 /VSamples .a2112
+.dicttomark readonly def
 /screen mark
   /AutoRotatePages /PageByPage
+%  /CalGrayProfile (None)
   /CannotEmbedFontPolicy /Warning
+  /ColorACSImageDict .screenACSImageDict
   /ColorConversionStrategy /sRGB
   /ColorImageDownsampleType /Average
   /ColorImageResolution 72
   /CompatibilityLevel 1.2
   /CreateJobTicket false
   /DoThumbnails false
-  /DownsampleColorImages true
-  /DownsampleGrayImages true
-  /DownsampleMonoImages true
   /EmbedAllFonts false
+  /GrayACSImageDict .screenACSImageDict
   /GrayImageDownsampleType /Average
   /GrayImageResolution 72
   /MonoImageDownsampleType /Average
   /MonoImageResolution 300
-  /ParseDSCCommentsForDocInfo false
+  /NeverEmbed .standardfonts
+  /PreserveEPSInfo false
+  /PreserveOPIComments false
+  /PreserveOverprintSettings false
+  /UCRandBGInfo /Remove
+.dicttomark readonly
+
+/ebook mark
+  /AutoRotatePages /All
+%  /CalGrayProfile (None)
+  /CannotEmbedFontPolicy /Warning
+  /ColorACSImageDict .screenACSImageDict
+  /ColorConversionStrategy /sRGB
+  /ColorImageDownsampleType /Bicubic
+  /ColorImageResolution 150
+  /CompatibilityLevel 1.3
+  /CreateJobTicket false
+  /DoThumbnails false
+  /EmbedAllFonts true
+  /GrayACSImageDict .screenACSImageDict
+  /GrayImageDownsampleType /Bicubic
+  /GrayImageResolution 150
+  /MonoImageDownsampleType /Bicubic
+  /MonoImageResolution 300
+  /NeverEmbed .standardfonts
+  /PreserveEPSInfo false
   /PreserveOPIComments false
   /PreserveOverprintSettings false
   /UCRandBGInfo /Remove
 .dicttomark readonly
 
 /.printerACSImageDict mark
-  /QFactor 0.55 /Blend 1
-  /HSamples [2 1 1 2] /VSamples [2 1 1 2]
+  /QFactor 0.4 /Blend 1 /ColorTransform 1
+  /HSamples .a1111 /VSamples .a1111
 .dicttomark readonly def
 /printer mark
   /AutoRotatePages /None
+%  /CalGrayProfile (None)
   /CannotEmbedFontPolicy /Warning
   /ColorACSImageDict .printerACSImageDict
   /ColorConversionStrategy /UseDeviceIndependentColor
@@ -143,15 +207,16 @@
   /GrayImageResolution 300
   /MonoImageDownsampleType /Bicubic
   /MonoImageResolution 1200
-  /ParseDSCCommentsForDocInfo true
+  /NeverEmbed []
+  /PreserveEPSInfo true
   /PreserveOPIComments true
   /PreserveOverprintSettings true
   /UCRandBGInfo /Preserve
 .dicttomark readonly
 
 /.prepressACSImageDict mark
-  /QFactor 0.25
-  /HSamples [1 1 1 1] /VSamples [1 1 1 1]
+  /QFactor 0.15 /Blend 1 /ColorTransform 1
+  /HSamples .a1111 /VSamples .a1111
 .dicttomark readonly def
 /prepress mark
   /AutoRotatePages /None
@@ -169,7 +234,8 @@
   /GrayImageResolution 300
   /MonoImageDownsampleType /Bicubic
   /MonoImageResolution 1200
-  /ParseDSCCommentsForDocInfo true
+  /NeverEmbed []
+  /PreserveEPSInfo true
   /PreserveOPIComments true
   /PreserveOverprintSettings true
   /UCRandBGInfo /Preserve
@@ -382,6 +448,7 @@ currentdict /.pdfmarkparams .undef
   /AutoPositionEPSFiles { }
   /PreserveCopyPage { }
   /UsePrologue { }
+  /OffOptimizations { }
 		% Color sampled image parameters
   /ColorACSImageDict { }
   /AntiAliasColorImages { }

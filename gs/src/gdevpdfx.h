@@ -369,6 +369,7 @@ struct gx_device_pdf_s {
     bool AutoPositionEPSFiles;
     bool PreserveCopyPage;
     bool UsePrologue;
+    int OffOptimizations;
     /* End of distiller parameters */
     /* Other parameters */
     bool ReAssignCharacters;

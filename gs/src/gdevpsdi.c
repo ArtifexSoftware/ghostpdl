@@ -112,10 +112,6 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
 	 * Disregard the requested filter: use DCTEncode with ACSDict
 	 * instead (or the lossless filter if the conditions for JPEG
 	 * encoding aren't met).
-	 *
-	 * Even though this isn't obvious from the Adobe Tech Note,
-	 * it appears that if UseFlateCompression is true, the default
-	 * compressor for AutoFilter is FlateEncode, not LZWEncode.
          */
 	orig_template = template = 
           ( pim->Width < 64 || pim->Height < 64 ) ? lossless_template : &s_DCTE_template;
