@@ -1,5 +1,8 @@
-pcl6: fonts
+pcl6:
 	make -C main -f pcl6_gcc.mak	# build PCL and PCLXL. 
+
+debug: 
+	make -C main -f pcl6_gcc.mak debug
 
 fonts:
 	mkdir -p /windows/fonts/	# make a font directory. 2 
@@ -9,7 +12,7 @@ fonts:
 install:
 	install main/obj/pcl6 /usr/local/bin
 
-test: pcl6
+test: 
 	cd tools; ../main/obj/pcl6 -sDEVICE=x11alpha owl.pcl frs96.pxl # test with PCL and PXL test file 
 
 # NB - this does not remove the fonts.  blowing away /windows/fonts

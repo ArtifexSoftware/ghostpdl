@@ -3,11 +3,15 @@ License is in Public.htm
 
 We encourage you to read the documentation and licence information but
 the software can be quickly built and installed on many unix systems
-by executing these commands.
+by executing these commands. (don't type '*')
 
-make
+make fonts *
+make pcl6 (make debug for a diagnostic system)
 make test
-make install
+make install *
+
+* may require administrator privelages depending on the permissions of
+  the install locations
 
 `make test' will run the pcl6 interpreter with the X11 device in
 interactive mode.  You must press return after each page is displayed.
