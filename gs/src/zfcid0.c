@@ -488,6 +488,12 @@ ztype9mapcid(i_ctx_t *i_ctx_p)
        code = pfcid->cidata.glyph_data((gs_font_base *)pfcid,
                     (gs_glyph)(gs_min_cid_glyph + default_fallback_CID),
                                    &gdata, &fidx);
+
+       if (code < 0) {
+           if_debug1('J', "[J]ztype9cidmap() could not load default glyph (CID %d)\n", op->value.intval);
+           return_error(e_invalidfont);
+       }
+
     }
 
     /****** FOLLOWING IS NOT GENERAL W.R.T. ALLOCATION OF GLYPH DATA ******/
@@ -496,7 +502,7 @@ ztype9mapcid(i_ctx_t *i_ctx_p)
 		      gdata.bits.size, 
 		      gdata.bits.data);
     make_int(op, fidx);
-    return 0;
+    return code;
 }
 
 /* ------ Initialization procedure ------ */
