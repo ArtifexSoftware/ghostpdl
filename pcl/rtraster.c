@@ -825,7 +825,7 @@ process_adaptive_compress(
     int                 code = 0;
 
     prast->plane_index = 0;
-    while ((insize > 3) && (code >= 0)) {
+    while ((insize >= 3) && (code >= 0)) {
         int     cmd = *pin++;
         uint    param = *pin++;
 
