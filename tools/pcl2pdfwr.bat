@@ -2,7 +2,7 @@
 @rem $RCSfile$ $Revision$
 rem Convert PCL or PXL to PDF without specifying CompatibilityLevel.
 
-set PS2PDFPARAMS= -dNOPAUSE -dBATCH -sDEVICE#pdfwrite2
+set PS2PDFPARAMS= -dNOPAUSE -dBATCH -sDEVICE#pdfwrite
 set PS2PDFOPT=
 set PS2PDFGS=pcl6
 
