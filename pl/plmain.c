@@ -589,7 +589,6 @@ pl_main_universe_dnit(
 
     /* dealloc device if sel'd */
     if (universe->curr_device) {
-      gx_device_retain(universe->curr_device, false);
       gx_device_finalize(universe->curr_device);
       /* finalize closes, frees stype, now free the rest of the device */
       gs_free_object(universe->mem, universe->curr_device,
