@@ -33,6 +33,9 @@
   <ghost@aladdin.com>.  Other authors are noted in the change history
   that follows (in reverse chronological order):
 
+  2002-03-11 lpd Corrected argument list for main(), and added int return
+		type, in test program and T value program.
+  2002-02-21 lpd Added missing #include <stdio.h> in test program.
   2000-07-03 lpd Patched to eliminate warnings about "constant is
 		unsigned in ANSI C, signed in traditional";
 		made test program self-checking.
@@ -49,8 +52,10 @@
  * The test program should print out the same values as given in section
  * A.5 of RFC 1321, reproduced below.
  */
+#include <stdio.h>
 #include <string.h>
-main()
+int
+main(int argc, char *argv[])
 {
     static const char *const test[7*2] = {
 	"", "d41d8cd98f00b204e9800998ecf8427e",
@@ -90,7 +95,8 @@ main()
  */
 #ifdef COMPUTE_T_VALUES
 #include <math.h>
-main()
+int
+main(int argc, char *argv[])
 {
     int i;
     for (i = 1; i <= 64; ++i) {
