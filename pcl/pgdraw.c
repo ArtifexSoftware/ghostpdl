@@ -31,6 +31,7 @@
 extern  int     abs( int );
 #endif
 
+#define round(x)    (((x) < 0.0) ? (ceil ((x) - 0.5)) : (floor ((x) + 0.5)))
 
  int
 hpgl_set_picture_frame_scaling(hpgl_state_t *pgls)
@@ -90,6 +91,12 @@ hpgl_set_pcl_to_plu_ctm(hpgl_state_t *pgls)
 	    }
 	}
 	hpgl_call(hpgl_set_picture_frame_scaling(pgls));
+	{
+	    gs_matrix mat;
+	    gs_currentmatrix(pgls->pgs, &mat);
+	    mat.ty = round(mat.ty); mat.tx = round(mat.tx);
+	    gs_setmatrix(pgls->pgs, &mat);
+	}
 	hpgl_call(gs_setdotorientation(pgls->pgs));
 	return 0;
 }
@@ -432,10 +439,10 @@ hpgl_set_clipping_region(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 	      }
 
 	    /* convert intersection box to fixed point and clip */
-	    fixed_box.p.x = float2fixed(dev_clip_box.p.x);
-	    fixed_box.p.y = float2fixed(dev_clip_box.p.y);
-	    fixed_box.q.x = float2fixed(dev_clip_box.q.x);
-	    fixed_box.q.y = float2fixed(dev_clip_box.q.y);
+	    fixed_box.p.x = float2fixed(round(dev_clip_box.p.x));
+	    fixed_box.p.y = float2fixed(round(dev_clip_box.p.y));
+	    fixed_box.q.x = float2fixed(round(dev_clip_box.q.x+1.0));
+	    fixed_box.q.y = float2fixed(round(dev_clip_box.q.y+1.0));
 	    /* intersect with pcl clipping region */
 	    fixed_box.p.x = max(fixed_box.p.x, pgls->xfm_state.dev_print_rect.p.x);
 	    fixed_box.p.y = max(fixed_box.p.y, pgls->xfm_state.dev_print_rect.p.y);

@@ -4,6 +4,7 @@
 
 /* pcpage.c - PCL5 page and transformation control commands */
 
+#include "math_.h"
 #include "std.h"
 #include "pcommand.h"
 #include "pcstate.h"
@@ -31,6 +32,8 @@
  * it is important that it be assigned this value.
  */
 #define PRINTABLE_MARGIN_CP inch2coord(1.0 / 6.0)
+
+#define round(x)    (((x) < 0.0) ? (ceil ((x) - 0.5)) : (floor ((x) + 0.5)))
 
 
 /* Procedures */
@@ -164,7 +167,9 @@ update_xfm_state(
 
     /* then the logical page to device transformation */
     gs_matrix_multiply(&(pxfmst->lp2pg_mtx), &pg2dev,  &(pxfmst->lp2dev_mtx));
-
+    pg2dev.ty = round(pg2dev.ty); pg2dev.tx = round(pg2dev.tx);
+    pxfmst->lp2dev_mtx.tx = round(pxfmst->lp2dev_mtx.tx);
+    pxfmst->lp2dev_mtx.ty = round(pxfmst->lp2dev_mtx.ty);
     /* the "pseudo page direction to logical page/device transformations */
     pcl_make_rotation( pxfmst->print_dir,
                        (floatp)pxfmst->lp_size.x,
@@ -195,10 +200,10 @@ update_xfm_state(
 	print_rect.q.x = psize->width - max(PRINTABLE_MARGIN_CP, inch2coord(pdev->HWMargins[2] / 72.0));
 	print_rect.q.y = psize->height - max(PRINTABLE_MARGIN_CP, inch2coord(pdev->HWMargins[3] / 72.0));
 	pcl_transform_rect(&print_rect, &dev_rect, &pg2dev);
-	pxfmst->dev_print_rect.p.x = float2fixed(dev_rect.p.x);
-	pxfmst->dev_print_rect.p.y = float2fixed(dev_rect.p.y);
-	pxfmst->dev_print_rect.q.x = float2fixed(dev_rect.q.x);
-	pxfmst->dev_print_rect.q.y = float2fixed(dev_rect.q.y);
+	pxfmst->dev_print_rect.p.x = float2fixed(round(dev_rect.p.x));
+	pxfmst->dev_print_rect.p.y = float2fixed(round(dev_rect.p.y));
+	pxfmst->dev_print_rect.q.x = float2fixed(round(dev_rect.q.x));
+	pxfmst->dev_print_rect.q.y = float2fixed(round(dev_rect.q.y));
     }
     pcl_invert_mtx(&(pxfmst->lp2pg_mtx), &pg2lp);
     pcl_transform_rect(&print_rect, &(pxfmst->lp_print_rect), &pg2lp);
