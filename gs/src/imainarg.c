@@ -50,8 +50,8 @@
 #include "vdtrace.h"
 
 /* Import operator procedures */
-extern int zflush(P1(i_ctx_t *));
-extern int zflushpage(P1(i_ctx_t *));
+extern int zflush(i_ctx_t *);
+extern int zflushpage(i_ctx_t *);
 
 #ifndef GS_LIB
 #  define GS_LIB "GS_LIB"
@@ -83,26 +83,26 @@ extern int zflushpage(P1(i_ctx_t *));
 #define runInit 1
 #define runFlush 2
 #define runBuffer 4
-private int swproc(P3(gs_main_instance *, const char *, arg_list *));
-private int argproc(P2(gs_main_instance *, const char *));
-private int run_buffered(P2(gs_main_instance *, const char *));
-private int esc_strlen(P1(const char *));
-private void esc_strcat(P2(char *, const char *));
-private int runarg(P5(gs_main_instance *, const char *, const char *, const char *, int));
-private int run_string(P3(gs_main_instance *, const char *, int));
-private int run_finish(P4(gs_main_instance *, int, int, ref *));
-private int try_stdout_redirect(P3(gs_main_instance * minst, 
-    const char *command, const char *filename));
+private int swproc(gs_main_instance *, const char *, arg_list *);
+private int argproc(gs_main_instance *, const char *);
+private int run_buffered(gs_main_instance *, const char *);
+private int esc_strlen(const char *);
+private void esc_strcat(char *, const char *);
+private int runarg(gs_main_instance *, const char *, const char *, const char *, int);
+private int run_string(gs_main_instance *, const char *, int);
+private int run_finish(gs_main_instance *, int, int, ref *);
+private int try_stdout_redirect(gs_main_instance * minst, 
+				const char *command, const char *filename);
 
 /* Forward references for help printout */
-private void print_help(P1(gs_main_instance *));
-private void print_revision(P1(const gs_main_instance *));
-private void print_version(P1(const gs_main_instance *));
-private void print_usage(P1(const gs_main_instance *));
-private void print_devices(P1(const gs_main_instance *));
-private void print_emulators(P1(const gs_main_instance *));
-private void print_paths(P1(gs_main_instance *));
-private void print_help_trailer(P1(const gs_main_instance *));
+private void print_help(gs_main_instance *);
+private void print_revision(const gs_main_instance *);
+private void print_version(const gs_main_instance *);
+private void print_usage(const gs_main_instance *);
+private void print_devices(const gs_main_instance *);
+private void print_emulators(const gs_main_instance *);
+private void print_paths(gs_main_instance *);
+private void print_help_trailer(const gs_main_instance *);
 
 /* ------ Main program ------ */
 

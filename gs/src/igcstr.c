@@ -24,7 +24,7 @@
 #include "igcstr.h"
 
 /* Forward references */
-private bool gc_mark_string(P4(const byte *, uint, bool, const chunk_t *));
+private bool gc_mark_string(const byte *, uint, bool, const chunk_t *);
 
 /* (Un)mark the strings in a chunk. */
 void

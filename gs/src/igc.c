@@ -70,18 +70,18 @@ struct gc_mark_stack_s {
 #define ms_size_min 50		/* min size for segment in free block */
 
 /* Forward references */
-private void gc_init_mark_stack(P2(gc_mark_stack *, uint));
-private void gc_objects_clear_marks(P1(chunk_t *));
-private void gc_unmark_names(P1(name_table *));
-private int gc_trace(P3(gs_gc_root_t *, gc_state_t *, gc_mark_stack *));
-private int gc_rescan_chunk(P3(chunk_t *, gc_state_t *, gc_mark_stack *));
-private int gc_trace_chunk(P3(chunk_t *, gc_state_t *, gc_mark_stack *));
-private bool gc_trace_finish(P1(gc_state_t *));
-private void gc_clear_reloc(P1(chunk_t *));
-private void gc_objects_set_reloc(P1(chunk_t *));
-private void gc_do_reloc(P3(chunk_t *, gs_ref_memory_t *, gc_state_t *));
-private void gc_objects_compact(P2(chunk_t *, gc_state_t *));
-private void gc_free_empty_chunks(P1(gs_ref_memory_t *));
+private void gc_init_mark_stack(gc_mark_stack *, uint);
+private void gc_objects_clear_marks(chunk_t *);
+private void gc_unmark_names(name_table *);
+private int gc_trace(gs_gc_root_t *, gc_state_t *, gc_mark_stack *);
+private int gc_rescan_chunk(chunk_t *, gc_state_t *, gc_mark_stack *);
+private int gc_trace_chunk(chunk_t *, gc_state_t *, gc_mark_stack *);
+private bool gc_trace_finish(gc_state_t *);
+private void gc_clear_reloc(chunk_t *);
+private void gc_objects_set_reloc(chunk_t *);
+private void gc_do_reloc(chunk_t *, gs_ref_memory_t *, gc_state_t *);
+private void gc_objects_compact(chunk_t *, gc_state_t *);
+private void gc_free_empty_chunks(gs_ref_memory_t *);
 
 /* Forward references for pointer types */
 private ptr_proc_unmark(ptr_struct_unmark);
@@ -752,7 +752,7 @@ gc_trace_chunk(chunk_t * cp, gc_state_t * pstate, gc_mark_stack * pmstack)
 /* Return -1 if we overflowed the mark stack, */
 /* 0 if we completed successfully without marking any new objects, */
 /* 1 if we completed and marked some new objects. */
-private int gc_extend_stack(P2(gc_mark_stack *, gc_state_t *));
+private int gc_extend_stack(gc_mark_stack *, gc_state_t *);
 private int
 gc_trace(gs_gc_root_t * rp, gc_state_t * pstate, gc_mark_stack * pmstack)
 {

@@ -235,7 +235,7 @@ obj_string_data(const ref *op, const byte **pchars, uint *plen)
  * repeatedly to print on a stream, which may require suspending at any
  * point to handle stream callouts.
  */
-private void ensure_dot(P1(char *));
+private void ensure_dot(char *);
 int
 obj_cvp(const ref * op, byte * str, uint len, uint * prlen,
 	int full_print, uint start_pos, gs_memory_t *mem)

@@ -135,12 +135,12 @@ typedef enum {
 #define SIZEOF_BIN_SEQ_OBJ ((uint)8)
 
 /* Forward references */
-private int scan_bin_get_name(P3(const ref *, int, ref *));
-private int scan_bin_num_array_continue(P4(i_ctx_t *, stream *, ref *, scanner_state *));
-private int scan_bin_string_continue(P4(i_ctx_t *, stream *, ref *, scanner_state *));
-private int scan_bos_continue(P4(i_ctx_t *, stream *, ref *, scanner_state *));
-private byte *scan_bos_resize(P4(i_ctx_t *, scanner_state *, uint, uint));
-private int scan_bos_string_continue(P4(i_ctx_t *, stream *, ref *, scanner_state *));
+private int scan_bin_get_name(const ref *, int, ref *);
+private int scan_bin_num_array_continue(i_ctx_t *, stream *, ref *, scanner_state *);
+private int scan_bin_string_continue(i_ctx_t *, stream *, ref *, scanner_state *);
+private int scan_bos_continue(i_ctx_t *, stream *, ref *, scanner_state *);
+private byte *scan_bos_resize(i_ctx_t *, scanner_state *, uint, uint);
+private int scan_bos_string_continue(i_ctx_t *, stream *, ref *, scanner_state *);
 
 /* Scan a binary token.  Called from the main scanner */
 /* when it encounters an ASCII code 128-159, */

@@ -42,7 +42,7 @@ struct stats_dstack_s {
 
 #ifdef DEBUG
 /* Wrapper for dstack_find_name_by_index */
-ref *real_dstack_find_name_by_index(P2(dict_stack_t * pds, uint nidx));
+ref *real_dstack_find_name_by_index(dict_stack_t * pds, uint nidx);
 ref *
 dstack_find_name_by_index(dict_stack_t * pds, uint nidx)
 {

@@ -49,9 +49,9 @@ gs_private_st_composite(st_name_table, name_table, "name_table",
 			name_table_enum_ptrs, name_table_reloc_ptrs);
 
 /* Forward references */
-private int name_alloc_sub(P1(name_table *));
-private void name_free_sub(P2(name_table *, uint));
-private void name_scan_sub(P3(name_table *, uint, bool));
+private int name_alloc_sub(name_table *);
+private void name_free_sub(name_table *, uint);
+private void name_scan_sub(name_table *, uint, bool);
 
 /* Debugging printout */
 #ifdef DEBUG

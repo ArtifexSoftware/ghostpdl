@@ -82,9 +82,9 @@ ref_to_key(const ref * pref, gs_param_key_t * key, iparam_list *plist)
 /* ================ Writing parameters to refs ================ */
 
 /* Forward references */
-private int array_new_indexed_plist_write(P4(dict_param_list *plist,
-					     ref *parray, const ref *pwanted,
-					     gs_ref_memory_t *imem));
+private int array_new_indexed_plist_write(dict_param_list *plist,
+					  ref *parray, const ref *pwanted,
+					  gs_ref_memory_t *imem);
 
 /* ---------------- Generic writing procedures ---------------- */
 
@@ -102,12 +102,12 @@ private const gs_param_list_procs ref_write_procs =
     NULL,			/* request */
     ref_param_requested
 };
-private int ref_array_param_requested(P5(const iparam_list *, gs_param_name,
-					 ref *, uint, client_name_t));
-private int ref_param_write(P3(iparam_list *, gs_param_name, const ref *));
-private int ref_param_write_string_value(P3(ref *, const gs_param_string *,
-					    gs_ref_memory_t *));
-private int ref_param_write_name_value(P2(ref *, const gs_param_string *));
+private int ref_array_param_requested(const iparam_list *, gs_param_name,
+				      ref *, uint, client_name_t);
+private int ref_param_write(iparam_list *, gs_param_name, const ref *);
+private int ref_param_write_string_value(ref *, const gs_param_string *,
+					 gs_ref_memory_t *);
+private int ref_param_write_name_value(ref *, const gs_param_string *);
 private int
 ref_param_make_int(ref *pe, const void *pvalue, uint i, gs_ref_memory_t *imem)
 {
@@ -138,8 +138,8 @@ ref_param_make_name(ref * pe, const void *pvalue, uint i, gs_ref_memory_t *imem)
 private int
 ref_param_write_typed_array(gs_param_list * plist, gs_param_name pkey,
 			    void *pvalue, uint count,
-			    int (*make)(P4(ref *, const void *, uint,
-					   gs_ref_memory_t *)))
+			    int (*make)(ref *, const void *, uint,
+					gs_ref_memory_t *))
 {
     iparam_list *const iplist = (iparam_list *) plist;
     ref value;
@@ -518,12 +518,12 @@ private const gs_param_list_procs ref_read_procs =
     ref_param_read_signal_error,
     ref_param_read_commit
 };
-private int ref_param_read(P4(iparam_list *, gs_param_name,
-			      iparam_loc *, int));
-private int ref_param_read_string_value(P2(const iparam_loc *,
-					   gs_param_string *));
-private int ref_param_read_array(P3(iparam_list *, gs_param_name,
-				    iparam_loc *));
+private int ref_param_read(iparam_list *, gs_param_name,
+			   iparam_loc *, int);
+private int ref_param_read_string_value(const iparam_loc *,
+					gs_param_string *);
+private int ref_param_read_array(iparam_list *, gs_param_name,
+				 iparam_loc *);
 
 #define iparam_note_error(loc, code)\
   gs_note_error(*(loc).presult = code)

@@ -31,13 +31,13 @@
 #include "store.h"		/* for make_array */
 
 /* Import preparation and cleanup routines. */
-extern void ialloc_gc_prepare(P1(gs_ref_memory_t *));
+extern void ialloc_gc_prepare(gs_ref_memory_t *);
 
 /* Forward references */
-private void gs_vmreclaim(P2(gs_dual_memory_t *, bool));
+private void gs_vmreclaim(gs_dual_memory_t *, bool);
 
 /* Initialize the GC hook in the allocator. */
-private int ireclaim(P2(gs_dual_memory_t *, int));
+private int ireclaim(gs_dual_memory_t *, int);
 private int
 ireclaim_init(i_ctx_t *i_ctx_p)
 {

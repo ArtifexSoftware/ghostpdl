@@ -58,13 +58,13 @@ no_comment_proc(const byte * str, uint len)
 
 /* Procedure for handling DSC comments if desired. */
 /* Set at initialization if a DSC handling module is included. */
-int (*scan_dsc_proc) (P2(const byte *, uint)) = NULL;
+int (*scan_dsc_proc) (const byte *, uint) = NULL;
 
 /* Procedure for handling all comments if desired. */
 /* Set at initialization if a comment handling module is included. */
 /* If both scan_comment_proc and scan_dsc_proc are set, */
 /* scan_comment_proc is called only for non-DSC comments. */
-int (*scan_comment_proc) (P2(const byte *, uint)) = NULL;
+int (*scan_comment_proc) (const byte *, uint) = NULL;
 
 /*
  * Level 2 includes some changes in the scanner:

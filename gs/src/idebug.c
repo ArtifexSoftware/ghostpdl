@@ -194,7 +194,7 @@ debug_print_ref(const ref * pref)
 }
 
 /* Dump one ref. */
-private void print_ref_data(P1(const ref *));
+private void print_ref_data(const ref *);
 void
 debug_dump_one_ref(const ref * p)
 {

@@ -285,8 +285,8 @@ object_size_valid(const obj_header_t * pre, uint size, const chunk_t * cp)
 }
 
 /* Validate all the objects in a chunk. */
-private void ialloc_validate_ref(P2(const ref *, gc_state_t *));
-private void ialloc_validate_ref_packed(P2(const ref_packed *, gc_state_t *));
+private void ialloc_validate_ref(const ref *, gc_state_t *);
+private void ialloc_validate_ref_packed(const ref_packed *, gc_state_t *);
 void
 ialloc_validate_chunk(const chunk_t * cp, gc_state_t * gcst)
 {

@@ -30,9 +30,9 @@
 #include "store.h"
 
 /* Forward references */
-private void init_block(P3(ref_stack_t *pstack, const ref *pblock_array,
-			   uint used));
-private int ref_stack_push_block(P3(ref_stack_t *pstack, uint keep, uint add));
+private void init_block(ref_stack_t *pstack, const ref *pblock_array,
+			uint used);
+private int ref_stack_push_block(ref_stack_t *pstack, uint keep, uint add);
 
 /* GC descriptors and procedures */
 private_st_ref_stack_params();

@@ -42,7 +42,7 @@
 /* ------ Private code ------ */
 
 /* Forward references */
-private int cfont_ref_from_string(P4(i_ctx_t *, ref *, const char *, uint));
+private int cfont_ref_from_string(i_ctx_t *, ref *, const char *, uint);
 
 typedef struct {
     i_ctx_t *i_ctx_p;

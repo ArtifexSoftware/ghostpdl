@@ -33,7 +33,7 @@
 #include "gsutil.h"		/* gs_next_ids prototype */
 
 /* Imported save/restore routines */
-extern void font_restore(P1(const alloc_save_t *));
+extern void font_restore(const alloc_save_t *);
 
 /* Structure descriptor */
 private_st_alloc_save();
@@ -252,10 +252,10 @@ alloc_save_print(alloc_change_t * cp, bool print_current)
 #endif
 
 /* Forward references */
-private void restore_resources(P2(alloc_save_t *, gs_ref_memory_t *));
-private void restore_free(P1(gs_ref_memory_t *));
-private long save_set_new(P2(gs_ref_memory_t *, bool));
-private void save_set_new_changes(P2(gs_ref_memory_t *, bool));
+private void restore_resources(alloc_save_t *, gs_ref_memory_t *);
+private void restore_free(gs_ref_memory_t *);
+private long save_set_new(gs_ref_memory_t *, bool);
+private void save_set_new_changes(gs_ref_memory_t *, bool);
 
 /* Initialize the save/restore machinery. */
 void
@@ -296,9 +296,9 @@ alloc_set_not_in_save(gs_dual_memory_t *dmem)
 }
 
 /* Save the state. */
-private alloc_save_t *alloc_save_space(P3(gs_ref_memory_t *mem,
-					  gs_dual_memory_t *dmem,
-					  ulong sid));
+private alloc_save_t *alloc_save_space(gs_ref_memory_t *mem,
+				       gs_dual_memory_t *dmem,
+				       ulong sid);
 private void
 alloc_free_save(gs_ref_memory_t *mem, alloc_save_t *save, const char *scn)
 {
@@ -624,8 +624,8 @@ alloc_save_client_data(const alloc_save_t * save)
  * if this is the outermost restore (which requires restoring both local
  * and global VM) or if we created extra save levels to reduce scanning.
  */
-private void restore_finalize(P1(gs_ref_memory_t *));
-private void restore_space(P2(gs_ref_memory_t *, gs_dual_memory_t *));
+private void restore_finalize(gs_ref_memory_t *);
+private void restore_space(gs_ref_memory_t *, gs_dual_memory_t *);
 
 bool
 alloc_restore_step_in(gs_dual_memory_t *dmem, alloc_save_t * save)
@@ -848,9 +848,9 @@ restore_free(gs_ref_memory_t * mem)
 }
 
 /* Forget a save, by merging this level with the next outer one. */
-private void file_forget_save(P1(gs_ref_memory_t *));
-private void combine_space(P1(gs_ref_memory_t *));
-private void forget_changes(P1(gs_ref_memory_t *));
+private void file_forget_save(gs_ref_memory_t *);
+private void combine_space(gs_ref_memory_t *);
+private void forget_changes(gs_ref_memory_t *);
 void
 alloc_forget_save_in(gs_dual_memory_t *dmem, alloc_save_t * save)
 {

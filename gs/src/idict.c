@@ -70,7 +70,7 @@ bool dict_default_pack = true;
   (pds && dstack_dict_is_permanent(pds, pdref) && !ref_saving_in(mem))
 
 /* Forward references */
-private int dict_create_contents(P3(uint size, const ref * pdref, bool pack));
+private int dict_create_contents(uint size, const ref * pdref, bool pack);
 
 /* Debugging statistics */
 #ifdef DEBUG
@@ -81,7 +81,7 @@ struct stats_dict_s {
 } stats_dict;
 
 /* Wrapper for dict_find */
-int real_dict_find(P3(const ref * pdref, const ref * key, ref ** ppvalue));
+int real_dict_find(const ref * pdref, const ref * key, ref ** ppvalue);
 int
 dict_find(const ref * pdref, const ref * pkey, ref ** ppvalue)
 {

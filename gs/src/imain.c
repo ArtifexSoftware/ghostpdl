@@ -81,10 +81,9 @@ name_table *the_gs_name_table;
 
 /* ------ Forward references ------ */
 
-private int gs_run_init_file(P3(gs_main_instance *, int *, ref *));
-private void print_resource_usage(P3(const gs_main_instance *,
-				     gs_dual_memory_t *,
-				     const char *));
+private int gs_run_init_file(gs_main_instance *, int *, ref *);
+private void print_resource_usage(const gs_main_instance *,
+				  gs_dual_memory_t *, const char *);
 
 /* ------ Initialization ------ */
 
