@@ -1438,12 +1438,15 @@ get_missing_width(gs_font_base *cfont, int wmode, double scale_c,
 		finfo.MissingWidth * scale_c;
 	pwidths->Width.w = pwidths->real_width.w =
 		pwidths->Width.xy.y;
+	pwidths->Width.v.x = pwidths->Width.xy.y / 2;
+	pwidths->Width.v.y = pwidths->Width.xy.y;
     } else {
 	pwidths->Width.xy.x = pwidths->real_width.xy.x =
 		finfo.MissingWidth * scale_c;
 	pwidths->Width.w = pwidths->real_width.w =
 		pwidths->Width.xy.x;
 	pwidths->Width.xy.y = pwidths->real_width.xy.y = 0;
+	pwidths->Width.v.x = pwidths->Width.v.y = 0;
     }
     /*
      * Don't mark the width as known, just in case this is an
@@ -1473,11 +1476,8 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
     int code, rcode = 0;
     gs_point v;
 
-    if (ofont->FontType == ft_composite) {
-	gs_font_type0 *const pfont = (gs_font_type0 *)ofont;
-	
-	ofont = pfont->data.FDepVector[0];
-    }
+    if (ofont->FontType == ft_composite)
+	return_error(gs_error_unregistered); /* Must not happen. */
     code = font_orig_scale((const gs_font *)cfont, &sxc);
     if (code < 0)
 	return code;
@@ -1496,36 +1496,47 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
 				    GLYPH_INFO_OUTLINE_WIDTHS |
 				    (GLYPH_INFO_VVECTOR0 << wmode),
 				    &info);
-    if (code == gs_error_undefined)
-	return get_missing_width(cfont, wmode, scale_c, pwidths);
-    else if (code < 0)
+    if (code == gs_error_undefined || !(info.members & (GLYPH_INFO_WIDTH0 << wmode))) {
+	code = get_missing_width(cfont, wmode, scale_c, pwidths);
+	if (code < 0)
+	    return code;
+	v = pwidths->Width.v;
+    } else if (code < 0)
 	return code;
-    code = store_glyph_width(&pwidths->Width, wmode, scale_c, &info);
-    if (code < 0)
-	return code;
-    rcode |= code;
-    v = info.v;
+    else {
+	code = store_glyph_width(&pwidths->Width, wmode, scale_c, &info);
+	if (code < 0)
+	    return code;
+	rcode |= code;
+	if (info.members & (GLYPH_INFO_VVECTOR0 | GLYPH_INFO_VVECTOR1)) {
+	    v.x = info.v.x * scale_c;
+	    v.y = info.v.y * scale_c;
+	} else
+	    v.x = v.y = 0;
+    }
+    pwidths->Width.v = v;
     if (code > 0)
 	pwidths->Width.xy.x = pwidths->Width.xy.y = pwidths->Width.w = 0;
-    rcode |= code;
     code = ofont->procs.glyph_info(ofont, glyph, NULL,
 					(GLYPH_INFO_WIDTH0 << wmode) |
 					(GLYPH_INFO_VVECTOR0 << wmode),
 					&info);
-    if (code == gs_error_undefined)
+    if (code == gs_error_undefined || !(info.members & (GLYPH_INFO_WIDTH0 << wmode)))
 	pwidths->real_width = pwidths->Width;
     else if (code < 0)
 	return code;
     else {
-	if ((info.members & (GLYPH_INFO_VVECTOR0 << wmode)) != 0)
+	if ((info.members & (GLYPH_INFO_VVECTOR0 | GLYPH_INFO_VVECTOR1)) != 0)
 	    pwidths->replaced_v = true;
+	else 
+	    info.v.x = info.v.y = 0;
 	code = store_glyph_width(&pwidths->real_width, wmode, scale_o, &info);
 	if (code < 0)
 	    return code;
 	rcode |= code;
-	pwidths->Width.v = v;
-	pwidths->real_width.v = info.v;
     }
+    pwidths->real_width.v.x = info.v.x * scale_o;
+    pwidths->real_width.v.y = info.v.y * scale_o;
     return rcode;
 }
 /* ---------------- Main entry ---------------- */

@@ -29,6 +29,7 @@
 #include "idict.h"
 #include "idparam.h"
 #include "ifcid.h"
+#include "ichar1.h"
 #include "ifont42.h"
 #include "store.h"
 #include "stream.h"
@@ -170,7 +171,7 @@ z11_get_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
 }
 
 private int
-z11_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
+z11_glyph_info_aux(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 		     int members, gs_glyph_info_t *info)
 {
     gs_font_cid2 *fontCID2 = (gs_font_cid2 *)font;
@@ -183,8 +184,18 @@ z11_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	return code;
     glyph_index = (uint)code;
     return gs_type42_glyph_info_by_gid(font, glyph, pmat, members, info, glyph_index);
-
 }
+
+private int
+z11_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
+		     int members, gs_glyph_info_t *info)
+{
+    int wmode = (members & GLYPH_INFO_WIDTH0 ? 0 : 1);
+
+    return z1_glyph_info_generic(font, glyph, pmat, members, info, 
+				    &z11_glyph_info_aux, wmode);
+}
+
 
 /* Enumerate glyphs (keys) from GlyphDirectory instead of loca / glyf. */
 private int

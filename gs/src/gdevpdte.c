@@ -686,6 +686,7 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 	gs_glyph glyph;
 	int code, index = pte->index;
 	gs_text_enum_t pte1 = *(gs_text_enum_t *)pte;
+	int FontType;
 
 	code = pte1.orig_font->procs.next_char_glyph(&pte1, &chr, &glyph);
 	if (code == 2) { /* end of string */
@@ -694,23 +695,50 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 	}
 	if (code < 0)
 	    return code;
-	if (composite) /* from process_cmap_text */
-	    code = pdf_glyph_widths(ppts->values.pdfont->u.type0.DescendantFont, font->WMode, glyph, font, &cw);
-	else /* must be a base font */
+	if (composite) { /* from process_cmap_text */
+	    gs_font *subfont = pte1.fstack.items[pte1.fstack.depth].font;
+	    pdf_font_resource_t *pdsubf = ppts->values.pdfont->u.type0.DescendantFont;
+
+	    FontType = pdsubf->FontType;
+	    code = pdf_glyph_widths(pdsubf, font->WMode, glyph, subfont, &cw);
+	} else {/* must be a base font */
+	    FontType = font->FontType;
 	    code = pdf_char_widths((gx_device_pdf *)pte->dev,
 	                           ppts->values.pdfont, chr, (gs_font_base *)font,
 				   &cw);
+	}
 	if (code < 0) {
 	    if (index > 0)
 		break;
 	    return code;
 	}
 	gs_text_enum_copy_dynamic((gs_text_enum_t *)pte, &pte1, true);
-	pdf_glyph_origin(ppts->values.pdfont, chr, font->WMode, &v);
+	if (composite) {
+	    if (cw.replaced_v) {
+		v.x = cw.Width.v.x - cw.real_width.v.x;
+		v.y = cw.Width.v.y - cw.real_width.v.y;
+	    }
+	} else
+	    pdf_glyph_origin(ppts->values.pdfont, chr, font->WMode, &v);
 	if (v.x != 0 || v.y != 0) {
 	    gs_point glyph_origin_shift;
+	    double scale0;
 
-	    gs_distance_transform(-v.x * scale, -v.y * scale,
+	    if (FontType == ft_TrueType || FontType == ft_CID_TrueType)
+		scale0 = (float)0.001;
+	    else
+		scale0 = 1;
+	    glyph_origin_shift.x = -v.x * scale0;
+	    glyph_origin_shift.y = -v.y * scale0;
+	    gs_distance_transform(glyph_origin_shift.x, glyph_origin_shift.y,
+				  &font->FontMatrix, &glyph_origin_shift);
+	    if (composite) {
+		gs_font *subfont = pte->fstack.items[pte->fstack.depth].font;
+
+		gs_distance_transform(glyph_origin_shift.x, glyph_origin_shift.y,
+				      &subfont->FontMatrix, &glyph_origin_shift);
+	    }
+	    gs_distance_transform(glyph_origin_shift.x, glyph_origin_shift.y,
 				  &ctm_only(pte->pis), &glyph_origin_shift);
 	    if (glyph_origin_shift.x != 0 || glyph_origin_shift.y != 0) {
 		ppts->values.matrix.tx = start.x + total.x + glyph_origin_shift.x;

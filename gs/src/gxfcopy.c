@@ -698,8 +698,8 @@ compare_glyphs(const gs_font *cfont, const gs_font *ofont, gs_glyph *glyphs,
      * We must request width explicitely because Type 42 stores widths 
      * separately from outline data. We could skip it for Type 1, which doesn't.
      */
-    int members = GLYPH_INFO_WIDTHS | GLYPH_INFO_OUTLINE_WIDTHS | GLYPH_INFO_NUM_PIECES;
     int i, WMode = ofont->WMode, code;
+    int members = (GLYPH_INFO_WIDTH0 << WMode) | GLYPH_INFO_OUTLINE_WIDTHS | GLYPH_INFO_NUM_PIECES;
     gs_matrix mat;
 
     /*

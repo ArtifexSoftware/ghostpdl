@@ -305,6 +305,7 @@ scan_cmap_text(pdf_text_enum_t *pte)
     gs_text_enum_t scan = *(gs_text_enum_t *)pte;
     int wmode = font->WMode, code;
     pdf_font_resource_t *pdsubf0 = NULL;
+    gs_font *subfont0 = NULL;
     uint index = scan.index, xy_index = scan.xy_index, font_index0;
     bool done = false;
 
@@ -314,6 +315,7 @@ scan_cmap_text(pdf_text_enum_t *pte)
 	gs_const_string str;
 	pdf_text_process_state_t text_state;
 	pdf_font_resource_t *pdsubf;
+	gs_font *subfont;
 	gs_point wxy;
 	bool font_change;
 
@@ -327,7 +329,6 @@ scan_cmap_text(pdf_text_enum_t *pte)
 	    byte *glyph_usage;
 	    double *real_widths, *w, *v;
 	    int char_cache_size, width_cache_size;
-	    gs_font *subfont;
 	    uint cid;
 	    gs_char unicode_char;
 
@@ -361,6 +362,7 @@ scan_cmap_text(pdf_text_enum_t *pte)
 	    if (!font_change) {
 		pdsubf0 = pdsubf;
 		font_index0 = font_index;
+		subfont0 = subfont;
 	    }
 	    code = pdf_attached_font_resource(pdev, (gs_font *)subfont, &pdsubf, 
 				       &glyph_usage, &real_widths, &char_cache_size, &width_cache_size);
@@ -432,7 +434,21 @@ scan_cmap_text(pdf_text_enum_t *pte)
 	} while (!font_change);
 	if (break_index > index) {
 	    pdf_font_resource_t *pdfont;
+	    gs_matrix m0, m1, m2, m3;
 
+	    code = pdf_font_orig_matrix(subfont0, &m0);
+	    if (code < 0)
+		return code;
+	    code = gs_matrix_invert(&m0, &m1);
+	    if (code < 0)
+		return code;
+	    code = gs_matrix_multiply(&subfont0->FontMatrix, &m1, &m2);
+	    if (code < 0)
+		return code;
+	    code = gs_matrix_multiply(&m2, &font->FontMatrix, &m3); 
+	    /* We thought that it should be gs_matrix_multiply(&font->FontMatrix, &m2, &m3); */
+	    if (code < 0)
+		return code;
 	    code = pdf_obtain_parent_type0_font_resource(pdev, pdsubf0, 
 			    &font->data.CMap->CMapName, &pdfont);
 	    if (code < 0)
@@ -448,8 +464,7 @@ scan_cmap_text(pdf_text_enum_t *pte)
 		    return code;
 	    }
 	    pdf_set_text_wmode(pdev, font->WMode);
-	    code = pdf_update_text_state(&text_state, (pdf_text_enum_t *)pte, pdfont,
-					 &font->FontMatrix);
+	    code = pdf_update_text_state(&text_state, (pdf_text_enum_t *)pte, pdfont, &m3);
 	    if (code < 0)
 		return code;
 	    str.data = scan.text.data.bytes + index;
@@ -485,6 +500,7 @@ scan_cmap_text(pdf_text_enum_t *pte)
 	    break;
 	pdsubf0 = pdsubf;
 	font_index0 = font_index;
+	subfont0 = subfont;
     }
     pte->index = index;
     pte->xy_index = xy_index;

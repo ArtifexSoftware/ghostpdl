@@ -1114,14 +1114,13 @@ icont:
  * e_rangecheck, since we can't call the interpreter from here.
  */
 int
-z1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
-	      int members, gs_glyph_info_t *info)
+z1_glyph_info_generic(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
+	      int members, gs_glyph_info_t *info, font_proc_glyph_info((*proc)), int wmode)
 {
     ref gref;
     ref *pcdevproc;
     gs_font_type1 *const pfont = (gs_font_type1 *)font;
     gs_font_base *const pbfont = (gs_font_base *)font;
-    int wmode = pfont->WMode;
     const ref *pfdict = &pfont_data(pbfont)->dict;
     int width_members = members & (GLYPH_INFO_WIDTH0 << wmode);
     int outline_widths = members & GLYPH_INFO_OUTLINE_WIDTHS;
@@ -1132,7 +1131,7 @@ z1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
     int code;
 
     if (!width_members)
-	return gs_type1_glyph_info(font, glyph, pmat, members, info);
+	return (*proc)(font, glyph, pmat, members, info);
     glyph_ref(glyph, &gref);
     if (width_members == GLYPH_INFO_WIDTH1) {
 	double wv[4];
@@ -1174,12 +1173,16 @@ z1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	    done_members = outline_widths;
 	}
     } else {
-	if (dict_find_string(pfdict, "CDevProc", &pcdevproc) > 0)
-	    return_error(e_rangecheck); /* can't handle it */
+	if (dict_find_string(pfdict, "CDevProc", &pcdevproc) > 0) {
+	    /* We can't handle CDevProc. 
+	       We ignore it for CIDFontType 2 as a temporary workaround for #686947. */
+	    if (font->FontType != ft_CID_TrueType)
+		return_error(e_rangecheck);
+	}
     }
     default_members |= width_members;
     if (default_members) {
-	code = gs_type1_glyph_info(font, glyph, pmat, default_members, info);
+	code = (*proc)(font, glyph, pmat, default_members, info);
 
 	if (code < 0)
 	    return code;
@@ -1187,4 +1190,14 @@ z1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	info->members = 0;
     info->members |= done_members;
     return 0;
+}
+
+int
+z1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
+	      int members, gs_glyph_info_t *info)
+{
+    int wmode = font->WMode;
+
+    return z1_glyph_info_generic(font, glyph, pmat, members, info, 
+				    &gs_type1_glyph_info, wmode);
 }

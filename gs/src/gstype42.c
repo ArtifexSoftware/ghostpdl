@@ -488,7 +488,8 @@ gs_type42_glyph_info_by_gid(gs_font *font, gs_glyph glyph, const gs_matrix *pmat
     gs_font_type42 *const pfont = (gs_font_type42 *)font;
     int default_members =
 	members & ~(GLYPH_INFO_WIDTHS | GLYPH_INFO_NUM_PIECES |
-		    GLYPH_INFO_PIECES | GLYPH_INFO_OUTLINE_WIDTHS);
+		    GLYPH_INFO_PIECES | GLYPH_INFO_OUTLINE_WIDTHS |
+		    GLYPH_INFO_VVECTOR0 | GLYPH_INFO_VVECTOR1);
     gs_glyph_data_t outline;
     int code = 0;
 
@@ -503,7 +504,7 @@ gs_type42_glyph_info_by_gid(gs_font *font, gs_glyph glyph, const gs_matrix *pmat
 	gs_glyph_data_free(&outline, "gs_type42_glyph_info");
 	info->members = 0;
     }
-    if (members & GLYPH_INFO_WIDTH) {
+    if (members & GLYPH_INFO_WIDTHS) {
 	int i;
 
 	for (i = 0; i < 2; ++i)
@@ -511,8 +512,10 @@ gs_type42_glyph_info_by_gid(gs_font *font, gs_glyph glyph, const gs_matrix *pmat
 		float sbw[4];
 
 		code = gs_type42_wmode_metrics(pfont, glyph_index, i, sbw);
-		if (code < 0)
-		    return code;
+		if (code < 0) {
+		    code = 0;
+		    continue;
+		}
 		if (pmat) {
 		    code = gs_point_transform(sbw[2], sbw[3], pmat,
 					      &info->width[i]);
@@ -525,8 +528,9 @@ gs_type42_glyph_info_by_gid(gs_font *font, gs_glyph glyph, const gs_matrix *pmat
 		    info->v.x = sbw[0], info->v.y = sbw[1];
 		}
 		info->members |= (GLYPH_INFO_VVECTOR0 << i);
+		info->members |= (GLYPH_INFO_WIDTH << i);
 	    }
-	info->members |= members & GLYPH_INFO_WIDTH;
+	
     }
     if (members & (GLYPH_INFO_NUM_PIECES | GLYPH_INFO_PIECES)) {
 	gs_glyph *pieces =

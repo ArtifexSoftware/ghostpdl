@@ -46,4 +46,8 @@ int
 z1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	      int members, gs_glyph_info_t *info);
 
+int z1_glyph_info_generic(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
+	      int members, gs_glyph_info_t *info, font_proc_glyph_info((*proc)), 
+	      int wmode);
+
 #endif /* ichar1_INCLUDED */
