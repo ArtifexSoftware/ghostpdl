@@ -108,6 +108,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     bool first_symbol;
     uint32_t index, max_id;
     Jbig2Image *IB;
+    Jbig2WordStream *ws = NULL;
     Jbig2ArithState *as = NULL;
     Jbig2ArithIntCtx *IADT = NULL;
     Jbig2ArithIntCtx *IAFS = NULL;
@@ -132,7 +133,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     if (!params->SBHUFF) {
 	int SBSYMCODELEN;
 
-        Jbig2WordStream *ws = jbig2_word_stream_buf_new(ctx, data, size);
+	ws = jbig2_word_stream_buf_new(ctx, data, size);
         as = jbig2_arith_new(ctx, ws);
         IADT = jbig2_arith_int_ctx_new(ctx);
         IAFS = jbig2_arith_int_ctx_new(ctx);
@@ -230,7 +231,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 		index = 0;
 		while (id >= dicts[index]->n_symbols)
 		    id -= dicts[index++]->n_symbols;
-		IB = dicts[index]->glyphs[id];
+		IB = jbig2_image_clone(ctx, dicts[index]->glyphs[id]);
 	    }
 	    if (params->SBREFINE) {
 		code = jbig2_arith_int_decode(IARI, as, &RI);
@@ -264,6 +265,8 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 		jbig2_decode_refinement_region(ctx, segment,
 		    &rparams, as, image, GR_stats);
 		IB = image;
+
+		jbig2_image_release(ctx, IBO);
 	    }
         
 	    /* (3c.vi) */
@@ -311,10 +314,27 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
         
 	    /* (3c.xi) */
 	    NINSTANCES++;
+
+	    jbig2_image_release(ctx, IB);
 	}
         /* end strip */
     }
     /* 6.4.5 (4) */
+
+    if (!params->SBHUFF) {
+	jbig2_arith_int_ctx_free(ctx, IADT);
+	jbig2_arith_int_ctx_free(ctx, IAFS);
+	jbig2_arith_int_ctx_free(ctx, IADS);
+	jbig2_arith_int_ctx_free(ctx, IAIT);
+	jbig2_arith_iaid_ctx_free(ctx, IAID);
+	jbig2_arith_int_ctx_free(ctx, IARI);
+	jbig2_arith_int_ctx_free(ctx, IARDW);
+	jbig2_arith_int_ctx_free(ctx, IARDH);
+	jbig2_arith_int_ctx_free(ctx, IARDX);
+	jbig2_arith_int_ctx_free(ctx, IARDY);
+	jbig2_free(ctx->allocator, as);
+	jbig2_word_stream_buf_free(ctx, ws);
+    }
     
     return 0;
 }
@@ -450,6 +470,12 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
                 (const Jbig2SymbolDict * const *)dicts, n_dicts, image,
                 segment_data + offset, segment->data_length - offset,
 		GR_stats);
+
+    if (!params.SBHUFF && params.SBREFINE) {
+	jbig2_free(ctx->allocator, GR_stats);
+    }
+
+    jbig2_free(ctx->allocator, dicts);
 
     /* todo: check errors */
 
