@@ -290,7 +290,7 @@ x_sync(gx_device * dev)
     gx_device_X *xdev = (gx_device_X *) dev;
 
     update_do_flush(xdev);
-    XFlush(xdev->dpy);
+    XSync(xdev->dpy, False);
     return 0;
 }
 

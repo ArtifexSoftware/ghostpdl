@@ -469,7 +469,7 @@ gdev_x_open(gx_device_X * xdev)
 
 	/* Before anything else, do a flush and wait for */
 	/* an exposure event. */
-	XFlush(xdev->dpy);
+	XSync(xdev->dpy, False);
 	if (xdev->pwin == (Window) None) {	/* there isn't a next event for existing windows */
 	    XNextEvent(xdev->dpy, &event);
 	}
