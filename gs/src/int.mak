@@ -1864,7 +1864,7 @@ $(PSD)fapiu.dev : $(INT_MAK) $(ECHOGS_XE)
 
 # FreeType bridge :
 
-FT_LIB=$(FT_ROOT)$(D)bin$(D)freetype
+FT_LIB=$(FT_ROOT)$(D)objs$(D)freetype214MT_D
 FT_INC=$(I_)$(FT_ROOT)$(D)include$(_I)
 
 wrfont_h=$(stdpre_h) $(PSSRC)wrfont.h

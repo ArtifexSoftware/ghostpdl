@@ -68,6 +68,7 @@ typedef struct FT_IncrementalRec_
 	bool m_glyph_data_in_use;					/* True if m_glyph_data is already in use. */
 	FT_Incremental_MetricsRec m_glyph_metrics;	/* Incremental glyph metrics supplied by GhostScript. */
 	unsigned long m_glyph_metrics_index;		/* m_glyph_metrics contains data for this glyph index unless it is 0xFFFFFFFF. */
+	FAPI_metrics_type m_metrics_type;			/* The metrics type determines whether metrics are replaced, added, etc. */
     } FT_IncrementalRec;
 
 static FF_face* new_face(FT_Face a_ft_face,FT_Incremental_InterfaceRec* a_ft_inc_int,
@@ -104,6 +105,7 @@ static FT_IncrementalRec* new_inc_int_info(FAPI_font* a_fapi_font)
 		info->m_glyph_data_length = 0;
 		info->m_glyph_data_in_use = false;
 		info->m_glyph_metrics_index = 0xFFFFFFFF;
+		info->m_metrics_type = FAPI_METRICS_NOTDEF;
 		}
 	return info;
 	}
@@ -181,16 +183,26 @@ static void free_fapi_glyph_data(FT_Incremental a_info,FT_Data* a_data)
 	}
 
 static FT_Error get_fapi_glyph_metrics(FT_Incremental a_info,FT_UInt a_glyph_index,
-									   FT_Bool a_vertical,FT_Incremental_MetricsRec* a_metrics,
-									   FT_Bool* a_found)
+									   FT_Bool a_vertical,FT_Incremental_MetricsRec* a_metrics)
 	{
 	if (a_info->m_glyph_metrics_index == a_glyph_index)
 		{
-		*a_metrics = a_info->m_glyph_metrics;
-		*a_found = 1;
+		switch (a_info->m_metrics_type)
+			{
+			case FAPI_METRICS_ADD:
+				a_metrics->advance += a_info->m_glyph_metrics.advance;
+				break;
+			case FAPI_METRICS_REPLACE_WIDTH:
+				a_metrics->advance = a_info->m_glyph_metrics.advance;
+				break;
+			case FAPI_METRICS_REPLACE:
+				*a_metrics = a_info->m_glyph_metrics;
+				break;
+			default:
+				assert(false); /* This can't happen. */
+				break;
+			}
 		}
-	else
-		*a_found = 0;
 	return 0;
 	}
 
@@ -266,15 +278,25 @@ static FAPI_retcode load_glyph(FAPI_font* a_fapi_font,const FAPI_char_ref *a_cha
 		if (ft_face->num_charmaps)
 			index = FT_Get_Char_Index(ft_face,index);
 		else
-			{
 			/*
 			If there are no character maps and no glyph index, loading the glyph will still work
 			properly if both glyph data and metrics are supplied by the incremental interface.
-			In that case we use a dummy glyph index of the character code, which will be passed
+			In that case we use a dummy glyph index which will be passed
 			back to FAPI_FF_get_glyph by get_fapi_glyph_data.
+
 			*/
-			index = 0;
-			if (!ft_face->num_charmaps && face->m_ft_inc_int && a_fapi_font->is_mtx_skipped)
+			{
+			/*
+			Type 1 fonts don't use the code and can appear to FreeType to have only one glyph,
+			so we have to set the index to 0.
+			*/
+			if (a_fapi_font->is_type1)
+				index = 0;
+			/*
+			For other font types, FAPI_FF_get_glyph requires the character code when getting
+			data.
+			*/
+			else
 				index = a_char_ref->char_code;
 			}
 		}
@@ -284,13 +306,14 @@ static FAPI_retcode load_glyph(FAPI_font* a_fapi_font,const FAPI_char_ref *a_cha
 		face->m_ft_inc_int->object->m_fapi_font = a_fapi_font;
 
 	/* Store the overriding metrics if they have been supplied. */
-	if (a_fapi_font->is_mtx_skipped && face->m_ft_inc_int)
+	if (face->m_ft_inc_int && a_char_ref->metrics_type != FAPI_METRICS_NOTDEF)
 		{
 		FT_Incremental_MetricsRec* m = &face->m_ft_inc_int->object->m_glyph_metrics;
 		m->bearing_x = a_char_ref->sb_x >> 16;
 		m->bearing_y = a_char_ref->sb_y >> 16;
 		m->advance = a_char_ref->aw_x >> 16;
 		face->m_ft_inc_int->object->m_glyph_metrics_index = index;
+		face->m_ft_inc_int->object->m_metrics_type = a_char_ref->metrics_type;
 		}
 
     ft_error = FT_Load_Glyph(ft_face,index,FT_LOAD_MONOCHROME | FT_LOAD_NO_SCALE);
@@ -387,19 +410,25 @@ static void transform_decompose(FT_Matrix* a_transform,
 		transform_concat(a_transform,&rotation);
 		}
 
-	/* Get the scales. */
+	/* Separate the scales from the transform. */
 	*a_x_scale = a_transform->xx;
 	if (*a_x_scale < 0)
+		{
 		*a_x_scale = -*a_x_scale;
+		a_transform->xx = -65536;
+		}
+	else
+		a_transform->xx = 65536;
 	*a_y_scale = a_transform->yy;
 	if (*a_y_scale < 0)
+		{
 		*a_y_scale = -*a_y_scale;
-
-	/* Remove the scales. */
-	a_transform->xx = 65536;
+		a_transform->yy = -65536;
+		}
+	else
+		a_transform->yy = 65536;
 	a_transform->yx = FT_DivFix(a_transform->yx,*a_x_scale);
 	a_transform->xy = FT_DivFix(a_transform->xy,*a_y_scale);
-	a_transform->yy = 65536;
 
 	if (have_rotation)
 		{
@@ -411,18 +440,19 @@ static void transform_decompose(FT_Matrix* a_transform,
 	}
 
 /**
-Open a font and set its transformation matrix to a_matrix, which is a 6-element array representing an affine
-transform, and its resolution in dpi to a_resolution, which contains horizontal and vertical components.
+Open a font and set its size.
 */
-static FAPI_retcode get_scaled_font(FAPI_server* a_server,FAPI_font* a_font,int a_subfont,const FAPI_font_scale *font_scale,
+static FAPI_retcode get_scaled_font(FAPI_server* a_server,FAPI_font* a_font,int a_subfont,
+									const FAPI_font_scale* a_font_scale,
 									const char* a_map,bool a_vertical,
 									FAPI_descendant_code a_descendant_code)
 	{
-	const FracInt *a_resolution = font_scale->HWResolution;
-	const FracInt *a_matrix = font_scale->matrix;
 	FF_server* s = (FF_server*)a_server;
 	FF_face* face = (FF_face*)a_font->server_font_data;
 	FT_Error ft_error = 0;
+
+	/* dpf("get_scaled_font enter: is_type1=%d is_cid=%d font_file_path='%s' a_subfont=%d a_descendant_code=%d\n",
+		a_font->is_type1,a_font->is_cid,a_font->font_file_path ? a_font->font_file_path : "",a_subfont,a_descendant_code); */
 
 	/*
 	If this font is the top level font of an embedded CID type 0 font (font type 9)
@@ -432,7 +462,10 @@ static FAPI_retcode get_scaled_font(FAPI_server* a_server,FAPI_font* a_font,int 
 	if (a_font->is_cid && a_font->is_type1 && a_font->font_file_path == NULL &&
 		(a_descendant_code == FAPI_TOPLEVEL_BEGIN ||
 		 a_descendant_code == FAPI_TOPLEVEL_COMPLETE))
+		{
+		/* dpf("get_scaled_font return 0\n"); */
 		return 0;
+		}
 
 	/* Create the face if it doesn't already exist. */
 	if (!face)
@@ -441,6 +474,8 @@ static FAPI_retcode get_scaled_font(FAPI_server* a_server,FAPI_font* a_font,int 
 		FT_Parameter ft_param;
         FT_Incremental_InterfaceRec* ft_inc_int = NULL;
 		unsigned char* own_font_data = NULL;
+
+		/* dpf("get_scaled_font creating face\n"); */
 
 		/* Load a typeface from a file. */
 		if (a_font->font_file_path)
@@ -555,10 +590,10 @@ static FAPI_retcode get_scaled_font(FAPI_server* a_server,FAPI_font* a_font,int 
 		Ignore the translation elements because they contain very large values
 		derived from the current transformation matrix and so are of no use.
 		*/
-		ft_transform.xx = a_matrix[0];
-		ft_transform.xy = a_matrix[1];
-		ft_transform.yx = -a_matrix[2];
-		ft_transform.yy = -a_matrix[3];
+		ft_transform.xx = a_font_scale->matrix[0];
+		ft_transform.xy = a_font_scale->matrix[1];
+		ft_transform.yx = -a_font_scale->matrix[2];
+		ft_transform.yy = -a_font_scale->matrix[3];
 
 		/*
 		Split the transform into scale factors and a rotation-and-shear
@@ -566,18 +601,12 @@ static FAPI_retcode get_scaled_font(FAPI_server* a_server,FAPI_font* a_font,int 
 		*/
 		transform_decompose(&ft_transform,&width,&height);
 
-		/*
-		Convert width and height to 64ths of pixels and set the FreeType sizes.
-		If either width or height is zero set it to 1.
-		*/
+		/* Convert width and height to 64ths of pixels and set the FreeType sizes. */
 		width >>= 10;
-		if (width < 0)
-			 width = -width;
 		height >>= 10;
-		if (height < 0)
-			height = -height;
 		ft_error = FT_Set_Char_Size(face->m_ft_face,width,height,
-									a_resolution[0] >> 16,a_resolution[1] >> 16);
+									a_font_scale->HWResolution[0] >> 16,
+									a_font_scale->HWResolution[1] >> 16);
 		if (ft_error)
 			{
 			delete_face(face);
@@ -595,6 +624,7 @@ static FAPI_retcode get_scaled_font(FAPI_server* a_server,FAPI_font* a_font,int 
 		FT_Set_Transform(face->m_ft_face,&ft_transform,NULL);
 		}
 
+	/* dpf("get_scaled_font return %d\n",a_font->server_font_data ? 0 : -1); */
 	return a_font->server_font_data ? 0 : -1;
 	}
 
@@ -639,7 +669,7 @@ setting a_char_ref.is_glyph_index as appropriate. If this is possible set a_resu
 The return value is a standard error return code.
 */
 static FAPI_retcode can_retrieve_char_by_name(FAPI_server* a_server,FAPI_font* a_font,FAPI_char_ref* a_char_ref,
-											   bool* a_result)
+											  bool* a_result)
 	{
 	FF_face* face = (FF_face*)a_font->server_font_data;
 	char name[128];
@@ -662,11 +692,8 @@ Return non-zero if the metrics can be replaced.
 */
 static FAPI_retcode can_replace_metrics(FAPI_server *a_server,FAPI_font *a_font,FAPI_char_ref *a_char_ref,int *a_result)
 	{
-	/*
-	Replace metrics only if the metrics are supplied in font units and
-	they are to be completely replaced, not added or partially replaced.
-	*/
-    *a_result = a_char_ref->metrics_scale == 0 && a_char_ref->metrics_type == FAPI_METRICS_REPLACE;
+	/* Replace metrics only if the metrics are supplied in font units. */
+    *a_result = a_char_ref->metrics_scale == 0;
     return 0;
 	}
 
@@ -750,7 +777,7 @@ static int conic_to(FT_Vector* aControl,FT_Vector* aTo,void* aObject)
 	Convert a quadratic spline to a cubic. Do this by changing the three points
 	A, B and C to A, 1/3(B,A), 1/3(B,C), C - that is, the two cubic control points are
 	a third of the way from the single quadratic control point to the end points. This
-	gives an exact approximation to the original quadratic.
+	gives the same curve as the original quadratic.
 	*/
 	return p->m_path->curveto(p->m_path,(p->m_x + aControl->x * 2) / 3,
 						      (p->m_y + aControl->y * 2) / 3,

@@ -24,7 +24,9 @@ Started by Graham Asher, 9th August 2002.
 
 #include "wrfont.h"
 #include "write_t2.h"
-#include "stdio_.h"
+#include "ghost.h"
+#include "gxfont.h"
+#include "gxfont1.h"
 
 #include <assert.h>
 
@@ -332,6 +334,19 @@ static void write_private_dict(FAPI_font* a_fapi_font,WRF_output* a_output,unsig
 	write_word_entry(a_fapi_font,a_output,FAPI_FONT_FEATURE_StdVW,1,false,11,16);
 	write_delta_array_entry(a_fapi_font,a_output,FAPI_FONT_FEATURE_StemSnapH,true,12,16);
 	write_delta_array_entry(a_fapi_font,a_output,FAPI_FONT_FEATURE_StemSnapV,true,13,16);
+
+	/*
+	Write the default width and the nominal width. These values are not available via
+	the FAPI interface so we have to get a pointer to the Type 1 font structure and
+	extract them directly.
+	*/
+	{
+	gs_font_type1* t1 = (gs_font_type1*)a_fapi_font->client_font_data;
+    write_type2_float(a_output,fixed2float(t1->data.defaultWidthX));
+	WRF_wbyte(a_output,20);
+    write_type2_float(a_output,fixed2float(t1->data.nominalWidthX));
+	WRF_wbyte(a_output,21);
+	}
 
 	/* Write the length in bytes of the private dictionary to the top dictionary. */	
 	if (a_output->m_pos)
