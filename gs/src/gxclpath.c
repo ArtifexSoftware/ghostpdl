@@ -39,7 +39,8 @@ ulong stats_cmd_diffs[5];
 
 /* Forward declarations */
 private int cmd_put_path(P8(gx_device_clist_writer * cldev,
-			    gx_clist_state * pcls, const gx_path * ppath, fixed ymin, fixed ymax, byte op,
+			    gx_clist_state * pcls, const gx_path * ppath,
+			    fixed ymin, fixed ymax, byte op,
 			    bool implicit_close, segment_notes keep_notes));
 
 /* ------ Utilities ------ */
@@ -54,6 +55,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     const gx_strip_bitmap *tile;
     gx_color_index color0, color1;
     ulong offset_temp;
+    int type;
 
     if (gx_dc_is_pure(pdcolor)) {
 	gx_color_index color1 = gx_dc_pure_color(pdcolor);
@@ -65,17 +67,6 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		return code;
 	}
 	return cmd_dc_type_pure;
-    }
-    /* Any non-pure color will require the phase. */
-    {
-	int px = pdcolor->phase.x, py = pdcolor->phase.y;
-
-	if (px != pcls->tile_phase.x || py != pcls->tile_phase.y) {
-	    int code = cmd_set_tile_phase(cldev, pcls, px, py);
-
-	    if (code < 0)
-		return code;
-	}
     }
     if (gx_dc_is_binary_halftone(pdcolor)) {
 	tile = gx_dc_binary_tile(pdcolor);
@@ -101,7 +92,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	    if (code < 0)
 		return code;
 	}
-	return cmd_dc_type_ht;
+	type = cmd_dc_type_ht;
     } else if (gx_dc_is_colored_halftone(pdcolor)) {
 	const gx_device_halftone *pdht = pdcolor->colors.colored.c_ht;
 	int num_comp = pdht->num_comp;
@@ -143,9 +134,21 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	if (code < 0)
 	    return code;
 	memcpy(dp + 1, buf, bp - buf);
-	return cmd_dc_type_color;
+	type = cmd_dc_type_color;
     } else
 	return_error(-1);
+     /* Any non-pure color will require the phase. */
+    {
+ 	int px = pdcolor->phase.x, py = pdcolor->phase.y;
+ 
+ 	if (px != pcls->tile_phase.x || py != pcls->tile_phase.y) {
+ 	    int code = cmd_set_tile_phase(cldev, pcls, px, py);
+ 
+ 	    if (code < 0)
+ 		return code;
+ 	}
+    }
+    return type;
 }
 
 /* Clear (a) specific 'known' flag(s) for all bands. */
