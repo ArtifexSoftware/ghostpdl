@@ -1359,7 +1359,7 @@ private void
 intersect_al(line_list *ll, fixed y, fixed *y_top, int draw)
 {
     fixed x = min_fixed, y1 = *y_top;
-    active_line *alp, *stopx, *endp;
+    active_line *alp, *stopx = NULL, *endp;
 
     /* don't bother if no pixels with no pseudo_rasterization */
     if (ll->pseudo_rasterization || draw >= 0) {
@@ -1384,7 +1384,7 @@ intersect_al(line_list *ll, fixed y, fixed *y_top, int draw)
 		stopx = alp;
 		if (y_new < y1) {
 		    y1 = y_new;
-		    nx = AL_X_AT_Y(alp, y1);
+		    alp->x_next = nx = AL_X_AT_Y(alp, y1);
 		    draw = 0;
 		}
 		if (nx > x)
