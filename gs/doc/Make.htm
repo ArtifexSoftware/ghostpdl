@@ -1687,16 +1687,33 @@ corresponding single-threaded drivers, whose names don't include the "a".
 </ul>
 
 <p>
-To create <a href="http://www.rpm.org">RPM</a>
-(<b>R</b>ed Hat <b>P</b>ackage <b>M</b>anager)
-files for Ghostscript N.NN:
+You may want to create <a href="http://www.rpm.org">RPM</a> (<b>R</b>ed Hat
+<b>P</b>ackage <b>M</b>anager) files for Ghostscript.  Because of the lack
+of standardization of installation directory names between Linux releases,
+Ghostscript does not come with any RPM specification files.  You may wish to
+contact the following people who have created RPM spec files in the past:
+
+<blockquote>
+Henri Gomez <a href="mailto:hgomez@slib.fr">hgomez@slib.fr</a><br>
+Russell Lang <a href="mailto:gsview@ghostgum.com.au">gsview@ghostgum.com.au</a><br>
+Cristian Gafton <a href="mailto:gafton@redhat.com">gafton@redhat.com</a><br>
+Preston Brown <a href="mailto:pbrown@redhat.com">pbrown@redhat.com</a><br>
+</blockquote>
+
+<p>
+The following instructions may work for the Ghostscript 6.0x distributions,
+once you have RPM spec files that you believe are appropriate.
+
+<p>
+To create RPMs for Ghostscript N.NN:
 
 <ul>
 <li>Change to your source directory (<b><tt>/usr/src/redhat</tt></b> for Red Hat
    Linux 5.1).
 <li>Copy <b><tt>ghostscript-N.NN*.tar.gz</tt></b> (4 source files) to the
 <b><tt>SOURCES</tt></b> subdirectory.
-<li>Copy <b><tt>ghostscript-fonts-5.10a.tar.gz</tt></b> to the
+<li>Copy <b><tt>ghostscript-fonts-std-6.0.tar.gz</tt></b> and
+<b><tt>ghostscript-fonts-other-6.0.tar.gz</tt></b> to the
 <b><tt>SOURCES</tt></b> subdirectory.
 <li>From <b><tt>SOURCES/ghostscript-N.NN.tar.gz</tt></b>,
 <ul>
