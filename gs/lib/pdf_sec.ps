@@ -152,7 +152,7 @@ def
     dup 3 eq {
       pop pdf_gen_user_password_R3
     } {
-      (   ****This file uses an unknown standard security handler revision: )
+      (   **** This file uses an unknown standard security handler revision: )
       exch =string cvs concatstrings pdfformaterror printProducer
       /pdf_check_user_password cvx /undefined signalerror
     } ifelse
@@ -217,7 +217,8 @@ def
 /pdf_process_Encrypt {
   Trailer /Encrypt oget
   /Filter oget /Standard eq not {
-    (****This file uses an unknown security handler.\n) print flush
+    (   **** This file uses an unknown security handler.\n) pdfformaterror
+    printProducer
     /pdf_process_Encrypt cvx /undefined signalerror
   } if
   () pdf_check_user_password
@@ -233,19 +234,21 @@ def
          {
            /FileKey exch def
          } {
-           (****Password did not work.\n) print flush
+           (   **** Password did not work.\n) pdfformaterror
+	   printProducer
 	   /pdf_process_Encrypt cvx /invalidfileaccess signalerror
          } ifelse
        } ifelse
     } {
-      (****This file requires a password for access.\n) print flush
+      (   **** This file requires a password for access.\n) pdfformaterror
+      printProducer
       /pdf_process_Encrypt cvx /invalidfileaccess signalerror
     } ifelse
   } ifelse
 
 %   Trailer /Encrypt oget /P oget 4 and 0 eq #? and
-%    { (****This owner of this file has requested you do not print it.\n)
-%	  print flush
+%    { (   ****This owner of this file has requested you do not print it.\n)
+%      pdfformaterror printProducer
 %      /pdf_process_Encrypt cvx /invalidfileaccess signalerror
 %    }
 %   if

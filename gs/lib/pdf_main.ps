@@ -350,14 +350,14 @@ pdfdict begin
   } ifelse
 } bind def
 /printrepaired {
-(
-   **** This file had errors that were repaired or ignored.
-) stderrprint
+   (\n   **** This file had errors that were repaired or ignored.\n)
+  stderrprint
   printProducer
-  (\
-   **** Please notify the author of the software that produced this
-   **** file that it does not conform to Adobe's published PDF
-   **** specification.\n\n)
+  (   **** Please notify the author of the software that produced this\n)
+  stderrprint
+  (   **** file that it does not conform to Adobe's published PDF\n)
+  stderrprint
+  (   **** specification.\n\n)
   stderrprint
 } bind def
 
