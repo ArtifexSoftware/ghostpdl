@@ -1673,6 +1673,12 @@ use the same buffer size as for the interpretation pass.
 </dl>
 
 <p>
+A special parameter <b><tt>.EmbedFontObjects &lt;integer&gt</tt></b> is being provided
+with <b><tt>currentpagedevice</tt></b> only for devices which
+embed font objects to output. The purpose of this parameter is
+to disable 3d party's font renderers for such devices.
+
+<p>
 In addition, Ghostscript supports the following parameter for
 <b><tt>setpagedevice</tt></b> and <b><tt>currentpagedevice</tt></b> that is
 <b><em>not</em></b> a device parameter per se:
