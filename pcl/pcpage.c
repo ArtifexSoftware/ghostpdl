@@ -758,7 +758,8 @@ pcl_media_type(
     if (type <= 4) {
         int     code = pcl_end_page_if_marked(pcs);
 
-        pcl_home_cursor(pcs);
+        if (code >= 0)
+            pcl_home_cursor(pcs);
         return (code < 0 ? code : e_Unimplemented);
     } else
         return e_Range;
@@ -782,6 +783,8 @@ pcl_print_quality(
     if ((quality >= -1) && (quality <= 1)) {
         int     code = pcl_end_page_if_marked(pcs);
 
+        if (code >= 0)
+            pcl_home_cursor(pcs);
         return (code < 0 ? code : 0);
     } else
 	return e_Range;
@@ -917,6 +920,13 @@ pcpage_do_reset(
                           (type & pcl_reset_initial) != 0
                           );
 	pcs->have_page = false;
+
+    } else if ((type & pcl_reset_overlay) != 0) {
+	pcs->perforation_skip = 1;
+        pcs->xfm_state.print_dir = 0;
+        update_xfm_state(pcs);
+        reset_margins(pcs);
+        pcl_xfm_reset_pcl_pat_ref_pt(pcs);
     }
 }
 
