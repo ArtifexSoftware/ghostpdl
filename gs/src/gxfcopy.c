@@ -57,9 +57,9 @@ typedef struct gs_copied_font_procs_s {
  * and the GlobalSubrs data for all but Type 1.
  */
 typedef struct gs_subr_info_s {
-    byte *data;			/* Subr data */
-    uint *starts;		/* Subr[i] = data[starts[i]..starts[i+1]] */
-    int count;			/* start is [count+1] */
+    byte *data;		/* Subr data */
+    int count;
+    uint *starts;	/* [count+1] Subr[i] = data[starts[i]..starts[i+1]] */
 } gs_subr_info_t;
 
 /*
@@ -241,7 +241,7 @@ copy_subrs(gs_font_type1 *pfont, bool global, gs_subr_info_t *psi,
 	gs_glyph_data_free(&gdata, "copy_subrs");
     }
     if (size == 0)
-	data = 0, starts = 0, i = -1;
+	data = 0, starts = 0, i = 0;
     else {
 	/* Allocate the copy. */
 	data = gs_alloc_bytes(mem, size, "copy_subrs(data)");
@@ -268,7 +268,7 @@ copy_subrs(gs_font_type1 *pfont, bool global, gs_subr_info_t *psi,
 
     psi->data = data;
     psi->starts = starts;
-    psi->count = i + 1;
+    psi->count = i;
     return 0;
 }
 
