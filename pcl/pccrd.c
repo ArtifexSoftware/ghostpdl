@@ -91,7 +91,7 @@ private const gs_cie_transform_proc3    dflt_TransformPQR_proto = {
 /*
  * Free a PCL color rendering dictionary structure.
  */
-  private void
+void
 free_crd(
     gs_memory_t *   pmem,
     void *          pvcrd,
