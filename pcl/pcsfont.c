@@ -655,12 +655,12 @@ pcsfont_do_init(gs_memory_t *mem)
 }
 private void
 pcsfont_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
-{	if ( type & (pcl_reset_initial | pcl_reset_printer) )
+{	if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay) )
 	  { 
 	    id_set_value(pcls->font_id, 0);
 	    pcls->character_code = 0;
 	    pcls->font_id_type = numeric_id;
-	    if ( !(type & pcl_reset_initial) )
+	    if ( (type & pcl_reset_printer) != 0 )
 	      { pcl_args_t args;
 	        arg_set_uint(&args, 1); /* delete temporary fonts */
 		pcl_font_control(&args, pcls);
@@ -668,10 +668,8 @@ pcsfont_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 		  gs_free_object(pcls->memory,
 				 pcls->alpha_font_id.id,
 				 "pcsfont_do_reset");
-		pcls->alpha_font_id.id = 0;
 	      }
-	    else /* pcl_reset_initial case */
-	      pcls->alpha_font_id.id = 0;
+	    pcls->alpha_font_id.id = 0;
 	  }
 }
 private int
