@@ -73,12 +73,13 @@ case 1:
 {
     gx_ht_tile *tile = cptr->colors.binary.b_tile;
 
-    ENUM_RETURN(tile - tile->index);
+    ENUM_RETURN(tile ? tile - tile->index : 0);
 }
 ENUM_PTRS_END
 private RELOC_PTRS_WITH(dc_ht_binary_reloc_ptrs, gx_device_color *cptr)
 {
-    uint index = cptr->colors.binary.b_tile->index;
+    gx_ht_tile *tile = cptr->colors.binary.b_tile;
+    uint index = tile ? tile->index : 0;
 
     RELOC_PTR(gx_device_color, colors.binary.b_ht);
     RELOC_TYPED_OFFSET_PTR(gx_device_color, colors.binary.b_tile, index);
@@ -303,6 +304,7 @@ gx_dc_ht_binary_load(gx_device_color * pdevc, const gs_imager_state * pis,
      * when the tile size is large enough that we do not have a separate
      * tile for each half tone level.)  See gx_dc_ht_binary_load_cache.
      */
+    pdevc->colors.binary.b_tile = NULL;
     return 0;
 }
 
