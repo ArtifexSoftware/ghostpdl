@@ -151,6 +151,7 @@ mswin_printer_fopen(gx_io_device * iodev, const char *fname, const char *access,
     HANDLE hprinter;
     int pipeh[2];
     unsigned long tid;
+    HANDLE hthread;
     char pname[gp_file_name_sizeof];
     unsigned long *ptid = &((tid_t *)(iodev->state))->tid;
 
@@ -164,9 +165,6 @@ mswin_printer_fopen(gx_io_device * iodev, const char *fname, const char *access,
 	return_error(gs_error_invalidfileaccess);
     ClosePrinter(hprinter);
 
-    if (iodev->state == NULL)
-	return_error(gs_error_invalidfileaccess);
-
     /* Create a pipe to connect a FILE pointer to a Windows printer. */
     if (_pipe(pipeh, 4096, _O_BINARY) != 0)
 	return_error(gs_fopen_errno_to_code(errno));
@@ -179,12 +177,23 @@ mswin_printer_fopen(gx_io_device * iodev, const char *fname, const char *access,
     }
 
     /* start a thread to read the pipe */
-    *ptid = _beginthread(&mswin_printer_thread, 32768, pipeh[0]);
-    if (*ptid == -1) {
+    tid = _beginthread(&mswin_printer_thread, 32768, pipeh[0]);
+    if (tid == -1) {
 	fclose(*pfile);
 	close(pipeh[0]);
 	return_error(gs_error_invalidfileaccess);
     }
+    /* Duplicate thread handle so we can wait on it
+     * even if original handle is closed by CRTL
+     * when the thread finishes.
+     */
+    if (!DuplicateHandle(GetCurrentProcess(), (HANDLE)tid,
+	GetCurrentProcess(), &hthread, 
+	0, FALSE, DUPLICATE_SAME_ACCESS)) {
+	fclose(*pfile);
+	return_error(gs_error_invalidfileaccess);
+    }
+    *ptid = (unsigned long)hthread;
 
     /* Give the name of the printer to the thread by writing
      * it to the pipe.  This is avoids elaborate thread 
@@ -202,7 +211,7 @@ mswin_printer_fclose(gx_io_device * iodev, FILE * file)
     unsigned long *ptid = &((tid_t *)(iodev->state))->tid;
     HANDLE hthread;
     fclose(file);
-    if ((iodev->state != NULL) && (*ptid != -1)) {
+    if (*ptid != -1) {
 	/* Wait until the print thread finishes before continuing */
 	hthread = (HANDLE)*ptid;
 	WaitForSingleObject(hthread, 60000);
