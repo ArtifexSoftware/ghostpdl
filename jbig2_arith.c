@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_arith.c,v 1.11 2002/07/20 17:23:15 giles Exp $
+    $Id: jbig2_arith.c,v 1.12 2002/08/06 11:15:29 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -64,7 +64,7 @@ jbig2_arith_bytein (Jbig2ArithState *as)
   /* invariant: as->next_word_bytes > 0 */
 
   /* Figure G.3 */
-  B = (as->next_word >> 24) & 0xFF;
+  B = (byte)((as->next_word >> 24) & 0xFF);
   if (B == 0xFF)
     {
       byte B1;
@@ -73,7 +73,7 @@ jbig2_arith_bytein (Jbig2ArithState *as)
 	  Jbig2WordStream *ws = as->ws;
 	  as->next_word = ws->get_next_word (ws, as->offset);
 	  as->offset += 4;
-	  B1 = (as->next_word >> 24) & 0xFF;
+	  B1 = (byte)((as->next_word >> 24) & 0xFF);
 	  if (B1 > 0x8F)
 	    {
 #ifdef DEBUG
@@ -102,7 +102,7 @@ jbig2_arith_bytein (Jbig2ArithState *as)
 	}
       else
 	{
-	  B1 = (as->next_word >> 16) & 0xFF;
+	  B1 = (byte)((as->next_word >> 16) & 0xFF);
 	  if (B1 > 0x8F)
 	    {
 #ifdef DEBUG
@@ -146,7 +146,7 @@ jbig2_arith_bytein (Jbig2ArithState *as)
 	  as->offset += 4;
 	  as->next_word_bytes = 4;
 	}
-      B = (as->next_word >> 24) & 0xFF;
+      B = (byte)((as->next_word >> 24) & 0xFF);
 #ifdef SOFTWARE_CONVENTION
       as->C += 0xFF00 - (B << 8);
 #else
