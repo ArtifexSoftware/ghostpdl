@@ -383,10 +383,10 @@ gdevdsp_h=$(GLSRC)gdevdsp.h
 gdevdsp2_h=$(GLSRC)gdevdsp2.h
 
 display_=$(GLOBJ)gdevdsp.$(OBJ)
-$(DD)display.dev: $(display_)
+$(DD)display.dev : $(display_)
 	$(SETDEV) $(DD)display $(display_)
 
-$(GLOBJ)gdevdsp.$(OBJ): $(GLSRC)gdevdsp.c $(string__h)\
+$(GLOBJ)gdevdsp.$(OBJ) : $(GLSRC)gdevdsp.c $(string__h)\
  $(gp_h) $(gpcheck_h) $(gdevpccm_h) $(gsexit_h) $(gsparam_h)\
  $(GDEVH) $(gxdevmem_h) $(gdevdsp_h) $(gdevdsp2_h)
 	$(GLCC) $(GLO_)gdevdsp.$(OBJ) $(C_) $(GLSRC)gdevdsp.c
