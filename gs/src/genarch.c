@@ -1,4 +1,4 @@
-/* Copyright (C) 1989-2003 artofcode LLC. All rights reserved.
+/* Copyright (C) 1989-2004 artofcode LLC. All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -220,6 +220,7 @@ main(int argc, char *argv[])
      */
     {
 #define MAX_BLOCK (1 << 22)	/* max 4M cache */
+#define MAX_NREPS (1 << 10)	/* limit the number of reps we try */
 	static char buf[MAX_BLOCK];
 	int bsize = 1 << 10;
 	int nreps = 1;
@@ -231,10 +232,10 @@ main(int argc, char *argv[])
 	 * long enough to exceed the likely uncertainty.
 	 */
 
-	while ((t = time_clear(buf, bsize, nreps)) == 0)
+	while (nreps < MAX_NREPS && (t = time_clear(buf, bsize, nreps)) == 0)
 	    nreps <<= 1;
 	t_eps = t;
-	while ((t = time_clear(buf, bsize, nreps)) < t_eps * 10)
+	while (nreps < MAX_NREPS && (t = time_clear(buf, bsize, nreps)) < t_eps * 10)
 	    nreps <<= 1;
 
 	/*
