@@ -222,11 +222,16 @@ pdf_encode_string(gx_device_pdf *pdev, const pdf_text_enum_t *penum,
 	    code = (pdfont->base_font != 0 ?
 		    pdf_base_font_copy_glyph(pdfont->base_font, glyph, (gs_font_base *)font) :
 		    pdf_font_used_glyph(pdfont->FontDescriptor, glyph, (gs_font_base *)font));
-	    if (code == gs_error_undefined)
-		continue;	/* notdef */
-	    if (code < 0)
+	    if (code < 0 && code != gs_error_undefined)
 		return code;
-	    if (pdfont->base_font == NULL && ccfont != NULL &&
+	    if (code == gs_error_undefined) {
+		/* PS font has no such glyph. */
+		if (bytes_compare(gnstr.data, gnstr.size, ".notdef", 7)) {
+		    pet->glyph = glyph;
+		    pet->str = gnstr;
+		    pet->is_difference = true;
+		}
+	    } else if (pdfont->base_font == NULL && ccfont != NULL &&
 		    (gs_copy_glyph_options(font, glyph, (gs_font *)ccfont, COPY_GLYPH_NO_NEW) != 1 || 
 		     gs_copied_font_add_encoding((gs_font *)ccfont, ch, glyph) < 0)) {
 		/*
