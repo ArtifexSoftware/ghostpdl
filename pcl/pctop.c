@@ -435,7 +435,8 @@ pcl_impl_set_device(
     }
     {
         pl_main_instance_t *pti = (pl_main_instance_t *)(pcli->pre_page_closure);
-        if ( (pti->page_count + 1) < pti->first_page || (pti->page_count + 1) > pti->last_page ) {
+        if ( (pti->page_count + 1) < pti->first_page || 
+             (pti->page_count + 1) > pti->last_page ) {
             gx_device *pdev = pti->device;
             if ( !pti->saved_hwres ) {
                 pti->saved_hwres = true;
@@ -624,11 +625,11 @@ pcl_end_page_top(
                out of range we can downgrade resolution to a very
                small arbitrary value for better performance on
                no-print pages.  If we are past the last page we can
-               record an error that will cause the interpreter to
+               record 'an error that will cause the interpreter to
                exit. */
-
             /* all done */
-            if ( (pti->page_count + 1) < pti->first_page || (pti->page_count + 1) > pti->last_page ) {
+            if ( (pti->page_count + 1) < pti->first_page || 
+                 (pti->page_count + 1) > pti->last_page ) {
                 if ( !pti->saved_hwres ) {
                     gx_device *pdev = pti->device;
                     pti->saved_hwres = true;
@@ -639,7 +640,10 @@ pcl_end_page_top(
             } else { /* next page is in range - restore the resolution */
                 if ( pti->saved_hwres ) {
                     pti->saved_hwres = false;
-                    gx_device_set_resolution(pti->device, pti->hwres[0], pti->hwres[1]);
+                    gx_device_set_resolution(pti->device, 
+                                             pti->hwres[0], pti->hwres[1]);
+                    new_logical_page(pcs, pcs->xfm_state.lp_orient,
+                                     pcs->xfm_state.paper_size, false);
                 }
             }
             return 0;    /* code > 0 means abort w/no error */
