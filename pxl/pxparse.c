@@ -110,7 +110,7 @@ private const px_tag_syntax_t tag_syntax[256] = {
   {1,ptsInSession,ptsInSession|ptsInPage|N,ptsInSession},
   {1,ptsInSession,ptsInSession|ptsInPage|N,ptsInPage},
   {1,ptsInPage,ptsInPage|N,ptsInPage},
-  P,P,C,
+  P,{1,1,1,0},C,
   C,C,P,P,P,P,P,R(0,0,ptsReadingFont),
 /*5x*/
   R(0,ptsReadingFont,0),

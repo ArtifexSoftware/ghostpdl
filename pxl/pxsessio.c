@@ -593,18 +593,33 @@ const byte apxEndPage[] = {
 };
 int
 pxEndPage(px_args_t *par, px_state_t *pxs)
-{	
-    int code;
-    px_end_page_cleanup(pxs);
-    code = (*pxs->end_page)(pxs, (par->pv[0] ? par->pv[0]->value.i : pxs->copies), 1);
-    pxs->have_page = false;
-    return code;
+{	px_end_page_cleanup(pxs);
+	(*pxs->end_page)(pxs, (par->pv[0] ? par->pv[0]->value.i : pxs->copies), 1);
+	pxs->have_page = false;
+	return 0;
 }
 /* The default end-page procedure just calls the device procedure. */
 int
 px_default_end_page(px_state_t *pxs, int num_copies, int flush)
 {	return gs_output_page(pxs->pgs, num_copies, flush);
 }
+
+const byte apxVendorUnique[] = {
+    pxaVUExtension,  pxaVUAttr1
+};
+
+/** we do NOTHING with the vendor unique command.
+ * it is undocumented, but appears that it contains the sames color commands as the
+ * XL 2.1 spec.  This is based on only finding it in hpclj 4500 driver output.
+ * of course HP denys that the 4500 supports XL.  
+ */
+int
+pxVendorUnique(px_args_t *par, px_state_t *pxs)
+{	
+    return 0;
+}
+
+
 
 const byte apxComment[] = {
   0,

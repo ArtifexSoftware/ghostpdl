@@ -254,7 +254,11 @@ const px_attr_value_type_t px_attr_value_types[] = {
   none,
   en(pxeErrorReport_next),		/* ErrorReport = 143 */
   none,
-  none5,
+  sc(ul),              /* VUExtension = 145 */
+  none,
+  sc(ub),              /* VUAttr1 = 147 */
+  none,
+  none,
   none5,
   none5,
   none,
@@ -353,7 +357,7 @@ const char *px_attribute_names[] = {
   0, "SourceType", "UnitsPerMeasure", 0, "StreamName",
 /*140*/
   "StreamDataLength", 0, 0, "ErrorReport", 0,
-  0, 0, 0, 0, 0,
+  "VUExtension", 0, "VUAttr1", 0, 0,
 /*150*/
   0, 0, 0, 0, 0,
   0, 0, 0, 0, 0,
@@ -427,7 +431,7 @@ const char *px_tag_c0_names[0x40] = {
 const char *px_operator_names[0x80] = {
 /*4x*/
   0, "BeginSession", "EndSession", "BeginPage",
-  "EndPage", 0, 0, "Comment",
+  "EndPage", 0, "VendorUnique", "Comment",
   "OpenDataSource", "CloseDataSource", 0, 0,
   0, 0, 0, "BeginFontHeader",
 /*5x*/
@@ -486,6 +490,7 @@ odef(pxBeginSession, apxBeginSession);
 odef(pxEndSession, apxEndSession);
 odef(pxBeginPage, apxBeginPage);
 odef(pxEndPage, apxEndPage);
+odef(pxVendorUnique, apxVendorUnique);
 odef(pxComment, apxComment);
 odef(pxOpenDataSource, apxOpenDataSource);
 odef(pxCloseDataSource, apxCloseDataSource);
@@ -575,7 +580,7 @@ const px_operator_definition_t px_operator_definitions[] = {
   {pxBeginPage, apxBeginPage},
   {pxEndPage, apxEndPage},
   none,
-  none,
+  {pxVendorUnique, apxVendorUnique},
   {pxComment, apxComment},
   {pxOpenDataSource, apxOpenDataSource},
   {pxCloseDataSource, apxCloseDataSource},
