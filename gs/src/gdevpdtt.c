@@ -102,9 +102,13 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
     default:
 	return_error(gs_error_rangecheck);
     }
-    if (penum->pte_default)
-	return gs_text_set_cache(penum->pte_default, pw, control);
-    return_error(gs_error_rangecheck); /* can't happen */
+    if (penum->pte_default) {
+	if (penum->pte_default->text.operation & TEXT_DO_CHARWIDTH /* See process_cmap_text.*/)
+	    return gs_text_set_cache(penum->pte_default, pw, TEXT_SET_CHAR_WIDTH);
+	else
+	    return gs_text_set_cache(penum->pte_default, pw, control);
+    }
+    return_error(gs_error_unregistered); /* can't happen */
 }
 private int
 pdf_text_retry(gs_text_enum_t *pte)
