@@ -185,9 +185,6 @@ currentdict end def
 /InstalledFonts 50 dict def
 /MacRomanEncodingInverse null def
 
-% Debug data :
-/StreamDumperBuffer //PDFR_DEBUG { 1024 } { 1 } ifelse string def
-
 % We need some structures in local VM, put then into the userdict :
 currentglobal false setglobal
 userdict /PDFR_InitialGS gstate put
@@ -424,8 +421,8 @@ currentdict end readonly def
   currentglobal exch dup gcheck setglobal
   [ exch                      % f
     1 dict dup /c 0 put exch  % d f
-    { //StreamDumperBuffer    % d f s
-      readstring pop          % d s
+    1024 string               % d f s
+    { readstring pop          % d s
       (StreamDumper ) print 1 index /c get =string cvs print ( ) print 
       dup length =string cvs print ( <) print dup print (>\n) print
       dup length              % d s l
