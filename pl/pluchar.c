@@ -346,6 +346,7 @@ pl_init_fc(
        state... use identity for resolution and ctm */
     gs_matrix mat;
     floatp xres, yres;
+
     if ( width_request ) {
         gs_make_identity(&mat);
         xres = yres = 1;
@@ -401,8 +402,9 @@ pl_init_fc(
             pfc->ExtndFlags |= EF_VERTSUBS_TYPE;
     }
     /* handle artificial emboldening */
-    if (plfont->bold_fraction)
+    if (plfont->bold_fraction) {
         pfc->pcl6bold = 32768 * plfont->bold_fraction + 0.5;
+    }
     else
         pfc->pcl6bold = 0;
     /* set the format */
@@ -574,6 +576,8 @@ pl_ufst_make_char(
     MEM_HANDLE          memhdl;
     UW16                status, chIdloc = chr;
     gs_matrix           sv_ctm, tmp_ctm;
+    int wasValid;
+    pl_font_t *plfont = (pl_font_t *)pfont->client_data;
 
     /* ignore illegitimate characters */
     if (chr == 0xffff)
@@ -598,12 +602,17 @@ pl_ufst_make_char(
         }
     }
 
+    wasValid = pgs->char_tm_valid;
     /* move to device space */
     gs_currentmatrix(pgs, &sv_ctm);
     gs_make_identity(&tmp_ctm);
     tmp_ctm.tx = sv_ctm.tx;
     tmp_ctm.ty = sv_ctm.ty;
     gs_setmatrix(pgs, &tmp_ctm);
+    /* gs_setcharmatrix(pgs, &tmp_ctm);
+     * force valid charmatrix to enable character caching.
+     */
+    pgs->char_tm_valid = wasValid;
 
     if (FC_ISBITMAP(pfc)) {
         PIFBITMAP       psbm = (PIFBITMAP)MEMptr(memhdl);
@@ -618,6 +627,7 @@ pl_ufst_make_char(
                                 0.0,
                                 &sv_ctm,
                                 &aw );
+
         wbox[0] = aw.x;
         wbox[1] = aw.y;
         wbox[2] = psbm->xorigin / 16.0 + psbm->left_indent;
@@ -1650,8 +1660,13 @@ pl_mt_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code, flo
 {
     gs_point width;
     metrics[0] = metrics[1] = metrics[2] = metrics[3] = 0;
-    if ( pl_mt_char_width(plfont, pgs, char_code, &width) )
-        metrics[0] = width.x;
+    if ( 0 == pl_mt_char_width(plfont, pgs, char_code, &width) ) {
+      /* width is correct, 
+	 stefan foo: lsb is missing. */
+        metrics[2] = width.x;
+        /* metrics[0] = left_side_bearing;
+	 */
+    }
     return 0;
 }
 
