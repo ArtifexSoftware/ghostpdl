@@ -2231,6 +2231,15 @@ externals, set
 "<b><tt>XLIBDIRS=-L/usr/lpp/X11/lib/R5&nbsp;-L/usr/lpp/X11/lib</tt></b>"
 rather than just "<b><tt>XLIBDIRS=-L/usr/lpp/X11/lib</tt></b>".
 
+<li>Ghostscript has been successfully compiled and runs under AIX 4.3.3 and
+the IBM C compiler version 5.  The following changes were required in
+unixansi.mak:
+
+<p>
+<b><tt>CC=xlc</tt></b>
+<br>
+<b><tt>XCFLAGS=-qalign=natural</tt></b>
+
 </ul>
 
 <h4>
