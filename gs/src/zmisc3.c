@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Miscellaneous LanguageLevel 3 operators */
 #include "ghost.h"
 #include "gscspace.h"		/* for gscolor2.h */

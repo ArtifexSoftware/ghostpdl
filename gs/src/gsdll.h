@@ -16,7 +16,7 @@
  */
 
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 
 /* This interface is deprecated and will be removed in future
  * ghostscript releases.  Use the interface described in

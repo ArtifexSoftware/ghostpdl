@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Internal color space writing interfaces for pdfwrite driver. */
 
 #ifndef gdevpdfc_INCLUDED

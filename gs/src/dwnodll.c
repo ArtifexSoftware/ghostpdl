@@ -15,7 +15,7 @@
 */
 
 /* dwnodll.c */
-/* $RCSfile$ $Revision$ */
+/* $Id$ */
 
 #define STRICT
 #include <windows.h>

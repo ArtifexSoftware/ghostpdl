@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* CoStar LabelWriter II, II Plus driver for Ghostscript */
 /* Contributed by Mike McCauley mikem@open.com.au        */
 

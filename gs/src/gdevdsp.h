@@ -14,7 +14,7 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861.
  */
 
-/* $RCSfile$ $Revision$ */
+/* $Id$ */
 /* gdevdsp.h - callback structure for DLL based display device */
 
 #ifndef gdevdsp_INCLUDED

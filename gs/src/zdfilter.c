@@ -16,7 +16,7 @@
 
   Author: Raph Levien <raph@artofcode.com>
 */
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* PostScript operators for managing the device filter stack */
 
 /* We probably don't need all of these, they were copied from zdevice.c. */

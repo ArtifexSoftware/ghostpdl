@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Interface to synchronization primitives */
 
 /* Initial version 2/1/98 by John Desrosiers (soho@crl.com) */

@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* SuperVGA display drivers */
 #include "memory_.h"
 #include "gconfigv.h"		/* for USE_ASM */

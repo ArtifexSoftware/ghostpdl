@@ -16,7 +16,7 @@
 
   Author: Raph Levien <raph@artofcode.com>
 */
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* PDF 1.4 blending functions */
 
 #ifndef gxblend_INCLUDED

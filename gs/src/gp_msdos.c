@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Common platform-specific routines for MS-DOS (any compiler) */
 #include "stdio_.h"
 #include "string_.h"		/* for strerror */

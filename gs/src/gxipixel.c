@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Common code for ImageType 1 and 4 initialization */
 #include "gx.h"
 #include "math_.h"

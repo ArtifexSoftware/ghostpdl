@@ -1,6 +1,6 @@
 /* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved. */
 
-/*$RCSfile$ $Revision$*/
+/* $Id$*/
 /* Convert ANSI C function definitions to K&R ("traditional C") syntax */
 
 /*

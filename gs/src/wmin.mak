@@ -13,7 +13,7 @@
 # contact Artifex Software, Inc., 101 Lucas Valley Road #110,
 # San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
-# $RCSfile$ $Revision$
+# $Id$
 # Makefile for compiling the Wadalab free Kanji font into the executable.
 # This does not yet include rules for creating the wmin*.c files.
 

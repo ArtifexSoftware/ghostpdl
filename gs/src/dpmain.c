@@ -15,7 +15,7 @@
 */
 
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Ghostscript DLL loader for OS/2 */
 /* For WINDOWCOMPAT (console mode) application */
 

@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$*/
+/* $Id$*/
 /*
  * Epson (and similar) dot-matrix printer driver for Ghostscript.
  *

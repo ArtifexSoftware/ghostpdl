@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Read stdin on platforms that do not support unbuffered read.
  * This is the most portable implementation, but it is very slow
  * when reading stdin because it will read one byte at a time.

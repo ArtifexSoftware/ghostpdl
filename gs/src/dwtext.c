@@ -15,7 +15,7 @@
 */
 
 
-/* $RCSfile$ $Revision$ */
+/* $Id$ */
 
 /* Microsoft Windows text window for Ghostscript.
 

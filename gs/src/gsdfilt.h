@@ -16,7 +16,7 @@
 
   Author: Raph Levien <raph@artofcode.com>
 */
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 
 #ifndef gsdfilt_INCLUDED
 #  define gsdfilt_INCLUDED

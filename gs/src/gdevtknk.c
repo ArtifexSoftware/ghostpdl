@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$*/
+/* $Id$*/
 /*   
    This driver is written for Tektronix ink-jet 4696 and 4695 plotters.
 

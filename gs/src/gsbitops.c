@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Bitmap filling, copying, and transforming operations */
 #include "stdio_.h"
 #include "memory_.h"

@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Graphics-state-aware fill and stroke procedures */
 #include "gx.h"
 #include "gzstate.h"

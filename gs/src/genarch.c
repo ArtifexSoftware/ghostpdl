@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /*
  * Generate a header file (arch.h) with parameters
  * reflecting the machine architecture and compiler characteristics.

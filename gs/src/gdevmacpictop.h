@@ -1,4 +1,4 @@
-/* $RCSfile$ $Revision$ */
+/* $Id$ */
 
 #ifndef gdevmacpictop_INCLUDED
 #  define gdevmacpictop_INCLUDED

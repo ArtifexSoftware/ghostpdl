@@ -13,7 +13,7 @@
 # contact Artifex Software, Inc., 101 Lucas Valley Road #110,
 # San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
-# $RCSfile$ $Revision$
+# $Id$
 # Partial makefile common to all Unix and Desqview/X configurations.
 # This is the next-to-last part of the makefile for these configurations.
 

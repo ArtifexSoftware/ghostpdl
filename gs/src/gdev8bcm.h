@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* 8-bit color map support */
 /* Requires gxdevice.h (for gx_color_value) */
 

@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Print values in ASCII form on a stream */
 #include "math_.h"		/* for fabs */
 #include "stdio_.h"		/* for stream.h */

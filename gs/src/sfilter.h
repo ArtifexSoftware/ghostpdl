@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Definitions for simple Ghostscript streams */
 /* Requires scommon.h; should require strimpl.h only if any templates */
 /* are referenced, but some compilers always require strimpl.h. */

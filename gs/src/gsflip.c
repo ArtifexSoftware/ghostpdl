@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Routines for "flipping" image data */
 #include "gx.h"
 #include "gserrors.h"		/* for rangecheck in sample macros */

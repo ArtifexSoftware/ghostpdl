@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Internal CMap structure definitions */
 
 /* This file should be called gxcmap.h, except that name is already used. */

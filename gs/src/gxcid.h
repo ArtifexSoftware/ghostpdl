@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Common data definitions for CMaps and CID-keyed fonts */
 
 #ifndef gxcid_INCLUDED

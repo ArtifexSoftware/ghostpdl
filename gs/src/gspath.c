@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Basic path routines for Ghostscript library */
 #include "gx.h"
 #include "gserrors.h"

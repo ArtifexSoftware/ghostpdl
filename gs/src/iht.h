@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Procedures exported by zht.c for zht1.c and zht2.c */
 
 #ifndef iht_INCLUDED

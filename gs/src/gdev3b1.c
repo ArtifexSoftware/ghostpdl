@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$*/
+/* $Id$*/
 /*
  * This is a driver for the AT&T 3b1/7300/UnixPC console display.
  *

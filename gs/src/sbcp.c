@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* BCP and TBCP filters */
 #include "stdio_.h"
 #include "strimpl.h"

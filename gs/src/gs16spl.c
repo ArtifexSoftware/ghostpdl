@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* 16-bit access to print spooler from Win32s */
 /* by Russell Lang */
 /* 1995-11-23 */

@@ -17,7 +17,7 @@
 #include "gdevprn.h"
 
 
-/*$RCSfile$ $Revision$*/
+/* $Id$*/
 /* High-res 24Dot-matrix printer driver */
 
 /* Supported printers 

@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Generate (bounded) Huffman code definitions from frequencies, */
 /* and tables from definitions. */
 #include "memory_.h"

@@ -33,7 +33,7 @@
    U.S.A.
  */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Generic monochrome H-P DeskJet/LaserJet driver */
 #include "gdevprn.h"
 #include "gdevdljm.h"

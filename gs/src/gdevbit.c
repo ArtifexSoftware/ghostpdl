@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* "Plain bits" devices to measure rendering time. */
 #include "math_.h"
 #include "gdevprn.h"

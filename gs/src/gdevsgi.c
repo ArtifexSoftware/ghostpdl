@@ -4,7 +4,7 @@
  * public domain.
  */
 
-/*$RCSfile$ $Revision$*/
+/* $Id$*/
 /* SGI raster file driver */
 #include "gdevprn.h"
 #include "gdevsgi.h"

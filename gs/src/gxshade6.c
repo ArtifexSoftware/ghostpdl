@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Rendering for Coons and tensor patch shadings */
 #include "memory_.h"
 #include "gx.h"

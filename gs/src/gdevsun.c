@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$*/
+/* $Id$*/
 /* SunView driver */
 #include "gx.h"			/* for gx_bitmap; includes std.h */
 

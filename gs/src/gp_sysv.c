@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* System V Unix-specific routines for Ghostscript */
 
 /* This file contains a couple of standard Unix library procedures */

@@ -15,7 +15,7 @@
  */
 
 /* gdevdsp.c */
-/* $RCSfile$ $Revision$ */
+/* $Id$ */
 
 /*
  * DLL based display device driver.

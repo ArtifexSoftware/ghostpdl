@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Path drawing procedures for pdfwrite driver */
 #include "math_.h"
 #include "gx.h"

@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Common platform-specific routines for MS-Windows WIN32 */
 /* originally hacked from gp_msdos.c by Russell Lang */
 #include "malloc_.h"

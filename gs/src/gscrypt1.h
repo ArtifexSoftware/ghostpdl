@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Interface to Adobe Type 1 encryption/decryption. */
 
 #ifndef gscrypt1_INCLUDED

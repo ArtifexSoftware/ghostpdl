@@ -15,7 +15,7 @@
  */
 
 
-/* $RCSfile$ $Revision$ */
+/* $Id$ */
 /* Text Window class */
 
 #ifndef dwtext_INCLUDED

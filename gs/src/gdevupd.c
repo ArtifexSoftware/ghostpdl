@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/* $RCSfile$ $Revision$ */
+/* $Id$ */
 /* gdevupd.c Revision: 1.88 */
 /* "uniprint" -- Ugly Printer Driver by Gunther Hess (ghess@elmos.de) */
 

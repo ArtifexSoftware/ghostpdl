@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Definition of matrices and client interface to matrix routines */
 
 #ifndef gsmatrix_INCLUDED

@@ -13,7 +13,7 @@
 # contact Artifex Software, Inc., 101 Lucas Valley Road #110,
 # San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
-# $RCSfile$ $Revision$
+# $Id$
 # Makefile for CodeWarrior XML project file creation from Darwin/MacOSX.
 
 # Run this file through make on MacOS X (or any other system with shell

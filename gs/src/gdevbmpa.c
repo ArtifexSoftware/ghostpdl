@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* .BMP file format output drivers: Demo of ASYNC rendering */
 
 /* 2000-04-20 ghost@aladdin.com - Makes device structures const, changing

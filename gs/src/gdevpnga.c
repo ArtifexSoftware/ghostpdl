@@ -16,7 +16,7 @@
 
   Author: Raph Levien <raph@artofcode.com>
 */
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Test driver for PDF 1.4 transparency stuff */
 
 #include "gdevprn.h"

@@ -16,7 +16,7 @@
 /* Portions Copyright (C) 1994-2000 Ghostgum Software Pty Ltd.  All rights reserved. */
 
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Dynamic Link Library interface for OS/2 and MS-Windows Ghostscript */
 /* front end to gs.c */
 

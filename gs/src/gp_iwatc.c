@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Intel processor, Watcom C-specific routines for Ghostscript */
 #include "dos_.h"
 #include <fcntl.h>

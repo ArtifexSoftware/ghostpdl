@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* External font (xfont) implementation for X11. */
 #include "math_.h"
 #include "memory_.h"

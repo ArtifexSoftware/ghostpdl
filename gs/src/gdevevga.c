@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* IBM PC EGA and VGA display drivers */
 /* All of the real code is in gdevpcfb.c. */
 #include "memory_.h"

@@ -3,7 +3,7 @@
  * Author : Jouk Jansen (joukj@hrem.stm.tudelft.nl)                        *
  *                                                                         *
  * Last revision : 22 August 2000                                          *
- * $RCSfile$ $Revision$
+ * $Id$
  *                                                                         *
  * Repair definitions of Xlib when compileing with /name=(as_is) on VMS    *
  *                                                                         *

@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Dummy scan_binary_token for Level 1 systems */
 #include "ghost.h"
 #include "errors.h"

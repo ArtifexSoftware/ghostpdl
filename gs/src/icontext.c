@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Context state operations */
 #include "ghost.h"
 #include "gsstruct.h"		/* for gxalloc.h */

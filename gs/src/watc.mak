@@ -13,7 +13,7 @@
 # contact Artifex Software, Inc., 101 Lucas Valley Road #110,
 # San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
-# $RCSfile$ $Revision$
+# $Id$
 # makefile for MS-DOS/Watcom C386 platform.
 # We strongly recommend that you read the Watcom section of Make.htm
 # before attempting to build Ghostscript with the Watcom compiler.

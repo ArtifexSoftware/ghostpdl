@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Ghostscript driver for 256-color VGA modes with Linux and vgalib */
 /* This Driver was derived from the BGI-Driver. It was written
    only for my own purpose. I never planned to release it or send

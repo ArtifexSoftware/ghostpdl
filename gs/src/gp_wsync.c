@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* MS Windows (Win32) thread / semaphore / monitor implementation */
 /* original multi-threading code by John Desrosiers */
 #include "malloc_.h"

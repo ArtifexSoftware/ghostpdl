@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$*/
+/* $Id$*/
 /* DigiBoard fax device. */
 /***
  *** Note: this driver is maintained by a user: please contact

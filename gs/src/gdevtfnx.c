@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* 12-bit & 24-bit RGB uncompressed TIFF driver */
 #include "gdevprn.h"
 #include "gdevtifs.h"

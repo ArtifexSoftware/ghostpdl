@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Dynamic color mapping for 8-bit displays */
 #include "gx.h"
 #include "gxdevice.h"

@@ -16,7 +16,7 @@
 
   Author: Raph Levien <raph@artofcode.com>
 */
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Device filter implementing PDF 1.4 imaging model */
 
 #include "math_.h"

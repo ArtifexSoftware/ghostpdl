@@ -15,7 +15,7 @@
  */
 
 
-/* $RCSfile$ $Revision$*/
+/* $Id$*/
 
 /* gsdll structure for MS-Windows */
 

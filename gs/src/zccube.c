@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Create Color Cube routines for tint transform replacement. */
 #include "memory_.h"
 #include "ghost.h"

@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$*/
+/* $Id$*/
 /* Okidata Microline 182 printer driver */
 
 /* Contributed by Maarten Koning (smeg@bnr.ca) April 4, 1993 */

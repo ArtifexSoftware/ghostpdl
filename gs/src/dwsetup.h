@@ -15,7 +15,7 @@
 */
 
 
-// $RCSfile$ $Revision$
+// $Id$
 
 #ifndef dwsetup_INCLUDED
 #  define dwsetup_INCLUDED

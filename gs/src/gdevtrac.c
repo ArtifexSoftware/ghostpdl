@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Tracing device (including sample high-level implementation) */
 #include "gx.h"
 #include "gserrors.h"

@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Common code for outline (Type 1 / 4 / 42) fonts */
 #include "memory_.h"
 #include "ghost.h"

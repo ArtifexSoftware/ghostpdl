@@ -15,7 +15,7 @@
 */
 
 
-// $RCSfile$ $Revision$
+// $Id$
 
 #ifndef dwuninst_INCLUDED
 #  define dwuninst_INCLUDED

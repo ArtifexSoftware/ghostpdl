@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Write an embedded CFF font with either Type 1 or Type 2 CharStrings */
 #include "math_.h"		/* for fabs */
 #include "memory_.h"

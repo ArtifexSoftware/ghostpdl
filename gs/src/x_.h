@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Header for including X library calls in Ghostscript X11 driver */
 
 #ifndef x__INCLUDED

@@ -33,7 +33,7 @@
    U.S.A.
  */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* HP LaserJet/DeskJet driver for Ghostscript */
 #include "gdevprn.h"
 #include "gdevdljm.h"

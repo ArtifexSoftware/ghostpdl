@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Type 1 font utilities shared with Type 2 */
 
 #ifndef ifont1_INCLUDED

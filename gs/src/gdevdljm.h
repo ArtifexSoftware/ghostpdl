@@ -33,7 +33,7 @@
    U.S.A.
  */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 /* Interface to generic monochrome H-P DeskJet/LaserJet driver */
 
 #ifndef gdevdljm_INCLUDED

@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/*$RCSfile$ $Revision$ */
+/* $Id$ */
 
 /* this is the ps interpreter interface to the arcfour cipher filter
    used in PDF encryption. We provide both Decode and Encode filters;
