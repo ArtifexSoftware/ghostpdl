@@ -161,6 +161,8 @@ See <a href="#Memory_management">below</a>.
 
 <p>
 Framework, file and string streams:
+<a href="../src/gsdsrc.c">src/gsdsrc.c</a>,
+<a href="../src/gsdsrc.h">src/gsdsrc.h</a>,
 <a href="../src/scommon.h">src/scommon.h</a>,
 <a href="../src/sfxboth.c">src/sfxboth.c</a>,
 <a href="../src/sfxfd.c">src/sfxfd.c</a>,
@@ -263,6 +265,11 @@ See <a href="#Cross_platform_APIs">below</a>.
 <h3>Miscellaneous</h3>
 
 <p>
+Library top level:
+<a href="../src/gsinit.c">src/gsinit.c</a>,
+<a href="../src/gslib.h">src/gslib.h</a>.
+
+<p>
 Configuration-related:
 <a href="../src/gconf.c">src/gconf.c</a>,
 <a href="../src/gconf.h">src/gconf.h</a>,
@@ -288,6 +295,8 @@ Operating system interface:
 
 <p>
 Other:
+<a href="../src/gsargs.c">src/gsargs.c</a>,
+<a href="../src/gsargs.h">src/gsargs.h</a>,
 <a href="../src/gserrors.h">src/gserrors.h</a>,
 <a href="../src/gsnotify.c">src/gsnotify.c</a>,
 <a href="../src/gsnotify.h">src/gsnotify.h</a>,
@@ -296,6 +305,7 @@ Other:
 <a href="../src/gsuid.h">src/gsuid.h</a>,
 <a href="../src/gsutil.h">src/gsutil.h</a>,
 <a href="../src/gsutil.c">src/gsutil.c</a>,
+<a href="../src/gx.h">src/gx.h</a>,
 <a href="../src/md5.c">src/md5.c</a>,
 <a href="../src/md5.h">src/md5.h</a>.
 
@@ -336,7 +346,7 @@ Parameter lists:
 <a href="../src/gscparam.c">src/gscparam.c</a>,
 <a href="../src/gsparam.c">src/gsparam.c</a>,
 <a href="../src/gsparam.h">src/gsparam.h</a>,
-<a href="../src/gsparam2.c">src/gsparam2.c</a>,
+<a href="../src/gsparam2.c">src/gsparam2.c</a> (not used),
 <a href="../src/gsparams.c">src/gsparams.c</a>,
 <a href="../src/gsparams.h">src/gsparams.h</a>,
 <a href="../src/gsparamx.c">src/gsparamx.c</a>,
@@ -344,6 +354,7 @@ Parameter lists:
 
 <p>
 I/O-related:
+<a href="../src/gdevpipe.c">src/gdevpipe.c</a>,
 <a href="../src/gsfname.c">src/gsfname.c</a>,
 <a href="../src/gsfname.h">src/gsfname.h</a>,
 <a href="../src/gsio.h">src/gsio.h</a>,
@@ -364,6 +375,7 @@ Coordinate transformation:
 
 <p>
 Path building:
+<a href="../src/gsdps1.c">src/gsdps1.c</a>,
 <a href="../src/gspath.c">src/gspath.c</a>,
 <a href="../src/gspath.h">src/gspath.h</a>,
 <a href="../src/gspath1.c">src/gspath1.c</a>,
@@ -378,6 +390,8 @@ Path building:
 
 <p>
 Path rendering:
+<a href="../src/gdevddrw.c">src/gdevddrw.c</a>,
+<a href="../src/gsdps1.c">src/gsdps1.c</a>,
 <a href="../src/gspaint.c">src/gspaint.c</a>,
 <a href="../src/gspaint.h">src/gspaint.h</a>,
 <a href="../src/gspenum.h">src/gspenum.h</a>,
@@ -548,6 +562,7 @@ Compositing, transparency, and RasterOp:
 <a href="../src/gsalphac.c">src/gsalphac.c</a>,
 <a href="../src/gsalphac.h">src/gsalphac.h</a>,
 <a href="../src/gscompt.h">src/gscompt.h</a>,
+<a href="../src/gsdpnext.h">src/gsdpnext.h</a>,
 <a href="../src/gsnorop.c">src/gsnorop.c</a>,
 <a href="../src/gsrop.c">src/gsrop.c</a>,
 <a href="../src/gsrop.h">src/gsrop.h</a>,
@@ -615,12 +630,15 @@ Miscellaneous graphics state:
 <a href="../src/gsclipsr.h">src/gsclipsr.h</a>,
 <a href="../src/gsdps.c">src/gsdps.c</a>,
 <a href="../src/gsdps.h">src/gsdps.h</a>,
+<a href="../src/gsdps1.c">src/gsdps1.c</a>,
 <a href="../src/gsistate.c">src/gsistate.c</a>,
 <a href="../src/gsline.c">src/gsline.c</a>,
 <a href="../src/gsline.h">src/gsline.h</a>,
 <a href="../src/gslparam.h">src/gslparam.h</a>,
 <a href="../src/gsstate.c">src/gsstate.c</a>,
 <a href="../src/gsstate.h">src/gsstate.h</a>,
+<a href="../src/gstrap.c">src/gstrap.c</a>,
+<a href="../src/gstrap.h">src/gstrap.h</a>,
 <a href="../src/gxclipsr.h">src/gxclipsr.h</a>,
 <a href="../src/gxistate.h">src/gxistate.h</a>,
 <a href="../src/gxline.h">src/gxline.h</a>,
@@ -632,13 +650,25 @@ Miscellaneous graphics state:
 
 <p>
 Generic driver support:
+<a href="../src/gdevdcrd.c">src/gdevdcrd.c</a>,
+<a href="../src/gdevdcrd.h">src/gdevdcrd.h</a>,
+<a href="../src/gdevemap.c">src/gdevemap.c</a>,
 <a href="../src/gsdevice.c">src/gsdevice.c</a>,
 <a href="../src/gsdevice.h">src/gsdevice.h</a>,
 <a href="../src/gsdparam.c">src/gsdparam.c</a>,
+<a href="../src/gsxfont.h">src/gsxfont.h</a>,
 <a href="../src/gxdevbuf.h">src/gxdevbuf.h</a>,
 <a href="../src/gxdevcli.h">src/gxdevcli.h</a>,
 <a href="../src/gxdevice.h">src/gxdevice.h</a>,
-<a href="../src/gxrplane.h">src/gxrplane.h</a>.
+<a href="../src/gxrplane.h">src/gxrplane.h</a>,
+<a href="../src/gxxfont.h">src/gxxfont.h</a>.
+
+<p>
+Accessing rendered bits:
+<a href="../src/gdevdbit.c">src/gdevdbit.c</a>,
+<a href="../src/gdevdgbr.c">src/gdevdgbr.c</a>,
+<a href="../src/gxbitfmt.h">src/gxbitfmt.h</a>,
+<a href="../src/gxgetbit.h">src/gxgetbit.h</a>.
 
 <p>
 "Printer" driver support:
@@ -913,6 +943,8 @@ bodies of client code.
 
 <p>
 Files:
+<a href="../src/gs.c">src/gs.c</a>,
+<a href="../src/gserver.c">src/gserver.c</a>,
 <a href="../src/iccinit0.c">src/iccinit0.c</a>,
 <a href="../src/iinit.c">src/iinit.c</a>,
 <a href="../src/iinit.h">src/iinit.h</a>,
@@ -967,9 +999,6 @@ Specific stacks (dictionary, execution, operand):
 <a href="../src/ostack.h">src/ostack.h</a>.
 
 <p>
-Files/streams
-
-<p>
 File implementation:
 <a href="../src/files.h">src/files.h</a>,
 <a href="../src/zfile.c">src/zfile.c</a>,
@@ -997,6 +1026,7 @@ Streams and filters:
 <p>
 Miscellaneous support:
 <a href="../src/errors.h">src/errors.h</a>,
+<a href="../src/ghost.h">src/ghost.h</a>,
 <a href="../src/iconf.c">src/iconf.c</a>,
 <a href="../src/idparam.c">src/idparam.c</a>,
 <a href="../src/idparam.h">src/idparam.h</a>,
@@ -1230,9 +1260,11 @@ individual programs for information about what they do.
 
 <p>
 Files:
+<a href="../src/bench.c">src/bench.c</a>,
 <a href="../src/echogs.c">src/echogs.c</a>,
 <a href="../src/genarch.c">src/genarch.c</a>,
 <a href="../src/genconf.c">src/genconf.c</a>,
+<a href="../src/gendev.c">src/gendev.c</a> (not used),
 <a href="../src/genht.c">src/genht.c</a>,
 <a href="../src/geninit.c">src/geninit.c</a>.
 
