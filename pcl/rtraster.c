@@ -17,6 +17,7 @@
 #include "gsrop.h"
 #include "pcstate.h"
 #include "pcpalet.h"
+#include "pcpage.h"
 #include "pcindxed.h"
 #include "pcwhtidx.h"
 #include "pcdraw.h"
@@ -1006,6 +1007,7 @@ add_raster_plane(
 pcl_start_raster(
     uint                src_width,
     uint                src_height,
+    bool                region_marked,
     pcl_state_t *       pcs
 )
 {
@@ -1132,10 +1134,17 @@ pcl_start_raster(
     prast->pseed_rows = pseed_rows;
     pcs->raster_state.pcur_raster = (pcl_raster_type *)prast;
 
+    /* a mask is never required if the region of interest is blank and
+       the interpreter is pcl5e or monochrome, this is actually worth
+       checking because many pcl files blindly set the expensive
+       source opaque/pattern transparent combination. */
+    if ( pcs->personality == pcl5e && !region_marked ) 
+	return 0;
+
     /* see if a mask is required */
     if ( !pcs->source_transparent                                      &&
          pcs->pattern_transparent                                      &&
-         (!prast->indexed                                           || 
+         (!prast->indexed                                              || 
           (prast->wht_indx
                     < (1 << prast->nplanes * prast->bits_per_plane))  )  ) {
 

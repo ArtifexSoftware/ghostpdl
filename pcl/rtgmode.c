@@ -7,9 +7,11 @@
 #include "math_.h"
 #include "gsmatrix.h"
 #include "gscoord.h"
+#include "gsrect.h"
 #include "gsstate.h"
 #include "pcstate.h"
 #include "pcpatxfm.h"
+#include "pcpage.h"
 #include "pcindxed.h"
 #include "pcpalet.h"
 #include "pcursor.h"
@@ -167,6 +169,7 @@ pcl_enter_graphics_mode(
     uint                    src_wid, src_hgt;
     int                     rot;
     int                     code = 0;
+    bool                    marked;
 
     /*
      * Check if the raster is to be clipped fully; see rtrstst.h for details.
@@ -275,6 +278,7 @@ pcl_enter_graphics_mode(
     pcl_set_drawing_color(pcs, pcs->pattern_type, pcs->current_pattern_id, true);
     gs_setmatrix(pcs->pgs, &rst2dev);
 
+    /* translate the origin of the forward transformation */
     /* tansform the clipping window to raster space; udpate source dimensions */
     get_raster_print_rect(&(pxfmst->lp_print_rect), &print_rect, &rst2lp);
 
@@ -285,7 +289,32 @@ pcl_enter_graphics_mode(
     if (prstate->src_height_set && (src_hgt > prstate->src_height))
         src_hgt = prstate->src_height;
 
-    if ((code = pcl_start_raster(src_wid, src_hgt, pcs)) >= 0)
+    /* determine (conservatively) if the region of interest has been
+       marked */
+    marked = true;
+    if ( !pcs->source_transparent && pcs->pattern_transparent ) {
+	gs_matrix mat;
+	gs_rect page_bbox;
+	gs_rect rast_bbox;
+	gs_point rast_p;
+	gs_point rast_q;
+	gs_point initial_pt;
+	
+	code = pcl_current_bounding_box(pcs, &page_bbox);
+	if ( code < 0 )
+	    return code; /* a shouldn't happen */
+	/* get the bounding box for the raster and convert the box to
+           device space and check if the two rectangles overlap */
+	rast_bbox.p.x = cur_pt.x;
+	rast_bbox.p.y = cur_pt.y;
+	rast_bbox.q.x = cur_pt.x + src_wid;
+	rast_bbox.q.y = cur_pt.y + src_hgt;
+	gs_bbox_transform(&rast_bbox, &rst2dev, &rast_bbox);
+	rect_intersect(rast_bbox, page_bbox);
+	if ((rast_bbox.p.x >= rast_bbox.q.x) || (rast_bbox.p.y >= rast_bbox.q.y))
+	    marked = false;
+    }
+    if ((code = pcl_start_raster(src_wid, src_hgt, marked, pcs)) >= 0)
         prstate->graphics_mode = true;
     else
         pcl_grestore(pcs);
