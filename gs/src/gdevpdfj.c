@@ -309,7 +309,7 @@ pdf_make_alt_stream(gx_device_pdf * pdev, psdf_binary_writer * pbw)
     if (pbw->strm == 0)
         return_error(gs_error_VMerror);
     pbw->dev = (gx_device_psdf *)pdev;
-    pbw->memory = pdev->memory;
+    pbw->memory = pdev->pdf_memory;
     return 0;
 }
 

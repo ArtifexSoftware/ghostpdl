@@ -823,7 +823,7 @@ s_compr_chooser__estimate_row(stream_compr_chooser_state *const ss, byte *p)
 	Dealing with vertical ones would be too expensive.
     */
     const int delta = 256 / 16; /* about 1/16 of the range */
-    const max_lineart_boundary_width = 3/* pixels */;
+    const int max_lineart_boundary_width = 3/* pixels */;
     int i, j0 = 0, j1 = 0;
     int w0 = p[0], w1 = p[0], v;
     ulong plateau_count = 0, lower_plateaus = 0;
@@ -832,7 +832,7 @@ s_compr_chooser__estimate_row(stream_compr_chooser_state *const ss, byte *p)
 
     for (i = 1; i < ss->width; i++) {
 	v = p[i];
-	if (!lower)
+	if (!lower) {
 	    if (w1 < v)
 		w1 = v, upper = true;
 	    else if (upper && w1 - delta > v) {
@@ -850,7 +850,8 @@ s_compr_chooser__estimate_row(stream_compr_chooser_state *const ss, byte *p)
 		j1 = i;
 		upper = false;
 	    }
-	if (!upper)
+	}
+	if (!upper) {
 	    if (w0 > v)
 		w0 = v, lower = true;
 	    else if (lower && w0 + delta < v) {
@@ -868,6 +869,7 @@ s_compr_chooser__estimate_row(stream_compr_chooser_state *const ss, byte *p)
 		j1 = i;
 		lower = false;
 	    }
+	}
     }
     if (plateau_count > ss->width / 6) {
 	/*  Possibly a dithering, can't recognize.
@@ -907,8 +909,13 @@ s_compr_chooser__unpack_and_recognize(stream_compr_chooser_state *const ss,
 				      const byte *data, int length)
 {   
     ulong mask = (1 << ss->bits_per_sample) - 1;
-    uint i = ss->samples_count / ss->width * ss->width;
-    uint j = ss->samples_count % ss->width;
+    /*
+     * Input samples are packed ABCABCABC..., but the sample[] array of
+     * unpacked values is stored AAA...BBB...CCC.  i counts samples within
+     * a pixel, multiplied by width; j counts pixels.
+     */
+    uint i = (ss->samples_count % ss->depth) * ss->width;
+    uint j = ss->samples_count / ss->depth;
     const byte *p = data;
     int l = length;
 
@@ -971,11 +978,12 @@ s_compr_chooser__get_choice(stream_compr_chooser_state *ss, bool force)
 {
     ulong plateaus = min(ss->lower_plateaus, ss->upper_plateaus);
 
-    if (force)
+    if (force) {
 	if (ss->gradients > plateaus / 3/* arbitrary */)
 	    return 2;
 	else if (plateaus > ss->gradients)
 	    return 1;
+    }
     return ss->choice;
 }
 
