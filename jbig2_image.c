@@ -81,6 +81,66 @@ void jbig2_image_free(Jbig2Ctx *ctx, Jbig2Image *image)
 	jbig2_free(ctx->allocator, image);
 }
 
+/* composite one jbig2_image onto another
+   slow but general version */
+int jbig2_image_compose_unopt(Jbig2Ctx *ctx,
+			Jbig2Image *dst, Jbig2Image *src,
+                        int x, int y, Jbig2ComposeOp op)
+{
+    int i, j;
+    int sw = src->width;
+    int sh = src->height;
+    int sx = 0;
+    int sy = 0;
+
+    /* clip to the dst image boundaries */
+    if (x < 0) { sx += -x; sw -= -x; x = 0; }
+    if (y < 0) { sy += -y; sh -= -y; y = 0; }
+    if (x + sw >= dst->width) sw = dst->width - x;
+    if (y + sh >= dst->height) sh = dst->height - y;
+
+    switch (op) {
+	case JBIG2_COMPOSE_OR:
+	    for (j = 0; j < sh; j++) {
+		for (i = 0; i < sw; i++) {
+		    jbig2_image_set_pixel(dst, i+x, j+y,
+			jbig2_image_get_pixel(src, i+sx, j+sy) |
+			jbig2_image_get_pixel(dst, i+x, j+y));
+		}
+    	    }
+	    break;
+	case JBIG2_COMPOSE_AND:
+	    for (j = 0; j < sh; j++) {
+		for (i = 0; i < sw; i++) {
+		    jbig2_image_set_pixel(dst, i+x, j+y,
+			jbig2_image_get_pixel(src, i+sx, j+sy) &
+			jbig2_image_get_pixel(dst, i+x, j+y));
+		}
+    	    }
+	    break;
+	case JBIG2_COMPOSE_XOR:
+	    for (j = 0; j < sh; j++) {
+		for (i = 0; i < sw; i++) {
+		    jbig2_image_set_pixel(dst, i+x, j+y,
+			jbig2_image_get_pixel(src, i+sx, j+sy) ^
+			jbig2_image_get_pixel(dst, i+x, j+y));
+		}
+    	    }
+	    break;
+	case JBIG2_COMPOSE_XNOR:
+	    for (j = 0; j < sh; j++) {
+		for (i = 0; i < sw; i++) {
+		    jbig2_image_set_pixel(dst, i+x, j+y,
+			~(jbig2_image_get_pixel(src, i+sx, j+sy) ^
+			jbig2_image_get_pixel(dst, i+x, j+y)));
+		}
+    	    }
+	    break;
+    }
+
+    return 0;
+}
+
 /* composite one jbig2_image onto another */
 int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src, 
 			int x, int y, Jbig2ComposeOp op)
@@ -94,8 +154,8 @@ int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src,
     uint8_t mask, rightmask;
     
     if (op != JBIG2_COMPOSE_OR) {
-        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1,
-            "non-OR composition modes NYI");
+	/* hand off the the general routine */
+	return jbig2_image_compose_unopt(ctx, dst, src, x, y, op);
     }
 
     /* clip */
