@@ -733,22 +733,32 @@ currentdict end readonly def
   } loop
 } bind def
 
+/ResolveArrayElement  % <array> <index> ResolveArrayElement <array>
+{ 2 copy get xcheck {
+    2 copy get exec
+	2 index 4 1 roll put
+  } {
+    pop
+  } ifelse
+} bind def
+
+
 /ResolveColorSpaceArray  % <color_space> ResolveColorSpaceArray <color_space>
 {
   dup 0 get /Indexed eq {
-    % The first element mat be a reference.
-    dup 1 get dup xcheck {
-	  exec
-	  1 index exch 1 exch put
+	1 //ResolveArrayElement exec
+	dup dup 1 get 
+	dup type /arraytype eq {
+	  //SubstitutePDFColorSpace exec 1 exch put
 	} {
-	  pop	  
+	  pop pop
 	} ifelse
-	dup 1 get dup type /arraytype eq {
-	  //SubstitutePDFColorSpace exec
-	  1 index exch 1 exch put
-	} {
-	  pop
-	} ifelse
+  } if
+  dup 0 get /Separation eq {
+	3 //ResolveArrayElement exec
+	dup 3 get type /dicttype eq {
+	  mark (Function in /Separation isn't implemented yet.) //error exec
+	} if
   } if
 } bind def
 
@@ -763,6 +773,7 @@ currentdict end readonly def
     exch //CheckColorSpace //ResolveD exec						% n cs
 	dup type /arraytype eq {
 	  //SubstitutePDFColorSpace exec
+	  //ResolveColorSpaceArray exec
 	  dup //PDFColorSpaces 4 2 roll put						    % []
 	} if
   } ifelse
