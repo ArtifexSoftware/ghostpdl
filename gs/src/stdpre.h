@@ -258,6 +258,15 @@ typedef const char *ptr_ord_t;
 #define ptr_between(ptr, lo, hi)\
   (ptr_ge(ptr, lo) && ptr_lt(ptr, hi))
 
+/* Define UPPERCASE macros for the pointer comparison operations. */
+#define _PTR_CMP(p1, rel, p2)  ((ptr_ord_t)(p1) rel (ptr_ord_t)(p2))
+#define PTR_LE(p1, p2) _PTR_CMP(p1, <=, p2)
+#define PTR_LT(p1, p2) _PTR_CMP(p1, <, p2)
+#define PTR_GE(p1, p2) _PTR_CMP(p1, >=, p2)
+#define PTR_GT(p1, p2) _PTR_CMP(p1, >, p2)
+#define PTR_BETWEEN(ptr, lo, hi)\
+  (PTR_GE(ptr, lo) && PTR_LT(ptr, hi))
+
 /* Define  min and max, but make sure to use the identical definition */
 /* to the one that all the compilers seem to have.... */
 #ifndef min
