@@ -265,7 +265,8 @@ zmatchpagesize(i_ctx_t *i_ctx_p)
     return 0;
 }
 /* Match the PageSize.  See below for details. */
-private bool match_page_size(const gs_point * request,
+private int
+match_page_size(const gs_point * request,
 			     const gs_rect * medium,
 			     int policy, int orient, bool roll,
 			     float *best_mismatch, gs_matrix * pmat,
@@ -328,13 +329,15 @@ private void make_adjustment_matrix(const gs_point * request,
 				    const gs_rect * medium,
 				    gs_matrix * pmat,
 				    bool scale, int rotate);
-private bool
+private int
 match_page_size(const gs_point * request, const gs_rect * medium, int policy,
 		int orient, bool roll, float *best_mismatch, gs_matrix * pmat,
 		gs_point * pmsize)
 {
     double rx = request->x, ry = request->y;
 
+    if ((rx <= 0) || (ry <= 0))
+	return_error(e_rangecheck);
     if (policy == 7) {
 		/* (Adobe) hack: just impose requested values */
 	*best_mismatch = 0;
@@ -371,18 +374,18 @@ match_page_size(const gs_point * request, const gs_rect * medium, int policy,
 
 	    switch (policy) {
 	        default:		/* exact match only */
-		    return false;
+		    return 0;
 	        case 3:		/* nearest match, adjust */
 		    adjust = true;
 	        case 5:		/* nearest match, don't adjust */
 		    if (fabs(mismatch) >= fabs(*best_mismatch))
-		        return false;
+		        return 0;
 		    break;
 	        case 4:		/* next larger match, adjust */
 		    adjust = true;
 	        case 6:		/* next larger match, don't adjust */
 		    if (!larger || mismatch >= *best_mismatch)
-		        return false;
+		        return 0;
 		    break;
 	    }
 	    if (adjust)
@@ -412,7 +415,7 @@ match_page_size(const gs_point * request, const gs_rect * medium, int policy,
         pmsize->y = ADJUST_INTO(ry, medium->p.y, medium->q.y);
 #undef ADJUST_INTO
     }
-    return true;
+    return 1;
 }
 /*
  * Compute the adjustment matrix for scaling and/or rotating the page

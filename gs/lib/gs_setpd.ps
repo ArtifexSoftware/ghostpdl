@@ -184,9 +184,9 @@ level2dict begin
 % Devices that care will override this.
   /InputAttributes {
     mark 0
-	% Since sizes match within 5 user units, we need to set the smallest
-	% PageSize to 6 units so that [0 0] will fail.
-    mark /PageSize [6 dup 16#7ffff dup] .dicttomark
+	% PageSize with either dimension 0 will be detected in
+	% match_page_size, so we can allow it here
+    mark /PageSize [0 dup 16#7ffff dup] .dicttomark
     .dicttomark
   }
   (%MediaSource) 0
