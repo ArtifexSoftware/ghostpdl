@@ -95,7 +95,7 @@ s_PDiff_process(stream_state * st, stream_cursor_read * pr,
     int count;
     int status = 0;
     uint s0 = ss->prev[0];
-    byte t;
+    byte t = 0;			/* avoid spurious compiler warnings */
     int  ti;
     const byte end_mask = ss->end_mask;
     int colors = ss->Colors;
