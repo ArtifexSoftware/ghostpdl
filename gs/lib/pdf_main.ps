@@ -465,7 +465,7 @@ end readonly def
 	% Stack: pagedict setpagedict
 	% We want to look at Rotate for displays, but not for printers.
 	% The following is a hack, but we don't know a better way to do this.
-   currentpagedevice /OutputFile known
+   currentpagedevice /OutputFile known not
     { dup /Orientation 3 index /Rotate pget not { 0 } if 90 idiv
 	% Rotate specifies *clockwise* rotation!
       neg 3 and put
