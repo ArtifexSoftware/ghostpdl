@@ -35,6 +35,7 @@
 #include "gxcvalue.h"
 #include "gxfixed.h"
 #include "gxtext.h"
+#include "gxcmap.h"
 
 /* See Drivers.htm for documentation of the driver interface. */
 
@@ -176,38 +177,360 @@ typedef struct gx_device_anti_alias_info_s {
     int text_bits;		/* 1,2,4 */
     int graphics_bits;		/* ditto */
 } gx_device_anti_alias_info;
+
+
+/*
+ * Possible values for the separable_and_linear flag in the
+ * gx_device_color_info structure. These form an order, with lower
+ * values having weaker properties.
+ *
+ *  GX_CINFO_SEP_LIN_UNKNOWN
+ *    The properties of the color encoding are not yet known. This is
+ *    always a safe default value.
+ *
+ *  GX_CINFO_SEP_LIN_NONE
+ *    The encoding is not separable and linear. If this value is set,
+ *    the device must provide an encode_color method, either directly
+ *    or via map_rgb_color/map_cmyk_color methods. This setting is
+ *    only legitimate for color models with 4 or fewer components.
+ *
+ *  GX_CINFO_SEP_LIN
+ *    A separable and linear encoding has the separability and
+ *    linearity properties.
+ *
+ *    Encodings with this property are completely characterized 
+ *    by the comp_shift array. Hence, there is no need to provide
+ *    an encode_color procedure for such devices, though the device
+ *    creator may choose to do so for performance reasons (e.g.: when
+ *     each color component is assigned a byte).
+ */
+
+typedef enum {
+    GX_CINFO_UNKNOWN_SEP_LIN = -1,
+    GX_CINFO_SEP_LIN_NONE = 0,
+    GX_CINFO_SEP_LIN
+} gx_color_enc_sep_lin_t;
+
+/*
+ * Color model component polarity. An "unknown" value has been added to
+ * this enumeration.
+ */
+typedef enum {
+    GX_CINFO_POLARITY_UNKNOWN = -1,
+    GX_CINFO_POLARITY_SUBTRACTIVE = 0,
+    GX_CINFO_POLARITY_ADDITIVE
+} gx_color_polarity_t;
+
+/* component index value used to indicate no color component.  */
+#define GX_CINFO_COMP_NO_INDEX 0xff
+
+/*
+ * Additional possible value for cinfo.gray_index, to indicate which
+ * component, if any, qualifies as the "gray" component.
+ */
+#define GX_CINFO_COMP_INDEX_UNKNOWN 0xfe
+
+/*
+ * The enlarged color model information structure: Some of the
+ * information that was implicit in the component number in
+ * the earlier conventions (component names, polarity, mapping
+ * functions) are now explicitly provided.
+ *
+ * Also included is some information regarding the encoding of
+ * color information into gx_color_index. Some of this information
+ * was previously gathered indirectly from the mapping
+ * functions in the existing code, specifically to speed up the
+ * halftoned color rendering operator (see
+ * gx_dc_ht_colored_fill_rectangle in gxcht.c). The information
+ * is now provided explicitly because such optimizations are
+ * more critical when the number of color components is large.
+ *
+ * Note: no pointers have been added to this structure, so there
+ *       is no requirement for a structure descriptor.
+ */
 typedef struct gx_device_color_info_s {
-    int num_components;		/* doesn't include alpha: */
-				/* 0 = alpha only, 1 = gray only, */
-				/* 3 = RGB, 4 = CMYK */
-    int depth;			/* # of bits per pixel */
-    gx_color_value max_gray;	/* # of distinct gray levels -1 */
-    gx_color_value max_color;	/* # of distinct color levels -1 */
-				/* (only relevant if num_comp. > 1) */
-    gx_color_value dither_grays;	/* size of gray ramp for dithering */
-    gx_color_value dither_colors;	/* size of color cube ditto */
-				/* (only relevant if num_comp. > 1) */
+
+    /*
+     * max_components is the maximum number of components for all
+     * color models supported by this device. This does not include
+     * any alpha components.
+     */
+    int max_components;
+
+    /*
+     * The number of color components. This does not include any
+     * alpha-channel information, which may be integrated into
+     * the gx_color_index but is otherwise passed as a separate
+     * component.
+     */
+    int num_components;
+
+    /*
+     * Polarity of the components of the color space, either
+     * additive or subtractive. This is used to interpret transfer
+     * functions and halftone threshold arrays. Possible values
+     * are GX_CM_POLARITY_ADDITIVE or GX_CM_POLARITY_SUBTRACTIVE
+     */
+    gx_color_polarity_t polarity;
+
+    /*
+     * The number of bits of gx_color_index actually used. 
+     * This must be <= sizeof(gx_color_index), which is usually 64.
+     */
+    byte depth;
+
+    /*
+     * Index of the gray color component, if any. The max_gray and
+     * dither_gray values apply to this component only; all other
+     * components use the max_color and dither_color values.
+     *
+     * This will be GX_CINFO_COMP_NO_INDEX if there is no gray 
+     * component.
+     */
+    byte gray_index;
+
+    /*
+     * max_gray and max_color are the number of distinct native
+     * intensity levels, less 1, for the gray and all other color
+     * components, respectively. For nearly all current devices
+     * that support both gray and non-gray components, the two
+     * parameters have the same value.
+     *
+     * dither_grays and dither_colors are the number of intensity
+     * levels between which halftoning can occur, for the gray and
+     * all other color components, respectively. This is
+     * essentially redundant information: in all reasonable cases,
+     * dither_grays = max_gray + 1 and dither_colors = max_color + 1.
+     * These parameters are, however, extensively used in the
+     * current code, and thus have been retained.
+     *
+     * Note that the non-gray values may now be relevant even if
+     * num_components == 1. This simplifies the handling of devices
+     * with configurable color models which may be set for a single
+     * non-gray color model.
+     */
+    gx_color_value max_gray;	/* # of distinct color levels -1 */
+    gx_color_value max_color;
+
+    gx_color_value dither_grays;
+    gx_color_value dither_colors;
+
+    /*
+     * Information to control super-sampling of objects to support
+     * anti-aliasing.
+     */
     gx_device_anti_alias_info anti_alias;
+
+    /*
+     * Flag to indicate if gx_color_index for this device may be divided
+     * into individual fields for each component. This is almost always
+     * the case for printers, and is the case for most modern displays
+     * as well. When this is the case, halftoning may be performed
+     * separately for each component, which greatly simplifies processing
+     * when the number of color components is large.
+     *
+     * If the gx_color_index is separable in this manner, the comp_shift
+     * array provides the location of the low-order bit for each
+     * component. This may be filled in by the client, but need not be.
+     * If it is not provided, it will be calculated based on the values
+     * in the max_gray and max_color fields as follows:
+     *
+     *     comp_shift[num_components - 1] = 0,
+     *     comp_shift[i] = comp_shift[i + 1]
+     *                      + ( i == gray_index ? ceil(log2(max_gray + 1))
+     *                                          : ceil(log2(max_color + 1)) )
+     *
+     * The comp_mask and comp_bits fields should be left empty by the client.
+     * They will be filled in during initialization using the following
+     * mechanism:
+     *
+     *     comp_bits[i] = ( i == gray_index ? ceil(log2(max_gray + 1))
+     *                                      : ceil(log2(max_color + 1)) )
+     *
+     *     comp_mask[i] = (((gx_color_index)1 << comp_bits[i]) - 1)
+     *                       << comp_shift[i]
+     *
+     * (For current devices, it is almost always the case that
+     * max_gray == max_color, if the color model contains both gray and
+     * non-gray components.)
+     *
+     * If separable_and_linear is not set, the data in the other fields
+     * is unpredictable and should be ignored.
+     */
+    gx_color_enc_sep_lin_t separable_and_linear;
+    byte                   comp_shift[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    byte                   comp_bits[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gx_color_index         comp_mask[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    /*
+     * Pointer to name for the process color model.
+     */
+    const char * cm_name;
+
 } gx_device_color_info;
 
-#define dci_alpha_values(nc,depth,mg,mc,dg,dc,ta,ga)\
-  { nc, depth, mg, mc, dg, dc, { ta, ga } }
+/* NB encoding flag ignored */
+#define dci_extended_alpha_values(mcmp, nc, p, d, gi, mg, \
+		        mc, dg, dc, ta, ga, sl, cn)   \
+    {mcmp /* max components */, \
+     nc /* number components */, \
+     p /* polarity */, \
+     d /* depth */, \
+     gi /* gray index */, \
+     mg /* max gray */, \
+     mc /* max color */, \
+     dg /* dither grays */, \
+     dc /* dither colors */, \
+     { ta, ga } /* antialias info text, graphics */, \
+     sl /* separable_and_linear */, \
+     { 0 } /* component shift */, \
+     { 0 } /* component bits */, \
+     { 0 } /* component mask */, \
+     cn /* process color name */ }
+
+/*
+ * The "has color" macro requires a slightly different definition
+ * with the more general color models.
+ */
+#define gx_device_has_color(dev)                           \
+   ( (dev)->color_info.num_components > 1 ||                \
+     (dev)->color_info.gray_index == GX_CINFO_COMP_NO_INDEX )
+
+
+/* parameter initialization macros for backwards compatibility */
+
+/*
+ * These macros are needed to define values for fields added when
+ * DeviceN compatibility was added.  Previously the graphics
+ * library and the much of the device code examined the number of
+ * components and assume that 1 --> DeviceGray, 3-->DeviceRGB,
+ * and 4--> DeviceCMYK.  Since the old device code does not
+ * specify a color model, these macros make the same assumption.
+ * This assumption is incorrect for a DeviceN device and thus
+ * the following macros should not be used.  The previously
+ * defined macros should be used for new devices.
+ */
+
+#define dci_std_cm_name(nc)                 \
+    ( (nc) == 1 ? "DeviceGray"              \
+                : ((nc) == 3 ? "DeviceRGB"  \
+                             : "DeviceCMYK") )
+
+#define dci_std_polarity(nc)                    \
+    ( (nc) == 4 ? GX_CINFO_POLARITY_SUBTRACTIVE \
+                : GX_CINFO_POLARITY_ADDITIVE )
+
+      /*
+       * Get the default gray_index value, based on the number of color
+       * components. Note that this must be consistent with the index
+       * implicitly used by the get_color_comp_index method and the
+       * procedures in the structure returned by the
+       * get_color_mapping_procs method.
+       */
+#define dci_std_gray_index(nc)    \
+    ((nc) == 3 ? GX_CINFO_COMP_NO_INDEX : (nc) - 1)
+
+#define dci_alpha_values(nc, depth, mg, mc, dg, dc, ta, ga) \
+    dci_extended_alpha_values(nc, nc,			    \
+                              dci_std_polarity(nc),         \
+                              depth,                        \
+                              dci_std_gray_index(nc),       \
+                              mg, mc, dg, dc, ta, ga,       \
+                              GX_CINFO_UNKNOWN_SEP_LIN,     \
+			      dci_std_cm_name(nc) )
+
+
+/*
+ * Determine the depth corresponding to a color_bits specification.
+ * Note that color_bits == 0 ==> depth == 0; surprisingly this
+ * case is used.
+*/
+#define dci_std_color_depth(color_bits)   \
+    ((color_bits) == 1 ? 1 : ((color_bits) + 7) & ~7)
+
+/*
+ * Determine the number of components corresponding to a color_bits
+ * specification. A device is monochrome only if it is bi-level;
+ * the 4 and 8 bit cases are handled as mapped color displays (for
+ * compatibility with existing code). The peculiar color_bits = 0
+ * case is considered monochrome, for no apparent reason.
+ */
+#define dci_std_color_num_components(color_bits)      \
+    ( (color_bits) <= 1 ? 1                           \
+                      : ((color_bits) % 3 == 0 ||     \
+                         (color_bits) == 4     ||     \
+                         (color_bits) == 8       ) ? 3 : 4 )
+
+/*
+ * The number of bits assigned to the gray/black color component,
+ * assuming there is such a component. The underlying assumption
+ * is that any extra bits are assigned to this component.
+ */
+#define dci_std_gray_bits(nc, color_bits)    \
+    ((color_bits) - ((nc) - 1) * ((color_bits) / (nc)))
+
+/*
+ * The number of bits assigned to a color component. The underlying
+ * assumptions are that there is a gray component if nc != 3, and
+ * that the gray component uses any extra bits.
+ */
+#define dci_std_color_bits(nc, color_bits)                        \
+    ( (nc) == 3                                                   \
+        ? (color_bits) / (nc)                                     \
+        : ( (nc) == 1                                             \
+              ? 0                                                 \
+              : ((color_bits) - dci_std_gray_bits(nc, color_bits))\
+                     / ((nc) - 1) ) )
+
+/*
+ * Determine the max_gray and max_color values based on the number
+ * of components and the color_bits value. See the comments above
+ * for information on the underlying assumptions.
+ */
+#define dci_std_color_max_gray(nc, color_bits)            \
+    ( (nc) == 3                                           \
+        ? 0                                               \
+        : ( dci_std_gray_bits(nc, color_bits) >= 8        \
+            ? 255                                         \
+            : (1 << dci_std_gray_bits(nc, color_bits)) - 1 ) )
+
+#define dci_std_color_max_color(nc, color_bits)               \
+    ( (nc) == 1                                               \
+        ? 0                                                   \
+        : ( dci_std_color_bits(nc, color_bits) >= 8           \
+            ? 255                                             \
+            : (1 << dci_std_color_bits(nc, color_bits)) - 1 ) )
+
+
+/*
+ * Define a color model based strictly on the number of bits
+ * available for color representation. Please note, this is only
+ * intended to work for a limited set of devices.
+ */
+#define dci_std_color_(nc, color_bits)                        \
+    dci_values( nc,                                           \
+                dci_std_color_depth(color_bits),              \
+                dci_std_color_max_gray(nc, color_bits),       \
+                dci_std_color_max_color(nc, color_bits),      \
+                dci_std_color_max_gray(nc, color_bits) + 1,   \
+                dci_std_color_max_color(nc, color_bits) + 1 )
+
+#define dci_std_color(color_bits)                             \
+    dci_std_color_( dci_std_color_num_components(color_bits), \
+                    color_bits )
+
 #define dci_values(nc,depth,mg,mc,dg,dc)\
   dci_alpha_values(nc, depth, mg, mc, dg, dc, 1, 1)
-#define dci_std_color(color_bits)\
-  dci_values(\
-    (color_bits == 32 ? 4 : color_bits > 1 ? 3 : 1),\
-    ((color_bits > 1) & (color_bits < 8) ? 8 : color_bits),\
-    (color_bits >= 8 ? 255 : 1),\
-    (color_bits >= 8 ? 255 : color_bits > 1 ? 1 : 0),\
-    (color_bits >= 8 ? 5 : 2),\
-    (color_bits >= 8 ? 5 : color_bits > 1 ? 2 : 0)\
-  )
 #define dci_black_and_white dci_std_color(1)
 #define dci_black_and_white_() dci_black_and_white
 #define dci_color(depth,maxv,dither)\
   dci_values(3, depth, maxv, maxv, dither, dither)
-#define gx_device_has_color(dev) ((dev)->color_info.num_components > 1)
+
+/*
+ * Macro to access the name of the process color model.
+ */
+#define get_process_color_model_name(dev) \
+    ((dev)->color_info.cm_name)
+
 
 /* Structure for device procedures. */
 typedef struct gx_device_procs_s gx_device_procs;
@@ -253,13 +576,6 @@ dev_page_proc_end_page(gx_default_end_page);
  * the second, which is what all client code starting in 2.8.1 expects
  * (using the procs record, not the static_procs pointer, to call the
  * driver procedures).
- *
- * Device procedures other than put_params MUST NOT change the state of
- * is_open.  put_params may change the state of is_open from true to false.
- * Changing the state of is_open in any other device procedure may lead to
- * unpredictable misfunctioning.
- * Most device procedures may assume that is_open is true: for details,
- * see the documentation in doc/Drivers.htm.
  *
  * The choice of the name Margins (rather than, say, HWOffset), and the
  * specification in terms of a default device resolution rather than
@@ -353,6 +669,7 @@ typedef struct gx_device_cached_colors_s {
 #define assign_dev_procs(todev, fromdev)\
   ((todev)->procs = (fromdev)->procs)
 
+
 /* ---------------- Device procedures ---------------- */
 
 /* Define an opaque type for parameter lists. */
@@ -398,8 +715,7 @@ typedef struct gs_param_list_s gs_param_list;
   dev_t_proc_close_device(proc, gx_device)
 
 #define dev_t_proc_map_rgb_color(proc, dev_t)\
-  gx_color_index proc(dev_t *dev,\
-    gx_color_value red, gx_color_value green, gx_color_value blue)
+  gx_color_index proc(dev_t *dev, const gx_color_value cv[])
 #define dev_proc_map_rgb_color(proc)\
   dev_t_proc_map_rgb_color(proc, gx_device)
 
@@ -470,9 +786,7 @@ typedef struct gs_param_list_s gs_param_list;
 		/* Added in release 2.6 */
 
 #define dev_t_proc_map_cmyk_color(proc, dev_t)\
-  gx_color_index proc(dev_t *dev,\
-    gx_color_value cyan, gx_color_value magenta, gx_color_value yellow,\
-    gx_color_value black)
+  gx_color_index proc(dev_t *dev, const gx_color_value cv[])
 #define dev_proc_map_cmyk_color(proc)\
   dev_t_proc_map_cmyk_color(proc, gx_device)
 
@@ -785,6 +1099,22 @@ typedef struct gs_param_list_s gs_param_list;
 
      /* (end of transparency driver interface extensions) */
 
+     /* (start of DeviceN color support) */
+/*
+ * The following macros are defined in gxcmap.h
+ *
+ * dev_t_proc_get_color_mapping_procs
+ * dev_proc_get_color_mapping_procs
+ * dev_t_proc_get_color_comp_index
+ * dev_proc_get_color_comp_index
+ * dev_t_proc_encode_color
+ * dev_proc_encode_color
+ * dev_t_proc_decode_color
+ * dev_proc_decode_color
+ */
+     /* (end of DeviceN color support) */
+
+
 /* Define the device procedure vector template proper. */
 
 #define gx_device_proc_struct(dev_t)\
@@ -837,7 +1167,13 @@ typedef struct gs_param_list_s gs_param_list;
 	dev_t_proc_begin_transparency_mask((*begin_transparency_mask), dev_t);\
 	dev_t_proc_end_transparency_mask((*end_transparency_mask), dev_t);\
 	dev_t_proc_discard_transparency_layer((*discard_transparency_layer), dev_t);\
+	dev_t_proc_get_color_mapping_procs((*get_color_mapping_procs), dev_t); \
+	dev_t_proc_get_color_comp_index((*get_color_comp_index), dev_t); \
+	dev_t_proc_encode_color((*encode_color), dev_t); \
+	dev_t_proc_decode_color((*decode_color), dev_t); \
 }
+
+
 /*
  * Provide procedures for passing image data.  image_data and end_image
  * are the equivalents of the obsolete driver procedures.  image_plane_data

@@ -30,7 +30,6 @@
 #include "ifunc.h"
 #include "igstate.h"
 #include "iimage.h"
-#include "iimage2.h"
 #include "iname.h"
 #include "store.h"
 #include "gsdfilt.h"
@@ -347,7 +346,7 @@ zimage3x(i_ctx_t *i_ctx_p)
 	return_error(e_rangecheck);
     if ((code = pixel_image_params(i_ctx_p, pDataDict,
 				   (gs_pixel_image_t *)&image, &ip_data,
-				   12)) < 0 ||
+				   12, false)) < 0 ||
 	(code = dict_int_param(pDataDict, "ImageType", 1, 1, 0, &ignored)) < 0
 	)
 	return code;
@@ -378,7 +377,8 @@ mask_dict_param(os_ptr op, image_params *pip_data, const char *dict_name,
 
     if (dict_find_string(op, dict_name, &pMaskDict) <= 0)
 	return 1;
-    if ((mcode = code = data_image_params(pMaskDict, &pixm->MaskDict, &ip_mask, false, 1, 12)) < 0 ||
+    if ((mcode = code = data_image_params(pMaskDict, &pixm->MaskDict,
+					  &ip_mask, false, 1, 12, false)) < 0 ||
 	(code = dict_int_param(pMaskDict, "ImageType", 1, 1, 0, &ignored)) < 0 ||
 	(code = dict_int_param(pMaskDict, "InterleaveType", 1, 3, -1,
 			       &pixm->InterleaveType)) < 0 ||

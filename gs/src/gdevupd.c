@@ -2146,11 +2146,12 @@ reverses this in the reverse-mapping procedures.
 */
 
 private gx_color_index
-upd_cmyk_icolor(gx_device *pdev,
-   gx_color_value c, gx_color_value m, gx_color_value y,gx_color_value k)
+upd_cmyk_icolor(gx_device *pdev, const gx_color_value cv[])
 {
    const upd_p     upd = ((upd_device *)pdev)->upd;
    gx_color_index  rv;
+   gx_color_value c, m, y, k;
+   c = cv[0]; m = cv[1]; y = cv[2]; k = cv[3];
 
 /**
 All 4-Component-Modi have to deal with the Problem, that a value
@@ -2260,11 +2261,12 @@ upd_icolor_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
 /* ------------------------------------------------------------------- */
 
 private gx_color_index
-upd_rgb_1color(gx_device *pdev,
-   gx_color_value r, gx_color_value g, gx_color_value b)
+upd_rgb_1color(gx_device *pdev, const gx_color_value cv[])
 {
    const upd_p     upd = ((upd_device *)pdev)->upd;
    gx_color_index  rv;
+   gx_color_value r, g, b;
+   r = cv[0]; g = cv[1]; b = cv[2];
 
    rv = upd_truncate(upd,0,r);
 
@@ -2315,11 +2317,12 @@ upd_1color_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
 /* ------------------------------------------------------------------- */
 
 private gx_color_index
-upd_rgb_3color(gx_device *pdev,
-   gx_color_value r, gx_color_value g, gx_color_value b)
+upd_rgb_3color(gx_device *pdev, const gx_color_value cv[])
 {
    const upd_p     upd = ((upd_device *)pdev)->upd;
    gx_color_index  rv;
+   gx_color_value r, g, b;
+   r = cv[0]; g = cv[1]; b = cv[2];
 
    rv = upd_truncate(upd,0,r) | upd_truncate(upd,1,g) | upd_truncate(upd,2,b);
    if(rv == gx_no_color_index) rv ^= 1;
@@ -2379,11 +2382,13 @@ upd_3color_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
 /* ------------------------------------------------------------------- */
 
 private gx_color_index
-upd_rgb_4color(gx_device *pdev,
-   gx_color_value r, gx_color_value g, gx_color_value b)
+upd_rgb_4color(gx_device *pdev, const gx_color_value cv[])
 {
    const upd_p     upd = ((upd_device *)pdev)->upd;
    gx_color_index  rv;
+   gx_color_value r, g, b;
+
+   r = cv[0]; g = cv[1]; b = cv[2];
 
    if((r == g) && (g == b)) {
 
@@ -2467,12 +2472,14 @@ upd_4color_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
 /* ------------------------------------------------------------------- */
 
 private gx_color_index
-upd_cmyk_kcolor(gx_device *pdev,
-   gx_color_value c, gx_color_value m, gx_color_value y,gx_color_value k)
+upd_cmyk_kcolor(gx_device *pdev, const gx_color_value cv[])
 {
    const upd_p     upd = ((upd_device *)pdev)->upd;
    gx_color_index  rv;
    gx_color_value  black;
+
+   gx_color_value c, m, y, k;
+   c = cv[0]; m = cv[1]; y = cv[2]; k = cv[3];
 
    if((c == m) && (m == y)) {
 
@@ -2578,13 +2585,13 @@ upd_kcolor_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
 /* ------------------------------------------------------------------- */
 
 private gx_color_index
-upd_rgb_ovcolor(gx_device *pdev,
-   gx_color_value r, gx_color_value g, gx_color_value b)
+upd_rgb_ovcolor(gx_device *pdev, const gx_color_value cv[])
 {
    const upd_p     upd = ((upd_device *)pdev)->upd;
    gx_color_index  rv;
    gx_color_value  c,m,y,black;
-
+   gx_color_value r, g, b;
+   r = cv[0]; g = cv[1]; b = cv[2];
    if((r == g) && (g == b)) {
 
       black  = gx_max_color_value - r;
@@ -2659,12 +2666,13 @@ upd_rgb_ovcolor(gx_device *pdev,
 /* ------------------------------------------------------------------- */
 
 private gx_color_index
-upd_rgb_novcolor(gx_device *pdev,
-   gx_color_value r, gx_color_value g, gx_color_value b)
+upd_rgb_novcolor(gx_device *pdev, const gx_color_value cv[])
 {
    const upd_p     upd = ((upd_device *)pdev)->upd;
    gx_color_index  rv;
    gx_color_value  c,m,y,black;
+   gx_color_value r, g, b;
+   r = cv[0]; g = cv[1]; b = cv[2];
 
    if((r == g) && (g == b)) {
 

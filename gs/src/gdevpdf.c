@@ -131,7 +131,7 @@ const gx_device_pdf gs_pdfwrite_device =
   gdev_pdf_copy_mono,
   gdev_pdf_copy_color,
   NULL,				/* draw_line */
-  NULL,				/* get_bits */
+  psdf_get_bits,		/* get_bits */
   gdev_pdf_get_params,
   gdev_pdf_put_params,
   NULL,				/* map_cmyk_color */
@@ -157,9 +157,9 @@ const gx_device_pdf gs_pdfwrite_device =
   NULL,				/* strip_copy_rop */
   NULL,				/* get_clipping_box */
   gdev_pdf_begin_typed_image,
-  NULL,				/* get_bits_rectangle */
+  psdf_get_bits_rectangle,	/* get_bits_rectangle */
   NULL,				/* map_color_rgb_alpha */
-  NULL,				/* create_compositor */
+  psdf_create_compositor,	/* create_compositor */
   NULL,				/* get_hardware_params */
   gdev_pdf_text_begin
  },
@@ -409,9 +409,12 @@ pdf_set_process_color_model(gx_device_pdf * pdev)
 	set_dev_proc(pdev, map_color_rgb, cmyk_8bit_map_color_rgb);
        /* possible problems with aliassing on next statement */
 	set_dev_proc(pdev, map_cmyk_color, cmyk_8bit_map_cmyk_color);
-        color = gx_map_cmyk_color((gx_device *)pdev,
-		      frac2cv(frac_0), frac2cv(frac_0),
-		      frac2cv(frac_0), frac2cv(frac_1));
+        {
+            gx_color_value cv[4];
+            cv[0] = cv[1] = cv[2] = frac2cv(frac_0);
+            cv[3] = frac2cv(frac_1);
+            color = dev_proc(pdev, map_cmyk_color)(pdev, cv);
+        }
 	break;
     default:			/* can't happen */
 	DO_NOTHING;

@@ -65,12 +65,6 @@ gs_get_device_or_hw_params(gx_device * orig_dev, gs_param_list * plist,
     return code;
 }
 
-/* Standard ProcessColorModel values. */
-static const char *const pcmsa[] =
-{
-    "", "DeviceGray", "", "DeviceRGB", "DeviceCMYK"
-};
-
 /* Get standard parameters. */
 int
 gx_default_get_params(gx_device * dev, gs_param_list * plist)
@@ -101,7 +95,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
 
     param_string_from_string(dns, dev->dname);
     {
-	const char *cms = pcmsa[colors];
+	const char *cms = get_process_color_model_name(dev);
 
 	/* We might have an uninitialized device with */
 	/* color_info.num_components = 0.... */
@@ -325,8 +319,8 @@ gdev_write_input_page_size(int index, gs_param_dict * pdict,
 {
     gdev_input_media_t media;
 
-    media.PageSize[0] = media.PageSize[2] = width_points;
-    media.PageSize[1] = media.PageSize[3] = height_points;
+    media.PageSize[0] = media.PageSize[2] = (float) width_points;
+    media.PageSize[1] = media.PageSize[3] = (float) height_points;
     media.MediaColor = 0;
     media.MediaWeight = 0;
     media.MediaType = 0;
@@ -637,18 +631,26 @@ nce:
 	    break;
     }
 
-    /* Now check nominally read-only parameters. */
-    if ((code = param_check_string(plist, "OutputDevice", dev->dname, true)) < 0)
-	ecode = code;
-    if ((code = param_check_string(plist, "ProcessColorModel", pcmsa[colors], colors != 0)) < 0)
-	ecode = code;
+    /* Separation, DeviceN Color, and ProcessColorModel related parameters. */
+    {
+	const char * pcms = get_process_color_model_name(dev);
+
+	if ((code = param_check_string(plist, "ProcessColorModel", pcms, (pcms != NULL))) < 0)
+	    ecode = code;
+    }
     if ((code = param_check_int(plist, "MaxSeparations", 1, true)) < 0)
 	ecode = code;
     if ((code = param_check_bool(plist, "Separations", false, true)) < 0)
 	ecode = code;
-    BEGIN_ARRAY_PARAM(param_read_name_array, "SeparationColorNames", scna, 0, scne) {
+
+    BEGIN_ARRAY_PARAM(param_read_name_array, "SeparationColorNames", scna, scna.size, scne) {
 	break;
     } END_ARRAY_PARAM(scna, scne);
+
+
+    /* Now check nominally read-only parameters. */
+    if ((code = param_check_string(plist, "OutputDevice", dev->dname, true)) < 0)
+	ecode = code;
     if ((code = param_check_string(plist, "Name", dev->dname, true)) < 0)
 	ecode = code;
     if ((code = param_check_int(plist, "Colors", colors, true)) < 0)

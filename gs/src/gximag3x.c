@@ -238,7 +238,7 @@ gx_begin_image3x_generic(gx_device * dev,
 	if (code < 0)
 	    goto out1;
 	penum->mask[i].mdev = mdev;
-	gs_image_t_init_gray(&mask[i].image, pis); /* gray is bogus */
+        gs_image_t_init(&mask[i].image, pmcs);
 	mask[i].image.ColorSpace = pmcs;
 	mask[i].image.adjust = false;
 	{

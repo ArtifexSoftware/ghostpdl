@@ -417,7 +417,7 @@ build_mesh_shading(i_ctx_t *i_ctx_p, const ref * op,
 					    "build_mesh_shading");
 	if (data == 0)
 	    return_error(e_VMerror);
-	code = float_params(pDataSource->value.refs + size - 1, size, data);
+	code = process_float_array(pDataSource, size, data);
 	if (code < 0) {
 	    gs_free_object(mem, data, "build_mesh_shading");
 	    return code;

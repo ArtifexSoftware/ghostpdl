@@ -209,12 +209,25 @@ IJSSRCDIR=ijs
 IJSEXECTYPE=win
 !endif
 
+# 1 --> Use 64 bits for gx_color_index.  This is required only for
+# non standard devices or DeviceN process color model devices.
+USE_LARGE_COLOR_INDEX=0
+
+!if $(USE_LARGE_COLOR_INDEX) == 1
+# Definitions to force gx_color_index to 64 bits
+LARGEST_UINTEGER_TYPE=unsigned __int64
+GX_COLOR_INDEX_TYPE=$(LARGEST_UINTEGER_TYPE)
+
+CFLAGS=/DGX_COLOR_INDEX_TYPE="$(GX_COLOR_INDEX_TYPE)"
+!endif
+
 # Define any other compilation flags.
 
 !ifndef CFLAGS
 CFLAGS=
 !endif
 
+#
 # Do not edit the next group of lines.
 
 #!include $(COMMONDIR)\msvcdefs.mak
@@ -508,6 +521,7 @@ DEVICE_DEVS17=$(DD)ljet3.dev $(DD)ljet3d.dev $(DD)ljet4.dev $(DD)ljet4d.dev
 DEVICE_DEVS18=$(DD)pj.dev $(DD)pjxl.dev $(DD)pjxl300.dev $(DD)jetp3852.dev $(DD)r4081.dev
 DEVICE_DEVS19=$(DD)lbp8.dev $(DD)m8510.dev $(DD)necp6.dev $(DD)bjc600.dev $(DD)bjc800.dev
 DEVICE_DEVS20=$(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev
+DEVICE_DEVS21=$(DD)spotrgb.dev $(DD)spotcmyk.dev $(DD)devicen.dev $(DD)bmpsep1.dev $(DD)bmpsep8.dev $(DD)bmp16m.dev $(DD)bmp32b.dev
 !endif
 
 # FAPI compilation options :

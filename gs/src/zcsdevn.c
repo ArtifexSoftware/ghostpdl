@@ -62,6 +62,7 @@ zsetdevicenspace(i_ctx_t *i_ctx_p)
     gs_device_n_map *pmap;
     uint num_components;
     gs_color_space cs;
+    const gs_color_space * pacs;
     ref_colorspace cspace_old;
     gs_function_t *pfn;
     int code;
@@ -86,26 +87,19 @@ zsetdevicenspace(i_ctx_t *i_ctx_p)
     check_proc(pcsa[2]);
     
     /* The alternate color space has been selected as the current color space */
-    cs = *gs_currentcolorspace(igs);
-    if (!cs.type->can_be_alt_space)
-	return_error(e_rangecheck);
-    /*
-     * Allocate space for DeviceN color map function.  This can be either
-     * a type 4 function or we can collecte data for a color cube (type 0
-     * function).
-     */
-    code = alloc_device_n_map(&pmap, imemory, ".setdevicenspace(map)");
+    pacs = gs_currentcolorspace(igs);
+    cs = *pacs;
+    /* See zcsindex.c for why we use memmove here. */
+    memmove(&cs.params.device_n.alt_space, &cs,
+	    sizeof(cs.params.device_n.alt_space));
+    gs_cspace_init(&cs, &gs_color_space_type_DeviceN, NULL);
+    code = gs_build_DeviceN(&cs, num_components, pacs, imemory);
     if (code < 0)
 	return code;
+    names = cs.params.device_n.names;
+    pmap = cs.params.device_n.map;
 
-    /* Allocate space for color names list and copy names from input array. */
-    names = (gs_separation_name *)
-	ialloc_byte_array(num_components, sizeof(gs_separation_name),
-			  ".setdevicenspace(names)");
-    if (names == 0) {
-	ifree_object(pmap, ".setdevicenspace(map)");
-	return_error(e_VMerror);
-    }
+    /* Pick up the names of the components */
     {
 	uint i;
 	ref sname;
@@ -134,10 +128,6 @@ zsetdevicenspace(i_ctx_t *i_ctx_p)
 
     /* Now set the current color space as DeviceN */
 
-    /* See zcsindex.c for why we use memmove here. */
-    memmove(&cs.params.device_n.alt_space, &cs,
-	    sizeof(cs.params.device_n.alt_space));
-    gs_cspace_init(&cs, &gs_color_space_type_DeviceN, NULL);
     cspace_old = istate->colorspace;
     /*
      * pcsa is a pointer to element 1 (2nd element)  in the DeviceN
@@ -145,11 +135,7 @@ zsetdevicenspace(i_ctx_t *i_ctx_p)
      * which is the tint transform.
      */
     istate->colorspace.procs.special.device_n.layer_names = pcsa[0];
-    istate->colorspace.procs.special.device_n.tint_transform = pcsa[2];
-    cs.params.device_n.names = names;
-    cs.params.device_n.num_components = num_components;
-    cs.params.device_n.map = pmap;
-    cs.params.device_n.get_colorname_string = gs_get_colorname_string;
+    istate->colorspace.procs.special.device_n.tint_transform = pcsa[2];    
     pfn = ref_function(pcsa + 2);	/* See comment above */
     if (!pfn)
 	code = gs_note_error(e_rangecheck);
@@ -162,9 +148,13 @@ zsetdevicenspace(i_ctx_t *i_ctx_p)
     }
     gs_cspace_set_devn_function(&cs, pfn);
     code = gs_setcolorspace(igs, &cs);
+    if (code < 0) {
+	istate->colorspace = cspace_old;
+	return code;
+    }
     rc_decrement(pmap, ".setdevicenspace(map)");  /* build sets rc = 1 */
     pop(1);
-    return code;
+    return 0;
 }
 
 
@@ -176,4 +166,3 @@ const op_def zcsdevn_op_defs[] =
     {"1.setdevicenspace", zsetdevicenspace},
     op_def_end(0)
 };
-

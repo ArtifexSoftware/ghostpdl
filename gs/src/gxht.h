@@ -20,11 +20,11 @@
 #ifndef gxht_INCLUDED
 #  define gxht_INCLUDED
 
-#include "gscsepnm.h"
 #include "gsht1.h"
 #include "gsrefct.h"
 #include "gxhttype.h"
 #include "gxtmap.h"
+#include "gscspace.h"
 
 /*
  * Halftone types. Note that for this implementation there are only
@@ -137,7 +137,8 @@ struct gs_client_order_halftone_s {
 
 /* Define the elements of a Type 5 halftone. */
 typedef struct gs_halftone_component_s {
-    gs_ht_separation_name cname;
+    int comp_number;
+    int cname;
     gs_halftone_type type;
     union {
 	gs_spot_halftone spot;	/* Type 1 */

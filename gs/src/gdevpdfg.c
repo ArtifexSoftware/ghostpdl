@@ -42,9 +42,10 @@ pdf_reset_graphics(gx_device_pdf * pdev)
 {
     gx_color_index color = 0; /* black on DeviceGray and DeviceRGB */
     if(pdev->color_info.num_components == 4) {
-        color = gx_map_cmyk_color((gx_device *)pdev,
-		      frac2cv(frac_0), frac2cv(frac_0),
-		      frac2cv(frac_0), frac2cv(frac_1));
+        gx_color_value cv[4];
+        cv[0] = cv[1] = cv[2] = frac2cv(frac_0);
+        cv[3] = frac2cv(frac_1);
+        color = dev_proc(pdev, map_cmyk_color)(pdev, cv);
     }
     color_set_pure(&pdev->fill_color, color);
     color_set_pure(&pdev->stroke_color, color);
@@ -128,10 +129,11 @@ int
 pdf_separation_name(gx_device_pdf *pdev, cos_value_t *pvalue,
 		    gs_separation_name sname)
 {
+#ifdef TO_DO_DEVICEN
     static const char *const snames[] = {
 	gs_ht_separation_name_strings
     };
-    char buf[sizeof(ulong) * 8 / 3 + 2];	/****** BOGUS ******/
+    static char buf[sizeof(ulong) * 8 / 3 + 2];	/****** BOGUS ******/
     const char *str;
     uint len;
     byte *chars;
@@ -149,6 +151,7 @@ pdf_separation_name(gx_device_pdf *pdev, cos_value_t *pvalue,
     chars[0] = '/';
     memcpy(chars + 1, str, len);
     cos_string_value(pvalue, chars, len + 1);
+#endif
     return 0;
 }
 
@@ -689,7 +692,9 @@ pdf_write_multiple_halftone(gx_device_pdf *pdev,
 	const gs_halftone_component *const phtc = &pmht->components[i];
 	cos_value_t value;
 
+#ifdef TO_DO_DEVICEN
 	code = pdf_separation_name(pdev, &value, phtc->cname);
+#endif
 	if (code < 0)
 	    return code;
 	cos_value_write(&value, pdev);
@@ -719,7 +724,7 @@ pdf_update_halftone(gx_device_pdf *pdev, const gs_imager_state *pis,
     switch (pht->type) {
     case ht_type_screen:
 	code = pdf_write_screen_halftone(pdev, &pht->params.screen,
-					 &pdht->order, &id);
+					 &pdht->components[0].corder, &id);
 	break;
     case ht_type_colorscreen:
 	code = pdf_write_colorscreen_halftone(pdev, &pht->params.colorscreen,
@@ -727,15 +732,15 @@ pdf_update_halftone(gx_device_pdf *pdev, const gs_imager_state *pis,
 	break;
     case ht_type_spot:
 	code = pdf_write_spot_halftone(pdev, &pht->params.spot,
-				       &pdht->order, &id);
+				       &pdht->components[0].corder, &id);
 	break;
     case ht_type_threshold:
 	code = pdf_write_threshold_halftone(pdev, &pht->params.threshold,
-					    &pdht->order, &id);
+					    &pdht->components[0].corder, &id);
 	break;
     case ht_type_threshold2:
 	code = pdf_write_threshold2_halftone(pdev, &pht->params.threshold2,
-					     &pdht->order, &id);
+					     &pdht->components[0].corder, &id);
 	break;
     case ht_type_multiple:
     case ht_type_multiple_colorscreen:
@@ -796,6 +801,8 @@ pdf_update_transfer(gx_device_pdf *pdev, const gs_imager_state *pis,
     gs_id transfer_ids[4];
     int code = 0;
 
+    dprintf( "pdf_update_transfer() unimplemented\n");
+#ifdef TO_DO_DEVICEN
     for (i = 0; i < 4; ++i) {
 	transfer_ids[i] = pis->set_transfer.indexed[i]->id;
 	if (pdev->transfer_ids[i] != transfer_ids[i])
@@ -828,6 +835,7 @@ pdf_update_transfer(gx_device_pdf *pdev, const gs_imager_state *pis,
 	memcpy(pdev->transfer_ids, transfer_ids, sizeof(pdev->transfer_ids));
 	pdev->transfer_not_identity = mask;
     }
+#endif
     return code;
 }
 

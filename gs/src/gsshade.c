@@ -62,21 +62,6 @@ check_CBFD(const gs_shading_params_t * params,
 	 * However, Adobe implementations apparently don't necessarily
 	 * check this ahead of time; therefore, we do the same.
 	 */
-#if 0				/*************** */
-	{
-	    int i;
-
-	    for (i = 0; i < m; ++i) {
-		static const float dom_01[2] = { 0.0, 1.0 };
-		const float *dom = (domain != 0 ? &domain[2 * i] : dom_01);
-
-		if (function->params.Domain[2 * i] > dom[0] ||
-		    function->params.Domain[2 * i + 1] < dom[1]
-		    )
-		    return_error(gs_error_rangecheck);
-	    }
-	}
-#endif /*************** */
     }
     return 0;
 }

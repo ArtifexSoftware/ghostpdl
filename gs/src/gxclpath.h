@@ -59,11 +59,17 @@ typedef enum {
 /* Extend the command set.  See gxcldev.h for more information. */
 typedef enum {
     cmd_op_misc2 = 0xd0,	/* (see below) */
-    cmd_opv_set_color = 0xd0,	/* pqrsaaaa abbbbbcc cccddddd */
-				/* (level[0] if p) (level[1] if q) */
-				/* (level[2] if r) (level[3] if s) */
+    cmd_opv_set_color = 0xd0,	/* Used if base values do not fit into 1 bit */
+    				/* #flags,#base[0],...#base[num_comp-1] if flags */
 				/* colored halftone with base colors a,b,c,d */
-    cmd_opv_set_color_short = 0xd1,	/* pqrsabcd, level[i] as above */
+    cmd_opv_set_color_short = 0xd1,	/* Used if base values fit into 1 bit */
+    					/* If num_comp <= 4 then use: */
+    					/* pqrsabcd, where a = base[0] */
+					/* b = base[1], c= base[2], d = base[3] */
+					/* p = level[0], q = level[1] */
+					/* r = level[2], s = level[3] */
+    					/* If num_comp > 4 then use: */
+					/* #flags, #bases */
     cmd_opv_set_fill_adjust = 0xd2,	/* adjust_x/y(fixed) */
     cmd_opv_set_ctm = 0xd3,	/* [per sput/sget_matrix] */
     cmd_opv_set_color_space = 0xd4,	/* base(4)Indexed?(2)0(2) */
@@ -100,7 +106,7 @@ typedef enum {
 				/* flags# (0 = same raster & data_x, */
 				/* 1 = new raster & data_x, lsb first), */
 				/* [raster#, [data_x#,]]* <data> */
-    cmd_opv_put_params = 0xdf,	/* (nothing) */
+    cmd_opv_extend = 0xdf,	/* command, varies */
     cmd_op_segment = 0xe0,	/* (see below) */
     cmd_opv_rmoveto = 0xe0,	/* dx%, dy% */
     cmd_opv_rlineto = 0xe1,	/* dx%, dy% */
@@ -144,6 +150,19 @@ typedef enum {
     cmd_opv_htpolyfill = 0xfa,
     cmd_opv_colorpolyfill = 0xfb
 } gx_cmd_xop;
+
+/*
+ * Further extended command set. This code always occupies a byte, which
+ * is the second byte of a command whose first byte is cmd_opv_extend.
+ */
+typedef enum {
+    cmd_opv_ext_put_params = 0x00,          /* serialized parameter list */
+    cmd_opv_ext_create_compositor = 0x01,   /* compositor id,
+                                             * serialized compositor */
+    cmd_opv_ext_put_halftone = 0x02,        /* length, serialized halftone */
+    cmd_opv_ext_put_drawing_color = 0x03    /* length, color type id,
+                                             * serialized color */
+} gx_cmd_ext_op;
 
 #define cmd_segment_op_num_operands_values\
   2, 2, 1, 1, 4, 6, 6, 6, 4, 4, 4, 4, 2, 2, 0, 0

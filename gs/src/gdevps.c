@@ -116,7 +116,7 @@ gs_private_st_suffix_add1_final(st_device_pswrite, gx_device_pswrite,
 		psw_copy_mono,\
 		psw_copy_color,\
 		NULL,			/* draw_line */\
-		NULL,			/* get_bits */\
+		psdf_get_bits,\
 		psw_get_params,\
 		psw_put_params,\
 		NULL,			/* map_cmyk_color */\
@@ -139,7 +139,12 @@ gs_private_st_suffix_add1_final(st_device_pswrite, gx_device_pswrite,
 		NULL,			/* image_data */\
 		NULL,			/* end_image */\
 		NULL,			/* strip_tile_rectangle */\
-		NULL/******psw_strip_copy_rop******/\
+		NULL,/******psw_strip_copy_rop******/\
+		NULL,			/* get_clipping_box */\
+		NULL,			/* begin_typed_image */\
+		psdf_get_bits_rectangle,\
+		NULL,			/* map_color_rgb_alpha */\
+		psdf_create_compositor\
 	}
 
 const gx_device_pswrite gs_pswrite_device = {

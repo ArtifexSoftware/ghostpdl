@@ -92,7 +92,16 @@ private const gx_device_rop_texture gs_rop_texture_device = {
      NULL,				/* create_compositor */
      gx_forward_get_hardware_params,
      NULL,				/* text_begin */
-     NULL				/* finish_copydevice */
+     NULL,				/* finish_copydevice */
+     NULL,				/* begin_transparency_group */
+     NULL,				/* end_transparency_group */
+     NULL,				/* begin_transparency_mask */
+     NULL,				/* end_transparency_mask */
+     NULL,				/* discard_transparency_layer */
+     gx_forward_get_color_mapping_procs,
+     gx_forward_get_color_comp_index,
+     gx_forward_encode_color,
+     gx_forward_decode_color
     },
     0,				/* target */
     lop_default			/* log_op */

@@ -26,6 +26,8 @@
 typedef struct gs_state_s gs_state;
 
 #endif
+#include "gscspace.h"
+
 
 /*
  * The interfaces in this file are for internal use only, primarily by the
@@ -48,6 +50,9 @@ gs_memory_t *gs_state_swap_memory(gs_state *, gs_memory_t *);
 typedef void *(*gs_state_alloc_proc_t) (gs_memory_t * mem);
 typedef int (*gs_state_copy_proc_t) (void *to, const void *from);
 typedef void (*gs_state_free_proc_t) (void *old, gs_memory_t * mem);
+typedef int (*get_colorname_string_proc_t) (gs_separation_name colorname_index,
+			unsigned char **ppstr, unsigned int *pname_size);
+
 typedef enum {
     copy_for_gsave,		/* from = current, to = new(saved) */
     copy_for_grestore,		/* from = saved, to = current */
@@ -66,6 +71,7 @@ typedef struct gs_state_client_procs_s {
     gs_state_copy_proc_t copy;
     gs_state_free_proc_t free;
     gs_state_copy_for_proc_t copy_for;
+    get_colorname_string_proc_t get_colorname_string;
 } gs_state_client_procs;
 void gs_state_set_client(gs_state *, void *, const gs_state_client_procs *);
 

@@ -108,15 +108,14 @@ const gx_device_printer gs_bitcmyk_device =
 /* Map gray to color. */
 /* Note that 1-bit monochrome is a special case. */
 private gx_color_index
-bit_mono_map_rgb_color(gx_device * dev, gx_color_value red,
-		       gx_color_value green, gx_color_value blue)
+bit_mono_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
     int bpc = dev->color_info.depth;
     int drop = sizeof(gx_color_value) * 8 - bpc;
     gx_color_value gray =
-    (red * (unsigned long)lum_red_weight +
-     green * (unsigned long)lum_green_weight +
-     blue * (unsigned long)lum_blue_weight +
+    (cv[0] * (unsigned long)lum_red_weight +
+     cv[1] * (unsigned long)lum_green_weight +
+     cv[2] * (unsigned long)lum_blue_weight +
      (lum_all_weights / 2))
     / lum_all_weights;
 
@@ -126,14 +125,14 @@ bit_mono_map_rgb_color(gx_device * dev, gx_color_value red,
 /* Map RGB to gray shade. */
 /* Only used in CMYK mode when put_params has set ForceMono=1 */
 private gx_color_index
-bit_forcemono_map_rgb_color(gx_device * dev, gx_color_value red,
-		  gx_color_value green, gx_color_value blue)
+bit_forcemono_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
     gx_color_value color;
     int bpc = dev->color_info.depth / 4;	/* This function is used in CMYK mode */
     int drop = sizeof(gx_color_value) * 8 - bpc;
-    gx_color_value gray = red;
-
+    gx_color_value gray, red, green, blue;
+    red = cv[0]; green = cv[1]; blue = cv[2];
+    gray = red;
     if ((red != green) || (green != blue))
 	gray = (red * (unsigned long)lum_red_weight +
 	     green * (unsigned long)lum_green_weight +
@@ -198,16 +197,15 @@ bit_map_color_rgb(gx_device * dev, gx_color_index color, gx_color_value rgb[3])
 
 /* Map CMYK to color. */
 private gx_color_index
-bit_map_cmyk_color(gx_device * dev, gx_color_value cyan,
-	gx_color_value magenta, gx_color_value yellow, gx_color_value black)
+bit_map_cmyk_color(gx_device * dev, const gx_color_value cv[])
 {
     int bpc = dev->color_info.depth / 4;
     int drop = sizeof(gx_color_value) * 8 - bpc;
     gx_color_index color =
-    ((((((cyan >> drop) << bpc) +
-	(magenta >> drop)) << bpc) +
-      (yellow >> drop)) << bpc) +
-    (black >> drop);
+    ((((((cv[0] >> drop) << bpc) +
+	(cv[1] >> drop)) << bpc) +
+      (cv[2] >> drop)) << bpc) +
+    (cv[3] >> drop);
 
     return (color == gx_no_color_index ? color ^ 1 : color);
 }

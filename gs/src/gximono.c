@@ -77,16 +77,6 @@ gs_image_class_3_mono(gx_image_enum * penum)
     return 0;
 }
 
-/* ------ Rendering procedure ------ */
-
-/* Provide a fake map_gray procedure for the DevicePixel color space. */
-private void
-no_map_gray(frac pixel, gx_device_color * pdc, const gs_imager_state * pis,
-	    gx_device * dev, gs_color_select_t select)
-{
-    color_set_pure(pdc, frac2byte(pixel));
-}
-
 /*
  * Rendering procedure for general mono-component images, dealing with
  * multiple bit-per-sample images, general transformations, arbitrary
@@ -102,7 +92,6 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
     gs_logical_operation_t lop = penum->log_op;
     const bool masked = penum->masked;
     const gs_color_space *pcs;	/* only set for non-masks */
-    cmap_proc_gray((*map_gray));	/* ditto */
     cs_proc_remap_color((*remap_color));	/* ditto */
     gs_client_color cc;
     gx_device_color *pdevc = &penum->icolor1;	/* color for masking */
@@ -122,8 +111,6 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
     if (!color_is_set(pdevc)) {\
 	if ((uint)(sample_value - mask_base) < mask_limit)\
 	    color_set_null(pdevc);\
-	else if (penum->device_color)\
-	    (*map_gray)(byte2frac(sample_value), pdevc, pis, dev, gs_color_select_source);\
 	else {\
 	    decode_sample(sample_value, cc, 0);\
 	    code = (*remap_color)(&cc, pcs, pdevc, pis, dev, gs_color_select_source);\
@@ -157,6 +144,9 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
      * whether all tiles fit in the cache.  We may bypass the latter check
      * for masked images with a pure color.
      */
+
+    /* TO_DO_DEVICEN - The gx_check_tile_cache_current() routine is bogus */
+
     if (pis == 0 || !gx_check_tile_cache_current(pis)) {
         image_init_clues(penum, penum->bps, penum->spp);
     }
@@ -165,14 +155,7 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
     xrun = dda_current(next.x);
     if (!masked) {
 	pcs = penum->pcs;	/* (may not be set for masks) */
-	if (penum->device_color)
-	    map_gray =
-		(gs_color_space_get_index(pcs) ==
-		 gs_color_space_index_DeviceGray ?
-		 gx_get_cmap_procs(pis, dev)->map_gray :
-		 no_map_gray /*DevicePixel */ );
-	else
-	    remap_color = pcs->type->remap_color;
+        remap_color = pcs->type->remap_color;
     }
     run = *psrc;
     /* Find the last transition in the input. */

@@ -57,12 +57,13 @@ mem_mono_strip_copy_rop(gx_device * dev,
 
     /* If map_rgb_color isn't the default one for monobit memory */
     /* devices, palette might not be set; set it now if needed. */
-    if (mdev->palette.data == 0)
+    if (mdev->palette.data == 0) {
+        gx_color_value cv[3];
+        cv[0] = cv[1] = cv[2] = 0;
 	gdev_mem_mono_set_inverted(mdev,
 				   (*dev_proc(dev, map_rgb_color))
-				   (dev, (gx_color_value) 0,
-				    (gx_color_value) 0, (gx_color_value) 0)
-				   != 0);
+				   (dev, cv) != 0);
+    }
     invert = mdev->palette.data[0] != 0;
 
 #ifdef DEBUG

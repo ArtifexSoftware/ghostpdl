@@ -16,6 +16,7 @@
 
 /* $Id$ */
 /* Default device implementation */
+#include "math_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsropt.h"
@@ -23,6 +24,308 @@
 #include "gxdevice.h"
 
 /* ---------------- Default device procedures ---------------- */
+
+/*
+ * Set a color model polarity to be additive or subtractive. In either
+ * case, indicate an error (and don't modify the polarity) if the current
+ * setting differs from the desired and is not GX_CINFO_POLARITY_UNKNOWN.
+ */
+static void
+set_cinfo_polarity(gx_device * dev, gx_color_polarity_t new_polarity)
+{
+#ifdef DEBUG
+    /* sanity check */
+    if (new_polarity == GX_CINFO_POLARITY_UNKNOWN) {
+        dprintf("set_cinfo_polarity: illegal operand");
+        return;
+    }
+#endif
+
+    if (dev->color_info.polarity == GX_CINFO_POLARITY_UNKNOWN)
+        dev->color_info.polarity = new_polarity;
+    else if (dev->color_info.polarity != new_polarity)
+        dprintf("set_cinfo_polarity: different polarity already set");
+}
+
+
+private gx_color_index
+(*get_encode_color(gx_device *dev))(gx_device *, const gx_color_value *)
+{
+    dev_proc_encode_color(*encode_proc);
+
+    /* use encode_color if it has been provided */
+    if ((encode_proc = dev_proc(dev, encode_color)) == 0) {
+        if ( (dev->color_info.num_components == 1 ||
+              dev->color_info.num_components == 3    )              &&
+             (encode_proc = dev_proc(dev, map_rgb_color)) != 0  )
+            set_cinfo_polarity(dev, GX_CINFO_POLARITY_ADDITIVE);
+        else if ( dev->color_info.num_components == 4                    &&
+                 (encode_proc = dev_proc(dev, map_cmyk_color)) != 0   )
+            set_cinfo_polarity(dev, GX_CINFO_POLARITY_SUBTRACTIVE);
+    }
+
+    /*
+     * If no encode_color procedure at this point, the color model had
+     * better be monochrome (though not necessarily bi-level). In this
+     * case, it is assumed to be additive, as that is consistent with
+     * the pre-DeviceN code.
+     *
+     * If this is not the case, then the color model had better be known
+     * to be separable and linear, for there is no other way to derive
+     * an encoding. This is the case even for weakly linear and separable
+     * color models with a known polarity.
+     */
+    if (encode_proc == 0) {
+        if (dev->color_info.num_components == 1 && dev->color_info.depth != 0) {
+            set_cinfo_polarity(dev, GX_CINFO_POLARITY_ADDITIVE);
+            if (dev->color_info.max_gray == (1 << dev->color_info.depth) - 1)
+                encode_proc = gx_default_gray_fast_encode;
+            else
+                encode_proc = gx_default_gray_encode;
+            dev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
+        } else if (dev->color_info.separable_and_linear == GX_CINFO_SEP_LIN) {
+            gx_color_value  max_gray = dev->color_info.max_gray;
+            gx_color_value  max_color = dev->color_info.max_color;
+
+            if ( (max_gray & (max_gray + 1)) == 0  &&
+                 (max_color & (max_color + 1)) == 0  )
+                /* NB should be gx_default_fast_encode_color */
+                encode_proc = gx_default_encode_color;
+            else
+                encode_proc = gx_default_encode_color;
+        } else
+            dprintf("get_encode_color: no color encoding information");
+    }
+
+    return encode_proc;
+}
+
+/*
+ * Determine if a color model has the properties of a DeviceRGB
+ * color model. This procedure is, in all likelihood, high-grade
+ * overkill, but since this is not a performance sensitive area
+ * no harm is done.
+ *
+ * Since there is little benefit to checking the values 0, 1, or
+ * 1/2, we use the values 1/4, 1/3, and 3/4 in their place. We
+ * compare the results to see if the intensities match to within
+ * a tolerance of .01, which is arbitrarily selected.
+ */
+
+private bool
+is_like_DeviceRGB(gx_device * dev)
+{
+    const gx_cm_color_map_procs *   cm_procs;
+    frac                            cm_comp_fracs[3];
+    int                             i;
+
+    if ( dev->color_info.num_components != 3                   ||
+         dev->color_info.polarity != GX_CINFO_POLARITY_ADDITIVE  )
+        return false;
+    cm_procs = dev_proc(dev, get_color_mapping_procs)(dev);
+    if (cm_procs == 0 || cm_procs->map_rgb == 0)
+        return false;
+
+    /* check the values 1/4, 1/3, and 3/4 */
+    cm_procs->map_rgb( dev,
+                       0,
+                       frac_1 / 4,
+                       frac_1 / 3,
+                       3 * frac_1 / 4,
+                       cm_comp_fracs );
+
+    /* verify results to .01 */
+    cm_comp_fracs[0] -= frac_1 / 4;
+    cm_comp_fracs[1] -= frac_1 / 3;
+    cm_comp_fracs[2] -= 3 * frac_1 / 4;
+    for ( i = 0;
+           i < 3                            &&
+           -frac_1 / 100 < cm_comp_fracs[i] &&
+           cm_comp_fracs[i] < frac_1 / 100;
+          i++ )
+        ;
+    return i == 3;
+}
+
+/*
+ * Similar to is_like_DeviceRGB, but for DeviceCMYK.
+ */
+private bool
+is_like_DeviceCMYK(gx_device * dev)
+{
+    const gx_cm_color_map_procs *   cm_procs;
+    frac                            cm_comp_fracs[4];
+    int                             i;
+
+    if ( dev->color_info.num_components != 4                      ||
+         dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE  )
+        return false;
+    cm_procs = dev_proc(dev, get_color_mapping_procs)(dev);
+    if (cm_procs == 0 || cm_procs->map_cmyk == 0)
+        return false;
+
+    /* check the values 1/4, 1/3, 3/4, and 1/8 */
+    cm_procs->map_cmyk( dev,
+                        frac_1 / 4,
+                        frac_1 / 3,
+                        3 * frac_1 / 4,
+                        frac_1 / 8,
+                        cm_comp_fracs );
+
+    /* verify results to .01 */
+    cm_comp_fracs[0] -= frac_1 / 4;
+    cm_comp_fracs[1] -= frac_1 / 3;
+    cm_comp_fracs[2] -= 3 * frac_1 / 4;
+    cm_comp_fracs[3] -= frac_1 / 8;
+    for ( i = 0;
+           i < 4                            &&
+           -frac_1 / 100 < cm_comp_fracs[i] &&
+           cm_comp_fracs[i] < frac_1 / 100;
+          i++ )
+        ;
+    return i == 4;
+}
+
+/*
+ * Two default decode_color procedures to use for monochrome devices.
+ * These will make use of the map_color_rgb routine, and use the first
+ * component of the returned value or its inverse.
+ */
+private int
+gx_default_1_add_decode_color(
+    gx_device *     dev,
+    gx_color_index  color,
+    gx_color_value  cv[1] )
+{
+    gx_color_value  rgb[3];
+    int             code = dev_proc(dev, map_color_rgb)(dev, color, rgb);
+
+    cv[0] = rgb[0];
+    return code;
+}
+
+private int
+gx_default_1_sub_decode_color(
+    gx_device *     dev,
+    gx_color_index  color,
+    gx_color_value  cv[1] )
+{
+    gx_color_value  rgb[3];
+    int             code = dev_proc(dev, map_color_rgb)(dev, color, rgb);
+
+    cv[0] = gx_max_color_value - rgb[0];
+    return code;
+}
+
+/*
+ * A default decode_color procedure for DeviceCMYK color models.
+ *
+ * There is no generally accurate way of decode a DeviceCMYK color using
+ * the map_color_rgb method. Unfortunately, there are many older devices
+ * employ the DeviceCMYK color model but don't provide a decode_color
+ * method. The code below works on the assumption of full undercolor
+ * removal and black generation. This may not be accurate, but is the
+ * best that can be done in the absence of other information.
+ */
+private int
+gx_default_cmyk_decode_color(
+    gx_device *     dev,
+    gx_color_index  color,
+    gx_color_value  cv[4] )
+{
+    int             i, code = dev_proc(dev, map_color_rgb)(dev, color, cv);
+    gx_color_value  min_val = gx_max_color_value;
+
+    for (i = 0; i < 3; i++) {
+        if ((cv[i] = gx_max_color_value - cv[i]) < min_val)
+            min_val = cv[i];
+    }
+    for (i = 0; i < 3; i++)
+        cv[i] -= min_val;
+    cv[3] = min_val;
+
+    return code;
+}
+
+
+private int
+(*get_decode_color(gx_device * dev))(gx_device *, gx_color_index, gx_color_value *)
+{
+    /* if a method has already been provided, use it */
+    if (dev_proc(dev, decode_color) != 0)
+        return dev_proc(dev, decode_color);
+
+    /*
+     * If a map_color_rgb method has been provided, we may be able to use it.
+     * Currently this will always be the case, as a default value will be
+     * provided this method. While this default may not be correct, we are not
+     * introducing any new errors by using it.
+     */
+    if (dev_proc(dev, map_color_rgb) != 0) {
+
+        /* if the device has a DeviceRGB color model, use map_color_rgb */
+        if (is_like_DeviceRGB(dev))
+            return dev_proc(dev, map_color_rgb);
+
+        /* gray devices can be handled based on their polarity */
+        if ( dev->color_info.num_components == 1 &&
+             dev->color_info.gray_index == 0       )
+            return dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE
+                       ? gx_default_1_add_decode_color
+                       : gx_default_1_sub_decode_color;
+
+        /*
+         * There is no accurate way to decode colors for cmyk devices
+         * using the map_color_rgb procedure. Unfortunately, this cases
+         * arises with some frequency, so it is useful not to generate an
+         * error in this case. The mechanism below assumes full undercolor
+         * removal and black generation, which may not be accurate but are
+         * the  best that can be done in the absence of other information.
+         */
+        if (is_like_DeviceCMYK(dev))
+            return gx_default_cmyk_decode_color;
+    }
+
+    /*
+     * The separable and linear case will already have been handled by
+     * code in gx_device_fill_in_procs, so at this point we can only hope
+     * the device doesn't use the decode_color method.
+     */
+     return gx_error_decode_color;
+}
+
+/*
+ * If a device has a linear and separable encode color function then
+ * set up the comp_bits, comp_mask, and comp_shift fields.
+ */
+void
+set_linear_color_bits_mask_shift(gx_device * dev)
+{
+    int i;
+    byte gray_index = dev->color_info.gray_index;
+    gx_color_value max_gray = dev->color_info.max_gray;
+    gx_color_value max_color = dev->color_info.max_color;
+    int num_components = dev->color_info.num_components;
+
+#define comp_bits (dev->color_info.comp_bits)
+#define comp_mask (dev->color_info.comp_mask)
+#define comp_shift (dev->color_info.comp_shift)
+    comp_shift[num_components - 1] = 0;
+    for ( i = num_components - 1 - 1; i >= 0; i-- ) {
+        comp_shift[i] = comp_shift[i + 1] + 
+            ( i == gray_index ? ilog2(max_gray + 1) : ilog2(max_color + 1) );
+    }
+    for ( i = 0; i < num_components; i++ ) {
+        comp_bits[i] = ( i == gray_index ?
+                         ilog2(max_gray + 1) :
+                         ilog2(max_color + 1) );
+        comp_mask[i] = (((gx_color_index)1 << comp_bits[i]) - 1)
+                                               << comp_shift[i];
+    }
+#undef comp_bits
+#undef comp_mask
+#undef comp_shift
+}
 
 /* Fill in NULL procedures in a device procedure record. */
 void
@@ -34,7 +337,7 @@ gx_device_fill_in_procs(register gx_device * dev)
     fill_dev_proc(dev, sync_output, gx_default_sync_output);
     fill_dev_proc(dev, output_page, gx_default_output_page);
     fill_dev_proc(dev, close_device, gx_default_close_device);
-    fill_dev_proc(dev, map_rgb_color, gx_default_map_rgb_color);
+    /* see below for map_rgb_color */
     fill_dev_proc(dev, map_color_rgb, gx_default_map_color_rgb);
     /* NOT fill_rectangle */
     fill_dev_proc(dev, tile_rectangle, gx_default_tile_rectangle);
@@ -44,7 +347,7 @@ gx_device_fill_in_procs(register gx_device * dev)
     fill_dev_proc(dev, get_bits, gx_default_get_bits);
     fill_dev_proc(dev, get_params, gx_default_get_params);
     fill_dev_proc(dev, put_params, gx_default_put_params);
-    fill_dev_proc(dev, map_cmyk_color, gx_default_map_cmyk_color);
+    /* see below for map_cmyk_color */
     fill_dev_proc(dev, get_xfont_procs, gx_default_get_xfont_procs);
     fill_dev_proc(dev, get_xfont_device, gx_default_get_xfont_device);
     fill_dev_proc(dev, map_rgb_alpha_color, gx_default_map_rgb_alpha_color);
@@ -95,6 +398,100 @@ gx_device_fill_in_procs(register gx_device * dev)
     fill_dev_proc(dev, get_hardware_params, gx_default_get_hardware_params);
     fill_dev_proc(dev, text_begin, gx_default_text_begin);
     fill_dev_proc(dev, finish_copydevice, gx_default_finish_copydevice);
+
+    set_dev_proc(dev, encode_color, get_encode_color(dev));
+    set_dev_proc(dev, map_cmyk_color, dev_proc(dev, encode_color));
+    set_dev_proc(dev, map_rgb_color, dev_proc(dev, encode_color));
+
+
+    if ( dev->color_info.separable_and_linear == GX_CINFO_SEP_LIN ) {
+        fill_dev_proc(dev, encode_color, gx_default_encode_color);
+        fill_dev_proc(dev, map_cmyk_color, gx_default_encode_color);
+        fill_dev_proc(dev, map_rgb_color, gx_default_encode_color);
+    } else {
+        /* if it isn't set now punt */
+        fill_dev_proc(dev, encode_color, gx_error_encode_color);
+        fill_dev_proc(dev, map_cmyk_color, gx_error_encode_color);
+        fill_dev_proc(dev, map_rgb_color, gx_error_encode_color);
+    }
+
+    /*
+     * Fill in the color mapping procedures and the component index
+     * assignment procedure if they have not been provided by the client.
+     *
+     * Because it is difficult to provide default encoding procedures
+     * that handle level inversion, this code needs to check both
+     * the number of components and the polarity of color model.
+     */
+    switch (dev->color_info.num_components) {
+    case 1:     /* DeviceGray or DeviceInvertGray */
+        if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE) {
+            fill_dev_proc( dev,
+                           get_color_mapping_procs,
+                           gx_default_DevGray_get_color_mapping_procs );
+        } else {
+            dprintf( "Subtractive gray mapping not implemented");
+#if 0
+            fill_dev_proc( dev,
+                           get_color_mapping_procs,
+                           gx_default_InvertDevGray_get_color_mapping_procs );
+#endif
+        }
+        fill_dev_proc( dev,
+                       get_color_comp_index,
+                       gx_default_DevGray_get_color_comp_index );
+        break;
+
+    case 3:
+        if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE) {
+            fill_dev_proc( dev,
+                           get_color_mapping_procs,
+                           gx_default_DevRGB_get_color_mapping_procs );
+            fill_dev_proc( dev,
+                           get_color_comp_index,
+                           gx_default_DevRGB_get_color_comp_index );
+        } else {
+            dprintf ( "DeviceCMY mapping procs not supported\n" );
+#if 0
+            fill_dev_proc( dev,
+                           get_color_mapping_procs,
+                           gx_default_DevCMY_get_color_mapping_procs );
+            fill_dev_proc( dev,
+                           get_color_comp_index,
+                           gx_default_DevCMY_get_color_comp_index );
+#endif
+        }
+        break;
+
+    case 4:
+        fill_dev_proc(dev, get_color_mapping_procs, gx_default_DevCMYK_get_color_mapping_procs);
+        fill_dev_proc(dev, get_color_comp_index, gx_default_DevCMYK_get_color_comp_index);
+        break;
+    default:		/* Unknown color model - set error handlers */
+        fill_dev_proc(dev, get_color_mapping_procs, gx_error_get_color_mapping_procs);
+        fill_dev_proc(dev, get_color_comp_index, gx_error_get_color_comp_index);
+    }
+
+    if ( dev->color_info.separable_and_linear == GX_CINFO_SEP_LIN ) {
+        fill_dev_proc(dev, decode_color, gx_default_decode_color);
+	if ((dev_proc(dev, map_color_rgb) != 0) !=
+	    (dev_proc(dev, decode_color) != 0)) {
+	    if (is_like_DeviceRGB(dev)) {
+		if (dev_proc(dev, map_color_rgb) != 0)
+		    set_dev_proc(dev, decode_color, dev_proc(dev, map_color_rgb));
+		else if (dev_proc(dev, decode_color) != 0)
+		    set_dev_proc(dev, map_color_rgb, dev_proc(dev, decode_color));
+	    }
+        }
+    }
+    fill_dev_proc(dev, map_color_rgb, gx_default_map_color_rgb);
+
+    set_dev_proc(dev, decode_color, get_decode_color(dev));
+
+    /* initialiazation -- NB this chould be moved */
+    if ( dev->color_info.separable_and_linear == GX_CINFO_SEP_LIN ) {
+	set_linear_color_bits_mask_shift(dev);
+    }
 }
 
 int

@@ -21,7 +21,6 @@
 #include "gsmatrix.h"		/* ditto */
 #include "gsclipsr.h"
 #include "gscolor2.h"
-#include "gscssub.h"
 #include "oper.h"
 #include "igstate.h"
 #include "store.h"
@@ -114,25 +113,6 @@ zeqproc(i_ctx_t *i_ctx_p)
     return 0;
 }
 
-/* <index> <bool> .setsubstitutecolorspace - */
-private int
-zsetsubstitutecolorspace(i_ctx_t *i_ctx_p)
-{
-    os_ptr op = osp;
-    int index, code;
-
-    check_type(*op, t_boolean);
-    check_int_leu(op[-1], 2);
-    index = (int)op[-1].value.intval;
-    code = gs_setsubstitutecolorspace(igs, index,
-				      (op->value.boolval ?
-				       gs_currentcolorspace(igs) :
-				       NULL));
-    if (code >= 0)
-	pop(2);
-    return code;
-}
-
 /* ------ Initialization procedure ------ */
 
 const op_def zmisc3_op_defs[] =
@@ -141,6 +121,5 @@ const op_def zmisc3_op_defs[] =
     {"0cliprestore", zcliprestore},
     {"0clipsave", zclipsave},
     {"2.eqproc", zeqproc},
-    {"2.setsubstitutecolorspace", zsetsubstitutecolorspace},
     op_def_end(0)
 };

@@ -120,12 +120,11 @@ image_render_color(gx_image_enum *penum_orig, const byte *buffer, int data_x,
     int vci, vdi;
     const gs_color_space *pcs = penum->pcs;
     cs_proc_remap_color((*remap_color)) = pcs->type->remap_color;
+    cs_proc_remap_concrete_color((*remap_concrete_color)) =
+	    pcs->type->remap_concrete_color;
     gs_client_color cc;
     bool device_color = penum->device_color;
     const gx_color_map_procs *cmap_procs = gx_get_cmap_procs(pis, dev);
-    cmap_proc_rgb((*map_3)) = cmap_procs->map_rgb;
-    cmap_proc_cmyk((*map_4)) =
-	(penum->alpha ? cmap_procs->map_rgb_alpha : cmap_procs->map_cmyk);
     bits32 mask = penum->mask_color.mask;
     bits32 test = penum->mask_color.test;
     gx_image_clue *pic = &clues[0];
@@ -219,10 +218,30 @@ map4:	    if (next.all[0] == run.all[0])
 		goto mapped;
 	    }
 	    if (device_color) {
-		(*map_4)(byte2frac(next.v[0]), byte2frac(next.v[1]),
+		frac frac_color[4];
+
+		if (penum->alpha) {
+		    /*
+		     * We do not have support for DeviceN color and alpha.
+		     */
+		    cmap_procs->map_rgb_alpha
+			(byte2frac(next.v[0]), byte2frac(next.v[1]),
 			 byte2frac(next.v[2]), byte2frac(next.v[3]),
 			 pdevc_next, pis, dev,
 			 gs_color_select_source);
+		    goto mapped;
+		}
+		/*
+		 * We can call the remap concrete_color for the colorspace
+		 * directly since device_color is only true if the colorspace
+		 * is concrete.
+		 */
+		frac_color[0] = byte2frac(next.v[0]);
+		frac_color[1] = byte2frac(next.v[1]);
+		frac_color[2] = byte2frac(next.v[2]);
+		frac_color[3] = byte2frac(next.v[3]);
+		remap_concrete_color(frac_color, pcs, pdevc_next, pis,
+					    dev, gs_color_select_source);
 		goto mapped;
 	    }
 	    decode_sample(next.v[3], cc, 3);
@@ -260,10 +279,17 @@ do3:	    decode_sample(next.v[0], cc, 0);
 		goto mapped;
 	    }
 	    if (device_color) {
-		(*map_3)(byte2frac(next.v[0]), byte2frac(next.v[1]),
-			 byte2frac(next.v[2]),
-			 pdevc_next, pis, dev,
-			 gs_color_select_source);
+		frac frac_color[3];
+		/*
+		 * We can call the remap concrete_color for the colorspace
+		 * directly since device_color is only true if the colorspace
+		 * is concrete.
+		 */
+		frac_color[0] = byte2frac(next.v[0]);
+		frac_color[1] = byte2frac(next.v[1]);
+		frac_color[2] = byte2frac(next.v[2]);
+		remap_concrete_color(frac_color, pcs, pdevc_next, pis,
+						dev, gs_color_select_source);
 		goto mapped;
 	    }
 	    goto do3;
@@ -340,7 +366,7 @@ fill:	/* Fill the region between */
 	/* xrun/irun and xprev */
         /*
 	 * Note;  This section is nearly a copy of a simlar section below
-         * for processing the image pixel in the loop.  This would have been
+         * for processing the last image pixel in the loop.  This would have been
          * made into a subroutine except for complications about the number of
          * variables that would have been needed to be passed to the routine.
 	 */

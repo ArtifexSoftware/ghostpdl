@@ -127,6 +127,24 @@ struct gx_ht_cache_s {
     gx_ht_tile *(*render_ht)(gx_ht_cache *, int); /* rendering procedure */
 };
 
+/* Define the sizes of the halftone cache. */
+#define max_cached_tiles_HUGE 5000	/* not used */
+#define max_ht_bits_HUGE 1000000	/* not used */
+#define max_cached_tiles_LARGE 577
+#define max_ht_bits_LARGE 100000
+#define max_cached_tiles_SMALL 25
+#define max_ht_bits_SMALL 1000
+
+/* Define the size of the halftone tile cache. */
+#define max_tile_bytes_LARGE 4096
+#define max_tile_bytes_SMALL 512
+#if arch_small_memory
+#  define max_tile_cache_bytes max_tile_bytes_SMALL
+#else
+#  define max_tile_cache_bytes\
+     (gs_debug_c('.') ? max_tile_bytes_SMALL : max_tile_bytes_LARGE)
+#endif
+
 /* We don't mark from the tiles pointer, and we relocate the tiles en masse. */
 #define private_st_ht_tiles()	/* in gxht.c */\
   gs_private_st_composite(st_ht_tiles, gx_ht_tile, "ht tiles",\
@@ -187,11 +205,10 @@ void gx_ht_order_release(gx_ht_order * porder, gs_memory_t * mem, bool free_cach
 
 /*
  * Install a device halftone in an imager state.  Note that this does not
- * read or update the client halftone.  There is a special check for pdht ==
- * pis->dev_ht, for the benefit of the band rendering code.
+ * read or update the client halftone.
  */
 int gx_imager_dev_ht_install(gs_imager_state * pis,
-			     const gx_device_halftone * pdht,
+			     gx_device_halftone * pdht,
 			     gs_halftone_type type,
 			     const gx_device * dev);
 
@@ -200,8 +217,7 @@ int gx_imager_dev_ht_install(gs_imager_state * pis,
  * level of the gs_halftone and the gx_device_halftone, and take ownership
  * of any substructures.
  */
-int gx_ht_install(gs_state *, const gs_halftone *,
-		  const gx_device_halftone *);
+int gx_ht_install(gs_state *, const gs_halftone *, gx_device_halftone *);
 
 /* Reestablish the effective transfer functions, taking into account */
 /* any overrides from halftone dictionaries. */
@@ -209,4 +225,30 @@ int gx_ht_install(gs_state *, const gs_halftone *,
 void gx_imager_set_effective_xfer(gs_imager_state * pis);
 void gx_set_effective_transfer(gs_state * pgs);
 
+/*
+ * This routine will take a color name (defined by a ptr and size) and
+ * check if this is a valid colorant name for the current device.  If
+ * so then the device's colorant number is returned.
+ *
+ * Two other checks are also made.  If the name is "Default" then a value
+ * of GX_DEVICE_COLOR_MAX_COMPONENTS is returned.  This is done to
+ * simplify the handling of default halftones.
+ *
+ * If the halftone type is colorscreen or multiple colorscreen, then we
+ * also check for Red/Cyan, Green/Magenta, Blue/Yellow, and Gray/Black
+ * component name pairs.  This is done since the setcolorscreen and
+ * sethalftone types 2 and 4 imply the dual name sets.
+ *
+ * A negative value is returned if the color name is not found.
+ */
+int gs_color_name_component_number(const gx_device * dev, char * pname,
+				int name_size, int halftonetype);
+/*
+ * See gs_color_name_component_number for main description.
+ *
+ * This version converts a name index value into a string and size and
+ * then call gs_color_name_component_number.
+ */
+int gs_cname_to_colorant_number(gs_state * pgs, gs_separation_name cname,
+				 int halftonetype);
 #endif /* gzht_INCLUDED */

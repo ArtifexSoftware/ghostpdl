@@ -212,9 +212,11 @@ write_bmp_separated_header(gx_device_printer *pdev, FILE *file)
 
 /* Map a r-g-b color to a color index. */
 gx_color_index
-bmp_map_16m_rgb_color(gx_device * dev, gx_color_value r, gx_color_value g,
-		  gx_color_value b)
+bmp_map_16m_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
+
+    gx_color_value r, g, b;
+    r = cv[0]; g = cv[1]; b = cv[2];
     return gx_color_value_to_byte(r) +
 	((uint) gx_color_value_to_byte(g) << 8) +
 	((ulong) gx_color_value_to_byte(b) << 16);

@@ -22,7 +22,6 @@
 #include "gsrect.h"
 #include "gxcspace.h"
 #include "gscie.h"		/* requires gscspace.h */
-#include "gscindex.h"
 #include "gxdevcli.h"
 #include "gxistate.h"
 #include "gxdht.h"		/* for computing # of different colors */
@@ -307,12 +306,12 @@ top:
 	    break;
 	}
     if (num_colors <= 32) {
-	/****** WRONG FOR MULTI-PLANE HALFTONES ******/
-	num_colors *= pis->dev_ht->order.num_levels;
-    }
-    if (psh->head.type == 2 || psh->head.type == 3) {
-	max_error *= 0.25;
-	num_colors *= 2.0;
+	gx_ht_order_component *components = pis->dev_ht->components;
+	if (components && components[0].corder.wts)
+	    num_colors = 256;
+	else
+	    /****** WRONG FOR MULTI-PLANE HALFTONES ******/
+	    num_colors *= pis->dev_ht->components[0].corder.num_levels;
     }
     if (max_error < 1.0 / num_colors)
 	max_error = 1.0 / num_colors;

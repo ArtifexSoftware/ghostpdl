@@ -76,6 +76,26 @@ struct gx_device_color_type_s {
     gs_memory_type_ptr_t stype;
 
     /*
+     * Accessors.
+     *
+     * The "save_dc" method fills in a gx_device_color_saved structure
+     * for the operand device color. This is may be used with the
+     * "write" and "read" methods (see below) to minimize command list
+     * size.
+     *
+     * The "get_dev_halftone" method returns a pointer to the device
+     * halftone used by the current color, or NULL if there is no such
+     * halftone (i.e.: the device color is a pure color).
+     */
+#define dev_color_proc_save_dc(proc)\
+  void proc(const gx_device_color * pdevc, gx_device_color_saved * psdc)
+			 dev_color_proc_save_dc((*save_dc));
+
+#define dev_color_proc_get_dev_halftone(proc)\
+  const gx_device_halftone * proc(const gx_device_color * pdevc)
+			 dev_color_proc_get_dev_halftone((*get_dev_halftone));
+
+    /*
      * If necessary and possible, load the halftone or Pattern cache
      * with the rendering of this color.
      */
@@ -117,6 +137,96 @@ struct gx_device_color_type_s {
   bool proc(const gx_device_color *pdevc1, const gx_device_color *pdevc2)
                          dev_color_proc_equal((*equal));
 
+    /*
+     * Serialize and deserialize a device color.
+     *
+     * The "write" routine converts a device color into a string for
+     * writing to the command list. *psize is the amount of space
+     * available. If it is large enough, the procedure sets *psize to
+     * the amount actually used and returns 0; otherwise, if no other
+     * problem is detected, *psize is set to the amount required and
+     * gs_error_rangecheck is returned. If some other error is detected,
+     * *psize is left unchanged and the error code is returned.
+     *
+     * The "read" routine converts the string representation back into
+     * the full device color structure. The value returned is the number
+     * of bytes actually read, or < 0 in the event of an error.
+     *
+     * As with any instance of virtual serialization, the command list
+     * code must include its own identifier of the color space type in
+     * the command list, so as to know which read routine to call. The
+     * procedures gx_dc_get_type_code and gx_dc_get_type_from_code are
+     * provided to support this operation.
+     *
+     * For the write operation, psdc points to the saved version of the
+     * color previously stored for a particular band. When the band is
+     * rendered this will be the current device color just before the
+     * color being serialized is read. This information can be used to
+     * make encoding more efficient. To avoid any optimization, set
+     * psdc to be a null pointer.
+     *
+     * Note that the caller is always responsible for serializing and
+     * transmitting the device halftone, if this is required. Because
+     * device halftones change infrequently, they are transmitted as
+     * "all bands" commands. This is only possible if they are serialized
+     * separately, which is why they cannot be handled by these methods.
+     *
+     * The first device color serialized after the halftone has been
+     * changed should always contain complete information; i.e.: psdc
+     * should be set to a null pointer. This is necessary as the command
+     * list reader will have reset its device color when the halftone is
+     * changed, so informaition from the prior device color will no
+     * longer be available.
+     *
+     * For the read and method, the imager state is passed as an operand,
+     * which allows the routine to access the current device halftone
+     * (always required). Also passed in a pointer to the existing device
+     * color, as this is not part of the imager state. If the writer was
+     * passed a non-null psdc operand, *prior_devc must reflect the
+     * information contained in *psdc.
+     *
+     * NB: For the read method, pdevc and prior_devc may and usually
+     *     will be the same. Code implementing this method must be able
+     *     to handle this situation.
+     *
+     * The device is provided as an operand for both routines to pass
+     * color model information. This allows more compact encoding of
+     * various pieces of information, in particular color indices.
+     */
+#define dev_color_proc_write(proc)\
+  int proc(const gx_device_color *pdevc, const gx_device_color_saved *psdc,\
+    const gx_device * dev, byte *data, uint *psize)
+			dev_color_proc_write((*write));
+
+#define dev_color_proc_read(proc)\
+  int proc(gx_device_color *pdevc, const gs_imager_state * pis,\
+    const gx_device_color *prior_devc, const gx_device * dev,\
+    const byte *data, uint size, gs_memory_t *mem)
+			dev_color_proc_read((*read));
+
+    /*
+     * Identify which color model components have non-zero intensities in
+     * a device color. If this is the case, set the (1 << i)'th bit of
+     * *pcomp_bits to 1; otherwise set it to 0. This method is used to
+     * support PDF's overprint mode. The *pcomp_bits value is known to be
+     * large enough for the number of device color components, and should
+     * be initialized to 0 by the client.
+     *
+     * Returns 0 except for shading and/or color tiling patterns, for
+     * which  1 is returned. For those two "colors", lower level device
+     * colors must be examined to determine the desired information. This
+     * is not a problem for shading colors, as overprint mode does not
+     * apply to them. It is potentially a problem for colored tiling
+     * patterns, but the situations in which it is a problem other, long-
+     * standing implementation difficulties for patterns would also be a
+     * problem.
+     *
+     * Returns of < 0 indicate an error, and shouldn't be possible.
+     */
+#define dev_color_proc_get_nonzero_comps(proc)\
+  int proc(const gx_device_color * pdevc, const gx_device * dev,\
+    gx_color_index * pcomp_bits)
+                         dev_color_proc_get_nonzero_comps((*get_nonzero_comps));
 };
 
 /* Define the default implementation of fill_masked. */
@@ -139,7 +249,19 @@ extern const gx_device_color_type_t
 #define gx_dc_type_ht_binary (&gx_dc_type_data_ht_binary)
       gx_dc_type_data_ht_binary,	/* gxht.c */
 #define gx_dc_type_ht_colored (&gx_dc_type_data_ht_colored)
-      gx_dc_type_data_ht_colored;	/* gxcht.c */
+      gx_dc_type_data_ht_colored,	/* gxcht.c */
+#define gx_dc_type_wts (&gx_dc_type_data_wts)
+      gx_dc_type_data_wts;	/* gxwts.c */
+
+/* the following are exported for the benefit of gsptype1.c */
+extern  dev_color_proc_get_nonzero_comps(gx_dc_pure_get_nonzero_comps);
+extern  dev_color_proc_get_nonzero_comps(gx_dc_ht_binary_get_nonzero_comps);
+extern  dev_color_proc_get_nonzero_comps(gx_dc_ht_colored_get_nonzero_comps);
+
+/* convert between color types and color type indices */
+extern int gx_get_dc_type_index(const gx_device_color *);
+extern const gx_device_color_type_t * gx_get_dc_type_from_index(int);
+
 
 #define gs_color_writes_pure(pgs)\
   color_writes_pure((pgs)->dev_color, (pgs)->log_op)
@@ -179,5 +301,23 @@ int gx_remap_color(gs_state *);
   gx_fill_rectangle_device_rop(x, y, w, h, pdevc, (pgs)->device, lop)
 #define gx_fill_rectangle(x, y, w, h, pdevc, pgs)\
   gx_fill_rectangle_rop(x, y, w, h, pdevc, (pgs)->log_op, pgs)
+
+/*
+ * Utilities to write/read color indices. Currently, a very simple mechanism
+ * is used, much simpler than that used by other command-list writers. This
+ * should be sufficient for most situations.
+ *
+ * The operand set and return values are those of the device color write/read
+ * routines.
+ */
+extern  int     gx_dc_write_color( gx_color_index       color,
+                                   const gx_device *    dev,
+                                   byte *               pdata,
+                                   uint *               psize );
+
+extern  int     gx_dc_read_color( gx_color_index *  pcolor,
+                                  const gx_device * dev,
+                                  const byte *      pdata,
+                                  int               size );
 
 #endif /* gxdcolor_INCLUDED */

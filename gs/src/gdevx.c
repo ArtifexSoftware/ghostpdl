@@ -579,6 +579,10 @@ x_copy_image(gx_device_X * xdev, const byte * base, int sourcex, int raster,
 	XPutImage(xdev->dpy, xdev->dest, xdev->gc, &xdev->image,
 		  sourcex, 0, x, y, w, h);
 	xdev->image.depth = xdev->image.bits_per_pixel = 1;
+
+	/* give up on optimization */
+	xdev->colors_or = (x_pixel)(-1);
+	xdev->colors_and = 0;
     }
     return 0;
 }

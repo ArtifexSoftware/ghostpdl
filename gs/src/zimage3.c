@@ -28,7 +28,6 @@
 #include "idparam.h"
 #include "igstate.h"
 #include "iimage.h"
-#include "iimage2.h"
 
 /* <dict> .image3 - */
 private int
@@ -56,8 +55,9 @@ zimage3(i_ctx_t *i_ctx_p)
 	return_error(e_rangecheck);
     if ((code = pixel_image_params(i_ctx_p, pDataDict,
 				   (gs_pixel_image_t *)&image, &ip_data,
-				   12)) < 0 ||
-	(mcode = code = data_image_params(pMaskDict, &image.MaskDict, &ip_mask, false, 1, 12)) < 0 ||
+				   12, false)) < 0 ||
+	(mcode = code = data_image_params(pMaskDict, &image.MaskDict,
+				   &ip_mask, false, 1, 12, false)) < 0 ||
 	(code = dict_int_param(pDataDict, "ImageType", 1, 1, 0, &ignored)) < 0 ||
 	(code = dict_int_param(pMaskDict, "ImageType", 1, 1, 0, &ignored)) < 0
 	)
@@ -97,7 +97,7 @@ zimage4(i_ctx_t *i_ctx_p)
 
     gs_image4_t_init(&image, NULL);
     code = pixel_image_params(i_ctx_p, op, (gs_pixel_image_t *)&image, &ip,
-			      12);
+			      12, false);
     if (code < 0)
 	return code;
     code = dict_int_array_check_param(op, "MaskColor", num_components * 2,

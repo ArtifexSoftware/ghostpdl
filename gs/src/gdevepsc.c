@@ -75,18 +75,18 @@ static char rgb_color[2][2][2] =	{
 /* Map an RGB color to a printer color. */
 #define cv_shift (sizeof(gx_color_value) * 8 - 1)
 private gx_color_index
-epson_map_rgb_color(gx_device *dev,
-  gx_color_value r, gx_color_value g, gx_color_value b)
+epson_map_rgb_color(gx_device *dev, const gx_color_value cv[])
 {
-if (gx_device_has_color(dev))
-	{
+
+    gx_color_value r = cv[0];
+    gx_color_value g = cv[1];
+    gx_color_value b = cv[2];
+    
+    if (gx_device_has_color(dev))
 /* use ^7 so WHITE is 0 for internal calculations */
-	return (gx_color_index)rgb_color[r >> cv_shift][g >> cv_shift][b >> cv_shift] ^ 7;	
-	}
-else
-	{
-	return gx_default_map_rgb_color(dev, r, g, b);
-	}
+        return (gx_color_index)rgb_color[r >> cv_shift][g >> cv_shift][b >> cv_shift] ^ 7;	
+    else
+	return gx_default_map_rgb_color(dev, cv);
 }
 
 /* Map the printer color back to RGB. */

@@ -443,12 +443,8 @@ end
 .dicttomark readonly def
 
 /csrdict mark
-  /DeviceGray {
-    /DefaultGray Page /ColorSpace rget { exch pop resolvecolorspace } if
-  }
-  /DeviceRGB {
-    /DefaultRGB Page /ColorSpace rget { exch pop resolvecolorspace } if
-  }
+  /DeviceGray { }
+  /DeviceRGB { }
   /DeviceCMYK { }
   /CalGray {
     1 oget 6 dict begin

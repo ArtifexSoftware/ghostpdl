@@ -24,6 +24,7 @@
 #include "gzstate.h"
 #include "gxdevice.h"           /* for gzht.h */
 #include "gzht.h"
+#include "gswts.h"
 
 /* Define whether to force all halftones to be strip halftones, */
 /* for debugging. */
@@ -235,7 +236,7 @@ gs_screen_order_init_memory(gx_ht_order * porder, const gs_state * pgs,
                             gs_memory_t * mem)
 {
     gs_matrix imat;
-    ulong max_size = pgs->ht_cache->bits_size;
+    ulong max_size = max_tile_cache_bytes;
     int code;
 
     if (phsp->frequency < 0.1)
@@ -464,44 +465,47 @@ gs_screen_enum_init_memory(gs_screen_enum * penum, const gx_ht_order * porder,
     penum->halftone.type = ht_type_screen;
     penum->halftone.params.screen = *phsp;
     penum->x = penum->y = 0;
-    penum->strip = porder->num_levels / porder->width;
-    penum->shift = porder->shift;
-    /*
-     * We want a transformation matrix that maps the parallelogram
-     * (0,0), (U,V), (U-V',V+U'), (-V',U') to the square (+/-1, +/-1).
-     * If the coefficients are [a b c d e f] and we let
-     *      u = U = M/R, v = V = N/R,
-     *      r = -V' = -N'/R', s = U' = M'/R',
-     * then we just need to solve the equations:
-     *      a*0 + c*0 + e = -1      b*0 + d*0 + f = -1
-     *      a*u + c*v + e = 1       b*u + d*v + f = 1
-     *      a*r + c*s + e = -1      b*r + d*s + f = 1
-     * This has the following solution:
-     *      Q = 2 / (M*M' + N*N')
-     *      a = Q * R * M'
-     *      b = -Q * R' * N
-     *      c = Q * R * N'
-     *      d = Q * R' * M
-     *      e = -1
-     *      f = -1
-     */
-    {
-        const int M = porder->params.M, N = porder->params.N, R = porder->params.R;
-        const int M1 = porder->params.M1, N1 = porder->params.N1, R1 = porder->params.R1;
-        double Q = 2.0 / ((long)M * M1 + (long)N * N1);
 
-        penum->mat.xx = Q * (R * M1);
-        penum->mat.xy = Q * (-R1 * N);
-        penum->mat.yx = Q * (R * N1);
-        penum->mat.yy = Q * (R1 * M);
-        penum->mat.tx = -1.0;
-        penum->mat.ty = -1.0;
-        gs_matrix_invert(&penum->mat, &penum->mat_inv);
+    if (porder->wse == NULL) {
+	penum->strip = porder->num_levels / porder->width;
+	penum->shift = porder->shift;
+	/*
+	 * We want a transformation matrix that maps the parallelogram
+	 * (0,0), (U,V), (U-V',V+U'), (-V',U') to the square (+/-1, +/-1).
+	 * If the coefficients are [a b c d e f] and we let
+	 *      u = U = M/R, v = V = N/R,
+	 *      r = -V' = -N'/R', s = U' = M'/R',
+	 * then we just need to solve the equations:
+	 *      a*0 + c*0 + e = -1      b*0 + d*0 + f = -1
+	 *      a*u + c*v + e = 1       b*u + d*v + f = 1
+	 *      a*r + c*s + e = -1      b*r + d*s + f = 1
+	 * This has the following solution:
+	 *      Q = 2 / (M*M' + N*N')
+	 *      a = Q * R * M'
+	 *      b = -Q * R' * N
+	 *      c = Q * R * N'
+	 *      d = Q * R' * M
+	 *      e = -1
+	 *      f = -1
+	 */
+	{
+	    const int M = porder->params.M, N = porder->params.N, R = porder->params.R;
+	    const int M1 = porder->params.M1, N1 = porder->params.N1, R1 = porder->params.R1;
+	    double Q = 2.0 / ((long)M * M1 + (long)N * N1);
+
+	    penum->mat.xx = Q * (R * M1);
+	    penum->mat.xy = Q * (-R1 * N);
+	    penum->mat.yx = Q * (R * N1);
+	    penum->mat.yy = Q * (R1 * M);
+	    penum->mat.tx = -1.0;
+	    penum->mat.ty = -1.0;
+	    gs_matrix_invert(&penum->mat, &penum->mat_inv);
+	}
+	if_debug7('h', "[h]Screen: (%dx%d)/%d [%f %f %f %f]\n",
+		  porder->width, porder->height, porder->params.R,
+		  penum->mat.xx, penum->mat.xy,
+		  penum->mat.yx, penum->mat.yy);
     }
-    if_debug7('h', "[h]Screen: (%dx%d)/%d [%f %f %f %f]\n",
-              porder->width, porder->height, porder->params.R,
-              penum->mat.xx, penum->mat.xy,
-              penum->mat.yx, penum->mat.yy);
     return 0;
 }
 
@@ -513,6 +517,15 @@ gs_screen_currentpoint(gs_screen_enum * penum, gs_point * ppt)
     int code;
     double sx, sy; /* spot center in spot coords (integers) */
     gs_point spot_center; /* device coords */
+
+    if (penum->order.wse) {
+	int code;
+	code = gs_wts_screen_enum_currentpoint(penum->order.wse, ppt);
+	if (code > 0) {
+	    wts_sort_blue(penum->order.wse);
+	}
+	return code;
+    }
 
     if (penum->y >= penum->strip) {     /* all done */
         gx_ht_construct_spot_order(&penum->order);
@@ -558,26 +571,30 @@ gs_screen_currentpoint(gs_screen_enum * penum, gs_point * ppt)
 int
 gs_screen_next(gs_screen_enum * penum, floatp value)
 {
-    ht_sample_t sample;
-    int width = penum->order.width;
-    gx_ht_bit *bits = (gx_ht_bit *)penum->order.bit_data;
+    if (penum->order.wse) {
+	return gs_wts_screen_enum_next (penum->order.wse, value);
+    } else {
+	ht_sample_t sample;
+	int width = penum->order.width;
+	gx_ht_bit *bits = (gx_ht_bit *)penum->order.bit_data;
 
-    if (value < -1.0 || value > 1.0)
-        return_error(gs_error_rangecheck);
-    sample = (ht_sample_t) ((value + 1) * max_ht_sample);
+	if (value < -1.0 || value > 1.0)
+	    return_error(gs_error_rangecheck);
+	sample = (ht_sample_t) ((value + 1) * max_ht_sample);
 #ifdef DEBUG
-    if (gs_debug_c('H')) {
-        gs_point pt;
+	if (gs_debug_c('H')) {
+	    gs_point pt;
 
-        gs_screen_currentpoint(penum, &pt);
-        dlprintf6("[H]sample x=%d y=%d (%f,%f): %f -> %u\n",
-                  penum->x, penum->y, pt.x, pt.y, value, sample);
-    }
+	    gs_screen_currentpoint(penum, &pt);
+	    dlprintf6("[H]sample x=%d y=%d (%f,%f): %f -> %u\n",
+		      penum->x, penum->y, pt.x, pt.y, value, sample);
+	}
 #endif
-    bits[penum->y * width + penum->x].mask = sample;
-    if (++(penum->x) >= width)
-        penum->x = 0, ++(penum->y);
-    return 0;
+	bits[penum->y * width + penum->x].mask = sample;
+	if (++(penum->x) >= width)
+	    penum->x = 0, ++(penum->y);
+	return 0;
+    }
 }
 
 /* Install a fully constructed screen in the gstate. */
@@ -585,9 +602,12 @@ int
 gs_screen_install(gs_screen_enum * penum)
 {
     gx_device_halftone dev_ht;
+    int code;
 
     dev_ht.rc.memory = penum->halftone.rc.memory;
     dev_ht.order = penum->order;
     dev_ht.components = 0;
-    return gx_ht_install(penum->pgs, &penum->halftone, &dev_ht);
+    if ((code = gx_ht_install(penum->pgs, &penum->halftone, &dev_ht)) < 0)
+        gx_device_halftone_release(&dev_ht, dev_ht.rc.memory);
+    return code;
 }

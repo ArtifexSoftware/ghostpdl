@@ -385,6 +385,10 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
 	COPY_PROC(get_clipping_box);
 	COPY_PROC(map_color_rgb_alpha);
 	COPY_PROC(get_hardware_params);
+	COPY_PROC(get_color_mapping_procs);
+	COPY_PROC(get_color_comp_index);
+	COPY_PROC(encode_color);
+	COPY_PROC(decode_color);
 #undef COPY_PROC
 	/* If using a command list, already opened the device. */
 	if (is_command_list)

@@ -143,18 +143,19 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     } else if (gx_dc_is_colored_halftone(pdcolor)) {
 	const gx_device_halftone *pdht = pdcolor->colors.colored.c_ht;
 	int num_comp = cldev->color_info.num_components;
-	byte buf[4 + 4 * cmd_max_intsize(sizeof(pdcolor->colors.colored.c_level[0]))];
-	byte *bp = buf;
 	int i;
 	byte cmd;
-	uint short_bases = 0;
-	ulong bases = 0;
-	byte flags = 0;
 	byte *dp;
 	int code;
+	byte buf[ GX_DEVICE_COLOR_MAX_COMPONENTS *
+		(1 + cmd_max_intsize(sizeof(pdcolor->colors.colored.c_level[0]))) ];
+	byte * bp = buf;
+	ulong flags = 0, short_bases = 0;
+	bool use_short_cmd = true;
 
 	pcls->colors_used.or |=
 	    colored_halftone_colors_used(cldev, pdcolor);
+
 	/****** HOW TO TELL IF COLOR IS ALREADY SET? ******/
 	if (pdht->id != cldev->device_halftone_id) {
 	    int code = cmd_put_halftone(cldev, pdht, pdht->type);
@@ -163,30 +164,47 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		return code;
 	    cldev->device_halftone_id = pdht->id;
 	}
-	for (i = 0; i < num_comp; ++i) {
+        /*
+	 * Check if we can use the short command form.  We can do this if
+	 * the base values fit into one bit.
+	 */
+	for (i = 0; i < num_comp; i++) {
 	    uint base = pdcolor->colors.colored.c_base[i];
 
-	    if (base > 31)
+	    /* sanity check */
+	    if (base > 0x1f)
 		return_error(gs_error_rangecheck);
-	    bases |= base << ((3 - i) * 5);
-	    short_bases |= base << (3 - i);
-	    if (pdcolor->colors.colored.c_level[i])
-		flags |= 0x80 >> i;
+
+	    /* check for 1-bit (short command) case */
+	    if (use_short_cmd = (use_short_cmd && base <= 1))
+		short_bases = (short_bases << 1) | base;
+
+	    /* set the flags */
+	    flags = (flags << 1)
+		| (pdcolor->colors.colored.c_level[i] != 0 ? 1 : 0);
 	}
-	if (bases & 0xf7bde) {
-	    /* Some base value requires more than 1 bit. */
-	    cmd = cmd_opv_set_color;
-	    *bp++ = flags | (byte)(bases >> 16);
-	    *bp++ = (byte) (bases >> 8);
-	    *bp++ = (byte) bases;
-	} else {
-	    /* The bases all fit in 1 bit each. */
+	/* Now put the data into the buffer */
+	if (use_short_cmd) {
 	    cmd = cmd_opv_set_color_short;
-	    *bp++ = flags | (byte)short_bases;
+	    /* use a variation of the old encoding for <= 4 components */
+	    if (num_comp <= 4)
+		*bp++ = ((flags << 4) | short_bases) << (4 - num_comp);
+	    else {
+		bp = cmd_put_w(flags, bp);
+		bp = cmd_put_w(short_bases, bp);
+	    }
+	} else {
+	    cmd = cmd_opv_set_color;
+	    bp = cmd_put_w(flags, bp);
+	    for (i = 0; i < num_comp; i++)
+		bp = cmd_put_w(pdcolor->colors.colored.c_base[i], bp);
 	}
-	for (i = 0; i < num_comp; ++i)
-	    if (flags & (0x80 >> i))
+
+	flags <<= 8 * sizeof(flags) - num_comp;
+	for (i = 0; flags != 0; flags <<= 1, i++) {
+	    if ((flags & (1LU << (8 * sizeof(flags) - 1))) != 0)
 		bp = cmd_put_w((uint)pdcolor->colors.colored.c_level[i], bp);
+	}
 	/****** IGNORE alpha ******/
 	code = set_cmd_put_op(dp, cldev, pcls, cmd, bp - buf + 1);
 	if (code < 0)

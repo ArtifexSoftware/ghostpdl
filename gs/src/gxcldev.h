@@ -84,23 +84,13 @@ typedef enum {
 				/* order_procs_index */
     cmd_opv_set_ht_data = 0x0a,	/* n, n x (uint|gx_ht_bit|ushort) */
     cmd_opv_end_page = 0x0b,	/* (nothing) */
-    cmd_opv_delta2_color0 = 0x0c,	/* dr5dg6db5 or dc4dm4dy4dk4 */
-#define cmd_delta2_24_bias 0x00102010
-#define cmd_delta2_24_mask 0x001f3f1f
-#define cmd_delta2_32_bias 0x08080808
-#define cmd_delta2_32_mask 0x0f0f0f0f
-    cmd_opv_delta2_color1 = 0x0d,	/* <<same as color0>> */
+    cmd_opv_delta_color0 = 0x0c,	/* See cmd_put_color in gxclutil.c */
+    cmd_opv_delta_color1 = 0x0d,	/* <<same as color0>> */
     cmd_opv_set_copy_color = 0x0e,	/* (nothing) */
     cmd_opv_set_copy_alpha = 0x0f,	/* (nothing) */
-    cmd_op_set_color0 = 0x10,	/* +15 = transparent | */
-				/* +0, color$ | +dcolor+8 | */
-				/* +dr4, dg4db4 | */
-				/* +dc3dm1, dm2dy3dk3 */
+    cmd_op_set_color0 = 0x10,	/* +n = number of low order zero bytes | */
+#define cmd_no_color_index 15	/* +15 = transparent - "no color" */
     cmd_op_set_color1 = 0x20,	/* <<same as color0>> */
-#define cmd_delta1_24_bias 0x00080808
-#define cmd_delta1_24_mask 0x000f0f0f
-#define cmd_delta1_32_bias 0x04040404
-#define cmd_delta1_32_mask 0x07070707
     cmd_op_fill_rect = 0x30,	/* +dy2dh2, x#, w# | +0, rect# */
     cmd_op_fill_rect_short = 0x40,	/* +dh, dx, dw | +0, rect_short */
     cmd_op_fill_rect_tiny = 0x50,	/* +dw+0, rect_tiny | +dw+8 */
@@ -434,15 +424,19 @@ byte *cmd_put_w(uint, byte *);
 /* Put out a command to set a color. */
 typedef struct {
     byte set_op;
-    byte delta2_op;
+    byte delta_op;
     bool tile_color;
 } clist_select_color_t;
 extern const clist_select_color_t
       clist_select_color0, clist_select_color1, clist_select_tile_color0,
       clist_select_tile_color1;
+
+/* See comments in gxclutil.c */
 int cmd_put_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
-		  const clist_select_color_t * select,
-		  gx_color_index color, gx_color_index * pcolor);
+                  const clist_select_color_t * select,
+                  gx_color_index color, gx_color_index * pcolor);
+
+extern const gx_color_index cmd_delta_offsets[];	/* In gxclutil.c */
 
 #define cmd_set_color0(dev, pcls, color0)\
   cmd_put_color(dev, pcls, &clist_select_color0, color0, &(pcls)->colors[0])
@@ -674,8 +668,8 @@ typedef enum {
     cmd_map_other		/* other map */
 } cmd_map_contents;
 int cmd_put_color_map(gx_device_clist_writer * cldev,
-		      cmd_map_index map_index,
-		      const gx_transfer_map * map, gs_id * pid);
+                      cmd_map_index map_index, int comp_num,
+                      const gx_transfer_map * map, gs_id * pid);
 
 /*
  * Change tiles for clist_tile_rectangle.  (We make this a separate

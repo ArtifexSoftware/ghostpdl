@@ -25,6 +25,10 @@
 #include "gxcmap.h"
 #include "gxcspace.h"
 #include "gxistate.h"
+#include "gsovrc.h"
+#include "gsstate.h"
+#include "gsdevice.h"
+#include "gxdevcli.h"
 
 /*
  * Define the standard color space types.  We include DeviceCMYK in the base
@@ -35,31 +39,37 @@
 private const gs_color_space_type gs_color_space_type_DeviceGray = {
     gs_color_space_index_DeviceGray, true, true,
     &st_base_color_space, gx_num_components_1,
-    gx_no_base_space, gx_cspace_is_equal,
+    gx_no_base_space,
     gx_init_paint_1, gx_restrict01_paint_1,
     gx_same_concrete_space,
     gx_concretize_DeviceGray, gx_remap_concrete_DGray,
     gx_remap_DeviceGray, gx_no_install_cspace,
+    gx_spot_colors_set_overprint,
     gx_no_adjust_cspace_count, gx_no_adjust_color_count
 };
 private const gs_color_space_type gs_color_space_type_DeviceRGB = {
     gs_color_space_index_DeviceRGB, true, true,
     &st_base_color_space, gx_num_components_3,
-    gx_no_base_space, gx_cspace_is_equal,
+    gx_no_base_space,
     gx_init_paint_3, gx_restrict01_paint_3,
     gx_same_concrete_space,
     gx_concretize_DeviceRGB, gx_remap_concrete_DRGB,
     gx_remap_DeviceRGB, gx_no_install_cspace,
+    gx_spot_colors_set_overprint,
     gx_no_adjust_cspace_count, gx_no_adjust_color_count
 };
+
+private cs_proc_set_overprint(gx_set_overprint_DeviceCMYK);
+
 private const gs_color_space_type gs_color_space_type_DeviceCMYK = {
     gs_color_space_index_DeviceCMYK, true, true,
     &st_base_color_space, gx_num_components_4,
-    gx_no_base_space, gx_cspace_is_equal,
+    gx_no_base_space,
     gx_init_paint_4, gx_restrict01_paint_4,
     gx_same_concrete_space,
     gx_concretize_DeviceCMYK, gx_remap_concrete_DCMYK,
     gx_remap_DeviceCMYK, gx_no_install_cspace,
+    gx_set_overprint_DeviceCMYK,
     gx_no_adjust_cspace_count, gx_no_adjust_color_count
 };
 
@@ -67,22 +77,6 @@ private const gs_color_space_type gs_color_space_type_DeviceCMYK = {
 public_st_color_space();
 public_st_base_color_space();
 
-/* Return the shared instances of the color spaces. */
-const gs_color_space *
-gs_cspace_DeviceGray(const gs_imager_state * pis)
-{
-    return pis->shared->device_color_spaces.named.Gray;
-}
-const gs_color_space *
-gs_cspace_DeviceRGB(const gs_imager_state * pis)
-{
-    return pis->shared->device_color_spaces.named.RGB;
-}
-const gs_color_space *
-gs_cspace_DeviceCMYK(const gs_imager_state * pis)
-{
-    return pis->shared->device_color_spaces.named.CMYK;
-}
 
 /* ------ Create/copy/destroy ------ */
 
@@ -106,7 +100,8 @@ gs_cspace_alloc(gs_color_space ** ppcspace,
 
     if (pcspace == 0)
 	return_error(gs_error_VMerror);
-    gs_cspace_init(pcspace, pcstype, mem);
+    if (pcstype != 0)
+        gs_cspace_init(pcspace, pcstype, mem);
     *ppcspace = pcspace;
     return 0;
 }
@@ -114,37 +109,70 @@ gs_cspace_alloc(gs_color_space ** ppcspace,
 int
 gs_cspace_init_DeviceGray(gs_color_space *pcs)
 {
-    gs_cspace_init(pcs, &gs_color_space_type_DeviceGray, NULL);
+    /* parameterless color space; no re-entrancy problems */
+    static gs_color_space  dev_gray_proto;
+
+    if (dev_gray_proto.id == 0)
+        gs_cspace_init( &dev_gray_proto,
+                        &gs_color_space_type_DeviceGray,
+                        NULL );
+    *pcs = dev_gray_proto;
     return 0;
 }
 int
 gs_cspace_build_DeviceGray(gs_color_space ** ppcspace, gs_memory_t * pmem)
 {
-    return gs_cspace_alloc(ppcspace, &gs_color_space_type_DeviceGray, pmem);
+    int     code = gs_cspace_alloc(ppcspace, NULL, pmem);
+
+    if (code >= 0)
+        code = gs_cspace_init_DeviceGray(*ppcspace);
+    return code;
 }
 
 int
 gs_cspace_init_DeviceRGB(gs_color_space *pcs)
 {
-    gs_cspace_init(pcs, &gs_color_space_type_DeviceRGB, NULL);
+    /* parameterless color space; no re-entrancy problems */
+    static gs_color_space  dev_rgb_proto;
+
+    if (dev_rgb_proto.id == 0)
+        gs_cspace_init( &dev_rgb_proto,
+                        &gs_color_space_type_DeviceRGB,
+                        NULL );
+    *pcs = dev_rgb_proto;
     return 0;
 }
 int
 gs_cspace_build_DeviceRGB(gs_color_space ** ppcspace, gs_memory_t * pmem)
 {
-    return gs_cspace_alloc(ppcspace, &gs_color_space_type_DeviceRGB, pmem);
+    int     code = gs_cspace_alloc(ppcspace, NULL, pmem);
+
+    if (code >= 0)
+        code = gs_cspace_init_DeviceRGB(*ppcspace);
+    return code;
 }
 
 int
 gs_cspace_init_DeviceCMYK(gs_color_space *pcs)
 {
-    gs_cspace_init(pcs, &gs_color_space_type_DeviceCMYK, NULL);
+    /* parameterless color space; no re-entrancy problems */
+    static gs_color_space  dev_cmyk_proto;
+
+    if (dev_cmyk_proto.id == 0)
+        gs_cspace_init( &dev_cmyk_proto,
+                        &gs_color_space_type_DeviceCMYK,
+                        NULL );
+    *pcs = dev_cmyk_proto;
     return 0;
 }
 int
 gs_cspace_build_DeviceCMYK(gs_color_space ** ppcspace, gs_memory_t * pmem)
 {
-    return gs_cspace_alloc(ppcspace, &gs_color_space_type_DeviceCMYK, pmem);
+    int     code = gs_cspace_alloc(ppcspace, NULL, pmem);
+
+    if (code >= 0)
+        code = gs_cspace_init_DeviceCMYK(*ppcspace);
+    return code;
 }
 
 /*
@@ -210,14 +238,6 @@ gs_color_space_restrict_color(gs_client_color *pcc, const gs_color_space *pcs)
     cs_restrict_color(pcc, pcs);
 }
 
-/* Test whether two color spaces are equal. */
-bool
-gs_color_space_equal(const gs_color_space *pcs1, const gs_color_space *pcs2)
-{
-    return ((pcs1->id == pcs2->id && pcs1->id != gs_no_id) ||
-	    (pcs1->type == pcs1->type && pcs1->type->equal(pcs1, pcs2)));
-}
-
 int
 gx_num_components_1(const gs_color_space * pcs)
 {
@@ -252,26 +272,164 @@ gx_no_base_space(const gs_color_space * pcspace)
 
 /* ------ Other implementation procedures ------ */
 
-/* Color space equality procedure for color spaces with no parameters. */
-bool
-gx_cspace_is_equal(const gs_color_space *pcs1, const gs_color_space *pcs2)
-{
-    return true;
-}
-
-/* Color space equality procedure for cases where a real test is too hard. */
-bool
-gx_cspace_not_equal(const gs_color_space *pcs1, const gs_color_space *pcs2)
-{
-    return false;
-}
-
 /* Null color space installation procedure. */
 int
 gx_no_install_cspace(const gs_color_space * pcs, gs_state * pgs)
 {
     return 0;
 }
+
+/*
+ * Push an overprint compositor onto the current device indicating that,
+ * at most, the spot color parameters are to be preserved.
+ *
+ * This routine should be used for all Device, CIEBased, and ICCBased
+ * color spaces, except for DeviceCMKY. The latter color space requires a
+ * special verson that supports overprint mode.
+ */
+int
+gx_spot_colors_set_overprint(const gs_color_space * pcs, gs_state * pgs)
+{
+    gs_imager_state *       pis = (gs_imager_state *)pgs;
+    gs_overprint_params_t   params;
+
+    if ((params.retain_any_comps = pis->overprint)) {
+        params.retain_spot_comps = true;
+        params.retain_zeroed_comps = false;
+    }
+    return gs_state_update_overprint(pgs, &params);
+}
+
+
+private bool
+check_single_comp(int comp, frac targ_val, int ncomps, const frac * pval)
+{
+    int     i;
+
+    for (i = 0; i < ncomps; i++) {
+        if ( (i != comp && pval[i] != frac_0)  ||
+             (i == comp && pval[i] != targ_val)  )
+            return false;
+    }
+    return true;
+}
+
+private bool
+gx_is_cmyk_color_model(const gs_state * pgs)
+{
+    gx_device *                     dev = gs_currentdevice(pgs);
+    int                             ncomps = dev->color_info.num_components;
+    int                             cyan_c, magenta_c, yellow_c, black_c;
+    const gx_cm_color_map_procs *   pprocs;
+    cm_map_proc_cmyk((*map_cmyk));
+    frac                            frac_14 = frac_1 / 4;
+    frac                            out[GX_DEVICE_COLOR_MAX_COMPONENTS];
+
+    /* check for the appropriate components */
+    if ( ncomps < 4                                       ||
+         (cyan_c = dev_proc(dev, get_color_comp_index)(
+                       dev,
+                       "Cyan",
+                       sizeof("Cyan") - 1,
+                       -1 )) < 0                          ||
+         cyan_c == GX_DEVICE_COLOR_MAX_COMPONENTS         ||
+         (magenta_c = dev_proc(dev, get_color_comp_index)(
+                          dev,
+                          "Magenta",
+                          sizeof("Magenta") - 1,
+                          -1 )) < 0                       ||
+         magenta_c == GX_DEVICE_COLOR_MAX_COMPONENTS      ||
+         (yellow_c = dev_proc(dev, get_color_comp_index)(
+                        dev,
+                        "Yellow",
+                        sizeof("Yellow") - 1,
+                        -1 )) < 0                         ||
+         yellow_c == GX_DEVICE_COLOR_MAX_COMPONENTS       ||
+         (black_c = dev_proc(dev, get_color_comp_index)(
+                        dev,
+                        "Black",
+                        sizeof("Black") - 1,
+                        -1 )) < 0                         ||
+         black_c == GX_DEVICE_COLOR_MAX_COMPONENTS          )
+        return false;
+
+    /* check the mapping */
+    if ( (pprocs = dev_proc(dev, get_color_mapping_procs)(dev)) == 0 ||
+         (map_cmyk = pprocs->map_cmyk) == 0                            )
+        return false;
+
+    map_cmyk(dev, frac_14, frac_0, frac_0, frac_0, out);
+    if (!check_single_comp(cyan_c, frac_14, ncomps, out))
+        return false;
+    map_cmyk(dev, frac_0, frac_14, frac_0, frac_0, out);
+    if (!check_single_comp(magenta_c, frac_14, ncomps, out))
+        return false;
+    map_cmyk(dev, frac_0, frac_0, frac_14, frac_0, out);
+    if (!check_single_comp(yellow_c, frac_14, ncomps, out))
+        return false;
+    map_cmyk(dev, frac_0, frac_0, frac_0, frac_14, out);
+    if (!check_single_comp(black_c, frac_14, ncomps, out))
+        return false;
+
+    return true;
+}
+
+private int
+gx_set_overprint_DeviceCMYK(const gs_color_space * pcs, gs_state * pgs)
+{
+    gs_imager_state *   pis = (gs_imager_state *)pgs;
+
+    /* check if we require special handling */
+    if ( !pis->overprint             ||
+         pis->overprint_mode != 1    ||
+         !gx_is_cmyk_color_model(pgs)  )
+        return gx_spot_colors_set_overprint(pcs, pgs);
+    else {
+        gs_overprint_params_t   params;
+
+        /* we known everything is true */
+        params.retain_any_comps = true;
+        params.retain_spot_comps = true;
+        params.retain_zeroed_comps = true;
+        return gs_state_update_overprint(pgs, &params);
+    }
+}
+
+
+/*
+ * Push the overprint compositor appropriate for the current color map
+ * onto the current device. This procedure is used for Separation and
+ * DeviceN color spaces that are supported in native mode (and, for
+ * Separation, do not involve component "All" or "None").
+ */
+int
+gx_comp_map_set_overprint(const gs_color_space * pcs, gs_state * pgs)
+{
+    gs_imager_state *       pis = (gs_imager_state *)pgs;
+    gs_devicen_color_map *  pcmap = &pis->color_component_map;
+    gs_overprint_params_t   params;
+
+    params.retain_any_comps = pis->overprint && pcmap->sep_type != SEP_ALL;
+    if (params.retain_any_comps) {
+        params.retain_zeroed_comps = false;
+        if (!(params.retain_spot_comps = pcmap->use_alt_cspace)) {
+            gs_overprint_clear_all_drawn_comps(&params);
+            if (pcmap->sep_type != SEP_NONE) {
+                int     i, ncomps = pcmap->num_components;
+
+                for (i = 0; i < ncomps; i++) {
+                    int     mcomp = pis->color_component_map.color_map[i];
+
+                    if (mcomp >= 0)
+                        gs_overprint_set_drawn_comp(&params, mcomp);
+                }
+            }
+        }
+    }
+
+    return gs_state_update_overprint(pgs, &params);
+}
+
 
 /* Null reference count adjustment procedure. */
 void

@@ -101,7 +101,8 @@ gs_ht_build(
     pht->params.ht_multiple.num_comp = num_comps;
 
     for (i = 0; i < num_comps; i++) {
-	phtc[i].cname = gs_ht_separation_Default;
+        phtc[i].comp_number = i;
+	phtc[i].cname = 0;
 	phtc[i].type = ht_type_none;
     }
 
@@ -117,7 +118,6 @@ int
 gs_ht_set_spot_comp(
 		       gs_ht * pht,
 		       int comp,
-		       gs_ht_separation_name sepname,
 		       floatp freq,
 		       floatp angle,
 		       float (*spot_func) (floatp, floatp),
@@ -133,9 +133,6 @@ gs_ht_set_spot_comp(
     if (phtc->type != ht_type_none)
 	return_error(gs_error_invalidaccess);
 
-    phtc->cname = (pht->params.ht_multiple.num_comp == 1
-		   ? gs_ht_separation_Default
-		   : sepname);
     phtc->type = ht_type_spot;
     phtc->params.ht_spot.screen.frequency = freq;
     phtc->params.ht_spot.screen.angle = angle;
@@ -158,7 +155,6 @@ int
 gs_ht_set_threshold_comp(
 			    gs_ht * pht,
 			    int comp,
-			    gs_ht_separation_name sepname,
 			    int width,
 			    int height,
 			    const gs_const_string * thresholds,
@@ -173,9 +169,6 @@ gs_ht_set_threshold_comp(
     if (phtc->type != ht_type_none)
 	return_error(gs_error_invalidaccess);
 
-    phtc->cname = (pht->params.ht_multiple.num_comp == 1
-		   ? gs_ht_separation_Default
-		   : sepname);
     phtc->type = ht_type_threshold;
     phtc->params.ht_threshold.width = width;
     phtc->params.ht_threshold.height = height;
@@ -222,24 +215,16 @@ check_ht(
 )
 {
     int i;
-    bool have_default = false;
     int num_comps = pht->params.ht_multiple.num_comp;
 
     if (pht->type != ht_type_multiple)
 	return_error(gs_error_unregistered);
     for (i = 0; i < num_comps; i++) {
 	gs_ht_component *phtc = &(pht->params.ht_multiple.components[i]);
-
 	if ((phtc->type != ht_type_spot) && (phtc->type != ht_type_threshold))
 	    return_error(gs_error_unregistered);
-	if (phtc->cname == gs_ht_separation_Default) {
-	    if (have_default)
-		return_error(gs_error_rangecheck);
-	    else
-		have_default = true;
-	}
     }
-    return have_default ? 0 : gs_error_rangecheck;
+    return 0;
 }
 
 /*
@@ -294,7 +279,7 @@ alloc_ht_order(
 					     &st_ht_order_component_element,
 							   "alloc_ht_order"
     );
-    int inext = 1;
+    int inext = 0;
     int i;
 
     if (pocs == 0)
@@ -319,21 +304,13 @@ alloc_ht_order(
 	}
 	pmap->proc = gs_mapped_transfer;
 	pmap->id = gs_next_ids(1);
-	if (phtc->cname == gs_ht_separation_Default) {
-	    pocs->corder.levels = 0;
-	    pocs->corder.bit_data = 0;
-	    pocs->corder.cache = 0;
-	    pocs->corder.transfer = pmap;
-	    pocs->cname = gs_ht_separation_Default;
-	    comp2order[i] = 0;
-	} else {
-	    pocs[inext].corder.levels = 0;
-	    pocs[inext].corder.bit_data = 0;
-	    pocs[inext].corder.cache = 0;
-	    pocs[inext].corder.transfer = pmap;
-	    pocs[inext].cname = phtc->cname;
-	    comp2order[i] = inext++;
-	}
+	pocs[inext].corder.levels = 0;
+	pocs[inext].corder.bit_data = 0;
+	pocs[inext].corder.cache = 0;
+	pocs[inext].corder.transfer = pmap;
+	pocs[inext].cname = phtc->cname;
+        pocs[inext].comp_number = phtc->comp_number;
+	comp2order[i] = inext++;
     }
 
     return pocs;
@@ -491,7 +468,9 @@ gs_ht_install(
     }
 
     /* at last, actually install the halftone in the graphic state */
-    return gx_ht_install(pgs, (gs_halftone *) pht, &dev_ht);
+    if ((code = gx_ht_install(pgs, (gs_halftone *) pht, &dev_ht)) < 0)
+        gx_device_halftone_release(&dev_ht, pmem);
+    return code;
 }
 
 /* ---------------- Mask-defined halftones ---------------- */
@@ -578,7 +557,7 @@ private const gs_client_order_ht_procs_t mask_order_procs =
  */
 int
 gs_ht_set_mask_comp(gs_ht * pht,
-		    int component_index, gs_ht_separation_name sepr_name,
+		    int component_index,
 		    int width, int height, int num_levels,
 		    const byte * masks,		/* width x height x num_levels bits */
 		    gs_ht_transfer_proc transfer,
@@ -592,9 +571,6 @@ gs_ht_set_mask_comp(gs_ht * pht,
     if (phtc->type != ht_type_none)
 	return_error(gs_error_invalidaccess);
 
-    phtc->cname =
-	(pht->params.ht_multiple.num_comp == 1 ? gs_ht_separation_Default :
-	 sepr_name);
     phtc->type = ht_type_client_order;
     phtc->params.client_order.width = width;
     phtc->params.client_order.height = height;

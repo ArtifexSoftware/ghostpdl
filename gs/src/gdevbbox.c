@@ -129,7 +129,16 @@ gx_device_bbox gs_bbox_device =
      bbox_create_compositor,
      NULL,			/* get_hardware_params */
      bbox_text_begin,
-     NULL			/* finish_copydevice */
+     NULL,			/* finish_copydevice */
+     NULL,			/* begin_transparency_group */
+     NULL,			/* end_transparency_group */
+     NULL,			/* begin_transparency_mask */
+     NULL,			/* end_transparency_mask */
+     NULL,			/* discard_transparency_layer */
+     NULL,			/* get_color_mapping_procs */
+     NULL,			/* get_color_comp_index */
+     NULL,			/* encode_color */
+     NULL			/* decode_color */
     },
     0,				/* target */
     1,				/*true *//* free_standing */
@@ -257,7 +266,10 @@ gx_device_bbox_init(gx_device_bbox * dev, gx_device * target)
 	set_dev_proc(dev, map_color_rgb, gx_forward_map_color_rgb);
 	set_dev_proc(dev, map_cmyk_color, gx_forward_map_cmyk_color);
 	set_dev_proc(dev, map_rgb_alpha_color, gx_forward_map_rgb_alpha_color);
-	set_dev_proc(dev, map_color_rgb_alpha, gx_forward_map_color_rgb_alpha);
+	set_dev_proc(dev, get_color_mapping_procs, gx_forward_get_color_mapping_procs);
+	set_dev_proc(dev, get_color_comp_index, gx_forward_get_color_comp_index);
+	set_dev_proc(dev, encode_color, gx_forward_encode_color);
+	set_dev_proc(dev, decode_color, gx_forward_decode_color);
 	gx_device_set_target((gx_device_forward *)dev, target);
     }
     dev->box_procs = box_procs_default;

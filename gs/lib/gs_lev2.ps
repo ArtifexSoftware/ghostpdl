@@ -613,181 +613,30 @@ currentdict end
 
 % ------ Color spaces ------ %
 
-% This set of dictionaries and the following procedure (.getcsrange)
-% will determine an array of the allowed ranges for a given color space
-% specifier.  This color space is the alternate color space specified in
-% the descriptor array which is used to specify a Separation or a DeviceN
-% color space.
+% Move setcolorsapce, setcolor, and colorspacedict to level2dict
+level2dict /setcolorspace .cspace_util 1 index get put
+level2dict /setcolor .cspace_util 1 index get put
+level2dict /colorspacedict .cspace_util 1 index get put
 
-% This dictionary used if the color space specified by a name.
-/namedcsranges 10 dict dup begin
-  /DeviceGray { [ 0 1 ] } bind def
-  /DeviceRGB { [ 0 1 0 1 0 1 ] } bind def
-  /DeviceCMYK { [ 0 1 0 1 0 1 0 1 ] } bind def
-  /CIEBasedA /DeviceGray load def
-  /CIEBasedABC /DeviceRGB load def
-  /CIEBasedDEF /DeviceRGB load def
-  /CIEBasedDEFG /DeviceCMYK load def
-  /ICCBased { /typecheck signalerror } bind def		% Must have description for ICCBased
-end def
+% Add the level 2 color spaces
+% DevicePixel is actually a LanguageLevel 3 feature; it is here for
+% historical reasons.
+%% Replace 1 (gs_devpxl.ps) 
+(gs_devpxl.ps) runlibfile
 
-% This dictionary used if the color space specified by an array.
-/arraycsranges 10 dict dup begin
-  /DeviceGray { [ 0 1 ] } bind def
-  /DeviceRGB { [ 0 1 0 1 0 1 ] } bind def
-  /DeviceCMYK { [ 0 1 0 1 0 1 0 1 ] } bind def
-  /CIEBasedA { dup 1 get /RangeA .knownget not { [ 0 1 ] } if } bind def
-  /CIEBasedABC { dup 1 get /RangeABC .knownget not { [ 0 1 0 1 0 1 ] } if } bind def
-  /CIEBasedDEF { dup 1 get /RangeDEF .knownget not { [ 0 1 0 1 0 1 ] } if } bind def
-  /CIEBasedDEFG { dup 1 get /RangeDEFG .knownget not { [ 0 1 0 1 0 1 0 1 ] } if } bind def
-  /ICCBased {
-    dup 1 get dup /Range .knownget {
-      exch pop
-    }{
-      /N get [ exch {0 1} repeat ] readonly
-    } ifelse
-  } bind def
-end def
+%% Replace 1 (gs_ciecs2.ps)
+(gs_ciecs2.ps) runlibfile
 
-% See comments before /namedcsranges
-/.getcsrange {				% <alt color space spec> .getcsrange <range array>
-  dup type /arraytype eq
-  {
-    dup 0 get arraycsranges exch get exec 
-  }
-  {
-    dup namedcsranges exch get exec
-  } ifelse
-  exch pop
-} bind def
+%% Replace 1 (gs_indxd.ps)
+(gs_indxd.ps) runlibfile
 
-% Attempt to convert a tint transformation procedure to a function that
-% we can execute without the actually executing the interpreter in the
-% graphics library.
-% The value <m> is the number of function inputs
-% The current color space will be the alternate color space for the function.
-% Thus the current color space defines the number of function output values.
-%
-% There are three situations.  The PDF interpreter already produces encapsulated
-% functions that we can use as is.  Otherwise we try to convert the given
-% procedure into a type 4 function.  This works for most practical situations.
-% If all else fails then build a color cube (type 0 sampled) function..
+%% Replace 1 (gs_sepr.ps)
+(gs_sepr.ps) runlibfile
 
-/.converttinttransform {	% [.. .. .. proc ] <m>
-				%   .converttinttransform [.. .. .. proc']
-  % PDF already has the tint transforms functions as encapsulated functions.
-  % If so then we do not need to do anything except clean up and exit.
-  1 index 3 get .isencapfunction 	% Check for encapsulated function
-  {				% Yes - clean up and exit
-    pop					% Clear <m> off stack
-  }
-  {				% No - try to build a type 4 function
-    .currentglobal			% Save current global memory state
-    2 index gcheck .setglobal		% Set gobal mode to match array's mode
-    6 dict				% Build a dictionary for our type 4
-    					% function.  We allow extra space since
-					% we may use dict for building cube
-    dup /FunctionType 4 put		% Set FunctionType
-    dup /Function 5 index 3 get put	% Set function expression
-    dup /Domain
-    [ 5 index {0 1} repeat ] put	% set Domain values
-    dup /Range
-    7 index 2 get .getcsrange put	% Set Range values
-					% Stack: orig m global func_dict
-    { .buildfunction } .internalstopped	% Try to build a type 4 function
-    dup
-    {				% type 4 function failed - build a color cube
-      pop				% Remove dupicate stopped status
-      dup /Order 3 put			% Set Order
-      dup /BitsPerSample 16 put		% Set sample size
-					% Stack: orig m global func_dict
-      { .buildsampledfunction } .internalstopped 
-    } if
-    {				% Color cube build failed - clean up and exit
-      pop .setglobal pop 		% Remove unused parameters
-    }
-    {				% Function build succeeded - install function
-      3 -1 roll pop			% Stack: orig global func
-      2 index 4 array copy dup 3 4 -1 roll put
-      exch .setglobal exch pop
-    } ifelse
-  } ifelse
-} bind def
+%% Replace 1 (gs_patrn.ps)
+(gs_patrn.ps) runlibfile
 
-% Define the setcolor procedure:
-%   <param1> ... <paramN> setcolor -
-% This definition is overridden in PS level 3.
-/setcolor {
-  .setcolor
-} odef
 
-% Define the setcolorspace procedures:
-%	<colorspace> proc <colorspace'|null>
-% We have to define the dictionary first, so it can be bound into the
-% implementation procedure, but we can't populate it until the procedure
-% has been defined, so that the procedure can get bound into recursive calls.
-/colorspacedict 20 dict def
-
-/.devcs [
-  /DeviceGray /DeviceRGB /DeviceCMYK /DevicePixel
-] readonly def
-/currentcolorspace {		% - currentcolorspace <array>
-  .currentcolorspace dup type /integertype eq {
-    //.devcs exch 1 getinterval
-  } if
-} odef
-currentdict /.devcs .undef
-
-% Actual setcolorspace procedure - used internally
-/.dosetcolorspace {		% <name|array> .dosetcolorspace -
-  dup dup dup type /nametype ne { 0 get } if
-  //colorspacedict exch get exec
-  dup null eq { pop } { .setcolorspace } ifelse pop
-} bind def
-
-% external setcolorspace optimized to avoid duplicate actions
-/setcolorspace {
-  currentcolorspace 1 index ne { .dosetcolorspace } { pop } ifelse
-} odef
-
-colorspacedict
-  dup /DeviceGray { pop 0 setgray null } bind put
-  dup /DeviceRGB { pop 0 0 0 setrgbcolor null } bind put
-  /setcmykcolor where
-   { pop dup /DeviceCMYK { pop 0 0 0 1 setcmykcolor null } bind put
-   } if
-  /.setcieaspace where
-   { pop dup /CIEBasedA { NOCIE { pop 0 setgray null } { dup 1 get .setcieaspace } ifelse } bind put
-   } if
-  /.setcieabcspace where
-   { pop dup /CIEBasedABC { NOCIE { pop 0 0 0 setrgbcolor null } { dup 1 get .setcieabcspace } ifelse } bind put
-   } if
-  /.setciedefspace where
-   { pop dup /CIEBasedDEF { NOCIE { pop 0 0 0 setrgbcolor null } { dup 1 get .setciedefspace } ifelse } bind put
-   } if
-  /.setciedefgspace where
-   { pop dup /CIEBasedDEFG { NOCIE { pop 0 0 0 1 setcmykcolor null } { dup 1 get .setciedefgspace } ifelse } bind put
-   } if
-  /.setseparationspace where
-   { pop dup /Separation { dup 2 get .dosetcolorspace dup 1 .converttinttransform .setseparationspace } bind put
-   } if
-  /.setindexedspace where
-   { pop dup /Indexed { dup 1 get .dosetcolorspace dup .setindexedspace } bind put
-   } if
-  /.nullpatternspace [/Pattern] readonly def
-  /.setpatternspace where
-   { pop dup /Pattern
-      { dup type /nametype eq { pop //.nullpatternspace } if
-	dup length 1 gt { dup 1 get .dosetcolorspace } if
-        dup .setpatternspace
-      } bind put
-   } if
-	% If DeviceN space is included, gs_ll3.ps registers it.
-  /.setdevicepixelspace where
-   { pop dup /DevicePixel { dup .setdevicepixelspace } bind put
-   } if
-  currentdict /.nullpatternspace .undef
-pop
 
 % ------ CIE color rendering ------ %
 
@@ -939,40 +788,9 @@ def
 
 /setpattern {			% [<comp1> ...] <pattern> setpattern -
   currentcolorspace 0 get /Pattern ne {
-    [ /Pattern currentcolorspace ] .dosetcolorspace
+    [ /Pattern currentcolorspace ] setcolorspace
   } if setcolor
 } odef
 
-% Extend image and imagemask to accept dictionaries.
-% We must create .imagetypes and .imagemasktypes outside level2dict,
-% and leave some extra space because we're still in Level 1 mode.
-systemdict begin
-/.imagetypes 5 dict
-  dup 1 /.image1 load put
-def
-/.imagemasktypes 5 dict
-  dup 1 /.imagemask1 load put
-def
-end
-
-/.image /image load def
-/image {
-  dup type /dicttype eq {
-    dup /ImageType get //.imagetypes exch get exec
-  } {
-    //.image
-  } ifelse
-} odef
-currentdict /.image undef
-
-/.imagemask /imagemask load def
-/imagemask {
-  dup type /dicttype eq {
-    dup /ImageType get //.imagemasktypes exch get exec
-  } {
-    //.imagemask
-  } ifelse
-} odef
-currentdict /.imagemask undef
 
 end				% level2dict

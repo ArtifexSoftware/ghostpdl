@@ -29,6 +29,7 @@
 #include "gxgetbit.h"
 #include "gxiparam.h"
 #include "gxpath.h"
+#include "gscolor2.h"
 
 /* Forward references */
 private dev_proc_begin_typed_image(gx_begin_image2);
@@ -111,23 +112,29 @@ gx_begin_image2(gx_device * dev,
     gs_state *pgs = pim->DataSource;
     gx_device *sdev = gs_currentdevice(pgs);
     int depth = sdev->color_info.depth;
-
-/****** ONLY HANDLE depth <= 8 FOR PixelCopy ******/
-    bool pixel_copy = pim->PixelCopy && depth <= 8 &&
-    !memcmp(&dev->color_info, &sdev->color_info,
-	    sizeof(dev->color_info));
+    bool pixel_copy = pim->PixelCopy;
     bool has_alpha;
-    bool direct_copy;
+    bool direct_copy = false;
     image2_data_t idata;
     byte *row;
     uint row_size, source_size;
     gx_image_enum_common_t *info;
     gs_matrix smat, dmat;
-    gs_color_space cs;
-    const gs_color_space *pcs;
     int code;
 
-    gs_image_t_init_rgb(&idata.image, pis);
+    /* verify that color models are the same for PixelCopy */
+    if ( pixel_copy                            &&
+         memcmp( &dev->color_info,
+                 &sdev->color_info,
+                 sizeof(dev->color_info) ) != 0  )
+        return_error(gs_error_typecheck);
+
+/****** ONLY HANDLE depth <= 8 FOR PixelCopy ******/
+    if (pixel_copy && depth <= 8)
+        return_error(gs_error_unregistered);
+
+    gs_image_t_init(&idata.image, gs_currentcolorspace((const gs_state *)pis));
+
     /* Add Decode entries for K and alpha */
     idata.image.Decode[6] = idata.image.Decode[8] = 0.0;
     idata.image.Decode[7] = idata.image.Decode[9] = 1.0;
@@ -152,38 +159,36 @@ gx_begin_image2(gx_device * dev,
     row = gs_alloc_bytes(mem, row_size, "gx_begin_image2");
     if (row == 0)
 	return_error(gs_error_VMerror);
-    if (pixel_copy &&
-	(pcpath == NULL ||
-	 gx_cpath_includes_rectangle(pcpath,
+    if (pixel_copy) {
+	idata.image.BitsPerComponent = depth;
+	has_alpha = false;	/* no separate alpha channel */
+
+	if ( pcpath == NULL ||
+	     gx_cpath_includes_rectangle(pcpath,
 				     int2fixed(idata.bbox.p.x),
 				     int2fixed(idata.bbox.p.y),
 				     int2fixed(idata.bbox.q.x),
-				     int2fixed(idata.bbox.q.y)))
-	) {
-	gs_matrix mat;
+				     int2fixed(idata.bbox.q.y)) ) {
+	    gs_matrix mat;
 
-	idata.image.BitsPerComponent = depth;
-	gs_cspace_init_DevicePixel(&cs, depth);
-	pcs = &cs;
-	/*
-	 * Figure 7.2 of the Adobe 3010 Supplement says that we should
-	 * compute CTM x ImageMatrix here, but I'm almost certain it
-	 * should be the other way around.  Also see gdevx.c.
-	 */
-	gs_matrix_multiply(&idata.image.ImageMatrix, &smat, &mat);
-	direct_copy =
-	    (is_xxyy(&dmat) || is_xyyx(&dmat)) &&
+
+	    /*
+	     * Figure 7.2 of the Adobe 3010 Supplement says that we should
+	     * compute CTM x ImageMatrix here, but I'm almost certain it
+	     * should be the other way around.  Also see gdevx.c.
+	     */
+	    gs_matrix_multiply(&idata.image.ImageMatrix, &smat, &mat);
+	    direct_copy =
+	        (is_xxyy(&dmat) || is_xyyx(&dmat)) &&
 #define eqe(e) mat.e == dmat.e
-	    eqe(xx) && eqe(xy) && eqe(yx) && eqe(yy);
+	        eqe(xx) && eqe(xy) && eqe(yx) && eqe(yy);
 #undef eqe
-	has_alpha = false;	/* no separate alpha channel */
+        }
     } else {
-	pixel_copy = false;
 	idata.image.BitsPerComponent = 8;
-	/* Always use RGB source color for now. */
-	pcs = gs_cspace_DeviceRGB(pis);
-	direct_copy = false;
-	/*
+
+	/* Always use RGB source color for now.
+         *
 	 * The source device has alpha if the same RGB values with
 	 * different alphas map to different pixel values.
 	 ****** THIS IS NOT GOOD ENOUGH: WE WANT TO SKIP TRANSFERRING
@@ -211,7 +216,6 @@ gx_begin_image2(gx_device * dev,
 		 gx_max_color_value, gx_max_color_value);
 	}
     }
-    idata.image.ColorSpace = pcs;
     idata.image.Alpha =
 	(has_alpha ? gs_image_alpha_last : gs_image_alpha_none);
     if (smat.yy < 0) {

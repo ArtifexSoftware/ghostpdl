@@ -284,15 +284,22 @@ ppm_output_page(gx_device * pdev, int num_copies, int flush)
 /* Map an RGB color to a PGM gray value. */
 /* Keep track of whether the image is black-and-white or gray. */
 private gx_color_index
-pgm_map_rgb_color(gx_device * pdev, gx_color_value r, gx_color_value g,
-		  gx_color_value b)
+pgm_map_rgb_color(gx_device * pdev, const gx_color_value cv[])
 {				/* We round the value rather than truncating it. */
-    gx_color_value gray =
-    ((r * (ulong) lum_red_weight) +
+    gx_color_value gray;
+    /* TO_DO_DEVICEN  - Kludge to emulate pre DeviceN math errors */
+#if 1
+    gx_color_value r, g, b;
+
+    r = cv[0]; g = cv[0]; b = cv[0];
+    gray = ((r * (ulong) lum_red_weight) +
      (g * (ulong) lum_green_weight) +
      (b * (ulong) lum_blue_weight) +
      (lum_all_weights / 2)) / lum_all_weights
     * pdev->color_info.max_gray / gx_max_color_value;
+#else	    /* Should be ... */
+    gray = cv[0] * pdev->color_info.max_gray / gx_max_color_value;
+#endif
 
     if (!(gray == 0 || gray == pdev->color_info.max_gray)) {
 	gx_device_pbm * const bdev = (gx_device_pbm *)pdev;
@@ -319,15 +326,13 @@ pgm_map_color_rgb(gx_device * dev, gx_color_index color,
 /* Map an RGB color to a PPM color tuple. */
 /* Keep track of whether the image is black-and-white, gray, or colored. */
 private gx_color_index
-ppm_map_rgb_color(gx_device * pdev, gx_color_value r, gx_color_value g,
-		  gx_color_value b)
+ppm_map_rgb_color(gx_device * pdev, const gx_color_value cv[])
 {
     gx_device_pbm * const bdev = (gx_device_pbm *)pdev;
-    gx_color_index color = gx_default_rgb_map_rgb_color(pdev, r, g, b);
+    gx_color_index color = gx_default_encode_color(pdev, cv);
     int bpc = pdev->color_info.depth / 3;
     gx_color_index mask =
 	((gx_color_index)1 << (pdev->color_info.depth - bpc)) - 1;
-
     if (!(((color >> bpc) ^ color) & mask)) { /* gray shade */
 	if (color != 0 && (~color & mask))
 	    bdev->uses_color |= 1;
@@ -356,15 +361,14 @@ ppm_map_color_rgb(gx_device * dev, gx_color_index color,
 
 /* Map a CMYK color to a pixel value. */
 private gx_color_index
-pkm_map_cmyk_color(gx_device * pdev, gx_color_value c, gx_color_value m,
-		   gx_color_value y, gx_color_value k)
+pkm_map_cmyk_color(gx_device * pdev, const gx_color_value cv[])
 {
     uint bpc = pdev->color_info.depth >> 2;
     uint max_value = pdev->color_info.max_color;
-    uint cc = c * max_value / gx_max_color_value;
-    uint mc = m * max_value / gx_max_color_value;
-    uint yc = y * max_value / gx_max_color_value;
-    uint kc = k * max_value / gx_max_color_value;
+    uint cc = cv[0] * max_value / gx_max_color_value;
+    uint mc = cv[1] * max_value / gx_max_color_value;
+    uint yc = cv[2] * max_value / gx_max_color_value;
+    uint kc = cv[3] * max_value / gx_max_color_value;
     gx_color_index color =
 	(((((cc << bpc) + mc) << bpc) + yc) << bpc) + kc;
 
@@ -634,7 +638,7 @@ pgm_print_row(gx_device_printer * pdev, byte * data, int depth,
      * If we're writing planes for a CMYK device, we have 0 = white,
      * mask = black, which is the opposite of the pgm convention.
      */
-    uint invert = (pdev->color_info.num_components == 4 ? mask : 0);
+    uint invert = (pdev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE);
     byte *bp;
     uint x;
     int shift;

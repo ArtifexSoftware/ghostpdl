@@ -50,23 +50,19 @@ mem_full_alpha_device("image1", 0, 1, mem_open,
 
 /* Map color to/from RGB.  This may be inverted. */
 private gx_color_index
-mem_mono_map_rgb_color(gx_device * dev, gx_color_value r, gx_color_value g,
-		       gx_color_value b)
+mem_mono_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
-
-    return (gx_default_w_b_map_rgb_color(dev, r, g, b) ^
-	    mdev->palette.data[0]) & 1;
+    return (gx_default_w_b_map_rgb_color(dev, cv) ^ mdev->palette.data[0]) & 1;
 }
+
 private int
 mem_mono_map_color_rgb(gx_device * dev, gx_color_index color,
 		       gx_color_value prgb[3])
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
-
-    return gx_default_w_b_map_color_rgb(dev,
-					(color ^ mdev->palette.data[0]) & 1,
-					prgb);
+    /* NB code doesn't make sense... map_color_rgb procedures return an error code */
+    return (gx_default_w_b_map_color_rgb(dev, color, prgb) ^ mdev->palette.data[0]) & 1;
 }
 
 /* Fill a rectangle with a color. */

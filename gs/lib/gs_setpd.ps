@@ -199,6 +199,7 @@ level2dict begin
   /EndPage {{.callendpage}} bind
   /Policies .defaultpolicies
   /ImagingBBox null		% default value
+  /UseCIEColor /.getuseciecolor load
 .dicttomark readonly def
 
 % Define currentpagedevice so it creates the dictionary on demand if needed,
@@ -241,7 +242,11 @@ level2dict begin
 	     { 2 index wcheck not
 		{	% This is the first entry being updated.
 			% Copy the dictionary to make it writable.
-		  3 -1 roll dup length dict .copydict
+		  3 -1 roll
+		  currentglobal 1 index dup gcheck currentglobal and setglobal
+		  length dict
+		  exch setglobal
+		  .copydict
 		  3 1 roll
 		}
 	       if
@@ -703,6 +708,32 @@ DEBUG { (Installing.) = pstack flush } if
    .setdevice pop
    .setpagedevice
 
+		% Implement UseCIEColor directly if this is a LL3 system.
+		% The color substitution feature is now implemented in
+		% the interpreter, and this is used as an optimization.
+		%
+		% NB: This shoud be the only use of the .setuseciecolor
+		%     operator anywhere.
+		%
+		% If UseCIEColor is transitioned to false, set some
+		% color space other than /DeviceGray, to insure that
+		% initgraphics will actually perform a setcolorspace
+		% operation (there is an optimization in setcolorspace
+		% that does nothing if the operand and current color
+		% spaces are the same, and UseCIEColor is false).
+
+    /.setuseciecolor where
+      {
+        pop 1 index /UseCIEColor .knownget
+          {
+            dup .setuseciecolor not
+              { /DeviceRGB setcolorspace }
+            if
+          }
+        if
+      }
+    if
+
 		% Merge the request into the current page device,
 		% unless we're changing the OutputDevice.
 		% Stack: mark ... <merged> <failed>
@@ -759,7 +790,10 @@ DEBUG { (Installing.) = pstack flush } if
 /.postinstall {		% mark ... <failed> <merged> .postinstall -
    matrix currentmatrix .setdefaultmatrix
 		% Erase and initialize the page.
-   erasepage initgraphics
+   initgraphics
+   currentoverprint false setoverprint 1 setcolor
+   .fillpage
+   0 setcolor setoverprint
    .beginpage
 
 		% Clean up, calling PolicyReport if needed.

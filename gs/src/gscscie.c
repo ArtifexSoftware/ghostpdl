@@ -49,11 +49,12 @@ private cs_proc_adjust_cspace_count(gx_adjust_cspace_CIEDEFG);
 const gs_color_space_type gs_color_space_type_CIEDEFG = {
     gs_color_space_index_CIEDEFG, true, true,
     &st_color_space_CIEDEFG, gx_num_components_4,
-    gx_no_base_space, gx_cspace_not_equal,
+    gx_no_base_space,
     gx_init_CIE, gx_restrict_CIEDEFG,
     gx_concrete_space_CIE,
     gx_concretize_CIEDEFG, NULL,
     gx_default_remap_color, gx_install_CIE,
+    gx_spot_colors_set_overprint,
     gx_adjust_cspace_CIEDEFG, gx_no_adjust_color_count
 };
 
@@ -65,11 +66,12 @@ private cs_proc_adjust_cspace_count(gx_adjust_cspace_CIEDEF);
 const gs_color_space_type gs_color_space_type_CIEDEF = {
     gs_color_space_index_CIEDEF, true, true,
     &st_color_space_CIEDEF, gx_num_components_3,
-    gx_no_base_space, gx_cspace_not_equal,
+    gx_no_base_space,
     gx_init_CIE, gx_restrict_CIEDEF,
     gx_concrete_space_CIE,
     gx_concretize_CIEDEF, NULL,
     gx_default_remap_color, gx_install_CIE,
+    gx_spot_colors_set_overprint,
     gx_adjust_cspace_CIEDEF, gx_no_adjust_color_count
 };
 
@@ -81,11 +83,12 @@ private cs_proc_adjust_cspace_count(gx_adjust_cspace_CIEABC);
 const gs_color_space_type gs_color_space_type_CIEABC = {
     gs_color_space_index_CIEABC, true, true,
     &st_color_space_CIEABC, gx_num_components_3,
-    gx_no_base_space, gx_cspace_not_equal,
+    gx_no_base_space,
     gx_init_CIE, gx_restrict_CIEABC,
     gx_concrete_space_CIE,
     gx_concretize_CIEABC, NULL,
     gx_remap_CIEABC, gx_install_CIE,
+    gx_spot_colors_set_overprint,
     gx_adjust_cspace_CIEABC, gx_no_adjust_color_count
 };
 
@@ -97,13 +100,16 @@ private cs_proc_adjust_cspace_count(gx_adjust_cspace_CIEA);
 const gs_color_space_type gs_color_space_type_CIEA = {
     gs_color_space_index_CIEA, true, true,
     &st_color_space_CIEA, gx_num_components_1,
-    gx_no_base_space, gx_cspace_not_equal,
+    gx_no_base_space,
     gx_init_CIE, gx_restrict_CIEA,
     gx_concrete_space_CIE,
     gx_concretize_CIEA, NULL,
     gx_default_remap_color, gx_install_CIE,
+    gx_spot_colors_set_overprint,
     gx_adjust_cspace_CIEA, gx_no_adjust_color_count
 };
+
+private gs_color_space rgb_cs, cmyk_cs;
 
 /* Determine the concrete space underlying a CIEBased space. */
 const gs_color_space *
@@ -113,10 +119,13 @@ gx_concrete_space_CIE(const gs_color_space * pcs, const gs_imager_state * pis)
 
     if (pcie == 0 || pcie->RenderTable.lookup.table == 0 ||
 	pcie->RenderTable.lookup.m == 3
-	)
-	return gs_cspace_DeviceRGB(pis);
-    else			/* pcie->RenderTable.lookup.m == 4 */
-	return gs_cspace_DeviceCMYK(pis);
+	) {
+	gs_cspace_init_DeviceRGB(&rgb_cs);  /* idempotent initialization */
+        return &rgb_cs;
+    } else {			/* pcie->RenderTable.lookup.m == 4 */
+	gs_cspace_init_DeviceCMYK(&rgb_cs); /* idempotent initialization */
+	return &cmyk_cs;
+    }
 }
 
 /* Install a CIE space in the graphics state. */

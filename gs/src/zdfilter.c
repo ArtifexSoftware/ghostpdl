@@ -36,24 +36,7 @@
 #include "store.h"
 #include "gsdfilt.h"
 
-#ifdef DFILTER_TEST
-private int
-/* - .pushtestdevicefilter - */
-zpushtestdevicefilter(i_ctx_t *i_ctx_p)
-{
-    gs_device_filter_t *df;
-    int code;
-    gs_memory_t *mem = gs_memory_stable(imemory);
-
-    code = gs_test_device_filter(&df, mem);
-    if (code < 0)
-	return code;
-    code = gs_push_device_filter(mem, igs, df);
-    return code;
-}
-#endif
-
-/* pushpdf14devicefilter is defined in zdtrans.c */
+/* pushpdf14devicefilter is defined in ztrans.c */
 
 /* - .popdevicefilter - */
 private int
@@ -66,9 +49,6 @@ zpopdevicefilter(i_ctx_t *i_ctx_p)
 
 const op_def zdfilter_op_defs[] =
 {
-#ifdef DFILTER_TEST
-    {"0.pushtestdevicefilter", zpushtestdevicefilter},
-#endif
     {"0.popdevicefilter", zpopdevicefilter},
     op_def_end(0)
 };

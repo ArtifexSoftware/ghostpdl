@@ -2684,12 +2684,11 @@ gdev_pcl_mode1compress(const byte *row, const byte *end_row, byte *compressed)
     (y) = gx_bits_to_color_value((v) & ((1 << (b)) - 1), (b))
 
 private gx_color_index
-gdev_cmyk_map_cmyk_color(gx_device* pdev,
-    gx_color_value cyan, gx_color_value magenta, gx_color_value yellow,
-    gx_color_value black) {
-
+gdev_cmyk_map_cmyk_color(gx_device* pdev, const gx_color_value cv[])
+{
+    gx_color_value cyan, magenta, yellow, black;
     gx_color_index color;
-
+    cyan = cv[0]; magenta = cv[1]; yellow = cv[2]; black = cv[3];
     switch (pdev->color_info.depth) {
 	case 1:
 	   color = (cyan | magenta | yellow | black) > gx_max_color_value / 2 ?
@@ -2724,34 +2723,35 @@ gdev_cmyk_map_cmyk_color(gx_device* pdev,
 /* Mapping of RGB colors to gray values. */
 
 private gx_color_index
-gdev_cmyk_map_rgb_color(gx_device *pdev, gx_color_value r, gx_color_value g, gx_color_value b)
+gdev_cmyk_map_rgb_color(gx_device *pdev, const gx_color_value cv[])
 {
+    gx_color_value r, g, b;
+    r = cv[0]; g = cv[1]; b = cv[2];
+    if (gx_color_value_to_byte(r & g & b) == 0xff) {
+        return (gx_color_index) 0;	/* White */
+    } else {
+        gx_color_value c = gx_max_color_value - r;
+        gx_color_value m = gx_max_color_value - g;
+        gx_color_value y = gx_max_color_value - b;
 
-  if (gx_color_value_to_byte(r & g & b) == 0xff) {
-      return (gx_color_index) 0;	/* White */
-  } else {
-      gx_color_value c = gx_max_color_value - r;
-      gx_color_value m = gx_max_color_value - g;
-      gx_color_value y = gx_max_color_value - b;
+        switch (pdev->color_info.depth) {
+        case 1:
+            return (c | m | y) > gx_max_color_value / 2 ?
+                (gx_color_index) 1 : (gx_color_index) 0;
+            /*NOTREACHED*/
+            break;
 
-      switch (pdev->color_info.depth) {
-	  case 1:
-	      return (c | m | y) > gx_max_color_value / 2 ?
-	          (gx_color_index) 1 : (gx_color_index) 0;
-	      /*NOTREACHED*/
-	      break;
+        case 8:
+            return ((ulong) c * lum_red_weight * 10
+                    + (ulong) m * lum_green_weight * 10
+                    + (ulong) y * lum_blue_weight * 10)
+                        >> (gx_color_value_bits + 2);
+            /*NOTREACHED*/
+            break;
+        }
+    }
 
-	  case 8:
-	      return ((ulong) c * lum_red_weight * 10
-	          + (ulong) m * lum_green_weight * 10
-	          + (ulong) y * lum_blue_weight * 10)
-		  >> (gx_color_value_bits + 2);
-	      /*NOTREACHED*/
-	      break;
-      }
-  }
-
-   return (gx_color_index) 0;	/* This should never happen. */
+    return (gx_color_index) 0;	/* This should never happen. */
 }
 
 /* Mapping of CMYK colors. */
@@ -2835,9 +2835,10 @@ gdev_cmyk_map_color_rgb(gx_device *pdev, gx_color_index color, gx_color_value pr
    } while (0)
 
 private gx_color_index
-gdev_pcl_map_rgb_color(gx_device *pdev, gx_color_value r,
-				 gx_color_value g, gx_color_value b)
+gdev_pcl_map_rgb_color(gx_device *pdev, const gx_color_value cv[])
 {
+  gx_color_value r, g, b;
+  r = cv[0]; g = cv[1]; b = cv[2];
   if (gx_color_value_to_byte(r & g & b) == 0xff)
     return (gx_color_index)0;         /* white */
   else {

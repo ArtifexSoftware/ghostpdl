@@ -23,21 +23,30 @@
 
 /* These procedures are exported by zimage.c for other modules. */
 
-/* Exported for zcolor1.c */
-int zimage_opaque_setup(i_ctx_t *i_ctx_p, os_ptr op, bool multi,
-			gs_image_alpha_t alpha, const gs_color_space * pcs,
-			int npop);
+/*
+ * Define a structure for image parameters other than those defined
+ * in the gs_*image*_t structure.
+ */
+typedef struct image_params_s {
+    bool MultipleDataSources;
+    ref DataSource[gs_image_max_components];
+    const float *pDecode;
+} image_params;
 
-/* Exported for zimage2.c */
+/* Extract and check parameters for an image. */
+int data_image_params(const ref *op, gs_data_image_t *pim,
+                      image_params *pip, bool require_DataSource,
+                      int num_components, int max_bits_per_component,
+                      bool has_alpha);
+int pixel_image_params(i_ctx_t *i_ctx_p, const ref *op,
+                       gs_pixel_image_t *pim, image_params * pip,
+                       int max_bits_per_component, bool has_alpha);
+
+/* Exported for zimage3.c and ztrans.c */
 int zimage_setup(i_ctx_t *i_ctx_p, const gs_pixel_image_t * pim,
-		 const ref * sources, bool uses_color, int npop);
+                 const ref * sources, bool uses_color, int npop);
 
-/* Exported for zcolor3.c */
-int zimage_data_setup(i_ctx_t *i_ctx_p, const gs_pixel_image_t * pim,
-		      gx_image_enum_common_t * pie,
-		      const ref * sources, int npop);
-
-/* Exported for zcolor1.c and zdpnext.c. */
-int zimage_multiple(i_ctx_t *i_ctx_p, bool has_alpha);
+/* Exported for zdpnext.c */
+int image1_setup(i_ctx_t * i_ctx_p, bool has_alpha);
 
 #endif /* iimage_INCLUDED */

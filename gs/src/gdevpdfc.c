@@ -730,7 +730,7 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	if (pfn == 0)
 	    return_error(gs_error_rangecheck);
 	if ((code = pdf_separation_name(pdev, &v,
-					pcs->params.separation.sname)) < 0 ||
+					pcs->params.separation.sep_name)) < 0 ||
 	    (code = pdf_separation_color_space(pdev, pca, "/Separation", &v,
 					       (const gs_color_space *)
 					&pcs->params.separation.alt_space,

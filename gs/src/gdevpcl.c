@@ -98,9 +98,10 @@ gdev_pcl_paper_size(gx_device * dev)
 
 /* Map an RGB color to a printer color. */
 gx_color_index
-gdev_pcl_3bit_map_rgb_color(gx_device * dev,
-		       gx_color_value r, gx_color_value g, gx_color_value b)
+gdev_pcl_3bit_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
+    gx_color_value r, g, b;
+    r = cv[0]; g = cv[1]; b = cv[2];
     return (((b >> cv_shift) << 2) + ((g >> cv_shift) << 1) + (r >> cv_shift)) ^ 7;
 }
 

@@ -167,6 +167,16 @@ zserialnumber(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+/* some FTS tests work better if realtime starts from 0 at boot time */
+private long    real_time_0[2];
+
+private int
+zmisc_init_realtime(i_ctx_t * i_ctx_p)
+{
+    gp_get_realtime(real_time_0);
+    return 0;
+}
+
 /* - realtime <int> */
 private int
 zrealtime(i_ctx_t *i_ctx_p)
@@ -175,6 +185,8 @@ zrealtime(i_ctx_t *i_ctx_p)
     long secs_ns[2];
 
     gp_get_realtime(secs_ns);
+    secs_ns[1] -= real_time_0[1];
+    secs_ns[0] -= real_time_0[0];
     push(1);
     make_int(op, secs_ns[0] * 1000 + secs_ns[1] / 1000000);
     return 0;
@@ -359,5 +371,5 @@ const op_def zmisc_op_defs[] =
     {"2.setdebug", zsetdebug},
     {"1.setoserrno", zsetoserrno},
     {"0usertime", zusertime},
-    op_def_end(0)
+    op_def_end(zmisc_init_realtime)
 };

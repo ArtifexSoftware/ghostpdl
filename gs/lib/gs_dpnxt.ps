@@ -102,6 +102,28 @@ counttomark { counttomark 1 sub def } repeat pop
   } //systemdict /exec get 3 packedarray cvx loop
 } bind odef
 
+%
+%   <w>  <h>  <bpc>  <mtx>  <dsrc0> ... <multi>  <ncomp>   alphaimage   -
+%
+img_utils_dict begin
+/.alphaimage  where
+  {
+    pop
+    currentglobal true setglobal
+    /alphaimage
+      {
+        //true
+          //.colorimage
+        stopped
+          { /alphaimage load $error /errorname get signalerror }
+        if
+      }
+    .bind systemdict begin odef end
+    setglobal
+  }
+if
+end
+
 % Implement sizeimage using lower-level operators.
 
 /sizeimage {		% <x> <y> <width> <height> <matrix> sizeimage

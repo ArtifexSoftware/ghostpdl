@@ -33,7 +33,7 @@ typedef struct gs_pattern_instance_s gs_pattern_instance_t;
  * This must be at least 4, and should be at least 6 to accommodate
  * hexachrome DeviceN color spaces.
  */
-#define GS_CLIENT_COLOR_MAX_COMPONENTS 6
+#define GS_CLIENT_COLOR_MAX_COMPONENTS 16
 
 /* Paint (non-Pattern) colors */
 typedef struct gs_paint_color_s {

@@ -131,7 +131,9 @@ zsetpatternspace(i_ctx_t *i_ctx_p)
     uint edepth = ref_stack_count(&e_stack);
     int code;
 
-    check_read_type(*op, t_array);
+    if (!r_is_array(op))
+        return_error(e_typecheck);
+    check_read(*op);
     switch (r_size(op)) {
 	case 1:		/* no base space */
 	    cs.params.pattern.has_base_space = false;
@@ -219,7 +221,8 @@ pattern_paint_prepare(i_ctx_t *i_ctx_p)
 	gs_grestore(pgs);
 	return code;
     }
-    gx_set_device_only(pgs, (gx_device *) pdev);
+    /* gx_set_device_only(pgs, (gx_device *) pdev); */
+    gs_setdevice_no_init(pgs, (gx_device *)pdev);
     push_mark_estack(es_other, pattern_paint_cleanup);
     ++esp;
     make_istruct(esp, 0, pdev);

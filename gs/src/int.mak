@@ -248,7 +248,7 @@ smtf_h=$(PSSRC)smtf.h
 bfont_h=$(PSSRC)bfont.h $(ifont_h)
 icontext_h=$(PSSRC)icontext.h $(gsstype_h) $(icstate_h)
 ifilter_h=$(PSSRC)ifilter.h $(istream_h) $(ivmspace_h)
-igstate_h=$(PSSRC)igstate.h $(gsstate_h) $(gxstate_h) $(imemory_h) $(istruct_h)
+igstate_h=$(PSSRC)igstate.h $(gsstate_h) $(gxstate_h) $(imemory_h) $(istruct_h) $(gxcindex_h)
 iscan_h=$(PSSRC)iscan.h $(sa85x_h) $(sstring_h)
 sbhc_h=$(PSSRC)sbhc.h $(shc_h)
 # Include files for optional features
@@ -570,8 +570,8 @@ $(PSD)level1.dev : $(PSD)psl1.dev
 	$(CP_) $(PSD)psl1.dev $(PSD)level1.dev
 
 $(PSD)psl1.dev : $(INT_MAK) $(ECHOGS_XE)\
- $(PSD)psbase.dev $(PSD)bcp.dev $(PSD)hsb.dev $(PSD)path1.dev $(PSD)type1.dev
-	$(SETMOD) $(PSD)psl1 -include $(PSD)psbase $(PSD)bcp $(PSD)hsb $(PSD)path1 $(PSD)type1
+ $(PSD)psbase.dev $(PSD)bcp.dev $(PSD)path1.dev $(PSD)type1.dev
+	$(SETMOD) $(PSD)psl1 -include $(PSD)psbase $(PSD)bcp $(PSD)path1 $(PSD)type1
 	$(ADDMOD) $(PSD)psl1 -emulator PostScript PostScriptLevel1
 
 # -------- Level 1 color extensions (CMYK color and colorimage) -------- #
@@ -624,18 +624,6 @@ $(PSD)dscparse.dev : $(INT_MAK) $(ECHOGS_XE) $(dscparse_)
 
 $(PSD)usedsc.dev : $(INT_MAK) $(ECHOGS_XE) $(PSD)dscparse.dev
 	$(SETMOD) $(PSD)usedsc -include $(PSD)dscparse -ps gs_dscp
-
-# ---------------- HSB color ---------------- #
-
-hsb_=$(PSOBJ)zhsb.$(OBJ)
-$(PSD)hsb.dev : $(INT_MAK) $(ECHOGS_XE) $(hsb_) $(GLD)hsblib.dev
-	$(SETMOD) $(PSD)hsb $(hsb_)
-	$(ADDMOD) $(PSD)hsb -include $(GLD)hsblib
-	$(ADDMOD) $(PSD)hsb -oper zhsb
-
-$(PSOBJ)zhsb.$(OBJ) : $(PSSRC)zhsb.c $(OP)\
- $(gshsb_h) $(igstate_h) $(store_h)
-	$(PSCC) $(PSO_)zhsb.$(OBJ) $(C_) $(PSSRC)zhsb.c
 
 # ---- Level 1 path miscellany (arcs, pathbbox, path enumeration) ---- #
 
@@ -1148,7 +1136,7 @@ $(PSD)psl2read.dev : $(INT_MAK) $(ECHOGS_XE) $(psl2read_)\
 	$(SETMOD) $(PSD)psl2read $(psl2read_)
 	$(ADDMOD) $(PSD)psl2read -include $(PSD)psl2int $(PSD)dps2read
 	$(ADDMOD) $(PSD)psl2read -oper zcolor2_l2 zcsindex_l2
-	$(ADDMOD) $(PSD)psl2read -oper zht2_l2 zimage2_l2
+	$(ADDMOD) $(PSD)psl2read -oper zht2_l2
 
 $(PSOBJ)zcolor2.$(OBJ) : $(PSSRC)zcolor2.c $(OP) $(string__h)\
  $(gscolor_h) $(gscssub_h) $(gsmatrix_h) $(gsstruct_h)\
@@ -1679,6 +1667,10 @@ $(PSOBJ)zmisc3.$(OBJ) : $(PSSRC)zmisc3.c $(GH)\
  $(igstate_h) $(oper_h) $(store_h)
 	$(PSCC) $(PSO_)zmisc3.$(OBJ) $(C_) $(PSSRC)zmisc3.c
 
+$(PSOBJ)zcolor3.$(OBJ) : $(PSSRC)zcolor3.c $(GH)\
+ $(oper_h) $(igstate_h)
+	$(PSCC) $(PSO_)zcolor3.$(OBJ) $(C_) $(PSSRC)zcolor3.c
+
 $(PSOBJ)zshade.$(OBJ) : $(PSSRC)zshade.c $(memory__h) $(OP)\
  $(gscolor2_h) $(gscolor3_h) $(gscspace_h) $(gsfunc3_h)\
  $(gsptype2_h) $(gsshade_h) $(gsstruct_h) $(gsuid_h)\
@@ -1689,7 +1681,8 @@ $(PSOBJ)zshade.$(OBJ) : $(PSSRC)zshade.c $(memory__h) $(OP)\
 	$(PSCC) $(PSO_)zshade.$(OBJ) $(C_) $(PSSRC)zshade.c
 
 psl3read_1=$(PSOBJ)zcsdevn.$(OBJ) $(PSOBJ)zfunc3.$(OBJ) $(PSOBJ)zfsample.$(OBJ)
-psl3read_2=$(PSOBJ)zimage3.$(OBJ) $(PSOBJ)zmisc3.$(OBJ) $(PSOBJ)zshade.$(OBJ)
+psl3read_2=$(PSOBJ)zimage3.$(OBJ) $(PSOBJ)zmisc3.$(OBJ) $(PSOBJ)zcolor3.$(OBJ)\
+ $(PSOBJ)zshade.$(OBJ)
 psl3read_=$(psl3read_1) $(psl3read_2)
 
 # Note: we need the ReusableStreamDecode filter for shadings.
@@ -1699,7 +1692,7 @@ $(PSD)psl3read.dev : $(INT_MAK) $(ECHOGS_XE) $(psl3read_)\
 	$(ADDMOD) $(PSD)psl3read $(psl3read_2)
 	$(ADDMOD) $(PSD)psl3read -oper zcsdevn
 	$(ADDMOD) $(PSD)psl3read -oper zfsample
-	$(ADDMOD) $(PSD)psl3read -oper zimage3 zmisc3 zshade
+	$(ADDMOD) $(PSD)psl3read -oper zimage3 zmisc3 zcolor3_l3 zshade
 	$(ADDMOD) $(PSD)psl3read -functiontype 2 3
 	$(ADDMOD) $(PSD)psl3read -ps gs_ll3
 	$(ADDMOD) $(PSD)psl3read -include $(PSD)frsd $(PSD)fzlib

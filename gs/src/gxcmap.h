@@ -46,15 +46,77 @@ typedef struct gx_device_color_s gx_device_color;
 	    const gs_imager_state *, gx_device *, gs_color_select_t)
 #define cmap_proc_rgb_alpha(proc)\
   void proc(frac, frac, frac, frac, gx_device_color *,\
-	    const gs_imager_state *, gx_device *, gs_color_select_t)
+	       const gs_imager_state *, gx_device *, gs_color_select_t)
+#define cmap_proc_separation(proc)\
+  void proc(frac, gx_device_color *, const gs_imager_state *,\
+	       gx_device *, gs_color_select_t)
+#define cmap_proc_devicen(proc)\
+  void proc(const frac *, gx_device_color *, const gs_imager_state *, \
+	       gx_device *, gs_color_select_t)
 
-/* Because of a bug in the Watcom C compiler, */
-/* we have to split the struct from the typedef. */
+/*
+ * List of mapping functions from the standard color spaces to the
+ * device color model. Any unused component will be mapped to 0.
+ */
+#define cm_map_proc_gray(proc) \
+    void proc (gx_device * dev, frac gray, \
+              frac * out)
+
+#define cm_map_proc_rgb(proc) \
+    void proc (gx_device * dev, \
+	      const gs_imager_state *pis, \
+              frac r, frac g, frac b, \
+              frac * out)
+
+#define cm_map_proc_cmyk(proc) \
+    void proc (gx_device * dev, \
+              frac c, frac m, frac y, frac k, \
+              frac * out)
+
+/*
+ * The following procedures come from the device.  It they are
+ * specified then  they are used to convert from the given
+ * color space to the device's color model.  Otherwise the
+ * standard conversions are used.  The procedures must be defined
+ * for a DeviceN color model
+ *
+ * Because of a bug in the Watcom C compiler, we have to split the
+ * struct from the typedef.
+ */
+struct gx_cm_color_map_procs_s {
+    cm_map_proc_gray((*map_gray));
+    cm_map_proc_rgb((*map_rgb));
+    cm_map_proc_cmyk((*map_cmyk));
+};
+
+typedef struct gx_cm_color_map_procs_s  gx_cm_color_map_procs;
+
+/*
+ * Make some routine global for use in the forwarding device.
+ */
+cm_map_proc_gray(gray_cs_to_gray_cm);
+cm_map_proc_rgb(rgb_cs_to_rgb_cm);
+cm_map_proc_cmyk(cmyk_cs_to_cmyk_cm);
+
+/*
+ * Color mapping may now be device specific, so the color space
+ * to color model mapping is separated from other maps, such as
+ * applying the current transfer function or halftone.
+ *
+ * The routine pointed to by get_cmap_procs (a field in the image
+ * state; see gxistate.h) should initialize the cm_color_map_procs
+ * pointer, using the get_color_mapping_procs method of the device.
+ *
+ * Because of a bug in the Watcom C compiler, we have to split the
+ * struct from the typedef.
+ */
 struct gx_color_map_procs_s {
     cmap_proc_gray((*map_gray));
     cmap_proc_rgb((*map_rgb));
     cmap_proc_cmyk((*map_cmyk));
     cmap_proc_rgb_alpha((*map_rgb_alpha));
+    cmap_proc_separation((*map_separation));
+    cmap_proc_devicen((*map_devicen));
 };
 typedef struct gx_color_map_procs_s gx_color_map_procs;
 
@@ -85,31 +147,122 @@ void gx_set_cmap_procs(gs_imager_state *, const gx_device *);
   ((pis)->cmap_procs->map_cmyk)(cc, cm, cy, ck, pdc, pis, dev, select)
 #define gx_remap_concrete_rgb_alpha(cr, cg, cb, ca, pdc, pis, dev, select)\
   ((pis)->cmap_procs->map_rgb_alpha)(cr, cg, cb, ca, pdc, pis, dev, select)
+#define gx_remap_concrete_separation(pcc, pdc, pis, dev, select)\
+  ((pis)->cmap_procs->map_separation)(pcc, pdc, pis, dev, select)
+#define gx_remap_concrete_devicen(pcc, pdc, pis, dev, select)\
+  ((pis)->cmap_procs->map_devicen)(pcc, pdc, pis, dev, select)
 
-/* Map a color, with optional tracing if we are debugging. */
+/* Map a color */
 #include "gxcindex.h"
 #include "gxcvalue.h"
-gx_color_index gx_proc_map_rgb_color(gx_device *,
-			   gx_color_value, gx_color_value, gx_color_value);
-gx_color_index gx_proc_map_rgb_alpha_color(gx_device *,
-	   gx_color_value, gx_color_value, gx_color_value, gx_color_value);
-gx_color_index gx_proc_map_cmyk_color(gx_device *,
-	   gx_color_value, gx_color_value, gx_color_value, gx_color_value);
-#ifdef DEBUG
-/* Use procedures in gxcmap.c */
-#  define gx_map_rgb_color(dev, vr, vg, vb)\
-     gx_proc_map_rgb_color(dev, vr, vg, vb)
-#  define gx_map_rgb_alpha_color(dev, vr, vg, vb, va)\
-     gx_proc_map_rgb_alpha_color(dev, vr, vg, vb, va)
-#  define gx_map_cmyk_color(dev, vc, vm, vy, vk)\
-     gx_proc_map_cmyk_color(dev, vc, vm, vy, vk)
-#else
-#  define gx_map_rgb_color(dev, vr, vg, vb)\
-     (*dev_proc(dev, map_rgb_color))(dev, vr, vg, vb)
-#  define gx_map_rgb_alpha_color(dev, vr, vg, vb, va)\
-     (*dev_proc(dev, map_rgb_alpha_color))(dev, vr, vg, vb, va)
-#  define gx_map_cmyk_color(dev, vc, vm, vy, vk)\
-     (*dev_proc(dev, map_cmyk_color))(dev, vc, vm, vy, vk)
-#endif
+
+/*
+ * These are the default routines for converting a color space into
+ * a list of device colorants.
+ */
+extern cm_map_proc_gray(gx_default_gray_cs_to_gray_cm);
+extern cm_map_proc_rgb(gx_default_rgb_cs_to_gray_cm);
+extern cm_map_proc_cmyk(gx_default_cmyk_cs_to_gray_cm);
+
+extern cm_map_proc_gray(gx_default_gray_cs_to_rgb_cm);
+extern cm_map_proc_rgb(gx_default_rgb_cs_to_rgb_cm);
+extern cm_map_proc_cmyk(gx_default_cmyk_cs_to_rgb_cm);
+
+extern cm_map_proc_gray(gx_default_gray_cs_to_cmyk_cm);
+extern cm_map_proc_rgb(gx_default_rgb_cs_to_cmyk_cm);
+extern cm_map_proc_cmyk(gx_default_cmyk_cs_to_cmyk_cm);
+
+extern cm_map_proc_gray(gx_default_gray_cs_to_cmyk_cm);
+extern cm_map_proc_rgb(gx_default_rgb_cs_to_cmyk_cm);
+extern cm_map_proc_cmyk(gx_default_cmyk_cs_to_cmyk_cm);
+
+extern cm_map_proc_gray(gx_error_gray_cs_to_cmyk_cm);
+extern cm_map_proc_rgb(gx_error_rgb_cs_to_cmyk_cm);
+extern cm_map_proc_cmyk(gx_error_cmyk_cs_to_cmyk_cm);
+
+
+/*
+  Get the mapping procedures appropriate for the currently set
+  color model.
+ */
+#define dev_t_proc_get_color_mapping_procs(proc, dev_t) \
+    const gx_cm_color_map_procs * (proc)(const dev_t * dev)
+
+#define dev_proc_get_color_mapping_procs(proc) \
+    dev_t_proc_get_color_mapping_procs(proc, gx_device)
+
+/*
+  Convert a color component name into a colorant index.
+*/
+#define dev_t_proc_get_color_comp_index(proc, dev_t) \
+    int (proc)(const dev_t * dev, const char * pname, int name_size, int src_index)
+
+#define dev_proc_get_color_comp_index(proc) \
+    dev_t_proc_get_color_comp_index(proc, gx_device)
+
+/*
+  Map a color into the device's color model.
+*/
+#define dev_t_proc_encode_color(proc, dev_t) \
+    gx_color_index (proc)(dev_t * dev, const gx_color_value colors[])
+
+#define dev_proc_encode_color(proc) \
+    dev_t_proc_encode_color(proc, gx_device)
+
+/*
+  Map a color index from the device's current color model into a list of
+  colorant values.
+*/
+#define dev_t_proc_decode_color(proc, dev_t) \
+    int (proc)(dev_t * dev, gx_color_index cindex, gx_color_value colors[])
+
+#define dev_proc_decode_color(proc) \
+    dev_t_proc_decode_color(proc, gx_device)
+
+
+
+/*
+ * These are the default routines for translating a color component
+ * name into the device colorant index.
+ */
+dev_proc_get_color_comp_index(gx_error_get_color_comp_index);
+dev_proc_get_color_comp_index(gx_default_DevGray_get_color_comp_index);
+dev_proc_get_color_comp_index(gx_default_DevRGB_get_color_comp_index);
+dev_proc_get_color_comp_index(gx_default_DevCMYK_get_color_comp_index);
+
+/*
+ * These are the default routines for getting the color space conversion
+ * routines.
+ */
+dev_proc_get_color_mapping_procs(gx_error_get_color_mapping_procs);
+dev_proc_get_color_mapping_procs(gx_default_DevGray_get_color_mapping_procs);
+dev_proc_get_color_mapping_procs(gx_default_DevRGB_get_color_mapping_procs);
+dev_proc_get_color_mapping_procs(gx_default_DevCMYK_get_color_mapping_procs);
+
+/*
+ * These are the default routines for converting a colorant value list
+ * into a gx_color_index.
+ */
+dev_proc_encode_color(gx_error_encode_color);
+dev_proc_encode_color(gx_default_encode_color);
+
+/*
+ * These are the default routines for converting a colorant value list
+ * into a gx_color_index.
+ */
+dev_proc_encode_color(gx_default_gray_fast_encode);
+dev_proc_encode_color(gx_default_gray_encode);
+
+/*
+ * These are the default routines for converting a gx_color_index into
+ * a list of device colorant values
+ */
+dev_proc_decode_color(gx_error_decode_color);
+dev_proc_decode_color(gx_default_decode_color);
+
+
+#define unit_frac(v, ftemp)\
+  (ftemp = (v),\
+   (is_fneg(ftemp) ? frac_0 : is_fge1(ftemp) ? frac_1 : float2frac(ftemp)))
 
 #endif /* gxcmap_INCLUDED */

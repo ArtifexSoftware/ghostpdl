@@ -235,12 +235,12 @@ dict_float_array_check_param(const ref * pdict, const char *kstr,
 
 	return len;
     }
-    if (!r_has_type(pdval, t_array))
+    if (!r_is_array(pdval))
 	return_error(e_typecheck);
     size = r_size(pdval);
     if (size > len)
 	return_error(over_error);
-    code = float_params(pdval->value.refs + size - 1, size, fvec);
+    code = process_float_array(pdval, size, fvec);
     return (code < 0 ? code :
 	    size == len || under_error >= 0 ? size :
 	    gs_note_error(under_error));

@@ -279,13 +279,6 @@ void gs_image_t_init_mask_adjust(gs_image_t * pim, bool write_1s,
 #define gs_image_t_init_mask(pim, write_1s)\
   gs_image_t_init_mask_adjust(pim, write_1s, true)
 
-/* init_gray and init_color require a (const) imager state. */
-#define gs_image_t_init_gray(pim, pis)\
-  gs_image_t_init(pim, gs_cspace_DeviceGray(pis))
-#define gs_image_t_init_rgb(pim, pis)\
-  gs_image_t_init(pim, gs_cspace_DeviceRGB(pis))
-#define gs_image_t_init_cmyk(pim, pis)\
-  gs_image_t_init(pim, gs_cspace_DeviceCMYK(pis))
 
 /****** REMAINDER OF FILE UNDER CONSTRUCTION. PROCEED AT YOUR OWN RISK. ******/
 

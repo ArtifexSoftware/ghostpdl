@@ -30,6 +30,7 @@
 #include "gxline.h"
 #include "gxmatrix.h"
 #include "gxtmap.h"
+#include "gscspace.h"
 
 /*
   Define the subset of the PostScript graphics state that the imager library
@@ -106,16 +107,15 @@ typedef struct gx_device_halftone_s gx_device_halftone;
  */
 
 /* Define the interior structure of a transfer function. */
-typedef struct gx_transfer_colored_s {
-    /* The components must be in this order: */
-    gx_transfer_map *red;	/* (RC) */
-    gx_transfer_map *green;	/* (RC) */
-    gx_transfer_map *blue;	/* (RC) */
-    gx_transfer_map *gray;	/* (RC) */
-} gx_transfer_colored;
-typedef union gx_transfer_s {
-    gx_transfer_map *indexed[4];	/* (RC) */
-    gx_transfer_colored colored;
+typedef struct gx_transfer_s {
+    int red_component_num;
+    gx_transfer_map *red;		/* (RC) */
+    int green_component_num;
+    gx_transfer_map *green;		/* (RC) */
+    int blue_component_num;
+    gx_transfer_map *blue;		/* (RC) */
+    int gray_component_num;
+    gx_transfer_map *gray;		/* (RC) */
 } gx_transfer;
 
 #define gs_color_rendering_state_common\
@@ -126,8 +126,6 @@ typedef union gx_transfer_s {
 	gs_int_point screen_phase[gs_color_select_count];\
 		/* dev_ht depends on halftone and device resolution. */\
 	gx_device_halftone *dev_ht;		/* (RC) */\
-		/* The contents of ht_cache depend on dev_ht. */\
-	struct gx_ht_cache_s *ht_cache;		/* (Shared) by all gstates */\
 \
 		/* Color (device-dependent): */\
 \
@@ -140,15 +138,23 @@ typedef union gx_transfer_s {
 		/* dictionaries.  (In Level 1 systems, set_transfer and */\
 		/* effective_transfer are always the same.) */\
 	gx_transfer set_transfer;		/* members are (RC) */\
-	gx_transfer effective_transfer;		/* see below */\
+	gx_transfer_map *effective_transfer[GX_DEVICE_COLOR_MAX_COMPONENTS]; /* see below */\
 \
 		/* Color caches: */\
+\
+		/* Id of color space for which cached information */\
+		/* applies. Note that this may differ from */\
+		/* cie_joint_caches->cspace_id, as the joint cache */\
+		/* is not rebuilt until needed */\
+	gs_id cspace_id;\
 \
 		/* cie_joint_caches depend on cie_render and */\
 		/* the color space. */\
 	struct gx_cie_joint_caches_s *cie_joint_caches;		/* (RC) */\
 		/* cmap_procs depend on the device's color_info. */\
 	const struct gx_color_map_procs_s *cmap_procs;		/* static */\
+		/* DeviceN component map for current color space */\
+	gs_devicen_color_map color_component_map;\
 		/* The contents of pattern_cache depend on the */\
 		/* the color space and the device's color_info and */\
 		/* resolution. */\
@@ -163,47 +169,36 @@ typedef union gx_transfer_s {
 #define gs_cr_state_do_rc_ptrs(m)\
   m(halftone) m(dev_ht) m(cie_render)\
   m(black_generation) m(undercolor_removal)\
-  m(set_transfer.colored.red) m(set_transfer.colored.green)\
-  m(set_transfer.colored.blue) m(set_transfer.colored.gray)\
+  m(set_transfer.red) m(set_transfer.green)\
+  m(set_transfer.blue) m(set_transfer.gray)\
   m(cie_joint_caches)
 
 /* Enumerate the pointers in a c.r. state. */
 #define gs_cr_state_do_ptrs(m)\
-  m(0,halftone) m(1,dev_ht) m(2,ht_cache)\
-  m(3,cie_render) m(4,black_generation) m(5,undercolor_removal)\
-  m(6,set_transfer.colored.red) m(7,set_transfer.colored.green)\
-  m(8,set_transfer.colored.blue) m(9,set_transfer.colored.gray)\
-  m(10,effective_transfer.colored.red) m(11,effective_transfer.colored.green)\
-  m(12,effective_transfer.colored.blue) m(13,effective_transfer.colored.gray)\
-  m(14,cie_joint_caches) m(15,pattern_cache)
-#define st_cr_state_num_ptrs 16
-
+  m(0,halftone) m(1,dev_ht)\
+  m(2,cie_render) m(3,black_generation) m(4,undercolor_removal)\
+  m(5,set_transfer.red) m(6,set_transfer.green)\
+  m(7,set_transfer.blue) m(8,set_transfer.gray)\
+  m(9,cie_joint_caches) m(10,pattern_cache)
+  /*
+   * We handle effective_transfer specially in gsistate.c since its pointers
+   * are not enumerated for garbage collection but they are are relocated.
+   */
 /*
- * Define constant values that can be allocated once and shared among
- * all imager states in an address space.
+ * This count does not include the effective_transfer pointers since they
+ * are not enumerated for GC.
  */
-#ifndef gs_color_space_DEFINED
-#  define gs_color_space_DEFINED
-typedef struct gs_color_space_s gs_color_space;
-#endif
-typedef union gx_device_color_spaces_s {
-    struct dcn_ {
-	gs_color_space *Gray;
-	gs_color_space *RGB;
-	gs_color_space *CMYK;
-    } named;
-    gs_color_space *indexed[3];
-} gx_device_color_spaces_t;
-typedef struct gs_imager_state_shared_s {
-    rc_header rc;
-    gx_device_color_spaces_t device_color_spaces;
-} gs_imager_state_shared_t;
+#define st_cr_state_num_ptrs 11
 
-#define private_st_imager_state_shared()	/* in gsistate.c */\
-  gs_private_st_ptrs3(st_imager_state_shared, gs_imager_state_shared_t,\
-    "gs_imager_state_shared", imager_state_shared_enum_ptrs,\
-    imager_state_shared_reloc_ptrs, device_color_spaces.named.Gray,\
-    device_color_spaces.named.RGB, device_color_spaces.named.CMYK)
+
+typedef struct gs_devicen_color_map_s {
+    bool use_alt_cspace;
+    separation_type sep_type;
+    uint num_components;	/* Input - Duplicate of value in gs_device_n_params */
+    uint num_colorants;		/* Number of colorants - output */ 
+    int color_map[GS_CLIENT_COLOR_MAX_COMPONENTS];
+} gs_devicen_color_map;
+
 
 /* Define the imager state structure itself. */
 typedef struct gs_transparency_source_s {
@@ -219,7 +214,6 @@ typedef struct gs_transparency_source_s {
 #define gs_imager_state_common\
 	gs_memory_t *memory;\
 	void *client_data;\
-	gs_imager_state_shared_t *shared;\
 	gx_line_params line_params;\
 	gs_matrix_fixed ctm;\
 	gs_logical_operation_t log_op;\
@@ -239,7 +233,7 @@ typedef struct gs_transparency_source_s {
 	  (*get_cmap_procs)(const gs_imager_state *, const gx_device *);\
 	gs_color_rendering_state_common
 #define st_imager_state_num_ptrs\
-  (st_line_params_num_ptrs + st_cr_state_num_ptrs + 5)
+  (st_line_params_num_ptrs + st_cr_state_num_ptrs + 4)
 /* Access macros */
 #define ctm_only(pis) (*(const gs_matrix *)&(pis)->ctm)
 #define ctm_only_writable(pis) (*(gs_matrix *)&(pis)->ctm)
@@ -261,7 +255,7 @@ struct gs_imager_state_s {
 
 /* Initialization for gs_imager_state */
 #define gs_imager_state_initial(scale)\
-  0, 0, 0, { gx_line_params_initial },\
+  0, 0, { gx_line_params_initial },\
    { scale, 0.0, 0.0, -(scale), 0.0, 0.0 },\
   lop_default, gx_max_color_value, BLEND_MODE_Compatible,\
    { 1.0, 0 }, { 1.0, 0 }, 0/*false*/, 0, 0/*false*/, 0, 1.0,\
@@ -289,9 +283,6 @@ void gs_imager_state_copied(gs_imager_state * pis);
 void gs_imager_state_pre_assign(gs_imager_state *to,
 				const gs_imager_state *from);
 
-/* Free device color spaces.  Perhaps this should be declared elsewhere? */
-void gx_device_color_spaces_free(gx_device_color_spaces_t *pdcs,
-				 gs_memory_t *mem, client_name_t cname);
 
 /* Release an imager state. */
 void gs_imager_state_release(gs_imager_state * pis);

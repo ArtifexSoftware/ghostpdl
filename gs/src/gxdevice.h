@@ -150,6 +150,13 @@
 	offset_margin_values(xoff, yoff, lm, bm, rm, tm),\
 	std_device_part3_()
 
+#define std_device_full_body_type_extended(dtype, pprocs, dname, stype, w, h, xdpi, ydpi, mcomp, ncomp, pol, depth, gi, mg, mc, dg, dc, ef, cn, xoff, yoff, lm, bm, rm, tm)\
+	std_device_part1_(dtype, pprocs, dname, stype, open_init_closed),\
+        dci_extended_alpha_values(mcomp, ncomp, pol, depth, gi, mg, mc, dg, dc, 1, 1, ef, cn), \
+	std_device_part2_(w, h, xdpi, ydpi),\
+	offset_margin_values(xoff, yoff, lm, bm, rm, tm),\
+	std_device_part3_()
+
 #define std_device_full_body(dtype, pprocs, dname, w, h, xdpi, ydpi, ncomp, depth, mg, mc, dg, dc, xoff, yoff, lm, bm, rm, tm)\
 	std_device_full_body_type(dtype, pprocs, dname, 0, w, h, xdpi, ydpi,\
 	    ncomp, depth, mg, mc, dg, dc, xoff, yoff, lm, bm, rm, tm)
@@ -280,8 +287,10 @@ dev_proc_map_color_rgb(gx_default_rgb_map_color_rgb);
 dev_proc_map_rgb_color(gx_default_rgb_map_rgb_color);
 dev_proc_map_cmyk_color(cmyk_1bit_map_cmyk_color);
 dev_proc_map_color_rgb(cmyk_1bit_map_color_rgb);
+dev_proc_decode_color(cmyk_1bit_map_color_cmyk);
 dev_proc_map_cmyk_color(cmyk_8bit_map_cmyk_color);
 dev_proc_map_color_rgb(cmyk_8bit_map_color_rgb);
+dev_proc_decode_color(cmyk_8bit_map_color_cmyk);
 
 /* Default implementations for forwarding devices */
 dev_proc_get_initial_matrix(gx_forward_get_initial_matrix);
@@ -324,6 +333,10 @@ dev_proc_map_color_rgb_alpha(gx_forward_map_color_rgb_alpha);
 /* There is no forward_create_compositor (see Drivers.htm). */
 dev_proc_get_hardware_params(gx_forward_get_hardware_params);
 dev_proc_text_begin(gx_forward_text_begin);
+dev_proc_get_color_mapping_procs(gx_forward_get_color_mapping_procs);
+dev_proc_get_color_comp_index(gx_forward_get_color_comp_index);
+dev_proc_encode_color(gx_forward_encode_color);
+dev_proc_decode_color(gx_forward_decode_color);
 
 /* ---------------- Implementation utilities ---------------- */
 
@@ -338,6 +351,11 @@ void gx_device_forward_fill_in_procs(gx_device_forward *);
 void gx_device_forward_color_procs(gx_device_forward *);
 
 /*
+ * If a device has a linear and separable encode color function then
+ * set up the comp_bits, comp_mask, and comp_shift fields.
+ */
+void set_linear_color_bits_mask_shift(gx_device * dev);
+/*
  * Copy the color mapping procedures from the target if they are
  * standard ones (saving a level of procedure call at mapping time).
  */
@@ -346,11 +364,11 @@ void gx_device_copy_color_procs(gx_device *dev, const gx_device *target);
 /* Get the black and white pixel values of a device. */
 gx_color_index gx_device_black(gx_device *dev);
 #define gx_device_black_inline(dev)\
-  ((dev)->cached_colors.black != gx_no_color_index ?\
+  ((dev)->cached_colors.black == gx_no_color_index ?\
    gx_device_black(dev) : (dev)->cached_colors.black)
 gx_color_index gx_device_white(gx_device *dev);
 #define gx_device_white_inline(dev)\
-  ((dev)->cached_colors.white != gx_no_color_index ?\
+  ((dev)->cached_colors.white == gx_no_color_index ?\
    gx_device_white(dev) : (dev)->cached_colors.white)
 
 /* Clear the black/white pixel cache. */

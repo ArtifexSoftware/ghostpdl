@@ -41,6 +41,12 @@
  * See the next section on command line switches for the meaning of
  * <name_prefix>.
  *
+ *    -comp <name>
+ *
+ *	Adds compositor_(<name_prefix>_composite_<name>_type) to <gconfig.h>.
+ *	Used for gs_composite_type_t structures, whose identity may need to
+ *	passed through the command list.
+ *
  *    -dev <device>
  *
  *	Adds device_(<name_prefix><device>_device) to <gconfig.h>.
@@ -276,13 +282,14 @@ typedef struct config_s {
 	    string_list_t sorted_resources;
 	    string_list_t resources;
 	    string_list_t devs;	/* also includes devs2 */
+	    string_list_t compositors;
 	    string_list_t fonts;
 	    string_list_t libs;
 	    string_list_t libpaths;
 	    string_list_t links;
 	    string_list_t objs;
 	} named;
-#define NUM_RESOURCE_LISTS 8
+#define NUM_RESOURCE_LISTS 9
 	string_list_t indexed[NUM_RESOURCE_LISTS];
     } lists;
     string_pattern_t lib_p;
@@ -305,6 +312,7 @@ static const config_t init_config = {
 static const string_list_t init_config_lists[] = {
     {"resource", 100, uniq_first},
     {"sorted_resource", 20, uniq_first},
+    {"-comp", 10, uniq_first},
     {"-dev", 100, uniq_first},
     {"-font", 50, uniq_first},
     {"-lib", 20, uniq_last},
@@ -477,6 +485,7 @@ main(int argc, char *argv[])
 	    case 'h':
 		process_replaces(&conf);
 		fputs("/* This file was generated automatically by genconf.c. */\n", out);
+		write_list(out, &conf.lists.named.compositors, "%s\n");
 		write_list(out, &conf.lists.named.devs, "%s\n");
 		sort_uniq(&conf.lists.named.resources, true);
 		write_list(out, &conf.lists.named.resources, "%s\n");
@@ -749,6 +758,12 @@ add_entry(config_t * pconf, char *category, const char *item, int file_index)
 	/* Handle a few resources specially; just queue the rest. */
 	switch (category[0]) {
 #define IS_CAT(str) !strcmp(category, str)
+	    case 'c':
+		if (!IS_CAT("comp"))
+		    goto err;
+		pat = "compositor_(%scomposite_%%s_type)";
+		list = &pconf->lists.named.compositors;
+		goto pre;
 	    case 'd':
 		if (IS_CAT("dev"))
 		    pat = "device_(%s%%s_device)";

@@ -58,7 +58,7 @@
 #	    always icclib (compiled in statically)
 #	DEVICE_DEVS - the devices to include in the executable.
 #	    See devs.mak for details.
-#	DEVICE_DEVS1...DEVICE_DEVS20 - additional devices, if the definition
+#	DEVICE_DEVS1...DEVICE_DEVS21 - additional devices, if the definition
 #	    of DEVICE_DEVS doesn't fit on one line.  See devs.mak for details.
 #	FEATURE_DEVS - what features to include in the executable.
 #	    Normally this is one of:
@@ -297,6 +297,8 @@ SETDEV2=$(EXP)$(ECHOGS_XE) -e .dev -w- -l-dev2 -b -s -l-obj
 SETPDEV2=$(EXP)$(ECHOGS_XE) -e .dev -w- -l-dev2 -b -s -l-include -l$(GLGENDIR)$(D)page -l-obj
 SETMOD=$(EXP)$(ECHOGS_XE) -e .dev -w- -l-obj
 ADDMOD=$(EXP)$(ECHOGS_XE) -e .dev -a- $(NULL)
+SETCOMP=$(EXP)$(ECHOGS_XE) -e .dev -w- -l-comp
+ADDCOMP=$(EXP)$(ECHOGS_XE) -e .dev -a- -l-comp
 
 # Define the search lists and compilation switches for the third-party
 # libraries, and the compilation switches for their clients.
@@ -368,7 +370,8 @@ DEVS_ALL=$(GLGENDIR)$(D)$(PLATFORM).dev\
  $(DEVICE_DEVS6) $(DEVICE_DEVS7) $(DEVICE_DEVS8) $(DEVICE_DEVS9) \
  $(DEVICE_DEVS10) $(DEVICE_DEVS11) $(DEVICE_DEVS12) $(DEVICE_DEVS13) \
  $(DEVICE_DEVS14) $(DEVICE_DEVS15) $(DEVICE_DEVS16) $(DEVICE_DEVS17) \
- $(DEVICE_DEVS18) $(DEVICE_DEVS19) $(DEVICE_DEVS20) $(DEVICE_DEVS_EXTRA)
+ $(DEVICE_DEVS18) $(DEVICE_DEVS19) $(DEVICE_DEVS20) $(DEVICE_DEVS21) \
+ $(DEVICE_DEVS_EXTRA)
 
 devs_tr=$(GLGENDIR)$(D)devs.tr
 $(devs_tr) : $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE)
@@ -396,6 +399,7 @@ $(devs_tr) : $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE)
 	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS18)
 	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS19)
 	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS20)
+	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS21)
 	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS_EXTRA)
 	$(EXP)$(ECHOGS_XE) -a $(devs_tr) - $(GLGENDIR)$(D)libcore
 

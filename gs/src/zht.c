@@ -51,23 +51,37 @@ zcurrenthalftone(i_ctx_t *i_ctx_p)
 	    push(4);
 	    make_real(op - 3, ht.params.screen.frequency);
 	    make_real(op - 2, ht.params.screen.angle);
-	    op[-1] = istate->screen_procs.colored.gray;
+	    op[-1] = istate->screen_procs.gray;
 	    make_int(op, 1);
 	    break;
 	case ht_type_colorscreen:
 	    push(13);
 	    {
-		int i;
+		os_ptr opc = op - 12;
+		gs_screen_halftone *pht = 
+		    &ht.params.colorscreen.screens.colored.red;
 
-		for (i = 0; i < 4; i++) {
-		    os_ptr opc = op - 12 + i * 3;
-		    gs_screen_halftone *pht =
-		    &ht.params.colorscreen.screens.indexed[i];
+		make_real(opc, pht->frequency);
+		make_real(opc + 1, pht->angle);
+		opc[2] = istate->screen_procs.red;
 
-		    make_real(opc, pht->frequency);
-		    make_real(opc + 1, pht->angle);
-		    opc[2] = istate->screen_procs.indexed[i];
-		}
+		opc = op - 9;
+		pht = &ht.params.colorscreen.screens.colored.green;
+		make_real(opc, pht->frequency);
+		make_real(opc + 1, pht->angle);
+		opc[2] = istate->screen_procs.green;
+
+		opc = op - 6;
+		pht = &ht.params.colorscreen.screens.colored.blue;
+		make_real(opc, pht->frequency);
+		make_real(opc + 1, pht->angle);
+		opc[2] = istate->screen_procs.blue;
+
+		opc = op - 3;
+		pht = &ht.params.colorscreen.screens.colored.gray;
+		make_real(opc, pht->frequency);
+		make_real(opc + 1, pht->angle);
+		opc[2] = istate->screen_procs.gray;
 	    }
 	    make_int(op, 2);
 	    break;
@@ -213,10 +227,10 @@ private int
 setscreen_finish(i_ctx_t *i_ctx_p)
 {
     gs_screen_install(senum);
-    istate->screen_procs.colored.red = sproc;
-    istate->screen_procs.colored.green = sproc;
-    istate->screen_procs.colored.blue = sproc;
-    istate->screen_procs.colored.gray = sproc;
+    istate->screen_procs.red = sproc;
+    istate->screen_procs.green = sproc;
+    istate->screen_procs.blue = sproc;
+    istate->screen_procs.gray = sproc;
     make_null(&istate->halftone);
     return 0;
 }

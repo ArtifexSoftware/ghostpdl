@@ -43,9 +43,6 @@ typedef ulong gx_bitmap_format_t;
   (GB_COLORS_GRAY | GB_COLORS_RGB | GB_COLORS_CMYK)
 #define GB_COLORS_ALL\
   (GB_COLORS_NATIVE | GB_COLORS_STANDARD_ALL)
-#define gb_colors_for_device(dev)\
-  ((dev)->color_info.num_components == 4 ? GB_COLORS_CMYK :\
-   (dev)->color_info.num_components == 3 ? GB_COLORS_RGB : GB_COLORS_GRAY)
 #define GB_COLORS_NAMES\
   "colors_native", "colors_Gray", "colors_RGB", "colors_CMYK"
 

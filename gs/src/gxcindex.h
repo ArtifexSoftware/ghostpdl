@@ -28,7 +28,7 @@
  * sizeof(gx_color_index) * 8, since for larger values, there aren't enough
  * bits in a gx_color_index to have even 1 bit per component.
  */
-#define GX_DEVICE_COLOR_MAX_COMPONENTS 6
+#define GX_DEVICE_COLOR_MAX_COMPONENTS 16
 
 /*
  * We might change gx_color_index to a pointer or a structure in the
@@ -54,7 +54,11 @@ typedef struct { ulong value[2]; } gx_color_index_data;
 #else  /* !TEST_CINDEX_STRUCT */
 
 /* Define the type for device color index (pixel value) data. */
+#ifdef GX_COLOR_INDEX_TYPE
+typedef GX_COLOR_INDEX_TYPE gx_color_index_data;
+#else
 typedef ulong gx_color_index_data;
+#endif
 
 #endif /* (!)TEST_CINDEX_STRUCT */
 
@@ -74,14 +78,16 @@ extern const gx_color_index_data gx_no_color_index_data;
 typedef gx_color_index_data gx_color_index;
 #define arch_sizeof_color_index arch_sizeof_long
 
-/* Define the 'transparent' color index. */
-#define gx_no_color_index_value (-1)	/* no cast -> can be used in #if */
-
-/* The SGI C compiler provided with Irix 5.2 gives error messages */
-/* if we use the proper definition of gx_no_color_index: */
-/*#define gx_no_color_index ((gx_color_index)gx_no_color_index_value) */
-/* Instead, we must spell out the typedef: */
-#define gx_no_color_index ((unsigned long)gx_no_color_index_value)
+/*
+ * Define the 'transparent' or 'undefined' color index.
+ */
+#define gx_no_color_index_value (~0)	/* no cast -> can be used in #if */
+/*
+ * There was a comment here about the SGI C compiler provided with Irix 5.2
+ * giving error messages.  I hope that was fixed when the value of gx_no_color_index
+ * was changed from (-1) to (~0).  If not then let us know.
+ */
+#define gx_no_color_index ((gx_color_index)gx_no_color_index_value)
 
 #endif /* (!)TEST_CINDEX_POINTER */
 

@@ -390,4 +390,11 @@ gx_color_index psdf_adjust_color_index(gx_device_vector *vdev,
 int psdf_set_color(gx_device_vector *vdev, const gx_drawing_color *pdc,
 		   const psdf_set_color_commands_t *ppscc);
 
+/* stubs to disable get_bits, get_bits_rectangle */
+dev_proc_get_bits(psdf_get_bits);
+dev_proc_get_bits_rectangle(psdf_get_bits_rectangle);
+
+/* intercept and ignore overprint compositor creation */
+dev_proc_create_compositor(psdf_create_compositor);
+
 #endif /* gdevpsdf_INCLUDED */

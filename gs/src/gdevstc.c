@@ -1785,7 +1785,7 @@ stc_open(gx_device *pdev) /* setup margins & arrays */
   }                                                    /* comp */
 
   if(code == 0) {
-
+      gx_color_value cv[4];
       sd->stc.flags |= STCOK4GO;
 
 /*
@@ -1798,26 +1798,28 @@ stc_open(gx_device *pdev) /* setup margins & arrays */
          set_dev_proc(sd,map_rgb_color, stc_map_gray_color);
          set_dev_proc(sd,map_cmyk_color,gx_default_map_cmyk_color);
          set_dev_proc(sd,map_color_rgb, stc_map_color_gray);
-         white = stc_map_gray_color((gx_device *) sd,
-                    gx_max_color_value,gx_max_color_value,gx_max_color_value);
+         cv[0] = cv[1] = cv[2] = gx_max_color_value;
+         white = stc_map_gray_color((gx_device *) sd, cv);
          break;
       case 3:
          set_dev_proc(sd,map_rgb_color, stc_map_rgb_color);
          set_dev_proc(sd,map_cmyk_color,gx_default_map_cmyk_color);
          set_dev_proc(sd,map_color_rgb, stc_map_color_rgb);
-         white = stc_map_rgb_color((gx_device *) sd,
-                    gx_max_color_value,gx_max_color_value,gx_max_color_value);
+         cv[0] = cv[1] = cv[2] = gx_max_color_value;
+         white = stc_map_rgb_color((gx_device *) sd, cv);
          break;
       default:
          set_dev_proc(sd,map_rgb_color, gx_default_map_rgb_color);
          if(sd->stc.flags & STCCMYK10) {
             set_dev_proc(sd,map_cmyk_color,stc_map_cmyk10_color);
             set_dev_proc(sd,map_color_rgb, stc_map_color_cmyk10);
-            white = stc_map_cmyk10_color((gx_device *) sd,0,0,0,0);
+            cv[0] = cv[1] = cv[2] = cv[3] = 0;
+            white = stc_map_cmyk10_color((gx_device *) sd, cv);
          } else {
             set_dev_proc(sd,map_cmyk_color,stc_map_cmyk_color);
             set_dev_proc(sd,map_color_rgb, stc_map_color_cmyk);
-            white = stc_map_cmyk_color((gx_device *) sd,0,0,0,0);
+            cv[0] = cv[1] = cv[2] = cv[3] = 0;
+            white = stc_map_cmyk_color((gx_device *) sd,cv);
          }
          break;                               /* Establish color-procs */
       }
@@ -1996,12 +1998,14 @@ stc_expand(stcolor_device *sd,int i,gx_color_index col)
  *** color-mapping of gray-scales
  ***/
 private gx_color_index 
-stc_map_gray_color(gx_device *pdev,
-        gx_color_value r, gx_color_value g, gx_color_value b)
+stc_map_gray_color(gx_device *pdev, const gx_color_value cv[])
 {
 
    stcolor_device *sd = (stcolor_device *) pdev;
    gx_color_index rv;
+   gx_color_value r = cv[0];
+   gx_color_value g = cv[1];
+   gx_color_value b = cv[2];
 
    if((r == g) && (g == b)) {
 
@@ -2055,14 +2059,15 @@ stc_map_color_gray(gx_device *pdev, gx_color_index color,gx_color_value prgb[3])
  *** color-mapping of rgb-values
  ***/
 private gx_color_index 
-stc_map_rgb_color(gx_device *pdev,
-                  gx_color_value r, gx_color_value g, gx_color_value b)
+stc_map_rgb_color(gx_device *pdev, const gx_color_value cv[])
 {
 
    stcolor_device *sd = (stcolor_device *) pdev;
    int          shift = sd->color_info.depth == 24 ? 8 : sd->stc.bits;
    gx_color_index  rv = 0;
-
+   gx_color_value r = cv[0];
+   gx_color_value g = cv[1];
+   gx_color_value b = cv[2];
    if((sd->stc.am != NULL) && ((r != g) || (g != b))) {
       float *m,fr,fg,fb,fv;
 
@@ -2122,13 +2127,16 @@ stc_map_color_rgb(gx_device *pdev, gx_color_index color,gx_color_value prgb[3])
  *** color-mapping of cmyk-values
  ***/
 private gx_color_index 
-stc_map_cmyk_color(gx_device *pdev,
-        gx_color_value c, gx_color_value m, gx_color_value y,gx_color_value k)
+stc_map_cmyk_color(gx_device *pdev, const gx_color_value cv[])
 {
 
    stcolor_device *sd = (stcolor_device *) pdev;
    int          shift = sd->color_info.depth == 32 ? 8 : sd->stc.bits;
    gx_color_index rv = 0;
+   gx_color_value c = cv[0];
+   gx_color_value m = cv[1];
+   gx_color_value y = cv[2];
+   gx_color_value k = cv[3];
 
    if((c == m) && (m == y)) {
 
@@ -2241,13 +2249,17 @@ stc_map_color_cmyk(gx_device *pdev, gx_color_index color,gx_color_value prgb[3])
  *** color-mapping of cmyk10-values
  ***/
 private gx_color_index 
-stc_map_cmyk10_color(gx_device *pdev,
-        gx_color_value c, gx_color_value m, gx_color_value y,gx_color_value k)
+stc_map_cmyk10_color(gx_device *pdev, const gx_color_value cv[])
 {
 
    stcolor_device *sd = (stcolor_device *) pdev;
    int             mode;
    gx_color_index rv  = 0;
+
+   gx_color_value c = cv[0];
+   gx_color_value m = cv[1];
+   gx_color_value y = cv[2];
+   gx_color_value k = cv[3];
 
    if((c == m) && (m == y)) {
 

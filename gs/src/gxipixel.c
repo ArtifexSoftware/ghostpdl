@@ -252,10 +252,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 	y_extent.y = float2fixed(rh * mat.yy + mat.ty) - mty;
     }
     if (masked) {	/* This is imagemask. */
-	if (bps != 1 || pcs != NULL || penum->alpha ||
-	    !((decode[0] == 0.0 && decode[1] == 1.0) ||
-	      (decode[0] == 1.0 && decode[1] == 0.0))
-	    ) {
+	if (bps != 1 || pcs != NULL || penum->alpha || decode[0] == decode[1]) {
 	    gs_free_object(mem, penum, "gx_default_begin_image");
 	    return_error(gs_error_rangecheck);
 	}
@@ -263,7 +260,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 	color_set_pure(&penum->icolor0, gx_no_color_index);
 	penum->icolor1 = *pdcolor;
 	memcpy(&penum->map[0].table.lookup4x1to32[0],
-	       (decode[0] == 0 ? lookup4x1to32_inverted :
+	       (decode[0] < decode[1] ? lookup4x1to32_inverted :
 		lookup4x1to32_identity),
 	       16 * 4);
 	penum->map[0].decoding = sd_none;

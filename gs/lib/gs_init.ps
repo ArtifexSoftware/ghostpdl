@@ -377,7 +377,9 @@ userdict /.echo.mode true put
 	      { currentrgbcolor { setrgbcolor } }
 	     ifelse
 	   }
-	  ifelse 1 setgray .fillpage exec
+	  ifelse
+          currentoverprint false setoverprint 1 setgray .fillpage setoverprint
+          exec
 	} odef
 % To satisfy the Genoa FTS, executive must be a procedure, not an operator.
 /executive
@@ -473,8 +475,12 @@ userdict /.echo.mode true put
 	0 .endpage .doneshowpage {
 	  .currentnumcopies true .outputpage
 	  (>>showpage, press <return> to continue<<\n) .confirm
-	  erasepage
-	} if initgraphics .beginpage
+	  initgraphics
+          currentoverprint false setoverprint 1 setcolor
+          .fillpage
+          setoverprint 0 setcolor
+	}
+	{ initgraphics } ifelse .beginpage
 } odef
 % Code output by Adobe Illustrator relies on the fact that
 % `stack' is a procedure, not an operator!!!
@@ -1209,11 +1215,22 @@ devicedict /Default devicedict .defaultdevicename get put
 	% If so, don't bother with color screening or gamma correction.
 	% Also don't do gamma correction on very high-resolution devices.
 	% (This should depend on dot gain, not resolution, but we don't
-	% currently have a way to determine this.)
+	% currently have a way to determine this.) Ignore missing components
+        % (*Values = 1).
    currentdevice mark
      /RedValues 0 /GreenValues 0 /BlueValues 0 /GrayValues 0
    .dicttomark .getdeviceparams
-   counttomark 2 idiv 1 sub { exch pop .min } repeat
+   counttomark 2 idiv 1 sub
+    { exch pop dup 1 le
+       { pop }
+       { exch dup 1 le
+          { pop }
+          { .min }
+        ifelse
+       }
+      ifelse
+    }
+   repeat
    exch pop exch pop 32 lt 4 index 800 lt and 5 1 roll
 	% Stack: doscreen dpi freq angle proc
 	% Ghostscript currently doesn't use correct, per-plane halftones
@@ -1328,6 +1345,23 @@ devicedict /Default devicedict .defaultdevicename get put
   .useloresscreen { .setloresscreen } { .sethiresscreen } ifelse
   .setdefaultbgucr
 } bind def
+
+% Load basic color support
+%% Replace 1 (gs_cspace.ps)
+(gs_cspace.ps) runlibfile
+
+(END BASIC COLOR) VMDEBUG
+
+%% Replace 1 (gs_devcs.ps)
+(gs_devcs.ps) runlibfile
+
+(END LEVEL 1 COLOR) VMDEBUG
+
+% Load image support
+%% Replace 1 (gs_img.ps)
+(gs_img.ps) runlibfile
+
+(END IMAGE) VMDEBUG
 
 % Load the initialization files for optional features.
 %% Replace 4 INITFILES

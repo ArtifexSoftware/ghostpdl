@@ -323,8 +323,7 @@ x_wrap_get_bits(gx_device * dev, int y, byte * str, byte ** actual_data)
 	    (*dev_proc(tdev, map_color_rgb))(tdev, pixel, rgb);
 	    pixel_in = pixel;
 	    if (dev->color_info.num_components <= 3)
-		pixel_out = (*dev_proc(dev, map_rgb_color))
-		    (dev, rgb[0], rgb[1], rgb[2]);
+		pixel_out = (*dev_proc(dev, map_rgb_color))(dev, rgb);
 	    else {
 		/* Convert RGB to CMYK. */
 		gx_color_value c = gx_max_color_value - rgb[0];
@@ -332,8 +331,9 @@ x_wrap_get_bits(gx_device * dev, int y, byte * str, byte ** actual_data)
 		gx_color_value y = gx_max_color_value - rgb[2];
 		gx_color_value k = (c < m ? min(c, y) : min(m, y));
 
-		pixel_out = (*dev_proc(dev, map_cmyk_color))
-		    (dev, c - k, m - k, y - k, k);
+                gx_color_value cmyk[4];
+                cmyk[0] = c - k; cmyk[1] = m - k; cmyk[2] = y - k; cmyk[3] = k;
+		pixel_out = (*dev_proc(dev, map_cmyk_color))(dev, cmyk);
 	    }
 	}
 	LINE_ACCUM(pixel_out, depth);
@@ -478,7 +478,7 @@ x_alt_map_color(gx_device * dev, gx_color_index color)
     if (result >= 0)
 	cindex = result;
     else
-	cindex = dev_proc(tdev, map_rgb_color)(tdev, rgb[0], rgb[1], rgb[2]);
+	cindex = dev_proc(tdev, map_rgb_color)(tdev, rgb);
     if (color < 16)
 	((gx_device_X_wrapper *) dev)->color_cache[color] = cindex;
     return cindex;
@@ -607,13 +607,12 @@ x_cmyk_put_params(gx_device * dev, gs_param_list * plist)
 }
 
 private gx_color_index
-x_cmyk_map_cmyk_color(gx_device * dev,
-		      gx_color_value c, gx_color_value m, gx_color_value y,
-		      gx_color_value k)
+x_cmyk_map_cmyk_color(gx_device * dev, const gx_color_value cv[])
 {
     int shift = dev->color_info.depth >> 2;
-    gx_color_index pixel = c >> (gx_color_value_bits - shift);
-
+    gx_color_index pixel = cv[0] >> (gx_color_value_bits - shift);
+    gx_color_value c, m, y, k;
+    c = cv[0]; m = cv[1]; y = cv[2]; k = cv[3];
     pixel = (pixel << shift) | (m >> (gx_color_value_bits - shift));
     pixel = (pixel << shift) | (y >> (gx_color_value_bits - shift));
     return (pixel << shift) | (k >> (gx_color_value_bits - shift));
@@ -797,9 +796,11 @@ private gx_color_index
 x_alpha_map_rgb_alpha_color(gx_device * dev,
  gx_color_value r, gx_color_value g, gx_color_value b, gx_color_value alpha)
 {
-    gx_color_index color = gx_forward_map_rgb_color(dev, r, g, b);
+    gx_color_index color;
+    gx_color_value cv[3];
     byte abyte = alpha >> (gx_color_value_bits - 8);
-
+    cv[0] = r; cv[1] = g; cv[2] = b;
+    color = gx_forward_map_rgb_color(dev, cv);
     return (abyte == 0 ? (gx_color_index)0xff << 24 :
 	    ((gx_color_index) (abyte ^ 0xff) << 24) + color);
 }
@@ -851,12 +852,13 @@ x_alpha_copy_alpha(gx_device * dev, const unsigned char *base, int sourcex,
 #define make_shade(v, alpha)\
   (gx_max_color_value -\
    ((gx_max_color_value - (v)) * (alpha) / 15))
-		    gx_color_value r = make_shade(rgb[0], alpha);
-		    gx_color_value g = make_shade(rgb[1], alpha);
-		    gx_color_value b = make_shade(rgb[2], alpha);
+                    gx_color_value cv[3];
+		    cv[0] = make_shade(rgb[0], alpha);
+		    cv[1] = make_shade(rgb[1], alpha);
+		    cv[2] = make_shade(rgb[2], alpha);
 
 #undef make_shade
-		    a_color = (*dev_proc(tdev, map_rgb_color)) (tdev, r, g, b);
+		    a_color = (*dev_proc(tdev, map_rgb_color)) (tdev, cv);
 		    if (a_color != gx_no_color_index) {
 			shades[alpha] = a_color;
 			break;
@@ -943,19 +945,21 @@ const gx_device_X_wrapper gs_x11rg32x_device = {
 
 /* Map RGB to a fake color. */
 private gx_color_index
-x_rg16x_map_rgb_color(gx_device * dev, gx_color_value r, gx_color_value g,
-		      gx_color_value b)
+x_rg16x_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
     /* Permute the colors to G5/B5/R6. */
+    gx_color_value r, g, b;
+    r = cv[0]; g = cv[1]; b = cv[2];
     return (r >> (gx_color_value_bits - 6)) +
 	((g >> (gx_color_value_bits - 5)) << 11) +
 	((b >> (gx_color_value_bits - 5)) << 6);
 }
 private gx_color_index
-x_rg32x_map_rgb_color(gx_device * dev, gx_color_value r, gx_color_value g,
-		      gx_color_value b)
+x_rg32x_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
     /* Permute the colors to G11/B10/R11. */
+    gx_color_value r, g, b;
+    r = cv[0]; g = cv[1]; b = cv[2];
     return (r >> (gx_color_value_bits - 11)) +
 	((gx_color_index)(g >> (gx_color_value_bits - 11)) << 21) +
 	((gx_color_index)(b >> (gx_color_value_bits - 10)) << 11);

@@ -383,7 +383,7 @@ $(DD)display.dev : $(display_)
 	$(SETDEV) $(DD)display $(display_)
 
 $(GLOBJ)gdevdsp.$(OBJ) : $(GLSRC)gdevdsp.c $(string__h)\
- $(gp_h) $(gpcheck_h) $(gdevpccm_h) $(gsparam_h)\
+ $(gp_h) $(gpcheck_h) $(gdevpccm_h) $(gsparam_h) $(gsdevice_h)\
  $(GDEVH) $(gxdevmem_h) $(gdevdsp_h) $(gdevdsp2_h)
 	$(GLCC) $(GLO_)gdevdsp.$(OBJ) $(C_) $(GLSRC)gdevdsp.c
 
@@ -692,7 +692,7 @@ $(GLOBJ)gdevpsds.$(OBJ) : $(GLSRC)gdevpsds.c $(GX) $(memory__h)\
 $(GLOBJ)gdevpsdu.$(OBJ) : $(GLSRC)gdevpsdu.c $(GXERR)\
  $(jpeglib__h) $(memory__h) $(stdio__h)\
  $(sa85x_h) $(scfx_h) $(sdct_h) $(sjpeg_h) $(sstring_h) $(strimpl_h)\
- $(gdevpsdf_h) $(spprint_h)
+ $(gdevpsdf_h) $(spprint_h) $(gsovrc_h)
 	$(GLJCC) $(GLO_)gdevpsdu.$(OBJ) $(C_) $(GLSRC)gdevpsdu.c
 
 # PostScript and EPS writers
@@ -1183,6 +1183,38 @@ $(DD)cgm8.dev : $(DEVS_MAK) $(cgm_)
 
 $(DD)cgm24.dev : $(DEVS_MAK) $(cgm_)
 	$(SETDEV) $(DD)cgm24 $(cgm_)
+
+### ------------------------ The DeviceN device ------------------------ ###
+
+devn_=$(GLOBJ)gdevdevn.$(OBJ)
+
+$(DD)spotrgb.dev : $(DEVS_MAK) $(devn_) $(GLD)page.dev
+	$(SETDEV) $(DD)spotrgb $(devn_)
+
+$(DD)spotcmyk.dev : $(DEVS_MAK) $(devn_) $(GLD)page.dev
+	$(SETDEV) $(DD)spotcmyk $(devn_)
+
+$(DD)devicen.dev : $(DEVS_MAK) $(devn_) $(GLD)page.dev
+	$(SETDEV) $(DD)devicen $(devn_)
+
+$(GLOBJ)gdevdevn.$(OBJ) : $(GLSRC)gdevdevn.c $(PDEVH) $(math__h)\
+ $(gdevprn_h) $(gsparam_h) $(gscrd_h) $(gscrdp_h) $(gxlum_h) $(gdevdcrd_h)\
+ $(gstypes_h) $(gxdcconv_h)
+	$(GLCC) $(GLO_)gdevdevn.$(OBJ) $(C_) $(GLSRC)gdevdevn.c
+
+### --------------------------- The XCF device ------------------------- ###
+
+xcf_=$(GLOBJ)gdevxcf.$(OBJ)
+
+$(DD)xcf.dev : $(DEVS_MAK) $(xcf_) $(GLD)page.dev
+	$(SETDEV) $(DD)xcf $(xcf_)
+
+$(DD)xcfcmyk.dev : $(DEVS_MAK) $(xcf_) $(GLD)page.dev
+	$(SETDEV) $(DD)xcfcmyk $(xcf_)
+
+$(GLOBJ)gdevxcf.$(OBJ) : $(GLSRC)gdevxcf.c $(PDEVH) $(math__h)\
+ $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gsparam_h) $(gxlum_h) $(icc_h)
+	$(GLICCCC) $(GLO_)gdevxcf.$(OBJ) $(C_) $(GLSRC)gdevxcf.c
 
 ### ------------------------- JPEG file format ------------------------- ###
 

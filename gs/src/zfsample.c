@@ -543,4 +543,3 @@ const op_def zfsample_op_defs[] =
     {"1.buildsampledfunction", zbuildsampledfunction},
     op_def_end(0)
 };
-

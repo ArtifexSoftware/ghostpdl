@@ -383,10 +383,8 @@ image_PaintProc(const gs_client_color * pcolor, gs_state * pgs)
     const gs_depth_bitmap *pbitmap = &(ppmap->bitmap);
     gs_image_enum *pen =
         gs_image_enum_alloc(gs_state_memory(pgs), "image_PaintProc");
-    const gs_color_space *pcspace =
-    	(ppmap->pcspace == 0 ?
-     	    gs_cspace_DeviceGray((const gs_imager_state *)pgs) :
-     	    ppmap->pcspace);
+    gs_color_space cs;
+    const gs_color_space *pcspace;
     gx_image_enum_common_t *pie;
     /*
      * If the image is transparent then we want to do image type4 processing.
@@ -409,6 +407,14 @@ image_PaintProc(const gs_client_color * pcolor, gs_state * pgs)
 
     if (pen == 0)
 	return_error(gs_error_VMerror);
+
+    if (ppmap->pcspace == 0) {
+        gs_cspace_init_DeviceGray(&cs);
+        pcspace = &cs;
+    } else
+        pcspace = ppmap->pcspace;
+    gs_gsave(pgs);
+    gs_setcolorspace(pgs, pcspace);
     if (transparent)
         gs_image4_t_init( (gs_image4_t *) &image, pcspace);
     else
@@ -427,14 +433,18 @@ image_PaintProc(const gs_client_color * pcolor, gs_state * pgs)
 	image.i1.Decode[0] = 1.0;
 	image.i1.Decode[1] = 0.0;
     }
-    code = gs_image_begin_typed((const gs_image_common_t *)&image, pgs,
-				false, &pie);
-    if (code < 0)
-	return code;
-    code = gs_image_enum_init(pen, pie, (gs_data_image_t *)&image, pgs);
-    if (code < 0)
-	return code;
-    return bitmap_paint(pen, (gs_data_image_t *) & image, pbitmap, pgs);
+
+    if ( (code = gs_image_begin_typed( (const gs_image_common_t *)&image,
+                                       pgs,
+		                       false,
+                                       &pie )) >= 0 &&
+         (code = gs_image_enum_init( pen,
+                                     pie,
+                                     (gs_data_image_t *)&image,
+                                     pgs )) >= 0      )
+	code = bitmap_paint(pen, (gs_data_image_t *) & image, pbitmap, pgs);
+    gs_grestore(pgs);
+    return code;
 }
 /* Finish painting any kind of bitmap pattern. */
 private int
@@ -600,19 +610,23 @@ gs_makebitmappattern_xform(
  * 'masked_fill_rect' instead of 'masked_fill_rectangle' in order to limit
  * identifier lengths to 32 characters.
  */
+private dev_color_proc_get_dev_halftone(gx_dc_pattern_get_dev_halftone);
 private dev_color_proc_load(gx_dc_pattern_load);
 /*dev_color_proc_fill_rectangle(gx_dc_pattern_fill_rectangle); *//*gxp1fill.h */
 private dev_color_proc_equal(gx_dc_pattern_equal);
 private dev_color_proc_load(gx_dc_pure_masked_load);
 
+private dev_color_proc_get_dev_halftone(gx_dc_pure_masked_get_dev_halftone);
 /*dev_color_proc_fill_rectangle(gx_dc_pure_masked_fill_rect); *//*gxp1fill.h */
 private dev_color_proc_equal(gx_dc_pure_masked_equal);
 private dev_color_proc_load(gx_dc_binary_masked_load);
 
+private dev_color_proc_get_dev_halftone(gx_dc_binary_masked_get_dev_halftone);
 /*dev_color_proc_fill_rectangle(gx_dc_binary_masked_fill_rect); *//*gxp1fill.h */
 private dev_color_proc_equal(gx_dc_binary_masked_equal);
 private dev_color_proc_load(gx_dc_colored_masked_load);
 
+private dev_color_proc_get_dev_halftone(gx_dc_colored_masked_get_dev_halftone);
 /*dev_color_proc_fill_rectangle(gx_dc_colored_masked_fill_rect); *//*gxp1fill.h */
 private dev_color_proc_equal(gx_dc_colored_masked_equal);
 
@@ -621,8 +635,11 @@ gs_private_st_composite(st_dc_pattern, gx_device_color, "dc_pattern",
 			dc_pattern_enum_ptrs, dc_pattern_reloc_ptrs);
 const gx_device_color_type_t gx_dc_pattern = {
     &st_dc_pattern,
+    gx_dc_pattern_save_dc, gx_dc_pattern_get_dev_halftone,
     gx_dc_pattern_load, gx_dc_pattern_fill_rectangle,
-    gx_dc_default_fill_masked, gx_dc_pattern_equal
+    gx_dc_default_fill_masked, gx_dc_pattern_equal,
+    gx_dc_pattern_write, gx_dc_pattern_read, 
+    gx_dc_pattern_get_nonzero_comps
 };
 
 extern_st(st_dc_ht_binary);
@@ -630,8 +647,11 @@ gs_private_st_composite(st_dc_pure_masked, gx_device_color, "dc_pure_masked",
 			dc_masked_enum_ptrs, dc_masked_reloc_ptrs);
 const gx_device_color_type_t gx_dc_pure_masked = {
     &st_dc_pure_masked,
+    gx_dc_pattern_save_dc, gx_dc_pure_masked_get_dev_halftone,
     gx_dc_pure_masked_load, gx_dc_pure_masked_fill_rect,
-    gx_dc_default_fill_masked, gx_dc_pure_masked_equal
+    gx_dc_default_fill_masked, gx_dc_pure_masked_equal,
+    gx_dc_pattern_write, gx_dc_pattern_read, 
+    gx_dc_pure_get_nonzero_comps
 };
 
 gs_private_st_composite(st_dc_binary_masked, gx_device_color,
@@ -639,8 +659,11 @@ gs_private_st_composite(st_dc_binary_masked, gx_device_color,
 			dc_binary_masked_reloc_ptrs);
 const gx_device_color_type_t gx_dc_binary_masked = {
     &st_dc_binary_masked,
+    gx_dc_pattern_save_dc, gx_dc_binary_masked_get_dev_halftone,
     gx_dc_binary_masked_load, gx_dc_binary_masked_fill_rect,
-    gx_dc_default_fill_masked, gx_dc_binary_masked_equal
+    gx_dc_default_fill_masked, gx_dc_binary_masked_equal,
+    gx_dc_pattern_write, gx_dc_pattern_read, 
+    gx_dc_ht_binary_get_nonzero_comps
 };
 
 gs_private_st_composite_only(st_dc_colored_masked, gx_device_color,
@@ -648,8 +671,11 @@ gs_private_st_composite_only(st_dc_colored_masked, gx_device_color,
 			     dc_masked_enum_ptrs, dc_masked_reloc_ptrs);
 const gx_device_color_type_t gx_dc_colored_masked = {
     &st_dc_colored_masked,
+    gx_dc_pattern_save_dc, gx_dc_colored_masked_get_dev_halftone,
     gx_dc_colored_masked_load, gx_dc_colored_masked_fill_rect,
-    gx_dc_default_fill_masked, gx_dc_colored_masked_equal
+    gx_dc_default_fill_masked, gx_dc_colored_masked_equal,
+    gx_dc_pattern_write, gx_dc_pattern_read, 
+    gx_dc_ht_colored_get_nonzero_comps
 };
 
 #undef gx_dc_type_pattern
@@ -716,6 +742,55 @@ private RELOC_PTRS_BEGIN(dc_binary_masked_reloc_ptrs)
     RELOC_USING(st_dc_ht_binary, vptr, size);
 }
 RELOC_PTRS_END
+
+
+/*
+ * Currently, patterns cannot be passed through the command list, so
+ * there is little reason to save them. We keep this as a distinct
+ * procedure for potential future enhancements.
+ */
+void
+gx_dc_pattern_save_dc(
+    const gx_device_color * pdevc, 
+    gx_device_color_saved * psdc )
+{
+    return;
+}
+
+/*
+ * Colored Type 1 patterns cannot provide a halftone, as multiple
+ * halftones may be used by the PaintProc procedure. Hence, we can only
+ * hope this is a contone device.
+ */
+private const gx_device_halftone *
+gx_dc_pattern_get_dev_halftone(const gx_device_color * pdevc)
+{
+    return 0;
+}
+
+/*
+ * Uncolored Type 1 halftones make use of the halftone impplied by their
+ * base color. Ideally this would be returned via an inhereted method,
+ * but the device color structure does not support such an arrangement.
+ */
+private const gx_device_halftone *
+gx_dc_pure_masked_get_dev_halftone(const gx_device_color * pdevc)
+{
+    return 0;
+}
+
+private const gx_device_halftone *
+gx_dc_binary_masked_get_dev_halftone(const gx_device_color * pdevc)
+{
+    return pdevc->colors.binary.b_ht;
+}
+
+private const gx_device_halftone *
+gx_dc_colored_masked_get_dev_halftone(const gx_device_color * pdevc)
+{
+    return pdevc->colors.colored.c_ht;
+}
+
 
 /* Macros for pattern loading */
 #define FINISH_PATTERN_LOAD\
@@ -817,6 +892,23 @@ gx_dc_pattern_equal(const gx_device_color * pdevc1,
 	pdevc1->phase.y == pdevc2->phase.y &&
 	pdevc1->mask.id == pdevc2->mask.id;
 }
+
+/*
+ * For shading and colored tiling patterns, it is not possible to say
+ * which color components have non-zero values. The following routine
+ * indicates this by just returning 1. The procedure is exported for
+ * the benefit of gsptype2.c.
+ */
+int
+gx_dc_pattern_get_nonzero_comps(
+    const gx_device_color * pdevc_ignored,
+    const gx_device *       dev_ignored,
+    gx_color_index *        pcomp_bits_ignored )
+{
+    return 1;
+}
+
+
 private bool
 gx_dc_pure_masked_equal(const gx_device_color * pdevc1,
 			const gx_device_color * pdevc2)
@@ -837,4 +929,29 @@ gx_dc_colored_masked_equal(const gx_device_color * pdevc1,
 {
     return (*gx_dc_type_ht_colored->equal) (pdevc1, pdevc2) &&
 	pdevc1->mask.id == pdevc2->mask.id;
+}
+
+/* currently, patterns cannot be passed through the command list */
+int
+gx_dc_pattern_write(
+    const gx_device_color *         pdevc,
+    const gx_device_color_saved *   psdc,
+    const gx_device *               dev,
+    byte *                          data,
+    uint *                          psize )
+{
+    return_error(gs_error_unknownerror);
+}
+
+int
+gx_dc_pattern_read(
+    gx_device_color *       pdevc,
+    const gs_imager_state * pis,
+    const gx_device_color * prior_devc,
+    const gx_device *       dev,
+    const byte *            data,
+    uint                    size,
+    gs_memory_t *           mem )
+{
+    return_error(gs_error_unknownerror);
 }

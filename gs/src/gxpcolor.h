@@ -115,6 +115,19 @@ extern const gx_device_color_type_t
 #define gx_dc_type_pattern (&gx_dc_pattern)
 
 /*
+ * These device color methods are shared amongst pattern types.
+ */
+extern dev_color_proc_save_dc(gx_dc_pattern_save_dc);
+extern dev_color_proc_write(gx_dc_pattern_write);
+extern dev_color_proc_read(gx_dc_pattern_read);
+
+/*
+ * For shading and colored tiling patterns, it is not possible to say
+ * which color components have non-zero values.
+ */
+extern dev_color_proc_get_nonzero_comps(gx_dc_pattern_get_nonzero_comps);
+
+/*
  * Define a color tile, an entry in the rendered Pattern cache (and
  * eventually in the colored halftone cache).  Note that the depth is
  * not sufficient to ensure that the rendering matches a given device;

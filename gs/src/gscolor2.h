@@ -38,11 +38,6 @@ int gs_setcolorspace(gs_state *, const gs_color_space *);
 const gs_client_color *gs_currentcolor(const gs_state *);
 int gs_setcolor(gs_state *, const gs_client_color *);
 
-/*
- * gs_currentcolorspace_index returns the index of the current color space
- * *before* any substitution.
- */
-gs_color_space_index gs_currentcolorspace_index(const gs_state *);
 
 /* CIE-specific routines */
 #ifndef gs_cie_render_DEFINED

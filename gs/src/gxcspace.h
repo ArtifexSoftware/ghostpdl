@@ -88,16 +88,6 @@ struct gs_color_space_type_s {
   (*(pcs)->type->base_space)(pcs)
 	cs_proc_base_space((*base_space));
 
-    /*
-     * Test whether this color space is equal to another one of the same
-     * type.  Spurious 'false' answers are OK if the real test is too much
-     * work, but spurious 'true' answers are not.
-     */
-
-#define cs_proc_equal(proc)\
-  bool proc(const gs_color_space *, const gs_color_space *)
-	cs_proc_equal((*equal));
-
     /* Construct the initial color value for this space. */
 
 #define cs_proc_init_color(proc)\
@@ -145,8 +135,8 @@ struct gs_color_space_type_s {
     /* (Only defined for concrete color spaces.) */
 
 #define cs_proc_remap_concrete_color(proc)\
-  int proc(const frac *, gx_device_color *, const gs_imager_state *,\
-    gx_device *, gs_color_select_t)
+  int proc(const frac *, const gs_color_space * pcs, gx_device_color *,\
+	const gs_imager_state *, gx_device *, gs_color_select_t)
 	cs_proc_remap_concrete_color((*remap_concrete_color));
 
     /* Map a color directly to a device color. */
@@ -162,6 +152,22 @@ struct gs_color_space_type_s {
 #define cs_proc_install_cspace(proc)\
   int proc(const gs_color_space *, gs_state *)
 	cs_proc_install_cspace((*install_cspace));
+
+    /*
+     * Push the appropriate overprint compositor onto the current device.
+     * This is distinct from install_cspace as it may need to be called
+     * when the overprint parameter is changed.
+     *
+     * This routine need only be called if:
+     *   1. The color space or color model has changed, and overprint
+     *      is true.
+     *   2. The overprint mode setting has changed, and overprint is true.
+     *   3. The overprint mode setting has changed.
+     */
+
+#define cs_proc_set_overprint(proc)\
+  int proc(const gs_color_space *, gs_state *)
+	cs_proc_set_overprint((*set_overprint));
 
     /* Adjust reference counts of indirect color space components. */
 
@@ -204,8 +210,6 @@ cs_proc_num_components(gx_num_components_1);
 cs_proc_num_components(gx_num_components_3);
 cs_proc_num_components(gx_num_components_4);
 cs_proc_base_space(gx_no_base_space);
-cs_proc_equal(gx_cspace_is_equal);
-cs_proc_equal(gx_cspace_not_equal);
 cs_proc_init_color(gx_init_paint_1);
 cs_proc_init_color(gx_init_paint_3);
 cs_proc_init_color(gx_init_paint_4);
@@ -217,6 +221,8 @@ cs_proc_concrete_space(gx_same_concrete_space);
 cs_proc_concretize_color(gx_no_concretize_color);
 cs_proc_remap_color(gx_default_remap_color);
 cs_proc_install_cspace(gx_no_install_cspace);
+cs_proc_set_overprint(gx_spot_colors_set_overprint);
+cs_proc_set_overprint(gx_comp_map_set_overprint);
 cs_proc_adjust_cspace_count(gx_no_adjust_cspace_count);
 cs_proc_adjust_color_count(gx_no_adjust_color_count);
 

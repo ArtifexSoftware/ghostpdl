@@ -34,6 +34,7 @@
 #include "stream.h"
 #include "strimpl.h"		/* for sisparam.h */
 #include "sisparam.h"
+#include "gxcomp.h"
 
 extern_gx_image_type_table();
 
@@ -809,8 +810,33 @@ clist_create_compositor(gx_device * dev,
 			gx_device ** pcdev, const gs_composite_t * pcte,
 			const gs_imager_state * pis, gs_memory_t * mem)
 {
-    /****** NYI ******/
-    return gx_no_create_compositor(dev, pcdev, pcte, pis, mem);
+    byte *                  dp;
+    uint                    size = 0;
+    int                     code = pcte->type->procs.write(pcte, 0, &size);
+
+    /* always return the same device */
+    *pcdev = dev;
+
+    /* determine the amount of space required */
+    if (code < 0 && code != gs_error_rangecheck)
+        return code;
+    size += 2 + 1;      /* 2 bytes for the command code, one for the id */
+
+    /* overprint applies to all bands */
+    code = set_cmd_put_all_op( dp,
+                               (gx_device_clist_writer *)dev,
+                               cmd_opv_extend,
+                               size );
+    if (code < 0)
+        return code;
+
+    /* insert the command and compositor identifier */
+    dp[1] = cmd_opv_ext_create_compositor;
+    dp[2] = pcte->type->comp_id;
+    dp += 3;
+
+    /* serialize the remainder of the compositor */
+    return pcte->type->procs.write(pcte, dp, &size);
 }
 
 /* ------ Utilities ------ */
@@ -843,7 +869,6 @@ cmd_put_set_data_x(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 /* Add commands to represent a halftone order. */
 private int
 cmd_put_ht_order(gx_device_clist_writer * cldev, const gx_ht_order * porder,
-		 gs_ht_separation_name cname,
 		 int component /* -1 = default/gray/black screen */ )
 {
     byte command[cmd_max_intsize(sizeof(long)) * 8];
@@ -861,8 +886,6 @@ cmd_put_ht_order(gx_device_clist_writer * cldev, const gx_ht_order * porder,
 	return_error(gs_error_unregistered);
     /* Put out the order parameters. */
     cp = cmd_put_w(component + 1, command);
-    if (component >= 0)
-	cp = cmd_put_w(cname, cp);
     cp = cmd_put_w(porder->width, cp);
     cp = cmd_put_w(porder->height, cp);
     cp = cmd_put_w(porder->raster, cp);
@@ -877,7 +900,7 @@ cmd_put_ht_order(gx_device_clist_writer * cldev, const gx_ht_order * porder,
     memcpy(dp + 1, command, len);
 
     /* Put out the transfer function, if any. */
-    code = cmd_put_color_map(cldev, cmd_map_ht_transfer, porder->transfer,
+    code = cmd_put_color_map(cldev, cmd_map_ht_transfer, 0, porder->transfer,
 			     NULL);
     if (code < 0)
 	return code;
@@ -932,14 +955,12 @@ cmd_put_halftone(gx_device_clist_writer * cldev, const gx_device_halftone * pdht
 	cmd_put_w(num_comp, dp + 2);
     }
     if (num_comp == 0)
-	return cmd_put_ht_order(cldev, &pdht->order,
-				gs_ht_separation_Default, -1);
+	return cmd_put_ht_order(cldev, &pdht->order, -1);
     {
 	int i;
 
 	for (i = num_comp; --i >= 0;) {
-	    int code = cmd_put_ht_order(cldev, &pdht->components[i].corder,
-					pdht->components[i].cname, i);
+	    int code = cmd_put_ht_order(cldev, &pdht->components[i].corder, i);
 
 	    if (code < 0)
 		return code;
@@ -966,12 +987,12 @@ cmd_put_color_mapping(gx_device_clist_writer * cldev,
     /* If we need to map RGB to CMYK, put out b.g. and u.c.r. */
     if (write_rgb_to_cmyk) {
 	code = cmd_put_color_map(cldev, cmd_map_black_generation,
-				 pis->black_generation,
+				 0, pis->black_generation,
 				 &cldev->black_generation_id);
 	if (code < 0)
 	    return code;
 	code = cmd_put_color_map(cldev, cmd_map_undercolor_removal,
-				 pis->undercolor_removal,
+				 0, pis->undercolor_removal,
 				 &cldev->undercolor_removal_id);
 	if (code < 0)
 	    return code;
@@ -980,39 +1001,76 @@ cmd_put_color_mapping(gx_device_clist_writer * cldev,
     {
 	uint which = 0;
 	bool all_same = true;
+	bool send_default_comp = false;
 	int i;
+	gs_id default_comp_id, xfer_ids[4];
+
+	/*
+	 * Determine the ids for the transfer functions that we currently
+	 * have in the set_transfer structure.  The halftone xfer funcs
+	 * are sent in cmd_put_ht_order().
+	 */
+#define get_id(pis, color, color_num) \
+    ((pis->set_transfer.color != NULL && pis->set_transfer.color_num >= 0) \
+	? pis->set_transfer.color->id\
+	: pis->set_transfer.gray->id)
+
+        xfer_ids[0] = get_id(pis, red, red_component_num);
+        xfer_ids[1] = get_id(pis, green, green_component_num);
+        xfer_ids[2] = get_id(pis, blue, blue_component_num);
+	xfer_ids[3] = default_comp_id = pis->set_transfer.gray->id;
+#undef get_id
 
 	for (i = 0; i < countof(cldev->transfer_ids); ++i) {
-	    if (pis->effective_transfer.indexed[i]->id !=
-		cldev->transfer_ids[i]
-		)
+	    if (xfer_ids[i] != cldev->transfer_ids[i])
 		which |= 1 << i;
-	    if (pis->effective_transfer.indexed[i]->id !=
-		pis->effective_transfer.indexed[0]->id
-		)
+	    if (xfer_ids[i] != default_comp_id)
 		all_same = false;
+	    if (xfer_ids[i] == default_comp_id &&
+		cldev->transfer_ids[i] != default_comp_id)
+		send_default_comp = true;
 	}
 	/* There are 3 cases for transfer functions: nothing to write, */
 	/* a single function, and multiple functions. */
 	if (which == 0)
 	    return 0;
-	if (which == (1 << countof(cldev->transfer_ids)) - 1 && all_same) {
-	    code = cmd_put_color_map(cldev, cmd_map_transfer,
-				     pis->effective_transfer.indexed[0],
-				     &cldev->transfer_ids[0]);
+	/*
+	 * Send default transfer function if changed or we need it for a
+	 * component
+	 */
+	if (send_default_comp || cldev->transfer_ids[0] != default_comp_id) {
+	    gs_id dummy = gs_no_id;
+
+	    code = cmd_put_color_map(cldev, cmd_map_transfer, 0,
+		pis->set_transfer.gray, &dummy);
 	    if (code < 0)
 		return code;
-	    for (i = 1; i < countof(cldev->transfer_ids); ++i)
-		cldev->transfer_ids[i] = cldev->transfer_ids[0];
-	} else
-	    for (i = 0; i < countof(cldev->transfer_ids); ++i) {
-		code = cmd_put_color_map(cldev,
-				   (cmd_map_index) (cmd_map_transfer_0 + i),
-					 pis->effective_transfer.indexed[i],
-					 &cldev->transfer_ids[i]);
-		if (code < 0)
-		    return code;
-	    }
+	    /* Sending a default will force all xfers to default */
+	    for (i = 0; i < countof(cldev->transfer_ids); ++i)
+		cldev->transfer_ids[i] = default_comp_id;
+	}
+	/* Send any transfer functions which have changed */
+	if (cldev->transfer_ids[0] != xfer_ids[0]) {
+	    code = cmd_put_color_map(cldev, cmd_map_transfer_0,
+			pis->set_transfer.red_component_num,
+			pis->set_transfer.red, &cldev->transfer_ids[0]);
+	    if (code < 0)
+		return code;
+	}
+	if (cldev->transfer_ids[1] != xfer_ids[1]) {
+	    code = cmd_put_color_map(cldev, cmd_map_transfer_1,
+			pis->set_transfer.green_component_num,
+			pis->set_transfer.green, &cldev->transfer_ids[1]);
+	    if (code < 0)
+		return code;
+	}
+	if (cldev->transfer_ids[2] != xfer_ids[2]) {
+	    code = cmd_put_color_map(cldev, cmd_map_transfer_2,
+			pis->set_transfer.blue_component_num,
+			pis->set_transfer.blue, &cldev->transfer_ids[2]);
+	    if (code < 0)
+		return code;
+	}
     }
 
     return 0;

@@ -28,49 +28,23 @@ typedef struct gx_device_halftone_s gx_device_halftone;
 #endif
 
 /*
- * Note that in the procedures below, the colors are specified by fracs,
- * but the alpha value is a gx_color_value.  This is a design flaw that
- * we might be able to fix eventually.
+ * Render DeviceN possibly by halftoning.
+ *  pcolors = pointer to an array color values (as fracs)
+ *  pdevc - pointer to device color structure
+ *  dev = pointer to device data structure
+ *  pht = pointer to halftone data structure
+ *  ht_phase  = halftone phase
+ *  gray_colorspace = true -> current color space is DeviceGray.
+ *  This is part of a kludge to minimize differences in the
+ *  regression testing.
  */
-
-/* Render a gray, possibly by halftoning. */
-/* Return 0 if complete, 1 if caller must do gx_color_load, <0 on error. */
-int gx_render_device_gray(frac gray, gx_color_value alpha,
-			  gx_device_color * pdevc, gx_device * dev,
-			  gx_device_halftone * dev_ht,
-			  const gs_int_point * ht_phase);
-
-#define gx_render_gray_alpha(gray, alpha, pdevc, pis, dev, select)\
-  gx_render_device_gray(gray, alpha, pdevc, dev, pis->dev_ht,\
-			&pis->screen_phase[select])
-#define gx_render_gray(gray, pdevc, pis, dev, select)\
-  gx_render_gray_alpha(gray, pis->alpha, pdevc, pis, dev, select)
-
-/* Render a color, possibly by halftoning. */
-/* Return as for gx_render_[device_]gray. */
-int gx_render_device_color(frac red, frac green, frac blue, frac white,
-			   bool cmyk, gx_color_value alpha,
-			   gx_device_color * pdevc, gx_device * dev,
-			   gx_device_halftone * pdht,
-			   const gs_int_point * ht_phase);
-
-#define gx_render_color_alpha(r, g, b, w, a, cmyk, pdevc, pis, dev, select)\
-  gx_render_device_color(r, g, b, w, cmyk, a, pdevc, dev,\
-			 pis->dev_ht, &pis->screen_phase[select])
-#define gx_render_color(r, g, b, w, cmyk, pdevc, pis, dev, select)\
-  gx_render_color_alpha(r, g, b, w, pis->alpha, cmyk, pdevc, pis, dev, select)
-#define gx_render_rgb(r, g, b, pdevc, pis, dev, select)\
-  gx_render_color(r, g, b, frac_0, false, pdevc, pis, dev, select)
-#define gx_render_cmyk(c, m, y, k, pdevc, pis, dev, select)\
-  gx_render_color(c, m, y, k, true, pdevc, pis, dev, select)
-#define gx_render_rgb_alpha(r, g, b, a, pdevc, pis, dev, select)\
-  gx_render_color_alpha(r, g, b, frac_0, a, false, pdevc, pis, dev, select)
-
+int gx_render_device_DeviceN(frac * pcolor, gx_device_color * pdevc,
+	gx_device * dev, gx_device_halftone * pdht,
+	const gs_int_point * ht_phase, bool gray_colorspace);
 /*
  * Reduce a colored halftone with 0 or 1 varying plane(s) to a pure color
  * or a binary halftone.
  */
-int gx_reduce_colored_halftone(gx_device_color *pdevc, gx_device *dev,
-			       bool cmyk);
+int gx_devn_reduce_colored_halftone(gx_device_color *pdevc, gx_device *dev);
 
 #endif /* gxdither_INCLUDED */

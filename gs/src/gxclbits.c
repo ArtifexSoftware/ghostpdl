@@ -304,7 +304,7 @@ cmd_put_tile_index(gx_device_clist_writer *cldev, gx_clist_state *pcls,
 /* If necessary, write out data for a single color map. */
 int
 cmd_put_color_map(gx_device_clist_writer * cldev, cmd_map_index map_index,
-		  const gx_transfer_map * map, gs_id * pid)
+	int comp_num, const gx_transfer_map * map, gs_id * pid)
 {
     byte *dp;
     int code;
@@ -312,27 +312,30 @@ cmd_put_color_map(gx_device_clist_writer * cldev, cmd_map_index map_index,
     if (map == 0) {
 	if (pid && *pid == gs_no_id)
 	    return 0;	/* no need to write */
-	code = set_cmd_put_all_op(dp, cldev, cmd_opv_set_misc, 2);
+	code = set_cmd_put_all_op(dp, cldev, cmd_opv_set_misc, 3);
 	if (code < 0)
 	    return code;
 	dp[1] = cmd_set_misc_map + (cmd_map_none << 4) + map_index;
+	dp[2] = comp_num;
 	if (pid)
 	    *pid = gs_no_id;
     } else {
 	if (pid && map->id == *pid)
 	    return 0;	/* no need to write */
 	if (map->proc == gs_identity_transfer) {
-	    code = set_cmd_put_all_op(dp, cldev, cmd_opv_set_misc, 2);
+	    code = set_cmd_put_all_op(dp, cldev, cmd_opv_set_misc, 3);
 	    if (code < 0)
 		return code;
 	    dp[1] = cmd_set_misc_map + (cmd_map_identity << 4) + map_index;
+	    dp[2] = comp_num;
 	} else {
 	    code = set_cmd_put_all_op(dp, cldev, cmd_opv_set_misc,
-				      2 + sizeof(map->values));
+				      3 + sizeof(map->values));
 	    if (code < 0)
 		return code;
 	    dp[1] = cmd_set_misc_map + (cmd_map_other << 4) + map_index;
-	    memcpy(dp + 2, map->values, sizeof(map->values));
+	    dp[2] = comp_num;
+	    memcpy(dp + 3, map->values, sizeof(map->values));
 	}
 	if (pid)
 	    *pid = map->id;

@@ -91,8 +91,12 @@ static ushort index_to_rgb[16][3]={
 
 /* Map an RGB color to a printer color. */
 private gx_color_index
-tekink_map_rgb_color(gx_device *dev, ushort r, ushort g, ushort b)
+tekink_map_rgb_color(gx_device *dev, const gx_color_value cv[])
 {
+    gx_color_value r = cv[0];
+    gx_color_value g = cv[1];
+    gx_color_value b = cv[2];
+    
     return(rgb_to_index[(((b>32767) << 2) + ((g>32767) << 1) + 
 			(r>32767)) & 7]);
 }

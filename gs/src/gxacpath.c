@@ -83,7 +83,16 @@ private const gx_device_cpath_accum gs_cpath_accum_device =
   NULL,
   NULL,
   gx_default_text_begin,
-  gx_default_finish_copydevice
+  gx_default_finish_copydevice,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL
  }
 };
 

@@ -80,31 +80,39 @@ const gs_const_string mem_mono_w_b_palette = {
 
 /* Return the appropriate memory device for a given */
 /* number of bits per pixel (0 if none suitable). */
-private const gx_device_memory *const mem_devices[33] = {
+private const gx_device_memory *const mem_devices[65] = {
     0, &mem_mono_device, &mem_mapped2_device, 0, &mem_mapped4_device,
     0, 0, 0, &mem_mapped8_device,
     0, 0, 0, 0, 0, 0, 0, &mem_true16_device,
     0, 0, 0, 0, 0, 0, 0, &mem_true24_device,
-    0, 0, 0, 0, 0, 0, 0, &mem_true32_device
+    0, 0, 0, 0, 0, 0, 0, &mem_true32_device,
+    0, 0, 0, 0, 0, 0, 0, &mem_true40_device,
+    0, 0, 0, 0, 0, 0, 0, &mem_true48_device,
+    0, 0, 0, 0, 0, 0, 0, &mem_true56_device,
+    0, 0, 0, 0, 0, 0, 0, &mem_true64_device
 };
 const gx_device_memory *
 gdev_mem_device_for_bits(int bits_per_pixel)
 {
-    return ((uint)bits_per_pixel > 32 ? (const gx_device_memory *)0 :
+    return ((uint)bits_per_pixel > 64 ? (const gx_device_memory *)0 :
 	    mem_devices[bits_per_pixel]);
 }
 /* Do the same for a word-oriented device. */
-private const gx_device_memory *const mem_word_devices[33] = {
+private const gx_device_memory *const mem_word_devices[65] = {
     0, &mem_mono_device, &mem_mapped2_word_device, 0, &mem_mapped4_word_device,
     0, 0, 0, &mem_mapped8_word_device,
     0, 0, 0, 0, 0, 0, 0, 0 /*no 16-bit word device*/,
     0, 0, 0, 0, 0, 0, 0, &mem_true24_word_device,
-    0, 0, 0, 0, 0, 0, 0, &mem_true32_word_device
+    0, 0, 0, 0, 0, 0, 0, &mem_true32_word_device,
+    0, 0, 0, 0, 0, 0, 0, &mem_true40_word_device,
+    0, 0, 0, 0, 0, 0, 0, &mem_true48_word_device,
+    0, 0, 0, 0, 0, 0, 0, &mem_true56_word_device,
+    0, 0, 0, 0, 0, 0, 0, &mem_true64_word_device
 };
 const gx_device_memory *
 gdev_mem_word_device_for_bits(int bits_per_pixel)
 {
-    return ((uint)bits_per_pixel > 32 ? (const gx_device_memory *)0 :
+    return ((uint)bits_per_pixel > 64 ? (const gx_device_memory *)0 :
 	    mem_word_devices[bits_per_pixel]);
 }
 
@@ -119,7 +127,7 @@ gs_device_is_memory(const gx_device * dev)
     int bits_per_pixel = dev->color_info.depth;
     const gx_device_memory *mdproto;
 
-    if ((uint)bits_per_pixel > 32)
+    if ((uint)bits_per_pixel > 64)
 	return false;
     mdproto = mem_devices[bits_per_pixel];
     if (mdproto != 0 && dev_proc(dev, draw_thin_line) == dev_proc(mdproto, draw_thin_line))
@@ -162,12 +170,12 @@ gs_make_mem_device(gx_device_memory * dev, const gx_device_memory * mdproto,
 	gx_device_copy_color_procs((gx_device *)dev, target);
 	dev->cached_colors = target->cached_colors;
     }
-    if (dev->color_info.depth == 1)
+    if (dev->color_info.depth == 1) {
 	gdev_mem_mono_set_inverted(dev,
-				   (target == 0 ||
-				    (*dev_proc(target, map_rgb_color))
-			    (target, (gx_color_value) 0, (gx_color_value) 0,
-			     (gx_color_value) 0) != 0));
+				   (target == 0 || 
+                                    dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE));
+    }
+    gx_device_fill_in_procs(dev);
 }
 /* Make a monobit memory device.  This is never a page device. */
 /* Note that white=0, black=1. */
@@ -180,6 +188,7 @@ gs_make_mem_mono_device(gx_device_memory * dev, gs_memory_t * mem,
     set_dev_proc(dev, get_page_device, gx_default_get_page_device);
     gx_device_set_target((gx_device_forward *)dev, target);
     gdev_mem_mono_set_inverted(dev, true);
+    gx_device_fill_in_procs(dev);
 }
 
 /* Define whether a monobit memory device is inverted (black=1). */
@@ -516,13 +525,12 @@ mem_word_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 /* (2, 4, or 8 bits per pixel.) */
 /* This requires searching the palette. */
 gx_color_index
-mem_mapped_map_rgb_color(gx_device * dev, gx_color_value r, gx_color_value g,
-			 gx_color_value b)
+mem_mapped_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
-    byte br = gx_color_value_to_byte(r);
-    byte bg = gx_color_value_to_byte(g);
-    byte bb = gx_color_value_to_byte(b);
+    byte br = gx_color_value_to_byte(cv[0]);
+    byte bg = gx_color_value_to_byte(cv[1]);
+    byte bb = gx_color_value_to_byte(cv[2]);
     register const byte *pptr = mdev->palette.data;
     int cnt = mdev->palette.size;
     const byte *which = 0;	/* initialized only to pacify gcc */

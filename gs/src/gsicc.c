@@ -123,7 +123,6 @@ RELOC_PTRS_END
  */
 private cs_proc_num_components(gx_num_components_CIEICC);
 private cs_proc_base_space(gx_alt_space_CIEICC);
-private cs_proc_equal(gx_equal_CIEICC);
 private cs_proc_init_color(gx_init_CIEICC);
 private cs_proc_restrict_color(gx_restrict_CIEICC);
 private cs_proc_concrete_space(gx_concrete_space_CIEICC);
@@ -137,7 +136,6 @@ private const gs_color_space_type gs_color_space_type_CIEICC = {
     &st_color_space_CIEICC,         /* stype - structure descriptor */
     gx_num_components_CIEICC,       /* num_components */
     gx_alt_space_CIEICC,            /* base_space */
-    gx_equal_CIEICC,                /* equal */
     gx_init_CIEICC,                 /* init_color */
     gx_restrict_CIEICC,             /* restrict_color */
     gx_concrete_space_CIEICC,       /* concrete_space */
@@ -145,6 +143,7 @@ private const gs_color_space_type gs_color_space_type_CIEICC = {
     NULL,                           /* remap_concrete_color */
     gx_default_remap_color,         /* remap_color */
     gx_install_CIE,                 /* install_cpsace */
+    gx_spot_colors_set_overprint,   /* set_overprint */
     gx_adjust_cspace_CIEICC,        /* adjust_cspace_count */
     gx_no_adjust_color_count        /* adjust_color_count */
 };
@@ -169,58 +168,6 @@ gx_alt_space_CIEICC(const gs_color_space * pcs)
     return (pcs->params.icc.picc_info->picc == NULL)
                 ? (const gs_color_space *)&pcs->params.icc.alt_space
                 : NULL;
-}
-
-/*
- * Return true if two ICCBased color spaces are equal. This routine is allowed
- * to return false even if the color spaces are equal (but not the converse),
- * so the following simple algorithm is used:
- *
- *   1. If one color space uses its alternative space, but the other does not,
- *      the two spaces are not the same.
- *
- *   2. If both color spaces use the alternative space, we recursively apply
- *      the question of equality to the base spaces.
- *
- *   3. If neither color space uses the alternative color space, the two
- *      spaces are considered the same only if they reference the same 
- *      data stream (which implies they must have the same number of
- *      components), and make use of the same ranges. No attempt is made to
- *      look into the stream (profile) contents.
- */
-private bool
-gx_equal_CIEICC(const gs_color_space * pcs0, const gs_color_space * pcs1)
-{
-    const gs_icc_params *   picc_params0 = &pcs0->params.icc;
-    const gs_icc_params *   picc_params1 = &pcs1->params.icc;
-    const gs_cie_icc *      picc_info0 = picc_params0->picc_info;
-    const gs_cie_icc *      picc_info1 = picc_params1->picc_info;
-
-    if (picc_info0->picc == NULL) {
-        if (picc_info1->picc != NULL)
-            return false;
-        return picc_params0->alt_space.type->equal(
-                        (const gs_color_space *)&picc_params0->alt_space,
-                        (const gs_color_space *)&picc_params1->alt_space );
-    } else if (picc_info1->picc == NULL)
-        return false;
-    else {
-        const gs_range *    pranges0 = picc_info0->Range.ranges;
-        const gs_range *    pranges1 = picc_info1->Range.ranges;
-        int                 i, ncomps = picc_info0->num_components;
-
-        if   ( picc_info0->instrp != picc_info1->instrp  ||
-               picc_info0->file_id != picc_info1->file_id  )
-            return false;
-
-        for ( i = 0;
-               i < ncomps &&
-               pranges0[i].rmin == pranges1[i].rmin &&
-               pranges0[i].rmax == pranges1[i].rmax;
-               i++ )
-            ;
-        return i == ncomps;
-    }
 }
 
 /*

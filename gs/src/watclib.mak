@@ -117,7 +117,7 @@ PLATOPT=
 !include $(GLSRCDIR)\wccommon.mak
 
 !ifndef FEATURE_DEVS
-FEATURE_DEVS=$(GLD)patlib.dev $(GLD)path1lib.dev $(GLD)hsblib.dev
+FEATURE_DEVS=$(GLD)patlib.dev $(GLD)path1lib.dev
 !endif
 !ifndef DEVICE_DEVS
 DEVICE_DEVS=$(DD)vga.dev

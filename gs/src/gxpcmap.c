@@ -30,6 +30,7 @@
 #include "gxdevice.h"
 #include "gxdevmem.h"
 #include "gxpcolor.h"
+#include "gxp1impl.h"
 #include "gzstate.h"
 
 /* Define the default size of the Pattern cache. */
@@ -121,10 +122,19 @@ private const gx_device_pattern_accum gs_pattern_accum_device =
      gx_default_begin_typed_image,
      pattern_accum_get_bits_rectangle,
      NULL,
-     NULL,
+     gx_default_create_compositor,
      NULL,
      gx_default_text_begin,
-     gx_default_finish_copydevice
+     gx_default_finish_copydevice,
+     NULL,
+     NULL,
+     NULL,
+     NULL,
+     NULL,
+     NULL,
+     NULL,
+     NULL,
+     NULL
  },
  0,				/* target */
  0, 0, 0, 0			/* bitmap_memory, bits, mask, instance */
@@ -296,6 +306,9 @@ pattern_accum_copy_mono(gx_device * dev, const byte * data, int data_x,
 {
     gx_device_pattern_accum *const padev = (gx_device_pattern_accum *) dev;
 
+    /* opt out early if nothing to render (some may think this a bug) */
+    if (color0 == gx_no_color_index && color1 == gx_no_color_index)
+        return 0;
     if (padev->bits)
 	(*dev_proc(padev->target, copy_mono))
 	    (padev->target, data, data_x, raster, id, x, y, w, h,

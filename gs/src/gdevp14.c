@@ -37,6 +37,7 @@
 #include "gsimage.h"
 #include "gzstate.h"
 #include "gdevp14.h"
+#include "gsovrc.h"
 
 # define INCR(v) DO_NOTHING
 
@@ -119,6 +120,7 @@ private dev_proc_fill_path(pdf14_fill_path);
 private dev_proc_stroke_path(pdf14_stroke_path);
 private dev_proc_begin_typed_image(pdf14_begin_typed_image);
 private dev_proc_text_begin(pdf14_text_begin);
+private dev_proc_create_compositor(pdf14_create_compositor);
 private dev_proc_begin_transparency_group(pdf14_begin_transparency_group);
 private dev_proc_end_transparency_group(pdf14_end_transparency_group);
 
@@ -173,7 +175,7 @@ private const gx_device_procs pdf14_procs =
 	pdf14_begin_typed_image,	/* begin_typed_image */
 	NULL,	/* get_bits_rectangle */
 	NULL,	/* map_color_rgb_alpha */
-	NULL,	/* create_compositor */
+	pdf14_create_compositor,	/* create_compositor */
 	NULL,	/* get_hardware_params */
 	pdf14_text_begin,	/* text_begin */
 	NULL,	/* finish_copydevice */
@@ -187,6 +189,8 @@ typedef struct pdf14_device_s {
     pdf14_ctx *ctx;
     gx_device *target;
 
+    const gx_color_map_procs *(*save_get_cmap_procs)(const gs_imager_state *,
+						     const gx_device *);
 } pdf14_device;
 
 gs_private_st_composite_use_final(st_pdf14_device, pdf14_device, "pdf14_device",
@@ -290,6 +294,9 @@ const pdf14_mark_device gs_pdf14_mark_device = {
 				XSIZE, YSIZE, X_DPI, Y_DPI, 24, 255, 0),
     { 0 }
 };
+
+private const gx_color_map_procs *
+    pdf14_get_cmap_procs(const gs_imager_state *, const gx_device *);
 
 /* ------ Private definitions ------ */
 
@@ -629,17 +636,21 @@ pdf14_put_image(pdf14_device *pdev, gs_state *pgs, gx_device *target)
     int planestride = buf->planestride;
     byte *buf_ptr = buf->data;
     byte *linebuf;
+    gs_color_space cs;
 
+#if 0
     /* Set graphics state device to target, so that image can set up
        the color mapping properly. */
     rc_increment(pdev);
     gs_setdevice_no_init(pgs, target);
+#endif
 
     /* Set color space to RGB, in preparation for sending an RGB image. */
     gs_setrgbcolor(pgs, 0, 0, 0);
 
-    gs_image_t_init_adjust(&image, pis->shared->device_color_spaces.named.RGB,
-			   false);
+    gs_cspace_init_DeviceRGB(&cs);
+    gx_set_dev_color(pgs);
+    gs_image_t_init_adjust(&image, &cs, false);
     image.ImageMatrix.xx = width;
     image.ImageMatrix.yy = height;
     image.Width = width;
@@ -716,9 +727,11 @@ pdf14_put_image(pdf14_device *pdev, gs_state *pgs, gx_device *target)
 
     info->procs->end_image(info, true);
 
+#if 0
     /* Restore device in graphics state.*/
     gs_setdevice_no_init(pgs, (gx_device*) pdev);
     rc_decrement_only(pdev, "pdf_14_put_image");
+#endif
 
     return code;
 }
@@ -892,6 +905,27 @@ pdf14_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
     return code;
 }
 
+/*
+ * The overprint compositor can be handled directly, so just set *pcdev = dev
+ * and return. Since the gs_pdf14_device only supports the high-level routines
+ * of the interface, don't bother trying to handle any other compositor.
+ */
+private int
+pdf14_create_compositor(
+    gx_device *             dev,
+    gx_device **            pcdev,
+    const gs_composite_t *  pct,
+    const gs_imager_state * pis,
+    gs_memory_t *           mem )
+{
+    if (gs_is_overprint_compositor(pct)) {
+        *pcdev = dev;
+        return 0;
+    } else
+        return gx_no_create_compositor(dev, pcdev, pct, pis, mem);
+}
+
+private int
 pdf14_text_begin(gx_device * dev, gs_imager_state * pis,
 		 const gs_text_params_t * text, gs_font * font,
 		 gx_path * path, const gx_device_color * pdcolor,
@@ -1061,9 +1095,227 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device * dev,
     return 0;
 }
 
+
+/**
+ * Here we have logic to override the cmap_procs with versions that
+ * do not apply the transfer function. These copies should track the
+ * versions in gxcmap.c.
+ **/
+
+private cmap_proc_gray(pdf14_cmap_gray_direct);
+private cmap_proc_rgb(pdf14_cmap_rgb_direct);
+private cmap_proc_cmyk(pdf14_cmap_cmyk_direct);
+private cmap_proc_rgb_alpha(pdf14_cmap_rgb_alpha_direct);
+private cmap_proc_separation(pdf14_cmap_separation_direct);
+private cmap_proc_devicen(pdf14_cmap_devicen_direct);
+
+private const gx_color_map_procs pdf14_cmap_many = {
+     pdf14_cmap_gray_direct,
+     pdf14_cmap_rgb_direct,
+     pdf14_cmap_cmyk_direct,
+     pdf14_cmap_rgb_alpha_direct,
+     pdf14_cmap_separation_direct,
+     pdf14_cmap_devicen_direct
+    };
+
+/**
+ * Note: copied from gxcmap.c because it's inlined.
+ **/
+private inline void
+map_components_to_colorants(const frac * pcc,
+	const gs_devicen_color_map * pcolor_component_map, frac * plist)
+{
+    int i = pcolor_component_map->num_colorants - 1;
+    int pos;
+
+    /* Clear all output colorants first */
+    for (; i >= 0; i--) {
+	plist[i] = frac_0;
+    }
+
+    /* Map color components into output list */
+    for (i = pcolor_component_map->num_components - 1; i >= 0; i--) {
+	pos = pcolor_component_map->color_map[i];
+	if (pos >= 0)
+	    plist[pos] = pcc[i];
+    }
+}
+
+private void
+pdf14_cmap_gray_direct(frac gray, gx_device_color * pdc, const gs_imager_state * pis,
+		 gx_device * dev, gs_color_select_t select)
+{
+    int i, ncomps = dev->color_info.num_components;
+    frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gx_color_index color;
+
+    /* map to the color model */
+    dev_proc(dev, get_color_mapping_procs)(dev)->map_gray(dev, gray, cm_comps);
+
+    for (i = 0; i < ncomps; i++)
+        cv[i] = frac2cv(cm_comps[i]);
+
+    /* encode as a color index */
+    color = dev_proc(dev, encode_color)(dev, cv);
+
+    /* check if the encoding was successful; we presume failure is rare */
+    if (color != gx_no_color_index)
+        color_set_pure(pdc, color);
+}
+
+
+private void
+pdf14_cmap_rgb_direct(frac r, frac g, frac b, gx_device_color * pdc,
+     const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
+{
+    int i, ncomps = dev->color_info.num_components;
+    frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gx_color_index color;
+
+    /* map to the color model */
+    dev_proc(dev, get_color_mapping_procs)(dev)->map_rgb(dev, pis, r, g, b, cm_comps);
+
+    for (i = 0; i < ncomps; i++)
+        cv[i] = frac2cv(cm_comps[i]);
+
+    /* encode as a color index */
+    color = dev_proc(dev, encode_color)(dev, cv);
+
+    /* check if the encoding was successful; we presume failure is rare */
+    if (color != gx_no_color_index)
+        color_set_pure(pdc, color);
+}
+
+private void
+pdf14_cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
+     const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
+{
+    int i, ncomps = dev->color_info.num_components;
+    frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gx_color_index color;
+
+    /* map to the color model */
+    dev_proc(dev, get_color_mapping_procs)(dev)->map_cmyk(dev, c, m, y, k, cm_comps);
+
+    for (i = 0; i < ncomps; i++)
+        cv[i] = frac2cv(cm_comps[i]);
+
+    color = dev_proc(dev, encode_color)(dev, cv);
+    if (color != gx_no_color_index) 
+	color_set_pure(pdc, color);
+}
+
+private void
+pdf14_cmap_rgb_alpha_direct(frac r, frac g, frac b, frac alpha, gx_device_color * pdc,
+     const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
+{
+    int i, ncomps = dev->color_info.num_components;
+    frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gx_color_value cv_alpha, cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gx_color_index color;
+
+    /* map to the color model */
+    dev_proc(dev, get_color_mapping_procs)(dev)->map_rgb(dev, pis, r, g, b, cm_comps);
+
+    /* pre-multiply to account for the alpha weighting */
+    if (alpha != frac_1) {
+#ifdef PREMULTIPLY_TOWARDS_WHITE
+        frac alpha_bias = frac_1 - alpha;
+#else
+	frac alpha_bias = 0;
+#endif
+
+        for (i = 0; i < ncomps; i++)
+            cm_comps[i] = (frac)((long)cm_comps[i] * alpha) / frac_1 + alpha_bias;
+    }
+
+    for (i = 0; i < ncomps; i++)
+        cv[i] = frac2cv(cm_comps[i]);
+
+    /* encode as a color index */
+    if (dev_proc(dev, map_rgb_alpha_color) != gx_default_map_rgb_alpha_color &&
+         (cv_alpha = frac2cv(alpha)) != gx_max_color_value)
+        color = dev_proc(dev, map_rgb_alpha_color)(dev, cv[0], cv[1], cv[2], cv_alpha);
+    else
+        color = dev_proc(dev, encode_color)(dev, cv);
+
+    /* check if the encoding was successful; we presume failure is rare */
+    if (color != gx_no_color_index)
+        color_set_pure(pdc, color);
+}
+
+
+private void
+pdf14_cmap_separation_direct(frac all, gx_device_color * pdc, const gs_imager_state * pis,
+		 gx_device * dev, gs_color_select_t select)
+{
+    int i;
+    bool additive = dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE;
+    frac comp_value = all;
+    frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gx_color_index color;
+
+    if (pis->color_component_map.sep_type == SEP_ALL) {
+	/*
+	 * Invert the photometric interpretation for additive
+	 * color spaces because separations are always subtractive.
+	 */
+	if (additive)
+	    comp_value = frac_1 - comp_value;
+
+        /* Use the "all" value for all components */
+        i = pis->color_component_map.num_colorants - 1;
+        for (; i >= 0; i--)
+            cm_comps[i] = comp_value;
+    }
+    else {
+        /* map to the color model */
+        map_components_to_colorants(&comp_value, &(pis->color_component_map), cm_comps);
+    }
+
+    /* encode as a color index */
+    color = dev_proc(dev, encode_color)(dev, cv);
+
+    /* check if the encoding was successful; we presume failure is rare */
+    if (color != gx_no_color_index)
+        color_set_pure(pdc, color);
+}
+
+
+private void
+pdf14_cmap_devicen_direct(const frac * pcc, 
+    gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
+    gs_color_select_t select)
+{
+    frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gx_color_index color;
+
+    /* map to the color model */
+    map_components_to_colorants(pcc, &(pis->color_component_map), cm_comps);;
+
+    /* encode as a color index */
+    color = dev_proc(dev, encode_color)(dev, cv);
+
+    /* check if the encoding was successful; we presume failure is rare */
+    if (color != gx_no_color_index)
+        color_set_pure(pdc, color);
+}
+
+private const gx_color_map_procs *
+pdf14_get_cmap_procs(const gs_imager_state *pis, const gx_device * dev)
+{
+    /* The pdf14 marking device itself is always continuous tone. */
+    return &pdf14_cmap_many;
+}
+
 private int
 gs_pdf14_device_filter_push(gs_device_filter_t *self, gs_memory_t *mem,
-			   gx_device **pdev, gx_device *target)
+			    gx_device **pdev, gs_state *pgs, gx_device *target)
 {
     pdf14_device *p14dev;
     int code;
@@ -1080,19 +1332,33 @@ gs_pdf14_device_filter_push(gs_device_filter_t *self, gs_memory_t *mem,
 
     rc_assign(p14dev->target, target, "gs_pdf14_device_filter_push");
 
+    p14dev->save_get_cmap_procs = pgs->get_cmap_procs;
+    pgs->get_cmap_procs = pdf14_get_cmap_procs;
+
     code = dev_proc((gx_device *) p14dev, open_device) ((gx_device *) p14dev);
     *pdev = (gx_device *) p14dev;
     return code;
 }
 
 private int
-gs_pdf14_device_filter_pop(gs_device_filter_t *self, gs_memory_t *mem,
+gs_pdf14_device_filter_prepop(gs_device_filter_t *self, gs_memory_t *mem,
 			   gs_state *pgs, gx_device *dev)
 {
-    gx_device *target = ((pdf14_device *)dev)->target;
+    pdf14_device *p14dev = (pdf14_device *)dev;
+
+    pgs->get_cmap_procs = p14dev->save_get_cmap_procs;
+    return 0;
+}
+
+private int
+gs_pdf14_device_filter_postpop(gs_device_filter_t *self, gs_memory_t *mem,
+			   gs_state *pgs, gx_device *dev)
+{
+    pdf14_device *p14dev = (pdf14_device *)dev;
+    gx_device *target = pgs->device;
     int code;
 
-    code = pdf14_put_image((pdf14_device *)dev, pgs, target);
+    code = pdf14_put_image(p14dev, pgs, target);
     if (code < 0)
 	return code;
 
@@ -1100,8 +1366,7 @@ gs_pdf14_device_filter_pop(gs_device_filter_t *self, gs_memory_t *mem,
     if (code < 0)
 	return code;
 
-    ((pdf14_device *)dev)->target = 0;
-    rc_decrement_only(target, "gs_pdf14_device_filter_pop");
+    rc_decrement(p14dev->target, "gs_pdf14_device_filter_pop");
 
     gs_free_object(mem, self, "gs_pdf14_device_filter_pop");
     return 0;
@@ -1117,7 +1382,8 @@ gs_pdf14_device_filter(gs_device_filter_t **pdf, int depth, gs_memory_t *mem)
     if (df == 0)
 	return_error(gs_error_VMerror);
     df->push = gs_pdf14_device_filter_push;
-    df->pop = gs_pdf14_device_filter_pop;
+    df->prepop = gs_pdf14_device_filter_prepop;
+    df->postpop = gs_pdf14_device_filter_postpop;
     *pdf = df;
     return 0;
 }

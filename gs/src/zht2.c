@@ -29,6 +29,7 @@
 #include "icolor.h"
 #include "iht.h"
 #include "store.h"
+#include "iname.h"
 
 /* Forward references */
 private int dict_spot_params(const ref *, gs_spot_halftone *, ref *, ref *);
@@ -56,35 +57,78 @@ zsethalftone5(i_ctx_t *i_ctx_p)
     gs_halftone_component *phtc;
     gs_halftone_component *pc;
     int code = 0;
-    int i, j;
+    int j;
     gs_halftone *pht;
     gx_device_halftone *pdht;
-    static const char *const color_names[] = {
-	gs_ht_separation_name_strings
-    };
-    ref sprocs[countof(color_names)];
-    ref tprocs[countof(color_names)];
+    ref sprocs[GS_CLIENT_COLOR_MAX_COMPONENTS + 1];
+    ref tprocs[GS_CLIENT_COLOR_MAX_COMPONENTS + 1];
     gs_memory_t *mem;
     uint edepth = ref_stack_count(&e_stack);
     int npop = 2;
+    int dict_enum = dict_first(op);
+    ref rvalue[2];
+    int cname, colorant_number;
+    int halftonetype, type = 0;
+    gs_state *pgs = igs;
 
     check_type(*op, t_dictionary);
     check_dict_read(*op);
     check_type(op[-1], t_dictionary);
     check_dict_read(op[-1]);
-    count = 0;
-    for (i = 0; i < countof(color_names); i++) {
-	ref *pvalue;
+ 
+    /*
+     * We think that Type 2 and Type 4 halftones, like
+     * screens set by setcolorscreen, adapt automatically to
+     * the device color space, so we need to mark them
+     * with a different internal halftone type.
+     */
+    dict_int_param(op - 1, "HalftoneType", 1, 5, 0, &type);
+    halftonetype = (type == 2 || type == 4)
+    			? ht_type_multiple_colorscreen
+			: ht_type_multiple;
 
-	if (dict_find_string(op, color_names[i], &pvalue) > 0)
-	    count++;
-	else if (i == gs_ht_separation_Default)
-	    return_error(e_typecheck);
+    /* Count how many components that we will actually use. */
+
+    for (count = 0; ;) {
+	bool have_default = false;
+
+	/* Move to next element in the dictionary */
+	if ((dict_enum = dict_next(op, dict_enum, rvalue)) == -1)
+	    break;
+	/*
+	 * Verify that we have a valid component.  We may have a
+	 * /HalfToneType entry.
+	 */
+  	if (!r_has_type(&rvalue[1], t_dictionary))
+	    continue;
+
+	/* Get the name of the component  verify that we will use it. */
+	cname = name_index(&rvalue[0]);
+	colorant_number = gs_cname_to_colorant_number(pgs, cname, halftonetype);
+	if (colorant_number < 0)
+	    continue;
+	else if (colorant_number == GX_DEVICE_COLOR_MAX_COMPONENTS) {
+	    /* If here then we have the "Default" component */
+	    if (have_default)
+		return_error(e_rangecheck);
+	    have_default = true;
+	}
+
+	count++;
+	/*
+	 * Check to see if we have already reached the legal number of
+	 * components.
+	 */
+	if (count > GS_CLIENT_COLOR_MAX_COMPONENTS + 1) {
+	    code = gs_note_error(e_rangecheck);
+	    break;
+        }
     }
+
     mem = (gs_memory_t *) idmemory->spaces_indexed[r_space_index(op - 1)];
     check_estack(5);		/* for sampling Type 1 screens */
-    refset_null(sprocs, countof(sprocs));
-    refset_null(tprocs, countof(tprocs));
+    refset_null(sprocs, count);
+    refset_null(tprocs, count);
     rc_alloc_struct_0(pht, gs_halftone, &st_halftone,
 		      imemory, pht = 0, ".sethalftone5");
     phtc = gs_alloc_struct_array(mem, count, gs_halftone_component,
@@ -94,77 +138,95 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 		      imemory, pdht = 0, ".sethalftone5");
     if (pht == 0 || phtc == 0 || pdht == 0)
 	code = gs_note_error(e_VMerror);
-    else
-	for (i = 0, j = 0, pc = phtc; i < countof(color_names); i++) {
+    else {
+        dict_enum = dict_first(op);
+	for (j = 0, pc = phtc; ;) {
 	    int type;
-	    ref *pvalue;
 
-	    if (dict_find_string(op, color_names[i], &pvalue) > 0) {
-		check_type_only(*pvalue, t_dictionary);
-		check_dict_read(*pvalue);
-		if (dict_int_param(pvalue, "HalftoneType", 1, 7, 0,
-				   &type) < 0
-		    ) {
-		    code = gs_note_error(e_typecheck);
-		    break;
-		}
-		switch (type) {
-		    default:
-			code = gs_note_error(e_rangecheck);
-			break;
-		    case 1:
-			code = dict_spot_params(pvalue,
-						&pc->params.spot, sprocs + j,
-						tprocs + j);
-			pc->params.spot.screen.spot_function = spot1_dummy;
-			pc->type = ht_type_spot;
-			break;
-		    case 3:
-			code = dict_threshold_params(pvalue,
-					 &pc->params.threshold, tprocs + j);
-			pc->type = ht_type_threshold;
-			break;
-		    case 7:
-			code = dict_threshold2_params(pvalue,
-					&pc->params.threshold2, tprocs + j,
-					imemory);
-			pc->type = ht_type_threshold2;
-			break;
-		}
-		if (code < 0)
-		    break;
-		pc->cname = (gs_ht_separation_name) i;
-		pc++, j++;
+	    /* Move to next element in the dictionary */
+	    if ((dict_enum = dict_next(op, dict_enum, rvalue)) == -1)
+	        break;
+	    /*
+	     * Verify that we have a valid component.  We may have a
+	     * /HalfToneType entry.
+	     */
+  	    if (!r_has_type(&rvalue[1], t_dictionary))
+		continue;
+
+	    /* Get the name of the component */
+	    cname = name_index(&rvalue[0]);
+	    colorant_number = gs_cname_to_colorant_number(pgs, cname, halftonetype);
+	    if (colorant_number < 0)
+		continue;		/* Do not use this component */
+	    pc->comp_number = colorant_number;
+
+	    /* Now process the component dictionary */
+	    check_dict_read(rvalue[1]);
+	    if (dict_int_param(&rvalue[1], "HalftoneType", 1, 7, 0, &type) < 0) {
+		code = gs_note_error(e_typecheck);
+		break;
 	    }
+	    switch (type) {
+		default:
+		    code = gs_note_error(e_rangecheck);
+		    break;
+		case 1:
+		    code = dict_spot_params(&rvalue[1], &pc->params.spot,
+		    				sprocs + j, tprocs + j);
+		    pc->params.spot.screen.spot_function = spot1_dummy;
+		    pc->type = ht_type_spot;
+		    break;
+		case 3:
+		    code = dict_threshold_params(&rvalue[1], &pc->params.threshold,
+		    					tprocs + j);
+		    pc->type = ht_type_threshold;
+		    break;
+		case 7:
+		    code = dict_threshold2_params(&rvalue[1], &pc->params.threshold2,
+		    					tprocs + j, imemory);
+		    pc->type = ht_type_threshold2;
+		    break;
+	    }
+	    if (code < 0)
+		break;
+	    pc++;
+	    j++;
 	}
+    }
     if (code >= 0) {
-	/*
-	 * We think that Type 2 and Type 4 halftones, like
-	 * screens set by setcolorscreen, adapt automatically to
-	 * the device color space, so we need to mark them
-	 * with a different internal halftone type.
-	 */
-	int type = 0;
-
-	dict_int_param(op - 1, "HalftoneType", 1, 5, 0, &type);
-	pht->type =
-	    (type == 2 || type == 4 ? ht_type_multiple_colorscreen :
-	     ht_type_multiple);
+	pht->type = halftonetype;
 	pht->params.multiple.components = phtc;
-	pht->params.multiple.num_comp = count;
+	pht->params.multiple.num_comp = j;
 	code = gs_sethalftone_prepare(igs, pht, pdht);
     }
-    if (code >= 0)
-	for (j = 0, pc = phtc; j < count; j++, pc++) {
-	    if (pc->type == ht_type_spot) {
-		ref *pvalue;
+    if (code >= 0) {
+	/*
+	 * Put the actual frequency and angle in the spot function component dictionaries.
+	 */
+	dict_enum = dict_first(op);
+	for (pc = phtc; ; ) {
+	    /* Move to next element in the dictionary */
+	    if ((dict_enum = dict_next(op, dict_enum, rvalue)) == -1)
+		break;
 
-		dict_find_string(op, color_names[pc->cname], &pvalue);
-		code = dict_spot_results(i_ctx_p, pvalue, &pc->params.spot);
+	    /* Verify that we have a valid component */
+	    if (!r_has_type(&rvalue[1], t_dictionary))
+		continue;
+
+	    /* Get the name of the component and verify that we will use it. */
+	    cname = name_index(&rvalue[0]);
+	    colorant_number = gs_cname_to_colorant_number(pgs, cname, halftonetype);
+	    if (colorant_number < 0)
+		continue;
+
+	    if (pc->type == ht_type_spot) {
+		code = dict_spot_results(i_ctx_p, &rvalue[1], &pc->params.spot);
 		if (code < 0)
 		    break;
 	    }
+	    pc++;
 	}
+    }
     if (code >= 0) {
 	/*
 	 * Schedule the sampling of any Type 1 screens,
@@ -186,32 +248,32 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 	make_op_estack(esp, sethalftone_finish);
 	for (j = 0; j < count; j++) {
 	    gx_ht_order *porder =
-	    (pdht->components == 0 ? &pdht->order :
-	     &pdht->components[j].corder);
+		(pdht->components == 0 ? &pdht->order :
+		 &pdht->components[j].corder);
 
 	    switch (phtc[j].type) {
-		case ht_type_spot:
-		    code = zscreen_enum_init(i_ctx_p, porder,
-					     &phtc[j].params.spot.screen,
-					     &sprocs[j], 0, 0, mem);
-		    if (code < 0)
-			break;
-		    /* falls through */
-		case ht_type_threshold:
-		    if (!r_has_type(tprocs + j, t__invalid)) {
-			/* Schedule TransferFunction sampling. */
-			/****** check_xstack IS WRONG ******/
-			check_ostack(zcolor_remap_one_ostack);
-			check_estack(zcolor_remap_one_estack);
-			code = zcolor_remap_one(i_ctx_p, tprocs + j,
-						porder->transfer, igs,
-						zcolor_remap_one_finish);
-			op = osp;
-		    }
+	    case ht_type_spot:
+		code = zscreen_enum_init(i_ctx_p, porder,
+					 &phtc[j].params.spot.screen,
+					 &sprocs[j], 0, 0, mem);
+		if (code < 0)
 		    break;
-		default:	/* not possible here, but to keep */
-		    /* the compilers happy.... */
-		    ;
+		/* falls through */
+	    case ht_type_threshold:
+		if (!r_has_type(tprocs + j, t__invalid)) {
+		    /* Schedule TransferFunction sampling. */
+		    /****** check_xstack IS WRONG ******/
+		    check_ostack(zcolor_remap_one_ostack);
+		    check_estack(zcolor_remap_one_estack);
+		    code = zcolor_remap_one(i_ctx_p, tprocs + j,
+					    porder->transfer, igs,
+					    zcolor_remap_one_finish);
+		    op = osp;
+		}
+		break;
+	    default:	/* not possible here, but to keep */
+				/* the compilers happy.... */
+		;
 	    }
 	    if (code < 0) {	/* Restore the stack. */
 		ref_stack_pop_to(&o_stack, odepth);
@@ -233,6 +295,7 @@ zsethalftone5(i_ctx_t *i_ctx_p)
     pop(npop);
     return (ref_stack_count(&e_stack) > edepth ? o_push_estack : 0);
 }
+
 /* Install the halftone after sampling. */
 private int
 sethalftone_finish(i_ctx_t *i_ctx_p)

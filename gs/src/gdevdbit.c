@@ -168,12 +168,13 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
 	const byte *row;
 	gs_memory_t *mem = dev->memory;
 	int bpp = dev->color_info.depth;
+	int ncomps = dev->color_info.num_components;
 	uint in_size = gx_device_raster(dev, false);
 	byte *lin;
 	uint out_size;
 	byte *lout;
 	int code = 0;
-	gx_color_value color_rgb[3];
+	gx_color_value color_cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
 	int ry;
 
 	fit_copy(dev, data, data_x, raster, id, x, y, width, height);
@@ -185,7 +186,7 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
 	    code = gs_note_error(gs_error_VMerror);
 	    goto out;
 	}
-	(*dev_proc(dev, map_color_rgb)) (dev, color, color_rgb);
+	(*dev_proc(dev, decode_color)) (dev, color, color_cv);
 	for (ry = y; ry < y + height; row += raster, ++ry) {
 	    byte *line;
 	    int sx, rx;
@@ -221,6 +222,14 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
 
 			    previous = 0;
 			    switch (bpp >> 3) {
+				case 8:
+				    previous += (gx_color_index) * src++ << 56;
+				case 7:
+				    previous += (gx_color_index) * src++ << 48;
+				case 6:
+				    previous += (gx_color_index) * src++ << 40;
+				case 5:
+				    previous += (gx_color_index) * src++ << 32;
 				case 4:
 				    previous += (gx_color_index) * src++ << 24;
 				case 3:
@@ -234,10 +243,11 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
 		    }
 		    if (alpha == 0) {	/* Just write the old color. */
 			composite = previous;
-		    } else {	/* Blend RGB values. */
-			gx_color_value rgb[3];
+		    } else {	/* Blend values. */
+			gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
+			int i;
 
-			(*dev_proc(dev, map_color_rgb)) (dev, previous, rgb);
+			(*dev_proc(dev, decode_color)) (dev, previous, cv);
 #if arch_ints_are_short
 #  define b_int long
 #else
@@ -245,14 +255,12 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
 #endif
 #define make_shade(old, clr, alpha, amax) \
   (old) + (((b_int)(clr) - (b_int)(old)) * (alpha) / (amax))
-			rgb[0] = make_shade(rgb[0], color_rgb[0], alpha, 15);
-			rgb[1] = make_shade(rgb[1], color_rgb[1], alpha, 15);
-			rgb[2] = make_shade(rgb[2], color_rgb[2], alpha, 15);
+			for (i=0; i<ncomps; i++)
+			    cv[i] = make_shade(cv[i], color_cv[i], alpha, 15);
 #undef b_int
 #undef make_shade
 			composite =
-			    (*dev_proc(dev, map_rgb_color)) (dev, rgb[0],
-							     rgb[1], rgb[2]);
+			    (*dev_proc(dev, encode_color)) (dev, cv);
 			if (composite == gx_no_color_index) {	/* The device can't represent this color. */
 			    /* Move the alpha value towards 0 or 1. */
 			    if (alpha == 7)	/* move 1/2 towards 1 */

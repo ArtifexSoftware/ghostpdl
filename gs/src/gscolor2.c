@@ -32,39 +32,32 @@
 int
 gs_setcolorspace(gs_state * pgs, const gs_color_space * pcs)
 {
-    int code;
-    gs_color_space cs_old;
-    gs_client_color cc_old;
+    int             code = 0;
+    gs_color_space  cs_old = *pgs->color_space;
+    gs_client_color cc_old = *pgs->ccolor;
 
     if (pgs->in_cachedevice)
 	return_error(gs_error_undefined);
-    if (pcs->id == pgs->color_space->id) {	/* same color space */
-	cs_full_init_color(pgs->ccolor, pcs);
-	return 0;
-    }
-    cs_old = *pgs->color_space;
-    cc_old = *pgs->ccolor;
-    (*pcs->type->adjust_cspace_count)(pcs, 1);
-    *pgs->color_space = *pcs;
-    if ((code = (*pcs->type->install_cspace)(pcs, pgs)) < 0)
-	goto rcs;
-    cs_full_init_color(pgs->ccolor, pcs);
-    (*cs_old.type->adjust_color_count)(&cc_old, &cs_old, -1);
-    (*cs_old.type->adjust_cspace_count)(&cs_old, -1);
-    pgs->orig_cspace_index = pcs->type->index;
-    {
-	const gs_color_space *pccs = pcs;
-	const gs_color_space *pbcs;
 
-	while ((pbcs = gs_cspace_base_space(pccs)) != 0)
-	    pccs = pbcs;
-	pgs->orig_base_cspace_index = pccs->type->index;
+    if (pcs->id != pgs->color_space->id) {
+        pcs->type->adjust_cspace_count(pcs, 1);
+        *pgs->color_space = *pcs;
+	pgs->cspace_id = pcs->id;
+        if ( (code = pcs->type->install_cspace(pcs, pgs)) < 0    ||
+              (pgs->overprint                                 &&
+               (code = pcs->type->set_overprint(pcs, pgs)) < 0  )  ) {
+            *pgs->color_space = cs_old;
+            pcs->type->adjust_cspace_count(pcs, -1);
+        } else
+            cs_old.type->adjust_cspace_count(&cs_old, -1);
     }
-    gx_unset_dev_color(pgs);
-    return code;
-    /* Restore the color space if installation failed. */
-rcs:*pgs->color_space = cs_old;
-    (*pcs->type->adjust_cspace_count)(pcs, -1);
+
+    if (code >= 0) {
+        cs_full_init_color(pgs->ccolor, pcs);
+        cs_old.type->adjust_color_count(&cc_old, &cs_old, -1);
+        gx_unset_dev_color(pgs);
+    }
+
     return code;
 }
 
@@ -73,11 +66,6 @@ const gs_color_space *
 gs_currentcolorspace(const gs_state * pgs)
 {
     return pgs->color_space;
-}
-gs_color_space_index
-gs_currentcolorspace_index(const gs_state *pgs)
-{
-    return pgs->orig_cspace_index;
 }
 
 /* setcolor */
@@ -164,20 +152,21 @@ gs_private_st_composite(st_color_space_Indexed, gs_paint_color_space,
 
 /* Define the Indexed color space type. */
 private cs_proc_base_space(gx_base_space_Indexed);
-private cs_proc_equal(gx_equal_Indexed);
 private cs_proc_restrict_color(gx_restrict_Indexed);
 private cs_proc_concrete_space(gx_concrete_space_Indexed);
 private cs_proc_concretize_color(gx_concretize_Indexed);
 private cs_proc_install_cspace(gx_install_Indexed);
+private cs_proc_set_overprint(gx_set_overprint_Indexed);
 private cs_proc_adjust_cspace_count(gx_adjust_cspace_Indexed);
 const gs_color_space_type gs_color_space_type_Indexed = {
     gs_color_space_index_Indexed, false, false,
     &st_color_space_Indexed, gx_num_components_1,
-    gx_base_space_Indexed, gx_equal_Indexed,
+    gx_base_space_Indexed,
     gx_init_paint_1, gx_restrict_Indexed,
     gx_concrete_space_Indexed,
     gx_concretize_Indexed, NULL,
     gx_default_remap_color, gx_install_Indexed,
+    gx_set_overprint_Indexed,
     gx_adjust_cspace_Indexed, gx_no_adjust_color_count
 };
 
@@ -230,35 +219,6 @@ gx_base_space_Indexed(const gs_color_space * pcs)
     return (const gs_color_space *)&(pcs->params.indexed.base_space);
 }
 
-/* Test whether one Indexed color space equals another. */
-private bool
-gx_equal_Indexed(const gs_color_space *pcs1, const gs_color_space *pcs2)
-{
-    const gs_color_space *base = gx_base_space_Indexed(pcs1);
-    uint hival = pcs1->params.indexed.hival;
-
-    if (!gs_color_space_equal(base, gx_base_space_Indexed(pcs2)))
-	return false;
-    if (hival == pcs2->params.indexed.hival ||
-	/*
-	 * In principle, a table-specified Indexed space could be equal
-	 * to a procedure-specified Indexed space, but we don't bother
-	 * to detect this.
-	 */
-	pcs1->params.indexed.use_proc != pcs2->params.indexed.use_proc
-	)
-	return false;
-    if (pcs1->params.indexed.use_proc) {
-	return !memcmp(pcs1->params.indexed.lookup.map->values,
-		       pcs2->params.indexed.lookup.map->values,
-		       pcs1->params.indexed.lookup.map->num_values *
-		         sizeof(pcs1->params.indexed.lookup.map->values[0]));
-    } else {
-	return !memcmp(&pcs1->params.indexed.lookup.table.data,
-		       &pcs2->params.indexed.lookup.table.data,
-		       gs_color_space_num_components(base) * (hival + 1));
-    }
-}
 
 /* Color space installation ditto. */
 
@@ -266,6 +226,15 @@ private int
 gx_install_Indexed(const gs_color_space * pcs, gs_state * pgs)
 {
     return (*pcs->params.indexed.base_space.type->install_cspace)
+	((const gs_color_space *) & pcs->params.indexed.base_space, pgs);
+}
+
+/* Color space overprint setting ditto. */
+
+private int
+gx_set_overprint_Indexed(const gs_color_space * pcs, gs_state * pgs)
+{
+    return (*pcs->params.indexed.base_space.type->set_overprint)
 	((const gs_color_space *) & pcs->params.indexed.base_space, pgs);
 }
 
@@ -469,6 +438,15 @@ gx_concrete_space_Indexed(const gs_color_space * pcs,
     const gs_color_space *pbcs =
     (const gs_color_space *)&pcs->params.indexed.base_space;
 
+#ifdef DEBUG
+    /* 
+     * Check that we are using the current color space, even though
+     * this is not required for this routine.
+     */
+    if (pcs->id != pis->cspace_id)
+	dprintf("gx_concrete_space_CIE: color space id mismatch");
+#endif
+
     return cs_concrete_space(pbcs, pis);
 }
 
@@ -485,6 +463,15 @@ gx_concretize_Indexed(const gs_client_color * pc, const gs_color_space * pcs,
 	(const gs_color_space *)&pcs->params.indexed.base_space;
     gs_client_color cc;
     int code = gs_cspace_indexed_lookup(&pcs->params.indexed, index, &cc);
+
+#ifdef DEBUG
+    /* 
+     * Check that we are using the current color space, even though
+     * this is not required for this routine.
+     */
+    if (pcs->id != pis->cspace_id)
+	dprintf("gx_concrete_space_CIE: color space id mismatch");
+#endif
 
     if (code < 0)
 	return code;

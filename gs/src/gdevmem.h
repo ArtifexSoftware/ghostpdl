@@ -209,6 +209,10 @@ extern const gx_device_memory mem_mapped8_device;
 extern const gx_device_memory mem_true16_device;
 extern const gx_device_memory mem_true24_device;
 extern const gx_device_memory mem_true32_device;
+extern const gx_device_memory mem_true40_device;
+extern const gx_device_memory mem_true48_device;
+extern const gx_device_memory mem_true56_device;
+extern const gx_device_memory mem_true64_device;
 extern const gx_device_memory mem_planar_device;
 /*
  * We declare the RasterOp implementation procedures here because they are
@@ -225,6 +229,10 @@ dev_proc_strip_copy_rop(mem_gray8_rgb24_strip_copy_rop);
 #  define mem_mapped8_word_device mem_mapped8_device
 #  define mem_true24_word_device mem_true24_device
 #  define mem_true32_word_device mem_true32_device
+#  define mem_true40_word_device mem_true40_device
+#  define mem_true48_word_device mem_true48_device
+#  define mem_true56_word_device mem_true56_device
+#  define mem_true64_word_device mem_true64_device
 #else
 extern const gx_device_memory mem_mono_word_device;
 extern const gx_device_memory mem_mapped2_word_device;
@@ -232,6 +240,10 @@ extern const gx_device_memory mem_mapped4_word_device;
 extern const gx_device_memory mem_mapped8_word_device;
 extern const gx_device_memory mem_true24_word_device;
 extern const gx_device_memory mem_true32_word_device;
+extern const gx_device_memory mem_true40_word_device;
+extern const gx_device_memory mem_true48_word_device;
+extern const gx_device_memory mem_true56_word_device;
+extern const gx_device_memory mem_true64_word_device;
 
 #endif
 /* Provide standard palettes for 1-bit devices. */

@@ -41,12 +41,11 @@ const gx_device_memory mem_true16_device =
 
 /* Map a r-g-b color to a color index. */
 private gx_color_index
-mem_true16_map_rgb_color(gx_device * dev, gx_color_value r, gx_color_value g,
-			 gx_color_value b)
+mem_true16_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
-    return ((r >> (gx_color_value_bits - 5)) << 11) +
-	((g >> (gx_color_value_bits - 6)) << 5) +
-	(b >> (gx_color_value_bits - 5));
+    return ((cv[0] >> (gx_color_value_bits - 5)) << 11) +
+	((cv[1] >> (gx_color_value_bits - 6)) << 5) +
+	(cv[2] >> (gx_color_value_bits - 5));
 }
 
 /* Map a color index to a r-g-b color. */

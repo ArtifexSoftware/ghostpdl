@@ -94,10 +94,7 @@ struct gs_state_s {
 
     /* Color (device-independent): */
 
-    gs_color_space_index	/* before substitution */
-        orig_cspace_index, orig_base_cspace_index;
     gs_color_space *color_space; /* after substitution */
-    gx_device_color_spaces_t device_color_spaces; /* substituted spaces */
     gs_client_color *ccolor;
 
     /* Color caches: */
@@ -146,10 +143,7 @@ struct gs_state_s {
   m(4,view_clip) m(5,effective_clip_path)\
   m(6,color_space) m(7,ccolor) m(8,dev_color)\
   m(9,font) m(10,root_font) m(11,show_gstate) /*m(---,device)*/\
-  m(12,transparency_group_stack)\
-  m(13,device_color_spaces.named.Gray)\
-  m(14,device_color_spaces.named.RGB)\
-  m(15,device_color_spaces.named.CMYK)
-#define gs_state_num_ptrs 16
+  m(12,transparency_group_stack)
+#define gs_state_num_ptrs 13
 
 #endif /* gzstate_INCLUDED */

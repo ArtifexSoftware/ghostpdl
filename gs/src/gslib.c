@@ -35,7 +35,6 @@ get_real(void)
 #include "gsmatrix.h"
 #include "gsstate.h"
 #include "gscspace.h"
-#include "gscssub.h"
 #include "gscolor2.h"
 #include "gscoord.h"
 #include "gscie.h"
@@ -546,6 +545,9 @@ test5(gs_state * pgs, gs_memory_t * mem)
 	0x88, 0xcc, 0x00, 0x44,
 	0xcc, 0x00, 0x44, 0x88
     };
+    gs_color_space gray_cs;
+
+    gs_cspace_init_DeviceGray(&gray_cs);
 
     /*
      * Neither ImageType 3 nor 4 needs a current color,
@@ -597,8 +599,10 @@ test5(gs_state * pgs, gs_memory_t * mem)
     {
 	gs_image1_t image1;
 	void *info1;
+        gs_color_space cs;
 
-	gs_image_t_init_gray(&image1, (const gs_imager_state *)pgs);
+        gs_cspace_init_DeviceGray(&cs);
+	gs_image_t_init(&image1, &cs);
 	/* image */
 	image1.ImageMatrix.xx = W;
 	image1.ImageMatrix.yy = -H;
@@ -649,8 +653,7 @@ test5(gs_state * pgs, gs_memory_t * mem)
 	    0x66
 	};
 
-	gs_image3_t_init(&image3, gs_current_DeviceGray_space(pgs),
-			 interleave_scan_lines);
+	gs_image3_t_init(&image3, &gray_cs, interleave_scan_lines);
 	/* image */
 	image3.ImageMatrix.xx = W;
 	image3.ImageMatrix.yy = -H;
@@ -721,7 +724,7 @@ test5(gs_state * pgs, gs_memory_t * mem)
 	gs_image4_t image4;
 	const byte *data4 = data3;
 
-	gs_image4_t_init(&image4, gs_current_DeviceGray_space(pgs));
+	gs_image4_t_init(&image4, &gray_cs);
 	/* image */
 	image4.ImageMatrix.xx = W;
 	image4.ImageMatrix.yy = -H;
@@ -812,10 +815,13 @@ test6(gs_state * pgs, gs_memory_t * mem)
     };
     gx_device_cmap *cmdev;
     int code;
+    gs_color_space rgb_cs;
+
+    gs_cspace_init_DeviceRGB(&rgb_cs);
 
     gs_scale(pgs, 150.0, 150.0);
     gs_translate(pgs, 0.5, 0.5);
-    gs_setcolorspace(pgs, gs_current_DeviceRGB_space(pgs));
+    gs_setcolorspace(pgs, &rgb_cs);
     spectrum(pgs, 5);
     gs_translate(pgs, 1.2, 0.0);
     /* We must set the CRD before the color space. */
@@ -880,7 +886,7 @@ test7(gs_state * pgs, gs_memory_t * mem)
     /* Fabricate a Type 5 halftone. */
     code = gs_ht_build(&pht, 1, mem);
     dprintf1("ht build code = %d\n", code);
-    code = gs_ht_set_mask_comp(pht, 0, gs_ht_separation_Default,
+    code = gs_ht_set_mask_comp(pht, 0,
 			       4, 4, 4, masks, NULL, NULL);
     dprintf1("set mask code = %d\n", code);
     code = gs_sethalftone(pgs, pht);
@@ -925,15 +931,14 @@ test8(gs_state * pgs, gs_memory_t * mem)
     gs_const_string table;
     gs_color_space *pcs;
     gs_client_color ccolor;
+    gs_color_space rgb_cs;
+
+    gs_cspace_init_DeviceRGB(&rgb_cs);
 
     table.data =
 	(const byte *)"\377\377\377\377\000\000\000\377\000\000\000\000";
     table.size = 12;
-    gs_cspace_build_Indexed(&pcs,
-			    gs_current_DeviceRGB_space(pgs),
-			    4,
-			    &table,
-			    mem);
+    gs_cspace_build_Indexed(&pcs, &rgb_cs, 4, &table, mem);
     ptile.data = pdata;
     ptile.raster = 4;
     ptile.size.x = ptile.size.y = 16;
@@ -1083,8 +1088,16 @@ test10(gs_state * pgs, gs_memory_t * mem)
     eprintf1("putdeviceparams: code=%d\n", code);
     gs_c_param_list_release(&list);
 
+    /* note: initgraphics no longer resets the color or color space */
     gs_erasepage(pgs);
     gs_initgraphics(pgs);
+    {
+        gs_color_space cs;
+
+        gs_cspace_init_DeviceGray(&cs);
+        gs_setcolorspace(pgs, &cs);
+    }
+    
     gs_clippath(pgs);
     gs_pathbbox(pgs, &cliprect);
     eprintf4("	cliprect = [[%g,%g],[%g,%g]]\n",

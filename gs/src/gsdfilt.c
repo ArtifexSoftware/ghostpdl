@@ -55,84 +55,6 @@ gs_private_st_ptrs3(st_gs_device_filter_stack, gs_device_filter_stack_t,
 gs_public_st_simple(st_gs_device_filter, gs_device_filter_t,
 		    "gs_device_filter");
 
-#ifdef DFILTER_TEST
-
-/* The test device filter installs a simple forwarding device which changes
-   the behavior of map_rgb_color to "bleach" colors. It is only here for
-   testing purposes, and isn't necessary to be compiled in production code.
-*/
-
-private gx_color_index
-gs_test_device_filter_map_rgb_color(gx_device * dev,
-				    gx_color_value r, gx_color_value g, gx_color_value b)
-{
-    gx_device_forward * const fdev = (gx_device_forward *)dev;
-    gx_device *tdev = fdev->target;
-
-    r += (gx_max_color_value - r) >> 1;
-    g += (gx_max_color_value - g) >> 1;
-    b += (gx_max_color_value - b) >> 1;
-    return dev_proc(tdev, map_rgb_color)(tdev, r, g, b);
-}
-
-private const gx_device_forward gs_test_device_filter_device =
-{std_device_std_body_open(gx_device_forward, 0,
-			  "Device filter test device", 0, 0, 1, 1),
- {NULL,		/* open_device */
-  NULL,		/* get_initial_matrix */
-  NULL,		/* sync_output */
-  NULL,		/* output_page */
-  NULL,		/* close_device */
-  gs_test_device_filter_map_rgb_color
- }
-};
-
-private int
-gs_test_device_filter_push(gs_device_filter_t *self, gs_memory_t *mem,
-			   gx_device **pdev, gx_device *target)
-{
-    gx_device_forward *fdev;
-
-    fdev = gs_alloc_struct_immovable(mem, gx_device_forward,
-				     &st_device_forward,
-				     "gs_test_device_filter_push");
-    if (fdev == 0)
-	return_error(gs_error_VMerror);
-    gx_device_init((gx_device *)fdev,
-		   (const gx_device *)&gs_test_device_filter_device, mem,
-		   false);
-    gx_device_forward_fill_in_procs(fdev);
-    gx_device_copy_params((gx_device *)fdev, target);
-    gx_device_set_target(fdev, target);
-    *pdev = (gx_device *)fdev;
-    return 0;
-}
-
-private int
-gs_test_device_filter_pop(gs_device_filter_t *self, gs_memory_t *mem,
-			  gs_state *pgs, gx_device *dev)
-{
-    gx_device_set_target((gx_device_forward *)dev, NULL);
-    gs_free_object(mem, self, "gs_test_device_filter_pop");
-    return 0;
-}
-
-int
-gs_test_device_filter(gs_device_filter_t **pdf, gs_memory_t *mem)
-{
-    gs_device_filter_t *df;
-
-    df = gs_alloc_struct(mem, gs_device_filter_t,
-			 &st_gs_device_filter, "gs_test_device_filter");
-    if (df == 0)
-	return_error(gs_error_VMerror);
-    df->push = gs_test_device_filter_push;
-    df->pop = gs_test_device_filter_pop;
-    *pdf = df;
-    return 0;
-}
-#endif
-
 int
 gs_push_device_filter(gs_memory_t *mem, gs_state *pgs, gs_device_filter_t *df)
 {
@@ -146,7 +68,7 @@ gs_push_device_filter(gs_memory_t *mem, gs_state *pgs, gs_device_filter_t *df)
 	return_error(gs_error_VMerror);
     rc_increment(pgs->device);
     dfs->next_device = pgs->device;
-    code = df->push(df, mem, &new_dev, pgs->device);
+    code = df->push(df, mem, &new_dev, pgs, pgs->device);
     if (code < 0) {
 	return code;
 	gs_free_object(mem, dfs, "gs_push_device_filter");
@@ -163,17 +85,21 @@ int
 gs_pop_device_filter(gs_memory_t *mem, gs_state *pgs)
 {
     gs_device_filter_stack_t *dfs_tos = pgs->dfilter_stack;
+    gx_device *tos_device = pgs->device;
     gs_device_filter_t *df;
     int code;
 
     if (dfs_tos == NULL)
 	return_error(gs_error_rangecheck);
     df = dfs_tos->df;
-    code = df->pop(df, mem, pgs, pgs->device);
     pgs->dfilter_stack = dfs_tos->next;
+    code = df->prepop(df, mem, pgs, tos_device);
+    rc_increment(tos_device);
     gs_setdevice_no_init(pgs, dfs_tos->next_device);
     rc_decrement_only(dfs_tos->next_device, "gs_pop_device_filter");
     gs_free_object(mem, dfs_tos, "gs_pop_device_filter");
+    code = df->postpop(df, mem, pgs, tos_device);
+    rc_decrement_only(tos_device, "gs_pop_device_filter");
     return code;
 }
 

@@ -27,6 +27,7 @@
 #include "gxdevice.h"		/* for gzht.h */
 #include "gxistate.h"
 #include "gzht.h"
+#include "gsserial.h"
 
 /* Define the sizes of the halftone cache. */
 #define max_cached_tiles_HUGE 5000	/* not used */
@@ -40,14 +41,21 @@
 /* The type descriptor must be public for Pattern types. */
 gs_public_st_composite(st_dc_ht_binary, gx_device_color, "dc_ht_binary",
 		       dc_ht_binary_enum_ptrs, dc_ht_binary_reloc_ptrs);
+private dev_color_proc_save_dc(gx_dc_ht_binary_save_dc);
+private dev_color_proc_get_dev_halftone(gx_dc_ht_binary_get_dev_halftone);
 private dev_color_proc_load(gx_dc_ht_binary_load);
 private dev_color_proc_fill_rectangle(gx_dc_ht_binary_fill_rectangle);
 private dev_color_proc_equal(gx_dc_ht_binary_equal);
+private dev_color_proc_write(gx_dc_ht_binary_write);
+private dev_color_proc_read(gx_dc_ht_binary_read);
 const gx_device_color_type_t
       gx_dc_type_data_ht_binary =
 {&st_dc_ht_binary,
+ gx_dc_ht_binary_save_dc, gx_dc_ht_binary_get_dev_halftone,
  gx_dc_ht_binary_load, gx_dc_ht_binary_fill_rectangle,
- gx_dc_default_fill_masked, gx_dc_ht_binary_equal
+ gx_dc_default_fill_masked, gx_dc_ht_binary_equal,
+ gx_dc_ht_binary_write, gx_dc_ht_binary_read,
+ gx_dc_ht_binary_get_nonzero_comps
 };
 
 #undef gx_dc_type_ht_binary
@@ -152,7 +160,6 @@ gx_ht_alloc_cache(gs_memory_t * mem, uint max_tiles, uint max_bits)
     pcache->bits_size = max_bits;
     pcache->ht_tiles = ht_tiles;
     pcache->num_tiles = max_tiles;
-    pcache->order.data_memory = 0;
     pcache->order.cache = pcache;
     pcache->order.transfer = 0;
     gx_ht_clear_cache(pcache);
@@ -172,6 +179,7 @@ gx_ht_free_cache(gs_memory_t * mem, gx_ht_cache * pcache)
 bool
 gx_check_tile_cache_current(const gs_imager_state * pis)
 {
+#ifdef TO_DO_DEVICEN
     const gx_ht_order *porder = &pis->dev_ht->order;
     gx_ht_cache *pcache = pis->ht_cache;
 
@@ -180,6 +188,9 @@ gx_check_tile_cache_current(const gs_imager_state * pis)
 	return false;
     /* else */
     return true;
+#else
+    return false;
+#endif
 }
 
 /* Make the cache order current, and return whether */
@@ -187,6 +198,7 @@ gx_check_tile_cache_current(const gs_imager_state * pis)
 bool
 gx_check_tile_cache(const gs_imager_state * pis)
 {
+#ifdef TO_DO_DEVICEN
     const gx_ht_order *porder = &pis->dev_ht->order;
     gx_ht_cache *pcache = pis->ht_cache;
 
@@ -223,6 +235,9 @@ gx_check_tile_cache(const gs_imager_state * pis)
 	pcache->tiles_fit = (int)fit;
 	return fit;
     }
+#else
+    return false;
+#endif
 }
 
 /*
@@ -235,6 +250,7 @@ int
 gx_check_tile_size(const gs_imager_state * pis, int w, int y, int h,
 		   gs_color_select_t select, int *ppx)
 {
+#ifdef TO_DO_DEVICEN
     int tsy;
     const gx_strip_bitmap *ptile0;
 
@@ -252,6 +268,9 @@ gx_check_tile_size(const gs_imager_state * pis, int w, int y, int h,
     /* Tile fits in Y, might fit in X. */
     *ppx = imod(-pis->screen_phase[select].x, ptile0->rep_width);
     return tsy * ptile0->raster;
+#else
+    return -1;
+#endif
 }
 
 /* Render a given level into a halftone cache. */
@@ -305,6 +324,25 @@ gx_render_ht_1_level(gx_ht_cache * pcache, int b_level)
     return bt;
 }
 
+/* save information about the operand binary halftone color */
+private void
+gx_dc_ht_binary_save_dc(const gx_device_color * pdevc,
+                        gx_device_color_saved * psdc)
+{
+    psdc->type = pdevc->type;
+    psdc->colors.binary.b_color[0] = pdevc->colors.binary.color[0];
+    psdc->colors.binary.b_color[1] = pdevc->colors.binary.color[1];
+    psdc->colors.binary.b_index = pdevc->colors.binary.b_index;
+    psdc->phase = pdevc->phase;
+}
+
+/* get the halftone used for a binary halftone color */
+private const gx_device_halftone *
+gx_dc_ht_binary_get_dev_halftone(const gx_device_color * pdevc)
+{
+    return pdevc->colors.binary.b_ht;
+}
+
 /* Load the device color into the halftone cache if needed. */
 private int
 gx_dc_ht_binary_load(gx_device_color * pdevc, const gs_imager_state * pis,
@@ -315,8 +353,7 @@ gx_dc_ht_binary_load(gx_device_color * pdevc, const gs_imager_state * pis,
 	(component_index < 0 ?
 	 &pdevc->colors.binary.b_ht->order :
 	 &pdevc->colors.binary.b_ht->components[component_index].corder);
-    gx_ht_cache *pcache =
-	(porder->cache == 0 ? pis->ht_cache : porder->cache);
+    gx_ht_cache *pcache = porder->cache;
 
     if (pcache->order.bit_data != porder->bit_data)
 	gx_ht_init_cache(pcache, porder);
@@ -389,6 +426,287 @@ gx_dc_ht_binary_equal(const gx_device_color * pdevc1,
 	gx_dc_binary_color1(pdevc1) == gx_dc_binary_color1(pdevc2) &&
 	pdevc1->colors.binary.b_level == pdevc2->colors.binary.b_level;
 }
+
+
+/* 
+ * Flags to indicate the pieces of a binary halftone that are included
+ * in its string representation. The first byte of the string holds this
+ * set of flags.
+ *
+ * It is unlikely that two successive binary halftones that are not equal
+ * would have the same level, so that field is always included in the
+ * string representation and therefore has no flag bit.
+ *
+ * The binary halftone tile is never transmitted as part of the string
+ * representation, so there is also no flag bit for it.
+ */
+private const int   dc_ht_binary_has_color0 = 0x01;
+private const int   dc_ht_binary_has_color1 = 0x02;
+private const int   dc_ht_binary_has_index = 0x04;
+private const int   dc_ht_binary_has_phase = 0x08;
+
+
+/*
+ * Serialize a binany halftone device color.
+ *
+ * Operands:
+ *
+ *  pdevc       pointer to device color to be serialized
+ *
+ *  psdc        pointer ot saved version of last serialized color (for
+ *              this band)
+ *  
+ *  dev         pointer to the current device, used to retrieve process
+ *              color model information
+ *
+ *  pdata       pointer to buffer in which to write the data
+ *
+ *  psize       pointer to a location that, on entry, contains the size of
+ *              the buffer pointed to by pdata; on return, the size of
+ *              the data required or actually used will be written here.
+ *
+ * Returns:
+ *
+ *  0, with *psize set to the amount of data written, if everything OK
+ *
+ *  gs_error_rangecheck, with *psize set to the size of buffer required,
+ *  if *psize was not large enough
+ *
+ *  < 0, != gs_error_rangecheck, in the event of some other error; in this
+ *  case *psize is not changed.
+ */
+private int
+gx_dc_ht_binary_write(
+    const gx_device_color *         pdevc,
+    const gx_device_color_saved *   psdc,
+    const gx_device *               dev,
+    byte *                          pdata,
+    uint *                          psize )
+{
+    int                             req_size = 2;   /* flag bits, b_level */
+    int                             flag_bits = 0;  /* just b_level */
+    uint                            tmp_size;
+    byte *                          pdata0 = pdata;
+    int                             code;
+
+    /* check if saved color is of the same type */
+    if (psdc != 0 && psdc->type != pdevc->type)
+        psdc = 0;
+
+    /* check for the information that must be transmitted */
+    if ( psdc == 0                                                      ||
+         pdevc->colors.binary.color[0] != psdc->colors.binary.b_color[0]  ) {
+        flag_bits |= dc_ht_binary_has_color0;
+        tmp_size = 0;
+        (void)gx_dc_write_color( pdevc->colors.binary.color[0],
+                                 dev,
+                                 pdata,
+                                 &tmp_size );
+        req_size += tmp_size;
+    }
+    if ( psdc == 0                                                      ||
+         pdevc->colors.binary.color[1] != psdc->colors.binary.b_color[1]  ) {
+        flag_bits |= dc_ht_binary_has_color1;
+        tmp_size = 0;
+        (void)gx_dc_write_color( pdevc->colors.binary.color[1],
+                                 dev,
+                                 pdata,
+                                 &tmp_size );
+        req_size += tmp_size;
+    }
+    if ( psdc == 0                                                  ||
+         pdevc->colors.binary.b_index != psdc->colors.binary.b_index  ) {
+        flag_bits |= dc_ht_binary_has_index;
+        req_size += 1;
+    }
+    if ( psdc == 0                       ||
+         pdevc->phase.x != psdc->phase.x ||
+         pdevc->phase.y != psdc->phase.y   ) {
+        flag_bits |= dc_ht_binary_has_phase;
+        /* the phases are known to be positive */
+        req_size += enc_u_sizexy(pdevc->phase);
+    }
+
+    /* check if sufficient space has been provided */
+    if (req_size > *psize) {
+        *psize = req_size;
+        return gs_error_rangecheck;
+    }
+
+    /* write out the flag byte and b_level */
+    *pdata++ = (byte)flag_bits;
+    *pdata++ = (byte)pdevc->colors.binary.b_level;
+
+    /* write out such other parts of the device color as are required */
+    if ((flag_bits & dc_ht_binary_has_color0) != 0) {
+        tmp_size = req_size - (pdata - pdata0);
+        code = gx_dc_write_color( pdevc->colors.binary.color[0],
+                                  dev,
+                                  pdata,
+                                  &tmp_size );
+        if (code < 0)
+            return code;
+        pdata += tmp_size;
+    }
+    if ((flag_bits & dc_ht_binary_has_color1) != 0) {
+        tmp_size = req_size - (pdata - pdata0);
+        code = gx_dc_write_color( pdevc->colors.binary.color[1],
+                                  dev,
+                                  pdata,
+                                  &tmp_size );
+        if (code < 0)
+            return code;
+        pdata += tmp_size;
+    }
+    if ((flag_bits & dc_ht_binary_has_index) != 0)
+        *pdata++ = pdevc->colors.binary.b_index;
+    if ((flag_bits & dc_ht_binary_has_phase) != 0)
+        enc_u_putxy(pdevc->phase, pdata);
+
+    *psize = pdata - pdata0;
+    return 0;
+}
+
+/*
+ * Reconstruct a binary halftone device color from its serial representation.
+ *
+ * Operands:
+ *
+ *  pdevc       pointer to the location in which to write the
+ *              reconstructed device color
+ *
+ *  pis         pointer to the current imager state (to access the
+ *              current halftone)
+ *
+ *  prior_devc  pointer to the current device color (this is provided
+ *              separately because the device color is not part of the
+ *              imager state)
+ *
+ *  dev         pointer to the current device, used to retrieve process
+ *              color model information
+ *
+ *  pdata       pointer to the buffer to be read
+ *
+ *  size        size of the buffer to be read; this should be large
+ *              enough to hold the entire color description
+ *
+ *  mem         pointer to the memory to be used for allocations
+ *              (ignored here)
+ *
+ * Returns:
+ *
+ *  # of bytes read if everthing OK, < 0 in the event of an error
+ */
+private int
+gx_dc_ht_binary_read(
+    gx_device_color *       pdevc,
+    const gs_imager_state * pis,
+    const gx_device_color * prior_devc,
+    const gx_device *       dev,        /* ignored */
+    const byte *            pdata,
+    uint                    size,
+    gs_memory_t *           mem )       /* ignored */
+{
+    gx_device_color         devc;
+    const byte *            pdata0 = pdata;
+    int                     code, flag_bits;
+
+    /* if prior information is available, use it */
+    if (prior_devc != 0 && prior_devc->type == gx_dc_type_ht_binary)
+        devc = *prior_devc;
+    else {
+        memset(&devc, 0, sizeof(devc));   /* clear pointers */
+        devc.type = gx_dc_type_ht_binary;
+    }
+
+    /* the halftone is always taken from the imager state */
+    devc.colors.binary.b_ht = pis->dev_ht;
+
+    /* cache is not porvided until the device color is used */
+    devc.colors.binary.b_tile = 0;
+
+    /* verify the minimum amount of information */
+    if ((size -= 2) < 0)
+        return_error(gs_error_rangecheck);
+    flag_bits = *pdata++;
+    devc.colors.binary.b_level = *pdata++;
+
+    /* read the other information provided */
+    if ((flag_bits & dc_ht_binary_has_color0) != 0) {
+        code = gx_dc_read_color( &devc.colors.binary.color[0],
+                                 dev,
+                                 pdata,
+                                 size );
+        if (code < 0)
+            return code;
+        size -= code;
+    }
+    if ((flag_bits & dc_ht_binary_has_color0) != 0) {
+        code = gx_dc_read_color( &devc.colors.binary.color[1],
+                                 dev,
+                                 pdata,
+                                 size );
+        if (code < 0)
+            return code;
+        size -= code;
+    }
+    if ((flag_bits & dc_ht_binary_has_index) != 0) {
+        if (--size < 0)
+            return_error(gs_error_rangecheck);
+        devc.colors.binary.b_index = *pdata++;
+    }
+    if ((flag_bits & dc_ht_binary_has_phase) != 0) {
+        /* we know the phase contains at least two bytes */
+        if (size < 2)
+            return_error(gs_error_rangecheck);
+        enc_u_getxy(pdevc->phase, pdata);
+    }
+
+    /* everything looks good */
+    *pdevc = devc;
+    return pdata - pdata0;
+}
+
+
+/*
+ * Get the nonzero components of a binary halftone. This is used to
+ * distinguish components that are given zero intensity due to halftoning
+ * from those for which the original color intensity was in fact zero.
+ *
+ * Since this device color type involves only a single halftone component,
+ * we can reasonably assume that b_level != 0. Hence, we need to check
+ * for components with identical intensities in color[0] and color[1].
+ */
+int
+gx_dc_ht_binary_get_nonzero_comps(
+    const gx_device_color * pdevc,
+    const gx_device *       dev,
+    gx_color_index *        pcomp_bits )
+{
+    int                     code;
+    gx_color_value          cvals_0[GX_DEVICE_COLOR_MAX_COMPONENTS],
+                            cvals_1[GX_DEVICE_COLOR_MAX_COMPONENTS];
+
+    if ( (code = dev_proc(dev, decode_color)( (gx_device *)dev,
+                                              pdevc->colors.binary.color[0],
+                                              cvals_0 )) >= 0 &&
+         (code = dev_proc(dev, decode_color)( (gx_device *)dev,
+                                              pdevc->colors.binary.color[0],
+                                              cvals_0 )) >= 0   ) {
+        int     i, ncomps = dev->color_info.num_components;
+        int     mask = 0x1, comp_bits = 0;
+
+        for (i = 0; i < ncomps; i++, mask <<= 1) {
+            if (cvals_0[i] != cvals_1[i])
+                comp_bits |= mask;
+        }
+        *pcomp_bits = comp_bits;
+        code = 0;
+    }
+
+    return code;
+}
+
 
 /* Initialize the tile cache for a given screen. */
 /* Cache as many different levels as will fit. */

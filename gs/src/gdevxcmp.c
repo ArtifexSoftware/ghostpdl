@@ -559,10 +559,12 @@ iabs(int x)
 
 /* Map RGB values to a pixel value. */
 gx_color_index
-gdev_x_map_rgb_color(gx_device * dev,
-		     gx_color_value r, gx_color_value g, gx_color_value b)
+gdev_x_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
     gx_device_X *const xdev = (gx_device_X *) dev;
+    gx_color_value r = cv[0];
+    gx_color_value g = cv[1];
+    gx_color_value b = cv[2];
 
     /* X and ghostscript both use shorts for color values. */
     /* Set drgb to the nearest color that the device can represent. */

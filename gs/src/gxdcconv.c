@@ -66,10 +66,10 @@ color_rgb_to_cmyk(frac r, frac g, frac b, const gs_imager_state * pis,
      * but they must agree with the ones in gs_init.ps.
      */
     frac bg =
-	(pis->black_generation == NULL ? frac_0 :
+	(pis == NULL ? k : pis->black_generation == NULL ? frac_0 :
 	 gx_map_color_frac(pis, k, black_generation));
     signed_frac ucr =
-	(pis->undercolor_removal == NULL ? frac_0 :
+	(pis == NULL ? k : pis->undercolor_removal == NULL ? frac_0 :
 	 gx_map_color_frac(pis, k, undercolor_removal));
 
     if (ucr == frac_1)

@@ -31,8 +31,6 @@
    chain.
 */
 
-#define DFILTER_TEST
-
 #ifndef gs_device_filter_stack_DEFINED
 #  define gs_device_filter_stack_DEFINED
 typedef struct gs_device_filter_stack_s gs_device_filter_stack_t;
@@ -42,18 +40,15 @@ typedef struct gs_device_filter_stack_s gs_device_filter_stack_t;
 typedef struct gs_device_filter_s gs_device_filter_t;
 
 struct gs_device_filter_s {
-    int (*push)(gs_device_filter_t *self, gs_memory_t *mem,
+    int (*push)(gs_device_filter_t *self, gs_memory_t *mem, gs_state *pgs,
 		gx_device **pdev, gx_device *target);
-    int (*pop)(gs_device_filter_t *self, gs_memory_t *mem, gs_state *pgs,
-	       gx_device *dev);
+    int (*prepop)(gs_device_filter_t *self, gs_memory_t *mem, gs_state *pgs,
+		  gx_device *dev);
+    int (*postpop)(gs_device_filter_t *self, gs_memory_t *mem, gs_state *pgs,
+		   gx_device *dev);
 };
 
 extern_st(st_gs_device_filter);
-
-#ifdef DFILTER_TEST
-int gs_test_device_filter(gs_device_filter_t **pdf, gs_memory_t *mem);
-#endif
-
 
 /**
  * gs_push_device_filter: Push a device filter.

@@ -26,6 +26,12 @@
 typedef struct gs_state_s gs_state;
 #endif
 
+/* opague type for overprint compositor parameters */
+#ifndef gs_overprint_params_t_DEFINED
+#  define gs_overprint_params_t_DEFINED
+typedef struct gs_overprint_params_s    gs_overprint_params_t;
+#endif
+
 /* Initial allocation and freeing */
 gs_state *gs_state_alloc(gs_memory_t *);	/* 0 if fails */
 int gs_state_free(gs_state *);
@@ -39,6 +45,13 @@ gs_state *gs_state_copy(gs_state *, gs_memory_t *);
 int gs_copygstate(gs_state * /*to */ , const gs_state * /*from */ ),
       gs_currentgstate(gs_state * /*to */ , const gs_state * /*from */ ),
       gs_setgstate(gs_state * /*to */ , const gs_state * /*from */ );
+
+int gs_state_update_overprint(gs_state *, const gs_overprint_params_t *);
+bool gs_currentoverprint(const gs_state *);
+void gs_setoverprint(gs_state *, bool);
+int gs_currentoverprintmode(const gs_state *);
+int gs_setoverprintmode(gs_state *, int);
+
 int gs_initgraphics(gs_state *);
 
 /* Device control */

@@ -161,7 +161,7 @@ zgetbitsrect(i_ctx_t *i_ctx_p)
 	depth_option = depths[std_depth];
 	if (depth_option == 0)
 	    return_error(e_rangecheck);
-	options |= depth_option | gb_colors_for_device(dev);
+	options |= depth_option | GB_COLORS_NATIVE;
 	depth = (dev->color_info.num_components +
 		 (options & GB_ALPHA_NONE ? 0 : 1)) * std_depth;
     }

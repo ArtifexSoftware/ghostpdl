@@ -95,8 +95,9 @@ private composite_create_default_compositor_proc(c_alpha_create_default_composit
 private composite_equal_proc(c_alpha_equal);
 private composite_write_proc(c_alpha_write);
 private composite_read_proc(c_alpha_read);
-private const gs_composite_type_t gs_composite_alpha_type =
+const gs_composite_type_t gs_composite_alpha_type =
 {
+    GX_COMPOSITOR_ALPHA,
     {
 	c_alpha_create_default_compositor,
 	c_alpha_equal,
@@ -174,19 +175,19 @@ c_alpha_read(gs_composite_t ** ppcte, const byte * data, uint size,
 	     gs_memory_t * mem)
 {
     gs_composite_alpha_params_t params;
+    int code, nbytes = 1;
 
     if (size < 1 || *data > composite_op_last)
 	return_error(gs_error_rangecheck);
     params.op = *data;
     if (params.op == composite_Dissolve) {
-	if (size != 1 + sizeof(params.delta))
+	if (size < 1 + sizeof(params.delta))
 	    return_error(gs_error_rangecheck);
 	memcpy(&params.delta, data + 1, sizeof(params.delta));
-    } else {
-	if (size != 1)
-	    return_error(gs_error_rangecheck);
+	nbytes += sizeof(params.delta);
     }
-    return gs_create_composite_alpha(ppcte, &params, mem);
+    code = gs_create_composite_alpha(ppcte, &params, mem);
+    return code < 0 ? code : nbytes;
 }
 
 /* ---------------- Alpha-compositing device ---------------- */
@@ -316,10 +317,9 @@ dca_close(gx_device * dev)
 /* ------ (RGB) color mapping ------ */
 
 private gx_color_index
-dca_map_rgb_color(gx_device * dev,
-		  gx_color_value r, gx_color_value g, gx_color_value b)
+dca_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
-    return dca_map_rgb_alpha_color(dev, r, g, b, gx_max_color_value);
+    return dca_map_rgb_alpha_color(dev, cv[0], cv[1], cv[2], gx_max_color_value);
 }
 private gx_color_index
 dca_map_rgb_alpha_color(gx_device * dev,
@@ -451,7 +451,7 @@ dca_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     }
     rect.p.x = x, rect.q.x = x + w;
     std_params.options =
-	gb_colors_for_device(dev) |
+	GB_COLORS_NATIVE |
 	(GB_ALPHA_LAST | GB_DEPTH_8 | GB_PACKING_CHUNKY |
 	 GB_RETURN_COPY | GB_RETURN_POINTER | GB_ALIGN_ANY |
 	 GB_OFFSET_0 | GB_OFFSET_ANY | GB_RASTER_STANDARD |

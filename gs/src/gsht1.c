@@ -25,15 +25,8 @@
 #include "gxdevice.h"		/* for gzht.h */
 #include "gzht.h"
 
-/* Define the size of the halftone tile cache. */
-#define max_tile_bytes_LARGE 4096
-#define max_tile_bytes_SMALL 512
-#if arch_small_memory
-#  define max_tile_cache_bytes max_tile_bytes_SMALL
-#else
-#  define max_tile_cache_bytes\
-     (gs_debug_c('.') ? max_tile_bytes_SMALL : max_tile_bytes_LARGE)
-#endif
+#include "gxwts.h"
+#include "gswts.h"
 
 /* Imports from gscolor.c */
 void load_transfer_map(gs_state *, gx_transfer_map *, floatp);
@@ -47,6 +40,9 @@ private int process_threshold2(gx_ht_order *, gs_state *,
 			       gs_threshold2_halftone *, gs_memory_t *);
 private int process_client_order(gx_ht_order *, gs_state *,
 				 gs_client_order_halftone *, gs_memory_t *);
+private int
+gs_sethalftone_try_wts(gs_halftone *pht, gs_state *pgs,
+		       gx_device_halftone *pdht);
 
 /* Structure types */
 public_st_halftone_component();
@@ -164,8 +160,11 @@ gs_sethalftone_allocated(gs_state * pgs, gs_halftone * pht)
     if (code < 0)
 	return code;
     dev_ht.rc.memory = pht->rc.memory;
-    return gx_ht_install(pgs, pht, &dev_ht);
+    if ((code = gx_ht_install(pgs, pht, &dev_ht)) < 0)
+        gx_device_halftone_release(&dev_ht, pht->rc.memory);
+    return code;
 }
+
 /* Prepare the halftone, but don't install it. */
 int
 gs_sethalftone_prepare(gs_state * pgs, gs_halftone * pht,
@@ -175,18 +174,19 @@ gs_sethalftone_prepare(gs_state * pgs, gs_halftone * pht,
     gx_ht_order_component *pocs = 0;
     int code = 0;
 
+/* #define USE_WTS */
+#ifdef USE_WTS
+    if (gs_sethalftone_try_wts(pht, pgs, pdht) == 0)
+	return 0;
+#endif
+
     switch (pht->type) {
 	case ht_type_colorscreen:
 	    {
 		gs_screen_halftone *phc =
-		pht->params.colorscreen.screens.indexed;
-		static const gs_ht_separation_name cnames[4] =
-		{
-		    gs_ht_separation_Default, gs_ht_separation_Red,
-		    gs_ht_separation_Green, gs_ht_separation_Blue
-		};
-		static const int cindex[4] =
-		{3, 0, 1, 2};
+		    pht->params.colorscreen.screens.indexed;
+		static const int cindex[4] = {3, 0, 1, 2};
+		static const char * color_names[4] = {"Gray", "Red", "Green", "Blue"};
 		int i;
 
 		pocs = gs_alloc_struct_array(mem, 4,
@@ -205,25 +205,11 @@ gs_sethalftone_prepare(gs_state * pgs, gs_halftone * pht,
 		    if (code < 0)
 			break;
 		    poc->corder = senum.order;
-		    poc->cname = cnames[i];
+		    poc->comp_number = gs_color_name_component_number(pgs->device,
+		    	(char *)color_names[i], strlen(color_names[i]), pht->type);
+		    poc->cname = 0;  /* name index values are not known (or needed) */
 		    if (i == 0)	/* Gray = Default */
-			pdht->order = senum.order;
-		    else {
-			uint tile_bytes = senum.order.raster *
-			    (senum.order.num_bits / senum.order.width);
-			uint num_tiles =
-			    max_tile_cache_bytes / tile_bytes + 1;
-			gx_ht_cache *pcache =
-			    gx_ht_alloc_cache(mem, num_tiles,
-					      tile_bytes * num_tiles);
-
-			if (pcache == 0) {
-			    code = gs_note_error(gs_error_VMerror);
-			    break;
-			}
-			poc->corder.cache = pcache;
-			gx_ht_init_cache(pcache, &poc->corder);
-		    }
+			pdht->order = poc->corder;	/* Save default value */
 		}
 		if (code < 0)
 		    break;
@@ -275,9 +261,9 @@ gs_sethalftone_prepare(gs_state * pgs, gs_halftone * pht,
 		    return_error(gs_error_VMerror);
 		poc_next = pocs + 1;
 		for (i = 0; i < count; i++, phc++) {
-		    gx_ht_order_component *poc;
+		    gx_ht_order_component *poc = poc_next;		    
 
-		    if (phc->cname == gs_ht_separation_Default) {
+		    if (phc->comp_number == GX_DEVICE_COLOR_MAX_COMPONENTS) {
 			if (have_Default) {
 			    /* Duplicate Default */
 			    code = gs_note_error(gs_error_rangecheck);
@@ -291,6 +277,8 @@ gs_sethalftone_prepare(gs_state * pgs, gs_halftone * pht,
 			break;
 		    } else
 			poc = poc_next++;
+
+		    poc->comp_number = phc->comp_number;
 		    poc->cname = phc->cname;
 		    switch (phc->type) {
 			case ht_type_spot:
@@ -315,6 +303,7 @@ gs_sethalftone_prepare(gs_state * pgs, gs_halftone * pht,
 		    }
 		    if (code < 0)
 			break;
+#if 0
 		    if (poc != pocs) {
 			gx_ht_cache *pcache =
 			gx_ht_alloc_cache(mem, 4,
@@ -329,6 +318,7 @@ gs_sethalftone_prepare(gs_state * pgs, gs_halftone * pht,
 			poc->corder.cache = pcache;
 			gx_ht_init_cache(pcache, &poc->corder);
 		    }
+#endif
 		}
 		if (code < 0)
 		    break;
@@ -365,10 +355,13 @@ process_transfer(gx_ht_order * porder, gs_state * pgs,
 
     if (proc == 0 && pmc->proc == 0)
 	return 0;
-    pmap = gs_alloc_struct(mem, gx_transfer_map, &st_transfer_map,
-			   "process_transfer");
-    if (pmap == 0)
-	return_error(gs_error_VMerror);
+    /*
+     * The transfer funtion is referenced by the order, so start the
+     * reference count at 1.
+     */
+    rc_alloc_struct_1(pmap, gx_transfer_map, &st_transfer_map, mem,
+		      return_error(gs_error_VMerror),
+		      "process_transfer");
     pmap->proc = proc;		/* 0 => use closure */
     pmap->closure = *pmc;
     pmap->id = gs_next_ids(1);
@@ -573,4 +566,120 @@ process_client_order(gx_ht_order * porder, gs_state * pgs,
 	return code;
     return process_transfer(porder, pgs, NULL,
 			    &phcop->transfer_closure, mem);
+}
+
+private const gx_ht_order_procs_t wts_order_procs = {
+};
+
+/**
+ * gs_sethalftone_try_wts: Try creating a wts-based device halftone.
+ * @pht: Client halftone.
+ * @pdht: Device halftone to initialize.
+ *
+ * Tries initializing @pdht based on data from @pht, using WTS.
+ *
+ * Return value: 0 on success, 1 to indicate that the initialization
+ * was not done, and that the legacy initialization code path should
+ * be used.
+ **/
+private int
+gs_sethalftone_try_wts(gs_halftone *pht, gs_state *pgs,
+		       gx_device_halftone *pdht)
+{
+    gx_device *dev = pgs->device;
+
+    /* todo: we probably want to fail if AccurateScreens is false */
+
+    if (pht->type != ht_type_multiple)
+	/* Only work with Type 5 halftones. todo: we probably want
+	   to relax this. */
+	return 1;
+
+#if 0
+    if (dev->color_info.separable_and_linear != GX_CINFO_SEP_LIN &&
+	pht->params.multiple.num_comp > 1)
+	/* WTS is only enabled for separable or monochrome devices. */
+	return 1;
+#endif
+
+    /* only work with bilevel (not multilevel) devices */
+    if (dev->color_info.num_components != dev->color_info.depth)
+	return 1;
+
+    if (pht->type == ht_type_multiple) {
+	gs_halftone_component *components = pht->params.multiple.components;
+	uint num_comp = pht->params.multiple.num_comp;
+	int i;
+	gx_ht_order_component *pocs;
+	gx_ht_order_component *poc_next;
+	int code = 0;
+	bool have_Default = false;
+
+	for (i = 0; i < num_comp; i++) {
+	    if (components[i].type != ht_type_spot)
+		return 1;
+	}
+
+	pocs = gs_alloc_struct_array( pgs->memory,
+                                      num_comp,
+                                      gx_ht_order_component,
+                                      &st_ht_order_component_element,
+                                      "gs_sethalftone_try_wts" );
+	/* pocs = malloc(num_comp * sizeof(gx_ht_order_component)); */
+	poc_next = &pocs[1];
+	for (i = 0; i < num_comp; i++) {
+	    gs_halftone_component *component = &components[i];
+	    gs_spot_halftone *spot = &component->params.spot;
+	    gs_screen_halftone *h = &spot->screen;
+	    gx_wts_cell_params_t *wcp;
+	    gs_wts_screen_enum_t *wse;
+	    gs_matrix imat;
+	    gx_ht_order_component *poc;
+
+	    if (component->comp_number == GX_DEVICE_COLOR_MAX_COMPONENTS) {
+		if (have_Default) {
+		    /* Duplicate Default */
+		    code = gs_note_error(gs_error_rangecheck);
+		    break;
+		}
+		poc = pocs;
+		have_Default = true;
+	    } else if (i == num_comp - 1 && !have_Default) {
+		/* No Default */
+		code = gs_note_error(gs_error_rangecheck);
+		break;
+	    } else
+		poc = poc_next++;
+
+	    gs_deviceinitialmatrix(gs_currentdevice(pgs), &imat);
+
+	    wcp = wts_pick_cell_size(h, &imat);
+	    wse = gs_wts_screen_enum_new(wcp);
+
+	    poc->corder.wse = wse;
+	    poc->corder.wts = NULL;
+	    poc->corder.procs = &wts_order_procs;
+	    poc->corder.data_memory = NULL;
+	    poc->corder.num_levels = 0;
+	    poc->corder.num_bits = 0;
+	    poc->corder.levels = NULL;
+	    poc->corder.bit_data = NULL;
+	    poc->corder.cache = NULL;
+	    poc->corder.transfer = NULL;
+	    poc->comp_number = component->comp_number;
+	    poc->cname = component->cname;
+	    code = process_transfer( &poc->corder,
+                                     pgs,
+                                     spot->transfer,
+                                     &spot->transfer_closure,
+                                     pgs->memory );
+	    if (code < 0)
+		break;
+	}
+	/* todo: cleanup on error */
+	pdht->components = pocs;
+	pdht->num_comp = num_comp;
+	return code;
+    }
+    return 1;
 }

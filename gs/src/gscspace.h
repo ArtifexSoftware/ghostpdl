@@ -21,6 +21,7 @@
 #  define gscspace_INCLUDED
 
 #include "gsmemory.h"
+#include "gsiparam.h"
 
 /*
  * The handling of color spaces in the graphic library is somewhat
@@ -267,27 +268,26 @@ typedef struct gs_base_color_space_s {
 
 #define gs_base_color_space_size sizeof(gs_base_color_space)
 
+#ifndef gs_device_n_map_DEFINED
+#  define gs_device_n_map_DEFINED
+typedef struct gs_device_n_map_s gs_device_n_map;
+#endif
 
 /*
  * Non-base direct color spaces: Separation and DeviceN.
  * These include a base alternative color space.
  */
 typedef ulong gs_separation_name;	/* BOGUS */
-typedef struct gs_indexed_map_s gs_indexed_map;
 
 typedef enum { SEP_NONE, SEP_ALL, SEP_OTHER } separation_type;
 
 typedef struct gs_separation_params_s {
-    gs_separation_name sname;
+    gs_separation_name sep_name;
     gs_base_color_space alt_space;
-    gs_indexed_map *map;
+    gs_device_n_map *map;
     separation_type sep_type;
+    bool use_alt_cspace;
 } gs_separation_params;
-
-#ifndef gs_device_n_map_DEFINED
-#  define gs_device_n_map_DEFINED
-typedef struct gs_device_n_map_s gs_device_n_map;
-#endif
 
 /*
  * Define callback function for graphics library to ask
@@ -304,6 +304,7 @@ typedef struct gs_device_n_params_s {
     uint num_components;
     gs_base_color_space alt_space;
     gs_device_n_map *map;
+    bool use_alt_cspace;
     gs_callback_func_get_colorname_string *get_colorname_string;
 } gs_device_n_params;
 
@@ -325,6 +326,8 @@ typedef struct gs_direct_color_space_s {
  * which is one less than the number of entries in the palette (as defined
  * in PostScript).
  */
+
+typedef struct gs_indexed_map_s gs_indexed_map;
 
 typedef struct gs_indexed_params_s {
     gs_direct_color_space base_space;
@@ -424,27 +427,13 @@ typedef struct gs_color_space_s gs_color_space;
 extern int
     gs_cspace_init_DeviceGray(gs_color_space *pcs),
     gs_cspace_build_DeviceGray(gs_color_space ** ppcspace,
-			       gs_memory_t * pmem),
+				  gs_memory_t * pmem),
     gs_cspace_init_DeviceRGB(gs_color_space *pcs),
     gs_cspace_build_DeviceRGB(gs_color_space ** ppcspace,
-			      gs_memory_t * pmem),
+                              gs_memory_t * pmem),
     gs_cspace_init_DeviceCMYK(gs_color_space *pcs),
     gs_cspace_build_DeviceCMYK(gs_color_space ** ppcspace,
-			       gs_memory_t * pmem);
-
-/*
- * We preallocate instances of the 3 device color spaces, and provide
- * procedures that return them.  Note that gs_cspace_DeviceCMYK() is
- * defined even if CMYK color support is not included in this configuration.
- */
-#ifndef gs_imager_state_DEFINED
-#  define gs_imager_state_DEFINED
-typedef struct gs_imager_state_s gs_imager_state;
-#endif
-
-const gs_color_space * gs_cspace_DeviceGray(const gs_imager_state * pis);
-const gs_color_space * gs_cspace_DeviceRGB(const gs_imager_state * pis);
-const gs_color_space * gs_cspace_DeviceCMYK(const gs_imager_state * pis);
+                               gs_memory_t * pmem);
 
 /* Copy a color space into one newly allocated by the caller. */
 void gs_cspace_init_from(gs_color_space * pcsto,

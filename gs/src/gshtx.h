@@ -21,9 +21,9 @@
 #  define gshtx_INCLUDED
 
 #include "gsmemory.h"
-#include "gscsepnm.h"
 #include "gsht1.h"
 #include "gxtmap.h"
+#include "gscspace.h"
 
 /*
  * The stand-alone halftone structures are opaque, and are placed in an opaque
@@ -88,26 +88,24 @@ typedef gs_mapping_closure_proc_t gs_ht_transfer_proc;	/* see gxtmap.h */
 extern int gs_ht_build(gs_ht ** ppht, uint num_comps, gs_memory_t * pmem);
 
 extern int gs_ht_set_spot_comp(
-			       gs_ht * pht,
-			       int component_index,
-			       gs_ht_separation_name sepr_name,
-			       floatp freq,
-			       floatp angle,
-			       float (*spot_func) (floatp, floatp),
-			       bool accurate,
-			       gs_ht_transfer_proc transfer,
-			       const void *client_data
+				     gs_ht * pht,
+				     int component_index,
+				     floatp freq,
+				     floatp angle,
+				     float (*spot_func) (floatp, floatp),
+				     bool accurate,
+				     gs_ht_transfer_proc transfer,
+				     const void *client_data
 			       );
 
 extern int gs_ht_set_threshold_comp(
-				    gs_ht * pht,
-				    int component_index,
-				    gs_ht_separation_name sepr_name,
-				    int width,
-				    int height,
-				    const gs_const_string * thresholds,
-				    gs_ht_transfer_proc transfer,
-				    const void *client_data
+					  gs_ht * pht,
+					  int component_index,
+					  int width,
+					  int height,
+					  const gs_const_string * thresholds,
+					  gs_ht_transfer_proc transfer,
+					  const void *client_data
 				    );
 
 /*
@@ -120,15 +118,14 @@ extern int gs_ht_set_threshold_comp(
  * Note that the client is responsible for releasing the mask data.
  */
 extern int gs_ht_set_mask_comp(
-			       gs_ht * pht,
-			       int component_index,
-			       gs_ht_separation_name sepr_name,
-			       int width,
-			       int height,
-			       int num_levels,
-			       const byte * masks,	/* width x height x num_levels */
-			       gs_ht_transfer_proc transfer,
-			       const void *client_data
+				     gs_ht * pht,
+				     int component_index,
+				     int width,
+				     int height,
+				     int num_levels,
+				     const byte * masks,	/* width x height x num_levels */
+				     gs_ht_transfer_proc transfer,
+				     const void *client_data
 			       );
 
 extern void gs_ht_reference(gs_ht * pht);

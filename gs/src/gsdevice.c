@@ -34,6 +34,7 @@
 #include "gxdevice.h"
 #include "gxdevmem.h"
 #include "gxiodev.h"
+#include "gxcspace.h"
 
 /* Include the extern for the device list. */
 extern_gs_lib_device_list();
@@ -396,13 +397,18 @@ gs_setdevice_no_erase(gs_state * pgs, gx_device * dev)
 int
 gs_setdevice_no_init(gs_state * pgs, gx_device * dev)
 {
+    gs_color_space *    pcs = pgs->color_space;
+
     /*
      * Just set the device, possibly changing color space but no other
      * device parameters.
      */
     rc_assign(pgs->device, dev, "gs_setdevice_no_init");
     gs_state_update_device(pgs);
-    return 0;
+    if (pgs->overprint)
+        return pcs->type->set_overprint(pcs, pgs);
+    else
+        return 0;
 }
 
 /* Initialize a just-allocated device. */

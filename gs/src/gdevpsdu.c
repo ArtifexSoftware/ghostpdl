@@ -29,6 +29,7 @@
 #include "sjpeg.h"
 #include "spprint.h"
 #include "sstring.h"
+#include "gsovrc.h"
 
 /* Structure descriptors */
 public_st_device_psdf();
@@ -406,4 +407,48 @@ psdf_end_binary(psdf_binary_writer * pbw)
     int status = s_close_filters(&pbw->strm, pbw->target);
 
     return (status >= 0 ? 0 : gs_note_error(gs_error_ioerror));
+}
+
+/* ---------------- Overprint, Get Bits ---------------- */
+
+/*
+ * High level devices cannot perform get_bits or get_bits_rectangle
+ * operations, for obvious reasons.
+ */
+int
+psdf_get_bits(gx_device * dev, int y, byte * data, byte ** actual_data)
+{
+    return_error(gs_error_unregistered);
+}
+
+int
+psdf_get_bits_rectangle(
+    gx_device *             dev,
+    const gs_int_rect *     prect,
+    gs_get_bits_params_t *  params,
+    gs_int_rect **          unread )
+{
+    return_error(gs_error_unregistered);
+}
+
+/*
+ * Create compositor procedure for PostScript/PDF writer. Since these
+ * devices directly support overprint (and have access to the imager
+ * state), no compositor is required for overprint support. Hence, this
+ * routine just recognizes and discards invocations of the overprint
+ * compositor.
+ */
+int
+psdf_create_compositor(
+    gx_device *             dev,
+    gx_device **            pcdev,
+    const gs_composite_t *  pct,
+    const gs_imager_state * pis,
+    gs_memory_t *           mem )
+{
+    if (gs_is_overprint_compositor(pct)) {
+        *pcdev = dev;
+        return 0;
+    } else
+        return gx_default_create_compositor(dev, pcdev, pct, pis, mem);
 }

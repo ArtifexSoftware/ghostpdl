@@ -25,6 +25,7 @@
 #include "gxiclass.h"
 #include "gxiodev.h"
 #include "gxiparam.h"
+#include "gxcomp.h"
 
 /*
  * The makefile generates the file gconfig.h, which consists of
@@ -62,6 +63,7 @@
 /* ---------------- Resources (devices, inits, IODevices) ---------------- */
 
 /* Declare devices, image types, init procedures, and IODevices as extern. */
+#define compositor_(comp_type) extern gs_composite_type_t comp_type;
 #define device_(dev) extern gx_device dev;
 #define device2_(dev) extern const gx_device dev;
 #define halftone_(dht) extern DEVICE_HALFTONE_RESOURCE_PROC(dht);
@@ -77,6 +79,15 @@
 #undef halftone_
 #undef device2_
 #undef device_
+#undef compositor_
+
+/* Set up compositor type table. */
+#define compositor_(comp_type) &comp_type,
+private const gs_composite_type_t *const gx_compositor_list[] = {
+#include "gconf.h"
+    0
+};
+#undef compositor_
 
 /* Set up the device table. */
 #define device_(dev) (const gx_device *)&dev,
@@ -141,6 +152,19 @@ const gx_io_device *const gx_io_device_table[] = {
 #undef io_device_
 /* We must use unsigned here, not uint.  See gscdefs.h. */
 const unsigned gx_io_device_table_count = countof(gx_io_device_table) - 1;
+
+/* Find a compositor by name. */
+extern_gs_find_compositor();
+const gs_composite_type_t *
+gs_find_compositor(int comp_id)
+{
+    const gs_composite_type_t *const * ppcomp = gx_compositor_list;
+    const gs_composite_type_t *  pcomp;
+
+    while ((pcomp = *ppcomp++) != 0 && pcomp->comp_id != comp_id)
+        ;
+    return pcomp;
+}
 
 /* Return the list of device prototypes, a NULL list of their structure */
 /* descriptors (no longer used), and (as the value) the length of the lists. */

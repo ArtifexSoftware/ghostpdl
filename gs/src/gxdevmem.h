@@ -112,6 +112,26 @@ struct gx_device_memory_s {
 	gx_color_index rgb;	/* cache key */
 	bits32 rgbr, gbrg, brgb;	/* cache value */
     } color24;
+    /* Following is only used for 40-bit color. */
+    struct _c40 {
+	gx_color_index abcde;	/* cache key */
+	bits32 abcd, bcde, cdea, deab, eabc;	/* cache value */
+    } color40;
+    /* Following is only used for 48-bit color. */
+    struct _c48 {
+	gx_color_index abcdef;	/* cache key */
+	bits32 abcd, cdef, efab;	/* cache value */
+    } color48;
+    /* Following is only used for 56-bit color. */
+    struct _c56 {
+	gx_color_index abcdefg;	/* cache key */
+	bits32 abcd, bcde, cdef, defg, efga, fgab, gabc;	/* cache value */
+    } color56;
+    /* Following is only used for 64-bit color. */
+    struct _c64 {
+	gx_color_index abcdefgh;	/* cache key */
+	bits32 abcd, efgh;	/* cache value */
+    } color64;
     /* Following are only used for alpha buffers. */
     /* The client initializes those marked with $; */
     /* they don't change after initialization. */
@@ -145,6 +165,10 @@ extern_st(st_device_memory);
 	(byte **)0,		/* line_ptrs (filled in by mem_open) */\
 	{ (byte *)0, 0 },	/* palette (filled in for color) */\
 	{ gx_no_color_index },	/* color24 */\
+	{ gx_no_color_index },	/* color40 */\
+	{ gx_no_color_index },	/* color48 */\
+	{ gx_no_color_index },	/* color56 */\
+	{ gx_no_color_index },	/* color64 */\
 	{ 0, 0 }, 0,		/* scale, log2_alpha_bits */\
 	0, 0, 0, 0,		/* mapped_* */\
 	gx_no_color_index	/* save_color */

@@ -114,6 +114,9 @@ int num_params(const ref *, int, double *);
 /* float_params can lose accuracy for large integers. */
 int float_params(const ref *, int, float *);
 
+/* process_float_array can lose accuracy for large integers */
+int process_float_array(const ref *, int, float *);
+
 /* Get a single real parameter. */
 /* The only possible error is e_typecheck. */
 int real_param(const ref *, double *);

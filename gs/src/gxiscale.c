@@ -295,7 +295,7 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 		    }
 #endif
 		    code = (*pconcs->type->remap_concrete_color)
-			(psrc, &devc, pis, dev, gs_color_select_source);
+			(psrc, pcs, &devc, pis, dev, gs_color_select_source);
 		    if (code < 0)
 			return code;
 		    if (color_is_pure(&devc)) {

@@ -122,12 +122,12 @@
   switch ( (dbpv) >> 2 ) {\
   case 0:\
     if ( (dbit += (dbpv)) == 8 )\
-       *(dptr)++ = dbbyte | (value), dbbyte = 0, dbit = 0;\
-    else dbbyte |= (value) << (8 - dbit);\
+       *(dptr)++ = dbbyte | (byte)(value), dbbyte = 0, dbit = 0;\
+    else dbbyte |= (byte)((value) << (8 - dbit));\
     break;\
   case 1:\
     if ( dbit ^= 4 ) dbbyte = (byte)((value) << 4);\
-    else *(dptr)++ = dbbyte | (value);\
+    else *(dptr)++ = dbbyte | ((byte)(value));\
     break;\
   /* case 2 is deliberately omitted */
 #define sample_store_next8(value, dptr, dbit, dbpv, dbbyte)\
@@ -135,9 +135,9 @@
   case 2: *(dptr)++ = (byte)(value); break;\
   sample_end_
 #define sample_store_next_12_(value, dptr, dbit, dbbyte)\
-    if ( dbit ^= 4 ) *(dptr)++ = (value) >> 4, dbbyte = (byte)((value) << 4);\
+    if ( dbit ^= 4 ) *(dptr)++ = (byte)((value) >> 4), dbbyte = (byte)((value) << 4);\
     else\
-      *(dptr) = dbbyte | ((value) >> 8), (dptr)[1] = (byte)(value), dptr += 2;
+      *(dptr) = dbbyte | (byte)((value) >> 8), (dptr)[1] = (byte)(value), dptr += 2;
 #define sample_store_next_12(value, dptr, dbit, dbbyte)\
   BEGIN sample_store_next_12_(value, dptr, dbit, dbbyte) END
 #define sample_store_next12_(value, dptr, dbit, dbpv, dbbyte)\
@@ -155,6 +155,17 @@
   sample_end_
 #define sample_store_next32(value, dptr, dbit, dbpv, dbbyte)\
   sample_store_next12_(value, dptr, dbit, dbpv, dbbyte)\
+  case 8: *(dptr)++ = (byte)((value) >> 24);\
+  case 6: *(dptr)++ = (byte)((value) >> 16);\
+  case 4: *(dptr)++ = (byte)((value) >> 8);\
+  case 2: *(dptr)++ = (byte)(value); break;\
+  sample_end_
+#define sample_store_next64(value, dptr, dbit, dbpv, dbbyte)\
+  sample_store_next12_(value, dptr, dbit, dbpv, dbbyte)\
+  case 16: *(dptr)++ = (byte)((value) >> 56);\
+  case 14: *(dptr)++ = (byte)((value) >> 48);\
+  case 12: *(dptr)++ = (byte)((value) >> 40);\
+  case 10: *(dptr)++ = (byte)((value) >> 32);\
   case 8: *(dptr)++ = (byte)((value) >> 24);\
   case 6: *(dptr)++ = (byte)((value) >> 16);\
   case 4: *(dptr)++ = (byte)((value) >> 8);\
@@ -199,7 +210,10 @@
 #  define mono_fill_make_pattern(byt) (uint)((uint)(byt) * 0x01010101)
 #endif
 void bits_fill_rectangle(byte * dest, int dest_bit, uint raster,
-    mono_fill_chunk pattern, int width_bits, int height);
+		      mono_fill_chunk pattern, int width_bits, int height);
+void bits_fill_rectangle_masked(byte * dest, int dest_bit, uint raster,
+		      mono_fill_chunk pattern, mono_fill_chunk src_mask,
+		      int width_bits, int height);
 
 /* Replicate a bitmap horizontally in place. */
 void bits_replicate_horizontally(byte * data, uint width, uint height,

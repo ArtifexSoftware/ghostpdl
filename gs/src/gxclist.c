@@ -121,7 +121,16 @@ const gx_device_procs gs_clist_device_procs = {
     clist_create_compositor,
     gx_forward_get_hardware_params,
     gx_default_text_begin,
-    gx_default_finish_copydevice
+    gx_default_finish_copydevice,
+    NULL,			/* begin_transparency_group */
+    NULL,			/* end_transparency_group */
+    NULL,			/* begin_transparency_mask */
+    NULL,			/* end_transparency_mask */
+    NULL,			/* discard_transparency_layer */
+    gx_forward_get_color_mapping_procs,
+    gx_forward_get_color_comp_index,
+    gx_forward_encode_color,
+    gx_forward_decode_color
 };
 
 /* ------ Define the command set and syntax ------ */

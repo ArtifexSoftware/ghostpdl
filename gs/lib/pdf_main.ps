@@ -112,6 +112,29 @@ currentdict /runpdfstring .undef
    /Page null def
    /DSCPageCount 0 def
    /PDFSave null def
+	% Color space substitution in PDF is handled somewhat differently
+	% than in PostScript. A given device color space will be substituted
+	% if the corresponding "Default..." entry exists in the Page's
+	% Resource dictionary (which might be inhereted); there is no
+	% UseCIEColor to enable/disable color mapping.
+	%
+	% This behavior is achieved by always setting UseCIEColor to true
+	% in the page device dictionary. If the value of this parameter was
+	% originally false (i.e.: the output device does not perform color
+	% space substitution by default), the instances DefaultGray,
+	% DefaultRGB, and DefaultCMYK of the (local) ColorSpace category
+	% are redefined to be DeviceGray, DeviceRGB, and DeviceCMYK,
+	% respectively. This is not done if UseCIEColor is true by default,
+	% as in that case color substitution is presumably desired even
+	% if the file does not request it.
+   currentpagedevice /UseCIEColor .knownget dup { pop } if not
+    { .currentglobal false .setglobal
+      /DefaultGray { /DeviceGray } cvlit /ColorSpace defineresource pop
+      /DefaultRGB { /DeviceRGB } cvlit /ColorSpace defineresource pop
+      /DefaultCMYK { /DeviceCMYK } cvlit /ColorSpace defineresource pop
+      .setglobal
+    }
+   if
    GS_PDF_ProcSet begin
    pdfdict begin
    pdfopen begin
@@ -594,6 +617,8 @@ end readonly def
    pdfshowpage_setpage 
    save /PDFSave exch store
    /PDFdictstackcount countdictstack store
+   % set up color space substitution (this must be inside the page save)
+   pdfshowpage_setcspacesub
    (before exec) VMDEBUG
    pdfshowpage_finish
    % Some PDF files don't have matching q/Q (gsave/grestore) so we need
@@ -634,8 +659,10 @@ end readonly def
 } bind def
 
 /pdfshowpage_setpage {	% <pagedict> pdfshowpage_setpage <pagedict>
-  4 dict begin		% for setpagedevice
+  5 dict begin		% for setpagedevice
 	% Stack: pagedict
+  % UseCIEColor is always true for PDF; see the comment in runpdf above
+  /UseCIEColor true def
   currentpagedevice /Orientation 2 index /Rotate pget not { 0 } if 90 idiv
 	% Rotate specifies *clockwise* rotation!
     neg 3 and def
@@ -821,6 +848,30 @@ end readonly def
     pop false exit
   } loop
 } bind def
+
+% ------ ColorSpace substitution support ------ %
+
+%
+%  <pagedict>   pdfshowpage_setcspacesub   <pagedict>
+%
+% Set up color space substitution for a page. Invocations of this procedure
+% must be bracketed by the save/restore operation for the page, to avoid
+% unintended affects on other pages.
+%
+/pdfshowpage_setcspacesub
+  {
+      { /DefaultGray /DefaultRGB /DefaultCMYK }
+      {
+        dup 2 index /ColorSpace //rget exec
+          { resolvecolorspace /ColorSpace defineresource pop }
+          { pop }
+        ifelse
+      }
+    forall
+  }
+bind def
+
+
 
 end			% pdfdict
 .setglobal

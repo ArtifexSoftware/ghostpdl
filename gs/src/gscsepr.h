@@ -22,66 +22,57 @@
 
 #include "gscspace.h"
 
-/* Graphics state */
-bool gs_currentoverprint(const gs_state *);
-void gs_setoverprint(gs_state *, bool);
-/* Overprint mode is a PDF feature, but we include it here. */
-int gs_currentoverprintmode(const gs_state *);
-int gs_setoverprintmode(gs_state *, int);
 
 /*
  * Separation color spaces.
  *
- * The API for creating Separation color space objects exposes the fact that
- * they normally cache the results of sampling the tint_transform procedure,
- * and use the cache to convert colors when necessary.  When a language
- * interpreter sets up a Separation space, it may either provide a
- * tint_tranform procedure that will be called each time (specifying the
- * cache size as 0), or it may fill in the cache directly and provide a
- * dummy procedure.
+ * With the implementation of full DeviceN support, the API for creating
+ * A Separation color space object has changed.  Separation color spaces
+ * are treated as a single component version of a DeviceN color space.
+ * The /All separation and the /None separation are the only exceptions.
+ * The /All separation and the /None separation is each treated as its own
+ * case and thus forms the majority of the remaining Separation color space
+ * code.
  *
- * By default, the tint transformation procedure will simple return the
- * entries in the cache. If this function is called when the cache size is
- * 0, all color components in the alternative color space will be set to 0.
+ * The earlier API which had a multi element cache has been removed.
+ * The tint transform procedure now is executed as required and must
+ * be executable without doing a call out.
  */
 extern int gs_cspace_build_Separation(
-				      gs_color_space ** ppcspace,
-				      gs_separation_name sname,
-				      const gs_color_space * palt_cspace,
-				      int cache_size,
-				      gs_memory_t * pmem
-				      );
-
-/* Get the cached value array for a Separation color space. */
-/* VMS limits procedure names to 31 characters. */
-extern float *gs_cspace_get_sepr_value_array(
-					     const gs_color_space * pcspace
-					     );
-/* BACKWARD COMPATIBILITY */
-#define gs_cspace_get_separation_value_array gs_cspace_get_sepr_value_array
-
-/* Set the tint transformation procedure for a Separation color space. */
-/* VMS limits procedure names to 31 characters, and some systems only */
-/* compare the first 23 characters. */
-extern int gs_cspace_set_sepr_proc(
-				   gs_color_space * pcspace,
-				   int (*proc)(const gs_separation_params *,
-					       floatp,
-					       float *
-					       )
-				   );
-/* BACKWARD COMPATIBILITY */
-#define gs_cspace_set_tint_xform_proc gs_cspace_set_sepr_proc
-#define gs_cspace_set_tint_transform_proc gs_cspace_set_tint_xform_proc
+					 gs_color_space ** ppcspace,
+					 gs_separation_name sname,
+					 const gs_color_space * palt_cspace,
+					 int cache_size,
+					 gs_memory_t * pmem
+					 );
+/*
+ * This routine builds the central part of the Separation color space.
+ * It does not allocate a structure for the color space or initialize it.
+ */
+extern int gs_build_Separation(
+				  gs_color_space * pcspace,
+				  const gs_color_space * palt_cspace,
+				  gs_memory_t * pmem
+				  );
 
 /* Set the Separation tint transformation procedure to a Function. */
 #ifndef gs_function_DEFINED
 typedef struct gs_function_s gs_function_t;
 #  define gs_function_DEFINED
 #endif
+int gs_cspace_set_sepr_proc(gs_color_space * pcspace,
+			int (*proc)(const float *,
+				    float *,
+				    const gs_imager_state *,
+				    void *
+				    ),
+			void *proc_data
+			);
+/*
+ * Set the Separation tint transformation procedure to a Function.
+ */
 int gs_cspace_set_sepr_function(const gs_color_space *pcspace,
-				gs_function_t *pfn);
-
+				    gs_function_t *pfn);
 /*
  * If the Separation tint transformation procedure is a Function,
  * return the function object, otherwise return 0.

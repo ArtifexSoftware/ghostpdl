@@ -209,9 +209,19 @@ gs_image_init(gs_image_enum * penum, const gs_image_t * pim, bool multi,
     } else {
 	if (pgs->in_cachedevice)
 	    return_error(gs_error_undefined);
-	if (image.ColorSpace == NULL)
-	    image.ColorSpace =
-		gs_cspace_DeviceGray((const gs_imager_state *)pgs);
+	if (image.ColorSpace == NULL) {
+            /* parameterless color space - no re-entrancy problems */
+            static gs_color_space cs;
+
+            /*
+             * Mutiple initialization of a DeviceGray color space is
+             * not harmful, as the space has no parameters. Use of a
+             * non-current color space is potentially incorrect, but
+             * it appears this case doesn't arise.
+             */
+            gs_cspace_init_DeviceGray(&cs);
+	    image.ColorSpace = &cs;
+        }
     }
     code = gs_image_begin_typed((const gs_image_common_t *)&image, pgs,
 				image.ImageMask | image.CombineWithColor,

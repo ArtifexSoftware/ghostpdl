@@ -992,7 +992,6 @@ gdev_vector_put_params(gx_device * dev, gs_param_list * plist)
 						 vdev->open_options);
 	}
     }
-    gdev_vector_load_cache(vdev);	/* in case color mapping changed */
     return 0;
 }
 
