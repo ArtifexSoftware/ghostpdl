@@ -86,7 +86,7 @@ jbig2_default_error(void *data, const char *msg,
 }
 
 int
-jbig2_error (Jbig2Ctx *ctx, Jbig2Severity severity, int segment_number,
+jbig2_error(Jbig2Ctx *ctx, Jbig2Severity severity, int segment_number,
 	     const char *fmt, ...)
 {
   char buf[1024];
@@ -288,7 +288,7 @@ jbig2_data_in (Jbig2Ctx *ctx, const unsigned char *data, size_t size)
 					  ctx->buf_wr_ix - ctx->buf_rd_ix,
 					  &header_size);
 	  if (segment == NULL)
-	    return 0;
+	    return 0; /* need more data */
 	  ctx->buf_rd_ix += header_size;
 
 	  if (ctx->n_segments == ctx->n_segments_max)
@@ -308,7 +308,7 @@ jbig2_data_in (Jbig2Ctx *ctx, const unsigned char *data, size_t size)
 	case JBIG2_FILE_RANDOM_BODIES:
 	  segment = ctx->segments[ctx->segment_index];
 	  if (segment->data_length > ctx->buf_wr_ix - ctx->buf_rd_ix)
-	    return 0;
+	    return 0; /* need more data */
 	  code = jbig2_parse_segment(ctx, segment, ctx->buf + ctx->buf_rd_ix);
 	  ctx->buf_rd_ix += segment->data_length;
 	  ctx->segment_index++;
