@@ -2425,7 +2425,9 @@ fill_loop_by_scan_lines(line_list *ll, gx_device * dev,
 
 	INCR(iter);
 
-	move_al_by_y(ll, y);
+#	if SCANLINE_USES_ITERATOR
+	    move_al_by_y(ll, y);
+#	endif
 	/*
 	 * Find the next sampling point, either the bottom of a sampling
 	 * band or a line start.
