@@ -319,7 +319,7 @@ typedef struct cie_linear_params_s {
 } cie_linear_params_t;
 typedef struct cie_cache_params_s {
     bool is_identity;		/* must come first */
-    float base, factor;
+    double base, factor;
     cie_linear_params_t linear;	/* only used in vector_cache.floats? */
 } cie_cache_params;
 typedef struct cie_cache_floats_s {
