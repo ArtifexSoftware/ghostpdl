@@ -1072,6 +1072,8 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 		return code;
 	    if (code)
 		rect_intersect(bbox, bbox1);
+	    if (bbox.p.x >= bbox.q.x || bbox.p.y >= bbox.q.y)
+		return 0;
 	    sx = fixed2int(bbox.p.x);
 	    sy = fixed2int(bbox.p.y);
 	    gs_distance_transform_inverse(sx * pdev->HWResolution[0] / 72, 
@@ -1126,18 +1128,25 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 	    if (code >= 0) {
 		/* See gx_default_fill_path. */
 		gx_clip_path cpath_intersection;
-		gx_path path_intersection;
+		gx_path path_intersection, path1, *p = &path_intersection;
 
 		gx_path_init_local(&path_intersection, pdev->memory);
+		gx_path_init_local(&path1, pdev->memory);
 		gx_cpath_init_local_shared(&cpath_intersection, pcpath, pdev->memory);
 		if ((code = gx_cpath_intersect(&cpath_intersection, ppath, params->rule, (gs_imager_state *)pis)) >= 0)
 		    code = gx_cpath_to_path(&cpath_intersection, &path_intersection);
+		if (code >= 0 && scale > 1) {
+		    code = gx_path_copy(&path_intersection, &path1);	
+		    if (code > 0) {
+			p = &path1;
+			code = path_scale(&path1, scalex, scaley);
+		    }
+		}
 		if (code >= 0)
-		    code = path_scale(&path_intersection, scalex, scaley);
-		if (code >= 0)
-		    code = gx_dc_pattern2_fill_path(&dc, &path_intersection, NULL, (gx_device *)&cvd.mdev);
-		gx_path_free(&path_intersection, "shading_fill_path_intersection");
-		gx_cpath_free(&cpath_intersection, "shading_fill_cpath_intersection");
+		    code = gx_dc_pattern2_fill_path(&dc, p, NULL, (gx_device *)&cvd.mdev);
+		gx_path_free(&path_intersection, "gdev_pdf_fill_path");
+		gx_path_free(&path1, "gdev_pdf_fill_path");
+		gx_cpath_free(&cpath_intersection, "gdev_pdf_fill_path");
 	    }
 	    if (code >= 0) {
 		code = pdf_dump_converted_image(pdev, &cvd);
