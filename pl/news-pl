@@ -7,6 +7,20 @@ This file, NEWS-PL, describes the changes in the most recent releases of
 Aladdin's library code that is shared between PCL5, HP-GL/2, HP RTL, and PCL
 XL, in reverse chronological order.
 
+Version 1.22 (10/05/98)
+=======================
+
+Tue Nov  3 07:57:46 1998  Red Hat Linux User  <henrys@warthog>
+
+	* pl.mak:
+	removes leaf compiler flags which are not used by pcl, pxl or pl
+
+Fri Oct 16 15:44:54 1998  Red Hat Linux User  <henrys@warthog>
+
+	* pldraw.c, plfont.c, plfont.h, plmain.c, plmain.h, plchar.c:
+	cleans up compiler warnings
+
+
 Version 1.21 (10/05/98)
 =======================
 

@@ -6,6 +6,18 @@
 This file, NEWS-TLS (tools), describes the changes in the most recent releases of
 Aladdin's utility tools directory in reverse chronological order.
 
+Version 1.01 (11/06/98)
+=======================
+
+Mon Nov  2 08:25:32 1998  Red Hat Linux User  <henrys@warthog>
+
+	* regress.sh:
+	adds ability to specify multiple devices and pipes stderr -> null
+
+Mon Oct  5 05:55:26 1998  Red Hat Linux User  <henrys@warthog>
+
+	* regress.sh: interactive shell script to test for regressions
+
 Version 1.00 (10/05/98)
 =======================
 

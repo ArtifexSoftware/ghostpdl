@@ -6,6 +6,22 @@
 This file, NEWS-XL, describes the changes in the most recent releases of
 Aladdin's PCL XL code, in reverse chronological order.
 
+Version 1.18 (10/06/98)
+=======================
+
+Wed Nov  4 19:41:05 1998  marcos  <marcos@warthog>
+
+	* pxffont.c, pxl_msvc.mak, pxl_top.mak:
+	created pxl_msvc.mak and modified pxl_top.mak for Microsoft Visual C++ 5.0
+	under NT 4.0
+
+Thu Oct 15 16:27:54 1998  Red Hat Linux User  <henrys@warthog>
+
+	* pxasm.ps:
+
+	pxasm.c was never updated after indenting the code from 2
+	space indent to 4 space indent.
+
 Version 1.17 (10/05/98)
 =======================
 

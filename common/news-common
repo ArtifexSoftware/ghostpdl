@@ -7,6 +7,35 @@ This file, NEWS-COM, describes the changes in the most recent releases of
 Aladdin's library code that is shared between all Aladdin products, in
 reverse chronological order.
 
+Version 1.05 (11/06/98)
+=====================
+
+Thu Nov  5 04:40:18 1998  marcos  <marcos@warthog>
+
+	* msvc_top.mak: removed "-p &ps" from genconf in msvc_top.mak
+
+Tue Nov  3 07:57:46 1998  Red Hat Linux User  <henrys@warthog>
+
+	* gccdefs.mak, generic.mak, msvc_top.mak, msvcdefs.mak,
+	sgi_top.mak, sgidefs.mak, ugcc_top.mak, watcdefs.mak:
+	removes leaf compiler flags which are not used by pcl, pxl or pl
+
+Mon Oct 26 23:31:11 1998  Red Hat Linux User  <henrys@warthog>
+
+	* ugcc_top.mak:
+	makes product compile consistant and uses floating point as
+	the default also forwards X11 variables to the gs makefile
+
+Tue Oct 20 06:39:00 1998  Red Hat Linux User  <henrys@warthog>
+
+	* ugcc_top.mak: restores symbols (-g) to the debugging configuration
+
+Sun Oct 18 08:20:47 1998  Red Hat Linux User  <henrys@warthog>
+
+	* ugcc_top.mak:
+	makes optimization options with pcl and graphics library consistant
+
+
 Version 1.04 (9/24/98)
 =====================
 

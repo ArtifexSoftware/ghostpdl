@@ -1,5 +1,62 @@
 This file documents modifications to Aladdin's release of ghostscript.
-See News.htm for documentation of the Aladdin releases.
+See News.htm for documentation of the Aladdin releases.  If code was
+ported directly from the latest aladdin release it is not documented
+here.  We provide a reference aladdin release number and the files.
+Please see News.htm for a detailed explanation of these changes.
+
+Version 5.50b (11/06/98) (branch of ghostscript 5.50)
+=====================================================
+
+Fri Nov  6 21:45:06 1998  Red Hat Linux User  <henrys@warthog>
+
+	* gxpageq.h, unix-gcc.mak, gximage4.c, gxpageq.c, gximage.c,
+	gximage1.c, gxclrect.c, gxdevice.h, gxclread.c, gxclrast.c,
+	gxclpath.c, gxclpath.h, gxclpage.c, gxclist.c, gxclist.h, gxclimag.c,
+	gxband.h, gxcldev.h, gsdevice.c, gsrect.h, gsropt.h, gdevx.c,
+	gdevwprn.c, gdevsnfb.c, gdevpx.c, gdevps.c, gdevprna.c, gdevprn.h,
+	gdevprn.c, gdevpm.c, gdevpdft.c, gdevpdf.c, gdevnfwd.c, gdevdflt.c,
+	gdevmrop.h, gdevcp50.c, gdevcgm.c, gdevbbox.c, gdev3b1.c:
+
+	checks in needed changes from gs5.64
+
+Tue Nov  3 07:38:44 1998  Red Hat Linux User  <henrys@warthog>
+
+	* gdevmr1.c, gdevmr2n.c, gdevmr8n.c, gsciemap.c, zcssepr.c,
+	zpcolor.c, slzwd.c, slzwx.h, unixhead.mak, zcie.c, zcrd.c, zcsdevn.c,
+	zcsindex.c, zcspixel.c, gxtype1.h, gzht.h, interp.c, lib.mak, math_.h,
+	gximono.c, gxiparam.h, gxipixel.c, gxpath2.c, gxpcopy.c, gximage3.c,
+	gximage4.c, gxht.c, gxicolor.c, gxidata.c, gximage.c, gximage.h,
+	gximage1.c, gximage2.c, gxdevcli.h, gxdevice.h, gxdither.c, gxfill.c,
+	gxcspace.h, gxdcolor.c, gxclread.c, gxcmap.c, gxclip.c, gxclist.c,
+	gxclpath.c, gxclpath.h, gxclrast.c, gxcldev.h, gxclimag.c, gstype1.c,
+	gstype42.c, gxalloc.h, gxbitmap.h, gxcht.c, gsnorop.c, gspcolor.c,
+	gsshade.c, gsstate.c, gsimage.c, gsiparam.h, gsiparm2.h, gsiparm4.h,
+	gsmatrix.c, gsmatrix.h, gsmisc.c, gsfemu.c, gsht1.c, gshtx.c,
+	gscspace.c, gscspace.h, gsdcolor.h, gsdevice.c, gsdevmem.c,
+	gsdparam.c, gscie.h, gscolor2.c, gscpixel.c, gscpixel.h, gscrd.c,
+	gscrdp.c, gscscie.c, gsalloc.h, gsbitops.c, gsbittab.h, gscdefs.h,
+	gscie.c, gdevx.c, gdevxalt.c, gdevxini.c, gsalloc.c, gdevpdfo.c,
+	gdevpdft.c, gdevps.c, gdevpx.c, gdevmem.h, gdevmrop.h, gdevnfwd.c,
+	gdevpbm.c, gdevpcx.c, gdevpdfi.c, gdevdrop.c, gdevm1.c, gdevm16.c,
+	gdevm24.c, gdevm32.c, gdevm8.c, gdevmem.c, gdevcmap.c, gdevddrw.c,
+	gdevdgbr.c, echogs.c, errors.h, gconf.c, gdevalph.c, gdevbbox.c,
+	gdevbbox.h, gdevcljc.c, ansi2knr.c:
+
+	performance enhancements from 5.6[12] and corrections for
+	handling of page count.
+
+Sat Oct 10 04:02:34 1998  Red Hat Linux User  <henrys@warthog>
+
+	* gdevmem.c:
+	update from jan that should prevent SL crash for an open device with allocated memory
+
+	* gdevprn.c: *** empty log message ***
+
+Wed Oct  7 02:19:14 1998  Red Hat Linux User  <henrys@warthog>
+
+	* gxiparam.h:
+	gxiparam.h should have made it into the last release gs550a but did not
+
 
 Version 5.50a (10/05/98) (branch of ghostscript 5.50)
 =====================================================
@@ -40,3 +97,5 @@ Fri Oct  2 08:45:22 1998  Red Hat Linux User  <henrys@warthog>
 	gxclipm.c, gxcpath.h, gxi12bit.c, gxicolor.c, gxifast.c, gdevbbox.c:
 
 	performance enhancement from gs5.60 (peter)
+
+

@@ -10,6 +10,81 @@ generated from the revision control logs.  The dates provided for each
 entry are the dates the sources were committed to the source code
 repository.
 
+Version 1.03 (11/06/98)
+=====================
+
+Thu Nov  5 21:50:43 1998  Red Hat Linux User  <henrys@warthog>
+
+	* pgvector.c:
+	bezier curves appear to be hardwired to no joins - they do not
+	use the current LA setting for join type
+
+	* pgdraw.c, pgchar.c:
+	fixes for character edging the pen was not being defaulted
+	correctly in CF and the hpgl/2 drawing machinery was filling the
+	character in addition to stroking hpgl/2 vector fills
+
+Thu Nov  5 06:57:31 1998  marcos  <marcos@warthog>
+
+	* pcfont.c: Added /winnt/fonts/ to tt font search path.
+
+Thu Nov  5 05:48:16 1998  Red Hat Linux User  <henrys@warthog>
+
+	* pcpage.c: adds a call to erase page after new paper size is
+	called.
+
+Tue Nov  3 08:01:38 1998  Red Hat Linux User  <henrys@warthog>
+
+	* pctext.c, pcfsel.c:
+
+	returns in error instead of noting an error if symbol mapping
+	fails
+
+	* pcmain.c: forgetting to close the device at the end of processing
+
+Fri Oct 30 22:49:06 1998  Red Hat Linux User  <henrys@warthog>
+
+	* pccsbase.c: normalizes ranges to (0,1) for independent color spaces
+
+Sun Oct 25 08:05:36 1998  Red Hat Linux User  <henrys@warthog>
+
+	* pcmain.c: proper usage of debugging memory switches
+
+	* rtraster.c: better bit twiddling for performance
+
+Fri Oct 16 15:41:39 1998  Red Hat Linux User  <henrys@warthog>
+
+	* pcmain.c: "canocalizes" args to **args.
+
+	* pgdraw.h: adds prototype for exported function hpgl_close_path().
+
+	* pglabel.c:
+	corrects a parameter mismatch with fetching the next
+	character.  This code was not updated when the gs text interface
+	changed in 550.
+
+	* pcpage.c, pcsfont.c: removes an incorrect const qualifier.
+
+	* pccsbase.c, pcindexed.c: corrects improper aggregate initialization.
+
+	* pcl.mak: reviewed and added new include file dependencies.
+
+	* pgstate.h: removes obsolete boolean which detected a path
+
+	* pcjob.c, pcmtx3.c, pcommand.c, pgdraw.c, pcbiptrn.c,
+	pccrd.c, pcfont.c, pctext.c, pcuptrn.c, rtraster.c, rtrstcmp.c:
+	
+	adds include files for correct prototypes we also corrected a problem
+	in correctly detecting if a path was actually being rendered
+
+Wed Oct 14 20:50:48 1998  Red Hat Linux User  <henrys@warthog>
+
+	* pcpatrn.c: fixes benevolant type mismatch
+
+Tue Oct  6 17:49:00 1998  Red Hat Linux User  <henrys@warthog>
+
+	* pcmtx3.h: changes math.h to math_h.
+
 Version 1.02 (10/05/98)
 =====================
 
