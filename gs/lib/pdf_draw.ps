@@ -350,7 +350,7 @@ end
   gsave PDFfile fileposition 4 1 roll
 	% We have to select the group's color space so that the
 	% background color will be interpreted correctly.
-  dup /Group oget /CS knownoget { csresolve setcolorspace } if
+  dup /Group oget /CS knownoget { csresolve setgcolorspace } if
   exch dup /BBox get aload pop .begintransparencymask {
     dup /Resources knownoget { oforce } { 0 dict } ifelse
     exch false resolvestream
@@ -373,7 +373,7 @@ end
 
 /.beginformgroup {	% groupdict bbox .beginformgroup -
   exch mark exch			% bbox mark groupdict
-  dup /CS knownoget { csresolve setcolorspace } if
+  dup /CS knownoget { csresolve setgcolorspace } if
   dup /I knownoget { /Isolated exch 3 2 roll } if
   dup /K knownoget { /Knockout exch 3 2 roll } if
   pop .dicttomark
@@ -475,7 +475,7 @@ end
     } if
     dup /BlackPoint knownoget { /BlackPoint exch def } if
     dup /WhitePoint knownoget { /WhitePoint exch def } if
-    pop [ /CIEBasedA currentdict end ]
+    /PDFColorSpace exch def [ /CIEBasedA currentdict end ]
   }
   /CalRGB {
     1 oget 6 dict begin
@@ -486,7 +486,7 @@ end
     dup /Matrix knownoget { /MatrixABC exch def } if
     dup /BlackPoint knownoget { /BlackPoint exch def } if
     dup /WhitePoint knownoget { /WhitePoint exch def } if
-    pop [ /CIEBasedABC currentdict end ]
+    /PDFColorSpace exch def [ /CIEBasedABC currentdict end ]
   }
   /CalCMYK {
     pop /DeviceCMYK		% not defined by Adobe
@@ -499,7 +499,7 @@ end
     //cslabinit { def } forall
     dup /BlackPoint knownoget { /BlackPoint exch def } if
     dup /WhitePoint knownoget { /WhitePoint exch def } if
-    pop [ /CIEBasedABC currentdict end ]
+    /PDFColorSpace exch def [ /CIEBasedABC currentdict end ]
   }
   /ICCBased {
     PDFfile fileposition exch
@@ -523,6 +523,7 @@ end
   }
   /Indexed {
     aload pop 3 -1 roll oforce resolvecolorspace
+		% Stack: /Indexed hival lookup basespace
 		% If the underlying space is a Lab space, we must scale
 		% the output of the lookup table as part of DecodeABC.
     dup dup type /arraytype eq { 0 get } if /CIEBasedABC eq {
@@ -554,6 +555,17 @@ end
 	5 -1 roll PDFfile exch setfileposition
     }
     if 4 array astore
+		% Replace the PDFColorSpace with the Indexed space if needed.
+    dup 1 get
+    dup type /arraytype eq {
+      dup length 2 ge {
+	dup 1 get type /dicttype eq {
+	  dup 1 get /PDFColorSpace known {
+	    dup 1 get /PDFColorSpace 3 index put
+	  } if
+	} if
+      } if
+    } if pop
   }
   /Pattern {
     dup type /nametype ne {
@@ -839,7 +851,7 @@ end
    % image and imagemask can be redefined in gs_init.ps to tweak interpolation
    % after device-specific files are run. Don't bind them here.
    { currentdict end setfillstate /imagemask }
-   { ColorSpace setcolorspace currentdict end setfillblend /image }
+   { ColorSpace setgcolorspace currentdict end setfillblend /image }
   ifelse
   .systemvar exec
    

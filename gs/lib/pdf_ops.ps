@@ -242,8 +242,7 @@ nodict readonly pop
   /DeviceGray { pop setgray } bdef
   /DeviceRGB { pop setrgbcolor } bdef
   /DeviceCMYK { pop setcmykcolor } bdef
-  /CIEBasedA
-   { dup currentcolorspace eq { pop } { setcolorspace } ifelse setcolor } bdef
+  /CIEBasedA { setgcolorspace setcolor } bdef
   /CIEBasedABC /CIEBasedA load def
   /CIEBasedDEF /CIEBasedA load def
   /CIEBasedDEFG /CIEBasedA load def
@@ -252,7 +251,7 @@ nodict readonly pop
   /DeviceN /CIEBasedA load def
   /Indexed /CIEBasedA load def
   /Pattern
-   { dup currentcolorspace eq { pop } { setcolorspace } ifelse
+   { setgcolorspace
      dup /Matrix .knownget not { matrix } if
      gsave DefaultMatrix setmatrix makepattern grestore setcolor
    } bdef
@@ -263,6 +262,29 @@ end def
     { dup 0 get //Cdict exch get exec }
    ifelse
  } bdef
+% Compare the old and new color spaces in an attempt to avoid expensive
+% reloads of CIEBased color spaces.
+/PCSdict 15 dict dup begin	% <colorspace> -proc- <colorspace|pdfcspace>
+  /CIEBasedA { dup 1 get /PDFColorSpace .knownget { exch pop } if } bdef
+  /CIEBasedABC /CIEBasedA load def
+  /CIEBasedDEF /CIEBasedA load def
+  /CIEBasedDEFG /CIEBasedA load def
+  /Indexed {
+    dup 1 get dup pdfcolorspace 2 copy ne { 3 1 roll } if pop pop
+  } bdef
+end def
+/pdfcolorspace {	% <colorspace> pdfcolorspace <colorspace|pdfcspace>
+  dup type /arraytype eq {
+    //PCSdict 1 index 0 get .knownget { exec } if
+  } if
+} bdef
+/setgcolorspace {	% <colorspace> setgcolorspace -
+  dup pdfcolorspace currentcolorspace pdfcolorspace eq {
+    pop
+  } {
+    setcolorspace
+  } ifelse
+} bdef
 /fsexec		% <fillop|strokeop> fsexec -
  {		% Preserve the current point, if any.
     { currentpoint } stopped
