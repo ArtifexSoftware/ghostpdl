@@ -1,5 +1,7 @@
-# $Id: Makefile.am,v 1.9 2002/07/20 16:02:24 giles Exp $
+# $Id: Makefile.am,v 1.10 2002/07/20 17:06:04 giles Exp $
 ## process this file with automake to generate Makefile.in
+
+AUTOMAKE_OPTIONS = 1.6.1 # require automake 1.6
 
 lib_LIBRARIES = libjbig2dec.a
 
