@@ -497,6 +497,7 @@ gs_malloc_init(void)
 {
     gs_malloc_memory_default = gs_malloc_memory_init();
     gs_malloc_wrap(&gs_memory_t_default, gs_malloc_memory_default);
+    gs_memory_t_default->stable_memory = gs_memory_t_default;
     return gs_memory_t_default;
 }
 
