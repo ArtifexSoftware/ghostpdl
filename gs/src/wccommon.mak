@@ -41,6 +41,13 @@
 
 .EXTENSIONS: .be .z
 
+# make sure the target directories exist - use special Watcom .BEFORE
+.BEFORE
+	@if not exist $(GLGENDIR) mkdir $(GLGENDIR)
+	@if not exist $(GLOBJDIR) mkdir $(GLOBJDIR)
+	@if not exist $(PSGENDIR) mkdir $(PSGENDIR)
+	@if not exist $(PSOBJDIR) mkdir $(PSOBJDIR)
+
 # Define the ANSI-to-K&R dependency.  Watcom C accepts ANSI syntax.
 
 AK=
@@ -96,6 +103,7 @@ COMP=$(%WATCOM)\bin\wcc386p
 LINK=$(%WATCOM)\bin\wlinkp
 STUB=$(%WATCOM)\binb\wstub.exe
 WRC=$(%WATCOM)\binb\rc.exe
+WAT32=0
 
 !ifeq WCVERSION 11.0
 # 11.0 is currently the same as 10.5.
@@ -132,9 +140,10 @@ COMP=$(%WATCOM)\binnt\wcc386
 LINK=$(%WATCOM)\binnt\wlink
 STUB=$(%WATCOM)\binw\wstub.exe
 WRC=$(%WATCOM)\binnt\wrc.exe
+WAT32=1
 !endif	# 10.6 under Windows 95 or NT (32 bit hosted tools)
 
-INCDIR=$(%WATCOM)\h
+INCDIR=$(%WATCOM)\h -i=$(%WATCOM)\h\nt
 WBIND=$(%WATCOM)\binb\wbind.exe
 
 # Define the generic compilation flags.
