@@ -24,7 +24,9 @@
 #include "gsmemory.h"
 #include "gsstruct.h"
 #include "gsrefct.h"
+#include "gsdevice.h"
 #include "gxdevice.h"
+#include "gdevcmap.h"
 #include "pcommand.h"
 #include "pcstate.h"
 #include "pcdither.h"
@@ -1140,13 +1142,13 @@ private const pcl_ht_builtin_threshold_t    ordered_dither_thresh = {
 
 private const pcl_ht_builtin_threshold_t    clustered_dither_thresh = {
     1,          /* all planes the same */
-    16, 16,     /* 128 x 128 pixels */
+    16, 16,     /* 16 x 16 pixels */
     clustered_dither_data
 };
 
 private const pcl_ht_builtin_threshold_t    noise_dither_thresh = {
     1,          /* all planes the same */
-    128, 128,   /* 16 x 16 pixels */
+    128, 128,   /* 128 x 128 pixels */
     noise_dither_data
 };
 
@@ -1175,92 +1177,119 @@ private pcl_ht_builtin_dither_t  noise_dither;
  * The HT_IMONLY flag indicates that a rendering method applies only to
  * images. ***This feature is currently not supported***
  *
- * The devices associated with earch rendering method are forwarding devices,
- * which are used to achieve monochrome output, snap-to-primary output, etc.
- * This information is always fixed. Because these devices must be allocated
- * on the heap, they cannot be included in the initialization below.
- * ***For the moment, all devices are set to null***
+ * For each rendering method there is an associated color mapping method, to
+ * be used with the devcmap color mapping device. A single device is used
+ * rather than one device for each different mapping, as the the graphic
+ * library provides no good technique for removing a device from a graphic
+ * state (this is typically done by grestore, as is the case for PostScript).
  *
  * To support environments in which all initialized globals are placed in ROM,
  * this code maitains two copies of the rendering_info array: a prototype
  * (which is qualified by const), and the actual array. The former is copied
  * to the latter in init_render_methods.
  */
+#define HT_NONE         0x0
 #define HT_FIXED        0x1
 #define HT_USERDEF      0x2
 #define HT_DEVCSPACE    0x4
 #define HT_IMONLY       0x8
 
 typedef struct rend_info_s {
-    uint                            flags;
-    gx_device_forward *             pdev;
-    const pcl_ht_builtin_dither_t * pbidither;
+    uint                                flags;
+    gx_device_color_mapping_method_t    mapping_method;
+    const pcl_ht_builtin_dither_t *     pbidither;
 } rend_info_t;
 
 private const rend_info_t   rendering_info_proto[20] = {
 
     /* 0 */
-    { 0, 0, &ordered_dither },
+    { HT_NONE, device_cmap_identity, &ordered_dither },
 
     /* 1 - dither doesn't matter */
-    { HT_FIXED | HT_DEVCSPACE, 0,  &ordered_dither },
+    { 
+        HT_FIXED | HT_DEVCSPACE,
+        device_cmap_snap_to_primaries,
+        &ordered_dither
+    },
 
     /* 2 - dither doesn't matter */
-    { HT_FIXED | HT_DEVCSPACE, 0, &ordered_dither },
+    {
+        HT_FIXED | HT_DEVCSPACE,
+        device_cmap_color_to_black_over_white,
+        &ordered_dither
+    },
 
     /* 3 - the default */
-    { 0, 0,   &ordered_dither },
+    { HT_NONE, device_cmap_identity, &ordered_dither },
 
     /* 4 - currently not supported */
-    { HT_FIXED | HT_IMONLY, 0, 0 },
+    { HT_FIXED | HT_IMONLY, device_cmap_identity, 0 },
 
-    /* 5 */
-    { 0, 0, &ordered_dither },
+    /* 5 - monochrome version of 3 */
+    { HT_NONE, device_cmap_monochrome, &ordered_dither },
 
     /* 6 - currently not supported */
-    { HT_FIXED | HT_IMONLY, 0, 0 },
+    { HT_FIXED | HT_IMONLY, device_cmap_monochrome, 0 },
 
     /* 7 */
-    { HT_FIXED, 0, &clustered_dither },
+    { HT_FIXED, device_cmap_identity, &clustered_dither },
 
     /* 8 */
-    { HT_FIXED, 0, &clustered_dither },
+    { HT_FIXED, device_cmap_monochrome, &clustered_dither },
 
     /* 9 - dither comes from user */
-    { HT_FIXED | HT_USERDEF | HT_DEVCSPACE,  0, 0 },
+    {
+        HT_FIXED | HT_USERDEF | HT_DEVCSPACE,
+        device_cmap_identity,
+        0
+    },
 
     /* 10 - dither comes from user */
-    { HT_FIXED | HT_USERDEF | HT_DEVCSPACE,  0, 0 },
+    { 
+        HT_FIXED | HT_USERDEF | HT_DEVCSPACE,
+        device_cmap_monochrome,
+        0
+    },
 
     /* 11 */
-    { HT_FIXED, 0, &ordered_dither },
+    { HT_FIXED, device_cmap_identity, &ordered_dither },
 
     /* 12 */
-    { HT_FIXED, 0, &ordered_dither },
+    { HT_FIXED, device_cmap_monochrome, &ordered_dither },
 
     /* 13 - device should override */
-    { 0, 0, &noise_dither },
+    { HT_NONE, device_cmap_identity, &noise_dither },
 
     /* 14 - device should override */
-    { 0, 0, &noise_dither },
+    { HT_NONE, device_cmap_monochrome, &noise_dither },
 
     /* 15 - device should override */
-    { 0, 0, &ordered_dither },
+    { HT_NONE, device_cmap_identity, &ordered_dither },
 
     /* 16 - device should override */
-    { 0, 0, &ordered_dither },
+    { HT_NONE, device_cmap_monochrome, &ordered_dither },
 
     /* 17 - device should override */
-    { 0, 0, &ordered_dither },
+    { HT_NONE, device_cmap_monochrome, &ordered_dither },
 
     /* 18 - device should override */
-    { 0, 0, &ordered_dither },
+    { HT_NONE, device_cmap_identity, &ordered_dither },
 
     /* 19 - device should override */
-    { 0, 0, &ordered_dither },
+    { HT_NONE, device_cmap_monochrome, &ordered_dither },
 };
 
 private rend_info_t rendering_info[20];
+
+/*
+ * The forwarding device to preform any necessary color mapping. Only a single
+ * device is used, and it is inserted into the graphic state only once (the
+ * existing device becomes its target). Changes in the render method modify
+ * the mapping_method field of this device. To make certain this change takes
+ * effect, the current device color must be un-set whenever a PCL halftone
+ * with rendering method have a new mapping_method is installed.
+ */
+private gx_device_cmap  cmap_device;
 
 /*
  * Remap the the rendering methods. This will generally be selected from the
@@ -1279,6 +1308,7 @@ private const byte  rendering_remap_proto[20] = {
     5,  5,  3,  5   /* 16 - 19 */
 };
 
+private byte    dflt_rendering_remap[20];
 private byte    rendering_remap[20];
 
 /* pointer to the default halftone */
@@ -1287,10 +1317,6 @@ private pcl_ht_t *  pdflt_ht;
 
 /*
  * Initialize the default rendering information.
- *
- * ***This is intended to allocate and set the default devices for rendering
- *    methods require monochrome output, snap to primaries, etc. Currently
- *    it only generates the built-in dither objects.***
  */
   void
 pcl_ht_init_render_methods(
@@ -1299,6 +1325,7 @@ pcl_ht_init_render_methods(
 )
 {
     int             i;
+    gx_device *     pcur_dev = gs_currentdevice(pcs->pgs);
 
     ordered_dither.type = pcl_halftone_Threshold;
     ordered_dither.u.thresh = ordered_dither_thresh;
@@ -1306,12 +1333,23 @@ pcl_ht_init_render_methods(
     clustered_dither.u.thresh =  clustered_dither_thresh;
     noise_dither.type = pcl_halftone_Threshold;
     noise_dither.u.thresh = noise_dither_thresh;
-    for (i = 0; i < countof(rendering_info_proto); i++) {
-        rendering_info[i] = rendering_info_proto[i];
-        /* allocate and insert device here */
-    }
-    for (i = 0; i < countof(rendering_remap_proto); i++)
-        rendering_remap[i] = rendering_remap_proto[i];
+
+    memcpy( rendering_info,
+            rendering_info_proto,
+            sizeof(rendering_info_proto)
+            );
+    memcpy( dflt_rendering_remap,
+            rendering_remap_proto,
+            sizeof(rendering_remap_proto)
+            );
+    memcpy( rendering_remap,
+            rendering_remap_proto,
+            sizeof(rendering_remap_proto)
+            );
+
+    /* initialize and install the color mapping device */
+    gdev_cmap_init(&cmap_device, pcur_dev, device_cmap_identity);
+    gs_setdevice_no_init(pcs->pgs, (gx_device *)&cmap_device);
 
     /* handle possible non-initialization of BSS */
     pdflt_ht = 0;
@@ -1336,14 +1374,60 @@ pcl_ht_update_rendering_info(
 }
 
 /*
- * Modify the rendering remap table.
+ * Modify the rendering remap table. Note that the change will not take
+ * effect until the next time the print mode
  */
   void
 pcl_ht_update_rendering_remap(
     const byte *    map
 )
 {
-    memcpy(rendering_remap, map, sizeof(rendering_remap));
+    memcpy(dflt_rendering_remap, map, sizeof(rendering_remap));
+}
+
+/*
+ * Set up normal or monochrome print mode. The latter is accomplished by
+ * remapping each of the rendering algorithms to its monochrome equivalent.
+ * The handling of the snap-to-primaries rendering method (1) is almost
+ * certianly wrong, but it is the best that can be done with the current
+ * scheme.
+ *
+ * Note that the current rendering method must be set before this change
+ * will take effect.
+ */
+  void
+pcl_ht_set_print_mode(
+    bool                monochrome
+)
+{
+    static  const byte  monochrome_remap[20] = {  5,  5,  2,  5,
+                                                  6,  5,  6,  8,
+                                                  8, 10, 10, 12,
+                                                 12, 14, 14, 17,
+                                                 16, 17, 19, 19  };
+
+    memcpy(rendering_remap, dflt_rendering_remap, sizeof(rendering_remap));
+    if (monochrome) {
+        int     i;
+
+        for (i = 0; i < countof(rendering_remap); i++) 
+            rendering_remap[i] = monochrome_remap[rendering_remap[i]];
+    }
+}
+
+
+/*
+ * Report if a rendering method is a monochrome method. The evaluation is made
+ * with considering the remapping array.
+ */
+  private bool
+is_monochrome(
+    int             method
+)
+{
+    rend_info_t *   pinfo = &(rendering_info[method]);
+
+    return pinfo->mapping_method == device_cmap_monochrome;
 }
 
 
@@ -1520,14 +1604,16 @@ unshare_pcl_ht(
   int
 pcl_ht_set_render_method(
     pcl_ht_t ** ppht,
-    int         render_method
+    uint        render_method
 )
 {
     int         code = 0;
 
-    if ( (render_method < 0)                      ||
-         (render_method >= 20)                    ||
-         ((*ppht)->render_method == render_method)  )
+    if (render_method >= countof(rendering_info))
+        return 0;
+
+    render_method = rendering_remap[render_method];
+    if (render_method == (*ppht)->render_method)
         return 0;
     if ((code = unshare_pcl_ht(ppht)) < 0)
         return code;
@@ -1649,7 +1735,7 @@ pcl_ht_update_cspace(
 )
 {
     pcl_ht_t *          pht = *ppht;
-    int                 i = rendering_remap[pht->render_method];
+    uint                i = pht->render_method;
     uint                flags = rendering_info[i].flags;
     int                 code = 0;
 
@@ -1706,7 +1792,8 @@ transfer_proc(
 
 /*
  * Special transfer function for use with the K component. We always want
- * this component to have the default (identity) transfer function.
+ * this component to have the default (identity) transfer function when
+ * operating in normal (colored) mode.
  */
   private float
 dflt_transfer_proc(
@@ -1726,12 +1813,12 @@ dflt_transfer_proc(
  */
   private const rend_info_t *
 get_rendering_info(
-    int                 sel_method,
+    uint                sel_method,
     pcl_cspace_type_t   cstype,
     bool                for_image
 )
 {
-    rend_info_t *       pinfo = &(rendering_info[rendering_remap[sel_method]]);
+    rend_info_t *       pinfo = &(rendering_info[sel_method]);
     uint                flags = pinfo->flags;
  
     /* check for methods that require device-dependent color spaces */
@@ -1776,6 +1863,10 @@ set_threshold_ht(
     int                     width, height, size;
     byte *                  pb = 0;
     const byte *            pdata;
+    float                   (*proc)( floatp,
+                                     const gx_transfer_map *,
+                                     const void *
+                                     ) = transfer_proc;
 
     static const gs_ht_separation_name  sepnames[4] = { gs_ht_separation_Cyan,
                                                         gs_ht_separation_Magenta,
@@ -1783,6 +1874,9 @@ set_threshold_ht(
                                                         gs_ht_separation_Default
                                                         };
 
+    /* if not in monochrome print mode, make sure K has default transfer */
+    if ((comp == 3) && !is_monochrome(pht->render_method))
+        proc = dflt_transfer_proc;
 
     /* set the array threshold pointers */
     if ((pinfo->flags & HT_USERDEF) != 0) {
@@ -1828,8 +1922,7 @@ set_threshold_ht(
                                      height,
                                      (gs_const_string *)
                                          &(pht->thresholds[icomp]),
-                                     ( comp == 3 ? dflt_transfer_proc
-                                                 : transfer_proc     ),
+                                     proc,
                                      &(pht->client_data[icomp])
                                      );
 }
@@ -1871,10 +1964,6 @@ create_gs_halftones(
             break;
     }
 
-    /* set the desired device ***unimplemented*** */
-    if ((code == 0) && (pinfo->pdev != 0))
-        code = e_Unimplemented;
-
     /* currently the foreground and image halftone objects must be the same */
     if (code == 0) {
         if (pinfo != get_rendering_info(pht->render_method, cstype, true))
@@ -1903,8 +1992,9 @@ pcl_ht_set_halftone(
 )
 {
     pcl_ht_t *           pht = *ppht;
-    gs_ht *              pgsht;
+    gs_ht *              pgsht = 0;
     int                  code = 0;
+    const rend_info_t *  pinfo = 0;                      
 
     /* if no halftone yet, create one */
     if (pht == 0) {
@@ -1924,7 +2014,16 @@ pcl_ht_set_halftone(
     pgsht = (for_image ? pht->pim_ht : pht->pfg_ht);
 
     /* install the halftone object */
-    if ((code = gs_ht_install(pcs->pgs, pgsht)) >= 0)
-        pcl_ht_copy_from(pcs->pids->pht, pht);
+    if ((code = gs_ht_install(pcs->pgs, pgsht)) < 0)
+        return code;
+
+    /* check if the color mapping has changed */
+    pinfo = get_rendering_info(pht->render_method, cstype, for_image);
+    if (cmap_device.mapping_method != pinfo->mapping_method) {
+        gdev_cmap_set_method(&cmap_device, pinfo->mapping_method);
+        gs_setdevice_no_init(pcs->pgs, (gx_device *)&cmap_device);
+    }
+
+    pcl_ht_copy_from(pcs->pids->pht, pht);
     return code;
 }
