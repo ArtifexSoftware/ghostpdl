@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* (used by both C code and Windows 'resource') */
 
 #ifndef gp_mswin_INCLUDED

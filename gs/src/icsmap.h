@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Interface to shared routines for loading the cached color space maps. */
 
 #ifndef icsmap_INCLUDED

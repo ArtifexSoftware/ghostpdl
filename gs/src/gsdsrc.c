@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* DataSource procedures */
 
 #include "memory_.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Command list document- and page-level code. */
 #include "memory_.h"
 #include "string_.h"

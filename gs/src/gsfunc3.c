@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Implementation of LL3 Functions */
 #include "math_.h"
 #include "gx.h"

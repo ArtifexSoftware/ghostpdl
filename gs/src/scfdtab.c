@@ -4,7 +4,7 @@
 /* as the files scftab.c and scfdgen.c from which it was derived. */
 /* Consult those files for the licensing terms and conditions. */
 
-/*$Id$ */
+
 /* Tables for CCITTFaxDecode filter. */
 
 #include "std.h"

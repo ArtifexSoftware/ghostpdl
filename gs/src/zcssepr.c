@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Separation color space support */
 #include "ghost.h"
 #include "oper.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Packed array operators */
 #include "ghost.h"
 #include "ialloc.h"

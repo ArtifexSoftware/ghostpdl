@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Interface to platform-dependent synchronization primitives */
 
 #if !defined(gpsync_INCLUDED)

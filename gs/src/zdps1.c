@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Level 2 / Display PostScript graphics extensions */
 #include "ghost.h"
 #include "oper.h"

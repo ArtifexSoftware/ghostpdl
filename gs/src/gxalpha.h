@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Internal machinery for alpha channel support */
 
 #ifndef gxalpha_INCLUDED

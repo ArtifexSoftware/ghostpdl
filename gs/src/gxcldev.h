@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Internal definitions for Ghostscript command lists. */
 
 #ifndef gxcldev_INCLUDED

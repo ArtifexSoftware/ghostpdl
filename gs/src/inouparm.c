@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Dummy set_user_params for Level 1 systems */
 #include "ghost.h"
 #include "icontext.h"		/* for set_user_params prototype */

@@ -15,7 +15,7 @@
   all copies.
 */
 
-/*$Id$*/
+
 /* Epson Stylus-Color Printer-Driver */
 
 /***

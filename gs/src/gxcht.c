@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Color halftone rendering for Ghostscript imaging library */
 #include "memory_.h"
 #include "gx.h"
@@ -140,12 +140,13 @@ gx_dc_ht_colored_fill_rectangle(const gx_device_color * pdevc, int x, int y,
     /* let tile_rectangle do the replication. */
     if ((w > lw || h > lh) &&
 	(raster = bitmap_raster(lw * depth)) <= tile_bytes / lh
-	) {			/*
-				 * The only reason we need to do fit_fill here is that if the
-				 * device is a clipper, the caller might be counting on it to do
-				 * all necessary clipping.  Actually, we should clip against the
-				 * device's clipping box, not the default....
-				 */
+	) {
+	/*
+	 * The only reason we need to do fit_fill here is that if the
+	 * device is a clipper, the caller might be counting on it to do
+	 * all necessary clipping.  Actually, we should clip against the
+	 * device's clipping box, not the default....
+	 */
 	fit_fill(dev, x, y, w, h);
 	/* Check to make sure we still have a big rectangle. */
 	if (w > lw || h > lh) {
@@ -177,10 +178,11 @@ gx_dc_ht_colored_fill_rectangle(const gx_device_color * pdevc, int x, int y,
     tiles.id = gx_no_bitmap_id;
     size_x = w * depth;
     raster = bitmap_raster(size_x);
-    if (raster > tile_bytes) {	/*
-				 * We can't even do an entire line at once.  See above for
-				 * why we do the X equivalent of fit_fill here.
-				 */
+    if (raster > tile_bytes) {
+	/*
+	 * We can't even do an entire line at once.  See above for
+	 * why we do the X equivalent of fit_fill here.
+	 */
 	if (x < 0)
 	    w += x, x = 0;
 	if (x > dev->width - w)
@@ -210,11 +212,14 @@ gx_dc_ht_colored_fill_rectangle(const gx_device_color * pdevc, int x, int y,
 	int cy = y, ch = dh, left = h;
 
 	tiles.rep_height = tiles.size.y = ch;
-	for (;;) {		/* The cast in the following statement is bogus, */
-	    /* but some compilers won't accept an array type, */
-	    /* and won't accept the ** type without a cast. */
-	    set_color_ht(&tiles, x, cy, dw, ch,
-			 depth, nplanes, colors,
+	for (;;) {
+	    /*
+	     * The cast in the following statement is bogus,
+	     * but some compilers won't accept an array type,
+	     * and won't accept the ** type without a cast.
+	     */
+	    set_color_ht(&tiles, x + pdevc->phase.x, cy + pdevc->phase.y,
+			 dw, ch, depth, nplanes, colors,
 			 (const gx_strip_bitmap **)sbits);
 	    if (source == NULL && lop_no_S_is_T(lop)) {
 		code = (*dev_proc(dev, copy_color)) (dev,
@@ -229,8 +234,7 @@ gx_dc_ht_colored_fill_rectangle(const gx_device_color * pdevc, int x, int y,
 			     (source->use_scolors ? source->scolors : NULL),
 						     &tiles, NULL,
 						     x, cy, dw, ch,
-					     pdevc->phase.x, pdevc->phase.y,
-                                                lop);
+							 0, 0, lop);
 	    }
 	    if (code < 0)
 		return code;

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* ImageType 2 image implementation */
 #include "math_.h"
 #include "memory_.h"

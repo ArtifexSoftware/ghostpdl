@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* .BMP file format driver utilities */
 #include "gdevprn.h"
 #include "gdevbmp.h"

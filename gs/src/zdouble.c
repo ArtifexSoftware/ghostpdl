@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Double-precision floating point arithmetic operators */
 #include "math_.h"
 #include "memory_.h"

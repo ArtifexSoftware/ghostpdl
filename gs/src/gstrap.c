@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Setting trapping parameters and zones */
 #include "string_.h"
 #include "gx.h"

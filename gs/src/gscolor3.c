@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* "Operators" for LanguageLevel 3 color facilities */
 #include "gx.h"
 #include "gserrors.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Additional PostScript Level 1 path routines for Ghostscript library */
 #include "math_.h"
 #include "gx.h"

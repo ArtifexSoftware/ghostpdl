@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* C heap allocator */
 #include "malloc_.h"
 #include "gdebug.h"

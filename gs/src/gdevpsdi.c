@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Image compression for PostScript and PDF writers */
 #include "math_.h"
 #include "gx.h"

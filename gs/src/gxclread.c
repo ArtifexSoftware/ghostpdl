@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Command list reading for Ghostscript. */
 #include "memory_.h"
 #include "gx.h"

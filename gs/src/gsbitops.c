@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Bitmap filling, copying, and transforming operations */
 #include "stdio_.h"
 #include "memory_.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* CIE color rendering operators */
 #include "math_.h"
 #include "ghost.h"

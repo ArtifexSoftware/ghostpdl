@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* DCT filter parameter setting and reading interface */
 
 #ifndef sdcparam_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Procedures exported by zht.c for zht1.c and zht2.c */
 
 #ifndef iht_INCLUDED

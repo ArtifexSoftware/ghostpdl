@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Definitions and declarations for clist implementation in memory. */
 
 #ifndef gxclmem_INCLUDED

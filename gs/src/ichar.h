@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Requires gxchar.h */
 
 #ifndef ichar_INCLUDED

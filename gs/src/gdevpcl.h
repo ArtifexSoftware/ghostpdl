@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Requires gdevprn.h */
 
 #ifndef gdevpcl_INCLUDED

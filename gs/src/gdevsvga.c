@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* SuperVGA display drivers */
 #include "memory_.h"
 #include "gconfigv.h"		/* for USE_ASM */

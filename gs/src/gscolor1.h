@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Client interface to Level 1 extended color facilities */
 /* Requires gscolor.h */
 

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Client interface to color routines */
 
 #ifndef gscolor_INCLUDED

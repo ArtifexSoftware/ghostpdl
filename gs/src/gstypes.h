@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Miscellaneous common types for Ghostscript library */
 
 #ifndef gstypes_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Filters included in Level 1 systems: NullEncode/Decode, PFBDecode, */
 /*   SubFileDecode. */
 #include "stdio_.h"		/* includes std.h */

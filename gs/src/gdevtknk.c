@@ -16,7 +16,7 @@
   all copies.
 */
 
-/*$Id$*/
+
 /*   
    Tektronix Ink-jet plotter driver.
    This code is written for 4696 and 4695 plotters, it may easily be 

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Debugging machinery definitions */
 
 #ifndef gdebug_INCLUDED

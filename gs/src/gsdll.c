@@ -18,7 +18,7 @@
 /* Portions Copyright (C) 1994, 1995, 1996, Russell Lang.  All rights reserved. */
 
 
-/*$Id$ */
+
 /* Dynamic Link Library interface for OS/2 and MS-Windows Ghostscript */
 /* front end to gs.c */
 

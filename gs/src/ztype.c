@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Type, attribute, and conversion operators */
 #include "math_.h"
 #include "memory_.h"

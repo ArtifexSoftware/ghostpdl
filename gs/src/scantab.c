@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Scanner table for PostScript/PDF tokens */
 #include "stdpre.h"
 #include "scommon.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Object locating and validating for Ghostscript memory manager */
 #include "ghost.h"
 #include "memory_.h"

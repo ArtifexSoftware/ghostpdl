@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Definitions common to gspmdrv.c and gspmdrv.rc */
 
 #ifndef gspmdrv_INCLUDED

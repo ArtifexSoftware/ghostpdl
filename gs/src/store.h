@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Assignment-related macros */
 
 #ifndef store_INCLUDED

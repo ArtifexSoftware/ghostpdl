@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Level 2 encoded number reading utilities for Ghostscript */
 #include "math_.h"
 #include "memory_.h"

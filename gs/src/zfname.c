@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* File name utilities */
 #include "memory_.h"
 #include "ghost.h"

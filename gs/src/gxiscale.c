@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Interpolated image procedures */
 #include "gx.h"
 #include "math_.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Adobe Type 1 font interpreter support */
 #include "math_.h"
 #include "gx.h"

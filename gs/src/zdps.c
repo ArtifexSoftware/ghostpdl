@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Display PostScript extensions */
 #include "ghost.h"
 #include "oper.h"

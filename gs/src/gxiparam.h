@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Definitions for implementors of image types */
 
 #ifndef gxiparam_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* CMap data definition */
 /* Requires gsstruct.h */
 

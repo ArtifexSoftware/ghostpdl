@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Requires ialloc.h, istack.h */
 
 #ifndef iparam_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Memory allocator for Ghostscript interpreter */
 #include "gx.h"
 #include "memory_.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* PostScript Level 1 additional path operators */
 #include "memory_.h"
 #include "ghost.h"

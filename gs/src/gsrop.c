@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* RasterOp / transparency accessing for library */
 #include "gx.h"
 #include "gserrors.h"

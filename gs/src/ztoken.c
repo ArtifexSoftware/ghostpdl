@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Token reading operators */
 #include "ghost.h"
 #include "oper.h"

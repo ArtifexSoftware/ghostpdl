@@ -85,7 +85,8 @@ counttomark 2 idiv {
 } .bind def
 end
 /currentuserparams {		% - currentuserparams <dict>
-  /userparams .systemvar dup length dict .copydict
+  /userparams .systemvar dup length
+  .currentglobal false .setglobal exch dict exch .setglobal .copydict
 } odef
 /setuserparams {		% <dict> setuserparams -
 	% Check that we will be able to set the PostScript-level

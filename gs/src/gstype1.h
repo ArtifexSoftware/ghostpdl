@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Client interface to Adobe Type 1 font routines */
 
 #ifndef gstype1_INCLUDED

@@ -16,7 +16,7 @@
   all copies.
 */
 
-/*$Id$*/
+
 /* Epson color dot-matrix printer driver by dave@exlog.com */
 #include "gdevprn.h"
 

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Band-processing parameters for Ghostscript */
 
 #ifndef gxband_INCLUDED

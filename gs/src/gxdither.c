@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 #include "gx.h"
 #include "gsstruct.h"
 #include "gsdcolor.h"

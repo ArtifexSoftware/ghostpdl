@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Requires gxiodev.h */
 
 #ifndef fname_INCLUDED

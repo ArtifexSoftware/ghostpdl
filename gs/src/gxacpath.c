@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Accumulator for clipping paths */
 #include "gx.h"
 #include "gserrors.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Requires stream.h */
 
 #ifndef files_INCLUDED

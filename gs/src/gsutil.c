@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Utilities for Ghostscript library */
 #include "string_.h"
 #include "memory_.h"

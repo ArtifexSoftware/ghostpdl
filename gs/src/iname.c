@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Name lookup for Ghostscript interpreter */
 #include "memory_.h"
 #include "string_.h"

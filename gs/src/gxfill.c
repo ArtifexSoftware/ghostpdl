@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Lower-level path filling procedures */
 #include "math_.h"		/* for floor in fixed_mult_quo */
 #include "gx.h"

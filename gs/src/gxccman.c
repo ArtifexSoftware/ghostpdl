@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Character cache management routines for Ghostscript library */
 #include "gx.h"
 #include "memory_.h"

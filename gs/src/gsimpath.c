@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Image to outline conversion for Ghostscript library */
 #include "gx.h"
 #include "gserrors.h"

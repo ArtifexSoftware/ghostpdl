@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Type 32 font operators */
 #include "ghost.h"
 #include "oper.h"

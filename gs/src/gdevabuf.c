@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Alpha-buffering memory devices */
 #include "memory_.h"
 #include "gx.h"

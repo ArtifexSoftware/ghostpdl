@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Interpreter internal routines and data needed for building fonts */
 /* Requires gxfont.h */
 

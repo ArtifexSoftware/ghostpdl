@@ -31,8 +31,17 @@
 # This partial makefile compiles the png library for use in the Ghostscript
 # PNG drivers.  You can get the source code for this library from:
 #   ftp://swrinde.nde.swri.edu/pub/png/src/
+#   ftp://ftp.uu.net/graphics/png/src/
+# Please see Ghostscript's `make.txt' file for instructions about how to
+# unpack these archives.
+#
+# When each version of Ghostscript is released, we copy the associated
+# version of the png library to
+#	ftp://ftp.cs.wisc.edu/ghost/3rdparty/
+# for more convenient access.
+#
 # The makefile is known to work with the following library versions:
-# 0.89, 0.90, 0.95, 0.96, and 1.0.1.  NOTE: the archive for libpng 0.95 may
+# 0.89, 0.90, 0.95, 0.96, 1.0.1, 1.0.2.  NOTE: the archive for libpng 0.95 may
 # be inconsistent: if you have compilation problems, use an older version.
 # Please see Ghostscript's `make.txt' file for instructions about how to
 # unpack these archives.

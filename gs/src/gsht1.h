@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Extended public interface to halftones */
 
 #ifndef gsht1_INCLUDED

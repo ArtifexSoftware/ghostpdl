@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Requires scommon.h */
 
 #ifndef scanchar_INCLUDED

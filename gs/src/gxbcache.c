@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Bitmap cache implementation */
 #include "memory_.h"
 #include "gx.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Image parameter definition */
 
 #ifndef gsiparam_INCLUDED

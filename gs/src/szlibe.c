@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* zlib encoding (compression) filter stream */
 #include "std.h"
 #include "gsmemory.h"

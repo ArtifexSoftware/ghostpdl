@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Code common to DCT encoding and decoding streams */
 #include "stdio_.h"
 #include "gsmemory.h"

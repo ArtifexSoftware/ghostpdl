@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Private definitions for memory devices. */
 
 #ifndef gdevmem_INCLUDED

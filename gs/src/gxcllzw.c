@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* LZW filter initialization for RAM-based band lists */
 #include "std.h"
 #include "gstypes.h"

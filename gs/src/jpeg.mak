@@ -33,17 +33,17 @@
 #
 # You can get the IJG library by Internet anonymous FTP from the following
 # places:
-#	Standard distribution (tar + gzip format, Unix end-of-line):
-#		ftp.uu.net:/graphics/jpeg/jpegsrc.v*.tar.gz
-#		ftp.cs.wisc.edu:/ghost/jpegsrc.v*.tar.gz
-#	MS-DOS archive (PKZIP a.k.a. zip format, MS-DOS end-of-line):
-#		ftp.simtel.net:/pub/simtelnet/msdos/graphics/jpegsr*.zip
-#		ftp.cs.wisc.edu:/ghost/jpeg-*.zip
-# The first site named above (ftp.uu.net and ftp.simtel.net) is supposed
-# to be the master distribution site, so it may have a more up-to-date
-# version; the ftp.cs.wisc.edu site is the master distribution site for
-# Ghostscript, so it will always have IJG library versions known to be
-# compatible with Ghostscript.
+#   Standard distribution (tar + gzip format, Unix end-of-line):
+#	ftp://ftp.uu.net/graphics/jpeg/jpegsrc.v*.tar.gz
+#   MS-DOS archive (PKZIP a.k.a. zip format, MS-DOS end-of-line):
+#	ftp://ftp.simtel.net/pub/simtelnet/msdos/graphics/jpegsr*.zip
+# Please see Ghostscript's `make.txt' file for instructions about how to
+# unpack these archives.
+#
+# When each version of Ghostscript is released, we copy the associated
+# version of the IJG library to
+#	ftp://ftp.cs.wisc.edu/ghost/3rdparty/
+# for more convenient access.
 #
 # If the version number, and hence the subdirectory name, changes, you
 # will probably want to change the definitions of JSRCDIR and possibly

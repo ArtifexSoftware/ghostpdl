@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Prototypes for configuration definitions in gconfig.c. */
 
 #ifndef gscdefs_INCLUDED

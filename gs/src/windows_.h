@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Wrapper for windows.h */
 
 #ifndef windows__INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* ReusableStreamDecode filter support */
 #include "memory_.h"
 #include "ghost.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Test program for Ghostscript library */
 /* Capture stdin/out/err before gsio.h redefines them. */
 #include "stdio_.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Tables for CCITTFaxEncode filter */
 #include "std.h"
 #include "scommon.h"		/* for scf.h */

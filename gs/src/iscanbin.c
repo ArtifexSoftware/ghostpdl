@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Ghostscript binary token scanner and writer */
 #include "math_.h"
 #include "memory_.h"

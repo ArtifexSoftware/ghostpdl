@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Requires strimpl.h */
 
 #ifndef sbhc_INCLUDED

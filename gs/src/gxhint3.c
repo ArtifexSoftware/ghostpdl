@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Apply hints for Type 1 fonts. */
 #include "math_.h"		/* for floor in fixed_mult_quo */
 #include "gx.h"

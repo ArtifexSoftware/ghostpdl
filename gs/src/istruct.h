@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Interpreter-level extension of gsstruct.h */
 
 #ifndef istruct_INCLUDED

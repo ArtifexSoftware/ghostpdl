@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Generic printer driver support */
 #include "ctype_.h"
 #include "gdevprn.h"

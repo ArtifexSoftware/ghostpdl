@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Array/string/dictionary generic operators for PostScript */
 #include "memory_.h"
 #include "ghost.h"

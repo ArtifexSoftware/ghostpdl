@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Alpha-channel storage device */
 #include "memory_.h"
 #include "gx.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Client interface for "raw memory" allocator */
 
 /* Initial version 02/03/1998 by John Desrosiers (soho@crl.com) */

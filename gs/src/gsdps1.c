@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Display PostScript graphics additions for Ghostscript library */
 #include "math_.h"
 #include "gx.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Basic path routines for Ghostscript library */
 #include "gx.h"
 #include "gserrors.h"

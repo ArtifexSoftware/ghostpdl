@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Line parameter and quality definitions */
 
 #ifndef gsline_INCLUDED

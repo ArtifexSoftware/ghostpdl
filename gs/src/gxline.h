@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Private line parameter definitions */
 
 #ifndef gxline_INCLUDED

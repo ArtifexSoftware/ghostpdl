@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Definitions for device RasterOp implementations. */
 /* Requires gxdevmem.h, gsropt.h */
 

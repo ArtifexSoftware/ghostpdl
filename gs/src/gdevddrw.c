@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Default polygon and image drawing device procedures */
 #include "math_.h"
 #include "memory_.h"

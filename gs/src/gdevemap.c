@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Mappings between StandardEncoding and ISOLatin1Encoding */
 #include "std.h"
 

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Embedded font writing */
 #include "memory_.h"
 #include "gx.h"

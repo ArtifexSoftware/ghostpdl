@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* I/O interface for command lists */
 
 #ifndef gxclio_INCLUDED

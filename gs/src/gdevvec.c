@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Utilities for "vector" devices */
 #include "math_.h"
 #include "memory_.h"

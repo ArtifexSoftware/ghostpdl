@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Configuration tables */
 #include "memory_.h"
 #include "gx.h"

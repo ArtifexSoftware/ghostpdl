@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Library "client" bitmap structures */
 
 #ifndef gsbitmap_INCLUDED

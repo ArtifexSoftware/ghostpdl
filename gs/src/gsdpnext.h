@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* API for NeXT DPS facilities */
 
 #ifndef gsdpnext_INCLUDED

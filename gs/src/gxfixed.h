@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Fixed-point arithmetic for Ghostscript */
 
 #ifndef gxfixed_INCLUDED

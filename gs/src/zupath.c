@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Operators related to user paths */
 #include "ghost.h"
 #include "oper.h"

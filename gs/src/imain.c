@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Common support for interpreter front ends */
 #include "memory_.h"
 #include "string_.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Generic substitute for Unix memory.h */
 
 #ifndef memory__INCLUDED

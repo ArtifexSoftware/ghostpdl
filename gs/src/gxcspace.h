@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Implementation of color spaces */
 /* Requires gsstruct.h */
 

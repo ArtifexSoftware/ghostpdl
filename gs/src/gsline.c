@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Line parameter operators for Ghostscript library */
 #include "math_.h"
 #include "memory_.h"

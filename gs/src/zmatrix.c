@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Matrix operators */
 #include "ghost.h"
 #include "oper.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* DCTDecode filter parameter setting and reading */
 #include "std.h"
 #include "jpeglib.h"

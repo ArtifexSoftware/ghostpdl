@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Internal interfaces in Ghostscript GC */
 
 #ifndef igc_INCLUDED

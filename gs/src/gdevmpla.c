@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Any-depth planar "memory" (stored bitmap) devices */
 #include "memory_.h"
 #include "gx.h"

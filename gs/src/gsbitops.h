@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Interface for bitmap operations */
 
 #ifndef gsbitops_INCLUDED

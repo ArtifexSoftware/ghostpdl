@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Code common to zlib encoding and decoding streams */
 #include "std.h"
 #include "gserror.h"

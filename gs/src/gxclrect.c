@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Rectangle-oriented command writing for command list */
 #include "gx.h"
 #include "gserrors.h"

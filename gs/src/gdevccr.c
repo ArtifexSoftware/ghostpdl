@@ -16,7 +16,7 @@
   all copies.
 */
 
-/*$Id$*/
+
 /* CalComp Raster Format driver */
 #include "gdevprn.h"
 

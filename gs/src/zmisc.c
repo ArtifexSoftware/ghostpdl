@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Miscellaneous operators */
 #include "errno_.h"
 #include "memory_.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Relational, boolean, and bit operators */
 #include "ghost.h"
 #include "oper.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Display PostScript context operators */
 #include "memory_.h"
 #include "ghost.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Rendering for Gouraud triangle shadings */
 #include "memory_.h"
 #include "gx.h"

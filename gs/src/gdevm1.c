@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Monobit "memory" (stored bitmap) device */
 #include "memory_.h"
 #include "gx.h"

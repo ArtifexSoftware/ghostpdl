@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Internal definitions for Functions */
 
 #ifndef gxfunc_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Debugging support for Ghostscript interpreter */
 /* This file must always be compiled with DEBUG set. */
 #undef DEBUG

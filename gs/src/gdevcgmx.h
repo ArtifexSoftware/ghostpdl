@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Internal definitions for CGM-writing library */
 
 #ifndef gdevcgmx_INCLUDED

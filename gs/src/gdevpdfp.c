@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Get/put parameters for PDF-writing driver */
 #include "gx.h"
 #include "gserrors.h"

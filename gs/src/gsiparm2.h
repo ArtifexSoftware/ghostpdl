@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* ImageType 2 image parameter definition */
 
 #ifndef gsiparm2_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* RasterOp / transparency procedure interface */
 
 #ifndef gsrop_INCLUDED

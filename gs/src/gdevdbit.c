@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Default device bitmap copying implementation */
 #include "gx.h"
 #include "gpcheck.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Burrows/Wheeler block sorting compression filters */
 #include "stdio_.h"
 #include "memory_.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* %pipe% IODevice */
 #include "errno_.h"
 #include "pipe_.h"

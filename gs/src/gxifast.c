@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Fast monochrome image rendering */
 #include "gx.h"
 #include "memory_.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Shading rendering support */
 #include "math_.h"
 #include "gx.h"

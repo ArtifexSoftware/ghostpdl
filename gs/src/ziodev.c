@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Standard IODevice implementation */
 #include "memory_.h"
 #include "stdio_.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Requires gsstruct.h, ostack.h, stream.h */
 
 #ifndef iscan_INCLUDED

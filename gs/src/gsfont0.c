@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Composite font operations for Ghostscript library */
 #include "memory_.h"
 #include "gx.h"

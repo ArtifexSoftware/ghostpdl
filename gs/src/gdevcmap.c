@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Special color mapping device */
 #include "gx.h"
 #include "gserrors.h"

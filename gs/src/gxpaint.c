@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Graphics-state-aware fill and stroke procedures */
 #include "gx.h"
 #include "gzstate.h"

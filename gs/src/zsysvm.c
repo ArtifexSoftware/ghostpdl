@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* System VM and VM-specific operators */
 #include "ghost.h"
 #include "oper.h"

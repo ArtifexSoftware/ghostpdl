@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Mask clipping support */
 #include "gx.h"
 #include "gxdevice.h"

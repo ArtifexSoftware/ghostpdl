@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* S3 86C911 driver */
 #include "gx.h"
 #include "gserrors.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Path drawing procedures for pdfwrite driver */
 #include "math_.h"
 #include "gx.h"

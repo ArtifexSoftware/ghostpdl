@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Page queue implementation */
 
 /* Initial version 2/1/98 by John Desrosiers (soho@crl.com) */

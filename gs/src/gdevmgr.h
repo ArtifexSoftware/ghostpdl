@@ -16,7 +16,7 @@
   all copies.
 */
 
-/*$Id$*/
+
 /* Common header file for MGR devices */
 
 #ifndef gdevmgr_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Driver interface for text */
 
 #ifndef gstext_INCLUDED

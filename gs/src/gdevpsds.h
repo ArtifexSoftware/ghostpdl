@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Image processing stream interface for PostScript and PDF writers */
 
 #ifndef gdevpsds_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Requires isave.h */
 
 #ifndef isstate_INCLUDED

@@ -268,7 +268,7 @@ FPU_TYPE=1
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
-#FEATURE_DEVS=psl3.dev pdf.dev dpsnext.dev epsf.dev pipe.dev rasterop.dev
+#FEATURE_DEVS=psl3.dev pdf.dev dpsnext.dev pipe.dev rasterop.dev
 FEATURE_DEVS=psl3.dev pdf.dev dpsnext.dev pipe.dev
 
 # Choose whether to compile the .ps initialization files into the executable.
@@ -295,7 +295,7 @@ FILE_IMPLEMENTATION=stdio
 # Choose the device(s) to include.  See devs.mak for details,
 # devs.mak and contrib.mak for the list of available devices.
 
-DEVICE_DEVS=x11.dev x11alpha.dev x11cmyk.dev x11gray2.dev x11mono.dev
+DEVICE_DEVS=x11.dev x11alpha.dev x11cmyk.dev x11gray2.dev x11gray4.dev x11mono.dev
 #DEVICE_DEVS1=bmpmono.dev bmpamono.dev posync.dev
 DEVICE_DEVS1=
 DEVICE_DEVS2=

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Operator and other tag definitions for PCL XL */
 
 #ifndef gdevpxop_INCLUDED

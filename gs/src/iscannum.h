@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Interface to Ghostscript number scanner */
 
 #ifndef iscannum_INCLUDED

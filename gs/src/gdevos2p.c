@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /*
  * OS/2 printer device
  * by Russell Lang.

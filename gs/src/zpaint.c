@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Painting operators */
 #include "ghost.h"
 #include "oper.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Requires gdevpcfb.h */
 
 #ifndef gdevsvga_INCLUDED

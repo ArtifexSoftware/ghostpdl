@@ -16,7 +16,7 @@
   all copies.
 */
 
-/*$Id$*/
+
 /*
  * This is a modification of Mark Wedel's Apple DMP and 
  * Jonathan Luckey's Imagewriter II driver to

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* RasterOp control operators */
 #include "memory_.h"
 #include "ghost.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Requires gsstruct.h, gxdevice.h, gxdevmem.h */
 
 #ifndef gxclipm_INCLUDED

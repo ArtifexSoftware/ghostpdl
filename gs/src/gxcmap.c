@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Color mapping for Ghostscript */
 #include "gx.h"
 #include "gserrors.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* String and hexstring streams (filters) */
 #include "stdio_.h"		/* includes std.h */
 #include "memory_.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Composite font creation operator */
 #include "ghost.h"
 #include "oper.h"

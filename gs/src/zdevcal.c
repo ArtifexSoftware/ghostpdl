@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* %Calendar% IODevice */
 #include "time_.h"
 #include "ghost.h"

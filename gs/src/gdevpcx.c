@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* PCX file format drivers */
 #include "gdevprn.h"
 #include "gdevpccm.h"

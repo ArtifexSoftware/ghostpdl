@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Generate a header file (arch.h) with parameters */
 /* reflecting the machine architecture and compiler characteristics. */
 

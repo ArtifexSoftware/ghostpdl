@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* PNG (Portable Network Graphics) Format.  Pronounced "ping". */
 /* lpd 1997-07-20: changed from using gs_malloc/png_xxx_int to png_create_xxx
  * for allocating structures, and from gs_free to png_write_destroy for

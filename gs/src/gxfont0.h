@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Type 0 (composite) font data definition */
 
 #ifndef gxfont0_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Rest of (client) halftone definitions */
 
 #ifndef gxht_INCLUDED
@@ -204,8 +204,6 @@ int gs_screen_init_memory(P5(gs_screen_enum *, gs_state *,
   gs_screen_init_memory(penum, pgs, phsp, accurate, pgs->memory)
 
 /* Procedural interface for MinScreenLevels (a Ghostscript extension) */
-
-/* Set/get the MinScreenLevels value. */
 
 /*
  * Set/get the MinScreenLevels value.

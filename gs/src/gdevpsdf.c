@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Common utilities for PostScript and PDF writers */
 #include "string_.h"
 #include "gx.h"

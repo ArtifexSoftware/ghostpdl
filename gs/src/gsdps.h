@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Client interface to Display PostScript facilities. */
 
 #ifndef gsdps_INCLUDED

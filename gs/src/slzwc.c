@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Code common to LZW encoding and decoding streams */
 #include "std.h"
 #include "strimpl.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Common definitions for "vector" devices */
 
 #ifndef gdevvec_INCLUDED

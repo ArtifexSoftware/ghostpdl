@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Display PostScript extensions */
 #include "gx.h"
 #include "gserrors.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Save/restore manager for Ghostscript interpreter */
 #include "ghost.h"
 #include "memory_.h"

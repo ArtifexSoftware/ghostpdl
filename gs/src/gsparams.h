@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Serializer/expander for gs_parm_list's */
 
 #ifndef gsparams_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Interface to Ghostscript interpreter memory allocator */
 
 #ifndef ialloc_INCLUDED

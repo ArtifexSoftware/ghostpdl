@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Definition of interpreter instance */
 /* Requires stdio_.h, gsmemory.h, iref.h */
 

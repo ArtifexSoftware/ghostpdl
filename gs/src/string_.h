@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Generic substitute for Unix string.h */
 
 #ifndef string__INCLUDED

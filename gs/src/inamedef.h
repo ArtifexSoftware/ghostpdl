@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Name table definition */
 
 #ifndef inamedef_INCLUDED

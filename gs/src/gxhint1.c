@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Font level hints for Type 1 fonts */
 #include "gx.h"
 #include "gserrors.h"

@@ -16,7 +16,7 @@
   all copies.
 */
 
-/*$Id$*/
+
 /* Mitsubishi CP50 color printer driver */
 #include "gdevprn.h"
 #define ppdev ((gx_device_printer *)pdev)

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Common routines for MS-DOS (any compiler) and DesqView/X, */
 /* which has a MS-DOS-like file system. */
 #include "dos_.h"

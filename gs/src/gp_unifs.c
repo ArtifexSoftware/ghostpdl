@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* "Unix-like" file system platform routines for Ghostscript */
 #include "memory_.h"
 #include "string_.h"

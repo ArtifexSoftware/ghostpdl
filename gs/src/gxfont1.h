@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Type 1 font data definition (including Type 2 charstrings) */
 
 #ifndef gxfont1_INCLUDED

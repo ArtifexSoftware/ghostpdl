@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Common platform-specific routines for OS/2 and MS-DOS */
 /* compiled with GCC/EMX */
 

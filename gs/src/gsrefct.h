@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Reference counting definitions */
 
 #ifndef gsrefct_INCLUDED

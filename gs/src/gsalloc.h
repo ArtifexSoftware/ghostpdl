@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Memory allocator extensions for standard allocator */
 
 #ifndef gsalloc_INCLUDED

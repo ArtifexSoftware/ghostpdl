@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* RasterOp / transparency type definitions */
 
 #ifndef gsropt_INCLUDED

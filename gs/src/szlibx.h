@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* zlib filter state definition */
 
 #ifndef szlibx_INCLUDED

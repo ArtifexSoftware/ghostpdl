@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Attribute ID definitions for PCL XL */
 
 #ifndef gdevpxat_INCLUDED

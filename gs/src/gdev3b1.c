@@ -16,7 +16,7 @@
   all copies.
 */
 
-/*$Id$*/
+
 /*
  * This is a driver for the AT&T 3b1/7300/UnixPC console display.
  *

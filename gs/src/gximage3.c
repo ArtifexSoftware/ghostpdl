@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* ImageType 3 image implementation */
 #include "math_.h"		/* for ceil, floor */
 #include "memory_.h"

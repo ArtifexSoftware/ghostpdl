@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Initialize internally known objects for Ghostscript interpreter */
 #include "string_.h"
 #include "ghost.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Run-length encoded "device" */
 #include "memory_.h"
 #include "gx.h"

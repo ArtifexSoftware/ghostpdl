@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Requires gsmatrix.h, gxdevice.h */
 
 #ifndef gxfont_INCLUDED

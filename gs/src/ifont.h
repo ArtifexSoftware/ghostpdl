@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Interpreter internal font representation */
 
 #ifndef ifont_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* PostScript color image output device */
 #include "gdevprn.h"
 #include "stream.h"

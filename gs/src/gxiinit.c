@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Image setup procedures for Ghostscript library */
 #include "gx.h"
 #include "math_.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Requires gsstate.h */
 
 #ifndef gsimage_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Color and halftone operators for Ghostscript library */
 #include "gx.h"
 #include "gserrors.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Substitute for math.h on VAX/VMS systems */
 
 #ifndef vmsmath_INCLUDED

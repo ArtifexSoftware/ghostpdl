@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Table of compiled fonts */
 #include "ccfont.h"
 

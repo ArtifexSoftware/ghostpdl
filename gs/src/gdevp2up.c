@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* A "2-up" PCX device for testing page objects. */
 #include "gdevprn.h"
 #include "gdevpccm.h"

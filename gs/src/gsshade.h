@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Definitions for shading */
 
 #ifndef gsshade_INCLUDED

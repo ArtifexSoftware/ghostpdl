@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Generic substitute for Unix errno.h */
 
 #ifndef errno__INCLUDED

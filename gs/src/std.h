@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Standard definitions for Aladdin Enterprises code */
 
 #ifndef std_INCLUDED

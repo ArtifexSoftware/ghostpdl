@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* JPEG output driver */
 #include "stdio_.h"		/* for jpeglib.h */
 #include "jpeglib.h"

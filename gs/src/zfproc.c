@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Procedure-based filter stream support */
 #include "memory_.h"
 #include "ghost.h"

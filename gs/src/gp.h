@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Interface to platform-specific routines */
 /* Requires gsmemory.h, gstypes.h */
 

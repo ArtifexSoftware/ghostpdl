@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Requires gxdevice.h */
 
 #ifndef gxdevmem_INCLUDED

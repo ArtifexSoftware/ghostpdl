@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Extended (non-standard) filter creation */
 #include "memory_.h"
 #include "ghost.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Generic substitute for Unix sys/stat.h */
 
 #ifndef stat__INCLUDED

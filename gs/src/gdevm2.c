@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* 2-bit-per-pixel "memory" (stored bitmap) device */
 #include "memory_.h"
 #include "gx.h"
@@ -24,7 +24,6 @@
 #include "gxdevmem.h"		/* semi-public definitions */
 #include "gdevmem.h"		/* private definitions */
 
-/**************** NOTE: copy_rop only works for gray scale ****************/
 extern dev_proc_strip_copy_rop(mem_gray_strip_copy_rop);
 
 /* ================ Standard (byte-oriented) device ================ */

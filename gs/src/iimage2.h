@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Requires gsiparam.h */
 
 #ifndef iimage2_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Generic operand stack API */
 
 #ifndef iostack_INCLUDED

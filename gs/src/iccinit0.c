@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Initialization string for non-compiled initialization */
 #include "stdpre.h"
 

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Client interface to HSB color routines */
 
 #ifndef gshsb_INCLUDED

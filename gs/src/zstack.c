@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Operand stack operators */
 #include "memory_.h"
 #include "ghost.h"

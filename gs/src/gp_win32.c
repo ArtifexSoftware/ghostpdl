@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Common platform-specific routines for MS-Windows WIN32 */
 /* hacked from gp_msdos.c by Russell Lang */
 #include "stdio_.h"

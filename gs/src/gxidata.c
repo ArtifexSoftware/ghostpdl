@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Generic image enumeration and cleanup */
 #include "gx.h"
 #include "memory_.h"

@@ -16,7 +16,7 @@
   all copies.
 */
 
-/*$Id$ */
+
 /* Generic asynchronous printer driver support */
 
 /* Initial version 2/1/1998 by John Desrosiers (soho@crl.com) */

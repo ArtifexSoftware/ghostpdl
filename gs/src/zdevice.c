@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Device-related operators */
 #include "string_.h"
 #include "ghost.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /*
  * This is a driver for 386 PCs using VGALIB for graphics on the console
  * display.

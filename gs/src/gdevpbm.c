@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Portable Bit/Gray/PixMap drivers */
 #include "gdevprn.h"
 #include "gscdefs.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Monitor-locked heap memory allocator */
 
 /* Initial version 2/1/98 by John Desrosiers (soho@crl.com) */

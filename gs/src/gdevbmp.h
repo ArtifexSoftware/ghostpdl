@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* .BMP file format definitions and utility interfaces */
 
 #ifndef gdevbmp_INCLUDED

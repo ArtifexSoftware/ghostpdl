@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Definition of Pattern cache */
 
 #ifndef gxpcache_INCLUDED

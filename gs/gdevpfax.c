@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Generic PostScript system compatible fax support */
 #include "gdevprn.h"
 #include "gsparam.h"

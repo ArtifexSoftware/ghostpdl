@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Definitions for the execution stack */
 
 #ifndef estack_INCLUDED

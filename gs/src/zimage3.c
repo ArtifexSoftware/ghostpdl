@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* LanguageLevel 3 ImageTypes (3 & 4 - masked images) */
 #include "memory_.h"
 #include "ghost.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Header for including X library calls in Ghostscript X11 driver */
 
 #ifndef x__INCLUDED

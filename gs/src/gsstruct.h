@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Definitions for Ghostscript modules that define allocatable structures */
 /* Requires gstypes.h */
 

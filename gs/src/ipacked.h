@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Packed array format for Ghostscript */
 
 #ifndef ipacked_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Generate the CCITTFaxDecode tables */
 #include "stdio_.h"		/* includes std.h */
 #include "scf.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Local/global space management */
 /* Requires iref.h */
 

@@ -29,6 +29,63 @@ Procedures, Utilities, Drivers, Platforms, Fonts, Interpreter, Streams
 (included under Interpreter through release 2.9.9), Library.  Changes marked
 with a * were made available as patches to a previous release.
 
+Version 5.35(beta) (8/18/98)
+============================
+
+More updates for 5.3x, specifically fixing problems with halftones on banded
+CMYK devices.
+
+Documentation
+-------------
+
+Fixes problems:
+	- The URLs for the third-party libraries were out of date.
+(make.txt, jpeg.mak, libpng.mak, zlib.mak)
+
+Drivers
+-------
+
+Adds an x11gray4 device for help in debugging.  (devs.mak, gdevxalt.c)
+
+Fonts
+-----
+
+Fixes problems:
+	- TrueType fonts with more than 64K of data before or after the
+glyfs caused an error.  (gs_ttf.ps)
+
+Interpreter
+-----------
+
+Fixes problems:
+	- The dictionary returned by currentuserparams was allocated in the
+current VM rather than always in local VM.  (gs_lev2.ps)
+
+Interpreter (PDF)
+-----------------
+
+Fixes problems:
+	- CID-keyed fonts caused an error, because their CDevProc was
+incorrect.  (pdf_font.ps)
+
+Library
+-------
+
+Fixes problems:
+	- A comment was duplicated.  (gxht.h)
+	- The main procedure of the command list reader was so large that it
+couldn't be optimized by many compilers, and was very hard to read.
+(gxclrast.c)
+	- Banding devices using multi-screen halftones could get memory
+access errors because they didn't clear the halftone caches when changing
+halftone parameters.  (gxclrast.c)
+	- Banding devices using multi-screen halftones didn't set the
+halftone phase correctly.  (gxcht.c, gxclrast.c)
+	- RasterOp didn't work for 2- or 4-bit gray-scale devices.  It still
+doesn't work right, but it's closer.  (gdevm2.c, gdevm4.c, gdevmrop.c)
+	- Undefined characters in CMap-based composite fonts caused errors
+and possible invalid memory accesses.  (gschar0.c)
+
 Version 5.34(beta) (8/16/98)
 ============================
 

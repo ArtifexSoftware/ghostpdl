@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* API for alpha value in graphics state */
 
 #ifndef gsalpha_INCLUDED

@@ -16,7 +16,7 @@
   all copies.
 */
 
-/*$Id$*/
+
 /* Epson Stylus-Color Printer-Driver */
 #ifndef   gdevstc_INCLUDED
 #  define gdevstc_INCLUDED

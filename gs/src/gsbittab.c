@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Tables for bit operations */
 #include "stdpre.h"
 #include "gsbittab.h"

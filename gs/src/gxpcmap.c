@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Pattern color mapping for Ghostscript library */
 #include "math_.h"
 #include "memory_.h"

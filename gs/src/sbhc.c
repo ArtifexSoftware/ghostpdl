@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Bounded Huffman code filters */
 #include "memory_.h"
 #include "stdio_.h"

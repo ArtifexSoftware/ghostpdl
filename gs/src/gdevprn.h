@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Common header file for memory-buffered printers */
 
 #ifndef gdevprn_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Null and forwarding device implementation */
 #include "gx.h"
 #include "gserrors.h"

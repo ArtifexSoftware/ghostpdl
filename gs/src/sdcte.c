@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* DCT encoding filter stream */
 #include "memory_.h"
 #include "stdio_.h"

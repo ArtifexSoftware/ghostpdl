@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Interrupt check interface */
 
 #ifndef gpcheck_INCLUDED

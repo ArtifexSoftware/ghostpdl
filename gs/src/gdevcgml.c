@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* CGM-writing library */
 #include "memory_.h"
 #include "stdio_.h"

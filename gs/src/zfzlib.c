@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* zlib and Flate filter creation */
 #include "ghost.h"
 #include "oper.h"

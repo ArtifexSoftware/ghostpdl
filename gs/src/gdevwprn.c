@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /*
  * Microsoft Windows 3.n printer driver for Ghostscript.
  * Original version by Russell Lang and

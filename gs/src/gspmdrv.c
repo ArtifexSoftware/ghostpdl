@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Presentation Manager driver for Ghostscript */
 /* Written by Russell Lang */
 

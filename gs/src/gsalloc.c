@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Standard memory allocator */
 #include "gx.h"
 #include "memory_.h"

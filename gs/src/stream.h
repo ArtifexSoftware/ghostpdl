@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Definitions for Ghostscript stream package */
 /* Requires stdio.h */
 

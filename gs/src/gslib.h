@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Requires stdio.h, gsmemory.h */
 
 #ifndef gslib_INCLUDED

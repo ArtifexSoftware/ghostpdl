@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Screen (Type 1) halftone processing for Ghostscript library */
 #include "math_.h"
 #include "gx.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Internal interfaces to interp.c and iinit.c */
 
 #ifndef interp_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* RasterOp-compositing interface */
 
 #ifndef gsropc_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Ghostscript memory allocator extensions for interpreter level */
 
 #ifndef imemory_INCLUDED

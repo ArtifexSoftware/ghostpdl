@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Generic dictionary stack API */
 
 #ifndef idstack_INCLUDED

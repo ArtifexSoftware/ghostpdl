@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Color space operators and support */
 #include "memory_.h"
 #include "gx.h"

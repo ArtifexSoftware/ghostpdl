@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Sample lookup and expansion */
 
 #ifndef gxsample_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* setscreen operator for Ghostscript library */
 #include "memory_.h"
 #include <stdlib.h>		/* for qsort */

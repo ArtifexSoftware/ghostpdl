@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* DCTEncode filter creation */
 #include "memory_.h"
 #include "stdio_.h"		/* for jpeglib.h */

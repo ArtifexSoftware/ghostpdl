@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Media matching for setpagedevice */
 #include "math_.h"
 #include "memory_.h"

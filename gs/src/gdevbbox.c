@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Device for tracking bounding box */
 #include "math_.h"
 #include "memory_.h"

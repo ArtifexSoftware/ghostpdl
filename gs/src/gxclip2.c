@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Mask clipping for patterns */
 #include "memory_.h"
 #include "gx.h"

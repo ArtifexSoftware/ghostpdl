@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* image operator extensions for Level 2 PostScript */
 #include "math_.h"
 #include "memory_.h"

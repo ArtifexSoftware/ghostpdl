@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Command list writing utilities. */
 
 #include "memory_.h"

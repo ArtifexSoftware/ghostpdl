@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Generate (bounded) Huffman code definitions from frequencies, */
 /* and tables from definitions. */
 #include "memory_.h"

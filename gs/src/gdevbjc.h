@@ -16,7 +16,7 @@
   all copies.
 */
 
-/*$Id$*/
+
 
 #ifndef gdevbjc_INCLUDED
 #  define gdevbjc_INCLUDED

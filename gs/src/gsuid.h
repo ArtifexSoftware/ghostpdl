@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Unique id definitions for Ghostscript */
 
 #ifndef gsuid_INCLUDED

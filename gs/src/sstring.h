@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* are referenced, but some compilers always require strimpl.h. */
 
 #ifndef sstring_INCLUDED

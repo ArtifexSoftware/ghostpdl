@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Pixel differencing filters */
 #include "stdio_.h"		/* should be std.h, but needs NULL */
 #include "strimpl.h"

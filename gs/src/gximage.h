@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Requires gxcpath.h, gxdevmem.h, gxdcolor.h, gzpath.h */
 
 #ifndef gximage_INCLUDED

@@ -16,7 +16,7 @@
   all copies.
 */
 
-/*$Id$*/
+
 
 /* EPSON LP-8000 ESC-sequence Laser Printer driver for Ghostscript.
 

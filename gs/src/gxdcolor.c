@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Pure and null device color implementation */
 #include "gx.h"
 #include "gserrors.h"

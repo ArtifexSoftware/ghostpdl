@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Internal definitions for Level 2 color routines */
 /* Requires gsstruct.h, gxfixed.h */
 

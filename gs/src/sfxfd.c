@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* File stream implementation using direct OS calls */
 /******
  ****** NOTE: THIS FILE PROBABLY WILL NOT COMPILE ON NON-UNIX

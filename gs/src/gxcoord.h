@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Requires gxmatrix.h and gzstate.h */
 
 #ifndef gxcoord_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* DeviceN color space and operation definition */
 #include "gx.h"
 #include "gserrors.h"

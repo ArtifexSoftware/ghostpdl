@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Definitions for device clients */
 
 #ifndef gxdevcli_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Interfaces for Ghostscript dictionary package */
 
 #ifndef idict_INCLUDED

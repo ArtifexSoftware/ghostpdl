@@ -80,6 +80,7 @@ GDEV=$(AK) $(ECHOGS_XE) $(GDEVH)
 #	x11alpha  X Windows masquerading as a device with alpha capability
 #	x11cmyk  X Windows masquerading as a 1-bit-per-plane CMYK device
 #	x11gray2  X Windows as a 2-bit gray-scale device
+#	x11gray4  X Windows as a 4-bit gray-scale device
 #	x11mono  X Windows masquerading as a black-and-white device
 # Printers:
 # +	deskjet  H-P DeskJet and DeskJet Plus
@@ -384,6 +385,7 @@ $(GLOBJ)gdevxxf.$(OBJ): $(GLSRC)gdevxxf.c $(GDEVX) $(math__h) $(memory__h)\
 # x11alpha pretends to have 4 bits of alpha channel.
 # x11cmyk pretends to be a CMYK device with 1 bit each of C,M,Y,K.
 # x11gray2 pretends to be a 2-bit gray-scale device.
+# x11gray4 pretends to be a 4-bit gray-scale device.
 # x11mono pretends to be a black-and-white device.
 x11alt_=$(x11_) $(GLOBJ)gdevxalt.$(OBJ)
 x11alpha.dev: $(x11alt_)
@@ -397,6 +399,10 @@ x11cmyk.dev: $(x11alt_)
 x11gray2.dev: $(x11alt_)
 	$(SETDEV2) x11gray2 $(x11alt_)
 	$(ADDMOD) x11gray2 -lib $(XLIBS)
+
+x11gray4.dev: $(x11alt_)
+	$(SETDEV2) x11gray4 $(x11alt_)
+	$(ADDMOD) x11gray4 -lib $(XLIBS)
 
 x11mono.dev: $(x11alt_)
 	$(SETDEV2) x11mono $(x11alt_)

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* DataSource definitions */
 
 #ifndef gsdsrc_INCLUDED

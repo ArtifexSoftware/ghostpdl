@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* String GC routines for Ghostscript */
 #include "memory_.h"
 #include "ghost.h"

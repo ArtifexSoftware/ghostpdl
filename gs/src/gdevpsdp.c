@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* (Distiller) parameter handling for PostScript and PDF writers */
 #include "string_.h"
 #include "gx.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* stdio redirection */
 
 #ifndef gsio_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Requires gxdevice.h, gzcpath.h */
 
 #ifndef gzacpath_INCLUDED

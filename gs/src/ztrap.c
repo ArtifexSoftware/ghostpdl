@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Operators for setting trapping parameters and zones */
 #include "ghost.h"
 #include "oper.h"

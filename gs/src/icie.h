@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Internal definitions for interpreter CIE color handling */
 
 #ifndef icie_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* ImageType 4 image implementation */
 #include "memory_.h"
 #include "gx.h"

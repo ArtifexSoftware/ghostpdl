@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Luminance computation parameters for Ghostscript */
 
 #ifndef gxlum_INCLUDED

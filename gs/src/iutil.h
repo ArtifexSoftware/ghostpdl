@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Requires imemory.h, ostack.h */
 
 #ifndef iutil_INCLUDED

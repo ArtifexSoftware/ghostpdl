@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* PatternType 1 filling algorithm interface */
 
 #ifndef gxp1fill_INCLUDED

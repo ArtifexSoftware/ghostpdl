@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Requires gsmemory.h, gsstruct.h */
 
 #ifndef gxalloc_INCLUDED

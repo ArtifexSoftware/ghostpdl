@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Generic MS-DOS interface */
 
 #ifndef dos__INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Interface to tables for bit operations */
 
 #ifndef gsbittab_INCLUDED

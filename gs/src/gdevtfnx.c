@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* 12-bit & 24-bit RGB uncompressed TIFF driver */
 #include "gdevprn.h"
 #include "gdevtifs.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Non-I/O file operators */
 #include "memory_.h"
 #include "string_.h"

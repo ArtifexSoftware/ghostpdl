@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Level 2 utilities for Ghostscript interpreter */
 #include "memory_.h"
 #include "string_.h"

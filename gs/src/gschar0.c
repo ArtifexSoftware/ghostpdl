@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Composite font decoding for Ghostscript library */
 #include "memory_.h"
 #include "gx.h"
@@ -368,8 +368,11 @@ gs_type0_next_glyph(register gs_show_enum * penum, gs_char * pchr,
 		    if_debug3('J', "[J]CMap returns %d, chr=0x%lx, glyph=0x%lx\n",
 			      code, (ulong) chr, (ulong) glyph);
 		    if (code == 0) {
-			if (glyph == gs_no_glyph)
+			if (glyph == gs_no_glyph) {
 			    glyph = gs_min_cid_glyph;
+			    if_debug0('J', "... undefined\n");
+			    goto done;
+			}
 		    } else
 			chr = (gs_char) glyph, glyph = gs_no_glyph;
 /****** RESCAN chr IF DESCENDANT IS CMAP'ED ******/
@@ -382,6 +385,7 @@ gs_type0_next_glyph(register gs_show_enum * penum, gs_char * pchr,
 	if_debug2('J', "... new depth=%d, new font=0x%lx\n",
 		  fdepth, (ulong) pfont);
     }
+done:
     *pchr = chr;
     *pglyph = glyph;
     /* Update the pointer into the original string, but only if */

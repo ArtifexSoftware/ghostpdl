@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Command line argument list management */
 #include "ctype_.h"
 #include "stdio_.h"

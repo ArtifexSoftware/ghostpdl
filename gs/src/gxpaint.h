@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Requires gsropt.h, gxfixed.h, gxpath.h */
 
 #ifndef gxpaint_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Garbage collector for Ghostscript */
 #include "memory_.h"
 #include "ghost.h"

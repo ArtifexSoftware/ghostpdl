@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Definition of device color values */
 
 #ifndef gxcvalue_INCLUDED

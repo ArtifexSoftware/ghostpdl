@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Internal matrix routines for Ghostscript library */
 
 #ifndef gxmatrix_INCLUDED

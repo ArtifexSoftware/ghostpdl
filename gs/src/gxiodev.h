@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Requires gsmemory.h */
 
 #ifndef gxiodev_INCLUDED

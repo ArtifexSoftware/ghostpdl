@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Object structure and type definitions for Ghostscript */
 
 #ifndef iref_INCLUDED

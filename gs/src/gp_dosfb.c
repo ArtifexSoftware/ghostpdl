@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* MS-DOS frame buffer swapping routines for Ghostscript */
 #include <conio.h>
 #include "malloc_.h"

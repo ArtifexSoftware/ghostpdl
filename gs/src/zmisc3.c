@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Miscellaneous LanguageLevel 3 operators */
 #include "ghost.h"
 #include "gsclipsr.h"

@@ -16,7 +16,7 @@
   all copies.
 */
 
-/*$Id$*/
+
 /* H-P PaintJet, PaintJet XL, and DEC LJ250 drivers. */
 /* Thanks to Rob Reiss (rob@moray.berkeley.edu) for the PaintJet XL */
 /* modifications. */

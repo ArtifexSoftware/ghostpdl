@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Extension of gxdevice.h for RasterOp */
 
 #ifndef gxdevrop_INCLUDED

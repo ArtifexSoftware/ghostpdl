@@ -29,9 +29,16 @@
 # You can get the source code for this library from:
 #   http://www.cdrom.com/infozip/zlib/
 #   ftp://ftp.cdrom.com/pub/infozip/zlib/
-#	zlib-1.1.1.tar.gz or zlib111.zip (zlib 1.1.1)
+#	zlib-#.#.#.tar.gz or zlib###.zip
 # Please see Ghostscript's `make.txt' file for instructions about how to
 # unpack these archives.
+#
+# When each version of Ghostscript is released, we copy the associated
+# version of the zlib library to
+#	ftp://ftp.cs.wisc.edu/ghost/3rdparty/
+# for more convenient access.
+#
+# This makefile is known to work with zlib versions through 1.1.3.
 
 ZSRC=$(ZSRCDIR)$(D)
 ZGEN=$(ZGENDIR)$(D)

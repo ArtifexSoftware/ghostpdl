@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Wrapper for ctype.h */
 
 #ifndef ctype__INCLUDED

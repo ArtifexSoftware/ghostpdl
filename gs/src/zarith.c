@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Arithmetic operators */
 #include "math_.h"
 #include "ghost.h"

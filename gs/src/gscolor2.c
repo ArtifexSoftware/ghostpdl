@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Level 2 color operators for Ghostscript library */
 #include "memory_.h"
 #include "gx.h"

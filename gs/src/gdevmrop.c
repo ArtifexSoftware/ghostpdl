@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* RasterOp / transparency implementation for memory devices */
 #include "memory_.h"
 #include "gx.h"
@@ -300,6 +300,35 @@ mem_mono_strip_copy_rop(gx_device * dev,
 
 /* ---------------- Fake RasterOp for 2- and 4-bit devices ---------------- */
 
+/*
+ * Define patched versions of the driver procedures that may be called
+ * by mem_mono_strip_copy_rop (see below).  Currently we just punt to
+ * the slow, general case; we could do a lot better.
+ */
+private int
+mem_gray_rop_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
+			    gx_color_index color)
+{
+    return -1;
+}
+private int
+mem_gray_rop_copy_mono(gx_device * dev, const byte * data,
+		       int dx, int raster, gx_bitmap_id id,
+		       int x, int y, int w, int h,
+		       gx_color_index zero, gx_color_index one)
+{
+    return -1;
+}
+private int
+mem_gray_rop_strip_tile_rectangle(gx_device * dev,
+				  const gx_strip_bitmap * tiles,
+				  int x, int y, int w, int h,
+				  gx_color_index color0, gx_color_index color1,
+				  int px, int py)
+{
+    return -1;
+}
+
 int
 mem_gray_strip_copy_rop(gx_device * dev,
 	     const byte * sdata, int sourcex, uint sraster, gx_bitmap_id id,
@@ -369,13 +398,44 @@ mem_gray_strip_copy_rop(gx_device * dev,
 	    real_tcolors = tcolors2;
 	}
     }
-    dev->width <<= log2_depth;
-    code = mem_mono_strip_copy_rop(dev, sdata,
-		   (real_scolors == NULL ? sourcex << log2_depth : sourcex),
-		      sraster, id, real_scolors, real_texture, real_tcolors,
-			    x << log2_depth, y, width << log2_depth, height,
-				   phase_x << log2_depth, phase_y, lop);
-    dev->width >>= log2_depth;
+    /*
+     * mem_mono_strip_copy_rop may call fill_rectangle, copy_mono, or
+     * strip_tile_rectangle for special cases.  Patch those procedures
+     * temporarily so they will either do the right thing or return
+     * an error.
+     */
+    {
+	dev_proc_fill_rectangle((*fill_rectangle)) =
+	    dev_proc(dev, fill_rectangle);
+	dev_proc_copy_mono((*copy_mono)) =
+	    dev_proc(dev, copy_mono);
+	dev_proc_strip_tile_rectangle((*strip_tile_rectangle)) =
+	    dev_proc(dev, strip_tile_rectangle);
+
+	set_dev_proc(dev, fill_rectangle, mem_gray_rop_fill_rectangle);
+	set_dev_proc(dev, copy_mono, mem_gray_rop_copy_mono);
+	set_dev_proc(dev, strip_tile_rectangle,
+		     mem_gray_rop_strip_tile_rectangle);
+	dev->width <<= log2_depth;
+	code = mem_mono_strip_copy_rop(dev, sdata,
+				       (real_scolors == NULL ?
+					sourcex << log2_depth : sourcex),
+				       sraster, id, real_scolors,
+				       real_texture, real_tcolors,
+				       x << log2_depth, y,
+				       width << log2_depth, height,
+				       phase_x << log2_depth, phase_y, lop);
+	set_dev_proc(dev, fill_rectangle, fill_rectangle);
+	set_dev_proc(dev, copy_mono, copy_mono);
+	set_dev_proc(dev, strip_tile_rectangle, strip_tile_rectangle);
+	dev->width >>= log2_depth;
+    }
+    /* If we punted, use the general procedure. */
+    if (code < 0)
+	return gx_default_strip_copy_rop(dev, sdata, sourcex, sraster, id,
+					 scolors, textures, tcolors,
+					 x, y, width, height,
+					 phase_x, phase_y, lop);
     return code;
 }
 

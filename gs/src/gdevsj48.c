@@ -16,7 +16,7 @@
   all copies.
 */
 
-/*$Id$*/
+
 /* --- derived from gdevbj10.c 1993-10-07
  *                by Mats kerblom (f86ma@dd.chalmers.se).
  * 

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Definitions for FunctionType 0 (Sampled) Functions */
 
 #ifndef gsfunc0_INCLUDED

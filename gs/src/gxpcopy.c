@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Path copying and flattening */
 #include "math_.h"
 #include "gx.h"

@@ -16,7 +16,7 @@
   all copies.
 */
 
-/*$Id$*/
+
 /* HP DeskJet 500C driver */
 #include "gdevprn.h"
 #include "gdevpcl.h"

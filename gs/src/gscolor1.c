@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Level 1 extended color operators for Ghostscript library */
 #include "gx.h"
 #include "gserrors.h"

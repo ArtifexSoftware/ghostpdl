@@ -19,7 +19,7 @@
 #ifndef gxarith_INCLUDED
 #  define gxarith_INCLUDED
 
-/*$Id$ */
+
 /* Arithmetic macros for Ghostscript library */
 
 /* Define an in-line abs function, good for any signed numeric type. */

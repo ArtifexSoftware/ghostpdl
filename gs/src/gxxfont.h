@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* External font interface for Ghostscript library */
 
 #ifndef gxxfont_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Client interface to LanguageLevel 3 color facilities */
 
 #ifndef gscolor3_INCLUDED

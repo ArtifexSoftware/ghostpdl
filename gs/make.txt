@@ -90,22 +90,18 @@ Third-party libraries
 ---------------------
 
 You need the source code for the Independent JPEG Group (IJG) library, the
-PNG library, and the zlib library in order to build Ghostscript.  The
-authoritative distribution points for these libraries are, respectively:
+PNG library, and the zlib library in order to build Ghostscript.  Please
+consult the following other files to find the authoritative distribution
+points for these libraries:
 
-    IJG library:
-	ftp.uu.net:/graphics/jpeg/jpegsrc.v##.tar.gz
-	ftp.simtel.net:/pub/simtelnet/msdos/graphics/jpegsr##.zip
-    PNG library:
-	ftp://swrinde.nde.swri.edu/pub/png/src/
-	    libpng-#.##.tar.gz
-	    lpng###.zip (or possibly lbpng###.zip or lp###.zip)
-    zlib library:
-	ftp://ftp.uu.net/pub/archiving/zip/zlib/
-	    zlib-#.#.#.tar.gz
-	    zlib###.zip
+    IJG library: see jpeg.mak
 
-Get the .zip files if you are building on MS-DOS or MS Windows, the .tar.gz
+    PNG library: see libpng.mak
+
+    zlib library: see zlib.mak
+
+The FTP sites have both .zip and .tar.gz archives of the source code.  Get
+the .zip files if you are building on MS-DOS or MS Windows, the .tar.gz
 files for all other environments.  Note that each of these libraries has its
 own version numbers that have nothing to do with Ghostscript version
 numbers; you should get the highest numbered version.  (You may have to go

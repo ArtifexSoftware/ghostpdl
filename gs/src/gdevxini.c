@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* X Windows driver initialization for Ghostscript library */
 #include "math_.h"
 #include "memory_.h"

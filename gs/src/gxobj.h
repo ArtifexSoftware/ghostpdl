@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Memory manager implementation structures for Ghostscript */
 
 #ifndef gxobj_INCLUDED

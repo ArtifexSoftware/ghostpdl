@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Miscellaneous utilities for Ghostscript library */
 #include "ctype_.h"
 #include "malloc_.h"

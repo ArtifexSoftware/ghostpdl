@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* File I/O operators */
 #include "ghost.h"
 #include "gp.h"

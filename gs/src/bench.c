@@ -17,7 +17,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Simple hardware benchmarking suite (C and PostScript) */
 #include <stdio.h>
 #include <stdlib.h>

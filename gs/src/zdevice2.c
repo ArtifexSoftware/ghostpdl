@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Level 2 device operators */
 #include "math_.h"
 #include "memory_.h"

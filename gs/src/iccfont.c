@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Initialization support for compiled fonts */
 #include "string_.h"
 #include "ghost.h"

@@ -16,7 +16,7 @@
   all copies.
 */
 
-/*$Id$*/
+
 /* Sony News frame buffer driver for GhostScript */
 #include "gdevprn.h"
 #define prn_dev ((gx_device_printer *)dev) /* needed in 5.31 et seq */

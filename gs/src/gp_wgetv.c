@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* MS Windows implementation of gp_getenv */
 
 #include <windows.h>

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* MS-DOS file enumeration. */
 #include "stdio_.h"
 #include <fcntl.h>

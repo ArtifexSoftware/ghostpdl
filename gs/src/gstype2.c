@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Adobe Type 2 charstring interpreter */
 #include "math_.h"
 #include "memory_.h"

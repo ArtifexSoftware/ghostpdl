@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* RasterOp source device */
 #include "gx.h"
 #include "gserrors.h"

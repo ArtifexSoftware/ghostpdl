@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /*
  * Streams for Windows text window
  * Original version by Russell Lang and Maurice Castro with help from

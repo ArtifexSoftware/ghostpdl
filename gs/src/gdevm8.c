@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* 8-bit-per-pixel "memory" (stored bitmap) device */
 #include "memory_.h"
 #include "gx.h"

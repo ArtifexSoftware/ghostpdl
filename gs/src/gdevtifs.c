@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* TIFF-writing substructure */
 #include "stdio_.h"
 #include "time_.h"

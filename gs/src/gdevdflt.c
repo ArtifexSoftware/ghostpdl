@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Default device implementation */
 #include "gx.h"
 #include "gserrors.h"

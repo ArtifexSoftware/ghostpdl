@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Additional decoding filter creation */
 #include "memory_.h"
 #include "ghost.h"

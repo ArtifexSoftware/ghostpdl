@@ -16,7 +16,7 @@
   all copies.
 */
 
-/*$Id$*/
+
 /* The `Fake bitmapped device to estimate rendering time' 
    slightly modified to produce CIF files from PostScript.
    So anyone can put a nice logo free on its chip!

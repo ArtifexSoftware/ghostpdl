@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Interface to idparam.c */
 
 #ifndef idparam_INCLUDED

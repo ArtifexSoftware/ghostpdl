@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Rendering for Coons and tensor patch shadings */
 #include "memory_.h"
 #include "gx.h"

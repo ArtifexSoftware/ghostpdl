@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Table of RasterOp procedures */
 #include "stdpre.h"
 #include "gsropt.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Intel processor, Watcom C-specific routines for Ghostscript */
 #include "dos_.h"
 #include <fcntl.h>

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Definitions for Ghostscript operand stack */
 
 #ifndef ostack_INCLUDED

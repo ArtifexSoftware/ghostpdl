@@ -482,16 +482,17 @@ readonly def
 } bdef
 
 % Apply the [D]W[2] metrics to a character before displaying.
-/CIDWProc {		% <font> <w0x> <w0y> <llx> <lly> <urx> <ury>
-			%   <w1x> <w1y> <vx> <vy> <cid> CIDWproc
+/CIDWProc {		% <w0x> <w0y> <llx> <lly> <urx> <ury>
+			%   <w1x> <w1y> <vx> <vy> <cid> <font> CIDWproc
 			%   <w0x'> ... <vy'>
-  12 -1 roll begin
+  begin
 	% Look up and apply [D]W
   10 index
-  currentdict /DW .knownget { exch pop } if
+  currentdict /DW .knownget { 1000 div exch pop } if
   currentdict /W .knownget {
 	% Search the W array for the CID.
 	% ****** NOT IMPLEMENTED YET ******
+	pop
   } if
   0 13 2 roll 11 -2 roll pop pop
 	% Look up and apply [D]W2

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Definitions for Level 2 binary tokens */
 
 #ifndef btoken_INCLUDED

@@ -16,7 +16,7 @@
   all copies.
 */
 
-/*$Id$*/
+
 /* Private Eye display driver
    Hacked by Fran Taylor, Reflection Technology Inc. */
 

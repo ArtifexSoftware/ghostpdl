@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Alternative X Windows drivers for help in driver debugging */
 #include "gx.h"			/* for gx_bitmap; includes std.h */
 #include "math_.h"
@@ -565,10 +565,10 @@ const gx_device_X_wrapper gs_x11mono_device =
     0				/* target */
 };
 
-/* ---------------- 2-bit gray-scale procedures ---------------- */
+/* ---------------- 2- and 4-bit gray-scale procedures ---------------- */
 
 /* The device descriptor */
-private const gx_device_procs x_gray2_procs =
+private const gx_device_procs x_gray_procs =
 {
     x_wrap_open,
     gx_forward_get_initial_matrix,
@@ -594,13 +594,23 @@ private const gx_device_procs x_gray2_procs =
     NULL			/* copy_alpha */
 };
 
-/* The instance is public. */
+/* The instances are public. */
 const gx_device_X_wrapper gs_x11gray2_device =
 {
-    std_device_dci_body(gx_device_X_wrapper, &x_gray2_procs, "x11gray2",
+    std_device_dci_body(gx_device_X_wrapper, &x_gray_procs, "x11gray2",
 			FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
 			FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
 			1, 2, 3, 0, 4, 0),
+    {0},			/* std_procs */
+    0				/* target */
+};
+
+const gx_device_X_wrapper gs_x11gray4_device =
+{
+    std_device_dci_body(gx_device_X_wrapper, &x_gray_procs, "x11gray4",
+			FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
+			FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
+			1, 4, 15, 0, 16, 0),
     {0},			/* std_procs */
     0				/* target */
 };

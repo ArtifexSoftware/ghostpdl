@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* H-P PCL XL driver */
 #include "math_.h"
 #include "memory_.h"

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* IODevice implementation for Ghostscript */
 #include "errno_.h"
 #include "string_.h"

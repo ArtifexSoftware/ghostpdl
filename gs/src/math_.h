@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Generic substitute for math.h */
 
 #ifndef math__INCLUDED

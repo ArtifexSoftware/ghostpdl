@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Common definitions for filters using Huffman coding */
 
 #ifndef shc_INCLUDED

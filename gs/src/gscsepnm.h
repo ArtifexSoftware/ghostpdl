@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Standard color space separation names */
 
 #ifndef gscsepnm_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Stream output for PostScript- and PDF-writing drivers */
 #include "math_.h"		/* for fabs */
 #include "stdio_.h"		/* for stream.h */

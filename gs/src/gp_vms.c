@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* VAX/VMS specific routines for Ghostscript */
 #include "string_.h"
 #include "gx.h"

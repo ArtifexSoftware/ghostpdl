@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Generic allocator support */
 #include "memory_.h"
 #include "gstypes.h"

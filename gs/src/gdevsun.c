@@ -16,7 +16,7 @@
   all copies.
 */
 
-/*$Id$*/
+
 /* SunView driver */
 #include "gx.h"			/* for gx_bitmap; includes std.h */
 

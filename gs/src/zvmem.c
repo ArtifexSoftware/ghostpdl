@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* "Virtual memory" operators */
 #include "ghost.h"
 #include "gsstruct.h"

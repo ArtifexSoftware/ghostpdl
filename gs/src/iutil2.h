@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Interface to procedures in iutil2.c */
 
 #ifndef iutil2_INCLUDED

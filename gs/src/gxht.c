@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Halftone rendering routines for Ghostscript imaging library */
 #include "memory_.h"
 #include "gx.h"

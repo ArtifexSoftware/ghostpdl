@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Type 42 character display operator */
 #include "ghost.h"
 #include "oper.h"

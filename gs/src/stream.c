@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Stream package for Ghostscript interpreter */
 #include "stdio_.h"		/* includes std.h */
 #include "memory_.h"

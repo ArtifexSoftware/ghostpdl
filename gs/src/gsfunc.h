@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Generic definitions for Functions */
 
 #ifndef gsfunc_INCLUDED

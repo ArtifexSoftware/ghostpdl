@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Higher-level image operations for band lists */
 #include "math_.h"
 #include "memory_.h"

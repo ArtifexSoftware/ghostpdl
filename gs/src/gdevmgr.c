@@ -16,7 +16,7 @@
   all copies.
 */
 
-/*$Id$*/
+
 /* MGR device driver */
 #include "gdevprn.h"
 #include "gdevpccm.h"

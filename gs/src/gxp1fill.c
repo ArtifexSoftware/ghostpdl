@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* PatternType 1 filling algorithms */
 #include "math_.h"
 #include "gx.h"

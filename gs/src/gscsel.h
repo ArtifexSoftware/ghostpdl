@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Definitions for color operand selection */
 
 #ifndef gscsel_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Definitions for LL3 Functions */
 
 #ifndef gsfunc3_INCLUDED

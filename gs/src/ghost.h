@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Common definitions for interpreter */
 
 #ifndef ghost_INCLUDED

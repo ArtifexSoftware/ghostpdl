@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Client interface to Pattern color */
 
 #ifndef gspcolor_INCLUDED

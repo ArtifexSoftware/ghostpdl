@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* DevicePixel color space support */
 #include "ghost.h"
 #include "oper.h"

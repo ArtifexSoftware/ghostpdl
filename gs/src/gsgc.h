@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Library-level interface to garbage collector */
 
 /*

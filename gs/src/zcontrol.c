@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Control operators */
 #include "string_.h"
 #include "ghost.h"

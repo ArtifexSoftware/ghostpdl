@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Alpha-compositing implementation */
 #include "memory_.h"
 #include "gx.h"

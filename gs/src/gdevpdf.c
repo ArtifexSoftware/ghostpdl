@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* PDF-writing driver */
 #include "math_.h"
 #include "memory_.h"

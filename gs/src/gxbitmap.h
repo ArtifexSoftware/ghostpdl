@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Definitions for stored bitmaps for Ghostscript */
 
 #ifndef gxbitmap_INCLUDED

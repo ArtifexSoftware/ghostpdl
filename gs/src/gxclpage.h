@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Requires gdevprn.h, gxclist.h */
 
 #ifndef gxclpage_INCLUDED

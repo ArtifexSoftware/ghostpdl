@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Interface to imain.c */
 /* Requires <stdio.h>, stdpre.h, gsmemory.h, gstypes.h, iref.h */
 

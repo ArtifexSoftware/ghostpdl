@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* MoveToFront filters */
 #include "stdio_.h"
 #include "strimpl.h"

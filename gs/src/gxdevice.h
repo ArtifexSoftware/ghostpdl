@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Definitions for device implementors */
 
 #ifndef gxdevice_INCLUDED

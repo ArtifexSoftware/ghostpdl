@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Command line parsing and dispatching */
 #include "ctype_.h"
 #include "memory_.h"

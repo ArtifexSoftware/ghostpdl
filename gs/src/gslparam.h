@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Line parameter definitions */
 
 #ifndef gslparam_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* General mono-component image rendering */
 #include "gx.h"
 #include "memory_.h"

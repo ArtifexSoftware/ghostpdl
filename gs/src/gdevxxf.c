@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* External font (xfont) implementation for X11. */
 #include "math_.h"
 #include "memory_.h"

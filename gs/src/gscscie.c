@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* CIE color space management */
 #include "math_.h"
 #include "gx.h"

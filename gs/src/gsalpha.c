@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Graphics state alpha value access */
 #include "gx.h"
 #include "gsalpha.h"

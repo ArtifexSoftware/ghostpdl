@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Path tracing procedures for Ghostscript library */
 #include "math_.h"
 #include "gx.h"

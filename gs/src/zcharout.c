@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Common code for outline (Type 1 / 4 / 42) fonts */
 #include "ghost.h"
 #include "oper.h"

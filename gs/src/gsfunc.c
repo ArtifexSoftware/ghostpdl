@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Generic Function support */
 #include "gx.h"
 #include "gserrors.h"

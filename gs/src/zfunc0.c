@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* PostScript language interface to FunctionType 0 (Sampled) Functions */
 #include "memory_.h"
 #include "ghost.h"

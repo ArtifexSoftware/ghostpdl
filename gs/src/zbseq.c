@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Level 2 binary object sequence operators */
 #include "memory_.h"
 #include "ghost.h"

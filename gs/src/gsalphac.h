@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Alpha-compositing interface */
 
 #ifndef gsalphac_INCLUDED

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Dictionary implementation */
 #include "string_.h"		/* for strlen */
 #include "ghost.h"
