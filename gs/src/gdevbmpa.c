@@ -143,7 +143,7 @@ bmpa_writer_open(gx_device *pdev  /* Driver instance to open */)
      */
     max_width = DEFAULT_WIDTH_10THS * 60;   /* figure max wid = default @ 600dpi */
     min_band_height = max(1, (DEFAULT_HEIGHT_10THS * 60) / 100);
-    max_raster = (max_width * pwdev->color_info.depth);	/* doesn't need to be super accurate */
+    max_raster = bitmap_raster(max_width * pwdev->color_info.depth);	/* doesn't need to be super accurate */
     max_src_image_row = max_width * 4 * 2;
 
     /* Special writer open routine for async interpretation */
@@ -469,7 +469,7 @@ bmpa_get_space_params(const gx_device_printer *pdev,
     int min_band_height = max(1, pdev->height / 100);	/* make bands >= 1% of total */
 
     space_params->band.BandWidth = pdev->width;
-    space_params->band.BandHeight = (pdev->height + min_band_height - 1) / min_band_height;
+    space_params->band.BandHeight = min_band_height;
 
     render_space = gdev_mem_data_size( (const gx_device_memory *)pdev,
 				       space_params->band.BandWidth,
@@ -481,6 +481,10 @@ bmpa_get_space_params(const gx_device_printer *pdev,
 	max(render_space, writer_space) + tile_cache_space;
     space_params->BufferSpace =
 	max(render_space, writer_space + min_row_space) + tile_cache_space;
+    /**************** HACK HACK HACK ****************/
+    /* Override this computation to force reader & writer to match */
+    space_params->BufferSpace = space_params->band.BandBufferSpace;
+
 }
 
 /* Put device parameters. */
