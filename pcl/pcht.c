@@ -25,6 +25,8 @@
 #include "pcstate.h"
 #include "pcdither.h"
 #include "pcht.h"
+#include "pcpalet.h"
+#include "pcindxed.h"
 
 /*
  * GC routines
@@ -1185,6 +1187,15 @@ private const byte  rendering_remap_proto[20] = {
     5,  5,  3,  5   /* 16 - 19 */
 };
 
+/* table used to map color rendering modes into monochrome 
+ */
+static  const byte  monochrome_remap[20] = {  5,  5,  2,  5,
+					      6,  5,  6,  8,
+					      8, 10, 10, 12,
+					      12, 14, 14, 17,
+					      16, 17, 19, 19  };
+
+
 /*
  * Update built-in rendering information. Attempts to changed fixed rendering
  * infomration are ignored.
@@ -1516,7 +1527,6 @@ pcl_ht_init_render_methods(
     pcs->pdflt_ht = 0;
 }
 
-
 /*
  * Set up normal or monochrome print mode. The latter is accomplished by
  * remapping each of the rendering algorithms to its monochrome equivalent.
@@ -1527,18 +1537,13 @@ pcl_ht_init_render_methods(
  * Note that the current rendering method must be set before this change
  * will take effect.
  */
+
   void
 pcl_ht_set_print_mode(
     pcl_state_t *       pcs,
     bool                monochrome
 )
 {
-    static  const byte  monochrome_remap[20] = {  5,  5,  2,  5,
-                                                  6,  5,  6,  8,
-                                                  8, 10, 10, 12,
-                                                 12, 14, 14, 17,
-                                                 16, 17, 19, 19  };
-
     memcpy(pcs->rendering_remap, pcs->dflt_rendering_remap, sizeof(pcs->rendering_remap));
     if (monochrome) {
         int     i;
@@ -1728,6 +1733,37 @@ unshare_pcl_ht(
     return 0;
 }
 
+/* If all palette entries are gray then the render algorithm is
+ * changed from color to gray prior to rendering_remap.
+ * Intent is to force K only for gray palettes instead of cmyk
+ */
+private uint 
+pcl_ht_set_rendering_remap(
+    pcl_state_t * pcs,
+    uint          render_method
+)
+{
+    const byte *pb = 0;
+    bool is_gray = true;    
+    pcl_palette_t *     ppalet = pcs->ppalet;
+    pcl_cs_indexed_t *  pindexed = ppalet->pindexed;
+    int i;
+
+    for ( i = 1; i <= pindexed->num_entries; i++ ) {
+	pb = pindexed->palette.data + 3 * i;
+	if ( !( pb[0] == pb[1] && pb[0] == pb[2] ) ) {
+	     is_gray = false;
+	     break;
+	}
+    }
+
+    if ( is_gray ) 
+	render_method = monochrome_remap[pcs->rendering_remap[render_method]];
+    else 
+	render_method = pcs->rendering_remap[render_method];
+    return render_method;
+}
+
 /*
  * Set the render method.
  *
@@ -1745,7 +1781,7 @@ pcl_ht_set_render_method(
     if (render_method >= countof(pcs->rendering_info))
         return 0;
 
-    render_method = pcs->rendering_remap[render_method];
+    render_method = pcl_ht_set_rendering_remap(pcs, render_method);
     if (render_method == (*ppht)->render_method)
         return 0;
     if ((code = unshare_pcl_ht(ppht)) < 0)
