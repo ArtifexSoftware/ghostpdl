@@ -85,7 +85,9 @@ pdfdict begin
 
 % Rename a font with a generated name.
 /renamefont {		% <fontdict> renamefont <font'>
-  dup /FontName 2 copy get genfontname dup 5 1 roll put definefont
+  dup /FontName 2 copy get genfontname
+  4 index exch /FontNameSuffix exch put
+  dup 5 1 roll put definefont
 } bind def
 
 % Adjust a font according to the Encoding and Widths in the font resource.
@@ -251,10 +253,12 @@ currentdict /match_in_diff undef
 % ---------------- Utilities ---------------- %
 
 % Fabricate a font name by adding ?'s on the end.
-/genfontname		% <name> genfontname <name>
- { dup length string cvs
-    { (?) concatstrings
-      dup cvn FontDirectory exch known not { cvn exit } if
+/genfontname		% <name> genfontname <name'> <namesuffixstring>
+ { dup length string cvs () 
+    { (?) concatstrings 1 index 1 index concatstrings
+      cvn FontDirectory exch known not { 
+        dup 3 -1 roll exch concatstrings cvn exch exit
+      } if
     }
    loop
  } bdef
@@ -579,7 +583,7 @@ readonly def
       /FirstChar 1 index /FirstChar oget def
       /LastChar 1 index /LastChar oget def
     } if
-    /FontName 1 index /Name get genfontname def
+    /FontName 1 index /Name get genfontname /FontNameSuffix exch def def
     /Encoding .notdefEncoding 2 index getencoding def
 		% We have to define BuildChar rather than BuildGlyph:
 		% there is no PDF equivalent of glyphshow, and we need
