@@ -379,8 +379,9 @@ typedef const char *client_name_t;
  * so they get passed through the linker.
  */
 #define public			/* */
+#define PUBLIC			/* */
 /*
- * We separate out the definition of private this way so that
+ * We separate out the definition of PRIVATE this way so that
  * we can temporarily #undef it to handle the X Windows headers,
  * which define a member named private.
  */
@@ -389,7 +390,17 @@ typedef const char *client_name_t;
 #else
 # define private_ static
 #endif
+
+/* PRIVATE means static or file scoped */
+#define PRIVATE private_
+
+/* temporary use of c++ keyword until all instances of private are gone. */
 #define private private_
+
+/* VIRTUAL equates to static but is a hint that the function is pointed to 
+ * creating something similar to a c++ public virtual function
+ */  
+#define VIRTUAL private_
 
 /*
  * Macros for argument templates.  ANSI C has these, as does Turbo C,
