@@ -34,6 +34,7 @@ s_DCTD_get_params(gs_param_list * plist, const stream_DCT_state * ss, bool all)
     stream_DCT_state dcts_defaults;
     const stream_DCT_state *defaults;
 
+    s_stack_init( dcts_defaults, mem );
     if (all)
 	defaults = 0;
     else {

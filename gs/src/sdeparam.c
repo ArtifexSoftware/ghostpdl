@@ -95,7 +95,7 @@ s_DCTE_get_params(gs_param_list * plist, const stream_DCT_state * ss, bool all)
     dcte_scalars_t params;
     const jpeg_compress_data *jcdp = ss->data.compress;
     int code;
-
+    s_stack_init( dcts_defaults, mem );
     if (!all) {
 	jpeg_compress_data *jcdp_default = gs_alloc_struct_immovable(mem,
            jpeg_compress_data, &st_jpeg_compress_data, "s_DCTE_get_params");
