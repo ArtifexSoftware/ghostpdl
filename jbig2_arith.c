@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_arith.c,v 1.5 2001/06/10 07:09:18 giles Exp $
+    $Id: jbig2_arith.c,v 1.6 2002/02/15 20:46:30 raph Exp $
 */
 
 #include <stdio.h>
@@ -34,7 +34,32 @@ struct _Jbig2ArithState {
   int offset;
 };
 
-#define SOFTWARE_CONVENTION
+#undef SOFTWARE_CONVENTION
+
+/*
+  A note on the "software conventions".
+
+  The spec (in both draft and final versions) gives a "software
+  conventions" version of the arithmetic decoding procedure. It is not
+  normative, which is good, because it's wrong.
+
+  The value of C in the "software conventions" is nominally equal to
+  -C + (0x10000 >> CT) + (A << 16). However, the leftmost branch of
+  Figure G.3 gives a very wrong value for C, based on this equation.
+  Changing the (B << 9) to (B << 8) restores the invariant, and gives
+  correct decoding of the H.2 test sequence. However, the decoding of
+  the 042_4.jb2 test bitstream is incorrect, even with this change.
+  Changing the "Chigh < A?" predicate in Figure G.2 to "C < (A << 16)"
+  restores correct decoding for bitstream, but I'm not sure this is
+  100% correct.
+
+  In any case, my benchmarking indicates no speed difference at all.
+  Therefore, for now we will just use the normative version. If
+  somebody wants to figure out how to do the software conventions
+  version correctly, and can establish that it really does improve
+  performance, it might be worthwhile to revisit.
+
+ */
 
 static void
 jbig2_arith_bytein (Jbig2ArithState *as)
@@ -48,7 +73,7 @@ jbig2_arith_bytein (Jbig2ArithState *as)
       as->offset += 4;
       as->next_word_bytes = 4;
     }
-  /* Figure F.3 */
+  /* Figure G.3 */
   B = (as->next_word >> 24) & 0xFF;
   if (B == 0xFF)
     {
@@ -76,11 +101,9 @@ jbig2_arith_bytein (Jbig2ArithState *as)
 #ifdef DEBUG
 	      printf ("read %02x (a)\n", B);
 #endif
-	      /* Note: the spec calls for adding (or subtracting) B <<
-		 9 here. However, to be consistent with the sample run
-		 in Annex H.2, we use the B << 8 instead. */
 #ifdef SOFTWARE_CONVENTION
-	      as->C += 0xFE00 - (B << 8);
+	      /* Note: this is what the spec says. The spec is wrong. */
+	      as->C += 0xFE00 - (B << 9);
 #else
 	      as->C += 0xFF00;
 #endif
@@ -108,11 +131,10 @@ jbig2_arith_bytein (Jbig2ArithState *as)
 #ifdef DEBUG
 	      printf ("read %02x (b)\n", B);
 #endif
-	      /* Note: the spec calls for adding (or subtracting) B <<
-		 9 here. However, to be consistent with the sample run
-		 in Annex H.2, we use the B << 8 instead. */
+
 #ifdef SOFTWARE_CONVENTION
-	      as->C += 0xFE00 - (B << 8);
+	      /* Note: this is what the spec says. The spec is wrong. */
+	      as->C += 0xFE00 - (B << 9);
 #else
 	      as->C += 0xFF00;
 #endif
@@ -158,7 +180,7 @@ jbig2_arith_new (Jbig2WordStream *ws)
   result->next_word_bytes = 4;
   result->offset = 4;
 
-  /* Figure F.1 */
+  /* Figure G.1 */
 #ifdef SOFTWARE_CONVENTION
   result->C = (~(result->next_word >> 8)) & 0xFF0000;
 #else
@@ -254,11 +276,12 @@ jbig2_arith_decode (Jbig2ArithState *as, Jbig2ArithCx *pcx)
   const Jbig2ArithQe *pqe = &jbig2_arith_Qe[cx & 0x7f];
   bool D;
 
-  /* Figure F.2 */
+  /* Figure G.2 */
   as->A -= pqe->Qe;
   if (
 #ifdef SOFTWARE_CONVENTION
-      (as->C) >> 16 < as->A
+      /* Note: I do not think this is correct. See above. */
+      (as->C >> 16) < as->A
 #else
       !((as->C >> 16) < pqe->Qe)
 #endif

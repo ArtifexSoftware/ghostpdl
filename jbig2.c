@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include "jbig2.h"
 #include "jbig2_priv.h"
+#include "jbig2_generic.h"
 
 static void *
 jbig2_default_alloc (Jbig2Allocator *allocator, size_t size)
@@ -95,8 +96,8 @@ jbig2_ctx_new (Jbig2Allocator *allocator,
   return result;
 }
 
-static int32_t
-jbig2_get_int32 (uint8_t *buf)
+int32_t
+jbig2_get_int32 (const byte *buf)
 {
   return (buf[0] << 24) | (buf[1] << 16) | (buf[2] << 8) | buf[3];
 }
@@ -364,5 +365,10 @@ int jbig2_write_segment (Jbig2Ctx *ctx, Jbig2SegmentHeader *sh,
 	      "Segment %d, flags=%x, type=%d, data_length=%d",
 	      sh->segment_number, sh->flags, sh->flags & 63,
 	      sh->data_length);
+  switch (sh->flags & 63)
+    {
+    case 38:
+      return jbig2_immediate_generic_region(ctx, sh, segment_data);
+    }
   return 0;
 }

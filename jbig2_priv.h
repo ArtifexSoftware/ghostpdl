@@ -12,6 +12,7 @@ jbig2_error (Jbig2Ctx *ctx, Jbig2Severity severity, int32_t seg_idx,
 	     const char *fmt, ...);
 
 typedef uint8_t byte;
+typedef int bool;
 
 typedef enum {
   JBIG2_FILE_HEADER,
@@ -45,3 +46,16 @@ struct _Jbig2Ctx {
   int sh_ix;
 };
 
+int32_t
+jbig2_get_int32 (const byte *buf);
+
+/* The word stream design is a compromise between simplicity and
+   trying to amortize the number of method calls. Each ::get_next_word
+   invocation pulls 4 bytes from the stream, packed big-endian into a
+   32 bit word. The offset argument is provided as a convenience. It
+   begins at 0 and increments by 4 for each successive invocation. */
+typedef struct _Jbig2WordStream Jbig2WordStream;
+
+struct _Jbig2WordStream {
+  uint32_t (*get_next_word) (Jbig2WordStream *self, int offset);
+};
