@@ -323,12 +323,15 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 			return code;
 		    apply_path_hints(pcis, true);
 		}
-		/*
-		 * It is an undocumented (!) feature of Type 2 CharStrings
-		 * that if endchar is invoked with 4 or 5 operands, it is
-		 * equivalent to the Type 1 seac operator!  In this case,
-		 * the asb operand of seac is missing: we assume it is
-		 * the same as the l.s.b. of the accented character.
+  		/*
+		 * It is a feature of Type 2 CharStrings that if endchar is
+		 * invoked with 4 or 5 operands, it is equivalent to the
+		 * Type 1 seac operator. In this case, the asb operand of
+		 * seac is missing: we assume it is the same as the
+		 * l.s.b. of the accented character.  This feature was
+		 * undocumented until the 16 March 2000 version of the Type
+		 * 2 Charstring Format specification, but, thankfully, is
+		 * described in that revision.
 		 */
 		if (csp >= cstack + 3) {
 		    check_first_operator(csp > cstack + 3);
