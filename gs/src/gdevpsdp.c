@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 
    This software is licensed to a single customer by Artifex Software Inc.
    under the terms of a specific OEM agreement.
@@ -157,9 +157,7 @@ private const char *const ColorConversionStrategy_names[] = {
 };
 private const char *const DownsampleType_names[] = {
     "Average",
-#ifdef POST60
     "Bicubic",
-#endif
     "Subsample", 0
 };
 #ifdef POST60

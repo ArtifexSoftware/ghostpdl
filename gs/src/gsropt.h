@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
 
    This software is licensed to a single customer by Artifex Software Inc.
    under the terms of a specific OEM agreement.
@@ -16,6 +16,12 @@
  * RasterOp, source and pattern white-pixel transparency, and
  * per-pixel "render algorithm" information.
  */
+
+/*
+ * Define whether we implement transparency correctly, or whether we
+ * implement it as documented in the H-P manuals.
+ */
+#define TRANSPARENCY_PER_H_P
 
 /*
  * By the magic of Boolean algebra, we can operate on the rop codes using
@@ -146,8 +152,13 @@ typedef uint gs_logical_operation_t;
    (pattern_transparent_default ? lop_T_transparent : 0))
 
      /* Test whether a logical operation uses S or T. */
+#ifdef TRANSPARENCY_PER_H_P	/* bizarre but necessary definition */
+#define lop_uses_S(lop)\
+  (rop3_uses_S(lop) || ((lop) & (lop_S_transparent | lop_T_transparent)))
+#else				/* reasonable definition */
 #define lop_uses_S(lop)\
   (rop3_uses_S(lop) || ((lop) & lop_S_transparent))
+#endif
 #define lop_uses_T(lop)\
   (rop3_uses_T(lop) || ((lop) & lop_T_transparent))
 /* Test whether a logical operation just sets D = x if y = 0. */

@@ -1,4 +1,4 @@
-%    Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
 % 
 % This software is licensed to a single customer by Artifex Software Inc.
 % under the terms of a specific OEM agreement.
@@ -173,6 +173,13 @@ end		% .cidfonttypes
      ifelse
   end			% scratch dict
 } bind def
+
+% Some Adobe fonts include the line
+%   /Setup /cid_Setup load def
+% This is apparently included only to prevent proper, conforming PostScript
+% interpreters (as opposed to ATM or a special Adobe font loader) from
+% loading the font, since Setup is not referenced anywhere else in the file.
+%/cid_Setup { } def
 
 currentdict end
 
@@ -350,7 +357,7 @@ dup null eq { pop pop pop pop } {	%**** WRONG ****
   3 -1 roll //.cid0buildstring cvs cvn 3 1 roll
   dup /CharStrings get 3 index 4 -1 roll put
   setfont
-  1000 0 setcharwidth	%**** WRONG ****
+  dup .glyphwidth setcharwidth
   0 0 moveto glyphshow
 } ifelse	%**** WRONG ****
   end

@@ -2,8 +2,8 @@
 -sDEVICE=uniprint
 -dNOPAUSE
 -dSAFER
--dupColorModel=/DeviceCMYKgenerate
--dupRendering=/FSCMYK32
+-dupColorModel=/DeviceCMYK
+-dupRendering=/ErrorDiffusion
 -dupOutputFormat=/Canon
 -r360x360
 -dupMargins="{ 8.23 20.44 11.05 7.9 }"

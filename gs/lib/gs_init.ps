@@ -1,4 +1,4 @@
-%    Copyright (C) 1989, 1996, 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 % 
 % This software is licensed to a single customer by Artifex Software Inc.
 % under the terms of a specific OEM agreement.
@@ -19,7 +19,7 @@
 
 % Check the interpreter revision.  NOTE: the interpreter code requires
 % that the first non-comment token in this file be an integer.
-611		% derived from Aladdin 6.0 version
+601
 dup revision ne
  { (gs: Interpreter revision \() print revision 10 string cvs print
    (\) does not match gs_init.ps revision \() print 10 string cvs print
@@ -1217,7 +1217,7 @@ devicedict /Default devicedict .defaultdevicename get put
 % Set the default screen and BG/UCR.
 /.setdefaultbgucr {
   systemdict /setblackgeneration known {
-    { } dup setblackgeneration setundercolorremoval
+    { pop 0 } dup setblackgeneration setundercolorremoval
   } if
 } bind def
 /.useloresscreen {	% - .useloresscreen <bool>

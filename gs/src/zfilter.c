@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
 
    This software is licensed to a single customer by Artifex Software Inc.
    under the terms of a specific OEM agreement.
@@ -383,6 +383,18 @@ void
 filter_mark_temp(const ref * fop, int is_temp)
 {
     fptr(fop)->is_temp = is_temp;
+}
+
+/* Mark the source or target of a filter as temporary, and propagate */
+/* close_strm from the temporary stream to the filter. */
+void
+filter_mark_strm_temp(const ref * fop, int is_temp)
+{
+    stream *s = fptr(fop);
+    stream *strm = s->strm;
+
+    strm->is_temp = is_temp;
+    s->close_strm = strm->close_strm;
 }
 
 /* ------ Initialization procedure ------ */

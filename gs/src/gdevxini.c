@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 
    This software is licensed to a single customer by Artifex Software Inc.
    under the terms of a specific OEM agreement.
@@ -480,7 +480,11 @@ gdev_x_open(gx_device_X * xdev)
 private int
 x_set_buffer(gx_device_X * xdev)
 {
-    gs_memory_t *mem = xdev->memory;
+    /*
+     * We must use the stable memory here, since the existence of the
+     * buffer is independent of save/restore.
+     */
+    gs_memory_t *mem = gs_memory_stable(xdev->memory);
     bool buffered = xdev->MaxBitmap > 0;
     const gx_device_procs *procs;
 
@@ -518,6 +522,7 @@ x_set_buffer(gx_device_X * xdev)
 	     */
 	    gs_make_mem_device(mdev, mdproto, mem, 0, (gx_device *)xdev);
 	    gx_device_set_target((gx_device_forward *)xdev, (gx_device *)mdev);
+	    xdev->is_buffered = true;
 	}
 	if (mdev->width != xdev->width || mdev->height != xdev->height) {
 	    byte *buffer;
@@ -552,10 +557,11 @@ x_set_buffer(gx_device_X * xdev)
 	gs_free_object(mem, xdev->buffer, "buffer");
 	xdev->buffer = 0;
 	xdev->buffer_size = 0;
-	if (!IS_BUFFERED(xdev))
+	if (!xdev->is_buffered)
 	    return 0;
 	gx_device_set_target((gx_device_forward *)xdev->target, NULL);
 	gx_device_set_target((gx_device_forward *)xdev, NULL);
+	xdev->is_buffered = false;
 	procs = &gs_x11_device.procs;
     }
     if (dev_proc(xdev, fill_rectangle) != procs->fill_rectangle) {
@@ -577,7 +583,7 @@ x_set_buffer(gx_device_X * xdev)
 	COPY_PROC(create_compositor);
 	COPY_PROC(text_begin);
 #undef COPY_PROC
-	if (IS_BUFFERED(xdev)) {
+	if (xdev->is_buffered) {
 	    gx_device_forward_fill_in_procs((gx_device_forward *)xdev);
 	    xdev->box_procs = gdev_x_box_procs;
 	    xdev->box_proc_data = xdev;

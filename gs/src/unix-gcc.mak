@@ -135,7 +135,7 @@ JPEG_NAME=jpeg
 # See libpng.mak for more information.
 
 PSRCDIR=libpng
-PVERSION=10003
+PVERSION=10005
 
 # Choose whether to use a shared version of the PNG library, and if so,
 # what its name is.
@@ -225,8 +225,8 @@ EXTRALIBS=
 
 # Define the standard libraries to search at the end of linking.
 # Most platforms require -lpthread for the POSIX threads library;
-# FreeBSD requires -lc_r instead, BSDI and perhaps some others include
-# pthreads in libc and don't require any additional library.
+# on FreeBSD, change -lpthread to -lc_r; BSDI and perhaps some others
+# include pthreads in libc and don't require any additional library.
 # All reasonable platforms require -lm, but Rhapsody and perhaps one or
 # two others fold libm into libc and don't require any additional library.
 

@@ -1,4 +1,4 @@
-#    Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
 # 
 # This software is licensed to a single customer by Artifex Software Inc.
 # under the terms of a specific OEM agreement.
@@ -144,7 +144,7 @@ stream_h=$(GLSRC)stream.h $(scommon_h) $(srdline_h)
 ### Memory manager
 
 $(GLOBJ)gsalloc.$(OBJ) : $(GLSRC)gsalloc.c $(GXERR) $(memory__h) $(string__h)\
- $(gsmdebug_h) $(gsstruct_h) $(gxalloc_h)\
+ $(gsexit_h) $(gsmdebug_h) $(gsstruct_h) $(gxalloc_h)\
  $(stream_h)
 	$(GLCC) $(GLO_)gsalloc.$(OBJ) $(C_) $(GLSRC)gsalloc.c
 

@@ -1,4 +1,4 @@
-#    Copyright (C) 1989, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 # 
 # This software is licensed to a single customer by Artifex Software Inc.
 # under the terms of a specific OEM agreement.
@@ -52,14 +52,14 @@ CONTRIB_MAK=$(GLSRC)contrib.mak
 # *	eps9high  Epson-compatible 9-pin, interleaved lines
 #		(triple resolution)
 # *	epsonc	Epson LQ-2550 and Fujitsu 3400/2400/1200 color printers
-# *	hl7x0   Brother HL 720 and HL 730 (HL 760 is PCL compliant)
+# *	hl7x0   Brother HL 720 and HL 730 (HL 760 is PCL compliant);
+#		also usable with the MFC6550MC Fax Machine.
 # *	ibmpro  IBM 9-pin Proprinter
 # *	imagen	Imagen ImPress printers
 # *	iwhi	Apple Imagewriter in high-resolution mode
 # *	iwlo	Apple Imagewriter in low-resolution mode
 # *	iwlq	Apple Imagewriter LQ in 320 x 216 dpi mode
 # *	jetp3852  IBM Jetprinter ink-jet color printer (Model #3852)
-# *	la70t	DEC LA70 printer with low-resolution text enhancement
 # *	lbp8	Canon LBP-8II laser printer
 # *	lips3	Canon LIPS III laser printer in English (CaPSL) mode
 # *	lj250	DEC LJ250 Companion color printer
@@ -330,7 +330,7 @@ coslw_=$(GLOBJ)gdevcslw.$(OBJ)
 $(DD)coslw2p.dev : $(coslw_) $(DD)page.dev
 	$(SETPDEV) $(DD)coslw2p $(coslw_)
 
-$(DD)coslwxl.dev : $(coslw_) page.dev
+$(DD)coslwxl.dev : $(coslw_) $(DD)page.dev
 	$(SETPDEV) ($DD)coslwxl $(coslw_)
 
 $(GLOBJ)gdevcslw.$(OBJ) : $(GLSRC)gdevcslw.c $(PDEVH)
@@ -458,6 +458,18 @@ $(GLOBJ)gdevcd8.$(OBJ) : $(GLSRC)gdevcd8.c $(PDEVH) $(math__h)\
  $(gsparam_h) $(gxlum_h) $(gdevpcl_h)
 	$(GLCC) $(GLO_)gdevcd8.$(OBJ) $(C_) $(GLSRC)gdevcd8.c
 
+### -------------- cdj880 - HP 880c Driver under development ------------- ###
+### Since this driver is in the development phase it is not distributed    ###
+### with Ghostscript, but is available from                                ###
+###   http://www.proaxis.com/~mgelhaus/linux/software/hp880c/hp880c.html   ###
+### For questions about this driver, please contact:                       ###
+###       Matthew Gelhaus (mgelhaus@proaxis.com)                           ###
+
+### NOTE:  Depends on the presence of the cdj850 section above.            ###
+
+$(DD)cdj880.dev : $(cdeskjet8_) $(DD)page.dev
+	$(SETPDEV2) $(DD)cdj880 $(cdeskjet8_)
+
 ### ------------ The H-P PaintJet color printer device ----------------- ###
 ### Note: this driver also supports the DEC LJ250 color printer, which   ###
 ###       has a PaintJet-compatible mode, and the PaintJet XL.           ###
@@ -479,9 +491,11 @@ $(DD)pjetxl.dev : $(PJET) $(DD)page.dev
 	$(SETPDEV) $(DD)pjetxl $(PJET)
 
 ###--------------------- The Brother HL 7x0 printer --------------------- ### 
-###                    This driver was contributed by a user :            ###
-###  Please contact Pierre-Olivier Gaillard (pierre.gaillard@hol.fr)      ###
-### if you have any questions.                                            ###
+### Note: this driver was contributed by users: please contact            ###
+###       Pierre-Olivier Gaillard (pierre.gaillard@hol.fr)                ###
+###         for questions about the basic driver;                         ###
+###       Ross Martin (ross@ross.interwrx.com, martin@walnut.eas.asu.edu) ###
+###         for questions about usage with the MFC6550MC Fax Machine.     ###
 
 hl7x0_=$(GLOBJ)gdevhl7x.$(OBJ)
 $(DD)hl7x0.dev : $(hl7x0_) $(DD)page.dev
@@ -535,17 +549,6 @@ $(DD)lips3.dev : $(lbp8_) $(DD)page.dev
 
 $(GLOBJ)gdevlbp8.$(OBJ) : $(GLSRC)gdevlbp8.c $(PDEVH)
 	$(GLCC) $(GLO_)gdevlbp8.$(OBJ) $(C_) $(GLSRC)gdevlbp8.c
-
-### -------- The DEC LN03/DL2100/LA50/LA70/LA75 printer devices -------- ###
-
-# LA70 driver with low-resolution text enhancement.
-
-la70t_=$(GLOBJ)gdevla7t.$(OBJ)
-$(DD)la70t.dev : $(la70t_) $(DD)page.dev
-	$(SETPDEV) $(DD)la70t $(la70t_)
-
-$(GLOBJ)gdevla7t.$(OBJ) : $(GLSRC)gdevla7t.c $(PDEVH)
-	$(GLCC) $(GLO_)gdevla7t.$(OBJ) $(C_) $(GLSRC)gdevla7t.c
 
 ### -------------- The Epson LP-8000 laser printer device -------------- ###
 ### Note: this driver was contributed by a user: please contact Oleg     ###

@@ -1,4 +1,4 @@
-#    Copyright (C) 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 # 
 # This software is licensed to a single customer by Artifex Software Inc.
 # under the terms of a specific OEM agreement.
@@ -31,7 +31,7 @@ install-scripts: $(PSLIBDIR)/gsnd
 	-mkdir $(scriptdir)
 	$(SH) -c 'for f in \
 gsbj gsdj gsdj500 gslj gslp gsnd \
-bdftops dvipdf font2c \
+bdftops dvipdf eps2eps font2c \
 pdf2dsc pdf2ps pf2afm pfbtopfa printafm \
 ps2ascii ps2epsi ps2pdf ps2pdf12 ps2pdf13 ps2pdfwr ps2ps wftopfa \
 fixmswrd.pl lprsetup.sh pj-gs.sh pv.sh sysvlp.sh unix-lpr.sh ;\
@@ -42,8 +42,9 @@ PSDOCDIR=$(PSLIBDIR)/../doc
 PSEXDIR=$(PSLIBDIR)/../examples
 PSMANDIR=$(PSLIBDIR)/../man
 
-MAN1_PAGES=gs pdf2dsc pdf2ps ps2ascii ps2epsi ps2pdf ps2ps \
-	   gslp gsnd dvipdf font2c pf2afm pfbtopfa printafm ps2pdfwr wftopfa
+MAN1_PAGES=gs gslp gsnd dvipdf eps2eps font2c pdf2dsc pdf2ps \
+	   pf2afm pfbtopfa printafm ps2ascii ps2epsi \
+	   ps2pdf ps2pdfwr ps2ps wftopfa
 MAN1_PS2PDF_LINKS=ps2pdf12 ps2pdf13
 MAN1_GSLP_LINKS=gsbj gsdj gsdj500 gslj
 # There's no point in providing a complete dependency list: we include
@@ -55,10 +56,10 @@ install-data: $(PSDOCDIR)/Use.htm $(PSEXDIR)/golfer.ps $(PSMANDIR)/gs.1
 	do if ( test -f $(PSMANDIR)/$$f.1 ); then $(INSTALL_DATA) $(PSMANDIR)/$$f.1 $(man1dir)/$$f.$(man1ext); fi;\
 	done'
 	$(SH) -c 'for f in $(MAN1_PS2PDF_LINKS) ;\
-	do ln -s ps2pdf.1 $(man1dir)/$$f.$(man1ext);\
+	do rm -f $(man1dir)/$$f.$(man1ext); ln -s ps2pdf.1 $(man1dir)/$$f.$(man1ext);\
 	done'
 	$(SH) -c 'for f in $(MAN1_GSLP_LINKS) ;\
-	do ln -s gslp.1 $(man1dir)/$$f.$(man1ext);\
+	do rm -f $(man1dir)/$$f.$(man1ext); ln -s gslp.1 $(man1dir)/$$f.$(man1ext);\
 	done'
 	-mkdir $(datadir)
 	-mkdir $(gsdir)
@@ -104,7 +105,7 @@ ps2epsi.txt \
 Bug-form.htm C-style.htm Commprod.htm Copying.htm Current.htm \
 DLL.htm Devices.htm Drivers.htm Fonts.htm \
 Helpers.htm Hershey.htm \
-History1.htm History2.htm History3.htm History4.htm History5.htm \
+History1.htm History2.htm History3.htm History4.htm History5.htm History6.htm \
 Htmstyle.htm Humor.htm Install.htm Language.htm Lib.htm Make.htm New-user.htm \
 News.htm Ps2pdf.htm Psfiles.htm Public.htm Readme.htm Release.htm \
 Source.htm Tester.htm Unix-lpr.htm Use.htm Xfonts.htm ;\
@@ -112,8 +113,8 @@ Source.htm Tester.htm Unix-lpr.htm Use.htm Xfonts.htm ;\
 	done'
 	-mkdir $(exdir)
 	for f in \
-alphabet.ps chess.ps cheq.ps colorcir.ps escher.ps golfer.ps \
-grayalph.ps snowflak.ps tiger.ps vasarely.ps waterfal.ps \
+alphabet.ps chess.ps cheq.ps colorcir.ps doretree.ps escher.ps \
+golfer.ps grayalph.ps snowflak.ps tiger.ps vasarely.ps waterfal.ps \
 ridt91.eps ;\
 	do $(INSTALL_DATA) $(PSEXDIR)/$$f $(exdir) ;\
 	done

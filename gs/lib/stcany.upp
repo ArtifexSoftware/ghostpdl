@@ -2,7 +2,7 @@
 -sDEVICE=uniprint
 -dNOPAUSE
 -dSAFER
--dupColorModel=/DeviceCMYKgenerate
+-dupColorModel=/DeviceCMYK
 -dupRendering=/ErrorDiffusion
 -dupOutputFormat=/EscP2
 -r360x360

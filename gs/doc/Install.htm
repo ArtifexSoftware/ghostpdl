@@ -128,12 +128,17 @@ Red Hat Linux 6 and later installs the Ghostscript base 35 fonts in
 fonts in <b><tt>/usr/share/fonts/default/ghostscript</tt></b>.
 
 <p>
-For Linux, you can install or upgrade Ghostscript from precompiled 
-<a href="http://www.rpm.org">RPM</a> files using:
+For Linux, you may be able to install or upgrade Ghostscript from
+precompiled <a href="http://www.rpm.org">RPM</a> files using:
+
 <blockquote><b><tt>
-  rpm -U ghostscript-N.NN-1.i386.rpm<br>
-  rpm -U ghostscript-fonts-N.NN-1.noarch.rpm
+rpm -U ghostscript-N.NN-1.i386.rpm<br>
+rpm -U ghostscript-fonts-N.NN-1.noarch.rpm
 </tt></b></blockquote>
+
+<p>
+However, please note that Aladdin Enterprises does not create RPMs for
+Ghostscript and takes no responsibility for RPMs created by others.
 
 <hr>
 
@@ -265,7 +270,6 @@ subdirectory, are:
 functionality
 </table></blockquote>
 
-
 <p>
 See "<a href="#Install_DOS">Installing Ghostscript on DOS</a>" below for
 information about using Adobe Type Manager, Adobe Type Basics, or Adobe
@@ -356,6 +360,12 @@ The Ghostscript setup program will create registry values
 for the environment variables <b><tt>GS_LIB</tt></b> 
 and <b><tt>GS_DLL</tt></b>.
 
+<h2><a name="Uninstall_Windows"></a>Uninstalling Ghostscript on Windows</h2>
+
+<p>
+To uninstall Ghostscript, use the Control Panel, Add/Remove Programs and
+remove "Aladdin Ghostscript #.##" and "Aladdin Ghostscript Fonts".
+
 <hr>
 
 <h1><a name="Install_VMS"></a>Installing Ghostscript on OpenVMS</h1>
@@ -442,9 +452,9 @@ little testing.  You need these files to run Ghostscript on OS/2:
 
 <p>
 <b><tt>GSOS2.EXE</tt></b>, <b><tt>GSDLL2.DLL</tt></b> and
-<b><tt>GSPMDRV.EXE</tt></b> are compiled using EMX/GCC 0.9b.  You must have
+<b><tt>GSPMDRV.EXE</tt></b> are compiled using EMX/GCC 0.9d.  You must have
 the EMX DLLs on your <b><tt>LIBPATH</tt></b>; they are available in a
-package <b><tt>emxrt*.zip</tt></b> from many places on the Internet, so you
+package <b><tt>emxrt.zip</tt></b> from many places on the Internet, so you
 can find the package by using a search engine or an ftp lookup service such
 as the one at
 
@@ -536,7 +546,7 @@ specified queue, use <b><tt>-sOutputFile=\\spool\NullLPT1</tt></b>, where
 This software is licensed to a single customer by Artifex Software Inc.
 under the terms of a specific OEM agreement.
 <p>
-Artifex version 6.11, Aladdin Ghostscript version 6.0, 3 February 2000
+Artifex version 6.12, Aladdin Ghostscript version 
 
 </font>
 

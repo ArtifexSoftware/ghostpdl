@@ -56,6 +56,7 @@ How to build Ghostscript from source code
 <li><a href="#Self-extracting_executables">Making self-extracting executables</a>
 <li><a href="#Watcom_build">Watcom environment</a>
 <li><a href="#Cygwin32_build">Cygwin32 gcc</a>
+<li><a href="#IntelWin32_build">Intel C/C++ compiler</a>
 </ul>
 <li><a href="#Mac_build">How to build Ghostscript from source (Mac version)</a>
 <ul>
@@ -245,7 +246,7 @@ version-independent and should always provide the latest version.
 
 <tr>	<td valign=top>zlib (latest)
 	<td>&nbsp;
-	<td>	<a href="ftp://ftp.cdrom.com/pub/infozip/zlib/zlib.tar.gz">ftp://ftp.cdrom.com/pub/infozip/zlib/zlib.tar.gz</a><br>
+	<td>	<a href="ftp://ftp.cdrom.com/pub/infozip/zlib/zlib.tar.gz">ftp://ftp.cdromcom/pub/infozip/zlib/zlib.tar.gz</a><br>
 	<a href="ftp://ftp.cdrom.com/pub/infozip/zlib/zlib.zip">ftp://ftp.cdrom.com/pub/infozip/zlib/zlib.zip</a><br>
 	<a href="http://www.cdrom.com/pub/infozip/zlib/zlib.tar.gz">http://www.cdrom.com/pub/infozip/zlib/zlib.tar.gz</a><br>
 	<a href="http://www.cdrom.com/pub/infozip/zlib/zlib.zip">http://www.cdrom.com/pub/infozip/zlib/zlib.zip</a>
@@ -1137,9 +1138,11 @@ You should then run "<b><tt>_genarch.bat</tt></b>", wait until
 NOTE: We have received reports that the Microsoft Visual C++ 5.0 and 6.0
 compilers produce incorrect code for Ghostscript version 6.0 and later, from
 the same source code that compiles and runs correctly with other compilers.
-We strongly recommend using the Inprise (Borland) compiler rather than
-MSVC++ 5.0 or later.  (We use the Inprise compiler for the executables that
-we distribute ourselves.)
+We strongly recommend using the <a href="#Borland_build">Inprise (Borland)
+compiler</a> rather than MSVC++ 5.0 or later.  (We use the Inprise compiler
+for the executables that we distribute ourselves.) You may also want to try
+out the <a href="#IntelWin32_build">Intel&nbsp;C/C++ compiler</a>, which can
+be integrated into the Microsoft Visual C++ environment.
 
 <p>
 To compile Ghostscript with the Microsoft environment, you need Microsoft
@@ -1280,6 +1283,47 @@ redistribution as either the GNU
 or the Aladdin <a href="Public.htm">Free Public License</a>, so read their
 license carefully if you want to redistribute the results of using their
 compiler.
+
+<h2><a name="IntelWin32_build"></a>Intel C/C++ environment</h2>
+
+<p>
+Intel provides a C/C++ compiler that is compatible with the <a
+href="#Microsoft_build">Microsoft Visual&nbsp;C++ environment</a>. The main
+advantage of this compiler over MSVC&nbsp;5.0 and 6.0 is that it produces
+working code even when all optimizations are enabled and when stack checking
+is disabled.
+
+<p>
+To build Ghostscript using the Intel C/C++ compiler, you have to make the
+following small changes in the makefiles:
+
+<ul>
+<li>Find and change the second occurrence of
+"<b><tt>COMPILE_FULL_OPTIMIZED</tt></b>" to "<b><tt>/O2</tt></b>" in file
+<b><tt>msvccmd.mak</tt></b>.  <li>Override "<b><tt>TDEBUG</tt></b>",
+"<b><tt>COMP</tt></b>", and "<b><tt>COMPAUX</tt></b>" when invoking
+<b><tt>nmake</tt></b>.
+</ul>
+
+<p>
+More specifically, use "<b><tt>TDEBUG=0</tt></b>" and set both
+"<b><tt>COMP</tt></b>" and "<b><tt>COMPAUX</tt></b>" to the full path of
+<b><tt>icl</tt></b> (for example
+"<b><tt>COMP=C:\intel\compiler45\bin\icl</tt></b>" if the Intel&nbsp;C/C++
+compiler V4.5 was installed to <b><tt>C:\intel</tt></b>). It is suggested
+that you use a batch file to launch <b><tt>nmake</tt></b>, since the command
+line processes the "<b><tt>=</tt></b>" on its own. Also, you may need to
+execute <b><tt>vcvars32.bat</tt></b> and <b><tt>iccvars.bat</tt></b> to
+register the proper paths for the compiler, its include files and its
+libraries.
+
+<p>
+You can buy or download a 30-day evaluation version of the Intel&nbsp;C/C++
+compiler from Intel's Software Performance Tools web site:
+
+<blockquote>
+<a href="http://www.intel.com/vtune/">http://www.intel.com/vtune/</a>
+</blockquote>
 
 <hr>
 
@@ -1687,16 +1731,33 @@ corresponding single-threaded drivers, whose names don't include the "a".
 </ul>
 
 <p>
-To create <a href="http://www.rpm.org">RPM</a>
-(<b>R</b>ed Hat <b>P</b>ackage <b>M</b>anager)
-files for Ghostscript N.NN:
+You may want to create <a href="http://www.rpm.org">RPM</a> (<b>R</b>ed Hat
+<b>P</b>ackage <b>M</b>anager) files for Ghostscript.  Because of the lack
+of standardization of installation directory names between Linux releases,
+Ghostscript does not come with any RPM specification files.  You may wish to
+contact the following people who have created RPM spec files in the past:
+
+<blockquote>
+Henri Gomez <a href="mailto:hgomez@slib.fr">hgomez@slib.fr</a><br>
+Russell Lang <a href="mailto:gsview@ghostgum.com.au">gsview@ghostgum.com.au</a><br>
+Cristian Gafton <a href="mailto:gafton@redhat.com">gafton@redhat.com</a><br>
+Preston Brown <a href="mailto:pbrown@redhat.com">pbrown@redhat.com</a><br>
+</blockquote>
+
+<p>
+The following instructions may work for the Ghostscript 6.0x distributions,
+once you have RPM spec files that you believe are appropriate.
+
+<p>
+To create RPMs for Ghostscript N.NN:
 
 <ul>
 <li>Change to your source directory (<b><tt>/usr/src/redhat</tt></b> for Red Hat
    Linux 5.1).
 <li>Copy <b><tt>ghostscript-N.NN*.tar.gz</tt></b> (4 source files) to the
 <b><tt>SOURCES</tt></b> subdirectory.
-<li>Copy <b><tt>ghostscript-fonts-5.10a.tar.gz</tt></b> to the
+<li>Copy <b><tt>ghostscript-fonts-std-6.0.tar.gz</tt></b> and
+<b><tt>ghostscript-fonts-other-6.0.tar.gz</tt></b> to the
 <b><tt>SOURCES</tt></b> subdirectory.
 <li>From <b><tt>SOURCES/ghostscript-N.NN.tar.gz</tt></b>,
 <ul>
@@ -1754,7 +1815,8 @@ are using only the library) change the definition of <b><tt>INCLUDE</tt></b>
 to "<b><tt>INCLUDE=/usr/include/bsd</tt></b>";
 
 <li>in <b><tt>unix-gcc.mak</tt></b>, change <b><tt>CC=gcc</tt></b> to
-<b><tt>CC=cc</tt></b>, add <b><tt>-D_POSIX_SOURCE</tt></b> to
+<b><tt>CC=cc</tt></b>, change the definition of <b><tt>STDLIBS</tt></b> to
+only <b><tt>-lm</tt></b>, add <b><tt>-D_POSIX_SOURCE</tt></b> to
 <b><tt>CFLAGS</tt></b> and remove <b><tt>-g</tt></b>, and remove
 <b><tt>-Wstrict-prototypes</tt></b> from <b><tt>GCFLAGS</tt></b>; and
 
@@ -1981,6 +2043,9 @@ standard distribution):
 
 <ul>
 
+<li>HP-UX versions before 11.0 do not support POSIX threads.  Set
+<b><tt>SYNC=nosync</tt></b> in the makefile before building.
+
 <li>Ghostscript builds on H-P machines with either GNU gcc or H-P's
 ANSI-capable <b><tt>cc</tt></b>.  The minimal, non-ANSI-capable
 <b><tt>cc</tt></b> that ships with a basic HPUX system does <b><em>not</em></b>
@@ -2071,6 +2136,7 @@ See "<a href="#ATT_7040">AT&amp;T 7040 R3</a>".
 <h3><a name="RS6000"></a>IBM RS/6000 with AIX</h3>
 
 <ul>
+
 <li>Many versions of the AIX C compiler have bugs that have prevented
 Ghostscript from compiling and linking properly.  We believe that the
 current Ghostscript release works around these bugs, and that
@@ -2078,6 +2144,9 @@ current Ghostscript release works around these bugs, and that
 
 <li>You must also edit the makefile (<b><tt>unixansi.mak</tt></b>) to change
 <b><tt>INSTALL</tt></b> to <b><tt>/usr/ucb/install</tt></b>.
+
+<li>AIX doesn't use a separate library for multi-thread support: set
+<b><tt>STDLIBS=-lm</tt></b> in the makefile.
 
 <li>If <b><tt>-DSYSV</tt></b> produces a complaint about the functions
 <b><tt>index</tt></b> and <b><tt>rindex</tt></b> not being defined, try
@@ -2120,6 +2189,11 @@ rather than just "<b><tt>XLIBDIRS=-L/usr/lpp/X11/lib</tt></b>".
 
 <h3>
 <a NAME="Silicon_Graphics"></a>Silicon Graphics</h3>
+
+<p>
+Users have had a lot of problems with the MIPSpro compilers on SGI systems.
+We recommend using gcc.  If you do choose to use the MIPSpro compiler,
+please read the following carefully.
 
 <ul>
 <li>
@@ -2299,6 +2373,13 @@ code" and "How to unpack the third-party libraries".
 
 <li>Use jpegsrc_v6b.tar.gz, zlib.tar.gz and libpng-1.0.3.tar.gz.  Earlier
 versions may not work.
+
+<li>If you wish to include support for XFree86, edit the makefile
+to change <b>BUILD_X11=0</b> to <b>BUILD_X11=1</b>.  
+XFree86 for OS/2 can be obtained from
+<a href="http://borneo.gmd.de/~veit/os2/xf86os2.html">
+http://borneo.gmd.de/~veit/os2/xf86os2.html</a>
+You must use emx 0.9d.
 </ul>
 
 <p>
@@ -2335,10 +2416,9 @@ Now, if you wish, you can edit OS2.MAK to suit your needs, and then perform
 <p>
 DEC C runtime library versions 5.5 and newer have an <b><tt>exit</tt></b>
 function that is compatible with all other C systems, but some older ones
-don't; we don't know whether the <b><tt>exit</tt></b> function in VAX C is
-compatible or not.  If you get error messages from VMS when auxiliary
-programs such as <b><tt>genarch</tt></b> or <b><tt>echogs</tt></b> finish
-executing, find the line in stdpre.h that reads
+don't.  If you get error messages from VMS when auxiliary programs such as
+<b><tt>genarch</tt></b> or <b><tt>echogs</tt></b> finish executing, find the
+line in stdpre.h that reads
 
 <blockquote><b><tt>
 /*#define&nbsp;OLD_VMS_C*/
@@ -2405,18 +2485,14 @@ As of Ghostscript version 5.0 you can use GNU make -- with the file
 -- to build Ghostscript on OpenVMS.  Use the command:
 
 <blockquote>
-<b><tt>make&nbsp;-fopenvms.mak&nbsp;"OPENVMS=</tt></b><em>{</em><b><tt>VAX</tt></b>,<b><tt>ALPHA</tt></b><em>}</em><b><tt>"&nbsp;"DECWINDOWS=</tt></b><em>[</em><b><tt>1.2</tt></b><em>]</em><b><tt>"</tt></b>
+<b><tt>make&nbsp;-fopenvms.mak&nbsp;"DECWINDOWS=</tt></b><em>[</em><b><tt>1.2</tt></b><em>]</em><b><tt>"</tt></b>
 </blockquote>
 
 <p>
-That is, specify either <b><tt>VAX</tt></b> or <b><tt>ALPHA</tt></b> as the
-value of the <b><tt>OPENVMS</tt></b> parameter, and either
-"<b><tt>1.2</tt></b>" or nothing (blank) as the value of
-<b><tt>DECWINDOWS</tt></b>.  (The value "<b><tt>VAX</tt></b>" just means
-that you want to use the VAX C compiler: it doesn't imply that you are
-running on VAX hardware.)  In Europe and other parts of the world where ISO
-standard paper sizes are used, append "<b><tt>A4_PAPER=1</tt></b>" to that
-line to make A4 the default paper size at run time.
+That is, specify either "<b><tt>1.2</tt></b>" or nothing (blank) as the
+value of <b><tt>DECWINDOWS</tt></b>.  In Europe and other parts of the world
+where ISO standard paper sizes are used, append "<b><tt>A4_PAPER=1</tt></b>"
+to that line to make A4 the default paper size at run time.
 
 <p>
 If you haven't a prebuilt copy of GNU make, you'll have to build it
@@ -2442,15 +2518,13 @@ Building Ghostscript with MMK or MMS uses the file
 To build Ghostscript with MMK or MMS, use the command:
 
 <blockquote>
-<b><tt>###/descrip=[.src]openvms.mmk/macro=("VAXC=</tt></b><em>{</em><b><tt>0</tt></b>,<b><tt>1</tt></b><em>}</em><b><tt>","DECWINDOWS1_2=</tt></b><em>{</em><b><tt>0</tt></b>,<b><tt>1</tt></b><em>}</em><b><tt>")</tt></b>
+<b><tt>###/descrip=[.src]openvms.mmk/macro=("DECWINDOWS1_2=</tt></b><em>{</em><b><tt>0</tt></b>,<b><tt>1</tt></b><em>}</em><b><tt>")</tt></b>
 </blockquote>
 
 where <b><tt>###</tt></b> is either <b><tt>mmk</tt></b> or <b><tt>mms</tt></b>.
 
 <p>
-Specify <b><tt>VAXC=1</tt></b> for the VAX C compiler,
-<b><tt>VAXC=0</tt></b> for the DEC C compiler.  Specify
-<b><tt>DECWINDOWS1_2=1</tt></b> for DECWINDOWS 1.2,
+Specify <b><tt>DECWINDOWS1_2=1</tt></b> for DECWINDOWS 1.2,
 <b><tt>DECWINDOWS1_2=0</tt></b> for other DECWINDOWS versions.  In Europe
 and other parts of the world where ISO standard paper sizes are used, add
 <b><tt>,"A4_PAPER=1"</tt></b> just before the final closing parenthesis to
@@ -2633,7 +2707,7 @@ to begin
 This software is licensed to a single customer by Artifex Software Inc.
 under the terms of a specific OEM agreement.
 <p>
-Artifex version 6.11, Aladdin Ghostscript version 6.0, 3 February 2000
+Artifex version 6.12, Aladdin Ghostscript version 
 
 </font>
 

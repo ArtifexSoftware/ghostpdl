@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 
    This software is licensed to a single customer by Artifex Software Inc.
    under the terms of a specific OEM agreement.
@@ -28,14 +28,15 @@ gdev_pdf_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 
     /* Make a special check for the initial fill with white, */
     /* which shouldn't cause the page to be opened. */
-    if (color == 0xffffff && !is_in_page(pdev))
+    if (color == pdev->white && !is_in_page(pdev))
 	return 0;
     code = pdf_open_page(pdev, PDF_IN_STREAM);
     if (code < 0)
 	return code;
     /* Make sure we aren't being clipped. */
     pdf_put_clip_path(pdev, NULL);
-    pdf_set_color(pdev, color, &pdev->fill_color, "rg");
+    pdf_set_color(pdev, color, &pdev->fill_color,
+		  &psdf_set_fill_color_commands);
     pprintd4(pdev->strm, "%d %d %d %d re f\n", x, y, w, h);
     return 0;
 }
@@ -47,21 +48,40 @@ private int
 pdf_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1, fixed y1,
 	   gx_path_type_t type)
 {
-    if (!(type & gx_path_type_stroke)) {
-	/*
-	 * Clamp coordinates to avoid tripping over Acrobat Reader's limit
-	 * of 32K on user coordinate values.
-	 */
-#define CLAMP_XY(v, m)\
-  if (v < 0) v = 0; else if (v > int2fixed(m)) v = int2fixed(m)
-	CLAMP_XY(x0, vdev->width);
-	CLAMP_XY(x1, vdev->width);
-	CLAMP_XY(y0, vdev->height);
-	CLAMP_XY(y1, vdev->height);
-	if ((x0 == x1 || y0 == y1) && !(type & gx_path_type_clip))
-	    return 0;		/* nothing to fill */
-#undef CLAMP_XY
+    fixed xmax = int2fixed(vdev->width), ymax = int2fixed(vdev->height);
+    fixed xmin = 0, ymin = 0;
+
+    /*
+     * If we're doing a stroke operation, expand the checking box by the
+     * stroke width.
+     */
+    if (type & gx_path_type_stroke) {
+	double w = vdev->state.line_params.half_width;
+	double xw = w * (fabs(vdev->state.ctm.xx) + fabs(vdev->state.ctm.yx));
+	double yw = w * (fabs(vdev->state.ctm.xy) + fabs(vdev->state.ctm.yy));
+
+	xmin = -(float2fixed(xw) + fixed_1);
+	xmax -= xmin;
+	ymin = -(float2fixed(yw) + fixed_1);
+	ymax -= ymin;
     }
+    if (!(type & gx_path_type_clip) &&
+	(x0 > xmax || x1 < xmin || y0 > ymax || y1 < ymin ||
+	 x0 > x1 || y0 > y1)
+	)
+	return 0;		/* nothing to fill or stroke */
+    /*
+     * Clamp coordinates to avoid tripping over Acrobat Reader's limit
+     * of 32K on user coordinate values.
+     */
+    if (x0 < xmin)
+	x0 = xmin;
+    if (x1 > xmax)
+	x1 = xmax;
+    if (y0 < ymin)
+	y0 = ymin;
+    if (y1 > ymax)
+	y1 = ymax;
     return psdf_dorect(vdev, x0, y0, x1, y1, type);
 }
 private int
@@ -205,7 +225,7 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
      * Make a special check for the initial fill with white,
      * which shouldn't cause the page to be opened.
      */
-    if (gx_dc_pure_color(pdcolor) == 0xffffff && !is_in_page(pdev))
+    if (gx_dc_pure_color(pdcolor) == pdev->white && !is_in_page(pdev))
 	return 0;
     have_path = !gx_path_is_void(ppath);
     if (have_path || pdev->context == PDF_IN_NONE ||
@@ -216,7 +236,8 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 	    return code;
     }
     pdf_put_clip_path(pdev, pcpath);
-    pdf_set_color(pdev, gx_dc_pure_color(pdcolor), &pdev->fill_color, "rg");
+    pdf_set_color(pdev, gx_dc_pure_color(pdcolor), &pdev->fill_color,
+		  &psdf_set_fill_color_commands);
     if (have_path) {
 	stream *s = pdev->strm;
 

@@ -462,7 +462,7 @@ be most useful in preparing new sections for the news document."
 (goto-char (point-min))
 (insert "<pre>\n") (setq g~pre-point (point))
 (setq g~ID " [No pre-existing ID] ")
-(if (re-search-forward "^\\$Id:\\( [^ ]+ \\)\\$" nil t) (progn
+(if (re-search-forward "^\\$RCSfile$ $Revision$" nil t) (progn
     (setq g~ID (buffer-substring (match-beginning 1) (match-end 1)))
     (next-line 1) (beginning-of-line) (delete-region g~pre-point (point))
     ))

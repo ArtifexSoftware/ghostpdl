@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 
    This software is licensed to a single customer by Artifex Software Inc.
    under the terms of a specific OEM agreement.
@@ -115,6 +115,7 @@ const gx_device_X gs_x11_device = {
 	x_get_bits_rectangle
     },
     gx_device_bbox_common_initial(0 /*false*/, 1 /*true*/, 1 /*true*/),
+    0 /*false*/,		/* is_buffered */
     1 /*true*/,			/* IsPageDevice */
     0,				/* MaxBitmap */
     NULL,			/* buffer */
@@ -1008,11 +1009,18 @@ update_do_flush(gx_device_X * xdev)
 
 	fit_fill_xywh(xdev, x, y, w, h);
 	if (w > 0 && h > 0) {
-	    if (IS_BUFFERED(xdev)) {
+	    if (xdev->is_buffered) {
 		/* Copy from memory image to X server. */
 		const gx_device_memory *mdev =
 		    (const gx_device_memory *)xdev->target;
 
+		/*
+		 * The bbox device may have set the target to NULL
+		 * temporarily.  If this is the case, defer the screen
+		 * update.
+		 */
+		if (mdev == NULL)
+		    return;	/* don't reset */
 		x_copy_image(xdev, mdev->line_ptrs[y], x, mdev->raster,
 			     x, y, w, h);
 	    }
@@ -1046,7 +1054,6 @@ x_update_add(gx_device_X * xdev, int xo, int yo, int w, int h)
     nw = u.q.x - u.p.x;
     nh = u.q.y - u.p.y;
     new_up_area = (long)nw * nh;
-    xdev->update.box = u;
     xdev->update.count++;
     xdev->update.area = new_up_area;
     xdev->update.total += added;
@@ -1065,10 +1072,16 @@ x_update_add(gx_device_X * xdev, int xo, int yo, int w, int h)
 	    old_area + added < new_up_area - (new_up_area >> 2)
 	    )
 	    DO_NOTHING;
-	else
+	else {
+	    xdev->update.box = u;
 	    return;
+	}
     }
     update_do_flush(xdev);
+    xdev->update.box.p.x = xo, xdev->update.box.p.y = yo;
+    xdev->update.box.q.x = xe, xdev->update.box.q.y = ye;
+    xdev->update.count = 1;
+    xdev->update.area = xdev->update.total = added;
 }
 
 /* Flush buffered text to the screen. */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 
    This software is licensed to a single customer by Artifex Software Inc.
    under the terms of a specific OEM agreement.
@@ -48,9 +48,7 @@ typedef struct psdf_image_params_s {
 #endif
     enum psdf_downsample_type {
 	ds_Average,
-#ifdef POST60
 	ds_Bicubic,
-#endif
 	ds_Subsample
     } DownsampleType;
     bool Encode;
@@ -427,8 +425,28 @@ int psdf_write_truetype_font(P6(stream *s, gs_font_type42 *pfont, int options,
 
 /* ---------------- Other procedures ---------------- */
 
-/* Set the fill or stroke color.  rgs is "rg" or "RG". */
-int psdf_set_color(P3(gx_device_vector * vdev, const gx_drawing_color * pdc,
-		      const char *rgs));
+/* Define the commands for setting the fill or stroke color. */
+typedef struct psdf_set_color_commands_s {
+    const char *setgray;
+    const char *setrgbcolor;
+    const char *setcmykcolor;
+    const char *setcolorspace;
+    const char *setcolor;
+    const char *setcolorn;
+} psdf_set_color_commands_t;
+/* Define the standard color-setting commands (with PDF names). */
+extern const psdf_set_color_commands_t
+    psdf_set_fill_color_commands, psdf_set_stroke_color_commands;
+
+/*
+ * Adjust a gx_color_index to compensate for the fact that the bit pattern
+ * of gx_color_index isn't representable.
+ */
+gx_color_index psdf_adjust_color_index(P2(gx_device_vector *vdev,
+					  gx_color_index color));
+
+/* Set the fill or stroke color. */
+int psdf_set_color(P3(gx_device_vector *vdev, const gx_drawing_color *pdc,
+		      const psdf_set_color_commands_t *ppscc));
 
 #endif /* gdevpsdf_INCLUDED */

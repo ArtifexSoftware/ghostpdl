@@ -1,10 +1,10 @@
-/* Copyright (C) 1999, Ghostgum Software Pty Ltd.  All rights reserved.
+/* Copyright (C) 1999, 2000, Ghostgum Software Pty Ltd.  All rights reserved.
   
   This software is licensed to a single customer by Artifex Software Inc.
   under the terms of a specific OEM agreement.
 */
 
-/* dwuninst.rc */
+// $RCSfile$ $Revision$
 
 #include <windows.h>
 #include "dwuninst.h"

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 
    This software is licensed to a single customer by Artifex Software Inc.
    under the terms of a specific OEM agreement.
@@ -135,10 +135,7 @@ gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
 {
     const char *fmode = (binary_mode ? "wb" : "w");
 
-    return
-	(strlen(fname) == 0 ?
-	 gp_open_scratch_file(gp_scratch_file_name_prefix, fname, fmode) :
-	 fopen(fname, fmode));
+    return (strlen(fname) == 0 ? 0 : fopen(fname, fmode));
 }
 
 /* Close the connection to the printer. */

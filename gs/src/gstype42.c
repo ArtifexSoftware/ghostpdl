@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 2000 Aladdin Enterprises.  All rights reserved.
 
    This software is licensed to a single customer by Artifex Software Inc.
    under the terms of a specific OEM agreement.
@@ -304,6 +304,11 @@ gs_type42_font_init(gs_font_type42 * pfont)
     ACCESS(12, numTables * 16, TableDirectory);
     /* Clear optional entries. */
     pfont->data.numLongMetrics = 0;
+    /*
+     * Clear the glyf and loca offsets so that clients who care can tell
+     * whether the font is being downloaded incrementally.
+     */
+    pfont->data.glyf = pfont->data.loca = 0;
     for (i = 0; i < numTables; ++i) {
 	const byte *tab = TableDirectory + i * 16;
 	ulong offset = u32(tab + 8);

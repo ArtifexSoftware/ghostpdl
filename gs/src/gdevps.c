@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 
    This software is licensed to a single customer by Artifex Software Inc.
    under the terms of a specific OEM agreement.
@@ -153,18 +153,20 @@ const gx_device_pswrite gs_epswrite_device =
 private int
     psw_beginpage(P1(gx_device_vector * vdev)),
     psw_setcolors(P2(gx_device_vector * vdev, const gx_drawing_color * pdc)),
-      psw_dorect(P6(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1, fixed y1,
-		    gx_path_type_t type)), psw_beginpath(P2(gx_device_vector * vdev, gx_path_type_t type)),
-      psw_moveto(P6(gx_device_vector * vdev, floatp x0, floatp y0,
-		    floatp x, floatp y, gx_path_type_t type)), psw_lineto(P6(gx_device_vector * vdev, floatp x0, floatp y0,
-				  floatp x, floatp y, gx_path_type_t type)),
-      psw_curveto(P10(gx_device_vector * vdev, floatp x0, floatp y0,
-		      floatp x1, floatp y1, floatp x2, floatp y2,
-		      floatp x3, floatp y3, gx_path_type_t type)), psw_closepath(P6(gx_device_vector * vdev, floatp x0, floatp y0,
-		      floatp x_start, floatp y_start, gx_path_type_t type)),
-      psw_endpath(P2(gx_device_vector * vdev, gx_path_type_t type));
-private const gx_device_vector_procs psw_vector_procs =
-{
+    psw_dorect(P6(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,
+		  fixed y1, gx_path_type_t type)),
+    psw_beginpath(P2(gx_device_vector * vdev, gx_path_type_t type)),
+    psw_moveto(P6(gx_device_vector * vdev, floatp x0, floatp y0,
+		  floatp x, floatp y, gx_path_type_t type)),
+    psw_lineto(P6(gx_device_vector * vdev, floatp x0, floatp y0,
+		  floatp x, floatp y, gx_path_type_t type)),
+    psw_curveto(P10(gx_device_vector * vdev, floatp x0, floatp y0,
+		    floatp x1, floatp y1, floatp x2, floatp y2,
+		    floatp x3, floatp y3, gx_path_type_t type)),
+    psw_closepath(P6(gx_device_vector * vdev, floatp x0, floatp y0,
+		     floatp x_start, floatp y_start, gx_path_type_t type)),
+    psw_endpath(P2(gx_device_vector * vdev, gx_path_type_t type));
+private const gx_device_vector_procs psw_vector_procs = {
 	/* Page management */
     psw_beginpage,
 	/* Imager state */
@@ -280,6 +282,7 @@ private const char *const psw_1_x_prolog[] =
 
 private const char *const psw_1_5_prolog[] =
 {
+	/* <x> <y> <w> <h> <src> <bpc> Ic - */
     "/Ic{exch Ix false 3 colorimage}!",
     0
 };
@@ -302,6 +305,10 @@ private const char *const psw_2_prolog[] =
 	/* <w> <h> <name> (<length>|) $F <w> <h> <data> */
 	/* <w> <h> <name> (<length>|) $C <w> <h> <data> */
     "/$X{+ @X |}!/&4{4 index 4 index}!/$F{+ @ &4<<F |}!/$C{+ @X &4 FX |}!",
+	/* <w> <h> <bpc> <matrix> <decode> <interpolate> <src>IC - */
+    "/IC{3 1 roll 10 dict begin 1{/ImageType/Interpolate/Decode/DataSource",
+    "/ImageMatrix/BitsPerComponent/Height/Width}{exch def}forall",
+    "currentdict end image}!",
     0
 };
 
@@ -555,8 +562,7 @@ psw_beginpage(gx_device_vector * vdev)
 	    psw_put_lines(s, psw_1_prolog);
 	} else if (pdev->LanguageLevel > 1.5) {
 	    psw_put_lines(s, psw_1_5_prolog);
-	    if (pdev->LanguageLevel > 1.5)
-		psw_put_lines(s, psw_2_prolog);
+	    psw_put_lines(s, psw_2_prolog);
 	} else {
 	    psw_put_lines(s, psw_1_x_prolog);
 	    psw_put_lines(s, psw_1_5_prolog);
@@ -819,17 +825,29 @@ psw_open(gx_device * dev)
     return 0;
 }
 
+/*
+ * Write the page trailer.  We do this directly to the file, rather than to
+ * the stream, because we may have to do it during finalization.
+ */
+private void
+psw_write_page_trailer(gx_device *dev, int num_copies, int flush)
+{
+    FILE *f = vdev->file;
+
+    if (num_copies != 1)
+	fprintf(f, "userdict /#copies %d put\n", num_copies);
+    fprintf(f, "cleartomark end %s pagesave restore\n%%%%PageTrailer\n",
+	    (flush ? "showpage" : "copypage"));
+}
+
 /* Wrap up ("output") a page. */
 private int
 psw_output_page(gx_device * dev, int num_copies, int flush)
 {
     stream *s = gdev_vector_stream(vdev);
 
-    if (num_copies != 1)
-	pprintd1(s, "userdict /#copies %d put\n", num_copies);
-    pprints1(s, "cleartomark end %s pagesave restore\n%%%%PageTrailer\n",
-	     (flush ? "showpage" : "copypage"));
-    sflush(s);
+    sflush(s);			/* sync stream and file */
+    psw_write_page_trailer(dev, num_copies, flush);
     vdev->in_page = false;
     pdev->first_page = false;
     gdev_vector_reset(vdev);
@@ -841,13 +859,26 @@ psw_output_page(gx_device * dev, int num_copies, int flush)
 
 /* Close the device. */
 /* Note that if this is being called as a result of finalization, */
-/* the stream may no longer exist; but the file will still be open. */
+/* the stream may have been finalized; but the file will still be open. */
 private void psw_print_bbox(P2(FILE *, const gs_rect *));
 private int
 psw_close(gx_device * dev)
 {
     FILE *f = vdev->file;
 
+    /* If there is an incomplete page, complete it now. */
+    if (vdev->in_page) {
+	/*
+	 * Flush the stream if it hasn't been flushed (and finalized)
+	 * already.
+	 */
+	stream *s = vdev->strm;
+
+	if (s->swptr != s->cbuf - 1)
+	    sflush(s);
+	psw_write_page_trailer(dev, 1, 1);
+	dev->PageCount++;
+    }
     fprintf(f, "%%%%Trailer\n%%%%Pages: %ld\n", dev->PageCount);
     {
 	gs_rect bbox;
@@ -1125,6 +1156,8 @@ psw_begin_image(gx_device * dev,
 	gs_alloc_struct(mem, gdev_vector_image_enum_t,
 			&st_vector_image_enum, "psw_begin_image");
     const gs_color_space *pcs = pim->ColorSpace;
+    const gs_color_space *pbcs = pcs;
+    const char *base_name;
     gs_color_space_index index;
     int num_components;
     bool can_do = prect == 0 &&
@@ -1145,10 +1178,32 @@ psw_begin_image(gx_device * dev,
 	if (pim->CombineWithColor)
 	    can_do = false;
 	/*
-	 * We can only handle Device color spaces right now, and only the
-	 * default Decode [0 1 ...].
+	 * We can only handle Device color spaces right now, or Indexed
+	 * color spaces over them, and only the default Decode [0 1 ...]
+	 * or [0 2^BPC-1] respectively.
 	 */
 	switch (index) {
+	case gs_color_space_index_Indexed: {
+	    if (pdev->LanguageLevel < 2 || pcs->params.indexed.use_proc ||
+		pim->Decode[0] != 0 ||
+		pim->Decode[1] != (1 << pim->BitsPerComponent) - 1
+		) {
+		can_do = false;
+		break;
+	    }
+	    pbcs = (const gs_color_space *)&pcs->params.indexed.base_space;
+	    switch (gs_color_space_get_index(pbcs)) {
+	    case gs_color_space_index_DeviceGray:
+		base_name = "DeviceGray"; break;
+	    case gs_color_space_index_DeviceRGB:
+		base_name = "DeviceRGB"; break;
+	    case gs_color_space_index_DeviceCMYK:
+		base_name = "DeviceCMYK"; break;
+	    default:
+		can_do = false;
+	    }
+	    break;
+	}
 	case gs_color_space_index_DeviceGray:
 	case gs_color_space_index_DeviceRGB:
 	case gs_color_space_index_DeviceCMYK: {
@@ -1165,9 +1220,10 @@ psw_begin_image(gx_device * dev,
     }
     if (pdev->LanguageLevel < 2 && !pim->ImageMask) {
 	/*
-	 * Restrict ourselves to Level 1 images: bits per component <= 8.
+	 * Restrict ourselves to Level 1 images: bits per component <= 8,
+	 * not indexed.
 	 */
-	if (pim->BitsPerComponent > 8)
+	if (pim->BitsPerComponent > 8 || pbcs != pcs)
 	    can_do = false;
     }
     if (!can_do ||
@@ -1200,7 +1256,18 @@ psw_begin_image(gx_device * dev,
 	} else {
 	    pprintd1(s, "%d", pim->BitsPerComponent);
 	    psw_put_matrix(s, &pim->ImageMatrix);
-	    if (index == gs_color_space_index_DeviceGray)
+	    if (pbcs != pcs) {
+		/* This is an Indexed color space. */
+		pprints1(s, "[/Indexed /%s ", base_name);
+		pprintd1(s, "%d\n", pcs->params.indexed.hival);
+		s_write_ps_string(s, pcs->params.indexed.lookup.table.data,
+				  pcs->params.indexed.lookup.table.size,
+				  (pdev->binary_ok ? PRINT_BINARY_OK : 0) |
+				  PRINT_ASCII85_OK);
+		pprintd1(s, "\n]setcolorspace[0 %d]", (int)pim->Decode[1]),
+		pprints2(s, "%s %s IC\n",
+			 (pim->Interpolate ? "true" : "false"), source);
+	    } else if (index == gs_color_space_index_DeviceGray)
 		pprints1(s, "%s image\n", source);
 	    else {
 		if (format == gs_image_format_chunky)
