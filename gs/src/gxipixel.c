@@ -134,7 +134,7 @@ gx_image_enum_alloc(const gs_image_common_t * pic,
     case gs_image_format_chunky:
     case gs_image_format_component_planar:
 	switch (bpc) {
-	case 1: case 2: case 4: case 8: case 12: break;
+	case 1: case 2: case 4: case 8: case 12: case 16: break;
 	default: return_error(gs_error_rangecheck);
 	}
 	break;
@@ -219,7 +219,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
     penum->matrix = mat;
     if_debug6('b', " [%g %g %g %g %g %g]\n",
 	      mat.xx, mat.xy, mat.yx, mat.yy, mat.tx, mat.ty);
-    /* following works for 1, 2, 4, 8, 12 */
+    /* following works for 1, 2, 4, 8, 12, 16 */
     index_bps = (bps < 8 ? bps >> 1 : (bps >> 2) + 1);
     mtx = float2fixed(mat.tx);
     mty = float2fixed(mat.ty);
@@ -532,14 +532,17 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
     penum->used.x = 0;
     penum->used.y = 0;
     {
-	static const sample_unpack_proc_t procs[4] = {
+	static sample_unpack_proc_t procs[6] = {
 	    sample_unpack_1, sample_unpack_2,
-	    sample_unpack_4, sample_unpack_8
+	    sample_unpack_4, sample_unpack_8,
+	    0, 0
 	};
 	int i;
 
-	if (index_bps == 4) {
-	    if ((penum->unpack = sample_unpack_12_proc) == 0) {		/* 12-bit samples are not supported. */
+        procs[4] = sample_unpack_12_proc;
+        procs[5] = sample_unpack_16_proc;
+	if (index_bps >= 4) {
+	    if ((penum->unpack = procs[index_bps]) == 0) {		/* bps case not supported. */
 		gx_default_end_image(dev,
 				     (gx_image_enum_common_t *) penum,
 				     false);
@@ -547,8 +550,8 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 	    }
 	} else {
 	    penum->unpack = procs[index_bps];
-	    if_debug1('b', "[b]unpack=%d\n", bps);
 	}
+	if_debug1('b', "[b]unpack=%d\n", bps);
 	/* Set up pixel0 for image class procedures. */
 	penum->dda.pixel0 = penum->dda.strip;
 	for (i = 0; i < gx_image_class_table_count; ++i)

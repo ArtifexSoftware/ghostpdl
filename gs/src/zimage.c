@@ -156,7 +156,7 @@ image1_setup(i_ctx_t * i_ctx_p, bool has_alpha)
                                op,
                                (gs_pixel_image_t *)&image,
                                &ip,
-			       (level2_enabled ? 12 : 8),
+			       (level2_enabled ? 16 : 8),
                                has_alpha );
     if (code < 0)
 	return code;

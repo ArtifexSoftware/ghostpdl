@@ -40,7 +40,7 @@ typedef struct stream_PDiff_state_s {
     int case_index;		/* switch index for case dispatch */
     /* The following are updated dynamically. */
     uint row_left;		/* # of bytes left in row */
-    byte prev[s_PDiff_max_Colors];	/* previous sample */
+    uint prev[s_PDiff_max_Colors];	/* previous sample */
 } stream_PDiff_state;
 
 #define private_st_PDiff_state()	/* in spdiff.c */\

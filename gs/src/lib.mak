@@ -1130,11 +1130,11 @@ $(GLD)libd.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBd)
 
 $(GLD)libcore.dev : $(LIB_MAK) $(ECHOGS_XE)\
  $(GLD)libs.dev $(GLD)libx.dev $(GLD)libd.dev\
- $(GLD)iscale.dev $(GLD)no12bit.dev $(GLD)noroplib.dev $(GLD)strdline.dev
+ $(GLD)iscale.dev $(GLD)no16bit.dev $(GLD)no12bit.dev $(GLD)noroplib.dev $(GLD)strdline.dev
 	$(SETMOD) $(GLD)libcore
 	$(ADDMOD) $(GLD)libcore -dev2 nullpage
 	$(ADDMOD) $(GLD)libcore -include $(GLD)libs $(GLD)libx $(GLD)libd
-	$(ADDMOD) $(GLD)libcore -include $(GLD)iscale $(GLD)no12bit $(GLD)noroplib
+	$(ADDMOD) $(GLD)libcore -include $(GLD)iscale $(GLD)no16bit $(GLD)no12bit $(GLD)noroplib
 	$(ADDMOD) $(GLD)libcore -include $(GLD)strdline
 
 # ---------------- Stream support ---------------- #
@@ -2156,7 +2156,7 @@ $(GLOBJ)gspath1.$(OBJ) : $(GLSRC)gspath1.c $(GXERR) $(math__h)\
 	$(GLCC) $(GLO_)gspath1.$(OBJ) $(C_) $(GLSRC)gspath1.c
 
 # --------------- Level 2 color space and color image support --------------- #
-# no12bit is a default, psl2lib replaces it.
+# no12bit and n16bit are the default, psl2lib replaces no12bit and pdfread replaces no16bit
 
 no12bit_=$(GLOBJ)gxino12b.$(OBJ)
 $(GLD)no12bit.dev : $(LIB_MAK) $(ECHOGS_XE) $(no12bit_)
@@ -2190,6 +2190,22 @@ $(GLOBJ)gxi12bit.$(OBJ) : $(GLSRC)gxi12bit.c $(GXERR)\
  $(gxdevmem_h) $(gxfixed_h) $(gxfrac_h) $(gximage_h) $(gxistate_h)\
  $(gxmatrix_h)
 	$(GLCC) $(GLO_)gxi12bit.$(OBJ) $(C_) $(GLSRC)gxi12bit.c
+
+no16bit_=$(GLOBJ)gxino16b.$(OBJ)
+$(GLD)no16bit.dev : $(LIB_MAK) $(ECHOGS_XE) $(no16bit_)
+	$(SETMOD) $(GLD)no16bit $(no16bit_)
+
+$(GLOBJ)gxino16b.$(OBJ) : $(GLSRC)gxino16b.c $(std_h)\
+ $(gstypes_h) $(gxsample_h)
+	$(GLCC) $(GLO_)gxino16b.$(OBJ) $(C_) $(GLSRC)gxino16b.c
+
+$(GLOBJ)gxi16bit.$(OBJ) : $(GLSRC)gxi16bit.c $(GXERR)\
+ $(memory__h) $(gpcheck_h)\
+ $(gsccolor_h) $(gspaint_h)\
+ $(gxarith_h) $(gxcmap_h) $(gxcpath_h) $(gxdcolor_h) $(gxdevice_h)\
+ $(gxdevmem_h) $(gxfixed_h) $(gxfrac_h) $(gximage_h) $(gxistate_h)\
+ $(gxmatrix_h)
+	$(GLCC) $(GLO_)gxi16bit.$(OBJ) $(C_) $(GLSRC)gxi16bit.c
 
 $(GLOBJ)gxiscale.$(OBJ) : $(GLSRC)gxiscale.c $(GXERR)\
  $(math__h) $(memory__h) $(gpcheck_h)\

@@ -119,6 +119,12 @@ typedef struct sample_map_s {
  */
 extern const sample_unpack_proc_t sample_unpack_12_proc;
 
+/*
+ * Declare the pointer that holds the 16-bit unpacking procedure
+ * if 16-bit samples are supported, 0 otherwise.
+ */
+extern const sample_unpack_proc_t sample_unpack_16_proc;
+
 /* Define the distinct postures of an image. */
 /* Each posture includes its reflected variant. */
 typedef enum {
