@@ -183,8 +183,8 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcs)
         byte *header;
         int code;
 
-        if ( count < 64 )
-          return e_Range;
+        if ( count < 64 && pfh->HeaderFormat != pcfh_bitmap)
+          return e_Range; /* pcfh_bitmap defaults short headers to 0 except underline position = 5; */ 
         desc_size =
           (pfh->FontDescriptorSize[0] << 8) + pfh->FontDescriptorSize[1];
         /* Dispatch on the header format. */
