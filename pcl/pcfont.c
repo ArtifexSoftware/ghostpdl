@@ -474,8 +474,9 @@ pcl_set_current_font_environment(pcl_state_t *pcs)
 	pjl_envvar_t *fontsource = pjl_proc_get_envvar(pcs->pjls, "fontsource");
 	switch (fontsource[0]) {
 	case 'I':
-	    if (!pcl_load_built_in_fonts(pcs, 
-					 pjl_proc_fontsource_to_path(pcs->pjls, fontsource))) {
+	    // NB what happens if pjl command is not I - hmmph?
+	    if (!pcl_load_built_in_fonts(pcs,
+			pjl_proc_fontsource_to_path(pcs->pjls, fontsource))) {
 		if ( pcs->personality == rtl )
 		    /* rtl doesn't use fonts */
 		    return 0;
@@ -580,6 +581,10 @@ pcfont_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 	/* corrupt configuration */
 	if ( code != 0 )
 	    exit( 1 );
+    }
+    if ( type & pcl_reset_permanent ) {
+	pl_dict_release(&pcs->soft_fonts);
+	pl_dict_release(&pcs->built_in_fonts);
     }
 }
 

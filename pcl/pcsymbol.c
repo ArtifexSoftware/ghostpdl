@@ -190,25 +190,29 @@ pcsymbol_dict_value_free(gs_memory_t *mem, void *value, client_name_t cname)
 
 private void
 pcsymbol_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
-{	if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay) )
-	  { id_set_value(pcs->symbol_set_id, 0);
-	    if ( type & pcl_reset_initial )
-	      {
-	      /* Don't set a parent relationship from soft to built-in
-	       * symbol sets.  Although it is arguably useful, it's
-	       * better to avoid it and keep anyone who's looking at the
-	       * soft symbol sets from mucking up the permanent ones. */
-	      pl_dict_init(&pcs->soft_symbol_sets, pcs->memory,
-		  pcsymbol_dict_value_free);
-	      pl_dict_init(&pcs->built_in_symbol_sets, pcs->memory,
-		  pcsymbol_dict_value_free);
-	      }
-	    else if ( type & pcl_reset_printer )
-	      { pcl_args_t args;
-	        arg_set_uint(&args, 1);	/* delete temporary symbol sets */
-		pcl_symbol_set_control(&args, pcs);
-	      }
-	  }
+{	
+    if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay) ) {
+	id_set_value(pcs->symbol_set_id, 0);
+	if ( type & pcl_reset_initial ) {
+	    /* Don't set a parent relationship from soft to built-in
+	     * symbol sets.  Although it is arguably useful, it's
+	     * better to avoid it and keep anyone who's looking at the
+	     * soft symbol sets from mucking up the permanent ones. */
+	    pl_dict_init(&pcs->soft_symbol_sets, pcs->memory,
+			 pcsymbol_dict_value_free);
+	    pl_dict_init(&pcs->built_in_symbol_sets, pcs->memory,
+			 pcsymbol_dict_value_free);
+	    // NB.  Symbol sets are require for RTL/HPGL/2 mode for
+	    // stickfonts but we shouldn't load all of them.
+	    if ( pcl_load_built_in_symbol_sets(pcs) < 0 )
+		dprintf("Internal error, no symbol sets found");
+	}
+	else if ( type & pcl_reset_printer ) { 
+	    pcl_args_t args;
+	    arg_set_uint(&args, 1);	/* delete temporary symbol sets */
+	    pcl_symbol_set_control(&args, pcs);
+	}
+    }
 }
 
 private int

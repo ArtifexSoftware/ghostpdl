@@ -363,9 +363,8 @@ pcl_impl_set_device(
 	//@@@remove color mapper in dnit (think should be in PCL d/nit code)?
 	if ((code = pcl_do_resets(&pcli->pcs, pcl_reset_initial)) < 0 )
 	  goto pisdEnd;
+//@@@ possibly remove sload - loading symbol set should be part of reset process.
 	stage = Sload;
-	if ( (code = pcl_load_built_in_symbol_sets(&pcli->pcs)) < 0 )	/* after pcl_reset_initial */
-	  goto pisdEnd;
 
 	/* provide a PCL graphic state we can return to */
 	stage = Sgsave2;
@@ -553,7 +552,9 @@ pcl_impl_deallocate_interp_instance(
 	gs_memory_t *mem = pcli->memory;
 
 	/*@@@ Do total deinit of interpreter instance */
-
+	/* Get rid of permanent and internal objects */
+	if ( pcl_do_resets(&pcli->pcs, pcl_reset_permanent) < 0 )
+	    return -1;
 	/* Unwind allocation */ 
 	gs_state_free(pcli->pcs.pgs);
 	gs_free_object(mem, pcli->bbox_device, "pcl_deallocate_interp_intance(bbox device)");

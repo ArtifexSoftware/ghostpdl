@@ -207,7 +207,10 @@ typedef enum {
   pcl_reset_page_params = 0x10,
   pcl_reset_picture_frame = 0x20,
   pcl_reset_anchor_point = 0x40,
-  pcl_reset_plot_size = 0x80
+  pcl_reset_plot_size = 0x80,
+  /* define a special reset to be used to free permanent and internal
+     objects: fonts, symbol sets and macros */
+  pcl_reset_permanent = 0x100
 } pcl_reset_type_t;
 /*
  * Define the different kinds of state copying operation that are required
