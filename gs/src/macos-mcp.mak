@@ -1,4 +1,4 @@
-#    Copyright (C) 1997-2002 artofcode LLC.  All rights reserved.
+#    Copyright (C) 1997-2003 artofcode LLC.  All rights reserved.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -172,11 +172,11 @@ SYNC=nosync
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(GLD)pipe.dev $(PSD)jbig2.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(GLD)pipe.dev $(PSD)jbig2.dev $(PSD)macpoll.dev
 #FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev
 #FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)rasterop.dev $(GLD)pipe.dev
 # The following is strictly for testing.
-FEATURE_DEVS_ALL=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)rasterop.dev $(PSD)double.dev $(PSD)trapping.dev $(PSD)stocht.dev $(GLD)pipe.dev $(GLD)macres.dev $(PSD)jbig2.dev
+FEATURE_DEVS_ALL=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)rasterop.dev $(PSD)double.dev $(PSD)trapping.dev $(PSD)stocht.dev $(GLD)pipe.dev $(GLD)macres.dev $(PSD)jbig2.dev $(PSD)macpoll.dev
 #FEATURE_DEVS=$(FEATURE_DEVS_ALL)
 
 # Choose whether to compile the .ps initialization files into the executable.
@@ -352,6 +352,15 @@ $(GLD)macos_.dev: $(MAC1)
 	$(SETMOD) $(DD)macos_ $(MAC1) $(MAC)
 	$(ADDMOD) $(DD)macos_ -obj $(MAC2)
 	$(ADDMOD) $(DD)macos_ -iodev macstdio  # stdout does not work with MSL!!!
+
+# Define polling as a separable feature because it is not needed by the gslib.
+macpoll_=$(GLOBJ)gp_macpoll.$(OBJ)
+$(GLD)macpoll.dev: $(ECHOGS_XE) $(macpoll_)
+	$(SETMOD) $(GLD)macpoll $(macpoll_)
+
+$(GLOBJ)gp_macpoll.$(OBJ): $(GLSRC)gp_macpoll.c $(AK)\
+ $(gx_h) $(gp_h) $(gpcheck_h) $(iapi_h) $(iref_h) $(iminst_h) $(imain_h)
+
 
 # ------------------------------------------------------------------- #
 
