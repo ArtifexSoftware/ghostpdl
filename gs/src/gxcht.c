@@ -71,23 +71,21 @@ private bool
 gx_dc_ht_colored_equal(const gx_device_color * pdevc1,
 		       const gx_device_color * pdevc2)
 {
-    uint num_comp;
+    uint num_comp, m, i;
 
     if (pdevc2->type != pdevc1->type ||
 	pdevc1->colors.colored.c_ht != pdevc2->colors.colored.c_ht ||
 	pdevc1->colors.colored.alpha != pdevc2->colors.colored.alpha ||
+	pdevc1->colors.colored.plane_mask != pdevc2->colors.colored.plane_mask ||
 	pdevc1->phase.x != pdevc2->phase.x ||
 	pdevc1->phase.y != pdevc2->phase.y
 	)
 	return false;
-    num_comp = pdevc1->colors.colored.c_ht->num_comp;
-    return
-	!memcmp(pdevc1->colors.colored.c_base,
-		pdevc2->colors.colored.c_base,
-		num_comp * sizeof(pdevc1->colors.colored.c_base[0])) &&
-	!memcmp(pdevc1->colors.colored.c_level,
-		pdevc2->colors.colored.c_level,
-		num_comp * sizeof(pdevc1->colors.colored.c_level[0]));
+    for (m = pdevc1->colors.colored.plane_mask, i = 0; m != 0; m >>=1, i++)
+        if(m & 1)
+            if (pdevc1->colors.colored.c_base[i]  != pdevc2->colors.colored.c_base[i] ||
+                pdevc1->colors.colored.c_level[i] != pdevc2->colors.colored.c_level[i])
+                return false;
 }
 
 /* Define an abbreviation for a heavily used value. */

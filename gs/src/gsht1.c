@@ -341,6 +341,7 @@ gs_sethalftone_prepare(gs_state * pgs, gs_halftone * pht,
 		    /* we don't need components. */
 		    gs_free_object(mem, pocs, "gs_sethalftone");
 		    pdht->components = 0;
+		    pdht->num_comp = 0;
 		} else {
 		    pdht->components = pocs;
 		    pdht->num_comp = count;
