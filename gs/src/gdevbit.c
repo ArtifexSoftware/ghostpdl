@@ -605,6 +605,9 @@ bit_put_params(gx_device * pdev, gs_param_list * plist)
 		     pdev->color_info.depth == 32 ? cmyk_8bit_map_cmyk_color :
 		     bit_map_cmyk_color);
     }
+    /* Reset the sparable and linear shift, masks, bits. */
+    set_linear_color_bits_mask_shift(pdev);
+    pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
     return 0;
 }
 

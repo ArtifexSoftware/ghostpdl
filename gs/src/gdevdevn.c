@@ -574,12 +574,12 @@ bpc_to_depth(int ncomp, int bpc)
     	return (ncomp * bpc + 7) & 0xf8;
 }
 
-#define BEGIN_ARRAY_PARAM(pread, pname, pa, psize, e)\
+#define BEGIN_ARRAY_PARAM(mem, pread, pname, pa, psize, e)\
     BEGIN\
     switch (code = pread(plist, (param_name = pname), &(pa))) {\
       case 0:\
 	if ((pa).size != psize) {\
-	  ecode = gs_note_error(gs_error_rangecheck);\
+	  ecode = gs_note_error(mem, gs_error_rangecheck);\
 	  (pa).data = 0;	/* mark as not filled */\
 	} else
 #define END_ARRAY_PARAM(pa, e)\
@@ -624,11 +624,12 @@ devicen_put_params_no_sep_order(gx_device * pdev, gs_devn_params * pparams,
     gs_param_string_array scna;		/* SeparationColorNames array */
 
     /* Get the SeparationColorNames */
-    BEGIN_ARRAY_PARAM(param_read_name_array, "SeparationColorNames", scna, scna.size, scne) {
+    BEGIN_ARRAY_PARAM(pdev->memory, 
+		      param_read_name_array, "SeparationColorNames", scna, scna.size, scne) {
 	break;
     } END_ARRAY_PARAM(scna, scne);
     if (scna.data != 0 && scna.size > GX_DEVICE_COLOR_MAX_COMPONENTS)
-	return_error(gs_error_rangecheck);
+	return_error(pdev->memory, gs_error_rangecheck);
 
     /* Separations are only valid with a subrtractive color model */
     if (pdev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
@@ -667,7 +668,7 @@ devicen_put_params_no_sep_order(gx_device * pdev, gs_devn_params * pparams,
 	    pdev->color_info.num_components = 1;
         pdev->color_info.depth = bpc_to_depth(pdev->color_info.num_components, 
 						pparams->bitspercomponent);
-        }
+    }
 
     /* If no error (so far) then check for default printer parameters */
     if (ecode >= 0)
@@ -719,11 +720,12 @@ devicen_put_params(gx_device * pdev, gs_devn_params * pparams,
 		    				sizeof(gs_separation_map));
 
     /* Get the SeparationOrder names */
-    BEGIN_ARRAY_PARAM(param_read_name_array, "SeparationOrder", sona, sona.size, sone) {
+    BEGIN_ARRAY_PARAM(pdev->memory, 
+		      param_read_name_array, "SeparationOrder", sona, sona.size, sone) {
 	break;
     } END_ARRAY_PARAM(sona, sone);
     if (sona.data != 0 && sona.size > GX_DEVICE_COLOR_MAX_COMPONENTS)
-	return_error(gs_error_rangecheck);
+	return_error(pdev->memory, gs_error_rangecheck);
 
     /* Separations are only valid with a subrtractive color model */
     if (pdev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
@@ -744,7 +746,7 @@ devicen_put_params(gx_device * pdev, gs_devn_params * pparams,
 	         */
 	        if ((comp_num = check_pcm_and_separation_names(pdev, pparams,
 			(const char *)sona.data[i].data, sona.data[i].size, 0)) < 0) {
-		    gs_note_error(ecode = gs_error_rangecheck);
+		    gs_note_error(pdev->memory, ecode = gs_error_rangecheck);
 		    break;
 		}
 		pparams->separation_order_map[comp_num] = i;
@@ -756,7 +758,7 @@ devicen_put_params(gx_device * pdev, gs_devn_params * pparams,
 	 * of ProcessColorModel components and SeparationColorNames is used.
 	 */
         pdev->color_info.num_components = (num_order) ? num_order 
-						       : npcmcolors + num_spot;
+						      : npcmcolors + num_spot;
         /* 
          * The DeviceN device can have zero components if nothing has been
 	 * specified.  This causes some problems so force at least one component
@@ -814,7 +816,7 @@ devicen_put_params(gx_device * pdev, gs_devn_params * pparams,
 int
 check_pcm_and_separation_names(const gx_device * dev,
 		const gs_devn_params * pparams, const char * pname,
-					int name_size, int src_index)
+		int name_size, int src_index)
 {
     const fixed_colorant_names_list * list = pparams->std_colorant_names;
     const fixed_colorant_name * pcolor = *list;
@@ -1208,12 +1210,12 @@ write_pcx_file(gx_device_printer * pdev, char * filename, int ncomp,
 
     in = fopen(filename, "rb");
     if (!in)
-	return_error(gs_error_invalidfileaccess);
+	return_error(pdev->memory, gs_error_invalidfileaccess);
     sprintf(outname, "%s.pcx", filename);
     out = fopen(outname, "wb");
     if (!out) {
 	fclose(in);
-	return_error(gs_error_invalidfileaccess);
+	return_error(pdev->memory, gs_error_invalidfileaccess);
     }
 
     planar = setup_pcx_header(pdev, &header, ncomp, bpc);
@@ -1243,7 +1245,7 @@ pcx_write_page(gx_device_printer * pdev, FILE * infile, int linesize, FILE * out
     int code = 0;		/* return code */
 
     if (line == 0)		/* can't allocate line buffer */
-	return_error(gs_error_VMerror);
+	return_error(pdev->memory, gs_error_VMerror);
 
     /* Fill in the other variable entries in the header struct. */
 
@@ -1322,7 +1324,7 @@ pcx_write_page(gx_device_printer * pdev, FILE * infile, int linesize, FILE * out
 		    break;
 
 		default:
-		    code = gs_note_error(gs_error_rangecheck);
+		    code = gs_note_error(pdev->memory, gs_error_rangecheck);
 		    goto pcx_done;
 
 	    }

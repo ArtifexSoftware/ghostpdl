@@ -149,9 +149,9 @@ epsc_print_page(gx_device_printer *pdev, FILE *prn_stream)
 	int y_mult = (y_24pin ? 3 : 1);
 	int line_size = (pdev->width + 7) >> 3;	/* always mono */
 	int in_size = line_size * (8 * y_mult);
-	byte *in = (byte *)gs_malloc(in_size+1, 1, "epsc_print_page(in)");
+	byte *in = (byte *)gs_malloc(pdev->memory, in_size+1, 1, "epsc_print_page(in)");
 	int out_size = ((pdev->width + 7) & -8) * y_mult;
-	byte *out = (byte *)gs_malloc(out_size+1, 1, "epsc_print_page(out)");
+	byte *out = (byte *)gs_malloc(pdev->memory, out_size+1, 1, "epsc_print_page(out)");
 	int x_dpi = (int)pdev->x_pixels_per_inch;
 	char start_graphics = (char)
 		((y_24pin ? graphics_modes_24 : graphics_modes_9)[x_dpi / 60]);
@@ -168,8 +168,8 @@ epsc_print_page(gx_device_printer *pdev, FILE *prn_stream)
 
 	/* Check allocations */
 	if ( in == 0 || out == 0 )
-	   {	if ( in ) gs_free((char *)in, in_size+1, 1, "epsc_print_page(in)");
-		if ( out ) gs_free((char *)out, out_size+1, 1, "epsc_print_page(out)");
+	   {	if ( in ) gs_free(pdev->memory, (char *)in, in_size+1, 1, "epsc_print_page(in)");
+		if ( out ) gs_free(pdev->memory, (char *)out, out_size+1, 1, "epsc_print_page(out)");
 		return -1;
 	   }
 
@@ -181,11 +181,11 @@ epsc_print_page(gx_device_printer *pdev, FILE *prn_stream)
 		{
 		color_line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
 		color_in_size = color_line_size * (8 * y_mult);
-		if((color_in = (byte *)gs_malloc(color_in_size+1, 1,
+		if((color_in = (byte *)gs_malloc(pdev->memory, color_in_size+1, 1,
 			"epsc_print_page(color)")) == 0)
 			{
-			gs_free((char *)in, in_size+1, 1, "epsc_print_page(in)");
-			gs_free((char *)out, out_size+1, 1, "epsc_print_page(out)");
+			gs_free(pdev->memory, (char *)in, in_size+1, 1, "epsc_print_page(in)");
+			gs_free(pdev->memory, (char *)out, out_size+1, 1, "epsc_print_page(out)");
 			return(-1);
 			}
 		}
@@ -413,10 +413,10 @@ epsc_print_page(gx_device_printer *pdev, FILE *prn_stream)
 	fputs("\f\033@", prn_stream);
 
 
-	gs_free((char *)out, out_size+1, 1, "epsc_print_page(out)");
-	gs_free((char *)in, in_size+1, 1, "epsc_print_page(in)");
+	gs_free(pdev->memory, (char *)out, out_size+1, 1, "epsc_print_page(out)");
+	gs_free(pdev->memory, (char *)in, in_size+1, 1, "epsc_print_page(in)");
 	if (gx_device_has_color(pdev))
-		gs_free((char *)color_in, color_in_size+1, 1, "epsc_print_page(rin)");
+		gs_free(pdev->memory, (char *)color_in, color_in_size+1, 1, "epsc_print_page(rin)");
 	return 0;
 }
 

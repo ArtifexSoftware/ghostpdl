@@ -486,7 +486,7 @@ gsijs_open(gx_device *dev)
 
     if (strlen(ijsdev->IjsServer) == 0) {
 	eprintf(dev->memory, "ijs server not specified\n");
-	return gs_note_error(gs_error_ioerror);
+	return gs_note_error(dev->memory, gs_error_ioerror);
     }
 
     /* Decide whether to use OutputFile or OutputFD. Note: how to
@@ -516,19 +516,19 @@ gsijs_open(gx_device *dev)
     ijsdev->ctx = ijs_invoke_server(ijsdev->IjsServer);
     if (ijsdev->ctx == (IjsClientCtx *)NULL) {
 	eprintf1(dev->memory, "Can't start ijs server \042%s\042\n", ijsdev->IjsServer);
-	return gs_note_error(gs_error_ioerror);
+	return gs_note_error(dev->memory, gs_error_ioerror);
     }
 
     ijsdev->ijs_version = ijs_client_get_version (ijsdev->ctx);
 
     if (ijs_client_open(ijsdev->ctx) < 0) {
 	eprintf(dev->memory, "Can't open ijs\n");
-	return gs_note_error(gs_error_ioerror);
+	return gs_note_error(dev->memory, gs_error_ioerror);
     }
     if (ijs_client_begin_job(ijsdev->ctx, 0) < 0) {
 	eprintf(dev->memory, "Can't begin ijs job 0\n");
 	ijs_client_close(ijsdev->ctx);
-	return gs_note_error(gs_error_ioerror);
+	return gs_note_error(dev->memory, gs_error_ioerror);
     }
 
     if (use_outputfd) {
@@ -580,18 +580,18 @@ gsijs_close(gx_device *dev)
 
     code = gdev_prn_close(dev);
     if (ijsdev->IjsParams)
-	gs_free(ijsdev->IjsParams, ijsdev->IjsParams_size, 1, 
+	gs_free(dev->memory, ijsdev->IjsParams, ijsdev->IjsParams_size, 1, 
 	    "gsijs_read_string_malloc");
     if (ijsdev->ColorSpace)
-	gs_free(ijsdev->ColorSpace,
+	gs_free(dev->memory, ijsdev->ColorSpace,
 		ijsdev->ColorSpace_size, 1, 
 		"gsijs_read_string_malloc");
     if (ijsdev->DeviceManufacturer)
-	gs_free(ijsdev->DeviceManufacturer,
+	gs_free(dev->memory, ijsdev->DeviceManufacturer,
 		ijsdev->DeviceManufacturer_size, 1, 
 		"gsijs_read_string_malloc");
     if (ijsdev->DeviceModel)
-	gs_free(ijsdev->DeviceModel, ijsdev->DeviceModel_size, 1, 
+	gs_free(dev->memory, ijsdev->DeviceModel, ijsdev->DeviceModel_size, 1, 
 		"gsijs_read_string_malloc");
     ijsdev->IjsParams = NULL;
     ijsdev->IjsParams_size = 0;
@@ -659,7 +659,7 @@ gsijs_output_page(gx_device *dev, int num_copies, int flush)
 
     if ((data = gs_alloc_bytes(pdev->memory, raster, "gsijs_output_page"))
 	== (unsigned char *)NULL)
-        return gs_note_error(gs_error_VMerror);
+        return gs_note_error(dev->memory, gs_error_VMerror);
 
     /* Determine bitmap width and height */
     ijs_height = gdev_prn_print_scan_lines(dev);
@@ -729,7 +729,7 @@ gsijs_output_page(gx_device *dev, int num_copies, int flush)
 	return endcode;
 
     if (status < 0)
-	return gs_note_error(gs_error_ioerror);
+	return gs_note_error(dev->memory, gs_error_ioerror);
 
     code = gx_finish_output_page(dev, num_copies, flush);
     return code;
@@ -814,7 +814,7 @@ gsijs_read_int(gs_param_list *plist, gs_param_name pname, int *pval,
 		*pval = new_value;
 		break;
 	    }
-	    code = gs_note_error(gs_error_rangecheck);
+	    code = gs_note_error(plist->memory, gs_error_rangecheck);
 	    goto e;
 	default:
 	    if (param_read_null(plist, pname) == 0)
@@ -877,7 +877,7 @@ gsijs_read_string(gs_param_list *plist, gs_param_name pname, char *str,
 		str[new_value.size+1] = '\0';
                 break;
 	    }
-            code = gs_note_error(gs_error_rangecheck);
+            code = gs_note_error(plist->memory, gs_error_rangecheck);
             goto e;
         default:
             if (param_read_null(plist, pname) == 0)
@@ -908,14 +908,14 @@ gsijs_read_string_malloc(gs_param_list *plist, gs_param_name pname, char **str,
 	    }
 	    if (new_value.size >= *size) {
 	        if (*str)
-		    gs_free(str, *size, 1, "gsijs_read_string_malloc");
+		    gs_free(plist->memory, str, *size, 1, "gsijs_read_string_malloc");
 		*str = NULL;
 		*size = 0;
 	    }
-	    *str = gs_malloc(new_value.size + 1, 1, 
+	    *str = gs_malloc(plist->memory, new_value.size + 1, 1, 
 		"gsijs_read_string_malloc");
 	    if (*str == NULL) {
-                code = gs_note_error(gs_error_VMerror);
+                code = gs_note_error(plist->memory, gs_error_VMerror);
                 goto e;
 	    }
 	    *size = new_value.size + 1;
@@ -1003,7 +1003,7 @@ gsijs_put_params(gx_device *dev, gs_param_list *plist)
 	if (code >= 0)
 	  code = gsijs_set_margin_params(ijsdev);
 	if (code < 0)
-	    return gs_note_error(gs_error_ioerror);
+	    return gs_note_error(dev->memory, gs_error_ioerror);
     }
     
     return code;

@@ -262,13 +262,13 @@ png_print_page(gx_device_printer * pdev, FILE * file)
     png_text text_png;
 
     if (row == 0 || png_ptr == 0 || info_ptr == 0) {
-	code = gs_note_error(gs_error_VMerror);
+	code = gs_note_error(pdev->memory, gs_error_VMerror);
 	goto done;
     }
     /* set error handling */
     if (setjmp(png_ptr->jmpbuf)) {
 	/* If we get here, we had a problem reading the file */
-	code = gs_note_error(gs_error_VMerror);
+	code = gs_note_error(pdev->memory, gs_error_VMerror);
 	goto done;
     }
     code = 0;			/* for normal path */
@@ -333,7 +333,7 @@ png_print_page(gx_device_printer * pdev, FILE * file)
 	    (void *)gs_alloc_bytes(mem, 256 * sizeof(png_color),
 				   "png palette");
 	if (info_ptr->palette == 0) {
-	    code = gs_note_error(gs_error_VMerror);
+	    code = gs_note_error(mem, gs_error_VMerror);
 	    goto done;
 	}
 	info_ptr->num_palette = num_colors;
@@ -460,15 +460,15 @@ pngalpha_put_params(gx_device * pdev, gs_param_list * plist)
 
     if (code == 0) {
 	code = gdev_prn_put_params(pdev, plist);
-    if ((ppdev->procs.fill_rectangle != pngalpha_fill_rectangle) &&
-	(ppdev->procs.fill_rectangle != NULL)) {
-        /* Get current implementation of fill_rectangle and restore ours.
-	 * Implementation is either clist or memory and can change 
-	 * during put_params.
-	 */
-	ppdev->orig_fill_rectangle = ppdev->procs.fill_rectangle;
-	ppdev->procs.fill_rectangle = pngalpha_fill_rectangle;
-    }
+	if ((ppdev->procs.fill_rectangle != pngalpha_fill_rectangle) &&
+	    (ppdev->procs.fill_rectangle != NULL)) {
+	    /* Get current implementation of fill_rectangle and restore ours.
+	     * Implementation is either clist or memory and can change 
+	     * during put_params.
+	     */
+	    ppdev->orig_fill_rectangle = ppdev->procs.fill_rectangle;
+	    ppdev->procs.fill_rectangle = pngalpha_fill_rectangle;
+	}
     }
     return code;
 }
@@ -534,6 +534,8 @@ pngalpha_copy_alpha(gx_device * dev, const byte * data, int data_x,
 	   int raster, gx_bitmap_id id, int x, int y, int width, int height,
 		      gx_color_index color, int depth)
 {				/* This might be called with depth = 1.... */
+    gs_memory_t *mem = dev->memory;
+
     if (depth == 1)
 	return (*dev_proc(dev, copy_mono)) (dev, data, data_x, raster, id,
 					    x, y, width, height,
@@ -544,7 +546,6 @@ pngalpha_copy_alpha(gx_device * dev, const byte * data, int data_x,
      */
     {
 	const byte *row;
-	gs_memory_t *mem = dev->memory;
 	int bpp = dev->color_info.depth;
 	int ncomps = dev->color_info.num_components;
 	uint in_size = gx_device_raster(dev, false);
@@ -561,7 +562,7 @@ pngalpha_copy_alpha(gx_device * dev, const byte * data, int data_x,
 	lin = gs_alloc_bytes(mem, in_size, "copy_alpha(lin)");
 	lout = gs_alloc_bytes(mem, out_size, "copy_alpha(lout)");
 	if (lin == 0 || lout == 0) {
-	    code = gs_note_error(gs_error_VMerror);
+	    code = gs_note_error(mem, gs_error_VMerror);
 	    goto out;
 	}
 	(*dev_proc(dev, decode_color)) (dev, color, color_cv);
@@ -634,6 +635,6 @@ pngalpha_copy_alpha(gx_device * dev, const byte * data, int data_x,
     }
 
     /* shouldn't reach */
-    return_error(gs_error_unknownerror);
+    return_error(mem, gs_error_unknownerror);
 }
 

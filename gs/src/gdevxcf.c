@@ -590,15 +590,15 @@ xcf_open_profile(xcf_device *xdev, char *profile_fn, icmLuBase **pluo,
     dlprintf1(xdev->memory, "xcf_open_profile %s\n", profile_fn);
     fp = new_icmFileStd_name(profile_fn, (char *)"r");
     if (fp == NULL)
-	return_error(gs_error_undefinedfilename);
+	return_error(xdev->memory, gs_error_undefinedfilename);
     icco = new_icc();
     if (icco == NULL)
-	return_error(gs_error_VMerror);
+	return_error(xdev->memory, gs_error_VMerror);
     if (icco->read(icco, fp, 0))
-	return_error(gs_error_rangecheck);
+	return_error(xdev->memory, gs_error_rangecheck);
     luo = icco->get_luobj(icco, icmFwd, icmDefaultIntent, icmSigDefaultData, icmLuOrdNorm);
     if (luo == NULL)
-	return_error(gs_error_rangecheck);
+	return_error(xdev->memory, gs_error_rangecheck);
     *pluo = luo;
     luo->spaces(luo, NULL, NULL, NULL, poutn, NULL, NULL, NULL, NULL);
     return 0;
@@ -722,12 +722,12 @@ bpc_to_depth(int ncomp, int bpc)
     	return (ncomp * bpc + 7) & 0xf8;
 }
 
-#define BEGIN_ARRAY_PARAM(pread, pname, pa, psize, e)\
+#define BEGIN_ARRAY_PARAM(mem, pread, pname, pa, psize, e)\
     BEGIN\
     switch (code = pread(plist, (param_name = pname), &(pa))) {\
       case 0:\
 	if ((pa).size != psize) {\
-	  ecode = gs_note_error(gs_error_rangecheck);\
+	  ecode = gs_note_error(mem, gs_error_rangecheck);\
 	  (pa).data = 0;	/* mark as not filled */\
 	} else
 #define END_ARRAY_PARAM(pa, e)\
@@ -812,7 +812,8 @@ xcf_put_params(gx_device * pdev, gs_param_list * plist)
     gs_param_string pcm;
     xcf_color_model color_model = pdevn->color_model;
 
-    BEGIN_ARRAY_PARAM(param_read_name_array, "SeparationColorNames", scna, scna.size, scne) {
+    BEGIN_ARRAY_PARAM(pdev->memory, 
+		      param_read_name_array, "SeparationColorNames", scna, scna.size, scne) {
 	break;
     } END_ARRAY_PARAM(scna, scne);
 
