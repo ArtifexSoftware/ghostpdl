@@ -49,6 +49,8 @@ gs.device = device
 gs.dpi = res
 gs.band = 0
 gs.gsoptions = gsconf.baselineoptions
+gs.log_stdout = gsconf.log_stdout
+gs.log_stderr = gsconf.log_stderr
 
 gs.process()
 
@@ -62,5 +64,7 @@ gs.device = device
 gs.dpi = res
 gs.band = 0
 gs.gsoptions = gsconf.compareoptions
+gs.log_stdout = gsconf.log_stdout
+gs.log_stderr = gsconf.log_stderr
 
 gs.process()
