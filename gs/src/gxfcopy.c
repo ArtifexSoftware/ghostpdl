@@ -673,15 +673,17 @@ copy_glyph_type1(gs_font *font, gs_glyph glyph, gs_font *copied)
     gs_glyph_data_t gdata;
     gs_font_type1 *font1 = (gs_font_type1 *)font;
     int code = font1->data.procs.glyph_data(font1, glyph, &gdata);
+    int rcode;
 
     if (code < 0)
 	return code;
     code = copy_glyph_data(font, glyph, copied, &gdata, NULL, 0);
     if (code < 0)
 	return code;
+    rcode = code;
     if (code == 0)
 	code = copy_glyph_name(font, glyph, copied, glyph);
-    return code;
+    return (code < 0 ? code : rcode);
 }
 
 private int
@@ -863,6 +865,7 @@ copy_glyph_type42(gs_font *font, gs_glyph glyph, gs_font *copied)
     gs_font_type42 *const copied42 = (gs_font_type42 *)copied;
     uint gid = font42->data.get_glyph_index(font42, glyph);
     int code = font42->data.get_outline(font42, gid, &gdata);
+    int rcode;
     gs_copied_font_data_t *const cfdata = cf_data(copied);
     gs_copied_glyph_t *pcg;
     float sbw[4];
@@ -874,6 +877,7 @@ copy_glyph_type42(gs_font *font, gs_glyph glyph, gs_font *copied)
     code = copy_glyph_data(font, gid + GS_MIN_CID_GLYPH, copied, &gdata, NULL, 0);
     if (code < 0)
 	return code;
+    rcode = code;
     if (glyph < GS_MIN_CID_GLYPH)
 	code = copy_glyph_name((gs_font *)font, glyph, copied,
 			       gid + GS_MIN_CID_GLYPH);
@@ -893,7 +897,7 @@ copy_glyph_type42(gs_font *font, gs_glyph glyph, gs_font *copied)
 	}
 	factor = -factor;	/* values are negated for WMode = 1 */
     }
-    return code;
+    return (code < 0 ? code : rcode);
 }
 
 private const gs_copied_font_procs_t copied_procs_type42 = {
@@ -1144,7 +1148,7 @@ copy_glyph_cid2(gs_font *font, gs_glyph glyph, gs_font *copied)
     if (code < 0)
 	return code;
     cfdata->CIDMap[cid] = gid;
-    return 0;
+    return code;
 }
 
 private const gs_copied_font_procs_t copied_procs_cid2 = {
@@ -1367,9 +1371,9 @@ gs_copy_glyph(gs_font *font, gs_glyph glyph, gs_font *copied)
     for (i = 0; i < count; ++i) {
 	code = gs_copy_glyph(font, glyphs[i], copied);
 	if (code < 0)
-	    break;
+	    return code;
     }
-    return code;
+    return 0;
 #undef MAX_GLYPH_PIECES
 }
 

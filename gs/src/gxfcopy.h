@@ -68,9 +68,13 @@ int gs_copy_font(gs_font *font, gs_memory_t *mem, gs_font **pfont_new);
  * ("font" argument) must have the same FontType as the destination, and in
  * addition must be "compatible" with it as described under the individual
  * FontTypes just below; however, gs_copy_glyph does not check
- * compatibility.  If any glyph has already been copied but does not have
- * the same definition as the one being copied now, gs_copy_glyph returns an
- * invalidaccess error.
+ * compatibility.
+ *
+ * If any glyph has already been copied but does not have the same
+ * definition as the one being copied now, gs_copy_glyph returns an
+ * invalidaccess error.  If the top-level glyph has already been copied
+ * (with the same definition), gs_copy_glyph returns 1.  Otherwise,
+ * gs_copy_glyph returns 0.
  *
  *	Type 1, Type 2 - the destination and source must have the same
  *	Subrs.  glyph must be a name (not an integer).  Copies the
