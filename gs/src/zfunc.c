@@ -231,6 +231,27 @@ fn_build_float_array(const ref * op, const char *kstr, bool required,
     return code;
 }
 
+/*
+ * If a PostScript object is a Function procedure, return the function
+ * object, otherwise return 0.
+ */
+gs_function_t *
+ref_function(const ref *op)
+{
+    if (r_has_type(op, t_array) &&
+	r_has_masked_attrs(op, a_executable | a_execute,
+			   a_executable | a_all) &&
+	r_size(op) == 2 &&
+	r_has_type_attrs(op->value.refs + 1, t_operator, a_executable) &&
+	op->value.refs[1].value.opproc == zexecfunction &&
+	r_is_struct(op->value.refs) &&
+	r_has_masked_attrs(op->value.refs, a_executable | a_execute,
+			   a_executable | a_all)
+	)
+	return (gs_function_t *)op->value.refs->value.pstruct;
+    return 0;
+}
+
 /* ------ Initialization procedure ------ */
 
 const op_def zfunc_op_defs[] =

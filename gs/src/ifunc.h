@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -57,5 +57,11 @@ int alloc_function_array(P3(uint count, gs_function_t *** pFunctions,
 int fn_build_float_array(P6(const ref * op, const char *kstr, bool required,
 			    bool even, const float **pparray,
 			    gs_memory_t *mem));
+
+/*
+ * If a PostScript object is a Function procedure, return the function
+ * object, otherwise return 0.
+ */
+gs_function_t *ref_function(P1(const ref *op));
 
 #endif /* ifunc_INCLUDED */
