@@ -68,12 +68,13 @@ class Ghostscript:
 
 		
 class GhostscriptTestCase(GSTestCase):
-	def __init__(self, gs='gs', dpi=72, band=0, file='test.ps', device='pdfwrite'):
+	def __init__(self, gs='gs', dpi=72, band=0, file='test.ps', device='pdfwrite', gsoptions=''):
 		self.gs = gs
 		self.file = file
 		self.dpi = dpi
 		self.band = band
 		self.device = device
+		self.gsoptions = gsoptions
 		GSTestCase.__init__(self)
 
 
@@ -85,6 +86,7 @@ class GSCrashTestCase(GhostscriptTestCase):
 		gs.band = self.band
 		gs.device = self.device
 		gs.infile = self.file
+		gs.gsoptions = self.gsoptions
 
 		self.assert_(gs.process(), 'ghostscript failed to render file: ' + self.file)
 
@@ -109,6 +111,7 @@ class GSCompareTestCase(GhostscriptTestCase):
 		gs.band = self.band
 		gs.infile = self.file
 		gs.outfile = file
+		gs.gsoptions = self.gsoptions
 
 		gs.process()
 		sum = gssum.make_sum(file)
