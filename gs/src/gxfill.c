@@ -565,15 +565,18 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	gx_path_free(&path_intersection, "shading_fill_path_intersection");
 	gx_cpath_free(&cpath_intersection, "shading_fill_cpath_intersection");
     } else {
-	vd_get_dc( (params->adjust.x | params->adjust.y)  ? 'F' : 'f');
-	if (vd_enabled) {
-	    vd_set_shift(0, 100);
-	    vd_set_scale(VD_SCALE);
-	    vd_set_origin(0, 0);
-	    vd_erase(RGB(192, 192, 192));
+	if (vd_allowed('F') || vd_allowed('f')) {
+	    vd_get_dc( (params->adjust.x | params->adjust.y)  ? 'F' : 'f');
+	    if (vd_enabled) {
+		vd_set_shift(0, 100);
+		vd_set_scale(VD_SCALE);
+		vd_set_origin(0, 0);
+		vd_erase(RGB(192, 192, 192));
+	    }
 	}
 	code = gx_general_fill_path(pdev, pis, ppath, params, pdevc, pcpath);
-	vd_release_dc;
+	if (vd_allowed('F') || vd_allowed('f'))
+	    vd_release_dc;
     }
     return code;
 }

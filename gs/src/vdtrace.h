@@ -94,7 +94,8 @@ void vd_setflag(char f, char v);
 #endif
 
 #if VD_TRACE && defined(DEBUG)
-#    define vd_get_dc(f)        BEGIN if (vd_trace0 && vd_flags[(f) & 127]) vd_trace0->get_dc(vd_trace0, &vd_trace1); END
+#    define vd_allowed(f)       (vd_flags[(f) & 127]) 
+#    define vd_get_dc(f)        while (vd_trace0 && vd_allowed(f)) { vd_trace0->get_dc(vd_trace0, &vd_trace1); break; }
 #    define vd_release_dc       BEGIN if (vd_trace1) vd_trace1->release_dc(vd_trace1, &vd_trace1); END
 #    define vd_enabled          (vd_trace1) 
 #    define vd_get_size_unscaled_x      (vd_trace1 ? vd_trace1->get_size_x(vd_trace1) : 100)
@@ -132,6 +133,7 @@ void vd_setflag(char f, char v);
 #    define vd_text(x,y,s,c)    BEGIN if (vd_trace1) vd_impl_text(x,y,s,c); END
 #    define vd_wait             BEGIN if (vd_trace1) vd_trace1->wait(vd_trace1); END
 #else
+#    define vd_allowed(f)   false 
 #    define vd_get_dc(f)    DO_NOTHING
 #    define vd_release_dc   DO_NOTHING
 #    define vd_enabled			0
