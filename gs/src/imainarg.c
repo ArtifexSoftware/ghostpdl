@@ -990,7 +990,7 @@ print_help_trailer(const gs_main_instance *minst)
     uint blen = sizeof(buffer);
 
     if (gp_file_name_combine(gs_doc_directory, strlen(gs_doc_directory), 
-	    use_htm, strlen(use_htm), buffer, &blen) != gp_combine_success)
+	    use_htm, strlen(use_htm), false, buffer, &blen) != gp_combine_success)
 	p = use_htm;
     outprintf(help_trailer, p, GS_BUG_MAILBOX);
 }

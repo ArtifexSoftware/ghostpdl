@@ -134,8 +134,8 @@ search_separator(const char **ip, const char *ipe, const char *item, int directi
  *		"\\server\share/a/y.z/v.v"
  */
 gp_file_name_combine_result
-gp_file_name_combine_generic(const char *prefix, uint plen, 
-	    const char *fname, uint flen, char *buffer, uint *blen)
+gp_file_name_combine_generic(const char *prefix, uint plen, const char *fname, uint flen, 
+		    bool no_neighbour, char *buffer, uint *blen)
 {
     /*
      * THIS CODE IS SHARED FOR MULTIPLE PLATFORMS.
@@ -228,12 +228,20 @@ gp_file_name_combine_generic(const char *prefix, uint plen,
 	    /* Input is a parent and the output continues after infix. */
 	    /* Unappend the last separator and the last item. */
 	    uint slen1 = gs_file_name_check_separator(bp, buffer + rlen - bp, bp); /* Backward search. */
+	    char *bie = bp - slen1;
 
-	    bp -= slen1;
+	    bp = bie;
 	    DISCARD(search_separator((const char **)&bp, buffer + rlen, bp, -1));
 	    /* The cast above quiets a gcc warning. We believe it's a bug in the compiler. */
 	    /* Skip the input with separator. We cannot use slen on Mac OS. */
 	    ip += gs_file_name_check_separator(ip, ipe - ip, ip);
+	    if (no_neighbour) {
+		const char *p = ip;
+
+		DISCARD(search_separator(&p, ipe, ip, 1));
+		if (p - ip != bie - bp || memcmp(ip, bp, p - ip))    
+		    return gp_combine_cant_handle;
+	    }
 	    slen = 0;
 	}
 	if (slen) {
@@ -304,7 +312,7 @@ gp_file_name_combine_generic(const char *prefix, uint plen,
 gp_file_name_combine_result
 gp_file_name_reduce(const char *fname, uint flen, char *buffer, uint *blen)
 {
-    return gp_file_name_combine(fname, flen, fname + flen, 0, buffer, blen);
+    return gp_file_name_combine(fname, flen, fname + flen, 0, false, buffer, blen);
 }
 
 /* 

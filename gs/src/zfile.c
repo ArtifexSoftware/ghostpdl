@@ -950,17 +950,17 @@ make_stream_file(ref * pfile, stream * s, const char *access)
 #if NEW_COMBINE_PATH
 
 private gp_file_name_combine_result 
-gp_file_name_combine_patch(const char *prefix, uint plen, 
-	    const char *fname, uint flen, char *buffer, uint *blen)
+gp_file_name_combine_patch(const char *prefix, uint plen, const char *fname, uint flen, 
+			    bool no_neighbour, char *buffer, uint *blen)
 {
-    return gp_file_name_combine(prefix, plen, fname, flen, buffer, blen);
+    return gp_file_name_combine(prefix, plen, fname, flen, no_neighbour, buffer, blen);
 }
 
 #else
 
 private gp_file_name_combine_result 
-gp_file_name_combine_patch(const char *prefix, uint plen, 
-	    const char *fname, uint flen, char *buffer, uint *blen)
+gp_file_name_combine_patch(const char *prefix, uint plen, const char *fname, uint flen, 
+			    bool no_neighbour, char *buffer, uint *blen)
 {
     /* This is a stub. */
     /* It will be replaced with a more intelligent code. */
@@ -1072,7 +1072,7 @@ lib_fopen_with_libpath(i_ctx_t *i_ctx_p, gx_io_device *iodev,
 	    uint plen = r_size(prdir), blen1 = blen;
 
 	    gp_file_name_combine_result r = gp_file_name_combine_patch(pstr, plen, 
-		    fname, flen, buffer, &blen1);
+		    fname, flen, true, buffer, &blen1);
 	    if (r != gp_combine_success)
 		continue;
 #if NEW_COMBINE_PATH

@@ -224,7 +224,7 @@ const char *gp_file_name_concat_string(const char *prefix, uint plen);
  * Various platforms may share this code.
  */
 gp_file_name_combine_result gp_file_name_combine(const char *prefix, uint plen, 
-	    const char *fname, uint flen, char *buffer, uint *blen);
+	    const char *fname, uint flen, bool no_neighbour, char *buffer, uint *blen);
 
 /* -------------- Helpers for gp_file_name_combine_generic ------------- */
 /* Platforms, which do not call gp_file_name_combine_generic, */

@@ -27,7 +27,7 @@
 #include "opcheck.h"
 #include "store.h"
 
-/* <string> <string> .file_name_combine <string> */
+/* <string> <string> <bool> .file_name_combine <string> */
 private int
 zfile_name_combine(i_ctx_t *i_ctx_p)
 {
@@ -35,26 +35,29 @@ zfile_name_combine(i_ctx_t *i_ctx_p)
     const byte *prefix, *fname;
     byte *buffer;
     os_ptr op = osp;
+    bool no_neighbour;
 
-    check_type(op[ 0], t_string);
+    check_type(op[ 0], t_boolean);
     check_type(op[-1], t_string);
-    plen = r_size(op - 1);
-    flen = r_size(op);
+    check_type(op[-2], t_string);
+    plen = r_size(op - 2);
+    flen = r_size(op - 1);
     blen = blen0 = plen + flen + 2; /* Inserts separator and ending zero byte. */
     buffer = ialloc_string(blen, "zfile_name_combine");
     if (buffer == 0)
 	return_error(e_VMerror);
-    prefix = op[-1].value.const_bytes;
-    fname =  op[ 0].value.const_bytes;
+    prefix = op[-2].value.const_bytes;
+    fname =  op[-1].value.const_bytes;
+    no_neighbour = op[0].value.boolval;
     if (gp_file_name_combine((const char *)prefix, plen, 
-			     (const char *)fname, flen, 
+			     (const char *)fname, flen, no_neighbour,
 		             (char *)buffer, &blen) != gp_combine_success)
 	return_error(e_undefinedfilename);
     buffer = iresize_string(buffer, blen0, blen, "zfile_name_combine");
     if (buffer == 0)
 	return_error(e_VMerror);
-    make_string(op - 1, a_read | icurrent_space, blen, buffer);
-    pop(1);
+    make_string(op - 2, a_read | icurrent_space, blen, buffer);
+    pop(2);
     return 0;
 }
 

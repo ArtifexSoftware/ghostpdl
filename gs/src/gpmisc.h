@@ -51,7 +51,7 @@ typedef enum {
  * The trailing zero byte is being added.
  */
 gp_file_name_combine_result gp_file_name_combine_generic(const char *prefix, uint plen, 
-	    const char *fname, uint flen, char *buffer, uint *blen);
+	    const char *fname, uint flen, bool no_neighbour, char *buffer, uint *blen);
 
 /*
  * Reduces parent references and current directory references when possible.
