@@ -1,14 +1,14 @@
 /*
     jbig2dec
     
-    Copyright (c) 2001-2002 artofcode LLC.
+    Copyright (c) 2003 artofcode LLC.
     
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_metadata.c,v 1.1 2003/03/05 02:44:43 giles Exp $
+    $Id: jbig2_metadata.c,v 1.2 2003/03/05 03:32:41 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
