@@ -22,6 +22,7 @@
 #include "memory_.h"
 #include "ghost.h"
 #include "gsutil.h"
+#include "gxalloc.h"		/* for names_array in allocator */
 #include "stream.h"
 #include "strimpl.h"		/* for sfilter.h */
 #include "sfilter.h"		/* for iscan.h */

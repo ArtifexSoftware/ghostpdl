@@ -1,4 +1,4 @@
-/* Copyright (C) 1990, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1990, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -22,11 +22,12 @@
 #ifndef btoken_INCLUDED
 #  define btoken_INCLUDED
 
-/* Define accessors for pointers to the system and user name tables. */
-extern ref binary_token_names;	/* array of size 2 */
-
-#define system_names_p (binary_token_names.value.refs)
-#define user_names_p (binary_token_names.value.refs + 1)
+/*
+ * Define accessors for pointers to the system and user name tables
+ * (arrays).  Note that these refer implicitly to i_ctx_p.
+ */
+#define system_names_p (gs_imemory.space_global->names_array)
+#define user_names_p (gs_imemory.space_local->names_array)
 
 /* Convert an object to its representation in a binary object sequence. */
 int encode_binary_token(P5(i_ctx_t *i_ctx_p, const ref *obj, long *ref_offset,

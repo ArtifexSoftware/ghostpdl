@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -26,7 +26,6 @@
 #ifndef gs_ref_memory_DEFINED
 #  define gs_ref_memory_DEFINED
 typedef struct gs_ref_memory_s gs_ref_memory_t;
-
 #endif
 
 #include "gsalloc.h"
@@ -299,7 +298,18 @@ struct alloc_change_s;
 #ifndef stream_DEFINED
 #  define stream_DEFINED
 typedef struct stream_s stream;
+#endif
 
+/*
+ * Ref (PostScript object) type, only needed for the binary_token_names
+ * member of the state.  This really shouldn't be visible at this level at
+ * all: we include it here only to avoid splitting gs_ref_memory_t two
+ * levels, which would be architecturally better but would involve too much
+ * work at this point.
+ */
+#ifndef ref_DEFINED
+typedef struct ref_s ref;
+#  define ref_DEFINED
 #endif
 
 /*
@@ -365,6 +375,7 @@ struct gs_ref_memory_s {
     uint new_mask;		/* l_new or 0 (default) */
     uint test_mask;		/* l_new or ~0 (default) */
     stream *streams;		/* streams allocated at current level */
+    ref *names_array;		/* system_names or user_names, if needed */
     /* Garbage collector information */
     gs_gc_root_t *roots;	/* roots for GC */
     /* Sharing / saved state information */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1990, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1990, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -20,14 +20,22 @@
 /* Level 2 binary object sequence operators */
 #include "memory_.h"
 #include "ghost.h"
+#include "gxalloc.h"		/* for names_array in allocator */
 #include "oper.h"
 #include "ialloc.h"
+#include "istruct.h"
 #include "btoken.h"
 #include "store.h"
 
-/* System and user name arrays. */
-ref binary_token_names;		/* array of size 2 */
-private ref *const binary_token_names_p = &binary_token_names;
+/*
+ * Define the structure that holds the t_*array ref for the system or
+ * user name table.
+ */
+typedef struct names_array_ref_s {
+    ref names;
+} names_array_ref_t;
+gs_private_st_ref_struct(st_names_array_ref, names_array_ref_t,
+			 "names_array_ref_t");
 
 /* Initialize the binary token machinery. */
 private int
@@ -35,12 +43,20 @@ zbseq_init(i_ctx_t *i_ctx_p)
 {
     /* Initialize fake system and user name tables. */
     /* PostScript code will install the real system name table. */
-    ialloc_ref_array(&binary_token_names, 0 /*a_noaccess */ , 2,
-		     "binary token names");
-    make_empty_array(system_names_p, a_readonly);
-    make_empty_array(user_names_p, a_all);
-    return gs_register_ref_root(imemory, NULL, (void **)&binary_token_names_p,
-				"binary token names");
+    ref *psystem_names = (ref *)
+	gs_alloc_struct(gs_memory_stable(imemory_global), names_array_ref_t,
+			&st_names_array_ref, "zbseq_init(system_names)");
+    ref *puser_names = (ref *)
+	gs_alloc_struct(gs_memory_stable(imemory_local), names_array_ref_t,
+			&st_names_array_ref, "zbseq_init(user_names)");
+
+    if (psystem_names == 0 || puser_names == 0)
+	return_error(e_VMerror);
+    make_empty_array(psystem_names, a_readonly);
+    make_empty_array(puser_names, a_all);
+    system_names_p = psystem_names;
+    user_names_p = puser_names;
+    return 0;
 }
 
 /* <names> .installsystemnames - */
@@ -49,7 +65,7 @@ zinstallsystemnames(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    if (r_space(op) != avm_global)
+    if (r_space(op) != avm_global || imemory_save_level(iimemory_global) != 0)
 	return_error(e_invalidaccess);
     check_read_type(*op, t_shortarray);
     ref_assign_old(NULL, system_names_p, op, ".installsystemnames");

@@ -207,6 +207,7 @@ ialloc_alloc_state(gs_raw_memory_t * parent, uint chunk_size)
     iimem->new_mask = 0;
     iimem->test_mask = ~0;
     iimem->streams = 0;
+    iimem->names_array = 0;
     iimem->roots = 0;
     iimem->num_contexts = 0;
     iimem->saved = 0;

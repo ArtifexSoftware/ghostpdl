@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -24,6 +24,7 @@
 #include "gsdps.h"
 #include "gsimage.h"
 #include "gsiparm2.h"
+#include "gxalloc.h"		/* for names_array in allocator */
 #include "gxfixed.h"		/* for gxpath.h */
 #include "gxpath.h"
 #include "btoken.h"		/* for user_names_p */
@@ -224,30 +225,31 @@ zdefineusername(i_ctx_t *i_ctx_p)
 			old_size << 1);
 	else
 	    new_size <<= 1;
-	/* The user name array is always allocated in system VM, */
-	/* because it must be immune to save/restore. */
+	/*
+	 * The user name array is allocated in stable local VM,
+	 * because it must be immune to save/restore.
+	 */
 	{
-	    uint save_space = icurrent_space;
+	    gs_ref_memory_t *slmem =
+		(gs_ref_memory_t *)gs_memory_stable(imemory_local);
 	    int code;
 
-	    ialloc_set_space(idmemory, avm_system);
-	    code = ialloc_ref_array(&new_array, a_all, new_size,
-				    "defineusername(new)");
-	    if (code < 0) {
-		ialloc_set_space(idmemory, save_space);
+	    code = gs_alloc_ref_array(slmem, &new_array, a_all, new_size,
+				      "defineusername(new)");
+	    if (code < 0)
 		return code;
-	    }
 	    refcpy_to_new(new_array.value.refs, user_names_p->value.refs,
 			  old_size, idmemory);
 	    refset_null(new_array.value.refs + old_size,
 			new_size - old_size);
-	    ifree_ref_array(user_names_p, "defineusername(old)");
-	    ialloc_set_space(idmemory, save_space);
+	    if (old_size)
+		gs_free_ref_array(slmem, user_names_p, "defineusername(old)");
 	}
 	ref_assign(user_names_p, &new_array);
     }
     ref_assign(user_names_p->value.refs + op[-1].value.intval, op);
-  ret:pop(2);
+  ret:
+    pop(2);
     return 0;
 }
 

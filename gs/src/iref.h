@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -23,7 +23,10 @@
 #  define iref_INCLUDED
 
 /* The typedef for object references */
+#ifndef ref_DEFINED
 typedef struct ref_s ref;
+#  define ref_DEFINED
+#endif
 
 /* The typedef for packed object references.  This is opaque here: */
 /* the details are in packed.h. */

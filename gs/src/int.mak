@@ -1224,14 +1224,15 @@ $(PSD)btoken.dev : $(INT_MAK) $(ECHOGS_XE) $(btoken_)
 
 $(PSOBJ)iscanbin.$(OBJ) : $(PSSRC)iscanbin.c $(GH)\
  $(math__h) $(memory__h) $(errors_h)\
- $(gsutil_h) $(ialloc_h) $(ibnum_h) $(iddict_h) $(iname_h)\
+ $(gsutil_h) $(gxalloc_h) $(ialloc_h) $(ibnum_h) $(iddict_h) $(iname_h)\
  $(iscan_h) $(iscanbin_h) $(iutil_h) $(ivmspace_h)\
  $(btoken_h) $(dstack_h) $(ostack_h)\
  $(sfilter_h) $(store_h) $(stream_h) $(strimpl_h)
 	$(PSCC) $(PSO_)iscanbin.$(OBJ) $(C_) $(PSSRC)iscanbin.c
 
 $(PSOBJ)zbseq.$(OBJ) : $(PSSRC)zbseq.c $(OP) $(memory__h)\
- $(btoken_h) $(ialloc_h) $(store_h)
+ $(gxalloc_h)\
+ $(btoken_h) $(ialloc_h) $(istruct_h) $(store_h)
 	$(PSCC) $(PSO_)zbseq.$(OBJ) $(C_) $(PSSRC)zbseq.c
 
 # ---------------- User paths & insideness testing ---------------- #
@@ -1475,7 +1476,7 @@ $(PSD)dps.dev : $(INT_MAK) $(ECHOGS_XE) $(GLD)dpslib.dev $(PSD)psl2.dev $(dps_)
 
 $(PSOBJ)zdps.$(OBJ) : $(PSSRC)zdps.c $(OP)\
  $(gsdps_h) $(gsimage_h) $(gsiparm2_h) $(gsstate_h)\
- $(gxfixed_h) $(gxpath_h)\
+ $(gxalloc_h) $(gxfixed_h) $(gxpath_h)\
  $(btoken_h)\
  $(idparam_h) $(iddict_h) $(igstate_h) $(iimage2_h) $(iname_h) $(store_h)
 	$(PSCC) $(PSO_)zdps.$(OBJ) $(C_) $(PSSRC)zdps.c
