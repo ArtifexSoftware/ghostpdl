@@ -220,7 +220,7 @@ $(GLOBJ)gxsync.$(OBJ) : $(GLSRC)gxsync.c $(GXERR) $(memory__h)\
 ### Miscellaneous
 
 # Support for platform code
-$(GLOBJ)gpmisc.$(OBJ) : $(GLSRC)gpmisc.c $(close__h) $(stdio__h)\
+$(GLOBJ)gpmisc.$(OBJ) : $(GLSRC)gpmisc.c $(close__h) $(stat__h) $(stdio__h)\
  $(gp_h) $(gpgetenv_h) $(gpmisc_h)
 	$(GLCC) $(GLO_)gpmisc.$(OBJ) $(C_) $(GLSRC)gpmisc.c
 

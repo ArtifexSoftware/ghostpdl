@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -69,6 +69,48 @@
 #    endif
 #  endif
 #  define S_ISCHR(mode) (((mode) & S_IFMT) == S_IFCHR)
+#endif
+/*
+ * Microsoft C defines the O_ and S_ symbols with, and only with, a
+ * leading underscore.
+ */
+#ifndef O_APPEND
+#  define O_APPEND _O_APPEND
+#endif
+#ifndef O_CREAT
+#  define O_CREAT _O_CREAT
+#endif
+#ifndef O_EXCL
+#  define O_EXCL _O_EXCL
+#endif
+#ifndef O_RDONLY
+#  define O_RDONLY _O_RDONLY
+#endif
+#ifndef O_RDWR
+#  define O_RDWR _O_RDWR
+#endif
+#ifndef O_TRUNC
+#  define O_TRUNC _O_TRUNC
+#endif
+#ifndef O_WRONLY
+#  define O_WRONLY _O_WRONLY
+#endif
+/*
+ * Microsoft C also doesn't define S_IRUSR or S_IWUSR.
+ */
+#ifndef S_IRUSR
+#  ifndef S_IREAD
+#    define S_IRUSR _S_IREAD
+#  else
+#    define S_IRUSR S_IREAD
+#  endif
+#endif
+#ifndef S_IWUSR
+#  ifndef S_IWRITE
+#    define S_IWUSR _S_IWRITE
+#  else
+#    define S_IWUSR S_IWRITE
+#  endif
 #endif
 
 #endif /* stat__INCLUDED */

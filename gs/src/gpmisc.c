@@ -21,8 +21,7 @@
 
 #include "close_.h"
 #include "stdio_.h"
-#include <sys/types.h>
-#include <sys/stat.h>
+#include "stat_.h"
 #include <fcntl.h>
 #include "gp.h"
 #include "gpgetenv.h"
@@ -44,7 +43,7 @@ gp_gettmpdir(char *ptr, int *plen)
 }
 
 /*
- * Open a temporary file, using O_EXCL and S_IRWXU to prevent race
+ * Open a temporary file, using O_EXCL and S_I*USR to prevent race
  * conditions and symlink attacks.
  */
 FILE *
@@ -73,12 +72,7 @@ gp_fopentemp(const char *fname, const char *mode)
 	default:		/* e.g., 'b' */
 	    break;
 	}
-    /*
-     * We should S_IRUSR and S_IWUSR here, but Microsoft VC++ (and *only*
-     * MSVC++) doesn't define these, so we have to use S_IREAD and S_IWRITE
-     * instead.
-     */
-    fildes = open(fname, flags, S_IREAD | S_IWRITE);
+    fildes = open(fname, flags, S_IRUSR | S_IWUSR);
     if (fildes < 0)
 	return 0;
     file = fdopen(fildes, mode);
