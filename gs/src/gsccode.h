@@ -60,8 +60,9 @@ typedef enum {
 	/* Pseudo-encodings (glyph sets). */
     ENCODING_INDEX_MACGLYPH,	/* a pseudo-encoding */
     ENCODING_INDEX_ALOGLYPH,	/* ditto */
-    ENCODING_INDEX_ALXGLYPH	/* ditto */
-#define NUM_KNOWN_ENCODINGS 10
+    ENCODING_INDEX_ALXGLYPH,	/* ditto */
+    ENCODING_INDEX_CFFSTRINGS	/* CFF StandardStrings */
+#define NUM_KNOWN_ENCODINGS 11
 } gs_encoding_index_t;
 #define KNOWN_REAL_ENCODING_NAMES\
   "StandardEncoding", "ISOLatin1Encoding", "SymbolEncoding",\
