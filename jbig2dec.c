@@ -488,6 +488,7 @@ main (int argc, char **argv)
 
   } /* end params.mode switch */
 
+  if (params.output_file) free(params.output_file);
   if (params.hash) hash_free(&params);
   
   /* fin */
