@@ -761,7 +761,7 @@ display_put_params(gx_device * dev, gs_param_list * plist)
     }
 
 
-    if ( is_open && 
+    if ( is_open && ddev->callback &&
 	((old_width != dev->width) || (old_height != dev->height)) ) {
 	/* We can resize this device while it is open, but we cannot
 	 * change the color format or handle.
