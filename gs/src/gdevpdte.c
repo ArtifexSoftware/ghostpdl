@@ -479,7 +479,7 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
 					width_pt.x, width_pt.y, false);
 		if (code < 0)
 		    return code;
-		adjust_first_last_char(pdfont, pstr->data + penum->index, accepted);
+		adjust_first_last_char(pdfont, pstr->data, accepted);
 		penum->index += accepted;
 	    } else if (text->operation & TEXT_DO_NONE)
 		penum->index += accepted;
