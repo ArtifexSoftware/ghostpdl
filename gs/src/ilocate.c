@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995-2000, 2004 artofcode LLC.  All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -23,12 +23,12 @@
 #include "gsstruct.h"
 #include "iastate.h"
 #include "idict.h"
-#include "igc.h"		/* for gc_state_t */
-#include "igcstr.h"		/* for prototype */
+#include "igc.h"	/* for gc_state_t and gcst_get_memory_ptr() */
+#include "igcstr.h"	/* for prototype */
 #include "iname.h"
 #include "ipacked.h"
 #include "isstate.h"
-#include "iutil.h"		/* for packed_get */
+#include "iutil.h"	/* for packed_get */
 #include "ivmspace.h"
 #include "store.h"
 
@@ -317,7 +317,7 @@ ialloc_validate_chunk(const chunk_t * cp, gc_state_t * gcst)
 	gs_ptr_type_t ptype;
 
 	if (proc != gs_no_struct_enum_ptrs)
-	    for (; (ptype = (*proc) ((const gs_memory_t *)gcst_get_memory_ptr(gcst), 
+	    for (; (ptype = (*proc) (gcst_get_memory_ptr(gcst), 
 				     pre + 1, size, index, &eptr, 
 				     pre->o_type, gcst)) != 0; ++index) {
 		if (eptr.ptr == 0)

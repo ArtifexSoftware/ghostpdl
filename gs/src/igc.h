@@ -83,6 +83,9 @@ void ialloc_validate_chunk(const chunk_t *, gc_state_t *);
 void ialloc_validate_object(const obj_header_t *, const chunk_t *,
 			    gc_state_t *);
 
+/* Exported by igc.c for ilocate.c */
+const gs_memory_t * gcst_get_memory_ptr(gc_state_t *gcst);
+
 /* Macro for returning a relocated pointer */
 const void *print_reloc_proc(const void *obj, const char *cname,
 			     const void *robj);

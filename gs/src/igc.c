@@ -68,8 +68,6 @@ struct gc_mark_stack_s {
 
 /* Forward references */
 
-const gs_memory_t * gcst_get_memory_ptr(gc_state_t *gcst);
-
 private void gc_init_mark_stack(gc_mark_stack *, uint);
 private void gc_objects_clear_marks(const gs_memory_t *mem, chunk_t *);
 private void gc_unmark_names(name_table *);
