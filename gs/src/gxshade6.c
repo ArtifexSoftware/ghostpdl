@@ -684,6 +684,69 @@ gs_shading_Tpp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 
 #if NEW_TENSOR_SHADING
 
+/*
+    This algorithm performs a decomposition of the shading area
+    into a set of constant color trapezoids, some of which
+    may use the transpozed coordinate system.
+
+    The target device assumes semi-open intrvals by X to be painted
+    (See PLRM3, 7.5. Scan conversion details), i.e.
+    it doesn't paint pixels which falls exactly to the right side.
+    Note that with raster devices the algorithm doesn't paint pixels, 
+    whigh are partially covered by the shading area, 
+    but which's centers are outside the area.
+
+    Pixels inside a monotonic part of the shading area are painted 
+    at once, but some exceptions may happen :
+
+        - While flattening boundaries of a subpatch,
+	to keep the plane coverage contiguity we insert wedges 
+	between enighbor subpatches, which use a different
+	flattening factor. With non-monotonic curves
+	those wedges may overlap, and a pixel is painted so many
+	times as many wedges cover it. Fortunately
+	the area of most wedges is zero or extremily small.
+
+	- Since quazi-horizontal wedges may have a non-constant color,
+	they can't decompose into constant color trapezoids with
+	keeping the coverage contiguity. To represent them we
+	apply the XY plane transposition. But with the transposition 
+	a semiopen interval can meet a non-transposed one,
+	so that some lines are not covered. Therefore we emulate 
+	closed intervals with expanding the transposed trapesoids in 
+	fixed_epsilon, and pixels at that boundary may be painted twice.
+
+	- A boundary of a monotonic area can't compute in XY 
+	preciselly due to high order polynomial equations. 
+	Therefore the subdivision near the monotonity boundary 
+	may paint some pixels twice within same monotonic part.
+    
+    The target device may be either raster or vector. 
+    Vector devices should preciselly pass trapezoids to the output.
+    Note that ends of sides of a trapesoid are not necessary 
+    the trapezoid's vertices. Converting this thing into
+    an exact quadrangle may cause an arithmetic error,
+    and the rounding must be done so that the coverage
+    contiguity is not lost. 
+
+    When a device passes a trapezoid to it's output, 
+    a regular rounding would keep the coverage contiguity, 
+    except for the transposed trapesoids. 
+    If a transposed trapezoid is being transposed back, 
+    it doesn't become a canonic trapezoid, and a further
+    decomposition is neccessary. But rounding errors here
+    would break the coverage contiguity at boundaries
+    of the tansposed part of the area.
+
+    Devices, which have no transposed trapezoids and represent 
+    trapezoids only with 8 coordinates of vertices of the quadrangle
+    (pclwrite is an example) may apply the backward transposition,
+    and a clipping instead the further decomposition.
+    Note that many clip regions may appear for all wedges. 
+    Note that in some cases the right side adjustment to be withdrown
+    before the backward transposition.
+ */
+
 /* fixme :
    The current code allocates up to 64 instances of tensor_patch on C stack, 
    when executes fill_stripe, decompose_stripe, fill_quadrangle.
@@ -698,6 +761,7 @@ typedef struct {
 
 #if NEW_TENSOR_SHADING_DEBUG
 static int patch_cnt = 0; /* Temporary for a debug purpose.*/
+static bool dbg_nofill = false;
 #endif
 
 private void
@@ -726,17 +790,18 @@ draw_patch(tensor_patch *p, bool interior, ulong rgbcolor)
 }
 
 private inline void
-draw_quadrangle(tensor_patch *p, ulong rgbcolor)
+draw_quadrangle(const tensor_patch *p, ulong rgbcolor)
 {
 #ifdef DEBUG
-#if 0 /* Disabled for a better view with a specific purpose. 
-	 Feel free to enable fo needed. */
-    vd_quad(p->pole[0][0].x, p->pole[0][0].y, 
+#   if NEW_TENSOR_SHADING_DEBUG
+    if (dbg_nofill) /* A switch for a better view with a specific purpose. 
+	    Feel free to change the condition if needed. */
+#   endif
+	vd_quad(p->pole[0][0].x, p->pole[0][0].y, 
 	    p->pole[0][3].x, p->pole[0][3].y,
 	    p->pole[3][3].x, p->pole[3][3].y,
 	    p->pole[3][0].x, p->pole[3][0].y,
 	    0, rgbcolor);
-#endif
 #endif
 }
 
@@ -793,7 +858,7 @@ intersection_of_big_bars(const gs_fixed_point q[4], int i0, int i1, int i2, int 
 	s3 = -1;
     else 
 	s3 = 0;
-    if (s2 = 0) {
+    if (s2 == 0) {
 	if (s3 == 0)
 	    return false; /* Collinear bars - out of interest. */
 	if (0 <= dx2 && dx2 <= dx1 && 0 <= dy2 && dy2 <= dy1) {
@@ -820,7 +885,7 @@ intersection_of_big_bars(const gs_fixed_point q[4], int i0, int i1, int i2, int 
 	   it converts to 'double' with a reasonable truncation. */
 	fixed d23x = dx3 - dx2, d23y = dy3 - dy2;
 	int64_t det = (int64_t)dx1 * d23y - (int64_t)dy1 * d23x;
-	int64_t mul = (int64_t)dy2 * d23x - (int64_t)dx2 * d23y;
+	int64_t mul = (int64_t)dx2 * d23y - (int64_t)dy2 * d23x;
 	double dy = dy1 * (double)mul / (double)det;
 	if (dy1 > 0 && dy >= dy1)
 	    return false; /* Outside the bar 1. */
@@ -853,23 +918,39 @@ gx_shade_trapezoid(patch_fill_state_t *pfs, const gs_fixed_point q[4],
 	int vi0, int vi1, int vi2, int vi3, fixed ybot, fixed ytop, 
 	bool swap_axes, const gx_device_color *pdevc, bool orient)
 {
-    gs_fixed_edge le, ri;
+    gs_fixed_edge le, re;
 
     if (ybot > ytop)
 	return 0;
     if (!orient) {
 	le.start = q[vi0];
 	le.end = q[vi1];
-	ri.start = q[vi2];
-	ri.end = q[vi3];
+	re.start = q[vi2];
+	re.end = q[vi3];
     } else {
 	le.start = q[vi2];
 	le.end = q[vi3];
-	ri.start = q[vi0];
-	ri.end = q[vi1];
+	re.start = q[vi0];
+	re.end = q[vi1];
+    }
+#   if NEW_TENSOR_SHADING_DEBUG
+    if (dbg_nofill)
+	return 0;
+#   endif
+    if (swap_axes) {
+	/*  Sinse the rasterizer algorithm assumes semi-open interval
+	    when computing pixel coverage, we should expand
+	    the right side of the area. Otherwise a dropout can happen :
+	    if the left neighbour is painted with !swap_axes,
+	    the left side of this area appears to be the left side 
+	    of the neighbour area, and the side is not included
+	    into both areas.
+	 */
+	re.start.x += fixed_epsilon;
+	re.end.x += fixed_epsilon;
     }
     return dev_proc(pfs->dev, fill_trapezoid)(pfs->dev,
-	    &le, &ri, ybot, ytop, swap_axes, pdevc, pfs->pis->log_op);
+	    &le, &re, ybot, ytop, swap_axes, pdevc, pfs->pis->log_op);
 }
 
 private void
@@ -922,10 +1003,12 @@ constant_color_wedge_trap(patch_fill_state_t *pfs,
     fixed dx2 = q[2].x - q[0].x, dy2 = q[2].y - q[0].y;
     bool orient;
 
+#if 0
     if (!swap_axes)
 	vd_quad(q[0].x, q[0].y, q[1].x, q[1].y, q[3].x, q[3].y, q[2].x, q[2].y, 0, RGB(255, 0, 0));
     else
 	vd_quad(q[0].y, q[0].x, q[1].y, q[1].x, q[3].y, q[3].x, q[2].y, q[2].x, 0, RGB(255, 0, 0));
+#endif
     patch_resolve_color(&c1, pfs);
     patch_color_to_device_color(pfs, &c1, &dc);
     if (intersection_of_big_bars(q, 0, 1, 2, 3, &ry, &ey)) {
@@ -1220,11 +1303,12 @@ constant_color_quadrangle(patch_fill_state_t * pfs, const tensor_patch *p)
     gs_fixed_point q[4];
     fixed ry, ey;
     int code;
-    bool swap_axes;
+    bool swap_axes = false;
     gx_device_color dc;
     patch_color_t c1, c2, c;
     bool orient;
 
+    draw_quadrangle(p, RGB(0, 255, 0));
     patch_interpolate_color(&c1, &p->c[0][0], &p->c[0][1], pfs, 0.5);
     patch_interpolate_color(&c2, &p->c[1][0], &p->c[1][1], pfs, 0.5);
     patch_interpolate_color(&c, &c1, &c2, pfs, 0.5);
@@ -1234,11 +1318,16 @@ constant_color_quadrangle(patch_fill_state_t * pfs, const tensor_patch *p)
 	gs_fixed_point qq[4];
 
 	make_vertices(qq, p);
-	dx = span_x(qq, 4);
-	dy = span_y(qq, 4);
-	swap_axes = (dy < dx);
-	if (swap_axes)
-	    do_swap_axes(qq, 4);
+#	if 0 /* Swapping axes may improve the precision, 
+		but slows down due to the area expantion needed
+		in gx_shade_trapezoid. */
+	    dx = span_x(qq, 4);
+	    dy = span_y(qq, 4);
+	    if (dy < dx) {
+		do_swap_axes(qq, 4);
+		swap_axes = true;
+	    }
+#	endif
 	wrap_vertices_by_y(q, qq);
     }
     {	fixed dx1 = q[1].x - q[0].x, dy1 = q[1].y - q[0].y;
@@ -1574,8 +1663,8 @@ fill_quadrangle(patch_fill_state_t *pfs, const tensor_patch *p)
 	fill_linear_wedge(pfs, q, &p->c[0][0], &p->c[1][0]); /* smashes q. */
 	q[0] = s0.pole[0][3], q[2] = s0.pole[3][3], q[1] = s1.pole[3][3];
 	fill_linear_wedge(pfs, q, &p->c[0][1], &p->c[1][1]); /* smashes q. */
-	draw_quadrangle(&s0, RGB(255, 0, 0));
-	draw_quadrangle(&s1, RGB(255, 0, 0));
+	/* draw_quadrangle(&s0, RGB(255, 0, 0)); */
+	/* draw_quadrangle(&s1, RGB(255, 0, 0)); */
 	code = fill_quadrangle(pfs, &s0);
 	if (code < 0)
 	    return code;
@@ -1586,8 +1675,8 @@ fill_quadrangle(patch_fill_state_t *pfs, const tensor_patch *p)
 	fill_linear_wedge(pfs, q, &p->c[0][0], &p->c[0][1]); /* smashes q. */
 	q[0] = s0.pole[3][0], q[2] = s0.pole[3][3], q[1] = s1.pole[3][3];
 	fill_linear_wedge(pfs, q, &p->c[1][0], &p->c[1][1]); /* smashes q. */
-	draw_quadrangle(&s0, RGB(255, 0, 0));
-	draw_quadrangle(&s1, RGB(255, 0, 0));
+	/* draw_quadrangle(&s0, RGB(255, 0, 0)); */
+	/* draw_quadrangle(&s1, RGB(255, 0, 0)); */
 	code = fill_quadrangle(pfs, &s0);
 	if (code < 0)
 	    return code;
@@ -1885,14 +1974,14 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 
 #if NEW_TENSOR_SHADING_DEBUG
     patch_cnt++;
-    /*if (patch_cnt == 3) */
+    if (patch_cnt == 11)
 #endif
     {
 	vd_get_dc('s');
 	vd_set_shift(0, 0);
 	vd_set_scale(0.01);
 	vd_set_origin(0, 0);
-	vd_erase(RGB(192, 192, 192));
+	/* vd_erase(RGB(192, 192, 192)); */
     }
     /* We decompose the patch into tiny quadrangles,
        possibly inserting wedges between them against a dropout. */
@@ -1925,6 +2014,11 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 	   patches may use the opposite direction for same bounding curve.
 	   We apply the recursive dichotomy, in which 
 	   the rounding errors do not depend on the direction. */
+#	if NEW_TENSOR_SHADING_DEBUG
+	    dbg_nofill = false;
+	    code = fill_patch(pfs, &p, kvm);
+	    dbg_nofill = true;
+#	endif
 	code = fill_patch(pfs, &p, kvm);
     }
     if (km + 1 > count_of(buf))
