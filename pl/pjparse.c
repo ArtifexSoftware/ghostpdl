@@ -15,6 +15,7 @@
 /* PJL parser */
 #include "stat_.h"
 #include "memory_.h"
+#include "stdio_.h"
 #include "scommon.h"
 #include "gdebug.h"
 #include "gp.h"
@@ -211,7 +212,7 @@ pjl_side_effects(pjl_parser_state_t *pst, char *variable, char *value, bool defa
        the caller. */
     if ( !pjl_compare(variable, "ORIENTATION") &&
 	 !pjl_compare(value, "LANDSCAPE") )
-	pjl_set(pst, "FORMLINES", "45", defaults);
+	pjl_set(pst, (char *)"FORMLINES", (char *)"45", defaults);
     /* fill in other side effects here */
     return;
 }
@@ -615,10 +616,10 @@ pjl_fsdirlist(pjl_parser_state_t *pst, char *pathname, int entry, int count)
 }
 
 inline private int
-pjl_write_remaining_data(pjl_parser_state_t *pst, byte **pptr, byte **pplimit)
+pjl_write_remaining_data(pjl_parser_state_t *pst, const byte **pptr, const byte **pplimit)
 {
-    byte *ptr = *pptr;
-    byte *plimit = *pplimit;
+    const byte *ptr = *pptr;
+    const byte *plimit = *pplimit;
 
     uint avail = plimit - ptr;
     uint bytes_written = min( avail, pst->bytes_to_write );
@@ -645,7 +646,7 @@ pjl_delete_file(pjl_parser_state_t *pst, char *pathname)
     pjl_parsed_filename_to_string(fname, pathname);
     if ( pjl_verify_file_operation(pst, fname) < 0 )
 	return -1;
-    return unlink(pst->mem, fname);
+    return unlink(fname);
 }
 
 /* handle pattern foo = setting, e.g. volume = "0:", name = 0:]pcl.
@@ -806,10 +807,10 @@ get_fp(pjl_parser_state_t *pst, char *name)
 	
     /* 0: */
     result[0] = '\0';
-    pjl_search_for_file(pst, PJL_VOLUME_0, name, result);
+    pjl_search_for_file(pst, (char *)PJL_VOLUME_0, name, result);
     if ( result[0] == '\0' ) {
 	/* try 1: */
-	pjl_search_for_file(pst, PJL_VOLUME_1, name, result);
+	pjl_search_for_file(pst, (char *)PJL_VOLUME_1, name, result);
 	if ( result[0] == '\0' )
 	    return 0;
     }
@@ -884,8 +885,8 @@ pjl_set_next_fontsource(pjl_parser_state_t* pst)
 	}
     }
     /* set both default and environment font source, the spec is not clear about this */
-    pjl_set(pst, "fontsource", pst->font_envir[current_source].designator, true);
-    pjl_set(pst, "fontsource", pst->font_defaults[current_source].designator, false);
+    pjl_set(pst, (char *)"fontsource", pst->font_envir[current_source].designator, true);
+    pjl_set(pst, (char *)"fontsource", pst->font_defaults[current_source].designator, false);
 }
 
 /* get a pjl environment variable from the current environment - not
@@ -909,8 +910,8 @@ pjl_get_envvar(pjl_parser_state *pst, const char *pjl_var)
  int
 pjl_process(pjl_parser_state* pst, void *pstate, stream_cursor_read * pr)
 {
-    byte *p = pr->ptr;
-    byte *rlimit = pr->limit;
+    const byte *p = pr->ptr;
+    const byte *rlimit = pr->limit;
     int code = 0;
     /* first check if we are writing data to a file as part of the
        file system commands */
