@@ -2,7 +2,7 @@
 <HTML>
 <HEAD>
    <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.07 [en] (X11; I; Linux 2.0.36 i686) [Netscape]">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.06 [en] (X11; I; Linux 2.0.32 i586) [Netscape]">
    <TITLE>GhostPCL5e, GhostPCL5c, and GhostPXL</TITLE>
 </HEAD>
 <BODY TEXT="#000000" BGCOLOR="#FFFFFF" LINK="#0000EF" VLINK="#51188E" ALINK="#FF0000">
@@ -251,20 +251,15 @@ Code modifications to use Windows TrueType fonts</H1>
 The source file pclfont.c contains the names of the TrueType font files.&nbsp;
 These filenames will need to be modified to the filenames that Windows
 uses for the corresponding TrueType font filenames.&nbsp; Additionally,
-the font search path is set in pcfont.c and pxffont.c for pcl5 and pxl,
-respectively.&nbsp; The current search path is as follows (note: this is
-likely to change in the future):
-<P>&nbsp;&nbsp;&nbsp; "",
-<BR>&nbsp;&nbsp;&nbsp; "fonts/",
-<BR>&nbsp;&nbsp;&nbsp; "/windows/system/",
-<BR>&nbsp;&nbsp;&nbsp; "/windows/fonts/",
-<BR>&nbsp;&nbsp;&nbsp; "/win95/fonts/",
-<BR>&nbsp;&nbsp;&nbsp; "/winnt/fonts/"
+the font search path is set in pjparse.c.&nbsp; cfont.c and pxffont.c for
+pcl5 and pxl, respectively.&nbsp; The current search path is a colon separated
+list associated with the structure that maintains pjl internal resource.&nbsp;
+See pjparse.c
 <H1>
 Reporting bugs</H1>
 Use the <A HREF="http://meerkat.dimensional.com/pcldocs/pclbug.html">bug
 reporting form</A> .
-<BR>&nbsp;
+<P>A frequently asked question file is under construction&nbsp; <A HREF="pclfaq.htm">here.</A>
 <P>Please send comments about this documentation to <A HREF="mailto:henrys@artifex.com">Henry
 Stiles</A> .
 </BODY>
