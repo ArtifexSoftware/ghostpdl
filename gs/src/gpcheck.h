@@ -45,12 +45,16 @@ int gp_check_interrupts(void);
     }
 #  define return_check_interrupt(code)\
     return gs_return_check_interrupt(code)
+#  define set_code_on_interrupt(pcode)\
+    if (*(pcode) == 0)\
+     *(pcode) = (gp_check_interrupts() != 0) ? gs_error_interrupt : 0;
 #else
 #  define gp_check_interrupts() 0
 #  define process_interrupts() DO_NOTHING
 #  define return_if_interrupt()	DO_NOTHING
 #  define return_check_interrupt(code)\
     return (code)
+#  define set_code_on_interrupt(pcode) DO_NOTHING
 #endif
 
 #endif /* gpcheck_INCLUDED */

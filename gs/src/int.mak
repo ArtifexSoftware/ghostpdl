@@ -1968,7 +1968,8 @@ $(PSOBJ)interp.$(OBJ) : $(PSSRC)interp.c $(GH) $(memory__h) $(string__h)\
  $(ialloc_h) $(iastruct_h) $(icontext_h) $(icremap_h) $(iddict_h) $(igstate_h)\
  $(iname_h) $(inamedef_h) $(interp_h) $(ipacked_h)\
  $(isave_h) $(iscan_h) $(istack_h) $(itoken_h) $(iutil_h) $(ivmspace_h)\
- $(oper_h) $(ostack_h) $(sfilter_h) $(store_h) $(stream_h) $(strimpl_h)
+ $(oper_h) $(ostack_h) $(sfilter_h) $(store_h) $(stream_h) $(strimpl_h)\
+ $(gpcheck_h)
 	$(PSCC) $(PSO_)interp.$(OBJ) $(C_) $(PSSRC)interp.c
 
 $(PSOBJ)ireclaim.$(OBJ) : $(PSSRC)ireclaim.c $(GH)\

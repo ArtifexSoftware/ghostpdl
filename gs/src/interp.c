@@ -46,6 +46,7 @@
 #include "files.h"		/* for file_check_read */
 #include "oper.h"
 #include "store.h"
+#include "gpcheck.h"
 
 /*
  * We may or may not optimize the handling of the special fast operators
@@ -1649,6 +1650,7 @@ res:
     } else
 	code = 0;
     ticks_left = gs_interp_time_slice_ticks;
+    set_code_on_interrupt(&code);
     goto sched;
 
     /* Error exits. */

@@ -305,6 +305,9 @@ This is used for handling window events or cooperative
 multitasking.  This function will only be called if
 the Ghostscript interpreter was compiled with <b><tt>CHECK_INTERRUPTS</tt></b>
 as described in <b><tt><a href="../src/gpcheck.h">gpcheck.h</a></tt></b>.
+The polling function should return zero if all is well,
+and return negative if it wants ghostscript to abort.
+The polling function must be fast.
 </blockquote>
 
 <h3><a name="set_display_callback"></a><b><tt>gsapi_set_display_callback()</tt></b></h3>

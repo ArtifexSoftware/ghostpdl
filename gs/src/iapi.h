@@ -174,6 +174,9 @@ gsapi_set_stdio(gs_main_instance *instance,
  * multitasking.  This function will only be called if
  * Ghostscript was compiled with CHECK_INTERRUPTS
  * as described in gpcheck.h.
+ * The polling function should return 0 if all is well,
+ * and negative if it wants ghostscript to abort.
+ * The polling function must be fast.
  */
 GSDLLEXPORT int GSDLLAPI gsapi_set_poll(gs_main_instance *instance,
     int (GSDLLCALLPTR poll_fn)(void *caller_handle));
