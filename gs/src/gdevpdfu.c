@@ -962,12 +962,12 @@ pdf_put_encoded_string(const gx_device_pdf *pdev, const byte *str, uint size, gs
     stream_arcfour_state sarc4;
 
     if (!pdev->KeyLength) {
-	pdf_put_string(pdev, str, size);
+	stream_write(pdev->strm, str, size);
 	return;
     }
     if (pdf_encrypt_init(pdev, object_id, &sarc4) < 0) {
 	/* The interface can't pass an error. */
-	pdf_put_string(pdev, str, size);
+	stream_write(pdev->strm, str, size);
 	return;
     }
     sread_string(&sinp, str + 1, size);
