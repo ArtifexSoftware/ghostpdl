@@ -59,6 +59,7 @@ gsdll_stdin(void *instance, char *buf, int len)
 {
     fd_set rfds;
     int count;
+    int fd = fileno(stdin);
     for (;;) {
 	count = read(fd, buf, len);
 	if (count >= 0)
