@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 2000, 2001 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -341,14 +341,14 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
     if (ecode < 0)
 	goto fail;
     /*
-     * Acrobat Reader 4.0 and earlier don't handle user-space coordinates
-     * larger than 32K.  To compensate for this, reduce the resolution so that
-     * the page size in device space (which we equate to user space) is
-     * significantly less than 32K.  Note that this still does not protect
-     * us against input files that use coordinates far outside the page
-     * boundaries.
+     * Acrobat Reader doesn't handle user-space coordinates larger than
+     * MAX_USER_COORD.  To compensate for this, reduce the resolution so
+     * that the page size in device space (which we equate to user space) is
+     * significantly less than MAX_USER_COORD.  Note that this still does
+     * not protect us against input files that use coordinates far outside
+     * the page boundaries.
      */
-#define MAX_EXTENT 28000
+#define MAX_EXTENT ((int)(MAX_USER_COORD * 0.9))
     /* Changing resolution or page size requires closing the device, */
     if (dev->height > MAX_EXTENT || dev->width > MAX_EXTENT) {
 	double factor =

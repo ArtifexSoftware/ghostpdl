@@ -228,28 +228,24 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
 
 /*
  * Compute the scaling to ensure that user coordinates for a path are within
- * Acrobat's 16K range.  Return true if scaling was needed.
+ * Acrobat's range.  Return true if scaling was needed.  In this case, the
+ * CTM will be multiplied by *pscale, and all coordinates will be divided by
+ * *pscale.
  */
 private bool
-make_path_scaling(const gx_device_pdf *pdev, gx_path *ppath, double *pscale)
+make_path_scaling(const gx_device_pdf *pdev, gx_path *ppath,
+		  floatp prescale, double *pscale)
 {
     gs_fixed_rect bbox;
     double bmin, bmax;
 
     gx_path_bbox(ppath, &bbox);
-    bmin = min(bbox.p.x / pdev->scale.x, bbox.p.y / pdev->scale.y);
-    bmax = max(bbox.q.x / pdev->scale.x, bbox.q.y / pdev->scale.y);
-/*
- * The PDF reference manual, 2nd ed., claims that the limit for coordinates
- * is +/- 32767. However, testing indicates that Acrobat Reader 4 for
- * Windows and Linux fail with coordinates outside +/- 16383. Hence, we
- * limit coordinates to 16k.
- */
-#define MAX_USER_COORD 16380
+    bmin = min(bbox.p.x / pdev->scale.x, bbox.p.y / pdev->scale.y) * prescale;
+    bmax = max(bbox.q.x / pdev->scale.x, bbox.q.y / pdev->scale.y) * prescale;
     if (bmin <= int2fixed(-MAX_USER_COORD) ||
 	bmax > int2fixed(MAX_USER_COORD)
 	) {
-	/* Rescale the path.  Add a little slop. */
+	/* Rescale the path. */
 	*pscale = max(bmin / int2fixed(-MAX_USER_COORD),
 		      bmax / int2fixed(MAX_USER_COORD));
 	return true;
@@ -323,7 +319,7 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 	    pprintg1(s, "%g i\n", params->flatness);
 	    pdev->state.flatness = params->flatness;
 	}
-	if (make_path_scaling(pdev, ppath, &scale)) {
+	if (make_path_scaling(pdev, ppath, 1.0, &scale)) {
 	    gs_make_scaling(pdev->scale.x * scale, pdev->scale.y * scale,
 			    &smat);
             pdf_put_matrix(pdev, "q ", &smat, "cm\n");
@@ -351,6 +347,7 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
     double scale, path_scale;
     bool set_ctm;
     gs_matrix mat;
+    double prescale = 1;
 
     if (gx_path_is_void(ppath))
 	return 0;		/* won't mark the page */
@@ -372,7 +369,15 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
      */
     set_ctm = (bool)gdev_vector_stroke_scaling((gx_device_vector *)pdev,
 					       pis, &scale, &mat);
-    if (make_path_scaling(pdev, ppath, &path_scale)) {
+    if (set_ctm) {
+	double mx = min(fabs(mat.xx), fabs(mat.xy));
+	double my = min(fabs(mat.yx), fabs(mat.yy));
+
+	prescale = 1 / min(mx, my);
+	if (prescale < 1)
+	    prescale = 1;
+    }
+    if (make_path_scaling(pdev, ppath, prescale, &path_scale)) {
 	scale /= path_scale;
 	if (set_ctm)
 	    gs_matrix_scale(&mat, path_scale, path_scale, &mat);

@@ -523,9 +523,10 @@ gdev_vector_prepare_stroke(gx_device_vector * vdev,
 }
 
 /*
- * Compute the scale or transformation matrix for transforming the line
- * width and dash pattern for a stroke operation.  Return 0 if scaling,
- * 1 if a full matrix is needed.
+ * Compute the scale for transforming the line width and dash pattern for a
+ * stroke operation, and, if necessary to handle anisotropic scaling, a full
+ * transformation matrix to be inverse-applied to the path elements as well.
+ * Return 0 if only scaling, 1 if a full matrix is needed.
  */
 int
 gdev_vector_stroke_scaling(const gx_device_vector *vdev,
@@ -559,10 +560,11 @@ gdev_vector_stroke_scaling(const gx_device_vector *vdev,
     }
     if (set_ctm) {
 	/*
-	 * Adobe Acrobat Reader can't handle user coordinates larger than
-	 * 32K.  If we scale the matrix down too far, the coordinates will
-	 * get too big: don't allow this to happen.  (This does no harm
-	 * for other output formats.)
+	 * Adobe Acrobat Reader has limitations on the maximum user
+	 * coordinate value.  If we scale the matrix down too far, the
+	 * coordinates will get too big: limit the scale factor to prevent
+	 * this from happening.  (This does no harm for other output
+	 * formats.)
 	 */
 	double
 	    mxx = pis->ctm.xx / vdev->scale.x,
