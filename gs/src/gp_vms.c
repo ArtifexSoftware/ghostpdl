@@ -625,9 +625,8 @@ gp_file_name_combine(const char *prefix, uint plen, const char *fname, uint flen
 	*blen = flen1;
 	return gp_combine_success;
     }
-    if ( (prefix[plen - 1] == ':' && fname[0] == '[') ||
-         ((prefix[plen - 1] == ']' || prefix[plen - 1] == ':') && 
-	   memchr(fname, ']', flen) == 0)
+    if ( prefix[plen - 1] == ':' || (prefix[plen - 1] == ']' &&
+				     memchr(fname, ']', flen) == 0) )
        ) {
 	/* Just concatenate. */
 	if (plen + flen + 1 > *blen)
@@ -638,6 +637,18 @@ gp_file_name_combine(const char *prefix, uint plen, const char *fname, uint flen
 	*blen = plen + flen;
 	return gp_combine_success;
     }
+   if ( memchr( prefix , '[' , plen ) == 0 &&
+	memchr( fname , '.' , flen ) != 0 )
+     {
+	if (plen + flen + 2 > *blen)
+	    return gp_combine_small_buffer;
+	memcpy(buffer, prefix, plen);
+	memcpy(buffer + plen , ":" , 1 );
+	memcpy(buffer + plen + 1, fname, flen);
+	buffer[plen + flen + 1] = 0;
+	*blen = plen + flen + 1;
+	return gp_combine_success;
+     }
     if (prefix[plen - 1] != ']' && fname[0] == '[')
         return gp_combine_cant_handle;
     /* Unclose "][" :*/
