@@ -210,6 +210,7 @@ fn_common_serialize(const gs_function_t * pfn, stream *s)
     uint n;
     const gs_function_params_t * p = &pfn->params;
     int code = sputs(s, (const byte *)&pfn->head.type, sizeof(pfn->head.type), &n);
+    const float dummy[8] = {0, 0, 0, 0,  0, 0, 0, 0};
 
     if (code < 0)
 	return code;
@@ -219,12 +220,15 @@ fn_common_serialize(const gs_function_t * pfn, stream *s)
     code = sputs(s, (const byte *)&p->m, sizeof(p->m), &n);
     if (code < 0)
 	return code;
-    code = sputs(s, (const byte *)&p->Domain[0], sizeof(p->Domain[0]) * p->m, &n);
+    code = sputs(s, (const byte *)&p->Domain[0], sizeof(p->Domain[0]) * p->m * 2, &n);
     if (code < 0)
 	return code;
     code = sputs(s, (const byte *)&p->n, sizeof(p->n), &n);
     if (code < 0)
 	return code;
-    return sputs(s, (const byte *)&p->Range[0], sizeof(p->Range[0]) * p->n, &n);
+    if (p->Range == NULL && p->n * 2 > count_of(dummy))
+	return_error(gs_error_unregistered); /* Unimplemented. */
+    return sputs(s, (const byte *)(p->Range != NULL ? &p->Range[0] : dummy), 
+	    sizeof(p->Range[0]) * p->n * 2, &n);
 }
 

@@ -567,6 +567,7 @@ gs_function_Sd_serialize(const gs_function_t * pfn, stream *s)
     uint count;
     byte buf[100];
     const byte *ptr;
+    const float dummy[8] = {0, 0, 0, 0,  0, 0, 0, 0};
 
     if (code < 0)
 	return code;
@@ -576,10 +577,16 @@ gs_function_Sd_serialize(const gs_function_t * pfn, stream *s)
     code = sputs(s, (const byte *)&p->BitsPerSample, sizeof(p->BitsPerSample), &n);
     if (code < 0)
 	return code;
-    code = sputs(s, (const byte *)&p->Encode[0], sizeof(p->Encode[0]) * p->m, &n);
+    if (p->Encode == NULL && p->m * 2 > count_of(dummy))
+	return_error(gs_error_unregistered); /* Unimplemented. */
+    code = sputs(s, (const byte *)(p->Encode != NULL ? &p->Encode[0] : dummy), 
+		    sizeof(p->Encode[0]) * p->m * 2, &n);
     if (code < 0)
 	return code;
-    code = sputs(s, (const byte *)&p->Decode[0], sizeof(p->Decode[0]) * p->n, &n);
+    if (p->Encode == NULL && p->n * 2 > count_of(dummy))
+	return_error(gs_error_unregistered); /* Unimplemented. */
+    code = sputs(s, (const byte *)(p->Decode != NULL ? &p->Decode[0] : dummy), 
+		    sizeof(p->Decode[0]) * p->n * 2, &n);
     if (code < 0)
 	return code;
     gs_function_get_info(pfn, &info);
