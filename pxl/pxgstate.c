@@ -299,6 +299,9 @@ px_initgraphics(px_state_t *pxs)
 	  /* and of using bevel joins for the segments of flattened curves. */
 	  gs_setdotlength(pgs, 72.0 / 300, true);
 	}
+	/* we always clamp coordinates hp does not seem to report
+           limit checks in paths */
+	gs_setlimitclamp(pgs, true);
 	return 0;
 }
 
