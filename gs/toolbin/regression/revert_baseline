@@ -29,6 +29,7 @@
 import gstest
 import gsconf
 import gssum
+import gsparamsets
 import anydbm
 import os, sys
 import string
@@ -60,37 +61,5 @@ def make_entry(ifile, device, dpi, band):
 f = sys.argv[1]
 
 if f[-3:] == '.ps' or f[-4:] == '.pdf' or f[-4:] == '.eps':
-    # mono
-    make_entry(f, 'pbmraw', 72, 0)
-    make_entry(f, 'pbmraw', 72, 1)
-    make_entry(f, 'pbmraw', 300, 0)
-    make_entry(f, 'pbmraw', 300, 1)
-    #make_entry(f, 'pbmraw', 600, 0)
-    #make_entry(f, 'pbmraw', 600, 1)
-
-    # grayscale
-    make_entry(f, 'pgmraw', 72, 0)
-    make_entry(f, 'pgmraw', 72, 1)
-    make_entry(f, 'pgmraw', 300, 0)
-    make_entry(f, 'pgmraw', 300, 1)
-    #make_entry(f, 'pgmraw', 600, 0)
-    #make_entry(f, 'pgmraw', 600, 1)
-
-    # color
-    make_entry(f, 'ppmraw', 72, 0)
-    make_entry(f, 'ppmraw', 72, 1)
-    make_entry(f, 'ppmraw', 300, 0)
-    make_entry(f, 'ppmraw', 300, 1)
-    #make_entry(f, 'ppmraw', 600, 0)
-    #make_entry(f, 'ppmraw', 600, 1)
-
-    # ?
-    make_entry(f, 'pkmraw', 72, 0)
-    make_entry(f, 'pkmraw', 72, 1)
-    make_entry(f, 'pkmraw', 300, 0)
-    make_entry(f, 'pkmraw', 300, 1)
-    #make_entry(f, 'pkmraw', 600, 0)
-    #make_entry(f, 'pkmraw', 600, 1)
-        
-        
-
+    for params in gsparamsets.testparamsets:
+        make_entry(f, params.device, params.resolution, params.banding)
