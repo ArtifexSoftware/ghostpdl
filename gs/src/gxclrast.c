@@ -856,9 +856,9 @@ set_phase:	/*
 		    case cmd_opv_set_fill_adjust:
 			cmd_get_value(imager_state.fill_adjust.x, cbp);
 			cmd_get_value(imager_state.fill_adjust.y, cbp);
-			if_debug2('L', " (%g,%g)\n",
-				  fixed2float(imager_state.fill_adjust.x),
-				  fixed2float(imager_state.fill_adjust.y));
+			if_debug2('L', " (%d,%d)\n",
+				  fixed2int(imager_state.fill_adjust.x),
+				  fixed2int(imager_state.fill_adjust.y));
 			continue;
 		    case cmd_opv_set_ctm:
 			{
@@ -868,9 +868,9 @@ set_phase:	/*
 			    mat.tx -= x0;
 			    mat.ty -= y0;
 			    gs_imager_setmatrix(&imager_state, &mat);
-			    if_debug6('L', " [%g %g %g %g %g %g]\n",
-				      mat.xx, mat.xy, mat.yx, mat.yy,
-				      mat.tx, mat.ty);
+			    if_debug6('L', " [%d %d %d %d %d %d]\n",
+				      (int)mat.xx, (int)mat.xy, (int)mat.yx, (int)mat.yy,
+				      (int)mat.tx, (int)mat.ty);
 			}
 			continue;
 		    case cmd_opv_set_misc2:
@@ -902,12 +902,12 @@ set_phase:	/*
 			    if (gs_debug_c('L')) {
 				int i;
 
-				dprintf4(" dot=%g(mode %d) adapt=%d offset=%g [",
-					 dot_length,
+				dprintf4(" dot=%d(mode %d) adapt=%d offset=%d [",
+					 (int)dot_length,
 					 (nb & 0x40) != 0,
-					 (nb & 0x80) != 0, offset);
+					 (nb & 0x80) != 0, (int)offset);
 				for (i = 0; i < n; ++i)
-				    dprintf1("%g ", dash_pattern[i]);
+				    dprintf1("%d ", (int)dash_pattern[i]);
 				dputs("]\n");
 			    }
 #endif
@@ -1262,7 +1262,7 @@ idata:			data_size = 0;
 				vs[i++] =
 				    ((fixed) ((b ^ 0x20) - 0x20) << 13) +
 				    ((int)cbp[1] << 5) + (cbp[2] >> 3);
-				if_debug1('L', " %g", fixed2float(vs[i - 1]));
+				if_debug1('L', " %d", fixed2int(vs[i - 1]));
 				cbp += 2;
 				v = (int)((*cbp & 7) ^ 4) - 4;
 				break;
@@ -1285,7 +1285,7 @@ idata:			data_size = 0;
 				v = (b ^ 0xd0) - 0x10;
 				vs[i] =
 				    ((v << 8) + cbp[1]) << (_fixed_shift - 2);
-				if_debug1('L', " %g", fixed2float(vs[i]));
+				if_debug1('L', " %d", fixed2int(vs[i]));
 				cbp += 2;
 				continue;
 			    default /*case 7 */ :
@@ -1299,7 +1299,7 @@ idata:			data_size = 0;
 			/* the Borland C++ 4.5 compiler incorrectly */
 			/* sign-extends the result of the shift. */
 			vs[i] = (v << 16) + (uint) (cbp[-2] << 8) + cbp[-1];
-			if_debug1('L', " %g", fixed2float(vs[i]));
+			if_debug1('L', " %", fixed2int(vs[i]));
 		    }
 		    if_debug0('L', "\n");
 		    code = clist_decode_segment(&path, op, vs, &ppos,
@@ -1917,14 +1917,14 @@ read_set_misc2(command_buf_t *pcb, gs_imager_state *pis, segment_notes *pnotes)
 
 	case cmd_set_misc2_flatness:
 	    cmd_get_value(pis->flatness, cbp);
-	    if_debug1('L', " %g\n", pis->flatness);
+	    if_debug1('L', " %d\n", (int)(pis->flatness));
 	    break;
 
 	case cmd_set_misc2_line_width: {
 	    float width;
 
 	    cmd_get_value(width, cbp);
-	    if_debug1('L', " %g\n", width);
+	    if_debug1('L', " %d\n", (int)width);
 	    gx_set_line_width(&pis->line_params, width);
 	}
 	break;
@@ -1933,7 +1933,7 @@ read_set_misc2(command_buf_t *pcb, gs_imager_state *pis, segment_notes *pnotes)
 	    float limit;
 
 	    cmd_get_value(limit, cbp);
-	    if_debug1('L', " %g\n", limit);
+	    if_debug1('L', " %d\n", (int)limit);
 	    gx_set_miter_limit(&pis->line_params, limit);
 	}
 	break;
@@ -2342,6 +2342,10 @@ vhc:	    E = B + D, F = D = A + C, C = B, B = A, A = 0;
  * Execute a polyfill -- either a fill_parallelogram or a fill_triangle.
  * If we ever implement fill_trapezoid in the band list, that will be
  * detected here too.
+ *
+ * Note that degenerate parallelograms or triangles may collapse into
+ * a single line or point.  We must check for this so we don't try to
+ * access non-existent segments.
  */
 private int
 clist_do_polyfill(gx_device *dev, gx_path *ppath,
@@ -2349,30 +2353,34 @@ clist_do_polyfill(gx_device *dev, gx_path *ppath,
 		  gs_logical_operation_t lop)
 {
     const subpath *psub = ppath->first_subpath;
-    fixed px = psub->pt.x, py = psub->pt.y;
-    const segment *pseg1 = psub->next;
-    fixed ax = pseg1->pt.x - px, ay = pseg1->pt.y - py;
-    const segment *pseg2 = pseg1->next;
-    fixed bx, by;
-    /*
-     * We take advantage of the fact that the parameter lists for
-     * fill_parallelogram and fill_triangle are identical.
-     */
-    dev_proc_fill_parallelogram((*fill));
+    const segment *pseg1;
+    const segment *pseg2;
     int code;
 
-    if (pseg2->next) {
-	/* Parallelogram */
-	fill = dev_proc(dev, fill_parallelogram);
-	bx = pseg2->pt.x - pseg1->pt.x;
-	by = pseg2->pt.y - pseg1->pt.y;
-    } else {
-	/* Triangle */
-	fill = dev_proc(dev, fill_triangle);
-	bx = pseg2->pt.x - px;
-	by = pseg2->pt.y - py;
-    }
-    code = fill(dev, px, py, ax, ay, bx, by, pdcolor, lop);
+    if (psub && (pseg1 = psub->next) != 0 && (pseg2 = pseg1->next) != 0) {
+	fixed px = psub->pt.x, py = psub->pt.y;
+	fixed ax = pseg1->pt.x - px, ay = pseg1->pt.y - py;
+	fixed bx, by;
+	/*
+	 * We take advantage of the fact that the parameter lists for
+	 * fill_parallelogram and fill_triangle are identical.
+	 */
+	dev_proc_fill_parallelogram((*fill));
+
+	if (pseg2->next) {
+	    /* Parallelogram */
+	    fill = dev_proc(dev, fill_parallelogram);
+	    bx = pseg2->pt.x - pseg1->pt.x;
+	    by = pseg2->pt.y - pseg1->pt.y;
+	} else {
+	    /* Triangle */
+	    fill = dev_proc(dev, fill_triangle);
+	    bx = pseg2->pt.x - px;
+	    by = pseg2->pt.y - py;
+	}
+	code = fill(dev, px, py, ax, ay, bx, by, pdcolor, lop);
+    } else
+	code = 0;
     gx_path_new(ppath);
     return code;
 }
