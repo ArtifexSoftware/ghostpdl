@@ -300,12 +300,12 @@ hpgl_set_graphics_line_attribute_state(
 
       case hpgl_rm_character:
       case hpgl_rm_polygon:
-      case hpgl_rm_vector_fill:
       case hpgl_rm_clip_and_fill_polygon:
 	hpgl_call(gs_setlinejoin(pgls->pgs, gs_join_round));
 	hpgl_call(gs_setlinecap(pgls->pgs, gs_cap_round));
 	break;
 
+      case hpgl_rm_vector_fill:
       case hpgl_rm_vector:
 vector:
 	hpgl_call(gs_setlinejoin(pgls->pgs, join_map[pgls->g.line.join]));
