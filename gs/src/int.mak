@@ -1711,7 +1711,7 @@ transread_=$(PSOBJ)ztrans.$(OBJ)
 $(PSD)transpar.dev : $(INT_MAK) $(ECHOGS_XE)\
  $(PSD)psl2read.dev $(GLD)translib.dev $(transread_)
 	$(SETMOD) $(PSD)transpar $(transread_)
-	$(ADDMOD) $(PSD)transpar -oper ztrans
+	$(ADDMOD) $(PSD)transpar -oper ztrans1 ztrans2
 	$(ADDMOD) $(PSD)transpar -include $(PSD)psl2read $(GLD)translib
 
 $(PSOBJ)ztrans.$(OBJ) : $(PSSRC)ztrans.c $(OP) $(memory__h) $(string__h)\

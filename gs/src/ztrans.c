@@ -428,7 +428,8 @@ zpushpdf14devicefilter(i_ctx_t *i_ctx_p)
 
 /* ------ Initialization procedure ------ */
 
-const op_def ztrans_op_defs[] = {
+/* We need to split the table because of the 16-element limit. */
+const op_def ztrans1_op_defs[] = {
     {"1.setblendmode", zsetblendmode},
     {"0.currentblendmode", zcurrentblendmode},
     {"1.setopacityalpha", zsetopacityalpha},
@@ -437,6 +438,9 @@ const op_def ztrans_op_defs[] = {
     {"0.currentshapealpha", zcurrentshapealpha},
     {"1.settextknockout", zsettextknockout},
     {"0.currenttextknockout", zcurrenttextknockout},
+    op_def_end(0)
+};
+const op_def ztrans2_op_defs[] = {
     {"5.begintransparencygroup", zbegintransparencygroup},
     {"0.discardtransparencygroup", zdiscardtransparencygroup},
     {"0.endtransparencygroup", zendtransparencygroup},
