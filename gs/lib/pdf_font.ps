@@ -85,16 +85,7 @@ pdfdict begin
 
 % Adjust a font according to the Encoding and Widths in the font resource.
 /adjustfont {		% <font-resource> <font> adjustfont <font'>
-		% Hack required by the PDF specification: if the
-		% font resource has Subtype = /TrueType but the actual
-		% (installed) font is not a TrueType font, ignore the
-		% Encoding in the font resource.
-  1 index /Subtype oget /TrueType eq
-  1 index /FontType get 42 ne and {
-    null
-  } {
-    getfontencoding
-  } ifelse
+  getfontencoding
   getfontmetrics 4 -1 roll pop .updatefont { renamefont } if
 } bind def
 
