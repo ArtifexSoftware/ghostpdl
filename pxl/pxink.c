@@ -1018,12 +1018,12 @@ pxSetPenSource(px_args_t *par, px_state_t *pxs)
 {	return set_source(par, pxs, &pxs->pxgs->pen);
 }
 
-const byte apxSetColorTreatment[] = {pxaColorTreatment, 0, 0};
+const byte apxSetColorTreatment[] =
+    {0, pxaColorTreatment, pxaAllObjectTypes, pxaTextObjects, pxaVectorObjects, pxaRasterObjects, 0};
 
 int
 pxSetColorTreatment(px_args_t *par, px_state_t *pxs)
 {
-    dprintf ("SetColorTreatment not implemented\n");
     return 0;
 }
 
