@@ -35,7 +35,7 @@ echo
 for flag in $cflags_to_try; do
 	CFLAGS="$CFLAGS $flag"
 	AC_TRY_COMPILE(, [return 0;], [
-		echo -n " $flag"
+		echo "   $flag"
 		GCFLAGS="$GCFLAGS $flag"
 	])
 	CFLAGS=$old_cflags
