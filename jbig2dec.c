@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.c,v 1.5 2001/06/12 09:56:33 giles Exp $
+    $Id: jbig2dec.c,v 1.6 2001/06/12 23:35:53 giles Exp $
 */
 
 #include <stdio.h>
@@ -19,6 +19,7 @@
 
 typedef struct _Jbig2SegmentHeader Jbig2SegmentHeader;
 typedef struct _Jbig2SymbolDictionary Jbig2SymbolDictionary;
+typedef struct _Jbig2PageInfo Jbig2PageInfo;
 
 struct _Jbig2Ctx {
   FILE *f;
@@ -44,6 +45,15 @@ struct _Jbig2SymbolDictionary {
   int32 SDNUMNEWSYMS;
 };
 
+struct _Jbig2PageInfo {
+	int32	height, width;	/* in pixels */
+	int32	x_resolution,
+			y_resolution;	/* in pixels per meter */
+	int16	stripe_size;
+	bool	striped;
+	byte	flags;
+};
+
 int32
 get_bytes (Jbig2Ctx *ctx, byte *buf, int size, int off)
 {
@@ -58,6 +68,15 @@ get_int16 (Jbig2Ctx *ctx, int off)
 
   get_bytes (ctx, buf, 2, off);
   return (buf[0] << 8) | buf[1];
+}
+
+byte
+get_byte (Jbig2Ctx *ctx, int off)
+{
+  byte buf;
+  
+  get_bytes (ctx, &buf, 1, off);
+  return buf;
 }
 
 int32
@@ -103,7 +122,7 @@ static Jbig2SegmentHeader *
 jbig2_read_segment_header (Jbig2Ctx *ctx)
 {
   Jbig2SegmentHeader *result = (Jbig2SegmentHeader *)malloc(sizeof(Jbig2SegmentHeader));
-  int32 offset = ctx->offset;
+  int offset = ctx->offset;
   byte rtscarf;
   int referred_to_segment_count;
   byte spa;
@@ -143,11 +162,18 @@ jbig2_read_segment_header (Jbig2Ctx *ctx)
   return result;
 }
 
+/* parse the symbol dictionary starting at ctx->offset
+   a pointer to a new Jbig2SymbolDictionary struct is returned
+
+   the ctx->offset pointer is not advanced; the caller must
+   take care of that, using the data_length field of the
+   segment header.
+*/
 static Jbig2SymbolDictionary *
 jbig2_read_symbol_dictionary (Jbig2Ctx *ctx)
 {
   Jbig2SymbolDictionary *result = (Jbig2SymbolDictionary *)malloc(sizeof(Jbig2SymbolDictionary));
-  int32 offset = ctx->offset;
+  int offset = ctx->offset;
   bool SDHUFF, SDREFAGG, SDRTEMPLATE;
   int sdat_bytes;
 
@@ -191,6 +217,48 @@ jbig2_read_symbol_dictionary (Jbig2Ctx *ctx)
   return result;
 }
 
+/* parse the page info segment data starting at ctx->offset
+   a pointer to a new Jbig2PageInfo struct is returned
+
+   the ctx->offset pointer is not advanced; the caller must
+   take care of that, using the data_length field of the
+   segment header.
+*/
+static Jbig2PageInfo *
+jbig2_read_page_info (Jbig2Ctx *ctx) {
+  Jbig2PageInfo *info = (Jbig2PageInfo *)malloc(sizeof(Jbig2PageInfo));
+  int offset = ctx->offset;
+
+	if (info == NULL) {
+		printf("unable to allocate memory to parse page info segment\n");
+		return NULL;
+	}
+	
+	info->width = get_int32(ctx, offset);
+	info->height = get_int32(ctx, offset + 4);
+	offset += 8;
+	
+	info->x_resolution = get_int32(ctx, offset);
+	info->y_resolution = get_int32(ctx, offset);
+	offset += 8;
+	
+	get_bytes(ctx, &(info->flags), 1, offset++);
+	
+	{
+	int16 striping = get_int16(ctx, offset);
+	if (striping & 0x8000) {
+		info->striped = TRUE;
+		info->stripe_size = striping & 0x7FFF;
+	} else {
+		info->striped = FALSE;
+		info->stripe_size = 0;	/* would info->height be better? */
+	}
+	offset += 2;
+	}
+	
+	return info;
+}
+
 static void
 dump_symbol_dictionary (Jbig2SymbolDictionary *sd)
 {
@@ -198,12 +266,30 @@ dump_symbol_dictionary (Jbig2SymbolDictionary *sd)
 	  sd->flags, sd->SDNUMNEWSYMS, sd->SDNUMEXSYMS);
 }
 
+static void
+dump_page_info(Jbig2PageInfo *info)
+{
+	printf("image is %dx%d ", info->width, info->height);
+	if (info->x_resolution == 0) {
+		printf("(unknown res) ");
+	} else if (info->x_resolution == info->y_resolution) {
+		printf("(%d ppm) ", info->x_resolution);
+	} else {
+		printf("(%dx%d ppm) ", info->x_resolution, info->y_resolution);
+	}
+	if (info->striped) {
+		printf("\tmaximum stripe size: %d\n", info->stripe_size);
+	} else {
+		printf("\tno striping\n");
+	}
+}
+
 static bool
 dump_segment (Jbig2Ctx *ctx)
 {
   Jbig2SegmentHeader *sh;
-  int32 offset;
   Jbig2SymbolDictionary *sd;
+  Jbig2PageInfo	*page_info;
 
   sh = jbig2_read_segment_header (ctx);
   
@@ -255,7 +341,9 @@ dump_segment (Jbig2Ctx *ctx)
 		printf("immediate lossless generic refinement region:");
 		break;
 	case 48:
-		printf("page information:");
+		page_info = jbig2_read_page_info(ctx);
+		printf("page info:\n");
+		if (page_info) dump_page_info(page_info);
 		break;
 	case 49:
 		printf("end of page");
@@ -282,8 +370,7 @@ dump_segment (Jbig2Ctx *ctx)
 	printf ("\tflags = %02x, page %d\n",
 	  sh->flags, sh->page_association);
 
-  offset = ctx->offset;
-  ctx->offset = offset + sh->data_length;
+  ctx->offset += sh->data_length;
   return FALSE;
 }
 
