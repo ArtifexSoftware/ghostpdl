@@ -144,21 +144,22 @@ cie_vector_cache_is_exponential(const gx_cie_vector_cache * pc, float *pexpt)
 private cie_cache_one_step_t
 cie_cached_abc_is_one_step(const gs_cie_abc *pcie, const gs_matrix3 **ppmat)
 {
-    /* The order of steps is DecodeLMN, MatrixLMN, DecodeABC, MatrixABC. */
-    if (CIE_CACHE3_IS_IDENTITY(pcie->caches.DecodeABC.caches)) {
-	if (pcie->MatrixABC.is_identity) {
-	    *ppmat = &pcie->common.MatrixLMN;
-	    return ONE_STEP_LMN;
-	}
-	if (pcie->common.MatrixLMN.is_identity) {
-	    *ppmat = &pcie->MatrixABC;
-	    return ONE_STEP_LMN;
-	}
-    }
+    /* The order of steps is, DecodeABC, MatrixABC, DecodeLMN, MatrixLMN. */
+    
     if (CIE_CACHE3_IS_IDENTITY(pcie->common.caches.DecodeLMN)) {
 	if (pcie->MatrixABC.is_identity) {
 	    *ppmat = &pcie->common.MatrixLMN;
 	    return ONE_STEP_ABC;
+	}
+	if (pcie->common.MatrixLMN.is_identity) {
+	    *ppmat = &pcie->MatrixABC;
+	    return ONE_STEP_ABC;
+	}
+    }
+    if (CIE_CACHE3_IS_IDENTITY(pcie->caches.DecodeABC.caches)) {
+	if (pcie->MatrixABC.is_identity) {
+	    *ppmat = &pcie->common.MatrixLMN;
+	    return ONE_STEP_LMN;
 	}
     }
     return ONE_STEP_NOT;
