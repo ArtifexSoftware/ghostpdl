@@ -593,24 +593,3 @@ gp_fopen(const char *fname, const char *mode)
     return fopen(fname, mode);
 }
 
-
-#include "iapi.h"
-#include "iref.h"
-#include "iminst.h"
-#include "imain.h"
-
-/* ------ Process message loop ------ */
-/* 
- * Check messages and interrupts; return true if interrupted.
- * This is called frequently - it must be quick!
- */
-#ifdef CHECK_INTERRUPTS
-int
-gp_check_interrupts(void)
-{
-    gs_main_instance *minst = gs_main_instance_default();
-    if (minst && minst->poll_fn)
-	return (*minst->poll_fn)(minst->caller_handle);
-    return 0;
-}
-#endif

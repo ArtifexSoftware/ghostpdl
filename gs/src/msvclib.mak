@@ -1,4 +1,4 @@
-#    Copyright (C) 1991-2000 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1991-2001 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of AFPL Ghostscript.
 # 
@@ -366,7 +366,7 @@ SYNC=winsync
 # Choose the language feature(s) to include.  See gs.mak for details.
 
 !ifndef FEATURE_DEVS
-FEATURE_DEVS=dps2lib.dev psl2cs.dev cielib.dev imasklib.dev patlib.dev htxlib.dev roplib.dev devcmap.dev bbox.dev pipe.dev
+FEATURE_DEVS=$(GLD)psl3lib.dev $(GLD)path1lib.dev $(GLD)dps2lib.dev $(GLD)psl2cs.dev $(GLD)cielib.dev $(GLD)imasklib.dev $(GLD)patlib.dev $(GLD)htxlib.dev $(GLD)roplib.dev $(GLD)devcmap.dev $(GLD)bbox.dev $(GLD)pipe.dev
 !endif
 
 # Choose whether to compile the .ps initialization files into the executable.
@@ -406,7 +406,7 @@ STDIO_IMPLEMENTATION=
 # Choose the device(s) to include.  See devs.mak for details,
 # devs.mak and contrib.mak for the list of available devices.
 !ifndef DEVICE_DEVS
-DEVICE_DEVS=ljet2p.dev bbox.dev
+DEVICE_DEVS=$(DD)ljet2p.dev $(DD)bbox.dev
 DEVICE_DEVS1=
 DEVICE_DEVS2=
 DEVICE_DEVS3=
@@ -455,7 +455,7 @@ TOP_MAKEFILES=$(MAKEFILE) $(GLSRCDIR)\msvccmd.mak $(GLSRCDIR)\msvctail.mak $(GLS
 # nmake expands macros when encountered, not when used,
 # so this must precede the !include statements.
 
-BEGINFILES2=$(GLOBJDIR)\$(GS).ilk $(GLOBJDIR)\$(GS).pdb
+BEGINFILES2=$(GLOBJDIR)\$(GS).ilk $(GLOBJDIR)\$(GS).pdb $(GLOBJDIR)\genarch.ilk $(GLOBJDIR)\genarch.pdb 
 
 # Define these right away because they modify the behavior of
 # msvccmd.mak, msvctail.mak & winlib.mak.
@@ -480,9 +480,9 @@ $(GLOBJ)gp_mslib.$(OBJ): $(GLSRC)gp_mslib.c $(AK)
 
 mslib32__=$(GLOBJ)gp_mslib.$(OBJ)
 
-$(GLGEN)mslib32_.dev: $(mslib32__) $(ECHOGS_XE) $(GLGEN)msw32nc_.dev
+$(GLGEN)mslib32_.dev: $(mslib32__) $(ECHOGS_XE) $(GLGEN)mswin32_.dev
         $(SETMOD) $(GLGEN)mslib32_ $(mslib32__)
-	$(ADDMOD) $(GLGEN)mslib32_ -include $(GLGEN)msw32nc_.dev
+	$(ADDMOD) $(GLGEN)mslib32_ -include $(GLGEN)mswin32_.dev
 
 # ----------------------------- Main program ------------------------------ #
 

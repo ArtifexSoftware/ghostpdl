@@ -237,7 +237,7 @@ main(int argc, const char *argv[])
     if (code)
 	dprintf1("**** Test returned code = %d.\n", code);
     dputs("Done.  Press <enter> to exit.");
-    getchar();
+    fgetc(gs_stdin);
     gs_lib_finit(0, 0);
     return 0;
 #undef mem

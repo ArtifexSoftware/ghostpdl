@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 2001 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 2001 artofcode LLC.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -18,11 +18,17 @@
 
 /*$Id$ */
 /*
- * Microsoft Windows platform support for Graphics Library
+ * Microsoft Windows platform polling support for Ghostscript.
  *
- * This file implements functions that differ between the graphics
- * library and the interpreter.
  */
+
+#include "gx.h"
+#include "gp.h"
+#include "gpcheck.h"
+#include "iapi.h"
+#include "iref.h"
+#include "iminst.h"
+#include "imain.h"
 
 /* ------ Process message loop ------ */
 /* 
@@ -33,6 +39,9 @@
 int
 gp_check_interrupts(void)
 {
+    gs_main_instance *minst = gs_main_instance_default();
+    if (minst && minst->poll_fn)
+	return (*minst->poll_fn)(minst->caller_handle);
     return 0;
 }
 #endif
