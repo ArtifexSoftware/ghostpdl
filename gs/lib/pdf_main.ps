@@ -249,56 +249,72 @@ pdfdict begin
  } bind def
 
 % Skip backward over the %%EOF at the end of the PDF file, and read
-% the preceding startxref line.  We put this in a separate procedure so
-% we can offer the option of accepting certain invalid files that Acrobat
-% Reader also accepts.
-% ****** NOTE: this will be changed in a future release so that %%EO
-% ****** (missing the F), and startxref followed by a blank rather than
-% ****** an EOL, will no longer be accepted.
+% the preceding startxref line.  The PDF specification unambiguously
+% requires that the %%EOF appear on a line by itself, and that the
+% startxref and the following position value appear on separate lines;
+% however, some applications (including, apparently, Acrobat Distiller
+% on the Macintosh) may add up to 2K of garbage after the %%EOF, and some
+% other applications also truncate the %%EOF to %%EO, and/or put the
+% startxref and the following value on the same line.
 /findxref {		% - findxref <xrefpos>
-  PDFfile dup dup 0 setfileposition bytesavailable {
-	% Scan backwards over trailing control-character garbage
-	% (nulls, ^Zs, EOLs, blanks).
-    1 sub 2 copy setfileposition 1 index read pop
-    32 gt {exit} if
-  } loop
-	% Stack: file endpos
-	% The top of the stack is now the file position of the last
-	% non-garbage character.
-	% We can't use prevline to check for the %%EOF, because if the
-	% %%EOF isn't followed by an EOL, prevline will read past the
-	% end of the file, and the file will get closed.
-	% Acrobat apparently accepts files in which the %%EOF was
-	% truncated to %%EO (!); we do the same.
-  5 sub 2 copy setfileposition
-  1 index (xxxxxx) readstring pop
-  (\015%%EO) anchorsearch { pop pop } {
-    (\012%%EO) anchorsearch { pop pop } {
-      pop findxreferror
+  PDFfile dup dup 0 setfileposition bytesavailable
+  dup /PDFfilelen exch def
+	% Find the last %%EOF string (within 2048 bytes)
+  2048 sub PDFoffset .max
+  2 copy setfileposition
+  PDFfilelen exch sub string 1 index exch readstring pop {
+    (\015%%EO) search {		% Adobe can handle truncated key string
+      pop pop			% if found, keep searching 'post' string
+    } {
+      (\012%%EO) search
+	{ pop pop } { exit } ifelse	% exit if neither string found
     } ifelse
-  } ifelse
-  1 add setfileposition
+  } loop
+  PDFfilelen exch length sub 4 sub PDFoffset .max exch 1 index setfileposition
+	% Stack: eofpos
+	% Check for whether this is, in fact, a valid PDF file.
+  dup PDFfilelen exch sub dup 7 gt {
+    pop true
+  } {
+    string PDFfile exch {
+      readline
+    } stopped {
+      pop pop true
+    } {
+      pop (%%EOF) ne
+    } ifelse
+  } ifelse {
+    (
+   **** This file has a corrupted %%EOF marker, or garbage after the %%EOF.
+) pdfformaterror
+  } if
+  PDFfile exch setfileposition
 	% Now read the startxref and xref start position.
-  prevline token pop dup type /integertype eq {
+  prevline token not { null } if dup type /integertype eq {
     exch pop cvi		% xref start position
     exch PDFfile exch setfileposition
-    prevline (startxref) linene { findxreferror } if
+    prevline (startxref) linene { /findxref cvx /syntaxerror signalerror } if
     pop
   } {	% else, this file has 'startxref #####' format
-    (startxref) ne { findxreferror } if
+    (startxref) ne { /findxref cvx /syntaxerror signalerror } if
     cvi		% xref start position
+    (
+   **** The format of the startxref line in this file is invalid.
+) pdfformaterror
     exch PDFfile exch setfileposition
   } ifelse
 } bind def
-/findxreferror {
-  (\n) =
-  (    **** The PDF input file appears to be corrupted, or not a PDF file.) =
-  (    **** Try preceding the input file with lib/pdfeof.ps.) =
-  (    **** If the file then is processed without error, please notify the) =
-  (    **** author of the software that produced the PDF file that the file) =
-  (    **** does not conform to Adobe's published PDF specification.) =
-  (\n) = flush
-  /pdfopen cvx /syntaxerror signalerror
+/stderrprint {		% <string> stderrprint -
+  (%stderr) (w) file dup dup 4 -1 roll writestring flushfile closefile
+} bind def
+/pdfformaterror {	% <string> pdfformaterror -
+  stderrprint
+(\
+   **** Please notify the author of the software that produced the file
+   **** that the file does not conform to Adobe's published PDF
+   **** specification.  Processing of the file will continue normally.
+
+) stderrprint
 } bind def
 
 % Write the outline structure for a file.  Uses linkdest (below).

@@ -91,7 +91,7 @@ traceimg.ps traceop.ps type1enc.ps type1ops.ps uninfo.ps unprot.ps \
 viewcmyk.ps viewgif.ps viewjpeg.ps viewmiff.ps \
 viewpcx.ps viewpbm.ps viewps2a.ps \
 winmaps.ps wftopfa.ps wrfont.ps zeroline.ps \
-pdf2dsc.ps pdfeof.ps pdfopt.ps ;\
+pdf2dsc.ps pdfopt.ps ;\
 	do if ( test -f $(PSLIBDIR)/$$f ); then $(INSTALL_DATA) $(PSLIBDIR)/$$f $(gsdatadir)/lib; fi;\
 	done'
 	$(SH) -c 'for f in $(PSLIBDIR)/gs_*.ps $(PSLIBDIR)/pdf*.ps;\
