@@ -111,6 +111,18 @@ px_state_release(px_state_t *pxs)
     gs_free_object(pxs->memory, pxs->error_page_show_enum,
 		   "px_state_release(pxs->error_page_show_enum)");
     gs_free_object(pxs->memory, pxs->font_dir->fmcache.mdata, "px_state_release");
+
+        /* free the blasted chunks */
+    {
+        gx_bits_cache_chunk *chunk = pxs->font_dir->ccache.chunks;
+        while( chunk != chunk->next ) {
+            gx_bits_cache_chunk *tmp_chunk = chunk->next->next;
+            gs_free_object(pxs->memory, chunk->next, "px_state_release");
+            chunk->next = tmp_chunk;
+        }
+        gs_free_object(pxs->memory, pxs->font_dir->ccache.chunks, "px_state_release");
+    }
+    gs_free_object(pxs->memory, pxs->font_dir->ccache.table, "px_state_release");
     /* free gs font dir */
     gs_free_object(pxs->memory, pxs->font_dir, "px_state_release(gs_font_dir)");
     /* Don't free pxgs since it'll get freed as pgs' client */

@@ -566,6 +566,14 @@ pcl_impl_deallocate_interp_instance(
 {
 	pcl_interp_instance_t *pcli = (pcl_interp_instance_t *)instance;
 	gs_memory_t *mem = pcli->memory;
+        /* free memory used by the parsers */
+        if ( pcl_parser_shutdown(&pcli->pst, mem ) < 0 ) {
+            dprintf( "Undefined error shutting down parser, continuing\n" );
+        }
+        /* this should have a shutdown procedure like pcl above */
+        gs_free_object(mem, 
+                       pcli->pst.hpgl_parser_state,
+                       "pcl_deallocate_interp_instance(pcl_interp_instance_t)");
 	gs_state_free(pcli->pcs.pgs);
 	/* remove pcl's gsave grestore stack */
 	pcl_free_gstate_stk(&pcli->pcs);
