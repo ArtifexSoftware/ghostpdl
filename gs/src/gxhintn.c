@@ -706,15 +706,6 @@ int t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm,
     this->transposed = (any_abs(this->ctmf.xy) * 10 > any_abs(this->ctmf.xx));
     this->align_to_pixels = align_to_pixels;
     t1_hinter__set_origin(this, origin_x, origin_y);
-#   if VD_DRAW_IMPORT
-    vd_get_dc('h');
-    vd_set_shift(VD_SHIFT_X, VD_SHIFT_Y);
-    vd_set_scale(VD_SCALE);
-    vd_set_origin(0,0);
-    vd_erase(RGB(255, 255, 255));
-    vd_setcolor(VD_IMPORT_COLOR);
-    vd_setlinewidth(0);
-#   endif
     return 0;
 }
 
@@ -789,6 +780,17 @@ private int t1_hinter__set_stem_snap(t1_hinter * this, float * value, int count,
     return 0;
 }
 
+private void enable_draw_import()
+{   /* CAUTION: can't close DC on import error */
+    vd_get_dc('h');
+    vd_set_shift(VD_SHIFT_X, VD_SHIFT_Y);
+    vd_set_scale(VD_SCALE);
+    vd_set_origin(0,0);
+    vd_erase(RGB(255, 255, 255));
+    vd_setcolor(VD_IMPORT_COLOR);
+    vd_setlinewidth(0);
+}
+
 int t1_hinter__set_font_data(t1_hinter * this, int FontType, gs_type1_data *pdata, bool no_grid_fitting)
 {   int code;
 
@@ -802,6 +804,8 @@ int t1_hinter__set_font_data(t1_hinter * this, int FontType, gs_type1_data *pdat
     this->ForceBold = pdata->ForceBold;
     this->disable_hinting |= no_grid_fitting;
     this->charpath_flag = no_grid_fitting;
+    if (vd_enabled && (VD_DRAW_IMPORT || this->disable_hinting))
+	enable_draw_import();
     if (this->disable_hinting)
 	return 0;
     code = t1_hinter__set_alignment_zones(this, pdata->OtherBlues.values, pdata->OtherBlues.count, botzone, false);
@@ -839,6 +843,8 @@ int t1_hinter__set_font42_data(t1_hinter * this, int FontType, gs_type42_data *p
     this->disable_hinting |= no_grid_fitting;
     this->charpath_flag = no_grid_fitting;
     this->autohinting = true;
+    if (vd_enabled && (VD_DRAW_IMPORT || this->disable_hinting))
+	enable_draw_import();
     if (this->disable_hinting)
 	return 0;
     /* Currently we don't provice alignments zones or stem snap. */
@@ -907,6 +913,10 @@ int t1_hinter__rmoveto(t1_hinter * this, fixed xx, fixed yy)
 	    code = gx_path_add_point(this->output_path, fx, fy);
 	    vd_circle(this->cx, this->cy, 2, RGB(255, 0, 0));
 	    vd_moveto(this->cx, this->cy);
+	    if (this->flex_count == 0) {
+		this->bx = this->cx;
+		this->by = this->cy;
+	    }
 	    return code;
 	}
 	if (this->pole_count > 0 && this->pole[this->pole_count - 1].type == moveto)
@@ -976,6 +986,7 @@ int t1_hinter__rcurveto(t1_hinter * this, fixed xx0, fixed yy0, fixed xx1, fixed
 	t1_glyph_space_coord gy2 = this->cy += yy2;
 	fixed fx0, fy0, fx1, fy1, fx2, fy2;
 
+	vd_curveto(gx0, gy0, gx1, gy1, gx2, gy2);
 	this->path_opened = true;
 	g2d(this, gx0, gy0, &fx0, &fy0);
 	g2d(this, gx1, gy1, &fx1, &fy1);
@@ -1026,6 +1037,7 @@ void t1_hinter__setcurrentpoint(t1_hinter * this, fixed xx, fixed yy)
 
 int t1_hinter__closepath(t1_hinter * this)
 {   if (this->disable_hinting) {
+	vd_lineto(this->bx, this->by);
 	this->path_opened = false;
         return gx_path_close_subpath(this->output_path);
     } else {
@@ -1033,12 +1045,11 @@ int t1_hinter__closepath(t1_hinter * this)
 
 	if (contour_beg == this->pole_count)
 	    return 0; /* maybe a single trailing moveto */
-#	if VD_DRAW_IMPORT
+	if (vd_enabled && (VD_DRAW_IMPORT || this->disable_hinting)) {
 	    vd_setcolor(VD_IMPORT_COLOR);
 	    vd_setlinewidth(0);
-	    vd_moveto(this->cx, this->cy);
 	    vd_lineto(this->bx, this->by);
-#	endif
+	}
 	if (this->bx == this->cx && this->by == this->cy) {
 	    /* Don't create degenerate segment */ 
 	    this->pole[this->pole_count - 1].type = closepath;
@@ -1076,6 +1087,8 @@ int t1_hinter__flex_beg(t1_hinter * this)
 {   if (this->flex_count != 0)
 	return_error(gs_error_invalidfont);
     this->flex_count++;
+    if (this->disable_hinting)
+	return t1_hinter__rmoveto(this, 0, 0);
     return 0;
 }
 
@@ -1109,15 +1122,15 @@ int t1_hinter__flex_end(t1_hinter * this, fixed flex_height)
 	    fixed fx0, fy0, fx1, fy1, fx2, fy2;
 	    int code;
 
-	    g2d(this, pole0[1].gx, pole0[1].gy, &fx0, &fy0);
-	    g2d(this, pole0[2].gx, pole0[2].gy, &fx1, &fy1);
-	    g2d(this, pole0[3].gx, pole0[3].gy, &fx2, &fy2);
+	    g2d(this, pole0[2].gx, pole0[2].gy, &fx0, &fy0);
+	    g2d(this, pole0[3].gx, pole0[3].gy, &fx1, &fy1);
+	    g2d(this, pole0[4].gx, pole0[4].gy, &fx2, &fy2);
 	    code = gx_path_add_curve(this->output_path, fx0, fy0, fx1, fy1, fx2, fy2);
 	    if (code < 0)
 		return code;
-	    g2d(this, pole0[4].gx, pole0[4].gy, &fx0, &fy0);
-	    g2d(this, pole0[5].gx, pole0[5].gy, &fx1, &fy1);
-	    g2d(this, pole0[6].gx, pole0[6].gy, &fx2, &fy2);
+	    g2d(this, pole0[5].gx, pole0[5].gy, &fx0, &fy0);
+	    g2d(this, pole0[6].gx, pole0[6].gy, &fx1, &fy1);
+	    g2d(this, pole0[7].gx, pole0[7].gy, &fx2, &fy2);
 	    this->flex_count = 0;
 	    this->pole_count = 0;
 	    return gx_path_add_curve(this->output_path, fx0, fy0, fx1, fy1, fx2, fy2);
@@ -2470,19 +2483,18 @@ int t1_hinter__endglyph(t1_hinter * this)
 	vd_set_shift(VD_SHIFT_X, VD_SHIFT_Y);
 	vd_set_scale(VD_SCALE);
 	vd_set_origin(0, 0);
-#	if !VD_DRAW_IMPORT
-	vd_erase(RGB(255, 255, 255));
-#	endif
+	if (!VD_DRAW_IMPORT && !this->disable_hinting)
+	    vd_erase(RGB(255, 255, 255));
     }
-    if (this->g2o_fraction != 0)
+    if (vd_enabled && this->g2o_fraction != 0 && !this->disable_hinting)
 	t1_hinter__paint_raster_grid(this);
     code = t1_hinter__add_trailing_moveto(this);
     if (code < 0)
 	goto exit;
     t1_hinter__compute_y_span(this);
     t1_hinter__simplify_representation(this);
-    t1_hinter__paint_glyph(this, false);
     if (!this->disable_hinting && (this->grid_fit_x || this->grid_fit_y)) {
+	t1_hinter__paint_glyph(this, false);
 	if (this->FontType == 1)
 	    t1_hinter__compute_type1_stem_ranges(this);
 	else
