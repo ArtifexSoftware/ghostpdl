@@ -171,7 +171,7 @@ check_file_permissions(i_ctx_t *i_ctx_p, const char *fname, int len,
         return 0;	/* if Permissions not found, just allow access */
     if (fname_bare) {
 	cwd_len = strlen(gp_current_directory_name);
-	sep_string = gp_file_name_concat_string("", 0);
+	sep_string = gp_file_name_concat_string(gp_current_directory_name, cwd_len);
 	sep_len = strlen(sep_string);
     }
 
