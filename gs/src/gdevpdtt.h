@@ -88,8 +88,7 @@ typedef struct pdf_text_enum_s {
     gs_text_enum_common;
     gs_text_enum_t *pte_default;
     gs_fixed_point origin;
-    gs_id charproc_id;
-    pdf_stream_position_t charproc_pos;
+    bool charproc_accum;
 } pdf_text_enum_t;
 #define private_st_pdf_text_enum()\
   extern_st(st_gs_text_enum);\

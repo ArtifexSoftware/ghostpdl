@@ -348,7 +348,7 @@ pdf_begin_image_data(gx_device_pdf * pdev, pdf_image_writer * piw,
 		     int alt_writer_index)
 {
     
-    cos_stream_t *s = cos_write_stream_from_pipeline(piw->binary[alt_writer_index].strm);
+    cos_stream_t *s = cos_stream_from_pipeline(piw->binary[alt_writer_index].strm);
     cos_dict_t *pcd = cos_stream_dict(s);
     int code = pdf_put_image_values(pcd, pdev, pim, piw->pin, pcsvalue);
 
@@ -553,8 +553,8 @@ int
 pdf_choose_compression(pdf_image_writer * piw, bool end_binary)
 {
     cos_stream_t *s[2];
-    s[0] = cos_write_stream_from_pipeline(piw->binary[0].strm);
-    s[1] = cos_write_stream_from_pipeline(piw->binary[1].strm);
+    s[0] = cos_stream_from_pipeline(piw->binary[0].strm);
+    s[1] = cos_stream_from_pipeline(piw->binary[1].strm);
     if (end_binary) {
 	int status;
 

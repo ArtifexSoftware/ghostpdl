@@ -45,6 +45,8 @@ gs_private_st_element(st_pdf_page_element, pdf_page_t, "pdf_page_t[]",
 		      pdf_page_elt_enum_ptrs, pdf_page_elt_reloc_ptrs,
 		      st_pdf_page);
 private_st_device_pdfwrite();
+private_st_pdf_substream_save();
+private_st_pdf_substream_save_element();
 
 /* GC procedures */
 private 
@@ -244,15 +246,12 @@ const gx_device_pdf gs_pdfwrite_device =
     {0}, {0}
  },
  0,				/* vgstack_depth */
+ 0,				/* vgstack_bottom */
  {0},				/* vg_initial */
  false,				/* vg_initial_set */
- 0,				/* accum_char_proc */
- PDF_IN_NONE,			/* accum_char_proc_context_save */
- 0,				/* accum_char_proc_text_state_save */
- 0,				/* accum_char_proc_clip_path_save */
- 0,				/* accum_char_proc_clip_path_id_save */
- 0,				/* accum_char_proc_vgstack_depth_save */
- 0				/* accum_char_proc_strm_save */
+ 0,				/* sbstack_size */
+ 0,				/* sbstack_depth */
+ 0				/* sbstack */
 };
 
 /* ---------------- Device open/close ---------------- */
@@ -504,16 +503,19 @@ pdf_open(gx_device * dev)
     pdev->outlines_id = 0;
     pdev->next_page = 0;
     pdev->text = pdf_text_data_alloc(mem);
-    pdev->accum_char_proc_text_state_save = pdf_text_state_alloc(mem);
-
+    /* Currently we need a single element for charprocs.
+       The Type 1 pattern accumulation is not supported yet. */
+    pdev->sbstack_size = 1;
+    pdev->sbstack = gs_alloc_struct_array(mem, pdev->sbstack_size, pdf_substream_save,
+				 &st_pdf_substream_save_element, "pdf_open");
     pdev->pages =
 	gs_alloc_struct_array(mem, initial_num_pages, pdf_page_t,
 			      &st_pdf_page_element, "pdf_open(pages)");
-    if (pdev->text == 0 || pdev->pages == 0 ||
-	    pdev->accum_char_proc_text_state_save == 0) {
+    if (pdev->text == 0 || pdev->pages == 0 || pdev->sbstack == 0) {
 	code = gs_error_VMerror;
 	goto fail;
     }
+    memset(pdev->sbstack, 0, pdev->sbstack_size * sizeof(pdf_substream_save));
     memset(pdev->pages, 0, initial_num_pages * sizeof(pdf_page_t));
     pdev->num_pages = initial_num_pages;
     {

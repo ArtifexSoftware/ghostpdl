@@ -161,9 +161,13 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	    code = gx_clip_to_rectangle(penum_s->pgs, &clip_box);
 	    if (code < 0)
 		return code;
-	    return pdf_install_charproc_accum(pdev, pte->orig_font, 
-			pw, control, ch, &gnstr,
-			&penum->charproc_id, &penum->charproc_pos);
+	    penum->charproc_accum = true;
+	    code = pdf_install_charproc_accum(pdev, pte->orig_font, 
+			pw, control, ch, &gnstr);
+	    if (code < 0)
+		return code;
+	    penum->charproc_accum = true;
+	    return code;
 	}
     }
     if (penum->pte_default) {
@@ -281,7 +285,7 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
 		      return_error(gs_error_VMerror), "gdev_pdf_text_begin");
     penum->rc.free = rc_free_text_enum;
     penum->pte_default = 0; 
-    penum->charproc_id = 0;
+    penum->charproc_accum = false;
     code = gs_text_enum_init((gs_text_enum_t *)penum, &pdf_text_procs,
 			     dev, pis, text, font, path, pdcolor, pcpath, mem);
     if (code < 0) {
@@ -1531,11 +1535,11 @@ pdf_text_process(gs_text_enum_t *pte)
  top:
     pte_default = penum->pte_default;
     if (pte_default) {
-	if (penum->charproc_id) {
-	    code = pdf_end_charproc_accum(pdev, penum->charproc_id, &penum->charproc_pos);
+	if (penum->charproc_accum) {
+	    code = pdf_end_charproc_accum(pdev);
 	    if (code < 0)
 		return code;
-	    penum->charproc_id = 0;
+	    penum->charproc_accum = false;
 	    code = gx_default_text_restore_state(pte_default);
 	    if (code < 0)
 		return code;

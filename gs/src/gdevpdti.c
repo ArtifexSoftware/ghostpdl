@@ -40,15 +40,15 @@ struct pdf_char_proc_s {
     pdf_font_resource_t *font;
     pdf_char_proc_t *char_next;	/* next char_proc for same font */
     int y_offset;		/* of character (0,0) */
+    int extra_length;           /* stream start position for vector fonts. */
     gs_char char_code;
     gs_const_string char_name;
-    cos_stream_t *pcos;
 };
 
 /* The descriptor is public for pdf_resource_type_structs. */
-gs_public_st_suffix_add3_string1(st_pdf_char_proc, pdf_char_proc_t,
+gs_public_st_suffix_add2_string1(st_pdf_char_proc, pdf_char_proc_t,
   "pdf_char_proc_t", pdf_char_proc_enum_ptrs, pdf_char_proc_reloc_ptrs,
-  st_pdf_resource, font, char_next, pcos, char_name);
+  st_pdf_resource, font, char_next, char_name);
 
 /* Define the state structure for tracking bitmap fonts. */
 /*typedef struct pdf_bitmap_fonts_s pdf_bitmap_fonts_t;*/
@@ -131,7 +131,7 @@ pdf_write_contents_bitmap(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
     stream *s = pdev->strm;
     const pdf_char_proc_t *pcp;
     long diff_id = 0;
-    int code, charproc_id;
+    int code;
 
     if (pdfont->u.simple.s.type3.bitmap_font)
 	diff_id = pdev->text->bitmap_fonts->bitmap_encoding_id;
@@ -142,7 +142,6 @@ pdf_write_contents_bitmap(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
     code = pdf_write_encoding_ref(pdev, pdfont, diff_id);
     if (code < 0)
 	return code;
-    charproc_id = pdev->next_id;
     stream_puts(s, "/CharProcs <<");
     /* Write real characters. */
     for (pcp = pdfont->u.simple.s.type3.char_procs; pcp;
@@ -153,8 +152,7 @@ pdf_write_contents_bitmap(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 		      pdf_char_proc_id(pcp));
 	else {
 	    pdf_put_name(pdev, pcp->char_name.data, pcp->char_name.size);
-	    pprintld1(s, " %ld 0 R\n", charproc_id);
-	    charproc_id++;
+	    pprintld1(s, " %ld 0 R\n", pdf_char_proc_id(pcp));
 	}
     }
     stream_puts(s, ">>");
@@ -172,14 +170,18 @@ pdf_write_contents_bitmap(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 	s = pdev->strm;
 	for (pcp = pdfont->u.simple.s.type3.char_procs; pcp; 
 		pcp = pcp->char_next) {
-	    pcp->object->id = pdf_obj_ref(pdev);
-	    pcp->object->length = cos_stream_length(pcp->pcos);
-	    pprintld1(s, "%ld 0 obj\n", pdf_char_proc_id(pcp));
-	    pprintld1(s, "<</Length %ld>>stream\n", pcp->object->length);
-	    code = cos_stream_contents_write(pcp->pcos, pdev);
+	    pcp->object->length = cos_stream_length((cos_stream_t *)pcp->object) 
+					- pcp->extra_length;
+	    pdf_open_obj(pdev, pdf_char_proc_id(pcp));
+	    code = cos_stream_contents_write((cos_stream_t *)pcp->object, pdev);
 	    if (code < 0)
 		return code;
-	    stream_puts(s, "endstream endobj\n");
+	    pdf_end_obj(pdev);
+	    pdf_open_obj(pdev, pdf_char_proc_id(pcp) + 1);
+	    pprintld1(pdev->strm, "%ld\n", pcp->object->length);
+	    pdf_end_obj(pdev);
+	    if (code < 0)
+		return code;
 	}
 	code = pdf_write_encoding(pdev, pdfont, diff_id, 0);
 	if (code < 0)
@@ -264,7 +266,6 @@ pdf_begin_char_proc_generic(gx_device_pdf * pdev, pdf_font_resource_t *pdfont,
     pcp->char_next = pdfont->u.simple.s.type3.char_procs;
     pdfont->u.simple.s.type3.char_procs = pcp;
     pcp->char_code = char_code;
-    pcp->pcos = 0;
     if (gnstr == 0) {
 	pcp->char_name.data = 0; 
 	pcp->char_name.size = 0;
@@ -391,13 +392,14 @@ pdf_write_bitmap_fonts_Encoding(gx_device_pdf *pdev)
  */
 int
 pdf_install_charproc_accum(gx_device_pdf *pdev, gs_font *font, const double *pw, 
-		gs_text_cache_control_t control, gs_char ch, gs_const_string *gnstr, 
-		gs_id *pid, pdf_stream_position_t *charproc_pos)
+		gs_text_cache_control_t control, gs_char ch, gs_const_string *gnstr)
 {
-    gs_id id = gs_next_ids(1);
     pdf_font_resource_t *pdfont;
     byte *glyph_usage;
+    pdf_resource_t *pres;
+    pdf_char_proc_t *pcp;
     double *real_widths;
+    long extra_length;
     int char_cache_size, width_cache_size;
     int code;
 
@@ -432,41 +434,16 @@ pdf_install_charproc_accum(gx_device_pdf *pdev, gs_font *font, const double *pw,
 	    }
 	}
     }
-    pdev->accum_char_proc_context_save = pdev->context;
-    pdf_text_state_copy(pdev->accum_char_proc_text_state_save, pdev->text->text_state);
-    pdf_set_text_state_default(pdev->text->text_state);
-    pdev->accum_char_proc_clip_path_save = pdev->clip_path;
-    pdev->accum_char_proc_clip_path_id_save = pdev->clip_path_id;
-    pdev->accum_char_proc_vgstack_depth_save = pdev->vgstack_depth;
-    pdev->clip_path = 0;
-    pdev->clip_path_id = pdev->no_clip_path_id;
-    pdev->accum_char_proc_strm_save = pdev->strm;
-    {	
-	stream *s;
-	cos_stream_t *pcos = cos_stream_alloc(pdev, "pdf_install_charproc_accum");
-	pdf_resource_t *pres;
-	pdf_char_proc_t *pcp;
-
-	if (pcos == 0)
-	    return_error(gs_error_VMerror);
-	s = cos_write_stream_alloc(pcos, pdev, "pdf_install_charproc_accum");
-	if (s == 0)
-	    return_error(gs_error_VMerror);
-	pdev->strm = s;
-	code = pdf_alloc_aside(pdev, PDF_RESOURCE_CHAIN(pdev, resourceCharProc, id),
-		    pdf_resource_type_structs[resourceCharProc], &pres, id);
-	if (code < 0)
-	    return code;
-	pcp = (pdf_char_proc_t *) pres;
-	pcp->font = pdfont;
-	pcp->char_next = pdfont->u.simple.s.type3.char_procs;
-	pdfont->u.simple.s.type3.char_procs = pcp;
-	pcp->char_code = ch;
-	pcp->pcos = pcos;
-        pcp->char_name = *gnstr;
-    }
-    *pid = id;
-    pdev->accum_char_proc = true;
+    code = pdf_enter_substream(pdev, resourceCharProc, &pres, &extra_length);
+    if (code < 0)
+	return code;
+    pcp = (pdf_char_proc_t *) pres;
+    pcp->font = pdfont;
+    pcp->char_next = pdfont->u.simple.s.type3.char_procs;
+    pdfont->u.simple.s.type3.char_procs = pcp;
+    pcp->char_code = ch;
+    pcp->char_name = *gnstr;
+    pcp->extra_length = extra_length;
     pdev->context = PDF_IN_STREAM;
     if (control == TEXT_SET_CHAR_WIDTH)
 	pprintg2(pdev->strm, "%g %g d0\n", (float)pw[0], (float)pw[1]);
@@ -478,29 +455,110 @@ pdf_install_charproc_accum(gx_device_pdf *pdev, gs_font *font, const double *pw,
 }
 
 /*
- * Complete charproc accumulation for a Type 3 font.
+ * Enter the substream accumulation mode.
  */
 int
-pdf_end_charproc_accum(gx_device_pdf *pdev, gs_id id, pdf_stream_position_t *ppos) 
+pdf_enter_substream(gx_device_pdf *pdev, pdf_resource_type_t rtype, pdf_resource_t **ppres, 
+			long *extra_length) 
+{
+    int sbstack_ptr = pdev->sbstack_depth;
+    stream *s, *save_strm = pdev->strm;
+    pdf_resource_t *pres;
+    gs_id id = gs_next_ids(1);
+    pdf_data_writer_t writer;
+    int code;
+
+    if (pdev->sbstack_depth >= pdev->sbstack_size)
+	return_error(gs_error_unregistered); /* Must not happen. */
+    code = pdf_alloc_aside(pdev, PDF_RESOURCE_CHAIN(pdev, rtype, id),
+		pdf_resource_type_structs[rtype], &pres, id);
+    if (code < 0)
+	return code;
+    cos_become(pres->object, cos_type_stream);
+    s = cos_write_stream_alloc((cos_stream_t *)pres->object, pdev, "pdf_enter_substream");
+    if (s == 0)
+	return_error(gs_error_VMerror);
+    if (pdev->sbstack[sbstack_ptr].text_state == 0) {
+	pdev->sbstack[sbstack_ptr].text_state = pdf_text_state_alloc(pdev->pdf_memory);
+	if (pdev->sbstack[sbstack_ptr].text_state == 0)
+	    return_error(gs_error_VMerror);
+    }
+    pdev->strm = s;
+    pres->object->id = pdf_obj_ref(pdev);
+    stream_puts(s, "<<");
+    /* Note : The obj_ref for the length object is the next one. See pdf_begin_data_stream. */
+    code = pdf_begin_data_stream(pdev, &writer,
+			     DATA_STREAM_NOT_BINARY |
+			     (pdev->CompressFonts ? DATA_STREAM_COMPRESS : 0));
+    if (code < 0) {
+	return code;
+	pdev->strm = save_strm;
+    }
+    *extra_length = writer.start + strlen("endstream\n");
+    pdev->strm = writer.binary.strm;
+    pdev->sbstack[sbstack_ptr].context = pdev->context;
+    pdf_text_state_copy(pdev->sbstack[sbstack_ptr].text_state, pdev->text->text_state);
+    pdf_set_text_state_default(pdev->text->text_state);
+    pdev->sbstack[sbstack_ptr].clip_path = pdev->clip_path;
+    pdev->clip_path = 0;
+    pdev->sbstack[sbstack_ptr].clip_path_id = pdev->clip_path_id;
+    pdev->clip_path_id = pdev->no_clip_path_id;
+    pdev->sbstack[sbstack_ptr].vgstack_bottom = pdev->vgstack_bottom;
+    pdev->vgstack_bottom = pdev->vgstack_depth;
+    pdev->sbstack[sbstack_ptr].strm = save_strm;
+    pdev->sbstack[sbstack_ptr].stream_start = writer.start;
+    pdev->sbstack_depth++;
+    *ppres = pres;
+    return 0;
+}
+
+/*
+ * Exit the substream accumulation mode.
+ */
+int
+pdf_exit_substream(gx_device_pdf *pdev) 
 {
     int code = pdf_open_contents(pdev, PDF_IN_STREAM), code1;
+    int sbstack_ptr;
     stream *s = pdev->strm;
 
-    while (pdev->vgstack_depth > pdev->accum_char_proc_vgstack_depth_save) {
+    if (pdev->sbstack_depth <= 0)
+	return_error(gs_error_unregistered); /* Must not happen. */
+    sbstack_ptr = pdev->sbstack_depth - 1;
+    while (pdev->vgstack_depth > pdev->vgstack_bottom) {
 	code1 = pdf_restore_viewer_state(pdev, s);
 	if (code >= 0)
 	    code = code1;
     }
     if (pdev->clip_path != 0)
 	gx_path_free(pdev->clip_path, "pdf_end_charproc_accum");
-    pdev->clip_path = pdev->accum_char_proc_clip_path_save;
-    pdev->clip_path_id = pdev->accum_char_proc_clip_path_id_save;
-    pdev->accum_char_proc_vgstack_depth_save = 0;
+    {	/* We should call pdf_end_data here, but we don't want to put pdf_data_writer_t
+	   into pdf_substream_save stack to simplify garbager descriptors. 
+	   Use a lower level functions instead that. */
+	int status = s_close_filters(&s, cos_write_stream_from_pipeline(s));
+
+	if (status < 0 && code >=0)
+	     code = gs_note_error(gs_error_ioerror);
+	stream_puts(s, "endstream\n");
+    }
     sclose(s);
-    pdev->strm = pdev->accum_char_proc_strm_save;
-    pdev->accum_char_proc_strm_save = 0;
-    pdev->context = pdev->accum_char_proc_context_save;
-    pdf_text_state_copy(pdev->text->text_state, pdev->accum_char_proc_text_state_save);
-    pdev->accum_char_proc = false;
+    pdev->context = pdev->sbstack[sbstack_ptr].context;
+    pdf_text_state_copy(pdev->text->text_state, pdev->sbstack[sbstack_ptr].text_state);
+    pdev->clip_path = pdev->sbstack[sbstack_ptr].clip_path;
+    pdev->sbstack[sbstack_ptr].clip_path = 0;
+    pdev->clip_path_id = pdev->sbstack[sbstack_ptr].clip_path_id;
+    pdev->vgstack_bottom = pdev->sbstack[sbstack_ptr].vgstack_bottom;
+    pdev->strm = pdev->sbstack[sbstack_ptr].strm;
+    pdev->sbstack[sbstack_ptr].strm = 0;
+    pdev->sbstack_depth = sbstack_ptr;
     return code;
+}
+
+/*
+ * Complete charproc accumulation for a Type 3 font.
+ */
+int
+pdf_end_charproc_accum(gx_device_pdf *pdev) 
+{
+    return pdf_exit_substream(pdev);
 }

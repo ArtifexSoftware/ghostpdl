@@ -351,6 +351,29 @@ typedef struct pdf_viewer_state_s {
     float dash_pattern[max_dash];
 } pdf_viewer_state;
 
+/*
+ * Define a structure for saving context when entering
+ * a graphic object accumulation mode (charproc, Type 1 pattern).
+ */
+typedef struct pdf_substream_save_s {
+    pdf_context_t	context;
+    pdf_text_state_t	*text_state;
+    gx_path		*clip_path;
+    gs_id		clip_path_id;
+    int			vgstack_bottom;
+    stream		*strm;
+    int			stream_start;
+} pdf_substream_save;
+
+#define private_st_pdf_substream_save()\
+    gs_private_st_ptrs3(st_pdf_substream_save, pdf_substream_save,\
+	"pdf_substream_save", pdf_substream_save_enum,\
+	pdf_substream_save_reloc, text_state, clip_path, strm);
+#define private_st_pdf_substream_save_element()\
+  gs_private_st_element(st_pdf_substream_save_element, pdf_substream_save,\
+    "pdf_substream_save[]", pdf_substream_save_elt_enum_ptrs,\
+    pdf_substream_save_elt_reloc_ptrs, st_pdf_substream_save)
+
 /* Define the device structure. */
 struct gx_device_pdf_s {
     gx_device_psdf_common;
@@ -512,15 +535,13 @@ struct gx_device_pdf_s {
      */
     pdf_viewer_state vgstack[4];
     int vgstack_depth;
+    int vgstack_bottom;		 /* Stack bottom for the current substream. */
     pdf_viewer_state vg_initial; /* Initial values for viewer's graphic state */
     bool vg_initial_set;
-    bool accum_char_proc;
-    pdf_context_t accum_char_proc_context_save;
-    pdf_text_state_t *accum_char_proc_text_state_save;
-    gx_path *accum_char_proc_clip_path_save;
-    gs_id accum_char_proc_clip_path_id_save;
-    int accum_char_proc_vgstack_depth_save;
-    stream *accum_char_proc_strm_save;
+    /* The substream context stack. */
+    int sbstack_size;
+    int sbstack_depth;
+    pdf_substream_save *sbstack;
 };
 
 #define is_in_page(pdev)\
@@ -542,10 +563,8 @@ struct gx_device_pdf_s {
  m(21, local_named_objects) m(22,NI_stack) m(23,Namespace_stack)\
  m(24,open_graphics) m(25,font_cache) m(26,clip_path)\
  m(27,PageLabels) m(28,PageLabels_current_label)\
- m(29,accum_char_proc_text_state_save)\
- m(30,accum_char_proc_clip_path_save)\
- m(31,accum_char_proc_strm_save)
-#define gx_device_pdf_num_ptrs 32
+ m(29,sbstack)
+#define gx_device_pdf_num_ptrs 30
 #define gx_device_pdf_do_strings(m) /* do nothing */
 #define gx_device_pdf_num_strings 0
 #define st_device_pdf_max_ptrs\
@@ -977,11 +996,16 @@ int pdf_do_char_image(gx_device_pdf * pdev, const pdf_char_proc_t * pcp,
 
 /* Install charproc accumulator for a Type 3 font. */
 int pdf_install_charproc_accum(gx_device_pdf *pdev, gs_font *font, const double *pw, 
-		gs_text_cache_control_t control, gs_char ch, gs_const_string *gnstr, 
-		gs_id *id, pdf_stream_position_t *charproc_pos);
+		gs_text_cache_control_t control, gs_char ch, gs_const_string *gnstr);
 /* Complete charproc accumulation for aType 3 font. */
-int pdf_end_charproc_accum(gx_device_pdf *pdev, gs_id id, pdf_stream_position_t *ppos);
+int pdf_end_charproc_accum(gx_device_pdf *pdev);
 
+/* Enter the substream accumulation mode. */
+int pdf_enter_substream(gx_device_pdf *pdev, pdf_resource_type_t rtype, pdf_resource_t **ppres, 
+			long *extra_length);
+
+/* Exit the substream accumulation mode. */
+int pdf_exit_substream(gx_device_pdf *pdev);
 
 /* For gdevpdfu.c */
 

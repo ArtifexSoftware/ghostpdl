@@ -706,7 +706,7 @@ pdf_unclip(gx_device_pdf * pdev)
 
     if (code < 0)
 	return code;
-    if (pdev->vgstack_depth > pdev->accum_char_proc_vgstack_depth_save) {
+    if (pdev->vgstack_depth > pdev->vgstack_bottom) {
 	code = pdf_restore_viewer_state(pdev, pdev->strm);
 	if (code < 0)
 	    return code;

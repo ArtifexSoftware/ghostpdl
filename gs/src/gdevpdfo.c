@@ -1295,7 +1295,7 @@ cos_write_stream_alloc(cos_stream_t *pcs, gx_device_pdf *pdev,
 
 /* Get cos stream from pipeline. */
 cos_stream_t *
-cos_write_stream_from_pipeline(stream *s)
+cos_stream_from_pipeline(stream *s)
 {
     cos_write_stream_state_t *ss;
 
@@ -1304,3 +1304,13 @@ cos_write_stream_from_pipeline(stream *s)
     ss = (cos_write_stream_state_t *)s->state;
     return ss->pcs;
 }
+
+/* Get cos write stream from pipeline. */
+stream *
+cos_write_stream_from_pipeline(stream *s)
+{
+    while(s->procs.process != cos_s_procs.process)
+	s = s->strm;
+    return s;
+}
+

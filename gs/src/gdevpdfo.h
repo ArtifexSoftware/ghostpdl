@@ -291,8 +291,9 @@ stream *cos_write_stream_alloc(cos_stream_t *pcs, gx_device_pdf *pdev,
 			       client_name_t cname);
 
 /* Get cos stream from pipeline. */
-cos_stream_t *
-cos_write_stream_from_pipeline(stream *s);
+cos_stream_t * cos_stream_from_pipeline(stream *s);
+/* Get cos write stream from pipeline. */
+stream * cos_write_stream_from_pipeline(stream *s);
 
 /* Write a Cos value on the output. */
 int cos_value_write(const cos_value_t *, gx_device_pdf *);
