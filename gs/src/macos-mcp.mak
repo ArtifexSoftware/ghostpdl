@@ -406,12 +406,6 @@ $(CWPROJ_XML):
 	$(CP_) $(GLSRC)iconf.c $(GLOBJ)iconfig.c
 	$(CP_) $(GLSRC)gscdef.c $(GLOBJ)gscdefs.c
 	/Developer/Tools/SetFile -c CWIE -t TEXT $(CWPROJ_XML)
-	/Developer/Tools/SetFile -c CWIE -t TEXT $(ZSRCDIR)/*
-	/Developer/Tools/SetFile -c CWIE -t TEXT $(PSRCDIR)/*
-	/Developer/Tools/SetFile -c CWIE -t TEXT $(JSRCDIR)/*
-	/Developer/Tools/SetFile -c CWIE -t TEXT $(ICCSRCDIR)/*
-	/Developer/Tools/SetFile -c CWIE -t TEXT $(GLOBJDIR)/*
-	/Developer/Tools/SetFile -c CWIE -t TEXT $(GLSRCDIR)/*
 
 $(GS_XE): $(ld_tr) $(ECHOGS_XE) $(XE_ALL) $(CWPROJ_XML)
 
