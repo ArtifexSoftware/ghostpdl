@@ -19,13 +19,13 @@
 
 /* ------ Parser state ------ */
 
-#define PJL_STRING_SIZE (15)
+#define PJL_STRING_LENGTH (15)
 
 /* for simplicity we define both variable names and values as strings.
    The client must do the appropriate conversions. */
 typedef struct pjl_envir_var_s {
-    char var[PJL_STRING_SIZE];
-    char value[PJL_STRING_SIZE];
+    char var[PJL_STRING_LENGTH+1];
+    char value[PJL_STRING_LENGTH+1];
 } pjl_envir_var_t;
 
 typedef struct pjl_parser_state_s {
@@ -167,8 +167,8 @@ pjl_get_token(pjl_parser_state_t *pst, char token[])
 	int slength = pst->pos - start_pos;
 	int i;
 
-	/* token and a null must fit */
-	if (( slength > PJL_STRING_SIZE - 1) || slength == 0)
+	/* token doesn't fit or is empty */
+	if (( slength > PJL_STRING_LENGTH) || slength == 0)
 	    return DONE;
 	/* now the string can be safely copied */
 	strncpy(token, &pst->line[start_pos], slength);
@@ -199,7 +199,7 @@ pjl_get_token(pjl_parser_state_t *pst, char token[])
 pjl_parse_and_process_line(pjl_parser_state_t *pst)
 {
     pjl_token_type_t tok;
-    char token[PJL_STRING_SIZE];
+    char token[PJL_STRING_LENGTH+1] = {0};
 
     /* reset the line position to the beginning of the line */
     pst->pos = 0;
@@ -217,7 +217,7 @@ pjl_parse_and_process_line(pjl_parser_state_t *pst)
 		/* NB we skip over lparm and search for the variable */
 		while( (tok = pjl_get_token(pst, token)) != DONE )
 		    if ( tok == VARIABLE ) {
-			char variable[PJL_STRING_SIZE];
+			char variable[PJL_STRING_LENGTH+1];
 			strcpy(variable, token);
 			if (((tok = pjl_get_token(pst, token)) == EQUAL) &&
 			    (tok = pjl_get_token(pst, token)) == SETTING) {
