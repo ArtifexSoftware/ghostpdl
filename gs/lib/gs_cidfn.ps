@@ -24,6 +24,16 @@
 % Define a CIDFont resource.  This is the defineresource implementation for
 % the CIDFont resource category.
 
+/.checkfonttype {	% <cidfont> <fonttype> .checkfonttype <cidfont> <new?>
+  1 index /FID known {
+    1 index /FontType get ne {
+      /definefont cvx /invalidfont signalerror
+    } if false
+  } {
+    1 index /FontType 3 -1 roll put true
+  } ifelse
+} bind def
+
 /.cidfonttypes where { pop } { /.cidfonttypes 6 dict def } ifelse
 .cidfonttypes
 
@@ -45,8 +55,14 @@
 % FDArray.
 
 dup 0 {
+  9 .checkfonttype { .completefont9 } if
+  1 index exch .buildfont9 exch pop
+} bind put
+
+% Add entries to a new CIDFontType 0 font per documentation (FontMatrix)
+% or for .buildfont9 (FDArray.Private.Subrs).
+/.completefont9 {	% <cidfont0> .completefont9 <cidfont0>
   currentglobal 3 1 roll dup gcheck setglobal
-  dup /FontType 9 put
   dup /FontMatrix known not {
     dup /FontMatrix [0.001 0 0 0.001 0 0] put
     dup /FDArray get {
@@ -70,8 +86,7 @@ dup 0 {
     } if pop
   } forall
   3 -1 roll setglobal
-  1 index exch .buildfont9 exch pop
-} bind put
+} bind def
 
 % Read some Subrs for the current Type 1 subfont.
 % The subfont's Private dict is currentdict; the CIDFont itself is the
@@ -109,14 +124,14 @@ dup 0 {
 % ------ CIDFontType 1 (FontType 10) ------ %
 
 dup 1 {
-  dup /FontType 10 put
+  10 .checkfonttype pop
   1 index exch .buildfont10 exch pop
 } bind put
 
 % ------ CIDFontType 2 (FontType 11) ------ %
 
 dup 2 {
-  dup /FontType 11 put
+  11 .checkfonttype pop
   1 index exch .buildfont11 exch pop
 } bind put
 

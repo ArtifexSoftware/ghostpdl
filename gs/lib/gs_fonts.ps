@@ -376,12 +376,11 @@ buildfontdict 3 /.buildfont3 cvx put
        }
       ifelse
       true exch
-      dup /FontType known not {
-	% This might be a CIDFont.
-	dup /CIDFontType known {
-	  /.buildcidfont where {
-	    pop exch pop false exch
-	  } if
+		% If this is a CIDFont, CIDFontType takes precedence
+		% over FontType.
+      dup /CIDFontType known {
+	/.buildcidfont where {
+	  pop exch not exch	% true => false
 	} if
       } if
       exch {
