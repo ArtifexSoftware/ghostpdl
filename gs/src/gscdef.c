@@ -47,7 +47,7 @@ const char *CONFIG_CONST gs_productfamily = GS_PRODUCTFAMILY;
 
 #ifndef GS_PRODUCT
 #  define GS_PRODUCT\
-	"Aladdin Ghostscript CVS PRE-RELEASE"
+	"Aladdin Ghostscript TESTER RELEASE"
 #endif
 const char *CONFIG_CONST gs_product = GS_PRODUCT;
 
