@@ -37,7 +37,7 @@ class GSPDFWriteCompareTestCase(gstestgs.GhostscriptTestCase):
 	rasterfilename = gsconf.rasterdbdir + file + ".gz"
 	if not os.access(rasterfilename, os.F_OK):
 		os.system(gsconf.codedir + "update_pdfbaseline " + os.path.basename(self.file))	
-	ct = time.localtime(os.stat(rasterfilename)[stat.ST_MTIME]])
+	ct = time.localtime(os.stat(rasterfilename)[stat.ST_MTIME])
 	baseline_date = "%s %d, %4d %02d:%02d" % ( calendar.month_abbr[ct[1]], ct[2], ct[0], ct[3], ct[4] )
 
 	if self.band:
