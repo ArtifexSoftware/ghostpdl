@@ -779,11 +779,11 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 		return_error(gs_error_rangecheck);
 	    }
 	}
-    } else {			/* embed == FONT_EMBED_NO (STD not possible) */
+    }
+    if (font->FontType != ft_TrueType) {
 	BaseEncoding = pdf_refine_encoding_index(
 	    ((const gs_font_base *)base_font)->nearest_encoding_index, false);
     }
-
     if ((code = pdf_font_descriptor_alloc(pdev, &pfd,
 					  (gs_font_base *)base_font,
 					  embed == FONT_EMBED_YES)) < 0 ||
