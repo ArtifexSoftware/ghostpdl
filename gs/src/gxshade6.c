@@ -46,6 +46,8 @@ static int dbg_triangle_cnt = 0;
 static int dbg_wedge_triangle_cnt = 0;
 #endif
 
+static int min_linear_grades = 255; /* The minimal number of device color grades,
+            required to apply linear color device functions. */
 
 /* ================ Utilities ================ */
 
@@ -1323,8 +1325,8 @@ is_color_linear(const patch_fill_state_t *pfs, const patch_color_t *c0, const pa
     gs_direct_color_space *cs = 
 		(gs_direct_color_space *)pfs->direct_space; /* break 'const'. */
     int code;
-    float smoothness = max(pfs->smoothness, 1.0 / 256), s = 0;
-    /* Restrict the smoothness with 1/256, because cs_is_linear
+    float smoothness = max(pfs->smoothness, 1.0 / min_linear_grades), s = 0;
+    /* Restrict the smoothness with 1/min_linear_grades, because cs_is_linear
        can't provide a better precision due to the color
        representation with integers.
      */
@@ -2007,7 +2009,7 @@ unlinear(const patch_fill_state_t *pfs, const patch_color_t *c)
     for (i = 0; i < pfs->dev->color_info.num_components; i++)
 	if ((i == pfs->dev->color_info.gray_index ? pfs->dev->color_info.max_gray 
 					          : pfs->dev->color_info.max_color)
-		< 128)
+		< min_linear_grades)
 	    return true;
     code = patch_color_to_device_color(pfs, c, &dc);
     if (code < 0)
