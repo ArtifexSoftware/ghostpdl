@@ -60,13 +60,13 @@
 #endif
 
 /* Define the hypot procedure on those few systems that don't provide it. */
-#ifdef _IBMR2
+#if defined(_IBMR2)
 /* The RS/6000 has hypot, but math.h doesn't declare it! */
 extern double hypot(double, double);
-#else
-#  if !defined(__TURBOC__) && !defined(BSD4_2) && !defined(VMS) && !defined(__MWERKS__)
-#    define hypot(x,y) sqrt((x)*(x)+(y)*(y))
-#  endif
+#elif defined(_MSC_VER)
+#  define hypot(x,y) _hypot(x,y)
+#elif !defined(__TURBOC__) && !defined(BSD4_2) && !defined(VMS) && !defined(__MWERKS__) && !defined(HAVE_HYPOT)
+#  define hypot(x,y) sqrt((double)(x)*(x)+(double)(y)*(y))
 #endif
 
 #ifdef OSK

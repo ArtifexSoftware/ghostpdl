@@ -106,7 +106,7 @@ GENOPT=
 #		This gets rid of several security warnings that look
 #		ominous.  Enable this if you wish to get rid of them.
 
-CAPOPT= @HAVE_MKSTEMP@
+CAPOPT= @HAVE_MKSTEMP@ @HAVE_HYPOT@
 
 # Define the name of the executable file.
 

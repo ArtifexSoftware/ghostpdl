@@ -1,3 +1,20 @@
+dnl Copyright (C) 2002-2004 artofcode LLC. All rights reserved.
+  
+dnl This software is provided AS-IS with no warranty, either express or
+dnl implied.
+  
+dnl This software is distributed under license and may not be copied,
+dnl modified or distributed except as expressly authorized under the terms
+dnl of the license contained in the file LICENSE in this distribution.
+  
+dnl For more information about licensing, please refer to
+dnl http://www.ghostscript.com/licensing/. For information on
+dnl commercial licensing, go to http://www.artifex.com/licensing/ or
+dnl contact Artifex Software, Inc., 101 Lucas Valley Road #110,
+dnl San Rafael, CA  94903, U.S.A., +1(415)492-9861.
+
+dnl $Id$
+
 dnl Process this file with autoconf to produce a configure script
 
 dnl ------------------------------------------------
@@ -313,6 +330,9 @@ dnl --------------------------------------------------
 
 AC_CHECK_FUNCS([mkstemp], [HAVE_MKSTEMP=-DHAVE_MKSTEMP])
 AC_SUBST(HAVE_MKSTEMP)
+
+AC_CHECK_FUNCS([hypot], [HAVE_HYPOT=-DHAVE_HYPOT])
+AC_SUBST(HAVE_HYPOT)
 
 AC_FUNC_FORK
 AC_PROG_GCC_TRADITIONAL
