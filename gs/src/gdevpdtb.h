@@ -90,6 +90,11 @@ gs_string *pdf_base_font_name(pdf_base_font_t *pbfont);
 gs_font_base *pdf_base_font_font(const pdf_base_font_t *pbfont, bool complete);
 
 /*
+ * Check for subset font.
+ */
+bool pdf_base_font_is_subset(const pdf_base_font_t *pbfont);
+
+/*
  * Drop the copied complete font associated with a base font.
  */
 void pdf_base_font_drop_complete(pdf_base_font_t *pbfont);
@@ -104,9 +109,18 @@ int pdf_base_font_copy_glyph(pdf_base_font_t *pbfont, gs_glyph glyph,
 			     gs_font_base *font);
 
 /*
- * Determine whether a copied font should be subsetted.  Note that if the
- * font is subsetted, this procedure modifies the copied font by adding the
- * XXXXXX+ font name prefix and clearing the UID.
+ * Determine whether a font is a subset font by examining the name.
+ */
+bool pdf_has_subset_prefix(const byte *str, uint size);
+
+/*
+ * Add the XXXXXX+ prefix for a subset font.
+ */
+int pdf_add_subset_prefix(const gx_device_pdf *pdev, gs_string *pstr, 
+			byte *used, int count);
+
+/*
+ * Determine whether a copied font should be subsetted.
  */
 bool pdf_do_subset_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont, 
 			gs_id rid);

@@ -511,7 +511,7 @@ write_font_resources(gx_device_pdf *pdev, pdf_resource_list_t *prlist)
     for (j = 0; j < NUM_RESOURCE_CHAINS; ++j)
 	for (pres = prlist->chains[j]; pres != 0; pres = pres->next) {
 	    pdf_font_resource_t *const pdfont = (pdf_font_resource_t *)pres;
-	    int code = pdf_compute_BaseFont(pdev, pdfont);
+	    int code = pdf_compute_BaseFont(pdev, pdfont, true);
 
 	    if (code < 0)
 		return code;

@@ -550,7 +550,7 @@ pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
  * in gdevpdtf.h.
  */
 int
-pdf_compute_BaseFont(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
+pdf_compute_BaseFont(gx_device_pdf *pdev, pdf_font_resource_t *pdfont, bool finish)
 {
     pdf_font_resource_t *pdsubf = pdfont;
     gs_string fname;
@@ -561,7 +561,7 @@ pdf_compute_BaseFont(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 	int code;
 
 	pdsubf = pdfont->u.type0.DescendantFont;
-	code = pdf_compute_BaseFont(pdev, pdsubf);
+	code = pdf_compute_BaseFont(pdev, pdsubf, finish);
 	if (code < 0)
 	    return code;
 	fname = pdsubf->BaseFont;
@@ -617,6 +617,19 @@ pdf_compute_BaseFont(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
     }
     pdfont->BaseFont.data = fname.data = data;
     pdfont->BaseFont.size = fname.size = size;
+    /* Compute names for subset fonts. */
+    if (finish && pdfont->FontDescriptor != NULL &&
+	pdf_font_descriptor_is_subset(pdfont->FontDescriptor) &&
+	!pdf_has_subset_prefix(fname.data, fname.size)
+	) {
+	int code = pdf_add_subset_prefix(pdev, &fname, pdfont->used, pdfont->count);
+
+	if (code < 0)
+	    return code;
+        pdfont->BaseFont = fname;
+	/* Don't write a UID for subset fonts. */
+	uid_set_invalid(&pdf_font_resource_font(pdfont, false)->UID);
+    }
     if (pdsubf->FontDescriptor)
 	*pdf_font_descriptor_name(pdsubf->FontDescriptor) = fname;
     return 0;
@@ -634,7 +647,7 @@ pdf_font_type0_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 
     if (code >= 0) {
 	(*ppfres)->u.type0.DescendantFont = DescendantFont;
-	code = pdf_compute_BaseFont(pdev, *ppfres);
+	code = pdf_compute_BaseFont(pdev, *ppfres, false);
     }
     return code;    
 }
@@ -693,7 +706,7 @@ pdf_font_simple_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
     pdfont->FontDescriptor = pfd;
     set_is_MM_instance(pdfont, pdf_font_descriptor_font(pfd, false));
     *ppfres = pdfont;
-    return pdf_compute_BaseFont(pdev, pdfont);
+    return pdf_compute_BaseFont(pdev, pdfont, false);
 }
 
 /* ------ CID-keyed ------ */
@@ -751,7 +764,7 @@ pdf_font_cidfont_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 	pdfont->u.cidfont.CIDSystemInfo_id = cidsi_id;
     }
     *ppfres = pdfont;
-    return pdf_compute_BaseFont(pdev, pdfont);
+    return pdf_compute_BaseFont(pdev, pdfont, false);
 }
 
 int

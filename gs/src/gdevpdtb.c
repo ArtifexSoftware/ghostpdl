@@ -89,7 +89,7 @@ gs_private_st_basic(st_pdf_base_font, pdf_base_font_t, "pdf_base_font_t",
 /*
  * Determine whether a font is a subset font by examining the name.
  */
-private bool
+bool
 pdf_has_subset_prefix(const byte *str, uint size)
 {
     int i;
@@ -102,21 +102,36 @@ pdf_has_subset_prefix(const byte *str, uint size)
     return true;
 }
 
+private ulong
+hash(ulong v, int index, ulong w)
+{
+    return v * 3141592653+ w;
+}
+
 /*
  * Add the XXXXXX+ prefix for a subset font.
  */
-private int
-pdf_add_subset_prefix(const gx_device_pdf *pdev, gs_string *pstr, gs_id rid)
+int
+pdf_add_subset_prefix(const gx_device_pdf *pdev, gs_string *pstr, byte *used, int count)
 {
     uint size = pstr->size;
     byte *data = gs_resize_string(pdev->pdf_memory, pstr->data, size,
 				  size + SUBSET_PREFIX_SIZE,
 				  "pdf_add_subset_prefix");
-    ulong v = rid;
+    int len = (count + 7) / 8;
+    ulong v = 0, t = 0;
     int i;
 
     if (data == 0)
 	return_error(gs_error_VMerror);
+    /* Hash the 'used' array. */
+    for (i = 0; i < len; i += sizeof(ulong))
+	v = hash(v, i, *(ulong *)(used + i));
+    i -= sizeof(ulong);
+    if (i < len) {
+	memmove(&t, used + i, len - i);
+	v = hash(v, i, *(ulong *)(used + i));
+    }
     memmove(data + SUBSET_PREFIX_SIZE, data, size);
     for (i = 0; i < SUBSET_PREFIX_SIZE - 1; ++i, v /= 26)
 	data[i] = 'A' + (v % 26);
@@ -302,6 +317,15 @@ pdf_base_font_font(const pdf_base_font_t *pbfont, bool complete)
 }
 
 /*
+ * Check for subset font.
+ */
+bool
+pdf_base_font_is_subset(const pdf_base_font_t *pbfont)
+{
+    return pbfont->do_subset == DO_SUBSET_YES;
+}
+
+/*
  * Drop the copied complete font associated with a base font.
  */
 void
@@ -338,9 +362,7 @@ pdf_base_font_copy_glyph(pdf_base_font_t *pbfont, gs_glyph glyph,
 }
 
 /*
- * Determine whether a font should be subsetted.  Note that if the font is
- * subsetted, this procedure modifies the copied font by adding the XXXXXX+
- * font name prefix and clearing the UID.
+ * Determine whether a font should be subsetted.
  */
 bool
 pdf_do_subset_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont, gs_id rid)
@@ -376,21 +398,6 @@ pdf_do_subset_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont, gs_id rid)
 	    }
 	}
 	pbfont->do_subset = (do_subset ? DO_SUBSET_YES : DO_SUBSET_NO);
-    }
-    /*
-     * Adjust the FontName and UID according to the subsetting decision.
-     */
-    if (pbfont->do_subset == DO_SUBSET_YES &&
-	!pdf_has_subset_prefix(pbfont->font_name.data, pbfont->font_name.size)
-	) {
-	/*
-	 * We have no way to report an error if pdf_add_subset_prefix
-	 * doesn't have enough room to add the subset prefix, but the
-	 * output is still OK if this happens.
-	 */
-	DISCARD(pdf_add_subset_prefix(pdev, &pbfont->font_name, rid));
-	/* Don't write a UID for subset fonts. */
-	uid_set_invalid(&copied->UID);
     }
     return (pbfont->do_subset == DO_SUBSET_YES);
 }

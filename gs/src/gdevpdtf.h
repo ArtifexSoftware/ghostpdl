@@ -339,7 +339,7 @@ pdf_font_embed_t pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font,
  * Compute the BaseFont of a font according to the algorithm described
  * above.
  */
-int pdf_compute_BaseFont(gx_device_pdf *pdev, pdf_font_resource_t *pdfont);
+int pdf_compute_BaseFont(gx_device_pdf *pdev, pdf_font_resource_t *pdfont, bool finish);
 
 /*
  * Close the text-related parts of a document, including writing out font
@@ -351,6 +351,7 @@ int pdf_close_text_document(gx_device_pdf *pdev); /* in gdevpdtw.c */
  * Choose a name for embedded font.
  */
 const gs_font_name *pdf_choose_font_name(gs_font *font, bool key_name);
+
 /* ---------------- CMap resources ---------------- */
 
 /*

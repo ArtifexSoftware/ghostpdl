@@ -87,6 +87,11 @@ font_type pdf_font_descriptor_FontType(const pdf_font_descriptor_t *pfd);
 bool pdf_font_descriptor_embedding(const pdf_font_descriptor_t *pfd);
 
 /*
+ * Check for subset font.
+ */
+bool pdf_font_descriptor_is_subset(const pdf_font_descriptor_t *pfd);
+
+/*
  * Return a reference to the FontName of a FontDescriptor, similar to
  * pdf_base_font_name.
  */
