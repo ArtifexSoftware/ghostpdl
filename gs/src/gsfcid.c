@@ -187,5 +187,5 @@ gs_cid0_indexed_font(const gs_font *font, int fidx)
 	eprintf1("Unexpected font type: %d\n", font->FontType);
         return 0;
     }
-    return (pfont->cidata.FDArray[fidx]);
+    return (const gs_font*) (pfont->cidata.FDArray[fidx]);
 }

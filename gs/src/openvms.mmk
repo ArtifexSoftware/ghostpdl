@@ -92,7 +92,7 @@ GS_INIT=GS_INIT.PS
 
 # Setting DEBUG=1 includes debugging features in the code
 
-DEBUG=
+DEBUG=0
 
 # Setting TDEBUG=1 includes symbol table information for the debugger,
 # and also enables stack tracing on failure.
@@ -138,9 +138,9 @@ JVERSION=6
 .ifdef SYSLIB
 PSRCDIR=sys$library:
 .else
-PSRCDIR=[--.libpng-1_0_10]
+PSRCDIR=[--.libpng-1_2_5]
 .endif
-PVERSION=10010
+PVERSION=10205
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
@@ -148,13 +148,24 @@ PVERSION=10010
 .ifdef SYSLIB
 ZSRCDIR=sys$library:
 .else
-ZSRCDIR=[--.zlib-1_1_3]
+ZSRCDIR=[--.zlib-1_1_4]
 .endif
 
 # Define the directory where the icclib source are stored.
 # See icclib.mak for more information
 
 ICCSRCDIR=[.icclib]
+
+# IJS has not been ported to OpenVMS. If you do the port,
+# you'll need to set these values. You'll also need to
+# include the ijs.mak makefile (right after icclib.mak).
+#
+# Define the directory where the ijs source is stored,
+# and the process forking method to use for the server.
+# See ijs.mak for more information.
+
+#IJSSRCDIR=[.ijs]
+#IJSEXECTYPE=unix
 
 # Note that built-in third-party libraries aren't available.
 
@@ -188,9 +199,9 @@ SW_PLATFORM=/DECC/PREFIX=ALL/NESTED_INCLUDE=PRIMARY/name=(as_is,short)
 # Including defines for A4 paper size
 
 .ifdef A4_PAPER
-SW_PAPER=/DEFINE=("A4","HAVE_MKSTEMP")
+SW_PAPER=/DEFINE=("A4","HAVE_MKSTEMP","GX_COLOR_INDEX_TYPE=unsigned __int64")
 .else
-SW_PAPER=/DEFINE=("HAVE_MKSTEMP")
+SW_PAPER=/DEFINE=("HAVE_MKSTEMP","GX_COLOR_INDEX_TYPE=unsigned __int64")
 .endif
 
 .ifdef IEEE
@@ -242,16 +253,18 @@ DEVICE_DEVS12=$(DD)psmono.dev $(DD)psgray.dev $(DD)psrgb.dev $(DD)bit.dev $(DD)b
 DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev
 DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev
 DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)epswrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev
+DEVICE_DEVS16=$(DD)bbox.dev
 # Overflow from DEVS9
-DEVICE_DEVS16=$(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev $(DD)pkm.dev $(DD)pkmraw.dev $(DD)pksm.dev $(DD)pksmraw.dev
-DEVICE_DEVS17=
+DEVICE_DEVS17=$(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev $(DD)pkm.dev $(DD)pkmraw.dev $(DD)pksm.dev $(DD)pksmraw.dev
 DEVICE_DEVS18=
 DEVICE_DEVS19=
 DEVICE_DEVS20=
+DEVICE_DEVS21=
+DEVICE_DEVS21=
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)fapi.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(PSD)fapi.dev
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
@@ -318,6 +331,7 @@ CMD=
 D=
 
 # Define the brackets for passing preprocessor definitions to the C compiler.
+NULL=
 
 D_=/DEFINE="
 _D_=$(NULL)=
@@ -376,7 +390,6 @@ OBJ=obj
 
 # Define the prefix for image invocations.
 
-NULL=
 EXP=MCR $(NULL)
 
 # Define the prefix for shell invocations.
