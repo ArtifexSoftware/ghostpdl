@@ -1062,8 +1062,8 @@ end
 /.schedule_init   %   <priority> <proc> .schedule_init -
 {
   //.delayed_init_queue 2 index known {
-    (.delayed_init_queue priority conflict with ) 1 index =
-    /unregistered /.schedule_init signalerror
+    (.delayed_init_queue priority conflict with ) print 1 index =
+    /.schedule_init cvx /configurationerror signalerror
   } if
   //.delayed_init_queue 3 1 roll .growput
 } bind def
