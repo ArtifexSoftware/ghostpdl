@@ -7,13 +7,15 @@ AC_CONFIG_SRCDIR([jbig2dec.c])
 AM_INIT_AUTOMAKE
 AM_CONFIG_HEADER(config.h)
 
-AC_REVISION([$Revision: 1.13 $])
+AC_REVISION([$Revision: 1.14 $])
 
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_RANLIB
 
 # Checks for libraries.
+dnl libpng requires pow() which may be in libm
+AC_SEARCH_LIBS([pow], [m])
 AC_CHECK_LIB([png], [png_check_sig], [
   AC_CHECK_LIB([z], [deflate], [
     AC_DEFINE(HAVE_LIBPNG, 1, [Define if libpng is available (-lpng)])
