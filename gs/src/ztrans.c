@@ -68,12 +68,12 @@ enum_param(const ref *pnref, const char *const names[])
     const char *const *p;
     ref nsref;
 
-    name_string_ref(op, &nsref);
+    name_string_ref(pnref, &nsref);
     for (p = names; *p; ++p)
 	if (r_size(&nsref) == strlen(*p) &&
 	    !memcmp(*p, nsref.value.const_bytes, r_size(&nsref))
 	    )
-	    return p - blend_mode_names;
+	    return p - names;
     return_error(e_rangecheck);
 }
 
@@ -88,7 +88,6 @@ private int
 zsetblendmode(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    ref nsref;
     int code;
 
     check_type(*op, t_name);
@@ -254,18 +253,17 @@ zbegintransparencymask(i_ctx_t *i_ctx_p)
     int num_components =
 	gs_color_space_num_components(gs_currentcolorspace(igs));
     int code;
-    static const char *const subtype_names = {
+    static const char *const subtype_names[] = {
 	GS_TRANSPARENCY_MASK_SUBTYPE_NAMES, 0
     };
 
     check_type(*dop, t_dictionary);
     check_dict_read(*dop);
-    gs_trans_mask_params_init(&params);
     if (dict_find_string(dop, "Subtype", &pparam) <= 0)
 	return_error(e_rangecheck);
     if ((code = enum_param(pparam, subtype_names)) < 0)
 	return code;
-    params.subtype = subtype;
+    gs_trans_mask_params_init(&params, code);
     if ((code = dict_floats_param(dop, "Background", num_components,
 				  params.Background, NULL)) < 0
 	)
