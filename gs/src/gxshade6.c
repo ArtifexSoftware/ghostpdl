@@ -2054,9 +2054,6 @@ wedge_by_triangles(patch_fill_state_t *pfs, int ka,
 private inline bool
 is_linear_color_applicable(const patch_fill_state_t *pfs)
 {
-    int i, code;
-    gx_device_color dc;
-
     if (!USE_LINEAR_COLOR_PROCS)
 	return false;
     if (pfs->dev->color_info.separable_and_linear != GX_CINFO_SEP_LIN)
