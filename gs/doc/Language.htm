@@ -29,7 +29,7 @@
 <li><a href="#Typical_memory_limits">Typical memory limits in LanguageLevel 1</a>
 <li><a href="#VM_consumption">Other differences in VM consumption</a>
 </ul>
-<li><a href="#Additional_facilities">Additional facilities in Ghostscript</a>
+<li><a href="#Additional_operators">Additional operators in Ghostscript</a>
 <ul>
 <li><a href="#Graphics_and_text">Graphics and text operators</a>
 <ul>
@@ -47,7 +47,8 @@
 <li><a href="#Other">Other operators</a>
 <ul>
 <li><a href="#Mathematical">Mathematical operators</a>
-<li><a href="#String">String operators</a>
+<li><a href="#Dictionary">Dictionary operators</a>
+<li><a href="#String">String and name operators</a>
 <li><a href="#Relational">Relational operators</a>
 <li><a href="#File">File operators</a>
 <li><a href="#Virtual_memory">Virtual memory operators</a>
@@ -660,6 +661,20 @@ order to create half-open pixels per Adobe's specification.)
 </dl>
 
 <dl>
+<dt><b><tt>&lt;bool&gt; .setlimitclamp -</tt></b>
+<dd>Sets a graphics state flag that determines whether attempts to set the
+current point outside the internally representable range should clamp the
+value to the largest representable value (true) or give a
+<b><tt>limitcheck</tt></b> error (false).  <b><tt>initgraphics</tt></b> sets
+this flag to false, to match other PostScript implementations.
+</dl>
+
+<dl>
+<dt><b><tt>- .currentlimitclamp &lt;bool&gt;</tt></b>
+<dd>Returns the current value of the limit clamp flag.
+</dl>
+
+<dl>
 <dt><b><tt>&lt;int&gt; .setoverprintmode -</tt></b>
 <dd>Sets the overprint mode in the graphics state.  Legal values are 0 or 1.
 Per the PDF 1.3 specification, if the overprint mode is 1, then when the
@@ -859,7 +874,72 @@ debugging.
 <dd>Computes the arc sine of a number between -1 and 1.
 </dl>
 
-<h4><a name="String"></a>String operators</h4>
+<h4><a name="Dictionary"></a>Dictionary operators</h4>
+
+<dl>
+<dt><b><tt>mark &lt;key1&gt; &lt;value1&gt; &lt;key2&gt; &lt;value2&gt; ... .dicttomark &lt;dict&gt;</tt></b>
+<dd>Creates and returns a dictionary with the given keys and values.  This
+is the same as the PostScript Level 2 <b><tt>&gt;&gt;</tt></b> operator,
+but is available even in Level 1 configurations.
+</dl>
+
+<dl>
+<dt><b><tt>&lt;dict&gt; &lt;key&gt; &lt;value&gt; .forceput - </tt></b>
+<dd>Equivalent to <b><tt>put</tt></b>, but works even if
+<b><tt>dict</tt></b> is not writable, and (if <b><tt>dict</tt></b> is
+<b><tt>systemdict</tt></b> or the current save level is 0) even if
+<b><tt>dict</tt></b> is in global VM and <b><tt>key</tt></b> and/or
+<b><tt>value</tt></b> is in local VM.  <strong>This operator should be used
+only initialization code, and only in executeonly procedures: it must not be
+accessible after initialization.</strong>
+</dl>
+
+<dl>
+<dt><b><tt>&lt;dict&gt; &lt;key&gt; .forceundef - </tt></b>
+<dd>Equivalent to <b><tt>undef</tt></b>, but works even if
+<b><tt>dict</tt></b> is not writable.  <strong>This operator should be used
+only initialization code, and only in executeonly procedures: it must not be
+accessible after initialization.</strong>
+</dl>
+
+
+<dl>
+<dt><b><tt>&lt;dict&gt; &lt;key&gt; .knownget &lt;value&gt; true</tt></b>
+<dt><b><tt>&lt;dict&gt; &lt;key&gt; .knownget false</tt></b>
+<dd>Combines <b><tt>known</tt></b> and <b><tt>get</tt></b> in the
+obvious way.
+</dl>
+
+<dl>
+<dt><b><tt>&lt;dict&gt; &lt;integer&gt; .setmaxlength -</tt></b>
+<dd>Sets the capacity (<b><tt>maxlength</tt></b>) of a dictionary.
+Causes a <b><tt>dictfull</tt></b> error if the dictionary has more
+occupied entries than the requested capacity.
+</dl>
+
+<h4><a name="String"></a>String and name operators</h4>
+
+<dl>
+<dt><b><tt>&lt;integer&gt; .bytestring &lt;bytestring&gt;</tt></b>
+<dd>Allocates and returns a bytestring, a special data type that can be
+larger than the maximum size of a string (64K-1 bytes) and can be used in
+place of a string with a very few operators.
+</dl>
+
+<dl>
+<dt><b><tt>&lt;name&gt; .namestring &lt;string&gt;</tt></b>
+<dd>Returns the (read-only) string for a name.
+</dl>
+
+<dl>
+<dt><b><tt>&lt;obj&gt; &lt;pattern&gt; .stringmatch &lt;bool&gt;</tt></b>
+<dd>Matches <b><tt>obj</tt></b> against a pattern in which '*' matches 0 or
+more characters and '?' matches any single character.  If
+<b><tt>obj</tt></b> is a string or a name, matches its characters against
+the pattern; if <b><tt>obj</tt></b> is of any other type, the result is
+<b><tt>true</tt></b> if the pattern is the single character "*" and
+<b><tt>false</tt></b> otherwise.
+</dl>
 
 <dl>
 <dt><b><tt>&lt;state&gt; &lt;fromString&gt; &lt;toString&gt; .type1encrypt &lt;newState&gt; &lt;toSubstring&gt;</tt></b>
@@ -894,6 +974,23 @@ Other specifications are as for <b><tt>type1encrypt</tt></b>.
 <h4><a name="File"></a>File operators</h4>
 
 <dl>
+<dt><b><tt>&lt;file&gt; .filename &lt;string&gt; true</tt></b>
+<dt><b><tt>&lt;file&gt; .filename false</tt></b>
+<dd>If the file was opened by the <b><tt>file</tt></b> operator, returns the
+file name and <b><tt>true</tt></b>; if the file is a filter, returns
+<b><tt>false</tt></b>.
+</dl>
+
+<dl>
+<dt><b><tt>&lt;file&gt; .fileposition &lt;integer&gt; true</tt></b>
+<dd>Returns the position of <b><tt>file</tt></b>.  Unlike the standard
+<b><tt>fileposition</tt></b> operator, which causes an error if the file is
+not positionable, <b><tt>.fileposition</tt></b> works on all files,
+including filters: for non-positionable files, it returns the total number
+of bytes read or written since the file was opened.
+</dl>
+
+<dl>
 <dt><b><tt>&lt;string&gt; findlibfile &lt;foundstring&gt; &lt;file&gt; true</tt></b>
 <dt><b><tt>&lt;string&gt; findlibfile &lt;string&gt; false</tt></b>
 <dd>Opens the file of the given name for reading, searching through
@@ -903,12 +1000,21 @@ pushes false on the stack and returns, rather than causing an error.
 </dl>
 
 <dl>
+<dt><b><tt>&lt;file&gt; &lt;string&gt; .peekstring &lt;substring&gt; &lt;filled_bool&gt;</tt></b>
+<dd>Reads bytes from a file like <b><tt>readstring</tt></b>, but also leaves
+the bytes in the file buffer so they will be read again by a subsequent read
+operation.  Currently gives a <b><tt>rangecheck</tt></b> error if
+<b><tt>string</tt></b> is larger than the file's buffer.
+</dl>
+
+<dl>
 <dt><b><tt>&lt;file&gt; &lt;integer&gt; .unread -</tt></b>
 <dd>Pushes back the last-read character onto the front of the file.  If the
 file is open only for writing, or if the integer argument is not the same
 as the last character read from the file, causes an <b><tt>ioerror</tt></b>
 error.  May also cause an <b><tt>ioerror</tt></b> if the last operation on
-the file was not a reading operation.
+the file was not a reading operation.  This operator is now deprecated:
+use <b><tt>.peekstring</tt></b> in new code.
 </dl>
  
 <p>
@@ -927,6 +1033,19 @@ happened.
 </dl>
 
 <h4><a name="Miscellaneous"></a>Miscellaneous operators</h4>
+
+<dl>
+<dt><b><tt>&lt;obj1&gt; &lt;obj2&gt; ... &lt;objn&gt; &lt;n&gt; .execn ...</tt></b>
+<dd>This executes <b><tt>obj1</tt></b> through <b><tt>objn</tt></b> in that
+order, essentially equivalent to
+
+<blockquote><pre>
+&lt;obj1&gt; &lt;obj2&gt; ... &lt;objn&gt; &lt;n&gt; array astore {exec} forall
+</pre></blockquote>
+
+<p>
+except that it doesn't actually create the array.
+</dl>
 
 <dl>
 <dt><b><tt>&lt;string&gt; getenv &lt;string&gt; true</tt></b>
@@ -964,7 +1083,7 @@ otherwise.
 </dl>
 
 <dl>
-<dt><b><tt>- .oserror &lt;string&gt;</tt></b>
+<dt><b><tt>- .oserrorstring &lt;string&gt;</tt></b>
 <dd>Returns the error string for the most recent operating system error.
 </dl>
 
@@ -991,6 +1110,15 @@ time, and returns the same instance thereafter.
 used with <b><tt>.getdeviceparams</tt></b> or other parameter-reading
 operators, but it is read-only and cannot be set with
 <b><tt>setdevice</tt></b>: it must be copied first.
+</dl>
+
+<dl>
+<dt><b><tt>&lt;device&gt; &lt;x&gt; &lt;y&gt; &lt;width&gt; &lt;max_height&gt; &lt;alpha?&gt; &lt;std_depth|null&gt; &lt;string&gt; .getbitsrect &lt;height&gt; &lt;substring&gt;</tt></b>
+<dd>Reads a rectangle of rendered bits back from a device.  This is only
+guaranteed to be implemented for image devices (see below).
+<b><tt>alpha?</tt></b> is 0 for no alpha, -1 for alpha first, 1 for alpha
+last.  <b><tt>std_depth</tt></b> is null for native pixels, number of bits
+per component for a standard color space.
 </dl>
 
 <dl>

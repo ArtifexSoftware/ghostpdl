@@ -1937,28 +1937,50 @@ Operator support:
 <p>
 The interpreter includes many non-standard operators.  Most of these provide
 some part of the function of a standard operator, so that the standard
-operator itself can be implemented in PostScript.  We don't document the
-non-standard operators here, because the set changes frequently.  However,
-all non-standard operators are supposed to have names that begin with '.',
-so you can find them all by executing the following (Unix) command:
+operator itself can be implemented in PostScript: these are not of interest
+to users, and their function is usually obvious from the way they are used.
+However, some non-standard operators provide access to additional,
+non-standard facilities that users might want to know about, such as
+transparency, RasterOp, and in-memory rendering.  These are documented at <a
+href="Language.htm#Additional_operators">Language.htm#Additional_operators</a>.
+
+<p>
+We don't document the complete set of non-standard operators here, because
+the set changes frequently.  However, all non-standard operators are
+supposed to have names that begin with '.', so you can find them all by
+executing the following (Unix) command:
 
 <blockquote><pre>
-egrep '    [{]["].[.]' src/z*.c
+grep '{".[.]' src/[zi]*.c
 </pre></blockquote>
 
 <p>
-There are several optional packages of non-standard operators.  As with
-other non-standard operators, the names of all the operators in these
-packages begin with '.'.  We list those packages here.
+In addition to individual non-standard operators implemented in the same
+files as standard ones, there are several independent optional packages of
+non-standard operators.  As with other non-standard operators, the names of
+all the operators in these packages begin with '.'.  We list those packages
+here.
 
 <dl>
 
 <dt>
-Optional non-standard operator packages:
+<a href="../src/zdosio.c">src/zdosio.c</a>
 <dd>
-<a href="../src/zdosio.c">src/zdosio.c</a>,
-<a href="../src/zdouble.c">src/zdouble.c</a>,
-<a href="../src/zsysvm.c">src/zsysvm.c</a>.
+Provides access to PC hardware I/O through MS-DOS system calls.  Probably no
+longer useful.
+
+<dt>
+<a href="../src/zdouble.c">src/zdouble.c</a>
+<dd>
+Provides "double" floating point arithmetic, using 8-byte strings to hold
+values.  Developed under a contract; probably used only by the group that
+funded the development.
+
+<dt>
+<a href="../src/zsysvm.c">src/zsysvm.c</a>
+<dd>
+Provides operators for allocating objects in specific VM spaces,
+disregarding the current VM mode.
 
 </dl>
 
