@@ -21,7 +21,7 @@
 #include "gxfixed.h"
 #include "vdtrace.h"
 
-/* Global data or all instances : */
+/* Global data for all instances : */
 vd_trace_interface * vd_trace0 = NULL, * vd_trace1 = NULL;
 char vd_flags[128] = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0""\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"
                      "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0""\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"
@@ -95,7 +95,6 @@ void vd_impl_curveto(double x1, double y1, double x2, double y2, double x3, doub
     p1x = SX(x1), p1y = SY(y1);
     p2x = SX(x2), p2y = SY(y2);
     p3x = SX(x3), p3y = SY(y3);
-    NullRET;
     if (vd_trace1->curveto != NULL)
         vd_trace1->curveto(vd_trace1, p1x, p1y, p2x, p2y, p3x, p3y);
     else
