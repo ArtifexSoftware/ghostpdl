@@ -665,48 +665,6 @@ $(GLOBJ)gdevpsdu.$(OBJ) : $(GLSRC)gdevpsdu.c $(GXERR) $(memory__h)\
  $(gdevpsdf_h) $(spprint_h)
 	$(GLCC) $(GLO_)gdevpsdu.$(OBJ) $(C_) $(GLSRC)gdevpsdu.c
 
-# Support for PostScript and PDF font writing
-
-gdevpsf_h=$(GLSRC)gdevpsf.h $(gsccode_h)
-
-psf_1=$(GLOBJ)gdevpsf1.$(OBJ) $(GLOBJ)gdevpsf2.$(OBJ)
-psf_2=$(GLOBJ)gdevpsft.$(OBJ) $(GLOBJ)gdevpsfu.$(OBJ) $(GLOBJ)gdevpsfx.$(OBJ)
-psf_=$(psf_1) $(psf_2)
-$(DD)psf.dev : $(DEVS_MAK) $(ECHOGS_XE) $(psf_)
-	$(SETMOD) $(DD)psf $(psf_1)
-	$(ADDMOD) $(DD)psf -obj $(psf_2)
-
-$(GLOBJ)gdevpsf1.$(OBJ) : $(GLSRC)gdevpsf1.c $(GXERR) $(memory__h)\
- $(gsccode_h) $(gsmatrix_h) $(gxfixed_h) $(gxfont_h) $(gxfont1_h)\
- $(sfilter_h) $(sstring_h) $(stream_h) $(strimpl_h)\
- $(gdevpsf_h) $(spprint_h) $(spsdf_h)
-	$(GLCC) $(GLO_)gdevpsf1.$(OBJ) $(C_) $(GLSRC)gdevpsf1.c
-
-$(GLOBJ)gdevpsf2.$(OBJ) : $(GLSRC)gdevpsf2.c $(GXERR)\
- $(math__h) $(memory__h)\
- $(gsccode_h) $(gscrypt1_h) $(gsmatrix_h) $(gsutil_h)\
- $(gxfcid_h) $(gxfixed_h) $(gxfont_h) $(gxfont1_h)\
- $(sfilter_h) $(stream_h)\
- $(gdevpsf_h)
-	$(GLCC) $(GLO_)gdevpsf2.$(OBJ) $(C_) $(GLSRC)gdevpsf2.c
-
-$(GLOBJ)gdevpsft.$(OBJ) : $(GLSRC)gdevpsft.c $(GXERR) $(memory__h)\
- $(gsmatrix_h) $(gsutil_h) $(gxfont_h) $(gxfont42_h) $(gxttf_h)\
- $(spprint_h) $(stream_h)\
- $(gdevpsf_h)
-	$(GLCC) $(GLO_)gdevpsft.$(OBJ) $(C_) $(GLSRC)gdevpsft.c
-
-$(GLOBJ)gdevpsfu.$(OBJ) : $(GLSRC)gdevpsfu.c $(GXERR) $(memory__h)\
- $(gsmatrix_h) $(gxfont_h) $(gdevpsf_h)
-	$(GLCC) $(GLO_)gdevpsfu.$(OBJ) $(C_) $(GLSRC)gdevpsfu.c
-
-$(GLOBJ)gdevpsfx.$(OBJ) : $(GLSRC)gdevpsfx.c $(GXERR)\
- $(math__h) $(memory__h)\
- $(gxfixed_h) $(gxfont_h) $(gxfont1_h) $(gxmatrix_h) $(gxtype1_h)\
- $(stream_h)\
- $(gdevpsf_h)
-	$(GLCC) $(GLO_)gdevpsfx.$(OBJ) $(C_) $(GLSRC)gdevpsfx.c
-
 # PostScript and EPS writers
 
 pswrite_=$(GLOBJ)gdevps.$(OBJ) $(GLOBJ)scantab.$(OBJ) $(GLOBJ)sfilter2.$(OBJ)

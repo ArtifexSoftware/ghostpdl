@@ -1745,6 +1745,52 @@ $(GLOBJ)gstype2.$(OBJ) : $(GLSRC)gstype2.c $(GXERR) $(math__h) $(memory__h)\
  $(gzpath_h)
 	$(GLCC) $(GLO_)gstype2.$(OBJ) $(C_) $(GLSRC)gstype2.c
 
+# ---------------- Font writing ---------------- #
+# This is not really a library facility, but one piece of interpreter test
+# code uses it.
+
+# Support for PostScript and PDF font writing
+
+gdevpsf_h=$(GLSRC)gdevpsf.h $(gsccode_h)
+
+psf_1=$(GLOBJ)gdevpsf1.$(OBJ) $(GLOBJ)gdevpsf2.$(OBJ)
+psf_2=$(GLOBJ)gdevpsft.$(OBJ) $(GLOBJ)gdevpsfu.$(OBJ) $(GLOBJ)gdevpsfx.$(OBJ)
+psf_=$(psf_1) $(psf_2)
+$(DD)psf.dev : $(DEVS_MAK) $(ECHOGS_XE) $(psf_)
+	$(SETMOD) $(DD)psf $(psf_1)
+	$(ADDMOD) $(DD)psf -obj $(psf_2)
+
+$(GLOBJ)gdevpsf1.$(OBJ) : $(GLSRC)gdevpsf1.c $(GXERR) $(memory__h)\
+ $(gsccode_h) $(gsmatrix_h) $(gxfixed_h) $(gxfont_h) $(gxfont1_h)\
+ $(sfilter_h) $(sstring_h) $(stream_h) $(strimpl_h)\
+ $(gdevpsf_h) $(spprint_h) $(spsdf_h)
+	$(GLCC) $(GLO_)gdevpsf1.$(OBJ) $(C_) $(GLSRC)gdevpsf1.c
+
+$(GLOBJ)gdevpsf2.$(OBJ) : $(GLSRC)gdevpsf2.c $(GXERR)\
+ $(math__h) $(memory__h)\
+ $(gsccode_h) $(gscrypt1_h) $(gsmatrix_h) $(gsutil_h)\
+ $(gxfcid_h) $(gxfixed_h) $(gxfont_h) $(gxfont1_h)\
+ $(sfilter_h) $(stream_h)\
+ $(gdevpsf_h)
+	$(GLCC) $(GLO_)gdevpsf2.$(OBJ) $(C_) $(GLSRC)gdevpsf2.c
+
+$(GLOBJ)gdevpsft.$(OBJ) : $(GLSRC)gdevpsft.c $(GXERR) $(memory__h)\
+ $(gsmatrix_h) $(gsutil_h) $(gxfont_h) $(gxfont42_h) $(gxttf_h)\
+ $(spprint_h) $(stream_h)\
+ $(gdevpsf_h)
+	$(GLCC) $(GLO_)gdevpsft.$(OBJ) $(C_) $(GLSRC)gdevpsft.c
+
+$(GLOBJ)gdevpsfu.$(OBJ) : $(GLSRC)gdevpsfu.c $(GXERR) $(memory__h)\
+ $(gsmatrix_h) $(gxfont_h) $(gdevpsf_h)
+	$(GLCC) $(GLO_)gdevpsfu.$(OBJ) $(C_) $(GLSRC)gdevpsfu.c
+
+$(GLOBJ)gdevpsfx.$(OBJ) : $(GLSRC)gdevpsfx.c $(GXERR)\
+ $(math__h) $(memory__h)\
+ $(gxfixed_h) $(gxfont_h) $(gxfont1_h) $(gxmatrix_h) $(gxtype1_h)\
+ $(stream_h)\
+ $(gdevpsf_h)
+	$(GLCC) $(GLO_)gdevpsfx.$(OBJ) $(C_) $(GLSRC)gdevpsfx.c
+
 # -------- Level 1 color extensions (CMYK color and colorimage) -------- #
 
 cmyklib_=$(GLOBJ)gscolor1.$(OBJ) $(GLOBJ)gsht1.$(OBJ)
@@ -1852,6 +1898,55 @@ $(GLOBJ)gsdps1.$(OBJ) : $(GLSRC)gsdps1.c $(GXERR) $(math__h)\
  $(gxdevice_h) $(gxfixed_h) $(gxmatrix_h) $(gzcpath_h) $(gzpath_h) $(gzstate_h)
 	$(GLCC) $(GLO_)gsdps1.$(OBJ) $(C_) $(GLSRC)gsdps1.c
 
+# ---------------- Functions ---------------- #
+# These are used by PDF and by LanguageLevel 3.  They are here because
+# the implementation of Separation colors also uses them.
+
+gsdsrc_h=$(GLSRC)gsdsrc.h $(gsstruct_h)
+gsfunc_h=$(GLSRC)gsfunc.h
+gsfunc0_h=$(GLSRC)gsfunc0.h $(gsdsrc_h) $(gsfunc_h)
+gxfunc_h=$(GLSRC)gxfunc.h $(gsfunc_h) $(gsstruct_h)
+
+# Generic support, and FunctionType 0.
+funclib_=$(GLOBJ)gsdsrc.$(OBJ) $(GLOBJ)gsfunc.$(OBJ) $(GLOBJ)gsfunc0.$(OBJ) $(GLOBJ)gsfuncv.$(OBJ)
+$(GLD)funclib.dev : $(LIB_MAK) $(ECHOGS_XE) $(funclib_)
+	$(SETMOD) $(GLD)funclib $(funclib_)
+
+$(GLOBJ)gsdsrc.$(OBJ) : $(GLSRC)gsdsrc.c $(GX) $(memory__h)\
+ $(gsdsrc_h) $(gserrors_h) $(stream_h)
+	$(GLCC) $(GLO_)gsdsrc.$(OBJ) $(C_) $(GLSRC)gsdsrc.c
+
+$(GLOBJ)gsfunc.$(OBJ) : $(GLSRC)gsfunc.c $(GX)\
+ $(gserrors_h) $(gsparam_h) $(gxfunc_h)
+	$(GLCC) $(GLO_)gsfunc.$(OBJ) $(C_) $(GLSRC)gsfunc.c
+
+$(GLOBJ)gsfunc0.$(OBJ) : $(GLSRC)gsfunc0.c $(GX) $(math__h)\
+ $(gserrors_h) $(gsfunc0_h) $(gsparam_h) $(gxfarith_h) $(gxfunc_h)
+	$(GLCC) $(GLO_)gsfunc0.$(OBJ) $(C_) $(GLSRC)gsfunc0.c
+
+# "Vanilla" Functions are no longer used at all.
+
+gsfuncv_h=$(GLSRC)gsfuncv.h $(gsfunc_h)
+
+$(GLOBJ)gsfuncv.$(OBJ) : $(GLSRC)gsfuncv.c $(GX)\
+ $(gserrors_h) $(gsfuncv_h) $(gsparam_h) $(gxfunc_h)
+	$(GLCC) $(GLO_)gsfuncv.$(OBJ) $(C_) $(GLSRC)gsfuncv.c
+
+# FunctionType 4 is not used by LL3.
+
+gsfunc4_h=$(GLSRC)gsfunc4.h $(gsfunc_h)
+
+func4lib_=$(GLOBJ)gsfunc4.$(OBJ) $(GLOBJ)spprint.$(OBJ)
+$(GLD)func4lib.dev : $(LIB_MAK) $(ECHOGS_XE) $(func4lib_) $(GLD)funclib.dev
+	$(SETMOD) $(GLD)func4lib $(func4lib_)
+	$(ADDMOD) $(GLD)func4lib -include $(GLD)funclib
+
+$(GLOBJ)gsfunc4.$(OBJ) : $(GLSRC)gsfunc4.c $(GX) $(math__h) $(memory__h)\
+ $(gsdsrc_h) $(gserrors_h) $(gsfunc4_h)\
+ $(gxfarith_h) $(gxfunc_h)\
+ $(sfilter_h) $(spprint_h) $(stream_h) $(strimpl_h)
+	$(GLCC) $(GLO_)gsfunc4.$(OBJ) $(C_) $(GLSRC)gsfunc4.c
+
 # ---------------- DevicePixel color space ---------------- #
 
 gscpixel_h=$(GLSRC)gscpixel.h
@@ -1913,56 +2008,6 @@ $(GLOBJ)gscsepr.$(OBJ) : $(GLSRC)gscsepr.c $(GXERR)\
  $(gscsepr_h) $(gsfunc_h) $(gsmatrix_h) $(gsrefct_h)\
  $(gxcolor2_h) $(gxcspace_h) $(gxfixed_h) $(gzstate_h)
 	$(GLCC) $(GLO_)gscsepr.$(OBJ) $(C_) $(GLSRC)gscsepr.c
-
-# ================ PDF support ================ #
-
-# ---------------- Functions ---------------- #
-# These are also used by LanguageLevel 3.
-
-gsdsrc_h=$(GLSRC)gsdsrc.h $(gsstruct_h)
-gsfunc_h=$(GLSRC)gsfunc.h
-gsfunc0_h=$(GLSRC)gsfunc0.h $(gsdsrc_h) $(gsfunc_h)
-gxfunc_h=$(GLSRC)gxfunc.h $(gsfunc_h) $(gsstruct_h)
-
-# Generic support, and FunctionType 0.
-funclib_=$(GLOBJ)gsdsrc.$(OBJ) $(GLOBJ)gsfunc.$(OBJ) $(GLOBJ)gsfunc0.$(OBJ) $(GLOBJ)gsfuncv.$(OBJ)
-$(GLD)funclib.dev : $(LIB_MAK) $(ECHOGS_XE) $(funclib_)
-	$(SETMOD) $(GLD)funclib $(funclib_)
-
-$(GLOBJ)gsdsrc.$(OBJ) : $(GLSRC)gsdsrc.c $(GX) $(memory__h)\
- $(gsdsrc_h) $(gserrors_h) $(stream_h)
-	$(GLCC) $(GLO_)gsdsrc.$(OBJ) $(C_) $(GLSRC)gsdsrc.c
-
-$(GLOBJ)gsfunc.$(OBJ) : $(GLSRC)gsfunc.c $(GX)\
- $(gserrors_h) $(gsparam_h) $(gxfunc_h)
-	$(GLCC) $(GLO_)gsfunc.$(OBJ) $(C_) $(GLSRC)gsfunc.c
-
-$(GLOBJ)gsfunc0.$(OBJ) : $(GLSRC)gsfunc0.c $(GX) $(math__h)\
- $(gserrors_h) $(gsfunc0_h) $(gsparam_h) $(gxfarith_h) $(gxfunc_h)
-	$(GLCC) $(GLO_)gsfunc0.$(OBJ) $(C_) $(GLSRC)gsfunc0.c
-
-# "Vanilla" Functions are no longer used at all.
-
-gsfuncv_h=$(GLSRC)gsfuncv.h $(gsfunc_h)
-
-$(GLOBJ)gsfuncv.$(OBJ) : $(GLSRC)gsfuncv.c $(GX)\
- $(gserrors_h) $(gsfuncv_h) $(gsparam_h) $(gxfunc_h)
-	$(GLCC) $(GLO_)gsfuncv.$(OBJ) $(C_) $(GLSRC)gsfuncv.c
-
-# FunctionType 4 is not used by LL3.
-
-gsfunc4_h=$(GLSRC)gsfunc4.h $(gsfunc_h)
-
-func4lib_=$(GLOBJ)gsfunc4.$(OBJ) $(GLOBJ)spprint.$(OBJ)
-$(GLD)func4lib.dev : $(LIB_MAK) $(ECHOGS_XE) $(func4lib_) $(GLD)funclib.dev
-	$(SETMOD) $(GLD)func4lib $(func4lib_)
-	$(ADDMOD) $(GLD)func4lib -include $(GLD)funclib
-
-$(GLOBJ)gsfunc4.$(OBJ) : $(GLSRC)gsfunc4.c $(GX) $(math__h) $(memory__h)\
- $(gsdsrc_h) $(gserrors_h) $(gsfunc4_h)\
- $(gxfarith_h) $(gxfunc_h)\
- $(sfilter_h) $(spprint_h) $(stream_h) $(strimpl_h)
-	$(GLCC) $(GLO_)gsfunc4.$(OBJ) $(C_) $(GLSRC)gsfunc4.c
 
 # ================ Display Postscript extensions ================ #
 
