@@ -80,8 +80,8 @@ check_support(const pcl_state_t *pcls, uint symbol_set, const pl_font_t *fp,
 	*mapp = pcl_find_symbol_map(pcls, id, gv);
 	if ( *mapp == 0 )
 	  {
-	    id[0] = pcl_default_symbol_set_value >> 8;
-	    id[1] = (byte)pcl_default_symbol_set_value;
+	    id[0] = pcls->default_symbol_set_value >> 8;
+	    id[1] = (byte)(pcls->default_symbol_set_value);
 	    *mapp = pcl_find_symbol_map(pcls, id, gv);
 	    return 0; /* worst */
 	  }
@@ -106,7 +106,7 @@ score_match(const pcl_state_t *pcls, const pcl_font_selection_t *pfs,
 	  {
 	    score[score_symbol_set] =
 		pfs->params.symbol_set == fp->params.symbol_set? 2:
-		    (fp->params.symbol_set == pcl_default_symbol_set_value);
+		    (fp->params.symbol_set == pcls->default_symbol_set_value);
 	    *mapp = 0;		/* bound fonts have no map */
 	  }
 	else
@@ -364,7 +364,7 @@ pcl_set_id_parameters(const pcl_state_t *pcls,
 	else
 	  { if ( check_support(pcls, pfs->params.symbol_set, fp, &pfs->map) )
 	      DO_NOTHING;
-	    else if ( check_support(pcls, pcl_default_symbol_set_value,
+	    else if ( check_support(pcls, pcls->default_symbol_set_value,
 				    fp, &pfs->map)
 		    )
 	      DO_NOTHING;

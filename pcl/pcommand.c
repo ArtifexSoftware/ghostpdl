@@ -141,7 +141,6 @@ put_param1_float_array(
     return end_param1(&list, pcs);
 }
 
-
 /*
  * Run the reset code of all the modules.
  */
@@ -158,10 +157,8 @@ pcl_do_resets(
 	if ((*init)->do_reset)
 	    (*(*init)->do_reset)(pcs, type);
     }
-
     return code;
 }
-
 
 /*
  * "Cold start" initialization of the graphic state. This is provided as a

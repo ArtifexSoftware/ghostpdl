@@ -5,6 +5,7 @@
 /* pcfont.c */
 /* PCL5 font selection and text printing commands */
 #include "memory_.h"
+#include <stdlib.h>
 /* The following are all for gxfont42.h. */
 #include "gx.h"
 #include "gsccode.h"
@@ -16,15 +17,6 @@
 #include "pcursor.h"
 #include "pcfont.h"
 #include "pcfsel.h"
-
-/*
- * It appears that the default symbol set in the LJ 6MP is PC-8,
- * not Roman-8.  Eventually we will have to deal with this in a more
- * systematic way, but for now, we just define it at compile time.
- */
-#define ROMAN_8_SYMBOL_SET 277
-/*#define DEFAULT_SYMBOL_SET 277*/	/* Roman-8 */
-#define DEFAULT_SYMBOL_SET 341		/* PC-8 */
 
 /*
  * Decache the HMI after resetting the font.  According to TRM 5-22,
@@ -435,22 +427,47 @@ pcfont_do_init(gs_memory_t *mem)
 	END_CLASS
 	return 0;
 }
+
+private char *    built_in_font_prefixes[] = {
+    "",
+    "fonts/",
+    "/windows/system/",
+    "/windows/fonts/",
+    "/win95/fonts/",
+    0
+};
+
 private void
 pcfont_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
-{	if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay) )
-	  { pcls->font_selection[0].params.symbol_set =
-	      DEFAULT_SYMBOL_SET;
-	    pcls->font_selection[0].params.proportional_spacing = false;
-	    pl_fp_set_pitch_per_inch(&pcls->font_selection[0].params, 10);
-	    pcls->font_selection[0].params.height_4ths = 12*4;
-	    pcls->font_selection[0].params.style = 0;
-	    pcls->font_selection[0].params.stroke_weight = 0;
-	    pcls->font_selection[0].params.typeface_family = 3;	/* Courier */
-	    pcls->font_selection[0].font = 0;		/* not looked up yet */
-	    pcls->font_selection[1] = pcls->font_selection[0];
-	    pcls->font_selected = primary;
-	    pcls->font = 0;
-	  }
+{	
+    if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay) ) {
+	pcls->default_symbol_set_value = pcls->font_selection[0].params.symbol_set =
+	    pjl_map_pjl_sym_to_pcl_sym(pjl_get_envvar(pcls->pjls, "symset"));
+	pl_fp_set_pitch_per_inch(&pcls->font_selection[0].params,
+				 atof(pjl_get_envvar(pcls->pjls, "pitch")));
+	pcls->font_selection[0].params.height_4ths = 
+	    atof(pjl_get_envvar(pcls->pjls, "ptsize")) * 4.0;
+	/* NB this needs to be filled in more completely with
+           information specific to the os and the implemented font
+           tables */
+	if (!strcmp(pjl_get_envvar(pcls->pjls, "fontsource"), "I"))
+	    pcls->current_font_directories = built_in_font_prefixes;
+	else
+	    /* NB - HANDLE other cases M1, M2, M3, M4, C, C1, S pjltrm
+               6-22 */
+	    pcls->current_font_directories = built_in_font_prefixes;
+	/* NB again this must be handled by the printer manufacturer
+           since it is specific to the printer architecture */
+	/* fontnumber = pjl_get_envvar(pcls->pjls, "fontnumber", envvar) */
+	pcls->font_selection[0].params.proportional_spacing = false;
+	pcls->font_selection[0].params.style = 0;
+	pcls->font_selection[0].params.stroke_weight = 0;
+	pcls->font_selection[0].params.typeface_family = 3;	/* Courier */
+	pcls->font_selection[0].font = 0;		/* not looked up yet */
+	pcls->font_selection[1] = pcls->font_selection[0];
+	pcls->font_selected = primary;
+	pcls->font = 0;
+    }
 }
 
 const pcl_init_t pcfont_init = {

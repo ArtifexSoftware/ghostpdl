@@ -23,7 +23,7 @@
 #include "pcdict.h"             /* PL dictionary key structure */
 #include "rtrstst.h"            /* raster state information */
 /*#include "pgstate.h"*/	/* HP-GL/2 state, included below */
-
+#include "pjparse.h"
 
 /* type for string id's */
 typedef struct pcl_string_id_s {
@@ -147,6 +147,7 @@ struct pcl_state_s {
     pcl_id_t        symbol_set_id;
     pl_dict_t       soft_symbol_sets;
     pl_dict_t       built_in_symbol_sets;
+    int             default_symbol_set_value;
 
     /* Chapter 9 & 11 (pcsfont.c) */
     pcl_id_t        font_id;
@@ -246,6 +247,12 @@ struct pcl_state_s {
 
     /* ---------------- HP-GL/2 state ---------------- */
     pcl_hpgl_state_t    g;	/* see pgstate.h */
+    /* ---------------- PJL state -------------------- */
+    pjl_parser_state *pjls;
+    /* ---------------- font directory locations ----- */
+    /* This is the pcl state variable associated with FONTSOURCE - see
+       pjltrm 6-22 */
+    char**            current_font_directories;
 };
 
 #endif 						/* pcstate_INCLUDED */

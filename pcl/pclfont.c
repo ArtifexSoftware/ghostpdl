@@ -26,8 +26,9 @@
  * salvaged for later.
  */
 bool
-pcl_load_built_in_fonts(pcl_state_t *pcls, const char *prefixes[])
-{	const char **pprefix;
+pcl_load_built_in_fonts(pcl_state_t *pcls)
+{	char **prefixes = pcls->current_font_directories;
+        char **pprefix;
 	typedef struct font_resident {
 	  const char *ext_name;
 	  pl_font_params_t params;

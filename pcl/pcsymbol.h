@@ -32,6 +32,4 @@ pl_symbol_map_t *pcl_find_symbol_map(P3(const pcl_state_t *pcls,
 					const byte *id,
 					pl_glyph_vocabulary_t gv));
 
-#define pcl_default_symbol_set_value (8 * 32 + 'U' - 64)
-
 #endif				/* pcsymbol_INCLUDED */

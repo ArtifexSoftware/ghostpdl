@@ -473,11 +473,6 @@ private const struct {
 };
 
 /*
- * The default paper. This should really to gotten from the device.
- */
-#define DFLT_PAPER_PTR  &(paper_sizes[1].psize)
-
-/*
  * ESC & l <psize_enum> A
  *
  * Select paper size
@@ -888,6 +883,20 @@ pcpage_do_init(
     return 0;
 }
 
+  private pcl_paper_size_t *
+get_default_paper(
+    pcl_state_t *      pcs
+)
+{
+    int i;
+    char *psize = pjl_get_envvar(pcs->pjls, "paper");
+    for (i = 0; i < countof(paper_sizes); i++)
+        if (!strcmp(psize, paper_sizes[i].pname))
+	    return &(paper_sizes[i].psize);
+    dprintf("pcl does not support system requested paper\n");
+    return &(paper_sizes[1].psize);
+}
+    
   private void
 pcpage_do_reset(
     pcl_state_t *       pcs,
@@ -902,8 +911,10 @@ pcpage_do_reset(
         pcs->xfm_state.top_offset_cp = 0.0;
 	pcs->perforation_skip = 1;
         new_logical_page( pcs,
-                          0,
-                          DFLT_PAPER_PTR,
+			  !strcmp(pjl_get_envvar(pcs->pjls,
+						 "orientation"),
+				  "portrait") ? 0 : 1,
+                          get_default_paper(pcs),
                           (type & pcl_reset_initial) != 0
                           );
 	pcs->have_page = false;

@@ -58,16 +58,7 @@ const pcl_init_t *    pcl_init_table[] = {
 };
 
 /* Interim font initialization procedure */
-extern  bool    pcl_load_built_in_fonts( pcl_state_t *, const char *[] );
-
-private const char *    built_in_font_prefixes[] = {
-    "",
-    "fonts/",
-    "/windows/system/",
-    "/windows/fonts/",
-    "/win95/fonts/",
-    0
-};
+extern  bool    pcl_load_built_in_fonts( pcl_state_t * );
 
 /* Built-in symbol set initialization procedure */
 extern  bool    pcl_load_built_in_symbol_sets( pcl_state_t * );
@@ -142,7 +133,6 @@ main(
     gs_state *          pgs;
     pcl_state_t *       pcls;
     pcl_parser_state_t  pstate;
-    pjl_parser_state_t  pjstate;
     arg_list            args;
     const char *        arg;
 
@@ -201,6 +191,9 @@ main(
     /* assume no appletalk configuration routine */
     pcls->configure_appletalk = 0;
 
+    /* initialize pjl */
+    pcls->pjls = pjl_process_init(mem);
+
     /* Run initialization code. */
     {
         const pcl_init_t ** init;
@@ -225,7 +218,7 @@ main(
      * Intermediate initialization: after state is initialized, may
      * allocate memory, but we won't re-run this level of init.
      */
-    if (!pcl_load_built_in_fonts(pcls, built_in_font_prefixes)) {
+    if (!pcl_load_built_in_fonts(pcls)) {
         lprintf("No built-in fonts found during initialization\n");
         exit(1);
     }
@@ -264,7 +257,6 @@ main(
             exit(1);
         }
 
-        pjl_process_init(&pjstate);
         r.limit = buf - 1;
         for (;;) {
             if_debug1('i', "[i][file pos=%ld]\n", (long)ftell(in));
@@ -275,7 +267,7 @@ main(
             r.limit += len;
 process:
             if (in_pjl) {
-                code = pjl_process(&pjstate, NULL, &r);
+                code = pjl_process(pcls->pjls, NULL, &r);
     	        if (code < 0)
     	            break;
     	        else if (code > 0) {
@@ -328,6 +320,7 @@ process:
     /* return to the original graphic state, reclaim memory once more */
     pcl_grestore(pcls);
     gs_reclaim(&inst.spaces, true);
+    pjl_process_destroy(pcls->pjls, mem);
 
 #ifdef DEBUG
     if ( gs_debug_c(':') ) {
