@@ -34,6 +34,7 @@ import anydbm
 import time
 import os, sys
 import string
+import gsutil
 
 def make_pdfcompare_entry(ifile, device, dpi, band):
     ofile = "%s.pdf.%s.%d.%d" % (ifile, device, dpi, band)
@@ -82,6 +83,6 @@ def make_pdfcompare_entry(ifile, device, dpi, band):
 
 f = os.path.basename(sys.argv[1])
 
-if f[-3:] == '.ps' or f[-4:] == '.pdf' or f[-4:] == '.eps':
+if gsutil.check_extension(f):
     for params in gsparamsets.testparamsets:
         make_pdfcompare_entry(f, params.device, params.resolution, params.banding)

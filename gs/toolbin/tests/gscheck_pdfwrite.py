@@ -28,7 +28,7 @@
 import os, stat
 import calendar, string, time
 import gstestutils
-import gsconf, gstestgs, gsparamsets, gssum
+import gsconf, gstestgs, gsparamsets, gssum, gsutil
 
 
 class GSPDFWriteCompareTestCase(gstestgs.GhostscriptTestCase):
@@ -110,7 +110,7 @@ def addTests(suite, gsroot, **args):
     comparefiles = os.listdir(gsconf.comparefiledir)
 
     for f in comparefiles:
-        if f[-3:] == '.ps' or f[-4:] == '.pdf' or f[-4:] == '.eps':
+        if gsutil.check_extension(f):
 	    for params in gsparamsets.pdftestparamsets:
 	        add_compare_test(suite, f, params.device,
 				 params.resolution,
