@@ -257,7 +257,8 @@ $(GLOBJ)gsnotify.$(OBJ) : $(GLSRC)gsnotify.c $(GXERR)\
 
 $(GLOBJ)gsutil.$(OBJ) : $(GLSRC)gsutil.c $(AK) $(memory__h) $(string__h)\
  $(gconfigv_h)\
- $(gsmemory_h) $(gsrect_h) $(gstypes_h) $(gsuid_h) $(gsutil_h)
+ $(gserror_h) $(gserrors_h) $(gsmemory_h) $(gsrect_h) $(gstypes_h)\
+ $(gsuid_h) $(gsutil_h)
 	$(GLCC) $(GLO_)gsutil.$(OBJ) $(C_) $(GLSRC)gsutil.c
 
 # MD5 digest
@@ -503,7 +504,8 @@ $(GLOBJ)gxbcache.$(OBJ) : $(GLSRC)gxbcache.c $(GX) $(memory__h)\
  $(gsmdebug_h) $(gxbcache_h)
 	$(GLCC) $(GLO_)gxbcache.$(OBJ) $(C_) $(GLSRC)gxbcache.c
 
-$(GLOBJ)gxccache.$(OBJ) : $(GLSRC)gxccache.c $(GXERR) $(gpcheck_h)\
+$(GLOBJ)gxccache.$(OBJ) : $(GLSRC)gxccache.c $(GXERR) $(memory__h)\
+ $(gpcheck_h)\
  $(gscencs_h) $(gscspace_h) $(gsimage_h) $(gsstruct_h)\
  $(gxchar_h) $(gxdevice_h) $(gxdevmem_h) $(gxfcache_h)\
  $(gxfixed_h) $(gxfont_h) $(gxhttile_h) $(gxmatrix_h) $(gxxfont_h)\
@@ -1475,16 +1477,15 @@ $(GLOBJ)gxclpage.$(OBJ) : $(GLSRC)gxclpage.c $(AK)\
 	$(GLCC) $(GLO_)gxclpage.$(OBJ) $(C_) $(GLSRC)gxclpage.c
 
 $(GLOBJ)gxclrast.$(OBJ) : $(GLSRC)gxclrast.c $(GXERR)\
- $(memory__h) $(gx_h) $(gp_h) $(gpcheck_h) $(gscdefs_h)\
- $(gserrors_h) $(gsbitops_h) $(gs_params_h)\
- $(gsstate_h) $(gxdcolor_h) $(gxdevice_h)\
- $(gxcoord_h) $(gsdevice_h) $(gsiparm4_h)\
- $(gxdevmem_h) $(gxcldev_h) $(gxclpath_h)\
- $(gxcmap_h) $(gxcolor2_h) $(gxcspace_h)\
- $(gxht_h) $(gxdtres_h) $(gxhttile_h)\
- $(gxgetbit_h) $(gxpaint_h) $(gxiparam_h)\
+ $(memory__h) $(gp_h) $(gpcheck_h)\
+ $(gsbitops_h) $(gscdefs_h) $(gscoord_h) $(gsdevice_h) $(gserrors_h)\
  $(gsiparm4_h) $(gsparams_h) $(gsstate_h)\
- $(gzacpath_h) $(gzcpath_h) $(gzpath_h)\
+ $(gxcldev_h) $(gxclpath_h)\
+ $(gxcmap_h) $(gxcolor2_h) $(gxcspace_h)\
+ $(gxdcolor_h) $(gxdevice_h) $(gxdevmem_h) $(gxdht_h) $(gxdhtres_h)\
+ $(gxgetbit_h) $(gxht_h) $(gxiparam_h) $(gxhttile_h)\
+ $(gxpaint_h)\
+ $(gzacpath_h) $(gzcpath_h) $(gzht_h) $(gzpath_h)\
  $(stream_h) $(strimpl_h)
 	$(GLCC) $(GLO_)gxclrast.$(OBJ) $(C_) $(GLSRC)gxclrast.c
 
@@ -1714,6 +1715,7 @@ $(GLOBJ)gstype42.$(OBJ) : $(GLSRC)gstype42.c $(GXERR) $(memory__h)\
 gxcid_h=$(GLSRC)gxcid.h $(gsstype_h)
 gxfcid_h=$(GLSRC)gxfcid.h $(gxcid_h) $(gxfont_h) $(gxfont42_h)
 gxfcmap_h=$(GLSRC)gxfcmap.h $(gsfcmap_h) $(gsuid_h) $(gxcid_h)
+gxfcmap1_h=$(GLSRC)gxfcmap1.h $(gxfcmap_h)
 gxfont0c_h=$(GLSRC)gxfont0c.h $(gxfcid_h) $(gxfont0_h)
 
 cidlib_=$(GLOBJ)gsfcid.$(OBJ) $(GLOBJ)gsfcid2.$(OBJ)
@@ -2066,7 +2068,7 @@ $(GLOBJ)gsdsrc.$(OBJ) : $(GLSRC)gsdsrc.c $(GX) $(memory__h)\
  $(gsdsrc_h) $(gserrors_h) $(stream_h)
 	$(GLCC) $(GLO_)gsdsrc.$(OBJ) $(C_) $(GLSRC)gsdsrc.c
 
-$(GLOBJ)gsfunc.$(OBJ) : $(GLSRC)gsfunc.c $(GX)\
+$(GLOBJ)gsfunc.$(OBJ) : $(GLSRC)gsfunc.c $(GX) $(memory__h)\
  $(gserrors_h) $(gsparam_h) $(gxfunc_h)
 	$(GLCC) $(GLO_)gsfunc.$(OBJ) $(C_) $(GLSRC)gsfunc.c
 
@@ -2293,7 +2295,7 @@ $(GLOBJ)gscolor3.$(OBJ) : $(GLSRC)gscolor3.c $(GXERR)\
  $(gzpath_h) $(gzstate_h)
 	$(GLCC) $(GLO_)gscolor3.$(OBJ) $(C_) $(GLSRC)gscolor3.c
 
-$(GLOBJ)gsfunc3.$(OBJ) : $(GLSRC)gsfunc3.c $(math__h) $(GXERR)\
+$(GLOBJ)gsfunc3.$(OBJ) : $(GLSRC)gsfunc3.c $(math__h) $(memory__h) $(GXERR)\
  $(gsfunc3_h) $(gsparam_h) $(gxfunc_h)
 	$(GLCC) $(GLO_)gsfunc3.$(OBJ) $(C_) $(GLSRC)gsfunc3.c
 
