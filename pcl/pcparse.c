@@ -559,6 +559,12 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcs, stream_cursor_read *pr)
 		      }
 		    if ( pcs->defining_macro && !in_macro )
 		      { /* We just started a macro definition. */
+			if (pst->scan_type != scanning_none) 
+			  { /* combinded command started macro */ 
+			    /* start definition of macro with esc& preloaded */ 
+			    static const byte macro_prefix[3] = " \033&";
+			    append_macro(&macro_prefix[0], &macro_prefix[2], pcs); 
+			  }
 			macro_p = p;
 		      }
 		    in_macro = pcs->defining_macro;
