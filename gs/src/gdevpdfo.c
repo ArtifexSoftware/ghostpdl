@@ -465,6 +465,8 @@ cos_array_release(cos_object_t *pco, client_name_t cname)
     pca->elements = 0;
 }
 
+private cos_array_element_t *cos_array_reorder(const cos_array_t *pca,
+					       cos_array_element_t *first);
 private int
 cos_array_write(const cos_object_t *pco, gx_device_pdf *pdev)
 {
@@ -601,7 +603,7 @@ cos_array_element_next(const cos_array_element_t *pca, long *pindex,
  *	...
  *	cos_array_reorder(pca, first_element);
  */
-cos_array_element_t *
+private cos_array_element_t *
 cos_array_reorder(const cos_array_t *pca, cos_array_element_t *first)
 {
     cos_array_element_t *last;

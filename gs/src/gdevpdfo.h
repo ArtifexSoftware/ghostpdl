@@ -248,21 +248,24 @@ int cos_stream_add_since(P2(cos_stream_t *, long /*start_pos*/));
 int cos_stream_add_bytes(P3(cos_stream_t *, const byte *, uint));
 cos_dict_t *cos_stream_dict(P1(cos_stream_t *));
 
-/* Get the first / next element for enumerating an array. */
+/*
+ * Get the first / next element for enumerating an array.  Usage:
+ *	const cos_array_element_t *elt = cos_array_element_first(pca);
+ *	while (elt) {
+ *	    long idx;
+ *	    const cos_value_t *pvalue;
+ *	    elt = cos_array_element_next(elt, &idx, &pvalue);
+ *	    ...
+ *	}
+ * The order in which the elements are returned is not defined.
+ * If the client adds elements to the array during the enumeration,
+ * they may or may not be included in the enumeration.
+ */
 const cos_array_element_t *
     cos_array_element_first(P1(const cos_array_t *));
 const cos_array_element_t *
     cos_array_element_next(P3(const cos_array_element_t *, long *,
 			      const cos_value_t **));
-
-/*
- * Reorder the elements of an array for writing or after writing.  Usage:
- *	first_element = cos_array_reorder(pca, NULL);
- *	...
- *	cos_array_reorder(pca, first_element);
- */
-cos_array_element_t *
-    cos_array_reorder(P2(const cos_array_t *, cos_array_element_t *));
 
 /* Look up a key in a dictionary. */
 const cos_value_t *cos_dict_find(P3(const cos_dict_t *, const byte *, uint));
