@@ -240,7 +240,7 @@ main(
 	if (pl_main_process_options(&inst, &args, &params, pdl_implementation,
 				    pl_characteristics(&pjl_implementation)->version,
 				    pl_characteristics(&pjl_implementation)->build_date) < 0) {
-	    fprintf(gs_stderr, pl_usage);
+	    fprintf(gs_stderr, pl_usage, argv[0]);
 	    exit(1);
 	}
 
