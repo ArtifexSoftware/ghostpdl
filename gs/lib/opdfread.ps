@@ -442,6 +442,32 @@ true setglobal
   } ifelse
 } bind def
 
+/ObtainMetrics % <font_resource> ObtainMetrics <font_resource>
+{ dup /Widths //knownget exec {									% fr W
+    1 index /Encoding get										% fr W E
+	256 dict													% fr W E M
+	3 index /Subtype get /TrueType eq {
+	  1000
+	} {
+	  1
+	} ifelse													% fr W E M s
+	4 index /FirstChar //knownget exec not {
+	  0
+	} if														% fr W E M s c0
+	5 4 roll													% fr E M s c0 W
+	dup 0 exch 1 exch length 1 sub {							% fr E M s c0 W i
+	  2 copy get												% fr E M s c0 W i w
+	  4 index div						
+	  exch 3 index add											% fr E M s c0 W w c
+	  6 index exch get											% fr E M s c0 W w n
+	  5 index 3 1 roll exch										% fr E M s c0 W M n w
+	  put														% fr E M s c0 W
+	} for
+	pop pop pop exch pop										% fr M
+	1 index exch /Metrics put									% fr
+  } if
+} bind def
+
 % ===================== Interpret Data Streams ===============
 
 /TempMatrix matrix def
@@ -473,6 +499,7 @@ currentdict end def
   } {
     (Underimplemented SetFont)=
     //ObtainEncoding exec
+    //ObtainMetrics exec
     dup /Subtype get /Type3 eq {
 	  pop /Courier findfont exch 10 mul exch
     } {
@@ -485,6 +512,9 @@ currentdict end def
 	  dup length dict copy											% s fr f
 	  dup 2 index /Encoding get										% s fr f f e
 	  /Encoding exch put											% s fr f
+	  1 index /Metrics //knownget exec {							% s fr f M
+	    1 index exch /Metrics exch put								% s fr f
+	  } if
 	  % todo: set Metrics here
 	  1 index /BaseFont get											% s fr f n
 	  exch definefont												% s fr f
