@@ -906,6 +906,18 @@ extern void reloc_const_bytestring(P2(gs_const_bytestring *pbs, gc_state_t *gcst
 #define gs_private_st_suffix_add4_final(stname, stype, sname, penum, preloc, pfinal, supstname, e1, e2, e3, e4)\
   gs__st_suffix_add4_final(private_st, stname, stype, sname, penum, preloc, pfinal, supstname, e1, e2, e3, e4)
 
+	/* Suffix subclasses with 5 additional pointers. */
+
+#define gs__st_suffix_add5(scope_st, stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4, e5)\
+  BASIC_PTRS(penum) {\
+    GC_OBJ_ELT3(stype, e1, e2, e3), GC_OBJ_ELT2(stype, e4, e5)\
+  };\
+  gs__st_basic_super(scope_st, stname, stype, sname, penum, preloc, &supstname, 0)
+#define gs_public_st_suffix_add5(stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4, e5)\
+  gs__st_suffix_add5(public_st, stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4, e5)
+#define gs_private_st_suffix_add5(stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4, e5)\
+  gs__st_suffix_add5(private_st, stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4, e5)
+
 	/* Suffix subclasses with 6 additional pointers. */
 
 #define gs__st_suffix_add6(scope_st, stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4, e5, e6)\
