@@ -53,10 +53,10 @@ Table of contents
              o Primarily for developers:
 
                     API.htm        Htmstyle.htm   Ps-style.htm
-                    C-style.htm    Lib.htm        Release.htm
-                    DLL.htm        Maintain.htm   Source.htm
-                    Develop.htm    Projects.htm   Xfonts.htm
-                    Drivers.htm
+                    C-style.htm    Issues.htm     Release.htm
+                    DLL.htm        Lib.htm        Source.htm
+                    Develop.htm    Maintain.htm   Xfonts.htm
+                    Drivers.htm    Projects.htm
 
   ------------------------------------------------------------------------
 
@@ -313,6 +313,11 @@ Humor.htm
 Install.htm
      How to install Ghostscript. See also how to build it.
 
+Issues.htm
+     A list of outstanding open issues in Ghostscript. These include known
+     limitations, minor bugs, performance issues, differences from Adobe
+     implementations, and others.
+
 Language.htm
      The relationship between the Ghostscript interpreter and the PostScript
      language as defined by Adobe.
@@ -407,4 +412,4 @@ This file is part of AFPL Ghostscript. See the Aladdin Free Public License
 (the "License") for full details of the terms of using, copying, modifying,
 and redistributing AFPL Ghostscript.
 
-Ghostscript version 6.62, 16 March 2001
+Ghostscript version 6.62, 19 March 2001
