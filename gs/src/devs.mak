@@ -860,7 +860,7 @@ $(GLOBJ)gdevpdfv.$(OBJ) : $(GLSRC)gdevpdfv.c $(GXERR) $(math__h) $(string__h)\
 
 pdftext1_=$(GLOBJ)gdevpdfe.$(OBJ) $(GLOBJ)gdevpdff.$(OBJ)
 pdftext2_=$(GLOBJ)gdevpdfs.$(OBJ) $(GLOBJ)gdevpdft.$(OBJ) $(GLOBJ)gdevpdfw.$(OBJ)
-pdftext10_=$(GLOBJ)gscencs.$(OBJ) $(GLOBJ)gsfont0c.$(OBJ)
+pdftext10_=$(GLOBJ)gsfont0c.$(OBJ)
 pdftext_=$(pdftext1_) $(pdftext2_)\
  $(pdftext10_)
 $(DD)pdftext.dev : $(DEVS_MAK) $(ECHOGS_MAK) $(pdftext_)\

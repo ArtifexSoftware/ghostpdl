@@ -1877,13 +1877,22 @@ $(GLOBJ)gstype2.$(OBJ) : $(GLSRC)gstype2.c $(GXERR) $(math__h) $(memory__h)\
 # code uses it.
 
 # C representation of known encodings.
+# gscedata.[ch] are generated automatically by lib/encs2c.ps.
 
+gscedata_h=$(GLSRC)gscedata.h
 gscencs_h=$(GLSRC)gscencs.h $(stdpre_h) $(gstypes_h) $(gsccode_h)
 
-# gscedata.c is generated automatically by lib/encs2c.ps.
+$(GLOBJ)gscedata.$(OBJ) : $(GLSRC)gscedata.c\
+ $(stdpre_h) $(gstypes_h) $(gscedata_h)
+	$(GLCC) $(GLO_)gscedata.$(OBJ) $(C_) $(GLSRC)gscedata.c
+
 $(GLOBJ)gscencs.$(OBJ) : $(GLSRC)gscencs.c $(GLSRC)gscedata.c\
- $(memory__h) $(gscencs_h)
+ $(memory__h) $(gscedata_h) $(gscencs_h) $(gserror_h) $(gserrors_h)
 	$(GLCC) $(GLO_)gscencs.$(OBJ) $(C_) $(GLSRC)gscencs.c
+
+cencs_=$(GLOBJ)gscedata.$(OBJ) $(GLOBJ)gscencs.$(OBJ)
+$(GLD)cencs.dev : $(LIB_MAK) $(ECHOGS_XE) $(cencs_)
+	$(SETMOD) $(GLD)cencs $(cencs_)
 
 # Support for PostScript and PDF font writing
 
@@ -1891,12 +1900,13 @@ gdevpsf_h=$(GLSRC)gdevpsf.h $(gsccode_h) $(gsgdata_h)
 
 psf_1=$(GLOBJ)gdevpsf1.$(OBJ) $(GLOBJ)gdevpsf2.$(OBJ) $(GLOBJ)gdevpsfm.$(OBJ)
 psf_2=$(GLOBJ)gdevpsft.$(OBJ) $(GLOBJ)gdevpsfu.$(OBJ) $(GLOBJ)gdevpsfx.$(OBJ)
-psf_3=$(GLOBJ)gscencs.$(OBJ) $(GLOBJ)spsdf.$(OBJ)
+psf_3=$(GLOBJ)spsdf.$(OBJ)
 psf_=$(psf_1) $(psf_2) $(psf_3)
-$(GLD)psf.dev : $(LIB_MAK) $(ECHOGS_XE) $(psf_)
+$(GLD)psf.dev : $(LIB_MAK) $(ECHOGS_XE) $(psf_) $(GLD)cencs.dev
 	$(SETMOD) $(DD)psf $(psf_1)
 	$(ADDMOD) $(DD)psf -obj $(psf_2)
 	$(ADDMOD) $(DD)psf -obj $(psf_3)
+	$(ADDMOD) $(DD)psf -include $(GLD)cencs
 
 $(GLOBJ)gdevpsf1.$(OBJ) : $(GLSRC)gdevpsf1.c $(GXERR) $(memory__h)\
  $(gsccode_h) $(gsmatrix_h)\

@@ -1,1498 +1,3629 @@
 /*
  * Copyright (C) 2002 artofcode LLC.  All rights reserved.
- * See gscencs.h for the complete license notice.
+ * See toolbin/encs2c.ps for the complete license notice.
  *
- * This file contains substantial parts of encs2c.ps, which generated
- * the remainder of the file mechanically from
+ * This file contains substantial parts of toolbin/encs2c.ps,
+ * which generated the remainder of the file mechanically from
  *   gs_std_e.ps  gs_il1_e.ps  gs_sym_e.ps  gs_dbt_e.ps
  *   gs_wan_e.ps  gs_mro_e.ps  gs_mex_e.ps  gs_mgl_e.ps
  *   gs_lgo_e.ps  gs_lgx_e.ps  gs_css_e.ps
  */
 
-#define MAX_DIRECT_LEN 13
-#define NUM_INDIRECT_LEN 6
-#define NUM_CHARS 4616
+#include "stdpre.h"
+#include "gstypes.h"
+#include "gscedata.h"
 
-static const char gs_c_std_encoding_chars[] = {
-'t','h','r','e','e','q','u','a','r','t','e','r','s','e','m','d','a','s','h',
-#define I_threequartersemdash NX(19,0)
-'p','a','r','e','n','r','i','g','h','t','i','n','f','e','r','i','o','r',
-#define I_parenrightinferior NX(18,0)
-'p','a','r','e','n','r','i','g','h','t','s','u','p','e','r','i','o','r',
-#define I_parenrightsuperior NX(18,1)
-'H','u','n','g','a','r','u','m','l','a','u','t','s','m','a','l','l',
-#define I_Hungarumlautsmall NX(17,0)
-'p','a','r','e','n','l','e','f','t','i','n','f','e','r','i','o','r',
-#define I_parenleftinferior NX(17,1)
-'p','a','r','e','n','l','e','f','t','s','u','p','e','r','i','o','r',
-#define I_parenleftsuperior NX(17,2)
-'q','u','e','s','t','i','o','n','d','o','w','n','s','m','a','l','l',
-#define I_questiondownsmall NX(17,3)
-'A','c','i','r','c','u','m','f','l','e','x','s','m','a','l','l',
-#define I_Acircumflexsmall NX(16,0)
-'E','c','i','r','c','u','m','f','l','e','x','s','m','a','l','l',
-#define I_Ecircumflexsmall NX(16,1)
-'I','c','i','r','c','u','m','f','l','e','x','s','m','a','l','l',
-#define I_Icircumflexsmall NX(16,2)
-'O','c','i','r','c','u','m','f','l','e','x','s','m','a','l','l',
-#define I_Ocircumflexsmall NX(16,3)
-'U','c','i','r','c','u','m','f','l','e','x','s','m','a','l','l',
-#define I_Ucircumflexsmall NX(16,4)
-'C','i','r','c','u','m','f','l','e','x','s','m','a','l','l',
-#define I_Circumflexsmall NX(15,0)
-'e','x','c','l','a','m','d','o','w','n','s','m','a','l','l',
-#define I_exclamdownsmall NX(15,1)
-'A','d','i','e','r','e','s','i','s','s','m','a','l','l',
-#define I_Adieresissmall NX(14,0)
-'D','o','t','a','c','c','e','n','t','s','m','a','l','l',
-#define I_Dotaccentsmall NX(14,1)
-'E','d','i','e','r','e','s','i','s','s','m','a','l','l',
-#define I_Edieresissmall NX(14,2)
-'I','d','i','e','r','e','s','i','s','s','m','a','l','l',
-#define I_Idieresissmall NX(14,3)
-'O','d','i','e','r','e','s','i','s','s','m','a','l','l',
-#define I_Odieresissmall NX(14,4)
-'U','d','i','e','r','e','s','i','s','s','m','a','l','l',
-#define I_Udieresissmall NX(14,5)
-'Y','d','i','e','r','e','s','i','s','s','m','a','l','l',
-#define I_Ydieresissmall NX(14,6)
-'a','m','p','e','r','s','a','n','d','s','m','a','l','l',
-#define I_ampersandsmall NX(14,7)
-'b','r','a','c','k','e','t','r','i','g','h','t','b','t',
-#define I_bracketrightbt NX(14,8)
-'b','r','a','c','k','e','t','r','i','g','h','t','e','x',
-#define I_bracketrightex NX(14,9)
-'b','r','a','c','k','e','t','r','i','g','h','t','t','p',
-#define I_bracketrighttp NX(14,10)
-'c','a','r','r','i','a','g','e','r','e','t','u','r','n',
-#define I_carriagereturn NX(14,11)
-'c','i','r','c','l','e','m','u','l','t','i','p','l','y',
-#define I_circlemultiply NX(14,12)
-'c','o','p','y','r','i','g','h','t','s','e','r','i','f',
-#define I_copyrightserif NX(14,13)
-'d','o','l','l','a','r','i','n','f','e','r','i','o','r',
-#define I_dollarinferior NX(14,14)
-'d','o','l','l','a','r','o','l','d','s','t','y','l','e',
-#define I_dollaroldstyle NX(14,15)
-'d','o','l','l','a','r','s','u','p','e','r','i','o','r',
-#define I_dollarsuperior NX(14,16)
-'g','u','i','l','l','e','m','o','t','r','i','g','h','t',
-#define I_guillemotright NX(14,17)
-'g','u','i','l','s','i','n','g','l','r','i','g','h','t',
-#define I_guilsinglright NX(14,18)
-'h','y','p','h','e','n','i','n','f','e','r','i','o','r',
-#define I_hypheninferior NX(14,19)
-'h','y','p','h','e','n','s','u','p','e','r','i','o','r',
-#define I_hyphensuperior NX(14,20)
-'o','n','e','d','o','t','e','n','l','e','a','d','e','r',
-#define I_onedotenleader NX(14,21)
-'p','e','r','i','o','d','c','e','n','t','e','r','e','d',
-#define I_periodcentered NX(14,22)
-'p','e','r','i','o','d','i','n','f','e','r','i','o','r',
-#define I_periodinferior NX(14,23)
-'p','e','r','i','o','d','s','u','p','e','r','i','o','r',
-#define I_periodsuperior NX(14,24)
-'p','r','o','p','e','r','s','u','p','e','r','s','e','t',
-#define I_propersuperset NX(14,25)
-'q','u','o','t','e','s','i','n','g','l','b','a','s','e',
-#define I_quotesinglbase NX(14,26)
-'r','e','f','l','e','x','s','u','p','e','r','s','e','t',
-#define I_reflexsuperset NX(14,27)
-'t','r','a','d','e','m','a','r','k','s','e','r','i','f',
-#define I_trademarkserif NX(14,28)
-'t','w','o','d','o','t','e','n','l','e','a','d','e','r',
-#define I_twodotenleader NX(14,29)
-'C','c','e','d','i','l','l','a','s','m','a','l','l',
-#define I_Ccedillasmall N(13,653)
-'D','i','e','r','e','s','i','s','s','m','a','l','l',
-#define I_Dieresissmall N(13,666)
-'O','h','u','n','g','a','r','u','m','l','a','u','t',
-#define I_Ohungarumlaut N(13,679)
-'U','h','u','n','g','a','r','u','m','l','a','u','t',
-#define I_Uhungarumlaut N(13,692)
-'a','r','r','o','w','d','b','l','r','i','g','h','t',
-#define I_arrowdblright N(13,705)
-'b','r','a','c','e','r','i','g','h','t','m','i','d',
-#define I_bracerightmid N(13,718)
-'b','r','a','c','k','e','t','l','e','f','t','b','t',
-#define I_bracketleftbt N(13,731)
-'b','r','a','c','k','e','t','l','e','f','t','e','x',
-#define I_bracketleftex N(13,744)
-'b','r','a','c','k','e','t','l','e','f','t','t','p',
-#define I_bracketlefttp N(13,757)
-'c','o','l','o','n','m','o','n','e','t','a','r','y',
-#define I_colonmonetary N(13,770)
-'c','o','m','m','a','i','n','f','e','r','i','o','r',
-#define I_commainferior N(13,783)
-'c','o','m','m','a','s','u','p','e','r','i','o','r',
-#define I_commasuperior N(13,796)
-'c','o','p','y','r','i','g','h','t','s','a','n','s',
-#define I_copyrightsans N(13,809)
-'e','i','g','h','t','i','n','f','e','r','i','o','r',
-#define I_eightinferior N(13,822)
-'e','i','g','h','t','o','l','d','s','t','y','l','e',
-#define I_eightoldstyle N(13,835)
-'e','i','g','h','t','s','u','p','e','r','i','o','r',
-#define I_eightsuperior N(13,848)
-'g','u','i','l','l','e','m','o','t','l','e','f','t',
-#define I_guillemotleft N(13,861)
-'g','u','i','l','s','i','n','g','l','l','e','f','t',
-#define I_guilsinglleft N(13,874)
-'o','h','u','n','g','a','r','u','m','l','a','u','t',
-#define I_ohungarumlaut N(13,887)
-'p','e','r','p','e','n','d','i','c','u','l','a','r',
-#define I_perpendicular N(13,900)
-'q','u','e','s','t','i','o','n','s','m','a','l','l',
-#define I_questionsmall N(13,913)
-'q','u','o','t','e','d','b','l','r','i','g','h','t',
-#define I_quotedblright N(13,926)
-'r','e','g','i','s','t','e','r','s','e','r','i','f',
-#define I_registerserif N(13,939)
-'s','e','v','e','n','i','n','f','e','r','i','o','r',
-#define I_seveninferior N(13,952)
-'s','e','v','e','n','o','l','d','s','t','y','l','e',
-#define I_sevenoldstyle N(13,965)
-'s','e','v','e','n','s','u','p','e','r','i','o','r',
-#define I_sevensuperior N(13,978)
-'t','h','r','e','e','i','n','f','e','r','i','o','r',
-#define I_threeinferior N(13,991)
-'t','h','r','e','e','o','l','d','s','t','y','l','e',
-#define I_threeoldstyle N(13,1004)
-'t','h','r','e','e','s','u','p','e','r','i','o','r',
-#define I_threesuperior N(13,1017)
-'t','r','a','d','e','m','a','r','k','s','a','n','s',
-#define I_trademarksans N(13,1030)
-'u','h','u','n','g','a','r','u','m','l','a','u','t',
-#define I_uhungarumlaut N(13,1043)
-#define I_threequarters N(13,0)
-'C','e','d','i','l','l','a','s','m','a','l','l',
-#define I_Cedillasmall N(12,1056)
-'G','c','o','m','m','a','a','c','c','e','n','t',
-#define I_Gcommaaccent N(12,1068)
-'K','c','o','m','m','a','a','c','c','e','n','t',
-#define I_Kcommaaccent N(12,1080)
-'L','c','o','m','m','a','a','c','c','e','n','t',
-#define I_Lcommaaccent N(12,1092)
-'N','c','o','m','m','a','a','c','c','e','n','t',
-#define I_Ncommaaccent N(12,1104)
-'R','c','o','m','m','a','a','c','c','e','n','t',
-#define I_Rcommaaccent N(12,1116)
-'S','c','o','m','m','a','a','c','c','e','n','t',
-#define I_Scommaaccent N(12,1128)
-'T','c','o','m','m','a','a','c','c','e','n','t',
-#define I_Tcommaaccent N(12,1140)
-'a','r','r','o','w','d','b','l','b','o','t','h',
-#define I_arrowdblboth N(12,1152)
-'a','r','r','o','w','d','b','l','d','o','w','n',
-#define I_arrowdbldown N(12,1164)
-'a','r','r','o','w','d','b','l','l','e','f','t',
-#define I_arrowdblleft N(12,1176)
-'a','r','r','o','w','h','o','r','i','z','e','x',
-#define I_arrowhorizex N(12,1188)
-'a','s','t','e','r','i','s','k','m','a','t','h',
-#define I_asteriskmath N(12,1200)
-'b','r','a','c','e','l','e','f','t','m','i','d',
-#define I_braceleftmid N(12,1212)
-'b','r','a','c','e','r','i','g','h','t','b','t',
-#define I_bracerightbt N(12,1224)
-'b','r','a','c','e','r','i','g','h','t','t','p',
-#define I_bracerighttp N(12,1236)
-'c','e','n','t','i','n','f','e','r','i','o','r',
-#define I_centinferior N(12,1248)
-'c','e','n','t','o','l','d','s','t','y','l','e',
-#define I_centoldstyle N(12,1260)
-'c','e','n','t','s','u','p','e','r','i','o','r',
-#define I_centsuperior N(12,1272)
-'f','i','v','e','i','n','f','e','r','i','o','r',
-#define I_fiveinferior N(12,1284)
-'f','i','v','e','o','l','d','s','t','y','l','e',
-#define I_fiveoldstyle N(12,1296)
-'f','i','v','e','s','u','p','e','r','i','o','r',
-#define I_fivesuperior N(12,1308)
-'f','o','u','r','i','n','f','e','r','i','o','r',
-#define I_fourinferior N(12,1320)
-'f','o','u','r','o','l','d','s','t','y','l','e',
-#define I_fouroldstyle N(12,1332)
-'f','o','u','r','s','u','p','e','r','i','o','r',
-#define I_foursuperior N(12,1344)
-'g','c','o','m','m','a','a','c','c','e','n','t',
-#define I_gcommaaccent N(12,1356)
-'g','r','e','a','t','e','r','e','q','u','a','l',
-#define I_greaterequal N(12,1368)
-'i','n','t','e','r','s','e','c','t','i','o','n',
-#define I_intersection N(12,1380)
-'k','c','o','m','m','a','a','c','c','e','n','t',
-#define I_kcommaaccent N(12,1392)
-'l','c','o','m','m','a','a','c','c','e','n','t',
-#define I_lcommaaccent N(12,1404)
-'n','c','o','m','m','a','a','c','c','e','n','t',
-#define I_ncommaaccent N(12,1416)
-'n','i','n','e','i','n','f','e','r','i','o','r',
-#define I_nineinferior N(12,1428)
-'n','i','n','e','o','l','d','s','t','y','l','e',
-#define I_nineoldstyle N(12,1440)
-'n','i','n','e','s','u','p','e','r','i','o','r',
-#define I_ninesuperior N(12,1452)
-'o','r','d','m','a','s','c','u','l','i','n','e',
-#define I_ordmasculine N(12,1464)
-'p','a','r','e','n','r','i','g','h','t','b','t',
-#define I_parenrightbt N(12,1476)
-'p','a','r','e','n','r','i','g','h','t','e','x',
-#define I_parenrightex N(12,1488)
-'p','a','r','e','n','r','i','g','h','t','t','p',
-#define I_parenrighttp N(12,1500)
-'p','r','o','p','e','r','s','u','b','s','e','t',
-#define I_propersubset N(12,1512)
-'p','r','o','p','o','r','t','i','o','n','a','l',
-#define I_proportional N(12,1524)
-'q','u','o','t','e','d','b','l','b','a','s','e',
-#define I_quotedblbase N(12,1536)
-'q','u','o','t','e','d','b','l','l','e','f','t',
-#define I_quotedblleft N(12,1548)
-'r','c','o','m','m','a','a','c','c','e','n','t',
-#define I_rcommaaccent N(12,1560)
-'r','e','f','l','e','x','s','u','b','s','e','t',
-#define I_reflexsubset N(12,1572)
-'r','e','g','i','s','t','e','r','s','a','n','s',
-#define I_registersans N(12,1584)
-'s','c','o','m','m','a','a','c','c','e','n','t',
-#define I_scommaaccent N(12,1596)
-'s','e','v','e','n','e','i','g','h','t','h','s',
-#define I_seveneighths N(12,1608)
-'t','c','o','m','m','a','a','c','c','e','n','t',
-#define I_tcommaaccent N(12,1620)
-'t','h','r','e','e','e','i','g','h','t','h','s',
-#define I_threeeighths N(12,1632)
-'z','e','r','o','i','n','f','e','r','i','o','r',
-#define I_zeroinferior N(12,1644)
-'z','e','r','o','o','l','d','s','t','y','l','e',
-#define I_zerooldstyle N(12,1656)
-'z','e','r','o','s','u','p','e','r','i','o','r',
-#define I_zerosuperior N(12,1668)
-#define I_bracketright N(12,373)
-#define I_hungarumlaut N(12,1044)
-#define I_questiondown N(12,106)
-'A','a','c','u','t','e','s','m','a','l','l',
-#define I_Aacutesmall N(11,1680)
-'A','g','r','a','v','e','s','m','a','l','l',
-#define I_Agravesmall N(11,1691)
-'A','t','i','l','d','e','s','m','a','l','l',
-#define I_Atildesmall N(11,1702)
-'E','a','c','u','t','e','s','m','a','l','l',
-#define I_Eacutesmall N(11,1713)
-'E','g','r','a','v','e','s','m','a','l','l',
-#define I_Egravesmall N(11,1724)
-'I','a','c','u','t','e','s','m','a','l','l',
-#define I_Iacutesmall N(11,1735)
-'I','g','r','a','v','e','s','m','a','l','l',
-#define I_Igravesmall N(11,1746)
-'L','s','l','a','s','h','s','m','a','l','l',
-#define I_Lslashsmall N(11,1757)
-'M','a','c','r','o','n','s','m','a','l','l',
-#define I_Macronsmall N(11,1768)
-'N','t','i','l','d','e','s','m','a','l','l',
-#define I_Ntildesmall N(11,1779)
-'O','a','c','u','t','e','s','m','a','l','l',
-#define I_Oacutesmall N(11,1790)
-'O','g','o','n','e','k','s','m','a','l','l',
-#define I_Ogoneksmall N(11,1801)
-'O','g','r','a','v','e','s','m','a','l','l',
-#define I_Ogravesmall N(11,1812)
-'O','s','l','a','s','h','s','m','a','l','l',
-#define I_Oslashsmall N(11,1823)
-'O','t','i','l','d','e','s','m','a','l','l',
-#define I_Otildesmall N(11,1834)
-'S','c','a','r','o','n','s','m','a','l','l',
-#define I_Scaronsmall N(11,1845)
-'U','a','c','u','t','e','s','m','a','l','l',
-#define I_Uacutesmall N(11,1856)
-'U','g','r','a','v','e','s','m','a','l','l',
-#define I_Ugravesmall N(11,1867)
-'Y','a','c','u','t','e','s','m','a','l','l',
-#define I_Yacutesmall N(11,1878)
-'Z','c','a','r','o','n','s','m','a','l','l',
-#define I_Zcaronsmall N(11,1889)
-'a','c','i','r','c','u','m','f','l','e','x',
-#define I_acircumflex N(11,1900)
-'a','p','p','r','o','x','e','q','u','a','l',
-#define I_approxequal N(11,1911)
-'a','r','r','o','w','v','e','r','t','e','x',
-#define I_arrowvertex N(11,1922)
-'a','s','c','i','i','c','i','r','c','u','m',
-#define I_asciicircum N(11,1933)
-'b','r','a','c','e','l','e','f','t','b','t',
-#define I_braceleftbt N(11,1944)
-'b','r','a','c','e','l','e','f','t','t','p',
-#define I_bracelefttp N(11,1955)
-'e','c','i','r','c','u','m','f','l','e','x',
-#define I_ecircumflex N(11,1966)
-'e','q','u','i','v','a','l','e','n','c','e',
-#define I_equivalence N(11,1977)
-'e','x','c','l','a','m','s','m','a','l','l',
-#define I_exclamsmall N(11,1988)
-'e','x','i','s','t','e','n','t','i','a','l',
-#define I_existential N(11,1999)
-'f','i','v','e','e','i','g','h','t','h','s',
-#define I_fiveeighths N(11,2010)
-'i','c','i','r','c','u','m','f','l','e','x',
-#define I_icircumflex N(11,2021)
-'o','c','i','r','c','u','m','f','l','e','x',
-#define I_ocircumflex N(11,2032)
-'o','n','e','i','n','f','e','r','i','o','r',
-#define I_oneinferior N(11,2043)
-'o','n','e','o','l','d','s','t','y','l','e',
-#define I_oneoldstyle N(11,2054)
-'o','n','e','s','u','p','e','r','i','o','r',
-#define I_onesuperior N(11,2065)
-'o','r','d','f','e','m','i','n','i','n','e',
-#define I_ordfeminine N(11,2076)
-'p','a','r','e','n','l','e','f','t','b','t',
-#define I_parenleftbt N(11,2087)
-'p','a','r','e','n','l','e','f','t','e','x',
-#define I_parenleftex N(11,2098)
-'p','a','r','e','n','l','e','f','t','t','p',
-#define I_parenlefttp N(11,2109)
-'p','a','r','t','i','a','l','d','i','f','f',
-#define I_partialdiff N(11,2120)
-'p','e','r','t','h','o','u','s','a','n','d',
-#define I_perthousand N(11,2131)
-'q','u','o','t','e','s','i','n','g','l','e',
-#define I_quotesingle N(11,2142)
-'s','i','x','i','n','f','e','r','i','o','r',
-#define I_sixinferior N(11,2153)
-'s','i','x','o','l','d','s','t','y','l','e',
-#define I_sixoldstyle N(11,2164)
-'s','i','x','s','u','p','e','r','i','o','r',
-#define I_sixsuperior N(11,2175)
-'t','w','o','i','n','f','e','r','i','o','r',
-#define I_twoinferior N(11,2186)
-'t','w','o','o','l','d','s','t','y','l','e',
-#define I_twooldstyle N(11,2197)
-'t','w','o','s','u','p','e','r','i','o','r',
-#define I_twosuperior N(11,2208)
-'u','c','i','r','c','u','m','f','l','e','x',
-#define I_ucircumflex N(11,2219)
-'w','e','i','e','r','s','t','r','a','s','s',
-#define I_weierstrass N(11,2230)
-#define I_Acircumflex N(11,123)
-#define I_Ecircumflex N(11,139)
-#define I_Icircumflex N(11,155)
-#define I_Ocircumflex N(11,171)
-#define I_Ucircumflex N(11,187)
-#define I_bracketleft N(11,757)
-#define I_commaaccent N(11,1621)
-'A','c','u','t','e','s','m','a','l','l',
-#define I_Acutesmall N(10,2241)
-'A','r','i','n','g','s','m','a','l','l',
-#define I_Aringsmall N(10,2251)
-'B','r','e','v','e','s','m','a','l','l',
-#define I_Brevesmall N(10,2261)
-'C','a','r','o','n','s','m','a','l','l',
-#define I_Caronsmall N(10,2271)
-'E','d','o','t','a','c','c','e','n','t',
-#define I_Edotaccent N(10,2281)
-'G','r','a','v','e','s','m','a','l','l',
-#define I_Gravesmall N(10,2291)
-'I','d','o','t','a','c','c','e','n','t',
-#define I_Idotaccent N(10,2301)
-'T','h','o','r','n','s','m','a','l','l',
-#define I_Thornsmall N(10,2311)
-'T','i','l','d','e','s','m','a','l','l',
-#define I_Tildesmall N(10,2321)
-'Z','d','o','t','a','c','c','e','n','t',
-#define I_Zdotaccent N(10,2331)
-'a','n','g','l','e','r','i','g','h','t',
-#define I_angleright N(10,2341)
-'a','r','r','o','w','d','b','l','u','p',
-#define I_arrowdblup N(10,2351)
-'a','r','r','o','w','r','i','g','h','t',
-#define I_arrowright N(10,2361)
-'a','s','c','i','i','t','i','l','d','e',
-#define I_asciitilde N(10,2371)
-'c','i','r','c','l','e','p','l','u','s',
-#define I_circleplus N(10,2381)
-'e','d','o','t','a','c','c','e','n','t',
-#define I_edotaccent N(10,2391)
-'f','i','g','u','r','e','d','a','s','h',
-#define I_figuredash N(10,2401)
-'g','e','r','m','a','n','d','b','l','s',
-#define I_germandbls N(10,2411)
-'i','n','t','e','g','r','a','l','b','t',
-#define I_integralbt N(10,2421)
-'i','n','t','e','g','r','a','l','e','x',
-#define I_integralex N(10,2431)
-'i','n','t','e','g','r','a','l','t','p',
-#define I_integraltp N(10,2441)
-'l','o','g','i','c','a','l','a','n','d',
-#define I_logicaland N(10,2451)
-'l','o','g','i','c','a','l','n','o','t',
-#define I_logicalnot N(10,2461)
-'n','o','t','e','l','e','m','e','n','t',
-#define I_notelement N(10,2471)
-'n','u','m','b','e','r','s','i','g','n',
-#define I_numbersign N(10,2481)
-'o','n','e','q','u','a','r','t','e','r',
-#define I_onequarter N(10,2491)
-'q','u','o','t','e','r','i','g','h','t',
-#define I_quoteright N(10,2501)
-'r','e','g','i','s','t','e','r','e','d',
-#define I_registered N(10,2511)
-'u','n','d','e','r','s','c','o','r','e',
-#define I_underscore N(10,2521)
-'z','d','o','t','a','c','c','e','n','t',
-#define I_zdotaccent N(10,2531)
-#define I_braceright N(10,1236)
-#define I_circumflex N(10,2220)
-#define I_exclamdown N(10,218)
-#define I_parenright N(10,1500)
-'R','i','n','g','s','m','a','l','l',
-#define I_Ringsmall N(9,2541)
-'a','d','i','e','r','e','s','i','s',
-#define I_adieresis N(9,2550)
-'a','n','g','l','e','l','e','f','t',
-#define I_angleleft N(9,2559)
-'a','p','p','l','e','l','o','g','o',
-#define I_applelogo N(9,2568)
-'a','r','r','o','w','b','o','t','h',
-#define I_arrowboth N(9,2577)
-'a','r','r','o','w','d','o','w','n',
-#define I_arrowdown N(9,2586)
-'a','r','r','o','w','l','e','f','t',
-#define I_arrowleft N(9,2595)
-'b','a','c','k','s','l','a','s','h',
-#define I_backslash N(9,2604)
-'b','r','o','k','e','n','b','a','r',
-#define I_brokenbar N(9,2613)
-'b','s','u','p','e','r','i','o','r',
-#define I_bsuperior N(9,2622)
-'c','o','n','g','r','u','e','n','t',
-#define I_congruent N(9,2631)
-'d','a','g','g','e','r','d','b','l',
-#define I_daggerdbl N(9,2640)
-'e','d','i','e','r','e','s','i','s',
-#define I_edieresis N(9,2649)
-'i','d','i','e','r','e','s','i','s',
-#define I_idieresis N(9,2658)
-'i','n','c','r','e','m','e','n','t',
-#define I_increment N(9,2667)
-'i','s','u','p','e','r','i','o','r',
-#define I_isuperior N(9,2676)
-'l','e','s','s','e','q','u','a','l',
-#define I_lessequal N(9,2685)
-'l','o','g','i','c','a','l','o','r',
-#define I_logicalor N(9,2694)
-'l','s','u','p','e','r','i','o','r',
-#define I_lsuperior N(9,2703)
-'m','s','u','p','e','r','i','o','r',
-#define I_msuperior N(9,2712)
-'n','o','t','s','u','b','s','e','t',
-#define I_notsubset N(9,2721)
-'o','d','i','e','r','e','s','i','s',
-#define I_odieresis N(9,2730)
-'o','n','e','e','i','g','h','t','h',
-#define I_oneeighth N(9,2739)
-'o','n','e','f','i','t','t','e','d',
-#define I_onefitted N(9,2748)
-'o','v','e','r','s','c','o','r','e',
-#define I_overscore N(9,2757)
-'p','a','r','a','g','r','a','p','h',
-#define I_paragraph N(9,2766)
-'p','l','u','s','m','i','n','u','s',
-#define I_plusminus N(9,2775)
-'q','u','o','t','e','l','e','f','t',
-#define I_quoteleft N(9,2784)
-'r','a','d','i','c','a','l','e','x',
-#define I_radicalex N(9,2793)
-'s','e','m','i','c','o','l','o','n',
-#define I_semicolon N(9,2802)
-'s','s','u','p','e','r','i','o','r',
-#define I_ssuperior N(9,2811)
-'s','u','m','m','a','t','i','o','n',
-#define I_summation N(9,2820)
-'t','h','e','r','e','f','o','r','e',
-#define I_therefore N(9,2829)
-'t','w','o','t','h','i','r','d','s',
-#define I_twothirds N(9,2838)
-'u','d','i','e','r','e','s','i','s',
-#define I_udieresis N(9,2847)
-'u','n','i','v','e','r','s','a','l',
-#define I_universal N(9,2856)
-'y','d','i','e','r','e','s','i','s',
-#define I_ydieresis N(9,2865)
-#define I_Adieresis N(9,233)
-#define I_Edieresis N(9,261)
-#define I_Idieresis N(9,275)
-#define I_Odieresis N(9,289)
-#define I_Udieresis N(9,303)
-#define I_Ydieresis N(9,317)
-#define I_ampersand N(9,331)
-#define I_asuperior N(9,800)
-#define I_braceleft N(9,1955)
-#define I_copyright N(9,809)
-#define I_dotaccent N(9,2532)
-#define I_dsuperior N(9,574)
-#define I_esuperior N(9,2067)
-#define I_nsuperior N(9,982)
-#define I_osuperior N(9,2210)
-#define I_parenleft N(9,2109)
-#define I_rsuperior N(9,1347)
-#define I_trademark N(9,1030)
-#define I_tsuperior N(9,1275)
-'E','t','h','s','m','a','l','l',
-#define I_Ethsmall N(8,2874)
-'I','f','r','a','k','t','u','r',
-#define I_Ifraktur N(8,2882)
-'R','f','r','a','k','t','u','r',
-#define I_Rfraktur N(8,2890)
-'S','c','e','d','i','l','l','a',
-#define I_Scedilla N(8,2898)
-'U','p','s','i','l','o','n','1',
-#define I_Upsilon1 N(8,2906)
-'c','c','e','d','i','l','l','a',
-#define I_ccedilla N(8,2914)
-'c','u','r','r','e','n','c','y',
-#define I_currency N(8,2922)
-'d','o','t','l','e','s','s','i',
-#define I_dotlessi N(8,2930)
-'e','l','l','i','p','s','i','s',
-#define I_ellipsis N(8,2938)
-'e','m','p','t','y','s','e','t',
-#define I_emptyset N(8,2946)
-'f','r','a','c','t','i','o','n',
-#define I_fraction N(8,2954)
-'g','r','a','d','i','e','n','t',
-#define I_gradient N(8,2962)
-'i','n','f','i','n','i','t','y',
-#define I_infinity N(8,2970)
-'n','o','t','e','q','u','a','l',
-#define I_notequal N(8,2978)
-'o','n','e','t','h','i','r','d',
-#define I_onethird N(8,2986)
-'s','c','e','d','i','l','l','a',
-#define I_scedilla N(8,2994)
-'s','t','e','r','l','i','n','g',
-#define I_sterling N(8,3002)
-'s','u','c','h','t','h','a','t',
-#define I_suchthat N(8,3010)
-#define I_Ccedilla N(8,653)
-#define I_asterisk N(8,1200)
-#define I_dieresis N(8,2866)
-#define I_integral N(8,2441)
-#define I_multiply N(8,407)
-#define I_question N(8,913)
-#define I_quotedbl N(8,1548)
-'.','n','o','t','d','e','f',
-#define I__notdef N(7,3018)
-'A','E','s','m','a','l','l',
-#define I_AEsmall N(7,3025)
-'A','m','a','c','r','o','n',
-#define I_Amacron N(7,3032)
-'A','o','g','o','n','e','k',
-#define I_Aogonek N(7,3039)
-'E','m','a','c','r','o','n',
-#define I_Emacron N(7,3046)
-'E','o','g','o','n','e','k',
-#define I_Eogonek N(7,3053)
-'E','p','s','i','l','o','n',
-#define I_Epsilon N(7,3060)
-'I','m','a','c','r','o','n',
-#define I_Imacron N(7,3067)
-'I','o','g','o','n','e','k',
-#define I_Iogonek N(7,3074)
-'O','E','s','m','a','l','l',
-#define I_OEsmall N(7,3081)
-'O','m','a','c','r','o','n',
-#define I_Omacron N(7,3088)
-'O','m','i','c','r','o','n',
-#define I_Omicron N(7,3095)
-'U','m','a','c','r','o','n',
-#define I_Umacron N(7,3102)
-'U','o','g','o','n','e','k',
-#define I_Uogonek N(7,3109)
-'a','m','a','c','r','o','n',
-#define I_amacron N(7,3116)
-'a','o','g','o','n','e','k',
-#define I_aogonek N(7,3123)
-'a','r','r','o','w','u','p',
-#define I_arrowup N(7,3130)
-'b','r','a','c','e','e','x',
-#define I_braceex N(7,3137)
-'d','i','a','m','o','n','d',
-#define I_diamond N(7,3144)
-'d','m','a','c','r','o','n',
-#define I_dmacron N(7,3151)
-'d','o','t','m','a','t','h',
-#define I_dotmath N(7,3158)
-'e','m','a','c','r','o','n',
-#define I_emacron N(7,3165)
-'e','o','g','o','n','e','k',
-#define I_eogonek N(7,3172)
-'e','p','s','i','l','o','n',
-#define I_epsilon N(7,3179)
-'i','m','a','c','r','o','n',
-#define I_imacron N(7,3186)
-'i','o','g','o','n','e','k',
-#define I_iogonek N(7,3193)
-'l','o','z','e','n','g','e',
-#define I_lozenge N(7,3200)
-'n','b','s','p','a','c','e',
-#define I_nbspace N(7,3207)
-'o','m','a','c','r','o','n',
-#define I_omacron N(7,3214)
-'o','m','i','c','r','o','n',
-#define I_omicron N(7,3221)
-'o','n','e','h','a','l','f',
-#define I_onehalf N(7,3228)
-'p','e','r','c','e','n','t',
-#define I_percent N(7,3235)
-'p','r','o','d','u','c','t',
-#define I_product N(7,3242)
-'s','i','m','i','l','a','r',
-#define I_similar N(7,3249)
-'u','m','a','c','r','o','n',
-#define I_umacron N(7,3256)
-'u','o','g','o','n','e','k',
-#define I_uogonek N(7,3263)
-'u','p','s','i','l','o','n',
-#define I_upsilon N(7,3270)
-#define I_Upsilon N(7,2906)
-#define I_cedilla N(7,2995)
-#define I_element N(7,2474)
-#define I_greater N(7,1368)
-#define I_radical N(7,2793)
-#define I_section N(7,1385)
-'A','b','r','e','v','e',
-#define I_Abreve N(6,3277)
-'A','s','m','a','l','l',
-#define I_Asmall N(6,3283)
-'B','s','m','a','l','l',
-#define I_Bsmall N(6,3289)
-'C','a','c','u','t','e',
-#define I_Cacute N(6,3295)
-'C','c','a','r','o','n',
-#define I_Ccaron N(6,3301)
-'C','s','m','a','l','l',
-#define I_Csmall N(6,3307)
-'D','c','a','r','o','n',
-#define I_Dcaron N(6,3313)
-'D','c','r','o','a','t',
-#define I_Dcroat N(6,3319)
-'D','s','m','a','l','l',
-#define I_Dsmall N(6,3325)
-'E','c','a','r','o','n',
-#define I_Ecaron N(6,3331)
-'F','s','m','a','l','l',
-#define I_Fsmall N(6,3337)
-'G','b','r','e','v','e',
-#define I_Gbreve N(6,3343)
-'G','s','m','a','l','l',
-#define I_Gsmall N(6,3349)
-'H','s','m','a','l','l',
-#define I_Hsmall N(6,3355)
-'I','s','m','a','l','l',
-#define I_Ismall N(6,3361)
-'J','s','m','a','l','l',
-#define I_Jsmall N(6,3367)
-'K','s','m','a','l','l',
-#define I_Ksmall N(6,3373)
-'L','a','c','u','t','e',
-#define I_Lacute N(6,3379)
-'L','a','m','b','d','a',
-#define I_Lambda N(6,3385)
-'L','c','a','r','o','n',
-#define I_Lcaron N(6,3391)
-'L','s','m','a','l','l',
-#define I_Lsmall N(6,3397)
-'M','s','m','a','l','l',
-#define I_Msmall N(6,3403)
-'N','a','c','u','t','e',
-#define I_Nacute N(6,3409)
-'N','c','a','r','o','n',
-#define I_Ncaron N(6,3415)
-'N','s','m','a','l','l',
-#define I_Nsmall N(6,3421)
-'O','s','m','a','l','l',
-#define I_Osmall N(6,3427)
-'P','s','m','a','l','l',
-#define I_Psmall N(6,3433)
-'Q','s','m','a','l','l',
-#define I_Qsmall N(6,3439)
-'R','a','c','u','t','e',
-#define I_Racute N(6,3445)
-'R','c','a','r','o','n',
-#define I_Rcaron N(6,3451)
-'R','s','m','a','l','l',
-#define I_Rsmall N(6,3457)
-'S','a','c','u','t','e',
-#define I_Sacute N(6,3463)
-'S','s','m','a','l','l',
-#define I_Ssmall N(6,3469)
-'T','c','a','r','o','n',
-#define I_Tcaron N(6,3475)
-'T','s','m','a','l','l',
-#define I_Tsmall N(6,3481)
-'U','s','m','a','l','l',
-#define I_Usmall N(6,3487)
-'V','s','m','a','l','l',
-#define I_Vsmall N(6,3493)
-'W','s','m','a','l','l',
-#define I_Wsmall N(6,3499)
-'X','s','m','a','l','l',
-#define I_Xsmall N(6,3505)
-'Y','s','m','a','l','l',
-#define I_Ysmall N(6,3511)
-'Z','a','c','u','t','e',
-#define I_Zacute N(6,3517)
-'Z','s','m','a','l','l',
-#define I_Zsmall N(6,3523)
-'a','a','c','u','t','e',
-#define I_aacute N(6,3529)
-'a','b','r','e','v','e',
-#define I_abreve N(6,3535)
-'a','g','r','a','v','e',
-#define I_agrave N(6,3541)
-'a','t','i','l','d','e',
-#define I_atilde N(6,3547)
-'b','u','l','l','e','t',
-#define I_bullet N(6,3553)
-'c','a','c','u','t','e',
-#define I_cacute N(6,3559)
-'c','c','a','r','o','n',
-#define I_ccaron N(6,3565)
-'d','c','a','r','o','n',
-#define I_dcaron N(6,3571)
-'d','c','r','o','a','t',
-#define I_dcroat N(6,3577)
-'d','e','g','r','e','e',
-#define I_degree N(6,3583)
-'d','i','v','i','d','e',
-#define I_divide N(6,3589)
-'e','a','c','u','t','e',
-#define I_eacute N(6,3595)
-'e','c','a','r','o','n',
-#define I_ecaron N(6,3601)
-'e','g','r','a','v','e',
-#define I_egrave N(6,3607)
-'e','n','d','a','s','h',
-#define I_endash N(6,3613)
-'f','l','o','r','i','n',
-#define I_florin N(6,3619)
-'g','b','r','e','v','e',
-#define I_gbreve N(6,3625)
-'i','a','c','u','t','e',
-#define I_iacute N(6,3631)
-'i','g','r','a','v','e',
-#define I_igrave N(6,3637)
-'l','a','c','u','t','e',
-#define I_lacute N(6,3643)
-'l','a','m','b','d','a',
-#define I_lambda N(6,3649)
-'l','c','a','r','o','n',
-#define I_lcaron N(6,3655)
-'l','s','l','a','s','h',
-#define I_lslash N(6,3661)
-'m','i','n','u','t','e',
-#define I_minute N(6,3667)
-'n','a','c','u','t','e',
-#define I_nacute N(6,3673)
-'n','c','a','r','o','n',
-#define I_ncaron N(6,3679)
-'n','t','i','l','d','e',
-#define I_ntilde N(6,3685)
-'o','a','c','u','t','e',
-#define I_oacute N(6,3691)
-'o','g','r','a','v','e',
-#define I_ograve N(6,3697)
-'o','m','e','g','a','1',
-#define I_omega1 N(6,3703)
-'o','s','l','a','s','h',
-#define I_oslash N(6,3709)
-'o','t','i','l','d','e',
-#define I_otilde N(6,3715)
-'r','a','c','u','t','e',
-#define I_racute N(6,3721)
-'r','c','a','r','o','n',
-#define I_rcaron N(6,3727)
-'r','u','p','i','a','h',
-#define I_rupiah N(6,3733)
-'s','a','c','u','t','e',
-#define I_sacute N(6,3739)
-'s','c','a','r','o','n',
-#define I_scaron N(6,3745)
-'s','e','c','o','n','d',
-#define I_second N(6,3751)
-'s','i','g','m','a','1',
-#define I_sigma1 N(6,3757)
-'t','c','a','r','o','n',
-#define I_tcaron N(6,3763)
-'t','h','e','t','a','1',
-#define I_theta1 N(6,3769)
-'u','a','c','u','t','e',
-#define I_uacute N(6,3775)
-'u','g','r','a','v','e',
-#define I_ugrave N(6,3781)
-'y','a','c','u','t','e',
-#define I_yacute N(6,3787)
-'z','a','c','u','t','e',
-#define I_zacute N(6,3793)
-'z','c','a','r','o','n',
-#define I_zcaron N(6,3799)
-#define I_Aacute N(6,1680)
-#define I_Agrave N(6,1691)
-#define I_Atilde N(6,1702)
-#define I_Eacute N(6,1713)
-#define I_Egrave N(6,1724)
-#define I_Esmall N(6,3082)
-#define I_Iacute N(6,1735)
-#define I_Igrave N(6,1746)
-#define I_Lslash N(6,1757)
-#define I_Ntilde N(6,1779)
-#define I_Oacute N(6,1790)
-#define I_Ograve N(6,1812)
-#define I_Oslash N(6,1823)
-#define I_Otilde N(6,1834)
-#define I_Scaron N(6,1845)
-#define I_Uacute N(6,1856)
-#define I_Ugrave N(6,1867)
-#define I_Yacute N(6,1878)
-#define I_Zcaron N(6,1889)
-#define I_dagger N(6,2640)
-#define I_dollar N(6,457)
-#define I_emdash N(6,13)
-#define I_exclam N(6,1988)
-#define I_hyphen N(6,513)
-#define I_macron N(6,3257)
-#define I_ogonek N(6,3264)
-#define I_period N(6,569)
-'.','n','u','l','l',
-#define I__null N(5,3805)
-'A','l','p','h','a',
-#define I_Alpha N(5,3810)
-'D','e','l','t','a',
-#define I_Delta N(5,3815)
-'G','a','m','m','a',
-#define I_Gamma N(5,3820)
-'K','a','p','p','a',
-#define I_Kappa N(5,3825)
-'O','m','e','g','a',
-#define I_Omega N(5,3830)
-'S','i','g','m','a',
-#define I_Sigma N(5,3835)
-'T','h','e','t','a',
-#define I_Theta N(5,3840)
-'U','r','i','n','g',
-#define I_Uring N(5,3845)
-'a','l','e','p','h',
-#define I_aleph N(5,3850)
-'a','l','p','h','a',
-#define I_alpha N(5,3855)
-'a','r','i','n','g',
-#define I_aring N(5,3860)
-'d','e','l','t','a',
-#define I_delta N(5,3865)
-'f','r','a','n','c',
-#define I_franc N(5,3870)
-'g','a','m','m','a',
-#define I_gamma N(5,3875)
-'h','e','a','r','t',
-#define I_heart N(5,3880)
-'k','a','p','p','a',
-#define I_kappa N(5,3885)
-'s','p','a','d','e',
-#define I_spade N(5,3890)
-'t','h','o','r','n',
-#define I_thorn N(5,3895)
-'u','n','i','o','n',
-#define I_union N(5,3900)
-'u','r','i','n','g',
-#define I_uring N(5,3905)
-#define I_Aring N(5,2251)
-#define I_Thorn N(5,2311)
-#define I_acute N(5,3794)
-#define I_angle N(5,2559)
-#define I_breve N(5,3626)
-#define I_caron N(5,3800)
-#define I_colon N(5,2806)
-#define I_comma N(5,796)
-#define I_eight N(5,848)
-#define I_equal N(5,2981)
-#define I_grave N(5,3782)
-#define I_minus N(5,2779)
-#define I_omega N(5,3703)
-#define I_seven N(5,1608)
-#define I_sigma N(5,3757)
-#define I_slash N(5,3710)
-#define I_space N(5,3209)
-#define I_theta N(5,3769)
-#define I_three N(5,1632)
-#define I_tilde N(5,3716)
-'B','e','t','a',
-#define I_Beta N(4,3910)
-'E','u','r','o',
-#define I_Euro N(4,3914)
-'I','o','t','a',
-#define I_Iota N(4,3918)
-'Z','e','t','a',
-#define I_Zeta N(4,3922)
-'a','1','0','0',
-#define I_a100 N(4,3926)
-'a','1','0','1',
-#define I_a101 N(4,3930)
-'a','1','0','2',
-#define I_a102 N(4,3934)
-'a','1','0','3',
-#define I_a103 N(4,3938)
-'a','1','0','4',
-#define I_a104 N(4,3942)
-'a','1','0','5',
-#define I_a105 N(4,3946)
-'a','1','0','6',
-#define I_a106 N(4,3950)
-'a','1','0','7',
-#define I_a107 N(4,3954)
-'a','1','0','8',
-#define I_a108 N(4,3958)
-'a','1','0','9',
-#define I_a109 N(4,3962)
-'a','1','1','0',
-#define I_a110 N(4,3966)
-'a','1','1','1',
-#define I_a111 N(4,3970)
-'a','1','1','2',
-#define I_a112 N(4,3974)
-'a','1','1','7',
-#define I_a117 N(4,3978)
-'a','1','1','8',
-#define I_a118 N(4,3982)
-'a','1','1','9',
-#define I_a119 N(4,3986)
-'a','1','2','0',
-#define I_a120 N(4,3990)
-'a','1','2','1',
-#define I_a121 N(4,3994)
-'a','1','2','2',
-#define I_a122 N(4,3998)
-'a','1','2','3',
-#define I_a123 N(4,4002)
-'a','1','2','4',
-#define I_a124 N(4,4006)
-'a','1','2','5',
-#define I_a125 N(4,4010)
-'a','1','2','6',
-#define I_a126 N(4,4014)
-'a','1','2','7',
-#define I_a127 N(4,4018)
-'a','1','2','8',
-#define I_a128 N(4,4022)
-'a','1','2','9',
-#define I_a129 N(4,4026)
-'a','1','3','0',
-#define I_a130 N(4,4030)
-'a','1','3','1',
-#define I_a131 N(4,4034)
-'a','1','3','2',
-#define I_a132 N(4,4038)
-'a','1','3','3',
-#define I_a133 N(4,4042)
-'a','1','3','4',
-#define I_a134 N(4,4046)
-'a','1','3','5',
-#define I_a135 N(4,4050)
-'a','1','3','6',
-#define I_a136 N(4,4054)
-'a','1','3','7',
-#define I_a137 N(4,4058)
-'a','1','3','8',
-#define I_a138 N(4,4062)
-'a','1','3','9',
-#define I_a139 N(4,4066)
-'a','1','4','0',
-#define I_a140 N(4,4070)
-'a','1','4','1',
-#define I_a141 N(4,4074)
-'a','1','4','2',
-#define I_a142 N(4,4078)
-'a','1','4','3',
-#define I_a143 N(4,4082)
-'a','1','4','4',
-#define I_a144 N(4,4086)
-'a','1','4','5',
-#define I_a145 N(4,4090)
-'a','1','4','6',
-#define I_a146 N(4,4094)
-'a','1','4','7',
-#define I_a147 N(4,4098)
-'a','1','4','8',
-#define I_a148 N(4,4102)
-'a','1','4','9',
-#define I_a149 N(4,4106)
-'a','1','5','0',
-#define I_a150 N(4,4110)
-'a','1','5','1',
-#define I_a151 N(4,4114)
-'a','1','5','2',
-#define I_a152 N(4,4118)
-'a','1','5','3',
-#define I_a153 N(4,4122)
-'a','1','5','4',
-#define I_a154 N(4,4126)
-'a','1','5','5',
-#define I_a155 N(4,4130)
-'a','1','5','6',
-#define I_a156 N(4,4134)
-'a','1','5','7',
-#define I_a157 N(4,4138)
-'a','1','5','8',
-#define I_a158 N(4,4142)
-'a','1','5','9',
-#define I_a159 N(4,4146)
-'a','1','6','0',
-#define I_a160 N(4,4150)
-'a','1','6','1',
-#define I_a161 N(4,4154)
-'a','1','6','2',
-#define I_a162 N(4,4158)
-'a','1','6','3',
-#define I_a163 N(4,4162)
-'a','1','6','4',
-#define I_a164 N(4,4166)
-'a','1','6','5',
-#define I_a165 N(4,4170)
-'a','1','6','6',
-#define I_a166 N(4,4174)
-'a','1','6','7',
-#define I_a167 N(4,4178)
-'a','1','6','8',
-#define I_a168 N(4,4182)
-'a','1','6','9',
-#define I_a169 N(4,4186)
-'a','1','7','0',
-#define I_a170 N(4,4190)
-'a','1','7','1',
-#define I_a171 N(4,4194)
-'a','1','7','2',
-#define I_a172 N(4,4198)
-'a','1','7','3',
-#define I_a173 N(4,4202)
-'a','1','7','4',
-#define I_a174 N(4,4206)
-'a','1','7','5',
-#define I_a175 N(4,4210)
-'a','1','7','6',
-#define I_a176 N(4,4214)
-'a','1','7','7',
-#define I_a177 N(4,4218)
-'a','1','7','8',
-#define I_a178 N(4,4222)
-'a','1','7','9',
-#define I_a179 N(4,4226)
-'a','1','8','0',
-#define I_a180 N(4,4230)
-'a','1','8','1',
-#define I_a181 N(4,4234)
-'a','1','8','2',
-#define I_a182 N(4,4238)
-'a','1','8','3',
-#define I_a183 N(4,4242)
-'a','1','8','4',
-#define I_a184 N(4,4246)
-'a','1','8','5',
-#define I_a185 N(4,4250)
-'a','1','8','6',
-#define I_a186 N(4,4254)
-'a','1','8','7',
-#define I_a187 N(4,4258)
-'a','1','8','8',
-#define I_a188 N(4,4262)
-'a','1','8','9',
-#define I_a189 N(4,4266)
-'a','1','9','0',
-#define I_a190 N(4,4270)
-'a','1','9','1',
-#define I_a191 N(4,4274)
-'a','1','9','2',
-#define I_a192 N(4,4278)
-'a','1','9','3',
-#define I_a193 N(4,4282)
-'a','1','9','4',
-#define I_a194 N(4,4286)
-'a','1','9','5',
-#define I_a195 N(4,4290)
-'a','1','9','6',
-#define I_a196 N(4,4294)
-'a','1','9','7',
-#define I_a197 N(4,4298)
-'a','1','9','8',
-#define I_a198 N(4,4302)
-'a','1','9','9',
-#define I_a199 N(4,4306)
-'a','2','0','0',
-#define I_a200 N(4,4310)
-'a','2','0','1',
-#define I_a201 N(4,4314)
-'a','2','0','2',
-#define I_a202 N(4,4318)
-'a','2','0','3',
-#define I_a203 N(4,4322)
-'a','2','0','4',
-#define I_a204 N(4,4326)
-'b','e','t','a',
-#define I_beta N(4,4330)
-'c','l','u','b',
-#define I_club N(4,4334)
-'i','o','t','a',
-#define I_iota N(4,4338)
-'p','h','i','1',
-#define I_phi1 N(4,4342)
-'z','e','t','a',
-#define I_zeta N(4,4346)
-#define I_cent N(4,3238)
-#define I_five N(4,2010)
-#define I_four N(4,1344)
-#define I_less N(4,2685)
-#define I_nine N(4,2083)
-#define I_plus N(4,2775)
-#define I_ring N(4,3906)
-#define I_zero N(4,1668)
-'C','h','i',
-#define I_Chi N(3,4350)
-'E','t','a',
-#define I_Eta N(3,4353)
-'O','h','m',
-#define I_Ohm N(3,4356)
-'P','h','i',
-#define I_Phi N(3,4359)
-'P','s','i',
-#define I_Psi N(3,4362)
-'R','h','o',
-#define I_Rho N(3,4365)
-'T','a','u',
-#define I_Tau N(3,4368)
-'a','2','1',
-#define I_a21 N(3,4371)
-'a','2','2',
-#define I_a22 N(3,4374)
-'a','2','3',
-#define I_a23 N(3,4377)
-'a','2','4',
-#define I_a24 N(3,4380)
-'a','2','5',
-#define I_a25 N(3,4383)
-'a','2','6',
-#define I_a26 N(3,4386)
-'a','2','7',
-#define I_a27 N(3,4389)
-'a','2','8',
-#define I_a28 N(3,4392)
-'a','2','9',
-#define I_a29 N(3,4395)
-'a','3','0',
-#define I_a30 N(3,4398)
-'a','3','1',
-#define I_a31 N(3,4401)
-'a','3','2',
-#define I_a32 N(3,4404)
-'a','3','3',
-#define I_a33 N(3,4407)
-'a','3','4',
-#define I_a34 N(3,4410)
-'a','3','5',
-#define I_a35 N(3,4413)
-'a','3','6',
-#define I_a36 N(3,4416)
-'a','3','7',
-#define I_a37 N(3,4419)
-'a','3','8',
-#define I_a38 N(3,4422)
-'a','3','9',
-#define I_a39 N(3,4425)
-'a','4','0',
-#define I_a40 N(3,4428)
-'a','4','1',
-#define I_a41 N(3,4431)
-'a','4','2',
-#define I_a42 N(3,4434)
-'a','4','3',
-#define I_a43 N(3,4437)
-'a','4','4',
-#define I_a44 N(3,4440)
-'a','4','5',
-#define I_a45 N(3,4443)
-'a','4','6',
-#define I_a46 N(3,4446)
-'a','4','7',
-#define I_a47 N(3,4449)
-'a','4','8',
-#define I_a48 N(3,4452)
-'a','4','9',
-#define I_a49 N(3,4455)
-'a','5','0',
-#define I_a50 N(3,4458)
-'a','5','1',
-#define I_a51 N(3,4461)
-'a','5','2',
-#define I_a52 N(3,4464)
-'a','5','3',
-#define I_a53 N(3,4467)
-'a','5','4',
-#define I_a54 N(3,4470)
-'a','5','5',
-#define I_a55 N(3,4473)
-'a','5','6',
-#define I_a56 N(3,4476)
-'a','5','7',
-#define I_a57 N(3,4479)
-'a','5','8',
-#define I_a58 N(3,4482)
-'a','5','9',
-#define I_a59 N(3,4485)
-'a','6','0',
-#define I_a60 N(3,4488)
-'a','6','1',
-#define I_a61 N(3,4491)
-'a','6','2',
-#define I_a62 N(3,4494)
-'a','6','3',
-#define I_a63 N(3,4497)
-'a','6','4',
-#define I_a64 N(3,4500)
-'a','6','5',
-#define I_a65 N(3,4503)
-'a','6','6',
-#define I_a66 N(3,4506)
-'a','6','7',
-#define I_a67 N(3,4509)
-'a','6','8',
-#define I_a68 N(3,4512)
-'a','6','9',
-#define I_a69 N(3,4515)
-'a','7','0',
-#define I_a70 N(3,4518)
-'a','7','1',
-#define I_a71 N(3,4521)
-'a','7','2',
-#define I_a72 N(3,4524)
-'a','7','3',
-#define I_a73 N(3,4527)
-'a','7','4',
-#define I_a74 N(3,4530)
-'a','7','5',
-#define I_a75 N(3,4533)
-'a','7','6',
-#define I_a76 N(3,4536)
-'a','7','7',
-#define I_a77 N(3,4539)
-'a','7','8',
-#define I_a78 N(3,4542)
-'a','7','9',
-#define I_a79 N(3,4545)
-'a','8','1',
-#define I_a81 N(3,4548)
-'a','8','2',
-#define I_a82 N(3,4551)
-'a','8','3',
-#define I_a83 N(3,4554)
-'a','8','4',
-#define I_a84 N(3,4557)
-'a','9','7',
-#define I_a97 N(3,4560)
-'a','9','8',
-#define I_a98 N(3,4563)
-'a','9','9',
-#define I_a99 N(3,4566)
-'c','h','i',
-#define I_chi N(3,4569)
-'e','t','h',
-#define I_eth N(3,4572)
-'f','f','i',
-#define I_ffi N(3,4575)
-'f','f','l',
-#define I_ffl N(3,4578)
-'m','u','1',
-#define I_mu1 N(3,4581)
-'p','s','i',
-#define I_psi N(3,4584)
-'r','h','o',
-#define I_rho N(3,4587)
-'t','a','u',
-#define I_tau N(3,4590)
-'y','e','n',
-#define I_yen N(3,4593)
-#define I_Eth N(3,2874)
-#define I_a10 N(3,3962)
-#define I_a11 N(3,3986)
-#define I_a12 N(3,4026)
-#define I_a13 N(3,4066)
-#define I_a14 N(3,4106)
-#define I_a15 N(3,4146)
-#define I_a16 N(3,4186)
-#define I_a17 N(3,4226)
-#define I_a18 N(3,4266)
-#define I_a19 N(3,4306)
-#define I_a20 N(3,4326)
-#define I_bar N(3,2619)
-#define I_eta N(3,4347)
-#define I_one N(3,3228)
-#define I_phi N(3,4342)
-#define I_six N(3,2175)
-#define I_two N(3,2838)
-'C','R',
-#define I_CR N(2,4596)
-'M','u',
-#define I_Mu N(2,4598)
-'N','u',
-#define I_Nu N(2,4600)
-'P','i',
-#define I_Pi N(2,4602)
-'X','i',
-#define I_Xi N(2,4604)
-'a','e',
-#define I_ae N(2,4606)
-'o','e',
-#define I_oe N(2,4608)
-'p','i',
-#define I_pi N(2,4610)
-'x','i',
-#define I_xi N(2,4612)
-#define I_AE N(2,3025)
-#define I_OE N(2,3081)
-#define I_a1 N(2,4306)
-#define I_a2 N(2,4395)
-#define I_a3 N(2,4425)
-#define I_a4 N(2,4455)
-#define I_a5 N(2,4485)
-#define I_a6 N(2,4515)
-#define I_a7 N(2,4545)
-#define I_a8 N(2,4557)
-#define I_a9 N(2,4566)
-#define I_at N(2,3581)
-#define I_ff N(2,4578)
-#define I_fi N(2,4576)
-#define I_fl N(2,4579)
-#define I_mu N(2,4581)
-#define I_nu N(2,2481)
-'j',
-#define I_j N(1,4614)
-'v',
-#define I_v N(1,4615)
-#define I_A N(1,3810)
-#define I_B N(1,3910)
-#define I_C N(1,4596)
-#define I_D N(1,3815)
-#define I_E N(1,4353)
-#define I_F N(1,3337)
-#define I_G N(1,3820)
-#define I_H N(1,3355)
-#define I_I N(1,3918)
-#define I_J N(1,3367)
-#define I_K N(1,3825)
-#define I_L N(1,3397)
-#define I_M N(1,4598)
-#define I_N N(1,4600)
-#define I_O N(1,4356)
-#define I_P N(1,4602)
-#define I_Q N(1,3439)
-#define I_R N(1,4597)
-#define I_S N(1,3835)
-#define I_T N(1,4368)
-#define I_U N(1,3845)
-#define I_V N(1,3493)
-#define I_W N(1,3499)
-#define I_X N(1,4604)
-#define I_Y N(1,3511)
-#define I_Z N(1,3922)
-#define I_a N(1,4606)
-#define I_b N(1,4337)
-#define I_c N(1,4569)
-#define I_d N(1,3865)
-#define I_e N(1,4609)
-#define I_f N(1,4578)
-#define I_g N(1,3909)
-#define I_h N(1,4574)
-#define I_i N(1,4613)
-#define I_k N(1,3885)
-#define I_l N(1,4580)
-#define I_m N(1,4581)
-#define I_n N(1,4595)
-#define I_o N(1,4608)
-#define I_p N(1,4610)
-#define I_q N(1,2784)
-#define I_r N(1,4587)
-#define I_s N(1,3890)
-#define I_t N(1,4590)
-#define I_u N(1,4601)
-#define I_w N(1,2230)
-#define I_x N(1,4612)
-#define I_y N(1,4593)
-#define I_z N(1,4346)
+const char gs_c_known_encoding_chars[] = {
+'A',  /*N(1,0)*/
+'B',  /*N(1,1)*/
+'C',  /*N(1,2)*/
+'D',  /*N(1,3)*/
+'E',  /*N(1,4)*/
+'F',  /*N(1,5)*/
+'G',  /*N(1,6)*/
+'H',  /*N(1,7)*/
+'I',  /*N(1,8)*/
+'J',  /*N(1,9)*/
+'K',  /*N(1,10)*/
+'L',  /*N(1,11)*/
+'M',  /*N(1,12)*/
+'N',  /*N(1,13)*/
+'O',  /*N(1,14)*/
+'P',  /*N(1,15)*/
+'Q',  /*N(1,16)*/
+'R',  /*N(1,17)*/
+'S',  /*N(1,18)*/
+'T',  /*N(1,19)*/
+'U',  /*N(1,20)*/
+'V',  /*N(1,21)*/
+'W',  /*N(1,22)*/
+'X',  /*N(1,23)*/
+'Y',  /*N(1,24)*/
+'Z',  /*N(1,25)*/
+'a',  /*N(1,26)*/
+'b',  /*N(1,27)*/
+'c',  /*N(1,28)*/
+'d',  /*N(1,29)*/
+'e',  /*N(1,30)*/
+'f',  /*N(1,31)*/
+'g',  /*N(1,32)*/
+'h',  /*N(1,33)*/
+'i',  /*N(1,34)*/
+'j',  /*N(1,35)*/
+'k',  /*N(1,36)*/
+'l',  /*N(1,37)*/
+'m',  /*N(1,38)*/
+'n',  /*N(1,39)*/
+'o',  /*N(1,40)*/
+'p',  /*N(1,41)*/
+'q',  /*N(1,42)*/
+'r',  /*N(1,43)*/
+'s',  /*N(1,44)*/
+'t',  /*N(1,45)*/
+'u',  /*N(1,46)*/
+'v',  /*N(1,47)*/
+'w',  /*N(1,48)*/
+'x',  /*N(1,49)*/
+'y',  /*N(1,50)*/
+'z',  /*N(1,51)*/
+'A','E',  /*N(2,0)*/
+'C','R',  /*N(2,2)*/
+'M','u',  /*N(2,4)*/
+'N','u',  /*N(2,6)*/
+'O','E',  /*N(2,8)*/
+'P','i',  /*N(2,10)*/
+'X','i',  /*N(2,12)*/
+'a','1',  /*N(2,14)*/
+'a','2',  /*N(2,16)*/
+'a','3',  /*N(2,18)*/
+'a','4',  /*N(2,20)*/
+'a','5',  /*N(2,22)*/
+'a','6',  /*N(2,24)*/
+'a','7',  /*N(2,26)*/
+'a','8',  /*N(2,28)*/
+'a','9',  /*N(2,30)*/
+'a','e',  /*N(2,32)*/
+'a','t',  /*N(2,34)*/
+'f','f',  /*N(2,36)*/
+'f','i',  /*N(2,38)*/
+'f','l',  /*N(2,40)*/
+'m','u',  /*N(2,42)*/
+'n','u',  /*N(2,44)*/
+'o','e',  /*N(2,46)*/
+'p','i',  /*N(2,48)*/
+'x','i',  /*N(2,50)*/
+'C','h','i',  /*N(3,0)*/
+'E','t','a',  /*N(3,3)*/
+'E','t','h',  /*N(3,6)*/
+'O','h','m',  /*N(3,9)*/
+'P','h','i',  /*N(3,12)*/
+'P','s','i',  /*N(3,15)*/
+'R','h','o',  /*N(3,18)*/
+'T','a','u',  /*N(3,21)*/
+'a','1','0',  /*N(3,24)*/
+'a','1','1',  /*N(3,27)*/
+'a','1','2',  /*N(3,30)*/
+'a','1','3',  /*N(3,33)*/
+'a','1','4',  /*N(3,36)*/
+'a','1','5',  /*N(3,39)*/
+'a','1','6',  /*N(3,42)*/
+'a','1','7',  /*N(3,45)*/
+'a','1','8',  /*N(3,48)*/
+'a','1','9',  /*N(3,51)*/
+'a','2','0',  /*N(3,54)*/
+'a','2','1',  /*N(3,57)*/
+'a','2','2',  /*N(3,60)*/
+'a','2','3',  /*N(3,63)*/
+'a','2','4',  /*N(3,66)*/
+'a','2','5',  /*N(3,69)*/
+'a','2','6',  /*N(3,72)*/
+'a','2','7',  /*N(3,75)*/
+'a','2','8',  /*N(3,78)*/
+'a','2','9',  /*N(3,81)*/
+'a','3','0',  /*N(3,84)*/
+'a','3','1',  /*N(3,87)*/
+'a','3','2',  /*N(3,90)*/
+'a','3','3',  /*N(3,93)*/
+'a','3','4',  /*N(3,96)*/
+'a','3','5',  /*N(3,99)*/
+'a','3','6',  /*N(3,102)*/
+'a','3','7',  /*N(3,105)*/
+'a','3','8',  /*N(3,108)*/
+'a','3','9',  /*N(3,111)*/
+'a','4','0',  /*N(3,114)*/
+'a','4','1',  /*N(3,117)*/
+'a','4','2',  /*N(3,120)*/
+'a','4','3',  /*N(3,123)*/
+'a','4','4',  /*N(3,126)*/
+'a','4','5',  /*N(3,129)*/
+'a','4','6',  /*N(3,132)*/
+'a','4','7',  /*N(3,135)*/
+'a','4','8',  /*N(3,138)*/
+'a','4','9',  /*N(3,141)*/
+'a','5','0',  /*N(3,144)*/
+'a','5','1',  /*N(3,147)*/
+'a','5','2',  /*N(3,150)*/
+'a','5','3',  /*N(3,153)*/
+'a','5','4',  /*N(3,156)*/
+'a','5','5',  /*N(3,159)*/
+'a','5','6',  /*N(3,162)*/
+'a','5','7',  /*N(3,165)*/
+'a','5','8',  /*N(3,168)*/
+'a','5','9',  /*N(3,171)*/
+'a','6','0',  /*N(3,174)*/
+'a','6','1',  /*N(3,177)*/
+'a','6','2',  /*N(3,180)*/
+'a','6','3',  /*N(3,183)*/
+'a','6','4',  /*N(3,186)*/
+'a','6','5',  /*N(3,189)*/
+'a','6','6',  /*N(3,192)*/
+'a','6','7',  /*N(3,195)*/
+'a','6','8',  /*N(3,198)*/
+'a','6','9',  /*N(3,201)*/
+'a','7','0',  /*N(3,204)*/
+'a','7','1',  /*N(3,207)*/
+'a','7','2',  /*N(3,210)*/
+'a','7','3',  /*N(3,213)*/
+'a','7','4',  /*N(3,216)*/
+'a','7','5',  /*N(3,219)*/
+'a','7','6',  /*N(3,222)*/
+'a','7','7',  /*N(3,225)*/
+'a','7','8',  /*N(3,228)*/
+'a','7','9',  /*N(3,231)*/
+'a','8','1',  /*N(3,234)*/
+'a','8','2',  /*N(3,237)*/
+'a','8','3',  /*N(3,240)*/
+'a','8','4',  /*N(3,243)*/
+'a','9','7',  /*N(3,246)*/
+'a','9','8',  /*N(3,249)*/
+'a','9','9',  /*N(3,252)*/
+'b','a','r',  /*N(3,255)*/
+'c','h','i',  /*N(3,258)*/
+'e','t','a',  /*N(3,261)*/
+'e','t','h',  /*N(3,264)*/
+'f','f','i',  /*N(3,267)*/
+'f','f','l',  /*N(3,270)*/
+'m','u','1',  /*N(3,273)*/
+'o','n','e',  /*N(3,276)*/
+'p','h','i',  /*N(3,279)*/
+'p','s','i',  /*N(3,282)*/
+'r','h','o',  /*N(3,285)*/
+'s','i','x',  /*N(3,288)*/
+'t','a','u',  /*N(3,291)*/
+'t','w','o',  /*N(3,294)*/
+'y','e','n',  /*N(3,297)*/
+'B','e','t','a',  /*N(4,0)*/
+'E','u','r','o',  /*N(4,4)*/
+'I','o','t','a',  /*N(4,8)*/
+'Z','e','t','a',  /*N(4,12)*/
+'a','1','0','0',  /*N(4,16)*/
+'a','1','0','1',  /*N(4,20)*/
+'a','1','0','2',  /*N(4,24)*/
+'a','1','0','3',  /*N(4,28)*/
+'a','1','0','4',  /*N(4,32)*/
+'a','1','0','5',  /*N(4,36)*/
+'a','1','0','6',  /*N(4,40)*/
+'a','1','0','7',  /*N(4,44)*/
+'a','1','0','8',  /*N(4,48)*/
+'a','1','0','9',  /*N(4,52)*/
+'a','1','1','0',  /*N(4,56)*/
+'a','1','1','1',  /*N(4,60)*/
+'a','1','1','2',  /*N(4,64)*/
+'a','1','1','7',  /*N(4,68)*/
+'a','1','1','8',  /*N(4,72)*/
+'a','1','1','9',  /*N(4,76)*/
+'a','1','2','0',  /*N(4,80)*/
+'a','1','2','1',  /*N(4,84)*/
+'a','1','2','2',  /*N(4,88)*/
+'a','1','2','3',  /*N(4,92)*/
+'a','1','2','4',  /*N(4,96)*/
+'a','1','2','5',  /*N(4,100)*/
+'a','1','2','6',  /*N(4,104)*/
+'a','1','2','7',  /*N(4,108)*/
+'a','1','2','8',  /*N(4,112)*/
+'a','1','2','9',  /*N(4,116)*/
+'a','1','3','0',  /*N(4,120)*/
+'a','1','3','1',  /*N(4,124)*/
+'a','1','3','2',  /*N(4,128)*/
+'a','1','3','3',  /*N(4,132)*/
+'a','1','3','4',  /*N(4,136)*/
+'a','1','3','5',  /*N(4,140)*/
+'a','1','3','6',  /*N(4,144)*/
+'a','1','3','7',  /*N(4,148)*/
+'a','1','3','8',  /*N(4,152)*/
+'a','1','3','9',  /*N(4,156)*/
+'a','1','4','0',  /*N(4,160)*/
+'a','1','4','1',  /*N(4,164)*/
+'a','1','4','2',  /*N(4,168)*/
+'a','1','4','3',  /*N(4,172)*/
+'a','1','4','4',  /*N(4,176)*/
+'a','1','4','5',  /*N(4,180)*/
+'a','1','4','6',  /*N(4,184)*/
+'a','1','4','7',  /*N(4,188)*/
+'a','1','4','8',  /*N(4,192)*/
+'a','1','4','9',  /*N(4,196)*/
+'a','1','5','0',  /*N(4,200)*/
+'a','1','5','1',  /*N(4,204)*/
+'a','1','5','2',  /*N(4,208)*/
+'a','1','5','3',  /*N(4,212)*/
+'a','1','5','4',  /*N(4,216)*/
+'a','1','5','5',  /*N(4,220)*/
+'a','1','5','6',  /*N(4,224)*/
+'a','1','5','7',  /*N(4,228)*/
+'a','1','5','8',  /*N(4,232)*/
+'a','1','5','9',  /*N(4,236)*/
+'a','1','6','0',  /*N(4,240)*/
+'a','1','6','1',  /*N(4,244)*/
+'a','1','6','2',  /*N(4,248)*/
+'a','1','6','3',  /*N(4,252)*/
+'a','1','6','4',  /*N(4,256)*/
+'a','1','6','5',  /*N(4,260)*/
+'a','1','6','6',  /*N(4,264)*/
+'a','1','6','7',  /*N(4,268)*/
+'a','1','6','8',  /*N(4,272)*/
+'a','1','6','9',  /*N(4,276)*/
+'a','1','7','0',  /*N(4,280)*/
+'a','1','7','1',  /*N(4,284)*/
+'a','1','7','2',  /*N(4,288)*/
+'a','1','7','3',  /*N(4,292)*/
+'a','1','7','4',  /*N(4,296)*/
+'a','1','7','5',  /*N(4,300)*/
+'a','1','7','6',  /*N(4,304)*/
+'a','1','7','7',  /*N(4,308)*/
+'a','1','7','8',  /*N(4,312)*/
+'a','1','7','9',  /*N(4,316)*/
+'a','1','8','0',  /*N(4,320)*/
+'a','1','8','1',  /*N(4,324)*/
+'a','1','8','2',  /*N(4,328)*/
+'a','1','8','3',  /*N(4,332)*/
+'a','1','8','4',  /*N(4,336)*/
+'a','1','8','5',  /*N(4,340)*/
+'a','1','8','6',  /*N(4,344)*/
+'a','1','8','7',  /*N(4,348)*/
+'a','1','8','8',  /*N(4,352)*/
+'a','1','8','9',  /*N(4,356)*/
+'a','1','9','0',  /*N(4,360)*/
+'a','1','9','1',  /*N(4,364)*/
+'a','1','9','2',  /*N(4,368)*/
+'a','1','9','3',  /*N(4,372)*/
+'a','1','9','4',  /*N(4,376)*/
+'a','1','9','5',  /*N(4,380)*/
+'a','1','9','6',  /*N(4,384)*/
+'a','1','9','7',  /*N(4,388)*/
+'a','1','9','8',  /*N(4,392)*/
+'a','1','9','9',  /*N(4,396)*/
+'a','2','0','0',  /*N(4,400)*/
+'a','2','0','1',  /*N(4,404)*/
+'a','2','0','2',  /*N(4,408)*/
+'a','2','0','3',  /*N(4,412)*/
+'a','2','0','4',  /*N(4,416)*/
+'b','e','t','a',  /*N(4,420)*/
+'c','e','n','t',  /*N(4,424)*/
+'c','l','u','b',  /*N(4,428)*/
+'f','i','v','e',  /*N(4,432)*/
+'f','o','u','r',  /*N(4,436)*/
+'i','o','t','a',  /*N(4,440)*/
+'l','e','s','s',  /*N(4,444)*/
+'n','i','n','e',  /*N(4,448)*/
+'p','h','i','1',  /*N(4,452)*/
+'p','l','u','s',  /*N(4,456)*/
+'r','i','n','g',  /*N(4,460)*/
+'z','e','r','o',  /*N(4,464)*/
+'z','e','t','a',  /*N(4,468)*/
+'.','n','u','l','l',  /*N(5,0)*/
+'A','l','p','h','a',  /*N(5,5)*/
+'A','r','i','n','g',  /*N(5,10)*/
+'D','e','l','t','a',  /*N(5,15)*/
+'G','a','m','m','a',  /*N(5,20)*/
+'K','a','p','p','a',  /*N(5,25)*/
+'O','m','e','g','a',  /*N(5,30)*/
+'S','i','g','m','a',  /*N(5,35)*/
+'T','h','e','t','a',  /*N(5,40)*/
+'T','h','o','r','n',  /*N(5,45)*/
+'U','r','i','n','g',  /*N(5,50)*/
+'a','c','u','t','e',  /*N(5,55)*/
+'a','l','e','p','h',  /*N(5,60)*/
+'a','l','p','h','a',  /*N(5,65)*/
+'a','n','g','l','e',  /*N(5,70)*/
+'a','r','i','n','g',  /*N(5,75)*/
+'b','r','e','v','e',  /*N(5,80)*/
+'c','a','r','o','n',  /*N(5,85)*/
+'c','o','l','o','n',  /*N(5,90)*/
+'c','o','m','m','a',  /*N(5,95)*/
+'d','e','l','t','a',  /*N(5,100)*/
+'e','i','g','h','t',  /*N(5,105)*/
+'e','q','u','a','l',  /*N(5,110)*/
+'f','r','a','n','c',  /*N(5,115)*/
+'g','a','m','m','a',  /*N(5,120)*/
+'g','r','a','v','e',  /*N(5,125)*/
+'h','e','a','r','t',  /*N(5,130)*/
+'k','a','p','p','a',  /*N(5,135)*/
+'m','i','n','u','s',  /*N(5,140)*/
+'o','m','e','g','a',  /*N(5,145)*/
+'s','e','v','e','n',  /*N(5,150)*/
+'s','i','g','m','a',  /*N(5,155)*/
+'s','l','a','s','h',  /*N(5,160)*/
+'s','p','a','c','e',  /*N(5,165)*/
+'s','p','a','d','e',  /*N(5,170)*/
+'t','h','e','t','a',  /*N(5,175)*/
+'t','h','o','r','n',  /*N(5,180)*/
+'t','h','r','e','e',  /*N(5,185)*/
+'t','i','l','d','e',  /*N(5,190)*/
+'u','n','i','o','n',  /*N(5,195)*/
+'u','r','i','n','g',  /*N(5,200)*/
+'A','a','c','u','t','e',  /*N(6,0)*/
+'A','b','r','e','v','e',  /*N(6,6)*/
+'A','g','r','a','v','e',  /*N(6,12)*/
+'A','s','m','a','l','l',  /*N(6,18)*/
+'A','t','i','l','d','e',  /*N(6,24)*/
+'B','s','m','a','l','l',  /*N(6,30)*/
+'C','a','c','u','t','e',  /*N(6,36)*/
+'C','c','a','r','o','n',  /*N(6,42)*/
+'C','s','m','a','l','l',  /*N(6,48)*/
+'D','c','a','r','o','n',  /*N(6,54)*/
+'D','c','r','o','a','t',  /*N(6,60)*/
+'D','s','m','a','l','l',  /*N(6,66)*/
+'E','a','c','u','t','e',  /*N(6,72)*/
+'E','c','a','r','o','n',  /*N(6,78)*/
+'E','g','r','a','v','e',  /*N(6,84)*/
+'E','s','m','a','l','l',  /*N(6,90)*/
+'F','s','m','a','l','l',  /*N(6,96)*/
+'G','b','r','e','v','e',  /*N(6,102)*/
+'G','s','m','a','l','l',  /*N(6,108)*/
+'H','s','m','a','l','l',  /*N(6,114)*/
+'I','a','c','u','t','e',  /*N(6,120)*/
+'I','g','r','a','v','e',  /*N(6,126)*/
+'I','s','m','a','l','l',  /*N(6,132)*/
+'J','s','m','a','l','l',  /*N(6,138)*/
+'K','s','m','a','l','l',  /*N(6,144)*/
+'L','a','c','u','t','e',  /*N(6,150)*/
+'L','a','m','b','d','a',  /*N(6,156)*/
+'L','c','a','r','o','n',  /*N(6,162)*/
+'L','s','l','a','s','h',  /*N(6,168)*/
+'L','s','m','a','l','l',  /*N(6,174)*/
+'M','s','m','a','l','l',  /*N(6,180)*/
+'N','a','c','u','t','e',  /*N(6,186)*/
+'N','c','a','r','o','n',  /*N(6,192)*/
+'N','s','m','a','l','l',  /*N(6,198)*/
+'N','t','i','l','d','e',  /*N(6,204)*/
+'O','a','c','u','t','e',  /*N(6,210)*/
+'O','g','r','a','v','e',  /*N(6,216)*/
+'O','s','l','a','s','h',  /*N(6,222)*/
+'O','s','m','a','l','l',  /*N(6,228)*/
+'O','t','i','l','d','e',  /*N(6,234)*/
+'P','s','m','a','l','l',  /*N(6,240)*/
+'Q','s','m','a','l','l',  /*N(6,246)*/
+'R','a','c','u','t','e',  /*N(6,252)*/
+'R','c','a','r','o','n',  /*N(6,258)*/
+'R','s','m','a','l','l',  /*N(6,264)*/
+'S','a','c','u','t','e',  /*N(6,270)*/
+'S','c','a','r','o','n',  /*N(6,276)*/
+'S','s','m','a','l','l',  /*N(6,282)*/
+'T','c','a','r','o','n',  /*N(6,288)*/
+'T','s','m','a','l','l',  /*N(6,294)*/
+'U','a','c','u','t','e',  /*N(6,300)*/
+'U','g','r','a','v','e',  /*N(6,306)*/
+'U','s','m','a','l','l',  /*N(6,312)*/
+'V','s','m','a','l','l',  /*N(6,318)*/
+'W','s','m','a','l','l',  /*N(6,324)*/
+'X','s','m','a','l','l',  /*N(6,330)*/
+'Y','a','c','u','t','e',  /*N(6,336)*/
+'Y','s','m','a','l','l',  /*N(6,342)*/
+'Z','a','c','u','t','e',  /*N(6,348)*/
+'Z','c','a','r','o','n',  /*N(6,354)*/
+'Z','s','m','a','l','l',  /*N(6,360)*/
+'a','a','c','u','t','e',  /*N(6,366)*/
+'a','b','r','e','v','e',  /*N(6,372)*/
+'a','g','r','a','v','e',  /*N(6,378)*/
+'a','t','i','l','d','e',  /*N(6,384)*/
+'b','u','l','l','e','t',  /*N(6,390)*/
+'c','a','c','u','t','e',  /*N(6,396)*/
+'c','c','a','r','o','n',  /*N(6,402)*/
+'d','a','g','g','e','r',  /*N(6,408)*/
+'d','c','a','r','o','n',  /*N(6,414)*/
+'d','c','r','o','a','t',  /*N(6,420)*/
+'d','e','g','r','e','e',  /*N(6,426)*/
+'d','i','v','i','d','e',  /*N(6,432)*/
+'d','o','l','l','a','r',  /*N(6,438)*/
+'e','a','c','u','t','e',  /*N(6,444)*/
+'e','c','a','r','o','n',  /*N(6,450)*/
+'e','g','r','a','v','e',  /*N(6,456)*/
+'e','m','d','a','s','h',  /*N(6,462)*/
+'e','n','d','a','s','h',  /*N(6,468)*/
+'e','x','c','l','a','m',  /*N(6,474)*/
+'f','l','o','r','i','n',  /*N(6,480)*/
+'g','b','r','e','v','e',  /*N(6,486)*/
+'h','y','p','h','e','n',  /*N(6,492)*/
+'i','a','c','u','t','e',  /*N(6,498)*/
+'i','g','r','a','v','e',  /*N(6,504)*/
+'l','a','c','u','t','e',  /*N(6,510)*/
+'l','a','m','b','d','a',  /*N(6,516)*/
+'l','c','a','r','o','n',  /*N(6,522)*/
+'l','s','l','a','s','h',  /*N(6,528)*/
+'m','a','c','r','o','n',  /*N(6,534)*/
+'m','i','n','u','t','e',  /*N(6,540)*/
+'n','a','c','u','t','e',  /*N(6,546)*/
+'n','c','a','r','o','n',  /*N(6,552)*/
+'n','t','i','l','d','e',  /*N(6,558)*/
+'o','a','c','u','t','e',  /*N(6,564)*/
+'o','g','o','n','e','k',  /*N(6,570)*/
+'o','g','r','a','v','e',  /*N(6,576)*/
+'o','m','e','g','a','1',  /*N(6,582)*/
+'o','s','l','a','s','h',  /*N(6,588)*/
+'o','t','i','l','d','e',  /*N(6,594)*/
+'p','e','r','i','o','d',  /*N(6,600)*/
+'r','a','c','u','t','e',  /*N(6,606)*/
+'r','c','a','r','o','n',  /*N(6,612)*/
+'r','u','p','i','a','h',  /*N(6,618)*/
+'s','a','c','u','t','e',  /*N(6,624)*/
+'s','c','a','r','o','n',  /*N(6,630)*/
+'s','e','c','o','n','d',  /*N(6,636)*/
+'s','i','g','m','a','1',  /*N(6,642)*/
+'t','c','a','r','o','n',  /*N(6,648)*/
+'t','h','e','t','a','1',  /*N(6,654)*/
+'u','a','c','u','t','e',  /*N(6,660)*/
+'u','g','r','a','v','e',  /*N(6,666)*/
+'y','a','c','u','t','e',  /*N(6,672)*/
+'z','a','c','u','t','e',  /*N(6,678)*/
+'z','c','a','r','o','n',  /*N(6,684)*/
+'.','n','o','t','d','e','f',  /*N(7,0)*/
+'A','E','s','m','a','l','l',  /*N(7,7)*/
+'A','m','a','c','r','o','n',  /*N(7,14)*/
+'A','o','g','o','n','e','k',  /*N(7,21)*/
+'E','m','a','c','r','o','n',  /*N(7,28)*/
+'E','o','g','o','n','e','k',  /*N(7,35)*/
+'E','p','s','i','l','o','n',  /*N(7,42)*/
+'I','m','a','c','r','o','n',  /*N(7,49)*/
+'I','o','g','o','n','e','k',  /*N(7,56)*/
+'O','E','s','m','a','l','l',  /*N(7,63)*/
+'O','m','a','c','r','o','n',  /*N(7,70)*/
+'O','m','i','c','r','o','n',  /*N(7,77)*/
+'U','m','a','c','r','o','n',  /*N(7,84)*/
+'U','o','g','o','n','e','k',  /*N(7,91)*/
+'U','p','s','i','l','o','n',  /*N(7,98)*/
+'a','m','a','c','r','o','n',  /*N(7,105)*/
+'a','o','g','o','n','e','k',  /*N(7,112)*/
+'a','r','r','o','w','u','p',  /*N(7,119)*/
+'b','r','a','c','e','e','x',  /*N(7,126)*/
+'c','e','d','i','l','l','a',  /*N(7,133)*/
+'d','i','a','m','o','n','d',  /*N(7,140)*/
+'d','m','a','c','r','o','n',  /*N(7,147)*/
+'d','o','t','m','a','t','h',  /*N(7,154)*/
+'e','l','e','m','e','n','t',  /*N(7,161)*/
+'e','m','a','c','r','o','n',  /*N(7,168)*/
+'e','o','g','o','n','e','k',  /*N(7,175)*/
+'e','p','s','i','l','o','n',  /*N(7,182)*/
+'g','r','e','a','t','e','r',  /*N(7,189)*/
+'i','m','a','c','r','o','n',  /*N(7,196)*/
+'i','o','g','o','n','e','k',  /*N(7,203)*/
+'l','o','z','e','n','g','e',  /*N(7,210)*/
+'n','b','s','p','a','c','e',  /*N(7,217)*/
+'o','m','a','c','r','o','n',  /*N(7,224)*/
+'o','m','i','c','r','o','n',  /*N(7,231)*/
+'o','n','e','h','a','l','f',  /*N(7,238)*/
+'p','e','r','c','e','n','t',  /*N(7,245)*/
+'p','r','o','d','u','c','t',  /*N(7,252)*/
+'r','a','d','i','c','a','l',  /*N(7,259)*/
+'s','e','c','t','i','o','n',  /*N(7,266)*/
+'s','i','m','i','l','a','r',  /*N(7,273)*/
+'u','m','a','c','r','o','n',  /*N(7,280)*/
+'u','o','g','o','n','e','k',  /*N(7,287)*/
+'u','p','s','i','l','o','n',  /*N(7,294)*/
+'C','c','e','d','i','l','l','a',  /*N(8,0)*/
+'E','t','h','s','m','a','l','l',  /*N(8,8)*/
+'I','f','r','a','k','t','u','r',  /*N(8,16)*/
+'R','f','r','a','k','t','u','r',  /*N(8,24)*/
+'S','c','e','d','i','l','l','a',  /*N(8,32)*/
+'U','p','s','i','l','o','n','1',  /*N(8,40)*/
+'a','s','t','e','r','i','s','k',  /*N(8,48)*/
+'c','c','e','d','i','l','l','a',  /*N(8,56)*/
+'c','u','r','r','e','n','c','y',  /*N(8,64)*/
+'d','i','e','r','e','s','i','s',  /*N(8,72)*/
+'d','o','t','l','e','s','s','i',  /*N(8,80)*/
+'e','l','l','i','p','s','i','s',  /*N(8,88)*/
+'e','m','p','t','y','s','e','t',  /*N(8,96)*/
+'f','r','a','c','t','i','o','n',  /*N(8,104)*/
+'g','r','a','d','i','e','n','t',  /*N(8,112)*/
+'i','n','f','i','n','i','t','y',  /*N(8,120)*/
+'i','n','t','e','g','r','a','l',  /*N(8,128)*/
+'m','u','l','t','i','p','l','y',  /*N(8,136)*/
+'n','o','t','e','q','u','a','l',  /*N(8,144)*/
+'o','n','e','t','h','i','r','d',  /*N(8,152)*/
+'q','u','e','s','t','i','o','n',  /*N(8,160)*/
+'q','u','o','t','e','d','b','l',  /*N(8,168)*/
+'s','c','e','d','i','l','l','a',  /*N(8,176)*/
+'s','t','e','r','l','i','n','g',  /*N(8,184)*/
+'s','u','c','h','t','h','a','t',  /*N(8,192)*/
+'A','d','i','e','r','e','s','i','s',  /*N(9,0)*/
+'E','d','i','e','r','e','s','i','s',  /*N(9,9)*/
+'I','d','i','e','r','e','s','i','s',  /*N(9,18)*/
+'O','d','i','e','r','e','s','i','s',  /*N(9,27)*/
+'R','i','n','g','s','m','a','l','l',  /*N(9,36)*/
+'U','d','i','e','r','e','s','i','s',  /*N(9,45)*/
+'Y','d','i','e','r','e','s','i','s',  /*N(9,54)*/
+'a','d','i','e','r','e','s','i','s',  /*N(9,63)*/
+'a','m','p','e','r','s','a','n','d',  /*N(9,72)*/
+'a','n','g','l','e','l','e','f','t',  /*N(9,81)*/
+'a','p','p','l','e','l','o','g','o',  /*N(9,90)*/
+'a','r','r','o','w','b','o','t','h',  /*N(9,99)*/
+'a','r','r','o','w','d','o','w','n',  /*N(9,108)*/
+'a','r','r','o','w','l','e','f','t',  /*N(9,117)*/
+'a','s','u','p','e','r','i','o','r',  /*N(9,126)*/
+'b','a','c','k','s','l','a','s','h',  /*N(9,135)*/
+'b','r','a','c','e','l','e','f','t',  /*N(9,144)*/
+'b','r','o','k','e','n','b','a','r',  /*N(9,153)*/
+'b','s','u','p','e','r','i','o','r',  /*N(9,162)*/
+'c','o','n','g','r','u','e','n','t',  /*N(9,171)*/
+'c','o','p','y','r','i','g','h','t',  /*N(9,180)*/
+'d','a','g','g','e','r','d','b','l',  /*N(9,189)*/
+'d','o','t','a','c','c','e','n','t',  /*N(9,198)*/
+'d','s','u','p','e','r','i','o','r',  /*N(9,207)*/
+'e','d','i','e','r','e','s','i','s',  /*N(9,216)*/
+'e','s','u','p','e','r','i','o','r',  /*N(9,225)*/
+'i','d','i','e','r','e','s','i','s',  /*N(9,234)*/
+'i','n','c','r','e','m','e','n','t',  /*N(9,243)*/
+'i','s','u','p','e','r','i','o','r',  /*N(9,252)*/
+'l','e','s','s','e','q','u','a','l',  /*N(9,261)*/
+'l','o','g','i','c','a','l','o','r',  /*N(9,270)*/
+'l','s','u','p','e','r','i','o','r',  /*N(9,279)*/
+'m','s','u','p','e','r','i','o','r',  /*N(9,288)*/
+'n','o','t','s','u','b','s','e','t',  /*N(9,297)*/
+'n','s','u','p','e','r','i','o','r',  /*N(9,306)*/
+'o','d','i','e','r','e','s','i','s',  /*N(9,315)*/
+'o','n','e','e','i','g','h','t','h',  /*N(9,324)*/
+'o','n','e','f','i','t','t','e','d',  /*N(9,333)*/
+'o','s','u','p','e','r','i','o','r',  /*N(9,342)*/
+'o','v','e','r','s','c','o','r','e',  /*N(9,351)*/
+'p','a','r','a','g','r','a','p','h',  /*N(9,360)*/
+'p','a','r','e','n','l','e','f','t',  /*N(9,369)*/
+'p','l','u','s','m','i','n','u','s',  /*N(9,378)*/
+'q','u','o','t','e','l','e','f','t',  /*N(9,387)*/
+'r','a','d','i','c','a','l','e','x',  /*N(9,396)*/
+'r','s','u','p','e','r','i','o','r',  /*N(9,405)*/
+'s','e','m','i','c','o','l','o','n',  /*N(9,414)*/
+'s','s','u','p','e','r','i','o','r',  /*N(9,423)*/
+'s','u','m','m','a','t','i','o','n',  /*N(9,432)*/
+'t','h','e','r','e','f','o','r','e',  /*N(9,441)*/
+'t','r','a','d','e','m','a','r','k',  /*N(9,450)*/
+'t','s','u','p','e','r','i','o','r',  /*N(9,459)*/
+'t','w','o','t','h','i','r','d','s',  /*N(9,468)*/
+'u','d','i','e','r','e','s','i','s',  /*N(9,477)*/
+'u','n','i','v','e','r','s','a','l',  /*N(9,486)*/
+'y','d','i','e','r','e','s','i','s',  /*N(9,495)*/
+'A','c','u','t','e','s','m','a','l','l',  /*N(10,0)*/
+'A','r','i','n','g','s','m','a','l','l',  /*N(10,10)*/
+'B','r','e','v','e','s','m','a','l','l',  /*N(10,20)*/
+'C','a','r','o','n','s','m','a','l','l',  /*N(10,30)*/
+'E','d','o','t','a','c','c','e','n','t',  /*N(10,40)*/
+'G','r','a','v','e','s','m','a','l','l',  /*N(10,50)*/
+'I','d','o','t','a','c','c','e','n','t',  /*N(10,60)*/
+'T','h','o','r','n','s','m','a','l','l',  /*N(10,70)*/
+'T','i','l','d','e','s','m','a','l','l',  /*N(10,80)*/
+'Z','d','o','t','a','c','c','e','n','t',  /*N(10,90)*/
+'a','n','g','l','e','r','i','g','h','t',  /*N(10,100)*/
+'a','r','r','o','w','d','b','l','u','p',  /*N(10,110)*/
+'a','r','r','o','w','r','i','g','h','t',  /*N(10,120)*/
+'a','s','c','i','i','t','i','l','d','e',  /*N(10,130)*/
+'b','r','a','c','e','r','i','g','h','t',  /*N(10,140)*/
+'c','i','r','c','l','e','p','l','u','s',  /*N(10,150)*/
+'c','i','r','c','u','m','f','l','e','x',  /*N(10,160)*/
+'e','d','o','t','a','c','c','e','n','t',  /*N(10,170)*/
+'e','x','c','l','a','m','d','o','w','n',  /*N(10,180)*/
+'f','i','g','u','r','e','d','a','s','h',  /*N(10,190)*/
+'g','e','r','m','a','n','d','b','l','s',  /*N(10,200)*/
+'i','n','t','e','g','r','a','l','b','t',  /*N(10,210)*/
+'i','n','t','e','g','r','a','l','e','x',  /*N(10,220)*/
+'i','n','t','e','g','r','a','l','t','p',  /*N(10,230)*/
+'l','o','g','i','c','a','l','a','n','d',  /*N(10,240)*/
+'l','o','g','i','c','a','l','n','o','t',  /*N(10,250)*/
+'n','o','t','e','l','e','m','e','n','t',  /*N(10,260)*/
+'n','u','m','b','e','r','s','i','g','n',  /*N(10,270)*/
+'o','n','e','q','u','a','r','t','e','r',  /*N(10,280)*/
+'p','a','r','e','n','r','i','g','h','t',  /*N(10,290)*/
+'q','u','o','t','e','r','i','g','h','t',  /*N(10,300)*/
+'r','e','g','i','s','t','e','r','e','d',  /*N(10,310)*/
+'u','n','d','e','r','s','c','o','r','e',  /*N(10,320)*/
+'z','d','o','t','a','c','c','e','n','t',  /*N(10,330)*/
+'A','a','c','u','t','e','s','m','a','l','l',  /*N(11,0)*/
+'A','c','i','r','c','u','m','f','l','e','x',  /*N(11,11)*/
+'A','g','r','a','v','e','s','m','a','l','l',  /*N(11,22)*/
+'A','t','i','l','d','e','s','m','a','l','l',  /*N(11,33)*/
+'E','a','c','u','t','e','s','m','a','l','l',  /*N(11,44)*/
+'E','c','i','r','c','u','m','f','l','e','x',  /*N(11,55)*/
+'E','g','r','a','v','e','s','m','a','l','l',  /*N(11,66)*/
+'I','a','c','u','t','e','s','m','a','l','l',  /*N(11,77)*/
+'I','c','i','r','c','u','m','f','l','e','x',  /*N(11,88)*/
+'I','g','r','a','v','e','s','m','a','l','l',  /*N(11,99)*/
+'L','s','l','a','s','h','s','m','a','l','l',  /*N(11,110)*/
+'M','a','c','r','o','n','s','m','a','l','l',  /*N(11,121)*/
+'N','t','i','l','d','e','s','m','a','l','l',  /*N(11,132)*/
+'O','a','c','u','t','e','s','m','a','l','l',  /*N(11,143)*/
+'O','c','i','r','c','u','m','f','l','e','x',  /*N(11,154)*/
+'O','g','o','n','e','k','s','m','a','l','l',  /*N(11,165)*/
+'O','g','r','a','v','e','s','m','a','l','l',  /*N(11,176)*/
+'O','s','l','a','s','h','s','m','a','l','l',  /*N(11,187)*/
+'O','t','i','l','d','e','s','m','a','l','l',  /*N(11,198)*/
+'S','c','a','r','o','n','s','m','a','l','l',  /*N(11,209)*/
+'U','a','c','u','t','e','s','m','a','l','l',  /*N(11,220)*/
+'U','c','i','r','c','u','m','f','l','e','x',  /*N(11,231)*/
+'U','g','r','a','v','e','s','m','a','l','l',  /*N(11,242)*/
+'Y','a','c','u','t','e','s','m','a','l','l',  /*N(11,253)*/
+'Z','c','a','r','o','n','s','m','a','l','l',  /*N(11,264)*/
+'a','c','i','r','c','u','m','f','l','e','x',  /*N(11,275)*/
+'a','p','p','r','o','x','e','q','u','a','l',  /*N(11,286)*/
+'a','r','r','o','w','v','e','r','t','e','x',  /*N(11,297)*/
+'a','s','c','i','i','c','i','r','c','u','m',  /*N(11,308)*/
+'b','r','a','c','e','l','e','f','t','b','t',  /*N(11,319)*/
+'b','r','a','c','e','l','e','f','t','t','p',  /*N(11,330)*/
+'b','r','a','c','k','e','t','l','e','f','t',  /*N(11,341)*/
+'c','o','m','m','a','a','c','c','e','n','t',  /*N(11,352)*/
+'e','c','i','r','c','u','m','f','l','e','x',  /*N(11,363)*/
+'e','q','u','i','v','a','l','e','n','c','e',  /*N(11,374)*/
+'e','x','c','l','a','m','s','m','a','l','l',  /*N(11,385)*/
+'e','x','i','s','t','e','n','t','i','a','l',  /*N(11,396)*/
+'f','i','v','e','e','i','g','h','t','h','s',  /*N(11,407)*/
+'i','c','i','r','c','u','m','f','l','e','x',  /*N(11,418)*/
+'o','c','i','r','c','u','m','f','l','e','x',  /*N(11,429)*/
+'o','n','e','i','n','f','e','r','i','o','r',  /*N(11,440)*/
+'o','n','e','o','l','d','s','t','y','l','e',  /*N(11,451)*/
+'o','n','e','s','u','p','e','r','i','o','r',  /*N(11,462)*/
+'o','r','d','f','e','m','i','n','i','n','e',  /*N(11,473)*/
+'p','a','r','e','n','l','e','f','t','b','t',  /*N(11,484)*/
+'p','a','r','e','n','l','e','f','t','e','x',  /*N(11,495)*/
+'p','a','r','e','n','l','e','f','t','t','p',  /*N(11,506)*/
+'p','a','r','t','i','a','l','d','i','f','f',  /*N(11,517)*/
+'p','e','r','t','h','o','u','s','a','n','d',  /*N(11,528)*/
+'q','u','o','t','e','s','i','n','g','l','e',  /*N(11,539)*/
+'s','i','x','i','n','f','e','r','i','o','r',  /*N(11,550)*/
+'s','i','x','o','l','d','s','t','y','l','e',  /*N(11,561)*/
+'s','i','x','s','u','p','e','r','i','o','r',  /*N(11,572)*/
+'t','w','o','i','n','f','e','r','i','o','r',  /*N(11,583)*/
+'t','w','o','o','l','d','s','t','y','l','e',  /*N(11,594)*/
+'t','w','o','s','u','p','e','r','i','o','r',  /*N(11,605)*/
+'u','c','i','r','c','u','m','f','l','e','x',  /*N(11,616)*/
+'w','e','i','e','r','s','t','r','a','s','s',  /*N(11,627)*/
+'C','e','d','i','l','l','a','s','m','a','l','l',  /*N(12,0)*/
+'G','c','o','m','m','a','a','c','c','e','n','t',  /*N(12,12)*/
+'K','c','o','m','m','a','a','c','c','e','n','t',  /*N(12,24)*/
+'L','c','o','m','m','a','a','c','c','e','n','t',  /*N(12,36)*/
+'N','c','o','m','m','a','a','c','c','e','n','t',  /*N(12,48)*/
+'R','c','o','m','m','a','a','c','c','e','n','t',  /*N(12,60)*/
+'S','c','o','m','m','a','a','c','c','e','n','t',  /*N(12,72)*/
+'T','c','o','m','m','a','a','c','c','e','n','t',  /*N(12,84)*/
+'a','r','r','o','w','d','b','l','b','o','t','h',  /*N(12,96)*/
+'a','r','r','o','w','d','b','l','d','o','w','n',  /*N(12,108)*/
+'a','r','r','o','w','d','b','l','l','e','f','t',  /*N(12,120)*/
+'a','r','r','o','w','h','o','r','i','z','e','x',  /*N(12,132)*/
+'a','s','t','e','r','i','s','k','m','a','t','h',  /*N(12,144)*/
+'b','r','a','c','e','l','e','f','t','m','i','d',  /*N(12,156)*/
+'b','r','a','c','e','r','i','g','h','t','b','t',  /*N(12,168)*/
+'b','r','a','c','e','r','i','g','h','t','t','p',  /*N(12,180)*/
+'b','r','a','c','k','e','t','r','i','g','h','t',  /*N(12,192)*/
+'c','e','n','t','i','n','f','e','r','i','o','r',  /*N(12,204)*/
+'c','e','n','t','o','l','d','s','t','y','l','e',  /*N(12,216)*/
+'c','e','n','t','s','u','p','e','r','i','o','r',  /*N(12,228)*/
+'f','i','v','e','i','n','f','e','r','i','o','r',  /*N(12,240)*/
+'f','i','v','e','o','l','d','s','t','y','l','e',  /*N(12,252)*/
+'f','i','v','e','s','u','p','e','r','i','o','r',  /*N(12,264)*/
+'f','o','u','r','i','n','f','e','r','i','o','r',  /*N(12,276)*/
+'f','o','u','r','o','l','d','s','t','y','l','e',  /*N(12,288)*/
+'f','o','u','r','s','u','p','e','r','i','o','r',  /*N(12,300)*/
+'g','c','o','m','m','a','a','c','c','e','n','t',  /*N(12,312)*/
+'g','r','e','a','t','e','r','e','q','u','a','l',  /*N(12,324)*/
+'h','u','n','g','a','r','u','m','l','a','u','t',  /*N(12,336)*/
+'i','n','t','e','r','s','e','c','t','i','o','n',  /*N(12,348)*/
+'k','c','o','m','m','a','a','c','c','e','n','t',  /*N(12,360)*/
+'l','c','o','m','m','a','a','c','c','e','n','t',  /*N(12,372)*/
+'n','c','o','m','m','a','a','c','c','e','n','t',  /*N(12,384)*/
+'n','i','n','e','i','n','f','e','r','i','o','r',  /*N(12,396)*/
+'n','i','n','e','o','l','d','s','t','y','l','e',  /*N(12,408)*/
+'n','i','n','e','s','u','p','e','r','i','o','r',  /*N(12,420)*/
+'o','r','d','m','a','s','c','u','l','i','n','e',  /*N(12,432)*/
+'p','a','r','e','n','r','i','g','h','t','b','t',  /*N(12,444)*/
+'p','a','r','e','n','r','i','g','h','t','e','x',  /*N(12,456)*/
+'p','a','r','e','n','r','i','g','h','t','t','p',  /*N(12,468)*/
+'p','r','o','p','e','r','s','u','b','s','e','t',  /*N(12,480)*/
+'p','r','o','p','o','r','t','i','o','n','a','l',  /*N(12,492)*/
+'q','u','e','s','t','i','o','n','d','o','w','n',  /*N(12,504)*/
+'q','u','o','t','e','d','b','l','b','a','s','e',  /*N(12,516)*/
+'q','u','o','t','e','d','b','l','l','e','f','t',  /*N(12,528)*/
+'r','c','o','m','m','a','a','c','c','e','n','t',  /*N(12,540)*/
+'r','e','f','l','e','x','s','u','b','s','e','t',  /*N(12,552)*/
+'r','e','g','i','s','t','e','r','s','a','n','s',  /*N(12,564)*/
+'s','c','o','m','m','a','a','c','c','e','n','t',  /*N(12,576)*/
+'s','e','v','e','n','e','i','g','h','t','h','s',  /*N(12,588)*/
+'t','c','o','m','m','a','a','c','c','e','n','t',  /*N(12,600)*/
+'t','h','r','e','e','e','i','g','h','t','h','s',  /*N(12,612)*/
+'z','e','r','o','i','n','f','e','r','i','o','r',  /*N(12,624)*/
+'z','e','r','o','o','l','d','s','t','y','l','e',  /*N(12,636)*/
+'z','e','r','o','s','u','p','e','r','i','o','r',  /*N(12,648)*/
+'C','c','e','d','i','l','l','a','s','m','a','l','l',  /*N(13,0)*/
+'D','i','e','r','e','s','i','s','s','m','a','l','l',  /*N(13,13)*/
+'O','h','u','n','g','a','r','u','m','l','a','u','t',  /*N(13,26)*/
+'U','h','u','n','g','a','r','u','m','l','a','u','t',  /*N(13,39)*/
+'a','r','r','o','w','d','b','l','r','i','g','h','t',  /*N(13,52)*/
+'b','r','a','c','e','r','i','g','h','t','m','i','d',  /*N(13,65)*/
+'b','r','a','c','k','e','t','l','e','f','t','b','t',  /*N(13,78)*/
+'b','r','a','c','k','e','t','l','e','f','t','e','x',  /*N(13,91)*/
+'b','r','a','c','k','e','t','l','e','f','t','t','p',  /*N(13,104)*/
+'c','o','l','o','n','m','o','n','e','t','a','r','y',  /*N(13,117)*/
+'c','o','m','m','a','i','n','f','e','r','i','o','r',  /*N(13,130)*/
+'c','o','m','m','a','s','u','p','e','r','i','o','r',  /*N(13,143)*/
+'c','o','p','y','r','i','g','h','t','s','a','n','s',  /*N(13,156)*/
+'e','i','g','h','t','i','n','f','e','r','i','o','r',  /*N(13,169)*/
+'e','i','g','h','t','o','l','d','s','t','y','l','e',  /*N(13,182)*/
+'e','i','g','h','t','s','u','p','e','r','i','o','r',  /*N(13,195)*/
+'g','u','i','l','l','e','m','o','t','l','e','f','t',  /*N(13,208)*/
+'g','u','i','l','s','i','n','g','l','l','e','f','t',  /*N(13,221)*/
+'o','h','u','n','g','a','r','u','m','l','a','u','t',  /*N(13,234)*/
+'p','e','r','p','e','n','d','i','c','u','l','a','r',  /*N(13,247)*/
+'q','u','e','s','t','i','o','n','s','m','a','l','l',  /*N(13,260)*/
+'q','u','o','t','e','d','b','l','r','i','g','h','t',  /*N(13,273)*/
+'r','e','g','i','s','t','e','r','s','e','r','i','f',  /*N(13,286)*/
+'s','e','v','e','n','i','n','f','e','r','i','o','r',  /*N(13,299)*/
+'s','e','v','e','n','o','l','d','s','t','y','l','e',  /*N(13,312)*/
+'s','e','v','e','n','s','u','p','e','r','i','o','r',  /*N(13,325)*/
+'t','h','r','e','e','i','n','f','e','r','i','o','r',  /*N(13,338)*/
+'t','h','r','e','e','o','l','d','s','t','y','l','e',  /*N(13,351)*/
+'t','h','r','e','e','q','u','a','r','t','e','r','s',  /*N(13,364)*/
+'t','h','r','e','e','s','u','p','e','r','i','o','r',  /*N(13,377)*/
+'t','r','a','d','e','m','a','r','k','s','a','n','s',  /*N(13,390)*/
+'u','h','u','n','g','a','r','u','m','l','a','u','t',  /*N(13,403)*/
+'A','d','i','e','r','e','s','i','s','s','m','a','l','l',  /*N(14,0)*/
+'D','o','t','a','c','c','e','n','t','s','m','a','l','l',  /*N(14,14)*/
+'E','d','i','e','r','e','s','i','s','s','m','a','l','l',  /*N(14,28)*/
+'I','d','i','e','r','e','s','i','s','s','m','a','l','l',  /*N(14,42)*/
+'O','d','i','e','r','e','s','i','s','s','m','a','l','l',  /*N(14,56)*/
+'U','d','i','e','r','e','s','i','s','s','m','a','l','l',  /*N(14,70)*/
+'Y','d','i','e','r','e','s','i','s','s','m','a','l','l',  /*N(14,84)*/
+'a','m','p','e','r','s','a','n','d','s','m','a','l','l',  /*N(14,98)*/
+'b','r','a','c','k','e','t','r','i','g','h','t','b','t',  /*N(14,112)*/
+'b','r','a','c','k','e','t','r','i','g','h','t','e','x',  /*N(14,126)*/
+'b','r','a','c','k','e','t','r','i','g','h','t','t','p',  /*N(14,140)*/
+'c','a','r','r','i','a','g','e','r','e','t','u','r','n',  /*N(14,154)*/
+'c','i','r','c','l','e','m','u','l','t','i','p','l','y',  /*N(14,168)*/
+'c','o','p','y','r','i','g','h','t','s','e','r','i','f',  /*N(14,182)*/
+'d','o','l','l','a','r','i','n','f','e','r','i','o','r',  /*N(14,196)*/
+'d','o','l','l','a','r','o','l','d','s','t','y','l','e',  /*N(14,210)*/
+'d','o','l','l','a','r','s','u','p','e','r','i','o','r',  /*N(14,224)*/
+'g','u','i','l','l','e','m','o','t','r','i','g','h','t',  /*N(14,238)*/
+'g','u','i','l','s','i','n','g','l','r','i','g','h','t',  /*N(14,252)*/
+'h','y','p','h','e','n','i','n','f','e','r','i','o','r',  /*N(14,266)*/
+'h','y','p','h','e','n','s','u','p','e','r','i','o','r',  /*N(14,280)*/
+'o','n','e','d','o','t','e','n','l','e','a','d','e','r',  /*N(14,294)*/
+'p','e','r','i','o','d','c','e','n','t','e','r','e','d',  /*N(14,308)*/
+'p','e','r','i','o','d','i','n','f','e','r','i','o','r',  /*N(14,322)*/
+'p','e','r','i','o','d','s','u','p','e','r','i','o','r',  /*N(14,336)*/
+'p','r','o','p','e','r','s','u','p','e','r','s','e','t',  /*N(14,350)*/
+'q','u','o','t','e','s','i','n','g','l','b','a','s','e',  /*N(14,364)*/
+'r','e','f','l','e','x','s','u','p','e','r','s','e','t',  /*N(14,378)*/
+'t','r','a','d','e','m','a','r','k','s','e','r','i','f',  /*N(14,392)*/
+'t','w','o','d','o','t','e','n','l','e','a','d','e','r',  /*N(14,406)*/
+'C','i','r','c','u','m','f','l','e','x','s','m','a','l','l',  /*N(15,0)*/
+'e','x','c','l','a','m','d','o','w','n','s','m','a','l','l',  /*N(15,15)*/
+'A','c','i','r','c','u','m','f','l','e','x','s','m','a','l','l',  /*N(16,0)*/
+'E','c','i','r','c','u','m','f','l','e','x','s','m','a','l','l',  /*N(16,16)*/
+'I','c','i','r','c','u','m','f','l','e','x','s','m','a','l','l',  /*N(16,32)*/
+'O','c','i','r','c','u','m','f','l','e','x','s','m','a','l','l',  /*N(16,48)*/
+'U','c','i','r','c','u','m','f','l','e','x','s','m','a','l','l',  /*N(16,64)*/
+'H','u','n','g','a','r','u','m','l','a','u','t','s','m','a','l','l',  /*N(17,0)*/
+'p','a','r','e','n','l','e','f','t','i','n','f','e','r','i','o','r',  /*N(17,17)*/
+'p','a','r','e','n','l','e','f','t','s','u','p','e','r','i','o','r',  /*N(17,34)*/
+'q','u','e','s','t','i','o','n','d','o','w','n','s','m','a','l','l',  /*N(17,51)*/
+'p','a','r','e','n','r','i','g','h','t','i','n','f','e','r','i','o','r',  /*N(18,0)*/
+'p','a','r','e','n','r','i','g','h','t','s','u','p','e','r','i','o','r',  /*N(18,18)*/
+'t','h','r','e','e','q','u','a','r','t','e','r','s','e','m','d','a','s','h',  /*N(19,0)*/
 0};
 
-static const ushort gs_c_sorted_short[] = {
-I_threequarters,
-I_bracketright,I_hungarumlaut,I_questiondown,
-I_Acircumflex,I_Ecircumflex,I_Icircumflex,I_Ocircumflex,I_Ucircumflex,I_bracketleft,I_commaaccent,
-I_braceright,I_circumflex,I_exclamdown,I_parenright,
-I_Adieresis,I_Edieresis,I_Idieresis,I_Odieresis,I_Udieresis,I_Ydieresis,I_ampersand,I_asuperior,I_braceleft,I_copyright,I_dotaccent,I_dsuperior,I_esuperior,I_nsuperior,I_osuperior,I_parenleft,I_rsuperior,I_trademark,I_tsuperior,
-I_Ccedilla,I_asterisk,I_dieresis,I_integral,I_multiply,I_question,I_quotedbl,
-I_Upsilon,I_cedilla,I_element,I_greater,I_radical,I_section,
-I_Aacute,I_Agrave,I_Atilde,I_Eacute,I_Egrave,I_Esmall,I_Iacute,I_Igrave,I_Lslash,I_Ntilde,I_Oacute,I_Ograve,I_Oslash,I_Otilde,I_Scaron,I_Uacute,I_Ugrave,I_Yacute,I_Zcaron,I_dagger,I_dollar,I_emdash,I_exclam,I_hyphen,I_macron,I_ogonek,I_period,
-I_Aring,I_Thorn,I_acute,I_angle,I_breve,I_caron,I_colon,I_comma,I_eight,I_equal,I_grave,I_minus,I_omega,I_seven,I_sigma,I_slash,I_space,I_theta,I_three,I_tilde,
-I_cent,I_five,I_four,I_less,I_nine,I_plus,I_ring,I_zero,
-I_Eth,I_a10,I_a11,I_a12,I_a13,I_a14,I_a15,I_a16,I_a17,I_a18,I_a19,I_a20,I_bar,I_eta,I_one,I_phi,I_six,I_two,
-I_AE,I_OE,I_a1,I_a2,I_a3,I_a4,I_a5,I_a6,I_a7,I_a8,I_a9,I_at,I_ff,I_fi,I_fl,I_mu,I_nu,
-I_A,I_B,I_C,I_D,I_E,I_F,I_G,I_H,I_I,I_J,I_K,I_L,I_M,I_N,I_O,I_P,I_Q,I_R,I_S,I_T,I_U,I_V,I_W,I_X,I_Y,I_Z,I_a,I_b,I_c,I_d,I_e,I_f,I_g,I_h,I_i,I_k,I_l,I_m,I_n,I_o,I_p,I_q,I_r,I_s,I_t,I_u,I_w,I_x,I_y,I_z,
+const int gs_c_known_encoding_max_length = 19;
+
+const ushort gs_c_known_encoding_offsets[] = {
+0,0,52,104,404,876,1081,1771,2072,2272,2776,3116,3754,4414,4830,5250,5280,5360,5428,5464,5483};
+
+const int gs_c_known_encoding_count = 11;
+
+/* StandardEncoding */
+static const ushort gs_c_known_encoding_0[] = {
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(5,165),  /*space*/
+N(6,474),  /*exclam*/
+N(8,168),  /*quotedbl*/
+N(10,270),  /*numbersign*/
+N(6,438),  /*dollar*/
+N(7,245),  /*percent*/
+N(9,72),  /*ampersand*/
+N(10,300),  /*quoteright*/
+N(9,369),  /*parenleft*/
+N(10,290),  /*parenright*/
+N(8,48),  /*asterisk*/
+N(4,456),  /*plus*/
+N(5,95),  /*comma*/
+N(6,492),  /*hyphen*/
+N(6,600),  /*period*/
+N(5,160),  /*slash*/
+N(4,464),  /*zero*/
+N(3,276),  /*one*/
+N(3,294),  /*two*/
+N(5,185),  /*three*/
+N(4,436),  /*four*/
+N(4,432),  /*five*/
+N(3,288),  /*six*/
+N(5,150),  /*seven*/
+N(5,105),  /*eight*/
+N(4,448),  /*nine*/
+N(5,90),  /*colon*/
+N(9,414),  /*semicolon*/
+N(4,444),  /*less*/
+N(5,110),  /*equal*/
+N(7,189),  /*greater*/
+N(8,160),  /*question*/
+N(2,34),  /*at*/
+N(1,0),  /*A*/
+N(1,1),  /*B*/
+N(1,2),  /*C*/
+N(1,3),  /*D*/
+N(1,4),  /*E*/
+N(1,5),  /*F*/
+N(1,6),  /*G*/
+N(1,7),  /*H*/
+N(1,8),  /*I*/
+N(1,9),  /*J*/
+N(1,10),  /*K*/
+N(1,11),  /*L*/
+N(1,12),  /*M*/
+N(1,13),  /*N*/
+N(1,14),  /*O*/
+N(1,15),  /*P*/
+N(1,16),  /*Q*/
+N(1,17),  /*R*/
+N(1,18),  /*S*/
+N(1,19),  /*T*/
+N(1,20),  /*U*/
+N(1,21),  /*V*/
+N(1,22),  /*W*/
+N(1,23),  /*X*/
+N(1,24),  /*Y*/
+N(1,25),  /*Z*/
+N(11,341),  /*bracketleft*/
+N(9,135),  /*backslash*/
+N(12,192),  /*bracketright*/
+N(11,308),  /*asciicircum*/
+N(10,320),  /*underscore*/
+N(9,387),  /*quoteleft*/
+N(1,26),  /*a*/
+N(1,27),  /*b*/
+N(1,28),  /*c*/
+N(1,29),  /*d*/
+N(1,30),  /*e*/
+N(1,31),  /*f*/
+N(1,32),  /*g*/
+N(1,33),  /*h*/
+N(1,34),  /*i*/
+N(1,35),  /*j*/
+N(1,36),  /*k*/
+N(1,37),  /*l*/
+N(1,38),  /*m*/
+N(1,39),  /*n*/
+N(1,40),  /*o*/
+N(1,41),  /*p*/
+N(1,42),  /*q*/
+N(1,43),  /*r*/
+N(1,44),  /*s*/
+N(1,45),  /*t*/
+N(1,46),  /*u*/
+N(1,47),  /*v*/
+N(1,48),  /*w*/
+N(1,49),  /*x*/
+N(1,50),  /*y*/
+N(1,51),  /*z*/
+N(9,144),  /*braceleft*/
+N(3,255),  /*bar*/
+N(10,140),  /*braceright*/
+N(10,130),  /*asciitilde*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(10,180),  /*exclamdown*/
+N(4,424),  /*cent*/
+N(8,184),  /*sterling*/
+N(8,104),  /*fraction*/
+N(3,297),  /*yen*/
+N(6,480),  /*florin*/
+N(7,266),  /*section*/
+N(8,64),  /*currency*/
+N(11,539),  /*quotesingle*/
+N(12,528),  /*quotedblleft*/
+N(13,208),  /*guillemotleft*/
+N(13,221),  /*guilsinglleft*/
+N(14,252),  /*guilsinglright*/
+N(2,38),  /*fi*/
+N(2,40),  /*fl*/
+N(7,0),  /*.notdef*/
+N(6,468),  /*endash*/
+N(6,408),  /*dagger*/
+N(9,189),  /*daggerdbl*/
+N(14,308),  /*periodcentered*/
+N(7,0),  /*.notdef*/
+N(9,360),  /*paragraph*/
+N(6,390),  /*bullet*/
+N(14,364),  /*quotesinglbase*/
+N(12,516),  /*quotedblbase*/
+N(13,273),  /*quotedblright*/
+N(14,238),  /*guillemotright*/
+N(8,88),  /*ellipsis*/
+N(11,528),  /*perthousand*/
+N(7,0),  /*.notdef*/
+N(12,504),  /*questiondown*/
+N(7,0),  /*.notdef*/
+N(5,125),  /*grave*/
+N(5,55),  /*acute*/
+N(10,160),  /*circumflex*/
+N(5,190),  /*tilde*/
+N(6,534),  /*macron*/
+N(5,80),  /*breve*/
+N(9,198),  /*dotaccent*/
+N(8,72),  /*dieresis*/
+N(7,0),  /*.notdef*/
+N(4,460),  /*ring*/
+N(7,133),  /*cedilla*/
+N(7,0),  /*.notdef*/
+N(12,336),  /*hungarumlaut*/
+N(6,570),  /*ogonek*/
+N(5,85),  /*caron*/
+N(6,462),  /*emdash*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(2,0),  /*AE*/
+N(7,0),  /*.notdef*/
+N(11,473),  /*ordfeminine*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(6,168),  /*Lslash*/
+N(6,222),  /*Oslash*/
+N(2,8),  /*OE*/
+N(12,432),  /*ordmasculine*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(2,32),  /*ae*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(8,80),  /*dotlessi*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(6,528),  /*lslash*/
+N(6,588),  /*oslash*/
+N(2,46),  /*oe*/
+N(10,200),  /*germandbls*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
 0};
 
-static const uint gs_c_sorted_starts[] = {
-187,137,120,102,94,74,47,41,34,15,11,4,1,0};
+/* ISOLatin1Encoding */
+static const ushort gs_c_known_encoding_1[] = {
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(5,165),  /*space*/
+N(6,474),  /*exclam*/
+N(8,168),  /*quotedbl*/
+N(10,270),  /*numbersign*/
+N(6,438),  /*dollar*/
+N(7,245),  /*percent*/
+N(9,72),  /*ampersand*/
+N(10,300),  /*quoteright*/
+N(9,369),  /*parenleft*/
+N(10,290),  /*parenright*/
+N(8,48),  /*asterisk*/
+N(4,456),  /*plus*/
+N(5,95),  /*comma*/
+N(5,140),  /*minus*/
+N(6,600),  /*period*/
+N(5,160),  /*slash*/
+N(4,464),  /*zero*/
+N(3,276),  /*one*/
+N(3,294),  /*two*/
+N(5,185),  /*three*/
+N(4,436),  /*four*/
+N(4,432),  /*five*/
+N(3,288),  /*six*/
+N(5,150),  /*seven*/
+N(5,105),  /*eight*/
+N(4,448),  /*nine*/
+N(5,90),  /*colon*/
+N(9,414),  /*semicolon*/
+N(4,444),  /*less*/
+N(5,110),  /*equal*/
+N(7,189),  /*greater*/
+N(8,160),  /*question*/
+N(2,34),  /*at*/
+N(1,0),  /*A*/
+N(1,1),  /*B*/
+N(1,2),  /*C*/
+N(1,3),  /*D*/
+N(1,4),  /*E*/
+N(1,5),  /*F*/
+N(1,6),  /*G*/
+N(1,7),  /*H*/
+N(1,8),  /*I*/
+N(1,9),  /*J*/
+N(1,10),  /*K*/
+N(1,11),  /*L*/
+N(1,12),  /*M*/
+N(1,13),  /*N*/
+N(1,14),  /*O*/
+N(1,15),  /*P*/
+N(1,16),  /*Q*/
+N(1,17),  /*R*/
+N(1,18),  /*S*/
+N(1,19),  /*T*/
+N(1,20),  /*U*/
+N(1,21),  /*V*/
+N(1,22),  /*W*/
+N(1,23),  /*X*/
+N(1,24),  /*Y*/
+N(1,25),  /*Z*/
+N(11,341),  /*bracketleft*/
+N(9,135),  /*backslash*/
+N(12,192),  /*bracketright*/
+N(11,308),  /*asciicircum*/
+N(10,320),  /*underscore*/
+N(9,387),  /*quoteleft*/
+N(1,26),  /*a*/
+N(1,27),  /*b*/
+N(1,28),  /*c*/
+N(1,29),  /*d*/
+N(1,30),  /*e*/
+N(1,31),  /*f*/
+N(1,32),  /*g*/
+N(1,33),  /*h*/
+N(1,34),  /*i*/
+N(1,35),  /*j*/
+N(1,36),  /*k*/
+N(1,37),  /*l*/
+N(1,38),  /*m*/
+N(1,39),  /*n*/
+N(1,40),  /*o*/
+N(1,41),  /*p*/
+N(1,42),  /*q*/
+N(1,43),  /*r*/
+N(1,44),  /*s*/
+N(1,45),  /*t*/
+N(1,46),  /*u*/
+N(1,47),  /*v*/
+N(1,48),  /*w*/
+N(1,49),  /*x*/
+N(1,50),  /*y*/
+N(1,51),  /*z*/
+N(9,144),  /*braceleft*/
+N(3,255),  /*bar*/
+N(10,140),  /*braceright*/
+N(10,130),  /*asciitilde*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(8,80),  /*dotlessi*/
+N(5,125),  /*grave*/
+N(5,55),  /*acute*/
+N(10,160),  /*circumflex*/
+N(5,190),  /*tilde*/
+N(6,534),  /*macron*/
+N(5,80),  /*breve*/
+N(9,198),  /*dotaccent*/
+N(8,72),  /*dieresis*/
+N(7,0),  /*.notdef*/
+N(4,460),  /*ring*/
+N(7,133),  /*cedilla*/
+N(7,0),  /*.notdef*/
+N(12,336),  /*hungarumlaut*/
+N(6,570),  /*ogonek*/
+N(5,85),  /*caron*/
+N(5,165),  /*space*/
+N(10,180),  /*exclamdown*/
+N(4,424),  /*cent*/
+N(8,184),  /*sterling*/
+N(8,64),  /*currency*/
+N(3,297),  /*yen*/
+N(9,153),  /*brokenbar*/
+N(7,266),  /*section*/
+N(8,72),  /*dieresis*/
+N(9,180),  /*copyright*/
+N(11,473),  /*ordfeminine*/
+N(13,208),  /*guillemotleft*/
+N(10,250),  /*logicalnot*/
+N(6,492),  /*hyphen*/
+N(10,310),  /*registered*/
+N(6,534),  /*macron*/
+N(6,426),  /*degree*/
+N(9,378),  /*plusminus*/
+N(11,605),  /*twosuperior*/
+N(13,377),  /*threesuperior*/
+N(5,55),  /*acute*/
+N(2,42),  /*mu*/
+N(9,360),  /*paragraph*/
+N(14,308),  /*periodcentered*/
+N(7,133),  /*cedilla*/
+N(11,462),  /*onesuperior*/
+N(12,432),  /*ordmasculine*/
+N(14,238),  /*guillemotright*/
+N(10,280),  /*onequarter*/
+N(7,238),  /*onehalf*/
+N(13,364),  /*threequarters*/
+N(12,504),  /*questiondown*/
+N(6,12),  /*Agrave*/
+N(6,0),  /*Aacute*/
+N(11,11),  /*Acircumflex*/
+N(6,24),  /*Atilde*/
+N(9,0),  /*Adieresis*/
+N(5,10),  /*Aring*/
+N(2,0),  /*AE*/
+N(8,0),  /*Ccedilla*/
+N(6,84),  /*Egrave*/
+N(6,72),  /*Eacute*/
+N(11,55),  /*Ecircumflex*/
+N(9,9),  /*Edieresis*/
+N(6,126),  /*Igrave*/
+N(6,120),  /*Iacute*/
+N(11,88),  /*Icircumflex*/
+N(9,18),  /*Idieresis*/
+N(3,6),  /*Eth*/
+N(6,204),  /*Ntilde*/
+N(6,216),  /*Ograve*/
+N(6,210),  /*Oacute*/
+N(11,154),  /*Ocircumflex*/
+N(6,234),  /*Otilde*/
+N(9,27),  /*Odieresis*/
+N(8,136),  /*multiply*/
+N(6,222),  /*Oslash*/
+N(6,306),  /*Ugrave*/
+N(6,300),  /*Uacute*/
+N(11,231),  /*Ucircumflex*/
+N(9,45),  /*Udieresis*/
+N(6,336),  /*Yacute*/
+N(5,45),  /*Thorn*/
+N(10,200),  /*germandbls*/
+N(6,378),  /*agrave*/
+N(6,366),  /*aacute*/
+N(11,275),  /*acircumflex*/
+N(6,384),  /*atilde*/
+N(9,63),  /*adieresis*/
+N(5,75),  /*aring*/
+N(2,32),  /*ae*/
+N(8,56),  /*ccedilla*/
+N(6,456),  /*egrave*/
+N(6,444),  /*eacute*/
+N(11,363),  /*ecircumflex*/
+N(9,216),  /*edieresis*/
+N(6,504),  /*igrave*/
+N(6,498),  /*iacute*/
+N(11,418),  /*icircumflex*/
+N(9,234),  /*idieresis*/
+N(3,264),  /*eth*/
+N(6,558),  /*ntilde*/
+N(6,576),  /*ograve*/
+N(6,564),  /*oacute*/
+N(11,429),  /*ocircumflex*/
+N(6,594),  /*otilde*/
+N(9,315),  /*odieresis*/
+N(6,432),  /*divide*/
+N(6,588),  /*oslash*/
+N(6,666),  /*ugrave*/
+N(6,660),  /*uacute*/
+N(11,616),  /*ucircumflex*/
+N(9,477),  /*udieresis*/
+N(6,672),  /*yacute*/
+N(5,180),  /*thorn*/
+N(9,495),  /*ydieresis*/
+0};
 
-static const uint gs_c_std_encoding_offsets[] = {
-4616,4614,4596,4350,3910,3805,3277,3018,2874,2541,2241,1680,1056,653,233,203,123,55,19,0};
+/* SymbolEncoding */
+static const ushort gs_c_known_encoding_2[] = {
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(5,165),  /*space*/
+N(6,474),  /*exclam*/
+N(9,486),  /*universal*/
+N(10,270),  /*numbersign*/
+N(11,396),  /*existential*/
+N(7,245),  /*percent*/
+N(9,72),  /*ampersand*/
+N(8,192),  /*suchthat*/
+N(9,369),  /*parenleft*/
+N(10,290),  /*parenright*/
+N(12,144),  /*asteriskmath*/
+N(4,456),  /*plus*/
+N(5,95),  /*comma*/
+N(5,140),  /*minus*/
+N(6,600),  /*period*/
+N(5,160),  /*slash*/
+N(4,464),  /*zero*/
+N(3,276),  /*one*/
+N(3,294),  /*two*/
+N(5,185),  /*three*/
+N(4,436),  /*four*/
+N(4,432),  /*five*/
+N(3,288),  /*six*/
+N(5,150),  /*seven*/
+N(5,105),  /*eight*/
+N(4,448),  /*nine*/
+N(5,90),  /*colon*/
+N(9,414),  /*semicolon*/
+N(4,444),  /*less*/
+N(5,110),  /*equal*/
+N(7,189),  /*greater*/
+N(8,160),  /*question*/
+N(9,171),  /*congruent*/
+N(5,5),  /*Alpha*/
+N(4,0),  /*Beta*/
+N(3,0),  /*Chi*/
+N(5,15),  /*Delta*/
+N(7,42),  /*Epsilon*/
+N(3,12),  /*Phi*/
+N(5,20),  /*Gamma*/
+N(3,3),  /*Eta*/
+N(4,8),  /*Iota*/
+N(6,654),  /*theta1*/
+N(5,25),  /*Kappa*/
+N(6,156),  /*Lambda*/
+N(2,4),  /*Mu*/
+N(2,6),  /*Nu*/
+N(7,77),  /*Omicron*/
+N(2,10),  /*Pi*/
+N(5,40),  /*Theta*/
+N(3,18),  /*Rho*/
+N(5,35),  /*Sigma*/
+N(3,21),  /*Tau*/
+N(7,98),  /*Upsilon*/
+N(6,642),  /*sigma1*/
+N(5,30),  /*Omega*/
+N(2,12),  /*Xi*/
+N(3,15),  /*Psi*/
+N(4,12),  /*Zeta*/
+N(11,341),  /*bracketleft*/
+N(9,441),  /*therefore*/
+N(12,192),  /*bracketright*/
+N(13,247),  /*perpendicular*/
+N(10,320),  /*underscore*/
+N(9,396),  /*radicalex*/
+N(5,65),  /*alpha*/
+N(4,420),  /*beta*/
+N(3,258),  /*chi*/
+N(5,100),  /*delta*/
+N(7,182),  /*epsilon*/
+N(3,279),  /*phi*/
+N(5,120),  /*gamma*/
+N(3,261),  /*eta*/
+N(4,440),  /*iota*/
+N(4,452),  /*phi1*/
+N(5,135),  /*kappa*/
+N(6,516),  /*lambda*/
+N(2,42),  /*mu*/
+N(2,44),  /*nu*/
+N(7,231),  /*omicron*/
+N(2,48),  /*pi*/
+N(5,175),  /*theta*/
+N(3,285),  /*rho*/
+N(5,155),  /*sigma*/
+N(3,291),  /*tau*/
+N(7,294),  /*upsilon*/
+N(6,582),  /*omega1*/
+N(5,145),  /*omega*/
+N(2,50),  /*xi*/
+N(3,282),  /*psi*/
+N(4,468),  /*zeta*/
+N(9,144),  /*braceleft*/
+N(3,255),  /*bar*/
+N(10,140),  /*braceright*/
+N(7,273),  /*similar*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(4,4),  /*Euro*/
+N(8,40),  /*Upsilon1*/
+N(6,540),  /*minute*/
+N(9,261),  /*lessequal*/
+N(8,104),  /*fraction*/
+N(8,120),  /*infinity*/
+N(6,480),  /*florin*/
+N(4,428),  /*club*/
+N(7,140),  /*diamond*/
+N(5,130),  /*heart*/
+N(5,170),  /*spade*/
+N(9,99),  /*arrowboth*/
+N(9,117),  /*arrowleft*/
+N(7,119),  /*arrowup*/
+N(10,120),  /*arrowright*/
+N(9,108),  /*arrowdown*/
+N(6,426),  /*degree*/
+N(9,378),  /*plusminus*/
+N(6,636),  /*second*/
+N(12,324),  /*greaterequal*/
+N(8,136),  /*multiply*/
+N(12,492),  /*proportional*/
+N(11,517),  /*partialdiff*/
+N(6,390),  /*bullet*/
+N(6,432),  /*divide*/
+N(8,144),  /*notequal*/
+N(11,374),  /*equivalence*/
+N(11,286),  /*approxequal*/
+N(8,88),  /*ellipsis*/
+N(11,297),  /*arrowvertex*/
+N(12,132),  /*arrowhorizex*/
+N(14,154),  /*carriagereturn*/
+N(5,60),  /*aleph*/
+N(8,16),  /*Ifraktur*/
+N(8,24),  /*Rfraktur*/
+N(11,627),  /*weierstrass*/
+N(14,168),  /*circlemultiply*/
+N(10,150),  /*circleplus*/
+N(8,96),  /*emptyset*/
+N(12,348),  /*intersection*/
+N(5,195),  /*union*/
+N(14,350),  /*propersuperset*/
+N(14,378),  /*reflexsuperset*/
+N(9,297),  /*notsubset*/
+N(12,480),  /*propersubset*/
+N(12,552),  /*reflexsubset*/
+N(7,161),  /*element*/
+N(10,260),  /*notelement*/
+N(5,70),  /*angle*/
+N(8,112),  /*gradient*/
+N(13,286),  /*registerserif*/
+N(14,182),  /*copyrightserif*/
+N(14,392),  /*trademarkserif*/
+N(7,252),  /*product*/
+N(7,259),  /*radical*/
+N(7,154),  /*dotmath*/
+N(10,250),  /*logicalnot*/
+N(10,240),  /*logicaland*/
+N(9,270),  /*logicalor*/
+N(12,96),  /*arrowdblboth*/
+N(12,120),  /*arrowdblleft*/
+N(10,110),  /*arrowdblup*/
+N(13,52),  /*arrowdblright*/
+N(12,108),  /*arrowdbldown*/
+N(7,210),  /*lozenge*/
+N(9,81),  /*angleleft*/
+N(12,564),  /*registersans*/
+N(13,156),  /*copyrightsans*/
+N(13,390),  /*trademarksans*/
+N(9,432),  /*summation*/
+N(11,506),  /*parenlefttp*/
+N(11,495),  /*parenleftex*/
+N(11,484),  /*parenleftbt*/
+N(13,104),  /*bracketlefttp*/
+N(13,91),  /*bracketleftex*/
+N(13,78),  /*bracketleftbt*/
+N(11,330),  /*bracelefttp*/
+N(12,156),  /*braceleftmid*/
+N(11,319),  /*braceleftbt*/
+N(7,126),  /*braceex*/
+N(7,0),  /*.notdef*/
+N(10,100),  /*angleright*/
+N(8,128),  /*integral*/
+N(10,230),  /*integraltp*/
+N(10,220),  /*integralex*/
+N(10,210),  /*integralbt*/
+N(12,468),  /*parenrighttp*/
+N(12,456),  /*parenrightex*/
+N(12,444),  /*parenrightbt*/
+N(14,140),  /*bracketrighttp*/
+N(14,126),  /*bracketrightex*/
+N(14,112),  /*bracketrightbt*/
+N(12,180),  /*bracerighttp*/
+N(13,65),  /*bracerightmid*/
+N(12,168),  /*bracerightbt*/
+N(7,0),  /*.notdef*/
+0};
 
-static const ushort gs_c_std_encoding_0[] = {
-C(32,95), I_space, I_exclam, I_quotedbl, I_numbersign, I_dollar, I_percent, I_ampersand, I_quoteright, I_parenleft, I_parenright, I_asterisk, I_plus, I_comma, I_hyphen, I_period, I_slash, I_zero, I_one, I_two, I_three, I_four, I_five, I_six, I_seven, I_eight, I_nine, I_colon, I_semicolon, I_less, I_equal, I_greater, I_question, I_at, I_A, I_B, I_C, I_D, I_E, I_F, I_G, I_H, I_I, I_J, I_K, I_L, I_M, I_N, I_O, I_P, I_Q, I_R, I_S, I_T, I_U, I_V, I_W, I_X, I_Y, I_Z, I_bracketleft, I_backslash, I_bracketright, I_asciicircum, I_underscore, I_quoteleft, I_a, I_b, I_c, I_d, I_e, I_f, I_g, I_h, I_i, I_j, I_k, I_l, I_m, I_n, I_o, I_p, I_q, I_r, I_s, I_t, I_u, I_v, I_w, I_x, I_y, I_z, I_braceleft, I_bar, I_braceright, I_asciitilde, C(34,48), I_exclamdown, I_cent, I_sterling, I_fraction, I_yen, I_florin, I_section, I_currency, I_quotesingle, I_quotedblleft, I_guillemotleft, I_guilsinglleft, I_guilsinglright, I_fi, I_fl, I__notdef, I_endash, I_dagger, I_daggerdbl, I_periodcentered, I__notdef, I_paragraph, I_bullet, I_quotesinglbase, I_quotedblbase, I_quotedblright, I_guillemotright, I_ellipsis, I_perthousand, I__notdef, I_questiondown, I__notdef, I_grave, I_acute, I_circumflex, I_tilde, I_macron, I_breve, I_dotaccent, I_dieresis, I__notdef, I_ring, I_cedilla, I__notdef, I_hungarumlaut, I_ogonek, I_caron, I_emdash, C(16,3), I_AE, I__notdef, I_ordfeminine, C(4,4), I_Lslash, I_Oslash, I_OE, I_ordmasculine, C(5,1), I_ae, C(3,1), I_dotlessi, C(2,4), I_lslash, I_oslash, I_oe, I_germandbls, C(4,0), 0};
+/* DingbatsEncoding */
+static const ushort gs_c_known_encoding_3[] = {
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(5,165),  /*space*/
+N(2,14),  /*a1*/
+N(2,16),  /*a2*/
+N(4,408),  /*a202*/
+N(2,18),  /*a3*/
+N(2,20),  /*a4*/
+N(2,22),  /*a5*/
+N(4,76),  /*a119*/
+N(4,72),  /*a118*/
+N(4,68),  /*a117*/
+N(3,27),  /*a11*/
+N(3,30),  /*a12*/
+N(3,33),  /*a13*/
+N(3,36),  /*a14*/
+N(3,39),  /*a15*/
+N(3,42),  /*a16*/
+N(4,36),  /*a105*/
+N(3,45),  /*a17*/
+N(3,48),  /*a18*/
+N(3,51),  /*a19*/
+N(3,54),  /*a20*/
+N(3,57),  /*a21*/
+N(3,60),  /*a22*/
+N(3,63),  /*a23*/
+N(3,66),  /*a24*/
+N(3,69),  /*a25*/
+N(3,72),  /*a26*/
+N(3,75),  /*a27*/
+N(3,78),  /*a28*/
+N(2,24),  /*a6*/
+N(2,26),  /*a7*/
+N(2,28),  /*a8*/
+N(2,30),  /*a9*/
+N(3,24),  /*a10*/
+N(3,81),  /*a29*/
+N(3,84),  /*a30*/
+N(3,87),  /*a31*/
+N(3,90),  /*a32*/
+N(3,93),  /*a33*/
+N(3,96),  /*a34*/
+N(3,99),  /*a35*/
+N(3,102),  /*a36*/
+N(3,105),  /*a37*/
+N(3,108),  /*a38*/
+N(3,111),  /*a39*/
+N(3,114),  /*a40*/
+N(3,117),  /*a41*/
+N(3,120),  /*a42*/
+N(3,123),  /*a43*/
+N(3,126),  /*a44*/
+N(3,129),  /*a45*/
+N(3,132),  /*a46*/
+N(3,135),  /*a47*/
+N(3,138),  /*a48*/
+N(3,141),  /*a49*/
+N(3,144),  /*a50*/
+N(3,147),  /*a51*/
+N(3,150),  /*a52*/
+N(3,153),  /*a53*/
+N(3,156),  /*a54*/
+N(3,159),  /*a55*/
+N(3,162),  /*a56*/
+N(3,165),  /*a57*/
+N(3,168),  /*a58*/
+N(3,171),  /*a59*/
+N(3,174),  /*a60*/
+N(3,177),  /*a61*/
+N(3,180),  /*a62*/
+N(3,183),  /*a63*/
+N(3,186),  /*a64*/
+N(3,189),  /*a65*/
+N(3,192),  /*a66*/
+N(3,195),  /*a67*/
+N(3,198),  /*a68*/
+N(3,201),  /*a69*/
+N(3,204),  /*a70*/
+N(3,207),  /*a71*/
+N(3,210),  /*a72*/
+N(3,213),  /*a73*/
+N(3,216),  /*a74*/
+N(4,412),  /*a203*/
+N(3,219),  /*a75*/
+N(4,416),  /*a204*/
+N(3,222),  /*a76*/
+N(3,225),  /*a77*/
+N(3,228),  /*a78*/
+N(3,231),  /*a79*/
+N(3,234),  /*a81*/
+N(3,237),  /*a82*/
+N(3,240),  /*a83*/
+N(3,243),  /*a84*/
+N(3,246),  /*a97*/
+N(3,249),  /*a98*/
+N(3,252),  /*a99*/
+N(4,16),  /*a100*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(4,20),  /*a101*/
+N(4,24),  /*a102*/
+N(4,28),  /*a103*/
+N(4,32),  /*a104*/
+N(4,40),  /*a106*/
+N(4,44),  /*a107*/
+N(4,48),  /*a108*/
+N(4,64),  /*a112*/
+N(4,60),  /*a111*/
+N(4,56),  /*a110*/
+N(4,52),  /*a109*/
+N(4,80),  /*a120*/
+N(4,84),  /*a121*/
+N(4,88),  /*a122*/
+N(4,92),  /*a123*/
+N(4,96),  /*a124*/
+N(4,100),  /*a125*/
+N(4,104),  /*a126*/
+N(4,108),  /*a127*/
+N(4,112),  /*a128*/
+N(4,116),  /*a129*/
+N(4,120),  /*a130*/
+N(4,124),  /*a131*/
+N(4,128),  /*a132*/
+N(4,132),  /*a133*/
+N(4,136),  /*a134*/
+N(4,140),  /*a135*/
+N(4,144),  /*a136*/
+N(4,148),  /*a137*/
+N(4,152),  /*a138*/
+N(4,156),  /*a139*/
+N(4,160),  /*a140*/
+N(4,164),  /*a141*/
+N(4,168),  /*a142*/
+N(4,172),  /*a143*/
+N(4,176),  /*a144*/
+N(4,180),  /*a145*/
+N(4,184),  /*a146*/
+N(4,188),  /*a147*/
+N(4,192),  /*a148*/
+N(4,196),  /*a149*/
+N(4,200),  /*a150*/
+N(4,204),  /*a151*/
+N(4,208),  /*a152*/
+N(4,212),  /*a153*/
+N(4,216),  /*a154*/
+N(4,220),  /*a155*/
+N(4,224),  /*a156*/
+N(4,228),  /*a157*/
+N(4,232),  /*a158*/
+N(4,236),  /*a159*/
+N(4,240),  /*a160*/
+N(4,244),  /*a161*/
+N(4,252),  /*a163*/
+N(4,256),  /*a164*/
+N(4,384),  /*a196*/
+N(4,260),  /*a165*/
+N(4,368),  /*a192*/
+N(4,264),  /*a166*/
+N(4,268),  /*a167*/
+N(4,272),  /*a168*/
+N(4,276),  /*a169*/
+N(4,280),  /*a170*/
+N(4,284),  /*a171*/
+N(4,288),  /*a172*/
+N(4,292),  /*a173*/
+N(4,248),  /*a162*/
+N(4,296),  /*a174*/
+N(4,300),  /*a175*/
+N(4,304),  /*a176*/
+N(4,308),  /*a177*/
+N(4,312),  /*a178*/
+N(4,316),  /*a179*/
+N(4,372),  /*a193*/
+N(4,320),  /*a180*/
+N(4,396),  /*a199*/
+N(4,324),  /*a181*/
+N(4,400),  /*a200*/
+N(4,328),  /*a182*/
+N(7,0),  /*.notdef*/
+N(4,404),  /*a201*/
+N(4,332),  /*a183*/
+N(4,336),  /*a184*/
+N(4,388),  /*a197*/
+N(4,340),  /*a185*/
+N(4,376),  /*a194*/
+N(4,392),  /*a198*/
+N(4,344),  /*a186*/
+N(4,380),  /*a195*/
+N(4,348),  /*a187*/
+N(4,352),  /*a188*/
+N(4,356),  /*a189*/
+N(4,360),  /*a190*/
+N(4,364),  /*a191*/
+N(7,0),  /*.notdef*/
+0};
 
-static const ushort gs_c_std_encoding_1[] = {
-C(32,95), I_space, I_exclam, I_quotedbl, I_numbersign, I_dollar, I_percent, I_ampersand, I_quoteright, I_parenleft, I_parenright, I_asterisk, I_plus, I_comma, I_minus, I_period, I_slash, I_zero, I_one, I_two, I_three, I_four, I_five, I_six, I_seven, I_eight, I_nine, I_colon, I_semicolon, I_less, I_equal, I_greater, I_question, I_at, I_A, I_B, I_C, I_D, I_E, I_F, I_G, I_H, I_I, I_J, I_K, I_L, I_M, I_N, I_O, I_P, I_Q, I_R, I_S, I_T, I_U, I_V, I_W, I_X, I_Y, I_Z, I_bracketleft, I_backslash, I_bracketright, I_asciicircum, I_underscore, I_quoteleft, I_a, I_b, I_c, I_d, I_e, I_f, I_g, I_h, I_i, I_j, I_k, I_l, I_m, I_n, I_o, I_p, I_q, I_r, I_s, I_t, I_u, I_v, I_w, I_x, I_y, I_z, I_braceleft, I_bar, I_braceright, I_asciitilde, C(17,112), I_dotlessi, I_grave, I_acute, I_circumflex, I_tilde, I_macron, I_breve, I_dotaccent, I_dieresis, I__notdef, I_ring, I_cedilla, I__notdef, I_hungarumlaut, I_ogonek, I_caron, I_space, I_exclamdown, I_cent, I_sterling, I_currency, I_yen, I_brokenbar, I_section, I_dieresis, I_copyright, I_ordfeminine, I_guillemotleft, I_logicalnot, I_hyphen, I_registered, I_macron, I_degree, I_plusminus, I_twosuperior, I_threesuperior, I_acute, I_mu, I_paragraph, I_periodcentered, I_cedilla, I_onesuperior, I_ordmasculine, I_guillemotright, I_onequarter, I_onehalf, I_threequarters, I_questiondown, I_Agrave, I_Aacute, I_Acircumflex, I_Atilde, I_Adieresis, I_Aring, I_AE, I_Ccedilla, I_Egrave, I_Eacute, I_Ecircumflex, I_Edieresis, I_Igrave, I_Iacute, I_Icircumflex, I_Idieresis, I_Eth, I_Ntilde, I_Ograve, I_Oacute, I_Ocircumflex, I_Otilde, I_Odieresis, I_multiply, I_Oslash, I_Ugrave, I_Uacute, I_Ucircumflex, I_Udieresis, I_Yacute, I_Thorn, I_germandbls, I_agrave, I_aacute, I_acircumflex, I_atilde, I_adieresis, I_aring, I_ae, I_ccedilla, I_egrave, I_eacute, I_ecircumflex, I_edieresis, I_igrave, I_iacute, I_icircumflex, I_idieresis, I_eth, I_ntilde, I_ograve, I_oacute, I_ocircumflex, I_otilde, I_odieresis, I_divide, I_oslash, I_ugrave, I_uacute, I_ucircumflex, I_udieresis, I_yacute, I_thorn, I_ydieresis, 0};
+/* WinAnsiEncoding */
+static const ushort gs_c_known_encoding_4[] = {
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(5,165),  /*space*/
+N(6,474),  /*exclam*/
+N(8,168),  /*quotedbl*/
+N(10,270),  /*numbersign*/
+N(6,438),  /*dollar*/
+N(7,245),  /*percent*/
+N(9,72),  /*ampersand*/
+N(11,539),  /*quotesingle*/
+N(9,369),  /*parenleft*/
+N(10,290),  /*parenright*/
+N(8,48),  /*asterisk*/
+N(4,456),  /*plus*/
+N(5,95),  /*comma*/
+N(6,492),  /*hyphen*/
+N(6,600),  /*period*/
+N(5,160),  /*slash*/
+N(4,464),  /*zero*/
+N(3,276),  /*one*/
+N(3,294),  /*two*/
+N(5,185),  /*three*/
+N(4,436),  /*four*/
+N(4,432),  /*five*/
+N(3,288),  /*six*/
+N(5,150),  /*seven*/
+N(5,105),  /*eight*/
+N(4,448),  /*nine*/
+N(5,90),  /*colon*/
+N(9,414),  /*semicolon*/
+N(4,444),  /*less*/
+N(5,110),  /*equal*/
+N(7,189),  /*greater*/
+N(8,160),  /*question*/
+N(2,34),  /*at*/
+N(1,0),  /*A*/
+N(1,1),  /*B*/
+N(1,2),  /*C*/
+N(1,3),  /*D*/
+N(1,4),  /*E*/
+N(1,5),  /*F*/
+N(1,6),  /*G*/
+N(1,7),  /*H*/
+N(1,8),  /*I*/
+N(1,9),  /*J*/
+N(1,10),  /*K*/
+N(1,11),  /*L*/
+N(1,12),  /*M*/
+N(1,13),  /*N*/
+N(1,14),  /*O*/
+N(1,15),  /*P*/
+N(1,16),  /*Q*/
+N(1,17),  /*R*/
+N(1,18),  /*S*/
+N(1,19),  /*T*/
+N(1,20),  /*U*/
+N(1,21),  /*V*/
+N(1,22),  /*W*/
+N(1,23),  /*X*/
+N(1,24),  /*Y*/
+N(1,25),  /*Z*/
+N(11,341),  /*bracketleft*/
+N(9,135),  /*backslash*/
+N(12,192),  /*bracketright*/
+N(11,308),  /*asciicircum*/
+N(10,320),  /*underscore*/
+N(5,125),  /*grave*/
+N(1,26),  /*a*/
+N(1,27),  /*b*/
+N(1,28),  /*c*/
+N(1,29),  /*d*/
+N(1,30),  /*e*/
+N(1,31),  /*f*/
+N(1,32),  /*g*/
+N(1,33),  /*h*/
+N(1,34),  /*i*/
+N(1,35),  /*j*/
+N(1,36),  /*k*/
+N(1,37),  /*l*/
+N(1,38),  /*m*/
+N(1,39),  /*n*/
+N(1,40),  /*o*/
+N(1,41),  /*p*/
+N(1,42),  /*q*/
+N(1,43),  /*r*/
+N(1,44),  /*s*/
+N(1,45),  /*t*/
+N(1,46),  /*u*/
+N(1,47),  /*v*/
+N(1,48),  /*w*/
+N(1,49),  /*x*/
+N(1,50),  /*y*/
+N(1,51),  /*z*/
+N(9,144),  /*braceleft*/
+N(3,255),  /*bar*/
+N(10,140),  /*braceright*/
+N(10,130),  /*asciitilde*/
+N(6,390),  /*bullet*/
+N(4,4),  /*Euro*/
+N(6,390),  /*bullet*/
+N(14,364),  /*quotesinglbase*/
+N(6,480),  /*florin*/
+N(12,516),  /*quotedblbase*/
+N(8,88),  /*ellipsis*/
+N(6,408),  /*dagger*/
+N(9,189),  /*daggerdbl*/
+N(10,160),  /*circumflex*/
+N(11,528),  /*perthousand*/
+N(6,276),  /*Scaron*/
+N(13,221),  /*guilsinglleft*/
+N(2,8),  /*OE*/
+N(6,390),  /*bullet*/
+N(6,354),  /*Zcaron*/
+N(6,390),  /*bullet*/
+N(6,390),  /*bullet*/
+N(9,387),  /*quoteleft*/
+N(10,300),  /*quoteright*/
+N(12,528),  /*quotedblleft*/
+N(13,273),  /*quotedblright*/
+N(6,390),  /*bullet*/
+N(6,468),  /*endash*/
+N(6,462),  /*emdash*/
+N(5,190),  /*tilde*/
+N(9,450),  /*trademark*/
+N(6,630),  /*scaron*/
+N(14,252),  /*guilsinglright*/
+N(2,46),  /*oe*/
+N(6,390),  /*bullet*/
+N(6,684),  /*zcaron*/
+N(9,54),  /*Ydieresis*/
+N(5,165),  /*space*/
+N(10,180),  /*exclamdown*/
+N(4,424),  /*cent*/
+N(8,184),  /*sterling*/
+N(8,64),  /*currency*/
+N(3,297),  /*yen*/
+N(9,153),  /*brokenbar*/
+N(7,266),  /*section*/
+N(8,72),  /*dieresis*/
+N(9,180),  /*copyright*/
+N(11,473),  /*ordfeminine*/
+N(13,208),  /*guillemotleft*/
+N(10,250),  /*logicalnot*/
+N(6,492),  /*hyphen*/
+N(10,310),  /*registered*/
+N(6,534),  /*macron*/
+N(6,426),  /*degree*/
+N(9,378),  /*plusminus*/
+N(11,605),  /*twosuperior*/
+N(13,377),  /*threesuperior*/
+N(5,55),  /*acute*/
+N(2,42),  /*mu*/
+N(9,360),  /*paragraph*/
+N(14,308),  /*periodcentered*/
+N(7,133),  /*cedilla*/
+N(11,462),  /*onesuperior*/
+N(12,432),  /*ordmasculine*/
+N(14,238),  /*guillemotright*/
+N(10,280),  /*onequarter*/
+N(7,238),  /*onehalf*/
+N(13,364),  /*threequarters*/
+N(12,504),  /*questiondown*/
+N(6,12),  /*Agrave*/
+N(6,0),  /*Aacute*/
+N(11,11),  /*Acircumflex*/
+N(6,24),  /*Atilde*/
+N(9,0),  /*Adieresis*/
+N(5,10),  /*Aring*/
+N(2,0),  /*AE*/
+N(8,0),  /*Ccedilla*/
+N(6,84),  /*Egrave*/
+N(6,72),  /*Eacute*/
+N(11,55),  /*Ecircumflex*/
+N(9,9),  /*Edieresis*/
+N(6,126),  /*Igrave*/
+N(6,120),  /*Iacute*/
+N(11,88),  /*Icircumflex*/
+N(9,18),  /*Idieresis*/
+N(3,6),  /*Eth*/
+N(6,204),  /*Ntilde*/
+N(6,216),  /*Ograve*/
+N(6,210),  /*Oacute*/
+N(11,154),  /*Ocircumflex*/
+N(6,234),  /*Otilde*/
+N(9,27),  /*Odieresis*/
+N(8,136),  /*multiply*/
+N(6,222),  /*Oslash*/
+N(6,306),  /*Ugrave*/
+N(6,300),  /*Uacute*/
+N(11,231),  /*Ucircumflex*/
+N(9,45),  /*Udieresis*/
+N(6,336),  /*Yacute*/
+N(5,45),  /*Thorn*/
+N(10,200),  /*germandbls*/
+N(6,378),  /*agrave*/
+N(6,366),  /*aacute*/
+N(11,275),  /*acircumflex*/
+N(6,384),  /*atilde*/
+N(9,63),  /*adieresis*/
+N(5,75),  /*aring*/
+N(2,32),  /*ae*/
+N(8,56),  /*ccedilla*/
+N(6,456),  /*egrave*/
+N(6,444),  /*eacute*/
+N(11,363),  /*ecircumflex*/
+N(9,216),  /*edieresis*/
+N(6,504),  /*igrave*/
+N(6,498),  /*iacute*/
+N(11,418),  /*icircumflex*/
+N(9,234),  /*idieresis*/
+N(3,264),  /*eth*/
+N(6,558),  /*ntilde*/
+N(6,576),  /*ograve*/
+N(6,564),  /*oacute*/
+N(11,429),  /*ocircumflex*/
+N(6,594),  /*otilde*/
+N(9,315),  /*odieresis*/
+N(6,432),  /*divide*/
+N(6,588),  /*oslash*/
+N(6,666),  /*ugrave*/
+N(6,660),  /*uacute*/
+N(11,616),  /*ucircumflex*/
+N(9,477),  /*udieresis*/
+N(6,672),  /*yacute*/
+N(5,180),  /*thorn*/
+N(9,495),  /*ydieresis*/
+0};
 
-static const ushort gs_c_std_encoding_2[] = {
-C(32,95), I_space, I_exclam, I_universal, I_numbersign, I_existential, I_percent, I_ampersand, I_suchthat, I_parenleft, I_parenright, I_asteriskmath, I_plus, I_comma, I_minus, I_period, I_slash, I_zero, I_one, I_two, I_three, I_four, I_five, I_six, I_seven, I_eight, I_nine, I_colon, I_semicolon, I_less, I_equal, I_greater, I_question, I_congruent, I_Alpha, I_Beta, I_Chi, I_Delta, I_Epsilon, I_Phi, I_Gamma, I_Eta, I_Iota, I_theta1, I_Kappa, I_Lambda, I_Mu, I_Nu, I_Omicron, I_Pi, I_Theta, I_Rho, I_Sigma, I_Tau, I_Upsilon, I_sigma1, I_Omega, I_Xi, I_Psi, I_Zeta, I_bracketleft, I_therefore, I_bracketright, I_perpendicular, I_underscore, I_radicalex, I_alpha, I_beta, I_chi, I_delta, I_epsilon, I_phi, I_gamma, I_eta, I_iota, I_phi1, I_kappa, I_lambda, I_mu, I_nu, I_omicron, I_pi, I_theta, I_rho, I_sigma, I_tau, I_upsilon, I_omega1, I_omega, I_xi, I_psi, I_zeta, I_braceleft, I_bar, I_braceright, I_similar, C(33,96), I_Euro, I_Upsilon1, I_minute, I_lessequal, I_fraction, I_infinity, I_florin, I_club, I_diamond, I_heart, I_spade, I_arrowboth, I_arrowleft, I_arrowup, I_arrowright, I_arrowdown, I_degree, I_plusminus, I_second, I_greaterequal, I_multiply, I_proportional, I_partialdiff, I_bullet, I_divide, I_notequal, I_equivalence, I_approxequal, I_ellipsis, I_arrowvertex, I_arrowhorizex, I_carriagereturn, I_aleph, I_Ifraktur, I_Rfraktur, I_weierstrass, I_circlemultiply, I_circleplus, I_emptyset, I_intersection, I_union, I_propersuperset, I_reflexsuperset, I_notsubset, I_propersubset, I_reflexsubset, I_element, I_notelement, I_angle, I_gradient, I_registerserif, I_copyrightserif, I_trademarkserif, I_product, I_radical, I_dotmath, I_logicalnot, I_logicaland, I_logicalor, I_arrowdblboth, I_arrowdblleft, I_arrowdblup, I_arrowdblright, I_arrowdbldown, I_lozenge, I_angleleft, I_registersans, I_copyrightsans, I_trademarksans, I_summation, I_parenlefttp, I_parenleftex, I_parenleftbt, I_bracketlefttp, I_bracketleftex, I_bracketleftbt, I_bracelefttp, I_braceleftmid, I_braceleftbt, I_braceex, I__notdef, I_angleright, I_integral, I_integraltp, I_integralex, I_integralbt, I_parenrighttp, I_parenrightex, I_parenrightbt, I_bracketrighttp, I_bracketrightex, I_bracketrightbt, I_bracerighttp, I_bracerightmid, I_bracerightbt, I__notdef, 0};
+/* MacRomanEncoding */
+static const ushort gs_c_known_encoding_5[] = {
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(5,165),  /*space*/
+N(6,474),  /*exclam*/
+N(8,168),  /*quotedbl*/
+N(10,270),  /*numbersign*/
+N(6,438),  /*dollar*/
+N(7,245),  /*percent*/
+N(9,72),  /*ampersand*/
+N(11,539),  /*quotesingle*/
+N(9,369),  /*parenleft*/
+N(10,290),  /*parenright*/
+N(8,48),  /*asterisk*/
+N(4,456),  /*plus*/
+N(5,95),  /*comma*/
+N(6,492),  /*hyphen*/
+N(6,600),  /*period*/
+N(5,160),  /*slash*/
+N(4,464),  /*zero*/
+N(3,276),  /*one*/
+N(3,294),  /*two*/
+N(5,185),  /*three*/
+N(4,436),  /*four*/
+N(4,432),  /*five*/
+N(3,288),  /*six*/
+N(5,150),  /*seven*/
+N(5,105),  /*eight*/
+N(4,448),  /*nine*/
+N(5,90),  /*colon*/
+N(9,414),  /*semicolon*/
+N(4,444),  /*less*/
+N(5,110),  /*equal*/
+N(7,189),  /*greater*/
+N(8,160),  /*question*/
+N(2,34),  /*at*/
+N(1,0),  /*A*/
+N(1,1),  /*B*/
+N(1,2),  /*C*/
+N(1,3),  /*D*/
+N(1,4),  /*E*/
+N(1,5),  /*F*/
+N(1,6),  /*G*/
+N(1,7),  /*H*/
+N(1,8),  /*I*/
+N(1,9),  /*J*/
+N(1,10),  /*K*/
+N(1,11),  /*L*/
+N(1,12),  /*M*/
+N(1,13),  /*N*/
+N(1,14),  /*O*/
+N(1,15),  /*P*/
+N(1,16),  /*Q*/
+N(1,17),  /*R*/
+N(1,18),  /*S*/
+N(1,19),  /*T*/
+N(1,20),  /*U*/
+N(1,21),  /*V*/
+N(1,22),  /*W*/
+N(1,23),  /*X*/
+N(1,24),  /*Y*/
+N(1,25),  /*Z*/
+N(11,341),  /*bracketleft*/
+N(9,135),  /*backslash*/
+N(12,192),  /*bracketright*/
+N(11,308),  /*asciicircum*/
+N(10,320),  /*underscore*/
+N(5,125),  /*grave*/
+N(1,26),  /*a*/
+N(1,27),  /*b*/
+N(1,28),  /*c*/
+N(1,29),  /*d*/
+N(1,30),  /*e*/
+N(1,31),  /*f*/
+N(1,32),  /*g*/
+N(1,33),  /*h*/
+N(1,34),  /*i*/
+N(1,35),  /*j*/
+N(1,36),  /*k*/
+N(1,37),  /*l*/
+N(1,38),  /*m*/
+N(1,39),  /*n*/
+N(1,40),  /*o*/
+N(1,41),  /*p*/
+N(1,42),  /*q*/
+N(1,43),  /*r*/
+N(1,44),  /*s*/
+N(1,45),  /*t*/
+N(1,46),  /*u*/
+N(1,47),  /*v*/
+N(1,48),  /*w*/
+N(1,49),  /*x*/
+N(1,50),  /*y*/
+N(1,51),  /*z*/
+N(9,144),  /*braceleft*/
+N(3,255),  /*bar*/
+N(10,140),  /*braceright*/
+N(10,130),  /*asciitilde*/
+N(7,0),  /*.notdef*/
+N(9,0),  /*Adieresis*/
+N(5,10),  /*Aring*/
+N(8,0),  /*Ccedilla*/
+N(6,72),  /*Eacute*/
+N(6,204),  /*Ntilde*/
+N(9,27),  /*Odieresis*/
+N(9,45),  /*Udieresis*/
+N(6,366),  /*aacute*/
+N(6,378),  /*agrave*/
+N(11,275),  /*acircumflex*/
+N(9,63),  /*adieresis*/
+N(6,384),  /*atilde*/
+N(5,75),  /*aring*/
+N(8,56),  /*ccedilla*/
+N(6,444),  /*eacute*/
+N(6,456),  /*egrave*/
+N(11,363),  /*ecircumflex*/
+N(9,216),  /*edieresis*/
+N(6,498),  /*iacute*/
+N(6,504),  /*igrave*/
+N(11,418),  /*icircumflex*/
+N(9,234),  /*idieresis*/
+N(6,558),  /*ntilde*/
+N(6,564),  /*oacute*/
+N(6,576),  /*ograve*/
+N(11,429),  /*ocircumflex*/
+N(9,315),  /*odieresis*/
+N(6,594),  /*otilde*/
+N(6,660),  /*uacute*/
+N(6,666),  /*ugrave*/
+N(11,616),  /*ucircumflex*/
+N(9,477),  /*udieresis*/
+N(6,408),  /*dagger*/
+N(6,426),  /*degree*/
+N(4,424),  /*cent*/
+N(8,184),  /*sterling*/
+N(7,266),  /*section*/
+N(6,390),  /*bullet*/
+N(9,360),  /*paragraph*/
+N(10,200),  /*germandbls*/
+N(10,310),  /*registered*/
+N(9,180),  /*copyright*/
+N(9,450),  /*trademark*/
+N(5,55),  /*acute*/
+N(8,72),  /*dieresis*/
+N(7,0),  /*.notdef*/
+N(2,0),  /*AE*/
+N(6,222),  /*Oslash*/
+N(7,0),  /*.notdef*/
+N(9,378),  /*plusminus*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(3,297),  /*yen*/
+N(2,42),  /*mu*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(11,473),  /*ordfeminine*/
+N(12,432),  /*ordmasculine*/
+N(7,0),  /*.notdef*/
+N(2,32),  /*ae*/
+N(6,588),  /*oslash*/
+N(12,504),  /*questiondown*/
+N(10,180),  /*exclamdown*/
+N(10,250),  /*logicalnot*/
+N(7,0),  /*.notdef*/
+N(6,480),  /*florin*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(13,208),  /*guillemotleft*/
+N(14,238),  /*guillemotright*/
+N(8,88),  /*ellipsis*/
+N(5,165),  /*space*/
+N(6,12),  /*Agrave*/
+N(6,24),  /*Atilde*/
+N(6,234),  /*Otilde*/
+N(2,8),  /*OE*/
+N(2,46),  /*oe*/
+N(6,468),  /*endash*/
+N(6,462),  /*emdash*/
+N(12,528),  /*quotedblleft*/
+N(13,273),  /*quotedblright*/
+N(9,387),  /*quoteleft*/
+N(10,300),  /*quoteright*/
+N(6,432),  /*divide*/
+N(7,0),  /*.notdef*/
+N(9,495),  /*ydieresis*/
+N(9,54),  /*Ydieresis*/
+N(8,104),  /*fraction*/
+N(8,64),  /*currency*/
+N(13,221),  /*guilsinglleft*/
+N(14,252),  /*guilsinglright*/
+N(2,38),  /*fi*/
+N(2,40),  /*fl*/
+N(9,189),  /*daggerdbl*/
+N(14,308),  /*periodcentered*/
+N(14,364),  /*quotesinglbase*/
+N(12,516),  /*quotedblbase*/
+N(11,528),  /*perthousand*/
+N(11,11),  /*Acircumflex*/
+N(11,55),  /*Ecircumflex*/
+N(6,0),  /*Aacute*/
+N(9,9),  /*Edieresis*/
+N(6,84),  /*Egrave*/
+N(6,120),  /*Iacute*/
+N(11,88),  /*Icircumflex*/
+N(9,18),  /*Idieresis*/
+N(6,126),  /*Igrave*/
+N(6,210),  /*Oacute*/
+N(11,154),  /*Ocircumflex*/
+N(7,0),  /*.notdef*/
+N(6,216),  /*Ograve*/
+N(6,300),  /*Uacute*/
+N(11,231),  /*Ucircumflex*/
+N(6,306),  /*Ugrave*/
+N(8,80),  /*dotlessi*/
+N(10,160),  /*circumflex*/
+N(5,190),  /*tilde*/
+N(6,534),  /*macron*/
+N(5,80),  /*breve*/
+N(9,198),  /*dotaccent*/
+N(4,460),  /*ring*/
+N(7,133),  /*cedilla*/
+N(12,336),  /*hungarumlaut*/
+N(6,570),  /*ogonek*/
+N(5,85),  /*caron*/
+0};
 
-static const ushort gs_c_std_encoding_3[] = {
-C(32,95), I_space, I_a1, I_a2, I_a202, I_a3, I_a4, I_a5, I_a119, I_a118, I_a117, I_a11, I_a12, I_a13, I_a14, I_a15, I_a16, I_a105, I_a17, I_a18, I_a19, I_a20, I_a21, I_a22, I_a23, I_a24, I_a25, I_a26, I_a27, I_a28, I_a6, I_a7, I_a8, I_a9, I_a10, I_a29, I_a30, I_a31, I_a32, I_a33, I_a34, I_a35, I_a36, I_a37, I_a38, I_a39, I_a40, I_a41, I_a42, I_a43, I_a44, I_a45, I_a46, I_a47, I_a48, I_a49, I_a50, I_a51, I_a52, I_a53, I_a54, I_a55, I_a56, I_a57, I_a58, I_a59, I_a60, I_a61, I_a62, I_a63, I_a64, I_a65, I_a66, I_a67, I_a68, I_a69, I_a70, I_a71, I_a72, I_a73, I_a74, I_a203, I_a75, I_a204, I_a76, I_a77, I_a78, I_a79, I_a81, I_a82, I_a83, I_a84, I_a97, I_a98, I_a99, I_a100, C(34,95), I_a101, I_a102, I_a103, I_a104, I_a106, I_a107, I_a108, I_a112, I_a111, I_a110, I_a109, I_a120, I_a121, I_a122, I_a123, I_a124, I_a125, I_a126, I_a127, I_a128, I_a129, I_a130, I_a131, I_a132, I_a133, I_a134, I_a135, I_a136, I_a137, I_a138, I_a139, I_a140, I_a141, I_a142, I_a143, I_a144, I_a145, I_a146, I_a147, I_a148, I_a149, I_a150, I_a151, I_a152, I_a153, I_a154, I_a155, I_a156, I_a157, I_a158, I_a159, I_a160, I_a161, I_a163, I_a164, I_a196, I_a165, I_a192, I_a166, I_a167, I_a168, I_a169, I_a170, I_a171, I_a172, I_a173, I_a162, I_a174, I_a175, I_a176, I_a177, I_a178, I_a179, I_a193, I_a180, I_a199, I_a181, I_a200, I_a182, I__notdef, I_a201, I_a183, I_a184, I_a197, I_a185, I_a194, I_a198, I_a186, I_a195, I_a187, I_a188, I_a189, I_a190, I_a191, I__notdef, 0};
+/* MacExpertEncoding */
+static const ushort gs_c_known_encoding_6[] = {
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(5,165),  /*space*/
+N(11,385),  /*exclamsmall*/
+N(17,0),  /*Hungarumlautsmall*/
+N(12,216),  /*centoldstyle*/
+N(14,210),  /*dollaroldstyle*/
+N(14,224),  /*dollarsuperior*/
+N(14,98),  /*ampersandsmall*/
+N(10,0),  /*Acutesmall*/
+N(17,34),  /*parenleftsuperior*/
+N(18,18),  /*parenrightsuperior*/
+N(14,406),  /*twodotenleader*/
+N(14,294),  /*onedotenleader*/
+N(5,95),  /*comma*/
+N(6,492),  /*hyphen*/
+N(6,600),  /*period*/
+N(8,104),  /*fraction*/
+N(12,636),  /*zerooldstyle*/
+N(11,451),  /*oneoldstyle*/
+N(11,594),  /*twooldstyle*/
+N(13,351),  /*threeoldstyle*/
+N(12,288),  /*fouroldstyle*/
+N(12,252),  /*fiveoldstyle*/
+N(11,561),  /*sixoldstyle*/
+N(13,312),  /*sevenoldstyle*/
+N(13,182),  /*eightoldstyle*/
+N(12,408),  /*nineoldstyle*/
+N(5,90),  /*colon*/
+N(9,414),  /*semicolon*/
+N(7,0),  /*.notdef*/
+N(19,0),  /*threequartersemdash*/
+N(7,0),  /*.notdef*/
+N(13,260),  /*questionsmall*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(8,8),  /*Ethsmall*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(10,280),  /*onequarter*/
+N(7,238),  /*onehalf*/
+N(13,364),  /*threequarters*/
+N(9,324),  /*oneeighth*/
+N(12,612),  /*threeeighths*/
+N(11,407),  /*fiveeighths*/
+N(12,588),  /*seveneighths*/
+N(8,152),  /*onethird*/
+N(9,468),  /*twothirds*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(2,36),  /*ff*/
+N(2,38),  /*fi*/
+N(2,40),  /*fl*/
+N(3,267),  /*ffi*/
+N(3,270),  /*ffl*/
+N(17,17),  /*parenleftinferior*/
+N(7,0),  /*.notdef*/
+N(18,0),  /*parenrightinferior*/
+N(15,0),  /*Circumflexsmall*/
+N(14,266),  /*hypheninferior*/
+N(10,50),  /*Gravesmall*/
+N(6,18),  /*Asmall*/
+N(6,30),  /*Bsmall*/
+N(6,48),  /*Csmall*/
+N(6,66),  /*Dsmall*/
+N(6,90),  /*Esmall*/
+N(6,96),  /*Fsmall*/
+N(6,108),  /*Gsmall*/
+N(6,114),  /*Hsmall*/
+N(6,132),  /*Ismall*/
+N(6,138),  /*Jsmall*/
+N(6,144),  /*Ksmall*/
+N(6,174),  /*Lsmall*/
+N(6,180),  /*Msmall*/
+N(6,198),  /*Nsmall*/
+N(6,228),  /*Osmall*/
+N(6,240),  /*Psmall*/
+N(6,246),  /*Qsmall*/
+N(6,264),  /*Rsmall*/
+N(6,282),  /*Ssmall*/
+N(6,294),  /*Tsmall*/
+N(6,312),  /*Usmall*/
+N(6,318),  /*Vsmall*/
+N(6,324),  /*Wsmall*/
+N(6,330),  /*Xsmall*/
+N(6,342),  /*Ysmall*/
+N(6,360),  /*Zsmall*/
+N(13,117),  /*colonmonetary*/
+N(9,333),  /*onefitted*/
+N(6,618),  /*rupiah*/
+N(10,80),  /*Tildesmall*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(9,126),  /*asuperior*/
+N(12,228),  /*centsuperior*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(11,0),  /*Aacutesmall*/
+N(11,22),  /*Agravesmall*/
+N(16,0),  /*Acircumflexsmall*/
+N(14,0),  /*Adieresissmall*/
+N(11,33),  /*Atildesmall*/
+N(10,10),  /*Aringsmall*/
+N(13,0),  /*Ccedillasmall*/
+N(11,44),  /*Eacutesmall*/
+N(11,66),  /*Egravesmall*/
+N(16,16),  /*Ecircumflexsmall*/
+N(14,28),  /*Edieresissmall*/
+N(11,77),  /*Iacutesmall*/
+N(11,99),  /*Igravesmall*/
+N(16,32),  /*Icircumflexsmall*/
+N(14,42),  /*Idieresissmall*/
+N(11,132),  /*Ntildesmall*/
+N(11,143),  /*Oacutesmall*/
+N(11,176),  /*Ogravesmall*/
+N(16,48),  /*Ocircumflexsmall*/
+N(14,56),  /*Odieresissmall*/
+N(11,198),  /*Otildesmall*/
+N(11,220),  /*Uacutesmall*/
+N(11,242),  /*Ugravesmall*/
+N(16,64),  /*Ucircumflexsmall*/
+N(14,70),  /*Udieresissmall*/
+N(7,0),  /*.notdef*/
+N(13,195),  /*eightsuperior*/
+N(12,276),  /*fourinferior*/
+N(13,338),  /*threeinferior*/
+N(11,550),  /*sixinferior*/
+N(13,169),  /*eightinferior*/
+N(13,299),  /*seveninferior*/
+N(11,209),  /*Scaronsmall*/
+N(7,0),  /*.notdef*/
+N(12,204),  /*centinferior*/
+N(11,583),  /*twoinferior*/
+N(7,0),  /*.notdef*/
+N(13,13),  /*Dieresissmall*/
+N(7,0),  /*.notdef*/
+N(10,30),  /*Caronsmall*/
+N(9,342),  /*osuperior*/
+N(12,240),  /*fiveinferior*/
+N(7,0),  /*.notdef*/
+N(13,130),  /*commainferior*/
+N(14,322),  /*periodinferior*/
+N(11,253),  /*Yacutesmall*/
+N(7,0),  /*.notdef*/
+N(14,196),  /*dollarinferior*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(10,70),  /*Thornsmall*/
+N(7,0),  /*.notdef*/
+N(12,396),  /*nineinferior*/
+N(12,624),  /*zeroinferior*/
+N(11,264),  /*Zcaronsmall*/
+N(7,7),  /*AEsmall*/
+N(11,187),  /*Oslashsmall*/
+N(17,51),  /*questiondownsmall*/
+N(11,440),  /*oneinferior*/
+N(11,110),  /*Lslashsmall*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(12,0),  /*Cedillasmall*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,63),  /*OEsmall*/
+N(10,190),  /*figuredash*/
+N(14,280),  /*hyphensuperior*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(15,15),  /*exclamdownsmall*/
+N(7,0),  /*.notdef*/
+N(14,84),  /*Ydieresissmall*/
+N(7,0),  /*.notdef*/
+N(11,462),  /*onesuperior*/
+N(11,605),  /*twosuperior*/
+N(13,377),  /*threesuperior*/
+N(12,300),  /*foursuperior*/
+N(12,264),  /*fivesuperior*/
+N(11,572),  /*sixsuperior*/
+N(13,325),  /*sevensuperior*/
+N(12,420),  /*ninesuperior*/
+N(12,648),  /*zerosuperior*/
+N(7,0),  /*.notdef*/
+N(9,225),  /*esuperior*/
+N(9,405),  /*rsuperior*/
+N(9,459),  /*tsuperior*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(9,252),  /*isuperior*/
+N(9,423),  /*ssuperior*/
+N(9,207),  /*dsuperior*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(9,279),  /*lsuperior*/
+N(11,165),  /*Ogoneksmall*/
+N(10,20),  /*Brevesmall*/
+N(11,121),  /*Macronsmall*/
+N(9,162),  /*bsuperior*/
+N(9,306),  /*nsuperior*/
+N(9,288),  /*msuperior*/
+N(13,143),  /*commasuperior*/
+N(14,336),  /*periodsuperior*/
+N(14,14),  /*Dotaccentsmall*/
+N(9,36),  /*Ringsmall*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+N(7,0),  /*.notdef*/
+0};
 
-static const ushort gs_c_std_encoding_4[] = {
-C(32,224), I_space, I_exclam, I_quotedbl, I_numbersign, I_dollar, I_percent, I_ampersand, I_quotesingle, I_parenleft, I_parenright, I_asterisk, I_plus, I_comma, I_hyphen, I_period, I_slash, I_zero, I_one, I_two, I_three, I_four, I_five, I_six, I_seven, I_eight, I_nine, I_colon, I_semicolon, I_less, I_equal, I_greater, I_question, I_at, I_A, I_B, I_C, I_D, I_E, I_F, I_G, I_H, I_I, I_J, I_K, I_L, I_M, I_N, I_O, I_P, I_Q, I_R, I_S, I_T, I_U, I_V, I_W, I_X, I_Y, I_Z, I_bracketleft, I_backslash, I_bracketright, I_asciicircum, I_underscore, I_grave, I_a, I_b, I_c, I_d, I_e, I_f, I_g, I_h, I_i, I_j, I_k, I_l, I_m, I_n, I_o, I_p, I_q, I_r, I_s, I_t, I_u, I_v, I_w, I_x, I_y, I_z, I_braceleft, I_bar, I_braceright, I_asciitilde, I_bullet, I_Euro, I_bullet, I_quotesinglbase, I_florin, I_quotedblbase, I_ellipsis, I_dagger, I_daggerdbl, I_circumflex, I_perthousand, I_Scaron, I_guilsinglleft, I_OE, I_bullet, I_Zcaron, I_bullet, I_bullet, I_quoteleft, I_quoteright, I_quotedblleft, I_quotedblright, I_bullet, I_endash, I_emdash, I_tilde, I_trademark, I_scaron, I_guilsinglright, I_oe, I_bullet, I_zcaron, I_Ydieresis, I_space, I_exclamdown, I_cent, I_sterling, I_currency, I_yen, I_brokenbar, I_section, I_dieresis, I_copyright, I_ordfeminine, I_guillemotleft, I_logicalnot, I_hyphen, I_registered, I_macron, I_degree, I_plusminus, I_twosuperior, I_threesuperior, I_acute, I_mu, I_paragraph, I_periodcentered, I_cedilla, I_onesuperior, I_ordmasculine, I_guillemotright, I_onequarter, I_onehalf, I_threequarters, I_questiondown, I_Agrave, I_Aacute, I_Acircumflex, I_Atilde, I_Adieresis, I_Aring, I_AE, I_Ccedilla, I_Egrave, I_Eacute, I_Ecircumflex, I_Edieresis, I_Igrave, I_Iacute, I_Icircumflex, I_Idieresis, I_Eth, I_Ntilde, I_Ograve, I_Oacute, I_Ocircumflex, I_Otilde, I_Odieresis, I_multiply, I_Oslash, I_Ugrave, I_Uacute, I_Ucircumflex, I_Udieresis, I_Yacute, I_Thorn, I_germandbls, I_agrave, I_aacute, I_acircumflex, I_atilde, I_adieresis, I_aring, I_ae, I_ccedilla, I_egrave, I_eacute, I_ecircumflex, I_edieresis, I_igrave, I_iacute, I_icircumflex, I_idieresis, I_eth, I_ntilde, I_ograve, I_oacute, I_ocircumflex, I_otilde, I_odieresis, I_divide, I_oslash, I_ugrave, I_uacute, I_ucircumflex, I_udieresis, I_yacute, I_thorn, I_ydieresis, 0};
+/* MacGlyphEncoding */
+static const ushort gs_c_known_encoding_7[] = {
+N(7,0),  /*.notdef*/
+N(5,0),  /*.null*/
+N(2,2),  /*CR*/
+N(5,165),  /*space*/
+N(6,474),  /*exclam*/
+N(8,168),  /*quotedbl*/
+N(10,270),  /*numbersign*/
+N(6,438),  /*dollar*/
+N(7,245),  /*percent*/
+N(9,72),  /*ampersand*/
+N(11,539),  /*quotesingle*/
+N(9,369),  /*parenleft*/
+N(10,290),  /*parenright*/
+N(8,48),  /*asterisk*/
+N(4,456),  /*plus*/
+N(5,95),  /*comma*/
+N(6,492),  /*hyphen*/
+N(6,600),  /*period*/
+N(5,160),  /*slash*/
+N(4,464),  /*zero*/
+N(3,276),  /*one*/
+N(3,294),  /*two*/
+N(5,185),  /*three*/
+N(4,436),  /*four*/
+N(4,432),  /*five*/
+N(3,288),  /*six*/
+N(5,150),  /*seven*/
+N(5,105),  /*eight*/
+N(4,448),  /*nine*/
+N(5,90),  /*colon*/
+N(9,414),  /*semicolon*/
+N(4,444),  /*less*/
+N(5,110),  /*equal*/
+N(7,189),  /*greater*/
+N(8,160),  /*question*/
+N(2,34),  /*at*/
+N(1,0),  /*A*/
+N(1,1),  /*B*/
+N(1,2),  /*C*/
+N(1,3),  /*D*/
+N(1,4),  /*E*/
+N(1,5),  /*F*/
+N(1,6),  /*G*/
+N(1,7),  /*H*/
+N(1,8),  /*I*/
+N(1,9),  /*J*/
+N(1,10),  /*K*/
+N(1,11),  /*L*/
+N(1,12),  /*M*/
+N(1,13),  /*N*/
+N(1,14),  /*O*/
+N(1,15),  /*P*/
+N(1,16),  /*Q*/
+N(1,17),  /*R*/
+N(1,18),  /*S*/
+N(1,19),  /*T*/
+N(1,20),  /*U*/
+N(1,21),  /*V*/
+N(1,22),  /*W*/
+N(1,23),  /*X*/
+N(1,24),  /*Y*/
+N(1,25),  /*Z*/
+N(11,341),  /*bracketleft*/
+N(9,135),  /*backslash*/
+N(12,192),  /*bracketright*/
+N(11,308),  /*asciicircum*/
+N(10,320),  /*underscore*/
+N(5,125),  /*grave*/
+N(1,26),  /*a*/
+N(1,27),  /*b*/
+N(1,28),  /*c*/
+N(1,29),  /*d*/
+N(1,30),  /*e*/
+N(1,31),  /*f*/
+N(1,32),  /*g*/
+N(1,33),  /*h*/
+N(1,34),  /*i*/
+N(1,35),  /*j*/
+N(1,36),  /*k*/
+N(1,37),  /*l*/
+N(1,38),  /*m*/
+N(1,39),  /*n*/
+N(1,40),  /*o*/
+N(1,41),  /*p*/
+N(1,42),  /*q*/
+N(1,43),  /*r*/
+N(1,44),  /*s*/
+N(1,45),  /*t*/
+N(1,46),  /*u*/
+N(1,47),  /*v*/
+N(1,48),  /*w*/
+N(1,49),  /*x*/
+N(1,50),  /*y*/
+N(1,51),  /*z*/
+N(9,144),  /*braceleft*/
+N(3,255),  /*bar*/
+N(10,140),  /*braceright*/
+N(10,130),  /*asciitilde*/
+N(9,0),  /*Adieresis*/
+N(5,10),  /*Aring*/
+N(8,0),  /*Ccedilla*/
+N(6,72),  /*Eacute*/
+N(6,204),  /*Ntilde*/
+N(9,27),  /*Odieresis*/
+N(9,45),  /*Udieresis*/
+N(6,366),  /*aacute*/
+N(6,378),  /*agrave*/
+N(11,275),  /*acircumflex*/
+N(9,63),  /*adieresis*/
+N(6,384),  /*atilde*/
+N(5,75),  /*aring*/
+N(8,56),  /*ccedilla*/
+N(6,444),  /*eacute*/
+N(6,456),  /*egrave*/
+N(11,363),  /*ecircumflex*/
+N(9,216),  /*edieresis*/
+N(6,498),  /*iacute*/
+N(6,504),  /*igrave*/
+N(11,418),  /*icircumflex*/
+N(9,234),  /*idieresis*/
+N(6,558),  /*ntilde*/
+N(6,564),  /*oacute*/
+N(6,576),  /*ograve*/
+N(11,429),  /*ocircumflex*/
+N(9,315),  /*odieresis*/
+N(6,594),  /*otilde*/
+N(6,660),  /*uacute*/
+N(6,666),  /*ugrave*/
+N(11,616),  /*ucircumflex*/
+N(9,477),  /*udieresis*/
+N(6,408),  /*dagger*/
+N(6,426),  /*degree*/
+N(4,424),  /*cent*/
+N(8,184),  /*sterling*/
+N(7,266),  /*section*/
+N(6,390),  /*bullet*/
+N(9,360),  /*paragraph*/
+N(10,200),  /*germandbls*/
+N(10,310),  /*registered*/
+N(9,180),  /*copyright*/
+N(9,450),  /*trademark*/
+N(5,55),  /*acute*/
+N(8,72),  /*dieresis*/
+N(8,144),  /*notequal*/
+N(2,0),  /*AE*/
+N(6,222),  /*Oslash*/
+N(8,120),  /*infinity*/
+N(9,378),  /*plusminus*/
+N(9,261),  /*lessequal*/
+N(12,324),  /*greaterequal*/
+N(3,297),  /*yen*/
+N(3,273),  /*mu1*/
+N(11,517),  /*partialdiff*/
+N(9,432),  /*summation*/
+N(7,252),  /*product*/
+N(2,48),  /*pi*/
+N(8,128),  /*integral*/
+N(11,473),  /*ordfeminine*/
+N(12,432),  /*ordmasculine*/
+N(3,9),  /*Ohm*/
+N(2,32),  /*ae*/
+N(6,588),  /*oslash*/
+N(12,504),  /*questiondown*/
+N(10,180),  /*exclamdown*/
+N(10,250),  /*logicalnot*/
+N(7,259),  /*radical*/
+N(6,480),  /*florin*/
+N(11,286),  /*approxequal*/
+N(9,243),  /*increment*/
+N(13,208),  /*guillemotleft*/
+N(14,238),  /*guillemotright*/
+N(8,88),  /*ellipsis*/
+N(7,217),  /*nbspace*/
+N(6,12),  /*Agrave*/
+N(6,24),  /*Atilde*/
+N(6,234),  /*Otilde*/
+N(2,8),  /*OE*/
+N(2,46),  /*oe*/
+N(6,468),  /*endash*/
+N(6,462),  /*emdash*/
+N(12,528),  /*quotedblleft*/
+N(13,273),  /*quotedblright*/
+N(9,387),  /*quoteleft*/
+N(10,300),  /*quoteright*/
+N(6,432),  /*divide*/
+N(7,210),  /*lozenge*/
+N(9,495),  /*ydieresis*/
+N(9,54),  /*Ydieresis*/
+N(8,104),  /*fraction*/
+N(8,64),  /*currency*/
+N(13,221),  /*guilsinglleft*/
+N(14,252),  /*guilsinglright*/
+N(2,38),  /*fi*/
+N(2,40),  /*fl*/
+N(9,189),  /*daggerdbl*/
+N(14,308),  /*periodcentered*/
+N(14,364),  /*quotesinglbase*/
+N(12,516),  /*quotedblbase*/
+N(11,528),  /*perthousand*/
+N(11,11),  /*Acircumflex*/
+N(11,55),  /*Ecircumflex*/
+N(6,0),  /*Aacute*/
+N(9,9),  /*Edieresis*/
+N(6,84),  /*Egrave*/
+N(6,120),  /*Iacute*/
+N(11,88),  /*Icircumflex*/
+N(9,18),  /*Idieresis*/
+N(6,126),  /*Igrave*/
+N(6,210),  /*Oacute*/
+N(11,154),  /*Ocircumflex*/
+N(9,90),  /*applelogo*/
+N(6,216),  /*Ograve*/
+N(6,300),  /*Uacute*/
+N(11,231),  /*Ucircumflex*/
+N(6,306),  /*Ugrave*/
+N(8,80),  /*dotlessi*/
+N(10,160),  /*circumflex*/
+N(5,190),  /*tilde*/
+N(9,351),  /*overscore*/
+N(5,80),  /*breve*/
+N(9,198),  /*dotaccent*/
+N(4,460),  /*ring*/
+N(7,133),  /*cedilla*/
+N(12,336),  /*hungarumlaut*/
+N(6,570),  /*ogonek*/
+N(5,85),  /*caron*/
+N(6,168),  /*Lslash*/
+N(6,528),  /*lslash*/
+N(6,276),  /*Scaron*/
+N(6,630),  /*scaron*/
+N(6,354),  /*Zcaron*/
+N(6,684),  /*zcaron*/
+N(9,153),  /*brokenbar*/
+N(3,6),  /*Eth*/
+N(3,264),  /*eth*/
+N(6,336),  /*Yacute*/
+N(6,672),  /*yacute*/
+N(5,45),  /*Thorn*/
+N(5,180),  /*thorn*/
+N(5,140),  /*minus*/
+N(8,136),  /*multiply*/
+N(11,462),  /*onesuperior*/
+N(11,605),  /*twosuperior*/
+N(13,377),  /*threesuperior*/
+N(7,238),  /*onehalf*/
+N(10,280),  /*onequarter*/
+N(13,364),  /*threequarters*/
+N(5,115),  /*franc*/
+N(6,102),  /*Gbreve*/
+N(6,486),  /*gbreve*/
+N(10,60),  /*Idotaccent*/
+N(8,32),  /*Scedilla*/
+N(8,176),  /*scedilla*/
+N(6,36),  /*Cacute*/
+N(6,396),  /*cacute*/
+N(6,42),  /*Ccaron*/
+N(6,402),  /*ccaron*/
+N(7,147),  /*dmacron*/
+0};
 
-static const ushort gs_c_std_encoding_5[] = {
-C(32,146), I_space, I_exclam, I_quotedbl, I_numbersign, I_dollar, I_percent, I_ampersand, I_quotesingle, I_parenleft, I_parenright, I_asterisk, I_plus, I_comma, I_hyphen, I_period, I_slash, I_zero, I_one, I_two, I_three, I_four, I_five, I_six, I_seven, I_eight, I_nine, I_colon, I_semicolon, I_less, I_equal, I_greater, I_question, I_at, I_A, I_B, I_C, I_D, I_E, I_F, I_G, I_H, I_I, I_J, I_K, I_L, I_M, I_N, I_O, I_P, I_Q, I_R, I_S, I_T, I_U, I_V, I_W, I_X, I_Y, I_Z, I_bracketleft, I_backslash, I_bracketright, I_asciicircum, I_underscore, I_grave, I_a, I_b, I_c, I_d, I_e, I_f, I_g, I_h, I_i, I_j, I_k, I_l, I_m, I_n, I_o, I_p, I_q, I_r, I_s, I_t, I_u, I_v, I_w, I_x, I_y, I_z, I_braceleft, I_bar, I_braceright, I_asciitilde, I__notdef, I_Adieresis, I_Aring, I_Ccedilla, I_Eacute, I_Ntilde, I_Odieresis, I_Udieresis, I_aacute, I_agrave, I_acircumflex, I_adieresis, I_atilde, I_aring, I_ccedilla, I_eacute, I_egrave, I_ecircumflex, I_edieresis, I_iacute, I_igrave, I_icircumflex, I_idieresis, I_ntilde, I_oacute, I_ograve, I_ocircumflex, I_odieresis, I_otilde, I_uacute, I_ugrave, I_ucircumflex, I_udieresis, I_dagger, I_degree, I_cent, I_sterling, I_section, I_bullet, I_paragraph, I_germandbls, I_registered, I_copyright, I_trademark, I_acute, I_dieresis, I__notdef, I_AE, I_Oslash, I__notdef, I_plusminus, C(2,2), I_yen, I_mu, C(5,10), I_ordfeminine, I_ordmasculine, I__notdef, I_ae, I_oslash, I_questiondown, I_exclamdown, I_logicalnot, I__notdef, I_florin, C(2,57), I_guillemotleft, I_guillemotright, I_ellipsis, I_space, I_Agrave, I_Atilde, I_Otilde, I_OE, I_oe, I_endash, I_emdash, I_quotedblleft, I_quotedblright, I_quoteleft, I_quoteright, I_divide, I__notdef, I_ydieresis, I_Ydieresis, I_fraction, I_currency, I_guilsinglleft, I_guilsinglright, I_fi, I_fl, I_daggerdbl, I_periodcentered, I_quotesinglbase, I_quotedblbase, I_perthousand, I_Acircumflex, I_Ecircumflex, I_Aacute, I_Edieresis, I_Egrave, I_Iacute, I_Icircumflex, I_Idieresis, I_Igrave, I_Oacute, I_Ocircumflex, I__notdef, I_Ograve, I_Uacute, I_Ucircumflex, I_Ugrave, I_dotlessi, I_circumflex, I_tilde, I_macron, I_breve, I_dotaccent, I_ring, I_cedilla, I_hungarumlaut, I_ogonek, I_caron, 0};
+/* AdobeLatinOriginalGlyphEncoding */
+static const ushort gs_c_known_encoding_8[] = {
+N(7,0),  /*.notdef*/
+N(1,0),  /*A*/
+N(2,0),  /*AE*/
+N(6,0),  /*Aacute*/
+N(11,11),  /*Acircumflex*/
+N(9,0),  /*Adieresis*/
+N(6,12),  /*Agrave*/
+N(5,10),  /*Aring*/
+N(6,24),  /*Atilde*/
+N(1,1),  /*B*/
+N(1,2),  /*C*/
+N(8,0),  /*Ccedilla*/
+N(1,3),  /*D*/
+N(1,4),  /*E*/
+N(6,72),  /*Eacute*/
+N(11,55),  /*Ecircumflex*/
+N(9,9),  /*Edieresis*/
+N(6,84),  /*Egrave*/
+N(3,6),  /*Eth*/
+N(1,5),  /*F*/
+N(1,6),  /*G*/
+N(1,7),  /*H*/
+N(1,8),  /*I*/
+N(6,120),  /*Iacute*/
+N(11,88),  /*Icircumflex*/
+N(9,18),  /*Idieresis*/
+N(6,126),  /*Igrave*/
+N(1,9),  /*J*/
+N(1,10),  /*K*/
+N(1,11),  /*L*/
+N(6,168),  /*Lslash*/
+N(1,12),  /*M*/
+N(1,13),  /*N*/
+N(6,204),  /*Ntilde*/
+N(1,14),  /*O*/
+N(2,8),  /*OE*/
+N(6,210),  /*Oacute*/
+N(11,154),  /*Ocircumflex*/
+N(9,27),  /*Odieresis*/
+N(6,216),  /*Ograve*/
+N(6,222),  /*Oslash*/
+N(6,234),  /*Otilde*/
+N(1,15),  /*P*/
+N(1,16),  /*Q*/
+N(1,17),  /*R*/
+N(1,18),  /*S*/
+N(6,276),  /*Scaron*/
+N(1,19),  /*T*/
+N(5,45),  /*Thorn*/
+N(1,20),  /*U*/
+N(6,300),  /*Uacute*/
+N(11,231),  /*Ucircumflex*/
+N(9,45),  /*Udieresis*/
+N(6,306),  /*Ugrave*/
+N(1,21),  /*V*/
+N(1,22),  /*W*/
+N(1,23),  /*X*/
+N(1,24),  /*Y*/
+N(6,336),  /*Yacute*/
+N(9,54),  /*Ydieresis*/
+N(1,25),  /*Z*/
+N(6,354),  /*Zcaron*/
+N(1,26),  /*a*/
+N(6,366),  /*aacute*/
+N(11,275),  /*acircumflex*/
+N(5,55),  /*acute*/
+N(9,63),  /*adieresis*/
+N(2,32),  /*ae*/
+N(6,378),  /*agrave*/
+N(9,72),  /*ampersand*/
+N(5,75),  /*aring*/
+N(11,308),  /*asciicircum*/
+N(10,130),  /*asciitilde*/
+N(8,48),  /*asterisk*/
+N(2,34),  /*at*/
+N(6,384),  /*atilde*/
+N(1,27),  /*b*/
+N(9,135),  /*backslash*/
+N(3,255),  /*bar*/
+N(9,144),  /*braceleft*/
+N(10,140),  /*braceright*/
+N(11,341),  /*bracketleft*/
+N(12,192),  /*bracketright*/
+N(5,80),  /*breve*/
+N(9,153),  /*brokenbar*/
+N(6,390),  /*bullet*/
+N(1,28),  /*c*/
+N(5,85),  /*caron*/
+N(8,56),  /*ccedilla*/
+N(7,133),  /*cedilla*/
+N(4,424),  /*cent*/
+N(10,160),  /*circumflex*/
+N(5,90),  /*colon*/
+N(5,95),  /*comma*/
+N(9,180),  /*copyright*/
+N(8,64),  /*currency*/
+N(1,29),  /*d*/
+N(6,408),  /*dagger*/
+N(9,189),  /*daggerdbl*/
+N(6,426),  /*degree*/
+N(8,72),  /*dieresis*/
+N(6,432),  /*divide*/
+N(6,438),  /*dollar*/
+N(9,198),  /*dotaccent*/
+N(8,80),  /*dotlessi*/
+N(1,30),  /*e*/
+N(6,444),  /*eacute*/
+N(11,363),  /*ecircumflex*/
+N(9,216),  /*edieresis*/
+N(6,456),  /*egrave*/
+N(5,105),  /*eight*/
+N(8,88),  /*ellipsis*/
+N(6,462),  /*emdash*/
+N(6,468),  /*endash*/
+N(5,110),  /*equal*/
+N(3,264),  /*eth*/
+N(6,474),  /*exclam*/
+N(10,180),  /*exclamdown*/
+N(1,31),  /*f*/
+N(2,38),  /*fi*/
+N(4,432),  /*five*/
+N(2,40),  /*fl*/
+N(6,480),  /*florin*/
+N(4,436),  /*four*/
+N(8,104),  /*fraction*/
+N(1,32),  /*g*/
+N(10,200),  /*germandbls*/
+N(5,125),  /*grave*/
+N(7,189),  /*greater*/
+N(13,208),  /*guillemotleft*/
+N(14,238),  /*guillemotright*/
+N(13,221),  /*guilsinglleft*/
+N(14,252),  /*guilsinglright*/
+N(1,33),  /*h*/
+N(12,336),  /*hungarumlaut*/
+N(6,492),  /*hyphen*/
+N(1,34),  /*i*/
+N(6,498),  /*iacute*/
+N(11,418),  /*icircumflex*/
+N(9,234),  /*idieresis*/
+N(6,504),  /*igrave*/
+N(1,35),  /*j*/
+N(1,36),  /*k*/
+N(1,37),  /*l*/
+N(4,444),  /*less*/
+N(10,250),  /*logicalnot*/
+N(6,528),  /*lslash*/
+N(1,38),  /*m*/
+N(6,534),  /*macron*/
+N(5,140),  /*minus*/
+N(2,42),  /*mu*/
+N(8,136),  /*multiply*/
+N(1,39),  /*n*/
+N(4,448),  /*nine*/
+N(6,558),  /*ntilde*/
+N(10,270),  /*numbersign*/
+N(1,40),  /*o*/
+N(6,564),  /*oacute*/
+N(11,429),  /*ocircumflex*/
+N(9,315),  /*odieresis*/
+N(2,46),  /*oe*/
+N(6,570),  /*ogonek*/
+N(6,576),  /*ograve*/
+N(3,276),  /*one*/
+N(7,238),  /*onehalf*/
+N(10,280),  /*onequarter*/
+N(11,462),  /*onesuperior*/
+N(11,473),  /*ordfeminine*/
+N(12,432),  /*ordmasculine*/
+N(6,588),  /*oslash*/
+N(6,594),  /*otilde*/
+N(1,41),  /*p*/
+N(9,360),  /*paragraph*/
+N(9,369),  /*parenleft*/
+N(10,290),  /*parenright*/
+N(7,245),  /*percent*/
+N(6,600),  /*period*/
+N(14,308),  /*periodcentered*/
+N(11,528),  /*perthousand*/
+N(4,456),  /*plus*/
+N(9,378),  /*plusminus*/
+N(1,42),  /*q*/
+N(8,160),  /*question*/
+N(12,504),  /*questiondown*/
+N(8,168),  /*quotedbl*/
+N(12,516),  /*quotedblbase*/
+N(12,528),  /*quotedblleft*/
+N(13,273),  /*quotedblright*/
+N(9,387),  /*quoteleft*/
+N(10,300),  /*quoteright*/
+N(14,364),  /*quotesinglbase*/
+N(11,539),  /*quotesingle*/
+N(1,43),  /*r*/
+N(10,310),  /*registered*/
+N(4,460),  /*ring*/
+N(1,44),  /*s*/
+N(6,630),  /*scaron*/
+N(7,266),  /*section*/
+N(9,414),  /*semicolon*/
+N(5,150),  /*seven*/
+N(3,288),  /*six*/
+N(5,160),  /*slash*/
+N(5,165),  /*space*/
+N(8,184),  /*sterling*/
+N(1,45),  /*t*/
+N(5,180),  /*thorn*/
+N(5,185),  /*three*/
+N(13,364),  /*threequarters*/
+N(13,377),  /*threesuperior*/
+N(5,190),  /*tilde*/
+N(9,450),  /*trademark*/
+N(3,294),  /*two*/
+N(11,605),  /*twosuperior*/
+N(1,46),  /*u*/
+N(6,660),  /*uacute*/
+N(11,616),  /*ucircumflex*/
+N(9,477),  /*udieresis*/
+N(6,666),  /*ugrave*/
+N(10,320),  /*underscore*/
+N(1,47),  /*v*/
+N(1,48),  /*w*/
+N(1,49),  /*x*/
+N(1,50),  /*y*/
+N(6,672),  /*yacute*/
+N(9,495),  /*ydieresis*/
+N(3,297),  /*yen*/
+N(1,51),  /*z*/
+N(6,684),  /*zcaron*/
+N(4,464),  /*zero*/
+0};
 
-static const ushort gs_c_std_encoding_6[] = {
-C(32,32), I_space, I_exclamsmall, I_Hungarumlautsmall, I_centoldstyle, I_dollaroldstyle, I_dollarsuperior, I_ampersandsmall, I_Acutesmall, I_parenleftsuperior, I_parenrightsuperior, I_twodotenleader, I_onedotenleader, I_comma, I_hyphen, I_period, I_fraction, I_zerooldstyle, I_oneoldstyle, I_twooldstyle, I_threeoldstyle, I_fouroldstyle, I_fiveoldstyle, I_sixoldstyle, I_sevenoldstyle, I_eightoldstyle, I_nineoldstyle, I_colon, I_semicolon, I__notdef, I_threequartersemdash, I__notdef, I_questionsmall, C(4,1), I_Ethsmall, C(2,9), I_onequarter, I_onehalf, I_threequarters, I_oneeighth, I_threeeighths, I_fiveeighths, I_seveneighths, I_onethird, I_twothirds, C(6,41), I_ff, I_fi, I_fl, I_ffi, I_ffl, I_parenleftinferior, I__notdef, I_parenrightinferior, I_Circumflexsmall, I_hypheninferior, I_Gravesmall, I_Asmall, I_Bsmall, I_Csmall, I_Dsmall, I_Esmall, I_Fsmall, I_Gsmall, I_Hsmall, I_Ismall, I_Jsmall, I_Ksmall, I_Lsmall, I_Msmall, I_Nsmall, I_Osmall, I_Psmall, I_Qsmall, I_Rsmall, I_Ssmall, I_Tsmall, I_Usmall, I_Vsmall, I_Wsmall, I_Xsmall, I_Ysmall, I_Zsmall, I_colonmonetary, I_onefitted, I_rupiah, I_Tildesmall, C(2,2), I_asuperior, I_centsuperior, C(4,48), I_Aacutesmall, I_Agravesmall, I_Acircumflexsmall, I_Adieresissmall, I_Atildesmall, I_Aringsmall, I_Ccedillasmall, I_Eacutesmall, I_Egravesmall, I_Ecircumflexsmall, I_Edieresissmall, I_Iacutesmall, I_Igravesmall, I_Icircumflexsmall, I_Idieresissmall, I_Ntildesmall, I_Oacutesmall, I_Ogravesmall, I_Ocircumflexsmall, I_Odieresissmall, I_Otildesmall, I_Uacutesmall, I_Ugravesmall, I_Ucircumflexsmall, I_Udieresissmall, I__notdef, I_eightsuperior, I_fourinferior, I_threeinferior, I_sixinferior, I_eightinferior, I_seveninferior, I_Scaronsmall, I__notdef, I_centinferior, I_twoinferior, I__notdef, I_Dieresissmall, I__notdef, I_Caronsmall, I_osuperior, I_fiveinferior, I__notdef, I_commainferior, I_periodinferior, I_Yacutesmall, I__notdef, I_dollarinferior, C(2,10), I_Thornsmall, I__notdef, I_nineinferior, I_zeroinferior, I_Zcaronsmall, I_AEsmall, I_Oslashsmall, I_questiondownsmall, I_oneinferior, I_Lslashsmall, C(6,1), I_Cedillasmall, C(5,3), I_OEsmall, I_figuredash, I_hyphensuperior, C(4,17), I_exclamdownsmall, I__notdef, I_Ydieresissmall, I__notdef, I_onesuperior, I_twosuperior, I_threesuperior, I_foursuperior, I_fivesuperior, I_sixsuperior, I_sevensuperior, I_ninesuperior, I_zerosuperior, I__notdef, I_esuperior, I_rsuperior, I_tsuperior, C(2,3), I_isuperior, I_ssuperior, I_dsuperior, C(5,11), I_lsuperior, I_Ogoneksmall, I_Brevesmall, I_Macronsmall, I_bsuperior, I_nsuperior, I_msuperior, I_commasuperior, I_periodsuperior, I_Dotaccentsmall, I_Ringsmall, C(4,0), 0};
+/* AdobeLatinExtensionGlyphEncoding */
+static const ushort gs_c_known_encoding_9[] = {
+N(6,6),  /*Abreve*/
+N(7,14),  /*Amacron*/
+N(7,21),  /*Aogonek*/
+N(6,36),  /*Cacute*/
+N(6,42),  /*Ccaron*/
+N(6,54),  /*Dcaron*/
+N(6,60),  /*Dcroat*/
+N(5,15),  /*Delta*/
+N(6,78),  /*Ecaron*/
+N(10,40),  /*Edotaccent*/
+N(7,28),  /*Emacron*/
+N(7,35),  /*Eogonek*/
+N(6,102),  /*Gbreve*/
+N(12,12),  /*Gcommaaccent*/
+N(10,60),  /*Idotaccent*/
+N(7,49),  /*Imacron*/
+N(7,56),  /*Iogonek*/
+N(12,24),  /*Kcommaaccent*/
+N(6,150),  /*Lacute*/
+N(6,162),  /*Lcaron*/
+N(12,36),  /*Lcommaaccent*/
+N(6,186),  /*Nacute*/
+N(6,192),  /*Ncaron*/
+N(12,48),  /*Ncommaaccent*/
+N(13,26),  /*Ohungarumlaut*/
+N(7,70),  /*Omacron*/
+N(6,252),  /*Racute*/
+N(6,258),  /*Rcaron*/
+N(12,60),  /*Rcommaaccent*/
+N(6,270),  /*Sacute*/
+N(8,32),  /*Scedilla*/
+N(12,72),  /*Scommaaccent*/
+N(6,288),  /*Tcaron*/
+N(12,84),  /*Tcommaaccent*/
+N(13,39),  /*Uhungarumlaut*/
+N(7,84),  /*Umacron*/
+N(7,91),  /*Uogonek*/
+N(5,50),  /*Uring*/
+N(6,348),  /*Zacute*/
+N(10,90),  /*Zdotaccent*/
+N(6,372),  /*abreve*/
+N(7,105),  /*amacron*/
+N(7,112),  /*aogonek*/
+N(6,396),  /*cacute*/
+N(6,402),  /*ccaron*/
+N(11,352),  /*commaaccent*/
+N(6,414),  /*dcaron*/
+N(6,420),  /*dcroat*/
+N(6,450),  /*ecaron*/
+N(10,170),  /*edotaccent*/
+N(7,168),  /*emacron*/
+N(7,175),  /*eogonek*/
+N(6,486),  /*gbreve*/
+N(12,312),  /*gcommaaccent*/
+N(12,324),  /*greaterequal*/
+N(7,196),  /*imacron*/
+N(7,203),  /*iogonek*/
+N(12,360),  /*kcommaaccent*/
+N(6,510),  /*lacute*/
+N(6,522),  /*lcaron*/
+N(12,372),  /*lcommaaccent*/
+N(9,261),  /*lessequal*/
+N(7,210),  /*lozenge*/
+N(6,546),  /*nacute*/
+N(6,552),  /*ncaron*/
+N(12,384),  /*ncommaaccent*/
+N(8,144),  /*notequal*/
+N(13,234),  /*ohungarumlaut*/
+N(7,224),  /*omacron*/
+N(11,517),  /*partialdiff*/
+N(6,606),  /*racute*/
+N(7,259),  /*radical*/
+N(6,612),  /*rcaron*/
+N(12,540),  /*rcommaaccent*/
+N(6,624),  /*sacute*/
+N(8,176),  /*scedilla*/
+N(12,576),  /*scommaaccent*/
+N(9,432),  /*summation*/
+N(6,648),  /*tcaron*/
+N(12,600),  /*tcommaaccent*/
+N(13,403),  /*uhungarumlaut*/
+N(7,280),  /*umacron*/
+N(7,287),  /*uogonek*/
+N(5,200),  /*uring*/
+N(6,678),  /*zacute*/
+N(10,330),  /*zdotaccent*/
+0};
 
-static const ushort gs_c_std_encoding_7[] = {
-C(1,257), I__null, I_CR, I_space, I_exclam, I_quotedbl, I_numbersign, I_dollar, I_percent, I_ampersand, I_quotesingle, I_parenleft, I_parenright, I_asterisk, I_plus, I_comma, I_hyphen, I_period, I_slash, I_zero, I_one, I_two, I_three, I_four, I_five, I_six, I_seven, I_eight, I_nine, I_colon, I_semicolon, I_less, I_equal, I_greater, I_question, I_at, I_A, I_B, I_C, I_D, I_E, I_F, I_G, I_H, I_I, I_J, I_K, I_L, I_M, I_N, I_O, I_P, I_Q, I_R, I_S, I_T, I_U, I_V, I_W, I_X, I_Y, I_Z, I_bracketleft, I_backslash, I_bracketright, I_asciicircum, I_underscore, I_grave, I_a, I_b, I_c, I_d, I_e, I_f, I_g, I_h, I_i, I_j, I_k, I_l, I_m, I_n, I_o, I_p, I_q, I_r, I_s, I_t, I_u, I_v, I_w, I_x, I_y, I_z, I_braceleft, I_bar, I_braceright, I_asciitilde, I_Adieresis, I_Aring, I_Ccedilla, I_Eacute, I_Ntilde, I_Odieresis, I_Udieresis, I_aacute, I_agrave, I_acircumflex, I_adieresis, I_atilde, I_aring, I_ccedilla, I_eacute, I_egrave, I_ecircumflex, I_edieresis, I_iacute, I_igrave, I_icircumflex, I_idieresis, I_ntilde, I_oacute, I_ograve, I_ocircumflex, I_odieresis, I_otilde, I_uacute, I_ugrave, I_ucircumflex, I_udieresis, I_dagger, I_degree, I_cent, I_sterling, I_section, I_bullet, I_paragraph, I_germandbls, I_registered, I_copyright, I_trademark, I_acute, I_dieresis, I_notequal, I_AE, I_Oslash, I_infinity, I_plusminus, I_lessequal, I_greaterequal, I_yen, I_mu1, I_partialdiff, I_summation, I_product, I_pi, I_integral, I_ordfeminine, I_ordmasculine, I_Ohm, I_ae, I_oslash, I_questiondown, I_exclamdown, I_logicalnot, I_radical, I_florin, I_approxequal, I_increment, I_guillemotleft, I_guillemotright, I_ellipsis, I_nbspace, I_Agrave, I_Atilde, I_Otilde, I_OE, I_oe, I_endash, I_emdash, I_quotedblleft, I_quotedblright, I_quoteleft, I_quoteright, I_divide, I_lozenge, I_ydieresis, I_Ydieresis, I_fraction, I_currency, I_guilsinglleft, I_guilsinglright, I_fi, I_fl, I_daggerdbl, I_periodcentered, I_quotesinglbase, I_quotedblbase, I_perthousand, I_Acircumflex, I_Ecircumflex, I_Aacute, I_Edieresis, I_Egrave, I_Iacute, I_Icircumflex, I_Idieresis, I_Igrave, I_Oacute, I_Ocircumflex, I_applelogo, I_Ograve, I_Uacute, I_Ucircumflex, I_Ugrave, I_dotlessi, I_circumflex, I_tilde, I_overscore, I_breve, I_dotaccent, I_ring, I_cedilla, I_hungarumlaut, I_ogonek, I_caron, I_Lslash, I_lslash, I_Scaron, I_scaron, I_Zcaron, I_zcaron, I_brokenbar, I_Eth, I_eth, I_Yacute, I_yacute, I_Thorn, I_thorn, I_minus, I_multiply, I_onesuperior, I_twosuperior, I_threesuperior, I_onehalf, I_onequarter, I_threequarters, I_franc, I_Gbreve, I_gbreve, I_Idotaccent, I_Scedilla, I_scedilla, I_Cacute, I_cacute, I_Ccaron, I_ccaron, I_dmacron, 0};
+/* CFFStandardStrings */
+static const ushort gs_c_known_encoding_10[] = {
+N(7,0),  /*.notdef*/
+N(5,165),  /*space*/
+N(6,474),  /*exclam*/
+N(8,168),  /*quotedbl*/
+N(10,270),  /*numbersign*/
+N(6,438),  /*dollar*/
+N(7,245),  /*percent*/
+N(9,72),  /*ampersand*/
+N(10,300),  /*quoteright*/
+N(9,369),  /*parenleft*/
+N(10,290),  /*parenright*/
+N(8,48),  /*asterisk*/
+N(4,456),  /*plus*/
+N(5,95),  /*comma*/
+N(6,492),  /*hyphen*/
+N(6,600),  /*period*/
+N(5,160),  /*slash*/
+N(4,464),  /*zero*/
+N(3,276),  /*one*/
+N(3,294),  /*two*/
+N(5,185),  /*three*/
+N(4,436),  /*four*/
+N(4,432),  /*five*/
+N(3,288),  /*six*/
+N(5,150),  /*seven*/
+N(5,105),  /*eight*/
+N(4,448),  /*nine*/
+N(5,90),  /*colon*/
+N(9,414),  /*semicolon*/
+N(4,444),  /*less*/
+N(5,110),  /*equal*/
+N(7,189),  /*greater*/
+N(8,160),  /*question*/
+N(2,34),  /*at*/
+N(1,0),  /*A*/
+N(1,1),  /*B*/
+N(1,2),  /*C*/
+N(1,3),  /*D*/
+N(1,4),  /*E*/
+N(1,5),  /*F*/
+N(1,6),  /*G*/
+N(1,7),  /*H*/
+N(1,8),  /*I*/
+N(1,9),  /*J*/
+N(1,10),  /*K*/
+N(1,11),  /*L*/
+N(1,12),  /*M*/
+N(1,13),  /*N*/
+N(1,14),  /*O*/
+N(1,15),  /*P*/
+N(1,16),  /*Q*/
+N(1,17),  /*R*/
+N(1,18),  /*S*/
+N(1,19),  /*T*/
+N(1,20),  /*U*/
+N(1,21),  /*V*/
+N(1,22),  /*W*/
+N(1,23),  /*X*/
+N(1,24),  /*Y*/
+N(1,25),  /*Z*/
+N(11,341),  /*bracketleft*/
+N(9,135),  /*backslash*/
+N(12,192),  /*bracketright*/
+N(11,308),  /*asciicircum*/
+N(10,320),  /*underscore*/
+N(9,387),  /*quoteleft*/
+N(1,26),  /*a*/
+N(1,27),  /*b*/
+N(1,28),  /*c*/
+N(1,29),  /*d*/
+N(1,30),  /*e*/
+N(1,31),  /*f*/
+N(1,32),  /*g*/
+N(1,33),  /*h*/
+N(1,34),  /*i*/
+N(1,35),  /*j*/
+N(1,36),  /*k*/
+N(1,37),  /*l*/
+N(1,38),  /*m*/
+N(1,39),  /*n*/
+N(1,40),  /*o*/
+N(1,41),  /*p*/
+N(1,42),  /*q*/
+N(1,43),  /*r*/
+N(1,44),  /*s*/
+N(1,45),  /*t*/
+N(1,46),  /*u*/
+N(1,47),  /*v*/
+N(1,48),  /*w*/
+N(1,49),  /*x*/
+N(1,50),  /*y*/
+N(1,51),  /*z*/
+N(9,144),  /*braceleft*/
+N(3,255),  /*bar*/
+N(10,140),  /*braceright*/
+N(10,130),  /*asciitilde*/
+N(10,180),  /*exclamdown*/
+N(4,424),  /*cent*/
+N(8,184),  /*sterling*/
+N(8,104),  /*fraction*/
+N(3,297),  /*yen*/
+N(6,480),  /*florin*/
+N(7,266),  /*section*/
+N(8,64),  /*currency*/
+N(11,539),  /*quotesingle*/
+N(12,528),  /*quotedblleft*/
+N(13,208),  /*guillemotleft*/
+N(13,221),  /*guilsinglleft*/
+N(14,252),  /*guilsinglright*/
+N(2,38),  /*fi*/
+N(2,40),  /*fl*/
+N(6,468),  /*endash*/
+N(6,408),  /*dagger*/
+N(9,189),  /*daggerdbl*/
+N(14,308),  /*periodcentered*/
+N(9,360),  /*paragraph*/
+N(6,390),  /*bullet*/
+N(14,364),  /*quotesinglbase*/
+N(12,516),  /*quotedblbase*/
+N(13,273),  /*quotedblright*/
+N(14,238),  /*guillemotright*/
+N(8,88),  /*ellipsis*/
+N(11,528),  /*perthousand*/
+N(12,504),  /*questiondown*/
+N(5,125),  /*grave*/
+N(5,55),  /*acute*/
+N(10,160),  /*circumflex*/
+N(5,190),  /*tilde*/
+N(6,534),  /*macron*/
+N(5,80),  /*breve*/
+N(9,198),  /*dotaccent*/
+N(8,72),  /*dieresis*/
+N(4,460),  /*ring*/
+N(7,133),  /*cedilla*/
+N(12,336),  /*hungarumlaut*/
+N(6,570),  /*ogonek*/
+N(5,85),  /*caron*/
+N(6,462),  /*emdash*/
+N(2,0),  /*AE*/
+N(11,473),  /*ordfeminine*/
+N(6,168),  /*Lslash*/
+N(6,222),  /*Oslash*/
+N(2,8),  /*OE*/
+N(12,432),  /*ordmasculine*/
+N(2,32),  /*ae*/
+N(8,80),  /*dotlessi*/
+N(6,528),  /*lslash*/
+N(6,588),  /*oslash*/
+N(2,46),  /*oe*/
+N(10,200),  /*germandbls*/
+N(11,462),  /*onesuperior*/
+N(10,250),  /*logicalnot*/
+N(2,42),  /*mu*/
+N(9,450),  /*trademark*/
+N(3,6),  /*Eth*/
+N(7,238),  /*onehalf*/
+N(9,378),  /*plusminus*/
+N(5,45),  /*Thorn*/
+N(10,280),  /*onequarter*/
+N(6,432),  /*divide*/
+N(9,153),  /*brokenbar*/
+N(6,426),  /*degree*/
+N(5,180),  /*thorn*/
+N(13,364),  /*threequarters*/
+N(11,605),  /*twosuperior*/
+N(10,310),  /*registered*/
+N(5,140),  /*minus*/
+N(3,264),  /*eth*/
+N(8,136),  /*multiply*/
+N(13,377),  /*threesuperior*/
+N(9,180),  /*copyright*/
+N(6,0),  /*Aacute*/
+N(11,11),  /*Acircumflex*/
+N(9,0),  /*Adieresis*/
+N(6,12),  /*Agrave*/
+N(5,10),  /*Aring*/
+N(6,24),  /*Atilde*/
+N(8,0),  /*Ccedilla*/
+N(6,72),  /*Eacute*/
+N(11,55),  /*Ecircumflex*/
+N(9,9),  /*Edieresis*/
+N(6,84),  /*Egrave*/
+N(6,120),  /*Iacute*/
+N(11,88),  /*Icircumflex*/
+N(9,18),  /*Idieresis*/
+N(6,126),  /*Igrave*/
+N(6,204),  /*Ntilde*/
+N(6,210),  /*Oacute*/
+N(11,154),  /*Ocircumflex*/
+N(9,27),  /*Odieresis*/
+N(6,216),  /*Ograve*/
+N(6,234),  /*Otilde*/
+N(6,276),  /*Scaron*/
+N(6,300),  /*Uacute*/
+N(11,231),  /*Ucircumflex*/
+N(9,45),  /*Udieresis*/
+N(6,306),  /*Ugrave*/
+N(6,336),  /*Yacute*/
+N(9,54),  /*Ydieresis*/
+N(6,354),  /*Zcaron*/
+N(6,366),  /*aacute*/
+N(11,275),  /*acircumflex*/
+N(9,63),  /*adieresis*/
+N(6,378),  /*agrave*/
+N(5,75),  /*aring*/
+N(6,384),  /*atilde*/
+N(8,56),  /*ccedilla*/
+N(6,444),  /*eacute*/
+N(11,363),  /*ecircumflex*/
+N(9,216),  /*edieresis*/
+N(6,456),  /*egrave*/
+N(6,498),  /*iacute*/
+N(11,418),  /*icircumflex*/
+N(9,234),  /*idieresis*/
+N(6,504),  /*igrave*/
+N(6,558),  /*ntilde*/
+N(6,564),  /*oacute*/
+N(11,429),  /*ocircumflex*/
+N(9,315),  /*odieresis*/
+N(6,576),  /*ograve*/
+N(6,594),  /*otilde*/
+N(6,630),  /*scaron*/
+N(6,660),  /*uacute*/
+N(11,616),  /*ucircumflex*/
+N(9,477),  /*udieresis*/
+N(6,666),  /*ugrave*/
+N(6,672),  /*yacute*/
+N(9,495),  /*ydieresis*/
+N(6,684),  /*zcaron*/
+N(11,385),  /*exclamsmall*/
+N(17,0),  /*Hungarumlautsmall*/
+N(14,210),  /*dollaroldstyle*/
+N(14,224),  /*dollarsuperior*/
+N(14,98),  /*ampersandsmall*/
+N(10,0),  /*Acutesmall*/
+N(17,34),  /*parenleftsuperior*/
+N(18,18),  /*parenrightsuperior*/
+N(14,406),  /*twodotenleader*/
+N(14,294),  /*onedotenleader*/
+N(12,636),  /*zerooldstyle*/
+N(11,451),  /*oneoldstyle*/
+N(11,594),  /*twooldstyle*/
+N(13,351),  /*threeoldstyle*/
+N(12,288),  /*fouroldstyle*/
+N(12,252),  /*fiveoldstyle*/
+N(11,561),  /*sixoldstyle*/
+N(13,312),  /*sevenoldstyle*/
+N(13,182),  /*eightoldstyle*/
+N(12,408),  /*nineoldstyle*/
+N(13,143),  /*commasuperior*/
+N(19,0),  /*threequartersemdash*/
+N(14,336),  /*periodsuperior*/
+N(13,260),  /*questionsmall*/
+N(9,126),  /*asuperior*/
+N(9,162),  /*bsuperior*/
+N(12,228),  /*centsuperior*/
+N(9,207),  /*dsuperior*/
+N(9,225),  /*esuperior*/
+N(9,252),  /*isuperior*/
+N(9,279),  /*lsuperior*/
+N(9,288),  /*msuperior*/
+N(9,306),  /*nsuperior*/
+N(9,342),  /*osuperior*/
+N(9,405),  /*rsuperior*/
+N(9,423),  /*ssuperior*/
+N(9,459),  /*tsuperior*/
+N(2,36),  /*ff*/
+N(3,267),  /*ffi*/
+N(3,270),  /*ffl*/
+N(17,17),  /*parenleftinferior*/
+N(18,0),  /*parenrightinferior*/
+N(15,0),  /*Circumflexsmall*/
+N(14,280),  /*hyphensuperior*/
+N(10,50),  /*Gravesmall*/
+N(6,18),  /*Asmall*/
+N(6,30),  /*Bsmall*/
+N(6,48),  /*Csmall*/
+N(6,66),  /*Dsmall*/
+N(6,90),  /*Esmall*/
+N(6,96),  /*Fsmall*/
+N(6,108),  /*Gsmall*/
+N(6,114),  /*Hsmall*/
+N(6,132),  /*Ismall*/
+N(6,138),  /*Jsmall*/
+N(6,144),  /*Ksmall*/
+N(6,174),  /*Lsmall*/
+N(6,180),  /*Msmall*/
+N(6,198),  /*Nsmall*/
+N(6,228),  /*Osmall*/
+N(6,240),  /*Psmall*/
+N(6,246),  /*Qsmall*/
+N(6,264),  /*Rsmall*/
+N(6,282),  /*Ssmall*/
+N(6,294),  /*Tsmall*/
+N(6,312),  /*Usmall*/
+N(6,318),  /*Vsmall*/
+N(6,324),  /*Wsmall*/
+N(6,330),  /*Xsmall*/
+N(6,342),  /*Ysmall*/
+N(6,360),  /*Zsmall*/
+N(13,117),  /*colonmonetary*/
+N(9,333),  /*onefitted*/
+N(6,618),  /*rupiah*/
+N(10,80),  /*Tildesmall*/
+N(15,15),  /*exclamdownsmall*/
+N(12,216),  /*centoldstyle*/
+N(11,110),  /*Lslashsmall*/
+N(11,209),  /*Scaronsmall*/
+N(11,264),  /*Zcaronsmall*/
+N(13,13),  /*Dieresissmall*/
+N(10,20),  /*Brevesmall*/
+N(10,30),  /*Caronsmall*/
+N(14,14),  /*Dotaccentsmall*/
+N(11,121),  /*Macronsmall*/
+N(10,190),  /*figuredash*/
+N(14,266),  /*hypheninferior*/
+N(11,165),  /*Ogoneksmall*/
+N(9,36),  /*Ringsmall*/
+N(12,0),  /*Cedillasmall*/
+N(17,51),  /*questiondownsmall*/
+N(9,324),  /*oneeighth*/
+N(12,612),  /*threeeighths*/
+N(11,407),  /*fiveeighths*/
+N(12,588),  /*seveneighths*/
+N(8,152),  /*onethird*/
+N(9,468),  /*twothirds*/
+N(12,648),  /*zerosuperior*/
+N(12,300),  /*foursuperior*/
+N(12,264),  /*fivesuperior*/
+N(11,572),  /*sixsuperior*/
+N(13,325),  /*sevensuperior*/
+N(13,195),  /*eightsuperior*/
+N(12,420),  /*ninesuperior*/
+N(12,624),  /*zeroinferior*/
+N(11,440),  /*oneinferior*/
+N(11,583),  /*twoinferior*/
+N(13,338),  /*threeinferior*/
+N(12,276),  /*fourinferior*/
+N(12,240),  /*fiveinferior*/
+N(11,550),  /*sixinferior*/
+N(13,299),  /*seveninferior*/
+N(13,169),  /*eightinferior*/
+N(12,396),  /*nineinferior*/
+N(12,204),  /*centinferior*/
+N(14,196),  /*dollarinferior*/
+N(14,322),  /*periodinferior*/
+N(13,130),  /*commainferior*/
+N(11,22),  /*Agravesmall*/
+N(11,0),  /*Aacutesmall*/
+N(16,0),  /*Acircumflexsmall*/
+N(11,33),  /*Atildesmall*/
+N(14,0),  /*Adieresissmall*/
+N(10,10),  /*Aringsmall*/
+N(7,7),  /*AEsmall*/
+N(13,0),  /*Ccedillasmall*/
+N(11,66),  /*Egravesmall*/
+N(11,44),  /*Eacutesmall*/
+N(16,16),  /*Ecircumflexsmall*/
+N(14,28),  /*Edieresissmall*/
+N(11,99),  /*Igravesmall*/
+N(11,77),  /*Iacutesmall*/
+N(16,32),  /*Icircumflexsmall*/
+N(14,42),  /*Idieresissmall*/
+N(8,8),  /*Ethsmall*/
+N(11,132),  /*Ntildesmall*/
+N(11,176),  /*Ogravesmall*/
+N(11,143),  /*Oacutesmall*/
+N(16,48),  /*Ocircumflexsmall*/
+N(11,198),  /*Otildesmall*/
+N(14,56),  /*Odieresissmall*/
+N(7,63),  /*OEsmall*/
+N(11,187),  /*Oslashsmall*/
+N(11,242),  /*Ugravesmall*/
+N(11,220),  /*Uacutesmall*/
+N(16,64),  /*Ucircumflexsmall*/
+N(14,70),  /*Udieresissmall*/
+N(11,253),  /*Yacutesmall*/
+N(10,70),  /*Thornsmall*/
+N(14,84),  /*Ydieresissmall*/
+0};
 
-static const ushort gs_c_std_encoding_8[] = {
-C(1,228), I_A, I_AE, I_Aacute, I_Acircumflex, I_Adieresis, I_Agrave, I_Aring, I_Atilde, I_B, I_C, I_Ccedilla, I_D, I_E, I_Eacute, I_Ecircumflex, I_Edieresis, I_Egrave, I_Eth, I_F, I_G, I_H, I_I, I_Iacute, I_Icircumflex, I_Idieresis, I_Igrave, I_J, I_K, I_L, I_Lslash, I_M, I_N, I_Ntilde, I_O, I_OE, I_Oacute, I_Ocircumflex, I_Odieresis, I_Ograve, I_Oslash, I_Otilde, I_P, I_Q, I_R, I_S, I_Scaron, I_T, I_Thorn, I_U, I_Uacute, I_Ucircumflex, I_Udieresis, I_Ugrave, I_V, I_W, I_X, I_Y, I_Yacute, I_Ydieresis, I_Z, I_Zcaron, I_a, I_aacute, I_acircumflex, I_acute, I_adieresis, I_ae, I_agrave, I_ampersand, I_aring, I_asciicircum, I_asciitilde, I_asterisk, I_at, I_atilde, I_b, I_backslash, I_bar, I_braceleft, I_braceright, I_bracketleft, I_bracketright, I_breve, I_brokenbar, I_bullet, I_c, I_caron, I_ccedilla, I_cedilla, I_cent, I_circumflex, I_colon, I_comma, I_copyright, I_currency, I_d, I_dagger, I_daggerdbl, I_degree, I_dieresis, I_divide, I_dollar, I_dotaccent, I_dotlessi, I_e, I_eacute, I_ecircumflex, I_edieresis, I_egrave, I_eight, I_ellipsis, I_emdash, I_endash, I_equal, I_eth, I_exclam, I_exclamdown, I_f, I_fi, I_five, I_fl, I_florin, I_four, I_fraction, I_g, I_germandbls, I_grave, I_greater, I_guillemotleft, I_guillemotright, I_guilsinglleft, I_guilsinglright, I_h, I_hungarumlaut, I_hyphen, I_i, I_iacute, I_icircumflex, I_idieresis, I_igrave, I_j, I_k, I_l, I_less, I_logicalnot, I_lslash, I_m, I_macron, I_minus, I_mu, I_multiply, I_n, I_nine, I_ntilde, I_numbersign, I_o, I_oacute, I_ocircumflex, I_odieresis, I_oe, I_ogonek, I_ograve, I_one, I_onehalf, I_onequarter, I_onesuperior, I_ordfeminine, I_ordmasculine, I_oslash, I_otilde, I_p, I_paragraph, I_parenleft, I_parenright, I_percent, I_period, I_periodcentered, I_perthousand, I_plus, I_plusminus, I_q, I_question, I_questiondown, I_quotedbl, I_quotedblbase, I_quotedblleft, I_quotedblright, I_quoteleft, I_quoteright, I_quotesinglbase, I_quotesingle, I_r, I_registered, I_ring, I_s, I_scaron, I_section, I_semicolon, I_seven, I_six, I_slash, I_space, I_sterling, I_t, I_thorn, I_three, I_threequarters, I_threesuperior, I_tilde, I_trademark, I_two, I_twosuperior, I_u, I_uacute, I_ucircumflex, I_udieresis, I_ugrave, I_underscore, I_v, I_w, I_x, I_y, I_yacute, I_ydieresis, I_yen, I_z, I_zcaron, I_zero, 0};
-
-static const ushort gs_c_std_encoding_9[] = {
-C(0,86), I_Abreve, I_Amacron, I_Aogonek, I_Cacute, I_Ccaron, I_Dcaron, I_Dcroat, I_Delta, I_Ecaron, I_Edotaccent, I_Emacron, I_Eogonek, I_Gbreve, I_Gcommaaccent, I_Idotaccent, I_Imacron, I_Iogonek, I_Kcommaaccent, I_Lacute, I_Lcaron, I_Lcommaaccent, I_Nacute, I_Ncaron, I_Ncommaaccent, I_Ohungarumlaut, I_Omacron, I_Racute, I_Rcaron, I_Rcommaaccent, I_Sacute, I_Scedilla, I_Scommaaccent, I_Tcaron, I_Tcommaaccent, I_Uhungarumlaut, I_Umacron, I_Uogonek, I_Uring, I_Zacute, I_Zdotaccent, I_abreve, I_amacron, I_aogonek, I_cacute, I_ccaron, I_commaaccent, I_dcaron, I_dcroat, I_ecaron, I_edotaccent, I_emacron, I_eogonek, I_gbreve, I_gcommaaccent, I_greaterequal, I_imacron, I_iogonek, I_kcommaaccent, I_lacute, I_lcaron, I_lcommaaccent, I_lessequal, I_lozenge, I_nacute, I_ncaron, I_ncommaaccent, I_notequal, I_ohungarumlaut, I_omacron, I_partialdiff, I_racute, I_radical, I_rcaron, I_rcommaaccent, I_sacute, I_scedilla, I_scommaaccent, I_summation, I_tcaron, I_tcommaaccent, I_uhungarumlaut, I_umacron, I_uogonek, I_uring, I_zacute, I_zdotaccent, 0};
-
-static const ushort gs_c_std_encoding_10[] = {
-C(1,378), I_space, I_exclam, I_quotedbl, I_numbersign, I_dollar, I_percent, I_ampersand, I_quoteright, I_parenleft, I_parenright, I_asterisk, I_plus, I_comma, I_hyphen, I_period, I_slash, I_zero, I_one, I_two, I_three, I_four, I_five, I_six, I_seven, I_eight, I_nine, I_colon, I_semicolon, I_less, I_equal, I_greater, I_question, I_at, I_A, I_B, I_C, I_D, I_E, I_F, I_G, I_H, I_I, I_J, I_K, I_L, I_M, I_N, I_O, I_P, I_Q, I_R, I_S, I_T, I_U, I_V, I_W, I_X, I_Y, I_Z, I_bracketleft, I_backslash, I_bracketright, I_asciicircum, I_underscore, I_quoteleft, I_a, I_b, I_c, I_d, I_e, I_f, I_g, I_h, I_i, I_j, I_k, I_l, I_m, I_n, I_o, I_p, I_q, I_r, I_s, I_t, I_u, I_v, I_w, I_x, I_y, I_z, I_braceleft, I_bar, I_braceright, I_asciitilde, I_exclamdown, I_cent, I_sterling, I_fraction, I_yen, I_florin, I_section, I_currency, I_quotesingle, I_quotedblleft, I_guillemotleft, I_guilsinglleft, I_guilsinglright, I_fi, I_fl, I_endash, I_dagger, I_daggerdbl, I_periodcentered, I_paragraph, I_bullet, I_quotesinglbase, I_quotedblbase, I_quotedblright, I_guillemotright, I_ellipsis, I_perthousand, I_questiondown, I_grave, I_acute, I_circumflex, I_tilde, I_macron, I_breve, I_dotaccent, I_dieresis, I_ring, I_cedilla, I_hungarumlaut, I_ogonek, I_caron, I_emdash, I_AE, I_ordfeminine, I_Lslash, I_Oslash, I_OE, I_ordmasculine, I_ae, I_dotlessi, I_lslash, I_oslash, I_oe, I_germandbls, I_onesuperior, I_logicalnot, I_mu, I_trademark, I_Eth, I_onehalf, I_plusminus, I_Thorn, I_onequarter, I_divide, I_brokenbar, I_degree, I_thorn, I_threequarters, I_twosuperior, I_registered, I_minus, I_eth, I_multiply, I_threesuperior, I_copyright, I_Aacute, I_Acircumflex, I_Adieresis, I_Agrave, I_Aring, I_Atilde, I_Ccedilla, I_Eacute, I_Ecircumflex, I_Edieresis, I_Egrave, I_Iacute, I_Icircumflex, I_Idieresis, I_Igrave, I_Ntilde, I_Oacute, I_Ocircumflex, I_Odieresis, I_Ograve, I_Otilde, I_Scaron, I_Uacute, I_Ucircumflex, I_Udieresis, I_Ugrave, I_Yacute, I_Ydieresis, I_Zcaron, I_aacute, I_acircumflex, I_adieresis, I_agrave, I_aring, I_atilde, I_ccedilla, I_eacute, I_ecircumflex, I_edieresis, I_egrave, I_iacute, I_icircumflex, I_idieresis, I_igrave, I_ntilde, I_oacute, I_ocircumflex, I_odieresis, I_ograve, I_otilde, I_scaron, I_uacute, I_ucircumflex, I_udieresis, I_ugrave, I_yacute, I_ydieresis, I_zcaron, I_exclamsmall, I_Hungarumlautsmall, I_dollaroldstyle, I_dollarsuperior, I_ampersandsmall, I_Acutesmall, I_parenleftsuperior, I_parenrightsuperior, I_twodotenleader, I_onedotenleader, I_zerooldstyle, I_oneoldstyle, I_twooldstyle, I_threeoldstyle, I_fouroldstyle, I_fiveoldstyle, I_sixoldstyle, I_sevenoldstyle, I_eightoldstyle, I_nineoldstyle, I_commasuperior, I_threequartersemdash, I_periodsuperior, I_questionsmall, I_asuperior, I_bsuperior, I_centsuperior, I_dsuperior, I_esuperior, I_isuperior, I_lsuperior, I_msuperior, I_nsuperior, I_osuperior, I_rsuperior, I_ssuperior, I_tsuperior, I_ff, I_ffi, I_ffl, I_parenleftinferior, I_parenrightinferior, I_Circumflexsmall, I_hyphensuperior, I_Gravesmall, I_Asmall, I_Bsmall, I_Csmall, I_Dsmall, I_Esmall, I_Fsmall, I_Gsmall, I_Hsmall, I_Ismall, I_Jsmall, I_Ksmall, I_Lsmall, I_Msmall, I_Nsmall, I_Osmall, I_Psmall, I_Qsmall, I_Rsmall, I_Ssmall, I_Tsmall, I_Usmall, I_Vsmall, I_Wsmall, I_Xsmall, I_Ysmall, I_Zsmall, I_colonmonetary, I_onefitted, I_rupiah, I_Tildesmall, I_exclamdownsmall, I_centoldstyle, I_Lslashsmall, I_Scaronsmall, I_Zcaronsmall, I_Dieresissmall, I_Brevesmall, I_Caronsmall, I_Dotaccentsmall, I_Macronsmall, I_figuredash, I_hypheninferior, I_Ogoneksmall, I_Ringsmall, I_Cedillasmall, I_questiondownsmall, I_oneeighth, I_threeeighths, I_fiveeighths, I_seveneighths, I_onethird, I_twothirds, I_zerosuperior, I_foursuperior, I_fivesuperior, I_sixsuperior, I_sevensuperior, I_eightsuperior, I_ninesuperior, I_zeroinferior, I_oneinferior, I_twoinferior, I_threeinferior, I_fourinferior, I_fiveinferior, I_sixinferior, I_seveninferior, I_eightinferior, I_nineinferior, I_centinferior, I_dollarinferior, I_periodinferior, I_commainferior, I_Agravesmall, I_Aacutesmall, I_Acircumflexsmall, I_Atildesmall, I_Adieresissmall, I_Aringsmall, I_AEsmall, I_Ccedillasmall, I_Egravesmall, I_Eacutesmall, I_Ecircumflexsmall, I_Edieresissmall, I_Igravesmall, I_Iacutesmall, I_Icircumflexsmall, I_Idieresissmall, I_Ethsmall, I_Ntildesmall, I_Ogravesmall, I_Oacutesmall, I_Ocircumflexsmall, I_Otildesmall, I_Odieresissmall, I_OEsmall, I_Oslashsmall, I_Ugravesmall, I_Uacutesmall, I_Ucircumflexsmall, I_Udieresissmall, I_Yacutesmall, I_Thornsmall, I_Ydieresissmall, 0};
-
-static const ushort *const gs_c_std_encodings[] = {
-    gs_c_std_encoding_0,
-    gs_c_std_encoding_1,
-    gs_c_std_encoding_2,
-    gs_c_std_encoding_3,
-    gs_c_std_encoding_4,
-    gs_c_std_encoding_5,
-    gs_c_std_encoding_6,
-    gs_c_std_encoding_7,
-    gs_c_std_encoding_8,
-    gs_c_std_encoding_9,
-    gs_c_std_encoding_10,
+const ushort *const gs_c_known_encodings[] = {
+    gs_c_known_encoding_0, /* StandardEncoding */
+    gs_c_known_encoding_1, /* ISOLatin1Encoding */
+    gs_c_known_encoding_2, /* SymbolEncoding */
+    gs_c_known_encoding_3, /* DingbatsEncoding */
+    gs_c_known_encoding_4, /* WinAnsiEncoding */
+    gs_c_known_encoding_5, /* MacRomanEncoding */
+    gs_c_known_encoding_6, /* MacExpertEncoding */
+    gs_c_known_encoding_7, /* MacGlyphEncoding */
+    gs_c_known_encoding_8, /* AdobeLatinOriginalGlyphEncoding */
+    gs_c_known_encoding_9, /* AdobeLatinExtensionGlyphEncoding */
+    gs_c_known_encoding_10, /* CFFStandardStrings */
     0
-};
+  };
+
+const ushort gs_c_known_encoding_lengths[] = {
+256,256,256,256,256,256,256,258,229,86,379,0};

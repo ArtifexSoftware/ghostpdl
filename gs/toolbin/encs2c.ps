@@ -1,0 +1,199 @@
+%!
+%    Copyright (C) 2002 Aladdin Enterprises.  All rights reserved.
+% 
+% This software is provided AS-IS with no warranty, either express or
+% implied.
+% 
+% This software is distributed under license and may not be copied,
+% modified or distributed except as expressly authorized under the terms
+% of the license contained in the file LICENSE in this distribution.
+% 
+% For more information about licensing, please refer to
+% http://www.ghostscript.com/licensing/. For information on
+% commercial licensing, go to http://www.artifex.com/licensing/ or
+% contact Artifex Software, Inc., 101 Lucas Valley Road #110,
+% San Rafael, CA  94903, U.S.A., +1(415)492-9861.
+
+% $Id$
+% Generate a C file containing the standard encodings and glyph sets.
+
+% This program probably never needs to be run again: it is included mostly
+% for reference.  It reads in the known Encodings and pseudo-Encodings
+% (see the definition of /encfiles below) and generates C files that
+% represent them in a compact format described in src/gscencs.c.
+% The generated files are named gscedata.[ch] and are included in the
+% source distribution in the src directory.  The canonical invocation is
+%	gs -dNODISPLAY -q -DH lib/encs2c.ps > src/gscedata.h
+%	gs -dNODISPLAY -q lib/encs2c.ps > src/gscedata.c
+
+% NOTE: If the C representation of encodings changes, this file
+% (toolbin/encs2c.ps), src/gscencs.h, and src/gscencs.c must be kept
+% consistent with each other.
+
+% ================ Write header file ================ %
+
+% Free variables: maxlen.
+/writeheader {
+	% Compute the division of the glyph number into length and offset.
+  /lenbits 1 maxlen {
+    dup 1 eq { exit } if exch 1 add exch -1 bitshift
+  } loop pop def
+  (#ifndef gscedata_INCLUDED) =
+  (#  define gscedata_INCLUDED) =
+  () =
+  (#define NUM_LEN_BITS ) print lenbits =
+  () =
+  (#define N(len,offset) (((offset) << NUM_LEN_BITS) + (len))) =
+  (#define N_LEN(e) ((e) & ((1 << NUM_LEN_BITS) - 1))) =
+  (#define N_OFFSET(e) ((e) >> NUM_LEN_BITS)) =
+  () =
+  (extern const char gs_c_known_encoding_chars[];) =
+  (extern const int gs_c_known_encoding_max_length;) =
+  (extern const ushort gs_c_known_encoding_offsets[];) =
+  (extern const int gs_c_known_encoding_count;) =
+  (extern const ushort *const gs_c_known_encodings[];) =
+  (extern const ushort gs_c_known_encoding_lengths[];) =
+  () =
+  (#endif /* gscedata_INCLUDED */) =
+} def
+
+% ================ Write data file ================ %
+
+% Free variables: encnames, encodings, estrs, maxlen.
+/writedata {
+
+  (#include "stdpre.h") =
+  (#include "gstypes.h") =
+  (#include "gscedata.h") =
+
+	% Write the name strings, sorted by increasing length, and
+	% alphabetically increasing within the same length.
+  (
+const char gs_c_known_encoding_chars[] = {) =
+  /lbase maxlen 1 add array def
+  lbase 0 0 put
+  /offset 0 def
+  1 1 maxlen {
+    /len exch def
+    lbase len offset put
+    /noff 0 def
+	% Collect and sort names of this length.
+    /new [ estrs {
+      pop dup length len ne { pop } { .namestring } ifelse
+    } forall ] /lt load .sort def
+	% Output the names.
+    new {
+      dup {
+	(') print (x) dup 0 4 -1 roll put print (',) print
+      } forall
+      (  /*N\() print len =only (,) print noff =only (\)*/) =
+      estrs exch noff put
+      /noff noff len add def
+    } forall
+    /offset offset noff add def
+  } for
+  (0};) =
+
+	% Write the starting offsets of the names of each length.
+  /numchars 0 estrs { pop length add } forall def
+  (
+const int gs_c_known_encoding_max_length = ) print
+  maxlen =only (;) =
+  (
+const ushort gs_c_known_encoding_offsets[] = {) =
+  0 1 maxlen {
+    lbase exch get =only (,) print
+  } for
+  numchars =only (};) =
+
+	% Write the encodings themselves.
+  (
+const int gs_c_known_encoding_count = ) print
+  encodings length =only (;) =
+  /i 0 def
+  encodings {
+    () =
+    (/* ) print encnames i get =only ( */) =
+    (static const ushort gs_c_known_encoding_) print i =only ([] = {) =
+    /e exch def
+    e {
+      (N\() print dup length =only (,) print
+      estrs 1 index get =only (\),  /*) print .namestring print (*/) =
+    } forall (0};) =
+    /i i 1 add def
+  } forall
+
+	% Write the table of pointers to the encodings.
+  (
+const ushort *const gs_c_known_encodings[] = {) =
+  0 1 encodings length 1 sub {
+    (    gs_c_known_encoding_) print dup =only (, /* ) print
+    encnames exch get =only ( */) =
+  } for (    0
+  };) =
+
+	% Write the table of encoding lengths.
+  (
+const ushort gs_c_known_encoding_lengths[] = {) =
+  0 1 encodings length 1 sub {
+    encodings exch get length =only (,) print
+  } for (0};) =
+
+} def
+
+
+% ================ Main program ================ %
+
+% Collect the registered encodings.
+
+/encodings 20 array def
+/encfiles [
+  [(gs_std_e.ps) (gs_il1_e.ps) (gs_sym_e.ps) (gs_dbt_e.ps)]
+  [(gs_wan_e.ps) (gs_mro_e.ps) (gs_mex_e.ps) (gs_mgl_e.ps)]
+  [(gs_lgo_e.ps) (gs_lgx_e.ps) (gs_css_e.ps)]
+] def
+/encnames 11 array def
+/encindex null def
+/encname null def
+4 dict begin
+/.registerencoding {
+  /encindex 2 index store
+  //encodings 3 1 roll readonly put
+} bind def
+/.defineencoding {
+  pop /encname exch store
+} bind def
+encfiles { { runlibfile encnames encindex encname put } forall } forall
+end
+/encodings [ encodings { dup null eq { pop } if } forall ] def
+
+% Collect all names referenced from the encodings.
+/estrs 1000 dict def
+/maxlen 0 def
+encodings {
+  {
+    estrs 1 index null put
+    .namestring length maxlen .max /maxlen exch def
+  } forall
+} forall
+
+% Write the initial boilerplate.
+(/*) =
+( * Copyright (C) 2002 artofcode LLC.  All rights reserved.) =
+( * See toolbin/encs2c.ps for the complete license notice.) =
+( *) =
+( * This file contains substantial parts of toolbin/encs2c.ps,) =
+( * which generated the remainder of the file mechanically from) =
+encfiles {
+  ( * ) print { (  ) print print } forall () =
+} forall
+( */) =
+() =
+
+/H where { pop H } { false } ifelse {
+  writeheader
+} {
+  writedata
+} ifelse
+
+quit
