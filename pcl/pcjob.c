@@ -97,7 +97,7 @@ pcl_simplex_duplex_print(pcl_args_t *pargs, pcl_state_t *pcs)
 	    break;
 	  case 2:
 	    pcs->duplex = true;
-	    pcs->bind_short_edge = false;
+	    pcs->bind_short_edge = true;
 	    break;
 	  default:
 	    return 0;
