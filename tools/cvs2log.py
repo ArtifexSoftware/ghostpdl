@@ -133,15 +133,47 @@ def ChangeLogFileRevDesc(entry_dict, indent, line_length, patch):
                     change_log_entry = change_log_entry + patch_line
     return change_log_entry
 
+def Revision(line):
+    return line[len("revision "):]
+
+def WorkingFile(line):
+    return line[len("Working file: "):]
+
+def DateAuthorStateLinesChanged(line, revision, rcs_file):
+    import string
+    # sample log line - date: 2000/03/15 06:45:34; author: \
+    # henrys; state: Exp; lines: +7 -1
+    (dd, aa, ss, ll) = string.splitfields(line, ';')
+    (foo, date) = string.splitfields(dd, ': ')
+    (foo, author) = string.splitfields(aa, ': ')
+    (foo, state) = string.splitfields(ss, ': ')
+    try:
+        (foo, lines_changed) = string.splitfields(ll, ': ')
+    except:
+        # lines changed does not exist in the initial revision
+        lines_changed = "+0 -0" + "\n"
+        expensive_lines_changed = 0
+        if ( expensive_lines_changed == 1 ):
+            import os
+            lines_changed = ""
+            initial_rev_line_count_command = 'cvs -d ' + GetCVSRepository() + ' update  -r ' + revision[:-1] + ' -p ' + rcs_file[:-1] + ' 2>/dev/null | wc -l';
+            lines_changed = os.popen(initial_rev_line_count_command, 'r').readline()[:-1]
+            lines_changed = "+" + lines_changed.lstrip() + " -0" + "\n"
+    return (date, author, state, lines_changed)
+
 # Build the cvs log.
 def BuildLog(log_date_command):
-    import os, string
+    import os, string, sys
     reading_description = 0
     description = []
     log = []
     # start reading cvs log output putting what we need in the log
     # list
-    for line in os.popen(log_date_command, 'r').readlines():
+    logpipe = os.popen(log_date_command, 'r')
+    while (1):
+        line = logpipe.readline()
+        if not line:
+            break
 	if line[:5] == '=====' or line[:5] == '-----':
 	    if description != []:
 		# append these items in the sort order we'll want later on.
@@ -152,24 +184,11 @@ def BuildLog(log_date_command):
 	    reading_description = 0
 	    description = []
 	elif not reading_description and line[:len("Working file: ")] == "Working file: ":
-	    rcs_file = line[len("Working file: "):]
+	    rcs_file = WorkingFile(line)
 	elif not reading_description and line[:len("revision ")] == "revision ":
-	    revision = line[len("revision "):]
+	    revision = Revision(line)
 	elif not reading_description and line[:len("date: ")] == "date: ":
-            # sample log line - date: 2000/03/15 06:45:34; author: \
-            # henrys; state: Exp; lines: +7 -1
-	    (dd, aa, ss, ll) = string.splitfields(line, ';')
-	    (foo, date) = string.splitfields(dd, ': ')
-	    (foo, author) = string.splitfields(aa, ': ')
-            (foo, state) = string.splitfields(ss, ': ')
-            try:
-                (foo, lines_changed) = string.splitfields(ll, ': ')
-            except:
-                # lines changed does not exist in the initial revision
-                lines_changed = ""
-                initial_rev_line_count_command = 'cvs -d ' + GetCVSRepository() + ' update  -r ' + revision[:-1] + ' -p ' + rcs_file[:-1] + ' 2>/dev/null | wc -l';
-                lines_changed = os.popen(initial_rev_line_count_command, 'r').readline()[:-1]
-                lines_changed = "+" + lines_changed.lstrip() + " -0" + "\n"
+            date, author, state, lines_changed = DateAuthorStateLinesChanged(line, revision, rcs_file)
 	    reading_description = 1
 	elif reading_description:
 	    description.append(line)
@@ -177,6 +196,44 @@ def BuildLog(log_date_command):
 	    continue
     return log
 
+def PrintLog(log, hostname, tabwidth, indent, length, patches):
+    # Pass through the logs creating new entries based on changing
+    # authors, dates and descriptions.
+    last_date = None
+    last_author = None
+    entry_dict = {}
+    for date, author, description, rcs_file, revision, state, lines_changed in log:
+	if author != last_author or date != last_date:
+	    # clear out any old revisions, descriptions, and filenames
+	    # that belong with the last log.
+	    if entry_dict:
+		print ChangeLogFileRevDesc(entry_dict, indent, length, patches)
+	    # clear the entry log for the next group of changes
+	    # if we have a new author or date we print a date, time,
+	    # author, and email address.
+	    entry_dict = {}
+	    print ChangeLogDateNameHeader(date, author, hostname, tabwidth)
+	# build string from description list so we can use it as a key
+	# for the entry dictionary
+	description_data = indent * ' '
+	for line in description:
+	    description_data = description_data + line + indent * ' '
+	# put the revisions and rcs files in decription-keyed
+	# dictionary.
+	if entry_dict.has_key(description_data):
+	    entry_dict[description_data].append((revision, rcs_file, lines_changed))
+	else:
+	    entry_dict[description_data] = [(revision, rcs_file, lines_changed)]
+
+	last_author = author
+	last_date = date
+	last_description = description
+
+    # print the last entry if there is one (i.e. the last two entries
+    # have the same author and date)
+    if entry_dict:
+	print ChangeLogFileRevDesc(entry_dict, indent, length, patches)
+    
 def main():
     import sys, getopt, time, string, socket
     try:
@@ -246,42 +303,7 @@ def main():
     # well.
     log.sort()
     log.reverse()
-    # Pass through the logs creating new entries based on changing
-    # authors, dates and descriptions.
-    last_date = None
-    last_author = None
-    entry_dict = {}
-    for date, author, description, rcs_file, revision, state, lines_changed in log:
-	if author != last_author or date != last_date:
-	    # clear out any old revisions, descriptions, and filenames
-	    # that belong with the last log.
-	    if entry_dict:
-		print ChangeLogFileRevDesc(entry_dict, indent, length, patches)
-	    # clear the entry log for the next group of changes
-	    # if we have a new author or date we print a date, time,
-	    # author, and email address.
-	    entry_dict = {}
-	    print ChangeLogDateNameHeader(date, author, hostname, tabwidth)
-	# build string from description list so we can use it as a key
-	# for the entry dictionary
-	description_data = indent * ' '
-	for line in description:
-	    description_data = description_data + line + indent * ' '
-	# put the revisions and rcs files in decription-keyed
-	# dictionary.
-	if entry_dict.has_key(description_data):
-	    entry_dict[description_data].append((revision, rcs_file, lines_changed))
-	else:
-	    entry_dict[description_data] = [(revision, rcs_file, lines_changed)]
-
-	last_author = author
-	last_date = date
-	last_description = description
-
-    # print the last entry if there is one (i.e. the last two entries
-    # have the same author and date)
-    if entry_dict:
-	print ChangeLogFileRevDesc(entry_dict, indent, length, patches)
+    PrintLog(log, hostname, tabwidth, indent, length, patches)
 
 if __name__ == '__main__':
     main()
