@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_segment.c,v 1.3 2002/06/18 09:46:45 giles Exp $
+    $Id: jbig2_segment.c,v 1.4 2002/06/18 13:40:29 giles Exp $
 */
 
 #include <stdio.h>
@@ -146,17 +146,16 @@ int jbig2_write_segment (Jbig2Ctx *ctx, Jbig2SegmentHeader *sh,
       return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, sh->segment_number,
         "unhandled segment type 'immediate lossless generic refinement region'");
     case 48:
-      return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, sh->segment_number,
-        "unhandled segment type 'page info'");
+      return jbig2_read_page_info(ctx, sh, segment_data);
     case 49:
-      return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, sh->segment_number,
-        "unhandled segment type 'end of page'");
+      return jbig2_complete_page(ctx, sh, segment_data);
     case 50:
       return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, sh->segment_number,
         "unhandled segment type 'end of stripe'");
     case 51:
-      return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, sh->segment_number,
-        "unhandled segment type 'end of file'");
+      ctx->state = JBIG2_FILE_EOF;
+      return jbig2_error(ctx, JBIG2_SEVERITY_INFO, sh->segment_number,
+        "end of file");
     case 52:
       return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, sh->segment_number,
         "unhandled segment type 'profile'");

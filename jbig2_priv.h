@@ -66,6 +66,12 @@ struct _Jbig2Ctx {
   int n_results;
   int n_results_max;
   const Jbig2Result **results;
+  
+  /* list of decoded pages, including the one in progress,
+     currently stored as a contiguous, 0-indexed array. */
+  int current_page;
+  int max_page_index;
+  Jbig2Page *pages;
 };
 
 int32_t
@@ -73,6 +79,35 @@ jbig2_get_int32 (const byte *buf);
 
 int16_t
 jbig2_get_int16 (const byte *buf);
+
+/* the page structure handles decoded page
+   results. it's allocated by a 'page info'
+   segement and marked complete by an 'end of page'
+   segment.
+*/
+
+typedef enum {
+    JBIG2_PAGE_FREE,
+    JBIG2_PAGE_NEW,
+    JBIG2_PAGE_COMPLETE,
+    JBIG2_PAGE_RETURNED
+} Jbig2PageState;
+
+struct _Jbig2Page {
+    Jbig2PageState state;
+    uint32_t number;
+    uint32_t height, width;	/* in pixels */
+    uint32_t x_resolution,
+             y_resolution;	/* in pixels per meter */
+    uint16_t stripe_size;
+    bool striped;
+    uint8_t flags;
+    Jbig2Image *image;
+};
+
+int jbig2_read_page_info (Jbig2Ctx *ctx, Jbig2SegmentHeader *sh, const byte *segment_data);
+int jbig2_complete_page (Jbig2Ctx *ctx, Jbig2SegmentHeader *sh, const byte *segment_data);
+
 
 /* The word stream design is a compromise between simplicity and
    trying to amortize the number of method calls. Each ::get_next_word

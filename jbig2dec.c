@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.c,v 1.20 2002/06/15 16:02:55 giles Exp $
+    $Id: jbig2dec.c,v 1.21 2002/06/18 13:40:29 giles Exp $
 */
 
 #include <stdio.h>
@@ -236,8 +236,8 @@ error_callback(void *error_callback_data, const char *buf, Jbig2Severity severit
     switch (severity) {
         case JBIG2_SEVERITY_DEBUG: string = "DEBUG"; break;;
         case JBIG2_SEVERITY_INFO: string = "info"; break;;
-        case JBIG2_SEVERITY_WARNING: string = "warning"; break;;
-        case JBIG2_SEVERITY_FATAL: string = "fatal error"; break;;
+        case JBIG2_SEVERITY_WARNING: string = "WARNING"; break;;
+        case JBIG2_SEVERITY_FATAL: string = "FATAL ERROR"; break;;
         default: string = "unknown message"; break;;
     }
     

@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2.c,v 1.7 2002/06/17 21:06:38 giles Exp $
+    $Id: jbig2.c,v 1.8 2002/06/18 13:40:29 giles Exp $
 */
 
 #include <stdint.h>
@@ -118,6 +118,18 @@ jbig2_ctx_new (Jbig2Allocator *allocator,
   result->n_results_max = 16;
   result->results = (const Jbig2Result **)jbig2_alloc(allocator, result->n_results_max * sizeof(Jbig2Result *));
 
+  result->current_page = 0;
+  result->max_page_index = 16;
+  result->pages = (Jbig2Page *)jbig2_alloc(allocator, result->max_page_index * sizeof(Jbig2Page));
+  {
+    int index;
+    for (index = 0; index < result->max_page_index; index++) {
+        result->pages[index].state = JBIG2_PAGE_FREE;
+        result->pages[index].number = 0;
+        result->pages[index].image = NULL;
+    }
+  }
+
   return result;
 }
 
@@ -217,7 +229,10 @@ jbig2_write (Jbig2Ctx *ctx, const unsigned char *data, size_t size)
 	      if (ctx->buf_wr_ix - ctx->buf_rd_ix < 13)
 		return 0;
 	      ctx->n_pages = jbig2_get_int32(ctx->buf + ctx->buf_rd_ix + 9);
-              jbig2_error(ctx, JBIG2_SEVERITY_INFO, -1, "file header indicates %d pages", ctx->n_pages);
+              if (ctx->n_pages == 1)
+                jbig2_error(ctx, JBIG2_SEVERITY_INFO, -1, "file header indicates a single page document");
+              else
+                jbig2_error(ctx, JBIG2_SEVERITY_INFO, -1, "file header indicates a %d page document", ctx->n_pages);
 	      ctx->buf_rd_ix += 13;
 	    }
 	  else
