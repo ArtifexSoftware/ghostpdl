@@ -228,7 +228,9 @@ setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
     {
 	stream_Downsample_state *const ss = (stream_Downsample_state *) st;
 
-	ss->Colors = gs_color_space_num_components(pim->ColorSpace);
+	ss->Colors =
+	    (pim->ColorSpace == 0 ? 1 /*mask*/ :
+	     gs_color_space_num_components(pim->ColorSpace));
 	ss->WidthIn = pim->Width;
 	ss->HeightIn = pim->Height;
 	ss->XFactor = ss->YFactor = factor;
