@@ -32,9 +32,7 @@
 #include "gxfill.h"
 #include "gsptype2.h"
 #include "gdevddrw.h"
-#if TT_GRID_FITTING
-#   include "gzspotan.h" /* Only for gx_san_trap_store. */
-#endif
+#include "gzspotan.h" /* Only for gx_san_trap_store. */
 #include "memory_.h"
 #include "vdtrace.h"
 #include <assert.h>
@@ -46,7 +44,7 @@
  */
 
 #define FILL_SCAN_LINES
-#define FILL_TRAPEZOIDS /* Necessary for TT_GRID_FITTING. */
+#define FILL_TRAPEZOIDS
 /*
  * Define whether to sample curves when using the scan line algorithm
  * rather than flattening them.  This produces more accurate output, at
@@ -167,16 +165,12 @@ print_al(const char *label, const active_line * alp)
 #define print_al(label,alp) DO_NOTHING
 #endif
 
-#if TT_GRID_FITTING
 private inline bool
 is_spotan_device(gx_device * dev)
 {
     return dev->memory != NULL && 
 	    gs_object_type(dev->memory, dev) == &st_device_spot_analyzer;
 }
-#endif
-
-
 
 /* Forward declarations */
 private void free_line_list(line_list *);
@@ -184,9 +178,7 @@ private int add_y_list(gx_path *, line_list *);
 private int add_y_line(const segment *, const segment *, int, line_list *);
 private void insert_x_new(active_line *, line_list *);
 private bool end_x_line(active_line *, const line_list *, bool);
-#if CURVED_TRAPEZOID_FILL
 private void step_al(active_line *alp, bool move_iterator);
-#endif
 
 
 #define FILL_LOOP_PROC(proc)\
@@ -326,11 +318,7 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
     lst.bbox_width = fixed2int(fixed_ceiling(ibox.q.x + adjust.x)) - lst.bbox_left;
     /* We assume (adjust.x | adjust.y) == 0 iff it's a character. */
     pseudo_rasterization = ((adjust.x | adjust.y) == 0 && 
-#			    if TT_GRID_FITTING
-				!is_spotan_device(dev) &&
-#			    else
-				1 &&
-#			    endif
+			    !is_spotan_device(dev) &&
 			    ibox.q.y - ibox.p.y < SMALL_CHARACTER * fixed_scale &&
 			    ibox.q.x - ibox.p.x < SMALL_CHARACTER * fixed_scale);
     if (params->fill_zero_width && !pseudo_rasterization)
@@ -446,10 +434,8 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 #else
     fill_by_trapezoids = true;
 #endif
-#if TT_GRID_FITTING
     if (is_spotan_device(dev))
 	fill_by_trapezoids = true;
-#endif
 #ifdef FILL_TRAPEZOIDS
     if (fill_by_trapezoids && !DOUBLE_WRITE_OK()) {
 	/* Avoid filling rectangles by scan line. */
@@ -478,58 +464,16 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	pfpath = ppath;
     else
 #if defined(FILL_CURVES) && defined(FILL_SCAN_LINES)
-	/* Filling curves is possible. */
-#  ifdef FILL_TRAPEZOIDS
-	/* Not filling curves is also possible. */
-    if (fill_by_trapezoids && !CURVED_TRAPEZOID_FILL)
-#  endif
-#endif
-#if !defined(FILL_CURVES) || defined(FILL_TRAPEZOIDS)
-	/* Not filling curves is possible. */
-	{   
-	    gx_path_init_local(&ffpath, ppath->memory);
-	    code = gx_path_add_flattened_accurate(ppath, &ffpath,
-						  params->flatness,
-						  false);
-	    if (code < 0)
-		return code;
-	    pfpath = &ffpath;
-	}
-#endif
-#if defined(FILL_CURVES) && defined(FILL_SCAN_LINES)
     /* Filling curves is possible. */
-#  ifdef FILL_TRAPEZOIDS
-    /* Not filling curves is also possible. */
-    else
-#  endif
-    if (
-#   if CURVED_TRAPEZOID_FILL
-	gx_path__check_curves(ppath, (!fill_by_trapezoids ? pco_monotonize : pco_none)
-					| pco_small_curves, lst.fixed_flat)
-#   else
-	gx_path_is_monotonic(ppath)
-#   endif
-	)
+    if (gx_path__check_curves(ppath, (!fill_by_trapezoids ? pco_monotonize : pco_none)
+					| pco_small_curves, lst.fixed_flat))
 	pfpath = ppath;
     else {
-#	if TT_GRID_FITTING
-	    if (is_spotan_device(dev))
-		return_error(gs_error_unregistered); /* Must not happen. */
-#	endif
+	if (is_spotan_device(dev))
+	    return_error(gs_error_unregistered); /* Must not happen. */
 	gx_path_init_local(&ffpath, ppath->memory);
-	code = gx_path_copy_reducing(ppath, &ffpath, 
-#		    if CURVED_TRAPEZOID_FILL
-		    max_fixed,
-#		    else
-		    (fill_by_trapezoids ? lst.fixed_flat : max_fixed),
-#		    endif
-		    NULL, 
-#		    if CURVED_TRAPEZOID_FILL
-			    (fill_by_trapezoids ? pco_small_curves : pco_monotonize)
-#		    else
-			pco_monotonize
-#		    endif
-		    );
+	code = gx_path_copy_reducing(ppath, &ffpath, max_fixed, NULL, 
+			    (fill_by_trapezoids ? pco_small_curves : pco_monotonize));
 	if (code < 0)
 	    return code;
 	pfpath = &ffpath;
@@ -738,7 +682,6 @@ insert_y_line(line_list *ll, active_line *alp)
     print_al("add ", alp);
 }
 
-#if CURVED_TRAPEZOID_FILL
 typedef struct contour_cursor_s {
     segment *prev, *pseg, *pfirst, *plast;
     gx_flattened_iterator *fi;
@@ -864,7 +807,7 @@ init_contour_cursor(line_list *ll, contour_cursor *q)
 	fixed ymax = max(max(q->prev->pt.y, s->p1.y), max(s->p2.y, s->pt.y));
 	bool in_band = ymin <= ll->ymax && ymax >= ll->ymin;
 	q->crossing = ymin < ll->ymin && ymax >= ll->ymin;
-	q->monotonic = !CURVED_TRAPEZOID_FILL || !ll->fill_by_trapezoids ||
+	q->monotonic = !ll->fill_by_trapezoids ||
 	    !in_band ||
 	    (!CURVED_TRAPEZOID_FILL_HEAVY_TEST && !q->crossing &&
 	    ((q->prev->pt.y <= s->p1.y && s->p1.y <= s->p2.y && s->p2.y <= s->pt.y) ||
@@ -912,8 +855,7 @@ scan_contour(line_list *ll, contour_cursor *q)
 	q->more_flattened = false;
 	ll->main_dir = (q->dir == DIR_DOWN ? DIR_DOWN : 
 			q->dir == DIR_UP ? DIR_UP : ll->main_dir);
-	if (!CURVED_TRAPEZOID_FILL || !fill_by_trapezoids || 
-		ll->main_dir != DIR_HORIZONTAL) {
+	if (!fill_by_trapezoids || ll->main_dir != DIR_HORIZONTAL) {
 	    only_horizontal = false;
 	    break;
 	}
@@ -958,25 +900,25 @@ scan_contour(line_list *ll, contour_cursor *q)
 		if (code < 0)
 		    return code;
 	    } 
-	    if (CURVED_TRAPEZOID_FILL && fill_by_trapezoids && 
+	    if (fill_by_trapezoids && 
 		    p.fi->fy0 >= ll->ymin && p.dir == DIR_UP && ll->main_dir == DIR_DOWN) {
 		code = start_al_pair(ll, q, &p);
 		if (code < 0)
 		    return code;
 	    }
-	    if ((!CURVED_TRAPEZOID_FILL || !fill_by_trapezoids) && 
+	    if (!fill_by_trapezoids && 
 		    p.fi->fy0 >= ll->ymin && p.dir == DIR_UP && q->dir == DIR_DOWN) {
 		code = start_al_pair(ll, q, &p);
 		if (code < 0)
 		    return code;
 	    }
-	    if ((!CURVED_TRAPEZOID_FILL || !fill_by_trapezoids) && 
+	    if (!fill_by_trapezoids && 
 		    p.fi->fy0 >= ll->ymin && p.dir == DIR_UP && q->dir == DIR_HORIZONTAL) {
 		code = add_y_line(p.prev, p.pseg, p.dir, ll);
 		if (code < 0)
 		    return code;
 	    }
-	    if ((!CURVED_TRAPEZOID_FILL || !fill_by_trapezoids) && 
+	    if (!fill_by_trapezoids && 
 		    q->fi->fy1 >= ll->ymin && q->dir == DIR_DOWN && p.dir == DIR_HORIZONTAL) {
 		code = add_y_line(q->prev, q->pseg, q->dir, ll);
 		if (code < 0)
@@ -1007,7 +949,7 @@ scan_contour(line_list *ll, contour_cursor *q)
 		if (code < 0)
 		    return code;
 	    }
-	    if (!CURVED_TRAPEZOID_FILL || p.dir == DIR_DOWN || 
+	    if (p.dir == DIR_DOWN || 
 		    p.dir == DIR_HORIZONTAL || !fill_by_trapezoids) {
 		gx_flattened_iterator *fi1 = q->fi;
 		q->prev = p.prev;
@@ -1081,111 +1023,6 @@ add_y_list(gx_path * ppath, line_list *ll)
     return close_count;
 }
 
-#else
-/*
- * Construct a Y-sorted list of segments for rasterizing a path.  We assume
- * the path is non-empty.  Only include non-horizontal lines or (monotonic)
- * curve segments where one endpoint is locally Y-minimal, and horizontal
- * lines that might color some additional pixels.
- */
-private int
-add_y_list(gx_path * ppath, line_list *ll)
-{
-    fixed adjust_below = ll->adjust_below, adjust_above = ll->adjust_above;
-    segment *pseg = (segment *) ppath->first_subpath;
-    int close_count = 0;
-    fixed ymin = ll->ymin;
-    fixed ymax = ll->ymax;
-    bool pseudo_rasterization = ll->pseudo_rasterization;
-    int code;
-
-    while (pseg) {
-	/* We know that pseg points to a subpath head (s_start). */
-	subpath *psub = (subpath *) pseg;
-	segment *plast = psub->last;
-	int dir = 2;		/* hack to skip first segment */
-	int first_dir = 2; /* Quiet compiler. */
-	int prev_dir;
-	segment *prev;
-
-	if (plast->type != s_line_close) {
-	    /* Create a fake s_line_close */
-	    line_close_segment *lp = &psub->closer;
-	    segment *next = plast->next;
-
-	    lp->next = next;
-	    lp->prev = plast;
-	    plast->next = (segment *) lp;
-	    if (next)
-		next->prev = (segment *) lp;
-	    lp->type = s_line_close;
-	    lp->pt = psub->pt;
-	    lp->sub = psub;
-	    psub->last = plast = (segment *) lp;
-	    ll->close_count++;
-	}
-	while ((prev_dir = dir, prev = pseg,
-		(pseg = pseg->next) != 0 && pseg->type != s_start)
-	    ) {
-	    /* This element is either a line or a monotonic curve segment. */
-	    fixed iy = pseg->pt.y;
-	    fixed py = prev->pt.y;
-
-	    /*
-	     * Segments falling entirely outside the ibox in Y
-	     * are treated as though they were horizontal, *
-	     * i.e., they are never put on the list.
-	     */
-#define COMPUTE_DIR(xo, xe, yo, ye)\
-  (ye > yo ? (ye <= ymin || yo >= ymax ? 0 : DIR_UP) :\
-   ye < yo ? (yo <= ymin || ye >= ymax ? 0 : DIR_DOWN) :\
-   2)
-#define ADD_DIR_LINES(prev2, prev, this, pdir, dir)\
-  BEGIN\
-    if (pdir)\
-      { if ((code = add_y_line(prev2, prev, pdir, ll)) < 0) return code; }\
-    if (dir)\
-      { if ((code = add_y_line(prev, this, dir, ll)) < 0) return code; }\
-  END
-	    dir = COMPUTE_DIR(prev->pt.x, pseg->pt.x, py, iy);
-	    if (dir == 2) {	/* Put horizontal lines on the list */
-		/* if they would color any pixels. */
-		if (
-		    (pseudo_rasterization && (prev->pt.x != pseg->pt.x)) ||  /* Since TT characters are not hinted. */
-		    fixed2int_pixround(iy - adjust_below) <
-		    fixed2int_pixround(iy + adjust_above)
-		    ) {
-		    INCR(horiz);
-		    if ((code = add_y_line(prev, pseg,
-					   DIR_HORIZONTAL, ll)) < 0
-			)
-			return code;
-		}
-		dir = 0;
-	    }
-	    if (dir > prev_dir) {
-		ADD_DIR_LINES(prev->prev, prev, pseg, prev_dir, dir);
-	    } else if (prev_dir == 2)	/* first segment */
-		first_dir = dir;
-	    if (pseg == plast) {
-		/*
-		 * We skipped the first segment of the subpath, so the last
-		 * segment must receive special consideration.	Note that we
-		 * have `closed' all subpaths.
-		 */
-		if (first_dir > dir) {
-		    ADD_DIR_LINES(prev, pseg, psub->next, dir, first_dir);
-		}
-	    }
-	}
-#undef COMPUTE_DIR
-#undef ADD_DIR_LINES
-    }
-    return close_count;
-}
-#endif
-
-#if CURVED_TRAPEZOID_FILL
 
 private void 
 step_al(active_line *alp, bool move_iterator)
@@ -1248,8 +1085,6 @@ init_al(active_line *alp, const segment *s0, const segment *s1, fixed fixed_flat
     }
     alp->pseg = s1;
 }
-#endif
-
 /*
  * Internal routine to test a segment and add it to the pending list if
  * appropriate.
@@ -1262,29 +1097,23 @@ add_y_line_aux(const segment * prev_lp, const segment * lp,
 
     if (alp == NULL)
 	return_error(gs_error_VMerror);
-#   if CURVED_TRAPEZOID_FILL
-	alp->more_flattened = false;
-#   endif
+    alp->more_flattened = false;
     switch ((alp->direction = dir)) {
 	case DIR_UP:
-#	    if CURVED_TRAPEZOID_FILL
-		if (ll->fill_by_trapezoids) {
-		    init_al(alp, prev_lp, lp, ll->fixed_flat);
-		    assert(alp->start.y <= alp->end.y);
-		} else
-#	    endif
-	    {	SET_AL_POINTS(alp, *prev, *curr);
+	    if (ll->fill_by_trapezoids) {
+		init_al(alp, prev_lp, lp, ll->fixed_flat);
+		assert(alp->start.y <= alp->end.y);
+	    } else {
+	    	SET_AL_POINTS(alp, *prev, *curr);
 		alp->pseg = lp;
 	    }
 	    break;
 	case DIR_DOWN:
-#	    if CURVED_TRAPEZOID_FILL
-		if (ll->fill_by_trapezoids) {
-		    init_al(alp, lp, prev_lp, ll->fixed_flat);
-		    assert(alp->start.y <= alp->end.y);
-		} else
-#	    endif
-	    {	SET_AL_POINTS(alp, *curr, *prev);
+	    if (ll->fill_by_trapezoids) {
+		init_al(alp, lp, prev_lp, ll->fixed_flat);
+		assert(alp->start.y <= alp->end.y);
+	    } else {
+	    	SET_AL_POINTS(alp, *curr, *prev);
 		alp->pseg = prev_lp;
 	    }
 	    break;
@@ -1318,11 +1147,9 @@ insert_x_new(active_line * alp, line_list *ll)
 
     vd_bar(alp->start.x, alp->start.y, alp->end.x, alp->end.y, 1, RGB(128, 128, 0));
     alp->x_current = alp->start.x;
-#   if CURVED_TRAPEZOID_FILL
-	alp->x_next = alp->start.x; /*	If the spot starts with a horizontal segment,
-					we need resort_x_line to work properly
-					in the very beginning. */
-#   endif
+    alp->x_next = alp->start.x; /*	If the spot starts with a horizontal segment,
+				    we need resort_x_line to work properly
+				    in the very beginning. */
     while (INCR_EXPR(x_step),
 	   (next = prev->next) != 0 && x_order(next, alp) < 0
 	)
@@ -1396,55 +1223,45 @@ end_x_line(active_line *alp, const line_list *ll, bool update)
     gs_fixed_point npt;
     const bool fill_by_trapezoids = ll->fill_by_trapezoids;
 
-#   if CURVED_TRAPEZOID_FILL
-	if (fill_by_trapezoids) {
-	    if (alp->end.y < alp->start.y) {
-		/* fixme: The condition above causes a horizontal
-		   part of a curve near an Y maximum to process twice :
-		   once scanning the left spot boundary and once scanning the right one.
-		   In both cases it will go to the H list.
-		   However the dropout prevention logic isn't
-		   sensitive to that, and such segments does not affect 
-		   trapezoids. Thus the resulting raster doesn't depend on that.
-		   However it would be nice to improve someday.
-		 */
-		remove_al(ll, alp);
-		return true;
-	    } else if (alp->more_flattened)
-		return false;
-	}
-	if (!fill_by_trapezoids) {
-	    npt.y = next->pt.y;
-	    if (!update) {
-		return npt.y <= pseg->pt.y;
-	    }
-	}
-#   else
+    if (fill_by_trapezoids) {
+	if (alp->end.y < alp->start.y) {
+	    /* fixme: The condition above causes a horizontal
+	       part of a curve near an Y maximum to process twice :
+	       once scanning the left spot boundary and once scanning the right one.
+	       In both cases it will go to the H list.
+	       However the dropout prevention logic isn't
+	       sensitive to that, and such segments does not affect 
+	       trapezoids. Thus the resulting raster doesn't depend on that.
+	       However it would be nice to improve someday.
+	     */
+	    remove_al(ll, alp);
+	    return true;
+	} else if (alp->more_flattened)
+	    return false;
+    }
+    if (!fill_by_trapezoids) {
 	npt.y = next->pt.y;
-	if (!update)
+	if (!update) {
 	    return npt.y <= pseg->pt.y;
-#   endif
+	}
+    }
     if_debug5('F', "[F]ended 0x%lx: pseg=0x%lx y=%f next=0x%lx npt.y=%f\n",
 	      (ulong) alp, (ulong) pseg, fixed2float(pseg->pt.y),
 	      (ulong) next, fixed2float(npt.y));
-#   if CURVED_TRAPEZOID_FILL
-	if (!fill_by_trapezoids)
-#   endif
+    if (!fill_by_trapezoids)
 	if (npt.y <= pseg->pt.y) {	/* End of a line sequence */
 	    remove_al(ll, alp);
 	    return true;
 	}
-#   if CURVED_TRAPEZOID_FILL
-	if (fill_by_trapezoids) {
-	    init_al(alp, pseg, next, ll->fixed_flat);
-	    if (alp->start.y > alp->end.y) {
-		/* See comment above. */
-		remove_al(ll, alp);
-		return true;
-	    }
-	    alp->x_current = alp->x_next = alp->start.x;
-	} else
-#   endif
+    if (fill_by_trapezoids) {
+	init_al(alp, pseg, next, ll->fixed_flat);
+	if (alp->start.y > alp->end.y) {
+	    /* See comment above. */
+	    remove_al(ll, alp);
+	    return true;
+	}
+	alp->x_current = alp->x_next = alp->start.x;
+    } else
     {	alp->pseg = next;
 	npt.x = next->pt.x;
 	SET_AL_POINTS(alp, alp->end, npt);
@@ -1619,7 +1436,6 @@ move_al_by_y(line_list *ll, fixed y1, fixed y)
     fixed x;
     active_line *alp, *nlp;
 
-#   if CURVED_TRAPEZOID_FILL
     for (x = min_fixed, alp = ll->x_list; alp != 0; alp = nlp) {
 	bool notend = false;
 	alp->x_current = alp->x_next;
@@ -1638,19 +1454,6 @@ move_al_by_y(line_list *ll, fixed y1, fixed y)
 		x = alp->x_next;
 	}
     }
-#   else
-    for (x = min_fixed, alp = ll->x_list; alp != 0; alp = nlp) {
-	alp->x_current = alp->x_next;
-
-	nlp = alp->next;
-	if (alp->end.y != y1 || !end_x_line(alp, ll, true)) {
-	    if (alp->x_next <= x)
-		resort_x_line(alp);
-	    else
-		x = alp->x_next;
-	}
-    }
-#   endif
     if (ll->x_list != 0 && ll->pseudo_rasterization) {
 	/* Ensure that contacting vertical stems are properly ordered.
 	   We don't want to unite contacting stems into
@@ -1683,7 +1486,6 @@ move_al_by_y(line_list *ll, fixed y1, fixed y)
     }
 }
 
-#if CURVED_TRAPEZOID_FILL
 /* Process horizontal segment of curves. */
 private inline int
 process_h_segments(line_list *ll, fixed y)
@@ -1705,7 +1507,6 @@ process_h_segments(line_list *ll, fixed y)
     return inserted;
     /* After this should call move_al_by_y and step to the next band. */
 }
-#endif
 
 private int
 loop_fill_trap(gx_device * dev, fixed fx0, fixed fw0, fixed fy0,
@@ -1841,7 +1642,6 @@ fill_trap_or_rect(gx_device * dev, const gs_fixed_rect * pbox,
      */
     int code;
 
-#if TT_GRID_FITTING
     /* We can't pass data through the device interface because 
        we need to pass segment pointers. We're unhappy of that. */
     if (is_spotan_device(dev)) {
@@ -1849,8 +1649,6 @@ fill_trap_or_rect(gx_device * dev, const gs_fixed_rect * pbox,
 	    y, y1, xlbot, xbot, xltop, xtop, flp->pseg, alp->pseg, 
 	    flp->direction, alp->direction);
     }
-#endif
-
     if (xltop == xlbot && xtop == xbot) {
 	int yi = fixed2int_pixround(y - adjust_below);
 	int wi = fixed2int_pixround(y1 + adjust_above) - yi;
@@ -1991,15 +1789,12 @@ intersect_al(line_list *ll, fixed y, fixed *y_top, int draw, bool all_bands)
     active_line *endp = NULL;
 
     /* don't bother if no pixels with no pseudo_rasterization */
-#if CURVED_TRAPEZOID_FILL
     if (y == y1) {
 	/* Rather the intersection algorithm can handle this case with
 	   retrieving x_next equal to x_current, 
 	   we bypass it for safety reason.
 	 */
-    } else
-#endif
-    if (ll->pseudo_rasterization || draw >= 0 || all_bands) {
+    } else if (ll->pseudo_rasterization || draw >= 0 || all_bands) {
 	/*
 	 * Loop invariants:
 	 *	alp = endp->next;
@@ -2020,9 +1815,7 @@ intersect_al(line_list *ll, fixed y, fixed *y_top, int draw, bool all_bands)
 	    else if (alp->x_current >= endp->x_current &&
 		     intersect(endp, alp, y, y1, &y_new)) {
 		if (y_new <= y1) {
-#		    if CURVED_TRAPEZOID_FILL
-			assert(y_new >= y);
-#		    endif
+		    assert(y_new >= y);
 		    stopx = endp;
 		    y1 = y_new;
 		    if (endp->diff.x == 0)
@@ -2143,12 +1936,7 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
     int code;
     bool fill_direct = color_writes_pure(pdevc, lop);
     const bool pseudo_rasterization = ll->pseudo_rasterization;
-#if TT_GRID_FITTING
     const bool all_bands = (is_spotan_device(dev));
-#else
-    const bool all_bands = false;
-#endif
-
     dev_proc_fill_rectangle((*fill_rect));
 
     if (yll == 0)
@@ -2173,13 +1961,11 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 	while (yll != 0 && yll->start.y == y) {
 	    active_line *ynext = yll->next;	/* insert smashes next/prev links */
 
-#	    if CURVED_TRAPEZOID_FILL
-		ll->y_list = ynext;
-		if (ll->y_line == yll)
-		    ll->y_line = ynext;
-		if (ynext != NULL)
-		    ynext->prev = NULL;
-#	    endif
+	    ll->y_list = ynext;
+	    if (ll->y_line == yll)
+		ll->y_line = ynext;
+	    if (ynext != NULL)
+		ynext->prev = NULL;
 	    if (yll->direction == DIR_HORIZONTAL) {
 		if (!pseudo_rasterization) {
 		    /*
@@ -2206,13 +1992,7 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 		insert_x_new(yll, ll);
 	    yll = ynext;
 	}
-#	if CURVED_TRAPEZOID_FILL
-	    /* Mustn't leave by Y before process_h_segments. */
-#	else
-	    /* Check whether we've reached the maximum y. */
-	    if (y >= y_limit)
-		break;
-#	endif
+	/* Mustn't leave by Y before process_h_segments. */
 	if (ll->x_list == 0) {	/* No active lines, skip to next start */
 	    if (yll == 0)
 		break;		/* no lines left */
@@ -2240,9 +2020,7 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 		y1 = y_band + 1;
 	}
 	for (alp = ll->x_list; alp != 0; alp = alp->next) {
-#	    if CURVED_TRAPEZOID_FILL
-		assert(alp->start.y <= y && y <= alp->end.y);
-#	    endif
+	    assert(alp->start.y <= y && y <= alp->end.y);
 	    if (alp->end.y < y1)
 		y1 = alp->end.y;
 	}
@@ -2253,7 +2031,6 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 		print_line_list(ll->x_list);
 	    }
 #	endif
-#	if CURVED_TRAPEZOID_FILL
 	assert(y1 >= y);
 	if (y == y1) {
 	    code = process_h_segments(ll, y);
@@ -2268,10 +2045,9 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 	}
 	if (y >= y_limit)
 	    break;
-#	endif
 	/* Now look for line intersections before y1. */
 	covering_pixel_centers = COVERING_PIXEL_CENTERS(y, y1, adjust_below, adjust_above);
-	if (!CURVED_TRAPEZOID_FILL || y != y1) {
+	if (y != y1) {
 	    intersect_al(ll, y, &y1, (covering_pixel_centers ? 1 : -1), all_bands); /* May change y1. */
 	    covering_pixel_centers = COVERING_PIXEL_CENTERS(y, y1, adjust_below, adjust_above);
 	}
@@ -2382,11 +2158,7 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 	y = y1;
     }
     if (pseudo_rasterization) {
-#	if CURVED_TRAPEZOID_FILL
-	    code = process_h_lists(ll, 0, 0, 0, y, y + 1 /*stub*/);
-#	else
-	    code = process_h_lists(ll, 0, 0, 0, y, y);
-#	endif
+	code = process_h_lists(ll, 0, 0, 0, y, y + 1 /*stub*/);
 	if (code < 0)
 	    return code;
 	code = close_margins(dev, ll, &ll->margin_set1);

@@ -77,11 +77,9 @@ struct active_line_s {
 #define DIR_DOWN (-1)
     int curve_k;		/* # of subdivisions for curves,-1 for lines */
     curve_cursor cursor;	/* cursor for curves, unused for lines */
-#if CURVED_TRAPEZOID_FILL
     /* fixme : use an union {cursor, {fi, last}}, because they are used exclusively. */
     gx_flattened_iterator fi;
     bool more_flattened;
-#endif
 /*
  * "Pending" lines (not reached in the Y ordering yet) use next and prev
  * to order lines by increasing starting Y.  "Active" lines (being scanned)
@@ -136,9 +134,7 @@ struct line_list_s {
     bool fill_by_trapezoids;
     fixed adjust_below, adjust_above;
     fixed ymin, ymax;
-#if CURVED_TRAPEZOID_FILL
     int main_dir;
-#endif
     fixed y_break;
 };
 

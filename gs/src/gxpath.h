@@ -182,10 +182,8 @@ typedef enum {
     pco_none = 0,
     pco_monotonize = 1,		/* make curves monotonic */
     pco_accurate = 2,		/* flatten with accurate tangents at ends */
-    pco_for_stroke = 4		/* flatten taking line width into account */
-#if CURVED_TRAPEZOID_FILL
-    , pco_small_curves = 8	/* make curves small */
-#endif
+    pco_for_stroke = 4,		/* flatten taking line width into account */
+    pco_small_curves = 8	/* make curves small */
 } gx_path_copy_options;
 
 /* Path accessors */
@@ -198,11 +196,7 @@ int gx_path_subpath_start_point(const gx_path *, gs_fixed_point *);
 bool gx_path_has_curves(const gx_path *),
     gx_path_is_void(const gx_path *),	/* no segments */
     gx_path_is_null(const gx_path *),	/* nothing at all */
-#if CURVED_TRAPEZOID_FILL
     gx_path__check_curves(const gx_path * ppath, gx_path_copy_options options, fixed fixed_flat);
-#else
-    gx_path_is_monotonic(const gx_path * ppath);
-#endif
 typedef enum {
     prt_none = 0,
     prt_open = 1,		/* only 3 sides */

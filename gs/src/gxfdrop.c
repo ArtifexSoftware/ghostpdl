@@ -451,12 +451,10 @@ private inline int process_h_list(line_list * ll, active_line * hlp, active_line
 int process_h_lists(line_list * ll, active_line * plp, active_line * flp, active_line * alp,
 		    fixed y0, fixed y1)
 {   
-#   if CURVED_TRAPEZOID_FILL
-	if (y0 == y1) {
-	    /*  fixme : Must not happen. Remove. */
-	    return 0;
-	}
-#   endif
+    if (y0 == y1) {
+	/*  fixme : Must not happen. Remove. */
+	return 0;
+    }
     if (ll->h_list0 != 0) {
 	int code = process_h_list(ll, ll->h_list0, plp, flp, alp, 1, y0, y1);
 

@@ -130,12 +130,8 @@ gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
 				flat = min(flat_x, flat_y);
 			    }
 			}
-#			if CURVED_TRAPEZOID_FILL
-			    k = (options & pco_small_curves ? -1 
-				    : gx_curve_log2_samples(x0, y0, pc, flat));
-#			else
-			    k = gx_curve_log2_samples(x0, y0, pc, flat);
-#			endif
+			k = (options & pco_small_curves ? -1 
+				: gx_curve_log2_samples(x0, y0, pc, flat));
 			if (options & pco_accurate) {
 			    segment *start;
 			    segment *end;
@@ -600,11 +596,7 @@ gx_curve_x_at_y(curve_cursor * prc, fixed y)
 
 /* Test whether a path is free of non-monotonic curves. */
 bool
-#if CURVED_TRAPEZOID_FILL
 gx_path__check_curves(const gx_path * ppath, gx_path_copy_options options, fixed fixed_flat)
-#else
-gx_path_is_monotonic(const gx_path * ppath)
-#endif
 {
     const segment *pseg = (const segment *)(ppath->first_subpath);
     gs_fixed_point pt0;
@@ -624,7 +616,7 @@ gx_path_is_monotonic(const gx_path * ppath)
 		{
 		    const curve_segment *pc = (const curve_segment *)pseg;
 
-		    if (!CURVED_TRAPEZOID_FILL || (options & pco_monotonize)) {
+		    if (options & pco_monotonize) {
 			double t[2];
 			int nz = gx_curve_monotonic_points(pt0.y,
 					       pc->p1.y, pc->p2.y, pc->pt.y, t);
@@ -636,17 +628,15 @@ gx_path_is_monotonic(const gx_path * ppath)
 			if (nz != 0)
 			    return false;
 		    }
-#		    if CURVED_TRAPEZOID_FILL
-			if (options & pco_small_curves) {
-			    fixed ax, bx, cx, ay, by, cy; 
-			    int k = gx_curve_log2_samples(pt0.x, pt0.y, pc, fixed_flat);
+		    if (options & pco_small_curves) {
+			fixed ax, bx, cx, ay, by, cy; 
+			int k = gx_curve_log2_samples(pt0.x, pt0.y, pc, fixed_flat);
 
-			    if(!curve_coeffs_ranged(pt0.x, pc->p1.x, pc->p2.x, pc->pt.x,
-				    pt0.y, pc->p1.y, pc->p2.y, pc->pt.y,
-				    &ax, &bx, &cx, &ay, &by, &cy, k))
-				return false;
-			}
-#		    endif
+			if(!curve_coeffs_ranged(pt0.x, pc->p1.x, pc->p2.x, pc->pt.x,
+				pt0.y, pc->p1.y, pc->p2.y, pc->pt.y,
+				&ax, &bx, &cx, &ay, &by, &cy, k))
+			    return false;
+		    }
 		}
 		break;
 	    default:

@@ -412,9 +412,7 @@ struct gx_flattened_iterator_s {
     fixed idx, idy, id2x, id2y, id3x, id3y;	/* I */
     uint rx, ry, rdx, rdy, rd2x, rd2y, rd3x, rd3y;	/* R */
     /* public : */
-#if CURVED_TRAPEZOID_FILL
     bool curve;
-#endif
     fixed lx0, ly0, lx1, ly1;
     /* private data for filtered1 : */
     int prev_filtered1_i;
@@ -430,9 +428,6 @@ struct gx_flattened_iterator_s {
     /* public data for filtered2 : */
     fixed fx0, fy0, fx1, fy1;
     int filtered2_i;
-#if !FLATTENED_ITERATOR_BACKSCAN
-    byte skip_points[(1 << k_sample_max) / 8]; /* Only for curves. */
-#endif
 };
 
 bool gx_flattened_iterator__init(gx_flattened_iterator *this, 
