@@ -7,6 +7,13 @@ This file, NEWS-PL, describes the changes in the most recent releases of
 Aladdin's library code that is shared between PCL5, HP-GL/2, HP RTL, and PCL
 XL, in reverse chronological order.
 
+Version 1.23 (12/02/98)
+======================
+
+Thu Nov 26 19:54:16 1998  Henry Stiles  <henrys@meerkat>
+
+	* pjparse.c, pjparse.h: pjl_compare() is now exported.
+
 Version 1.22 (10/05/98)
 =======================
 
