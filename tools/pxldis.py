@@ -20,7 +20,6 @@
 # Artifex reports the file offset of each operator HP does not.
 
 import string 
-DEBUG = 0
 
 # for packing and unpacking binary data
 from struct import *
@@ -326,12 +325,6 @@ class pxl_dis:
 
         # the n'th operator in the stream
         self.operator_position = 0
-        self.__verbose = DEBUG
-        
-    # set DEBUG=1 above to enable this
-    def debug_trace(self, format, *arguments):
-        if self.__verbose:
-            print format % arguments
         
     def big_endian_stream(self):
         return (self.binding == ')')
@@ -365,16 +358,6 @@ class pxl_dis:
     def attributeIDValue(self):
         return 1
 
-    # search for next expected tag "tag"
-    def getTag(self, tag):
-        new_tag = unpack('B', self.data[self.index])[0]
-        if ( new_tag == tag ):
-            self.index = self.index + 1
-            self.debug_trace( "found tag: %x", tag )
-            return 1
-        self.debug_trace( "tag not found: %x", tag )
-        return 0
-
     # get the next operator
     def operatorTag(self):
         self.operator_position = self.operator_position + 1
@@ -388,21 +371,23 @@ class pxl_dis:
                 # handle special cases
                 if ( self.is_Embedded(k) ):
                     self.process_EmbeddedInfo(k)
-                self.debug_trace( "found operator %s", k )
                 return 1
-        self.debug_trace( "did not find operator %x", tag )
         return 0
 
     def Tag_ubyte(self):
-        if ( self.getTag( pxl_tags_dict['ubyte'] ) ):
-             print "ubyte",
-             self.unpack_string = 'B'
-             self.size_of_element = 1
-             return 1
+        new_tag = unpack('B', self.data[self.index])[0]
+        if ( new_tag == pxl_tags_dict['ubyte'] ):
+            self.index = self.index + 1
+            print "ubyte",
+            self.unpack_string = 'B'
+            self.size_of_element = 1
+            return 1
         return 0
 
     def Tag_sint16(self):
-        if ( self.getTag( pxl_tags_dict['sint16'] ) ):
+        new_tag = unpack('B', self.data[self.index])[0]
+        if ( new_tag == pxl_tags_dict['sint16'] ):
+            self.index = self.index + 1
             print "sint16", 
             self.unpack_string = 'h'
             self.size_of_element = 2
@@ -410,15 +395,20 @@ class pxl_dis:
         return 0
 
     def Tag_uint16(self):
-        if ( self.getTag( pxl_tags_dict['uint16'] ) ):
-             print "uint16",
-             self.unpack_string = 'H'
-             self.size_of_element = 2
-             return 1
+        new_tag = unpack('B', self.data[self.index])[0]
+        if ( new_tag == pxl_tags_dict['uint16'] ):
+            self.index = self.index + 1
+            print "uint16",
+            self.unpack_string = 'H'
+            self.size_of_element = 2
+            return 1
         return 0
 
     def Tag_sint32(self):
-        if ( self.getTag( pxl_tags_dict['sint32'] ) ):
+        new_tag = unpack('B', self.data[self.index])[0]
+
+        if ( new_tag == pxl_tags_dict['sint32'] ):
+            self.index = self.index + 1
             print "sint32",
             self.unpack_string = 'l'
             self.size_of_element = 4
@@ -426,15 +416,22 @@ class pxl_dis:
         return 0
 
     def Tag_uint32(self):
-        if ( self.getTag( pxl_tags_dict['uint32'] ) ):
-             print "uint32",
-             self.unpack_string = 'L'
-             self.size_of_element = 4
-             return 1
+        new_tag = unpack('B', self.data[self.index])[0]
+
+        if ( new_tag == pxl_tags_dict['uint32'] ):
+            self.index = self.index + 1
+
+            print "uint32",
+            self.unpack_string = 'L'
+            self.size_of_element = 4
+            return 1
         return 0
 
     def Tag_real32(self):
-        if ( self.getTag( pxl_tags_dict['real32'] ) ):
+        new_tag = unpack('B', self.data[self.index])[0]
+
+        if ( new_tag == pxl_tags_dict['real32'] ):
+            self.index = self.index + 1
             print "real32",
             self.unpack_string = 'f'
             self.size_of_element = 4
@@ -442,7 +439,10 @@ class pxl_dis:
         return 0
 
     def Tag_ubyte_array(self):
-        if ( self.getTag( pxl_tags_dict['ubyte_array'] ) ):
+        new_tag = unpack('B', self.data[self.index])[0]
+
+        if ( new_tag == pxl_tags_dict['ubyte_array'] ):
+            self.index = self.index + 1
             self.unpack_string = 'B'
             self.size_of_element = 1
             print "ubyte_array [",
@@ -450,7 +450,10 @@ class pxl_dis:
         return 0
 
     def Tag_uint16_array(self):
-        if ( self.getTag( pxl_tags_dict['uint16_array'] ) ):
+        new_tag = unpack('B', self.data[self.index])[0]
+
+        if ( new_tag == pxl_tags_dict['uint16_array'] ):
+            self.index = self.index + 1
             self.unpack_string = 'H'
             self.size_of_element = 2
             print "uint16_array [",
@@ -458,7 +461,10 @@ class pxl_dis:
         return 0
 
     def Tag_sint16_array(self):
-        if ( self.getTag( pxl_tags_dict['sint16_array'] ) ):
+        new_tag = unpack('B', self.data[self.index])[0]
+
+        if ( new_tag == pxl_tags_dict['sint16_array'] ):
+            self.index = self.index + 1
             self.unpack_string = 'h'
             self.size_of_element = 2
             print "sint16_array [",
@@ -466,7 +472,10 @@ class pxl_dis:
         return 0
 
     def Tag_uint32_array(self):
-        if ( self.getTag( pxl_tags_dict['uint32_array'] ) ):
+        new_tag = unpack('B', self.data[self.index])[0]
+
+        if ( new_tag == pxl_tags_dict['uint32_array'] ):
+            self.index = self.index + 1
             self.unpack_string = 'L'
             self.size_of_element = 4
             print "uint32_array [",
@@ -474,7 +483,10 @@ class pxl_dis:
         return 0
 
     def Tag_sint32_array(self):
-        if ( self.getTag( pxl_tags_dict['sint32_array'] ) ):
+        new_tag = unpack('B', self.data[self.index])[0]
+
+        if ( new_tag == pxl_tags_dict['sint32_array'] ):
+            self.index = self.index + 1
             self.unpack_string = 'l'
             self.size_of_element = 4
             print "sint32_array [",
@@ -482,7 +494,10 @@ class pxl_dis:
         return 0
 
     def Tag_real32_array(self):
-        if ( self.getTag( pxl_tags_dict['real32_array'] ) ):
+        new_tag = unpack('B', self.data[self.index])[0]
+
+        if ( new_tag == pxl_tags_dict['real32_array'] ):
+            self.index = self.index + 1
             self.unpack_string = 'f'
             self.size_of_element = 4
             print "real32_array [",
@@ -490,7 +505,11 @@ class pxl_dis:
         return 0
     
     def Tag_ubyte_xy(self):
-        if ( self.getTag( pxl_tags_dict['ubyte_xy'] ) ):
+        new_tag = unpack('B', self.data[self.index])[0]
+
+        if ( new_tag == pxl_tags_dict['ubyte_xy'] ):
+            self.index = self.index + 1
+
             print "ubyte_xy %d %d" % \
                   self.unpack('BB', self.data[self.index:self.index+2]),
             self.index = self.index + 2
@@ -498,7 +517,11 @@ class pxl_dis:
         return 0
 
     def Tag_uint16_xy(self):
-        if ( self.getTag( pxl_tags_dict['uint16_xy'] ) ):
+        new_tag = unpack('B', self.data[self.index])[0]
+
+        if ( new_tag == pxl_tags_dict['uint16_xy'] ):
+            self.index = self.index + 1
+
             print "uint16_xy %d %d" % \
                   self.unpack('HH', self.data[self.index:self.index+4]),
             self.index = self.index + 4
@@ -506,7 +529,11 @@ class pxl_dis:
         return 0
 
     def Tag_sint16_xy(self):
-        if ( self.getTag( pxl_tags_dict['sint16_xy'] ) ):
+        new_tag = unpack('B', self.data[self.index])[0]
+
+        if ( new_tag == pxl_tags_dict['sint16_xy'] ):
+            self.index = self.index + 1
+
             print "sint16_xy %d %d" % \
                   self.unpack('hh', self.data[self.index:self.index+4]),
             self.index = self.index + 4
@@ -514,7 +541,11 @@ class pxl_dis:
         return 0
 
     def Tag_uint32_xy(self):
-        if ( self.getTag( pxl_tags_dict['uint32_xy'] ) ):
+        new_tag = unpack('B', self.data[self.index])[0]
+
+        if ( new_tag == pxl_tags_dict['uint32_xy'] ):
+            self.index = self.index + 1
+
             print "uint32_xy" % \
                   self.unpack('LL', self.data[self.index:self.index+8]),
             self.index = self.index + 8
@@ -522,7 +553,11 @@ class pxl_dis:
         return 0
 
     def Tag_sint32_xy(self):
-        if ( self.getTag( pxl_tags_dict['sint32_xy'] ) ):
+        new_tag = unpack('B', self.data[self.index])[0]
+
+        if ( new_tag == pxl_tags_dict['sint32_xy'] ):
+            self.index = self.index + 1
+
             print "sint32_xy %d %d" % \
                   self.unpack('ll', self.data[self.index:self.index+8]),
             self.index = self.index + 8
@@ -530,7 +565,11 @@ class pxl_dis:
         return 0
 
     def Tag_real32_xy(self):
-        if ( self.getTag( pxl_tags_dict['real32_xy'] ) ):
+        new_tag = unpack('B', self.data[self.index])[0]
+
+        if ( new_tag == pxl_tags_dict['real32_xy'] ):
+            self.index = self.index + 1
+
             print "real32_xy %f %f" % \
                   self.unpack('ff', self.data[self.index:self.index+8]),
             self.index = self.index + 8
@@ -538,7 +577,11 @@ class pxl_dis:
         return 0
     
     def Tag_ubyte_box(self):
-        if ( self.getTag( pxl_tags_dict['ubyte_box'] ) ):
+        new_tag = unpack('B', self.data[self.index])[0]
+
+        if ( new_tag == pxl_tags_dict['ubyte_box'] ):
+            self.index = self.index + 1
+
             print "ubyte_box %d %d %d %d" % \
                   self.unpack('BBBB', self.data[self.index:self.index+4]),
             self.index = self.index + 4
@@ -546,7 +589,10 @@ class pxl_dis:
         return 0
 
     def Tag_uint16_box(self):
-        if ( self.getTag( pxl_tags_dict['uint16_box'] ) ):
+        new_tag = unpack('B', self.data[self.index])[0]
+
+        if ( new_tag == pxl_tags_dict['uint16_box'] ):
+            self.index = self.index + 1
             print "uint16_box %d %d %d %d" % \
                   self.unpack('hhhh', self.data[self.index:self.index+8]),
             self.index = self.index + 8
@@ -554,7 +600,9 @@ class pxl_dis:
         return 0
 
     def Tag_sint16_box(self):
-        if ( self.getTag( pxl_tags_dict['sint16_box'] ) ):
+        new_tag = unpack('B', self.data[self.index])[0]
+        if ( new_tag == pxl_tags_dict['sint16_box'] ):
+            self.index = self.index + 1
             print "sint16_box %d %d %d %d" % \
                   self.unpack('hhhh', self.data[self.index:self.index+8])
             self.index = self.index + 8
@@ -562,7 +610,9 @@ class pxl_dis:
         return 0
 
     def Tag_uint32_box(self):
-        if ( self.getTag( pxl_tags_dict['uint32_box'] ) ):
+        new_tag = unpack('B', self.data[self.index])[0]
+        if ( new_tag == pxl_tags_dict['uint32_box'] ):
+            self.index = self.index + 1
             print "uint32_box %d %d %d %d" % \
                   self.unpack('LLLL', self.data[self.index:self.index+16])
             self.index = self.index + 32
@@ -570,7 +620,11 @@ class pxl_dis:
         return 0
 
     def Tag_sint32_box(self):
-        if ( self.getTag( pxl_tags_dict['sint32_box'] ) ):
+        new_tag = unpack('B', self.data[self.index])[0]
+
+        if ( new_tag == pxl_tags_dict['sint32_box'] ):
+            self.index = self.index + 1
+
             print "sint32_box %d %d %d %d" % \
                   self.unpack('llll', self.data[self.index:self.index+16])
             self.index = self.index + 16
@@ -578,7 +632,11 @@ class pxl_dis:
         return 0
 
     def Tag_real32_box(self):
-        if ( self.getTag( pxl_tags_dict['real32_box'] ) ):
+        new_tag = unpack('B', self.data[self.index])[0]
+
+        if ( new_tag == pxl_tags_dict['real32_box'] ):
+            self.index = self.index + 1
+
             print "real32_box %f %f %f %f" % \
                   self.unpack('ffff', self.data[self.index:self.index+16])
             self.index = self.index + 16
@@ -615,13 +673,15 @@ class pxl_dis:
             
                  
     def Tag_attr_ubyte(self):
-        if ( self.getTag( pxl_tags_dict['attr_ubyte'] ) ):
+        new_tag = unpack('B', self.data[self.index])[0]
+
+        if ( new_tag == pxl_tags_dict['attr_ubyte'] ):
+            self.index = self.index + 1
+
             tag = unpack('B', self.data[self.index] )[0]
-            self.debug_trace( "searching for attribute %x", tag)
             for k in pxl_attribute_name_to_attribute_number_dict.keys():
                 if ( pxl_attribute_name_to_attribute_number_dict[k] == tag ):
                     print k
-                    self.debug_trace( "found  %s", k)
                     self.index = self.index + 1
 		    # handle special cases
 		    if ( self.is_Embedded(k) ):
@@ -630,7 +690,9 @@ class pxl_dis:
         return 0
 
     def Tag_attr_uint16(self):
-        if ( self.getTag( pxl_tags_dict['attr_uint16'] ) ):
+        new_tag = unpack('B', self.data[self.index])[0]
+        if ( new_tag == pxl_tags_dict['attr_uint16'] ):
+            self.index = self.index + 1
             print "Attribute tag uint16 # NOT IMPLEMENTED #", self.unpack('HH', self.data[self.index] )
             self.index = self.index + 2
             return 1
@@ -674,7 +736,6 @@ class pxl_dis:
             self.size_of_array = self.unpack( self.unpack_string, \
                                          self.data[self.index:self.index+self.size_of_element] )[0]
             print self.size_of_array,
-            self.debug_trace(  "array size found %d", self.size_of_array )
             self.index = self.index + self.size_of_element
             # restore the unpack string
             self.unpack_string = unpack_string
