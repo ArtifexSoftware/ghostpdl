@@ -59,6 +59,9 @@
  * with this kind of driver.
  */
 
+/* A configuration switch for development purpose (please don't modify) : */
+#define PS2WRITE 0 /* Old code = 0, new code = 1 */
+
 /* ================ Types and structures ================ */
 
 /* Define the abstract type for a vector device. */

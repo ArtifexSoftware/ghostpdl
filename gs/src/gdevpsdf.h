@@ -129,6 +129,9 @@ typedef struct psdf_distiller_params_s {
 	"sRGB"
     bool PreserveHalftoneInfo;
     bool PreserveOverprintSettings;
+#if PS2WRITE
+    bool OrderResources;
+#endif
     enum psdf_transfer_function_info {
 	tfi_Preserve,
 	tfi_Apply,
@@ -143,6 +146,17 @@ typedef struct psdf_distiller_params_s {
 #define psdf_ucrbg_names\
 	"Preserve", "Remove"
 
+#if PS2WRITE
+#define psdf_general_param_defaults(ascii)\
+  ascii, arp_None, binding_Left, 1/*true*/,\
+  ri_Default, 1 /*true*/, 0 /*false*/,\
+  500000, 0 /*false*/, 0/*false*/, 1,\
+  0 /*false*/, 1 /*true*/,\
+	/* Color processing parameters */\
+  {0}, {0}, {0}, {0},\
+  ccs_LeaveColorUnchanged, 0/*false*/, 0/*false*/, 0/*false*/,\
+  tfi_Preserve, ucrbg_Remove
+#else
 #define psdf_general_param_defaults(ascii)\
   ascii, arp_None, binding_Left, 1/*true*/,\
   ri_Default, 1 /*true*/, 0 /*false*/,\
@@ -151,6 +165,7 @@ typedef struct psdf_distiller_params_s {
 	/* Color processing parameters */\
   {0}, {0}, {0}, {0},\
   ccs_LeaveColorUnchanged, 0/*false*/, 0/*false*/, tfi_Preserve, ucrbg_Remove
+#endif
 
     /* Color sampled image parameters */
 
