@@ -145,7 +145,7 @@ typedef enum {
     cmd_opv_stroke = 0xf6,
     /* cmd_opv_htstroke = 0xf7, */ /* obsolete */
     /* cmd_opv_colorstroke = 0xf8, */ /* obsolete */
-    cmd_opv_polyfill = 0xf9,
+    cmd_opv_polyfill = 0xf9
     /* cmd_opv_htpolyfill = 0xfa, */ /* obsolete */
     /* cmd_opv_colorpolyfill = 0xfb */ /* obsolete */
 } gx_cmd_xop;
