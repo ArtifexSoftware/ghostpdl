@@ -16,23 +16,24 @@ public class Nav extends Gview {
     protected void runMain(String[] args) {
 	// NB no error checking.
 	pickle.setJob(args[0]);
-	origRes = desiredRes = 100/2;
+	origRes = desiredRes = startingRes/2;
 	pickle.setRes(desiredRes, desiredRes);
+	pageNumber = 1;
 	pickle.setPageNumber(pageNumber);
 	currentPage = pickle.getPrinterOutputPage();
-       	setSize(pickle.getImgWidth(), pickle.getImgHeight());
+	setSize(pickle.getImgWidth(), pickle.getImgHeight());
 	origW = pickle.getImgWidth();
 	origH = pickle.getImgHeight();
 	show();
 
 	pageView.runMain(args);
-	
+	repaint();
     }
 
     /** main program */
     public static void main( String[] args )
     {
-	// if (debug) 
+	// if (debug)
 	    System.out.print(usage());
 	Nav view = new Nav();
         view.runMain(args);
@@ -59,6 +60,8 @@ public class Nav extends Gview {
 	jMenu.add(jMenuItemOpen);
 	jMenuBar.add(jMenu);
 	*/
+	
+	// window exit
 	addWindowListener(new java.awt.event.WindowAdapter() {
 		public void windowClosing(java.awt.event.WindowEvent evt) {
 		    exitForm(evt);
@@ -69,9 +72,15 @@ public class Nav extends Gview {
 	 setJMenuBar(jMenuBar);
 	 */
     }
-    /** file open */ 
+
+    /** file open From menu */
     private void jMenuItemOpenActionPerformed(java.awt.event.ActionEvent evt) {
-	runFileOpen();
+	fileOpen();
+    }
+
+    /** file open */
+    /*
+    void fileOpen() {
 	int result = chooser.showOpenDialog(null);
 	File file = chooser.getSelectedFile();
 	if (result == JFileChooser.APPROVE_OPTION) {
@@ -81,19 +90,7 @@ public class Nav extends Gview {
 	    runMain(args);
 	}
     }
-
-    /** file open */ 
-    void runFileOpen() {
-	int result = chooser.showOpenDialog(null);
-	File file = chooser.getSelectedFile();
-	if (result == JFileChooser.APPROVE_OPTION) {
-	    if (debug) System.out.println("file open " + file.getPath());
-	    String[] args = new String[1];
-	    args[0] = file.getPath();
-	    runMain(args);
-	}
-    }
-
+    */
     /** Exit the Application */
     private void exitForm(java.awt.event.WindowEvent evt) {
         System.exit (0);
@@ -147,7 +144,7 @@ public class Nav extends Gview {
         double psfy = origY / origH * pageView.origH / pageView.origRes * pageView.desiredRes;
 	
 	// System.out.println( "tx " +  psfx +
-	//	    	     " ty " + psfy );
+	//		     " ty " + psfy );
 
 	pageView.translateTo( psfx, psfy );
 	repaint();
@@ -168,6 +165,7 @@ public class Nav extends Gview {
         double psfy = y / origH * pageView.origH / pageView.origRes * pageView.desiredRes;
 	pageView.origX = pageView.origY = 0;
 	pageView.zoomIn((int)psfx,(int)psfy);
+	repaint();
     }
 
     protected void zoomOut( int x, int y ) {
@@ -175,6 +173,7 @@ public class Nav extends Gview {
         double psfy = y / origH * pageView.origH / pageView.origRes * pageView.desiredRes;
 	pageView.origX = pageView.origY = 0;
 	pageView.zoomOut(0,0);
+	repaint();
     }
 
     /**
