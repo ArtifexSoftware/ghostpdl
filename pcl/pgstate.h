@@ -223,7 +223,7 @@ typedef struct pcl_hpgl_state_s {
 	    hpgl_hatch_params_t hatch;
 	    hpgl_hatch_params_t crosshatch;
 	    int shading;	/* 0..100 */
-	    int pattern_index;
+	    struct { int pattern_index; bool use_current_pen; } user_defined;
 	    int pattern_type;
 	    uint pattern_id;
 	  } param;
@@ -235,7 +235,7 @@ typedef struct pcl_hpgl_state_s {
 	bool source_transparent;
 	struct scr_ {
           hpgl_SV_pattern_source_t type;
-	  union su_ {
+	  struct sp_ {
 	    int shading;	/* 0..100 */
 	    struct { int pattern_index; bool use_current_pen; } user_defined;
 	    int pattern_type;
@@ -243,11 +243,11 @@ typedef struct pcl_hpgl_state_s {
 	  } param;
 	} screen;
 	    /* Temporary while downloading raster fill pattern */
-	    /****** NOT USED NOW, BUT MAY BE USED AGAIN ******/
 	struct rf_ {
 	  int index, width, height;
 	  uint raster;
 	  byte *data;
+          bool is_mask;
 	} raster_fill;
 
 		/* Chapter 23 (pgchar.c, pglabel.c) */
@@ -337,4 +337,3 @@ do {\
 } while (0)
 
 #endif				/* pgstate_INCLUDED */
-
