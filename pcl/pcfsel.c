@@ -299,7 +299,7 @@ pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcs)
 		void *value;
 		id_key[0] = pfs->selected_id >> 8;
 		id_key[1] = (byte)(pfs->selected_id);
-		if ( pl_dict_find(&pcs->soft_fonts, id_key, 2, &value) ) {
+		if ( pl_dict_find((pl_dict_t *)&pcs->soft_fonts, id_key, 2, &value) ) {
 
 		    pfs->font = (pl_font_t *)value;
 		    /* probably not necessary */
