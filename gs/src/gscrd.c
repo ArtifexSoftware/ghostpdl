@@ -341,5 +341,8 @@ gs_cie_render1_initialize(gs_cie_render * pcrd, void *client_data,
 	pcrd->RenderTable.T = RenderTableT_default;
     }
     pcrd->status = CIE_RENDER_STATUS_BUILT;
+    /* initialize domainLMN, DomainABC, and pqr white and black points
+       for source and device. */
+    gs_cie_render_init(pcrd);
     return 0;
 }

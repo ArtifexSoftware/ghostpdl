@@ -584,9 +584,7 @@ param_get_cie_render1(gs_cie_render * pcrd, gs_param_list * plist,
 	code = param_read_string_array(plist, "RenderTableTable", &rt_values);
 	if (code < 0)
 	    return code;
-	else if (code > 0 ||
-		 rt_values.size != rt_size.data[3] *
-		 rt_size.data[1] * rt_size.data[2])
+	if (code > 0) 
 	    return_error(gs_error_rangecheck);
 	pcrd->RenderTable.lookup.n = n = rt_size.size - 1;
 	pcrd->RenderTable.lookup.m = m = rt_size.data[n];
