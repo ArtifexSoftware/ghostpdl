@@ -26,7 +26,7 @@
 /*
  * Note that IODevices are not the same as Ghostscript output devices.
  * See section 3.8.2 of the PostScript Language Reference Manual,
- * Second Edition, for more information.
+ * Second and Third Edition, for more information.
  */
 
 #ifndef gx_io_device_DEFINED
@@ -55,9 +55,24 @@ typedef struct gs_param_list_s gs_param_list;
 typedef struct stream_s stream;
 #endif
 
-/* Definition of IODevice procedures */
-/* Note that file names for fopen, delete, rename, and status */
-/* are C strings, not pointer + length. */
+/*
+ * Define the IODevice procedures.  Note that file names for fopen, delete,
+ * rename, and status are C strings, not pointer + length.
+ *
+ * open_device is called when opening a file whose name consists only of
+ * the IODevice name, e.g., '%lineedit'.  open_file is called when opening
+ * a file whose name includes both an (optional) IODevice and a further
+ * name, e.g., '%os%xyz' or just 'xyz'.
+ *
+ * The open_device and open_file procedures return streams.  The default
+ * implementation of open_device returns an error; the default
+ * implementation of open_file in the PostScript interpreter,
+ * iodev_os_open_file, uses the IODevice's fopen procedure to open a stream
+ * based on an OS FILE *.  However, IODevices are free to implement
+ * open_file (and, if desired, open_device) in any way they want, returning
+ * a stream that need not have any relationship to the OS's file system.
+ * In this case there is no need to implement fopen or fclose.
+ */
 /* Note also that "streams" are a higher-level concept; */
 /* the open_device and open_file procedures are normally NULL. */
 
