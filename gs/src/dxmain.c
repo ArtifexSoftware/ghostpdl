@@ -65,6 +65,10 @@ enum SEPARATIONS {
     SEP_BLACK = 1
 };
 
+#ifndef min
+#define min(a,b) ((a) < (b) ? (a) : (b))
+#endif
+
 /*********************************************************************/
 /* stdio functions */
 
@@ -162,6 +166,7 @@ IMAGE *first_image;
 static IMAGE *image_find(void *handle, void *device);
 static void window_destroy(GtkWidget *w, gpointer data);
 static void window_create(IMAGE *img);
+static void window_resize(IMAGE *img);
 static gboolean window_draw(GtkWidget *widget, GdkEventExpose *event, gpointer user_data);
 
 static IMAGE *
@@ -184,48 +189,85 @@ window_draw(GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
     if (img && img->window && img->buf) {
         int color = img->format & DISPLAY_COLORS_MASK;
 	int depth = img->format & DISPLAY_DEPTH_MASK;
-	switch (color) {
-	    case DISPLAY_COLORS_NATIVE:
-		if (depth == DISPLAY_DEPTH_8)
-		    gdk_draw_indexed_image(widget->window, 
-			widget->style->fg_gc[GTK_STATE_NORMAL],
-			0, 0, img->width, img->height,
-			GDK_RGB_DITHER_MAX, img->buf, img->rowstride,
-			img->cmap);
-	  	else if ((depth == DISPLAY_DEPTH_16) && img->rgbbuf)
-		    gdk_draw_rgb_image(widget->window, 
-			widget->style->fg_gc[GTK_STATE_NORMAL],
-			0, 0, img->width, img->height,
-			GDK_RGB_DITHER_MAX, img->rgbbuf, img->width * 3);
-		break;
-	    case DISPLAY_COLORS_GRAY:
-		if (depth == DISPLAY_DEPTH_8)
-		    gdk_draw_gray_image(widget->window, 
-			widget->style->fg_gc[GTK_STATE_NORMAL],
-			0, 0, img->width, img->height,
-			GDK_RGB_DITHER_MAX, img->buf, img->rowstride);
-		break;
-	    case DISPLAY_COLORS_RGB:
-		if (depth == DISPLAY_DEPTH_8) {
-		    if (img->rgbbuf)
+	int x, y, width, height;
+	if (event->area.x + event->area.width > img->width) {
+	    x = img->width;
+	    width = (event->area.x + event->area.width) - x;
+	    y = event->area.y;
+            height = min(img->height, event->area.y + event->area.height) - y;
+	    gdk_window_clear_area(widget->window, x, y, width, height);
+	}
+	if (event->area.y + event->area.height > img->height) {
+	    x = event->area.x;
+	    width = event->area.width;
+	    y = img->height;
+	    height = (event->area.y + event->area.height) - y;
+	    gdk_window_clear_area(widget->window, x, y, width, height);
+	}
+	x = event->area.x;
+	y = event->area.y;
+	width = event->area.width;
+	height = event->area.height;
+	if ((x>=0) && (y>=0) && (x < img->width) && (y < img->height)) {
+	    /* drawing area intersects bitmap */
+	    if (x + width > img->width)
+		width = img->width - x;
+	    if (y + height > img->height)
+		height =  img->height - y;
+	    switch (color) {
+		case DISPLAY_COLORS_NATIVE:
+		    if (depth == DISPLAY_DEPTH_8)
+			gdk_draw_indexed_image(widget->window, 
+			    widget->style->fg_gc[GTK_STATE_NORMAL],
+			    x, y, width, height, 
+			    GDK_RGB_DITHER_MAX, 
+			    img->buf + x + y*img->rowstride, 
+			    img->rowstride, img->cmap);
+		    else if ((depth == DISPLAY_DEPTH_16) && img->rgbbuf)
 			gdk_draw_rgb_image(widget->window, 
 			    widget->style->fg_gc[GTK_STATE_NORMAL],
-			    0, 0, img->width, img->height,
-			    GDK_RGB_DITHER_MAX, img->rgbbuf, img->width * 3);
-		    else
+			    x, y, width, height, 
+			    GDK_RGB_DITHER_MAX, 
+			    img->rgbbuf + x*3 + y*img->width*3, 
+			    img->width * 3);
+		    break;
+		case DISPLAY_COLORS_GRAY:
+		    if (depth == DISPLAY_DEPTH_8)
+			gdk_draw_gray_image(widget->window, 
+			    widget->style->fg_gc[GTK_STATE_NORMAL],
+			    x, y, width, height,
+			    GDK_RGB_DITHER_MAX, 
+			    img->buf + x + y*img->rowstride, 
+			    img->rowstride);
+		    break;
+		case DISPLAY_COLORS_RGB:
+		    if (depth == DISPLAY_DEPTH_8) {
+			if (img->rgbbuf)
+			    gdk_draw_rgb_image(widget->window, 
+				widget->style->fg_gc[GTK_STATE_NORMAL],
+				x, y, width, height,
+				GDK_RGB_DITHER_MAX, 
+				img->rgbbuf + x*3 + y*img->width*3, 
+				img->width * 3);
+			else
+			    gdk_draw_rgb_image(widget->window, 
+				widget->style->fg_gc[GTK_STATE_NORMAL],
+				x, y, width, height,
+				GDK_RGB_DITHER_MAX, 
+				img->buf + x*3 + y*img->rowstride, 
+				img->rowstride);
+		    }
+		    break;
+		case DISPLAY_COLORS_CMYK:
+		    if ((depth == DISPLAY_DEPTH_8) && img->rgbbuf)
 			gdk_draw_rgb_image(widget->window, 
 			    widget->style->fg_gc[GTK_STATE_NORMAL],
-			    0, 0, img->width, img->height,
-			    GDK_RGB_DITHER_MAX, img->buf, img->rowstride);
-		}
-		break;
-	    case DISPLAY_COLORS_CMYK:
-		if ((depth == DISPLAY_DEPTH_8) && img->rgbbuf)
-		    gdk_draw_rgb_image(widget->window, 
-			widget->style->fg_gc[GTK_STATE_NORMAL],
-			0, 0, img->width, img->height,
-			GDK_RGB_DITHER_MAX, img->rgbbuf, img->width * 3);
-		break;
+			    x, y, width, height,
+			    GDK_RGB_DITHER_MAX, 
+			    img->rgbbuf + x*3 + y*img->width*3, 
+			    img->width * 3);
+		    break;
+	    }
 	}
     }
     return TRUE;
@@ -244,7 +286,6 @@ static void window_create(IMAGE *img)
     /* Create a gtk window */
     img->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(img->window), "gs");
-    gtk_window_set_default_size(GTK_WINDOW(img->window), 500, 400);
     img->vbox = gtk_vbox_new(FALSE, 0);
     gtk_container_add(GTK_CONTAINER(img->window), img->vbox);
     gtk_widget_show(img->vbox);
@@ -263,6 +304,22 @@ static void window_create(IMAGE *img)
     gtk_signal_connect(GTK_OBJECT (img->window), "destroy", 
 			GTK_SIGNAL_FUNC (window_destroy), img);
     /* do not show img->window until we know the image size */
+}
+
+static void window_resize(IMAGE *img)
+{
+    gtk_drawing_area_size(GTK_DRAWING_AREA (img->darea), 
+	img->width, img->height);
+    if (!(GTK_WIDGET_FLAGS(img->window) & GTK_VISIBLE)) {
+	/* We haven't yet shown the window, so set a default size 
+	 * which is smaller than the desktop to allow room for 
+	 * desktop toolbars, and if possible a little larger than 
+	 * the image to allow room for the scroll bars.
+	 * We don't know the width of the scroll bars, so just guess. */
+	gtk_window_set_default_size(GTK_WINDOW(img->window), 
+	    min(gdk_screen_width()-96, img->width+24),
+	    min(gdk_screen_height()-96, img->height+24));
+    }
 }
 
 static void window_separation(IMAGE *img, int layer)
@@ -415,7 +472,6 @@ static int display_size(void *handle, void *device, int width, int height,
     img->rowstride = raster;
     img->buf = pimage;
     img->format = format;
-    gtk_drawing_area_size(GTK_DRAWING_AREA (img->darea), width, height);
 
     color = img->format & DISPLAY_COLORS_MASK;
     depth = img->format & DISPLAY_DEPTH_MASK;
@@ -504,7 +560,7 @@ static int display_size(void *handle, void *device, int width, int height,
 	    gtk_widget_hide(img->cmyk_bar);
     }
 
-
+    window_resize(img);
     if (!(GTK_WIDGET_FLAGS(img->window) & GTK_VISIBLE))
 	gtk_widget_show(img->window);
 
@@ -522,11 +578,6 @@ static int display_sync(void *handle, void *device)
     int alpha;
     if (img == NULL)
 	return -1;
-
-    if (img->window == NULL)
-	window_create(img);
-    if (!(GTK_WIDGET_FLAGS(img->window) & GTK_VISIBLE))
-	gtk_widget_show_all(img->window);
 
     color = img->format & DISPLAY_COLORS_MASK;
     depth = img->format & DISPLAY_DEPTH_MASK;
@@ -728,6 +779,13 @@ static int display_sync(void *handle, void *device)
 	    }
 	    break;
     }
+
+    if (img->window == NULL) {
+	window_create(img);
+	window_resize(img);
+    }
+    if (!(GTK_WIDGET_FLAGS(img->window) & GTK_VISIBLE))
+	gtk_widget_show_all(img->window);
 
     gtk_widget_draw(img->darea, NULL);
     gtk_main_iteration_do(FALSE);
