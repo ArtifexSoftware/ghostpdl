@@ -120,7 +120,8 @@ append_text_move(pdf_text_state_t *pts, floatp dw)
 	dw += pts->buffer.moves[--count].amount;
     }
     /* Round dw if it's very close to an integer. */
-    if (fabs(dw - (rounded = floor(dw + 0.5))) < fabs(dw * 0.001))
+    rounded = floor(dw + 0.5);
+    if (fabs(dw - rounded) < 0.001)
 	dw = rounded;
     if (dw != 0) {
 	if (count == MAX_TEXT_BUFFER_MOVES)
