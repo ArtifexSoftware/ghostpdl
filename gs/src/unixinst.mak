@@ -104,12 +104,14 @@ pdf2dsc.ps pdfeof.ps pdfopt.ps ;\
 	$(SH) -c 'for f in \
 PUBLIC README \
 ps2epsi.txt \
-Bug-form.htm C-style.htm Commprod.htm Copying.htm Current.htm \
+Bug-form.htm Bug-info.htm \
+C-style.htm Changes.htm Commprod.htm Copying.htm Current.htm \
 DLL.htm Devices.htm Drivers.htm Fonts.htm \
 Helpers.htm Hershey.htm \
 History1.htm History2.htm History3.htm History4.htm History5.htm History6.htm \
 Htmstyle.htm Humor.htm Install.htm Language.htm Lib.htm Make.htm New-user.htm \
-News.htm Ps2pdf.htm Psfiles.htm Public.htm Readme.htm Release.htm \
+News.htm Projects.htm Ps2pdf.htm Psfiles.htm Public.htm \
+Readme.htm Release.htm \
 Source.htm Tester.htm Unix-lpr.htm Use.htm Xfonts.htm ;\
 	do if ( test -f $(PSDOCDIR)/$$f ); then $(INSTALL_DATA) $(PSDOCDIR)/$$f $(docdir); fi;\
 	done'
