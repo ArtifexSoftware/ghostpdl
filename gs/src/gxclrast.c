@@ -1505,6 +1505,11 @@ idata:			data_size = 0;
     ht_buff.ht_size = 0;
     ht_buff.read_size = 0;
 
+    if (color_space.params.indexed.lookup.table.size)
+        gs_free_const_string(mem,
+			     color_space.params.indexed.lookup.table.data,
+			     color_space.params.indexed.lookup.table.size,
+			     "color_space indexed table");
     gx_cpath_free(&clip_path, "clist_render_band exit");
     gx_path_free(&path, "clist_render_band exit");
     gs_imager_state_release(&imager_state);
@@ -1890,9 +1895,9 @@ read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
     } else {
 	if (pcolor_space->params.indexed.lookup.table.size)
 	    gs_free_const_string(mem,
-			pcolor_space->params.indexed.lookup.table.data,
-			pcolor_space->params.indexed.lookup.table.size,
-				 "old indexed table");
+				 pcolor_space->params.indexed.lookup.table.data,
+				 pcolor_space->params.indexed.lookup.table.size,
+				 "color_spapce indexed table");
 	pcolor_space->params.indexed.lookup.table.size = 0;
     }
     if (b & 8) {
@@ -1915,7 +1920,7 @@ read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
 	    data = (byte *)map->values;
 	    data_size = num_values * sizeof(map->values[0]);
 	} else {
-	    byte *table = gs_alloc_string(mem, num_values, "indexed table");
+	    byte *table = gs_alloc_string(mem, num_values, "color_space indexed table");
 
 	    if (table == 0) {
 		code = gs_note_error(gs_error_VMerror);
