@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2001 artofcode LLC.
+  Copyright (C) 2001-2003 artofcode LLC.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -35,9 +35,16 @@
 #include "gxtext.h"
 #include "gsdfilt.h"
 #include "gsimage.h"
+#include "gsrect.h"
 #include "gzstate.h"
 #include "gdevp14.h"
 #include "gsovrc.h"
+
+#define DUMP_TO_PNG
+
+#ifdef DUMP_TO_PNG
+#include "png_.h"
+#endif
 
 # define INCR(v) DO_NOTHING
 
@@ -71,10 +78,13 @@ struct pdf14_buf_s {
     int n_chan; /* number of pixel planes including alpha */
     int n_planes; /* total number of planes including alpha, shape, alpha_g */
     byte *data;
+
+    gs_int_rect bbox;
 };
 
 struct pdf14_ctx_s {
     pdf14_buf *stack;
+    pdf14_buf *maskbuf;
     gs_memory_t *memory;
     gs_int_rect rect;
     int n_chan;
@@ -100,9 +110,9 @@ RELOC_PTRS_END
 gs_private_st_composite(st_pdf14_buf, pdf14_buf, "pdf14_buf",
 			pdf14_buf_enum_ptrs, pdf14_buf_reloc_ptrs);
 
-gs_private_st_ptrs1(st_pdf14_ctx, pdf14_ctx, "pdf14_ctx",
+gs_private_st_ptrs2(st_pdf14_ctx, pdf14_ctx, "pdf14_ctx",
 		    pdf14_ctx_enum_ptrs, pdf14_ctx_reloc_ptrs,
-		    stack);
+		    stack, maskbuf);
 
 /* ------ The device descriptors ------ */
 
@@ -123,6 +133,8 @@ private dev_proc_text_begin(pdf14_text_begin);
 private dev_proc_create_compositor(pdf14_create_compositor);
 private dev_proc_begin_transparency_group(pdf14_begin_transparency_group);
 private dev_proc_end_transparency_group(pdf14_end_transparency_group);
+private dev_proc_begin_transparency_mask(pdf14_begin_transparency_mask);
+private dev_proc_end_transparency_mask(pdf14_end_transparency_mask);
 
 #define XSIZE (int)(8.5 * X_DPI)	/* 8.5 x 11 inch page, by default */
 #define YSIZE (int)(11 * Y_DPI)
@@ -180,7 +192,9 @@ private const gx_device_procs pdf14_procs =
 	pdf14_text_begin,	/* text_begin */
 	NULL,	/* finish_copydevice */
 	pdf14_begin_transparency_group,
-	pdf14_end_transparency_group
+	pdf14_end_transparency_group,
+	pdf14_begin_transparency_mask,
+	pdf14_end_transparency_mask
 };
 
 typedef struct pdf14_device_s {
@@ -346,6 +360,10 @@ pdf14_buf_new(gs_int_rect *rect, bool has_alpha_g, bool has_shape,
 	int alpha_g_plane = n_chan + (has_shape ? 1 : 0);
 	memset (result->data + alpha_g_plane * planestride, 0, planestride);
     }
+    result->bbox.p.x = max_int;
+    result->bbox.p.y = max_int;
+    result->bbox.q.x = min_int;
+    result->bbox.q.y = min_int;
     return result;
 }
 
@@ -377,6 +395,7 @@ pdf14_ctx_new(gs_int_rect *rect, int n_chan, gs_memory_t *memory)
     memset(buf->data, 0, buf->planestride * buf->n_planes);
     buf->saved = NULL;
     result->stack = buf;
+    result->maskbuf = NULL;
     result->n_chan = n_chan;
     result->memory = memory;
     result->rect = *rect;
@@ -488,6 +507,7 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx)
 {
     pdf14_buf *tos = ctx->stack;
     pdf14_buf *nos = tos->saved;
+    pdf14_buf *maskbuf = ctx->maskbuf;
     int n_chan = ctx->n_chan;
     byte alpha = tos->alpha;
     byte shape = tos->shape;
@@ -499,8 +519,11 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx)
     byte *tos_ptr = tos->data;
     byte *nos_ptr = nos->data + x0 - nos->rect.p.x +
 	(y0 - nos->rect.p.y) * nos->rowstride;
+    byte *mask_ptr = NULL;
     int tos_planestride = tos->planestride;
     int nos_planestride = nos->planestride;
+    int mask_planestride;
+    byte mask_bg_alpha;
     int width = x1 - x0;
     int x, y;
     int i;
@@ -518,50 +541,67 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx)
     if (nos == NULL)
 	return_error(gs_error_rangecheck);
 
-    /* for now, only simple non-knockout */
+    rect_merge(nos->bbox, tos->bbox);
 
     if (nos->has_alpha_g)
 	nos_alpha_g_ptr = nos_ptr + n_chan * nos_planestride;
     else
 	nos_alpha_g_ptr = NULL;
 
+    if (maskbuf != NULL) {
+	mask_ptr = maskbuf->data + x0 - maskbuf->rect.p.x +
+	    (y0 - maskbuf->rect.p.y) * maskbuf->rowstride;
+	mask_planestride = maskbuf->planestride;
+	mask_bg_alpha = maskbuf->alpha;
+    }
+
     for (y = y0; y < y1; ++y) {
 	for (x = 0; x < width; ++x) {
+	    byte pix_alpha = alpha;
 	    for (i = 0; i < n_chan; ++i) {
 		tos_pixel[i] = tos_ptr[x + i * tos_planestride];
 		nos_pixel[i] = nos_ptr[x + i * nos_planestride];
 	    }
-	    
+
+	    if (mask_ptr != NULL) {
+		int mask_alpha = mask_ptr[x + 3 * mask_planestride];
+		int tmp;
+		byte mask;
+
+		if (mask_alpha == 255)
+		    mask = mask_ptr[x]; /* todo: rgba->mask */
+		else if (mask_alpha == 0)
+		    mask = mask_bg_alpha;
+		else {
+		    int t2 = (mask_ptr[x] - mask_bg_alpha) * mask_alpha + 0x80;
+		    mask = mask_bg_alpha + ((t2 + (t2 >> 8)) >> 8);
+		}
+		tmp = pix_alpha * mask + 0x80;
+		pix_alpha = (tmp + (tmp >> 8)) >> 8;
+	    }
+
 	    if (nos_knockout) {
 		byte *nos_shape_ptr = nos_has_shape ?
 		    &nos_ptr[x + nos_shape_offset] : NULL;
 		byte tos_shape = tos_ptr[x + tos_shape_offset];
 
-#if 1
-		art_pdf_composite_knockout_isolated_8 (nos_pixel,
-						       nos_shape_ptr,
-						       tos_pixel,
-						       n_chan - 1,
-						       tos_shape,
-						       alpha, shape);
-#else
-		tos_pixel[3] = tos_ptr[x + tos_shape_offset];
-		art_pdf_composite_group_8(nos_pixel, nos_alpha_g_ptr,
-					  tos_pixel,
-					  n_chan - 1,
-					  alpha, blend_mode);
-#endif
+		art_pdf_composite_knockout_isolated_8(nos_pixel,
+						      nos_shape_ptr,
+						      tos_pixel,
+						      n_chan - 1,
+						      tos_shape,
+						      pix_alpha, shape);
 	    } else if (tos_isolated) {
 		art_pdf_composite_group_8(nos_pixel, nos_alpha_g_ptr,
 					  tos_pixel,
 					  n_chan - 1,
-					  alpha, blend_mode);
+					  pix_alpha, blend_mode);
 	    } else {
 		byte tos_alpha_g = tos_ptr[x + tos_alpha_g_offset];
 		art_pdf_recomposite_group_8(nos_pixel, nos_alpha_g_ptr,
 					    tos_pixel, tos_alpha_g,
 					    n_chan - 1,
-					    alpha, blend_mode);
+					    pix_alpha, blend_mode);
 	    }
 	    if (nos_has_shape) {
 		nos_ptr[x + nos_shape_offset] =
@@ -569,7 +609,6 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx)
 					 tos_ptr[x + tos_shape_offset],
 					 shape);
 	    }
-	    /* todo: knockout cases */
 	    
 	    for (i = 0; i < n_chan; ++i) {
 		nos_ptr[x + i * nos_planestride] = nos_pixel[i];
@@ -581,11 +620,49 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx)
 	nos_ptr += nos->rowstride;
 	if (nos_alpha_g_ptr != NULL)
 	    nos_alpha_g_ptr += nos->rowstride - width;
+	if (mask_ptr != NULL)
+	    mask_ptr += maskbuf->rowstride;
     }
 
     ctx->stack = nos;
     if_debug0('v', "[v]pop buf\n");
     pdf14_buf_free(tos, ctx->memory);
+    if (maskbuf != NULL) {
+	pdf14_buf_free(maskbuf, ctx->memory);
+	ctx->maskbuf = NULL;
+    }
+    return 0;
+}
+
+private int
+pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect, byte bg_alpha)
+{
+    pdf14_buf *buf;
+
+    buf = pdf14_buf_new(rect, false, false, ctx->n_chan, ctx->memory);
+    if (buf == NULL)
+	return_error(gs_error_VMerror);
+
+    /* fill in, but these values aren't really used */
+    buf->isolated = true;
+    buf->knockout = false;
+    buf->alpha = bg_alpha;
+    buf->shape = 0xff;
+    buf->blend_mode = BLEND_MODE_Normal;
+
+    buf->saved = ctx->stack;
+    ctx->stack = buf;
+    memset(buf->data, 0, buf->planestride * buf->n_chan);
+    return 0;
+}
+
+private int
+pdf14_pop_transparency_mask(pdf14_ctx *ctx)
+{
+    pdf14_buf *tos = ctx->stack;
+
+    ctx->stack = tos->saved;
+    ctx->maskbuf = tos;
     return 0;
 }
 
@@ -608,6 +685,104 @@ pdf14_open(gx_device *dev)
 
     return 0;
 }
+
+#ifdef DUMP_TO_PNG
+/* Dumps a planar RGBA image to a PNG file. */
+private int
+dump_planar_rgba(const byte *buf, int width, int height, int rowstride, int planestride)
+{
+    int rowbytes = width << 2;
+    byte *row = gs_malloc(rowbytes, 1, "png raster buffer");
+    png_struct *png_ptr =
+    png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+    png_info *info_ptr =
+    png_create_info_struct(png_ptr);
+    const char *software_key = "Software";
+    char software_text[256];
+    png_text text_png;
+    const byte *buf_ptr = buf;
+    FILE *file;
+    int code;
+    int y;
+
+	file = fopen ("c:\\temp\\tmp.png", "wb");
+
+    if_debug0('v', "[v]pnga_output_page\n");
+
+    if (row == 0 || png_ptr == 0 || info_ptr == 0) {
+	code = gs_note_error(gs_error_VMerror);
+	goto done;
+    }
+    /* set error handling */
+    if (setjmp(png_ptr->jmpbuf)) {
+	/* If we get here, we had a problem reading the file */
+	code = gs_note_error(gs_error_VMerror);
+	goto done;
+    }
+
+    code = 0;			/* for normal path */
+    /* set up the output control */
+    png_init_io(png_ptr, file);
+
+    /* set the file information here */
+    info_ptr->width = width;
+    info_ptr->height = height;
+    /* resolution is in pixels per meter vs. dpi */
+    info_ptr->x_pixels_per_unit =
+	(png_uint_32) (96.0 * (100.0 / 2.54));
+    info_ptr->y_pixels_per_unit =
+	(png_uint_32) (96.0 * (100.0 / 2.54));
+    info_ptr->phys_unit_type = PNG_RESOLUTION_METER;
+    info_ptr->valid |= PNG_INFO_pHYs;
+
+    /* At present, only supporting 32-bit rgba */
+    info_ptr->bit_depth = 8;
+    info_ptr->color_type = PNG_COLOR_TYPE_RGB_ALPHA;
+
+    /* add comment */
+    sprintf(software_text, "%s %d.%02d", gs_product,
+	    (int)(gs_revision / 100), (int)(gs_revision % 100));
+    text_png.compression = -1;	/* uncompressed */
+    text_png.key = (char *)software_key;	/* not const, unfortunately */
+    text_png.text = software_text;
+    text_png.text_length = strlen(software_text);
+    info_ptr->text = &text_png;
+    info_ptr->num_text = 1;
+
+    /* write the file information */
+    png_write_info(png_ptr, info_ptr);
+
+    /* don't write the comments twice */
+    info_ptr->num_text = 0;
+    info_ptr->text = NULL;
+
+    /* Write the contents of the image. */
+    for (y = 0; y < height; ++y) {
+	int x;
+
+	for (x = 0; x < width; ++x) {
+	    row[(x << 2)] = buf_ptr[x];
+	    row[(x << 2) + 1] = buf_ptr[x + planestride];
+	    row[(x << 2) + 2] = buf_ptr[x + planestride * 2];
+	    row[(x << 2) + 3] = buf_ptr[x + planestride * 3];
+	}
+	png_write_row(png_ptr, row);
+	buf_ptr += rowstride;
+    }
+
+    /* write the rest of the file */
+    png_write_end(png_ptr, info_ptr);
+
+  done:
+    /* free the structures */
+    png_destroy_write_struct(&png_ptr, &info_ptr);
+    gs_free(row, rowbytes, 1, "png raster buffer");
+
+    fclose (file);
+    return code;
+}
+#endif
+
 
 /**
  * pdf14_put_image: Put rendered image to target device.
@@ -637,6 +812,11 @@ pdf14_put_image(pdf14_device *pdev, gs_state *pgs, gx_device *target)
     byte *buf_ptr = buf->data;
     byte *linebuf;
     gs_color_space cs;
+
+#ifdef DUMP_TO_PNG
+    dump_planar_rgba(buf_ptr, width, height,
+		     buf->rowstride, buf->planestride);
+#endif
 
 #if 0
     /* Set graphics state device to target, so that image can set up
@@ -855,6 +1035,7 @@ pdf14_fill_path(gx_device *dev, const gs_imager_state *pis,
     new_is.log_op |= lop_pdf14;
     code = gx_default_fill_path(mdev, &new_is, ppath, params, pdcolor, pcpath);
     pdf14_release_marking_device(mdev);
+
     return code;
 }
 
@@ -993,6 +1174,33 @@ pdf14_end_transparency_group(gx_device *dev,
 }
 
 private int
+pdf14_begin_transparency_mask(gx_device *dev,
+			      const gs_transparency_mask_params_t *ptmp,
+			      const gs_rect *pbbox,
+			      gs_imager_state *pis,
+			      gs_transparency_state_t **ppts,
+			      gs_memory_t *mem)
+{
+    pdf14_device *pdev = (pdf14_device *)dev;
+    byte bg_alpha = 0;
+
+    if (ptmp->has_Background)
+	bg_alpha = (int)(255 * ptmp->Background[0] + 0.5);
+    if_debug1('v', "begin transparency mask, bg_alpha = %d!\n", bg_alpha);
+    return pdf14_push_transparency_mask(pdev->ctx, &pdev->ctx->rect, bg_alpha);
+}
+
+private int
+pdf14_end_transparency_mask(gx_device *dev,
+			  gs_transparency_mask_t **pptm)
+{
+    pdf14_device *pdev = (pdf14_device *)dev;
+
+    if_debug0('v', "end transparency mask!\n");
+    return pdf14_pop_transparency_mask(pdev->ctx);
+}
+
+private int
 pdf14_mark_fill_rectangle(gx_device * dev,
 			 int x, int y, int w, int h, gx_color_index color)
 {
@@ -1023,6 +1231,11 @@ pdf14_mark_fill_rectangle(gx_device * dev,
     if (y < buf->rect.p.x) y = buf->rect.p.y;
     if (x + w > buf->rect.q.x) w = buf->rect.q.x - x;
     if (y + h > buf->rect.q.y) h = buf->rect.q.y - y;
+
+    if (x < buf->bbox.p.x) buf->bbox.p.x = x;
+    if (y < buf->bbox.p.y) buf->bbox.p.y = y;
+    if (x + w > buf->bbox.q.x) buf->bbox.q.x = x + w;
+    if (y + h > buf->bbox.q.y) buf->bbox.q.y = y + h;
 
     line = buf->data + (x - buf->rect.p.x) + (y - buf->rect.p.y) * rowstride;
 
@@ -1076,6 +1289,11 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device * dev,
     if (y < buf->rect.p.x) y = buf->rect.p.y;
     if (x + w > buf->rect.q.x) w = buf->rect.q.x - x;
     if (y + h > buf->rect.q.y) h = buf->rect.q.y - y;
+
+    if (x < buf->bbox.p.x) buf->bbox.p.x = x;
+    if (y < buf->bbox.p.y) buf->bbox.p.y = y;
+    if (x + w > buf->bbox.q.x) buf->bbox.q.x = x + w;
+    if (y + h > buf->bbox.q.y) buf->bbox.q.y = y + h;
 
     line = buf->data + (x - buf->rect.p.x) + (y - buf->rect.p.y) * rowstride;
 

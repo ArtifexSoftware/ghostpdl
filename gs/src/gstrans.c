@@ -222,7 +222,6 @@ gs_begin_transparency_group(gs_state *pgs,
 			    const gs_transparency_group_params_t *ptgp,
 			    const gs_rect *pbbox)
 {
-    /****** NYI, DUMMY ******/
 #ifdef DEBUG
     if (gs_debug_c('v')) {
 	static const char *const cs_names[] = {
@@ -240,9 +239,12 @@ gs_begin_transparency_group(gs_state *pgs,
 		 ptgp->Isolated, ptgp->Knockout);
     }
 #endif
-    return (*dev_proc(pgs->device, begin_transparency_group)) (pgs->device, ptgp,
-							    pbbox, (gs_imager_state *)pgs,
-							    NULL, NULL);
+    if (dev_proc(pgs->device, begin_transparency_group) != 0)
+	return (*dev_proc(pgs->device, begin_transparency_group)) (pgs->device, ptgp,
+								   pbbox, (gs_imager_state *)pgs,
+								   NULL, NULL);
+    else
+	return 0;
 #if 0
     return push_transparency_stack(pgs, TRANSPARENCY_STATE_Group,
 				   "gs_begin_transparency_group");
@@ -252,9 +254,11 @@ gs_begin_transparency_group(gs_state *pgs,
 int
 gs_end_transparency_group(gs_state *pgs)
 {
-    /****** NYI, DUMMY ******/
-    return (*dev_proc(pgs->device, end_transparency_group)) (pgs->device, (gs_imager_state *)pgs,
-							     NULL);
+    if (dev_proc(pgs->device, end_transparency_group) != 0)
+	return (*dev_proc(pgs->device, end_transparency_group)) (pgs->device, (gs_imager_state *)pgs,
+								 NULL);
+    else
+	return 0;
 #if 0
     gs_transparency_state_t *pts = pgs->transparency_stack;
 
@@ -287,30 +291,49 @@ gs_begin_transparency_mask(gs_state *pgs,
 			   const gs_transparency_mask_params_t *ptmp,
 			   const gs_rect *pbbox)
 {
-    /****** NYI, DUMMY ******/
+
     if_debug8('v', "[v](0x%lx)begin_transparency_mask [%g %g %g %g]\n\
       subtype = %d  has_Background = %d  %s\n",
 	      (ulong)pgs, pbbox->p.x, pbbox->p.y, pbbox->q.x, pbbox->q.y,
 	      (int)ptmp->subtype, ptmp->has_Background,
 	      (ptmp->TransferFunction == mask_transfer_identity ? "no TR" :
 	       "has TR"));
+    if (dev_proc(pgs->device, begin_transparency_mask) != 0)
+	return (*dev_proc(pgs->device, begin_transparency_mask))
+	    (pgs->device, ptmp, pbbox, (gs_imager_state *)pgs, NULL, NULL);
+    else
+	return 0;
+	     
+#if 0
     return push_transparency_stack(pgs, TRANSPARENCY_STATE_Mask,
 				   "gs_begin_transparency_group");
+#endif
 }
 
 int
 gs_end_transparency_mask(gs_state *pgs,
 			 gs_transparency_channel_selector_t csel)
 {
-    /****** NYI, DUMMY ******/
+#if 0
     gs_transparency_state_t *pts = pgs->transparency_stack;
+#endif
 
     if_debug2('v', "[v](0x%lx)end_transparency_mask(%d)\n", (ulong)pgs,
 	      (int)csel);
+
+    /* todo: route csel */
+
+    if (dev_proc(pgs->device, end_transparency_mask) != 0)
+	return (*dev_proc(pgs->device, end_transparency_mask))
+	    (pgs->device, NULL);
+    else
+	return 0;
+#if 0
     if (!pts || pts->type != TRANSPARENCY_STATE_Mask)
 	return_error(gs_error_rangecheck);
     pop_transparency_stack(pgs, "gs_end_transparency_mask");
     return 0;
+#endif
 }
 
 int

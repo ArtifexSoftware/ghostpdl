@@ -737,7 +737,6 @@ art_pdf_recomposite_group_8(byte *dst, byte *dst_alpha_g,
 	    tmp = (255 - *dst_alpha_g) * (255 - src_alpha_g) + 0x80;
 	    *dst_alpha_g = 255 - ((tmp + (tmp >> 8)) >> 8);
 	}
-	*dst_alpha_g = src[n_chan];
 	return;
     } else {
 	/* "interesting" blend mode */
