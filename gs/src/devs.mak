@@ -88,6 +88,9 @@ GDEV=$(AK) $(ECHOGS_XE) $(GDEVH)
 #	x11rg16x  X Windows with G5/B5/R6 pixel layout for testing.
 #	x11rg32x  X Windows with G11/B10/R11 pixel layout for testing.
 # Printers:
+# +	atx23	Practical Automation ATX-23 label printer
+# +	atx24	Practical Automation ATX-24 label printer
+# +	atx38	Practical Automation ATX-38 label printer
 # +	deskjet  H-P DeskJet and DeskJet Plus
 #	djet500  H-P DeskJet 500; use -r600 for DJ 600 series
 # +	fs600	Kyocera FS-600 (600 dpi)
@@ -487,6 +490,22 @@ $(GLOBJ)gdevxalt.$(OBJ) : $(GLSRC)gdevxalt.c $(GDEVX) $(math__h) $(memory__h)\
 	$(GLCC) $(XINCLUDE) $(GLO_)gdevxalt.$(OBJ) $(C_) $(GLSRC)gdevxalt.c
 
 ###### --------------- Memory-buffered printer devices --------------- ######
+
+### ---------------- Practical Automation label printers ---------------- ###
+
+atx_=$(GLOBJ)gdevatx.$(OBJ)
+
+$(DD)atx23.dev : $(DEVS_MAK) $(atx_) $(GLD)page.dev
+	$(SETPDEV2) $(DD)atx23 $(atx_)
+
+$(DD)atx24.dev : $(DEVS_MAK) $(atx_) $(GLD)page.dev
+	$(SETPDEV2) $(DD)atx24 $(atx_)
+
+$(DD)atx38.dev : $(DEVS_MAK) $(atx_) $(GLD)page.dev
+	$(SETPDEV2) $(DD)atx38 $(atx_)
+
+$(GLOBJ)gdevatx.$(OBJ) : $(GLSRC)gdevatx.c $(PDEVH) $(math__h)
+	$(GLCC) $(GLO_)gdevatx.$(OBJ) $(C_) $(GLSRC)gdevatx.c
 
 ### ----------- The H-P DeskJet and LaserJet printer devices ----------- ###
 
