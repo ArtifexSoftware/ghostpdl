@@ -304,7 +304,9 @@ def
        }
        { exch pop DEBUG { dup ==only ( ) print flush } if
 	 dup type /stringtype eq
-	  { 1 index arc4decode }
+	  { 1 index arc4decode
+	    DEBUG { (%Decrypted: ) print dup == flush } if
+	  }
 	 if
 	 exch pop
        }
