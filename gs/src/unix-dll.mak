@@ -1,4 +1,4 @@
-#    Copyright (C) 2000, Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 2001, Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of AFPL Ghostscript.
 # 
@@ -16,10 +16,30 @@
 # copies.
 
 # $Id$
-# Partial makefile for Unix DLL (shared object) target
+# Partial makefile for Unix shared object target
 
+# Useful make commands:
+#  make so		make ghostscript as a shared object
+#  make sodebug		make debug ghostscript as a shared object
+#  make soinstall	install shared object ghostscript
+#  make soclean		remove build files
+#
+# If you want to test the executable without installing:
+#  export LD_LIBRARY_PATH=/insert-path-here/sobin
+#  export GS_LIB=/insert-path-here/lib
 
-GSSO_XE=$(BINDIR)$(D)$(GS)_so$(XE)
+# Location for building shared object
+SOOBJRELDIR=../soobj
+SOBINRELDIR=../sobin
+
+# ------------------- Ghostscript shared object --------------------------- #
+
+# Shared object names
+
+GSSO_XENAME=$(GS)x$(XE)
+GSSO=$(BINDIR)/$(SOBINRELDIR)/$(GSSO_XENAME)
+
+GSSO_XE=$(BINDIR)/$(GSSO_XENAME)
 GS_SONAME=lib$(GS).so
 GS_SONAME_MAJOR=$(GS_SONAME).$(GS_VERSION_MAJOR)
 GS_SONAME_MAJOR_MINOR= $(GS_SONAME).$(GS_VERSION_MAJOR).$(GS_VERSION_MINOR)
@@ -27,52 +47,76 @@ GS_SO=$(BINDIR)/$(GS_SONAME)
 GS_SO_MAJOR=$(GS_SO).$(GS_VERSION_MAJOR)
 GS_SO_MAJOR_MINOR=$(GS_SO_MAJOR).$(GS_VERSION_MINOR)
 
+# Shared object is built by redefining GS_XE in a recursive make.
 
-# --------------------------- Executable loader --------------------------- #
-
-# build the small Ghostscript loader
-
-$(GSSO_XE): $(GS_SO) $(GLSRC)dxmain.c
-	$(GLCC) -g `gtk-config --cflags` -o $(GSSO_XE) $(GLSRC)dxmain.c -L$(BINDIR) -lgs `gtk-config --libs`
-	
-
-# ------------------- Ghostscript shared object --------------------------- #
-
-# build the Ghostscript DLL (shared object)
+# Create symbolic links to the Ghostscript interpreter library
 
 $(GS_SO): $(GS_SO_MAJOR)
-	-rm $(GS_SO)
+	$(RM_) $(GS_SO)
 	ln -s $(GS_SONAME_MAJOR_MINOR) $(GS_SO)
 
 $(GS_SO_MAJOR): $(GS_SO_MAJOR_MINOR)
-	-rm $(GS_SO_MAJOR)
+	$(RM_) $(GS_SO_MAJOR)
 	ln -s $(GS_SONAME_MAJOR_MINOR) $(GS_SO_MAJOR)
 
-$(GS_SO_MAJOR_MINOR): $(ld_tr) $(ECHOGS_XE) $(XE_ALL)
-	$(ECHOGS_XE) -w $(ldt_tr) -n - $(CCLD) $(LDFLAGS) -shared -Wl,-soname,$(GS_SONAME_MAJOR) -o $(GS_SO_MAJOR_MINOR)
-	$(ECHOGS_XE) -a $(ldt_tr) -n -s $(PSOBJ)gs.$(OBJ) -s
-	cat $(ld_tr) >>$(ldt_tr)
-	$(ECHOGS_XE) -a $(ldt_tr) -s - $(EXTRALIBS) $(STDLIBS)
-	LD_RUN_PATH=$(XLIBDIR); export LD_RUN_PATH; \
-	XCFLAGS= XINCLUDE= XLDFLAGS= XLIBDIRS= XLIBS= \
-	FEATURE_DEVS= DEVICE_DEVS= DEVICE_DEVS1= DEVICE_DEVS2= DEVICE_DEVS3= \
-	DEVICE_DEVS4= DEVICE_DEVS5= DEVICE_DEVS6= DEVICE_DEVS7= DEVICE_DEVS8= \
-	DEVICE_DEVS9= DEVICE_DEVS10= DEVICE_DEVS11= DEVICE_DEVS12= \
-	DEVICE_DEVS13= DEVICE_DEVS14= DEVICE_DEVS15= DEVICE_DEVS16= \
-	DEVICE_DEVS17= DEVICE_DEVS18= DEVICE_DEVS19= DEVICE_DEVS20= \
-	$(SH) <$(ldt_tr)
+# Build the small Ghostscript loader
+
+$(GSSO_XE): $(GS_SO) $(GLSRC)dxmain.c
+	$(GLCC) -g `gtk-config --cflags` -o $(GSSO_XE) $(GLSRC)dxmain.c -L$(BINDIR) -lgs `gtk-config --libs`
 
 
-# Define a rule for building shared object configurations.
-DLLDEFS=CFLAGS='$(CFLAGS_SO) $(GCFLAGS) $(XDFLAGS)' STDIO_IMPLEMENTATION=c DISPLAY_DEV=$(DD)display.dev
+# ------------------------- Recursive make targets ------------------------- #
 
-so: dll
+SODEFS=LDFLAGS='$(LDFLAGS) -shared -Wl,-soname,$(GS_SONAME_MAJOR)'\
+ GS_XE=$(BINDIR)/$(SOBINRELDIR)/$(GS_SONAME_MAJOR_MINOR)\
+ STDIO_IMPLEMENTATION=c\
+ DISPLAY_DEV=$(DD)$(SOOBJRELDIR)/display.dev\
+ BINDIR=$(BINDIR)/$(SOBINRELDIR)\
+ GLGENDIR=$(GLGENDIR)/$(SOOBJRELDIR)\
+ GLOBJDIR=$(GLOBJDIR)/$(SOOBJRELDIR)\
+ PSGENDIR=$(PSGENDIR)/$(SOOBJRELDIR)\
+ PSOBJDIR=$(PSOBJDIR)/$(SOOBJRELDIR)
 
-dll:
-	$(MAKE) $(DLLDEFS) $(GSSO_XE)
 
-dllclean: clean
-	-rm $(GS_SO)
-	-rm $(GS_SO_MAJOR)
-	-rm $(GS_SO_MAJOR_MINOR)
-	-rm $(GSSO_XE)
+# Normal shared object
+so: SODIRS
+	$(MAKE) $(SODEFS) CFLAGS='$(CFLAGS_STANDARD) $(CFLAGS_SO) $(GCFLAGS) $(XCFLAGS)' $(GSSO)
+
+# Debug shared object
+# Note that this is in the same directory as the normal shared
+# object, so you will need to use 'make soclean', 'make sodebug'
+sodebug: SODIRS
+	$(MAKE) $(SODEFS) GENOPT='-DDEBUG' CFLAGS='$(CFLAGS_DEBUG) $(CFLAGS_SO) $(GCFLAGS) $(XCFLAGS)' $(GSSO)
+
+install-so: so
+	-mkdir $(prefix)
+	-mkdir $(datadir)
+	-mkdir $(gsdir)
+	-mkdir $(gsdatadir)
+	-mkdir $(bindir)
+	-mkdir $(libdir)
+	$(INSTALL_PROGRAM) $(GSSO) $(bindir)/$(GS)
+	$(INSTALL_PROGRAM) $(BINDIR)/$(SOBINRELDIR)/$(GS_SONAME_MAJOR_MINOR) $(libdir)/$(GS_SONAME_MAJOR_MINOR)
+	$(RM_) $(libdir)/$(GS_SONAME)
+	ln -s $(GS_SONAME_MAJOR_MINOR) $(libdir)/$(GS_SONAME)
+	$(RM_) $(libdir)/$(GS_SONAME_MAJOR)
+	ln -s $(GS_SONAME_MAJOR_MINOR) $(libdir)/$(GS_SONAME_MAJOR)
+
+soinstall: install-so install-scripts install-data
+
+# Make the build directories
+SODIRS: STDDIRS
+	@if test ! -d $(BINDIR)/$(SOBINRELDIR); then mkdir $(BINDIR)/$(SOBINRELDIR); fi
+	@if test ! -d $(GLGENDIR)/$(SOOBJRELDIR); then mkdir $(GLGENDIR)/$(SOOBJRELDIR); fi
+	@if test ! -d $(GLOBJDIR)/$(SOOBJRELDIR); then mkdir $(GLOBJDIR)/$(SOOBJRELDIR); fi
+	@if test ! -d $(PSGENDIR)/$(SOOBJRELDIR); then mkdir $(PSGENDIR)/$(SOOBJRELDIR); fi
+	@if test ! -d $(PSOBJDIR)/$(SOOBJRELDIR); then mkdir $(PSOBJDIR)/$(SOOBJRELDIR); fi
+
+
+soclean: SODIRS
+	$(MAKE) $(SODEFS) clean
+	$(RM_) $(BINDIR)/$(SOBINRELDIR)/$(GS_SONAME)
+	$(RM_) $(BINDIR)/$(SOBINRELDIR)/$(GS_SONAME_MAJOR)
+	$(RM_) $(GSSO)
+
+# End of unix-dll.mak

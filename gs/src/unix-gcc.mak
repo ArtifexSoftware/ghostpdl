@@ -60,6 +60,7 @@ prefix = /usr/local
 exec_prefix = $(prefix)
 bindir = $(exec_prefix)/bin
 scriptdir = $(bindir)
+libdir = $(exec_prefix)/lib
 mandir = $(prefix)/man
 man1ext = 1
 datadir = $(prefix)/share
@@ -196,12 +197,12 @@ CCLD=$(CC)
 GCFLAGS=-Wall -Wstrict-prototypes -Wmissing-declarations -Wmissing-prototypes -Wtraditional -fno-builtin -fno-common
 
 # Define the added flags for standard, debugging, profiling 
-# and shared object (DLL) builds.
+# and shared object builds.
 
 CFLAGS_STANDARD=-O2
 CFLAGS_DEBUG=-g -O
 CFLAGS_PROFILE=-pg -O2
-CFLAGS_SO=$(CFLAGS_STANDARD) -fPIC
+CFLAGS_SO=-fPIC
 
 # Define the other compilation flags.  Add at most one of the following:
 #	-DBSD4_2 for 4.2bsd systems.
