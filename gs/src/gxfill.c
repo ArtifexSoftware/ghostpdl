@@ -1202,6 +1202,60 @@ fill_trap_slanted(gx_device * dev, const gs_fixed_rect * pbox,
     return code;
 }
 
+private int
+fill_trap_or_rect(gx_device * dev, const gs_fixed_rect * pbox,
+	    const gx_device_color * pdevc, gs_logical_operation_t lop,
+	    bool fill_direct, 
+	    fixed xlbot, fixed xbot, fixed xltop, fixed xtop, fixed y, fixed y1,
+	    fixed adjust_below, fixed adjust_above,
+	    active_line *flp, active_line *alp, 
+	    line_list *ll, const bool pseudo_rasterization)
+{
+    /* xlbot, xbot, xltop, xtop, y, y1 must be consistent with flp, alp,
+     * except for adjusted rectangles.
+     * Rather pseudo_rasterization == ll->pseudo_rasterization
+     * we pass it as a separate argument to allow inline optimization.
+     */
+    int code;
+
+    if (xltop == xlbot && xtop == xbot) {
+	int yi = fixed2int_pixround(y - adjust_below);
+	int wi = fixed2int_pixround(y1 + adjust_above) - yi;
+	int xli = fixed2int_var_pixround(xltop);
+	int xi = fixed2int_var_pixround(xtop);
+	dev_proc_fill_rectangle((*fill_rect)) = dev_proc(dev, fill_rectangle);
+
+	if (pseudo_rasterization && xli == xi) {
+	    /*
+	     * The scan is empty but we should paint something 
+	     * against a dropout. Choose one of two pixels which 
+	     * is closer to the "axis".
+	     */
+	    fixed xx = int2fixed(xli);
+
+	    if (xx - xltop < xtop - xx)
+		++xi;
+	    else
+		--xli;
+	}
+	code = LOOP_FILL_RECTANGLE_DIRECT(xli, yi, xi - xli, wi);
+	vd_rect(xltop, y, xtop, y1, 1, VD_TRAP_COLOR);
+    } else {
+	int flags = 0;
+
+	if (pseudo_rasterization) {
+	    flags |= ftf_pseudo_rasterization;
+	    if (flp->start.x == alp->start.x && flp->start.y == y)
+		flags |= ftf_peak0;
+	    if (flp->end.x == alp->end.x && flp->end.y == y1)
+		flags |= ftf_peak0;
+	}
+	code = loop_fill_trap(dev, xlbot, xbot - xlbot, y, xltop, 
+			xtop - xltop, y1 - y, pbox, pdevc, lop, flags);
+    }
+    return code;
+}
+
 #define COVERING_PIXEL_CENTERS(y, y1, adjust_below, adjust_above)\
     (fixed_pixround(y - adjust_below) < fixed_pixround(y1 + adjust_above))
 
@@ -1212,6 +1266,7 @@ intersect_al(line_list *ll, fixed y, fixed *y_top, int draw)
 {
     fixed x = min_fixed, y1 = *y_top;
     active_line *alp, *stopx, *endp;
+    const bool pseudo_rasterization = ll->pseudo_rasterization;
 
     /*
      * Loop invariants:
@@ -1229,7 +1284,7 @@ intersect_al(line_list *ll, fixed y, fixed *y_top, int draw)
 	/* Check for intersecting lines. */
 	if (nx >= x)
 	    x = nx;
-	else if ((ll->pseudo_rasterization || draw >= 0) &&	/* don't bother if no pixels with no pseudo_rasterization */
+	else if ((pseudo_rasterization || draw >= 0) &&	/* don't bother if no pixels with no pseudo_rasterization */
 		 (dx_old = alp->x_current - endp->x_current) >= 0 &&
 		 (dx_den = dx_old + endp->x_next - nx) > dx_old
 	    ) {		/* Make a good guess at the intersection */
@@ -1438,7 +1493,6 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 	/* Fill a multi-trapezoid band for the active lines. */
 	covering_pixel_centers = COVERING_PIXEL_CENTERS(y, y1, adjust_below, adjust_above);
 	if (covering_pixel_centers) {
-	    fixed height = y1 - y;
 	    fixed xlbot, xltop; /* as of last "outside" line */
 	    int inside = 0;
 	    active_line *flp;
@@ -1450,9 +1504,6 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 	    for (alp = ll->x_list; alp != 0; alp = alp->next) {
 		fixed xbot = alp->x_current;
 		fixed xtop = alp->x_current = alp->x_next;
-		fixed wtop;
-		int xi, xli;
-		bool is_rect;
 		int code;
 
 		print_al("step", alp);
@@ -1468,56 +1519,21 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 		if (INSIDE_PATH_P(inside, rule))	/* not about to go out */
 		    continue;
 		/* We just went from inside to outside, so fill the region. */
-		wtop = xtop - xltop;
 		INCR(band_fill);
 		if ((adjust_left | adjust_right) != 0) {
 		    xlbot -= adjust_left;
 		    xbot += adjust_right;
 		    xltop -= adjust_left;
 		    xtop += adjust_right;
-		    wtop = xtop - xltop;
 		}
-		xli = fixed2int_var_pixround(xltop);
-		xi = fixed2int_var_pixround(xtop);
-		is_rect = (xltop == xlbot && xtop == xbot);
-		if (!is_rect && (adjust_below | adjust_above) != 0) {
+		if (!(xltop == xlbot && xtop == xbot) && (adjust_below | adjust_above) != 0) {
 		    /* Assuming pseudo_rasterization = false. */
 		    code = fill_trap_slanted(dev, pbox, pdevc, lop, fill_direct, 
 				xlbot, xbot, xltop, xtop, y, y1, adjust_below, adjust_above);
 		} else {
-		    if (is_rect) {
-			int yi = fixed2int_pixround(y - adjust_below);
-			int wi = fixed2int_pixround(y1 + adjust_above) - yi;
-
-			if (pseudo_rasterization && xli == xi) {
-			    /*
-			     * The scan is empty but we should paint something 
-			     * against a dropout. Choose one of two pixels which 
-			     * is closer to the "axis".
-			     */
-			    fixed xx = int2fixed(xli);
-
-			    if (xx - xltop < xtop - xx)
-				++xi;
-			    else
-				--xli;
-			}
-			code = LOOP_FILL_RECTANGLE_DIRECT(xli, yi,
-							  xi - xli, wi);
-			vd_rect(xltop, y, xtop, y1, 1, VD_TRAP_COLOR);
-		    } else {
-			int flags = 0;
-
-			if (pseudo_rasterization) {
-			    flags |= ftf_pseudo_rasterization;
-			    if (flp->start.x == alp->start.x && flp->start.y == y)
-				flags |= ftf_peak0;
-			    if (flp->end.x == alp->end.x && flp->end.y == y1)
-				flags |= ftf_peak0;
-			}
-			code = loop_fill_trap(dev, xlbot, xbot - xlbot, y, xltop, wtop, height, 
-							pbox, pdevc, lop, flags);
-		    }
+		    code = fill_trap_or_rect(dev, pbox, pdevc, lop, fill_direct, 
+				xlbot, xbot, xltop, xtop, y, y1, adjust_below, adjust_above,
+				flp, alp, ll, pseudo_rasterization);
 		    if (pseudo_rasterization) {
 			if (code < 0)
 			    return code;
