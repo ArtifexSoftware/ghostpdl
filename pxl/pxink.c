@@ -376,7 +376,7 @@ render_pattern(gs_client_color *pcc, const px_pattern_t *pattern,
 	    px_gstate_rc_adjust(pxgs, -1, pxgs->memory);
 	    pxgs->brush.type = pxgs->pen.type = pxpNull;
 	    gs_newpath(pgs);
-	    gs_initclip(pgs);
+	    px_initclip(pxs);
 	    /* 
 	     * Since the PaintProcs don't reference the saved color space or
 	     * color, reset these so that there isn't an extra retained

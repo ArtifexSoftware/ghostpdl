@@ -10,6 +10,7 @@
 #include "pxoper.h"
 #include "pxstate.h"
 #include "pxfont.h"		/* for px_free_font */
+#include "pjparse.h"
 #include "gschar.h"
 #include "gscoord.h"
 #include "gserrors.h"		/* for gs_error_undefined */
@@ -17,6 +18,7 @@
 #include "gsparam.h"
 #include "gsstate.h"
 #include "gxfixed.h"
+#include "gxpath.h"             /* for gx_clip_to_rectangle */
 #include "gxfcache.h"
 #include "gxdevice.h"
 #include "pjtop.h"
@@ -56,6 +58,7 @@ private px_media_t known_media[] = {
 private const double measure_to_points[] = pxeMeasure_to_points;
 
 /* ---------------- Internal procedures ---------------- */
+
 
 /* return the default media set up in the XL state */
 private px_media_t * 
@@ -246,7 +249,9 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 	const px_media_t *pm;
 	gs_point page_size_pixels;
 	gs_point media_size;
-
+	gs_matrix points2device;
+	short int media_height;
+	short int media_width;
 	/* Check parameter presence for legal combinations. */
 	if ( par->pv[2] )
 	  { if ( par->pv[3] || par->pv[4] )
@@ -295,6 +300,8 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 	    pxs->media_size = pm->ms_enum;
 	    media_size.x = pm->width * media_size_scale;
 	    media_size.y = pm->height * media_size_scale;
+	    media_height = pm->height;
+	    media_width = pm->width;
 	  }
 	else
 	  { double scale = measure_to_points[par->pv[4]->value.i];
@@ -305,6 +312,8 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 	     * as for the default media.  This may not be right.
 	     */
 	    pm = px_get_default_media(pxs);
+	    media_height = media_size.y / media_size_scale;
+	    media_width = media_size.x / media_size_scale;
 	  }
 	if ( par->pv[5] )
 	  { pxs->duplex = false;
@@ -345,20 +354,7 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 	  fa.size = 2;
 	  code = param_write_float_array(plist, ".MediaSize", &fa);
 	  ecode = px_put1(dev, &list, ecode);
-
 	  gs_c_param_list_write(&list, mem);
-
-	  /* be careful not to set up a clipping region beyond the
-             physical capabilites of the driver.  It seems like
-             pm->m_top and pm->m_bottom are reversed but this is
-             consistant with the way it was before. */
-	  fv[0] = max((dev->HWMargins[0]), (pm->m_left * media_size_scale));
-	  fv[1] = max((dev->HWMargins[1]), (pm->m_top * media_size_scale));
-	  fv[2] = max((dev->HWMargins[2]), (pm->m_right * media_size_scale));
-	  fv[3] = max((dev->HWMargins[3]), (pm->m_bottom * media_size_scale));
-	  fa.size = 4;
-	  code = param_write_float_array(plist, ".HWMargins", &fa);
-	  ecode = px_put1(dev, &list, ecode);
 
 	  /* Set the mis-named "Margins" (actually the offset on the page) */
 	  /* to zero. */
@@ -422,6 +418,7 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 	{ int code;
 
 	  px_initgraphics(pxs);
+	  gs_currentmatrix(pgs, &points2device);
 	  gs_dtransform(pgs, media_size.x, media_size.y,
 			&page_size_pixels);
 	  { /*
@@ -465,7 +462,7 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 
 	    if ( (code = gs_scale(pgs, scale / pxs->units_per_measure.x,
 				  scale / pxs->units_per_measure.y)) < 0
-	       )
+				  )
 	      return code;
 	    gs_currentmatrix(pgs, &mat);
 	    mat.xx = px_adjust_scale(mat.xx, page_size_pixels.x);
@@ -475,8 +472,35 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 	    gs_setmatrix(pgs, &mat);
 	    pxs->initial_matrix = mat;
 	  }
+	  {
+	      /* note we don't expect errors here since the
+                 coordinates are functions of media sizes known at
+                 compile time */
+	      gs_rect page_bbox, device_page_bbox;
+	      gs_fixed_rect fixed_bbox;
+	      /* XL requires a 1/6" border to print correctly, this
+                 will set up the border as long as we do not exceed
+                 the boundary of the hardware margins.  If the
+                 engine's border is larger than 1/6" the XL output
+                 will be clipped by the engine and will not behave as
+                 expected */
+	      page_bbox.p.x = max(dev->HWMargins[0], pm->m_left * media_size_scale);
+	      page_bbox.p.y = max(dev->HWMargins[1], pm->m_top * media_size_scale);
+	      page_bbox.q.x = (media_width * media_size_scale) -
+		  max(dev->HWMargins[2], pm->m_bottom * media_size_scale);
+	      page_bbox.q.y = (media_height * media_size_scale) - 
+		  max(dev->HWMargins[3], pm->m_right * media_size_scale);
+	      gs_bbox_transform(&page_bbox, &points2device, &device_page_bbox);
+	      /* clip to rectangle takes fixed coordinates */
+	      fixed_bbox.p.x = float2fixed(device_page_bbox.p.x);
+	      fixed_bbox.p.y = float2fixed(device_page_bbox.p.y);
+	      fixed_bbox.q.x = float2fixed(device_page_bbox.q.x);
+	      fixed_bbox.q.y = float2fixed(device_page_bbox.q.y);
+	      gx_clip_to_rectangle(pgs, &fixed_bbox);
+	      pxs->pxgs->initial_clip_rect = fixed_bbox;
+	  }
 	}
-	  { /*
+	{ /*
 	     * Set the default halftone method.  We have to do this here,
 	     * rather than earlier, so that the origin is set correctly.
 	     */

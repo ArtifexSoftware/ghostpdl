@@ -282,6 +282,7 @@ px_initgraphics(px_state_t *pxs)
 	px_gstate_reset(pxs->pxgs);
 	gs_initgraphics(pgs);
 
+	px_initclip(pxs);
 	/* PCL XL uses the center-of-pixel rule. */
 	gs_setfilladjust(pgs, 0.0, 0.0);
 
@@ -335,6 +336,14 @@ px_gstate_reset(px_gstate_t *pxgs)
 	gs_make_identity(&pxgs->text_ctm);
 	pxgs->char_matrix_set = false;
 	pxgs->symbol_map = 0;
+}
+
+/* initial clip region note, we don't use gs_initclip() because we
+   give special handling for the XL 1/6" border */
+int
+px_initclip(px_state_t *pxs) 
+{
+    return gx_clip_to_rectangle(pxs->pgs, &pxs->pxgs->initial_clip_rect);
 }
 
 /* ---------------- Utilities ---------------- */
@@ -443,7 +452,7 @@ pxSetClipReplace(px_args_t *par, px_state_t *pxs)
 {	int code;
 
 	check_clip_region(par, pxs);
-	if ( (code = gs_initclip(pxs->pgs)) < 0 )
+	if ( (code = px_initclip(pxs)) < 0 )
 	  return code;
 	return pxSetClipIntersect(par, pxs);
 }
@@ -535,7 +544,7 @@ pxSetClipIntersect(px_args_t *par, px_state_t *pxs)
 	    code = gs_gsave(pgs);
 	    if ( code < 0 )
 	      return code;
-	    gs_initclip(pgs);
+	    px_initclip(pxs);
 	    if ( (code = gs_clippath(pgs)) < 0 ||
 		 (code = gs_pathbbox(pgs, &bbox)) < 0
 	       )
@@ -546,7 +555,7 @@ pxSetClipIntersect(px_args_t *par, px_state_t *pxs)
 	       )
 	      return code;
 #ifdef CLIP_INTERSECT_EXTERIOR_REPLACES
-	    gs_initclip(pgs);
+	    px_initclip(pxs);
 #endif
 	  }
 	code =
@@ -580,7 +589,7 @@ const byte apxSetClipToPage[] = {0, 0};
 int
 pxSetClipToPage(px_args_t *par, px_state_t *pxs)
 {	gs_newpath(pxs->pgs);
-	return gs_initclip(pxs->pgs);
+	return px_initclip(pxs);
 }
 
 const byte apxSetCursor[] = {
