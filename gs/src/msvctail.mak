@@ -25,7 +25,7 @@
 
 # -------------------------- Auxiliary programs --------------------------- #
 
-!if "$(INCDIR)"=""
+!if "$(INCDIR)"==""
 IINCDIR=
 !else
 IINCDIR=/I$(INCDIR)
