@@ -124,8 +124,8 @@ EXPERIMENT_CFLAGS=
 GCFLAGS=-Wall -Wpointer-arith -Wstrict-prototypes -Wwrite-strings $(PSICFLAGS) $(EXPERIMENT_CFLAGS)
 CFLAGS=-g -O0 $(GCFLAGS) $(XCFLAGS) $(PSICFLAGS)
 
-XINCLUDE=-I/usr/local/X/include
-XLIBDIRS=-L/usr/X11/lib -L/usr/X11R6/lib
+XINCLUDE=-I/usr/X11R6/include
+XLIBDIRS=-L/usr/X11R6/lib
 XLIBDIR=
 XLIBS=Xt SM ICE Xext X11
 
