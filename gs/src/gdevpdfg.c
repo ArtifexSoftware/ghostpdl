@@ -1250,9 +1250,15 @@ pdf_try_prepare_stroke(gx_device_pdf *pdev, const gs_imager_state *pis)
 	    return code;
 	pprintb1(pdev->strm, "/OP %s", pis->overprint);
 	pdev->stroke_overprint = pis->overprint;
-	/* PDF 1.2 only has a single overprint setting. */
-	if (pdev->CompatibilityLevel < 1.3)
+	if (pdev->CompatibilityLevel < 1.3) {
+	    /* PDF 1.2 only has a single overprint setting. */
 	    pdev->fill_overprint = pis->overprint;
+	} else {
+	    /* According to PDF>=1.3 spec, OP also sets op,
+	       if there is no /op in same garphic state object. 
+	       We don't write /op, so monitor the viewer's state here : */
+	    pdev->fill_overprint = pis->overprint;
+	}
     }
     if (pdev->state.stroke_adjust != pis->stroke_adjust) {
 	code = pdf_open_gstate(pdev, &pres);
