@@ -150,10 +150,15 @@ typedef enum {
  * and render algorithm all packed into a single integer.
  * In principle, we should use a structure, but most C implementations
  * implement structure values very inefficiently.
+ *
+ * In addition, we define a "pdf14" flag which indicates that PDF
+ * transparency is in effect. This doesn't change rendering in any way,
+ * but does force the lop to be considered non-idempotent.
  */
 #define lop_rop(lop) ((gs_rop3_t)((lop) & 0xff))	/* must be low-order bits */
 #define lop_S_transparent 0x100
 #define lop_T_transparent 0x200
+#define lop_pdf14 0x4000
 #define lop_ral_shift 10
 #define lop_ral_mask 0xf
 typedef uint gs_logical_operation_t;
@@ -179,7 +184,7 @@ typedef uint gs_logical_operation_t;
 #define lop_no_S_is_T(lop)\
   (((lop) & (lop_T_transparent | (rop3_1 - rop3_S))) == (rop3_T & ~rop3_S))
 /* Test whether a logical operation is idempotent. */
-#define lop_is_idempotent(lop) rop3_is_idempotent(lop)
+#define lop_is_idempotent(lop) (rop3_is_idempotent(lop) && !(lop & lop_pdf14))
 
 /*
  * Define the logical operation versions of some RasterOp transformations.
