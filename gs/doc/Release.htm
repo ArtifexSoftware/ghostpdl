@@ -41,9 +41,9 @@ How to prepare an Aladdin Ghostscript release
 <ul>
 <li><a href="#Tester_or_beta">Tester or beta distributions</a>
 <li><a href="#Public_releases">Public releases</a>
+</ul>
+</ul>
 <li><a href="#After_releasing">After releasing</a>
-</ul>
-</ul>
 </ul></blockquote>
 
 <!-- [1.2 end table of contents] =========================================== -->
@@ -184,8 +184,7 @@ much work to support other Unix systems).  Ghostscript as distributed also
 often includes executables or other packages for the Windows and MacOS
 environment, but Aladdin does not produce these, and this document does not
 discuss them.  For more information about Windows packages, please contact
-<a href="mailto:bug-gswin@aladdin.com"><tt>bug-gswin@aladdin.com</tt></a> or
-<a href="mailto:gsview@ghostgum.com.au"><tt>gsview@ghostgum.com.au</tt></a>;
+<a href="mailto:bug-gswin@aladdin.com"><tt>bug-gswin@aladdin.com</tt></a>;
 for more information about MacOS packages; please contact <a
 href="mailto:mac-gs@aladdin.com"><tt>mac-gs@aladdin.com</tt></a>.
 
@@ -195,9 +194,9 @@ the <b><tt>toolbin/</tt></b> directory.  You will probably find it
 convenient to include this directory in the PATH, but the instructions below
 don't assume that you have done this.  To run the scripts, you will need
 reasonably current versions of Tcl, freely available from Scriptics (<a
-href="http://www.scriptics.com">http://www.scriptics.com</a>), and Python,
-freely available from <a
-href="http://www.python.org">http://www.python.org</a>
+href="http://www.scriptics.com"><tt>http://www.scriptics.com</tt></a>), and
+Python, freely available from <a
+href="http://www.python.org"><tt>http://www.python.org</tt></a>
 
 <p>
 The instructions below also refer to some files that are deliberately
@@ -206,8 +205,8 @@ authors and not freely redistributable.  You will need to provide similar
 files for your environment.
 
 <blockquote><pre>
-<b><tt>data/*/*.ps</tt></b> (PostScript files)
-<b><tt>beta.msg</tt></b>
+<b><tt>data/*/*.ps</tt></b> (PostScript files) - needed for smoke testing
+<b><tt>beta.msg</tt></b> - the announcement message for the release
 </pre></blockquote>
 
 <h2><a name="Preparing_source"></a>Preparing the source code</h2>
@@ -215,6 +214,10 @@ files for your environment.
 <p>
 Make sure the release date and version number are up to date in
 <b><tt>version.mak</tt></b>, <b><tt>lib/gs_init.ps</tt></b>, and
+<b><tt>doc/News.htm</tt></b>.
+
+<p>
+Update the number of the highest closed bug, and the list of open bugs, in
 <b><tt>doc/News.htm</tt></b>.
 
 <p>
@@ -272,6 +275,8 @@ running:
 toolbin/gsmake check
 </pre></blockquote>
 
+<h2><a name="Testing"></a>Testing</h2>
+
 <p>
 Edit the makefile (presumably <b><tt>unix-gcc.mak</tt></b>) to set
 <blockquote><pre>
@@ -294,14 +299,32 @@ make -j2 &gt;&amp; t.log
 and look for warnings and errors in the log file.
 
 <p>
-Do a smoke test:
+Do a smoke test in a separate window, replacing <b><tt>/gs</tt></b> with the
+name of the development root directory if necessary:
 
 <blockquote><pre>
-bin/gs @b toolbin/smoke.ps
+unset GS_DEVICE GS_LIB GS_OPTIONS
+cd /tmp
+/gs/bin/gs -I/gs/lib -I/gs/fonts -dNOPAUSE -dBATCH /gs/toolbin/smoke.ps | tee t
 export TEMP=/gs/tmp
-bin/gs @b -sDEVICE=bitcmyk -sOutputFile=/dev/null -r600 -dMaxBitmap=1000000\
-  toolbin/smoke.ps
+/gs/bin/gs -I/gs/lib -I/gs/fonts -dNOPAUSE -dBATCH -sDEVICE=bitcmyk\
+  -sOutputFile=/dev/null -r600 -dMaxBitmap=1000000 /gs/toolbin/smoke.ps | tee t
 </pre></blockquote>
+
+<p>
+This reads files named
+
+<blockquote><pre>
+<b><tt>/gs/data/ps/*.ps</tt></b>
+<b><tt>/gs/data/psl2/*.ps</tt></b>
+<b><tt>/gs/data/psl3/*.ps</tt></b>
+<b><tt>/gs/data/test/*.ps</tt></b>
+</pre></blockquote>
+
+<p>
+(Edit <b><tt>toolbin/smoke.ps</tt></b> ad lib to use other test sets.)
+Watch for crashes, unusual error messages, or anomalous displayed output.
+If there are any problems, start over from the beginning of the process.
 
 <p>
 Undo the <b><tt>FEATURE_DEVS</tt></b> and <b><tt>COMPILE_INITS</tt></b>
@@ -344,7 +367,7 @@ cvs commit
 </pre></blockquote>
 
 <p>
-again.
+again to check in the Changes and history files.
 
 <p>
 Make the source archives with
@@ -361,42 +384,6 @@ This creates the files
 <b><tt>ghostscript-#.##.tar.bz2</tt></b> (main archive)
 <b><tt>ghostscript-#.##gnu.tar.gz</tt></b> (GPL'ed files)
 </pre></blockquote>
-
-<h2><a name="Testing"></a>Testing</h2>
-
-<p>
-Unpack the main archive in a clean directory.  Prepare for building:
-
-<blockquote><pre>
-ln -s src/unix-gcc.mak makefile;\
-ln -s /gs/jpeg jpeg; ln -s /gs/libpng libpng; ln -s /gs/zlib zlib
-</pre></blockquote>
-
-<p>
-Do a full build and smoke test (in a separate window):
-
-<blockquote><pre>
-unset GS_LIB
-bin/gs -Ilib -I/gs/fonts -dNOPAUSE -dBATCH /gs/toolbin/smoke.ps | tee t
-export TEMP=/gs/tmp
-bin/gs -Ilib -I/gs/fonts -dNOPAUSE -dBATCH -sDEVICE=bitcmyk\
-  -sOutputFile=/dev/null -r600 -dMaxBitmap=1000000 /gs/toolbin/smoke.ps | tee t
-</pre></blockquote>
-
-<p>
-This reads files named
-
-<blockquote><pre>
-<b><tt>/gs/data/ps/*.ps</tt></b>
-<b><tt>/gs/data/psl2/*.ps</tt></b>
-<b><tt>/gs/data/psl3/*.ps</tt></b>
-<b><tt>/gs/data/test/*.ps</tt></b>
-</pre></blockquote>
-
-<p>
-(Edit <b><tt>toolbin/smoke.ps</tt></b> ad lib to use other test sets.)
-Watch for crashes, unusual error messages, or anomalous displayed output.
-If there are any problems, start over from the beginning of the process.
 
 <h2><a name="Testing_on_Windows"></a>Testing on Windows</h2>
 
@@ -522,10 +509,6 @@ Upload <b><tt>ghostscript-#.##.tar.*</tt></b> to
 <b><tt>ftp://ftp.cs.wisc.edu/ghost/aladdin/test</tt></b>.
 
 <p>
-Copy the same files from there to
-<b><tt>ftp://www.aladdin.com/pub/ftp/ghost/aladdin/test</tt></b>.
-
-<p>
 Construct the e-mail announcement by editing <b><tt>beta.msg</tt></b>;
 include the News section for this release.  Mail using:
 <blockquote><pre>
@@ -551,10 +534,10 @@ To: gs-announce
 <p>
 Edit the Web pages on the Wisconsin server to reflect the new release.
 
-<h3><a name="After_releasing"></a>After releasing</h3>
+<h1><a name="After_releasing"></a>After releasing</h1>
 
 <p>
-Edit <b><tt>doc/News.htm</tt></b> to remove all content.
+Edit <b><tt>doc/News.htm</tt></b> to remove all the content.
 
 <!-- [2.0 end contents] ==================================================== -->
 
@@ -571,7 +554,7 @@ details of the terms of using, copying, modifying, and redistributing
 Aladdin Ghostscript.
 
 <p>
-Ghostscript version 6.01, 16 March 2000
+Ghostscript version 6.20, 6 April 2000
 
 </font>
 
