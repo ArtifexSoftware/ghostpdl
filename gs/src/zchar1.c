@@ -1203,3 +1203,4 @@ z1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
     return z1_glyph_info_generic(font, glyph, pmat, members, info, 
 				    &gs_type1_glyph_info, wmode);
 }
+

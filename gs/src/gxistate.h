@@ -283,6 +283,6 @@ void gs_imager_state_pre_assign(gs_imager_state *to,
 
 /* Release an imager state. */
 void gs_imager_state_release(gs_imager_state * pis);
-int gs_currentscreenphase_pis(const gs_imager_state *, gs_int_point *, gs_color_select_t);;
+int gs_currentscreenphase_pis(const gs_imager_state *, gs_int_point *, gs_color_select_t);
 
 #endif /* gxistate_INCLUDED */
