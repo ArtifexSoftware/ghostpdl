@@ -109,6 +109,7 @@ rtrstst_h   = $(PCLSRC)rtrstst.h  \
               $(pccoord_h)
 
 pcmtx3_h    = $(PCLSRC)pcmtx3.h   \
+	      $(math__h)          \
               $(gx_h)             \
               $(gsmatrix_h)       \
               $(gscspace_h)       \
@@ -294,6 +295,7 @@ rtrstcmp_h  = $(PCLSRC)rtrstcmp.h \
 
 $(PCLOBJ)pcommand.$(OBJ): $(PCLSRC)pcommand.c   \
                           $(std_h)              \
+	                  $(memory__h)          \
                           $(gstypes_h)          \
                           $(gsmemory_h)         \
                           $(gsmatrix_h)         \
@@ -388,6 +390,7 @@ $(PCLOBJ)rtcursor.$(OBJ): $(PCLSRC)rtcursor.c   \
 
 # Chapter 15
 $(PCLOBJ)rtraster.$(OBJ): $(PCLSRC)rtraster.c   \
+			  $(memory__h)          \
                           $(gx_h)               \
                           $(gsmatrix_h)         \
                           $(gscoord_h)          \
@@ -422,6 +425,7 @@ $(PCLOBJ)rtlbase.dev: $(PCL_MAK) $(ECHOGS_XE) $(rtlbase_) $(PCLOBJ)pcl5base.dev
 
 # Chapter 2, 3, 4, 5
 $(PCLOBJ)pcbiptrn.$(OBJ): $(PCLSRC)pcbiptrn.c   \
+			  $(string__h)          \
                           $(pcpatrn_h)          \
                           $(pcuptrn_h)          \
                           $(pcbiptrn_h)
@@ -438,13 +442,14 @@ $(PCLOBJ)pccid.$(OBJ): $(PCLSRC)pccid.c     \
 	$(PCLCCC) $(PCLSRC)pccid.c $(PCLO_)pccid.$(OBJ)
 
 $(PCLOBJ)pccolor.$(OBJ): $(PCLSRC)pccolor.c \
-                         $(std__h)           \
+                         $(std_h)           \
                          $(pcommand_h)      \
                          $(pcstate_h)       \
                          $(pcpalet_h)
 	$(PCLCCC) $(PCLSRC)pccolor.c $(PCLO_)pccolor.$(OBJ)
 
 $(PCLOBJ)pccrd.$(OBJ): $(PCLSRC)pccrd.c \
+		       $(string__h)     \
                        $(gx_h)          \
                        $(gsmatrix_h)    \
                        $(gsmemory_h)    \
@@ -513,6 +518,7 @@ $(PCLOBJ)pcident.$(OBJ): $(PCLSRC)pcident.c \
 $(PCLOBJ)pcindexed.$(OBJ): $(PCLSRC)pcindexed.c \
                            $(gx_h)              \
                            $(math__h)           \
+                           $(string__h)         \
                            $(pcmtx3_h)          \
                            $(pccid_h)           \
                            $(pccsbase_h)        \
@@ -527,6 +533,7 @@ $(PCLOBJ)pclookup.$(OBJ): $(PCLSRC)pclookup.c   \
 
 $(PCLOBJ)pcmtx3.$(OBJ): $(PCLSRC)pcmtx3.c   \
                         $(gx_h)             \
+			$(string__h)        \
                         $(math__h)          \
                         $(gstypes_h)        \
                         $(pcommand_h)       \
@@ -569,6 +576,7 @@ $(PCLOBJ)pcpatxfm.$(OBJ): $(PCLSRC)pcpatxfm.c   \
 	$(PCLCCC) $(PCLSRC)pcpatxfm.c $(PCLO_)pcpatxfm.$(OBJ)
 
 $(PCLOBJ)pcuptrn.$(OBJ): $(PCLSRC)pcuptrn.c \
+		         $(string__h)       \
                          $(gx_h)            \
                          $(gscsel_h)        \
                          $(gxdevice_h)      \
@@ -602,10 +610,14 @@ $(PCLOBJ)rtgmode.$(OBJ):  $(PCLSRC)rtgmode.c    \
                           $(pcdraw_h)           \
                           $(rtraster_h)         \
                           $(rtrstcmp_h)         \
-                          $(rtgmode_h)
+                          $(rtgmode_h)          \
+			  $(rtrstst_h)          \
+			  $(pcstate_h)          \
+                          $(pcommand_h)
 	$(PCLCCC) $(PCLSRC)rtgmode.c $(PCLO_)rtgmode.$(OBJ)
 
 $(PCLOBJ)rtrstcmp.$(OBJ): $(PCLSRC)rtrstcmp.c   \
+			  $(string__h)          \
                           $(pcstate_h)          \
                           $(rtrstcmp_h)
 	$(PCLCCC) $(PCLSRC)rtrstcmp.c $(PCLO_)rtrstcmp.$(OBJ)
@@ -637,7 +649,7 @@ $(PCLOBJ)rtlbasec.dev: $(PCL_MAK) $(ECHOGS_XE) $(rtlbasec_) $(PCLOBJ)rtlbase.dev
 # CCITT fax compression modes.
 
 $(PCLOBJ)rtlrastr.$(OBJ): $(PCLSRC)rtlrastr.c   \
-                          $(std_h)              \
+                          $(std]h)             \
                           $(pcommand_h)         \
                           $(pcstate_h)          \
                           $(rtgmode_h)
@@ -682,6 +694,7 @@ PCL_COMMON  = $(PCLOBJ)pcfsel.$(OBJ)
 # Chapter 4
 # Some of these replace implementations in rtmisc.c.
 $(PCLOBJ)pcjob.$(OBJ): $(PCLSRC)pcjob.c \
+		       $(std_h)         \
                        $(gx_h)          \
                        $(gsmemory_h)    \
                        $(gsmatrix_h)    \
@@ -718,7 +731,7 @@ $(PCLOBJ)pcpage.$(OBJ): $(PCLSRC)pcpage.c   \
 # Chapter 6
 # Some of these replace implementations in rtcursor.c.
 $(PCLOBJ)pcursor.$(OBJ): $(PCLSRC)pcursor.c \
-                         $(std_h)           \
+                         $(std_h)          \
                          $(math__h)         \
                          $(pcommand_h)      \
                          $(pcstate_h)       \
@@ -732,6 +745,8 @@ $(PCLOBJ)pcursor.$(OBJ): $(PCLSRC)pcursor.c \
 
 # Chapter 8
 $(PCLOBJ)pcfont.$(OBJ): $(PCLSRC)pcfont.c   \
+			$(std_h)            \
+			$(memory__h)        \
                         $(gx_h)             \
                         $(gsccode_h)        \
                         $(gsmatrix_h)       \
@@ -1063,7 +1078,7 @@ $(PCLOBJ)pgvector.$(OBJ): $(PCLSRC)pgvector.c \
 
 # Chapter 21
 $(PCLOBJ)pgpoly.$(OBJ): $(PCLSRC)pgpoly.c \
-                        $(std_h)          \
+                        $(std_h)         \
                         $(pgmand_h)       \
                         $(pgdraw_h)       \
                         $(pggeom_h)       \
@@ -1129,7 +1144,7 @@ $(PCLOBJ)pglabel.$(OBJ): $(PCLSRC)pglabel.c  \
 	$(PCLCCC) $(PCLSRC)pglabel.c $(PCLO_)pglabel.$(OBJ)
 
 $(PCLOBJ)pgfdata.$(OBJ): $(PCLSRC)pgfdata.c  \
-                         $(std_h)            \
+                         $(std_h)           \
                          $(gstypes_h)        \
                          $(gsccode_h)        \
                          $(gxarith_h)        \
