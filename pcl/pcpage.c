@@ -636,15 +636,11 @@ set_logical_page_orientation(
     if ( i > 3 )
 	return 0;
 
-    /* Oddly, the orientation is set, disabling the command, if the
-       requested value is current in the state. */
-    if ( i == pcs->xfm_state.lp_orient )
+    /* If orientation is same as before ignore the command */
+    if ( i == pcs->xfm_state.lp_orient ) {
 	pcs->orientation_set = true;
-
-    /* the orientation has already been set for this logical page,
-       cannot execute the command. */
-    if ( pcs->orientation_set == true )
 	return 0;
+    }
 
     /* ok to execute - clear the page, set up the transformations and
        set the flag disabling the orientation command for this page. */
