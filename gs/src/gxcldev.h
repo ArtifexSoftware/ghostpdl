@@ -314,7 +314,7 @@ struct gx_clist_state_s {
  *     waits until the next page has finished rendering. The recovery logic
  *     keeps calling clist_VMerror_recover() until enough memory is freed,
  *     or until clist_VMerror_recover() signals that no more pages
- *     remain to be rendered.
+ *     remain to be rendered (when return code < 0).
  *
  *  2) If enough memory is not free, the recovery logic calls
  *     clist_VMerror_recover_flush() once. This routine terminates and
@@ -596,7 +596,7 @@ retry_rect:\
 		    do
 #define HANDLE_RECT_UNLESS(codevar, unless_clause)\
 		    while (codevar < 0 &&\
-			   !(codevar = clist_VMerror_recover(cdev, (codevar)))\
+			   ((codevar = clist_VMerror_recover(cdev, (codevar))) >= 0)\
 			   );\
 		    if (codevar < 0 && !(unless_clause))\
 			ERROR_RECT(codevar);\
