@@ -43,7 +43,7 @@
  *	ATX-24	0.193"
  *	ATS-38	0.25"
  * The code below assumes that coordinates refer only to the *printable*
- * part of each page.  THIS IS WRONG AND MUST BE CHANGED.
+ * part of each page.  This is wrong and must eventually be changed.
  */
 
 /* Define the printer commands. */
@@ -54,23 +54,25 @@
 #define ATX_END_PAGE "\033e"
 
 /* The device descriptors */
-private dev_proc_print_page(atx_print_page);
+private dev_proc_print_page(atx23_print_page);
+private dev_proc_print_page(atx24_print_page);
+private dev_proc_print_page(atx38_print_page);
 
-#define ATX_DEVICE(dname, w10, h10, dpi, lrm, btm)\
+#define ATX_DEVICE(dname, w10, h10, dpi, lrm, btm, print_page)\
   prn_device_margins(prn_std_procs, dname, w10, h10, dpi, dpi, 0, 0,\
-		     lrm, btm, lrm, btm, 1, atx_print_page)
+		     lrm, btm, lrm, btm, 1, print_page)
 
 const gx_device_printer gs_atx23_device = /* real width = 576 pixels */
 ATX_DEVICE("atx23", 28 /* 2.84" */, 35 /* (minimum) */,
-	   203, 0.25, 0.125);
+	   203, 0.25, 0.125, atx23_print_page);
 
 const gx_device_printer gs_atx24_device = /* real width = 832 pixels */
 ATX_DEVICE("atx24", 41 /* 4.1" */, 35 /* (minimum) */,
-	   203, 0.193, 0.125);
+	   203, 0.193, 0.125, atx24_print_page);
 
 const gx_device_printer gs_atx38_device = /* real width = 2400 pixels */
 ATX_DEVICE("atx38", 80 /* 8.0" */, 35 /* (minimum) */,
-	   300, 0.25, 0.125);
+	   300, 0.25, 0.125, atx38_print_page);
 
 /* Output a printer command with a 2-byte, little-endian numeric argument. */
 private void
@@ -158,7 +160,7 @@ atx_compress(const byte *in_buf, int in_size, byte *out_buf, int out_size)
 
 /* Send the page to the printer. */
 private int
-atx_print_page(gx_device_printer *pdev, FILE *f)
+atx_print_page(gx_device_printer *pdev, FILE *f, int max_width_bytes)
 {
     /*
      * The page length command uses 16 bits to represent the length in
@@ -183,6 +185,9 @@ atx_print_page(gx_device_printer *pdev, FILE *f)
     int blank_lines, lnum;
     int code = 0;
 
+    /* Enforce a minimum 3" page length. */
+    if (page_length_100ths < 300)
+	page_length_100ths = 300;
     buf = gs_alloc_bytes(mem, raster, "atx_print_page(buf)");
     compressed = gs_alloc_bytes(mem, compressed_raster,
 				"atx_print_page(compressed)");
@@ -208,6 +213,9 @@ atx_print_page(gx_device_printer *pdev, FILE *f)
 	    fput_atx_command(f, ATX_VERTICAL_TAB, blank_lines + 1);
 	    blank_lines = 0;
 	}
+	/* Truncate the line to the maximum printable width. */
+	if (end - row > max_width_bytes)
+	    end = row + max_width_bytes;
 	count = atx_compress(row, end - row, compressed, compressed_raster);
 	if (count >= 0) {		/* compressed line */
 	    /*
@@ -225,6 +233,20 @@ atx_print_page(gx_device_printer *pdev, FILE *f)
 	}
     }
 
+#if 0	/**************** MAY NOT BE NEEDED ****************/
+    /* Enforce the minimum page length, and skip any final blank lines. */
+    {
+	int paper_length = (int)(pdev->HWResolution[1] * 3 + 0.5);
+	int printed_length = height - blank_lines;
+
+	if (height > paper_length)
+	    paper_length = height;
+	if (printed_length < paper_length)
+	    fput_atx_command(f, ATX_VERTICAL_TAB,
+			     paper_length - printed_length + 1);
+    }
+#endif
+
     /* End the page. */
     fputs(ATX_END_PAGE, f);
 
@@ -232,4 +254,21 @@ atx_print_page(gx_device_printer *pdev, FILE *f)
     gs_free_object(mem, compressed, "atx_print_page(compressed)");
     gs_free_object(mem, buf, "atx_print_page(buf)");
     return code;
+}
+
+/* Print pages with specified maximum pixel widths. */
+private int
+atx23_print_page(gx_device_printer *pdev, FILE *f)
+{
+    return atx_print_page(pdev, f, 576 / 8);
+}
+private int
+atx24_print_page(gx_device_printer *pdev, FILE *f)
+{
+    return atx_print_page(pdev, f, 832 / 8);
+}
+private int
+atx38_print_page(gx_device_printer *pdev, FILE *f)
+{
+    return atx_print_page(pdev, f, 2400 / 8);
 }
