@@ -41,10 +41,10 @@
 <li><a href="#Public_releases">Public releases</a>
 </ul>
 <li><a href="#After_releasing">After releasing</a>
-<li><a href="#GNU_releases">GNU Ghostscript releases</a>
+<li><a href="#GPL_releases">GPL Ghostscript releases</a>
 <ul>
-<li><a href="#GNU_code">GNU code</a>
-<li><a href="#GNU_after_releasing">After releasing (GNU)</a>
+<li><a href="#GPL_code">GPL code</a>
+<li><a href="#GPL_after_releasing">After releasing (GPL)</a>
 </ul>
 <li><a href="#Fonts">Fonts</a>
 </ul></blockquote>
@@ -84,8 +84,8 @@ detail.
 <p>
 The release process for the GPL and AFPL branches are similar, though
 there are some differences in terms of policy and release locations. See
-the section on <a href="#GNU_releases">GNU releases</a> below for
-information specific to GNU Ghostscript.
+the section on <a href="#GPL_releases">GPL releases</a> below for
+information specific to GPL Ghostscript.
 
 <p>
 File names below that don't include an explicit subdirectory name are in the
@@ -118,7 +118,7 @@ below.
 <h2><a name="Servers"></a>Servers</h2>
 
 <p>
-The GNU and AFPL Ghostscript files are maintained on sites accessible to
+The GPL and AFPL Ghostscript files are maintained on sites accessible to
 the public.  One specific site hosts the active CVS repository for code,
 data, and documentation, and the bug report data base; several sites
 offer distributions with release numbers, intended for wider
@@ -127,7 +127,7 @@ distribution.
 <h3><a name="Development_files"></a>Development sources and bug reports</h3>
 
 <p>
-The primary repository for GNU and AFPL Ghostscript is <a
+The primary repository for GPL and AFPL Ghostscript is <a
 href="http://www.ghostscript.com/" class="offsite">ghostscript.com</a>.
 Please check there first for any news about releases or current work,
 and for information about where to download ghostscript and how to
@@ -162,8 +162,8 @@ href="ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/AFPL/"
 class="offsite">ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/AFPL/</a> or
 <br>
 <a
-href="ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/gnu/" 
-class="offsite">ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/gnu/</a>
+href="ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/gpl/" 
+class="offsite">ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/gpl/</a>
 </blockquote>
 
 <p>
@@ -705,7 +705,7 @@ FTP to <b><tt>upload.sourceforge.net</tt></b>, directory
 <b><tt>/incoming</tt></b>), and then post it using the "File Release"
 facility in the AFPL Ghostscript project. If this is a stable AFPL
 release put it in the <b><tt>ghostscript</tt></b> module.
-If this is a GNU release, put it in the <b><tt>gnu-gs</tt></b> module.
+If this is a GPL release, put it in the <b><tt>gs-gpl</tt></b> module.
 If this is a test release or beta release, put
 it in the <b><tt>gs-devel</tt></b> or <b><tt>gs-beta</tt></b> module,
 respectively. 
@@ -815,25 +815,25 @@ In <b><tt>gscdef.c</tt></b>, edit the definition of
 Edit <b><tt>doc/News.htm</tt></b> to remove all the content.
 
 
-<h2><a name="GNU_releases"></a>GNU Ghostscript releases</h2>
+<h2><a name="GPL_releases"></a>GPL Ghostscript releases</h2>
 
 <p>
-artofcode LLC re-releases each stable AFPL Ghostscript branch under
-the GPL--as GNU Ghostscript--when the next major stable AFPL 
-release comes out, or after one calendar year, whichever comes first.
+artofcode LLC re-releases each stable AFPL Ghostscript branch as
+GPL Ghostscript (under the GNU GPL license) when the next major stable
+AFPL release comes out, or after one calendar year, whichever comes first.
 
-<h3><a name="GNU_code"></a>GNU code</h3>
+<h3><a name="GPL_code"></a>GPL code</h3>
 
 <p>
-To make a GNU Ghostscript release from AFPL Ghostscript, update the
+To make a GPL Ghostscript release from AFPL Ghostscript, update the
 LICENCE file to reflect the new status of the code. In general there
 can be no recipe for this as it depends on the niceties of ownership and
-permisison attached to each piece of code. However, a previous GNU
+permisison attached to each piece of code. However, a previous GPL
 release can serve as a guide.
 
 <p>
 There are also generally some portions of code (usually drivers) which
-are limited to GNU Ghostscript only. These may want porting to the new
+are limited to GPL Ghostscript only. These may want porting to the new
 version before release.
 
 <p>Once the license change is complete and the codebase has been
@@ -842,18 +842,7 @@ Ghostscript above to test and package the new version. The distribution
 methods are parallel to those for the AFPL, with the GPL releases
 generally going under a separate header. For example, on the wisc
 ftp site upload the file to 
-<tt>ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/gnu/gs###/</tt>.
-
-<h3><a name="GNU_after_releasing"></a>After releasing (GNU)</h3>
-
-<p>
-E-mail the full URL and the <b><tt>md5sum</tt></b> of the new archive(s) to
-<a href="mailto:ftp-upload@gnu.org"><tt>ftp-upload@gnu.org</tt></a>.
-
-<p>
-It may also be helpful to have the Free Software Foundation review the
-code before release to see whether it meets their standards for
-distribution from the gnu.org website.
+<tt>ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/gpl/gs###/</tt>.
 
 
 <h2><a name="Fonts"></a>Fonts</h2>
@@ -886,8 +875,8 @@ gnu-gs-fonts-other-#.##.tar.gz
 The first two of these use the AFPL, and should be uploaded to
 <b><tt>ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/AFPL/fonts/</tt></b>.  The other two
 use the GPL, and should be uploaded to
-<b><tt>ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/gnu/fonts/</tt></b>.  For the GNU
-release, also see <a href="#GNU_after_releasing">"After releasing
+<b><tt>ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/gnu/fonts/</tt></b>.  For the GPL
+release, also see <a href="#GPL_after_releasing">"After releasing
 (GNU)"</a>.
 
 <!-- [2.0 end contents] ==================================================== -->
@@ -896,7 +885,7 @@ release, also see <a href="#GNU_after_releasing">"After releasing
 <hr>
 
 <p>
-<small>Copyright &copy; 1999-2002 artofcode LLC. All rights 
+<small>Copyright &copy; 1999-2003 artofcode LLC. All rights 
 reserved.</small>
 
 <p>
