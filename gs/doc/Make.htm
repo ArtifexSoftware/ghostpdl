@@ -237,8 +237,10 @@ will tell you if it cannot find the appropriate libraries.
 Here are authoritative distribution points for these libraries, should you need
 to obtain the source yourself. As elsewhere, "#" is used for version
 numbers.  The JPEG source code is quite stable, so the reference
-here includes the latest version number.  The zlib references are
-version-independent and should always provide the latest version.
+here includes the latest version number. Versions of the zlib source are 
+not compatible between the 1.1.x and 1.2.x series; if you with to 
+compile in zlib (as opposed to linking to a separately build dynamic 
+library) you must use a 1.2.x version.
 
 <blockquote><table cellpadding=0 cellspacing=0>
 <tr><th colspan=3 bgcolor="#CCCC00"><hr><font size="+1">Third-party libraries: authoritative sources</font><hr>
@@ -265,13 +267,12 @@ class="offsite">ftp://swrinde.nde.swri.edu/pub/png/src/</a>lpng###.zip
 
 <tr>	<td valign=top>zlib (latest)
 	<td>&nbsp;
-	<td>	<a href="http://www.gzip.org/zlib/zlib.tar.gz" 
-class="offsite">http://www.gzip.org/zlib/zlib.tar.gz</a><br>
-	<a href="http://www.gzip.org/zlib/zlib.zip" 
-class="offsite">http://www.gzip.org/zlib/zlib.zip</a><br>
-	<a href="ftp://swrinde.nde.swri.edu/pub/png/src/" class="offsite">ftp://swrinde.nde.swri.edu/pub/png/src/zlib-#.#.#.tar.gz</a><br>
-	<a href="ftp://swrinde.nde.swri.edu/pub/png/src/" class="offsite">ftp://swrinde.nde.swri.edu/pub/png/src/zlib###.zip</a>
-
+	<td>	<a href="http://www.gzip.org/zlib/zlib-1.2.1.tar.gz" 
+class="offsite">http://www.gzip.org/zlib/zlib-1.2.1.tar.gz</a><br>
+	<a href="http://www.gzip.org/zlib/zlib121.zip" 
+class="offsite">http://www.gzip.org/zlib/zlib121.zip</a><br>
+	See the <a href="http://www.gzip.org/zlib/">official website</a> 
+for a list of mirrors.
 <tr>	<td valign=top>jbig2dec
 	<td>&nbsp;
 	<td>	<a href="http://sourceforge.net/project/showfiles.php?group_id=28301" 
@@ -2415,8 +2416,8 @@ work.
 <li>Make sure you followed the instructions in "How to unpack the source
 code" and "How to unpack the third-party libraries".
 
-<li>Use jpegsrc_v6b.tar.gz, zlib.tar.gz and libpng-1.0.3.tar.gz.  Earlier
-versions may not work.
+<li>Use jpegsrc_v6b.tar.gz, zlib-1.2.x.tar.gz and libpng-1.2.x.tar.gz.  
+Earlier versions may not work.
 
 <li>If you wish to include support for XFree86, edit the makefile
 to change <b>BUILD_X11=0</b> to <b>BUILD_X11=1</b>.  
