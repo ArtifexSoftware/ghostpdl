@@ -75,7 +75,7 @@ hpgl_font_definition(hpgl_args_t *pargs, hpgl_state_t *pgls, int index)
 	      { int posture;
 	        if ( !hpgl_arg_c_int(pargs, &posture) )
 		    return e_Range;
-		if ( ( posture >= 0 && posture <= 2 ) && ( pfp->style != posture ) )
+		if ( pfp->style != posture )
 		    pfp->style = posture,
 			pargs->phase |= 2;
 
