@@ -749,7 +749,7 @@ pdf_convert_cie_space(gx_device_pdf *pdev, cos_array_t *pca,
 		      cie_cache_one_step_t one_step, const gs_matrix3 *pmat,
 		      const gs_range_t **pprange)
 {
-    return (pdev->CompatibilityLevel < 1.3 ?
+    return (pdev->CompatibilityLevel < 1.3 && !PS2WRITE && !pdev->OrderResources ?
 	    /* PDF 1.2 or earlier, use a Lab space. */
 	    pdf_convert_cie_to_lab(pdev, pca, pcs, pciec, prange) :
 	    /* PDF 1.3 or later, use an ICCBased space. */
