@@ -1,0 +1,205 @@
+<html>
+<head>
+<title>Reporting Ghostscript problems</title>
+<!-- $Id$ -->
+</head>
+
+<body>
+<!-- [1.0 begin visible header] ============================================ -->
+
+<!-- [1.1 begin headline] ================================================== -->
+
+<table width="100%" border="0">
+<tr><th align="center" bgcolor="#CCCC00"><font size=6>
+Reporting Ghostscript problems
+</font>
+</table>
+
+<!-- [1.1 end headline] ==================================================== -->
+
+<!-- [1.0 end visible header] ============================================== -->
+
+<!-- [2.0 begin contents] ================================================== -->
+
+<!-- [2.0 end contents] ==================================================== -->
+
+<!-- [3.0 begin visible trailer] =========================================== -->
+<hr>
+
+<p>
+Aladdin Enterprises wants Ghostscript to be of high quality, but we have
+very limited resources for responding to problems, so please read this
+document carefully.  Read each section in order, and follow the instructions
+in the first one that applies to your situation.  We appreciate problem
+reports, since they help us improve the quality of Ghostscript, but please
+help us by following the procedure below.
+
+<p>
+While we do try to respond to all reports, we give priority to the following
+classes of users:
+
+<ol>
+<li>Beta testers who have actually given us at least one report on some beta
+version supplied to them.
+
+<li>People developing drivers for Ghostscript or applications based on it,
+and that will be made freely available.
+
+<li>People who express serious interest in <a
+href="New-user.htm#Commercial_use">licensing Ghostscript commercially</a>.
+
+<li>Other testers of test releases.
+
+</ol>
+
+<p>
+Aladdin Enterprises owns or has access to the following hardware and
+software:
+
+<ul>
+<li> Pentium II with 8/16/24-bit color monitor; various H-P printers.  These
+systems run Red Hat Linux 5.1 and 5.2 with gcc, and Microsoft Windows 95 and
+98 with Borland C++ Builder 4.0, Watcom C++ 10.0, and Microsoft Visual C++
+5.0.
+
+</ul>
+
+<p>
+If your problem turns out to be specific to some other hardware or software
+configuration, it may take longer to track down, since we will have to rely
+on other users to help.
+
+<h3>Check that you have a good copy of the most recent version.</h3>
+
+<p>
+Go to
+
+<blockquote>
+<a href="http://sourceforge.net/project/filelist.php?group_id=1897">
+http://sourceforge.net/project/filelist.php?group_id=1897</a>
+</blockquote>
+
+<p>
+and see if the version number of your Ghostscript installation is the
+highest number listed there in the applicable File Module.  The
+<b><tt>ghostscript</tt></b> module lists public, tested releases; the
+<b><tt>gs-test</tt></b> module lists "test" versions.  You can find the
+version number of your installation by executing
+
+<blockquote><pre>
+gs --version
+</pre></blockquote>
+
+<p>
+(or <b><tt>gswin32c</tt></b>, or whatever your Ghostscript executable is
+named).
+
+<p>
+If you aren't running the most recent version, please get the most recent
+version and install it, per the instructions in <a
+href="Install.htm">Install.htm</a>.  Check whether the problem is still
+there.  If it is, go on to the next step.
+
+<p>
+Even if you are running the most recent version, it is possible that you may
+be running a modified copy.  We are confident that copies on the SourceForge
+site just mentioned, our other master distribution site on
+<b><tt>ftp.cs.wisc.edu</tt></b>, and CD-ROMs of commercial Linux
+distributions are good; if you got Ghostscript somewhere else, please update
+it from one of these places, and check whether the problem is still there
+before proceeding.
+
+<h3>Check whether your problem is already known.</h3>
+
+<p>
+Go to 
+
+<blockquote>
+<a href="http://sourceforge.net/bugs/?group_id=1897">
+http://sourceforge.net/bugs/?group_id=1897</a>
+</blockquote>
+
+<p>
+and see whether your problem is already known.  If it is, you may want to
+add a follow-up comment to the report.  If it isn't, go on to the next step.
+
+<h3>Have you ever run Ghostscript successfully?</h3>
+
+<p>
+If your problem is connected with installing or configuring Ghostscript, and
+you haven't yet been able to run it successfully, we're sorry, but we can't
+provide help.  You might want to re-read the <a
+href="Install.htm">instructions</a> for installing Ghostscript, mentioned
+above.  If that doesn't help, all we can suggest is that you post your
+problem to the Usenet newsgroup <a
+href="news:comp.lang.postscript">comp.lang.postscript</a>.  If, after you
+find the solution, you have suggestions for improving the documentation,
+please let us know.
+
+<h3>Reproduce the problem with Ghostscript alone.</h3>
+
+<p>
+If you are running Ghostscript through some other piece of software, such as
+a GUI-based viewer, you will have to reproduce the problem with Ghostscript
+alone before we can look at it.
+
+<ul>
+
+<li>If you are running Ghostscript through Ghostview (for Unix and Linux),
+try to run the same file through Ghostscript (<b><tt>gs</tt></b>) without
+using Ghostview.  If you don't know how to do this, or the problem doesn't
+show up, please contact <a
+href="mailto:ghostview@cs.wisc.edu">ghostview@cs.wisc.edu</a>.
+
+<li>If you are running Ghostscript through GSview (for MS Windows and OS/2),
+try to run the same file through Ghostscript (<b><tt>gswin32</tt></b> or
+<b><tt>gswin32c</tt></b>) without using GSview.  To find out more details
+about how GSview is calling Ghostscript, start GSview with debugging enabled
+(e.g. <b><tt>gsview&nbsp;/d</tt></b>): these details can be seen using "File
+| Show Messages" and can be copied to the clipboard for pasting into a text
+document.  If you have trouble doing this, or if you can't reproduce the
+original problem with Ghostscript alone, please contact <a
+href="mailto:gsview@ghostgum.com.au">gsview@ghostgum.com.au</a>.
+
+<li>If you are running Ghostscript through any other software (e.g.,
+<b><tt>dvips</tt></b>, a printer spooler, etc.), we are sorry, but we cannot
+help you unless you can tell us how to produce the problem using Ghostscript
+alone.
+
+</ul>
+
+<h3>Check whether you are using a third-party printer driver.</h3>
+
+<p>
+The file <a href="Devlist.htm">Devlist.htm</a> gives a complete list of the
+drivers included in the Ghostscript distribution, and indicates which ones
+we can answer questions about.  If you are using a driver that isn't on this
+list, please try to reproduce the problem using a driver that we are able to
+help with.  If you can't, please contact the author of the problem driver.
+
+<h3>Send us a problem report.</h3>
+
+<p>
+Please go to the problem reporting form in <a
+href="Bug-form.htm">Bug-form.htm</a> and follow its instructions.
+
+<hr>
+
+<font size=2>
+
+<p>Copyright &copy; 2000 Aladdin Enterprises.  All rights reserved.
+
+<p>This file is part of Aladdin Ghostscript.  See the
+<a href="Public.htm">Aladdin Free Public License</a> (the "License") for
+full details of the terms of using, copying, modifying, and redistributing
+Aladdin Ghostscript.
+
+<p>
+Ghostscript version 6.20, xx xxxxxx 2000
+
+</font>
+
+<!-- [3.0 end visible trailer] ============================================= -->
+
+</body>
+</html>
