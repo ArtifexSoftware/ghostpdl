@@ -80,6 +80,7 @@ s_proc_init(ref * sop, stream ** psstrm, uint mode,
     sstrm->procs.process = temp->process;
     state->template = temp;
     state->memory = mem;
+    state->min_left = 1;
     state->eof = 0;
     state->proc = *sop;
     make_empty_string(&state->data, a_all);

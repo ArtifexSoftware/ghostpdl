@@ -75,6 +75,9 @@ metrics computed from FontBBox rather than the horizontal metrics.
 (PDF interpreter)
 	- The interpreter now skips to the next EOL after reading the data
 following the ID operator.
+(Streams)
+	- All decoding filters that recognize an EOD in the source data
+must now have an init procedure that sets state->min_left = 1.
 
 </pre>
 

@@ -848,9 +848,9 @@ filter_open(const char *file_access, uint buffer_size, ref * pfile,
     } else if (st != 0)		/* might not have client parameters */
 	memcpy(sst, st, ssize);
     s->state = sst;
-    sst->template = template;
-    sst->memory = mem;
+    s_init_state(sst, template, mem);
     sst->report_error = filter_report_error;
+
     if (template->init != 0) {
 	code = (*template->init)(sst);
 	if (code < 0) {

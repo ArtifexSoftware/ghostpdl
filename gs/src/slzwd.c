@@ -84,6 +84,7 @@ s_LZWD_init(stream_state * st)
 	return ERRC;
 /****** WRONG ******/
     ss->table.decode = dc;
+    ss->min_left = 1;
     return s_LZWD_reset(st);
 }
 

@@ -109,6 +109,14 @@
  */
 
 /*
+ * Note that all decoding filters that require an explicit EOD in the
+ * source data must have an init procedure that sets min_left = 1.
+ * This effectively provides a 1-byte lookahead in the source data,
+ * which is required so that the stream can close itself "after reading
+ * the last byte of data" (per Adobe specification), as noted above.
+ */
+
+/*
  * Define a template for creating a stream.
  *
  * The meaning of min_in_size and min_out_size is the following:

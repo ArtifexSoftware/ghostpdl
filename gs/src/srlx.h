@@ -66,7 +66,7 @@ typedef struct stream_RLD_state_s {
 #define s_RLD_set_defaults_inline(ss)\
   ((ss)->EndOfData = true)
 #define s_RLD_init_inline(ss)\
-  ((ss)->copy_left = 0)
+  ((ss)->min_left = ((ss)->EndOfData ? 1 : 0), (ss)->copy_left = 0)
 extern const stream_template s_RLD_template;
 
 #endif /* srlx_INCLUDED */

@@ -75,6 +75,7 @@ s_CFD_init(stream_state * st)
     ss->rpos = ss->wpos = raster - 1;
     ss->eol_count = 0;
     ss->invert = white;
+    ss->min_left = 1;
     return 0;
 }
 

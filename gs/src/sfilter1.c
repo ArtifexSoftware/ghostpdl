@@ -169,6 +169,8 @@ s_SFD_init(stream_state * st)
 
     ss->match = 0;
     ss->copy_count = 0;
+    ss->min_left = (ss->eod.size != 0);
+
     return 0;
 }
 

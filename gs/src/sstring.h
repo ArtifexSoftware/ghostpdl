@@ -48,7 +48,7 @@ typedef struct stream_AXD_state_s {
   gs_private_st_simple(st_AXD_state, stream_AXD_state,\
     "ASCIIHexDecode state")
 #define s_AXD_init_inline(ss)\
-  ((ss)->odd = -1, 0)
+  ((ss)->min_left = 1, (ss)->odd = -1, 0)
 extern const stream_template s_AXD_template;
 
 /* PSStringDecode */

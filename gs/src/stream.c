@@ -106,6 +106,7 @@ s_init(stream *s, gs_memory_t * mem)
 {
     s->memory = mem;
     s->report_error = s_no_report_error;
+    s->min_left = 0;
     s->error_string[0] = 0;
     s->prev = s->next = 0;	/* clean for GC */
     s->file_name.data = 0;	/* ibid. */
@@ -133,6 +134,7 @@ s_init_state(stream_state *st, const stream_template *template,
     st->template = template;
     st->memory = mem;
     st->report_error = s_no_report_error;
+    st->min_left = 0;
 }
 stream_state *
 s_alloc_state(gs_memory_t * mem, gs_memory_type_ptr_t stype,
@@ -420,15 +422,14 @@ sclose(register stream * s)
 /*
  * Define the minimum amount of data that must be left in an input buffer
  * after a read operation to handle filter read-ahead.  This is 1 byte for
- * filters (including procedure data sources) that haven't reached EOD,
- * 0 for files.
+ * filters (including procedure data sources) that require EOD but
+ * haven't reached EOD, 0 for files and for filters that have no EOD.
  */
 int
 sbuf_min_left(const stream *s)
 {
-    return
-	(s->strm == 0 ? (s->end_status != CALLC ? 0 : 1) :
-	 s->end_status == EOFC || s->end_status == ERRC ? 0 : 1);
+    return 
+      (s->end_status == EOFC || s->end_status == ERRC ? 0 : s->state->min_left);
 }
 
 /*

@@ -36,7 +36,7 @@ typedef struct stream_A85D_state_s {
 /* We define the initialization procedure here, so that the scanner */
 /* can avoid a procedure call. */
 #define s_A85D_init_inline(ss)\
-  ((ss)->word = 0, (ss)->odd = 0)
+  ((ss)->min_left = 1, (ss)->word = 0, (ss)->odd = 0)
 extern const stream_template s_A85D_template;
 
 #endif /* sa85d_INCLUDED */

@@ -40,6 +40,7 @@ s_zlibD_init(stream_state * st)
 	s_zlib_free_dynamic_state(ss);
 	return ERRC;	/****** WRONG ******/
     }
+    st->min_left=1;
     return 0;
 }
 
