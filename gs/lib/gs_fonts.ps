@@ -442,6 +442,9 @@ buildfontdict 3 /.buildfont3 cvx put
          } if
        }
       ifelse
+      dup /.OrigFont known not {
+        dup dup /.OrigFont exch .growput
+      } if
       true exch
                 % If this is a CIDFont, CIDFontType takes precedence
                 % over FontType.
@@ -464,9 +467,6 @@ buildfontdict 3 /.buildfont3 cvx put
       systemdict /ProvideUnicode .knownget not { false } if {
         /FontEmulationProcs /ProcSet findresource
         /ProvideUnicodeDecoding get exec
-      } if
-      dup /.OrigFont known not {
-        dup dup /.OrigFont exch .growput
       } if
       readonly          % stack: name fontdict
   } stopped { /invalidfont signalerror } if
