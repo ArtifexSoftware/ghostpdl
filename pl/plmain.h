@@ -46,7 +46,7 @@ typedef struct pl_main_instance_s {
     int page_count;		/* # of pages printed */
 
     bool saved_hwres;
-    int hwres[2];
+    float hwres[2];
     char pcl_personality[6];      /* a character string to set pcl's
                                      personality - rtl, pcl5c, pcl5e, and
                                      pcl == default.  NB doesn't belong here. */
