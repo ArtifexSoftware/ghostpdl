@@ -152,17 +152,14 @@ check_file_permissions(i_ctx_t *i_ctx_p, const char *fname, int len,
     const char *filenamesep = gp_file_name_concat_string("\\", 1);
 
     /*
-     * We can't know where we will get to if we reference the parent
-     * directory, so don't allow access if LockFilePermissions is true
-     * Also check here for the %pipe device which is illegal when
+     * Check here for the %pipe device which is illegal when
      * LockFilePermissions is true. In the future we might want to allow
      * the %pipe device to be included on the PermitFile... paths, but
      * for now it is simply disallowed.
      */
     if (i_ctx_p->LockFilePermissions &&
-	    (gp_file_name_references_parent(fname, len) ||
                string_match( (const unsigned char*) fname, len,
-			     (const unsigned char*) "%pipe*", 5, NULL))
+			     (const unsigned char*) "%pipe*", 5, NULL)
        ) {
 	return e_invalidfileaccess;
     }
@@ -175,14 +172,24 @@ check_file_permissions(i_ctx_t *i_ctx_p, const char *fname, int len,
 	};
 
 	if (array_get(permitlist, i, &permitstring) < 0 ||
-	    r_type(&permitstring) != t_string
+	    r_type(&permitstring) != t_string 
 	   )    
 	    break;	/* any problem, just fail */
         if (string_match( (const unsigned char*) fname, len,
 			  permitstring.value.bytes, r_size(&permitstring), 
 		filenamesep[0] == 0 ? &win_filename_params : NULL)
 	   )
-	    return 0;		/* success */
+	    /*
+	     * We can't know where we will get to if we reference the parent
+	     * directory, so don't allow access if LockFilePermissions is true
+	     * unless the Permission string starts with '*' (anywhere).
+	     */
+	    if (i_ctx_p->LockFilePermissions &&
+		gp_file_name_references_parent(fname, len) &&
+		    permitstring.value.bytes[0] != '*')
+		continue;	/* disregard this match and keep trying */
+	    else
+		return 0;		/* success */
     }
     /* not found */
     return e_invalidfileaccess;
