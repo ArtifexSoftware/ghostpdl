@@ -702,11 +702,7 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, gs_glyph glyph,
 	    pwidths->v = info.v;
 	} else
 	    pwidths->real_width = pwidths->Width;
-	/*
-	 * If the character is .notdef, don't cache the width,
-	 * just in case this is an incrementally defined font.
-	 */
-	return (gs_font_glyph_is_notdef(font, glyph) ? 1 : rcode);
+	return rcode;
     }
     /* Try for MissingWidth. */
     {
