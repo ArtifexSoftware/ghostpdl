@@ -70,7 +70,7 @@ gs_shfill(gs_state * pgs, const gs_shading_t * psh)
 			   pgs->memory);
     if (code < 0)
 	return code;
-    gs_cspace_init(&cs, &gs_color_space_type_Pattern, NULL);
+    gs_cspace_init(&cs, &gs_color_space_type_Pattern, pgs->memory);
     cs.params.pattern.has_base_space = false;
     code = cs.type->remap_color(&cc, &cs, &devc, (gs_imager_state *)pgs,
 				pgs->device, gs_color_select_texture);

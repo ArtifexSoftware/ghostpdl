@@ -200,7 +200,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
 	    return code;
 	c[0] = psdf_adjust_color_index((gx_device_vector *)pdev, zero);
 	c[1] = psdf_adjust_color_index((gx_device_vector *)pdev, one);
-	gs_cspace_init(&cs, &gs_color_space_type_Indexed, NULL);
+	gs_cspace_init(&cs, &gs_color_space_type_Indexed, pdev->memory);
 	cs.params.indexed.base_space = *(gs_direct_color_space *)&cs_base;
 	cs.params.indexed.hival = 1;
 	p = palette;

@@ -71,7 +71,7 @@ zsetdevicenspace(i_ctx_t *i_ctx_p)
     /* See zcsindex.c for why we use memmove here. */
     memmove(&cs.params.device_n.alt_space, &cs,
 	    sizeof(cs.params.device_n.alt_space));
-    gs_cspace_init(&cs, &gs_color_space_type_DeviceN, NULL);
+    gs_cspace_init(&cs, &gs_color_space_type_DeviceN, imemory);
     code = gs_build_DeviceN(&cs, num_components, pacs, imemory);
     if (code < 0)
 	return code;

@@ -116,7 +116,7 @@ zsetseparationspace(i_ctx_t *i_ctx_p)
     if (code < 0)
 	return code;
     pmap = cs.params.separation.map;
-    gs_cspace_init(&cs, &gs_color_space_type_Separation, NULL);
+    gs_cspace_init(&cs, &gs_color_space_type_Separation, imemory);
     cs.params.separation.sep_type = sep_type;
     cs.params.separation.sep_name = name_index(imemory, &sname);
     cs.params.separation.get_colorname_string = gs_get_colorname_string;

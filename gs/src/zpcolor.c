@@ -153,7 +153,7 @@ zsetpatternspace(i_ctx_t *i_ctx_p)
 	    }
 	    cs.params.pattern.has_base_space = true;
     }
-    gs_cspace_init(&cs, &gs_color_space_type_Pattern, NULL);
+    gs_cspace_init(&cs, &gs_color_space_type_Pattern, imemory);
     code = gs_setcolorspace(igs, &cs);
     if (code < 0) {
 	ref_stack_pop_to(&e_stack, edepth);

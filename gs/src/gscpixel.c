@@ -59,7 +59,7 @@ gs_cspace_init_DevicePixel(const gs_memory_t *mem, gs_color_space * pcs, int dep
 	default:
 	    return_error(mem, gs_error_rangecheck);
     }
-    gs_cspace_init(pcs, &gs_color_space_type_DevicePixel, NULL);
+    gs_cspace_init(pcs, &gs_color_space_type_DevicePixel, mem);
     pcs->params.pixel.depth = depth;
     return 0;
 }
