@@ -1,5 +1,5 @@
 % Copyright (C) 1995 Aladdin Enterprises.  All rights reserved
-%
+% 
 % This software is licensed to a single customer by Artifex Software Inc.
 % under the terms of a specific OEM agreement.
 
@@ -16,7 +16,8 @@
 % but I prefer to know why the device-setup failed.
 
 statusdict begin product end
-dup (Ghostscript) eq exch (Aladdin Ghostscript) eq or{
+dup (Ghostscript) eq 1 index (Aladdin Ghostscript) eq or
+exch (Artifex Ghostscript) eq or{
 
 % fetch the current device-parameters this is specific for Ghostscript.
 
@@ -156,5 +157,5 @@ dup (Ghostscript) eq exch (Aladdin Ghostscript) eq or{
     (%%[ stcolor.ps: currentdevice is not stcolor - ignored ]%%\n) print
   } ifelse
 }{
-  (%%[ stcolor.ps: interpreted not by Aladdin Ghostscript - ignored ]%%\n) print
+  (%%[ stcolor.ps: not interpreted by AFPL Ghostscript - ignored ]%%\n) print
 } ifelse

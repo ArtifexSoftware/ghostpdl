@@ -2,7 +2,7 @@
 # $RCSfile$ $Revision$
 # "Distill" PostScript.
 
-OPTIONS=""
+OPTIONS="-dSAFER"
 while true
 do
 	case "$1" in

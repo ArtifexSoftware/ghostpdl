@@ -32,10 +32,16 @@ userdict /GS_PDF_ProcSet 127 dict dup begin
 %	Show
 %	TextSaveMatrix		% matrix at time of BT (iff within BT/ET)
 % (The following correspond directly to PDF state parameters.)
+%	AlphaIsShape
+%	FillConstantAlpha
 %	FillColor
 %	FillColorSpace
+%	FillOverprint
+%	SoftMask
+%	StrokeConstantAlpha
 %	StrokeColor
 %	StrokeColorSpace
+%	StrokeOverprint
 %	TextSpacing
 %	TextHScaling
 %	Leading
@@ -61,7 +67,8 @@ nodict readonly pop
 /graphicsbeginpage {
   initgraphics
   currentdict /ClipRect .knownget { aload pop rectclip } if
-  0 g  0 G
+  0 g  0 G  false op  false OP  0 OPM
+  1 ca  1 CA  null SMask  false AIS  /Compatible BM  true TK
 } bdef
 
 /gput		% <value> <key> gput -
@@ -141,14 +148,83 @@ nodict readonly pop
 % We have to break up sc according to the number of operands.
 /sc1 { /FillColor gput } bdef
 /SC1 { /StrokeColor gput } bdef
-/sc* { /FillColor load astore pop } bdef
-/SC* { /StrokeColor load astore pop } bdef
+% We have to avoid storing into a color array associated with an outer
+% gsave level, so we do a kind of "copy on write".
+/sc* {
+  currentdict /FillColor .knownget {
+    astore pop
+  } {
+    /FillColor load length array astore cvx /FillColor gput
+  } ifelse
+} bdef
+/SC* {
+  currentdict /StrokeColor .knownget {
+    astore pop
+  } {
+    /StrokeColor load length array astore cvx /StrokeColor gput
+  } ifelse
+} bdef
+
+% ---------------- Overprint/transparency setting ---------------- %
+
+/op { /FillOverprint gput } bdef
+/OP { /StrokeOverprint gput } bdef
+/OPM {
+  /.setoverprintmode where { pop .setoverprintmode } { pop } ifelse
+} bdef
+/ca { /FillConstantAlpha gput } bdef
+/CA { /StrokeConstantAlpha gput } bdef
+/SMask { /SoftMask gput } bdef
+/AIS { /AlphaIsShape gput } bdef
+/BM {
+  /.setblendmode where {
+    pop [ exch dup type /nametype ne { aload pop } if /Normal ] {
+      { .setblendmode } .internalstopped not { exit } if pop
+    } forall
+  } {
+    pop
+  } ifelse
+} bdef
+/TK {
+  /.settextknockout where { pop .settextknockout } { pop } ifelse
+} bdef
 
 % ---------------- Color installation ---------------- %
 
 % Establish a given color (and color space) as current.
-/setfillcolor { FillColor FillColorSpace setgcolor } def
-/setstrokecolor { StrokeColor StrokeColorSpace setgcolor } def
+/.settransparencyparams {	% <alpha> <smask> .settransparencyparams -
+  /.begintransparencymask where {
+    pop AlphaIsShape {
+      1 .setopacityalpha 0 .inittransparencymask exch .setshapealpha 1
+    } {
+      1 .setshapealpha 1 .inittransparencymask exch .setopacityalpha 0
+    } ifelse
+	% Set the soft mask by rendering the XObject.  Doing this every time
+	% is obviously very inefficient; we'll improve it later.
+    .settransparencymask    
+  } {
+    pop pop
+  } ifelse
+} bdef
+/.settransparencymask {		% <paramdict> <masknum> .settransparencymask -
+  exch dup null eq {
+    pop .inittransparencymask
+  } {
+    dup /Draw get exec
+  } ifelse
+} bdef
+% (Non-mask) images must execute setfillblend.
+/setfillblend {
+  FillOverprint setoverprint
+  FillConstantAlpha SoftMask .settransparencyparams
+} def
+/setfillstate {
+  FillColor FillColorSpace setgcolor setfillblend
+} def
+/setstrokestate {
+  StrokeColor StrokeColorSpace setgcolor StrokeOverprint setoverprint
+  StrokeConstantAlpha SoftMask .settransparencyparams
+} def
 /Cdict 15 dict dup begin	% <color...> <colorspace> -proc- -
   /DeviceGray { pop setgray } bdef
   /DeviceRGB { pop setrgbcolor } bdef
@@ -163,7 +239,8 @@ nodict readonly pop
   /Indexed /CIEBasedA load def
   /Pattern
    { dup currentcolorspace eq { pop } { setcolorspace } ifelse
-     dup /Matrix .knownget not { matrix } if makepattern setcolor
+     dup /Matrix .knownget not { matrix } if
+     gsave DefaultMatrix setmatrix makepattern grestore setcolor
    } bdef
 end def
 /setgcolor	% (null | <color...>) <colorspace> setgcolor -
@@ -182,22 +259,22 @@ end def
 
 % ---------------- Path painting and clipping ---------------- %
 
-/S { setstrokecolor /stroke fsexec } bdef
-/f { setfillcolor /fill fsexec } bdef
-/f* { setfillcolor /eofill fsexec } bdef
+/S { setstrokestate /stroke fsexec } bdef
+/f { setfillstate /fill fsexec } bdef
+/f* { setfillstate /eofill fsexec } bdef
 /n { newpath } bdef		% don't allow n to get bound in
 /s { closepath S } bdef
-/B { gsave setfillcolor fill grestore S } bdef
+/B { gsave setfillstate fill grestore S } bdef
 /b { closepath B } bdef
-/B* { gsave setfillcolor eofill grestore S } bdef
+/B* { gsave setfillstate eofill grestore S } bdef
 /b* { closepath B* } bdef
 
 % Clipping:
 
 /Wdict 4 dict dup begin
-/S { gsave setstrokecolor stroke grestore n } bdef
-/f { gsave setfillcolor fill grestore n } bdef
-/f* { gsave setfillcolor eofill grestore n } bdef
+/S { gsave setstrokestate stroke grestore n } bdef
+/f { gsave setfillstate fill grestore n } bdef
+/f* { gsave setfillstate eofill grestore n } bdef
 /n { end clip newpath } bdef
 end readonly def
 /W { //Wdict begin } bdef
@@ -242,7 +319,13 @@ end readonly def
 		% Update the TextMatrix translation.
   gsave TextSaveMatrix setmatrix
   currentpoint TextMatrix 4 2 getinterval astore pop
-  grestore currentpoint translate
+		% We would like to do "grestore currentpoint translate"
+		% here, but some PDF files set a singular text matrix
+		% (0 0 0 0 <x> <y> Tm), so we can't do this.
+  TextTempMatrix identmatrix setmatrix currentpoint
+  grestore
+  TextTempMatrix currentmatrix 4 2 getinterval astore pop
+  TextTempMatrix setmatrix
 } bdef
 
 /BT {
@@ -250,12 +333,14 @@ end readonly def
     { identmatrix pop TextMatrix identmatrix pop }
     { matrix /TextLineMatrix gput matrix /TextMatrix gput }
   ifelse
-    { showfirst } /Show gput
-  currentdict /TextSaveMatrix .knownget not
-    { matrix dup /TextSaveMatrix gput }
-  if currentmatrix pop settextmatrix
+  { showfirst } /Show gput
+  currentdict /TextSaveMatrix .knownget not {
+    matrix dup /TextSaveMatrix gput
+  } if currentmatrix pop settextmatrix
+  matrix /TextTempMatrix gput		% see settextposition
 } bdef
 /ET {
+  TextRenderingMode 4 ge { clip newpath } if
   TextSaveMatrix setmatrix
   currentdict /TextSaveMatrix undef
 } bdef
@@ -274,8 +359,8 @@ end readonly def
 } bdef
 
 % Read a CFF font.
-/FRD		% <resdict> <file> FRD -
- { /FontSetInit /ProcSet findresource begin ReadData
+/FRD		% <resname> <file> FRD -
+ { /FontSetInit /ProcSet findresource begin true ReadData
  } bdef
 
 % Copy a font, removing its FID.  If changed is true, also remove
@@ -338,23 +423,27 @@ end readonly def
 % ---------------- Text painting ---------------- %
 
 /textrenderingprocs [		% (0 is handled specially)
+	% Painting-only modes
    { tf } { tS } { tB } { tn }
-	% We don't know what the clipping modes mean....
-   4 copy
+	% Clipping modes
+   { gsave tf grestore tW }
+   { gsave tS grestore tW }
+   { gsave tB grestore tW }
+   { tW }
 ] readonly def
 /setshowstate
  { WordSpacing 0 eq TextSpacing 0 eq and
     { TextRenderingMode 0 eq
-       { { setfillcolor show } }
+       { { setfillstate show } }
        { { false charpath textrenderingprocs TextRenderingMode get exec } }
       ifelse
     }
     { TextRenderingMode 0 eq
        { WordSpacing 0 eq
-          { { setfillcolor TextSpacing exch 0 exch ashow } }
+          { { setfillstate TextSpacing exch 0 exch ashow } }
 	  { TextSpacing 0 eq
-	     { { setfillcolor WordSpacing exch 0 exch 32 exch widthshow } }
-	     { { setfillcolor WordSpacing exch TextSpacing exch 0 32 4 2 roll 0 exch awidthshow } }
+	     { { setfillstate WordSpacing exch 0 exch 32 exch widthshow } }
+	     { { setfillstate WordSpacing exch TextSpacing exch 0 32 4 2 roll 0 exch awidthshow } }
 	    ifelse
 	  }
 	 ifelse
@@ -394,17 +483,20 @@ end readonly def
   } forall settextposition
 } bdef
 
-/tf { setfillcolor currentpoint fill moveto } bdef
+/tf { setfillstate currentpoint fill moveto } bdef
 /tn { currentpoint newpath moveto } bdef
 % For stroking characters, temporarily restore the graphics CTM so that
 % the line width will be transformed properly.
 /Tmatrix matrix def
 /tS
- { setstrokecolor
+ { setstrokestate
    currentpoint //Tmatrix currentmatrix TextSaveMatrix setmatrix stroke
    setmatrix moveto
  } bdef
 /tB { gsave tf grestore tS } bdef
+% This does the wrong thing if there have been multiple text operations
+% within a single BT/ET pair, but it's a start.
+/tW { } bdef
 
 end readonly put		% GS_PDF_ProcSet
 

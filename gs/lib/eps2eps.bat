@@ -4,7 +4,8 @@
 
 if "%1"=="" goto usage
 if "%2"=="" goto usage
-echo -dNODISPLAY -dNOPAUSE -dBATCH >_.at
+call gssetgs.bat
+echo -dNOPAUSE -dBATCH -dSAFER >_.at
 rem Watcom C deletes = signs, so use # instead.
 echo -dDEVICEWIDTH#250000 -dDEVICEHEIGHT#250000 >>_.at
 :cp
@@ -15,7 +16,7 @@ goto cp
 
 :doit
 rem Watcom C deletes = signs, so use # instead.
-gs -q -sDEVICE#epswrite -sOutputFile#%2 @_.at %1
+%GSC% -q -sDEVICE#epswrite -sOutputFile#%2 @_.at %1
 goto end
 
 :usage

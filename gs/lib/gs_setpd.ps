@@ -1,4 +1,4 @@
-%    Copyright (C) 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1994, 2000 Aladdin Enterprises.  All rights reserved.
 % 
 % This software is licensed to a single customer by Artifex Software Inc.
 % under the terms of a specific OEM agreement.
@@ -597,6 +597,15 @@ DEBUG { (Merging.) = pstack flush } if
     { dup /PageSize 4 index /PageSize get put
       dup /HWSize 4 index /HWSize get put
     } if
+		% Hack: to work around some files that take a PageSize
+		% from InputAttributes and impose it, discard any attempt
+		% to set PageSize to a 4-element value.
+		% Stack: mark <orig> <request> <merged>
+    dup /PageSize .knownget {
+      length 2 ne {
+	dup /PageSize 4 index /PageSize get put
+      } if
+    } if
 
 		% Select input and output media.
 		% Stack: mark <orig> <request> <merged>
@@ -709,7 +718,14 @@ DEBUG { (Installing.) = pstack flush } if
 % restored if it fails.
 
 /.execinstall {		% <proc> .execinstall -
+	% Because the interpreter optimizes tail calls, we can't just let
+	% the body of this procedure be 'exec', because that would lose
+	% the stack protection that is the whole reason for having the
+	% procedure in the first place.  We hack this by adding a couple
+	% of extra tokens to ensure that the operator procedure is still
+	% on the stack during the exec.
   exec
+  0 pop	% See above.
 } odef
 /.postinstall {		% mark ... <failed> <merged> .postinstall -
    matrix currentmatrix .setdefaultmatrix

@@ -1,5 +1,5 @@
 % Copyright (C) 1995 Aladdin Enterprises.  All rights reserved
-%
+% 
 % This software is licensed to a single customer by Artifex Software Inc.
 % under the terms of a specific OEM agreement.
 
@@ -14,7 +14,8 @@
 % use either existing STCinfo-dictionary, retrieve new one or create dummy
 
 statusdict begin product end 
-dup (Ghostscript) eq exch (Aladdin Ghostscript) eq or{
+dup (Ghostscript) eq 1 index (Aladdin Ghostscript) eq or
+exch (Artifex Ghostscript) eq or{
 
   currentdevice getdeviceprops .dicttomark
   dup /Name get (stcolor) eq /STCi_onstc exch def
