@@ -4,7 +4,7 @@ Version 0.7 (unreleased)
  * refinement region handling
  * successfully decodes ubc test streams 042_21, 042_22 and 042_23
  * generic region template 3 handling with arbitrary AT locations
- * seccussfully decodes ubc test stream 042_6
+ * seccussfully decodes ubc test stream 042_6 and 042_7
  
 Version 0.6 (2003 December 31)
 
