@@ -107,7 +107,8 @@ class GSCheckDirectoryMatchesCVS(GSTestCase):
 
 ################ Main program
 
-gsFilesInTopDirectory = ['autogen.sh']
+gsFilesInTopDirectory = ['LICENSE', 'autogen.sh', 'Makefile',
+			 'configure', 'config.log', 'config.status']
 gsDirectories = [
     'doc', 'examples', 'lib', 'src', 'toolbin', 'toolbin/tests'
     ]
