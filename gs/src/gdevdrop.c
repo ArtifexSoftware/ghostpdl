@@ -250,29 +250,10 @@ pack_cmyk_1bit_from_standard(gx_device * dev, byte * dest, int destx,
 
 }
 
-private gx_color_index
-map_rgb_to_color_via_cmyk(gx_device * dev, const gx_color_value rgbcv[])
-{
-    gx_color_value cmykcv[4];
-    
-    cmykcv[0] = gx_max_color_value - rgbcv[0];
-    cmykcv[1] = gx_max_color_value - rgbcv[1];
-    cmykcv[2] = gx_max_color_value - rgbcv[2];
-    cmykcv[3] = (cmykcv[0] < cmykcv[1] ? min(cmykcv[0], cmykcv[2]) : min(cmykcv[1], cmykcv[2]));
-
-    cmykcv[0] -= cmykcv[3];
-    cmykcv[1] -= cmykcv[3];
-    cmykcv[2] -= cmykcv[3];
-
-    return (*dev_proc(dev, map_cmyk_color)) (dev, cmykcv);
-}
 private void
 pack_from_standard(gx_device * dev, byte * dest, int destx, const byte * src,
 		   int width, int depth, int src_depth)
 {
-    dev_proc_map_rgb_color((*map)) =
-	(dev->color_info.num_components == 4 ?
-	 map_rgb_to_color_via_cmyk : dev_proc(dev, map_rgb_color));
     int bit_x = destx * depth;
     byte *dp = dest + (bit_x >> 3);
     int shift = (~bit_x & 7) + 1;
@@ -300,7 +281,7 @@ pack_from_standard(gx_device * dev, byte * dest, int destx, const byte * src,
 	    cv[0] = gx_color_value_from_byte(vr);
 	    cv[1] = gx_color_value_from_byte(vg);
 	    cv[2] = gx_color_value_from_byte(vb);
-	    pixel = (*map) (dev, cv);
+            pixel = dev_proc(dev, map_rgb_color)(dev, cv);
 	    if (pixel != gx_no_color_index)
 		break;
 	    /* Reduce the color accuracy and try again. */

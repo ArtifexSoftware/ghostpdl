@@ -10,10 +10,15 @@
 #    bit.tmp.ppm - detagged bit file converted to ppmraw output
 #    tag.tmp.ppm - just the tags color coded see tagimage.c for mapping.
 
-../../main/obj/pcl6 -dNOPAUSE -sDEVICE=bitrgbtags -sOutputFile=bit.tmp $1
-make detag
-./detag < bit.tmp > bit_detagged.tmp.ppm
-make tagimage
-./tagimage < bit.tmp > tag.tmp.ppm
-rm -f detag tagimage
-display bit_detagged.tmp.ppm tag.tmp.ppm
+FILES=$*
+
+for x in $FILES
+do
+    ../../main/obj/pcl6 -dNOPAUSE -sDEVICE=bitrgbtags -sOutputFile=bit.tmp $x
+    make detag
+    ./detag < bit.tmp > bit_detagged.tmp.ppm
+    make tagimage
+    ./tagimage < bit.tmp > tag.tmp.ppm
+    display bit_detagged.tmp.ppm tag.tmp.ppm
+done
+

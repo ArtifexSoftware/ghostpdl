@@ -32,7 +32,7 @@
 private dev_proc_get_color_mapping_procs(bittag_get_color_mapping_procs);
 private dev_proc_map_rgb_color(bittag_rgb_map_rgb_color);
 private dev_proc_map_color_rgb(bittag_map_color_rgb);
-private dev_proc_get_params(bittag_get_params);
+private dev_proc_put_params(bittag_put_params);
 private dev_proc_map_rgb_color(bit_mono_map_color);
 private dev_proc_map_rgb_color(bit_forcemono_map_rgb_color);
 private dev_proc_map_color_rgb(bit_map_color_rgb);
@@ -153,8 +153,8 @@ static const gx_device_procs bitrgbtags_procs =
         ((void *)0),                        /* copy color */
         ((void *)0),                        /* obsolete draw line */
         ((void *)0),                        /* get_bits */
-        bittag_get_params,                  /* get params */
-        gdev_prn_put_params,                  /* put params */
+        gdev_prn_get_params,                  /* get params */
+        bittag_put_params,                    /* put params */
         bittag_rgb_map_rgb_color,             /* map_cmyk_color */
         ((void *)0),                        /* get_xfonts */
         ((void *)0),                        /* get_xfont_device */
@@ -282,7 +282,7 @@ const gx_device_printer gs_bitrgbtags_device =
             PRN_BUFFER_SPACE,
             { 0, 0, 0 },
             0 ,
-            BandingNever },
+            BandingAlways },
         { 0 },
         0 ,
         0 ,
@@ -347,8 +347,8 @@ bittag_rgb_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 private int
 bittag_map_color_rgb(gx_device * dev, gx_color_index color, gx_color_value cv[4])
 {
-    int depth = dev->color_info.depth;
-    int ncomp = 4;
+    int depth = 24;
+    int ncomp = 3;
     int bpc = depth / ncomp;
     uint mask = (1 << bpc) - 1;
 
@@ -358,7 +358,8 @@ bittag_map_color_rgb(gx_device * dev, gx_color_index color, gx_color_value cv[4]
     cv[2] = cvalue(cshift & mask);
     cshift >>= bpc;
     cv[1] = cvalue(cshift & mask);
-    cv[0] = cvalue(cshift >> bpc);
+    cshift >>= bpc;
+    cv[0] = cvalue(cshift & mask);
     return 0;
 #undef cvalue
 }
@@ -463,10 +464,10 @@ bit_map_cmyk_color(gx_device * dev, const gx_color_value cv[])
 }
 
 private int
-bittag_get_params(gx_device * pdev, gs_param_list * plist)
+bittag_put_params(gx_device * pdev, gs_param_list * plist)
 {
     gs_enable_object_tagging();
-    return gdev_prn_get_params(pdev, plist);
+    return gdev_prn_put_params(pdev, plist);
 }
 /* Get parameters.  We provide a default CRD. */
 private int
