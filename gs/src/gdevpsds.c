@@ -306,7 +306,9 @@ const stream_template s_8_4_template = {
     &st_1248_state, s_4_init, s_8_N_process, 2, 1
 };
 
-/* ---------------- CMYK => RGB conversion ---------------- */
+/* ---------------- Color space conversion ---------------- */
+
+/* ------ Convert CMYK to RGB ------ */
 
 private_st_C2R_state();
 
@@ -353,10 +355,221 @@ s_C2R_process(stream_state * st, stream_cursor_read * pr,
     return (rlimit - p < 4 ? 0 : 1);
 }
 
-const stream_template s_C2R_template =
-{
+const stream_template s_C2R_template = {
     &st_C2R_state, 0 /*NULL */ , s_C2R_process, 4, 3, 0, s_C2R_set_defaults
 };
+
+/* ------ Convert any color space to Indexed ------ */
+
+private_st_IE_state();
+private
+ENUM_PTRS_WITH(ie_state_enum_ptrs, stream_IE_state *st) return 0;
+case 0: return ENUM_OBJ(st->Decode);
+case 1: return ENUM_BYTESTRING(&st->Table);
+ENUM_PTRS_END
+private
+RELOC_PTRS_WITH(ie_state_reloc_ptrs, stream_IE_state *st)
+{
+    RELOC_VAR(st->Decode);
+    RELOC_BYTESTRING_VAR(st->Table);
+}
+RELOC_PTRS_END
+
+/* Set defaults. */
+private void
+s_IE_set_defaults(stream_state * st)
+{
+    stream_IE_state *const ss = (stream_IE_state *) st;
+
+    ss->Decode = 0;		/* clear pointers */
+    gs_bytestring_from_string(&ss->Table, 0, 0);
+}
+
+/* Initialize the state. */
+private int
+s_IE_init(stream_state * st)
+{
+    stream_IE_state *const ss = (stream_IE_state *) st;
+    int key_index = (1 << ss->BitsPerIndex) * ss->NumComponents;
+    int i;
+
+    if (ss->Table.data == 0 || ss->Table.size < key_index)
+	return ERRC;		/****** WRONG ******/
+    /* Initialize Table with default values. */
+    memset(ss->Table.data, 0, ss->NumComponents);
+    ss->Table.data[ss->Table.size - 1] = 0;
+    for (i = 0; i < countof(ss->hash_table); ++i)
+	ss->hash_table[i] = key_index;
+    ss->next_index = 0;
+    ss->in_bits_left = 0;
+    ss->next_component = 0;
+    ss->byte_out = 1;
+    ss->x = 0;
+    return 0;
+}
+
+/* Process a buffer. */
+private int
+s_IE_process(stream_state * st, stream_cursor_read * pr,
+	     stream_cursor_write * pw, bool last)
+{
+    stream_IE_state *const ss = (stream_IE_state *) st;
+    /* Constant values from the state */
+    const int bpc = ss->BitsPerComponent;
+    const int num_components = ss->NumComponents;
+    const int end_index = (1 << ss->BitsPerIndex) * num_components;
+    byte *const table = ss->Table.data;
+    byte *const key = table + end_index;
+    /* Dynamic values from the state */
+    uint byte_in = ss->byte_in;
+    int in_bits_left = ss->in_bits_left;
+    int next_component = ss->next_component;
+    uint byte_out = ss->byte_out;
+    /* Other dynamic values */
+    const byte *p = pr->ptr;
+    const byte *rlimit = pr->limit;
+    byte *q = pw->ptr;
+    byte *wlimit = pw->limit;
+    int status = 0;
+
+    for (;;) {
+	uint hash, reprobe;
+	int i, index;
+
+	/* Check for a filled output byte. */
+	if (byte_out >= 0x100) {
+	    if (q >= wlimit) {
+		status = 1;
+		break;
+	    }
+	    *++q = (byte)byte_out;
+	    byte_out = 1;
+	}
+	/* Acquire a complete input value. */
+	while (next_component < num_components) {
+	    const float *decode = &ss->Decode[next_component * 2];
+	    int sample;
+
+	    if (in_bits_left == 0) {
+		if (p >= rlimit)
+		    goto out;
+		byte_in = *++p;
+		in_bits_left = 8;
+	    }
+	    /* An input sample can never span a byte boundary. */
+	    in_bits_left -= bpc;
+	    sample = (byte_in >> in_bits_left) & ((1 << bpc) - 1);
+	    /* Scale the sample according to Decode. */
+	    sample = (int)((decode[0] +
+			    (sample / (float)((1 << bpc) - 1) *
+			     (decode[1] - decode[0]))) * 255 + 0.5);
+	    key[next_component++] =
+		(sample < 0 ? 0 : sample > 255 ? 255 : (byte)sample);
+	}
+	/* Look up the input value. */
+	for (hash = 0, i = 0; i < num_components; ++i)
+	    hash = hash + 23 * key[i];  /* adhoc */
+	reprobe = (hash / countof(ss->hash_table)) | 137;  /* adhoc */
+	for (hash %= countof(ss->hash_table);
+	     memcmp(table + ss->hash_table[hash], key, num_components);
+	     hash = (hash + reprobe) % countof(ss->hash_table)
+	     )
+	    DO_NOTHING;
+	index = ss->hash_table[hash];
+	if (index == end_index) {
+	    /* The match was on an empty entry. */
+	    if (ss->next_index == end_index) {
+		/* Too many different values. */
+		status = ERRC;
+		break;
+	    }
+	    ss->hash_table[hash] = index = ss->next_index;
+	    ss->next_index += num_components;
+	    memcpy(table + index, key, num_components);
+	}
+	byte_out = (byte_out << ss->BitsPerIndex) + index / num_components;
+	next_component = 0;
+	if (++(ss->x) == ss->Width) {
+	    /* Handle input and output padding. */
+	    in_bits_left = 0;
+	    if (byte_out != 1)
+		while (byte_out < 0x100)
+		    byte_out <<= 1;
+	    ss->x = 0;
+	}
+    }
+out:
+    pr->ptr = p;
+    pw->ptr = q;
+    ss->byte_in = byte_in;
+    ss->in_bits_left = in_bits_left;
+    ss->next_component = next_component;
+    ss->byte_out = byte_out;
+    /* For simplicity, always update the record of the table size. */
+    ss->Table.data[ss->Table.size - 1] =
+	(ss->next_index == 0 ? 0 :
+	 ss->next_index / ss->NumComponents - 1);
+    return status;
+}
+
+const stream_template s_IE_template = {
+    &st_IE_state, s_IE_init, s_IE_process, 1, 1,
+    0 /* NULL */, s_IE_set_defaults
+};
+
+#if 0
+
+/* Test code */
+void
+test_IE(void)
+{
+    const stream_template *const template = &s_IE_template;
+    stream_IE_state state;
+    stream_state *const ss = (stream_state *)&state;
+    static const float decode[6] = {1, 0, 1, 0, 1, 0};
+    static const byte in[] = {
+	/*
+	 * Each row is 3 pixels x 3 components x 4 bits.  Processing the
+	 * first two rows doesn't cause an error; processing all 3 rows
+	 * does.
+	 */
+	0x12, 0x35, 0x67, 0x9a, 0xb0,
+	0x56, 0x7d, 0xef, 0x12, 0x30,
+	0x88, 0x88, 0x88, 0x88, 0x80
+    };
+    byte table[3 * 5];
+    int n;
+
+    template->set_defaults(ss);
+    state.BitsPerComponent = 4;
+    state.NumComponents = 3;
+    state.Width = 3;
+    state.BitsPerIndex = 2;
+    state.Decode = decode;
+    gs_bytestring_from_bytes(&state.Table, table, 0, sizeof(table));
+    for (n = 10; n <= 15; n += 5) {
+	stream_cursor_read r;
+	stream_cursor_write w;
+	byte out[100];
+	int status;
+
+	s_IE_init(ss);
+	r.ptr = in; --r.ptr;
+	r.limit = r.ptr + n;
+	w.ptr = out; --w.ptr;
+	w.limit = w.ptr + sizeof(out);
+	memset(table, 0xcc, sizeof(table));
+	memset(out, 0xff, sizeof(out));
+	dprintf1("processing %d bytes\n", n);
+	status = template->process(ss, &r, &w, true);
+	dprintf3("%d bytes read, %d bytes written, status = %d\n",
+		 (int)(r.ptr + 1 - in), (int)(w.ptr + 1 - out), status);
+	debug_dump_bytes(table, table + sizeof(table), "table");
+	debug_dump_bytes(out, w.ptr + 1, "out");
+    }
+}
+
+#endif
 
 /* ---------------- Downsampling ---------------- */
 
@@ -375,7 +588,7 @@ s_Downsample_set_defaults(register stream_state * st)
     s_Downsample_set_defaults_inline(ss);
 }
 
-/* Subsample */
+/* ------ Subsample ------ */
 
 gs_private_st_simple(st_Subsample_state, stream_Subsample_state,
 		     "stream_Subsample_state");
@@ -437,13 +650,12 @@ s_Subsample_process(stream_state * st, stream_cursor_read * pr,
     return status;
 }
 
-const stream_template s_Subsample_template =
-{
+const stream_template s_Subsample_template = {
     &st_Subsample_state, s_Subsample_init, s_Subsample_process, 4, 4,
     0 /* NULL */, s_Downsample_set_defaults
 };
 
-/* Average */
+/* ------ Average ------ */
 
 private_st_Average_state();
 
@@ -541,8 +753,7 @@ out:
     return status;
 }
 
-const stream_template s_Average_template =
-{
+const stream_template s_Average_template = {
     &st_Average_state, s_Average_init, s_Average_process, 4, 4,
     s_Average_release, s_Average_set_defaults
 };

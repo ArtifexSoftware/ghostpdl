@@ -68,6 +68,46 @@ extern const stream_template s_C2R_template;
 /* Initialize a CMYK => RGB conversion stream. */
 int s_C2R_init(P2(stream_C2R_state *ss, const gs_imager_state *pis));
 
+/* Convert an image to indexed form (IndexedEncode filter). */
+typedef struct stream_IE_state_s {
+    stream_state_common;
+    /* The client sets the following before initializing the stream. */
+    int BitsPerComponent;	/* 1, 2, 4, 8 */
+    int NumComponents;
+    int Width;			/* pixels per scan line, > 0 */
+    int BitsPerIndex;		/* 1, 2, 4, 8 */
+    /*
+     * Note: this is not quite the same as the Decode array for images:
+     * [0..1] designates the range of the corresponding component of the
+     * color space, not the literal values 0..1.  This is the same for
+     * all color spaces except Lab, where the default values here are
+     * [0 1 0 1 0 1] rather than [0 100 amin amax bmin bmax].
+     */
+    const float *Decode;
+    /*
+     * The client must provide a Table whose size is at least
+     * ((1 << BitsPerIndex) + 1) * NumComponents.  After the stream is
+     * closed, the first (N + 1) * NumComponents bytes of the Table
+     * will hold the palette, where N is the contents of the last byte of
+     * the Table.
+     */
+    gs_bytestring Table;
+    /* The following change dynamically. */
+    int hash_table[400];	/* holds byte offsets in Table */
+    int next_index;		/* next Table offset to assign */
+    uint byte_in;
+    int in_bits_left;
+    int next_component;
+    uint byte_out;
+    int x;
+} stream_IE_state;
+
+#define private_st_IE_state()	/* in gdevpsds.c */\
+  gs_public_st_composite(st_IE_state, stream_IE_state, "stream_IE_state",\
+    ie_state_enum_ptrs, ie_state_reloc_ptrs)
+
+extern const stream_template s_IE_template;
+
 /* ---------------- Downsampling ---------------- */
 
 /* Downsample, possibly with anti-aliasing. */
