@@ -1,4 +1,4 @@
-/* Copyright (C) 1999, 2000, Ghostgum Software Pty Ltd.  All rights reserved.
+/* Copyright (C) 1999-2003, Ghostgum Software Pty Ltd.  All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -750,7 +750,11 @@ install_prog()
 	strcat(szLIB, cinst.GetMainDir());
 	strcat(szLIB, "\\lib;");
 	strcat(szLIB, g_szTargetDir);
-	strcat(szLIB, "\\fonts");
+	strcat(szLIB, "\\fonts;");
+	strcat(szLIB, g_szTargetDir);
+	strcat(szLIB, "\\");
+	strcat(szLIB, cinst.GetMainDir());
+	strcat(szLIB, "\\Resource");
 	if (!cinst.UpdateRegistryValue(regkey1, regkey2, "GS_LIB", szLIB)) {
 		gs_addmess("Failed to add registry value\n");
 		return FALSE;
