@@ -49,6 +49,7 @@
 #include "isave.h"		/* for prototypes */
 #include "interp.h"
 #include "ivmspace.h"
+#include "idisp.h"		/* for setting display device callback */
 #include "iplugin.h"
 
 /* ------ Exported data ------ */
