@@ -317,15 +317,15 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	 * we postpone the selection of the PDF color space to here:
 	 */
 	(!is_mask &&
-	 pdf_color_space(pdev, &cs_value, image.pixel.ColorSpace,
-			 (in_line ? &pdf_color_space_names_short :
-			  &pdf_color_space_names), in_line) < 0) ||
+	 (code = pdf_color_space(pdev, &cs_value, image.pixel.ColorSpace,
+				 (in_line ? &pdf_color_space_names_short :
+				  &pdf_color_space_names), in_line)) < 0) ||
 	(code = pdf_begin_image_data(pdev, &pie->writer,
 				     (const gs_pixel_image_t *)&image,
 				     &cs_value)) < 0
 	) {
 	/****** SHOULD FREE STRUCTURES AND CLEAN UP HERE ******/
-	return code;
+	goto nyi;		/* fall back to default implementation */
     }
     return 0;
  nyi:
