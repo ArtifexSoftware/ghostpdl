@@ -86,13 +86,16 @@ pcl_set_drawing_color(
 )
 {   int                     code;
 
+    /* use PCL's pattern transparency */
+    pcs->pattern_transparent = pcs->pcl_pattern_transparent;
+
     if (type == pcl_pattern_raster_cspace)
         code = (pcl_pattern_get_proc_PCL(type))(pcs, 0, 0);
     else
         code = (pcl_pattern_get_proc_PCL(type))(pcs, id, (int)for_image);
     if (code >= 0) {
         gs_setrasterop(pcs->pgs, (gs_rop3_t)pcs->logical_op);
-        gs_setfilladjust(pcs->pgs, pcs->grid_adjust, pcs->grid_adjust);
+        gs_setfilladjust(pcs->pgs, 0.0, 0.0);
     }
     return 0;
 }
