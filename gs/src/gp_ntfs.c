@@ -127,8 +127,7 @@ gp_file_name_references_parent(const char *fname, unsigned len)
 /* Answer the string to be used for combining a directory/device prefix */
 /* with a base file name.  The file name is known to not be absolute. */
 const char *
-gp_file_name_concat_string(const char *prefix, uint plen,
-			   const char *fname, uint len)
+gp_file_name_concat_string(const char *prefix, uint plen)
 {
     if (plen > 0)
 	switch (prefix[plen - 1]) {
