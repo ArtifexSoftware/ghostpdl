@@ -671,6 +671,19 @@ class pxl_dis:
             return 1
         return 0
     
+
+    def dump(self, src):
+        N=0
+        result=''
+        while src:
+            s,src = src[:16],src[16:]
+            hexa = ' '.join(["%02X"%ord(x) for x in s])
+            s = s.translate(''.join([(len(repr(chr(x)))==3) and chr(x) or '.' for x in range(256)]))
+            result += "%04X   %-*s   %s\n" % (N, 16*3, hexa, s)
+            N+=16
+        return result
+
+
     # check for embedded tags.
     def is_Embedded(self, name):
         return ( name == 'embedded_data' or name == 'embedded_data_byte' )
@@ -686,12 +699,9 @@ class pxl_dis:
             self.index = self.index + 1
         print "length:",
         print length
-
-        # NB needs wrapping
-        print "[ ",
-        for byte in self.data[self.index:self.index+length]:
-            print ord(byte),
-        print " ]"
+        print "["
+        print self.dump(self.data[self.index:self.index+length])
+        print "]"
         self.index = self.index + length
 
     def Tag_attr_ubyte(self):
@@ -787,8 +797,8 @@ class pxl_dis:
             array_size = self.size_of_element * self.size_of_array
             array_elements = self.unpack( str(self.size_of_array) + self.unpack_string, \
                                      self.data[self.index:self.index+array_size] )
-            for num in array_elements:
-                print num,
+            print
+            print self.dump(self.data[self.index:self.index+array_size])
             print "]",
             self.index = self.index + array_size
             return 1
@@ -861,8 +871,10 @@ if __name__ == '__main__':
 
     if not sys.argv[1:]:
         print "Usage: %s pxl files" % sys.argv[0]
-        
-    for file in sys.argv[1:]:
+
+    files = sys.argv[1:]
+
+    for file in files:
         try:
             fp = open(file, 'rb')
         except:
