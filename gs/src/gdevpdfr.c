@@ -215,17 +215,32 @@ pdf_get_named(gx_device_pdf * pdev, const gs_param_string * pname,
  * to but not including *pscan.
  *
  * Note that this scanner expects a subset of PostScript syntax, not PDF
- * syntax.  In particular, it doesn't understand ASCII85 strings, and it
- * doesn't process the PDF #-escape syntax within names.  Note also that
- * it does only minimal syntax checking.
+ * syntax.  In particular, it doesn't understand ASCII85 strings,
+ * doesn't process the PDF #-escape syntax within names, and does only
+ * minimal syntax checking.  It also recognizes one extension to PostScript
+ * syntax, to allow gs_pdfwr.ps to pass names that include non-regular
+ * characters: If a name is immediately preceded by two null characters,
+ * the name includes everything up to a following null character.  The only
+ * place that currently generates this convention is the PostScript code
+ * that pre-processes the arguments for pdfmarks, in lib/gs_pdfwr.ps.
  */
 int
 pdf_scan_token(const byte **pscan, const byte * end, const byte **ptoken)
 {
     const byte *p = *pscan;
 
-    while (p < end && scan_char_decoder[*p] == ctype_space)
+    while (p < end && scan_char_decoder[*p] == ctype_space) {
 	++p;
+	if (p[-1] == 0 && p + 1 < end && *p == 0 && p[1] == '/') {
+	/* Special handling for names delimited by a null character. */
+	    *ptoken = ++p;
+	    while (*p != 0)
+		if (++p >= end)
+		    return_error(gs_error_syntaxerror);	/* no terminator */
+	    *pscan = p;
+	    return 1;
+	}
+    }
     *ptoken = p;
     if (p >= end) {
 	*pscan = p;

@@ -275,6 +275,24 @@
       }
      forall (>>) writestring
    } bind
+  /nametype {
+    % If the name string includes any non-regular characters,
+    % write it with two preceding and one following null character(s).
+    % (Null characters in the name itself are not allowed.)
+    % This non-standard escape convention is required for passing names
+    % that include non-regular characters, because PostScript provides
+    % no way to do this.  The pdf_scan_token procedure in the C code of
+    % the pdfwrite driver is currently the only place that recognizes
+    % this convention.
+    dup .namestring (\000\011\012\014\015 %()/<>[]{}) .stringbreak null ne {
+      dup .namestring (\000) .stringbreak null ne {
+	/rangecheck signalerror
+      } if
+      1 index <0000> writestring 1 index exch write===only 0 write
+    } {
+      write===only
+    } ifelse
+  } bind
 .dicttomark readonly def
 /pdf===only {	% <file> <obj> pdf===only -
   .pdf===dict 1 index type .knownget { exec } { write===only } ifelse

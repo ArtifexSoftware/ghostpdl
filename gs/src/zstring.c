@@ -149,6 +149,28 @@ found:
     return 0;
 }
 
+/* <string> <charstring> .stringbreak <int|null> */
+private int
+zstringbreak(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    uint i, j;
+
+    check_read_type(op[-1], t_string);
+    check_read_type(*op, t_string);
+    /* We can't use strpbrk here, because C doesn't allow nulls in strings. */
+    for (i = 0; i < r_size(op - 1); ++i)
+	for (j = 0; j < r_size(op); ++j)
+	    if (op[-1].value.const_bytes[i] == op->value.const_bytes[j]) {
+		make_int(op - 1, i);
+		goto done;
+	    }
+    make_null(op - 1);
+ done:
+    pop(1);
+    return 0;
+}
+
 /* <obj> <pattern> .stringmatch <bool> */
 private int
 zstringmatch(i_ctx_t *i_ctx_p)
@@ -186,6 +208,7 @@ const op_def zstring_op_defs[] =
     {"1.namestring", znamestring},
     {"2search", zsearch},
     {"1string", zstring},
+    {"2.stringbreak", zstringbreak},
     {"2.stringmatch", zstringmatch},
     op_def_end(0)
 };

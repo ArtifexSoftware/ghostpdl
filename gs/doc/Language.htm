@@ -937,6 +937,14 @@ place of a string with a very few operators.
 </dl>
 
 <dl>
+<dt><b><tt>&lt;string&gt; &lt;charstring&gt; .stringbreak &lt;index|null&gt;</tt></b>
+<dd>Searches for a character in <b><tt>string</tt></b> that appears
+somewhere in <b><tt>charstring</tt></b>.  If such a character is found,
+returns the index of the first such character; if no such character is
+found, returns <b><tt>null</tt></b>.
+</dl>
+
+<dl>
 <dt><b><tt>&lt;obj&gt; &lt;pattern&gt; .stringmatch &lt;bool&gt;</tt></b>
 <dd>Matches <b><tt>obj</tt></b> against a pattern in which '*' matches 0 or
 more characters and '?' matches any single character.  If
