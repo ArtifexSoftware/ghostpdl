@@ -147,7 +147,13 @@ else
 	X11DEVS='$(DD)x11.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev $(DD)x11gray2.dev $(DD)x11gray4.dev $(DD)x11mono.dev'
 fi
 AC_SUBST(X11DEVS)
-AC_SUBST(x_includes)
+
+if test "x$x_includes" = "x"; then
+	XINCLUDE=''
+else
+	XINCLUDE=-I$x_includes
+fi
+AC_SUBST(XINCLUDE)
 AC_SUBST(x_libraries)
 
 
