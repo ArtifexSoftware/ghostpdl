@@ -660,7 +660,7 @@ zisprocfilter(i_ctx_t *i_ctx_p)
     return 0;
 }
 
-/* <file> <int> unread - */
+/* <file> <int> .unread - */
 private int
 zunread(i_ctx_t *i_ctx_p)
 {
@@ -777,7 +777,7 @@ const op_def zfileio1_op_defs[] = {
 const op_def zfileio2_op_defs[] = {
     {"1.isprocfilter", zisprocfilter},
     {"2setfileposition", zsetfileposition},
-    {"2unread", zunread},
+    {"2.unread", zunread},
     {"2write", zwrite},
     {"3.writecvp", zwritecvp},
     {"2writehexstring", zwritehexstring},
