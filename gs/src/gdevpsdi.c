@@ -417,12 +417,12 @@ psdf_setup_lossless_filters(gx_device_psdf *pdev, psdf_binary_writer *pbw,
 
 /* Set up image compression chooser. */
 int
-pdf_setup_compression_chooser(psdf_binary_writer *pbw, gx_device_psdf *pdev,
-		    int width, int height, int depth, int bits_per_samile)
+psdf_setup_compression_chooser(psdf_binary_writer *pbw, gx_device_psdf *pdev,
+		    int width, int height, int depth, int bits_per_sample)
 {
     int code;
     stream_state *ss = s_alloc_state(pdev->memory, s_compr_chooser_template.stype, 
-                                     "pdf_setup_compression_chooser");
+                                     "psdf_setup_compression_chooser");
 
     if (ss == 0)
 	return_error(gs_error_VMerror);
@@ -433,7 +433,7 @@ pdf_setup_compression_chooser(psdf_binary_writer *pbw, gx_device_psdf *pdev,
     if (code < 0)
 	return code;
     code = s_compr_chooser_set_dimensions((stream_compr_chooser_state *)ss, 
-		    width, height, depth, bits_per_samile);
+		    width, height, depth, bits_per_sample);
     return code;
 }
 

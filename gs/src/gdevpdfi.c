@@ -474,7 +474,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
   	    goto fail;
     }
     if (pie->writer.alt_writer_count == 2) {
-        pdf_setup_compression_chooser(&pie->writer.binary[2], 
+        psdf_setup_compression_chooser(&pie->writer.binary[2], 
 	     (gx_device_psdf *)pdev, pim->Width, pim->Height, 
 	     num_components, pim->BitsPerComponent);
 	pie->writer.alt_writer_count = 3;

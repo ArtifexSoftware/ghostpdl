@@ -343,8 +343,10 @@ int psdf_setup_lossless_filters(P3(gx_device_psdf *pdev,
 int psdf_end_binary(P1(psdf_binary_writer * pbw));
 
 /* Set up image compression chooser. */
-int pdf_setup_compression_chooser(P6(psdf_binary_writer *pbw, gx_device_psdf *pdev,
-			  int width, int height, int depth, int bits_per_samile));
+int psdf_setup_compression_chooser(P6(psdf_binary_writer *pbw,
+				      gx_device_psdf *pdev,
+				      int width, int height, int depth,
+				      int bits_per_sample));
 
 /* ---------------- Symbolic data printing ---------------- */
 
