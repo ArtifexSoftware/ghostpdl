@@ -16,6 +16,7 @@
 
 /* $Id$ */
 
+#ifndef __CARBON__
 //#include "MacHeaders"
 #include <Palettes.h>
 #include <Aliases.h>
@@ -41,6 +42,10 @@
 #include <Fonts.h>
 #include <FixMath.h>
 #include <Resources.h>
+#else
+#include <Carbon.h>
+#include <CoreServices.h>
+#endif /* __CARBON__ */
 
 #include "stdio_.h"
 #include "math_.h"
@@ -891,33 +896,36 @@ static reftable * parse_fond(FSSpec *spec)
 {
     OSErr result = noErr;
     FSRef specref;
+    SInt16 ref;
     Handle fond = NULL;
     unsigned char *res;
     reftable *table = NULL;
-    SInt16 ref;
-    char *filename = MacStr2c(spec->name);
     int i,j, count, n, start;
-    
-    start = 0;
-    
-    result = FSpMakeFSRef(spec,&specref);
-    if (result == noErr)
-      result = FSOpenResourceFile(&specref, 0, NULL, fsRdPerm, &ref);
+        
+	/* FSpOpenResFile will fail for data fork resource (.dfont) files.
+	   FSOpenResourceFile can open either, but cannot handle broken resource
+	   maps, as often occurs in font files (the suitcase version of Arial,
+	   for example) Thus, we try one, and then the other. */
+	 
+    result = FSpMakeFSRef(spec,&specref); 
+   	if (result == noErr)
+   		result = FSOpenResourceFile(&specref, 0, NULL, fsRdPerm, &ref);
     if (result != noErr) {
-      if (result = mapReadErr) {
-        /* this may mean there's no resource map, i.e. it's
-           it's a .ttf or .otf file, but also occurs if the
-           map structure on disk isn't 'internally consistent'
-           which is unfortunately rather common, so we ignore
-           this an hope for the best. */
-        dlprintf("map read error opening resource file...ignoring\n");
-      } else {
-      	dlprintf2("unable to open resource file '%s' (error %d)\n", filename, result);
-      	return NULL;
-      }
+	    ref = FSpOpenResFile(spec, fsRdPerm);
+	    result = ResError();
+	}
+    if (result != noErr || ref <= 0) {
+    	char path[256];
+    	convertSpecToPath(spec, path, 256);
+      	dlprintf2("unable to open resource file '%s' for font enumeration (error %d)\n",
+      		path, result);
+      	goto fin;
     }
-    if (ref == -1) goto fin;
     
+    /* we've opened the font file, now loop over the FOND resource(s)
+       and construct a table of the font references */
+    
+    start = 0; /* number of entries so far */
     UseResFile(ref);
     count = Count1Resources('FOND');
     for (i = 0; i < count; i++) {
@@ -931,11 +939,10 @@ static reftable * parse_fond(FSSpec *spec)
            data structures documented in the FontManager reference. However,
            access to these types is deprecated in Carbon. We therefore access the
            data by direct offset in the hope that the resource format will not change
-           even in api access to the in-memory versions goes away. */
+           even if api access to the in-memory versions goes away. */
         HLock(fond);
         res = *fond + 52; /* offset to association table */
         n = get_int16(res) + 1;	res += 2;
-        dlprintf1("found %d fonts in resource file\n", n);
 		table = reftable_grow(table, n);
         for (j = start; j < start + n; j++ ) {
             table->refs[j].size = get_int16(res); res += 2;
@@ -1026,7 +1033,7 @@ void *gp_enumerate_fonts_init(gs_memory_t *mem)
 		state->name = NULL;
 		state->path = NULL;
 		result = FMCreateFontIterator(NULL, NULL,
-			kFMUseGlobalScopeOption, Iterator);
+			kFMLocalIterationScope, Iterator);
 		if (result != noErr) return NULL;
     }
 
@@ -1045,11 +1052,11 @@ int gp_enumerate_fonts_next(void *enum_state, char **fontname, char **path)
 	char type[5];
 	char fontpath[256];
 	char *psname;
-	reftable *table;
+	reftable *table = NULL;
 	OSStatus result;
     	
 	result = FMGetNextFont(Iterator, &Font);
-    if (result != noErr) return 0;
+    if (result != noErr) return 0; /* no more fonts */
 
 	result = FMGetFontFormat(Font, &Format);
 	type[0] = ((char*)&Format)[0];
@@ -1074,7 +1081,8 @@ int gp_enumerate_fonts_next(void *enum_state, char **fontname, char **path)
 		state->path = NULL;
 	}
 	convertSpecToPath(&FontContainer, fontpath, 256);
-    table = parse_fond(&FontContainer);
+	if (!is_ttf_file(fontpath) && !is_otf_file(fontpath))
+	    table = parse_fond(&FontContainer);
     if (table != NULL) {
     	int i;
     	for (i = 0; i < table->entries; i++) {
@@ -1089,7 +1097,7 @@ int gp_enumerate_fonts_next(void *enum_state, char **fontname, char **path)
             }
         }
         reftable_free(table);
-        if (state->path == NULL) dlprintf1("couldn't find reource matching font '%s'\n",
+        if (state->path == NULL) dlprintf1("couldn't find resource matching font '%s'\n",
         	state->name);
     } else {
         /* regular font file */
@@ -1099,9 +1107,7 @@ int gp_enumerate_fonts_next(void *enum_state, char **fontname, char **path)
     *fontname = state->name;
     *path = state->path;
 
-	dlprintf2("nativefontenum: returning '%s'\n in '%s'\n", *fontname, *path);
 	state->count += 1;
-	//return (state->count < 24) ? 1 : 0;
 	return 1;
 }
                                                                                 
