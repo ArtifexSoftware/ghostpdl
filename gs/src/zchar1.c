@@ -450,13 +450,22 @@ bbox_draw(i_ctx_t *i_ctx_p, int (*draw)(P1(gs_state *)))
 
     if (igs->in_cachedevice < 2)	/* not caching */
 	return nobbox_draw(i_ctx_p, draw);
-    if ((code = gs_pathbbox(igs, &bbox)) < 0 ||
-	(code = font_param(op - 3, &pfont)) < 0
-	)
+    if ((code = font_param(op - 3, &pfont)) < 0)
 	return code;
     penum = op_show_find(i_ctx_p);
     if (penum == 0 || !font_uses_charstrings(pfont))
 	return_error(e_undefined);
+    if ((code = gs_pathbbox(igs, &bbox)) < 0) {
+	/*
+	 * If the matrix is singular, all user coordinates map onto a
+	 * straight line.  Don't bother rendering the character at all.
+	 */
+	if (code == e_undefinedresult) {
+	    gs_newpath(igs);
+	    return 0;
+	}
+	return code;
+    }
     if (draw == gs_stroke) {
 	/* Expand the bounding box by the line width. */
 	float width = gs_currentlinewidth(igs) * 1.41422;
