@@ -78,6 +78,9 @@ The following projects are in a partially completed state in the PDF writer:
 
 <h2><a name="6.23_Incompatible_changes"></a>Incompatible changes</h2>
 
+(Drivers)
+	- With high-level drivers ([e]pswrite, pdfwrite, pxl*, cgm*),
+changing the OutputFile after writing one or more pages now causes an error.
 (Interpreter)
 	- By default, copydevice will only copy a device prototype.
 	- Some internal references to contexts in zcontext.c are changed

@@ -872,8 +872,15 @@ gdev_vector_put_params(gx_device * dev, gs_param_list * plist)
 
     switch (code = param_read_string(plist, (param_name = "OutputFile"), &ofns)) {
 	case 0:
+	    /*
+	     * Vector devices typically write header information at the
+	     * beginning of the file: changing the file name after writing
+	     * any pages should be an error.
+	     */
 	    if (ofns.size > fname_size)
 		ecode = gs_error_limitcheck;
+	    else if (dev->is_open && vdev->strm != 0 && stell(vdev->strm) != 0)
+		ecode = gs_error_rangecheck;
 	    else
 		break;
 	    goto ofe;
@@ -905,10 +912,15 @@ gdev_vector_put_params(gx_device * dev, gs_param_list * plist)
 	memcpy(vdev->fname, ofns.data, ofns.size);
 	vdev->fname[ofns.size] = 0;
 	if (vdev->file != 0) {
+	    gx_device_bbox *bbdev = vdev->bbox_device;
+
+	    vdev->bbox_device = 0; /* don't let it be freed */
 	    code = gdev_vector_close_file(vdev);
+	    vdev->bbox_device = bbdev;
 	    if (code < 0)
 		return code;
-	    return gdev_vector_open_file(vdev, vdev->strmbuf_size);
+	    return gdev_vector_open_file_bbox(vdev, vdev->strmbuf_size,
+					      bbdev != 0);
 	}
     }
     gdev_vector_load_cache(vdev);	/* in case color mapping changed */
