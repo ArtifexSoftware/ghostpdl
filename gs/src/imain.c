@@ -827,6 +827,11 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
 	if (i_ctx_p->pgs != NULL && i_ctx_p->pgs->device != NULL) {
 	    gx_device *pdev = i_ctx_p->pgs->device;
 
+	    /* deactivate the device just before we close it for the last time */
+	    gs_main_run_string(minst, 
+		".uninstallpagedevice "
+		"serverdict /.jobsavelevel get 0 eq {/quit} {/stop} ifelse .systemvar exec",
+		0 , &exit_code, &error_object);
 	    code = gs_closedevice(pdev);
 	    if (code < 0)
 		eprintf2("ERROR %d closing the device. See gs/src/ierrors.h for code explanation.\n", code, i_ctx_p->pgs->device->dname);
