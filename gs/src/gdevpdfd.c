@@ -227,6 +227,34 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
     return 0;
 }
 
+/*
+ * Compute the scaling to ensure that user coordinates for a path are within
+ * Acrobat's 15-bit range.  Return true if scaling was needed.
+ */
+private bool
+make_path_scaling(const gx_device_pdf *pdev, gx_path *ppath, double *pscale)
+{
+    gs_fixed_rect bbox;
+    double bmin, bmax;
+
+    gx_path_bbox(ppath, &bbox);
+    bmin = min(bbox.p.x / pdev->scale.x, bbox.p.y / pdev->scale.y);
+    bmax = max(bbox.q.x / pdev->scale.x, bbox.q.y / pdev->scale.y);
+#define MAX_USER_COORD 32000
+    if (bmin <= int2fixed(-MAX_USER_COORD) ||
+	bmax > int2fixed(MAX_USER_COORD)
+	) {
+	/* Rescale the path.  Add a little slop. */
+	*pscale = max(bmin / int2fixed(-MAX_USER_COORD),
+		      bmax / int2fixed(MAX_USER_COORD));
+	return true;
+    } else {
+	*pscale = 1;
+	return false;
+    }
+#undef MAX_USER_COORD
+}
+
 /* ------ Driver procedures ------ */
 
 /* Fill a path. */
@@ -283,14 +311,26 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 				    pcpath);
     if (have_path) {
 	stream *s = pdev->strm;
+	double scale;
+	gs_matrix smat;
+	gs_matrix *psmat = NULL;
 
 	if (params->flatness != pdev->state.flatness) {
 	    pprintg1(s, "%g i\n", params->flatness);
 	    pdev->state.flatness = params->flatness;
 	}
+	if (make_path_scaling(pdev, ppath, &scale)) {
+	    gs_make_scaling(pdev->scale.x / scale, pdev->scale.y / scale,
+			    &smat);
+	    psmat = &smat;
+	    pputs(s, "q\n");
+	}
 	gdev_vector_dopath((gx_device_vector *)pdev, ppath,
-			   gx_path_type_fill | gx_path_type_optimize, NULL);
+			   gx_path_type_fill | gx_path_type_optimize,
+			   psmat);
 	pputs(s, (params->rule < 0 ? "f\n" : "f*\n"));
+	if (psmat)
+	    pputs(s, "Q\n");
     }
     return 0;
 }
@@ -304,7 +344,7 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
     gx_device_pdf *pdev = (gx_device_pdf *) dev;
     stream *s;
     int code;
-    double scale;
+    double scale, path_scale;
     bool set_ctm;
     gs_matrix mat;
 
@@ -329,6 +369,15 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
      */
     set_ctm = (bool)gdev_vector_stroke_scaling((gx_device_vector *)pdev,
 					       pis, &scale, &mat);
+    if (make_path_scaling(pdev, ppath, &path_scale)) {
+	scale *= path_scale;
+	if (set_ctm)
+	    gs_matrix_scale(&mat, path_scale, path_scale, &mat);
+	else {
+	    gs_make_scaling(path_scale, path_scale, &mat);
+	    set_ctm = true;
+	}
+    }
     pdf_put_clip_path(pdev, pcpath);
     code = gdev_vector_prepare_stroke((gx_device_vector *)pdev, pis, params,
 				      pdcolor, scale);
