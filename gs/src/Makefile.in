@@ -383,7 +383,7 @@ DEVICE_DEVS21=$(DD)spotrgb.dev $(DD)spotcmyk.dev $(DD)devicen.dev $(DD)xcf.dev
 MAKEFILE=Makefile
 TOP_MAKEFILES=$(MAKEFILE) $(GLSRCDIR)/unixhead.mak
 
-# This defines the ANSI-to-K&R dependency. No longer supported.
+# Define the auxiliary program dependency. We don't use this.
 
 AK=
 

@@ -55,9 +55,6 @@ $(GLOBJ)gp_sysv.$(OBJ): $(GLSRC)gp_sysv.c $(stdio__h) $(time__h) $(AK)
 
 # -------------------------- Auxiliary programs --------------------------- #
 
-$(ANSI2KNR_XE): $(GLSRC)ansi2knr.c
-	$(CCA2K) $(O_)$(ANSI2KNR_XE) $(GLSRC)ansi2knr.c
-
 $(ECHOGS_XE): $(GLSRC)echogs.c $(AK) $(stdpre_h)
 	$(CCAUX) $(I_)$(GLSRCDIR)$(_I) $(O_)$(ECHOGS_XE) $(GLSRC)echogs.c
 

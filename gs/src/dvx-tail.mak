@@ -40,9 +40,6 @@ $(GLOBJ)gp_stdin.$(OBJ): $(GLSRC)gp_stdin.c $(AK) $(stdio__h) $(gx_h) $(gp_h)
 
 # -------------------------- Auxiliary programs --------------------------- #
 
-$(ANSI2KNR_XE): ansi2knr.c $(stdio__h) $(string__h) $(malloc__h)
-	$(CC) -o ansi2knr $(CFLAGS) ansi2knr.c
-
 $(ECHOGS_XE): echogs.c
 	$(CC) -o echogs $(CFLAGS) echogs.c
 	strip echogs

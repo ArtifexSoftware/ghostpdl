@@ -256,7 +256,7 @@ TOP_MAKEFILES=$(MAKEFILE)
 
 BEGINFILES=$(BINDIR)\gspmdrv.exe $(GLOBJDIR)\gspmdrv.o $(GLOBJDIR)\gs*.res $(GLOBJDIR)\gs*.ico $(BINDIR)\$(GSDLL).dll
 
-# Define the ANSI-to-K&R dependency.
+# Define the auxiliary program dependency. We don't use this.
 
 AK=
 

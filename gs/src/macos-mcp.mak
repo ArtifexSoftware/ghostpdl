@@ -261,11 +261,9 @@ MAKEFILE=$(GLSRCDIR)/macos-mcp.mak
 TOP_MAKEFILES=
 
 
-# Define the ANSI-to-K&R dependency.  There isn't one, but we do have to
-# detect whether we're running a version of gcc with the const optimization
-# bug.
+# Define the auxilary program dependency. (we don't have any)
 
-AK=$(GLGENDIR)/cc.tr
+AK=
 
 # Define the compilation rules and flags.
 

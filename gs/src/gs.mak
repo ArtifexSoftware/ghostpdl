@@ -156,13 +156,9 @@
 #	OBJ - the extension for relocatable object files (e.g., o or obj).
 #	XE - the extension for executable files (e.g., null or .exe).
 #	XEAUX - the extension for the executable files (e.g., null or .exe)
-#		for the utility programs (ansi2knr and those compiled with
-#		CCAUX).
+#		for the utility programs (those compiled with CCAUX).
 #	BEGINFILES - the list of additional files that `make clean' should
 #		delete.
-#	CCA2K - the C invocation for the ansi2knr program, which is the only
-#		one that doesn't use ANSI C syntax.  (It is only needed if
-#		the main C compiler also isn't an ANSI compiler.)
 #	CCAUX - the C invocation for auxiliary programs (echogs, genarch,
 #		genconf, gendev, genht, geninit).
 #	CC_ - the C invocation for normal compilation.
@@ -231,7 +227,6 @@ GS_MAK=$(GLSRCDIR)$(D)gs.mak
 GS_XE=$(BINDIR)$(D)$(GS)$(XE)
 AUXGENDIR=$(GLGENDIR)
 AUXGEN=$(AUXGENDIR)$(D)
-ANSI2KNR_XE=$(AUXGEN)ansi2knr$(XEAUX)
 ECHOGS_XE=$(AUXGEN)echogs$(XEAUX)
 GENARCH_XE=$(AUXGEN)genarch$(XEAUX)
 GENCONF_XE=$(AUXGEN)genconf$(XEAUX)
@@ -261,7 +256,6 @@ mostlyclean : config-clean
 	$(RMN_) $(GSGEN)deflate.h $(GSGEN)zutil.h
 	$(RMN_) $(GSGEN)gconfig*.c $(GSGEN)gscdefs*.c $(GSGEN)iconfig*.c
 	$(RMN_) $(GSGEN)_temp_* $(GSGEN)_temp_*.* $(GSOBJ)*.map $(GSOBJ)*.sym
-	$(RMN_) $(ANSI2KNR_XE) $(ECHOGS_XE)
 	$(RMN_) $(GENARCH_XE) $(GENCONF_XE) $(GENDEV_XE) $(GENHT_XE) $(GENINIT_XE)
 	$(RMN_) $(GSGEN)gs_init.c $(BEGINFILES)
 

@@ -39,7 +39,7 @@
 
 .EXTENSIONS: .be .z
 
-# Define the ANSI-to-K&R dependency.  Watcom C accepts ANSI syntax.
+# Define the auxiliary program dependency. We don't use this.
 
 AK=
 

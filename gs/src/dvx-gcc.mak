@@ -320,7 +320,7 @@ DEVICE_DEVS20=
 MAKEFILE=$(GLSRCDIR)/dvx-gcc.mak
 TOP_MAKEFILES=$(MAKEFILE) $(GLSRCDIR)/dvx-head.mak
 
-# Define the ANSI-to-K&R dependency.  (gcc accepts ANSI syntax.)
+# Define the auxiliary programs dependency.
 
 AK=
 

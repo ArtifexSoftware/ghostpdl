@@ -33,9 +33,9 @@ SHARE_ZLIB=0
 PLATFORM=mswin32_
 !endif
 
-# Define the ANSI-to-K&R dependency.  Borland C, Microsoft C and
-# Watcom C all accept ANSI syntax, but we need to preconstruct ccf32.tr 
-# to get around the limit on the maximum length of a command line.
+# Define the auxiliary program dependency. We use this to 
+# preconstruct ccf32.tr to get around the limit on the maximum
+# length of a command line.
 
 AK=$(GLGENDIR)\ccf32.tr
 

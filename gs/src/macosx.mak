@@ -401,9 +401,9 @@ DEVICE_DEVS20=
 MAKEFILE=$(GLSRCDIR)/macosx.mak
 TOP_MAKEFILES=$(MAKEFILE) $(GLSRCDIR)/unixhead.mak
 
-# Define the ANSI-to-K&R dependency.  There isn't one, but we do have to
-# detect whether we're running a version of gcc with the const optimization
-# bug.
+# Define the auxiliary programs dependency. There aren't any, but we use
+# this as a hook to detect whether we're running a version of gcc with   
+# the const optimization bug.
 
 AK=$(GLGENDIR)/cc.tr
 

@@ -353,10 +353,6 @@ XEAUX=.exe
 
 BEGINFILES=$(GLSRCDIR)OPENVMS.OPT $(GLSRCDIR)OPENVMS.COM
 
-# Define the C invocation for the ansi2knr program.  We don't use this.
-
-CCA2K=
-
 # Define the C invocation for auxiliary programs (echogs, genarch).
 # We don't need to define this separately.
 
@@ -370,7 +366,7 @@ CC=$(COMP)
 
 LINK=$(LINKER)/EXE=$@ $+,$(GLSRCDIR)OPENVMS.OPT/OPTION
 
-# Define the ANSI-to-K&R dependency.  We don't need this.
+# Define the auxiliary program dependency. We don't need this.
 
 AK=
 

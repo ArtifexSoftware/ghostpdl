@@ -12,7 +12,7 @@
 # commercial licensing, go to http://www.artifex.com/licensing/ or
 # contact Artifex Software, Inc., 101 Lucas Valley Road #110,
 # San Rafael, CA  94903, U.S.A., +1(415)492-9861.
-
+#
 # $Id$
 # makefile for Unix/ANSI C/X11 configuration.
 
@@ -361,7 +361,7 @@ DEVICE_DEVS20=
 MAKEFILE=$(GLSRCDIR)/unixansi.mak
 TOP_MAKEFILES=$(MAKEFILE) $(GLSRCDIR)/unixhead.mak
 
-# Define the ANSI-to-K&R dependency (none for ANSI compilers).
+# Define the auxilary program dependency.
 
 AK=
 
