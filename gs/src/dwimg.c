@@ -37,6 +37,7 @@
 
 #define STRICT
 #include <windows.h>
+#include "stdio_.h"
 #include "iapi.h"
 
 #include "dwmain.h"
@@ -1217,7 +1218,7 @@ WndImg2Proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		const char *p;
 		const char *szDragPre = "\r(";
 		const char *szDragPost = ") run\r";
-		HANDLE hdrop = (HANDLE)wParam;
+		HDROP hdrop = (HDROP)wParam;
 		cFiles = DragQueryFile(hdrop, (UINT)(-1), (LPSTR)NULL, 0);
 		for (i=0; i<cFiles; i++) {
 		    DragQueryFile(hdrop, i, szFile, 80);
