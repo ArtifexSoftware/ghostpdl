@@ -479,6 +479,9 @@ void pdf_initialize_ids(P1(gx_device_pdf * pdev));
 /* Update the color mapping procedures after setting ProcessColorModel. */
 void pdf_set_process_color_model(P1(gx_device_pdf * pdev));
 
+/* Reset the text state parameters to initial values. */
+void pdf_reset_text(P1(gx_device_pdf *pdev));
+
 /* ---------------- Exported by gdevpdfu.c ---------------- */
 
 /* ------ Document ------ */

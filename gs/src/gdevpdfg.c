@@ -53,12 +53,7 @@ pdf_reset_graphics(gx_device_pdf * pdev)
     }
     pdev->fill_overprint = false;
     pdev->stroke_overprint = false;
-    pdev->text.character_spacing = 0;
-    pdev->text.font = NULL;
-    pdev->text.size = 0;
-    pdev->text.word_spacing = 0;
-    pdev->text.leading = 0;
-    pdev->text.use_leading = false;
+    pdf_reset_text(pdev);
 }
 
 /* Set the fill or stroke color. */

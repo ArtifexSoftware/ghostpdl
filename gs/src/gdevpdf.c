@@ -391,6 +391,21 @@ pdf_set_process_color_model(gx_device_pdf * pdev)
     }
 }
 
+/*
+ * Reset the text state parameters to initial values.  This isn't a very
+ * good place for this procedure, but the alternatives seem worse.
+ */
+void
+pdf_reset_text(gx_device_pdf * pdev)
+{
+    pdev->text.character_spacing = 0;
+    pdev->text.font = NULL;
+    pdev->text.size = 0;
+    pdev->text.word_spacing = 0;
+    pdev->text.leading = 0;
+    pdev->text.use_leading = false;
+}
+
 /* Open the device. */
 private int
 pdf_open(gx_device * dev)
