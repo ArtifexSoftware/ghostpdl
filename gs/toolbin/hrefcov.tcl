@@ -23,18 +23,22 @@
 # set of files.  The requirement is that the union of all the docfiles
 # must somewhere reference all the files directories.  Usage:
 set USAGE {Usage:
-    hrefcov ([+-]from (<docfile> | -) | [+-]to (<directory> | <file> | -))*
+    hrefcov (+src | +lib | [+-]from <docfile> | [+-]to (<directory> | <file>))*
 }
-# +from or +to adds files; -from or -to removes them.
-# After -from or -to, "-" removes ALL directories or files:
-# this is the only way to remove the defaults.
+# +from or +to adds files; -from or -to removes them;
+# +src and +lib execute SRC_LIST and LIB_LIST below.
 
-# Define the defaults.  These are Ghostscript-specific.
-set DEFAULTS [list\
+# Define the Ghostscript-specific parameter lists.
+set SRC_LIST [list\
 	+from doc/Develop.htm\
 	+to lib src\
 	-to lib/CVS src/CVS\
-	-to src/*.mak.tcl
+	-to src/*.mak.tcl\
+	-to lib/*.ps +to lib/pdf_*.ps
+]
+set LIB_LIST [list\
+	+from doc/Psfiles.htm\
+	+to examples/*.ps lib/*.ps
 ]
 
 # Global variables:
@@ -107,19 +111,27 @@ proc for_from {doc proc} {
 	}
     }
 }
-proc add1_from {from} {global FROM; set FROM($from) 1}
 proc add_from {doc} {for_from $doc add1_from}
-proc remove1_from {from} {global FROM; catch {unset FROM($from)}}
+proc add1_from {from} {global FROM; set FROM($from) 1}
 proc remove_from {doc} {for_from $doc remove1_from}
+proc remove1_from {from} {global FROM; catch {unset FROM($from)}}
 
 # Main program.
 proc main_args {arglist} {
+    global FROM TO SRC_LIST LIB_LIST
+
     foreach arg $arglist {
-	switch -- $arg {
+	switch -glob -- $arg {
+	    +src {main_args $SRC_LIST}
+	    +lib {main_args $LIB_LIST}
 	    +from {set do add_from}
 	    -from {set do remove_from}
 	    +to {set do add_to}
 	    -to {set do remove_to}
+	    {[+-]*} {
+		puts stderr "Unknown switch: $arg"
+		exit 1
+	    }
 	    default {
 		if {[regexp {[*]} $arg]} {
 		    foreach a [glob -nocomplain $arg] {$do $a}
@@ -131,10 +143,9 @@ proc main_args {arglist} {
     }
 }
 proc main {argv} {
-    global DEFAULTS FROM TO TO_DIR
+    global FROM TO TO_DIR
 
     init
-    main_args $DEFAULTS
     main_args $argv
     set dirs_exp {^$}
     foreach dir [array names TO_DIR] {
