@@ -626,7 +626,7 @@ gdev_vector_dopath_segment(gdev_vector_dopath_state_t *state, int pe_op,
 	    if (state->first)
 		state->start = vp[0], state->first = false;
 	    code = vdev_proc(vdev, moveto)
-		(vdev, state->prev.x, state->prev.y, vp[0].x, vp[0].y,
+		(vdev, 0/*unused*/, 0/*unused*/, vp[0].x, vp[0].y,
 		 state->type);
 	    state->prev = vp[0];
 	    break;
