@@ -673,6 +673,7 @@ pdfmark_write_outline(gx_device_pdf * pdev, pdf_outline_node_t * pnode,
     stream *s;
 
     pdf_open_separate(pdev, pnode->id);
+    pnode->action->id = pnode->id;
     s = pdev->strm;
     stream_puts(s, "<< ");
     cos_dict_elements_write(pnode->action, pdev);
