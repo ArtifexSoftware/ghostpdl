@@ -72,18 +72,6 @@ prn_device(bmp16m_procs, "bmp16m",
 	   0, 0, 0, 0,		/* margins */
 	   24, bmp_print_page);
 
-/* 32-bit CMYK color (outside the BMP specification). */
-
-private const gx_device_procs bmp32b_procs = {
-    bmp_cmyk_procs(gx_default_map_color_rgb, gx_default_cmyk_map_cmyk_color)
-};
-gx_device_printer far_data gs_bmp32b_device =
-prn_device(bmp32b_procs, "bmp32b",
-	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	   X_DPI, Y_DPI,
-	   0, 0, 0, 0,		/* margins */
-	   32, bmp_print_page);
-
 /* ------ Private definitions ------ */
 
 /* Write out a page in BMP format. */
