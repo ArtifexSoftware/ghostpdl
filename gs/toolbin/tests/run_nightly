@@ -31,8 +31,8 @@ MAIL_SERVER = 'localhost'
 REPORT_EMAIL = 'gs-regression@ghostscript.com'
 MAIL_FROM = 'regression@casper.ghostscript.com'
 HEAD_DIR = gsconf.gsroot
-REGRESSION_SCRIPT = 'run_regression 2>&1'
-DIFF_SCRIPT = 'testdiff %s 2>&1' % (YESTERDAY,)
+REGRESSION_SCRIPT = '/home/regression/regression/run_regression 2>&1'
+DIFF_SCRIPT = '/home/regression/regression/testdiff %s 2>&1' % (YESTERDAY,)
 LOG_STDOUT = gsconf.log_stdout
 LOG_STDERR = gsconf.log_stderr
 CVS_LOG_STDOUT = "/home/regression/cvs-stdout.log"
@@ -100,12 +100,14 @@ def update_ghostscript():
 	os.chdir(HEAD_DIR)
 	
 	os.unlink("%s/src/gscdef.c" % (HEAD_DIR,))
-	if os.system("cvs update -Pd >> " + CVS_LOG_STDOUT + " 2>> " + CVS_LOG_STDERR") != 0: return -1
+	if os.system("date >> " + CVS_LOG_STDOUT) != 0: return -1
+	if os.system("date >> " + CVS_LOG_STDERR) != 0: return -1
+	if os.system("cvs update -Pd >> " + CVS_LOG_STDOUT + " 2>> " + CVS_LOG_STDERR) != 0: return -1
 	change_gsproduct("%s/src/gscdef.c" % (HEAD_DIR,))
 	
 	if os.system("make clean > /dev/null 2> /dev/null") != 0: return -1
-	if os.system("make > " + MAKE_LOG_STDOUT + " 2> " + MAKE_LOG_STDERR") != 0: return -1
-	if os.system("make install > " + INSTALL_LOG_STDOUT + " 2> " + INSTALL_LOG_STDERR") != 0: return -1
+	if os.system("make > " + MAKE_LOG_STDOUT + " 2> " + MAKE_LOG_STDERR) != 0: return -1
+	if os.system("make install > " + INSTALL_LOG_STDOUT + " 2> " + INSTALL_LOG_STDERR) != 0: return -1
 
 	return 0
 
