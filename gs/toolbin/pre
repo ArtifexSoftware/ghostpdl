@@ -189,29 +189,11 @@ foreach d "[glob doc/*.htm] doc/gs-vms.hlp" {
 if {$argv == {update}} {
 	# Create text files from HTML.
     proc htm2txt {htm txt} {
-	set tmpfile /tmp/[pid]
-	file copy -force $htm ${tmpfile}.htm
-	exec netscape -remote "openURL(file:${tmpfile}.htm)"
-	exec sleep 5
-	exec netscape -remote "saveAs(${tmpfile}.txt,Text)"
-	exec sleep 5
-	file rename -force ${tmpfile}.txt $txt
-	file delete ${tmpfile}.htm
-    }
-    set nspid ""
-    if {![regexp {(^|[^a-zA-Z0-9_])netscape($|[^a-zA-Z0-9_])} [exec ps]]} {
-	puts stderr "Starting Netscape...."
-	flush stderr
-	set nspid [lindex [exec netscape -iconic -ncols 16 &] 0]
-	exec sleep 10
+	exec lynx -dump -nolist $htm > $txt
     }
     htm2txt doc/Public.htm doc/PUBLIC
     htm2txt doc/Readme.htm doc/README
-    if {$nspid != ""} {
-	puts stderr "Killing Netscape...."
-	flush stderr
-	exec kill -s SIGKILL $nspid
-    }
+
 	# Update dates in .htm and .1 files.
     proc updoc {doc before after} {
 	set tmpfile /tmp/[pid]
