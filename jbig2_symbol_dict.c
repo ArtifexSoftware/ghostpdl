@@ -391,7 +391,6 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
   int sdat_bytes;
   int offset;
   Jbig2ArithCx *GB_stats = NULL;
-  Jbig2SymbolDict *SDINSYMS = NULL;
   
   if (segment->data_length < 10)
     goto too_short;
