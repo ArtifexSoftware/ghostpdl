@@ -917,19 +917,27 @@ const gx_device_color * pdevc, gx_device * dev, const gs_imager_state * pis,
 			points[3].y == nplp->o.p.y
 			)
 			++bevel;
-		    /* Fill the bevel. */
-		    code = (*dev_proc(dev, fill_triangle)) (dev,
-							 bevel->x, bevel->y,
-			       bevel[1].x - bevel->x, bevel[1].y - bevel->y,
-			       bevel[2].x - bevel->x, bevel[2].y - bevel->y,
-							pdevc, pis->log_op);
-		    if (code < 0)
-			return code;
+		    /* Fill the bevel if the three points are not colinear. */
+#define colinear(x1, y1, x2, y2, x3, y3) \
+	(((y1) - (y3)) * ((x1) - (x2)) == ((y1) - (y2)) * ((x1) - (x3)))
+
+		    if ( !colinear( bevel[0].x, bevel[0].y,
+				    bevel[1].x, bevel[1].y,
+				    bevel[2].x, bevel[2].y ) ) {
+#undef colinear
+			code = (*dev_proc(dev, fill_triangle)) (dev,
+			       bevel[0].x, bevel[0].y,
+			       bevel[1].x - bevel[0].x, bevel[1].y - bevel[0].y,
+			       bevel[2].x - bevel[0].x, bevel[2].y - bevel[0].y,
+			       pdevc, pis->log_op);
+			if (code < 0)
+			    return code;
+		    }
 		}
 	    }
 	    /* Fill the body of the stroke. */
 	    return (*dev_proc(dev, fill_parallelogram)) (dev,
-						   points[1].x, points[1].y,
+						  points[1].x, points[1].y,
 						  points[0].x - points[1].x,
 						  points[0].y - points[1].y,
 						  points[2].x - points[1].x,
