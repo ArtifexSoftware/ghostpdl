@@ -23,3 +23,11 @@ make install
 
 The CYGWIN variable will not include devices that depend on threads or
 X11, neither are supported by the default cygwin system.
+
+Note for setting up different font scaler configurations:
+
+make PL_SCALER=afs ... # build using the Artifex Font scaler also the default.
+make PL_SCALER=ufst ...# build with the AGFA Font Scaler.
+make PL_SCALER=fts ... # build with the Freetype Scaler.
+
+We recommend doing a clean make prior to the changing the font scaler.
