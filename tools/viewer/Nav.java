@@ -51,8 +51,8 @@ public class Nav extends Gview  {
     public static void main( String[] args )
     {
 	if (args.length < 1) {
-	    System.out.println("Error: Missing input file\n" + usage());
-	    System.exit(1);
+	    args = new String[1];
+	    args[0] = new String("GhostPrinter.pcl");
 	}
 	System.out.print(usage());
 	Nav view = new Nav();

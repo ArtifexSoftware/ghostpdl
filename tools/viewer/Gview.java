@@ -417,13 +417,7 @@ public class Gview
 
 
 	if ( (e.getModifiers() & (e.BUTTON2_MASK | e.BUTTON3_MASK)) != 0 ) {
-
-	    if ( popupMenuAllowed ) {
-		// show popup Menu
-		popup.show(this, e.getX(), e.getY());
-		return;
-	    }
-	    else {
+	    if ( !popupMenuAllowed ) {
 		// if menus are fixed then right mouse button zooms
 		if ( e.isControlDown() ) {
 		    zoomOut(e.getX(), e.getY());
@@ -457,11 +451,15 @@ public class Gview
            translate(tx - e.getX(), ty - e.getY());
            drag = false;
 	   setCursor( Cursor.getDefaultCursor() );
-	}
+	} 
     }
 
     public void mouseClicked(MouseEvent e) {
+	if ( (e.getModifiers() & (e.BUTTON2_MASK | e.BUTTON3_MASK)) != 0 ) {
+	    popup.show(this, e.getX(), e.getY());
+	}
     }
+
     public void mouseEntered(MouseEvent e) {
     }
     public void mouseExited(MouseEvent e) {
@@ -576,8 +574,8 @@ public class Gview
     public static void main( String[] args )
     {
 	if (args.length < 1) {
-	    System.out.println("Error: Missing input file\n" + usage());
-	    System.exit(1);
+	    args = new String[1];
+	    args[0] = new String("GhostPrinter.pcl");
 	}
 	System.out.print(usage());
 	Gview view = new Gview();
