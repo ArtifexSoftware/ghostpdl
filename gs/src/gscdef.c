@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996-2002 artofcode LLC. All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -33,7 +33,7 @@ CONFIG_CONST long gs_buildtime = GS_BUILDTIME;
 
 #ifndef GS_COPYRIGHT
 #  define GS_COPYRIGHT\
-	"Copyright (C) 2001 artofcode LLC, Benicia, CA.  All rights reserved."
+	"Copyright (C) 2002 artofcode LLC, Benicia, CA.  All rights reserved."
 #endif
 const char *CONFIG_CONST gs_copyright = GS_COPYRIGHT;
 
@@ -45,7 +45,7 @@ const char *CONFIG_CONST gs_productfamily = GS_PRODUCTFAMILY;
 
 #ifndef GS_PRODUCT
 #  define GS_PRODUCT\
-	"AFPL Ghostscript CVS PRE-RELEASE"
+	"AFPL Ghostscript DEVELOPMENT RELEASE"
 #endif
 const char *CONFIG_CONST gs_product = GS_PRODUCT;
 
