@@ -582,10 +582,17 @@ gs_type42_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 		     int members, gs_glyph_info_t *info)
 {
     gs_font_type42 *const pfont = (gs_font_type42 *)font;
-    uint glyph_index = (glyph >= GS_MIN_GLYPH_INDEX 
-			    ? glyph - GS_MIN_GLYPH_INDEX 
-			    : pfont->data.get_glyph_index(pfont, glyph));
+    uint glyph_index;
+    
+    if (glyph >= GS_MIN_GLYPH_INDEX)
+	glyph_index = glyph - GS_MIN_GLYPH_INDEX;
+    else {
+	int code = pfont->data.get_glyph_index(pfont, glyph);
 
+	if (code < 0)
+	    return code;
+	glyph_index = (uint)code;
+    }
     return gs_type42_glyph_info_by_gid(font, glyph, pmat, members, info, glyph_index);
 
 }

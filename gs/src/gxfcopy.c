@@ -1150,7 +1150,7 @@ copied_type42_get_glyph_index(gs_font_type42 *font, gs_glyph glyph)
     int code = copied_glyph_slot(cfdata, glyph, &pcg);
 
     if (code < 0)
-	return 0;		/* undefined */
+	return_error(gs_error_undefined);
     return pcg - cfdata->glyphs;
 }
 
@@ -1246,8 +1246,8 @@ copy_glyph_type42(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
     DISCARD(copied_glyph_slot(cfdata, gid + GS_MIN_GLYPH_INDEX, &pcg)); /* can't fail */
     for (i = 0; i < 2; ++i) {
 	if (font42->data.get_metrics(font42, gid, i, sbw) >= 0) {
-	    int sb = (int)(sbw[i] * factor);
-	    uint width = (uint)(sbw[2 + i] * factor);
+	    int sb = (int)(sbw[i] * factor + 0.5);
+	    uint width = (uint)(sbw[2 + i] * factor + 0.5);
 	    byte *pmetrics =
 		cfdata->data + copied42->data.metrics[i].offset + gid * 4;
 

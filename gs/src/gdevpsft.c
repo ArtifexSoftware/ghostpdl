@@ -431,7 +431,7 @@ size_mtx(gs_font_type42 *pfont, gs_type42_mtx_t *pmtx, uint max_glyph,
 
 	if (code < 0)
 	    continue;
-	width = (int)(sbw[wmode + 2] * factor);
+	width = (int)(sbw[wmode + 2] * factor + 0.5);
 	if (width != prev_width)
 	    prev_width = width, last_width = i;
     }
