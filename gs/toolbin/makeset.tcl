@@ -37,7 +37,7 @@ proc setnum {num3} {
     global Num3 Dot Dir
 
     set Num3 $num3
-    set Dot [expr ${Num3}.0 / 100]
+    set Dot [expr ${Num3} / 100].[expr ${Num3} % 100]
 
 # Set other, derived globals.
     set Dir gs$Dot
