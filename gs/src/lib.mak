@@ -511,7 +511,7 @@ gzspotan_h = $(GLSRC)gzspotan.h $(gxdevcli_h)
 
 # gconfig and gscdefs are handled specially.  Currently they go in psbase
 # rather than in libcore, which is clearly wrong.
-$(GLOBJ)gconfig.$(OBJ) : $(GLSRC)gconf.c $(GX)\
+$(GLOBJ)gconfig.$(OBJ) : $(gconfig_h) $(GLSRC)gconf.c $(GX)\
  $(gscdefs_h) $(gconf_h)\
  $(gxdevice_h) $(gxiclass_h) $(gxiodev_h) $(gxiparam_h) $(TOP_MAKEFILES)
 	$(RM_) $(GLGEN)gconfig.c

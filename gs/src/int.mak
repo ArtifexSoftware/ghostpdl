@@ -258,7 +258,7 @@ ibnum_h=$(PSSRC)ibnum.h
 
 ### Initialization and scanning
 
-$(PSOBJ)iconfig.$(OBJ) : $(PSSRC)iconf.c $(stdio__h)\
+$(PSOBJ)iconfig.$(OBJ) : $(gconfig_h) $(PSSRC)iconf.c $(stdio__h)\
  $(gconf_h) $(gconfigd_h) $(gsmemory_h) $(gstypes_h)\
  $(iminst_h) $(iref_h) $(ivmspace_h) $(opdef_h) $(iplugin_h)
 	$(RM_) $(PSGEN)iconfig.c
