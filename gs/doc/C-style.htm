@@ -192,6 +192,12 @@ one or more statements), surround it with <b><tt>BEGIN</tt></b> and
 <b><tt>END</tt></b>.  These work around the fact that simple statements and
 compound statements in C can't be substituted for each other syntactically.
 
+<li>If a macro introduces local variables, only use names that end with an
+underscore (<b><tt>_</tt></b>), such as <b><tt>code_</tt></b>.  This avoids
+clashes both with ordinary variable names (which should never end with an
+underscore) and with system-defined names (which may begin with an
+underscore).
+
 </ul>
 
 <h3><a name="Preprocessor_other"></a>Other</h3>
