@@ -1,2067 +1,546 @@
-/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights
-   reserved.  Unauthorized use, copying, and/or distribution
-   prohibited.  */
+   Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+   Unauthorized use, copying, and/or distribution prohibited.
 
-Version 0.45 Mon Aug 17 16:09:56 MDT 1998
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-This news file is temporarly in a different format normally
-distributed by Aladdin or Artifex.  Currently it lists known missing
-functionality, known anomalies, and a log of modifications in reverse
-chronological order.
+This file, NEWS-PCL, describes the changes in the most recent releases
+of PCL5e/c, entries are made in reverse chronological order.  This
+news file differs from other Aladdin news files it is automatically
+generated from the revision control logs.  The dates provided for each
+entry are the dates the sources were committed to the source code
+repository.
 
-This is a very incomplete list of anomalies (expected differences that are not
-errors) in the PCL 5c FTS output when comparing the Artifex PCL interpreter
-with the HP Color LaserJet 5/5M.
 
+Version 1.00 (9/18/98)
+=======================
 
-310, 320:
+Fri Sep 18 06:22:58 1998  Henry Stiles  <henrys@meerkat>
 
-      These two panels are printed with the printer's "line printer" font.
-      On the HP DJ 1600C/CM and the CLJ 5/5M, this is a bitmap font that is
-      not scalable and is offered in only one size, hence its size does not
-      change with pitch. On the Artifex system, the scalable Courier font is
-      substituted for the line printer font. This font does change pitch as
-      requested in the tests.
+* All files
 
+	* Removes ghostscript license and replaces it with the shorter
+	Aladdin license notice.
 
-701:
-      The length of the bitarray for the third and fourth pair of raster
-      (magenta and yellow) differ from those on the HP CLJ 5/5M.
+	* pcindexed.h, rtgmode.c, pcfrgrnd.c, pcindexed.c:
+	Changes a variable name from fixed to pfixed to avoid a spurious
+	warning from the Solaris C compiler.
 
-      The ouptut of the Artifex interpreter matches that of the HP DJ 1600C/CM.
-      The output of the CLJ 5/5M is contrary to the documentation, and likely
-      a limitation of the particular implementation due to the interaction
-      between rasters and the hardware dither method.
+	* pcl.mak:
+	corrected typos in dependency lists and removes ghostscript
+	copyright notice.
 
+Tue Sep 15 07:04:00 1998  Henry Stiles  <henrys@meerkat>
 
-800 - 804:
+	* pcl_ugcc.mak: adds tiff devices to the makefile.
 
-      Each of the "bars" in each test are rendered in a different color space,
-      in the sequence RGB, CMY, ColorMetric RGB, CIE L*a*b*, Luminance-
-      Chrominance. The final three bars are in device independent color spaces,
-      hence there appearance will vary based on the color rendering
-      dictionary provided.
+	* Anomalies.txt: A new file that describes known anomalies.
 
-      Note, in particular, that HP's implementation of the CID L*a*b* color
-      space varies pronouncedly from that used in the Artifex interpreter.
-      The latter matches what is documented for L*a*b* and what is used in
-      PostScript. We have no idea where HP's concept for CIE L*a*b* came from
-      (e.g.: how does one get something other than black for an L value
-      near 0?).
+Mon Sep 14 05:28:27 1998  Henry Stiles  <henrys@meerkat>
 
+	* pcpatrn.c:
+	sets pen to 1 if the pen number equals the number of entries in the
+	palette.
 
-811
-      The third raster is implemented using the colormetric RGB color space.
-      This space is not supported on the CLJ 5/5M, but is supported by the
-      Artifex PCL interpreter. On the CLJ 5/5M, the color space specification
-      is discarded, the default RGB color space is used, and a speical lookup
-      table is installed. Hence, the results will be (nearly) identical to the
-      prior raster for the CLJ 5/5M, but not for the Artifex interpreter.
+Sun Sep 13 05:51:08 1998  Henry Stiles  <henrys@meerkat>
 
-      The fourth raster has a somewhat different appearance because the
-      Artifex PCL interpreter uses a standard L*a*b* color space, while the
-      CLJ 5/5M uses a very non-standard one.
+	* rtraster.c, rtrstcmp.c, pgdraw.c, pcpatxfm.c, pcrect.c,
+	pctext.c, pcwhtindx.c, pgcolor.c, pgconfig.c, pcl.mak, pcl_ugcc.mak,
+	pcmain.c, pcmtx3.c, pcpalet.c, pcpatrn.c, pcht.c, pcindexed.c,
+	pccid.c, pccprint.c, pccsbase.c:
 
-      The fifth raster is done in the Luminance-Chrominance color space. It
-      isn't clear yet which output is "correct" for this case. Further work
-      will be required.
+	adds color laserjet driver, fixes makefile header file
+	dependency typos and, removes unused variables.
 
+Sat Sep 12 08:09:46 1998  Henry Stiles  <henrys@meerkat>
 
-813:
-      The firs two rasters are printed in RGB and CMY color spaces, with the
-      white and black points reveresed. Due to an error in the implementation
-      of transparency in the CLJ 5/5M, this causes BOTH white and black to be
-      considered transparent, which in turn causes the center region to be
-      full transparent.
+	* pcpage.c: modification so that pcl can request page sizes.
 
-      The Artifex impelementation does not have this bug, hence either the
-      black triangles or the black background of this region is visible.
+	* pcparam.h: modifications so pcl can request page sizes.
 
-      The third raster is implemented using the colormetric RGB color space.
-      This space is not supported on the CLJ 5/5M, but is supported by the
-      Artifex PCL interpreter. On the CLJ 5/5M, the color space specification
-      is discarded, the default RGB color space is used, and a speical lookup
-      table is installed. Hence, the results will be identical to the
-      prior raster for the CLJ 5/5M (minus the transparency bug - white and
-      black points are no longer reversed).
+Fri Sep 11 03:42:59 1998  Henry Stiles  <henrys@meerkat>
 
-      The fourth raster has a somewhat different appearance because the
-      Artifex PCL interpreter uses a standard L*a*b* color space, while the
-      CLJ 5/5M uses a very non-standard one.
+	* pcpage.c, pcparam.h:
+	reverts page device media changes to support cljet5.
 
-      The fifth raster is done in the Luminance-Chrominance color space. It
-      isn't clear yet which output is "correct" for this case. Further work
-      will be required.
+Thu Sep 10 17:07:39 1998  Henry Stiles  <henrys@meerkat>
 
+	* pcl_msvc.mak: adds broken msvc files for shipment to johnd's.
 
-956:
+	* pcpatrn.c: removes SGI NFS null from the end of a file.
 
-      The rectangle on the right is printed with a transparent pattern. This
-      produces the expected output on the HP 1600C/CM and on the Artifex PCL
-      interpreter. It does not produce the expected output for the HP CLJ 5/5M,
-      apparently due to a bug in the implementation of transparency on that
-      device.
+	* pcl_ugcc.mak: removes cljet driver temporarily.
 
+Tue Sep  8 07:35:55 1998  Red Hat Linux User  <jan@meerkat>
 
-974, 975, 976:
+	* pcl.mak: adds .h file dependencies.
 
-      The HP Color LaserJet 5/5M does not support user defined dithers, while
-      the Artifex PCL 5c interpreter does. Hence, these panels make use of
-      of user defined dithers, hence their appearance will not be the same
-      on the Artifex interpreter as on the CLJ 5/5M.
+	* pcl_top.mak: changes to not compile main with debug.
 
+	* pcsymbol.c:
+	We were allocating extra for the symbol set codes but they are
+	actually allocated through the structure allocation since the symbol
+	code array is defined statically.
 
-2230:
+	* pctext.c:
+	Modified the handling of the right text margin. It turns out that the case
+	of no-line-wrap must be handle differently that the case in which line
+	wrapping is enabled.
 
-      Copies are handled by the device, not by the interpreter. Hence, it is
-      quite possible that there will be only one page of output for this
-      test.
+	* pcpatrn.c:
+	Fixed typo in pattern_set_shade_gl: a solid pattern should be used for
+	an unrecognized intensity if the intensity is > 0, not <= 0. This gave
+	rise to an anomally on panel 1815 of the PCL 5c FTS.
 
+	* pcpalet.c:
+	Modified invocations of pcl_crd_build_default_crd to pass a pcl_state_t
+	pointer rather than a memory structure pointer; see pccrd.h above.
 
-2330:
+	* pcmain.c: Modified code to not always define DEBUG.
 
-     The CLJ 5/5M does not support the viewing illuminant command; the Artifex
-     PCL interpret does.
+	* pcindexed.c:
+	Modified the code to handle the situation in which the black and white
+	reference points for a component are the same. This is tested in the
+	PCL 5c FTS.
 
+	* pcht.h, pcht.c:
+	Changed from a single color mapping device to multiple color mapping
+	devices, one for each mapping type. This is needed because the
+	rendering method used by the foreground may be different from that used
+	by the palette (which, in turn, is used by a raster), so it is necessary
+	to have two different color mapping device present at the same time.
 
-Capabilities missing in the Artifex PCL interpreter release of 17 August,
-1998:
+	Added support for table-dither (mask, non-monotonic) halftones to be
+	used with the (not fixed) built-in rendering methods.
 
- Transparency for rasters
-    The specification for transparency in PCL is unintuitive for one situation:
-    the case in which the source transparency is off but pattern transparency
-    is on. In this case, the pattern should be applied only the "foreground"
-    region of the source; the background region should be processed as though
-    the pattern is solid white.
+	Added code to allow device-specific halftones and re-mapping arrays
+	encoded as gs_param dictionaries to be read from the device on start-up.
 
-    This case is handled correctly in the 17 August release for characters,
-    rectangles, and line drawing, but not for rasters. The latter objects will
-    have a transparent pattern applied to both their foreground and background
-    regions, even when source transparency is disabled.
+	Added support for table dither halftones. Also provided a structure
+	descriptor for pcl_ht_builtin_dither_t structures, as these may now need
+	to be allocated when read from a device.
 
-    On the Genoa PCL 5c FTS, this difference is visible in parts of panel 886
-    and 887. It may also be visible on other panels, though we have not yet
-    confirmed this.
+	* pccrd.c, pccrd.h:
+	Added facility to read a device-specific CRD encoded as a gs_param
+	dictionary.
 
- Rendering Methods
-    Currently, the Artifex interpreter supports only the standard, colored
-    rendering methods, and then only with a single set of order, clustered
-    ordered, and noise ordered dither arrays.
+	Changed the operand to pcl_crd_build_default_crd from a memory pointer
+	to a pcl_state_t pointer. This is necessary to allow the default dictionary
+	to be read from a device.
 
-    The most visible effect is the absence of the snap-to-primaries, snap
-    black to white, color to black, and monochrome render methods. This is
-    visible in all tests that set multiple render methods, such as
-    panels 853 - 865, and some panels in the later, GL/2-specific tests.
+Mon Sep  7 02:02:19 1998  Henry Stiles  <henrys@meerkat>
 
-    Monochrome print mode, which is implemented via the monochrome rendering
-    methods, is also not present in the 17 August release. This is apparent
-    in test 2340.
+	* pcsfont.c: bad revision.
 
- Pixel Placement
-    Though the pixel placement facility is provided in this release, it does
-    not work properly.
+Sun Sep  6 19:50:14 1998  Henry Stiles  <henrys@meerkat>
 
-    As implemented by HP, the grid-intersection pixel placement mode is always
-    one pixel larger than the grid-centered mode (in each direction), and the
-    extra pixel is always on the "same" side of an object (which side is
-    orientation dependent). In the 17 August release, the grid-intersection
-    mode may be up to two pixels larger than the grid-centered mode, and the
-    extra pixels may appear on either side of the object.
+	* pcsymbol.c:
+	fixes memory allocation problem introduced because a new field was
+	added to the symbol set data structure.
 
-    This difference is visible on several panels of the PCL 5c FTS, the most
-    prominently on panels 870 - 873.
+Sat Sep  5 05:55:09 1998  Henry Stiles  <henrys@meerkat>
 
- No device-specific Color Rendering Dictionary
-    The interpreter release of 17 August has a hard-coded Color Rendering
-    dictionary, and does not contain the interface necessary to override this
-    dictionary from a device. This will cause all tests that use the device-
-    independent color spaces to have device-dependent output.
+	* pcpage.c, pcparam.h, pcommand.c, pcl_sgi.mak, pcl_ugcc.mak:
+	modifications to support paper size specification from pcl.
 
- No table-dither interface
-    The 17 August release does not provide a mechanism for the output device
-    to specify a "non-monotonic" or "table-dither" array.
+Fri Sep  4 02:47:44 1998  Red Hat Linux User  <jan@meerkat>
 
-    This is not directly visible on the test results.
+	* pcl.mak: add new header file dependencies.
 
- Overlay macros not properly supported
-    The code in the 17 August release does not properly re-establish the
-    default environment for the execution of overlay macros.
+Fri Sep  4 02:45:08 1998  Henry Stiles  <henrys@meerkat>
 
-    FTS tests 2180 and 2190 produce incorrectly colored and sized output
-    because of this missing feature.
+	* pcl.mak: update documentation.
 
- Driver configuration command
-    The driver configuration command is not supported in this release, and
-    support for this feature is not expected in the final release.
+Fri Sep  4 02:39:01 1998  Red Hat Linux User  <jan@meerkat>
 
-    FTS test 2350-2354 test the driver configuration command, and will not
-    produce correct output with the Artifex PCL 5c interpreter.
+	* pcl_top.mak: adds decmap device.
 
-Other features that are present but not working as expected:
+	* pcsymbol.c: Modified pcsymbol_do_reset to support overlay macros.
 
-    Device color lookup tables are present and will work so long as they
-    are not inverting tables. The latter will produce completely black
-    results on 4-color devices. This is due to the K component being mapped
-    to full-on by this color maps.
+	* pcbiptrn.c, pcbiptrn.h:
+	Modified the shade pattern for the 11% - 20% case; this had been entered
+	incorrectly previously.
 
-    There is a problem in the handling of the palette store. This causes
-    sometimes incorrect palettes to be used, as can be seen in the tests
-    2320 - 2412. This also causes a crash immediately after the very last
-    page of the FTS test.
+	Added the "un-solid" pattern. This is a masked patter that has no
+	foreground pixels. It is used with GL/2, as a solid white foreground
+	is transparent in GL/2 (if GL's "source transparency" is set), but
+	opaque in PCL.
 
-    There is an as-yet undiagnosed problem in the line-fill code in GL/2
-    which causes test 1462 to create a vastly oversized fill path, which
-    eventually leads to failure on memory exhaustion.
-Modifications to the PCL code between the release of 4th August, 1998, and
-17 August, 1998.
+	Added prototype for the pcl_pattern_get_unsolid_pattern.
 
+	* pccprint.c:
+	Modified the code for the pixel placement operator for the new manner
+	in which pixel placement information is kept in the PCL state.
 
-pcbiptrn.c
+	Modified the pccprint_do_reset routine to support overlay macros.
 
-    Significant re-write to accommodate the new pattern structure, and the
-    need to avoid use of initialized BSS. The built-in pattern data was
-    also re-organized to make it more compact. The static data is now just
-    the minimal information set, with the full pattern created on demand.
-    On a reset (<esc>E), the all of the pattern structures for the built-in
-    patterns will be released (leaving just the minmal information set);
-    this saves memory and should have a negligible performance impact.
-
-    Too many lines modified to list.
-
--------------------------------------------------------------------------------
-
-pcbiptrn.h
-
-    Modified the declaration of pcl_pattern_init_bi_patterns to include an
-    operand (a memory structure pointer).
+	* pcdraw.c:
+	Added code to handle GL/2's source transparency separately from PCL's
+	pattern transparency. The two parameters have the same effect (all
+	GL/2 objects are masks, and hence do not support notion of "source"
+	transparency similar to PCL's), but must be maintained independently
+	in the PCL-GL/2 state.
 
-    Added a declaration for the new procedure pcl_pattern_clear_bi_patterns.
-    This procedure is used to clear the pattern structures for the built-in
-    patterns during a reset (<esc> E command; the minimal information for
-    the patterns remains, so they may be regenerated when necessary). This
-    coonserves memory and should have a negligible performance impact.
-
-    Diff listing:
+	Turned off fill-adjust for all PCL objects. This used to (incorrectly)
+	implement pixel placement, which is now implemented directly for
+	rectangles (the only object affected by pixel placement for most
+	printers (the CLJ 5/5M allows pixel placement to also affect scalable
+	characters)).
 
-        RCS file: RCS/pcbiptrn.h,v
-        retrieving revision 1.2
-        diff -r1.2 pcbiptrn.h
-        33c33,39
-        < extern  void    pcl_pattern_init_bi_patterns( void );
-        ---
-        > extern  void    pcl_pattern_init_bi_patterns( gs_memory_t * pmem );
-        > 
-        > /*
-        >  * Clear the renderings of the built-in patterns. This may be called during
-        >  * a reset to conserve memory.
-        >  */
-        > extern  void    pcl_pattern_clear_bi_patterns( void );
-
--------------------------------------------------------------------------------
-
-pccid.h
-
-    Added the internal color space type pcl_cspace_white. This is used to 
-    construct the special color space used for the PCL "set white" pattern
-    type.
-
-    Diff listing:
-
-        RCS file: RCS/pccid.h,v
-        retrieving revision 1.1
-        diff -r1.1 pccid.h
-        41a42
-        >     pcl_cspace_White = -1,
-        donner:jan 88] fgrep pcl_cspace_white *.[ch]
-        donner:jan 89] ^w^W^
-        fgrep pcl_cspace_White *.[ch]
-        pccid.h:    pcl_cspace_White = -1,
-        pccsbase.c:    if (type == pcl_cspace_White)
-        pccsbase.c:    return alloc_base_cspace(ppbase, pcl_cspace_White, pmem);
-        pcindexed.c:    static const pcl_cid_hdr_t  cid = { pcl_cspace_White, /* ignored */
-
--------------------------------------------------------------------------------
-
-pccrd.c
-
-    Modified to reflect changes in the interface to the graphic library's
-    color rendering dictionary facility between versions 5.14 and 5.30. Also
-    modified to reflect the removal of the identifier from the PCL color
-    rendering dictionary structure. The latter is no longer required as the
-    structure pointer may now be used as an identifier.
-
-    Too many lines modified to list.
-
--------------------------------------------------------------------------------
-
-pccrd.h
-
-    Removed the identifier field from the PCL color rendering dictionary
-    structure. This field is not longer needed, as the dictionary pointer
-    may now be used as an identifier.
-
-    Provided for an opaque type declaration for pcl_crd_t. This is useful
-    in pcpattyp.h.
-
-    Diff listing:
-
-        RCS file: RCS/pccrd.h,v
-        retrieving revision 1.2
-        diff -r1.2 pccrd.h
-        61c61
-        < typedef struct pcl_crd_s {
-        ---
-        > struct pcl_crd_s {
-        64d63
-        <     pcl_gsid_t        id;             
-        66c65
-        < } pcl_crd_t;
-        ---
-        > };
-        76a76,80
-        > #ifndef pcl_crd_DEFINED
-        > #define pcl_crd_DEFINED
-        > typedef struct pcl_crd_s        pcl_crd_t;
-        > #endif
-        > 
-        147c151
-        <     const gx_color_lookup_table *   RenderTable
-        ---
-        >     const gs_cie_render_table_t *   RenderTable
-
--------------------------------------------------------------------------------
-
-pccsbase.c
-
-    Modified to reflect removal of the identifier from the PCL base color
-    space structure. This identifier is no longer needed as the structure
-    pointer may now be used as an identifier.
-
-    Added the procedure pcl_cs_base_build_white_cspace. This procedure is used
-    to build the special color space used for the PCL "set white" pattern
-    type.
-
-    Diff listing:
-
-        RCS file: RCS/pccsbase.c,v
-        retrieving revision 1.2
-        diff -r1.2 pccsbase.c
-        981a982
-        >     *ppbase = 0;
-        990d990
-        <     pbase->id = pcl_next_id();
-        996c996,998
-        <     if (type <= pcl_cspace_CMY)
-        ---
-        >     if (type == pcl_cspace_White)
-        >         code = gs_cspace_build_DeviceGray(&(pbase->pcspace), pmem);
-        >     else if (type <= pcl_cspace_CMY)
-        1028,1031d1029
-        <  *
-        <  * For simplicity of the remaining code, an "unshared" base color space is
-        <  * assigned a new identifier, even if the unshare operation itself does
-        <  * nothing.
-        1043,1044c1041
-        <     if (pbase->rc.ref_count == 1) {
-        <         pbase->id = pcl_next_id();
-        ---
-        >     if (pbase->rc.ref_count == 1)
-        1046d1042
-        <     }
-        1109a1106,1121
-        >  * Build a special base color space, used for setting the color white.
-        >  * This base space is unique in that it uses the DeviceGray graphic library
-        >  * color space.
-        >  *
-        >  * This routine is usually called once at initialization.
-        >  */
-        >   int
-        > pcl_cs_base_build_white_cspace(
-        >     pcl_cs_base_t **        ppbase,
-        >     gs_memory_t *           pmem
-        > )
-        > {
-        >     return alloc_base_cspace(ppbase, pcl_cspace_White, pmem);
-        > }
-        > 
-        > /*
-        1191,1200c1203
-        <     pcl_cs_base_t *     pbase = *ppbase;
-        <     int                 code = 0;
-        < 
-        <     /* check if there is anything to do */
-        <     if (pcs->ids.cspace_id == pbase->id)
-        <         return 0;
-        < 
-        <     if ((code = gs_setcolorspace(pcs->pgs, pbase->pcspace)) >= 0)
-        <         pcs->ids.cspace_id = pbase->id;
-        <     return code;
-        ---
-        >     return gs_setcolorspace(pcs->pgs, (*ppbase)->pcspace);
-
--------------------------------------------------------------------------------
-
-pccsbase.h
-
-    Removed the identifier field from the PCL base color structure. This
-    field is no longer required, as the structure pointer may now be used as
-    an identifier.
-
-    Added the prototype for a new routine, pcl_cs_base_build_white_cspace,
-    which is used to build the color space to support PCL's "set white"
-    pattern type.
-
-    Diff listing:
-
-        RCS file: RCS/pccsbase.h,v
-        retrieving revision 1.2
-        diff -r1.2 pccsbase.h
-        76,78d75
-        <  *
-        <  * The identifier field is used to determine if a base color space has changed,
-        <  * and thus if items dependent on that color space have changed.
-        82d78
-        <     pcl_gsid_t              id;
-        132a129,140
-        > );
-        > 
-        > /*
-        >  * Build a special base color space, used for setting the color white.
-        >  * This base space is unique in that it uses the DeviceGray graphic library
-        >  * color space.
-        >  *
-        >  * This routine is usually called once at initialization.
-        >  */
-        > extern  int     pcl_cs_base_build_white_cspace(
-        >     pcl_cs_base_t **    ppbase,
-        >     gs_memory_t *       pmem
-
--------------------------------------------------------------------------------
-
-pcdraw.c
-
-    Added the routines pcl_gsave and pcl_grestore. These allow tracking of
-    allocated objects in the graphic state, and are used instead of gs_gsave
-    and gs_grestore in the PCL and GL/2 modules.
-
-    Removed the calls to gs_setsourcetransparent and gs_settexturetransparent;
-    the PCL module no longer makes use of the graphic library transaprency
-    feature (transparency is now implemented separately).
-
-    Added support for the pcl_pattern_raster_cspace pattern source type. This
-    is used to work around a problem in the graphic library with CIE color
-    spaces used for rasters.
-
-    Too many lines (relative to file size) modified list.
-
--------------------------------------------------------------------------------
-
-pcfrgrnd.h
-
-    Fixed typo.
-
-    Diff listing:
-
-        RCS file: RCS/pcfrgrnd.h,v
-        retrieving revision 1.2
-        diff -r1.2 pcfrgrnd.h
-        24c24
-        < #  define pcfrgrnd_INCLUDEDE
-        ---
-        > #  define pcfrgrnd_INCLUDED
-
--------------------------------------------------------------------------------
-
-pcht.c
-
-    Removed the identifier field from the PCL halftone structure. This field
-    is no longer necessary as the structure pointer may now be used as an
-    identifier.
-
-    Diff listing:
-
-        RCS file: RCS/pcht.c,v
-        retrieving revision 1.2
-        diff -r1.2 pcht.c
-        1438d1437
-        <     pht->id = pcl_next_id();
-        1484d1482
-        <         pht->id = pcl_next_id();
-        1567a1566
-        >         pht->client_data[i].plktbl = 0;
-        1885c1884
-        <     if (pcs->ids.ht_id == pht->id)
-        ---
-        >     if (pcs->ids.pht == pht)
-        1896c1895
-        <         pcs->ids.ht_id = pht->id;
-        ---
-        >         pcl_ht_copy_from(pcs->ids.pht, pht);
-
--------------------------------------------------------------------------------
-
-pcht.h
-
-    Removed the identifier field from the PCL halftone structure. This field
-    is no longer necessary as the structure pointer may now be used as an
-    identifier.
-
-    Provided for an opaque type declaration for pcl_ht_t. This is useful in
-    pcpattyp.h
-
-    Diff listing:
-
-        RCS file: RCS/pcht.h,v
-        retrieving revision 1.3
-        diff -r1.3 pcht.h
-        103c103
-        < typedef struct pcl_ht_s {
-        ---
-        > struct pcl_ht_s {
-        105d104
-        <     pcl_gsid_t              id;
-        112c111
-        < } pcl_ht_t;
-        ---
-        > };
-        120a120,124
-        > 
-        > #ifndef pcl_ht_DEFINED
-        > #define pcl_ht_DEFINED
-        > typedef struct pcl_ht_s         pcl_ht_t;
-        > #endif
-
--------------------------------------------------------------------------------
-
-pcindexed.c
-
-    Modified to reflect removal of the identifier from the PCL indexed color
-    space structure. This identifier is no longer needed as the structure
-    pointer may now be used as an identifier.
-
-    Added the procedure pcl_cs_indexed_build_special. This procedure creates
-    the special two-entry indexed color space required for generating
-    opaque uncolored PCL patterns.
-
-    Diff listing:
-
-        RCS file: RCS/pcindexed.c,v
-        retrieving revision 1.2
-        diff -r1.2 pcindexed.c
-        123d122
-        <     pindexed->id = pcl_next_id();
-        164,166d162
-        <  * To simplify other code, any "unshared" color spaces are always given new
-        <  * identifiers, even if the unsharing operation itself has no effect.
-        <  *
-        180,181c176
-        <     if (pindexed->rc.ref_count == 1) {
-        <         pindexed->id = pcl_next_id();
-        ---
-        >     if (pindexed->rc.ref_count == 1)
-        183d177
-        <     }
-        665a660,662
-        >     } else {
-        >         pindexed->Decode[0] = 0.0;
-        >         pindexed->Decode[1] = 0.0;  /* modified subsequently */
-        870,873d866
-        <  * Note that an indexed color space retains its identifier, even if pen widths
-        <  * are modified. This is because pen widths are not cached anywhere in the
-        <  * system.
-        <  *
-        884d876
-        <     pcl_gsid_t          id = pindexed->id;
-        894,895d885
-        <     if (*ppindexed = pindexed)
-        <         (*ppindexed)->id = id;
-        1014a1005,1057
-        >  * Special indexed color space constructor, for building a 2 entry indexed color
-        >  * space based on an existing base color space. The first color is always set
-        >  * to white, while the second entry takes the value indicated by pcolor1.
-        >  *
-        >  * This reoutine is used to build the two-entry indexed color spaces required
-        >  * for creating opaque "uncolored" patterns.
-        >  */
-        >   int
-        > pcl_cs_indexed_build_special(
-        >     pcl_cs_indexed_t **         ppindexed,
-        >     pcl_cs_base_t *             pbase,
-        >     byte *                      pcolor1,
-        >     gs_memory_t *               pmem
-        > )
-        > {
-        >     static const pcl_cid_hdr_t  cid = { pcl_cspace_White, /* ignored */
-        >                                         pcl_penc_indexed_by_pixel,
-        >                                         1,
-        >                                         { 8, 8, 8}        /* ignored */ };
-        >     static const floatp         wht_ref[3] = { 255.0, 255.0, 255.0 };
-        >     static const floatp         blk_ref[3] = { 0.0, 0.0, 0.0 };
-        > 
-        >     pcl_cs_indexed_t *          pindexed;
-        >     int                         i, code = 0;
-        > 
-        >     /* build the indexed color space */
-        >     if ((code = alloc_indexed_cspace(ppindexed, pbase, pmem)) < 0)
-        >         return code;
-        >     pindexed = *ppindexed;
-        >     pindexed->fixed = false;
-        >     pindexed->cid = cid;
-        >     pindexed->num_entries = 2;
-        > 
-        >     /* set up the normalization information - not strictly necessary */
-        >     pcl_cs_indexed_set_norm_and_Decode( ppindexed,
-        >                                         wht_ref[0], wht_ref[1], wht_ref[2],
-        >                                         blk_ref[0], blk_ref[1], blk_ref[2]
-        >                                         );
-        >     pindexed->Decode[1] = 1;
-        > 
-        >     for (i = 0; i < 3; i++) {
-        >         pindexed->palette.data[i] = 255;
-        >         pindexed->palette.data[i + 3] = pcolor1[i];
-        >     }
-        > 
-        >     /* the latter are not strictly necessary */
-        >     pindexed->pen_widths[0] = 0.35;
-        >     pindexed->pen_widths[1] = 0.35;
-        > 
-        >     return 0;
-        > }
-        > 
-        > /*
-        1036,1042c1079
-        <     /* check if there is anything to do */
-        <     if (pcs->ids.cspace_id == pindexed->id)
-        <         return 0;
-        < 
-        <     if ((code = gs_setcolorspace(pcs->pgs, pindexed->pcspace)) >= 0)
-        <         pcs->ids.cspace_id = pindexed->id;
-        <     return code;
-        ---
-        >     return gs_setcolorspace(pcs->pgs, pindexed->pcspace);
-
--------------------------------------------------------------------------------
-
-pcindexed.h
-
-    Removed the identifier field from the PCL indexed color space structure.
-    This field is no longer required as the structure pointer may now be used
-    as an identifier.
-
-    Diff listing:
-
-        RCS file: RCS/pcindexed.h,v
-        retrieving revision 1.2
-        diff -r1.2 pcindexed.h
-        140d139
-        <     pcl_gsid_t              id;
-        312,313c311,327
-        <     pcl_cs_indexed_t **         ppindexed,
-        <     gs_memory_t *               pmem
-        ---
-        >     pcl_cs_indexed_t ** ppindexed,
-        >     gs_memory_t *       pmem
-        > );
-        > 
-        > /*
-        >  * Special indexed color space constructor, for building a 2 entry indexed color
-        >  * space based on an existing base color space. The first color is always set
-        >  * to white, while the second entry takes the value indicated by pcolor1.
-        >  *
-        >  * This reoutine is used to build the two-entry indexed color spaces required
-        >  * for creating opaque "uncolored" patterns.
-        >  */
-        > extern  int     pcl_cs_indexed_build_special(
-        >     pcl_cs_indexed_t ** ppindexed,
-        >     pcl_cs_base_t *     pbase,
-        >     byte *              pcolor1,
-        >     gs_memory_t *       pmem
-
--------------------------------------------------------------------------------
-
-pcmain.c
-
-    Modified to reflect changes in the memory management interface in the
-    graphic library between versions 5.14 and 5.30.
-
-    The calls to various PCL intialization functions have been removed from
-    the main routine and placed in the new routine pcl_init_state. The latter
-    routine should be called immediately after creating the PCL state.
-
-    The graphic library transparency feature is now uniformly disabled.
-
-    Added call to the routine hpgl_init_command_index. This procedure is used
-    to handle situations in which BSS is not initialized to 0.
-
-    Diff listing:
-
-        RCS file: RCS/pcmain.c,v
-        retrieving revision 1.3
-        diff -r1.3 pcmain.c
-        44a45
-        > #include "gsmalloc.h"
-        49a51
-        > #include "gsrop.h"
-        55a58
-        > #include "pgmand.h"
-        62,63d64
-        < extern  gs_ref_memory_t *   ialloc_alloc_state( gs_memory_t *, uint );
-        < extern  long    gs_malloc_max;
-        182c183
-        <     imem = ialloc_alloc_state(&gs_memory_default, 20000);
-        ---
-        >     imem = ialloc_alloc_state((gs_raw_memory_t *)&gs_memory_default, 20000);
-        203,205d203
-        <     /* initialize the pcl identifier mechanism */
-        <     pcl_init_id();
-        < 
-        210a209
-        >     pcl_init_state(pcls);
-        213c212
-        <     /* Set the default CTM for H-P coordinates. */
-        ---
-        >     /* Set the default CTM for H-P coordinates (centi-points, 7200 per inch. */
-        230a230,233
-        >     /* PCL no longer uses the graphic library transparency mechanism */
-        >     gs_setsourcetransparent(pgs, false);
-        >     gs_settexturetransparent(pgs, false);
-        > 
-        240,245d242
-        <     /* clear the graphic state color, color space, halftone and CRD id.'s */
-        <     pcls->ids.pattern_id = 0L;
-        <     pcls->ids.cspace_id = 0L;
-        <     pcls->ids.ht_id = 0L;
-        <     pcls->ids.crd_id = 0L;
-        < 
-        252a250
-        >         hpgl_init_command_index();
-
--------------------------------------------------------------------------------
-
-pcommand.c
-
-    Added the procedure pcl_init_state, which provides a first-level
-    initialization of the PCL state structure. This helps to reduce
-    initializaiton order dependencies.
-
-    Diff listing:
-
-        RCS file: RCS/pcommand.c,v
-        retrieving revision 1.2
-        diff -r1.2 pcommand.c
-        15a16
-        > #include "pcident.h"
-        87a89,127
-        > }
-        > 
-        > 
-        > /*
-        >  * "Cold start" initialization of the graphic state. This is provided as a
-        >  * special routine to avoid (as much as possible) order depedencies in the
-        >  * various reset routines used by individual modules. Some of the values
-        >  * selected may be subsequently overridden by the reset routines; this code
-        >  * just attempts to set them to reasonable values.
-        >  */
-        >   void
-        > pcl_init_state(
-        >     pcl_state_t *   pcs
-        > )
-        > {
-        >     /* start off setting everything to 0 */
-        >     memset(pcs, 0, sizeof(pcl_state_t));
-        > 
-        >     /* some elementary fields */
-        >     pcs->num_copies = 1;
-        >     pcs->output_bin = 1;
-        >     pcs->uom_cp = 7200L / 300L;
-        > 
-        >     pcs->perforation_skip = 1;
-        > 
-        >     pcs->font_id_type = numeric_id;
-        >     pcs->macro_id_type = numeric_id;
-        > 
-        >     pcs->rotate_patterns = true;
-        >     pcs->source_transparent = true;
-        >     pcs->pattern_transparent = true;
-        > 
-        >     pcs->logical_op = 252;
-        >     pcs->grid_adjust = 0.4;
-        > 
-        >     pcl_init_gstate_stk(pcs);
-        > 
-        >     /* the PCL identifier mechanism is not strictly part of the state */
-        >     pcl_init_id();
-
--------------------------------------------------------------------------------
-
-pcpage.c
-
-    Added code to remove an order-dependency during initializaiton. This will
-    suppress certain initialization operations during the initial reset.
-
-        RCS file: RCS/pcpage.c,v
-        retrieving revision 1.2
-        diff -r1.2 pcpage.c
-        278a279,282
-        >  *
-        >  * The third operand indicates if this routine is being called as part of
-        >  * an initial reset. In that case, done't call HPGL's reset - the reset
-        >  * will do that later.
-        283c287,288
-        <     const pcl_paper_size_t *    psize
-        ---
-        >     const pcl_paper_size_t *    psize,
-        >     bool                        reset_initial
-        293a299,305
-        > 
-        >     /* 
-        >      * If this is an initial reset, make sure underlining is disabled (homing
-        >      * the cursor may cause an underline to be put out.
-        >      */
-        >     if (reset_initial)
-        >         pcs->underline_enabled = false;
-        294a307
-        > 
-        297,298c310,312
-        <     /* the following sometimes erroneosuly set have_page */
-        <     hpgl_do_reset(pcs, pcl_reset_page_params);
-        ---
-        >     /* the following sometimes erroneosuly sets have_page */
-        >     if (!reset_initial)
-        >         hpgl_do_reset(pcs, pcl_reset_page_params);
-        304a319,321
-        >  *
-        >  * The last operand indicates if this routine is being called as part of
-        >  * an initial resete.
-        310c327,328
-        <     const pcl_paper_size_t *    psize
-        ---
-        >     const pcl_paper_size_t *    psize,
-        >     bool                        reset_initial
-        319c337
-        <     new_page_size(pcs, psize);
-        ---
-        >     new_page_size(pcs, psize, reset_initial);
-        480c498
-        <         new_page_size(pcs, psize);
-        ---
-        >         new_page_size(pcs, psize, false);
-        560c578
-        <         new_logical_page(pcs, i, pcs->xfm_state.paper_size);
-        ---
-        >         new_logical_page(pcs, i, pcs->xfm_state.paper_size, false);
-        875c893,897
-        <         new_logical_page(pcs, 0, DFLT_PAPER_PTR);
-        ---
-        >         new_logical_page( pcs,
-        >                           0,
-        >                           DFLT_PAPER_PTR,
-        >                           (type & pcl_reset_initial) != 0
-        >                           );
-
--------------------------------------------------------------------------------
-
-pcpalet.c
-
-    Modified to handled potentially non-initialized BSS.
-
-    Diff listing:
-
-        RCS file: RCS/pcpalet.c,v
-        retrieving revision 1.2
-        diff -r1.2 pcpalet.c
-        871d870
-        <     }
-        873,875c872,880
-        <     /* clear the palette stack and store */
-        <     clear_palette_stack(pcs->memory);
-        <     clear_palette_store(pcs);
-        ---
-        >         /* handle possible non-initialization of BSS */
-        >         pcl_default_crd = 0;
-        > 
-        >     } else {
-        > 
-        >         /* clear the palette stack and store */
-        >         clear_palette_stack(pcs->memory);
-        >         clear_palette_store(pcs);
-        >     }
-        889c894
-        <  * This procedure implements to the two most unusual features of the palette
-        ---
-        >  * This procedure implements the two most unusual features of the palette
-
--------------------------------------------------------------------------------
-
-pcpatrn.c
-
-    Major re-write to accommodate the changes in the way transparency is
-    implemented, and to accommodate the new pattern structure and pattern
-    memory handling conventions associated with the new transparency
-    mechanism.
-
-    Note that The procedural interface to this component is essentially
-    unchanged.
-
-    Too many lines modified to list.
-
--------------------------------------------------------------------------------
-
-pcpatrn.h
-
-    Essentially complete rewritten. This file defines the new pattern
-    structure, which allows tracking of objects held in the graphic state.
-    Note that the procedural interface specified in this file, for pcuptrn.c
-    and pcpatrn.c, is essentially unchanged.
-
-    Too many lines modified to list.
-
--------------------------------------------------------------------------------
-
-pcpattyp.h
-
-    Added pcl_pattern_raster_cspace to the pcl_pattern_source_t category; this
-    is used to work around a problem in the graphic library involving CIE
-    color used for rasters.
-
-    Modified the pcl_gstate_ids_t structure to use pointers rather than
-    identifiers. The pointers are used as reference for memory tracking or
-    objects in the graphic state, which is necessary for the new mechanism
-    for handling transparency.
-
-    Diff listing:
-
-        RCS file: RCS/pcpattyp.h,v
-        retrieving revision 1.1
-        diff -r1.1 pcpattyp.h
-        26,27d25
-        < #include "pcident.h"
-        < 
-        40c38,39
-        <     pcl_pattern_current_pattern    /* for rectangle fill only */
-        ---
-        >     pcl_pattern_current_pattern,   /* for rectangle fill only */
-        >     pcl_pattern_raster_cspace      /* internal - used for rasters only */
-        64c63,64
-        <  * Opaque definitions of palettes and foregrounds.
-        ---
-        >  * Opaque definitions of palettes, foregrounds, client colors, halftones,
-        >  * and backgrounds.
-        75a76,90
-        > #ifndef pcl_ccolor_DEFINED
-        > #define pcl_ccolor_DEFINED
-        > typedef struct pcl_ccolor_s     pcl_ccolor_t;
-        > #endif
-        > 
-        > #ifndef pcl_ht_DEFINED
-        > #define pcl_ht_DEFINED
-        > typedef struct pcl_ht_s         pcl_ht_t;
-        > #endif
-        > 
-        > #ifndef pcl_crd_DEFINED
-        > #define pcl_crd_DEFINED
-        > typedef struct pcl_crd_s        pcl_crd_t;
-        > #endif
-        > 
-        78,87c93,95
-        <  * used to avoid unnecessary re-installation, which can be quite costly when
-        <  * dealing with large halftones or device-independent color spaces.
-        <  *
-        <  *     pattern_id is the identifier of the currently installed pattern color
-        <  *         (this is not the PCL id. for this pattern, which refers to the
-        <  *         source form); if the current color space is not a pattern space
-        <  *         this will be 0.
-        <  *
-        <  *     cspace_id is the identifier of the currently installed color space; if
-        <  *         a pattern color space is currently isntalled, this will be 0.
-        ---
-        >  * used to avoid unnecessary re-installation, and to avoid memory handling
-        >  * problems that would arise if various objects were released while the
-        >  * graphic state still retained pointes to them.
-        89,95c97,98
-        <  *     ht_id is the identifier of the currently installed halftone; at present,
-        <  *         all PCL halftones are threshold-array based.
-        <  *
-        <  *     crd_id is the identifier of the currently installed color rendering
-        <  *         dictionary; the only language-modifiable feature of this dictionary
-        <  *         space is the viewing illuminant.
-        <  * 
-        ---
-        >  * The PCL client color structure (pcl_ccolor_t) incorporates both color and
-        >  * color space information.
-        98,101c101,104
-        <     pcl_gsid_t   pattern_id;
-        <     pcl_gsid_t   cspace_id;
-        <     pcl_gsid_t   ht_id;
-        <     pcl_gsid_t   crd_id;
-        ---
-        >     struct pcl_gstate_ids_s *   prev;       /* stack back pointer */
-        >     pcl_ccolor_t *              pccolor;
-        >     pcl_ht_t *                  pht;
-        >     pcl_crd_t *                 pcrd;
-        102a106,117
-        > 
-        > #define private_st_gstate_ids_t()   /* in pcdraw.c */   \
-        >     gs_private_st_ptrs4( st_gstate_ids_t,               \
-        >                          pcl_gstate_ids_t,              \
-        >                          "PCL graphics state tracker",  \
-        >                          gstate_ids_enum_ptrs,          \
-        >                          gstate_ids_reloc_ptrs,         \
-        >                          prev,                          \
-        >                          pccolor,                       \
-        >                          pht,                           \
-        >                          pcrd                           \
-        >                          )
-
-
--------------------------------------------------------------------------------
-
-pcpatxfm.c
-
-    Corrected a bug that would cause the pattern reference point not to be
-    stored in the pattern structures rendering information.
-
-    Modified to reflect the change in the pattern structure.
-
-    Diff listing:
-
-        RCS file: RCS/pcpatxfm.c,v
-        retrieving revision 1.3
-        diff -r1.3 pcpatxfm.c
-        222a223,225
-        >     /* record the referenc point used in the rendering structure */
-        >     pptrn->ref_pt = pcs->pat_ref_pt;
-        > 
-        229,230c232,233
-        <                      inch2coord(1.0 / (floatp)pptrn->xres),
-        <                      inch2coord(1.0 / (floatp)pptrn->yres),
-        ---
-        >                      inch2coord(1.0 / (floatp)pptrn->ppat_data->xres),
-        >                      inch2coord(1.0 / (floatp)pptrn->ppat_data->yres),
-
--------------------------------------------------------------------------------
-
-pcrect.c
-
-    Modified to behave in the same way HP systems do when given an
-    illegitimate shade pattern identifier.
-
-    Diff listing:
-
-        RCS file: RCS/pcrect.c,v
-        retrieving revision 1.3
-        diff -r1.3 pcrect.c
-        110c110,111
-        <     }
-        ---
-        >     } else if (type != pcl_pattern_shading)
-        >         return 0;
-
--------------------------------------------------------------------------------
-
-pcstate.h
-
-    Added prototypes for the pcl_gsave/pcl_grestore functions and their
-    initialization function (pcl_init_gstate_stk). This functions are used
-    instead of gs_gsave/gs_grestore in the PCL module, to allow tracking
-    of the memory used by objects in the graphic state.
-
-    Added a declaration for the procedure pcl_init_state. This procedure is
-    a first-level initialization routine for the PCL state structure, and
-    its presence helps remove some initialization order dependencies.
-
-    Diff listing:
-
-        > /*
-        >  * The routines pcl_gsave and pcl_grestore should be used instead of
-        >  * gs_gsave and gs_grestore. See the comment in pcdraw.c for details.
-        >  *
-        >  * The routine pcl_init_gstate_stk must be called once a boot time to
-        >  * intialize PCL graphics state stack tracking mechanism.
-        >  */
-        > extern  int     pcl_gsave( pcl_state_t * pcs );
-        > extern  int     pcl_grestore( pcl_state_t * pcs );
-        > extern  void    pcl_init_gstate_stk( pcl_state_t * pcs );
-        > 
-        > /*
-        >  * "Cold start" initialization for the graphic state.
-        >  */
-        > extern  void    pcl_init_state( pcl_state_t * pcs );
-        > 
-        > 
-        72a90,92
-        >  *
-        >  * NB: If you modify this structure, be sure to also modify the routine
-        >  *     pcl_init_state in pcommand.c.
-
--------------------------------------------------------------------------------
-
-pcstatus.c
-
-    Included an additional header file, due to the change in the grahpics
-    library memory manager interface between versions 5.14 and 5.30.
-
-    Diff listing:
-
-        RCS file: RCS/pcstatus.c,v
-        retrieving revision 1.3
-        diff -r1.3 pcstatus.c
-        27a28
-        > #include "gsmalloc.h"
-
--------------------------------------------------------------------------------
-
-pctext.c
-
-    Several smaller changes to accommodate changes in the other parts of
-    the code:
-
-        The show enumeration structure in the graphic library differs
-        in versions 5.24 and 5.32; the corresponding change was made in
-        the "get next character" routine
-
-        The routines gs_gsave and gs_restore have been superseded, for
-        PCL's use, by pcl_gsave and pcl_grestore
-
-        The opaque source, transparent pattern case was not handled properly;
-        this case requires that they background be render solid white,
-        ignoring the current pattern.
-        
-
-    diff listing:
-
-        RCS file: RCS/pctext.c,v
-        retrieving revision 1.5
-        diff -r1.5 pctext.c
-        64c64
-        <     const byte *        pb = penum->str.data;
-        ---
-        >     const byte *        pb = penum->text.data.bytes;
-        281a282,286
-        >  *
-        >  * An additional complication arises from the specification provided by HP for
-        >  * handling the source opaque, pattern transparent situation. In this case,
-        >  * the pattern affects only for the foreground pixels of the source; the back-
-        >  * ground must be rendered as a solid, opaque white.
-        285c290
-        <     const pcl_state_t * pcs,
-        ---
-        >     pcl_state_t *       pcs,
-        298c303,305
-        <     gs_gsave(pgs);
-        ---
-        >     pcl_gsave(pcs);
-        >     if (pcs->pattern_transparent)
-        >         pcl_set_drawing_color(pcs, pcl_pattern_solid_white, 0, false);
-        313c320
-        <             gs_grestore(pgs);
-        ---
-        >             pcl_grestore(pcs);
-        320c327
-        <             gs_grestore(pgs);
-        ---
-        >             pcl_grestore(pcs);
-        354,362c361,367
-        <       if ((code = gs_show_next(penum)) < 0) {
-        <            gs_grestore(pgs);
-        <          return code;
-        <       }
-        < 
-        <       /* append the characters bounding box and use eofill */
-        <       gs_pathbbox(pgs, &bbox);
-        <       gs_rectappend(pgs, &bbox, 1);
-        <       gs_eofill(pgs);
-        ---
-        >       if ((code = gs_show_next(penum)) >= 0) {
-        > 
-        >           /* append the characters bounding box and use eofill */
-        >           gs_pathbbox(pgs, &bbox);
-        >           gs_rectappend(pgs, &bbox, 1);
-        >           gs_eofill(pgs);
-        >         }
-        365c370
-        <     gs_grestore(pgs);
-        ---
-        >     pcl_grestore(pcs);
-
--------------------------------------------------------------------------------
-
-pcuptrn.c
-
-    Modified to accommodate the new pattern structure and pattern handling
-    mechanism. This involves the creation of new constructors and 
-    destructors for the pattern object.
-
-    Note that the "renderings" of patterns are now deleted on a system
-    reset (<esc> E), even if the pattern is permanent and will survive
-    the reset. This saves memory and should have a negligible performance
-    impact.
-    
-    Too many lines modified to list.
-
--------------------------------------------------------------------------------
-
-pcuptrn.h
-
-   Added declarations for the procedures pcl_pattern_build_pattern and
-   pcl_pattern_free_pattern. These facilities are now exported for use
-   by pcbiptrn.c when creating the "built-in" patterns.
-
-   Diff listing:
-
-        RCS file: RCS/pcuptrn.h,v
-        retrieving revision 1.1
-        diff -r1.1 pcuptrn.h
-        30a31,53
-        >  * Free routine for patterns. This is exported for the benefit of the code
-        >  * that handles PCL built-in patterns.
-        >  */
-        > extern  void    pcl_pattern_free_pattern(
-        >     gs_memory_t *   pmem,
-        >     void *          pvptrn,
-        >     client_name_t   cname
-        > );
-        > 
-        > /*
-        >  * Build a PCL pattern. This is exported for use by the routines supporting
-        >  * built-in patterns.
-        >  */
-        > extern  int     pcl_pattern_build_pattern(
-        >     pcl_pattern_t **        pppat_data,
-        >     const gs_depth_bitmap * ppixmap,
-        >     pcl_pattern_type_t      type,
-        >     int                     xres,
-        >     int                     yres,
-        >     gs_memory_t *           pmem
-        > );
-        > 
-        > /*
-
--------------------------------------------------------------------------------
-
-pcursor.c
-
-
-    Added code to help remove an initialization order dependency.
-
-    Diff listing:
-
-        RCS file: RCS/pcursor.c,v
-        retrieving revision 1.2
-        diff -r1.2 pcursor.c
-        797a798,799
-        > 
-        >         cursor_stk_size = 0;
-        800a803,809
-        > 
-        >         /* 
-        >          * If this is an initial reset, make sure underlining is disabled
-        >          * (homing the cursor may cause an underline to be put out.
-        >          */
-        >         if ((type & pcl_reset_initial) != 0)
-        >             pcs->underline_enabled = false;
-        802c811
-        <         cursor_stk_size = 0;
-        ---
-        > 
-
--------------------------------------------------------------------------------
-
-pcwhtindx.c
-
-    Removed the hack that made all rasters opaque.
-
-    Diff listing:
-
-        RCS file: RCS/pcwhtindx.c,v
-        retrieving revision 1.2
-        diff -r1.2 pcwhtindx.c
-        346a347
-        > #if 0
-        348a350
-        > #endif
-
--------------------------------------------------------------------------------
-
-pgdraw.c
-
-    Replaced hpgl_gsave and hpgl_grestore with macros that invoke pcl_gsave
-    and pcl_grestore.
-
-    Removed calls to gs_setsourcetransparent and gs_settexturetransparent;
-    PCL no longer uses the graphic library's transparency feature.
-
-    Modified to reflect the change in the graphic library path interface
-    from version 5.14 to 5.30.
-
-    Diff listing:
-
-        RCS file: RCS/pgdraw.c,v
-        retrieving revision 1.2
-        diff -r1.2 pgdraw.c
-        33c33
-        < #include "gsrop.h"            /* for gs_setsourcetransparent */
-        ---
-        > #include "gsrop.h"            /* for gs_setrasterop */
-        831a832
-        >         /* PCL and GL/2 no longer use graphic library transparency */
-        833,834d833
-        <         gs_setsourcetransparent(pgls->pgs, pgls->g.source_transparent);
-        <         gs_settexturetransparent(pgls->pgs, pgls->g.source_transparent);
-        1297,1315c1296,1297
-        <     gx_path_copy(ppath, &pgls->g.polygon.buffer.path, true );
-        <     return 0;
-        < }
-        < 
-        <  int
-        < hpgl_gsave(
-        <     hpgl_state_t *  pgls
-        < )
-        < {
-        <     hpgl_call(gs_gsave(pgls->pgs));
-        <     return 0;
-        < }
-        < 
-        <  int
-        < hpgl_grestore(
-        <     hpgl_state_t *  pgls
-        < )
-        < {
-        <     hpgl_call(gs_grestore(pgls->pgs));
-        ---
-        >     gx_path_new(&pgls->g.polygon.buffer.path);
-        >     gx_path_copy(ppath, &pgls->g.polygon.buffer.path);
-        1326c1308
-        <     gx_path_copy(&pgls->g.polygon.buffer.path, ppath, true );
-        ---
-        >     gx_path_copy(&pgls->g.polygon.buffer.path, ppath);
-
--------------------------------------------------------------------------------
-
-pgdraw.h
-
-    Replace the prototypes for hpgl_gsave and hpgl_grestore with macros
-    that invoke pcl_gsave and pcl_grestore.
-
-    Diff listing:
-
-        RCS file: RCS/pgdraw.h,v
-        retrieving revision 1.1
-        diff -r1.1 pgdraw.h
-        68,72c68,70
-        < /* save gs graphics state + HPGL/2's first moveto state */
-        < int hpgl_gsave(P1(hpgl_state_t *pgls));
-        < 
-        < /* restore gs graphics state + HPGL/2's first moveto state */
-        < int hpgl_grestore(P1(hpgl_state_t *pgls));
-        ---
-        > /* save/restore gs graphics state + HPGL/2's first moveto state */
-        > #define hpgl_gsave(pgls)    pcl_gsave(pgls)
-        > #define hpgl_grestore(pgls) pcl_grestore(pgls)
-
--------------------------------------------------------------------------------
-
-pginit.c
-
-    Modified to reflect changes in the graphic library path handling interface
-    from versions 5.14 to 5.30.
-
-    Diff listing:
-
-        RCS file: RCS/pginit.c,v
-        retrieving revision 1.3
-        diff -r1.3 pginit.c
-        108,109c108,111
-        <           hpgl_default_all_fill_patterns(pcls);
-        <           gx_path_init(&pcls->g.polygon.buffer.path, pcls->memory);
-        ---
-        >             gx_path_alloc_contained( &pcls->g.polygon.buffer.path,
-        >                                      pcls->memory,
-        >                                      "hpgl_do_reset"
-        >                                      );
-        117c119
-        <           gx_path_release(&pcls->g.polygon.buffer.path);
-        ---
-        >             gx_path_new(&pcls->g.polygon.buffer.path);
-
--------------------------------------------------------------------------------
-
-pglabel.c
-
-    Modified to reflect the change in the graphic library show enumeration
-    interface between versions 5.14 and 5.30.
-
-    Diff listing:
-
-        RCS file: RCS/pglabel.c,v
-        retrieving revision 1.2
-        diff -r1.2 pglabel.c
-        112c112,113
-        <       int code = hpgl_next_char(&penum->str, &penum->index, pgls, pchr);
-        ---
-        >       int code = hpgl_next_char(&penum->text.data.bytes, &penum->index,
-        >                                   pgls, pchr);
-
--------------------------------------------------------------------------------
-
-pgmand.h
-
-    Added a declaration for the new procedure hpgl_init_command_index. This
-    procedure is used to handle situations in which BSS is not initialized
-    to 0.
-
-    Diff listing:
-
-
-        RCS file: RCS/pgmand.h,v
-        retrieving revision 1.1
-        diff -r1.1 pgmand.h
-        122a123
-        > void hpgl_init_command_index(P1(void));
-
--------------------------------------------------------------------------------
-
-pgparse.c
-
-    Added the procedure hpgl_init_command_index. This procedure is used to
-    handle situations in which BSS is not initialized to 0.
-
-    Diff listing:
-
-        RCS file: RCS/pgparse.c,v
-        retrieving revision 1.2
-        diff -r1.2 pgparse.c
-        371a372,378
-        > 
-        > /* initialize the HPGL command counter (for uninitialized BSS) */
-        > void
-        > hpgl_init_command_index(void)
-        > {
-        >     hpgl_command_next_index = 0;
-        > }
-
--------------------------------------------------------------------------------
-
-pgpoly.c
-
-    Modified to reflect the change in the graphic library path interface
-    between versions 5.14 and 5.30.
-
-    Diff listing:
-
-        RCS file: RCS/pgpoly.c,v
-        retrieving revision 1.1
-        diff -r1.1 pgpoly.c
-        216c216
-        <           gx_path_release(&pgls->g.polygon.buffer.path);
-        ---
-        >             gx_path_new(&pgls->g.polygon.buffer.path);
-
--------------------------------------------------------------------------------
-
-rtgmode.c
-
-    Modified to use pcl_gsave/pcl_grestore in preferance to gs_gsave/
-    gs_grestore.
-
-    Also modified to work around a problem in the graphic library involving
-    device-independent color spaces. These color spaces must be installed
-    in the graphic state before than can be used with rasters, even though
-    they are not the current color space when the rasters are used.
-
-    diff listing (most changes are in the comments):
-
-        RCS file: RCS/rtgmode.c,v
-        retrieving revision 1.1
-        diff -r1.1 rtgmode.c
-        187,209d186
-        <     /*
-        <      * Set the drawing color to initialize the halftone machinery.
-        <      * This is actually quite tricky, as two different CRD's and halftones may
-        <      * be needed simultaneously:
-        <      *
-        <      *     the foreground CRD and halftone, in case the current "texture" is a
-        <      *     a solid color or an uncolored pattern
-        <      *
-        <      *     the palette CRD and halftone, to be used in rendering the raster
-        <      *     itself
-        <      *
-        <      * Since the graphic state can only hold one CRD and one halftone method
-        <      * at a time, this presents a bit of a problem.
-        <      *
-        <      * To get around the problem, an extra graphic state is necessary. Patterns
-        <      * in the graphic library are given their own graphic state. Hence, by
-        <      * replacing a solid color with an uncolored pattern that takes the
-        <      * foreground value everywhere, the desired effect can be achieved. Code
-        <      * in pcpatrn.c handles these matters.
-        <      */
-        <     pcl_set_graphics_state(pcs);
-        <     pcl_set_drawing_color(pcs, pcs->pattern_type, pcs->current_pattern_id, true);
-        < 
-        270,272d246
-        < 
-        <     /* install the matrix into the graphic state */
-        <     gs_gsave(pcs->pgs);
-        273a248,283
-        > 
-        >     /*
-        >      * Set up the graphic stat for rasters. This turns out to be more difficult
-        >      * than might first be imagined.
-        >      *
-        >      * One problem is that two halftones may be needed simultaneously:
-        >      *
-        >      *     the foreground CRD and halftone, in case the current "texture" is a
-        >      *     a solid color or an uncolored pattern
-        >      *
-        >      *     the palette CRD and halftone, to be used in rendering the raster
-        >      *     itself
-        >      *
-        >      * Since the graphic state can only hold one CRD and one halftone method
-        >      * at a time, this presents a bit of a problem.
-        >      *
-        >      * To get around the problem, an extra graphic state is necessary. Patterns
-        >      * in the graphic library are given their own graphic state. Hence, by
-        >      * replacing a solid color with an uncolored pattern that takes the
-        >      * foreground value everywhere, the desired effect can be achieved. Code
-        >      * in pcpatrn.c handles these matters.
-        >      *
-        >      * The second problem is a limitation in the graphic library's support of
-        >      * CIE color spaces. These spaces require a joint cache, which is only
-        >      * created when the color space is installed in the graphic state. However,
-        >      * the current color space at the time a raster is rendered may need to
-        >      * be a pattern color space, so that the proper interaction between the
-        >      * raster and the texture generated by the pattern. To work around this
-        >      * problem, we install the raster's color space in the current graphic
-        >      * state, perform a gsave, then place what may be a patterned color space
-        >      * in the new graphic state.
-        >      */
-        >     pcl_set_graphics_state(pcs);
-        >     pcl_set_drawing_color(pcs, pcl_pattern_raster_cspace, 0, true);
-        >     pcl_gsave(pcs);
-        >     pcl_set_drawing_color(pcs, pcs->pattern_type, pcs->current_pattern_id, true);
-        290c300
-        <         gs_grestore(pcs->pgs);
-        ---
-        >         pcl_grestore(pcs);
-        313c323
-        <     gs_grestore(pcs->pgs);
-        ---
-        >     pcl_grestore(pcs);
-        
--------------------------------------------------------------------------------
-
-rtmisc.c
-
-    Modified to reflect the change in the graphic library path interface
-    between versions 5.14 and 5.30.
-
-    Diff listing:
-
-        RCS file: RCS/rtmisc.c,v
-        retrieving revision 1.2
-        diff -r1.2 rtmisc.c
-        125c125
-        <       gx_path_release(&(pcls->g.polygon.buffer.path));
-        ---
-        >         gx_path_new(&(pcls->g.polygon.buffer.path));
-
--------------------------------------------------------------------------------
-
-rtraster.c
-
-    Removed the temporary hack that made all rasters opaque.
-
-    Modified the handling of color planes that have not been provided when
-    the "transfer raster row" command is received. These should be processed
-    as though they were 0-length rows, NOT rows of 0's. The distinction is
-    significant for the delta-row compression modes (3 and 9).
-
-    Diff listing:
-
-        RCS file: RCS/rtraster.c,v
-        retrieving revision 1.1
-        diff -r1.1 rtraster.c
-        234c234
-        <         else
-        ---
-        >       else
-        245,246d244
-        <           /* TEMPORARY HACK - put mask color out of range */
-        < #if 0
-        252d249
-        < #endif
-        447a445,448
-        >     /* check if there is anything to do */
-        >     if (prast->rows_rendered >= prast->src_height)
-        >         return 0;
-        > 
-        455,462d455
-        <     /* clear any rows that have not been provided */
-        <     for (i = prast->plane_index; i < nplanes; i++) {
-        <         if (!prast->pseed_rows[i].is_blank) {
-        <             memset(prast->pseed_rows[i].pdata, 0, prast->pseed_rows[i].size);
-        <             prast->pseed_rows[i].is_blank = true;
-        <         }
-        <     }
-        < 
-        635,639c628
-        <     /* render this row if necessary */
-        <     if (end_row)
-        <         return process_row(prast);
-        <     else
-        <         return 0;
-        ---
-        >     return 0;
-        849a839,841
-        >     const byte *    pdata = arg_data(pargs);
-        >     int             code = 0;
-        > 
-        851c843,855
-        <     return add_raster_plane(arg_data(pargs), arg_data_size(pargs), true, pcs);
-        ---
-        >     code = add_raster_plane(pdata, arg_data_size(pargs), true, pcs);
-        > 
-        >     /* process any planes that have not been provided; complete the row */
-        >     if (code >= 0) {
-        >         int     i, nplanes = pcur_raster->nplanes;
-        > 
-        >         for (i = pcur_raster->plane_index; (i < nplanes) && (code >= 0); i++)
-        >             code = add_raster_plane(pdata, 0, false, pcs);
-        >     }
-        >     if (code >= 0)
-        >         code = process_row(pcur_raster);
-        > 
-        >     return code;
-
-
-Modifications to the PCL code between the release of 14 August, 1998, and
-17 August, 1998.
-
-
-pcommand.c:
-
-    Added operand to pcl_init_state.
-
-    Diff listing:
-
-        RCS file: RCS/pcommand.c,v
-        retrieving revision 1.3
-        diff -r1.3 pcommand.c
-        101c101,102
-        <     pcl_state_t *   pcs
-        ---
-        >     pcl_state_t *   pcs,
-        >     gs_memory_t *   pmem
-        107a109
-        >     pcs->memory = pmem;
-
-
--------------------------------------------------------------------------------
-
-pccid.c
-
-    Added code to work around the (rather idiotic) convention that ignores
-    range-check errors by defining e_Range to be a non-error.
-
-    Diff listing:
-
-        RCS file: RCS/pccid.c,v
-        retrieving revision 1.2
-        diff -r1.2 pccid.c
-        193a194,197
-        >  * Because of the #%&&!!! confounded idiocy of causing e_Range to be ignored in
-        >  * the parser by seeting it to be a non-error (0), we must use literal -1 here
-        >  * to indicate that a palette is not acceptable.
-        >  *
-        204c208
-        <         return e_Range;
-        ---
-        >         return -1;
-        221c225
-        <             return e_Range;
-        ---
-        >             return -1;
-        226c230
-        <             return e_Range;
-        ---
-        >             return -1;
-        232c236
-        <             return e_Range;
-        ---
-        >             return -1;
-        236c240
-        <             return e_Range;
-        ---
-        >             return -1;
-        243c247
-        <             return e_Range;
-        ---
-        >             return -1;
-        273c277,279
-        <     if (code < 0)
-        ---
-        >     if (code < 0) {
-        >         if (code == -1)
-        >             code = e_Range;     /* handle idiocy in pcommand.h */
-        275c281
-        <     else
-        ---
-        >     } else
-
-
--------------------------------------------------------------------------------
-
-pccrd.c
-
-    Modified to reflect the change in the ids structure in the PCL state
-    from a structure to a pointer.
-
-    Diff listing:
-
-        RCS file: RCS/pccrd.c,v
-        retrieving revision 1.3
-        diff -r1.3 pccrd.c
-        356c356
-        <     if (pcs->ids.pcrd == pcrd)
-        ---
-        >     if (pcs->pids->pcrd == pcrd)
-        363c363
-        <         pcl_crd_copy_from(pcs->ids.pcrd, pcrd);
-        ---
-        >         pcl_crd_copy_from(pcs->pids->pcrd, pcrd);
-
-
--------------------------------------------------------------------------------
-
-pcdraw.c
-
-    Modified to reflect the change in the ids structure in the PCL state
-    from a structure to a pointer.
-
-    Diff listing:
-
-        RCS file: RCS/pcdraw.c,v
-        retrieving revision 1.4
-        diff -r1.4 pcdraw.c
-        127,131c127,131
-        <         pids->prev = pcs->ids.prev;
-        <         pcs->ids.prev = pids;
-        <         pcl_ccolor_init_from(pids->pccolor, pcs->ids.pccolor);
-        <         pcl_ht_init_from(pids->pht, pcs->ids.pht);
-        <         pcl_crd_init_from(pids->pcrd, pcs->ids.pcrd);
-        ---
-        >         pids->prev = pcs->pids->prev;
-        >         pcs->pids->prev = pids;
-        >         pcl_ccolor_init_from(pids->pccolor, pcs->pids->pccolor);
-        >         pcl_ht_init_from(pids->pht, pcs->pids->pht);
-        >         pcl_crd_init_from(pids->pcrd, pcs->pids->pcrd);
-        143c143
-        <     pcl_gstate_ids_t *  pids = pcs->ids.prev;
-        ---
-        >     pcl_gstate_ids_t *  pids = pcs->pids->prev;
-        150,153c150,153
-        <         pcs->ids.prev = pids->prev;
-        <         pcl_ccolor_copy_from(pcs->ids.pccolor, pids->pccolor);
-        <         pcl_ht_copy_from(pcs->ids.pht, pids->pht);
-        <         pcl_crd_copy_from(pcs->ids.pcrd, pids->pcrd);
-        ---
-        >         pcs->pids->prev = pids->prev;
-        >         pcl_ccolor_copy_from(pcs->pids->pccolor, pids->pccolor);
-        >         pcl_ht_copy_from(pcs->pids->pht, pids->pht);
-        >         pcl_crd_copy_from(pcs->pids->pcrd, pids->pcrd);
-        162c162
-        <     pcl_state_t *   pcs
-        ---
-        >     pcl_state_t *       pcs
-        165,168c165,176
-        <     pcs->ids.prev = 0;
-        <     pcs->ids.pccolor = 0;
-        <     pcs->ids.pht = 0;
-        <     pcs->ids.pcrd = 0;
-        ---
-        >     pcl_gstate_ids_t *  pids = gs_alloc_struct( pcs->memory,
-        >                                                 pcl_gstate_ids_t,
-        >                                                 &st_gstate_ids_t,
-        >                                                 "PCL gsave"
-        >                                                 );
-        >     if (pids != 0) {    /* otherwise will crash soon enough */
-        >         pids->prev = 0;
-        >         pids->pccolor = 0;
-        >         pids->pht = 0;
-        >         pids->pcrd = 0;
-        >     }
-        >     pcs->pids = pids;
-
--------------------------------------------------------------------------------
-
-pcdither.c
-
-    Fixed off-by-one miscalculation of dither table size.
-
-    Diff listing:
-
-        RCS file: RCS/pcdither.c,v
-        retrieving revision 1.1
-        diff -r1.1 pcdither.c
-        88c88
-        <     rlen = nplanes * h * w + 7;
-        ---
-        >     rlen = nplanes * h * w + 6;
-        92c92
-        <          (len < nplanes * h * w + 6)          )
-        ---
-        >          (len < rlen)                         )
-
-
--------------------------------------------------------------------------------
-
-pcht.c
-
-    Modified to reflect the change in the ids structure in the graphic
-    state from a structure to a pointer.
-
-    Diff listing:
-
-        RCS file: RCS/pcht.c,v
-        retrieving revision 1.3
-        diff -r1.3 pcht.c
-        1701d1700
-        < 
-        1884c1883
-        <     if (pcs->ids.pht == pht)
-        ---
-        >     if (pcs->pids->pht == pht)
-        1895c1894
-        <         pcl_ht_copy_from(pcs->ids.pht, pht);
-        ---
-        >         pcl_ht_copy_from(pcs->pids->pht, pht);
-
--------------------------------------------------------------------------------
-
-pcindexed.c
-
-    Modified code to properly interpret long-form configure image data command
-    for CMY color space.
-
-    Diff listing:
-
-        RCS file: RCS/pcindexed.c,v
-        retrieving revision 1.3
-        diff -r1.3 pcindexed.c
-        586a587,590
-        >     /* check for singularity */
-        >     if ((wht0 == blk0) || (wht1 == blk1) || (wht2 == blk2))
-        >         return 0;
-        > 
-        601,610d604
-        <     /* reverse for the CMY color space */
-        <     if (type == pcl_cspace_CMY) {
-        <         int     i;
-        < 
-        <         for (i = 0; i < 3; i++) {
-        <             pnorm[i].blkref +=  255.0 / pnorm[i].inv_range;
-        <             pnorm[i].inv_range = -pnorm[i].inv_range;
-        <         }
-        <     }
-        < 
-        959a954,965
-        >         }
-        > 
-        >         /* reverse for the CMY color space */
-        >         if (type == pcl_cspace_CMY) {
-        >             int     i;
-        > 
-        >             for (i = 0; i < 3; i++) {
-        >                 floatp  ftmp = wht_ref[i];
-        > 
-        >                 wht_ref[i] = blk_ref[i];
-        >                 blk_ref[i] = ftmp;
-        >             }
-
-
--------------------------------------------------------------------------------
-
-pmain.c
-
-    Modified for additional operand to pcl_init_state.
-
-    Diff listing:
-
-        RCS file: RCS/pcmain.c,v
-        retrieving revision 1.4
-        diff -r1.4 pcmain.c
-        209c209
-        <     pcl_init_state(pcls);
-        ---
-        >     pcl_init_state(pcls, mem);
-        239d238
-        <     pcls->memory = mem;
-
-
--------------------------------------------------------------------------------
-
-pcpage.c
-
-    Modified the set top/left offset commands to update the transformations
-    held in the PCL state.
-
-    Set a solid white color (and default halftone/transfer function) before
-    calling gs_erasepage. This is necessary in the presence of inverting
-    color lookup tables for device-specific color spaces.
-
-    Diff listing:
-
-        RCS file: RCS/pcpage.c,v
-        retrieving revision 1.3
-        diff -r1.3 pcpage.c
-        425c425
-        <     pcs->have_page = false;
-        ---
-        >     pcl_set_drawing_color(pcs, pcl_pattern_solid_white, 0, false);
-        426a427
-        >     pcs->have_page = false;
-        540a542
-        >     update_xfm_state(pcs);
-        556a559
-        >     update_xfm_state(pcs);
-
-
--------------------------------------------------------------------------------
-
-pcpatrn.c
-
-    Modified to use gs_pattern_reference in place of gs_reference_color. Only
-    the name has changed; the function remains the same.
-
-    Also Modified to reflect the change in the ids structure in the PCL state
-    from a structure to a pointer
-
-    Diff listing:
-
-        RCS file: RCS/pcpatrn.c,v
-        retrieving revision 1.4
-        diff -r1.4 pcpatrn.c
-        149,152d148
-        <     if (pccolor->ccolor.pattern != 0) {
-        <         gs_reference_color(&(pccolor->ccolor), -1);
-        <         pccolor->ccolor.pattern = 0;
-        <     }
-        154a151
-        >     gs_pattern_reference(&(pccolor->ccolor), -1);
-        211c208
-        <         gs_reference_color(&(pnew->ccolor), 1);
-        ---
-        >         gs_pattern_reference(&(pnew->ccolor), 1);
-        245c242
-        <     pcl_ccolor_t *          pcur = pcs->ids.pccolor;
-        ---
-        >     pcl_ccolor_t *          pcur = pcs->pids->pccolor;
-        259c256
-        <     if ( (code = unshare_ccolor(&(pcs->ids.pccolor), pcs->memory)) < 0 )
-        ---
-        >     if ( (code = unshare_ccolor(&(pcs->pids->pccolor), pcs->memory)) < 0 )
-        261c258
-        <     pcur = pcs->ids.pccolor;
-        ---
-        >     pcur = pcs->pids->pccolor;
-        280a278,279
-        >     gs_pattern_reference(&(pcur->ccolor), -1);
-        >     pcur->ccolor.pattern = 0;
-        282,285d280
-        <     if (pcur->ccolor.pattern != 0) {
-        <         gs_reference_color(&(pcur->ccolor), -1);
-        <         pcur->ccolor.pattern = 0;
-        <     }
-        299c294
-        <     pcl_ccolor_t *      pcur = pcs->ids.pccolor;
-        ---
-        >     pcl_ccolor_t *      pcur = pcs->pids->pccolor;
-        322c317
-        <         pcl_ccolor_copy_from(pcs->ids.pccolor, pnew);
-        ---
-        >         pcl_ccolor_copy_from(pcs->pids->pccolor, pnew);
-
-
--------------------------------------------------------------------------------
-
-pcpatrn.h
-
-    Removed extraneous, un-protected typedef for pcl_ccolor_t.
-
-    Diff listing:
-
-        RCS file: RCS/pcpatrn.h,v
-        retrieving revision 1.4
-        diff -r1.4 pcpatrn.h
-        107a108,109
-        > #ifndef pcl_ccolor_DEFINED
-        > #define pcl_ccolor_DEFINED
-        108a111
-        > #endif
-        251,255d253
-        < 
-        < #ifndef pcl_ccolor_DEFINED
-        < #define pcl_ccolor_DEFINED
-        < typedef struct pcl_ccolor_s     pcl_ccolor_t;
-        < #endif
-
-
--------------------------------------------------------------------------------
-
-pcstate.h
-
-    Modified to change the ids structure from a structure to a pointer;
-    also modified the prototype for pcl_init_state to add an operand.
-
-    Diff listing:
-
-        RCS file: RCS/pcstate.h,v
-        retrieving revision 1.3
-        diff -r1.3 pcstate.h
-        79c79
-        < extern  void    pcl_init_state( pcl_state_t * pcs );
-        ---
-        > extern  void    pcl_init_state( pcl_state_t * pcs, gs_memory_t * pmem );
-        250c250
-        <     pcl_gstate_ids_t    ids;
-        ---
-        >     pcl_gstate_ids_t *  pids;
-
--------------------------------------------------------------------------------
-
-pgdraw.c
-
-    Removed erroneous call to gs_setgray that had been left over from the
-    monochrome code.
-
-    Diff listing:
-
-        RCS file: RCS/pgdraw.c,v
-        retrieving revision 1.3
-        diff -r1.3 pgdraw.c
-        555,556c555
-        <           hpgl_call(gs_setgray(pgls->pgs, 0.0));
-        <           hpgl_call(gs_fill(pgls->pgs));
-        ---
-        >             hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_polygon));
-
-
--------------------------------------------------------------------------------
-
-
-pglabel.c
-
-    Added call to gs_setlinewidth to set the line width to be used with
-    stick/arc fonts.
-
-    Diff listing:
-
-        RCS file: RCS/pglabel.c,v
-        retrieving revision 1.3
-        diff -r1.3 pglabel.c
-        685a686,687
-        > 
-        >             gs_setlinewidth(pgs, nwidth);
-
-
--------------------------------------------------------------------------------
+	* pcht.c:
+	Modified to support color-mapping as part of a rendering method, and to
+	support monochrome mode.
+
+	As part of this change, the never-used device field of the rend_info_t
+	structure is replaced with a color mapping parameter, which is used
+	with a color-mapping forwarding device that is always present.
+
+	To support monochrome mode, the nature of the remapping array has been
+	change somewhat, and the render_method field of the pcl_ht_t structure
+	modified to be the mapped rather than raw rendering method. Fields for
+	print mode (monochrome or color) and raw rendering method have been
+	added to the PCL state.
+
+	* pcht.h:
+	Added prototype for the new procedure pcl_ht_set_print_mode, which
+	can be used to set monochrome or colored print mode.
+
+	Changed the render_method field/operand to be unsigned.
+
+	* pcindexed.h, pcindexed.c:
+	Generalixed the pcl_cs_indexed_0_is_{black | white} routines to check
+	for the blackness or whiteness of any entry. The routines are now know
+	as pcl_cs_indexed_is_{black | white}.  Replaced prototypes for
+	pcl_cs_indexed_0_is_{black | white} with those for
+	pcl_cs_indexed_is_{black | white}. Defined macros to correspond to the
+	former prototypes, for backwards compatibility.
+
+	* pcfont.c, pcmacros.c, pcjob.c:
+	Modified pcmacros_do_reset to support overlay macros.
+
+	* pcmain.c:
+	Added a pair of calls to gs_reclaim prior to running the first job.
+	This is very important; until gs_reclaim is called for the first time,
+	freed string objects are not recovered. Hence, the memory they use
+	is lost.
+
+	Added some debugging code to assist with memory leak detection.
+
+	* pcmisc.c: Modified pcmisc_do_reset to support overlay marcos.
+
+	* pcommand.c:
+	Modifed pcl_init_state for the deletion of the grid_adjust field and the
+	addition of the addition of the monochrome_mode and render_mode fields
+	in the graphic state.
+
+	* pcpage.c:
+	Modified print quality command (<esc> * o # Q) to home the cursor.
+	Modified pcpage_do_reset to support overlay macros.
+
+	* pcpalet.c: Added command for setting monochrome/normal print mode.
+
+	Modified pcl_palette_set_render_method to reflect the addition of
+	the render_mode field in the PCL state.
+
+	Modified palette_do_reset to support overlay macros.
+
+	* pcpalet.h: Changed render_method operand to be unsigned.
+
+	* pcpatrn.c:
+	Modified pattern_set_gl_RF to account for the fact that patterns defined
+	with the RF command may be either masked or colored patterns, and in the
+	former case are fully transparent if GL/2's source transparency is set and
+	the current pen is white. Also modified this routine to use the current
+	pen if the pattern does not exist, even if the applicable SV or FT command
+	specified using pen 1 (this requires a hack regarding the interpretation
+	of the current pen operand when it is negative).
+
+	Modified several other pattern_set_*_gl routines for mask patterns (shades,
+	cross-hatch, user-defined) to make these fully transparent if the current
+	pen is white.
+
+	Also modified pattern_do_reset to support overlay macros.
+
+	* pcrect.c:
+	Moved implementation of pixel placement for PCL objects to this module
+	(rectangles are the only PCL object affected by pixel placement in
+	this and most other PCL interpreters, including most but not all HP
+	implementations.
+
+	Modified pcrect_do_reset to support overlay macros.
+
+	* pcsfont.c: Modified pcsfont_do_reset to support overlay macros.
+
+	* pcstate.h:
+	Added pcl_pattern_transparent field, so that PCL's pattern transparency
+	setting and GL/2's source transparency setting may be separately
+	maintained.
+
+	Added the render_mode and monochrome_mode fields, to support the
+	monochrome/normal print mode selection command.
+
+	Replaced the grid_adjust field with the pp_mode field.
+
+	* pcstatus.c: Modified pcsymbol_do_reset to support overlay macros.
+
+	* pctext.c:
+	Removed no longer needed invocation of gs_setfilladjust (for PCL, fill
+	adjust is now always set to 0).
+
+	Modified pctext_do_reset to support overlay macros.
+
+	* pcuptrn.c:
+	Modified pcl_pattern_RF to handle both colored and uncolored patterns
+	created via the RF command.
+
+	* pcursor.c: Modified pcursor_do_reset to support overlay macros.
+
+	* pgconfig.c:
+	Split the hpgl_DF command into two sections, one of which is accessible
+	separately to support the reset required for overlay macros.
+
+	* pgdraw.c:
+	Modified the handling of patterns generated with the RF command to
+	allow both colored and uncolored variations.
+
+	Modified the manner in which the current pen is specified for
+	uncolored patterns generated via the RF command. If pen 1 is desired,
+	the opposite of the current pen is specified, to allow for the
+	possibility that the pattern may not exist.
+
+	Changed the handling of fill adjust to reflect the replacement of the
+	grid_adjust state parameter with pp_mode (note that the actual
+	implementation of pixel placement for GL objects is still broken).
+
+	* pginit.c: Added support for overlay macros.
+
+	* pglfill.c:
+	Modified hpgl_FT to read and use the second optional parameter for
+	mode 11 patterns (this is contrary to the documentation, but
+	consistent with the SV command and has been empirically verified on
+	two HP PCL implementations).
+
+	Modified hpgl_RF to allow for both colored and uncolored patterns.
+
+	* pgmand.h:
+	Added prototype for the new procedure hpgl_reset_overlay. This is used to
+	reset the GL/2 state prior to the execution of an overlay macro.
+
+	* pgstate.h:
+	1. Replaced the su_ union with the sp_ structure, and made the latter part
+	of the fp_ structure consistent with the sp_ structure. Though not
+	documented as such, for fills other than line fills the FT and SV
+	commands are symmetric.
+
+	2. Added the is_mask field to the rf_ structure. This is used to support
+	uncolored patterns created via the RF command.
+
+	* rtgmode.c: Modified gmode_do_reset to support overlay macros.
+
+Tue Aug 25 19:18:59 1998  Henry Stiles  <henrys@meerkat>
+
+	* pcl.mak: adds code to clean up gs generated files.
+
+Mon Aug 24 08:03:18 1998  Henry Stiles  <henrys@meerkat>
+
+	* pcl.mak:
+	removed device files from current working source directory that should
+	not exist there in the first place...
+
+Mon Aug 24 07:36:32 1998  Red Hat Linux User  <jan@meerkat>
+
+	* pglabel.c: whitespace difference.
+
+	* pcwhtindx.c:
+	Fixed a bug/memory leak in pcl_cmap_map_raster. If a new raster array was
+	allocated to hold the re-mapped pattern data, its pointer was never being
+	placed in *pout_pixinfo.
+
+	* pcuptrn.c:
+	1. Modified code to support (up to) two rendered instances per pattern:
+	   one mask and one colored.
+
+	2. Modified the reset code to clear the pattern cache. This is an attempt
+	   to limit memory fragmenation.
+
+	* pcpatrn.h:
+	Modified the pattern structure to be able to hold two rendered instances:
+	one colored and one uncolored. This is an attempt to reduce memory
+	thrashing due to the frequent and unnecessary re-allocation of mask
+	patterns.
+
+	* pcpatrn.c:
+	Modified to the pattern handling code to allow for two rendered instances
+	per pattern: one mask and one colored. This is an attempt to reduce
+	memory thrashing due to the frequent and unnecessary re-allocation of
+	mask patterns.
+
+	* pcpalet.c:
+	1.  Fixed a pair of memory-related problems in the push/pop palette code:
+	    pop palettes were erroneously getting an extra reference, and the
+	    palette stack global was not being set to NULL after the palette had
+	    been cleared.
+
+	2.  Removed code in build_default_palette that undefined the current
+	    palette before redefining it. This avoids a release/allocate operation
+	    for a dictionary entry that otherwise would confuse the memory leak
+	    detection tool.
+
+	3.  Fixed a bug in a never-used case in pcl_palette_PW. If the palette
+	    does not exist when this routine is called, it is created, but in the
+	    earlier code the ppalet pointer was not being updated after the
+	    creation.
+
+	4.  Modified clear_palette_store to leave the current palette alone if it
+	    already is the default palette. This simplifies work with the memory
+	    leak detector. This change also moves the invocation of the
+	    build_default_palette routine to this procedure from its various
+	    callers.
+
+	* pcmain.c:
+	Moved the reporting points for the memory leak detection code to more
+	convenient locations.
+
+	* pcht.c:
+	Fixed a memory leak in set_threshold_ht. A fourth threshold string was
+	being generated to handle the case of a 4-color output device, but
+	this was overwritting the red-component threshold array allocated
+	previously.  Not output error occurred because the two arrays were
+	meant to be the same, but the previously allocated array could no
+	longer be freed.
+
+	* pcfsel.c: *** empty log message ***
+
+	* pccolor.c:
+	Modified the set color component and assign color index commands to be
+	permitted but ignored in raster graphics mode (i.e.: they do not end
+	raster graphics mode). This is contrary to the documentation but
+	matches the behavior of the CLJ 5/5M and DJ 1600C/CM. The effect is
+	visible in PCL 5c FTS panel 845.
+
+	* pcindexed.c:
+	Fixed bug in pcl_cs_indexed_update_lookup_tbl. A new indexed color
+	space may have been created via the "unshare" operation, but the color
+	space pointer was never being updated. Hence, the lookup table was
+	being modified in the old color space. This bug is visible on PCL 5c
+	FTS panels 2410 and 2411.
+
+	* pcmain.c, pcindexed.c, pcl.mak, pcht.c, pcfsel.c, pccolor.c:
+	*** empty log message ***
+
+Sun Aug 23 05:30:05 1998  Henry Stiles  <henrys@meerkat>
+
+	* pgdraw.c:
+	Work around to stroke lines gl/2 style fills individually instead of
+	accumulating the entire fill in one path.  This guarantees that a
+	fixed amount of memory will be used for fills.  It was changed to fix
+	fts 1462 which creates a path that is much to large, not due to the
+	size of the graphical object being filled but the algorithm fills from
+	GL/2's anchor corner and clips the resulting fill to the graphical
+	object.  We should find the equivalent maximum value for the anchor
+	corner such that the coordinates are less than the X and Y origin
+	coordinates of the bounding box of the object being filled.
+
+Sun Aug 23 05:10:18 1998  Red Hat Linux User  <jan@meerkat>
+
+	* rtraster.c:
+	Modified to properly (if quite slowly) handle the case of a raster with
+	source transaprency off but pattern transparency on.
+
+	* pcwhtindx.c:
+	Modified pcl_cmap_create_remap_ary to potentially provide a remap
+	array if source of pattern transparency is set. This is necessary to
+	support the "two part" image structure required for rendering images
+	with opaque source\ s but transparent patterns. Also removed a remnant
+	of the temporary hack that made all rasters opaque.
+
+	* pctext.c: fills in a missing else.
+
+	* pcpatrn.h:
+	Added the "colored" bit to the pattern object, to indicate if it was
+	rendered as a colored pattern.
+
+	* pcpatrn.c:
+	1.  Moved the retained copy of the special white base color space to
+	pccsbase.c, and the retained copy of the default halftone to pcht.c.
+	This improves modularity and simplifies work with memory leak
+	detection tools.
+
+	2.  Modified the rendering of uncolored, transparent, foreground
+	patterns.  If the halftone or color rendering dictionary in the
+	foreground varies from that in the current palette, these must be
+	rendered as colored patterns (because the graphic library's state
+	cannot retain two halftones).
+
+	3.  Plugged a memory leak in render_pattern: the pattern instance of
+	the previous pattern was not being released.
+
+	4.  Added stub for the driver configuratioin command. This will absorb
+	any data provided.
+
+	* pcpalet.c:
+	Modified to retain a copy of the default palette, and to set the
+	default drawing color during initialization. This reduces memory
+	thrashing slightly and simplies work with memory leak detection tools.
+
+	* pcpage.c:
+	Modified new_page_size to reset the default transformation in the graphic
+	state. This is necessary for devices that feed different size sheets in
+	different directions.
+
+	* pcmain.c:
+	Removed initialization of the PCL coordinate system; this is now
+	handled in pcpage.c
+
+	* pcindexed.h:
+	Changed the third operand of pcl_cs_indexed_build_special to be a
+	const byte pointer rather than a byte pointer. Also added the
+	prototype for the new initialization routine pcl_cs_indexed_init.
+
+	* pcindexed.c:
+	Modified default pen widths to be in plotter units rather than
+	millemeters.  Also modified to retain the default indexed color
+	space. This reduces memory thrashing slightly, and makes working
+	with memory leak detection tools simpler. The latter change requires
+	the addition of the an intialization procedure, pcl_cs_indexed_init.
+
+	* pcht.c:
+	Modified to provide a default transfer map (color lookup table) for
+	the default (K) component of the output. This is necessary to properly
+	handle cases in which the provided transfer function for the other
+	components is an inverting function, for otherwise the results will be
+	very black.
+
+	Also modified to maintain a copy of the default halftone, which is
+	allocated at boot time. This reduces memory trhashing slight, but more
+	significantly it greatly simplifies working with the memory leak
+	detection tools.
+
+	* pcfrgrnd.c:
+	Modified to retain a copy of the default foreground. This reduces
+	memory thrashing slightly, and more significantly simplifies work with
+	memory leak detection tools.
+
+	* pcdraw.c: Modified pcl_grestore to release the references held by the
+	pcl_gstate_ids_t structure that will be discarded. This plugs a major
+	memory leak.
+	VS: ----------------------------------------------------------------------
+
+	* pccsbase.h:
+	Added prototype for initialization routine pcl_cs_base_init.
+
+	* pccsbase.c: Modified to keep a copy of the special "white" color
+	space. Previously, this was kept in pcpatrn.c, which was not ideal
+	from a modularity point of view. As part of the change, an
+	initialization routine, pcl_cs_base_init, has been added.
+
+Thu Aug 20 20:56:10 1998  Henry Stiles  <henrys@meerkat>
+
+	* Anomalies.txt: remove cvs anomalies
+
+	* pglabel.c, pcindexed.c, pcmain.c:
+	changes default translation (pcmain.c) to put pcl's origin correctly
+	on devices that have a non-zero imageable area.  Also, pcl was not
+	using the default plu to initialize line width and the character code
+	was not properly initializing the line width prior to stroking
+	"stroke" font characters.
+
