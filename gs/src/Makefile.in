@@ -367,8 +367,8 @@ DEVICE_DEVS12=$(DD)psmono.dev $(DD)psgray.dev $(DD)psrgb.dev $(DD)bit.dev $(DD)b
 DEVICE_DEVS13=@PNGDEVS@
 DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev
 DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)epswrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev
+DEVICE_DEVS16=$(DD)bbox.dev
 
-DEVICE_DEVS16=
 DEVICE_DEVS17=
 DEVICE_DEVS18=
 DEVICE_DEVS19=

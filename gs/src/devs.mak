@@ -207,7 +207,7 @@ GDEV=$(AK) $(ECHOGS_XE) $(GDEVH)
 #	DEVICE_DEVS2 - dot matrix printers.
 #	DEVICE_DEVS3 - H-P monochrome printers.
 #	DEVICE_DEVS4 - H-P color printers.
-#	DEVICE_DEVS5 - additional H-P printers if needed.
+#	DEVICE_DEVS5 - additional inkjet printers if needed.
 #	DEVICE_DEVS6 - other ink-jet and laser printers.
 #	DEVICE_DEVS7 - fax file formats.
 #	DEVICE_DEVS8 - PCX file formats.
@@ -218,8 +218,8 @@ GDEV=$(AK) $(ECHOGS_XE) $(GDEVH)
 #	DEVICE_DEVS13 - PNG file formats.
 #	DEVICE_DEVS14 - CGM, JPEG, and MIFF file formats.
 #	DEVICE_DEVS15 - high-level (PostScript and PDF) file formats.
-#	DEVICE_DEVS16 - (overflow for PC platforms)
-#	DEVICE_DEVS17 - (ditto)
+#	DEVICE_DEVS16 - additional high-level and utility drivers
+#	DEVICE_DEVS17 - (overflow for PC platforms)
 #	DEVICE_DEVS18 - (ditto)
 #	DEVICE_DEVS19 - (ditto)
 #	DEVICE_DEVS20 - (ditto)

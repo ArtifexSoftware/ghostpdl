@@ -1,4 +1,4 @@
-#    Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1997-2002 artofcode LLC. All rights reserved.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -346,9 +346,9 @@ DEVICE_DEVS12=$(DD)psmono.dev $(DD)psgray.dev $(DD)psrgb.dev $(DD)bit.dev $(DD)b
 DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev
 DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev
 DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)epswrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev
+DEVICE_DEVS16=$(DD)bbox.dev
 # Overflow from DEVS9
-DEVICE_DEVS16=$(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev $(DD)pkm.dev $(DD)pkmraw.dev $(DD)pksm.dev $(DD)pksmraw.dev
-DEVICE_DEVS17=
+DEVICE_DEVS17=$(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev $(DD)pkm.dev $(DD)pkmraw.dev $(DD)pksm.dev $(DD)pksmraw.dev
 DEVICE_DEVS18=
 DEVICE_DEVS19=
 DEVICE_DEVS20=
