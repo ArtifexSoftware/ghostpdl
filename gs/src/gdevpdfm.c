@@ -1436,7 +1436,7 @@ pdfmark_BP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     bbox_str_len = stell(&s);
     swrite_string(&s, matrix_str, sizeof(bbox_str));
     pprintg6(&s, "[%g %g %g %g %g %g]",
-	    ictm.xx, ictm.xy, ictm.yx, ictm.yy, ictm.tx, ictm.tx);
+	    ictm.xx, ictm.xy, ictm.yx, ictm.yy, ictm.tx, ictm.ty);
     matrix_str_len = stell(&s);
     if ((code = cos_stream_put_c_strings(pcs, "/Type", "/XObject")) < 0 ||
 	(code = cos_stream_put_c_strings(pcs, "/Subtype", "/Form")) < 0 ||
