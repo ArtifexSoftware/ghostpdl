@@ -209,13 +209,14 @@ get_next_char(
         return 0;
     }
 
-    /* map the symbol. If it fails to map, quit now */
+    /* map the symbol. If it fails to map, quit now.  Unless we have a
+       galley character */
     chr = map_symbol(pcs->font, pcs->map, chr);
     *pchr = chr;
     if (chr == 0xffff) {
         *pis_space = true;
         return 0;
-    }
+     }
 
     /* check if the character is in the font and get the character
        width at the same time */
@@ -780,7 +781,8 @@ pcl_text(
     if ( (pcs->cap.x <= pcs->margins.right) && 
 	 (pcs->source_transparent) &&
 	 (!pcs->last_was_BS) &&
-	 (!pcs->end_of_line_wrap) )
+	 (!pcs->end_of_line_wrap) &&
+	 (pcl_tpm_is_single_byte(pcs->text_parsing_method)) )
 	code = pcl_show_chars_fast(pcs, &scale, str, size, literal);
     else 
 	code = pcl_show_chars_slow(pcs, &scale, str, size, literal);

@@ -418,7 +418,20 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcs, stream_cursor_read *pr)
 			      goto x;
 			  }
 			chr = *++p;
-			if ( chr != ESC )
+			/* check for double byte scanning */
+			if ( pcl_char_is_2_byte(chr, pcs->text_parsing_method ) ) {
+			    /* we need to have at least 2 bytes - check if we need more data */
+			    if ( p >= rlimit ) {
+				--p;
+				goto x;
+			    }
+			    if_debug2('i', "%x%x\n", p[0], p[1]);
+			    code = pcl_text(p, 2, pcs, false);
+			    if ( code < 0 ) goto x;
+			    /* now pass over the second byte */
+			    p++;
+			    cdefn = NULL;
+			} else if ( chr != ESC )
 			  {	if_debug1('i',
 					  (chr == '\\' ? "\\%c\n" :
 					   chr >= 33 && chr <= 126 ?

@@ -1307,10 +1307,10 @@ hpgl_add_bezier_to_path(hpgl_state_t *pgls, floatp x1, floatp y1,
 			floatp x4, floatp y4, hpgl_plot_function_t draw)
 {
     gs_fixed_point dummy_pt;
+    gx_path *       ppath = gx_current_path(pgls->pgs);
     /* Don't add superflous points in polygon mode */
     if ( ( !pgls->g.polygon_mode ) || 
-	 ( gx_path_subpath_start_point(gx_current_path(pgls->pgs),
-				       &dummy_pt) < 0 ) )
+	 ( !ppath->current_subpath ) )
 	hpgl_call(hpgl_add_point_to_path(pgls, x1, y1,
 					 hpgl_plot_move_absolute, true));
     if ( draw )
@@ -1335,7 +1335,9 @@ hpgl_close_path(
 {
     gs_point        first, last;
     gs_fixed_point  first_device;
-
+    gx_path *ppath = gx_current_path(pgls->pgs);
+    if (!ppath->current_subpath)
+	return 0;
     /* if we do not have a subpath there is nothing to do, get the
        first points of the path in device space and convert to floats */
     if ( gx_path_subpath_start_point(gx_current_path(pgls->pgs),
@@ -1398,11 +1400,11 @@ hpgl_draw_current_path(
     gs_state *              pgs = pgls->pgs;
     pcl_pattern_set_proc_t  set_proc;
     int                     code = 0;
+    gx_path *       ppath = gx_current_path(pgls->pgs);
 
     /* check if we have a current path - we don't need the current
        point */
-    if ( gx_path_subpath_start_point(gx_current_path(pgls->pgs),
-				     &dummy_pt) < 0 ) {
+    if (!ppath->current_subpath) {
 	hpgl_call(hpgl_clear_current_path(pgls));
  	return 0;
     }

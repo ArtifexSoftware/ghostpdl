@@ -214,9 +214,9 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcs)
 	  {
 	  case plfst_bitmap:
 	  {
-	    gs_font_base *pfont =
-	      gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
-			      "pcl_font_header(bitmap font)");
+	    gs_font_base *pfont;
+bitmap:	    pfont = gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
+				    "pcl_font_header(bitmap font)");
 
 	    if ( pfont == 0 )
 	      return_error(e_Memory);
@@ -254,12 +254,7 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcs)
 	  }
 	  case plfst_TrueType:
 	  {
-	    gs_font_type42 *pfont =
-	      gs_alloc_struct(mem, gs_font_type42, &st_gs_font_type42,
-			      "pcl_font_header(truetype font)");
-
-	    if ( pfont == 0 )
-	      return_error(e_Memory);
+	    gs_font_type42 *pfont;
 	    { static const pl_font_offset_errors_t errors = {
 	        gs_error_invalidfont, 0
 	      };
@@ -269,7 +264,18 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcs)
 				      &errors);
 	      if ( code < 0 )
 		return code;
+	      /* truetype large format 16 can be truetype or bitmap -
+                 absurd */
+	      if ( ( pfh->HeaderFormat == pcfh_truetype_large ) &&
+		   ( plfont->scaling_technology == plfst_bitmap ) )
+		  goto bitmap;
+								  
 	    }
+	    pfont = gs_alloc_struct(mem, gs_font_type42, &st_gs_font_type42,
+				    "pcl_font_header(truetype font)");
+	    if ( pfont == 0 )
+	      return_error(e_Memory);
+
 	    { uint num_chars = pl_get_uint16(pfh->LastCode);
 
 	      if ( num_chars < 20 )
@@ -394,7 +400,8 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcs)
 	    { uint width, height;
 	      if ( data[2] != 14 ||
 		   (format != pcfh_bitmap &&
-		    format != pcfh_resolution_bitmap)
+		    format != pcfh_resolution_bitmap &&
+		    format != pcfh_truetype_large)
 		 )
 		return e_Range;
 	      width = pl_get_uint16(data + 10);
