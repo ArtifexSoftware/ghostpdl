@@ -603,7 +603,7 @@ pdf_choose_compression_cos(pdf_image_writer *piw, cos_stream_t *s[2], bool force
     s[k0]->cos_procs->release((cos_object_t *)s[k0], "pdf_image_choose_filter");
     s[k0]->written = 1;
     piw->binary[0].strm = piw->binary[k1].strm;
-    sclose(piw->binary[2].strm);
+    s_close_filters(&piw->binary[2].strm, piw->binary[2].target);
     piw->binary[1].strm = piw->binary[2].strm = 0; /* for GC */
     piw->binary[1].target = piw->binary[2].target = 0;
     s[k1]->id = piw->pres->object->id;

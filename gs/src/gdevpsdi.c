@@ -448,6 +448,8 @@ psdf_setup_compression_chooser(psdf_binary_writer *pbw, gx_device_psdf *pdev,
     pbw->memory = pdev->memory;
     pbw->strm = pdev->strm; /* just a stub - will not write to it. */
     pbw->dev = pdev;
+    pbw->target = pbw->strm; /* Since s_add_filter may insert NullEncode to comply buffering,
+			         will need to close a chain of filetrs. */
     code = psdf_encode_binary(pbw, &s_compr_chooser_template, ss);
     if (code < 0)
 	return code;
