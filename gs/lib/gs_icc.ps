@@ -95,12 +95,18 @@ colorspacedict /ICCBased
 
     % if CIE spaces are not use, just take the alternate space
     NOCIE
-      { pop null }
-      {
-        % check for native support
+      { pop //null }
+      { % check for native support
         /.seticcspace where
-          { pop dup 1 get .seticcspace }
-          { pop null }
+          { pop dup 1 get
+	    % Acrobat Reader silently ignores errors with ICC profiles
+	    % and uses the alternate color space -- do the same.
+	    mark exch { .seticcspace } stopped
+	      { cleartomark pop //null }
+	      { pop }
+	    ifelse
+	  }
+          { pop //null }
         ifelse
       }
     ifelse

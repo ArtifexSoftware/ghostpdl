@@ -382,38 +382,29 @@ gx_load_icc_profile(gs_cie_icc *picc_info)
     /* verify that the file is legitimate */
     if (picc_info->file_id != (instrp->read_id | instrp->write_id))
 	return_error(gs_error_ioerror);
-
     /*
      * Load the top-level ICC profile.
      *
-     * Our initial inclination had been to generate an error in the
-     * event that the profile fails to load. This was the only way
-     * to provide a language-visible indication of a problem.
-     * Testing demonstrates, however, that this is not what the
-     * Acrobat reader does. Further, it leads to situations in
-     * which a file may print properly with an interpreter that
-     * does not support the ICCBased color space, but fail on one
-     * that does. For failure to load the profile is now handled
-     * by using the alternate color space.
+     * If an ICC profile fails to load, generate an error.
+     * 
+     * Testing demonstrates, however, Acrobat Reader silently
+     * ignores the error and uses the alternate color space.
+     * This behaviour is implemented by catching the error using
+     * a stopped context from within the interpreter (gs_icc.ps).
      *
      * Failure to allocate the top-level profile object is considered
      * a limitcheck rather than a VMerror, as profile data structures
      * are stored in "foreign" memory.
-     *
-     * The following code employs a false loop, to facilitate use of
-     * break.
      */
     if ((picc = new_icc()) == NULL)
 	return_error(gs_error_limitcheck);
-
-    /* false loop, to allow use of break */
-    do {
+    {
 	icProfileClassSignature profile_class;
 	icColorSpaceSignature   cspace_type;
 	gs_vector3 *            ppt;
       
 	if ((picc->read(picc, instrp, 0)) != 0)
-	    break;
+	    return_error(gs_error_rangecheck);
             
 	/* verify the profile type */
 	profile_class = picc->header->deviceClass;
@@ -421,7 +412,7 @@ gx_load_icc_profile(gs_cie_icc *picc_info)
 	     profile_class != icSigDisplayClass   &&
 	     profile_class != icSigOutputClass    &&
 	     profile_class != icSigColorSpaceClass  )
-	    break;
+	    return_error(gs_error_rangecheck);
 
 	/* verify the profile connection space */
 	cspace_type = picc->header->pcs;
@@ -430,20 +421,20 @@ gx_load_icc_profile(gs_cie_icc *picc_info)
 	else if (cspace_type == icSigXYZData)
 	    picc_info->pcs_is_cielab = false;
 	else
-	    break;
+	    return_error(gs_error_rangecheck);
 
 	/* verify the source color space */
 	cspace_type = picc->header->colorSpace;
 	if (cspace_type == icSigCmykData) {
 	    if (picc_info->num_components != 4)
-		break;
+		return_error(gs_error_rangecheck);
 	} else if ( cspace_type == icSigRgbData ||
 		    cspace_type == icSigLabData   ) {
 	    if (picc_info->num_components != 3)
-		break;
+		return_error(gs_error_rangecheck);
 	} else if (cspace_type == icSigGrayData) {
 	    if (picc_info->num_components != 1)
-		break;
+		return_error(gs_error_rangecheck);
 	}
 
 	/*
@@ -502,7 +493,7 @@ gx_load_icc_profile(gs_cie_icc *picc_info)
 			       icmDefaultIntent,
 			       icmLuOrdNorm );
 	if (plu == NULL)
-	    break;
+	    return_error(gs_error_rangecheck);
 
 	/* 
 	 * Get the appropriate white and black points. See the note on
@@ -518,7 +509,7 @@ gx_load_icc_profile(gs_cie_icc *picc_info)
 	picc_info->picc = picc;
 	picc_info->plu = plu;
 
-    } while (false);    /* end of false loop */
+    }
 
     if (picc_info->picc == NULL) {
 	if (plu != NULL)
