@@ -1,4 +1,4 @@
-#    Copyright (C) 1989, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -781,7 +781,8 @@ $(GLOBJ)gdevpdfr.$(OBJ) : $(GLSRC)gdevpdfr.c $(memory__h) $(string__h)\
 $(GLOBJ)gdevpdft.$(OBJ) : $(GLSRC)gdevpdft.c\
  $(math__h) $(memory__h) $(string__h) $(gx_h)\
  $(gdevpdff_h) $(gdevpdfx_h) $(gserrors_h) $(gsmatrix_h) $(gsutil_h)\
- $(gxfcache_h) $(gxfixed_h) $(gxfont_h) $(gxfont0_h) $(gxfont1_h) $(gxpath_h)\
+ $(gxfcache_h) $(gxfixed_h) $(gxfont_h) $(gxfont0_h) $(gxfont1_h)\
+ $(gxfont42_h) $(gxpath_h)\
  $(scommon_h)
 	$(GLCC) $(GLO_)gdevpdft.$(OBJ) $(C_) $(GLSRC)gdevpdft.c
 
