@@ -338,7 +338,6 @@ x_render_char(gx_xfont * xf, gx_xglyph xg, gx_device * dev,
 	      int xo, int yo, gx_color_index color, int required)
 {
     x_xfont *xxf = (x_xfont *) xf;
-    gx_device_X *xdev = xxf->xdev;
     char chr = (char)xg;
     gs_point wxy;
     gs_int_rect bbox;
@@ -346,6 +345,8 @@ x_render_char(gx_xfont * xf, gx_xglyph xg, gx_device * dev,
     int code;
 
     if (dev->dname == gs_x11_device.dname && !((gx_device_X *)dev)->is_buffered) {
+	gx_device_X *xdev = (gx_device_X *)dev;
+
 	code = (*xf->common.procs->char_metrics) (xf, xg, 0, &wxy, &bbox);
 	if (code < 0)
 	    return code;
@@ -405,6 +406,7 @@ x_render_char(gx_xfont * xf, gx_xglyph xg, gx_device * dev,
 	return -1;		/* too hard */
     else {
 	/* Display on an intermediate bitmap, then copy the bits. */
+	gx_device_X *xdev = xxf->xdev;
 	int wbm, raster;
 	int i;
 	XImage *xim;
