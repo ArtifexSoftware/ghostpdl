@@ -51,7 +51,7 @@ extern_gx_io_device_table();
 extern const char iodev_dtype_stdio[];
 
 /* Forward references: file name parsing. */
-private int parse_file_name(const ref * op, gs_parsed_file_name_t * pfn);
+private int parse_file_name(const ref * op, gs_parsed_file_name_t * pfn, bool safemode);
 private int parse_real_file_name(const ref * op,
 				 gs_parsed_file_name_t * pfn,
 				 gs_memory_t *mem, client_name_t cname);
@@ -163,18 +163,6 @@ check_file_permissions_reduced(i_ctx_t *i_ctx_p, const char *fname, int len,
     /* Assuming a reduced file name. */
 #endif
 
-    /*
-     * Check here for the %pipe device which is illegal when
-     * LockFilePermissions is true. In the future we might want to allow
-     * the %pipe device to be included on the PermitFile... paths, but
-     * for now it is simply disallowed.
-     */
-    if (i_ctx_p->LockFilePermissions &&
-               string_match( (const unsigned char*) fname, len,
-			     (const unsigned char*) "%pipe*", 5, NULL)
-       ) {
-	return e_invalidfileaccess;
-    }
     if (dict_find_string(&(i_ctx_p->userparams), permitgroup, &permitlist) <= 0)
         return 0;	/* if Permissions not found, just allow access */
 #if !NEW_COMBINE_PATH
@@ -275,11 +263,11 @@ check_file_permissions(i_ctx_t *i_ctx_p, const char *fname, int len,
     uint rlen = sizeof(fname_reduced);
 
     if (gp_file_name_reduce(fname, len, fname_reduced, &rlen) != gp_combine_success)
-	return 0;
-    fname = fname_reduced;
-    len = rlen;
-#endif
+	return e_invalidaccess;		/* fail if we couldn't reduce */
+    return check_file_permissions_reduced(i_ctx_p, fname_reduced, rlen, permitgroup);
+#else
     return check_file_permissions_reduced(i_ctx_p, fname, len, permitgroup);
+#endif
 }
 
 /* <name_string> <access_string> file <file> */
@@ -294,7 +282,7 @@ zfile(i_ctx_t *i_ctx_p)
 
     if (code < 0)
 	return code;
-    code = parse_file_name(op - 1, &pname);
+    code = parse_file_name(op - 1, &pname, i_ctx_p->LockFilePermissions);
     if (code < 0)
 	return code;
 	/*
@@ -414,7 +402,7 @@ zfilenameforall(i_ctx_t *i_ctx_p)
     /* and the procedure, and invoke the continuation. */
     check_estack(7);
     /* Get the iodevice */
-    code = parse_file_name(op - 2, &pname);
+    code = parse_file_name(op - 2, &pname, i_ctx_p->LockFilePermissions);
     if (code < 0)
 	return code;
     iodev = (pname.iodev == NULL) ? iodev_default : pname.iodev;
@@ -511,7 +499,7 @@ zrenamefile(i_ctx_t *i_ctx_p)
 		 */
 	      ((check_file_permissions(i_ctx_p, pname1.fname, pname1.len,
 	      				"PermitFileControl") < 0 &&
-	          !file_is_tempfile(i_ctx_p, op - 1) < 0) ||
+	          !file_is_tempfile(i_ctx_p, op - 1)) ||
 	      (check_file_permissions(i_ctx_p, pname2.fname, pname2.len,
 	      				"PermitFileControl") < 0 ||
 	      check_file_permissions(i_ctx_p, pname2.fname, pname2.len,
@@ -550,7 +538,7 @@ zstatus(i_ctx_t *i_ctx_p)
 	    {
 		gs_parsed_file_name_t pname;
 		struct stat fstat;
-		int code = parse_file_name(op, &pname);
+		int code = parse_file_name(op, &pname, i_ctx_p->LockFilePermissions);
 
 		if (code < 0)
 		    return code;
@@ -688,7 +676,7 @@ zlibfile(i_ctx_t *i_ctx_p)
     stream *s;
 
     check_ostack(2);
-    code = parse_file_name(op, &pname);
+    code = parse_file_name(op, &pname, i_ctx_p->LockFilePermissions);
     if (code < 0)
 	return code;
     if (pname.iodev == NULL)
@@ -895,11 +883,24 @@ const op_def zfile_op_defs[] =
 /* Parse a file name into device and individual name. */
 /* See gsfname.c for details. */
 private int
-parse_file_name(const ref * op, gs_parsed_file_name_t * pfn)
+parse_file_name(const ref * op, gs_parsed_file_name_t * pfn, bool safemode)
 {
+    int code;
+
     check_read_type(*op, t_string);
-    return gs_parse_file_name(pfn, (const char *)op->value.const_bytes,
+    code = gs_parse_file_name(pfn, (const char *)op->value.const_bytes,
 			      r_size(op));
+    if (code < 0)
+	return code;
+    /*
+     * Check here for the %pipe device which is illegal when
+     * LockFilePermissions is true. In the future we might want to allow
+     * the %pipe device to be included on the PermitFile... paths, but
+     * for now it is simply disallowed.
+     */
+    if (pfn->iodev && safemode && strcmp(pfn->iodev->dname, "%pipe%") == 0)
+	return e_invalidfileaccess;
+    return code;
 }
 
 /* Parse a real (non-device) file name and convert to a C string. */
