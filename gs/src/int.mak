@@ -1517,7 +1517,8 @@ $(PSOBJ)zcssepr.$(OBJ) : $(PSSRC)zcssepr.c $(OP) $(memory__h)\
 	$(PSCC) $(PSO_)zcssepr.$(OBJ) $(C_) $(PSSRC)zcssepr.c
 
 $(PSOBJ)zfsample.$(OBJ) : $(PSSRC)zfsample.c $(OP) $(memory__h)\
- $(gxcspace_h) $(estack_h) $(ialloc_h) $(ifunc_h) $(ostack_h) $(gsfunc0_h)
+ $(gxcspace_h) $(estack_h) $(ialloc_h) $(idict_h) $(idparam_h)\
+ $(ifunc_h) $(ostack_h) $(gsfunc0_h)
 	$(PSCC) $(PSO_)zfsample.$(OBJ) $(C_) $(PSSRC)zfsample.c
 
 # ---------------- DCT filters ---------------- #

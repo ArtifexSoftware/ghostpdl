@@ -22,6 +22,8 @@
 #include "gxcspace.h"
 #include "estack.h"
 #include "ialloc.h"
+#include "idict.h"
+#include "idparam.h"
 #include "ifunc.h"
 #include "ostack.h"
 #include "store.h"
@@ -56,8 +58,9 @@ struct gs_sampled_data_enum_s {
 typedef struct gs_sampled_data_enum_s gs_sampled_data_enum;
 
 
-gs_private_st_ptrs1(st_gs_sampled_data_enum, gs_sampled_data_enum, "gs_sampled_data_enum",
-		    gs_sampled_data_enum_enum_ptrs, gs_sampled_data_enum_reloc_ptrs, pfn);
+gs_private_st_ptrs1(st_gs_sampled_data_enum, gs_sampled_data_enum,
+		"gs_sampled_data_enum", gs_sampled_data_enum_enum_ptrs,
+		gs_sampled_data_enum_reloc_ptrs, pfn);
 
 
 /* Forward references */
@@ -68,6 +71,7 @@ private int sampled_data_setup(i_ctx_t *i_ctx_p, gs_function_t *pfn,
 	const ref * pproc, int (*finish_proc)(P1(i_ctx_t *)),
 	gs_memory_t * mem);
 private int sampled_data_sample(i_ctx_t *i_ctx_p);
+private int sampled_data_continue(i_ctx_t *i_ctx_p);
 private int sampled_data_finish(i_ctx_t *i_ctx_p);
 
 private gs_sampled_data_enum * gs_sampled_data_enum_alloc
@@ -91,7 +95,7 @@ zbuildsampledfunction(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     const ref * pdict = op;
-    const ref * pfunc;
+    ref * pfunc;
     int code = 0;
     gs_function_t *pfn;
     gs_function_Sd_params_t params = {0};
@@ -270,18 +274,18 @@ cube_build_func0(const ref * pdict, gs_function_Sd_params_t * params,
 							gs_memory_t *mem)
 {
     byte * bytes = 0;
-    int code, i, cube_size;
+    int code, i;
     int total_size;
-    int * size;
-    float * domain, * range;
 
     if ((code = dict_int_param(pdict, "Order", 1, 3, 1, &params->Order)) < 0 ||
 	(code = dict_int_param(pdict, "BitsPerSample", 1, 32, 0,
 			       &params->BitsPerSample)) < 0 ||
 	((code = params->m =
-	    fn_build_float_array(pdict, "Domain", false, true, &params->Domain, mem)) < 0 ) ||
+	    fn_build_float_array(pdict, "Domain", false, true,
+		    			&params->Domain, mem)) < 0 ) ||
 	((code = params->n =
-	    fn_build_float_array(pdict, "Range", false, true, &params->Range, mem)) < 0) 
+	    fn_build_float_array(pdict, "Range", false, true,
+		    			&params->Range, mem)) < 0) 
 	) {
 	goto fail;
     }
@@ -354,9 +358,6 @@ fail:
     return (code < 0 ? code : gs_note_error(e_rangecheck));
 }
 
-private int sampled_data_collect(i_ctx_t *i_ctx_p);
-private int sampled_data_continue(i_ctx_t *i_ctx_p);
-
 /*
  * Layout of stuff pushed on estack while collecting the sampled data.
  * The data is saved there since it is safe from attack by the procedure
@@ -373,7 +374,7 @@ private int sampled_data_continue(i_ctx_t *i_ctx_p);
 
 /*
  * Set up to collect the data for the sampled function.  This is used for
- * those alternate tine transforms that cannot be converted into a
+ * those alternate tint transforms that cannot be converted into a
  * type 4 function.
  */
 private int
@@ -381,7 +382,7 @@ sampled_data_setup(i_ctx_t *i_ctx_p, gs_function_t *pfn,
 	const ref * pproc, int (*finish_proc)(P1(i_ctx_t *)), gs_memory_t * mem)
 {
     gs_sampled_data_enum *penum;
-    int i, code;
+    int i;
     gs_function_Sd_params_t * params = (gs_function_Sd_params_t *)&pfn->params;
 
     check_estack(estack_storage + 1);		/* Verify space on estack */
@@ -424,7 +425,6 @@ sampled_data_sample(i_ctx_t *i_ctx_p)
     			(gs_function_Sd_params_t *)&penum->pfn->params;
     int num_inputs = params->m;
     int i;
-    byte * data_ptr;
 
     /*
      * Put set of input values onto the stack.
@@ -434,8 +434,8 @@ sampled_data_sample(i_ctx_t *i_ctx_p)
 	double dmin = params->Domain[2 * i];
 	double dmax = params->Domain[2 * i + 1];
 
-	make_real(op - num_inputs + i + 1,
-	    penum->indexes[i] * (dmax - dmin)/(params->Size[i] - 1) + dmin);
+	make_real(op - num_inputs + i + 1, (float) (
+	    penum->indexes[i] * (dmax - dmin)/(params->Size[i] - 1) + dmin));
     }
 
     proc = sample_proc;			    /* Get procedure from storage */
@@ -452,7 +452,8 @@ sampled_data_continue(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     gs_sampled_data_enum *penum = senum;
-    gs_function_Sd_params_t * params = (gs_function_Sd_params_t *)&penum->pfn->params;
+    gs_function_Sd_params_t * params =
+	    (gs_function_Sd_params_t *)&penum->pfn->params;
     int i, j, num_out = params->n;
     int code = 0;
     byte * data_ptr;
@@ -479,7 +480,7 @@ sampled_data_continue(i_ctx_t *i_ctx_p)
 	value = (value - rmin) / (rmax - rmin);		/* Convert to 0 to 1.0 */
 	cv = (int) (value * sampled_data_value_max + 0.5);
 	for (j = 0; j < bps; j++)
-	    data_ptr[bps * i + j] = cv >> ((bps - 1 - j) * 8);	/* MSB first */
+	    data_ptr[bps * i + j] = (byte)(cv >> ((bps - 1 - j) * 8));	/* MSB first */
     }
     pop(num_out);		    /* Move op to base of result values */
     
@@ -509,7 +510,8 @@ sampled_data_finish(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     gs_sampled_data_enum *penum = senum;
     /* Build a type 0 function using the given parameters */
-    gs_function_Sd_params_t * params = (gs_function_Sd_params_t *)&penum->pfn->params;
+    gs_function_Sd_params_t * params =
+	(gs_function_Sd_params_t *)&penum->pfn->params;
     gs_function_t * pfn;
     ref cref;			/* closure */
     int code = gs_function_Sd_init(&pfn, params, imemory);
