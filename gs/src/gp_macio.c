@@ -139,8 +139,6 @@ setenv(const char * env, char *p) {
 //	}
 }
 
-
-
 char *
 getenv(const char * env) {
 
@@ -173,7 +171,6 @@ failed:
 	    return NULL;
 
 }
-
 
 /* ====== Substitute for stdio ====== */
 
@@ -353,6 +350,7 @@ fputs(const char *string, FILE *file)
 		return fwrite(string, strlen(string), 1, file);
 	}
 }
+
 
 /* ------ Printer accessing ------ */
 
@@ -579,20 +577,18 @@ gp_read_macresource(byte *buf, const char *fname, const uint type, const ushort 
     fileref = FSpOpenResFile(&spec, fsRdPerm);
     if (fileref == -1) goto fin;
     
-    dlprintf1("loading resource from fileref %d\n", fileref);
+    if_debug1('s', "[s] loading resource from fileref %d\n", fileref);
 
     /* load resource */
     resource = Get1Resource((ResType)type, (SInt16)id);
     if (resource == NULL) goto fin;
-    
-    dlprintf1("loaded resource at handle 0x%08x\n", resource);
-      
+          
     /* allocate res */
     /* GetResourceSize() is probably good enough */
     //size = GetResourceSizeOnDisk(resource);
     size = GetMaxResourceSize(resource);
     
-    dlprintf1("size on disk is %d bytes\n", size);
+    if_debug1('s', "[s] resource size on disk is %d bytes\n", size);
     
     /* if we don't have a buffer to fill, just return */
     if (buf == NULL) goto fin;

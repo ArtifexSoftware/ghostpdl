@@ -43,6 +43,7 @@
 #include "gstypes.h"
 #include "gsmemory.h"
 #include "stream.h"
+#include "gdebug.h"
 #include "gxiodev.h"
 #include "gp.h"
 
@@ -196,7 +197,7 @@ resource_list *read_resource_map(FILE *in, resource_header *header)
 
     buf = malloc(sizeof(*buf)*header->map_length);
     if (buf == NULL) {
-        fprintf(stderr, "error: could not allocate %d bytes for resource map\n", header->map_length);
+        if_debug1('s', "error: could not allocate %d bytes for resource map\n", header->map_length);
         return NULL;
     }
         
@@ -209,7 +210,7 @@ resource_list *read_resource_map(FILE *in, resource_header *header)
     n_types = get_int16(buf + 28); n_types++;
     
     if (type_offset != 30)
-        fprintf(stderr, "warning! type list offset is %d, not 30!\n", type_offset);
+        if_debug1('s', "[s] warning! resource type list offset is %d, not 30!\n", type_offset);
             
     /* determine the total number of resources */
     types = malloc(sizeof(*types)*n_types);
@@ -233,7 +234,7 @@ resource_list *read_resource_map(FILE *in, resource_header *header)
     k = 0;
     for (i = 0; i < n_types; i++) {
     	res_type2string(types[i], type_string);
-        fprintf(stderr, "%d resources of type '%s':\n", number[i], type_string);
+    	if_debug2('s', "[s] %d resources of type '%s':\n", number[i], type_string);
         p = buf + type_offset + ref_offsets[i]; // FIXME: also off?
         //p = buf + 32 + ref_offsets[i];
         for (j = 0; j < number[i]; j++) {
@@ -256,9 +257,9 @@ resource_list *read_resource_map(FILE *in, resource_header *header)
             list->resources[k].data = NULL;
             
             p += 12;
-            fprintf(stderr, "\tid %d offset 0x%08x flags 0x%02x '%s'\n",
+            if_debug4('s', "\tid %d offset 0x%08x flags 0x%02x '%s'\n",
                 list->resources[k].id, list->resources[k].offset,
-                list->resources[k].flags, list->resources[k].name); 
+                list->resources[k].flags, list->resources[k].name);
             k++;
         }
     }        
@@ -296,21 +297,21 @@ int read_datafork_resource(byte *buf, const char *fname, const uint type, const 
 
     in = fopen(fname, "rb");
     if (in == NULL) {
-        fprintf(stderr, "couldn't open '%s'\n", fname);
+        if_debug1('s', "[s] couldn't open '%s'\n", fname);
         return 0;
     }
 
     header = read_resource_header(in, 0);
     if (header == NULL) {
-        fprintf(stderr, "could not read file header.\n");
-        fprintf(stderr, "not a serialized data fork resource file?\n");
+        if_debug0('s', "[s] could not read resource file header.\n");
+        if_debug0('s', "[s] not a serialized data fork resource file?\n");
         return 0;
     }
     
-    fprintf(stderr, "loading resource map\n");
+    if_debug0('s', "[s] loading resource map\n");
 	list = read_resource_map(in, header);
     if (list == NULL) {
-        fprintf(stderr, "couldn't read resource map.\n");
+        if_debug0('s', "[s] couldn't read resource map.\n");
         return 0;
     }
     
@@ -318,10 +319,10 @@ int read_datafork_resource(byte *buf, const char *fname, const uint type, const 
     for (i = 0; i < list->n_resources; i++) {
         if ((list->resources[i].type == type) && 
         	(list->resources[i].id == id)) {
-            fprintf(stderr, "loading '%s' resource id %d",
+        	if_debug2('s', "[s] loading '%s' resource id %d",
                 list->resources[i].name, list->resources[i].id);
             load_resource(in, header, &(list->resources[i]));
-            fprintf(stderr, " (%d bytes)\n", list->resources[i].length);
+            if_debug1('s', " (%d bytes)\n", list->resources[i].length);
             fclose(in);
             if (buf) memcpy (buf, list->resources[i].data, list->resources[i].length);
             return (list->resources[i].length);
@@ -388,39 +389,39 @@ iodev_macresource_open_file(gx_io_device *iodev, const char *fname, uint namelen
        in the form '#<type>+<id>' */
     res_type_string = strrchr(filename, '#');
     if (res_type_string == NULL) {
-        dlprintf("couldn't find resource type separator\n");
+        if_debug0('s', "[s] couldn't find resource type separator\n");
         return_error(e_invalidfileaccess);
     }
     *res_type_string++ = '\0';
     res_id_string = strrchr(res_type_string, '+');
     if (res_id_string == NULL) {
-        dlprintf("couldn't find resource id separator\n");
+        if_debug0('s', "couldn't find resource id separator\n");
         return_error(e_invalidfileaccess);
     }
     *res_id_string++ = '\0';
     type = res_string2type(res_type_string);
     id = (ushort)atoi(res_id_string);
-    dlprintf3("opening resource fork of '%s' for type '%s' id '%d'\n", filename, res_type_string, id);
+    if_debug3('s', "[s] opening resource fork of '%s' for type '%s' id '%d'\n", filename, res_type_string, id);
     
     /* we call with a NULL buffer to get the size */
     size = gp_read_macresource(NULL, filename, type, id);
     if (size == 0) {
         /* this means that opening the resource fork failed */
         /* try to open as a .dfont from here */
-        dlprintf("trying to open as a datafork file instead...\n");
+        if_debug0('s', "[s] trying to open as a datafork file instead...\n");
         size = read_datafork_resource(NULL, filename, type, id);
     	if (size != 0) {
             datafork = true;
     	} else {
-            dlprintf("could not get resource size\n");
+            if_debug0('s', "could not get resource size\n");
     	    return_error(e_invalidfileaccess);
     	}
     }
-    dlprintf1("got resource size %d bytes\n", size);
+    if_debug1('s', "[s] got resource size %d bytes\n", size);
     /* allocate a buffer */    
     buf = gs_alloc_string(mem, size, "macresource buffer");
     if (buf == NULL) {
-        dlprintf("macresource: could not allocate buffer for resource data\n");
+        if_debug0('s', "macresource: could not allocate buffer for resource data\n");
         return_error(e_VMerror);
     }
     /* call again to get the resource data */
