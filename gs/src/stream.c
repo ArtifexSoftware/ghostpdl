@@ -420,19 +420,6 @@ sclose(register stream * s)
 }
 
 /*
- * Define the minimum amount of data that must be left in an input buffer
- * after a read operation to handle filter read-ahead.  This is 1 byte for
- * filters (including procedure data sources) that require EOD but
- * haven't reached EOD, 0 for files and for filters that have no EOD.
- */
-int
-sbuf_min_left(const stream *s)
-{
-    return 
-      (s->end_status == EOFC || s->end_status == ERRC ? 0 : s->state->min_left);
-}
-
-/*
  * Implement sgetc when the buffer may be empty.  If the buffer really is
  * empty, refill it and then read a byte.  Note that filters must read one
  * byte ahead, so that they can close immediately after the client reads the

@@ -295,7 +295,14 @@ int spseek(P2(stream *, long));
  * byte(s).
  */
 #define max_min_left 1
-int sbuf_min_left(P1(const stream *));
+/*
+ * The stream.state min_left value is the minimum amount of data that must
+ * be left in an input buffer after a read operation to handle filter
+ * read-ahead. Once filters reach EOD, return 0 since read-ahead is
+ * no longer relevant.
+ */
+#define sbuf_min_left(s) \
+      ((s->end_status == EOFC || s->end_status == ERRC ? 0 : s->state->min_left))
 
 /* The following are for very high-performance clients of read streams, */
 /* who unpack the stream state into local variables. */
