@@ -110,4 +110,13 @@ int pjl_register_permanent_soft_font_addition(P1(pjl_parser_state *pst));
    be done at the beginning of each job */
 void pjl_set_init_from_defaults(P1(pjl_parser_state *pst));
 
+/* returns the size of an named resource, presumably the client can
+   use this number (bytes) to allocate memory for the object. 0
+   returned if the object is not found */
+long int pjl_get_named_resource_size(P2(pjl_parser_state *pst, char *name));
+
+/* returns the contents of the resource in "mem" allocated by the
+   client.  Returns < 0 if it fails to find the object */
+int pjl_get_named_resource(P3(pjl_parser_state *pst, char *name, byte *data));
+
 #endif				/* pjparse_INCLUDED */

@@ -5,6 +5,7 @@
 
 /* pjparse.c */
 /* PJL parser */
+#include "stat_.h"
 #include "memory_.h"
 #include "scommon.h"
 #include "gdebug.h"
@@ -15,8 +16,9 @@
 
 /* ------ pjl state definitions ------ */
 
-#define PJL_STRING_LENGTH (15)
-#define PJL_PATH_NAME_LENGTH (150)
+#define PJL_STRING_LENGTH (256)
+#define PJL_PATH_NAME_LENGTH (256)
+#define MAXPATHLEN 1024
 
 /* definitions for fontsource and font number table entries */
 typedef struct pjl_fontsource {
@@ -36,6 +38,9 @@ typedef struct pjl_envir_var_s {
    systems. */
 typedef struct pjl_parser_state_s {
     char line[81];		/* buffered command line */
+    int bytes_to_write;          /* data processing by fsdownload */
+    int bytes_to_read;           /* data processed by fsupload */
+    FILE *fp;                   /* fsdownload or fsupload file */
     int pos;			/* current position in line */
     pjl_envir_var_t *defaults;  /* the default environment (i.e. set default) */
     pjl_envir_var_t *envir;     /* the pjl environment */
@@ -71,6 +76,7 @@ private const pjl_envir_var_t pjl_factory_defaults[] = {
     {"fontnumber", "0"},
     {"personality", "pcl5c"},
     {"language", "auto"},
+    {"disklock", "off"},
     /*    {"personality", "rtl"}, */
     {"", ""}
 };
@@ -112,7 +118,24 @@ typedef enum {
     INQUIRE,
     DINQUIRE,
     ENTER,
-    LANGUAGE
+    LANGUAGE,
+    ENTRY,
+    COUNT,
+    OFFSET,
+    FSDOWNLOAD,
+    FSAPPEND,
+    FSDELETE,
+    FSDIRLIST,
+    FSINIT,
+    FSMKDIR,
+    FSQUERY,
+    FSUPLOAD,
+    FORMATBINARY, /* this nonsense is ignored.
+		     all data is treated as binary */
+    NAME,         /* used for pathnames */
+    SIZE,         /* size of data */
+    VOLUME,       /* volume indicator for filesystem initialization */
+    DISKLOCK
 } pjl_token_type_t;
 
 /* lookup table to map strings to pjl tokens */
@@ -130,6 +153,24 @@ private const pjl_lookup_table_t pjl_table[] = {
     { "DINQUIRE", DINQUIRE },
     { "INQUIRE", INQUIRE },
     { "ENTER", ENTER },
+    /* File system related variables */
+    { "FSDOWNLOAD", FSDOWNLOAD },
+    { "FSAPPEND", FSAPPEND },
+    { "FSDELETE", FSDELETE },
+    { "FSDIRLIST", FSDIRLIST },
+    { "FSINIT", FSINIT },
+    { "FSMKDIR", FSMKDIR },
+    { "FSQUERY", FSQUERY },
+    { "FSUPLOAD", FSUPLOAD },
+    { "FORMAT:BINARY", FORMATBINARY }, /* this nonsense is ignored.
+					   all data is treated as binary */
+    { "NAME", NAME }, /* used for pathnames */
+    { "SIZE", SIZE }, /* size of data */
+    { "VOLUME", VOLUME }, /* used for volume name */
+    { "ENTRY", ENTRY },
+    { "COUNT", COUNT },
+    { "OFFSET", OFFSET },
+    { "DISKLOCK", DISKLOCK },
     { "", (pjl_token_type_t)0 /* don't care */ }
 };
 
@@ -201,14 +242,29 @@ pjl_get_token(pjl_parser_state_t *pst, char token[])
     if ( c == '\0' || c == '\n' )
 	return DONE;
 
-    /* set the ptr to the next delimeter. */
-    while((c = pst->line[pst->pos]) != ' ' &&
-	  c != '\t' &&
-	  c != '\r' &&
-	  c != '\n' &&
-	  c != '=' &&
-	  c != '\0')
-	pst->pos++;
+    /* check for a quoted string.  It should not span a line */
+    if ( c == '"' ) {
+	c = pst->line[pst->pos++];
+	while ((c = pst->line[pst->pos]) != '"' &&
+	       c != '\0' &&
+	       c != '\n')
+	    pst->pos++;
+	/* this routine doesn't yet support real error handling - here
+           we should check if c == '"' */
+	if ( c == '"' )
+	    pst->pos++;
+	else
+	    return DONE;
+    } else {
+	/* set the ptr to the next delimeter. */
+	while((c = pst->line[pst->pos]) != ' ' &&
+	      c != '\t' &&
+	      c != '\r' &&
+	      c != '\n' &&
+	      c != '=' &&
+	      c != '\0')
+	    pst->pos++;
+    }
 
     /* build the token */
     {
@@ -216,7 +272,7 @@ pjl_get_token(pjl_parser_state_t *pst, char token[])
 	int i;
 
 	/* we allow = to special case for allowing 
-	/* token doesn't fit or is empty */
+	   token doesn't fit or is empty */
 	if (( slength > PJL_STRING_LENGTH) || slength == 0)
 	    return DONE;
 	/* now the string can be safely copied */
@@ -226,13 +282,13 @@ pjl_get_token(pjl_parser_state_t *pst, char token[])
 	/* for known tokens */
 	for (i = 0; pjl_table[i].pjl_string[0]; i++)
 	    if (!pjl_compare(pjl_table[i].pjl_string, token))
-	       return pjl_table[i].pjl_token;
+		return pjl_table[i].pjl_token;
 
 	/* NB add other cases here */
 	/* check for variables that we support */
 	for (i = 0; pst->envir[i].var[0]; i++)
 	    if (!pjl_compare(pst->envir[i].var, token))
-	       return VARIABLE;
+		return VARIABLE;
 	
 	/* NB assume this is a setting yuck */
 	return SETTING;
@@ -252,10 +308,7 @@ pjl_check_font_path(char *path_list, gs_memory_t *mem)
     const char pattern[] = "*";
     char tmp_path_and_pattern[PJL_PATH_NAME_LENGTH+1+1]; /* pattern + null */
     char *dirname;
-#define MAXPATHLEN 1024
-	    char fontfilename[MAXPATHLEN+1];
-#undef MAXPATHLEN
-
+    char fontfilename[MAXPATHLEN+1];
     /* make a tmp copy of the colon delimited path */
     strcpy(tmp_path, path_list);
     /* for each path search for fonts.  If we find them return we only
@@ -308,13 +361,267 @@ pjl_reset_fontsource_fontnumbers(pjl_parser_state_t* pst)
     }
 }
 
+
+/* NB we should name this strip quotes.  The pjl parser preserves the
+   quotes of strings - this strips them off, shouldn't fail */
+private void
+pjl_parsed_filename_to_string(char *fnamep, char *pathname)
+{
+    int i;
+    /* the pathname parsed has whatever quoting mechanism was used */
+    int size = strlen(pathname);
+    for( i = 0; i < size; i++ ) {
+	if ( pathname[i] == '\\' )
+	    *fnamep++ = '/';
+	else if ( pathname[i] != '"' )
+	    *fnamep++ = pathname[i];
+	/* else it is a quote skip it */
+    }
+    /* NULL terminate */
+    *fnamep = NULL;
+}
+
+/* Verify a file write operation is ok.  The filesystem must be 0: or
+   1:, no other pjl files can have pending writes, and the pjl
+   disklock state variable must be false */
+private int
+pjl_verify_file_operation(pjl_parser_state_t *pst, char *fname)
+{
+    /* make sure we are playing in the pjl sandbox */
+    if ( ((fname[0] != '0') || (fname[0] != '1')) && (fname[1] != ':') ) {
+	dprintf1( "illegal path name %s\n", fname);
+	return -1;
+    }
+    /* make sure we are not currently writing to a file.
+       Simultaneously file writing is not supported */
+    if ( pst->bytes_to_write || pst->fp )
+	return -1;
+
+    /* no operation if disklocak is enabled */
+    if ( !pjl_compare(pjl_get_envvar(pst, "disklock"), "on") )
+	return -1;
+    /* ok */
+    return 0;
+}
+
+/* debugging procedure to warn about writing to an extant file */
+private void
+pjl_warn_exists(char *fname) 
+{
+    FILE *fpdownload;
+    /* issue a warning if the file exists */
+    if ( (fpdownload = fopen(fname, gp_fmode_rb) ) != NULL ) {
+	fclose(fpdownload);
+	dprintf1( "warning file exists overwriting %s\n", fname);
+    }
+}
+
+/* open a file for writing or appending */
+private FILE *
+pjl_setup_file_for_writing(pjl_parser_state_t *pst, char *pathname, int size, bool append)
+{
+    FILE *fp;
+    char fname[MAXPATHLEN];
+
+    pjl_parsed_filename_to_string(fname, pathname);
+    if ( pjl_verify_file_operation(pst, fname) < 0 )
+	return NULL;
+    pjl_warn_exists(fname);
+    {
+	char fmode[4];
+	strcpy(fmode, gp_fmode_wb);
+	if (append)
+	    strcat(fmode, "+");
+	if ( (fp = fopen(fname, gp_fmode_wb)) == NULL) {
+	    dprintf( "warning file open for writing failed\n" );
+	    return NULL;
+	}
+    }
+    return fp;
+}
+
+/* set up the state to download date to a pjl file */
+private int
+pjl_set_fs_download_state(pjl_parser_state_t *pst, char *pathname, int size)
+{
+    /* somethink is wrong if the state indicates we are already writing to a file */
+    FILE *fp = pjl_setup_file_for_writing(pst, pathname, size, false /* append */); 
+    if ( fp == NULL )
+	return -1;
+    pst->fp = fp;
+    pst->bytes_to_write = size;
+    return 0;
+}
+
+/* set up the state to append subsequent data from the input stream to
+   a file */
+ private int
+pjl_set_append_state(pjl_parser_state_t *pst, char *pathname, int size)
+{
+    FILE *fp = pjl_setup_file_for_writing(pst, pathname, size, true /* append */); 
+    if ( fp == NULL )
+	return -1;
+    pst->fp = fp;
+    pst->bytes_to_write = size;
+    return 0;
+}
+
+/* create a pjl volume, this should create the volume 0: or 1: we
+   simply create a directory with the volume name. */
+private int
+pjl_fsinit(pjl_parser_state_t *pst, char *pathname)
+{
+    char fname[MAXPATHLEN];
+    pjl_parsed_filename_to_string(fname, pathname);
+    if ( pjl_verify_file_operation(pst, fname) < 0 )
+	return -1;
+    if ( strlen(fname) != 2 )
+	return -1;
+    return mkdir(fname, 0777);
+}
+
+/* make a pjl directory */
+int
+pjl_fsmkdir(pjl_parser_state_t *pst, char *pathname)
+{
+    char fname[MAXPATHLEN];
+    pjl_parsed_filename_to_string(fname, pathname);
+    if ( pjl_verify_file_operation(pst, fname) < 0 )
+	return -1;
+    return mkdir(fname, 0777);
+}
+
+/* query a file in the pjl sandbox */
+int
+pjl_fsquery(pjl_parser_state_t *pst, char *pathname)
+{
+    /* not implemented */
+    return -1;
+}
+
+/* Upload a file from the pjl sandbox */
+int
+pjl_fsupload(pjl_parser_state_t *pst, char *pathname, int offset, int size)
+{
+    /* not implemented */
+    return -1;
+}
+
+
+/* search pathname for filename return a match in result.  result
+   should be a 0 length string upon calling this routine.  If a match
+   is found result will hold the matching path and filename.  Thie
+   procedure recursively searches the directory tree "pathname" for
+   "filename" */
+int
+pjl_search_for_file(pjl_parser_state_t *pst, char *pathname, char *filename, char *result)
+{
+    file_enum *fe;
+    char fontfilename[MAXPATHLEN];
+    struct stat stbuf;
+
+    /* should check length */
+    strcpy(fontfilename, pathname);
+    strcat(fontfilename, "/*");
+    fe = gp_enumerate_files_init(fontfilename, strlen(fontfilename), pst->mem);
+    if ( fe ) {
+	do {
+	    uint fstatus = gp_enumerate_files_next(fe, fontfilename, 0);
+	    /* done */
+	    if ( fstatus == ~(uint)0 )
+		return 0;
+	    fontfilename[fstatus] = (char)NULL;
+	    /* a directory */
+	    if ( ( stat(fontfilename, &stbuf) >= 0 ) && stat_is_dir(stbuf) )
+		pjl_search_for_file(pst, fontfilename, filename, result);
+	    else  /* a file */
+		if ( !strcmp(strrchr( fontfilename, '/' ) + 1, filename) )
+		    strcpy(result, fontfilename);
+
+	} while (1);
+    }
+    /* not implemented */
+    return -1;
+}
+
+int
+pjl_fsdirlist(pjl_parser_state_t *pst, char *pathname, int entry, int count)
+{
+    file_enum *fe;
+    char fontfilename[MAXPATHLEN];
+    pjl_parsed_filename_to_string(fontfilename, pathname);
+    /* if this is a directory add * for the directory listing NB fix */
+    strcat(fontfilename, "/*");
+    fe = gp_enumerate_files_init(fontfilename, strlen(fontfilename), pst->mem);
+    if ( fe ) {
+	do {
+	    uint fstatus = gp_enumerate_files_next(fe, fontfilename, 0);
+	    /* done */
+	    if ( fstatus == ~(uint)0 )
+		return 0;
+	    fontfilename[fstatus] = (char)NULL;
+	    /* NB - debugging output only */
+	    dprintf1("%s\n", fontfilename);
+	} while (1);
+    }
+    /* should not get here */
+    return -1;
+}
+
+inline private int
+pjl_write_remaining_data(pjl_parser_state_t *pst, byte **pptr, byte **pplimit)
+{
+    byte *ptr = *pptr;
+    byte *plimit = *pplimit;
+
+    uint avail = plimit - ptr;
+    uint bytes_written = min( avail, pst->bytes_to_write );
+    if ( fwrite( ptr, 1, bytes_written, pst->fp ) != bytes_written ) {
+	/* try to close the file before failing */
+	fclose(pst->fp);
+	return -1;
+    }
+    pst->bytes_to_write -= bytes_written;
+    if ( pst->bytes_to_write == 0 ) /* done */
+	fclose(pst->fp);
+    /* update stream pointer */
+    *pptr += bytes_written;
+    return 0;
+}
+
+private int
+pjl_delete_file(pjl_parser_state_t *pst, char *pathname)
+{
+    char fname[MAXPATHLEN];
+    pjl_parsed_filename_to_string(fname, pathname);
+    if ( pjl_verify_file_operation(pst, fname) < 0 )
+	return -1;
+    return unlink(fname);
+}
+
+/* handle pattern foo = setting, e.g. volume = "0:", name = 0:]pcl.
+   the setting will be returned in "token" if successful.  Return 0
+   for success and -1 if we fail */
+private int
+pjl_get_setting(pjl_parser_state_t *pst, pjl_token_type_t tok, char *token)
+{
+    pjl_token_type_t lhs = pjl_get_token(pst, token);
+    if ( lhs != tok )
+	return -1;
+    if ( (tok = pjl_get_token(pst, token) ) != EQUAL )
+	return -1;
+    if ( (tok = pjl_get_token(pst, token) ) != SETTING )
+	return -1;
+    return 0;
+}
+    
 /* parse and set up state for one line of pjl commands */
  private int
 pjl_parse_and_process_line(pjl_parser_state_t *pst)
 {
     pjl_token_type_t tok;
     char token[PJL_STRING_LENGTH+1] = {0};
-
+    char pathname[MAXPATHLEN];
     /* reset the line position to the beginning of the line */
     pst->pos = 0;
     /* all pjl commands start with the pjl prefix @PJL */
@@ -358,12 +665,143 @@ var:            defaults = (tok == DEFAULT);
 	    /* there is no setting for the default language */
 	    tok = SET;
 	    goto var;
+	case FSDOWNLOAD: {
+	    /* consume and ignore FORMAT:BINARY foolishness. if it is
+               present or search for the name */
+	    int size;
+	    /* ignore format binary stuff */
+	    if ( ( tok = pjl_get_token(pst, token) ) == FORMATBINARY )
+		;
+	    if ( pjl_get_setting(pst, NAME, token) < 0 )
+		return -1;
+	    strcpy(pathname, token);
+	    if ( pjl_get_setting(pst, SIZE, token) < 0 )
+		return -1;
+	    size = pjl_vartoi(token);
+	    return pjl_set_fs_download_state(pst, pathname, size);
+	}
+	case FSAPPEND: {
+	    int size;
+	    if ( ( tok = pjl_get_token(pst, token) ) == FORMATBINARY )
+		;
+	    if ( pjl_get_setting(pst, NAME, token) < 0 )
+		return -1;
+	    strcpy(pathname, token);
+	    if ( pjl_get_setting(pst, SIZE, token) < 0 )
+		return -1;
+	    size = pjl_vartoi(token);
+	    return pjl_set_append_state(pst, pathname, size);
+	}
+	case FSDELETE:
+	    if ( pjl_get_setting(pst, NAME, token) < 0 )
+		return -1;
+	    strcpy(pathname, token);
+	    return pjl_delete_file(pst, pathname);
+	case FSDIRLIST: {
+	    int entry;
+	    int count;
+	    if ( pjl_get_setting(pst, NAME, token) < 0 )
+		return -1;
+	    strcpy(pathname, token);
+	    if ( pjl_get_setting(pst, ENTRY, token) < 0 )
+		return -1;
+	    entry = pjl_vartoi(token);
+	    if ( pjl_get_setting(pst, COUNT, token) < 0 )
+		return -1;
+	    count = pjl_vartoi(token);
+	    return pjl_fsdirlist(pst, pathname, entry, count);
+	}
+	case FSINIT:
+	    if ( pjl_get_setting(pst, VOLUME, token) < 0 )
+		return -1;
+	    strcpy(pathname, token);
+	    return pjl_fsinit(pst, pathname);
+	case FSMKDIR:
+	    if ( pjl_get_setting(pst, NAME, token) < 0 )
+		return -1;
+	    strcpy(pathname, token);
+	    return pjl_fsmkdir(pst, pathname);
+	case FSQUERY:
+	    if ( pjl_get_setting(pst, NAME, token) < 0 )
+		return -1;
+	    strcpy(pathname, token);
+	    return pjl_fsquery(pst, pathname);
+	case FSUPLOAD: {
+	    int size;
+	    int offset;
+	    if ( ( tok = pjl_get_token(pst, token) ) == FORMATBINARY )
+		;
+	    if ( pjl_get_setting(pst, NAME, token) < 0 )
+		return -1;
+	    strcpy(pathname, token);
+	    if ( pjl_get_setting(pst, OFFSET, token) < 0 )
+		return -1;
+	    offset = pjl_vartoi(token);
+	    if ( pjl_get_setting(pst, SIZE, token) < 0 )
+		return -1;
+	    size = pjl_vartoi(token);
+	    return pjl_fsupload(pst, pathname, size, offset);
+	}
 	default:
 	    return -1;
 	}
     }
     return (tok == DONE ? 0 : -1);
 }
+
+/* get a file from 0: or 1: volume */
+private FILE *
+get_fp(pjl_parser_state_t *pst, char *name)
+{
+    char result[MAXPATHLEN];
+	
+    /* 0: */
+    result[0] = '\0';
+    pjl_search_for_file(pst, "0:", name, result);
+    if ( result[0] == '\0' ) {
+	/* try 1: */
+	pjl_search_for_file(pst, "1:", name, result);
+	if ( result[0] == '\0' )
+	    return 0;
+    }
+    return fopen(result, gp_fmode_rb);
+}
+    
+/* scan for a named resoource in the pcl sandbox 0: or 1: and return
+   the size of the object.  We do not distinguish between empty and
+   non-existant files */
+long int
+pjl_get_named_resource_size(pjl_parser_state_t *pst, char *name)
+{
+    long int size;
+    FILE *fp = get_fp(pst, name);
+    if ( fp == NULL )
+	return 0;
+    fseek(fp, 0L, SEEK_END);
+    size = ftell(fp);
+    fclose(fp);
+    return size;
+}
+
+/* get the contents of a file on 0: or 1: and return the result in the
+   client allocated memory */
+int
+pjl_get_named_resource(pjl_parser_state *pst, char *name, byte *data)
+{
+    long int size;
+    FILE *fp = get_fp(pst, name);
+    if ( fp == NULL )
+	return 0;
+    fseek(fp, 0L, SEEK_END);
+    size = ftell(fp);
+    rewind(fp);
+    if ( size != fread(data, 1, size, fp) ) {
+	fclose(fp);
+	return -1;
+    }
+    return 0;
+}
+
 /* set the initial environment to the default environment, this should
    be done at the beginning of each job */
  void
@@ -425,8 +863,20 @@ pjl_process(pjl_parser_state* pst, void *pstate, stream_cursor_read * pr)
     const byte *p = pr->ptr;
     const byte *rlimit = pr->limit;
     int code = 0;
+    /* first check if we are writing data to a file as part of the
+       file system commands */
 
     while (p < rlimit) {
+	if ( pst->bytes_to_write != 0 ) {
+	    p++;
+	    if (pjl_write_remaining_data(pst, &p, &rlimit) == 0 ) {
+		p--;
+		continue;
+	    }
+	    else
+		return -1;
+	}
+
 	if (pst->pos == 0) {	/* Look ahead for the @PJL prefix or a UEL. */
 	    uint avail = rlimit - p;
 
@@ -633,7 +1083,11 @@ pjl_process_init(gs_memory_t *mem)
     /* initialize the font repository data as well */
     memcpy(pjlstate->font_defaults, pjl_fontsource_table, sizeof(pjl_fontsource_table));
     memcpy(pjlstate->font_envir, pjl_fontsource_table, sizeof(pjl_fontsource_table));
-    /* initialize the current position in the line array */
+    /* initialize the current position in the line array and bytes pending */
+    pjlstate->bytes_to_read = 0;
+    pjlstate->bytes_to_write = 0;
+    pjlstate->fp = 0;
+    /* line pos */
     pjlstate->pos = 0;
     pjlstate->mem = mem;
     /* initialize available font sources */
@@ -643,7 +1097,7 @@ pjl_process_init(gs_memory_t *mem)
 	for (i = 0; i < countof(pjl_permanent_soft_fonts); i++)
 	    pjl_permanent_soft_fonts[i] = 0;
     }
-     return (pjl_parser_state *)pjlstate;
+    return (pjl_parser_state *)pjlstate;
 }
 
 /* case insensitive comparison of two null terminated strings. */

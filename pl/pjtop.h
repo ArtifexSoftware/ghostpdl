@@ -96,6 +96,11 @@ int pjl_proc_register_permanent_soft_font_deletion(P2(pl_interp_instance_t *pli,
 typedef int (*pjl_proc_register_permanent_soft_font_addition_t)(P1(pl_interp_instance_t *pli));
 int pjl_proc_register_permanent_soft_font_addition(P1(pl_interp_instance_t *pli));
 
+typedef long int (*pjl_proc_get_named_resource_size_t)(P2(pl_interp_instance_t *pli, char *name));
+long int pjl_proc_get_named_resource_size(P2(pl_interp_instance_t *pli, char *name));
+
+typedef int (*pjl_proc_get_named_resource_t)(P3(pl_interp_instance_t *pli, char *name, byte *data));
+int pjl_proc_get_named_resource(P3(pl_interp_instance_t *pli, char *name, byte *data));
 
 /*
  * Define a generic interpreter implementation
@@ -112,10 +117,12 @@ typedef struct pjl_implementation_s {
   pjl_proc_fontsource_to_path_t            proc_fontsource_to_path;
   pjl_proc_get_pcl_internal_font_number_t  proc_get_pcl_internal_font_number;
   pjl_proc_set_next_fontsource_t           proc_set_next_fontsource;
-  pjl_proc_register_permanent_soft_font_deletion_t
-                                           proc_register_permanent_soft_font_deletion;
-  pjl_proc_register_permanent_soft_font_addition_t
-                                           proc_register_permanent_soft_font_addition;
+  pjl_proc_register_permanent_soft_font_deletion_t proc_register_permanent_soft_font_deletion;
+  pjl_proc_register_permanent_soft_font_addition_t proc_register_permanent_soft_font_addition;
+  pjl_proc_get_named_resource_size_t       proc_get_named_resource_size;
+  pjl_proc_get_named_resource_t            proc_get_named_resource;
+
+
 } pjl_implementation_t;
 
 

@@ -356,6 +356,7 @@ pjl_impl_register_permanent_soft_font_deletion(
 	return pjl_register_permanent_soft_font_deletion(pjli->state, font_number);
 }
 
+
 /* request that pjl add a soft font and return a pjl font number for the font. */
 int
 pjl_impl_register_permanent_soft_font_addition(
@@ -365,6 +366,21 @@ pjl_impl_register_permanent_soft_font_addition(
 	pjl_interp_instance_t *pjli = (pjl_interp_instance_t *)pli;
 	return pjl_register_permanent_soft_font_addition(pjli->state);
 }
+
+long int
+pjl_impl_get_named_resource_size(pl_interp_instance_t *pli, char *name)
+{
+    pjl_interp_instance_t *pjli = (pjl_interp_instance_t *)pli;
+    return pjl_get_named_resource_size(pjli->state, name);
+}
+
+int
+pjl_impl_get_named_resource(pl_interp_instance_t *pli, char *name, unsigned char *data)
+{
+    pjl_interp_instance_t *pjli = (pjl_interp_instance_t *)pli;
+    return pjl_get_named_resource(pjli->state, name, data);
+}
+
 
 /* Parser implementation descriptor */
 pjl_implementation_t pjl_implementation = {
@@ -396,5 +412,7 @@ pjl_implementation_t pjl_implementation = {
   pjl_impl_get_pcl_internal_font_number,
   pjl_impl_set_next_fontsource,
   pjl_impl_register_permanent_soft_font_deletion,
-  pjl_impl_register_permanent_soft_font_addition
+  pjl_impl_register_permanent_soft_font_addition,
+  pjl_impl_get_named_resource_size,
+  pjl_impl_get_named_resource
 };

@@ -113,3 +113,16 @@ pjl_proc_register_permanent_soft_font_addition(
 	 ->proc_register_permanent_soft_font_addition(pli);
 }
 
+long int
+pjl_proc_get_named_resource_size(pl_interp_instance_t *pli, char *name)
+{
+    return ((pjl_implementation_t *)pli->interp->implementation)
+	->proc_get_named_resource_size(pli, name);
+}
+
+int
+pjl_proc_get_named_resource(pl_interp_instance_t *pli, char *name, byte *data)
+{
+    return ((pjl_implementation_t *)pli->interp->implementation)
+	->proc_get_named_resource(pli, name, data);
+}
