@@ -9,7 +9,7 @@ import string
 
 MAIL_SERVER = 'localhost'
 REPORT_EMAIL = 'gs-regression@ghostscript.com'
-MAIL_FROM = 'jack@meerkat.dimensional.com'
+MAIL_FROM = 'regression@casper.ghostscript.com'
 HEAD_DIR = '/path/to/cvs'
 REGRESSION_SCRIPT = 'run_regression 2>&1'
 
