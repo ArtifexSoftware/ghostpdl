@@ -325,6 +325,22 @@ def
   70 { idstring /FontName exch def }
 .dicttomark readonly def
 
+% readcharset and readFDSelect may require the length of CharStringArray,
+% but these structures may occur in the file before the CharStrings.
+% If that happens, use a hack: assume that all the data up to the next
+% queued read should be read.
+
+/charstringcount {	% <font> charstringcount <count> true
+			% <font> charstringcount <length> false
+  /CharStringArray .knownget {
+    length true
+  } {
+	% Hack: look for the next queued read.
+    16#7fffffff offsets { pop .min } forall
+    pos sub false
+  } ifelse
+} def
+
 /readCharStrings {	% <font> readCharStrings -
   /CharStringArray Index put
 } def
@@ -333,15 +349,18 @@ def
 
 % Note: formats 1 and 2 can overflow the operand stack.
 % We'll fix this if it ever becomes necessary.
+/charsetcount {
+  charstringcount { 1 sub } { 2 idiv } ifelse
+} def
 /charsetformats [
-{ [ 0 CharStringArray length 1 sub { sid } repeat ]
+{ [ 0 3 -1 roll charsetcount { sid } repeat ]
 }
-{ [ 0 CharStringArray length 1 sub {
+{ [ 0 3 -1 roll charsetcount {
     dup 0 eq { pop exit } if
     sid card8 1 add 2 index .min { exch 1 sub 1 index 1 add } repeat pop
   } loop ]
 }
-{ [ 0 CharStringArray length 1 sub {
+{ [ 0 3 -1 roll charsetcount {
     dup 0 eq { pop exit } if
     sid card16 1 add 2 index .min { exch 1 sub 1 index 1 add } repeat pop
   } loop ]
@@ -352,7 +371,7 @@ def
 } def
 /readcharset {		% <data> <font> readcharset -
   begin 0 () /SubFileDecode filter /f exch store
-  charsetformats next get exec /charset exch def end
+  charsetformats next get currentdict exch exec /charset exch def end
 } def
 
 /encodingformats [
@@ -401,10 +420,10 @@ def
 % Note: this implementation can overflow the operand stack.
 % We'll fix this if it ever becomes necessary.
 /fdselectformats [
-charsetformats 0 get
+{ [ exch charstringcount pop { card8 } repeat ] }
 { /FDSelect cvx /invalidfont signalerror }
 dup
-{ [ card16 card16 exch {
+{ pop [ card16 card16 exch {
 		% Stack: previndex
     card8 card16 dup 4 1 roll 3 -1 roll sub 1 sub {
       exch 1 index
@@ -414,7 +433,7 @@ dup
 ] readonly def
 
 /readFDSelect {		% <font> readFDSelect -
-  begin fdselectformats next get exec /FDSelect exch def end
+  begin fdselectformats next get currentdict exch exec /FDSelect exch def end
 } def
 
 
