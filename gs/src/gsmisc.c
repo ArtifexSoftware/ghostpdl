@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -18,6 +18,26 @@
 
 /*$Id$ */
 /* Miscellaneous utilities for Ghostscript library */
+
+/*
+ * In order to capture the original definition of sqrt, which might be
+ * either a procedure or a macro and might not have an ANSI-compliant
+ * prototype (!), we need to do the following:
+ */
+#include "std.h"
+#if defined(VMS) && defined(__GNUC__)
+/*  DEC VAX/VMS C comes with a math.h file, but GNU VAX/VMS C does not. */
+#  include "vmsmath.h"
+#else
+#  include <math.h>
+#endif
+inline private double
+orig_sqrt(double x)
+{
+    return sqrt(x);
+}
+
+/* Here is the real #include section. */
 #include "ctype_.h"
 #include "malloc_.h"
 #include "math_.h"
@@ -827,8 +847,6 @@ fixed_mult_quo(fixed signed_A, fixed B, fixed C)
 #undef half_mask
 
 /* Trace calls on sqrt when debugging. */
-#undef sqrt
-extern double sqrt(P1(double));
 double
 gs_sqrt(double x, const char *file, int line)
 {
@@ -837,7 +855,7 @@ gs_sqrt(double x, const char *file, int line)
 		x, (const char *)file, line);
 	fflush(stdout);
     }
-    return sqrt(x);
+    return orig_sqrt(x);
 }
 
 /*
