@@ -1188,7 +1188,7 @@ gc_do_reloc(chunk_t * cp, gs_ref_memory_t * mem, gc_state_t * pstate)
     if_debug_chunk('6', "[6]relocating in chunk", cp);
     SCAN_CHUNK_OBJECTS(cp)
 	DO_ALL
-#if DEBUG
+#ifdef DEBUG
 	pstate->container = cp;
 #endif
     /* We need to relocate the pointers in an object iff */
@@ -1208,7 +1208,7 @@ gc_do_reloc(chunk_t * cp, gs_ref_memory_t * mem, gc_state_t * pstate)
 	    if (proc != 0)
 		(*proc) (pre + 1, size, pre->o_type, pstate);
 	}
-#if DEBUG
+#ifdef DEBUG
 	pstate->container = 0;
 #endif
     END_OBJECTS_SCAN
