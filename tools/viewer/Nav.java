@@ -57,15 +57,13 @@ public class Nav extends Gview  {
     }
 
     public void nextPage() {
+	pageView.setPage(pageNumber+1);
 	super.nextPage();
-	
-	pageView.setPage(pageNumber);
     }
 
     public void prevPage() {
+	pageView.setPage(pageNumber-1);
         super.prevPage();
-	
-	pageView.setPage(pageNumber);
     }
 
     /** low res image is ready, 
@@ -75,7 +73,7 @@ public class Nav extends Gview  {
     public void imageIsReady( BufferedImage newImage ) {
 	super.imageIsReady(newImage);
 
-	if (pickle.busy() == false && pageView.pickle.busy() == false) {
+	if (!pickle.busy() && !pageView.pickle.busy()) {
 	    pageView.pickle.startProduction(pageNumber);
 	}
     }

@@ -593,6 +593,7 @@ public class Gview
     protected int newX = 0;
     protected int newY = 0;
     public void mouseDragged(MouseEvent e) {
+	
 	lastX = newX;
 	lastY = newY;
 	newX = e.getX() - tx + (int)origX;
@@ -647,23 +648,15 @@ public class Gview
     /** starts drag translation, or popup menu
      */ 
     public void mousePressed(MouseEvent e) {
-
-	if ( (e.getModifiers() & (e.BUTTON2_MASK | e.BUTTON3_MASK)) != 0 ) {
-	    if ( !popupMenuAllowed ) {
-		// if menus are fixed then right mouse button zooms
-		if ( e.isControlDown() ) {
-		    zoomOut(e.getX(), e.getY());
-		}
-		else {
-		    zoomIn(e.getX(), e.getY());
-		}
-	    }    
-	    else {
-		return;
-		//popup.show(this, e.getX(), e.getY());
-	    }
-	}
-	else {
+	if (debug) 
+	    System.out.println("mousePressed " + e + 
+			       " B1 " + (e.getModifiers() & (e.BUTTON1_MASK)) + 
+			       " B2 " + (e.getModifiers() & (e.BUTTON2_MASK)) + 
+			       " B3 " + (e.getModifiers() & (e.BUTTON3_MASK)) + 
+			       " Ctrl " + e.isControlDown() 
+			       );
+	// search for mouse button presses.
+	if ( (e.getModifiers() & e.BUTTON1_MASK) != 0 ) {	
 	    if ( e.isControlDown() ) {
 		// translate to origin
 	        desiredRes = origRes;
@@ -677,6 +670,21 @@ public class Gview
 	        ty = e.getY();
 	        drag = true;
 		setCursor( new Cursor(Cursor.MOVE_CURSOR) );
+	    }
+	}
+	else if ( (e.getModifiers() & (e.BUTTON2_MASK | e.BUTTON3_MASK)) != 0 ) {
+	    if ( !popupMenuAllowed ) {
+		// if menus are fixed then right mouse button zooms
+		if ( e.isControlDown() ) {
+		    zoomOut(e.getX(), e.getY());
+		}
+		else {
+		    zoomIn(e.getX(), e.getY());
+		}
+	    }    
+	    else {
+		return;
+		// show menu on release // popup.show(this, e.getX(), e.getY());
 	    }
 	}
     }
@@ -703,19 +711,44 @@ public class Gview
     }
 
     public void setPage(int _pageNumber) {
-       pageNumber = _pageNumber;
+	if (totalPageCount > 0 && _pageNumber > totalPageCount)
+	    // repair case where out of bounds page is requested before page count is known.
+	    pageNumber = totalPageCount;
+ 	else
+	    pageNumber = _pageNumber;
     }
+
+    /** Render and display the next page,
+     * stopping at the last page in document.
+     * NOTE: it is possible to request beyond the last page if the request comes faster 
+     * than the computation of the number of pages in the job.
+     */
     public void nextPage() {
-	++pageNumber;					
+	if (totalPageCount > 0 && pageNumber >= totalPageCount)
+	    // repair case where out of bounds page is requested before page count is known.
+	    pageNumber = totalPageCount;
+ 	else
+	    ++pageNumber;				   
+
         pickle.startProduction( pageNumber );	
     }
+
+    /** Render and display the previous page */
     public void prevPage() {
-        --pageNumber;
-        if ( pageNumber < 1 )
-	    pageNumber = 1;
+	if (totalPageCount > 0 && pageNumber > totalPageCount) {
+	    // repair case where out of bounds page is requested before page count is known.
+	    pageNumber = totalPageCount;
+	}
+	else {
+	    --pageNumber;
+	    if ( pageNumber < 1 ) 
+		pageNumber = 1;
+	}
         pickle.startProduction( pageNumber );
     }
 
+    /** translate a viewport, moves by an offset
+     */ 
     protected void translate(int x, int y) {
         double x1 = origX = origX + x;
         double y1 = origY = origY + y;
@@ -725,6 +758,9 @@ public class Gview
 
         createViewPort( x1, y1, sfx, sfy, origRes, origRes);
     }
+
+    /** translate a viewport, moves top,left of viewport to a coordinate 
+     */
     protected void translateTo( double x1, double y1 ) {
         origX = x1;
         origY = y1;
@@ -733,7 +769,7 @@ public class Gview
         double sfy = desiredRes / origRes;
 
         createViewPort( x1, y1, sfx, sfy, origRes, origRes);
-   }
+    }
 
     /** Increase resolution by factor of 2 */
     protected void zoomIn( int x, int y ) {
