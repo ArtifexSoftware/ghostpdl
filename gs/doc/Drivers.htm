@@ -1571,18 +1571,21 @@ region is to the right of it.
 
 <dl>
 <dt><b><tt>int (*fill_trapezoid)(P10(gx_device&nbsp;*dev,
-fixed&nbsp;fx0, fixed&nbsp;fw0, fixed&nbsp;fy0, fixed&nbsp;fx1,
-fixed&nbsp;fw1, fixed&nbsp;fh, bool&nbsp;swap_axes,
+const&nbsp;gs_fixed_edge&nbsp;*left, const&nbsp;gs_fixed_edge&nbsp;*right,
+fixed&nbsp;ybot, fixed&nbsp;ytop,  bool&nbsp;swap_axes,
 const&nbsp;gx_drawing_color&nbsp;*pdcolor,
 gs_logical_operation_t&nbsp;lop))</tt></b> <b><em>[OPTIONAL]</em></b>
-<dd>Fill a trapezoid whose parallel sides are parallel to a coordinate
-axis.  The corners are <em>(fx0,fy0)</em>, <em>(fx0+fw0,fy0)</em>,
-<em>(fx1,fy0+fh)</em>, and <em>(fx1+fw1,fy0+fy)</em>.  We require
-<b><tt>fw0</tt></b>&nbsp;&gt;=&nbsp;0,
-<b><tt>fw1</tt></b>&nbsp;&gt;=&nbsp;0, and
-<b><tt>fh</tt></b>&nbsp;&gt;=&nbsp;0; if <b><tt>fw0</tt></b>&nbsp;=&nbsp;0
-or <b><tt>fw1</tt></b>&nbsp;=&nbsp;0, the trapezoid is actually a triangle.
-If <b><tt>swap_axes</tt></b> is set, the meanings of X and Y are
+<dd>Fill a trapezoid. The bottom and top edges are parallel to the x
+axis, and are defined by <b><tt>ybot</tt></b> and <b><tt>ytop</tt></b>,
+respectively. The left and right edges are defined by <b><tt>left</tt></b>
+and <b><tt>right</tt></b>. Both of these respresent lines (<b><tt>gs_fixed_edge</tt></b>
+is defined in <a href="../src/gxdevcli.h">gxdevcli.h</a> and consists
+of <b><tt>gs_fixed_point</tt></b> <b><tt>start</tt></b> and <b><tt>end</tt></b> points).
+The y coordinates of these lines need not have any specific relation to
+<b><tt>ybot</tt></b> and <b><tt>ytop</tt></b>. The routine is defined this way so
+that the filling algorithm can subdivide edges and still guarantee
+that the exact same pixels will be filled. If
+<b><tt>swap_axes</tt></b> is set, the meanings of X and Y are
 interchanged.
 </dl>
 
@@ -1677,7 +1680,7 @@ see <a href="../src/gdevtrac.c">gdevtrac.c</a>.
 
 <dl>
 <dt><b><tt>int (*fill_path)(P6(gx_device&nbsp;*dev,
-const&nbsp;gx_imager_state&nbsp;*pis, gx_path&nbsp;*ppath,
+const&nbsp;gs_imager_state&nbsp;*pis, gx_path&nbsp;*ppath,
 const&nbsp;gx_fill_params&nbsp;*params,
 const&nbsp;gx_drawing_color&nbsp;*pdcolor,
 const&nbsp;gx_clip_path&nbsp;*pcpath))</tt></b> <b><em>[OPTIONAL]</em></b>
@@ -1688,7 +1691,7 @@ given parameters, with the given color.  The clip path pointer may be
 
 <dl>
 <dt><b><tt>int (*stroke_path)(P6(gx_device&nbsp;*dev,
-const&nbsp;gx_imager_state&nbsp;*pis, gx_path&nbsp;*ppath,
+const&nbsp;gs_imager_state&nbsp;*pis, gx_path&nbsp;*ppath,
 const&nbsp;gx_stroke_params&nbsp;*params,
 const&nbsp;gx_drawing_color&nbsp;*pdcolor,
 const&nbsp;gx_clip_path&nbsp;*pcpath))</tt></b> <b><em>[OPTIONAL]</em></b>
