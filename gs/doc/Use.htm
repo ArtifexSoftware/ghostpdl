@@ -949,10 +949,10 @@ Adobe Type Manager fonts).
 
 <p>
 You can change in which directory Ghostscript creates temporary files by
-setting the <b><tt>TEMP</tt></b> environment variable to the name of the
-directory you want used.  Ghostscript currently doesn't do a very good job
-of deleting temporary files when it exits; you may have to delete them
-manually from time to time.
+setting the <b><tt>TMPDIR</tt></b> or <b><tt>TEMP</tt></b> environment
+variable to the name of the directory you want used.  Ghostscript currently
+doesn't do a very good job of deleting temporary files if it exits because
+of an error; you may have to delete them manually from time to time.
 
 <h1><a name="Environment_variables"></a>Summary of environment variables</h1>
 
@@ -984,8 +984,10 @@ actual file names or even <a href="#Input_control">"@file" arguments</a>.
 </dl>
 
 <dl>
-<dt><a href="#Temp_files"><b><tt>TEMP</tt></b></a>
-<dd>Defines a directory name for temporary files.
+<dt><a href="#Temp_files"><b><tt>TEMP</tt></b>, <b><tt>TMPDIR</tt></b></a>
+<dd>Defines a directory name for temporary files.  If both
+<b><tt>TEMP</tt></b> and <b><tt>TMPDIR</tt></b> are defined,
+<b><tt>TMPDIR</tt></b> takes precedence.
 </dl>
 
 <hr>
