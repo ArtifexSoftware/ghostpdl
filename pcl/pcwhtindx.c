@@ -292,6 +292,7 @@ pcl_cmap_map_raster(
                                     );
         if (pout_rast == 0)
             return e_Memory;
+        pout_pixinfo->data = pout_rast;
 
     } else
         pout_rast = (byte *)pin_pixinfo->data;
