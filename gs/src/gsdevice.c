@@ -441,8 +441,20 @@ gs_make_null_device(gx_device_null *dev_null, gx_device *dev,
     gx_device_init((gx_device *)dev_null, (const gx_device *)&gs_null_device,
 		   mem, true);
     gx_device_set_target((gx_device_forward *)dev_null, dev);
-    if (dev)
-	gx_device_copy_color_params((gx_device *)dev_null, dev);
+    if (dev) {
+	/* The gx_device_copy_color_params() call below should
+	   probably copy over these new-style color mapping procs, as
+	   well as the old-style (map_rgb_color and friends). However,
+	   the change was made here instead, to minimize the potential
+	   impact of the patch.
+	*/
+	gx_device *dn = (gx_device *)dev_null;
+	set_dev_proc(dn, get_color_mapping_procs, gx_forward_get_color_mapping_procs);
+	set_dev_proc(dn, get_color_comp_index, gx_forward_get_color_comp_index);
+	set_dev_proc(dn, encode_color, gx_forward_encode_color);
+	set_dev_proc(dn, decode_color, gx_forward_decode_color);
+	gx_device_copy_color_params(dn, dev);
+    }
 }
 
 /* Mark a device as retained or not retained. */
@@ -616,6 +628,11 @@ gx_device_copy_color_procs(gx_device *dev, const gx_device *target)
     dev_proc_map_color_rgb((*to_rgb)) =
 	dev_proc(dev, map_color_rgb);
 
+    /* The logic in this function seems a bit stale; it sets the
+       old-style color procs, but not the new ones
+       (get_color_mapping_procs, get_color_comp_index, encode_color,
+       and decode_color). It should probably copy those as well.
+    */
     if (from_cmyk == gx_forward_map_cmyk_color ||
 	from_cmyk == cmyk_1bit_map_cmyk_color ||
 	from_cmyk == cmyk_8bit_map_cmyk_color) {
