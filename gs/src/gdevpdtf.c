@@ -56,8 +56,9 @@ case 8: switch (pdfont->FontType) {
  case ft_composite:
      ENUM_RETURN(pdfont->u.type0.DescendantFont);
  case ft_CID_encrypted:
+     ENUM_RETURN(0);
  case ft_CID_TrueType:
-     ENUM_RETURN(pdfont->u.cidfont.glyphshow_font);
+     ENUM_RETURN(pdfont->u.cidfont.CIDToGIDMap);
  default:
      ENUM_RETURN(pdfont->u.simple.Encoding);
 }
@@ -65,8 +66,6 @@ case 9: switch (pdfont->FontType) {
  case ft_composite:
      return (pdfont->u.type0.cmap_is_standard ? ENUM_OBJ(0) :
 	     ENUM_CONST_STRING(&pdfont->u.type0.CMapName));
- case ft_CID_TrueType:
-     ENUM_RETURN(pdfont->u.cidfont.CIDToGIDMap);
  case ft_encrypted:
  case ft_encrypted2:
  case ft_TrueType:
@@ -102,9 +101,6 @@ RELOC_PTRS_WITH(pdf_font_resource_reloc_ptrs, pdf_font_resource_t *pdfont)
 	break;
     case ft_CID_TrueType:
 	RELOC_VAR(pdfont->u.cidfont.CIDToGIDMap);
-	/* falls through */
-    case ft_CID_encrypted:
-	RELOC_VAR(pdfont->u.cidfont.glyphshow_font);
 	break;
     default:
 	RELOC_VAR(pdfont->u.simple.Encoding);

@@ -190,7 +190,7 @@ struct pdf_font_resource_s {
 	    /* [D]W[2] is Widths. */
 	    long CIDSystemInfo_id; /* (written when font is allocated) */
 	    ushort *CIDToGIDMap; /* (CIDFontType 2 only) [count] */
-	    gs_font_type0 *glyphshow_font;
+	    gs_id glyphshow_font_id;
 
 	} cidfont;
 

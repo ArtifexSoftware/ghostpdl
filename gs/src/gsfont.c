@@ -624,6 +624,18 @@ gs_purge_font(gs_font * pfont)
 
 }
 
+/* Locate a gs_font by gs_id. */
+gs_font *
+gs_find_font_by_id(gs_font_dir *pdir, gs_id id)
+ {
+    gs_font *pfont = pdir->orig_fonts;
+
+    for(; pfont != NULL; pfont = pfont->next)
+	if(pfont->id == id)
+	    return pfont;
+    return NULL;
+ }
+
 /* ---------------- Default font procedures ---------------- */
 
 /* ------ Font-level procedures ------ */

@@ -55,7 +55,7 @@ type0_from_cidfont_cmap(gs_font_type0 **ppfont0, gs_font *font,
 	gs_make_identity(&font0->FontMatrix);
     font0->FontType = ft_composite;
     font0->procs.init_fstack = gs_type0_init_fstack;
-    font0->procs.define_font = 0; /* not called */
+    font0->procs.define_font = gs_no_define_font;
     font0->procs.make_font = 0; /* not called */
     font0->procs.next_char_glyph = gs_type0_next_char_glyph;
     font0->key_name = font->key_name;
@@ -70,6 +70,7 @@ type0_from_cidfont_cmap(gs_font_type0 **ppfont0, gs_font *font,
     font0->data.CMap = pcmap;
     font0->data.SubsVector.data = 0;
     font0->data.SubsVector.size = 0;
+    gs_definefont(font->dir, (gs_font *)font0);
     *ppfont0 = font0;
     return 0;
 }
