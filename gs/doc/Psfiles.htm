@@ -309,6 +309,19 @@ href="Use.htm#DISKFONTS">a description of this feature</a>.
 </dl>
 
 <dl>
+<dt><a href="../lib/gs_diskn.ps"><tt>gs_diskn.ps</tt></a>
+<dd>This file implements the <b><tt>%disk</tt></b> IODevice
+(<b><tt>diskn.dev</tt></b> feature).  See the the language documentation
+for information on the use of the %disk# devices. These PostScript
+modifications primarily perform the searching of all Searchable file
+systems in a defined SearchOrder when a file reference does not contain
+an explicit %device% specifier (such as <b><tt>%os%</tt></b> or
+<b><tt>%disk0</tt></b>%). This is required to emulate undocumented
+behaviour of Adobe PostScript printers that have a disk and was
+experimentally determined.
+</dl>
+
+<dl>
 <dt><a href="../lib/gs_fform.ps"><tt>gs_fform.ps</tt></a>
 <dd>A usable but imperfect PostScript implementation of Form caching.
 </dl>
