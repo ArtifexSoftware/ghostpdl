@@ -141,9 +141,9 @@ make_invalid_file(ref * fp)
 }
 
 /* Check a file name for permission by stringmatch on one of the */
-/* strings of the permitgroup array */
+/* strings of the permitgroup array. */
 private int
-check_file_permissions(i_ctx_t *i_ctx_p, const char *fname, int len,
+check_file_permissions_reduced(i_ctx_t *i_ctx_p, const char *fname, int len,
 			const char *permitgroup)
 {
     long i;
@@ -159,6 +159,8 @@ check_file_permissions(i_ctx_t *i_ctx_p, const char *fname, int len,
     const char *win_sep2 = "\\";
     bool use_windows_pathsep = (gs_file_name_check_separator(win_sep2, 1, win_sep2) == 1);
     uint plen = gp_file_name_parents(fname, len);
+
+    /* Assuming a reduced file name. */
 #endif
 
     /*
@@ -188,27 +190,37 @@ check_file_permissions(i_ctx_t *i_ctx_p, const char *fname, int len,
 	const string_match_params win_filename_params = {
 		'*', '?', '\\', true, true	/* ignore case & '/' == '\\' */
 	};
+	const byte *permstr;
+	uint permlen;
+	int cwd_len = 0;
 
 	if (array_get(permitlist, i, &permitstring) < 0 ||
 	    r_type(&permitstring) != t_string 
 	   )    
 	    break;	/* any problem, just fail */
+	permstr = permitstring.value.bytes;
+	permlen = r_size(&permitstring);
 #if NEW_COMBINE_PATH
 	/* 
 	 * Check if any file name is permitted with "*".
 	 */
-	if (r_size(&permitstring) == 1 && permitstring.value.bytes[0] == '*')
+	if (permlen == 1 && permstr[0] == '*')
 	    return 0;		/* success */
 	/* 
 	 * If the filename starts with parent references, 
-	 * the permission element must start with same parent references.
+	 * the permission element must start with same number of parent references.
 	 */
-	if (plen != 0 && (r_size(&permitstring) <= plen ||
-		memcmp(fname, permitstring.value.bytes, plen)))
+	if (plen != 0 && plen != gp_file_name_parents((const char *)permstr, permlen))
 	    continue;
+	/*
+	 * If the permission starts with "./", relative paths
+	 * with no "./" are allowed as well as with "./".
+	 * 'fname' has no "./" because it is reduced.
+	 */
+	cwd_len = gp_file_name_cwds((const char *)permstr, permlen);
 #endif
         if (string_match( (const unsigned char*) fname, len,
-			  permitstring.value.bytes, r_size(&permitstring), 
+			  permstr + cwd_len, permlen - cwd_len, 
 		use_windows_pathsep ? &win_filename_params : NULL)
 	   ) {
 #if !NEW_COMBINE_PATH
@@ -219,7 +231,7 @@ check_file_permissions(i_ctx_t *i_ctx_p, const char *fname, int len,
 	     */
 	    if (i_ctx_p->LockFilePermissions &&
 		gp_file_name_references_parent(fname, len) &&
-		    permitstring.value.bytes[0] != '*')
+		    permstr[0] != '*')
 		continue;	/* disregard this match and keep trying */
 	    else
 		return 0;		/* success */
@@ -233,17 +245,35 @@ check_file_permissions(i_ctx_t *i_ctx_p, const char *fname, int len,
              * platform's current directory, and if so, succeed.
 	     */
 	if (fname_bare && 
-	    (r_size(&permitstring) >= cwd_len + sep_len + 1) &&
-		(bytes_compare(permitstring.value.bytes, cwd_len,
+	    (permlen >= cwd_len + sep_len + 1) &&
+		(bytes_compare(permstr, cwd_len,
 			(const byte *)gp_current_directory_name, cwd_len) == 0) &&
-		(bytes_compare(permitstring.value.bytes+cwd_len, sep_len,
+		(bytes_compare(permstr + cwd_len, sep_len,
 			(const byte *)sep_string, sep_len) == 0) &&
-		(permitstring.value.bytes[cwd_len+sep_len] == '*'))
+		(permstr[cwd_len + sep_len] == '*'))
 	    return 0;	/* permitstring was CWD + sep + * */
 #endif
     }
     /* not found */
     return e_invalidfileaccess;
+}
+
+/* Check a file name for permission by stringmatch on one of the */
+/* strings of the permitgroup array */
+private int
+check_file_permissions(i_ctx_t *i_ctx_p, const char *fname, int len,
+			const char *permitgroup)
+{
+#if NEW_COMBINE_PATH    
+    char fname_reduced[gp_file_name_sizeof];
+    uint rlen = sizeof(fname_reduced);
+
+    if (gp_file_name_reduce(fname, len, fname_reduced, &rlen) != gp_combine_success)
+	return 0;
+    fname = fname_reduced;
+    len = rlen;
+#endif
+    return check_file_permissions_reduced(i_ctx_p, fname, len, permitgroup);
 }
 
 /* <name_string> <access_string> file <file> */
@@ -706,7 +736,7 @@ zlibfile(i_ctx_t *i_ctx_p)
 	    }
 	}
 	if (code < 0) {
-	    if (code == e_VMerror)
+	    if (code == e_VMerror || code == e_invalidfileaccess)
 		return code;
 	    push(1);
 	    make_false(op);
@@ -1022,9 +1052,9 @@ private int
 check_file_permissions_aux(i_ctx_t *i_ctx_p, char *fname, uint flen)
 {   /* i_ctx_p is NULL running init files. */
     /* fname must be reduced. */
-#if NEW_COMBINE_PATH
     if (i_ctx_p == NULL)
 	return 0;
+#if !NEW_COMBINE_PATH
     /* Skip checks if this file name came from the command line. */
     if (!i_ctx_p->LockFilePermissions ||
 	(i_ctx_p->filearg != NULL &&
@@ -1032,42 +1062,76 @@ check_file_permissions_aux(i_ctx_t *i_ctx_p, char *fname, uint flen)
 		      (const byte *)i_ctx_p->filearg,
 		      strlen( (const char*)i_ctx_p->filearg) ) == 0))
 	return 0;
-    if (check_file_permissions(i_ctx_p, fname, flen, "PermitFileReading") < 0)
-	return_error(e_invalidfileaccess);
 #endif
+    if (check_file_permissions_reduced(i_ctx_p, fname, flen, "PermitFileReading") < 0)
+	return_error(e_invalidfileaccess);
     return 0;
 }
 
 
 /* The startup code calls this to open @-files. */
-private FILE *
+private int
 lib_fopen_with_libpath(i_ctx_t *i_ctx_p, gx_io_device *iodev, 
-		const char *fname, uint flen, char fmode[4], char *buffer, int blen)
+		const char *fname, uint flen, char fmode[4], char *buffer, int blen,
+		FILE **file)
 {   /* i_ctx_p is NULL running init files. */
-    FILE *file = NULL;
     bool starting_arg_file = false;
+    bool search_with_no_combine = false;
+    bool search_with_combine = false;
 
+#if NEW_COMBINE_PATH
     if (i_ctx_p != NULL) {
 	starting_arg_file = i_ctx_p->starting_arg_file;
 	i_ctx_p->starting_arg_file = false;
-    }
-    if (
-#if !NEW_COMBINE_PATH
-	gp_pathstring_not_bare(fname, flen)
-#else
-	gp_file_name_is_absolute(fname, flen)
+    } else
+	starting_arg_file = true;
 #endif
-       ) {
+
+#if NEW_COMBINE_PATH
+    if (gp_file_name_is_absolute(fname, flen)) {
+       search_with_no_combine = true;
+       search_with_combine = false;
+    } else {
+       search_with_no_combine = starting_arg_file;
+       search_with_combine = true;
+    }
+#else
+    if (gp_pathstring_not_bare(fname, flen)) {
+       search_with_no_combine = true;
+       search_with_combine = false;
+    } else {
+       search_with_no_combine = false;
+       search_with_combine = true;
+    }
+#endif
+    if (search_with_no_combine) {
+	uint blen1 = blen;
+
+#if NEW_COMBINE_PATH
+	if (gp_file_name_reduce(fname, flen, buffer, &blen1) != gp_combine_success)
+	    goto skip;
+#else
 	if (flen + 1 > blen)
 	    return 0;
 	memcpy(buffer, fname, flen);
 	buffer[flen] = 0;
-	if (check_file_permissions_aux(i_ctx_p, buffer, blen) < 0)
-	    return 0;
-	if (iodev->procs.fopen(iodev, buffer, fmode, &file,
-				     buffer, blen) == 0)
-	    return file;
-    } else {
+	blen1 = flen;
+#endif
+	if (iodev->procs.fopen(iodev, buffer, fmode, file,
+				 buffer, blen) == 0) {
+	    if (starting_arg_file ||
+		check_file_permissions_aux(i_ctx_p, buffer, blen1) >= 0)
+		    return 0;
+	    iodev->procs.fclose(iodev, *file);
+	    *file = NULL;
+	    return_error(e_invalidfileaccess);
+	} else
+	    *file = NULL;
+#if NEW_COMBINE_PATH
+	skip:;
+#endif
+    } 
+    if (search_with_combine) {
 	const gs_file_path *pfpath = &gs_lib_path;
 	uint pi;
 
@@ -1080,21 +1144,19 @@ lib_fopen_with_libpath(i_ctx_t *i_ctx_p, gx_io_device *iodev,
 		    fname, flen, false, buffer, &blen1);
 	    if (r != gp_combine_success)
 		continue;
-#if 0 /*NEW_COMBINE_PATH*/
-	    if (gp_file_name_parents(buffer, blen1) > 
-	        gp_file_name_parents(pstr, plen))
-		continue;
-#endif
-	    if (!starting_arg_file &&
-	        check_file_permissions_aux(i_ctx_p, buffer, blen) < 0)
-		continue;
-	    if (iodev->procs.fopen(iodev, buffer, fmode, &file,
-					 buffer, blen) == 0)
-		return file;
-	    file = NULL; /* safety */
+	    if (iodev->procs.fopen(iodev, buffer, fmode, file,
+					 buffer, blen) == 0) {
+		if (starting_arg_file ||
+		    check_file_permissions_aux(i_ctx_p, buffer, blen1) >= 0)
+		    return 0;
+		iodev->procs.fclose(iodev, *file);
+		*file = NULL;
+		return_error(e_invalidfileaccess);
+	    }
+	    *file = NULL; /* safety */
 	}
     }
-    return 0;
+    return_error(e_undefinedfilename);
 }
 
 /* The startup code calls this to open @-files. */
@@ -1107,10 +1169,12 @@ lib_fopen(const char *fname)
     /* Allocate a copy of the default IODevice. */
     gx_io_device iodev_default_copy = *gx_io_device_table[0];
     char fmode[3] = "r";
+    FILE *file = NULL;
 
     strcat(fmode, gp_fmode_binary_suffix);
-    return lib_fopen_with_libpath(NULL, &iodev_default_copy, fname, strlen(fname), 
-			    fmode, buffer, sizeof(buffer));
+    lib_fopen_with_libpath(NULL, &iodev_default_copy, fname, strlen(fname), 
+			    fmode, buffer, sizeof(buffer), &file);
+    return file;
 }
 
 /* Open a file stream on an OS file and create a file object, */
@@ -1135,12 +1199,12 @@ lib_file_open(i_ctx_t *i_ctx_p, const char *fname, uint len, byte * cname, uint 
     if (fname == 0)
 	return 0;
     buffer = (char *)s->cbuf;
-    file = lib_fopen_with_libpath(i_ctx_p, iodev, fname, len, fmode, buffer, s->bsize);
-    if (file == NULL) {
+    code = lib_fopen_with_libpath(i_ctx_p, iodev, fname, len, fmode, buffer, s->bsize, &file);
+    if (code < 0) {
 	s->cbuf = NULL;
 	s->bsize = s->cbsize = 0;
 	gs_free_object(mem, buffer, "lib_file_open");
-        return_error(e_undefinedfilename);
+        return code;
     }
     file_init_stream(s, file, fmode, (byte *)buffer, s->bsize);
     /* Get the name from the stream buffer. */

@@ -70,4 +70,9 @@ bool gp_file_name_is_absolute(const char *fname, uint flen);
  */
 uint gp_file_name_parents(const char *fname, uint flen);
 
+/* 
+ * Returns length of all starting cwd references.
+ */
+uint gp_file_name_cwds(const char *fname, uint flen);
+
 #endif /* gpmisc_INCLUDED */

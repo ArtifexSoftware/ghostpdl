@@ -50,9 +50,12 @@ struct gs_context_state_s {
     ref userparams;		/* t_dictionary */
     int scanner_options;	/* derived from userparams */
     bool LockFilePermissions;	/* accessed from userparams */
+#if NEW_COMBINE_PATH
     bool starting_arg_file;	/* starting a file specified in command line. */
+#else
     char *filearg;		/* C string of the file being run */
 				/* (allocated on the C heap, no gc needed) */
+#endif
     ref stdio[3];		/* t_file */
     /* Put the stacks at the end to minimize other offsets. */
     dict_stack_t dict_stack;

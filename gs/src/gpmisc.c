@@ -319,7 +319,8 @@ gp_file_name_reduce(const char *fname, uint flen, char *buffer, uint *blen)
 /* 
  * Answers whether a file name is absolute (starts from a root). 
  */
-bool gp_file_name_is_absolute(const char *fname, uint flen)
+bool 
+gp_file_name_is_absolute(const char *fname, uint flen)
 {
     return (gp_file_name_root(fname, flen) > 0);
 }
@@ -327,7 +328,9 @@ bool gp_file_name_is_absolute(const char *fname, uint flen)
 /* 
  * Returns length of all starting parent references.
  */
-uint gp_file_name_parents(const char *fname, uint flen)
+private uint 
+gp_file_name_prefix(const char *fname, uint flen, 
+		bool (*test)(const char *fname, uint flen))
 {
     uint plen = gp_file_name_root(fname, flen), slen;
     const char *ip, *ipe, *item;
@@ -339,10 +342,27 @@ uint gp_file_name_parents(const char *fname, uint flen)
     for (; ip < ipe; ) {
 	item = ip;
 	slen = search_separator(&ip, ipe, item, 1);
-	if (!gp_file_name_is_parent(item, ip - item))
+	if (!(*test)(item, ip - item))
 	    break;
 	ip += slen;
     }
     return item - fname;
 }
 
+/* 
+ * Returns length of all starting parent references.
+ */
+uint 
+gp_file_name_parents(const char *fname, uint flen)
+{
+    return gp_file_name_prefix(fname, flen, gp_file_name_is_parent); 
+}
+
+/* 
+ * Returns length of all starting cwd references.
+ */
+uint 
+gp_file_name_cwds(const char *fname, uint flen)
+{
+    return gp_file_name_prefix(fname, flen, gp_file_name_is_current); 
+}
