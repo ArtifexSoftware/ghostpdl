@@ -271,50 +271,6 @@ typedef unsigned long ulong;
 #undef ushort
 #undef ulong
 
-/* Some systems are guaranteed to have stdint.h
- * but don't use the autoconf detection
- */
-#ifndef HAVE_STDINT_H
-# ifdef __MACOS__
-#   define HAVE_STDINT_H
-# endif
-#endif
-
-/* Define some stdint.h types. The jbig2dec headers require these and 
- * they're generally useful to have around now that there's a standard.
- */
-#ifdef HAVE_STDINT_H
-# include <stdint.h>
-# define STDINT_TYPES_DEFINED
-#else
-# if defined(__WIN32__) /* MSVC currently doesn't provide C99 headers */
-   typedef signed char             int8_t;
-   typedef short int               int16_t;
-   typedef int                     int32_t;
-   typedef __int64                 int64_t;
-   typedef unsigned char           uint8_t;
-   typedef unsigned short int      uint16_t;
-   typedef unsigned int            uint32_t;
-   typedef unsigned __int64        uint64_t;
-#  define STDINT_TYPES_DEFINED
-# endif
-# if defined(__VMS) /* OpenVMS provides these types in inttypes.h */
-#  include <inttypes.h>
-#  define STDINT_TYPES_DEFINED
-# endif
-# if defined(__CYGWIN__)
-   /* Cygwin defines the signed versions in sys/types.h */
-   /* but uses a u_ prefix for the unsigned versions */
-   typedef u_int8_t                uint8_t;
-   typedef u_int16_t               uint16_t;
-   typedef u_int32_t               uint32_t;
-   typedef u_int64_t               uint64_t;
-#  define STDINT_TYPES_DEFINED
-# endif
-   /* other archs may want to add defines here, 
-      or use the fallbacks in std.h */
-#endif /* STDINT_H */
-
 /*
  * Define a Boolean type.  Even though we would like it to be
  * unsigned char, it pretty well has to be int, because

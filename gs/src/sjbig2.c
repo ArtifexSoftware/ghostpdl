@@ -17,6 +17,7 @@
 /* $Id$ */
 /* jbig2decode filter implementation -- hooks in libjbig2dec */
 
+#include "stdint_.h"
 #include "memory_.h"
 #include "stdio_.h" /* for debug printouts */
 

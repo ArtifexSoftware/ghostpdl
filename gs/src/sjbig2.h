@@ -21,6 +21,7 @@
 #ifndef sjbig2_INCLUDED
 #  define sjbig2_INCLUDED
 
+#include "stdint_.h"
 #include "scommon.h"
 #include <jbig2.h>
 

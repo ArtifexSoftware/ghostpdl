@@ -97,51 +97,6 @@ typedef ulong bits32;
 # endif
 #endif
 
-/* define some of the stdint.h types if they haven't been set by stdpre.h */
-#ifndef STDINT_TYPES_DEFINED
-/* 8 bit types */
-# if ARCH_SIZEOF_CHAR == 1
-typedef signed char int8_t;
-typedef unsigned char uint8_t;
-# endif
-/* 16 bit types */
-# if ARCH_SIZEOF_SHORT == 2
-typedef signed short int16_t;
-typedef unsigned short uint16_t;
-# else
-#  if ARCH_SIZEOF_INT == 2
-typedef signed int int16_t;
-typedef unsigned int uint16_t;
-#  endif
-# endif
-/* 32 bit types */
-# if ARCH_SIZEOF_INT == 4
-typedef signed int int32_t;
-typedef unsigned int uint32_t;
-# else
-#  if ARCH_SIZEOF_LONG == 4
-typedef signed long int32_t;
-typedef unsigned long uint32_t;
-#  else
-#   if ARCH_SIZEOF_SHORT == 4
-typedef signed short int32_t;
-typedef unsigned short uint32_t;
-#   endif
-#  endif
-# endif
-/* 64 bit types */
-# if ARCH_SIZEOF_INT == 8
-typedef signed int int64_t;
-typedef unsigned int uint64_t;
-# else
-#  if ARCH_SIZEOF_LONG == 8
-typedef signed long int64_t;
-typedef unsigned long uint64_t;
-#  endif
-# endif
-#  define STDINT_TYPES_DEFINED
-#endif /* STDINT_TYPES_DEFINED */
-
 /* Minimum and maximum values for the signed types. */
 /* Avoid casts, to make them acceptable to strict ANSI compilers. */
 #define min_short (-1 << (arch_sizeof_short * 8 - 1))

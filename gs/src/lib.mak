@@ -90,6 +90,7 @@ malloc__h=$(GLSRC)malloc_.h $(std_h)
 math__h=$(GLSRC)math_.h $(std_h) $(vmsmath_h)
 memory__h=$(GLSRC)memory_.h $(std_h)
 stat__h=$(GLSRC)stat_.h $(std_h)
+stdint__h=$(GLSRC)stdint_.h $(std_h)
 stdio__h=$(GLSRC)stdio_.h $(std_h)
 string__h=$(GLSRC)string_.h $(std_h)
 time__h=$(GLSRC)time_.h $(std_h) $(gconfig__h)
@@ -470,7 +471,7 @@ sjpeg_h=$(GLSRC)sjpeg.h
 slzwx_h=$(GLSRC)slzwx.h
 smd5_h=$(GLSRC)smd5.h $(md5_h)
 sarc4_h=$(GLSRC)sarc4.h $(scommon_h)
-sjbig2_h=$(GLSRC)sjbig2.h $(scommon_h)
+sjbig2_h=$(GLSRC)sjbig2.h $(stdint__h) $(scommon_h)
 spdiffx_h=$(GLSRC)spdiffx.h
 spngpx_h=$(GLSRC)spngpx.h
 spprint_h=$(GLSRC)spprint.h
@@ -1361,7 +1362,7 @@ $(GLD)sjbig2.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLD)libjbig2.dev $(sjbig2_)
 	$(ADDMOD) $(GLD)sjbig2 -include $(GLD)libjbig2.dev
 
 $(GLOBJ)sjbig2.$(OBJ) : $(GLSRC)sjbig2.c $(AK) \
- $(memory__h) $(stdio__h) $(gserror_h) $(gserrors_h) $(gdebug_h) \
+ $(stdint__h) $(memory__h) $(stdio__h) $(gserror_h) $(gserrors_h) $(gdebug_h) \
  $(sjbig2_h) $(strimpl_h)
 	$(GLJBIG2CC) $(GLO_)sjbig2.$(OBJ) $(C_) $(GLSRC)sjbig2.c
 
@@ -1800,7 +1801,7 @@ $(GLOBJ)gstype42.$(OBJ) : $(GLSRC)gstype42.c $(GXERR) $(memory__h)\
  $(gxpath_h) $(gxttf_h) $(gxttfb_h) $(gxfcache_h) $(stream_h)
 	$(GLCC) $(GLO_)gstype42.$(OBJ) $(C_) $(GLSRC)gstype42.c
 
-ttfsfnt_h=$(GLSRC)ttfsfnt.h
+ttfsfnt_h=$(GLSRC)ttfsfnt.h $(stdint__h)
 ttcommon_h=$(GLSRC)ttcommon.h
 ttconf_h=$(GLSRC)ttconf.h
 ttfinp_h=$(GLSRC)ttfinp.h
