@@ -50,9 +50,10 @@
 <ul>
 <li><a href="#PS_resources">Finding PostScript Level 2 resources</a>
 <li><a href="#Font_lookup">Font lookup</a>
+<li><a href="#CIDFonts">CID fonts</a>
+<li><a href="#CIDFontSubstitution">CID font substitution</a>
 <li><a href="#Temp_files">Temporary files</a>
 </ul>
-<li><a href="#CIDFontSubstitution">CID font substitution</a>
 
 <li><a href="#Platforms">Notes on specific platforms</a>
 <ul>
@@ -773,13 +774,13 @@ given.  To run a file using the searching algorithm, use
 
 <p>
 Adobe specifies that resources are installed in a single directory.
-Instead that, Ghostscript maintains a list of resource directories,
+Ghostscript instead maintains a list of resource directories,
 and uses an extended method for finding resource files.
 
 <p>
-The search of a resource file depends on whether
+The search for a resource file depends on whether
 the value of the system parameter <b><tt>GenericResourceDir</tt></b>
-specifies an absolute path. The user may set it how explained in
+specifies an absolute path. The user may set it as explained in
 <a href="#Resource_related_parameters">Resource-related parameters</a>.
 
 <p>
@@ -793,7 +794,7 @@ The first successful combination is used.
 
 <p>
 If the value of the system parameter <b><tt>GenericResourceDir</tt></b>
-is an absolute path (it is so by default), 
+is an absolute path (the default), 
 Ghostscript assumes a single resource directory.
 It concatenates :
 
@@ -838,17 +839,16 @@ the value of the system parameter
 <b><tt>GenericResourcePathSep</tt></b> (initially
 "<b><tt>/</tt></b>" on Unix and Windows, "<b><tt>:</tt></b>" on MacOS,
 "<b><tt>]</tt></b>" on OpenVMS).
-Also string <b><tt>./Resource</tt></b> is replaced with a
+The string <b><tt>./Resource</tt></b> is replaced with a
 platform dependent equivalent. 
 
 <p>
 In the case of multiple resource directories,
 the default <b><tt>ResourceFileName</b></tt> procedure retrieves either a path 
-to the first avaliable resource,
-or a path starting with <b><tt>GenericResourceDir</tt></b>,
-if the resource is not available.
-Due to that Postscript installers of Postscript resources
-will overvrite an existing resource or add into the first resource directory.
+to the first avaliable resource, or if the resource is not available it
+returns a path starting with <b><tt>GenericResourceDir</tt></b>.
+Consequently Postscript installers of Postscript resources
+will overwrite an existing resource or add a new one to the first resource directory.
 
 <p>
 To look up fonts, after exhausting the search method described in <a href="#Font_lookup">the
@@ -863,7 +863,7 @@ next section</a>, it concatenates together
 </ol>
 
 <p>
-Note that even though the system parameters are named "somethingDir", they
+Note that even although the system parameters are named "somethingDir", they
 are not just plain directory names: they have "<b><tt>/</tt></b>" on the
 end, so that they can be concatenated with the category name or font name.
 
@@ -873,7 +873,7 @@ end, so that they can be concatenated with the category name or font name.
 Ghostscript has a slightly different way to find the file containing a font
 with a given name.  This rule uses not only the search path defined by
 <b><tt>-I</tt></b>, <b><tt>GS_LIB</tt></b>, and
-<b><tt>GS_LIB_DEFAULT</tt></b> <a href="#General_search_path">as described
+<b><tt>GS_LIB_DEFAULT</tt></b> <a href="#Finding_files">as described
 above</a>, but also the directory that is the value of the
 <b><tt>FontResourceDir</tt></b> system parameter, and an additional list of
 directories that is the value of the <b><tt>GS_FONTPATH</tt></b> environment
@@ -937,9 +937,8 @@ from among the standard 35 fonts.
 </ul>
 
 <p>
-Loading truetype fonts directly from <tt>/Resource/CIDFont/</tt> is not
-supported. A <a href="#CIDFontSubstitution"><tt>cidfmap</tt></a> entry
-must be created instead to provide a proper character ordering for the font.
+<a href="#CIDFonts">CID fonts</a> (e.g. Chinese, Japanese and Korean) 
+are found using a different method.
 
 <blockquote><table cellpadding=0 cellspacing=0>
 <tr><th colspan=3 bgcolor="#CCCC00"><hr><font size="+1">Differences between search path and font path</font><hr>
@@ -1092,6 +1091,169 @@ Ghostscript distribution (which are of just as good quality), except to save
 about a megabyte of disk space, but the installation documentation explains
 how to do it <a href="Install.htm#Use_Acrobat_fonts_Unix">on Unix</a>.
 
+<h3><a name="CIDFonts"></a>CID fonts</h2>
+
+<p>
+CID fonts are PostScript resources containing a
+large number of glyphs (e.g. glyphs for Far East languages,
+Chinese, Japanese and Korean).
+Please refer to the PostScript Language Reference,
+third edition, for details.
+
+<p>
+CID font resources are a different kind of PostScript resource from fonts.
+In particular, they cannot be used as regular fonts.
+CID font resources must first be combined with a CMap resource, which
+defines specific codes for glyphs, before it can be used as a font. This 
+allows the reuse of a collection of glyphs with different encodings.
+
+<p>
+The simplest method to request a font composed of a CID font resource 
+and a CMap resource in a PostScript document is
+<blockquote><b><tt>
+/CIDFont-CMap findfont
+</tt></b></blockquote>
+where <b><tt>CIDFont</tt></b> is a name of any
+CID font resource, and <b><tt>CMap</tt></b> is a name of a CMap resource
+designed for the same character collection. The interpreter will compose
+the font automatically from the specified CID font and CMap resources.
+Another method is possible using the <b><tt>composefont</tt></b> operator.
+
+<p>
+CID fonts must be placed in the <b><tt>/Resource/CIDFont/</tt></b> directory.
+They are not found using <a href="#Font_lookup">Font lookup</a>
+on the search path or font path.
+
+<h3><a name="CIDFontSubstitution"></a>CID font substitution</h3>
+
+<p>
+
+<p>
+Substitution of CID font resources is controlled by the Ghostscript
+configuration file <b><tt>lib/cidfmap</tt></b>, 
+which defines a CID font resource map.
+The file forms a table of records, each of which should use one of two formats,
+explained below.
+
+<p> To substitute a CID font resource with another CID font resource:
+
+<blockquote><b><tt>
+/Substituted /Original ;
+</tt></b></blockquote>
+where <b><tt>Substituted</tt></b> is a name of CID font resource being used
+by a document, and <b><tt>Original</tt></b> is a name of an available
+CID font resource. Please pay attention that both them must be
+designed for same character collection. In other words, you
+cannot substitute a Japanese CID font resource with a Korean CID font resource,
+etc. CMap resource names must not appear in
+<b><tt>lib/cidfmap</tt></b>. The trailing semicolon and the space before it
+are both required.
+
+<p>
+
+To substitute a CID font resource with a TrueType font:
+
+<blockquote><b><tt>
+/Substituted &lt;&lt; keys&amp;values &gt;&gt; ;
+</tt></b></blockquote>
+
+Where <b><tt>keys&amp;values</tt></b> are explained in the table below.
+
+<table cellpadding=0 cellspacing=10>
+
+<tr valign="top">	<th>Key
+	<th>Type
+	<th>Description
+<tr valign="top">	<td><b><tt>/Path</tt></b>
+        <td>string
+        <td>A path to a TrueType font file.  This must be an absolute path.
+        If using <b><tt><a href="#Safer">-dSAFER</a></b></tt>, the directory 
+        containing the font file must be on one of the permitted paths.
+<tr valign="top">	<td><b><tt>/FileType</tt></b>
+        <td>name
+        <td>Must be <b><tt>/TrueType</tt></b>.
+<tr valign="top">	<td><b><tt>/SubfontID</tt></b>
+        <td>integer
+        <td>(optional) Index of the font in font collection, such as TTC.
+            This is ignored if <b><tt>Path</tt></b> doesn't specify a collection.
+            The first font in a collection is 1.
+            Default value is 0.
+<tr valign="top">	<td><b><tt>/CSI</tt></b>
+        <td>array of 2 elements
+        <td>(required) Information for building <b><tt>CIDSystemInfo</tt></b>.
+            The first element is a string, which specifies <b><tt>Ordering</tt></b>.
+            The second element is a number, which specifies <b><tt>Supplement</tt></b>.
+</table>
+
+<p>
+Currently only CIDFontType 2 can be emulated with a TrueType font.
+The TrueType font must contain enough characters to cover an
+Adobe character collection, which is specified in <b><tt>Ordering</tt></b>.
+
+<p>
+Examples :
+
+
+<blockquote><b><tt>
+/Ryumin-Medium  /ShinGo-Bold ;<br>
+/MS-Mincho &lt;&lt; /FileType /TrueType /Path (C:/WINDOWS/fonts/msmincho.ttc) /SubfontID 1 /CSI [(Japan1) 3] &gt;&gt; ;<br>
+/Ryumin-Light /MS-Mincho ;<br>
+<br>
+/Batang &lt;&lt; /FileType /TrueType /Path (C:/WINDOWS/fonts/batang.ttc) /SubfontID 1 /CSI [(Korea1) 3] &gt;&gt; ;<br>
+/Gulim &lt;&lt; /FileType /TrueType /Path (C:/WINDOWS/fonts/gulim.ttc) /SubfontID 1 /CSI [(Korea1) 3] &gt;&gt; ;<br>
+/Dotum &lt;&lt; /FileType /TrueType /Path (C:/WINDOWS/fonts/gulim.ttc) /SubfontID 3 /CSI [(Korea1) 3] &gt;&gt; ;<br>
+/HYSMyeongJo-Medium /Batang ;<br>
+/HYRGoThic-Medium /Gulim ;<br>
+/HYGoThic-Medium /Dotum ;<br>
+<br>
+/SimSun &lt;&lt; /FileType /TrueType /Path (C:/WINDOWS/fonts/simsun.ttc) /SubfontID 1 /CSI [(GB1) 2] &gt;&gt; ;<br>
+/SimHei &lt;&lt; /FileType /TrueType /Path (C:/WINDOWS/fonts/simhei.ttf) /SubfontID 0 /CSI [(GB1) 2] &gt;&gt; ;<br>
+/STSong-Light /SimSun ;<br>
+/STHeiti-Regular /SimHei ;<br>
+</tt></b></blockquote>
+
+<p>
+Note that loading truetype fonts directly from 
+<b><tt>/Resources/CIDFont</tt></b> is no longer supported. 
+There is no reliable way to generate a character ordering for truetype
+fonts. The 7.0x versions of Ghostscript supported this by assuming a Japanese
+character ordering. This is replaced in the 8.0x and later releases with the more
+general <b><tt>cidfmap</tt></b> mechanism.
+
+<p>
+The PDF specification requires CID font files to be embedded,
+however some documents omit them. As a workaround
+the PDF interpreter applies an additional substitution method when 
+a requested CID font resource is not embedded and it is not available.
+It takes values of the keys <b><tt>Registry</b></tt> and <b><tt>Ordering</b></tt>
+from the <b><tt>CIDFontSystem</b></tt> dictionary,
+and concatenates them with a dash inserted.
+For example, if a PDF CID font resource specifies 
+<blockquote><b><tt>
+/CIDSystemInfo &lt;&lt; /Registry (Adobe) /Ordering (CNS1) /Supplement 1 &gt;&gt;
+</tt></b></blockquote>
+the generated subsitituite name is <b><tt>Adobe-CNS1</b></tt>.
+The latter may look some confusing for a font name,
+but we keep it for compatibility with older Ghostscript versions,
+which do so due to a historical reason.
+Add a proper record to <b><tt>lib/cidfmap</b></tt> to provide it.
+
+<p>
+Please note that when a PDF font resource specifies
+<blockquote><b><tt> 
+/Registry (Adobe) /Ordering (Identity)
+</tt></b></blockquote>
+there is no way to determine the language properly.
+If the CID font file is not embedded, the <b><tt>Adobe-Identity</b></tt> 
+record depends on the document and a correct record isn't possible when
+a document refers to multiple Far East languages.
+In the latter case add individual records for specific CID font names.
+
+<p>
+Consequently, if you want to handle any PDF document with 
+non-embedded CID fonts (which isn't a correct PDF),
+you need to create a suitable <b><tt>lib/cidfmap</tt></b> by hand.
+
 <h3><a name="Temp_files"></a>Temporary files</h3>
 
 <blockquote><table cellpadding=0 cellspacing=0>
@@ -1127,146 +1289,6 @@ variable to the name of the directory you want used.  Ghostscript currently
 doesn't do a very good job of deleting temporary files if it exits because
 of an error; you may have to delete them manually from time to time.
 
-<h2><a name="CIDFontSubstitution"></a>CID font substitution</h2>
-
-<p>
-CID fonts are PostScript resources containing
-large number of glyphs (e.g. glyphs for Far East languages).
-Please refer to the PostScript Language Reference,
-third edition, for details.
-
-
-<p>
-CID font resources are a different kind of PostScript resources from fonts.
-Particularly they cannot be used as regular fonts.
-CID font resources must first to be combined with a CMap resource, which
-defines specific codes for glyphs, before it can be used as a font. This 
-allows the reuse of a collection of glyphs with different encodings.
-
-<p>
-The simplest method to request a font composed of a CID font resource 
-and a CMap resource in a PostScript document is
-<blockquote><b><tt>
-/CIDFont-CMap findfont
-</tt></b></blockquote>
-where <b><tt>CIDFont</tt></b> is a name of any
-CID font resource, and <b><tt>CMap</tt></b> is a name of a CMap resource
-designed for the same character collection. The interpreter will compose
-the font automatically from the specified CID font and CMap resources.
-Another method is possible using the <b><tt>composefont</tt></b> operator.
-
-<p>
-For substituting CID font resources Ghostscript provides the control file
-<b><tt>lib/cidfmap</tt></b>, which defines a CID font resource map.
-The file forms a table of records, each of which should use one of two formats,
-explained below.
-
-<p> For substituting a CID font resource to another CID font resource
-a record is a simple pair of names:
-
-<blockquote><b><tt>
-/Substituted /Original ;
-</tt></b></blockquote>
-where <b><tt>Substituted</tt></b> is a name of CID font resource being used
-by a document, and <b><tt>Original</tt></b> is a name of an available
-CID font resource. Please pay attention that both them must be
-designed for same character collection. In other words, you
-cannot substitute Japanese CID font resource to Korean CID font resource,
-etc. CMap resource names must not appear in
-<b><tt>lib/cidfmap</tt></b>. The trailing semicolon and the space before it
-are both required.
-
-<p>
-
-For substituting a TrueType font to a CID font one should use format like this :
-
-<blockquote><b><tt>
-/Substituted << keys&values >> ;
-</tt></b></blockquote>
-
-Where <b><tt>keys&values</tt></b> are explained in the table below.
-
-<table cellpadding=0 cellspacing=10>
-
-<tr>	<th>Key
-	<th>Type
-	<th>Description
-<tr>	<td><tt>/Path</tt>
-        <td>string
-        <td>A path to a TrueType font file.
-<tr>	<td><tt>/FileType</tt>
-        <td>name
-        <td>Must be <b><tt>/TrueType</tt></b>.
-<tr>	<td><tt>/SubfontID</tt>
-        <td>integer
-        <td>(optional) Index of the font in font collection, such as TTC.
-            This is ignored if Path doesn't specify a collection.
-            Default value is 0.
-<tr>	<td><tt>/CSI</tt>
-        <td>array of 2 elements
-        <td>(required) Information for building <b><tt>CIDSystemInfo</tt></b>.
-            The first element is a string, which specifies <b><tt>Ordering</tt></b>.
-            The second element is a number, which specifies <b><tt>Supplement</tt></b>.
-</table>
-
-<p>
-Currently only CIDFontType 2 can be emulated with a TrueType font.
-The TrueType font must contain enough charasters to cover an
-Adobe character collection, which is specified in <b><tt>Ordering</tt></b>.
-
-<p>
-Examples :
-
-
-<blockquote><b><tt>
-/Ryumin-Medium  /ShinGo-Bold ;
-</tt></b></blockquote>
-<blockquote><b><tt>
-/Ryumin-Light   << /FileType /TrueType /Path (F:/WIN2000/Fonts/ARIALUNI.TTF) /SubfontID 3 /CSI [(Japan1) 2] >> ;
-</tt></b></blockquote>
-
-<p>
-Note that loading truetype fonts directly from /Resources/CIDFont is no longer
-supported. There is no reliable way to generate a character ordering for truetype
-fonts. The 7.0x versions of Ghostscript supported this by assuming a Japanese
-character ordering. This is replaced in the 8.0x and later releases with the more
-general <b><tt>cidfmap</tt></b> mechanism.
-
-<p>
-Rather the PDF specification requires CID font files to be embedded,
-some documents miss them. As a workaround
-the PDF interpreter applies an additional substitution method when 
-a requested CID font resource is not embedded and it is not available.
-It takes values of the keys <b><tt>Registry</b></tt> and <b><tt>Ordering</b></tt>
-from the <b><tt>CIDFontSystem</b></tt> dictionary,
-and concatenates them with a dash inserted.
-For example, if a PDF CID font resource specifies 
-<blockquote><b><tt>
-/CIDSystemInfo << /Registry (Adobe) /Ordering (CNS1) /Supplement 1 >>
-</tt></b></blockquote>
-the generated subsitituite name is <b><tt>Adobe-CNS1</b></tt>.
-The latter may look some confusing for a font name,
-but we keep it for compatibility with older Ghostscript versions,
-which do so due to a historical reason.
-Add a proper record to <b><tt>lib/cidfmap</b></tt> to provide it.
-
-<p>
-Please note that when a PDF font resource specifies
-<blockquote><b><tt>
-/Registry (Adobe) /Ordering (Identity),
-</tt></b></blockquote>
-there is no way to determine the language properly.
-Therefore in this case, if the CID font file is not embedded,
-the <b><tt>Adobe-Identity</b></tt> record depends on document,
-and a correct record isn't possible when
-a document refers multiple Far East languages.
-In the latter case add individual records for specific CID font names.
-
-<p>
-Consequently, if you want to handle any PDF document with 
-non-embedded CID fonts (which isn't a correct PDF),
-you need to create <b><tt>lib/cidfmap</tt></b> dynamicly
-with a human interaction.
 
 <hr>
 
@@ -2225,7 +2247,7 @@ rendering.
 The value is platform dependent. It must end with a directory separator.
 <p>
 Adobe specifies <b><tt>GenericResourceDir</tt></b> to be an absolute path
-to a single resource directory. Instead that, Ghostscript maintains
+to a single resource directory. Ghostscript instead maintains
 multiple resource directories and uses an extended method for finding
 resources, which is explained in  
 <a href="PS_resources">"Finding PostScript Level 2 resources"</a>.
