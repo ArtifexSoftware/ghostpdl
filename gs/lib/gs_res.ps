@@ -370,30 +370,29 @@ end
 		% Construct a new procedure to hold the arguments.
 		% All objects constructed here must be in local VM to avoid
 		% a possible invalidaccess.
-	currentdict 4 .localpackedarray	% template, proc, scratch, resdict
-	//.localresourceforall {exec} 0 get 3 .localpackedarray
-		% Stack: iterproc
+	currentdict 4 .localpackedarray	% [template proc scratch resdict]
 		% We must pop the resource dictionary off the dict stack
 		% when doing the actual iteration, and restore it afterwards.
 	.currentglobal not {
 	  .LocalInstances length 0 ne {
 		% We must do local instances, and do them first.
-	    .LocalInstances exch cvx {forall} 0 get 1 index cvlit
+	    //.localresourceforall {exec} 0 get 3 .localpackedarray cvx
+	    .LocalInstances exch {forall} 0 get 1 index 0 get
 	    currentdict end 3 .execn begin
 	  } if
 	} if
 		% Do global instances next.
-	0 get //.globalresourceforall {exec} 0 get 3 .localpackedarray
-	.Instances exch cvx {forall} 0 get 1 index cvlit
+	//.globalresourceforall {exec} 0 get 3 .localpackedarray cvx
+	.Instances exch cvx {forall} 0 get 1 index 0 get
+	currentdict end 3 .execn begin
 	currentdict /ResourceFileName known {
-	  currentdict end 3 .execn begin
 		% Finally, do instances stored on files.
-	  dup 0 get 0 get 100 string ResourceFileName
-	  dup length 3 index 0 get length sub 3 -1 roll 0 get
+	  dup 0 get 100 string ResourceFileName
+	  dup length 2 index 0 get length sub 3 -1 roll
 	  //.externalresourceforall {exec} 0 get 4 .localpackedarray cvx
 	  100 string {filenameforall} 0 get
-	} if
-	currentdict end 2 .execn begin
+	  currentdict end 2 .execn begin null	% for pop
+	} if pop
 } bind
 /ResourceFileName
 	{ /GenericResourceDir getsystemparam 
