@@ -46,51 +46,49 @@ hpgl_font_definition(hpgl_args_t *pargs, hpgl_state_t *pgls, int index)
 	      break;
 	    case 2:		/* spacing */
 	      { int spacing;
-	        if ( !hpgl_arg_c_int(pargs, &spacing) || (spacing & ~1) )
+	        if ( !hpgl_arg_c_int(pargs, &spacing) )
 		  return e_Range;
-		if ( pfp->proportional_spacing != spacing )
+		if ( ((spacing == 1) || (spacing == 0)) && (pfp->proportional_spacing != spacing) )
 		  pfp->proportional_spacing = spacing,
 		    pargs->phase |= 2;
 	      }
 	      break;
 	    case 3:		/* pitch */
 	      { hpgl_real_t pitch;
-	        if ( !hpgl_arg_c_real(pargs, &pitch) || pitch < 0 )
+	        if ( !hpgl_arg_c_real(pargs, &pitch) )
 		  return e_Range;
-		if ( pl_fp_pitch_per_inch(pfp) != pitch )
+		if ( (pl_fp_pitch_per_inch(pfp) != pitch) && (pitch >= 0) )
 		  pl_fp_set_pitch_per_inch(pfp, pitch),
 		    pargs->phase |= 2;
 	      }
 	      break;
 	    case 4:		/* height */
 	      { hpgl_real_t height;
-	        if ( !hpgl_arg_c_real(pargs, &height) || height < 0 )
+	        if ( !hpgl_arg_c_real(pargs, &height) )
 		  return e_Range;
-		if ( pfp->height_4ths != (uint)(height * 4) )
+		if ( (pfp->height_4ths != (uint)(height * 4)) && (height >= 0))
 		  pfp->height_4ths = (uint)(height * 4),
 		    pargs->phase |= 2;
 	      }
 	      break;
 	    case 5:		/* posture */
 	      { int posture;
-	        if ( !hpgl_arg_c_int(pargs, &posture) ||
-		     posture < 0 || posture > 2
-		   )
-		  return e_Range;
-		if ( pfp->style != posture )
-		  pfp->style = posture,
-		    pargs->phase |= 2;
+	        if ( !hpgl_arg_c_int(pargs, &posture) )
+		    return e_Range;
+		if ( ( posture >= 0 && posture <= 2 ) && ( pfp->style != posture ) )
+		    pfp->style = posture,
+			pargs->phase |= 2;
+
 	      }
 	      break;
 	    case 6:		/* stroke weight */
 	      { int weight;
-	        if ( !hpgl_arg_c_int(pargs, &weight) ||
-		     weight < -7 || (weight > 7 && weight != 9999)
-		   )
-		  return e_Range;
+	        if ( !hpgl_arg_c_int(pargs, &weight) )
+		     return e_Range;
 		if ( pfp->stroke_weight != weight )
-		  pfp->stroke_weight = weight,
-		    pargs->phase |= 2;
+		    if ( ((weight >= -7 ) && (weight <= 7)) || (weight == 9999 ) )
+			pfp->stroke_weight = weight,
+			    pargs->phase |= 2;
 	      }
 	      break;
 	    case 7:		/* typeface */
