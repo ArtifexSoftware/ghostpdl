@@ -815,12 +815,10 @@ $error /SubstituteFont { .stdsubstfont } put
 			% <fontname> .tryloadfont false
   dup dup type /nametype eq { .namestring } if
 		% Hack: check for the presence of the resource machinery.
-		% Stack: fontname fontnamestring
   /.genericrfn where {
     pop
     exch 1 index .fonttempstring /FontResourceDir getsystemparam .genericrfn
-		% Stack: fontnamestring fontname resfilename
-    .loadfontloop { exch pop true } { exch .loadfontloop } ifelse
+    .loadfontloop { 3 -1 roll pop true } { exch .loadfontloop } ifelse
   } {
     .loadfontloop
   } ifelse
