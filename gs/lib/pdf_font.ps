@@ -608,8 +608,7 @@ readonly def
 
 % Insert metrics into a CIDFont, by saving the PDF W, W2, DW, and DW2
 % arrays and using a (currently very inefficient) CDevProc.
-/addCIDmetrics {	% <CIDFont-resource> addCIDmetrics <fontdict>
-  dup /BaseFont get /CIDFont findresource
+/addCIDmetrics {	% <CIDFont-resource> <CIDFont> addCIDmetrics <fontdict>
   dup length 5 add dict .copydict
   dup /FID undef
   dup /UniqueID undef
@@ -647,10 +646,12 @@ readonly def
 } bdef
 
 /buildCIDType0 {	% <CIDFontType0-font-resource> buildCIDType0 <font>
+  dup /BaseFont get /CIDFont findresource
   addCIDmetrics dup /CIDFontName get exch /CIDFont defineresource
 } bdef
 
 /buildCIDType2 {	% <CIDFontType2-font-resource> buildCIDType2 <font>
+  dup /BaseFont get /CIDFont findresource
   addCIDmetrics
 	%****** Handle CIDToGIDMap ******
   dup /BaseFont get exch /CIDFont defineresource
@@ -686,6 +687,11 @@ readonly def
   1 index FRD
   closefile closefile pop
   PDFfile 3 -1 roll setfileposition
+		% Some broken Adobe software produces PDF files in which
+		% the FontName of the CFF font and the FontName in the
+		% FontDescriptor don't match the BaseFont in the font.
+		% Use the FontName, rather than the BaseFont, here.
+  dup /FontDescriptor oget /FontName oget /CIDFont findresource
   addCIDmetrics dup /CIDFontName get exch /CIDFont defineresource
 } bdef
 
