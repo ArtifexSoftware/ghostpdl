@@ -255,6 +255,12 @@ IJSSRCDIR=ijs
 IJSEXECTYPE=win
 !endif
 
+# Define any other compilation flags.
+
+!ifndef CFLAGS
+CFLAGS=
+!endif
+
 # 1 --> Use 64 bits for gx_color_index.  This is required only for
 # non standard devices or DeviceN process color model devices.
 USE_LARGE_COLOR_INDEX=1
@@ -264,13 +270,7 @@ USE_LARGE_COLOR_INDEX=1
 LARGEST_UINTEGER_TYPE=unsigned __int64
 GX_COLOR_INDEX_TYPE=$(LARGEST_UINTEGER_TYPE)
 
-CFLAGS=/DGX_COLOR_INDEX_TYPE="$(GX_COLOR_INDEX_TYPE)"
-!endif
-
-# Define any other compilation flags.
-
-!ifndef CFLAGS
-CFLAGS=
+CFLAGS=$(CFLAGS) /DGX_COLOR_INDEX_TYPE="$(GX_COLOR_INDEX_TYPE)"
 !endif
 
 # -W3 generates too much noise.
