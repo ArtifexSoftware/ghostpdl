@@ -405,7 +405,6 @@ end		% serverdict
 % it doesn't reset stdin/stdout.
 /.startnewjob {			% <exit_bool> <password_level>
 				%   .startnewjob -
-    clear cleardictstack
     serverdict /.jobsave get dup null eq { pop } { restore } ifelse
     exch {
 			% Unencapsulated job
@@ -423,6 +422,7 @@ end		% serverdict
       serverdict /.jobsavelevel 1 put
     } ifelse
 		% Reset the interpreter state.
+  clear cleardictstack
   initgraphics
   false setglobal
 } bind def
