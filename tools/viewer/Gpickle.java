@@ -1,3 +1,11 @@
+/* Portions Copyright (C) 2001 Artifex Software Inc.
+   
+   This software is distributed under license and may not be copied, modified
+   or distributed except as expressly authorized under the terms of that
+   license.  Refer to licensing information at http://www.artifex.com/ or
+   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
+   San Rafael, CA  94903, (415)492-9861, for further information. */
+
 import java.awt.*;
 import java.awt.image.*;
 import java.io.*;
@@ -59,13 +67,16 @@ public class Gpickle {
 
     private String deviceOptions =  " ";
 
+    private String ghostAppStr =  "../../language_switch/obj/pspcl6";
+    //private String ghostAppStr =  "../../main/obj/pcl6";
+
     /**
      * "command line" used to run interpreter.
      * NB Client should be able to modify settings.
      */
     private String runString()
     {
-	return "pcl6"
+	return ghostAppStr 
 	    + deviceOptions
 	    + rtl
 	    + textAlphaOptStr
@@ -225,6 +236,7 @@ public class Gpickle {
 	System.out.println("Width = " + pcl.getImgWidth());
 	System.out.println("Height = " + pcl.getImgWidth());
 	Gpickle pxl = new Gpickle();
+	pcl.setPageNumber(5);
 	pxl.setJob("frs96.pxl");
         System.out.println(pcl.getPrinterPageCount());
 	System.out.println(pxl.getPrinterOutputPage());
