@@ -229,8 +229,8 @@ FILL_PROC_NAME (line_list *ll, fixed band_mask)
 			    flp->pseg, alp->pseg, flp->direction, alp->direction);
 		    } else {
 			if (le.start.x == le.end.x && re.start.x == re.end.x) {
-			    int yi = fixed2int_pixround(le.start.y - (!FILL_ADJUST ? 0 : fo.adjust_below));
-			    int wi = fixed2int_pixround(le.end.y + (!FILL_ADJUST ? 0 : fo.adjust_above)) - yi;
+			    int yi = fixed2int_pixround(y - (!FILL_ADJUST ? 0 : fo.adjust_below));
+			    int hi = fixed2int_pixround(y1 + (!FILL_ADJUST ? 0 : fo.adjust_above)) - yi;
 			    int xli = fixed2int_var_pixround(le.end.x - (!FILL_ADJUST ? 0 : fo.adjust_left));
 			    int xi = fixed2int_var_pixround(re.end.x + (!FILL_ADJUST ? 0 : fo.adjust_right));
 
@@ -247,8 +247,8 @@ FILL_PROC_NAME (line_list *ll, fixed band_mask)
 				else
 				    --xli;
 			    }
-			    vd_rect(le.end.x, le.start.y, re.end.x, le.end.y, 1, VD_TRAP_COLOR);
-			    code = LOOP_FILL_RECTANGLE_DIRECT(&fo, xli, yi, xi - xli, wi);
+			    vd_rect(le.end.x, y, re.end.x, y1, 1, VD_TRAP_COLOR);
+			    code = LOOP_FILL_RECTANGLE_DIRECT(&fo, xli, yi, xi - xli, hi);
 			} else if (ybot < ytop) {
 			    vd_quad(flp->x_current, ybot, alp->x_current, ybot, alp->x_next, ytop, flp->x_next, ytop, 1, VD_TRAP_COLOR);
 			    if (PSEUDO_RASTERIZATION) {
