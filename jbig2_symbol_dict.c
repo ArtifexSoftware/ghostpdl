@@ -572,8 +572,8 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
 	params.SDTEMPLATE == 1 ? 8192 : 1024;
       GB_stats = jbig2_alloc(ctx->allocator, stats_size);
       memset(GB_stats, 0, stats_size);
-      if (!params.SDRTEMPLATE) {
-	stats_size = params.SDRTEMPLATE ? 1 << 1 : 1 << 13;
+      if (!params.SDREFAGG) {
+	stats_size = params.SDRTEMPLATE ? 1 << 10 : 1 << 13;
 	GR_stats = jbig2_alloc(ctx->allocator, stats_size);
 	memset(GR_stats, 0, stats_size);
       }
