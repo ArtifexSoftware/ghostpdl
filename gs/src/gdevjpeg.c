@@ -137,7 +137,7 @@ jpeg_get_params(gx_device * dev, gs_param_list * plist)
     gx_device_jpeg *jdev = (gx_device_jpeg *) dev;
     int code = gdev_prn_get_params(dev, plist);
     int ecode;
-
+    float float2double;
     if (code < 0)
 	return code;
 
@@ -145,17 +145,20 @@ jpeg_get_params(gx_device * dev, gs_param_list * plist)
 	code = ecode;
     if ((ecode = param_write_float(plist, "QFactor", &jdev->QFactor)) < 0)
 	code = ecode;
-    if ((ecode = param_write_float(plist, "ViewScaleX", &jdev->ViewScale.x)) < 0)
+    float2double = jdev->ViewScale.x;
+    if ((ecode = param_write_float(plist, "ViewScaleX", &float2double)) < 0)
 	code = ecode;
-    if ((ecode = param_write_float(plist, "ViewScaleY", &jdev->ViewScale.y)) < 0)
+    float2double = jdev->ViewScale.y;
+    if ((ecode = param_write_float(plist, "ViewScaleY", &float2double)) < 0)
 	code = ecode;
-    if ((ecode = param_write_float(plist, "ViewTransX", &jdev->ViewTrans.x)) < 0)
+    float2double = jdev->ViewTrans.x;
+    if ((ecode = param_write_float(plist, "ViewTransX", &float2double)) < 0)
 	code = ecode;
-    if ((ecode = param_write_float(plist, "ViewTransY", &jdev->ViewTrans.y)) < 0)
+    float2double = jdev->ViewTrans.y;
+    if ((ecode = param_write_float(plist, "ViewTransY", &float2double)) < 0)
 	code = ecode;
     if ((ecode = param_write_int(plist, "TrayOrientation", &jdev->TrayOrientation)) < 0)
         code = ecode;
-
 
     return code;
 }
@@ -366,7 +369,7 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
     stream_DCT_state state;
     stream fstrm, jstrm;
 
-    s_stack_init( &state, mem );
+    s_stack_init( (stream*)&state, mem );
     s_stack_init( &fstrm, mem );
     s_stack_init( &jstrm, mem );
     if (jcdp == 0 || in == 0) {
