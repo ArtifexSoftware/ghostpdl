@@ -777,11 +777,11 @@ pcl_text(
 	floatp ppi = (pfp->font->scaling_technology == plfst_Intellifont) ? 72.307 : 72.0;
         if (pfp->params.proportional_spacing) {
 	    scale.x = scale.y = pfp->params.height_4ths
-                                 * 0.25 * inch2coord(1.0 / ppi);
+	                         * 0.25 * 7200.0 / ppi;
 	} else
 	    scale.x = scale.y = pl_fp_pitch_cp(&pfp->params)
 	                         * (100.0 / pl_fp_pitch_cp(&pfp->font->params))
-	                         * inch2coord(1.0 / (100.0 * ppi));
+	                         * (7200.0 / (100.0 * ppi));
 	/*
 	 * Scalable fonts use an upright coordinate system,
 	 * the opposite from the usual PCL system.
