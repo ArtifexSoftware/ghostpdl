@@ -102,7 +102,8 @@ private const gx_device_rop_texture gs_rop_texture_device = {
      gx_forward_get_color_comp_index,
      gx_forward_encode_color,
      gx_forward_decode_color,
-     gx_forward_pattern_manage
+     gx_forward_pattern_manage,
+     gx_forward_fill_rectangle_hl_color
     },
     0,				/* target */
     lop_default			/* log_op */

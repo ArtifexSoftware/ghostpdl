@@ -1187,6 +1187,26 @@ typedef enum {
 #define dev_proc_pattern_manage(proc)\
   dev_t_proc_pattern_manage(proc, gx_device)
 
+/*
+  Fill rectangle with a high level color.
+  Return rangecheck, if the device can't handle the high level color.
+
+  The graphics library calls this function with degenerate (widths=0) 
+  rectangles, to know whether the device can handle a rectangle with 
+  the high level color. The device should skip such rectangles returning 
+  a proper code.
+
+  Currently this function is used with gs_rectfill and gs_fillpage only.
+  In future it should be called while decomposing other objects.
+*/
+
+#define dev_t_proc_fill_rectangle_hl_color(proc, dev_t)\
+  int proc(dev_t *dev, int x, int y, int width, int height, \
+	const gs_imager_state *pis, const gx_drawing_color *pdcolor, \
+	const gx_clip_path *pcpath)
+#define dev_proc_fill_rectangle_hl_color(proc)\
+  dev_t_proc_fill_rectangle_hl_color(proc, gx_device)
+
 /* Define the device procedure vector template proper. */
 
 #define gx_device_proc_struct(dev_t)\
@@ -1244,6 +1264,7 @@ typedef enum {
 	dev_t_proc_encode_color((*encode_color), dev_t); \
 	dev_t_proc_decode_color((*decode_color), dev_t); \
 	dev_t_proc_pattern_manage((*pattern_manage), dev_t); \
+	dev_t_proc_fill_rectangle_hl_color((*fill_rectangle_hl_color), dev_t); \
 }
 
 

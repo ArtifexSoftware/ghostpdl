@@ -175,7 +175,8 @@ const gx_device_pdf gs_pdfwrite_device =
   NULL,				/* get_color_comp_index */
   NULL,				/* encode_color */
   NULL,				/* decode_color */
-  gdev_pdf_pattern_manage 	/* pattern_manage */
+  gdev_pdf_pattern_manage, 	/* pattern_manage */
+  gdev_pdf_fill_rectangle_hl_color 	/* fill_rectangle_hl_color */
  },
  psdf_initial_values(PSDF_VERSION_INITIAL, 0 /*false */ ),  /* (!ASCII85EncodePages) */
  PDF_COMPATIBILITY_LEVEL_INITIAL,  /* CompatibilityLevel */

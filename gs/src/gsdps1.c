@@ -25,6 +25,7 @@
 #include "gxdevice.h"
 #include "gxfixed.h"
 #include "gxmatrix.h"
+#include "gxhldevc.h"
 #include "gspath.h"
 #include "gspath2.h"		/* defines interface */
 #include "gzpath.h"
@@ -146,18 +147,26 @@ gs_rectfill(gs_state * pgs, const gs_rect * pr, uint count)
     gx_clip_path *pcpath;
     uint rcount = count;
     int code;
+    gx_device * pdev = pgs->device;
+    gx_device_color *pdc = pgs->dev_color;
+    const gs_imager_state *pis = (const gs_imager_state *)pgs;
+    bool hl_color_available = gx_hld_is_hl_color_available(pis, pdc);
+    bool hl_color = (hl_color_available && 
+		dev_proc(pdev, fill_rectangle_hl_color)(pdev, 
+		    	    0, 0, 0, 0, pis, pdc, NULL) == 0);
 
     gx_set_dev_color(pgs);
     if ((is_fzero2(pgs->ctm.xy, pgs->ctm.yx) ||
 	 is_fzero2(pgs->ctm.xx, pgs->ctm.yy)) &&
 	gx_effective_clip_path(pgs, &pcpath) >= 0 &&
 	clip_list_is_rectangle(gx_cpath_list(pcpath)) &&
-	(pgs->dev_color->type == gx_dc_type_pure ||
-	 pgs->dev_color->type == gx_dc_type_ht_binary ||
-	 pgs->dev_color->type == gx_dc_type_ht_colored
+	(hl_color ||
+	 pdc->type == gx_dc_type_pure ||
+	 pdc->type == gx_dc_type_ht_binary ||
+	 pdc->type == gx_dc_type_ht_colored
 	 /* DeviceN todo: add wts case */) &&
 	gs_state_color_load(pgs) >= 0 &&
-	(*dev_proc(pgs->device, get_alpha_bits)) (pgs->device, go_graphics)
+	(*dev_proc(pdev, get_alpha_bits)) (pdev, go_graphics)
 	<= 1 &&
         (!pgs->overprint || !pgs->effective_overprint_mode)
 	) {
@@ -185,8 +194,14 @@ gs_rectfill(gs_state * pgs, const gs_rect * pr, uint count)
 	    w = fixed2int_pixround(draw_rect.q.x) - x;
 	    h = fixed2int_pixround(draw_rect.q.y) - y;
 	    if (w > 0 && h > 0) {
-		if (gx_fill_rectangle(x, y, w, h, pgs->dev_color, pgs) < 0)
-		    goto slow;
+		if (hl_color) {
+		    if (dev_proc(pdev, fill_rectangle_hl_color)(pdev,
+			     x, y, w, h, pis, pdc, pcpath) < 0)
+			goto slow;
+		} else {
+    		    if (gx_fill_rectangle(x, y, w, h, pdc, pgs) < 0)
+			goto slow;
+		}
 	    }
 	}
 	return 0;

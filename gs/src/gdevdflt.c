@@ -529,6 +529,7 @@ gx_device_fill_in_procs(register gx_device * dev)
 	dev->color_info.opmode = GX_CINFO_OPMODE_NOT;
 
     fill_dev_proc(dev, pattern_manage, gx_default_pattern_manage);
+    fill_dev_proc(dev, fill_rectangle_hl_color, gx_default_fill_rectangle_hl_color);
 }
 
 int
@@ -678,6 +679,16 @@ gx_default_pattern_manage(gx_device *pdev, gx_bitmap_id id,
 {
     return 0;
 }
+
+int
+gx_default_fill_rectangle_hl_color(gx_device *pdev, 
+    int x, int y, int width, int height, 
+    const gs_imager_state *pis, const gx_drawing_color *pdcolor,
+    const gx_clip_path *pcpath)
+{
+    return_error(gs_error_rangecheck);
+}
+
 
 /* ---------------- Default per-instance procedures ---------------- */
 

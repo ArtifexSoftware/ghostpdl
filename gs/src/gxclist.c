@@ -132,7 +132,8 @@ const gx_device_procs gs_clist_device_procs = {
     gx_forward_get_color_comp_index,
     gx_forward_encode_color,
     gx_forward_decode_color,
-    gx_default_pattern_manage
+    gx_default_pattern_manage,
+    gx_default_fill_rectangle_hl_color
 };
 
 /* ------ Define the command set and syntax ------ */

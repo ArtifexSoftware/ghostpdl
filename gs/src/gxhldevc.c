@@ -133,6 +133,20 @@ bool gx_hld_saved_color_same_cspace(const gx_hl_saved_color * psc1,
 }
 
 /*
+ * Check if a high level color is availavble.
+ */
+bool
+gx_hld_is_hl_color_available(const gs_imager_state * pis,
+		const gx_device_color * pdevc)
+{
+    const gs_state * pgs = gx_hld_get_gstate_ptr(pis);
+
+    if (pgs != NULL && pdevc != NULL && pdevc->ccolor_valid)
+	return true;
+    return false;
+}
+
+/*
  * Get pointers to the current color space and client color.
  *
  * More description in src/gxhldevc.h
@@ -142,10 +156,9 @@ gx_hld_get_color_space_and_ccolor(const gs_imager_state * pis,
 		const gx_device_color * pdevc, const gs_color_space ** ppcs,
 		const gs_client_color ** ppcc)
 {
-    const gs_state * pgs = gx_hld_get_gstate_ptr(pis);
-
     /* Check if the current color space was used to build the device color */
-    if (pgs != NULL && pdevc != NULL && pdevc->ccolor_valid) {
+    if (gx_hld_is_hl_color_available(pis, pdevc)) {
+	const gs_state * pgs = gx_hld_get_gstate_ptr(pis);
         const gs_color_space * pcs = pgs->color_space;
 
 	*ppcs = pcs;

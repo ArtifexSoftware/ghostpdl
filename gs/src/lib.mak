@@ -823,7 +823,7 @@ $(GLOBJ)gsmatrix.$(OBJ) : $(GLSRC)gsmatrix.c $(GXERR) $(math__h) $(memory__h)\
 
 $(GLOBJ)gspaint.$(OBJ) : $(GLSRC)gspaint.c $(GXERR) $(math__h) $(gpcheck_h)\
  $(gspaint_h) $(gspath_h) $(gsropt_h)\
- $(gxdevmem_h) $(gxdevice_h) $(gxfixed_h) $(gxmatrix_h) $(gxpaint_h)\
+ $(gxdevmem_h) $(gxdevice_h) $(gxfixed_h) $(gxmatrix_h) $(gxpaint_h) $(gxhldevc_h)\
  $(gzcpath_h) $(gzpath_h) $(gzstate_h)
 	$(GLCC) $(GLO_)gspaint.$(OBJ) $(C_) $(GLSRC)gspaint.c
 
@@ -2123,7 +2123,7 @@ $(GLD)dps2lib.dev : $(LIB_MAK) $(ECHOGS_XE) $(dps2lib_)
 $(GLOBJ)gsdps1.$(OBJ) : $(GLSRC)gsdps1.c $(GXERR) $(math__h)\
  $(gsmatrix_h) $(gscoord_h) $(gspaint_h) $(gxdevice_h)\
  $(gxfixed_h) $(gxmatrix_h) $(gspath_h) $(gspath2_h)\
- $(gxdevice_h) $(gxfixed_h) $(gxmatrix_h)\
+ $(gxdevice_h) $(gxfixed_h) $(gxmatrix_h) $(gxhldevc_h)\
  $(gzpath_h) $(gzcpath_h) $(gzstate_h)
 	$(GLCC) $(GLO_)gsdps1.$(OBJ) $(C_) $(GLSRC)gsdps1.c
 

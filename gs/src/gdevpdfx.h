@@ -583,6 +583,7 @@ dev_proc_put_params(gdev_pdf_put_params);
     /* In gdevpdft.c */
 dev_proc_text_begin(gdev_pdf_text_begin);
 dev_proc_pattern_manage(gdev_pdf_pattern_manage);
+dev_proc_fill_rectangle_hl_color(gdev_pdf_fill_rectangle_hl_color);
 
 /* ================ Utility procedures ================ */
 

@@ -116,6 +116,13 @@ bool gx_hld_saved_color_same_cspace(const gx_hl_saved_color * psc1,
 			   const gx_hl_saved_color * psc2);
 
 /*
+ * Check if a high level color is availavble.
+ */
+bool
+gx_hld_is_hl_color_available(const gs_imager_state * pis,
+		const gx_device_color * pdevc);
+
+/*
  * Return status from get_color_space_and_ccolor.  See that routine for
  * more information.
  *
