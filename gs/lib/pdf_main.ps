@@ -364,7 +364,8 @@ pdfdict begin
        } if
      } loop
    } ifelse
-   Trailer /Encrypt known {
+   Trailer /Encrypt knownoget {
+     pop
      pdf_process_Encrypt	% signal error
    } if
    currentdict end
