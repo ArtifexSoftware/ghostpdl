@@ -286,14 +286,11 @@ int spseek(P2(stream *, long));
 #define sbufskip(s, n) ((s)->srptr += (n), 0)
 /*
  * Define the minimum amount of data that must be left in an input buffer
- * after a read operation to handle filter read-ahead.  This is 1 byte for
- * filters (including procedure data sources) that haven't reached EOD,
- * 0 for files.
+ * after a read operation to handle filter read-ahead, either 0 or 1
+ * byte(s).
  */
 #define max_min_left 1
-#define sbuf_min_left(s)\
-  (s->strm == 0 ? (s->end_status != CALLC ? 0 : 1) :\
-   s->end_status == EOFC || s->end_status == ERRC ? 0 : 1)
+int sbuf_min_left(P1(const stream *));
 
 /* The following are for very high-performance clients of read streams, */
 /* who unpack the stream state into local variables. */
