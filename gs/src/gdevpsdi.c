@@ -190,6 +190,10 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
 	    goto fail;
 	/* psdf_DCT_filter already did the psdf_encode_binary. */
 	return 0;
+    } else if (template == &s_LZWE_template) {
+	stream_LZW_state *const ss = (stream_LZW_state *) st;
+
+	s_LZW_set_defaults_inline(ss);
     }
     code = psdf_encode_binary(pbw, template, st);
     if (code >= 0)
