@@ -410,7 +410,14 @@ render_pattern(gs_client_color *pcc, const px_pattern_t *pattern,
 	     * color, reset these so that there isn't an extra retained
 	     * reference to the Pattern object.
 	     */
-	    gs_setcolorspace(pgs, gs_cspace_DeviceGray((const gs_imager_state *)(pgs)));
+            {
+                gs_color_space cs;
+                gs_color_space *pcs;
+
+                gs_cspace_init_DeviceGray(&cs);
+                pcs = &cs;
+                gs_setcolorspace(pgs, pcs);
+            }
 	  }
 	  code = gs_makepattern(pcc, &template, &mat, pgs, NULL);
 	  gs_grestore(pgs);

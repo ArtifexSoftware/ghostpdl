@@ -395,7 +395,7 @@ px_image_color_space(gs_color_space *pcs, gs_image_t *pim,
 	pcs->params.indexed.use_proc = 0;
 	pcs->type = &gs_color_space_type_Indexed;
     }
-    gs_image_t_init_rgb(pim, (const gs_imager_state *)pgs);
+    gs_image_t_init(pim, gs_currentcolorspace(pgs));
     pim->ColorSpace = pcs;
     pim->BitsPerComponent = depth;
     if ( params->indexed )

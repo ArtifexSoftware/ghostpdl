@@ -111,7 +111,7 @@ DEVICE_DEVS=$(DD)\ljet4.dev\
  $(DD)\tiffcrle.dev $(DD)\tiffg3.dev $(DD)\tiffg32d.dev $(DD)\tiffg4.dev\
  $(DD)\tifflzw.dev $(DD)\tiffpack.dev\
  $(DD)\tiff12nc.dev $(DD)\tiff24nc.dev \
- $(DD)\pswrite.dev $(DD)\pdfwrite2.dev $(DD)\jpeg.dev
+ $(DD)\pswrite.dev $(DD)\jpeg.dev
 
 # GS options
 # Even though FEATURE_DEVS is defined in pcl_top.mak, define identically here

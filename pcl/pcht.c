@@ -2242,6 +2242,8 @@ pcl_ht_set_halftone(
     gs_ht *              pgsht = 0;
     int                  code = 0;
 
+    dprintf( "NB halftone installation\n" );
+    return 0;
     /* if no halftone yet, create one */
     if (pht == 0) {
         if ((code = pcl_ht_build_default_ht(pcs, ppht, pcs->memory)) < 0)
