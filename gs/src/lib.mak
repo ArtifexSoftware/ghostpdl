@@ -1909,7 +1909,7 @@ gsfunc0_h=$(GLSRC)gsfunc0.h $(gsdsrc_h) $(gsfunc_h)
 gxfunc_h=$(GLSRC)gxfunc.h $(gsfunc_h) $(gsstruct_h)
 
 # Generic support, and FunctionType 0.
-funclib_=$(GLOBJ)gsdsrc.$(OBJ) $(GLOBJ)gsfunc.$(OBJ) $(GLOBJ)gsfunc0.$(OBJ)
+funclib_=$(GLOBJ)gsdsrc.$(OBJ) $(GLOBJ)gsfunc.$(OBJ) $(GLOBJ)gsfunc0.$(OBJ) $(GLOBJ)gsfuncv.$(OBJ)
 $(GLD)funclib.dev : $(LIB_MAK) $(ECHOGS_XE) $(funclib_)
 	$(SETMOD) $(GLD)funclib $(funclib_)
 
@@ -1924,6 +1924,14 @@ $(GLOBJ)gsfunc.$(OBJ) : $(GLSRC)gsfunc.c $(GX)\
 $(GLOBJ)gsfunc0.$(OBJ) : $(GLSRC)gsfunc0.c $(GX) $(math__h)\
  $(gserrors_h) $(gsfunc0_h) $(gxfarith_h) $(gxfunc_h)
 	$(GLCC) $(GLO_)gsfunc0.$(OBJ) $(C_) $(GLSRC)gsfunc0.c
+
+# "Vanilla" Functions are no longer used at all.
+
+gsfuncv_h=$(GLSRC)gsfuncv.h $(gsfunc_h)
+
+$(GLOBJ)gsfuncv.$(OBJ) : $(GLSRC)gsfuncv.c $(GX)\
+ $(gserrors_h) $(gsfuncv_h) $(gsparam_h) $(gxfunc_h)
+	$(GLCC) $(GLO_)gsfuncv.$(OBJ) $(C_) $(GLSRC)gsfuncv.c
 
 # FunctionType 4 is not used by LL3.
 

@@ -197,37 +197,4 @@ void gs_function_XxYy_free_params(P2(gs_function_XxYy_params_t *params,
 #define gs_function_free(pfn, free_params, mem)\
   ((pfn)->head.procs.free(pfn, free_params, mem))
 
-/* ---------------- Vanilla functions ---------------- */
-
-/*
- * The simplest type of functions, these just store closure data.
- * The client provides the evaluation procedure.
- */
-
-#define function_type_Vanilla (-1)
-
-typedef struct gs_function_Va_params_s {
-    gs_function_params_common;
-    fn_evaluate_proc_t eval_proc;
-    void *eval_data;
-    int is_monotonic;
-} gs_function_Va_params_t;
-
-typedef struct gs_function_Va_s {
-    gs_function_head_t head;
-    gs_function_Va_params_t params;
-} gs_function_Va_t;
-
-#define private_st_function_Va()	/* in gsfunc.c */\
-  gs_private_st_suffix_add1(st_function_Va, gs_function_Va_t,\
-    "gs_function_Va_t", function_Va_enum_ptrs, function_Va_reloc_ptrs,\
-    st_function, params.eval_data)
-
-int gs_function_Va_init(P3(gs_function_t ** ppfn,
-			   const gs_function_Va_params_t * params,
-			   gs_memory_t * mem));
-
-void gs_function_Va_free_params(P2(gs_function_Va_params_t * params,
-				   gs_memory_t * mem));
-
 #endif /* gsfunc_INCLUDED */
