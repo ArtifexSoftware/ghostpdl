@@ -109,23 +109,38 @@ GS_INIT=gs_init.ps
 
 # Choose generic configuration options.
 
-# Setting DEBUG=1 includes debugging features (-Z switch) in the code.
-# Code runs substantially slower even if no debugging switches are set,
-# and is also substantially larger.
+# Setting DEBUG=1 includes debugging features in the algorithm :
+# 1. It defines the C preprocessor symbol DEBUG. The latter includes
+#    tracing and self-validation code fragments into compilation.
+#    Particularly it compiles the handling of -Z and -T switches in Ghostscript.
+# 2. It compiles code fragments for the C stack overflow checks.
+# Code runs some slower and becomes some larger.
 
 !ifndef DEBUG
 DEBUG=0
 !endif
 
-# Setting TDEBUG=1 includes symbol table information for the debugger,
-# and also enables stack checking.  Code is substantially slower and larger.
+# Setting TDEBUG=1 disables code optimization in the C compiler and
+# includes symbol table information for the debugger.
+# Code is substantially slower and larger.
 
 # NOTE: The MSVC++ 5.0 compiler produces incorrect output code with TDEBUG=0.
 # Also MSVC 6 must be service pack >= 3 to prevent INTERNAL COMPILER ERROR
+
 # Default to 0 anyway since the execution times are so much better.
 !ifndef TDEBUG
 TDEBUG=0
 !endif
+
+# Setting DEBUGSYM=1 is only useful with TDEBUG=0 for advanced developers.
+# It includes symbol table information for the debugger to the release build.
+# NOTE: The debug information generated for the optimized code may be
+# significantly misleading. For inadvanced MSVC users we recommend TDEBUG=1.
+
+!ifndef DEBUGSYM
+DEBUGSYM=0
+!endif
+
 
 # Setting NOPRIVATE=1 makes private (static) procedures and variables public,
 # so they are visible to the debugger and profiler.

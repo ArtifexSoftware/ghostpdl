@@ -1248,13 +1248,35 @@ the top level directory using the following command:</li>
   it is simpler to use a build batch command file rather than retyping the build 
   command line for each new project. Here is an example used by one of Artifex's 
   staff members. This file is one line:
-<blockquote><b><tt> nmake -f src/msvc32.mak DEVSTUDIO= DEBUG=1 GS_LIB_DEFAULT="./lib/;./font;$(GSROOTDIR)/lib;$(AROOTDIR)/fonts" 
+<blockquote><b><tt> nmake -f src/msvc32.mak DEVSTUDIO= DEBUG=1 TDEBUG=1 GS_LIB_DEFAULT="./lib/;./font;$(GSROOTDIR)/lib;$(AROOTDIR)/fonts" 
   </tt></b></blockquote>
-<p> The <b><tt>DEBUG=1</tt></b> enables many debugging features built into Ghostscript. 
-  Please note the double quotes around the value for <b><tt>GS_LIB_DEFAULT</tt></b> 
-  and the addition of <b><tt>./lib;./fonts;</tt></b> to its definition. This uses 
-  the local (within the project) copy of the <b><tt>lib</tt></b> and <b><tt>fonts</tt></b> 
-  directories. This is convenient if any changes need to be made in these directories. 
+<p>Please note the double quotes around the value for <b><tt>GS_LIB_DEFAULT</tt></b>
+  and the addition of <b><tt>./lib;./fonts;</tt></b> to its definition. This uses
+  the local (within the project) copy of the <b><tt>lib</tt></b> and <b><tt>fonts</tt></b>
+  directories. This is convenient if any changes need to be made in these directories.
+
+<p> Setting <b><tt>DEBUG=1</tt></b> includes debugging features in the algotithm :
+<ul>
+<li> It defines the C preprocessor symbol <b><tt>DEBUG</tt></b>. The latter includes
+   tracing and self-validation code fragments into compilation.
+   Particularly it compiles a handling of <b><tt>-Z</tt></b> and <b><tt>-T</tt></b>
+   switches in Ghostscript.
+<li> It compiles code fragments for the C stack overflow checks.
+</ul>
+   Code runs some slower and becomes some larger.
+
+<p>Setting <b><tt>TDEBUG=1</tt></b> disables code optimization in the C compiler and
+includes symbol table information for the debugger.
+Code becomes substantially slower and larger.
+
+<p> An optional setting <b><tt>DEBUGSYM=1</tt></b> is only useful with <b><tt>TDEBUG=0</tt></b>
+for advanced developers. It includes symbol table information for the debugger
+to the release build.
+<em>
+NOTE: The debug information generated for the optimized code may be
+significantly misleading. For inadvanced MSVC users we recommend TDEBUG=1.
+</em>
+
 <h4><a name="Using_the_command_line"></a>Using the command line</h4>
 <p>Ghostscript can be made using either the DOS shell or one one of the various 
   command line shells made for Windows.

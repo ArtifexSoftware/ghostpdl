@@ -134,9 +134,13 @@ COMPILE_FULL_OPTIMIZED=    # no optimization when debugging
 COMPILE_WITH_FRAMES=    # no optimization when debugging
 COMPILE_WITHOUT_FRAMES=    # no optimization when debugging
 !else
+!if $(DEBUGSYM)==0
 CT=
 LCT=
-
+!else
+CT=/Zi /Fd$(GLOBJDIR) $(NULL)
+LCT=/DEBUG
+!endif
 !if $(MSVC_VERSION) == 5
 # NOTE: With MSVC++ 5.0, /O2 produces a non-working executable.
 # We believe the following list of optimizations works around this bug.
