@@ -373,7 +373,12 @@ sync_text_state(gx_device_pdf *pdev)
     /*
      * NOTE: pdf_set_text_matrix may add characters to the buffer.
      */
-    if (memcmp(&pts->in.matrix, &pts->out.matrix, sizeof(pts->in.matrix))) {
+    if (pts->in.matrix.xx != pts->out.matrix.xx ||
+	pts->in.matrix.xy != pts->out.matrix.xy ||
+	pts->in.matrix.yx != pts->out.matrix.yx ||
+	pts->in.matrix.yy != pts->out.matrix.yy ||
+	pts->start.x != pts->out.matrix.tx ||
+	pts->start.y != pts->out.matrix.ty) {
 	/* pdf_set_text_matrix sets out.matrix = in.matrix */
 	code = pdf_set_text_matrix(pdev);
 	if (code < 0)
