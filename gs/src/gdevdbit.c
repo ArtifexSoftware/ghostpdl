@@ -107,6 +107,14 @@ gx_default_copy_color(gx_device * dev, const byte * data,
 	    if (depth >= 8) {
 		color = *ptr++;
 		switch (depth) {
+		    case 64:
+			color = (color << 8) + *ptr++;
+		    case 56:
+			color = (color << 8) + *ptr++;
+		    case 48:
+			color = (color << 8) + *ptr++;
+		    case 40:
+			color = (color << 8) + *ptr++;
 		    case 32:
 			color = (color << 8) + *ptr++;
 		    case 24:
