@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -93,8 +93,8 @@ extern int gs_ht_set_spot_comp(P9(
 				     gs_ht * pht,
 				     int component_index,
 				     gs_ht_separation_name sepr_name,
-				     float freq,
-				     float angle,
+				     floatp freq,
+				     floatp angle,
 				     float (*spot_func) (P2(floatp, floatp)),
 				     bool accurate,
 				     gs_ht_transfer_proc transfer,

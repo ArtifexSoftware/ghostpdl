@@ -37,28 +37,110 @@
 private fixed
 fixed_mult_rem(fixed a, fixed b, fixed c)
 {
-    double prod = (double)a * b;
-
-    return (fixed) (prod - floor(prod / c) * c);
+    /* All kinds of truncation may happen here, but it's OK. */
+    return a * b - fixed_mult_quo(a, b, c) * c;
 }
 
 /*
- * Fill a trapezoid.  Requires:
+ * The trapezoid fill algorithm uses trap_line structures to keep track of
+ * the left and right edges during the Bresenham loop.
+ */
+typedef struct trap_line_s {
+	/*
+	 * h is the y extent of the line (edge.end.y - edge.start.y).
+	 * We know h > 0.
+	 */
+    fixed h;
+	/*
+	 * The dx/dy ratio for the line is di + df/h.
+	 * (The quotient refers to the l.s.b. of di, not fixed_1.)
+	 * We know 0 <= df < h.
+	 */
+    int di;
+    fixed df;
+	/*
+	 * The current position within the scan line is x + xf/h + 1.
+	 * (The 1 refers to the least significant bit of x, not fixed_1;
+	 * similarly, the quotient refers to the l.s.b. of x.)
+	 * We know -h <= xf < 0.
+	 */
+    fixed x, xf;
+	/*
+	 * We increment (x,xf) by (ldi,ldf) after each scan line.
+	 * (ldi,ldf) is just (di,df) converted to fixed point.
+	 * We know 0 <= ldf < h.
+	 */
+    fixed ldi, ldf;
+} trap_line;
+
+/*
+ * Compute the di and df members of a trap_line structure.  The x extent
+ * (edge.end.x - edge.start.x) is a parameter; the y extent (h member)
+ * has already been set.  Also adjust x for the initial y.
+ */
+inline private void
+compute_dx(trap_line *tl, fixed xd, fixed ys)
+{
+    fixed h = tl->h;
+    int di;
+
+    if (xd >= 0) {
+	if (xd < h)
+	    tl->di = 0, tl->df = xd;
+	else {
+	    tl->di = di = (int)(xd / h);
+	    tl->df = xd - di * h;
+	    tl->x += ys * di;
+	}
+    } else {
+	if ((tl->df = xd + h) >= 0 /* xd >= -h */)
+	    tl->di = -1, tl->x -= ys;
+	else {
+	    tl->di = di = (int)-((h - 1 - xd) / h);
+	    tl->df = xd - di * h;
+	    tl->x += ys * di;
+	}
+    }
+}
+
+#define YMULT_LIMIT (max_fixed / fixed_1)
+
+/* Compute ldi, ldf, and xf similarly. */
+inline private void
+compute_ldx(trap_line *tl, fixed ys)
+{
+    int di = tl->di;
+    fixed df = tl->df;
+    fixed h = tl->h;
+
+    if ( df < YMULT_LIMIT ) {
+	 if ( df == 0 )		/* vertical edge, worth checking for */
+	     tl->ldi = int2fixed(di), tl->ldf = 0, tl->xf = -h;
+	 else {
+	     tl->ldi = int2fixed(di) + int2fixed(df) / h;
+	     tl->ldf = int2fixed(df) % h;
+	     tl->xf =
+		 (ys < fixed_1 ? ys * df % h : fixed_mult_rem(ys, df, h)) - h;
+	 }
+    }
+    else {
+	tl->ldi = int2fixed(di) + fixed_mult_quo(fixed_1, df, h);
+	tl->ldf = fixed_mult_rem(fixed_1, df, h);
+	tl->xf = fixed_mult_rem(ys, df, h) - h;
+    }
+}
+
+/*
+ * Fill a trapezoid.  left.start => left.end and right.start => right.end
+ * define the sides; ybot and ytop define the top and bottom.  Requires:
  *      {left,right}->start.y <= ybot <= ytop <= {left,right}->end.y.
  * Lines where left.x >= right.x will not be drawn.  Thanks to Paul Haeberli
  * for an early floating point version of this algorithm.
  */
-typedef struct trap_line_s {
-    int di;
-    fixed df;			/* dx/dy ratio = di + df/h */
-    fixed ldi, ldf;		/* increment per scan line = ldi + ldf/h */
-    fixed x, xf;		/* current value */
-    fixed h;
-} trap_line;
 int
 gx_default_fill_trapezoid(gx_device * dev, const gs_fixed_edge * left,
-	const gs_fixed_edge * right, fixed ybot, fixed ytop, bool swap_axes,
-		  const gx_device_color * pdevc, gs_logical_operation_t lop)
+    const gs_fixed_edge * right, fixed ybot, fixed ytop, bool swap_axes,
+    const gx_device_color * pdevc, gs_logical_operation_t lop)
 {
     const fixed ymin = fixed_pixround(ybot) + fixed_half;
     const fixed ymax = fixed_pixround(ytop);
@@ -71,59 +153,48 @@ gx_default_fill_trapezoid(gx_device * dev, const gs_fixed_edge * left,
 	trap_line l, r;
 	int rxl, rxr, ry;
 	const fixed
-	      x0l = left->start.x, x1l = left->end.x, x0r = right->start.x,
-	      x1r = right->end.x, dxl = x1l - x0l, dxr = x1r - x0r;
-	const fixed		/* partial pixel offset to first line to sample */
-	      ysl = ymin - left->start.y, ysr = ymin - right->start.y;
+	    x0l = left->start.x, x1l = left->end.x, x0r = right->start.x,
+	    x1r = right->end.x, dxl = x1l - x0l, dxr = x1r - x0r;
+	const fixed	/* partial pixel offset to first line to sample */
+	    ysl = ymin - left->start.y, ysr = ymin - right->start.y;
 	fixed fxl;
 	bool fill_direct = color_writes_pure(pdevc, lop);
-	gx_color_index cindex;
-
-	dev_proc_fill_rectangle((*fill_rect));
-	int max_rect_height = 1;	/* max height to do fill as rectangle */
+	int max_rect_height = 1;  /* max height to do fill as rectangle */
 	int code;
 
 	if_debug2('z', "[z]y=[%d,%d]\n", iy, iy1);
 
-	if (fill_direct)
-	    cindex = pdevc->colors.pure,
-		fill_rect = dev_proc(dev, fill_rectangle);
 	l.h = left->end.y - left->start.y;
 	r.h = right->end.y - right->start.y;
 	l.x = x0l + (fixed_half - fixed_epsilon);
 	r.x = x0r + (fixed_half - fixed_epsilon);
 	ry = iy;
 
-#define fill_trap_rect(x,y,w,h)\
-  (fill_direct ?\
-    (swap_axes ? (*fill_rect)(dev, y, x, h, w, cindex) :\
-     (*fill_rect)(dev, x, y, w, h, cindex)) :\
-   swap_axes ? gx_fill_rectangle_device_rop(y, x, h, w, pdevc, dev, lop) :\
+/*
+ * Free variables of FILL_TRAP_RECT:
+ *	swap_axes, pdevc, dev, lop
+ * Free variables of FILL_TRAP_RECT_DIRECT:
+ *	swap_axes, fill_rect, dev, cindex
+ */
+#define FILL_TRAP_RECT(x,y,w,h)\
+  (swap_axes ? gx_fill_rectangle_device_rop(y, x, h, w, pdevc, dev, lop) :\
    gx_fill_rectangle_device_rop(x, y, w, h, pdevc, dev, lop))
+#define FILL_TRAP_RECT_DIRECT(x,y,w,h)\
+  (swap_axes ? (*fill_rect)(dev, y, x, h, w, cindex) :\
+   (*fill_rect)(dev, x, y, w, h, cindex))
 
 	/* Compute the dx/dy ratios. */
-	/* dx# = dx#i + (dx#f / h#). */
-#define compute_dx(tl, d, ys)\
-  if ( d >= 0 )\
-   { if ( d < tl.h ) tl.di = 0, tl.df = d;\
-     else tl.di = (int)(d / tl.h), tl.df = d - tl.di * tl.h,\
-       tl.x += ys * tl.di;\
-   }\
-  else\
-   { if ( (tl.df = d + tl.h) >= 0 /* d >= -tl.h */ ) tl.di = -1, tl.x -= ys;\
-     else tl.di = (int)-((tl.h - 1 - d) / tl.h), tl.df = d - tl.di * tl.h,\
-       tl.x += ys * tl.di;\
-   }
 
-	/* Compute the x offsets at the first scan line to sample. */
-	/* We need to be careful in computing ys# * dx#f {/,%} h# */
-	/* because the multiplication may overflow.  We know that */
-	/* all the quantities involved are non-negative, and that */
-	/* ys# is usually than 1 (as a fixed, of course); this gives us */
-	/* a cheap conservative check for overflow in the multiplication. */
-#define ymult_limit (max_fixed / fixed_1)
-#define ymult_quo(ys, tl)\
-  (ys < fixed_1 && tl.df < ymult_limit ? ys * tl.df / tl.h :\
+	/*
+	 * Compute the x offsets at the first scan line to sample.  We need
+	 * to be careful in computing ys# * dx#f {/,%} h# because the
+	 * multiplication may overflow.  We know that all the quantities
+	 * involved are non-negative, and that ys# is usually less than 1 (as
+	 * a fixed, of course); this gives us a cheap conservative check for
+	 * overflow in the multiplication.
+	 */
+#define YMULT_QUO(ys, tl)\
+  (ys < fixed_1 && tl.df < YMULT_LIMIT ? ys * tl.df / tl.h :\
    fixed_mult_quo(ys, tl.df, tl.h))
 
 	/*
@@ -131,35 +202,39 @@ gx_default_fill_trapezoid(gx_device * dev, const gs_fixed_edge * left,
 	 * for parallelograms (including stroked lines).
 	 * Also check for left or right vertical edges.
 	 */
-	if (fixed_floor(l.x) == fixed_pixround(x1l)) {	/* Left edge is vertical, we don't need to increment. */
+	if (fixed_floor(l.x) == fixed_pixround(x1l)) {
+	    /* Left edge is vertical, we don't need to increment. */
 	    l.di = 0, l.df = 0;
 	    fxl = 0;
 	} else {
-	    compute_dx(l, dxl, ysl);
-	    fxl = ymult_quo(ysl, l);
+	    compute_dx(&l, dxl, ysl);
+	    fxl = YMULT_QUO(ysl, l);
 	    l.x += fxl;
 	}
-	if (fixed_floor(r.x) == fixed_pixround(x1r)) {	/* Right edge is vertical.  If both are vertical, */
+	if (fixed_floor(r.x) == fixed_pixround(x1r)) {
+	    /* Right edge is vertical.  If both are vertical, */
 	    /* we have a rectangle. */
 	    if (l.di == 0 && l.df == 0)
 		max_rect_height = max_int;
 	    else
 		r.di = 0, r.df = 0;
 	}
-	/* The test for fxl != 0 is required because the right edge */
-	/* might cross some pixel centers even if the left edge doesn't. */
+	/*
+	 * The test for fxl != 0 is required because the right edge might
+	 * cross some pixel centers even if the left edge doesn't.
+	 */
 	else if (dxr == dxl && fxl != 0) {
 	    if (l.di == 0)
 		r.di = 0, r.df = l.df;
 	    else		/* too hard to do adjustments right */
-		compute_dx(r, dxr, ysr);
+		compute_dx(&r, dxr, ysr);
 	    if (ysr == ysl && r.h == l.h)
 		r.x += fxl;
 	    else
-		r.x += ymult_quo(ysr, r);
+		r.x += YMULT_QUO(ysr, r);
 	} else {
-	    compute_dx(r, dxr, ysr);
-	    r.x += ymult_quo(ysr, r);
+	    compute_dx(&r, dxr, ysr);
+	    r.x += YMULT_QUO(ysr, r);
 	}
 	rxl = fixed2int_var(l.x);
 	rxr = fixed2int_var(r.x);
@@ -169,56 +244,57 @@ gx_default_fill_trapezoid(gx_device * dev, const gs_fixed_edge * left,
 	 * or if we have a rectangle.
 	 */
 	if (iy1 - iy <= max_rect_height) {
-	    iy = iy1;
+	    iy = iy1 - 1;
 	    if_debug2('z', "[z]rectangle, x=[%d,%d]\n", rxl, rxr);
-	    goto last;
+	} else {
+	    /* Compute one line's worth of dx/dy. */
+	    compute_ldx(&l, ysl);
+	    if (dxr == dxl && ysr == ysl && r.h == l.h)
+		r.ldi = l.ldi, r.ldf = l.ldf, r.xf = l.xf;
+	    else
+		compute_ldx(&r, ysr);
 	}
-	/* Compute one line's worth of dx/dy. */
-	/* dx# * fixed_1 = ld#i + (ld#f / h#). */
-#define compute_ldx(tl, ys)\
-  if ( tl.df < ymult_limit )\
-    { if ( tl.df == 0 )	/* vertical edge, worth checking for */\
-	tl.ldi = int2fixed(tl.di),\
-	tl.ldf = 0,\
-	tl.xf = -tl.h;\
-      else\
-	tl.ldi = int2fixed(tl.di) + int2fixed(tl.df) / tl.h,\
-	tl.ldf = int2fixed(tl.df) % tl.h,\
-	tl.xf = (ys < fixed_1 ? ys * tl.df % tl.h :\
-		 fixed_mult_rem(ys, tl.df, tl.h)) - tl.h;\
-    }\
-  else\
-    tl.ldi = int2fixed(tl.di) + fixed_mult_quo(fixed_1, tl.df, tl.h),\
-    tl.ldf = fixed_mult_rem(fixed_1, tl.df, tl.h),\
-    tl.xf = fixed_mult_rem(ys, tl.df, tl.h) - tl.h
-	compute_ldx(l, ysl);
-	if (dxr == dxl && ysr == ysl && r.h == l.h)
-	    r.ldi = l.ldi, r.ldf = l.ldf, r.xf = l.xf;
-	else {
-	    compute_ldx(r, ysr);
-	}
-#undef compute_ldx
 
-	while (++iy != iy1) {
-	    int ixl, ixr;
-
-#define step_line(tl)\
+#define STEP_LINE(ix, tl)\
   tl.x += tl.ldi;\
-  if ( (tl.xf += tl.ldf) >= 0 ) tl.xf -= tl.h, tl.x++;
-	    step_line(l);
-	    step_line(r);
-#undef step_line
-	    ixl = fixed2int_var(l.x);
-	    ixr = fixed2int_var(r.x);
-	    if (ixl != rxl || ixr != rxr) {
-		code = fill_trap_rect(rxl, ry, rxr - rxl, iy - ry);
-		if (code < 0)
-		    goto xit;
-		rxl = ixl, rxr = ixr, ry = iy;
+  if ( (tl.xf += tl.ldf) >= 0 ) tl.xf -= tl.h, tl.x++;\
+  ix = fixed2int_var(tl.x)
+
+	if (fill_direct) {
+	    gx_color_index cindex = pdevc->colors.pure;
+	    dev_proc_fill_rectangle((*fill_rect)) =
+		dev_proc(dev, fill_rectangle);
+
+	    while (++iy != iy1) {
+		int ixl, ixr;
+
+		STEP_LINE(ixl, l);
+		STEP_LINE(ixr, r);
+		if (ixl != rxl || ixr != rxr) {
+		    code = FILL_TRAP_RECT_DIRECT(rxl, ry, rxr - rxl, iy - ry);
+		    if (code < 0)
+			goto xit;
+		    rxl = ixl, rxr = ixr, ry = iy;
+		}
 	    }
+	    code = FILL_TRAP_RECT_DIRECT(rxl, ry, rxr - rxl, iy - ry);
+	} else {
+	    while (++iy != iy1) {
+		int ixl, ixr;
+
+		STEP_LINE(ixl, l);
+		STEP_LINE(ixr, r);
+		if (ixl != rxl || ixr != rxr) {
+		    code = FILL_TRAP_RECT(rxl, ry, rxr - rxl, iy - ry);
+		    if (code < 0)
+			goto xit;
+		    rxl = ixl, rxr = ixr, ry = iy;
+		}
+	    }
+	    code = FILL_TRAP_RECT(rxl, ry, rxr - rxl, iy - ry);
 	}
-      last:code = fill_trap_rect(rxl, ry, rxr - rxl, iy - ry);
-      xit:if (code < 0 && fill_direct)
+#undef STEP_LINE
+xit:	if (code < 0 && fill_direct)
 	    return_error(code);
 	return_if_interrupt();
 	return code;
@@ -258,9 +334,7 @@ gx_default_fill_parallelogram(gx_device * dev,
     if (by < 0)
 	px += bx, py += by, bx = -bx, by = -by;
     qx = px + ax + bx;
-
 #define swap(r, s) (t = r, r = s, s = t)
-
     if ((ax ^ bx) < 0) {	/* In this case, the test ax <= bx is sufficient. */
 	if (ax > bx)
 	    swap(ax, bx), swap(ay, by);
@@ -341,6 +415,7 @@ gx_default_fill_triangle(gx_device * dev,
 {
     fixed t;
     fixed ym;
+
     dev_proc_fill_trapezoid((*fill_trapezoid)) =
 	dev_proc(dev, fill_trapezoid);
     gs_fixed_edge left, right;
@@ -567,42 +642,6 @@ gx_default_begin_typed_image(gx_device * dev,
     }
     return (*pic->type->begin_typed_image)
 	(dev, pis, pmat, pic, prect, pdcolor, pcpath, memory, pinfo);
-}
-
-int
-gx_image_data(gx_image_enum_common_t * info, const byte ** plane_data,
-	      int data_x, uint raster, int height)
-{
-    int num_planes = info->num_planes;
-    gx_image_plane_t planes[gs_image_max_planes];
-    int i;
-
-#ifdef DEBUG
-    if (num_planes > gs_image_max_planes) {
-	lprintf2("num_planes=%d > gs_image_max_planes=%d!\n",
-		 num_planes, gs_image_max_planes);
-	return_error(gs_error_Fatal);
-    }
-#endif
-    for (i = 0; i < num_planes; ++i) {
-	planes[i].data = plane_data[i];
-	planes[i].data_x = data_x;
-	planes[i].raster = raster;
-    }
-    return gx_image_plane_data(info, planes, height);
-}
-
-int
-gx_image_plane_data(gx_image_enum_common_t * info,
-		    const gx_image_plane_t * planes, int height)
-{
-    return info->procs->plane_data(info->dev, info, planes, height);
-}
-
-int
-gx_image_end(gx_image_enum_common_t * info, bool draw_last)
-{
-    return info->procs->end_image(info->dev, info, draw_last);
 }
 
 /* Backward compatibility for obsolete driver procedures. */

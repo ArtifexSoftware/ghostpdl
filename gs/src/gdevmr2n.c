@@ -28,6 +28,7 @@
 #include "gxdevice.h"
 #include "gxdevmem.h"
 #include "gxdevrop.h"
+#include "gdevmem.h"
 #include "gdevmrop.h"
 
 extern dev_proc_strip_copy_rop(mem_mono_strip_copy_rop);

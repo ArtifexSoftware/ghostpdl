@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -29,8 +29,8 @@
  * more accurate, packed arrays of values -- they may be complete pixels
  * or individual components of pixels).
  *
- * Supported #s of bits per value (bpv) are 1, 2, 4, 8, 12[, 16[, 24, 32]].
- * The suffix 12, 16, or 32 on a macro name indicates the maximum value
+ * Supported #s of bits per value (bpv) are 1, 2, 4, 8, 12, 16, 24, 32.
+ * The suffix 8, 12, 16, or 32 on a macro name indicates the maximum value
  * of bpv that the macro is prepared to handle.
  *
  * The setup macros number bits within a byte in big-endian order, i.e.,
@@ -55,12 +55,20 @@
   sbit = (bitno)
 
 /* Load a value from memory, without incrementing. */
-#define sample_load12_(value, sptr, sbit, sbpv)\
+#define sample_load8_(value, sptr, sbit, sbpv)\
   BEGIN\
   switch ( (sbpv) >> 2 ) {\
-  case 0: value = (*(sptr) >> (8 - (sbit) - (sbpv))) & ((sbpv) - 1); break;\
+  case 0: value = (*(sptr) >> (8 - (sbit) - (sbpv))) & ((sbpv) | 1); break;\
   case 1: value = (*(sptr) >> (4 - (sbit))) & 0xf; break;\
-  case 2: value = *(sptr); break;\
+  case 2: value = *(sptr); break;
+#define sample_load8(value, sptr, sbit, sbpv)\
+  sample_load8_(value, sptr, sbit, sbpv)\
+  sample_end_
+#define sample_load_next8(value, sptr, sbit, sbpv)\
+  sample_load8(value, sptr, sbit, sbpv);\
+  sample_next(sptr, sbit, sbpv)
+#define sample_load12_(value, sptr, sbit, sbpv)\
+  sample_load8_(value, sptr, sbit, sbpv)\
   case 3:\
     value = ((sbit) ? ((*(sptr) & 0xf) << 8) | (sptr)[1] :\
 	      (*(sptr) << 4) | ((sptr)[1] >> 4));\
@@ -111,7 +119,7 @@
   dbbyte = ((dbit) ? (byte)(*(dptr) & (0xff00 >> (dbit))) : 0)
 
 /* Store a value and increment the pointer. */
-#define sample_store_next12_(value, dptr, dbit, dbpv, dbbyte)\
+#define sample_store_next8_(value, dptr, dbit, dbpv, dbbyte)\
   BEGIN\
   switch ( (dbpv) >> 2 ) {\
   case 0:\
@@ -123,12 +131,21 @@
     if ( dbit ^= 4 ) dbbyte = (byte)((value) << 4);\
     else *(dptr)++ = dbbyte | (value);\
     break;\
-  /* case 2 is deliberately omitted */\
-  case 3:\
+  /* case 2 is deliberately omitted */
+#define sample_store_next8(value, dptr, dbit, dbpv, dbbyte)\
+  sample_store_next8_(value, dptr, dbit, dbpv, dbbyte)\
+  case 2: *(dptr)++ = (byte)(value); break;\
+  sample_end_
+#define sample_store_next_12_(value, dptr, dbit, dbbyte)\
     if ( dbit ^= 4 ) *(dptr)++ = (value) >> 4, dbbyte = (byte)((value) << 4);\
     else\
-      *(dptr) = dbbyte | ((value) >> 8), (dptr)[1] = (byte)(value), dptr += 2;\
-    break;
+      *(dptr) = dbbyte | ((value) >> 8), (dptr)[1] = (byte)(value), dptr += 2;
+#define sample_store_next_12(value, dptr, dbit, dbbyte)\
+  BEGIN sample_store_next_12_(value, dptr, dbit, dbbyte) END
+#define sample_store_next12_(value, dptr, dbit, dbpv, dbbyte)\
+  sample_store_next8_(value, dptr, dbit, dbpv, dbbyte)\
+  /* case 2 is deliberately omitted */\
+  case 3: sample_store_next_12_(value, dptr, dbit, dbbyte) break;
 #define sample_store_next12(value, dptr, dbit, dbpv, dbbyte)\
   sample_store_next12_(value, dptr, dbit, dbpv, dbbyte)\
   case 2: *(dptr)++ = (byte)(value); break;\
@@ -192,18 +209,35 @@ void bits_replicate_horizontally(P6(byte * data, uint width, uint height,
 
 /* Replicate a bitmap vertically in place. */
 void bits_replicate_vertically(P4(byte * data, uint height, uint raster,
-				  uint replicated_height));
+    uint replicated_height));
 
 /* Find the bounding box of a bitmap. */
 void bits_bounding_box(P4(const byte * data, uint height, uint raster,
-			  gs_int_rect * pbox));
+    gs_int_rect * pbox));
 
 /* Compress an oversampled image, possibly in place. */
 /* The width and height must be multiples of the respective scale factors. */
 /* The source must be an aligned bitmap, as usual. */
 void bits_compress_scaled(P9(const byte * src, int srcx, uint width,
-		       uint height, uint sraster, byte * dest, uint draster,
-	       const gs_log2_scale_point * plog2_scale, int log2_out_bits));
+    uint height, uint sraster, byte * dest, uint draster,
+    const gs_log2_scale_point * plog2_scale, int log2_out_bits));
+
+/* Extract a plane from a pixmap. */
+typedef struct bits_plane_s {
+    union bpd_ {	/* Bit planes must be aligned. */
+	byte *write;
+	const byte *read;
+    } data;
+    int raster;
+    int depth;
+    int x;			/* starting x */
+} bits_plane_t;
+int bits_extract_plane(P5(const bits_plane_t *dest /*write*/,
+    const bits_plane_t *source /*read*/, int shift, int width, int height));
+
+/* Expand a plane into a pixmap. */
+int bits_expand_plane(P5(const bits_plane_t *dest /*write*/,
+    const bits_plane_t *source /*read*/, int shift, int width, int height));
 
 /* Fill a rectangle of bytes. */
 void bytes_fill_rectangle(P5(byte * dest, uint raster,

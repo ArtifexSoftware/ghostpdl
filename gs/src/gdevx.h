@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -25,36 +25,30 @@
 /* Define the type of an X pixel. */
 typedef unsigned long x_pixel;
 
-/* Define a rectangle structure for update bookkeeping */
-typedef struct rect_s {
-    int xo, yo, xe, ye;
-} rect;
+#include "gdevxcmp.h"
 
-/* Define dynamic color hash table structure */
-struct x11color_s;
-typedef struct x11color_s x11color;
-struct x11color_s {
-    XColor color;
-    x11color *next;
-};
+/* Declare the X resource tables compiled separately in gdevxres.c. */
+extern XtResource gdev_x_resources[];
+extern const int gdev_x_resource_count;
+extern String gdev_x_fallback_resources[];
+
+/* Define a rectangle structure for update bookkeeping */
+typedef struct x_rect_s {
+    int xo, yo, xe, ye;
+} x_rect;
 
 /* Define PostScript to X11 font name mapping */
-struct x11fontmap_s;
+typedef struct x11fontlist_s {
+    char **names;
+    int count;
+} x11fontlist;
 typedef struct x11fontmap_s x11fontmap;
 struct x11fontmap_s {
     char *ps_name;
     char *x11_name;
-    char **std_names;
-    char **iso_names;
-    int std_count, iso_count;
+    x11fontlist std, iso;
     x11fontmap *next;
 };
-
-/* Define pixel value to RGB mapping */
-typedef struct x11_rgb_s {
-    gx_color_value rgb[3];
-    bool defined;
-} x11_rgb_t;
 
 /* Define the X Windows device */
 typedef struct gx_device_X_s {
@@ -80,15 +74,11 @@ typedef struct gx_device_X_s {
     /* or if it can't be allocated */
     int ghostview;		/* flag to tell if ghostview is in control */
     Window mwin;		/* window to receive ghostview messages */
-/* Don't include standard colormap stuff for X11R3 and earlier */
-#if HaveStdCMap
-    XStandardColormap *std_cmap;	/* standard color map if available */
-#endif
     gs_matrix initial_matrix;	/* the initial transformation */
     Atom NEXT, PAGE, DONE;	/* Atoms used to talk to ghostview */
-    rect update;		/* region needing updating */
+    x_rect update;		/* region needing updating */
     long up_area;		/* total area of update */
-    /* (always 0 if no backing pixmap) */
+				/* (always 0 if no backing pixmap) */
     int up_count;		/* # of updates since flush */
     Pixmap dest;		/* bpixmap if non-0, else win */
     x_pixel colors_or;		/* 'or' of all device colors used so far */
@@ -129,16 +119,12 @@ typedef struct gx_device_X_s {
     x_pixel back_color, fore_color;
 
     Pixel background, foreground;
-#define X_max_color_value 0xffff
-#define cube_index(r,g,b) (((r) * xdev->color_info.dither_colors + (g)) * \
-				  xdev->color_info.dither_colors + (b))
-    x_pixel *dither_colors;
-    ushort color_mask;
-    int num_rgb;
-    x11color *(*dynamic_colors)[];
-    int max_dynamic_colors, dynamic_size, dynamic_allocs;
-    x11_rgb_t *color_to_rgb;	/* [256] */
-    int color_to_rgb_size;
+
+    /*
+     * The color management structure is defined in gdevxcmp.h and is
+     * managed by the code in gdevxcmp.c.
+     */
+    x11_cman_t cman;
 
 #define note_color(pixel)\
   xdev->colors_or |= pixel,\

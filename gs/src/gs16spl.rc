@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, Russell Lang.  All rights reserved.
+/* Copyright (C) 1995, 1999, Russell Lang.  All rights reserved.
   
   This file is part of Aladdin Ghostscript.
   
@@ -24,7 +24,11 @@
 
 #define ID_TEXT 100
 
-1 ICON "gstext.ico"
+#ifndef gstext_ico
+#define gstext_ico gstext.ico
+#endif
+
+1 ICON gstext_ico
 
 SpoolDlgBox DIALOG 20, 32, 158, 56
 STYLE DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU

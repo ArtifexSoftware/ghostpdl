@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -37,14 +37,40 @@ typedef ulong gs_id;
  * the C char * type (which can't store arbitrary data, represent
  * substrings, or perform concatenation without destroying aliases).
  */
+#define GS_STRING_COMMON\
+    byte *data;\
+    uint size
 typedef struct gs_string_s {
-    byte *data;
-    uint size;
+    GS_STRING_COMMON;
 } gs_string;
+#define GS_CONST_STRING_COMMON\
+    const byte *data;\
+    uint size
 typedef struct gs_const_string_s {
-    const byte *data;
-    uint size;
+    GS_CONST_STRING_COMMON;
 } gs_const_string;
+
+/*
+ * Since strings are allocated differently from ordinary objects, define a
+ * structure that can reference either a string (if bytes == 0) or a byte
+ * object (if bytes != 0, in which case data+size point within the object).
+ *
+ * Note: for garbage collection purposes, the string_common members must
+ * come first.
+ */
+typedef struct gs_bytestring_s {
+    GS_STRING_COMMON;
+    byte *bytes;		/* see above */
+} gs_bytestring;
+typedef struct gs_const_bytestring_s {
+    GS_CONST_STRING_COMMON;
+    const byte *bytes;		/* see above */
+} gs_const_bytestring;
+
+#define gs_bytestring_from_string(pbs, dat, siz)\
+  ((pbs)->data = (dat), (pbs)->size = (siz), (pbs)->bytes = 0)
+#define gs_bytestring_from_bytes(pbs, byts, offset, siz)\
+  ((pbs)->data = ((pbs)->bytes = (byts)) + (offset), (pbs)->size = (siz))
 
 /*
  * Define types for Cartesian points.

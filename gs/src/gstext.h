@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -25,8 +25,6 @@
 #include "gsccode.h"
 #include "gsrefct.h"
 
-/* EVERYTHING IN THIS FILE IS SUBJECT TO CHANGE WITHOUT NOTICE. */
-
 /*
  * Note that like get_params and get_hardware_params, but unlike all other
  * driver procedures, text display must return information to the generic
@@ -41,8 +39,8 @@
  * a bit mask for convenience in testing, only certain combinations are
  * meaningful.  Specifically, the following are errors:
  *      - No FROM or DO.
- * The following are undefined:
  *      - More than one FROM or DO.
+ *	- FROM_SINGLE with size != 1.
  *      - Both ADD_TO and REPLACE.
  */
 #define TEXT_HAS_MORE_THAN_ONE_(op, any_)\
@@ -54,30 +52,39 @@
    TEXT_HAS_MORE_THAN_ONE_(op, TEXT_DO_ANY_) ||\
    (((op) & TEXT_ADD_ANY_) && ((op) & TEXT_REPLACE_ANY_))\
    )
+#define TEXT_PARAMS_ARE_INVALID(params)\
+  (TEXT_OPERATION_IS_INVALID(op) ||\
+   ( ((op) & TEXT_FROM_ANY_SINGLE_) && ((params)->size != 1) )\
+   )
 
 	/* Define the representation of the text itself. */
 #define TEXT_FROM_STRING          0x00001
 #define TEXT_FROM_BYTES           0x00002
 #define TEXT_FROM_CHARS           0x00004
 #define TEXT_FROM_GLYPHS          0x00008
+#define TEXT_FROM_SINGLE_CHAR     0x00010
+#define TEXT_FROM_SINGLE_GLYPH    0x00020
+#define TEXT_FROM_ANY_SINGLE_ /* internal use only, see above */\
+  (TEXT_FROM_SINGLE_CHAR | TEXT_FROM_SINGLE_GLYPH)
 #define TEXT_FROM_ANY_ /* internal use only, see above */\
-  (TEXT_FROM_STRING | TEXT_FROM_BYTES | TEXT_FROM_CHARS | TEXT_FROM_GLYPHS)
+  (TEXT_FROM_STRING | TEXT_FROM_BYTES | TEXT_FROM_CHARS | TEXT_FROM_GLYPHS |\
+   TEXT_FROM_ANY_SINGLE_)
 	/* Define how to compute escapements. */
-#define TEXT_ADD_TO_ALL_WIDTHS    0x00010
-#define TEXT_ADD_TO_SPACE_WIDTH   0x00020
+#define TEXT_ADD_TO_ALL_WIDTHS    0x00040
+#define TEXT_ADD_TO_SPACE_WIDTH   0x00080
 #define TEXT_ADD_ANY_ /* internal use only, see above */\
   (TEXT_ADD_TO_ALL_WIDTHS | TEXT_ADD_TO_SPACE_WIDTH)
-#define TEXT_REPLACE_X_WIDTHS     0x00040
-#define TEXT_REPLACE_Y_WIDTHS     0x00080
+#define TEXT_REPLACE_X_WIDTHS     0x00100
+#define TEXT_REPLACE_Y_WIDTHS     0x00200
 #define TEXT_REPLACE_ANY_ /* internal use only, see above */\
   (TEXT_REPLACE_X_WIDTHS | TEXT_REPLACE_Y_WIDTHS)
 	/* Define what result should be produced. */
-#define TEXT_DO_NONE              0x00100	/* stringwidth or cshow only */
-#define TEXT_DO_DRAW              0x00200
-#define TEXT_DO_FALSE_CHARPATH    0x00400
-#define TEXT_DO_TRUE_CHARPATH     0x00800
-#define TEXT_DO_FALSE_CHARBOXPATH 0x01000
-#define TEXT_DO_TRUE_CHARBOXPATH  0x02000
+#define TEXT_DO_NONE              0x00400	/* stringwidth or cshow only */
+#define TEXT_DO_DRAW              0x00800
+#define TEXT_DO_FALSE_CHARPATH    0x01000
+#define TEXT_DO_TRUE_CHARPATH     0x02000
+#define TEXT_DO_FALSE_CHARBOXPATH 0x04000
+#define TEXT_DO_TRUE_CHARBOXPATH  0x08000
 #define TEXT_DO_ANY_CHARPATH\
   (TEXT_DO_FALSE_CHARPATH | TEXT_DO_TRUE_CHARPATH |\
    TEXT_DO_FALSE_CHARBOXPATH | TEXT_DO_TRUE_CHARBOXPATH)
@@ -100,6 +107,8 @@ typedef struct gs_text_params_s {
 	const byte *bytes;	/* FROM_STRING, FROM_BYTES */
 	const gs_char *chars;	/* FROM_CHARS */
 	const gs_glyph *glyphs;	/* FROM_GLYPHS */
+	gs_char d_char;		/* FROM_SINGLE_CHAR */
+	gs_glyph d_glyph;	/* FROM_SINGLE_GLYPH */
     } data;
     uint size;			/* number of data elements */
     /* The following are used only in the indicated cases. */
@@ -113,6 +122,7 @@ typedef struct gs_text_params_s {
     /* Either one may be NULL, meaning widths = 0. */
     const float *x_widths;	/* REPLACE_X_WIDTHS */
     const float *y_widths;	/* REPLACE_Y_WIDTHS */
+    uint widths_size;		/* REPLACE_X_WIDTHS, REPLACE_Y_WIDTHS */
     /* The following are for internal use only, not by clients. */
     gs_const_string gc_string;	/* for use only during GC */
 } gs_text_params_t;
@@ -123,44 +133,64 @@ typedef struct gs_text_params_s {
   gs_public_st_composite(st_gs_text_params, gs_text_params_t,\
     "gs_text_params", text_params_enum_ptrs, text_params_reloc_ptrs)
 
-/* Define the abstract type for the object procedures. */
-typedef struct gs_text_enum_procs_s gs_text_enum_procs_t;
-
 /*
- * Define the common part of the structure that tracks the state of text
- * display.  All implementations of text_begin must allocate one of these
- * using rc_alloc_struct_1; implementations may subclass and extend it.
- * Note that it includes a copy of the text parameters.
+ * Define the abstract type for the structure that tracks the state of text
+ * processing.
  */
+typedef struct gs_text_enum_s gs_text_enum_t;
+
+/* Abstract types */
 #ifndef gx_device_DEFINED
 #  define gx_device_DEFINED
 typedef struct gx_device_s gx_device;
-
 #endif
-#define gs_text_enum_common\
-	/* The following are set at initialization, and const thereafter. */\
-	gs_text_params_t text;\
-	const gs_text_enum_procs_t *procs;\
-	gx_device *dev;\
-	/* The following change dynamically. */\
-	rc_header rc;\
-	uint index		/* index within string */
-typedef struct gs_text_enum_s {
-    gs_text_enum_common;
-} gs_text_enum_t;
+#ifndef gs_imager_state_DEFINED
+#  define gs_imager_state_DEFINED
+typedef struct gs_imager_state_s gs_imager_state;
+#endif
+#ifndef gx_device_color_DEFINED
+#  define gx_device_color_DEFINED
+typedef struct gx_device_color_s gx_device_color;
+#endif
+#ifndef gs_font_DEFINED
+#  define gs_font_DEFINED
+typedef struct gs_font_s gs_font;
+#endif
+#ifndef gx_path_DEFINED
+#  define gx_path_DEFINED
+typedef struct gx_path_s gx_path;
+#endif
+#ifndef gx_clip_path_DEFINED
+#  define gx_clip_path_DEFINED
+typedef struct gx_clip_path_s gx_clip_path;
+#endif
 
-#define st_gs_text_enum_max_ptrs st_gs_text_params_max_ptrs
-/*extern_st(st_gs_text_enum); */
-#define public_st_gs_text_enum()	/* in gstext.c */\
-  gs_public_st_composite(st_gs_text_enum, gs_text_enum_t, "gs_text_enum_t",\
-    text_enum_enum_ptrs, text_enum_reloc_ptrs)
+/*
+ * Define the driver procedure for text.
+ */
+#define dev_t_proc_text_begin(proc, dev_t)\
+  int proc(P9(dev_t *dev,\
+    gs_imager_state *pis,\
+    const gs_text_params_t *text,\
+    const gs_font *font,\
+    gx_path *path,			/* unless DO_NONE & !RETURN_WIDTH */\
+    const gx_device_color *pdcolor,	/* if DO_DRAW */\
+    const gx_clip_path *pcpath,		/* if DO_DRAW */\
+    gs_memory_t *memory,\
+    gs_text_enum_t **ppenum))
+#define dev_proc_text_begin(proc)\
+  dev_t_proc_text_begin(proc, gx_device)
 
-/* Begin processing text. */
-/* Note that these take a graphics state argument. */
+/*
+ * Begin processing text.  This calls the device procedure, and also
+ * initializes the common parts of the enumerator.
+ */
+dev_proc_text_begin(gx_device_text_begin);
+
+/* Begin processing text with a graphics state. */
 #ifndef gs_state_DEFINED
 #  define gs_state_DEFINED
 typedef struct gs_state_s gs_state;
-
 #endif
 int gs_text_begin(P4(gs_state * pgs, const gs_text_params_t * text,
 		     gs_memory_t * mem, gs_text_enum_t ** ppenum));
@@ -168,26 +198,32 @@ int gs_text_begin(P4(gs_state * pgs, const gs_text_params_t * text,
 /* Begin the PostScript-equivalent text operators. */
 int
     gs_show_begin(P5(gs_state *, const byte *, uint,
-		     gs_memory_t *, gs_text_enum_t **)), gs_ashow_begin(P7(gs_state *, floatp, floatp, const byte *, uint,
-					 gs_memory_t *, gs_text_enum_t **)),
-      gs_widthshow_begin(P8(gs_state *, floatp, floatp, gs_char,
-			    const byte *, uint,
-			    gs_memory_t *, gs_text_enum_t **)), gs_awidthshow_begin(P10(gs_state *, floatp, floatp, gs_char,
-					 floatp, floatp, const byte *, uint,
-					 gs_memory_t *, gs_text_enum_t **)),
-      gs_kshow_begin(P5(gs_state *, const byte *, uint,
-			gs_memory_t *, gs_text_enum_t **)), gs_xyshow_begin(P7(gs_state *, const byte *, uint,
-					       const float *, const float *,
-					 gs_memory_t *, gs_text_enum_t **)),
-      gs_glyphshow_begin(P4(gs_state *, gs_glyph,
-			    gs_memory_t *, gs_text_enum_t **)), gs_cshow_begin(P5(gs_state *, const byte *, uint,
-					 gs_memory_t *, gs_text_enum_t **)),
-      gs_stringwidth_begin(P5(gs_state *, const byte *, uint,
-			      gs_memory_t *, gs_text_enum_t **)), gs_charpath_begin(P6(gs_state *, const byte *, uint, bool,
-					 gs_memory_t *, gs_text_enum_t **)),
-      gs_glyphpath_begin(P5(gs_state *, gs_glyph, bool,
-			    gs_memory_t *, gs_text_enum_t **)), gs_charboxpath_begin(P6(gs_state *, const byte *, uint, bool,
-					 gs_memory_t *, gs_text_enum_t **));
+		     gs_memory_t *, gs_text_enum_t **)),
+    gs_ashow_begin(P7(gs_state *, floatp, floatp, const byte *, uint,
+		      gs_memory_t *, gs_text_enum_t **)),
+    gs_widthshow_begin(P8(gs_state *, floatp, floatp, gs_char,
+			  const byte *, uint,
+			  gs_memory_t *, gs_text_enum_t **)),
+    gs_awidthshow_begin(P10(gs_state *, floatp, floatp, gs_char,
+			    floatp, floatp, const byte *, uint,
+			    gs_memory_t *, gs_text_enum_t **)),
+    gs_kshow_begin(P5(gs_state *, const byte *, uint,
+		      gs_memory_t *, gs_text_enum_t **)),
+    gs_xyshow_begin(P8(gs_state *, const byte *, uint,
+		       const float *, const float *, uint,
+		       gs_memory_t *, gs_text_enum_t **)),
+    gs_glyphshow_begin(P4(gs_state *, gs_glyph,
+			  gs_memory_t *, gs_text_enum_t **)),
+    gs_cshow_begin(P5(gs_state *, const byte *, uint,
+		      gs_memory_t *, gs_text_enum_t **)),
+    gs_stringwidth_begin(P5(gs_state *, const byte *, uint,
+			    gs_memory_t *, gs_text_enum_t **)),
+    gs_charpath_begin(P6(gs_state *, const byte *, uint, bool,
+			 gs_memory_t *, gs_text_enum_t **)),
+    gs_glyphpath_begin(P5(gs_state *, gs_glyph, bool,
+			  gs_memory_t *, gs_text_enum_t **)),
+    gs_charboxpath_begin(P6(gs_state *, const byte *, uint, bool,
+			    gs_memory_t *, gs_text_enum_t **));
 
 /*
  * Define the possible return values from gs_text_process.  The client
@@ -197,15 +233,15 @@ int
 
 	/*
 	 * The client must render a character: obtain the code from
-	 * gs_show_current_char, do whatever is necessary, and then
+	 * gs_text_current_char, do whatever is necessary, and then
 	 * call gs_text_process again.
 	 */
 #define TEXT_PROCESS_RENDER 1
 
 	/*
 	 * The client has asked to intervene between characters.
-	 * Obtain the previous and next codes from gs_show_previous_char
-	 * and gs_kshow_next_char, do whatever is necessary, and then
+	 * Obtain the current and next codes from gs_text_current_char
+	 * and gs_text_next_char, do whatever is necessary, and then
 	 * call gs_text_process again.
 	 */
 #define TEXT_PROCESS_INTERVENE 2
@@ -213,11 +249,14 @@ int
 /* Process text after 'begin'. */
 int gs_text_process(P1(gs_text_enum_t * penum));
 
-/* Set text metrics and optionally enable caching. */
+/*
+ * Set text metrics and optionally enable caching.  Return 1 iff the
+ * cache device was just installed.
+ */
 int
     gs_text_setcharwidth(P2(gs_text_enum_t * penum, const double wxy[2])),
-       gs_text_setcachedevice(P2(gs_text_enum_t * penum, const double wbox[6])),
-       gs_text_setcachedevice2(P2(gs_text_enum_t * penum, const double wbox2[10]));
+    gs_text_setcachedevice(P2(gs_text_enum_t * penum, const double wbox[6])),
+    gs_text_setcachedevice2(P2(gs_text_enum_t * penum, const double wbox2[10]));
 
 /* Release the text processing structures. */
 void gs_text_release(P2(gs_text_enum_t * penum, client_name_t cname));

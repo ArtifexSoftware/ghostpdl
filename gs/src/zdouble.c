@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -40,10 +40,11 @@
 /* Forward references */
 private int double_params_result(P3(os_ptr, int, double *));
 private int double_params(P3(os_ptr, int, double *));
-private int double_result(P3(os_ptr, int, double));
-private int double_unary(P2(os_ptr, double (*)(P1(double))));
+private int double_result(P3(i_ctx_t *, int, double));
+private int double_unary(P2(i_ctx_t *, double (*)(P1(double))));
 
 #define dbegin_unary()\
+	os_ptr op = osp;\
 	double num;\
 	int code = double_params_result(op, 1, &num);\
 \
@@ -51,6 +52,7 @@ private int double_unary(P2(os_ptr, double (*)(P1(double))));
 	  return code
 
 #define dbegin_binary()\
+	os_ptr op = osp;\
 	double num[2];\
 	int code = double_params_result(op, 2, num);\
 \
@@ -61,119 +63,119 @@ private int double_unary(P2(os_ptr, double (*)(P1(double))));
 
 /* <dnum1> <dnum2> <dresult> .dadd <dresult> */
 private int
-zdadd(os_ptr op)
+zdadd(i_ctx_t *i_ctx_p)
 {
     dbegin_binary();
-    return double_result(op, 2, num[0] + num[1]);
+    return double_result(i_ctx_p, 2, num[0] + num[1]);
 }
 
 /* <dnum1> <dnum2> <dresult> .ddiv <dresult> */
 private int
-zddiv(os_ptr op)
+zddiv(i_ctx_t *i_ctx_p)
 {
     dbegin_binary();
     if (num[1] == 0.0)
 	return_error(e_undefinedresult);
-    return double_result(op, 2, num[0] / num[1]);
+    return double_result(i_ctx_p, 2, num[0] / num[1]);
 }
 
 /* <dnum1> <dnum2> <dresult> .dmul <dresult> */
 private int
-zdmul(os_ptr op)
+zdmul(i_ctx_t *i_ctx_p)
 {
     dbegin_binary();
-    return double_result(op, 2, num[0] * num[1]);
+    return double_result(i_ctx_p, 2, num[0] * num[1]);
 }
 
 /* <dnum1> <dnum2> <dresult> .dsub <dresult> */
 private int
-zdsub(os_ptr op)
+zdsub(i_ctx_t *i_ctx_p)
 {
     dbegin_binary();
-    return double_result(op, 2, num[0] - num[1]);
+    return double_result(i_ctx_p, 2, num[0] - num[1]);
 }
 
 /* ------ Simple functions ------ */
 
 /* <dnum> <dresult> .dabs <dresult> */
 private int
-zdabs(os_ptr op)
+zdabs(i_ctx_t *i_ctx_p)
 {
-    return double_unary(op, fabs);
+    return double_unary(i_ctx_p, fabs);
 }
 
 /* <dnum> <dresult> .dceiling <dresult> */
 private int
-zdceiling(os_ptr op)
+zdceiling(i_ctx_t *i_ctx_p)
 {
-    return double_unary(op, ceil);
+    return double_unary(i_ctx_p, ceil);
 }
 
 /* <dnum> <dresult> .dfloor <dresult> */
 private int
-zdfloor(os_ptr op)
+zdfloor(i_ctx_t *i_ctx_p)
 {
-    return double_unary(op, floor);
+    return double_unary(i_ctx_p, floor);
 }
 
 /* <dnum> <dresult> .dneg <dresult> */
 private int
-zdneg(os_ptr op)
+zdneg(i_ctx_t *i_ctx_p)
 {
     dbegin_unary();
-    return double_result(op, 1, -num);
+    return double_result(i_ctx_p, 1, -num);
 }
 
 /* <dnum> <dresult> .dround <dresult> */
 private int
-zdround(os_ptr op)
+zdround(i_ctx_t *i_ctx_p)
 {
     dbegin_unary();
-    return double_result(op, 1, floor(num + 0.5));
+    return double_result(i_ctx_p, 1, floor(num + 0.5));
 }
 
 /* <dnum> <dresult> .dsqrt <dresult> */
 private int
-zdsqrt(os_ptr op)
+zdsqrt(i_ctx_t *i_ctx_p)
 {
     dbegin_unary();
     if (num < 0.0)
 	return_error(e_rangecheck);
-    return double_result(op, 1, sqrt(num));
+    return double_result(i_ctx_p, 1, sqrt(num));
 }
 
 /* <dnum> <dresult> .dtruncate <dresult> */
 private int
-zdtruncate(os_ptr op)
+zdtruncate(i_ctx_t *i_ctx_p)
 {
     dbegin_unary();
-    return double_result(op, 1, (num < 0 ? ceil(num) : floor(num)));
+    return double_result(i_ctx_p, 1, (num < 0 ? ceil(num) : floor(num)));
 }
 
 /* ------ Transcendental functions ------ */
 
 private int
-darc(os_ptr op, double (*afunc)(P1(double)))
+darc(i_ctx_t *i_ctx_p, double (*afunc)(P1(double)))
 {
     dbegin_unary();
-    return double_result(op, 1, (*afunc)(num) * radians_to_degrees);
+    return double_result(i_ctx_p, 1, (*afunc)(num) * radians_to_degrees);
 }
 /* <dnum> <dresult> .darccos <dresult> */
 private int
-zdarccos(os_ptr op)
+zdarccos(i_ctx_t *i_ctx_p)
 {
-    return darc(op, acos);
+    return darc(i_ctx_p, acos);
 }
 /* <dnum> <dresult> .darcsin <dresult> */
 private int
-zdarcsin(os_ptr op)
+zdarcsin(i_ctx_t *i_ctx_p)
 {
-    return darc(op, asin);
+    return darc(i_ctx_p, asin);
 }
 
 /* <dnum> <ddenom> <dresult> .datan <dresult> */
 private int
-zdatan(register os_ptr op)
+zdatan(i_ctx_t *i_ctx_p)
 {
     double result;
 
@@ -187,19 +189,19 @@ zdatan(register os_ptr op)
 	if (result < 0)
 	    result += 360;
     }
-    return double_result(op, 2, result);
+    return double_result(i_ctx_p, 2, result);
 }
 
 /* <dnum> <dresult> .dcos <dresult> */
 private int
-zdcos(os_ptr op)
+zdcos(i_ctx_t *i_ctx_p)
 {
-    return double_unary(op, gs_cos_degrees);
+    return double_unary(i_ctx_p, gs_cos_degrees);
 }
 
 /* <dbase> <dexponent> <dresult> .dexp <dresult> */
 private int
-zdexp(os_ptr op)
+zdexp(i_ctx_t *i_ctx_p)
 {
     double ipart;
 
@@ -208,42 +210,43 @@ zdexp(os_ptr op)
 	return_error(e_undefinedresult);
     if (num[0] < 0.0 && modf(num[1], &ipart) != 0.0)
 	return_error(e_undefinedresult);
-    return double_result(op, 2, pow(num[0], num[1]));
+    return double_result(i_ctx_p, 2, pow(num[0], num[1]));
 }
 
 private int
-dlog(os_ptr op, double (*lfunc)(P1(double)))
+dlog(i_ctx_t *i_ctx_p, double (*lfunc)(P1(double)))
 {
     dbegin_unary();
     if (num <= 0.0)
 	return_error(e_rangecheck);
-    return double_result(op, 1, (*lfunc)(num));
+    return double_result(i_ctx_p, 1, (*lfunc)(num));
 }
 /* <dposnum> <dresult> .dln <dresult> */
 private int
-zdln(os_ptr op)
+zdln(i_ctx_t *i_ctx_p)
 {
-    return dlog(op, log);
+    return dlog(i_ctx_p, log);
 }
 /* <dposnum> <dresult> .dlog <dresult> */
 private int
-zdlog(os_ptr op)
+zdlog(i_ctx_t *i_ctx_p)
 {
-    return dlog(op, log10);
+    return dlog(i_ctx_p, log10);
 }
 
 /* <dnum> <dresult> .dsin <dresult> */
 private int
-zdsin(os_ptr op)
+zdsin(i_ctx_t *i_ctx_p)
 {
-    return double_unary(op, gs_sin_degrees);
+    return double_unary(i_ctx_p, gs_sin_degrees);
 }
 
 /* ------ Comparison ------ */
 
 private int
-dcompare(os_ptr op, int mask)
+dcompare(i_ctx_t *i_ctx_p, int mask)
 {
+    os_ptr op = osp;
     double num[2];
     int code = double_params(op, 2, num);
 
@@ -257,39 +260,39 @@ dcompare(os_ptr op, int mask)
 }
 /* <dnum1> <dnum2> .deq <bool> */
 private int
-zdeq(os_ptr op)
+zdeq(i_ctx_t *i_ctx_p)
 {
-    return dcompare(op, 2);
+    return dcompare(i_ctx_p, 2);
 }
 /* <dnum1> <dnum2> .dge <bool> */
 private int
-zdge(os_ptr op)
+zdge(i_ctx_t *i_ctx_p)
 {
-    return dcompare(op, 6);
+    return dcompare(i_ctx_p, 6);
 }
 /* <dnum1> <dnum2> .dgt <bool> */
 private int
-zdgt(os_ptr op)
+zdgt(i_ctx_t *i_ctx_p)
 {
-    return dcompare(op, 4);
+    return dcompare(i_ctx_p, 4);
 }
 /* <dnum1> <dnum2> .dle <bool> */
 private int
-zdle(os_ptr op)
+zdle(i_ctx_t *i_ctx_p)
 {
-    return dcompare(op, 3);
+    return dcompare(i_ctx_p, 3);
 }
 /* <dnum1> <dnum2> .dlt <bool> */
 private int
-zdlt(os_ptr op)
+zdlt(i_ctx_t *i_ctx_p)
 {
-    return dcompare(op, 1);
+    return dcompare(i_ctx_p, 1);
 }
 /* <dnum1> <dnum2> .dne <bool> */
 private int
-zdne(os_ptr op)
+zdne(i_ctx_t *i_ctx_p)
 {
-    return dcompare(op, 5);
+    return dcompare(i_ctx_p, 5);
 }
 
 /* ------ Conversion ------ */
@@ -299,16 +302,17 @@ zdne(os_ptr op)
 
 /* <dnum> <dresult> .cvd <dresult> */
 private int
-zcvd(os_ptr op)
+zcvd(i_ctx_t *i_ctx_p)
 {
     dbegin_unary();
-    return double_result(op, 1, num);
+    return double_result(i_ctx_p, 1, num);
 }
 
 /* <string> <dresult> .cvsd <dresult> */
 private int
-zcvsd(os_ptr op)
+zcvsd(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code = double_params_result(op, 0, NULL);
     double num;
     char buf[MAX_CHARS + 2];
@@ -339,13 +343,14 @@ zcvsd(os_ptr op)
     strcat(str, "$");
     if (sscanf(str, "%lf%c", &num, &end) != 2 || end != '$')
 	return_error(e_syntaxerror);
-    return double_result(op, 1, num);
+    return double_result(i_ctx_p, 1, num);
 }
 
 /* <dnum> .dcvi <int> */
 private int
-zdcvi(os_ptr op)
+zdcvi(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
 #define alt_min_long (-1L << (arch_sizeof_long * 8 - 1))
 #define alt_max_long (~(alt_min_long))
     static const double min_int_real = (alt_min_long * 1.0 - 1);
@@ -364,8 +369,9 @@ zdcvi(os_ptr op)
 
 /* <dnum> .dcvr <real> */
 private int
-zdcvr(os_ptr op)
+zdcvr(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
 #define b30 (0x40000000L * 1.0)
 #define max_mag (0xffffff * b30 * b30 * b30 * 0x4000)
     static const float min_real = -max_mag;
@@ -385,8 +391,9 @@ zdcvr(os_ptr op)
 
 /* <dnum> <string> .dcvs <substring> */
 private int
-zdcvs(os_ptr op)
+zdcvs(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     double num;
     int code = double_params(op - 1, 1, &num);
     char str[MAX_CHARS + 1];
@@ -424,13 +431,29 @@ zdcvs(os_ptr op)
 
 /* ------ Initialization table ------ */
 
-const op_def zdouble_op_defs[] =
-{
+/* We need to split the table because of the 16-element limit. */
+const op_def zdouble1_op_defs[] = {
 		/* Arithmetic */
     {"3.dadd", zdadd},
     {"3.ddiv", zddiv},
     {"3.dmul", zdmul},
     {"3.dsub", zdsub},
+		/* Comparison */
+    {"2.deq", zdeq},
+    {"2.dge", zdge},
+    {"2.dgt", zdgt},
+    {"2.dle", zdle},
+    {"2.dlt", zdlt},
+    {"2.dne", zdne},
+		/* Conversion */
+    {"2.cvd", zcvd},
+    {"2.cvsd", zcvsd},
+    {"1.dcvi", zdcvi},
+    {"1.dcvr", zdcvr},
+    {"2.dcvs", zdcvs},
+    op_def_end(0)
+};
+const op_def zdouble2_op_defs[] = {
 		/* Simple functions */
     {"2.dabs", zdabs},
     {"2.dceiling", zdceiling},
@@ -448,19 +471,6 @@ const op_def zdouble_op_defs[] =
     {"2.dln", zdln},
     {"2.dlog", zdlog},
     {"2.dsin", zdsin},
-		/* Comparison */
-    {"2.deq", zdeq},
-    {"2.dge", zdge},
-    {"2.dgt", zdgt},
-    {"2.dle", zdle},
-    {"2.dlt", zdlt},
-    {"2.dne", zdne},
-		/* Conversion */
-    {"2.cvd", zcvd},
-    {"2.cvsd", zcvsd},
-    {"1.dcvi", zdcvi},
-    {"1.dcvr", zdcvr},
-    {"2.dcvs", zdcvs},
     op_def_end(0)
 };
 
@@ -503,14 +513,15 @@ double_params_result(os_ptr op, int count, double *pval)
 {
     check_write_type(*op, t_string);
     if (r_size(op) != sizeof(double))
-	       return_error(e_typecheck);
+	return_error(e_typecheck);
     return double_params(op - 1, count, pval);
 }
 
 /* Return a double result. */
 private int
-double_result(os_ptr op, int count, double result)
+double_result(i_ctx_t *i_ctx_p, int count, double result)
 {
+    os_ptr op = osp;
     os_ptr op1 = op - count;
 
     ref_assign_inline(op1, op);
@@ -521,8 +532,8 @@ double_result(os_ptr op, int count, double result)
 
 /* Apply a unary function to a double operand. */
 private int
-double_unary(os_ptr op, double (*func)(P1(double)))
+double_unary(i_ctx_t *i_ctx_p, double (*func)(P1(double)))
 {
     dbegin_unary();
-    return double_result(op, 1, (*func)(num));
+    return double_result(i_ctx_p, 1, (*func)(num));
 }

@@ -16,6 +16,7 @@
    all copies.
  */
 
+
 /* Interface for device-specified CRDs */
 
 #ifndef gscrdp_INCLUDED

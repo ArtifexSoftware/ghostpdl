@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -23,6 +23,27 @@
 #include "gserrors.h"
 #include "gsfunc3.h"
 #include "gxfunc.h"
+
+
+/* ---------------- Utilities ---------------- */
+
+/*
+ * Free an array of subsidiary Functions.  Note that this may be called
+ * before the Functions array has been fully initialized.  Note also that
+ * its argument conforms to the Functions array in the parameter structure,
+ * but it (necessarily) deconstifies it.
+ */
+private void
+fn_free_functions(const gs_function_t *const * Functions, int count,
+		  gs_memory_t * mem)
+{
+    int i;
+
+    for (i = count; --i >= 0;)
+	if (Functions[i])
+	    gs_function_free((gs_function_t *)Functions[i], true, mem);
+    gs_free_const_object(mem, Functions, "Functions");
+}
 
 /* ---------------- Exponential Interpolation functions ---------------- */
 
@@ -86,8 +107,8 @@ void
 gs_function_ElIn_free_params(gs_function_ElIn_params_t * params,
 			     gs_memory_t * mem)
 {
-    gs_free_object(mem, (void *)params->C1, "C1");	/* break const */
-    gs_free_object(mem, (void *)params->C0, "C0");	/* break const */
+    gs_free_const_object(mem, params->C1, "C1");
+    gs_free_const_object(mem, params->C0, "C0");
     fn_common_free_params((gs_function_params_t *) params, mem);
 }
 
@@ -196,10 +217,9 @@ void
 gs_function_1ItSg_free_params(gs_function_1ItSg_params_t * params,
 			      gs_memory_t * mem)
 {
-    gs_free_object(mem, (void *)params->Encode, "Encode");	/* break const */
-    gs_free_object(mem, (void *)params->Bounds, "Bounds");	/* break const */
-    fn_free_functions((gs_function_t **) params->Functions,	/* break const */
-		      params->k, mem);
+    gs_free_const_object(mem, params->Encode, "Encode");
+    gs_free_const_object(mem, params->Bounds, "Bounds");
+    fn_free_functions(params->Functions, params->k, mem);
     fn_common_free_params((gs_function_params_t *) params, mem);
 }
 
@@ -308,8 +328,7 @@ void
 gs_function_AdOt_free_params(gs_function_AdOt_params_t * params,
 			     gs_memory_t * mem)
 {
-    fn_free_functions((gs_function_t **) params->Functions,	/* break const */
-		      params->n, mem);
+    fn_free_functions(params->Functions, params->n, mem);
     fn_common_free_params((gs_function_params_t *) params, mem);
 }
 

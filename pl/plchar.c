@@ -457,14 +457,18 @@ pl_tt_get_outline(gs_font_type42 *pfont, uint index, gs_const_string *pdata)
 	const byte *cdata = pfg->data;
 
 	if ( cdata == 0 )
-	  pdata->data = 0;		/* undefined glyph */
+	  { pdata->data = 0;		/* undefined glyph */
+            pdata->size = 0;
+          }
 	else
 	  { uint desc_size =
 	      (*cdata == 15 ? cdata[2] /* PCL5 */ : 0 /* PCL XL */);
 	    uint data_size = pl_get_uint16(cdata + 2 + desc_size);
 
 	    if ( data_size <= 4 )
-	      pdata->data = 0;		/* empty outline */
+	     { pdata->data = 0;		/* empty outline */
+	       pdata->size = 0;
+             }
 	    else
 	      { pdata->data = cdata + 6 + desc_size;
 	        pdata->size = data_size - 4;

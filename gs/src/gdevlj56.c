@@ -265,7 +265,8 @@ ljet5_print_page(gx_device_printer * pdev, FILE * prn_stream)
 	    goto fin;
 	put_us(lnum, prn_stream);
 	fwrite_bytes(line_header, prn_stream);
-	ncompr = gdev_pcl_mode2compress(line, line + line_size_words, out);
+	ncompr = gdev_pcl_mode2compress_padded(line, line + line_size_words,
+					       out, true);
 	if (ncompr <= 255) {
 	    fputc(pxt_dataLengthByte, prn_stream);
 	    fputc(ncompr, prn_stream);

@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -36,6 +36,7 @@ get_real(void)
 #include "gsmatrix.h"
 #include "gsstate.h"
 #include "gscspace.h"
+#include "gscssub.h"
 #include "gscolor2.h"
 #include "gscoord.h"
 #include "gscie.h"
@@ -590,8 +591,7 @@ test5(gs_state * pgs, gs_memory_t * mem)
 	    0x66
 	};
 
-	gs_image3_t_init(&image3,
-			 gs_cspace_DeviceGray((const gs_imager_state *)pgs),
+	gs_image3_t_init(&image3, gs_current_DeviceGray_space(pgs),
 			 interleave_scan_lines);
 	/* image */
 	image3.ImageMatrix.xx = W;
@@ -663,8 +663,7 @@ test5(gs_state * pgs, gs_memory_t * mem)
 	gs_image4_t image4;
 	const byte *data4 = data3;
 
-	gs_image4_t_init(&image4,
-			 gs_cspace_DeviceGray((const gs_imager_state *)pgs));
+	gs_image4_t_init(&image4, gs_current_DeviceGray_space(pgs));
 	/* image */
 	image4.ImageMatrix.xx = W;
 	image4.ImageMatrix.yy = -H;
@@ -698,7 +697,6 @@ test5(gs_state * pgs, gs_memory_t * mem)
 /* ---------------- Test program 6 ---------------- */
 /* Test the C API for CIE CRDs, and color snapping. */
 
-extern const gs_color_space_type gs_color_space_type_CIEABC;
 private void
 spectrum(gs_state * pgs, int n)
 {
@@ -728,6 +726,21 @@ render_abc(floatp v, const gs_cie_render * ignore_crd)
     return v / 2;
 }
 private int
+set_cmap_method(gx_device_cmap *cmdev, gx_device_color_mapping_method_t method,
+		gs_state *pgs, gs_memory_t *mem)
+{
+    gs_c_param_list list;
+    int cmm = method;
+
+    gs_c_param_list_write(&list, mem);
+    param_write_int((gs_param_list *)&list, "ColorMappingMethod", &cmm);
+    gs_c_param_list_read(&list);
+    gs_putdeviceparams((gx_device *)cmdev, (gs_param_list *)&list);
+    gs_c_param_list_release(&list);
+    gs_setdevice_no_init(pgs, (gx_device *)cmdev);
+    return 0;
+}
+private int
 test6(gs_state * pgs, gs_memory_t * mem)
 {
     gs_color_space *pcs;
@@ -744,8 +757,7 @@ test6(gs_state * pgs, gs_memory_t * mem)
 
     gs_scale(pgs, 150.0, 150.0);
     gs_translate(pgs, 0.5, 0.5);
-    gs_setcolorspace(pgs,
-		     gs_cspace_DeviceRGB((const gs_imager_state *)pgs));
+    gs_setcolorspace(pgs, gs_current_DeviceRGB_space(pgs));
     spectrum(pgs, 5);
     gs_translate(pgs, 1.2, 0.0);
     /* We must set the CRD before the color space. */
@@ -777,7 +789,10 @@ test6(gs_state * pgs, gs_memory_t * mem)
     gs_translate(pgs, -1.2, 1.2);
     spectrum(pgs, 5);
     gs_translate(pgs, 1.2, 0.0);
-    gdev_cmap_set_method(cmdev, device_cmap_monochrome);
+    set_cmap_method(cmdev, device_cmap_monochrome, pgs, mem);
+    spectrum(pgs, 5);
+    gs_translate(pgs, -1.2, 1.2);
+    set_cmap_method(cmdev, device_cmap_color_to_black_over_white, pgs, mem);
     spectrum(pgs, 5);
     return 0;
 }
@@ -857,7 +872,7 @@ test8(gs_state * pgs, gs_memory_t * mem)
 	(const byte *)"\377\377\377\377\000\000\000\377\000\000\000\000";
     table.size = 12;
     gs_cspace_build_Indexed(&pcs,
-			  gs_cspace_DeviceRGB((const gs_imager_state *)pgs),
+			    gs_current_DeviceRGB_space(pgs),
 			    4,
 			    &table,
 			    mem);

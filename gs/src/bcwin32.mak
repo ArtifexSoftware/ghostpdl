@@ -1,4 +1,4 @@
-#    Copyright (C) 1989-1998 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1989-1999 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -33,7 +33,7 @@ GS_DOCDIR=c:/gs
 # initialization and font files.  Separate multiple directories with \;.
 # Use / to indicate directories, not a single \.
 
-GS_LIB_DEFAULT=.;c:/gs\;c:/gs/fonts
+GS_LIB_DEFAULT=.;c:/gs/lib\;c:/gs/fonts
 
 # Define whether or not searching for initialization files should always
 # look in the current directory first.  This leads to well-known security
@@ -86,13 +86,16 @@ MAKEDLL=1
 
 MULTITHREAD=1
 
-# Define the source, generated intermediate file, and object directories
+# Define the directory for the final executable, and the
+# source, generated intermediate file, and object directories
 # for the graphics library (GL) and the PostScript/PDF interpreter (PS).
 
-GLSRCDIR=.
+BINDIR=bin
+GLSRCDIR=src
 GLGENDIR=obj
 GLOBJDIR=obj
-PSSRCDIR=.
+PSSRCDIR=src
+PSLIBDIR=lib
 PSGENDIR=obj
 PSOBJDIR=obj
 
@@ -110,20 +113,29 @@ JVERSION=6
 # See libpng.mak for more information.
 
 PSRCDIR=libpng
-PVERSION=96
+PVERSION=10002
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
 
 ZSRCDIR=zlib
 
-# Define the configuration ID.  Read gs.mak carefully before changing this.
-
-CONFIG=
-
 # Define any other compilation flags.
 
 CFLAGS=
+
+# Do not edit the next group of lines.
+
+#!include $(COMMONDIR)\bcdefs.mak
+#!include $(COMMONDIR)\pcdefs.mak
+#!include $(COMMONDIR)\generic.mak
+!include $(GLSRCDIR)\version.mak
+# The following is a hack to get around the special treatment of \ at
+# the end of a line.
+NUL=
+DD=$(GLGENDIR)\$(NUL)
+GLD=$(GLGENDIR)\$(NUL)
+PSD=$(PSGENDIR)\$(NUL)
 
 # ------ Platform-specific options ------ #
 
@@ -177,11 +189,17 @@ CPU_TYPE=586
 
 FPU_TYPE=387
 
+# Define the .dev module that implements thread and synchronization
+# primitives for this platform.  Don't change this unless you really know
+# what you're doing.
+
+SYNC=winsync
+
 # ------ Devices and features ------ #
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
-FEATURE_DEVS=psl3.dev pdf.dev ttfont.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
@@ -207,36 +225,41 @@ FILE_IMPLEMENTATION=stdio
 # Choose the device(s) to include.  See devs.mak for details,
 # devs.mak and contrib.mak for the list of available devices.
 
-DEVICE_DEVS=mswindll.dev mswinprn.dev mswinpr2.dev
-DEVICE_DEVS2=epson.dev eps9high.dev eps9mid.dev epsonc.dev ibmpro.dev
-DEVICE_DEVS3=deskjet.dev djet500.dev laserjet.dev ljetplus.dev ljet2p.dev ljet3.dev ljet4.dev
-DEVICE_DEVS4=cdeskjet.dev cdjcolor.dev cdjmono.dev cdj550.dev pj.dev pjxl.dev pjxl300.dev
-DEVICE_DEVS5=djet500c.dev declj250.dev lj250.dev jetp3852.dev r4081.dev lbp8.dev uniprint.dev
-DEVICE_DEVS6=st800.dev stcolor.dev bj10e.dev bj200.dev m8510.dev necp6.dev bjc600.dev bjc800.dev
-DEVICE_DEVS7=t4693d2.dev t4693d4.dev t4693d8.dev tek4696.dev
-DEVICE_DEVS8=pcxmono.dev pcxgray.dev pcx16.dev pcx256.dev pcx24b.dev
-DEVICE_DEVS9=pbm.dev pbmraw.dev pgm.dev pgmraw.dev pgnm.dev pgnmraw.dev pnm.dev pnmraw.dev ppm.dev ppmraw.dev
-DEVICE_DEVS10=tiffcrle.dev tiffg3.dev tiffg32d.dev tiffg4.dev tifflzw.dev tiffpack.dev
-DEVICE_DEVS11=bmpmono.dev bmp16.dev bmp256.dev bmp16m.dev tiff12nc.dev tiff24nc.dev
-DEVICE_DEVS12=psmono.dev bit.dev bitrgb.dev bitcmyk.dev
-DEVICE_DEVS13=pngmono.dev pnggray.dev png16.dev png256.dev png16m.dev
-DEVICE_DEVS14=jpeg.dev jpeggray.dev
-DEVICE_DEVS15=pdfwrite.dev pswrite.dev epswrite.dev pxlmono.dev pxlcolor.dev
+DEVICE_DEVS=$(DD)mswindll.dev $(DD)mswinprn.dev $(DD)mswinpr2.dev
+DEVICE_DEVS2=$(DD)epson.dev $(DD)eps9high.dev $(DD)eps9mid.dev $(DD)epsonc.dev $(DD)ibmpro.dev
+DEVICE_DEVS3=$(DD)deskjet.dev $(DD)djet500.dev $(DD)laserjet.dev $(DD)ljetplus.dev $(DD)ljet2p.dev
+DEVICE_DEVS4=$(DD)cdeskjet.dev $(DD)cdjcolor.dev $(DD)cdjmono.dev $(DD)cdj550.dev
+DEVICE_DEVS5=$(DD)djet500c.dev $(DD)declj250.dev $(DD)lj250.dev
+DEVICE_DEVS6=$(DD)st800.dev $(DD)stcolor.dev $(DD)bj10e.dev $(DD)bj200.dev
+DEVICE_DEVS7=$(DD)t4693d2.dev $(DD)t4693d4.dev $(DD)t4693d8.dev $(DD)tek4696.dev
+DEVICE_DEVS8=$(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcx16.dev $(DD)pcx256.dev $(DD)pcx24b.dev
+DEVICE_DEVS9=$(DD)pbm.dev $(DD)pbmraw.dev $(DD)pgm.dev $(DD)pgmraw.dev $(DD)pgnm.dev $(DD)pgnmraw.dev
+DEVICE_DEVS10=$(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev $(DD)tifflzw.dev $(DD)tiffpack.dev
+DEVICE_DEVS11=$(DD)bmpmono.dev $(DD)bmp16.dev $(DD)bmp256.dev $(DD)bmp16m.dev $(DD)tiff12nc.dev $(DD)tiff24nc.dev
+DEVICE_DEVS12=$(DD)psmono.dev $(DD)bit.dev $(DD)bitrgb.dev $(DD)bitcmyk.dev
+DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev
+DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev
+DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)epswrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev
+# Overflow for DEVS3,4,5,6,9
+DEVICE_DEVS16=$(DD)ljet3.dev $(DD)ljet3d.dev $(DD)ljet4.dev $(DD)ljet4d.dev
+DEVICE_DEVS17=$(DD)pj.dev $(DD)pjxl.dev $(DD)pjxl300.dev
+DEVICE_DEVS18=$(DD)jetp3852.dev $(DD)r4081.dev $(DD)lbp8.dev $(DD)uniprint.dev
+DEVICE_DEVS19=$(DD)m8510.dev $(DD)necp6.dev $(DD)bjc600.dev $(DD)bjc800.dev
+DEVICE_DEVS20=$(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev
 
 # ---------------------------- End of options ---------------------------- #
 
 # Define the name of the makefile -- used in dependencies.
 
 MAKEFILE=$(GLSRCDIR)\bcwin32.mak
+TOP_MAKEFILES=$(MAKEFILE) $(GLSRCDIR)\winlib.mak $(GLSRCDIR)\winint.mak
 
 # Define the current directory prefix and shell invocations.
 
 D=\\
 
 EXP=
-EXPP=
 SH=
-SHP=
 
 # Define the arguments for genconf.
 
@@ -252,7 +275,7 @@ PCFBASM=
 
 # Make sure we get the right default target for make.
 
-dosdefault: default $(GLOBJDIR)\gs16spl.exe
+dosdefault: default $(BINDIR)\gs16spl.exe
 
 # Define the switch for output files.
 
@@ -351,7 +374,7 @@ CCWINFLAGS=
 # so this must precede the !include statements.
 
 # ****** HACK ****** *.tr and *.map are still created in the current directory.
-BEGINFILES2=$(GLOBJDIR)\gs16spl.exe *.tr *.map
+BEGINFILES2=$(BINDIR)\gs16spl.exe *.tr *.map
 
 # Include the generic makefiles.
 
@@ -362,33 +385,37 @@ BEGINFILES2=$(GLOBJDIR)\gs16spl.exe *.tr *.map
 
 # Compiler for auxiliary programs
 
-CCAUX=$(COMPAUX) -ml -I$(INCDIR) -L$(LIBDIR) -n$(AUXGENDIR) -O
+CCAUX=$(COMPAUX) -ml -I$(GLSRCDIR) -I$(INCDIR) -L$(LIBDIR) -n$(AUXGENDIR) -O
 CCAUX_TAIL=
 
-$(GLGENDIR)\ccf32.tr: $(MAKEFILE) makefile
-	echo -a1 -d -r -G -N -X -I$(INCDIR) $(CCFLAGS0) -DCHECK_INTERRUPTS > $(GLGENDIR)\ccf32.tr
+$(GLGENDIR)\ccf32.tr: $(TOP_MAKEFILES)
+	echo -a1 -d -r -w-par -w-stu -G -N -X -I$(INCDIR) > $(GLGENDIR)\ccf32.tr
+	echo $(CCFLAGS0) -DCHECK_INTERRUPTS >> $(GLGENDIR)\ccf32.tr
 
-$(ECHOGS_XE): $(GLSRC)echogs.c
-	$(CCAUX) $(GLSRC)echogs.c $(CCAUX_TAIL)
+$(ECHOGS_XE): $(GLSRCDIR)\echogs.c
+	$(CCAUX) $(GLSRCDIR)\echogs.c $(CCAUX_TAIL)
 
 # Since we are running in a Windows environment with a different compiler
 # for the DOS utilities, we have to invoke genarch by hand.
 # For unfathomable reasons, the 'win' program requires /, not \,
 # in the name of the program to be run, and apparently also in any
 # file names passed on the command line (?!).
-$(GENARCH_XE): $(GLSRC)genarch.c $(stdpre_h) $(iref_h) $(GLGENDIR)\ccf32.tr
-	$(COMP) -I$(INCDIR) -L$(LIBDIR) -n$(AUXGENDIR) -O $(GLSRC)genarch.c
+$(GENARCH_XE): $(GLSRCDIR)\genarch.c $(GENARCH_DEPS) $(GLGENDIR)\ccf32.tr
+	$(COMP) -I$(GLSRCDIR) -I$(INCDIR) -L$(LIBDIR) -n$(AUXGENDIR) -O $(GLSRCDIR)\genarch.c
 	echo win $(AUXGENDIR)/genarch $(GLGENDIR)/arch.h >_genarch.bat
 	echo ***** Run "_genarch.bat", then continue make. *****
 
-$(GENCONF_XE): $(GLSRC)genconf.c $(stdpre_h)
-	$(CCAUX) $(GLSRC)genconf.c $(CCAUX_TAIL)
+$(GENCONF_XE): $(GLSRCDIR)\genconf.c $(GENCONF_DEPS)
+	$(CCAUX) $(GLSRCDIR)\genconf.c $(CCAUX_TAIL)
 
-$(GENDEV_XE): $(GLSRC)gendev.c $(stdpre_h)
-	$(CCAUX) $(GLSRC)gendev.c $(CCAUX_TAIL)
+$(GENDEV_XE): $(GLSRCDIR)\gendev.c $(GENDEV_DEPS)
+	$(CCAUX) $(GLSRCDIR)\gendev.c $(CCAUX_TAIL)
 
-$(GENINIT_XE): $(PSSRC)geninit.c $(stdio__h) $(string__h)
-	$(CCAUX) $(PSSRC)geninit.c $(CCAUX_TAIL)
+$(GENHT_XE): $(PSSRCDIR)\genht.c $(GENHT_DEPS)
+	$(CCAUX) $(GENHT_CFLAGS) $(PSSRCDIR)\genht.c $(CCAUX_TAIL)
+
+$(GENINIT_XE): $(PSSRCDIR)\geninit.c $(GENINIT_DEPS)
+	$(CCAUX) $(PSSRCDIR)\geninit.c $(CCAUX_TAIL)
 
 # -------------------------------- Library -------------------------------- #
 
@@ -396,82 +423,86 @@ $(GENINIT_XE): $(PSSRC)geninit.c $(stdio__h) $(string__h)
 
 # ----------------------------- Main program ------------------------------ #
 
-LIBCTR=libc32.tr
-GSCONSOLE_XE=$(GLOBJ)$(GSCONSOLE).exe
+LIBCTR=$(GLGEN)libc32.tr
+GSCONSOLE_XE=$(BINDIR)\$(GSCONSOLE).exe
+GSDLL_DLL=$(BINDIR)\$(GSDLL).dll
 
-$(LIBCTR): $(MAKEFILE) $(ECHOGS_XE)
+$(LIBCTR): $(TOP_MAKEFILES) $(ECHOGS_XE)
 	echo $(LIBDIR)\import32.lib $(LIBDIR)\$(CLIB) >$(LIBCTR)
 
 !if $(MAKEDLL)
 # The graphical small EXE loader
-$(GS_XE): $(GSDLL_OBJ).dll  $(DWOBJ) $(GSCONSOLE_XE)\
- $(GS_OBJ).res $(GLSRC)dwmain32.def
+$(GS_XE): $(GSDLL_DLL)  $(DWOBJ) $(GSCONSOLE_XE)\
+ $(GS_OBJ).res $(GLSRCDIR)\dwmain32.def
 	$(LINK) /Tpe $(LCT) @&&!
 $(LIBDIR)\c0w32 +
 $(DWOBJ) +
 ,$(GS_XE),$(GS), +
 $(LIBDIR)\import32 +
 $(LIBDIR)\cw32, +
-$(GLSRC)dwmain32.def, +
+$(GLSRCDIR)\dwmain32.def, +
 $(GS_OBJ).res
 !
 
 # The console mode small EXE loader
-$(GSCONSOLE_XE): $(OBJC) $(GS_OBJ).res $(GLSRC)dw32c.def
+$(GSCONSOLE_XE): $(OBJC) $(GS_OBJ).res $(GLSRCDIR)\dw32c.def
 	$(LINK) /Tpe /ap $(LCT) $(DEBUGLINK) @&&!
 $(LIBDIR)\c0w32 +
 $(OBJC) +
 ,$(GSCONSOLE_XE),$(GSCONSOLE), +
 $(LIBDIR)\import32 +
 $(LIBDIR)\cw32, +
-$(GLSRC)dw32c.def, +
+$(GLSRCDIR)\dw32c.def, +
 $(GS_OBJ).res
 !
 
 # The big DLL
-$(GSDLL_OBJ).dll: $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ)\
- $(GSDLL_OBJ).res $(GSDLL_SRC).def
-	-del gswin32.tr
-	copy $(ld_tr) gswin32.tr
-	echo $(LIBDIR)\c0d32 $(GLOBJ)gsdll + >> gswin32.tr
-	$(LINK) $(LCT) /Tpd @gswin32.tr $(INTASM) ,$(GSDLL_OBJ).dll,$(GSDLL),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(GSDLL_SRC).def,$(GSDLL_OBJ).res
+$(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ)\
+ $(GSDLL_OBJ).res $(GLSRCDIR)\gsdll32.def
+	-del $(GLGEN)gswin32.tr
+	copy $(ld_tr) $(GLGEN)gswin32.tr
+	echo $(LIBDIR)\c0d32 $(GLOBJ)gsdll + >> $(GLGEN)gswin32.tr
+	$(LINK) $(LCT) /Tpd @$(GLGEN)gswin32.tr $(INTASM) ,$(GSDLL_DLL),$(GSDLL),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(GLSRCDIR)\gsdll32.def,$(GSDLL_OBJ).res
 
 !else
 # The big graphical EXE
 $(GS_XE):   $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL)\
- $(GLOBJ)gsdll.$(OBJ) $(DWOBJNO) $(GS_OBJ).res $(GLSRC)dwmain32.def
-	-del gswin32.tr
-	copy $(ld_tr) gswin32.tr
-	echo $(LIBDIR)\c0w32 $(GLOBJ)gsdll + >> gswin32.tr
-	echo $(DWOBJNO) $(INTASM) >> gswin32.tr
-	$(LINK) $(LCT) /Tpe @gswin32.tr ,$(GS_XE),$(GS),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(GLSRC)dwmain32.def,$(GS_OBJ).res
-	-del gswin32.tr
+ $(GLOBJ)gsdll.$(OBJ) $(DWOBJNO) $(GS_OBJ).res $(GLSRCDIR)\dwmain32.def
+	-del $(GLGEN)gswin32.tr
+	copy $(ld_tr) $(GLGEN)gswin32.tr
+	echo $(LIBDIR)\c0w32 $(GLOBJ)gsdll + >> $(GLGEN)gswin32.tr
+	echo $(DWOBJNO) $(INTASM) >> $(GLGEN)gswin32.tr
+	$(LINK) $(LCT) /Tpe @$(GLGEN)gswin32.tr ,$(GS_XE),$(GS),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(GLSRCDIR)\dwmain32.def,$(GS_OBJ).res
 
 # The big console mode EXE
 $(GSCONSOLE_XE):  $(GS_ALL) $(DEVS_ALL)\
- $(GLOBJ)gsdll.$(OBJ) $(OBJCNO) $(GS_OBJ).res $(GLSRC)dw32c.def
-	-del gswin32.tr
-	copy $(ld_tr) gswin32.tr
-	echo $(LIBDIR)\c0w32 $(GLOBJ)gsdll + >> gswin32.tr
-	echo $(OBJCNO) $(INTASM) >> gswin32.tr
-	$(LINK) $(LCT) /Tpe /ap @gswin32.tr ,$(GSCONSOLE_XE),$(GSCONSOLE),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(GLSRC)dw32c.def,$(GS_OBJ).res
-	-del gswin32.tr
+ $(GLOBJ)gsdll.$(OBJ) $(OBJCNO) $(GS_OBJ).res $(GLSRCDIR)\dw32c.def
+	-del $(GLGEN)gswin32.tr
+	copy $(ld_tr) $(GLGEN)gswin32.tr
+	echo $(LIBDIR)\c0w32 $(GLOBJ)gsdll + >> $(GLGEN)gswin32.tr
+	echo $(OBJCNO) $(INTASM) >> $(GLGEN)gswin32.tr
+	$(LINK) $(LCT) /Tpe /ap @$(GLGEN)gswin32.tr ,$(GSCONSOLE_XE),$(GSCONSOLE),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(GLSRCDIR)\dw32c.def,$(GS_OBJ).res
 !endif
 
 # Access to 16 spooler from Win32s
 
-$(GLOBJ)gs16spl.exe: $(GLSRC)gs16spl.c $(GLSRC)gs16spl.rc
-	$(CCAUX) -W -ms -v -I$(INCDIR) $(GLO_)gs16spl.obj -c $(GLSRC)gs16spl.c
-	$(COMPDIR)\brcc -i$(INCDIR) -r -fo$(GLOBJ)gs16spl.res $(GLSRC)gs16spl.rc
+GSSPL_XE=$(BINDIR)\gs16spl.exe
+
+$(GSSPL_XE): $(GLSRCDIR)\gs16spl.c $(GLSRCDIR)\gs16spl.rc
+	$(ECHOGS_XE) -w $(GLGEN)_spl.rc -x 23 define -s gstext_ico $(GLGENDIR)/gstext.ico
+	$(ECHOGS_XE) -a $(GLGEN)_spl.rc -x 23 define -s gsgraph_ico $(GLGENDIR)/gsgraph.ico
+	$(ECHOGS_XE) -a $(GLGEN)_spl.rc -R $(GLSRC)gs16spl.rc
+	$(CCAUX) -W -ms -v -I$(INCDIR) $(GLO_)gs16spl.obj -c $(GLSRCDIR)\gs16spl.c
+	$(COMPDIR)\brcc -i$(INCDIR) -r -fo$(GLOBJ)gs16spl.res $(GLGEN)_spl.rc
 	$(COMPDIR)\tlink /Twe /c /m /s /l @&&!
 $(LIBDIR)\c0ws +
-$(GLOBJ)gs16spl.obj +
-,$(GLOBJ)gs16spl.exe,$(GLOBJ)gs16spl, +
+$(GLOBJ)gs16spl.obj, +
+$(GSSPL_XE),$(GLOBJ)gs16spl, +
 $(LIBDIR)\import +
 $(LIBDIR)\mathws +
 $(LIBDIR)\cws, +
-$(GLSRC)gs16spl.def
+$(GLSRCDIR)\gs16spl.def
 !
-	$(COMPDIR)\rlink -t $(GLOBJ)gs16spl.res $(GLOBJ)gs16spl.exe
+	$(COMPDIR)\rlink -t $(GLOBJ)gs16spl.res $(GSSPL_XE)
 
 # end of makefile

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -19,6 +19,7 @@
 
 /* Matrix operators for Ghostscript library */
 #include "math_.h"
+#include "memory_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gxfarith.h"
@@ -375,7 +376,7 @@ gs_point_transform2fixed(const gs_matrix_fixed * pmat,
 			 floatp x, floatp y, gs_fixed_point * ppt)
 {
     fixed px, py, t;
-    double dtemp;
+    double xtemp, ytemp;
     int code;
 
     if (!pmat->txy_fixed_valid) {	/* The translation is out of range.  Do the */
@@ -391,28 +392,35 @@ gs_point_transform2fixed(const gs_matrix_fixed * pmat,
 	return 0;
     }
     if (!is_fzero(pmat->xy)) {	/* Hope for 90 degree rotation */
-	if ((code = set_dfmul2fixed_vars(px, y, pmat->yx, dtemp)) < 0 ||
-	    (code = set_dfmul2fixed_vars(py, x, pmat->xy, dtemp)) < 0
+	if ((code = CHECK_DFMUL2FIXED_VARS(px, y, pmat->yx, xtemp)) < 0 ||
+	    (code = CHECK_DFMUL2FIXED_VARS(py, x, pmat->xy, ytemp)) < 0
 	    )
 	    return code;
+	FINISH_DFMUL2FIXED_VARS(px, xtemp);
+	FINISH_DFMUL2FIXED_VARS(py, ytemp);
 	if (!is_fzero(pmat->xx)) {
-	    if ((code = set_dfmul2fixed_vars(t, x, pmat->xx, dtemp)) < 0)
+	    if ((code = CHECK_DFMUL2FIXED_VARS(t, x, pmat->xx, xtemp)) < 0)
 		return code;
+	    FINISH_DFMUL2FIXED_VARS(t, xtemp);
 	    px += t;		/* should check for overflow */
 	}
 	if (!is_fzero(pmat->yy)) {
-	    if ((code = set_dfmul2fixed_vars(t, y, pmat->yy, dtemp)) < 0)
+	    if ((code = CHECK_DFMUL2FIXED_VARS(t, y, pmat->yy, ytemp)) < 0)
 		return code;
+	    FINISH_DFMUL2FIXED_VARS(t, ytemp);
 	    py += t;		/* should check for overflow */
 	}
     } else {
-	if ((code = set_dfmul2fixed_vars(px, x, pmat->xx, dtemp)) < 0 ||
-	    (code = set_dfmul2fixed_vars(py, y, pmat->yy, dtemp)) < 0
+	if ((code = CHECK_DFMUL2FIXED_VARS(px, x, pmat->xx, xtemp)) < 0 ||
+	    (code = CHECK_DFMUL2FIXED_VARS(py, y, pmat->yy, ytemp)) < 0
 	    )
 	    return code;
+	FINISH_DFMUL2FIXED_VARS(px, xtemp);
+	FINISH_DFMUL2FIXED_VARS(py, ytemp);
 	if (!is_fzero(pmat->yx)) {
-	    if ((code = set_dfmul2fixed_vars(t, y, pmat->yx, dtemp)) < 0)
+	    if ((code = CHECK_DFMUL2FIXED_VARS(t, y, pmat->yx, ytemp)) < 0)
 		return code;
+	    FINISH_DFMUL2FIXED_VARS(t, ytemp);
 	    px += t;		/* should check for overflow */
 	}
     }
@@ -427,21 +435,25 @@ gs_distance_transform2fixed(const gs_matrix_fixed * pmat,
 			    floatp dx, floatp dy, gs_fixed_point * ppt)
 {
     fixed px, py, t;
-    double dtemp;
+    double xtemp, ytemp;
     int code;
 
-    if ((code = set_dfmul2fixed_vars(px, dx, pmat->xx, dtemp)) < 0 ||
-	(code = set_dfmul2fixed_vars(py, dy, pmat->yy, dtemp)) < 0
+    if ((code = CHECK_DFMUL2FIXED_VARS(px, dx, pmat->xx, xtemp)) < 0 ||
+	(code = CHECK_DFMUL2FIXED_VARS(py, dy, pmat->yy, ytemp)) < 0
 	)
 	return code;
+    FINISH_DFMUL2FIXED_VARS(px, xtemp);
+    FINISH_DFMUL2FIXED_VARS(py, ytemp);
     if (!is_fzero(pmat->yx)) {
-	if ((code = set_dfmul2fixed_vars(t, dy, pmat->yx, dtemp)) < 0)
+	if ((code = CHECK_DFMUL2FIXED_VARS(t, dy, pmat->yx, ytemp)) < 0)
 	    return code;
+	FINISH_DFMUL2FIXED_VARS(t, ytemp);
 	px += t;		/* should check for overflow */
     }
     if (!is_fzero(pmat->xy)) {
-	if ((code = set_dfmul2fixed_vars(t, dx, pmat->xy, dtemp)) < 0)
+	if ((code = CHECK_DFMUL2FIXED_VARS(t, dx, pmat->xy, xtemp)) < 0)
 	    return code;
+	FINISH_DFMUL2FIXED_VARS(t, xtemp);
 	py += t;		/* should check for overflow */
     }
     ppt->x = px;

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -35,7 +35,6 @@
 #ifndef gx_path_DEFINED
 #  define gx_path_DEFINED
 typedef struct gx_path_s gx_path;
-
 #endif
 
 /* Define the two insideness rules */
@@ -54,7 +53,6 @@ typedef enum {
 #ifdef DEBUG
 void gx_dump_path(P2(const gx_path *, const char *));
 void gx_path_print(P1(const gx_path *));
-
 #endif
 
 /* Path memory management */
@@ -148,10 +146,12 @@ int gx_path_new(P1(gx_path *)),
 	  /* to keep it unique in the first 23 characters. */
     gx_path_pop_close_notes(P2(gx_path *, segment_notes));
 
-/* The last argument to gx_path_add_partial_arc is a fraction for computing */
-/* the curve parameters.  Here is the correct value for quarter-circles. */
-/* (stroke uses this to draw round caps and joins.) */
-#define quarter_arc_fraction 0.552285
+/*
+ * The last argument to gx_path_add_partial_arc is a fraction for computing
+ * the curve parameters.  Here is the correct value for quarter-circles.
+ * (stroke uses this to draw round caps and joins.)
+ */
+#define quarter_arc_fraction 0.55228474983079334
 /*
  * Backward-compatible constructors that don't take a notes argument.
  */
@@ -200,26 +200,39 @@ gx_path_is_rectangular(P2(const gx_path *, gs_fixed_rect *));
 typedef enum {
     pco_none = 0,
     pco_monotonize = 1,		/* make curves monotonic */
-    pco_accurate = 2		/* flatten with accurate tangents at ends */
+    pco_accurate = 2,		/* flatten with accurate tangents at ends */
+    pco_for_stroke = 4		/* flatten taking line width into account */
 } gx_path_copy_options;
-int gx_path_copy_reducing(P4(const gx_path * ppath_old, gx_path * ppath_new,
-			     fixed fixed_flatness,
+/* The imager state is only needed when flattening for stroke. */
+#ifndef gs_imager_state_DEFINED
+#  define gs_imager_state_DEFINED
+typedef struct gs_imager_state_s gs_imager_state;
+#endif
+int gx_path_copy_reducing(P5(const gx_path * ppath_old, gx_path * ppath_new,
+			     fixed fixed_flatness, const gs_imager_state *pis,
 			     gx_path_copy_options options));
 
 #define gx_path_copy(old, new)\
-  gx_path_copy_reducing(old, new, max_fixed, pco_none)
+  gx_path_copy_reducing(old, new, max_fixed, NULL, pco_none)
 #define gx_path_add_flattened(old, new, flatness)\
-  gx_path_copy_reducing(old, new, float2fixed(flatness), pco_none)
+  gx_path_copy_reducing(old, new, float2fixed(flatness), NULL, pco_none)
 #define gx_path_add_flattened_accurate(old, new, flatness, accurate)\
-  gx_path_copy_reducing(old, new, float2fixed(flatness),\
+  gx_path_copy_reducing(old, new, float2fixed(flatness), NULL,\
 			(accurate ? pco_accurate : pco_none))
+#define gx_path_add_flattened_for_stroke(old, new, flatness, pis)\
+  gx_path_copy_reducing(old, new, float2fixed(flatness), pis,\
+			(pis->accurate_curves ?\
+			 pco_accurate | pco_for_stroke : pco_for_stroke))
 #define gx_path_add_monotonized(old, new)\
-  gx_path_copy_reducing(old, new, max_fixed, pco_monotonize)
-int gx_path_add_dash_expansion(P3(const gx_path * /*old */ , gx_path * /*new */ , const gs_imager_state *)),
-      gx_path_copy_reversed(P2(const gx_path * /*old */ , gx_path * /*new */ )),
+  gx_path_copy_reducing(old, new, max_fixed, NULL, pco_monotonize)
+int gx_path_add_dash_expansion(P3(const gx_path * /*old*/, gx_path * /*new*/,
+				  const gs_imager_state *)),
+      gx_path_copy_reversed(P2(const gx_path * /*old*/, gx_path * /*new*/)),
       gx_path_translate(P3(gx_path *, fixed, fixed)),
-      gx_path_scale_exp2(P3(gx_path *, int, int));
-void gx_point_scale_exp2(P3(gs_fixed_point *, int, int)), gx_rect_scale_exp2(P3(gs_fixed_rect *, int, int));
+      gx_path_scale_exp2_shared(P4(gx_path *ppath, int log2_scale_x,
+				   int log2_scale_y, bool segments_shared));
+void gx_point_scale_exp2(P3(gs_fixed_point *, int, int)),
+      gx_rect_scale_exp2(P3(gs_fixed_rect *, int, int));
 
 /* Path enumerator */
 
@@ -238,7 +251,6 @@ bool gx_path_enum_backup(P1(gs_path_enum *));
 #ifndef gx_clip_path_DEFINED
 #  define gx_clip_path_DEFINED
 typedef struct gx_clip_path_s gx_clip_path;
-
 #endif
 
 /* Graphics state clipping */
@@ -251,7 +263,6 @@ int gx_effective_clip_path(P2(gs_state *, gx_clip_path **));
 #ifndef gx_clip_list_DEFINED
 #  define gx_clip_list_DEFINED
 typedef struct gx_clip_list_s gx_clip_list;
-
 #endif
 
 /* Opaque type for a clipping path enumerator. */
@@ -290,16 +301,18 @@ int gx_cpath_assign_free(P2(gx_clip_path * pcpto, gx_clip_path * pcpfrom));
 int
     gx_cpath_reset(P1(gx_clip_path *)),		/* from_rectangle ((0,0),(0,0)) */
     gx_cpath_from_rectangle(P2(gx_clip_path *, gs_fixed_rect *)),
-    gx_cpath_clip(P4(gs_state *, gx_clip_path *, gx_path *, int)),
-    gx_cpath_scale_exp2(P3(gx_clip_path *, int, int)),
+    gx_cpath_clip(P4(gs_state *, gx_clip_path *, /*const*/ gx_path *, int)),
+    gx_cpath_intersect(P4(gx_clip_path *, /*const*/ gx_path *, int,
+			  gs_imager_state *)),
+    gx_cpath_scale_exp2_shared(P5(gx_clip_path *pcpath, int log2_scale_x,
+				  int log2_scale_y, bool list_shared,
+				  bool segments_shared)),
     gx_cpath_to_path(P2(gx_clip_path *, gx_path *));
 bool
     gx_cpath_inner_box(P2(const gx_clip_path *, gs_fixed_rect *)),
     gx_cpath_outer_box(P2(const gx_clip_path *, gs_fixed_rect *)),
     gx_cpath_includes_rectangle(P5(const gx_clip_path *, fixed, fixed,
 				   fixed, fixed));
-int gx_cpath_set_outside(P2(gx_clip_path *, bool));
-bool gx_cpath_is_outside(P1(const gx_clip_path *));
 
 /* Enumerate a clipping path.  This interface does not copy the path. */
 /* However, it does write into the path's "visited" flags. */

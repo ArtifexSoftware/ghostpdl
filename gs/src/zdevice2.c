@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -33,29 +33,31 @@
 #include "gsstate.h"
 
 /* Forward references */
-private int z2copy_gstate(P1(os_ptr));
-private int push_callout(P1(const char *));
+private int z2copy_gstate(P1(i_ctx_t *));
+private int push_callout(P2(i_ctx_t *, const char *));
 
 /* Extend the `copy' operator to deal with gstates. */
 /* This is done with a hack -- we know that gstates are the only */
 /* t_astruct subtype that implements copy. */
 private int
-z2copy(register os_ptr op)
+z2copy(i_ctx_t *i_ctx_p)
 {
-    int code = zcopy(op);
+    os_ptr op = osp;
+    int code = zcopy(i_ctx_p);
 
     if (code >= 0)
 	return code;
     if (!r_has_type(op, t_astruct))
 	return code;
-    return z2copy_gstate(op);
+    return z2copy_gstate(i_ctx_p);
 }
 
 /* - .currentshowpagecount <count> true */
 /* - .currentshowpagecount false */
 private int
-zcurrentshowpagecount(register os_ptr op)
+zcurrentshowpagecount(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gx_device *dev = gs_currentdevice(igs);
 
     if ((*dev_proc(dev, get_page_device))(dev) == 0) {
@@ -71,8 +73,9 @@ zcurrentshowpagecount(register os_ptr op)
 
 /* - .currentpagedevice <dict> <bool> */
 private int
-zcurrentpagedevice(register os_ptr op)
+zcurrentpagedevice(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gx_device *dev = gs_currentdevice(igs);
 
     push(2);
@@ -88,8 +91,9 @@ zcurrentpagedevice(register os_ptr op)
 
 /* <local_dict|null> .setpagedevice - */
 private int
-zsetpagedevice(register os_ptr op)
+zsetpagedevice(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code;
 
 /******
@@ -107,7 +111,7 @@ zsetpagedevice(register os_ptr op)
 	    return_error(e_invalidaccess);
 #endif	/****************/
 	/* Make the dictionary read-only. */
-	code = zreadonly(op);
+	code = zreadonly(i_ctx_p);
 	if (code < 0)
 	    return code;
     } else {
@@ -123,7 +127,7 @@ zsetpagedevice(register os_ptr op)
 
 /* - .callinstall - */
 private int
-zcallinstall(os_ptr op)
+zcallinstall(i_ctx_t *i_ctx_p)
 {
     gx_device *dev = gs_currentdevice(igs);
 
@@ -138,8 +142,9 @@ zcallinstall(os_ptr op)
 
 /* <showpage_count> .callbeginpage - */
 private int
-zcallbeginpage(os_ptr op)
+zcallbeginpage(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gx_device *dev = gs_currentdevice(igs);
 
     check_type(*op, t_integer);
@@ -155,8 +160,9 @@ zcallbeginpage(os_ptr op)
 
 /* <showpage_count> <reason_int> .callendpage <flush_bool> */
 private int
-zcallendpage(os_ptr op)
+zcallendpage(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gx_device *dev = gs_currentdevice(igs);
     int code;
 
@@ -195,47 +201,47 @@ save_page_device(gs_state *pgs)
 
 /* - gsave - */
 private int
-z2gsave(os_ptr op)
+z2gsave(i_ctx_t *i_ctx_p)
 {
     if (!save_page_device(igs))
 	return gs_gsave(igs);
-    return push_callout("%gsavepagedevice");
+    return push_callout(i_ctx_p, "%gsavepagedevice");
 }
 
 /* - save - */
 private int
-z2save(os_ptr op)
+z2save(i_ctx_t *i_ctx_p)
 {
     if (!save_page_device(igs))
-	return zsave(op);
-    return push_callout("%savepagedevice");
+	return zsave(i_ctx_p);
+    return push_callout(i_ctx_p, "%savepagedevice");
 }
 
 /* - gstate <gstate> */
 private int
-z2gstate(os_ptr op)
+z2gstate(i_ctx_t *i_ctx_p)
 {
     if (!save_page_device(igs))
-	return zgstate(op);
-    return push_callout("%gstatepagedevice");
+	return zgstate(i_ctx_p);
+    return push_callout(i_ctx_p, "%gstatepagedevice");
 }
 
 /* <gstate1> <gstate2> copy <gstate2> */
 private int
-z2copy_gstate(os_ptr op)
+z2copy_gstate(i_ctx_t *i_ctx_p)
 {
     if (!save_page_device(igs))
-	return zcopy_gstate(op);
-    return push_callout("%copygstatepagedevice");
+	return zcopy_gstate(i_ctx_p);
+    return push_callout(i_ctx_p, "%copygstatepagedevice");
 }
 
 /* <gstate> currentgstate <gstate> */
 private int
-z2currentgstate(os_ptr op)
+z2currentgstate(i_ctx_t *i_ctx_p)
 {
     if (!save_page_device(igs))
-	return zcurrentgstate(op);
-    return push_callout("%currentgstatepagedevice");
+	return zcurrentgstate(i_ctx_p);
+    return push_callout(i_ctx_p, "%currentgstatepagedevice");
 }
 
 /* ------ Wrappers for operators that reset the graphics state. ------ */
@@ -273,16 +279,16 @@ restore_page_device(const gs_state * pgs_old, const gs_state * pgs_new)
 
 /* - grestore - */
 private int
-z2grestore(os_ptr op)
+z2grestore(i_ctx_t *i_ctx_p)
 {
     if (!restore_page_device(igs, gs_state_saved(igs)))
 	return gs_grestore(igs);
-    return push_callout("%grestorepagedevice");
+    return push_callout(i_ctx_p, "%grestorepagedevice");
 }
 
 /* - grestoreall - */
 private int
-z2grestoreall(os_ptr op)
+z2grestoreall(i_ctx_t *i_ctx_p)
 {
     for (;;) {
 	if (!restore_page_device(igs, gs_state_saved(igs))) {
@@ -292,34 +298,36 @@ z2grestoreall(os_ptr op)
 	    if (done)
 		break;
 	} else
-	    return push_callout("%grestoreallpagedevice");
+	    return push_callout(i_ctx_p, "%grestoreallpagedevice");
     }
     return 0;
 }
 
 /* <save> restore - */
 private int
-z2restore(os_ptr op)
+z2restore(i_ctx_t *i_ctx_p)
 {
     for (;;) {
 	if (!restore_page_device(igs, gs_state_saved(igs))) {
-	    zgrestore(op);
 	    if (!gs_state_saved(gs_state_saved(igs)))
 		break;
+	    gs_grestore(igs);
 	} else
-	    return push_callout("%restorepagedevice");
+	    return push_callout(i_ctx_p, "%restorepagedevice");
     }
-    return zrestore(op);
+    return zrestore(i_ctx_p);
 }
 
 /* <gstate> setgstate - */
 private int
-z2setgstate(os_ptr op)
+z2setgstate(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     check_stype(*op, st_igstate_obj);
     if (!restore_page_device(igs, igstate_ptr(op)))
-	return zsetgstate(op);
-    return push_callout("%setgstatepagedevice");
+	return zsetgstate(i_ctx_p);
+    return push_callout(i_ctx_p, "%setgstatepagedevice");
 }
 
 /* ------ Initialization procedure ------ */
@@ -353,7 +361,7 @@ const op_def zdevice2_l2_op_defs[] =
 
 /* Call out to a PostScript procedure. */
 private int
-push_callout(const char *callout_name)
+push_callout(i_ctx_t *i_ctx_p, const char *callout_name)
 {
     int code;
 

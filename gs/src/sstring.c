@@ -53,7 +53,7 @@ s_AXE_process(stream_state * st, stream_cursor_read * pr,
     const char *hex_digits = "0123456789abcdef";
     int status = 0;
 
-    if (last)
+    if (last && ss->EndOfData)
 	wcount--;		/* leave room for '>' */
     wcount -= (wcount + 64) / 65;	/* leave room for \n */
     wcount >>= 1;		/* 2 chars per input byte */
@@ -64,7 +64,7 @@ s_AXE_process(stream_state * st, stream_cursor_read * pr,
 	if (!(++pos & 31) && (count != 0 || !last))
 	    *++q = '\n';
     }
-    if (last && status == 0)
+    if (last && status == 0 && ss->EndOfData)
 	*++q = '>';
     pr->ptr = p;
     pw->ptr = q;

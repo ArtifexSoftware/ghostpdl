@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -22,6 +22,7 @@
 #include "math_.h"
 #include "memory_.h"
 #include "gpcheck.h"
+#include "gscdefs.h"		/* for image class table */
 #include "gserrors.h"
 #include "gsstruct.h"
 #include "gsutil.h"
@@ -43,8 +44,8 @@
 /* Structure descriptors */
 private_st_gx_image_enum();
 
-/* Strategy procedures */
-gx_image_strategies_t image_strategies;
+/* Image class procedures */
+extern_gx_image_class_table();
 
 /* Enumerator procedures */
 private const gx_image_enum_procs_t image1_enum_procs = {
@@ -114,12 +115,7 @@ private void image_init_colors(P9(gx_image_enum * penum, int bps, int spp,
 				  const gs_color_space * pcs, bool * pdcb));
 
 /* Procedures for unpacking the input data into bytes or fracs. */
-/*extern sample_unpack_proc(sample_unpack_copy); *//* declared above */
-extern sample_unpack_proc(sample_unpack_1);
-extern sample_unpack_proc(sample_unpack_2);
-extern sample_unpack_proc(sample_unpack_4);
-extern sample_unpack_proc(sample_unpack_8);
-sample_unpack_proc((*sample_unpack_12_proc));	/* optional */
+/*extern SAMPLE_UNPACK_PROC(sample_unpack_copy); *//* declared above */
 
 /*
  * Do common initialization for processing an ImageType 1 or 4 image.
@@ -229,38 +225,35 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 	      mat.xx, mat.xy, mat.yx, mat.yy, mat.tx, mat.ty);
     /* following works for 1, 2, 4, 8, 12 */
     index_bps = (bps < 8 ? bps >> 1 : (bps >> 2) + 1);
-    if ((code =
-	 gs_distance_transform2fixed((const gs_matrix_fixed *)&penum->matrix,
-				     (floatp) width, (floatp) 0,
-				     &row_extent)) < 0 ||
-	(code =
-	 gs_distance_transform2fixed((const gs_matrix_fixed *)&penum->matrix,
-				     (floatp) 0, (floatp) height,
-				     &col_extent)) < 0
-	) {
-	gs_free_object(mem, penum, "gx_default_begin_image");
-	return code;
-    }
-    gx_image_enum_common_init((gx_image_enum_common_t *) penum, pic,
-			      &image1_enum_procs, dev, bps,
+    mtx = float2fixed(mat.tx);
+    mty = float2fixed(mat.ty);
+    row_extent.x = float2fixed(width * mat.xx + mat.tx) - mtx;
+    row_extent.y =
+	(is_fzero(mat.xy) ? fixed_0 :
+	 float2fixed(width * mat.xy + mat.ty) - mty);
+    col_extent.x =
+	(is_fzero(mat.yx) ? fixed_0 :
+	 float2fixed(height * mat.yx + mat.tx) - mtx);
+    col_extent.y = float2fixed(height * mat.yy + mat.ty) - mty;
+    gx_image_enum_common_init((gx_image_enum_common_t *)penum,
+			      (const gs_data_image_t *)pim,
+			      &image1_enum_procs, dev,
 			      (masked ? 1 : cs_num_components(pcs)),
 			      format);
     if (penum->rect.w == width && penum->rect.h == height) {
 	x_extent = row_extent;
 	y_extent = col_extent;
     } else {
-	if ((code =
-	     gs_distance_transform2fixed((const gs_matrix_fixed *)&penum->matrix,
-					 (floatp) penum->rect.w, (floatp) 0,
-					 &x_extent)) < 0 ||
-	    (code =
-	     gs_distance_transform2fixed((const gs_matrix_fixed *)&penum->matrix,
-					 (floatp) 0, (floatp) penum->rect.h,
-					 &y_extent)) < 0
-	    ) {
-	    gs_free_object(mem, penum, "gx_default_begin_image");
-	    return code;
-	}
+	int rw = penum->rect.w, rh = penum->rect.h;
+
+	x_extent.x = float2fixed(rw * mat.xx + mat.tx) - mtx;
+	x_extent.y =
+	    (is_fzero(mat.xy) ? fixed_0 :
+	     float2fixed(rw * mat.xy + mat.ty) - mty);
+	y_extent.x =
+	    (is_fzero(mat.yx) ? fixed_0 :
+	     float2fixed(rh * mat.yx + mat.tx) - mtx);
+	y_extent.y = float2fixed(rh * mat.yy + mat.ty) - mty;
     }
     if (masked) {	/* This is imagemask. */
 	if (bps != 1 || pcs != NULL || penum->alpha ||
@@ -400,7 +393,9 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 	nplanes = spp * bps;
 	spread = spp << log2_xbytes;
 	break;
-    /* No other cases are possible (checked by gx_image_enum_alloc). */
+    default:
+	/* No other cases are possible (checked by gx_image_enum_alloc). */
+	return_error(gs_error_Fatal);
     }
     penum->num_planes = nplanes;
     penum->spread = spread;
@@ -417,8 +412,6 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 	((x_extent.y | y_extent.x) == 0 ? image_portrait :
 	 (x_extent.x | y_extent.y) == 0 ? image_landscape :
 	 image_skewed);
-    mtx = float2fixed(penum->matrix.tx);
-    mty = float2fixed(penum->matrix.ty);
     penum->pis = pis;
     penum->pcs = pcs;
     penum->memory = mem;
@@ -521,16 +514,14 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 	}
 	penum->cur.x = penum->prev.x = dda_current(penum->dda.row.x);
 	penum->cur.y = penum->prev.y = dda_current(penum->dda.row.y);
-	dda_init(penum->dda.pixel0.x, penum->cur.x, row_extent.x,
-		 width);
-	dda_init(penum->dda.pixel0.y, penum->cur.y, row_extent.y,
-		 width);
+	dda_init(penum->dda.strip.x, penum->cur.x, row_extent.x, width);
+	dda_init(penum->dda.strip.y, penum->cur.y, row_extent.y, width);
 	if (penum->rect.x) {
-	    dda_advance(penum->dda.pixel0.x, penum->rect.x);
-	    dda_advance(penum->dda.pixel0.y, penum->rect.x);
+	    dda_advance(penum->dda.strip.x, penum->rect.x);
+	    dda_advance(penum->dda.strip.y, penum->rect.x);
 	} {
-	    fixed ox = dda_current(penum->dda.pixel0.x);
-	    fixed oy = dda_current(penum->dda.pixel0.y);
+	    fixed ox = dda_current(penum->dda.strip.x);
+	    fixed oy = dda_current(penum->dda.strip.y);
 
 	    if (!penum->clip_image)	/* i.e., not clip region */
 		penum->clip_image =
@@ -545,12 +536,14 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 	}
     }
     penum->y = 0;
+    penum->used.x = 0;
+    penum->used.y = 0;
     {
-	static const sample_unpack_proc_t procs[4] =
-	{
+	static const sample_unpack_proc_t procs[4] = {
 	    sample_unpack_1, sample_unpack_2,
 	    sample_unpack_4, sample_unpack_8
 	};
+	int i;
 
 	if (index_bps == 4) {
 	    if ((penum->unpack = sample_unpack_12_proc) == 0) {		/* 12-bit samples are not supported. */
@@ -563,19 +556,13 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 	    penum->unpack = procs[index_bps];
 	    if_debug1('b', "[b]unpack=%d\n", bps);
 	}
-#define use_strategy(sp)\
-  (image_strategies.sp != 0 &&\
-   (penum->render = (*image_strategies.sp)(penum)) != 0)
-	if (
-	       use_strategy(interpolate) ||
-	       use_strategy(simple) ||
-	       use_strategy(fracs) ||
-	       use_strategy(mono) ||
-	       use_strategy(color)
-	    )
-	    DO_NOTHING;
-#undef use_strategy
-	else {			/* No available strategy can handle this image. */
+	/* Set up pixel0 for image class procedures. */
+	penum->dda.pixel0 = penum->dda.strip;
+	for (i = 0; i < gx_image_class_table_count; ++i)
+	    if ((penum->render = gx_image_class_table[i](penum)) != 0)
+		break;
+	if (i == gx_image_class_table_count) {
+	    /* No available class can handle this image. */
 	    gx_default_end_image(dev, (gx_image_enum_common_t *) penum,
 				 false);
 	    return_error(gs_error_rangecheck);
@@ -593,7 +580,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 	    return_error(gs_error_VMerror);
 	}
 	gx_make_clip_device(cdev, cdev, gx_cpath_list(pcpath));
-	cdev->target = dev;
+	gx_device_set_target((gx_device_forward *)cdev, dev);
 	(*dev_proc(cdev, open_device)) ((gx_device *) cdev);
 	penum->clip_dev = cdev;
     }
@@ -751,9 +738,10 @@ image_init_colors(gx_image_enum * penum, int bps, int spp,
 	    (real_decode[1] - real_decode[0]) /
 	    (bps <= 8 ? 255.0 : (float)frac_1);
 	pmap->decode_max /* = decode_lookup[15] */  = real_decode[1];
-	if (no_decode)
+	if (no_decode) {
 	    pmap->decoding = sd_none;
-	else if (bps <= 4) {
+	    pmap->inverted = map_decode[0] != 0;
+	} else if (bps <= 4) {
 	    int step = 15 / ((1 << bps) - 1);
 	    int i;
 
@@ -800,5 +788,26 @@ image_init_map(byte * map, int map_size, const float *decode)
 
 	    map[i] = (value < 0 ? 0 : value > 255 ? 255 : value);
 	}
+    }
+}
+
+/*
+ * Scale a pair of mask_color values to match the scaling of each sample to
+ * a full byte, and complement and swap them if the map incorporates
+ * a Decode = [1 0] inversion.
+ */
+void
+gx_image_scale_mask_colors(gx_image_enum *penum, int component_index)
+{
+    uint scale = 255 / ((1 << penum->bps) - 1);
+    uint *values = &penum->mask_color.values[component_index * 2];
+    uint v0 = values[0] *= scale;
+    uint v1 = values[1] *= scale;
+
+    if (penum->map[component_index].decoding == sd_none &&
+	penum->map[component_index].inverted
+	) {
+	values[0] = 255 - v1;
+	values[1] = 255 - v0;
     }
 }

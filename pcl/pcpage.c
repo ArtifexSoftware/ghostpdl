@@ -426,7 +426,7 @@ pcl_end_page(
 	    pcs->overlay_enabled = true; /**** IN copy_after ****/
 	}
     }
-    gs_reclaim(&(pmi->spaces), true);
+    gs_nogc_reclaim(&(pmi->spaces), true);
     /* output the page */
     pl_finish_page(pmi, pcs->pgs, pcs->num_copies, /* flush = */ true);
     pcl_set_drawing_color(pcs, pcl_pattern_solid_white, 0, false);

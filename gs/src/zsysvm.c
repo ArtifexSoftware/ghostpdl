@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -34,105 +34,107 @@
 
 /* Execute an operator with a specific VM selected as current VM. */
 private int
-specific_vm_op(os_ptr op, int (*opproc)(P1(os_ptr)), uint space)
+specific_vm_op(i_ctx_t *i_ctx_p, op_proc_t opproc, uint space)
 {
     uint save_space = icurrent_space;
     int code;
 
     ialloc_set_space(idmemory, space);
-    code = (*opproc)(op);
+    code = opproc(i_ctx_p);
     ialloc_set_space(idmemory, save_space);
     return code;
 }
 
 /* <int> .globalvmarray <array> */
 private int
-zglobalvmarray(os_ptr op)
+zglobalvmarray(i_ctx_t *i_ctx_p)
 {
-    return specific_vm_op(op, zarray, avm_global);
+    return specific_vm_op(i_ctx_p, zarray, avm_global);
 }
 
 /* <int> .globalvmdict <dict> */
 private int
-zglobalvmdict(os_ptr op)
+zglobalvmdict(i_ctx_t *i_ctx_p)
 {
-    return specific_vm_op(op, zdict, avm_global);
+    return specific_vm_op(i_ctx_p, zdict, avm_global);
 }
 
 /* <obj_0> ... <obj_n-1> <n> .globalvmpackedarray <packedarray> */
 private int
-zglobalvmpackedarray(os_ptr op)
+zglobalvmpackedarray(i_ctx_t *i_ctx_p)
 {
-    return specific_vm_op(op, zpackedarray, avm_global);
+    return specific_vm_op(i_ctx_p, zpackedarray, avm_global);
 }
 
 /* <int> .globalvmstring <string> */
 private int
-zglobalvmstring(os_ptr op)
+zglobalvmstring(i_ctx_t *i_ctx_p)
 {
-    return specific_vm_op(op, zstring, avm_global);
+    return specific_vm_op(i_ctx_p, zstring, avm_global);
 }
 
 /* <int> .localvmarray <array> */
 private int
-zlocalvmarray(os_ptr op)
+zlocalvmarray(i_ctx_t *i_ctx_p)
 {
-    return specific_vm_op(op, zarray, avm_local);
+    return specific_vm_op(i_ctx_p, zarray, avm_local);
 }
 
 /* <int> .localvmdict <dict> */
 private int
-zlocalvmdict(os_ptr op)
+zlocalvmdict(i_ctx_t *i_ctx_p)
 {
-    return specific_vm_op(op, zdict, avm_local);
+    return specific_vm_op(i_ctx_p, zdict, avm_local);
 }
 
 /* <obj_0> ... <obj_n-1> <n> .localvmpackedarray <packedarray> */
 private int
-zlocalvmpackedarray(os_ptr op)
+zlocalvmpackedarray(i_ctx_t *i_ctx_p)
 {
-    return specific_vm_op(op, zpackedarray, avm_local);
+    return specific_vm_op(i_ctx_p, zpackedarray, avm_local);
 }
 
 /* <int> .localvmstring <string> */
 private int
-zlocalvmstring(os_ptr op)
+zlocalvmstring(i_ctx_t *i_ctx_p)
 {
-    return specific_vm_op(op, zstring, avm_local);
+    return specific_vm_op(i_ctx_p, zstring, avm_local);
 }
 
 /* <int> .systemvmarray <array> */
 private int
-zsystemvmarray(os_ptr op)
+zsystemvmarray(i_ctx_t *i_ctx_p)
 {
-    return specific_vm_op(op, zarray, avm_system);
+    return specific_vm_op(i_ctx_p, zarray, avm_system);
 }
 
 /* <int> .systemvmdict <dict> */
 private int
-zsystemvmdict(os_ptr op)
+zsystemvmdict(i_ctx_t *i_ctx_p)
 {
-    return specific_vm_op(op, zdict, avm_system);
+    return specific_vm_op(i_ctx_p, zdict, avm_system);
 }
 
 /* <obj_0> ... <obj_n-1> <n> .systemvmpackedarray <packedarray> */
 private int
-zsystemvmpackedarray(os_ptr op)
+zsystemvmpackedarray(i_ctx_t *i_ctx_p)
 {
-    return specific_vm_op(op, zpackedarray, avm_system);
+    return specific_vm_op(i_ctx_p, zpackedarray, avm_system);
 }
 
 /* <int> .systemvmstring <string> */
 private int
-zsystemvmstring(os_ptr op)
+zsystemvmstring(i_ctx_t *i_ctx_p)
 {
-    return specific_vm_op(op, zstring, avm_system);
+    return specific_vm_op(i_ctx_p, zstring, avm_system);
 }
 
 /* <any> .systemvmcheck <bool> */
 private int
-zsystemvmcheck(register os_ptr op)
+zsystemvmcheck(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     make_bool(op, (r_space(op) == avm_system ? true : false));
     return 0;
 }

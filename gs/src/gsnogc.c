@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -19,8 +19,8 @@
 
 /* String freelist implementation and ersatz garbage collector */
 #include "gx.h"
-#include "gsgc.h"
 #include "gsmdebug.h"
+#include "gsnogc.h"
 #include "gsstruct.h"
 #include "gxalloc.h"
 
@@ -29,8 +29,26 @@
  * in non-garbage-collected environments.
  */
 
-#define GET2(ptr) (((ptr)[0] << 8) + (ptr)[1])
-#define PUT2(ptr, val) ((ptr)[0] = (val) >> 8, (ptr)[1] = (byte)(val))
+/*
+ * Get and put unaligned 32-bit values.  NOTE: these procedures must match
+ * the value of SFREE_NB defined in gxalloc.h.
+ */
+#define NB SFREE_NB
+#if NB == 4
+private uint
+get_uu32(const byte *ptr)
+{
+    return (ptr[0] << 24) + (ptr[1] << 16) + (ptr[2] << 8) + ptr[3];
+}
+private void
+put_uu32(byte *ptr, uint val)
+{
+    ptr[0] = val >> 24;
+    ptr[1] = (byte)(val >> 16);
+    ptr[2] = (byte)(val >> 8);
+    ptr[3] = (byte)val;
+}
+#endif /* otherwise, undefined procedures will give an error */
 
 /* Allocate a string. */
 /* Scan the current chunk's free list if the request is large enough. */
@@ -49,14 +67,14 @@ sf_alloc_string(gs_memory_t * mem, uint nbytes, client_name_t cname)
 
 	for (; offset != 0; prev = ptr, offset = next) {
 	    ptr = base + offset;
-	    next = GET2(ptr + 2);
-	    if (GET2(ptr) != nbytes)
+	    next = get_uu32(ptr + NB);
+	    if (get_uu32(ptr) != nbytes)
 		continue;
 	    /* Take this block. */
 	    if (prev == 0)
 		imem->cc.sfree = next;
 	    else
-		PUT2(prev + 2, next);
+		put_uu32(prev + NB, next);
 	    if_debug4('A', "[a%d:+>F]%s(%u) = 0x%lx\n", imem->space,
 		      client_name_string(cname), nbytes, (ulong) ptr);
 	    gs_alloc_fill(ptr, gs_alloc_fill_alloc, nbytes);
@@ -102,14 +120,14 @@ sf_free_string(gs_memory_t * mem, byte * str, uint size, client_name_t cname)
 	}
     }
     str_offset = str - csbase(cp);
-    if (size >= 4) {
+    if (size >= 2 * NB) {
 	byte *prev;
 	uint next;
 
-	PUT2(str, size);
+	put_uu32(str, size);
 	if (cp->sfree == 0 || str_offset < cp->sfree) {
 	    /* Put the string at the head of the free list. */
-	    PUT2(str + 2, cp->sfree);
+	    put_uu32(str + NB, cp->sfree);
 	    cp->sfree = str_offset;
 	    return;
 	}
@@ -117,22 +135,22 @@ sf_free_string(gs_memory_t * mem, byte * str, uint size, client_name_t cname)
 	prev = csbase(cp) + cp->sfree;
 #ifdef DEBUG
 	if (gs_debug_c('?')) {
-	    if (prev < str + size && prev + GET2(prev) > str) {
+	    if (prev < str + size && prev + get_uu32(prev) > str) {
 		lprintf4("freeing string 0x%lx(%u), overlaps 0x%lx(%u)!\n",
-			 (ulong) str, size, (ulong) prev, GET2(prev));
+			 (ulong) str, size, (ulong) prev, get_uu32(prev));
 		return;
 	    }
 	}
 #endif
 	for (;;) {
-	    next = GET2(prev + 2);
+	    next = get_uu32(prev + NB);
 #ifdef DEBUG
 	    if (gs_debug_c('?') && next != 0) {
 		byte *pnext = csbase(cp) + next;
 
-		if (pnext < str + size && pnext + GET2(pnext) > str) {
+		if (pnext < str + size && pnext + get_uu32(pnext) > str) {
 		    lprintf4("freeing string 0x%lx(%u), overlaps 0x%lx(%u)!\n",
-			     (ulong) str, size, (ulong) pnext, GET2(pnext));
+			     (ulong) str, size, (ulong) pnext, get_uu32(pnext));
 		    return;
 		}
 	    }
@@ -141,15 +159,15 @@ sf_free_string(gs_memory_t * mem, byte * str, uint size, client_name_t cname)
 		break;
 	    prev = csbase(cp) + next;
 	}
-	PUT2(str + 2, next);
-	PUT2(prev + 2, str_offset);
-	gs_alloc_fill(str + 4, gs_alloc_fill_free, size - 4);
+	put_uu32(str + NB, next);
+	put_uu32(prev + NB, str_offset);
+	gs_alloc_fill(str + 2 * NB, gs_alloc_fill_free, size - 2 * NB);
     } else {
 	/*
 	 * Insert the string in the 1-byte free list(s).  Note that
 	 * if it straddles a 256-byte block, we need to do this twice.
 	 */
-	ushort *pfree1 = &cp->sfree1[str_offset >> 8];
+	uint *pfree1 = &cp->sfree1[str_offset >> 8];
 	uint count = size;
 	byte *prev;
 	byte *ptr = str;
@@ -210,11 +228,11 @@ sf_merge_strings(chunk_t * cp)
     for (;;) {
 	byte *ctop = cp->ctop;
 	uint top_offset = ctop - csbase(cp);
-	ushort *pfree1;
+	uint *pfree1;
 
 	if (cp->sfree == top_offset) {	/* Merge a large free block. */
-	    cp->sfree = GET2(ctop + 2);
-	    cp->ctop += GET2(ctop);
+	    cp->sfree = get_uu32(ctop + NB);
+	    cp->ctop += get_uu32(ctop);
 	    continue;
 	}
 	if (!cp->sfree1)
@@ -235,12 +253,35 @@ sf_consolidate_free(gs_memory_t *mem)
     gs_ref_memory_t *imem = (gs_ref_memory_t *)mem;
     chunk_t *cp;
 
+    alloc_close_chunk(imem);
     for (cp = imem->clast; cp != 0; cp = cp->cprev) {
 	byte *top = cp->ctop;
 
 	sf_merge_strings(cp);
 	imem->lost.strings -= cp->ctop - top;
+        if (cp->ctop == cp->climit && cp->smark_size != 0) {
+	    /*
+	     * No string space is being used.  Since we are not using the
+	     * 'string marking table' for GC, we can recover its space by
+	     * deleting the smark area, setting smark_size = 0, and sliding
+	     * up ctop and climit.  We also need to recompute the size of
+	     * the string freelist area (it will be larger, since the
+	     * space potentially allocated to strings is larger).
+	     */
+	    cp->smark_size = 0;
+	    cp->smark = 0;
+	    /*
+	     * Reserve enough space for the string freelist all the way to
+	     * cend even though the climit will be moved to before the
+	     * freelist area.  This recovers most of the space.
+	     */
+	    cp->climit = cp->cend;
+	    cp->climit -= STRING_FREELIST_SPACE(cp);
+	    cp->ctop = cp->climit;
+	    alloc_init_free_strings(cp);
+	}
     }
+    alloc_open_chunk(imem);
 
     /* Merge free objects, detecting entirely free chunks. */
     ialloc_consolidate_free(imem);
@@ -251,18 +292,21 @@ sf_consolidate_free(gs_memory_t *mem)
  * PostScript interpreter, but it is designed to be used in environments
  * that don't need garbage collection and don't use save/restore.  All it
  * does is coalesce free blocks at the high end of the object area of each
- * chunk, and free strings at the low end of the string area, and then free
- * completely empty chunks.
+ * chunk, and free strings at the low end of the string area, and then if
+ * not 'controlled' memory, free completely empty chunks.
+ *
+ * Note that any string marking area will be added to the free space
+ * within the chunk if possible.
  */
 
 void
-gs_reclaim(vm_spaces * pspaces, bool global)
+gs_nogc_reclaim(vm_spaces * pspaces, bool global)
 {
     int space;
     gs_ref_memory_t *mem_prev = 0;
 
-    for (space = 0; space < countof(pspaces->indexed); ++space) {
-	gs_ref_memory_t *mem = pspaces->indexed[space];
+    for (space = 0; space < countof(pspaces->memories.indexed); ++space) {
+	gs_ref_memory_t *mem = pspaces->memories.indexed[space];
 
 	if (mem == 0 || mem == mem_prev)
 	    continue;

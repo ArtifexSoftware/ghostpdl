@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -18,26 +18,13 @@
 
 
 /* "Plain bits" devices to measure rendering time. */
+#include "math_.h"
 #include "gdevprn.h"
 #include "gsparam.h"
 #include "gscrd.h"
 #include "gscrdp.h"
 #include "gxlum.h"
-
-/*
- * When debugging problems on large CMYK devices, we have to be able to
- * modify the output at this stage.  These parameters are not set in any
- * normal configuration.
- */
-/* Define whether to trim off top and bottom white space. */
-/*#define TRIM_TOP_BOTTOM */
-/* Define left and right trimming margins. */
-/* Note that this is only approximate: we trim to byte boundaries. */
-/*#define TRIM_LEFT 400 */
-/*#define TRIM_RIGHT 400 */
-/* Define whether to expand each bit to a byte. */
-/* Also convert black-and-white to proper gray (inverting if monobit). */
-/*#define EXPAND_BITS_TO_BYTES */
+#include "gdevdcrd.h"
 
 /* Define the device parameters. */
 #ifndef X_DPI
@@ -49,7 +36,6 @@
 
 /* The device descriptor */
 private dev_proc_map_rgb_color(bit_mono_map_rgb_color);
-private dev_proc_map_rgb_color(bit_map_rgb_color);
 private dev_proc_map_rgb_color(bit_forcemono_map_rgb_color);
 private dev_proc_map_color_rgb(bit_map_color_rgb);
 private dev_proc_map_cmyk_color(bit_map_cmyk_color);
@@ -89,7 +75,7 @@ private dev_proc_print_page(bit_print_page);
  * parameter, which alters dev->num_components.
  */
 #define REAL_NUM_COMPONENTS(dev) (dev->dname[3] == 'c' ? 4 : \
-                                  dev->dname[3] == 'r' ? 3 : 1)
+				  dev->dname[3] == 'r' ? 3 : 1)
 
 private const gx_device_procs bitmono_procs =
 bit_procs(bit_mono_map_rgb_color, NULL);
@@ -102,7 +88,7 @@ const gx_device_printer gs_bit_device =
 };
 
 private const gx_device_procs bitrgb_procs =
-bit_procs(bit_map_rgb_color, NULL);
+bit_procs(gx_default_rgb_map_rgb_color, NULL);
 const gx_device_printer gs_bitrgb_device =
 {prn_device_body(gx_device_printer, bitrgb_procs, "bitrgb",
 		 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
@@ -139,18 +125,6 @@ bit_mono_map_rgb_color(gx_device * dev, gx_color_value red,
     return (bpc == 1 ? gx_max_color_value - gray : gray) >> drop;
 }
 
-/* Map RGB to color. */
-private gx_color_index
-bit_map_rgb_color(gx_device * dev, gx_color_value red,
-		  gx_color_value green, gx_color_value blue)
-{
-    int bpc = dev->color_info.depth / 3;
-    int drop = sizeof(gx_color_value) * 8 - bpc;
-
-    return ((((red >> drop) << bpc) + (green >> drop)) << bpc) +
-	(blue >> drop);
-}
-
 /* Map RGB to gray shade. */
 /* Only used in CMYK mode when put_params has set ForceMono=1 */
 private gx_color_index
@@ -179,7 +153,7 @@ private int
 bit_map_color_rgb(gx_device * dev, gx_color_index color, gx_color_value rgb[3])
 {
     int depth = dev->color_info.depth;
-    int ncomp = dev->color_info.num_components;
+    int ncomp = REAL_NUM_COMPONENTS(dev);
     int bpc = depth / ncomp;
     uint mask = (1 << bpc) - 1;
 
@@ -242,14 +216,6 @@ bit_map_cmyk_color(gx_device * dev, gx_color_value cyan,
 
 /* Get parameters.  We provide a default CRD. */
 private int
-my_tpqr(int index, floatp in, const gs_cie_wbsd * pwbsd,
-	gs_cie_render * pcrd, float *out)
-{
-    *out = (in < 0.5 ? in / 2 : in * 3 / 2 - 0.5);
-    return 0;
-}
-
-private int
 bit_get_params(gx_device * pdev, gs_param_list * plist)
 {
     int code, ecode;
@@ -267,50 +233,10 @@ bit_get_params(gx_device * pdev, gs_param_list * plist)
      */
     pdev->color_info.num_components = real_ncomps;
 
-    if (param_requested(plist, "CRDDefault") > 0) {
-	gs_cie_render *pcrd;
-
     ecode = gdev_prn_get_params(pdev, plist);
-	code = gs_cie_render1_build(&pcrd, pdev->memory, "bit_get_params");
-	if (code >= 0) {
-	    static const gs_vector3 my_white_point = {1, 1, 1};
-	    static const gs_cie_transform_proc3 my_TransformPQR = {
-		0, "bitTPQRDefault", {0, 0}, 0
-	    };
-	    gs_cie_transform_proc3 tpqr;
-
-	    tpqr = my_TransformPQR;
-	    tpqr.driver_name = pdev->dname;
-	    code = gs_cie_render1_initialize(pcrd, NULL,
-					     &my_white_point, NULL,
-					     NULL, NULL, &tpqr,
-					     NULL, NULL, NULL,
-					     NULL, NULL, NULL,
-					     NULL);
-	    if (code >= 0) {
-		code = param_write_cie_render1(plist, "CRDDefault", pcrd,
-					       pdev->memory);
-	    }
-	    rc_decrement(pcrd, "bit_get_params"); /* release */
-	}
+    code = sample_device_crd_get_params(pdev, plist, "CRDDefault");
 	if (code < 0)
 	    ecode = code;
-    }
-
-    if (param_requested(plist, "bitTPQRDefault") > 0) {
-	gs_cie_transform_proc my_proc = my_tpqr;
-	static byte my_addr[sizeof(gs_cie_transform_proc)];
-	gs_param_string as;
-
-	memcpy(my_addr, &my_proc, sizeof(gs_cie_transform_proc));
-	as.data = my_addr;
-	as.size = sizeof(gs_cie_transform_proc);
-	as.persistent = true;
-	code = param_write_string(plist, "bitTPQRDefault", &as);
-	if (code < 0)
-	    ecode = code;
-    }
-
     if ((code = param_write_int(plist, "ForceMono", &forcemono)) < 0) {
 	ecode = code;
     }
@@ -356,11 +282,11 @@ bit_put_params(gx_device * pdev, gs_param_list * plist)
 	    ecode = code;
 	else
 	    switch (v) {
-                case   2: bpc = 1; break;
-                case   4: bpc = 2; break;
-                case  16: bpc = 4; break;
-                case  32: bpc = 5; break;
-                case 256: bpc = 8; break;
+		case   2: bpc = 1; break;
+		case   4: bpc = 2; break;
+		case  16: bpc = 4; break;
+		case  32: bpc = 5; break;
+		case 256: bpc = 8; break;
 		default:
 		    param_signal_error(plist, vname,
 				       ecode = gs_error_rangecheck);
@@ -370,13 +296,13 @@ bit_put_params(gx_device * pdev, gs_param_list * plist)
     switch (code = param_read_int(plist, (vname = "ForceMono"), &v)) {
     case 0:
 	if (v == 1) {
-            ncomps = 1;
+	    ncomps = 1;
 	    break;
 	}
-        else if (v == 0) {
-            ncomps = real_ncomps;
+	else if (v == 0) {
+	    ncomps = real_ncomps;
 	    break;
-        }
+	}
 	code = gs_error_rangecheck;
     default:
 	ecode = code;
@@ -396,7 +322,7 @@ bit_put_params(gx_device * pdev, gs_param_list * plist)
     pdev->color_info.max_gray = pdev->color_info.max_color =
 	(pdev->color_info.dither_grays =
 	 pdev->color_info.dither_colors =
-	     (1 << bpc)) - 1;
+	 (1 << bpc)) - 1;
     ecode = gdev_prn_put_params(pdev, plist);
     if (ecode < 0) {
 	pdev->color_info = save_info;
@@ -405,9 +331,11 @@ bit_put_params(gx_device * pdev, gs_param_list * plist)
     /* Now restore/change num_components. This is done after other	*/
     /* processing since it is used in gx_default_put_params		*/
     pdev->color_info.num_components = ncomps;
-
-    if (pdev->color_info.depth != save_info.depth)
-	    gs_closedevice(pdev);
+    if (pdev->color_info.depth != save_info.depth ||
+	pdev->color_info.num_components != save_info.num_components
+	) {
+	gs_closedevice(pdev);
+    }
     /* Reset the map_cmyk_color procedure if appropriate. */
     if (dev_proc(pdev, map_cmyk_color) == cmyk_1bit_map_cmyk_color ||
 	dev_proc(pdev, map_cmyk_color) == cmyk_8bit_map_cmyk_color ||
@@ -433,84 +361,10 @@ bit_print_page(gx_device_printer * pdev, FILE * prn_stream)
 
     if (in == 0)
 	return_error(gs_error_VMerror);
-#ifdef TRIM_TOP_BOTTOM
-    {
-	gx_color_index white =
-	(pdev->color_info.num_components == 4 ? 0 :
-	 (*dev_proc(pdev, map_rgb_color))
-	 ((gx_device *) pdev, gx_max_color_value, gx_max_color_value,
-	  gx_max_color_value));
-
-#define color_index_bits (sizeof(gx_color_index) * 8)
-	const gx_color_index *p;
-	const gx_color_index *end;
-	int depth = pdev->color_info.depth;
-	int end_bits = ((long)line_size * depth) % color_index_bits;
-	gx_color_index end_mask =
-	(end_bits == 0 ? 0 : -1 << (color_index_bits - end_bits));
-	int i;
-
-	for (i = depth; i < color_index_bits; i += depth)
-	    white |= white << depth;
-	/* Remove bottom white space. */
-	for (; bottom - lnum > 1; --bottom) {
-	    gdev_prn_get_bits(pdev, bottom - 1, in, &data);
-	    p = (const gx_color_index *)data;
-	    end = p + line_size / sizeof(gx_color_index);
-	    for (; p < end; ++p)
-		if (*p != white)
-		    goto bx;
-	    if (end_mask != 0 && ((*end ^ white) & end_mask) != 0)
-		goto bx;
-	}
-	/* Remove top white space. */
-      bx:for (; lnum < bottom; ++lnum) {
-	    gdev_prn_get_bits(pdev, lnum, in, &data);
-	    p = (const gx_color_index *)data;
-	    end = p + line_size / sizeof(gx_color_index);
-	    for (; p < end; ++p)
-		if (*p != white)
-		    goto tx;
-	    if (end_mask != 0 && ((*end ^ white) & end_mask) != 0)
-		goto tx;
-	}
-      tx:;
-    }
-#endif
     for (; lnum < bottom; ++lnum) {
 	gdev_prn_get_bits(pdev, lnum, in, &data);
-	if (!nul) {
-	    const byte *row = data;
-	    uint len = line_size;
-
-#ifdef TRIM_LEFT
-	    row += (TRIM_LEFT * pdev->color_info.depth) >> 3;
-#endif
-#ifdef TRIM_RIGHT
-	    len = data + ((TRIM_RIGHT * pdev->color_info.depth + 7) >> 3) - row;
-#endif
-#ifdef EXPAND_BITS_TO_BYTES
-	    {
-		uint i;
-		byte invert = (pdev->color_info.depth == 1 ? 0xff : 0);
-
-		for (i = 0; i < len; ++i) {
-		    byte b = row[i] ^ invert;
-
-		    putc(-(b >> 7) & 0xff, prn_stream);
-		    putc(-((b >> 6) & 1) & 0xff, prn_stream);
-		    putc(-((b >> 5) & 1) & 0xff, prn_stream);
-		    putc(-((b >> 4) & 1) & 0xff, prn_stream);
-		    putc(-((b >> 3) & 1) & 0xff, prn_stream);
-		    putc(-((b >> 2) & 1) & 0xff, prn_stream);
-		    putc(-((b >> 1) & 1) & 0xff, prn_stream);
-		    putc(-(b & 1) & 0xff, prn_stream);
-		}
-	    }
-#else
-	    fwrite(row, 1, len, prn_stream);
-#endif
-	}
+	if (!nul)
+	    fwrite(data, 1, line_size, prn_stream);
     }
     gs_free((char *)in, line_size, 1, "bit_print_page(in)");
     return 0;

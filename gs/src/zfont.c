@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -28,7 +28,7 @@
 #include "gxfcache.h"
 #include "bfont.h"
 #include "ialloc.h"
-#include "idict.h"
+#include "iddict.h"
 #include "igstate.h"
 #include "iname.h"		/* for name_mark_index */
 #include "isave.h"
@@ -36,7 +36,7 @@
 #include "ivmspace.h"
 
 /* Forward references */
-private int make_font(P2(os_ptr, const gs_matrix *));
+private int make_font(P2(i_ctx_t *, const gs_matrix *));
 private void make_uint_array(P3(os_ptr, const uint *, int));
 
 /* The (global) font directory */
@@ -51,19 +51,20 @@ zfont_mark_glyph_name(gs_glyph glyph, void *ignore_data)
 }
 
 /* Initialize the font operators */
-private void
-zfont_init(void)
+private int
+zfont_init(i_ctx_t *i_ctx_p)
 {
     ifont_dir = gs_font_dir_alloc2(imemory, &gs_memory_default);
     ifont_dir->ccache.mark_glyph = zfont_mark_glyph_name;
-    gs_register_struct_root(imemory, NULL, (void **)&ifont_dir,
-			    "ifont_dir");
+    return gs_register_struct_root(imemory, NULL, (void **)&ifont_dir,
+				   "ifont_dir");
 }
 
 /* <font> <scale> scalefont <new_font> */
 private int
-zscalefont(register os_ptr op)
+zscalefont(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code;
     double scale;
     gs_matrix mat;
@@ -72,25 +73,27 @@ zscalefont(register os_ptr op)
 	return code;
     if ((code = gs_make_scaling(scale, scale, &mat)) < 0)
 	return code;
-    return make_font(op, &mat);
+    return make_font(i_ctx_p, &mat);
 }
 
 /* <font> <matrix> makefont <new_font> */
 private int
-zmakefont(register os_ptr op)
+zmakefont(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code;
     gs_matrix mat;
 
     if ((code = read_matrix(op, &mat)) < 0)
 	return code;
-    return make_font(op, &mat);
+    return make_font(i_ctx_p, &mat);
 }
 
 /* <font> setfont - */
 int
-zsetfont(register os_ptr op)
+zsetfont(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_font *pfont;
     int code = font_param(op, &pfont);
 
@@ -102,8 +105,10 @@ zsetfont(register os_ptr op)
 
 /* - currentfont <font> */
 private int
-zcurrentfont(register os_ptr op)
+zcurrentfont(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(1);
     *op = *pfont_dict(gs_currentfont(igs));
     return 0;
@@ -111,8 +116,9 @@ zcurrentfont(register os_ptr op)
 
 /* - cachestatus <mark> <bsize> <bmax> <msize> <mmax> <csize> <cmax> <blimit> */
 private int
-zcachestatus(register os_ptr op)
+zcachestatus(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     uint status[7];
 
     gs_cachestatus(ifont_dir, status);
@@ -123,8 +129,10 @@ zcachestatus(register os_ptr op)
 
 /* <blimit> setcachelimit - */
 private int
-zsetcachelimit(register os_ptr op)
+zsetcachelimit(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     check_int_leu(*op, max_uint);
     gs_setcachelimit(ifont_dir, (uint) op->value.intval);
     pop(1);
@@ -133,8 +141,9 @@ zsetcachelimit(register os_ptr op)
 
 /* <mark> <size> <lower> <upper> setcacheparams - */
 private int
-zsetcacheparams(register os_ptr op)
+zsetcacheparams(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     uint params[3];
     int i, code;
     os_ptr opp = op;
@@ -155,13 +164,14 @@ zsetcacheparams(register os_ptr op)
 		return code;
 	case 0:;
     }
-    return zcleartomark(op);
+    return zcleartomark(i_ctx_p);
 }
 
 /* - currentcacheparams <mark> <size> <lower> <upper> */
 private int
-zcurrentcacheparams(register os_ptr op)
+zcurrentcacheparams(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     uint params[3];
 
     params[0] = gs_currentcachesize(ifont_dir);
@@ -219,20 +229,23 @@ font_param(const ref * pfdict, gs_font ** ppfont)
 }
 
 /* Add the FID entry to a font dictionary. */
+/* Note that i_ctx_p may be NULL. */
 int
-add_FID(ref * fp /* t_dictionary */ , gs_font * pfont)
+add_FID(i_ctx_t *i_ctx_p, ref * fp /* t_dictionary */ , gs_font * pfont)
 {
     ref fid;
 
     make_tav_new(&fid, t_fontID, a_readonly | icurrent_space,
 		 pstruct, (void *)pfont);
-    return dict_put_string(fp, "FID", &fid);
+    return (i_ctx_p ? idict_put_string(fp, "FID", &fid) :
+	    dict_put_string(fp, "FID", &fid, NULL));
 }
 
 /* Make a transformed font (common code for makefont/scalefont). */
 private int
-make_font(os_ptr op, const gs_matrix * pmat)
+make_font(i_ctx_t *i_ctx_p, const gs_matrix * pmat)
 {
+    os_ptr op = osp;
     os_ptr fp = op - 1;
     gs_font *oldfont, *newfont;
     int code;
@@ -285,7 +298,7 @@ make_font(os_ptr op, const gs_matrix * pmat)
 }
 /* Create the transformed font dictionary. */
 /* This is the make_font completion procedure for all non-composite fonts */
-/* created at the interpreter level (see build_gs_simple_font in zfont2.c.) */
+/* created at the interpreter level (see build_gs_simple_font in zbfont.c.) */
 int
 zbase_make_font(gs_font_dir * pdir, const gs_font * oldfont,
 		const gs_matrix * pmat, gs_font ** ppfont)
@@ -318,8 +331,12 @@ zdefault_make_font(gs_font_dir * pdir, const gs_font * oldfont,
 			       "make_font(font_data)")) == 0
 	)
 	return_error(e_VMerror);
+    /*
+     * This dictionary is newly created: it's safe to pass NULL as the
+     * dstack pointer to dict_copy and dict_put_string.
+     */
     if ((code = dict_create(dlen, &newdict)) < 0 ||
-	(code = dict_copy(fp, &newdict)) < 0 ||
+	(code = dict_copy(fp, &newdict, NULL)) < 0 ||
     (code = ialloc_ref_array(&newmat, a_all, 12, "make_font(matrices)")) < 0
 	)
 	return code;
@@ -350,10 +367,10 @@ zdefault_make_font(gs_font_dir * pdir, const gs_font * oldfont,
     r_set_size(&newmat, 6);
     write_matrix(&newmat, &newfont->FontMatrix);
     r_clear_attrs(&newmat, a_write);
-    if ((code = dict_put_string(&newdict, "FontMatrix", &newmat)) < 0 ||
-	(code = dict_put_string(&newdict, "OrigFont", pfont_dict(oldfont->base))) < 0 ||
-	(code = dict_put_string(&newdict, "ScaleMatrix", &scalemat)) < 0 ||
-	(code = add_FID(&newdict, newfont)) < 0
+    if ((code = dict_put_string(&newdict, "FontMatrix", &newmat, NULL)) < 0 ||
+	(code = dict_put_string(&newdict, "OrigFont", pfont_dict(oldfont->base), NULL)) < 0 ||
+	(code = dict_put_string(&newdict, "ScaleMatrix", &scalemat, NULL)) < 0 ||
+	(code = add_FID(NULL, &newdict, newfont)) < 0
 	)
 	return code;
     newfont->client_data = pdata;

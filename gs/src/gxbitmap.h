@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1993, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1993, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -57,20 +57,26 @@ typedef gs_bitmap_id gx_bitmap_id;
  *          raster >= bitmap_raster(size.x * depth)
  *          raster % align_bitmap_mod = 0
  */
-#define gx_bitmap_common gs_bitmap_common
+#define gx_bitmap_common(data_type) gs_bitmap_common(data_type)
 typedef struct gx_bitmap_s {
-    gx_bitmap_common;
+    gx_bitmap_common(byte);
 } gx_bitmap;
+typedef struct gx_const_bitmap_s {
+    gx_bitmap_common(const byte);
+} gx_const_bitmap;
 
 /*
  * Define the gx analogue of the tile bitmap structure.  Note that if
  * shift != 0 (for strip bitmaps, see below), size.y and rep_height
  * mean something slightly different: see below for details.
  */
-#define gx_tile_bitmap_common gs_tile_bitmap_common
+#define gx_tile_bitmap_common(data_type) gs_tile_bitmap_common(data_type)
 typedef struct gx_tile_bitmap_s {
-    gx_tile_bitmap_common;
+    gx_tile_bitmap_common(byte);
 } gx_tile_bitmap;
+typedef struct gx_const_tile_bitmap_s {
+    gx_tile_bitmap_common(const byte);
+} gx_const_tile_bitmap;
 
 /*
  * For halftones at arbitrary angles, we provide for storing the halftone
@@ -109,13 +115,16 @@ typedef struct gx_tile_bitmap_s {
  *      rep_shift < rep_width
  *      shift = (rep_shift * (size.y / rep_height)) % rep_width
  */
-#define gx_strip_bitmap_common\
-	gx_tile_bitmap_common;\
+#define gx_strip_bitmap_common(data_type)\
+	gx_tile_bitmap_common(data_type);\
 	ushort rep_shift;\
 	ushort shift
 typedef struct gx_strip_bitmap_s {
-    gx_strip_bitmap_common;
+    gx_strip_bitmap_common(byte);
 } gx_strip_bitmap;
+typedef struct gx_const_strip_bitmap_s {
+    gx_strip_bitmap_common(const byte);
+} gx_const_strip_bitmap;
 
 extern_st(st_gx_strip_bitmap);
 #define public_st_gx_strip_bitmap()	/* in gspcolor.c */\

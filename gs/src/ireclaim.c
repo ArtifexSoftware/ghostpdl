@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -40,10 +40,11 @@ private void gs_vmreclaim(P2(gs_dual_memory_t *, bool));
 
 /* Initialize the GC hook in the allocator. */
 private int ireclaim(P2(gs_dual_memory_t *, int));
-private void
-ireclaim_init(void)
+private int
+ireclaim_init(i_ctx_t *i_ctx_p)
 {
     gs_imemory.reclaim = ireclaim;
+    return 0;
 }
 
 /* GC hook called when the allocator returns a VMerror (space = -1), */
@@ -59,8 +60,8 @@ ireclaim(gs_dual_memory_t * dmem, int space)
 	int i;
 
 	mem = dmem->space_global;	/* just in case */
-	for (i = 0; i < countof(dmem->spaces.indexed); ++i) {
-	    mem = dmem->spaces.indexed[i];
+	for (i = 0; i < countof(dmem->spaces_indexed); ++i) {
+	    mem = dmem->spaces_indexed[i];
 	    if (mem == 0)
 		continue;
 	    if (mem->gc_status.requested > 0)
@@ -71,7 +72,7 @@ ireclaim(gs_dual_memory_t * dmem, int space)
 	    return_error(e_VMerror);
 	}
     } else {
-	mem = dmem->spaces.indexed[space >> r_space_shift];
+	mem = dmem->spaces_indexed[space >> r_space_shift];
     }
     if_debug3('0', "[0]GC called, space=%d, requestor=%d, requested=%ld\n",
 	      space, mem->space, (long)mem->gc_status.requested);
@@ -87,10 +88,11 @@ ireclaim(gs_dual_memory_t * dmem, int space)
 private void
 gs_vmreclaim(gs_dual_memory_t * dmem, bool global)
 {
+    i_ctx_t *i_ctx_p = dmem->reclaim_data;
     gs_ref_memory_t *lmem = dmem->space_local;
     gs_ref_memory_t *gmem = dmem->space_global;
     gs_ref_memory_t *smem = dmem->space_system;
-    int code = context_state_store(gs_interp_context_state_current);
+    int code = context_state_store(i_ctx_p);
 
 /****** ABORT IF code < 0 ******/
     alloc_close_chunk(lmem);
@@ -105,12 +107,12 @@ gs_vmreclaim(gs_dual_memory_t * dmem, bool global)
 	int i;
 
 	for (i = (global ? i_vm_system : i_vm_local);
-	     i < countof(dmem->spaces.indexed);
+	     i < countof(dmem->spaces_indexed);
 	     ++i
 	    ) {
-	    gs_ref_memory_t *mem = dmem->spaces.indexed[i];
+	    gs_ref_memory_t *mem = dmem->spaces_indexed[i];
 
-	    if (mem == 0 || (i > 0 && mem == dmem->spaces.indexed[i - 1]))
+	    if (mem == 0 || (i > 0 && mem == dmem->spaces_indexed[i - 1]))
 		continue;
 	    for (;; mem = &mem->saved->state) {
 		ialloc_gc_prepare(mem);
@@ -122,12 +124,29 @@ gs_vmreclaim(gs_dual_memory_t * dmem, bool global)
 
     /* Do the actual collection. */
 
-    gs_reclaim(&dmem->spaces, global);
+    {
+	gs_gc_root_t context_root;
+
+	gs_register_struct_root((gs_memory_t *)lmem, &context_root,
+				(void **)&dmem->reclaim_data, "reclaim_data");
+	GS_RECLAIM(&dmem->spaces, global);
+	gs_unregister_root((gs_memory_t *)lmem, &context_root, "reclaim_data");
+    }
+    i_ctx_p = dmem->reclaim_data;
+
+    /* Update caches not handled by context_state_load. */
+
+    *systemdict = *ref_stack_index(&d_stack, ref_stack_count(&d_stack) - 1);
 
     /* Reload the context state. */
 
-    code = context_state_load(gs_interp_context_state_current);
-/****** ABORT IF code < 0 ******/
+    code = context_state_load(i_ctx_p);
+    /****** ABORT IF code < 0 ******/
+    /*
+     * context_state_load overwrites gs_memory (*dmem): put back the
+     * relocated context pointer.
+     */
+    dmem->reclaim_data = i_ctx_p;
 
     /* Update the cached value pointers in names. */
 
@@ -139,14 +158,6 @@ gs_vmreclaim(gs_dual_memory_t * dmem, bool global)
     if (gmem != lmem)
 	alloc_open_chunk(gmem);
     alloc_open_chunk(lmem);
-
-    /* Update caches not handled by context_state_load. */
-
-    {
-	uint dcount = ref_stack_count(&d_stack);
-
-	*systemdict = *ref_stack_index(&d_stack, dcount - 1);
-    }
 }
 
 /* ------ Initialization procedure ------ */

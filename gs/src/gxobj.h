@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -78,8 +78,10 @@
 #define o_l_unmarked (o_unmarked & 3)
 #define o_set_unmarked_large(pp) (pp)->o_lmark = o_l_unmarked
 #define o_set_unmarked(pp)\
-  if ( (pp)->o_large ) o_set_unmarked_large(pp);\
-  else (pp)->o_smark = o_unmarked
+  BEGIN\
+    if ((pp)->o_large) o_set_unmarked_large(pp);\
+    else (pp)->o_smark = o_unmarked;\
+  END
 #define o_is_unmarked_large(pp) ((pp)->o_lmark == o_l_unmarked)
 #define o_is_unmarked(pp)\
  ((pp)->o_large ? o_is_unmarked_large(pp) :\
@@ -87,16 +89,20 @@
 #define o_untraced (((uint)1 << obj_mb_bits) - 2)
 #define o_l_untraced (o_untraced & 3)
 #define o_set_untraced(pp)\
-  if ( (pp)->o_large ) (pp)->o_lmark = o_l_untraced;\
-  else (pp)->o_smark = o_untraced
+  BEGIN\
+    if ((pp)->o_large) (pp)->o_lmark = o_l_untraced;\
+    else (pp)->o_smark = o_untraced;\
+  END
 #define o_is_untraced(pp)\
  ((pp)->o_large ? (pp)->o_lmark == o_l_untraced :\
   ((pp)->o_smark == o_untraced))
 #define o_marked 0
 #define o_mark_large(pp) (pp)->o_lmark = o_marked
 #define o_mark(pp)\
-  if ( (pp)->o_large ) o_mark_large(pp);\
-  else (pp)->o_smark = o_marked
+  BEGIN\
+    if ((pp)->o_large) o_mark_large(pp);\
+    else (pp)->o_smark = o_marked;\
+  END
 #define obj_back_shift obj_flag_bits
 #define obj_back_scale (1 << obj_back_shift)
 typedef struct obj_header_data_s {
@@ -153,7 +159,7 @@ typedef struct obj_header_data_s {
 struct obj_header_s {		/* must be a struct because of forward reference */
     union _d {
 	obj_header_data_t o;
-	byte _pad[round_up(sizeof(obj_header_data_t), obj_align_mod)];
+	byte _pad[ROUND_UP(sizeof(obj_header_data_t), obj_align_mod)];
     }
     d;
 };

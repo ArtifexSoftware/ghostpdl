@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -96,7 +96,7 @@ void gs_main_init2(P1(gs_main_instance * minst));
 
 /*
  * The runlibfile operator uses a search path, as described in
- * use.doc, for looking up file names.  Each interpreter instance has
+ * Use.htm, for looking up file names.  Each interpreter instance has
  * its own search path.  The following call adds a directory or set of
  * directories to the search path; it is equivalent to the -I command
  * line switch.  It may be called any time after init0.
@@ -121,7 +121,7 @@ int gs_main_lib_open(P3(gs_main_instance * minst, const char *fname,
 
 /*
  * Here we summarize the C API calls that correspond to some of the
- * most common command line switches documented in use.doc, to help
+ * most common command line switches documented in Use.htm, to help
  * clients who are familiar with the command line and are starting to
  * use the API.
  *
@@ -242,7 +242,8 @@ int gs_pop_string(P2(gs_main_instance * minst, gs_string * result));
  * and operand and execution stacks in hex.  Clients will probably
  * never call this.
  */
-void gs_debug_dump_stack(P2(int code, ref * perror_object));
+void gs_main_dump_stack(P3(gs_main_instance *minst, int code,
+			   ref * perror_object));
 
 /* ---------------- Termination ---------------- */
 
@@ -264,7 +265,7 @@ void gs_main_finit(P3(gs_main_instance * minst, int exit_status, int code));
  * Define an internal interface to the interpreter.  Clients do not
  * normally use this.
  */
-int gs_interpret(P4(ref * pref, int user_errors, int *pexit_code,
-		    ref * perror_object));
+int gs_interpret(P5(i_ctx_t **pi_ctx_p, ref * pref, int user_errors,
+		    int *pexit_code, ref * perror_object));
 
 #endif /* imain_INCLUDED */

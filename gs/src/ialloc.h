@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -52,17 +52,19 @@ extern gs_dual_memory_t gs_imemory;
   gs_alloc_struct_array(imemory, nelts, typ, pstype, cname)
 #define ifree_object(data, cname)\
   gs_free_object(imemory, data, cname)
+#define ifree_const_object(data, cname)\
+  gs_free_const_object(imemory, data, cname)
 #define ialloc_string(nbytes, cname)\
   gs_alloc_string(imemory, nbytes, cname)
-#define ifree_string(data, nbytes, cname)\
-  gs_free_string(imemory, data, nbytes, cname)
-
-/* Initialize the interpreter's allocator. */
-void ialloc_init(P3(gs_raw_memory_t *, uint, bool));
-
-/* Resize a string. */
 #define iresize_string(data, oldn, newn, cname)\
   gs_resize_string(imemory, data, oldn, newn, cname)
+#define ifree_string(data, nbytes, cname)\
+  gs_free_string(imemory, data, nbytes, cname)
+#define ifree_const_string(data, nbytes, cname)\
+  gs_free_const_string(imemory, data, nbytes, cname)
+
+/* Initialize the interpreter's allocator. */
+void ialloc_init(P4(gs_dual_memory_t *, gs_raw_memory_t *, uint, bool));
 
 /* ------ Internal routines ------ */
 

@@ -25,6 +25,9 @@
 /* ASCIIHexEncode */
 typedef struct stream_AXE_state_s {
     stream_state_common;
+    /* The following are set by the client. */
+    bool EndOfData;		/* if true, write > at EOD (default) */
+    /* The following change dynamically. */
     int count;			/* # of digits since last EOL */
 } stream_AXE_state;
 
@@ -32,7 +35,7 @@ typedef struct stream_AXE_state_s {
   gs_private_st_simple(st_AXE_state, stream_AXE_state,\
     "ASCIIHexEncode state")
 #define s_AXE_init_inline(ss)\
-  ((ss)->count = 0)
+  ((ss)->EndOfData = true, (ss)->count = 0)
 extern const stream_template s_AXE_template;
 
 /* ASCIIHexDecode */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -24,6 +24,7 @@
 #include "gconfigv.h"		/* for USE_FPU */
 #include "gxfixed.h"
 #include "gxfarith.h"
+#include "gxistate.h"		/* for access to line params */
 #include "gzpath.h"
 
 /* Forward declarations */
@@ -34,11 +35,13 @@ private int monotonize_internal(P2(gx_path *, const curve_segment *));
 /* Copy a path, optionally flattening or monotonizing it. */
 /* If the copy fails, free the new path. */
 int
-gx_path_copy_reducing(const gx_path * ppath_old, gx_path * ppath,
-		      fixed fixed_flatness, gx_path_copy_options options)
+gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
+		      fixed fixed_flatness, const gs_imager_state *pis,
+		      gx_path_copy_options options)
 {
     const segment *pseg;
-
+    fixed flat = fixed_flatness;
+    gs_fixed_point expansion;
     /*
      * Since we're going to be adding to the path, unshare it
      * before we start.
@@ -51,6 +54,15 @@ gx_path_copy_reducing(const gx_path * ppath_old, gx_path * ppath,
     if (gs_debug_c('P'))
 	gx_dump_path(ppath_old, "before reducing");
 #endif
+    if (options & pco_for_stroke) {
+	/* Precompute the maximum expansion of the bounding box. */
+	double width = pis->line_params.half_width;
+
+	expansion.x =
+	    float2fixed((fabs(pis->ctm.xx) + fabs(pis->ctm.yx)) * width) * 2;
+	expansion.y =
+	    float2fixed((fabs(pis->ctm.xy) + fabs(pis->ctm.yy)) * width) * 2;
+    }
     pseg = (const segment *)(ppath_old->first_subpath);
     while (pseg) {
 	switch (pseg->type) {
@@ -72,11 +84,42 @@ gx_path_copy_reducing(const gx_path * ppath_old, gx_path * ppath,
 		    } else {
 			fixed x0 = ppath->position.x;
 			fixed y0 = ppath->position.y;
-			int k = gx_curve_log2_samples(x0, y0, pc,
-						      fixed_flatness);
 			segment_notes notes = pseg->notes;
 			curve_segment cseg;
+			int k;
 
+			if (options & pco_for_stroke) {
+			    /*
+			     * When flattening for stroking, the flatness
+			     * must apply to the outside of the resulting
+			     * stroked region.  We approximate this by
+			     * dividing the flatness by the ratio of the
+			     * expanded bounding box to the original
+			     * bounding box.  This is crude, but pretty
+			     * simple to calculate, and produces reasonably
+			     * good results.
+			     */
+			    fixed min01, max01, min23, max23;
+			    fixed ex, ey, flat_x, flat_y;
+
+#define SET_EXTENT(r, c0, c1, c2, c3)\
+    BEGIN\
+	if (c0 < c1) min01 = c0, max01 = c1;\
+	else         min01 = c1, max01 = c0;\
+	if (c2 < c3) min23 = c2, max23 = c3;\
+	else         min23 = c3, max23 = c2;\
+	r = max(max01, max23) - min(min01, min23);\
+    END
+			    SET_EXTENT(ex, x0, pc->p1.x, pc->p2.x, pc->pt.x);
+			    SET_EXTENT(ey, y0, pc->p1.y, pc->p2.y, pc->pt.y);
+#undef SET_EXTENT
+			    flat_x = fixed_mult_quo(fixed_flatness, ex,
+						    ex + expansion.x);
+			    flat_y = fixed_mult_quo(fixed_flatness, ey,
+						    ey + expansion.y);
+			    flat = min(flat_x, flat_y);
+			}
+			k = gx_curve_log2_samples(x0, y0, pc, flat);
 			if (options & pco_accurate) {
 			    segment *start;
 			    segment *end;

@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -142,7 +142,7 @@ s_CFE_init(register stream_state * st)
     int code_bytes =
     ((columns * (ss->K == 0 ? 9 : 12)) >> 4) + 20;	/* add slop */
     int raster = ss->raster =
-    round_up((columns + 7) >> 3, ss->DecodedByteAlign);
+	ROUND_UP((columns + 7) >> 3, ss->DecodedByteAlign);
 
     s_hce_init_inline(ss);
     ss->lbuf = ss->lprev = ss->lcode = 0;	/* in case we have to release */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1993, 1994, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1993, 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -63,6 +63,7 @@
 #include "gdevpm.h"
 #ifdef __DLL__
 #include "gsdll.h"
+#include "gsdllwin.h"
 #endif
 
 #define MIN_COMMIT 4096		/* memory is committed in these size chunks */
@@ -82,8 +83,6 @@ typedef struct gx_device_pm_s gx_device_pm;
 
 #define gx_device_pm_common\
 	int BitsPerPixel;\
-	int alpha_text;\
-	int alpha_graphics;\
 	int UpdateInterval;\
 	char GSVIEW[pm_gsview_sizeof];\
 	BOOL dll;\
@@ -125,7 +124,6 @@ private dev_proc_copy_color(pm_copy_color);
 private dev_proc_get_bits(pm_get_bits);
 private dev_proc_get_params(pm_get_params);
 private dev_proc_put_params(pm_put_params);
-private dev_proc_get_alpha_bits(pm_get_alpha_bits);
 
 private gx_device_procs pm_procs =
 {
@@ -148,8 +146,7 @@ private gx_device_procs pm_procs =
     gx_default_get_xfont_procs,
     NULL,			/* get_xfont_device */
     NULL,			/* map_rgb_alpha_color */
-    gx_page_device_get_page_device,
-    pm_get_alpha_bits
+    gx_page_device_get_page_device
 };
 
 #ifdef __DLL__
@@ -160,7 +157,6 @@ gx_device_pm far_data gs_os2dll_device =
 			INITIAL_RESOLUTION, INITIAL_RESOLUTION),
     {0},			/* std_procs */
     8,				/* BitsPerPixel */
-    1, 1,			/* alpha */
     5000,			/* UpdateInterval */
     "\0",			/* GSVIEW */
     1				/* is DLL device */
@@ -738,32 +734,6 @@ pm_get_params(gx_device * dev, gs_param_list * plist)
 }
 
 /* Put parameters. */
-private int
-pm_put_alpha_param(gs_param_list * plist, gs_param_name param_name, int *pa,
-		   bool alpha_ok)
-{
-    int code = param_read_int(plist, param_name, pa);
-
-    switch (code) {
-	case 0:
-	    switch (*pa) {
-		case 1:
-		    return 0;
-		case 2:
-		case 4:
-		    if (alpha_ok)
-			return 0;
-		default:
-		    code = gs_error_rangecheck;
-	    }
-	default:
-	    param_signal_error(plist, param_name, code);
-	case 1:
-	    ;
-    }
-    return code;
-}
-
 
 /* Set PM parameters -- size and resolution. */
 /* We implement this ourselves so that we can do it without */
@@ -781,8 +751,6 @@ pm_put_params(gx_device * dev, gs_param_list * plist)
     int bpp = old_bpp;
     int uii = pmdev->UpdateInterval;
     gs_param_string gsvs;
-    int atext = pmdev->alpha_text, agraphics = pmdev->alpha_graphics;
-    bool alpha_ok;
 
     /* Handle extra parameters */
     switch (code = param_read_string(plist, "GSVIEW", &gsvs)) {
@@ -841,12 +809,6 @@ pm_put_params(gx_device * dev, gs_param_list * plist)
 	    break;
     }
 
-    alpha_ok = pmdev->color_info.depth >= 8;
-    if ((code = pm_put_alpha_param(plist, "TextAlphaBits", &pmdev->alpha_text, alpha_ok)) < 0)
-	ecode = code;
-    if ((code = pm_put_alpha_param(plist, "GraphicsAlphaBits", &pmdev->alpha_graphics, alpha_ok)) < 0)
-	ecode = code;
-
     if (ecode >= 0) {		/* Prevent gx_default_put_params from closing the device. */
 	dev->is_open = false;
 	ecode = gx_default_put_params(dev, plist);
@@ -855,8 +817,6 @@ pm_put_params(gx_device * dev, gs_param_list * plist)
     if (ecode < 0) {
 	if (bpp != old_bpp)
 	    pm_set_bits_per_pixel(pmdev, old_bpp);
-	pmdev->alpha_text = atext;
-	pmdev->alpha_graphics = agraphics;
 	return ecode;
     }
     /* Hand off the change to the implementation. */
@@ -876,8 +836,6 @@ pm_put_params(gx_device * dev, gs_param_list * plist)
 	    dev->width = width;
 	    dev->height = height;
 	    pm_set_bits_per_pixel(pmdev, old_bpp);
-	    pmdev->alpha_text = atext;
-	    pmdev->alpha_graphics = agraphics;
 	    pm_alloc_bitmap(pmdev, dev);
 	    DosReleaseMutexSem(pmdev->bmp_mutex);
 	    return ccode;
@@ -918,15 +876,6 @@ pm_put_params(gx_device * dev, gs_param_list * plist)
     DosReleaseMutexSem(pmdev->bmp_mutex);
     return 0;
 }
-
-
-/* Get the number of alpha bits. */
-int
-pm_get_alpha_bits(gx_device * dev, graphics_object_type type)
-{
-    return (type == go_text ? pmdev->alpha_text : pmdev->alpha_graphics);
-}
-
 
 #ifdef __DLL__
 /* ------ DLL routines ------ */

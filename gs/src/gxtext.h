@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -24,7 +24,56 @@
 
 #include "gstext.h"
 
-/* EVERYTHING IN THIS FILE IS SUBJECT TO CHANGE WITHOUT NOTICE. */
+/* Define the abstract type for the object procedures. */
+typedef struct gs_text_enum_procs_s gs_text_enum_procs_t;
+
+/*
+ * Define values returned by text_process to the client.
+ */
+typedef struct gs_text_returned_s {
+    gs_char current_char;	/* INTERVENE */
+    gs_glyph current_glyph;	/* INTERVENE */
+    gs_point current_width;	/* INTERVENE & RETURN_WIDTH */
+    gs_point total_width;	/* RETURN_WIDTH */
+} gs_text_returned_t;
+/*
+ * Define the common part of the structure that tracks the state of text
+ * processing.  All implementations of text_begin must allocate one of these
+ * using rc_alloc_struct_1; implementations may subclass and extend it.
+ * Note that it includes a copy of the text parameters.
+ */
+#define gs_text_enum_common\
+    /*\
+     * The following copies of the arguments of text_begin are set at\
+     * initialization, and const thereafter.\
+     */\
+    gs_text_params_t text;	/* must be first for subclassing */\
+    gx_device *dev;\
+    gs_imager_state *pis;\
+    const gs_font *orig_font;\
+    gx_path *path;			/* unless DO_NONE & !RETURN_WIDTH */\
+    const gx_device_color *pdcolor;	/* if DO_DRAW */\
+    const gx_clip_path *pcpath;		/* if DO_DRAW */\
+    gs_memory_t *memory;\
+    /* The following additional members are set at initialization. */\
+    const gs_text_enum_procs_t *procs;\
+    /* The following change dynamically. */\
+    rc_header rc;\
+    const gs_font *current_font; /* changes for composite fonts */\
+    gs_log2_scale_point scale;	/* for oversampling */\
+    uint index;		/* index within string */\
+    /* The following are used to return information to the client. */\
+    gs_text_returned_t returned
+/* The typedef is in gstext.h. */
+/*typedef*/ struct gs_text_enum_s {
+    gs_text_enum_common;
+} /*gs_text_enum_t*/;
+
+#define st_gs_text_enum_max_ptrs st_gs_text_params_max_ptrs
+/*extern_st(st_gs_text_enum); */
+#define public_st_gs_text_enum()	/* in gstext.c */\
+  gs_public_st_composite(st_gs_text_enum, gs_text_enum_t, "gs_text_enum_t",\
+    text_enum_enum_ptrs, text_enum_reloc_ptrs)
 
 /*
  * Define the control parameter for setting text metrics.
@@ -36,7 +85,7 @@ typedef enum {
 } gs_text_cache_control_t;
 
 /*
- * Define the procedures associated with text display.
+ * Define the procedures associated with text processing.
  */
 struct gs_text_enum_procs_s {
 
@@ -51,8 +100,8 @@ struct gs_text_enum_procs_s {
     text_enum_proc_process((*process));
 
     /*
-     * Set the character width and optionally bounding box,
-     * and enable caching.
+     * Set the character width and optionally the bounding box,
+     * and optionally enable caching.
      */
 
 #define text_enum_proc_set_cache(proc)\
@@ -62,54 +111,5 @@ struct gs_text_enum_procs_s {
     text_enum_proc_set_cache((*set_cache));
 
 };
-
-/* Abstract types */
-#ifndef gs_imager_state_DEFINED
-#  define gs_imager_state_DEFINED
-typedef struct gs_imager_state_s gs_imager_state;
-
-#endif
-#ifndef gx_device_color_DEFINED
-#  define gx_device_color_DEFINED
-typedef struct gx_device_color_s gx_device_color;
-
-#endif
-#ifndef gs_font_DEFINED
-#  define gs_font_DEFINED
-typedef struct gs_font_s gs_font;
-
-#endif
-#ifndef gx_path_DEFINED
-#  define gx_path_DEFINED
-typedef struct gx_path_s gx_path;
-
-#endif
-#ifndef gx_clip_path_DEFINED
-#  define gx_clip_path_DEFINED
-typedef struct gx_clip_path_s gx_clip_path;
-
-#endif
-
-/*
- * Define the driver procedure for text.
- */
-#define dev_t_proc_text_begin(proc, dev_t)\
-  int proc(P9(dev_t *dev,\
-    gs_imager_state *pis,\
-    const gs_text_params_t *text,\
-    const gs_font *font,\
-    gx_path *path,			/* unless DO_NONE & !RETURN_WIDTH */\
-    const gx_device_color *pdcolor,	/* DO_DRAW */\
-    const gx_clip_path *pcpath,		/* DO_DRAW */\
-    gs_memory_t *memory,\
-    gs_text_enum_t **ppenum))
-#define dev_proc_text_begin(proc)\
-  dev_t_proc_text_begin(proc, gx_device)
-
-/*
- * Begin processing text.  This calls the device procedure, and also
- * initializes the common parts of the enumerator.
- */
-dev_proc_text_begin(gx_device_text_begin);
 
 #endif /* gxtext_INCLUDED */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1994, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -33,17 +33,25 @@ struct rc_header_s {
     gs_memory_t *memory;
 #define rc_free_proc(proc)\
   void proc(P3(gs_memory_t *, void *, client_name_t))
-                rc_free_proc((*free));
+    rc_free_proc((*free));
 };
+
+#ifdef DEBUG
+const char *rc_object_type_name(P2(const void *vp, const rc_header *prc));
+#endif
 
 /* ------ Allocate/free ------ */
 
 rc_free_proc(rc_free_struct_only);
 /* rc_init[_free] is only used to initialize stack-allocated structures. */
 #define rc_init_free(vp, mem, rcinit, proc)\
-  ((vp)->rc.ref_count = rcinit,\
-   (vp)->rc.memory = mem,\
-   (vp)->rc.free = proc)
+  BEGIN\
+    (vp)->rc.ref_count = rcinit;\
+    (vp)->rc.memory = mem;\
+    (vp)->rc.free = proc;\
+    if_debug3('^', "[^]%s 0x%lx init = %d\n",\
+	      rc_object_type_name(vp, &(vp)->rc), (ulong)vp, rcinit);\
+  END
 #define rc_init(vp, mem, rcinit)\
   rc_init_free(vp, mem, rcinit, rc_free_struct_only)
 
@@ -61,30 +69,51 @@ rc_free_proc(rc_free_struct_only);
   rc_alloc_struct_n(vp, typ, pstype, mem, errstat, cname, 1)
 
 #define rc_free_struct(vp, cname)\
-  (*(vp)->rc.free)((vp)->rc.memory, (void *)(vp), cname)
+  BEGIN\
+    if_debug3('^', "[^]%s 0x%lx => free (%s)\n",\
+	      rc_object_type_name(vp, &(vp)->rc),\
+	      (ulong)vp, client_name_string(cname));\
+    (vp)->rc.free((vp)->rc.memory, (void *)(vp), cname);\
+  END
 
 /* ------ Reference counting ------ */
 
 /* Increment a reference count. */
+#define RC_DO_INCREMENT(vp)\
+  BEGIN\
+    (vp)->rc.ref_count++;\
+    if_debug3('^', "[^]%s 0x%lx ++ => %ld\n",\
+	      rc_object_type_name(vp, &(vp)->rc),\
+	      (ulong)vp, (long)(vp)->rc.ref_count);\
+  END
 #define rc_increment(vp)\
-  BEGIN if ( (vp) != 0 ) (vp)->rc.ref_count++; END
+  BEGIN\
+    if (vp) RC_DO_INCREMENT(vp);\
+  END
 
 /* Increment a reference count, allocating the structure if necessary. */
 #define rc_allocate_struct(vp, typ, pstype, mem, errstat, cname)\
   BEGIN\
-    if ( (vp) != 0 )\
-      (vp)->rc.ref_count++;\
+    if (vp)\
+      RC_DO_INCREMENT(vp);\
     else\
       rc_alloc_struct_1(vp, typ, pstype, mem, errstat, cname);\
   END
 
 /* Guarantee that a structure is allocated and is not shared. */
+#define RC_DO_ADJUST(vp, delta)\
+  BEGIN\
+    if_debug4('^', "[^]%s 0x%lx %+d => %ld\n",\
+	      rc_object_type_name(vp, &(vp)->rc),\
+	      (ulong)vp, delta, (long)((vp)->rc.ref_count + (delta)));\
+    (vp)->rc.ref_count += (delta);\
+  END
 #define rc_unshare_struct(vp, typ, pstype, mem, errstat, cname)\
   BEGIN\
     if ( (vp) == 0 || (vp)->rc.ref_count > 1 || (vp)->rc.memory != (mem) ) {\
       typ *new;\
       rc_alloc_struct_1(new, typ, pstype, mem, errstat, cname);\
-      if ( vp ) (vp)->rc.ref_count--;\
+      if ( vp ) RC_DO_ADJUST(vp, -1);\
       (vp) = new;\
     }\
   END
@@ -93,7 +122,7 @@ rc_free_proc(rc_free_struct_only);
 #ifdef DEBUG
 #  define rc_check_(vp)\
      BEGIN\
-       if ( gs_debug_c('?') && (vp) != 0 && (vp)->rc.ref_count < 0 )\
+       if (gs_debug_c('?') && (vp)->rc.ref_count < 0)\
 	 lprintf2("0x%lx has ref_count of %ld!\n", (ulong)(vp),\
 		  (vp)->rc.ref_count);\
      END
@@ -102,11 +131,14 @@ rc_free_proc(rc_free_struct_only);
 #endif
 #define rc_adjust_(vp, delta, cname, body)\
   BEGIN\
-    if ( (vp) != 0 && !((vp)->rc.ref_count += delta) ) {\
-      rc_free_struct(vp, cname);\
-      body;\
-    } else\
-      rc_check_(vp);\
+    if (vp) {\
+      RC_DO_ADJUST(vp, delta);\
+      if (!(vp)->rc.ref_count) {\
+	rc_free_struct(vp, cname);\
+	body;\
+      } else\
+	rc_check_(vp);\
+    }\
   END
 #define rc_adjust(vp, delta, cname)\
   rc_adjust_(vp, delta, cname, (vp) = 0)
@@ -119,23 +151,30 @@ rc_free_proc(rc_free_struct_only);
 #define rc_decrement_only(vp, cname)\
   rc_adjust_only(vp, -1, cname)
 
-/* Assign a pointer, adjusting reference counts. */
+/*
+ * Assign a pointer, adjusting reference counts.  vpfrom might be a local
+ * variable with a copy of the last reference to the object, and freeing
+ * vpto might decrement the object's reference count and cause it to be
+ * freed (incorrectly); for that reason, we do the increment first.
+ */
 #define rc_assign(vpto, vpfrom, cname)\
   BEGIN\
-    if ( (vpto) != (vpfrom) ) {\
+    if ((vpto) != (vpfrom)) {\
+      rc_increment(vpfrom);\
       rc_decrement_only(vpto, cname);\
       (vpto) = (vpfrom);\
-      rc_increment(vpto);\
     }\
   END
-/* Adjust reference counts for assigning a pointer, */
-/* but don't do the assignment.  We use this before assigning */
-/* an entire structure containing reference-counted pointers. */
+/*
+ * Adjust reference counts for assigning a pointer,
+ * but don't do the assignment.  We use this before assigning
+ * an entire structure containing reference-counted pointers.
+ */
 #define rc_pre_assign(vpto, vpfrom, cname)\
   BEGIN\
-    if ( (vpto) != (vpfrom) ) {\
-      rc_decrement_only(vpto, cname);\
+    if ((vpto) != (vpfrom)) {\
       rc_increment(vpfrom);\
+      rc_decrement_only(vpto, cname);\
     }\
   END
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -321,7 +321,7 @@ pcx_write_page(gx_device_printer * pdev, FILE * file, pcx_header * phdr,
 	       bool planar)
 {
     int raster = gdev_prn_raster(pdev);
-    uint rsize = round_up((pdev->width * phdr->bpp + 7) >> 3, 2);	/* PCX format requires even */
+    uint rsize = ROUND_UP((pdev->width * phdr->bpp + 7) >> 3, 2);	/* PCX format requires even */
     int height = pdev->height;
     int depth = pdev->color_info.depth;
     uint lsize = raster + rsize;

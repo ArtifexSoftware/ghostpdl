@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -26,7 +26,7 @@
 #include "ifont.h"
 
 /* In zfont.c */
-int add_FID(P2(ref * pfdict, gs_font * pfont));
+int add_FID(P3(i_ctx_t *i_ctx_p, ref * pfdict, gs_font * pfont));
 
 font_proc_make_font(zdefault_make_font);
 font_proc_make_font(zbase_make_font);
@@ -50,19 +50,19 @@ typedef enum {
     bf_notdef_required = 16	/* build_gs_primitive_font */
 } build_font_options_t;
 
-/* In zfont2.c */
+/* In zbfont.c */
 int build_proc_name_refs(P3(build_proc_refs * pbuild,
 			    const char *bcstr,
 			    const char *bgstr));
 int build_gs_font_procs(P2(os_ptr, build_proc_refs *));
-int build_gs_primitive_font(P6(os_ptr, gs_font_base **, font_type,
+int build_gs_primitive_font(P7(i_ctx_t *, os_ptr, gs_font_base **, font_type,
 			       gs_memory_type_ptr_t, const build_proc_refs *,
 			       build_font_options_t));
-int build_gs_simple_font(P6(os_ptr, gs_font_base **, font_type,
+int build_gs_simple_font(P7(i_ctx_t *, os_ptr, gs_font_base **, font_type,
 			    gs_memory_type_ptr_t, const build_proc_refs *,
 			    build_font_options_t));
 void lookup_gs_simple_font_encoding(P1(gs_font_base *));
-int build_gs_font(P6(os_ptr, gs_font **, font_type,
+int build_gs_font(P7(i_ctx_t *, os_ptr, gs_font **, font_type,
 		     gs_memory_type_ptr_t, const build_proc_refs *,
 		     build_font_options_t));
 int define_gs_font(P1(gs_font *));

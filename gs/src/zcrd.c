@@ -16,6 +16,7 @@
    all copies.
  */
 
+
 /* CIE color rendering operators */
 #include "math_.h"
 #include "ghost.h"
@@ -39,14 +40,16 @@
 private int zcrd1_proc_params(P2(os_ptr op, ref_cie_render_procs * pcprocs));
 private int zcrd1_params(P4(os_ptr op, gs_cie_render * pcrd,
 			ref_cie_render_procs * pcprocs, gs_memory_t * mem));
-private int cache_colorrendering1(P3(gs_cie_render * pcrd,
+private int cache_colorrendering1(P4(i_ctx_t *i_ctx_p, gs_cie_render * pcrd,
 				     const ref_cie_render_procs * pcprocs,
 				     gs_ref_memory_t * imem));
 
 /* - currentcolorrendering <dict> */
 private int
-zcurrentcolorrendering(os_ptr op)
+zcurrentcolorrendering(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(1);
     *op = istate->colorrendering.dict;
     return 0;
@@ -54,8 +57,9 @@ zcurrentcolorrendering(os_ptr op)
 
 /* <dict> .buildcolorrendering1 <crd> */
 private int
-zbuildcolorrendering1(os_ptr op)
+zbuildcolorrendering1(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_memory_t *mem = gs_state_memory(igs);
     int code;
     es_ptr ep = esp;
@@ -69,7 +73,8 @@ zbuildcolorrendering1(os_ptr op)
 	return code;
     code = zcrd1_params(op, pcrd, &procs, mem);
     if (code < 0 ||
-    (code = cache_colorrendering1(pcrd, &procs, (gs_ref_memory_t *) mem)) < 0
+    (code = cache_colorrendering1(i_ctx_p, pcrd, &procs,
+				  (gs_ref_memory_t *) mem)) < 0
 	) {
 	rc_free_struct(pcrd, ".buildcolorrendering1");
 	esp = ep;
@@ -84,8 +89,9 @@ zbuildcolorrendering1(os_ptr op)
 
 /* <dict> .builddevicecolorrendering1 <crd> */
 private int
-zbuilddevicecolorrendering1(os_ptr op)
+zbuilddevicecolorrendering1(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_memory_t *mem = gs_state_memory(igs);
     dict_param_list list;
     gs_cie_render *pcrd = 0;
@@ -116,8 +122,9 @@ zbuilddevicecolorrendering1(os_ptr op)
 
 /* <dict> <crd> .setcolorrendering1 - */
 private int
-zsetcolorrendering1(os_ptr op)
+zsetcolorrendering1(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     es_ptr ep = esp;
     ref_cie_render_procs procs;
     int code;
@@ -131,7 +138,7 @@ zsetcolorrendering1(os_ptr op)
     if (code < 0)
 	return code;
     if (gs_cie_cs_common(igs) != 0 &&
-	(code = cie_cache_joint(&procs, igs)) < 0
+	(code = cie_cache_joint(i_ctx_p, &procs, gs_cie_cs_common(igs), igs)) < 0
 	)
 	return code;
     istate->colorrendering.dict = op[-1];
@@ -142,8 +149,9 @@ zsetcolorrendering1(os_ptr op)
 
 /* <dict> <crd> .setdevicecolorrendering1 - */
 private int
-zsetdevicecolorrendering1(os_ptr op)
+zsetdevicecolorrendering1(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code;
     ref_cie_render_procs procs;
 
@@ -154,7 +162,7 @@ zsetdevicecolorrendering1(os_ptr op)
 	return code;
     refset_null((ref *)&procs, sizeof(procs) / sizeof(ref));
     if (gs_cie_cs_common(igs) != 0 &&
-	(code = cie_cache_joint(&procs, igs)) < 0
+	(code = cie_cache_joint(i_ctx_p, &procs, gs_cie_cs_common(igs), igs)) < 0
 	)
 	return code;
     istate->colorrendering.dict = op[-1];
@@ -241,9 +249,9 @@ zcrd1_params(os_ptr op, gs_cie_render * pcrd,
 }
 
 /* Cache the results of the color rendering procedures. */
-private int cie_cache_render_finish(P1(os_ptr));
+private int cie_cache_render_finish(P1(i_ctx_t *));
 private int
-cache_colorrendering1(gs_cie_render * pcrd,
+cache_colorrendering1(i_ctx_t *i_ctx_p, gs_cie_render * pcrd,
 		      const ref_cie_render_procs * pcrprocs,
 		      gs_ref_memory_t * imem)
 {
@@ -252,9 +260,9 @@ cache_colorrendering1(gs_cie_render * pcrd,
     int i;
 
     if (code < 0 ||
-	(code = cie_cache_push_finish(cie_cache_render_finish, imem, pcrd)) < 0 ||
-	(code = cie_prepare_cache3(&pcrd->DomainLMN, pcrprocs->EncodeLMN.value.const_refs, &pcrd->caches.EncodeLMN[0], pcrd, imem, "Encode.LMN")) < 0 ||
-	(code = cie_prepare_cache3(&pcrd->DomainABC, pcrprocs->EncodeABC.value.const_refs, &pcrd->caches.EncodeABC[0], pcrd, imem, "Encode.ABC")) < 0
+	(code = cie_cache_push_finish(i_ctx_p, cie_cache_render_finish, imem, pcrd)) < 0 ||
+	(code = cie_prepare_cache3(i_ctx_p, &pcrd->DomainLMN, pcrprocs->EncodeLMN.value.const_refs, &pcrd->caches.EncodeLMN[0], pcrd, imem, "Encode.LMN")) < 0 ||
+	(code = cie_prepare_cache3(i_ctx_p, &pcrd->DomainABC, pcrprocs->EncodeABC.value.const_refs, &pcrd->caches.EncodeABC[0], pcrd, imem, "Encode.ABC")) < 0
 	) {
 	esp = ep;
 	return code;
@@ -271,7 +279,7 @@ cache_colorrendering1(gs_cie_render * pcrd,
 	if (!is_identity)
 	    for (i = 0; i < pcrd->RenderTable.lookup.m; i++)
 		if ((code =
-		     cie_prepare_cache(Range4_default.ranges,
+		     cie_prepare_cache(i_ctx_p, Range4_default.ranges,
 				pcrprocs->RenderTableT.value.const_refs + i,
 				       &pcrd->caches.RenderTableT[i].floats,
 				       pcrd, imem, "RenderTable.T")) < 0
@@ -285,8 +293,9 @@ cache_colorrendering1(gs_cie_render * pcrd,
 
 /* Finish up after loading the rendering caches. */
 private int
-cie_cache_render_finish(os_ptr op)
+cie_cache_render_finish(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_cie_render *pcrd = r_ptr(op, gs_cie_render);
     int code;
 
@@ -315,15 +324,15 @@ cie_cache_render_finish(os_ptr op)
 
 /* Load the joint caches. */
 private int
-    cie_exec_tpqr(P1(os_ptr)),
-    cie_post_exec_tpqr(P1(os_ptr)),
-    cie_tpqr_finish(P1(os_ptr));
+    cie_exec_tpqr(P1(i_ctx_t *)),
+    cie_post_exec_tpqr(P1(i_ctx_t *)),
+    cie_tpqr_finish(P1(i_ctx_t *));
 int
-cie_cache_joint(const ref_cie_render_procs * pcrprocs, gs_state * pgs)
+cie_cache_joint(i_ctx_t *i_ctx_p, const ref_cie_render_procs * pcrprocs,
+		const gs_cie_common *pcie, gs_state * pgs)
 {
     const gs_cie_render *pcrd = gs_currentcolorrendering(pgs);
     gx_cie_joint_caches *pjc = gx_currentciecaches(pgs);
-    const gs_cie_common *pcie = gs_cie_cs_common(pgs);
     gs_ref_memory_t *imem = (gs_ref_memory_t *) gs_state_memory(pgs);
     ref pqr_procs;
     uint space;
@@ -348,7 +357,7 @@ cie_cache_joint(const ref_cie_render_procs * pcrprocs, gs_state * pgs)
 	return code;
     /* When we're done, deallocate the procs and complete the caches. */
     check_estack(3);
-    cie_cache_push_finish(cie_tpqr_finish, imem, pgs);
+    cie_cache_push_finish(i_ctx_p, cie_tpqr_finish, imem, pgs);
     *++esp = pqr_procs;
     space = r_space(&pqr_procs);
     for (i = 0; i < 3; i++) {
@@ -365,7 +374,7 @@ cie_cache_joint(const ref_cie_render_procs * pcrprocs, gs_state * pgs)
 	for (j = 0, p += 4; j < 4 * 6; j++, p++, ppt++)
 	    make_real(p, *ppt);
     }
-    return cie_prepare_cache3(&pcrd->RangePQR,
+    return cie_prepare_cache3(i_ctx_p, &pcrd->RangePQR,
 			      pqr_procs.value.const_refs,
 			      &pjc->TransformPQR[0],
 			      pjc, imem, "Transform.PQR");
@@ -374,8 +383,9 @@ cie_cache_joint(const ref_cie_render_procs * pcrprocs, gs_state * pgs)
 /* Private operator to shuffle arguments for the TransformPQR procedure: */
 /* v [ws wd bs bd] proc -> -mark- ws wd bs bd v proc + exec */
 private int
-cie_exec_tpqr(os_ptr op)
+cie_exec_tpqr(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     const ref *ppt = op[-1].value.const_refs;
     uint space = r_space(op - 1);
     int i;
@@ -388,14 +398,15 @@ cie_exec_tpqr(os_ptr op)
 	make_const_array(op - 5 + i, a_readonly | space,
 			 6, ppt + i * 6);
     make_mark(op - 6);
-    return zexec(op);
+    return zexec(i_ctx_p);
 }
 
 /* Remove extraneous values from the stack after executing */
 /* the TransformPQR procedure.  -mark- ... v -> v */
 private int
-cie_post_exec_tpqr(os_ptr op)
+cie_post_exec_tpqr(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     uint count = ref_stack_counttomark(&o_stack);
     ref vref;
 
@@ -409,8 +420,9 @@ cie_post_exec_tpqr(os_ptr op)
 
 /* Free the procs array and complete the joint caches. */
 private int
-cie_tpqr_finish(os_ptr op)
+cie_tpqr_finish(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_state *pgs = r_ptr(op, gs_state);
     gs_cie_render *pcrd =
 	(gs_cie_render *)gs_currentcolorrendering(pgs);  /* break const */

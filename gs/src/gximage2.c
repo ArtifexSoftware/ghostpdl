@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -87,7 +87,7 @@ image2_set_data(const gs_image2_t * pim, image2_data_t * pid)
 }
 
 /* Compute the source size of an ImageType 2 image. */
-int
+private int
 gx_image2_source_size(const gs_imager_state * pis, const gs_image_common_t * pim,
 		      gs_int_point * psize)
 {
@@ -313,5 +313,5 @@ gx_begin_image2(gx_device * dev,
 	}
     }
     gs_free_object(mem, row, "gx_begin_image2");
-    return code;
+    return (code < 0 ? code : 1);
 }

@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -32,7 +32,6 @@
 #include "gxcmap.h"
 #include "gxdcolor.h"
 #include "gxistate.h"
-#include "gzpath.h"
 #include "gxdevmem.h"
 #include "gxcpath.h"
 #include "gximage.h"
@@ -94,12 +93,14 @@ sample_unpack_12(byte * bptr, int *pdata_x, const byte * data,
     return bptr;
 }
 
+const sample_unpack_proc_t sample_unpack_12_proc = sample_unpack_12;
+
 /* ------ Strategy procedure ------ */
 
 /* Use special (slow) logic for 12-bit source values. */
 private irender_proc(image_render_frac);
-private irender_proc_t
-image_strategy_frac(gx_image_enum * penum)
+irender_proc_t
+gs_image_class_2_fracs(gx_image_enum * penum)
 {
     if (penum->bps > 8) {
 	if (penum->use_mask_color) {
@@ -116,29 +117,25 @@ image_strategy_frac(gx_image_enum * penum)
     return 0;
 }
 
-void
-gs_gxi12bit_init(gs_memory_t * mem)
-{
-    image_strategies.fracs = image_strategy_frac;
-    sample_unpack_12_proc = sample_unpack_12;
-}
-
 /* ---------------- Rendering procedures ---------------- */
 
 /* ------ Rendering for 12-bit samples ------ */
 
-#define longs_per_4_fracs (arch_sizeof_frac * 4 / arch_sizeof_long)
+#define FRACS_PER_LONG (arch_sizeof_long / arch_sizeof_frac)
 typedef union {
-    frac v[4];
-    long all[longs_per_4_fracs];	/* for fast comparison */
+    frac v[GS_IMAGE_MAX_COLOR_COMPONENTS];
+#define LONGS_PER_COLOR_FRACS\
+  ((GS_IMAGE_MAX_COLOR_COMPONENTS + FRACS_PER_LONG - 1) / FRACS_PER_LONG)
+    long all[LONGS_PER_COLOR_FRACS];	/* for fast comparison */
 } color_fracs;
 
-#if longs_per_4_fracs == 1
-#  define color_frac_eq(f1, f2)\
+#define LONGS_PER_4_FRACS ((FRACS_PER_LONG + 3) / 4)
+#if LONGS_PER_4_FRACS == 1
+#  define COLOR_FRACS_4_EQ(f1, f2)\
      ((f1).all[0] == (f2).all[0])
 #else
-#if longs_per_4_fracs == 2
-#  define color_frac_eq(f1, f2)\
+#if LONGS_PER_4_FRACS == 2
+#  define COLOR_FRACS_4_EQ(f1, f2)\
      ((f1).all[0] == (f2).all[0] && (f1).all[1] == (f2).all[1])
 #endif
 #endif
@@ -174,8 +171,8 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
     const gs_color_space *pcs = penum->pcs;
     cs_proc_remap_color((*remap_color)) = pcs->type->remap_color;
     gs_client_color cc;
-    int device_color = penum->device_color;
-    const gx_color_map_procs *cmap_procs = gx_device_cmap_procs(dev);
+    bool device_color = penum->device_color;
+    const gx_color_map_procs *cmap_procs = gx_get_cmap_procs(pis, dev);
     cmap_proc_rgb((*map_rgb)) = cmap_procs->map_rgb;
     cmap_proc_cmyk((*map_cmyk)) = cmap_procs->map_cmyk;
     bool use_mask_color = penum->use_mask_color;
@@ -202,23 +199,20 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
     pdyy = dda_current(penum->dda.row.y) - penum->cur.y;
     if_debug4('b', "[b]y=%d w=%d xt=%f yt=%f\n",
 	      penum->y, w, fixed2float(xl), fixed2float(ytf));
-    run.v[0] = run.v[1] = run.v[2] = run.v[3] = 0;
-    next.v[0] = next.v[1] = next.v[2] = next.v[3] = 0;
-    cc.paint.values[0] = cc.paint.values[1] =
-	cc.paint.values[2] = cc.paint.values[3] = 0;
-    cc.pattern = 0;
-    (*remap_color) (&cc, pcs, pdevc, pis, dev, gs_color_select_source);
+    memset(&run, 0, sizeof(run));
+    memset(&next, 0, sizeof(next));
+    cs_full_init_color(&cc, pcs);
     run.v[0] = ~psrc[0];	/* force remap */
 
     while (psrc < bufend) {
 	next.v[0] = psrc[0];
 	switch (spp) {
-	    case 4:		/* cmyk */
+	    case 4:		/* may be CMYK */
 		next.v[1] = psrc[1];
 		next.v[2] = psrc[2];
 		next.v[3] = psrc[3];
 		psrc += 4;
-		if (color_frac_eq(next, run))
+		if (COLOR_FRACS_4_EQ(next, run))
 		    goto inc;
 		if (use_mask_color && mask_color12_matches(next.v, penum, 4)) {
 		    color_set_null(pdevc_next);
@@ -241,11 +235,11 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
 		if_debug1('B', "[B]cc[3]=%g\n",
 			  cc.paint.values[3]);
 		break;
-	    case 3:		/* rgb */
+	    case 3:		/* may be RGB */
 		next.v[1] = psrc[1];
 		next.v[2] = psrc[2];
 		psrc += 3;
-		if (color_frac_eq(next, run))
+		if (COLOR_FRACS_4_EQ(next, run))
 		    goto inc;
 		if (use_mask_color && mask_color12_matches(next.v, penum, 3)) {
 		    color_set_null(pdevc_next);
@@ -264,7 +258,7 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
 			  cc.paint.values[0], cc.paint.values[1],
 			  cc.paint.values[2]);
 		break;
-	    case 1:		/* gray */
+	    case 1:		/* may be Gray */
 		psrc++;
 		if (next.v[0] == run.v[0])
 		    goto inc;
@@ -282,9 +276,39 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
 		if_debug1('B', "[B]cc[0]=%g\n",
 			  cc.paint.values[0]);
 		break;
+	    default:		/* DeviceN */
+		{
+		    int i;
+
+		    for (i = 1; i < spp; ++i)
+			next.v[i] = psrc[i];
+		    psrc += spp;
+		    if (!memcmp(next.v, run.v, spp * sizeof(next.v[0])))
+			goto inc;
+		    if (use_mask_color &&
+			mask_color12_matches(next.v, penum, spp)
+			) {
+			color_set_null(pdevc_next);
+			goto f;
+		    }
+		    for (i = 0; i < spp; ++i)
+			decode_frac(next.v[i], cc, i);
+#ifdef DEBUG
+		    if (gs_debug_c('B')) {
+			dprintf2("[B]cc[0..%d]=%g", spp - 1,
+				 cc.paint.values[0]);
+			for (i = 1; i < spp; ++i)
+			    dprintf1(",%g", cc.paint.values[i]);
+			dputs("\n");
+		    }
+#endif
+		}
+		break;
 	}
-	(*remap_color) (&cc, pcs, pdevc_next, pis, dev,
-			gs_color_select_source);
+	code = remap_color(&cc, pcs, pdevc_next, pis, dev,
+			   gs_color_select_source);
+	if (code < 0)
+	    return code;
 f:
 	if_debug7('B', "[B]0x%x,0x%x,0x%x,0x%x -> %ld,%ld,0x%lx\n",
 		  next.v[0], next.v[1], next.v[2], next.v[3],

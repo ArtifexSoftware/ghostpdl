@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -26,13 +26,13 @@
 #include "gxdevice.h"
 #include "gxfixed.h"
 #include "gscoord.h"		/* needs gsmatrix.h */
-#include "gxstate.h"
+#include "gxistate.h"
 #include "gzpath.h"
 #include "gzcpath.h"
 
 /* Imported from gxacpath.c */
-extern int gx_cpath_intersect_slow(P4(gs_state *, gx_clip_path *,
-				      gx_path *, int));
+extern int gx_cpath_intersect_path_slow(P4(gx_clip_path *, gx_path *, int,
+					   gs_imager_state *));
 
 /* Forward references */
 private void gx_clip_list_from_rectangle(P2(gx_clip_list *, gs_fixed_rect *));
@@ -46,26 +46,25 @@ public_st_device_clip();
 private_st_cpath_enum();
 
 /* GC procedures for gx_clip_path */
-#define cptr ((gx_clip_path *)vptr)
 private 
-ENUM_PTRS_BEGIN(clip_path_enum_ptrs) return ENUM_USING(st_path, &cptr->path, sizeof(cptr->path), index - 1);
+ENUM_PTRS_WITH(clip_path_enum_ptrs, gx_clip_path *cptr) return ENUM_USING(st_path, &cptr->path, sizeof(cptr->path), index - 1);
 
 case 0:
 ENUM_RETURN((cptr->rect_list == &cptr->local_list ? 0 :
 	     cptr->rect_list));
 ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(clip_path_reloc_ptrs)
+private
+RELOC_PTRS_WITH(clip_path_reloc_ptrs, gx_clip_path *cptr)
 {
     if (cptr->rect_list != &cptr->local_list)
 	RELOC_VAR(cptr->rect_list);
     RELOC_USING(st_path, &cptr->path, sizeof(gx_path));
 }
 RELOC_PTRS_END
-#undef cptr
 
 /* GC procedures for gx_device_clip */
-#define cptr ((gx_device_clip *)vptr)
-private ENUM_PTRS_BEGIN(device_clip_enum_ptrs)
+private
+ENUM_PTRS_WITH(device_clip_enum_ptrs, gx_device_clip *cptr)
 {
     if (index < st_clip_list_max_ptrs + 1)
 	return ENUM_USING(st_clip_list, &cptr->list,
@@ -78,7 +77,8 @@ case 0:
 ENUM_RETURN((cptr->current == &cptr->list.single ? NULL :
 	     (void *)cptr->current));
 ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(device_clip_reloc_ptrs)
+private
+RELOC_PTRS_WITH(device_clip_reloc_ptrs, gx_device_clip *cptr)
 {
     if (cptr->current == &cptr->list.single)
 	cptr->current = &((gx_device_clip *)RELOC_OBJ(vptr))->list.single;
@@ -88,13 +88,12 @@ private RELOC_PTRS_BEGIN(device_clip_reloc_ptrs)
     RELOC_USING(st_device_forward, vptr, sizeof(gx_device_forward));
 }
 RELOC_PTRS_END
-#undef cptr
 
 /* Define an empty clip list. */
 private const gx_clip_list clip_list_empty =
 {
     {0, 0, min_int, max_int, 0, 0},
-    0, 0, 0, 0			/*false */
+    0, 0, 0, 0, 0
 };
 
 /* Debugging */
@@ -414,30 +413,17 @@ gx_cpath_to_path(gx_clip_path * pcpath, gx_path * ppath)
 
 /* Return the inner and outer check rectangles for a clipping path. */
 /* Return true iff the path is a rectangle. */
-/* Note that these must return something strange if we are using */
-/* outside clipping. */
 bool
 gx_cpath_inner_box(const gx_clip_path * pcpath, gs_fixed_rect * pbox)
 {
-    if (gx_cpath_is_outside(pcpath)) {
-	pbox->p.x = pbox->p.y = pbox->q.x = pbox->q.y = 0;
-	return false;
-    } else {
-	*pbox = pcpath->inner_box;
-	return clip_list_is_rectangle(gx_cpath_list(pcpath));
-    }
+    *pbox = pcpath->inner_box;
+    return clip_list_is_rectangle(gx_cpath_list(pcpath));
 }
 bool
 gx_cpath_outer_box(const gx_clip_path * pcpath, gs_fixed_rect * pbox)
 {
-    if (gx_cpath_is_outside(pcpath)) {
-	pbox->p.x = pbox->p.y = min_fixed;
-	pbox->q.x = pbox->q.y = max_fixed;
-	return false;
-    } else {
-	*pbox = pcpath->outer_box;
-	return clip_list_is_rectangle(gx_cpath_list(pcpath));
-    }
+    *pbox = pcpath->outer_box;
+    return clip_list_is_rectangle(gx_cpath_list(pcpath));
 }
 
 /* Test if a clipping path includes a rectangle. */
@@ -455,24 +441,6 @@ gx_cpath_includes_rectangle(register const gx_clip_path * pcpath,
 	 (pcpath->inner_box.p.y <= y1 && y0 <= pcpath->inner_box.q.y));
 }
 
-/* Set the current outsideness of a clipping path. */
-int
-gx_cpath_set_outside(gx_clip_path * pcpath, bool outside)
-{
-    if (outside != gx_cpath_list(pcpath)->outside) {
-	pcpath->id = gs_next_ids(1);	/* path changed => change id */
-	gx_cpath_list(pcpath)->outside = outside;
-    }
-    return 0;
-}
-
-/* Return the current outsideness of a clipping path. */
-bool
-gx_cpath_is_outside(const gx_clip_path * pcpath)
-{
-    return gx_cpath_list(pcpath)->outside;
-}
-
 /* Set the outer clipping box to the path bounding box, */
 /* expanded to pixel boundaries. */
 void
@@ -483,6 +451,20 @@ gx_cpath_set_outer_box(gx_clip_path * pcpath)
     pcpath->outer_box.q.x = fixed_ceiling(pcpath->path.bbox.q.x);
     pcpath->outer_box.q.y = fixed_ceiling(pcpath->path.bbox.q.y);
 }
+
+/* Return the rectangle list of a clipping path (for local use only). */
+const gx_clip_list *
+gx_cpath_list(const gx_clip_path *pcpath)
+{
+    return &pcpath->rect_list->list;
+}
+/* Internal non-const version of the same accessor. */
+inline private gx_clip_list *
+gx_cpath_list_private(gx_clip_path *pcpath)
+{
+    return &pcpath->rect_list->list;
+}
+
 
 /* ------ Clipping path setting ------ */
 
@@ -529,20 +511,27 @@ gx_cpath_reset(gx_clip_path * pcpath)
 /* Intersect a new clipping path with an old one. */
 /* Flatten the new path first (in a copy) if necessary. */
 int
-gx_cpath_clip(gs_state *pgs, gx_clip_path *pcpath, gx_path *ppath_orig,
-	      int rule)
+gx_cpath_clip(gs_state *pgs, gx_clip_path *pcpath,
+	      /*const*/ gx_path *ppath_orig, int rule)
+{
+    return gx_cpath_intersect(pcpath, ppath_orig, rule,
+			      (gs_imager_state *)pgs);
+}
+int
+gx_cpath_intersect(gx_clip_path *pcpath, /*const*/ gx_path *ppath_orig,
+		   int rule, gs_imager_state *pis)
 {
     gx_path fpath;
-    gx_path *ppath = ppath_orig;
+    /*const*/ gx_path *ppath = ppath_orig;
     gs_fixed_rect old_box, new_box;
     int code;
 
     /* Flatten the path if necessary. */
     if (gx_path_has_curves_inline(ppath)) {
-	gx_path_init_local(&fpath, gs_state_memory(pgs));
+	gx_path_init_local(&fpath, pis->memory);
 	code = gx_path_add_flattened_accurate(ppath, &fpath,
-					      gs_currentflat(pgs),
-					      gs_currentaccuratecurves(pgs));
+					      gs_currentflat_inline(pis),
+					      pis->accurate_curves);
 	if (code < 0)
 	    return code;
 	ppath = &fpath;
@@ -553,17 +542,13 @@ gx_cpath_clip(gs_state *pgs, gx_clip_path *pcpath, gx_path *ppath_orig,
 	 gx_path_is_void(ppath))
 	) {
 	bool changed = false;
-	bool outside = gx_cpath_is_outside(pcpath);
 
 	if (!code) {
 	    /* The new path is void. */
 	    if (gx_path_current_point(ppath, &new_box.p) < 0) {
 		/* Use the user space origin (arbitrarily). */
-		gs_point origin;
-
-		gs_transform(pgs, 0.0, 0.0, &origin);
-		new_box.p.x = float2fixed(origin.x);
-		new_box.p.y = float2fixed(origin.y);
+		new_box.p.x = float2fixed(pis->ctm.tx);
+		new_box.p.y = float2fixed(pis->ctm.ty);
 		changed = true;
 	    }
 	    new_box.q = new_box.p;
@@ -593,7 +578,6 @@ gx_cpath_clip(gs_state *pgs, gx_clip_path *pcpath, gx_path *ppath_orig,
 	}
 	ppath->bbox = new_box;
 	cpath_set_rectangle(pcpath, &new_box);
-	pcpath->rect_list->list.outside = outside;
     } else {
 	/* Existing clip path is not a rectangle.  Intersect the slow way. */
 	bool path_valid =
@@ -603,7 +587,7 @@ gx_cpath_clip(gs_state *pgs, gx_clip_path *pcpath, gx_path *ppath_orig,
 					new_box.p.x, new_box.p.y,
 					new_box.q.x, new_box.q.y);
 
-	code = gx_cpath_intersect_slow(pgs, pcpath, ppath, rule);
+	code = gx_cpath_intersect_path_slow(pcpath, ppath, rule, pis);
 	if (code >= 0 && path_valid) {
 	    gx_path_assign_preserve(&pcpath->path, ppath_orig);
 	    pcpath->path_valid = true;
@@ -616,11 +600,16 @@ gx_cpath_clip(gs_state *pgs, gx_clip_path *pcpath, gx_path *ppath_orig,
 
 /* Scale a clipping path by a power of 2. */
 int
-gx_cpath_scale_exp2(gx_clip_path * pcpath, int log2_scale_x, int log2_scale_y)
+gx_cpath_scale_exp2_shared(gx_clip_path * pcpath, int log2_scale_x,
+			   int log2_scale_y, bool list_shared,
+			   bool segments_shared)
 {
     int code =
-	gx_path_scale_exp2(&pcpath->path, log2_scale_x, log2_scale_y);
-    gx_clip_list *list = gx_cpath_list(pcpath);
+	(pcpath->path_valid ?
+	 gx_path_scale_exp2_shared(&pcpath->path, log2_scale_x, log2_scale_y,
+				   segments_shared) :
+	 0);
+    gx_clip_list *list = gx_cpath_list_private(pcpath);
     gx_clip_rect *pr;
 
     if (code < 0)
@@ -628,21 +617,25 @@ gx_cpath_scale_exp2(gx_clip_path * pcpath, int log2_scale_x, int log2_scale_y)
     /* Scale the fixed entries. */
     gx_rect_scale_exp2(&pcpath->inner_box, log2_scale_x, log2_scale_y);
     gx_rect_scale_exp2(&pcpath->outer_box, log2_scale_x, log2_scale_y);
-    /* Scale the clipping list. */
-    pr = list->head;
-    if (pr == 0)
-	pr = &list->single;
-    for (; pr != 0; pr = pr->next)
-	if (pr != list->head && pr != list->tail) {
-#define scale_v(v, s)\
+    if (!list_shared) {
+	/* Scale the clipping list. */
+	pr = list->head;
+	if (pr == 0)
+	    pr = &list->single;
+	for (; pr != 0; pr = pr->next)
+	    if (pr != list->head && pr != list->tail) {
+
+#define SCALE_V(v, s)\
   if ( pr->v != min_int && pr->v != max_int )\
     pr->v = (s >= 0 ? pr->v << s : pr->v >> -s)
-	    scale_v(xmin, log2_scale_x);
-	    scale_v(xmax, log2_scale_x);
-	    scale_v(ymin, log2_scale_y);
-	    scale_v(ymax, log2_scale_y);
-#undef scale_v
-	}
+
+		SCALE_V(xmin, log2_scale_x);
+		SCALE_V(xmax, log2_scale_x);
+		SCALE_V(ymin, log2_scale_y);
+		SCALE_V(ymax, log2_scale_y);
+#undef SCALE_V
+	    }
+    }
     pcpath->id = gs_next_ids(1);	/* path changed => change id */
     return 0;
 }
@@ -676,12 +669,11 @@ gx_clip_list_from_rectangle(register gx_clip_list * clp,
 	rp->p.y = rp->q.y;
 	rp->q.y = t;
     }
-    clp->single.xmin = fixed2int_var(rp->p.x);
+    clp->single.xmin = clp->xmin = fixed2int_var(rp->p.x);
     clp->single.ymin = fixed2int_var(rp->p.y);
-    clp->single.xmax = fixed2int_var_ceiling(rp->q.x);
+    clp->single.xmax = clp->xmax = fixed2int_var_ceiling(rp->q.x);
     clp->single.ymax = fixed2int_var_ceiling(rp->q.y);
     clp->count = 1;
-    clp->outside = false;
 }
 
 /* Start enumerating a clipping path. */
@@ -693,7 +685,7 @@ gx_cpath_enum_init(gs_cpath_enum * penum, gx_clip_path * pcpath)
 	penum->rp = penum->visit = 0;
     } else {
 	gx_path empty_path;
-	gx_clip_list *clp = gx_cpath_list(pcpath);
+	gx_clip_list *clp = gx_cpath_list_private(pcpath);
 	gx_clip_rect *head = (clp->count <= 1 ? &clp->single : clp->head);
 	gx_clip_rect *rp;
 
@@ -914,13 +906,33 @@ gx_clip_list_free(gx_clip_list * clp, gs_memory_t * mem)
 
 #ifdef DEBUG
 
+/* Print a clipping list. */
+void
+gx_clip_list_print(const gx_clip_list *list)
+{
+    const gx_clip_rect *pr;
+
+    dlprintf3("   list count=%d xmin=%d xmax=%d\n",
+	     list->count, list->xmin, list->xmax);
+    switch (list->count) {
+	case 0:
+	    pr = 0;
+	    break;
+	case 1:
+	    pr = &list->single;
+	    break;
+	default:
+	    pr = list->head;
+    }
+    for (; pr != 0; pr = pr->next)
+	dlprintf4("   rect: (%d,%d),(%d,%d)\n",
+		  pr->xmin, pr->ymin, pr->xmax, pr->ymax);
+}
+
 /* Print a clipping path */
 void
 gx_cpath_print(const gx_clip_path * pcpath)
 {
-    const gx_clip_rect *pr;
-    const gx_clip_list *list = gx_cpath_list(pcpath);
-
     if (pcpath->path_valid)
 	gx_path_print(&pcpath->path);
     else
@@ -935,22 +947,9 @@ gx_cpath_print(const gx_clip_path * pcpath)
 	      fixed2float(pcpath->outer_box.p.y),
 	      fixed2float(pcpath->outer_box.q.x),
 	      fixed2float(pcpath->outer_box.q.y));
-    dprintf4("     rule=%d outside=%d count=%d list.refct=%ld\n",
-	     pcpath->rule, list->outside, list->count,
-	     pcpath->rect_list->rc.ref_count);
-    switch (list->count) {
-	case 0:
-	    pr = 0;
-	    break;
-	case 1:
-	    pr = &list->single;
-	    break;
-	default:
-	    pr = list->head;
-    }
-    for (; pr != 0; pr = pr->next)
-	dlprintf4("   rect: (%d,%d),(%d,%d)\n",
-		  pr->xmin, pr->ymin, pr->xmax, pr->ymax);
+    dprintf2("     rule=%d list.refct=%ld\n",
+	     pcpath->rule, pcpath->rect_list->rc.ref_count);
+    gx_clip_list_print(gx_cpath_list(pcpath));
 }
 
 #endif /* DEBUG */

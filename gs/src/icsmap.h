@@ -1,4 +1,4 @@
-/* Copyright (C) 1994 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -33,7 +33,14 @@
 #  define csme_proc (-2)	/* -procedure- */
 #  define csme_hival (-1)	/* t_integer */
 #  define csme_index 0		/* t_integer */
-int zcs_begin_map(P5(gs_indexed_map ** pmap, const ref * pproc, int num_entries,
-	 const gs_base_color_space * base_space, int (*map1) (P1(os_ptr))));
+/*
+ * Note that the underlying color space parameter is a direct space, not a
+ * base space, since the underlying space of an Indexed color space may be
+ * a Separation or DeviceN space.
+ */
+int zcs_begin_map(P6(i_ctx_t *i_ctx_p, gs_indexed_map ** pmap,
+		     const ref * pproc, int num_entries,
+		     const gs_direct_color_space * base_space,
+		     op_proc_t map1));
 
 #endif /* icsmap_INCLUDED */

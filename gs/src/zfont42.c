@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -37,8 +37,9 @@ private int z42_gdir_get_outline(P3(gs_font_type42 *, uint, gs_const_string *));
 /* <string|name> <font_dict> .buildfont11/42 <string|name> <font> */
 /* Build a type 11 (TrueType CID-keyed) or 42 (TrueType) font. */
 int
-build_gs_TrueType_font(os_ptr op, font_type ftype, const char *bcstr,
-		       const char *bgstr, build_font_options_t options)
+build_gs_TrueType_font(i_ctx_t *i_ctx_p, os_ptr op, font_type ftype,
+		       const char *bcstr, const char *bgstr,
+		       build_font_options_t options)
 {
     build_proc_refs build;
     ref sfnts, sfnts0, GlyphDirectory;
@@ -72,7 +73,7 @@ build_gs_TrueType_font(os_ptr op, font_type ftype, const char *bcstr,
 	 */
 	sfnts = *psfnts;
     }
-    code = build_gs_primitive_font(op, (gs_font_base **) & pfont, ftype,
+    code = build_gs_primitive_font(i_ctx_p, op, (gs_font_base **)&pfont, ftype,
 				   &st_gs_font_type42, &build, options);
     if (code != 0)
 	return code;
@@ -111,9 +112,11 @@ build_gs_TrueType_font(os_ptr op, font_type ftype, const char *bcstr,
     return define_gs_font((gs_font *) pfont);
 }
 private int
-zbuildfont42(os_ptr op)
+zbuildfont42(i_ctx_t *i_ctx_p)
 {
-    return build_gs_TrueType_font(op, ft_TrueType, "%Type42BuildChar",
+    os_ptr op = osp;
+
+    return build_gs_TrueType_font(i_ctx_p, op, ft_TrueType, "%Type42BuildChar",
 				  "%Type42BuildGlyph", bf_options_none);
 }
 

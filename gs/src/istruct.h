@@ -61,7 +61,7 @@ typedef struct gc_procs_with_refs_s {
  * not worth the trouble.)
  */
 #define ENUM_RETURN_REF(ptr)\
-  BEGIN *pep = (const void *)(ptr); return ptr_ref_type; END
+  return (*pep = (const void *)(ptr), ptr_ref_type)
 #define ENUM_RETURN_REF_MEMBER(typ, memb)\
   ENUM_RETURN_REF(&((typ *)vptr)->memb)
 #define RELOC_REF_PTR_VAR(ptrvar)\

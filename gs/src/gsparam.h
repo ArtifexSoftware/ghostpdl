@@ -35,7 +35,6 @@
 #ifndef gs_param_list_DEFINED
 #  define gs_param_list_DEFINED
 typedef struct gs_param_list_s gs_param_list;
-
 #endif
 
 /* Define the type for a parameter key name. */
@@ -457,9 +456,7 @@ param_proc_requested(gs_param_requested_default);  /* always returns true */
  * Define a default implementation, intended to be usable easily
  * from C code.  The intended usage pattern is:
 	gs_c_param_list list;
-
 	[... other code here ...]
-
 	gs_c_param_list_write(&list, mem);
 	[As many as needed:]
 	code = param_write_XXX(&list, "ParamName", &param_value);
@@ -473,11 +470,12 @@ param_proc_requested(gs_param_requested_default);  /* always returns true */
 	    code = (*dev_proc(dev, open_device))(dev);
 	    [Check code for <0]
 	}
-  *
-  * The default implementation also has the special property that it can
-  * forward unrecognized param_read_ calls to another parameter list,
-  * called the target.  This allows constructing incrementally modified
-  * parameter lists.
+ *
+ * The default implementation also has the special property that it can
+ * forward unrecognized param_read_ calls to another parameter list,
+ * called the target.  This allows constructing incrementally modified
+ * parameter lists.  Note that this is only relevant for put_params
+ * (reading from the parameter list).
  */
 
 typedef struct gs_c_param_s gs_c_param;	/* opaque here */
@@ -495,7 +493,6 @@ typedef struct gs_c_param_list_s {
 
 /* Set the target of a C parameter list. */
 void gs_c_param_list_set_target(P2(gs_c_param_list *, gs_param_list *));
-
 
 /* Clients normally allocate the gs_c_param_list on the stack. */
 void gs_c_param_list_write(P2(gs_c_param_list *, gs_memory_t *));

@@ -1,4 +1,4 @@
-%    Copyright (C) 1994, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -431,11 +431,11 @@ pop readonly pop end
 mark
 	% Non-Type categories with existing entries.
  /ColorSpaceFamily
-   mark colorspacedict { pop } forall .packtomark
+   { }	% These must be deferred, because optional features may add some.
  /Emulator
    mark EMULATORS { cvn } forall .packtomark
  /Filter
-   mark filterdict { pop } forall .packtomark
+   { }	% These must be deferred, because optional features may add some.
  /IODevice
 	% Loop until the .getiodevice gets a rangecheck.
    errordict /rangecheck 2 copy get
@@ -454,7 +454,7 @@ mark
  /FormType
    { }	% These must be deferred, because optional features may add some.
  /HalftoneType
-   {1 2 3 4 5}
+   { }	% These must be deferred, because optional features may add some.
  /ImageType
    { }	% Deferred, optional features may add some.
  /PatternType
@@ -520,7 +520,9 @@ counttomark 2 idiv
  } bind def
 
 /ColorRendering mark /InstanceType /dicttype .definecategory
-/ColorSpace mark /InstanceType /arraytype .definecategory
+% ColorSpace is defined below
+% Encoding is defined below
+% Font is defined below
 /Form mark /InstanceType /dicttype .definecategory
 /Halftone mark /InstanceType /dicttype .definecategory
 /Pattern mark /InstanceType /dicttype .definecategory
@@ -536,6 +538,64 @@ counttomark 2 idiv
 % IdiomSet, InkParams, and TrapParams are defined in gs_ll3.ps
 
 (END MISC) VMDEBUG
+
+% Define the ColorSpace category.
+
+/.defaultcsnames mark
+  /DefaultGray 0
+  /DefaultRGB 1
+  /DefaultCMYK 2
+.dicttomark readonly def
+
+% The "hooks" are no-ops here, redefined in LL3.
+/.definedefaultcs {	% <index> <value> .definedefaultcs -
+  pop pop
+} bind def
+/.undefinedefaultcs {	% <index> .undefinedefaultcs -
+  pop
+} bind def
+
+/ColorSpace mark
+
+/InstanceType /arraytype
+
+% We keep track of whether there are any local definitions for any of
+% the Default keys.  This information must get saved and restored in
+% parallel with the local instance dictionary, so it must be stored in
+% local VM.  Therefore, we use a local array (actually, a procedure)
+% to hold the flag.
+
+% We'll need to use .forceput to initialize this correctly.
+/.LocalDefaults null
+
+/DefineResource {
+  2 copy /Generic /Category findresource /DefineResource get exec
+  exch pop
+  exch //.defaultcsnames exch .knownget {
+    1 index .definedefaultcs
+    currentglobal not { /.LocalDefaults load 0 true put } if
+  } if
+} bind
+
+/UndefineResource {
+  dup /Generic /Category findresource /UndefineResource get exec
+  //.defaultcsnames exch .knownget {
+    .undefinedefaultcs
+    currentglobal not {
+	% Recompute .LocalDefaults by scanning.  This is rarely needed.
+      /.LocalDefaults load 0 false //.defaultcsnames {
+	pop .LocalInstances exch known { pop true exit } if
+      } forall put
+    } if
+  } if
+} bind
+
+.definecategory			% ColorSpace
+
+currentglobal false setglobal
+/ColorSpace /Category findresource
+  /.LocalDefaults [false] cvx .forceput	% category is global, array is local
+setglobal
 
 % Define the Encoding category.
 
@@ -668,7 +728,7 @@ end				% level2dict
 
 /.fixresources {
 	% Encoding resources
- EncodingDirectory
+  EncodingDirectory
    { dup length 256 eq
       { /Encoding defineresource pop }
       { pop pop }
@@ -688,6 +748,10 @@ end				% level2dict
     /sRGB exch /ColorSpace defineresource pop
     systemdict /CIEsRGB undef
   } if
+	% ColorSpaceFamily resources
+  colorspacedict { pop dup /ColorSpaceFamily defineresource pop } forall
+	% Filter resources
+  filterdict { pop dup /Filter defineresource pop } forall
 	% FontType and FMapType resources
   buildfontdict { pop dup /FontType defineresource pop } forall
   mark
@@ -696,6 +760,8 @@ end				% level2dict
   counttomark { dup /FMapType defineresource pop } repeat pop
 	% FormType resources
   .formtypes { pop dup /FormType defineresource pop } forall
+	% HalftoneType resources
+  .halftonetypes { pop dup /HalftoneType defineresource pop } forall
 	% ColorRenderingType resources
   .colorrenderingtypes {pop dup /ColorRenderingType defineresource pop} forall
 	% ImageType resources

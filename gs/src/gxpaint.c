@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -64,12 +64,24 @@ gx_stroke_fill(gx_path * ppath, gs_state * pgs)
 }
 
 int
-gx_stroke_add(gx_path * ppath, gx_path * to_path, gs_state * pgs)
+gx_stroke_add(gx_path * ppath, gx_path * to_path,
+	      const gs_state * pgs)
 {
     gx_stroke_params params;
 
     params.flatness = (pgs->in_cachedevice > 1 ? 0.0 : pgs->flatness);
     return gx_stroke_path_only(ppath, to_path, pgs->device,
 			       (const gs_imager_state *)pgs,
+			       &params, NULL, NULL);
+}
+
+int
+gx_imager_stroke_add(gx_path *ppath, gx_path *to_path,
+		     const gs_imager_state *pis)
+{
+    gx_stroke_params params;
+
+    params.flatness = pis->flatness;
+    return gx_stroke_path_only(ppath, to_path, (gx_device *)0, pis,
 			       &params, NULL, NULL);
 }

@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -138,33 +138,28 @@ typedef struct gx_image_enum_common_s gx_image_enum_common_t;
 
 /*
  * Define the procedures associated with an image enumerator.
- *
- * Note that image_plane_data and end_image used to be device procedures;
- * they still take the device argument first for compatibility.  However, in
- * order to make forwarding begin_image work, the intermediary routines
- * gx_image_[plane_]data and gx_image_end substitute the device from the
- * enumerator for the explicit device argument, which is ignored.
- * Eventually we should fix this by removing the device argument from
- * gx_device..., just as we have done for text enumeration; but this would
- * have caused major difficulties with 5.1x retrofitting of this code, and
- * it's too much work to fix right now.  ****** FIX THIS SOMEDAY ******
  */
 typedef struct gx_image_enum_procs_s {
 
     /*
-     * Pass the next batch of data for processing.
-     * image_enum_proc_plane_data is defined in gxdevcli.h.
+     * Pass the next batch of data for processing.  *rows_used is set
+     * even in the case of an error.
      */
+
+#define image_enum_proc_plane_data(proc)\
+  int proc(P4(gx_image_enum_common_t *info, const gx_image_plane_t *planes,\
+	      int height, int *rows_used))
 
     image_enum_proc_plane_data((*plane_data));
 
     /*
-     * End processing an image.  We keep this procedure as the last one that
-     * requires initialization, so that we can detect obsolete static
-     * initializers.  dev_proc_end_image is defined in gxdevcli.h.
+     * End processing an image, freeing the enumerator.  We keep this
+     * procedure as the last required one, so that we can detect obsolete
+     * static initializers.
      */
+
 #define image_enum_proc_end_image(proc)\
-  dev_proc_end_image(proc)
+  int proc(P2(gx_image_enum_common_t *info, bool draw_last))
 
     image_enum_proc_end_image((*end_image));
 
@@ -174,10 +169,28 @@ typedef struct gx_image_enum_procs_s {
      * (currently, only the mask and the data of ImageType 3).
      * This procedure is optional (may be 0).
      */
+
 #define image_enum_proc_flush(proc)\
   int proc(P1(gx_image_enum_common_t *info))
 
     image_enum_proc_flush((*flush));
+
+    /* 
+     * Determine which data planes should be passed on the next call to the
+     * plane_data procedure, by filling wanted[0 .. num_planes - 1] with 0
+     * for unwanted planes and non-0 for wanted planes.  The procedure
+     * returns true if the returned vector will always be the same *and* if
+     * the plane widths remain constant, false if the wanted planes *or*
+     * plane widths may vary over the course of the image.  By default, all
+     * data planes are always wanted; however, ImageType 3 images with
+     * separate mask and image data sources may want mask data before image
+     * data or vice versa.  This procedure is optional (may be 0).
+     */
+
+#define image_enum_proc_planes_wanted(proc)\
+  bool proc(P2(const gx_image_enum_common_t *info, byte *wanted))
+
+    image_enum_proc_planes_wanted((*planes_wanted));
 
 } gx_image_enum_procs_t;
 
@@ -189,15 +202,15 @@ typedef struct gx_image_enum_procs_s {
  *
  * Note that the structure includes a unique ID, so that the banding
  * machinery could in principle keep track of multiple enumerations that may
- * be in progress simultaneously.
- */
+ * be in progress simultaneously.  */
 #define gx_image_enum_common\
 	const gx_image_type_t *image_type;\
 	const gx_image_enum_procs_t *procs;\
 	gx_device *dev;\
 	gs_id id;\
 	int num_planes;\
-	int plane_depths[gs_image_max_planes]	/* [num_planes] */
+	int plane_depths[gs_image_max_planes];	/* [num_planes] */\
+	int plane_widths[gs_image_max_planes]	/* [num_planes] */
 struct gx_image_enum_common_s {
     gx_image_enum_common;
 };
@@ -211,11 +224,10 @@ struct gx_image_enum_common_s {
 /*
  * Initialize the common part of an image enumerator.
  */
-int gx_image_enum_common_init(P7(gx_image_enum_common_t * piec,
-				 const gs_image_common_t * pic,
+int gx_image_enum_common_init(P6(gx_image_enum_common_t * piec,
+				 const gs_data_image_t * pic,
 				 const gx_image_enum_procs_t * piep,
-				 gx_device * dev,
-				 int bits_per_component, int num_components,
+				 gx_device * dev, int num_components,
 				 gs_image_format_t format));
 
 /*

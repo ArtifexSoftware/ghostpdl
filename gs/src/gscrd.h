@@ -16,6 +16,7 @@
    all copies.
  */
 
+
 /* Interface for CIE color rendering dictionary creation */
 
 #ifndef gscrd_INCLUDED

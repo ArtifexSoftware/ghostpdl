@@ -1,4 +1,4 @@
-/* Copyright (C) 1990, 1993, 1994, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1990, 1993, 1994, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -31,6 +31,17 @@ int imod(P2(int m, int n));
 
 /* Compute the GCD of two integers. */
 int igcd(P2(int x, int y));
+
+/*
+ * Given A, B, and M, compute X such that A*X = B mod M, 0 < X < M.
+ * Requires: M > 0, 0 < A < M, 0 < B < M, gcd(A, M) | gcd(A, B).
+ */
+int idivmod(P3(int a, int b, int m));
+
+/*
+ * Compute floor(log2(N)).  Requires N > 0.
+ */
+int ilog2(P1(int n));
 
 /* Test whether an integral value fits in a given number of bits. */
 /* This works for all integral types. */

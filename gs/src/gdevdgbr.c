@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -18,6 +18,7 @@
 
 
 /* Default implementation of device get_bits[_rectangle] */
+#include "memory_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gxdevice.h"
@@ -63,16 +64,34 @@ gx_default_get_bits(gx_device * dev, int y, byte * data, byte ** actual_data)
 
 /*
  * Determine whether we can satisfy a request by simply using the stored
- * representation.
+ * representation.  dev is used only for color_info.{num_components, depth}.
  */
 private bool
-requested_includes_stored(gs_get_bits_options_t requested,
-			  gs_get_bits_options_t stored)
+requested_includes_stored(const gx_device *dev,
+			  const gs_get_bits_params_t *requested,
+			  const gs_get_bits_params_t *stored)
 {
-    gs_get_bits_options_t both = requested & stored;
+    gs_get_bits_options_t both = requested->options & stored->options;
 
     if (!(both & GB_PACKING_ALL))
 	return false;
+    if (stored->options & GB_SELECT_PLANES) {
+	/*
+	 * The device only provides a subset of the planes.
+	 * Make sure it provides all the requested ones.
+	 */
+	int i;
+	int n = (stored->options & GB_PACKING_BIT_PLANAR ?
+		 dev->color_info.depth : dev->color_info.num_components);
+
+	if (!(requested->options & GB_SELECT_PLANES) ||
+	    !(both & (GB_PACKING_PLANAR || GB_PACKING_BIT_PLANAR))
+	    )
+	    return false;
+	for (i = 0; i < n; ++i)
+	    if (requested->data[i] && !stored->data[i])
+		return false;
+    }
     if (both & GB_COLORS_NATIVE)
 	return true;
     if (both & GB_COLORS_STANDARD_ALL) {
@@ -90,40 +109,57 @@ requested_includes_stored(gs_get_bits_options_t requested,
  */
 int
 gx_get_bits_return_pointer(gx_device * dev, int x, int h,
-		gs_get_bits_params_t * params, gs_get_bits_options_t stored,
+			   gs_get_bits_params_t *params,
+			   const gs_get_bits_params_t *stored,
 			   byte * stored_base)
 {
     gs_get_bits_options_t options = params->options;
+    gs_get_bits_options_t both = options & stored->options;
 
     if (!(options & GB_RETURN_POINTER) ||
-	!requested_includes_stored(options, stored)
+	!requested_includes_stored(dev, params, stored)
 	)
 	return -1;
     /*
      * See whether we can return the bits in place.  Note that even if
-     * offset_any isn't set, x_offset and x don't have to be equal: their
+     * OFFSET_ANY isn't set, x_offset and x don't have to be equal: their
      * bit offsets only have to match modulo align_bitmap_mod * 8 (to
-     * preserve alignment) if align_any isn't set, or mod 8 (since
-     * byte alignment is always required) if align_any is set.
+     * preserve alignment) if ALIGN_ANY isn't set, or mod 8 (since
+     * byte alignment is always required) if ALIGN_ANY is set.
      */
     {
 	int depth = dev->color_info.depth;
-	uint dev_raster = gx_device_raster(dev, 1);
+	/*
+	 * For PLANAR devices, we assume that each plane consists of
+	 * depth/num_components bits.  This is wrong in general, but if
+	 * the device wants something else, it should implement
+	 * get_bits_rectangle itself.
+	 */
+	uint dev_raster =
+	    (both & GB_PACKING_CHUNKY ?
+	       gx_device_raster(dev, true) :
+	     both & GB_PACKING_PLANAR ?
+	       bitmap_raster(dev->color_info.depth /
+			     dev->color_info.num_components * dev->width) :
+	     both & GB_PACKING_BIT_PLANAR ?
+	       bitmap_raster(dev->width) :
+	     0 /* not possible */);
 	uint raster =
-	(options & (GB_RASTER_STANDARD | GB_RASTER_ANY) ? dev_raster :
-	 params->raster);
+	    (options & (GB_RASTER_STANDARD | GB_RASTER_ANY) ? dev_raster :
+	     params->raster);
+	byte *base;
 
 	if (h <= 1 || raster == dev_raster) {
 	    int x_offset =
-	    (options & GB_OFFSET_ANY ? x :
-	     options & GB_OFFSET_0 ? 0 : params->x_offset);
+		(options & GB_OFFSET_ANY ? x :
+		 options & GB_OFFSET_0 ? 0 : params->x_offset);
 
 	    if (x_offset == x) {
-		params->data[0] = stored_base;
+		base = stored_base;
 		params->x_offset = x;
 	    } else {
 		uint align_mod =
-		(options & GB_ALIGN_ANY ? 8 : align_bitmap_mod * 8);
+		    (options & GB_ALIGN_ANY ? 8 : align_bitmap_mod * 8);
 		int bit_offset = x - x_offset;
 		int bytes;
 
@@ -138,13 +174,31 @@ gx_get_bits_return_pointer(gx_device * dev, int x, int h,
 		    /* Use a faster algorithm if depth is a power of 2. */
 		    bytes = bit_offset & (-depth & -align_mod);
 		}
-		params->data[0] = stored_base + arith_rshift(bytes, 3);
+		base = stored_base + arith_rshift(bytes, 3);
 		params->x_offset = (bit_offset - bytes) / depth;
 	    }
 	    params->options =
 		GB_ALIGN_STANDARD | GB_RETURN_POINTER | GB_RASTER_STANDARD |
-		GB_PACKING_CHUNKY | stored |
+		(stored->options & ~GB_PACKING_ALL) /*see below for PACKING*/ |
 		(params->x_offset == 0 ? GB_OFFSET_0 : GB_OFFSET_SPECIFIED);
+	    if (both & GB_PACKING_CHUNKY) {
+		params->options |= GB_PACKING_CHUNKY;
+		params->data[0] = base;
+	    } else {
+		int n =
+		    (stored->options & GB_PACKING_BIT_PLANAR ?
+		       (params->options |= GB_PACKING_BIT_PLANAR,
+			dev->color_info.depth) :
+		       (params->options |= GB_PACKING_PLANAR,
+			dev->color_info.num_components));
+		int i;
+
+		for (i = 0; i < n; ++i)
+		    if (!(both & GB_SELECT_PLANES) || stored->data[i] != 0) {
+			params->data[i] = base;
+			base += dev_raster * dev->height;
+		    }
+	    }
 	    return 0;
 	}
     }
@@ -193,41 +247,62 @@ gx_get_bits_copy_cmyk_1bit(byte *dest_line, uint dest_raster,
  * the stored data are aligned.
  *
  * Note: this routine does not check x, w, h for validity.
+ *
+ * The code for converting between standard and native colors has been
+ * factored out into single-use procedures strictly for readability.
+ * A good optimizing compiler would compile them in-line.
  */
+private int
+    gx_get_bits_std_to_native(P10(gx_device * dev, int x, int w, int h,
+				  gs_get_bits_params_t * params,
+				  const gs_get_bits_params_t *stored,
+				  const byte * src_base, uint dev_raster,
+				  int x_offset, uint raster)),
+    gx_get_bits_native_to_std(P11(gx_device * dev, int x, int w, int h,
+				  gs_get_bits_params_t * params,
+				  const gs_get_bits_params_t *stored,
+				  const byte * src_base, uint dev_raster,
+				  int x_offset, uint raster, uint std_raster));
 int
 gx_get_bits_copy(gx_device * dev, int x, int w, int h,
-		 gs_get_bits_params_t * params, gs_get_bits_options_t stored,
+		 gs_get_bits_params_t * params,
+		 const gs_get_bits_params_t *stored,
 		 const byte * src_base, uint dev_raster)
 {
     gs_get_bits_options_t options = params->options;
-    byte *data = params->data[0];
+    gs_get_bits_options_t stored_options = stored->options;
+    int x_offset = (options & GB_OFFSET_0 ? 0 : params->x_offset);
     int depth = dev->color_info.depth;
     int bit_x = x * depth;
     const byte *src = src_base;
-
     /*
      * If the stored representation matches a requested representation,
      * we can copy the data without any transformations.
      */
-    bool direct_copy = requested_includes_stored(options, stored);
+    bool direct_copy = requested_includes_stored(dev, params, stored);
+    int code = 0;
 
     /*
-     * The request must include GB_PACKING_CHUNKY, GB_RETURN_COPY,
-     * and an offset and raster specification.
+     * The request must include either GB_PACKING_CHUNKY or
+     * GB_PACKING_PLANAR + GB_SELECT_PLANES, GB_RETURN_COPY,
+     * and an offset and raster specification.  In the planar case,
+     * the request must include GB_ALIGN_STANDARD, the stored
+     * representation must include GB_PACKING_CHUNKY, and both must
+     * include GB_COLORS_NATIVE.
      */
-    if ((~options & (GB_PACKING_CHUNKY | GB_RETURN_COPY)) ||
+    if ((~options & GB_RETURN_COPY) ||
 	!(options & (GB_OFFSET_0 | GB_OFFSET_SPECIFIED)) ||
 	!(options & (GB_RASTER_STANDARD | GB_RASTER_SPECIFIED))
 	)
 	return_error(gs_error_rangecheck);
-    {
-	int x_offset = (options & GB_OFFSET_0 ? 0 : params->x_offset);
+    if (options & GB_PACKING_CHUNKY) {
+	byte *data = params->data[0];
 	int end_bit = (x_offset + w) * depth;
 	uint std_raster =
-	(options & GB_ALIGN_STANDARD ? bitmap_raster(end_bit) :
-	 (end_bit + 7) >> 3);
+	    (options & GB_ALIGN_STANDARD ? bitmap_raster(end_bit) :
+	     (end_bit + 7) >> 3);
 	uint raster =
-	(options & GB_RASTER_STANDARD ? std_raster : params->raster);
+	    (options & GB_RASTER_STANDARD ? std_raster : params->raster);
 	int dest_bit_x = x_offset * depth;
 	int skew = bit_x - dest_bit_x;
 
@@ -255,7 +330,7 @@ gx_get_bits_copy(gx_device * dev, int x, int w, int h,
 	    tdev.line_ptrs = &tdev.base;
 	    for (; h > 0; line_ptr += raster, src += dev_raster, --h) {
 		/* Make sure the destination is aligned. */
-		int align = alignment_mod(line_ptr, align_bitmap_mod);
+		int align = ALIGNMENT_MOD(line_ptr, align_bitmap_mod);
 
 		tdev.base = line_ptr - align;
 		(*dev_proc(&mem_mono_device, copy_mono))
@@ -263,182 +338,19 @@ gx_get_bits_copy(gx_device * dev, int x, int w, int h,
 		     dest_bit_x + (align << 3), 0, w, 1,
 		     (gx_color_index) 0, (gx_color_index) 1);
 	    }
-	} else if (options & ~stored & GB_COLORS_NATIVE) {
-	    /*
-	     * Convert standard colors to native.  Note that the source
-	     * may have depths other than 8 bits per component.
-	     */
-	    int dest_bit_offset = x_offset * depth;
-	    byte *dest_line = data + (dest_bit_offset >> 3);
-	    int ncolors =
-	    (stored & GB_COLORS_RGB ? 3 : stored & GB_COLORS_CMYK ? 4 :
-	     stored & GB_COLORS_GRAY ? 1 : -1);
-	    int ncomp = ncolors +
-	    ((stored & (GB_ALPHA_FIRST | GB_ALPHA_LAST)) != 0);
-	    int src_depth = GB_OPTIONS_DEPTH(stored);
-	    int src_bit_offset = x * src_depth * ncomp;
-	    const byte *src_line = src_base + (src_bit_offset >> 3);
-	    gx_color_value src_max = (1 << src_depth) - 1;
-
-#define v2cv(value) ((ulong)(value) * gx_max_color_value / src_max)
-	    gx_color_value alpha_default = src_max;
-
-	    options &= ~GB_COLORS_ALL | GB_COLORS_NATIVE;
-	    for (; h > 0; dest_line += raster, src_line += dev_raster, --h) {
-		int i;
-
-		sample_load_declare_setup(src, sbit, src_line,
-					  src_bit_offset & 7, src_depth);
-		sample_store_declare_setup(dest, dbit, dbyte, dest_line,
-					   dest_bit_offset & 7, depth);
-
-		for (i = 0; i < w; ++i) {
-		    int j;
-		    gx_color_value v[4], va = alpha_default;
-		    gx_color_index pixel;
-
-		    /* Fetch the source data. */
-		    if (stored & GB_ALPHA_FIRST) {
-			sample_load_next16(va, src, sbit, src_depth);
-			va = v2cv(va);
-		    }
-		    for (j = 0; j < ncolors; ++j) {
-			gx_color_value vj;
-
-			sample_load_next16(vj, src, sbit, src_depth);
-			v[j] = v2cv(vj);
-		    }
-		    if (stored & GB_ALPHA_LAST) {
-			sample_load_next16(va, src, sbit, src_depth);
-			va = v2cv(va);
-		    }
-		    /* Convert and store the pixel value. */
-		    switch (ncolors) {
-			case 1:
-			    v[2] = v[1] = v[0];
-			case 3:
-			    pixel = (*dev_proc(dev, map_rgb_alpha_color))
-				(dev, v[0], v[1], v[2], va);
-			    break;
-			case 4:
-			    /****** NO ALPHA FOR CMYK ******/
-			    pixel = (*dev_proc(dev, map_cmyk_color))
-				(dev, v[0], v[1], v[2], v[3]);
-			    break;
-			default:
-			    return_error(gs_error_rangecheck);
-		    }
-		    sample_store_next32(pixel, dest, dbit, depth, dbyte);
-		}
-		sample_store_flush(dest, dbit, depth, dbyte);
-	    }
-	} else if (!(options & GB_DEPTH_8)) {
-	    /*
-	     * We don't support general depths yet, or conversion between
-	     * different formats.  Punt.
-	     */
-	    return_error(gs_error_rangecheck);
+	} else if (options & ~stored_options & GB_COLORS_NATIVE) {
+	    /* Convert standard colors to native. */
+	    code = gx_get_bits_std_to_native(dev, x, w, h, params, stored,
+					     src_base, dev_raster,
+					     x_offset, raster);
+	    options = params->options;
 	} else {
-	    /*
-	     * Convert native colors to standard.
-	     */
-	    int src_bit_offset = x * depth;
-	    const byte *src_line = src_base + (src_bit_offset >> 3);
-	    int ncomp =
-		(options & (GB_ALPHA_FIRST | GB_ALPHA_LAST) ? 4 : 3);
-	    byte *dest_line = data + x_offset * ncomp;
-	    byte *mapped[16];
-	    int dest_bytes;
-	    int i;
-
-	    /* Pick the representation that's most likely to be useful. */
-	    if (options & GB_COLORS_RGB)
-		options &= ~GB_COLORS_STANDARD_ALL | GB_COLORS_RGB,
-		    dest_bytes = 3;
-	    else if (options & GB_COLORS_CMYK)
-		options &= ~GB_COLORS_STANDARD_ALL | GB_COLORS_CMYK,
-		    dest_bytes = 4;
-	    else if (options & GB_COLORS_GRAY)
-		options &= ~GB_COLORS_STANDARD_ALL | GB_COLORS_GRAY,
-		    dest_bytes = 1;
-	    else
-		return_error(gs_error_rangecheck);
-	    /* Recompute the destination raster based on the color space. */
-	    if (options & GB_RASTER_STANDARD) {
-		uint end_byte = (x_offset + w) * dest_bytes;
-
-		raster = std_raster =
-		    (options & GB_ALIGN_STANDARD ?
-		     bitmap_raster(end_byte << 3) : end_byte);
-	    }
-	    /* Check for the one special case we care about. */
-	    if (((options & (GB_COLORS_RGB | GB_ALPHA_FIRST | GB_ALPHA_LAST))
-		 == GB_COLORS_RGB) &&
-		dev_proc(dev, map_color_rgb) ==
-		  cmyk_1bit_map_color_rgb) {
-		gx_get_bits_copy_cmyk_1bit(dest_line, raster,
-					   src_line, dev_raster,
-					   src_bit_offset & 7, w, h);
-		goto done;
-	    }
-	    if (options & (GB_ALPHA_FIRST | GB_ALPHA_LAST))
-		++dest_bytes;
-	    /* Clear the color translation cache. */
-	    for (i = (depth > 4 ? 16 : 1 << depth); --i >= 0; )
-		mapped[i] = 0;
-	    for (; h > 0; dest_line += raster, src_line += dev_raster, --h) {
-		sample_load_declare_setup(src, bit, src_line,
-					  src_bit_offset & 7, depth);
-		byte *dest = dest_line;
-
-		for (i = 0; i < w; ++i) {
-		    gx_color_index pixel = 0;
-		    gx_color_value rgba[4];
-
-		    sample_load_next32(pixel, src, bit, depth);
-		    if (pixel < 16) {
-			if (mapped[pixel]) {
-			    /* Use the value from the cache. */
-			    memcpy(dest, mapped[pixel], dest_bytes);
-			    dest += dest_bytes;
-			    continue;
-			}
-			mapped[pixel] = dest;
-		    }
-		    (*dev_proc(dev, map_color_rgb_alpha)) (dev, pixel, rgba);
-		    if (options & GB_ALPHA_FIRST)
-			*dest++ = gx_color_value_to_byte(rgba[3]);
-		    /* Convert to the requested color space. */
-		    if (options & GB_COLORS_RGB) {
-			dest[0] = gx_color_value_to_byte(rgba[0]);
-			dest[1] = gx_color_value_to_byte(rgba[1]);
-			dest[2] = gx_color_value_to_byte(rgba[2]);
-			dest += 3;
-		    } else if (options & GB_COLORS_CMYK) {
-			/* Use the standard RGB to CMYK algorithm, */
-			/* with maximum black generation and undercolor removal. */
-			gx_color_value white = max(rgba[0], max(rgba[1], rgba[2]));
-
-			dest[0] = gx_color_value_to_byte(white - rgba[0]);
-			dest[1] = gx_color_value_to_byte(white - rgba[1]);
-			dest[2] = gx_color_value_to_byte(white - rgba[2]);
-			dest[3] = gx_color_value_to_byte(gx_max_color_value - white);
-			dest += 4;
-		    } else {	/* GB_COLORS_GRAY */
-			/* Use the standard RGB to Gray algorithm. */
-			*dest++ = gx_color_value_to_byte(
-				       ((rgba[0] * (ulong) lum_red_weight) +
-				      (rgba[1] * (ulong) lum_green_weight) +
-					(rgba[2] * (ulong) lum_blue_weight) +
-					(lum_all_weights / 2))
-							 / lum_all_weights);
-		    }
-		    if (options & GB_ALPHA_LAST)
-			*dest++ = gx_color_value_to_byte(rgba[3]);
-		}
-	    }
+	    /* Convert native colors to standard. */
+	    code = gx_get_bits_native_to_std(dev, x, w, h, params, stored,
+					     src_base, dev_raster,
+					     x_offset, raster, std_raster);
+	    options = params->options;
 	}
-done:
 	params->options =
 	    (options & (GB_COLORS_ALL | GB_ALPHA_ALL)) | GB_PACKING_CHUNKY |
 	    (options & GB_COLORS_NATIVE ? 0 : options & GB_DEPTH_ALL) |
@@ -446,9 +358,239 @@ done:
 	    GB_RETURN_COPY |
 	    (x_offset == 0 ? GB_OFFSET_0 : GB_OFFSET_SPECIFIED) |
 	    (raster == std_raster ? GB_RASTER_STANDARD : GB_RASTER_SPECIFIED);
+    } else if (!(~options &
+		 (GB_PACKING_PLANAR | GB_SELECT_PLANES | GB_ALIGN_STANDARD)) &&
+	       (stored_options & GB_PACKING_CHUNKY) &&
+	       ((options & stored_options) & GB_COLORS_NATIVE)
+	       ) {
+	int num_planes = dev->color_info.num_components;
+	int dest_depth = depth / num_planes;
+	bits_plane_t source, dest;
+	int plane = -1;
+	int i;
+
+	/* Make sure only one plane is being requested. */
+	for (i = 0; i < num_planes; ++i)
+	    if (params->data[i] != 0) {
+		if (plane >= 0)
+		    return_error(gs_error_rangecheck); /* > 1 plane */
+		plane = i;
+	    }
+	source.data.read = src_base;
+	source.raster = dev_raster;
+	source.depth = depth;
+	source.x = x;
+	dest.data.write = params->data[plane];
+	dest.raster =
+	    (options & GB_RASTER_STANDARD ?
+	     bitmap_raster((x_offset + w) * dest_depth) : params->raster);
+	dest.depth = dest_depth;
+	dest.x = x_offset;
+	return bits_extract_plane(&dest, &source,
+				  (num_planes - 1 - plane) * dest_depth,
+				  w, h);
+    } else
+	return_error(gs_error_rangecheck);
+    return code;
+}
+
+/*
+ * Convert standard colors to native.  Note that the source
+ * may have depths other than 8 bits per component.
+ */
+private int
+gx_get_bits_std_to_native(gx_device * dev, int x, int w, int h,
+			  gs_get_bits_params_t * params,
+			  const gs_get_bits_params_t *stored,
+			  const byte * src_base, uint dev_raster,
+			  int x_offset, uint raster)
+{
+    int depth = dev->color_info.depth;
+    int dest_bit_offset = x_offset * depth;
+    byte *dest_line = params->data[0] + (dest_bit_offset >> 3);
+    int ncolors =
+	(stored->options & GB_COLORS_RGB ? 3 :
+	 stored->options & GB_COLORS_CMYK ? 4 :
+	 stored->options & GB_COLORS_GRAY ? 1 : -1);
+    int ncomp = ncolors +
+	((stored->options & (GB_ALPHA_FIRST | GB_ALPHA_LAST)) != 0);
+    int src_depth = GB_OPTIONS_DEPTH(stored->options);
+    int src_bit_offset = x * src_depth * ncomp;
+    const byte *src_line = src_base + (src_bit_offset >> 3);
+    gx_color_value src_max = (1 << src_depth) - 1;
+#define v2cv(value) ((ulong)(value) * gx_max_color_value / src_max)
+    gx_color_value alpha_default = src_max;
+
+    params->options &= ~GB_COLORS_ALL | GB_COLORS_NATIVE;
+    for (; h > 0; dest_line += raster, src_line += dev_raster, --h) {
+	int i;
+
+	sample_load_declare_setup(src, sbit, src_line,
+				  src_bit_offset & 7, src_depth);
+	sample_store_declare_setup(dest, dbit, dbyte, dest_line,
+				   dest_bit_offset & 7, depth);
+
+	for (i = 0; i < w; ++i) {
+	    int j;
+	    gx_color_value v[4], va = alpha_default;
+	    gx_color_index pixel;
+
+	    /* Fetch the source data. */
+	    if (stored->options & GB_ALPHA_FIRST) {
+		sample_load_next16(va, src, sbit, src_depth);
+		va = v2cv(va);
+	    }
+	    for (j = 0; j < ncolors; ++j) {
+		gx_color_value vj;
+
+		sample_load_next16(vj, src, sbit, src_depth);
+		v[j] = v2cv(vj);
+	    }
+	    if (stored->options & GB_ALPHA_LAST) {
+		sample_load_next16(va, src, sbit, src_depth);
+		va = v2cv(va);
+	    }
+	    /* Convert and store the pixel value. */
+	    switch (ncolors) {
+	    case 1:
+		v[2] = v[1] = v[0];
+	    case 3:
+		pixel = (*dev_proc(dev, map_rgb_alpha_color))
+		    (dev, v[0], v[1], v[2], va);
+		break;
+	    case 4:
+		/****** NO ALPHA FOR CMYK ******/
+		pixel = (*dev_proc(dev, map_cmyk_color))
+		    (dev, v[0], v[1], v[2], v[3]);
+		break;
+	    default:
+		return_error(gs_error_rangecheck);
+	    }
+	    sample_store_next32(pixel, dest, dbit, depth, dbyte);
+	}
+	sample_store_flush(dest, dbit, depth, dbyte);
     }
     return 0;
 }
+
+/*
+ * Convert native colors to standard.  Only GB_DEPTH_8 is supported.
+ */
+private int
+gx_get_bits_native_to_std(gx_device * dev, int x, int w, int h,
+			  gs_get_bits_params_t * params,
+			  const gs_get_bits_params_t *stored,
+			  const byte * src_base, uint dev_raster,
+			  int x_offset, uint raster, uint std_raster)
+{
+    int depth = dev->color_info.depth;
+    int src_bit_offset = x * depth;
+    const byte *src_line = src_base + (src_bit_offset >> 3);
+    gs_get_bits_options_t options = params->options;
+    int ncomp =
+	(options & (GB_ALPHA_FIRST | GB_ALPHA_LAST) ? 4 : 3);
+    byte *dest_line = params->data[0] + x_offset * ncomp;
+    byte *mapped[16];
+    int dest_bytes;
+    int i;
+
+    if (!(options & GB_DEPTH_8)) {
+	/*
+	 * We don't support general depths yet, or conversion between
+	 * different formats.  Punt.
+	 */
+	return_error(gs_error_rangecheck);
+    }
+
+    /* Pick the representation that's most likely to be useful. */
+    if (options & GB_COLORS_RGB)
+	params->options = options &= ~GB_COLORS_STANDARD_ALL | GB_COLORS_RGB,
+	    dest_bytes = 3;
+    else if (options & GB_COLORS_CMYK)
+	params->options = options &= ~GB_COLORS_STANDARD_ALL | GB_COLORS_CMYK,
+	    dest_bytes = 4;
+    else if (options & GB_COLORS_GRAY)
+	params->options = options &= ~GB_COLORS_STANDARD_ALL | GB_COLORS_GRAY,
+	    dest_bytes = 1;
+    else
+	return_error(gs_error_rangecheck);
+    /* Recompute the destination raster based on the color space. */
+    if (options & GB_RASTER_STANDARD) {
+	uint end_byte = (x_offset + w) * dest_bytes;
+
+	raster = std_raster =
+	    (options & GB_ALIGN_STANDARD ?
+	     bitmap_raster(end_byte << 3) : end_byte);
+    }
+    /* Check for the one special case we care about. */
+    if (((options & (GB_COLORS_RGB | GB_ALPHA_FIRST | GB_ALPHA_LAST))
+	   == GB_COLORS_RGB) &&
+	dev_proc(dev, map_color_rgb) == cmyk_1bit_map_color_rgb) {
+	gx_get_bits_copy_cmyk_1bit(dest_line, raster,
+				   src_line, dev_raster,
+				   src_bit_offset & 7, w, h);
+	return 0;
+    }
+    if (options & (GB_ALPHA_FIRST | GB_ALPHA_LAST))
+	++dest_bytes;
+    /* Clear the color translation cache. */
+    for (i = (depth > 4 ? 16 : 1 << depth); --i >= 0; )
+	mapped[i] = 0;
+    for (; h > 0; dest_line += raster, src_line += dev_raster, --h) {
+	sample_load_declare_setup(src, bit, src_line,
+				  src_bit_offset & 7, depth);
+	byte *dest = dest_line;
+
+	for (i = 0; i < w; ++i) {
+	    gx_color_index pixel = 0;
+	    gx_color_value rgba[4];
+
+	    sample_load_next32(pixel, src, bit, depth);
+	    if (pixel < 16) {
+		if (mapped[pixel]) {
+		    /* Use the value from the cache. */
+		    memcpy(dest, mapped[pixel], dest_bytes);
+		    dest += dest_bytes;
+		    continue;
+		}
+		mapped[pixel] = dest;
+	    }
+	    (*dev_proc(dev, map_color_rgb_alpha)) (dev, pixel, rgba);
+	    if (options & GB_ALPHA_FIRST)
+		*dest++ = gx_color_value_to_byte(rgba[3]);
+	    /* Convert to the requested color space. */
+	    if (options & GB_COLORS_RGB) {
+		dest[0] = gx_color_value_to_byte(rgba[0]);
+		dest[1] = gx_color_value_to_byte(rgba[1]);
+		dest[2] = gx_color_value_to_byte(rgba[2]);
+		dest += 3;
+	    } else if (options & GB_COLORS_CMYK) {
+		/* Use the standard RGB to CMYK algorithm, */
+		/* with maximum black generation and undercolor removal. */
+		gx_color_value white = max(rgba[0], max(rgba[1], rgba[2]));
+
+		dest[0] = gx_color_value_to_byte(white - rgba[0]);
+		dest[1] = gx_color_value_to_byte(white - rgba[1]);
+		dest[2] = gx_color_value_to_byte(white - rgba[2]);
+		dest[3] = gx_color_value_to_byte(gx_max_color_value - white);
+		dest += 4;
+	    } else {	/* GB_COLORS_GRAY */
+		/* Use the standard RGB to Gray algorithm. */
+		*dest++ = gx_color_value_to_byte(
+				((rgba[0] * (ulong) lum_red_weight) +
+				 (rgba[1] * (ulong) lum_green_weight) +
+				 (rgba[2] * (ulong) lum_blue_weight) +
+				   (lum_all_weights / 2))
+				/ lum_all_weights);
+	    }
+	    if (options & GB_ALPHA_LAST)
+		*dest++ = gx_color_value_to_byte(rgba[3]);
+	}
+    }
+    return 0;
+}
+
+/* ------ Default implementations of get_bits_rectangle ------ */
 
 int
 gx_no_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
@@ -456,6 +598,7 @@ gx_no_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 {
     return_error(gs_error_unknownerror);
 }
+
 int
 gx_default_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 		       gs_get_bits_params_t * params, gs_int_rect ** unread)
@@ -569,11 +712,12 @@ gx_default_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 	    gs_int_rect rect;
 	    gs_get_bits_params_t copy_params;
 	    gs_get_bits_options_t copy_options =
-	    GB_ALIGN_ANY | (GB_RETURN_COPY | GB_RETURN_POINTER) |
-	    (GB_OFFSET_0 | GB_OFFSET_ANY) |
-	    (GB_RASTER_STANDARD | GB_RASTER_ANY) | GB_PACKING_CHUNKY |
-	    GB_COLORS_NATIVE | (options & (GB_DEPTH_ALL | GB_COLORS_ALL)) |
-	    GB_ALPHA_ALL;
+		(GB_ALIGN_STANDARD | GB_ALIGN_ANY) |
+		(GB_RETURN_COPY | GB_RETURN_POINTER) |
+		(GB_OFFSET_0 | GB_OFFSET_ANY) |
+		(GB_RASTER_STANDARD | GB_RASTER_ANY) | GB_PACKING_CHUNKY |
+		GB_COLORS_NATIVE | (options & (GB_DEPTH_ALL | GB_COLORS_ALL)) |
+		GB_ALPHA_ALL;
 	    byte *dest = params->data[0];
 	    int y;
 
@@ -591,7 +735,7 @@ gx_default_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 		    copy_params.x_offset = 0;
 		params->data[0] = dest + (y - prect->p.y) * raster;
 		code = gx_get_bits_copy(dev, copy_params.x_offset, w, 1,
-					params, copy_params.options,
+					params, &copy_params,
 					copy_params.data[0], dev_raster);
 		if (code < 0)
 		    break;
@@ -611,8 +755,7 @@ gx_default_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 void
 debug_print_gb_options(gx_bitmap_format_t options)
 {
-    static const char *const option_names[] =
-    {
+    static const char *const option_names[] = {
 	GX_BITMAP_FORMAT_NAMES
     };
     const char *prev = "   ";
@@ -630,17 +773,26 @@ debug_print_gb_options(gx_bitmap_format_t options)
 }
 
 void 
-debug_print_gb_params(gs_get_bits_params_t * params)
+debug_print_gb_planes(const gs_get_bits_params_t * params, int num_planes)
 {
     gs_get_bits_options_t options = params->options;
+    int i;
 
     debug_print_gb_options(options);
-    dprintf1("data[0]=0x%lx", (ulong) params->data[0]);
+    for (i = 0; i < num_planes; ++i)
+	dprintf2("data[%d]=0x%lx ", i, (ulong)params->data[i]);
     if (options & GB_OFFSET_SPECIFIED)
-	dprintf1(" x_offset=%d", params->x_offset);
+	dprintf1("x_offset=%d ", params->x_offset);
     if (options & GB_RASTER_SPECIFIED)
-	dprintf1(" raster=%u", params->raster);
+	dprintf1("raster=%u", params->raster);
     dputc('\n');
 }
+
+void 
+debug_print_gb_params(const gs_get_bits_params_t * params)
+{
+    debug_print_gb_planes(params, 1);
+}
+
 
 #endif /* DEBUG */

@@ -61,7 +61,7 @@ typedef dynamic_area *da_ptr;
 /* Define state specific to binary tokens and binary object sequences. */
 typedef struct scan_binary_state_s {
     int num_format;
-    int (*cont) (P3(stream *, ref *, scanner_state *));
+    int (*cont)(P4(i_ctx_t *, stream *, ref *, scanner_state *));
     ref bin_array;
     uint index;
     uint max_array_index;	/* largest legal index in objects */
@@ -122,21 +122,23 @@ extern_st(st_scanner_state);
 #define scan_BOS 1		/* binary object sequence */
 #define scan_EOF 2		/* end of stream */
 #define scan_Refill 3		/* get more input data, then call again */
-int scan_token(P3(stream * s, ref * pref, scanner_state * pstate));
+int scan_token(P4(i_ctx_t *i_ctx_p, stream * s, ref * pref,
+		  scanner_state * pstate));
 
 /*
  * Read a token from a string.  Return like scan_token, but also
  * update the string to move past the token (if no error).
  */
-int scan_string_token(P2(ref * pstr, ref * pref));
+int scan_string_token(P3(i_ctx_t *i_ctx_p, ref * pstr, ref * pref));
 
 /*
  * Handle a scan_Refill return from scan_token.
  * This may return o_push_estack, 0 (meaning just call scan_token again),
  * or an error code.
  */
-int scan_handle_refill(P5(const ref * fop, scanner_state * pstate, bool save,
-			  bool push_file, int (*cont) (P1(os_ptr))));
+int scan_handle_refill(P6(i_ctx_t *i_ctx_p, const ref * fop,
+			  scanner_state * pstate, bool save, bool push_file,
+			  op_proc_t cont));
 
 /*
  * Define the procedure "hook" for parsing DSC comments.  If not NULL,

@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -74,7 +74,7 @@ fn_gets_4(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
 {
     SETUP_SAMPLES(4, (((offset & 7) >> 2) + n + 1) >> 1);
     for (i = 0; i < n; ++i) {
-	samples[i] = (offset & 4 ? *p++ & 0xf : *p >> 4);
+	samples[i] = ((offset ^= 4) & 4 ? *p >> 4 : *p++ & 0xf);
     }
     return 0;
 }
@@ -271,9 +271,9 @@ fn_Sd_is_monotonic(const gs_function_t * pfn_common,
 void
 gs_function_Sd_free_params(gs_function_Sd_params_t * params, gs_memory_t * mem)
 {
-    gs_free_object(mem, (void *)params->Size, "Size");	/* break const */
-    gs_free_object(mem, (void *)params->Decode, "Decode");	/* break const */
-    gs_free_object(mem, (void *)params->Encode, "Encode");	/* break const */
+    gs_free_const_object(mem, params->Size, "Size");
+    gs_free_const_object(mem, params->Decode, "Decode");
+    gs_free_const_object(mem, params->Encode, "Encode");
     fn_common_free_params((gs_function_params_t *) params, mem);
 }
 

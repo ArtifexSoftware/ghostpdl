@@ -130,9 +130,14 @@ int alloc_save_level(P1(const gs_dual_memory_t *));
 #ifdef DEBUG
 #  define and_fill_s(pref)\
     , (gs_debug['$'] ? r_set_size(pref, 0xfeed) : 0)
+/*
+ * The following nonsense avoids compiler warnings about signed/unsigned
+ * integer constants.
+ */
+#define DEADBEEF ((0xdeadL << 16) | 0xbeef)
 #  define and_fill_sv(pref)\
     , (gs_debug['$'] ? (r_set_size(pref, 0xfeed),\
-			(pref)->value.intval = 0xdeadbeef) : 0)
+			(pref)->value.intval = DEADBEEF) : 0)
 #else /* !DEBUG */
 #  define and_fill_s(pref)	/* */
 #  define and_fill_sv(pref)	/* */

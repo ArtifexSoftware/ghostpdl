@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -30,10 +30,29 @@
 /* The generic operators (copy, get, put, getinterval, putinterval, */
 /* length, and forall) are implemented in zgeneric.c. */
 
+/* <int> .bytestring <bytestring> */
+private int
+zbytestring(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    byte *sbody;
+    uint size;
+
+    check_int_leu(*op, max_int);
+    size = (uint)op->value.intval;
+    sbody = ialloc_bytes(size, ".bytestring");
+    if (sbody == 0)
+	return_error(e_VMerror);
+    make_astruct(op, a_all | icurrent_space, sbody);
+    memset(sbody, 0, size);
+    return 0;
+}
+
 /* <int> string <string> */
 int
-zstring(register os_ptr op)
+zstring(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     byte *sbody;
     uint size;
 
@@ -49,8 +68,10 @@ zstring(register os_ptr op)
 
 /* <name> .namestring <string> */
 private int
-znamestring(register os_ptr op)
+znamestring(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     check_type(*op, t_name);
     name_string_ref(op, op);
     return 0;
@@ -59,8 +80,9 @@ znamestring(register os_ptr op)
 /* <string> <pattern> anchorsearch <post> <match> -true- */
 /* <string> <pattern> anchorsearch <string> -false- */
 private int
-zanchorsearch(register os_ptr op)
+zanchorsearch(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     os_ptr op1 = op - 1;
     uint size = r_size(op);
 
@@ -83,8 +105,9 @@ zanchorsearch(register os_ptr op)
 /* <string> <pattern> search <post> <match> <pre> -true- */
 /* <string> <pattern> search <string> -false- */
 private int
-zsearch(register os_ptr op)
+zsearch(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     os_ptr op1 = op - 1;
     uint size = r_size(op);
     uint count;
@@ -128,8 +151,9 @@ found:
 
 /* <obj> <pattern> .stringmatch <bool> */
 private int
-zstringmatch(register os_ptr op)
+zstringmatch(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     os_ptr op1 = op - 1;
     bool result;
 
@@ -157,6 +181,7 @@ cmp:
 
 const op_def zstring_op_defs[] =
 {
+    {"1.bytestring", zbytestring},
     {"2anchorsearch", zanchorsearch},
     {"1.namestring", znamestring},
     {"2search", zsearch},

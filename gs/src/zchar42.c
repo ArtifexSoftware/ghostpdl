@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -47,15 +47,16 @@ int gs_type42_get_metrics(P3(gs_font_type42 * pfont, uint glyph_index,
 			     float psbw[4]));
 
 /* <font> <code|name> <name> <glyph_index> .type42execchar - */
-private int type42_fill(P1(os_ptr));
-private int type42_stroke(P1(os_ptr));
+private int type42_fill(P1(i_ctx_t *));
+private int type42_stroke(P1(i_ctx_t *));
 private int
-ztype42execchar(register os_ptr op)
+ztype42execchar(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_font *pfont;
     int code = font_param(op - 3, &pfont);
     gs_font_base *const pbfont = (gs_font_base *) pfont;
-    gs_show_enum *penum = op_show_find();
+    gs_show_enum *penum = op_show_find(i_ctx_p);
     int present;
     double sbw[4];
 
@@ -80,7 +81,7 @@ ztype42execchar(register os_ptr op)
      * Execute the definition of the character.
      */
     if (r_is_proc(op))
-	return zchar_exec_char_proc(op);
+	return zchar_exec_char_proc(i_ctx_p);
     /*
      * The definition must be a Type 42 glyph index.
      * Note that we do not require read access: this is deliberate.
@@ -106,7 +107,7 @@ ztype42execchar(register os_ptr op)
 	for (i = 0; i < 4; ++i)
 	    sbw[i] = sbw42[i];
     }
-    return zchar_set_cache(op, pbfont, op - 1,
+    return zchar_set_cache(i_ctx_p, pbfont, op - 1,
 			   (present == metricsSideBearingAndWidth ?
 			    sbw : NULL),
 			   sbw + 2, &pbfont->FontBBox,
@@ -114,25 +115,27 @@ ztype42execchar(register os_ptr op)
 }
 
 /* Continue after a CDevProc callout. */
-private int type42_finish(P2(os_ptr op, int (*cont) (P1(gs_state *))));
+private int type42_finish(P2(i_ctx_t *i_ctx_p,
+			     int (*cont)(P1(gs_state *))));
 private int
-type42_fill(os_ptr op)
+type42_fill(i_ctx_t *i_ctx_p)
 {
-    return type42_finish(op, gs_fill);
+    return type42_finish(i_ctx_p, gs_fill);
 }
 private int
-type42_stroke(os_ptr op)
+type42_stroke(i_ctx_t *i_ctx_p)
 {
-    return type42_finish(op, gs_stroke);
+    return type42_finish(i_ctx_p, gs_stroke);
 }
 /* <font> <code|name> <name> <glyph_index> <sbx> <sby> %type42_{fill|stroke} - */
 /* <font> <code|name> <name> <glyph_index> %type42_{fill|stroke} - */
 private int
-type42_finish(os_ptr op, int (*cont) (P1(gs_state *)))
+type42_finish(i_ctx_t *i_ctx_p, int (*cont) (P1(gs_state *)))
 {
+    os_ptr op = osp;
     gs_font *pfont;
     int code;
-    gs_show_enum *penum = op_show_find();
+    gs_show_enum *penum = op_show_find(i_ctx_p);
     double sbxy[2];
     gs_point sbpt;
     gs_point *psbpt = 0;

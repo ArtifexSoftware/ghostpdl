@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -23,6 +23,9 @@
 #  define igc_INCLUDED
 
 #include "istruct.h"
+
+/* Declare the vm_reclaim procedure for the real GC. */
+extern vm_reclaim_proc(gs_gc_reclaim);
 
 /* Define the procedures shared among a "genus" of structures. */
 /* Currently there are only two genera: refs, and all other structures. */
@@ -52,11 +55,10 @@ struct struct_shared_procs_s {
 };
 
 /* Define the structure for holding GC state. */
-						/*typedef struct gc_state_s gc_state_t; *//* in gsstruct.h */
+/*typedef struct gc_state_s gc_state_t; *//* in gsstruct.h */
 #ifndef name_table_DEFINED
 #  define name_table_DEFINED
 typedef struct name_table_s name_table;
-
 #endif
 struct gc_state_s {
     const gc_procs_with_refs_t *procs;	/* must be first */
@@ -83,14 +85,12 @@ void ialloc_validate_object(P3(const obj_header_t *, const chunk_t *,
 
 /* Macro for returning a relocated pointer */
 #ifdef DEBUG
-void *print_reloc_proc(P3(const void *obj, const char *cname, void *robj));
-
+const void *print_reloc_proc(P3(const void *obj, const char *cname,
+				const void *robj));
 #  define print_reloc(obj, cname, nobj)\
-	(gs_debug_c('9') ? print_reloc_proc(obj, cname, nobj) :\
-	 (void *)(nobj))
+	(gs_debug_c('9') ? print_reloc_proc(obj, cname, nobj) : nobj)
 #else
-#  define print_reloc(obj, cname, nobj)\
-	(void *)(nobj)
+#  define print_reloc(obj, cname, nobj) (nobj)
 #endif
 
 #endif /* igc_INCLUDED */

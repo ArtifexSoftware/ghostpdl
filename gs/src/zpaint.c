@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -25,21 +25,21 @@
 
 /* - fill - */
 private int
-zfill(register os_ptr op)
+zfill(i_ctx_t *i_ctx_p)
 {
     return gs_fill(igs);
 }
 
 /* - eofill - */
 private int
-zeofill(register os_ptr op)
+zeofill(i_ctx_t *i_ctx_p)
 {
     return gs_eofill(igs);
 }
 
 /* - stroke - */
 private int
-zstroke(register os_ptr op)
+zstroke(i_ctx_t *i_ctx_p)
 {
     return gs_stroke(igs);
 }
@@ -48,15 +48,16 @@ zstroke(register os_ptr op)
 
 /* - .fillpage - */
 private int
-zfillpage(register os_ptr op)
+zfillpage(i_ctx_t *i_ctx_p)
 {
     return gs_fillpage(igs);
 }
 
 /* <width> <height> <data> .imagepath - */
 private int
-zimagepath(register os_ptr op)
+zimagepath(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code;
 
     check_type(op[-2], t_integer);

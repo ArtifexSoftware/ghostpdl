@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -34,8 +34,8 @@
 #include "gxiparam.h"
 #include "gxpath.h"
 #include "stream.h"
-#include "strimpl.h"		/* for siscale.h */
-#include "siscale.h"
+#include "strimpl.h"		/* for sisparam.h */
+#include "sisparam.h"
 
 extern_gx_image_type_table();
 
@@ -44,6 +44,8 @@ extern_gx_image_type_table();
 static bool USE_HL_IMAGES = true;
 
 /* Forward references */
+private int cmd_put_set_data_x(P3(gx_device_clist_writer * cldev,
+				  gx_clist_state * pcls, int data_x));
 private int cmd_put_color_mapping(P3(gx_device_clist_writer * cldev,
 				     const gs_imager_state * pis,
 				     bool write_rgb_to_cmyk));
@@ -68,20 +70,23 @@ clist_fill_mask(gx_device * dev,
     int orig_x = x;		/* ditto */
     int orig_width = width;	/* ditto */
     int orig_height = height;	/* ditto */
-    int log2_depth = depth >> 1;	/* works for 1,2,4 */
+    int log2_depth = ilog2(depth);
     int y0;
     int data_x_bit;
     byte copy_op =
 	(depth > 1 ? cmd_op_copy_color_alpha :
 	 gx_dc_is_pure(pdcolor) ? cmd_op_copy_mono :
 	 cmd_op_copy_mono + cmd_copy_ht_color);
-
+    bool slow_rop =
+	cmd_slow_rop(dev, lop_know_S_0(lop), pdcolor) ||
+	cmd_slow_rop(dev, lop_know_S_1(lop), pdcolor);
     fit_copy(dev, data, data_x, raster, id, x, y, width, height);
     y0 = y;			/* must do after fit_copy */
 
     /* If non-trivial clipping & complex clipping disabled, default */
-    if ((cdev->disable_mask & clist_disable_complex_clip) &&
-	!check_rect_for_trivial_clip(pcpath, x, y, x + width, y + height)
+    if (((cdev->disable_mask & clist_disable_complex_clip) &&
+	 !check_rect_for_trivial_clip(pcpath, x, y, x + width, y + height)) ||
+	gs_debug_c('`')
 	)
 	return gx_default_fill_mask(dev, data, data_x, raster, id,
 				    x, y, width, height, pdcolor, depth,
@@ -114,6 +119,7 @@ clist_fill_mask(gx_device * dev,
 	TRY_RECT {
 	    code = cmd_put_drawing_color(cdev, pcls, pdcolor);
 	} HANDLE_RECT(code);
+	pcls->colors_used.slow_rop |= slow_rop;
 	/*
 	 * Unfortunately, painting a character with a halftone requires the
 	 * use of two bitmaps, a situation that we can neither represent in
@@ -150,7 +156,6 @@ clist_fill_mask(gx_device * dev,
 		gx_cmd_rect rect;
 		int rsize;
 		byte op = copy_op + cmd_copy_use_tile;
-		byte *dp;
 
 		/* Output a command to copy the entire character. */
 		/* It will be truncated properly per band. */
@@ -158,26 +163,26 @@ clist_fill_mask(gx_device * dev,
 		rect.width = orig_width, rect.height = yend - y0;
 		rsize = 1 + cmd_sizexy(rect);
 		TRY_RECT {
-		    code = 0;
-		    if (orig_data_x) {
-			int dx_msb = orig_data_x >> 5;
+		    code = (orig_data_x ?
+			    cmd_put_set_data_x(cdev, pcls, orig_data_x) : 0);
+		    if (code >= 0) {
+			byte *dp;
 
-			code = set_cmd_put_op(dp, cdev, pcls, cmd_opv_set_misc,
-					      2 + cmd_size_w(dx_msb));
+			code = set_cmd_put_op(dp, cdev, pcls, op, rsize);
+			/*
+			 * The following conditional is unnecessary: the two
+			 * statements inside it should go outside the
+			 * HANDLE_RECT.  They are here solely to pacify
+			 * stupid compilers that don't understand that dp
+			 * will always be set if control gets past the
+			 * HANDLE_RECT.
+			 */
 			if (code >= 0) {
-			    if (dx_msb) {
-				dp[1] = cmd_set_misc_data_x + 0x20 +
-				    (orig_data_x & 0x1f);
-				cmd_put_w(dx_msb, dp + 2);
-			    } else
-				dp[1] = cmd_set_misc_data_x + orig_data_x;
+			    dp++;
+			    cmd_putxy(rect, dp);
 			}
 		    }
-		    if (code >= 0)
-			code = set_cmd_put_op(dp, cdev, pcls, op, rsize);
 		} HANDLE_RECT(code);
-		dp++;
-		cmd_putxy(rect, dp);
 		pcls->rect = rect;
 		goto end;
 	    }
@@ -215,25 +220,30 @@ typedef struct clist_image_enum_s {
     const gs_imager_state *pis;
     const gx_clip_path *pcpath;
     /* Set at creation time */
-    gx_image_enum_common_t *default_info;
     gs_image_format_t format;
     gs_int_point support;	/* extra source pixels for interpolation */
     int bits_per_plane;		/* bits per pixel per plane */
     gs_matrix matrix;		/* image space -> device space */
     bool uses_color;
     byte color_space;
+    gs_id color_space_id;
     int ymin, ymax;
     bool map_rgb_to_cmyk;
-    gx_color_index colors_used;
+    gx_colors_used_t colors_used;
     /* begin_image command prepared & ready to output */
     /****** SIZE COMPUTATION IS WRONG, TIED TO gximage.c, gsmatrix.c ******/
-    byte begin_image_command[3 + 2 * cmd_sizew_max + 1 + 6 * sizeof(float) +
-			    /****** Decode, ASSUME 5 COMPONENTS MAX ******/
-			     1 + 8 * sizeof(float) + 1 + 2 * sizeof(float) +
-			    /****** MaskColor, DITTO ******/
-			     10 * cmd_sizew_max +
+    byte begin_image_command[3 +
+			    /* Width, Height */
+			    2 * cmd_sizew_max +
+			    /* ImageMatrix */
+			    1 + 6 * sizeof(float) +
+			    /* Decode */
+			    (GS_IMAGE_MAX_COMPONENTS + 3) / 4 +
+			      GS_IMAGE_MAX_COMPONENTS * 2 * sizeof(float) +
+			    /* MaskColors */
+			    GS_IMAGE_MAX_COMPONENTS * cmd_sizew_max +
 			    /* rect */
-			     4 * cmd_sizew_max];
+			    4 * cmd_sizew_max];
     int begin_image_command_length;
     /* Updated dynamically */
     int y;
@@ -242,8 +252,7 @@ typedef struct clist_image_enum_s {
 
 /* We can disregard the pointers in the writer by allocating */
 /* the image enumerator as immovable.  This is a hack, of course. */
-gs_private_st_ptrs1(st_clist_image_enum, clist_image_enum, "clist_image_enum",
-     clist_image_enum_enum_ptrs, clist_image_enum_reloc_ptrs, default_info);
+gs_private_st_simple(st_clist_image_enum, clist_image_enum, "clist_image_enum");
 
 private image_enum_proc_plane_data(clist_image_plane_data);
 private image_enum_proc_end_image(clist_image_end_image);
@@ -302,7 +311,7 @@ clist_begin_typed_image(gx_device * dev,
     const gs_pixel_image_t * const pim = (const gs_pixel_image_t *)pic;
     gx_device_clist_writer * const cdev =
 	&((gx_device_clist *)dev)->writer;
-    clist_image_enum *pie;
+    clist_image_enum *pie = 0;
     int base_index;
     bool indexed;
     bool masked = false;
@@ -313,13 +322,12 @@ clist_begin_typed_image(gx_device * dev,
     bool varying_depths = false;
     gs_matrix mat;
     gs_rect sbox, dbox;
-    bool use_default_image;
     gs_image_format_t format;
     gx_color_index colors_used = 0;
     int code;
 
     /* We can only handle a limited set of image types. */
-    switch (pic->type->index) {
+    switch ((gs_debug_c('`') ? -1 : pic->type->index)) {
     case 1:
 	masked = ((const gs_image1_t *)pim)->ImageMask;
 	has_alpha = ((const gs_image1_t *)pim)->Alpha != 0;
@@ -327,8 +335,7 @@ clist_begin_typed_image(gx_device * dev,
 	if (pmat == 0)
 	    break;
     default:
-	return gx_default_begin_typed_image(dev, pis, pmat, pic, prect,
-					    pdcolor, pcpath, mem, pinfo);
+	goto use_default;
     }
     format = pim->format;
     /* See above for why we allocate the enumerator as immovable. */
@@ -365,9 +372,8 @@ clist_begin_typed_image(gx_device * dev,
 	uses_color = pim->CombineWithColor && rop3_uses_T(pis->log_op);
     }
     code = gx_image_enum_common_init((gx_image_enum_common_t *) pie,
-				     (const gs_image_common_t *) pim,
+				     (const gs_data_image_t *) pim,
 				     &clist_image_enum_procs, dev,
-				     pim->BitsPerComponent,
 				     num_components, format);
     {
 	int i;
@@ -375,32 +381,29 @@ clist_begin_typed_image(gx_device * dev,
 	for (i = 1; i < pie->num_planes; ++i)
 	    varying_depths |= pie->plane_depths[i] != pie->plane_depths[0];
     }
-    use_default_image =
-	(code < 0 ||
-	 !USE_HL_IMAGES ||	/* Always use the default. */
-	 (cdev->disable_mask & clist_disable_hl_image) || 
-	 cdev->image_enum_id != gs_no_id ||  /* Can't handle nested images */
-	 /****** CAN'T HANDLE CIE COLOR YET ******/
-	 base_index > gs_color_space_index_DeviceCMYK ||
-	 /****** CAN'T HANDLE INDEXED COLOR (READING MAP) ******/
-	 indexed ||
-	 /****** CAN'T HANDLE NON-PURE COLORS YET ******/
-	 (uses_color && !gx_dc_is_pure(pdcolor)) ||
-	 /****** CAN'T HANDLE IMAGES WITH ALPHA YET ******/
-	 has_alpha ||
-	 /****** CAN'T HANDLE IMAGES WITH IRREGULAR DEPTHS ******/
-	 varying_depths ||
-	 (code = gs_matrix_invert(&pim->ImageMatrix, &mat)) < 0 ||
-	 (code = gs_matrix_multiply(&mat, &ctm_only(pis), &mat)) < 0 ||
-	 !(cdev->disable_mask & clist_disable_nonrect_hl_image ?
-	   (is_xxyy(&mat) || is_xyyx(&mat)) :
-	   image_matrix_ok_to_band(&mat))
-	 );
-    if (!use_default_image) {
+    if (code < 0 ||
+	!USE_HL_IMAGES ||	/* Always use the default. */
+	(cdev->disable_mask & clist_disable_hl_image) || 
+	cdev->image_enum_id != gs_no_id ||  /* Can't handle nested images */
+	/****** CAN'T HANDLE CIE COLOR YET ******/
+	base_index > gs_color_space_index_DeviceCMYK ||
+	/****** CAN'T HANDLE NON-PURE COLORS YET ******/
+	(uses_color && !gx_dc_is_pure(pdcolor)) ||
+	/****** CAN'T HANDLE IMAGES WITH ALPHA YET ******/
+	has_alpha ||
+	/****** CAN'T HANDLE IMAGES WITH IRREGULAR DEPTHS ******/
+	varying_depths ||
+	(code = gs_matrix_invert(&pim->ImageMatrix, &mat)) < 0 ||
+	(code = gs_matrix_multiply(&mat, &ctm_only(pis), &mat)) < 0 ||
+	!(cdev->disable_mask & clist_disable_nonrect_hl_image ?
+	  (is_xxyy(&mat) || is_xyyx(&mat)) :
+	  image_matrix_ok_to_band(&mat))
+	)
+	goto use_default;
+    {
 	int bytes_per_plane, bytes_per_row;
 
 	bits_per_pixel = pim->BitsPerComponent * num_components;
-	pie->default_info = 0;
 	pie->image = *pim;
 	pie->dcolor = *pdcolor;
 	if (prect)
@@ -417,6 +420,7 @@ clist_begin_typed_image(gx_device * dev,
 	pie->uses_color = uses_color;
 	pie->color_space = (base_index << 4) |
 	    (indexed ? (pim->ColorSpace->params.indexed.use_proc ? 12 : 8) : 0);
+	pie->color_space_id = (masked ? gs_no_id : pim->ColorSpace->id);
 	pie->y = pie->rect.p.y;
 
 	/* Image row has to fit in cmd writer's buffer */
@@ -424,40 +428,29 @@ clist_begin_typed_image(gx_device * dev,
 	    (pim->Width * pie->bits_per_plane + 7) >> 3;
 	bytes_per_row = bytes_per_plane * pie->num_planes;
 	bytes_per_row = max(bytes_per_row, 1);
-	use_default_image = cmd_largest_size + bytes_per_row >
-	    cdev->cend - cdev->cbuf;
+	if (cmd_largest_size + bytes_per_row > cdev->cend - cdev->cbuf)
+	    goto use_default;
     }
-    if (!use_default_image) {
-	if (pim->Interpolate)
-	    pie->support.x = pie->support.y = max_support + 1;
-	else
-	    pie->support.x = pie->support.y = 0;
-	sbox.p.x = pie->rect.p.x - pie->support.x;
-	sbox.p.y = pie->rect.p.y - pie->support.y;
-	sbox.q.x = pie->rect.q.x + pie->support.x;
-	sbox.q.y = pie->rect.q.y + pie->support.y;
-	gs_bbox_transform(&sbox, &mat, &dbox);
+    if (pim->Interpolate)
+	pie->support.x = pie->support.y = MAX_ISCALE_SUPPORT + 1;
+    else
+	pie->support.x = pie->support.y = 0;
+    sbox.p.x = pie->rect.p.x - pie->support.x;
+    sbox.p.y = pie->rect.p.y - pie->support.y;
+    sbox.q.x = pie->rect.q.x + pie->support.x;
+    sbox.q.y = pie->rect.q.y + pie->support.y;
+    gs_bbox_transform(&sbox, &mat, &dbox);
 
-	if (cdev->disable_mask & clist_disable_complex_clip)
-	    use_default_image =
-		!check_rect_for_trivial_clip( pcpath,
+    if (cdev->disable_mask & clist_disable_complex_clip)
+	if (!check_rect_for_trivial_clip(pcpath,
 				(int)floor(dbox.p.x), (int)floor(dbox.p.y),
-				(int)ceil(dbox.q.x), (int)ceil(dbox.q.y) );
-    }
+				(int)ceil(dbox.q.x), (int)ceil(dbox.q.y)))
+	    goto use_default;
     /* Create the begin_image command. */
     if ((pie->begin_image_command_length =
 	 begin_image_command(pie->begin_image_command,
 			     sizeof(pie->begin_image_command), pic)) < 0)
-	use_default_image = true;
-    if (use_default_image) {
-	int code = gx_default_begin_typed_image(dev, pis, pmat, pic, prect,
-						pdcolor, pcpath, mem,
-						&pie->default_info);
-
-	if (code < 0)
-	    gs_free_object(mem, pie, "clist_begin_typed_image");
-	return code;
-    }
+	goto use_default;
     if (!masked) {
 	/*
 	 * Calculate (conservatively) the set of colors that this image
@@ -502,7 +495,9 @@ clist_begin_typed_image(gx_device * dev,
 
     pie->map_rgb_to_cmyk = dev->color_info.num_components == 4 &&
 	base_index == gs_color_space_index_DeviceRGB;
-    pie->colors_used = colors_used;
+    pie->colors_used.or = colors_used;
+    pie->colors_used.slow_rop =
+	cmd_slow_rop(dev, pis->log_op, (uses_color ? pdcolor : NULL));
     pie->color_map_is_known = false;
     /*
      * Calculate a (slightly conservative) Y bounding interval for the image
@@ -525,27 +520,38 @@ clist_begin_typed_image(gx_device * dev,
 
     cdev->image_enum_id = pie->id;
     return 0;
+
+    /*
+     * We couldn't handle the image.  Use the default algorithms, which
+     * break the image up into rectangles or small pixmaps.
+     */
+use_default:
+    gs_free_object(mem, pie, "clist_begin_typed_image");
+    return gx_default_begin_typed_image(dev, pis, pmat, pic, prect,
+					pdcolor, pcpath, mem, pinfo);
 }
 
 /* Process the next piece of an image. */
 private int
-clist_image_plane_data(gx_device * dev, gx_image_enum_common_t * info,
-		       const gx_image_plane_t * planes, int yh)
+clist_image_plane_data(gx_image_enum_common_t * info,
+		       const gx_image_plane_t * planes, int yh,
+		       int *rows_used)
 {
+    gx_device *dev = info->dev;
     gx_device_clist_writer * const cdev =
 	&((gx_device_clist *)dev)->writer;
     clist_image_enum *pie = (clist_image_enum *) info;
     gs_rect sbox, dbox;
+    int y_orig = pie->y;
     int y0, y1;
     int y, height;		/* for BEGIN/END_RECT */
     int code;
 
-    if (pie->default_info)
-	return gx_image_plane_data(pie->default_info, planes, yh);
 #ifdef DEBUG
     if (pie->id != cdev->image_enum_id) {
 	lprintf2("end_image id = %lu != clist image id = %lu!\n",
 		 (ulong) pie->id, (ulong) cdev->image_enum_id);
+	*rows_used = 0;
 	return_error(gs_error_Fatal);
     }
 #endif
@@ -554,11 +560,13 @@ clist_image_plane_data(gx_device * dev, gx_image_enum_common_t * info,
 	int i;
 
 	for (i = 1; i < info->num_planes; ++i)
-	    if (planes[i].data_x != planes[0].data_x)
+	    if (planes[i].data_x != planes[0].data_x) {
+		*rows_used = 0;
 		return_error(gs_error_rangecheck);
+	    }
     }
     sbox.p.x = pie->rect.p.x - pie->support.x;
-    sbox.p.y = (y0 = pie->y) - pie->support.y;
+    sbox.p.y = (y0 = y_orig) - pie->support.y;
     sbox.q.x = pie->rect.q.x + pie->support.x;
     sbox.q.y = (y1 = pie->y += yh) + pie->support.y;
     gs_bbox_transform(&sbox, &pie->matrix, &dbox);
@@ -584,9 +592,15 @@ clist_image_plane_data(gx_device * dev, gx_image_enum_common_t * info,
 	    ry0 = pie->ymin;
 	if (ry1 > pie->ymax)
 	    ry1 = pie->ymax;
+	/*
+	 * If the image extends off the page in the Y direction,
+	 * we may have ry0 > ry1.  Check for this here.
+	 */
+	if (ry0 >= ry1)
+	    goto done;
 	/* Expand the range out to band boundaries. */
 	y = ry0 / band_height * band_height;
-	height = min(round_up(ry1, band_height), dev->height) - y;
+	height = min(ROUND_UP(ry1, band_height), dev->height) - y;
     }
 
     FOR_RECTS {
@@ -605,7 +619,8 @@ clist_image_plane_data(gx_device * dev, gx_image_enum_common_t * info,
 
 	if (!image_band_box(dev, pie, y, height, &ibox))
 	    continue;
-	pcls->colors_used |= pie->colors_used;
+	pcls->colors_used.or |= pie->colors_used.or;
+	pcls->colors_used.slow_rop |= pie->colors_used.slow_rop;
 	/*
 	 * The transmitted subrectangle has to be computed at the time
 	 * we write the begin_image command; this in turn controls how
@@ -709,64 +724,62 @@ clist_image_plane_data(gx_device * dev, gx_image_enum_common_t * info,
 #undef by0
 #undef bx1
 #undef by1
-    } END_RECTS_ON_ERROR(\
-	BEGIN\
-	    ++cdev->ignore_lo_mem_warnings;\
-	    NEST_RECT {\
-		code = write_image_end_all(dev, pie);\
-	    } UNNEST_RECT;\
-	    --cdev->ignore_lo_mem_warnings;\
-	END,\
-	(code < 0 ? (band_code = code) : code) >= 0,\
-	(cmd_clear_known(cdev,\
-	    clist_image_unknowns(dev, pie) | begin_image_known),\
-	 pie->color_map_is_known = false,\
-	 cdev->image_enum_id = pie->id, true)\
+    } END_RECTS_ON_ERROR(
+	BEGIN
+	    ++cdev->ignore_lo_mem_warnings;
+	    NEST_RECT {
+		code = write_image_end_all(dev, pie);
+	    } UNNEST_RECT;
+	    --cdev->ignore_lo_mem_warnings;
+	    /* Update sub-rect */
+	    if (!pie->image.Interpolate)
+	        pie->rect.p.y += yh;  /* interpolate & mem recovery currently incompat */
+	END,
+	(code < 0 ? (band_code = code) : code) >= 0,
+	(cmd_clear_known(cdev,
+			 clist_image_unknowns(dev, pie) | begin_image_known),
+	 pie->color_map_is_known = false,
+	 cdev->image_enum_id = pie->id, true)
 	);
-    /* Update sub-rect in case memory exhaustion forced end_image */
-    if (!pie->image.Interpolate)
-	pie->rect.p.y += yh;  /* interpolate & mem recovery currently incompat */
+ done:
+    *rows_used = pie->y - y_orig;
     return pie->y >= pie->rect.q.y;
 }
 
 /* Clean up by releasing the buffers. */
 private int
-clist_image_end_image(gx_device * dev, gx_image_enum_common_t * info,
-		      bool draw_last)
+clist_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 {
+    gx_device *dev = info->dev;
     gx_device_clist_writer * const cdev =
 	&((gx_device_clist *)dev)->writer;
     clist_image_enum *pie = (clist_image_enum *) info;
     int code;
 
-    if (pie->default_info)
-	code = gx_default_end_image(dev, pie->default_info, draw_last);
-    else {
 #ifdef DEBUG
-	if (pie->id != cdev->image_enum_id) {
-	    lprintf2("end_image id = %lu != clist image id = %lu!\n",
-		     (ulong) pie->id, (ulong) cdev->image_enum_id);
-	    return_error(gs_error_Fatal);
-	}
-#endif
-	NEST_RECT {
- 	    do {
-		code = write_image_end_all(dev, pie);
-	    } while (code < 0 && cdev->error_is_retryable &&
-		     (code = clist_VMerror_recover(cdev, code)) >= 0
-		     );
- 	    /* if couldn't write successsfully, do a hard flush */
- 	    if (code < 0 && cdev->error_is_retryable) {
-		int retry_code;
-		++cdev->ignore_lo_mem_warnings;
-		retry_code = write_image_end_all(dev, pie); /* force it out */
-		--cdev->ignore_lo_mem_warnings;
-		if (retry_code >= 0 && cdev->driver_call_nesting == 0)
-		    code = clist_VMerror_recover_flush(cdev, code);
-	    }
-	} UNNEST_RECT;
-	cdev->image_enum_id = gs_no_id;
+    if (pie->id != cdev->image_enum_id) {
+	lprintf2("end_image id = %lu != clist image id = %lu!\n",
+		 (ulong) pie->id, (ulong) cdev->image_enum_id);
+	return_error(gs_error_Fatal);
     }
+#endif
+    NEST_RECT {
+	do {
+	    code = write_image_end_all(dev, pie);
+	} while (code < 0 && cdev->error_is_retryable &&
+		 (code = clist_VMerror_recover(cdev, code)) >= 0
+		 );
+	/* if couldn't write successsfully, do a hard flush */
+	if (code < 0 && cdev->error_is_retryable) {
+	    int retry_code;
+	    ++cdev->ignore_lo_mem_warnings;
+	    retry_code = write_image_end_all(dev, pie); /* force it out */
+	    --cdev->ignore_lo_mem_warnings;
+	    if (retry_code >= 0 && cdev->driver_call_nesting == 0)
+		code = clist_VMerror_recover_flush(cdev, code);
+	}
+    } UNNEST_RECT;
+    cdev->image_enum_id = gs_no_id;
     gs_free_object(pie->memory, pie, "clist_image_end_image");
     return code;
 }
@@ -783,6 +796,26 @@ clist_create_compositor(gx_device * dev,
 
 /* ------ Utilities ------ */
 
+/* Add a command to set data_x. */
+private int
+cmd_put_set_data_x(gx_device_clist_writer * cldev, gx_clist_state * pcls,
+		   int data_x)
+{
+    int dx_msb = data_x >> 5;
+    byte *dp;
+    int code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_misc,
+			      2 + cmd_size_w(dx_msb));
+
+    if (code >= 0) {
+	if (dx_msb) {
+	    dp[1] = cmd_set_misc_data_x + 0x20 + (data_x & 0x1f);
+	    cmd_put_w(dx_msb, dp + 2);
+	} else
+	    dp[1] = cmd_set_misc_data_x + data_x;
+    }
+    return code;
+}
+
 /* Add commands to represent a halftone order. */
 private int
 cmd_put_ht_order(gx_device_clist_writer * cldev, const gx_ht_order * porder,
@@ -795,7 +828,13 @@ cmd_put_ht_order(gx_device_clist_writer * cldev, const gx_ht_order * porder,
     byte *dp;
     uint i, n;
     int code;
+    int pi = porder->procs - ht_order_procs_table;
+    uint elt_size = porder->procs->bit_data_elt_size;
+    const uint nlevels = min((cbuf_size - 2) / sizeof(*porder->levels), 255);
+    const uint nbits = min((cbuf_size - 2) / elt_size, 255);
 
+    if (pi < 0 || pi > countof(ht_order_procs_table))
+	return_error(gs_error_unregistered);
     /* Put out the order parameters. */
     cp = cmd_put_w(component + 1, command);
     if (component >= 0)
@@ -806,6 +845,7 @@ cmd_put_ht_order(gx_device_clist_writer * cldev, const gx_ht_order * porder,
     cp = cmd_put_w(porder->shift, cp);
     cp = cmd_put_w(porder->num_levels, cp);
     cp = cmd_put_w(porder->num_bits, cp);
+    *cp++ = (byte)pi;
     len = cp - command;
     code = set_cmd_put_all_op(dp, cldev, cmd_opv_set_ht_order, len + 1);
     if (code < 0)
@@ -819,7 +859,6 @@ cmd_put_ht_order(gx_device_clist_writer * cldev, const gx_ht_order * porder,
 	return code;
 
     /* Put out the levels array. */
-#define nlevels min((cbuf_size - 2) / sizeof(*porder->levels), 255)
     for (i = 0; i < porder->num_levels; i += n) {
 	n = porder->num_levels - i;
 	if (n > nlevels)
@@ -831,22 +870,20 @@ cmd_put_ht_order(gx_device_clist_writer * cldev, const gx_ht_order * porder,
 	dp[1] = n;
 	memcpy(dp + 2, porder->levels + i, n * sizeof(*porder->levels));
     }
-#undef nlevels
 
     /* Put out the bits array. */
-#define nbits min((cbuf_size - 2) / sizeof(*porder->bits), 255)
     for (i = 0; i < porder->num_bits; i += n) {
 	n = porder->num_bits - i;
 	if (n > nbits)
 	    n = nbits;
 	code = set_cmd_put_all_op(dp, cldev, cmd_opv_set_ht_data,
-				  2 + n * sizeof(*porder->bits));
+				  2 + n * elt_size);
 	if (code < 0)
 	    return code;
 	dp[1] = n;
-	memcpy(dp + 2, porder->bits + i, n * sizeof(*porder->bits));
+	memcpy(dp + 2, (const byte *)porder->bit_data + i * elt_size,
+	       n * elt_size);
     }
-#undef nbits
 
     return 0;
 }
@@ -1158,16 +1195,14 @@ clist_image_unknowns(gx_device *dev, const clist_image_enum *pie)
 	unknown |= ctm_known;
 	cdev->imager_state.ctm = pis->ctm;
     }
-    /****** hival CHECK IS NOT SUFFICIENT ******/
-    if (cdev->color_space != pie->color_space ||
-	((cdev->color_space & 8) != 0 &&
-	 cdev->indexed_params.hival !=
-	 pie->image.ColorSpace->params.indexed.hival)
-	) {
-	unknown |= color_space_known;
-	cdev->color_space = pie->color_space;
-	if (cdev->color_space & 8)
-	    cdev->indexed_params = pie->image.ColorSpace->params.indexed;
+    if (pie->color_space_id != gs_no_id /* i.e., not masked */) {
+	if (cdev->color_space_id != pie->color_space_id) {
+	    unknown |= color_space_known;
+	    cdev->color_space = pie->color_space;
+	    cdev->color_space_id = pie->color_space_id;
+	    if (cdev->color_space & 8)
+		cdev->indexed_params = pie->image.ColorSpace->params.indexed;
+	}
     }
     if (cmd_check_clip_path(cdev, pie->pcpath))
 	unknown |= clip_path_known;
@@ -1210,10 +1245,9 @@ cmd_image_plane_data(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     int code;
 
     if (data_x) {
-	code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_misc, 2);
+	code = cmd_put_set_data_x(cldev, pcls, data_x);
 	if (code < 0)
 	    return code;
-	dp[1] = cmd_set_misc_data_x + (data_x & 7);
 	offset = ((data_x & ~7) * cldev->color_info.depth) >> 3;
     }
     code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_image_data, len);
@@ -1242,6 +1276,12 @@ write_image_end_all(gx_device *dev, const clist_image_enum *pie)
     int y = pie->ymin;
     int height = pie->ymax - y;
 
+    /*
+     * We need to check specially for images lying entirely outside the
+     * page, since FOR_RECTS doesn't do this.
+     */
+    if (height <= 0)
+	return 0;
     FOR_RECTS {
 	byte *dp;
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 1992 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -26,8 +26,10 @@
 
 /* <port> .inport <word> */
 private int
-zinport(register os_ptr op)
+zinport(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     check_type(*op, t_integer);
     make_int(op, inport((int)op->value.intval));
     return 0;
@@ -35,8 +37,10 @@ zinport(register os_ptr op)
 
 /* <port> .inportb <byte> */
 private int
-zinportb(register os_ptr op)
+zinportb(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     check_type(*op, t_integer);
     make_int(op, inportb((int)op->value.intval));
     return 0;
@@ -44,8 +48,10 @@ zinportb(register os_ptr op)
 
 /* <port> <word> .outport - */
 private int
-zoutport(register os_ptr op)
+zoutport(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     check_type(*op, t_integer);
     check_type(op[-1], t_integer);
     outport((int)op[-1].value.intval, (int)op->value.intval);
@@ -55,8 +61,10 @@ zoutport(register os_ptr op)
 
 /* <port> <byte> .outportb - */
 private int
-zoutportb(register os_ptr op)
+zoutportb(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     check_type(*op, t_integer);
     check_int_leu(op[-1], 0xff);
     outportb((int)op[-1].value.intval, (byte) op->value.intval);
@@ -66,8 +74,10 @@ zoutportb(register os_ptr op)
 
 /* <loc> .peek <byte> */
 private int
-zpeek(register os_ptr op)
+zpeek(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     check_type(*op, t_integer);
     make_int(op, *(byte *) (op->value.intval));
     return 0;
@@ -75,8 +85,10 @@ zpeek(register os_ptr op)
 
 /* <loc> <byte> .poke - */
 private int
-zpoke(register os_ptr op)
+zpoke(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     check_type(*op, t_integer);
     check_int_leu(op[-1], 0xff);
     *(byte *) (op[-1].value.intval) = (byte) op->value.intval;

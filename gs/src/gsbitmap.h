@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -22,7 +22,7 @@
 #ifndef gsbitmap_INCLUDED
 #define gsbitmap_INCLUDED
 
-#include "gsstruct.h"		/* for extern_st */
+#include "gsstype.h"		/* for extern_st */
 
 /*
  * The Ghostscript library stores all bitmaps bit-big-endian (i.e., the 0x80
@@ -69,15 +69,18 @@ typedef gs_id gs_bitmap_id;
  *      If size.y > 1,
  *          raster >= (size.x * depth + 7) / 8
  */
-#define gs_bitmap_common                                                    \
-    byte *          data;       /* pointer to the data */                   \
+#define gs_bitmap_common(data_type)                                         \
+    data_type *     data;       /* pointer to the data */                   \
     int             raster;     /* increment between scanlines, bytes */    \
     gs_int_point    size;       /* width and height */                      \
     gs_bitmap_id    id		/* usually unused */
 
 typedef struct gs_bitmap_s {
-    gs_bitmap_common;
+    gs_bitmap_common(byte);
 } gs_bitmap;
+typedef struct gs_const_bitmap_s {
+    gs_bitmap_common(const byte);
+} gs_const_bitmap;
 
 /*
  * For bitmaps used as halftone tiles, we may replicate the tile in
@@ -89,13 +92,16 @@ typedef struct gs_bitmap_s {
  * since most of the library procedures that replicate tiles expect them
  * to be aligned.
  */
-#define gs_tile_bitmap_common                                   \
-    gs_bitmap_common;                                           \
+#define gs_tile_bitmap_common(data_type)                          \
+    gs_bitmap_common(data_type);                                  \
     ushort      rep_width, rep_height	/* true size of tile */
 
 typedef struct gs_tile_bitmap_s {
-    gs_tile_bitmap_common;
+    gs_tile_bitmap_common(byte);
 } gs_tile_bitmap;
+typedef struct gs_const_tile_bitmap_s {
+    gs_tile_bitmap_common(const byte);
+} gs_const_tile_bitmap;
 
 /*
  * There is no "strip" version for client bitmaps, as the strip structure is
@@ -113,23 +119,29 @@ typedef struct gs_tile_bitmap_s {
  * space is almost always derived from context, and to provide such a feature
  * would involve additional memory-management complexity.
  */
-#define gs_depth_bitmap_common                                      \
-    gs_bitmap_common;                                               \
+#define gs_depth_bitmap_common(data_type)                           \
+    gs_bitmap_common(data_type);                                    \
     byte     pix_depth;      /* bits per sample */                  \
     byte     num_comps      /* number of interleaved components */  \
 
 typedef struct gs_depth_bitmap_s {
-    gs_depth_bitmap_common;
+    gs_depth_bitmap_common(byte);
 } gs_depth_bitmap;
+typedef struct gs_const_depth_bitmap_s {
+    gs_depth_bitmap_common(const byte);
+} gs_const_depth_bitmap;
 
-#define gs_tile_depth_bitmap_common                                 \
-    gs_tile_bitmap_common;                                          \
+#define gs_tile_depth_bitmap_common(data_type)                      \
+    gs_tile_bitmap_common(data_type);                               \
     byte     pix_depth;     /* bits per sample */                   \
     byte     num_comps      /* number of interleaved components */  \
 
 typedef struct gs_tile_depth_bitmap_s {
-    gs_tile_depth_bitmap_common;
+    gs_tile_depth_bitmap_common(byte);
 } gs_tile_depth_bitmap;
+typedef struct gs_const_tile_depth_bitmap_s {
+    gs_tile_depth_bitmap_common(const byte);
+} gs_const_tile_depth_bitmap;
 
 /*
  * For reasons that are no entirely clear, no memory management routines were

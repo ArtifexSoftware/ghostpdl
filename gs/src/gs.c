@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -60,8 +60,11 @@ main(int argc, char *argv[])
 	    zflush(osp);
 	    fprintf(stdout, " => code = %d\n", code);
 	    fflush(stdout);
-	    if (code < 0)
+	    if (code < 0) {
 		gs_exit(1);
+		/* NOTREACHED */
+		return 1;	/* pacify compilers */
+	    }
 	}
     }
 #endif
@@ -71,4 +74,5 @@ main(int argc, char *argv[])
 
     gs_exit(0);			/* exit */
     /* NOTREACHED */
+    return 0;			/* pacify compilers */
 }

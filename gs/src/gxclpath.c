@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -58,17 +58,40 @@ colored_halftone_colors_used(gx_device_clist_writer *cldev,
      */
     if (dev_proc(cldev, map_cmyk_color) != cmyk_1bit_map_cmyk_color)
 	return ((gx_color_index)1 << cldev->color_info.depth) - 1;
-     /*
-      * Note that c_base[0], and the low-order bit of plane_mask,
-      * correspond to cyan: this requires reversing the bit order of
-      * the plane mask.
-      */
+    /*
+     * Note that c_base[0], and the low-order bit of plane_mask,
+     * correspond to cyan: this requires reversing the bit order of
+     * the plane mask.
+     */
     return
 	((pdcolor->colors.colored.c_base[0] << 3) |
 	 (pdcolor->colors.colored.c_base[1] << 2) |
 	 (pdcolor->colors.colored.c_base[2] << 1) |
 	 (pdcolor->colors.colored.c_base[3]) |
 	 (byte_reverse_bits[pdcolor->colors.colored.plane_mask] >> 4));
+}
+
+/*
+ * Compute whether a drawing operation will require the slow (full-pixel)
+ * RasterOp implementation.  If pdcolor is not NULL, it is the texture for
+ * the RasterOp.
+ */
+bool
+cmd_slow_rop(gx_device *dev, gs_logical_operation_t lop,
+    const gx_drawing_color *pdcolor)
+{
+    gs_rop3_t rop = lop_rop(lop);
+
+    if (pdcolor != 0 && gx_dc_is_pure(pdcolor)) {
+	gx_color_index color = gx_dc_pure_color(pdcolor);
+
+	if (color == gx_device_black(dev))
+	    rop = rop3_know_T_0(rop);
+	else if (color == gx_device_white(dev))
+	    rop = rop3_know_T_1(rop);
+    }
+    return !(rop == rop3_0 || rop == rop3_1 ||
+	     rop == rop3_D || rop == rop3_S || rop == rop3_T);
 }
 
 /* Write out the color for filling, stroking, or masking. */
@@ -84,7 +107,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     if (gx_dc_is_pure(pdcolor)) {
 	gx_color_index color1 = gx_dc_pure_color(pdcolor);
 
-	pcls->colors_used |= color1;
+	pcls->colors_used.or |= color1;
 	if (color1 != pcls->colors[1]) {
 	    int code = cmd_set_color1(cldev, pcls, color1);
 
@@ -98,7 +121,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	gx_color_index color0 = gx_dc_binary_color0(pdcolor);
 	gx_color_index color1 = gx_dc_binary_color1(pdcolor);
 
-	pcls->colors_used |= color0 | color1;
+	pcls->colors_used.or |= color0 | color1;
 	/* Set up tile and colors as for clist_tile_rectangle. */
 	if (!cls_has_tile_id(cldev, pcls, tile->id, offset_temp)) {
 	    int depth =
@@ -126,12 +149,14 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	byte buf[4 + 4 * cmd_max_intsize(sizeof(pdcolor->colors.colored.c_level[0]))];
 	byte *bp = buf;
 	int i;
+	byte cmd;
 	uint short_bases = 0;
 	ulong bases = 0;
+	byte flags = 0;
 	byte *dp;
 	int code;
 
-	pcls->colors_used |=
+	pcls->colors_used.or |=
 	    colored_halftone_colors_used(cldev, pdcolor);
 	/****** HOW TO TELL IF COLOR IS ALREADY SET? ******/
 	if (pdht->id != cldev->device_halftone_id) {
@@ -148,20 +173,25 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		return_error(gs_error_rangecheck);
 	    bases |= base << ((3 - i) * 5);
 	    short_bases |= base << (3 - i);
+	    if (pdcolor->colors.colored.c_level[i])
+		flags |= 0x80 >> i;
 	}
 	if (bases & 0xf7bde) {
 	    /* Some base value requires more than 1 bit. */
-	    *bp++ = 0x10 + (byte) (bases >> 16);
+	    cmd = cmd_opv_set_color;
+	    *bp++ = flags | (byte)(bases >> 16);
 	    *bp++ = (byte) (bases >> 8);
 	    *bp++ = (byte) bases;
 	} else {
 	    /* The bases all fit in 1 bit each. */
-	    *bp++ = 0x00 + (byte) short_bases;
+	    cmd = cmd_opv_set_color_short;
+	    *bp++ = flags | (byte)short_bases;
 	}
 	for (i = 0; i < num_comp; ++i)
-	    bp = cmd_put_w((uint) pdcolor->colors.colored.c_level[i], bp);
+	    if (flags & (0x80 >> i))
+		bp = cmd_put_w((uint)pdcolor->colors.colored.c_level[i], bp);
 	/****** IGNORE alpha ******/
-	code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_color, bp - buf + 1);
+	code = set_cmd_put_op(dp, cldev, pcls, cmd, bp - buf + 1);
 	if (code < 0)
 	    return code;
 	memcpy(dp + 1, buf, bp - buf);
@@ -412,7 +442,7 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	}
 	{
 	    int end_code =
-		set_cmd_put_op(dp, cldev, pcls, cmd_opv_end_clip, 2);
+		set_cmd_put_op(dp, cldev, pcls, cmd_opv_end_clip, 1);
 
 	    if (code >= 0)
 		code = end_code;	/* take the first failure seen */
@@ -424,11 +454,9 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		 */
 	        ++cldev->ignore_lo_mem_warnings;
 	        end_code =
-		    set_cmd_put_op(dp, cldev, pcls, cmd_opv_end_clip, 2);
+		    set_cmd_put_op(dp, cldev, pcls, cmd_opv_end_clip, 1);
 	        --cldev->ignore_lo_mem_warnings;
 	    }
-	    if (end_code >= 0)
-		dp[1] = (gx_cpath_is_outside(pcpath) ? 1 : 0);
 	}
 	if (code < 0)
 	    return code;
@@ -440,8 +468,8 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 
 	if (cldev->color_space & 8) {	/* indexed */
 	    uint num_values = (cldev->indexed_params.hival + 1) *
-	    gs_color_space_num_components(
-		 (const gs_color_space *)&cldev->indexed_params.base_space);
+		gs_color_space_num_components(
+		    (const gs_color_space *)&cldev->indexed_params.base_space);
 	    bool use_proc = cldev->color_space & 4;
 	    const void *map_data;
 	    uint map_size;
@@ -487,6 +515,7 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	(params->rule == gx_rule_even_odd ?
 	 cmd_opv_eofill : cmd_opv_fill);
     gs_fixed_point adjust;
+    bool slow_rop = cmd_slow_rop(dev, lop_know_S_0(lop), pdcolor);
 
     if ( (cdev->disable_mask & clist_disable_fill_path) ||
 	 gs_debug_c(',')
@@ -540,10 +569,12 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	    )
 	    return code;
 	code = cmd_put_drawing_color(cdev, pcls, pdcolor);
-	if (code < 0) {		/* Something went wrong, use the default implementation. */
+	if (code < 0) {
+	    /* Something went wrong, use the default implementation. */
 	    return gx_default_fill_path(dev, pis, ppath, params, pdcolor,
 					pcpath);
 	}
+	pcls->colors_used.slow_rop |= slow_rop;
 	code = cmd_put_path(cdev, pcls, ppath,
 			    int2fixed(max(y - 1, y0)),
 			    int2fixed(min(y + height + 1, y1)),
@@ -569,6 +600,7 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
     int adjust_y;
     int y, height, y0, y1;
     gs_logical_operation_t lop = pis->log_op;
+    bool slow_rop = cmd_slow_rop(dev, lop_know_S_0(lop), pdcolor);
 
     if ((cdev->disable_mask & clist_disable_stroke_path) ||
 	gs_debug_c(',')
@@ -688,6 +720,7 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	    return gx_default_stroke_path(dev, pis, ppath, params, pdcolor,
 					  pcpath);
 	}
+	pcls->colors_used.slow_rop |= slow_rop;
 	{
 	    fixed ymin, ymax;
 
@@ -731,6 +764,7 @@ clist_put_polyfill(gx_device *dev, fixed px, fixed py,
 	&((gx_device_clist *)dev)->writer;
     gs_fixed_rect bbox;
     int y, height, y0, y1;
+    bool slow_rop = cmd_slow_rop(dev, lop_know_S_0(lop), pdcolor);
 
     if (gs_debug_c(','))
 	return -1;		/* path-based banding is disabled */
@@ -752,6 +786,7 @@ clist_put_polyfill(gx_device *dev, fixed px, fixed py,
 	if ((code = cmd_update_lop(cdev, pcls, lop)) < 0 ||
 	    (code = cmd_put_drawing_color(cdev, pcls, pdcolor)) < 0)
 	    goto out;
+	pcls->colors_used.slow_rop |= slow_rop;
 	code = cmd_put_path(cdev, pcls, &path,
 			    int2fixed(max(y - 1, y0)),
 			    int2fixed(min(y + height + 1, y1)),
@@ -771,8 +806,6 @@ clist_fill_parallelogram(gx_device *dev, fixed px, fixed py,
 			 const gx_drawing_color *pdcolor,
 			 gs_logical_operation_t lop)
 {
-    gx_device_clist_writer * const cdev =
-	&((gx_device_clist *)dev)->writer;
     gs_fixed_point pts[3];
     int code;
 
@@ -782,13 +815,6 @@ clist_fill_parallelogram(gx_device *dev, fixed px, fixed py,
 	INT_RECT_FROM_PARALLELOGRAM(&r, px, py, ax, ay, bx, by);
 	return gx_fill_rectangle_device_rop(r.p.x, r.p.y, r.q.x - r.p.x,
 					    r.q.y - r.p.y, pdcolor, dev, lop);
-    }
-    if ( (cdev->disable_mask & clist_disable_fill_path) ||
-	 gs_debug_c(',')
-	 ) {
-	/* Disable path-based banding. */
-	return gx_default_fill_parallelogram(dev, px, py, ax, ay, bx, by,
-					  pdcolor, lop);
     }
     pts[0].x = px + ax, pts[0].y = py + ay;
     pts[1].x = pts[0].x + bx, pts[1].y = pts[0].y + by;
@@ -805,18 +831,9 @@ clist_fill_triangle(gx_device *dev, fixed px, fixed py,
 		    const gx_drawing_color *pdcolor,
 		    gs_logical_operation_t lop)
 {
-    gx_device_clist_writer * const cdev =
-	&((gx_device_clist *)dev)->writer;
     gs_fixed_point pts[2];
     int code;
 
-    if ( (cdev->disable_mask & clist_disable_fill_path) ||
-	 gs_debug_c(',')
-	 ) {
-	/* Disable path-based banding. */
-	return gx_default_fill_triangle(dev, px, py, ax, ay, bx, by,
-					  pdcolor, lop);
-    }
     pts[0].x = px + ax, pts[0].y = py + ay;
     pts[1].x = px + bx, pts[1].y = py + by;
     code = clist_put_polyfill(dev, px, py, pts, 2, pdcolor, lop);
@@ -1057,6 +1074,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     set_first_point();
     for (;;) {
 	fixed vs[6];
+	struct { fixed vs[6]; } prev;
 
 #define A vs[0]
 #define B vs[1]
@@ -1272,7 +1290,16 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 			E -= C, F -= D;
 			C -= A, D -= B;
 			A -= px, B -= py;
-			if (B == 0 && E == 0) {
+			if (*writer.dp >= cmd_opv_min_curveto &&
+			    *writer.dp <= cmd_opv_max_curveto &&
+			    ((prev.A == 0 &&
+			      A == prev.E && C == prev.C && E == prev.A &&
+			      B == -prev.F && D == -prev.D && F == -prev.B) ||
+			     (A == -prev.E && C == -prev.C && E == -prev.A &&
+			      B == prev.F && D == prev.D && F == prev.B))
+			    )
+			    op = cmd_opv_scurveto;
+			else if (B == 0 && E == 0) {
 			    B = A, E = F, optr++, op = cmd_opv_hvcurveto;
 			    if ((B ^ D) >= 0) {
 				if (C == D && E == B)
@@ -1292,6 +1319,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 			    op = cmd_opv_rncurveto;
 			else
 			    op = cmd_opv_rrcurveto;
+			memcpy(prev.vs, vs, sizeof(prev.vs));
 			px = nx, py = ny;
 			open = 1;
 			code = cmd_put_segment(&writer, op, optr, notes);

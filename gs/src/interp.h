@@ -1,4 +1,4 @@
-/* Copyright (C) 1994 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -25,10 +25,14 @@
 /* ------ iinit.c ------ */
 
 /* Enter a name and value into systemdict. */
-void initial_enter_name(P2(const char *, const ref *));
+void i_initial_enter_name(P3(i_ctx_t *, const char *, const ref *));
+#define initial_enter_name(nstr, pvalue)\
+  i_initial_enter_name(i_ctx_p, nstr, pvalue)
 
 /* Remove a name from systemdict. */
-void initial_remove_name(P1(const char *));
+void i_initial_remove_name(P2(i_ctx_t *, const char *));
+#define initial_remove_name(nstr)\
+  i_initial_remove_name(i_ctx_p, nstr)
 
 /* ------ interp.c ------ */
 
@@ -49,25 +53,21 @@ extern const int gs_interp_num_special_ops;
  * If operator is hard-coded into the interpreter,
  * assign it a special type and index.
  */
-void gs_interp_make_oper(P3(ref * opref, op_proc_p, int index));
+void gs_interp_make_oper(P3(ref * opref, op_proc_t, int index));
 
 /* Get the name corresponding to an error number. */
-int gs_errorname(P2(int, ref *));
+int gs_errorname(P3(i_ctx_t *, int, ref *));
 
 /* Put a string in $error /errorinfo. */
-int gs_errorinfo_put_string(P1(const char *));
+int gs_errorinfo_put_string(P2(i_ctx_t *, const char *));
 
 /* Initialize the interpreter. */
-void gs_interp_init(P0());
+int gs_interp_init(P2(i_ctx_t **pi_ctx_p, const ref *psystem_dict));
 
 #ifndef gs_context_state_t_DEFINED
 #  define gs_context_state_t_DEFINED
 typedef struct gs_context_state_s gs_context_state_t;
-
 #endif
-
-/* Define a pointer to the current interpreter context state. */
-extern gs_context_state_t *gs_interp_context_state_current;
 
 /*
  * Create initial stacks for the interpreter.
@@ -84,6 +84,6 @@ void gs_interp_free_stacks(P2(gs_ref_memory_t * smem,
 			      gs_context_state_t * pcst));
 
 /* Reset the interpreter. */
-void gs_interp_reset(P0());
+void gs_interp_reset(P1(i_ctx_t *i_ctx_p));
 
 #endif /* interp_INCLUDED */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -51,7 +51,7 @@ int
 gp_semaphore_wait(gp_semaphore * sema)
 {
     if (*(int *)sema == 0)
-	return_error(gs_error_unknownerror);
+	return_error(gs_error_unknownerror); /* no real waiting */
     --(*(int *)sema);
     return 0;
 }
@@ -90,14 +90,14 @@ gp_monitor_enter(gp_monitor * mon)
 {
     if (mon->dummy_ != 0)
 	return_error(gs_error_unknownerror);
-    mon->dummy_ = &mon;
+    mon->dummy_ = mon;
     return 0;
 }
 
 int
 gp_monitor_leave(gp_monitor * mon)
 {
-    if (mon->dummy_ != &mon)
+    if (mon->dummy_ != mon)
 	return_error(gs_error_unknownerror);
     mon->dummy_ = 0;
     return 0;
@@ -108,7 +108,5 @@ gp_monitor_leave(gp_monitor * mon)
 int
 gp_create_thread(gp_thread_creation_callback_t proc, void *proc_data)
 {
-    /* Just call the procedure now. */
-    (*proc)(proc_data);
-    return 0;
+    return_error(gs_error_unknownerror);
 }

@@ -32,7 +32,6 @@
 #include "gxcmap.h"
 #include "gxdcolor.h"
 #include "gxistate.h"
-#include "gzpath.h"
 #include "gxdevmem.h"
 #include "gdevmem.h"		/* for mem_mono_device */
 #include "gxcpath.h"
@@ -42,8 +41,8 @@
 /* ------ Strategy procedure ------ */
 
 private irender_proc(image_render_mono);
-private irender_proc_t
-image_strategy_mono(gx_image_enum * penum)
+irender_proc_t
+gs_image_class_3_mono(gx_image_enum * penum)
 {
     if (penum->spp == 1) {
 	/*
@@ -66,22 +65,15 @@ image_strategy_mono(gx_image_enum * penum)
 	 * or icolor1, which are used directly in the fast case loop.
 	 */
 	if (penum->use_mask_color) {
-	    uint scale = 255 / ((1 << penum->bps) - 1);
-
-	    if ((penum->mask_color.values[0] *= scale) <= 0)
+	    gx_image_scale_mask_colors(penum, 0);
+	    if (penum->mask_color.values[0] <= 0)
 		color_set_null(&penum->icolor0);
-	    if ((penum->mask_color.values[1] *= scale) >= 255)
+	    if (penum->mask_color.values[1] >= 255)
 		color_set_null(&penum->icolor1);
 	}
 	return image_render_mono;
     }
     return 0;
-}
-
-void
-gs_gximono_init(gs_memory_t * mem)
-{
-    image_strategies.mono = image_strategy_mono;
 }
 
 /* ------ Rendering procedure ------ */
@@ -139,12 +131,15 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
 	    (*map_gray)(byte2frac(sample_value), pdevc, pis, dev, gs_color_select_source);\
 	else {\
 	    decode_sample(sample_value, cc, 0);\
-	    (*remap_color)(&cc, pcs, pdevc, pis, dev, gs_color_select_source);\
+	    code = (*remap_color)(&cc, pcs, pdevc, pis, dev, gs_color_select_source);\
+	    if (code < 0)\
+		return code;\
 	}\
     } else if (!color_is_pure(pdevc)) {\
 	if (!tiles_fit) {\
 	    code = gx_color_load_select(pdevc, pis, dev, gs_color_select_source);\
-	    if ( code < 0 ) return code;\
+	    if (code < 0)\
+		return code;\
 	}\
     }\
   END
@@ -168,7 +163,7 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
 	    map_gray =
 		(gs_color_space_get_index(pcs) ==
 		 gs_color_space_index_DeviceGray ?
-		 gx_device_cmap_procs(dev)->map_gray :
+		 gx_get_cmap_procs(pis, dev)->map_gray :
 		 no_map_gray /*DevicePixel */ );
 	else
 	    remap_color = pcs->type->remap_color;

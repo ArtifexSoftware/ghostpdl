@@ -131,6 +131,15 @@ const byte *const byte_bit_run_length_neg[8] =
  byte_bit_run_length_2, byte_bit_run_length_1
 };
 
+/*
+ * byte_acegbdfh_to_abcdefgh[acegbdfh] = abcdefgh, where the letters
+ * denote the individual bits of the byte.
+ */
+const byte byte_acegbdfh_to_abcdefgh[256] =
+{
+    bit_table_8(0, 0x80, 0x20, 0x08, 0x02, 0x40, 0x10, 0x04, 0x01)
+};
+
 /* Some C compilers insist on having executable code in every file.... */
 void
 gsbittab_dummy(void)

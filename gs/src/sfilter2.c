@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -27,15 +27,27 @@
 
 /* ------ ASCII85Encode ------ */
 
+private_st_A85E_state();
+
+/* Initialize the state */
+private int
+s_A85E_init(stream_state * st)
+{
+    stream_A85E_state *const ss = (stream_A85E_state *) st;
+
+    return s_A85E_init_inline(ss);
+}
+
 /* Process a buffer */
-#define LINE_LIMIT 65
+#define LINE_LIMIT 80
 private int
 s_A85E_process(stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
+    stream_A85E_state *const ss = (stream_A85E_state *) st;
     register const byte *p = pr->ptr;
     register byte *q = pw->ptr;
-    byte *qn = q + LINE_LIMIT;
+    byte *qn = q + (LINE_LIMIT - ss->count);
     const byte *rlimit = pr->limit;
     byte *wlimit = pw->limit;
     int status = 0;
@@ -123,6 +135,7 @@ put:	    if (wlimit - q < 6) {
 	    qn = q + LINE_LIMIT;
 	}
     }
+    ss->count = LINE_LIMIT - (qn - q);
     /* Check for final partial word. */
     if (last && status == 0 && count < 4) {
 	if (wlimit - q < (count == 0 ? 2 : count + 3))
@@ -160,140 +173,7 @@ put:	    if (wlimit - q < 6) {
 
 /* Stream template */
 const stream_template s_A85E_template = {
-    &st_stream_state, NULL, s_A85E_process, 4, 6
-};
-
-/* ------ ASCII85Decode ------ */
-
-private_st_A85D_state();
-
-/* Initialize the state */
-private int
-s_A85D_init(stream_state * st)
-{
-    stream_A85D_state *const ss = (stream_A85D_state *) st;
-
-    return s_A85D_init_inline(ss);
-}
-
-/* Process a buffer */
-private int a85d_finish(P3(int, ulong, stream_cursor_write *));
-private int
-s_A85D_process(stream_state * st, stream_cursor_read * pr,
-	       stream_cursor_write * pw, bool last)
-{
-    stream_A85D_state *const ss = (stream_A85D_state *) st;
-    register const byte *p = pr->ptr;
-    register byte *q = pw->ptr;
-    const byte *rlimit = pr->limit;
-    byte *wlimit = pw->limit;
-    int ccount = ss->odd;
-    ulong word = ss->word;
-    int status = 0;
-
-    while (p < rlimit) {
-	int ch = *++p;
-	uint ccode = ch - '!';
-
-	if (ccode < 85) {	/* catches ch < '!' as well */
-	    if (wlimit - q < 4) {
-		p--;
-		status = 1;
-		break;
-	    }
-	    word = word * 85 + ccode;
-	    if (++ccount == 5) {
-		q[1] = (byte) (word >> 24);
-		q[2] = (byte) (word >> 16);
-		q[3] = (byte) ((uint) word >> 8);
-		q[4] = (byte) word;
-		q += 4;
-		word = 0;
-		ccount = 0;
-	    }
-	} else if (ch == 'z' && ccount == 0) {
-	    if (wlimit - q < 4) {
-		p--;
-		status = 1;
-		break;
-	    }
-	    q[1] = q[2] = q[3] = q[4] = 0,
-		q += 4;
-	} else if (scan_char_decoder[ch] == ctype_space)
-	    DO_NOTHING;
-	else if (ch == '~') {
-	    /* Handle odd bytes. */
-	    if (p == rlimit) {
-		if (last)
-		    status = ERRC;
-		else
-		    p--;
-		break;
-	    }
-	    if ((int)(wlimit - q) < ccount - 1) {
-		status = 1;
-		p--;
-		break;
-	    }
-	    if (*++p != '>') {
-		status = ERRC;
-		break;
-	    }
-	    pw->ptr = q;
-	    status = a85d_finish(ccount, word, pw);
-	    q = pw->ptr;
-	    break;
-	} else {		/* syntax error or exception */
-	    status = ERRC;
-	    break;
-	}
-    }
-    pw->ptr = q;
-    if (status == 0 && last) {
-	if ((int)(wlimit - q) < ccount - 1)
-	    status = 1;
-	else
-	    status = a85d_finish(ccount, word, pw);
-    }
-    pr->ptr = p;
-    ss->odd = ccount;
-    ss->word = word;
-    return status;
-}
-/* Handle the end of input data. */
-private int
-a85d_finish(int ccount, ulong word, stream_cursor_write * pw)
-{
-    /* Assume there is enough room in the output buffer! */
-    byte *q = pw->ptr;
-    int status = EOFC;
-
-    switch (ccount) {
-	case 0:
-	    break;
-	case 1:		/* syntax error */
-	    status = ERRC;
-	    break;
-	case 2:		/* 1 odd byte */
-	    word = word * (85L * 85 * 85) + 0xffffffL;
-	    goto o1;
-	case 3:		/* 2 odd bytes */
-	    word = word * (85L * 85) + 0xffffL;
-	    goto o2;
-	case 4:		/* 3 odd bytes */
-	    word = word * 85 + 0xffL;
-	    q[3] = (byte) (word >> 8);
-o2:	    q[2] = (byte) (word >> 16);
-o1:	    q[1] = (byte) (word >> 24);
-	    q += ccount - 1;
-	    pw->ptr = q;
-    }
-    return status;
-}
-
-/* Stream template */
-const stream_template s_A85D_template = {
-    &st_A85D_state, s_A85D_init, s_A85D_process, 2, 4
+    &st_A85E_state, s_A85E_init, s_A85E_process, 4, 6
 };
 
 /* ------ ByteTranslateEncode/Decode ------ */

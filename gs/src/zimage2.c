@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -22,6 +22,7 @@
 #include "memory_.h"
 #include "ghost.h"
 #include "oper.h"
+#include "gschar.h"		/* for in_cachedevice */
 #include "gscolor.h"
 #include "gscspace.h"
 #include "gscolor2.h"
@@ -37,8 +38,9 @@
 
 /* Extract and check the parameters for a gs_data_image_t. */
 int
-data_image_params(const ref * op, gs_data_image_t * pim, image_params * pip,
-    bool require_DataSource, int num_components, int max_bits_per_component)
+data_image_params(const ref *op, gs_data_image_t *pim,
+		  image_params *pip, bool require_DataSource,
+		  int num_components, int max_bits_per_component)
 {
     int code;
     int decode_size;
@@ -86,8 +88,8 @@ data_image_params(const ref * op, gs_data_image_t * pim, image_params * pip,
 
 /* Extract and check the parameters for a gs_pixel_image_t. */
 int
-pixel_image_params(const ref * op, gs_pixel_image_t * pim, image_params * pip,
-		   int max_bits_per_component)
+pixel_image_params(i_ctx_t *i_ctx_p, const ref *op, gs_pixel_image_t *pim,
+		   image_params *pip, int max_bits_per_component)
 {
     int num_components =
 	gs_color_space_num_components(gs_currentcolorspace(igs));
@@ -109,35 +111,39 @@ pixel_image_params(const ref * op, gs_pixel_image_t * pim, image_params * pip,
 
 /* <dict> .image1 - */
 private int
-zimage1(register os_ptr op)
+zimage1(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_image_t image;
     image_params ip;
     int code;
 
     gs_image_t_init(&image, gs_currentcolorspace(igs));
-    code = pixel_image_params(op, (gs_pixel_image_t *) & image, &ip, 12);
+    code = pixel_image_params(i_ctx_p, op, (gs_pixel_image_t *)&image, &ip,
+			      12);
     if (code < 0)
 	return code;
-    return zimage_setup((gs_pixel_image_t *) & image, &ip.DataSource[0],
+    return zimage_setup(i_ctx_p, (gs_pixel_image_t *)&image, &ip.DataSource[0],
 			image.CombineWithColor, 1);
 }
 
 /* <dict> .imagemask1 - */
 private int
-zimagemask1(register os_ptr op)
+zimagemask1(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_image_t image;
     image_params ip;
     int code;
 
-    gs_image_t_init_mask(&image, false);
+    gs_image_t_init_mask_adjust(&image, false,
+				gs_incachedevice(igs) != CACHE_DEVICE_NONE);
     code = data_image_params(op, (gs_data_image_t *) & image, &ip, true, 1, 1);
     if (code < 0)
 	return code;
     if (ip.MultipleDataSources)
 	return_error(e_rangecheck);
-    return zimage_setup((gs_pixel_image_t *) & image, &ip.DataSource[0],
+    return zimage_setup(i_ctx_p, (gs_pixel_image_t *)&image, &ip.DataSource[0],
 			true, 1);
 }
 

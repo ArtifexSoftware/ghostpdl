@@ -1,0 +1,5 @@
+#!/bin/sh
+
+# Convert .pfb fonts to .pfa format
+
+exec gs -q -dNODISPLAY -- pfbtopfa.ps $1 $2

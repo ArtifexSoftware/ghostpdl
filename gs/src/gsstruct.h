@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -23,6 +23,8 @@
 #ifndef gsstruct_INCLUDED
 #  define gsstruct_INCLUDED
 
+#include "gsstype.h"
+
 /*
  * Ghostscript structures are defined with names of the form (gs_)xxx_s,
  * with a corresponding typedef of the form (gs_)xxx or (gs_)xxx_t.
@@ -46,13 +48,7 @@
  * structure descriptors; if the definer of a structure wants to make
  * available the ability to create an instance but does not want to
  * expose the structure definition, it must export a creator procedure.
- *
- * Because of bugs in some compilers' bookkeeping for undefined structure
- * types, any file that uses extern_st must include gsstruct.h.
- * (If it weren't for these bugs, the definition of extern_st could
- * go in gsmemory.h.)
  */
-#define extern_st(st) extern const gs_memory_struct_type_t st
 /*
  * If the structure is defined in a .c file, we require that the following
  * appear together:
@@ -90,11 +86,7 @@
 #ifndef obj_header_DEFINED
 #  define obj_header_DEFINED
 typedef struct obj_header_s obj_header_t;
-
 #endif
-
-/* Define an opaque type for the garbage collector state. */
-typedef struct gc_state_s gc_state_t;
 
 /*
  * Define pointer types, which define how to mark the referent of the
@@ -186,80 +178,9 @@ typedef struct gc_procs_common_s {
 
 #define gc_proc(gcst, proc) ((*(const gc_procs_common_t **)(gcst))->proc)
 
-/*
- * The first argument of enum_ptrs procedures is logically const *.
- * Unfortunately, actually declaring it as such would produce many compiler
- * warnings from places that cast this argument to a non-const non-void
- * pointer type.  For the moment, we define EV_CONST as empty, with the
- * intention of changing it to const at some future time.
- */
-/*#define EV_CONST const */
-#define EV_CONST		/* */
-
-/* Define the procedures for structure types. */
-
-		/* Clear the marks of a structure. */
-
-#define struct_proc_clear_marks(proc)\
-  void proc(P3(void /*obj_header_t*/ *pre, uint size,\
-    const gs_memory_struct_type_t *pstype))
-
-		/* Enumerate the pointers in a structure. */
-
-#define struct_proc_enum_ptrs(proc)\
-  gs_ptr_type_t proc(P6(EV_CONST void /*obj_header_t*/ *ptr, uint size,\
-    int index, const void **pep, const gs_memory_struct_type_t *pstype,\
-    gc_state_t *gcst))
-
-		/* Relocate all the pointers in this structure. */
-
-#define struct_proc_reloc_ptrs(proc)\
-  void proc(P4(void /*obj_header_t*/ *ptr, uint size,\
-    const gs_memory_struct_type_t *pstype, gc_state_t *gcst))
-
-		/*
-		 * Finalize this structure just before freeing it.
-		 * Finalization procedures must not allocate or resize
-		 * any objects in any space managed by the allocator,
-		 * and must not assume that any objects in such spaces
-		 * referenced by this structure still exist.  However,
-		 * finalization procedures may free such objects, and
-		 * may allocate, free, and reference objects allocated
-		 * in other ways, such as objects allocated with malloc
-		 * by libraries.
-		 */
-
-#define struct_proc_finalize(proc)\
-  void proc(P1(void /*obj_header_t*/ *ptr))
-
-/*
- * A descriptor for an object (structure) type.
- */
-typedef struct struct_shared_procs_s struct_shared_procs_t;
-
-struct gs_memory_struct_type_s {
-	uint ssize;
-	struct_name_t sname;
-
-	/* ------ Procedures shared among many structure types. ------ */
-	/* Note that this pointer is usually 0. */
-
-	const struct_shared_procs_t *shared;
-
-	/* ------ Procedures specific to this structure type. ------ */
-
-	struct_proc_clear_marks((*clear_marks));
-	struct_proc_enum_ptrs((*enum_ptrs));
-	struct_proc_reloc_ptrs((*reloc_ptrs));
-	struct_proc_finalize((*finalize));
-
-	/* A pointer to additional data for the above procedures. */
-
-	const void *proc_data;
-
-};
-
+/* Define the accessor for structure type names. */
 #define struct_type_name_string(pstype) ((const char *)((pstype)->sname))
+
 /* Default pointer processing */
 struct_proc_enum_ptrs(gs_no_struct_enum_ptrs);
 struct_proc_reloc_ptrs(gs_no_struct_reloc_ptrs);
@@ -311,8 +232,7 @@ extern_st(st_const_string_element);
 typedef enum {
     GC_ELT_OBJ,			/* obj * or const obj * */
     GC_ELT_STRING,		/* gs_string */
-    GC_ELT_CONST_STRING,	/* gs_const_string */
-    GC_ELT_REF
+    GC_ELT_CONST_STRING		/* gs_const_string */
 } gc_ptr_type_index_t;
 
 typedef struct gc_ptr_element_s {
@@ -330,8 +250,6 @@ typedef struct gc_ptr_element_s {
   { GC_ELT_STRING, offset_of(typ, elt) }
 #define GC_CONST_STRING_ELT(typ, elt)\
   { GC_ELT_CONST_STRING, offset_of(typ, elt) }
-#define GC_REF_ELT(typ, elt)\
-  { GC_ELT_REF, offset_of(typ, elt) }
 
 /* Define the complete table of descriptor data. */
 
@@ -384,12 +302,15 @@ struct_proc_reloc_ptrs(basic_reloc_ptrs);
  * defining this kind of structure conveniently, either all at once in
  * the structure definition macro, or using the following template:
 
- ENUM_PTRS_BEGIN(xxx_enum_ptrs) return 0;
+ ENUM_PTRS_WITH(xxx_enum_ptrs, stype *myptr) return 0;
  ... ENUM_PTR(i, xxx, elt); ...
  ENUM_PTRS_END
- RELOC_PTRS_BEGIN(xxx_reloc_ptrs) ;
- ... RELOC_PTR(xxx, elt) ...
- RELOC_PTRS_END
+ RELOC_PTRS_WITH(xxx_reloc_ptrs, stype *myptr)
+ {
+     ...
+     RELOC_VAR(myptr->elt);
+     ...
+ }
 
  */
 /*
@@ -409,7 +330,11 @@ struct_proc_reloc_ptrs(basic_reloc_ptrs);
     gs_ptr_type_t proc(vptr, size, index, pep, pstype, gcst) EV_CONST void *vptr; uint size; int index; const void **pep; const gs_memory_struct_type_t *pstype; gc_state_t *gcst;
 #endif
 #define ENUM_PTRS_BEGIN(proc)\
-  ENUM_PTRS_BEGIN_PROC(proc) { switch ( index ) { default:
+  ENUM_PTRS_BEGIN_PROC(proc)\
+  { switch ( index ) { default:
+#define ENUM_PTRS_WITH(proc, stype_ptr)\
+  ENUM_PTRS_BEGIN_PROC(proc)\
+  { EV_CONST stype_ptr = vptr; switch ( index ) { default:
 
     /* Enumerate elements */
 
@@ -419,6 +344,14 @@ struct_proc_reloc_ptrs(basic_reloc_ptrs);
   (*pep = (const void *)(ptr), ptr_string_type)
 #define ENUM_CONST_STRING(ptr)	/* pointer to gs_const_string */\
   (*pep = (const void *)(ptr), ptr_const_string_type)
+extern gs_ptr_type_t
+    enum_bytestring(P2(const void **pep, const gs_bytestring *pbs));
+#define ENUM_BYTESTRING(ptr)	/* pointer to gs_bytestring */\
+  enum_bytestring(pep, ptr)
+extern gs_ptr_type_t
+    enum_const_bytestring(P2(const void **pep, const gs_const_bytestring *pbs));
+#define ENUM_CONST_BYTESTRING(ptr)  /* pointer to gs_const_bytestring */\
+  enum_const_bytestring(pep, ptr)
 
 #define ENUM_OBJ_ELT(typ, elt)\
   ENUM_OBJ(((const typ *)vptr)->elt)
@@ -451,6 +384,8 @@ struct_proc_reloc_ptrs(basic_reloc_ptrs);
 #  define RELOC_PTRS_BEGIN(proc)\
     void proc(vptr, size, pstype, gcst) void *vptr; uint size; const gs_memory_struct_type_t *pstype; gc_state_t *gcst; {
 #endif
+#define RELOC_PTRS_WITH(proc, stype_ptr)\
+    RELOC_PTRS_BEGIN(proc) stype_ptr = vptr;
 
     /* Relocate elements */
 
@@ -458,10 +393,18 @@ struct_proc_reloc_ptrs(basic_reloc_ptrs);
   (gc_proc(gcst, reloc_struct_ptr)((const void *)(ptr), gcst))
 #define RELOC_OBJ_VAR(ptrvar)\
   (ptrvar = RELOC_OBJ(ptrvar))
+#define RELOC_VAR(ptrvar)	/* a handy abbreviation */\
+  RELOC_OBJ_VAR(ptrvar)
 #define RELOC_STRING_VAR(ptrvar)\
   (gc_proc(gcst, reloc_string)(&(ptrvar), gcst))
 #define RELOC_CONST_STRING_VAR(ptrvar)\
   (gc_proc(gcst, reloc_const_string)(&(ptrvar), gcst))
+extern void reloc_bytestring(P2(gs_bytestring *pbs, gc_state_t *gcst));
+#define RELOC_BYTESTRING_VAR(ptrvar)\
+  reloc_bytestring(&(ptrvar), gcst)
+extern void reloc_const_bytestring(P2(gs_const_bytestring *pbs, gc_state_t *gcst));
+#define RELOC_CONST_BYTESTRING_VAR(ptrvar)\
+  reloc_const_bytestring(&(ptrvar), gcst)
 
 #define RELOC_OBJ_ELT(typ, elt)\
   RELOC_VAR(((typ *)vptr)->elt)
@@ -482,8 +425,6 @@ struct_proc_reloc_ptrs(basic_reloc_ptrs);
 
     /* Backward compatibility */
 
-#define RELOC_VAR(ptrvar)\
-  RELOC_OBJ_VAR(ptrvar)
 #define RELOC_PTR(typ, elt)\
   RELOC_OBJ_ELT(typ, elt)
 #define RELOC_PTR3(typ, e1, e2, e3) /* just an abbreviation */\
@@ -515,8 +456,11 @@ struct_proc_reloc_ptrs(basic_reloc_ptrs);
      * 'by hand' may use this also.
      */
 
+#define ENUM_USING_PREFIX(supst, n)\
+  ENUM_USING(supst, vptr, size, index-(n))
+
 #define ENUM_PREFIX(supst, n)\
-  return ENUM_USING(supst, vptr, size, index-(n))
+  return ENUM_USING_PREFIX(supst, n)
 
 #define RELOC_PREFIX(supst)\
   RELOC_USING(supst, vptr, size)
@@ -597,13 +541,22 @@ struct_proc_reloc_ptrs(basic_reloc_ptrs);
 #define gs_private_st_composite(stname, stype, sname, penum, preloc)\
   gs__st_composite(private_st, stname, stype, sname, penum, preloc)
 
+	/* Composite structures with inherited finalization. */
+
+#define gs__st_composite_use_final(scope_st, stname, stype, sname, penum, preloc, pfinal)\
+  private struct_proc_enum_ptrs(penum);\
+  private struct_proc_reloc_ptrs(preloc);\
+  gs__st_complex_only(scope_st, stname, stype, sname, 0, penum, preloc, pfinal)
+#define gs_public_st_composite_use_final(stname, stype, sname, penum, preloc, pfinal)\
+  gs__st_composite_use_final(public_st, stname, stype, sname, penum, preloc, pfinal)
+#define gs_private_st_composite_use_final(stname, stype, sname, penum, preloc, pfinal)\
+  gs__st_composite_use_final(private_st, stname, stype, sname, penum, preloc, pfinal)
+
 	/* Composite structures with finalization. */
 
 #define gs__st_composite_final(scope_st, stname, stype, sname, penum, preloc, pfinal)\
-  private struct_proc_enum_ptrs(penum);\
-  private struct_proc_reloc_ptrs(preloc);\
   private struct_proc_finalize(pfinal);\
-  gs__st_complex_only(scope_st, stname, stype, sname, 0, penum, preloc, pfinal)
+  gs__st_composite_use_final(scope_st, stname, stype, sname, penum, preloc, pfinal)
 #define gs_public_st_composite_final(stname, stype, sname, penum, preloc, pfinal)\
   gs__st_composite_final(public_st, stname, stype, sname, penum, preloc, pfinal)
 #define gs_private_st_composite_final(stname, stype, sname, penum, preloc, pfinal)\

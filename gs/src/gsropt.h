@@ -170,6 +170,19 @@ typedef uint gs_logical_operation_t;
 /* Test whether a logical operation is idempotent. */
 #define lop_is_idempotent(lop) rop3_is_idempotent(lop)
 
+/*
+ * Define the logical operation versions of some RasterOp transformations.
+ * Note that these also affect the transparency flags.
+ */
+#define lop_know_S_0(lop)\
+  (rop3_know_S_0(lop) & ~lop_S_transparent)
+#define lop_know_T_0(lop)\
+  (rop3_know_T_0(lop) & ~lop_T_transparent)
+#define lop_know_S_1(lop)\
+  (lop & lop_S_transparent ? rop3_D : rop3_know_S_1(lop))
+#define lop_know_T_1(lop)\
+  (lop & lop_T_transparent ? rop3_D : rop3_know_T_1(lop))
+
 /* Define the interface to the table of 256 RasterOp procedures. */
 typedef unsigned long rop_operand;
 typedef rop_operand (*rop_proc)(P3(rop_operand D, rop_operand S, rop_operand T));

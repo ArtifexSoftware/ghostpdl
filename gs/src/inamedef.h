@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -101,7 +101,7 @@ struct name_s {
  *
  * First we define the name sub-table structure.
  */
-#define nt_log2_sub_size (7 + (EXTEND_NAMES / 2))
+#define nt_log2_sub_size (8 + (EXTEND_NAMES / 2))
 # define nt_sub_size (1 << nt_log2_sub_size)
 # define nt_sub_index_mask (nt_sub_size - 1)
 typedef struct name_sub_table_s {
@@ -136,17 +136,17 @@ typedef struct name_sub_table_s {
 #define nt_hash_size (1024 << (EXTEND_NAMES / 2))	/* must be a power of 2 */
 struct name_table_s {
     uint free;			/* head of free list, which is sorted in */
-    /* increasing count (not index) order */
+				/* increasing count (not index) order */
     uint sub_next;		/* index of next sub-table to allocate */
-    /* if not already allocated */
+				/* if not already allocated */
     uint sub_count;		/* index of highest allocated sub-table +1 */
     uint max_sub_count;		/* max allowable value of sub_count */
+    uint name_string_attrs;	/* imemory_space(memory) | a_readonly */
     gs_memory_t *memory;
     uint hash[nt_hash_size];
     name_sub_table *sub_tables[max_name_index / nt_sub_size + 1];
 };
-
-						/*typedef struct name_table_s name_table; *//* in inames.h */
+/*typedef struct name_table_s name_table; *//* in inames.h */
 
 /* ---------------- Procedural interface ---------------- */
 
@@ -193,7 +193,6 @@ void names_trace_finish(P2(name_table * nt, gc_state_t * gcst));
 /* by removing names whose count is less than old_count. */
 #ifndef alloc_save_t_DEFINED	/* also in isave.h */
 typedef struct alloc_save_s alloc_save_t;
-
 #  define alloc_save_t_DEFINED
 #endif
 void names_restore(P2(name_table * nt, alloc_save_t * save));
@@ -209,16 +208,19 @@ void names_restore(P2(name_table * nt, alloc_save_t * save));
  *      - It must be a permutation on the sub-table index.
  * Something very simple works just fine.
  */
+#define NAME_COUNT_TO_INDEX_FACTOR 23
 #define name_count_to_index(cnt)\
   (((cnt) & (-nt_sub_size)) +\
-   (((cnt) * 59) & nt_sub_index_mask))
+   (((cnt) * NAME_COUNT_TO_INDEX_FACTOR) & nt_sub_index_mask))
 /*
  * The reverse permutation requires finding a number R such that
- * 59*R = 1 mod nt_sub_size.  For nt_sub_size any power of 2 up to 2048,
- * R = 243 will work.  Currently, this is only needed for debugging printout.
+ * NAME_COUNT_TO_INDEX_FACTOR * R = 1 mod nt_sub_size.
+ * The value given below works for  nt_sub_size any power of 2 up to 4096.
+ * Currently, this is only needed for debugging printout.
  */
+#define NAME_INDEX_TO_COUNT_FACTOR 1959
 #define name_index_to_count(nidx)\
   (((nidx) & (-nt_sub_size)) +\
-   (((nidx) * 243) & nt_sub_index_mask))
+   (((nidx) * NAME_INDEX_TO_COUNT_FACTOR) & nt_sub_index_mask))
 
 #endif /* inamedef_INCLUDED */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -22,10 +22,14 @@
 #include "gserrors.h"
 #include "gsrefct.h"
 #include "gsmatrix.h"		/* for gscolor2.h */
+#include "gsstruct.h"
 #include "gxcspace.h"
+#include "gxcdevn.h"
 
+/* GC descriptors */
 gs_private_st_composite(st_color_space_DeviceN, gs_paint_color_space,
      "gs_color_space_DeviceN", cs_DeviceN_enum_ptrs, cs_DeviceN_reloc_ptrs);
+private_st_device_n_map();
 
 /* Define the DeviceN color space type. */
 private cs_proc_num_components(gx_num_components_DeviceN);
@@ -48,7 +52,48 @@ const gs_color_space_type gs_color_space_type_DeviceN = {
     gx_adjust_cspace_DeviceN, gx_no_adjust_color_count
 };
 
-/* ------ Internal routines ------ */
+/* GC procedures */
+
+private 
+ENUM_PTRS_WITH(cs_DeviceN_enum_ptrs, gs_color_space *pcs)
+{
+    return ENUM_USING(*pcs->params.device_n.alt_space.type->stype,
+		      &pcs->params.device_n.alt_space,
+		      sizeof(pcs->params.device_n.alt_space), index - 2);
+}
+ENUM_PTR(0, gs_color_space, params.device_n.names);
+ENUM_PTR(1, gs_color_space, params.device_n.map);
+ENUM_PTRS_END
+private RELOC_PTRS_WITH(cs_DeviceN_reloc_ptrs, gs_color_space *pcs)
+{
+    RELOC_PTR(gs_color_space, params.device_n.names);
+    RELOC_PTR(gs_color_space, params.device_n.map);
+    RELOC_USING(*pcs->params.device_n.alt_space.type->stype,
+		&pcs->params.device_n.alt_space,
+		sizeof(gs_base_color_space));
+}
+RELOC_PTRS_END
+
+/* ------ Public procedures ------ */
+
+
+/* Allocate and initialize a DeviceN map. */
+int
+alloc_device_n_map(gs_device_n_map ** ppmap, gs_memory_t * mem,
+		   client_name_t cname)
+{
+    gs_device_n_map *pimap;
+
+    rc_alloc_struct_1(pimap, gs_device_n_map, &st_device_n_map, mem,
+		      return_error(gs_error_VMerror), cname);
+    pimap->tint_transform = 0;
+    pimap->tint_transform_data = 0;
+    pimap->cache_valid = false;
+    *ppmap = pimap;
+    return 0;
+}
+
+/* ------ Color space implementation ------ */
 
 /* Return the number of components of a DeviceN space. */
 private int
@@ -65,7 +110,6 @@ gx_alt_space_DeviceN(const gs_color_space * pcs)
 }
 
 /* Initialize a DeviceN color. */
-/****** DOESN'T WORK IF num_components > 4 ******/
 private void
 gx_init_DeviceN(gs_client_color * pcc, const gs_color_space * pcs)
 {
@@ -92,9 +136,10 @@ gx_restrict_DeviceN(gs_client_color * pcc, const gs_color_space * pcs)
 private const gs_color_space *
 gx_concrete_space_DeviceN(const gs_color_space * pcs,
 			  const gs_imager_state * pis)
-{				/* We don't support concrete DeviceN spaces yet. */
+{
+    /* We don't support concrete DeviceN spaces yet. */
     const gs_color_space *pacs =
-    (const gs_color_space *)&pcs->params.device_n.alt_space;
+	(const gs_color_space *)&pcs->params.device_n.alt_space;
 
     return cs_concrete_space(pacs, pis);
 }
@@ -103,35 +148,58 @@ private int
 gx_concretize_DeviceN(const gs_client_color * pc, const gs_color_space * pcs,
 		      frac * pconc, const gs_imager_state * pis)
 {
-    int code;
+    int code, tcode;
     gs_client_color cc;
     const gs_color_space *pacs =
-    (const gs_color_space *)&pcs->params.device_n.alt_space;
+	(const gs_color_space *)&pcs->params.device_n.alt_space;
+    gs_device_n_map *map = pcs->params.device_n.map;
 
-    /* We always map into the alternate color space. */
-    code = (*pcs->params.device_n.tint_transform)
+    /* Check the 1-element cache first. */
+    if (map->cache_valid) {
+	int i;
+
+	for (i = pcs->params.device_n.num_components; --i >= 0;) {
+	    if (map->tint[i] != pc->paint.values[i])
+		break;
+	}
+	if (i < 0) {
+	    int num_out = gs_color_space_num_components(pacs);
+
+	    for (i = 0; i < num_out; ++i)
+		pconc[i] = map->conc[i];
+	    return 0;
+	}
+    }
+    /*
+     * We always map into the alternate color space.  We must preserve
+     * tcode for implementing a semi-hack in the interpreter.
+     */
+    tcode = (*pcs->params.device_n.map->tint_transform)
 	(&pcs->params.device_n, pc->paint.values, &cc.paint.values[0],
-	 pcs->params.device_n.tint_transform_data);
-    if (code < 0)
-	return code;
-    return (*pacs->type->concretize_color) (&cc, pacs, pconc, pis);
+	 pis, pcs->params.device_n.map->tint_transform_data);
+    if (tcode < 0)
+	return tcode;
+    code = (*pacs->type->concretize_color) (&cc, pacs, pconc, pis);
+    return (code < 0 || tcode == 0 ? code : tcode);
 }
 
 private int
 gx_remap_concrete_DeviceN(const frac * pconc,
 	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
 			  gs_color_select_t select)
-{				/* We don't support concrete DeviceN colors yet. */
+{
+    /* We don't support concrete DeviceN colors yet. */
     return_error(gs_error_rangecheck);
 }
 
 /* Install a DeviceN color space. */
 private int
-gx_install_DeviceN(gs_color_space * pcs, gs_state * pgs)
-{				/*
-				 * Give an error if any of the separation names are duplicated.
-				 * We can't check this any earlier.
-				 */
+gx_install_DeviceN(const gs_color_space * pcs, gs_state * pgs)
+{
+    /*
+     * Give an error if any of the separation names are duplicated.
+     * We can't check this any earlier.
+     */
     const gs_separation_name *names = pcs->params.device_n.names;
     uint i, j;
 
@@ -140,39 +208,16 @@ gx_install_DeviceN(gs_color_space * pcs, gs_state * pgs)
 	    if (names[i] == names[j])
 		return_error(gs_error_rangecheck);
     return (*pcs->params.device_n.alt_space.type->install_cspace)
-	((gs_color_space *) & pcs->params.device_n.alt_space, pgs);
+	((const gs_color_space *) & pcs->params.device_n.alt_space, pgs);
 }
 
 /* Adjust the reference count of a DeviceN color space. */
 private void
 gx_adjust_cspace_DeviceN(const gs_color_space * pcs, int delta)
 {
+    rc_adjust_const(pcs->params.device_n.map, delta, "gx_adjust_DeviceN");
     (*pcs->params.device_n.alt_space.type->adjust_cspace_count)
 	((const gs_color_space *)&pcs->params.device_n.alt_space, delta);
 }
-
-/* GC procedures */
-
-#define pcs ((gs_color_space *)vptr)
-
-private 
-ENUM_PTRS_BEGIN(cs_DeviceN_enum_ptrs)
-{
-    return ENUM_USING(*pcs->params.device_n.alt_space.type->stype,
-		      &pcs->params.device_n.alt_space,
-		      sizeof(pcs->params.device_n.alt_space), index - 2);
-}
-ENUM_PTR(0, gs_color_space, params.device_n.names);
-ENUM_PTR(1, gs_color_space, params.device_n.tint_transform_data);
-ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(cs_DeviceN_reloc_ptrs)
-{
-    RELOC_PTR(gs_color_space, params.device_n.names);
-    RELOC_PTR(gs_color_space, params.device_n.tint_transform_data);
-    RELOC_USING(*pcs->params.device_n.alt_space.type->stype,
-		&pcs->params.device_n.alt_space,
-		sizeof(gs_base_color_space));
-}
-RELOC_PTRS_END
 
 #undef pcs

@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1994 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1994, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -85,9 +85,15 @@ struct gs_dual_memory_s {
     int save_level;
     /* Garbage collection hook */
     int (*reclaim) (P2(gs_dual_memory_t *, int));
+    void *reclaim_data;
     /* Masks for store checking, see isave.h. */
     uint test_mask;
     uint new_mask;
 };
+
+#define public_st_gs_dual_memory()	/* in ialloc.c */\
+  gs_public_st_ptrs1(st_gs_dual_memory, gs_dual_memory_t, "gs_dual_memory_t",\
+    dual_memory_enum_ptrs, dual_memory_reloc_ptrs, reclaim_data)
+#define st_gs_dual_memory_num_ptrs 1
 
 #endif /* imemory_INCLUDED */

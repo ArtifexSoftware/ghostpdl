@@ -1,4 +1,4 @@
-/* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -138,7 +138,7 @@ dsa_open(gx_device * dev)
     sadev->width = tdev->width;
     sadev->height = tdev->height;
     sadev->color_info = tdev->color_info;
-    sadev->color_info.depth = (depth <= 4 ? 4 : round_up(depth, 8));
+    sadev->color_info.depth = (depth <= 4 ? 4 : ROUND_UP(depth, 8));
     sadev->alpha_depth = adepth;
     sadev->adev = 0;
     return 0;

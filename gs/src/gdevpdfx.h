@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -53,6 +53,7 @@ typedef enum {
     resourceFontDescriptor,
     resourceColorSpace,
     resourceImageXObject,
+    resourcePattern,
     /* Internally used resources. */
     resourceCharProc,
     resourceNamedObject,
@@ -61,10 +62,10 @@ typedef enum {
 
 #define pdf_resource_type_names\
   "Font", "Encoding", "FontDescriptor", "ColorSpace", "XObject",\
-   0, 0, 0
+  "Pattern", 0, 0, 0
 #define pdf_resource_type_structs\
   &st_pdf_font, &st_pdf_resource, &st_pdf_resource, &st_pdf_resource,\
-  &st_pdf_resource, &st_pdf_char_proc, &st_pdf_named_object
+  &st_pdf_resource, &st_pdf_resource, &st_pdf_char_proc, &st_pdf_named_object
 
 #define pdf_resource_common(typ)\
 	typ *next;			/* next resource of this type */\
@@ -321,6 +322,7 @@ typedef struct gx_device_pdf_s {
     int num_page_ids;
     int pages_referenced;
     pdf_resource_list resources[num_resource_types];
+    pdf_resource *cs_Pattern;
     pdf_resource *annots;	/* rid = page # */
     pdf_resource *last_resource;
     gs_string catalog_string;
@@ -438,6 +440,10 @@ int pdf_begin_aside(P4(gx_device_pdf * pdev, pdf_resource ** plist,
 int pdf_begin_resource(P4(gx_device_pdf * pdev, pdf_resource_type type,
 			  gs_id rid, pdf_resource ** ppres));
 
+/* Begin a resource body of a given type. */
+int pdf_begin_resource_body(P4(gx_device_pdf * pdev, pdf_resource_type type,
+			       gs_id rid, pdf_resource ** ppres));
+
 /* Allocate a resource, but don't open the stream. */
 int pdf_alloc_resource(P4(gx_device_pdf * pdev, pdf_resource_type type,
 			  gs_id rid, pdf_resource ** ppres));
@@ -515,7 +521,7 @@ int pdfmark_write_article(P2(gx_device_pdf * pdev, const pdf_article * part));
 /* Define the syntax of object names. */
 #define pdfmark_objname_is_valid(data, size)\
   ((size) >= 2 && (data)[0] == '{' &&\
-   memchr(data, '}', size) == (data) + (size) - 1)
+   (const byte *)memchr(data, '}', size) == (data) + (size) - 1)
 
 /* Define the table of named-object pdfmark types. */
 extern const pdfmark_name pdfmark_names_named[];

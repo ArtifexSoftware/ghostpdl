@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -25,8 +25,34 @@
 #include "gdevmem.h"		/* private definitions */
 
 extern dev_proc_strip_copy_rop(mem_gray8_rgb24_strip_copy_rop);
-
 #define mem_true24_strip_copy_rop mem_gray8_rgb24_strip_copy_rop
+
+/*
+ * Define whether to use the library's memset.
+ */
+/*#define USE_MEMSET*/
+/*
+ * Define whether to use memcpy for very wide fills.  We thought this
+ * made a big difference, but it turned out to be an artifact of the
+ * profiler.
+ */
+/*#define USE_MEMCPY*/
+
+/* Define debugging statistics. */
+#ifdef DEBUG
+struct stats_mem24_s {
+    long
+	fill, fwide, fgray[101], fsetc, fcolor[101], fnarrow[5],
+	fprevc[257];
+    double ftotal;
+} stats_mem24;
+static int prev_count;
+static uint prev_colors[256];
+# define INCR(v) (++(stats_mem24.v))
+#else
+# define INCR(v) DO_NOTHING
+#endif
+
 
 /* ================ Standard (byte-oriented) device ================ */
 
@@ -94,16 +120,22 @@ mem_true24_fill_rectangle(gx_device * dev,
      * fit_fill.
      */
     fit_fill_xywh(dev, x, y, w, h);
+    INCR(fill);
+#ifdef DEBUG
+    stats_mem24.ftotal += w;
+#endif
     if (w >= 5) {
 	if (h <= 0)
 	    return 0;
+	INCR(fwide);
 	setup_rect(dest);
 	if (r == g && r == b) {
-#if 1
+#ifndef USE_MEMSET
 	    /* We think we can do better than the library's memset.... */
 	    int bcntm7 = w * 3 - 7;
 	    register bits32 cword = color | (color << 24);
 
+	    INCR(fgray[min(w, 100)]);
 	    while (h-- > 0) {
 		register byte *pptr = dest;
 		byte *limit = pptr + bcntm7;
@@ -153,6 +185,7 @@ mem_true24_fill_rectangle(gx_device * dev,
 #else
 	    int bcnt = w * 3;
 
+	    INCR(fgray[min(w, 100)]);
 	    while (h-- > 0) {
 		memset(dest, r, bcnt);
 		inc_ptr(dest, draster);
@@ -162,12 +195,35 @@ mem_true24_fill_rectangle(gx_device * dev,
 	    int x3 = -x & 3, ww = w - x3;	/* we know ww >= 2 */
 	    bits32 rgbr, gbrg, brgb;
 
-	    if (mdev->color24.rgb == color)
-		rgbr = mdev->color24.rgbr,
-		    gbrg = mdev->color24.gbrg,
-		    brgb = mdev->color24.brgb;
-	    else
+	    if (mdev->color24.rgb == color) {
+		rgbr = mdev->color24.rgbr;
+		gbrg = mdev->color24.gbrg;
+		brgb = mdev->color24.brgb;
+	    } else {
+		INCR(fsetc);
 		set_color24_cache(color, r, g, b);
+	    }
+#ifdef DEBUG
+	    {
+		int ci;
+		for (ci = 0; ci < prev_count; ++ci)
+		    if (prev_colors[ci] == color)
+			break;
+		INCR(fprevc[ci]);
+		if (ci == prev_count) {
+		    if (ci < countof(prev_colors))
+			++prev_count;
+		    else
+			--ci;
+		}
+		if (ci) {
+		    memmove(&prev_colors[1], &prev_colors[0],
+			    ci * sizeof(prev_colors[0]));
+		    prev_colors[0] = color;
+		}
+	    }
+#endif
+	    INCR(fcolor[min(w, 100)]);
 	    while (h-- > 0) {
 		register byte *pptr = dest;
 		int w1 = ww;
@@ -192,6 +248,31 @@ mem_true24_fill_rectangle(gx_device * dev,
 		    case 0:
 			;
 		}
+#ifdef USE_MEMCPY
+		/*
+		 * For very wide fills, it's most efficient to fill a few
+		 * pixels and then use memcpy to fill the rest.
+		 */
+		if (w1 > 16) {
+#define PUTW4(ptr, w)\
+  BEGIN\
+    putw(ptr, w); putw((ptr)+12, w); putw((ptr)+24, w); putw((ptr)+36, w);\
+  END
+		    PUTW4(pptr, rgbr);
+		    PUTW4(pptr + 4, gbrg);
+		    PUTW4(pptr + 8, brgb);
+#undef PUTW4
+		    if (w1 > 64) {
+			memcpy(pptr + 48, pptr, 48);
+			memcpy(pptr + 96, pptr, 96);
+			for (pptr += 192; (w1 -= 64) >= 64; pptr += 192)
+			    memcpy(pptr, pptr - 192, 192);
+		    } else
+			pptr += 48;
+		    for (; (w1 -= 16) >= 16; pptr += 48)
+			memcpy(pptr, pptr - 48, 48);
+		}
+#endif
 		while (w1 >= 4) {
 		    putw(pptr, rgbr);
 		    putw(pptr + 4, gbrg);
@@ -220,6 +301,7 @@ mem_true24_fill_rectangle(gx_device * dev,
 	    }
 	}
     } else if (h > 0) {		/* w < 5 */
+	INCR(fnarrow[max(w, 0)]);
 	setup_rect(dest);
 	switch (w) {
 	    case 4:

@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -93,7 +93,8 @@ s_proc_init(ref * sop, stream ** psstrm, uint mode,
 /* This is logically unrelated to procedure streams, */
 /* but it is also associated with the interpreter stream machinery. */
 private int
-s_handle_intc(const ref * pstate, int nstate, int (*cont) (P1(os_ptr)))
+s_handle_intc(i_ctx_t *i_ctx_p, const ref *pstate, int nstate,
+	      op_proc_t cont)
 {
     int npush = nstate + 2;
 
@@ -120,7 +121,7 @@ s_handle_intc(const ref * pstate, int nstate, int (*cont) (P1(os_ptr)))
 
 /* Forward references */
 private stream_proc_process(s_proc_read_process);
-private int s_proc_read_continue(P1(os_ptr));
+private int s_proc_read_continue(P1(i_ctx_t *));
 
 /* Stream templates */
 private const stream_template s_proc_read_template = {
@@ -172,15 +173,15 @@ s_proc_read_process(stream_state * st, stream_cursor_read * ignore_pr,
 /* Handle an exception (INTC or CALLC) from a read stream */
 /* whose buffer is empty. */
 int
-s_handle_read_exception(int status, const ref * fop, const ref * pstate,
-			int nstate, int (*cont) (P1(os_ptr)))
+s_handle_read_exception(i_ctx_t *i_ctx_p, int status, const ref * fop,
+			const ref * pstate, int nstate, op_proc_t cont)
 {
     int npush = nstate + 4;
     stream *ps;
 
     switch (status) {
 	case INTC:
-	    return s_handle_intc(pstate, nstate, cont);
+	    return s_handle_intc(i_ctx_p, pstate, nstate, cont);
 	case CALLC:
 	    break;
 	default:
@@ -205,8 +206,9 @@ s_handle_read_exception(int status, const ref * fop, const ref * pstate,
 /* osp[-1] contains the new data string (pushed by the procedure). */
 /* The top of the e-stack contains the real continuation. */
 private int
-s_proc_read_continue(os_ptr op)
+s_proc_read_continue(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     os_ptr opbuf = op - 1;
     stream *ps;
     stream_proc_state *ss;
@@ -228,7 +230,7 @@ s_proc_read_continue(os_ptr op)
 
 /* Forward references */
 private stream_proc_process(s_proc_write_process);
-private int s_proc_write_continue(P1(os_ptr));
+private int s_proc_write_continue(P1(i_ctx_t *));
 
 /* Stream templates */
 private const stream_template s_proc_write_template = {
@@ -279,15 +281,15 @@ s_proc_write_process(stream_state * st, stream_cursor_read * pr,
 /* Handle an exception (INTC or CALLC) from a write stream */
 /* whose buffer is full. */
 int
-s_handle_write_exception(int status, const ref * fop, const ref * pstate,
-			 int nstate, int (*cont) (P1(os_ptr)))
+s_handle_write_exception(i_ctx_t *i_ctx_p, int status, const ref * fop,
+			 const ref * pstate, int nstate, op_proc_t cont)
 {
     stream *ps;
     stream_proc_state *psst;
 
     switch (status) {
 	case INTC:
-	    return s_handle_intc(pstate, nstate, cont);
+	    return s_handle_intc(i_ctx_p, pstate, nstate, cont);
 	case CALLC:
 	    break;
 	default:
@@ -329,8 +331,9 @@ s_handle_write_exception(int status, const ref * fop, const ref * pstate,
 /* osp[-1] contains the new buffer string (pushed by the procedure). */
 /* The top of the e-stack contains the real continuation. */
 private int
-s_proc_write_continue(os_ptr op)
+s_proc_write_continue(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     os_ptr opbuf = op - 1;
     stream *ps;
     stream_proc_state *ss;

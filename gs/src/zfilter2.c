@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -44,8 +44,9 @@ int zpp_setup(P2(os_ptr op, stream_PNGP_state * ppps));
 
 /* <target> <dict> CCITTFaxEncode/filter <file> */
 private int
-zCFE(os_ptr op)
+zCFE(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     stream_CFE_state cfs;
     int code;
 
@@ -54,15 +55,16 @@ zCFE(os_ptr op)
     code = zcf_setup(op, (stream_CF_state *)&cfs);
     if (code < 0)
 	return code;
-    return filter_write(op, 0, &s_CFE_template, (stream_state *)&cfs, 0);
+    return filter_write(i_ctx_p, 0, &s_CFE_template, (stream_state *)&cfs, 0);
 }
 
 /* ------ Common setup for possibly pixel-oriented encoding filters ------ */
 
 int
-filter_write_predictor(os_ptr op, int npop, const stream_template * template,
-		       stream_state * st)
+filter_write_predictor(i_ctx_t *i_ctx_p, int npop,
+		       const stream_template * template, stream_state * st)
 {
+    os_ptr op = osp;
     int predictor, code;
     stream_PDiff_state pds;
     stream_PNGP_state pps;
@@ -95,7 +97,7 @@ filter_write_predictor(os_ptr op, int npop, const stream_template * template,
     } else
 	predictor = 1;
     if (predictor == 1)
-	return filter_write(op, npop, template, st, 0);
+	return filter_write(i_ctx_p, npop, template, st, 0);
     {
 	/* We need to cascade filters. */
 	ref rtarget, rdict, rfd;
@@ -104,7 +106,7 @@ filter_write_predictor(os_ptr op, int npop, const stream_template * template,
 	/* Save the operands, just in case. */
 	ref_assign(&rtarget, op - 1);
 	ref_assign(&rdict, op);
-	code = filter_write(op, 1, template, st, 0);
+	code = filter_write(i_ctx_p, 1, template, st, 0);
 	if (code < 0)
 	    return code;
 	/* filter_write changed osp.... */
@@ -112,8 +114,8 @@ filter_write_predictor(os_ptr op, int npop, const stream_template * template,
 	ref_assign(&rfd, op);
 	code =
 	    (predictor == 2 ?
-	     filter_write(op, 0, &s_PDiffE_template, (stream_state *)&pds, 0) :
-	     filter_write(op, 0, &s_PNGPE_template, (stream_state *)&pps, 0));
+	     filter_write(i_ctx_p, 0, &s_PDiffE_template, (stream_state *)&pds, 0) :
+	     filter_write(i_ctx_p, 0, &s_PNGPE_template, (stream_state *)&pps, 0));
 	if (code < 0) {
 	    /* Restore the operands.  Don't bother trying to clean up */
 	    /* the first stream. */
@@ -137,14 +139,15 @@ filter_write_predictor(os_ptr op, int npop, const stream_template * template,
  * to be subject to Unisys' Welch Patent.
  */
 private int
-zLZWE(os_ptr op)
+zLZWE(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     stream_LZW_state lzs;
     int code = zlz_setup(op, &lzs);
 
     if (code < 0)
 	return code;
-    return filter_write_predictor(op, 0, &s_LZWE_template,
+    return filter_write_predictor(i_ctx_p, 0, &s_LZWE_template,
 				  (stream_state *) & lzs);
 }
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -26,6 +26,7 @@
 #include "gsrefct.h"
 #include "gsropt.h"
 #include "gxcvalue.h"
+#include "gxcmap.h"
 #include "gxfixed.h"
 #include "gxline.h"
 #include "gxmatrix.h"
@@ -50,12 +51,13 @@
  *          black generation, undercolor removal
  *          CIE rendering tables
  *          halftone and pattern caches
+ *	shared (constant) device color spaces
  * The imager state currently EXCLUDES the following:
  *      graphics state stack
  *      default CTM
  *      path
- *      clipping path
- *      color specification: color, color space
+ *      clipping path and stack
+ *      color specification: color, color space, substitute color spaces
  *      font
  *      device
  *      caches for many of the above
@@ -64,24 +66,21 @@
 /*
  * Define the color rendering state information.
  * This should be a separate object (or at least a substructure),
- * but doing this would require editing too much code.
+ * but making this change would require editing too much code.
  */
 
 /* Opaque types referenced by the color rendering state. */
 #ifndef gs_halftone_DEFINED
 #  define gs_halftone_DEFINED
 typedef struct gs_halftone_s gs_halftone;
-
 #endif
 #ifndef gx_device_color_DEFINED
 #  define gx_device_color_DEFINED
 typedef struct gx_device_color_s gx_device_color;
-
 #endif
 #ifndef gx_device_halftone_DEFINED
 #  define gx_device_halftone_DEFINED
 typedef struct gx_device_halftone_s gx_device_halftone;
-
 #endif
 
 /*
@@ -115,7 +114,7 @@ typedef union gx_transfer_s {
 	gs_halftone *halftone;			/* (RC) */\
 	gs_int_point screen_phase[gs_color_select_count];\
 		/* dev_ht depends on halftone and device resolution. */\
-	gx_device_halftone *dev_ht;		/* (Owned) */\
+	gx_device_halftone *dev_ht;		/* (RC) */\
 		/* The contents of ht_cache depend on dev_ht. */\
 	struct gx_ht_cache_s *ht_cache;		/* (Shared) by all gstates */\
 \
@@ -151,7 +150,8 @@ typedef union gx_transfer_s {
  * structure that someone else worries about.
  */
 #define gs_cr_state_do_rc_ptrs(m)\
-  m(halftone) m(cie_render) m(black_generation) m(undercolor_removal)\
+  m(halftone) m(dev_ht) m(cie_render)\
+  m(black_generation) m(undercolor_removal)\
   m(set_transfer.colored.red) m(set_transfer.colored.green)\
   m(set_transfer.colored.blue) m(set_transfer.colored.gray)\
   m(cie_joint_caches)
@@ -174,23 +174,30 @@ typedef union gx_transfer_s {
 #ifndef gs_color_space_DEFINED
 #  define gs_color_space_DEFINED
 typedef struct gs_color_space_s gs_color_space;
-
 #endif
+typedef union gx_device_color_spaces_s {
+    struct dcn_ {
+	gs_color_space *Gray;
+	gs_color_space *RGB;
+	gs_color_space *CMYK;
+    } named;
+    gs_color_space *indexed[3];
+} gx_device_color_spaces_t;
 typedef struct gs_imager_state_shared_s {
     rc_header rc;
-    gs_color_space *cs_DeviceGray;
-    gs_color_space *cs_DeviceRGB;
-    gs_color_space *cs_DeviceCMYK;
+    gx_device_color_spaces_t device_color_spaces;
 } gs_imager_state_shared_t;
 
-#define private_st_imager_state_shared()	/* in gsstate.c */\
+#define private_st_imager_state_shared()	/* in gsistate.c */\
   gs_private_st_ptrs3(st_imager_state_shared, gs_imager_state_shared_t,\
     "gs_imager_state_shared", imager_state_shared_enum_ptrs,\
-    imager_state_shared_reloc_ptrs, cs_DeviceGray, cs_DeviceRGB, cs_DeviceCMYK)
+    imager_state_shared_reloc_ptrs, device_color_spaces.named.Gray,\
+    device_color_spaces.named.RGB, device_color_spaces.named.CMYK)
 
 /* Define the imager state structure itself. */
 #define gs_imager_state_common\
 	gs_memory_t *memory;\
+	void *client_data;\
 	gs_imager_state_shared_t *shared;\
 	gx_line_params line_params;\
 	gs_matrix_fixed ctm;\
@@ -202,21 +209,24 @@ typedef struct gs_imager_state_shared_s {
 	bool stroke_adjust;\
 	bool accurate_curves;\
 	float smoothness;\
+	const gx_color_map_procs *\
+	  (*get_cmap_procs)(P2(const gs_imager_state *, const gx_device *));\
 	gs_color_rendering_state_common
-#define gs_imager_state_shared(pis, elt) ((pis)->shared->elt)
 #define st_imager_state_num_ptrs\
-  (st_line_params_num_ptrs + st_cr_state_num_ptrs + 1)
+  (st_line_params_num_ptrs + st_cr_state_num_ptrs + 2)
 /* Access macros */
 #define ctm_only(pis) (*(const gs_matrix *)&(pis)->ctm)
 #define ctm_only_writable(pis) (*(gs_matrix *)&(pis)->ctm)
 #define set_ctm_only(pis, mat) (*(gs_matrix *)&(pis)->ctm = (mat))
 #define gs_init_rop(pis) ((pis)->log_op = lop_default)
+#define gs_currentflat_inline(pis) ((pis)->flatness)
 #define gs_currentlineparams_inline(pis) (&(pis)->line_params)
+#define gs_current_logical_op_inline(pis) ((pis)->log_op)
+#define gs_set_logical_op_inline(pis, lop) ((pis)->log_op = (lop))
 
 #ifndef gs_imager_state_DEFINED
 #  define gs_imager_state_DEFINED
 typedef struct gs_imager_state_s gs_imager_state;
-
 #endif
 
 struct gs_imager_state_s {
@@ -225,19 +235,36 @@ struct gs_imager_state_s {
 
 /* Initialization for gs_imager_state */
 #define gs_imager_state_initial(scale)\
-  0, 0, { gx_line_params_initial },\
+  0, 0, 0, { gx_line_params_initial },\
    { scale, 0.0, 0.0, -(scale), 0.0, 0.0 },\
   lop_default, gx_max_color_value, 0/*false*/, 1.0,\
-   { fixed_half, fixed_half }, 0/*false*/, 0/*false*/, 1.0
+   { fixed_half, fixed_half }, 0/*false*/, 0/*false*/, 1.0,\
+  gx_default_get_cmap_procs
 
-#define private_st_imager_state()	/* in gsstate.c */\
-  gs_private_st_composite(st_imager_state, gs_imager_state, "gs_imager_state",\
+/* The imager state structure is public only for subclassing. */
+#define public_st_imager_state()	/* in gsistate.c */\
+  gs_public_st_composite(st_imager_state, gs_imager_state, "gs_imager_state",\
     imager_state_enum_ptrs, imager_state_reloc_ptrs)
 
 /* Initialize an imager state, other than the parts covered by */
 /* gs_imager_state_initial. */
-/* The halftone, dev_ht, and ht_cache elements are not set or used. */
 int gs_imager_state_initialize(P2(gs_imager_state * pis, gs_memory_t * mem));
+
+/* Make a temporary copy of a gs_imager_state.  Note that this does not */
+/* do all the necessary reference counting, etc. */
+gs_imager_state *
+    gs_imager_state_copy(P2(const gs_imager_state * pis, gs_memory_t * mem));
+
+/* Increment reference counts to note that an imager state has been copied. */
+void gs_imager_state_copied(P1(gs_imager_state * pis));
+
+/* Adjust reference counts before assigning one imager state to another. */
+void gs_imager_state_pre_assign(P2(gs_imager_state *to,
+				   const gs_imager_state *from));
+
+/* Free device color spaces.  Perhaps this should be declared elsewhere? */
+void gx_device_color_spaces_free(P3(gx_device_color_spaces_t *pdcs,
+				    gs_memory_t *mem, client_name_t cname));
 
 /* Release an imager state. */
 void gs_imager_state_release(P1(gs_imager_state * pis));

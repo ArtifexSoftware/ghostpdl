@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -101,15 +101,16 @@ typedef enum {
     cmd_opv_set_misc = 0x06,
 #define cmd_set_misc_lop (0 << 6)	/* 00: lop_lsb(6), lop_msb# */
 #define cmd_set_misc_data_x (1 << 6)	/* 01: more(1)dx_lsb(5)[, dx_msb#] */
-#define cmd_set_misc_map (2 << 6)	/* 10: non-0(1)map_index(5) */
-				/*   [, n x frac] */
+#define cmd_set_misc_map (2 << 6)	/* 10: contents(2)map_index(4) */
+					/* [, n x frac] */
 #define cmd_set_misc_halftone (3 << 6)	/* 11: type(6), num_comp# */
     cmd_opv_enable_lop = 0x07,	/* (nothing) */
     cmd_opv_disable_lop = 0x08,	/* (nothing) */
     cmd_opv_set_ht_order = 0x09,	/* component+1#[, cname#], */
 				/* width#, height#, raster#, */
-				/* shift#, num_levels#, num_bits# */
-    cmd_opv_set_ht_data = 0x0a,	/* n, n x (uint|gx_ht_bit) */
+				/* shift#, num_levels#, num_bits#, */
+				/* order_procs_index */
+    cmd_opv_set_ht_data = 0x0a,	/* n, n x (uint|gx_ht_bit|ushort) */
     cmd_opv_end_page = 0x0b,	/* (nothing) */
     cmd_opv_delta2_color0 = 0x0c,	/* dr5dg6db5 or dc4dm4dy4dk4 */
 #define cmd_delta2_24_bias 0x00102010
@@ -271,9 +272,9 @@ struct gx_clist_state_s {
 #define initial_known 0x3fff	/* exclude tile & image params */
     /* Following are only used when writing */
     cmd_list list;		/* list of commands for band */
-    /* Following is set when writing, read when reading */
+    /* Following are set when writing, read when reading */
     ulong cost;			/* cost of rendering the band */
-    gx_color_index colors_used;	/* 'or' of all colors written */
+    gx_colors_used_t colors_used;
 };
 
 /* The initial values for a band state */
@@ -283,7 +284,7 @@ struct gx_clist_state_s {
 	0, gx_no_bitmap_id,\
 	 { 0, 0 }, { gx_no_color_index, gx_no_color_index },\
 	 { 0, 0, 0, 0 }, lop_default, 0, 0, 0, initial_known,\
-	 { 0, 0 }, 0, 0
+	{ 0, 0 }, 0, { 0 }
 
 /* Define the size of the command buffer used for reading. */
 /* This is needed to split up operations with a large amount of data, */
@@ -553,6 +554,11 @@ int cmd_update_lop(P3(gx_device_clist_writer *, gx_clist_state *,
  * permanent_error, which prevents writing to the command list.
  */
 
+/*
+ * The "if (1)" statements in the following macros are there to prevent
+ * stupid compilers from giving "statement not reached" warnings.
+ */
+
 #define FOR_RECTS_NO_ERROR\
     BEGIN\
 	int yend = y + height;\
@@ -589,14 +595,14 @@ retry_rect:\
 #define ERROR_RECT(code_value)\
 		BEGIN\
 		    band_code = (code_value);\
-		    goto error_in_rect;\
+		    if (1) goto error_in_rect;\
 		END
 #define TRY_RECT\
 		BEGIN\
 		    do
 #define HANDLE_RECT_UNLESS(codevar, unless_clause)\
 		    while (codevar < 0 &&\
-			   ((codevar = clist_VMerror_recover(cdev, (codevar))) >= 0)\
+			   (codevar = clist_VMerror_recover(cdev, codevar)) >= 0\
 			   );\
 		    if (codevar < 0 && !(unless_clause))\
 			ERROR_RECT(codevar);\
@@ -616,7 +622,7 @@ error_in_rect:\
 			)\
 			goto retry_rect;\
 		}\
-		return band_code;\
+		if (1) return band_code;\
 	} while ((y += height) < yend);\
     END
 #define END_RECTS END_RECTS_ON_ERROR(DO_NOTHING, 1, 1)
@@ -675,6 +681,11 @@ typedef enum {
     cmd_map_black_generation,
     cmd_map_undercolor_removal
 } cmd_map_index;
+typedef enum {
+    cmd_map_none = 0,		/* no map, use default */
+    cmd_map_identity,		/* identity map */
+    cmd_map_other		/* other map */
+} cmd_map_contents;
 int cmd_put_color_map(P4(gx_device_clist_writer * cldev,
 			 cmd_map_index map_index,
 			 const gx_transfer_map * map, gs_id * pid));

@@ -1,4 +1,4 @@
-/* Copyright (C) 1995 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -55,20 +55,18 @@ gx_color_interpolate_nearest(const fixed * pi,
 /*
  * Define an implementation that uses trilinear interpolation.
  */
-void
-gx_color_interpolate_linear(const fixed * pi,
-			    const gx_color_lookup_table * pclt, frac * pv)
+private void
+interpolate_accum(const fixed * pi, const gx_color_lookup_table * pclt,
+		  frac * pv, fixed factor)
 {
     const int *pdim = pclt->dims;
     int m = pclt->m;
 
-    if (pclt->n > 3) {		/* Do two 3-D interpolations, */
-	/* and then interpolate between them. */
+    if (pclt->n > 3) {
+	/* Do two 3-D interpolations, interpolating between them. */
 	gx_color_lookup_table clt3;
-	frac vx[4];
 	int ix = fixed2int_var(pi[0]);
 	fixed fx = fixed_fraction(pi[0]);
-	int j;
 
 	clt3.n = 3;
 	/*clt3.dims[0] = pdim[1]; *//* not used */
@@ -76,14 +74,11 @@ gx_color_interpolate_linear(const fixed * pi,
 	clt3.dims[2] = pdim[3];
 	clt3.m = m;
 	clt3.table = pclt->table + ix * pdim[1];
-	gx_color_interpolate_linear(pi + 1, &clt3, pv);
+	interpolate_accum(pi + 1, &clt3, pv, fixed_1);
 	if (ix == pdim[0] - 1)
 	    return;
 	clt3.table += pdim[1];
-	gx_color_interpolate_linear(pi + 1, &clt3, vx);
-	for (j = 0; j < m; ++j)
-	    pv[j] += (frac) arith_rshift((long)fx * (vx[j] - pv[j]),
-					 _fixed_shift);
+	interpolate_accum(pi + 1, &clt3, pv, fx);
     } else {
 	int ic = fixed2int_var(pi[2]);
 	fixed fc = fixed_fraction(pi[2]);
@@ -97,7 +92,7 @@ gx_color_interpolate_linear(const fixed * pi,
 	fixed fa = fixed_fraction(pi[0]);
 	const byte *pa0 = pclt->table[ia].data + dbc;
 	const byte *pa1 =
-	(ia == pdim[0] - 1 ? pa0 : pclt->table[ia + 1].data + dbc);
+	    (ia == pdim[0] - 1 ? pa0 : pclt->table[ia + 1].data + dbc);
 	int j;
 
 	/* The values to be interpolated are */
@@ -111,30 +106,42 @@ gx_color_interpolate_linear(const fixed * pi,
 	    frac v101 = byte2frac(pa1[dc1]);
 	    frac v110 = byte2frac(pa1[db1]);
 	    frac v111 = byte2frac(pa1[dbc1]);
+	    frac rv;
 
 	    frac v00 = v000 +
-	    (frac) arith_rshift((long)fc * (v001 - v000),
-				_fixed_shift);
+		(frac) arith_rshift((long)fc * (v001 - v000),
+				    _fixed_shift);
 	    frac v01 = v010 +
-	    (frac) arith_rshift((long)fc * (v011 - v010),
-				_fixed_shift);
+		(frac) arith_rshift((long)fc * (v011 - v010),
+				    _fixed_shift);
 	    frac v10 = v100 +
-	    (frac) arith_rshift((long)fc * (v101 - v100),
-				_fixed_shift);
+		(frac) arith_rshift((long)fc * (v101 - v100),
+				    _fixed_shift);
 	    frac v11 = v110 +
-	    (frac) arith_rshift((long)fc * (v111 - v110),
-				_fixed_shift);
+		(frac) arith_rshift((long)fc * (v111 - v110),
+				    _fixed_shift);
 
 	    frac v0 = v00 +
-	    (frac) arith_rshift((long)fb * (v01 - v00),
-				_fixed_shift);
+		(frac) arith_rshift((long)fb * (v01 - v00),
+				    _fixed_shift);
 	    frac v1 = v10 +
-	    (frac) arith_rshift((long)fb * (v11 - v10),
-				_fixed_shift);
+		(frac) arith_rshift((long)fb * (v11 - v10),
+				    _fixed_shift);
 
-	    pv[j] = v0 +
+	    rv = v0 +
 		(frac) arith_rshift((long)fa * (v1 - v0),
 				    _fixed_shift);
+	    if (factor == fixed_1)
+		pv[j] = rv;
+	    else
+		pv[j] += (frac) arith_rshift((long)factor * (rv - pv[j]),
+					     _fixed_shift);
 	}
     }
+}
+void
+gx_color_interpolate_linear(const fixed * pi,
+			    const gx_color_lookup_table * pclt, frac * pv)
+{
+    interpolate_accum(pi, pclt, pv, fixed_1);
 }

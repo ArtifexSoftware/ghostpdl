@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1993, 1994, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1993, 1994, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -35,8 +35,9 @@
 
 /* <bool> .setglobal - */
 private int
-zsetglobal(register os_ptr op)
+zsetglobal(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     check_type(*op, t_boolean);
     ialloc_set_space(idmemory,
 		     (op->value.boolval ? avm_global : avm_local));
@@ -46,8 +47,10 @@ zsetglobal(register os_ptr op)
 
 /* <bool> .currentglobal - */
 private int
-zcurrentglobal(register os_ptr op)
+zcurrentglobal(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(1);
     make_bool(op, ialloc_space(idmemory) != avm_local);
     return 0;
@@ -55,8 +58,10 @@ zcurrentglobal(register os_ptr op)
 
 /* <any> gcheck/scheck <bool> */
 private int
-zgcheck(register os_ptr op)
+zgcheck(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     check_op(1);
     make_bool(op, (r_is_local(op) ? false : true));
     return 0;
@@ -72,7 +77,7 @@ zgcheck(register os_ptr op)
  * This is implemented as a PostScript procedure that calls setuserparams.
  */
 int
-set_vm_threshold(long val)
+set_vm_threshold(i_ctx_t *i_ctx_p, long val)
 {
     gs_memory_gc_status_t stat;
 
@@ -101,7 +106,7 @@ set_vm_threshold(long val)
  * disabling GC is implemented by calling setuserparams.
  */
 int
-set_vm_reclaim(long val)
+set_vm_reclaim(i_ctx_t *i_ctx_p, long val)
 {
     if (val >= -2 && val <= 0) {
 	gs_memory_gc_status_t stat;
@@ -120,8 +125,10 @@ set_vm_reclaim(long val)
 	return_error(e_rangecheck);
 }
 private int
-zvmreclaim(register os_ptr op)
+zvmreclaim(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     check_type(*op, t_integer);
     if (op->value.intval == 1 || op->value.intval == 2) {
 	/* Force the interpreter to store its state and exit. */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -108,9 +108,6 @@ typedef struct gs_shading_Tpp_s {
 } gs_shading_Tpp_t;
 shading_fill_rectangle_proc(gs_shading_Tpp_fill_rectangle);
 
-/* We should probably get this from somewhere else.... */
-#define max_color_components 4
-
 /* Define a stream for decoding packed coordinate values. */
 typedef struct shade_coord_stream_s shade_coord_stream_t;
 struct shade_coord_stream_s {
@@ -129,7 +126,7 @@ struct shade_coord_stream_s {
 /* Define one vertex of a mesh. */
 typedef struct mesh_vertex_s {
     gs_fixed_point p;
-    float cc[max_color_components];
+    float cc[GS_CLIENT_COLOR_MAX_COMPONENTS];
 } mesh_vertex_t;
 
 /* Initialize a packed value stream. */
@@ -183,7 +180,7 @@ int shade_next_vertex(P2(shade_coord_stream_t * cs, mesh_vertex_t * vertex));
   gx_device *dev;\
   gs_imager_state *pis;\
   int num_components;		/* # of color components */\
-  float cc_max_error[max_color_components]
+  float cc_max_error[GS_CLIENT_COLOR_MAX_COMPONENTS]
 typedef struct shading_fill_state_s {
     shading_fill_state_common;
 } shading_fill_state_t;
@@ -211,31 +208,3 @@ int shade_fill_path(P3(const shading_fill_state_t * pfs, gx_path * ppath,
 		       gx_device_color * pdevc));
 
 #endif /* gxshade_INCLUDED */
-
-#if 0				/*************************************************************** */
-
-/*
- * Here is a sketch of what will be needed to generalize Patterns for
- * (the) new PatternType(s).
- */
-typedef struct gs_pattern_instance_s {
-    rc_header rc;		/* ?? */
-    const gs_pattern_type_t *type;
-    gs_uid XUID;		/* ?? */
-    gs_state *saved;		/* ?? */
-    void *data;
-} gs_pattern_instance_t;
-typedef struct gs_pattern1_instance_data_s {
-    ...
-} gs_pattern1_instance_data_t;
-
-#define gs_pattern2_instance_data_common\
-  const gs_shading_t *shading;\
-  gx_device_color *background;\
-  const gs_color_space *color_space;\
-  gs_matrix param_to_device_matrix
-typedef struct gs_pattern2_instance_data_common_s {
-    gs_pattern2_instance_data_common;
-} gs_pattern2_instance_data_common_t;
-
-#endif /*************************************************************** */

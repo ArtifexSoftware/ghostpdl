@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -25,7 +25,7 @@
 #include "gsstruct.h"
 #include "errors.h"
 #include "ialloc.h"
-#include "idict.h"
+#include "iddict.h"
 #include "dstack.h"
 #include "ilevel.h"
 #include "iname.h"
@@ -48,10 +48,10 @@
  */
 /* The size of systemdict can be set in the makefile. */
 #ifndef SYSTEMDICT_SIZE
-#  define SYSTEMDICT_SIZE 601
+#  define SYSTEMDICT_SIZE 631
 #endif
 #ifndef SYSTEMDICT_LEVEL2_SIZE
-#  define SYSTEMDICT_LEVEL2_SIZE 941
+#  define SYSTEMDICT_LEVEL2_SIZE 983
 #endif
 /* The size of level2dict, if applicable, can be set in the makefile. */
 #ifndef LEVEL2DICT_SIZE
@@ -85,15 +85,14 @@ const char *const gs_error_names[] =
 };
 
 /* The operator tables */
-const op_def **op_def_table;
-uint op_def_count;
 op_array_table op_array_table_global, op_array_table_local;	/* definitions of `operator' procedures */
 
 /* Enter a name and value into a dictionary. */
 void
-initial_enter_name_in(const char *nstr, const ref * pref, ref * pdict)
+i_initial_enter_name_in(i_ctx_t *i_ctx_p, ref *pdict, const char *nstr,
+			const ref * pref)
 {
-    int code = dict_put_string(pdict, nstr, pref);
+    int code = idict_put_string(pdict, nstr, pref);
 
     if (code < 0) {
 	lprintf4("initial_enter failed (%d), entering /%s in -dict:%u/%u-\n",
@@ -102,19 +101,19 @@ initial_enter_name_in(const char *nstr, const ref * pref, ref * pdict)
     }
 }
 void
-initial_enter_name(const char *nstr, const ref * pref)
+i_initial_enter_name(i_ctx_t *i_ctx_p, const char *nstr, const ref * pref)
 {
-    initial_enter_name_in(nstr, pref, systemdict);
+    i_initial_enter_name_in(i_ctx_p, systemdict, nstr, pref);
 }
 
 /* Remove a name from systemdict. */
 void
-initial_remove_name(const char *nstr)
+i_initial_remove_name(i_ctx_t *i_ctx_p, const char *nstr)
 {
     ref nref;
 
     if (name_ref((const byte *)nstr, strlen(nstr), &nref, -1) >= 0)
-	dict_undef(systemdict, &nref);
+	idict_undef(systemdict, &nref);
 }
 
 /* Create a name.  Fatal error if it fails. */
@@ -190,7 +189,7 @@ gs_have_level2(void)
 
 /* Create an initial dictionary if necessary. */
 private ref *
-make_initial_dict(const char *iname, ref idicts[])
+make_initial_dict(i_ctx_t *i_ctx_p, const char *iname, ref idicts[])
 {
     int i;
 
@@ -206,8 +205,8 @@ make_initial_dict(const char *iname, ref idicts[])
 
 	    if (r_has_type(dref, t_null)) {
 		gs_ref_memory_t *mem =
-		(initial_dictionaries[i].local ?
-		 iimemory_local : iimemory_global);
+		    (initial_dictionaries[i].local ?
+		     iimemory_local : iimemory_global);
 		int code = dict_alloc(mem, dsize, dref);
 
 		if (code < 0)
@@ -227,12 +226,11 @@ make_initial_dict(const char *iname, ref idicts[])
 /* Initialize objects other than operators.  In particular, */
 /* initialize the dictionaries that hold operator definitions. */
 void
-obj_init(void)
+obj_init(i_ctx_t **pi_ctx_p)
 {
     bool level2 = gs_have_level2();
-
-    /* Initialize the language level. */
-    make_int(&ref_language_level, 1);
+    ref system_dict;
+    i_ctx_t *i_ctx_p;
 
     /*
      * Create systemdict.  The context machinery requires that
@@ -240,10 +238,11 @@ obj_init(void)
      */
     dict_alloc(iimemory_global,
 	       (level2 ? SYSTEMDICT_LEVEL2_SIZE : SYSTEMDICT_SIZE),
-	       systemdict);
+	       &system_dict);
 
     /* Initialize the interpreter. */
-    gs_interp_init();
+    gs_interp_init(pi_ctx_p, &system_dict);
+    i_ctx_p = *pi_ctx_p;
 
     {
 #define icount countof(initial_dictionaries)
@@ -261,12 +260,12 @@ obj_init(void)
 	    /*
 	     * For the moment, let globaldict be an alias for systemdict.
 	     */
-	    dsp[-1] = *systemdict;
+	    dsp[-1] = system_dict;
 	    min_dstack_size++;
 	} else {
 	    ++dsp;
 	}
-	*dsp = *systemdict;
+	*dsp = system_dict;
 
 	/* Create dictionaries which are to be homes for operators. */
 	for (tptr = op_defs_all; *tptr != 0; tptr++) {
@@ -274,7 +273,7 @@ obj_init(void)
 
 	    for (def = *tptr; def->oname != 0; def++)
 		if (op_def_is_begin_dict(def))
-		    make_initial_dict(def->oname, idicts);
+		    make_initial_dict(i_ctx_p, def->oname, idicts);
 	}
 
 	/* Set up the initial dstack. */
@@ -284,7 +283,7 @@ obj_init(void)
 	    ++dsp;
 	    if (!strcmp(dname, "userdict"))
 		dstack_userdict_index = dsp - dsbot;
-	    ref_assign(dsp, make_initial_dict(dname, idicts));
+	    ref_assign(dsp, make_initial_dict(i_ctx_p, dname, idicts));
 	}
 
 	/* Enter names of referenced initial dictionaries into systemdict. */
@@ -292,15 +291,16 @@ obj_init(void)
 	for (i = 0; i < icount; i++) {
 	    ref *idict = &idicts[i];
 
-	    if (!r_has_type(idict, t_null)) {	/*
-						 * Note that we enter the dictionary in systemdict
-						 * even if it is in local VM.  There is a special
-						 * provision in the garbage collector for this:
-						 * see ivmspace.h for more information.
-						 * In order to do this, we must temporarily
-						 * identify systemdict as local, so that the
-						 * store check in dict_put won't fail.
-						 */
+	    if (!r_has_type(idict, t_null)) {
+		/*
+		 * Note that we enter the dictionary in systemdict
+		 * even if it is in local VM.  There is a special
+		 * provision in the garbage collector for this:
+		 * see ivmspace.h for more information.
+		 * In order to do this, we must temporarily
+		 * identify systemdict as local, so that the
+		 * store check in dict_put won't fail.
+		 */
 		uint save_space = r_space(systemdict);
 
 		r_set_space(systemdict, avm_local);
@@ -312,7 +312,7 @@ obj_init(void)
 #undef icount
     }
 
-    gs_interp_reset();
+    gs_interp_reset(i_ctx_p);
 
     {
 	ref vtemp;
@@ -341,7 +341,7 @@ obj_init(void)
 
 /* Run the initialization procedures of the individual operator files. */
 void
-zop_init(void)
+zop_init(i_ctx_t *i_ctx_p)
 {
     const op_def *const *tptr;
 
@@ -352,8 +352,15 @@ zop_init(void)
     for (tptr = op_defs_all; *tptr != 0; tptr++) {
 	for (def = *tptr; def->oname != 0; def++)
 	    DO_NOTHING;
-	if (def->proc != 0)
-	    ((void (*)(P0()))(def->proc)) ();
+	if (def->proc != 0) {
+	    int code = def->proc(i_ctx_p);
+
+	    if (code < 0) {
+		lprintf2("op_init proc 0x%lx returned error %d!\n",
+			 (ulong)def->proc, code);
+		gs_exit(1);
+	    }
+	}
     }
 
     /* Initialize the predefined names other than operators. */
@@ -403,36 +410,16 @@ alloc_op_array_table(uint size, uint space, op_array_table * opt)
 
 /* Initialize the operator table. */
 void
-op_init(void)
+op_init(i_ctx_t *i_ctx_p)
 {
-    int count = 1;
     const op_def *const *tptr;
-    const op_def *def;
-    const char *nstr;
 
-    /* Do a first pass just to count the operators. */
+    /* Enter each operator into the appropriate dictionary. */
 
-    for (tptr = op_defs_all; *tptr != 0; tptr++) {
-	for (def = *tptr; def->oname != 0; def++)
-	    if (!op_def_is_begin_dict(def))
-		count++;
-    }
-
-    /* Do a second pass to construct the operator table, */
-    /* and enter the operators into the appropriate dictionary. */
-
-    /* Because of a bug in Sun's SC1.0 compiler, */
-    /* we have to spell out the typedef for op_def_ptr here: */
-    op_def_table =
-	(const op_def **)ialloc_byte_array(count, sizeof(const op_def *),
-					   "op_init(op_def_table)");
-
-    op_def_count = count;
-    for (count = 0; count <= gs_interp_num_special_ops; count++)
-	op_def_table[count] = 0;
-    count = gs_interp_num_special_ops + 1;	/* leave space for magic entries */
     for (tptr = op_defs_all; *tptr != 0; tptr++) {
 	ref *pdict = systemdict;
+	const op_def *def;
+	const char *nstr;
 
 	for (def = *tptr; (nstr = def->oname) != 0; def++)
 	    if (op_def_is_begin_dict(def)) {
@@ -448,33 +435,27 @@ op_init(void)
 		    gs_abort();
 	    } else {
 		ref oper;
-		uint opidx;
+		uint index_in_table = def - *tptr;
+		uint opidx = (tptr - op_defs_all) * OP_DEFS_MAX_SIZE +
+		    index_in_table;
 
-		gs_interp_make_oper(&oper, def->proc, count);
-		opidx = r_size(&oper);
+		if (index_in_table >= OP_DEFS_MAX_SIZE)
+		    dprintf1("opdef overrun: %s\n", def->oname);
+		gs_interp_make_oper(&oper, def->proc, opidx);
 		/* The first character of the name is a digit */
 		/* giving the minimum acceptable number of operands. */
 		/* Check to make sure it's within bounds. */
 		if (*nstr - '0' > gs_interp_max_op_num_args)
 		    gs_abort();
 		nstr++;
-		/* Don't enter internal operators into */
-		/* the dictionary. */
-		if (*nstr != '%')
-		    initial_enter_name_in(nstr, &oper, pdict);
-		op_def_table[opidx] = def;
-		if (opidx == count)
-		    count++;
+		/*
+		 * Skip internal operators, and the second occurrence of
+		 * operators with special indices.
+		 */
+		if (*nstr != '%' && r_size(&oper) == opidx)
+		    i_initial_enter_name_in(i_ctx_p, pdict, nstr, &oper);
 	    }
     }
-    /* All of the built-ins had better be defined somewhere, */
-    /* or things like op_find_index will choke. */
-    for (count = 1; count <= gs_interp_num_special_ops; count++)
-	if (op_def_table[count] == 0)
-	    gs_abort();
-    gs_register_struct_root(imemory, NULL, (void **)&op_def_table,
-			    "op_def_table");
-
     /* Allocate the tables for `operator' procedures. */
     /* Make one of them local so we can have local operators. */
 

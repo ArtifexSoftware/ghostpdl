@@ -179,7 +179,7 @@ main(
     memset(pcs, 0, sizeof(pcl_state_t));
 
     /* call once to set up the free list handlers */
-    gs_reclaim(&inst.spaces, true);
+    gs_nogc_reclaim(&inst.spaces, true);
     pcl_set_target_device(pcs, inst.device);
     /* Insert a bounding box device so we can detect empty pages. */
     {
@@ -236,7 +236,7 @@ main(
     pcl_gsave(pcs);
 
     /* call once more to get rid of any temporary objects */
-    gs_reclaim(&inst.spaces, true);
+    gs_nogc_reclaim(&inst.spaces, true);
 
     while ((arg = arg_next(&args)) != 0) {
         /* Process one input file. */
@@ -313,8 +313,7 @@ process:
                 fwrite(buf, 1, count, gs_stdout);
             fflush(gs_stdout);
         }
-
-        gs_reclaim(&inst.spaces, true);
+	gs_nogc_reclaim(&inst.spaces, true);
     }
 
     /* to help with memory leak detection, issue a reset */
@@ -322,7 +321,7 @@ process:
 
     /* return to the original graphic state, reclaim memory once more */
     pcl_grestore(pcs);
-    gs_reclaim(&inst.spaces, true);
+    gs_nogc_reclaim(&inst.spaces, true);
     pjl_process_destroy(pcs->pjls, mem);
     /* shutdown the parser */
     pcl_parser_shutdown(&pcl_parser_state, pcs->memory);

@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -313,18 +313,25 @@ cmd_put_color_map(gx_device_clist_writer * cldev, cmd_map_index map_index,
 	code = set_cmd_put_all_op(dp, cldev, cmd_opv_set_misc, 2);
 	if (code < 0)
 	    return code;
-	dp[1] = cmd_set_misc_map + map_index;
+	dp[1] = cmd_set_misc_map + (cmd_map_none << 4) + map_index;
 	if (pid)
 	    *pid = gs_no_id;
     } else {
 	if (pid && map->id == *pid)
 	    return 0;	/* no need to write */
-	code = set_cmd_put_all_op(dp, cldev, cmd_opv_set_misc,
-				  2 + sizeof(map->values));
-	if (code < 0)
-	    return code;
-	dp[1] = cmd_set_misc_map + 0x20 + map_index;
-	memcpy(dp + 2, map->values, sizeof(map->values));
+	if (map->proc == gs_identity_transfer) {
+	    code = set_cmd_put_all_op(dp, cldev, cmd_opv_set_misc, 2);
+	    if (code < 0)
+		return code;
+	    dp[1] = cmd_set_misc_map + (cmd_map_identity << 4) + map_index;
+	} else {
+	    code = set_cmd_put_all_op(dp, cldev, cmd_opv_set_misc,
+				      2 + sizeof(map->values));
+	    if (code < 0)
+		return code;
+	    dp[1] = cmd_set_misc_map + (cmd_map_other << 4) + map_index;
+	    memcpy(dp + 2, map->values, sizeof(map->values));
+	}
 	if (pid)
 	    *pid = map->id;
     }

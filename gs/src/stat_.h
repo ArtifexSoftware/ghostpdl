@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -51,6 +51,24 @@
 #  define stat_is_dir(stbuf) ((stbuf).st_mode & S_IFDIR)
 #else
 #  define stat_is_dir(stbuf) S_ISDIR((stbuf).st_mode)
+#endif
+
+/*
+ * Some systems have S_IFMT and S_IFCHR but not S_ISCHR.
+ */
+#ifndef S_ISCHR
+#  ifndef S_IFMT
+#    ifdef _S_IFMT
+#      define S_IFMT _S_IFMT
+#      define S_IFCHR _S_IFCHR
+#    else
+#    ifdef __S_IFMT
+#      define S_IFMT __S_IFMT
+#      define S_IFCHR __S_IFCHR
+#    endif
+#    endif
+#  endif
+#  define S_ISCHR(mode) (((mode) & S_IFMT) == S_IFCHR)
 #endif
 
 #endif /* stat__INCLUDED */

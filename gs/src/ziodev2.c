@@ -75,8 +75,9 @@ const gx_io_device gs_iodev_ram = {
 
 /* <iodevice> .getdevparams <mark> <name> <value> ... */
 private int
-zgetdevparams(os_ptr op)
+zgetdevparams(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gx_io_device *iodev;
     stack_param_list list;
     gs_param_list *const plist = (gs_param_list *) & list;
@@ -99,8 +100,9 @@ zgetdevparams(os_ptr op)
 
 /* <mark> <name> <value> ... <iodevice> .putdevparams */
 private int
-zputdevparams(os_ptr op)
+zputdevparams(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gx_io_device *iodev;
     stack_param_list list;
     gs_param_list *const plist = (gs_param_list *) & list;

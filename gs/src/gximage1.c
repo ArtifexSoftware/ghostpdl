@@ -52,21 +52,24 @@ const gx_image_type_t gs_image_type_mask1 = {
 
 /* Define the procedures for initializing gs_image_ts to default values. */
 void
-gs_image_t_init(gs_image_t * pim, const gs_color_space * color_space)
+gs_image_t_init_adjust(gs_image_t * pim, const gs_color_space * color_space,
+		       bool adjust)
 {
     gs_pixel_image_t_init((gs_pixel_image_t *) pim, color_space);
-    pim->ImageMask = pim->adjust = (color_space == NULL);
+    pim->ImageMask = (color_space == NULL);
+    pim->adjust = adjust;
     pim->type = (pim->ImageMask ? &gs_image_type_mask1 : &gs_image_type_1);
     pim->Alpha = gs_image_alpha_none;
 }
 void
-gs_image_t_init_mask(gs_image_t * pim, bool write_1s)
+gs_image_t_init_mask_adjust(gs_image_t * pim, bool write_1s, bool adjust)
 {
     gs_image_t_init(pim, NULL);
     if (write_1s)
 	pim->Decode[0] = 1, pim->Decode[1] = 0;
     else
 	pim->Decode[0] = 0, pim->Decode[1] = 1;
+    pim->adjust = adjust;
 }
 
 /* Start processing an ImageType 1 image. */

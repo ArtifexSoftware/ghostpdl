@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -34,8 +34,9 @@
 /* ([wx wy llx lly urx ury] | [w0x w0y llx lly urx ury w1x w1y vx vy]) */
 /*   <bitmap> <cid> <type32font> <str22> .makeglyph32 <<same with substr>> */
 private int
-zmakeglyph32(os_ptr op)
+zmakeglyph32(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     bool long_form;
     uint msize;
     double metrics[10];
@@ -125,8 +126,9 @@ select_cid_range(cached_char * cc, void *range_ptr)
 	    cc->pair->font == range->font);
 }
 private int
-zremoveglyphs(os_ptr op)
+zremoveglyphs(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code;
     font_cid_range_t range;
 
@@ -145,11 +147,12 @@ zremoveglyphs(os_ptr op)
     return 0;
 }
 
-/* <str5/14/22> .getmetrics32 <width> <height> <w0x> ... <vy> 5/14 */
-/* <str5/14/22> .getmetrics32 <width> <height> <wx> ... <ury> 22 */
+/* <str5/14/22> .getmetrics32 <width> <height> <wx> ... <ury> 5/14 */
+/* <str5/14/22> .getmetrics32 <width> <height> <w0x> ... <vy> 22 */
 private int
-zgetmetrics32(os_ptr op)
+zgetmetrics32(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     const byte *data;
     uint size;
     int i, n = 6;

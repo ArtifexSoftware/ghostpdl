@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -28,56 +28,56 @@
 #include "ifilter.h"
 
 /* Import the Predictor machinery from zfdecode.c and zfilter2.c. */
-int filter_read_predictor(P4(os_ptr op, int npop,
+int filter_read_predictor(P4(i_ctx_t *i_ctx_p, int npop,
 			     const stream_template * template,
 			     stream_state * st));
-int filter_write_predictor(P4(os_ptr op, int npop,
+int filter_write_predictor(P4(i_ctx_t *i_ctx_p, int npop,
 			      const stream_template * template,
 			      stream_state * st));
 
 /* <source> zlibEncode/filter <file> */
 /* <source> <dict> zlibEncode/filter <file> */
 private int
-zzlibE(os_ptr op)
+zzlibE(i_ctx_t *i_ctx_p)
 {
     stream_zlib_state zls;
 
     (*s_zlibE_template.set_defaults)((stream_state *)&zls);
-    return filter_write(op, 0, &s_zlibE_template, (stream_state *)&zls, 0);
+    return filter_write(i_ctx_p, 0, &s_zlibE_template, (stream_state *)&zls, 0);
 }
 
 /* <target> zlibDecode/filter <file> */
 /* <target> <dict> zlibDecode/filter <file> */
 private int
-zzlibD(os_ptr op)
+zzlibD(i_ctx_t *i_ctx_p)
 {
     stream_zlib_state zls;
 
     (*s_zlibD_template.set_defaults)((stream_state *)&zls);
-    return filter_read(op, 0, &s_zlibD_template, (stream_state *)&zls, 0);
+    return filter_read(i_ctx_p, 0, &s_zlibD_template, (stream_state *)&zls, 0);
 }
 
 /* <source> FlateEncode/filter <file> */
 /* <source> <dict> FlateEncode/filter <file> */
 private int
-zFlateE(os_ptr op)
+zFlateE(i_ctx_t *i_ctx_p)
 {
     stream_zlib_state zls;
 
     (*s_zlibE_template.set_defaults)((stream_state *)&zls);
-    return filter_write_predictor(op, 0, &s_zlibE_template,
+    return filter_write_predictor(i_ctx_p, 0, &s_zlibE_template,
 				  (stream_state *)&zls);
 }
 
 /* <target> FlateDecode/filter <file> */
 /* <target> <dict> FlateDecode/filter <file> */
 private int
-zFlateD(os_ptr op)
+zFlateD(i_ctx_t *i_ctx_p)
 {
     stream_zlib_state zls;
 
     (*s_zlibD_template.set_defaults)((stream_state *)&zls);
-    return filter_read_predictor(op, 0, &s_zlibD_template,
+    return filter_read_predictor(i_ctx_p, 0, &s_zlibD_template,
 				 (stream_state *)&zls);
 }
 

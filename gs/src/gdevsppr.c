@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1993, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1993, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
   
   This file is part of Aladdin Ghostscript.
   
@@ -65,7 +65,7 @@ prn_device(prn_sparc_procs,
 private int
 sparc_open(gx_device *pdev)
 {	/* Change the margins according to the paper size. */
-	const float _ds *m;
+	const float *m;
 	static const float m_a4[4] = { SPARC_MARGINS_A4 };
 	static const float m_letter[4] = { SPARC_MARGINS_LETTER };
 
@@ -126,7 +126,7 @@ sparc_print_page(gx_device_printer *pdev, FILE *prn)
   lpvipage.bitmap_width=gdev_mem_bytes_per_scan_line((gx_device *)pdev);
   lpvipage.page_width=lpvipage.bitmap_width*8;
   lpvipage.page_length=pdev->height;
-  lpvipage.resolution= (pdev->x_pixels_per_inch == 300 ? 300 : 400);
+  lpvipage.resolution = (pdev->x_pixels_per_inch == 300 ? DPI300 : DPI400);
   if (ioctl(fileno(prn),LPVIIOC_SETPAGE,&lpvipage)!=0)
     {
     fprintf(stderr,"sparc_print_page: LPVIIOC_SETPAGE failed\n");

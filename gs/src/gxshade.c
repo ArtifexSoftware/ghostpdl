@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -181,7 +181,7 @@ shade_next_coords(shade_coord_stream_t * cs, gs_fixed_point * ppt,
 	float x, y;
 
 	if ((code = cs->get_decoded(cs, num_bits, decode, &x)) < 0 ||
-	    (code = cs->get_decoded(cs, num_bits, decode, &y)) < 0 ||
+	    (code = cs->get_decoded(cs, num_bits, decode + 2, &y)) < 0 ||
 	    (code = gs_point_transform2fixed(cs->pctm, x, y, &ppt[i])) < 0
 	    )
 	    break;

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -24,6 +24,7 @@
 
 #include "gsstate.h"
 #include "gxstate.h"		/* for 'client data' access */
+#include "imemory.h"
 #include "istruct.h"		/* for gstate obj definition */
 
 /*
@@ -99,13 +100,20 @@ typedef struct ref_color_procs_s {
     } special;
 } ref_color_procs;
 typedef struct ref_colorspace_s {
-    ref array;			/* color space (array), */
-    /* only relevant if the current */
-    /* color space has parameters associated with it. */
+    ref array;			/* color space (array), only relevant if */
+				/* the current color space has parameters */
+				/* associated with it. */
     ref_color_procs procs;	/* associated procedures/parameters, */
-    /* only relevant for DeviceN, CIE, Separation, Indexed/CIE, */
-    /* Indexed with procedure, or a Pattern with one of these. */
+				/* only relevant for DeviceN, CIE, */
+				/* Separation, Indexed/CIE, */
+				/* Indexed with procedure, or a Pattern */
+				/* with one of these. */
 } ref_colorspace;
+
+#ifndef int_remap_color_info_DEFINED
+#  define int_remap_color_info_DEFINED
+typedef struct int_remap_color_info_s int_remap_color_info_t;
+#endif
 
 typedef struct int_gstate_s {
     ref dash_pattern;		/* (array) */
@@ -123,23 +131,40 @@ typedef struct int_gstate_s {
     ref black_generation;	/* (procedure) */
     ref undercolor_removal;	/* (procedure) */
     ref_colorspace colorspace;
-    /* Pattern is only relevant if the current color space */
-    /* is a pattern space. */
+    /*
+     * Pattern is relevant only if the current color space
+     * is a pattern space.
+     */
     ref pattern;		/* pattern (dictionary) */
     struct {
 	ref dict;		/* CIE color rendering dictionary */
 	ref_cie_render_procs procs;	/* (see above) */
     } colorrendering;
-    /* Halftone is only relevant if sethalftone was executed */
-    /* more recently than setscreen for this graphics context. */
-    /* setscreen sets it to null. */
+    /*
+     * Halftone is relevant only if sethalftone was executed
+     * more recently than setscreen for this graphics context.
+     * setscreen sets it to null.
+     */
     ref halftone;		/* halftone (dictionary) */
-    /* Pagedevice is only relevant if setpagedevice was */
-    /* executed more recently than nulldevice, setcachedevice, */
-    /* or setdevice with a non-page device (for this */
-    /* graphics context).  If the current device is not a */
-    /* page device, pagedevice is null. */
+    /*
+     * Pagedevice is only relevant if setpagedevice was executed more
+     * recently than nulldevice, setcachedevice, or setdevice with a
+     * non-page device (for this graphics context).  If the current device
+     * is not a page device, pagedevice is null.
+     */
     ref pagedevice;		/* page device (dictionary|null) */
+    /*
+     * Remap_color_info is used temporarily to communicate the need for
+     * Pattern or DeviceNcolor remapping to the interpreter.  See
+     * e_RemapColor in errors.h.  The extra level of indirection through a
+     * structure is needed because the gstate passed to the PaintProc is
+     * different from the current gstate in the graphics state, and because
+     * the DeviceN color being remapped is not necessarily the current color
+     * in the graphics state (for shading or images): the structure is
+     * shared, so that the interpreter can get its hands on the remapping
+     * procedure.
+     */
+    ref remap_color_info;	/* t_struct (int_remap_color_info_t) */
 } int_gstate;
 
 #define clear_pagedevice(pigs) make_null(&(pigs)->pagedevice)
@@ -162,14 +187,13 @@ typedef struct int_gstate_s {
 
 /* Create the gstate for a new context. */
 /* We export this so that fork can use it. */
-gs_state *int_gstate_alloc(P1(gs_ref_memory_t * mem));
+gs_state *int_gstate_alloc(P1(const gs_dual_memory_t * dmem));
 
 /* Get the int_gstate from a gs_state. */
 #define gs_int_gstate(pgs) ((int_gstate *)gs_state_client_data(pgs))
 
-/* The current instances. */
-extern gs_state *igs;
-
+/* The current instances for operators. */
+#define igs (i_ctx_p->pgs)
 #define istate gs_int_gstate(igs)
 
 #endif /* igstate_INCLUDED */

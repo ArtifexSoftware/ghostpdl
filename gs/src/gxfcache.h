@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1997, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -179,7 +179,7 @@ struct cached_char_s {
  */
 #define align_cached_char_mod align_cached_bits_mod
 #define sizeof_cached_char\
-  round_up(sizeof(cached_char), align_cached_char_mod)
+  ROUND_UP(sizeof(cached_char), align_cached_char_mod)
 #define cc_bits(cc) ((byte *)(cc) + sizeof_cached_char)
 #define cc_const_bits(cc) ((const byte *)(cc) + sizeof_cached_char)
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -26,14 +26,13 @@
 #include "gsdcolor.h"
 #include "gxdevice.h"
 #include "gxfixed.h"
+#include "gxistate.h"
 #include "gzpath.h"
 #include "gxpaint.h"
 #include "gzcpath.h"
 #include "gzacpath.h"
 
 /* Imported procedures */
-extern gx_device *gs_currentdevice(P1(const gs_state *));
-extern float gs_currentflat(P1(const gs_state *));
 extern bool clip_list_validate(P1(const gx_clip_list *));
 
 /* Device procedures */
@@ -160,11 +159,10 @@ gx_cpath_accum_discard(gx_device_cpath_accum * padev)
 
 /* Intersect two clipping paths using an accumulator. */
 int
-gx_cpath_intersect_slow(gs_state * pgs, gx_clip_path * pcpath, gx_path * ppath,
-			int rule)
+gx_cpath_intersect_path_slow(gx_clip_path * pcpath, gx_path * ppath,
+			     int rule, gs_imager_state *pis)
 {
-    bool outside = gx_cpath_is_outside(pcpath);
-    gs_logical_operation_t save_lop = gs_current_logical_op(pgs);
+    gs_logical_operation_t save_lop = gs_current_logical_op_inline(pis);
     gx_device_cpath_accum adev;
     gx_device_color devc;
     gx_fill_params params;
@@ -172,18 +170,16 @@ gx_cpath_intersect_slow(gs_state * pgs, gx_clip_path * pcpath, gx_path * ppath,
 
     gx_cpath_accum_begin(&adev, pcpath->path.memory);
     color_set_pure(&devc, 0);	/* arbitrary, but not transparent */
-    gs_set_logical_op(pgs, lop_default);
+    gs_set_logical_op_inline(pis, lop_default);
     params.rule = rule;
     params.adjust.x = params.adjust.y = fixed_half;
-    params.flatness = gs_currentflat(pgs);
+    params.flatness = gs_currentflat_inline(pis);
     params.fill_zero_width = true;
-    code = gx_fill_path_only(ppath, (gx_device *) & adev,
-			     (const gs_imager_state *)pgs,
+    code = gx_fill_path_only(ppath, (gx_device *)&adev, pis,
 			     &params, &devc, pcpath);
     if (code < 0 || (code = gx_cpath_accum_end(&adev, pcpath)) < 0)
 	gx_cpath_accum_discard(&adev);
-    gx_cpath_set_outside(pcpath, outside);
-    gs_set_logical_op(pgs, save_lop);
+    gs_set_logical_op_inline(pis, save_lop);
     return code;
 }
 
@@ -207,16 +203,19 @@ accum_open(register gx_device * dev)
 private int
 accum_close(gx_device * dev)
 {
-#ifdef DEBUG
     gx_device_cpath_accum * const adev = (gx_device_cpath_accum *)dev;
 
+    adev->list.xmin = adev->bbox.p.x;
+    adev->list.xmax = adev->bbox.q.x;
+#ifdef DEBUG
     if (gs_debug_c('q')) {
 	gx_clip_rect *rp =
 	    (adev->list.count <= 1 ? &adev->list.single : adev->list.head);
 
-	dlprintf4("[q]list at 0x%lx, count=%d, head=0x%lx, tail=0x%lx:\n",
+	dlprintf6("[q]list at 0x%lx, count=%d, head=0x%lx, tail=0x%lx, xrange=(%d,%d):\n",
 		  (ulong) & adev->list, adev->list.count,
-		  (ulong) adev->list.head, (ulong) adev->list.tail);
+		  (ulong) adev->list.head, (ulong) adev->list.tail,
+		  adev->list.xmin, adev->list.xmax);
 	while (rp != 0) {
 	    clip_rect_print('q', "   ", rp);
 	    rp = rp->next;
@@ -231,12 +230,13 @@ accum_close(gx_device * dev)
 }
 
 /* Accumulate one rectangle. */
-#undef adev
 /* Allocate a rectangle to be added to the list. */
-static const gx_clip_rect clip_head_rect =
-{0, 0, min_int, min_int, min_int, min_int};
-static const gx_clip_rect clip_tail_rect =
-{0, 0, max_int, max_int, max_int, max_int};
+static const gx_clip_rect clip_head_rect = {
+    0, 0, min_int, min_int, min_int, min_int
+};
+static const gx_clip_rect clip_tail_rect = {
+    0, 0, max_int, max_int, max_int, max_int
+};
 private gx_clip_rect *
 accum_alloc_rect(gx_device_cpath_accum * adev)
 {
@@ -246,15 +246,16 @@ accum_alloc_rect(gx_device_cpath_accum * adev)
 
     if (ar == 0)
 	return 0;
-    if (adev->list.count == 2) {	/* We're switching from a single rectangle to a list. */
+    if (adev->list.count == 2) {
+	/* We're switching from a single rectangle to a list. */
 	/* Allocate the head and tail entries. */
 	gx_clip_rect *head = ar;
 	gx_clip_rect *tail =
-	gs_alloc_struct(mem, gx_clip_rect, &st_clip_rect,
-			"accum_alloc_rect(tail)");
+	    gs_alloc_struct(mem, gx_clip_rect, &st_clip_rect,
+			    "accum_alloc_rect(tail)");
 	gx_clip_rect *single =
-	gs_alloc_struct(mem, gx_clip_rect, &st_clip_rect,
-			"accum_alloc_rect(single)");
+	    gs_alloc_struct(mem, gx_clip_rect, &st_clip_rect,
+			    "accum_alloc_rect(single)");
 
 	ar = gs_alloc_struct(mem, gx_clip_rect, &st_clip_rect,
 			     "accum_alloc_rect(head)");
@@ -277,32 +278,32 @@ accum_alloc_rect(gx_device_cpath_accum * adev)
     }
     return ar;
 }
-#define accum_alloc(s, ar, px, py, qx, qy)\
-	if ( ++(adev->list.count) == 1 )\
+#define ACCUM_ALLOC(s, ar, px, py, qx, qy)\
+	if (++(adev->list.count) == 1)\
 	  ar = &adev->list.single;\
-	else if ( (ar = accum_alloc_rect(adev)) == 0 )\
+	else if ((ar = accum_alloc_rect(adev)) == 0)\
 	  return_error(gs_error_VMerror);\
-	accum_set(s, ar, px, py, qx, qy)
-#define accum_set(s, ar, px, py, qx, qy)\
+	ACCUM_SET(s, ar, px, py, qx, qy)
+#define ACCUM_SET(s, ar, px, py, qx, qy)\
 	(ar)->xmin = px, (ar)->ymin = py, (ar)->xmax = qx, (ar)->ymax = qy;\
 	clip_rect_print('Q', s, ar)
 /* Link or unlink a rectangle in the list. */
-#define accum_add_last(ar)\
-	accum_add_before(ar, adev->list.tail)
-#define accum_add_after(ar, rprev)\
+#define ACCUM_ADD_LAST(ar)\
+	ACCUM_ADD_BEFORE(ar, adev->list.tail)
+#define ACCUM_ADD_AFTER(ar, rprev)\
 	ar->prev = (rprev), (ar->next = (rprev)->next)->prev = ar,\
 	  (rprev)->next = ar
-#define accum_add_before(ar, rnext)\
+#define ACCUM_ADD_BEFORE(ar, rnext)\
 	(ar->prev = (rnext)->prev)->next = ar, ar->next = (rnext),\
 	  (rnext)->prev = ar
-#define accum_remove(ar)\
+#define ACCUM_REMOVE(ar)\
 	ar->next->prev = ar->prev, ar->prev->next = ar->next
 /* Free a rectangle that was removed from the list. */
-#define accum_free(s, ar)\
-	if ( --(adev->list.count) )\
-	  { clip_rect_print('Q', s, ar);\
-	    gs_free_object(adev->list_memory, ar, "accum_rect");\
-	  }
+#define ACCUM_FREE(s, ar)\
+	if (--(adev->list.count)) {\
+	  clip_rect_print('Q', s, ar);\
+	  gs_free_object(adev->list_memory, ar, "accum_rect");\
+	}
 /*
  * Add a rectangle to the list.  It would be wonderful if rectangles
  * were always disjoint and always presented in the correct order,
@@ -350,31 +351,48 @@ accum_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     if (ye > adev->bbox.q.y)
 	adev->bbox.q.y = ye;
 
-  top:if (adev->list.count == 0) {	/* very first rectangle */
+top:
+    if (adev->list.count == 0) {	/* very first rectangle */
 	adev->list.count = 1;
-	accum_set("single", &adev->list.single, x, y, xe, ye);
+	ACCUM_SET("single", &adev->list.single, x, y, xe, ye);
 	return 0;
     }
-    if (adev->list.count == 1)	/* check for Y merging */
-       
-    {
+    if (adev->list.count == 1) {	/* check for Y merging */
 	rptr = &adev->list.single;
 	if (x == rptr->xmin && xe == rptr->xmax &&
-	    y <= rptr->ymax && y >= rptr->ymin
+	    y <= rptr->ymax && ye >= rptr->ymin
 	    ) {
+	    if (y < rptr->ymin)
+		rptr->ymin = y;
 	    if (ye > rptr->ymax)
 		rptr->ymax = ye;
 	    return 0;
 	}
     }
-    accum_alloc("accum", nr, x, y, xe, ye);
-    rptr = adev->list.tail->prev;
-    if (y >= rptr->ymax ||
-	(y == rptr->ymin && ye == rptr->ymax && x >= rptr->xmax)
-	) {
-	accum_add_last(nr);
+    else
+	rptr = adev->list.tail->prev;
+    if (y >= rptr->ymax) {
+	if (y == rptr->ymax && x == rptr->xmin && xe == rptr->xmax &&
+	    (rptr->prev == 0 || y != rptr->prev->ymax)
+	    ) {
+	    rptr->ymax = ye;
+	    return 0;
+	}
+	ACCUM_ALLOC("app.y", nr, x, y, xe, ye);
+	ACCUM_ADD_LAST(nr);
+	return 0;
+    } else if (y == rptr->ymin && ye == rptr->ymax && x >= rptr->xmin) {
+	if (x <= rptr->xmax) {
+	    if (xe > rptr->xmax)
+		rptr->xmax = xe;
+	    return 0;
+	}
+	ACCUM_ALLOC("app.x", nr, x, y, xe, ye);
+	ACCUM_ADD_LAST(nr);
 	return 0;
     }
+    ACCUM_ALLOC("accum", nr, x, y, xe, ye);
+    rptr = adev->list.tail->prev;
     /* Work backwards till we find the insertion point. */
     while (ye <= rptr->ymin)
 	rptr = rptr->prev;
@@ -382,12 +400,12 @@ accum_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     ymax = rptr->ymax;
     if (ye > ymax) {
 	if (y >= ymax) {	/* Insert between two bands. */
-	    accum_add_after(nr, rptr);
+	    ACCUM_ADD_AFTER(nr, rptr);
 	    return 0;
 	}
 	/* Split off the top part of the new rectangle. */
-	accum_alloc("a.top", ar, x, ymax, xe, ye);
-	accum_add_after(ar, rptr);
+	ACCUM_ALLOC("a.top", ar, x, ymax, xe, ye);
+	ACCUM_ADD_AFTER(ar, rptr);
 	ye = nr->ymax = ymax;
 	clip_rect_print('Q', " ymax", nr);
     }
@@ -399,8 +417,8 @@ accum_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 	gx_clip_rect *rsplit = rptr;
 
 	while (rsplit->ymax == ymax) {
-	    accum_alloc("s.top", ar, rsplit->xmin, ye, rsplit->xmax, ymax);
-	    accum_add_after(ar, rptr);
+	    ACCUM_ALLOC("s.top", ar, rsplit->xmin, ye, rsplit->xmax, ymax);
+	    ACCUM_ADD_AFTER(ar, rptr);
 	    rsplit->ymax = ye;
 	    rsplit = rsplit->prev;
 	}
@@ -414,8 +432,8 @@ accum_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 	while (rbot->prev->ymin == ymin)
 	    rbot = rbot->prev;
 	for (rsplit = rbot;;) {
-	    accum_alloc("s.bot", ar, rsplit->xmin, ymin, rsplit->xmax, y);
-	    accum_add_before(ar, rbot);
+	    ACCUM_ALLOC("s.bot", ar, rsplit->xmin, ymin, rsplit->xmax, y);
+	    ACCUM_ADD_BEFORE(ar, rbot);
 	    rsplit->ymin = y;
 	    if (rsplit == rptr)
 		break;
@@ -437,18 +455,20 @@ accum_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 	    /* we already did a merge */
 	    clip_rect_print('Q', "widen", rptr);
 	}
-	accum_free("free", nr);
+	ACCUM_FREE("free", nr);
 	if (x >= rptr->xmin)
 	    goto out;
 	/* Might overlap other rectangles to the left. */
 	rptr->xmin = x;
 	nr = rptr;
-	accum_remove(rptr);
+	ACCUM_REMOVE(rptr);
 	clip_rect_print('Q', "merge", nr);
     }
-    accum_add_after(nr, rptr);
-  out:				/* Check whether there are only 0 or 1 rectangles left. */
-    if (adev->list.count <= 1) {	/* We're switching from a list to at most 1 rectangle. */
+    ACCUM_ADD_AFTER(nr, rptr);
+out:
+    /* Check whether there are only 0 or 1 rectangles left. */
+    if (adev->list.count <= 1) {
+	/* We're switching from a list to at most 1 rectangle. */
 	/* Free the head and tail entries. */
 	gs_memory_t *mem = adev->list_memory;
 	gx_clip_rect *single = adev->list.head->next;
@@ -464,7 +484,8 @@ accum_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 	adev->list.tail = 0;
     }
     /* Check whether there is still more of the new band to process. */
-    if (y < ymin) {		/* Continue with the bottom part of the new rectangle. */
+    if (y < ymin) {
+	/* Continue with the bottom part of the new rectangle. */
 	clip_rect_print('Q', " ymin", nr);
 	ye = ymin;
 	goto top;

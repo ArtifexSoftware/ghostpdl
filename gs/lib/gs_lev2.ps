@@ -1,4 +1,4 @@
-%    Copyright (C) 1990, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1990, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -248,6 +248,32 @@ end
    setobjectformat
  } if
 
+% Aldus Freehand versions 2.x check for the presence of the
+% setcolor operator, and if it is missing, substitute a procedure.
+% Unfortunately, the procedure takes different parameters from
+% the operator.  As a result, files produced by this application
+% cause an error if the setcolor operator is actually defined
+% and 'bind' is ever used.  Aldus fixed this bug in Freehand 3.0,
+% but there are a lot of files created by the older versions
+% still floating around.  Therefore, at Adobe's suggestion,
+% we implement the following dreadful hack in the 'where' operator:
+%      If the key is /setcolor, and
+%        there is a dictionary named FreeHandDict, and
+%        currentdict is that dictionary,
+%      then "where" consults only that dictionary and not any other
+%        dictionaries on the dictionary stack.
+.wheredict /setcolor {
+  /FreeHandDict .where {
+    /FreeHandDict get currentdict eq {
+      pop currentdict /setcolor known { currentdict true } { false } ifelse
+    } {
+      .where
+    } ifelse
+  } {
+    .where
+  } ifelse
+} bind put
+
 % ------ Virtual memory ------ %
 
 /currentglobal			% - currentglobal <bool>
@@ -325,7 +351,6 @@ end		% serverdict
       pop
       serverdict /.jobsave save put
       serverdict /.jobsavelevel 1 put
-      .userdict /quit /stop load put
     } ifelse
 		% Reset the interpreter state.
   clear cleardictstack
@@ -346,6 +371,9 @@ end		% serverdict
   } ifelse
 } odef
 /startjob {			% <exit_bool> <password> startjob <ok_bool>
+	% This is a hack.  We really need some way to indicate explicitly
+	% to the interpreter that we are under control of a job server.
+  .userdict /quit /stop load put
   { .startnewjob true } .startjob
 } odef
 
@@ -509,9 +537,7 @@ currentdict end
         dup .setpatternspace
       } bind
    } if
-  /.setdevicenspace where
-   { pop /DeviceN { dup 2 get setcolorspace dup .setdevicenspace } bind
-   } if
+	% If DeviceN space is included, gs_ll3.ps registers it.
   /.setdevicepixelspace where
    { pop /DevicePixel { dup .setdevicepixelspace } bind
    } if
@@ -587,6 +613,12 @@ end
 
 .colorrenderingtypes 1 {
   dup .buildcolorrendering1 .setcolorrendering1
+} .bind put
+
+% Note: the value 101 in the next line must be the same as the value of
+% GX_DEVICE_CRD1_TYPE in gscrdp.h.
+.colorrenderingtypes 101 {
+  dup .builddevicecolorrendering1 .setdevicecolorrendering1
 } .bind put
 
 % Initialize the default CIE rendering dictionary.

@@ -16,6 +16,7 @@
    all copies.
  */
 
+
 /* Structures for CIE color algorithms */
 /* (requires gscspace.h, gscolor2.h) */
 
@@ -24,7 +25,7 @@
 
 #include "gconfigv.h"		/* for USE_FPU */
 #include "gsrefct.h"
-#include "gsstruct.h"		/* for extern_st */
+#include "gsstype.h"		/* for extern_st */
 #include "gxctable.h"
 
 /* ---------------- Configuration parameters ---------------- */
@@ -561,11 +562,27 @@ typedef enum {
 
 typedef struct gx_cie_joint_caches_s {
     /*
-     * The next two items are the "key" in the cache.  id_status refers to
-     * the cache status with respect to these keys; status refers to the
-     * status with respect to the graphics state.  The cache is valid iff
-     * status and id_status are both COMPLETED and the ids here are equal
-     * to those in the graphics state.
+     * The first 4 members are the "key" in the cache.  They behave as
+     * follows:
+     *
+     *    If id_status = COMPLETED, the cache is valid with respect to the
+     *    color space and CRD identified by cspace_id and render_id.
+     *
+     *    If status = COMPLETED, then id_status = COMPLETED also, and for
+     *    every gstate pgs that references this cache, pgs->color_space->id =
+     *    cspace_id and pgs->cie_render->id = render_id; hence the cache is
+     *    valid with respect to that gstate.
+     *
+     * This invariant is maintained because the PostScript CRD-setting
+     * operators, the library's CRD-setting procedure, and the library's
+     * procedures for setting CIE color spaces all unshare the joint caches
+     * and set status in the new copy to something other than COMPLETED.
+     *
+     * The only reason for id_status is that certain client code often
+     * resets the CRD and/or color space and then sets it back to its
+     * original value, and we want to detect that and not invalidate the
+     * caches.  If it weren't for that, setcolorspace and setcolorrendering
+     * could simply invalidate the caches.
      */
     gs_id cspace_id;
     gs_id render_id;

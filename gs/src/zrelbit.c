@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -41,8 +41,9 @@ private int obj_le(P2(os_ptr, os_ptr));
 
 /* <obj1> <obj2> eq <bool> */
 private int
-zeq(register os_ptr op)
+zeq(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     EQ_CHECK_READ(op - 1, check_op(2));
     EQ_CHECK_READ(op, DO_NOTHING);
     make_bool(op - 1, (obj_eq(op - 1, op) ? 1 : 0));
@@ -52,20 +53,21 @@ zeq(register os_ptr op)
 
 /* <obj1> <obj2> ne <bool> */
 private int
-zne(register os_ptr op)
+zne(i_ctx_t *i_ctx_p)
 {	/* We'll just be lazy and use eq. */
-    int code = zeq(op);
+    int code = zeq(i_ctx_p);
 
     if (!code)
-	op[-1].value.boolval ^= 1;
+	osp->value.boolval ^= 1;
     return code;
 }
 
 /* <num1> <num2> ge <bool> */
 /* <str1> <str2> ge <bool> */
 private int
-zge(register os_ptr op)
+zge(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code = obj_le(op, op - 1);
 
     if (code < 0)
@@ -78,8 +80,9 @@ zge(register os_ptr op)
 /* <num1> <num2> gt <bool> */
 /* <str1> <str2> gt <bool> */
 private int
-zgt(register os_ptr op)
+zgt(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code = obj_le(op - 1, op);
 
     if (code < 0)
@@ -92,8 +95,9 @@ zgt(register os_ptr op)
 /* <num1> <num2> le <bool> */
 /* <str1> <str2> le <bool> */
 private int
-zle(register os_ptr op)
+zle(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code = obj_le(op - 1, op);
 
     if (code < 0)
@@ -106,8 +110,9 @@ zle(register os_ptr op)
 /* <num1> <num2> lt <bool> */
 /* <str1> <str2> lt <bool> */
 private int
-zlt(register os_ptr op)
+zlt(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code = obj_le(op, op - 1);
 
     if (code < 0)
@@ -120,8 +125,9 @@ zlt(register os_ptr op)
 /* <num1> <num2> .max <num> */
 /* <str1> <str2> .max <str> */
 private int
-zmax(register os_ptr op)
+zmax(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code = obj_le(op - 1, op);
 
     if (code < 0)
@@ -136,8 +142,9 @@ zmax(register os_ptr op)
 /* <num1> <num2> .min <num> */
 /* <str1> <str2> .min <str> */
 private int
-zmin(register os_ptr op)
+zmin(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code = obj_le(op - 1, op);
 
     if (code < 0)
@@ -152,8 +159,10 @@ zmin(register os_ptr op)
 /* <bool1> <bool2> and <bool> */
 /* <int1> <int2> and <int> */
 private int
-zand(register os_ptr op)
+zand(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     switch (r_type(op)) {
 	case t_boolean:
 	    check_type(op[-1], t_boolean);
@@ -173,8 +182,10 @@ zand(register os_ptr op)
 /* <bool> not <bool> */
 /* <int> not <int> */
 private int
-znot(register os_ptr op)
+znot(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     switch (r_type(op)) {
 	case t_boolean:
 	    op->value.boolval = !op->value.boolval;
@@ -191,8 +202,10 @@ znot(register os_ptr op)
 /* <bool1> <bool2> or <bool> */
 /* <int1> <int2> or <int> */
 private int
-zor(register os_ptr op)
+zor(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     switch (r_type(op)) {
 	case t_boolean:
 	    check_type(op[-1], t_boolean);
@@ -212,8 +225,10 @@ zor(register os_ptr op)
 /* <bool1> <bool2> xor <bool> */
 /* <int1> <int2> xor <int> */
 private int
-zxor(register os_ptr op)
+zxor(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     switch (r_type(op)) {
 	case t_boolean:
 	    check_type(op[-1], t_boolean);
@@ -232,8 +247,9 @@ zxor(register os_ptr op)
 
 /* <int> <shift> bitshift <int> */
 private int
-zbitshift(register os_ptr op)
+zbitshift(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int shift;
 
     check_type(*op, t_integer);
@@ -254,8 +270,10 @@ zbitshift(register os_ptr op)
 
 /* <obj1> <obj2> .identeq <bool> */
 private int
-zidenteq(register os_ptr op)
+zidenteq(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     EQ_CHECK_READ(op - 1, check_op(2));
     EQ_CHECK_READ(op, DO_NOTHING);
     make_bool(op - 1, (obj_ident_eq(op - 1, op) ? 1 : 0));
@@ -266,12 +284,13 @@ zidenteq(register os_ptr op)
 
 /* <obj1> <obj2> .identne <bool> */
 private int
-zidentne(register os_ptr op)
-{	/* We'll just be lazy and use .identeq. */
-    int code = zidenteq(op);
+zidentne(i_ctx_t *i_ctx_p)
+{
+	/* We'll just be lazy and use .identeq. */
+    int code = zidenteq(i_ctx_p);
 
     if (!code)
-	op[-1].value.boolval ^= 1;
+	osp->value.boolval ^= 1;
     return code;
 }
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 1993 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -106,5 +106,5 @@ void
 free_file_name(parsed_file_name * pfn, client_name_t cname)
 {
     if (pfn->fname != 0)
-	ifree_string((byte *) pfn->fname, pfn->len, cname);
+	ifree_const_string((const byte *)pfn->fname, pfn->len, cname);
 }

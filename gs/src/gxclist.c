@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -29,6 +29,40 @@
 #include "gxcldev.h"
 #include "gxclpath.h"
 #include "gsparams.h"
+
+/* GC information */
+#define CLIST_IS_WRITER(cdev) ((cdev)->common.ymin < 0)
+extern_st(st_imager_state);
+public
+ENUM_PTRS_WITH(device_clist_enum_ptrs, gx_device_clist *cdev)
+    if (index < st_device_forward_max_ptrs) {
+	gs_ptr_type_t ret = ENUM_USING_PREFIX(st_device_forward, 0);
+
+	return (ret ? ret : ENUM_OBJ(0));
+    }
+    if (!CLIST_IS_WRITER(cdev))
+	return 0;
+    index -= st_device_forward_max_ptrs;
+    switch (index) {
+    case 0: return ENUM_OBJ((cdev->writer.image_enum_id != gs_no_id ?
+			     cdev->writer.clip_path : 0));
+    default:
+	return ENUM_USING(st_imager_state, &cdev->writer.imager_state,
+			  sizeof(gs_imager_state), index - 1);
+    }
+ENUM_PTRS_END
+public
+RELOC_PTRS_WITH(device_clist_reloc_ptrs, gx_device_clist *cdev)
+{
+    RELOC_PREFIX(st_device_forward);
+    if (!CLIST_IS_WRITER(cdev))
+	return;
+    if (cdev->writer.image_enum_id != gs_no_id)
+	RELOC_VAR(cdev->writer.clip_path);
+    RELOC_USING(st_imager_state, &cdev->writer.imager_state,
+		sizeof(gs_imager_state));
+} RELOC_PTRS_END
+public_st_device_clist();
 
 /* Forward declarations of driver procedures */
 private dev_proc_open_device(clist_open);
@@ -198,25 +232,22 @@ clist_init_tile_cache(gx_device * dev, byte * init_data, ulong data_size)
  * page_band_height (=page_info.band_params.BandHeight), nbands.
  */
 private int
-clist_init_bands(gx_device * dev, uint data_size, int band_width,
-		 int band_height)
+clist_init_bands(gx_device * dev, gx_device_memory *bdev, uint data_size,
+		 int band_width, int band_height)
 {
     gx_device_clist_writer * const cdev =
 	&((gx_device_clist *)dev)->writer;
-    gx_device *target = cdev->target;
     int nbands;
 
-    if (gdev_mem_data_size((gx_device_memory *) target, band_width,
-			   band_height) > data_size
-	)
+    if (gdev_mem_data_size(bdev, band_width, band_height) > data_size)
 	return_error(gs_error_rangecheck);
     cdev->page_band_height = band_height;
-    nbands = (target->height + band_height - 1) / band_height;
+    nbands = (cdev->target->height + band_height - 1) / band_height;
     cdev->nbands = nbands;
 #ifdef DEBUG
     if (gs_debug_c('l') | gs_debug_c(':'))
 	dlprintf4("[:]width=%d, band_width=%d, band_height=%d, nbands=%d\n",
-		  target->width, band_width, band_height, nbands);
+		  bdev->width, band_width, band_height, nbands);
 #endif
     return 0;
 }
@@ -257,38 +288,42 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
 	&((gx_device_clist *)dev)->writer;
     gx_device *target = cdev->target;
     const int band_width =
-    cdev->page_info.band_params.BandWidth =
-    (cdev->band_params.BandWidth ? cdev->band_params.BandWidth :
-     target->width);
+	cdev->page_info.band_params.BandWidth =
+	(cdev->band_params.BandWidth ? cdev->band_params.BandWidth :
+	 target->width);
     int band_height = cdev->band_params.BandHeight;
     const uint band_space =
     cdev->page_info.band_params.BandBufferSpace =
-    (cdev->band_params.BandBufferSpace ?
-     cdev->band_params.BandBufferSpace : data_size);
+	(cdev->band_params.BandBufferSpace ?
+	 cdev->band_params.BandBufferSpace : data_size);
     byte *data = init_data;
     uint size = band_space;
     uint bits_size;
+    gx_device_memory bdev;
+    gx_device *pbdev = (gx_device *)&bdev;
     int code;
 
-    if (band_height) {		/*
-				 * The band height is fixed, so the band buffer requirement
-				 * is completely determined.
-				 */
+    /* Call create_buf_device to get the memory planarity set up. */
+    cdev->buf_procs.create_buf_device(&pbdev, target, NULL, NULL, true);
+    if (band_height) {
+	/*
+	 * The band height is fixed, so the band buffer requirement
+	 * is completely determined.
+	 */
 	uint band_data_size =
-	gdev_mem_data_size((gx_device_memory *) target,
-			   band_width, band_height);
+	    gdev_mem_data_size(&bdev, band_width, band_height);
 
 	if (band_data_size >= band_space)
 	    return_error(gs_error_rangecheck);
 	bits_size = min(band_space - band_data_size, data_size >> 1);
-    } else {			/*
-				 * Choose the largest band height that will fit in the
-				 * rendering-time buffer.
-				 */
+    } else {
+	/*
+	 * Choose the largest band height that will fit in the
+	 * rendering-time buffer.
+	 */
 	bits_size = clist_tile_cache_size(target, band_space);
 	bits_size = min(bits_size, data_size >> 1);
-	band_height = gdev_mem_max_height((gx_device_memory *) target,
-					  band_width,
+	band_height = gdev_mem_max_height(&bdev, band_width,
 					  band_space - bits_size);
 	if (band_height == 0)
 	    return_error(gs_error_rangecheck);
@@ -299,7 +334,7 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
     cdev->page_tile_cache_size = bits_size;
     data += bits_size;
     size -= bits_size;
-    code = clist_init_bands(dev, size, band_width, band_height);
+    code = clist_init_bands(dev, &bdev, size, band_width, band_height);
     if (code < 0)
 	return code;
     return clist_init_states(dev, data, data_size - bits_size);
@@ -359,6 +394,7 @@ clist_reset(gx_device * dev)
     cdev->clip_path = NULL;
     cdev->clip_path_id = gs_no_id;
     cdev->color_space = 0;
+    cdev->color_space_id = gs_no_id;
     {
 	int i;
 
@@ -397,26 +433,26 @@ clist_reinit_output_file(gx_device *dev)
 	&((gx_device_clist *)dev)->writer;
     int code = 0;
 
-	/* bfile needs to guarantee cmd_blocks for: 1 band range, nbands */
-	/*  & terminating entry */
-	int b_block = sizeof(cmd_block) * (cdev->nbands + 2);
+    /* bfile needs to guarantee cmd_blocks for: 1 band range, nbands */
+    /*  & terminating entry */
+    int b_block = sizeof(cmd_block) * (cdev->nbands + 2);
 
-	/* cfile needs to guarantee one writer buffer */
-	/*  + one end_clip cmd (if during image's clip path setup) */
-	/*  + an end_image cmd for each band (if during image) */
-	/*  + end_cmds for each band and one band range */
-	int c_block
-	 = cdev->cend - cdev->cbuf + 2 + cdev->nbands * 2 + (cdev->nbands + 1);
+    /* cfile needs to guarantee one writer buffer */
+    /*  + one end_clip cmd (if during image's clip path setup) */
+    /*  + an end_image cmd for each band (if during image) */
+    /*  + end_cmds for each band and one band range */
+    int c_block =
+	cdev->cend - cdev->cbuf + 2 + cdev->nbands * 2 + (cdev->nbands + 1);
 
-	/* All this is for partial page rendering's benefit, do only */
-	/* if partial page rendering is available */
-	if ( clist_test_VMerror_recoverable(cdev) )
-	  { if (cdev->page_bfile != 0)
-	      code = clist_set_memory_warning(cdev->page_bfile, b_block);
-	    if (code >= 0 && cdev->page_cfile != 0)
-	      code = clist_set_memory_warning(cdev->page_cfile, c_block);
-	  }
-	return code;
+    /* All this is for partial page rendering's benefit, do only */
+    /* if partial page rendering is available */
+    if ( clist_test_VMerror_recoverable(cdev) )
+	{ if (cdev->page_bfile != 0)
+	    code = clist_set_memory_warning(cdev->page_bfile, b_block);
+	if (code >= 0 && cdev->page_cfile != 0)
+	    code = clist_set_memory_warning(cdev->page_cfile, c_block);
+	}
+    return code;
 }
 
 /* Write out the current parameters that must be at the head of each page */
@@ -428,16 +464,27 @@ clist_emit_page_header(gx_device *dev)
 	&((gx_device_clist *)dev)->writer;
     int code = 0;
 
-    if ( (cdev->disable_mask & clist_disable_pass_thru_params) )
-	{ do
+    if ((cdev->disable_mask & clist_disable_pass_thru_params)) {
+	do
 	    if ((code = clist_put_current_params(cdev)) >= 0)
 	        break;
-	  while ((code = clist_VMerror_recover(cdev, code)) >= 0);
-	cdev->permanent_error = (code < 0) ? code : 0;
+	while ((code = clist_VMerror_recover(cdev, code)) >= 0);
+	cdev->permanent_error = (code < 0 ? code : 0);
 	if (cdev->permanent_error < 0)
 	    cdev->error_is_retryable = 0;
-	}
+    }
     return code;
+}
+
+/* Reset parameters for the beginning of a page. */
+private void
+clist_reset_page(gx_device_clist_writer *cwdev)
+{
+    cwdev->page_bfile_end_pos = 0;
+    /* Indicate that the colors_used information hasn't been computed. */
+    cwdev->page_info.scan_lines_per_colors_used = 0;
+    memset(cwdev->page_info.band_colors_used, 0,
+	   sizeof(cwdev->page_info.band_colors_used));
 }
 
 /* Open the device's bandfiles */
@@ -460,7 +507,7 @@ clist_open_output_file(gx_device *dev)
     strcat(fmode, gp_fmode_binary_suffix);
     cdev->page_cfname[0] = 0;	/* create a new file */
     cdev->page_bfname[0] = 0;	/* ditto */
-    cdev->page_bfile_end_pos = 0;
+    clist_reset_page(cdev);
     if ((code = clist_fopen(cdev->page_cfname, fmode, &cdev->page_cfile,
 			    cdev->bandlist_memory, cdev->bandlist_memory,
 			    true)) < 0 ||
@@ -553,7 +600,7 @@ clist_finish_page(gx_device *dev, bool flush)
 	    clist_rewind(cdev->page_cfile, true, cdev->page_cfname);
 	if (cdev->page_bfile != 0)
 	    clist_rewind(cdev->page_bfile, true, cdev->page_bfname);
-	cdev->page_bfile_end_pos = 0;
+	clist_reset_page(cdev);
     } else {
 	if (cdev->page_cfile != 0)
 	    clist_fseek(cdev->page_cfile, 0L, SEEK_END, cdev->page_cfname);
@@ -586,10 +633,12 @@ clist_end_page(gx_device_clist_writer * cldev)
 	 */
 	cb.band_min = cb.band_max = cmd_band_end;
 	cb.pos = (cldev->page_cfile == 0 ? 0 : clist_ftell(cldev->page_cfile));
-	clist_fwrite_chars(&cb, sizeof(cb), cldev->page_bfile);
-	cldev->page_bfile_end_pos = clist_ftell(cldev->page_bfile);
+	code = clist_fwrite_chars(&cb, sizeof(cb), cldev->page_bfile);
+	if (code > 0)
+	    code = 0;
     }
     if (code >= 0) {
+	clist_compute_colors_used(cldev);
 	ecode |= code;
 	cldev->page_bfile_end_pos = clist_ftell(cldev->page_bfile);
     }
@@ -608,6 +657,30 @@ clist_end_page(gx_device_clist_writer * cldev)
 		  cb.pos, cldev->page_bfile_end_pos);
 #endif
     return 0;
+}
+
+/* Compute the set of used colors in the page_info structure. */
+void
+clist_compute_colors_used(gx_device_clist_writer *cldev)
+{
+    int nbands = cldev->nbands;
+    int bands_per_colors_used =
+	(nbands + PAGE_INFO_NUM_COLORS_USED - 1) /
+	PAGE_INFO_NUM_COLORS_USED;
+    int band;
+
+    cldev->page_info.scan_lines_per_colors_used =
+	cldev->page_band_height * bands_per_colors_used;
+    memset(cldev->page_info.band_colors_used, 0,
+	   sizeof(cldev->page_info.band_colors_used));
+    for (band = 0; band < nbands; ++band) {
+	int entry = band / bands_per_colors_used;
+
+	cldev->page_info.band_colors_used[entry].or |=
+	    cldev->states[band].colors_used.or;
+	cldev->page_info.band_colors_used[entry].slow_rop |=
+	    cldev->states[band].colors_used.slow_rop;
+    }
 }
 
 /* Recover recoverable VM error if possible without flushing */

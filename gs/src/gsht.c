@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -41,29 +41,47 @@ public_st_device_halftone();
 
 /* GC procedures */
 
-#define hptr ((gs_halftone *)vptr)
+private
+ENUM_PTRS_WITH(ht_order_enum_ptrs, gx_ht_order *porder) return 0;
+case 0: ENUM_RETURN((porder->data_memory ? porder->levels : 0));
+case 1: ENUM_RETURN((porder->data_memory ? porder->bit_data : 0));
+case 2: ENUM_RETURN(porder->cache);
+case 3: ENUM_RETURN(porder->transfer);
+ENUM_PTRS_END
+private
+RELOC_PTRS_WITH(ht_order_reloc_ptrs, gx_ht_order *porder)
+{
+    if (porder->data_memory) {
+	RELOC_VAR(porder->levels);
+	RELOC_VAR(porder->bit_data);
+    }
+    RELOC_VAR(porder->cache);
+    RELOC_VAR(porder->transfer);
+}
+RELOC_PTRS_END
 
 private 
-ENUM_PTRS_BEGIN(halftone_enum_ptrs) return 0;
-
+ENUM_PTRS_WITH(halftone_enum_ptrs, gs_halftone *hptr) return 0;
 case 0:
 switch (hptr->type)
 {
     case ht_type_spot:
-ENUM_RETURN((hptr->params.spot.transfer == 0 ?
-	     hptr->params.spot.transfer_closure.data :
-	     0));
+	ENUM_RETURN((hptr->params.spot.transfer == 0 ?
+		     hptr->params.spot.transfer_closure.data :
+		     0));
     case ht_type_threshold:
-ENUM_RETURN_CONST_STRING_PTR(gs_halftone, params.threshold.thresholds);
+	ENUM_RETURN_CONST_STRING_PTR(gs_halftone, params.threshold.thresholds);
+    case ht_type_threshold2:
+	return ENUM_CONST_BYTESTRING(&hptr->params.threshold2.thresholds);
     case ht_type_client_order:
-ENUM_RETURN(hptr->params.client_order.client_data);
+	ENUM_RETURN(hptr->params.client_order.client_data);
     case ht_type_multiple:
     case ht_type_multiple_colorscreen:
-ENUM_RETURN(hptr->params.multiple.components);
+	ENUM_RETURN(hptr->params.multiple.components);
     case ht_type_none:
     case ht_type_screen:
     case ht_type_colorscreen:
-return 0;
+	return 0;
 }
 case 1:
 switch (hptr->type) {
@@ -71,14 +89,16 @@ switch (hptr->type) {
 	ENUM_RETURN((hptr->params.threshold.transfer == 0 ?
 		     hptr->params.threshold.transfer_closure.data :
 		     0));
+    case ht_type_threshold2:
+	ENUM_RETURN(hptr->params.threshold2.transfer_closure.data);
     case ht_type_client_order:
-	ENUM_RETURN(hptr->params.threshold.transfer_closure.data);
+	ENUM_RETURN(hptr->params.client_order.transfer_closure.data);
     default:
 	return 0;
 }
 ENUM_PTRS_END
 
-private RELOC_PTRS_BEGIN(halftone_reloc_ptrs)
+private RELOC_PTRS_WITH(halftone_reloc_ptrs, gs_halftone *hptr)
 {
     switch (hptr->type) {
 	case ht_type_spot:
@@ -89,6 +109,10 @@ private RELOC_PTRS_BEGIN(halftone_reloc_ptrs)
 	    RELOC_CONST_STRING_PTR(gs_halftone, params.threshold.thresholds);
 	    if (hptr->params.threshold.transfer == 0)
 		RELOC_PTR(gs_halftone, params.threshold.transfer_closure.data);
+	    break;
+	case ht_type_threshold2:
+	    RELOC_CONST_BYTESTRING_VAR(hptr->params.threshold2.thresholds);
+	    RELOC_OBJ_VAR(hptr->params.threshold2.transfer_closure.data);
 	    break;
 	case ht_type_client_order:
 	    RELOC_PTR(gs_halftone, params.client_order.client_data);
@@ -105,8 +129,6 @@ private RELOC_PTRS_BEGIN(halftone_reloc_ptrs)
     }
 }
 RELOC_PTRS_END
-
-#undef hptr
 
 /* setscreen */
 int
@@ -216,13 +238,16 @@ gx_ht_process_screen_memory(gs_screen_enum * penum, gs_state * pgs,
     return 0;
 }
 
-/* Internal procedure to allocate and initialize either an internally */
-/* generated or a client-defined halftone order. */
-private int
+/*
+ * Internal procedure to allocate and initialize either an internally
+ * generated or a client-defined halftone order.  For spot halftones,
+ * the client is responsible for calling gx_compute_cell_values.
+ */
+int
 gx_ht_alloc_ht_order(gx_ht_order * porder, uint width, uint height,
-	uint num_levels, uint num_bits, uint strip_shift, gs_memory_t * mem)
+		     uint num_levels, uint num_bits, uint strip_shift,
+		     const gx_ht_order_procs_t *procs, gs_memory_t * mem)
 {
-    gx_compute_cell_values(&porder->params);
     porder->width = width;
     porder->height = height;
     porder->raster = bitmap_raster(width);
@@ -232,15 +257,20 @@ gx_ht_alloc_ht_order(gx_ht_order * porder, uint width, uint height,
     porder->full_height = ht_order_full_height(porder);
     porder->num_levels = num_levels;
     porder->num_bits = num_bits;
+    porder->procs = procs;
+    porder->data_memory = mem;
     porder->levels =
-	(uint *) gs_alloc_byte_array(mem, num_levels, sizeof(uint),
-				     "ht order(levels)");
-    porder->bits =
-	(gx_ht_bit *) gs_alloc_byte_array(mem, num_bits, sizeof(gx_ht_bit),
-					  "ht order(bits)");
-    if (porder->levels == 0 || porder->bits == 0) {
-	gs_free_object(mem, porder->bits, "ht order(bits)");
-	gs_free_object(mem, porder->levels, "ht order(levels)");
+	(uint *)gs_alloc_byte_array(mem, porder->num_levels, sizeof(uint),
+				    "alloc_ht_order_data(levels)");
+    porder->bit_data =
+	gs_alloc_byte_array(mem, porder->num_bits,
+			    porder->procs->bit_data_elt_size,
+			    "alloc_ht_order_data(bit_data)");
+    if (porder->levels == 0 || porder->bit_data == 0) {
+	gs_free_object(mem, porder->bit_data, "alloc_ht_order_data(bit_data)");
+	porder->bit_data = 0;
+	gs_free_object(mem, porder->levels, "alloc_ht_order_data(levels)");
+	porder->levels = 0;
 	return_error(gs_error_VMerror);
     }
     porder->cache = 0;
@@ -260,7 +290,33 @@ gx_ht_alloc_order(gx_ht_order * porder, uint width, uint height,
     order = *porder;
     gx_compute_cell_values(&order.params);
     code = gx_ht_alloc_ht_order(&order, width, height, num_levels,
-				width * height, strip_shift, mem);
+				width * height, strip_shift,
+				&ht_order_procs_default, mem);
+    if (code < 0)
+	return code;
+    *porder = order;
+    return 0;
+}
+
+/*
+ * Allocate and initialize a threshold order, which may use the short
+ * representation.
+ */
+int
+gx_ht_alloc_threshold_order(gx_ht_order * porder, uint width, uint height,
+			    uint num_levels, gs_memory_t * mem)
+{
+    gx_ht_order order;
+    uint num_bits = width * height;
+    const gx_ht_order_procs_t *procs =
+	(num_bits > 2000 && num_bits <= max_ushort ?
+	 &ht_order_procs_short : &ht_order_procs_default);
+    int code;
+
+    order = *porder;
+    gx_compute_cell_values(&order.params);
+    code = gx_ht_alloc_ht_order(&order, width, height, num_levels,
+				width * height, 0, procs, mem);
     if (code < 0)
 	return code;
     *porder = order;
@@ -282,7 +338,7 @@ gx_ht_alloc_client_order(gx_ht_order * porder, uint width, uint height,
     order.params.R1 = 1;
     gx_compute_cell_values(&order.params);
     code = gx_ht_alloc_ht_order(&order, width, height, num_levels,
-				num_bits, 0, mem);
+				num_bits, 0, &ht_order_procs_default, mem);
     if (code < 0)
 	return code;
     *porder = order;
@@ -332,7 +388,7 @@ gx_ht_construct_spot_order(gx_ht_order * porder)
     uint width = porder->width;
     uint num_levels = porder->num_levels;	/* = width x strip */
     uint strip = num_levels / width;
-    gx_ht_bit *bits = porder->bits;
+    gx_ht_bit *bits = (gx_ht_bit *)porder->bit_data;
     uint *levels = porder->levels;
     uint shift = porder->orig_shift;
     uint full_height = porder->full_height;
@@ -401,12 +457,16 @@ gx_ht_construct_bits(gx_ht_order * porder)
     uint i;
     gx_ht_bit *phb;
 
-    for (i = 0, phb = porder->bits; i < porder->num_bits; i++, phb++)
+    for (i = 0, phb = (gx_ht_bit *)porder->bit_data;
+	 i < porder->num_bits;
+	 i++, phb++)
 	gx_ht_construct_bit(phb, porder->width, phb->offset);
 #ifdef DEBUG
     if (gs_debug_c('H')) {
-	dlprintf1("[H]Halftone order bits 0x%lx:\n", (ulong) porder->bits);
-	for (i = 0, phb = porder->bits; i < porder->num_bits; i++, phb++)
+	dlprintf1("[H]Halftone order bits 0x%lx:\n", (ulong)porder->bit_data);
+	for (i = 0, phb = (gx_ht_bit *)porder->bit_data;
+	     i < porder->num_bits;
+	     i++, phb++)
 	    dlprintf3("%4d: %u:0x%lx\n", i, phb->offset,
 		      (ulong) phb->mask);
     }
@@ -421,8 +481,12 @@ gx_ht_order_release(gx_ht_order * porder, gs_memory_t * mem, bool free_cache)
     if (free_cache && porder->cache)
 	gx_ht_free_cache(mem, porder->cache);
     gs_free_object(mem, porder->transfer, "gx_ht_order_release(transfer)");
-    gs_free_object(mem, porder->bits, "gx_ht_order_release(bits)");
-    gs_free_object(mem, porder->levels, "gx_ht_order_release(levels)");
+    if (porder->data_memory) {
+	gs_free_object(porder->data_memory, porder->bit_data,
+		       "gx_ht_order_release(bit_data)");
+	gs_free_object(porder->data_memory, porder->levels,
+		       "gx_ht_order_release(levels)");
+    }
 }
 void
 gx_device_halftone_release(gx_device_halftone * pdht, gs_memory_t * mem)
@@ -433,8 +497,8 @@ gx_device_halftone_release(gx_device_halftone * pdht, gs_memory_t * mem)
 	/* One of the components might be the same as the default */
 	/* order, so check that we don't free it twice. */
 	for (i = 0; i < pdht->num_comp; ++i)
-	    if (pdht->components[i].corder.bits !=
-		pdht->order.bits
+	    if (pdht->components[i].corder.bit_data !=
+		pdht->order.bit_data
 		) {		/* Currently, all orders except the default one */
 		/* own their caches. */
 		gx_ht_order_release(&pdht->components[i].corder, mem, true);
@@ -447,21 +511,28 @@ gx_device_halftone_release(gx_device_halftone * pdht, gs_memory_t * mem)
     gx_ht_order_release(&pdht->order, mem, false);
 }
 
-/* Install a device halftone in an imager state. */
-/* Note that this does not read or update the client halftone. */
+/*
+ * Install a device halftone in an imager state.  Note that this does not
+ * read or update the client halftone.  There is a special check for pdht ==
+ * pis->dev_ht, for the benefit of the band rendering code.
+ */
 int
 gx_imager_dev_ht_install(gs_imager_state * pis,
-			 const gx_device_halftone * pdht, gs_halftone_type type, const gx_device * dev)
+			 const gx_device_halftone * pdht,
+			 gs_halftone_type type, const gx_device * dev)
 {
     gx_device_halftone *pgdht = pis->dev_ht;
 
-    if ((ulong) pdht->order.raster * (pdht->order.num_bits /
-			       pdht->order.width) > pis->ht_cache->bits_size
+    if ((ulong) pdht->order.raster *
+	(pdht->order.num_bits / pdht->order.width) > pis->ht_cache->bits_size
 	)
 	return_error(gs_error_limitcheck);
-    if (pgdht != 0 && pgdht->rc.ref_count == 1 &&
+    if (pdht == pgdht)
+	DO_NOTHING;		/* special hack for band renderer */
+    else if (pgdht != 0 && pgdht->rc.ref_count == 1 &&
 	pgdht->rc.memory == pdht->rc.memory
-	) {			/* The current device halftone isn't shared. */
+	) {
+	/* The current device halftone isn't shared. */
 	/* Just release its components. */
 	gx_device_halftone_release(pgdht, pgdht->rc.memory);
     } else {			/* The device halftone is shared or not yet allocated. */

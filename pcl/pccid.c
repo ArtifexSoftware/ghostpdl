@@ -36,7 +36,7 @@ make_float(
     lf.l = (((uint32)pbuff[0]) << 24) + (((uint32)pbuff[1]) << 16)
            + (((uint32)pbuff[2]) << 8) + pbuff[3];
 
-#if (arch_floats_are_IEEE && (arch_sizeof_float == 4))
+#if (ARCH_FLOATS_ARE_IEEE && (ARCH_SIZEOF_FLOAT == 4))
     return lf.f;
 #else
     if (lf.l == 0L)

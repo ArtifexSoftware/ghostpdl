@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -36,6 +36,8 @@
 private dev_proc_begin_typed_image(gx_begin_image3);
 private image_enum_proc_plane_data(gx_image3_plane_data);
 private image_enum_proc_end_image(gx_image3_end_image);
+private image_enum_proc_flush(gx_image3_flush);
+private image_enum_proc_planes_wanted(gx_image3_planes_wanted);
 
 /* GC descriptor */
 extern_st(st_gs_pixel_image);
@@ -47,7 +49,8 @@ const gx_image_type_t gs_image_type_3 = {
     gx_image_no_sput, gx_image_no_sget, gx_image_default_release, 3
 };
 private const gx_image_enum_procs_t image3_enum_procs = {
-    gx_image3_plane_data, gx_image3_end_image
+    gx_image3_plane_data, gx_image3_end_image,
+    gx_image3_flush, gx_image3_planes_wanted
 };
 
 /* Initialize an ImageType 3 image. */
@@ -70,19 +73,19 @@ typedef struct gx_image3_enum_s {
     gx_image_enum_common;
     gx_device_memory *mdev;
     gx_device_mask_clip *pcdev;
-    gx_image_enum_common_t *pixel_info;
     gx_image_enum_common_t *mask_info;
+    gx_image_enum_common_t *pixel_info;
     gs_image3_interleave_type_t InterleaveType;
     int num_components;		/* (not counting mask) */
     int bpc;			/* BitsPerComponent */
     gs_memory_t *memory;
-    int mask_width;
-    int pixel_width;
-    byte *pixel_data;		/* (if chunky) */
+    int mask_width, mask_height, mask_full_height;
+    int pixel_width, pixel_height, pixel_full_height;
     byte *mask_data;		/* (if chunky) */
-    int y;			/* counts up to max(p'height, m'height) */
-    int pixel_height;
-    int mask_height;
+    byte *pixel_data;		/* (if chunky) */
+    /* The following are the only members that change dynamically. */
+    int mask_y;
+    int pixel_y;
 } gx_image3_enum_t;
 
 gs_private_st_ptrs6(st_image3_enum, gx_image3_enum_t, "gx_image3_enum_t",
@@ -90,6 +93,7 @@ gs_private_st_ptrs6(st_image3_enum, gx_image3_enum_t, "gx_image3_enum_t",
 		 mdev, pcdev, pixel_info, mask_info, pixel_data, mask_data);
 
 /* Begin an ImageType 3 image. */
+private bool check_image3_extent(P2(floatp mask_coeff, floatp data_coeff));
 private int
 gx_begin_image3(gx_device * dev,
 		const gs_imager_state * pis, const gs_matrix * pmat,
@@ -99,10 +103,11 @@ gx_begin_image3(gx_device * dev,
 {
     const gs_image3_t *pim = (const gs_image3_t *)pic;
     gx_image3_enum_t *penum;
+    gs_int_rect mask_rect, data_rect;
     gx_device_memory *mdev;
     gx_device_mask_clip *pcdev;
     gs_image_t i_pixel, i_mask;
-    gs_matrix mat;
+    gs_matrix mi_pixel, mi_mask, mat;
     gs_rect mrect;
     gs_int_point origin;
     int code;
@@ -131,7 +136,37 @@ gx_begin_image3(gx_device * dev,
 	    if (pim->MaskDict.BitsPerComponent != 1)
 		return_error(gs_error_rangecheck);
     }
-    /****** CHECK FOR COMPATIBLE ImageMatrix ******/
+    if (!check_image3_extent(pim->ImageMatrix.xx,
+			     pim->MaskDict.ImageMatrix.xx) ||
+	!check_image3_extent(pim->ImageMatrix.xy,
+			     pim->MaskDict.ImageMatrix.xy) ||
+	!check_image3_extent(pim->ImageMatrix.yx,
+			     pim->MaskDict.ImageMatrix.yx) ||
+	!check_image3_extent(pim->ImageMatrix.yy,
+			     pim->MaskDict.ImageMatrix.yy)
+	)
+	return_error(gs_error_rangecheck);
+    if ((code = gs_matrix_invert(&pim->ImageMatrix, &mi_pixel)) < 0 ||
+	(code = gs_matrix_invert(&pim->MaskDict.ImageMatrix, &mi_mask)) < 0
+	)
+	return code;
+    if (fabs(mi_pixel.tx - mi_mask.tx) >= 0.5 ||
+	fabs(mi_pixel.ty - mi_mask.ty) >= 0.5
+	)
+	return_error(gs_error_rangecheck);
+    {
+	gs_point ep, em;
+
+	if ((code = gs_point_transform(pim->Width, pim->Height, &mi_pixel,
+				       &ep)) < 0 ||
+	    (code = gs_point_transform(pim->MaskDict.Width,
+				       pim->MaskDict.Height, &mi_mask,
+				       &em)) < 0
+	    )
+	    return code;
+	if (fabs(ep.x - em.x) >= 0.5 || fabs(ep.y - em.y) >= 0.5)
+	    return_error(gs_error_rangecheck);
+    }
     penum = gs_alloc_struct(mem, gx_image3_enum_t, &st_image3_enum,
 			    "gx_begin_image3");
     if (penum == 0)
@@ -139,20 +174,39 @@ gx_begin_image3(gx_device * dev,
     penum->num_components =
 	gs_color_space_num_components(pim->ColorSpace);
     gx_image_enum_common_init((gx_image_enum_common_t *) penum,
-			      pic, &image3_enum_procs, dev,
-			      pim->BitsPerComponent,
+			      (const gs_data_image_t *)pim,
+			      &image3_enum_procs, dev,
 			      1 + penum->num_components,
 			      pim->format);
-    if (prect)
-	penum->pixel_width = prect->q.x - prect->p.x,
-	    penum->y = prect->p.y,
-	    penum->pixel_height = prect->q.y - prect->p.y;
-    else
-	penum->pixel_width = pim->Width,
-	    penum->y = 0,
-	    penum->pixel_height = pim->Height;
-    penum->mask_width = pim->MaskDict.Width;
-    penum->mask_height = pim->MaskDict.Height;
+    /* Initialize pointers now in case we bail out. */
+    penum->mask_data = 0;
+    penum->pixel_data = 0;
+    if (prect) {
+	long lmw = pim->MaskDict.Width, lmh = pim->MaskDict.Height;
+
+	data_rect = *prect;
+	mask_rect.p.x = (int)(data_rect.p.x * lmw / pim->Width);
+	mask_rect.p.y = (int)(data_rect.p.y * lmh / pim->Height);
+	mask_rect.q.x = (int)((data_rect.q.x + pim->Width - 1) * lmw /
+			      pim->Width);
+	mask_rect.q.y = (int)((data_rect.q.y + pim->Height - 1) * lmh /
+			      pim->Height);
+    } else {
+	mask_rect.p.x = mask_rect.p.y = 0;
+	mask_rect.q.x = pim->MaskDict.Width;
+	mask_rect.q.y = pim->MaskDict.Height;
+	data_rect.p.x = data_rect.p.y = 0;
+	data_rect.q.x = pim->Width;
+	data_rect.q.y = pim->Height;
+    }
+    penum->mask_width = mask_rect.q.x - mask_rect.p.x;
+    penum->mask_height = mask_rect.q.y - mask_rect.p.y;
+    penum->mask_full_height = pim->MaskDict.Height;
+    penum->mask_y = 0;
+    penum->pixel_width = data_rect.q.x - data_rect.p.x;
+    penum->pixel_height = data_rect.q.y - data_rect.p.y;
+    penum->pixel_full_height = pim->Height;
+    penum->pixel_y = 0;
     penum->mdev = mdev =
 	gs_alloc_struct(mem, gx_device_memory, &st_device_memory,
 			"gx_begin_image3(mdev)");
@@ -165,8 +219,6 @@ gx_begin_image3(gx_device * dev,
 	goto out2;
     penum->mask_info = 0;
     penum->pixel_info = 0;
-    penum->mask_data = 0;
-    penum->pixel_data = 0;
     if (pim->InterleaveType == interleave_chunky) {
 	/* Allocate row buffers for the mask and pixel data. */
 	penum->pixel_data =
@@ -190,8 +242,7 @@ gx_begin_image3(gx_device * dev,
     mrect.q.y = pim->MaskDict.Height;
     if (pmat == 0)
 	pmat = &ctm_only(pis);
-    if ((code = gs_matrix_invert(&pim->MaskDict.ImageMatrix, &mat)) < 0 ||
-	(code = gs_matrix_multiply(&mat, pmat, &mat)) < 0 ||
+    if ((code = gs_matrix_multiply(&mi_mask, pmat, &mat)) < 0 ||
 	(code = gs_bbox_transform(&mrect, &mat, &mrect)) < 0
 	)
 	return code;
@@ -226,6 +277,7 @@ gx_begin_image3(gx_device * dev,
 
 	*(gs_data_image_t *)&i_mask = pim->MaskDict;
 	i_mask.type = type1;
+	i_mask.BitsPerComponent = 1;
     }
     {
 	gx_drawing_color dcolor;
@@ -248,7 +300,7 @@ gx_begin_image3(gx_device * dev,
 	 */
 	code = gx_device_begin_typed_image((gx_device *)mdev, NULL, &m_mat,
 					   (const gs_image_common_t *)&i_mask,
-					   prect, &dcolor, NULL, mem,
+					   &mask_rect, &dcolor, NULL, mem,
 					   &penum->mask_info);
 	if (code < 0)
 	    goto out5;
@@ -266,21 +318,38 @@ gx_begin_image3(gx_device * dev,
     if (code < 0)
 	goto out6;
     /*
-     * Compute num_planes and plane_depths from the values in the
+     * Set num_planes, plane_widths, and plane_depths from the values in the
      * enumerators for the mask and the image data.
      */
-    if (pim->InterleaveType == interleave_chunky) {
+    switch (pim->InterleaveType) {
+    case interleave_chunky:
 	/* Add the mask data to the depth of the image data. */
 	penum->num_planes = 1;
+	penum->plane_widths[0] = pim->Width;
 	penum->plane_depths[0] =
 	    penum->pixel_info->plane_depths[0] *
 	    (penum->num_components + 1) / penum->num_components;
-    } else {
+	break;
+    case interleave_scan_lines:
+	/*
+	 * There is only 1 plane, with dynamically changing width & depth.
+	 * Initialize it for the mask data, since that is what will be
+	 * read first.
+	 */
+	penum->num_planes = 1;
+	penum->plane_depths[0] = 1;
+	penum->plane_widths[0] = pim->MaskDict.Width;
+	break;
+    case interleave_separate_source:
 	/* Insert the mask data as a separate plane before the image data. */
 	penum->num_planes = penum->pixel_info->num_planes + 1;
+	penum->plane_widths[0] = pim->MaskDict.Width;
 	penum->plane_depths[0] = 1;
+	memcpy(&penum->plane_widths[1], &penum->pixel_info->plane_widths[0],
+	       (penum->num_planes - 1) * sizeof(penum->plane_widths[0]));
 	memcpy(&penum->plane_depths[1], &penum->pixel_info->plane_depths[0],
 	       (penum->num_planes - 1) * sizeof(penum->plane_depths[0]));
+	break;
     }
     *pinfo = (gx_image_enum_common_t *) penum;
     return 0;
@@ -294,17 +363,40 @@ gx_begin_image3(gx_device * dev,
     gs_free_object(mem, penum, "gx_begin_image3");
     return_error(gs_error_VMerror);
 }
+private bool
+check_image3_extent(floatp mask_coeff, floatp data_coeff)
+{
+    if (mask_coeff == 0)
+	return data_coeff == 0;
+    if (data_coeff == 0 || (mask_coeff > 0) != (data_coeff > 0))
+	return false;
+    return true;
+}
+
+/*
+ * Return > 0 if we want more mask now, < 0 if we want more data now,
+ * 0 if we want both.
+ */
+inline private long
+planes_next(const gx_image3_enum_t *penum)
+{
+    return (penum->pixel_y * (long)penum->mask_full_height -
+	    penum->mask_y * (long)penum->pixel_full_height);
+}
 
 /* Process the next piece of an ImageType 3 image. */
 private int
-gx_image3_plane_data(gx_device * dev,
- gx_image_enum_common_t * info, const gx_image_plane_t * planes, int height)
+gx_image3_plane_data(gx_image_enum_common_t * info,
+		     const gx_image_plane_t * planes, int height,
+		     int *rows_used)
 {
     gx_image3_enum_t *penum = (gx_image3_enum_t *) info;
     int pixel_height = penum->pixel_height;
+    int pixel_used = -1;
     int mask_height = penum->mask_height;
-    int image_height = max(pixel_height, mask_height);
-    int h = min(height, image_height - penum->y);
+    int mask_used = -1;
+    int h1 = max(pixel_height - penum->pixel_y, mask_height - penum->mask_y);
+    int h = min(height, h1);
     const gx_image_plane_t *pixel_planes;
     gx_image_plane_t pixel_plane, mask_plane;
 
@@ -314,11 +406,15 @@ gx_image3_plane_data(gx_device * dev,
 		return 0;
 	    if (h > 1) {
 		/* Do the operation one row at a time. */
+		int h_orig = h;
+
 		mask_plane = planes[0];
 		do {
-		    int code = gx_image3_plane_data(dev, info, &mask_plane, 1);
+		    int code = gx_image3_plane_data(info, &mask_plane, 1,
+						    rows_used);
 
-		    if (code < 0)
+		    *rows_used += h_orig - h;
+		    if (code)
 			return code;
 		    mask_plane.data += mask_plane.raster;
 		} while (--h);
@@ -335,10 +431,10 @@ gx_image3_plane_data(gx_device * dev,
 		sample_load_declare_setup(sptr, sbit,
 					  planes[0].data + (bit_x >> 3),
 					  bit_x & 7, bpc);
-		sample_store_declare_setup(mptr, mbit, mbbyte, penum->mask_data,
-					   0, 1);
-		sample_store_declare_setup(pptr, pbit, pbbyte, penum->pixel_data,
-					   0, bpc);
+		sample_store_declare_setup(mptr, mbit, mbbyte,
+					   penum->mask_data, 0, 1);
+		sample_store_declare_setup(pptr, pbit, pbbyte,
+					   penum->pixel_data, 0, bpc);
 		int x;
 
 		mask_plane.data = mptr;
@@ -364,11 +460,23 @@ gx_image3_plane_data(gx_device * dev,
 	    }
 	    break;
 	case interleave_scan_lines:
+	    if (planes_next(penum) >= 0) {
+		/* This is mask data. */
+		mask_plane = planes[0];
+		pixel_planes = &pixel_plane;
+		pixel_plane.data = 0;
+	    } else {
+		/* This is pixel data. */
+		mask_plane.data = 0;
+		pixel_planes = planes;
+	    }
+	    break;
 	case interleave_separate_source:
 	    mask_plane = planes[0];
 	    pixel_planes = planes + 1;
 	    break;
 	default:		/* not possible */
+	    *rows_used = 0;
 	    return_error(gs_error_rangecheck);
     }
     /*
@@ -376,7 +484,8 @@ gx_image3_plane_data(gx_device * dev,
      * device for clipping the pixel data.
      */
     if (mask_plane.data) {
-	int code = gx_image_plane_data(penum->mask_info, &mask_plane, h);
+	int code = gx_image_plane_data_rows(penum->mask_info, &mask_plane, h,
+					    &mask_used);
 
 	if (code < 0)
 	    return code;
@@ -388,20 +497,87 @@ gx_image3_plane_data(gx_device * dev,
 	 * If necessary, flush any buffered mask data to the mask clipping
 	 * device.
 	 */
-	if (penum->mask_info->procs->flush)
-	    (*penum->mask_info->procs->flush)(penum->mask_info);
-	code = gx_image_plane_data(penum->pixel_info, pixel_planes, h);
+	gx_image_flush(penum->mask_info);
+	code = gx_image_plane_data_rows(penum->pixel_info, pixel_planes, h,
+					&pixel_used);
 	if (code < 0)
 	    return code;
-	penum->y += h;
+	penum->pixel_y += pixel_used;
     }
-    return penum->y >= image_height;
+    if (mask_plane.data)
+	penum->mask_y += mask_used;
+    if_debug5('b', "[b]image3 h=%d %smask_y=%d %spixel_y=%d\n",
+	      h, (mask_plane.data ? "+" : ""), penum->mask_y,
+	      (pixel_planes[0].data ? "+" : ""), penum->pixel_y);
+    /*
+     * There isn't any way to set rows_used if different amounts of
+     * the mask and pixel data were used.  Fake it.
+     */
+    *rows_used = (pixel_used < 0 ? mask_used : pixel_used);
+    if (penum->mask_y >= penum->mask_height &&
+	penum->pixel_y >= penum->pixel_height)
+	return 1;
+    if (penum->InterleaveType == interleave_scan_lines) {
+	/* Update the width and depth in the enumerator. */
+	if (planes_next(penum) >= 0) {  /* want mask data next */
+	    penum->plane_widths[0] = penum->mask_width;
+	    penum->plane_depths[0] = 1;
+	} else {		/* want pixel data next */
+	    penum->plane_widths[0] = penum->pixel_width;
+	    penum->plane_depths[0] = penum->pixel_info->plane_depths[0];
+	}
+    }
+    return 0;
+}
+
+/* Flush buffered data. */
+private int
+gx_image3_flush(gx_image_enum_common_t * info)
+{
+    gx_image3_enum_t * const penum = (gx_image3_enum_t *) info;
+    int code = gx_image_flush(penum->mask_info);
+
+    if (code >= 0)
+	code = gx_image_flush(penum->pixel_info);
+    return code;
+}
+
+/* Determine which data planes are wanted. */
+private bool
+gx_image3_planes_wanted(const gx_image_enum_common_t * info, byte *wanted)
+{
+    const gx_image3_enum_t * const penum = (const gx_image3_enum_t *) info;
+
+    switch (penum->InterleaveType) {
+    case interleave_chunky:	/* only 1 plane */
+	wanted[0] = 0xff;
+	return true;
+    case interleave_scan_lines:	/* only 1 plane, but varying width/depth */
+	wanted[0] = 0xff;
+	return false;
+    case interleave_separate_source: {
+	/*
+	 * We always want at least as much of the mask to be filled as the
+	 * pixel data.  more_data > 0 iff we've processed more data than
+	 * mask.  Plane 0 is the mask, planes [1 .. num_planes - 1] are
+	 * pixel data.
+	 */
+	long next = planes_next(penum);
+
+	wanted[0] = (next >= 0 ? 0xff : 0);
+	memset(wanted + 1, (next <= 0 ? 0xff : 0), info->num_planes - 1);
+	return (next == 0 &&
+		penum->mask_full_height == penum->pixel_full_height);
+    }
+    default:			/* can't happen */
+	memset(wanted, 0, info->num_planes);
+	return false;
+    }
 }
 
 /* Clean up after processing an ImageType 3 image. */
 private int
-gx_image3_end_image(gx_device * dev, gx_image_enum_common_t * info,
-		    bool draw_last)
+gx_image3_end_image(gx_image_enum_common_t * info, bool draw_last)
 {
     gx_image3_enum_t *penum = (gx_image3_enum_t *) info;
     gs_memory_t *mem = penum->memory;

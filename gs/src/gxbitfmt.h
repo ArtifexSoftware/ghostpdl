@@ -68,6 +68,9 @@ typedef ulong gx_bitmap_format_t;
 
     /*
      * Define the supported depths per component for GB_COLORS_STANDARD.
+     * For GB_COLORS_NATIVE with planar packing, it is the client's
+     * responsibility to know how the device divides up the bits of the
+     * pixel.
      */
 
 #define GB_DEPTH_1  (1L<<8)
@@ -108,12 +111,25 @@ typedef ulong gx_bitmap_format_t;
 #define GB_PACKING_CHUNKY     (1L<<16)
 #define GB_PACKING_PLANAR     (1L<<17)  /* 1 plane per component */
 #define GB_PACKING_BIT_PLANAR (1L<<18)  /* 1 plane per bit */
-  /*unused*/                  /*(1L<<19)*/
 
 #define GB_PACKING_ALL\
   (GB_PACKING_CHUNKY | GB_PACKING_PLANAR | GB_PACKING_BIT_PLANAR)
 #define GB_PACKING_NAMES\
-  "packing_chunky", "packing_planar", "packing_bit_planar", "?packing_unused?"
+  "packing_chunky", "packing_planar", "packing_bit_planar"
+
+    /*
+     * Define whether to return a subset of the planes.  With planar packing
+     * formats, if this is set, only those planes that had non-zero data
+     * pointers originally will be returned (either by copying or by
+     * pointer).  With chunky packing, if this is set, only an undefined
+     * subset of the returned bits may be valid.
+     */
+
+#define GB_SELECT_PLANES  (1L<<19)
+#define GB_SELECT_ALL\
+  (GB_SELECT_PLANES)
+#define GB_SELECT_NAMES\
+  "select_planes"
 
     /*
      * Define the possible methods of returning data.
@@ -129,7 +145,8 @@ typedef ulong gx_bitmap_format_t;
 
     /*
      * Define the allowable alignments.  This is only relevant for
-     * GB_RETURN_POINTER: for GB_RETURN_COPY, any alignment is acceptable.
+     * GB_RETURN_POINTER: for GB_RETURN_COPY, any alignment is
+     * acceptable.
      */
 
 #define GB_ALIGN_STANDARD (1L<<22)  /* require standard bitmap alignment */
@@ -138,18 +155,18 @@ typedef ulong gx_bitmap_format_t;
 #define GB_ALIGN_ALL\
   (GB_ALIGN_ANY | GB_ALIGN_STANDARD)
 #define GB_ALIGN_NAMES\
-  "align_any", "align_standard"
+  "align_standard", "align_any"
 
     /*
      * Define the allowable X offsets.  GB_OFFSET_ANY is only relevant for
-     * GB_RETURN_POINTER: for GB_RETURN_COPY, clients must specify the
-     * offset so they know how much space to allocate.
+     * GB_RETURN_POINTER: for GB_RETURN_COPY, clients must specify
+     * the offset so they know how much space to allocate.
      */
 
 #define GB_OFFSET_0         (1L<<24)  /* no offsetting */
 #define GB_OFFSET_SPECIFIED (1L<<25)  /* client-specified offset */
 #define GB_OFFSET_ANY       (1L<<26)  /* any offset is acceptable */
-					/* (for GB_RETURN_POINTER only) */
+				/* (for GB_RETURN_POINTER only) */
   /*unused*/                /*(1L<<27)*/
 
 #define GB_OFFSET_ALL\
@@ -174,7 +191,7 @@ typedef ulong gx_bitmap_format_t;
 #define GB_RASTER_STANDARD  (1L<<28)
 #define GB_RASTER_SPECIFIED (1L<<29)  /* any client-specified raster */
 #define GB_RASTER_ANY       (1L<<30)  /* any raster is acceptable (for */
-					/* GB_RETURN_POINTER only) */
+				/* GB_RETURN_POINTER only) */
 
 #define GB_RASTER_ALL\
   (GB_RASTER_STANDARD | GB_RASTER_SPECIFIED | GB_RASTER_ANY)
@@ -184,6 +201,7 @@ typedef ulong gx_bitmap_format_t;
 /* Define names for debugging printout. */
 #define GX_BITMAP_FORMAT_NAMES\
   GB_COLORS_NAMES, GB_ALPHA_NAMES, GB_DEPTH_NAMES, GB_PACKING_NAMES,\
-  GB_RETURN_NAMES, GB_ALIGN_NAMES, GB_OFFSET_NAMES, GB_RASTER_NAMES
+  GB_SELECT_NAMES, GB_RETURN_NAMES, GB_ALIGN_NAMES, GB_OFFSET_NAMES,\
+  GB_RASTER_NAMES
 
 #endif /* gxbitfmt_INCLUDED */

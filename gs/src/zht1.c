@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1997, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -41,11 +41,12 @@ spot_dummy(floatp x, floatp y)
 }
 
 /* <red_freq> ... <gray_proc> setcolorscreen - */
-private int setcolorscreen_finish(P1(os_ptr));
-private int setcolorscreen_cleanup(P1(os_ptr));
+private int setcolorscreen_finish(P1(i_ctx_t *));
+private int setcolorscreen_cleanup(P1(i_ctx_t *));
 private int
-zsetcolorscreen(register os_ptr op)
+zsetcolorscreen(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_colorscreen_halftone cscreen;
     ref sprocs[4];
     gs_halftone *pht;
@@ -65,7 +66,7 @@ zsetcolorscreen(register os_ptr op)
 	sprocs[i] = *op1;
 	space = max(space, r_space_index(op1));
     }
-    mem = (gs_memory_t *)idmemory->spaces.indexed[space];
+    mem = (gs_memory_t *)idmemory->spaces_indexed[space];
     check_estack(8);		/* for sampling screens */
     rc_alloc_struct_0(pht, gs_halftone, &st_halftone,
 		      mem, pht = 0, "setcolorscreen(halftone)");
@@ -90,7 +91,7 @@ zsetcolorscreen(register os_ptr op)
 	for (i = 0; i < 4; i++) {
 	    /* Shuffle the indices to correspond to */
 	    /* the component order. */
-	    code = zscreen_enum_init(op,
+	    code = zscreen_enum_init(i_ctx_p,
 				     &pdht->components[(i + 1) & 3].corder,
 				&pht->params.colorscreen.screens.indexed[i],
 				     &sprocs[i], 0, 0, mem);
@@ -110,7 +111,7 @@ zsetcolorscreen(register os_ptr op)
 }
 /* Install the color screen after sampling. */
 private int
-setcolorscreen_finish(os_ptr op)
+setcolorscreen_finish(i_ctx_t *i_ctx_p)
 {
     gx_device_halftone *pdht = r_ptr(esp, gx_device_halftone);
     int code;
@@ -122,12 +123,12 @@ setcolorscreen_finish(os_ptr op)
     memcpy(istate->screen_procs.indexed, esp - 5, sizeof(ref) * 4);
     make_null(&istate->halftone);
     esp -= 7;
-    setcolorscreen_cleanup(op);
+    setcolorscreen_cleanup(i_ctx_p);
     return o_pop_estack;
 }
 /* Clean up after installing the color screen. */
 private int
-setcolorscreen_cleanup(os_ptr op)
+setcolorscreen_cleanup(i_ctx_t *i_ctx_p)
 {
     gs_halftone *pht = r_ptr(esp + 6, gs_halftone);
     gx_device_halftone *pdht = r_ptr(esp + 7, gx_device_halftone);

@@ -1,4 +1,4 @@
-%    Copyright (C) 1994, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -14,6 +14,7 @@
 % under certain conditions described in the License.  Among other things, the
 % License requires that the copyright notice and this notice be preserved on
 % all copies.
+
 
 % pdf_main.ps
 % PDF file- and page-level operations.
@@ -206,15 +207,15 @@ pdfdict begin
 	% We can't use prevline to check for the %%EOF, because if the
 	% %%EOF isn't followed by an EOL, prevline will read past the
 	% end of the file, and the file will get closed.
+	% Acrobat apparently accepts files in which the %%EOF was
+	% truncated to %%EO (!); we do the same.
    5 sub 2 copy setfileposition
    1 index (xxxxxx) readstring pop
-   dup
-   dup (\015%%EOF) eq exch (\012%%EOF) eq or
-   exch 1 5 getinterval
-   dup (\015%%EO) eq exch (\012%%EO) eq or
-   or
-   not
-    { /pdfopen cvx /syntaxerror signalerror } if
+  (\015%%EO) anchorsearch { pop pop } {
+    (\012%%EO) anchorsearch { pop pop } {
+      pop /pdfopen cvx /syntaxerror signalerror
+    } ifelse
+  } ifelse
    1 add setfileposition
    prevline token pop dup type /integertype eq 
     { exch pop cvi		% xref start position
@@ -373,10 +374,11 @@ pdfdict begin
  } bind def
 /resolvedest {		% <name|string|other> resolvedest <other|null>
   dup type /nametype eq {
-    Trailer /Root oget /Dests knownoget
-      { exch knownoget not { null } if }
-      { null }
-    ifelse
+    Trailer /Root oget /Dests knownoget {
+      exch knownoget not { null } if
+    } {
+      null
+    } ifelse
   } {
     dup type /stringtype eq {
       Trailer /Root oget /Names oget /Dests knownoget {
@@ -466,34 +468,35 @@ end readonly def
    /DSCPageCount DSCPageCount 1 add store
  } bind def
 
-/pdfshowpage_setpage	% <pagedict> pdfshowpage_setpage <pagedict>
- { 
-   3 dict	% for setpagedevice
-	% Stack: pagedict setpagedict
+/pdfshowpage_setpage {	% <pagedict> pdfshowpage_setpage <pagedict>
+  4 dict begin		% for setpagedevice
+	% Stack: pagedict
 	% We want to look at Rotate for displays, but not for printers.
 	% The following is a hack, but we don't know a better way to do this.
-   currentpagedevice /OutputFile known not
-    { dup /Orientation 3 index /Rotate pget not { 0 } if 90 idiv
+  currentpagedevice dup /OutputFile known not {
+    /Orientation 2 index /Rotate pget not { 0 } if 90 idiv
 	% Rotate specifies *clockwise* rotation!
-      neg 3 and put
-    }
-   if
-	% Stack: pagedict setpagedict
-   1 index /MediaBox pget
-    {			% Set the page size.
-      boxrect [ 2 index 2 index ]
-	% Stack: pagedict setpagedict llx lly urx ury pagesize
-      5 index exch /PageSize exch put
-	% Stack: pagedict contents setpagedict llx lly urx ury
-      pop pop exch neg exch		% only negate Y offset
-      [ 3 1 roll ]
-	% Stack: pagedict setpagedict pageoffset
-      1 index exch /PageOffset exch put
-    }
-   if
-	% Stack: pagedict setpagedict
-   setpagedevice
- } bind def
+    neg 3 and def
+  } if
+	% Stack: pagedict currentpagedict
+  1 index /MediaBox pget {
+			% Set the page size.
+    boxrect [ 2 index 2 index ]
+	% Stack: pagedict currentpagedict llx lly width height pagesize
+    /PageSize exch def
+			% Set the offset on the page.
+	% Stack: pagedict currentpagedict llx lly width height
+    pop pop exch neg exch neg
+	% Stack: pagedict currentpagedict -llx -lly
+    [ 3 1 roll /translate load 4 index /Install .knownget {
+      1 array astore 0 /get load /exec load
+    } if ] cvx
+	% Stack: pagedict currentpagedict installproc
+    /Install exch def
+  } if
+	% Stack: pagedict currentpagedict
+  pop currentdict end setpagedevice
+} bind def
 
 /pdfshowpage_finish	% <pagedict> pdfshowpage_finish -
  {

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1990, 1993, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1990, 1993, 1996, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -23,7 +23,10 @@
 #  define gsio_INCLUDED
 
 /* The library and interpreter never use stdin/out/err directly. */
-extern FILE *gs_stdin, *gs_stdout, *gs_stderr;
+extern FILE *gs_stdio[3];
+#define gs_stdin (gs_stdio[0])
+#define gs_stdout (gs_stdio[1])
+#define gs_stderr (gs_stdio[2])
 
 /* Redefine all the relevant stdio functions to use the above. */
 /* Some functions we make illegal, rather than redefining them. */

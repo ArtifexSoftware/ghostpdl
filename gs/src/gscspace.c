@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -27,14 +27,22 @@
 #include "gxcspace.h"
 #include "gxistate.h"
 
-/* Define the standard color space types. */
+/*
+ * Define the standard color space types.  We include DeviceCMYK in the base
+ * build because it's too awkward to omit it, but we don't provide any of
+ * the PostScript operator procedures (setcmykcolor, etc.) for dealing with
+ * it.
+ */
 extern cs_proc_remap_color(gx_remap_DeviceGray);
 extern cs_proc_concretize_color(gx_concretize_DeviceGray);
 extern cs_proc_remap_concrete_color(gx_remap_concrete_DGray);
 extern cs_proc_remap_color(gx_remap_DeviceRGB);
 extern cs_proc_concretize_color(gx_concretize_DeviceRGB);
 extern cs_proc_remap_concrete_color(gx_remap_concrete_DRGB);
-const gs_color_space_type gs_color_space_type_DeviceGray = {
+extern cs_proc_remap_color(gx_remap_DeviceCMYK);
+extern cs_proc_concretize_color(gx_concretize_DeviceCMYK);
+extern cs_proc_remap_concrete_color(gx_remap_concrete_DCMYK);
+private const gs_color_space_type gs_color_space_type_DeviceGray = {
     gs_color_space_index_DeviceGray, true, true,
     &st_base_color_space, gx_num_components_1,
     gx_no_base_space,
@@ -44,7 +52,7 @@ const gs_color_space_type gs_color_space_type_DeviceGray = {
     gx_remap_DeviceGray, gx_no_install_cspace,
     gx_no_adjust_cspace_count, gx_no_adjust_color_count
 };
-const gs_color_space_type gs_color_space_type_DeviceRGB = {
+private const gs_color_space_type gs_color_space_type_DeviceRGB = {
     gs_color_space_index_DeviceRGB, true, true,
     &st_base_color_space, gx_num_components_3,
     gx_no_base_space,
@@ -52,6 +60,16 @@ const gs_color_space_type gs_color_space_type_DeviceRGB = {
     gx_same_concrete_space,
     gx_concretize_DeviceRGB, gx_remap_concrete_DRGB,
     gx_remap_DeviceRGB, gx_no_install_cspace,
+    gx_no_adjust_cspace_count, gx_no_adjust_color_count
+};
+private const gs_color_space_type gs_color_space_type_DeviceCMYK = {
+    gs_color_space_index_DeviceCMYK, true, true,
+    &st_base_color_space, gx_num_components_4,
+    gx_no_base_space,
+    gx_init_paint_4, gx_restrict01_paint_4,
+    gx_same_concrete_space,
+    gx_concretize_DeviceCMYK, gx_remap_concrete_DCMYK,
+    gx_remap_DeviceCMYK, gx_no_install_cspace,
     gx_no_adjust_cspace_count, gx_no_adjust_color_count
 };
 
@@ -63,17 +81,17 @@ public_st_base_color_space();
 const gs_color_space *
 gs_cspace_DeviceGray(const gs_imager_state * pis)
 {
-    return gs_imager_state_shared(pis, cs_DeviceGray);
+    return pis->shared->device_color_spaces.named.Gray;
 }
 const gs_color_space *
 gs_cspace_DeviceRGB(const gs_imager_state * pis)
 {
-    return gs_imager_state_shared(pis, cs_DeviceRGB);
+    return pis->shared->device_color_spaces.named.RGB;
 }
 const gs_color_space *
 gs_cspace_DeviceCMYK(const gs_imager_state * pis)
 {
-    return gs_imager_state_shared(pis, cs_DeviceCMYK);
+    return pis->shared->device_color_spaces.named.CMYK;
 }
 
 /* ------ Create/copy/destroy ------ */
@@ -231,7 +249,7 @@ gx_no_base_space(const gs_color_space * pcspace)
 
 /* Null color space installation procedure. */
 int
-gx_no_install_cspace(gs_color_space * pcs, gs_state * pgs)
+gx_no_install_cspace(const gs_color_space * pcs, gs_state * pgs)
 {
     return 0;
 }

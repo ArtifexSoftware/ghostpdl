@@ -1,0 +1,124 @@
+/* Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
+
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+
+/* X driver color mapping structure */
+
+#ifndef gdevxcmp_INCLUDED
+#  define gdevxcmp_INCLUDED
+
+/*
+ * The structure defined in this file is used in only one place, in the
+ * gx_device_X structure defined in gdevx.h.  We define it as a separate
+ * structure because its function is logically separate from the rest of the
+ * X driver, and because this function (color mapping / management) accounts
+ * for the single largest piece of the driver.
+ */
+
+/* Define pixel value to RGB mapping */
+typedef struct x11_rgb_s {
+    gx_color_value rgb[3];
+    bool defined;
+} x11_rgb_t;
+
+/* Define dynamic color hash table structure */
+typedef struct x11_color_s x11_color_t;
+struct x11_color_s {
+    XColor color;
+    x11_color_t *next;
+};
+
+/*
+ * Define X color values.  Fortuitously, these are the same as Ghostscript
+ * color values; in gdevxcmap.c, we are pretty sloppy about aliasing the
+ * two.
+ */
+typedef ushort X_color_value;
+#define X_max_color_value 0xffff
+
+typedef struct x11_cman_s {
+
+    /*
+     * num_rgb is the number of possible R/G/B values, i.e.,
+     * 1 << the bits_per_rgb of the X visual.
+     */
+    int num_rgb;
+
+    /*
+     * color_mask is a mask that selects the high-order N bits of an
+     * X color value, where N may be the mask width for TrueColor or
+     * StaticGray and is bits_per_rgb for the other visual classes.
+     */
+    struct cmm_ {
+	X_color_value red, green, blue;
+    } color_mask;
+
+#if HaveStdCMap  /* Standard colormap stuff is only in X11R4 and later. */
+
+    /*
+     * std_cmap is the X standard colormap for the display and screen,
+     * if one is available.
+     */
+
+    XStandardColormap *std_cmap;
+
+    /*
+     * If free_std_cmap is true, we allocated std_cmap ourselves (to
+     * represent a TrueColor or Static Gray visual), and must free it when
+     * closing the device.
+     */
+    bool free_std_cmap;
+
+#endif /* HaveStdCmap */
+
+    /*
+     * color_to_rgb is a reverse map from pixel values to RGB values.  It
+     * only maps pixels values up to 255: pixel values above this must go
+     * through the standard colormap or query the server.
+     */
+    struct cmc_ {
+	int size;		/* min(1 << depth, 256) */
+	x11_rgb_t *values;	/* [color_to_rgb.size] */
+    } color_to_rgb;
+
+    /*
+     * For systems with writable colormaps and no suitable standard
+     * colormap, dither_ramp is a preallocated ramp or cube used for
+     * dithering.
+     */
+#define CUBE_INDEX(r,g,b) (((r) * xdev->color_info.dither_colors + (g)) * \
+				  xdev->color_info.dither_colors + (b))
+    x_pixel *dither_ramp;	/* [color_info.dither_colors^3] if color,
+				   [color_info.dither_grays] if gray */
+
+    /*
+     * For systems with writable colormaps, dynamic.colors is a chained
+     * hash table that maps RGB values (masked with color_mask) to
+     * pixel values.  Entries are added dynamically.
+     */
+    struct cmd_ {
+	int size;
+	x11_color_t **colors;	/* [size] */
+	int shift;		/* 16 - log2(size) */
+	int used;
+	int max_used;
+    } dynamic;
+
+} x11_cman_t;
+
+#endif /* gdevxcmp_INCLUDED */

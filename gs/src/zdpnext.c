@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -40,8 +40,10 @@
 
 /* - currentalpha <alpha> */
 private int
-zcurrentalpha(register os_ptr op)
+zcurrentalpha(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(1);
     make_real(op, gs_currentalpha(igs));
     return 0;
@@ -49,8 +51,9 @@ zcurrentalpha(register os_ptr op)
 
 /* <alpha> setalpha - */
 private int
-zsetalpha(register os_ptr op)
+zsetalpha(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     double alpha;
     int code;
 
@@ -75,8 +78,9 @@ zsetalpha(register os_ptr op)
  */
 
 /* Imported procedures */
-int zimage_multiple(P2(os_ptr op, bool has_alpha));	/* in zcolor1.c */
-int process_non_source_image(P2(const gs_image_common_t * pim,
+int zimage_multiple(P2(i_ctx_t *i_ctx_p, bool has_alpha));  /* in zcolor1.c */
+int process_non_source_image(P3(i_ctx_t *i_ctx_p,
+				const gs_image_common_t * pim,
 				client_name_t cname));	/* in zdps.c */
 
 /*
@@ -92,24 +96,25 @@ typedef struct alpha_composite_state_s {
 } alpha_composite_state_t;
 
 /* Forward references */
-private int begin_composite(P1(alpha_composite_state_t *));
-private void end_composite(P1(alpha_composite_state_t *));
+private int begin_composite(P2(i_ctx_t *, alpha_composite_state_t *));
+private void end_composite(P2(i_ctx_t *, alpha_composite_state_t *));
 private int rect_param(P2(os_ptr, double[4]));
 
 /* <width> <height> <bits/comp> <matrix> */
 /*      <datasrc_0> ... <datasrc_ncomp-1> true <ncomp> alphaimage - */
 /*      <datasrc> false <ncomp> alphaimage - */
 private int
-zalphaimage(register os_ptr op)
+zalphaimage(i_ctx_t *i_ctx_p)
 {
     /* Essentially the whole implementation is shared with colorimage. */
-    return zimage_multiple(op, true);
+    return zimage_multiple(i_ctx_p, true);
 }
 
 /* <destx> <desty> <width> <height> <op> compositerect - */
 private int
-zcompositerect(register os_ptr op)
+zcompositerect(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     double dest_rect[4];
     alpha_composite_state_t cstate;
     int code = rect_param(op - 1, dest_rect);
@@ -118,7 +123,7 @@ zcompositerect(register os_ptr op)
 	return code;
     check_int_leu(*op, compositerect_last);
     cstate.params.op = (gs_composite_op_t) op->value.intval;
-    code = begin_composite(&cstate);
+    code = begin_composite(i_ctx_p, &cstate);
     if (code < 0)
 	return code;
     {
@@ -128,7 +133,7 @@ zcompositerect(register os_ptr op)
 	rect.q.y = (rect.p.y = dest_rect[1]) + dest_rect[3];
 	code = gs_rectfill(igs, &rect, 1);
     }
-    end_composite(&cstate);
+    end_composite(i_ctx_p, &cstate);
     if (code >= 0)
 	pop(5);
     return code;
@@ -136,8 +141,9 @@ zcompositerect(register os_ptr op)
 
 /* Common code for composite and dissolve. */
 private int
-composite_image(os_ptr op, const gs_composite_alpha_params_t * params)
+composite_image(i_ctx_t *i_ctx_p, const gs_composite_alpha_params_t * params)
 {
+    os_ptr op = osp;
     alpha_composite_state_t cstate;
     gs_image2_t image;
     double src_rect[4];
@@ -171,11 +177,12 @@ composite_image(os_ptr op, const gs_composite_alpha_params_t * params)
 	image.XOrigin -= dest_pt[0];
 	image.YOrigin -= dest_pt[1];
     }
-    code = begin_composite(&cstate);
+    code = begin_composite(i_ctx_p, &cstate);
     if (code >= 0) {
-	code = process_non_source_image((const gs_image_common_t *)&image,
+	code = process_non_source_image(i_ctx_p,
+					(const gs_image_common_t *)&image,
 					"composite_image");
-	end_composite(&cstate);
+	end_composite(i_ctx_p, &cstate);
 	if (code >= 0)
 	    pop(8);
     }
@@ -186,20 +193,22 @@ composite_image(os_ptr op, const gs_composite_alpha_params_t * params)
 /* <srcx> <srcy> <width> <height> <srcgstate|null> <destx> <desty> <op> */
 /*   composite - */
 private int
-zcomposite(register os_ptr op)
+zcomposite(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_composite_alpha_params_t params;
 
     check_int_leu(*op, composite_last);
     params.op = (gs_composite_op_t) op->value.intval;
-    return composite_image(op, &params);
+    return composite_image(i_ctx_p, &params);
 }
 
 /* <srcx> <srcy> <width> <height> <srcgstate|null> <destx> <desty> <delta> */
 /*   dissolve - */
 private int
-zdissolve(register os_ptr op)
+zdissolve(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_composite_alpha_params_t params;
     double delta;
     int code = real_param(op, &delta);
@@ -210,7 +219,7 @@ zdissolve(register os_ptr op)
 	return_error(e_rangecheck);
     params.op = composite_Dissolve;
     params.delta = delta;
-    return composite_image(op, &params);
+    return composite_image(i_ctx_p, &params);
 }
 
 /* ------ Image reading ------ */
@@ -221,8 +230,9 @@ private int device_is_true_color(P1(gx_device * dev));
 /*   <dev_x> <dev_y> <dev_width> <dev_height> <matrix> */
 private void box_confine(P3(int *pp, int *pq, int wh));
 private int
-zsizeimagebox(os_ptr op)
+zsizeimagebox(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     const gx_device *dev = gs_currentdevice(igs);
     gs_rect srect, drect;
     gs_matrix mat;
@@ -289,8 +299,9 @@ box_confine(int *pp, int *pq, int wh)
 
 /* - .sizeimageparams <bits/sample> <multiproc> <ncolors> */
 private int
-zsizeimageparams(register os_ptr op)
+zsizeimageparams(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gx_device *dev = gs_currentdevice(igs);
     int ncomp = dev->color_info.num_components;
     int bps;
@@ -357,11 +368,11 @@ rect_param(os_ptr op, double rect[4])
 
 /* Begin a compositing operation. */
 private int
-begin_composite(alpha_composite_state_t * pcp)
+begin_composite(i_ctx_t *i_ctx_p, alpha_composite_state_t * pcp)
 {
     gx_device *dev = gs_currentdevice(igs);
     int code =
-    gs_create_composite_alpha(&pcp->pcte, &pcp->params, imemory);
+	gs_create_composite_alpha(&pcp->pcte, &pcp->params, imemory);
 
     if (code < 0)
 	return code;
@@ -370,7 +381,7 @@ begin_composite(alpha_composite_state_t * pcp)
 	(dev, &pcp->cdev, pcp->pcte, (const gs_imager_state *)igs,
 	 imemory);
     if (code < 0) {
-	end_composite(pcp);
+	end_composite(i_ctx_p, pcp);
 	return code;
     }
     gs_setdevice_no_init(igs, pcp->cdev);
@@ -379,7 +390,7 @@ begin_composite(alpha_composite_state_t * pcp)
 
 /* End a compositing operation. */
 private void
-end_composite(alpha_composite_state_t * pcp)
+end_composite(i_ctx_t *i_ctx_p, alpha_composite_state_t * pcp)
 {
     /* Close and free the compositor and the compositing object. */
     if (pcp->cdev != pcp->orig_dev) {
@@ -463,7 +474,7 @@ device_is_true_color(gx_device * dev)
 	    }
 	    return 1;
 	default:
-	    return 0;		/* error?! */
+	    return 0;		/* DeviceN */
     }
 #undef CV
 #undef CV0

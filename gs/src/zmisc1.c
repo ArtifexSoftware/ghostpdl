@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1997, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -31,22 +31,23 @@
 
 /* <state> <from_string> <to_string> .type1encrypt <new_state> <substring> */
 /* <state> <from_string> <to_string> .type1decrypt <new_state> <substring> */
-private int type1crypt(P2(os_ptr,
+private int type1crypt(P2(i_ctx_t *,
 			int (*)(P4(byte *, const byte *, uint, ushort *))));
 private int
-ztype1encrypt(os_ptr op)
+ztype1encrypt(i_ctx_t *i_ctx_p)
 {
-    return type1crypt(op, gs_type1_encrypt);
+    return type1crypt(i_ctx_p, gs_type1_encrypt);
 }
 private int
-ztype1decrypt(os_ptr op)
+ztype1decrypt(i_ctx_t *i_ctx_p)
 {
-    return type1crypt(op, gs_type1_decrypt);
+    return type1crypt(i_ctx_p, gs_type1_decrypt);
 }
 private int
-type1crypt(register os_ptr op,
+type1crypt(i_ctx_t *i_ctx_p,
 	   int (*proc)(P4(byte *, const byte *, uint, ushort *)))
 {
+    os_ptr op = osp;
     crypt_state state;
     uint ssize;
 
@@ -87,21 +88,23 @@ eexec_param(os_ptr op, ushort * pcstate)
 /* <target> <seed> eexecEncode/filter <file> */
 /* <target> <seed> <dict_ignored> eexecEncode/filter <file> */
 private int
-zexE(register os_ptr op)
+zexE(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     stream_exE_state state;
     int code = eexec_param(op, &state.cstate);
 
     if (code < 0)
 	return code;
-    return filter_write(op, code, &s_exE_template, (stream_state *)&state, 0);
+    return filter_write(i_ctx_p, code, &s_exE_template, (stream_state *)&state, 0);
 }
 
 /* <source> <seed> eexecDecode/filter <file> */
 /* <source> <dict> eexecDecode/filter <file> */
 private int
-zexD(register os_ptr op)
+zexD(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     stream_exD_state state;
     int code;
 
@@ -135,7 +138,7 @@ zexD(register os_ptr op)
 	    state.pfb_state = (stream_PFBD_state *) s->state;
     }
     state.binary = -1;
-    return filter_read(op, code, &s_exD_template, (stream_state *)&state, 0);
+    return filter_read(i_ctx_p, code, &s_exD_template, (stream_state *)&state, 0);
 }
 
 /* ------ Initialization procedure ------ */

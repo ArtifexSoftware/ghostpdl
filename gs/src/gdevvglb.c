@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1993, 1994, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1993, 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -349,7 +349,7 @@ vgalib_put_params(gx_device * dev, gs_param_list * plist)
     int ecode = 0;
     int code;
     int imode = vga_dev->display_mode;
-    const char _ds *param_name;
+    const char *param_name;
 
     switch (code = param_read_int(plist, (param_name = "DisplayMode"), &imode)) {
 	default:

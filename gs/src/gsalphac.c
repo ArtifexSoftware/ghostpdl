@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -261,7 +261,7 @@ private const gx_device_composite_alpha gs_composite_alpha_device =
 };
 
 /* Create an alpha compositor. */
-int
+private int
 c_alpha_create_default_compositor(const gs_composite_t * pcte,
 	   gx_device ** pcdev, gx_device * dev, const gs_imager_state * pis,
 				  gs_memory_t * mem)
@@ -301,7 +301,7 @@ c_alpha_create_default_compositor(const gs_composite_t * pcte,
      * the device to the specific num_components, but for simplicity,
      * we'll defer considering that until there is a demonstrated need.
      */
-    cdev->target = dev;
+    gx_device_set_target((gx_device_forward *)cdev, dev);
     cdev->params = pacte->params;
     return 0;
 }
@@ -505,7 +505,7 @@ dca_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 		 GB_OFFSET_0 | GB_RASTER_ALL | GB_ALIGN_STANDARD);
 	    native_params.data[0] = native_row;
 	    code = gx_get_bits_copy(target, 0, w, 1, &native_params,
-				    std_params.options, std_row,
+				    &std_params, std_row,
 				    0 /* raster is irrelevant */ );
 	    if (code < 0)
 		break;

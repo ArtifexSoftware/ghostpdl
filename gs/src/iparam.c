@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -349,7 +349,7 @@ private int
 stack_param_write(iparam_list * plist, const ref * pkey, const ref * pvalue)
 {
     stack_param_list *const splist = (stack_param_list *) plist;
-    ref_stack *pstack = splist->pstack;
+    ref_stack_t *pstack = splist->pstack;
     s_ptr p = pstack->p;
 
     if (pstack->top - p < 2) {
@@ -391,7 +391,7 @@ stack_param_enumerate(iparam_list * plist, gs_param_enumerator_t * penum,
 }
 
 int
-stack_param_list_write(stack_param_list * plist, ref_stack * pstack,
+stack_param_list_write(stack_param_list * plist, ref_stack_t * pstack,
 		       const ref * pwanted)
 {
     plist->u.w.write = stack_param_write;
@@ -407,7 +407,8 @@ stack_param_list_write(stack_param_list * plist, ref_stack * pstack,
 private int
 dict_param_write(iparam_list * plist, const ref * pkey, const ref * pvalue)
 {
-    int code = dict_put(&((dict_param_list *) plist)->dict, pkey, pvalue);
+    int code =
+	dict_put(&((dict_param_list *) plist)->dict, pkey, pvalue, NULL);
 
     return min(code, 0);
 }
@@ -597,7 +598,7 @@ ref_param_read_string_array(gs_param_list * plist, gs_param_name pkey,
 {
     iparam_list *const iplist = (iparam_list *) plist;
     iparam_loc loc;
-    ref aref, elt;
+    ref aref;
     int code = ref_param_read_array(iplist, pkey, &loc);
     gs_param_string *psv;
     uint size;
@@ -612,10 +613,19 @@ ref_param_read_string_array(gs_param_list * plist, gs_param_name pkey,
     if (psv == 0)
 	return_error(e_VMerror);
     aref = *loc.pvalue;
-    loc.pvalue = &elt;
-    for (i = 0; code >= 0 && i < size; i++) {
-	array_get(&aref, i, &elt);
-	code = ref_param_read_string_value(&loc, psv + i);
+    if (r_has_type(&aref, t_array)) {
+	for (i = 0; code >= 0 && i < size; i++) {
+	    loc.pvalue = aref.value.refs + i;
+	    code = ref_param_read_string_value(&loc, psv + i);
+	}
+    } else {
+	ref elt;
+
+	loc.pvalue = &elt;
+	for (i = 0; code >= 0 && i < size; i++) {
+	    array_get(&aref, i, &elt);
+	    code = ref_param_read_string_value(&loc, psv + i);
+	}
     }
     if (code < 0) {
 	ifree_object(psv, "ref_param_read_string_array");
@@ -823,19 +833,22 @@ private int
 ref_param_read_string_value(const iparam_loc * ploc, gs_param_string * pvalue)
 {
     const ref *pref = ploc->pvalue;
-    ref nref;
 
     switch (r_type(pref)) {
-	case t_name:
+	case t_name: {
+	    ref nref;
+
 	    name_string_ref(pref, &nref);
-	    pref = &nref;
+	    pvalue->data = nref.value.const_bytes;
+	    pvalue->size = r_size(&nref);
 	    pvalue->persistent = true;
-	    goto s;
+	}
+	    break;
 	case t_string:
 	    iparam_check_read(*ploc);
-	    pvalue->persistent = false;
-	  s:pvalue->data = pref->value.const_bytes;
+	    pvalue->data = pref->value.const_bytes;
 	    pvalue->size = r_size(pref);
+	    pvalue->persistent = false;
 	    break;
 	default:
 	    return iparam_note_error(*ploc, e_typecheck);
@@ -1002,7 +1015,7 @@ private int
 stack_param_read(iparam_list * plist, const ref * pkey, iparam_loc * ploc)
 {
     stack_param_list *const splist = (stack_param_list *) plist;
-    ref_stack *pstack = splist->pstack;
+    ref_stack_t *pstack = splist->pstack;
 
     /* This implementation is slow, but it probably doesn't matter. */
     uint index = splist->skip + 1;
@@ -1021,8 +1034,8 @@ stack_param_read(iparam_list * plist, const ref * pkey, iparam_loc * ploc)
     return 1;
 }
 int
-stack_param_list_read(stack_param_list * plist, ref_stack * pstack, uint skip,
-		      const ref * ppolicies, bool require_all)
+stack_param_list_read(stack_param_list * plist, ref_stack_t * pstack,
+		      uint skip, const ref * ppolicies, bool require_all)
 {
     iparam_list *const iplist = (iparam_list *) plist;
     uint count = ref_stack_counttomark(pstack);

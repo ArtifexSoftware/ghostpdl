@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -93,15 +93,14 @@ public_st_gs_type1_state();
 private 
 ENUM_PTRS_BEGIN(gs_type1_state_enum_ptrs)
 {
-    if (index < pcis->ips_count + 3) {
+    if (index < pcis->ips_count + 4) {
 	ENUM_RETURN_CONST_STRING_PTR(gs_type1_state,
-				     ipstack[index - 3].char_string);
+				     ipstack[index - 4].char_string);
     }
     return 0;
 }
-ENUM_PTR(0, gs_type1_state, pfont);
-ENUM_PTR(1, gs_type1_state, pis);
-ENUM_PTR(2, gs_type1_state, path);
+ENUM_PTR3(0, gs_type1_state, pfont, pis, path);
+ENUM_PTR(3, gs_type1_state, callback_data);
 ENUM_PTRS_END
 private RELOC_PTRS_BEGIN(gs_type1_state_reloc_ptrs)
 {
@@ -110,6 +109,7 @@ private RELOC_PTRS_BEGIN(gs_type1_state_reloc_ptrs)
     RELOC_PTR(gs_type1_state, pfont);
     RELOC_PTR(gs_type1_state, pis);
     RELOC_PTR(gs_type1_state, path);
+    RELOC_PTR(gs_type1_state, callback_data);
     for (i = 0; i < pcis->ips_count; i++) {
 	ip_state *ipsp = &pcis->ipstack[i];
 	int diff = ipsp->ip - ipsp->char_string.data;
@@ -119,35 +119,6 @@ private RELOC_PTRS_BEGIN(gs_type1_state_reloc_ptrs)
     }
 } RELOC_PTRS_END
 #undef pcis
-
-/* ------ Interpreter entry point ------ */
-
-private int
-gs_no_charstring_interpret(gs_type1_state * pcis, const gs_const_string * str,
-			   int *pindex)
-{
-    return_error(gs_error_rangecheck);
-}
-int (*gs_charstring_interpreter[3])
-    (P3(gs_type1_state * pcis, const gs_const_string * str, int *pindex)) = {
-    gs_no_charstring_interpret,
-	gs_no_charstring_interpret,
-	gs_no_charstring_interpret
-};
-
-/*
- * Continue interpreting a Type 1 charstring.  If str != 0, it is taken as
- * the byte string to interpret.  Return 0 on successful completion, <0 on
- * error, or >0 when client intervention is required (or allowed).  The int*
- * argument is where the othersubr # is stored for callothersubr.
- */
-int
-gs_type1_interpret(gs_type1_state * pcis, const gs_const_string * str,
-		   int *pindex)
-{
-    return (*gs_charstring_interpreter[pcis->pfont->data.CharstringType])
-	(pcis, str, pindex);
-}
 
 /* ------ Interpreter services ------ */
 
@@ -179,6 +150,7 @@ gs_type1_interp_init(register gs_type1_state * pcis, gs_imager_state * pis,
     pcis->pfont = pfont;
     pcis->pis = pis;
     pcis->path = ppath;
+    pcis->callback_data = pfont; /* default callback data */
     /*
      * charpath_flag controls coordinate rounding, hinting, and
      * flatness enhancement.  If we allow it to be set to true,
@@ -205,6 +177,15 @@ gs_type1_interp_init(register gs_type1_state * pcis, gs_imager_state * pis,
 
     return 0;
 }
+
+/* Set the push/pop callback data. */
+void
+gs_type1_set_callback_data(gs_type1_state *pcis, void *callback_data)
+{
+    pcis->callback_data = callback_data;
+}
+
+
 /* Preset the left side bearing and/or width. */
 void
 gs_type1_set_lsb(gs_type1_state * pcis, const gs_point * psbpt)
@@ -220,6 +201,7 @@ gs_type1_set_width(gs_type1_state * pcis, const gs_point * pwpt)
     pcis->width.y = float2fixed(pwpt->y);
     pcis->width_set = true;
 }
+
 /* Finish initializing the interpreter if we are actually rasterizing */
 /* the character, as opposed to just computing the side bearing and width. */
 void
@@ -273,14 +255,14 @@ gs_type1_finish_init(gs_type1_state * pcis, gs_op1_state * ps)
     {
 	float cxx = fabs(pis->ctm.xx), cyy = fabs(pis->ctm.yy);
 
-	if (cyy < cxx)
+	if (is_fzero(cxx) || (cyy < cxx && !is_fzero(cyy)))
 	    cxx = cyy;
 	if (!is_xxyy(&pis->ctm)) {
 	    float cxy = fabs(pis->ctm.xy), cyx = fabs(pis->ctm.yx);
 
-	    if (cxy < cxx)
+	    if (is_fzero(cxx) || (cxy < cxx && !is_fzero(cxy)))
 		cxx = cxy;
-	    if (cyx < cxx)
+	    if (is_fzero(cxx) || (cyx < cxx && !is_fzero(cyx)))
 		cxx = cyx;
 	}
 	/* Don't let the flatness be worse than the default. */

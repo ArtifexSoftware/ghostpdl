@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -36,74 +36,74 @@
  */
 
 /* Operators exported for the special operator encoding in interp.c. */
-int zadd(P1(os_ptr));
-int zdef(P1(os_ptr));
-int zdup(P1(os_ptr));
-int zexch(P1(os_ptr));
-int zif(P1(os_ptr));
-int zifelse(P1(os_ptr));
-int zindex(P1(os_ptr));
-int zpop(P1(os_ptr));
-int zroll(P1(os_ptr));
-int zsub(P1(os_ptr));
+int zadd(P1(i_ctx_t *));
+int zdef(P1(i_ctx_t *));
+int zdup(P1(i_ctx_t *));
+int zexch(P1(i_ctx_t *));
+int zif(P1(i_ctx_t *));
+int zifelse(P1(i_ctx_t *));
+int zindex(P1(i_ctx_t *));
+int zpop(P1(i_ctx_t *));
+int zroll(P1(i_ctx_t *));
+int zsub(P1(i_ctx_t *));
 
 /* Operators exported for server loop implementations. */
-int zflush(P1(os_ptr));
-int zflushpage(P1(os_ptr));
-int zsave(P1(os_ptr));
-int zrestore(P1(os_ptr));
+int zflush(P1(i_ctx_t *));
+int zflushpage(P1(i_ctx_t *));
+int zsave(P1(i_ctx_t *));
+int zrestore(P1(i_ctx_t *));
 
 /* Operators exported for save/restore. */
-int zgsave(P1(os_ptr));
-int zgrestore(P1(os_ptr));
+int zgsave(P1(i_ctx_t *));
+int zgrestore(P1(i_ctx_t *));
 
 /* Operators exported for Level 2 pagedevice facilities. */
-int zcopy_gstate(P1(os_ptr));
-int zcurrentgstate(P1(os_ptr));
-int zgrestoreall(P1(os_ptr));
-int zgstate(P1(os_ptr));
-int zreadonly(P1(os_ptr));
-int zsetdevice(P1(os_ptr));
-int zsetgstate(P1(os_ptr));
+int zcopy_gstate(P1(i_ctx_t *));
+int zcurrentgstate(P1(i_ctx_t *));
+int zgrestoreall(P1(i_ctx_t *));
+int zgstate(P1(i_ctx_t *));
+int zreadonly(P1(i_ctx_t *));
+int zsetdevice(P1(i_ctx_t *));
+int zsetgstate(P1(i_ctx_t *));
 
 /* Operators exported for Level 2 "wrappers". */
-int zcopy(P1(os_ptr));
-int zimage(P1(os_ptr));
-int zimagemask(P1(os_ptr));
-int zwhere(P1(os_ptr));
+int zcopy(P1(i_ctx_t *));
+int zimage(P1(i_ctx_t *));
+int zimagemask(P1(i_ctx_t *));
+int zwhere(P1(i_ctx_t *));
 
 /* Operators exported for specific-VM operators. */
-int zarray(P1(os_ptr));
-int zdict(P1(os_ptr));
-int zpackedarray(P1(os_ptr));
-int zstring(P1(os_ptr));
+int zarray(P1(i_ctx_t *));
+int zdict(P1(i_ctx_t *));
+int zpackedarray(P1(i_ctx_t *));
+int zstring(P1(i_ctx_t *));
 
 /* Operators exported for user path decoding. */
 /* Note that only operators defined in all configurations are declared here. */
-int zclosepath(P1(os_ptr));
-int zcurveto(P1(os_ptr));
-int zlineto(P1(os_ptr));
-int zmoveto(P1(os_ptr));
-int zrcurveto(P1(os_ptr));
-int zrlineto(P1(os_ptr));
-int zrmoveto(P1(os_ptr));
+int zclosepath(P1(i_ctx_t *));
+int zcurveto(P1(i_ctx_t *));
+int zlineto(P1(i_ctx_t *));
+int zmoveto(P1(i_ctx_t *));
+int zrcurveto(P1(i_ctx_t *));
+int zrlineto(P1(i_ctx_t *));
+int zrmoveto(P1(i_ctx_t *));
 
 /* Operators exported for CIE cache loading. */
-int zcvx(P1(os_ptr));
-int zexec(P1(os_ptr));		/* also for .runexec */
-int zfor(P1(os_ptr));
+int zcvx(P1(i_ctx_t *));
+int zexec(P1(i_ctx_t *));		/* also for .runexec */
+int zfor(P1(i_ctx_t *));
 
 /* Odds and ends */
-int zbegin(P1(os_ptr));
-int zcleartomark(P1(os_ptr));
-int zend(P1(os_ptr));
-int zclosefile(P1(os_ptr));	/* for runexec_cleanup */
-int zsetfont(P1(os_ptr));	/* for cshow_continue */
+int zbegin(P1(i_ctx_t *));
+int zcleartomark(P1(i_ctx_t *));
+int zend(P1(i_ctx_t *));
+int zclosefile(P1(i_ctx_t *));	/* for runexec_cleanup */
+int zsetfont(P1(i_ctx_t *));	/* for cshow_continue */
 
 /* Operators exported for special customer needs. */
-int zcurrentdevice(P1(os_ptr));
-int ztoken(P1(os_ptr));
-int ztokenexec(P1(os_ptr));
-int zwrite(P1(os_ptr));
+int zcurrentdevice(P1(i_ctx_t *));
+int ztoken(P1(i_ctx_t *));
+int ztokenexec(P1(i_ctx_t *));
+int zwrite(P1(i_ctx_t *));
 
 #endif /* opextern_INCLUDED */

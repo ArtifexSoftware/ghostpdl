@@ -79,7 +79,7 @@ const gx_color_value *const fc_color_quo[8] = {
 /* Render a gray, possibly by halftoning. */
 int
 gx_render_device_gray(frac gray, gx_color_value alpha, gx_device_color * pdevc,
-		      gx_device * dev, const gx_device_halftone * pdht,
+		      gx_device * dev, gx_device_halftone * pdht,
 		      const gs_int_point * ht_phase)
 {
     bool cmyk = dev->color_info.num_components == 4;
@@ -118,7 +118,7 @@ gx_render_device_gray(frac gray, gx_color_value alpha, gx_device_color * pdevc,
 	/* The following should be a conditional expression, */
 	/* but the DECStation 3100 Ultrix 4.3 compiler */
 	/* generates bad code for it. */
-#define set_color_lum(col, lum)\
+#define SET_COLOR_LUM(col, lum)\
   if ( cmyk )\
     col = gx_map_cmyk_color(dev, 0, 0, 0,\
 			       gx_max_color_value - lum);\
@@ -126,7 +126,7 @@ gx_render_device_gray(frac gray, gx_color_value alpha, gx_device_color * pdevc,
     col = gx_map_rgb_color(dev, lum, lum, lum);\
   else\
     col = gx_map_rgb_alpha_color(dev, lum, lum, lum, alpha)
-	set_color_lum(color1, lum);
+	SET_COLOR_LUM(color1, lum);
 	if_debug5('c', "[c]gray=0x%x --> (%d+%d/%lu)/%d\n",
 		  (unsigned)gray, v, level, hsize, max_value + 1);
 	if (level == 0) {	/* Close enough to a pure color, */
@@ -138,7 +138,7 @@ gx_render_device_gray(frac gray, gx_color_value alpha, gx_device_color * pdevc,
 
 	    v++;
 	    lum = fractional_color(v, max_value);
-	    set_color_lum(color2, lum);
+	    SET_COLOR_LUM(color2, lum);
 	    color_set_binary_halftone(pdevc, pdht,
 				      color1, color2, level);
 	    color_set_phase_mod(pdevc, ht_phase->x, ht_phase->y,
@@ -146,6 +146,7 @@ gx_render_device_gray(frac gray, gx_color_value alpha, gx_device_color * pdevc,
 				pdht->order.full_height);
 	    return 1;
 	}
+#undef SET_COLOR_LUM
     }
 }
 
@@ -234,12 +235,10 @@ private const unsigned short lum_w[16] =
  * white is ignored.  If we are rendering CMYK, red/green/blue/white are
  * actually cyan/magenta/yellow/black.
  */
-private int gx_reduce_colored_dither(P3(gx_device_color *pdevc,
-					gx_device *dev, bool cmyk));
 int
 gx_render_device_color(frac red, frac green, frac blue, frac white, bool cmyk,
-	     gx_color_value alpha, gx_device_color * pdevc, gx_device * dev,
-	     const gx_device_halftone * pdht, const gs_int_point * ht_phase)
+	gx_color_value alpha, gx_device_color * pdevc, gx_device * dev,
+	gx_device_halftone * pdht, const gs_int_point * ht_phase)
 {
     uint max_value = dev->color_info.dither_colors - 1;
     uint num_levels = pdht->order.num_levels;
@@ -247,14 +246,14 @@ gx_render_device_color(frac red, frac green, frac blue, frac white, bool cmyk,
     uint r, g, b, w;
     gx_color_value vr, vg, vb, vw;
 
-#define map_color_rgb()\
+#define MAP_COLOR_RGB()\
   (alpha == gx_max_color_value ?\
    gx_map_rgb_color(dev, vr, vg, vb) :\
    gx_map_rgb_alpha_color(dev, vr, vg, vb, alpha))
-#define map_color_cmyk()\
+#define MAP_COLOR_CMYK()\
   gx_map_cmyk_color(dev, vr, vg, vb, vw)
-#define map_color()\
-  (cmyk ? map_color_cmyk() : map_color_rgb())
+#define MAP_COLOR()\
+  (cmyk ? MAP_COLOR_CMYK() : MAP_COLOR_RGB())
 
     /* Compute the quotient and remainder of each color component */
     /* with the actual number of available colors. */
@@ -280,20 +279,20 @@ gx_render_device_color(frac red, frac green, frac blue, frac white, bool cmyk,
 	default:
 	    {
 		ulong want_r, want_g, want_b, want_w;
-		want_r = (ulong) max_value *red;
 
+		want_r = (ulong) max_value * red;
 		r = frac_1_quo(want_r);
 		rem_r = frac_1_rem(want_r, r);
-		want_g = (ulong) max_value *green;
 
+		want_g = (ulong) max_value * green;
 		g = frac_1_quo(want_g);
 		rem_g = frac_1_rem(want_g, g);
-		want_b = (ulong) max_value *blue;
 
+		want_b = (ulong) max_value * blue;
 		b = frac_1_quo(want_b);
 		rem_b = frac_1_rem(want_b, b);
-		want_w = (ulong) max_value *white;
 
+		want_w = (ulong) max_value * white;
 		w = frac_1_quo(want_w);
 		rem_w = frac_1_rem(want_w, w);
 	    }
@@ -305,7 +304,7 @@ gx_render_device_color(frac red, frac green, frac blue, frac white, bool cmyk,
 	vg = fractional_color(g, max_value);
 	vb = fractional_color(b, max_value);
 	vw = fractional_color(w, max_value);
-	color_set_pure(pdevc, map_color());
+	color_set_pure(pdevc, MAP_COLOR());
 	return 0;
     }
     if_debug12('c', "[c]rgbw=0x%x,0x%x,0x%x,0x%x -->\n   %x+0x%x,%x+0x%x,%x+0x%x,%x+0x%x -->\n",
@@ -319,22 +318,23 @@ gx_render_device_color(frac red, frac green, frac blue, frac white, bool cmyk,
 	/* Someone went to the trouble of setting different */
 	/* screens for the different components. */
 	/* Use the slow, general colored halftone algorithm. */
-#define rgb_rem(rem_v, i)\
+#define RGB_REM(rem_v, i)\
   (rem_v * (ulong)(pdht->components[pdht->color_indices[i]].corder.num_levels) / frac_1)
-	uint lr = rgb_rem(rem_r, 0), lg = rgb_rem(rem_g, 1), lb = rgb_rem(rem_b, 2);
+	uint lr = RGB_REM(rem_r, 0), lg = RGB_REM(rem_g, 1),
+	    lb = RGB_REM(rem_b, 2);
 
 	if (cmyk)
 	    color_set_cmyk_halftone(pdevc, pdht, r, lr, g, lg, b, lb,
-				    w, rgb_rem(rem_w, 3));
+				    w, RGB_REM(rem_w, 3));
 	else
 	    color_set_rgb_halftone(pdevc, pdht, r, lr, g, lg, b, lb, alpha);
-#undef rgb_rem
+#undef RGB_REM
 	color_set_phase_mod(pdevc, ht_phase->x, ht_phase->y,
 			    pdht->lcm_width, pdht->lcm_height);
 	if (!(pdevc->colors.colored.plane_mask &
 	      (pdevc->colors.colored.plane_mask - 1))) {
 	    /* We can reduce this color to a binary halftone or pure color. */
-	    return gx_reduce_colored_dither(pdevc, dev, cmyk);
+	    return gx_reduce_colored_halftone(pdevc, dev, cmyk);
 	}
 	return 1;
     }
@@ -380,9 +380,9 @@ gx_render_device_color(frac red, frac green, frac blue, frac white, bool cmyk,
 	    else
 		adjust_w = 1;
 	    vw = fractional_color(w, max_value);
-	    color1 = map_color_cmyk();
+	    color1 = MAP_COLOR_CMYK();
 	} else
-	    color1 = map_color_rgb();
+	    color1 = MAP_COLOR_RGB();
 
 /* 
  * Dot the color with each axis to find the best one of 15;
@@ -483,9 +483,9 @@ gx_render_device_color(frac red, frac green, frac blue, frac white, bool cmyk,
 		if (diagc & DIAG_W)
 		    w += adjust_w;
 		vw = fractional_color(w, max_value);
-		color2 = map_color_cmyk();
+		color2 = MAP_COLOR_CMYK();
 	    } else
-		color2 = map_color_rgb();
+		color2 = MAP_COLOR_RGB();
 	    if (level == num_levels) {	/* This can only happen through rounding.... */
 		color_set_pure(pdevc, color2);
 		code = 0;
@@ -510,8 +510,8 @@ gx_render_device_color(frac red, frac green, frac blue, frac white, bool cmyk,
 }
 
 /* Reduce a colored halftone to a binary halftone or pure color. */
-private int
-gx_reduce_colored_dither(gx_device_color *pdevc, gx_device *dev, bool cmyk)
+int
+gx_reduce_colored_halftone(gx_device_color *pdevc, gx_device *dev, bool cmyk)
 {
     int planes = pdevc->colors.colored.plane_mask;
     gx_color_value max_color = dev->color_info.dither_colors - 1;

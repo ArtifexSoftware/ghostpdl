@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -192,7 +192,7 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
 	    byte *line;
 	    int sx, rx;
 
-	    declare_line_accum(lout, bpp, x);
+	    DECLARE_LINE_ACCUM_COPY(lout, bpp, x);
 
 	    code = (*dev_proc(dev, get_bits)) (dev, ry, lin, &line);
 	    if (code < 0)
@@ -264,9 +264,9 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
 			}
 		    }
 		}
-		line_accum(composite, bpp);
+		LINE_ACCUM(composite, bpp);
 	    }
-	    line_accum_copy(dev, lout, bpp, x, rx, raster, ry);
+	    LINE_ACCUM_COPY(dev, lout, bpp, x, rx, raster, ry);
 	}
       out:gs_free_object(mem, lout, "copy_alpha(lout)");
 	gs_free_object(mem, lin, "copy_alpha(lin)");
@@ -490,13 +490,13 @@ gx_default_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
   if ( code < 0 ) return_error(code);\
   return_if_interrupt()
 #ifdef DEBUG
-#define copy_tile(sx, tx, ty, tw, th)\
-  if_debug5('t', "   copy sx=%d x=%d y=%d w=%d h=%d\n",\
-	    sx, tx, ty, tw, th);\
-  real_copy_tile(sx, tx, ty, tw, th)
+#define copy_tile(srcx, tx, ty, tw, th)\
+  if_debug5('t', "   copy sx=%d => x=%d y=%d w=%d h=%d\n",\
+	    srcx, tx, ty, tw, th);\
+  real_copy_tile(srcx, tx, ty, tw, th)
 #else
-#define copy_tile(sx, tx, ty, tw, th)\
-  real_copy_tile(sx, tx, ty, tw, th)
+#define copy_tile(srcx, tx, ty, tw, th)\
+  real_copy_tile(srcx, tx, ty, tw, th)
 #endif
 	if (ch >= h) {		/* Shallow operation */
 	    if (icw >= w) {	/* Just one (partial) tile to transfer. */
@@ -589,7 +589,7 @@ gx_copy_mono_unaligned(gx_device * dev, const byte * data,
 		       gx_color_index zero, gx_color_index one)
 {
     dev_proc_copy_mono((*copy_mono)) = dev_proc(dev, copy_mono);
-    uint offset = alignment_mod(data, align_bitmap_mod);
+    uint offset = ALIGNMENT_MOD(data, align_bitmap_mod);
     int step = raster & (align_bitmap_mod - 1);
 
     /* Adjust the origin. */

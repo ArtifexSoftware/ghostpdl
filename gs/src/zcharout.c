@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -33,8 +33,8 @@
 #include "store.h"
 
 /* Imported operators */
-int zsetcachedevice(P1(os_ptr));	/* zchar.c */
-int zsetcachedevice2(P1(os_ptr));	/* zchar.c */
+int zsetcachedevice(P1(i_ctx_t *));	/* zchar.c */
+int zsetcachedevice2(P1(i_ctx_t *));	/* zchar.c */
 
 /*
  * Execute an outline defined by a PostScript procedure.
@@ -42,8 +42,10 @@ int zsetcachedevice2(P1(os_ptr));	/* zchar.c */
  *      <font> <code|name> <name> <outline_id>
  */
 int
-zchar_exec_char_proc(os_ptr op)
-{	/*
+zchar_exec_char_proc(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+	/*
 	 * The definition is a PostScript procedure.  Execute
 	 *      <code|name> proc
 	 * within a systemdict begin/end and a font begin/end.
@@ -123,19 +125,21 @@ zchar_get_metrics(const gs_font_base * pbfont, const ref * pcnref,
  * rendering process (only getting the metrics).
  */
 int
-zchar_set_cache(os_ptr op, const gs_font_base * pbfont, const ref * pcnref,
-	 const double psb[2], const double pwidth[2], const gs_rect * pbbox,
-	     int (*cont_fill)(P1(os_ptr)), int (*cont_stroke)(P1(os_ptr)))
+zchar_set_cache(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
+		const ref * pcnref, const double psb[2],
+		const double pwidth[2], const gs_rect * pbbox,
+		op_proc_t cont_fill, op_proc_t cont_stroke)
 {
+    os_ptr op = osp;
     const ref *pfdict = &pfont_data(pbfont)->dict;
     ref *pmdict;
     ref *pcdevproc;
     int have_cdevproc;
     ref rpop;
     bool metrics2 = false;
-    int (*cont) (P1(os_ptr));
+    op_proc_t cont;
     double w2[10];
-    gs_show_enum *penum = op_show_find();
+    gs_show_enum *penum = op_show_find(i_ctx_p);
 
     w2[0] = pwidth[0], w2[1] = pwidth[1];
 
@@ -164,8 +168,7 @@ zchar_set_cache(os_ptr op, const gs_font_base * pbfont, const ref * pcnref,
 	if (dict_find(pmdict, pcnref, &pmvalue) > 0) {
 	    check_read_type_only(*pmvalue, t_array);
 	    if (r_size(pmvalue) == 4) {
-		int code = num_params(pmvalue->value.refs + 3,
-				      4, w2 + 6);
+		int code = num_params(pmvalue->value.refs + 3, 4, w2 + 6);
 
 		if (code < 0)
 		    return code;
@@ -178,7 +181,7 @@ zchar_set_cache(os_ptr op, const gs_font_base * pbfont, const ref * pcnref,
     have_cdevproc = dict_find_string(pfdict, "CDevProc", &pcdevproc) > 0;
     if (have_cdevproc || gs_show_width_only(penum)) {
 	int i;
-	int (*zsetc) (P1(os_ptr));
+	op_proc_t zsetc;
 	int nparams;
 
 	if (have_cdevproc) {
@@ -231,5 +234,5 @@ zchar_set_cache(os_ptr op, const gs_font_base * pbfont, const ref * pcnref,
 	make_real(op - 1, psb[0]);
 	make_real(op, psb[1]);
     }
-    return cont(op);
+    return cont(i_ctx_p);
 }

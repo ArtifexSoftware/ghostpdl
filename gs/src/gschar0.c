@@ -364,6 +364,7 @@ gs_type0_next_glyph(register gs_show_enum * penum, gs_char * pchr,
 					       &fidx, &chr, &glyph);
 		    if (code < 0)
 			return code;
+		    penum->cmap_code = code; /* hack for widthshow */
 		    p = str + mindex;
 		    if_debug3('J', "[J]CMap returns %d, chr=0x%lx, glyph=0x%lx\n",
 			      code, (ulong) chr, (ulong) glyph);
@@ -375,7 +376,7 @@ gs_type0_next_glyph(register gs_show_enum * penum, gs_char * pchr,
 			}
 		    } else
 			chr = (gs_char) glyph, glyph = gs_no_glyph;
-/****** RESCAN chr IF DESCENDANT IS CMAP'ED ******/
+		    /****** RESCAN chr IF DESCENDANT IS CMAP'ED ******/
 		    break;
 		}
 

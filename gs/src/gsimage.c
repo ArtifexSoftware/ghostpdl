@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -32,22 +32,27 @@
 #include "gzstate.h"
 
 /* Define the enumeration state for this interface layer. */
-							/*typedef struct gs_image_enum_s gs_image_enum; *//* in gsimage.h */
+/*typedef struct gs_image_enum_s gs_image_enum; *//* in gsimage.h */
+typedef struct image_enum_plane_s {
+    /* Change dynamically */
+    uint pos;			/* byte position within the scan line */
+    gs_const_string source;	/* source data, [0 .. plane_index - 1] */
+    gs_string row;		/* row buffers, [0 .. num_planes - 1] */
+} image_enum_plane_t;
 struct gs_image_enum_s {
     /* The following are set at initialization time. */
     gs_memory_t *memory;
     gx_device *dev;		/* if 0, just skip over the data */
     gx_image_enum_common_t *info;	/* driver bookkeeping structure */
     int num_planes;
-    int width, height;
-    uint raster;		/* bytes per row (per plane), no padding */
+    int height;
+    bool wanted_varies;
     /* The following are updated dynamically. */
     int plane_index;		/* index of next plane of data */
     int y;
-    uint pos;			/* byte position within the scan line */
-    gs_const_string sources[gs_image_max_planes];	/* source data */
-    gs_string rows[gs_image_max_planes];	/* row buffers */
     bool error;
+    byte wanted[gs_image_max_planes];
+    image_enum_plane_t planes[gs_image_max_planes];
 };
 
 gs_private_st_composite(st_gs_image_enum, gs_image_enum, "gs_image_enum",
@@ -62,10 +67,10 @@ ENUM_PTRS_BEGIN(gs_image_enum_enum_ptrs)
     /* Enumerate the data planes. */
     index -= gs_image_enum_num_ptrs;
     if (index < eptr->plane_index)
-	ENUM_RETURN_STRING_PTR(gs_image_enum, sources[index]);
+	ENUM_RETURN_STRING_PTR(gs_image_enum, planes[index].source);
     index -= eptr->plane_index;
     if (index < eptr->num_planes)
-	ENUM_RETURN_STRING_PTR(gs_image_enum, rows[index]);
+	ENUM_RETURN_STRING_PTR(gs_image_enum, planes[index].row);
     return 0;
 }
 ENUM_PTR(0, gs_image_enum, dev);
@@ -78,9 +83,9 @@ private RELOC_PTRS_BEGIN(gs_image_enum_reloc_ptrs)
     RELOC_PTR(gs_image_enum, dev);
     RELOC_PTR(gs_image_enum, info);
     for (i = 0; i < eptr->plane_index; i++)
-	RELOC_CONST_STRING_PTR(gs_image_enum, sources[i]);
+	RELOC_CONST_STRING_PTR(gs_image_enum, planes[i].source);
     for (i = 0; i < eptr->num_planes; i++)
-	RELOC_STRING_PTR(gs_image_enum, rows[i]);
+	RELOC_STRING_PTR(gs_image_enum, planes[i].row);
 }
 RELOC_PTRS_END
 #undef eptr
@@ -105,21 +110,18 @@ gs_image_begin_typed(const gs_image_common_t * pic, gs_state * pgs,
 /* Allocate an image enumerator. */
 private void
 image_enum_init(gs_image_enum * penum)
-{				/* Clean pointers for GC. */
-    int i;
-
+{
+    /* Clean pointers for GC. */
     penum->info = 0;
     penum->dev = 0;
-    for (i = 0; i < countof(penum->sources); ++i) {
-	penum->sources[i].data = 0, penum->sources[i].size = 0;
-	penum->rows[i].data = 0, penum->rows[i].size = 0;
-    }
+    penum->plane_index = 0;
+    penum->num_planes = 0;
 }
 gs_image_enum *
 gs_image_enum_alloc(gs_memory_t * mem, client_name_t cname)
 {
     gs_image_enum *penum =
-    gs_alloc_struct(mem, gs_image_enum, &st_gs_image_enum, cname);
+	gs_alloc_struct(mem, gs_image_enum, &st_gs_image_enum, cname);
 
     if (penum != 0) {
 	penum->memory = mem;
@@ -154,17 +156,41 @@ gs_image_init(gs_image_enum * penum, const gs_image_t * pim, bool multi,
 				&pie);
     if (code < 0)
 	return code;
-    return gs_image_common_init(penum, pie,
-				(const gs_data_image_t *)&image,
-				pgs->memory,
+    return gs_image_enum_init(penum, pie, (const gs_data_image_t *)&image,
+			      pgs);
+}
+/* Start processing a general image. */
+private void
+begin_planes(gs_image_enum *penum)
+{
+    /*
+     * Initialize plane_index and (if appropriate) wanted and
+     * wanted_varies at the beginning of a group of planes.
+     */
+    int px = 0;
+
+    if (penum->wanted_varies) {
+	penum->wanted_varies =
+	    !gx_image_planes_wanted(penum->info, penum->wanted);
+    }
+    while (!penum->wanted[px])
+	++px;
+    penum->plane_index = px;
+}
+int
+gs_image_enum_init(gs_image_enum * penum, gx_image_enum_common_t * pie,
+		   const gs_data_image_t * pim, gs_state *pgs)
+{
+    return gs_image_common_init(penum, pie, pim, pgs->memory,
 				(pgs->in_charpath ? NULL :
 				 gs_currentdevice_inline(pgs)));
 }
-/* Start processing a general image. */
 int
 gs_image_common_init(gs_image_enum * penum, gx_image_enum_common_t * pie,
 	    const gs_data_image_t * pim, gs_memory_t * mem, gx_device * dev)
 {
+    int i;
+
     if (pim->Width == 0 || pim->Height == 0) {
 	gx_image_end(pie, false);
 	return 1;
@@ -174,50 +200,78 @@ gs_image_common_init(gs_image_enum * penum, gx_image_enum_common_t * pie,
     penum->dev = dev;
     penum->info = pie;
     penum->num_planes = pie->num_planes;
-    penum->width = pim->Width;
     penum->height = pim->Height;
-/****** ALL PLANES MUST HAVE SAME DEPTH FOR NOW ******/
-    penum->raster = (pim->Width * pie->plane_depths[0] + 7) >> 3;
+    for (i = 0; i < pie->num_planes; ++i) {
+	penum->planes[i].pos = 0;
+	penum->planes[i].row.data = 0; /* for GC */
+	penum->planes[i].row.size = 0; /* ditto */
+    }
     /* Initialize the dynamic part of the state. */
-    penum->plane_index = 0;
     penum->y = 0;
-    penum->pos = 0;
     penum->error = false;
+    penum->wanted_varies = true;
+    begin_planes(penum);
     return 0;
 }
 
 /*
- * Return the number of bytes of data per row per plane.
+ * Return the number of bytes of data per row for a given plane.
  */
-uint
+inline uint
 gs_image_bytes_per_plane_row(const gs_image_enum * penum, int plane)
 {
-/****** IGNORE PLANE FOR NOW ******/
-    return penum->raster;
+    const gx_image_enum_common_t *pie = penum->info;
+
+    return (pie->plane_widths[plane] * pie->plane_depths[plane] + 7) >> 3;
+}
+
+/* Return the set of planes wanted. */
+const byte *
+gs_image_planes_wanted(const gs_image_enum *penum)
+{
+    return penum->wanted;
+}
+
+/* Free the row buffers when cleaning up. */
+private void
+free_row_buffers(gs_image_enum *penum, int num_planes, client_name_t cname)
+{
+    int i;
+
+    for (i = num_planes - 1; i >= 0; --i) {
+	gs_free_string(penum->memory, penum->planes[i].row.data,
+		       penum->planes[i].row.size, cname);
+	penum->planes[i].row.data = 0;
+	penum->planes[i].row.size = 0;
+    }
 }
 
 /* Process the next piece of an image. */
 private int
-copy_planes(gx_device * dev, gs_image_enum * penum, const byte ** planes,
-	    int h)
+copy_planes(gx_device * dev, gs_image_enum * penum,
+	    const gx_image_plane_t *planes, int h, int *rows_used)
 {
-    int code =
-	(penum->dev == 0 ? (penum->y + h < penum->height ? 0 : 1) :
-	 gx_image_data(penum->info, planes, 0, penum->raster, h));
+    int code;
 
-    if (code < 0)
-	penum->error = true;
+    if (penum->dev == 0) {
+	if (penum->y + h < penum->height)
+	    *rows_used = h, code = 0;
+	else
+	    *rows_used = penum->height - penum->y, code = 1;
+    } else {
+	code = gx_image_plane_data_rows(penum->info, planes, h, rows_used);
+	penum->error = code < 0;
+    }
     return code;
 }
 int
 gs_image_next(gs_image_enum * penum, const byte * dbytes, uint dsize,
 	      uint * pused)
 {
+    const gx_image_enum_common_t *pie = penum->info;
+    int px = penum->plane_index;
     gx_device *dev;
-    uint left;
-    int num_planes;
-    uint raster;
-    uint pos;
+    int num_planes = penum->num_planes;
     int code;
 
     /*
@@ -230,78 +284,142 @@ gs_image_next(gs_image_enum * penum, const byte * dbytes, uint dsize,
      *      - image_data requires that each call pass entire rows;
      *      gs_image_next allows arbitrary amounts of data.
      */
-    if (penum->plane_index != 0)
-	if (dsize != penum->sources[0].size)
+    if (penum->error) {
+	/*
+	 * We were interrupted by an error.  The current data are the
+	 * same as the data presented at the last call.
+	 */
+	penum->error = false;
+    } else {
+	if (px != 0 && dsize != penum->planes[0].source.size &&
+	    pie->plane_depths[px] == pie->plane_depths[0] &&
+	    pie->plane_widths[px] == pie->plane_widths[0])
 	    return_error(gs_error_rangecheck);
-    penum->sources[penum->plane_index].data = dbytes;
-    penum->sources[penum->plane_index].size = dsize;
-    if (++(penum->plane_index) != penum->num_planes)
-	return 0;
-    /* We have a full set of planes. */
-    dev = penum->dev;
-    left = dsize;
-    num_planes = penum->num_planes;
-    raster = penum->raster;
-    pos = penum->pos;
-    code = 0;
-    while (left && penum->y < penum->height) {
-	const byte *planes[gs_image_max_planes];
-	int i;
-
-	for (i = 0; i < num_planes; ++i)
-	    planes[i] = penum->sources[i].data + dsize - left;
-	if (pos == 0 && left >= raster) {	/* Pass (a) row(s) directly from the source. */
-	    int h = left / raster;
-
-	    if (h > penum->height - penum->y)
-		h = penum->height - penum->y;
-	    code = copy_planes(dev, penum, planes, h);
-	    if (code < 0)
-		break;
-	    left -= raster * h;
-	    penum->y += h;
-	} else {		/* Buffer a partial row. */
-	    uint count = min(left, raster - pos);
-
-	    if (penum->rows[0].data == 0) {	/* Allocate the row buffers. */
-		for (i = 0; i < num_planes; ++i) {
-		    byte *row = gs_alloc_string(penum->memory, raster,
-						"gs_image_next(row)");
-
-		    if (row == 0) {
-			code = gs_note_error(gs_error_VMerror);
-			while (--i >= 0) {
-			    gs_free_string(penum->memory, penum->rows[i].data,
-					   raster, "gs_image_next(row)");
-			    penum->rows[i].data = 0;
-			    penum->rows[i].size = 0;
-			}
-			break;
-		    }
-		    penum->rows[i].data = row;
-		    penum->rows[i].size = raster;
-		}
-		if (code < 0)
-		    break;
-	    }
-	    for (i = 0; i < num_planes; ++i)
-		memcpy(penum->rows[i].data + pos, planes[i], count);
-	    pos += count;
-	    left -= count;
-	    if (pos == raster) {
-		for (i = 0; i < num_planes; ++i)
-		    planes[i] = penum->rows[i].data;
-		code = copy_planes(dev, penum, planes, 1);
-		if (code < 0)
-		    break;
-		pos = 0;
-		penum->y++;
-	    }
+	penum->planes[px].source.data = dbytes;
+	penum->planes[px].source.size = dsize;
+	while (++px < num_planes && !penum->wanted[px])
+	    DO_NOTHING;
+	if (px < num_planes) {
+	    /* We need more planes. */
+	    penum->plane_index = px;
+	    return 0;
 	}
     }
-    penum->pos = pos;
-    penum->plane_index = 0;
-    *pused = dsize - left;
+    /* We have a full set of planes. */
+    dev = penum->dev;
+    code = 0;
+    /****** HOW TO STOP IN TIME IF TOO MUCH DATA? ******/
+    while (!code) {
+	gx_image_plane_t planes[gs_image_max_planes];
+	int i;
+	int direct = max_int;
+	bool filled = true;
+
+	for (i = 0; i < num_planes; ++i) {
+	    if (!penum->wanted[i])
+		planes[i].data = 0;
+	    else {
+		planes[i].data_x = 0;
+		planes[i].raster = gs_image_bytes_per_plane_row(penum, i);
+		if (penum->planes[i].pos == 0)
+		    direct = min(direct, penum->planes[i].source.size /
+				 planes[i].raster);
+		else
+		    direct = 0;
+	    }
+	}
+	if (direct) {
+	    /*
+	     * Pass (a) row(s) directly from the source.  If wanted_varies,
+	     * we can only safely pass 1 scan line at a time.
+	     */
+	    if (penum->wanted_varies)
+		direct = 1;
+	    for (i = 0; i < num_planes; ++i)
+		if (penum->wanted[i])
+		    planes[i].data = penum->planes[i].source.data;
+	    code = copy_planes(dev, penum, planes, direct, &direct);
+	    for (i = 0; i < num_planes; ++i)
+		if (planes[i].data) {
+		    uint used = direct * planes[i].raster;
+
+		    penum->planes[i].source.data += used;
+		    penum->planes[i].source.size -= used;
+		}
+	    penum->y += direct;
+	    if (code < 0)
+		break;
+	} else {		/* Buffer a partial row. */
+	    bool empty = false;
+	    uint count[gs_image_max_planes];
+
+	    /* Make sure the row buffers are allocated. */
+	    for (i = 0; i < num_planes; ++i)
+		if (penum->wanted[i]) {
+		    uint raster = planes[i].raster;
+		    uint old_size = penum->planes[i].row.size;
+
+		    if (raster > old_size) {
+			byte *old_data = penum->planes[i].row.data;
+			byte *row =
+			    (old_data == 0 ?
+			     gs_alloc_string(penum->memory, raster,
+					     "gs_image_next(row)") :
+			     gs_resize_string(penum->memory, old_data,
+					      old_size, raster,
+					      "gs_image_next(row)"));
+
+			if (row == 0) {
+			    code = gs_note_error(gs_error_VMerror);
+			    free_row_buffers(penum, i, "gs_image_next(row)");
+			    break;
+			}
+			penum->planes[i].row.data = row;
+			penum->planes[i].row.size = raster;
+		    }
+		    count[i] = min(raster - penum->planes[i].pos,
+				   penum->planes[i].source.size);
+		    memcpy(penum->planes[i].row.data + penum->planes[i].pos,
+			   penum->planes[i].source.data, count[i]);
+		    if ((penum->planes[i].pos += count[i]) < raster) {
+			filled = false;
+			empty |= count[i] == 0;
+		    }
+		}
+	    if (code < 0)
+		break;
+	    if (filled) {
+		for (i = 0; i < num_planes; ++i)
+		    if (penum->wanted[i])
+			planes[i].data = penum->planes[i].row.data;
+		code = copy_planes(dev, penum, planes, 1, &direct);
+		if (code < 0) {
+		    /* Undo the incrementing of pos. */
+		    for (i = 0; i < num_planes; ++i)
+			if (penum->wanted[i])
+			    penum->planes[i].pos -= count[i];
+		    break;
+		}
+		for (i = 0; i < num_planes; ++i)
+		    penum->planes[i].pos = 0;
+		penum->y++;
+	    }
+	    for (i = 0; i < num_planes; ++i)
+		if (penum->wanted[i]) {
+		    penum->planes[i].source.data += count[i];
+		    penum->planes[i].source.size -= count[i];
+		}
+	    if (empty)
+		break;
+	}
+	if (filled & !code)
+	    begin_planes(penum);
+    }
+    /*
+     * We only set *pused for the last plane of a group.  We will have to
+     * rethink this in order to handle varying-size planes.
+     */
+    *pused = penum->planes[penum->plane_index].source.data - dbytes;
     return code;
 }
 
@@ -309,11 +427,7 @@ gs_image_next(gs_image_enum * penum, const byte * dbytes, uint dsize,
 void
 gs_image_cleanup(gs_image_enum * penum)
 {
-    int i;
-
-    for (i = 0; i < penum->num_planes; ++i)
-	gs_free_string(penum->memory, penum->rows[i].data,
-		       penum->rows[i].size, "gs_image_cleanup(row)");
+    free_row_buffers(penum, penum->num_planes, "gs_image_cleanup(row)");
     if (penum->dev != 0)
 	gx_image_end(penum->info, !penum->error);
     /* Don't free the local enumerator -- the client does that. */

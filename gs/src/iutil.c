@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -23,6 +23,12 @@
 #include "string_.h"
 #include "ghost.h"
 #include "errors.h"
+#include "gsccode.h"		/* for gxfont.h */
+#include "gsmatrix.h"
+#include "gsutil.h"
+#include "gxfont.h"
+#include "strimpl.h"
+#include "sstring.h"
 #include "idict.h"
 #include "imemory.h"
 #include "iname.h"
@@ -31,17 +37,12 @@
 #include "ivmspace.h"
 #include "oper.h"
 #include "store.h"
-#include "gsccode.h"		/* for gxfont.h */
-#include "gsmatrix.h"
-#include "gsutil.h"
-#include "gxfont.h"
 
 /* ------ Object utilities ------ */
 
 /* Define the table of ref type properties. */
-const byte ref_type_properties[] =
-{
-    ref_type_properties_data
+const byte ref_type_properties[] = {
+    REF_TYPE_PROPERTIES_DATA
 };
 
 /* Copy refs from one place to another. */
@@ -186,132 +187,284 @@ obj_ident_eq(const ref * pref1, const ref * pref2)
 }
 
 /*
- * Create a printable representation of an object, a la cvs (full_print =
- * false) or == (full_print = true).  Return 0 if OK, <0 if the destination
- * wasn't large enough or the object's contents weren't readable.
- * If the object was a string or name, store a pointer to its characters
- * even if it was too large.
+ * Set *pchars and *plen to point to the data of a name or string, and
+ * return 0.  If the object isn't a name or string, return e_typecheck.
+ * If the object is a string without read access, return e_invalidaccess.
+ */
+int
+obj_string_data(const ref *op, const byte **pchars, uint *plen)
+{
+    switch (r_type(op)) {
+    case t_name: {
+	ref nref;
+
+	name_string_ref(op, &nref);
+	*pchars = nref.value.bytes;
+	*plen = r_size(&nref);
+	return 0;
+    }
+    case t_string:
+	check_read(*op);
+	*pchars = op->value.bytes;
+	*plen = r_size(op);
+	return 0;
+    default:
+	return_error(e_typecheck);
+    }
+}
+
+/*
+ * Create a printable representation of an object, a la cvs and =
+ * (full_print = 0), == (full_print = 1), or === (full_print = 2).  Return 0
+ * if OK, 1 if the destination wasn't large enough, e_invalidaccess if the
+ * object's contents weren't readable.  If the return value is 0 or 1,
+ * *prlen contains the amount of data returned.  start_pos is the starting
+ * output position -- the first start_pos bytes of output are discarded, and
+ * *prlen reflects the remaining amount of output.
+ *
+ * This rather complex API is needed so that a client can call obj_cvp
+ * repeatedly to print on a stream, which may require suspending at any
+ * point to handle stream callouts.
  */
 private void ensure_dot(P1(char *));
 int
 obj_cvp(const ref * op, byte * str, uint len, uint * prlen,
-	const byte ** pchars, bool full_print)
+	int full_print, uint start_pos)
 {
-    if (full_print)
-	switch (r_btype(op)) {
-	    case t_boolean:
-	    case t_integer:
-		break;
-	    case t_real:
-	    /*
-	     * To get fully accurate output results for IEEE single-
-	     * precision floats (24 bits of mantissa), the ANSI
-	     * %g default of 6 digits is not enough; 9 are needed.
-	     * Unfortunately, using %.9g for floats (as opposed to
-	     * doubles) produces unfortunate artifacts such as 0.01 5 mul
-	     * printing as 0.049999997.  Therefore, we print using %g,
-	     * and if the result isn't accurate enough, print again
-	     * using %.9g.  Unfortunately, a few PostScript programs
-	     * 'know' that the printed representation of floats fits
-	     * into 6 digits (e.g., with cvs).  We resolve this by letting
-	     * cvs, cvrs, and = do what the Adobe interpreters appear
-	     * to do (use %g), and only produce accurate output for ==,
-	     * for which there is no analogue of cvs.  What a hack!
-	     */
-		if (!full_print)
-		    break;
-		{
-		    char buf[30];  /* big enough for any float or double */
-		    float value = op->value.realval;
-		    float scanned;
-		    uint plen;
-
-		    sprintf(buf, "%g", value);
-		    sscanf(buf, "%f", &scanned);
-		    if (scanned != value)
-			sprintf(buf, "%.9g", value);
-		    ensure_dot(buf);
-		    *prlen = plen = strlen(buf);
-		    if (plen > len)
-			return_error(e_rangecheck);
-		    memcpy(str, buf, plen);
-		    return 0;
-		}
-	    default:
-		return_error(e_typecheck);
-	}
-    return obj_cvs(op, str, len, prlen, pchars);
-}
-int
-obj_cvs(const ref * op, byte * str, uint len, uint * prlen,
-	const byte ** pchars)
-{
-    char buf[30];		/* big enough for any float or double */
-    const byte *pstr = (const byte *)buf;
-    uint plen;
+    char buf[50];  /* big enough for any float, double, or struct name */
+    const byte *data = (const byte *)buf;
+    uint size;
+    int code;
     ref nref;
 
-    switch (r_btype(op)) {
+    if (full_print) {
+	static const char * const type_strings[] = { REF_TYPE_PRINT_STRINGS };
+
+	switch (r_btype(op)) {
 	case t_boolean:
-	    pstr = (const byte *)(op->value.boolval ? "true" : "false");
-	    break;
 	case t_integer:
-	    sprintf(buf, "%ld", op->value.intval);
 	    break;
-	case t_name:
-	    name_string_ref(op, &nref);		/* name string */
-cvname:	    pstr = nref.value.bytes;
-	    plen = r_size(&nref);
-	    if (pchars != 0)
-		*pchars = pstr;
-	    goto nl;
-	case t_oparray:
-	    {
-		uint index = op_index(op);
-		const op_array_table *opt = op_index_op_array_table(index);
+	case t_real: {
+	    /*
+	     * To get fully accurate output results for IEEE
+	     * single-precision floats (24 bits of mantissa), the ANSI %g
+	     * default of 6 digits is not enough; 9 are needed.
+	     * Unfortunately, using %.9g for floats (as opposed to doubles)
+	     * produces unfortunate artifacts such as 0.01 5 mul printing as
+	     * 0.049999997.  Therefore, we print using %g, and if the result
+	     * isn't accurate enough, print again using %.9g.
+	     * Unfortunately, a few PostScript programs 'know' that the
+	     * printed representation of floats fits into 6 digits (e.g.,
+	     * with cvs).  We resolve this by letting cvs, cvrs, and = do
+	     * what the Adobe interpreters appear to do (use %g), and only
+	     * produce accurate output for ==, for which there is no
+	     * analogue of cvs.  What a hack!
+	     */
+	    float value = op->value.realval;
+	    float scanned;
 
-		name_index_ref(opt->nx_table[index - opt->base_index], &nref);
-	    }
-	    name_string_ref(&nref, &nref);
-	    goto cvname;
+	    sprintf(buf, "%g", value);
+	    sscanf(buf, "%f", &scanned);
+	    if (scanned != value)
+		sprintf(buf, "%.9g", value);
+	    ensure_dot(buf);
+	    goto rs;
+	}
 	case t_operator:
+	case t_oparray:  
+	    code = obj_cvp(op, (byte *)buf + 2, sizeof(buf) - 4, &size, 0, 0);
+	    if (code < 0) 
+		return code;
+	    buf[0] = buf[1] = buf[size + 2] = buf[size + 3] = '-';
+	    size += 4;
+	    goto nl;
+	case t_name:	 
+	    if (r_has_attr(op, a_executable)) {
+		code = obj_string_data(op, &data, &size);
+		if (code < 0)
+		    return code;
+		goto nl;
+	    }
+	    if (start_pos > 0)
+		return obj_cvp(op, str, len, prlen, 0, start_pos - 1);
+	    if (len < 1)
+		return_error(e_rangecheck);
+	    code = obj_cvp(op, str + 1, len - 1, prlen, 0, 0);
+	    if (code < 0)
+		return code;
+	    str[0] = '/';
+	    ++*prlen;
+	    return code;
+	case t_null:
+	    data = (const byte *)"null";
+	    goto rs;
+	case t_string:  
+	    if (!r_has_attr(op, a_read))
+		goto other;
+	    size = r_size(op);
 	    {
-		/* Recover the name from the initialization table. */
-		uint index = op_index(op);
+		bool truncate = (full_print == 1 && size > CVP_MAX_STRING);
+		stream_cursor_read r;
+		stream_cursor_write w;
+		uint skip;
+		byte *wstr;
+		uint len1;
+		int status = 1;
 
+		if (start_pos == 0) {
+		    if (len < 1)
+			return_error(e_rangecheck);
+		    str[0] = '(';
+		    skip = 0;
+		    wstr = str + 1;
+		} else {
+		    skip = start_pos - 1;
+		    wstr = str;
+		}
+		len1 = len + (str - wstr);
+		r.ptr = op->value.const_bytes - 1;
+		r.limit = r.ptr + (truncate ? CVP_MAX_STRING : size);
+		while (skip && status == 1) {
+		    uint written;
+
+		    w.ptr = (byte *)buf - 1;
+		    w.limit = w.ptr + min(skip + len1, sizeof(buf));
+		    status = s_PSSE_template.process(NULL, &r, &w, false);
+		    written = w.ptr - ((byte *)buf - 1);
+		    if (written > skip) {
+			written -= skip;
+			memcpy(wstr, buf + skip, written);
+			wstr += written;
+			skip = 0;
+			break;
+		    }
+		    skip -= written;
+		}
 		/*
-		 * Check the validity of the index.  (An out-of-bounds index
-		 * is only possible when examining an invalid object using
-		 * the debugger.)
+		 * We can reach here with status == 0 (and skip != 0) if
+		 * start_pos lies within the trailing ")" or  "...)".
 		 */
-		if (index > 0 && index < op_def_count) {
-		    pstr = (const byte *)(op_def_table[index]->oname + 1);
-		    break;
+		if (status == 0) {
+#ifdef DEBUG
+		    if (skip > (truncate ? 4 : 1)) {
+			return_error(e_Fatal);
+		    }
+#endif
+		}
+		w.ptr = wstr - 1;
+		w.limit = str - 1 + len;
+		if (status == 1)
+		    status = s_PSSE_template.process(NULL, &r, &w, false);
+		*prlen = w.ptr - (str - 1);
+		if (status != 0)
+		    return 1;
+		if (truncate) {
+		    if (len - *prlen < 4 - skip)
+			return 1;
+		    memcpy(w.ptr + 1, "...)" + skip, 4 - skip);
+		    *prlen += 4 - skip;
+		} else {
+		    if (len - *prlen < 1 - skip)
+			return 1;
+		    memcpy(w.ptr + 1, ")" + skip, 1 - skip);
+		    *prlen += 1 - skip;
 		}
 	    }
-	    /* Internal operator, no name. */
-	    sprintf(buf, "@0x%lx", (ulong) op->value.opproc);
-	    break;
-	case t_real:
-	    sprintf(buf, "%g", op->value.realval);
-	    ensure_dot(buf);
-	    break;
-	case t_string:
-	    check_read(*op);
-	    pstr = op->value.bytes;
-	    plen = r_size(op);
-	    if (pchars != 0)
-		*pchars = pstr;
+	    return 0;
+	case t_astruct:
+	case t_struct:    
+	    if (r_is_foreign(op)) {
+		/* gs_object_type may not work. */
+		data = (const byte *)"-foreign-struct-";
+		goto rs;
+	    }
+	    data = (const byte *)
+		gs_struct_type_name_string(
+			gs_object_type(imemory,
+			       (const obj_header_t *)op->value.pstruct));
+	    size = strlen((const char *)data);
+	    if (size > 4 && !memcmp(data + size - 4, "type", 4))
+		size -= 4;
+	    if (size > sizeof(buf) - 2)
+		return_error(e_rangecheck);
+	    buf[0] = '-';
+	    memcpy(buf + 1, data, size);
+	    buf[size + 1] = '-';
+	    size += 2;
+	    data = (const byte *)buf;
 	    goto nl;
 	default:
-	    pstr = (const byte *)"--nostringval--";
+other:
+	    {
+		int rtype = r_btype(op);
+
+		if (rtype > countof(type_strings))
+		    return_error(e_rangecheck);
+		data = (const byte *)type_strings[rtype];
+		if (data == 0)
+		    return_error(e_rangecheck);
+	    }
+	    goto rs;
+	}
+    }	
+    /* full_print = 0 */
+    switch (r_btype(op)) {
+    case t_boolean:
+	data = (const byte *)(op->value.boolval ? "true" : "false");
+	break;
+    case t_integer:
+	sprintf(buf, "%ld", op->value.intval);
+	break;
+    case t_string:
+	check_read(*op);
+	/* falls through */
+    case t_name:
+	code = obj_string_data(op, &data, &size);
+	if (code < 0)
+	    return code;
+	goto nl;
+    case t_oparray: {
+	uint index = op_index(op);
+	const op_array_table *opt = op_index_op_array_table(index);
+
+	name_index_ref(opt->nx_table[index - opt->base_index], &nref);
+	name_string_ref(&nref, &nref);
+	code = obj_string_data(&nref, &data, &size);
+	if (code < 0)
+	    return code;
+	goto nl;
     }
-    plen = strlen((const char *)pstr);
-nl: *prlen = plen;
-    if (plen > len)
+    case t_operator: {
+	/* Recover the name from the initialization table. */
+	uint index = op_index(op);
+
+	/*
+	 * Check the validity of the index.  (An out-of-bounds index
+	 * is only possible when examining an invalid object using
+	 * the debugger.)
+	 */
+	if (index > 0 && index < op_def_count) {
+	    data = (const byte *)(op_index_def(index)->oname + 1);
+	    break;
+	}
+	/* Internal operator, no name. */
+	sprintf(buf, "@0x%lx", (ulong) op->value.opproc);
+	break;
+    }
+    case t_real:
+	sprintf(buf, "%g", op->value.realval);
+	ensure_dot(buf);
+	break;
+    default:
+	data = (const byte *)"--nostringval--";
+    }
+rs: size = strlen((const char *)data);
+nl: if (size < start_pos)
 	return_error(e_rangecheck);
-    memcpy(str, pstr, plen);
-    return 0;
+    size -= start_pos;
+    *prlen = min(size, len);
+    memmove(str, data + start_pos, *prlen);
+    return (size > len);
 }
 /*
  * Make sure the converted form of a real number has a decimal point.  This
@@ -331,22 +484,47 @@ ensure_dot(char *buf)
 
 	    strcpy(buf1, ept);
 	    strcpy(ept, ".0");
-	    strcat(buf, buf1);
+	    strcat(buf, ept);
 	}
     }
+}
+
+/*
+ * Create a printable representation of an object, a la cvs and =.  Return 0
+ * if OK, e_rangecheck if the destination wasn't large enough,
+ * e_invalidaccess if the object's contents weren't readable.  If pchars !=
+ * NULL, then if the object was a string or name, store a pointer to its
+ * characters in *pchars even if it was too large; otherwise, set *pchars =
+ * str.  In any case, store the length in *prlen.
+ */
+int
+obj_cvs(const ref * op, byte * str, uint len, uint * prlen,
+	const byte ** pchars)
+{
+    int code = obj_cvp(op, str, len, prlen, 0, 0);
+
+    if (code != 1 && pchars) {
+	*pchars = str;
+	return code;
+    }
+    code = obj_string_data(op, pchars, prlen);
+    return (code == e_typecheck ? gs_note_error(e_rangecheck) : code);
 }
 
 /* Find the index of an operator that doesn't have one stored in it. */
 ushort
 op_find_index(const ref * pref /* t_operator */ )
 {
-    op_proc_p proc = real_opproc(pref);
-    const op_def *const *opp = op_def_table;
-    const op_def *const *opend = opp + op_def_count;
+    op_proc_t proc = real_opproc(pref);
+    const op_def *const *opp = op_defs_all;
+    const op_def *const *opend = opp + (op_def_count / OP_DEFS_MAX_SIZE);
 
-    for (; ++opp < opend;) {
-	if ((*opp)->proc == proc)
-	    return opp - op_def_table;
+    for (; opp < opend; ++opp) {
+	const op_def *def = *opp;
+
+	for (; def->oname != 0; ++def)
+	    if (def->proc == proc)
+		return (opp - op_defs_all) * OP_DEFS_MAX_SIZE + (def - *opp);
     }
     /* Lookup failed!  This isn't possible.... */
     return 0;

@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1996, 1997, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -28,19 +28,14 @@
 int gs_setlinewidth(P2(gs_state *, floatp));
 float gs_currentlinewidth(P1(const gs_state *));
 int gs_setlinecap(P2(gs_state *, gs_line_cap));
-
-gs_line_cap
-gs_currentlinecap(P1(const gs_state *));
+gs_line_cap gs_currentlinecap(P1(const gs_state *));
 int gs_setlinejoin(P2(gs_state *, gs_line_join));
-
-gs_line_join
-gs_currentlinejoin(P1(const gs_state *));
+gs_line_join gs_currentlinejoin(P1(const gs_state *));
 int gs_setmiterlimit(P2(gs_state *, floatp));
 float gs_currentmiterlimit(P1(const gs_state *));
 int gs_setdash(P4(gs_state *, const float *, uint, floatp));
 uint gs_currentdash_length(P1(const gs_state *));
-const float *
-      gs_currentdash_pattern(P1(const gs_state *));
+const float *gs_currentdash_pattern(P1(const gs_state *));
 float gs_currentdash_offset(P1(const gs_state *));
 int gs_setflat(P2(gs_state *, floatp));
 float gs_currentflat(P1(const gs_state *));

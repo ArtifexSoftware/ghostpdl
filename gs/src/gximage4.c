@@ -42,10 +42,15 @@ const gx_image_type_t gs_image_type_4 = {
     &st_gs_image4, gx_begin_image4, gx_data_image_source_size,
     gx_image4_sput, gx_image4_sget, gx_image4_release, 4
 };
-/* The implementation is shared with ImageType 1. */
-private const gx_image_enum_procs_t image4_enum_procs = {
+/*
+ * The implementation is shared with ImageType 1, so we don't need our own
+ * enum_procs.
+ */
+/*
+  private const gx_image_enum_procs_t image4_enum_procs = {
     gx_image1_plane_data, gx_image1_end_image
-};
+  };
+*/
 
 /* Initialize an ImageType 4 image. */
 void
@@ -57,7 +62,7 @@ gs_image4_t_init(gs_image4_t * pim, const gs_color_space * color_space)
 }
 
 /* Start processing an ImageType 4 image. */
-int
+private int
 gx_begin_image4(gx_device * dev,
 		const gs_imager_state * pis, const gs_matrix * pmat,
 		const gs_image_common_t * pic, const gs_int_rect * prect,

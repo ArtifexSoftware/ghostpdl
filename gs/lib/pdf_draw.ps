@@ -1,4 +1,4 @@
-%    Copyright (C) 1994, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1994, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -214,6 +214,10 @@ end
 
 % ---------------- Color setting ---------------- %
 
+/01_1 [0 1] readonly def
+/01_3 [0 1 0 1 0 1] readonly def
+/01_4 [0 1 0 1 0 1 0 1] readonly def
+
 % The keys here are resolved (PostScript, not PDF) color space names.
 /csncompdict mark
   /DeviceGray { pop 1 }
@@ -249,33 +253,37 @@ end
   }
   /DeviceCMYK { }
   /CalGray {
-    1 oget dup /Gamma knownoget {
-      exch dup length 1 add dict .copydict
-      dup /DecodeA 4 -1 roll /exp load 2 packedarray cvx put
+    1 oget 6 dict begin
+    dup /Gamma knownoget {
+      /exp load 2 packedarray cvx /DecodeA exch def
     } if
-    /CIEBasedA exch 2 array astore
+    dup /BlackPoint knownoget { /BlackPoint exch def } if
+    dup /WhitePoint knownoget { /WhitePoint exch def } if
+    pop [ /CIEBasedA currentdict end ]
   }
   /CalRGB {
-    1 oget dup /Gamma known 1 index /Matrix known or {
-      dup length 2 add dict .copydict
-      dup /Matrix knownoget { 1 index /MatrixABC 3 -1 roll put } if
-      dup /Gamma knownoget {
-        [ exch { /exp load 2 packedarray cvx } forall
-        ] 1 index /DecodeABC 3 -1 roll put
-      } if
-    }
-    if /CIEBasedABC exch 2 array astore 
+    1 oget 6 dict begin
+    dup /Gamma knownoget {
+      [ exch { /exp load 2 packedarray cvx } forall
+      ] /DecodeABC exch def
+    } if
+    dup /Matrix knownoget { /MatrixABC exch def } if
+    dup /BlackPoint knownoget { /BlackPoint exch def } if
+    dup /WhitePoint knownoget { /WhitePoint exch def } if
+    pop [ /CIEBasedABC currentdict end ]
   }
   /CalCMYK {
     pop /DeviceCMYK		% not defined by Adobe
   }
   /Lab {
-    1 oget dup length 3 add dict .copydict
+    1 oget 6 dict begin
     dup /Range knownoget not { [-100 100 -100 100] } if
-    [-100 0 null null null null] dup 2 4 -1 roll putinterval
-    1 index /RangeABC 3 -1 roll put
-    //cslabinit exch copy
-    /CIEBasedABC exch 2 array astore
+    [0 100 null null null null] dup 2 4 -1 roll putinterval
+    /RangeABC exch def
+    //cslabinit { def } forall
+    dup /BlackPoint knownoget { /BlackPoint exch def } if
+    dup /WhitePoint knownoget { /WhitePoint exch def } if
+    pop [ /CIEBasedABC currentdict end ]
   }
   /ICCBased {
 		% Since the PostScript interpreter doesn't support these yet,
@@ -297,10 +305,23 @@ end
     4 array astore
   }
   /Indexed {
-    aload pop 3 -1 roll resolvecolorspace 3 1 roll
-    oforce dup type /stringtype eq {
-      pop
-    } {
+    aload pop 3 -1 roll resolvecolorspace
+		% If the underlying space is a Lab space, we must scale
+		% the output of the lookup table as part of DecodeABC.
+    dup dup type /arraytype eq { 0 get } if /CIEBasedABC eq {
+      dup 1 get /DecodeLMN known {
+	1 get dup length dict copy
+	begin /DecodeABC [ 0 2 4 {
+	  RangeABC 1 index 1 add get RangeABC 2 index get sub /mul load
+	  RangeABC 3 index get /add load
+	  DecodeABC 6 -1 roll 2 idiv get [ 6 1 roll aload pop ] cvx
+	} for ] def
+	/RangeABC //01_3 def
+	currentdict end /CIEBasedABC exch 2 array astore
+      } if
+    } if
+    3 1 roll
+    oforce dup type /stringtype ne {
 		% The color lookup table is a stream.
 		% Get its contents.  Don't lose our place in PDFfile.
 		% Stack: /Indexed basespace hival lookup
@@ -315,11 +336,11 @@ end
 		% Stack: filepos /Indexed basespace hival table
 	5 -1 roll PDFfile exch setfileposition
     }
-    ifelse 4 array astore
+    if 4 array astore
   }
   /Pattern
    { dup type /nametype ne
-      { dup length 1 ge
+      { dup length 1 gt
 	 { 1 get resolvecolorspace
 	   /Pattern exch 2 array astore
 	 }
@@ -361,36 +382,43 @@ end
    if
    count 1 gt
  } bdef
- 
+
 /.pdfpaintproc {         % <patdict> <resdict> .pdfpaintproc -
   DEBUG { (%Begin PaintProc) = flush } if
+	% For uncolored patterns, we have to unbind the current
+	% color and color space before running the PaintProc.
+	% There's no harm in doing this for colored patterns,
+	% so for simplicity, we always do it.
+  q
+  null sc1 null SC1
   exch false resolvestream pdfopdict .pdfruncontext
+  Q
   DEBUG { (%End PaintProc) = flush } if
-} bind def
+} bdef
 
-/resolvepattern		% <patternstreamdict> resolvepattern <patterndict>
- {		% Don't do the resolvestream now: just capture the data
+/resolvepattern {	% <patternstreamdict> resolvepattern <patterndict>
+		% Don't do the resolvestream now: just capture the data
 		% from the file if necessary.
-   dup length dict copy
-   dup /FilePosition .knownget
-    { 1 index /File get dup fileposition 3 1 roll
+  dup length dict copy
+  dup /FilePosition .knownget {
+    1 index /File get dup fileposition 3 1 roll
 		% Stack: dict savepos pos file
-      dup 3 -1 roll setfileposition
-      dup 3 index /Length get string readstring pop
+    dup 3 -1 roll setfileposition
+    dup 3 index /Length get string readstring pop
 		% Stack: dict savepos file string
-      3 1 roll exch setfileposition
-      1 index /File 3 -1 roll put
-      dup /FilePosition undef
-    }
-   if
-   dup [
-     1 index /Resources knownoget { oforce } { 0 dict } ifelse
-     /.pdfpaintproc cvx
-   ] cvx /PaintProc exch put
-   DEBUG {
-     (%Pattern: ) print dup === flush
-   } if
- } bdef
+    3 1 roll exch setfileposition
+    1 index /File 3 -1 roll put
+    dup /FilePosition undef
+  } if
+  dup /PaintProc [
+		% Bind the resource dictionary into the PaintProc.
+    2 index /Resources knownoget { oforce } { 0 dict } ifelse
+    /.pdfpaintproc cvx
+  ] cvx put
+  DEBUG {
+    (%Pattern: ) print dup === flush
+  } if
+} bdef
 
 drawopdict begin
   /g { /DeviceGray cssubst { cs sc1 } { g } ifelse } bdef
@@ -445,9 +473,6 @@ end
 
 % Note that the keys in defaultdecodedict are resolved (PostScript, not PDF)
 % color space names.
-/01_1 [0 1] readonly def
-/01_3 [0 1 0 1 0 1] readonly def
-/01_4 [0 1 0 1 0 1 0 1] readonly def
 /defaultdecodedict mark
   /DeviceGray { pop //01_1 }
   /DeviceRGB { pop //01_3 }
@@ -458,69 +483,78 @@ end
   /DeviceN {
     dup 1 oget length [ exch {0 1} repeat ] readonly
   }
+  /Indexed {
+    pop [ 0 1 BitsPerComponent bitshift 1 sub ]
+  }
 .dicttomark readonly def
 
-/makeimagedict
- { dup length dict
-   1 index /ColorSpace knownoget
-    { resolvecolorspace
-      dup type /arraytype eq { dup length 1 eq { 0 get } if } if
-      exch begin /ColorSpace exch def
-    }
-    { begin
-    }
-   ifelse
-   /ImageType 1 def
-		% Always define ImageMask appropriately.
-   dup /ImageMask knownoget dup { and } if
-     /ImageMask exch def
-   /Width 2 copy oget def
-   /Height 2 copy oget def
-   /BitsPerComponent 2 copy oget def
-   /Decode 2 copy knownoget not
-    {		% Decode is required for the PostScript image operators.
-      ImageMask
-       { [0 1]
-       }
-       { ColorSpace dup type /arraytype eq { 0 get } if dup /Indexed eq
-	  { pop [ 0 1 BitsPerComponent bitshift 1 sub ] }
-	  { defaultdecodedict exch get ColorSpace exch exec }
-	 ifelse
-       }
-      ifelse
-    }
-   if def
-   /Interpolate 2 copy knownoget { def } { pop } ifelse
-   /ImageMatrix Width 0 0 Height neg 0 Height 6 array astore def
+/makeimagedict {	% <resdict> <newdict> makeimagedict -
+			% On return, newdict' is currentdict
+  begin
+  /Width 2 copy oget def
+  /Height 2 copy oget def
+  /BitsPerComponent 2 copy oget def
+  /Interpolate 2 copy knownoget { def } { pop } ifelse
+  makeimagekeys
+} bdef
+/makeimagekeys {	% <resdict> makeimagekeys <imagemask>
+		% newdict is currentdict
+		% Assumes Width, Height, BPC, Interpolate already copied.
+  /ImageType 1 def
+  /ImageMatrix Width 0 0 Height neg 0 Height 6 array astore def
+  dup /ImageMask knownoget dup { and } if {
+		% Image mask
+		% Decode is required for the PostScript image operators.
+    /Decode 2 copy knownoget not { //01_1 } if def
+		% BitsPerComponent may be missing for masks.
+		% The spec requires it, but some producers omit it, and
+		% Acrobat Reader doesn't care.
+    /BitsPerComponent 2 copy known { pop } { 1 def } ifelse
+    true
+  } {
+		% Opaque image
+    dup /ColorSpace oget resolvecolorspace /ColorSpace exch def
+		% Decode is required for the PostScript image operators.
+    /Decode 2 copy knownoget not {
+      ColorSpace //defaultdecodedict
+      ColorSpace dup type /arraytype eq { 0 get } if get exec
+    } if def
+    false
+  } ifelse
 		% Even though we're going to read data,
 		% pass false to resolvestream so that
 		% it doesn't try to use Length (which may not be present).
-   false resolvestream
-     /DataSource exch def
-  currentdict end
+  exch false resolvestream /DataSource exch def
 } bdef
 
 /DoImage {
-  makeimagedict
-  dup /Mask knownoget {
+  dup length 6 add dict makeimagedict doimage
+} bdef
+/doimage {	% <imagemask> doimage -
+		% imagedict is currentdict, gets popped from dstack
+  DataSource exch
+  currentdict /Mask knownoget {
     dup type /arraytype eq {
-      1 index /ImageType 4 put
-      1 index /MaskColor 3 -1 roll put
+      /ImageType 4 def
+      /MaskColor exch def
     } {
 		% Mask is a stream, another Image XObject.
-      makeimagedict
+      dup length dict makeimagedict
+      currentdict end currentdict end
       4 dict begin
       /ImageType 3 def
       /InterleaveType 3 def
       /MaskDict exch def
       /DataDict exch def
-      currentdict end
     } ifelse
   } if
-  dup /ImageMask get
-   { setfillcolor imagemask }
-   { dup /ColorSpace get csset setcolorspace pop image }
+		% Stack: datasource imagemask
+   { currentdict end setfillcolor imagemask }
+   { ColorSpace setcolorspace currentdict end image }
   ifelse
+		% Close the input stream, unless it is PDFfile or
+		% PDFsource.
+  dup dup PDFfile eq exch PDFsource eq or { pop } { closefile } ifelse
 } bdef
 
 /DoForm {
@@ -548,46 +582,44 @@ end
 % ---------------- In-line images ---------------- %
 
 % Undo the abbreviations in an in-line image dictionary.
-% Note that these can appear as keys, values, or members of array values.
-% /I is ambiguous; we check specially for it below.
-/unabbrevdict mark
-	% Top-level dictionary keys
+% Note that we must look inside array values.
+% /I is context-dependent.
+/unabbrevkeydict mark
   /BPC /BitsPerComponent  /CS /ColorSpace  /D /Decode  /DP /DecodeParms
-  /F /Filter  /H /Height  /IM /ImageMask  /W /Width
-	% Values
+  /F /Filter  /H /Height  /I /Interpolate  /IM /ImageMask  /W /Width
+.dicttomark readonly def
+/unabbrevvaluedict mark
   /AHx /ASCIIHexDecode  /A85 /ASCII85Decode  /CC /CalCMYK
   /CCF /CCITTFaxDecode  /CG /CalGray  /CR /CalRGB
   /DCT /DCTDecode  /CMYK /DeviceCMYK  /Fl /FlateDecode
   /G /DeviceGray  /RGB /DeviceRGB
   /I /Indexed  /LZW /LZWDecode  /RL /RunLengthDecode
 .dicttomark readonly def
-/unabbrev		% <obj> unabbrev <obj'>
- { dup type /nametype eq
-    { unabbrevdict 1 index .knownget { exch pop } if
-    }
-    { dup type /arraytype eq
-       { dup 0 1 2 index length 1 sub
-	  { 2 copy get unabbrev put dup
-	  }
-	 for pop
-       }
-      if
-    }
-   ifelse
- } bdef
+/unabbrevtypedict mark
+  /nametype {
+    //unabbrevvaluedict 1 index .knownget { exch pop } if
+  }
+  /arraytype {
+    dup 0 1 2 index length 1 sub {
+      2 copy get unabbrevvalue put dup
+    } for pop
+  }
+.dicttomark readonly def
+/unabbrevvalue {	% <obj> unabbrevvalue <obj'>
+  oforce //unabbrevtypedict 1 index type .knownget { exec } if
+} bdef
 
 drawopdict begin
   /BI { mark } bdef
-  /ID
-    { counttomark
-       { counttomark 1 roll
-	 dup /I eq { pop /Interpolate } { unabbrev } ifelse
-       }
-      repeat
-      /File PDFsource
-      .dicttomark DoImage
-      PDFsource token pop /EI ne { /ID cvx /syntaxerror signalerror } if
-    } bdef
+  /ID {
+    counttomark 2 idiv dup 6 add dict begin {
+      exch //unabbrevkeydict 1 index .knownget { exch pop } if
+      exch unabbrevvalue def
+    } repeat pop
+    /File PDFsource def
+    currentdict makeimagekeys doimage
+    PDFsource token pop /EI ne { /ID cvx /syntaxerror signalerror } if
+  } bdef
 end
 
 % ================================ Text ================================ %

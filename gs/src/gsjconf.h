@@ -25,7 +25,7 @@
 /*
  * We should have the following here:
 
- #include "stdpre.h"
+#include "stdpre.h"
 
  * But because of the directory structure used to build the IJG library, we
  * actually concatenate stdpre.h on the front of this file instead to
@@ -57,14 +57,14 @@
 #undef INCOMPLETE_TYPES_BROKEN
 
 /* The following is documented in jmemsys.h, not jconfig.doc. */
-#if arch_ints_are_short
+#if ARCH_SIZEOF_INT <= 2
 #  undef MAX_ALLOC_CHUNK
 #  define MAX_ALLOC_CHUNK 0xfff0
 #endif
 
 #ifdef JPEG_INTERNALS
 
-#if arch_arith_rshift == 0
+#if ARCH_ARITH_RSHIFT == 0
 #  define RIGHT_SHIFT_IS_UNSIGNED
 #else
 #  undef RIGHT_SHIFT_IS_UNSIGNED

@@ -1,4 +1,4 @@
-%    Copyright (C) 1992, 1993, 1994 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1992, 1993, 1994, 1999 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -36,43 +36,48 @@ currentpacking true setpacking
 % Define the default "after" action
 /traceafter { } def
 
-/traceprint
- { dup type /integertype eq
-    { 1 sub -1 0 { ( ) print index ==only } for }
-    { exec }
-   ifelse
- } bind def
-/traceend
- { traceflush { flush } if
- } bind def
-/traceop
- { userdict begin
-   dup type dup /nametype eq exch /dicttype eq or { { tracebefore } } if
-   1 index type dup /nametype eq exch /dicttype eq or { { traceafter } } if
-   /.tpost exch def /.tpre exch def
-   dup type /dicttype ne
-    { dup where not { userdict 1 index {} put userdict } if
-    } if
-   dup dup wcheck not
-    { (Warning: substituting userdict for non-writable dictionary.\n) print
-      pop userdict
-    } if
-   /.tddict exch def   /.tdict exch def   /.tname exch cvlit def
-   [ .tname /=only cvx ( ) /print cvx
-     /.tpre load /traceprint cvx /traceend cvx
-     .tdict .tname get
-     dup xcheck
-      { dup type dup /arraytype eq exch /packedarraytype eq or
-         { /exec cvx
-	 } if
+/traceprint {
+  dup type /integertype eq {
+    1 sub -1 0 { ( ) print index ==only } for
+  } {
+    exec
+  } ifelse
+} bind def
+/traceend {
+  traceflush { flush } if
+} bind def
+/traceop {
+  userdict begin
+  dup type dup /nametype eq exch /dicttype eq or { { tracebefore } } if
+  1 index type dup /nametype eq exch /dicttype eq or { { traceafter } } if
+  /.tpost exch def /.tpre exch def
+  dup type /dicttype ne {
+    dup where not { userdict 1 index {} put userdict } if
+  } if
+  dup dup wcheck not {
+    (Warning: substituting userdict for non-writable dictionary.) =
+    pop userdict
+  } if
+  /.tddict exch def   /.tdict exch def   /.tname exch cvlit def
+  .currentglobal [
+  .tname /=only cvx ( ) /print cvx
+    /.tpre load /traceprint cvx /traceend cvx
+    .tdict .tname get /.tdef 1 index cvlit def
+    dup xcheck {
+      dup type dup /arraytype eq exch /packedarraytype eq or {
+	/exec cvx
       } if
-     /.tpost load /traceprint cvx (\n) /print cvx /traceend cvx
-   ] cvx
-   .tdict .tname get type /operatortype eq
-    { .tname exch .makeoperator
     } if
-   .tddict exch .tname exch put end
- } bind def
+    /.tpost load /traceprint cvx () /= cvx /traceend cvx
+  .tdef gcheck /.tpre load gcheck and /.tpost load gcheck and .setglobal
+  ] cvx
+  .tdef type /operatortype eq {
+    .tname exch .makeoperator
+  } if
+  exch .setglobal
+  .tddict exch .tname exch put
+  end		% userdict
+} bind def
 /tracebind /bind load def	% in case someone wants to put it back
 /bind { } def		% disable
 

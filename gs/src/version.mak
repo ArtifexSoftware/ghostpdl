@@ -1,4 +1,4 @@
-#    Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -18,17 +18,13 @@
 
 # Makefile fragment containing the current revision identification.
 
-# Define the name of this makefile.
-VERSION_MAK=$(GLSRC)version.mak
-
 # Major and minor version numbers.
 # MINOR0 is different from MINOR only if MINOR is a single digit.
 GS_VERSION_MAJOR=5
-GS_VERSION_MINOR=55
-GS_VERSION_MINOR0=55
+GS_VERSION_MINOR=84
+GS_VERSION_MINOR0=84
 # Revision date: year x 10000 + month x 100 + day.
-GS_REVISIONDATE=19981201
-
+GS_REVISIONDATE=19990519
 # Derived values
 GS_VERSION=$(GS_VERSION_MAJOR)$(GS_VERSION_MINOR0)
 GS_DOT_VERSION=$(GS_VERSION_MAJOR).$(GS_VERSION_MINOR)

@@ -1,4 +1,4 @@
-%    Copyright (C) 1994, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -301,21 +301,28 @@ pdfdict begin
   } ifelse
 } bind def
 /oforce /exec load def
-/oget		% <array> <index> oget <object>
+/oget {		% <array> <index> oget <object>
 		% <dict> <key> oget <object>
- { 2 copy get dup xcheck
-    { exec dup 4 1 roll put }
-    { exch pop exch pop }
-   ifelse
- } bind def
+  2 copy get dup xcheck {
+    exec dup 4 1 roll put
+  } {
+    exch pop exch pop
+  } ifelse
+} bind def
 % A null value in a dictionary is equivalent to an omitted key;
 % we must check for this specially.
-/knownoget
- { 2 copy known
-    { oget dup null eq { pop false } { true } ifelse }
-    { pop pop false }
-   ifelse
- } bind def
+/knownoget {
+  2 copy .knownget {
+    dup xcheck {
+      exec dup 4 1 roll put
+    } {
+      exch pop exch pop
+    } ifelse
+    dup null eq { pop false } { true } ifelse
+  } {
+    pop pop false
+  } ifelse
+} bind def
 
 % PDF 1.1 defines a 'foreign file reference', but not its meaning.
 % Per the specification, we convert these to nulls.
@@ -459,12 +466,21 @@ pdfdict begin
 % Extract and apply filters.
 /filterparms {		% <dict> <DPkey> <Fkey> filterparms
 			%   <dict> <parms> <filternames>
-  exch 2 index exch .knownget not { null } if
-  exch 2 index exch .knownget not { { } } if
-  dup type /nametype eq {
-    1 array astore
-    1 index null ne { exch 1 array astore exch } if
-  } if
+  2 index exch .knownget {
+    exch 2 index exch .knownget {
+		% Both filters and parameters.
+      exch dup type /nametype eq {
+	1 array astore exch 1 array astore exch
+      } if
+    } {
+		% Filters, but no parameters.
+      null exch
+      dup type /nametype eq { 1 array astore } if
+    } ifelse
+  } {
+		% No filters: ignore parameters, if any.
+    pop null { }
+  } ifelse
 } bind def
 /applyfilters {		% <parms> <source> <filternames> applyfilters <stream>
   2 index null eq {
@@ -493,7 +509,7 @@ pdfdict begin
 		% Stack: readdata? dict parms filternames
     4 -1 roll exch
     pdf_decrypt_stream
-    apply_filters
+    applyfilters
   } {
     exch dup /FilePosition .knownget {
       1 index /File get exch setfileposition
@@ -515,7 +531,7 @@ pdfdict begin
       } {
 	dup type /filetype ne {
 		% Use a SubFileDecode filter to read from a string.
-	  0 () SubFileDecode filter
+	  0 () /SubFileDecode filter
 	} if
       } ifelse
     } {

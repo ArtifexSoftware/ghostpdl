@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -35,19 +35,21 @@
 
 /* The stdxxx files.  We have to access them through procedures, */
 /* because they might have to be opened when referenced. */
-int zget_stdin(P1(stream **));
-int zget_stdout(P1(stream **));
-int zget_stderr(P1(stream **));
+int zget_stdin(P2(i_ctx_t *, stream **));
+int zget_stdout(P2(i_ctx_t *, stream **));
+int zget_stderr(P2(i_ctx_t *, stream **));
 extern bool gs_stdin_is_interactive;
+/* Test whether a stream is stdin. */
+bool zis_stdin(P1(const stream *));
 
-/* Export the stdio refs for switching contexts. */
-extern ref ref_stdio[3];
-
+/* Define access to the stdio refs for operators. */
+#define ref_stdio (i_ctx_p->stdio)
 #define ref_stdin ref_stdio[0]
 #define ref_stdout ref_stdio[1]
 #define ref_stderr ref_stdio[2]
 /* An invalid (closed) file. */
-extern stream *invalid_file_entry;
+#define avm_invalid_file_entry avm_foreign
+extern stream *const invalid_file_entry;
 
 /*
  * Macros for checking file validity.
@@ -78,17 +80,19 @@ int file_switch_to_read(P1(const ref *));
   END
 #define check_read_known_file(svar,op,error_return)\
   check_read_known_file_else(svar, op, error_return, svar = invalid_file_entry)
-/* The do... avoids problems with a possible enclosed 'if'. */
 #define check_read_known_file_else(svar,op,error_return,invalid_action)\
   BEGIN\
-	svar = fptr(op);\
-	if ( svar->read_id != r_size(op) )\
-	{	if ( svar->read_id == 0 && svar->write_id == r_size(op) )\
-		{	int fcode = file_switch_to_read(op);\
-			if ( fcode < 0 ) error_return(fcode);\
-		}\
-		else BEGIN invalid_action; END;	/* closed or reopened file */\
+    svar = fptr(op);\
+    if (svar->read_id != r_size(op)) {\
+	if (svar->read_id == 0 && svar->write_id == r_size(op)) {\
+	    int fcode = file_switch_to_read(op);\
+\
+	    if (fcode < 0)\
+		 error_return(fcode);\
+	} else {\
+	    invalid_action;	/* closed or reopened file */\
 	}\
+    }\
   END
 int file_switch_to_write(P1(const ref *));
 
@@ -146,6 +150,7 @@ stream *file_alloc_stream(P2(gs_memory_t *, client_name_t));
 
 /* Procedures exported by zfileio.c. */
 	/* for ziodev.c */
-int zreadline_from(P5(stream *, byte *, uint, uint *, bool *));
+int zreadline_from(P5(stream *s, gs_string *buf, gs_memory_t *bufmem,
+		      uint *pcount, bool *pin_eol));
 
 #endif /* files_INCLUDED */

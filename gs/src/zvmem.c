@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -55,7 +55,7 @@ gs_private_st_ptrs1(st_vm_save, vm_save_t, "savetype",
 
 /* Clean up the stacks and validate storage. */
 private void
-ivalidate_clean_spaces(void)
+ivalidate_clean_spaces(i_ctx_t *i_ctx_p)
 {
     if (gs_debug_c('?')) {
 	ref_stack_cleanup(&d_stack);
@@ -67,8 +67,9 @@ ivalidate_clean_spaces(void)
 
 /* - save <save> */
 int
-zsave(register os_ptr op)
+zsave(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     uint space = icurrent_space;
     vm_save_t *vmsave;
     ulong sid;
@@ -76,7 +77,7 @@ zsave(register os_ptr op)
     gs_state *prev;
 
     if (I_VALIDATE_BEFORE_SAVE)
-	ivalidate_clean_spaces();
+	ivalidate_clean_spaces(i_ctx_p);
     ialloc_set_space(idmemory, avm_local);
     vmsave = ialloc_struct(vm_save_t, &st_vm_save, "zsave");
     ialloc_set_space(idmemory, space);
@@ -99,17 +100,18 @@ zsave(register os_ptr op)
     push(1);
     make_tav(op, t_save, 0, saveid, sid);
     if (I_VALIDATE_AFTER_SAVE)
-	ivalidate_clean_spaces();
+	ivalidate_clean_spaces(i_ctx_p);
     return 0;
 }
 
 /* <save> restore - */
 private int restore_check_operand(P2(os_ptr, alloc_save_t **));
-private int restore_check_stack(P3(const ref_stack *, const alloc_save_t *, bool));
-private void restore_fix_stack(P3(ref_stack *, const alloc_save_t *, bool));
+private int restore_check_stack(P3(const ref_stack_t *, const alloc_save_t *, bool));
+private void restore_fix_stack(P3(ref_stack_t *, const alloc_save_t *, bool));
 int
-zrestore(register os_ptr op)
+zrestore(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     alloc_save_t *asave;
     bool last;
     vm_save_t *vmsave;
@@ -121,7 +123,7 @@ zrestore(register os_ptr op)
 	      (ulong) alloc_save_client_data(asave),
 	      (ulong) op->value.saveid);
     if (I_VALIDATE_BEFORE_RESTORE)
-	ivalidate_clean_spaces();
+	ivalidate_clean_spaces(i_ctx_p);
     /* Check the contents of the stacks. */
     osp--;
     {
@@ -168,7 +170,7 @@ zrestore(register os_ptr op)
     }
     dict_set_top();		/* reload dict stack cache */
     if (I_VALIDATE_AFTER_RESTORE)
-	ivalidate_clean_spaces();
+	ivalidate_clean_spaces(i_ctx_p);
     return 0;
 }
 /* Check the operand of a restore. */
@@ -192,7 +194,7 @@ restore_check_operand(os_ptr op, alloc_save_t ** pasave)
 }
 /* Check a stack to make sure all its elements are older than a save. */
 private int
-restore_check_stack(const ref_stack * pstack, const alloc_save_t * asave,
+restore_check_stack(const ref_stack_t * pstack, const alloc_save_t * asave,
 		    bool is_estack)
 {
     ref_stack_enum_t rsenum;
@@ -272,7 +274,7 @@ restore_check_stack(const ref_stack * pstack, const alloc_save_t * asave,
  * Note that this procedure is only called if restore_check_stack succeeded.
  */
 private void
-restore_fix_stack(ref_stack * pstack, const alloc_save_t * asave,
+restore_fix_stack(ref_stack_t * pstack, const alloc_save_t * asave,
 		  bool is_estack)
 {
     ref_stack_enum_t rsenum;
@@ -319,8 +321,9 @@ restore_fix_stack(ref_stack * pstack, const alloc_save_t * asave,
 
 /* - vmstatus <save_level> <vm_used> <vm_maximum> */
 private int
-zvmstatus(register os_ptr op)
+zvmstatus(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_memory_status_t mstat, dstat;
 
     gs_memory_status(imemory, &mstat);
@@ -343,8 +346,9 @@ zvmstatus(register os_ptr op)
 
 /* <save> .forgetsave - */
 private int
-zforgetsave(register os_ptr op)
+zforgetsave(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     alloc_save_t *asave;
     vm_save_t *vmsave;
     int code = restore_check_operand(op, &asave);

@@ -97,24 +97,25 @@ end		% .cidfonttypes
 (%Type32BuildGlyph) cvn {	% <font> <cid> %Type32BuildGlyph -
   1 index /CharStrings get
 		% Stack: font cid CharStrings
-  dup 2 index .knownget { exch pop } { 0 get } ifelse
+  dup 2 index .knownget
+ { exch pop } { 0 get } ifelse
 		% Stack: font cid cstr
   dup .getmetrics32
- dup 14 gt {
-    11 1 roll setcachedevice2
+  dup 14 gt {
+    8 index 8 index 13 3 roll setcachedevice2
   } {
-    7 1 roll setcachedevice
+    4 index 4 index 9 3 roll setcachedevice
   } ifelse
-		% Stack: font cid cstr w h nmetrics
-  4 -1 roll exch 1 index length 1 index sub getinterval
-		% Stack: font cid w h bitstr
+		% Stack: font cid cstr w h nmetrics llx lly
+  6 -1 roll 4 -1 roll 1 index length 1 index sub getinterval
+		% Stack: font cid w h llx lly bitstr
   dup () eq {
-    pop
+    pop pop pop
   } {
-    mark /Columns 4 index /Rows 5 index /K -1 /EndOfBlock false /BlackIs1 true
-    .dicttomark /CCITTFaxDecode filter 2 index 2 index true
-		% Stack: font cid w h filter w h true
-    [ 1 0 0 1 0 7 index ] 5 -1 roll imagemask
+    mark /Columns 6 index /Rows 7 index /K -1 /EndOfBlock false /BlackIs1 true
+    .dicttomark /CCITTFaxDecode filter 4 index 4 index true
+		% Stack: font cid w h llx lly filter w h true
+    [ 1 0 0 1 11 -2 roll exch neg exch neg ] 5 -1 roll imagemask
   } ifelse
   pop pop pop pop
 } bind def

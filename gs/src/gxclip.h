@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -55,14 +55,17 @@ typedef struct clip_callback_data_s {
 /* Declare the callback procedures. */
 int
     clip_call_fill_rectangle(P5(clip_callback_data_t * pccd,
-				int xc, int yc, int xec, int yec)), clip_call_copy_mono(P5(clip_callback_data_t * pccd,
-					 int xc, int yc, int xec, int yec)),
+				int xc, int yc, int xec, int yec)),
+    clip_call_copy_mono(P5(clip_callback_data_t * pccd,
+			   int xc, int yc, int xec, int yec)),
     clip_call_copy_color(P5(clip_callback_data_t * pccd,
-			    int xc, int yc, int xec, int yec)), clip_call_copy_alpha(P5(clip_callback_data_t * pccd,
-					 int xc, int yc, int xec, int yec)),
+			    int xc, int yc, int xec, int yec)),
+    clip_call_copy_alpha(P5(clip_callback_data_t * pccd,
+			    int xc, int yc, int xec, int yec)),
     clip_call_fill_mask(P5(clip_callback_data_t * pccd,
-			   int xc, int yc, int xec, int yec)), clip_call_strip_tile_rectangle(P5(clip_callback_data_t * pccd,
-					 int xc, int yc, int xec, int yec)),
+			   int xc, int yc, int xec, int yec)),
+    clip_call_strip_tile_rectangle(P5(clip_callback_data_t * pccd,
+				      int xc, int yc, int xec, int yec)),
     clip_call_strip_copy_rop(P5(clip_callback_data_t * pccd,
 				int xc, int yc, int xec, int yec));
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -54,7 +54,8 @@ private dc_entry dynamic_colors[dc_hash_size + 1];
 	svga_get_bits, NULL /*get_params*/, svga_put_params,\
 	NULL /*map_cmyk_color*/, NULL /*get_xfont_procs*/,\
 	NULL /*get_xfont_device*/, NULL /*map_rgb_alpha_color*/,\
-	gx_page_device_get_page_device, svga_get_alpha_bits, svga_copy_alpha\
+	gx_page_device_get_page_device, NULL /*get_alpha_bits*/,\
+	svga_copy_alpha\
 }
 
 /* Save the controller mode */
@@ -457,38 +458,11 @@ svga_put_params(gx_device * dev, gs_param_list * plist)
 {
     int ecode = 0;
     int code;
-    int atext = fb_dev->alpha_text, agraphics = fb_dev->alpha_graphics;
     const char *param_name;
-
-    switch (code = param_read_int(plist, (param_name = "TextAlphaBits"), &fb_dev->alpha_text)) {
-	case 0:
-	    if (atext == 1 || atext == 2 || atext == 4)
-		break;
-	    code = gs_error_rangecheck;
-	default:
-	    ecode = code;
-	    param_signal_error(plist, param_name, ecode);
-	case 1:
-	    ;
-    }
-
-    switch (code = param_read_int(plist, (param_name = "GraphicsAlphaBits"), &fb_dev->alpha_graphics)) {
-	case 0:
-	    if (agraphics == 1 || agraphics == 2 || agraphics == 4)
-		break;
-	    code = gs_error_rangecheck;
-	default:
-	    ecode = code;
-	    param_signal_error(plist, param_name, ecode);
-	case 1:
-	    ;
-    }
 
     if ((code = ecode) < 0 ||
 	(code = gx_default_put_params(dev, plist)) < 0
 	) {
-	fb_dev->alpha_text = atext;
-	fb_dev->alpha_graphics = agraphics;
     }
     return code;
 }
@@ -517,14 +491,6 @@ svga_get_bits(gx_device * dev, int y, byte * data, byte ** actual_data)
     if (actual_data != 0)
 	*actual_data = data;
     return 0;
-}
-
-/* Get the number of alpha bits. */
-private int
-svga_get_alpha_bits(gx_device * dev, graphics_object_type type)
-{
-    return (type == go_text ? fb_dev->alpha_text :
-	    fb_dev->alpha_graphics);
 }
 
 /* Copy an alpha-map to the screen. */
@@ -760,7 +726,7 @@ vesa_find_mode(gx_device * dev, const mode_info * mode_table)
     fb_dev->mode = mip;
     gx_device_adjust_resolution(dev, mip->width, mip->height, 1);
     fb_dev->info.vesa.bios_set_page = info.win_func_ptr;
-    fb_dev->info.vesa.pn_shift = small_exact_log2(64 / info.win_granularity);
+    fb_dev->info.vesa.pn_shift = ilog2(64 / info.win_granularity);
     /* Reset the raster per the VESA info. */
     fb_dev->raster = info.bytes_per_line;
     return 0;

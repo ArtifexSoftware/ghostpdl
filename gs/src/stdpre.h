@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1994, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -91,8 +91,14 @@
 #  undef inline
 #  define inline __inline
 #else
-#  if !(defined(__GNUC__) || defined(__MWERKS__) || defined(inline))
-#    define inline		/* */
+#  ifdef __GNUC__
+/* Define inline as __inline__ so -pedantic won't produce a warning. */
+#    undef inline
+#    define inline __inline__
+#  else
+#    if !(defined(__MWERKS__) || defined(inline))
+#      define inline		/* */
+#    endif
 #  endif
 #endif
 
@@ -118,33 +124,18 @@
 #define size_of(x) ((int)(sizeof(x)))
 
 /*
- * Disable MS-DOS specialized pointer types on non-MS-DOS systems.
- * Watcom C defines near, far, and huge as macros, so we must undef them.
- * far_data is used for static data that must get its own segment.
- * This is supported in Borland C++, but none of the others.
+ * far_data was formerly used for static data that had to be assigned its
+ * own segment on PCs with 64K segments.  This was supported in Borland C++,
+ * but none of the other compilers.  Since we no longer support
+ * small-segment systems, far_data is vacuous.
  */
 #undef far_data
-#if defined(__TURBOC__) && !defined(__WIN32__)
-#  ifdef __BORLANDC__
-#    define far_data far
-#  else
-#    define far_data		/* */
-#  endif
-#else
-#  undef near
-#  define near			/* */
-#  undef far
-#  define far			/* */
-#  define far_data		/* */
-#  undef huge
-#  define huge			/* */
-#  define _cs			/* */
-#  define _ds			/* */
-/* _es is never safe to use */
-#  define _ss			/* */
-#endif
+#define far_data /* */
 
-/* Get the size of a statically declared array. */
+/*
+ * Get the number of elements of a statically dimensioned array.
+ * Note that this also works on array members of structures.
+ */
 #define countof(a) (sizeof(a) / sizeof((a)[0]))
 #define count_of(a) (size_of(a) / size_of((a)[0]))
 
@@ -169,7 +160,7 @@
  * There is no portable way to do this, but the following definition
  * works on all reasonable systems.
  */
-#define alignment_mod(ptr, modu)\
+#define ALIGNMENT_MOD(ptr, modu)\
   ((uint)( ((const char *)(ptr) - (const char *)0) & ((modu) - 1) ))
 
 /* Define short names for the unsigned types. */
@@ -208,10 +199,8 @@ typedef unsigned long ulong;
 #ifndef __cplusplus
 #ifdef __BEOS__
 typedef unsigned char bool;
-
 #else
 typedef int bool;
-
 #endif
 #endif
 /*
@@ -244,21 +233,10 @@ typedef int bool;
  */
 #if defined(__TURBOC__) || defined(_MSC_VER)
 typedef unsigned long ptr_ord_t;
-
 #else
 typedef const char *ptr_ord_t;
-
 #endif
 /* Define all the pointer comparison operations. */
-#define _ptr_cmp(p1, rel, p2)  ((ptr_ord_t)(p1) rel (ptr_ord_t)(p2))
-#define ptr_le(p1, p2) _ptr_cmp(p1, <=, p2)
-#define ptr_lt(p1, p2) _ptr_cmp(p1, <, p2)
-#define ptr_ge(p1, p2) _ptr_cmp(p1, >=, p2)
-#define ptr_gt(p1, p2) _ptr_cmp(p1, >, p2)
-#define ptr_between(ptr, lo, hi)\
-  (ptr_ge(ptr, lo) && ptr_lt(ptr, hi))
-
-/* Define UPPERCASE macros for the pointer comparison operations. */
 #define _PTR_CMP(p1, rel, p2)  ((ptr_ord_t)(p1) rel (ptr_ord_t)(p2))
 #define PTR_LE(p1, p2) _PTR_CMP(p1, <=, p2)
 #define PTR_LT(p1, p2) _PTR_CMP(p1, <, p2)
@@ -277,16 +255,6 @@ typedef const char *ptr_ord_t;
 #endif
 
 /* Define a standard way to round values to a (constant) modulus. */
-#define round_down(value, modulus)\
-  ( (modulus) & ((modulus) - 1) ?	/* not a power of 2 */\
-    (value) - (value) % (modulus) :\
-    (value) & -(modulus) )
-#define round_up(value, modulus)\
-  ( (modulus) & ((modulus) - 1) ?	/* not a power of 2 */\
-    ((value) + ((modulus) - 1)) / (modulus) * (modulus) :\
-    ((value) + ((modulus) - 1)) & -(modulus) )
-
-/* Define UPPERCASE macros for the rounding operations. */
 #define ROUND_DOWN(value, modulus)\
   ( (modulus) & ((modulus) - 1) ?	/* not a power of 2 */\
     (value) - (value) % (modulus) :\
@@ -295,6 +263,9 @@ typedef const char *ptr_ord_t;
   ( (modulus) & ((modulus) - 1) ?	/* not a power of 2 */\
     ((value) + ((modulus) - 1)) / (modulus) * (modulus) :\
     ((value) + ((modulus) - 1)) & -(modulus) )
+/* Backward compatibility */
+#define round_up(v, m) ROUND_UP(v, m)
+#define round_down(v, m) ROUND_DOWN(v, m)
 
 /*
  * In pre-ANSI C, float parameters get converted to double.
@@ -328,14 +299,12 @@ typedef double floatp;
 #endif
 
 /*
- * For accountability, debugging, and error messages,
- * we pass a client identification string to alloc and free,
- * and possibly other places as well. Define the type for these strings.
- * The definition used to have a _ds modifier, so we had to coerce
- * them when passing them to printf at all; this is no longer needed.
+ * For accountability, debugging, and error messages, we pass a client
+ * identification string to alloc and free, and possibly other places as
+ * well.  Define the type for these strings.
  */
 typedef const char *client_name_t;
-
+/****** WHAT TO DO ABOUT client_name_string ? ******/
 #define client_name_string(cname) (cname)
 
 /*
@@ -399,8 +368,16 @@ typedef const char *client_name_t;
 # define P16(t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15,t16)	/* */
 #endif
 
-/* Define success and failure codes for 'exit'. */
-#ifdef VMS
+/*
+ * Define success and failure codes for 'exit'.  The only system on which
+ * they are different is VMS with older DEC C versions.  We aren't sure
+ * in what version DEC C started being compatible with the rest of the
+ * world, and we don't know what the story is with VAX C.  If you have
+ * problems, uncomment the following line or add -DOLD_VMS_C to the C
+ * command line.
+ */
+/*#define OLD_VMS_C*/
+#if defined(VMS) && (defined(OLD_VMS_C) || !defined(__DECC))
 #  define exit_OK 1
 #  define exit_FAILED 18
 #else

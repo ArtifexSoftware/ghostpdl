@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -31,55 +31,71 @@
 #include "isave.h"
 #include "dstack.h"
 #include "estack.h"
-#include "ostack.h"
 #include "store.h"
 
-/* Define the initial stack sizes. */
-#define DSTACK_INITIAL 20
-#define ESTACK_INITIAL 250
-#define OSTACK_INITIAL 200
-
-/* Per-context state stored in statics */
-extern ref ref_array_packing;
-extern ref ref_binary_object_format;
-extern long zrand_state;
-
-				/*extern ref ref_stdio[3]; *//* in files.h */
+/* Declare the GC descriptors for embedded objects. */
+extern_st(st_gs_dual_memory);
+extern_st(st_ref_stack);
+extern_st(st_dict_stack);
+extern_st(st_exec_stack);
+extern_st(st_op_stack);
 
 /* Initialization procedures */
 void zrand_state_init(P1(long *));
 
 /* GC descriptors */
-extern_st(st_ref_stack);
 #define pcst ((gs_context_state_t *)vptr)
 private 
 CLEAR_MARKS_PROC(context_state_clear_marks)
 {
+    r_clear_attrs(&pcst->stdio[0], l_mark);
+    r_clear_attrs(&pcst->stdio[1], l_mark);
+    r_clear_attrs(&pcst->stdio[2], l_mark);
     r_clear_attrs(&pcst->userparams, l_mark);
 }
 private 
-ENUM_PTRS_BEGIN(context_state_enum_ptrs) return 0;
-
-ENUM_PTR3(0, gs_context_state_t, dstack, estack, ostack);
-ENUM_PTR3(3, gs_context_state_t, pgs, stdio[0].value.pstruct,
-	  stdio[1].value.pstruct);
-case 6:
-ENUM_RETURN_REF(&pcst->userparams);
+ENUM_PTRS_BEGIN(context_state_enum_ptrs) {
+    index -= 5;
+    if (index < st_gs_dual_memory_num_ptrs)
+	return ENUM_USING(st_gs_dual_memory, &pcst->memory,
+			  sizeof(pcst->memory), index);
+    index -= st_gs_dual_memory_num_ptrs;
+    if (index < st_dict_stack_num_ptrs)
+	return ENUM_USING(st_dict_stack, &pcst->dict_stack,
+			  sizeof(pcst->dict_stack), index);
+    index -= st_dict_stack_num_ptrs;
+    if (index < st_exec_stack_num_ptrs)
+	return ENUM_USING(st_exec_stack, &pcst->exec_stack,
+			  sizeof(pcst->exec_stack), index);
+    index -= st_dict_stack_num_ptrs;
+    return ENUM_USING(st_op_stack, &pcst->op_stack,
+		      sizeof(pcst->op_stack), index);
+    }
+    ENUM_PTR(0, gs_context_state_t, pgs);
+    case 1: ENUM_RETURN_REF(&pcst->stdio[0]);
+    case 2: ENUM_RETURN_REF(&pcst->stdio[1]);
+    case 3: ENUM_RETURN_REF(&pcst->stdio[2]);
+    case 4: ENUM_RETURN_REF(&pcst->userparams);
 ENUM_PTRS_END
 private RELOC_PTRS_BEGIN(context_state_reloc_ptrs);
-RELOC_PTR3(gs_context_state_t, dstack, estack, ostack);
-RELOC_PTR3(gs_context_state_t, pgs, stdio[0].value.pstruct,
-	   stdio[1].value.pstruct);
-RELOC_REF_VAR(pcst->userparams);
-r_clear_attrs(&pcst->userparams, l_mark);
+    RELOC_PTR(gs_context_state_t, pgs);
+    RELOC_USING(st_gs_dual_memory, &pcst->memory, sizeof(pcst->memory));
+    RELOC_REF_VAR(pcst->stdio[0]);
+    RELOC_REF_VAR(pcst->stdio[1]);
+    RELOC_REF_VAR(pcst->stdio[2]);
+    RELOC_REF_VAR(pcst->userparams);
+    r_clear_attrs(&pcst->userparams, l_mark);
+    RELOC_USING(st_dict_stack, &pcst->dict_stack, sizeof(pcst->dict_stack));
+    RELOC_USING(st_exec_stack, &pcst->exec_stack, sizeof(pcst->exec_stack));
+    RELOC_USING(st_op_stack, &pcst->op_stack, sizeof(pcst->op_stack));
 RELOC_PTRS_END
 #undef pcst
 public_st_context_state();
 
 /* Allocate the state of a context. */
-     int
-         context_state_alloc(gs_context_state_t ** ppcst,
-			     const gs_dual_memory_t * dmem)
+int
+context_state_alloc(gs_context_state_t ** ppcst,
+		    const gs_dual_memory_t * dmem)
 {
     gs_ref_memory_t *mem = dmem->space_local;
     gs_context_state_t *pcst = *ppcst;
@@ -95,25 +111,27 @@ public_st_context_state();
     code = gs_interp_alloc_stacks(mem, pcst);
     if (code < 0)
 	goto x0;
-    pcst->pgs = int_gstate_alloc(mem);
+    pcst->pgs = int_gstate_alloc(dmem);
     if (pcst->pgs == 0) {
 	code = gs_note_error(e_VMerror);
 	goto x1;
     }
     pcst->memory = *dmem;
+    pcst->language_level = 1;
     make_false(&pcst->array_packing);
     make_int(&pcst->binary_object_format, 0);
     zrand_state_init(&pcst->rand_state);
     pcst->usertime_total = 0;
     pcst->keep_usertime = false;
-    {				/*
-				 * Create an empty userparams dictionary of the right size.
-				 * If we can't determine the size, pick an arbitrary one.
-				 */
+    {	/*
+	 * Create an empty userparams dictionary of the right size.
+	 * If we can't determine the size, pick an arbitrary one.
+	 */
 	ref *puserparams;
 	uint size;
+	ref *system_dict = &pcst->dict_stack.system_dict;
 
-	if (dict_find_string(systemdict, "userparams", &puserparams) >= 0)
+	if (dict_find_string(system_dict, "userparams", &puserparams) >= 0)
 	    size = dict_length(puserparams);
 	else
 	    size = 20;
@@ -123,11 +141,15 @@ public_st_context_state();
 	/* PostScript code initializes the user parameters. */
     }
     /* The initial stdio values are bogus.... */
-    make_file(&pcst->stdio[0], 0, 1, invalid_file_entry);
-    make_file(&pcst->stdio[1], 0, 1, invalid_file_entry);
-    for (i = countof(pcst->memory.spaces.indexed); --i >= 0;)
-	if (dmem->spaces.indexed[i] != 0)
-	    ++(dmem->spaces.indexed[i]->num_contexts);
+    make_file(&pcst->stdio[0], a_readonly | avm_invalid_file_entry, 1,
+	      invalid_file_entry);
+    make_file(&pcst->stdio[1], a_all | avm_invalid_file_entry, 1,
+	      invalid_file_entry);
+    make_file(&pcst->stdio[2], a_all | avm_invalid_file_entry, 1,
+	      invalid_file_entry);
+    for (i = countof(pcst->memory.spaces_indexed); --i >= 0;)
+	if (dmem->spaces_indexed[i] != 0)
+	    ++(dmem->spaces_indexed[i]->num_contexts);
     *ppcst = pcst;
     return 0;
   x2:gs_state_free(pcst->pgs);
@@ -139,53 +161,48 @@ public_st_context_state();
 
 /* Load the interpreter state from a context. */
 int
-context_state_load(const gs_context_state_t * pcst)
+context_state_load(gs_context_state_t * pcst)
 {
     gs_ref_memory_t *lmem = iimemory_local;
-    uint space = r_space(systemdict);
+    ref *system_dict = &pcst->dict_stack.system_dict;
+    uint space = r_space(system_dict);
     int code;
 
-    d_stack = *pcst->dstack;
-    e_stack = *pcst->estack;
-    o_stack = *pcst->ostack;
-    igs = pcst->pgs;
     gs_imemory = pcst->memory;
-    ref_array_packing = pcst->array_packing;
-    ref_binary_object_format = pcst->binary_object_format;
-    zrand_state = pcst->rand_state;
     /*
      * Set systemdict.userparams to the saved copy, and then
      * set the actual user parameters.  Be careful to disable both
      * space checking and save checking while we do this.
      */
-    r_set_space(systemdict, avm_max);
+    r_set_space(system_dict, avm_max);
     alloc_set_not_in_save(idmemory);
-    code = dict_put_string(systemdict, "userparams", &pcst->userparams);
+    code = dict_put_string(system_dict, "userparams", &pcst->userparams,
+			   &pcst->dict_stack);
     if (code >= 0)
-	code = set_user_params(&pcst->userparams);
-    ref_stdio[0] = pcst->stdio[0];
-    ref_stdio[1] = pcst->stdio[1];
+	code = set_user_params(pcst, &pcst->userparams);
     if (iimemory_local != lmem) {
 	/*
 	 * Switch references in systemdict to local objects.
 	 * userdict.localdicts holds these objects.
 	 */
+	dict_stack_t *dstack = &pcst->dict_stack;
+	ref_stack_t *rdstack = &dstack->stack;
 	const ref *puserdict =
-	ref_stack_index(&d_stack, ref_stack_count(&d_stack) - 1 -
-			dstack_userdict_index);
+	    ref_stack_index(rdstack, ref_stack_count(rdstack) - 1 -
+			    dstack->userdict_index);
 	ref *plocaldicts;
 
 	if (dict_find_string(puserdict, "localdicts", &plocaldicts) > 0 &&
 	    r_has_type(plocaldicts, t_dictionary)
 	    ) {
-	    dict_copy(plocaldicts, systemdict);
+	    dict_copy(plocaldicts, system_dict, dstack);
 	}
     }
-    r_set_space(systemdict, space);
+    r_set_space(system_dict, space);
     if (idmemory->save_level > 0)
 	alloc_set_in_save(idmemory);
-    esfile_clear_cache();
-    dict_set_top();		/* reload dict stack cache */
+    estack_clear_cache(&pcst->exec_stack);
+    dstack_set_top(&pcst->dict_stack);
     return code;
 }
 
@@ -193,17 +210,10 @@ context_state_load(const gs_context_state_t * pcst)
 int
 context_state_store(gs_context_state_t * pcst)
 {
-    ref_stack_cleanup(&d_stack);
-    ref_stack_cleanup(&e_stack);
-    ref_stack_cleanup(&o_stack);
-    *pcst->dstack = d_stack;
-    *pcst->estack = e_stack;
-    *pcst->ostack = o_stack;
-    pcst->pgs = igs;
+    ref_stack_cleanup(&pcst->dict_stack.stack);
+    ref_stack_cleanup(&pcst->exec_stack.stack);
+    ref_stack_cleanup(&pcst->op_stack.stack);
     pcst->memory = gs_imemory;
-    pcst->array_packing = ref_array_packing;
-    pcst->binary_object_format = ref_binary_object_format;
-    pcst->rand_state = zrand_state;
     /*
      * The user parameters in systemdict.userparams are kept
      * up to date by PostScript code, but we still need to save
@@ -211,13 +221,13 @@ context_state_store(gs_context_state_t * pcst)
      */
     {
 	ref *puserparams;
+	/* We need i_ctx_p for access to the d_stack. */
+	i_ctx_t *i_ctx_p = pcst;
 
 	if (dict_find_string(systemdict, "userparams", &puserparams) < 0)
 	    return_error(e_Fatal);
 	pcst->userparams = *puserparams;
     }
-    pcst->stdio[0] = ref_stdio[0];
-    pcst->stdio[1] = ref_stdio[1];
     return 0;
 }
 
@@ -234,9 +244,9 @@ context_state_free(gs_context_state_t * pcst)
      * (local / global / system), free the entire VM space;
      * otherwise, just free the context-related structures.
      */
-    for (i = countof(pcst->memory.spaces.indexed); --i >= 0;) {
-	if (pcst->memory.spaces.indexed[i] != 0 &&
-	    !--(pcst->memory.spaces.indexed[i]->num_contexts)
+    for (i = countof(pcst->memory.spaces_indexed); --i >= 0;) {
+	if (pcst->memory.spaces_indexed[i] != 0 &&
+	    !--(pcst->memory.spaces_indexed[i]->num_contexts)
 	    ) {
 /****** FREE THE ENTIRE SPACE ******/
 	    freed |= 1 << i;

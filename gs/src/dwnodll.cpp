@@ -34,6 +34,7 @@
 
 extern "C" {
 #include "gsdll.h"
+#include "gsdllwin.h"
 }
 
 #include "dwdll.h"   // gsdll_class

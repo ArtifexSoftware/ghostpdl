@@ -1,4 +1,4 @@
-#    Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -36,55 +36,59 @@ install-exec: $(GS_XE)
 	-mkdir $(bindir)
 	$(INSTALL_PROGRAM) $(GS_XE) $(bindir)/$(GS)
 
-install-scripts: gsnd
+install-scripts: lib/gsnd
 	-mkdir $(datadir)
 	-mkdir $(gsdir)
 	-mkdir $(gsdatadir)
 	-mkdir $(scriptdir)
-	sh -c 'for f in \
+	$(SH) -c 'for f in \
 gsbj gsdj gsdj500 gslj gslp gsnd \
 bdftops dvipdf font2c \
-pdf2dsc pdf2ps pf2afm printafm ps2ascii ps2epsi ps2pdf ps2ps wftopfa ;\
-	do if ( test -f $$f ); then $(INSTALL_PROGRAM) $$f $(scriptdir)/$$f; fi;\
+pdf2dsc pdf2ps pf2afm pfbtopfa printafm \
+ps2ascii ps2epsi ps2pdf ps2ps wftopfa ;\
+	do if ( test -f lib/$$f ); then $(INSTALL_PROGRAM) lib/$$f $(scriptdir)/$$f; fi;\
 	done'
 
 MAN1_PAGES=gs pdf2dsc pdf2ps ps2ascii ps2epsi ps2pdf ps2ps
-install-data: gs.1
+install-data: man/gs.1
 	-mkdir $(mandir)
 	-mkdir $(man1dir)
-	sh -c 'for f in $(MAN1_PAGES) ;\
+	cd man; $(SH) -c 'for f in $(MAN1_PAGES) ;\
 	do if ( test -f $$f.1 ); then $(INSTALL_DATA) $$f.1 $(man1dir)/$$f.$(man1ext); fi;\
 	done'
 	-mkdir $(datadir)
 	-mkdir $(gsdir)
 	-mkdir $(gsdatadir)
-	sh -c 'for f in \
+	-mkdir $(gsdatadir)/lib
+	cd lib; $(SH) -c 'for f in \
 Fontmap \
 cbjc600.ppd cbjc800.ppd *.upp \
 gs_init.ps gs_btokn.ps gs_ccfnt.ps gs_cff.ps gs_cidfn.ps gs_cmap.ps \
 gs_diskf.ps gs_dpnxt.ps gs_dps.ps gs_dps1.ps gs_dps2.ps gs_epsf.ps \
 gs_fonts.ps gs_kanji.ps gs_lev2.ps gs_ll3.ps \
-gs_pfile.ps gs_res.ps gs_setpd.ps gs_statd.ps \
-gs_ttf.ps gs_typ32.ps gs_typ42.ps gs_type1.ps \
+gs_pfile.ps gs_rdlin.ps gs_res.ps gs_setpd.ps gs_statd.ps \
+gs_trap.ps gs_ttf.ps gs_typ32.ps gs_typ42.ps gs_type1.ps \
 gs_dbt_e.ps gs_iso_e.ps gs_ksb_e.ps gs_std_e.ps gs_sym_e.ps \
+ht_ccbnm.ps \
 acctest.ps align.ps bdftops.ps caption.ps cid2code.ps decrypt.ps docie.ps \
-font2c.ps font2pcl.ps gslp.ps impath.ps landscap.ps level1.ps lines.ps \
-markhint.ps markpath.ps \
+errpage.ps font2c.ps font2pcl.ps gslp.ps impath.ps \
+landscap.ps level1.ps lines.ps markhint.ps markpath.ps \
 packfile.ps pcharstr.ps pf2afm.ps ppath.ps prfont.ps printafm.ps \
-ps2ai.ps ps2ascii.ps ps2epsi.ps ps2image.ps \
-quit.ps showchar.ps showpage.ps stcinfo.ps stcolor.ps \
+ps2ai.ps ps2ascii.ps ps2epsi.ps quit.ps rollconv.ps \
+showchar.ps showpage.ps stcinfo.ps stcolor.ps \
 traceimg.ps traceop.ps type1enc.ps type1ops.ps uninfo.ps unprot.ps \
-viewcmyk.ps viewgif.ps viewjpeg.ps viewpcx.ps viewpbm.ps viewps2a.ps \
+viewcmyk.ps viewgif.ps viewjpeg.ps viewmiff.ps \
+viewpcx.ps viewpbm.ps viewps2a.ps \
 winmaps.ps wftopfa.ps wrfont.ps zeroline.ps \
 gs_l2img.ps \
 pdf2dsc.ps \
 pdf_base.ps pdf_draw.ps pdf_font.ps pdf_main.ps pdf_ops.ps pdf_sec.ps \
 gs_mex_e.ps gs_mro_e.ps gs_pdf_e.ps gs_wan_e.ps \
 gs_pdfwr.ps ;\
-	do if ( test -f $$f ); then $(INSTALL_DATA) $$f $(gsdatadir)/$$f; fi;\
+	do if ( test -f $$f ); then $(INSTALL_DATA) $$f $(gsdatadir)/lib/$$f; fi;\
 	done'
 	-mkdir $(docdir)
-	sh -c 'for f in \
+	cd doc; $(SH) -c 'for f in \
 PUBLIC README \
 ps2epsi.txt \
 Bug-form.htm C-style.htm Commprod.htm Copying.htm Current.htm \
@@ -96,7 +100,7 @@ Readme.htm Source.htm Unix-lpr.htm Use.htm Xfonts.htm ;\
 	do if ( test -f $$f ); then $(INSTALL_DATA) $$f $(docdir)/$$f; fi;\
 	done'
 	-mkdir $(exdir)
-	for f in \
+	cd examples; for f in \
 alphabet.ps chess.ps cheq.ps colorcir.ps escher.ps golfer.ps \
 grayalph.ps snowflak.ps tiger.ps vasarely.ps waterfal.ps \
 ridt91.eps ;\

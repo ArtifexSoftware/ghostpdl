@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1996, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -86,6 +86,18 @@
 
 #define gs_run_string_end(ue, pec, peo)\
   gs_main_run_string_end(gs_main_instance_default(), ue, pec, peo)
+
+/* ---------------- Debugging ---------------- */
+
+/*
+ * We should have the following definition:
+
+#define gs_debug_dump_stack(code, peo)\
+  gs_main_dump_stack(gs_main_instance_default(), code, peo)
+
+ * but we make it a procedure instead so it can be called from debuggers.
+ */
+void gs_debug_dump_stack(P2(int code, ref * perror_object));
 
 /* ---------------- Termination ---------------- */
 

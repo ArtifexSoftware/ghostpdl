@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -101,6 +101,16 @@ private const stream_template s_no_template = {
 /* ------ Generic procedures ------ */
 
 /* Allocate a stream and initialize it minimally. */
+void
+s_init(stream *s, gs_memory_t * mem)
+{
+    s->memory = mem;
+    s->report_error = s_no_report_error;
+    s->error_string[0] = 0;
+    s->prev = s->next = 0;	/* clean for GC */
+    s->close_strm = false;	/* default */
+    s->close_at_eod = true;	/* default */
+}
 stream *
 s_alloc(gs_memory_t * mem, client_name_t cname)
 {
@@ -110,10 +120,7 @@ s_alloc(gs_memory_t * mem, client_name_t cname)
 	      client_name_string(cname), (ulong) s);
     if (s == 0)
 	return 0;
-    s->memory = mem;
-    s->report_error = s_no_report_error;
-    s->prev = s->next = 0;	/* clean for GC */
-    s->close_strm = false;	/* default */
+    s_init(s, mem);
     return s;
 }
 
@@ -316,8 +323,11 @@ savailable(stream * s, long *pl)
 /* Return the current position of a stream. */
 long
 stell(stream * s)
-{				/* The stream might have been closed, but the position */
-    /* is still meaningful in this case. */
+{
+    /*
+     * The stream might have been closed, but the position
+     * is still meaningful in this case.
+     */
     const byte *ptr = (s_is_writing(s) ? s->swptr : s->srptr);
 
     return (ptr == 0 ? 0 : ptr + 1 - s->cbuf) + s->position;
@@ -366,13 +376,13 @@ sclose(register stream * s)
 }
 
 /*
- * Implement sgetc when the buffer may be empty.
- * If the buffer really is empty, refill it and then read a byte.
- * Note that filters must read one byte ahead, so that they can close immediately
- * after the client reads the last data byte if the next thing is an EOD.
+ * Implement sgetc when the buffer may be empty.  If the buffer really is
+ * empty, refill it and then read a byte.  Note that filters must read one
+ * byte ahead, so that they can close immediately after the client reads the
+ * last data byte if the next thing is an EOD.
  */
 int
-spgetcc(register stream * s, bool close_on_eof)
+spgetcc(register stream * s, bool close_at_eod)
 {
     int status, left;
     int min_left = sbuf_min_left(s);
@@ -384,7 +394,7 @@ spgetcc(register stream * s, bool close_on_eof)
 	s_process_read_buf(s);
     if (left <= min_left && (left == 0 || (status != EOFC && status != ERRC))) {	/* Compact the stream so stell will return the right result. */
 	stream_compact(s, true);
-	if (status == EOFC && close_on_eof) {
+	if (status == EOFC && close_at_eod && s->close_at_eod) {
 	    status = sclose(s);
 	    if (status == 0)
 		status = EOFC;
@@ -550,6 +560,98 @@ spskip(register stream * s, long nskip, long *pskipped)
     return 0;
 }
 
+/* Read a line from a stream.  See srdline.h for the specification. */
+int
+sreadline(stream *s_in, stream *s_out, void *readline_data,
+	  gs_const_string *prompt, gs_string * buf,
+	  gs_memory_t * bufmem, uint * pcount, bool *pin_eol,
+	  bool (*is_stdin)(P1(const stream *)))
+{
+    uint count = *pcount;
+
+    /* Most systems define \n as 0xa and \r as 0xd; however, */
+    /* OS-9 has \n == \r == 0xd and \l == 0xa.  The following */
+    /* code works properly regardless of environment. */
+#if '\n' == '\r'
+#  define LF 0xa
+#else
+#  define LF '\n'
+#endif
+
+    if (count == 0 && s_out && prompt) {
+	uint ignore_n;
+	int ch = sputs(s_out, prompt->data, prompt->size, &ignore_n);
+
+	if (ch < 0)
+	    return ch;
+    }
+
+top:
+    if (*pin_eol) {
+	/*
+	 * We're in the middle of checking for a two-character
+	 * end-of-line sequence.  If we get an EOF here, stop, but
+	 * don't signal EOF now; wait till the next read.
+	 */
+	int ch = spgetcc(s_in, false);
+
+	if (ch == EOFC) {
+	    *pin_eol = false;
+	    return 0;
+	} else if (ch < 0)
+	    return ch;
+	else if (ch != LF)
+	    sputback(s_in);
+	*pin_eol = false;
+	return 0;
+    }
+    for (;;) {
+	int ch = sgetc(s_in);
+
+	if (ch < 0) {		/* EOF or exception */
+	    *pcount = count;
+	    return ch;
+	}
+	switch (ch) {
+	    case '\r':
+		{
+#if '\n' == '\r'		/* OS-9 or similar */
+		    if (!is_stdin(s_in))
+#endif
+		    {
+			*pcount = count;
+			*pin_eol = true;
+			goto top;
+		    }
+		}
+		/* falls through */
+	    case LF:
+#undef LF
+		*pcount = count;
+		return 0;
+	}
+	if (count >= buf->size) {	/* filled the string */
+	    if (!bufmem) {
+		sputback(s_in);
+		*pcount = count;
+		return 1;
+	    }
+	    {
+		uint nsize = count + max(count, 20);
+		byte *ndata = gs_resize_string(bufmem, buf->data, buf->size,
+					       nsize, "sreadline(buffer)");
+
+		if (ndata == 0)
+		    return ERRC; /* no better choice */
+		buf->data = ndata;
+		buf->size = nsize;
+	    }
+	}
+	buf->data[count++] = ch;
+    }
+    /*return 0; *//* not reached */
+}
+
 /* ------ Utilities ------ */
 
 /*
@@ -639,7 +741,8 @@ sreadbuf(stream * s, stream_cursor_write * pbuf)
 	}
 	/* If curr reached EOD and is a filter stream, close it. */
 	if (strm != 0 && status == EOFC &&
-	    curr->cursor.r.ptr >= curr->cursor.r.limit
+	    curr->cursor.r.ptr >= curr->cursor.r.limit &&
+	    curr->close_at_eod
 	    ) {
 	    int cstat = sclose(curr);
 
@@ -805,25 +908,46 @@ private int
 
 /* Initialize a stream for reading a string. */
 void
-sread_string(register stream * s, const byte * ptr, uint len)
+sread_string(register stream *s, const byte *ptr, uint len)
 {
-    static const stream_procs p =
-    {s_string_available, s_string_read_seek, s_std_read_reset,
-     s_std_read_flush, s_std_null, s_string_read_process
+    static const stream_procs p = {
+	 s_string_available, s_string_read_seek, s_std_read_reset,
+	 s_std_read_flush, s_std_null, s_string_read_process
     };
 
-    s_std_init(s, (byte *) ptr, len, &p, s_mode_read + s_mode_seek);
-    s->cbuf_string.data = (byte *) ptr;
+    s_std_init(s, (byte *)ptr, len, &p, s_mode_read + s_mode_seek);
+    s->cbuf_string.data = (byte *)ptr;
     s->cbuf_string.size = len;
     s->end_status = EOFC;
     s->srlimit = s->swlimit;
 }
+/* Initialize a reusable stream for reading a string. */
+private void
+s_string_reusable_reset(stream *s)
+{
+    s->srptr = s->cbuf - 1;	/* just reset to the beginning */
+}
+private int
+s_string_reusable_flush(stream *s)
+{
+    s->srptr = s->srlimit;	/* just set to the end */
+    return 0;
+}
+void
+sread_string_reusable(stream *s, const byte *ptr, uint len)
+{
+    sread_string(s, ptr, len);
+    s->procs.reset = s_string_reusable_reset;
+    s->procs.flush = s_string_reusable_flush;
+    s->close_at_eod = false;
+}
+
 /* Return the number of available bytes when reading from a string. */
 private int
-s_string_available(stream * s, long *pl)
+s_string_available(stream *s, long *pl)
 {
     *pl = sbufavailable(s);
-    if (*pl == 0)		/* EOF */
+    if (*pl == 0 && s->close_at_eod)	/* EOF */
 	*pl = -1;
     return 0;
 }
@@ -890,9 +1014,9 @@ private int
 void
 swrite_position_only(stream *s)
 {
-    static byte buf[50];	/* size is arbitrary */
+    static byte discard_buf[50];	/* size is arbitrary */
 
-    swrite_string(s, buf, sizeof(buf));
+    swrite_string(s, discard_buf, sizeof(discard_buf));
     s->procs.process = s_write_position_process;
 }
 

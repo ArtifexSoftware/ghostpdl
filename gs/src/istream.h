@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -29,9 +29,9 @@ int swrite_proc(P2(ref *, stream **));
 
 	/* for interp.c, zfileio.c, zpaint.c - handle a procedure */
 	/* callback or an interrupt */
-int s_handle_read_exception(P5(int, const ref *, const ref *, int,
-			       int (*)(P1(os_ptr))));
-int s_handle_write_exception(P5(int, const ref *, const ref *, int,
-				int (*)(P1(os_ptr))));
+int s_handle_read_exception(P6(i_ctx_t *, int, const ref *, const ref *,
+			       int, op_proc_t));
+int s_handle_write_exception(P6(i_ctx_t *, int, const ref *, const ref *,
+				int, op_proc_t));
 
 #endif /* istream_INCLUDED */

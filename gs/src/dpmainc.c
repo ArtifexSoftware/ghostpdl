@@ -31,6 +31,7 @@
 #include "gscdefs.h"
 #define GS_REVISION gs_revision
 #include "gsdll.h"
+#include "gsdllos2.h"
 
 #define MAXSTR 256
 const char *szDllName = "GSDLL2.DLL";

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1991, 1993, 1994, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1991, 1993, 1994, 1997, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -34,16 +34,17 @@
 #include "store.h"
 
 /* Forward references */
-private int screen_sample(P1(os_ptr));
-private int set_screen_continue(P1(os_ptr));
-private int screen_cleanup(P1(os_ptr));
+private int screen_sample(P1(i_ctx_t *));
+private int set_screen_continue(P1(i_ctx_t *));
+private int screen_cleanup(P1(i_ctx_t *));
 
 /* - .currenthalftone <dict> 0 */
 /* - .currenthalftone <frequency> <angle> <proc> 1 */
 /* - .currenthalftone <red_freq> ... <gray_proc> 2 */
 private int
-zcurrenthalftone(register os_ptr op)
+zcurrenthalftone(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_halftone ht;
 
     gs_currenthalftone(igs, &ht);
@@ -83,8 +84,10 @@ zcurrenthalftone(register os_ptr op)
 
 /* - .currentscreenlevels <int> */
 private int
-zcurrentscreenlevels(register os_ptr op)
+zcurrentscreenlevels(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(1);
     make_int(op, gs_currentscreenlevels(igs));
     return 0;
@@ -105,14 +108,13 @@ zcurrentscreenlevels(register os_ptr op)
 #define senum r_ptr(esp, gs_screen_enum)
 
 /* Forward references */
-int zscreen_enum_init(P7(os_ptr, const gx_ht_order *, gs_screen_halftone *,
-			 ref *, int, int (*)(P1(os_ptr)), gs_memory_t *));
-private int setscreen_finish(P1(os_ptr));
+private int setscreen_finish(P1(i_ctx_t *));
 
 /* <frequency> <angle> <proc> setscreen - */
 private int
-zsetscreen(register os_ptr op)
+zsetscreen(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_screen_halftone screen;
     gx_ht_order order;
     int code = zscreen_params(op, &screen);
@@ -120,7 +122,7 @@ zsetscreen(register os_ptr op)
 
     if (code < 0)
 	return code;
-    mem = (gs_memory_t *)idmemory->spaces.indexed[r_space_index(op)];
+    mem = (gs_memory_t *)idmemory->spaces_indexed[r_space_index(op)];
     /*
      * Allocate the halftone in the same VM space as the procedure.
      * This keeps the space relationships consistent.
@@ -129,15 +131,15 @@ zsetscreen(register os_ptr op)
 				       gs_currentaccuratescreens(), mem);
     if (code < 0)
 	return code;
-    return zscreen_enum_init(op, &order, &screen, op, 3,
+    return zscreen_enum_init(i_ctx_p, &order, &screen, op, 3,
 			     setscreen_finish, mem);
 }
 /* We break out the body of this operator so it can be shared with */
 /* the code for Type 1 halftones in sethalftone. */
 int
-zscreen_enum_init(os_ptr op, const gx_ht_order * porder,
+zscreen_enum_init(i_ctx_t *i_ctx_p, const gx_ht_order * porder,
 		  gs_screen_halftone * psp, ref * pproc, int npop,
-		  int (*finish_proc)(P1(os_ptr)), gs_memory_t * mem)
+		  int (*finish_proc)(P1(i_ctx_t *)), gs_memory_t * mem)
 {
     gs_screen_enum *penum;
     int code;
@@ -149,7 +151,7 @@ zscreen_enum_init(os_ptr op, const gx_ht_order * porder,
     make_istruct(esp + snumpush, 0, penum);	/* do early for screen_cleanup in case of error */
     code = gs_screen_enum_init_memory(penum, porder, igs, psp, mem);
     if (code < 0) {
-	screen_cleanup(op);
+	screen_cleanup(i_ctx_p);
 	return code;
     }
     /* Push everything on the estack */
@@ -163,8 +165,9 @@ zscreen_enum_init(os_ptr op, const gx_ht_order * porder,
 }
 /* Set up the next sample */
 private int
-screen_sample(register os_ptr op)
+screen_sample(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_screen_enum *penum = senum;
     gs_point pt;
     int code = gs_screen_currentpoint(penum, &pt);
@@ -176,9 +179,9 @@ screen_sample(register os_ptr op)
 	case 1:
 	    /* All done */
 	    if (real_opproc(esp - 2) != 0)
-		code = (*real_opproc(esp - 2)) (op);
+		code = (*real_opproc(esp - 2)) (i_ctx_p);
 	    esp -= snumpush;
-	    screen_cleanup(op);
+	    screen_cleanup(i_ctx_p);
 	    return (code < 0 ? code : o_pop_estack);
 	case 0:
 	    ;
@@ -193,8 +196,9 @@ screen_sample(register os_ptr op)
 }
 /* Continuation procedure for processing sampled pixels. */
 private int
-set_screen_continue(register os_ptr op)
+set_screen_continue(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     double value;
     int code = real_param(op, &value);
 
@@ -204,12 +208,11 @@ set_screen_continue(register os_ptr op)
     if (code < 0)
 	return code;
     pop(1);
-    op--;
-    return screen_sample(op);
+    return screen_sample(i_ctx_p);
 }
 /* Finish setscreen. */
 private int
-setscreen_finish(os_ptr op)
+setscreen_finish(i_ctx_t *i_ctx_p)
 {
     gs_screen_install(senum);
     istate->screen_procs.colored.red = sproc;
@@ -221,7 +224,7 @@ setscreen_finish(os_ptr op)
 }
 /* Clean up after screen enumeration */
 private int
-screen_cleanup(os_ptr op)
+screen_cleanup(i_ctx_t *i_ctx_p)
 {
     ifree_object(esp[snumpush].value.pstruct, "screen_cleanup");
     return 0;

@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -23,18 +23,16 @@
 #  define gsflip_INCLUDED
 
 /*
- * Convert line-based (MultipleDataSource) input to the chunky format
- * used everywhere else.
- *
- * We store the output at buffer.
- * Each row of input must consist of an integral number of pixels.
- * In particular, for 12-bit input, nbytes must be 0 mod 3.
- * offset is the amount to be added to each plane pointer.
- * num_planes must be 3 or 4; bits_per_sample must be 1, 2, 4, 8, or 12.
- * Returns -1 if num_planes or bits_per_sample is invalid, otherwise 0.
+ * Convert planar (MultipleDataSource) input to chunky format.  The input
+ * data starts at planes[0] + offset ... planes[num_planes-1] + offset; the
+ * output is stored at buffer.  This procedure assumes that the input
+ * consists of an integral number of pixels; in particular, for 12-bit
+ * input, nbytes is rounded up to a multiple of 3.  num_planes must be >=0;
+ * bits_per_sample must be 1, 2, 4, 8, or 12.  Returns -1 if num_planes or
+ * bits_per_sample is invalid, otherwise 0.
  */
 extern int image_flip_planes(P6(byte * buffer, const byte ** planes,
-				uint offset, uint nbytes,
+				int offset, int nbytes,
 				int num_planes, int bits_per_sample));
 
 #endif /* gsflip_INCLUDED */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -62,20 +62,29 @@
 
 /*
  * Compute the amount by which to expand a stroked bounding box to account
- * for line width, caps and joins.  Because of square caps and miter and
- * triangular joins, the maximum expansion on each side (in user space) is
+ * for line width, caps and joins.  Return 0 if the result is exact, 1 if
+ * it may be conservative, or gs_error_limitcheck if the result is too
+ * large to fit in a gs_fixed_point.
+ *
+ * Because of square caps and miter and triangular joins, the maximum
+ * expansion on each side (in user space) is
  *      K * line_width/2
  * where K is determined as follows:
  *      If the path is only a single line segment, K = 1;
  *      if triangular joins, K = 2;
  *      if miter joins, K = miter_limit;
  *      otherwise, K = 1.
- * If the amount is too large to fit in a gs_fixed_point, return
- * gs_error_limitcheck.
  *
- * If the miter limit is very large, the foregoing computation will produce
- * a result that is much too large; we would like to tighten this up at
- * some point in the future.
+ * If the following conditions apply, K = 1 yields an exact result:
+ *	- The CTM is of the form [X 0 0 Y] or [0 X Y 0].
+ *	- Square or round caps are used, or all subpaths are closed.
+ *	- All segments (including the implicit segment created by
+ *	  closepath) are vertical or horizontal lines.
+ *
+ * Note that these conditions are sufficient, but not necessary, to get an
+ * exact result.  We choose this set of conditions because it is easy to
+ * check and covers many common cases.  Clients that care always have the
+ * option of using strokepath to get an exact result.
  */
 int
 gx_stroke_path_expansion(const gs_imager_state * pis, const gx_path * ppath,
@@ -83,38 +92,64 @@ gx_stroke_path_expansion(const gs_imager_state * pis, const gx_path * ppath,
 {
     const subpath *psub = ppath->first_subpath;
     const segment *pseg;
-    double expand =
-    (!gx_path_has_curves(ppath) && gx_path_subpath_count(ppath) <= 1 &&
-     (psub == 0 || (pseg = psub->next) == 0 ||
-      (pseg = pseg->next) == 0 || pseg->type == s_line_close) ? 1.0 :
-     pis->line_params.join == gs_join_miter ?
-     pis->line_params.miter_limit :
-     pis->line_params.join == gs_join_triangle ? 2.0 : 1.0) *
-    pis->line_params.half_width;
+    double cx = fabs(pis->ctm.xx) + fabs(pis->ctm.yx);
+    double cy = fabs(pis->ctm.xy) + fabs(pis->ctm.yy);
+    double expand = pis->line_params.half_width;
+    int result = 1;
 
+    /* Check for whether an exact result can be computed easily. */
+    if (is_fzero2(pis->ctm.xy, pis->ctm.yx) ||
+	is_fzero2(pis->ctm.xx, pis->ctm.yy)
+	) {
+	bool must_be_closed =
+	    !(pis->line_params.cap == gs_cap_square ||
+	      pis->line_params.cap == gs_cap_round);
+	gs_fixed_point prev;
+
+	for (pseg = (const segment *)psub; pseg;
+	     prev = pseg->pt, pseg = pseg->next
+	     )
+	    switch (pseg->type) {
+	    case s_start:
+		if (((const subpath *)pseg)->curve_count ||
+		    (must_be_closed && !((const subpath *)pseg)->is_closed)
+		    )
+		    goto not_exact;
+		break;
+	    case s_line:
+	    case s_line_close:
+		if (!(pseg->pt.x == prev.x || pseg->pt.y == prev.y))
+		    goto not_exact;
+		break;
+	    default:		/* other/unknown segment type */
+		goto not_exact;
+	    }
+	result = 0;		/* exact result */
+    }
+not_exact:
+    if (result)
+	expand *=
+	    (!gx_path_has_curves(ppath) && gx_path_subpath_count(ppath) <= 1 &&
+	     (psub == 0 || (pseg = psub->next) == 0 ||
+	      (pseg = pseg->next) == 0 || pseg->type == s_line_close) ? 1.0 :
+	     pis->line_params.join == gs_join_miter ?
+	     pis->line_params.miter_limit :
+	     pis->line_params.join == gs_join_triangle ? 2.0 : 1.0);
+	    
     /* Short-cut gs_bbox_transform. */
-    float cx1 = pis->ctm.xx + pis->ctm.yx;
-    float cy1 = pis->ctm.xy + pis->ctm.yy;
-    float cx2 = pis->ctm.xx - pis->ctm.yx;
-    float cy2 = pis->ctm.xy - pis->ctm.yy;
-
-    if (cx1 < 0)
-	cx1 = -cx1;
-    if (cy1 < 0)
-	cy1 = -cy1;
-    if (cx2 < 0)
-	cx2 = -cx2;
-    if (cy2 < 0)
-	cy2 = -cy2;
     {
-	float exx = expand * max(cx1, cx2);
-	float exy = expand * max(cy1, cy2);
+	float exx = expand * cx;
+	float exy = expand * cy;
 	int code = set_float2fixed_vars(ppt->x, exx);
 
 	if (code < 0)
 	    return code;
-	return set_float2fixed_vars(ppt->y, exy);
+	code = set_float2fixed_vars(ppt->y, exy);
+	if (code < 0)
+	    return code;
     }
+
+    return result;
 }
 
 /*
@@ -205,8 +240,8 @@ gx_default_stroke_path(gx_device * dev, const gs_imager_state * pis,
  */
 #define stroke_line_proc(proc)\
   int proc(P10(gx_path *, int, pl_ptr, pl_ptr, const gx_device_color *,\
-		    gx_device *, const gs_imager_state *,\
-		    const gx_stroke_params *, const gs_fixed_rect *, int))
+	       gx_device *, const gs_imager_state *,\
+	       const gx_stroke_params *, const gs_fixed_rect *, int))
 typedef stroke_line_proc((*stroke_line_proc_t));
 
 private stroke_line_proc(stroke_add);
@@ -233,7 +268,7 @@ gx_stroke_path_only(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 		 const gx_device_color * pdevc, const gx_clip_path * pcpath)
 {
     stroke_line_proc_t line_proc =
-    (to_path == 0 ? stroke_fill : stroke_add);
+	(to_path == 0 ? stroke_fill : stroke_add);
     gs_fixed_rect ibox, cbox;
     gx_device_clip cdev;
     gx_device *dev = pdev;
@@ -246,33 +281,32 @@ gx_stroke_path_only(gx_path * ppath, gx_path * to_path, gx_device * pdev,
     const gx_path *spath;
     float xx = pis->ctm.xx, xy = pis->ctm.xy;
     float yx = pis->ctm.yx, yy = pis->ctm.yy;
-
     /*
-       * We are dealing with a reflected coordinate system
-       * if transform(1,0) is counter-clockwise from transform(0,1).
-       * See the note in stroke_add for the algorithm.
+     * We are dealing with a reflected coordinate system
+     * if transform(1,0) is counter-clockwise from transform(0,1).
+     * See the note in stroke_add for the algorithm.
      */
     int uniform;
     bool reflected;
     orientation orient =
-    (
+	(
 #ifdef OPTIMIZE_ORIENTATION
-	is_fzero2(xy, yx) ?
-	(uniform = (xx == yy ? 1 : xx == -yy ? -1 : 0),
-	 reflected = (uniform ? uniform < 0 : (xx < 0) != (yy < 0)),
-	 orient_portrait) :
-	is_fzero2(xx, yy) ?
-	(uniform = (xy == yx ? -1 : xy == -yx ? 1 : 0),
-	 reflected = (uniform ? uniform < 0 : (xy < 0) == (yx < 0)),
-	 orient_landscape) :
+	 is_fzero2(xy, yx) ?
+	 (uniform = (xx == yy ? 1 : xx == -yy ? -1 : 0),
+	  reflected = (uniform ? uniform < 0 : (xx < 0) != (yy < 0)),
+	  orient_portrait) :
+	 is_fzero2(xx, yy) ?
+	 (uniform = (xy == yx ? -1 : xy == -yx ? 1 : 0),
+	  reflected = (uniform ? uniform < 0 : (xy < 0) == (yx < 0)),
+	  orient_landscape) :
     /* We should optimize uniform rotated coordinate systems */
     /* here as well, but we don't. */
 #endif
-	(uniform = 0,
-	 reflected = xy * yx > xx * yy,
-	 orient_other));
+	 (uniform = 0,
+	  reflected = xy * yx > xx * yy,
+	  orient_other));
     segment_notes not_first =
-    (!is_fzero(pis->line_params.dot_length) ? sn_not_first : sn_none);
+	(!is_fzero(pis->line_params.dot_length) ? sn_not_first : sn_none);
     float line_width = pgs_lp->half_width;	/* (*half* the line width) */
     bool always_thin;
     double line_width_and_scale, device_line_width_scale;
@@ -438,8 +472,8 @@ gx_stroke_path_only(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 	spath = ppath;
     } else {
 	gx_path_init_local(&fpath, ppath->memory);
-	if ((code = gx_path_add_flattened_accurate(ppath, &fpath,
-				params->flatness, pis->accurate_curves)) < 0
+	if ((code = gx_path_add_flattened_for_stroke(ppath, &fpath,
+						params->flatness, pis)) < 0
 	    )
 	    return code;
 	spath = &fpath;
@@ -652,11 +686,11 @@ gx_stroke_path_only(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 	    /* For some reason, the Borland compiler requires the cast */
 	    /* in the following statement. */
 	    pl_ptr lptr =
-	    (!is_closed ||
-	     (pgs_lp->join == gs_join_none &&
-	      !((pseg == 0 ? (const segment *)spath->first_subpath :
-		 pseg)->notes & not_first)) ?
-	     (pl_ptr) 0 : (pl_ptr) & pl_first);
+		(!is_closed ||
+		 (pgs_lp->join == gs_join_none &&
+		  !((pseg == 0 ? (const segment *)spath->first_subpath :
+		     pseg)->notes & not_first)) ?
+		 (pl_ptr) 0 : (pl_ptr) & pl_first);
 
 	    code = (*line_proc) (to_path, index - 1, &pl_prev, lptr,
 				 pdevc, dev, pis, params, &cbox, uniform);
@@ -926,17 +960,17 @@ const gx_device_color * pdevc, gx_device * dev, const gs_imager_state * pis,
 			++bevel;
 		    /* Fill the bevel. */
 		    code = (*dev_proc(dev, fill_triangle)) (dev,
-							    bevel[0].x, bevel[0].y,
-				 bevel[1].x - bevel[0].x, bevel[1].y - bevel[0].y,
-			         bevel[2].x - bevel[0].x, bevel[2].y - bevel[0].y,
-							    pdevc, pis->log_op);
-			if (code < 0)
-			    return code;
+							 bevel->x, bevel->y,
+			       bevel[1].x - bevel->x, bevel[1].y - bevel->y,
+			       bevel[2].x - bevel->x, bevel[2].y - bevel->y,
+							pdevc, pis->log_op);
+		    if (code < 0)
+			return code;
 		}
 	    }
 	    /* Fill the body of the stroke. */
 	    return (*dev_proc(dev, fill_parallelogram)) (dev,
-						  points[1].x, points[1].y,
+						   points[1].x, points[1].y,
 						  points[0].x - points[1].x,
 						  points[0].y - points[1].y,
 						  points[2].x - points[1].x,
@@ -956,7 +990,7 @@ const gx_device_color * pdevc, gx_device * dev, const gs_imager_state * pis,
 
 /* Add a segment to the path.  This handles all the complex cases. */
 private int
-stroke_add(gx_path * ppath, int first, register pl_ptr plp, pl_ptr nplp,
+stroke_add(gx_path * ppath, int first, pl_ptr plp, pl_ptr nplp,
 const gx_device_color * pdevc, gx_device * dev, const gs_imager_state * pis,
 	const gx_stroke_params * params, const gs_fixed_rect * ignore_pbbox,
 	   int uniform)
@@ -1078,10 +1112,8 @@ line_join_points(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
      * that almost all CPUs provide!
      */
     bool ccw =
-    (double)(plp->width.x) *	/* x1 */
-    (nplp->width.y) >		/* y2 */
-    (double)(nplp->width.x) *	/* x2 */
-    (plp->width.y);
+	(double)(plp->width.x) /* x1 */ * (nplp->width.y) /* y2 */ >
+	(double)(nplp->width.x) /* x2 */ * (plp->width.y) /* y1 */;
     p_ptr outp, np;
 
     /* Initialize for a bevel join. */
@@ -1240,7 +1272,7 @@ line_join_points(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
 /* Compute the endpoints of the two caps of a segment. */
 /* Only o.p, e.p, width, and cdelta have been set. */
 private void
-compute_caps(register pl_ptr plp)
+compute_caps(pl_ptr plp)
 {
     fixed wx2 = plp->width.x;
     fixed wy2 = plp->width.y;
@@ -1275,26 +1307,27 @@ compute_caps(register pl_ptr plp)
 
 /* Add a round cap to a path. */
 /* Assume the current point is the cap origin (endp->co). */
-/* Leave with the current point at [xe, ye] */
 private int
 add_round_cap(gx_path * ppath, const_ep_ptr endp)
 {
-    fixed xm = px + cdx;
-    fixed ym = py + cdy;
-    fixed xmm = px - cdx;
-    fixed ymm = py - cdy;
     int code;
 
-    if ((code = gx_path_add_partial_arc(ppath, xm, ym,
-			   xo + cdx, yo + cdy, quarter_arc_fraction)) < 0 ||
-	(code = gx_path_add_partial_arc(ppath, xe, ye,
-			      xe + cdx, ye + cdy, quarter_arc_fraction)) < 0 ||
-	(code = gx_path_add_partial_arc(ppath, xmm, ymm,
-			      xe - cdx, ye - cdy, quarter_arc_fraction)) < 0 ||
-	(code = gx_path_add_partial_arc(ppath, xo, yo,
-			      xo - cdx, yo - cdy, quarter_arc_fraction)) < 0 ||
-	/* The final point must be (xe,ye) */ 
-	(code = gx_path_add_line(ppath, xe, ye))
+    /*
+     * Per the Red Book, we draw a full circle, even though a semicircle
+     * is sufficient for the join.
+     */
+    if ((code = gx_path_add_partial_arc(ppath, px + cdx, py + cdy,
+					xo + cdx, yo + cdy,
+					quarter_arc_fraction)) < 0 ||
+	(code = gx_path_add_partial_arc(ppath, xe, ye, xe + cdx, ye + cdy,
+					quarter_arc_fraction)) < 0 ||
+	(code = gx_path_add_partial_arc(ppath, px - cdx, py - cdy,
+					xe - cdx, ye - cdy,
+					quarter_arc_fraction)) < 0 ||
+	(code = gx_path_add_partial_arc(ppath, xo, yo, xo - cdx, yo - cdy,
+					quarter_arc_fraction)) < 0 ||
+	/* The final point must be (xe,ye). */
+	(code = gx_path_add_line(ppath, xe, ye)) < 0
 	)
 	return code;
     return 0;

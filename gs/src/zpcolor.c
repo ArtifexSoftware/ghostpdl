@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -32,50 +32,55 @@
 #include "gxpcolor.h"
 #include "estack.h"
 #include "ialloc.h"
+#include "icremap.h"
 #include "istruct.h"
 #include "idict.h"
 #include "idparam.h"
 #include "igstate.h"
+#include "ipcolor.h"
 #include "store.h"
 
 /* Imported from gspcolor.c */
 extern const gs_color_space_type gs_color_space_type_Pattern;
 
-/* Imported from zcolor2.c */
-extern gs_memory_type_ptr_t zcolor2_st_pattern_instance_p;
-
 /* Forward references */
 private int zPaintProc(P2(const gs_client_color *, gs_state *));
-private int pattern_paint_prepare(P1(os_ptr));
-private int pattern_paint_finish(P1(os_ptr));
+private int pattern_paint_prepare(P1(i_ctx_t *));
+private int pattern_paint_finish(P1(i_ctx_t *));
 
-/*
- * Define the structure for remembering the pattern dictionary.
- * This is the "client data" in the template.
- * See zgstate.c (int_gstate) or zfont2.c (font_data) for information
- * as to why we define this as a structure rather than a ref array.
- */
-typedef struct int_pattern_s {
-    ref dict;
-} int_pattern;
+/* GC descriptors */
+private_st_int_pattern();
 
-gs_private_st_ref_struct(st_int_pattern, int_pattern, "int_pattern");
-
-/* Initialize the Pattern cache and the Pattern instance type. */
-private void
-zpcolor_init(void)
+/* Initialize the Pattern cache. */
+private int
+zpcolor_init(i_ctx_t *i_ctx_p)
 {
     gstate_set_pattern_cache(igs,
 			     gx_pattern_alloc_cache(imemory_system,
 					       gx_pat_cache_default_tiles(),
 					      gx_pat_cache_default_bits()));
-    zcolor2_st_pattern_instance_p = &st_pattern_instance;
+    return 0;
+}
+
+/* Create an interpreter pattern structure. */
+int
+int_pattern_alloc(int_pattern **ppdata, const ref *op)
+{
+    int_pattern *pdata =
+	ialloc_struct(int_pattern, &st_int_pattern, "int_pattern");
+
+    if (pdata == 0)
+	return_error(e_VMerror);
+    pdata->dict = *op;
+    *ppdata = pdata;
+    return 0;
 }
 
 /* <pattern> <matrix> .buildpattern1 <pattern> <instance> */
 private int
-zbuildpattern1(os_ptr op)
+zbuildpattern1(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     os_ptr op1 = op - 1;
     int code;
     gs_matrix mat;
@@ -89,7 +94,7 @@ zbuildpattern1(os_ptr op)
     check_dict_read(*op1);
     gs_pattern1_init(&template);
     if ((code = read_matrix(op, &mat)) < 0 ||
-	(code = dict_uid_param(op1, &template.uid, 1, imemory)) != 1 ||
+	(code = dict_uid_param(op1, &template.uid, 1, imemory, i_ctx_p)) != 1 ||
 	(code = dict_int_param(op1, "PaintType", 1, 2, 0, &template.PaintType)) < 0 ||
 	(code = dict_int_param(op1, "TilingType", 1, 3, 0, &template.TilingType)) < 0 ||
 	(code = dict_float_array_param(op1, "BBox", 4, BBox, NULL)) != 4 ||
@@ -104,11 +109,10 @@ zbuildpattern1(os_ptr op)
     template.BBox.q.x = BBox[2];
     template.BBox.q.y = BBox[3];
     template.PaintProc = zPaintProc;
-    pdata = ialloc_struct(int_pattern, &st_int_pattern, "int_pattern");
-    if (pdata == 0)
-	return_error(e_VMerror);
+    code = int_pattern_alloc(&pdata, op1);
+    if (code < 0)
+	return code;
     template.client_data = pdata;
-    pdata->dict = *op1;
     code = gs_makepattern(&cc_instance, &template, &mat, igs, imemory);
     if (code < 0) {
 	ifree_object(pdata, "int_pattern");
@@ -122,8 +126,9 @@ zbuildpattern1(os_ptr op)
 /* In the case of uncolored patterns, the current color space is */
 /* the base space for the pattern space. */
 private int
-zsetpatternspace(register os_ptr op)
+zsetpatternspace(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_color_space cs;
     uint edepth = ref_stack_count(&e_stack);
     int code;
@@ -174,27 +179,24 @@ const op_def zpcolor_l2_op_defs[] =
 
 /* ------ Internal procedures ------ */
 
-/* Set up the pattern pointer in a client color for setcolor */
-/* with a Pattern space. */
-/****** ? WHAT WAS THIS FOR ? ******/
-
 /* Render the pattern by calling the PaintProc. */
-private int pattern_paint_cleanup(P1(os_ptr));
+private int pattern_paint_cleanup(P1(i_ctx_t *));
 private int
 zPaintProc(const gs_client_color * pcc, gs_state * pgs)
 {
     /* Just schedule a call on the real PaintProc. */
-    check_estack(2);
-    esp++;
-    push_op_estack(pattern_paint_prepare);
-    return e_InsertProc;
+    r_ptr(&gs_int_gstate(pgs)->remap_color_info,
+	  int_remap_color_info_t)->proc =
+	pattern_paint_prepare;
+    return_error(e_RemapColor);
 }
 /* Prepare to run the PaintProc. */
 private int
-pattern_paint_prepare(os_ptr op)
+pattern_paint_prepare(i_ctx_t *i_ctx_p)
 {
     gs_state *pgs = igs;
-    gs_pattern_instance *pinst = gs_currentcolor(pgs)->pattern;
+    gs_pattern1_instance_t *pinst =
+	(gs_pattern1_instance_t *)gs_currentcolor(pgs)->pattern;
     ref *pdict = &((int_pattern *) pinst->template.client_data)->dict;
     gx_device_pattern_accum *pdev;
     int code;
@@ -231,7 +233,7 @@ pattern_paint_prepare(os_ptr op)
 }
 /* Save the rendered pattern. */
 private int
-pattern_paint_finish(os_ptr op)
+pattern_paint_finish(i_ctx_t *i_ctx_p)
 {
     gx_device_pattern_accum *pdev = r_ptr(esp, gx_device_pattern_accum);
     gx_color_tile *ctile;
@@ -241,13 +243,13 @@ pattern_paint_finish(os_ptr op)
     if (code < 0)
 	return code;
     esp -= 2;
-    pattern_paint_cleanup(op);
+    pattern_paint_cleanup(i_ctx_p);
     return o_pop_estack;
 }
 /* Clean up after rendering a pattern.  Note that iff the rendering */
 /* succeeded, closing the accumulator won't free the bits. */
 private int
-pattern_paint_cleanup(os_ptr op)
+pattern_paint_cleanup(i_ctx_t *i_ctx_p)
 {
     gx_device_pattern_accum *const pdev =
 	r_ptr(esp + 2, gx_device_pattern_accum);

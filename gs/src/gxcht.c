@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -30,6 +30,9 @@
 #include "gxdcolor.h"
 #include "gxistate.h"
 #include "gzht.h"
+
+/* Define whether to force use of the slow code, for testing. */
+#define USE_SLOW_CODE 0
 
 /* Define the size of the tile buffer allocated on the stack. */
 #define tile_longs_LARGE 256
@@ -63,28 +66,76 @@ const gx_device_color_type_t *const gx_dc_type_ht_colored =
     &gx_dc_type_data_ht_colored;
 #define gx_dc_type_ht_colored (&gx_dc_type_data_ht_colored)
 
-/* Forward references. */
-private int set_ht_colors(P6(gx_color_index[16], gx_strip_bitmap *[4],
-			     const gx_device_color *, gx_device *,
-			     gx_ht_cache *[4], int));
-private int set_cmyk_1bit_colors(P6(gx_color_index[16], gx_strip_bitmap *[4],
-				    const gx_device_color *, gx_device *,
-				    gx_ht_cache *[4], int));
-private void set_color_ht(P11(byte *, uint, int, int, int, int, int, int, int,
-			      const gx_color_index[16],
-			      const gx_strip_bitmap *[4]));
+/* Compare two colored halftones for equality. */
+private bool
+gx_dc_ht_colored_equal(const gx_device_color * pdevc1,
+		       const gx_device_color * pdevc2)
+{
+    uint num_comp;
 
-/* Define a table for expanding 8x1 bits to 8x4. */
-private const bits32 expand_8x1_to_8x4[256] = {
-#define x16(c)\
-  c+0, c+1, c+0x10, c+0x11, c+0x100, c+0x101, c+0x110, c+0x111,\
-  c+0x1000, c+0x1001, c+0x1010, c+0x1011, c+0x1100, c+0x1101, c+0x1110, c+0x1111
-    x16(0x00000000), x16(0x00010000), x16(0x00100000), x16(0x00110000),
-    x16(0x01000000), x16(0x01010000), x16(0x01100000), x16(0x01110000),
-    x16(0x10000000), x16(0x10010000), x16(0x10100000), x16(0x10110000),
-    x16(0x11000000), x16(0x11010000), x16(0x11100000), x16(0x11110000)
-#undef x16
-};
+    if (pdevc2->type != pdevc1->type ||
+	pdevc1->colors.colored.c_ht != pdevc2->colors.colored.c_ht ||
+	pdevc1->colors.colored.alpha != pdevc2->colors.colored.alpha ||
+	pdevc1->phase.x != pdevc2->phase.x ||
+	pdevc1->phase.y != pdevc2->phase.y
+	)
+	return false;
+    num_comp = pdevc1->colors.colored.c_ht->num_comp;
+    return
+	!memcmp(pdevc1->colors.colored.c_base,
+		pdevc2->colors.colored.c_base,
+		num_comp * sizeof(pdevc1->colors.colored.c_base[0])) &&
+	!memcmp(pdevc1->colors.colored.c_level,
+		pdevc2->colors.colored.c_level,
+		num_comp * sizeof(pdevc1->colors.colored.c_level[0]));
+}
+
+/* Define an abbreviation for a heavily used value. */
+#define MAX_DCC GX_DEVICE_COLOR_MAX_COMPONENTS
+
+/* Forward references. */
+/* Use a typedef to attempt to work around overly picky compilers. */
+typedef gx_color_value gx_color_value_array[MAX_DCC];
+typedef struct color_values_pair_s {
+    gx_color_value_array values[2];
+} color_values_pair_t;
+#define SET_HT_COLORS_PROC(proc)\
+  int proc(P7(\
+	      color_values_pair_t *pvp,\
+	      gx_color_index colors[1 << MAX_DCC],\
+	      const gx_const_strip_bitmap *sbits[MAX_DCC],\
+	      const gx_device_color *pdevc,\
+	      gx_device *dev,\
+	      gx_ht_cache *caches[MAX_DCC],\
+	      int nplanes\
+	      ))
+
+private SET_HT_COLORS_PROC(set_ht_colors_le_4);
+private SET_HT_COLORS_PROC(set_cmyk_1bit_colors);
+private SET_HT_COLORS_PROC(set_ht_colors_gt_4);
+
+#define SET_COLOR_HT_PROC(proc)\
+  void proc(P14(\
+	        byte *dest_data, /* the output tile */\
+		uint dest_raster, /* ibid. */\
+		int px,	/* the initial phase of the output tile */\
+		int py,\
+		int w,	/* how much of the tile to set */\
+		int h,\
+		int depth,	/* depth of tile (4, 8, 16, 24, 32) */\
+		int special,	/* >0 means special 1-bit CMYK */\
+		int nplanes,\
+		gx_color_index plane_mask,	/* which planes are halftoned */\
+		gx_device *dev,		/* in case we are mapping lazily */\
+		const color_values_pair_t *pvp,	/* color values ditto */\
+		gx_color_index colors[1 << MAX_DCC],	/* the actual colors for the tile, */\
+				/* actually [1 << nplanes] */\
+		const gx_const_strip_bitmap * sbits[MAX_DCC]	/* the bitmaps for the planes, */\
+				/* actually [nplanes] */\
+		))
+
+private SET_COLOR_HT_PROC(set_color_ht_le_4);
+private SET_COLOR_HT_PROC(set_color_ht_gt_4);
 
 /* Prepare to use a colored halftone, by loading the default cache. */
 private int
@@ -95,7 +146,7 @@ gx_dc_ht_colored_load(gx_device_color * pdevc, const gs_imager_state * pis,
     gx_ht_order *porder = &pdht->components[0].corder;
     gx_ht_cache *pcache = pis->ht_cache;
 
-    if (pcache->order.bits != porder->bits)
+    if (pcache->order.bit_data != porder->bit_data)
 	gx_ht_init_cache(pcache, porder);
     /* Set the cache pointers in the default order. */
     pdht->order.cache = porder->cache = pcache;
@@ -117,9 +168,17 @@ gx_dc_ht_colored_fill_rectangle(const gx_device_color * pdevc,
     const gx_device_halftone *pdht = pdevc->colors.colored.c_ht;
     int depth = dev->color_info.depth;
     int nplanes = dev->color_info.num_components;
-    gx_color_index colors[16];
-    gx_strip_bitmap *sbits[4];
-    gx_ht_cache *caches[4];
+    SET_COLOR_HT_PROC((*set_color_ht)) =
+	(
+#if !USE_SLOW_CODE
+	 !(pdevc->colors.colored.plane_mask & ~(gx_color_index)15) ?
+	 set_color_ht_le_4 :
+#endif
+	 set_color_ht_gt_4);
+    color_values_pair_t vp;
+    gx_color_index colors[1 << MAX_DCC];
+    const gx_const_strip_bitmap *sbits[MAX_DCC];
+    gx_ht_cache *caches[MAX_DCC];
     int special;
     int code = 0;
     int raster;
@@ -127,24 +186,59 @@ gx_dc_ht_colored_fill_rectangle(const gx_device_color * pdevc,
     int dw, dh;
     int lw = pdht->lcm_width, lh = pdht->lcm_height;
     bool no_rop;
+    int i;
 
     if (w <= 0 || h <= 0)
 	return 0;
+    if ((w | h) >= 16) {
+	/* It's worth taking the trouble to check the clipping box. */
+	gs_fixed_rect cbox;
+	int t;
+
+	dev_proc(dev, get_clipping_box)(dev, &cbox);
+	if ((t = fixed2int(cbox.p.x)) > x) {
+	    if ((w += x - t) <= 0)
+		return 0;
+	    x = t;
+	}
+	if ((t = fixed2int(cbox.p.y)) > y) {
+	    if ((h += y - t) <= 0)
+		return 0;
+	    y = t;
+	}
+	if ((t = fixed2int(cbox.q.x)) < x + w)
+	    if ((w = t - x) <= 0)
+		return 0;
+	if ((t = fixed2int(cbox.q.y)) < y + h)
+	    if ((h = t - y) <= 0)
+		return 0;
+    }
     /* Colored halftone patterns are unconditionally opaque. */
     lop &= ~lop_T_transparent;
-    if (pdht->components == 0)
+    if (pdht->components == 0) {
 	caches[0] = caches[1] = caches[2] = caches[3] = pdht->order.cache;
-    else {
+	for (i = 4; i < nplanes; ++i)
+	    caches[i] = pdht->order.cache;
+    } else {
 	gx_ht_order_component *pocs = pdht->components;
 
 	caches[0] = pocs[pdht->color_indices[0]].corder.cache;
 	caches[1] = pocs[pdht->color_indices[1]].corder.cache;
 	caches[2] = pocs[pdht->color_indices[2]].corder.cache;
 	caches[3] = pocs[pdht->color_indices[3]].corder.cache;
+	for (i = 4; i < nplanes; ++i)
+	    caches[i] = pocs[pdht->color_indices[i]].corder.cache;
     }
-    special = (dev_proc(dev, map_cmyk_color) == cmyk_1bit_map_cmyk_color ?
-	       set_cmyk_1bit_colors : set_ht_colors)
-	(colors, sbits, pdevc, dev, caches, nplanes);
+    special =
+#if USE_SLOW_CODE
+	set_ht_colors_gt_4
+#else
+	(dev_proc(dev, map_cmyk_color) == cmyk_1bit_map_cmyk_color ?
+	   set_cmyk_1bit_colors :
+	 nplanes < 4 ? set_ht_colors_le_4 :
+	 set_ht_colors_gt_4)
+#endif
+	(&vp, colors, sbits, pdevc, dev, caches, nplanes);
     no_rop = source == NULL && lop_no_S_is_T(lop);
     /*
      * If the LCM of the plane cell sizes is smaller than the rectangle
@@ -169,10 +263,9 @@ gx_dc_ht_colored_fill_rectangle(const gx_device_color * pdevc,
 	    tiles.rep_height = tiles.size.y = lh;
 	    tiles.id = gs_next_ids(1);
 	    tiles.rep_shift = tiles.shift = 0;
-	    /* See below for why we need to cast bits. */
 	    set_color_ht((byte *)tbits, raster, 0, 0, lw, lh, depth,
-			 special, pdevc->colors.colored.plane_mask, colors,
-			 (const gx_strip_bitmap **)sbits);
+			 special, nplanes, pdevc->colors.colored.plane_mask,
+			 dev, &vp, colors, sbits);
 	    if (no_rop)
 		return (*dev_proc(dev, strip_tile_rectangle)) (dev, &tiles,
 							       x, y, w, h,
@@ -230,16 +323,11 @@ fit:				/* Now the tile will definitely fit. */
 	int cy = y, ch = dh, left = h;
 
 	for (;;) {
-	    /*
-	     * The cast in the following statement is bogus,
-	     * but some compilers won't accept an array type,
-	     * and won't accept the ** type without a cast.
-	     */
 	    set_color_ht((byte *)tbits, raster,
 			 x + pdevc->phase.x, cy + pdevc->phase.y,
-			 dw, ch, depth, special,
+			 dw, ch, depth, special, nplanes,
 			 pdevc->colors.colored.plane_mask,
-			 colors, (const gx_strip_bitmap **)sbits);
+			 dev, &vp, colors, sbits);
 	    if (no_rop) {
 		code = (*dev_proc(dev, copy_color))
 		    (dev, (byte *)tbits, 0, raster, gx_no_bitmap_id,
@@ -272,70 +360,87 @@ fit:				/* Now the tile will definitely fit. */
     return code;
 }
 
+/* ---------------- Color table setup ---------------- */
+
 /*
- * We construct color halftone tiles out of 3 or 4 "planes".
- * Each plane specifies halftoning for one component (R/G/B or C/M/Y/K).
+ * We could cache this if we had a place to store it.  Even a 1-element
+ * cache would help performance substantially.
+ *   Key: device + c_base/c_level of device color
+ *   Value: colors table
  */
 
-private const ulong ht_no_bitmap_data[] = {
-    0, 0, 0, 0, 0, 0, 0, 0
-};
-private gx_strip_bitmap ht_no_bitmap;
-private const gx_strip_bitmap ht_no_bitmap_init = {
-    0, sizeof(ulong),
-    {sizeof(ulong) * 8, countof(ht_no_bitmap_data)},
+/*
+ * We construct color halftone tiles out of multiple "planes".
+ * Each plane specifies halftoning for one component (R/G/B, C/M/Y/K,
+ * or DeviceN components).
+ */
+
+private const struct {
+    ulong pad;			/* to get bytes aligned properly */
+    byte bytes[sizeof(ulong) * 8];	/* 8 is arbitrary */
+} ht_no_bitmap_data = { 0 };
+private const gx_const_strip_bitmap ht_no_bitmap = {
+    &ht_no_bitmap_data.bytes[0], sizeof(ulong),
+    {sizeof(ulong) * 8, sizeof(ht_no_bitmap_data.bytes) / sizeof(ulong)},
     gx_no_bitmap_id, 1, 1, 0, 0
 };
 
-void
-gs_gxcht_init(gs_memory_t *mem)
-{
-    ht_no_bitmap = ht_no_bitmap_init;
-    ht_no_bitmap.data = (byte *)ht_no_bitmap_data;	/* actually const */
-}
+/* Set the color value(s) and halftone mask for one plane. */
 
-/* Set up the colors and the individual plane halftone bitmaps. */
-private int
-set_ht_colors(gx_color_index colors[16], gx_strip_bitmap * sbits[4],
-	      const gx_device_color * pdc, gx_device * dev,
-	      gx_ht_cache * caches[4], int nplanes)
-{
-    gx_color_value v[2][4];
-    gx_color_value max_color = dev->color_info.dither_colors - 1;
-    /*
-     * NB: the halftone orders are all set up for an additive color space.
-     *     To use these work with a cmyk color space, it is necessary to
-     *     invert both the color level and the color pair. Note that if the
-     *     original color was provided an additive space, this will reverse
-     *     (in an approximate sense) the color conversion performed to
-     *     express the color in cmyk space.
-     */
-    bool invert = dev->color_info.num_components == 4;  /****** HACK ******/
+/* Free variables: pvp, pdc, sbits */
+#define SET_PLANE_COLOR_CONSTANT(i)\
+  BEGIN\
+    pvp->values[1][i] = pvp->values[0][i] = pdc->colors.colored.c_base[i];\
+    sbits[i] = &ht_no_bitmap;\
+  END
 
-#define set_plane_color(i)\
+/* Free variables: pvp, pdc, sbits, caches, invert, max_color */
+#define SET_PLANE_COLOR(i)\
   BEGIN\
     uint q = pdc->colors.colored.c_base[i];\
     uint r = pdc->colors.colored.c_level[i];\
 \
-    v[0][i] = fractional_color(q, max_color);\
+    pvp->values[0][i] = fractional_color(q, max_color);\
     if (r == 0)\
-	v[1][i] = v[0][i], sbits[i] = &ht_no_bitmap;\
+	pvp->values[1][i] = pvp->values[0][i], sbits[i] = &ht_no_bitmap;\
     else if (!invert) {\
-	v[1][i] = fractional_color(q + 1, max_color);\
-	sbits[i] = &gx_render_ht(caches[i], r)->tiles;\
+	pvp->values[1][i] = fractional_color(q + 1, max_color);\
+	sbits[i] = (const gx_const_strip_bitmap *)\
+	    &gx_render_ht(caches[i], r)->tiles;\
     } else {                                                        \
 	const gx_device_halftone *pdht = pdc->colors.colored.c_ht;  \
 	int nlevels =\
 	    pdht->components[pdht->color_indices[i]].corder.num_levels;\
 \
-	v[1][i] = v[0][i];                                          \
-	v[0][i] = fractional_color(q + 1, max_color);               \
-	sbits[i] = &gx_render_ht(caches[i], nlevels - r)->tiles;    \
+	pvp->values[1][i] = pvp->values[0][i];                   \
+	pvp->values[0][i] = fractional_color(q + 1, max_color);   \
+	sbits[i] = (const gx_const_strip_bitmap *)\
+	    &gx_render_ht(caches[i], nlevels - r)->tiles;    \
     }\
   END
-    set_plane_color(0);
-    set_plane_color(1);
-    set_plane_color(2);
+
+/* Set up the colors and the individual plane halftone bitmaps. */
+private int
+set_ht_colors_le_4(color_values_pair_t *pvp /* only used internally */,
+		   gx_color_index colors[1 << MAX_DCC],
+		   const gx_const_strip_bitmap * sbits[MAX_DCC],
+		   const gx_device_color * pdc, gx_device * dev,
+		   gx_ht_cache * caches[MAX_DCC], int nplanes)
+{
+    gx_color_value max_color = dev->color_info.dither_colors - 1;
+    /*
+     * NB: the halftone orders are all set up for an additive color space.
+     *     To make these work with a subtractive device space such as CMYK,
+     *     it is necessary to invert both the color level and the color
+     *     pair. Note that if the original color was provided an additive
+     *     space, this will reverse (in an approximate sense) the color
+     *     conversion performed to express the color in the device space.
+     */
+    bool invert = dev->color_info.num_components >= 4;  /****** HACK ******/
+
+    SET_PLANE_COLOR(0);
+    SET_PLANE_COLOR(1);
+    SET_PLANE_COLOR(2);
     if (nplanes == 3) {
 	gx_color_value alpha = pdc->colors.colored.alpha;
 
@@ -345,30 +450,45 @@ set_ht_colors(gx_color_index colors[16], gx_strip_bitmap * sbits[4],
 	    dev_proc_map_rgb_color((*gx_map_rgb_color)) =
 		dev_proc(dev, map_rgb_color);
 #endif
-#define m(i)\
-  colors[i] = gx_map_rgb_color(dev, v[(i) & 1][0], v[((i) & 2) >> 1][1],\
-			       v[(i) >> 2][2])
-	    m(0); m(1); m(2); m(3); m(4); m(5); m(6); m(7);
-#undef m
+#define M(i)\
+  colors[i] = gx_map_rgb_color(dev, pvp->values[(i) & 1][0],\
+			       pvp->values[((i) & 2) >> 1][1],\
+			       pvp->values[(i) >> 2][2])
+	    M(0); M(1); M(2); M(3); M(4); M(5); M(6); M(7);
+#undef M
 	} else {
 #ifndef DEBUG
 #  undef gx_map_rgb_alpha_color
 	    dev_proc_map_rgb_alpha_color((*gx_map_rgb_alpha_color)) =
 		dev_proc(dev, map_rgb_alpha_color);
 #endif
-#define m(i)\
-  colors[i] = gx_map_rgb_alpha_color(dev, v[(i) & 1][0], v[((i) & 2) >> 1][1],\
-				     v[(i) >> 2][2], alpha)
-	    m(0); m(1); m(2); m(3); m(4); m(5); m(6); m(7);
-#undef m
+#define M(i)\
+  colors[i] = gx_map_rgb_alpha_color(dev, pvp->values[(i) & 1][0],\
+				     pvp->values[((i) & 2) >> 1][1],\
+				     pvp->values[(i) >> 2][2], alpha)
+	    M(0); M(1); M(2); M(3); M(4); M(5); M(6); M(7);
+#undef M
 	}
     } else {
-#ifndef DEBUG
-#  undef gx_map_cmyk_color
-	dev_proc_map_cmyk_color((*gx_map_cmyk_color)) =
+#ifdef DEBUG
+#  define do_map_cmyk_color(dev, c, m, y, k) gx_map_cmyk_color(dev, c, m, y, k)
+#else
+	dev_proc_map_cmyk_color((*do_map_cmyk_color)) =
 	    dev_proc(dev, map_cmyk_color);
 #endif
-	set_plane_color(3);
+	SET_PLANE_COLOR(3);
+	if (nplanes > 4) {
+	    /*
+	     * Set colors for any planes beyond the 4th.  Since this code
+	     * only handles the case of at most 4 active planes, we know
+	     * that any further planes are constant.
+	     */
+	    /****** DOESN'T MAP COLORS RIGHT, DOESN'T HANDLE ALPHA ******/
+	    int pi;
+
+	    for (pi = 4; pi < nplanes; ++pi)
+		SET_PLANE_COLOR_CONSTANT(pi);
+	}
 	/*
 	 * For CMYK output, especially if the input was RGB, it's
 	 * common for one or more of the components to be zero.
@@ -376,63 +496,71 @@ set_ht_colors(gx_color_index colors[16], gx_strip_bitmap * sbits[4],
 	 * half, so it's worth doing a little checking here.
 	 */
 
-#define m(i)\
-  colors[i] = gx_map_cmyk_color(dev, v[(i) & 1][0], v[((i) & 2) >> 1][1],\
-				v[((i) & 4) >> 2][2], v[(i) >> 3][3])
-	switch (pdc->colors.colored.plane_mask) {
+#define M(i)\
+  colors[i] = do_map_cmyk_color(dev, pvp->values[(i) & 1][0],\
+				pvp->values[((i) & 2) >> 1][1],\
+				pvp->values[((i) & 4) >> 2][2],\
+				pvp->values[(i) >> 3][3])
+
+      /* We know that plane_mask <= 15. */
+	switch ((int)pdc->colors.colored.plane_mask) {
 	    case 15:
-		m(15); m(14); m(13); m(12);
-		m(11); m(10); m(9); m(8);
+		M(15); M(14); M(13); M(12);
+		M(11); M(10); M(9); M(8);
 	    case 7:
-		m(7); m(6); m(5); m(4);
+		M(7); M(6); M(5); M(4);
 c3:	    case 3:
-		m(3); m(2);
+		M(3); M(2);
 c1:	    case 1:
-		m(1);
+		M(1);
 		break;
 	    case 14:
-		m(14); m(12); m(10); m(8);
+		M(14); M(12); M(10); M(8);
 	    case 6:
-		m(6); m(4);
+		M(6); M(4);
 c2:	    case 2:
-		m(2);
+		M(2);
 		break;
 	    case 13:
-		m(13); m(12); m(9); m(8);
+		M(13); M(12); M(9); M(8);
 	    case 5:
-		m(5); m(4);
+		M(5); M(4);
 		goto c1;
 	    case 12:
-		m(12); m(8);
+		M(12); M(8);
 	    case 4:
-		m(4);
+		M(4);
 		break;
 	    case 11:
-		m(11); m(10); m(9); m(8);
+		M(11); M(10); M(9); M(8);
 		goto c3;
 	    case 10:
-		m(10); m(8);
+		M(10); M(8);
 		goto c2;
 	    case 9:
-		m(9); m(8);
+		M(9); M(8);
 		goto c1;
 	    case 8:
-		m(8);
+		M(8);
 		break;
 	    case 0:;
 	}
-	m(0);
-#undef m
+	M(0);
+
+#undef M
+
     }
-#undef set_plane_color
     return 0;
 }
 
 /* Set up colors using the standard 1-bit CMYK mapping. */
 private int
-set_cmyk_1bit_colors(gx_color_index colors[16], gx_strip_bitmap * sbits[4],
+set_cmyk_1bit_colors(color_values_pair_t *ignore_pvp,
+		     gx_color_index colors[1 << MAX_DCC /*16 used*/],
+		     const gx_const_strip_bitmap * sbits[MAX_DCC /*4 used*/],
 		     const gx_device_color * pdc, gx_device * dev,
-		     gx_ht_cache * caches[4], int nplanes /*4*/)
+		     gx_ht_cache * caches[MAX_DCC /*4 used*/],
+		     int nplanes /*4*/)
 {
     const gx_device_halftone *pdht = pdc->colors.colored.c_ht;
     /*
@@ -447,7 +575,7 @@ set_cmyk_1bit_colors(gx_color_index colors[16], gx_strip_bitmap * sbits[4],
      * the values in all the nibbles so we can do several pixels at a time.
      */
     bits32 mask0 = 0, mask1 = 0;
-#define set_plane_color(i, mask)\
+#define SET_PLANE_COLOR_CMYK(i, mask)\
   BEGIN\
     uint r = pdc->colors.colored.c_level[i];\
 \
@@ -460,14 +588,16 @@ set_cmyk_1bit_colors(gx_color_index colors[16], gx_strip_bitmap * sbits[4],
 	    pdht->components[pdht->color_indices[i]].corder.num_levels;\
 \
 	mask0 |= mask;\
-	sbits[3 - i] = &gx_render_ht(caches[i], nlevels - r)->tiles;\
+	sbits[3 - i] = (const gx_const_strip_bitmap *)\
+	    &gx_render_ht(caches[i], nlevels - r)->tiles;\
     }\
   END
-    set_plane_color(0, 0x88888888);
-    set_plane_color(1, 0x44444444);
-    set_plane_color(2, 0x22222222);
-    set_plane_color(3, 0x11111111);
-#undef set_plane_color
+	 /* Suppress a compiler warning about signed/unsigned constants. */
+    SET_PLANE_COLOR_CMYK(0, /*0x88888888*/ (bits32)~0x77777777);
+    SET_PLANE_COLOR_CMYK(1, 0x44444444);
+    SET_PLANE_COLOR_CMYK(2, 0x22222222);
+    SET_PLANE_COLOR_CMYK(3, 0x11111111);
+#undef SET_PLANE_COLOR_CMYK
     {
 	gx_ht_cache *ctemp;
 
@@ -478,6 +608,46 @@ set_cmyk_1bit_colors(gx_color_index colors[16], gx_strip_bitmap * sbits[4],
     colors[1] = mask1;
     return 1;
 }
+
+/*
+ * Set up colors for >4 planes.  In this case, we compute the colors
+ * themselves lazily.
+ */
+private int
+set_ht_colors_gt_4(color_values_pair_t *pvp,
+		   gx_color_index colors[1 << MAX_DCC],
+		   const gx_const_strip_bitmap * sbits[MAX_DCC],
+		   const gx_device_color * pdc, gx_device * dev,
+		   gx_ht_cache * caches[MAX_DCC], int nplanes)
+{
+    gx_color_value max_color = dev->color_info.dither_colors - 1;
+    /* See set_ht_color_le_4 for invert. */
+    bool invert = true;  /****** HACK ******/
+    gx_color_index plane_mask = pdc->colors.colored.plane_mask;
+    int i;
+    gx_color_index ci;
+
+    /* Set the color values and halftone caches. */
+    for (i = 0; i < nplanes; ++i)
+	if ((plane_mask >> i) & 1)
+	    SET_PLANE_COLOR(i);
+        else
+	    SET_PLANE_COLOR_CONSTANT(i);
+
+    /*
+     * Clear the color table entries that will actually be used, namely,
+     * those whose indices are either 0 or 1 in bits selected by plane_mask
+     * and 0 in all other bits.
+     */
+    ci = 0;
+    do {
+	colors[ci] = gx_no_color_index;
+    } while ((ci = ((ci | ~plane_mask) + 1) & plane_mask) != 0);
+
+    return 0;
+}
+
+/* ---------------- Color rendering ---------------- */
 
 /* Define the bookkeeping structure for each plane of halftone rendering. */
 typedef struct tile_cursor_s {
@@ -498,7 +668,7 @@ typedef struct tile_cursor_s {
  * (data and bit_shift).
  */
 private void
-init_tile_cursor(int i, tile_cursor_t *ptc, const gx_strip_bitmap *btile,
+init_tile_cursor(int i, tile_cursor_t *ptc, const gx_const_strip_bitmap *btile,
 		 int endx, int lasty)
 {
     int tw = btile->size.x;
@@ -519,30 +689,66 @@ init_tile_cursor(int i, tile_cursor_t *ptc, const gx_strip_bitmap *btile,
 	      i, tw, btile->size.y, btile->shift, bx, by);
 }
 
-/* Render the combined halftone. */
+/* Step a cursor to the next row. */
 private void
-set_color_ht(
-	     byte *dest_data, /* the output tile */
-	     uint dest_raster, /* ibid. */
-	     int px,	/* the initial phase of the output tile */
-	     int py,
-	     int w,	/* how much of the tile to set */
-	     int h,
-	     int depth,	/* depth of tile (4, 8, 16, 24, 32) */
-	     int special,	/* >0 means special 1-bit CMYK */
-	     int plane_mask,	/* which planes are halftoned */
-	     const gx_color_index colors[16],	/* the actual colors for the tile, */
-				/* actually [1 << nplanes] */
-	     const gx_strip_bitmap * sbits[4]	/* the bitmaps for the planes, */
-				/* actually [nplanes] */
-) {
+wrap_shifted_cursor(tile_cursor_t *ptc, const gx_const_strip_bitmap *psbit)
+{
+    ptc->row += ptc->raster * (psbit->size.y - 1);
+    if (ptc->tile_shift) {
+	if ((ptc->xshift += ptc->tile_shift) >= 8) {
+	    if ((ptc->xoffset -= ptc->xshift >> 3) < 0) {
+		/* wrap around in X */
+		int bx = (ptc->xoffset << 3) + 8 - (ptc->xshift & 7) +
+		    psbit->size.x;
+
+		ptc->xoffset = bx >> 3;
+		ptc->xshift = 8 - (bx & 7);
+	    } else
+		ptc->xshift &= 7;
+	}
+    }
+}
+#define STEP_ROW(c, i)\
+  BEGIN\
+    if (c.row > c.tdata)\
+      c.row -= c.raster;\
+    else {	/* wrap around to end of tile */\
+	wrap_shifted_cursor(&c, sbits[i]);\
+    }\
+    c.data = c.row + c.xoffset;\
+    c.bit_shift = c.xshift;\
+  END
+
+/* Define a table for expanding 8x1 bits to 8x4. */
+private const bits32 expand_8x1_to_8x4[256] = {
+#define X16(c)\
+  c+0, c+1, c+0x10, c+0x11, c+0x100, c+0x101, c+0x110, c+0x111,\
+  c+0x1000, c+0x1001, c+0x1010, c+0x1011, c+0x1100, c+0x1101, c+0x1110, c+0x1111
+    X16(0x00000000), X16(0x00010000), X16(0x00100000), X16(0x00110000),
+    X16(0x01000000), X16(0x01010000), X16(0x01100000), X16(0x01110000),
+    X16(0x10000000), X16(0x10010000), X16(0x10100000), X16(0x10110000),
+    X16(0x11000000), X16(0x11010000), X16(0x11100000), X16(0x11110000)
+#undef X16
+};
+
+/*
+ * Render the combined halftone for nplanes <= 4.
+ */
+private void
+set_color_ht_le_4(byte *dest_data, uint dest_raster, int px, int py,
+		  int w, int h, int depth, int special, int nplanes,
+		  gx_color_index plane_mask, gx_device *ignore_dev,
+		  const color_values_pair_t *ignore_pvp,
+		  gx_color_index colors[1 << MAX_DCC],
+		  const gx_const_strip_bitmap * sbits[MAX_DCC])
+{
     /*
      * Note that the planes are specified in the order RGB or CMYK, but
      * the indices used for the internal colors array are BGR or KYMC,
      * except for the special 1-bit CMYK case.
      */
     int x, y;
-    tile_cursor_t cursor[4];
+    tile_cursor_t cursor[MAX_DCC];
     int dbytes = depth >> 3;
     byte *dest_row =
 	dest_data + dest_raster * (h - 1) + (w * depth) / 8;
@@ -553,8 +759,8 @@ set_color_ht(
 	    "\000\010\004\014\002\012\006\016\001\011\005\015\003\013\007\017"[plane_mask];
     }
     if_debug6('h',
-	      "[h]color_ht: x=%d y=%d w=%d h=%d plane_mask=%d depth=%d\n",
-	      px, py, w, h, plane_mask, depth);
+	      "[h]color_ht: x=%d y=%d w=%d h=%d plane_mask=0x%lu depth=%d\n",
+	      px, py, w, h, (ulong)plane_mask, depth);
 
     /* Do one-time cursor initialization. */
     {
@@ -583,7 +789,7 @@ set_color_ht(
 
 /* Get the next byte's worth of bits.  Note that there may be */
 /* excess bits set beyond the 8th. */
-#define next_bits(c)\
+#define NEXT_BITS(c)\
   BEGIN\
     if (c.data > c.row) {\
       bits = ((c.data[-1] << 8) | *c.data) >> c.bit_shift;\
@@ -601,23 +807,23 @@ set_color_ht(
     }\
   END
 	    if (plane_mask & 1) {
-		next_bits(cursor[0]);
+		NEXT_BITS(cursor[0]);
 		indices = expand_8x1_to_8x4[bits & 0xff];
 	    } else
 		indices = 0;
 	    if (plane_mask & 2) {
-		next_bits(cursor[1]);
+		NEXT_BITS(cursor[1]);
 		indices |= expand_8x1_to_8x4[bits & 0xff] << 1;
 	    }
 	    if (plane_mask & 4) {
-		next_bits(cursor[2]);
+		NEXT_BITS(cursor[2]);
 		indices |= expand_8x1_to_8x4[bits & 0xff] << 2;
 	    }
 	    if (plane_mask & 8) {
-		next_bits(cursor[3]);
+		NEXT_BITS(cursor[3]);
 		indices |= expand_8x1_to_8x4[bits & 0xff] << 3;
 	    }
-#undef next_bits
+#undef NEXT_BITS
 	    nx = min(x, 8);	/* 1 <= nx <= 8 */
 	    x -= nx;
 	    switch (dbytes) {
@@ -703,61 +909,116 @@ set_color_ht(
 	if (y == 0)
 	    break;
 
-#define step_row(c, i)\
-  BEGIN\
-    if (c.row > c.tdata)\
-      c.row -= c.raster;\
-    else {	/* wrap around to end of tile, taking shift into account */\
-      c.row += c.raster * (sbits[i]->size.y - 1);\
-      if (c.tile_shift) {\
-	if ((c.xshift += c.tile_shift) >= 8) {\
-	  if ((c.xoffset -= c.xshift >> 3) < 0) {\
-	    /* wrap around in X */\
-	    int bx = (c.xoffset << 3) + 8 - (c.xshift & 7) +\
-	      sbits[i]->size.x;\
-	    c.xoffset = bx >> 3;\
-	    c.xshift = 8 - (bx & 7);\
-	  } else\
-	    c.xshift &= 7;\
-	}\
-      }\
-    }\
-    c.data = c.row + c.xoffset;\
-    c.bit_shift = c.xshift;\
-  END
-
 	if (plane_mask & 1)
-	    step_row(cursor[0], 0);
+	    STEP_ROW(cursor[0], 0);
 	if (plane_mask & 2)
-	    step_row(cursor[1], 1);
+	    STEP_ROW(cursor[1], 1);
 	if (plane_mask & 4)
-	    step_row(cursor[2], 2);
+	    STEP_ROW(cursor[2], 2);
 	if (plane_mask & 8)
-	    step_row(cursor[3], 3);
-#undef step_row
+	    STEP_ROW(cursor[3], 3);
     }
 }
 
-/* Compare two colored halftones for equality. */
-private bool
-gx_dc_ht_colored_equal(const gx_device_color * pdevc1,
-		       const gx_device_color * pdevc2)
+/*
+ * Render the combined halftone for nplanes > 4.  We haven't made any
+ * attempt to optimize this code.
+ */
+private void
+set_color_ht_gt_4(byte *dest_data, uint dest_raster, int px, int py,
+		  int w, int h, int depth, int special, int nplanes,
+		  gx_color_index plane_mask, gx_device *dev,
+		  const color_values_pair_t *pvp,
+		  gx_color_index colors[1 << MAX_DCC],
+		  const gx_const_strip_bitmap * sbits[MAX_DCC])
 {
-    uint num_comp;
+    int x, y;
+    tile_cursor_t cursor[MAX_DCC];
+    int dbytes = depth >> 3;
+    byte *dest_row =
+	dest_data + dest_raster * (h - 1) + (w * depth) / 8;
 
-    if (pdevc2->type != pdevc1->type ||
-	pdevc1->colors.colored.c_ht != pdevc2->colors.colored.c_ht ||
-	pdevc1->colors.colored.alpha != pdevc2->colors.colored.alpha ||
-	pdevc1->phase.x != pdevc2->phase.x ||
-	pdevc1->phase.y != pdevc2->phase.y
-	)
-	return false;
-    num_comp = pdevc1->colors.colored.c_ht->num_comp;
-    return
-	!memcmp(pdevc1->colors.colored.c_base,
-		pdevc2->colors.colored.c_base,
-		num_comp * sizeof(pdevc1->colors.colored.c_base[0])) &&
-	!memcmp(pdevc1->colors.colored.c_level,
-		pdevc2->colors.colored.c_level,
-		num_comp * sizeof(pdevc1->colors.colored.c_level[0]));
+    /* Compute the number of active planes. */
+    for (nplanes = 0; (plane_mask >> nplanes) != 0; )
+	++nplanes;
+
+    /* Do one-time cursor initialization. */
+    {
+	int endx = w + px;
+	int lasty = h - 1 + py;
+	int i;
+
+	for (i = 0; i < nplanes; ++i)
+	    if ((plane_mask >> i) & 1)
+		init_tile_cursor(i, &cursor[i], sbits[i], endx, lasty);
+    }
+
+    /* Now compute the actual tile. */
+    for (y = h; ; dest_row -= dest_raster) {
+	byte *dest = dest_row;
+	int i;
+
+	--y;
+	for (x = w; x > 0;) {
+	    gx_color_index index = 0;
+	    gx_color_index tcolor;
+
+	    for (i = 0; i < nplanes; ++i)
+		if ((plane_mask >> i) & 1) {
+		    /* Get the next bit from an individual mask. */
+		    tile_cursor_t *ptc = &cursor[i];
+		    byte tile_bit;
+
+b:		    if (ptc->bit_shift < 8)
+			tile_bit = *ptc->data >> ptc->bit_shift++;
+		    else if (ptc->data > ptc->row) {
+			tile_bit = *--(ptc->data);
+			ptc->bit_shift = 1;
+		    } else {
+			/* Wrap around. */
+			ptc->data += ptc->xbytes;
+			ptc->bit_shift = 8 - ptc->xbits;
+			goto b;
+		    }
+		    index |= (gx_color_index)(tile_bit & 1) << i;
+		}
+	    tcolor = colors[index];
+	    if (tcolor == gx_no_color_index) {
+		/* Map the color value now. */
+		gx_color_value cv[MAX_DCC];
+		int i;
+
+		for (i = 0; i < nplanes; ++i)
+		    cv[i] = pvp->values[(index >> i) & 1][i];
+		/****** HACK -- NO WAY TO MAP GENERAL COLORS ******/
+		tcolor = colors[index] =
+		    gx_map_cmyk_color(dev, cv[0], cv[1], cv[2], cv[3]);
+	    }
+	    --x;
+	    switch (dbytes) {
+		case 0:	/* 4 -- might be 2, but we don't support this */
+		    if (x & 1) { /* odd nibble */
+			*--dest = (byte)tcolor;
+		    } else {	/* even nibble */
+			*dest = (*dest & 0xf) + ((byte)tcolor << 4);
+		    }
+		    break;
+		case 4:	/* 32 */
+		    dest[-4] = (byte)(tcolor >> 24);
+		case 3:	/* 24 */
+		    dest[-3] = (byte)(tcolor >> 16);
+		case 2:	/* 16 */
+		    dest[-2] = (byte)(tcolor >> 8);
+		case 1:	/* 8 */
+		    dest[-1] = (byte)tcolor;
+		    dest -= dbytes;
+		    break;
+	    }
+	}
+	if (y == 0)
+	    break;
+	for (i = 0; i < nplanes; ++i)
+	    if ((plane_mask >> i) & 1)
+		STEP_ROW(cursor[i], i);
+    }
 }

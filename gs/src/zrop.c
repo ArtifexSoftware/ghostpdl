@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -31,8 +31,9 @@
 
 /* <int8> .setrasterop - */
 private int
-zsetrasterop(register os_ptr op)
+zsetrasterop(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int param;
     int code = int_param(op, 0xff, &param);
 
@@ -45,8 +46,10 @@ zsetrasterop(register os_ptr op)
 
 /* - .currentrasterop <int8> */
 private int
-zcurrentrasterop(register os_ptr op)
+zcurrentrasterop(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(1);
     make_int(op, (int)gs_currentrasterop(igs));
     return 0;
@@ -54,8 +57,10 @@ zcurrentrasterop(register os_ptr op)
 
 /* <bool> .setsourcetransparent - */
 private int
-zsetsourcetransparent(register os_ptr op)
+zsetsourcetransparent(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     check_type(*op, t_boolean);
     gs_setsourcetransparent(igs, op->value.boolval);
     pop(1);
@@ -64,8 +69,10 @@ zsetsourcetransparent(register os_ptr op)
 
 /* - .currentsourcetransparent <bool> */
 private int
-zcurrentsourcetransparent(register os_ptr op)
+zcurrentsourcetransparent(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(1);
     make_bool(op, gs_currentsourcetransparent(igs));
     return 0;
@@ -73,8 +80,10 @@ zcurrentsourcetransparent(register os_ptr op)
 
 /* <bool> .settexturetransparent - */
 private int
-zsettexturetransparent(register os_ptr op)
+zsettexturetransparent(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     check_type(*op, t_boolean);
     gs_settexturetransparent(igs, op->value.boolval);
     pop(1);
@@ -83,8 +92,10 @@ zsettexturetransparent(register os_ptr op)
 
 /* - .currenttexturetransparent <bool> */
 private int
-zcurrenttexturetransparent(register os_ptr op)
+zcurrenttexturetransparent(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(1);
     make_bool(op, gs_currenttexturetransparent(igs));
     return 0;

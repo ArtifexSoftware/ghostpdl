@@ -26,11 +26,15 @@
 
 /* The structure for tile clipping is the same as for simple mask clipping. */
 typedef gx_device_mask_clip gx_device_tile_clip;
-
+#define st_device_tile_clip st_device_mask_clip
+/*
+ * We can't just make this macro empty, since it is processed as a top-level
+ * declaration and would lead to an extraneous semicolon.  The least damage
+ * we can do is make it declare a constant (and not static, since static
+ * would lead to a compiler warning about an unreferenced variable).
+ */
 #define private_st_device_tile_clip() /* in gxclip2.c */\
-  gs_private_st_suffix_add0(st_device_tile_clip, gx_device_tile_clip,\
-    "gx_device_tile_clip", device_tile_clip_enum_ptrs,\
-    device_tile_clip_reloc_ptrs, st_device_mask_clip)
+  const byte gxclip2_dummy = 0
 
 /*
  * Initialize a tile clipping device from a mask.

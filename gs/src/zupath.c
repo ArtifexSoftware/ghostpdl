@@ -1,4 +1,4 @@
-/* Copyright (C) 1990, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1990, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -43,57 +43,57 @@ extern const gx_device gs_hit_device;
 extern const int gs_hit_detected;
 
 /* Forward references */
-private int upath_append(P2(os_ptr, os_ptr));
-private int upath_stroke(P2(os_ptr, gs_matrix *));
+private int upath_append(P2(os_ptr, i_ctx_t *));
+private int upath_stroke(P2(i_ctx_t *, gs_matrix *));
 
 /* ---------------- Insideness testing ---------------- */
 
 /* Forward references */
-private int in_test(P2(os_ptr, int (*)(P1(gs_state *))));
-private int in_path(P3(os_ptr, os_ptr, gx_device *));
-private int in_path_result(P3(os_ptr, int, int));
-private int in_utest(P2(os_ptr, int (*)(P1(gs_state *))));
-private int in_upath(P2(os_ptr, gx_device *));
-private int in_upath_result(P3(os_ptr, int, int));
+private int in_test(P2(i_ctx_t *, int (*)(P1(gs_state *))));
+private int in_path(P3(os_ptr, i_ctx_t *, gx_device *));
+private int in_path_result(P3(i_ctx_t *, int, int));
+private int in_utest(P2(i_ctx_t *, int (*)(P1(gs_state *))));
+private int in_upath(P2(i_ctx_t *, gx_device *));
+private int in_upath_result(P3(i_ctx_t *, int, int));
 
 /* <x> <y> ineofill <bool> */
 /* <userpath> ineofill <bool> */
 private int
-zineofill(os_ptr op)
+zineofill(i_ctx_t *i_ctx_p)
 {
-    return in_test(op, gs_eofill);
+    return in_test(i_ctx_p, gs_eofill);
 }
 
 /* <x> <y> infill <bool> */
 /* <userpath> infill <bool> */
 private int
-zinfill(os_ptr op)
+zinfill(i_ctx_t *i_ctx_p)
 {
-    return in_test(op, gs_fill);
+    return in_test(i_ctx_p, gs_fill);
 }
 
 /* <x> <y> instroke <bool> */
 /* <userpath> instroke <bool> */
 private int
-zinstroke(os_ptr op)
+zinstroke(i_ctx_t *i_ctx_p)
 {
-    return in_test(op, gs_stroke);
+    return in_test(i_ctx_p, gs_stroke);
 }
 
 /* <x> <y> <userpath> inueofill <bool> */
 /* <userpath1> <userpath2> inueofill <bool> */
 private int
-zinueofill(os_ptr op)
+zinueofill(i_ctx_t *i_ctx_p)
 {
-    return in_utest(op, gs_eofill);
+    return in_utest(i_ctx_p, gs_eofill);
 }
 
 /* <x> <y> <userpath> inufill <bool> */
 /* <userpath1> <userpath2> inufill <bool> */
 private int
-zinufill(os_ptr op)
+zinufill(i_ctx_t *i_ctx_p)
 {
-    return in_utest(op, gs_fill);
+    return in_utest(i_ctx_p, gs_fill);
 }
 
 /* <x> <y> <userpath> inustroke <bool> */
@@ -101,8 +101,9 @@ zinufill(os_ptr op)
 /* <userpath1> <userpath2> inustroke <bool> */
 /* <userpath1> <userpath2> <matrix> inustroke <bool> */
 private int
-zinustroke(os_ptr op)
+zinustroke(i_ctx_t *i_ctx_p)
 {	/* This is different because of the optional matrix operand. */
+    os_ptr op = osp;
     int code = gs_gsave(igs);
     int spop, npop;
     gs_matrix mat;
@@ -110,11 +111,11 @@ zinustroke(os_ptr op)
 
     if (code < 0)
 	return code;
-    if ((spop = upath_stroke(op, &mat)) < 0) {
+    if ((spop = upath_stroke(i_ctx_p, &mat)) < 0) {
 	gs_grestore(igs);
 	return spop;
     }
-    if ((npop = in_path(op - spop, op, &hdev)) < 0) {
+    if ((npop = in_path(op - spop, i_ctx_p, &hdev)) < 0) {
 	gs_grestore(igs);
 	return npop;
     }
@@ -122,28 +123,29 @@ zinustroke(os_ptr op)
 	code = gs_concat(igs, &mat);
     if (code >= 0)
 	code = gs_stroke(igs);
-    return in_upath_result(op, npop + spop, code);
+    return in_upath_result(i_ctx_p, npop + spop, code);
 }
 
 /* ------ Internal routines ------ */
 
 /* Do the work of the non-user-path insideness operators. */
 private int
-in_test(os_ptr op, int (*paintproc)(P1(gs_state *)))
+in_test(i_ctx_t *i_ctx_p, int (*paintproc)(P1(gs_state *)))
 {
+    os_ptr op = osp;
     gx_device hdev;
-    int npop = in_path(op, op, &hdev);
+    int npop = in_path(op, i_ctx_p, &hdev);
     int code;
 
     if (npop < 0)
 	return npop;
     code = (*paintproc)(igs);
-    return in_path_result(op, npop, code);
+    return in_path_result(i_ctx_p, npop, code);
 }
 
 /* Set up a clipping path and device for insideness testing. */
 private int
-in_path(os_ptr oppath, os_ptr op, gx_device * phdev)
+in_path(os_ptr oppath, i_ctx_t *i_ctx_p, gx_device * phdev)
 {
     int code = gs_gsave(igs);
     int npop;
@@ -172,7 +174,7 @@ in_path(os_ptr oppath, os_ptr op, gx_device * phdev)
 	gx_path_init_local(&save, imemory);
 	gx_path_assign_preserve(&save, ipath);
 	gs_newpath(igs);
-	code = upath_append(oppath, op);
+	code = upath_append(oppath, i_ctx_p);
 	if (code >= 0)
 	    code = gx_clip_to_path(igs);
 	gx_path_assign_free(igs->path, &save);
@@ -194,8 +196,9 @@ in_path(os_ptr oppath, os_ptr op, gx_device * phdev)
 
 /* Finish an insideness test. */
 private int
-in_path_result(os_ptr op, int npop, int code)
+in_path_result(i_ctx_t *i_ctx_p, int npop, int code)
 {
+    os_ptr op = osp;
     bool result;
 
     gs_grestore(igs);		/* matches gsave in in_path */
@@ -215,30 +218,31 @@ in_path_result(os_ptr op, int npop, int code)
 
 /* Do the work of the user-path insideness operators. */
 private int
-in_utest(os_ptr op, int (*paintproc)(P1(gs_state *)))
+in_utest(i_ctx_t *i_ctx_p, int (*paintproc)(P1(gs_state *)))
 {
     gx_device hdev;
-    int npop = in_upath(op, &hdev);
+    int npop = in_upath(i_ctx_p, &hdev);
     int code;
 
     if (npop < 0)
 	return npop;
     code = (*paintproc)(igs);
-    return in_upath_result(op, npop, code);
+    return in_upath_result(i_ctx_p, npop, code);
 }
 
 /* Set up a clipping path and device for insideness testing */
 /* with a user path. */
 private int
-in_upath(os_ptr op, gx_device * phdev)
+in_upath(i_ctx_t *i_ctx_p, gx_device * phdev)
 {
+    os_ptr op = osp;
     int code = gs_gsave(igs);
     int npop;
 
     if (code < 0)
 	return code;
-    if ((code = upath_append(op, op)) < 0 ||
-	(npop = in_path(op - 1, op, phdev)) < 0
+    if ((code = upath_append(op, i_ctx_p)) < 0 ||
+	(npop = in_path(op - 1, i_ctx_p, phdev)) < 0
 	) {
 	gs_grestore(igs);
 	return code;
@@ -248,10 +252,10 @@ in_upath(os_ptr op, gx_device * phdev)
 
 /* Finish an insideness test with a user path. */
 private int
-in_upath_result(os_ptr op, int npop, int code)
+in_upath_result(i_ctx_t *i_ctx_p, int npop, int code)
 {
     gs_grestore(igs);		/* matches gsave in in_upath */
-    return in_path_result(op, npop, code);
+    return in_path_result(i_ctx_p, npop, code);
 }
 
 /* ---------------- User paths ---------------- */
@@ -279,14 +283,14 @@ static const byte up_nargs[UPATH_MAX_OP + 1] = {
 };
 
 /* Declare operator procedures not declared in opextern.h. */
-int zsetbbox(P1(os_ptr));
-int zarc(P1(os_ptr));
-int zarcn(P1(os_ptr));
-int zarct(P1(os_ptr));
-private int zucache(P1(os_ptr));
+int zsetbbox(P1(i_ctx_t *));
+int zarc(P1(i_ctx_t *));
+int zarcn(P1(i_ctx_t *));
+int zarct(P1(i_ctx_t *));
+private int zucache(P1(i_ctx_t *));
 
 #undef zp
-static const op_proc_p up_ops[UPATH_MAX_OP + 1] = {
+static const op_proc_t up_ops[UPATH_MAX_OP + 1] = {
     zsetbbox, zmoveto, zrmoveto, zlineto, zrlineto,
     zcurveto, zrcurveto, zarc, zarcn, zarct,
     zclosepath, zucache
@@ -294,20 +298,22 @@ static const op_proc_p up_ops[UPATH_MAX_OP + 1] = {
 
 /* - ucache - */
 private int
-zucache(os_ptr op)
-{				/* A no-op for now. */
+zucache(i_ctx_t *i_ctx_p)
+{
+    /* A no-op for now. */
     return 0;
 }
 
 /* <userpath> uappend - */
 private int
-zuappend(register os_ptr op)
+zuappend(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code = gs_gsave(igs);
 
     if (code < 0)
 	return code;
-    if ((code = upath_append(op, op)) >= 0)
+    if ((code = upath_append(op, i_ctx_p)) >= 0)
 	code = gs_upmergepath(igs);
     gs_grestore(igs);
     if (code < 0)
@@ -318,13 +324,14 @@ zuappend(register os_ptr op)
 
 /* <userpath> ueofill - */
 private int
-zueofill(register os_ptr op)
+zueofill(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code = gs_gsave(igs);
 
     if (code < 0)
 	return code;
-    if ((code = upath_append(op, op)) >= 0)
+    if ((code = upath_append(op, i_ctx_p)) >= 0)
 	code = gs_eofill(igs);
     gs_grestore(igs);
     if (code < 0)
@@ -335,13 +342,14 @@ zueofill(register os_ptr op)
 
 /* <userpath> ufill - */
 private int
-zufill(register os_ptr op)
+zufill(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code = gs_gsave(igs);
 
     if (code < 0)
 	return code;
-    if ((code = upath_append(op, op)) >= 0)
+    if ((code = upath_append(op, i_ctx_p)) >= 0)
 	code = gs_fill(igs);
     gs_grestore(igs);
     if (code < 0)
@@ -353,14 +361,14 @@ zufill(register os_ptr op)
 /* <userpath> ustroke - */
 /* <userpath> <matrix> ustroke - */
 private int
-zustroke(register os_ptr op)
+zustroke(i_ctx_t *i_ctx_p)
 {
     int code = gs_gsave(igs);
     int npop;
 
     if (code < 0)
 	return code;
-    if ((code = npop = upath_stroke(op, NULL)) >= 0)
+    if ((code = npop = upath_stroke(i_ctx_p, NULL)) >= 0)
 	code = gs_stroke(igs);
     gs_grestore(igs);
     if (code < 0)
@@ -372,7 +380,7 @@ zustroke(register os_ptr op)
 /* <userpath> ustrokepath - */
 /* <userpath> <matrix> ustrokepath - */
 private int
-zustrokepath(register os_ptr op)
+zustrokepath(i_ctx_t *i_ctx_p)
 {
     gx_path save;
     int code, npop;
@@ -380,7 +388,7 @@ zustrokepath(register os_ptr op)
     /* Save and reset the path. */
     gx_path_init_local(&save, imemory);
     gx_path_assign_preserve(&save, igs->path);
-    if ((code = npop = upath_stroke(op, NULL)) < 0 ||
+    if ((code = npop = upath_stroke(i_ctx_p, NULL)) < 0 ||
 	(code = gs_strokepath(igs)) < 0
 	) {
 	gx_path_assign_free(igs->path, &save);
@@ -397,8 +405,10 @@ zustrokepath(register os_ptr op)
 int make_upath(P4(ref * rupath, gs_state * pgs, gx_path * ppath,
 		  bool with_ucache));
 private int
-zupath(register os_ptr op)
+zupath(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     check_type(*op, t_boolean);
     return make_upath(op, igs, igs->path, op->value.boolval);
 }
@@ -509,7 +519,7 @@ make_upath(ref * rupath, gs_state * pgs, gx_path * ppath, bool with_ucache)
 
 /* Append a user path to the current path. */
 private int
-upath_append(os_ptr oppath, os_ptr op)
+upath_append(os_ptr oppath, i_ctx_t *i_ctx_p)
 {
     check_read(*oppath);
     gs_newpath(igs);
@@ -538,6 +548,7 @@ upath_append(os_ptr oppath, os_ptr op)
 		return_error(e_rangecheck);
 	    else {		/* operator */
 		do {
+		    os_ptr op = osp;
 		    byte opargs = up_nargs[opx];
 
 		    while (opargs--) {
@@ -554,10 +565,9 @@ upath_append(os_ptr oppath, os_ptr op)
 				return_error(e_typecheck);
 			}
 		    }
-		    code = (*up_ops[opx])(op);
+		    code = (*up_ops[opx])(i_ctx_p);
 		    if (code < 0)
 			return code;
-		    op = osp;	/* resync */
 		}
 		while (--repcount);
 		repcount = 1;
@@ -568,12 +578,13 @@ upath_append(os_ptr oppath, os_ptr op)
 	uint ocount = r_size(oppath);
 	long index = 0;
 	int argcount = 0;
-	int (*oproc)(P1(os_ptr));
+	op_proc_t oproc;
 	int opx, code;
 
 	for (; index < ocount; index++) {
 	    ref rup;
 	    ref *defp;
+	    os_ptr op = osp;
 
 	    array_get(arp, index, &rup);
 	    switch (r_type(&rup)) {
@@ -601,10 +612,9 @@ upath_append(os_ptr oppath, os_ptr op)
 			    break;
 		    if (opx > UPATH_MAX_OP || argcount != up_nargs[opx])
 			return_error(e_typecheck);
-		    code = (*oproc)(op);
+		    code = (*oproc)(i_ctx_p);
 		    if (code < 0)
 			return code;
-		    op = osp;	/* resync ostack pointer */
 		    argcount = 0;
 		    break;
 		default:
@@ -621,13 +631,14 @@ upath_append(os_ptr oppath, os_ptr op)
 /* Append a user path to the current path, and then apply or return */
 /* a transformation if one is supplied. */
 private int
-upath_stroke(os_ptr op, gs_matrix *pmat)
+upath_stroke(i_ctx_t *i_ctx_p, gs_matrix *pmat)
 {
+    os_ptr op = osp;
     int code, npop;
     gs_matrix mat;
 
     if ((code = read_matrix(op, &mat)) >= 0) {
-	if ((code = upath_append(op - 1, op)) >= 0) {
+	if ((code = upath_append(op - 1, i_ctx_p)) >= 0) {
 	    if (pmat)
 		*pmat = mat;
 	    else
@@ -635,7 +646,7 @@ upath_stroke(os_ptr op, gs_matrix *pmat)
 	}
 	npop = 2;
     } else {
-	if ((code = upath_append(op, op)) >= 0)
+	if ((code = upath_append(op, i_ctx_p)) >= 0)
 	    if (pmat)
 		gs_make_identity(pmat);
 	npop = 1;

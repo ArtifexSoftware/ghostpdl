@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -19,9 +19,9 @@
 
 /* Code common to DCT encoding and decoding streams */
 #include "stdio_.h"
+#include "jpeglib_.h"
 #include "gsmemory.h"
 #include "gsmalloc.h"
-#include "jpeglib.h"
 #include "strimpl.h"
 #include "sdct.h"
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -17,7 +17,7 @@
  */
 
 
-/* Ghostscript expandable stack manager */
+/* Manager for expandable stacks of refs */
 #include "memory_.h"
 #include "ghost.h"
 #include "gsstruct.h"
@@ -30,12 +30,31 @@
 #include "ivmspace.h"		/* for local/global test */
 #include "store.h"
 
+/*
+ * Define the structure for stack parameters set at initialization.
+ */
+/*typedef struct ref_stack_params_s ref_stack_params_t;*/ /* in istack.h */
+struct ref_stack_params_s {
+    uint bot_guard;		/* # of guard elements below bot */
+    uint top_guard;		/* # of guard elements above top */
+    uint block_size;		/* size of each block */
+    uint data_size;		/* # of data slots in each block */
+    ref guard_value;		/* t__invalid or t_operator, */
+				/* bottom guard value */
+    int underflow_error;	/* error code for underflow */
+    int overflow_error;		/* error code for overflow */
+    bool allow_expansion;	/* if false, don't expand */
+};
+gs_private_st_simple(st_ref_stack_params, ref_stack_params_t,
+		     "ref_stack_params_t");
+
 /* Forward references */
-private void init_block(P3(ref_stack *, ref *, uint));
-int ref_stack_push_block(P3(ref_stack *, uint, uint));
+private void init_block(P3(ref_stack_t *pstack, const ref *pblock_array,
+			   uint used));
+private int ref_stack_push_block(P3(ref_stack_t *pstack, uint keep, uint add));
 
 /* GC procedures */
-#define sptr ((ref_stack *)vptr)
+#define sptr ((ref_stack_t *)vptr)
 private 
 CLEAR_MARKS_PROC(ref_stack_clear_marks)
 {
@@ -43,9 +62,8 @@ CLEAR_MARKS_PROC(ref_stack_clear_marks)
 }
 private 
 ENUM_PTRS_BEGIN(ref_stack_enum_ptrs) return 0;
-
-case 0:
-ENUM_RETURN_REF(&sptr->current);
+case 0: ENUM_RETURN_REF(&sptr->current);
+case 1: return ENUM_OBJ(sptr->params);
 ENUM_PTRS_END
 private RELOC_PTRS_BEGIN(ref_stack_reloc_ptrs)
 {
@@ -65,24 +83,33 @@ private RELOC_PTRS_BEGIN(ref_stack_reloc_ptrs)
     RELOC_P(bot);
     RELOC_P(top);
 #undef RELOC_P
+    RELOC_OBJ_VAR(sptr->params);
 } RELOC_PTRS_END
 /* Structure type for a ref_stack. */
 public_st_ref_stack();
 
 /* Initialize a stack. */
-void
-ref_stack_init(ref_stack * pstack, ref * psb, uint bot_guard, uint top_guard,
-	       ref * pguard, gs_ref_memory_t * mem)
+int
+ref_stack_init(ref_stack_t *pstack, const ref *pblock_array,
+	       uint bot_guard, uint top_guard, const ref *pguard_value,
+	       gs_ref_memory_t *mem)
 {
-    uint size = r_size(psb);
+    ref_stack_params_t *params =
+	gs_alloc_struct((gs_memory_t *)mem, ref_stack_params_t,
+			&st_ref_stack_params,
+			"ref_stack_alloc(stack.params)");
+    uint size = r_size(pblock_array);
     uint avail = size - (stack_block_refs + bot_guard + top_guard);
-    ref_stack_block *pblock = (ref_stack_block *) psb->value.refs;
-    s_ptr body = (s_ptr) (pblock + 1);
+    ref_stack_block *pblock = (ref_stack_block *)pblock_array->value.refs;
+    s_ptr body = (s_ptr)(pblock + 1);
+
+    if (params == 0)
+	return_error(-1);	/* avoid binding in any error codes */
 
     pstack->bot = body + bot_guard;
     pstack->p = pstack->bot - 1;
     pstack->top = pstack->p + avail;
-    pstack->current = *psb;
+    pstack->current = *pblock_array;
     pstack->extension_size = 0;
     pstack->extension_used = 0;
 
@@ -91,26 +118,45 @@ ref_stack_init(ref_stack * pstack, ref * psb, uint bot_guard, uint top_guard,
     pstack->margin = 0;
     pstack->body_size = avail;
 
-    pstack->bot_guard = bot_guard;
-    pstack->top_guard = top_guard;
-    pstack->block_size = size;
-    pstack->data_size = avail;
-    if (pguard != 0)
-	pstack->guard_value = *pguard;
-    else
-	make_tav(&pstack->guard_value, t__invalid, 0, intval, 0);
-    pstack->underflow_error = -1;	/* bogus, caller must set */
-    pstack->overflow_error = -1;	/* bogus, caller must set */
-    pstack->allow_expansion = true;	/* default, caller may reset */
+    pstack->params = params;
     pstack->memory = mem;
-    init_block(pstack, psb, 0);
+
+    params->bot_guard = bot_guard;
+    params->top_guard = top_guard;
+    params->block_size = size;
+    params->data_size = avail;
+    if (pguard_value != 0)
+	params->guard_value = *pguard_value;
+    else
+	make_tav(&params->guard_value, t__invalid, 0, intval, 0);
+    params->underflow_error = -1;
+    params->overflow_error = -1;
+    params->allow_expansion = true;
+    init_block(pstack, pblock_array, 0);
     refset_null(pstack->bot, avail);
     make_empty_array(&pblock->next, 0);
+    return 0;
+}
+
+/* Set whether a stack is allowed to expand.  The initial value is true. */
+void
+ref_stack_allow_expansion(ref_stack_t *pstack, bool expand)
+{
+    pstack->params->allow_expansion = expand;
+}
+
+/* Set the error codes for under- and overflow.  The initial values are -1. */
+void
+ref_stack_set_error_codes(ref_stack_t *pstack, int underflow_error,
+			  int overflow_error)
+{
+    pstack->params->underflow_error = underflow_error;
+    pstack->params->overflow_error = overflow_error;
 }
 
 /* Set the maximum number of elements allowed on a stack. */
 int
-ref_stack_set_max_count(ref_stack * pstack, long nmax)
+ref_stack_set_max_count(ref_stack_t *pstack, long nmax)
 {
     uint nmin = ref_stack_count_inline(pstack);
 
@@ -118,7 +164,7 @@ ref_stack_set_max_count(ref_stack * pstack, long nmax)
 	nmax = nmin;
     if (nmax > max_uint / sizeof(ref))
 	nmax = max_uint / sizeof(ref);
-    if (!pstack->allow_expansion) {
+    if (!pstack->params->allow_expansion) {
 	uint ncur = pstack->body_size;
 
 	if (nmax > ncur)
@@ -128,19 +174,24 @@ ref_stack_set_max_count(ref_stack * pstack, long nmax)
     return 0;
 }
 
-/* Set the margin between the limit and the top of the stack. */
-/* Note that this may require allocating a block. */
+/*
+ * Set the margin between the limit and the top of the stack.
+ * Note that this may require allocating a block.
+ */
 int
-ref_stack_set_margin(ref_stack * pstack, uint margin)
+ref_stack_set_margin(ref_stack_t *pstack, uint margin)
 {
+    const ref_stack_params_t *params = pstack->params;
+    uint data_size = params->data_size;
+
     if (margin <= pstack->margin) {
 	refset_null(pstack->top + 1, pstack->margin - margin);
     } else {
-	if (margin > pstack->data_size >> 1)
+	if (margin > data_size >> 1)
 	    return_error(e_rangecheck);
 	if (pstack->top - pstack->p < margin) {
 	    uint used = pstack->p + 1 - pstack->bot;
-	    uint keep = pstack->data_size - margin;
+	    uint keep = data_size - margin;
 	    int code = ref_stack_push_block(pstack, keep, used - keep);
 
 	    if (code < 0)
@@ -148,22 +199,24 @@ ref_stack_set_margin(ref_stack * pstack, uint margin)
 	}
     }
     pstack->margin = margin;
-    pstack->body_size = pstack->data_size - margin;
+    pstack->body_size = data_size - margin;
     pstack->top = pstack->bot + pstack->body_size - 1;
     return 0;
 }
 
 /* Return the number of elements on a stack. */
 uint
-ref_stack_count(const ref_stack * pstack)
+ref_stack_count(const ref_stack_t *pstack)
 {
-    return pstack->extension_used + (pstack->p - pstack->bot + 1);
+    return ref_stack_count_inline(pstack);
 }
 
-/* Retrieve a given element from the stack, counting from */
-/* 0 as the top element. */
+/*
+ * Return a pointer to a given element from the stack, counting from
+ * 0 as the top element.  If the index is out of range, return 0.
+ */
 ref *
-ref_stack_index(const ref_stack * pstack, long idx)
+ref_stack_index(const ref_stack_t *pstack, long idx)
 {
     ref_stack_block *pblock;
     uint used = pstack->p + 1 - pstack->bot;
@@ -183,10 +236,12 @@ ref_stack_index(const ref_stack * pstack, long idx)
     return pblock->used.value.refs + (used - 1 - (uint) idx);
 }
 
-/* Count the number of elements down to and including the first mark. */
-/* If no mark is found, return 0. */
+/*
+ * Count the number of elements down to and including the first mark.
+ * If no mark is found, return 0.
+ */
 uint
-ref_stack_counttomark(const ref_stack * pstack)
+ref_stack_counttomark(const ref_stack_t *pstack)
 {
     uint scanned = 0;
     ref_stack_enum_t rsenum;
@@ -204,10 +259,12 @@ ref_stack_counttomark(const ref_stack * pstack)
     return 0;
 }
 
-/* Do the store check for storing elements of a stack into an array. */
-/* May return e_invalidaccess. */
+/*
+ * Do the store check for storing 'count' elements of a stack, starting
+ * 'skip' elements below the top, into an array.  Return 0 or e_invalidaccess.
+ */
 int
-ref_stack_store_check(const ref_stack * pstack, ref * parray, uint count,
+ref_stack_store_check(const ref_stack_t *pstack, ref *parray, uint count,
 		      uint skip)
 {
     uint space = r_space(parray);
@@ -243,12 +300,15 @@ ref_stack_store_check(const ref_stack * pstack, ref * parray, uint count,
     return 0;
 }
 
-/* Store the top elements of a stack into an array, */
-/* with or without store/undo checking. */
-/* May return e_rangecheck or e_invalidaccess. */
+/*
+ * Store the top 'count' elements of a stack, starting 'skip' elements below
+ * the top, into an array, with or without store/undo checking.  age=-1 for
+ * no check, 0 for old, 1 for new.  May return e_rangecheck or
+ * e_invalidaccess.
+ */
 int
-ref_stack_store(const ref_stack * pstack, ref * parray, uint count, uint skip,
-		int age, bool check, client_name_t cname)
+ref_stack_store(const ref_stack_t *pstack, ref *parray, uint count,
+		uint skip, int age, bool check, client_name_t cname)
 {
     uint left, pass;
     ref *to;
@@ -306,10 +366,12 @@ ref_stack_store(const ref_stack * pstack, ref * parray, uint count, uint skip,
     return 0;
 }
 
-/* Pop a given number of elements off a stack. */
-/* The number must not exceed the number of elements in use. */
+/*
+ * Pop the top N elements off a stack.
+ * The number must not exceed the number of elements in use.
+ */
 void
-ref_stack_pop(ref_stack * pstack, uint count)
+ref_stack_pop(ref_stack_t *pstack, uint count)
 {
     uint used;
 
@@ -321,9 +383,9 @@ ref_stack_pop(ref_stack * pstack, uint count)
     pstack->p -= count;
 }
 
-/* Pop the top block off a stack. */
+/* Pop the top block off a stack.  May return underflow_error. */
 int
-ref_stack_pop_block(ref_stack * pstack)
+ref_stack_pop_block(ref_stack_t *pstack)
 {
     s_ptr bot = pstack->bot;
     uint count = pstack->p + 1 - bot;
@@ -336,9 +398,9 @@ ref_stack_pop_block(ref_stack * pstack)
     ref next;
 
     if (pnext == 0)
-	return_error(pstack->underflow_error);
+	return_error(pstack->params->underflow_error);
     used = r_size(&pnext->used);
-    body = (ref *) (pnext + 1) + pstack->bot_guard;
+    body = (ref *) (pnext + 1) + pstack->params->bot_guard;
     next = pcur->next;
     /*
        * If the contents of the two blocks won't fit in a single block, we
@@ -388,16 +450,19 @@ ref_stack_pop_block(ref_stack * pstack)
     return 0;
 }
 
-/* Extend a stack to recover from an overflow condition. */
-/* May return overflow_error or e_VMerror. */
+/*
+ * Extend a stack to recover from an overflow condition.
+ * May return overflow_error or e_VMerror.
+ */
 int
-ref_stack_extend(ref_stack * pstack, uint request)
+ref_stack_extend(ref_stack_t *pstack, uint request)
 {
     uint keep = (pstack->top - pstack->bot + 1) / 3;
     uint count = pstack->p - pstack->bot + 1;
+    const ref_stack_params_t *params = pstack->params;
 
-    if (request > pstack->data_size)
-	return_error(pstack->overflow_error);
+    if (request > params->data_size)
+	return_error(params->overflow_error);
     if (keep + request > pstack->body_size)
 	keep = pstack->body_size - request;
     if (keep > count)
@@ -405,12 +470,14 @@ ref_stack_extend(ref_stack * pstack, uint request)
     return ref_stack_push_block(pstack, keep, request);
 }
 
-/* Push N empty slots onto a stack.  These slots are not initialized; */
-/* the caller must fill them immediately.  May return overflow_error */
-/* (if max_stack would be exceeded, or the stack has no allocator) */
-/* or e_VMerror. */
+/*
+ * Push N empty slots onto a stack.  These slots are not initialized:
+ * the caller must immediately fill them.  May return overflow_error
+ * (if max_stack would be exceeded, or the stack has no allocator)
+ * or e_VMerror.
+ */
 int
-ref_stack_push(ref_stack * pstack, uint count)
+ref_stack_push(ref_stack_t *pstack, uint count)
 {
     /* Don't bother to pre-check for overflow: we must be able to */
     /* back out in the case of a VMerror anyway, and */
@@ -436,14 +503,16 @@ ref_stack_push(ref_stack * pstack, uint count)
     return 0;
 }
 
-/* Push a block onto the stack, specifying how many elements of */
-/* the current top block should remain in the top block and also */
-/* how many elements we are trying to add. */
-/* May return overflow_error or e_VMerror. */
-/* Must have keep <= count. */
-int
-ref_stack_push_block(ref_stack * pstack, uint keep, uint add)
+/*
+ * Push a block onto the stack, specifying how many elements of the current
+ * top block should remain in the top block and also how many elements we
+ * are trying to add.  Requires keep <= count.  May return overflow_error or
+ * e_VMerror.
+ */
+private int
+ref_stack_push_block(ref_stack_t *pstack, uint keep, uint add)
 {
+    const ref_stack_params_t *params = pstack->params;
     uint count = pstack->p - pstack->bot + 1;
     uint move = count - keep;
     ref_stack_block *pcur = (ref_stack_block *) pstack->current.value.refs;
@@ -456,14 +525,13 @@ ref_stack_push_block(ref_stack * pstack, uint keep, uint add)
 	return_error(e_Fatal);
     /* Check for overflowing the maximum size, */
     /* or expansion not allowed.  */
-    if (pstack->memory == 0 ||
-	pstack->extension_used + (pstack->top - pstack->bot) + add >=
+    if (pstack->extension_used + (pstack->top - pstack->bot) + add >=
 	pstack->max_stack.value.intval ||
-	!pstack->allow_expansion
+	!params->allow_expansion
 	)
-	return_error(pstack->overflow_error);
+	return_error(params->overflow_error);
     code = gs_alloc_ref_array(pstack->memory, &next, 0,
-			      pstack->block_size, "ref_stack_push_block");
+			      params->block_size, "ref_stack_push_block");
     if (code < 0)
 	return code;
     pnext = (ref_stack_block *) next.value.refs;
@@ -471,10 +539,10 @@ ref_stack_push_block(ref_stack * pstack, uint keep, uint add)
     /* Copy the top keep elements into the new block, */
     /* and make the new block the top block. */
     init_block(pstack, &next, keep);
-    body += pstack->bot_guard;
+    body += params->bot_guard;
     memcpy(body, pstack->bot + move, keep * sizeof(ref));
     /* Clear the elements above the top of the new block. */
-    refset_null(body + keep, pstack->data_size - keep);
+    refset_null(body + keep, params->data_size - keep);
     /* Clear the elements above the top of the old block. */
     refset_null(pstack->bot + move, keep);
     pnext->next = pstack->current;
@@ -491,7 +559,7 @@ ref_stack_push_block(ref_stack * pstack, uint keep, uint add)
 
 /* Begin enumerating the blocks of a stack. */
 void
-ref_stack_enum_begin(ref_stack_enum_t *prse, const ref_stack *pstack)
+ref_stack_enum_begin(ref_stack_enum_t *prse, const ref_stack_t *pstack)
 {
     prse->block = (ref_stack_block *)pstack->current.value.refs;
     prse->ptr = pstack->bot;
@@ -513,10 +581,10 @@ ref_stack_enum_next(ref_stack_enum_t *prse)
 
 /* Clean up a stack for garbage collection. */
 void
-ref_stack_cleanup(ref_stack * pstack)
+ref_stack_cleanup(ref_stack_t *pstack)
 {
     ref_stack_block *pblock =
-    (ref_stack_block *) pstack->current.value.refs;
+	(ref_stack_block *) pstack->current.value.refs;
 
     refset_null(pstack->p + 1, pstack->top - pstack->p);
     pblock->used = pstack->current;	/* set attrs */
@@ -526,57 +594,64 @@ ref_stack_cleanup(ref_stack * pstack)
 
 /*
  * Free the entire contents of a stack, including the bottom block.
- * The client must free the ref_stack itself.  Note that after calling
+ * The client must still call ref_stack_free.  Note that after calling
  * ref_stack_release, the stack is no longer usable.
  */
 void
-ref_stack_release(ref_stack * pstack)
+ref_stack_release(ref_stack_t *pstack)
 {
+    gs_ref_memory_t *mem = pstack->memory;
+
     ref_stack_clear(pstack);
+    /* Free the parameter structure. */
+    gs_free_object((gs_memory_t *)mem, pstack->params,
+		   "ref_stack_release(stack.params)");
     /* Free the original (bottom) block. */
-    gs_free_ref_array(pstack->memory, &pstack->current,
-		      "ref_stack_release");
+    gs_free_ref_array(mem, &pstack->current, "ref_stack_release");
 }
 
 /*
  * Release a stack and then free the ref_stack object.
  */
 void
-ref_stack_free(ref_stack * pstack, gs_memory_t * mem, client_name_t cname)
+ref_stack_free(ref_stack_t *pstack)
 {
+    gs_memory_t *mem = (gs_memory_t *)pstack->memory;
+
     ref_stack_release(pstack);
-    gs_free_object(mem, pstack, cname);
+    gs_free_object(mem, pstack, "ref_stack_free");
 }
 
 /* ------ Internal routines ------ */
 
 /* Initialize the guards and body of a stack block. */
 private void
-init_block(ref_stack * pstack, ref * psb, uint used)
+init_block(ref_stack_t *pstack, const ref *psb, uint used)
 {
+    ref_stack_params_t *params = pstack->params;
     ref *brefs = psb->value.refs;
     uint i;
     ref *p;
 
-    for (i = pstack->bot_guard, p = brefs + stack_block_refs;
+    for (i = params->bot_guard, p = brefs + stack_block_refs;
 	 i != 0; i--, p++
 	)
-	ref_assign(p, &pstack->guard_value);
+	ref_assign(p, &params->guard_value);
     /* The top guard elements will never be read, */
     /* but we need to initialize them for the sake of the GC. */
     /* We can use refset_null for this, because even though it uses */
     /* make_null_new and stack elements must not be marked new, */
     /* these slots will never actually be read or written. */
-    if (pstack->top_guard) {
+    if (params->top_guard) {
 	ref *top = brefs + r_size(psb);
-	int top_guard = pstack->top_guard;
+	int top_guard = params->top_guard;
 
 	refset_null(top - top_guard, top_guard);
     } {
 	ref_stack_block *const pblock = (ref_stack_block *) brefs;
 
 	pblock->used = *psb;
-	pblock->used.value.refs = brefs + stack_block_refs + pstack->bot_guard;
+	pblock->used.value.refs = brefs + stack_block_refs + params->bot_guard;
 	r_set_size(&pblock->used, 0);
     }
 }

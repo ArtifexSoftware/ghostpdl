@@ -75,4 +75,10 @@ extern const byte
 extern const byte *const byte_bit_run_length[8];
 extern const byte *const byte_bit_run_length_neg[8];
 
+/*
+ * byte_acegbdfh_to_abcdefgh[acegbdfh] = abcdefgh, where the letters
+ * denote the individual bits of the byte.
+ */
+extern const byte byte_acegbdfh_to_abcdefgh[256];
+
 #endif /* gsbittab_INCLUDED */

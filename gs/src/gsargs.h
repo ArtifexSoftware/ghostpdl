@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -34,8 +34,8 @@ typedef struct arg_source_s {
     bool is_file;
     union _u {
 	struct _su {
-	    const char *chars;	/* original string */
-	    gs_memory_t *memory;	/* if non-0, free chars when done with it */
+	    char *chars;	/* original string */
+	    gs_memory_t *memory;  /* if non-0, free chars when done with it */
 	    const char *str;	/* string being read */
 	} s;
 	FILE *file;
@@ -62,8 +62,7 @@ void arg_init(P5(arg_list * pal, const char **argv, int argc,
  * This may also be used (once) to "unread" the last argument.
  * If mem != 0, it is used to free the string when we are done with it.
  */
-void arg_push_memory_string(P3(arg_list * pal, const char *str,
-			       gs_memory_t * mem));
+void arg_push_memory_string(P3(arg_list * pal, char *str, gs_memory_t * mem));
 
 #define arg_push_string(pal, str)\
   arg_push_memory_string(pal, str, (gs_memory_t *)0);

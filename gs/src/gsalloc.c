@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Standard memory allocator */
 #include "gx.h"
 #include "memory_.h"
@@ -1121,14 +1121,15 @@ ialloc_consolidate_free(gs_ref_memory_t *mem)
 	    /* The entire chunk is free. */
 	    chunk_t *cnext = cp->cnext;
 
-	    if (!mem->is_controlled)
+	    if (!mem->is_controlled) {
 		alloc_free_chunk(cp, mem);
-	    if (mem->pcc == cp)
-		mem->pcc =
-		    (cnext == 0 ? cprev : cprev == 0 ? cnext :
-		     cprev->cbot - cprev->ctop >
-		     cnext->cbot - cnext->ctop ? cprev :
-		     cnext);
+		if (mem->pcc == cp)
+		    mem->pcc =
+			(cnext == 0 ? cprev : cprev == 0 ? cnext :
+			 cprev->cbot - cprev->ctop >
+			 cnext->cbot - cnext->ctop ? cprev :
+			 cnext);
+	    }
 	}
     }
     alloc_open_chunk(mem);
@@ -1413,10 +1414,11 @@ alloc_init_chunk(chunk_t * cp, byte * bot, byte * top, bool has_strings,
     cp->inner_count = 0;
     cp->has_refs = false;
     cp->sbase = cdata;
-    if (has_strings && top - cdata >= string_space_quantum + sizeof(long) - 1) {	/*
-											 * We allocate a large enough string marking and reloc table
-											 * to cover the entire chunk.
-											 */
+    if (has_strings && top - cdata >= string_space_quantum + sizeof(long) - 1) {
+	/*
+	 * We allocate a large enough string marking and reloc table
+	 * to cover the entire chunk.
+	 */
 	uint nquanta = string_space_quanta(top - cdata);
 
 	cp->climit = cdata + nquanta * string_data_quantum;
@@ -1424,8 +1426,9 @@ alloc_init_chunk(chunk_t * cp, byte * bot, byte * top, bool has_strings,
 	cp->smark_size = string_quanta_mark_size(nquanta);
 	cp->sreloc =
 	    (string_reloc_offset *) (cp->smark + cp->smark_size);
-	cp->sfree1 = (ushort *) cp->sreloc;
-    } else {			/* No strings, don't need the string GC tables. */
+	cp->sfree1 = (uint *) cp->sreloc;
+    } else {
+	/* No strings, don't need the string GC tables. */
 	cp->climit = cp->cend;
 	cp->sfree1 = 0;
 	cp->smark = 0;
@@ -1441,9 +1444,7 @@ void
 alloc_init_free_strings(chunk_t * cp)
 {
     if (cp->sfree1)
-	memset(cp->sfree1, 0,
-	       ((cp->climit - csbase(cp) + 255) >> 8) *
-	       sizeof(*cp->sfree1));
+	memset(cp->sfree1, 0, STRING_FREELIST_SPACE(cp));
     cp->sfree = 0;
 }
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -26,7 +26,6 @@
 #ifndef gs_main_instance_DEFINED
 #  define gs_main_instance_DEFINED
 typedef struct gs_main_instance_s gs_main_instance;
-
 #endif
 
 /*
@@ -55,13 +54,16 @@ typedef struct gs_file_path_s {
 
 /*
  * Here is where we actually define the structure of interpreter instances.
- * Clients should not reference any of the members.
+ * Clients should not reference any of the members.  Note that in order to
+ * be able to initialize this structure statically, members including
+ * unions must come last (and be initialized to 0 by default).
  */
 struct gs_main_instance_s {
     /* The following are set during initialization. */
     FILE *fstdin;
     FILE *fstdout;
     FILE *fstderr;
+    bool stdin_is_interactive;
     gs_memory_t *heap;		/* (C) heap allocator */
     uint memory_chunk_size;	/* 'wholesale' allocation unit */
     ulong name_table_size;
@@ -70,9 +72,12 @@ struct gs_main_instance_s {
     int user_errors;		/* define what to do with errors */
     bool search_here_first;	/* if true, make '.' first lib dir */
     bool run_start;		/* if true, run 'start' after */
-    /* processing command line */
+				/* processing command line */
     gs_file_path lib_path;	/* library search list (GS_LIB) */
     long base_time[2];		/* starting usertime */
+    void *readline_data;	/* data for gp_readline */
+    /* The following are updated dynamically. */
+    i_ctx_t *i_ctx_p;		/* current interpreter context state */
 };
 
 /*
@@ -80,7 +85,7 @@ struct gs_main_instance_s {
  * must include gconfig.h, because of SEARCH_HERE_FIRST.
  */
 #define gs_main_instance_default_init_values\
- 0, 0, 0, 0, 20000, 0, 0, -1, 0, SEARCH_HERE_FIRST, 1
+  0, 0, 0, 1 /*true*/, 0, 20000, 0, 0, -1, 0, SEARCH_HERE_FIRST, 1
 extern const gs_main_instance gs_main_instance_init_values;
 
 #endif /* iminst_INCLUDED */

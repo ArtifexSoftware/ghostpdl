@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -162,7 +162,7 @@ lvga256_map_rgb_color(gx_device * dev, gx_color_value r, gx_color_value g,
     uint cx = ((uint) cube_bits[r5] << 2) + ((uint) cube_bits[g5] << 1) +
     (uint) cube_bits[b5];
     ushort rgb;
-    register dc_entry _ds *pdc;
+    register dc_entry *pdc;
 
     /* Check for a color on the cube. */
     if (cx < 64)

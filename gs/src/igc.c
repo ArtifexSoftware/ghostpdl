@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -150,7 +150,7 @@ depth_dots(const ms_entry * sp, const gc_mark_stack * pms)
 #  define end_phase(str) DO_NOTHING
 #endif
 void
-gs_reclaim(vm_spaces * pspaces, bool global)
+gs_gc_reclaim(vm_spaces * pspaces, bool global)
 {
     vm_spaces spaces;
 
@@ -186,7 +186,7 @@ gs_reclaim(vm_spaces * pspaces, bool global)
 #define for_collected_spaces(i)\
   for ( i = min_collect; i <= max_trace; ++i )
 #define for_space_mems(i, mem)\
-  for ( mem = spaces.indexed[i]; mem != 0; mem = &mem->saved->state )
+  for ( mem = spaces_indexed[i]; mem != 0; mem = &mem->saved->state )
 #define for_mem_chunks(mem, cp)\
   for ( cp = (mem)->cfirst; cp != 0; cp = cp->cnext )
 #define for_space_chunks(i, mem, cp)\
@@ -197,11 +197,11 @@ gs_reclaim(vm_spaces * pspaces, bool global)
   for_collected_spaces(ispace) for_space_chunks(ispace, mem, cp)
 #define for_roots(n, mem, rp)\
   for_spaces(ispace, n)\
-    for ( mem = spaces.indexed[ispace], rp = mem->roots; rp != 0; rp = rp->next )
+    for ( mem = spaces_indexed[ispace], rp = mem->roots; rp != 0; rp = rp->next )
 
     /* Initialize the state. */
     state.procs = &igc_procs;
-    state.loc.memory = spaces.named.global;	/* any one will do */
+    state.loc.memory = space_global;	/* any one will do */
 
     state.loc.cp = 0;
     state.spaces = spaces;
@@ -214,9 +214,9 @@ gs_reclaim(vm_spaces * pspaces, bool global)
     /* so we mark and relocate the change and save lists properly. */
 
     for_spaces(ispace, max_trace)
-	gs_register_struct_root((gs_memory_t *) spaces.indexed[ispace],
+	gs_register_struct_root((gs_memory_t *) spaces_indexed[ispace],
 				&space_roots[ispace],
-				(void **)&spaces.indexed[ispace],
+				(void **)&spaces_indexed[ispace],
 				"gc_top_level");
 
     end_phase("register space roots");
@@ -226,7 +226,7 @@ gs_reclaim(vm_spaces * pspaces, bool global)
     /* Pre-validate the state.  This shouldn't be necessary.... */
 
     for_spaces(ispace, max_trace)
-	ialloc_validate_memory(spaces.indexed[ispace], &state);
+	ialloc_validate_memory(spaces_indexed[ispace], &state);
 
     end_phase("pre-validate pointers");
 
@@ -376,7 +376,7 @@ gs_reclaim(vm_spaces * pspaces, bool global)
 	int i;
 
 	for_collected_spaces(i)
-	    gs_enable_free((gs_memory_t *) spaces.indexed[i], false);
+	    gs_enable_free((gs_memory_t *) spaces_indexed[i], false);
     }
 
     /* Compute relocation based on marks, in the spaces */
@@ -392,7 +392,7 @@ gs_reclaim(vm_spaces * pspaces, bool global)
 	int i;
 
 	for_collected_spaces(i)
-	    gs_enable_free((gs_memory_t *) spaces.indexed[i], true);
+	    gs_enable_free((gs_memory_t *) spaces_indexed[i], true);
     }
 
     end_phase("set reloc");
@@ -467,7 +467,7 @@ gs_reclaim(vm_spaces * pspaces, bool global)
 	alloc_save_t *next;
 	gs_memory_status_t total;
 
-	for (curr = spaces.indexed[ispace]->saved; curr != 0;
+	for (curr = spaces_indexed[ispace]->saved; curr != 0;
 	     prev = curr, curr = next
 	    ) {
 	    next = curr->state.saved;
@@ -489,7 +489,7 @@ gs_reclaim(vm_spaces * pspaces, bool global)
 	    mem->gc_allocated = mem->allocated + total.allocated;
 	    mem->inherited = -mem->allocated;
 	}
-	mem = spaces.indexed[ispace];
+	mem = spaces_indexed[ispace];
 	mem->previous_status = total;
 	mem->gc_allocated = mem->allocated + total.allocated;
 	if_debug3('6', "[6]0x%lx previous allocated=%lu, used=%lu\n",
@@ -503,7 +503,7 @@ gs_reclaim(vm_spaces * pspaces, bool global)
     /* Unregister the allocator roots. */
 
     for_spaces(ispace, max_trace)
-	gs_unregister_root((gs_memory_t *) spaces.indexed[ispace],
+	gs_unregister_root((gs_memory_t *) spaces_indexed[ispace],
 			   &space_roots[ispace], "gc_top_level");
 
     end_phase("unregister space roots");
@@ -513,7 +513,7 @@ gs_reclaim(vm_spaces * pspaces, bool global)
     /* Validate the state.  This shouldn't be necessary.... */
 
     for_spaces(ispace, max_trace)
-	ialloc_validate_memory(spaces.indexed[ispace], &state);
+	ialloc_validate_memory(spaces_indexed[ispace], &state);
 
     end_phase("validate pointers");
 
@@ -913,14 +913,23 @@ gc_trace(gs_gc_root_t * rp, gc_state_t * pstate, gc_mark_stack * pmstack)
 		    }
 		  rrp:
 		  rrc:sp[1].is_refs = true;
-		    if (sp == stop)
+		    if (sp == stop) {
+			/*
+			 * The following initialization is unnecessary:
+			 * ptp will not be used if sp[1].is_refs = true.
+			 * We put this here solely to get rid of bogus
+			 * "possibly uninitialized variable" warnings
+			 * from certain compilers.
+			 */
+			ptp = ptr_ref_type;
 			break;
+		    }
 		    new |= 1;
 		    (++sp)->ptr = nptr;
 		    goto do_refs;
 		case t_mixedarray:
 		case t_shortarray:
-		    nptr = (void *)rptr->value.packed;	/* discard const */
+		    nptr = rptr->value.writable_packed;
 		    goto rr;
 		case t_name:
 		    mark_name(names_index(nt, rptr), rptr->value.pname);
@@ -931,7 +940,7 @@ gc_trace(gs_gc_root_t * rp, gc_state_t * pstate, gc_mark_stack * pmstack)
 			new |= 1;
 		    goto nr;
 		case t_oparray:
-		    nptr = (void *)rptr->value.const_refs;	/* discard const */
+		    nptr = rptr->value.refs;	/* discard const */
 		    sp[1].index = 1;
 		    goto rrc;
 		default:
@@ -1185,11 +1194,11 @@ gc_do_reloc(chunk_t * cp, gs_ref_memory_t * mem, gc_state_t * pstate)
 /* Print pointer relocation if debugging. */
 /* We have to provide this procedure even if DEBUG is not defined, */
 /* in case one of the other GC modules was compiled with DEBUG. */
-void *
-print_reloc_proc(const void *obj, const char *cname, void *robj)
+const void *
+print_reloc_proc(const void *obj, const char *cname, const void *robj)
 {
     if_debug3('9', "  [9]relocate %s * 0x%lx to 0x%lx\n",
-	      cname, (ulong) obj, (ulong) robj);
+	      cname, (ulong)obj, (ulong)robj);
     return robj;
 }
 
@@ -1201,8 +1210,10 @@ igc_reloc_struct_ptr(const void /*obj_header_t */ *obj, gc_state_t * gcst)
     const obj_header_t *const optr = (const obj_header_t *)obj;
     const void *robj;
 
-    if (obj == 0)
-	return print_reloc(obj, "NULL", 0);
+    if (obj == 0) {
+	discard(print_reloc(obj, "NULL", 0));
+	return 0;
+    }
     debug_check_object(optr - 1, NULL, gcst);
     /* The following should be a conditional expression, */
     /* but Sun's cc compiler can't handle it. */
@@ -1236,9 +1247,13 @@ igc_reloc_struct_ptr(const void /*obj_header_t */ *obj, gc_state_t * gcst)
 	    }
 	}
     }
-    return print_reloc(obj,
-		       struct_type_name_string(optr[-1].o_type),
-		       (void *)robj);	/* discard const */
+    /* Use a severely deprecated pun to remove the const property. */
+    {
+	union { const void *r; void *w; } u;
+
+	u.r = print_reloc(obj, struct_type_name_string(optr[-1].o_type), robj);
+	return u.w;
+    }
 }
 
 /* ------ Compaction phase ------ */

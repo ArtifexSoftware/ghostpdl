@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -25,9 +25,11 @@
 #include "gserrors.h"
 #include "gsparam.h"
 #include "gxdevice.h"
+#include "gsdevice.h"		/* for gs_copydevice */
 #include "gdevx.h"
+#include "gdevdcrd.h"
 
-extern gx_device_X gs_x11_device;
+extern const gx_device_X gs_x11_device;
 
 /*
  * Define a forwarding device with a cache for the first 16 colors,
@@ -260,11 +262,18 @@ x_wrap_get_bits(gx_device * dev, int y, byte * str, byte ** actual_data)
     byte *base;
     int code;
     gx_color_index pixel_in = gx_no_color_index;
-    gx_color_index pixel_out;
+    /*
+     * The following initialization is unnecessary: since no pixel has a
+     * value of gx_no_color_index, the test pixel != pixel_in will always
+     * succeed the first time through the loop below, so pixel_out will
+     * always be set before it is used.  We initialize pixel_out solely to
+     * suppress bogus warning messages from certain compilers.
+     */
+    gx_color_index pixel_out = 0;
     int xi;
     int sbit;
 
-    declare_line_accum(str, depth, 0);
+    DECLARE_LINE_ACCUM(str, depth, 0);
 
     set_dev_target(tdev, dev);
     width = tdev->width;
@@ -287,13 +296,13 @@ x_wrap_get_bits(gx_device * dev, int y, byte * str, byte ** actual_data)
 	    pixel = (*sptr >> (8 - sdepth - (sbit & 7))) & smask;
 	else {
 	    pixel = 0;
-	    for (i = 0; i < depth; i += 8, ++sptr)
+	    for (i = 0; i < sdepth; i += 8, ++sptr)
 		pixel = (pixel << 8) + *sptr;
 	}
 	if (pixel != pixel_in) {
 	    (*dev_proc(tdev, map_color_rgb))(tdev, pixel, rgb);
 	    pixel_in = pixel;
-	    if (tdev->color_info.num_components <= 3)
+	    if (dev->color_info.num_components <= 3)
 		pixel_out = (*dev_proc(dev, map_rgb_color))
 		    (dev, rgb[0], rgb[1], rgb[2]);
 	    else {
@@ -307,9 +316,9 @@ x_wrap_get_bits(gx_device * dev, int y, byte * str, byte ** actual_data)
 		    (dev, c - k, m - k, y - k, k);
 	    }
 	}
-	line_accum(pixel_out, depth);
+	LINE_ACCUM(pixel_out, depth);
     }
-    line_accum_store(depth);
+    LINE_ACCUM_STORE(depth);
   gx:gs_free_object(mem, row, "x_wrap_get_bits");
     *actual_data = str;
     return code;
@@ -319,19 +328,21 @@ private int
 x_wrap_get_params(gx_device * dev, gs_param_list * plist)
 {
     gx_device *tdev;
-
     /* We assume that a get_params call has no side effects.... */
     gx_device_X save_dev;
-    int code;
+    int ecode, code;
 
     set_dev_target(tdev, dev);
     save_dev = *(gx_device_X *) tdev;
     if (tdev->is_open)
 	tdev->color_info = dev->color_info;
     tdev->dname = dev->dname;
-    code = (*dev_proc(tdev, get_params)) (tdev, plist);
+    ecode = (*dev_proc(tdev, get_params)) (tdev, plist);
     *(gx_device_X *) tdev = save_dev;
-    return code;
+    code = sample_device_crd_get_params(dev, plist, "CRDDefault");
+    if (code < 0)
+	ecode = code;
+    return ecode;
 }
 
 private int
@@ -368,21 +379,15 @@ get_dev_target(gx_device ** ptdev, gx_device * dev)
 {
     gx_device *tdev = ((gx_device_forward *) dev)->target;
 
-    if (tdev == 0) {		/* Create or link to an X device instance. */
-	if (dev->memory == 0)	/* static instance */
-	    tdev = (gx_device *) & gs_x11_device;
-	else {
-	    tdev = (gx_device *) gs_alloc_bytes(dev->memory,
-						(gs_x11_device).params_size,
-						"dev_target");
-	    if (tdev == 0)
-		return_error(gs_error_VMerror);
-	    *(gx_device_X *) tdev = gs_x11_device;
-	    tdev->memory = dev->memory;
-	    tdev->is_open = false;
-	}
+    if (tdev == 0) {
+	/* Create an X device instance. */
+	int code = gs_copydevice(&tdev, (const gx_device *)&gs_x11_device,
+				 dev->memory);
+
+	if (code < 0)
+	    return 0;
 	gx_device_fill_in_procs(tdev);
-	((gx_device_forward *) dev)->target = tdev;
+	gx_device_set_target((gx_device_forward *)dev, tdev);
 	x_clear_color_cache(dev);
     }
     *ptdev = tdev;
@@ -410,8 +415,14 @@ get_target_info(gx_device * dev)
     copy2(MarginsHWResolution);
     copy2(Margins);
     copy4(HWMargins);
-    if (dev->color_info.num_components == 3)
+    if (dev->color_info.num_components == 3) {
+	/* Leave the anti-aliasing information alone. */
+	gx_device_anti_alias_info aa;
+
+	aa = dev->color_info.anti_alias;
 	copy(color_info);
+	dev->color_info.anti_alias = aa;
+    }
 
 #undef copy4
 #undef copy2
@@ -680,7 +691,6 @@ const gx_device_X_wrapper gs_x11gray4_device =
 /* Device procedures */
 private dev_proc_map_color_rgb(x_alpha_map_color_rgb);
 private dev_proc_map_rgb_alpha_color(x_alpha_map_rgb_alpha_color);
-private dev_proc_get_alpha_bits(x_alpha_get_alpha_bits);
 private dev_proc_copy_alpha(x_alpha_copy_alpha);
 
 /* The device descriptor */
@@ -706,17 +716,18 @@ private const gx_device_procs x_alpha_procs =
     gx_forward_get_xfont_device,
     x_alpha_map_rgb_alpha_color,
     gx_forward_get_page_device,
-    x_alpha_get_alpha_bits,
+    gx_default_get_alpha_bits,
 	/*gx_default_copy_alpha */ x_alpha_copy_alpha
 };
 
 /* The instance is public. */
 const gx_device_X_wrapper gs_x11alpha_device =
 {
-    std_device_dci_body(gx_device_X_wrapper, &x_alpha_procs, "x11alpha",
+    std_device_dci_alpha_type_body(gx_device_X_wrapper, &x_alpha_procs,
+			"x11alpha", 0,
 			FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
 			FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
-			3, 32, 255, 255, 256, 256),
+			3, 32, 255, 255, 256, 256, 4, 4),
     {0},			/* std_procs */
     0				/* target */
 };
@@ -738,14 +749,8 @@ x_alpha_map_rgb_alpha_color(gx_device * dev,
     gx_color_index color = gx_forward_map_rgb_color(dev, r, g, b);
     byte abyte = alpha >> (gx_color_value_bits - 8);
 
-    return (abyte == 0 ? 0xff000000 :
+    return (abyte == 0 ? (gx_color_index)0xff << 24 :
 	    ((gx_color_index) (abyte ^ 0xff) << 24) + color);
-}
-
-private int
-x_alpha_get_alpha_bits(gx_device * dev, graphics_object_type type)
-{
-    return 4;
 }
 
 private int

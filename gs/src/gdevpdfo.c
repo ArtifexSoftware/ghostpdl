@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -19,6 +19,7 @@
 
 /* Named object pdfmark processing */
 #include "memory_.h"
+#include "string_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsutil.h"		/* for bytes_compare */
@@ -186,10 +187,11 @@ pdfmark_next_object(const byte * scan, const byte * end, const byte ** pname,
     const byte *right;
 
     *ppno = 0;
-  top:left = memchr(scan, '{', end - scan);
+top:
+    left = (const byte *)memchr(scan, '{', end - scan);
     if (left == 0)
 	return (*pname = end);
-    lit = memchr(scan, '(', left - scan);
+    lit = (const byte *)memchr(scan, '(', left - scan);
     if (lit) {
 	/* Skip over the string. */
 	byte buf[50];		/* size is arbitrary */
@@ -211,7 +213,7 @@ pdfmark_next_object(const byte * scan, const byte * end, const byte ** pname,
 	scan = r.ptr + 1;
 	goto top;
     }
-    right = memchr(left + 1, '}', end - (left + 1));
+    right = (const byte *)memchr(left + 1, '}', end - (left + 1));
     if (right == 0)		/* malformed name */
 	return (*pname = end);
     *pname = left;

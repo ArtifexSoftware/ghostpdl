@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -366,14 +366,21 @@ mem_default_strip_copy_rop(gx_device * dev,
     gs_memory_t *mem = (dev->memory ? dev->memory : &gs_memory_default);
     const gx_device_memory *mdproto = gdev_mem_device_for_bits(rop_depth);
     gx_device_memory mdev;
+    union { long l; void *p; } mdev_storage[20];
     uint row_raster = bitmap_raster(width * depth);
-    bool uses_d = rop3_uses_D(gs_transparent_rop(lop));
+    gs_rop3_t trans_rop = gs_transparent_rop(lop);
+    bool uses_d = rop3_uses_D(trans_rop);
+    bool uses_s = rop3_uses_S(trans_rop);
+    bool uses_t = rop3_uses_T(trans_rop);
     bool expand_s, expand_t;
     byte *row = 0;
+    union { long l; void *p; } dest_buffer[16];
     byte *source_row = 0;
     uint source_row_raster;
+    union { long l; void *p; } source_buffer[16];
     byte *texture_row = 0;
     uint texture_row_raster;
+    union { long l; void *p; } texture_buffer[16];
     gx_color_index source_colors[2];
     const gx_color_index *real_scolors = scolors;
     gx_color_index texture_colors[2];
@@ -383,6 +390,7 @@ mem_default_strip_copy_rop(gx_device * dev,
     gs_int_rect rect;
     gs_get_bits_params_t bit_params;
     gs_get_bits_params_t expand_params;
+    gs_get_bits_params_t no_expand_params;
     int max_height;
     int block_height, loop_height;
     int code;
@@ -392,12 +400,18 @@ mem_default_strip_copy_rop(gx_device * dev,
  * Allocate a temporary row buffer.  Free variables: mem, block_height.
  * Labels used: out.
  */
-#define ALLOC_BUF(buf, size, cname)\
+#define ALLOC_BUF(buf, prebuf, size, cname)\
 	BEGIN\
-	  buf = gs_alloc_bytes(mem, size * block_height, cname);\
-	  if ( buf == 0 ) {\
-	    code = gs_note_error(gs_error_VMerror);\
-	    goto out;\
+	  uint num_bytes = (size) * block_height;\
+\
+	  if (num_bytes <= sizeof(prebuf))\
+	    buf = (byte *)prebuf;\
+	  else {\
+	    buf = gs_alloc_bytes(mem, num_bytes, cname);\
+	    if (buf == 0) {\
+	      code = gs_note_error(gs_error_VMerror);\
+	      goto out;\
+	    }\
 	  }\
 	END
 
@@ -420,8 +434,9 @@ mem_default_strip_copy_rop(gx_device * dev,
     if (max_height == 0)
 	max_height = 1;
     block_height = min(height, max_height);
-    expand_s = scolors == 0 && rop3_uses_S(gs_transparent_rop(lop));
-    expand_t = tcolors == 0 && rop3_uses_T(gs_transparent_rop(lop));
+    expand_s = scolors == 0 && uses_s;
+    expand_t = tcolors == 0 && uses_t;
+    no_expand_params.options = no_expand_options;
     if (expand_t) {
 	/*
 	 * We don't want to wrap around more than once in Y when
@@ -433,24 +448,33 @@ mem_default_strip_copy_rop(gx_device * dev,
     gs_make_mem_device(&mdev, mdproto, 0, -1, NULL);
     mdev.width = width;
     mdev.height = block_height;
-    mdev.bitmap_memory = mem;
     mdev.color_info.num_components = rop_depth >> 3;
+    if (gdev_mem_data_size(&mdev, width, block_height) <= sizeof(mdev_storage)) {
+	/* Use the locally allocated storage. */
+	mdev.base = (byte *)mdev_storage;
+	mdev.line_ptrs = (byte **)
+	    (mdev.base + gdev_mem_bits_size(&mdev, mdev.width, mdev.height));
+    } else {
+	mdev.bitmap_memory = mem;
+    }
     code = (*dev_proc(&mdev, open_device))((gx_device *)&mdev);
     if (code < 0)
 	return code;
-    ALLOC_BUF(row, row_raster, "copy_rop row");
+    ALLOC_BUF(row, dest_buffer, row_raster, "copy_rop row");
     /* We may need intermediate buffers for all 3 operands. */
     if (expand_s) {
 	source_row_raster = bitmap_raster(width * rop_depth);
-	ALLOC_BUF(source_row, source_row_raster, "copy_rop source_row");
+	ALLOC_BUF(source_row, source_buffer, source_row_raster,
+		  "copy_rop source_row");
     }
-    if (scolors) {
+    if (scolors && uses_s) {
 	unpack_colors_to_standard(dev, source_colors, scolors, rop_depth);
 	real_scolors = source_colors;
     }
     if (expand_t) {
 	texture_row_raster = bitmap_raster(textures->rep_width * rop_depth);
-	ALLOC_BUF(texture_row, texture_row_raster, "copy_rop texture_row");
+	ALLOC_BUF(texture_row, texture_buffer, texture_row_raster,
+		  "copy_rop texture_row");
 	rop_texture = *textures;
 	rop_texture.data = texture_row;
 	rop_texture.raster = texture_row_raster;
@@ -458,7 +482,7 @@ mem_default_strip_copy_rop(gx_device * dev,
 	rop_texture.id = gs_no_bitmap_id;
 	real_texture = &rop_texture;
     }
-    if (tcolors) {
+    if (tcolors && uses_t) {
 	unpack_colors_to_standard(dev, texture_colors, tcolors, rop_depth);
 	real_tcolors = texture_colors;
     }
@@ -481,7 +505,7 @@ mem_default_strip_copy_rop(gx_device * dev,
 	    rect.q.y = py + loop_height;
 	    expand_params.data[0] = texture_row;
 	    gx_get_bits_copy(dev, 0, textures->rep_width, loop_height,
-			     &expand_params, no_expand_options,
+			     &expand_params, &no_expand_params,
 			     textures->data + rep_y * textures->raster,
 			     textures->raster);
 	    /*
@@ -506,8 +530,7 @@ mem_default_strip_copy_rop(gx_device * dev,
 	if (expand_s) {
 	    expand_params.data[0] = source_row;
 	    gx_get_bits_copy(dev, sx, width, loop_height, &expand_params,
-			     no_expand_options, source_data,
-			     sraster);
+			     &no_expand_params, source_data, sraster);
 	    sx = 0;
 	    source_data = source_row;
 	    source_raster = source_row_raster;
@@ -519,25 +542,28 @@ mem_default_strip_copy_rop(gx_device * dev,
 	if (code < 0)
 	    break;
 	{
-	    /* Convert the result back to the device's format. */
+	    /*
+	     * Convert the result back to the device's format.  We know
+	     * the device is a memory device, so we can store the result
+	     * directly into its scan lines.
+	     */
 	    int i;
-	    byte *packed = row;
 	    const byte *unpacked = scan_line_base(&mdev, 0);
 
-	    for (i = 0; i < loop_height;
-		 packed += row_raster, unpacked += mdev.raster, ++i)
-		pack(dev, packed, 0, unpacked, width, depth, rop_depth);
+	    for (i = 0; i < loop_height; unpacked += mdev.raster, ++i) {
+		byte *packed = scan_line_base((gx_device_memory *)dev, py + i);
+
+		pack(dev, packed, x, unpacked, width, depth, rop_depth);
+	    }
 	}
-	code = (*dev_proc(dev, copy_color))
-	    (dev, row, 0, row_raster, gx_no_bitmap_id,
-	     x, py, width, loop_height);
-	if (code < 0)
-	    break;
     }
 out:
-    gs_free_object(mem, texture_row, "copy_rop texture_row");
-    gs_free_object(mem, source_row, "copy_rop source_row");
-    gs_free_object(mem, row, "copy_rop row");
+    if (texture_row != 0 && texture_row != (byte *)texture_buffer)
+	gs_free_object(mem, texture_row, "copy_rop texture_row");
+    if (source_row != 0 && source_row != (byte *)source_buffer)
+	gs_free_object(mem, source_row, "copy_rop source_row");
+    if (row != 0 && row != (byte *)dest_buffer)
+	gs_free_object(mem, row, "copy_rop row");
     (*dev_proc(&mdev, close_device)) ((gx_device *) & mdev);
     return code;
 }
@@ -691,4 +717,3 @@ gs_transparent_rop(gs_logical_operation_t lop)
 #undef MPo
     return (rop & mask) | (rop3_D & ~mask);
 }
-

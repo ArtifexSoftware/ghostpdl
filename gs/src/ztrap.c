@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -30,8 +30,9 @@ gs_trap_params_t i_trap_params;
 
 /* <dict> .settrapparams - */
 private int
-zsettrapparams(os_ptr op)
+zsettrapparams(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     dict_param_list list;
     int code;
 
@@ -49,7 +50,7 @@ zsettrapparams(os_ptr op)
 
 /* - settrapzone - */
 private int
-zsettrapzone(os_ptr op)
+zsettrapzone(i_ctx_t *i_ctx_p)
 {
 /****** NYI ******/
     return_error(e_undefined);

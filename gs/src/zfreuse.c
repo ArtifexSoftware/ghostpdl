@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -30,6 +30,8 @@
 #include "iname.h"
 #include "store.h"
 
+/* ---------------- Reusable streams ---------------- */
+
 /*
  * The actual work of constructing the filter is done in PostScript code.
  * The operators in this file are internal ones that handle the dirty work.
@@ -39,8 +41,9 @@
 /* filters is always an array, and decodeparms is always either an array */
 /* of the same length as filters, or null. */
 private int
-zrsdparams(os_ptr op)
+zrsdparams(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     ref *pFilter;
     ref *pDecodeParms;
     int Intent;
@@ -80,7 +83,7 @@ zrsdparams(os_ptr op)
 	    return_error(e_typecheck);
 	name_string_ref(&f, &fname);
 	if (r_size(&fname) < 6 ||
-	    !memcmp(fname.value.bytes + r_size(&fname) - 6, "Decode", 6)
+	    memcmp(fname.value.bytes + r_size(&fname) - 6, "Decode", 6)
 	    )
 	    return_error(e_rangecheck);
 	if (pDecodeParms) {
@@ -105,17 +108,18 @@ zrsdparams(os_ptr op)
 /* <file|string> <length|null> <CloseSource> .reusablestream <filter> */
 /*
  * The file|string operand must be a "reusable source", either:
- *      - A string;
+ *      - A string or bytestring;
  *      - A readable, positionable file stream;
  *      - A SubFileDecode filter with an empty EODString and a reusable
  *      source;
  *      - A reusable stream.
  */
-private int make_rss(P6(os_ptr op, const byte * data, uint size, long offset,
-			long length, bool close_source));
+private int make_rss(P7(os_ptr op, const byte * data, uint size, long offset,
+			long length, bool is_bytestring, bool close_source));
 private int
-zreusablestream(os_ptr op)
+zreusablestream(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     os_ptr source_op = op - 2;
     os_ptr length_op = op - 1;
     long length;
@@ -131,9 +135,21 @@ zreusablestream(os_ptr op)
     check_type(*op, t_boolean);
     close_source = op->value.boolval;
     if (r_has_type(source_op, t_string)) {
+	uint size = r_size(source_op);
+
 	check_read(*source_op);
 	code = make_rss(source_op, source_op->value.const_bytes,
-			r_size(source_op), 0L, length, close_source);
+			size, 0L, (length < 0 ? size : length), false,
+			close_source);
+    } else if (r_has_type(source_op, t_astruct)) {
+	uint size = gs_object_size(imemory, source_op->value.pstruct);
+
+	if (gs_object_type(imemory, source_op->value.pstruct) != &st_bytes)
+	    return_error(e_rangecheck);
+	check_read(*source_op);
+	code = make_rss(source_op, (const byte *)source_op->value.pstruct,
+			size, 0L, (length < 0 ? size : length), true,
+			close_source);
     } else {
 	long offset = 0;
 	stream *source;
@@ -148,14 +164,13 @@ rs:
 	    savailable(source, &avail);
 	    if (avail < 0)
 		avail = 0;
-	    if (avail > length)
-		avail = length;
 	    code = make_rss(source_op, source->cbuf_string.data,
-			    source->cbuf_string.size, offset, avail,
+			    source->cbuf_string.size, offset, avail, false,
 			    close_source);
 	} else if (source->file != 0) {
 	    /* The data source is a file. */
-/****** NYI ******/
+	    /****** NYI ******/
+	    return_error(e_rangecheck);
 	} else if (source->state->template == &s_SFD_template) {
 	    /* The data source is a SubFileDecode filter. */
 	    const stream_SFD_state *const sfd_state =
@@ -172,9 +187,10 @@ rs:
 	    source = source->strm;
 	    goto rs;
 	}
-/****** REUSABLE CASE IS NYI ******/
-	else
+	else {
+	    /****** REUSABLE CASE IS NYI ******/
 	    return_error(e_rangecheck);
+	}
     }
     if (code >= 0)
 	pop(2);
@@ -184,17 +200,27 @@ rs:
 /* Make a reusable string stream. */
 private int
 make_rss(os_ptr op, const byte * data, uint size, long offset,
-	 long length, bool close_source)
+	 long length, bool is_bytestring, bool close_source)
 {
-/****** NYI ******/
-    return_error(e_rangecheck);
+    stream *s;
+
+    /****** SELECT CORRECT VM FOR ALLOCATION ******/
+    s = file_alloc_stream(imemory, "make_rss");
+    if (s == 0)
+	return_error(e_VMerror);
+    sread_string_reusable(s, data + offset, min(length, size - offset));
+    if (is_bytestring)
+	s->cbuf_string.data = 0;	/* byte array, not string */
+    /****** DO WHAT WITH close_source ? ******/
+    make_stream_file(op, s, "r");
+    return 0;
 }
 
 /* ---------------- Initialization procedure ---------------- */
 
 const op_def zfreuse_op_defs[] =
 {
-    {"2.rsdparams", zrsdparams},
     {"2.reusablestream", zreusablestream},
+    {"2.rsdparams", zrsdparams},
     op_def_end(0)
 };

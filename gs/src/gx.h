@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1991, 1994, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1991, 1994 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 

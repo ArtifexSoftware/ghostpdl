@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -26,8 +26,8 @@
 
 /* Check whether one rectangle is included entirely within another. */
 #define rect_within(inner, outer)\
-  (inner.q.y <= outer.q.y && inner.q.x <= outer.q.x &&\
-   inner.p.y >= outer.p.y && inner.p.x >= outer.p.x)
+  ((inner).q.y <= (outer).q.y && (inner).q.x <= (outer).q.x &&\
+   (inner).p.y >= (outer).p.y && (inner).p.x >= (outer).p.x)
 
 /*
  * Intersect two rectangles, replacing the first.  The result may be
@@ -35,10 +35,10 @@
  */
 #define rect_intersect(to, from)\
   BEGIN\
-    if ( from.p.x > to.p.x ) to.p.x = from.p.x;\
-    if ( from.q.x < to.q.x ) to.q.x = from.q.x;\
-    if ( from.p.y > to.p.y ) to.p.y = from.p.y;\
-    if ( from.q.y < to.q.y ) to.q.y = from.q.y;\
+    if ((from).p.x > (to).p.x) (to).p.x = (from).p.x;\
+    if ((from).q.x < (to).q.x) (to).q.x = (from).q.x;\
+    if ((from).p.y > (to).p.y) (to).p.y = (from).p.y;\
+    if ((from).q.y < (to).q.y) (to).q.y = (from).q.y;\
   END
 
 /*
@@ -47,10 +47,10 @@
  */
 #define rect_merge(to, from)\
   BEGIN\
-    if ( from.p.x < to.p.x ) to.p.x = from.p.x;\
-    if ( from.q.x > to.q.x ) to.q.x = from.q.x;\
-    if ( from.p.y < to.p.y ) to.p.y = from.p.y;\
-    if ( from.q.y > to.q.y ) to.q.y = from.q.y;\
+    if ((from).p.x < (to).p.x) (to).p.x = (from).p.x;\
+    if ((from).q.x > (to).q.x) (to).q.x = (from).q.x;\
+    if ((from).p.y < (to).p.y) (to).p.y = (from).p.y;\
+    if ((from).q.y > (to).q.y) (to).q.y = (from).q.y;\
   END
 
 /*

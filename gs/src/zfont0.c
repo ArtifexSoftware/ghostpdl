@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1992, 1993, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 1992, 1993, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -38,7 +38,7 @@
 #include "gxfont0.h"
 #include "bfont.h"
 #include "ialloc.h"
-#include "idict.h"
+#include "iddict.h"
 #include "idparam.h"
 #include "igstate.h"
 #include "iname.h"
@@ -57,13 +57,14 @@ int ztype0_get_cmap(P3(const gs_cmap ** ppcmap, const ref * pfdepvector,
 /* Forward references */
 private font_proc_define_font(ztype0_define_font);
 private font_proc_make_font(ztype0_make_font);
-private int ensure_char_entry(P4(os_ptr, const char *, byte *, int));
+private int ensure_char_entry(P5(i_ctx_t *, os_ptr, const char *, byte *, int));
 
 /* <string|name> <font_dict> .buildfont0 <string|name> <font> */
 /* Build a type 0 (composite) font. */
 private int
-zbuildfont0(os_ptr op)
+zbuildfont0(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_type0_data data;
     ref fdepvector;
     ref *pprefenc;
@@ -125,12 +126,12 @@ zbuildfont0(os_ptr op)
     switch (data.FMapType) {
 	case fmap_escape:
 	case fmap_double_escape:	/* need EscChar */
-	    code = ensure_char_entry(op, "EscChar", &data.EscChar, 255);
+	    code = ensure_char_entry(i_ctx_p, op, "EscChar", &data.EscChar, 255);
 	    break;
 	case fmap_shift:	/* need ShiftIn & ShiftOut */
-	    code = ensure_char_entry(op, "ShiftIn", &data.ShiftIn, 15);
+	    code = ensure_char_entry(i_ctx_p, op, "ShiftIn", &data.ShiftIn, 15);
 	    if (code >= 0)
-		code = ensure_char_entry(op, "ShiftOut", &data.ShiftOut, 14);
+		code = ensure_char_entry(i_ctx_p, op, "ShiftOut", &data.ShiftOut, 14);
 	    break;
 	case fmap_SubsVector:	/* need SubsVector */
 	    {
@@ -177,7 +178,7 @@ zbuildfont0(os_ptr op)
 				    "%Type0BuildChar", "%Type0BuildGlyph");
 	if (code < 0)
 	    return code;
-	code = build_gs_font(op, (gs_font **) & pfont,
+	code = build_gs_font(i_ctx_p, op, (gs_font **) & pfont,
 			     ft_composite, &st_gs_font_type0, &build,
 			     bf_options_none);
     }
@@ -193,7 +194,7 @@ zbuildfont0(os_ptr op)
 	ref nul;
 
 	make_null_new(&nul);
-	if ((code = dict_put_string(op, "PrefEnc", &nul)) < 0)
+	if ((code = idict_put_string(op, "PrefEnc", &nul)) < 0)
 	    goto fail;
     }
     /* Fill in the font data */
@@ -249,9 +250,9 @@ fail:
 	ref rnfid;
 
 	name_enter_string("FID", &rnfid);
-	dict_undef(op, &rnfid);
+	idict_undef(op, &rnfid);
     } else
-	dict_put_string(op, "FID", &save_FID);
+	idict_put_string(op, "FID", &save_FID);
     gs_free_object(pfont->memory, pfont, "buildfont0(font)");
     return code;
 }
@@ -277,7 +278,11 @@ ztype0_adjust_FDepVector(gs_font_type0 * pfont)
 
 	ref_assign_new(prdep, pdict);
     }
-    return dict_put_string(pfont_dict(pfont), "FDepVector", &newdep);
+    /*
+     * The FDepVector is an existing key in the parent's dictionary,
+     * so it's safe to pass NULL as the dstack pointer to dict_put_string.
+     */
+    return dict_put_string(pfont_dict(pfont), "FDepVector", &newdep, NULL);
 }
 private int
 ztype0_define_font(gs_font_dir * pdir, gs_font * pfont)
@@ -313,7 +318,7 @@ ztype0_make_font(gs_font_dir * pdir, const gs_font * pfont,
 
 /* Find or add a character entry in a font dictionary. */
 private int
-ensure_char_entry(os_ptr op, const char *kstr,
+ensure_char_entry(i_ctx_t *i_ctx_p, os_ptr op, const char *kstr,
 		  byte * pvalue, int default_value)
 {
     ref *pentry;
@@ -323,7 +328,7 @@ ensure_char_entry(os_ptr op, const char *kstr,
 
 	make_int(&ent, default_value);
 	*pvalue = (byte) default_value;
-	return dict_put_string(op, kstr, &ent);
+	return idict_put_string(op, kstr, &ent);
     } else {
 	check_int_leu_only(*pentry, 255);
 	*pvalue = (byte) pentry->value.intval;

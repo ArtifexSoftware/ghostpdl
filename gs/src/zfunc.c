@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -21,6 +21,7 @@
 #include "memory_.h"
 #include "ghost.h"
 #include "oper.h"
+#include "gscdefs.h"
 #include "gsfunc.h"
 #include "gsstruct.h"
 #include "ialloc.h"
@@ -32,19 +33,6 @@
 /* Define the maximum depth of nesting of subsidiary functions. */
 #define MAX_SUB_FUNCTION_DEPTH 3
 
-/* Define the table of build procedures. */
-build_function_proc((*build_function_procs[5])) = {
-    build_function_undefined, build_function_undefined, build_function_undefined,
-    build_function_undefined, build_function_undefined
-};
-
-int
-build_function_undefined(const_os_ptr op, const gs_function_params_t * mnDR,
-			 int depth, gs_function_t ** ppfn)
-{
-    return_error(e_rangecheck);
-}
-
 /* GC descriptors */
 gs_private_st_ptr(st_function_ptr, gs_function_t *, "gs_function_t *",
 		  function_ptr_enum_ptrs, function_ptr_reloc_ptrs);
@@ -54,12 +42,13 @@ gs_private_st_element(st_function_ptr_element, gs_function_t *,
 
 /* ------ Operators ------ */
 
-private int zexecfunction(P1(os_ptr op));
+private int zexecfunction(P1(i_ctx_t *));
 
 /* <dict> .buildfunction <function_struct> */
 private int
-zbuildfunction(os_ptr op)
+zbuildfunction(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_function_t *pfn;
     ref cref;			/* closure */
     int code;
@@ -81,8 +70,11 @@ zbuildfunction(os_ptr op)
 
 /* <in1> ... <function_struct> %execfunction <out1> ... */
 private int
-zexecfunction(os_ptr op)
-{	/*
+zexecfunction(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+
+	/*
 	 * Since this operator's name begins with %, the name is not defined
 	 * in systemdict.  The only place this operator can ever appear is
 	 * in the execute-only closure created by .buildfunction.
@@ -138,16 +130,20 @@ zexecfunction(os_ptr op)
 int
 fn_build_sub_function(const ref * op, gs_function_t ** ppfn, int depth)
 {
-    int code, type;
+    int code, type, i;
     gs_function_params_t params;
 
     if (depth > MAX_SUB_FUNCTION_DEPTH)
 	return_error(e_limitcheck);
     check_type(*op, t_dictionary);
-    code = dict_int_param(op, "FunctionType", 0,
-			  countof(build_function_procs) - 1, -1, &type);
+    code = dict_int_param(op, "FunctionType", 0, max_int, -1, &type);
     if (code < 0)
 	return code;
+    for (i = 0; i < build_function_type_table_count; ++i)
+	if (build_function_type_table[i].type == type)
+	    break;
+    if (i == build_function_type_table_count)
+	return_error(e_rangecheck);
     /* Collect parameters common to all function types. */
     params.Domain = 0;
     params.Range = 0;
@@ -161,10 +157,10 @@ fn_build_sub_function(const ref * op, gs_function_t ** ppfn, int depth)
     params.n = code >> 1;
     /* Finish building the function. */
     /* If this fails, it will free all the parameters. */
-    return (*build_function_procs[type]) (op, &params, depth + 1, ppfn);
+    return (*build_function_type_table[i].proc)(op, &params, depth + 1, ppfn);
 fail:
-    ifree_object((void *)params.Range, "Range");	/* break const */
-    ifree_object((void *)params.Domain, "Domain");	/* break const */
+    ifree_const_object(params.Range, "Range");
+    ifree_const_object(params.Domain, "Domain");
     return code;
 }
 

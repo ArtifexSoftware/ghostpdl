@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -21,8 +21,6 @@
 
 #ifndef gxclpath_INCLUDED
 #  define gxclpath_INCLUDED
-
-#include "gxfixed.h"		/* for gzpath.h */
 
 /* Define the flags indicating whether a band knows the current values of */
 /* various miscellaneous parameters (pcls->known). */
@@ -51,15 +49,16 @@ typedef enum {
 /* Extend the command set.  See gxcldev.h for more information. */
 typedef enum {
     cmd_op_misc2 = 0xd0,	/* (see below) */
-    cmd_opv_set_color = 0xd0,	/* (0000abcd | */
-				/*  0001aaaa abbbbbcc cccddddd), */
-				/* (3|4) x level#: colored halftone */
-				/* with base colors a,b,c,d */
-    cmd_opv_set_fill_adjust = 0xd1,	/* adjust_x/y(fixed) */
-    cmd_opv_set_ctm = 0xd2,	/* [per sput/sget_matrix] */
-    cmd_opv_set_color_space = 0xd3,	/* base(4)Indexed?(2)0(3) */
+    cmd_opv_set_color = 0xd0,	/* pqrsaaaa abbbbbcc cccddddd */
+				/* (level[0] if p) (level[1] if q) */
+				/* (level[2] if r) (level[3] if s) */
+				/* colored halftone with base colors a,b,c,d */
+    cmd_opv_set_color_short = 0xd1,	/* pqrsabcd, level[i] as above */
+    cmd_opv_set_fill_adjust = 0xd2,	/* adjust_x/y(fixed) */
+    cmd_opv_set_ctm = 0xd3,	/* [per sput/sget_matrix] */
+    cmd_opv_set_color_space = 0xd4,	/* base(4)Indexed?(2)0(2) */
 				/* [, hival#, table|map] */
-    cmd_opv_set_misc2 = 0xd4,
+    cmd_opv_set_misc2 = 0xd5,
 #define cmd_set_misc2_cap_join (0x00) /* 00: cap(3)join(3) */
 #define cmd_set_misc2_ac_op_sa (0x40) /* 01: 0(3)acc.curves(1)overprint(1) */
 					/*   stroke_adj(1) */
@@ -75,7 +74,7 @@ typedef enum {
     cmd_opv_enable_clip = 0xd7,	/* (nothing) */
     cmd_opv_disable_clip = 0xd8,	/* (nothing) */
     cmd_opv_begin_clip = 0xd9,	/* (nothing) */
-    cmd_opv_end_clip = 0xda,	/* outside? */
+    cmd_opv_end_clip = 0xda,	/* (nothing) */
     cmd_opv_begin_image_rect = 0xdb, /* same as begin_image, followed by */
 				/* x0#, w-x1#, y0#, h-y1# */
     cmd_opv_begin_image = 0xdc,	/* image_type_table index, */
@@ -92,21 +91,27 @@ typedef enum {
     cmd_opv_rlineto = 0xe1,	/* dx%, dy% */
     cmd_opv_hlineto = 0xe2,	/* dx% */
     cmd_opv_vlineto = 0xe3,	/* dy% */
-    cmd_opv_rrcurveto = 0xe4,	/* dx1%,dy1%, dx2%,dy2%, dx3%,dy3% */
-    cmd_opv_hvcurveto = 0xe5,	/* dx1%, dx2%,dy2%, dy3% */
-    cmd_opv_vhcurveto = 0xe6,	/* dy1%, dx2%,dy2%, dx3% */
-    cmd_opv_nrcurveto = 0xe7,	/* dx2%,dy2%, dx3%,dy3% */
-    cmd_opv_rncurveto = 0xe8,	/* dx1%,dy1%, dx2%,dy2% */
-    cmd_opv_rmlineto = 0xe9,	/* dx1%,dy1%, dx2%,dy2% */
-    cmd_opv_rm2lineto = 0xea,	/* dx1%,dy1%, dx2%,dy2%, dx3%,dy3% */
-    cmd_opv_rm3lineto = 0xeb,	/* dx1%,dy1%, dx2%,dy2%, dx3%,dy3%, */
+    cmd_opv_rmlineto = 0xe4,	/* dx1%,dy1%, dx2%,dy2% */
+    cmd_opv_rm2lineto = 0xe5,	/* dx1%,dy1%, dx2%,dy2%, dx3%,dy3% */
+    cmd_opv_rm3lineto = 0xe6,	/* dx1%,dy1%, dx2%,dy2%, dx3%,dy3%, */
 				/* [-dx2,-dy2 implicit] */
+    cmd_opv_rrcurveto = 0xe7,	/* dx1%,dy1%, dx2%,dy2%, dx3%,dy3% */
+      cmd_opv_min_curveto = cmd_opv_rrcurveto,
+    cmd_opv_hvcurveto = 0xe8,	/* dx1%, dx2%,dy2%, dy3% */
+    cmd_opv_vhcurveto = 0xe9,	/* dy1%, dx2%,dy2%, dx3% */
+    cmd_opv_nrcurveto = 0xea,	/* dx2%,dy2%, dx3%,dy3% */
+    cmd_opv_rncurveto = 0xeb,	/* dx1%,dy1%, dx2%,dy2% */
     cmd_opv_vqcurveto = 0xec,	/* dy1%, dx2%[,dy2=dx2 with sign */
 				/* of dy1, dx3=dy1 with sign of dx2] */
     cmd_opv_hqcurveto = 0xed,	/* dx1%, [dx2=dy2 with sign */
 				/* of dx1,]%dy2, [dy3=dx1 with sign */
 				/* of dy2] */
-    cmd_opv_closepath = 0xee,	/* (nothing) */
+    cmd_opv_scurveto = 0xee,	/* all implicit: previous op must have been */
+				/* *curveto with one or more of dx/y1/3 = 0. */
+				/* If h*: -dx3,dy3, -dx2,dy2, -dx1,dy1. */
+				/* If v*: dx3,-dy3, dx2,-dy2, dx1,-dy1. */
+      cmd_opv_max_curveto = cmd_opv_scurveto,
+    cmd_opv_closepath = 0xef,	/* (nothing) */
     cmd_op_path = 0xf0,		/* (see below) */
     /* The path drawing commands come in groups: */
     /* each group consists of a base command plus an offset */
@@ -126,19 +131,19 @@ typedef enum {
 } gx_cmd_xop;
 
 #define cmd_segment_op_num_operands_values\
-  2, 2, 1, 1, 6, 4, 4, 4, 4, 4, 6, 6, 2, 2, 0
+  2, 2, 1, 1, 4, 6, 6, 6, 4, 4, 4, 4, 2, 2, 0, 0
 
 #define cmd_misc2_op_name_strings\
-  "set_color", "set_fill_adjust", "set_ctm", "set_color_space",\
-  "set_misc2", "?d5?", "set_dash", "enable_clip",\
+  "set_color", "set_color_short", "set_fill_adjust", "set_ctm",\
+  "set_color_space", "set_misc2", "set_dash", "enable_clip",\
   "disable_clip", "begin_clip", "end_clip", "begin_image_rect",\
   "begin_image", "image_data", "image_plane_data", "put_params"
 
 #define cmd_segment_op_name_strings\
   "rmoveto", "rlineto", "hlineto", "vlineto",\
-  "rrcurveto", "hvcurveto", "vhcurveto", "nrcurveto",\
-  "rncurveto", "rmlineto", "rm2lineto", "rm3lineto",\
-  "vqcurveto", "hqcurveto", "closepath", "?ef?"
+  "rmlineto", "rm2lineto", "rm3lineto", "rrcurveto",\
+  "hvcurveto", "vhcurveto", "nrcurveto", "rncurveto",\
+  "vqcurveto", "hqcurveto", "scurveto", "closepath"
 
 #define cmd_path_op_name_strings\
   "fill", "htfill", "colorfill", "eofill",\
@@ -170,15 +175,23 @@ typedef enum {
 
 /* ------ Exported by gxclpath.c ------ */
 
+/* Compute the colors used by a drawing color. */
+gx_color_index cmd_drawing_colors_used(P2(gx_device_clist_writer *cldev,
+					  const gx_drawing_color *pdcolor));
+
+/*
+ * Compute whether a drawing operation will require the slow (full-pixel)
+ * RasterOp implementation.  If pdcolor is not NULL, it is the texture for
+ * the RasterOp.
+ */
+bool cmd_slow_rop(P3(gx_device *dev, gs_logical_operation_t lop,
+		     const gx_drawing_color *pdcolor));
+
 /* Write out the color for filling, stroking, or masking. */
 /* Return a cmd_dc_type. */
 int cmd_put_drawing_color(P3(gx_device_clist_writer * cldev,
 			     gx_clist_state * pcls,
 			     const gx_drawing_color * pdcolor));
-
-/* Compute the colors used by a drawing color. */
-gx_color_index cmd_drawing_colors_used(P2(gx_device_clist_writer *cldev,
-					  const gx_drawing_color *pdcolor));
 
 /* Clear (a) specific 'known' flag(s) for all bands. */
 /* We must do this whenever the value of a 'known' parameter changes. */

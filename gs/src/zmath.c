@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1992, 1993, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1992, 1993, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -25,16 +25,16 @@
 #include "store.h"
 
 /*
- * Define the current state of random number generator.  We have to
- * implement this ourselves because the Unix rand doesn't provide anything
- * equivalent to rrand.  Note that the value always lies in the range
- * [0..0x7ffffffe], even if longs are longer than 32 bits.
+ * Define the current state of random number generator for operators.  We
+ * have to implement this ourselves because the Unix rand doesn't provide
+ * anything equivalent to rrand.  Note that the value always lies in the
+ * range [0..0x7ffffffe], even if longs are longer than 32 bits.
  *
  * The state must be public so that context switching can save and
  * restore it.  (Even though the Red Book doesn't mention this,
  * we verified with Adobe that this is the case.)
  */
-long zrand_state;
+#define zrand_state (i_ctx_p->rand_state)
 
 /* Initialize the random number generator. */
 void
@@ -48,8 +48,9 @@ zrand_state_init(long *pstate)
 
 /* <num> sqrt <real> */
 private int
-zsqrt(register os_ptr op)
+zsqrt(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     double num;
     int code = real_param(op, &num);
 
@@ -63,8 +64,9 @@ zsqrt(register os_ptr op)
 
 /* <num> arccos <real> */
 private int
-zarccos(register os_ptr op)
+zarccos(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     double num, result;
     int code = real_param(op, &num);
 
@@ -77,8 +79,9 @@ zarccos(register os_ptr op)
 
 /* <num> arcsin <real> */
 private int
-zarcsin(register os_ptr op)
+zarcsin(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     double num, result;
     int code = real_param(op, &num);
 
@@ -91,8 +94,9 @@ zarcsin(register os_ptr op)
 
 /* <num> <denom> atan <real> */
 private int
-zatan(register os_ptr op)
+zatan(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     double args[2];
     double result;
     int code = num_params(op, 2, args);
@@ -115,8 +119,9 @@ zatan(register os_ptr op)
 
 /* <num> cos <real> */
 private int
-zcos(register os_ptr op)
+zcos(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     double angle;
     int code = real_param(op, &angle);
 
@@ -128,8 +133,9 @@ zcos(register os_ptr op)
 
 /* <num> sin <real> */
 private int
-zsin(register os_ptr op)
+zsin(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     double angle;
     int code = real_param(op, &angle);
 
@@ -141,8 +147,9 @@ zsin(register os_ptr op)
 
 /* <base> <exponent> exp <real> */
 private int
-zexp(register os_ptr op)
+zexp(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     double args[2];
     double result;
     double ipart;
@@ -162,8 +169,9 @@ zexp(register os_ptr op)
 
 /* <posnum> ln <real> */
 private int
-zln(register os_ptr op)
+zln(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     double num;
     int code = real_param(op, &num);
 
@@ -177,8 +185,9 @@ zln(register os_ptr op)
 
 /* <posnum> log <real> */
 private int
-zlog(register os_ptr op)
+zlog(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     double num;
     int code = real_param(op, &num);
 
@@ -192,8 +201,11 @@ zlog(register os_ptr op)
 
 /* - rand <int> */
 private int
-zrand(register os_ptr op)
-{	/*
+zrand(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+
+	/*
 	 * We use an algorithm from CACM 31 no. 10, pp. 1192-1201,
 	 * October 1988.  According to a posting by Ed Taft on
 	 * comp.lang.postscript, Level 2 (Adobe) PostScript interpreters
@@ -219,8 +231,9 @@ zrand(register os_ptr op)
 
 /* <int> srand - */
 private int
-zsrand(register os_ptr op)
+zsrand(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     long state;
 
     check_type(*op, t_integer);
@@ -244,8 +257,10 @@ zsrand(register os_ptr op)
 
 /* - rrand <int> */
 private int
-zrrand(register os_ptr op)
+zrrand(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(1);
     make_int(op, zrand_state);
     return 0;

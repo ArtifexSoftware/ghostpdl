@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1996, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -24,7 +24,7 @@
 
 #include "gsmemory.h"
 #include "gstypes.h"		/* for gs_string */
-#include "gsstruct.h"		/* for extern_st */
+#include "gsstype.h"		/* for extern_st */
 
 /*
  * There are three major structures involved in the stream package.
@@ -152,10 +152,12 @@ stream_proc_report_error(s_no_report_error);
  * we require that the generic stream state not contain any pointers
  * to garbage-collectable storage.
  */
+#define STREAM_MAX_ERROR_STRING 79
 #define stream_state_common\
 	const stream_template *template;\
 	gs_memory_t *memory;\
-	stream_proc_report_error((*report_error))
+	stream_proc_report_error((*report_error));\
+	char error_string[STREAM_MAX_ERROR_STRING + 1]
 struct stream_state_s {
     stream_state_common;
 };

@@ -794,6 +794,7 @@ gp_fopen(const char *fname, const char *mode)
 /* Forward references */
 private stream_proc_process(pm_std_read_process);
 private stream_proc_process(pm_std_write_process);
+private stream_proc_available(pm_std_available);
 
 /* Use a pseudo IODevice to get pm_stdio_init called at the right time. */
 /* This is bad architecture; we'll fix it later. */
@@ -831,6 +832,7 @@ pm_stdin_open(gx_io_device * iodev, const char *access, stream ** ps,
 	return code;
     s->procs.reset = pm_std_read_reset;
     s->procs.process = pm_std_read_process;
+    s->procs.available = win_std_available;
     s->file = NULL;
     return 0;
 }
@@ -847,6 +849,7 @@ pm_stdout_open(gx_io_device * iodev, const char *access, stream ** ps,
     if (code != 1)
 	return code;
     s->procs.process = pm_std_write_process;
+    s->procs.available = win_std_available;
     s->file = NULL;
     return 0;
 }
@@ -863,6 +866,7 @@ pm_stderr_open(gx_io_device * iodev, const char *access, stream ** ps,
     if (code != 1)
 	return code;
     s->procs.process = pm_std_write_process;
+    s->procs.available = win_std_available;
     s->file = NULL;
     return 0;
 }
@@ -911,6 +915,14 @@ pm_std_read_process(stream_state * st, stream_cursor_read * ignore_pr,
     pw->ptr += count;
     return 1;
 }
+
+private int
+pm_std_available(register stream * s, long *pl)
+{
+    *pl = -1;		// EOF, since we can't do it
+    return 0;		// OK
+}
+
 
 private int
 pm_std_write_process(stream_state * st, stream_cursor_read * pr,

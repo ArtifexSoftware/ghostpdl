@@ -21,7 +21,6 @@
 #include "memory_.h"
 #include "gx.h"
 #include "gserrors.h"
-#include "gsmalloc.h"		/* for gs_memory_default */
 #include "gxclmem.h"
 
 /*
@@ -91,10 +90,10 @@ DECOMPRESSION.
    decompression buffer list in order to keep the tail of the list as the
    "least recently used".
 
-   There are some DEBUG_MEMFILE global static variables used to count the
-   number of cache hits "tot_cache_hits" and the number of times a logical
-   block is decompressed "tot_cache_miss". Note that the actual number of cache
-   miss events is 'f->log_length/MEMFILE_DATA_SIZE - tot_cache_miss' since we
+   There are some DEBUG global static variables used to count the number of
+   cache hits "tot_cache_hits" and the number of times a logical block is
+   decompressed "tot_cache_miss". Note that the actual number of cache miss
+   events is 'f->log_length/MEMFILE_DATA_SIZE - tot_cache_miss' since we
    assume that every logical block must be decmpressed at least once.
 
    Empirical results so far indicate that if one cache raw buffer for every
@@ -160,10 +159,10 @@ private void memfile_free_mem(P1(MEMFILE * f));
 private int memfile_init_empty(P1(MEMFILE * f));
 
 /************************************************/
-/*   #define DEBUG_MEMFILE      /- force statistics -/  */
+/*   #define DEBUG      /- force statistics -/  */
 /************************************************/
 
-#ifdef DEBUG_MEMFILE
+#ifdef DEBUG
 long tot_compressed;
 long tot_raw;
 long tot_cache_miss;
@@ -302,7 +301,7 @@ memfile_fopen(char fname[gp_file_name_sizeof], const char *fmode,
     }
     f->total_space = 0;
 
-#ifdef DEBUG_MEMFILE
+#ifdef DEBUG
     /* If this is the start, init some statistics.       */
     /* Hack: we know the 'a' file is opened first. */
     if (*fname == 'a') {
@@ -499,7 +498,7 @@ compress_log_blk(MEMFILE * f, LOG_MEMFILE_BLK * bp)
 	eprintf2("\nCompression didn't - raw=%d, compressed=%ld\n",
 		 MEMFILE_DATA_SIZE, compressed_size);
     }
-#ifdef DEBUG_MEMFILE
+#ifdef DEBUG
     tot_compressed += compressed_size;
 #endif
     return (status < 0 ? gs_note_error(gs_error_ioerror) : ecode);
@@ -659,7 +658,7 @@ memfile_fwrite_chars(const void *data, uint len, clist_file_ptr cf)
     }
     f->log_curr_pos += len;
     f->log_length = f->log_curr_pos;	/* truncate length to here      */
-#ifdef DEBUG_MEMFILE
+#ifdef DEBUG
     tot_raw += len;
 #endif
     return (len);
@@ -732,13 +731,13 @@ memfile_get_pdata(MEMFILE * f)
 		      num_raw_buffers);
 	}			/* end allocating the raw buffer pool (first time only)           */
 	if (bp->raw_block == NULL) {
-#ifdef DEBUG_MEMFILE
+#ifdef DEBUG
 	    tot_cache_miss++;	/* count every decompress       */
 #endif
 	    /* find a raw buffer and decompress                            */
 	    if (f->raw_tail->log_blk != NULL) {
 		/* This block was in use, grab it                           */
-#ifdef DEBUG_MEMFILE
+#ifdef DEBUG
 		tot_swap_out++;
 #endif
 		f->raw_tail->log_blk->raw_block = NULL;		/* data no longer here */
@@ -762,7 +761,7 @@ memfile_get_pdata(MEMFILE * f)
 	    f->wt.limit = f->wt.ptr + MEMFILE_DATA_SIZE;
 	    f->rd.ptr = (const byte *)(bp->phys_pdata) - 1;
 	    f->rd.limit = (const byte *)bp->phys_blk->data_limit;
-#ifdef DEBUG_MEMFILE
+#ifdef DEBUG
 	    decomp_wt_ptr0 = f->wt.ptr;
 	    decomp_wt_limit0 = f->wt.limit;
 	    decomp_rd_ptr0 = f->rd.ptr;
@@ -782,7 +781,7 @@ memfile_get_pdata(MEMFILE * f)
 		}
 		f->rd.ptr = (const byte *)bp->phys_blk->link->data - back_up - 1;
 		f->rd.limit = (const byte *)bp->phys_blk->link->data_limit;
-#ifdef DEBUG_MEMFILE
+#ifdef DEBUG
 		decomp_wt_ptr1 = f->wt.ptr;
 		decomp_wt_limit1 = f->wt.limit;
 		decomp_rd_ptr1 = f->rd.ptr;
@@ -813,7 +812,7 @@ memfile_get_pdata(MEMFILE * f)
 		bp->raw_block->fwd = f->raw_head;	/* this.fwd = orig head */
 		f->raw_head = bp->raw_block;	/* head = this          */
 		f->raw_head->back = NULL;	/* this.back = NULL     */
-#ifdef DEBUG_MEMFILE
+#ifdef DEBUG
 		tot_cache_hits++;	/* counting here prevents repeats since */
 		/* won't count if already at head       */
 #endif
@@ -942,7 +941,7 @@ memfile_free_mem(MEMFILE * f)
 {
     LOG_MEMFILE_BLK *bp, *tmpbp;
 
-#ifdef DEBUG_MEMFILE
+#ifdef DEBUG
     /* output some diagnostics about the effectiveness                   */
     if (tot_raw > 100) {
 	if_debug2(':', "[:]tot_raw=%ld, tot_compressed=%ld\n",

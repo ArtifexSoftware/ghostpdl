@@ -11,7 +11,7 @@ MAKEFILE=../pcl/pcl_ugcc.mak
 GENDIR=./obj
 
 # The sources are taken from these directories:
-GLSRCDIR=../gs
+GLSRCDIR=../gs/src
 PLSRCDIR=../pl
 PCLSRCDIR=../pcl
 COMMONDIR=../common
@@ -33,7 +33,7 @@ TARGET_XE=$(PCLOBJDIR)/pcl5
 MAIN_OBJ=$(PCLOBJDIR)/pcmain.$(OBJ)
 
 # specify the location of zlib.  We use zlib for bandlist compression.
-ZSRCDIR=$(GLSRCDIR)/zlib
+ZSRCDIR=../gs/zlib
 ZGENDIR=$(GENDIR)
 ZOBJDIR=$(GENDIR)
 SHARE_ZLIB=0
@@ -52,6 +52,7 @@ XLIBS=Xt SM ICE Xext X11
 
 CCLD=gcc
 
+DD='$(GLGENDIR)$(D)'
 DEVICE_DEVS=$(DD)x11mono.dev $(DD)x11.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev\
  $(DD)djet500.dev $(DD)ljet4.dev $(DD)cljet5.dev $(DD)cljet5c.dev\
  $(DD)pcx16.dev $(DD)pcx256.dev\
@@ -61,8 +62,8 @@ DEVICE_DEVS=$(DD)x11mono.dev $(DD)x11.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev\
  $(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev\
  $(DD)tifflzw.dev $(DD)tiffpack.dev\
  $(DD)tiff12nc.dev $(DD)tiff24nc.dev\
- $(DD)bit.dev $(DD)bitrgb.dev $(DD)bitcmyk.dev\
- $(DD)bmpmono.dev $(DD)bmpamono.dev $(DD)bmpa16m.dev $(DD)bmpa32b.dev $(DD)posync.dev
+ $(DD)bit.dev $(DD)bitrgb.dev $(DD)bitcmyk.dev \
+ $(DD)bmpmono.dev $(DD)bmpamono.dev $(DD)bmpa16m.dev $(DD)bmpa32b.dev
 
 # Generic makefile
 include $(COMMONDIR)/ugcc_top.mak

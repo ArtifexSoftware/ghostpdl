@@ -25,7 +25,7 @@
 #include "gsccode.h"
 #include "gsfont.h"
 #include "gsuid.h"
-#include "gsstruct.h"		/* for extern_st */
+#include "gsstype.h"		/* for extern_st */
 #include "gxftype.h"
 
 /* A font object as seen by clients. */

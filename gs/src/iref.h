@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -123,19 +123,18 @@ typedef enum {
     t_string,			/* @!+# value.bytes */
 /*
  * The following are extensions to the PostScript type set.
- * When adding new types, be sure to edit:
- *      - type_name_strings, type_print_strings, and type_properties below;
+ * If you add new types, be sure to edit:
+ *      - REF_TYPE_*STRINGS* and REF_TYPE_PROPERTIES_DATA below;
  *      - the table in gs_init.ps (==only operator);
  *      - the printing routine in idebug.c;
  *      - the dispatches in igc.c, igcref.c, and interp.c;
- *      - obj_eq in iutil.c;
+ *      - obj_cvs, obj_cvp, and obj_eq in iutil.c;
  *      - restore_check_stack in zvmem.c.
  */
     t_device,			/* @ +   value.pdevice */
     t_oparray,			/* @! #  value.const_refs, uses size */
-    /*         for index */
-    t_next_index
-/*** first available index ***/
+				/*         for index */
+    t_next_index		/*** first available index ***/
 } ref_type;
 
 /*
@@ -145,7 +144,7 @@ typedef enum {
  * there is no need for any operators to check specifically for these
  * types.  The r_btype macro takes care of the conversion when required.
  */
-						/*extern const int tx_next_index; *//* in interp.c */
+/*extern const int tx_next_index; *//* in interp.c */
 /*
  * Define a table giving properties of types, similar to the table used
  * by the isxxx functions (macros) in <ctype.h>.
@@ -156,7 +155,7 @@ typedef enum {
 #define _rtype_is_dictionary 8
 extern const byte ref_type_properties[1 << 6];	/* r_type_bits */
 
-#define ref_type_properties_data\
+#define REF_TYPE_PROPERTIES_DATA\
   0,				/* t__invalid */\
   0,				/* t_boolean */\
   _rtype_uses_access | _rtype_is_dictionary, /* t_dictionary */\
@@ -205,7 +204,7 @@ extern const byte ref_type_properties[1 << 6];	/* r_type_bits */
  * Define the type names for debugging printout.
  * All names must be the same length, so that columns will line up.
  */
-#define type_print_strings\
+#define REF_TYPE_DEBUG_PRINT_STRINGS\
   "INVL","bool","dict","file",\
   "arry","mpry","spry","u?ry",\
   "STRC","ASTR",\
@@ -215,13 +214,24 @@ extern const byte ref_type_properties[1 << 6];	/* r_type_bits */
 /*
  * Define the type names for the type operator.
  */
-#define type_name_strings\
+#define REF_TYPE_NAME_STRINGS\
   0,"booleantype","dicttype","filetype",\
   "arraytype","packedarraytype","packedarraytype","arraytype",\
   0,0,\
   "fonttype","integertype","marktype","nametype","nulltype",\
   "operatortype","realtype","savetype","stringtype",\
   "devicetype","operatortype"
+/*
+ * Define the type names for obj_cvp (the == operator).  We only need these
+ * for types that obj_cvp and obj_cvs don't handle specially.
+ */
+#define REF_TYPE_PRINT_STRINGS\
+  0,0,"-dict-","-file-",\
+  "-array-","-packedarray-","-packedarray-","-array-",\
+  0,0,\
+  "-fontID-",0,"-mark-",0,0,\
+  0,0,"-save-","-string-",\
+  "-device-",0
 
 /*
  * The following factors affect the encoding of attributes:
@@ -288,23 +298,26 @@ typedef struct name_s name;
 #ifndef stream_DEFINED
 #  define stream_DEFINED
 typedef struct stream_s stream;
-
 #endif
 #ifndef gx_device_DEFINED
 #  define gx_device_DEFINED
 typedef struct gx_device_s gx_device;
-
 #endif
 #ifndef obj_header_DEFINED
 #  define obj_header_DEFINED
 typedef struct obj_header_s obj_header_t;
-
 #endif
-/* We duplicate the definition of os_ptr (a.k.a. s_ptr) here */
-/* so that we can have an accurate typedef for op_proc */
-/* without having to drag in istack.h and ostack.h. */
-typedef int (*op_proc_p) (P1(ref *));
 
+/*
+ * Define the argument type for operator procedures.  Note that the
+ * argument name is not arbitrary: it is used in access macros, so all
+ * operator procedures must use it.
+ */
+#ifndef i_ctx_t_DEFINED
+#  define i_ctx_t_DEFINED
+typedef struct gs_context_state_s i_ctx_t;
+#endif
+typedef int (*op_proc_t)(P1(i_ctx_t *i_ctx_p));
 /* real_opproc is a holdover.... */
 #define real_opproc(pref) ((pref)->value.opproc)
 
@@ -401,8 +414,14 @@ struct ref_s {
 	const name *const_pname;
 	dict *pdict;
 	const dict *const_pdict;
+	/*
+	 * packed is the normal variant for referring to packed arrays,
+	 * but we need a writable variant for memory management and for
+	 * storing into packed dictionary key arrays.
+	 */
 	const ref_packed *packed;
-	op_proc_p opproc;
+	ref_packed *writable_packed;
+	op_proc_t opproc;
 	struct stream_s *pfile;
 	struct gx_device_s *pdevice;
 	obj_header_t *pstruct;

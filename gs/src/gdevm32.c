@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -137,35 +137,88 @@ mem_true32_copy_mono(gx_device * dev,
     bits32 a_zero = arrange_bytes(zero);
     bits32 a_one = arrange_bytes(one);
     const byte *line;
-    int first_bit;
 
     declare_scan_ptr(dest);
     fit_copy(dev, base, sourcex, sraster, id, x, y, w, h);
     setup_rect(dest);
     line = base + (sourcex >> 3);
-    first_bit = 0x80 >> (sourcex & 7);
-    while (h-- > 0) {
-	register bits32 *pptr = (bits32 *) dest;
-	const byte *sptr = line;
-	register int sbyte = *sptr++;
-	register int bit = first_bit;
-	int count = w;
+    if (zero == gx_no_color_index) {
+	int first_bit = sourcex & 7;
+	int w_first = min(w, 8 - first_bit);
+	int w_rest = w - w_first;
 
-	do {
-	    if (sbyte & bit) {
-		if (one != gx_no_color_index)
-		    *pptr = a_one;
-	    } else {
-		if (zero != gx_no_color_index)
-		    *pptr = a_zero;
+	if (one == gx_no_color_index)
+	    return 0;
+	/*
+	 * There are no halftones, so this case -- characters --
+	 * is the only common one.
+	 */
+	while (h-- > 0) {
+	    bits32 *pptr = (bits32 *) dest;
+	    const byte *sptr = line;
+	    int sbyte = (*sptr++ << first_bit) & 0xff;
+	    int count = w_first;
+
+	    if (sbyte)
+		do {
+		    if (sbyte & 0x80)
+			*pptr = a_one;
+		    sbyte <<= 1;
+		    pptr++;
+		}
+		while (--count > 0);
+	    else
+		pptr += count;
+	    for (count = w_rest; count >= 8; count -= 8, pptr += 8) {
+		sbyte = *sptr++;
+		if (sbyte) {
+		    if (sbyte & 0x80) pptr[0] = a_one;
+		    if (sbyte & 0x40) pptr[1] = a_one;
+		    if (sbyte & 0x20) pptr[2] = a_one;
+		    if (sbyte & 0x10) pptr[3] = a_one;
+		    if (sbyte & 0x08) pptr[4] = a_one;
+		    if (sbyte & 0x04) pptr[5] = a_one;
+		    if (sbyte & 0x02) pptr[6] = a_one;
+		    if (sbyte & 0x01) pptr[7] = a_one;
+		}
 	    }
-	    if ((bit >>= 1) == 0)
-		bit = 0x80, sbyte = *sptr++;
-	    pptr++;
+	    if (count) {
+		sbyte = *sptr;
+		do {
+		    if (sbyte & 0x80)
+			*pptr = a_one;
+		    sbyte <<= 1;
+		    pptr++;
+		}
+		while (--count > 0);
+	    }
+	    line += sraster;
+	    inc_ptr(dest, draster);
 	}
-	while (--count > 0);
-	line += sraster;
-	inc_ptr(dest, draster);
+    } else {			/* zero != gx_no_color_index */
+	int first_bit = 0x80 >> (sourcex & 7);
+
+	while (h-- > 0) {
+	    bits32 *pptr = (bits32 *) dest;
+	    const byte *sptr = line;
+	    int sbyte = *sptr++;
+	    int bit = first_bit;
+	    int count = w;
+
+	    do {
+		if (sbyte & bit) {
+		    if (one != gx_no_color_index)
+			*pptr = a_one;
+		} else
+		    *pptr = a_zero;
+		if ((bit >>= 1) == 0)
+		    bit = 0x80, sbyte = *sptr++;
+		pptr++;
+	    }
+	    while (--count > 0);
+	    line += sraster;
+	    inc_ptr(dest, draster);
+	}
     }
     return 0;
 }

@@ -1,4 +1,4 @@
-/* Copyright (C) 1990, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1990, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -53,9 +53,9 @@ typedef fixed *cs_ptr;
  * error, or >0 when client intervention is required (or allowed).  The int*
  * argument is where the othersubr # is stored for callothersubr.
  */
-private int
-gs_type1_charstring_interpret(gs_type1_state * pcis,
-			      const gs_const_string * str, int *pindex)
+int
+gs_type1_interpret(gs_type1_state * pcis, const gs_const_string * str,
+		   int *pindex)
 {
     gs_font_type1 *pfont = pcis->pfont;
     gs_type1_data *pdata = &pfont->data;
@@ -528,7 +528,8 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 				)
 				return_error(gs_error_invalidfont);
 			    n = fixed2int_var(csp[-1]);
-			    code = (*pdata->procs->push) (pfont, csp - (n + 1), n);
+			    code = (*pdata->procs->push_values)
+				(pcis->callback_data, csp - (n + 1), n);
 			    if (code < 0)
 				return_error(code);
 			    scount -= n + 1;
@@ -551,7 +552,8 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 			    inext;
 			}
 			++csp;
-			code = (*pdata->procs->pop) (pfont, csp);
+			code = (*pdata->procs->pop_value)
+			    (pcis->callback_data, csp);
 			if (code < 0)
 			    return_error(code);
 			goto pushed;
@@ -573,11 +575,4 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 		return_error(gs_error_invalidfont);
 	}
     }
-}
-
-/* Register the interpreter. */
-void
-gs_gstype1_init(gs_memory_t * mem)
-{
-    gs_charstring_interpreter[1] = gs_type1_charstring_interpret;
 }

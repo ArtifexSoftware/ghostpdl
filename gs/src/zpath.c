@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -27,22 +27,23 @@
 #include "store.h"
 
 /* Forward references */
-private int common_to(P2(os_ptr,
+private int common_to(P2(i_ctx_t *,
 			 int (*)(P3(gs_state *, floatp, floatp))));
-private int common_curve(P2(os_ptr,
+private int common_curve(P2(i_ctx_t *,
   int (*)(P7(gs_state *, floatp, floatp, floatp, floatp, floatp, floatp))));
 
 /* - newpath - */
 private int
-znewpath(register os_ptr op)
+znewpath(i_ctx_t *i_ctx_p)
 {
     return gs_newpath(igs);
 }
 
 /* - currentpoint <x> <y> */
 private int
-zcurrentpoint(register os_ptr op)
+zcurrentpoint(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_point pt;
     int code = gs_currentpoint(igs, &pt);
 
@@ -56,36 +57,38 @@ zcurrentpoint(register os_ptr op)
 
 /* <x> <y> moveto - */
 int
-zmoveto(os_ptr op)
+zmoveto(i_ctx_t *i_ctx_p)
 {
-    return common_to(op, gs_moveto);
+    return common_to(i_ctx_p, gs_moveto);
 }
 
 /* <dx> <dy> rmoveto - */
 int
-zrmoveto(os_ptr op)
+zrmoveto(i_ctx_t *i_ctx_p)
 {
-    return common_to(op, gs_rmoveto);
+    return common_to(i_ctx_p, gs_rmoveto);
 }
 
 /* <x> <y> lineto - */
 int
-zlineto(os_ptr op)
+zlineto(i_ctx_t *i_ctx_p)
 {
-    return common_to(op, gs_lineto);
+    return common_to(i_ctx_p, gs_lineto);
 }
 
 /* <dx> <dy> rlineto - */
 int
-zrlineto(os_ptr op)
+zrlineto(i_ctx_t *i_ctx_p)
 {
-    return common_to(op, gs_rlineto);
+    return common_to(i_ctx_p, gs_rlineto);
 }
 
 /* Common code for [r](move/line)to */
 private int
-common_to(os_ptr op, int (*add_proc)(P3(gs_state *, floatp, floatp)))
+common_to(i_ctx_t *i_ctx_p,
+	  int (*add_proc)(P3(gs_state *, floatp, floatp)))
 {
+    os_ptr op = osp;
     double opxy[2];
     int code;
 
@@ -99,23 +102,24 @@ common_to(os_ptr op, int (*add_proc)(P3(gs_state *, floatp, floatp)))
 
 /* <x1> <y1> <x2> <y2> <x3> <y3> curveto - */
 int
-zcurveto(register os_ptr op)
+zcurveto(i_ctx_t *i_ctx_p)
 {
-    return common_curve(op, gs_curveto);
+    return common_curve(i_ctx_p, gs_curveto);
 }
 
 /* <dx1> <dy1> <dx2> <dy2> <dx3> <dy3> rcurveto - */
 int
-zrcurveto(register os_ptr op)
+zrcurveto(i_ctx_t *i_ctx_p)
 {
-    return common_curve(op, gs_rcurveto);
+    return common_curve(i_ctx_p, gs_rcurveto);
 }
 
 /* Common code for [r]curveto */
 private int
-common_curve(os_ptr op,
+common_curve(i_ctx_t *i_ctx_p,
 	     int (*add_proc)(P7(gs_state *, floatp, floatp, floatp, floatp, floatp, floatp)))
 {
+    os_ptr op = osp;
     double opxy[6];
     int code;
 
@@ -129,52 +133,30 @@ common_curve(os_ptr op,
 
 /* - closepath - */
 int
-zclosepath(register os_ptr op)
+zclosepath(i_ctx_t *i_ctx_p)
 {
     return gs_closepath(igs);
 }
 
 /* - initclip - */
 private int
-zinitclip(register os_ptr op)
+zinitclip(i_ctx_t *i_ctx_p)
 {
     return gs_initclip(igs);
 }
 
 /* - clip - */
 private int
-zclip(register os_ptr op)
+zclip(i_ctx_t *i_ctx_p)
 {
     return gs_clip(igs);
 }
 
 /* - eoclip - */
 private int
-zeoclip(register os_ptr op)
+zeoclip(i_ctx_t *i_ctx_p)
 {
     return gs_eoclip(igs);
-}
-
-/* <bool> .setclipoutside - */
-private int
-zsetclipoutside(register os_ptr op)
-{
-    int code;
-
-    check_type(*op, t_boolean);
-    code = gs_setclipoutside(igs, op->value.boolval);
-    if (code >= 0)
-	pop(1);
-    return code;
-}
-
-/* - .currentclipoutside <bool> */
-private int
-zcurrentclipoutside(register os_ptr op)
-{
-    push(1);
-    make_bool(op, gs_currentclipoutside(igs));
-    return 0;
 }
 
 /* ------ Initialization procedure ------ */
@@ -183,7 +165,6 @@ const op_def zpath_op_defs[] =
 {
     {"0clip", zclip},
     {"0closepath", zclosepath},
-    {"0.currentclipoutside", zcurrentclipoutside},
     {"0currentpoint", zcurrentpoint},
     {"6curveto", zcurveto},
     {"0eoclip", zeoclip},
@@ -194,6 +175,5 @@ const op_def zpath_op_defs[] =
     {"6rcurveto", zrcurveto},
     {"2rlineto", zrlineto},
     {"2rmoveto", zrmoveto},
-    {"1.setclipoutside", zsetclipoutside},
     op_def_end(0)
 };

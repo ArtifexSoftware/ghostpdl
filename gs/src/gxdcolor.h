@@ -150,10 +150,6 @@ extern const gx_device_color_type_t
 /* (e.g., the character cache). */
 void gx_set_device_color_1(P1(gs_state * pgs));
 
-/* Get the black and white pixel values of a device. */
-gx_color_index gx_device_black(P1(gx_device *dev));
-gx_color_index gx_device_white(P1(gx_device *dev));
-
 /* Remap the color if necessary. */
 int gx_remap_color(P1(gs_state *));
 

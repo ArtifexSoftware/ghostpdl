@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1992, 1993, 1994, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1992, 1993, 1994, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -27,7 +27,7 @@
 #include "sfilter.h"		/* for iscan.h */
 #include "errors.h"
 #include "ialloc.h"
-#include "idict.h"
+#include "iddict.h"
 #include "dstack.h"		/* for immediately evaluated names */
 #include "ostack.h"		/* must precede iscan.h */
 #include "iname.h"
@@ -128,21 +128,19 @@ typedef enum {
 #define BS_EXECUTABLE 128
 #define SIZEOF_BIN_SEQ_OBJ ((uint)8)
 
-/* Current binary format (in iscan.c) */
-extern ref ref_binary_object_format;
-
 /* Forward references */
-private int scan_bin_num_array_continue(P3(stream *, ref *, scanner_state *));
-private int scan_bin_string_continue(P3(stream *, ref *, scanner_state *));
-private int scan_bos_continue(P3(stream *, ref *, scanner_state *));
+private int scan_bin_num_array_continue(P4(i_ctx_t *, stream *, ref *, scanner_state *));
+private int scan_bin_string_continue(P4(i_ctx_t *, stream *, ref *, scanner_state *));
+private int scan_bos_continue(P4(i_ctx_t *, stream *, ref *, scanner_state *));
 private byte *scan_bos_resize(P3(scanner_state *, uint, uint));
-private int scan_bos_string_continue(P3(stream *, ref *, scanner_state *));
+private int scan_bos_string_continue(P4(i_ctx_t *, stream *, ref *, scanner_state *));
 
 /* Scan a binary token.  Called from the main scanner */
 /* when it encounters an ASCII code 128-159, */
 /* if binary tokens are being recognized (object format != 0). */
 int
-scan_binary_token(stream * s, ref * pref, scanner_state * pstate)
+scan_binary_token(i_ctx_t *i_ctx_p, stream *s, ref *pref,
+		  scanner_state *pstate)
 {
     scan_binary_state *const pbs = &pstate->s_ss.binary;
 
@@ -208,7 +206,7 @@ scan_binary_token(stream * s, ref * pref, scanner_state * pstate)
 		pstate->s_da.is_dynamic = false;
 		pstate->s_da.base = pstate->s_da.next =
 		    pstate->s_da.limit = pstate->s_da.buf;
-		code = scan_bos_continue(s, pref, pstate);
+		code = scan_bos_continue(i_ctx_p, s, pref, pstate);
 		if (code == scan_Refill || code < 0) {
 		    /* Clean up array for GC. */
 		    uint index = pbs->index;
@@ -279,7 +277,7 @@ scan_binary_token(stream * s, ref * pref, scanner_state * pstate)
 		s_end_inline(s, p, rlimit);
 		pstate->s_da.base = pstate->s_da.next = str;
 		pstate->s_da.limit = str + arg;
-		code = scan_bin_string_continue(s, pref, pstate);
+		code = scan_bin_string_continue(i_ctx_p, s, pref, pstate);
 		if (code == scan_Refill || code < 0) {
 		    pstate->s_da.is_dynamic = true;
 		    make_null(&pbs->bin_array);		/* clean up for GC */
@@ -325,7 +323,7 @@ scan_binary_token(stream * s, ref * pref, scanner_state * pstate)
 	    pbs->index = 0;
 	    p += 3;
 	    s_end_inline(s, p, rlimit);
-	    code = scan_bin_num_array_continue(s, pref, pstate);
+	    code = scan_bin_num_array_continue(i_ctx_p, s, pref, pstate);
 	    if (code == scan_Refill || code < 0) {
 		/* Make sure the array is clean for the GC. */
 		refset_null(pbs->bin_array.value.refs + pbs->index,
@@ -339,7 +337,8 @@ scan_binary_token(stream * s, ref * pref, scanner_state * pstate)
 
 /* Continue collecting a binary string. */
 private int
-scan_bin_string_continue(stream * s, ref * pref, scanner_state * pstate)
+scan_bin_string_continue(i_ctx_t *i_ctx_p, stream * s, ref * pref,
+			 scanner_state * pstate)
 {
     byte *q = pstate->s_da.next;
     uint wanted = pstate->s_da.limit - q;
@@ -360,7 +359,8 @@ scan_bin_string_continue(stream * s, ref * pref, scanner_state * pstate)
 
 /* Continue scanning a binary number array. */
 private int
-scan_bin_num_array_continue(stream * s, ref * pref, scanner_state * pstate)
+scan_bin_num_array_continue(i_ctx_t *i_ctx_p, stream * s, ref * pref,
+			    scanner_state * pstate)
 {
     scan_binary_state *const pbs = &pstate->s_ss.binary;
     uint index = pbs->index;
@@ -402,7 +402,8 @@ scan_bin_num_array_continue(stream * s, ref * pref, scanner_state * pstate)
  * all the pointers.
  */
 private int
-scan_bos_continue(register stream * s, ref * pref, scanner_state * pstate)
+scan_bos_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
+		  scanner_state * pstate)
 {
     scan_binary_state *const pbs = &pstate->s_ss.binary;
     s_declare_inline(s, p, rlimit);
@@ -550,7 +551,7 @@ scan_bos_continue(register stream * s, ref * pref, scanner_state * pstate)
     /* to be used for strings. */
     iresize_ref_array(&pbs->bin_array, max_array_index,
 		      "binary object sequence(objects)");
-    code = scan_bos_string_continue(s, pref, pstate);
+    code = scan_bos_string_continue(i_ctx_p, s, pref, pstate);
     if (code == scan_Refill)
 	pbs->cont = scan_bos_string_continue;
     return code;
@@ -584,12 +585,13 @@ scan_bos_resize(scanner_state * pstate, uint new_size, uint index)
 
 /* Continue reading the strings for a binary object sequence. */
 private int
-scan_bos_string_continue(register stream * s, ref * pref, scanner_state * pstate)
+scan_bos_string_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
+			 scanner_state * pstate)
 {
     scan_binary_state *const pbs = &pstate->s_ss.binary;
     ref rstr;
     ref *op = pbs->bin_array.value.refs;
-    int code = scan_bin_string_continue(s, &rstr, pstate);
+    int code = scan_bin_string_continue(i_ctx_p, s, &rstr, pstate);
     uint space = ialloc_space(idmemory);
     bool rescan = false;
     uint i;
@@ -642,7 +644,7 @@ scan_bos_string_continue(register stream * s, ref * pref, scanner_state * pstate
 			    return code;
 			while (count) {
 			    count -= 2;
-			    code = dict_put(&rdict,
+			    code = idict_put(&rdict,
 					    &op->value.refs[count],
 					    &op->value.refs[count + 1]);
 			    if (code < 0)
@@ -679,8 +681,8 @@ scan_bos_string_continue(register stream * s, ref * pref, scanner_state * pstate
 /* ---------------- Writing ---------------- */
 
 int
-encode_binary_token(const ref * obj, long *ref_offset, long *char_offset,
-		    byte * str)
+encode_binary_token(i_ctx_t *i_ctx_p, const ref *obj, long *ref_offset,
+		    long *char_offset, byte *str)
 {
     bin_seq_type_t type;
     uint size = 0;

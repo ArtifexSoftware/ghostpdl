@@ -42,8 +42,66 @@
 #ifndef gx_device_DEFINED
 #  define gx_device_DEFINED
 typedef struct gx_device_s gx_device;
-
 #endif
+
+/* ---------------- Memory management ---------------- */
+
+/*
+ * NOTE: if you write code that creates device instances (either with
+ * gs_copydevice or by allocating them explicitly), allocates device
+ * instances as either local or static variables (actual instances, not
+ * pointers to instances), or sets the target of forwarding devices, please
+ * read the following documentation carefully.  The rules for doing these
+ * things changed substantially in release 5.68, in a
+ * non-backward-compatible way, and unfortunately we could not find a way to
+ * make the compiler give an error at places that need changing.
+ */
+
+/*
+ * Device instances are managed with reference counting: when the last
+ * reference to a device from a graphics state or the target field of a
+ * forwarding device is removed, the device is normally freed.  However,
+ * some device instances are referenced in other ways (for example, from
+ * objects in the PostScript interpreter, or from library client code) and
+ * will be freed by the garbage collector (if any) or explicitly: they
+ * should not be freed by reference counting.  These are called "retained"
+ * device instances.  Every device instance remembers whether or not it is
+ * retained, and an instance is freed iff its reference count is zero and it
+ * is not retained.
+ *
+ * Normally devices are initialized as not retained.  However, devices
+ * initialized by calling gx_device_init(pdev, proto, memory, false), or
+ * created by gs_copydevice are marked as retained.  You can also set the
+ * retention status of a device explicitly with gx_device_retain(pdev,
+ * true-or-false).  Note that if you change a retained device to
+ * non-retained, if there are no references to it from graphics states or
+ * targets, it will be freed immediately.
+ *
+ * There are 3 ways that a device structure might be allocated:
+ *	1) Allocated dynamically, e.g.,
+ *		gx_device *pdev_new;
+ *		gs_copydevice(&pdev_new, pdev_old, memory);
+ *	2) Declared as a local or static variable, e.g.,
+ *		gx_device devv;
+ *	or
+ *		const gx_device devc = ...;
+ *	3) Embedded in an object allocated in one of the above ways.
+ * If you allocate a device using #2 or #3, you MUST mark it as retained
+ * by calling gx_device_retain(pdev, true).  If you do not do this, an
+ * attempt will be made to free the device, corrupting memory.  */
+
+/*
+ * Do not set the target of a forwarding device with an assignment like
+ *	fdev->target = tdev;
+ * You must use the procedure
+ *	gx_device_set_target(fdev, tdev);
+ * Note that the first argument is a gx_device_forward *, not a gx_device *.
+ *
+ * We could have changed the member name "target" when this became
+ * necessary, so the compiler would flag places that needed editing, but
+ * there were literally hundreds of places that only read the target member
+ * that we would have had to change, so we decided to leave the name alone.
+ */
 
 /* ---------------- Auxiliary types and structures ---------------- */
 
@@ -52,7 +110,6 @@ typedef struct gx_device_s gx_device;
 #ifndef gs_state_DEFINED
 #  define gs_state_DEFINED
 typedef struct gs_state_s gs_state;
-
 #endif
 
 /* We need abstract types for paths and fill/stroke parameters, */
@@ -60,34 +117,29 @@ typedef struct gs_state_s gs_state;
 #ifndef gx_path_DEFINED
 #  define gx_path_DEFINED
 typedef struct gx_path_s gx_path;
-
 #endif
 #ifndef gx_clip_path_DEFINED
 #  define gx_clip_path_DEFINED
 typedef struct gx_clip_path_s gx_clip_path;
-
 #endif
 #ifndef gx_fill_params_DEFINED
 #  define gx_fill_params_DEFINED
 typedef struct gx_fill_params_s gx_fill_params;
-
 #endif
 #ifndef gx_stroke_params_DEFINED
 #  define gx_stroke_params_DEFINED
 typedef struct gx_stroke_params_s gx_stroke_params;
-
 #endif
 #ifndef gs_imager_state_DEFINED
 #  define gs_imager_state_DEFINED
 typedef struct gs_imager_state_s gs_imager_state;
-
 #endif
+
 /* We need an abstract type for the image enumeration state, */
 /* for begin[_typed]_image. */
 #ifndef gx_image_enum_common_t_DEFINED
 #  define gx_image_enum_common_t_DEFINED
 typedef struct gx_image_enum_common_s gx_image_enum_common_t;
-
 #endif
 
 /* Define the type for colors passed to the higher-level procedures. */
@@ -113,20 +165,28 @@ typedef struct gs_get_bits_params_s gs_get_bits_params_t;
 #endif
 
 /* Define the structure for device color capabilities. */
+typedef struct gx_device_anti_alias_info_s {
+    int text_bits;		/* 1,2,4 */
+    int graphics_bits;		/* ditto */
+} gx_device_anti_alias_info;
 typedef struct gx_device_color_info_s {
     int num_components;		/* doesn't include alpha: */
-    /* 0 = alpha only, 1 = gray only, */
-    /* 3 = RGB, 4 = CMYK */
+				/* 0 = alpha only, 1 = gray only, */
+				/* 3 = RGB, 4 = CMYK */
     int depth;			/* # of bits per pixel */
     gx_color_value max_gray;	/* # of distinct gray levels -1 */
     gx_color_value max_color;	/* # of distinct color levels -1 */
-    /* (only relevant if num_comp. > 1) */
+				/* (only relevant if num_comp. > 1) */
     gx_color_value dither_grays;	/* size of gray ramp for dithering */
     gx_color_value dither_colors;	/* size of color cube ditto */
-    /* (only relevant if num_comp. > 1) */
+				/* (only relevant if num_comp. > 1) */
+    gx_device_anti_alias_info anti_alias;
 } gx_device_color_info;
 
-#define dci_values(nc,depth,mg,mc,dg,dc) { nc, depth, mg, mc, dg, dc }
+#define dci_alpha_values(nc,depth,mg,mc,dg,dc,ta,ga)\
+  { nc, depth, mg, mc, dg, dc, { ta, ga } }
+#define dci_values(nc,depth,mg,mc,dg,dc)\
+  dci_alpha_values(nc, depth, mg, mc, dg, dc, 1, 1)
 #define dci_std_color(color_bits)\
   dci_values(\
     (color_bits == 32 ? 4 : color_bits > 1 ? 3 : 1),\
@@ -206,9 +266,14 @@ typedef struct gx_device_cached_colors_s {
 	const char *dname;		/* the device name */\
 	gs_memory_t *memory;		/* (0 iff static prototype) */\
 	gs_memory_type_ptr_t stype;	/* memory manager structure type, */\
-					/* 0 iff static prototype */\
-	rc_header rc;			/* reference count from gstates, */\
-					/* +1 if not internal device */\
+					/* may be 0 if static prototype */\
+	bool stype_is_dynamic;		/* if true, free the stype when */\
+					/* freeing the device */\
+	void (*finalize)(P1(gx_device *));  /* finalization to execute */\
+					/* before closing device, if any */\
+	rc_header rc;			/* reference count from gstates */\
+					/* and targets, +1 if retained */\
+	bool retained;			/* true if retained */\
 	bool is_open;			/* true if device has been opened */\
 	int max_fill_band;		/* limit on band size for fill, */\
 					/* must be 0 or a power of 2 */\
@@ -232,6 +297,7 @@ typedef struct gx_device_cached_colors_s {
 	int NumCopies;\
 	  bool NumCopies_set;\
 	bool IgnoreNumCopies;		/* if true, force num_copies = 1 */\
+	bool UseCIEColor;		/* for PS LL3 */\
 	gx_page_device_procs page_procs;	/* must be last */\
 		/* end of std_device_body */\
 	gx_device_procs procs	/* object procedures */
@@ -274,7 +340,6 @@ typedef struct gx_device_cached_colors_s {
 #ifndef gs_param_list_DEFINED
 #  define gs_param_list_DEFINED
 typedef struct gs_param_list_s gs_param_list;
-
 #endif
 
 /*
@@ -420,12 +485,14 @@ typedef struct gs_param_list_s gs_param_list;
 #define dev_proc_get_page_device(proc)\
   dev_t_proc_get_page_device(proc, gx_device)
 
-		/* Added in release 3.20 */
+		/* Added in release 3.20, OBSOLETED in 5.65 */
 
 #define dev_t_proc_get_alpha_bits(proc, dev_t)\
   int proc(P2(dev_t *dev, graphics_object_type type))
 #define dev_proc_get_alpha_bits(proc)\
   dev_t_proc_get_alpha_bits(proc, gx_device)
+
+		/* Added in release 3.20 */
 
 #define dev_t_proc_copy_alpha(proc, dev_t)\
   int proc(P11(dev_t *dev, const byte *data, int data_x,\
@@ -674,10 +741,6 @@ typedef struct gx_image_plane_s {
     uint raster;
 } gx_image_plane_t;
 
-#define image_enum_proc_plane_data(proc)\
-  int proc(P4(gx_device *dev,\
-    gx_image_enum_common_t *info, const gx_image_plane_t *planes,\
-    int height))
 #define gx_device_begin_image(dev, pis, pim, format, prect, pdcolor, pcpath, memory, pinfo)\
   ((*dev_proc(dev, begin_image))\
    (dev, pis, pim, format, prect, pdcolor, pcpath, memory, pinfo))
@@ -692,8 +755,17 @@ typedef struct gx_image_plane_s {
  */
 int gx_image_data(P5(gx_image_enum_common_t *info, const byte **planes,
 		     int data_x, uint raster, int height));
+/*
+ * Solely for backward compatibility, gx_image_plane_data doesn't return
+ * rows_used.
+ */
 int gx_image_plane_data(P3(gx_image_enum_common_t *info,
 			   const gx_image_plane_t *planes, int height));
+int gx_image_plane_data_rows(P4(gx_image_enum_common_t *info,
+				const gx_image_plane_t *planes, int height,
+				int *rows_used));
+int gx_image_flush(P1(gx_image_enum_common_t *info));
+bool gx_image_planes_wanted(P2(const gx_image_enum_common_t *info, byte *wanted));
 int gx_image_end(P2(gx_image_enum_common_t *info, bool draw_last));
 
 #define gx_device_image_data(dev, info, planes, data_x, raster, height)\
@@ -703,24 +775,15 @@ int gx_image_end(P2(gx_image_enum_common_t *info, bool draw_last));
 #define gx_device_end_image(dev, info, draw_last)\
   gx_image_end(info, draw_last)
 
+/*
+ * Get the anti-aliasing parameters for a device.  This replaces the
+ * obsolete get_alpha_bits device procedure.
+ */
+#define gx_device_get_alpha_bits(dev, type)\
+  gx_default_get_alpha_bits(dev, type)
+
 /* A generic device procedure record. */
 struct gx_device_procs_s gx_device_proc_struct(gx_device);
-
-/*
- * Define a procedure for setting up a memory device for buffering output
- * for a given device.  This is only used by band devices, but we define it
- * here for convenience.  The default implementation just calls
- * gs_make_mem_device.  Possibly this should be a generic device
- * procedure....
- */
-#ifndef gx_device_memory_DEFINED
-#  define gx_device_memory_DEFINED
-typedef struct gx_device_memory_s gx_device_memory;
-
-#endif
-#define dev_proc_make_buffer_device(proc)\
-  int proc(P4(gx_device_memory *, gx_device *, gs_memory_t *, bool))
-dev_proc_make_buffer_device(gx_default_make_buffer_device);
 
 /*
  * Define unaligned analogues of the copy_xxx procedures.
@@ -790,7 +853,6 @@ extern_st(st_device_forward);
 #ifndef gx_device_null_DEFINED
 #  define gx_device_null_DEFINED
 typedef struct gx_device_null_s gx_device_null;
-
 #endif
 struct gx_device_null_s {
     gx_device_forward_common;
@@ -807,9 +869,11 @@ extern_st(st_device_null);
 #define st_device_null_max_ptrs st_device_forward_max_ptrs
 
 /*
- * Initialize a just-allocated device from a prototype.
- * internal = true means initialize the reference count to 0,
- * false means initialize to 1.
+ * Initialize a just-allocated device from a prototype.  If internal =
+ * false, the device is marked retained; if internal = true, the device is
+ * not marked retained.  See the beginning of this file for more information
+ * about what this means.  Normally, devices created for temporary use have
+ * internal = true (retained = false).
  */
 void gx_device_init(P4(gx_device * dev, const gx_device * proto,
 		       gs_memory_t * mem, bool internal));
@@ -817,8 +881,14 @@ void gx_device_init(P4(gx_device * dev, const gx_device * proto,
 /* Make a null device. */
 /* The gs_memory_t argument is 0 if the device is temporary and local, */
 /* or the allocator that was used to allocate it if it is a real object. */
-void gs_make_null_device(P3(gx_device_null *, const gx_device *,
-			    gs_memory_t *));
+void gs_make_null_device(P3(gx_device_null *dev_null, gx_device *target,
+			    gs_memory_t *mem));
+
+/* Set the target of a (forwarding) device. */
+void gx_device_set_target(P2(gx_device_forward *fdev, gx_device *target));
+
+/* Mark a device as retained or not retained. */
+void gx_device_retain(P2(gx_device *dev, bool retained));
 
 /* Calculate the raster (number of bytes in a scan line), */
 /* with byte or word padding. */
@@ -856,6 +926,9 @@ void gx_set_device_only(P2(gs_state *, gx_device *));
 
 /* Close a device. */
 int gs_closedevice(P1(gx_device *));
+
+/* "Free" a device locally allocated on the stack, by finalizing it. */
+void gx_device_free_local(P1(gx_device *));
 
 /* ------ Device types (an unused concept right now) ------ */
 

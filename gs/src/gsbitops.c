@@ -21,7 +21,10 @@
 #include "stdio_.h"
 #include "memory_.h"
 #include "gdebug.h"
+#include "gserror.h"
+#include "gserrors.h"
 #include "gstypes.h"
+#include "gsbittab.h"
 #include "gxbitops.h"
 
 /*
@@ -51,15 +54,14 @@ const bits16 mono_copy_masks[17] =
 #  if arch_sizeof_int > 2
 const bits32 mono_fill_masks[33] =
 {
-    0xffffffff, 0xffffff7f, 0xffffff3f, 0xffffff1f,
-    0xffffff0f, 0xffffff07, 0xffffff03, 0xffffff01,
-    0xffffff00, 0xffff7f00, 0xffff3f00, 0xffff1f00,
-    0xffff0f00, 0xffff0700, 0xffff0300, 0xffff0100,
-    0xffff0000, 0xff7f0000, 0xff3f0000, 0xff1f0000,
-    0xff0f0000, 0xff070000, 0xff030000, 0xff010000,
-    0xff000000, 0x7f000000, 0x3f000000, 0x1f000000,
-    0x0f000000, 0x07000000, 0x03000000, 0x01000000,
-    0x00000000
+#define mask(n)\
+  ((~0xff | (0xff >> (n & 7))) << (n & -8))
+    mask( 0),mask( 1),mask( 2),mask( 3),mask( 4),mask( 5),mask( 6),mask( 7),
+    mask( 8),mask( 9),mask(10),mask(11),mask(12),mask(13),mask(14),mask(15),
+    mask(16),mask(17),mask(18),mask(19),mask(20),mask(21),mask(22),mask(23),
+    mask(24),mask(25),mask(26),mask(27),mask(28),mask(29),mask(30),mask(31),
+    0
+#undef mask
 };
 
 #  endif
@@ -460,10 +462,16 @@ bits_compress_scaled(const byte * src, int srcx, uint width, uint height,
     int xscale = 1 << log2_x;
     int yscale = 1 << log2_y;
     int out_bits = 1 << log2_out_bits;
-    int input_byte_out_bits;
-    byte input_byte_out_mask;
+    /*
+     * The following two initializations are only needed (and the variables
+     * are only used) if out_bits <= xscale.  We do them in all cases only
+     * to suppress bogus "possibly uninitialized variable" warnings from
+     * certain compilers.
+     */
+    int input_byte_out_bits = out_bits << (3 - log2_x);
+    byte input_byte_out_mask = (1 << input_byte_out_bits) - 1;
     const byte *table =
-    compress_tables[log2_out_bits][log2_x + log2_y - 1];
+	compress_tables[log2_out_bits][log2_x + log2_y - 1];
     uint sskip = sraster << log2_y;
     uint dwidth = (width >> log2_x) << log2_out_bits;
     uint dskip = draster - ((dwidth + 7) >> 3);
@@ -480,9 +488,6 @@ bits_compress_scaled(const byte * src, int srcx, uint width, uint height,
     byte *d = dest;
     uint h;
 
-    if (out_bits <= xscale)
-	input_byte_out_bits = out_bits << (3 - log2_x),
-	    input_byte_out_mask = (1 << input_byte_out_bits) - 1;
     for (h = height; h; srow += sskip, h -= yscale) {
 	const byte *s = srow;
 
@@ -652,6 +657,199 @@ bits_compress_scaled(const byte * src, int srcx, uint width, uint height,
 #undef out_shift_initial
 #undef out_shift_update
     }
+}
+
+/* Extract a plane from a pixmap. */
+int
+bits_extract_plane(const bits_plane_t *dest /*write*/,
+    const bits_plane_t *source /*read*/, int shift, int width, int height)
+{
+    int source_depth = source->depth;
+    int source_bit = source->x * source_depth;
+    const byte *source_row = source->data.read + (source_bit >> 3);
+    int dest_depth = dest->depth;
+    uint plane_mask = (1 << dest_depth) - 1;
+    int dest_bit = dest->x * dest_depth;
+    byte *dest_row = dest->data.write + (dest_bit >> 3);
+    enum {
+	EXTRACT_SLOW = 0,
+	EXTRACT_4_TO_1,
+	EXTRACT_32_TO_8
+    } loop_case = EXTRACT_SLOW;
+    int y;
+
+    source_bit &= 7;
+    dest_bit &= 7;
+    /* Check for the fast CMYK cases. */
+    if (!(source_bit | dest_bit)) {
+	switch (source_depth) {
+	case 4:
+	    loop_case =
+		(dest_depth == 1 && !(source->raster & 3) &&
+		 !(source->x & 1) ? EXTRACT_4_TO_1 :
+		 EXTRACT_SLOW);
+	    break;
+	case 32:
+	    if (dest_depth == 8 && !(shift & 7)) {
+		loop_case = EXTRACT_32_TO_8;
+		source_row += 3 - (shift >> 3);
+	    }
+	    break;
+	}
+    }
+    for (y = 0; y < height;
+	 ++y, source_row += source->raster, dest_row += dest->raster
+	) {
+	int x;
+
+	switch (loop_case) {
+	case EXTRACT_4_TO_1: {
+	    const byte *source = source_row;
+	    byte *dest = dest_row;
+
+	    /* Do groups of 8 pixels. */
+	    for (x = width; x >= 8; source += 4, x -= 8) {
+		bits32 sword =
+		    (*(const bits32 *)source >> shift) & 0x11111111;
+
+		*dest++ =
+		    byte_acegbdfh_to_abcdefgh[(
+#if arch_is_big_endian
+		    (sword >> 21) | (sword >> 14) | (sword >> 7) | sword
+#else
+		    (sword << 3) | (sword >> 6) | (sword >> 15) | (sword >> 24)
+#endif
+					) & 0xff];
+	    }
+	    if (x) {
+		/* Do the final 1-7 pixels. */
+		uint test = 0x10 << shift, store = 0x80;
+
+		do {
+		    *dest = (*source & test ? *dest | store : *dest & ~store);
+		    if (test >= 0x10)
+			test >>= 4;
+		    else
+			test <<= 4, ++source;
+		    store >>= 1;
+		} while (--x > 0);
+	    }
+	    break;
+	}
+	case EXTRACT_32_TO_8: {
+	    const byte *source = source_row;
+	    byte *dest = dest_row;
+
+	    for (x = width; x > 0; source += 4, --x)
+		*dest++ = *source;
+	    break;
+	}
+	default: {
+	    sample_load_declare_setup(sptr, sbit, source_row, source_bit,
+				      source_depth);
+	    sample_store_declare_setup(dptr, dbit, dbbyte, dest_row, dest_bit,
+				       dest_depth);
+
+	    sample_store_preload(dbbyte, dptr, dbit, dest_depth);
+	    for (x = width; x > 0; --x) {
+		bits32 color;
+		uint pixel;
+
+		sample_load_next32(color, sptr, sbit, source_depth);
+		pixel = (color >> shift) & plane_mask;
+		sample_store_next8(pixel, dptr, dbit, dest_depth, dbbyte);
+	    }
+	    sample_store_flush(dptr, dbit, dest_depth, dbbyte);
+	}
+	}
+    }
+    return 0;
+}
+
+/* Expand a plane into a pixmap. */
+int
+bits_expand_plane(const bits_plane_t *dest /*write*/,
+    const bits_plane_t *source /*read*/, int shift, int width, int height)
+{
+    /*
+     * Eventually we will optimize this just like bits_extract_plane.
+     */
+    int source_depth = source->depth;
+    int source_bit = source->x * source_depth;
+    const byte *source_row = source->data.read + (source_bit >> 3);
+    int dest_depth = dest->depth;
+    int dest_bit = dest->x * dest_depth;
+    byte *dest_row = dest->data.write + (dest_bit >> 3);
+    enum {
+	EXPAND_SLOW = 0,
+	EXPAND_1_TO_4,
+	EXPAND_8_TO_32
+    } loop_case = EXPAND_SLOW;
+    int y;
+
+    source_bit &= 7;
+    /* Check for the fast CMYK cases. */
+    if (!(source_bit || (dest_bit & 31) || (dest->raster & 3))) {
+	switch (dest_depth) {
+	case 4:
+	    if (source_depth == 1)
+		loop_case = EXPAND_1_TO_4;
+	    break;
+	case 32:
+	    if (source_depth == 8 && !(shift & 7))
+		loop_case = EXPAND_8_TO_32;
+	    break;
+	}
+    }
+    dest_bit &= 7;
+    switch (loop_case) {
+
+    case EXPAND_8_TO_32: {
+#if arch_is_big_endian
+#  define word_shift (shift)
+#else
+	int word_shift = 24 - shift;
+#endif
+	for (y = 0; y < height;
+	     ++y, source_row += source->raster, dest_row += dest->raster
+	     ) {
+	    int x;
+	    const byte *source = source_row;
+	    bits32 *dest = (bits32 *)dest_row;
+
+	    for (x = width; x > 0; --x)
+		*dest++ = (bits32)(*source++) << word_shift;
+	}
+#undef word_shift
+    }
+	break;
+
+    case EXPAND_1_TO_4:
+    default:
+	for (y = 0; y < height;
+	     ++y, source_row += source->raster, dest_row += dest->raster
+	     ) {
+	    int x;
+	    sample_load_declare_setup(sptr, sbit, source_row, source_bit,
+				      source_depth);
+	    sample_store_declare_setup(dptr, dbit, dbbyte, dest_row, dest_bit,
+				       dest_depth);
+
+	    sample_store_preload(dbbyte, dptr, dbit, dest_depth);
+	    for (x = width; x > 0; --x) {
+		uint color;
+		bits32 pixel;
+
+		sample_load_next8(color, sptr, sbit, source_depth);
+		pixel = color << shift;
+		sample_store_next32(pixel, dptr, dbit, dest_depth, dbbyte);
+	    }
+	    sample_store_flush(dptr, dbit, dest_depth, dbbyte);
+	}
+	break;
+
+    }
+    return 0;
 }
 
 /* ---------------- Byte-oriented operations ---------------- */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1990, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1990, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -179,11 +179,11 @@ sdecodelong(const byte * p, int format)
 	      ((long)d << 24) + ((long)c << 16) + (b << 8) + a :
 	      ((long)a << 24) + ((long)b << 16) + (c << 8) + d);
 
-    /*
-     * The following is only needed if sizeof(long) > 4, but it does
-     * no harm if sizeof(long) == 4.
-     */
-    return (v ^ 0x80000000L) - 0x80000000L;
+#if arch_sizeof_long > 4
+    /* Propagate bit 31 as the sign. */
+    v = (v ^ 0x80000000L) - 0x80000000L;
+#endif
+    return v;
 }
 
 /* Decode a float.  We assume that native floats occupy 32 bits. */

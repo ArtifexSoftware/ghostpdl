@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Special color mapping device */
 #include "gx.h"
 #include "gserrors.h"
@@ -133,7 +133,7 @@ gdev_cmap_init(gx_device_cmap * dev, gx_device * target,
 
     gx_device_init((gx_device *) dev, (const gx_device *)&gs_cmap_device,
 		   target->memory, true);
-    dev->target = target;
+    gx_device_set_target((gx_device_forward *)dev, target);
     gx_device_copy_params((gx_device *)dev, target);
     gx_device_forward_fill_in_procs((gx_device_forward *) dev);
     code = gdev_cmap_set_method(dev, method);

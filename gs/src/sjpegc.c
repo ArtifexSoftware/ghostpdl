@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1997, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -20,18 +20,13 @@
 /* Interface routines for IJG code, common to encode/decode. */
 #include "stdio_.h"
 #include "string_.h"
-#include "jpeglib.h"
-#include "jerror.h"
+#include "jpeglib_.h"
+#include "jerror_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "strimpl.h"
 #include "sdct.h"
 #include "sjpeg.h"
-
-/* gs_jpeg_message_table() is kept in a separate file for arcane reasons.
- * See sjpegerr.c.
- */
-const char *const *gs_jpeg_message_table(P1(void));
 
 /*
  * Error handling routines (these replace corresponding IJG routines from
@@ -67,66 +62,6 @@ gs_jpeg_emit_message(j_common_ptr cinfo, int msg_level)
 }
 
 /*
- * This is an exact copy of format_message from jpeg/jerror.c.
- * We do not use jerror.c in Ghostscript, so we have to duplicate this routine.
- */
-
-private void
-gs_jpeg_format_message(j_common_ptr cinfo, char *buffer)
-{
-    struct jpeg_error_mgr *err = cinfo->err;
-    int msg_code = err->msg_code;
-    const char *msgtext = NULL;
-    const char *msgptr;
-    char ch;
-    boolean isstring;
-
-    /* Look up message string in proper table */
-    if (msg_code > 0 && msg_code <= err->last_jpeg_message) {
-	msgtext = err->jpeg_message_table[msg_code];
-    } else if (err->addon_message_table != NULL &&
-	       msg_code >= err->first_addon_message &&
-	       msg_code <= err->last_addon_message) {
-	msgtext = err->addon_message_table[msg_code - err->first_addon_message];
-    }
-    /* Defend against bogus message number */
-    if (msgtext == NULL) {
-	err->msg_parm.i[0] = msg_code;
-	msgtext = err->jpeg_message_table[0];
-    }
-    /* Check for string parameter, as indicated by %s in the message text */
-    isstring = FALSE;
-    msgptr = msgtext;
-    while ((ch = *msgptr++) != '\0') {
-	if (ch == '%') {
-	    if (*msgptr == 's')
-		isstring = TRUE;
-	    break;
-	}
-    }
-
-    /* Format the message into the passed buffer */
-    if (isstring)
-	sprintf(buffer, msgtext, err->msg_parm.s);
-    else
-	sprintf(buffer, msgtext,
-		err->msg_parm.i[0], err->msg_parm.i[1],
-		err->msg_parm.i[2], err->msg_parm.i[3],
-		err->msg_parm.i[4], err->msg_parm.i[5],
-		err->msg_parm.i[6], err->msg_parm.i[7]);
-}
-
-/* And this is an exact copy of another routine from jpeg/jerror.c. */
-
-private void
-gs_jpeg_reset_error_mgr(j_common_ptr cinfo)
-{
-    cinfo->err->num_warnings = 0;
-    /* trace_level is not reset since it is an application-supplied parameter */
-    cinfo->err->msg_code = 0;	/* may be useful as a flag for "no error" */
-}
-
-/*
  * This routine initializes the error manager fields in the JPEG object.
  * It is based on jpeg_std_error from jpeg/jerror.c.
  */
@@ -136,27 +71,12 @@ gs_jpeg_error_setup(stream_DCT_state * st)
 {
     struct jpeg_error_mgr *err = &st->data.common->err;
 
+    /* Initialize the JPEG compression object with default error handling */
+    jpeg_std_error(err);
+
+    /* Replace some methods with our own versions */
     err->error_exit = gs_jpeg_error_exit;
     err->emit_message = gs_jpeg_emit_message;
-    /* We need not set the output_message field since gs_jpeg_emit_message
-     * doesn't call it, and the IJG library never calls output_message directly.
-     * Setting the format_message field isn't strictly necessary either,
-     * since gs_jpeg_log_error calls gs_jpeg_format_message directly.
-     */
-    err->format_message = gs_jpeg_format_message;
-    err->reset_error_mgr = gs_jpeg_reset_error_mgr;
-
-    err->trace_level = 0;	/* default = no tracing */
-    err->num_warnings = 0;	/* no warnings emitted yet */
-    err->msg_code = 0;		/* may be useful as a flag for "no error" */
-
-    /* Initialize message table pointers */
-    err->jpeg_message_table = gs_jpeg_message_table();
-    err->last_jpeg_message = (int)JMSG_LASTMSGCODE - 1;
-
-    err->addon_message_table = NULL;
-    err->first_addon_message = 0;	/* for safety */
-    err->last_addon_message = 0;
 
     st->data.compress->cinfo.err = err;		/* works for decompress case too */
 }
@@ -170,7 +90,7 @@ gs_jpeg_log_error(stream_DCT_state * st)
     char buffer[JMSG_LENGTH_MAX];
 
     /* Format the error message */
-    gs_jpeg_format_message(cinfo, buffer);
+    (*cinfo->err->format_message) (cinfo, buffer);
     (*st->report_error) ((stream_state *) st, buffer);
     return gs_error_ioerror;	/* caller will do return_error() */
 }

@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -131,7 +131,7 @@ typedef struct gx_device_halftone_s gx_device_halftone;
   ((pdc)->colors.colored.c_base[i] = (b),\
    (pdc)->colors.colored.c_level[i] = (l))
 void gx_complete_rgb_halftone(P2(gx_device_color *pdevc,
-				 const gx_device_halftone *pdht));
+				 gx_device_halftone *pdht));
 #define color_set_rgb_halftone(pdc, ht, br, lr, bg, lg, bb, lb, a)\
   (_color_set_c(pdc, 0, br, lr),\
    _color_set_c(pdc, 1, bg, lg),\
@@ -140,7 +140,7 @@ void gx_complete_rgb_halftone(P2(gx_device_color *pdevc,
    gx_complete_rgb_halftone(pdc, ht))
 /* Some special clients set the individual components separately. */
 void gx_complete_cmyk_halftone(P2(gx_device_color *pdevc,
-				  const gx_device_halftone *pdht));
+				  gx_device_halftone *pdht));
 #define color_finish_set_cmyk_halftone(pdc, ht)\
   gx_complete_cmyk_halftone(pdc, ht)
 #define color_set_cmyk_halftone(pdc, ht, bc, lc, bm, lm, by, ly, bk, lk)\
@@ -205,12 +205,13 @@ typedef struct gx_color_tile_s gx_color_tile;
  *              colors.colored.c_level[0..N-1] = the halftone levels,
  *                like b_level;
  *              colors.colored.c_base[0..N-1] = the base colors;
- *                N=3 for RGB devices, 4 for CMYK devices;
+ *                N = the device color_info.num_components
+ *		    (3 for RGB devices, 4 for CMYK devices, ? for DeviceN);
  *                0 <= c_level[i] < P;
  *                0 <= c_base[i] <= dither_rgb;
  *              colors.colored.alpha = the opacity.
  *		colors.colored.plane_mask: bit 2^i = 1 iff c_level[i] != 0
- *      Colored pattern (gx_dc_pattern):
+ *      Colored PatternType 1 pattern (gx_dc_pattern):
  *              (mask is also set, see below)
  *      @       colors.pattern.p_tile points to a gx_color_tile in
  *                the pattern cache, or is NULL for a null pattern.
@@ -219,12 +220,14 @@ typedef struct gx_color_tile_s gx_color_tile;
  * negative of the graphics state halftone phase, modulo the halftone tile
  * size.
  *
- * The mask elements of a device color are only used for patterns:
+ * The ccolor element is used for all kinds of patterns.  It is needed for
+ * rendering the pattern.
+ *
+ * The mask elements of a device color are only used for PatternType 1
+ * patterns:
  *      Non-pattern:
  *              mask is unused.
  *      Pattern:
- *              mask.ccolor gives the original Pattern color (needed for
- *                reloading the pattern cache);
  *              mask.id gives the ID of the pattern (and its mask);
  *              mask.m_phase holds the negative of the graphics state
  *                halftone phase;
@@ -266,18 +269,27 @@ struct gx_device_color_s {
 	} binary;
 	struct _col {
 	    gx_device_halftone *c_ht; /* non-const for setting cache ptr */
-	    byte c_base[4];
-	    uint c_level[4];
+	    byte c_base[GX_DEVICE_COLOR_MAX_COMPONENTS];
+	    uint c_level[GX_DEVICE_COLOR_MAX_COMPONENTS];
 	    ushort /*gx_color_value */ alpha;
+#if GX_DEVICE_COLOR_MAX_COMPONENTS <= arch_sizeof_short
 	    ushort plane_mask;
+#else
+#if GX_DEVICE_COLOR_MAX_COMPONENTS <= arch_sizeof_int
+	    uint plane_mask;
+#else
+	    gx_color_index plane_mask;
+#endif
+#endif
 	} colored;
 	struct _pat {
 	    gx_color_tile *p_tile;
 	} /*(colored) */ pattern;
     } colors;
     gs_int_point phase;
+    gs_client_color ccolor;	/* needed for remapping patterns, */
+				/* not set for non-pattern colors */
     struct _mask {
-	gs_client_color ccolor;	/* needed for remapping pattern */
 	struct mp_ {
 	    short x, y;
 	} m_phase;
@@ -290,7 +302,7 @@ struct gx_device_color_s {
 #define public_st_device_color() /* in gxcmap.c */\
   gs_public_st_composite(st_device_color, gx_device_color, "gx_device_color",\
     device_color_enum_ptrs, device_color_reloc_ptrs)
-#define st_device_color_max_ptrs 2
+#define st_device_color_max_ptrs (st_client_color_max_ptrs + 2)
 
 /*
  * Define the standard device color types.

@@ -1,4 +1,4 @@
-/* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -30,23 +30,56 @@
  * they might not wind up properly long- or short-aligned.
  */
 #define map4tox(z,a,b,c,d)\
-	z, z^a, z^b, z^(a+b),\
-	z^c, z^(a+c), z^(b+c), z^(a+b+c),\
-	z^d, z^(a+d), z^(b+d), z^(a+b+d),\
-	z^(c+d), z^(a+c+d), z^(b+c+d), z^(a+b+c+d)
-#if arch_is_big_endian
-const bits32 lookup4x1to32_identity[16] =
-{map4tox(0L, 0xffL, 0xff00L, 0xff0000L, 0xff000000L)};
-const bits32 lookup4x1to32_inverted[16] =
-{map4tox(0xffffffffL, 0xffL, 0xff00L, 0xff0000L, 0xff000000L)};
-
-#else /* !arch_is_big_endian */
-const bits32 lookup4x1to32_identity[16] =
-{map4tox(0L, 0xff000000L, 0xff0000L, 0xff00L, 0xffL)};
-const bits32 lookup4x1to32_inverted[16] =
-{map4tox(0xffffffffL, 0xff000000L, 0xff0000L, 0xff00L, 0xffL)};
-
+    z, z^a, z^b, z^(a+b),\
+    z^c, z^(a+c), z^(b+c), z^(a+b+c),\
+    z^d, z^(a+d), z^(b+d), z^(a+b+d),\
+    z^(c+d), z^(a+c+d), z^(b+c+d), z^(a+b+c+d)
+/* Work around warnings from really picky compilers. */
+#ifdef __STDC__
+#  define n0L 0xffffffffU
+#  define ffL8 0x0000ff00U
+#  define ffL16 0x00ff0000U
+#  define ffL24 0xff000000U
+#else
+#if arch_sizeof_long == 4
+/*
+ * The compiler evaluates long expressions mod 2^32.  Even very picky
+ * compilers allow assigning signed longs to unsigned longs, so we use
+ * signed constants.
+ */
+#  define n0L (-1)
+#  define ffL8 0x0000ff00
+#  define ffL16 0x00ff0000
+#  define ffL24 (-0x01000000)
+#else
+/*
+ * The compiler evaluates long expressions mod 2^64.
+ */
+#  define n0L 0xffffffffL
+#  define ffL8 0x0000ff00L
+#  define ffL16 0x00ff0000L
+#  define ffL24 0xff000000L
 #endif
+#endif
+#if arch_is_big_endian
+const bits32 lookup4x1to32_identity[16] = {
+    map4tox(0, 0xff, ffL8, ffL16, ffL24)
+};
+const bits32 lookup4x1to32_inverted[16] = {
+    map4tox(n0L, 0xff, ffL8, ffL16, ffL24)
+};
+#else /* !arch_is_big_endian */
+const bits32 lookup4x1to32_identity[16] = {
+    map4tox(0, ffL24, ffL16, ffL8, 0xff)
+};
+const bits32 lookup4x1to32_inverted[16] = {
+    map4tox(n0L, ffL24, ffL16, ffL8, 0xff)
+};
+#endif
+#undef n0L
+#undef ffL8
+#undef ffL16
+#undef ffL24
 
 /* ---------------- Unpacking procedures ---------------- */
 

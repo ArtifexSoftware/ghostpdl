@@ -55,9 +55,9 @@ void
 pl_main_init(pl_main_instance_t *pmi, gs_memory_t *mem)
 {	pmi->memory = mem;
 	{ int i;
-	  for ( i = 0; i < countof(pmi->spaces.indexed); ++i )
-	    pmi->spaces.indexed[i] = 0;
-	  pmi->spaces.named.local = pmi->spaces.named.global =
+	  for ( i = 0; i < countof(pmi->spaces.memories.indexed); ++i )
+	    pmi->spaces.memories.indexed[i] = 0;
+	  pmi->spaces.memories.named.local = pmi->spaces.memories.named.global =
 	    (gs_ref_memory_t *)mem;
 	}
 	gp_get_usertime(pmi->base_time);

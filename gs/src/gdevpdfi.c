@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -21,6 +21,7 @@
 #include "math_.h"
 #include "memory_.h"
 #include "string_.h"
+#include "jpeglib_.h"		/* for sdct.h */
 #include "gx.h"
 #include "gserrors.h"
 #include "gsflip.h"
@@ -29,7 +30,6 @@
 #include "gscolor2.h"		/* for gscie.h */
 #include "gscie.h"		/* requires gscspace.h */
 #include "gxistate.h"
-#include "jpeglib.h"		/* for sdct.h */
 #include "strimpl.h"
 #include "sa85x.h"
 #include "scfx.h"
@@ -39,10 +39,8 @@
 #include "srlx.h"
 #include "szlibx.h"
 
-/* We need color space types for constructing temporary color spaces. */
-extern const gs_color_space_type
-      gs_color_space_type_DeviceGray, gs_color_space_type_DeviceRGB, gs_color_space_type_DeviceCMYK,
-      gs_color_space_type_Indexed;
+/* We need this color space type for constructing temporary color spaces. */
+extern const gs_color_space_type gs_color_space_type_Indexed;
 
 /* Import procedures for writing filter parameters. */
 extern stream_state_proc_get_params(s_DCTE_get_params, stream_DCT_state);
@@ -459,19 +457,19 @@ pdf_make_bitmap_image(gs_image_t * pim, int x, int y, int w, int h)
 private void
 pdf_put_image_matrix(gx_device_pdf * pdev, const gs_matrix * pmat)
 {
-    pdf_put_matrix(pdev, "q\n", pmat, "cm\n");
+    pdf_put_matrix(pdev, "q ", pmat, "cm\n");
 }
 
 /* ------ Image writing ------ */
 
 /* Forward references */
 private image_enum_proc_plane_data(pdf_image_plane_data);
-private dev_proc_end_image(pdf_end_image);
+private image_enum_proc_end_image(pdf_image_end_image);
 
 private const gx_image_enum_procs_t pdf_image_enum_procs =
 {
     pdf_image_plane_data,
-    pdf_end_image
+    pdf_image_end_image
 };
 
 /* Define the structure for writing an image. */
@@ -546,7 +544,7 @@ pdf_end_write_image(gx_device_pdf * pdev, pdf_image_writer * piw)
 	pdf_end_separate(pdev);
 	return 0;
     } else {			/* in-line image */
-	pputs(s, "\nEI\nQ\n");
+	pputs(s, "\nEI Q\n");
 	return 1;
     }
 }
@@ -571,12 +569,12 @@ pdf_do_image(gx_device_pdf * pdev, const pdf_resource * pres,
 /* ------ Low-level calls ------ */
 
 /* Copy a monochrome bitmap or mask. */
-int
-gdev_pdf_copy_mono(gx_device * dev,
-		const byte * base, int sourcex, int raster, gx_bitmap_id id,
-	int x, int y, int w, int h, gx_color_index zero, gx_color_index one)
+private int
+pdf_copy_mono(gx_device_pdf *pdev,
+	      const byte *base, int sourcex, int raster, gx_bitmap_id id,
+	      int x, int y, int w, int h, gx_color_index zero,
+	      gx_color_index one, const gx_clip_path *pcpath)
 {
-    gx_device_pdf *pdev = (gx_device_pdf *) dev;
     int code;
     gs_color_space cs;
     byte palette[6];
@@ -587,14 +585,12 @@ gdev_pdf_copy_mono(gx_device * dev,
     pdf_resource *pres = 0;
     byte invert = 0;
 
-    if (w <= 0 || h <= 0)
-	return 0;
-    /* Make sure we aren't being clipped. */
-    if (pdf_must_put_clip_path(pdev, NULL)) {
+    /* Update clipping. */
+    if (pdf_must_put_clip_path(pdev, pcpath)) {
 	code = pdf_open_page(pdev, pdf_in_stream);
 	if (code < 0)
 	    return code;
-	pdf_put_clip_path(pdev, NULL);
+	pdf_put_clip_path(pdev, pcpath);
     }
     /* We have 3 cases: mask, inverse mask, and solid. */
     if (zero == gx_no_color_index) {
@@ -754,68 +750,106 @@ gdev_pdf_copy_mono(gx_device * dev,
 	return pdf_do_char_image(pdev, (const pdf_char_proc *)pres, &imat);
     }
 }
-
-/* Copy a color bitmap. */
 int
-gdev_pdf_copy_color(gx_device * dev,
-		const byte * base, int sourcex, int raster, gx_bitmap_id id,
-		    int x, int y, int w, int h)
+gdev_pdf_copy_mono(gx_device * dev,
+		   const byte * base, int sourcex, int raster, gx_bitmap_id id,
+		   int x, int y, int w, int h, gx_color_index zero,
+		   gx_color_index one)
 {
     gx_device_pdf *pdev = (gx_device_pdf *) dev;
-    int depth = dev->color_info.depth;
-    int bytes_per_pixel = depth >> 3;
-    int code = pdf_open_page(pdev, pdf_in_stream);
-    int yi;
-    gs_image_t image;
-    gs_color_space cs;
-    pdf_image_writer writer;
-    ulong nbytes;
 
-    if (code < 0)
-	return code;
     if (w <= 0 || h <= 0)
 	return 0;
-    /* Make sure we aren't being clipped. */
-    pdf_put_clip_path(pdev, NULL);
+    return pdf_copy_mono(pdev, base, sourcex, raster, id, x, y, w, h,
+			 zero, one, NULL);
+}
+
+/* Copy a color bitmap. */
+private int
+pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
+		    int raster, int x, int y, int w, int h,
+		    gs_image_t *pim, pdf_image_writer *piw, bool for_pattern)
+{
+    int depth = pdev->color_info.depth;
+    int bytes_per_pixel = depth >> 3;
+    int yi;
+    gs_color_space cs;
+    ulong nbytes;
+    int code;
+    const byte *row_base;
+    int row_step;
+
     switch(bytes_per_pixel) {
     case 3: gs_cspace_init_DeviceRGB(&cs); break;
     case 4: gs_cspace_init_DeviceCMYK(&cs); break;
     default: gs_cspace_init_DeviceGray(&cs);
     }
-    gs_image_t_init(&image, &cs);
-    pdf_make_bitmap_image(&image, x, y, w, h);
-    image.BitsPerComponent = 8;
-    nbytes = (ulong) w *bytes_per_pixel * h;
+    gs_image_t_init(pim, &cs);
+    pdf_make_bitmap_image(pim, x, y, w, h);
+    pim->BitsPerComponent = 8;
+    nbytes = (ulong)w * bytes_per_pixel * h;
 
-    pdf_put_image_matrix(pdev, &image.ImageMatrix);
-    code = pdf_begin_write_image(pdev, &writer, nbytes <= 4000);
+    if (for_pattern) {
+	/*
+	 * Patterns must be emitted in order of increasing user Y, i.e.,
+	 * the opposite of PDF's standard image order.
+	 */
+	row_base = base + (h - 1) * raster;
+	row_step = -raster;
+	pputs(pdev->strm, "q ");
+    } else {
+	row_base = base;
+	row_step = raster;
+	pdf_put_image_matrix(pdev, &pim->ImageMatrix);
+    }
+    code = pdf_begin_write_image(pdev, piw, nbytes <= 4000);
     if (code < 0)
 	return code;
-    psdf_begin_binary((gx_device_psdf *) pdev, &writer.binary);
+    psdf_begin_binary((gx_device_psdf *) pdev, &piw->binary);
     code = psdf_setup_image_filters((gx_device_psdf *) pdev,
-				    &writer.binary, &image, NULL, NULL);
+				    &piw->binary, pim, NULL, NULL);
     if (code < 0)
 	return code;
-    code = pdf_begin_image_data(pdev, &writer, &image);
+    code = pdf_begin_image_data(pdev, piw, pim);
     if (code < 0)
 	return code;
     for (yi = 0; yi < h; ++yi) {
 	uint ignore;
 
-	sputs(writer.binary.strm,
-	      base + sourcex * bytes_per_pixel + yi * raster,
+	sputs(piw->binary.strm,
+	      row_base + sourcex * bytes_per_pixel + yi * row_step,
 	      w * bytes_per_pixel, &ignore);
     }
-    psdf_end_binary(&writer.binary);
-    code = pdf_end_write_image(pdev, &writer);
+    psdf_end_binary(&piw->binary);
+    return pdf_end_write_image(pdev, piw);
+}
+
+int
+gdev_pdf_copy_color(gx_device * dev, const byte * base, int sourcex,
+		    int raster, gx_bitmap_id id, int x, int y, int w, int h)
+{
+    gx_device_pdf *pdev = (gx_device_pdf *) dev;
+    gs_image_t image;
+    pdf_image_writer writer;
+    int code;
+    
+    if (w <= 0 || h <= 0)
+	return 0;
+    code = pdf_open_page(pdev, pdf_in_stream);
+    if (code < 0)
+	return code;
+    /* Make sure we aren't being clipped. */
+    pdf_put_clip_path(pdev, NULL);
+    code = pdf_copy_color_data(pdev, base, sourcex, raster, x, y, w, h,
+			       &image, &writer, false);
     switch (code) {
 	default:
 	    return code;	/* error */
 	case 1:
 	    return 0;
-	case 0:;
+	case 0:
+	    return pdf_do_image(pdev, writer.pres, &image.ImageMatrix);
     }
-    return pdf_do_image(pdev, writer.pres, &image.ImageMatrix);
 }
 
 /* Fill a mask. */
@@ -827,7 +861,6 @@ gdev_pdf_fill_mask(gx_device * dev,
 		   gs_logical_operation_t lop, const gx_clip_path * pcpath)
 {
     gx_device_pdf *pdev = (gx_device_pdf *) dev;
-    int code;
 
     if (width <= 0 || height <= 0)
 	return 0;
@@ -835,16 +868,100 @@ gdev_pdf_fill_mask(gx_device * dev,
 	return gx_default_fill_mask(dev, data, data_x, raster, id,
 				    x, y, width, height, pdcolor, depth, lop,
 				    pcpath);
-    if (pdf_must_put_clip_path(pdev, pcpath)) {
-	code = pdf_open_page(pdev, pdf_in_stream);
+    return pdf_copy_mono(pdev, data, data_x, raster, id, x, y, width, height,
+			 gx_no_color_index, gx_dc_pure_color(pdcolor),
+			 pcpath);
+}
+
+/* Tile with a bitmap.  This is important for pattern fills. */
+int
+gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
+			      int x, int y, int w, int h,
+			      gx_color_index color0, gx_color_index color1,
+			      int px, int py)
+{
+    gx_device_pdf *const pdev = (gx_device_pdf *) dev;
+    int tw = tiles->rep_width, th = tiles->rep_height;
+    pdf_resource *pres;
+
+    if (tiles->id == gx_no_bitmap_id || tiles->shift != 0 ||
+	w < tw || h < th ||
+	/* We only handle full colored patterns right now. */
+	color0 != gx_no_color_index || color1 != gx_no_color_index ||
+	/* Pattern fills are only available starting in PDF 1.2. */
+	pdev->CompatibilityLevel < 1.2)
+	goto use_default;
+    if (!pdev->cs_Pattern) {
+	/* Create a single Pattern color space resource named Pattern. */
+	int code = pdf_begin_resource_body(pdev, resourceColorSpace, gs_no_id,
+					   &pdev->cs_Pattern);
+
 	if (code < 0)
-	    return code;
-	pdf_put_clip_path(pdev, pcpath);
+	    goto use_default;
+	pputs(pdev->strm, "[/Pattern]\n");
+	pdf_end_resource(pdev);
     }
-    return gdev_pdf_copy_mono(dev, data, data_x, raster, id,
-			      x, y, width, height,
-			      gx_no_color_index,
-			      gx_dc_pure_color(pdcolor));
+    pres = pdf_find_resource_by_gs_id(pdev, resourcePattern, tiles->id);
+    if (!pres) {
+	/* Create the Pattern resource. */
+	int code = pdf_begin_resource(pdev, resourcePattern, tiles->id, &pres);
+	long length_id, start, end;
+	stream *s;
+	gs_image_t image;
+	pdf_image_writer writer;
+
+	if (code < 0)
+	    goto use_default;
+	s = pdev->strm;
+	length_id = pdf_obj_ref(pdev);
+	pputs(s, "/PatternType 1/PaintType 1/TilingType 1\n");
+	pputs(s, "/Resources<</ProcSet[/PDF/ImageC]>>\n");
+	/*
+	 * Because of bugs in Acrobat Reader's Print function, we can't use
+	 * the natural BBox and Step here: they have to be 1.
+	 */
+	pprintld1(s, "/BBox[0 0 1 1]/XStep 1/YStep 1/Length %ld 0 R>>stream\n", length_id);
+	start = pdf_stell(pdev);
+	code = pdf_copy_color_data(pdev, tiles->data, 0, tiles->raster,
+				   0, 0, tw, th, &image, &writer, true);
+	switch (code) {
+	default:
+	    return code;	/* error */
+	case 1:
+	    break;
+	case 0:
+	    pdf_do_image(pdev, writer.pres, &image.ImageMatrix);
+	}
+	end = pdf_stell(pdev);
+	pputs(s, "endstream\n");
+	pdf_end_resource(pdev);
+	pdf_open_separate(pdev, length_id);
+	pprintld1(pdev->strm, "%ld\n", end - start);
+	pdf_end_separate(pdev);
+    }
+    /* Fill the rectangle with the Pattern. */
+    {
+	int code = pdf_open_page(pdev, pdf_in_stream);
+	double xscale = pdev->HWResolution[0] / 72.0,
+	    yscale = pdev->HWResolution[1] / 72.0;
+	stream *s;
+
+	if (code < 0)
+	    goto use_default;
+	s = pdev->strm;
+	/*
+	 * Because of bugs in Acrobat Reader's Print function, we can't
+	 * leave the CTM alone here: we have to reset it to the default.
+	 */
+	pprintg2(s, "q %g 0 0 %g 0 0 cm", xscale, yscale);
+	pprintld2(s, "/R%ld cs/R%ld scn ", pdev->cs_Pattern->id, pres->id);
+	pprintg4(s, "%g %g %g %g re f Q\n",
+		 x / xscale, y / yscale, w / xscale, h / xscale);
+    }
+    return 0;
+use_default:
+    return gx_default_strip_tile_rectangle(dev, tiles, x, y, w, h,
+					   color0, color1, px, py);
 }
 
 /* ------ High-level calls ------ */
@@ -853,7 +970,6 @@ gdev_pdf_fill_mask(gx_device * dev,
 typedef struct pdf_image_enum_s {
     gx_image_enum_common;
     gs_memory_t *memory;
-    gx_image_enum_common_t *default_info;
     int width;
     int bits_per_pixel;		/* bits per pixel (per plane) */
     int rows_left;
@@ -862,8 +978,7 @@ typedef struct pdf_image_enum_s {
 
 /* We can disregard the pointers in the writer by allocating */
 /* the image enumerator as immovable.  This is a hack, of course. */
-gs_private_st_ptrs1(st_pdf_image_enum, pdf_image_enum, "pdf_image_enum",
-	 pdf_image_enum_enum_ptrs, pdf_image_enum_reloc_ptrs, default_info);
+gs_private_st_simple(st_pdf_image_enum, pdf_image_enum, "pdf_image_enum");
 
 /* Test whether we can handle a given color space. */
 private bool
@@ -963,24 +1078,18 @@ gdev_pdf_begin_image(gx_device * dev,
     if (pie == 0)
 	return_error(gs_error_VMerror);
     *pinfo = (gx_image_enum_common_t *) pie;
-    gx_image_enum_common_init(*pinfo, (gs_image_common_t *) pim,
+    gx_image_enum_common_init(*pinfo, (gs_data_image_t *) pim,
 			      &pdf_image_enum_procs, dev,
-			      pim->BitsPerComponent, num_components,
-			      format);
+			      num_components, format);
     pie->memory = mem;
-    pie->default_info = 0;
     if ((pim->ImageMask ?
 	 (!gx_dc_is_pure(pdcolor) || pim->CombineWithColor) :
 	 !pdf_can_handle_color_space(pim->ColorSpace)) ||
 	prect != 0
 	) {
-	int code = gx_default_begin_image(dev, pis, pim, format, prect,
-					  pdcolor, pcpath, mem,
-					  &pie->default_info);
-
-	if (code < 0)
-	    gs_free_object(mem, pie, "pdf_begin_image");
-	return code;
+	gs_free_object(mem, pie, "pdf_begin_image");
+	return gx_default_begin_image(dev, pis, pim, format, prect,
+				      pdcolor, pcpath, mem, pinfo);
     }
     pie->width = rect.q.x - rect.p.x;
     pie->bits_per_pixel =
@@ -1027,44 +1136,58 @@ gdev_pdf_begin_image(gx_device * dev,
 
 /* Process the next piece of an image. */
 private int
-pdf_image_plane_data(gx_device * dev, gx_image_enum_common_t * info,
-		     const gx_image_plane_t * planes, int height)
+pdf_image_plane_data(gx_image_enum_common_t * info,
+		     const gx_image_plane_t * planes, int height,
+		     int *rows_used)
 {
     pdf_image_enum *pie = (pdf_image_enum *) info;
     int h = height;
     int y;
-    uint bcount;
+    /****** DOESN'T HANDLE IMAGES WITH VARYING WIDTH PER PLANE ******/
+    uint width_bits = pie->width * pie->plane_depths[0];
+    /****** DOESN'T HANDLE NON-ZERO data_x CORRECTLY ******/
+    uint bcount = (width_bits + 7) >> 3;
     uint ignore;
     int nplanes = pie->num_planes;
 
-#define row_bytes 180		/* must be 0 mod 3, 4, 6, 9 */
-    byte row[row_bytes];
-
-    if (pie->default_info)
-	return gx_image_plane_data(pie->default_info, planes, height);
     if (h > pie->rows_left)
 	h = pie->rows_left;
     pie->rows_left -= h;
-/****** DOESN'T HANDLE NON-ZERO data_x CORRECTLY ******/
-    bcount =
-	((planes[0].data_x + pie->width) * pie->plane_depths[0] + 7) >> 3;
     for (y = 0; y < h; ++y) {
 	if (nplanes > 1) {
-	    /* Flip the data in blocks before writing. */
+	    /*
+	     * We flip images in blocks, and each block except the last one
+	     * must contain an integral number of pixels.  The easiest way
+	     * to meet this condition is for all blocks except the last to
+	     * be a multiple of 3 source bytes (guaranteeing an integral
+	     * number of 1/2/4/8/12-bit samples), i.e., 3*nplanes flipped
+	     * bytes.  This requires a buffer of at least
+	     * 3*GS_IMAGE_MAX_COMPONENTS bytes.
+	     */
 	    int pi;
 	    uint count = bcount;
 	    uint offset = 0;
-	    const byte *bit_planes[gs_image_max_components];
+#define ROW_BYTES max(200 /*arbitrary*/, 3 * GS_IMAGE_MAX_COMPONENTS)
+	    const byte *bit_planes[GS_IMAGE_MAX_COMPONENTS];
+	    int block_bytes = ROW_BYTES / (3 * nplanes) * 3;
+	    byte row[ROW_BYTES];
 
 	    for (pi = 0; pi < nplanes; ++pi)
 		bit_planes[pi] = planes[pi].data + planes[pi].raster * y;
 	    while (count) {
-		uint flip_count = min(count, row_bytes / nplanes);
+		uint flip_count;
+		uint flipped_count;
 
+		if (count >= block_bytes)
+		    flip_count = flipped_count = block_bytes;
+		else {
+		    flip_count = count;
+		    flipped_count =
+			(width_bits % (block_bytes * 8) * nplanes + 7) >> 3;
+		}
 		image_flip_planes(row, bit_planes, offset, flip_count,
 				  nplanes, pie->plane_depths[0]);
-		sputs(pie->writer.binary.strm, row, flip_count * nplanes,
-		      &ignore);
+		sputs(pie->writer.binary.strm, row, flipped_count, &ignore);
 		offset += flip_count;
 		count -= flip_count;
 	    }
@@ -1073,34 +1196,30 @@ pdf_image_plane_data(gx_device * dev, gx_image_enum_common_t * info,
 		  planes[0].data + planes[0].raster * y, bcount, &ignore);
 	}
     }
+    *rows_used = h;
     return !pie->rows_left;
-#undef row_bytes
+#undef ROW_BYTES
 }
 
 /* Clean up by releasing the buffers. */
 private int
-pdf_end_image(gx_device * dev, gx_image_enum_common_t * info, bool draw_last)
+pdf_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 {
-    gx_device_pdf *pdev = (gx_device_pdf *) dev;
-    pdf_image_enum *pie = (pdf_image_enum *) info;
-    int code;
+    gx_device_pdf *pdev = (gx_device_pdf *)info->dev;
+    pdf_image_enum *pie = (pdf_image_enum *)info;
+    int code = psdf_end_binary(&pie->writer.binary);
 
-    if (pie->default_info)
-	code = gx_default_end_image(dev, pie->default_info, draw_last);
-    else {
-	code = psdf_end_binary(&pie->writer.binary);
-	if (code < 0)
-	    return code;
-	code = pdf_end_write_image(pdev, &pie->writer);
-	switch (code) {
-	    default:
-		return code;	/* error */
-	    case 1:
-		return 0;
-	    case 0:;
-	}
-	code = pdf_do_image(pdev, pie->writer.pres, NULL);
+    if (code < 0)
+	return code;
+    code = pdf_end_write_image(pdev, &pie->writer);
+    switch (code) {
+    default:
+	return code;	/* error */
+    case 1:
+	return 0;
+    case 0:;
     }
+    code = pdf_do_image(pdev, pie->writer.pres, NULL);
     gs_free_object(pie->memory, pie, "pdf_end_image");
     return code;
 }

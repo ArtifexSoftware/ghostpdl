@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -23,6 +23,7 @@
 #  define gxfmap_INCLUDED
 
 #include "gsrefct.h"
+#include "gsstype.h"
 #include "gxfrac.h"
 #include "gxtmap.h"
 
@@ -64,7 +65,8 @@ extern_st(st_transfer_map);
 frac gx_color_frac_map(P2(frac, const frac *));		/* in gxcmap.c */
 
 #  define gx_map_color_frac(pgs,cf,m)\
-     gx_color_frac_map(cf, &pgs->m->values[0])
+     (pgs->m->proc == gs_identity_transfer ? cf :\
+      gx_color_frac_map(cf, &pgs->m->values[0]))
 
 #else /* !FRAC_MAP_INTERPOLATE */
 
@@ -95,5 +97,8 @@ frac gx_color_frac_map(P2(frac, const frac *));		/* in gxcmap.c */
 /* Define a mapping procedure that just looks up the value in the cache. */
 /* (It is equivalent to gx_map_color_float with the arguments swapped.) */
 float gs_mapped_transfer(P2(floatp, const gx_transfer_map *));
+
+/* Define an identity mapping procedure. */
+float gs_identity_transfer(P2(floatp, const gx_transfer_map *));
 
 #endif /* gxfmap_INCLUDED */

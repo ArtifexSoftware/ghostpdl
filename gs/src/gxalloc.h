@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Requires gsmemory.h, gsstruct.h */
 
 #ifndef gxalloc_INCLUDED
@@ -117,12 +117,17 @@ typedef uint string_reloc_offset;
  */
 #define string_quanta_mark_size(nquanta)\
   ((nquanta) * (string_data_quantum / 8))
+/*
+ * Compute the size of the string freelists for a chunk.
+ */
+#define STRING_FREELIST_SPACE(cp)\
+  (((cp->climit - csbase(cp) + 255) >> 8) * sizeof(*cp->sfree1))
 
 /*
  * To allow the garbage collector to combine chunks, we store in the
  * head of each chunk the address to which its contents will be moved.
  */
-						/*typedef struct chunk_head_s chunk_head_t; *//* in gxobj.h */
+/*typedef struct chunk_head_s chunk_head_t; *//* in gxobj.h */
 
 /* Structure for a chunk. */
 typedef struct chunk_s chunk_t;
@@ -153,22 +158,24 @@ struct chunk_s {
 				/*   the outer chunk, if any */
     bool has_refs;		/* true if any refs in chunk */
     /*
-     * Free lists for single bytes in blocks of 1-3 bytes,
-     * one per 256 bytes in [csbase..climit).  The chain
-     * pointer is a (1-byte) self-relative offset,
-     * terminated by a 0; obviously, the chain is sorted by
-     * increasing address.  The free list pointers themselves
-     * are offsets relative to csbase.
+     * Free lists for single bytes in blocks of 1 to 2*N-1 bytes, one per
+     * 256 bytes in [csbase..climit), where N is sizeof(uint). The chain
+     * pointer is a (1-byte) self-relative offset, terminated by a 0;
+     * obviously, the chain is sorted by increasing address.  The free list
+     * pointers themselves are offsets relative to csbase.
      *
-     * Note that these lists overlay the GC relocation table.
+     * Note that these lists overlay the GC relocation table, and that
+     * sizeof(*sfree1) / 256 must be less than sizeof(string_reloc_offset) /
+     * string_data_quantum (as real numbers).
      */
-    ushort *sfree1;
+#define SFREE_NB 4		/* # of bytes for values on sfree list */
+    uint *sfree1;
     /*
-     * Free list for blocks of >= 4 bytes.  Each block begins
-     * with a 2-byte size and a 2-byte next block pointer,
+     * Free list for blocks of >= 2*N bytes.  Each block begins
+     * with a N-byte size and a N-byte next block pointer,
      * both big-endian.  This too is sorted in increasing address order.
      */
-    ushort sfree;
+    uint sfree;
     /* The remaining members are for the GC. */
     byte *odest;		/* destination for objects */
     byte *smark;		/* mark bits for strings */

@@ -1,4 +1,4 @@
-%    Copyright (C) 1990, 1995 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1990, 1995, 1999 Aladdin Enterprises.  All rights reserved.
 %
 % Fontmap.Ult
 %
@@ -36,6 +36,8 @@
 %	export GS_LIB_DEFAULT
 %
 % Peter Kaiser (kaiser@acm.org) 27 January 1995
+% Updated by L. Peter Deutsch (ghost@aladdin.com) 5 January 1999
+%   to include correct aliasing for the Bitstream Charter fonts
 
 /AvantGarde-Book			(AvantGarde-Book)		;
 /AvantGarde-BookOblique			(AvantGarde-BookOblique)	;
@@ -75,10 +77,10 @@
 /Bookman-LightItalic			(pbkli.gsf)	;
 /Calligraphic-Hiragana			(fhirw.gsf)	;
 /Calligraphic-Katakana			(fkarw.gsf)	;
-/Charter-Bold				(bchb.pfa)	;
-/Charter-BoldItalic			(bchbi.pfa)	;
-/Charter-Italic				(bchri.pfa)	;
-/Charter-Roman				(bchr.pfa)	;
+/CharterBT-Bold				(bchb.pfa)	;
+/CharterBT-BoldItalic			(bchbi.pfa)	;
+/CharterBT-Italic			(bchri.pfa)	;
+/CharterBT-Roman			(bchr.pfa)	;
 /Hershey-Gothic-English			(hrger.pfa)	;
 /Hershey-Gothic-English-Bold		(hrgerb.gsf)	;
 /Hershey-Gothic-English-Oblique		(hrgero.gsf)	;
@@ -135,6 +137,10 @@
 
 % Font aliases
 
+/Charter-Roman			/CharterBT-Roman	;
+/Charter-Italic			/CharterBT-Italic	;
+/Charter-Bold			/CharterBT-Bold		;
+/Charter-BoldItalic		/CharterBT-BoldItalic	;
 /Courier-BoldItalic			/Courier-BoldOblique		;
 /Courier-Italic				/Courier-Oblique		;
 /Cyrillic				/Shareware-Cyrillic-Regular	;

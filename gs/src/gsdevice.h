@@ -65,15 +65,17 @@ int gs_initialize_wordimagedevice(P9(gx_device_memory * new_dev,
 				     const byte * colors, int colors_size,
 				     bool word_oriented, bool page_device,
 				     gs_memory_t * mem));
-
 const char *gs_devicename(P1(const gx_device *));
 void gs_deviceinitialmatrix(P2(gx_device *, gs_matrix *));
 
-int gs_get_device_or_hardware_params(P3(gx_device *, gs_param_list *, bool));
+/* VMS limits identifiers to 31 characters. */
+int gs_get_device_or_hw_params(P3(gx_device *, gs_param_list *, bool));
 #define gs_getdeviceparams(dev, plist)\
-  gs_get_device_or_hardware_params(dev, plist, false)
+  gs_get_device_or_hw_params(dev, plist, false)
 #define gs_gethardwareparams(dev, plist)\
-  gs_get_device_or_hardware_params(dev, plist, true)
+  gs_get_device_or_hw_params(dev, plist, true)
+/* BACKWARD COMPATIBILITY */
+#define gs_get_device_or_hardware_params gs_get_device_or_hw_params
 
 int gs_putdeviceparams(P2(gx_device *, gs_param_list *));
 int gs_closedevice(P1(gx_device *));
@@ -86,13 +88,13 @@ typedef struct gs_imager_state_s gs_imager_state;
 #endif
 
 int gs_imager_putdeviceparams(P3(gs_imager_state *pis, gx_device *dev,
-                               gs_param_list *plist));
+				 gs_param_list *plist));
 
 /* Device procedures involving a graphics state. */
 
 #ifndef gs_state_DEFINED
 #  define gs_state_DEFINED
-   typedef struct gs_state_s gs_state;
+typedef struct gs_state_s gs_state;
 #endif
 
 int gs_flushpage(P1(gs_state *));
@@ -100,8 +102,8 @@ int gs_copypage(P1(gs_state *));
 int gs_output_page(P3(gs_state *, int, int));
 int gs_nulldevice(P1(gs_state *));
 int gs_setdevice(P2(gs_state *, gx_device *));
-int gs_setdevice_no_erase(P2(gs_state *, gx_device *));               /* returns 1 */
-                                              /* if erasepage required */
+int gs_setdevice_no_erase(P2(gs_state *, gx_device *));		/* returns 1 */
+						/* if erasepage required */
 int gs_setdevice_no_init(P2(gs_state *, gx_device *));
 gx_device *gs_currentdevice(P1(const gs_state *));
 
@@ -111,5 +113,5 @@ gx_device *gs_currentdevice(P1(const gs_state *));
 #endif
 
 int gs_state_putdeviceparams(P2(gs_state *pgs, gs_param_list *plist));
-  
+
 #endif /* gsdevice_INCLUDED */

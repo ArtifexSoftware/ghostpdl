@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -33,11 +33,13 @@ private void repack_bit_planes(P7(const gx_image_plane_t *src_planes,
 
 /* Process the next piece of an ImageType 1 image. */
 int
-gx_image1_plane_data(gx_device * dev, gx_image_enum_common_t * info,
-		     const gx_image_plane_t * planes, int height)
+gx_image1_plane_data(gx_image_enum_common_t * info,
+		     const gx_image_plane_t * planes, int height,
+		     int *rows_used)
 {
+    gx_device *dev = info->dev;
     gx_image_enum *penum = (gx_image_enum *) info;
-    int y = penum->y;
+    const int y = penum->y;
     int y_end = min(y + height, penum->rect.h);
     int width_spp = penum->rect.w * penum->spp;
     int num_planes = penum->num_planes;
@@ -52,30 +54,44 @@ gx_image1_plane_data(gx_device * dev, gx_image_enum_common_t * info,
     bool bit_planar = penum->num_planes > penum->spp;
     int code;
 
-    if (height == 0)
+    if (height == 0) {
+	*rows_used = 0;
 	return 0;
+    }
 
     /* Set up the clipping and/or RasterOp device if needed. */
 
     if (penum->clip_dev) {
 	gx_device_clip *cdev = penum->clip_dev;
 
-	cdev->target = dev;
+	gx_device_set_target((gx_device_forward *)cdev, dev);
 	dev = (gx_device *) cdev;
     }
     if (penum->rop_dev) {
 	gx_device_rop_texture *rtdev = penum->rop_dev;
 
-	((gx_device_forward *) rtdev)->target = dev;
+	gx_device_set_target((gx_device_forward *)rtdev, dev);
 	dev = (gx_device *) rtdev;
     }
     /* Now render complete rows. */
 
-    memset(offsets, 0, num_planes * sizeof(offsets[0]));
+    if (penum->used.y) {
+	/*
+	 * Processing was interrupted by an error.  Skip over rows
+	 * already processed.
+	 */
+	int px;
+
+	for (px = 0; px < num_planes; ++px)
+	    offsets[px] = planes[px].raster * penum->used.y;
+	penum->used.y = 0;
+    } else
+	memset(offsets, 0, num_planes * sizeof(offsets[0]));
     for (; penum->y < y_end; penum->y++) {
 	int px;
 	const byte *buffer;
 	int sourcex;
+	int x_used = penum->used.x;
 
 	if (bit_planar) {
 	    /* Repack the bit planes into byte-wide samples. */
@@ -115,6 +131,10 @@ gx_image1_plane_data(gx_device * dev, gx_image_enum_common_t * info,
 	if (gs_debug_c('B')) {
 	    int i, n = width_spp;
 
+	    if (penum->bps > 8)
+		n *= 2;
+	    else if (penum->bps == 1 && penum->unpack_bps == 8)
+		n = (n + 7) / 8;
 	    dlputs("[B]row:");
 	    for (i = 0; i < n; i++)
 		dprintf1(" %02x", buffer[i]);
@@ -130,7 +150,8 @@ gx_image1_plane_data(gx_device * dev, gx_image_enum_common_t * info,
 		case image_portrait:
 		    {		/* Precompute integer y and height, */
 			/* and check for clipping. */
-			fixed yc = penum->cur.y, yn = dda_current(penum->dda.row.y);
+			fixed yc = penum->cur.y,
+			    yn = dda_current(penum->dda.row.y);
 
 			if (yn < yc) {
 			    fixed temp = yn;
@@ -148,11 +169,14 @@ gx_image1_plane_data(gx_device * dev, gx_image_enum_common_t * info,
 			penum->hci = fixed2int_pixround(yn) - penum->yci;
 			if (penum->hci == 0)
 			    goto mt;
+			if_debug2('b', "[b]yci=%d, hci=%d\n",
+				  penum->yci, penum->hci);
 		    }
 		    break;
 		case image_landscape:
 		    {		/* Check for no pixel centers in x. */
-			fixed xc = penum->cur.x, xn = dda_current(penum->dda.row.x);
+			fixed xc = penum->cur.x,
+			    xn = dda_current(penum->dda.row.x);
 
 			if (xn < xc) {
 			    fixed temp = xn;
@@ -170,43 +194,61 @@ gx_image1_plane_data(gx_device * dev, gx_image_enum_common_t * info,
 			penum->wci = fixed2int_pixround(xn) - penum->xci;
 			if (penum->wci == 0)
 			    goto mt;
+			if_debug2('b', "[b]xci=%d, wci=%d\n",
+				  penum->xci, penum->wci);
 		    }
 		    break;
 		case image_skewed:
 		    ;
 	    }
-	dda_translate(penum->dda.pixel0.x,
+	dda_translate(penum->dda.strip.x,
 		      penum->cur.x - penum->prev.x);
-	dda_translate(penum->dda.pixel0.y,
+	dda_translate(penum->dda.strip.y,
 		      penum->cur.y - penum->prev.y);
+	penum->dda.pixel0 = penum->dda.strip;
+	if (x_used) {
+	    /*
+	     * Processing was interrupted by an error.  Skip over pixels
+	     * already processed.
+	     */
+	    dda_advance(penum->dda.pixel0.x, penum->used.x);
+	    dda_advance(penum->dda.pixel0.y, penum->used.x);
+	    penum->used.x = 0;
+	}
+	if_debug2('b', "[b]pixel0 x=%g, y=%g\n",
+		  fixed2float(dda_current(penum->dda.pixel0.x)),
+		  fixed2float(dda_current(penum->dda.pixel0.y)));
+	code = (*penum->render)(penum, buffer, sourcex + x_used,
+				width_spp - x_used * penum->spp, 1, dev);
+	if (code < 0) {
+	    /* Error or interrupt, restore original state. */
+	    penum->used.x += x_used;
+	    if (!penum->used.y) {
+		dda_previous(penum->dda.row.x);
+		dda_previous(penum->dda.row.y);
+		dda_translate(penum->dda.strip.x,
+			      penum->prev.x - penum->cur.x);
+		dda_translate(penum->dda.strip.y,
+			      penum->prev.y - penum->cur.y);
+	    }
+	    goto out;
+	}
 	penum->prev = penum->cur;
-	code = (*penum->render) (penum, buffer, sourcex, width_spp, 1,
-				 dev);
-	if (code < 0)
-	    goto err;
       mt:;
     }
     if (penum->y < penum->rect.h) {
 	code = 0;
-	goto out;
+    } else {
+	/* End of input data.  Render any left-over buffered data. */
+	code = gx_image1_flush(info);
+	if (code >= 0)
+	    code = 1;
     }
-    /* End of data.  Render any left-over buffered data. */
-    code = gx_image1_flush(info);
-    if (code < 0) {
-	penum->y--;
-	goto err;
-    }
-    code = 1;
-    goto out;
-  err:				/* Error or interrupt, restore original state. */
-    while (penum->y > y) {
-	dda_previous(penum->dda.row.x);
-	dda_previous(penum->dda.row.y);
-	--(penum->y);
-    }
+out:
     /* Note that caller must call end_image */
     /* for both error and normal termination. */
-  out:return code;
+    *rows_used = penum->y - y;
+    return code;
 }
 
 /* Flush any buffered data. */
@@ -353,23 +395,26 @@ repack_bit_planes(const gx_image_plane_t *src_planes, const ulong *offsets,
 }
 
 /* Clean up by releasing the buffers. */
+/* Currently we ignore draw_last. */
 int
-gx_image1_end_image(gx_device *ignore_dev, gx_image_enum_common_t * info,
-		    bool draw_last)
+gx_image1_end_image(gx_image_enum_common_t * info, bool draw_last)
 {
     gx_image_enum *penum = (gx_image_enum *) info;
     gs_memory_t *mem = penum->memory;
-    stream_IScale_state *scaler = penum->scaler;
-
-    if (draw_last)
-        gx_image1_flush(info);
+    stream_image_scale_state *scaler = penum->scaler;
 
     if_debug2('b', "[b]%send_image, y=%d\n",
 	      (penum->y < penum->rect.h ? "premature " : ""), penum->y);
+    if (draw_last) {
+	int code = gx_image_flush(info);
+
+	if (code < 0)
+	    return code;
+    }
     gs_free_object(mem, penum->rop_dev, "image RasterOp");
     gs_free_object(mem, penum->clip_dev, "image clipper");
     if (scaler != 0) {
-	(*s_IScale_template.release) ((stream_state *) scaler);
+	(*scaler->template->release) ((stream_state *) scaler);
 	gs_free_object(mem, scaler, "image scaler state");
     }
     gs_free_object(mem, penum->line, "image line");

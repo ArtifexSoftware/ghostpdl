@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1995, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 1995, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -23,20 +23,13 @@
 #  define opdef_INCLUDED
 
 /*
- * Operator procedures take the pointer to the top of the o-stack
- * as their argument.  They return 0 for success, a negative code
- * for an error, or a positive code for some uncommon situations (see below).
- */
-
-/*
  * Define the structure for initializing the operator table.  Each operator
  * file zxxx.c declares an array of these as follows:
 
- const op_def * const zxxx_op_defs[] =
- {
- {"1name", zname},
- ...
- op_def_end(iproc)
+ const op_def * const zxxx_op_defs[] = {
+    {"1name", zname},
+    ...
+    op_def_end(iproc)
  };
 
  * where iproc is an initialization procedure for the file, or 0.  This
@@ -45,8 +38,8 @@
  * compatibility with an older convention, we also allow (deprecated)
 
  BEGIN_OP_DEFS(my_defs) {
- {"1name", zname},
- ...
+    {"1name", zname},
+    ...
  END_OP_DEFS(iproc) }
 
  * Operators may be stored in dictionaries other than systemdict.
@@ -57,7 +50,7 @@
  */
 typedef struct {
     const char *oname;
-    op_proc_p proc;
+    op_proc_t proc;
 } op_def;
 
 #define op_def_begin_dict(dname) {dname, 0}
@@ -65,7 +58,17 @@ typedef struct {
 #define op_def_begin_level2() op_def_begin_dict("level2dict")
 #define op_def_begin_ll3() op_def_begin_dict("ll3dict")
 #define op_def_is_begin_dict(def) ((def)->proc == 0)
-#define op_def_end(iproc) {0, (op_proc_p)iproc}
+#define op_def_end(iproc) {0, iproc}
+
+/*
+ * NOTE: for implementation reasons, a single table of operator definitions
+ * is limited to 16 entries, including op_def_begin_xxx entries.  If a file
+ * defines more operators than this, it must split them into multiple
+ * tables and have multiple -oper entries in the makefile.  Currently,
+ * only 4 out of 85 operator files require this.
+ */
+#define OP_DEFS_LOG2_MAX_SIZE 4
+#define OP_DEFS_MAX_SIZE (1 << OP_DEFS_LOG2_MAX_SIZE)
 
 /*
  * Define the table of pointers to all operator definition tables.
@@ -114,17 +117,22 @@ ushort op_find_index(P1(const ref *));
 
 #define op_index(opref)\
   (r_size(opref) == 0 ? op_find_index(opref) : r_size(opref))
+
 /*
  * There are actually two kinds of operators: the real ones (t_operator),
  * and ones defined by procedures (t_oparray).  The catalog for t_operators
- * is op_def_table, and their index is in the range [1..op_def_count-1].
+ * is (indirectly) op_defs_all, and their index is in the range
+ * [1..op_def_count-1].
  */
 #define op_index_is_operator(index) ((index) < op_def_count)
-extern const op_def **op_def_table;
-extern uint op_def_count;
+extern const uint op_def_count;
 
-#define op_num_args(opref) (op_def_table[op_index(opref)]->oname[0] - '0')
-#define op_index_proc(index) (op_def_table[index]->proc)
+#define op_index_def(index)\
+  (&op_defs_all[(index) >> OP_DEFS_LOG2_MAX_SIZE]\
+    [(index) & (OP_DEFS_MAX_SIZE - 1)])
+#define op_num_args(opref) (op_index_def(op_index(opref))->oname[0] - '0')
+#define op_index_proc(index) (op_index_def(index)->proc)
+
 /*
  * There are two catalogs for t_oparrays, one global and one local.
  * Operator indices for the global table are in the range

@@ -1,4 +1,4 @@
-%    Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -24,8 +24,8 @@
 %	CIDFonts
 %	Chameleon fonts
 %	Synthetic fonts
-% Also, Type 2 charstrings are converted into Type 1 fonts with
-% CharstringType = 2, which may or may not be supported.
+% Also, Type 2 charstrings are converted into FontType 2 fonts,
+% which may or may not be supported.
 
 30 dict begin
 
@@ -216,13 +216,17 @@ mark
   f cff eq { /pos pos 3 -1 roll add store } { pop } ifelse
 } def
 /next {		% - next <byte>
-  f read { 1 advance } if
+  f read {
+    1 advance
+    DEBUG { (  ) print dup = } if
+  } if
 } def
 /nextstring {	% <length> nextstring <string>
   dup 0 eq {
     pop ()
   } {
     string f exch readstring pop dup length advance
+    DEBUG { (  ) print dup == } if
   } ifelse
 } def
 /card8		% - card8 <card8>
@@ -248,6 +252,7 @@ def
 /tokens {	% - tokens <num1> ... <op#> (op# = 12 means EOF)
   {
     f read not { 12 exit } if
+    DEBUG { (..) print dup = } if
     1 advance
     dup 12 eq { pop next 32 add exit } if
     dup 28 lt { exit } if
@@ -299,7 +304,9 @@ def
 } def
 /Dict {		% <opsdict> Dict -
   /opdict exch store {
-    mark tokens opdict exch .knownget { exec } if cleartomark
+    mark tokens
+    DEBUG { (tokens: ) print ] dup === mark exch aload pop } if
+    opdict exch .knownget { exec } if cleartomark
   } loop cleartomark
 } def
 /idstring {	% <sid> idstring <string|name>
@@ -308,10 +315,15 @@ def
 /idname {	% <sid> idname <name>
   idstring dup type /nametype ne { cvn } if
 } def
+/subfilefilter {	% <file> <length> subfilefilter <filter>
+	% SubFileDecode interprets a length of 0 as infinite.
+  dup 0 le { pop pop () 0 } if () /SubFileDecode filter
+} def
 
 % ------ Top dictionary ------ %
 
 /offput {	% <offset> <proc> offput -
+  DEBUG { (queued: ) print 1 index =only ( ) print dup === } if
   currentdict exch aload length 1 add packedarray cvx
   offsets 3 1 roll put
 } def
@@ -344,7 +356,7 @@ def
   35 { /UnderlinePosition putfi }
   36 { /UnderlineThickness putfi }
   37 { /PaintType xdef }
-  38 { /CharstringType xdef }
+  38 { /FontType xdef }		% actually CharstringType
   39 { counttomark array astore /FontMatrix xdef }
   13 { /UniqueID xdef }
   5 { counttomark array astore /FontBBox xdef }
@@ -461,7 +473,7 @@ def
 .dicttomark readonly def
 
 /readPrivate {		% <font> <size> readPrivate -
-  exch 1 index f exch () /SubFileDecode filter /f exch def
+  exch 1 index f exch subfilefilter /f exch def
   /Private get begin //privatedictops Dict end
   /f cff def advance
 } def
@@ -471,7 +483,7 @@ def
 % We need to pass the file as a parameter for the sake of the PDF
 % interpreter.
 /StartData {		% <resname> <nbytes> StartData -
-  currentfile exch () /SubFileDecode filter ReadData
+  currentfile exch subfilefilter ReadData
 } def
 /ReadData {		% <resname> <file> ReadData -
 
@@ -507,9 +519,8 @@ def
     40 dict begin
 		% Preload defaults that differ from PostScript defaults,
 		% or that are required.
-      /FontType 1 def
+      /FontType 2 def
       /PaintType 0 def
-      /CharstringType 2 def
       /FontMatrix [0.001 0 0 0.001 0 0] def
       /charset StandardCharsets 0 get def
       /Encoding 0 def
@@ -526,8 +537,9 @@ def
 
 	% Read other tables with queued offsets.
 
-  DEBUG { offsets length =only ( offsets) = flush } if
+  DEBUG { (offsets: ) print [ offsets { pop } forall ] == } if
   { /f cff def
+    DEBUG { (pos=) print pos = } if
     offsets pos 2 copy .knownget not { pop pop exit } if
     3 1 roll undef exec
   } loop

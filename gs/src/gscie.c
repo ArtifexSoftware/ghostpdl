@@ -15,7 +15,7 @@
    License requires that the copyright notice and this notice be preserved on
    all copies.
  */
-/* $Id$ */
+
 
 /* CIE color rendering cache management */
 #include "math_.h"
@@ -609,8 +609,7 @@ gx_currentciecaches(gs_state * pgs)
     rc_unshare_struct(pgs->cie_joint_caches, gx_cie_joint_caches,
 		      &st_joint_caches, pgs->memory,
 		      return 0, "gx_currentciecaches");
-    if (pjc != pgs->cie_joint_caches) {
-	/* if unshare did alloction of new cache */
+    if (pgs->cie_joint_caches != pjc) {
 	pjc = pgs->cie_joint_caches;
 	pjc->cspace_id = pjc->render_id = gs_no_id;
 	pjc->id_status = pjc->status = CIE_JC_STATUS_BUILT;

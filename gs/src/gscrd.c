@@ -16,6 +16,7 @@
    all copies.
  */
 
+
 /* CIE color rendering dictionary creation */
 #include "math_.h"
 #include "memory_.h"
@@ -26,6 +27,7 @@
 #include "gserrors.h"
 #include "gsmatrix.h"		/* for gscolor2.h */
 #include "gsparam.h"
+#include "gsstruct.h"
 #include "gsutil.h"
 #include "gxcspace.h"
 #include "gscolor2.h"		/* for gs_set/currentcolorrendering */

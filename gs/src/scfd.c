@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -44,7 +44,7 @@ s_CFD_init(stream_state * st)
 {
     stream_CFD_state *const ss = (stream_CFD_state *) st;
     int raster = ss->raster =
-    round_up((ss->Columns + 7) >> 3, ss->DecodedByteAlign);
+	ROUND_UP((ss->Columns + 7) >> 3, ss->DecodedByteAlign);
     byte white = (ss->BlackIs1 ? 0 : 0xff);
 
     s_hcd_init_inline(ss);
@@ -568,12 +568,17 @@ cf_decode_2d(stream_CFD_state * ss, stream_cursor_read * pr)
 		      count, pcount);
     }
 #endif
-    /* We could just use get_run here, but we can do better: */
-    ensure_bits(3, out0);
+    /*
+     * We could just use get_run here, but we can do better.  However,
+     * we must be careful to handle the case where the very last codes
+     * in the input stream are 1-bit "vertical 0" codes: we can't just
+     * use ensure_bits(3, ...) and go to get more data if it fails.
+     */
+    ensure_bits(3, out3);
 #define vertical_0 (countof(cf2_run_vertical) / 2)
     switch (peek_bits(3)) {
-	default /*4..7 */ :	/* vertical(0) */
-	    skip_bits(1);
+	default /*4..7*/ :	/* vertical(0) */
+v0:	    skip_bits(1);
 	    rlen = vertical_0;
 	    break;
 	case 2:		/* vertical(+1) */
@@ -684,11 +689,17 @@ cf_decode_2d(stream_CFD_state * ss, stream_cursor_read * pr)
 	    invert = ~invert;	/* polarity changes */
     }
     goto top;
+ out3:
+    if (bits_left > 0 && peek_bits(1)) {
+	/* This is a 1-bit "vertical 0" code, which we can still process. */
+	goto v0;
+    }
+    /* falls through */
+  out0:status = 0;
+    /* falls through */
   out:cfd_store_state();
     ss->invert = invert;
     return status;
-  out0:status = 0;
-    goto out;
     /*
      * We handle horizontal decoding here, so that we can
      * branch back into it if we run out of input data.

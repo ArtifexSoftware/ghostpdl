@@ -22,7 +22,7 @@
 /* Initial version 2/1/98 by John Desrosiers (soho@crl.com) */
 
 #if !defined(gxsync_INCLUDED)
- #define gxsync_INCLUDED
+#  define gxsync_INCLUDED
 
 #include "gpsync.h"
 #include "gsmemory.h"
@@ -40,16 +40,16 @@ typedef struct gx_semaphore_s {
 } gx_semaphore_t;
 
 gx_semaphore_t *		/* returns a new semaphore, 0 if error */
-               gx_semaphore_alloc(P1(
-					gs_memory_t * memory	/* memory allocator to use */
-				  ));
+    gx_semaphore_alloc(P1(
+			  gs_memory_t * memory	/* memory allocator to use */
+			  ));
 void
-     gx_semaphore_free(P1(
-			     gx_semaphore_t * sema	/* semaphore to delete */
-		       ));
+    gx_semaphore_free(P1(
+			 gx_semaphore_t * sema	/* semaphore to delete */
+			 ));
 
- #define gx_semaphore_wait(sema)  gp_semaphore_wait(&(sema)->native)
- #define gx_semaphore_signal(sema)  gp_semaphore_signal(&(sema)->native)
+#define gx_semaphore_wait(sema)  gp_semaphore_wait(&(sema)->native)
+#define gx_semaphore_signal(sema)  gp_semaphore_signal(&(sema)->native)
 
 
 /* ----- Monitor interface ----- */
@@ -61,15 +61,15 @@ typedef struct gx_monitor_s {
 } gx_monitor_t;
 
 gx_monitor_t *			/* returns a new monitor, 0 if error */
-             gx_monitor_alloc(P1(
-				    gs_memory_t * memory	/* memory allocator to use */
-			      ));
+    gx_monitor_alloc(P1(
+			gs_memory_t * memory	/* memory allocator to use */
+			));
 void
-     gx_monitor_free(P1(
-			   gx_monitor_t * mon	/* monitor to delete */
-		     ));
+    gx_monitor_free(P1(
+		       gx_monitor_t * mon	/* monitor to delete */
+		       ));
 
- #define gx_monitor_enter(sema)  gp_monitor_enter(&(sema)->native)
- #define gx_monitor_leave(sema)  gp_monitor_leave(&(sema)->native)
+#define gx_monitor_enter(sema)  gp_monitor_enter(&(sema)->native)
+#define gx_monitor_leave(sema)  gp_monitor_leave(&(sema)->native)
 
 #endif /* !defined(gxsync_INCLUDED) */

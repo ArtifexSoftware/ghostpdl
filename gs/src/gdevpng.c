@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -18,6 +18,8 @@
 
 
 /* PNG (Portable Network Graphics) Format.  Pronounced "ping". */
+/* lpd 1999-03-08: changed png.h to png_.h to allow compiling with only
+   headers in /usr/include, no source code. */
 /* lpd 1997-07-20: changed from using gs_malloc/png_xxx_int to png_create_xxx
  * for allocating structures, and from gs_free to png_write_destroy for
  * freeing them. */
@@ -36,7 +38,7 @@
 
 #define PNG_INTERNAL
 #define PNG_NO_STDIO
-#include "png.h"
+#include "png_.h"
 
 /* ------ The device descriptors ------ */
 

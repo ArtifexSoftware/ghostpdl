@@ -1,4 +1,4 @@
-#    Copyright (C) 1991-1998 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1991-1999 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -53,6 +53,7 @@ _D=
 I_=-I
 II=-I
 _I=
+NO_OP=@rem
 # O_ and XE_ are defined separately for each compiler.
 OBJ=obj
 XE=.exe
@@ -77,15 +78,14 @@ PCFBASM=
 # nmake expands macros when encountered, not when used,
 # so this must precede the !include statements.
 
-# *** see comments eleswhere why .ico files are not in obj directory 
-BEGINFILES=$(GLOBJDIR)\gs*.res gs*.ico $(GLGENDIR)\ccf32.tr\
-   $(GSDLL_DLL) $(GSCONSOLE_XE)\
+# ****** WRONG ****** NEED GLOBJ PREFIX ******
+BEGINFILES=gs*.res gs*.ico $(GLGENDIR)\ccf32.tr\
+   $(GSDLL).dll $(GSCONSOLE).exe\
    $(BEGINFILES2)
 
 # Include the generic makefiles.
 #!include $(COMMONDIR)/pcdefs.mak
 #!include $(COMMONDIR)/generic.mak
-!include $(GLSRCDIR)\version.mak
 !include $(GLSRCDIR)\gs.mak
 !include $(GLSRCDIR)\lib.mak
 !include $(GLSRCDIR)\jpeg.mak
@@ -99,6 +99,7 @@ BEGINFILES=$(GLOBJDIR)\gs*.res gs*.ico $(GLGENDIR)\ccf32.tr\
 # This requires GL*_ to be defined, so it has to come after lib.mak.
 GLCCWIN=$(CC_WX) $(CCWINFLAGS) $(I_)$(GLI_)$(_I) $(GLF_)
 
+!include $(GLSRCDIR)\winplat.mak
 !include $(GLSRCDIR)\pcwin.mak
 
 # Define abbreviations for the executable and DLL files.
@@ -110,10 +111,10 @@ GSDLL_OBJ=$(GLOBJ)$(GSDLL)
 
 # No special gconfig_.h is needed.
 # Assume `make' supports output redirection.
-$(gconfig__h): $(MAKEFILE)
+$(gconfig__h): $(TOP_MAKEFILES)
 	echo /* This file deliberately left blank. */ >$(gconfig__h)
 
-$(gconfigv_h): $(MAKEFILE) $(ECHOGS_XE)
+$(gconfigv_h): $(TOP_MAKEFILES) $(ECHOGS_XE)
 	$(ECHOGS_XE) -w $(gconfigv_h) -x 23 define USE_ASM -x 2028 -q $(USE_ASM)-0 -x 29
 	$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define USE_FPU -x 2028 -q $(FPU_TYPE)-0 -x 29
 	$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define EXTEND_NAMES 0$(EXTEND_NAMES)
@@ -124,10 +125,10 @@ $(gconfigv_h): $(MAKEFILE) $(ECHOGS_XE)
 # The Windows Win32 platform
 
 mswin32__=$(GLOBJ)gp_msio.$(OBJ)
-mswin32_.dev: $(mswin32__) $(ECHOGS_XE) msw32nc_.dev
-        $(SETMOD) mswin32_ $(mswin32__)
-	$(ADDMOD) mswin32_ -include msw32nc_
-        $(ADDMOD) mswin32_ -iodev wstdio
+$(GLGEN)mswin32_.dev: $(mswin32__) $(ECHOGS_XE) $(GLGEN)msw32nc_.dev
+	$(SETMOD) $(GLGEN)mswin32_ $(mswin32__)
+	$(ADDMOD) $(GLGEN)mswin32_ -include $(GLGEN)msw32nc_.dev
+	$(ADDMOD) $(GLGEN)mswin32_ -iodev wstdio
 
 $(GLOBJ)gp_msio.$(OBJ): $(GLSRC)gp_msio.c $(AK) $(gp_mswin_h) \
  $(gsdll_h) $(stdio__h) $(gxiodev_h) $(stream_h) $(gx_h) $(gp_h) $(windows__h)
@@ -137,27 +138,16 @@ $(GLOBJ)gp_msio.$(OBJ): $(GLSRC)gp_msio.c $(AK) $(gp_mswin_h) \
 # console I/O module gp_msio.c, because this incorrectly refers to gsdll.c,
 # which in turn incorrectly refers to PostScript interpreter code.
 
-msw32nc_1=$(GLOBJ)gp_mswin.$(OBJ) $(GLOBJ)gp_win32.$(OBJ) $(GLOBJ)gp_wgetv.$(OBJ)
-msw32nc_2=$(GLOBJ)gp_nofb.$(OBJ) $(GLOBJ)gp_ntfs.$(OBJ)
-msw32nc__=$(msw32nc_1) $(msw32nc_2)
-msw32nc_.dev: $(msw32nc__) $(ECHOGS_XE)
-        $(SETMOD) msw32nc_ $(msw32nc_1)
-	$(ADDMOD) msw32nc_ -obj $(msw32nc_2)
+msw32nc__=$(GLOBJ)gp_mswin.$(OBJ) $(GLOBJ)gp_nofb.$(OBJ) $(GLOBJ)gp_wgetv.$(OBJ)
+msw32nc_inc=$(GLD)nosync.dev $(GLD)winplat.dev
+$(GLGEN)msw32nc_.dev: $(msw32nc__) $(ECHOGS_XE) $(msw32nc_inc)
+	$(SETMOD) $(GLGEN)msw32nc_ $(msw32nc__)
+	$(ADDMOD) $(GLGEN)msw32nc_ -include $(msw32nc_inc)
 
 $(GLOBJ)gp_mswin.$(OBJ): $(GLSRC)gp_mswin.c $(AK) $(gp_mswin_h) \
  $(ctype__h) $(dos__h) $(malloc__h) $(memory__h) $(string__h) $(windows__h) \
  $(gx_h) $(gp_h) $(gpcheck_h) $(gserrors_h) $(gsexit_h)
 	$(GLCCWIN) $(GLO_)gp_mswin.$(OBJ) $(C_) $(GLSRC)gp_mswin.c
-
-$(GLOBJ)gp_ntfs.$(OBJ): $(GLSRC)gp_ntfs.c $(AK)\
- $(dos__h) $(memory__h) $(stdio__h) $(string__h) $(windows__h)\
- $(gp_h) $(gsmemory_h) $(gsstruct_h) $(gstypes_h) $(gsutil_h)
-	$(GLCCWIN) $(GLO_)gp_ntfs.$(OBJ) $(C_) $(GLSRC)gp_ntfs.c
-
-$(GLOBJ)gp_win32.$(OBJ): $(GLSRC)gp_win32.c $(AK)\
- $(dos__h) $(stdio__h) $(string__h) $(windows__h)\
- $(gp_h) $(gsmemory_h) $(gstypes_h)
-	$(GLCCWIN) $(GLO_)gp_win32.$(OBJ) $(C_) $(GLSRC)gp_win32.c
 
 $(GLOBJ)gp_wgetv.$(OBJ): $(GLSRC)gp_wgetv.c $(AK) $(gscdefs_h)
 	$(GLCCWIN) $(GLO_)gp_wgetv.$(OBJ) $(C_) $(GLSRC)gp_wgetv.c

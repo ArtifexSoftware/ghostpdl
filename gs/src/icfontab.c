@@ -1,4 +1,4 @@
-/* Copyright (C) 1995 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -20,21 +20,22 @@
 /* Table of compiled fonts */
 #include "ccfont.h"
 
-/* This is compiled separately and linked with the fonts themselves, */
-/* in a shared library when applicable. */
+/*
+ * This is compiled separately and linked with the fonts themselves,
+ * in a shared library when applicable.
+ */
 
 #undef font_
-#define font_(fname, fproc, zfproc) extern ccfont_fproc fproc;
+#define font_(fname, fproc, zfproc) extern ccfont_proc(fproc);
 #ifndef GCONFIGF_H
 # include "gconfigf.h"
 #else
 # include GCONFIGF_H
 #endif
 
-private ccfont_fproc *fprocs[] =
-{
+private const ccfont_fproc fprocs[] = {
 #undef font_
-#define font_(fname, fproc, zfproc) &fproc,	/* fname, zfproc are not needed */
+#define font_(fname, fproc, zfproc) fproc,  /* fname, zfproc are not needed */
 #ifndef GCONFIGF_H
 # include "gconfigf.h"
 #else
@@ -44,7 +45,7 @@ private ccfont_fproc *fprocs[] =
 };
 
 int
-ccfont_fprocs(int *pnum_fprocs, ccfont_fproc *** pfprocs)
+ccfont_fprocs(int *pnum_fprocs, const ccfont_fproc ** pfprocs)
 {
     *pnum_fprocs = countof(fprocs) - 1;
     *pfprocs = &fprocs[0];

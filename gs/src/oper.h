@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -28,6 +28,13 @@
 #include "opextern.h"
 #include "opcheck.h"
 #include "iutil.h"
+
+/*
+ * Operator procedures take a single argument.  This is currently a pointer
+ * to the current context state, but might conceivably change in the future.
+ * They return 0 for success, a negative code for an error, or a positive
+ * code for some uncommon situations (see below).
+ */
 
 /*
  * In order to combine typecheck and stackunderflow error checking

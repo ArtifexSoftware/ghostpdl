@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1991, 1993, 1994, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1991, 1993, 1994, 1996, 1997, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -23,7 +23,7 @@
 #  define ifont_INCLUDED
 
 #include "gsccode.h"		/* for gs_glyph */
-#include "gsstruct.h"		/* for extern_st */
+#include "gsstype.h"		/* for extern_st */
 
 /* The external definition of fonts is given in the PostScript manual, */
 /* pp. 91-93. */
@@ -60,7 +60,7 @@ typedef struct font_data_s {
  */
 /* st_font_data is exported for zdefault_make_font in zfont.c. */
 extern_st(st_font_data);
-#define public_st_font_data()	/* in zfont2.c */\
+#define public_st_font_data()	/* in zbfont.c */\
   gs_public_st_ref_struct(st_font_data, font_data, "font_data")
 #define pfont_data(pfont) ((font_data *)((pfont)->client_data))
 #define pfont_dict(pfont) (&pfont_data(pfont)->dict)

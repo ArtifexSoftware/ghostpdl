@@ -20,7 +20,7 @@
 /* Interface to platform-dependent synchronization primitives */
 
 #if !defined(gpsync_INCLUDED)
- #define gpsync_INCLUDED
+#  define gpsync_INCLUDED
 
 /* Initial version 4/1/98 by John Desrosiers (soho@crl.com). */
 /* 8/9/98 L. Peter Deutsch (ghost@aladdin.com) Changed ...sizeof to

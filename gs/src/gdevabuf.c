@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -39,7 +39,6 @@
 private dev_proc_map_rgb_color(mem_alpha_map_rgb_color);
 private dev_proc_map_color_rgb(mem_alpha_map_color_rgb);
 private dev_proc_map_rgb_alpha_color(mem_alpha_map_rgb_alpha_color);
-private dev_proc_get_alpha_bits(mem_alpha_get_alpha_bits);
 private dev_proc_copy_alpha(mem_alpha_copy_alpha);
 
 void
@@ -56,7 +55,6 @@ gs_make_mem_alpha_device(gx_device_memory * adev, gs_memory_t * mem,
     set_dev_proc(adev, map_rgb_color, mem_alpha_map_rgb_color);
     set_dev_proc(adev, map_color_rgb, mem_alpha_map_color_rgb);
     set_dev_proc(adev, map_rgb_alpha_color, mem_alpha_map_rgb_alpha_color);
-    set_dev_proc(adev, get_alpha_bits, mem_alpha_get_alpha_bits);
     set_dev_proc(adev, copy_alpha, mem_alpha_copy_alpha);
 }
 
@@ -90,13 +88,6 @@ mem_alpha_map_rgb_alpha_color(gx_device * dev, gx_color_value r,
     return (color == 0 || color == gx_no_color_index ? color :
 	    (gx_color_index) (alpha >> (gx_color_value_bits -
 					mdev->log2_alpha_bits)));
-}
-private int
-mem_alpha_get_alpha_bits(gx_device * dev, graphics_object_type type)
-{
-    gx_device_memory * const mdev = (gx_device_memory *)dev;
-
-    return 1 << mdev->log2_alpha_bits;
 }
 /* Implement alpha copying. */
 private int
@@ -175,6 +166,9 @@ gs_make_mem_abuf_device(gx_device_memory * adev, gs_memory_t * mem,
     adev->mapped_x = mapped_x;
     set_dev_proc(adev, close_device, mem_abuf_close);
     set_dev_proc(adev, get_clipping_box, mem_abuf_get_clipping_box);
+    adev->color_info.anti_alias.text_bits =
+      adev->color_info.anti_alias.graphics_bits =
+	alpha_bits;
 }
 
 /* Test whether a device is an alpha-buffering device. */
@@ -269,7 +263,7 @@ typedef struct y_transfer_s {
     int transfer_y;
     int transfer_height;
 } y_transfer;
-private void near
+private void
 y_transfer_init(y_transfer * pyt, gx_device * dev, int ty, int th)
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
@@ -286,7 +280,7 @@ y_transfer_init(y_transfer * pyt, gx_device * dev, int ty, int th)
     pyt->transfer_height = 0;
 }
 /* while ( yt.height_left > 0 ) { y_transfer_next(&yt, mdev); ... } */
-private void near
+private void
 y_transfer_next(y_transfer * pyt, gx_device * dev)
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;

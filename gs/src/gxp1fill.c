@@ -85,9 +85,9 @@ tile_fill_init(tile_fill_state_t * ptfs, const gx_device_color * pdevc,
      */
     if (set_mask_phase && m_tile->is_simple) {
 	px = imod(-(int)(m_tile->step_matrix.tx - ptfs->phase.x + 0.5),
-		m_tile->tmask.rep_width);
+		  m_tile->tmask.rep_width);
 	py = imod(-(int)(m_tile->step_matrix.ty - ptfs->phase.y + 0.5),
-		m_tile->tmask.rep_height);
+		  m_tile->tmask.rep_height);
     } else
 	px = py = 0;
     return tile_clip_initialize(&ptfs->cdev, ptfs->tmask, dev, px, py);
@@ -122,6 +122,7 @@ tile_by_steps(tile_fill_state_t * ptfs, int x0, int y0, int w0, int h0,
 	gs_rect ibbox;		/* bounding box in stepping space */
 	double bbw = ptile->bbox.q.x - ptile->bbox.p.x;
 	double bbh = ptile->bbox.q.y - ptile->bbox.p.y;
+	double u0, v0, u1, v1;
 
 	bbox.p.x = x0, bbox.p.y = y0;
 	bbox.q.x = x1, bbox.q.y = y1;
@@ -131,14 +132,26 @@ tile_by_steps(tile_fill_state_t * ptfs, int x0, int y0, int w0, int h0,
 		   x0, y0, w0, h0,
 		   ibbox.p.x, ibbox.p.y, ibbox.q.x, ibbox.q.y,
 		   step_matrix.tx, step_matrix.ty);
-	i0 = (int)ceil(ibbox.p.x - bbw - 0.000001);
-	i1 = (int)floor(ibbox.q.x + 0.000001);
-	j0 = (int)ceil(ibbox.p.y - bbh - 0.000001);
-	j1 = (int)floor(ibbox.q.y + 0.000001);
+	/*
+	 * If the pattern is partly transparent and XStep/YStep is smaller
+	 * than the device space BBox, we need to ensure that we cover
+	 * each pixel of the rectangle being filled with *every* pattern
+	 * that overlaps it, not just *some* pattern copy.
+	 */
+	u0 = ibbox.p.x - max(ptile->bbox.p.x, 0) - 0.000001;
+	v0 = ibbox.p.y - max(ptile->bbox.p.y, 0) - 0.000001;
+	u1 = ibbox.q.x - min(ptile->bbox.q.x, 0) + 0.000001;
+	v1 = ibbox.q.y - min(ptile->bbox.q.y, 0) + 0.000001;
+	if (!ptile->is_simple)
+	    u0 -= bbw, v0 -= bbh, u1 += bbw, v1 += bbh;
+	i0 = (int)floor(u0);
+	j0 = (int)floor(v0);
+	i1 = (int)ceil(u1);
+	j1 = (int)ceil(v1);
     }
     if_debug4('T', "[T]i=(%d,%d) j=(%d,%d)\n", i0, i1, j0, j1);
-    for (i = i0; i <= i1; i++)
-	for (j = j0; j <= j1; j++) {
+    for (i = i0; i < i1; i++)
+	for (j = j0; j < j1; j++) {
 	    int x = (int)(step_matrix.xx * i +
 			  step_matrix.yx * j + step_matrix.tx);
 	    int y = (int)(step_matrix.xy * i +
@@ -250,11 +263,10 @@ gx_dc_pattern_fill_rectangle(const gx_device_color * pdevc, int x, int y,
     if (ptile->is_simple) {
 	int px =
 	    imod(-(int)(ptile->step_matrix.tx - state.phase.x + 0.5),
-		bits->rep_width);
+		 bits->rep_width);
 	int py =
 	    imod(-(int)(ptile->step_matrix.ty - state.phase.y + 0.5),
-		bits->rep_height);
-  
+		 bits->rep_height);
 
 	if (state.pcdev != dev)
 	    tile_clip_set_phase(&state.cdev, px, py);

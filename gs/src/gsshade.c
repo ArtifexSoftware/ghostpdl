@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -21,10 +21,13 @@
 #include "gx.h"
 #include "gscspace.h"
 #include "gserrors.h"
-#include "gsstruct.h"		/* for extern_st */
+#include "gsstruct.h"
 #include "gxdevcli.h"
 #include "gxcpath.h"
+#include "gxcspace.h"
+#include "gxdcolor.h"		/* for filling background rectangle */
 #include "gxistate.h"
+#include "gxpaint.h"
 #include "gxpath.h"
 #include "gxshade.h"
 #include "gzpath.h"
@@ -382,68 +385,134 @@ gs_shading_Tpp_init(gs_shading_t ** ppsh,
 
 /* ================ Shading rendering ================ */
 
+/* Add a user-space rectangle to a path. */
+private int
+shading_path_add_box(gx_path *ppath, const gs_rect *pbox,
+		     const gs_matrix_fixed *pmat)
+{
+    gs_fixed_point pt;
+    gs_fixed_point pts[3];
+    int code;
+
+    if ((code = gs_point_transform2fixed(pmat, pbox->p.x, pbox->p.y,
+					 &pt)) < 0 ||
+	(code = gx_path_add_point(ppath, pt.x, pt.y)) < 0 ||
+	(code = gs_point_transform2fixed(pmat, pbox->q.x, pbox->p.y,
+					 &pts[0])) < 0 ||
+	(code = gs_point_transform2fixed(pmat, pbox->q.x, pbox->q.y,
+					 &pts[1])) < 0 ||
+	(code = gs_point_transform2fixed(pmat, pbox->p.x, pbox->q.y,
+					 &pts[2])) < 0 ||
+	(code = gx_path_add_lines(ppath, pts, 3)) < 0
+	)
+	DO_NOTHING;
+    return code;
+}
+
 /* Fill a path with a shading. */
 int
-gs_shading_fill_path(const gs_shading_t *psh, const gx_path *ppath,
-		     gx_device *orig_dev, gs_imager_state *pis)
+gs_shading_fill_path(const gs_shading_t *psh, /*const*/ gx_path *ppath,
+		     const gs_fixed_rect *prect, gx_device *orig_dev,
+		     gs_imager_state *pis, bool fill_background)
 {
     gs_memory_t *mem = pis->memory;
+    const gs_matrix_fixed *pmat = &pis->ctm;
     gx_device *dev = orig_dev;
     gs_fixed_rect path_box;
     gs_rect rect;
-    gx_clip_path *box_clip = 0;
     gx_clip_path *path_clip = 0;
-    gx_device_clip box_dev, path_dev;
-    int code;
+    bool path_clip_set = false;
+    gx_device_clip path_dev;
+    int code = 0;
 
-    if (psh->params.have_BBox) {
-	/****** NOT IMPLEMENTED YET *****/
-	box_clip = gx_cpath_alloc(mem, "shading_fill_path(box_clip)");
-	if (box_clip == 0)
-	    return_error(gs_error_VMerror);
-	/****** APPEND TRANSFORMED BOX ******/
-	gx_make_clip_device(&box_dev, &box_dev, &box_clip->rect_list->list);
-	box_dev.target = dev;
-#if 0
-	dev = &box_dev;
-	dev_proc(dev, open_device)(dev);
-#endif
+    path_clip = gx_cpath_alloc(mem, "shading_fill_path(path_clip)");
+    if (path_clip == 0) {
+	code = gs_note_error(gs_error_VMerror);
+	goto out;
     }
     dev_proc(dev, get_clipping_box)(dev, &path_box);
-    if (ppath) {
-	/****** NOT IMPLEMENTED YET *****/
-	if (psh->params.Background) {
-	    /****** FILL BOX WITH BACKGROUND ******/
+    if (prect)
+	rect_intersect(path_box, *prect);
+    if (psh->params.have_BBox) {
+	gs_fixed_rect bbox_fixed;
+
+	if ((is_xxyy(pmat) || is_xyyx(pmat)) &&
+	    (code = shade_bbox_transform2fixed(&psh->params.BBox, pis,
+					       &bbox_fixed)) >= 0
+	    ) {
+	    /* We can fold BBox into the clipping rectangle. */
+	    rect_intersect(path_box, bbox_fixed);
+	} else
+	    {
+	    gx_path *box_path;
+
+	    if (path_box.p.x >= path_box.q.x || path_box.p.y >= path_box.q.y)
+		goto out;		/* empty rectangle */
+	    box_path = gx_path_alloc(mem, "shading_fill_path(box_path)");
+	    if (box_path == 0) {
+		code = gs_note_error(gs_error_VMerror);
+		goto out;
+	    }
+	    if ((code = gx_cpath_from_rectangle(path_clip, &path_box)) < 0 ||
+		(code = shading_path_add_box(box_path, &psh->params.BBox,
+					     pmat)) < 0 ||
+		(code = gx_cpath_intersect(path_clip, box_path,
+					   gx_rule_winding_number, pis)) < 0
+		)
+		DO_NOTHING;
+	    gx_path_free(box_path, "shading_fill_path(box_path)");
+	    if (code < 0)
+		goto out;
+	    path_clip_set = true;
 	}
-	path_clip = gx_cpath_alloc(mem, "shading_fill_path(path_clip)");
-	if (path_clip == 0) {
-	    code = gs_note_error(gs_error_VMerror);
+    }
+    if (!path_clip_set) {
+	if (path_box.p.x >= path_box.q.x || path_box.p.y >= path_box.q.y)
+	    goto out;		/* empty rectangle */
+	if ((code = gx_cpath_from_rectangle(path_clip, &path_box)) < 0)
 	    goto out;
-	}
-	/****** SET CLIP PATH ******/
-	gx_make_clip_device(&path_dev, &path_dev, &path_clip->rect_list->list);
-	path_dev.target = dev;
-#if 0
-	dev = &path_dev;
-	dev_proc(dev, open_device)(dev);
-	dev_proc(dev, get_clipping_box)(dev, &path_box);
-#endif
+    }
+    if (ppath &&
+	(code =
+	 gx_cpath_intersect(path_clip, ppath, gx_rule_winding_number, pis)) < 0
+	)
+	goto out;
+    gx_make_clip_device(&path_dev, &path_dev, &path_clip->rect_list->list);
+    path_dev.target = dev;
+    dev = (gx_device *)&path_dev;
+    dev_proc(dev, open_device)(dev);
+    dev_proc(dev, get_clipping_box)(dev, &path_box);
+    if (psh->params.Background && fill_background) {
+	int x0 = fixed2int(path_box.p.x);
+	int y0 = fixed2int(path_box.p.y);
+	int x1 = fixed2int(path_box.q.x);
+	int y1 = fixed2int(path_box.q.y);
+	const gs_color_space *pcs = psh->params.ColorSpace;
+	gs_client_color cc;
+	gx_device_color dev_color;
+
+	cc = *psh->params.Background;
+	(*pcs->type->restrict_color)(&cc, pcs);
+	(*pcs->type->remap_color)(&cc, pcs, &dev_color, pis,
+				  dev, gs_color_select_texture);
+	/****** WRONG IF NON-IDEMPOTENT RasterOp ******/
+	code = gx_fill_rectangle_device_rop(x0, y0, x1 - x0, y1 - y0,
+					    &dev_color, dev, pis->log_op);
+	if (code < 0)
+	    goto out;
     }
     {
 	gs_rect path_rect;
-	const gs_matrix *pmat = &ctm_only(pis);
 
 	path_rect.p.x = fixed2float(path_box.p.x);
 	path_rect.p.y = fixed2float(path_box.p.y);
 	path_rect.q.x = fixed2float(path_box.q.x);
 	path_rect.q.y = fixed2float(path_box.q.y);
-	gs_bbox_transform_inverse(&path_rect, pmat, &rect);
+	gs_bbox_transform_inverse(&path_rect, (const gs_matrix *)pmat, &rect);
     }
     code = psh->head.fill_rectangle(psh, &rect, dev, pis);
 out:
     if (path_clip)
 	gx_cpath_free(path_clip, "shading_fill_path(path_clip)");
-    if (box_clip)
-	gx_cpath_free(box_clip, "shading_fill_path(box_clip)");
     return code;
 }

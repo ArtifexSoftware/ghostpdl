@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -123,33 +123,35 @@ struct gs_show_enum_s {
     int level;			/* save the level of pgs */
     gs_char_path_mode charpath_flag;
     gs_state *show_gstate;	/* for setting pgs->show_gstate */
-    /* at returns/callouts */
+				/* at returns/callouts */
     int can_cache;		/* -1 if can't use cache at all, */
-    /* 0 if can read but not load, */
-    /* 1 if can read and load */
+				/* 0 if can read but not load, */
+				/* 1 if can read and load */
     gs_int_rect ibox;		/* int version of quick-check */
-    /* (inner) clipping box */
+				/* (inner) clipping box */
     gs_int_rect obox;		/* int version of (outer) clip box */
     int ftx, fty;		/* transformed font translation */
     /* Following are updated dynamically */
-        gs_glyph(*encode_char) (P3(gs_show_enum *, gs_font *, gs_char *));
-    /* copied from font, */
-    /* except for glyphshow */
+    gs_glyph(*encode_char) (P3(gs_show_enum *, gs_font *, gs_char *));
+				/* copied from font, */
+				/* except for glyphshow */
     gs_log2_scale_point log2_suggested_scale;	/* suggested scaling */
-    /* factors for oversampling, */
-    /* based on FontBBox and CTM */
+				/* factors for oversampling, */
+				/* based on FontBBox and CTM */
     gx_device_memory *dev_cache;	/* cache device */
     gx_device_memory *dev_cache2;	/* underlying alpha memory device, */
-    /* if dev_cache is an alpha buffer */
+				/* if dev_cache is an alpha buffer */
     gx_device_null *dev_null;	/* null device for stringwidth */
-    /*uint index; *//* index within string */
+    /*uint index; */		/* index within string */
     gs_char current_char;	/* current char for render or move */
     gs_glyph current_glyph;	/* current glyph ditto */
+    int cmap_code;		/* for FMapType 9 composite fonts, */
+				/* the value returned by decode_next */
     gs_fixed_point wxy;		/* width of current char */
-    /* in device coords */
+				/* in device coords */
     gs_fixed_point origin;	/* unrounded origin of current char */
-    /* in device coords, needed for */
-    /* charpath and WMode=1 */
+				/* in device coords, needed for */
+				/* charpath and WMode=1 */
     cached_char *cc;		/* being accumulated */
     gs_point width;		/* total width of string, set at end */
     show_width_status width_status;

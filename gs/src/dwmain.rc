@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, Russell Lang.  All rights reserved.
+/* Copyright (C) 1996, 1998 Russell Lang.  All rights reserved.
   
   This file is part of Aladdin Ghostscript.
   
@@ -18,13 +18,20 @@
 
 
 
+
 #include <windows.h>
 #include "dwmain.h"
 
-GSTEXT_ICON ICON gstext.ico
-GSIMAGE_ICON ICON gsgraph.ico
+#ifndef gstext_ico
+#define gstext_ico gstext.ico
+#endif
+#ifndef gsgraph_ico
+#define gsgraph_ico gsgraph.ico
+#endif
+
+GSTEXT_ICON ICON gstext_ico
+GSIMAGE_ICON ICON gsgraph_ico
 
 #ifndef DS_3DLOOK
 #define DS_3DLOOK 0x0004L	/* for Windows 95 look */
 #endif
-

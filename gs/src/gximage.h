@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -24,14 +24,15 @@
 
 #include "gsiparam.h"
 #include "gxcspace.h"
-#include "strimpl.h"		/* for siscale.h */
-#include "siscale.h"
+#include "strimpl.h"		/* for sisparam.h */
+#include "sisparam.h"
 #include "gxdda.h"
+#include "gxiclass.h"
 #include "gxiparam.h"
 #include "gxsample.h"
 
 /* Define the abstract type for the image enumerator state. */
-typedef struct gx_image_enum_s gx_image_enum;
+/*typedef struct gx_image_enum_s gx_image_enum;*/  /* in gxiclass.h */
 
 /*
  * Incoming samples may go through two different transformations:
@@ -81,6 +82,14 @@ typedef struct sample_map_s {
 
     sample_decoding decoding;
 
+    /*
+     * If decoding is sd_none for a non-mask image, we still need to know
+     * whether the table includes an inversion, so that we can transform
+     * mask values correctly.
+     */
+
+    bool inverted;
+
 } sample_map;
 
 /* Decode an 8-bit sample into a floating point color component. */
@@ -106,49 +115,10 @@ typedef struct sample_map_s {
     penum->map[i].decode_base + (frac_value) * penum->map[i].decode_factor
 
 /*
- * Declare the variable that holds the 12-bit unpacking procedure
- * if 12-bit samples are supported.
+ * Declare the pointer that holds the 12-bit unpacking procedure
+ * if 12-bit samples are supported, 0 otherwise.
  */
-extern sample_unpack_proc((*sample_unpack_12_proc));
-
-/*
- * Define the interface for routines used to render a (source) scan line.
- * If the buffer is the original client's input data, it may be unaligned;
- * otherwise, it will always be aligned.
- *
- * The image_render procedures work on fully expanded, complete rows.  These
- * take a height argument, which is an integer >= 0; they return a negative
- * code, or the number of rows actually processed (which may be less than
- * the height).  height = 0 is a special call to indicate that there is no
- * more input data; this is necessary because the last scan lines of the
- * source data may not produce any output.
- */
-#define irender_proc(proc)\
-  int proc(P6(gx_image_enum *penum, const byte *buffer, int data_x,\
-	      uint w, int h, gx_device *dev))
-typedef irender_proc((*irender_proc_t));
-
-/*
- * Define 'strategy' procedures for selecting imaging methods.  Strategies
- * are called in the order in which they are declared below, so each one may
- * assume that all the previous ones failed.  If a strategy succeeds, it may
- * update the enumerator structure as well as returning the rendering
- * procedure.
- *
- * Note that strategies are defined by procedure members of a structure, so
- * that they may be omitted from configurations where they are not desired.
- */
-#define image_strategy_proc(proc)\
-  irender_proc_t proc(P1(gx_image_enum *penum))
-typedef image_strategy_proc((*image_strategy_proc_t));
-typedef struct gx_image_strategies_s {
-    image_strategy_proc_t interpolate;
-    image_strategy_proc_t simple;
-    image_strategy_proc_t fracs;
-    image_strategy_proc_t mono;
-    image_strategy_proc_t color;
-} gx_image_strategies_t;
-extern gx_image_strategies_t image_strategies;
+extern const sample_unpack_proc_t sample_unpack_12_proc;
 
 /* Define the distinct postures of an image. */
 /* Each posture includes its reflected variant. */
@@ -193,11 +163,10 @@ struct gx_image_enum_s {
     byte log2_xbytes;		/* log2(bytes per expanded sample): */
 				/* 0 if bps <= 8, log2(sizeof(frac)) */
 				/* if bps > 8 */
-    byte spp;			/* samples per pixel: 1, 3, or 4 */
-				/* (1, 2, 3, 4, or 5 if alpha is allowed) */
+    byte spp;			/* samples per pixel */
     gs_image_alpha_t alpha;	/* Alpha from image structure */
     struct mc_ {
-	uint values[gs_image_max_components * 2]; /* MaskColor values, */
+	uint values[GS_IMAGE_MAX_COMPONENTS * 2]; /* MaskColor values, */
 				/* always as ranges, guaranteed in range */
 				/* and in order (v0 <= v1) */
 	bits32 mask, test;	/* (if spp > 1, bps <= 8) */
@@ -216,7 +185,7 @@ struct gx_image_enum_s {
 	int x, y, w, h;		/* subrectangle being rendered */
     } rect;
     gs_fixed_point x_extent, y_extent;	/* extent of one row of rect */
-    sample_unpack_proc((*unpack));
+    SAMPLE_UNPACK_PROC((*unpack));
     irender_proc((*render));
     const gs_imager_state *pis;
     const gs_color_space *pcs;	/* color space of image */
@@ -252,16 +221,20 @@ struct gx_image_enum_s {
 				/* components (as needed) */
     gx_device_clip *clip_dev;	/* clipping device (if needed) */
     gx_device_rop_texture *rop_dev;	/* RasterOp device (if needed) */
-    stream_IScale_state *scaler;	/* scale state for */
-				/* Interpolate (if needed) */
+    stream_image_scale_state *scaler;	/* scale state for Interpolate */
+				/* (if needed) */
     /* Following are updated dynamically */
     int y;			/* next source y */
+    gs_int_point used;		/* amount of data already used, if */
+				/* interrupted by error */
     gs_fixed_point cur, prev;	/* device x, y of current & */
 				/* previous row */
     struct dd_ {
 	gx_dda_fixed_point row;	/* DDA for row origin, has been */
 				/* advanced when render proc called */
-	gx_dda_fixed_point pixel0;	/* DDA for first pixel of row */
+	gx_dda_fixed_point strip;  /* row + rect.x */
+	gx_dda_fixed_point pixel0;	/* DDA for first pixel to render, */
+				/* strip + used.x */
     } dda;
     int line_xy;		/* x or y value at start of buffered line */
     int xi_next;		/* expected xci of next row */
@@ -272,7 +245,7 @@ struct gx_image_enum_s {
     int xci, wci;		/* integer x & w of row (landscape) */
     /* The maps are set at initialization.  We put them here */
     /* so that the scalars will have smaller offsets. */
-    sample_map map[5];		/* 4 colors + alpha */
+    sample_map map[GS_IMAGE_MAX_COMPONENTS];
     /* Entries 0 and 255 of the following are set at initialization */
     /* for monochrome images; other entries are updated dynamically. */
     gx_image_clue clues[256];
@@ -293,6 +266,14 @@ struct gx_image_enum_s {
 /* We can special-case this for speed later if we care. */
 #define dev_color_eq(devc1, devc2)\
   gx_device_color_equal(&(devc1), &(devc2))
+
+/*
+ * Scale a pair of mask_color values to match the scaling of each sample to
+ * a full byte, and complement and swap them if the map incorporates
+ * a Decode = [1 0] inversion.
+ */
+void gx_image_scale_mask_colors(P2(gx_image_enum *penum,
+				   int component_index));
 
 /*
  * Do common initialization for processing an ImageType 1 or 4 image.

@@ -48,19 +48,21 @@ ZO_=$(O_)$(ZOBJ)
 # Because the Watcom C runtime (and compiler) substitute space for = in
 # command lines (!), we can't have a -D whose argument begins with -,
 # since this will cause the argument to be interpreted as a switch (!!).
+# We need D_, _D_, and _D because the OpenVMS and Watcom  compilers use
+# different syntax.
 # ZI_ and ZF_ are defined in gs.mak.
 ZCC=$(CC_) $(I_)$(ZI_)$(_I) $(ZF_) $(D_)verbose$(_D_)0-1$(_D)
 
 # Define the name of this makefile.
 ZLIB_MAK=$(GLSRC)zlib.mak
 
-z.clean: z.config-clean z.clean-not-config-clean
+z.clean : z.config-clean z.clean-not-config-clean
 
 ### WRONG.  MUST DELETE OBJ AND GEN FILES SELECTIVELY.
-z.clean-not-config-clean:
+z.clean-not-config-clean :
 	$(RM_) $(ZOBJ)*.$(OBJ)
 
-z.config-clean:
+z.config-clean :
 	$(RMN_) $(ZGEN)zlib*.dev $(ZGEN)crc32*.dev
 
 ZDEP=$(AK)
@@ -68,79 +70,79 @@ ZDEP=$(AK)
 # Code common to compression and decompression.
 
 zlibc_=$(ZOBJ)zutil.$(OBJ)
-$(ZGEN)zlibc.dev: $(ZLIB_MAK) $(ECHOGS_XE) $(zlibc_)
+$(ZGEN)zlibc.dev : $(ZLIB_MAK) $(ECHOGS_XE) $(zlibc_)
 	$(SETMOD) $(ZGEN)zlibc $(zlibc_)
 
-$(ZOBJ)zutil.$(OBJ): $(ZSRC)zutil.c $(ZDEP)
+$(ZOBJ)zutil.$(OBJ) : $(ZSRC)zutil.c $(ZDEP)
 	$(ZCC) $(ZO_)zutil.$(OBJ) $(C_) $(ZSRC)zutil.c
 
 # Encoding (compression) code.
 
-$(ZGEN)zlibe.dev: $(MAKEFILE) $(ZGEN)zlibe_$(SHARE_ZLIB).dev
+$(ZGEN)zlibe.dev : $(TOP_MAKEFILES) $(ZGEN)zlibe_$(SHARE_ZLIB).dev
 	$(CP_) $(ZGEN)zlibe_$(SHARE_ZLIB).dev $(ZGEN)zlibe.dev
 
-$(ZGEN)zlibe_1.dev: $(MAKEFILE) $(ZLIB_MAK) $(ECHOGS_XE)
+$(ZGEN)zlibe_1.dev : $(TOP_MAKEFILES) $(ZLIB_MAK) $(ECHOGS_XE)
 	$(SETMOD) $(ZGEN)zlibe_1 -lib $(ZLIB_NAME)
 
 zlibe_=$(ZOBJ)adler32.$(OBJ) $(ZOBJ)deflate.$(OBJ) $(ZOBJ)trees.$(OBJ)
-$(ZGEN)zlibe_0.dev: $(ZLIB_MAK) $(ECHOGS_XE) $(ZGEN)zlibc.dev $(zlibe_)
+$(ZGEN)zlibe_0.dev : $(ZLIB_MAK) $(ECHOGS_XE) $(ZGEN)zlibc.dev $(zlibe_)
 	$(SETMOD) $(ZGEN)zlibe_0 $(zlibe_)
-	$(ADDMOD) $(ZGEN)zlibe_0 -include $(ZGEN)zlibc
+	$(ADDMOD) $(ZGEN)zlibe_0 -include $(ZGEN)zlibc.dev
 
-$(ZOBJ)adler32.$(OBJ): $(ZSRC)adler32.c $(ZDEP)
+$(ZOBJ)adler32.$(OBJ) : $(ZSRC)adler32.c $(ZDEP)
 	$(ZCC) $(ZO_)adler32.$(OBJ) $(C_) $(ZSRC)adler32.c
 
-$(ZOBJ)deflate.$(OBJ): $(ZSRC)deflate.c $(ZDEP)
+$(ZOBJ)deflate.$(OBJ) : $(ZSRC)deflate.c $(ZDEP)
 	$(ZCC) $(ZO_)deflate.$(OBJ) $(C_) $(ZSRC)deflate.c
 
-$(ZOBJ)trees.$(OBJ): $(ZSRC)trees.c $(ZDEP)
+$(ZOBJ)trees.$(OBJ) : $(ZSRC)trees.c $(ZDEP)
 	$(ZCC) $(ZO_)trees.$(OBJ) $(C_) $(ZSRC)trees.c
 
 # The zlib filters per se don't need crc32, but libpng versions starting
 # with 0.90 do.
 
-$(ZGEN)crc32.dev: $(MAKEFILE) $(ZGEN)crc32_$(SHARE_ZLIB).dev
+$(ZGEN)crc32.dev : $(TOP_MAKEFILES) $(ZGEN)crc32_$(SHARE_ZLIB).dev
 	$(CP_) $(ZGEN)crc32_$(SHARE_ZLIB).dev $(ZGEN)crc32.dev
 
-$(ZGEN)crc32_1.dev: $(MAKEFILE) $(ZLIB_MAK) $(ECHOGS_XE)
+$(ZGEN)crc32_1.dev : $(TOP_MAKEFILES) $(ZLIB_MAK) $(ECHOGS_XE)
 	$(SETMOD) $(ZGEN)crc32_1 -lib $(ZLIB_NAME)
 
-$(ZGEN)crc32_0.dev: $(ZLIB_MAK) $(ECHOGS_XE) $(ZOBJ)crc32.$(OBJ)
+$(ZGEN)crc32_0.dev : $(ZLIB_MAK) $(ECHOGS_XE) $(ZOBJ)crc32.$(OBJ)
 	$(SETMOD) $(ZGEN)crc32_0 $(ZOBJ)crc32.$(OBJ)
 
-$(ZOBJ)crc32.$(OBJ): $(ZSRC)crc32.c $(ZDEP)
+$(ZOBJ)crc32.$(OBJ) : $(ZSRC)crc32.c $(ZDEP)
 	$(ZCC) $(ZO_)crc32.$(OBJ) $(C_) $(ZSRC)crc32.c
 
 # Decoding (decompression) code.
 
-$(ZGEN)zlibd.dev: $(MAKEFILE) $(ZGEN)zlibd_$(SHARE_ZLIB).dev
+$(ZGEN)zlibd.dev : $(TOP_MAKEFILES) $(ZGEN)zlibd_$(SHARE_ZLIB).dev
 	$(CP_) $(ZGEN)zlibd_$(SHARE_ZLIB).dev $(ZGEN)zlibd.dev
 
-$(ZGEN)zlibd_1.dev: $(MAKEFILE) $(ZLIB_MAK) $(ECHOGS_XE)
+$(ZGEN)zlibd_1.dev : $(TOP_MAKEFILES) $(ZLIB_MAK) $(ECHOGS_XE)
 	$(SETMOD) $(ZGEN)zlibd_1 -lib $(ZLIB_NAME)
 
 zlibd1_=$(ZOBJ)infblock.$(OBJ) $(ZOBJ)infcodes.$(OBJ) $(ZOBJ)inffast.$(OBJ)
 zlibd2_=$(ZOBJ)inflate.$(OBJ) $(ZOBJ)inftrees.$(OBJ) $(ZOBJ)infutil.$(OBJ)
 zlibd_ = $(zlibd1_) $(zlibd2_)
-$(ZGEN)zlibd_0.dev: $(ZLIB_MAK) $(ECHOGS_XE) $(ZGEN)zlibc.dev $(zlibd_)
+$(ZGEN)zlibd_0.dev : $(ZLIB_MAK) $(ECHOGS_XE) $(ZGEN)zlibc.dev $(zlibd_)
 	$(SETMOD) $(ZGEN)zlibd_0 $(zlibd1_)
 	$(ADDMOD) $(ZGEN)zlibd_0 -obj $(zlibd2_)
-	$(ADDMOD) $(ZGEN)zlibd_0 -include $(ZGEN)zlibc
+	$(ADDMOD) $(ZGEN)zlibd_0 -include $(ZGEN)zlibc.dev
 
-$(ZOBJ)infblock.$(OBJ): $(ZSRC)infblock.c $(ZDEP)
+$(ZOBJ)infblock.$(OBJ) : $(ZSRC)infblock.c $(ZDEP)
 	$(ZCC) $(ZO_)infblock.$(OBJ) $(C_) $(ZSRC)infblock.c
 
-$(ZOBJ)infcodes.$(OBJ): $(ZSRC)infcodes.c $(ZDEP)
+$(ZOBJ)infcodes.$(OBJ) : $(ZSRC)infcodes.c $(ZDEP)
 	$(ZCC) $(ZO_)infcodes.$(OBJ) $(C_) $(ZSRC)infcodes.c
 
-$(ZOBJ)inffast.$(OBJ): $(ZSRC)inffast.c $(ZDEP)
+$(ZOBJ)inffast.$(OBJ) : $(ZSRC)inffast.c $(ZDEP)
 	$(ZCC) $(ZO_)inffast.$(OBJ) $(C_) $(ZSRC)inffast.c
 
-$(ZOBJ)inflate.$(OBJ): $(ZSRC)inflate.c $(ZDEP)
+$(ZOBJ)inflate.$(OBJ) : $(ZSRC)inflate.c $(ZDEP)
 	$(ZCC) $(ZO_)inflate.$(OBJ) $(C_) $(ZSRC)inflate.c
 
-$(ZOBJ)inftrees.$(OBJ): $(ZSRC)inftrees.c $(ZDEP)
+$(ZOBJ)inftrees.$(OBJ) : $(ZSRC)inftrees.c $(ZDEP)
 	$(ZCC) $(ZO_)inftrees.$(OBJ) $(C_) $(ZSRC)inftrees.c
 
-$(ZOBJ)infutil.$(OBJ): $(ZSRC)infutil.c $(ZDEP)
+$(ZOBJ)infutil.$(OBJ) : $(ZSRC)infutil.c $(ZDEP)
 	$(ZCC) $(ZO_)infutil.$(OBJ) $(C_) $(ZSRC)infutil.c

@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -26,7 +26,6 @@
 
 /* GC procedures */
 private_st_device_rop_texture();
-#define rtdev ((gx_device_rop_texture *)vptr)
 private ENUM_PTRS_BEGIN(device_rop_texture_enum_ptrs) {
     if (index < st_device_color_max_ptrs) {
 	gs_ptr_type_t ptype =
@@ -42,7 +41,6 @@ private RELOC_PTRS_BEGIN(device_rop_texture_reloc_ptrs) {
     RELOC_PREFIX(st_device_forward);
     RELOC_SUPER(gx_device_rop_texture, st_device_color, texture);
 } RELOC_PTRS_END
-#undef rtdev
 
 /* Device for providing source data for RasterOp. */
 private dev_proc_fill_rectangle(rop_texture_fill_rectangle);
@@ -120,12 +118,10 @@ gx_make_rop_texture_device(gx_device_rop_texture * dev, gx_device * target,
     gx_device_init((gx_device *) dev,
 		   (const gx_device *)&gs_rop_texture_device,
 		   NULL, true);
+    gx_device_set_target((gx_device_forward *)dev, target);
     /* Drawing operations are defaulted, non-drawing are forwarded. */
     gx_device_fill_in_procs((gx_device *) dev);
-    dev->width = target->width;
-    dev->height = target->height;
-    dev->color_info = target->color_info;
-    dev->target = target;
+    gx_device_copy_params((gx_device *)dev, target);
     dev->log_op = log_op;
     dev->texture = *texture;
 }

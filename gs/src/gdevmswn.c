@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -30,6 +30,7 @@
 #include "gsparam.h"
 #include "gdevpccm.h"
 #include "gsdll.h"
+#include "gsdllwin.h"
 
 /* Forward references */
 private int win_set_bits_per_pixel(P2(gx_device_win *, int));
@@ -53,11 +54,13 @@ win_open(gx_device * dev)
 
 	/* Set parameters that were unknown before opening device */
 	/* Find out if the device supports color */
-	/* We recognize 1, 4, 8, 24 bit/pixel devices */
+	/* We recognize 1, 4, 8, 16, 24 bit/pixel devices */
 	hdc = GetDC(NULL);	/* get hdc for desktop */
 	depth = GetDeviceCaps(hdc, PLANES) * GetDeviceCaps(hdc, BITSPIXEL);
-	if (depth > 8) {
+	if (depth > 16) {
 	    wdev->BitsPerPixel = 24;
+	} else if (depth > 8) {
+	    wdev->BitsPerPixel = 16;
 	} else if (depth >= 8) {
 	    wdev->BitsPerPixel = 8;
 	} else if (depth >= 4) {
@@ -94,7 +97,7 @@ int
 win_output_page(gx_device * dev, int copies, int flush)
 {
     (*pgsdll_callback) (GSDLL_PAGE, (unsigned char *)wdev, 0);
-    return 0;
+    return gx_finish_output_page(dev, copies, flush);;
 }
 
 /* Close the win driver */
@@ -122,6 +125,28 @@ win_map_rgb_color(gx_device * dev, gx_color_value r, gx_color_value g,
 	    return (((unsigned long)b >> (gx_color_value_bits - 8)) << 16) +
 		(((unsigned long)g >> (gx_color_value_bits - 8)) << 8) +
 		(((unsigned long)r >> (gx_color_value_bits - 8)));
+	case 16:{
+		gx_color_index color = ((r >> (gx_color_value_bits - 5)) << 11) +
+				       ((g >> (gx_color_value_bits - 6)) << 5) +
+				       (b >> (gx_color_value_bits - 5));
+#if arch_is_big_endian
+		ushort color16 = (ushort)color;
+#else
+		ushort color16 = (ushort)((color << 8) | (color >> 8));
+#endif
+		return color16;
+	    }
+	case 15:{
+		gx_color_index color = ((r >> (gx_color_value_bits - 5)) << 10) +
+				       ((g >> (gx_color_value_bits - 5)) << 5) +
+				       (b >> (gx_color_value_bits - 5));
+#if arch_is_big_endian
+		ushort color15 = (ushort)color;
+#else
+		ushort color15 = (ushort)((color << 8) | (color >> 8));
+#endif
+		return color15;
+	    }
 	case 8:{
 		int i;
 		LPLOGPALETTE lpal = wdev->limgpalette;
@@ -204,6 +229,7 @@ win_map_color_rgb(gx_device * dev, gx_color_index color,
 		  gx_color_value prgb[3])
 {
     gx_color_value one;
+    ushort value;
 
     switch (wdev->BitsPerPixel) {
 	case 24:
@@ -211,6 +237,22 @@ win_map_color_rgb(gx_device * dev, gx_color_index color,
 	    prgb[0] = ((color) & 255) * one;
 	    prgb[1] = ((color >> 8) & 255) * one;
 	    prgb[2] = ((color >> 16) & 255) * one;
+	    break;
+	case 16:
+	    value = (color >> 11) & 0x1f;
+	    prgb[0] = ((value << 11) + (value << 6) + (value << 1) + (value >> 4)) >> (16 - gx_color_value_bits);
+	    value = (color >> 5) & 0x3f;
+	    prgb[1] = ((value << 10) + (value << 4) + (value >> 2)) >> (16 - gx_color_value_bits);
+	    value = (color) & 0x1f;
+	    prgb[2] = ((value << 11) + (value << 6) + (value << 1) + (value >> 4)) >> (16 - gx_color_value_bits);
+	    break;
+	case 15:
+	    value = (color >> 10) & 0x1f;
+	    prgb[0] = ((value << 11) + (value << 6) + (value << 1) + (value >> 4)) >> (16 - gx_color_value_bits);
+	    value = (color >> 5) & 0x1f;
+	    prgb[1] = ((value << 11) + (value << 6) + (value << 1) + (value >> 4)) >> (16 - gx_color_value_bits);
+	    value = (color) & 0x1f;
+	    prgb[2] = ((value << 11) + (value << 6) + (value << 1) + (value >> 4)) >> (16 - gx_color_value_bits);
 	    break;
 	case 8:
 	    if (!dev->is_open)
@@ -243,32 +285,6 @@ win_get_params(gx_device * dev, gs_param_list * plist)
 }
 
 /* Put parameters. */
-private int
-win_put_alpha_param(gs_param_list * plist, gs_param_name param_name, int *pa,
-		    bool alpha_ok)
-{
-    int code = param_read_int(plist, param_name, pa);
-
-    switch (code) {
-	case 0:
-	    switch (*pa) {
-		case 1:
-		    return 0;
-		case 2:
-		case 4:
-		    if (alpha_ok)
-			return 0;
-		default:
-		    code = gs_error_rangecheck;
-	    }
-	default:
-	    param_signal_error(plist, param_name, code);
-	case 1:
-	    ;
-    }
-    return code;
-}
-
 /* Set window parameters -- size and resolution. */
 /* We implement this ourselves so that we can do it without */
 /* closing and opening the device. */
@@ -282,8 +298,6 @@ win_put_params(gx_device * dev, gs_param_list * plist)
     int old_bpp = dev->color_info.depth;
     int bpp = old_bpp;
     byte *old_flags = wdev->mapped_color_flags;
-    int atext = wdev->alpha_text, agraphics = wdev->alpha_graphics;
-    bool alpha_ok;
 
     /* Handle extra parameters */
 
@@ -308,12 +322,6 @@ win_put_params(gx_device * dev, gs_param_list * plist)
 	    break;
     }
 
-    alpha_ok = wdev->color_info.depth >= 8;
-    if ((code = win_put_alpha_param(plist, "TextAlphaBits", &wdev->alpha_text, alpha_ok)) < 0)
-	ecode = code;
-    if ((code = win_put_alpha_param(plist, "GraphicsAlphaBits", &wdev->alpha_graphics, alpha_ok)) < 0)
-	ecode = code;
-
     if (ecode >= 0) {		/* Prevent gx_default_put_params from closing the device. */
 	dev->is_open = false;
 	ecode = gx_default_put_params(dev, plist);
@@ -326,8 +334,6 @@ win_put_params(gx_device * dev, gs_param_list * plist)
 	wdev->mapped_color_flags = old_flags;
 	if (bpp != old_bpp)
 	    win_set_bits_per_pixel(wdev, old_bpp);
-	wdev->alpha_text = atext;
-	wdev->alpha_graphics = agraphics;
 	return ecode;
     }
     if (wdev->mapped_color_flags == 0 && old_flags != 0) {	/* Release old mapped_color_flags. */
@@ -347,20 +353,11 @@ win_put_params(gx_device * dev, gs_param_list * plist)
 	    dev->width = width;
 	    dev->height = height;
 	    win_set_bits_per_pixel(wdev, old_bpp);
-	    wdev->alpha_text = atext;
-	    wdev->alpha_graphics = agraphics;
 	    (*wdev->alloc_bitmap) (wdev, dev);
 	    return ccode;
 	}
     }
     return 0;
-}
-
-/* Get the number of alpha bits. */
-int
-win_get_alpha_bits(gx_device * dev, graphics_object_type type)
-{
-    return (type == go_text ? wdev->alpha_text : wdev->alpha_graphics);
 }
 
 /* ------ Internal routines ------ */
@@ -427,6 +424,7 @@ private int
 win_set_bits_per_pixel(gx_device_win * wdev, int bpp)
 {
     static const gx_device_color_info win_24bit_color = dci_color(24, 255, 255);
+    static const gx_device_color_info win_16bit_color = dci_color(16, 255, 255);
     static const gx_device_color_info win_8bit_color = dci_color(8, 31, 4);
     static const gx_device_color_info win_ega_color = dci_pc_4bit;
     static const gx_device_color_info win_vga_color = dci_pc_4bit;
@@ -436,6 +434,11 @@ win_set_bits_per_pixel(gx_device_win * wdev, int bpp)
     switch (bpp) {
 	case 24:
 	    wdev->color_info = win_24bit_color;
+	    wdev->nColors = -1;
+	    break;
+	case 16:
+	case 15:
+	    wdev->color_info = win_16bit_color;
 	    wdev->nColors = -1;
 	    break;
 	case 8:

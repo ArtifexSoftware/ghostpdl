@@ -1,4 +1,4 @@
-#    Copyright (C) 1991, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1991, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -34,7 +34,7 @@ GS_DOCDIR=c:/gs
 # initialization and font files.  Separate multiple directories with \;.
 # Use / to indicate directories, not a single \.
 
-GS_LIB_DEFAULT=.;c:/gs\;c:/gs/fonts
+GS_LIB_DEFAULT=.\;c:/gs/lib\;c:/gs/fonts
 
 # Define whether or not searching for initialization files should always
 # look in the current directory first.  This leads to well-known security
@@ -74,15 +74,24 @@ NOPRIVATE=0
 
 GS=gs386
 
-# Define the source, generated intermediate file, and object directories
+# Define the directory for the final executable, and the
+# source, generated intermediate file, and object directories
 # for the graphics library (GL) and the PostScript/PDF interpreter (PS).
 
-GLSRCDIR=..\gs
-GLGENDIR=..\gs\obj
-GLOBJDIR=..\gs\obj
-PSSRCDIR=..\gs
-PSGENDIR=..\gs\obj
-PSOBJDIR=..\gs\obj
+BINDIR=.\bin
+GLSRCDIR=.\src
+GLGENDIR=.\obj
+GLOBJDIR=.\obj
+PSSRCDIR=.\src
+PSLIBDIR=.\lib
+PSGENDIR=.\obj
+PSOBJDIR=.\obj
+
+# Do not edit the next group of lines.
+NUL=
+DD=$(GLGENDIR)\$(NUL)
+GLD=$(GLGENDIR)\$(NUL)
+PSD=$(PSGENDIR)\$(NUL)
 
 # Define the directory where the IJG JPEG library sources are stored,
 # and the major version of the library that is stored there.
@@ -98,16 +107,12 @@ JVERSION=6
 # See libpng.mak for more information.
 
 PSRCDIR=libpng
-PVERSION=96
+PVERSION=10002
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
 
 ZSRCDIR=zlib
-
-# Define the configuration ID.  Read gs.mak carefully before changing this.
-
-CONFIG=
 
 # Define any other compilation flags.  Including -DA4 makes A4 paper size
 # the default for most, but not, printer drivers.
@@ -122,7 +127,7 @@ CFLAGS=
 # so the version must be exactly one of those strings.
 #
 # 10.695 equates to version 10.6 on 95 or NT
-WCVERSION=10.695
+WCVERSION=10.0
 
 # Define the locations of the libraries.
 LIBPATHS=LIBPATH $(%WATCOM)\lib386 LIBPATH $(%WATCOM)\lib386\dos
@@ -134,7 +139,7 @@ LIBPATHS=LIBPATH $(%WATCOM)\lib386 LIBPATH $(%WATCOM)\lib386\dos
 # Currently the only difference is that 486 and above assume
 # the presence of a FPU, and the other processor types do not.
 
-CPU_TYPE=586
+CPU_TYPE=386
 
 # Define the math coprocessor (FPU) type.
 # Options are -1 (optimize for no FPU), 0 (optimize for FPU present,
@@ -147,6 +152,12 @@ CPU_TYPE=586
 
 FPU_TYPE=0
 
+# Define the .dev module that implements thread and synchronization
+# primitives for this platform.  Don't change this unless you really know
+# what you're doing.
+
+SYNC=winsync
+
 # ---------------------------- End of options ---------------------------- #
 
 # Define the platform name.
@@ -156,6 +167,7 @@ PLATFORM=watc_
 # Define the name of the makefile -- used in dependencies.
 
 MAKEFILE=$(GLSRCDIR)\watc.mak
+TOP_MAKEFILES=$(MAKEFILE) $(GLSRCDIR)\wccommon.mak
 
 # Define additional platform compilation flags.
 
@@ -168,7 +180,7 @@ PLATOPT=
 # Choose the language feature(s) to include.  See gs.mak for details.
 # Since we have a large address space, we include some optional features.
 
-FEATURE_DEVS=psl3.dev pdf.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
@@ -194,61 +206,65 @@ FILE_IMPLEMENTATION=stdio
 # Choose the device(s) to include.  See devs.mak for details,
 # devs.mak and contrib.mak for the list of available devices.
 
-###	DEVICE_DEVS=vga.dev ega.dev svga16.dev
-###	DEVICE_DEVS1=atiw.dev tseng.dev tvga.dev
-DEVICE_DEVS3=deskjet.dev djet500.dev laserjet.dev ljetplus.dev ljet2p.dev ljet3.dev ljet4.dev
-DEVICE_DEVS4=cdeskjet.dev cdjcolor.dev cdjmono.dev cdj550.dev pj.dev pjxl.dev pjxl300.dev
-DEVICE_DEVS5=uniprint.dev
-DEVICE_DEVS6=epson.dev eps9high.dev ibmpro.dev bj10e.dev bj200.dev bjc600.dev bjc800.dev
-DEVICE_DEVS8=pcxmono.dev pcxgray.dev pcx16.dev pcx256.dev pcx24b.dev pcxcmyk.dev
-DEVICE_DEVS10=tiffcrle.dev tiffg3.dev tiffg32d.dev tiffg4.dev tifflzw.dev tiffpack.dev
-DEVICE_DEVS11=bmpmono.dev bmp16.dev bmp256.dev bmp16m.dev tiff12nc.dev tiff24nc.dev
-DEVICE_DEVS12=psmono.dev psgray.dev bit.dev bitrgb.dev bitcmyk.dev
-DEVICE_DEVS14=jpeg.dev jpeggray.dev
-DEVICE_DEVS15=pdfwrite.dev
+DEVICE_DEVS=$(DD)vga.dev $(DD)ega.dev $(DD)svga16.dev
+DEVICE_DEVS1=$(DD)atiw.dev $(DD)tseng.dev $(DD)tvga.dev
+DEVICE_DEVS2=
+DEVICE_DEVS3=$(DD)deskjet.dev $(DD)djet500.dev $(DD)laserjet.dev $(DD)ljetplus.dev $(DD)ljet2p.dev
+DEVICE_DEVS4=$(DD)cdeskjet.dev $(DD)cdjcolor.dev $(DD)cdjmono.dev $(DD)cdj550.dev
+DEVICE_DEVS5=$(DD)uniprint.dev
+DEVICE_DEVS6=$(DD)epson.dev $(DD)eps9high.dev $(DD)ibmpro.dev $(DD)bj10e.dev $(DD)bj200.dev $(DD)bjc600.dev $(DD)bjc800.dev
+DEVICE_DEVS7=
+DEVICE_DEVS8=$(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcx16.dev $(DD)pcx256.dev $(DD)pcx24b.dev $(DD)pcxcmyk.dev
+DEVICE_DEVS9=
+DEVICE_DEVS10=$(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev $(DD)tifflzw.dev $(DD)tiffpack.dev
+DEVICE_DEVS11=$(DD)bmpmono.dev $(DD)bmp16.dev $(DD)bmp256.dev $(DD)bmp16m.dev $(DD)tiff12nc.dev $(DD)tiff24nc.dev
+DEVICE_DEVS12=$(DD)psmono.dev $(DD)psgray.dev $(DD)bit.dev $(DD)bitrgb.dev $(DD)bitcmyk.dev
+DEVICE_DEVS13=
+DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev
+DEVICE_DEVS15=$(DD)pdfwrite.dev
+# Overflow for DEVS3,4,5,6,9
+DEVICE_DEVS16=$(DD)ljet3.dev $(DD)ljet3d.dev $(DD)ljet4.dev $(DD)ljet4d.dev
+DEVICE_DEVS17=$(DD)pj.dev $(DD)pjxl.dev $(DD)pjxl300.dev
+DEVICE_DEVS18=
+DEVICE_DEVS19=
+DEVICE_DEVS20=
 
 !include $(GLSRCDIR)\wctail.mak
 !include $(GLSRCDIR)\devs.mak
 !include $(GLSRCDIR)\contrib.mak
 !include $(PSSRCDIR)\int.mak
+!include $(PSSRCDIR)\cfonts.mak
 
 # -------------------------------- Library -------------------------------- #
 
 # make sure the target directories exist - use special Watcom .BEFORE
+# (This is not the best way to do this, but we will have to wait until
+# the makefiles get disentangled to do it better.)
 .BEFORE
 	@if not exist $(GLGENDIR) mkdir $(GLGENDIR)
 	@if not exist $(GLOBJDIR) mkdir $(GLOBJDIR)
 	@if not exist $(PSGENDIR) mkdir $(PSGENDIR)
 	@if not exist $(PSOBJDIR) mkdir $(PSOBJDIR)
 
-$(GLOBJ)gp_ntfs.$(OBJ): $(GLSRC)gp_ntfs.c $(AK)\
- $(dos__h) $(memory__h) $(stdio__h) $(string__h) $(windows__h)\
- $(gp_h) $(gsmemory_h) $(gsstruct_h) $(gstypes_h) $(gsutil_h)
-	$(GLCC) $(GLO_)gp_ntfs.$(OBJ) $(C_) $(GLSRC)gp_ntfs.c
+GLCCWIN=$(GLCC)
 
-$(GLOBJ)gp_win32.$(OBJ): $(GLSRC)gp_win32.c $(AK)\
- $(dos__h) $(stdio__h) $(string__h) $(windows__h)\
- $(gp_h) $(gsmemory_h) $(gstypes_h)
-	$(GLCC) $(GLO_)gp_win32.$(OBJ) $(C_) $(GLSRC)gp_win32.c
+!include $(GLSRCDIR)\winplat.mak
 
 # The Watcom C platform
 
+watc_1=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_iwatc.$(OBJ) $(GLOBJ)gp_dosfb.$(OBJ)
 !ifeq WAT32 0
-watc_1=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_iwatc.$(OBJ) $(GLOBJ)gp_msdos.$(OBJ)
-watc_2=$(GLOBJ)gp_dosfb.$(OBJ) $(GLOBJ)gp_dosfs.$(OBJ) $(GLOBJ)gp_dosfe.$(OBJ)
-watc__=$(watc_1) $(watc_2)
-watc_.dev: $(watc__) nosync.dev
-	$(SETMOD) watc_ $(watc_1)
-	$(ADDMOD) watc_ -obj $(watc_2)
-	$(ADDMOD) watc_ -include nosync
+watc_2=$(GLOBJ)gp_dosfs.$(OBJ) $(GLOBJ)gp_dosfe.$(OBJ) $(GLOBJ)gp_msdos.$(OBJ)
+watc_inc=
 !else
-watc_1=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_iwatc.$(OBJ) $(GLOBJ)gp_win32.$(OBJ)
-watc_2=$(GLOBJ)gp_dosfb.$(OBJ) $(GLOBJ)gp_ntfs.$(OBJ) $(GLOBJ)gxsync.$(OBJ)
-watc__=$(watc_1) $(watc_2)
-watc_.dev: $(watc__)
-	$(SETMOD) watc_ $(watc_1)
-	$(ADDMOD) watc_ -obj $(watc_2)
+watc_2=
+watc_inc=$(GLD)winplat.dev
 !endif
+watc__=$(watc_1) $(watc_2)
+$(GLGEN)watc_.dev: $(watc__) $(GLD)nosync.dev $(watc_inc)
+	$(SETMOD) $(GLGEN)watc_ $(watc_1)
+	$(ADDMOD) $(GLGEN)watc_ -obj $(watc_2)
+	$(ADDMOD) $(GLGEN)watc_ -include $(GLD)nosync $(watc_inc)
 
 $(GLOBJ)gp_iwatc.$(OBJ): $(GLSRC)gp_iwatc.c $(stat__h) $(string__h)\
  $(gx_h) $(gp_h)
@@ -264,8 +280,8 @@ LIBDOS=$(LIB_ALL) $(watc__) $(ld_tr)
 
 GS_ALL=$(GLOBJ)gs.$(OBJ) $(INT_ALL) $(INTASM) $(LIBDOS)
 
-ll_tr=$(GLGENDIR)ll$(CONFIG).tr
-$(ll_tr): $(MAKEFILE)
+ll_tr=$(GLOBJ)ll.tr
+$(ll_tr): $(TOP_MAKEFILES)
 	echo OPTION STACK=64k >$(ll_tr)
 !ifeq WAT32 0
 	echo SYSTEM DOS4G >>$(ll_tr)

@@ -1,4 +1,5 @@
 /* Copyright (C) 1996, Russell Lang.  All rights reserved.
+   Portions Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -21,14 +22,13 @@
 
 // gsdll_class for MS-Windows
 
-#ifndef _GSDLL_H
+#ifndef dwdll_INCLUDED
+#  define dwdll_INCLUDED
+
 extern "C" {
 #include "gsdll.h"
+#include "gsdllwin.h"
 }
-#endif
-#ifndef _GSDLL_CLASS_H
-#define _GSDLL_CLASS_H
-
 
 class gsdll_class {
     // instance of caller
@@ -113,4 +113,4 @@ class gsdll_class {
     HPALETTE gsdll_class::copy_palette(const char FAR * device);
 };
 
-#endif // _GSDLL_CLASS_H
+#endif /* dwdll_INCLUDED */

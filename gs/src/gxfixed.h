@@ -136,18 +136,14 @@ typedef ulong ufixed;		/* only used in a very few places */
 /*
  * Define a procedure for computing a * b / c when b and c are non-negative,
  * b < c, and a * b exceeds (or might exceed) the capacity of a long.
+ * Note that this procedure takes the floor, rather than truncating
+ * towards zero, if a < 0: this ensures 0 <= R < c, where R is the remainder.
+ *
  * It's really annoying that C doesn't provide any way to get at
  * the double-length multiply/divide instructions that almost all hardware
  * provides....
  */
-
-#if USE_FPU_FIXED
 fixed fixed_mult_quo(P3(fixed A, fixed B, fixed C));
-
-#else
-#  define fixed_mult_quo(fixed_a, fixed_b, fixed_c)\
-    ((fixed)floor((double)(fixed_a) * (fixed_b) / (fixed_c)))
-#endif
 
 /*
  * Transforming coordinates involves multiplying two floats, or a float
@@ -159,38 +155,55 @@ fixed fixed_mult_quo(P3(fixed A, fixed B, fixed C));
  */
 
 /*
- * set_fmul2fixed_vars(R, FA, FB, dtemp) computes R = FA * FB:
- *      R is a fixed, FA and FB are floats (not doubles), and
- *        dtemp is a temporary double.
- * set_dfmul2fixed_vars(R, DA, FB, dtemp) computes R = DA * FB:
- *      R is a fixed, DA is a double, FB is a float, and
- *        dtemp is a temporary double.
- * R, FA, FB, and DA must be variables, not expressions.
+ * The macros all use R for the (fixed) result, FB for the second (float)
+ * operand, and dtemp for a temporary double variable.  The work is divided
+ * between the two macros of each set in order to avoid bogus "possibly
+ * uninitialized variable" messages from slow-witted compilers.
+ *
+ * For the case where the first operand is a float (FA):
+ *	code = CHECK_FMUL2FIXED_VARS(R, FA, FB, dtemp);
+ *	if (code < 0) ...
+ *	FINISH_FMUL2FIXED_VARS(R, dtemp);
+ *
+ * For the case where the first operand is a double (DA):
+ *	code = CHECK_DFMUL2FIXED_VARS(R, DA, FB, dtemp);
+ *	if (code < 0) ...;
+ *	FINISH_DFMUL2FIXED_VARS(R, dtemp);
  */
 #if USE_FPU_FIXED && arch_sizeof_short == 2
+
 int set_fmul2fixed_(P3(fixed *, long, long));
-
-#define set_fmul2fixed_vars(vr,vfa,vfb,dtemp)\
+#define CHECK_FMUL2FIXED_VARS(vr, vfa, vfb, dtemp)\
   set_fmul2fixed_(&vr, *(long *)&vfa, *(long *)&vfb)
-int set_dfmul2fixed_(P4(fixed *, ulong, long, long));
+#define FINISH_FMUL2FIXED_VARS(vr, dtemp)\
+  DO_NOTHING
 
+int set_dfmul2fixed_(P4(fixed *, ulong, long, long));
 #  if arch_is_big_endian
-#  define set_dfmul2fixed_vars(vr,vda,vfb,dtemp)\
+#  define CHECK_DFMUL2FIXED_VARS(vr, vda, vfb, dtemp)\
      set_dfmul2fixed_(&vr, ((ulong *)&vda)[1], *(long *)&vfb, *(long *)&vda)
 #  else
-#  define set_dfmul2fixed_vars(vr,vda,vfb,dtemp)\
+#  define CHECK_DFMUL2FIXED_VARS(vr, vda, vfb, dtemp)\
      set_dfmul2fixed_(&vr, *(ulong *)&vda, *(long *)&vfb, ((long *)&vda)[1])
 #  endif
+#define FINISH_DFMUL2FIXED_VARS(vr, dtemp)\
+  DO_NOTHING
+
 #else /* don't bother */
-#  define set_fmul2fixed_vars(vr,vfa,vfb,dtemp)\
-     (dtemp = (vfa) * (vfb),\
-      (f_fits_in_bits(dtemp, fixed_int_bits) ? (vr = float2fixed(dtemp), 0) :\
-       gs_note_error(gs_error_limitcheck)))
-#  define set_dfmul2fixed_vars(vr,vda,vfb,dtemp)\
-     (dtemp = (vda) * (vfb),\
-      (f_fits_in_bits(dtemp, fixed_int_bits) ? (vr = float2fixed(dtemp), 0) :\
-       gs_note_error(gs_error_limitcheck)))
+
+#define CHECK_FMUL2FIXED_VARS(vr, vfa, vfb, dtemp)\
+  (dtemp = (vfa) * (vfb),\
+   (f_fits_in_bits(dtemp, fixed_int_bits) ? 0 :\
+    gs_note_error(gs_error_limitcheck)))
+#define FINISH_FMUL2FIXED_VARS(vr, dtemp)\
+  vr = float2fixed(dtemp)
+#define CHECK_DFMUL2FIXED_VARS(vr, vda, vfb, dtemp)\
+  CHECK_FMUL2FIXED_VARS(vr, vda, vfb, dtemp)
+#define FINISH_DFMUL2FIXED_VARS(vr, dtemp)\
+  FINISH_FMUL2FIXED_VARS(vr, dtemp)
+
 #endif
+
 /*
  * set_float2fixed_vars(R, F) does the equivalent of R = float2fixed(F):
  *      R is a fixed, F is a float or a double.

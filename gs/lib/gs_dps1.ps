@@ -1,4 +1,4 @@
-%    Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1997, 1999 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -60,7 +60,9 @@ level2dict begin
    ifelse .forceput pop	% LocalFontDirectory is local, systemdict is global
  } .bind odef		% must bind .forceput and .setglobal
 			% even if NOBIND in effect
-/setshared /.setglobal load def
+% Don't just copy (load) the definition of .setglobal:
+% it gets redefined for LL3.
+/setshared { /.setglobal .systemvar exec } odef
 .currentglobal setshared
 
 % See below for changes in save and restore.

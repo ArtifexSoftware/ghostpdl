@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -22,10 +22,11 @@
 #ifndef gxdither_INCLUDED
 #  define gxdither_INCLUDED
 
+#include "gxfrac.h"
+
 #ifndef gx_device_halftone_DEFINED
 #  define gx_device_halftone_DEFINED
 typedef struct gx_device_halftone_s gx_device_halftone;
-
 #endif
 
 /*
@@ -38,7 +39,7 @@ typedef struct gx_device_halftone_s gx_device_halftone;
 /* Return 0 if complete, 1 if caller must do gx_color_load, <0 on error. */
 int gx_render_device_gray(P6(frac gray, gx_color_value alpha,
 			     gx_device_color * pdevc, gx_device * dev,
-			     const gx_device_halftone * dev_ht,
+			     gx_device_halftone * dev_ht,
 			     const gs_int_point * ht_phase));
 
 #define gx_render_gray_alpha(gray, alpha, pdevc, pis, dev, select)\
@@ -52,7 +53,7 @@ int gx_render_device_gray(P6(frac gray, gx_color_value alpha,
 int gx_render_device_color(P10(frac red, frac green, frac blue, frac white,
 			       bool cmyk, gx_color_value alpha,
 			       gx_device_color * pdevc, gx_device * dev,
-			       const gx_device_halftone * pdht,
+			       gx_device_halftone * pdht,
 			       const gs_int_point * ht_phase));
 
 #define gx_render_color_alpha(r, g, b, w, a, cmyk, pdevc, pis, dev, select)\
@@ -66,5 +67,12 @@ int gx_render_device_color(P10(frac red, frac green, frac blue, frac white,
   gx_render_color(c, m, y, k, true, pdevc, pis, dev, select)
 #define gx_render_rgb_alpha(r, g, b, a, pdevc, pis, dev, select)\
   gx_render_color_alpha(r, g, b, frac_0, a, false, pdevc, pis, dev, select)
+
+/*
+ * Reduce a colored halftone with 0 or 1 varying plane(s) to a pure color
+ * or a binary halftone.
+ */
+int gx_reduce_colored_halftone(P3(gx_device_color *pdevc, gx_device *dev,
+				  bool cmyk));
 
 #endif /* gxdither_INCLUDED */

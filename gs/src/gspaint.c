@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -32,7 +32,7 @@
 #include "gzstate.h"
 #include "gxdevice.h"
 #include "gxdevmem.h"
-#include "gxcpath.h"
+#include "gzcpath.h"
 
 /* Define the nominal size for alpha buffers. */
 #define abuf_nominal_SMALL 500
@@ -102,7 +102,8 @@ alpha_buffer_bits(gs_state * pgs)
 	/* We're already writing into an alpha buffer. */
 	return 0;
     }
-    return (*dev_proc(dev, get_alpha_bits)) (dev, go_graphics);
+    return (*dev_proc(dev, get_alpha_bits))
+	(dev, (pgs->in_cachedevice ? go_text : go_graphics));
 }
 /*
  * Set up an alpha buffer for a stroke or fill operation.  Return 0
@@ -118,16 +119,53 @@ alpha_buffer_bits(gs_state * pgs)
 private int
 scale_paths(gs_state * pgs, int log2_scale_x, int log2_scale_y, bool do_path)
 {
-    if (do_path)
-	gx_path_scale_exp2(pgs->path, log2_scale_x, log2_scale_y);
-    gx_cpath_scale_exp2(pgs->clip_path, log2_scale_x, log2_scale_y);
-    if (pgs->view_clip != 0)
-	gx_cpath_scale_exp2(pgs->view_clip, log2_scale_x, log2_scale_y);
+    /*
+     * Because of clip and clippath, any of path, clip_path, and view_clip
+     * may be aliases for each other.  The only reliable way to detect
+     * this is by comparing the segments pointers.  Note that we must
+     * scale the non-segment parts of the paths even if the segments are
+     * aliased.
+     */
+    const gx_path_segments *seg_clip =
+	(pgs->clip_path->path_valid ? pgs->clip_path->path.segments : 0);
+    const gx_clip_rect_list *list_clip = pgs->clip_path->rect_list;
+    const gx_path_segments *seg_view_clip;
+    const gx_clip_rect_list *list_view_clip;
+    const gx_path_segments *seg_effective_clip =
+	(pgs->effective_clip_path->path_valid ?
+	 pgs->effective_clip_path->path.segments : 0);
+    const gx_clip_rect_list *list_effective_clip =
+	pgs->effective_clip_path->rect_list;
+
+    gx_cpath_scale_exp2_shared(pgs->clip_path, log2_scale_x, log2_scale_y,
+			       false, false);
+    if (pgs->view_clip != 0 && pgs->view_clip != pgs->clip_path) {
+	seg_view_clip =
+	    (pgs->view_clip->path_valid ? pgs->view_clip->path.segments : 0);
+	list_view_clip = pgs->view_clip->rect_list;
+	gx_cpath_scale_exp2_shared(pgs->view_clip, log2_scale_x, log2_scale_y,
+				   list_view_clip == list_clip,
+				   seg_view_clip && seg_view_clip == seg_clip);
+    } else
+	seg_view_clip = 0, list_view_clip = 0;
     if (pgs->effective_clip_path != pgs->clip_path &&
 	pgs->effective_clip_path != pgs->view_clip
 	)
-	gx_cpath_scale_exp2(pgs->effective_clip_path,
-			    log2_scale_x, log2_scale_y);
+	gx_cpath_scale_exp2_shared(pgs->effective_clip_path, log2_scale_x,
+				   log2_scale_y,
+				   list_effective_clip == list_clip ||
+				   list_effective_clip == list_view_clip,
+				   seg_effective_clip &&
+				   (seg_effective_clip == seg_clip ||
+				    seg_effective_clip == seg_view_clip));
+    if (do_path) {
+	const gx_path_segments *seg_path = pgs->path->segments;
+
+	gx_path_scale_exp2_shared(pgs->path, log2_scale_x, log2_scale_y,
+				  seg_path == seg_clip ||
+				  seg_path == seg_view_clip ||
+				  seg_path == seg_effective_clip);
+    }
     return 0;
 }
 private void
@@ -147,7 +185,7 @@ private int
 alpha_buffer_init(gs_state * pgs, fixed extra_x, fixed extra_y, int alpha_bits)
 {
     gx_device *dev = gs_currentdevice_inline(pgs);
-    int log2_alpha_bits;
+    int log2_alpha_bits = ilog2(alpha_bits);
     gs_fixed_rect bbox;
     gs_int_rect ibox;
     uint width, raster, band_space;
@@ -156,7 +194,6 @@ alpha_buffer_init(gs_state * pgs, fixed extra_x, fixed extra_y, int alpha_bits)
     gs_memory_t *mem;
     gx_device_memory *mdev;
 
-    log2_alpha_bits = alpha_bits >> 1;	/* works for 1,2,4 */
     log2_scale.x = log2_scale.y = log2_alpha_bits;
     gx_path_bbox(pgs->path, &bbox);
     ibox.p.x = fixed2int(bbox.p.x - extra_x) - 1;

@@ -1,4 +1,4 @@
-%    Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1996, 1999 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -21,9 +21,27 @@
 % Requires the Level 2 `image' operator (to handle variable pixel widths).
 % If SCALE is defined, maps input pixels to output pixels with that scale;
 % if SCALE is undefined, scales the image to fit the page.
-% ****NOTE: Requires RLE compression; does not handle multi-plane
-% ****images with palette.
+% ****NOTE: does not handle multi-plane images with palette.
 
+/pcxbytes [
+  0 1 255 {
+    64 string exch 0 1 63 {
+      3 copy exch put pop
+    } for pop
+  } for
+] readonly def
+/readpcx {			% - readpcx <str>
+  f				% gets replaced
+  dup read not {
+    pop ()
+  } {
+    dup 192 lt {
+      ( ) dup 0 4 -1 roll put exch pop
+    } {
+      192 sub //pcxbytes 3 -1 roll read pop get exch 0 exch getinterval
+    } ifelse
+  } ifelse
+} def
 /get2				% <string> <index> get2 <int>
  { 2 copy get 3 1 roll 1 add get 8 bitshift add
  } bind def
@@ -88,7 +106,8 @@
    /wbpl w bpp mul 7 add 8 idiv def
 		% Define the data source procedure.
    /s1 bpl wbpl sub string def
-   /df f /PCXDecode filter def
+   /df /readpcx load copyarray dup 0 f put cvx bind readonly
+     0 () /SubFileDecode filter def
    /dsource [ nplanes
     { /dsproc load copyarray
       dup 1 wbpl string put

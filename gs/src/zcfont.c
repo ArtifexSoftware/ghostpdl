@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -32,13 +32,14 @@
 #include "store.h"
 
 /* Forward references */
-private int cshow_continue(P1(os_ptr));
-private int cshow_restore_font(P1(os_ptr));
+private int cshow_continue(P1(i_ctx_t *));
+private int cshow_restore_font(P1(i_ctx_t *));
 
 /* <proc> <string> cshow - */
 private int
-zcshow(os_ptr op)
+zcshow(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     os_ptr proc_op = op - 1;
     os_ptr str_op = op;
     gs_show_enum *penum;
@@ -58,7 +59,7 @@ zcshow(os_ptr op)
 	check_op(2);
 	return_error(e_typecheck);
     }
-    if ((code = op_show_setup(str_op, &penum)) != 0)
+    if ((code = op_show_setup(i_ctx_p, str_op, &penum)) != 0)
 	return code;
     if ((code = gs_cshow_n_init(penum, igs, (char *)str_op->value.bytes,
 				r_size(str_op))) < 0
@@ -66,20 +67,22 @@ zcshow(os_ptr op)
 	ifree_object(penum, "op_show_enum_setup");
 	return code;
     }
-    op_show_finish_setup(penum, 2, NULL);
+    op_show_finish_setup(i_ctx_p, penum, 2, NULL);
     sslot = *proc_op;		/* save kerning proc */
-    return cshow_continue(op - 2);
+    pop(2);
+    return cshow_continue(i_ctx_p);
 }
 private int
-cshow_continue(os_ptr op)
+cshow_continue(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_show_enum *penum = senum;
     int code;
 
     check_estack(4);		/* in case we call the procedure */
     code = gs_show_next(penum);
     if (code != gs_show_move) {
-	code = op_show_continue_dispatch(op, code);
+	code = op_show_continue_dispatch(i_ctx_p, 0, code);
 	if (code == o_push_estack)	/* must be gs_show_render */
 	    make_op_estack(esp - 1, cshow_continue);
 	return code;
@@ -118,7 +121,7 @@ cshow_continue(os_ptr op)
 	scaled_font = font;
 #endif
 	push(3);
-	make_int(op - 2, gs_show_current_char(penum));
+	make_int(op - 2, gs_show_current_char(penum) & 0xff);
 	make_real(op - 1, wpt.x);
 	make_real(op, wpt.y);
 	push_op_estack(cshow_continue);
@@ -131,15 +134,17 @@ cshow_continue(os_ptr op)
     return o_push_estack;
 }
 private int
-cshow_restore_font(os_ptr op)
+cshow_restore_font(i_ctx_t *i_ctx_p)
 {	/* We have 1 more entry on the e-stack (cshow_continue). */
     return gs_show_restore_font(esenum(esp - 1));
 }
 
 /* - rootfont <font> */
 private int
-zrootfont(os_ptr op)
+zrootfont(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(1);
     *op = *pfont_dict(gs_rootfont(igs));
     return 0;

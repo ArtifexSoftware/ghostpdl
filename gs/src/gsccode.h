@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1996, 1997, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -39,7 +39,12 @@ typedef ulong gs_char;
 typedef ulong gs_glyph;
 
 #define gs_no_glyph ((gs_glyph)0x7fffffff)
-#define gs_min_cid_glyph ((gs_glyph)0x80000000)
+#if arch_sizeof_long > 4
+#  define gs_min_cid_glyph ((gs_glyph)0x80000000)
+#else
+/* Avoid compiler warnings about signed/unsigned constants. */
+#  define gs_min_cid_glyph ((gs_glyph)~0x7fffffff)
+#endif
 #define gs_max_glyph max_ulong
 
 /* Define a procedure for marking a gs_glyph during garbage collection. */

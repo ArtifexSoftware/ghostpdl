@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -19,14 +19,15 @@
 
 /* (Distiller) parameter handling for PostScript and PDF writers */
 #include "string_.h"
+#include "jpeglib_.h"		/* for sdct.h */
 #include "gx.h"
 #include "gserrors.h"
 #include "gxdevice.h"
+#include "gsparamx.h"
 #include "gdevpsdf.h"
 #include "gdevpstr.h"
 #include "strimpl.h"		/* for short-sighted compilers */
 #include "scfx.h"
-#include "jpeglib.h"		/* for sdct.h */
 #include "sdct.h"
 #include "slzwx.h"
 #include "srlx.h"
@@ -57,61 +58,51 @@ typedef struct psdf_image_param_names_s {
     const char *Filter;
     const char *Resolution;
 } psdf_image_param_names;
-private const psdf_image_param_names Color_names =
-{
+private const psdf_image_param_names Color_names = {
     "ColorACSImageDict", "AntiAliasColorImages", "AutoFilterColorImages",
     "ColorImageDepth", "ColorImageDict",
     "DownsampleColorImages", "ColorImageDownsampleType", "EncodeColorImages",
     "ColorImageFilter", "ColorImageResolution"
 };
-private const psdf_image_filter_name Poly_filters[] =
-{
+private const psdf_image_filter_name Poly_filters[] = {
     {"DCTEncode", &s_DCTE_template},
     {"FlateEncode", &s_zlibE_template, psdf_version_ll3},
     {"LZWEncode", &s_LZWE_template},
     {0, 0}
 };
-private const psdf_image_param_names Gray_names =
-{
+private const psdf_image_param_names Gray_names = {
     "GrayACSImageDict", "AntiAliasGrayImages", "AutoFilterGrayImages",
     "GrayImageDepth", "GrayImageDict",
     "DownsampleGrayImages", "GrayImageDownsampleType", "EncodeGrayImages",
     "GrayImageFilter", "GrayImageResolution"
 };
-private const psdf_image_param_names Mono_names =
-{
+private const psdf_image_param_names Mono_names = {
     0, "AntiAliasMonoImages", 0,
     "MonoImageDepth", "MonoImageDict",
     "DownsampleMonoImages", "MonoImageDownsampleType", "EncodeMonoImages",
     "MonoImageFilter", "MonoImageResolution"
 };
-private const psdf_image_filter_name Mono_filters[] =
-{
+private const psdf_image_filter_name Mono_filters[] = {
     {"CCITTFaxEncode", &s_CFE_template},
     {"FlateEncode", &s_zlibE_template, psdf_version_ll3},
     {"LZWEncode", &s_LZWE_template},
     {"RunLengthEncode", &s_RLE_template},
     {0, 0}
 };
-private const char *const AutoRotatePages_names[] =
-{
+private const char *const AutoRotatePages_names[] = {
     "None", "All", "PageByPage", 0
 };
-private const char *const ColorConversionStrategy_names[] =
-{
+private const char *const ColorConversionStrategy_names[] = {
     "LeaveColorUnchanged", "UseDeviceDependentColor",
     "UseDeviceIndependentColor", 0
 };
-private const char *const DownsampleType_names[] =
-{
+private const char *const DownsampleType_names[] = {
     "Average", "Subsample", 0
 };
-private const char *const TransferFunctionInfo_names[] =
-{
+private const char *const TransferFunctionInfo_names[] = {
     "Preserve", "Apply", "Remove", 0
 };
-private const char *const UCRandBGInfo_names[] =
-{
+private const char *const UCRandBGInfo_names[] = {
     "Preserve", "Remove", 0
 };
 
@@ -305,77 +296,6 @@ psdf_DCT_put_params(gs_param_list * plist, stream_state * ss)
     return s_DCTE_put_params(plist, (stream_DCT_state *) ss);
 }
 
-/* Compare a C string and a gs_param_string. */
-bool
-psdf_key_eq(const gs_param_string * pcs, const char *str)
-{
-    return (strlen(str) == pcs->size &&
-	    !strncmp(str, (const char *)pcs->data, pcs->size));
-}
-
-/* Put an enumerated value. */
-private int
-psdf_put_enum_param(gs_param_list * plist, gs_param_name param_name,
-		    int *pvalue, const char *const pnames[], int ecode)
-{
-    gs_param_string ens;
-    int code = param_read_name(plist, param_name, &ens);
-
-    switch (code) {
-	case 1:
-	    return ecode;
-	case 0:
-	    {
-		int i;
-
-		for (i = 0; pnames[i] != 0; ++i)
-		    if (psdf_key_eq(&ens, pnames[i])) {
-			*pvalue = i;
-			return 0;
-		    }
-	    }
-	    code = gs_error_rangecheck;
-	default:
-	    ecode = code;
-	    param_signal_error(plist, param_name, code);
-    }
-    return code;
-}
-
-/* Put a Boolean or integer parameter. */
-int
-psdf_put_bool_param(gs_param_list * plist, gs_param_name param_name,
-		    bool * pval, int ecode)
-{
-    int code;
-
-    switch (code = param_read_bool(plist, param_name, pval)) {
-	default:
-	    ecode = code;
-	    param_signal_error(plist, param_name, ecode);
-	case 0:
-	case 1:
-	    break;
-    }
-    return ecode;
-}
-int
-psdf_put_int_param(gs_param_list * plist, gs_param_name param_name,
-		   int *pval, int ecode)
-{
-    int code;
-
-    switch (code = param_read_int(plist, param_name, pval)) {
-	default:
-	    ecode = code;
-	    param_signal_error(plist, param_name, ecode);
-	case 0:
-	case 1:
-	    break;
-    }
-    return ecode;
-}
-
 /* Put [~](Always|Never)Embed parameters. */
 private int
 psdf_put_embed_param(gs_param_list * plist, gs_param_name notpname,
@@ -482,12 +402,12 @@ psdf_put_image_params(const gx_device_psdf * pdev, gs_param_list * plist,
 	if (code < 0)
 	    ecode = code;
     }
-    ecode = psdf_put_bool_param(plist, pnames->AntiAlias,
+    ecode = param_put_bool(plist, pnames->AntiAlias,
 				&params->AntiAlias, ecode);
     if (pnames->AutoFilter)
-	ecode = psdf_put_bool_param(plist, pnames->AutoFilter,
+	ecode = param_put_bool(plist, pnames->AutoFilter,
 				    &params->AutoFilter, ecode);
-    ecode = psdf_put_int_param(plist, pnames->Depth,
+    ecode = param_put_int(plist, pnames->Depth,
 			       &params->Depth, ecode);
     if ((pname = pnames->Dict) != 0) {
 	const stream_template *template;
@@ -505,21 +425,21 @@ psdf_put_image_params(const gx_device_psdf * pdev, gs_param_list * plist,
 	if (code < 0)
 	    ecode = code;
     }
-    ecode = psdf_put_bool_param(plist, pnames->Downsample,
+    ecode = param_put_bool(plist, pnames->Downsample,
 				&params->Downsample, ecode);
-    if ((ecode = psdf_put_enum_param(plist, pnames->DownsampleType,
+    if ((ecode = param_put_enum(plist, pnames->DownsampleType,
 				     &dsti, DownsampleType_names,
 				     ecode)) >= 0
 	)
 	params->DownsampleType = (enum psdf_downsample_type)dsti;
-    ecode = psdf_put_bool_param(plist, pnames->Encode,
+    ecode = param_put_bool(plist, pnames->Encode,
 				&params->Encode, ecode);
     switch (code = param_read_string(plist, pnames->Filter, &fs)) {
 	case 0:
 	    {
 		const psdf_image_filter_name *pn = pifn;
 
-		while (pn->pname != 0 && !psdf_key_eq(&fs, pn->pname))
+		while (pn->pname != 0 && !gs_param_string_eq(&fs, pn->pname))
 		    pn++;
 		if (pn->pname == 0 || pn->min_version > pdev->version) {
 		    ecode = gs_error_rangecheck;
@@ -535,7 +455,7 @@ psdf_put_image_params(const gx_device_psdf * pdev, gs_param_list * plist,
 	case 1:
 	    break;
     }
-    ecode = psdf_put_int_param(plist, pnames->Resolution,
+    ecode = param_put_int(plist, pnames->Resolution,
 			       &params->Resolution, ecode);
     if (ecode >= 0) {		/* Force parameters to acceptable values. */
 	if (params->Resolution < 1)
@@ -568,16 +488,16 @@ gdev_psdf_put_params(gx_device * dev, gs_param_list * plist)
 
     params = pdev->params;
 
-    ecode = psdf_put_bool_param(plist, "ASCII85EncodePages",
+    ecode = param_put_bool(plist, "ASCII85EncodePages",
 				&params.ASCII85EncodePages, ecode);
     {
 	int arpi = params.AutoRotatePages;
 
-	ecode = psdf_put_enum_param(plist, "AutoRotatePages", &arpi,
+	ecode = param_put_enum(plist, "AutoRotatePages", &arpi,
 				    AutoRotatePages_names, ecode);
 	params.AutoRotatePages = (enum psdf_auto_rotate_pages)arpi;
     }
-    ecode = psdf_put_bool_param(plist, "CompressPages",
+    ecode = param_put_bool(plist, "CompressPages",
 				&params.CompressPages, ecode);
     switch (code = param_read_long(plist, (param_name = "ImageMemory"), &params.ImageMemory)) {
 	default:
@@ -587,29 +507,29 @@ gdev_psdf_put_params(gx_device * dev, gs_param_list * plist)
 	case 1:
 	    break;
     }
-    ecode = psdf_put_bool_param(plist, "LZWEncodePages",
+    ecode = param_put_bool(plist, "LZWEncodePages",
 				&params.LZWEncodePages, ecode);
-    ecode = psdf_put_bool_param(plist, "PreserveHalftoneInfo",
+    ecode = param_put_bool(plist, "PreserveHalftoneInfo",
 				&params.PreserveHalftoneInfo, ecode);
-    ecode = psdf_put_bool_param(plist, "PreserveOPIComments",
+    ecode = param_put_bool(plist, "PreserveOPIComments",
 				&params.PreserveOPIComments, ecode);
-    ecode = psdf_put_bool_param(plist, "PreserveOverprintSettings",
+    ecode = param_put_bool(plist, "PreserveOverprintSettings",
 				&params.PreserveOverprintSettings, ecode);
     {
 	int tfii = params.TransferFunctionInfo;
 
-	ecode = psdf_put_enum_param(plist, "TransferFunctionInfo", &tfii,
+	ecode = param_put_enum(plist, "TransferFunctionInfo", &tfii,
 				    TransferFunctionInfo_names, ecode);
 	params.TransferFunctionInfo = (enum psdf_transfer_function_info)tfii;
     }
     {
 	int ucrbgi = params.UCRandBGInfo;
 
-	ecode = psdf_put_enum_param(plist, "UCRandBGInfo", &ucrbgi,
+	ecode = param_put_enum(plist, "UCRandBGInfo", &ucrbgi,
 				    UCRandBGInfo_names, ecode);
 	params.UCRandBGInfo = (enum psdf_ucr_and_bg_info)ucrbgi;
     }
-    ecode = psdf_put_bool_param(plist, "UseFlateCompression",
+    ecode = param_put_bool(plist, "UseFlateCompression",
 				&params.UseFlateCompression, ecode);
 
     /* Color sampled image parameters */
@@ -619,14 +539,14 @@ gdev_psdf_put_params(gx_device * dev, gs_param_list * plist)
     {
 	int ccsi = params.ColorConversionStrategy;
 
-	ecode = psdf_put_enum_param(plist, "ColorConversionStrategy", &ccsi,
+	ecode = param_put_enum(plist, "ColorConversionStrategy", &ccsi,
 				    ColorConversionStrategy_names, ecode);
 	params.ColorConversionStrategy =
 	    (enum psdf_color_conversion_strategy)ccsi;
     }
-    ecode = psdf_put_bool_param(plist, "ConvertCMYKImagesToRGB",
+    ecode = param_put_bool(plist, "ConvertCMYKImagesToRGB",
 				&params.ConvertCMYKImagesToRGB, ecode);
-    ecode = psdf_put_bool_param(plist, "ConvertImagesToIndexed",
+    ecode = param_put_bool(plist, "ConvertImagesToIndexed",
 				&params.ConvertImagesToIndexed, ecode);
 
     /* Gray sampled image parameters */
@@ -645,11 +565,11 @@ gdev_psdf_put_params(gx_device * dev, gs_param_list * plist)
 				 &params.AlwaysEmbed, ecode);
     ecode = psdf_put_embed_param(plist, "~NeverEmbed",
 				 &params.NeverEmbed, ecode);
-    ecode = psdf_put_bool_param(plist, "EmbedAllFonts",
+    ecode = param_put_bool(plist, "EmbedAllFonts",
 				&params.EmbedAllFonts, ecode);
-    ecode = psdf_put_bool_param(plist, "SubsetFonts",
+    ecode = param_put_bool(plist, "SubsetFonts",
 				&params.SubsetFonts, ecode);
-    ecode = psdf_put_int_param(plist, "MaxSubsetPct",
+    ecode = param_put_int(plist, "MaxSubsetPct",
 			       &params.MaxSubsetPct, ecode);
 
     if (ecode < 0)

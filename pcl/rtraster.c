@@ -313,7 +313,7 @@ consolidate_row(
 		 * cons_buff was allocated with gs_alloc_bytes, so we know
 		 * it is aligned for (at least) bits32 access.
 		 */
-#if arch_is_big_endian
+#if ARCH_IS_BIG_ENDIAN
 		static const bits32 spread[16] = {
 		    0x00000000, 0x00000001, 0x00000100, 0x00000101,
 		    0x00010000, 0x00010001, 0x00010100, 0x00010101,

@@ -1,5 +1,5 @@
 %!
-%    Copyright (C) 1994 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1994 , 1999 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -21,7 +21,13 @@
 %
 %   ps2ai.ps - a postscript to editable adobe illustrator file filter
 %
-/vers {2.13} def                  %                    April 25, 1994  
+/vers {2.14} def                  %                    January 31, 1999
+
+% conditional def ( if the key is already defined before, don't 
+% redefine it. This can be used by other programs to overwrite
+% some settings from externally
+%  
+/cdef { 1 index where { pop pop pop } { def } ifelse } def
 %
 %xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 %
@@ -32,26 +38,30 @@
 %               gs -q -dNODISPLAY ps2ai.ps file.ps
 %                              or
 %               cat ps2ai.ps file.ps | lpr  (then look in log file)
+%
+% or from within gsview via:
+% 	Edit->Convert to vector format
 %xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 %                            Options
 %xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 %   Output Options: directly to a file or standard out
 %
-/jout false def            % true=file  false=stdout (default=false)
-/joutput (ps2ai.out.aips) def      % Name of Output file
+/jout false cdef            % true=file  false=stdout (default=false)
+/joutput (ps2ai.out.aips) cdef      % Name of Output file
 %
 %xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 %
 %              Other Options
 %
-/jtxt3 true def           % output text in AI3 form (false=ai88)
+/jtxt3 true cdef           % output text in AI3 form (false=ai88)
                           % for coreldraw/photoshop readable output
-/joutln false def         % use font outline  instead of font
+/joutln false cdef         % use font outline  instead of font
 /jerr false def            % use error handling (ie die gracefully)
 /jbiterr false def         % attempt to handle bitmap fonts (kludge)
 /jMacGS false def         % true if using MacGS (not fully implemented yet)
 /jMacfix true def         % convert filled boxes to lines (only usefull with
                           % laserwriter 8 postscript input)
+
 %
 %xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 %                    No options below here
@@ -70,6 +80,7 @@
 %       URL ftp://toby.princeton.edu/pub/olszewsk
 %
 %         - Fix History -
+%  2.14 added cdef to allow overwriting of certain values from externally
 %  2.13 check for bitmap fonts, work better with TeX,WinPS,etc
 %  2.12 fixed initclip to US letter size page
 %  2.11 added header support for *u/*U compound paths
@@ -538,5 +549,5 @@ jtxt3 {
 (%%EndSetup\n) jp
 0 0 0 1 oldsetcmykcolor
 currentstate
-jout {(%%Note: Load Postscript file to be converted now\n) print} if
 
+jout {(%%Note: Load Postscript file to be converted now\n) print} if

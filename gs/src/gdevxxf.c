@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -75,6 +75,62 @@ struct x_xfont_s {
 gs_private_st_dev_ptrs1(st_x_xfont, x_xfont, "x_xfont",
 			x_xfont_enum_ptrs, x_xfont_reloc_ptrs, xdev);
 
+/* ---------------- Utilities ---------------- */
+
+/* Search one set of font maps for a font with a given name. */
+private x11fontmap *
+find_fontmap(x11fontmap *fmps, const byte *fname, uint len)
+{
+    x11fontmap *fmp = fmps;
+
+    while (fmp) {
+	if (len == strlen(fmp->ps_name) &&
+	    strncmp(fmp->ps_name, (const char *)fname, len) == 0)
+	    break;
+	fmp = fmp->next;
+    }
+    return fmp;
+}
+
+/* Find an X font with a given name, encoding, and size. */
+private char *
+find_x_font(gx_device_X *xdev, char x11template[256], x11fontmap *fmp,
+	    const char *encoding_name, x11fontlist *fls, int xheight,
+	    bool *scalable_font)
+{
+    int i;
+    char *x11fontname = 0;
+    int len1 = strlen(fmp->x11_name) + 1;
+
+    if (fls->count == -1) {
+	sprintf(x11template, "%s-*-*-*-*-*-*-%s", fmp->x11_name,
+		encoding_name);
+	fls->names = XListFonts(xdev->dpy, x11template, 32, &fls->count);
+    }
+    *scalable_font = false;
+    for (i = 0; i < fls->count; i++) {
+	const char *szp = fls->names[i] + len1;
+	int size = 0;
+
+	while (*szp >= '0' && *szp <= '9')
+	    size = size * 10 + *szp++ - '0';
+	if (size == 0) {
+	    *scalable_font = true;
+	    continue;
+	}
+	if (size == xheight)
+	    return fls->names[i];
+    }
+    if (*scalable_font && xdev->useScalableFonts) {
+	sprintf(x11template, "%s-%d-0-0-0-*-0-%s", fmp->x11_name,
+		xheight, encoding_name);
+	x11fontname = x11template;
+    }
+    return x11fontname;
+}
+
+/* ---------------- xfont procedures ---------------- */
+
 /* Look up a font. */
 private gx_xfont *
 x_lookup_font(gx_device * dev, const byte * fname, uint len,
@@ -87,12 +143,10 @@ x_lookup_font(gx_device * dev, const byte * fname, uint len,
     char *x11fontname = NULL;
     XFontStruct *x11font;
     x11fontmap *fmp;
-    int i;
     double height;
-    int size;
     int xwidth, xheight, angle;
     Boolean My;
-    Boolean scalable_font = False;
+    bool scalable_font;
 
     if (!xdev->useXFonts)
 	return NULL;
@@ -101,19 +155,13 @@ x_lookup_font(gx_device * dev, const byte * fname, uint len,
 	xwidth = fabs(pmat->xx * 1000) + 0.5;
 	xheight = fabs(pmat->yy * 1000) + 0.5;
 	height = fabs(pmat->yy * 1000);
-	if (pmat->xx > 0)
-	    angle = 0;
-	else
-	    angle = 180;
+	angle = (pmat->xx > 0 ? 0 : 180);
 	My = (pmat->xx > 0 && pmat->yy > 0) || (pmat->xx < 0 && pmat->yy < 0);
     } else if (pmat->xx == 0 && pmat->yy == 0) {
 	xwidth = fabs(pmat->xy * 1000) + 0.5;
 	xheight = fabs(pmat->yx * 1000) + 0.5;
 	height = fabs(pmat->yx * 1000);
-	if (pmat->yx < 0)
-	    angle = 90;
-	else
-	    angle = 270;
+	angle = (pmat->yx < 0 ? 90 : 270);
 	My = (pmat->yx > 0 && pmat->xy < 0) || (pmat->yx < 0 && pmat->xy > 0);
     } else {
 	return NULL;
@@ -132,150 +180,59 @@ x_lookup_font(gx_device * dev, const byte * fname, uint len,
     if (!xdev->useFontExtensions && (My || angle != 0))
 	return NULL;
 
-    if (encoding_index == 0 || encoding_index == 1) {
-	int tried_other_encoding = 0;
-
-	fmp = xdev->regular_fonts;
-	while (fmp) {
-	    if (len == strlen(fmp->ps_name) &&
-		strncmp(fmp->ps_name, (const char *)fname, len) == 0)
-		break;
-	    fmp = fmp->next;
-	}
+    switch (encoding_index) {
+    case 0:
+	fmp = find_fontmap(xdev->regular_fonts, fname, len);
 	if (fmp == NULL)
 	    return NULL;
-	while (True) {
-	    if (encoding_index == 0) {
-		if (fmp->std_count == -1) {
-		    sprintf(x11template, "%s%s", fmp->x11_name,
-			    "-*-*-*-*-*-*-Adobe-fontspecific");
-		    fmp->std_names = XListFonts(xdev->dpy, x11template, 32,
-						&fmp->std_count);
-		}
-		if (fmp->std_count) {
-		    for (i = 0; i < fmp->std_count; i++) {
-			char *szp = fmp->std_names[i] + strlen(fmp->x11_name) + 1;
-
-			size = 0;
-			while (*szp >= '0' && *szp <= '9')
-			    size = size * 10 + *szp++ - '0';
-			if (size == 0) {
-			    scalable_font = True;
-			    continue;
-			}
-			if (size == xheight) {
-			    x11fontname = fmp->std_names[i];
-			    break;
-			}
-		    }
-		    if (!x11fontname && scalable_font &&
-			xdev->useScalableFonts) {
-			sprintf(x11template, "%s-%d%s", fmp->x11_name,
-				xheight, "-0-0-0-*-0-Adobe-fontspecific");
-			x11fontname = x11template;
-		    }
-		    if (x11fontname)
-			break;
-		}
-		if (tried_other_encoding)
-		    return NULL;
-		encoding_index = 1;
-		tried_other_encoding = 1;
-	    } else if (encoding_index == 1) {
-		if (fmp->iso_count == -1) {
-		    sprintf(x11template, "%s%s", fmp->x11_name,
-			    "-*-*-*-*-*-*-ISO8859-1");
-		    fmp->iso_names = XListFonts(xdev->dpy, x11template, 32,
-						&fmp->iso_count);
-		}
-		if (fmp->iso_count) {
-		    for (i = 0; i < fmp->iso_count; i++) {
-			char *szp = fmp->iso_names[i] + strlen(fmp->x11_name) + 1;
-
-			size = 0;
-			while (*szp >= '0' && *szp <= '9')
-			    size = size * 10 + *szp++ - '0';
-			if (size == 0) {
-			    scalable_font = True;
-			    continue;
-			}
-			if (size == xheight) {
-			    x11fontname = fmp->iso_names[i];
-			    break;
-			}
-		    }
-		    if (!x11fontname && scalable_font &&
-			xdev->useScalableFonts) {
-			sprintf(x11template, "%s-%d%s", fmp->x11_name,
-				xheight, "-0-0-0-*-0-ISO8859-1");
-			x11fontname = x11template;
-		    }
-		    if (x11fontname)
-			break;
-		}
-		if (tried_other_encoding)
-		    return NULL;
-		encoding_index = 0;
-		tried_other_encoding = 1;
-	    }
+	x11fontname =
+	    find_x_font(xdev, x11template, fmp, "Adobe-fontspecific",
+			&fmp->std, xheight, &scalable_font);
+	if (!x11fontname) {
+	    x11fontname =
+		find_x_font(xdev, x11template, fmp, "ISO8859-1",
+			    &fmp->iso, xheight, &scalable_font);
+	    encoding_index = 1;
 	}
-    } else if (encoding_index == 2 || encoding_index == 3) {
-	if (encoding_index == 2)
-	    fmp = xdev->symbol_fonts;
-	if (encoding_index == 3)
-	    fmp = xdev->dingbat_fonts;
-	while (fmp) {
-	    if (len == strlen(fmp->ps_name) &&
-		strncmp(fmp->ps_name, (const char *)fname, len) == 0)
-		break;
-	    fmp = fmp->next;
-	}
+	break;
+    case 1:
+	fmp = find_fontmap(xdev->regular_fonts, fname, len);
 	if (fmp == NULL)
 	    return NULL;
-	if (fmp->std_count == -1) {
-	    sprintf(x11template, "%s%s", fmp->x11_name,
-		    "-*-*-*-*-*-*-Adobe-fontspecific");
-	    fmp->std_names = XListFonts(xdev->dpy, x11template, 32,
-					&fmp->std_count);
+	x11fontname =
+	    find_x_font(xdev, x11template, fmp, "ISO8859-1",
+			&fmp->iso, xheight, &scalable_font);
+	if (!x11fontname) {
+	    x11fontname =
+		find_x_font(xdev, x11template, fmp, "Adobe-fontspecific",
+			    &fmp->std, xheight, &scalable_font);
+	    encoding_index = 0;
 	}
-	if (fmp->std_count) {
-	    for (i = 0; i < fmp->std_count; i++) {
-		char *szp = fmp->std_names[i] + strlen(fmp->x11_name) + 1;
-
-		size = 0;
-		while (*szp >= '0' && *szp <= '9')
-		    size = size * 10 + *szp++ - '0';
-		if (size == 0) {
-		    scalable_font = True;
-		    continue;
-		}
-		if (size == xheight) {
-		    x11fontname = fmp->std_names[i];
-		    break;
-		}
-	    }
-	    if (!x11fontname && scalable_font && xdev->useScalableFonts) {
-		sprintf(x11template, "%s-%d%s", fmp->x11_name, xheight,
-			"-0-0-0-*-0-Adobe-fontspecific");
-		x11fontname = x11template;
-	    }
-	    if (!x11fontname)
-		return NULL;
-	} else {
+	break;
+    case 2:
+	fmp = xdev->symbol_fonts;
+	goto sym;
+    case 3:
+	fmp = xdev->dingbat_fonts;
+sym:	fmp = find_fontmap(fmp, fname, len);
+	if (fmp == NULL)
 	    return NULL;
-	}
-    } else {
+	x11fontname =
+	    find_x_font(xdev, x11template, fmp, "Adobe-fontspecific",
+			&fmp->std, xheight, &scalable_font);
+    default:
 	return NULL;
     }
+    if (!x11fontname)
+	return NULL;
 
     if (xwidth != xheight || angle != 0 || My) {
 	if (!xdev->useScalableFonts || !scalable_font)
 	    return NULL;
-	sprintf(x11template, "%s%s+%d-%d+%d%s",
-		fmp->x11_name, My ? "+My" : "",
+	sprintf(x11template, "%s%s+%d-%d+%d-0-0-0-*-0-%s",
+		fmp->x11_name, (My ? "+My" : ""),
 		angle * 64, xheight, xwidth,
-		encoding_index == 1 ? "-0-0-0-*-0-ISO8859-1" :
-		"-0-0-0-*-0-Adobe-fontspecific");
+		(encoding_index == 1 ? "ISO8859-1" : "Adobe-fontspecific"));
 	x11fontname = x11template;
     }
     x11font = XLoadQueryFont(xdev->dpy, x11fontname);
@@ -293,7 +250,7 @@ x_lookup_font(gx_device * dev, const byte * fname, uint len,
     xxf->xdev = xdev;
     xxf->font = x11font;
     xxf->encoding_index = encoding_index;
-    xxf->My = My ? -1 : 1;
+    xxf->My = (My ? -1 : 1);
     xxf->angle = angle;
     if (xdev->logXFonts) {
 	fprintf(stdout, "Using %s\n", x11fontname);
@@ -308,7 +265,7 @@ private gx_xglyph
 x_char_xglyph(gx_xfont * xf, gs_char chr, int encoding_index,
 	      gs_glyph glyph, gs_proc_glyph_name_t glyph_name_proc)
 {
-    x_xfont *xxf = (x_xfont *) xf;
+    const x_xfont *xxf = (x_xfont *) xf;
 
     if (chr == gs_no_char)
 	return gx_no_xglyph;	/* can't look up names yet */
@@ -327,7 +284,7 @@ x_char_xglyph(gx_xfont * xf, gs_char chr, int encoding_index,
 	return gx_no_xglyph;
     if (xxf->font->per_char) {
 	int i = chr - xxf->font->min_char_or_byte2;
-	XCharStruct *xc = &(xxf->font->per_char[i]);
+	const XCharStruct *xc = &xxf->font->per_char[i];
 
 	if ((xc->lbearing == 0) && (xc->rbearing == 0) &&
 	    (xc->ascent == 0) && (xc->descent == 0))
@@ -341,48 +298,36 @@ private int
 x_char_metrics(gx_xfont * xf, gx_xglyph xg, int wmode,
 	       gs_point * pwidth, gs_int_rect * pbbox)
 {
-    x_xfont *xxf = (x_xfont *) xf;
+    const x_xfont *xxf = (const x_xfont *) xf;
+    int width;
 
     if (wmode != 0)
 	return gs_error_undefined;
     if (xxf->font->per_char == NULL) {
-	if (xxf->angle == 0) {
-	    pwidth->x = xxf->font->max_bounds.width;
-	    pwidth->y = 0;
-	} else if (xxf->angle == 90) {
-	    pwidth->x = 0;
-	    pwidth->y = -xxf->My * xxf->font->max_bounds.width;
-	} else if (xxf->angle == 180) {
-	    pwidth->x = -xxf->font->max_bounds.width;
-	    pwidth->y = 0;
-	} else if (xxf->angle == 270) {
-	    pwidth->x = 0;
-	    pwidth->y = xxf->My * xxf->font->max_bounds.width;
-	}
+	width = xxf->font->max_bounds.width;
 	pbbox->p.x = xxf->font->max_bounds.lbearing;
 	pbbox->q.x = xxf->font->max_bounds.rbearing;
 	pbbox->p.y = -xxf->font->max_bounds.ascent;
 	pbbox->q.y = xxf->font->max_bounds.descent;
     } else {
 	int i = xg - xxf->font->min_char_or_byte2;
+	const XCharStruct *xc = &xxf->font->per_char[i];
 
-	if (xxf->angle == 0) {
-	    pwidth->x = xxf->font->per_char[i].width;
-	    pwidth->y = 0;
-	} else if (xxf->angle == 90) {
-	    pwidth->x = 0;
-	    pwidth->y = -xxf->My * xxf->font->per_char[i].width;
-	} else if (xxf->angle == 180) {
-	    pwidth->x = -xxf->font->per_char[i].width;
-	    pwidth->y = 0;
-	} else if (xxf->angle == 270) {
-	    pwidth->x = 0;
-	    pwidth->y = xxf->My * xxf->font->per_char[i].width;
-	}
-	pbbox->p.x = xxf->font->per_char[i].lbearing;
-	pbbox->q.x = xxf->font->per_char[i].rbearing;
-	pbbox->p.y = -xxf->font->per_char[i].ascent;
-	pbbox->q.y = xxf->font->per_char[i].descent;
+	width = xc->width;
+	pbbox->p.x = xc->lbearing;
+	pbbox->q.x = xc->rbearing;
+	pbbox->p.y = -xc->ascent;
+	pbbox->q.y = xc->descent;
+    }
+    switch (xxf->angle) {
+    case 0:
+	pwidth->x = width, pwidth->y = 0; break;
+    case 90:
+	pwidth->x = 0, pwidth->y = -xxf->My * width; break;
+    case 180:
+	pwidth->x = -width, pwidth->y = 0; break;
+    case 270:
+	pwidth->x = 0, pwidth->y = xxf->My * width; break;
     }
     return 0;
 }
@@ -474,7 +419,7 @@ x_render_char(gx_xfont * xf, gx_xglyph xg, gx_device * dev,
 	    return code;
 	w = bbox.q.x - bbox.p.x;
 	h = bbox.q.y - bbox.p.y;
-	wbm = round_up(w, align_bitmap_mod * 8);
+	wbm = ROUND_UP(w, align_bitmap_mod * 8);
 	raster = wbm >> 3;
 	bits = (byte *) gs_malloc(h, raster, "x_render_char");
 	if (bits == 0)

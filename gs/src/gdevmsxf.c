@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1994, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1994, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -369,7 +369,7 @@ win_render_char(gx_xfont * xf, gx_xglyph xg, gx_device * dev,
 	    return code;
 	w = bbox.q.x - bbox.p.x;
 	h = bbox.q.y - bbox.p.y;
-	wbm = round_up(w, align_bitmap_mod * 8);
+	wbm = ROUND_UP(w, align_bitmap_mod * 8);
 	raster = wbm >> 3;
 	bits = gs_malloc(h, raster, "win_render_char");
 	if (bits == 0)

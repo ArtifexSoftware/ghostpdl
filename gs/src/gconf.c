@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,6 @@
    all copies.
  */
 
-#define IN_GCONF_C	1	/* set for gconf.h to prevent conflict def'n */
 
 /* Configuration tables */
 #include "memory_.h"
@@ -24,6 +23,8 @@
 #include "gscdefs.h"		/* interface */
 #include "gconf.h"		/* for #defines */
 #include "gxdevice.h"
+#include "gxdhtres.h"
+#include "gxiclass.h"
 #include "gxiodev.h"
 #include "gxiparam.h"
 
@@ -36,7 +37,13 @@
  * for each installed device;
  *      emulator_("emulator", strlen("emulator"))
  * for each known emulator;
- *	image_type(gs_image_type_xxx)
+ *	function_type_(xxx, gs_function_type_xxx)
+ * for each known function type;
+ *	halftone_(gs_dht_xxx)
+ * for each known (device) halftone;
+ *	image_class_(gs_image_class_xxx)
+ * for each known image class;
+ *	image_type_(xxx, gs_image_type_xxx)
  * for each known image type;
  *      init_(gs_xxx_init)
  * for each initialization procedure;
@@ -57,33 +64,66 @@
 /* Declare devices, image types, init procedures, and IODevices as extern. */
 #define device_(dev) extern far_data gx_device dev;
 #define device2_(dev) extern const gx_device dev;
-#define image_type_(type) extern const gx_image_type_t type;
+#define halftone_(dht) extern const gx_device_halftone_resource_t *dht(P0());
+#define image_class_(cls) extern iclass_proc(cls);
+#define image_type_(i,type) extern const gx_image_type_t type;
 #define init_(proc) extern void proc(P1(gs_memory_t *));
 #define io_device_(iodev) extern const gx_io_device iodev;
 #include "gconf.h"
 #undef io_device_
 #undef init_
 #undef image_type_
+#undef image_class_
+#undef halftone_
 #undef device2_
 #undef device_
 
+/* Set up the device table. */
+#define device_(dev) (const gx_device *)&dev,
+#define device2_(dev) &dev,
+private const gx_device *const gx_device_list[] = {
+#include "gconf.h"
+	 0
+};
+#undef device2_
+#undef device_
+
+/* Set up the (device) halftone table. */
+extern_gx_device_halftone_list();
+#define halftone_(dht) dht,
+const gx_dht_proc gx_device_halftone_list[] = {
+#include "gconf.h"
+    0
+};
+#undef halftone_
+
+/* Set up the image class table. */
+extern_gx_image_class_table();
+#define image_class_(cls) cls,
+const gx_image_class_t gx_image_class_table[] = {
+#include "gconf.h"
+    0
+};
+#undef image_class_
+/* We must use unsigned here, not uint.  See gscdefs.h. */
+const unsigned gx_image_class_table_count = countof(gx_image_class_table) - 1;
+
 /* Set up the image type table. */
 extern_gx_image_type_table();
-#define image_type_(type) &type,
+#define image_type_(i,type) &type,
 const gx_image_type_t *const gx_image_type_table[] = {
 #include "gconf.h"
     0
 };
 #undef image_type_
-const uint gx_image_type_table_count = countof(gx_image_type_table) - 1;
+/* We must use unsigned here, not uint.  See gscdefs.h. */
+const unsigned gx_image_type_table_count = countof(gx_image_type_table) - 1;
 
 /* Set up the initialization procedure table. */
 extern_gx_init_table();
-private void gconf_init(P1(gs_memory_t *));
 #define init_(proc) proc,
 const gx_init_proc gx_init_table[] = {
 #include "gconf.h"
-    gconf_init,
     0
 };
 #undef init_
@@ -99,31 +139,11 @@ const gx_io_device *const gx_io_device_table[] = {
     0
 };
 #undef io_device_
-const uint gx_io_device_table_count = countof(gx_io_device_table) - 1;
+/* We must use unsigned here, not uint.  See gscdefs.h. */
+const unsigned gx_io_device_table_count = countof(gx_io_device_table) - 1;
 
-/* Set up the device table. */
-#define device_(dev) (const gx_device *)&dev,
-#define device2_(dev) &dev,
-private const gx_device *const gx_device_list[] = {
-#include "gconf.h"
-	 0
-};
-#undef device2_
-#undef device_
-
-/* Allocate and initialize structure descriptors for the devices. */
-private gs_memory_struct_type_t gx_device_st_list[countof(gx_device_list) - 1];
-private void
-gconf_init(gs_memory_t *mem)
-{
-    int i;
-
-    for (i = 0; i < countof(gx_device_list) - 1; ++i)
-	gx_device_make_struct_type(&gx_device_st_list[i], gx_device_list[i]);
-}
-
-/* Return the list of device prototypes, the list of their structure */
-/* descriptors, and (as the value) the length of the lists. */
+/* Return the list of device prototypes, a NULL list of their structure */
+/* descriptors (no longer used), and (as the value) the length of the lists. */
 extern_gs_lib_device_list();
 int
 gs_lib_device_list(const gx_device * const **plist,
@@ -132,6 +152,6 @@ gs_lib_device_list(const gx_device * const **plist,
     if (plist != 0)
 	*plist = gx_device_list;
     if (pst != 0)
-	*pst = gx_device_st_list;
+	*pst = NULL;
     return countof(gx_device_list) - 1;
 }

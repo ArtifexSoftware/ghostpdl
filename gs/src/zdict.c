@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -20,7 +20,7 @@
 /* Dictionary operators */
 #include "ghost.h"
 #include "oper.h"
-#include "idict.h"
+#include "iddict.h"
 #include "dstack.h"
 #include "ilevel.h"		/* for [count]dictstack */
 #include "iname.h"		/* for dict_find_name */
@@ -30,8 +30,10 @@
 
 /* <int> dict <dict> */
 int
-zdict(register os_ptr op)
+zdict(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     check_type(*op, t_integer);
 #if arch_sizeof_int < arch_sizeof_long
     check_int_leu(*op, max_uint);
@@ -44,8 +46,10 @@ zdict(register os_ptr op)
 
 /* <dict> maxlength <int> */
 private int
-zmaxlength(register os_ptr op)
+zmaxlength(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     check_type(*op, t_dictionary);
     check_dict_read(*op);
     make_int(op, dict_maxlength(op));
@@ -54,8 +58,10 @@ zmaxlength(register os_ptr op)
 
 /* <dict> begin - */
 int
-zbegin(register os_ptr op)
+zbegin(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     check_type(*op, t_dictionary);
     check_dict_read(*op);
     if (dsp == dstop)
@@ -69,7 +75,7 @@ zbegin(register os_ptr op)
 
 /* - end - */
 int
-zend(register os_ptr op)
+zend(i_ctx_t *i_ctx_p)
 {
     if (ref_stack_count_inline(&d_stack) == min_dstack_size) {
 	/* We would underflow the d-stack. */
@@ -90,9 +96,10 @@ zend(register os_ptr op)
  * the interpreter will almost always call it directly.
  */
 int
-zop_def(register os_ptr op)
+zop_def(i_ctx_t *i_ctx_p)
 {
-    register os_ptr op1 = op - 1;
+    os_ptr op = osp;
+    os_ptr op1 = op - 1;
     ref *pvslot;
 
     /* The following combines a check_op(2) with a type check. */
@@ -131,16 +138,16 @@ zop_def(register os_ptr op)
      * in the uncommon case.
      */
     if (dict_find(dsp, op1, &pvslot) <= 0)
-	return dict_put(dsp, op1, op);
+	return idict_put(dsp, op1, op);
 ra:
     ref_assign_old_inline(&dsp->value.pdict->values, pvslot, op,
 			  "dict_put(value)");
     return 0;
 }
 int
-zdef(os_ptr op)
+zdef(i_ctx_t *i_ctx_p)
 {
-    int code = zop_def(op);
+    int code = zop_def(i_ctx_p);
 
     if (code >= 0) {
 	pop(2);
@@ -150,8 +157,9 @@ zdef(os_ptr op)
 
 /* <key> load <value> */
 private int
-zload(register os_ptr op)
+zload(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     ref *pvalue;
 
     switch (r_type(op)) {
@@ -191,19 +199,22 @@ zload(register os_ptr op)
 /* <dict> <key> .undef - */
 /* <dict> <key> undef - */
 private int
-zundef(register os_ptr op)
+zundef(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     check_type(op[-1], t_dictionary);
     check_dict_write(op[-1]);
-    dict_undef(op - 1, op);	/* ignore undefined error */
+    idict_undef(op - 1, op);	/* ignore undefined error */
     pop(2);
     return 0;
 }
 
 /* <dict> <key> known <bool> */
 private int
-zknown(register os_ptr op)
+zknown(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     register os_ptr op1 = op - 1;
     ref *pvalue;
 
@@ -217,8 +228,9 @@ zknown(register os_ptr op)
 /* <key> where <dict> true */
 /* <key> where false */
 int
-zwhere(register os_ptr op)
+zwhere(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     ref_stack_enum_t rsenum;
 
     check_op(1);
@@ -245,8 +257,9 @@ zwhere(register os_ptr op)
 /* copy for dictionaries -- called from zcopy in zgeneric.c. */
 /* Only the type of *op has been checked. */
 int
-zcopy_dict(register os_ptr op)
+zcopy_dict(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     os_ptr op1 = op - 1;
     int code;
 
@@ -257,7 +270,7 @@ zcopy_dict(register os_ptr op)
 	(dict_length(op) != 0 || dict_maxlength(op) < dict_length(op1))
 	)
 	return_error(e_rangecheck);
-    code = dict_copy(op1, op);
+    code = idict_copy(op1, op);
     if (code < 0)
 	return code;
     /*
@@ -274,8 +287,10 @@ zcopy_dict(register os_ptr op)
 
 /* - currentdict <dict> */
 private int
-zcurrentdict(register os_ptr op)
+zcurrentdict(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(1);
     ref_assign(op, dsp);
     return 0;
@@ -283,8 +298,9 @@ zcurrentdict(register os_ptr op)
 
 /* - countdictstack <int> */
 private int
-zcountdictstack(register os_ptr op)
+zcountdictstack(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     uint count = ref_stack_count(&d_stack);
 
     push(1);
@@ -296,8 +312,9 @@ zcountdictstack(register os_ptr op)
 
 /* <array> dictstack <subarray> */
 private int
-zdictstack(register os_ptr op)
+zdictstack(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     uint count = ref_stack_count(&d_stack);
 
     check_write_type(*op, t_array);
@@ -308,9 +325,10 @@ zdictstack(register os_ptr op)
 
 /* - cleardictstack - */
 private int
-zcleardictstack(os_ptr op)
+zcleardictstack(i_ctx_t *i_ctx_p)
 {
-    while (zend(op) >= 0);
+    while (zend(i_ctx_p) >= 0)
+	DO_NOTHING;
     return 0;
 }
 
@@ -318,8 +336,9 @@ zcleardictstack(os_ptr op)
 
 /* <dict1> <dict2> .dictcopynew <dict2> */
 private int
-zdictcopynew(register os_ptr op)
+zdictcopynew(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     os_ptr op1 = op - 1;
     int code;
 
@@ -330,7 +349,7 @@ zdictcopynew(register os_ptr op)
     /* This is only recognized in Level 2 mode. */
     if (!dict_auto_expand)
 	return_error(e_undefined);
-    code = dict_copy_new(op1, op);
+    code = idict_copy_new(op1, op);
     if (code < 0)
 	return code;
     ref_assign(op1, op);
@@ -341,7 +360,7 @@ zdictcopynew(register os_ptr op)
 /* -mark- <key0> <value0> <key1> <value1> ... .dicttomark <dict> */
 /* This is the Level 2 >> operator. */
 private int
-zdicttomark(register os_ptr op)
+zdicttomark(i_ctx_t *i_ctx_p)
 {
     uint count2 = ref_stack_counttomark(&o_stack);
     ref rdict;
@@ -359,9 +378,9 @@ zdicttomark(register os_ptr op)
     /* << /a 1 /a 2 >> => << /a 1 >>, i.e., */
     /* we must enter the keys in top-to-bottom order. */
     for (idx = 0; idx < count2; idx += 2) {
-	code = dict_put(&rdict,
-			ref_stack_index(&o_stack, idx + 1),
-			ref_stack_index(&o_stack, idx));
+	code = idict_put(&rdict,
+			 ref_stack_index(&o_stack, idx + 1),
+			 ref_stack_index(&o_stack, idx));
 	if (code < 0) {		/* There's no way to free the dictionary -- too bad. */
 	    return code;
 	}
@@ -381,8 +400,9 @@ zdicttomark(register os_ptr op)
  * should no longer be accessible by name.
  */
 private int
-zforceput(register os_ptr op)
+zforceput(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     os_ptr odp = op - 2;
     int code;
 
@@ -393,10 +413,10 @@ zforceput(register os_ptr op)
 	uint space = r_space(odp);
 
 	r_set_space(odp, avm_local);
-	code = dict_put(odp, op - 1, op);
+	code = idict_put(odp, op - 1, op);
 	r_set_space(odp, space);
     } else
-	code = dict_put(odp, op - 1, op);
+	code = idict_put(odp, op - 1, op);
     if (code < 0)
 	return code;
     pop(3);
@@ -410,11 +430,13 @@ zforceput(register os_ptr op)
  * and should not be accessible by name after initialization.
  */
 private int
-zforceundef(register os_ptr op)
+zforceundef(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     check_type(op[-1], t_dictionary);
     /* Don't check_dict_write */
-    dict_undef(op - 1, op);	/* ignore undefined error */
+    idict_undef(op - 1, op);	/* ignore undefined error */
     pop(2);
     return 0;
 }
@@ -422,8 +444,9 @@ zforceundef(register os_ptr op)
 /* <dict> <key> .knownget <value> true */
 /* <dict> <key> .knownget false */
 private int
-zknownget(register os_ptr op)
+zknownget(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     register os_ptr op1 = op - 1;
     ref *pvalue;
 
@@ -441,14 +464,15 @@ zknownget(register os_ptr op)
 
 /* <dict> <key> .knownundef <bool> */
 private int
-zknownundef(register os_ptr op)
+zknownundef(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     os_ptr op1 = op - 1;
     int code;
 
     check_type(*op1, t_dictionary);
     check_dict_write(*op1);
-    code = dict_undef(op1, op);
+    code = idict_undef(op1, op);
     make_bool(op1, code == 0);
     pop(1);
     return 0;
@@ -456,8 +480,9 @@ zknownundef(register os_ptr op)
 
 /* <dict> <int> .setmaxlength - */
 private int
-zsetmaxlength(register os_ptr op)
+zsetmaxlength(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     os_ptr op1 = op - 1;
     uint new_size;
     int code;
@@ -474,7 +499,7 @@ zsetmaxlength(register os_ptr op)
     new_size = (uint) op->value.intval;
     if (dict_length(op - 1) > new_size)
 	return_error(e_dictfull);
-    code = dict_resize(op - 1, new_size);
+    code = idict_resize(op - 1, new_size);
     if (code >= 0)
 	pop(2);
     return code;
@@ -482,8 +507,8 @@ zsetmaxlength(register os_ptr op)
 
 /* ------ Initialization procedure ------ */
 
-const op_def zdict_op_defs[] =
-{
+/* We need to split the table because of the 16-element limit. */
+const op_def zdict1_op_defs[] = {
     {"0cleardictstack", zcleardictstack},
     {"1begin", zbegin},
     {"0countdictstack", zcountdictstack},
@@ -497,6 +522,9 @@ const op_def zdict_op_defs[] =
     {"1maxlength", zmaxlength},
     {"2.undef", zundef},	/* we need this even in Level 1 */
     {"1where", zwhere},
+    op_def_end(0)
+};
+const op_def zdict2_op_defs[] = {
 		/* Extensions */
     {"2.dictcopynew", zdictcopynew},
     {"1.dicttomark", zdicttomark},

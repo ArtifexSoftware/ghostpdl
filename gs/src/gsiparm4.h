@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -41,7 +41,7 @@ typedef struct gs_image4_s {
      * samples up to 32 bits as well.
      */
     bool MaskColor_is_range;
-    uint MaskColor[gs_image_max_components * 2];
+    uint MaskColor[GS_IMAGE_MAX_COMPONENTS * 2];
 } gs_image4_t;
 
 #define private_st_gs_image4()	/* in gximage4.c */\

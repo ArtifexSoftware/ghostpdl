@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -22,6 +22,7 @@
 #include "memory_.h"
 #include "stream.h"
 #include "errors.h"
+#include "btoken.h"		/* for ref_binary_object_format */
 #include "files.h"		/* for fptr */
 #include "ialloc.h"
 #include "idict.h"		/* for //name lookup */
@@ -31,6 +32,7 @@
 #include "ipacked.h"
 #include "iparray.h"
 #include "strimpl.h"		/* for string decoding */
+#include "sa85d.h"		/* ditto */
 #include "sfilter.h"		/* ditto */
 #include "ostack.h"		/* for accumulating proc bodies; */
 					/* must precede iscan.h */
@@ -43,24 +45,15 @@
 #include "store.h"
 #include "scanchar.h"
 
-/* Array packing flag */
-ref ref_array_packing;		/* t_boolean */
-
-/* Binary object format flag. This will never be set non-zero */
-/* unless the binary token feature is enabled. */
-ref ref_binary_object_format;	/* t_integer */
-
 #define recognize_btokens()\
   (ref_binary_object_format.value.intval != 0 && level2_enabled)
 
-/* Procedure for binary tokens.  Set at initialization if Level 2 */
-/* features are included; only called if recognize_btokens() is true. */
-/* Returns 0 or scan_BOS on success, <0 on failure. */
-int (*scan_btoken_proc) (P3(stream *, ref *, scanner_state *)) = NULL;
-
-/* Stream template for scanning ASCII85 literals. */
-/* Set at initialization if Level 2 features are included. */
-const stream_template *scan_ascii85_template = NULL;
+/*
+ * Procedure for binary tokens.  Only called if recognize_btokens() is true;
+ * returns e_unregistered if Level 2 features are not included.  Returns 0
+ * or scan_BOS on success, <0 on failure.
+ */
+int scan_binary_token(P4(i_ctx_t *, stream *, ref *, scanner_state *));
 
 #ifdef DEBUG
 /* Dummy comment processing procedure for testing. */
@@ -235,8 +228,8 @@ public_st_scanner_state();
 /* This may return o_push_estack, 0 (meaning just call scan_token again), */
 /* or an error code. */
 int
-scan_handle_refill(const ref * fop, scanner_state * sstate, bool save,
-		   bool push_file, int (*cont) (P1(os_ptr)))
+scan_handle_refill(i_ctx_t *i_ctx_p, const ref * fop, scanner_state * sstate,
+		   bool save, bool push_file, op_proc_t cont)
 {
     stream *s = fptr(fop);
     uint avail = sbufavailable(s);
@@ -282,7 +275,7 @@ scan_handle_refill(const ref * fop, scanner_state * sstate, bool save,
 		make_istruct(&rstate[0], 0, pstate);
 		rstate[1] = *fop;
 		r_clear_attrs(&rstate[1], a_executable);
-		return s_handle_read_exception(status, fop,
+		return s_handle_read_exception(i_ctx_p, status, fop,
 					       rstate, nstate, cont);
 	    }
     }
@@ -329,7 +322,7 @@ scan_comment(const byte * base, const byte * end, bool saved)
 /* Read a token from a string. */
 /* Update the string if succesful. */
 int
-scan_string_token(ref * pstr, ref * pref)
+scan_string_token(i_ctx_t *i_ctx_p, ref * pstr, ref * pref)
 {
     stream st;
     stream *s = &st;
@@ -340,7 +333,7 @@ scan_string_token(ref * pstr, ref * pref)
 	return_error(e_invalidaccess);
     sread_string(s, pstr->value.bytes, r_size(pstr));
     scanner_state_init(&state, true);
-    switch (code = scan_token(s, pref, &state)) {
+    switch (code = scan_token(i_ctx_p, s, pref, &state)) {
 	case 0:		/* read a token */
 	case scan_BOS:
 	    {
@@ -369,7 +362,7 @@ scan_string_token(ref * pstr, ref * pref)
  * as well as for scan_Refill.
  */
 int
-scan_token(stream * s, ref * pref, scanner_state * pstate)
+scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 {
     ref *myref = pref;
     int retcode = 0;
@@ -440,7 +433,8 @@ scan_token(stream * s, ref * pref, scanner_state * pstate)
 	daptr = da.next;
 	switch (scan_type) {
 	    case scanning_binary:
-		retcode = (*sstate.s_ss.binary.cont) (s, myref, &sstate);
+		retcode = (*sstate.s_ss.binary.cont)
+		    (i_ctx_p, s, myref, &sstate);
 		scan_begin_inline();
 		if (retcode == scan_Refill)
 		    goto pause;
@@ -494,8 +488,7 @@ scan_token(stream * s, ref * pref, scanner_state * pstate)
 			goto try_funny_name;
 		    case '~':
 			s_A85D_init_inline(&sstate.s_ss.a85d);
-			sstate.s_ss.st.template =
-			    scan_ascii85_template;
+			sstate.s_ss.st.template = &s_A85D_template;
 			goto str;
 		}
 		scan_putback();
@@ -832,7 +825,7 @@ scan_token(stream * s, ref * pref, scanner_state * pstate)
 #undef case4
 	    if (recognize_btokens()) {
 		scan_end_inline();
-		retcode = (*scan_btoken_proc) (s, myref, &sstate);
+		retcode = scan_binary_token(i_ctx_p, s, myref, &sstate);
 		scan_begin_inline();
 		if (retcode == scan_Refill)
 		    goto pause;

@@ -38,11 +38,29 @@
 /* Include the extern for the device list. */
 extern_gs_lib_device_list();
 
-/* Finalization for devices: close the device if it is open. */
+/*
+ * Finalization for devices: do any special finalization first, then
+ * close the device if it is open, and finally free the structure
+ * descriptor if it is dynamic.
+ */
 void
 gx_device_finalize(void *vptr)
 {
-    discard(gs_closedevice((gx_device *) vptr));
+    gx_device * const dev = (gx_device *)vptr;
+
+    if (dev->finalize)
+	dev->finalize(dev);
+    discard(gs_closedevice(dev));
+    if (dev->stype_is_dynamic)
+	gs_free_const_object(&gs_memory_default, dev->stype,
+			     "gx_device_finalize");
+}
+
+/* "Free" a device locally allocated on the stack, by finalizing it. */
+void
+gx_device_free_local(gx_device *dev)
+{
+    gx_device_finalize(dev);
 }
 
 /* GC procedures */
@@ -198,28 +216,24 @@ gs_getdevice(int index)
 }
 
 /* Fill in the GC structure descriptor for a device. */
-/* This is only called during initialization. */
-void
+private void
 gx_device_make_struct_type(gs_memory_struct_type_t *st,
 			   const gx_device *dev)
 {
     const gx_device_procs *procs = dev->static_procs;
-    bool forward = false;
 
     /*
-     * Try to figure out whether this is a forwarding device.  All
-     * printer devices, and no other devices, have a null fill_rectangle
-     * procedure; for other devices, we look for a likely forwarding
-     * procedure in the vector.  The algorithm isn't foolproof, but it's
-     * the best we can come up with.
+     * Try to figure out whether this is a forwarding device.  For printer
+     * devices, we rely on the prototype referencing the correct structure
+     * descriptor; for other devices, we look for a likely forwarding
+     * procedure in the vector.  The algorithm isn't foolproof, but it's the
+     * best we can come up with.
      */
     if (procs == 0)
 	procs = &dev->procs;
-    if (procs->fill_rectangle == 0 ||
-	procs->get_xfont_procs == gx_forward_get_xfont_procs
-	)
-	forward = true;
-    if (forward)
+    if (dev->stype)
+	*st = *dev->stype;
+    else if (procs->get_xfont_procs == gx_forward_get_xfont_procs)
 	*st = st_device_forward;
     else
 	*st = st_device;
@@ -232,43 +246,46 @@ gs_copydevice(gx_device ** pnew_dev, const gx_device * dev, gs_memory_t * mem)
 {
     gx_device *new_dev;
     const gs_memory_struct_type_t *std = dev->stype;
+    const gs_memory_struct_type_t *new_std;
 
+    if (dev->stype_is_dynamic) {
+	/*
+	 * We allocated the stype for this device previously.
+	 * Just allocate a new stype and copy the old one into it.
+	 */
+	gs_memory_struct_type_t *a_std = (gs_memory_struct_type_t *)
+	    gs_alloc_bytes_immovable(&gs_memory_default, sizeof(*std),
+				     "gs_copydevice(stype)");
+
+	if (!a_std)
+	    return_error(gs_error_VMerror);
+	*a_std = *std;
+	new_std = a_std;
+    } else if (std != 0 && std->ssize == dev->params_size) {
+	/* Use the static stype. */
+	new_std = std;
+    } else {
+	/* We need to figure out or adjust the stype. */
+	gs_memory_struct_type_t *a_std = (gs_memory_struct_type_t *)
+	    gs_alloc_bytes_immovable(&gs_memory_default, sizeof(*std),
+				     "gs_copydevice(stype)");
+
+	if (!a_std)
+	    return_error(gs_error_VMerror);
+	gx_device_make_struct_type(a_std, dev);
+	new_std = a_std;
+    }
     /*
      * Because command list devices have complicated internal pointer
      * structures, we allocate all device instances as immovable.
      */
-    if (std == 0) {
-	/*
-	 * This is the statically allocated prototype.  Find its
-	 * structure descriptor.
-	 */
-	const gx_device *const *list;
-	gs_memory_struct_type_t *st;
-	int count = gs_lib_device_list(&list, &st);
-	int i;
-
-	for (i = 0; list[i] != dev; ++i)
-	    if (i == count) {
-		/*
-		 * We can't find a structure descriptor for this device.
-		 * Allocate it as bytes and hope for the best.
-		 */
-		std = &st_device_unknown;
-		new_dev =
-		    gs_alloc_struct_array_immovable(mem, dev->params_size,
-						    gx_device, std,
-						  "gs_copydevice(unknown)");
-		goto out;
-	    }
-	std = st + i;
-    }
-    new_dev = gs_alloc_struct_immovable(mem, gx_device, std,
-					"gs_copydevice");
-out:
+    new_dev = gs_alloc_struct_immovable(mem, gx_device, new_std,
+					"gs_copydevice(device)");
     if (new_dev == 0)
 	return_error(gs_error_VMerror);
     gx_device_init(new_dev, dev, mem, false);
-    new_dev->stype = std;
+    new_dev->stype = new_std;
+    new_dev->stype_is_dynamic = new_std != std;
     new_dev->is_open = false;
     *pnew_dev = new_dev;
     return 0;
@@ -281,6 +298,7 @@ gs_opendevice(gx_device *dev)
 {
     if (dev->is_open)
 	return 0;
+    gx_device_fill_in_procs(dev);
     {
 	int code = (*dev_proc(dev, open_device))(dev);
 
@@ -294,12 +312,12 @@ gs_opendevice(gx_device *dev)
 /* Set device parameters, updating a graphics state or imager state. */
 int
 gs_imager_putdeviceparams(gs_imager_state *pis, gx_device *dev,
-                        gs_param_list *plist)
+			  gs_param_list *plist)
 {
     int code = gs_putdeviceparams(dev, plist);
 
     if (code >= 0)
-      gx_set_cmap_procs(pis, dev);
+	gx_set_cmap_procs(pis, dev);
     return code;
 }
 private void
@@ -314,7 +332,7 @@ gs_state_putdeviceparams(gs_state *pgs, gs_param_list *plist)
     int code = gs_putdeviceparams(pgs->device, plist);
 
     if (code >= 0)
-      gs_state_update_device(pgs);
+	gs_state_update_device(pgs);
     return code;
 }
 
@@ -331,7 +349,7 @@ gs_setdevice(gs_state * pgs, gx_device * dev)
 int
 gs_setdevice_no_erase(gs_state * pgs, gx_device * dev)
 {
-    int code = 0;
+    int open_code = 0, code;
 
     /* Initialize the device */
     if (!dev->is_open) {
@@ -342,10 +360,9 @@ gs_setdevice_no_erase(gs_state * pgs, gx_device * dev)
 
 	    while (odev != 0 && gs_device_is_memory(odev))
 		odev = ((gx_device_memory *)odev)->target;
-	    rc_assign(((gx_device_memory *)dev)->target, odev,
-		      "set memory device(target)");
+	    gx_device_set_target(((gx_device_forward *)dev), odev);
 	}
-	code = gs_opendevice(dev);
+	code = open_code = gs_opendevice(dev);
 	if (code < 0)
 	    return code;
     }
@@ -359,7 +376,7 @@ gs_setdevice_no_erase(gs_state * pgs, gx_device * dev)
     /* we aren't any longer. */
     pgs->in_cachedevice = 0;
     pgs->in_charpath = (gs_char_path_mode) 0;
-    return code;
+    return open_code;
 }
 int
 gs_setdevice_no_init(gs_state * pgs, gx_device * dev)
@@ -380,19 +397,32 @@ gx_device_init(gx_device * dev, const gx_device * proto, gs_memory_t * mem,
 {
     memcpy(dev, proto, proto->params_size);
     dev->memory = mem;
+    dev->retained = !internal;
     rc_init(dev, mem, (internal ? 0 : 1));
 }
 
 /* Make a null device. */
 void
-gs_make_null_device(gx_device_null *dev_null, const gx_device *dev,
+gs_make_null_device(gx_device_null *dev_null, gx_device *dev,
 		    gs_memory_t * mem)
 {
     gx_device_init((gx_device *)dev_null, (const gx_device *)&gs_null_device,
 		   mem, true);
-    dev_null->target = dev;
+    gx_device_set_target((gx_device_forward *)dev_null, dev);
     if (dev)
 	gx_device_copy_color_params((gx_device *)dev_null, dev);
+}
+
+/* Mark a device as retained or not retained. */
+void
+gx_device_retain(gx_device *dev, bool retained)
+{
+    int delta = (int)retained - (int)dev->retained;
+
+    if (delta) {
+	dev->retained = retained; /* do first in case dev is freed */
+	rc_adjust_only(dev, delta, "gx_device_retain");
+    }
 }
 
 /* Select a null device. */
@@ -401,7 +431,7 @@ gs_nulldevice(gs_state * pgs)
 {
     if (pgs->device == 0 || !gx_device_is_null(pgs->device)) {
 	gx_device *ndev;
-	int code = gs_copydevice(&ndev, (gx_device *) & gs_null_device,
+	int code = gs_copydevice(&ndev, (const gx_device *)&gs_null_device,
 				 pgs->memory);
 
 	if (code < 0)
@@ -424,7 +454,7 @@ gs_closedevice(gx_device * dev)
     int code = 0;
 
     if (dev->is_open) {
-	code = (*dev_proc(dev, close_device)) (dev);
+	code = (*dev_proc(dev, close_device))(dev);
 	if (code < 0)
 	    return_error(code);
 	dev->is_open = false;
@@ -528,6 +558,8 @@ gx_device_copy_color_procs(gx_device *dev, const gx_device *target)
 {
     dev_proc_map_cmyk_color((*from_cmyk)) =
 	dev_proc(dev, map_cmyk_color);
+    dev_proc_map_rgb_color((*from_rgb)) =
+	dev_proc(dev, map_rgb_color);
     dev_proc_map_color_rgb((*to_rgb)) =
 	dev_proc(dev, map_color_rgb);
 
@@ -539,6 +571,13 @@ gx_device_copy_color_procs(gx_device *dev, const gx_device *target)
 		     (from_cmyk == cmyk_1bit_map_cmyk_color ||
 		      from_cmyk == cmyk_8bit_map_cmyk_color ?
 		      from_cmyk : gx_forward_map_cmyk_color));
+    }
+    if (from_rgb == gx_forward_map_rgb_color ||
+	from_rgb == gx_default_rgb_map_rgb_color) {
+	from_rgb = dev_proc(target, map_rgb_color);
+	set_dev_proc(dev, map_rgb_color,
+		     (from_rgb == gx_default_rgb_map_rgb_color ?
+		      from_rgb : gx_forward_map_rgb_color));
     }
     if (to_rgb == gx_forward_map_color_rgb ||
 	to_rgb == cmyk_1bit_map_color_rgb ||

@@ -1,4 +1,4 @@
-%    Copyright (C) 1989, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1989, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -31,7 +31,7 @@
 
 % Check the interpreter revision.  NOTE: the interpreter code requires
 % that the first non-comment token in this file be an integer.
-555
+584
 dup revision ne
  { (gs: Interpreter revision \() print revision 10 string cvs print
    (\) does not match gs_init.ps revision \() print 10 string cvs print
@@ -56,9 +56,9 @@ if begin
 systemdict /.setglobal known
  { true .setglobal
  }
- { /.setglobal { pop } .bind def
-   /.currentglobal { false } .bind def
-   /.gcheck { pop false } .bind def
+ { /.setglobal { pop } bind def
+   /.currentglobal { false } bind def
+   /.gcheck { pop false } bind def
  }
 ifelse
 
@@ -102,6 +102,7 @@ currentdict /DEBUG known   /DEBUG exch def
 currentdict /BATCH known   /BATCH exch def
 currentdict /DELAYBIND known   /DELAYBIND exch def
 currentdict /DISKFONTS known   /DISKFONTS exch def
+currentdict /DOINTERPOLATE .knownget { /INTERPOLATE exch def } if
 currentdict /ESTACKPRINT known   /ESTACKPRINT exch def
 currentdict /FAKEFONTS known   /FAKEFONTS exch def
 currentdict /FIXEDMEDIA known   /FIXEDMEDIA exch def
@@ -116,7 +117,7 @@ currentdict /NODISPLAY known   not /DISPLAYING exch def
 currentdict /NOFONTMAP known   /NOFONTMAP exch def
 currentdict /NOFONTPATH known   /NOFONTPATH exch def
 currentdict /NOGC known   /NOGC exch def
-currentdict /NOINTERPOLATE known   /NOINTERPOLATE exch def
+currentdict /NOINTERPOLATE .knownget { /INTERPOLATE exch not def } if
 currentdict /NOPAGEPROMPT known   /NOPAGEPROMPT exch def
 currentdict /NOPAUSE known   /NOPAUSE exch def
 currentdict /NOPLATFONTS known   /NOPLATFONTS exch def
@@ -132,6 +133,7 @@ currentdict /QUIET known   /QUIET exch def
 currentdict /SAFER known   /SAFER exch def
 currentdict /SHORTERRORS known   /SHORTERRORS exch def
 currentdict /STRICT known   /STRICT exch def
+currentdict /TTYPAUSE known   /TTYPAUSE exch def
 currentdict /WRITESYSTEMDICT known   /WRITESYSTEMDICT exch def
 
 % Acquire environment variables.
@@ -193,15 +195,15 @@ userdict /=string 256 string put
     }
    ifelse
    (\n) copyright
-   (\)\n) revisiondate 100 mod (-)
-   revisiondate 100 idiv 100 mod (-)
+   (\)\n) revisiondate 10 mod revisiondate 10 idiv 10 mod (-)
+   revisiondate 100 idiv 10 mod revisiondate 1000 idiv 10 mod (-)
    revisiondate 10000 idiv ( \()
    revision 10 mod
    revision 100 mod dup 0 ne { 10 idiv } { pop } ifelse (.)
    revision 100 idiv ( )
    product
    counttomark
-    { (%stdout) (w) file exch false .writecvp
+    { (%stdout) (w) file exch 0 .writecvp
     } repeat pop
  } .bind def
 
@@ -276,7 +278,7 @@ currentdict /hwsizedict .undef
 /min { .min } bind def
 /.currentfilladjust { .currentfilladjust2 pop } bind odef
 /.setfilladjust { dup .setfilladjust2 } bind odef
-/.writecvs { false .writecvp } bind odef
+/.writecvs { 0 .writecvp } bind odef
 
 % Define predefined procedures substituting for operators,
 % in alphabetical order.
@@ -293,7 +295,7 @@ userdict /#copies 1 put
 % In LanguageLevel 3, copypage erases the page.
 /copypage {
 	.languagelevel 3 ge
-	1 .endpage {
+	dup { 0 } { 1 } ifelse .endpage {
 	  .currentnumcopies 1 index .outputpage
 	  (>>copypage, press <return> to continue<<\n) .confirm
 	  dup { erasepage } if
@@ -375,11 +377,13 @@ userdict /.echo.mode true put
 /pathbbox
 	{ false .pathbbox
 	} odef
-/prompt	{ flush flushpage
-	  (GS) print
-	  count 0 ne { (<) print count =only } if
-	  (>) print flush
-	} bind def
+% .promptmsg is redefined if the interpreter includes readline support.
+/.promptmsg {
+	(GS) print
+	count 0 ne { (<) print count =only } if
+	(>) print flush
+} bind def
+/prompt	{ flush flushpage .promptmsg } bind def
 /pstack	{ 0 1 count 3 sub { index == } for } bind def
 /putdeviceprops
 	{ .putdeviceprops { erasepage } if } odef
@@ -451,13 +455,19 @@ userdict /.echo.mode true put
 /store {	% Don't alter operands before completing.
 	1 index where { 2 index 2 index put pop pop } { def } ifelse
 } odef
-% NOTE: the name typenames is known to (initialized by) the interpreter.
+/.typenames mark .typenames counttomark packedarray exch pop def
 /type {
-	//typenames .type
+	//.typenames .type
 } odef
+currentdict /.typenames .undef
 % When running in Level 1 mode, this interpreter is supposed to be
 % compatible with PostScript "version" 54.0 (I think).
 /version (54.0) readonly def
+/.wheredict 10 dict def
+/.where /where load def
+/where {
+	//.wheredict 1 index .knownget { exec } { .where } ifelse
+} odef
 
 % internaldict is defined in systemdict, but is allocated in local VM.
 % We make a procedure for creating it, since we must create a new one
@@ -577,22 +587,29 @@ currentdict /superexec .knownget {
 	     ifelse }
 	   { false } ifelse
 	} bind def
-/.confirm
-	{ DISPLAYING NOPAUSE not and
-	   {	% Print a message (unless NOPAGEPROMPT or NOPROMPT is true)
-		% and wait for the user to type something.
-		% If the user just types a newline, flush it.
-	     NOPAGEPROMPT NOPROMPT or { pop } { print flush } ifelse
-	     .echo.mode false echo
-	     (%stdin) (r) file dup read
-	      { dup (\n) 0 get eq { pop pop } { unread } ifelse }
-	      { pop }
-	     ifelse echo
-	   }
-	   { pop
-	   }
-	  ifelse
-	} bind def
+/.confirm {
+  DISPLAYING NOPAUSE not TTYPAUSE or and {
+	% Print a message (unless NOPAGEPROMPT or NOPROMPT is true)
+	% and wait for the user to type something.
+	% If the user just types a newline, flush it.
+    NOPAGEPROMPT NOPROMPT or { pop } { print flush } ifelse
+    .confirmread
+  } {
+    pop
+  } ifelse
+} bind def
+/.confirmread {
+  TTYPAUSE {
+    (/dev/tty) (r) file dup read pop pop closefile
+  } {
+    .echo.mode false echo
+    (%stdin) (r) file dup read {
+      dup (\n) 0 get eq { pop pop } { unread } ifelse
+    } {
+      pop
+    } ifelse echo
+  } ifelse
+} bind def
 
 % Define the procedure used by .runfile, .runstdin and .runstring
 % for executing user input.
@@ -867,47 +884,15 @@ errordict begin
 end
 
 % Define the [write]==[only] procedures.
-/.dict 26 dict dup
+/.dict 8 dict dup
 begin def
-  /.cvp {1 index exch .writecvs} bind def
-  /.nop {exch pop .p} bind def
+  /.cvp {1 index exch 1 .writecvp} bind def
   /.p {1 index exch writestring} bind def
   /.p1 {2 index exch writestring} bind def
   /.p2 {3 index exch writestring} bind def
   /.print
-	{ dup type .dict exch .knownget
-	   { dup type /stringtype eq { .nop } { exec } ifelse }
-	   { (-) .p1 type .cvp (-) .p }
-	  ifelse
+	{ dup type .dict exch .knownget { exec } { .cvp } ifelse
 	} bind def
-  /.pstring
-	{  { dup dup 32 lt exch 127 ge or
-	      { (\\) .p1 2 copy -6 bitshift 48 add write
-		2 copy -3 bitshift 7 and 48 add write
-		7 and 48 add
-	      }
-	      { dup dup -2 and 40 eq exch 92 eq or {(\\) .p1} if
-	      }
-	     ifelse 1 index exch write
-	   }
-	  forall
-	} bind def  
-  /booleantype /.cvp load def
-  /conditiontype (-condition-) def
-  /devicetype (-device-) def
-  /dicttype (-dict-) def
-  /filetype (-file-) def
-  /fonttype (-fontID-) def
-  /gstatetype (-gstate-) def
-  /integertype /.cvp load def
-  /locktype (-lock-) def
-  /marktype (-mark-) def
-  /nulltype (null) def
-  /realtype {1 index exch true .writecvp} bind def
-  /savetype (-save-) def
-  /nametype
-	{dup xcheck not {(/) .p1} if
-	 1 index exch .writecvs} bind def
   /arraytype
 	{dup rcheck
 	  {() exch dup xcheck
@@ -920,27 +905,9 @@ begin def
 	      1 index exch .print pop ( )} forall
 	     (])}
 	   ifelse exch pop .p}
-	  {(-array-) .nop}
+	  {.cvp}
 	 ifelse} bind def
-  /operatortype
-  	{(--) .p1 .cvp (--) .p} bind def
-  /packedarraytype
-	{ dup rcheck
-	   { arraytype }
-	   { (-packedarray-) .nop }
-	  ifelse
-	} bind def
-  /stringtype
-	{ dup rcheck
-	   { (\() .p1 dup length 200 le
-	      { .pstring }
-	      { 0 200 getinterval .pstring (...) .p }
-	     ifelse (\)) .p
-	   }
-	   { (-string-) .nop
-	   }
-	  ifelse
-	} bind def
+  /packedarraytype /arraytype load def
 {//.dict begin .print pop end}
   bind
 end
@@ -952,7 +919,7 @@ end
 
 % Define [write]===[only], an extension that prints dictionaries
 % in readable form and doesn't truncate strings.
-/.dict /write==only load 0 get dup length dict .copydict dup
+/.dict /write==only load 0 get dup length 2 add dict .copydict dup
 begin def
   /dicttype
 	{ dup rcheck
@@ -962,15 +929,12 @@ begin def
 	      }
 	     forall (>>) .p
 	   }
-	   { (-dict-) .nop
+	   { .cvp
 	   }
 	  ifelse
 	} bind def
   /stringtype
-	{ dup rcheck
-	   { (\() .p1 .pstring (\)) .p }
-	   { (-string-) .nop }
-	  ifelse
+	{ 1 index exch 2 .writecvp
 	} bind def
 
 {//.dict begin .print pop end}
@@ -1310,8 +1274,8 @@ NOCACHE { 0 setcachelimit } if
 % We make this a procedure so we can call it again when switching devices.
 
 % Use an ordered dither for low-resolution devices.
-/.setloresscreen	% <dpi> .setloresscreen -
- {	% The following 'ordered dither' spot function was contributed by
+/.setloreshalftone {	% <dpi> .setloreshalftone -
+	% The following 'ordered dither' spot function was contributed by
 	% Gregg Townsend.  Thanks, Gregg!
    16.001 div 0			% not 16: avoids rounding problems
     { 1 add 7.9999 mul cvi exch 1 add 7.9999 mul cvi 16 mul add <
@@ -1339,12 +1303,15 @@ NOCACHE { 0 setcachelimit } if
     { 3 copy 6 copy setcolorscreen }
     { setscreen }
    ifelse
-   0 array cvx settransfer	% Genoa CET won't accept a packed array!
-   /setstrokeadjust where { pop true setstrokeadjust } if
- } bind def
+} bind def
+/.setloresscreen {	% <dpi> .setloresscreen -
+  .setloreshalftone
+  0 array cvx settransfer	% Genoa CET won't accept a packed array!
+  /setstrokeadjust where { pop true setstrokeadjust } if
+} bind def
 % Use a 45-degree spot screen for high-resolution devices.
-/.sethiresscreen	% <dpi> .sethiresscreen -
- {	% According to information published by Hewlett-Packard,
+/.sethireshalftone {	% <dpi> .sethireshalftone <doscreen>
+	% According to information published by Hewlett-Packard,
 	% they use a 60 line screen on 300 DPI printers and
 	% an 85 line screen on 600 DPI printers.
 	% However, we use a 106 line screen, which produces smoother-
@@ -1412,6 +1379,9 @@ NOCACHE { 0 setcachelimit } if
     { setscreen			% not high resolution
     }
    ifelse
+} bind def
+/.sethiresscreen {	% <dpi> .sethiresscreen -
+  .sethireshalftone
 			% Stack: doscreen
     {	% Set the transfer function to lighten up the grays.
 	% We correct at the high end so that very light grays
@@ -1440,21 +1410,24 @@ NOCACHE { 0 setcachelimit } if
 	% Increase fill adjustment so that we effectively use Adobe's
 	% any-part-of-pixel rule.
    0.5 .setfilladjust
- } bind def
-% Set the default screen and BG/UCR based on the device resolution and
-% process color capability.
+} bind def
+% Set the default screen and BG/UCR.
 /.setdefaultbgucr systemdict /setblackgeneration known { {
-  processcolors 1 eq { { } } { { pop 0.0 } } ifelse
-  dup setblackgeneration setundercolorremoval
+  { } dup setblackgeneration setundercolorremoval
 } } { {
 } } ifelse bind def
-/.setdefaultscreen
- {	% Compute min(|dpi x|,|dpi y|) as the definition of the resolution.
-   72 72 matrix defaultmatrix dtransform abs exch abs .min
-   dup 150 lt //systemdict /DITHERPPI known not and
-    { .setloresscreen } { .sethiresscreen }
-   ifelse .setdefaultbgucr
- } bind def
+/.useloresscreen {	% - .useloresscreen <bool>
+	% Compute min(|dpi x|,|dpi y|) as the definition of the resolution.
+  72 72 matrix defaultmatrix dtransform abs exch abs .min
+  dup 150 lt //systemdict /DITHERPPI known not and
+} bind def
+/.setdefaulthalftone {
+  .useloresscreen { .setloreshalftone } { .sethireshalftone pop } ifelse
+} bind def
+/.setdefaultscreen {
+  .useloresscreen { .setloresscreen } { .sethiresscreen } ifelse
+  .setdefaultbgucr
+} bind def
 .setdefaultscreen
 initgraphics
 
@@ -1560,21 +1533,60 @@ false setpacking
   } repeat pop
 } if
 
-% Conditionally turn off image interpolation.
-NOINTERPOLATE not { (%END NOINTERPOLATE) .skipeof } if
-/.nointerpolate {
-  dup type /dicttype eq {
-    dup /Interpolate .knownget not { false } if {
-      dup gcheck .currentglobal exch .setglobal
-      exch dup length dict copy
-      dup /Interpolate .undef
-      exch .setglobal
-    } if
+% Conditionally turn image interpolation on or off.
+currentdict /INTERPOLATE known not { (%END INTERPOLATE) .skipeof } if
+/.interpolate {
+  dup /Interpolate .knownget not { false } if
+  /INTERPOLATE .systemvar ne {
+    dup gcheck .currentglobal exch .setglobal
+    exch dup length dict copy
+    dup /Interpolate /INTERPOLATE .systemvar put
+    exch .setglobal
   } if
 } bind odef
-/image { .nointerpolate image } bind odef
-/imagemask { .nointerpolate imagemask } bind odef
-%END NOINTERPOLATE
+/image {
+  dup type /dicttype eq {
+    .interpolate image
+  } {
+    /INTERPOLATE .systemvar {
+      8 dict begin
+      /ImageType 1 def
+      /DataSource 1 index def
+      /ImageMatrix 2 index def
+      /BitsPerComponent 3 index def
+      /Decode {0 1} def
+      /Height 4 index def
+      /Width 5 index def
+      /Interpolate true def
+      currentdict end
+      gsave /DeviceGray setcolorspace image grestore
+      5 { pop } repeat
+    } {
+      image
+    } ifelse
+  } ifelse
+} bind odef
+/imagemask {
+  dup type /dicttype eq {
+    .interpolate imagemask
+  } {
+    /INTERPOLATE .systemvar {
+      8 dict begin
+      /ImageType 1 def
+      /DataSource 1 index def
+      /ImageMatrix 2 index def
+      /BitsPerComponent 1 def
+      3 index { {1 0} } { {0 1} } ifelse /Decode exch def
+      /Height 4 index def
+      /Width 5 index def
+      /Interpolate true def
+      currentdict end imagemask 5 { pop } repeat
+    } {
+      imagemask
+    } ifelse
+  } ifelse
+} bind odef
+%END INTERPOLATE
 
 % Establish local VM as the default.
 false /setglobal where { pop setglobal } { .setglobal } ifelse
@@ -1593,15 +1605,18 @@ $error /.nosetlocal false put
   .definefakefonts	% current VM is local
 } ifelse
 
-% Close up systemdict.
-currentdict /filterdict .undef		% bound in where needed
-currentdict /.cidfonttypes .undef	% ditto
-currentdict /.colorrenderingtypes .undef	% ditto
-currentdict /.formtypes .undef		% ditto
-currentdict /.imagetypes .undef		% ditto
-currentdict /.imagemasktypes .undef	% ditto
-currentdict /.patterntypes .undef	% ditto
-currentdict /.shadingtypes .undef	% ditto
+% Remove systemdict entries for things that have been bound in where used
+% and that shouldn't be accessible by name, and close up systemdict.
+currentdict /filterdict .undef
+currentdict /.cidfonttypes .undef
+currentdict /.colorrenderingtypes .undef
+currentdict /.formtypes .undef
+currentdict /.halftonetypes .undef
+currentdict /.imagetypes .undef
+currentdict /.imagemasktypes .undef
+currentdict /.patterntypes .undef
+currentdict /.shadingtypes .undef
+currentdict /.wheredict .undef
 end
 
 % Clean up VM, and enable GC.

@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1996, 1997, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -21,6 +21,7 @@
 #include "gdevmswn.h"
 #include "gxdevmem.h"
 #include "gsdll.h"
+#include "gsdllwin.h"
 
 #ifdef __WIN32__
 #  define USE_SEGMENTS 0
@@ -95,8 +96,7 @@ private const gx_device_procs win_dib_procs =
     win_get_xfont_procs,
     NULL,			/* get_xfont_device */
     NULL,			/* map_rgb_alpha_color */
-    gx_page_device_get_page_device,
-    win_get_alpha_bits
+    gx_page_device_get_page_device
 };
 gx_device_win_dib far_data gs_mswindll_device =
 {
@@ -107,8 +107,6 @@ gx_device_win_dib far_data gs_mswindll_device =
     {0},			/* std_procs */
     0,				/* BitsPerPixel */
     2,				/* nColors */
-    1,				/* Text Alpha bits */
-    1,				/* Graphics Alpha bits */
     0,				/* mapped_color_flags */
     win_dib_alloc_bitmap,
     win_dib_free_bitmap
@@ -363,6 +361,8 @@ win_dib_repaint(gx_device_win * dev, HDC hdc, int dx, int dy, int wx, int wy,
     int i;
     UINT which_colors;
 
+    memset(&bmi.h, 0, sizeof(bmi.h));
+    
     bmi.h.biSize = sizeof(bmi.h);
     bmi.h.biWidth = wdev->mdev.width;
     bmi.h.biHeight = wy;
@@ -372,12 +372,27 @@ win_dib_repaint(gx_device_win * dev, HDC hdc, int dx, int dy, int wx, int wy,
     bmi.h.biSizeImage = 0;	/* default */
     bmi.h.biXPelsPerMeter = 0;	/* default */
     bmi.h.biYPelsPerMeter = 0;	/* default */
+    
     if (dev->BitsPerPixel <= 8) {
 	bmi.h.biClrUsed = wdev->nColors;
 	bmi.h.biClrImportant = wdev->nColors;
 	for (i = 0; i < wdev->nColors; i++)
 	    bmi.pal_index[i] = i;
 	which_colors = DIB_PAL_COLORS;
+    } else if (dev->BitsPerPixel == 15) { /* 5-5-5 RGB mode */
+	DWORD* bmi_colors = (DWORD*)(&bmi.pal_index[0]);
+	bmi.h.biCompression = BI_BITFIELDS;
+	bmi_colors[0] = 0x7c00;
+	bmi_colors[1] = 0x03e0;
+	bmi_colors[2] = 0x001f;
+	which_colors = DIB_RGB_COLORS;
+    } else if (dev->BitsPerPixel == 16) { /* 5-6-5 RGB mode */
+	DWORD* bmi_colors = (DWORD*)(&bmi.pal_index[0]);
+	bmi.h.biCompression = BI_BITFIELDS;
+	bmi_colors[0] = 0xf800;
+	bmi_colors[1] = 0x07e0;
+	bmi_colors[2] = 0x001f;
+	which_colors = DIB_RGB_COLORS;
     } else {
 	bmi.h.biClrUsed = 0;
 	bmi.h.biClrImportant = 0;
@@ -416,8 +431,8 @@ win_dib_make_dib(gx_device_win * dev, int orgx, int orgy, int wx, int wy)
     BYTE FAR *pDIB;
     BITMAPINFOHEADER FAR *pbmih;
     RGBQUAD FAR *pColors;
-    BYTE huge *pBits;
-    BYTE huge *pLine;
+    BYTE FAR *pBits;
+    BYTE FAR *pLine;
     ulong bitmapsize;
     int palcount;
     int i;
@@ -438,8 +453,10 @@ win_dib_make_dib(gx_device_win * dev, int orgx, int orgy, int wx, int wy)
     lwidth = ((wx * wdev->color_info.depth + 31) & ~31) >> 3;
     bitmapsize = (long)lwidth *wy;
 
-    if (wdev->color_info.depth == 24)
+    if (wdev->color_info.depth > 16)
 	palcount = 0;
+    else if (wdev->color_info.depth > 8)
+	palcount = 3;		// 16-bit BI_BITFIELDS
     else
 	palcount = wdev->nColors;
 
@@ -456,7 +473,7 @@ win_dib_make_dib(gx_device_win * dev, int orgx, int orgy, int wx, int wy)
     }
     pbmih = (BITMAPINFOHEADER FAR *) (pDIB);
     pColors = (RGBQUAD FAR *) (pDIB + sizeof(BITMAPINFOHEADER));
-    pBits = (BYTE huge *) (pDIB + sizeof(BITMAPINFOHEADER) + sizeof(RGBQUAD) * palcount);
+    pBits = (BYTE FAR *) (pDIB + sizeof(BITMAPINFOHEADER) + sizeof(RGBQUAD) * palcount);
 
     pbmih->biSize = sizeof(BITMAPINFOHEADER);
     pbmih->biWidth = wx;
@@ -469,12 +486,29 @@ win_dib_make_dib(gx_device_win * dev, int orgx, int orgy, int wx, int wy)
     pbmih->biYPelsPerMeter = (DWORD) (dev->y_pixels_per_inch / 25.4 * 1000);
     pbmih->biClrUsed = palcount;
     pbmih->biClrImportant = palcount;
+
+    if (dev->BitsPerPixel == 15) { /* 5-5-5 RGB mode */
+	DWORD* bmi_colors = (DWORD*)(pColors);
+        pbmih->biCompression = BI_BITFIELDS;
+	bmi_colors[0] = 0x7c00;
+	bmi_colors[1] = 0x03e0;
+	bmi_colors[2] = 0x001f;
+    } 
+    else if (dev->BitsPerPixel == 16) { /* 5-6-5 RGB mode */
+	DWORD* bmi_colors = (DWORD*)(pColors);
+        pbmih->biCompression = BI_BITFIELDS;
+	bmi_colors[0] = 0xf800;
+	bmi_colors[1] = 0x07e0;
+	bmi_colors[2] = 0x001f;
+    } 
+    else {
     for (i = 0; i < palcount; i++) {
 	win_map_color_rgb((gx_device *) wdev, (gx_color_index) i, prgb);
 	pColors[i].rgbRed = win_color_value(prgb[0]);
 	pColors[i].rgbGreen = win_color_value(prgb[1]);
 	pColors[i].rgbBlue = win_color_value(prgb[2]);
 	pColors[i].rgbReserved = 0;
+    }
     }
 
     pLine = pBits;
@@ -506,8 +540,8 @@ win_dib_alloc_bitmap(gx_device_win * dev, gx_device * param_dev)
     int width;
     gx_device_memory mdev;
     HGLOBAL hmdata;
-    byte huge *base;
-    byte huge *ptr_base;
+    byte FAR *base;
+    byte FAR *ptr_base;
     uint ptr_size;
     uint raster;
 
@@ -656,6 +690,9 @@ gsdll_get_bitmap_row(unsigned char *device, LPBITMAPINFOHEADER pbmih,
 	pbmih->biHeight = dev->mdev.height;
 	pbmih->biPlanes = 1;
 	pbmih->biBitCount = dev->color_info.depth;
+	if ((dev->BitsPerPixel == 15) || (dev->BitsPerPixel == 16))
+            pbmih->biCompression = BI_BITFIELDS;
+	else
 	pbmih->biCompression = 0;
 	pbmih->biSizeImage = 0;	/* default */
 	pbmih->biXPelsPerMeter = (DWORD) (dev->x_pixels_per_inch / 25.4 * 1000);
@@ -667,12 +704,28 @@ gsdll_get_bitmap_row(unsigned char *device, LPBITMAPINFOHEADER pbmih,
 	int i;
 	gx_color_value prgb[3];
 
+	if (dev->BitsPerPixel == 15) { /* 5-5-5 RGB mode */
+	    DWORD* bmi_colors = (DWORD*)(prgbquad);
+	    pbmih->biCompression = BI_BITFIELDS;
+	    bmi_colors[0] = 0x7c00;
+	    bmi_colors[1] = 0x03e0;
+	    bmi_colors[2] = 0x001f;
+	} 
+	else if (dev->BitsPerPixel == 16) { /* 5-6-5 RGB mode */
+	    DWORD* bmi_colors = (DWORD*)(prgbquad);
+	    pbmih->biCompression = BI_BITFIELDS;
+	    bmi_colors[0] = 0xf800;
+	    bmi_colors[1] = 0x07e0;
+	    bmi_colors[2] = 0x001f;
+	} 
+	else {
 	for (i = 0; i < palcount; i++) {
 	    win_map_color_rgb((gx_device *) wdev, (gx_color_index) i, prgb);
 	    prgbquad[i].rgbRed = win_color_value(prgb[0]);
 	    prgbquad[i].rgbGreen = win_color_value(prgb[1]);
 	    prgbquad[i].rgbBlue = win_color_value(prgb[2]);
 	    prgbquad[i].rgbReserved = 0;
+	    }
 	}
     }
     if (ppbyte) {

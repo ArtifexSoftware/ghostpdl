@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -29,11 +29,6 @@
 #include "gxiparam.h"
 #include "gxistate.h"
 #include "stream.h"
-
-/******
- ****** NOTE: EVERYTHING IN THIS FILE IS SUBJECT TO CHANGE WITHOUT NOTICE.
- ****** USE AT YOUR OWN RISK.
- ******/
 
 /*
  * "Vector" devices produce a stream of higher-level drawing commands rather
@@ -118,8 +113,8 @@ typedef struct gx_device_vector_procs_s {
     int (*setstrokecolor) (P2(gx_device_vector * vdev, const gx_drawing_color * pdc));
     /* Paths */
     /* dopath and dorect are normally defaulted */
-    int (*dopath) (P3(gx_device_vector * vdev, const gx_path * ppath,
-		      gx_path_type_t type));
+    int (*dopath) (P4(gx_device_vector * vdev, const gx_path * ppath,
+		      gx_path_type_t type, const gs_matrix *pmat));
     int (*dorect) (P6(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,
 		      fixed y1, gx_path_type_t type));
     int (*beginpath) (P2(gx_device_vector * vdev, gx_path_type_t type));
@@ -141,8 +136,8 @@ int gdev_vector_setflat(P2(gx_device_vector * vdev, floatp flatness));
 
 /* dopath may call dorect, beginpath, moveto/lineto/curveto/closepath, */
 /* endpath */
-int gdev_vector_dopath(P3(gx_device_vector * vdev, const gx_path * ppath,
-			  gx_path_type_t type));
+int gdev_vector_dopath(P4(gx_device_vector * vdev, const gx_path * ppath,
+			  gx_path_type_t type, const gs_matrix *pmat));
 
 /* dorect may call beginpath, moveto, lineto, closepath */
 int gdev_vector_dorect(P6(gx_device_vector * vdev, fixed x0, fixed y0,
@@ -252,6 +247,34 @@ int gdev_vector_prepare_stroke(P5(gx_device_vector * vdev,
 				  const gx_stroke_params * params,
 				  const gx_drawing_color * pdcolor,
 				  floatp scale));
+
+/*
+ * Compute the scale or transformation matrix for transforming the line
+ * width and dash pattern for a stroke operation.  Return 0 if scaling,
+ * 1 if a full matrix is needed.
+ */
+int gdev_vector_stroke_scaling(P4(const gx_device_vector *vdev,
+				  const gs_imager_state *pis,
+				  double *pscale, gs_matrix *pmat));
+
+/* Prepare to write a path using the default implementation. */
+typedef struct gdev_vector_dopath_state_s {
+    /* Initialized by _init */
+    gx_device_vector *vdev;
+    gx_path_type_t type;
+    bool first;
+    gs_matrix scale_mat;
+    /* Change dynamically */
+    gs_point start;
+    gs_point prev;
+} gdev_vector_dopath_state_t;
+void gdev_vector_dopath_init(P4(gdev_vector_dopath_state_t *state,
+				gx_device_vector *vdev,
+				gx_path_type_t type, const gs_matrix *pmat));
+
+/* Write a segment of a path using the default implementation. */
+int gdev_vector_dopath_segment(P3(gdev_vector_dopath_state_t *state, int pe_op,
+				  gs_fixed_point vs[3]));
 
 /* Write a polygon as part of a path (type = gx_path_type_none) */
 /* or as a path. */

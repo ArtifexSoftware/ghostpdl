@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -34,8 +34,9 @@
 #include "opdef.h"
 
 /* Table of type name strings */
-static const char *const type_strings[] =
-{type_print_strings};
+static const char *const type_strings[] = {
+    REF_TYPE_DEBUG_PRINT_STRINGS
+};
 
 /* First unassigned type index */
 extern const int tx_next_index;	/* in interp.c */
@@ -54,7 +55,7 @@ debug_print_name(const ref * pnref)
 private void
 debug_print_full_ref(const ref * pref)
 {
-    unsigned size = r_size(pref);
+    uint size = r_size(pref);
     ref nref;
 
     dprintf1("(%x)", r_type_attrs(pref));
@@ -110,7 +111,7 @@ debug_print_full_ref(const ref * pref)
 	case t_operator:
 	    dprintf1("op(%u", size);
 	    if (size > 0 && size < op_def_count)	/* just in case */
-		dprintf1(":%s", (const char *)(op_def_table[size]->oname + 1));
+		dprintf1(":%s", (const char *)(op_index_def(size)->oname + 1));
 	    dprintf1(")0x%lx", (ulong) pref->value.opproc);
 	    break;
 	case t_real:
@@ -179,19 +180,17 @@ debug_print_ref(const ref * pref)
 }
 
 /* Dump one ref. */
+private void print_ref_data(P1(const ref *));
 void
 debug_dump_one_ref(const ref * p)
 {
     uint attrs = r_type_attrs(p);
     uint type = r_type(p);
-    static const attr_print_mask apm[] =
-    {attr_print_masks,
-     {0, 0, 0}};
+    static const attr_print_mask apm[] = {
+	attr_print_masks,
+	{0, 0, 0}
+    };
     const attr_print_mask *ap = apm;
-
-#define buf_size 30
-    char buf[buf_size + 1];
-    uint plen;
 
     if (type >= tx_next_index)
 	dprintf1("0x%02x?? ", type);
@@ -203,11 +202,23 @@ debug_dump_one_ref(const ref * p)
 	if ((attrs & ap->mask) == ap->value)
 	    dputc(ap->print);
     dprintf2(" 0x%04x 0x%08lx", r_size(p), *(const ulong *)&p->value);
-    if (obj_cvs(p, (byte *) buf, countof(buf) - 1, &plen, NULL) >= 0 &&
-	((buf[plen] = 0), strcmp(buf, "--nostringval--"))
-	)
-	dprintf1(" = %s", buf);
+    print_ref_data(p);
     fflush(dstderr);
+}
+private void
+print_ref_data(const ref *p)
+{
+#define BUF_SIZE 30
+    byte buf[BUF_SIZE + 1];
+    const byte *pchars;
+    uint plen;
+
+    if (obj_cvs(p, buf, countof(buf) - 1, &plen, &pchars) >= 0 &&
+	pchars == buf &&
+	((buf[plen] = 0), strcmp((char *)buf, "--nostringval--"))
+	)
+	dprintf1(" = %s", (char *)buf);
+#undef BUF_SIZE
 }
 
 /* Dump a region of memory containing refs. */
@@ -219,10 +230,8 @@ debug_dump_refs(const ref * from, uint size, const char *msg)
 
     if (size && msg)
 	dprintf2("%s at 0x%lx:\n", msg, (ulong) from);
-    while (count--) {		/* The double cast in the next line is to pacify some */
-	/* unreasonably picky compilers. */
-	dprintf2("..%04x: 0x%04x ", (uint) (ulong) p & 0xffff,
-		 r_type_attrs(p));
+    while (count--) {
+	dprintf2("0x%lx: 0x%04x ", (ulong)p, r_type_attrs(p));
 	debug_dump_one_ref(p);
 	dputc('\n');
 	p++;
@@ -231,7 +240,7 @@ debug_dump_refs(const ref * from, uint size, const char *msg)
 
 /* Dump a stack. */
 void
-debug_dump_stack(const ref_stack * pstack, const char *msg)
+debug_dump_stack(const ref_stack_t * pstack, const char *msg)
 {
     uint i;
     const char *m = msg;
@@ -239,10 +248,11 @@ debug_dump_stack(const ref_stack * pstack, const char *msg)
     for (i = ref_stack_count(pstack); i != 0;) {
 	const ref *p = ref_stack_index(pstack, --i);
 
-	if (m)
-	    dprintf2("%s at 0x%lx:\n", m, (ulong) pstack),
-		m = NULL;
-	dprintf2("0x%lx: 0x%02x ", (ulong) p, r_type(p));
+	if (m) {
+	    dprintf2("%s at 0x%lx:\n", m, (ulong) pstack);
+	    m = NULL;
+	}
+	dprintf2("0x%lx: 0x%02x ", (ulong)p, r_type(p));
 	debug_dump_one_ref(p);
 	dputc('\n');
     }
@@ -253,7 +263,7 @@ void
 debug_dump_array(const ref * array)
 {
     const ref_packed *pp;
-    unsigned int type = r_type(array);
+    uint type = r_type(array);
     uint len;
 
     switch (type) {
@@ -281,13 +291,13 @@ debug_dump_array(const ref * array)
 	ref temp;
 
 	packed_get(pp, &temp);
-	/* The double cast in the next line is to pacify some */
-	/* unreasonably picky compilers. */
-	dprintf3("..%04x%c 0x%02x ",
-		 (uint) (ulong) pp & 0xffff,
-		 ((r_is_packed(pp)) ? '*' : ':'),
-		 r_type(&temp));
-	debug_dump_one_ref(&temp);
+	if (r_is_packed(pp)) {
+	    dprintf2("0x%lx* 0x%04x", (ulong)pp, (uint)*pp);
+	    print_ref_data(&temp);
+	} else {
+	    dprintf2("0x%lx: 0x%02x", (ulong)pp, r_type(&temp));
+	    debug_dump_one_ref(&temp);
+	}
 	dputc('\n');
     }
 }

@@ -165,8 +165,8 @@ struct gx_xfont_procs_s {
   gs__st_composite_only(scope_st, stname, stype, sname, penum, preloc)
 /*
  * We probably don't ever want xfont descriptors to be public....
- #define gs_public_st_dev_ptrs1(stname, stype, sname, penum, preloc, de)\
- gs__st_dev_ptrs1(public_st, stname, stype, sname, penum, preloc, de)
+#define gs_public_st_dev_ptrs1(stname, stype, sname, penum, preloc, de)\
+  gs__st_dev_ptrs1(public_st, stname, stype, sname, penum, preloc, de)
  */
 #define gs_private_st_dev_ptrs1(stname, stype, sname, penum, preloc, de)\
   gs__st_dev_ptrs1(private_st, stname, stype, sname, penum, preloc, de)

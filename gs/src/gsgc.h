@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -49,7 +49,6 @@ typedef enum {
 #ifndef gs_ref_memory_DEFINED
 #  define gs_ref_memory_DEFINED
 typedef struct gs_ref_memory_s gs_ref_memory_t;
-
 #endif
 /*
  * r_space_bits is only defined in PostScript interpreters, but if it is
@@ -60,26 +59,41 @@ typedef struct gs_ref_memory_s gs_ref_memory_t;
 Error_r_space_bits_is_not_2;
 #  endif
 #endif
-typedef union vm_spaces_s {
-    gs_ref_memory_t *indexed[4 /*1 << r_space_bits */ ];
-    struct _ssn {
-	gs_ref_memory_t *foreign;
-	gs_ref_memory_t *system;
-	gs_ref_memory_t *global;
-	gs_ref_memory_t *local;
-    } named;
-} vm_spaces;
-
-/* By convention, the vm_spaces member of structures, and local variables */
-/* of type vm_spaces, are named spaces. */
-#define space_foreign spaces.named.foreign
-#define space_system spaces.named.system
-#define space_global spaces.named.global
-#define space_local spaces.named.local
+typedef struct vm_spaces_s vm_spaces;
+/*
+ * The garbage collection procedure is named vm_reclaim so as not to
+ * collide with the reclaim member of gs_dual_memory_t.
+ */
+#define vm_reclaim_proc(proc)\
+  void proc(P2(vm_spaces *pspaces, bool global))
+struct vm_spaces_s {
+    vm_reclaim_proc((*vm_reclaim));
+    union {
+	gs_ref_memory_t *indexed[4 /*1 << r_space_bits */ ];
+	struct _ssn {
+	    gs_ref_memory_t *foreign;
+	    gs_ref_memory_t *system;
+	    gs_ref_memory_t *global;
+	    gs_ref_memory_t *local;
+	} named;
+    } memories;
+};
 
 /*
- * Define the top-level entry to the garbage collector.
+ * By convention, the vm_spaces member of structures, and local variables
+ * of type vm_spaces, are named spaces.
  */
-void gs_reclaim(P2(vm_spaces * pspaces, bool global));
+#define space_foreign spaces.memories.named.foreign
+#define space_system spaces.memories.named.system
+#define space_global spaces.memories.named.global
+#define space_local spaces.memories.named.local
+#define spaces_indexed spaces.memories.indexed
+
+/*
+ * Define the top-level entry to the garbage collectors.
+ */
+#define GS_RECLAIM(pspaces, global) ((pspaces)->vm_reclaim(pspaces, global))
+/* Backward compatibility */
+#define gs_reclaim(pspaces, global) GS_RECLAIM(pspaces, global)
 
 #endif /* gsgc_INCLUDED */

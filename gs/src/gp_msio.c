@@ -54,6 +54,7 @@ int gp_file_is_console(P1(FILE *));
 private void win_std_init(void);
 private stream_proc_process(win_std_read_process);
 private stream_proc_process(win_std_write_process);
+private stream_proc_available(win_std_available);
 
 /* Use a pseudo IODevice to get win_stdio_init called at the right time. */
 /* This is bad architecture; we'll fix it later. */
@@ -90,6 +91,7 @@ win_stdin_open(gx_io_device * iodev, const char *access, stream ** ps,
     if (code != 1)
 	return code;
     s->procs.process = win_std_read_process;
+    s->procs.available = win_std_available;
     s->file = NULL;
     return 0;
 }
@@ -106,6 +108,7 @@ win_stdout_open(gx_io_device * iodev, const char *access, stream ** ps,
     if (code != 1)
 	return code;
     s->procs.process = win_std_write_process;
+    s->procs.available = win_std_available;
     s->file = NULL;
     return 0;
 }
@@ -122,6 +125,7 @@ win_stderr_open(gx_io_device * iodev, const char *access, stream ** ps,
     if (code != 1)
 	return code;
     s->procs.process = win_std_write_process;
+    s->procs.available = win_std_available;
     s->file = NULL;
     return 0;
 }
@@ -164,6 +168,13 @@ win_std_read_process(stream_state * st, stream_cursor_read * ignore_pr,
     }
     pw->ptr += count;
     return 1;
+}
+
+private int
+win_std_available(register stream * s, long *pl)
+{
+    *pl = -1;		// EOF, since we can't do it
+    return 0;		// OK
 }
 
 

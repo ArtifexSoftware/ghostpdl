@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -39,7 +39,7 @@
 extern const gs_color_space_type gs_color_space_type_Separation;
 
 /* Forward references */
-private int separation_map1(P1(os_ptr));
+private int separation_map1(P1(i_ctx_t *));
 
 /* Define the separation cache size.  This makes many useful tint values */
 /* map to integer cache indices. */
@@ -56,25 +56,16 @@ lookup_tint(const gs_separation_params * params, floatp tint, float *values)
 	 (int)(tint * SEPARATION_CACHE_SIZE + 0.5) * m);
     const float *pv = &map->values[value_index];
 
-    switch (m) {
-	default:
-	    return_error(e_rangecheck);
-	case 4:
-	    values[3] = pv[3];
-	case 3:
-	    values[2] = pv[2];
-	    values[1] = pv[1];
-	case 1:
-	    values[0] = pv[0];
-    }
+    memcpy(values, pv, sizeof(*values) * m);
     return 0;
 }
 
 /* <array> .setseparationspace - */
 /* The current color space is the alternate space for the separation space. */
 private int
-zsetseparationspace(register os_ptr op)
+zsetseparationspace(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     const ref *pcsa;
     gs_color_space cs;
     ref_colorspace cspace_old;
@@ -97,8 +88,8 @@ zsetseparationspace(register os_ptr op)
     cs = *gs_currentcolorspace(igs);
     if (!cs.type->can_be_alt_space)
 	return_error(e_rangecheck);
-    code = zcs_begin_map(&map, &pcsa[2], SEPARATION_CACHE_SIZE + 1,
-			 (const gs_base_color_space *)&cs,
+    code = zcs_begin_map(i_ctx_p, &map, &pcsa[2], SEPARATION_CACHE_SIZE + 1,
+			 (const gs_direct_color_space *)&cs,
 			 separation_map1);
     if (code < 0)
 	return code;
@@ -123,8 +114,9 @@ zsetseparationspace(register os_ptr op)
 
 /* Continuation procedure for saving transformed tint values. */
 private int
-separation_map1(os_ptr op)
+separation_map1(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     es_ptr ep = esp;
     int i = (int)ep[csme_index].value.intval;
 
@@ -152,8 +144,10 @@ separation_map1(os_ptr op)
 
 /* - currentoverprint <bool> */
 private int
-zcurrentoverprint(register os_ptr op)
+zcurrentoverprint(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(1);
     make_bool(op, gs_currentoverprint(igs));
     return 0;
@@ -161,8 +155,10 @@ zcurrentoverprint(register os_ptr op)
 
 /* <bool> setoverprint - */
 private int
-zsetoverprint(register os_ptr op)
+zsetoverprint(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     check_type(*op, t_boolean);
     gs_setoverprint(igs, op->value.boolval);
     pop(1);

@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -72,8 +72,10 @@ struct gx_device_rop_texture_s {
 };
 
 #define private_st_device_rop_texture()	/* in gdevrops.c */\
-  gs_private_st_composite(st_device_rop_texture, gx_device_rop_texture,\
-    "gx_device_rop_texture", device_rop_texture_enum_ptrs, device_rop_texture_reloc_ptrs)
+  gs_private_st_composite_use_final(st_device_rop_texture,\
+    gx_device_rop_texture, "gx_device_rop_texture",\
+    device_rop_texture_enum_ptrs, device_rop_texture_reloc_ptrs,\
+    gx_device_finalize)
 
 /* Create a RasterOp source device. */
 int gx_alloc_rop_texture_device(P3(gx_device_rop_texture ** prsdev,

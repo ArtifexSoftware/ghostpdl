@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -19,8 +19,8 @@
 
 /* File stream implementation using direct OS calls */
 /******
- ****** NOTE: THIS FILE PROBABLY WILL NOT COMPILE ON NON-UNIX
- ****** PLATFORMS, AND IT MAY REQUIRE EDITING ON SOME UNIX PLATFORMS.
+ ****** NOTE: THIS FILE MAY NOT COMPILE ON NON-UNIX PLATFORMS, AND MAY
+ ****** REQUIRE EDITING ON SOME UNIX PLATFORMS.
  ******/
 #include "stdio_.h"		/* includes std.h */
 #include "errno_.h"
@@ -218,7 +218,7 @@ s_fileno_write_close(register stream * s)
 }
 
 /* Define the System V interrupts that require retrying a call. */
-inline private bool
+private bool
 errno_is_retry(int errn)
 {
     switch (errn) {
@@ -244,8 +244,13 @@ s_fileno_read_process(stream_state * st, stream_cursor_read * ignore_pr,
     int nread, status;
 
 again:
-    nread = read(sfileno((stream *) st), pw->ptr + 1,
-		 (uint) (pw->limit - pw->ptr));
+    /*
+     * In the Mac MetroWerks compiler, the prototype for read incorrectly
+     * declares the second argument of read as char * rather than void *.
+     * Work around this here.
+     */
+    nread = read(sfileno((stream *)st), (void *)(pw->ptr + 1),
+		 (uint)(pw->limit - pw->ptr));
     if (nread > 0) {
 	pw->ptr += nread;
 	status = 0;
@@ -276,7 +281,8 @@ again:
 	process_interrupts();
 	return 0;
     }
-    nwrite = write(sfileno((stream *) st), pr->ptr + 1, count);
+    /* See above regarding the Mac MetroWorks compiler. */
+    nwrite = write(sfileno((stream *)st), (const void *)(pr->ptr + 1), count);
     if (nwrite >= 0) {
 	pr->ptr += nwrite;
 	status = 0;

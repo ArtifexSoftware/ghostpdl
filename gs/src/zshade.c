@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -25,6 +25,7 @@
 #include "gscspace.h"
 #include "gscolor2.h"		/* requires gscspace.h */
 #include "gsfunc3.h"
+#include "gsptype2.h"
 #include "gsstruct.h"		/* must precede gsshade.h */
 #include "gsshade.h"
 #include "gsuid.h"
@@ -35,6 +36,7 @@
 #include "idparam.h"
 #include "ifunc.h"
 #include "igstate.h"
+#include "ipcolor.h"
 #include "store.h"
 
 /* Forward references */
@@ -44,8 +46,10 @@ private int shading_param(P2(const_os_ptr op, const gs_shading_t ** ppsh));
 
 /* - currentsmoothness <smoothness> */
 private int
-zcurrentsmoothness(register os_ptr op)
+zcurrentsmoothness(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(1);
     make_real(op, gs_currentsmoothness(igs));
     return 0;
@@ -53,8 +57,9 @@ zcurrentsmoothness(register os_ptr op)
 
 /* <smoothness> setsmoothness - */
 private int
-zsetsmoothness(register os_ptr op)
+zsetsmoothness(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     double smoothness;
     int code;
 
@@ -68,8 +73,9 @@ zsetsmoothness(register os_ptr op)
 
 /* <shading> .shfill - */
 private int
-zshfill(register os_ptr op)
+zshfill(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     const gs_shading_t *psh;
     int code = shading_param(op, &psh);
 
@@ -83,26 +89,36 @@ zshfill(register os_ptr op)
 
 /* <pattern> <matrix> <shading> .buildshadingpattern <pattern> <instance> */
 private int
-zbuildshadingpattern(os_ptr op)
+zbuildshadingpattern(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     os_ptr op2 = op - 2;
-    const gs_shading_t *psh;
     gs_matrix mat;
-    struct {
-	gs_uid uid;
-    } template;		/****** WRONG ******/
+    gs_pattern2_template_t template;
+    int_pattern *pdata;
+    gs_client_color cc_instance;
     int code;
 
     check_type(*op2, t_dictionary);
     check_dict_read(*op2);
-
-    if ((code = shading_param(op, &psh)) < 0 ||
-	(code = read_matrix(op - 1, &mat)) < 0 ||
-	(code = dict_uid_param(op2, &template.uid, 1, imemory)) != 1
+    gs_pattern2_init(&template);
+    if ((code = read_matrix(op - 1, &mat)) < 0 ||
+	(code = dict_uid_param(op2, &template.uid, 1, imemory, i_ctx_p)) != 1 ||
+	(code = shading_param(op, &template.Shading)) < 0 ||
+	(code = int_pattern_alloc(&pdata, op2)) < 0
 	)
 	return_error((code < 0 ? code : e_rangecheck));
-    /****** NYI ******/
-    return_error(e_undefined);
+    template.client_data = pdata;
+    code = gs_make_pattern(&cc_instance,
+			   (const gs_pattern_template_t *)&template,
+			   &mat, igs, imemory);
+    if (code < 0) {
+	ifree_object(pdata, "int_pattern");
+	return code;
+    }
+    make_istruct(op - 1, a_readonly, cc_instance.pattern);
+    pop(1);
+    return code;
 }
 
 /* ------ Internal procedures ------ */
@@ -136,8 +152,9 @@ typedef int (*build_shading_proc_t)(P3(const ref *op,
 
 /* Common framework for building shadings. */
 private int
-build_shading(ref * op, build_shading_proc_t proc)
+build_shading(i_ctx_t *i_ctx_p, build_shading_proc_t proc)
 {
+    os_ptr op = osp;
     int code;
     float box[4];
     gs_shading_params_t params;
@@ -278,9 +295,9 @@ build_shading_1(const ref * op, const gs_shading_params_t * pcommon,
 }
 /* <dict> .buildshading1 <shading_struct> */
 private int
-zbuildshading1(os_ptr op)
+zbuildshading1(i_ctx_t *i_ctx_p)
 {
-    return build_shading(op, build_shading_1);
+    return build_shading(i_ctx_p, build_shading_1);
 }
 
 /* Collect parameters for an Axial or Radial shading. */
@@ -338,9 +355,9 @@ build_shading_2(const ref * op, const gs_shading_params_t * pcommon,
 }
 /* <dict> .buildshading2 <shading_struct> */
 private int
-zbuildshading2(os_ptr op)
+zbuildshading2(i_ctx_t *i_ctx_p)
 {
-    return build_shading(op, build_shading_2);
+    return build_shading(i_ctx_p, build_shading_2);
 }
 
 /* Build a ShadingType 3 (Radial) shading. */
@@ -363,9 +380,9 @@ build_shading_3(const ref * op, const gs_shading_params_t * pcommon,
 }
 /* <dict> .buildshading3 <shading_struct> */
 private int
-zbuildshading3(os_ptr op)
+zbuildshading3(i_ctx_t *i_ctx_p)
 {
-    return build_shading(op, build_shading_3);
+    return build_shading(i_ctx_p, build_shading_3);
 }
 
 /* Collect parameters for a mesh shading. */
@@ -484,9 +501,9 @@ build_shading_4(const ref * op, const gs_shading_params_t * pcommon,
 }
 /* <dict> .buildshading4 <shading_struct> */
 private int
-zbuildshading4(os_ptr op)
+zbuildshading4(i_ctx_t *i_ctx_p)
 {
-    return build_shading(op, build_shading_4);
+    return build_shading(i_ctx_p, build_shading_4);
 }
 
 /* Build a ShadingType 5 (Lattice-form Gouraud triangle mesh) shading. */
@@ -512,9 +529,9 @@ build_shading_5(const ref * op, const gs_shading_params_t * pcommon,
 }
 /* <dict> .buildshading5 <shading_struct> */
 private int
-zbuildshading5(os_ptr op)
+zbuildshading5(i_ctx_t *i_ctx_p)
 {
-    return build_shading(op, build_shading_5);
+    return build_shading(i_ctx_p, build_shading_5);
 }
 
 /* Build a ShadingType 6 (Coons patch mesh) shading. */
@@ -540,9 +557,9 @@ build_shading_6(const ref * op, const gs_shading_params_t * pcommon,
 }
 /* <dict> .buildshading6 <shading_struct> */
 private int
-zbuildshading6(os_ptr op)
+zbuildshading6(i_ctx_t *i_ctx_p)
 {
-    return build_shading(op, build_shading_6);
+    return build_shading(i_ctx_p, build_shading_6);
 }
 
 /* Build a ShadingType 7 (Tensor product patch mesh) shading. */
@@ -568,9 +585,9 @@ build_shading_7(const ref * op, const gs_shading_params_t * pcommon,
 }
 /* <dict> .buildshading7 <shading_struct> */
 private int
-zbuildshading7(os_ptr op)
+zbuildshading7(i_ctx_t *i_ctx_p)
 {
-    return build_shading(op, build_shading_7);
+    return build_shading(i_ctx_p, build_shading_7);
 }
 
 /* ------ Initialization procedure ------ */

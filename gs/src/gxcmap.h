@@ -17,13 +17,22 @@
  */
 
 
-/* Requires gxdcolor.h, gxdevice.h. */
+/* Requires gxdcolor.h. */
 
 #ifndef gxcmap_INCLUDED
 #  define gxcmap_INCLUDED
 
 #include "gscsel.h"
 #include "gxfmap.h"
+
+#ifndef gx_device_DEFINED
+#  define gx_device_DEFINED
+typedef struct gx_device_s gx_device;
+#endif
+#ifndef gx_device_color_DEFINED
+#  define gx_device_color_DEFINED
+typedef struct gx_device_color_s gx_device_color;
+#endif
 
 /* Procedures for rendering colors specified by fractions. */
 
@@ -50,25 +59,38 @@ struct gx_color_map_procs_s {
 };
 typedef struct gx_color_map_procs_s gx_color_map_procs;
 
-/* Determine the color mapping procedures for a device. */
-const gx_color_map_procs *gx_device_cmap_procs(P1(const gx_device *));
+/*
+ * Determine the color mapping procedures for a device.  Even though this
+ * does not currently use information from the imager state, it must be
+ * a virtual procedure of the state for internal reasons.
+ */
+const gx_color_map_procs *
+    gx_get_cmap_procs(P2(const gs_imager_state *, const gx_device *));
+const gx_color_map_procs *
+    gx_default_get_cmap_procs(P2(const gs_imager_state *, const gx_device *));
 
-/* Set the color mapping procedures in the graphics state. */
-/* This is only needed when switching devices. */
+/*
+ * Set the color mapping procedures in the graphics state.  This is
+ * currently only needed when switching devices, but might be used more
+ * often in the future.
+ */
 void gx_set_cmap_procs(P2(gs_imager_state *, const gx_device *));
 
-/* Remap a concrete (frac) RGB or CMYK color. */
+/* Remap a concrete (frac) gray, RGB or CMYK color. */
 /* These cannot fail, and do not return a value. */
-#define gx_remap_concrete_rgb(cr, cg, cb, pdc, pgs, dev, select)\
-  (*pgs->cmap_procs->map_rgb)(cr, cg, cb, pdc, pgs, dev, select)
-#define gx_remap_concrete_cmyk(cc, cm, cy, ck, pdc, pgs, dev, select)\
-  (*pgs->cmap_procs->map_cmyk)(cc, cm, cy, ck, pdc, pgs, dev, select)
-#define gx_remap_concrete_rgb_alpha(cr, cg, cb, ca, pdc, pgs, dev, select)\
-  (*pgs->cmap_procs->map_rgb_alpha)(cr, cg, cb, ca, pdc, pgs, dev, select)
+#define gx_remap_concrete_gray(cgray, pdc, pis, dev, select)\
+  ((pis)->cmap_procs->map_gray)(cgray, pdc, pis, dev, select)
+#define gx_remap_concrete_rgb(cr, cg, cb, pdc, pis, dev, select)\
+  ((pis)->cmap_procs->map_rgb)(cr, cg, cb, pdc, pis, dev, select)
+#define gx_remap_concrete_cmyk(cc, cm, cy, ck, pdc, pis, dev, select)\
+  ((pis)->cmap_procs->map_cmyk)(cc, cm, cy, ck, pdc, pis, dev, select)
+#define gx_remap_concrete_rgb_alpha(cr, cg, cb, ca, pdc, pis, dev, select)\
+  ((pis)->cmap_procs->map_rgb_alpha)(cr, cg, cb, ca, pdc, pis, dev, select)
 
 /* Map a color, with optional tracing if we are debugging. */
 #ifdef DEBUG
 /* Use procedures in gxcmap.c */
+#include "gxcindex.h"
 #include "gxcvalue.h"
 gx_color_index gx_proc_map_rgb_color(P4(gx_device *,
 			   gx_color_value, gx_color_value, gx_color_value));

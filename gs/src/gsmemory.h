@@ -238,6 +238,17 @@ typedef struct gs_memory_procs_s {
 
 } gs_memory_procs_t;
 
+/*
+ * Define versions of the freeing procedures that are applicable even if the
+ * pointer is declared as const T *.  These are intended for use where a
+ * structure contains a pointer member whose referent is declared as const
+ * because it is const for all ordinary clients.
+ */
+void gs_free_const_object(P3(gs_memory_t *mem, const void *data,
+			     client_name_t cname));
+void gs_free_const_string(P4(gs_memory_t *mem, const byte *data, uint nbytes,
+			     client_name_t cname));
+
 /* Register a structure root.  This just calls gs_register_root. */
 int gs_register_struct_root(P4(gs_memory_t *mem, gs_gc_root_t *root,
 			       void **pp, client_name_t cname));

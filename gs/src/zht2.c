@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -25,7 +25,7 @@
 #include "gzht.h"
 #include "estack.h"
 #include "ialloc.h"
-#include "idict.h"
+#include "iddict.h"
 #include "idparam.h"
 #include "igstate.h"
 #include "icolor.h"
@@ -35,18 +35,20 @@
 /* Forward references */
 private int dict_spot_params(P4(const ref *, gs_spot_halftone *,
 				ref *, ref *));
-private int dict_spot_results(P2(ref *, const gs_spot_halftone *));
+private int dict_spot_results(P3(i_ctx_t *, ref *, const gs_spot_halftone *));
 private int dict_threshold_params(P3(const ref *,
 				     gs_threshold_halftone *, ref *));
+private int dict_threshold2_params(P3(const ref *,
+				      gs_threshold2_halftone *, ref *));
 
 /* <dict> <dict5> .sethalftone5 - */
 float spot_dummy(P2(floatp, floatp));	/* in zht1.c */
-int spot_sample_finish(P1(os_ptr));	/* in zht.c */
-private int sethalftone_finish(P1(os_ptr));
-private int sethalftone_cleanup(P1(os_ptr));
+private int sethalftone_finish(P1(i_ctx_t *));
+private int sethalftone_cleanup(P1(i_ctx_t *));
 private int
-zsethalftone5(register os_ptr op)
+zsethalftone5(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     uint count;
     gs_halftone_component *phtc;
     gs_halftone_component *pc;
@@ -60,6 +62,7 @@ zsethalftone5(register os_ptr op)
     ref sprocs[countof(color_names)];
     ref tprocs[countof(color_names)];
     gs_memory_t *mem;
+    uint edepth = ref_stack_count(&e_stack);
     int npop = 2;
 
     check_type(*op, t_dictionary);
@@ -75,7 +78,7 @@ zsethalftone5(register os_ptr op)
 	else if (i == gs_ht_separation_Default)
 	    return_error(e_typecheck);
     }
-    mem = (gs_memory_t *) idmemory->spaces.indexed[r_space_index(op - 1)];
+    mem = (gs_memory_t *) idmemory->spaces_indexed[r_space_index(op - 1)];
     check_estack(5);		/* for sampling Type 1 screens */
     refset_null(sprocs, countof(sprocs));
     refset_null(tprocs, countof(tprocs));
@@ -96,7 +99,7 @@ zsethalftone5(register os_ptr op)
 	    if (dict_find_string(op, color_names[i], &pvalue) > 0) {
 		check_type_only(*pvalue, t_dictionary);
 		check_dict_read(*pvalue);
-		if (dict_int_param(pvalue, "HalftoneType", 1, 5, 0,
+		if (dict_int_param(pvalue, "HalftoneType", 1, 7, 0,
 				   &type) < 0
 		    ) {
 		    code = gs_note_error(e_typecheck);
@@ -118,6 +121,11 @@ zsethalftone5(register os_ptr op)
 			code = dict_threshold_params(pvalue,
 					 &pc->params.threshold, tprocs + j);
 			pc->type = ht_type_threshold;
+			break;
+		    case 7:
+			code = dict_threshold2_params(pvalue,
+					 &pc->params.threshold2, tprocs + j);
+			pc->type = ht_type_threshold2;
 			break;
 		}
 		if (code < 0)
@@ -149,7 +157,7 @@ zsethalftone5(register os_ptr op)
 		ref *pvalue;
 
 		dict_find_string(op, color_names[pc->cname], &pvalue);
-		code = dict_spot_results(pvalue, &pc->params.spot);
+		code = dict_spot_results(i_ctx_p, pvalue, &pc->params.spot);
 		if (code < 0)
 		    break;
 	    }
@@ -160,7 +168,6 @@ zsethalftone5(register os_ptr op)
 	 * and any (Type 1 or Type 3) TransferFunctions.
 	 * Save the stack depths in case we have to back out.
 	 */
-	uint edepth = ref_stack_count(&e_stack);
 	uint odepth = ref_stack_count(&o_stack);
 	ref odict, odict5;
 
@@ -181,7 +188,7 @@ zsethalftone5(register os_ptr op)
 
 	    switch (phtc[j].type) {
 		case ht_type_spot:
-		    code = zscreen_enum_init(op, porder,
+		    code = zscreen_enum_init(i_ctx_p, porder,
 					     &phtc[j].params.spot.screen,
 					     &sprocs[j], 0, 0, mem);
 		    if (code < 0)
@@ -193,8 +200,8 @@ zsethalftone5(register os_ptr op)
 			/****** check_xstack IS WRONG ******/
 			check_ostack(zcolor_remap_one_ostack);
 			check_estack(zcolor_remap_one_estack);
-			code = zcolor_remap_one(tprocs + j,
-						op, porder->transfer, igs,
+			code = zcolor_remap_one(i_ctx_p, tprocs + j,
+						porder->transfer, igs,
 						zcolor_remap_one_finish);
 			op = osp;
 		    }
@@ -221,11 +228,11 @@ zsethalftone5(register os_ptr op)
 	return code;
     }
     pop(npop);
-    return o_push_estack;
+    return (ref_stack_count(&e_stack) > edepth ? o_push_estack : 0);
 }
 /* Install the halftone after sampling. */
 private int
-sethalftone_finish(os_ptr op)
+sethalftone_finish(i_ctx_t *i_ctx_p)
 {
     gx_device_halftone *pdht = r_ptr(esp, gx_device_halftone);
     int code;
@@ -237,12 +244,12 @@ sethalftone_finish(os_ptr op)
 	return code;
     istate->halftone = esp[-2];
     esp -= 4;
-    sethalftone_cleanup(op);
+    sethalftone_cleanup(i_ctx_p);
     return o_pop_estack;
 }
 /* Clean up after installing the halftone. */
 private int
-sethalftone_cleanup(os_ptr op)
+sethalftone_cleanup(i_ctx_t *i_ctx_p)
 {
     gx_device_halftone *pdht = r_ptr(&esp[4], gx_device_halftone);
     gs_halftone *pht = r_ptr(&esp[3], gs_halftone);
@@ -295,7 +302,7 @@ dict_spot_params(const ref * pdict, gs_spot_halftone * psp,
 
 /* Set actual frequency and angle in a dictionary. */
 private int
-dict_real_result(ref * pdict, const char *kstr, floatp val)
+dict_real_result(i_ctx_t *i_ctx_p, ref * pdict, const char *kstr, floatp val)
 {
     int code = 0;
     ref *ignore;
@@ -305,47 +312,114 @@ dict_real_result(ref * pdict, const char *kstr, floatp val)
 
 	check_dict_write(*pdict);
 	make_real(&rval, val);
-	code = dict_put_string(pdict, kstr, &rval);
+	code = idict_put_string(pdict, kstr, &rval);
     }
     return code;
 }
 private int
-dict_spot_results(ref * pdict, const gs_spot_halftone * psp)
+dict_spot_results(i_ctx_t *i_ctx_p, ref * pdict, const gs_spot_halftone * psp)
 {
     int code;
 
-    code = dict_real_result(pdict, "ActualFrequency",
+    code = dict_real_result(i_ctx_p, pdict, "ActualFrequency",
 			    psp->screen.actual_frequency);
     if (code < 0)
 	return code;
-    return dict_real_result(pdict, "ActualAngle",
+    return dict_real_result(i_ctx_p, pdict, "ActualAngle",
 			    psp->screen.actual_angle);
 }
 
-/* Extract width, height, and thresholds from a dictionary. */
+/* Extract Width, Height, and TransferFunction from a dictionary. */
 private int
-dict_threshold_params(const ref * pdict, gs_threshold_halftone * ptp,
-		      ref * ptproc)
+dict_threshold_common_params(const ref * pdict,
+			     gs_threshold_halftone_common * ptp,
+			     ref **pptstring, ref *ptproc)
 {
     int code;
-    ref *tstring;
 
     check_dict_read(*pdict);
     if ((code = dict_int_param(pdict, "Width", 1, 0x7fff, -1,
 			       &ptp->width)) < 0 ||
 	(code = dict_int_param(pdict, "Height", 1, 0x7fff, -1,
 			       &ptp->height)) < 0 ||
-	(code = dict_find_string(pdict, "Thresholds", &tstring)) <= 0 ||
+	(code = dict_find_string(pdict, "Thresholds", pptstring)) <= 0 ||
       (code = dict_proc_param(pdict, "TransferFunction", ptproc, false)) < 0
 	)
 	return (code < 0 ? code : e_undefined);
+    ptp->transfer_closure.proc = 0;
+    ptp->transfer_closure.data = 0;
+    return code;
+}
+
+/* Extract threshold common parameters + Thresholds. */
+private int
+dict_threshold_params(const ref * pdict, gs_threshold_halftone * ptp,
+		      ref * ptproc)
+{
+    ref *tstring;
+    int code =
+	dict_threshold_common_params(pdict,
+				     (gs_threshold_halftone_common *)ptp,
+				     &tstring, ptproc);
+
+    if (code < 0)
+	return code;
     check_read_type_only(*tstring, t_string);
     if (r_size(tstring) != (long)ptp->width * ptp->height)
 	return_error(e_rangecheck);
     ptp->thresholds.data = tstring->value.const_bytes;
     ptp->thresholds.size = r_size(tstring);
     ptp->transfer = (code > 0 ? (gs_mapping_proc) 0 : gs_mapped_transfer);
-    ptp->transfer_closure.proc = 0;
-    ptp->transfer_closure.data = 0;
+    return 0;
+}
+
+/* Extract threshold common parameters + Thresholds, Width2, Height2, */
+/* BitsPerSample. */
+private int
+dict_threshold2_params(const ref * pdict, gs_threshold2_halftone * ptp,
+		       ref * ptproc)
+{
+    ref *tstring;
+    int code =
+	dict_threshold_common_params(pdict,
+				     (gs_threshold_halftone_common *)ptp,
+				     &tstring, ptproc);
+    int bps;
+    uint size;
+    int cw2, ch2;
+
+    if (code < 0 ||
+	(code = cw2 = dict_int_param(pdict, "Width2", 0, 0x7fff, 0,
+				     &ptp->width2)) < 0 ||
+	(code = ch2 = dict_int_param(pdict, "Height2", 0, 0x7fff, 0,
+				     &ptp->height2)) < 0 ||
+	(code = dict_int_param(pdict, "BitsPerSample", 8, 16, -1, &bps)) < 0
+	)
+	return code;
+    if ((bps != 8 && bps != 16) || cw2 != ch2 ||
+	(!cw2 && (ptp->width2 == 0 || ptp->height2 == 0))
+	)
+	return_error(e_rangecheck);
+    ptp->bytes_per_sample = bps / 8;
+    switch (r_type(tstring)) {
+    case t_string:
+	size = r_size(tstring);
+	gs_bytestring_from_string(&ptp->thresholds, tstring->value.const_bytes,
+				  size);
+	break;
+    case t_astruct:
+	if (gs_object_type(imemory, tstring->value.pstruct) != &st_bytes)
+	    return_error(e_typecheck);
+	size = gs_object_size(imemory, tstring->value.pstruct);
+	gs_bytestring_from_bytes(&ptp->thresholds, r_ptr(tstring, byte),
+				 0, size);
+	break;
+    default:
+	return_error(e_typecheck);
+    }
+    check_read(*tstring);
+    if (size != (ptp->width * ptp->height + ptp->width2 * ptp->height2) *
+	ptp->bytes_per_sample)
+	return_error(e_rangecheck);
     return 0;
 }

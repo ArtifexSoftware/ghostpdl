@@ -28,7 +28,7 @@
 typedef enum {
     ft_composite = 0,
     ft_encrypted = 1,
-    ft_CFF = 2,
+    ft_encrypted2 = 2,
     ft_user_defined = 3,
     ft_disk_based = 4,
     ft_CID_encrypted = 9,	/* CIDFontType 0 */

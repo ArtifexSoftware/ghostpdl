@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -26,6 +26,11 @@
 #include "gxdevice.h"
 #include "gdevpccm.h"
 #include "gdevpcfb.h"
+ 
+/* We may compile this in a non-segmented environment.... */
+#ifndef _ss
+#define _ss
+#endif
 
 /* Macro for casting gx_device argument */
 #define fb_dev ((gx_device_ega *)dev)
@@ -33,10 +38,8 @@
 /* Procedure record */
 private dev_proc_map_rgb_color(ega0_map_rgb_color);
 private dev_proc_map_rgb_color(ega1_map_rgb_color);
-
 #define ega2_map_rgb_color pc_4bit_map_rgb_color
 private dev_proc_map_color_rgb(ega01_map_color_rgb);
-
 #define ega2_map_color_rgb pc_4bit_map_color_rgb
 #if ega_bits_of_color == 0
 #   define ega_map_rgb_color ega0_map_rgb_color
@@ -230,7 +233,6 @@ typedef rop_params _ss *rop_ptr;
 
 #if USE_ASM
 void memsetcol(P1(rop_ptr));	/* dest, draster, height, data */
-
 #else
 #define memsetcol cmemsetcol
 private void
@@ -251,7 +253,6 @@ cmemsetcol(rop_ptr rop)
 
 #if USE_ASM
 void memsetrect(P1(rop_ptr));	/* dest, draster, width, height, data */
-
 #else
 #define memsetrect cmemsetrect
 private void
@@ -293,7 +294,6 @@ cmemsetrect(rop_ptr rop)
 
 #if USE_ASM
 void memrwcol(P1(rop_ptr));	/* dest, draster, src, sraster, height, shift, invert */
-
 #  define memrwcol0(rop) memrwcol(rop)	/* same except shift = 0 */
 #else
 #  define memrwcol cmemrwcol
@@ -335,7 +335,6 @@ cmemrwcol0(rop_ptr rop)
 
 #if USE_ASM
 void memrwcol2(P1(rop_ptr));	/* dest, draster, src, sraster, height, shift, invert */
-
 #else
 #define memrwcol2 cmemrwcol2
 private void
@@ -358,8 +357,8 @@ cmemrwcol2(rop_ptr rop)
 
 /* Forward definitions */
 int ega_write_dot(P4(gx_device *, int, int, gx_color_index));
-private void near fill_rectangle(P4(rop_ptr, int, int, int));
-private void near fill_row_only(P4(byte *, int, int, int));
+private void fill_rectangle(P4(rop_ptr, int, int, int));
+private void fill_row_only(P4(byte *, int, int, int));
 
 /* Clean up after writing */
 #define dot_end()\
@@ -843,7 +842,7 @@ static const byte rmask_tab[9] =
 /* Fill a rectangle specified by pointer into frame buffer, */
 /* starting bit within byte, width, and height. */
 /* Smashes rop->dest. */
-private void near
+private void
 fill_rectangle(register rop_ptr rop, int bit, int w, int color)
   /* rop: dest, draster, height */
 {
@@ -880,7 +879,7 @@ fill_rectangle(register rop_ptr rop, int bit, int w, int color)
 /* Fill a single row specified by pointer into frame buffer, */
 /* starting bit within byte, and width; clean up afterwards. */
 #define r_m_w(ptr) (*(ptr))++	/* read & write, data irrelevant */
-private void near
+private void
 fill_row_only(byte * dest, int bit, int w, int color)
   /* rop: dest */
 {

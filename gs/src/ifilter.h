@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -31,28 +31,31 @@
  * and all relevant parameters (if any) are in global VM.
  */
 int filter_read(P5(
-	/* Operand stack pointer that was passed to zfxxx operator */
-		      os_ptr op,
+	/* Operator arguments that were passed to zfxxx operator */
+		   i_ctx_t *i_ctx_p,
 	/* # of parameters to pop off o-stack, */
 	/* not counting the source/target */
-		      int npop,
+		   int npop,
 	/* Template for stream */
-		      const stream_template * template,
+		   const stream_template * template,
 	/* Initialized s_xxx_state, 0 if no separate state */
-		      stream_state * st,
+		   stream_state * st,
 	/* Max of space attributes of all parameters referenced by */
 	/* the state, 0 if no such parameters */
-		      uint space
+		   uint space
 		));
-int filter_write(P5(os_ptr op, int npop, const stream_template * template,
+int filter_write(P5(i_ctx_t *i_ctx_p, int npop,
+		    const stream_template * template,
 		    stream_state * st, uint space));
 
 /*
  * Define a simplified interface for streams with no parameters or state.
  * These procedures also pop the top o-stack element if it is a dictionary.
  */
-int filter_read_simple(P2(os_ptr op, const stream_template * template));
-int filter_write_simple(P2(os_ptr op, const stream_template * template));
+int filter_read_simple(P2(i_ctx_t *i_ctx_p,
+			  const stream_template * template));
+int filter_write_simple(P2(i_ctx_t *i_ctx_p,
+			   const stream_template * template));
 
 /* Mark a filter stream as temporary. */
 /* See stream.h for the meaning of is_temp. */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1990, 1992, 1993 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1990, 1992, 1993, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -29,13 +29,12 @@
 #include "oper.h"
 #include "store.h"
 
-/* Import the array packing flag */
-extern ref ref_array_packing;
-
 /* - currentpacking <bool> */
 private int
-zcurrentpacking(register os_ptr op)
+zcurrentpacking(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(1);
     ref_assign(op, &ref_array_packing);
     return 0;
@@ -43,8 +42,9 @@ zcurrentpacking(register os_ptr op)
 
 /* <obj_0> ... <obj_n-1> <n> packedarray <packedarray> */
 int
-zpackedarray(register os_ptr op)
+zpackedarray(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code;
     ref parr;
 
@@ -65,10 +65,14 @@ zpackedarray(register os_ptr op)
 
 /* <bool> setpacking - */
 private int
-zsetpacking(register os_ptr op)
+zsetpacking(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+    ref cont;
+
     check_type(*op, t_boolean);
-    ref_assign_old(NULL, &ref_array_packing, op, "setpacking");
+    make_struct(&cont, avm_local, ref_array_packing_container);
+    ref_assign_old(&cont, &ref_array_packing, op, "setpacking");
     pop(1);
     return 0;
 }
@@ -78,7 +82,7 @@ zsetpacking(register os_ptr op)
 /* Make a packed array.  See the comment in packed.h about */
 /* ensuring that refs in mixed arrays are properly aligned. */
 int
-make_packed_array(ref * parr, ref_stack * pstack, uint size,
+make_packed_array(ref * parr, ref_stack_t * pstack, uint size,
 		  client_name_t cname)
 {
     uint i;

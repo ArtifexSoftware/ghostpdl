@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1992, 1993, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1992, 1993, 1996, 1999 Aladdin Enterprises.  All rights reserved.
   
   This file is part of Aladdin Ghostscript.
   
@@ -22,7 +22,10 @@ Modified 3/93 to correct bug in cnt_2prn size.
 Modified 3/93 to dimension page back to 8.5, which seems to
    work better than the actual page width of 7.6, ie. it uses
 	the full printing width of the printer.
-	It was modeled after the V2.4.1 HP Paintjet driver (gdevpjet.c) */
+	It was modeled after the V2.4.1 HP Paintjet driver (gdevpjet.c)
+Modified by L. Peter Deutsch <ghost@aladdin.com> 1999-01-10 to remove _ss
+    modifiers inappropriately copied from other code.
+ */
 
 
 /* IBM 3852 JetPrinter color ink jet driver for Ghostscript */
@@ -78,7 +81,7 @@ jetp3852_print_page(gx_device_printer *pdev, FILE *prn_stream)
 		int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
 		int num_blank_lines = 0;
 		for ( lnum = 0; lnum < pdev->height; lnum++ )
-		   {	byte _ss *end_data = data + line_size;
+		   {	byte *end_data = data + line_size;
 			gdev_prn_copy_scan_lines(pdev, lnum,
 						 (byte *)data, line_size);
 			/* Remove trailing 0s. */
@@ -90,8 +93,8 @@ jetp3852_print_page(gx_device_printer *pdev, FILE *prn_stream)
 			   }
 			else
 			   {	int i;
-				byte _ss *odp;
-				byte _ss *row;
+				byte *odp;
+				byte *row;
 
 				/* Pad with 0s to fill out the last */
 				/* block of 8 bytes. */
@@ -107,7 +110,7 @@ jetp3852_print_page(gx_device_printer *pdev, FILE *prn_stream)
 				   static ulong spr40[8] = spread3(0x40);
 				   static ulong spr8[8] = spread3(8);
 				   static ulong spr2[8] = spread3(2);
-				   register byte _ss *dp = data + i;
+				   register byte *dp = data + i;
 				   register ulong pword =
 				     (spr40[dp[0]] << 1) +
 				     (spr40[dp[1]]) +

@@ -1,4 +1,4 @@
-%    Copyright (C) 1992, 1997 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1992, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -17,16 +17,11 @@
 
 
 % type1ops.ps
-% Define the Type 1 font opcodes for use by Ghostscript utilities.
-% This includes both Type 1 and Type 2 CharStrings.
+% Define the Type 1 and Type 2 font opcodes for use by Ghostscript utilities.
 
 % Define the default value of lenIV.
 
 /lenIV 4 def
-
-% Define the default CharString type.
-
-/CharstringType 1 def
 
 % ---------------- Encoding ---------------- %
 
@@ -61,7 +56,7 @@ dup /integertype {
 
 	% Operators
 
-% Identical or similar in Type 1 and Type 2 CharStrings.
+% Identical or similar in Type 1 and Type 2.
 /c_hstem 1 def   dup /hstem <01> put
 /c_vstem 3 def   dup /vstem <03> put
 /c_vmoveto 4 def   dup /vmoveto <04> put
@@ -78,7 +73,7 @@ dup /integertype {
 /c_hmoveto 22 def   dup /hmoveto <16> put
 /c_vhcurveto 30 def   dup /vhcurveto <1e> put
 /c_hvcurveto 31 def   dup /hvcurveto <1f> put
-% Only in Type 1 CharStrings.
+% Only in Type 1.
 /c_closepath 9 def   dup /closepath <09> put
 /c_hsbw 13 def   /s_hsbw <0d> def   dup /hsbw s_hsbw put
   /ce_dotsection 0 def   /s_dotsection <0c06> def   dup /dotsection s_dotsection put
@@ -90,7 +85,7 @@ dup /integertype {
   /ce_pop 17 def   /s_pop <0c11> def   dup /pop s_pop put
   /ce_setcurrentpoint 33 def   /s_setcurrentpoint <0c21> def   dup /setcurrentpoint s_setcurrentpoint put
   /s_setcurrentpoint_hmoveto s_setcurrentpoint <8b16> concatstrings def
-% Only in Type 2 CharStrings.
+% Only in Type 2.
 dup /blend <10> put
 dup /hstemhm <12> put
 dup /hintmask <13> put
@@ -149,7 +144,7 @@ dup 12 {
     { pop 2 string dup 0 12 put dup 1 4 -1 roll put }
   ifelse
 } put
-dup 28 {		% Type 2 CharStrings only
+dup 28 {		% Type 2 only
   dup read pop 128 xor 128 sub 8 bitshift
   1 index read pop add
 } put
@@ -165,7 +160,7 @@ dup 254 { dup read pop 876 add neg } put
 dup 255 {		% Different for Type 1 and Type 2
   dup read pop 128 xor 128 sub
   3 { 8 bitshift 1 index read pop add } repeat
-  CharstringType 2 eq { 65536.0 div } if
+  FontType 2 eq { 65536.0 div } if
 } put
 
 readonly def

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -49,6 +49,10 @@ private int X_MAX_TEMP_PIXMAP = 20000;
 /* for get_bits_rectangle. */
 private int X_MAX_TEMP_IMAGE = 5000;
 
+/* Define whether to try to read back exposure events after XGetImage. */
+/****** THIS IS USELESS.  XGetImage DOES NOT GENERATE EXPOSURE EVENTS. ******/
+#define GET_IMAGE_EXPOSURES 0
+
 /* Forward references */
 private int set_tile(P2(gx_device *, const gx_strip_bitmap *));
 private void free_cp(P1(gx_device *));
@@ -73,15 +77,16 @@ private dev_proc_open_device(x_open);
 private dev_proc_get_initial_matrix(x_get_initial_matrix);
 private dev_proc_sync_output(x_sync);
 private dev_proc_output_page(x_output_page);
+extern void gdev_x_free_dynamic_colors(P1(gx_device_X *));
+extern void gdev_x_free_colors(P1(gx_device_X *));
 private dev_proc_close_device(x_close);
-private dev_proc_map_rgb_color(x_map_rgb_color);
-private dev_proc_map_color_rgb(x_map_color_rgb);
+extern dev_proc_map_rgb_color(gdev_x_map_rgb_color);
+extern dev_proc_map_color_rgb(gdev_x_map_color_rgb);
 private dev_proc_fill_rectangle(x_fill_rectangle);
 private dev_proc_copy_mono(x_copy_mono);
 private dev_proc_copy_color(x_copy_color);
 private dev_proc_get_params(x_get_params);
 private dev_proc_put_params(x_put_params);
-
 dev_proc_get_xfont_procs(x_get_xfont_procs);
 private dev_proc_get_page_device(x_get_page_device);
 private dev_proc_strip_tile_rectangle(x_strip_tile_rectangle);
@@ -96,8 +101,8 @@ private const gx_device_procs x_procs =
     x_sync,
     x_output_page,
     x_close,
-    x_map_rgb_color,
-    x_map_color_rgb,
+    gdev_x_map_rgb_color,
+    gdev_x_map_color_rgb,
     x_fill_rectangle,
     NULL,			/* tile_rectangle */
     x_copy_mono,
@@ -144,7 +149,7 @@ const gx_device_X gs_x11_device =
     {				/* image */
 	0, 0,			/* width, height */
 	0, XYBitmap, NULL,	/* xoffset, format, data */
-	LSBFirst, 8,		/* byte-order, bitmap-unit */
+	MSBFirst, 8,		/* byte-order, bitmap-unit */
 	MSBFirst, 8, 1,		/* bitmap-bit-order, bitmap-pad, depth */
 	0, 1,			/* bytes_per_line, bits_per_pixel */
 	0, 0, 0,		/* red_mask, green_mask, blue_mask */
@@ -167,9 +172,6 @@ const gx_device_X gs_x11_device =
     (Pixmap) 0,			/* bpixmap */
     0,				/* ghostview */
     (Window) None,		/* mwin */
-#if HaveStdCMap
-    NULL,			/* std_cmap */
-#endif
     {identity_matrix_body},	/* initial matrix (filled in) */
     (Atom) 0, (Atom) 0, (Atom) 0,	/* Atoms: NEXT, PAGE, DONE */
     {0, 0, 0, 0}, 0, 0,		/* update, up_area, up_count */
@@ -192,11 +194,7 @@ const gx_device_X gs_x11_device =
     0,				/* font */
     0, 0,			/* back_color, fore_color */
     0, 0,			/* background, foreground */
-    NULL,			/* dither_colors */
-    0, 0,			/* color_mask, num_rgb */
-    NULL, 0,			/* dynamic_colors, max_dynamic_colors */
-    0, 0,			/* dynamic_size, dynamic_allocs */
-    NULL, 0,			/* color_to_rgb, color_to_rgb_size */
+    { 0 },			/* cman */
     0, 0,			/* borderColor, borderWidth */
     NULL,			/* geometry */
     128, 5,			/* maxGrayRamp, maxRGBRamp */
@@ -248,6 +246,27 @@ x_open(gx_device * dev)
     return 0;
 }
 
+/* Free fonts when closing the device. */
+private void
+free_x_fontmaps(x11fontmap **pmaps)
+{
+    while (*pmaps) {
+	x11fontmap *font = *pmaps;
+
+	*pmaps = font->next;
+	if (font->std.names)
+	    XFreeFontNames(font->std.names);
+	if (font->iso.names)
+	    XFreeFontNames(font->iso.names);
+	gs_free(font->x11_name, sizeof(char), strlen(font->x11_name) + 1,
+		"x11_font_x11name");
+	gs_free(font->ps_name, sizeof(char), strlen(font->ps_name) + 1,
+		"x11_font_psname");
+
+	gs_free(font, sizeof(x11fontmap), 1, "x11_fontmap");
+    }
+}
+
 /* Close the device. */
 private int
 x_close(gx_device * dev)
@@ -260,470 +279,12 @@ x_close(gx_device * dev)
 	XFree((char *)xdev->vinfo);
 	xdev->vinfo = NULL;
     }
-    if (xdev->dither_colors) {
-	if (gx_device_has_color(xdev))
-#define cube(r) (r*r*r)
-	    gs_free((char *)xdev->dither_colors, sizeof(x_pixel),
-		    cube(xdev->color_info.dither_colors), "x11_rgb_cube");
-#undef cube
-	else
-	    gs_free((char *)xdev->dither_colors, sizeof(x_pixel),
-		    xdev->color_info.dither_grays, "x11_gray_ramp");
-	xdev->dither_colors = NULL;
-    }
-    if (xdev->dynamic_colors) {
-	int i;
-
-	for (i = 0; i < xdev->dynamic_size; i++) {
-	    x11color *xcp = (*xdev->dynamic_colors)[i];
-	    x11color *next;
-
-	    while (xcp) {
-		next = xcp->next;
-		gs_free((char *)xcp, sizeof(x11color), 1, "x11_dynamic_color");
-		xcp = next;
-	    }
-	}
-	gs_free((char *)xdev->dynamic_colors, sizeof(x11color *),
-		xdev->dynamic_size, "x11_dynamic_colors");
-	xdev->dynamic_colors = NULL;
-    }
-    if (xdev->color_to_rgb) {
-	gs_free((char *)xdev->color_to_rgb, sizeof(x11_rgb_t),
-		xdev->color_to_rgb_size, "color_to_rgb");
-	xdev->color_to_rgb = NULL;
-	xdev->color_to_rgb_size = 0;
-    }
-    while (xdev->regular_fonts) {
-	x11fontmap *font = xdev->regular_fonts;
-
-	xdev->regular_fonts = font->next;
-	if (font->std_names)
-	    XFreeFontNames(font->std_names);
-	if (font->iso_names)
-	    XFreeFontNames(font->iso_names);
-	gs_free(font->x11_name, sizeof(char), strlen(font->x11_name) + 1,
-		"x11_font_x11name");
-	gs_free(font->ps_name, sizeof(char), strlen(font->ps_name) + 1,
-		"x11_font_psname");
-
-	gs_free((char *)font, sizeof(x11fontmap), 1, "x11_fontmap");
-    }
-    while (xdev->symbol_fonts) {
-	x11fontmap *font = xdev->symbol_fonts;
-
-	xdev->symbol_fonts = font->next;
-	if (font->std_names)
-	    XFreeFontNames(font->std_names);
-	if (font->iso_names)
-	    XFreeFontNames(font->iso_names);
-	gs_free(font->x11_name, sizeof(char), strlen(font->x11_name) + 1,
-		"x11_font_x11name");
-	gs_free(font->ps_name, sizeof(char), strlen(font->ps_name) + 1,
-		"x11_font_psname");
-
-	gs_free((char *)font, sizeof(x11fontmap), 1, "x11_fontmap");
-    }
-    while (xdev->dingbat_fonts) {
-	x11fontmap *font = xdev->dingbat_fonts;
-
-	xdev->dingbat_fonts = font->next;
-	if (font->std_names)
-	    XFreeFontNames(font->std_names);
-	if (font->iso_names)
-	    XFreeFontNames(font->iso_names);
-	gs_free(font->x11_name, sizeof(char), strlen(font->x11_name) + 1,
-		"x11_font_x11name");
-	gs_free(font->ps_name, sizeof(char), strlen(font->ps_name) + 1,
-		"x11_font_psname");
-
-	gs_free((char *)font, sizeof(x11fontmap), 1, "x11_fontmap");
-    }
+    gdev_x_free_colors(xdev);
+    free_x_fontmaps(&xdev->dingbat_fonts);
+    free_x_fontmaps(&xdev->symbol_fonts);
+    free_x_fontmaps(&xdev->regular_fonts);
     XCloseDisplay(xdev->dpy);
     return 0;
-}
-
-/* Define a table for computing N * X_max_color_value / D for 0 <= N <= D, */
-/* 1 <= D <= 7. */
-/* This requires a multiply and a divide otherwise; */
-/* integer multiply and divide are slow on all platforms. */
-#define cv_fraction(n, d) ((ushort)(X_max_color_value * (n) / (d)))
-#define nd(n, d) cv_fraction(n, d)
-private const ushort cv_tab1[] =
-{
-    nd(0, 1), nd(1, 1)
-};
-private const ushort cv_tab2[] =
-{
-    nd(0, 2), nd(1, 2), nd(2, 2)
-};
-private const ushort cv_tab3[] =
-{
-    nd(0, 3), nd(1, 3), nd(2, 3), nd(3, 3)
-};
-private const ushort cv_tab4[] =
-{
-    nd(0, 4), nd(1, 4), nd(2, 4), nd(3, 4), nd(4, 4)
-};
-private const ushort cv_tab5[] =
-{
-    nd(0, 5), nd(1, 5), nd(2, 5), nd(3, 5), nd(4, 5), nd(5, 5)
-};
-private const ushort cv_tab6[] =
-{
-    nd(0, 6), nd(1, 6), nd(2, 6), nd(3, 6), nd(4, 6), nd(5, 6), nd(6, 6)
-};
-private const ushort cv_tab7[] =
-{
-    nd(0, 7), nd(1, 7), nd(2, 7), nd(3, 7), nd(4, 7), nd(5, 7), nd(6, 7), nd(7, 7)
-};
-private const ushort *const cv_tables[] =
-{
-    0, cv_tab1, cv_tab2, cv_tab3, cv_tab4, cv_tab5, cv_tab6, cv_tab7
-};
-
-/* Map a color.  The "device colors" are just r,g,b packed together. */
-private gx_color_index
-x_map_rgb_color(register gx_device * dev,
-		gx_color_value r, gx_color_value g, gx_color_value b)
-{
-    gx_device_X *xdev = (gx_device_X *) dev;
-
-    /* X and ghostscript both use shorts for color values */
-    unsigned short dr = r & xdev->color_mask;	/* Nearest color that */
-    unsigned short dg = g & xdev->color_mask;	/* the X device can   */
-    unsigned short db = b & xdev->color_mask;	/* represent          */
-    unsigned short cv_max = X_max_color_value & xdev->color_mask;
-
-#define cv_denom (gx_max_color_value + 1)
-
-    /* Foreground and background get special treatment: */
-    /* They may be mapped to other colors. */
-    if ((dr | dg | db) == 0) {	/* i.e., all 0 */
-	if_debug4('C', "[cX]%u,%u,%u => foreground = %lu\n",
-		  r, g, b, (ulong) xdev->foreground);
-	return xdev->foreground;
-    }
-    if ((dr & dg & db) == cv_max) {	/* i.e., all max value */
-	if_debug4('C', "[cX]%u,%u,%u => background = %lu\n",
-		  r, g, b, (ulong) xdev->background);
-	return xdev->background;
-    }
-#if HaveStdCMap
-    /* check the standard colormap first */
-    if (xdev->std_cmap) {
-	XStandardColormap *cmap = xdev->std_cmap;
-
-	if (gx_device_has_color(xdev)) {
-	    unsigned short cr, cg, cb;	/* rgb cube indices */
-	    unsigned short cvr, cvg, cvb;	/* color value on cube */
-
-	    cr = r * (cmap->red_max + 1) / cv_denom;
-	    cg = g * (cmap->green_max + 1) / cv_denom;
-	    cb = b * (cmap->blue_max + 1) / cv_denom;
-	    cvr = X_max_color_value * cr / cmap->red_max;
-	    cvg = X_max_color_value * cg / cmap->green_max;
-	    cvb = X_max_color_value * cb / cmap->blue_max;
-	    if ((abs((int)r - (int)cvr) & xdev->color_mask) == 0 &&
-		(abs((int)g - (int)cvg) & xdev->color_mask) == 0 &&
-		(abs((int)b - (int)cvb) & xdev->color_mask) == 0) {
-		gx_color_index pixel =
-		cr * cmap->red_mult + cg * cmap->green_mult +
-		cb * cmap->blue_mult + cmap->base_pixel;
-
-		if_debug4('C', "[cX]%u,%u,%u (std cmap) => %lu\n",
-			  r, g, b, pixel);
-		return pixel;
-	    }
-	    if_debug3('C', "[cX]%u,%u,%u (std cmap fails)\n", r, g, b);
-	} else {
-	    unsigned short cr;
-	    unsigned short cvr;
-	    int dither_grays = xdev->color_info.dither_grays;
-
-	    cr = r * dither_grays / cv_denom;
-	    cvr = X_max_color_value * cr / cmap->red_max;
-	    if ((abs((int)r - (int)cvr) & xdev->color_mask) == 0) {
-		gx_color_index pixel = cr * cmap->red_mult + cmap->base_pixel;
-
-		if_debug2('C', "[cX]%u (std cmap) => %lu\n", r, pixel);
-		return pixel;
-	    }
-	    if_debug1('C', "[cX]%u (std cmap fails)\n", r);
-	}
-    } else
-#endif
-	/* If there is no standard colormap, check the dither cube/ramp */
-    if (xdev->dither_colors) {
-	if (gx_device_has_color(xdev)) {
-	    unsigned short cr, cg, cb;	/* rgb cube indices */
-	    unsigned short cvr, cvg, cvb;	/* color value on cube */
-	    int dither_rgb = xdev->color_info.dither_colors;
-	    unsigned short max_rgb = dither_rgb - 1;
-
-	    cr = r * dither_rgb / cv_denom;
-	    cg = g * dither_rgb / cv_denom;
-	    cb = b * dither_rgb / cv_denom;
-	    if (max_rgb < countof(cv_tables)) {
-		const ushort *cv_tab = cv_tables[max_rgb];
-
-		cvr = cv_tab[cr];
-		cvg = cv_tab[cg];
-		cvb = cv_tab[cb];
-	    } else {
-		cvr = cv_fraction(cr, max_rgb);
-		cvg = cv_fraction(cg, max_rgb);
-		cvb = cv_fraction(cb, max_rgb);
-	    }
-	    if ((abs((int)r - (int)cvr) & xdev->color_mask) == 0 &&
-		(abs((int)g - (int)cvg) & xdev->color_mask) == 0 &&
-		(abs((int)b - (int)cvb) & xdev->color_mask) == 0) {
-		gx_color_index pixel =
-		xdev->dither_colors[cube_index(cr, cg, cb)];
-
-		if_debug4('C', "[cX]%u,%u,%u (dither cube) => %lu\n",
-			  r, g, b, pixel);
-		return pixel;
-	    }
-	    if_debug3('C', "[cX]%u,%u,%u (dither cube fails)\n", r, g, b);
-	} else {
-	    unsigned short cr;
-	    unsigned short cvr;
-	    int dither_grays = xdev->color_info.dither_grays;
-	    unsigned short max_gray = dither_grays - 1;
-
-	    cr = r * dither_grays / cv_denom;
-	    cvr = (X_max_color_value * cr / max_gray);
-	    if ((abs((int)r - (int)cvr) & xdev->color_mask) == 0) {
-		gx_color_index pixel = xdev->dither_colors[cr];
-
-		if_debug2('C', "[cX]%u (dither ramp) => %lu\n", r, pixel);
-		return pixel;
-	    }
-	    if_debug1('C', "[cX]%u (dither ramp fails)\n", r);
-	}
-    }
-    /* Finally look through the list of dynamic colors */
-    if (xdev->dynamic_colors) {
-	int i = (dr ^ dg ^ db) >> (16 - xdev->vinfo->bits_per_rgb);
-	x11color *xcp = (*xdev->dynamic_colors)[i];
-	x11color *last = NULL;
-	XColor xc;
-
-	while (xcp) {
-	    if (xcp->color.red == dr && xcp->color.green == dg &&
-		xcp->color.blue == db) {
-		if (last) {
-		    last->next = xcp->next;
-		    xcp->next = (*xdev->dynamic_colors)[i];
-		    (*xdev->dynamic_colors)[i] = xcp;
-		}
-		if (xcp->color.pad) {
-		    if_debug4('C', "[cX]%u,%u,%u (dynamic) => %lu\n",
-			      r, g, b, (ulong) xcp->color.pixel);
-		    return xcp->color.pixel;
-		} else {
-		    if_debug3('C', "[cX]%u,%u,%u (dynamic) => missing\n",
-			      r, g, b);
-		    return gx_no_color_index;
-		}
-	    }
-	    last = xcp;
-	    xcp = xcp->next;
-	}
-
-	/* If not in our list of dynamic colors, */
-	/* ask the X server and add an entry. */
-	/* First check if dynamic table is exhausted */
-	if (xdev->dynamic_allocs > xdev->max_dynamic_colors) {
-	    if_debug3('C', "[cX]%u,%u,%u (dynamic) => full\n", r, g, b);
-	    return gx_no_color_index;
-	}
-	xcp = (x11color *) gs_malloc(sizeof(x11color), 1, "x11_dynamic_color");
-	if (!xcp)
-	    return gx_no_color_index;
-	xc.red = xcp->color.red = dr;
-	xc.green = xcp->color.green = dg;
-	xc.blue = xcp->color.blue = db;
-	xcp->next = (*xdev->dynamic_colors)[i];
-	(*xdev->dynamic_colors)[i] = xcp;
-	xdev->dynamic_allocs++;
-	if (XAllocColor(xdev->dpy, xdev->cmap, &xc)) {
-	    xcp->color.pixel = xc.pixel;
-	    xcp->color.pad = True;
-	    if_debug4('C', "[cX]%u,%u,%u (dynamic) => added %lu\n",
-		      r, g, b, (ulong) xc.pixel);
-	    return xc.pixel;
-	} else {
-	    xcp->color.pad = False;
-	    if_debug3('C', "[cX]%u,%u,%u (dynamic) => can't alloc\n", r, g, b);
-	    return gx_no_color_index;
-	}
-    }
-    if_debug3('C', "[cX]%u,%u,%u fails\n", r, g, b);
-    return gx_no_color_index;
-}
-
-
-/*
- * Map a "device color" back to r-g-b.  This happens surprisingly often, so
- * we go to some trouble to make it efficient.  Foreground and background
- * may be mapped to other colors, so they are handled specially.
- */
-private int
-x_map_color_rgb(register gx_device * dev, gx_color_index color,
-		gx_color_value prgb[3])
-{
-    gx_device_X *xdev = (gx_device_X *) dev;
-
-#if HaveStdCMap
-    const XStandardColormap *cmap = xdev->std_cmap;
-
-#endif
-#define cv_denom (gx_max_color_value + 1)
-
-    if (color == xdev->foreground) {
-	prgb[0] = prgb[1] = prgb[2] = 0;
-	return 0;
-    }
-    if (color == xdev->background) {
-	prgb[0] = prgb[1] = prgb[2] = gx_max_color_value;
-	return 0;
-    }
-    if (color < xdev->color_to_rgb_size) {
-	x11_rgb_t *pxrgb = &xdev->color_to_rgb[color];
-
-	if (pxrgb->defined) {
-	    prgb[0] = pxrgb->rgb[0];
-	    prgb[1] = pxrgb->rgb[1];
-	    prgb[2] = pxrgb->rgb[2];
-	    return 0;
-	}
-    }
-#if HaveStdCMap
-    /* Check the standard colormap first. */
-    if (cmap) {
-	if (color >= cmap->base_pixel) {
-	    x_pixel value = color - cmap->base_pixel;
-	    unsigned long mult[3];
-	    unsigned long rgb[3];
-
-#define R 0
-#define G 1
-#define B 2
-	    mult[R] = cmap->red_mult;
-	    mult[G] = cmap->green_mult;
-	    mult[B] = cmap->blue_mult;
-	    /* Get the multipliers in the right order. */
-	    {
-		static const byte order[8][3] =
-		{
-		    {0, 0, 0},	/* not possible */
-		    {B, G, R},
-		    {G, R, B},
-		    {G, B, R},
-		    {R, B, G},
-		    {B, R, G},
-		    {R, G, B},
-		    {0, 0, 0}	/* not possible */
-		};
-		const byte *indices =
-		order[((mult[R] > mult[G]) << 2) + ((mult[G] > mult[B]) << 1) +
-		      (mult[B] > mult[R])];
-
-		rgb[indices[0]] = value / mult[indices[0]];
-		value %= mult[indices[0]];
-		rgb[indices[1]] = value / mult[indices[1]];
-		value %= mult[indices[1]];
-		rgb[indices[2]] = value / mult[indices[2]];
-		value %= mult[indices[2]];
-		if (value == 0 && rgb[R] <= cmap->red_max &&
-		    rgb[G] <= cmap->green_max && rgb[B] <= cmap->blue_max
-		    ) {
-		    /*
-		     * When mapping color buckets back to specific colors, we can
-		     * choose to map them to the darkest shades (e.g., 0, 1/3, 2/3),
-		     * to the lightest shades (e.g., 1/3-epsilon, 2/3-epsilon,
-		     * 1-epsilon), to the middle shades (e.g., 1/6, 1/2, 5/6),
-		     * or for maximum contrast (e.g., 0, 1/2, 1).  The last of these
-		     * matches the assumptions of the halftoning code, so that is
-		     * what we choose.
-		     */
-		    prgb[0] = rgb[R] * gx_max_color_value / cmap->red_max;
-		    prgb[1] = rgb[G] * gx_max_color_value / cmap->green_max;
-		    prgb[2] = rgb[B] * gx_max_color_value / cmap->blue_max;
-		    goto found;
-		}
-	    }
-#undef R
-#undef G
-#undef B
-	}
-    }
-#endif
-    /* Check the dither cube/ramp. */
-    if (xdev->dither_colors) {
-	if (gx_device_has_color(xdev)) {
-	    int size = xdev->color_info.dither_colors;
-	    int size3 = size * size * size;
-	    int i;
-
-	    for (i = 0; i < size3; ++i)
-		if (xdev->dither_colors[i] == color) {
-		    uint max_rgb = size - 1;
-		    unsigned long
-			r = i / (size * size),
-			g = (i / size) % size,
-			b = i % size;
-
-		    /*
-		     * See above regarding the choice of color mapping
-		     * algorithm.
-		     */
-		    prgb[0] = r * gx_max_color_value / max_rgb;
-		    prgb[1] = g * gx_max_color_value / max_rgb;
-		    prgb[2] = b * gx_max_color_value / max_rgb;
-		    goto found;
-		}
-	}
-    } else {
-	int size = xdev->color_info.dither_grays;
-	int i;
-
-	for (i = 0; i < size; ++i)
-	    if (xdev->dither_colors[i] == color) {
-		prgb[0] = prgb[1] = prgb[2] =
-		    i * gx_max_color_value / (size - 1);
-		goto found;
-	    }
-    }
-    /* Finally, search the list of dynamic colors. */
-    if (xdev->dynamic_colors) {
-	int i;
-	const x11color *xcp;
-
-	for (i = 1 << xdev->vinfo->bits_per_rgb; --i >= 0;)
-	    for (xcp = (*xdev->dynamic_colors)[i]; xcp; xcp = xcp->next)
-		if (xcp->color.pad && xcp->color.pixel == color) {
-		    prgb[0] = xcp->color.red;
-		    prgb[1] = xcp->color.green;
-		    prgb[2] = xcp->color.blue;
-		    goto found;
-		}
-    }
-    /* Not found -- not possible! */
-    return_error(gs_error_unknownerror);
-  found:
-    if (color < xdev->color_to_rgb_size) {
-	x11_rgb_t *pxrgb = &xdev->color_to_rgb[color];
-
-	pxrgb->rgb[0] = prgb[0];
-	pxrgb->rgb[1] = prgb[1];
-	pxrgb->rgb[2] = prgb[2];
-	pxrgb->defined = true;
-    }
-    return 0;
-#undef cv_denom
 }
 
 /* Get initial matrix for X device. */
@@ -812,35 +373,12 @@ x_fill_rectangle(register gx_device * dev,
     set_function(GXcopy);
     XFillRectangle(xdev->dpy, xdev->dest, xdev->gc, x, y, w, h);
     /* If we are filling the entire screen, reset */
-    /* colors_or and colors_and.  It's wasteful to do this */
+    /* colors_or and colors_and.  It's wasteful to test this */
     /* on every operation, but there's no separate driver routine */
     /* for erasepage (yet). */
     if (x == 0 && y == 0 && w == xdev->width && h == xdev->height) {
-	if (color == xdev->foreground || color == xdev->background) {
-	    if (xdev->dynamic_colors) {
-		int i;
-
-		for (i = 0; i < xdev->dynamic_size; i++) {
-		    x11color *xcp = (*xdev->dynamic_colors)[i];
-		    x11color *next;
-
-		    while (xcp) {
-			next = xcp->next;
-			if (xcp->color.pad) {
-			    XFreeColors(xdev->dpy, xdev->cmap,
-					&xcp->color.pixel, 1, 0);
-			}
-			gs_free((char *)xcp, sizeof(x11color), 1,
-				"x11_dynamic_color");
-			xcp = next;
-		    }
-		    (*xdev->dynamic_colors)[i] = NULL;
-		}
-		xdev->dynamic_allocs = 0;
-		for (i = 0; i < xdev->color_to_rgb_size; ++i)
-		    xdev->color_to_rgb[i].defined = false;
-	    }
-	}
+	if (color == xdev->foreground || color == xdev->background)
+	    gdev_x_free_dynamic_colors(xdev);
 	xdev->colors_or = xdev->colors_and = color;
     }
     if (xdev->bpixmap != (Pixmap) 0) {
@@ -1369,7 +907,9 @@ x_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
     int y, h;
     XImage *image;
     int code = 0;
+#if GET_IMAGE_EXPOSURES
     XWindowAttributes attributes;
+#endif /* GET_IMAGE_EXPOSURES */
 
     if (x0 < 0 || y0 < 0 || x1 > dev->width || y1 > dev->height)
 	return_error(gs_error_rangecheck);
@@ -1401,46 +941,103 @@ x_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 	 ****** FOLLOWING IS WRONG.  XGetImage DOES NOT GENERATE
 	 ****** EXPOSURE EVENTS.
 	 ******/
-#if 0				/*************** */
+#if GET_IMAGE_EXPOSURES
     if (unread) {
 	XSetGraphicsExposures(xdev->dpy, xdev->gc, True);
 	XGetWindowAttributes(xdev->dpy, xdev->win, &attributes);
 	XSelectInput(xdev->dpy, xdev->win,
 		     attributes.your_event_mask | ExposureMask);
     }
-#endif /*************** */
+#endif /* GET_IMAGE_EXPOSURES */
     /*
      * The X library doesn't provide any way to specify the desired
-     * bit or byte ordering for the result, so we just hope for the best
-     * (big-endian).
+     * bit or byte ordering for the result, so we may have to swap the
+     * bit or byte order.
      */
     if (band == 0)
 	band = 1;
     for (y = y0; y < y1; y += h) {
+	int cy;
+
 	h = min(band, y1 - y);
 	image = XGetImage(xdev->dpy, xdev->dest, x0, y, x1 - x0, h,
 			  plane_mask, ZPixmap);
-	{
-	    int cy;
+	for (cy = y; cy < y + h; ++cy) {
+	    const byte *source =
+		(const byte *)image->data + (cy - y) * image->bytes_per_line;
+	    byte *dest = params->data[0] + (cy - y0) * raster;
 
-	    for (cy = y; cy < y + h; ++cy)
-		memcpy(params->data[0] + (cy - y0) * raster,
-		       image->data + (cy - y) * image->bytes_per_line,
-		       width_bytes);
+	    /*
+	     * XGetImage can return an image with any bit order, byte order,
+	     * unit size (for bitmaps), and bits_per_pixel it wants: it's up
+	     * to us to convert the results.  (It's a major botch in the X
+	     * design that even though the server has to have the ability to
+	     * convert images from any format to any format, there's no way
+	     * to specify a requested format for XGetImage.)
+	     */
+	    if (image->bits_per_pixel == image->depth &&
+		(image->depth > 1 || image->bitmap_bit_order == MSBFirst) &&
+		(image->byte_order == MSBFirst || image->depth <= 8)
+		) {
+		/*
+		 * The server has been nice enough to return an image in the
+		 * format we use.  
+		 */
+		memcpy(dest, source, width_bytes);
+	    } else {
+		/*
+		 * We need to swap byte order and/or bit order.  What a
+		 * totally unnecessary nuisance!  For the moment, the only
+		 * cases we deal with are 16- and 24-bit images with padding
+		 * and/or byte swapping.
+		 */
+		if (image->depth == 24) {
+		    int cx;
+		    const byte *p = source;
+		    byte *q = dest;
+		    int step = image->bits_per_pixel >> 3;
+
+		    if (image->byte_order == MSBFirst) {
+			p += step - 3;
+			for (cx = x0; cx < x1; p += step, q += 3, ++cx)
+			    q[0] = p[0], q[1] = p[1], q[2] = p[2];
+		    } else {
+			for (cx = x0; cx < x1; p += step, q += 3, ++cx)
+			    q[0] = p[2], q[1] = p[1], q[2] = p[0];
+		    }
+		} else if (image->depth == 16) {
+		    int cx;
+		    const byte *p = source;
+		    byte *q = dest;
+		    int step = image->bits_per_pixel >> 3;
+
+		    if (image->byte_order == MSBFirst) {
+			p += step - 2;
+			for (cx = x0; cx < x1; p += step, q += 2, ++cx)
+			    q[0] = p[0], q[1] = p[1];
+		    } else {
+			for (cx = x0; cx < x1; p += step, q += 2, ++cx)
+			    q[0] = p[1], q[1] = p[0];
+		    }
+		} else
+		    code = gs_note_error(gs_error_rangecheck);
+	    }
 	}
 	XDestroyImage(image);
     }
     if (unread) {
+#if GET_IMAGE_EXPOSURES
 	XEvent event;
+#endif /* GET_IMAGE_EXPOSURES */
 
 	*unread = 0;
-#if 0				/*************** */
+#if GET_IMAGE_EXPOSURES
 	/* Read any exposure events. */
 	XWindowEvent(xdev->dpy, xdev->win, ExposureMask, &event);
 	if (event.type == GraphicsExpose) {
 	    gs_int_rect *rects = (gs_int_rect *)
-	    gs_alloc_bytes(dev->memory, sizeof(gs_int_rect),
-			   "x_get_bits_rectangle");
+		gs_alloc_bytes(dev->memory, sizeof(gs_int_rect),
+			       "x_get_bits_rectangle");
 	    int num_rects = 0;
 
 	    for (;;) {
@@ -1458,7 +1055,7 @@ x_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 		    break;
 #undef xevent
 		rects = gs_resize_object(dev->memory, rects,
-				      (num_rects + 1) * sizeof(gs_int_rect),
+					 (num_rects + 1) * sizeof(gs_int_rect),
 					 "x_get_bits_rectangle");
 	    }
 	    if (code >= 0) {
@@ -1469,7 +1066,7 @@ x_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 	/* Restore the window state. */
 	XSetGraphicsExposures(xdev->dpy, xdev->gc, False);
 	XSelectInput(xdev->dpy, xdev->win, attributes.your_event_mask);
-#endif /*************** */
+#endif /* GET_IMAGE_EXPOSURES */
     }
     return code;
 }
@@ -1575,7 +1172,7 @@ x_update_add(gx_device * dev, int xo, int yo, int w, int h)
 	    /* would result in too much being copied unnecessarily. */
 	    long old_area = xdev->up_area;
 	    long new_up_area;
-	    rect u;
+	    x_rect u;
 
 	    u.xo = min(xo, xdev->update.xo);
 	    u.yo = min(yo, xdev->update.yo);

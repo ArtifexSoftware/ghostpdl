@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -33,7 +33,6 @@
 #include "gxcmap.h"
 #include "gxdcolor.h"
 #include "gxistate.h"
-#include "gzpath.h"
 #include "gxdevmem.h"
 #include "gdevmem.h"		/* for mem_mono_device */
 #include "gxcpath.h"
@@ -51,8 +50,8 @@
 private irender_proc(image_render_skip);
 private irender_proc(image_render_simple);
 private irender_proc(image_render_landscape);
-private irender_proc_t
-image_strategy_simple(gx_image_enum * penum)
+irender_proc_t
+gs_image_class_1_simple(gx_image_enum * penum)
 {
     irender_proc_t rproc;
     fixed ox = dda_current(penum->dda.pixel0.x);
@@ -102,7 +101,7 @@ image_strategy_simple(gx_image_enum * penum)
 		long line_size =
 		    (dev_width = any_abs(dev_width),
 		     bitmap_raster(dev_width) * 8 +
-		     round_up(dev_width, 8) * align_bitmap_mod);
+		     ROUND_UP(dev_width, 8) * align_bitmap_mod);
 
 		if ((dev_width != penum->rect.w && penum->adjust != 0) ||
 		    line_size > max_uint
@@ -165,12 +164,6 @@ image_strategy_simple(gx_image_enum * penum)
 	penum->map[0].decoding = sd_none;
     }
     return rproc;
-}
-
-void
-gs_gxifast_init(gs_memory_t * mem)
-{
-    image_strategies.simple = image_strategy_simple;
 }
 
 /* ------ Rendering procedures ------ */
@@ -472,7 +465,7 @@ copy_portrait(gx_image_enum * penum, const byte * data, int dx, int raster,
 {
     const gx_device_color *pdc0;
     const gx_device_color *pdc1;
-    uint align = alignment_mod(data, align_bitmap_mod);
+    uint align = ALIGNMENT_MOD(data, align_bitmap_mod);
 
     /*
      * We know that the lookup table maps 1 bit to 1 bit,
@@ -543,6 +536,7 @@ image_render_simple(gx_image_enum * penum, const byte * buffer, int data_x,
     int line_x;
     fixed xcur = dda_current(penum->dda.pixel0.x);
     int ix = fixed2int_pixround(xcur);
+    int ixr;
     const int iy = penum->yci, ih = penum->hci;
     const gx_device_color * const pdc0 = &penum->icolor0;
     const gx_device_color * const pdc1 = &penum->icolor1;
@@ -557,12 +551,20 @@ image_render_simple(gx_image_enum * penum, const byte * buffer, int data_x,
 	line_x = 0;
     } else if (copy_mono == dev_proc(&mem_mono_device, copy_mono) &&
 	       dxx > 0 && gx_dc_is_pure(pdc1) && gx_dc_is_pure(pdc0) &&
-	/* We know the colors must be (0,1) or (1,0). */
+	       /* We know the colors must be (0,1) or (1,0). */
 	       (pdc0->colors.pure ^ pdc1->colors.pure) == 1 &&
-	       !penum->clip_image
+	       !penum->clip_image &&
+	       /*
+		* Even if clip_image is false, the clipping rectangle
+		* might lie partly outside the device coordinate space
+		* if the Margins values are non-zero.
+		*/
+	       ix >= 0 &&
+	       (ixr = fixed2int_pixround(xcur + penum->x_extent.x) - 1) <
+	         dev->width &&
+	       iy >= 0 && iy + ih <= dev->height
 	) {
 	/* Do the operation directly into the memory device bitmap. */
-	int ixr = fixed2int_pixround(xcur + penum->x_extent.x) - 1;
 	int line_ix;
 	int ib_left = ix >> 3, ib_right = ixr >> 3;
 	byte *scan_line = scan_line_base((gx_device_memory *) dev, iy);

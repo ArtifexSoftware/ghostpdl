@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -25,7 +25,13 @@
 #define STRICT
 #include <windows.h>
 
-#ifndef __WATCOMC__
+#ifdef __WATCOMC__
+	/* Watcom's _beginthread takes an extra stack_bottom argument. */
+#  define BEGIN_THREAD(proc, stksize, data)\
+     _beginthread(proc, NULL, stksize, data)
+#else
+#  define BEGIN_THREAD(proc, stksize, data)\
+     _beginthread(proc, stksize, data)
 	/* Define null equivalents of the Watcom 32-to-16-bit glue. */
 #  define AllocAlias16(ptr) ((DWORD)(ptr))
 #  define FreeAlias16(dword)	/* */

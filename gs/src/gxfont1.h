@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -17,22 +17,22 @@
  */
 
 
-/* Type 1 font data definition (including Type 2 charstrings) */
+/* Type 1 / Type 2 font data definition */
 
 #ifndef gxfont1_INCLUDED
 #  define gxfont1_INCLUDED
 
+#include "gstype1.h"		/* for charstring_interpret_proc */
 
 /*
- * This is the type-specific information for an Adobe Type 1 font.
- * It also includes the information for Type 2 charstrings, because
+ * This is the type-specific information for Adobe Type 1 fonts.
+ * It also includes the information for Type 2 fonts, because
  * there isn't very much of it and it's less trouble to include here.
  */
 
 #ifndef gs_font_type1_DEFINED
 #  define gs_font_type1_DEFINED
 typedef struct gs_font_type1_s gs_font_type1;
-
 #endif
 
 /*
@@ -72,20 +72,25 @@ typedef struct gs_type1_data_procs_s {
 			 gs_const_string * pcdata));
 
     /*
-     * Get the next glyph.  index = 0 means return the first one; a
-     * returned index of 0 means the enumeration is finished.
+     * Get the next glyph in an enumeration.  index = 0 means return the
+     * first one; a returned index of 0 means the enumeration is finished.
      */
 
-    int (*next_glyph) (P3(gs_font_type1 * pfont, int *pindex,
-			  gs_glyph * pglyph));
+    int (*next_glyph)(P3(gs_font_type1 *pfont, int *pindex,
+			 gs_glyph * pglyph));
 
-    /* Push (a) value(s) onto the client ('PostScript') stack. */
+    /*
+     * Push (a) value(s) onto the client ('PostScript') stack during
+     * interpretation.  Note that this procedure and the next one take a
+     * closure pointer, not the font pointer, as the first argument.
+     */
 
-    int (*push) (P3(gs_font_type1 * pfont, const fixed * values, int count));
+    int (*push_values)(P3(void *callback_data, const fixed *values,
+			  int count));
 
     /* Pop a value from the client stack. */
 
-    int (*pop) (P2(gs_font_type1 * pfont, fixed * value));
+    int (*pop_value)(P2(void *callback_data, fixed *value));
 
 } gs_type1_data_procs_t;
 
@@ -97,18 +102,19 @@ typedef struct gs_type1_data_procs_s {
  */
 struct gs_type1_data_s {
     /*int PaintType; *//* in gs_font_common */
-    int CharstringType;		/* 1 or 2 */
     const gs_type1_data_procs_t *procs;
+    charstring_interpret_proc((*interpret));
     void *proc_data;		/* data for procs */
     int lenIV;			/* -1 means no encryption */
-    /* (undocumented feature!) */
+				/* (undocumented feature!) */
     uint subroutineNumberBias;	/* added to operand of callsubr */
-    /* (undocumented feature!) */
-    /* Type 2 charstring additions */
+				/* (undocumented feature!) */
+	/* Type 2 additions */
     uint gsubrNumberBias;	/* added to operand of callgsubr */
     long initialRandomSeed;
     fixed defaultWidthX;
     fixed nominalWidthX;
+	/* End of Type 2 additions */
     /* For a description of the following hint information, */
     /* see chapter 5 of the "Adobe Type 1 Font Format" book. */
     int BlueFuzz;
@@ -119,21 +125,21 @@ struct gs_type1_data_s {
     float ExpansionFactor;
     bool ForceBold;
 #define max_FamilyBlues 7
-         zone_table(max_FamilyBlues) FamilyBlues;
+    zone_table(max_FamilyBlues) FamilyBlues;
 #define max_FamilyOtherBlues 5
-         zone_table(max_FamilyOtherBlues) FamilyOtherBlues;
+    zone_table(max_FamilyOtherBlues) FamilyOtherBlues;
     int LanguageGroup;
 #define max_OtherBlues 5
-        zone_table(max_OtherBlues) OtherBlues;
+    zone_table(max_OtherBlues) OtherBlues;
     bool RndStemUp;
-         stem_table(1) StdHW;
-         stem_table(1) StdVW;
+    stem_table(1) StdHW;
+    stem_table(1) StdVW;
 #define max_StemSnap 12
-         stem_table(max_StemSnap) StemSnapH;
-         stem_table(max_StemSnap) StemSnapV;
+    stem_table(max_StemSnap) StemSnapH;
+    stem_table(max_StemSnap) StemSnapV;
     /* Additional information for Multiple Master fonts */
 #define max_WeightVector 16
-         float_array(max_WeightVector) WeightVector;
+    float_array(max_WeightVector) WeightVector;
 };
 
 #define gs_type1_data_s_DEFINED

@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -38,46 +38,14 @@
 extern const gs_color_space_type gs_color_space_type_Indexed;
 
 /* Forward references. */
-private int indexed_map1(P1(os_ptr));
-
-/* Free the map when freeing the gs_indexed_map structure. */
-private void
-rc_free_indexed_map(gs_memory_t * mem, void *data, client_name_t cname)
-{	/*
-	 * A bug in the SGI Irix 4.05 compiler requires the following:
-	 */
-    char *cdata = (char *)data;
-
-    gs_free_object(mem, ((gs_indexed_map *)cdata)->values, cname);
-    gs_free_object(mem, cdata, cname);
-}
-
-/* Indexed lookup procedure that just consults the cache. */
-private int
-lookup_indexed(const gs_indexed_params * params, int index, float *values)
-{
-    int m = cs_num_components((const gs_color_space *)&params->base_space);
-    const float *pv = &params->lookup.map->values[index * m];
-
-    switch (m) {
-	default:
-	    return_error(e_rangecheck);
-	case 4:
-	    values[3] = pv[3];
-	case 3:
-	    values[2] = pv[2];
-	    values[1] = pv[1];
-	case 1:
-	    values[0] = pv[0];
-    }
-    return 0;
-}
+private int indexed_map1(P1(i_ctx_t *));
 
 /* <array> .setindexedspace - */
 /* The current color space is the base space for the indexed space. */
 private int
-zsetindexedspace(register os_ptr op)
+zsetindexedspace(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     ref *pproc = &istate->colorspace.procs.special.index_proc;
     const ref *pcsa;
     gs_color_space cs;
@@ -106,19 +74,20 @@ zsetindexedspace(register os_ptr op)
 	 cs.params.indexed.base_space = cs_base;
      * But the Watcom C 10.0 compiler is too smart: it turns this into
      * a direct assignment (and compiles incorrect code for it),
-     * defeating our purpose.  Instead, we have to do it by brute force:
+     * defeating our purpose.  Instead, we have to do it by brute force
+     * using memmove.
      */
-    memmove(&cs.params.indexed.base_space, &cs,
-	    sizeof(cs.params.indexed.base_space));
     if (r_has_type(&pcsa[2], t_string)) {
 	int num_values = num_entries * cs_num_components(&cs);
 
 	check_read(pcsa[2]);
 	if (r_size(&pcsa[2]) != num_values)
 	    return_error(e_rangecheck);
+	memmove(&cs.params.indexed.base_space, &cs,
+		sizeof(cs.params.indexed.base_space));
 	gs_cspace_init(&cs, &gs_color_space_type_Indexed, NULL);
-	cs.params.indexed.lookup.table.data =
-	    pcsa[2].value.const_bytes;
+	cs.params.indexed.lookup.table.data = pcsa[2].value.const_bytes;
+	cs.params.indexed.lookup.table.size = num_values;
 	cs.params.indexed.use_proc = 0;
 	make_null(pproc);
 	code = 0;
@@ -126,15 +95,22 @@ zsetindexedspace(register os_ptr op)
 	gs_indexed_map *map;
 
 	check_proc(pcsa[2]);
-	code = zcs_begin_map(&map, &pcsa[2], num_entries,
-			     (const gs_base_color_space *)&cs,
+	/*
+	 * We have to call zcs_begin_map before moving the parameters,
+	 * since if the color space is a DeviceN or Separation space,
+	 * the memmove will overwrite its parameters.
+	 */
+	code = zcs_begin_map(i_ctx_p, &map, &pcsa[2], num_entries,
+			     (const gs_direct_color_space *)&cs,
 			     indexed_map1);
 	if (code < 0)
 	    return code;
+	memmove(&cs.params.indexed.base_space, &cs,
+		sizeof(cs.params.indexed.base_space));
 	gs_cspace_init(&cs, &gs_color_space_type_Indexed, NULL);
 	cs.params.indexed.use_proc = 1;
 	*pproc = pcsa[2];
-	map->proc.lookup_index = lookup_indexed;
+	map->proc.lookup_index = lookup_indexed_map;
 	cs.params.indexed.lookup.map = map;
     }
     cs.params.indexed.hival = num_entries - 1;
@@ -150,8 +126,9 @@ zsetindexedspace(register os_ptr op)
 
 /* Continuation procedure for saving mapped Indexed color values. */
 private int
-indexed_map1(os_ptr op)
+indexed_map1(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     es_ptr ep = esp;
     int i = (int)ep[csme_index].value.intval;
 
@@ -192,12 +169,13 @@ const op_def zcsindex_l2_op_defs[] =
 
 /* Allocate, and prepare to load, the index or tint map. */
 int
-zcs_begin_map(gs_indexed_map ** pmap, const ref * pproc, int num_entries,
-	   const gs_base_color_space * base_space, int (*map1) (P1(os_ptr)))
+zcs_begin_map(i_ctx_t *i_ctx_p, gs_indexed_map ** pmap, const ref * pproc,
+	      int num_entries,  const gs_direct_color_space * base_space,
+	      op_proc_t map1)
 {
     gs_memory_t *mem = gs_state_memory(igs);
     int num_components =
-    cs_num_components((const gs_color_space *)base_space);
+	cs_num_components((const gs_color_space *)base_space);
     int num_values = num_entries * num_components;
     gs_indexed_map *map;
     es_ptr ep;
@@ -214,12 +192,12 @@ zcs_begin_map(gs_indexed_map ** pmap, const ref * pproc, int num_entries,
 	gs_free_object(mem, map, "setcolorspace(mapped)");
 	return_error(e_VMerror);
     }
-    map->rc.free = rc_free_indexed_map;
+    map->rc.free = free_indexed_map;
     map->num_values = num_values;
     map->values = values;
     *pmap = map;
     /* Map the entire set of color indices.  Since the */
-    /* o-stack may not be able to hold 4*4096 values, we have */
+    /* o-stack may not be able to hold N*4096 values, we have */
     /* to load them into the cache as they are generated. */
     check_estack(num_csme + 1);	/* 1 extra for map1 proc */
     ep = esp += num_csme;

@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -68,8 +68,6 @@ extern_st(st_clip_path);
 /* Inline accessors. */
 #define gx_cpath_is_shared(pcpath)\
   ((pcpath)->rect_list->rc.ref_count > 1)
-#define gx_cpath_list(pcpath)\
-  (&(pcpath)->rect_list->list)
 
 /* Define the structure for enumerating a clipping list. */
 typedef enum {

@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -33,10 +33,9 @@ void debug_dump_array(P1(const ref * array));
 
 /* Dump a stack.  Using this requires istack.h. */
 #ifndef ref_stack_DEFINED
-typedef struct ref_stack_s ref_stack;	/* also defined in istack.h */
-
+typedef struct ref_stack_s ref_stack_t;	/* also defined in istack.h */
 #  define ref_stack_DEFINED
 #endif
-void debug_dump_stack(P2(const ref_stack * pstack, const char *msg));
+void debug_dump_stack(P2(const ref_stack_t * pstack, const char *msg));
 
 #endif /* idebug_INCLUDED */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1990, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1990, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -21,8 +21,32 @@
 #include "ctype_.h"
 #include "gdevprn.h"
 #include "gp.h"
+#include "gsdevice.h"		/* for gs_deviceinitialmatrix */
 #include "gsparam.h"
 #include "gxclio.h"
+#include "gxgetbit.h"
+#include "gdevplnx.h"
+
+/*#define DEBUGGING_HACKS*/
+
+/* GC information */
+#define PRINTER_IS_CLIST(pdev) ((pdev)->buffer_space != 0)
+public
+ENUM_PTRS_WITH(device_printer_enum_ptrs, gx_device_printer *pdev)
+    if (PRINTER_IS_CLIST(pdev))
+	ENUM_PREFIX(st_device_clist, 0);
+    else
+	ENUM_PREFIX(st_device_forward, 0);
+ENUM_PTRS_END
+public
+RELOC_PTRS_WITH(device_printer_reloc_ptrs, gx_device_printer *pdev)
+{
+    if (PRINTER_IS_CLIST(pdev))
+	RELOC_PREFIX(st_device_clist);
+    else
+	RELOC_PREFIX(st_device_forward);
+} RELOC_PTRS_END
+public_st_device_printer();
 
 /* ---------------- Standard device procedures ---------------- */
 
@@ -31,9 +55,9 @@ const gx_device_procs prn_std_procs =
     prn_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close);
 
 /* Forward references */
-int gdev_prn_maybe_reallocate_memory(P4(gx_device_printer *pdev,
-					gdev_prn_space_params *old_space,
-					int old_width, int old_height));
+int gdev_prn_maybe_realloc_memory(P4(gx_device_printer *pdev, 
+				     gdev_prn_space_params *old_space,
+				     int old_width, int old_height));
 
 /* ------ Open/close ------ */
 
@@ -84,27 +108,23 @@ gdev_prn_setup_as_command_list(gx_device *pdev, gs_memory_t *buffer_memory,
     bool reallocate = *the_memory != 0;
     byte *base;
 
-    space = space_params->BufferSpace;
-    /* Adjust existing size (reallocate) or get new Buffer. If can't get */
-    /* requested size, and not constrained to 'exact', reduce space till */
-    /* allocation succeeds.						 */
-    for ( ; ; ) {
-	if (reallocate) 	    
-#if DO_NOT_REDUCE_BUFFER_SPACE
-    	    /* If 'reallocate' to smaller size, don't free up memory to	*/
-	    /* avoid creating sandbar that wouldn't allow the resize	*/
-	    /* back to larger size 					*/
-	    base = (space <= gs_object_size(buffer_memory, *the_memory)) ?
-		*the_memory :		/* just reuse the space */
-		gs_resize_object(buffer_memory, *the_memory, space,
-				"cmd list buffer");
-#else	/* free up any space beyond what is needed			*/
-	    base = gs_resize_object(buffer_memory, *the_memory, space,
-				"cmd list buffer");
-#endif
-	else
-	    base = gs_alloc_bytes(buffer_memory, space,
-				"cmd list buffer");
+    /* Try to allocate based simply on param-requested buffer size */
+#ifdef DEBUGGING_HACKS
+#define BACKTRACE(first_arg)\
+  BEGIN\
+    ulong *fp_ = (ulong *)&first_arg - 2;\
+    for (; fp_ && (fp_[1] & 0xff000000) == 0x08000000; fp_ = (ulong *)*fp_)\
+	dprintf2("  fp=0x%lx ip=0x%lx\n", (ulong)fp_, fp_[1]);\
+  END
+dputs("alloc buffer:\n");
+BACKTRACE(pdev);
+#endif /*DEBUGGING_HACKS*/
+    for ( space = space_params->BufferSpace; ; ) {
+	base = (reallocate ?
+		(byte *)gs_resize_object(buffer_memory, *the_memory, space,
+					 "cmd list buffer") :
+		gs_alloc_bytes(buffer_memory, space,
+			       "cmd list buffer"));
 	if (base != 0)
 	    break;
 	if (bufferSpace_is_exact || (space >>= 1) < PRN_MIN_BUFFER_SPACE)
@@ -120,7 +140,7 @@ open_c:
     ppdev->buf = base;
     ppdev->buffer_space = space;
     clist_init_params(pclist_dev, base, space, pdev,
-		      ppdev->printer_procs.make_buffer_device,
+		      ppdev->printer_procs.buf_procs,
 		      space_params->band, ppdev->is_async_renderer,
 		      (ppdev->bandlist_memory == 0 ? &gs_memory_default :
 		       ppdev->bandlist_memory),
@@ -136,7 +156,7 @@ open_c:
 	     ) {
 	    space <<= 1;
 	    if (reallocate) {
-		base = gs_resize_object(buffer_memory,
+		base = gs_resize_object(buffer_memory, 
 					*the_memory, space,
 					"cmd list buf(retry open)");
 		if (base != 0)
@@ -220,8 +240,10 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
 	ulong mem_space;
 	byte *base = 0;
 	bool bufferSpace_is_default = false;
-	gdev_prn_space_params space_params = ppdev->space_params;
+	gdev_prn_space_params space_params;
+	gx_device_buf_space_t buf_space;
 
+	space_params = ppdev->space_params;
 	if (reallocate)
 	    switch (pass)
 	        {
@@ -244,7 +266,9 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
 
 	/* Init clist/mem device-specific fields */
 	memset(ppdev->skip, 0, sizeof(ppdev->skip));
-	mem_space = gdev_mem_bitmap_size(pmemdev);
+	ppdev->printer_procs.buf_procs.size_buf_device
+	    (&buf_space, pdev, NULL, pdev->height, false);
+	mem_space = buf_space.bits + buf_space.line_ptrs;
 
 	/* Compute desired space params: never use the space_params as-is. */
 	/* Rather, give the dev-specific driver a chance to adjust them. */
@@ -271,11 +295,12 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
 	}
 	if (!is_command_list) {
 	    /* Try to allocate memory for full memory buffer */
-	    base = reallocate
-		? gs_resize_object( buffer_memory, the_memory,
-				    (uint)mem_space, "printer buffer" )
-		: gs_alloc_bytes( buffer_memory, (uint)mem_space,
-				  "printer_buffer" );
+	    base =
+		(reallocate ?
+		 (byte *)gs_resize_object(buffer_memory, the_memory,
+					  (uint)mem_space, "printer buffer") :
+		 gs_alloc_bytes(buffer_memory, (uint)mem_space,
+				"printer_buffer"));
 	    if (base == 0)
 		is_command_list = true;
 	    else
@@ -315,12 +340,19 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
 		ppdev->procs = gs_clist_device_procs;
 	} else {
 	    /* Render entirely in memory. */
+	    gx_device *bdev = (gx_device *)pmemdev;
 	    int code;
 
 	    ppdev->buffer_space = 0;
-	    code = (*ppdev->printer_procs.make_buffer_device)
-		(pmemdev, pdev, buffer_memory, false);
-	    if (code < 0) {	/* Catastrophic. Shouldn't ever happen */
+	    if ((code = gdev_create_buf_device
+		 (ppdev->printer_procs.buf_procs.create_buf_device,
+		  &bdev, pdev, NULL, NULL, false)) < 0 ||
+		(code = ppdev->printer_procs.buf_procs.setup_buf_device
+		 (bdev, base, buf_space.raster,
+		  (byte **)(base + buf_space.bits), 0, pdev->height,
+		  pdev->height)) < 0
+		) {
+		/* Catastrophic. Shouldn't ever happen */
 		gs_free_object(buffer_memory, base, "printer buffer");
 		pdev->procs = ppdev->orig_procs;
 		ppdev->orig_procs.open_device = 0;	/* prevent uninit'd restore of procs */
@@ -351,7 +383,6 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
 	/* All printers are page devices, even if they didn't use the */
 	/* standard macros for generating their procedure vectors. */
 	set_dev_proc(ppdev, get_page_device, gx_page_device_get_page_device);
-	COPY_PROC(get_alpha_bits);
 	COPY_PROC(get_clipping_box);
 	COPY_PROC(map_color_rgb_alpha);
 	COPY_PROC(get_hardware_params);
@@ -649,7 +680,7 @@ label:\
     /* If necessary, free and reallocate the printer memory. */
     /* Formerly, would not reallocate if device is not open: */
     /* we had to patch this out (see News for 5.50). */
-    code = gdev_prn_maybe_reallocate_memory(ppdev, &save_sp, width, height);
+    code = gdev_prn_maybe_realloc_memory(ppdev, &save_sp, width, height);
     if (code < 0)
 	return code;
 
@@ -680,8 +711,8 @@ label:\
 
 /* Default routine to (not) override current space_params. */
 void
-gdev_prn_default_get_space_params(const gx_device_printer *printer_dev,
-				  gdev_prn_space_params *space_params)
+gx_default_get_space_params(const gx_device_printer *printer_dev,
+			    gdev_prn_space_params *space_params)
 {
     return;
 }
@@ -719,8 +750,8 @@ gdev_prn_output_page(gx_device * pdev, int num_copies, int flush)
 	if (!upgraded_copypage)
 	    closecode = gdev_prn_close_printer(pdev);
     }
-    endcode = (ppdev->buffer_space && !ppdev->is_async_renderer
-              ? clist_finish_page(pdev, flush) : 0);
+    endcode = (ppdev->buffer_space && !ppdev->is_async_renderer ?
+	       clist_finish_page(pdev, flush) : 0);
 
     if (outcode < 0)
 	return outcode;
@@ -761,6 +792,38 @@ gx_default_buffer_page(gx_device_printer *pdev, FILE *prn_stream,
 
 /* ---------------- Driver services ---------------- */
 
+/* Initialize a rendering plane specification. */
+int
+gx_render_plane_init(gx_render_plane_t *render_plane, const gx_device *dev,
+		     int index)
+{
+    /*
+     * Eventually the computation of shift and depth from dev and index
+     * will be made device-dependent.
+     */
+    int num_planes = dev->color_info.num_components;
+    int plane_depth = dev->color_info.depth / num_planes;
+
+    if (index < 0 || index >= num_planes)
+	return_error(gs_error_rangecheck);
+    render_plane->index = index;
+    render_plane->depth = plane_depth;
+    render_plane->shift = plane_depth * (num_planes - 1 - index);
+    return 0;
+}
+
+/* Clear trailing bits in the last byte of (a) scan line(s). */
+void
+gdev_prn_clear_trailing_bits(byte *data, uint raster, int height,
+			     const gx_device *dev)
+{
+    int first_bit = dev->width * dev->color_info.depth;
+
+    if (first_bit & 7)
+	bits_fill_rectangle(data, first_bit, raster, mono_fill_make_pattern(0),
+			    -first_bit & 7, height);
+}
+
 /* Return the number of scan lines that should actually be passed */
 /* to the device. */
 int
@@ -786,8 +849,8 @@ gdev_prn_print_scan_lines(gx_device * pdev)
 
 /* Open the current page for printing. */
 int
-gdev_prn_open_printer_positionable(gx_device *pdev, bool binary_mode,
-				   bool positionable)
+gdev_prn_open_printer_seekable(gx_device *pdev, bool binary_mode,
+			       bool seekable)
 {
     gx_device_printer * const ppdev = (gx_device_printer *)pdev;
 
@@ -797,7 +860,7 @@ gdev_prn_open_printer_positionable(gx_device *pdev, bool binary_mode,
     }
     {
 	int code = gx_device_open_output_file(pdev, ppdev->fname,
-					      binary_mode, positionable,
+					      binary_mode, seekable,
 					      &ppdev->file);
 	if (code < 0)
 	    return code;
@@ -808,8 +871,272 @@ gdev_prn_open_printer_positionable(gx_device *pdev, bool binary_mode,
 int
 gdev_prn_open_printer(gx_device *pdev, bool binary_mode)
 {
-    return gdev_prn_open_printer_positionable(pdev, binary_mode, false);
+    return gdev_prn_open_printer_seekable(pdev, binary_mode, false);
 }
+
+/* Determine the colors used in a range of lines. */
+int
+gx_page_info_colors_used(const gx_device *dev,
+			 const gx_band_page_info_t *page_info,
+			 int y, int height,
+			 gx_colors_used_t *colors_used, int *range_start)
+{
+    int start, end, i;
+    int num_lines = page_info->scan_lines_per_colors_used;
+    gx_color_index or = 0;
+    bool slow_rop = false;
+
+    if (y < 0 || height < 0 || height > dev->height - y)
+	return -1;
+    start = y / num_lines;
+    end = (y + height + num_lines - 1) / num_lines;
+    for (i = start; i < end; ++i) {
+	or |= page_info->band_colors_used[i].or;
+	slow_rop |= page_info->band_colors_used[i].slow_rop;
+    }
+    colors_used->or = or;
+    colors_used->slow_rop = slow_rop;
+    *range_start = start * num_lines;
+    return min(end * num_lines, dev->height) - *range_start;
+}
+int
+gdev_prn_colors_used(gx_device *dev, int y, int height,
+		     gx_colors_used_t *colors_used, int *range_start)
+{
+    gx_device_clist_writer *cldev;
+
+    /* If this isn't a banded device, return default values. */
+    if (dev_proc(dev, get_bits_rectangle) !=
+	  gs_clist_device_procs.get_bits_rectangle
+	) {
+	*range_start = 0;
+	colors_used->or = ((gx_color_index)1 << dev->color_info.depth) - 1;
+	return dev->height;
+    }
+    cldev = (gx_device_clist_writer *)dev;
+    if (cldev->page_info.scan_lines_per_colors_used == 0) /* not set yet */
+	clist_compute_colors_used(cldev);
+    return
+	gx_page_info_colors_used(dev, &cldev->page_info,
+				 y, height, colors_used, range_start);
+}
+
+/*
+ * Create the buffer device for a printer device.  Clients should always
+ * call this, and never call the device procedure directly.
+ */
+int
+gdev_create_buf_device(create_buf_device_proc_t cbd_proc, gx_device **pbdev,
+		       gx_device *target,
+		       const gx_render_plane_t *render_plane,
+		       gs_memory_t *mem, bool for_band)
+{
+    int code = cbd_proc(pbdev, target, render_plane, mem, for_band);
+
+    if (code < 0)
+	return code;
+    /* Retain this device -- it will be freed explicitly. */
+    gx_device_retain(*pbdev, true);
+    return code;
+}
+
+/*
+ * Create an ordinary memory device for page or band buffering,
+ * possibly preceded by a plane extraction device.
+ */
+int
+gx_default_create_buf_device(gx_device **pbdev, gx_device *target,
+    const gx_render_plane_t *render_plane, gs_memory_t *mem, bool for_band)
+{
+    int plane_index = (render_plane ? render_plane->index : -1);
+    int depth;
+    const gx_device_memory *mdproto;
+    gx_device_memory *mdev;
+    gx_device *bdev;
+
+    if (plane_index >= 0)
+	depth = render_plane->depth;
+    else
+	depth = target->color_info.depth;
+    mdproto = gdev_mem_device_for_bits(depth);
+    if (mdproto == 0)
+	return_error(gs_error_rangecheck);
+    if (mem) {
+	mdev = gs_alloc_struct(mem, gx_device_memory, &st_device_memory,
+			       "create_buf_device");
+	if (mdev == 0)
+	    return_error(gs_error_VMerror);
+    } else {
+	mdev = (gx_device_memory *)*pbdev;
+    }
+    if (target == (gx_device *)mdev) {
+	/* The following is a special hack for setting up printer devices. */
+	assign_dev_procs(mdev, mdproto);
+    } else
+	gs_make_mem_device(mdev, mdproto, mem, (for_band ? 1 : 0),
+			   (target == (gx_device *)mdev ? NULL : target));
+    mdev->width = target->width;
+    /*
+     * The matrix in the memory device is irrelevant,
+     * because all we do with the device is call the device-level
+     * output procedures, but we may as well set it to
+     * something halfway reasonable.
+     */
+    gs_deviceinitialmatrix(target, &mdev->initial_matrix);
+    if (plane_index >= 0) {
+	gx_device_plane_extract *edev =
+	    gs_alloc_struct(mem, gx_device_plane_extract,
+			    &st_device_plane_extract, "create_buf_device");
+
+	if (edev == 0) {
+	    gx_default_destroy_buf_device((gx_device *)mdev);
+	    return_error(gs_error_VMerror);
+	}
+	edev->memory = mem;
+	plane_device_init(edev, target, (gx_device *)mdev, render_plane,
+			  false);
+	bdev = (gx_device *)edev;
+    } else
+	bdev = (gx_device *)mdev;
+    /****** QUESTIONABLE, BUT BETTER THAN OMITTING ******/
+    bdev->color_info = target->color_info;
+    *pbdev = bdev;
+    return 0;
+}
+
+/* Determine the space needed by the buffer device. */
+int
+gx_default_size_buf_device(gx_device_buf_space_t *space, gx_device *target,
+			   const gx_render_plane_t *render_plane,
+			   int height, bool for_band)
+{
+    gx_device_memory mdev;
+
+    mdev.color_info.depth =
+	(render_plane && render_plane->index >= 0 ? render_plane->depth :
+	 target->color_info.depth);
+    mdev.width = target->width;
+    mdev.num_planes = 0;
+    space->bits = gdev_mem_bits_size(&mdev, target->width, height);
+    space->line_ptrs = gdev_mem_line_ptrs_size(&mdev, target->width, height);
+    space->raster = gdev_mem_raster(&mdev);
+    return 0;
+}
+
+/* Set up the buffer device. */
+int
+gx_default_setup_buf_device(gx_device *bdev, byte *buffer, int bytes_per_line,
+			    byte **line_ptrs, int y, int setup_height,
+			    int full_height)
+{
+    gx_device_memory *mdev =
+	(gs_device_is_memory(bdev) ? (gx_device_memory *)bdev :
+	 (gx_device_memory *)(((gx_device_plane_extract *)bdev)->plane_dev));
+    byte **ptrs = line_ptrs;
+    int raster = bytes_per_line;
+    int code;
+
+    /****** HACK ******/
+    if ((gx_device *)mdev == bdev && mdev->num_planes)
+	raster = bitmap_raster(mdev->planes[0].depth * mdev->width);
+    if (ptrs == 0) {
+	/*
+	 * Allocate line pointers now; free them when we close the device.
+	 * Note that for multi-planar devices, we have to allocate using
+	 * full_height rather than setup_height.
+	 */
+	ptrs = (byte **)
+	    gs_alloc_byte_array(mdev->memory,
+				(mdev->num_planes ?
+				 full_height * mdev->num_planes :
+				 setup_height),
+				sizeof(byte *), "setup_buf_device");
+	if (ptrs == 0)
+	    return_error(gs_error_VMerror);
+	mdev->line_pointer_memory = mdev->memory;
+	mdev->foreign_line_pointers = false;
+    }
+    mdev->height = full_height;
+    code = gdev_mem_set_line_ptrs(mdev, buffer + raster * y, bytes_per_line,
+				  ptrs, setup_height);
+    mdev->height = setup_height;
+    bdev->height = setup_height; /* do here in case mdev == bdev */
+    return code;
+}
+
+/* Destroy the buffer device. */
+void
+gx_default_destroy_buf_device(gx_device *bdev)
+{
+    gx_device *mdev = bdev;
+
+    if (!gs_device_is_memory(bdev)) {
+	/* bdev must be a plane extraction device. */
+	mdev = ((gx_device_plane_extract *)bdev)->plane_dev;
+	gs_free_object(bdev->memory, bdev, "destroy_buf_device");
+    }
+    dev_proc(mdev, close_device)(mdev);
+    gs_free_object(mdev->memory, mdev, "destroy_buf_device");
+}
+
+/*
+ * Copy one or more rasterized scan lines to a buffer, or return a pointer
+ * to them.  See gdevprn.h for detailed specifications.
+ */
+int
+gdev_prn_get_lines(gx_device_printer *pdev, int y, int height,
+		   byte *buffer, uint bytes_per_line,
+		   byte **actual_buffer, uint *actual_bytes_per_line,
+		   const gx_render_plane_t *render_plane)
+{
+    int code;
+    gs_int_rect rect;
+    gs_get_bits_params_t params;
+    int plane;
+
+    if (y < 0 || height < 0 || y + height > pdev->height)
+	return_error(gs_error_rangecheck);
+    rect.p.x = 0, rect.p.y = y;
+    rect.q.x = pdev->width, rect.q.y = y + height;
+    params.options =
+	GB_RETURN_POINTER | GB_ALIGN_STANDARD | GB_OFFSET_0 |
+	GB_RASTER_ANY |
+	/* No depth specified, we always use native colors. */
+	GB_COLORS_NATIVE | GB_ALPHA_NONE;
+    if (render_plane) {
+	params.options |= GB_PACKING_PLANAR | GB_SELECT_PLANES;
+	memset(params.data, 0,
+	       sizeof(params.data[0]) * pdev->color_info.num_components);
+	plane = render_plane->index;
+	params.data[plane] = buffer;
+    } else {
+	params.options |= GB_PACKING_CHUNKY;
+	params.data[0] = buffer;
+	plane = 0;
+    }
+    params.x_offset = 0;
+    params.raster = bytes_per_line;
+    code = dev_proc(pdev, get_bits_rectangle)
+	((gx_device *)pdev, &rect, &params, NULL);
+    if (code < 0 && actual_buffer) {
+	/*
+	 * RETURN_POINTER might not be implemented for this
+	 * combination of parameters: try RETURN_COPY.
+	 */
+	params.options &= ~(GB_RETURN_POINTER | GB_RASTER_ALL);
+	params.options |= GB_RETURN_COPY | GB_RASTER_SPECIFIED;
+	code = dev_proc(pdev, get_bits_rectangle)
+	    ((gx_device *)pdev, &rect, &params, NULL);
+    }
+    if (code < 0)
+	return code;
+    if (actual_buffer)
+	*actual_buffer = params.data[plane];
+    if (actual_bytes_per_line)
+	*actual_bytes_per_line = params.raster;
+    return code;
+}
+
 
 /* Copy a scan line from the buffer to the printer. */
 int
@@ -829,7 +1156,7 @@ gdev_prn_get_bits(gx_device_printer * pdev, int y, byte * str, byte ** actual_da
     return 0;
 }
 /* Copy scan lines to a buffer.  Return the number of scan lines, */
-/* or <0 if error. */
+/* or <0 if error.  This procedure is DEPRECATED. */
 int
 gdev_prn_copy_scan_lines(gx_device_printer * pdev, int y, byte * str, uint size)
 {
@@ -846,36 +1173,6 @@ gdev_prn_copy_scan_lines(gx_device_printer * pdev, int y, byte * str, uint size)
 	    return code;
     }
     return count;
-}
-
-/* Like get_bits, but accepts initial raster contents */
-int
-gdev_prn_get_overlay_bits(gx_device_printer *pdev, int y, int lineCount,
-			  byte *data)
-{
-    if (pdev->buffer_space) {
-	/* Command lists have built-in support for this function */
-	return clist_get_overlay_bits(pdev, y, lineCount, data);
-    } else {
-	/* Memory devices cannot support this function. */
-	return_error(gs_error_unknownerror);
-    }
-}
-
-/* Find out where the band buffer for a given line is going to fall on the */
-/* next call to get_bits. */
-int	/* rets # lines from y till end of buffer, or -ve error code */
-gdev_prn_locate_overlay_buffer(gx_device_printer *pdev, int y, byte **data)
-{
-    gx_device_printer * const ppdev = (gx_device_printer *)pdev;
-
-    if (ppdev->buffer_space) {
-	  /* Command lists have built-in support for this function */
-	  return clist_locate_overlay_buffer(pdev, y, data);
-    } else {
-	/* Memory devices cannot support this function. */
-	return_error(gs_error_unknownerror);
-    }
 }
 
 /* Close the current page. */
@@ -895,22 +1192,37 @@ gdev_prn_close_printer(gx_device * pdev)
 
 /* If necessary, free and reallocate the printer memory after changing params */
 int
-gdev_prn_maybe_reallocate_memory(gx_device_printer *prdev,
-				 gdev_prn_space_params *old_sp,
-				 int old_width, int old_height)
+gdev_prn_maybe_realloc_memory(gx_device_printer *prdev, 
+			      gdev_prn_space_params *old_sp,
+			      int old_width, int old_height)
 {
     int code = 0;
     gx_device *const pdev = (gx_device *)prdev;
-    gx_device_memory * const mdev = (gx_device_memory *)prdev;
-
-    if (prdev->is_open != 0 &&
+    /*gx_device_memory * const mdev = (gx_device_memory *)prdev;*/
+	
+    /*
+     * The first test was changed to mdev->base != 0 in 5.50 (per Artifex).
+     * Not only was this test wrong logically, it was incorrect in that
+     * casting pdev to a (gx_device_memory *) is only meaningful if banding
+     * is not being used.  The test was changed back to prdev->is_open in
+     * 5.67 (also per Artifex).  For more information, see the News items
+     * for these filesets.
+     */
+    if (prdev->is_open &&
 	(memcmp(&prdev->space_params, old_sp, sizeof(*old_sp)) != 0 ||
 	 prdev->width != old_width || prdev->height != old_height )
 	) {
 	int new_width = prdev->width;
 	int new_height = prdev->height;
-	gdev_prn_space_params new_sp = prdev->space_params;
+	gdev_prn_space_params new_sp;
 
+#ifdef DEBUGGING_HACKS
+debug_dump_bytes((const byte *)old_sp, (const byte *)(old_sp + 1), "old");
+debug_dump_bytes((const byte *)&prdev->space_params,
+		 (const byte *)(&prdev->space_params + 1), "new");
+dprintf4("w=%d/%d, h=%d/%d\n", old_width, new_width, old_height, new_height);
+#endif /*DEBUGGING_HACKS*/
+	new_sp = prdev->space_params;
 	prdev->width = old_width;
 	prdev->height = old_height;
 	prdev->space_params = *old_sp;

@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -18,6 +18,7 @@
 
 
 /* 'echo'-like utility */
+#include "stdpre.h"
 #include <stdio.h>
 /* Some brain-damaged environments (e.g. Sun) don't include */
 /* prototypes for fputc/fputs in stdio.h! */
@@ -28,14 +29,8 @@ extern int fputc(), fputs();
 #include <ctype.h>
 #include <string.h>
 #include <time.h>		/* for ctime */
-/* The VMS environment uses different values for success/failure exits: */
 #ifdef VMS
 #include <stdlib.h>
-#  define exit_OK 1
-#  define exit_FAILED 18
-#else
-#  define exit_OK 0
-#  define exit_FAILED 1
 #endif
 
 /*
@@ -72,7 +67,7 @@ extern int fputc(), fputs();
  * -R means copy a named file with no interpretation
  *   (but convert to hex if -h is in effect).
  * -X means treat any following literals as hex rather than string data.
- * - alone means treat the rest of the line as literal data,
+ * - or -+ alone means treat the rest of the line as literal data,
  *   even if the first string begins with a -.
  * -+<letter> is equivalent to -<Letter>, i.e., it upper-cases the letter.
  * Inserts spaces automatically between the trailing strings,
@@ -89,7 +84,7 @@ main(int argc, char *argv[])
 {
     FILE *out = stdout;
     FILE *in;
-    char *extn = "";
+    const char *extn = "";
     char fmode[4];
 #define FNSIZE 100
     char *fnparam;
@@ -127,8 +122,14 @@ main(int argc, char *argv[])
 	strcpy(fname, fnparam);
 	strcat(fname, extn);
 	if (fmode[len - 2] == '-') {
+	    /*
+	     * The referents of argp are actually const, but they can't be
+	     * declared that way, so we have to make a writable constant.
+	     */
+	    static char dash[2] = { '-', 0 };
+
 	    fmode[len - 2] = 0;
-	    argp[i] = "-";
+	    argp[i] = dash;
 	    argp++, nargs--;
 	} else {
 	    for (; i > 1; i--)
@@ -174,10 +175,6 @@ main(int argc, char *argv[])
 
 	    sp = 0;
 	  swc:switch (chr) {
-		case '+':	/* upper-case command */
-		    ++arg;
-		    chr = toupper(arg[1]);
-		    goto swc;
 		case 'l':	/* literal string, then -s */
 		    chr = 'Q';
 		    /* falls through */
@@ -229,7 +226,14 @@ main(int argc, char *argv[])
 		case 'X':	/* treat literals as hex */
 		    hexx = 1;
 		    break;
-		case 0:	/* just '-' */
+		case '+':	/* upper-case command */
+		    if (arg[1]) {
+			++arg;
+			chr = toupper(arg[1]);
+			goto swc;
+		    }
+		    /* falls through */
+		case 0:		/* just '-' */
 		    sw = '-';
 		    break;
 	    }
@@ -316,7 +320,7 @@ main(int argc, char *argv[])
 static int
 hputc(int ch, FILE * out)
 {
-    static char *hex = "0123456789abcdef";
+    static const char *hex = "0123456789abcdef";
 
     /* In environments where char is signed, ch may be negative (!). */
     putc(hex[(ch >> 4) & 0xf], out);

@@ -1,4 +1,4 @@
-#    Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -50,7 +50,7 @@ GS_DOCDIR=$(docdir)
 # Define the default directory/ies for the runtime
 # initialization and font files.  Separate multiple directories with a ;.
 
-GS_LIB_DEFAULT="$(gsdatadir);$(gsfontdir)"
+GS_LIB_DEFAULT="$(gsdatadir)/lib;$(gsfontdir)"
 
 # Define whether or not searching for initialization files should always
 # look in the current directory first.  This leads to well-known security
@@ -83,15 +83,18 @@ GENOPT=
 
 GS=gs
 
-# Define the source, generated intermediate file, and object directories
+# Define the directory for the final executable, and the
+# source, generated intermediate file, and object directories
 # for the graphics library (GL) and the PostScript/PDF interpreter (PS).
 
-GLSRCDIR=.
-GLGENDIR=.
-GLOBJDIR=.
-PSSRCDIR=.
-PSGENDIR=.
-PSOBJDIR=.
+BINDIR=bin
+GLSRCDIR=src
+GLGENDIR=obj
+GLOBJDIR=obj
+PSSRCDIR=src
+PSLIBDIR=lib
+PSGENDIR=obj
+PSOBJDIR=obj
 
 # Define the directory where the IJG JPEG library sources are stored,
 # and the major version of the library that is stored there.
@@ -117,7 +120,7 @@ JPEG_NAME=jpeg
 # See libpng.mak for more information.
 
 PSRCDIR=libpng
-PVERSION=96
+PVERSION=10002
 
 # Choose whether to use a shared version of the PNG library (-lpng).
 # See gs.mak and Make.htm for more information.
@@ -134,10 +137,6 @@ ZSRCDIR=zlib
 
 SHARE_ZLIB=0
 ZLIB_NAME=gz
-
-# Define the configuration ID.  Read gs.mak carefully before changing this.
-
-CONFIG=
 
 # ------ Platform-specific options ------ #
 
@@ -220,11 +219,17 @@ XLIBS=Xt Xext X11
 
 FPU_TYPE=1
 
+# Define the .dev module that implements thread and synchronization
+# primitives for this platform.  Don't change this unless you really know
+# what you're doing.
+
+SYNC=posync
+
 # ------ Devices and features ------ #
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
-FEATURE_DEVS=psl3.dev pdf.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
@@ -253,7 +258,7 @@ FILE_IMPLEMENTATION=stdio
 DEVICE_DEVS=x11.dev
 DEVICE_DEVS1=
 DEVICE_DEVS2=
-DEVICE_DEVS3=deskjet.dev djet500.dev laserjet.dev ljetplus.dev ljet2p.dev ljet3.dev ljet4.dev
+DEVICE_DEVS3=deskjet.dev djet500.dev laserjet.dev ljetplus.dev ljet2p.dev ljet3.dev ljet3d.dev ljet4.dev ljet4d.dev
 DEVICE_DEVS4=cdeskjet.dev cdjcolor.dev cdjmono.dev cdj550.dev pj.dev pjxl.dev pjxl300.dev
 DEVICE_DEVS5=paintjet.dev pjetxl.dev uniprint.dev
 DEVICE_DEVS6=
@@ -266,6 +271,11 @@ DEVICE_DEVS12=psmono.dev psgray.dev bit.dev bitrgb.dev bitcmyk.dev
 DEVICE_DEVS13=
 DEVICE_DEVS14=
 DEVICE_DEVS15=pdfwrite.dev
+DEVICE_DEVS16=
+DEVICE_DEVS17=
+DEVICE_DEVS18=
+DEVICE_DEVS19=
+DEVICE_DEVS20=
 
 # ---------------------------- End of options --------------------------- #
 
@@ -273,6 +283,7 @@ DEVICE_DEVS15=pdfwrite.dev
 # used in dependencies.
 
 MAKEFILE=$(GLSRCDIR)/dvx-gcc.mak
+TOP_MAKEFILES=$(MAKEFILE) $(GLSRCDIR)/dvx-head.mak
 
 # Define the ANSI-to-K&R dependency.  (gcc accepts ANSI syntax.)
 
@@ -289,7 +300,8 @@ CC_LEAF=$(CC_) -fomit-frame-pointer
 include $(GLSRCDIR)/dvx-head.mak
 include $(GLSRCDIR)/gs.mak
 include $(GLSRCDIR)/lib.mak
-include $(GLSRCDIR)/int.mak
+include $(PSSRCDIR)/int.mak
+include $(PSSRCDIR)/cfonts.mak
 include $(GLSRCDIR)/jpeg.mak
 # zlib.mak must precede libpng.mak
 include $(GLSRCDIR)/zlib.mak

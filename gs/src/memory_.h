@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1992, 1993, 1994, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1992, 1993, 1994, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -70,32 +70,50 @@ extern bcopy(), bcmp(), bzero();
 #	 define memcpy(dest,src,len) bcopy(src,dest,len)
 #	 define memcmp(b1,b2,len) bcmp(b1,b2,len)
 	 /* Define our own versions of missing routines (in gsmisc.c). */
-#	 define memory__need_memmove
-#        define memmove(dest,src,len) gs_memmove(dest,src,len)
+#	 define MEMORY__NEED_MEMMOVE
 #        include <sys/types.h>	/* for size_t */
-void *gs_memmove(P3(void *, const void *, size_t));
-
-#	 define memory__need_memset
-#        define memset(dest,ch,len) gs_memset(dest,ch,len)
-void *gs_memset(P3(void *, int, size_t));
-
+#	 define MEMORY__NEED_MEMSET
 #	 if defined(UTEK)
-#          define memory__need_memchr
-#          define memchr(ptr,ch,len) gs_memchr(ptr,ch,len)
-const char *gs_memchr(P3(const void *, int, size_t));
-
+#          define MEMORY__NEED_MEMCHR
 #        endif			/* UTEK */
 #    else
 #      include <memory.h>
 #      if defined(__SVR3) || defined(sun)	/* Not sure this is right.... */
-#	 define memory__need_memmove
-#        define memmove(dest,src,len) gs_memmove(dest,src,len)
+#	 define MEMORY__NEED_MEMMOVE
 #        include <sys/types.h>	/* for size_t */
-void *gs_memmove(P3(void *, const void *, size_t));
-
 #      endif			/* __SVR3 or sun */
 #    endif			/* BSD4_2 or UTEK */
 #  endif			/* VMS, POSIX, ... */
 #endif /* !__TURBOC__ */
+
+/*
+ * If we are profiling, substitute our own versions of memset, memcpy,
+ * and memmove, in case profiling libraries aren't available.
+ */
+#ifdef PROFILE
+#  define MEMORY__NEED_MEMCPY
+#  define MEMORY__NEED_MEMMOVE
+#  define MEMORY__NEED_MEMSET
+#endif
+
+/* Declare substitutes for library procedures we supply. */
+#ifdef MEMORY__NEED_MEMMOVE
+#  define memmove(dest,src,len) gs_memmove(dest,src,len)
+void *gs_memmove(P3(void *, const void *, size_t));
+#endif
+#ifdef MEMORY__NEED_MEMCPY
+#  define memcpy(dest,src,len) gs_memcpy(dest,src,len)
+void *gs_memcpy(P3(void *, const void *, size_t));
+#endif
+#ifdef MEMORY__NEED_MEMSET
+#  define memset(dest,ch,len) gs_memset(dest,ch,len)
+void *gs_memset(P3(void *, int, size_t));
+#endif
+#ifdef MEMORY__NEED_MEMCHR
+#  define memchr(ptr,ch,len) gs_memchr(ptr,ch,len)
+void *gs_memchr(P3(const void *, int, size_t));
+#endif
+
+
 
 #endif /* memory__INCLUDED */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -24,7 +24,8 @@
 #include "gxdcconv.h"
 #include "gdevpsds.h"
 
-/* ---------------- Convert between 1/2/4 and 8 bits ---------------- */
+/* ---------------- Convert between 1/2/4/12 and 8 bits ---------------- */
+
 gs_private_st_simple(st_1248_state, stream_1248_state, "stream_1248_state");
 
 /* Initialize the state. */
@@ -53,6 +54,15 @@ s_4_init(stream_state * st)
 
     ss->left = ss->samples_per_row;
     ss->bits_per_sample = 4;
+    return 0;
+}
+private int
+s_12_init(stream_state * st)
+{
+    stream_1248_state *const ss = (stream_1248_state *) st;
+
+    ss->left = ss->samples_per_row;
+    ss->bits_per_sample = 12;	/* not needed */
     return 0;
 }
 
@@ -157,6 +167,36 @@ s_N_8_process(stream_state * st, stream_cursor_read * pr,
     END_1248;
 }
 
+/* 12-to-8 "expansion" */
+private int
+s_12_8_process(stream_state * st, stream_cursor_read * pr,
+	       stream_cursor_write * pw, bool last)
+{
+    BEGIN_1248;
+
+    n = ss->samples_per_row;	/* misuse n to avoid a compiler warning */
+    status = 0;
+    for (; rlimit - p >= 2; ++q) {
+	if (q >= wlimit) {
+	    status = 1;
+	    break;
+	}
+	if (left == 0)
+	    left = n;
+	if ((n - left) & 1) {
+	    q[1] = (byte)((p[1] << 4) | (p[2] >> 4));
+	    p += 2, --left;
+	} else {
+	    q[1] = *++p;
+	    if (!--left)
+		++p;
+	}
+    }
+
+    END_1248;
+}
+
+
 /* 8-to-N reduction */
 #define FOREACH_8_N(out, nin)\
 	byte out;\
@@ -235,29 +275,26 @@ s_8_N_process(stream_state * st, stream_cursor_read * pr,
     END_1248;
 }
 
-const stream_template s_1_8_template =
-{
+const stream_template s_1_8_template = {
     &st_1248_state, s_1_init, s_N_8_process, 1, 8
 };
-const stream_template s_2_8_template =
-{
+const stream_template s_2_8_template = {
     &st_1248_state, s_2_init, s_N_8_process, 1, 4
 };
-const stream_template s_4_8_template =
-{
+const stream_template s_4_8_template = {
     &st_1248_state, s_4_init, s_N_8_process, 1, 2
 };
+const stream_template s_12_8_template = {
+    &st_1248_state, s_12_init, s_12_8_process, 1, 2
+};
 
-const stream_template s_8_1_template =
-{
+const stream_template s_8_1_template = {
     &st_1248_state, s_1_init, s_8_N_process, 8, 1
 };
-const stream_template s_8_2_template =
-{
+const stream_template s_8_2_template = {
     &st_1248_state, s_2_init, s_8_N_process, 4, 1
 };
-const stream_template s_8_4_template =
-{
+const stream_template s_8_4_template = {
     &st_1248_state, s_4_init, s_8_N_process, 2, 1
 };
 

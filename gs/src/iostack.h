@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -22,18 +22,11 @@
 #ifndef iostack_INCLUDED
 #  define iostack_INCLUDED
 
+#include "iosdata.h"
 #include "istack.h"
 
 /* Define pointers into the operand stack. */
 typedef s_ptr os_ptr;
 typedef const_s_ptr const_os_ptr;
-
-/* Define the operand stack structure. */
-/* Currently this is just a generic ref stack. */
-typedef struct op_stack_s {
-
-    ref_stack stack;		/* the actual operand stack */
-
-} op_stack_t;
 
 #endif /* iostack_INCLUDED */

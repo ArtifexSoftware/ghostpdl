@@ -1,4 +1,4 @@
-/* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -40,13 +40,7 @@ typedef union sample_lookup_s {
  * These can be cast to a const sample_lookup_t.
  */
 extern const bits32 lookup4x1to32_identity[16];
-
-#define sample_lookup_1_identity\
-  ((const sample_lookup_t *)lookup4x1to32_identity)
 extern const bits32 lookup4x1to32_inverted[16];
-
-#define sample_lookup_1_inverted\
-  ((const sample_lookup_t *)lookup4x1to32_inverted)
 
 /*
  * Define procedures to unpack and shuffle image data samples.  The Unix C
@@ -60,22 +54,22 @@ extern const bits32 lookup4x1to32_inverted[16];
  * Note that this procedure may return either a pointer to the buffer, or
  * a pointer to the original data.
  */
-#define sample_unpack_proc(proc)\
+#define SAMPLE_UNPACK_PROC(proc)\
   const byte *proc(P7(byte *bptr, int *pdata_x, const byte *data, int data_x,\
 		      uint dsize, const sample_lookup_t *ptab, int spread))
-typedef sample_unpack_proc((*sample_unpack_proc_t));
+typedef SAMPLE_UNPACK_PROC((*sample_unpack_proc_t));
 
 /*
  * Declare the 1-for-1 unpacking procedure.
  */
-sample_unpack_proc(sample_unpack_copy);
+SAMPLE_UNPACK_PROC(sample_unpack_copy);
 /*
  * Declare unpacking procedures for 1, 2, 4, and 8 bits per pixel,
  * with optional spreading of the result.
  */
-sample_unpack_proc(sample_unpack_1);
-sample_unpack_proc(sample_unpack_2);
-sample_unpack_proc(sample_unpack_4);
-sample_unpack_proc(sample_unpack_8);
+SAMPLE_UNPACK_PROC(sample_unpack_1);
+SAMPLE_UNPACK_PROC(sample_unpack_2);
+SAMPLE_UNPACK_PROC(sample_unpack_4);
+SAMPLE_UNPACK_PROC(sample_unpack_8);
 
 #endif /* gxsample_INCLUDED */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -22,9 +22,9 @@
 #include "memory_.h"
 #include "errors.h"
 #include "gsstruct.h"
-#include "gxarith.h"		/* for small_exact_log2 */
 #include "iref.h"		/* must precede iastate.h */
 #include "iastate.h"
+#include "igc.h"		/* for gs_gc_reclaim */
 #include "ipacked.h"
 #include "iutil.h"
 #include "ivmspace.h"
@@ -33,33 +33,34 @@
 /*
  * Define global and local instances.
  */
+public_st_gs_dual_memory();
 gs_dual_memory_t gs_imemory;
 
 /* Initialize the allocator */
 void
-ialloc_init(gs_raw_memory_t * rmem, uint chunk_size, bool level2)
+ialloc_init(gs_dual_memory_t *dmem, gs_raw_memory_t * rmem, uint chunk_size,
+	    bool level2)
 {
     gs_ref_memory_t *ilmem = ialloc_alloc_state(rmem, chunk_size);
     gs_ref_memory_t *igmem =
-    (level2 ?
-     ialloc_alloc_state(rmem, chunk_size) :
-     ilmem);
+	(level2 ? ialloc_alloc_state(rmem, chunk_size) : ilmem);
     gs_ref_memory_t *ismem = ialloc_alloc_state(rmem, chunk_size);
     int i;
 
-    for (i = 0; i < countof(gs_imemory.spaces.indexed); i++)
-	gs_imemory.spaces.indexed[i] = 0;
-    gs_imemory.space_local = ilmem;
-    gs_imemory.space_global = igmem;
-    gs_imemory.space_system = ismem;
-    gs_imemory.reclaim = 0;
+    for (i = 0; i < countof(dmem->spaces_indexed); i++)
+	dmem->spaces_indexed[i] = 0;
+    dmem->space_local = ilmem;
+    dmem->space_global = igmem;
+    dmem->space_system = ismem;
+    dmem->spaces.vm_reclaim = gs_gc_reclaim; /* real GC */
+    dmem->reclaim = 0;		/* no interpreter GC yet */
+    dmem->reclaim_data = 0;
     /* Level 1 systems have only local VM. */
     igmem->space = avm_global;
     ilmem->space = avm_local;	/* overrides if ilmem == igmem */
     igmem->global = ilmem->global = igmem;
-
     ismem->space = avm_system;
-    ialloc_set_space(&gs_imemory, avm_global);
+    ialloc_set_space(dmem, avm_global);
 }
 
 /* ================ Local/global VM ================ */
@@ -75,7 +76,7 @@ imemory_space(gs_ref_memory_t * iimem)
 void
 ialloc_set_space(gs_dual_memory_t * dmem, uint space)
 {
-    gs_ref_memory_t *mem = dmem->spaces.indexed[space >> r_space_shift];
+    gs_ref_memory_t *mem = dmem->spaces_indexed[space >> r_space_shift];
 
     dmem->current = mem;
     dmem->current_space = mem->space;

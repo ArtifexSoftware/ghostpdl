@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1997, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -34,9 +34,16 @@
 #include "store.h"
 
 /* <proc> bind <proc> */
-private int
-zbind(os_ptr op)
+inline private bool
+r_is_ex_oper(const ref *rp)
 {
+    return (r_has_attr(rp, a_executable) &&
+	    (r_btype(rp) == t_operator || r_type(rp) == t_oparray));
+}
+private int
+zbind(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
     uint depth = 1;
     ref defn;
     register os_ptr bsp;
@@ -64,9 +71,6 @@ zbind(os_ptr op)
      *      `depth' elements have been pushed on the ostack;
      *      For i < depth, p = ref_stack_index(&o_stack, i):
      *        *p is an array (or packedarray) ref. */
-#define r_is_ex_oper(rp)\
-  ((r_btype(rp) == t_operator || r_type(rp) == t_oparray) &&\
-   r_has_attr(rp, a_executable))
     while (depth) {
 	while (r_size(bsp)) {
 	    ref *tp = bsp->value.refs;
@@ -84,11 +88,17 @@ zbind(os_ptr op)
 				   &nref);
 		    if ((pvalue = dict_find_name(&nref)) != 0 &&
 			r_is_ex_oper(pvalue)
-			)
-			/* Note: can't undo this by restore! */
+			) {
+			store_check_dest(bsp, pvalue);
+			/*
+			 * Always save the change, since this can only
+			 * happen once.
+			 */
+			ref_do_save(bsp, tp, "bind");
 			*(ushort *) tp =
 			    pt_tag(pt_executable_operator) +
 			    op_index(pvalue);
+		    }
 		}
 		bsp->value.refs = (ref *) ((ref_packed *) tp + 1);
 	    } else
@@ -99,8 +109,10 @@ zbind(os_ptr op)
 
 			    if ((pvalue = dict_find_name(tp)) != 0 &&
 				r_is_ex_oper(pvalue)
-				)
+				) {
+				store_check_dest(bsp, pvalue);
 				ref_assign_old(bsp, tp, pvalue, "bind");
+			    }
 			}
 			break;
 		    case t_array:	/* push into array if writable */
@@ -145,8 +157,10 @@ zbind(os_ptr op)
 
 /* - serialnumber <int> */
 private int
-zserialnumber(register os_ptr op)
+zserialnumber(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(1);
     make_int(op, gs_serialnumber);
     return 0;
@@ -154,8 +168,9 @@ zserialnumber(register os_ptr op)
 
 /* - realtime <int> */
 private int
-zrealtime(register os_ptr op)
+zrealtime(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     long secs_ns[2];
 
     gp_get_realtime(secs_ns);
@@ -166,8 +181,9 @@ zrealtime(register os_ptr op)
 
 /* - usertime <int> */
 private int
-zusertime(register os_ptr op)
+zusertime(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     long secs_ns[2];
 
     gp_get_usertime(secs_ns);
@@ -181,8 +197,9 @@ zusertime(register os_ptr op)
 /* <string> getenv <value_string> true */
 /* <string> getenv false */
 private int
-zgetenv(register os_ptr op)
+zgetenv(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     char *str;
     byte *value;
     int code;
@@ -215,8 +232,9 @@ zgetenv(register os_ptr op)
 
 /* <name> <proc> .makeoperator <oper> */
 private int
-zmakeoperator(register os_ptr op)
+zmakeoperator(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     op_array_table *opt;
     uint count;
     ref *tab;
@@ -257,8 +275,10 @@ zmakeoperator(register os_ptr op)
 
 /* - .oserrno <int> */
 private int
-zoserrno(register os_ptr op)
+zoserrno(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(1);
     make_int(op, errno);
     return 0;
@@ -266,8 +286,10 @@ zoserrno(register os_ptr op)
 
 /* <int> .setoserrno - */
 private int
-zsetoserrno(register os_ptr op)
+zsetoserrno(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     check_type(*op, t_integer);
     errno = op->value.intval;
     pop(1);
@@ -277,8 +299,9 @@ zsetoserrno(register os_ptr op)
 /* <int> .oserrorstring <string> true */
 /* <int> .oserrorstring false */
 private int
-zoserrorstring(register os_ptr op)
+zoserrorstring(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     const char *str;
     int code;
     uint len;
@@ -306,8 +329,9 @@ zoserrorstring(register os_ptr op)
 
 /* <string> <bool> .setdebug - */
 private int
-zsetdebug(register os_ptr op)
+zsetdebug(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     check_read_type(op[-1], t_string);
     check_type(*op, t_boolean);
     {

@@ -31,10 +31,18 @@
 /* Debugging statistics */
 #ifdef DEBUG
 #include "idebug.h"
-long ds_lookups;		/* total lookups */
-long ds_1probe;			/* successful lookups on only 1 probe */
-long ds_2probe;			/* successful lookups on 2 probes */
+#define MAX_STATS_DEPTH 6
+struct stats_dstack_s {
+    long lookups;		/* total lookups */
+    long probes[2];		/* successful lookups on 1 or 2 probes */
+    long depth[MAX_STATS_DEPTH + 1]; /* stack depth of lookups requiring search */
+} stats_dstack;
+# define INCR(v) (++stats_dstack.v)
+#else
+# define INCR(v) DO_NOTHING
+#endif
 
+#ifdef DEBUG
 /* Wrapper for dstack_find_name_by_index */
 ref *real_dstack_find_name_by_index(P2(dict_stack_t * pds, uint nidx));
 ref *
@@ -43,7 +51,7 @@ dstack_find_name_by_index(dict_stack_t * pds, uint nidx)
     ref *pvalue = real_dstack_find_name_by_index(pds, nidx);
     dict *pdict = pds->stack.p->value.pdict;
 
-    ds_lookups++;
+    INCR(lookups);
     if (dict_is_packed(pdict)) {
 	uint hash =
 	dict_hash_mod(dict_name_index_hash(nidx), npairs(pdict)) + 1;
@@ -51,16 +59,16 @@ dstack_find_name_by_index(dict_stack_t * pds, uint nidx)
 	if (pdict->keys.value.packed[hash] ==
 	    pt_tag(pt_literal_name) + nidx
 	    )
-	    ds_1probe++;
+	    INCR(probes[0]);
 	else if (pdict->keys.value.packed[hash - 1] ==
 		 pt_tag(pt_literal_name) + nidx
 	    )
-	    ds_2probe++;
+	    INCR(probes[1]);
     }
-    /* Do the cheap flag test before the expensive remainder test. */
-    if (gs_debug_c('d') && !(ds_lookups % 1000))
-	dlprintf3("[d]lookups=%ld 1probe=%ld 2probe=%ld\n",
-		  ds_lookups, ds_1probe, ds_2probe);
+    if (gs_debug_c('d') && !(stats_dstack.lookups % 1000))
+	dlprintf3("[d]lookups=%ld probe1=%ld probe2=%ld\n",
+		  stats_dstack.lookups, stats_dstack.probes[0],
+		  stats_dstack.probes[1]);
     return pvalue;
 }
 #define dstack_find_name_by_index real_dstack_find_name_by_index
@@ -117,11 +125,13 @@ dstack_find_name_by_index(dict_stack_t * pds, uint nidx)
 		     dict_maxlength(pdref));
 	}
 #endif
+#define INCR_DEPTH(pdref)\
+  INCR(depth[min(MAX_STATS_DEPTH, pds->stack.p - pdref)])
 	if (dict_is_packed(pdict)) {
-	    packed_search_1(DO_NOTHING,
+	    packed_search_1(INCR_DEPTH(pdref),
 			    return packed_search_value_pointer,
 			    DO_NOTHING, goto miss);
-	    packed_search_2(DO_NOTHING,
+	    packed_search_2(INCR_DEPTH(pdref),
 			    return packed_search_value_pointer,
 			    DO_NOTHING, break);
 	  miss:;
@@ -134,9 +144,10 @@ dstack_find_name_by_index(dict_stack_t * pds, uint nidx)
 	    for (kp = kbot + dict_hash_mod(hash, size) + 2;;) {
 		--kp;
 		if (r_has_type(kp, t_name)) {
-		    if (name_index(kp) == nidx)
-			return pdict->values.value.refs +
-			    (kp - kbot);
+		    if (name_index(kp) == nidx) {
+			INCR_DEPTH(pdref);
+			return pdict->values.value.refs + (kp - kbot);
+		    }
 		} else if (r_has_type(kp, t_null)) {	/* Empty, deleted, or wraparound. */
 		    /* Figure out which. */
 		    if (!r_has_attr(kp, a_executable))
@@ -149,6 +160,7 @@ dstack_find_name_by_index(dict_stack_t * pds, uint nidx)
 		}
 	    }
 	}
+#undef INCR_DEPTH
     }
     while (pdref-- > pds->stack.bot);
     /* The name isn't in the top dictionary block. */
@@ -166,8 +178,10 @@ dstack_find_name_by_index(dict_stack_t * pds, uint nidx)
 	for (; i < size; i++) {
 	    if (dict_find(ref_stack_index(&pds->stack, i),
 			  &key, &pvalue) > 0
-		)
+		) {
+		INCR(depth[min(MAX_STATS_DEPTH, i)]);
 		return pvalue;
+	    }
 	}
     }
     return (ref *) 0;

@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1997, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -91,18 +91,23 @@ void gx_compute_cell_values(P1(gx_ht_cell_params_t *));
 
 /*
  * The whitening order is represented by a pair of arrays.
- * The levels array contains an integer (an index into the bits array)
+ * The levels array contains an integer (an index into the bit_data array)
  * for each distinct halftone level, indicating how many pixels should be
  * whitened for that level; levels[0] = 0, levels[i] <= levels[i+1], and
- * levels[num_levels-1] <= num_bits.
- * The bits array contains an (offset,mask) pair for each pixel in the tile.
- * bits[i].offset is the (properly aligned) byte index of a pixel
- * in the tile; bits[i].mask is the mask to be or'ed into this byte and
- * following ones.  This is arranged so it will work properly on
+ * levels[num_levels-1] <= num_bits.  The bit_data array contains data to
+ * specify which bits should be set for each level: it has several
+ * different representations depending on space/time tradeoffs.
+ *
+ * The default bit_data representation is an (offset,mask) pair for each
+ * pixel in the tile.  bits[i].offset is the (properly aligned) byte index
+ * of a pixel in the tile; bits[i].mask is the mask to be or'ed into this
+ * byte and following ones.  This is arranged so it will work properly on
  * either big- or little-endian machines, and with different mask widths.
  */
-/* The mask width must be at least as wide as uint, */
-/* and must not be wider than the width implied by align_bitmap_mod. */
+/*
+ * The mask width must be at least as wide as uint,
+ * and must not be wider than the width implied by align_bitmap_mod.
+ */
 typedef uint ht_mask_t;
 
 #define ht_mask_bits (sizeof(ht_mask_t) * 8)
@@ -148,12 +153,39 @@ typedef ht_mask_t ht_sample_t;
  * See gxbitmap.h for more details about strip halftones.
  */
 typedef struct gx_ht_cache_s gx_ht_cache;
-
 #ifndef gx_ht_order_DEFINED
 #  define gx_ht_order_DEFINED
 typedef struct gx_ht_order_s gx_ht_order;
-
 #endif
+#ifndef gx_ht_tile_DEFINED
+#  define gx_ht_tile_DEFINED
+typedef struct gx_ht_tile_s gx_ht_tile;
+#endif
+typedef struct gx_ht_order_procs_s {
+
+    /* Define the size of each element of bit_data. */
+
+    uint bit_data_elt_size;
+
+    /* Construct the order from the threshold array. */
+    /* Note that for 16-bit threshold values (not supported yet), */
+    /* each value is 2 bytes in big-endian order (Adobe spec). */
+
+    int (*construct_order)(P2(gx_ht_order *order, const byte *thresholds));
+
+    /* Update a halftone cache tile to match this order. */
+
+    int (*render)(P3(gx_ht_tile *tile, int new_bit_level,
+		     const gx_ht_order *order));
+
+} gx_ht_order_procs_t;
+/*
+ * Define the procedure vectors for the supported implementations
+ * (in gxhtbit.c).
+ */
+extern const gx_ht_order_procs_t ht_order_procs_table[2];
+#define ht_order_procs_default ht_order_procs_table[0]	/* bit_data is gx_ht_bit[] */
+#define ht_order_procs_short ht_order_procs_table[1]	/* bit_data is ushort[] */
 struct gx_ht_order_s {
     gx_ht_cell_params_t params;	/* parameters defining the cells */
     ushort width;
@@ -164,9 +196,11 @@ struct gx_ht_order_s {
     ushort orig_shift;
     uint full_height;
     uint num_levels;		/* = levels size */
-    uint num_bits;		/* = bits size = width * height */
+    uint num_bits;		/* = countof(bit_data) = width * height */
+    const gx_ht_order_procs_t *procs;
+    gs_memory_t *data_memory;	/* for levels and bit_data, may be 0 */
     uint *levels;
-    gx_ht_bit *bits;
+    void *bit_data;
     gx_ht_cache *cache;		/* cache to use */
     gx_transfer_map *transfer;	/* TransferFunction or 0 */
 };
@@ -181,8 +215,8 @@ struct gx_ht_order_s {
 /* We only export st_ht_order for use in st_screen_enum. */
 extern_st(st_ht_order);
 #define public_st_ht_order()	/* in gsht.c */\
-  gs_public_st_ptrs4(st_ht_order, gx_ht_order, "gx_ht_order",\
-    ht_order_enum_ptrs, ht_order_reloc_ptrs, levels, bits, cache, transfer)
+  gs_public_st_composite(st_ht_order, gx_ht_order, "gx_ht_order",\
+    ht_order_enum_ptrs, ht_order_reloc_ptrs)
 #define st_ht_order_max_ptrs 4
 
 /*
@@ -199,9 +233,10 @@ extern_st(st_ht_order);
  * because they are needed for setcolorscreen.
  *
  * NOTE: it is assumed that all subsidiary structures of device halftones
- * (the components array, and the bits, levels, cache, and transfer members
- * of any gx_ht_orders, both the default order and any component orders) are
- * allocated with the same allocator as the device halftone itself.
+ * (the components array, and the bit_data, levels, cache, and transfer
+ * members of any gx_ht_orders, both the default order and any component
+ * orders) are allocated with the same allocator as the device halftone
+ * itself.
  */
 typedef struct gx_ht_order_component_s {
     gx_ht_order corder;
@@ -223,7 +258,6 @@ extern_st(st_ht_order_component_element);
 #ifndef gx_device_halftone_DEFINED
 #  define gx_device_halftone_DEFINED
 typedef struct gx_device_halftone_s gx_device_halftone;
-
 #endif
 
 /*
@@ -257,6 +291,9 @@ extern_st(st_device_halftone);
     "gx_device_halftone", device_halftone_enum_ptrs,\
     device_halftone_reloc_ptrs, st_ht_order, order, components)
 #define st_device_halftone_max_ptrs (st_ht_order_max_ptrs + 1)
+
+/* Complete a halftone order defined by a threshold array. */
+void gx_ht_complete_threshold_order(P1(gx_ht_order *porder));
 
 /* Release a gx_device_halftone by freeing its components. */
 /* (Don't free the gx_device_halftone itself.) */

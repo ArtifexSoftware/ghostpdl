@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -31,7 +31,9 @@
 #include "gxfixed.h"
 
 /* Define private replacements for stdin, stdout, and stderr. */
-FILE *gs_stdin, *gs_stdout, *gs_stderr;
+FILE *gs_stdio[3];
+
+/* ------ Debugging ------ */
 
 /* Ghostscript writes debugging output to gs_debug_out. */
 /* We define gs_debug and gs_debug_out even if DEBUG isn't defined, */
@@ -81,10 +83,27 @@ dprintf_file(FILE * f, const char *file)
 	fprintf(f, dprintf_file_only_format, dprintf_file_tail(file));
 }
 void
-eprintf_program_name(FILE * f, const char *program_name)
+printf_program_ident(FILE * f, const char *program_name,
+		     long revision_number)
 {
-    if (program_name)
-	fprintf(f, "%s: ", program_name);
+    if (program_name) {
+	fputs(program_name, f);
+	if (revision_number)
+	    fputc(' ', f);
+    }
+    if (revision_number)
+	fprintf(f, "%d.%02d",
+		(int)(revision_number / 100),
+		(int)(revision_number % 100));
+}
+void
+eprintf_program_ident(FILE * f, const char *program_name,
+		      long revision_number)
+{
+    if (program_name) {
+	printf_program_ident(f, program_name, revision_number);
+	fputs(": ", f);
+    }
 }
 void
 lprintf_file_and_line(FILE * f, const char *file, int line)
@@ -129,7 +148,7 @@ gs_return_check_interrupt(int code)
 
 /* ------ Substitutes for missing C library functions ------ */
 
-#ifdef memory__need_memmove	/* see memory_.h */
+#ifdef MEMORY__NEED_MEMMOVE	/* see memory_.h */
 /* Copy bytes like memcpy, guaranteed to handle overlap correctly. */
 /* ANSI C defines the returned value as being the src argument, */
 /* but with the const restriction removed! */
@@ -142,10 +161,11 @@ gs_memmove(void *dest, const void *src, size_t len)
 #define bsrc ((const byte *)src)
     /* We use len-1 for comparisons because adding len */
     /* might produce an offset overflow on segmented systems. */
-    if (ptr_le(bdest, bsrc)) {
+    if (PTR_LE(bdest, bsrc)) {
 	register byte *end = bdest + (len - 1);
 
-	if (ptr_le(bsrc, end)) {	/* Source overlaps destination from above. */
+	if (PTR_LE(bsrc, end)) {
+	    /* Source overlaps destination from above. */
 	    register const byte *from = bsrc;
 	    register byte *to = bdest;
 
@@ -160,7 +180,8 @@ gs_memmove(void *dest, const void *src, size_t len)
     } else {
 	register const byte *from = bsrc + (len - 1);
 
-	if (ptr_le(bdest, from)) {	/* Source overlaps destination from below. */
+	if (PTR_LE(bdest, from)) {
+	    /* Source overlaps destination from below. */
 	    register const byte *end = bsrc;
 	    register byte *to = bdest + (len - 1);
 
@@ -181,11 +202,37 @@ gs_memmove(void *dest, const void *src, size_t len)
 }
 #endif
 
-#ifdef memory__need_memchr	/* see memory_.h */
+#ifdef MEMORY__NEED_MEMCPY	/* see memory_.h */
+void *
+gs_memcpy(void *dest, const void *src, size_t len)
+{
+    if (len > 0) {
+#define bdest ((byte *)dest)
+#define bsrc ((const byte *)src)
+	/* We can optimize this much better later on. */
+	register byte *end = bdest + (len - 1);
+	register const byte *from = bsrc;
+	register byte *to = bdest;
+
+	for (;;) {
+	    *to = *from;
+	    if (to >= end)	/* faster than = */
+		break;
+	    to++;
+	    from++;
+	}
+    }
+#undef bdest
+#undef bsrc
+    return (void *)src;
+}
+#endif
+
+#ifdef MEMORY__NEED_MEMCHR	/* see memory_.h */
 /* ch should obviously be char rather than int, */
 /* but the ANSI standard declaration uses int. */
-const char *
-gs_memchr(const char *ptr, int ch, size_t len)
+void *
+gs_memchr(const void *ptr, int ch, size_t len)
 {
     if (len > 0) {
 	register const char *p = ptr;
@@ -193,7 +240,7 @@ gs_memchr(const char *ptr, int ch, size_t len)
 
 	do {
 	    if (*p == (char)ch)
-		return p;
+		return (void *)p;
 	    p++;
 	} while (--count);
     }
@@ -201,22 +248,46 @@ gs_memchr(const char *ptr, int ch, size_t len)
 }
 #endif
 
-#ifdef memory__need_memset	/* see memory_.h */
+#ifdef MEMORY__NEED_MEMSET	/* see memory_.h */
 /* ch should obviously be char rather than int, */
 /* but the ANSI standard declaration uses int. */
 void *
 gs_memset(void *dest, register int ch, size_t len)
 {
-    if (ch == 0)
-	bzero(dest, len);
-    else if (len > 0) {
-	register char *p = dest;
-	register uint count = len;
+    /*
+     * This procedure is used a lot to fill large regions of images,
+     * so we take some trouble to optimize it.
+     */
+    register char *p = dest;
+    register size_t count = len;
 
-	do {
-	    *p++ = (char)ch;
-	} while (--count);
+    ch &= 255;
+    if (len >= sizeof(long) * 3) {
+	long wd = (ch << 24) | (ch << 16) | (ch << 8) | ch;
+
+	while (ALIGNMENT_MOD(p, sizeof(long)))
+	    *p++ = (char)ch, --count;
+	for (; count >= sizeof(long) * 4;
+	     p += sizeof(long) * 4, count -= sizeof(long) * 4
+	     )
+	    ((long *)p)[3] = ((long *)p)[2] = ((long *)p)[1] =
+		((long *)p)[0] = wd;
+	switch (count >> ARCH_LOG2_SIZEOF_LONG) {
+	case 3:
+	    ((long *)p)[2] = wd; p += sizeof(long);
+	case 2:
+	    ((long *)p)[1] = wd; p += sizeof(long);
+	case 1:
+	    ((long *)p)[0] = wd; p += sizeof(long);
+	    count &= sizeof(long) - 1;
+	case 0:
+	default:		/* can't happen */
+	    DO_NOTHING;
+	}
     }
+    /* Do any leftover bytes. */
+    for (; count > 0; --count)
+	*p++ = (char)ch;
     return dest;
 }
 #endif
@@ -287,6 +358,22 @@ debug_print_string(const byte * chrs, uint len)
     fflush(dstderr);
 }
 
+/*
+ * The following code prints a hex stack backtrace on Linux/Intel systems.
+ * It is here to be patched into places where we need to print such a trace
+ * because of gdb's inability to put breakpoints in dynamically created
+ * threads.
+ *
+ * first_arg is the first argument of the procedure into which this code
+ * is patched.
+ */
+#define BACKTRACE(first_arg)\
+  BEGIN\
+    ulong *fp_ = (ulong *)&first_arg - 2;\
+    for (; fp_ && (fp_[1] & 0xff000000) == 0x08000000; fp_ = (ulong *)*fp_)\
+	dprintf2("  fp=0x%lx ip=0x%lx\n", (ulong)fp_, fp_[1]);\
+  END
+
 /* ------ Arithmetic ------ */
 
 /* Compute M modulo N.  Requires N > 0; guarantees 0 <= imod(M,N) < N, */
@@ -323,7 +410,45 @@ igcd(int x, int y)
     return d + c;		/* at most one is non-zero */
 }
 
-#if defined(set_fmul2fixed_vars) && !USE_ASM
+/* Compute X such that A*X = B mod M.  See gxarith.h for details. */
+int
+idivmod(int a, int b, int m)
+{
+    /*
+     * Use the approach indicated in Knuth vol. 2, section 4.5.2, Algorithm
+     * X (p. 302) and exercise 15 (p. 315, solution p. 523).
+     */
+    int u1 = 0, u3 = m;
+    int v1 = 1, v3 = a;
+    /*
+     * The following loop will terminate with a * u1 = gcd(a, m) mod m.
+     * Then x = u1 * b / gcd(a, m) mod m.  Since we require that
+     * gcd(a, m) | gcd(a, b), it follows that gcd(a, m) | b, so the
+     * division is exact.
+     */
+    while (v3) {
+	int q = u3 / v3, t;
+
+	t = u1 - v1 * q, u1 = v1, v1 = t;
+	t = u3 - v3 * q, u3 = v3, v3 = t;
+    }
+    return imod(u1 * b / igcd(a, m), m);
+}
+
+/* Compute floor(log2(N)).  Requires N > 0. */
+int
+ilog2(int n)
+{
+    int m = n, l = 0;
+
+    while (m >= 16)
+	m >>= 4, l += 4;
+    return
+	(m <= 1 ? 0 :
+	 "\000\000\001\001\002\002\002\002\003\003\003\003\003\003\003\003"[m] + l);
+}
+
+#if defined(CHECK_FMUL2FIXED_VARS) && !USE_ASM
 
 /*
  * Floating multiply with fixed result, for avoiding floating point in
@@ -370,7 +495,7 @@ int
 set_dfmul2fixed_(fixed * pr, ulong /*double lo */ xalo, long /*float */ b, long /*double hi */ xahi)
 {
     return set_fmul2fixed_(pr,
-			   (xahi & 0xc0000000) +
+			   (xahi & (3L << 30)) +
 			   ((xahi << 3) & 0x3ffffff8) +
 			   (xalo >> 29),
 			   b);
@@ -483,36 +608,50 @@ set_fixed2double_(double *pd, fixed x, int frac_bits)
     }
 }
 
+#endif				/* USE_FPU_FIXED */
+
 /*
  * Compute A * B / C when 0 <= B < C and A * B exceeds (or might exceed)
  * the capacity of a long.
+ * Note that this procedure takes the floor, rather than truncating
+ * towards zero, if A < 0.  This ensures that 0 <= R < C.
  */
+
+#define num_bits (sizeof(fixed) * 8)
+#define half_bits (num_bits / 2)
+#define half_mask ((1L << half_bits) - 1)
+
+/*
+ * If doubles aren't wide enough, we lose too much precision by using double
+ * arithmetic: we have to use the slower, accurate fixed-point algorithm.
+ */
+#if USE_FPU_FIXED || (arch_double_mantissa_bits < arch_sizeof_long * 12)
+
 #ifdef DEBUG
 struct {
     long mnanb, mnab, manb, mab, mnc, mdq, mde, mds, mqh, mql;
 } fmq_stat;
-
 #  define mincr(x) ++fmq_stat.x
 #else
 #  define mincr(x) DO_NOTHING
 #endif
 fixed
 fixed_mult_quo(fixed signed_A, fixed B, fixed C)
-{				/* First compute A * B in double-fixed precision. */
+{
+    /* First compute A * B in double-fixed precision. */
     ulong A = (signed_A < 0 ? -signed_A : signed_A);
     long msw;
     ulong lsw;
     ulong p1;
 
-#define num_bits (sizeof(fixed) * 8)
-#define half_bits (num_bits / 2)
-#define half_mask ((1L << half_bits) - 1)
     if (B <= half_mask) {
 	if (A <= half_mask) {
-	    fixed Q = (ulong) (A * B) / (ulong) C;
+	    ulong P = A * B;
+	    fixed Q = P / (ulong)C;
 
 	    mincr(mnanb);
-	    return (signed_A < 0 ? -Q : Q);
+	    /* If A < 0 and the division isn't exact, take the floor. */
+	    return (signed_A >= 0 ? Q : Q * C == P ? -Q : ~Q /* -Q - 1 */);
 	}
 	/*
 	 * We might still have C <= half_mask, which we can
@@ -521,12 +660,14 @@ fixed_mult_quo(fixed signed_A, fixed B, fixed C)
 	lsw = (A & half_mask) * B;
 	p1 = (A >> half_bits) * B;
 	if (C <= half_mask) {
-	    ulong q0 = (p1 += lsw >> half_bits) / C;
+	    fixed q0 = (p1 += lsw >> half_bits) / C;
 	    ulong rem = ((p1 - C * q0) << half_bits) + (lsw & half_mask);
-	    ulong Q = (q0 << half_bits) + rem / C;
+	    ulong q1 = rem / (ulong)C;
+	    fixed Q = (q0 << half_bits) + q1;
 
 	    mincr(mnc);
-	    return (signed_A < 0 ? -Q : Q);
+	    /* If A < 0 and the division isn't exact, take the floor. */
+	    return (signed_A >= 0 ? Q : q1 * C == rem ? -Q : ~Q);
 	}
 	msw = p1 >> half_bits;
 	mincr(manb);
@@ -634,15 +775,47 @@ fixed_mult_quo(fixed signed_A, fixed B, fixed C)
 		    mincr(mql);
 		}
 		Q = (hi_Q << half_bits) + lo_Q;
-		return (signed_A < 0 ? -Q : Q);
+		return (signed_A >= 0 ? Q : p0 | p1 ? ~Q /* -Q - 1 */ : -Q);
 	    }
 	}
     }
-#undef half_bits
-#undef half_mask
+}
+
+#else				/* can approximate using doubles */
+
+/*
+ * Compute A * B / C as above.  Since a double doesn't have enough bits to
+ * represent the product of two longs, we have to do it in two steps.
+ */
+fixed
+fixed_mult_quo(fixed signed_A, fixed B, fixed C)
+{
+#define MAX_OTHER_FACTOR\
+  (1L << (arch_double_mantissa_bits - sizeof(fixed) * 8))
+    if (B < MAX_OTHER_FACTOR || any_abs(signed_A) < MAX_OTHER_FACTOR) {
+	/* The double computation will be exact. */
+	return (fixed)floor((double)signed_A * B / C);
+    }
+#undef MAX_OTHER_FACTOR
+    {
+	/* Use 2 double steps. */
+	fixed bhi = B >> half_bits;
+	fixed qhi = (fixed)floor((double)signed_A * bhi / C);
+	fixed rhi = signed_A * bhi - qhi * C;
+	fixed blo = B & half_mask;
+	fixed qlo =
+	    (fixed)floor(((double)rhi * (1L << half_bits) +
+			  (double)signed_A * blo) / C);
+
+	return (qhi << half_bits) + qlo;
+    }
 }
 
 #endif
+
+#undef num_bits
+#undef half_bits
+#undef half_mask
 
 /* Trace calls on sqrt when debugging. */
 #undef sqrt

@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -27,7 +27,7 @@
 #include "gxfixed.h"		/* for gxpath.h */
 #include "gxpath.h"
 #include "btoken.h"		/* for user_names_p */
-#include "idict.h"
+#include "iddict.h"
 #include "idparam.h"
 #include "igstate.h"
 #include "iname.h"
@@ -40,8 +40,9 @@ extern int make_upath(P4(ref *, const gs_state *, gx_path *, bool));
 
 /* <screen_index> <x> <y> .setscreenphase - */
 private int
-zsetscreenphase(register os_ptr op)
+zsetscreenphase(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code;
     long x, y;
 
@@ -64,8 +65,9 @@ zsetscreenphase(register os_ptr op)
 
 /* <screen_index> .currentscreenphase <x> <y> */
 private int
-zcurrentscreenphase(register os_ptr op)
+zcurrentscreenphase(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_int_point phase;
     int code;
 
@@ -89,7 +91,8 @@ zcurrentscreenphase(register os_ptr op)
 /* Process an image that has no explicit source data. */
 /* We export this for composite images. */
 int
-process_non_source_image(const gs_image_common_t * pic, client_name_t cname)
+process_non_source_image(i_ctx_t *i_ctx_p, const gs_image_common_t * pic,
+			 client_name_t cname)
 {
     gx_image_enum_common_t *pie;
     int code = gs_image_begin_typed(pic, igs, false /****** WRONG ******/ ,
@@ -101,8 +104,9 @@ process_non_source_image(const gs_image_common_t * pic, client_name_t cname)
 
 /* <dict> .image2 - */
 private int
-zimage2(register os_ptr op)
+zimage2(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code;
 
     check_type(*op, t_dictionary);
@@ -143,7 +147,8 @@ zimage2(register os_ptr op)
 	    } else
 		image.UnpaintedPath = 0;
 	}
-	code = process_non_source_image((const gs_image_common_t *)&image,
+	code = process_non_source_image(i_ctx_p,
+					(const gs_image_common_t *)&image,
 					".image2");
 	if (image.UnpaintedPath) {
 	    ref rupath;
@@ -157,7 +162,7 @@ zimage2(register os_ptr op)
 	    gx_path_free(image.UnpaintedPath, ".image2 UnpaintedPath");
 	    if (code < 0)
 		return code;
-	    code = dict_put_string(op, "UnpaintedPath", &rupath);
+	    code = idict_put_string(op, "UnpaintedPath", &rupath);
 	}
     }
     if (code >= 0)
@@ -169,28 +174,28 @@ zimage2(register os_ptr op)
 
 /* - viewclip - */
 private int
-zviewclip(register os_ptr op)
+zviewclip(i_ctx_t *i_ctx_p)
 {
     return gs_viewclip(igs);
 }
 
 /* - eoviewclip - */
 private int
-zeoviewclip(register os_ptr op)
+zeoviewclip(i_ctx_t *i_ctx_p)
 {
     return gs_eoviewclip(igs);
 }
 
 /* - initviewclip - */
 private int
-zinitviewclip(register os_ptr op)
+zinitviewclip(i_ctx_t *i_ctx_p)
 {
     return gs_initviewclip(igs);
 }
 
 /* - viewclippath - */
 private int
-zviewclippath(register os_ptr op)
+zviewclippath(i_ctx_t *i_ctx_p)
 {
     return gs_viewclippath(igs);
 }
@@ -199,8 +204,9 @@ zviewclippath(register os_ptr op)
 
 /* <index> <name> defineusername - */
 private int
-zdefineusername(register os_ptr op)
+zdefineusername(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     ref uname;
 
     check_int_ltu(op[-1], max_array_size);

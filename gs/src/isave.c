@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -43,11 +43,6 @@ private_st_alloc_save();
 /* Define the maximum amount of data we are willing to scan repeatedly -- */
 /* see below for details. */
 private const long max_repeated_scan = 100000;
-
-/* Some compilers try to substitute macro args in string literals! */
-#define print_save(str, spacen, sav)\
-  if_debug5('u', "[u]%s space %u 0x%lx: cdata = 0x%lx, id = %lu\n",\
-    str, spacen, (ulong)(sav), (ulong)(sav)->client_data, (ulong)(sav)->id);
 
 /*
  * The logic for saving and restoring the state is complex.
@@ -121,14 +116,14 @@ private const long max_repeated_scan = 100000;
  */
 
 /*
- * A consequence of the foregoing algorithms is that the cost of a save
- * is proportional to the total amount of data allocated since the previous
- * save.  If a PostScript program reads in a large amount of setup code
- * and then uses save/restore heavily, each save/restore will be expensive.
- * To mitigate this, we check to see how much data we are scanning at a save;
- * if it is large, we do a second, invisible save.  This greatly reduces
- * the cost of inner saves, at the expense of possibly saving some changes
- * twice that otherwise would only have to be saved once.
+ * A consequence of the foregoing algorithms is that the cost of a save is
+ * proportional to the total amount of data allocated since the previous
+ * save.  If a PostScript program reads in a large amount of setup code and
+ * then uses save/restore heavily, each save/restore will be expensive.  To
+ * mitigate this, we check to see how much data we have scanned at this save
+ * level: if it is large, we do a second, invisible save.  This greatly
+ * reduces the cost of inner saves, at the expense of possibly saving some
+ * changes twice that otherwise would only have to be saved once.
  */
 
 /*
@@ -153,6 +148,14 @@ private const long max_repeated_scan = 100000;
  * not by the current allocation mode.
  */
 
+/* Tracing printout */
+private void
+print_save(const char *str, uint spacen, const alloc_save_t *sav)
+{
+  if_debug5('u', "[u]%s space %u 0x%lx: cdata = 0x%lx, id = %lu\n",\
+	    str, spacen, (ulong)sav, (ulong)sav->client_data, (ulong)sav->id);
+}
+
 /*
  * Structure for saved change chain for save/restore.  Because of the
  * garbage collector, we need to distinguish the cases where the change
@@ -168,28 +171,28 @@ struct alloc_change_s {
     short offset;		/* if >= 0, offset within struct */
 };
 
-#define ptr ((alloc_change_t *)vptr)
 private 
 CLEAR_MARKS_PROC(change_clear_marks)
 {
+    alloc_change_t *const ptr = (alloc_change_t *)vptr;
+
     if (r_is_packed(&ptr->contents))
 	r_clear_pmark((ref_packed *) & ptr->contents);
     else
 	r_clear_attrs(&ptr->contents, l_mark);
 }
 private 
-ENUM_PTRS_BEGIN(change_enum_ptrs) return 0;
-
+ENUM_PTRS_WITH(change_enum_ptrs, alloc_change_t *ptr) return 0;
 ENUM_PTR(0, alloc_change_t, next);
 case 1:
-if (ptr->offset >= 0)
-    ENUM_RETURN((byte *) ptr->where - ptr->offset);
-else
-    ENUM_RETURN_REF(ptr->where);
+    if (ptr->offset >= 0)
+	ENUM_RETURN((byte *) ptr->where - ptr->offset);
+    else
+	ENUM_RETURN_REF(ptr->where);
 case 2:
-ENUM_RETURN_REF(&ptr->contents);
+    ENUM_RETURN_REF(&ptr->contents);
 ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(change_reloc_ptrs)
+private RELOC_PTRS_WITH(change_reloc_ptrs, alloc_change_t *ptr)
 {
     RELOC_VAR(ptr->next);
     switch (ptr->offset) {
@@ -215,7 +218,6 @@ private RELOC_PTRS_BEGIN(change_reloc_ptrs)
     }
 }
 RELOC_PTRS_END
-#undef ptr
 gs_private_st_complex_only(st_alloc_change, alloc_change_t, "alloc_change",
 		change_clear_marks, change_enum_ptrs, change_reloc_ptrs, 0);
 
@@ -279,24 +281,26 @@ alloc_set_not_in_save(gs_dual_memory_t *dmem)
 /* Save the state. */
 private alloc_save_t *alloc_save_space(P2(gs_ref_memory_t *,
 					  gs_dual_memory_t *));
+private void
+alloc_free_save(gs_ref_memory_t *mem, alloc_save_t *save, const char *scn,
+		const char *icn)
+{
+    chunk_t *inner = mem->pcc;
 
+    gs_free_object((gs_memory_t *)mem, save, scn);
+    gs_free_object(mem->parent, inner, icn);
+}
 ulong
 alloc_save_state(gs_dual_memory_t * dmem, void *cdata)
 {
     gs_ref_memory_t *lmem = dmem->space_local;
     gs_ref_memory_t *gmem = dmem->space_global;
     ulong sid = gs_next_ids(2);
-
-#define alloc_free_save(mem, s, scn, icn)\
-  { chunk_t *inner = (mem)->pcc;\
-    gs_free_object((gs_memory_t *)(mem), s, scn);\
-    gs_free_object((mem)->parent, inner, icn);\
-  }
     bool global =
-    dmem->save_level == 0 && gmem != lmem &&
-    gmem->num_contexts == 1;
+	dmem->save_level == 0 && gmem != lmem &&
+	gmem->num_contexts == 1;
     alloc_save_t *gsave =
-    (global ? alloc_save_space(gmem, dmem) : (alloc_save_t *) 0);
+	(global ? alloc_save_space(gmem, dmem) : (alloc_save_t *) 0);
     alloc_save_t *lsave = alloc_save_space(lmem, dmem);
 
     if (lsave == 0 || (global &&gsave == 0)) {
@@ -308,7 +312,6 @@ alloc_save_state(gs_dual_memory_t * dmem, void *cdata)
 			    "alloc_save_state(global inner)");
 	return 0;
     }
-#undef alloc_free_save
     if (gsave != 0) {
 	gsave->id = sid + 1;
 	gsave->client_data = 0;
@@ -326,7 +329,8 @@ alloc_save_state(gs_dual_memory_t * dmem, void *cdata)
     if (dmem->save_level != 0) {
 	long scanned = save_set_new(&lsave->state, false);
 
-	if (scanned > max_repeated_scan) {	/* Do a second, invisible save. */
+	if ((lsave->state.total_scanned += scanned) > max_repeated_scan) {
+	    /* Do a second, invisible save. */
 	    alloc_save_t *rsave;
 
 	    rsave = alloc_save_space(lmem, dmem);
@@ -339,8 +343,7 @@ alloc_save_state(gs_dual_memory_t * dmem, void *cdata)
 		/* Inherit the allocated space count -- */
 		/* we need this for triggering a GC. */
 		rsave->state.inherited =
-		    lsave->state.allocated +
-		    lsave->state.inherited;
+		    lsave->state.allocated + lsave->state.inherited;
 		lmem->inherited = rsave->state.inherited;
 		print_save("save", lmem->space, lsave);
 	    }
@@ -407,6 +410,7 @@ alloc_save_space(gs_ref_memory_t * mem, gs_dual_memory_t * dmem)
     if_debug2('u', "[u%u]file_save 0x%lx\n",
 	      mem->space, (ulong) mem->streams);
     mem->streams = 0;
+    mem->total_scanned = 0;
     return save;
 }
 
@@ -422,7 +426,7 @@ alloc_save_change(gs_dual_memory_t * dmem, const ref * pcont,
     if (dmem->save_level == 0)
 	return 0;		/* no saving */
     mem = (pcont == NULL ? dmem->space_local :
-	   dmem->spaces.indexed[r_space(pcont) >> r_space_shift]);
+	   dmem->spaces_indexed[r_space(pcont) >> r_space_shift]);
     cp = gs_alloc_struct((gs_memory_t *) mem, alloc_change_t,
 			 &st_alloc_change, "alloc_save_change");
     if (cp == 0)
@@ -449,7 +453,7 @@ alloc_save_change(gs_dual_memory_t * dmem, const ref * pcont,
     mem->changes = cp;
 #ifdef DEBUG
     if (gs_debug_c('U')) {
-	dlprintf1("[u]save(%s)", client_name_string(cname));
+	dlprintf1("[U]save(%s)", client_name_string(cname));
 	alloc_save_print(cp, false);
     }
 #endif
@@ -1050,8 +1054,8 @@ save_set_new_changes(gs_ref_memory_t * mem, bool to_new)
     for (; chp; chp = chp->next) {
 	ref_packed *prp = chp->where;
 
-	if_debug2('U', "[U]set_new(0x%lx, %d)\n",
-		  (ulong) prp, new);
+	if_debug3('U', "[U]set_new 0x%lx: (0x%lx, %d)\n",
+		  (ulong)chp, (ulong)prp, new);
 	if (!r_is_packed(prp)) {
 	    ref *const rp = (ref *) prp;
 

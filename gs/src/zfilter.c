@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -37,46 +37,46 @@
 /* <source> ASCIIHexEncode/filter <file> */
 /* <source> <dict> ASCIIHexEncode/filter <file> */
 private int
-zAXE(os_ptr op)
+zAXE(i_ctx_t *i_ctx_p)
 {
-    return filter_write_simple(op, &s_AXE_template);
+    return filter_write_simple(i_ctx_p, &s_AXE_template);
 }
 
 /* <target> ASCIIHexDecode/filter <file> */
 /* <target> <dict> ASCIIHexDecode/filter <file> */
 private int
-zAXD(os_ptr op)
+zAXD(i_ctx_t *i_ctx_p)
 {
-    return filter_read_simple(op, &s_AXD_template);
+    return filter_read_simple(i_ctx_p, &s_AXD_template);
 }
 
 /* <target> NullEncode/filter <file> */
 /* <target> <dict_ignored> NullEncode/filter <file> */
 private int
-zNullE(os_ptr op)
+zNullE(i_ctx_t *i_ctx_p)
 {
-    return filter_write_simple(op, &s_NullE_template);
+    return filter_write_simple(i_ctx_p, &s_NullE_template);
 }
 
 /* <source> <bool> PFBDecode/filter <file> */
 /* <source> <dict> <bool> PFBDecode/filter <file> */
 private int
-zPFBD(os_ptr op)
+zPFBD(i_ctx_t *i_ctx_p)
 {
+    os_ptr sop = osp;
     stream_PFBD_state state;
-    os_ptr sop = op;
 
     check_type(*sop, t_boolean);
     state.binary_to_hex = sop->value.boolval;
-    return filter_read(op, 1, &s_PFBD_template, (stream_state *) & state, 0);
+    return filter_read(i_ctx_p, 1, &s_PFBD_template, (stream_state *)&state, 0);
 }
 
 /* <target> PSStringEncode/filter <file> */
 /* <target> <dict> PSStringEncode/filter <file> */
 private int
-zPSSE(os_ptr op)
+zPSSE(i_ctx_t *i_ctx_p)
 {
-    return filter_write_simple(op, &s_PSSE_template);
+    return filter_write_simple(i_ctx_p, &s_PSSE_template);
 }
 
 /* ------ RunLength filters ------ */
@@ -101,8 +101,9 @@ rl_setup(os_ptr dop, bool * eod)
 /* <target> <record_size> RunLengthEncode/filter <file> */
 /* <target> <dict> <record_size> RunLengthEncode/filter <file> */
 private int
-zRLE(register os_ptr op)
+zRLE(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     stream_RLE_state state;
     int code;
 
@@ -112,28 +113,30 @@ zRLE(register os_ptr op)
 	return code;
     check_int_leu(*op, max_uint);
     state.record_size = op->value.intval;
-    return filter_write(op, 1, &s_RLE_template, (stream_state *) & state, 0);
+    return filter_write(i_ctx_p, 1, &s_RLE_template, (stream_state *) & state, 0);
 }
 
 /* <source> RunLengthDecode/filter <file> */
 /* <source> <dict> RunLengthDecode/filter <file> */
 private int
-zRLD(os_ptr op)
+zRLD(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     stream_RLD_state state;
     int code = rl_setup(op, &state.EndOfData);
 
     if (code < 0)
 	return code;
-    return filter_read(op, 0, &s_RLD_template, (stream_state *) & state, 0);
+    return filter_read(i_ctx_p, 0, &s_RLD_template, (stream_state *) & state, 0);
 }
 
 /* <source> <EODcount> <EODstring> SubFileDecode/filter <file> */
 /* <source> <dict> <EODcount> <EODstring> SubFileDecode/filter <file> */
 /* <source> <dict> SubFileDecode/filter <file> *//* (LL3 only) */
 private int
-zSFD(os_ptr op)
+zSFD(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     stream_SFD_state state;
     ref *sop = op;
     int npop;
@@ -159,8 +162,8 @@ zSFD(os_ptr op)
     check_read_type(*sop, t_string);
     state.eod.data = sop->value.const_bytes;
     state.eod.size = r_size(sop);
-    return filter_read(op, npop, &s_SFD_template, (stream_state *) & state,
-		       r_space(sop));
+    return filter_read(i_ctx_p, npop, &s_SFD_template,
+		       (stream_state *)&state, r_space(sop));
 }
 
 /* ------ Utilities ------ */
@@ -170,9 +173,10 @@ private int filter_ensure_buf(P3(stream **, uint, bool));
 
 /* Set up an input filter. */
 int
-filter_read(os_ptr op, int npop, const stream_template * template,
+filter_read(i_ctx_t *i_ctx_p, int npop, const stream_template * template,
 	    stream_state * st, uint space)
 {
+    os_ptr op = osp;
     uint min_size = template->min_out_size + max_min_left;
     uint save_space = ialloc_space(idmemory);
     os_ptr sop = op - npop;
@@ -239,16 +243,17 @@ out:
     return code;
 }
 int
-filter_read_simple(os_ptr op, const stream_template * template)
+filter_read_simple(i_ctx_t *i_ctx_p, const stream_template * template)
 {
-    return filter_read(op, 0, template, NULL, 0);
+    return filter_read(i_ctx_p, 0, template, NULL, 0);
 }
 
 /* Set up an output filter. */
 int
-filter_write(os_ptr op, int npop, const stream_template * template,
+filter_write(i_ctx_t *i_ctx_p, int npop, const stream_template * template,
 	     stream_state * st, uint space)
 {
+    os_ptr op = osp;
     uint min_size = template->min_in_size + max_min_left;
     uint save_space = ialloc_space(idmemory);
     register os_ptr sop = op - npop;
@@ -315,9 +320,9 @@ out:
     return code;
 }
 int
-filter_write_simple(os_ptr op, const stream_template * template)
+filter_write_simple(i_ctx_t *i_ctx_p, const stream_template * template)
 {
-    return filter_write(op, 0, template, NULL, 0);
+    return filter_write(i_ctx_p, 0, template, NULL, 0);
 }
 
 /* Define a byte-at-a-time NullDecode filter for intermediate buffers. */

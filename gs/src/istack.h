@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -17,17 +17,13 @@
  */
 
 
-/* Definitions for expandable Ghostscript stacks */
+/* Definitions for expandable stacks of refs */
 /* Requires iref.h */
 
 #ifndef istack_INCLUDED
 #  define istack_INCLUDED
 
-/* Define an opaque allocator type. */
-#ifndef gs_ref_memory_DEFINED
-#  define gs_ref_memory_DEFINED
-typedef struct gs_ref_memory_s gs_ref_memory_t;
-#endif
+#include "isdata.h"
 
 /*
  * The 3 principal Ghostscript stacks (operand, execution, and dictionary)
@@ -38,9 +34,6 @@ typedef struct gs_ref_memory_s gs_ref_memory_t;
  * recovery code in interp.c.  A few situations require special treatment:
  * see ostack.h, estack.h, and dstack.h for details.
  */
-
-typedef ref *s_ptr;
-typedef const ref *const_s_ptr;
 
 /*
  * Define the structure for a stack block.
@@ -66,86 +59,37 @@ typedef struct ref_stack_block_s {
 
 #define stack_block_refs (sizeof(ref_stack_block) / sizeof(ref))
 
-/*
- * In order to detect under- and overflow with minimum overhead, we put
- * guard elements at the top and bottom of each stack block (see dstack.h,
- * estack.h, and ostack.h for details of the individual stacks).  Note that
- * the 'current' and 'next' arrays include the guard elements.
- */
-
-/*
- * The garbage collector requires that the entire contents of every block
- * be 'clean', i.e., contain legitimate refs; we also need to ensure that
- * at GC time, pointers in unused areas of a block will not be followed
- * (since they may be dangling).  We ensure this as follows:
- *      - When allocating a new block, we set the entire body to nulls.
- *      This is necessary because the block may be freed before the next GC,
- *      and the GC must be able to scan (parse) refs even if they are free.
- *      - When adding a new block to the top of the stack, we set to nulls
- *      the unused area of the new next-to-top blocks.
- *      - At the beginning of garbage collection, we set to nulls the unused
- *      elements of the top block.
- */
-
-/*
- * Define the (statically allocated) state of a stack.
- * Note that the total size of a stack cannot exceed max_uint,
- * because it has to be possible to copy a stack to a PostScript array.
- */
-#ifndef ref_stack_DEFINED
-typedef struct ref_stack_s ref_stack;	/* also defined in idebug.h */
-#  define ref_stack_DEFINED
-#endif
-struct ref_stack_s {
-    /* Following are updated dynamically. */
-    s_ptr p;			/* current top element */
-    /* Following are updated when adding or deleting blocks. */
-    s_ptr bot;			/* bottommost valid element */
-    s_ptr top;			/* topmost valid element = */
-				/* bot + data_size */
-    ref current;		/* t_array for current top block */
-    uint extension_size;	/* total sizes of extn. blocks */
-    uint extension_used;	/* total used sizes of extn. blocks */
-    /* Following are updated rarely. */
-    ref max_stack;		/* t_integer, Max...Stack user param */
-    uint requested;		/* amount of last failing */
-				/* push or pop request */
-    uint margin;		/* # of slots to leave between limit */
-				/* and top */
-    uint body_size;		/* data_size - margin */
-    /* Following are set at initialization. */
-    uint bot_guard;		/* # of guard elements below bot */
-    uint top_guard;		/* # of guard elements above top */
-    uint block_size;		/* size of each block */
-    uint data_size;		/* # of data slots in each block */
-    ref guard_value;		/* t__invalid or t_operator, */
-				/* bottom guard value */
-    int underflow_error;	/* error code for underflow */
-    int overflow_error;		/* error code for overflow */
-    bool allow_expansion;	/* if false, don't expand */
-    gs_ref_memory_t *memory;	/* allocator for blocks */
-};
-#define public_st_ref_stack()	/* in istack.c */\
-  gs_public_st_complex_only(st_ref_stack, ref_stack, "ref_stack",\
-    ref_stack_clear_marks, ref_stack_enum_ptrs, ref_stack_reloc_ptrs, 0)
-#define st_ref_stack_num_ptrs 1	/* current */
-
 /* ------ Procedural interface ------ */
 
-/* Initialize a stack. */
-void ref_stack_init(P6(ref_stack *, ref *, uint, uint, ref *,
-		       gs_ref_memory_t *));
+/*
+ * Initialize a stack.  Note that this allocates the stack parameter
+ * structure.
+ */
+int ref_stack_init(P6(ref_stack_t *pstack, const ref *pblock_array,
+		      uint bot_guard, uint top_guard,
+		      const ref *pguard_value, gs_ref_memory_t *mem));
 
-/* Set the maximum number of elements allowed on a stack. */
-/* Note that the value is a long, not a uint or a ulong. */
-int ref_stack_set_max_count(P2(ref_stack *, long));
+/* Set whether a stack is allowed to expand.  The initial value is true. */
+void ref_stack_allow_expansion(P2(ref_stack_t *pstack, bool expand));
 
-/* Set the margin between the limit and the top of the stack. */
-/* Note that this may require allocating a block. */
-int ref_stack_set_margin(P2(ref_stack *, uint));
+/* Set the error codes for under- and overflow.  The initial values are -1. */
+void ref_stack_set_error_codes(P3(ref_stack_t *pstack, int underflow_error,
+				  int overflow_error));
+
+/*
+ * Set the maximum number of elements allowed on a stack.
+ * Note that the value is a long, not a uint or a ulong.
+ */
+int ref_stack_set_max_count(P2(ref_stack_t *pstack, long nmax));
+
+/*
+ * Set the margin between the limit and the top of the stack.
+ * Note that this may require allocating a block.
+ */
+int ref_stack_set_margin(P2(ref_stack_t *pstack, uint margin));
 
 /* Return the number of elements on a stack. */
-uint ref_stack_count(P1(const ref_stack *));
+uint ref_stack_count(P1(const ref_stack_t *pstack));
 
 #define ref_stack_count_inline(pstk)\
   ((pstk)->p + 1 - (pstk)->bot + (pstk)->extension_used)
@@ -153,53 +97,62 @@ uint ref_stack_count(P1(const ref_stack *));
 /* Return the maximum number of elements allowed on a stack. */
 #define ref_stack_max_count(pstk) (uint)((pstk)->max_stack.value.intval)
 
-/* Return a pointer to a given element from the stack, counting from */
-/* 0 as the top element.  If the index is out of range, return 0. */
-/* Note that the index is a long, not a uint or a ulong. */
-ref *ref_stack_index(P2(const ref_stack *, long));
+/*
+ * Return a pointer to a given element from the stack, counting from
+ * 0 as the top element.  If the index is out of range, return 0.
+ * Note that the index is a long, not a uint or a ulong.
+ */
+ref *ref_stack_index(P2(const ref_stack_t *pstack, long index));
 
-/* Count the number of elements down to and including the first mark. */
-/* If no mark is found, return 0. */
-uint ref_stack_counttomark(P1(const ref_stack *));
+/*
+ * Count the number of elements down to and including the first mark.
+ * If no mark is found, return 0.
+ */
+uint ref_stack_counttomark(P1(const ref_stack_t *pstack));
 
 /*
  * Do the store check for storing 'count' elements of a stack, starting
  * 'skip' elements below the top, into an array.  Return 0 or e_invalidaccess.
  */
-int ref_stack_store_check(P4(const ref_stack * pstack, ref * parray,
+int ref_stack_store_check(P4(const ref_stack_t *pstack, ref *parray,
 			     uint count, uint skip));
 
 /*
- * Store 'count elements of a stack, starting 'skip' elements below the top,
- * into an array, with or without store/undo checking.
- * age=-1 for no check, 0 for old, 1 for new.
- * May return e_rangecheck or e_invalidaccess.
+ * Store the top 'count' elements of a stack, starting 'skip' elements below
+ * the top, into an array, with or without store/undo checking.  age=-1 for
+ * no check, 0 for old, 1 for new.  May return e_rangecheck or
+ * e_invalidaccess.
  */
-int ref_stack_store(P7(const ref_stack * pstack, ref * parray, uint count,
+int ref_stack_store(P7(const ref_stack_t *pstack, ref *parray, uint count,
 		       uint skip, int age, bool check, client_name_t cname));
 
-/* Pop the top N elements off a stack. */
-/* The number must not exceed the number of elements in use. */
-void ref_stack_pop(P2(ref_stack *, uint));
+/*
+ * Pop the top N elements off a stack.
+ * The number must not exceed the number of elements in use.
+ */
+void ref_stack_pop(P2(ref_stack_t *pstack, uint count));
 
 #define ref_stack_clear(pstk) ref_stack_pop(pstk, ref_stack_count(pstk))
 #define ref_stack_pop_to(pstk, depth)\
   ref_stack_pop(pstk, ref_stack_count(pstk) - (depth))
 
-/* Pop the top block off a stack. */
-/* May return underflow_error. */
-int ref_stack_pop_block(P1(ref_stack *));
+/* Pop the top block off a stack.  May return underflow_error. */
+int ref_stack_pop_block(P1(ref_stack_t *pstack));
 
-/* Extend a stack to recover from an overflow condition. */
-/* Uses the requested value to decide what to do. */
-/* May return overflow_error or e_VMerror. */
-int ref_stack_extend(P2(ref_stack *, uint));
+/*
+ * Extend a stack to recover from an overflow condition.
+ * Uses the requested value to decide what to do.
+ * May return overflow_error or e_VMerror.
+ */
+int ref_stack_extend(P2(ref_stack_t *pstack, uint request));
 
-/* Push N empty slots onto a stack.  These slots are not initialized; */
-/* the caller must immediately fill them.  May return overflow_error */
-/* (if max_stack would be exceeded, or the stack has no allocator) */
-/* or e_VMerror. */
-int ref_stack_push(P2(ref_stack *, uint));
+/*
+ * Push N empty slots onto a stack.  These slots are not initialized:
+ * the caller must immediately fill them.  May return overflow_error
+ * (if max_stack would be exceeded, or the stack has no allocator)
+ * or e_VMerror.
+ */
+int ref_stack_push(P2(ref_stack_t *pstack, uint count));
 
 /*
  * Enumerate the blocks of a stack from top to bottom, as follows:
@@ -217,34 +170,23 @@ typedef struct ref_stack_enum_s {
     ref *ptr;
     uint size;
 } ref_stack_enum_t;
-void ref_stack_enum_begin(P2(ref_stack_enum_t *, const ref_stack *));
-bool ref_stack_enum_next(P1(ref_stack_enum_t *));
-
-/* Define a previous enumeration structure, for backward compatibility. */
-#define STACK_LOOP_BEGIN(pstack, ptrv, sizev)\
-{ ref_stack_enum_t enum_;\
-  ref_stack_enum_begin(&enum_, pstack);\
-  do {\
-    ref *ptrv = enum_.ptr;\
-    uint sizev = enum_.size;
-#define STACK_LOOP_END(ptrv, sizev)\
-  } while (ref_stack_enum_next(&enum_));\
-}
+void ref_stack_enum_begin(P2(ref_stack_enum_t *prse,
+			     const ref_stack_t *pstack));
+bool ref_stack_enum_next(P1(ref_stack_enum_t *prse));
 
 /* Clean up a stack for garbage collection. */
-void ref_stack_cleanup(P1(ref_stack *));
+void ref_stack_cleanup(P1(ref_stack_t *pstack));
 
 /*
- * Free the entire contents of a stack, including the bottom block.
- * The client must free the ref_stack itself.  Note that after calling
+ * Free the entire contents of a stack, including the bottom block.  The
+ * client must still free the ref_stack_t object.  Note that after calling
  * ref_stack_release, the stack is no longer usable.
  */
-void ref_stack_release(P1(ref_stack *));
+void ref_stack_release(P1(ref_stack_t *pstack));
 
 /*
- * Release a stack and then free the ref_stack object.
+ * Release a stack and then free the stack object.
  */
-void ref_stack_free(P3(ref_stack * pstack, gs_memory_t * mem,
-		       client_name_t cname));
+void ref_stack_free(P1(ref_stack_t *pstack));
 
 #endif /* istack_INCLUDED */

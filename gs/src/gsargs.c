@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -41,7 +41,7 @@ arg_init(arg_list * pal, const char **argv, int argc,
 
 /* Push a string onto an arg list. */
 void
-arg_push_memory_string(arg_list * pal, const char *str, gs_memory_t * mem)
+arg_push_memory_string(arg_list * pal, char *str, gs_memory_t * mem)
 {
     arg_source *pas;
 
@@ -67,7 +67,7 @@ arg_finit(arg_list * pal)
 	if (pas->is_file)
 	    fclose(pas->u.file);
 	else if (pas->u.s.memory)
-	    gs_free_object(pas->u.s.memory, (void *)pas->u.s.chars, "arg_finit");
+	    gs_free_object(pas->u.s.memory, pas->u.s.chars, "arg_finit");
     }
 }
 
@@ -116,7 +116,7 @@ arg_next(arg_list * pal)
 		if (f != NULL)
 		    fclose(f);
 		else if (pas->u.s.memory)
-		    gs_free_object(pas->u.s.memory, (void *)pas->u.s.chars,
+		    gs_free_object(pas->u.s.memory, pas->u.s.chars,
 				   "arg_next");
 		pal->depth--;
 		goto top;

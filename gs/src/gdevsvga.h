@@ -35,7 +35,6 @@ dev_proc_copy_color(svga_copy_color);
 dev_proc_get_params(svga_get_params);
 dev_proc_put_params(svga_put_params);
 dev_proc_get_bits(svga_get_bits);
-dev_proc_get_alpha_bits(svga_get_alpha_bits);
 dev_proc_copy_alpha(svga_copy_alpha);
 
 /* Table structure for looking up graphics modes. */
@@ -52,7 +51,6 @@ struct gx_device_svga_s {
     void (*set_mode) (P1(int));
     void (*set_page) (P3(gx_device_svga * fbdev, int pnum, int wnum));
     bool fixed_colors;		/* if true, used a fixed palette */
-    int alpha_text, alpha_graphics;	/* if >1, map alpha to saturation */
     const mode_info *mode;	/* BIOS display mode info */
     uint raster;		/* frame buffer bytes per line */
     int current_page;		/* current page */
@@ -83,7 +81,7 @@ struct gx_device_svga_s {
 	  /*dci_color(*/depth, maxv, dither/*)*/),\
 	 { 0 },		/* std_procs */\
 	get_mode, set_mode, set_page,\
-	0 /*fixed_colors*/, 1 /*alpha_text*/, 1 /*alpha_graphics*/\
+	0 /*fixed_colors*/\
    }
 #define svga_device(procs, name, get_mode, set_mode, set_page)\
   svga_color_device(procs, name, 8, 31, 4, get_mode, set_mode, set_page)

@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -28,7 +28,7 @@
 #include "store.h"
 
 /* Imported from zfont42.c */
-int build_gs_TrueType_font(P5(os_ptr op, font_type ftype,
+int build_gs_TrueType_font(P6(i_ctx_t *i_ctx_p, os_ptr op, font_type ftype,
 			      const char *bcstr, const char *bgstr,
 			      build_font_options_t options));
 
@@ -36,13 +36,14 @@ int build_gs_TrueType_font(P5(os_ptr op, font_type ftype,
 /* Build a type 9 or 10 (CID-keyed) font. */
 /* Right now, we treat these like type 3 (with a BuildGlyph procedure). */
 private int
-build_gs_cid_font(os_ptr op, font_type ftype, const build_proc_refs * pbuild)
+build_gs_cid_font(i_ctx_t *i_ctx_p, os_ptr op, font_type ftype,
+		  const build_proc_refs * pbuild)
 {
     int code;
     gs_font_base *pfont;
 
     check_type(*op, t_dictionary);
-    code = build_gs_simple_font(op, &pfont, ftype, &st_gs_font_base,
+    code = build_gs_simple_font(i_ctx_p, op, &pfont, ftype, &st_gs_font_base,
 				pbuild,
 				bf_Encoding_optional |
 				bf_FontBBox_required |
@@ -52,33 +53,36 @@ build_gs_cid_font(os_ptr op, font_type ftype, const build_proc_refs * pbuild)
     return define_gs_font((gs_font *) pfont);
 }
 private int
-zbuildfont9(os_ptr op)
+zbuildfont9(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     build_proc_refs build;
     int code = build_proc_name_refs(&build, NULL, "%Type9BuildGlyph");
 
     if (code < 0)
 	return code;
-    return build_gs_cid_font(op, ft_CID_encrypted, &build);
+    return build_gs_cid_font(i_ctx_p, op, ft_CID_encrypted, &build);
 }
 private int
-zbuildfont10(os_ptr op)
+zbuildfont10(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     build_proc_refs build;
     int code = build_gs_font_procs(op, &build);
 
     if (code < 0)
 	return code;
     make_null(&build.BuildChar);	/* only BuildGlyph */
-    return build_gs_cid_font(op, ft_CID_user_defined, &build);
+    return build_gs_cid_font(i_ctx_p, op, ft_CID_user_defined, &build);
 }
 
 /* <string|name> <font_dict> .buildfont11 <string|name> <font> */
 private int
-zbuildfont11(os_ptr op)
+zbuildfont11(i_ctx_t *i_ctx_p)
 {
-    return build_gs_TrueType_font(op, ft_CID_TrueType, (const char *)0,
-				  "%Type11BuildGlyph",
+    os_ptr op = osp;
+    return build_gs_TrueType_font(i_ctx_p, op, ft_CID_TrueType,
+				  (const char *)0, "%Type11BuildGlyph",
 				  bf_Encoding_optional |
 				  bf_FontBBox_required |
 				  bf_UniqueID_ignored |

@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -21,6 +21,7 @@
 #include "gx.h"
 #include "gserrors.h"
 #include "gdevpdfx.h"
+#include "gsparamx.h"
 
 /*
  * The pdfwrite device supports the following "real" parameters:
@@ -135,13 +136,13 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
     {
 	int cdv = CoreDistVersion;
 
-	ecode = psdf_put_int_param(plist, (param_name = "CoreDistVersion"), &cdv, ecode);
+	ecode = param_put_int(plist, (param_name = "CoreDistVersion"), &cdv, ecode);
 	if (cdv != CoreDistVersion)
 	    param_signal_error(plist, param_name, ecode = gs_error_rangecheck);
     }
 
-    ecode = psdf_put_bool_param(plist, "ReAssignCharacters", &rac, ecode);
-    ecode = psdf_put_bool_param(plist, "ReEncodeCharacters", &rec, ecode);
+    ecode = param_put_bool(plist, "ReAssignCharacters", &rac, ecode);
+    ecode = param_put_bool(plist, "ReEncodeCharacters", &rec, ecode);
     switch (code = param_read_long(plist, (param_name = "FirstObjectNumber"), &fon)) {
 	case 0:
 	    /*

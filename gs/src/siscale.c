@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -22,6 +22,7 @@
 #include "memory_.h"
 #include "stdio_.h"
 #include <assert.h>
+#include "gconfigv.h"
 #include "strimpl.h"
 #include "siscale.h"
 
@@ -32,7 +33,88 @@
 
 /* ---------------- ImageScaleEncode/Decode ---------------- */
 
-public_st_IScale_state();	/* public so clients can allocate */
+/* Define whether to accumulate pixels in fixed or floating point. */
+#if USE_FPU <= 0
+
+	/* Accumulate pixels in fixed point. */
+
+typedef int PixelWeight;
+
+#  if arch_ints_are_short
+typedef long AccumTmp;
+#  else
+typedef int AccumTmp;
+#  endif
+
+#define num_weight_bits\
+  ((sizeof(AccumTmp) - maxSizeofPixel) * 8 - (LOG2_MAX_ISCALE_SUPPORT + 1))
+#define scale_PixelWeight(factor) ((int)((factor) * (1 << num_weight_bits)))
+#define unscale_AccumTmp(atemp) arith_rshift(atemp, num_weight_bits)
+
+#else /* USE_FPU > 0 */
+
+	/* Accumulate pixels in floating point. */
+
+typedef float PixelWeight;
+typedef double AccumTmp;
+
+#define scale_PixelWeight(factor) (factor)
+#define unscale_AccumTmp(atemp) ((int)(atemp))
+
+#endif /* USE_FPU */
+
+/* Temporary intermediate values */
+typedef byte PixelTmp;
+typedef int PixelTmp2;		/* extra width for clamping sum */
+
+#define minPixelTmp 0
+#define maxPixelTmp 255
+#define unitPixelTmp 255
+
+/* Max of all pixel sizes */
+#define maxSizeofPixel 2
+
+/* Auxiliary structures. */
+
+typedef struct {
+    PixelWeight weight;		/* float or scaled fraction */
+} CONTRIB;
+
+typedef struct {
+    int index;			/* index of first element in list of */
+    /* contributors */
+    int n;			/* number of contributors */
+    /* (not multiplied by stride) */
+    int first_pixel;		/* offset of first value in source data */
+} CLIST;
+
+/* ImageScaleEncode / ImageScaleDecode */
+typedef struct stream_IScale_state_s {
+    /* The client sets the params values before initialization. */
+    stream_image_scale_state_common;  /* = state_common + params */
+    /* The init procedure sets the following. */
+    int sizeofPixelIn;		/* bytes per input value, 1 or 2 */
+    int sizeofPixelOut;		/* bytes per output value, 1 or 2 */
+    double xscale, yscale;
+    void /*PixelIn */ *src;
+    void /*PixelOut */ *dst;
+    PixelTmp *tmp;
+    CLIST *contrib;
+    CONTRIB *items;
+    /* The following are updated dynamically. */
+    int src_y;
+    uint src_offset, src_size;
+    int dst_y;
+    uint dst_offset, dst_size;
+    CLIST dst_next_list;	/* for next output value */
+    int dst_last_index;		/* highest index used in list */
+    CONTRIB dst_items[MAX_ISCALE_SUPPORT];	/* ditto */
+} stream_IScale_state;
+
+gs_private_st_ptrs5(st_IScale_state, stream_IScale_state,
+    "ImageScaleEncode/Decode state",
+    iscale_state_enum_ptrs, iscale_state_reloc_ptrs,
+    dst, src, tmp, contrib, items);
 
 /* ------ Digital filter definition ------ */
 
@@ -81,10 +163,10 @@ Mitchell_filter(double t)
 /* ------ Auxiliary procedures ------ */
 
 /* Define the minimum scale. */
-#define min_scale ((fWidthIn * 2) / (max_support - 1.01))
+#define min_scale ((fWidthIn * 2) / (MAX_ISCALE_SUPPORT - 1.01))
 
 /* Calculate the support for a given scale. */
-/* The value is always in the range 1 .. max_support. */
+/* The value is always in the range 1 .. MAX_ISCALE_SUPPORT. */
 private int
 contrib_pixels(double scale)
 {
@@ -285,8 +367,8 @@ zoom_y(void /*PixelOut */ *dst, int sizeofPixelOut, uint MaxValueOut,
 
 /* ------ Stream implementation ------ */
 
-#define tmp_width WidthOut
-#define tmp_height HeightIn
+#define tmp_width params.WidthOut
+#define tmp_height params.HeightIn
 
 /* Forward references */
 private void s_IScale_release(P1(stream_state * st));
@@ -295,28 +377,28 @@ private void s_IScale_release(P1(stream_state * st));
 private void
 calculate_dst_contrib(stream_IScale_state * ss, int y)
 {
-    uint row_size = ss->WidthOut * ss->Colors;
+    uint row_size = ss->params.WidthOut * ss->params.Colors;
     int last_index =
     calculate_contrib(&ss->dst_next_list, ss->dst_items, ss->yscale,
-		      y, 1, ss->HeightIn, max_support, row_size,
-		      (double)ss->MaxValueOut / unitPixelTmp);
+		      y, 1, ss->params.HeightIn, MAX_ISCALE_SUPPORT, row_size,
+		      (double)ss->params.MaxValueOut / unitPixelTmp);
     int first_index_mod = ss->dst_next_list.first_pixel / row_size;
 
     ss->dst_last_index = last_index;
-    last_index %= max_support;
+    last_index %= MAX_ISCALE_SUPPORT;
     if (last_index < first_index_mod) {		/* Shuffle the indices to account for wraparound. */
-	CONTRIB shuffle[max_support];
+	CONTRIB shuffle[MAX_ISCALE_SUPPORT];
 	int i;
 
-	for (i = 0; i < max_support; ++i)
+	for (i = 0; i < MAX_ISCALE_SUPPORT; ++i)
 	    shuffle[i].weight =
 		(i <= last_index ?
-		 ss->dst_items[i + max_support - first_index_mod].weight :
+		 ss->dst_items[i + MAX_ISCALE_SUPPORT - first_index_mod].weight :
 		 i >= first_index_mod ?
 		 ss->dst_items[i - first_index_mod].weight :
 		 0);
-	memcpy(ss->dst_items, shuffle, max_support * sizeof(CONTRIB));
-	ss->dst_next_list.n = max_support;
+	memcpy(ss->dst_items, shuffle, MAX_ISCALE_SUPPORT * sizeof(CONTRIB));
+	ss->dst_next_list.n = MAX_ISCALE_SUPPORT;
 	ss->dst_next_list.first_pixel = 0;
     }
 }
@@ -328,33 +410,33 @@ s_IScale_init(stream_state * st)
     stream_IScale_state *const ss = (stream_IScale_state *) st;
     gs_memory_t *mem = ss->memory;
 
-    ss->sizeofPixelIn = ss->BitsPerComponentIn / 8;
-    ss->sizeofPixelOut = ss->BitsPerComponentOut / 8;
-    ss->xscale = (double)ss->WidthOut / (double)ss->WidthIn;
-    ss->yscale = (double)ss->HeightOut / (double)ss->HeightIn;
+    ss->sizeofPixelIn = ss->params.BitsPerComponentIn / 8;
+    ss->sizeofPixelOut = ss->params.BitsPerComponentOut / 8;
+    ss->xscale = (double)ss->params.WidthOut / (double)ss->params.WidthIn;
+    ss->yscale = (double)ss->params.HeightOut / (double)ss->params.HeightIn;
 
     ss->src_y = 0;
-    ss->src_size = ss->WidthIn * ss->sizeofPixelIn * ss->Colors;
+    ss->src_size = ss->params.WidthIn * ss->sizeofPixelIn * ss->params.Colors;
     ss->src_offset = 0;
     ss->dst_y = 0;
-    ss->dst_size = ss->WidthOut * ss->sizeofPixelOut * ss->Colors;
+    ss->dst_size = ss->params.WidthOut * ss->sizeofPixelOut * ss->params.Colors;
     ss->dst_offset = 0;
 
     /* create intermediate image to hold horizontal zoom */
     ss->tmp = (PixelTmp *) gs_alloc_byte_array(mem,
-					   min(ss->tmp_height, max_support),
-			      ss->tmp_width * ss->Colors * sizeof(PixelTmp),
+					   min(ss->tmp_height, MAX_ISCALE_SUPPORT),
+			      ss->tmp_width * ss->params.Colors * sizeof(PixelTmp),
 					       "image_scale tmp");
     ss->contrib = (CLIST *) gs_alloc_byte_array(mem,
-					   max(ss->WidthOut, ss->HeightOut),
+					   max(ss->params.WidthOut, ss->params.HeightOut),
 				      sizeof(CLIST), "image_scale contrib");
     ss->items = (CONTRIB *) gs_alloc_byte_array(mem,
-				  contrib_pixels(ss->xscale) * ss->WidthOut,
+				  contrib_pixels(ss->xscale) * ss->params.WidthOut,
 				 sizeof(CONTRIB), "image_scale contrib[*]");
     /* Allocate buffers for 1 row of source and destination. */
-    ss->dst = gs_alloc_byte_array(mem, ss->WidthOut * ss->Colors,
+    ss->dst = gs_alloc_byte_array(mem, ss->params.WidthOut * ss->params.Colors,
 				  ss->sizeofPixelOut, "image_scale dst");
-    ss->src = gs_alloc_byte_array(mem, ss->WidthIn * ss->Colors,
+    ss->src = gs_alloc_byte_array(mem, ss->params.WidthIn * ss->params.Colors,
 				  ss->sizeofPixelIn, "image_scale src");
     if (ss->tmp == 0 || ss->contrib == 0 || ss->items == 0 ||
 	ss->dst == 0 || ss->src == 0
@@ -365,8 +447,8 @@ s_IScale_init(stream_state * st)
     }
     /* Pre-calculate filter contributions for a row. */
     calculate_contrib(ss->contrib, ss->items, ss->xscale,
-		      0, ss->WidthOut, ss->WidthIn, ss->WidthIn,
-		      ss->Colors, (double)unitPixelTmp / ss->MaxValueIn);
+		      0, ss->params.WidthOut, ss->params.WidthIn, ss->params.WidthIn,
+		      ss->params.Colors, (double)unitPixelTmp / ss->params.MaxValueIn);
 
     /* Prepare the weights for the first output row. */
     calculate_dst_contrib(ss, 0);
@@ -388,7 +470,7 @@ s_IScale_process(stream_state * st, stream_cursor_read * pr,
 	/* to generate a vertically scaled output row. */
 	uint wleft = pw->limit - pw->ptr;
 
-	if (ss->dst_y == ss->HeightOut)
+	if (ss->dst_y == ss->params.HeightOut)
 	    return EOFC;
 	if (wleft == 0)
 	    return 1;
@@ -402,8 +484,8 @@ s_IScale_process(stream_state * st, stream_cursor_read * pr,
 		row = ss->dst;
 	    }
 	    /* Apply filter to zoom vertically from tmp to dst. */
-	    zoom_y(row, ss->sizeofPixelOut, ss->MaxValueOut, ss->tmp,
-		   ss->WidthOut, ss->tmp_width, ss->Colors,
+	    zoom_y(row, ss->sizeofPixelOut, ss->params.MaxValueOut, ss->tmp,
+		   ss->params.WidthOut, ss->tmp_width, ss->params.Colors,
 		   &ss->dst_next_list, ss->dst_items);
 	    /* Idiotic C coercion rules allow T* and void* to be */
 	    /* inter-assigned freely, but not compared! */
@@ -422,7 +504,7 @@ s_IScale_process(stream_state * st, stream_cursor_read * pr,
 	}
 	/* Advance to the next output row. */
       adv:++(ss->dst_y);
-	if (ss->dst_y != ss->HeightOut)
+	if (ss->dst_y != ss->params.HeightOut)
 	    calculate_dst_contrib(ss, ss->dst_y);
     }
 
@@ -435,7 +517,7 @@ s_IScale_process(stream_state * st, stream_cursor_read * pr,
 	if (rleft == 0)
 	    return 0;		/* need more input */
 #ifdef DEBUG
-	assert(ss->src_y < ss->HeightIn);
+	assert(ss->src_y < ss->params.HeightIn);
 #endif
 	if (rleft >= rcount) {	/* We're going to fill up a row. */
 	    const byte *row;
@@ -450,10 +532,10 @@ s_IScale_process(stream_state * st, stream_cursor_read * pr,
 		ss->src_offset = 0;
 	    }
 	    /* Apply filter to zoom horizontally from src to tmp. */
-	    zoom_x(ss->tmp + (ss->src_y % max_support) *
-		   ss->tmp_width * ss->Colors, row,
-		   ss->sizeofPixelIn, ss->tmp_width, ss->WidthIn,
-		   ss->Colors, ss->contrib, ss->items);
+	    zoom_x(ss->tmp + (ss->src_y % MAX_ISCALE_SUPPORT) *
+		   ss->tmp_width * ss->params.Colors, row,
+		   ss->sizeofPixelIn, ss->tmp_width, ss->params.WidthIn,
+		   ss->params.Colors, ss->contrib, ss->items);
 	    pr->ptr += rcount;
 	    ++(ss->src_y);
 	    goto top;

@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -19,12 +19,12 @@
 
 /* Image compression for PostScript and PDF writers */
 #include "math_.h"
+#include "jpeglib_.h"		/* for sdct.h */
 #include "gx.h"
 #include "gserrors.h"
 #include "gscspace.h"
 #include "gdevpsdf.h"
 #include "gdevpsds.h"
-#include "jpeglib.h"		/* for sdct.h */
 #include "strimpl.h"
 #include "scfx.h"
 #include "sdct.h"
@@ -35,8 +35,11 @@
 
 /* ---------------- Image compression ---------------- */
 
-/* Add a filter to expand or reduce the pixel width if needed. */
-/* At least one of bpc_in and bpc_out is 8; the other is 1, 2, 4, or 8. */
+/*
+ * Add a filter to expand or reduce the pixel width if needed.
+ * At least one of bpc_in and bpc_out is 8; the other is 1, 2, 4, or 8,
+ * except if bpc_out is 8, bpc_in may be 12.
+ */
 private int
 pixel_resize(psdf_binary_writer * pbw, int width, int num_components,
 	     int bpc_in, int bpc_out)
@@ -48,16 +51,15 @@ pixel_resize(psdf_binary_writer * pbw, int width, int num_components,
 
     if (bpc_out == bpc_in)
 	return 0;
-    if (bpc_in < 8) {
-	static const stream_template *const exts[5] =
-	{
-	    0, &s_1_8_template, &s_2_8_template, 0, &s_4_8_template
+    if (bpc_in != 8) {
+	static const stream_template *const exts[13] = {
+	    0, &s_1_8_template, &s_2_8_template, 0, &s_4_8_template,
+	    0, 0, 0, 0, 0, 0, 0, &s_12_8_template
 	};
 
 	template = exts[bpc_in];
     } else {
-	static const stream_template *const rets[5] =
-	{
+	static const stream_template *const rets[5] = {
 	    0, &s_8_1_template, &s_8_2_template, 0, &s_8_4_template
 	};
 
@@ -78,7 +80,7 @@ pixel_resize(psdf_binary_writer * pbw, int width, int num_components,
 
 /* Add the appropriate image compression filter, if any. */
 private int
-setup_image_compression(psdf_binary_writer * pbw, const psdf_image_params * pdip,
+setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
 			const gs_image_t * pim)
 {
     gx_device_psdf *pdev = pbw->dev;
@@ -130,8 +132,9 @@ setup_image_compression(psdf_binary_writer * pbw, const psdf_image_params * pdip
 	}
 	ss->Columns = pim->Width;
 	ss->Rows = (ss->EndOfBlock ? 0 : pim->Height);
-    } else if (template == &s_LZWE_template ||
-	       template == &s_zlibE_template) {
+    } else if ((template == &s_LZWE_template ||
+		template == &s_zlibE_template) &&
+	       pdev->version >= psdf_version_ll3) {
 	/* Add a PNGPredictor filter. */
 	int code = psdf_encode_binary(pbw, template, st);
 
@@ -226,14 +229,15 @@ int
 psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
 			 gs_image_t * pim, const gs_matrix * pctm,
 			 const gs_imager_state * pis)
-{	/*
-	 * The following algorithms are per Adobe Tech Note # 5151,
-	 * "Acrobat Distiller Parameters", revised 16 September 1996
-	 * for Acrobat(TM) Distiller(TM) 3.0.
-	 *
-	 * The control structure is a little tricky, because filter
-	 * pipelines must be constructed back-to-front.
-	 */
+{
+    /*
+     * The following algorithms are per Adobe Tech Note # 5151,
+     * "Acrobat Distiller Parameters", revised 16 September 1996
+     * for Acrobat(TM) Distiller(TM) 3.0.
+     *
+     * The control structure is a little tricky, because filter
+     * pipelines must be constructed back-to-front.
+     */
     int code = 0;
     psdf_image_params params;
 
@@ -243,6 +247,7 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
     } else {
 	int ncomp = gs_color_space_num_components(pim->ColorSpace);
 	int bpc = pim->BitsPerComponent;
+	int bpc_out = pim->BitsPerComponent = min(bpc, 8);
 
 	/*
 	 * We can compute the image resolution by:
@@ -286,6 +291,9 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
 	    } else {
 		code = setup_image_compression(pbw, &params, pim);
 	    }
+	    if (code < 0)
+		return code;
+	    code = pixel_resize(pbw, pim->Width, ncomp, bpc, bpc_out);
 	} else {
 	    /* Color */
 	    bool cmyk_to_rgb =
@@ -298,7 +306,7 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
 		pim->ColorSpace = gs_cspace_DeviceRGB(pis);
 	    params = pdev->params.ColorImage;
 	    if (params.Depth == -1)
-		params.Depth = (cmyk_to_rgb ? 8 : bpc);
+		params.Depth = (cmyk_to_rgb ? 8 : bpc_out);
 	    if (params.Downsample && params.Resolution <= resolution / 2) {
 		code = setup_downsampling(pbw, &params, pim, resolution);
 	    } else {
@@ -308,8 +316,8 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
 		gs_memory_t *mem = pdev->v_memory;
 		stream_C2R_state *ss = (stream_C2R_state *)
 		s_alloc_state(mem, s_C2R_template.stype, "C2R state");
-		int code = pixel_resize(pbw, pim->Width, 3, 8, bpc);
-
+		int code = pixel_resize(pbw, pim->Width, 3, 8, bpc_out);
+		    
 		if (code < 0 ||
 		    (code = psdf_encode_binary(pbw, &s_C2R_template,
 					       (stream_state *) ss)) < 0 ||
@@ -317,6 +325,10 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
 		    )
 		    return code;
 		s_C2R_init(ss, pis);
+	    } else {
+		code = pixel_resize(pbw, pim->Width, ncomp, bpc, bpc_out);
+		if (code < 0)
+		    return code;
 	    }
 	}
     }

@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -22,14 +22,24 @@
 #ifndef gsccolor_INCLUDED
 #  define gsccolor_INCLUDED
 
-#include "gsstruct.h"		/* for extern_st */
+#include "gsstype.h"		/* for extern_st */
 
 /* Pattern instance, usable in color. */
-typedef struct gs_pattern_instance_s gs_pattern_instance;
+#ifndef gs_pattern_instance_DEFINED
+#  define gs_pattern_instance_DEFINED
+typedef struct gs_pattern_instance_s gs_pattern_instance_t;
+#endif
 
-/* Paint (non-pattern) colors (Device, CIE, Indexed, Separation) */
+/*
+ * Define the maximum number of components in a client color.
+ * This must be at least 4, and should be at least 6 to accommodate
+ * hexachrome DeviceN color spaces.
+ */
+#define GS_CLIENT_COLOR_MAX_COMPONENTS 6
+
+/* Paint (non-Pattern) colors */
 typedef struct gs_paint_color_s {
-    float values[4];
+    float values[GS_CLIENT_COLOR_MAX_COMPONENTS];
 } gs_paint_color;
 
 /* General colors */
@@ -40,7 +50,7 @@ typedef struct gs_client_color_s gs_client_color;
 #endif
 struct gs_client_color_s {
     gs_paint_color paint;	/* also color for uncolored pattern */
-    gs_pattern_instance *pattern;
+    gs_pattern_instance_t *pattern;
 };
 
 extern_st(st_client_color);

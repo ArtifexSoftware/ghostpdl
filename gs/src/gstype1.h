@@ -1,4 +1,4 @@
-/* Copyright (C) 1990, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1990, 1995, 1996, 1997, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -30,25 +30,22 @@ typedef struct gs_type1_state_s gs_type1_state;
 #ifndef gx_path_DEFINED
 #  define gx_path_DEFINED
 typedef struct gx_path_s gx_path;
-
 #endif
 #ifndef gs_show_enum_s_DEFINED
 struct gs_show_enum_s;
-
 #endif
 #ifndef gs_font_type1_DEFINED
 #  define gs_font_type1_DEFINED
 typedef struct gs_font_type1_s gs_font_type1;
-
 #endif
 #ifndef gs_type1_data_s_DEFINED
 struct gs_type1_data_s;
-
 #endif
 int gs_type1_interp_init(P7(gs_type1_state * pcis, gs_imager_state * pis,
 			gx_path * ppath, const gs_log2_scale_point * pscale,
 			    bool charpath_flag, int paint_type,
 			    gs_font_type1 * pfont));
+void gs_type1_set_callback_data(P2(gs_type1_state *pcis, void *callback_data));
 void gs_type1_set_lsb(P2(gs_type1_state * pcis, const gs_point * psbpt));
 void gs_type1_set_width(P2(gs_type1_state * pcis, const gs_point * pwpt));
 
@@ -59,7 +56,7 @@ void gs_type1_set_width(P2(gs_type1_state * pcis, const gs_point * pwpt));
 			charpath_flag, paint_type, pfont) |\
    ((psbpt) == 0 ? 0 : (gs_type1_set_lsb(pcis, psbpt), 0)))
 /*
- * Continue interpreting a Type 1 CharString.  If str != 0, it is taken as
+ * Continue interpreting a (Type 1) CharString.  If str != 0, it is taken as
  * the byte string to interpret.  Return 0 on successful completion, <0 on
  * error, or >0 when client intervention is required (or allowed).  The int*
  * argument is where the othersubr # is stored for callothersubr.
@@ -67,7 +64,13 @@ void gs_type1_set_width(P2(gs_type1_state * pcis, const gs_point * pwpt));
 #define type1_result_sbw 1	/* allow intervention after [h]sbw */
 #define type1_result_callothersubr 2
 
-int gs_type1_interpret(P3(gs_type1_state *, const gs_const_string *, int *));
+/* Define the generic procedure type for a CharString interpreter. */
+#define charstring_interpret_proc(proc)\
+  int proc(P3(gs_type1_state *, const gs_const_string *, int *))
+typedef charstring_interpret_proc((*charstring_interpret_proc_t));
+
+/* Define the Type 1 interpreter. */
+charstring_interpret_proc(gs_type1_interpret);
 
 /* ------ CharString number representation ------ */
 

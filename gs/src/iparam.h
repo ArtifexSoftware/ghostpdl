@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1995, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -78,7 +78,7 @@ typedef struct array_param_list_s {
 /* For stack lists, the bottom of the list is just above a mark. */
 typedef struct stack_param_list_s {
     iparam_list_common;
-    ref_stack *pstack;
+    ref_stack_t *pstack;
     uint skip;			/* # of top items to skip (reading only) */
 } stack_param_list;
 
@@ -101,9 +101,9 @@ int array_indexed_param_list_write(P3(dict_param_list *, ref * /*t_*array */ ,
 				      const ref *));
 int array_param_list_read(P5(array_param_list *, ref *, uint,
 			     const ref *, bool));
-int stack_param_list_read(P5(stack_param_list *, ref_stack *, uint,
+int stack_param_list_read(P5(stack_param_list *, ref_stack_t *, uint,
 			     const ref *, bool));
-int stack_param_list_write(P3(stack_param_list *, ref_stack *,
+int stack_param_list_write(P3(stack_param_list *, ref_stack_t *,
 			      const ref *));
 
 #define iparam_list_release(plist)\

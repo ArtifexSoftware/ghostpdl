@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -24,6 +24,7 @@
 #  define stream_INCLUDED
 
 #include "scommon.h"
+#include "srdline.h"
 
 /* See scommon.h for documentation on the design of streams. */
 
@@ -110,8 +111,7 @@ struct stream_s {
     short end_status;		/* status at end of buffer (when */
 				/* reading) or now (when writing) */
     byte foreign;		/* true if buffer is outside heap */
-    byte modes;			/* access modes allowed for this */
-				/* stream */
+    byte modes;			/* access modes allowed for this stream */
 #define s_mode_read 1
 #define s_mode_write 2
 #define s_mode_seek 4
@@ -147,6 +147,7 @@ struct stream_s {
     ushort write_id;		/* ditto to validate write access */
     stream *prev, *next;	/* keep track of all files */
     bool close_strm;		/* CloseSource/CloseTarget */
+    bool close_at_eod;		/*(default is true, only false if "reusable")*/
     /*
      * In order to avoid allocating a separate stream_state for
      * file streams, which are the most heavily used stream type,
@@ -199,12 +200,11 @@ int sswitch(P2(stream *, bool));
 /*
  * Following are only valid for read streams.
  */
-int spgetcc(P2(stream *, bool));	/* bool indicates close-on-EOD */
-
+int spgetcc(P2(stream *, bool));	/* bool indicates close at EOD */
 #define spgetc(s) spgetcc(s, true)	/* a procedure equivalent of sgetc */
 /*
- * Note that sgetc must call spgetc one byte early, because filter must read ahead
- * to detect EOD.
+ * Note that sgetc must call spgetc one byte early, because filter must read
+ * ahead to detect EOD.
  *
  * In the definition of sgetc, the first alternative should read
  *      (int)(*++((s)->srptr))
@@ -295,9 +295,12 @@ int spseek(P2(stream *, long));
 /* Allocate a stream or a stream state. */
 stream *s_alloc(P2(gs_memory_t *, client_name_t));
 stream_state *s_alloc_state(P3(gs_memory_t *, gs_memory_type_ptr_t, client_name_t));
+/* Initialize a separately allocated stream, as if allocated by s_alloc. */
+void s_init(P2(stream *, gs_memory_t *));
 
 /* Create a stream on a string or a file. */
 void sread_string(P3(stream *, const byte *, uint)),
+    sread_string_reusable(P3(stream *, const byte *, uint)),
     swrite_string(P3(stream *, byte *, uint));
 void sread_file(P4(stream *, FILE *, byte *, uint)),
     swrite_file(P4(stream *, FILE *, byte *, uint)),

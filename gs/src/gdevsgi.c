@@ -63,7 +63,7 @@ typedef struct sgi_cursor_s {
 } sgi_cursor;
 
 private int
-sgi_begin_page(gx_device_printer *bdev, FILE *pstream, sgi_cursor _ss *pcur)
+sgi_begin_page(gx_device_printer *bdev, FILE *pstream, sgi_cursor *pcur)
 {
      uint line_size = gdev_mem_bytes_per_scan_line((gx_device_printer*)bdev);
      byte *data = (byte*)gs_malloc(line_size, 1, "sgi_begin_page");
@@ -96,7 +96,7 @@ sgi_begin_page(gx_device_printer *bdev, FILE *pstream, sgi_cursor _ss *pcur)
 }
 
 private int
-sgi_next_row(sgi_cursor _ss *pcur)
+sgi_next_row(sgi_cursor *pcur)
 {    if (pcur->lnum < 0)
        return 1;
      gdev_prn_copy_scan_lines((gx_device_printer*)pcur->dev,

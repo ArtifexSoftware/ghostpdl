@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -20,8 +20,8 @@
 /* DCT encoding filter stream */
 #include "memory_.h"
 #include "stdio_.h"
-#include "jpeglib.h"
-#include "jerror.h"
+#include "jpeglib_.h"
+#include "jerror_.h"
 #include "gdebug.h"
 #include "gsmemory.h"		/* for gsmalloc.h */
 #include "gsmalloc.h"		/* for gs_memory_default */

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Client interface to default (C heap) allocator */
 /* Requires gsmemory.h */
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -84,7 +84,7 @@ gx_mask_clip_initialize(gx_device_mask_clip * cdev,
     cdev->width = tdev->width;
     cdev->height = tdev->height;
     cdev->color_info = tdev->color_info;
-    cdev->target = tdev;
+    gx_device_set_target((gx_device_forward *)cdev, tdev);
     cdev->phase.x = -tx;
     cdev->phase.y = -ty;
     if (buffer_height > bits->size.y)

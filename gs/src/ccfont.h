@@ -23,7 +23,7 @@
 #  define ccfont_INCLUDED
 
 /* Include all the things a compiled font needs. */
-#include "std.h"
+#include "stdpre.h"
 #include "gsmemory.h"
 #include "iref.h"
 #include "ivmspace.h"		/* for avm_foreign */
@@ -86,12 +86,16 @@ typedef struct cfont_procs_s {
  * a shared library, on systems that support such things), we define
  * a tiny procedural interface for getting access to the compiled font table.
  */
-typedef int ccfont_fproc(P2(const cfont_procs *, ref *));
+#define ccfont_proc(proc)\
+  int proc(P2(const cfont_procs *, ref *))
+typedef ccfont_proc((*ccfont_fproc));
 
-/* There should be some consts in the *** below, but a number of */
-/* C compilers don't handle const properly in such situations. */
-extern int ccfont_fprocs(P2(int *, ccfont_fproc ***));
+/*
+ * There should be some consts in the *** below, but a number of
+ * C compilers don't handle const properly in such situations.
+ */
+extern int ccfont_fprocs(P2(int *, const ccfont_fproc **));
 
-#define ccfont_version 17	/* for checking against libraries */
+#define ccfont_version 18	/* for checking against libraries */
 
 #endif /* ccfont_INCLUDED */

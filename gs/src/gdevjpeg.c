@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -19,7 +19,7 @@
 
 /* JPEG output driver */
 #include "stdio_.h"		/* for jpeglib.h */
-#include "jpeglib.h"
+#include "jpeglib_.h"
 #include "gdevprn.h"
 #include "stream.h"
 #include "strimpl.h"

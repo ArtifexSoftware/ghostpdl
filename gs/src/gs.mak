@@ -1,4 +1,4 @@
-#    Copyright (C) 1989, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1989, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -41,9 +41,9 @@
 #	PSRCDIR, PVERSION - the same for libpng.
 #	ZSRCDIR - the same for zlib.
 #	SHARE_JPEG - normally 0; if set to 1, asks the linker to use
-#	    an existing compiled libpng (-ljpeg) instead of compiling and
-#	    linking libpng explicitly.  (We strongly recommend against
-#	    doing this: see make.txt details.)
+#	    an existing compiled libjpeg (-ljpeg) instead of compiling and
+#	    linking libjpeg explicitly.  (We strongly recommend against
+#	    doing this: see Make.htm details.)
 #	JPEG_NAME - the name of the shared library, currently always
 #	    jpeg (libjpeg, -lpjeg).
 #	SHARE_LIBPNG - normally 0; if set to 1, asks the linker to use
@@ -56,19 +56,15 @@
 #	    and linking libgz/libz explicitly.
 #	ZLIB_NAME - the name of the shared zlib, either gz (for libgz, -lgz)
 #	    or z (for libz, -lz).
-#	CONFIG - a configuration ID, added at the request of a customer,
-#	    that is supposed to help in maintaining multiple variants in
-#	    a single directory.  Normally this is an empty string;
-#	    it may be any string that is legal as part of a file name.
 #	DEVICE_DEVS - the devices to include in the executable.
 #	    See devs.mak for details.
-#	DEVICE_DEVS1...DEVICE_DEVS15 - additional devices, if the definition
+#	DEVICE_DEVS1...DEVICE_DEVS20 - additional devices, if the definition
 #	    of DEVICE_DEVS doesn't fit on one line.  See devs.mak for details.
 #	FEATURE_DEVS - what features to include in the executable.
 #	    Normally this is one of:
-#		    psl1 - a PostScript Level 1 language interpreter.
-#		    psl2 - a PostScript Level 2 language interpreter.
-#		    psl3 - a PostScript LanguageLevel 3 language
+#		    $(PSD)psl1.dev - a PostScript Level 1 language interpreter.
+#		    $(PSD)psl2.dev - a PostScript Level 2 language interpreter.
+#		    $(PSD)psl3.dev - a PostScript LanguageLevel 3 language
 #		      interpreter.
 #	      and/or
 #		    pdf - a PDF 1.2 interpreter.
@@ -78,7 +74,7 @@
 #	    The following feature may be added to any of the standard
 #	      configurations:
 #		    ccfonts - precompile fonts into C, and link them
-#			with the executable.  See fonts.txt for details.
+#			with the executable.  See Fonts.htm for details.
 #	    The remaining features are of interest primarily to developers
 #	      who want to "mix and match" features to create custom
 #	      configurations:
@@ -92,7 +88,7 @@
 #		    dct - support for DCTEncode/Decode filters.
 #			Included automatically in the psl2 feature.
 #		    dps - (partial) support for Display PostScript extensions:
-#			see language.txt for details.
+#			see Language.htm for details.
 #		    dpsnext - (partial) support for Display PostScript
 #			extensions with NeXT's additions.
 #		    epsf - support for recognizing and skipping the binary
@@ -146,7 +142,7 @@
 #	CMD - the suffix for shell command files (e.g., null or .bat).
 #		(This is only needed in a few places.)
 #	D - the directory separator character (\ for MS-DOS, / for Unix).
-#	O - the string for specifying the output file from the C compiler
+#	O_ - the string for specifying the output file from the C compiler
 #		(-o for MS-DOS, -o ./ for Unix).
 #	OBJ - the extension for relocatable object files (e.g., o or obj).
 #	XE - the extension for executable files (e.g., null or .exe).
@@ -159,7 +155,7 @@
 #		one that doesn't use ANSI C syntax.  (It is only needed if
 #		the main C compiler also isn't an ANSI compiler.)
 #	CCAUX - the C invocation for auxiliary programs (echogs, genarch,
-#		genconf, gendev, geninit).
+#		genconf, gendev, genht, geninit).
 #	CC_ - the C invocation for normal compilation.
 #	CCD - the C invocation for files that store into frame buffers or
 #		device registers.  Needed because some optimizing compilers
@@ -176,10 +172,8 @@
 #		this is $(ANSI2KNR_XE); if not, it is null.
 #		If a particular platform requires other utility programs
 #		to be built, AK must include them too.
-#	SHP - the prefix for invoking a shell script in the current directory
-#		(null for MS-DOS, $(SH) ./ for Unix).
-#	EXPP, EXP - the prefix for invoking an executable program in the
-#		current directory (null for MS-DOS, ./ for Unix).
+#	EXP - the prefix for invoking an executable program in a specified
+#		directory (MCR on OpenVMS, null on all other platforms).
 #	SH - the shell for scripts (null on MS-DOS, sh on Unix).
 #	CONFILES - the arguments for genconf to generate the appropriate
 #		linker control files (various).
@@ -211,16 +205,18 @@ PNGGENDIR=$(GLGENDIR)
 PNGOBJDIR=$(GLOBJDIR)
 ZGENDIR=$(GLGENDIR)
 ZOBJDIR=$(GLOBJDIR)
-GLSRC=$(GLSRCDIR)$(D)
-GLGEN=$(GLGENDIR)$(D)
-GLOBJ=$(GLOBJDIR)$(D)
 #**************** END PATCHES
 
+GSGEN=$(GLGENDIR)$(D)
+GSOBJ=$(GLOBJDIR)$(D)
+# All top-level makefiles define DD.
+#DD=$(GLGEN)
+
 # Define the name of this makefile.
-GS_MAK=$(GLSRC)gs.mak
+GS_MAK=$(GLSRCDIR)$(D)gs.mak
 
 # Define the names of the executables.
-GS_XE=$(GLOBJ)$(GS)$(XE)
+GS_XE=$(BINDIR)$(D)$(GS)$(XE)
 AUXGENDIR=$(GLGENDIR)
 AUXGEN=$(AUXGENDIR)$(D)
 ANSI2KNR_XE=$(AUXGEN)ansi2knr$(XEAUX)
@@ -228,81 +224,84 @@ ECHOGS_XE=$(AUXGEN)echogs$(XEAUX)
 GENARCH_XE=$(AUXGEN)genarch$(XEAUX)
 GENCONF_XE=$(AUXGEN)genconf$(XEAUX)
 GENDEV_XE=$(AUXGEN)gendev$(XEAUX)
+GENHT_XE=$(AUXGEN)genht$(XEAUX)
 GENINIT_XE=$(AUXGEN)geninit$(XEAUX)
 
-# Define the names of the CONFIG-dependent header files.
+# Define the names of the generated header files.
 # gconfig*.h and gconfx*.h are generated dynamically.
-gconfig_h=$(GLGEN)gconfxx$(CONFIG).h
-gconfigf_h=$(GLGEN)gconfxc$(CONFIG).h
+gconfig_h=$(GLGENDIR)$(D)gconfxx.h
+gconfigf_h=$(GLGENDIR)$(D)gconfxc.h
 
-# Watcom make insists that rules have a non-empty body!
-all default: $(GS_XE)
-	$(RM_) _temp_*
+all default : $(GS_XE)
+	$(NO_OP)
 
-distclean maintainer-clean realclean: clean
-	$(RM_) makefile
+#****** ON UNIX PLATFORMS, SHOULD REMOVE `makefile' ******
+distclean maintainer-clean realclean : clean
+	$(NO_OP)
 
-clean: mostlyclean
-	$(RM_) $(GLGEN)arch.h
+clean : mostlyclean
+	$(RM_) $(GSGEN)arch.h
 	$(RM_) $(GS_XE)
 
 #****** FOLLOWING IS WRONG, NEEDS TO BE PER-SUBSYSTEM ******
-mostlyclean: config-clean
-	$(RMN_) $(GLOBJ)*.$(OBJ) $(GLOBJ)*.a $(GLOBJ)core $(GLOBJ)gmon.out
-	$(RMN_) $(GLGEN)deflate.h $(GLGEN)zutil.h
-	$(RMN_) $(GLGEN)gconfig*.c $(GLGEN)gscdefs*.c $(GLGEN)iconfig*.c
-	$(RMN_) $(GLGEN)_temp_* $(GLGEN)_temp_*.* $(GLOBJ)*.map $(GLOBJ)*.sym
+mostlyclean : config-clean
+	$(RMN_) $(GSOBJ)*.$(OBJ) $(GSOBJ)*.a $(GSOBJ)core $(GSOBJ)gmon.out
+	$(RMN_) $(GSGEN)deflate.h $(GSGEN)zutil.h
+	$(RMN_) $(GSGEN)gconfig*.c $(GSGEN)gscdefs*.c $(GSGEN)iconfig*.c
+	$(RMN_) $(GSGEN)_temp_* $(GSGEN)_temp_*.* $(GSOBJ)*.map $(GSOBJ)*.sym
 	$(RMN_) $(ANSI2KNR_XE) $(ECHOGS_XE)
-	$(RMN_) $(GENARCH_XE) $(GENCONF_XE) $(GENDEV_XE) $(GENINIT_XE)
-	$(RMN_) $(GLGEN)gs_init.c $(BEGINFILES)
+	$(RMN_) $(GENARCH_XE) $(GENCONF_XE) $(GENDEV_XE) $(GENHT_XE) $(GENINIT_XE)
+	$(RMN_) $(GSGEN)gs_init.c $(BEGINFILES)
 
 # Remove only configuration-dependent information.
 #****** FOLLOWING IS WRONG, NEEDS TO BE PER-SUBSYSTEM ******
-#****** rm *.dev IS WRONG ******
-config-clean:
-	$(RMN_) *.dev
-	$(RMN_) $(GLGEN)*.dev $(GLGEN)devs*.tr $(GLGEN)gconfig*.h
-	$(RMN_) $(GLGEN)gconfx*.h $(GLGEN)j*.h
-	$(RMN_) $(GLGEN)c*.tr $(GLGEN)o*.tr $(GLGEN)l*.tr
+config-clean :
+	$(RMN_) $(GSGEN)*.dev $(GSGEN)devs*.tr $(GSGEN)gconfig*.h
+	$(RMN_) $(GSGEN)gconfx*.h $(GSGEN)j*.h
+	$(RMN_) $(GSGEN)c*.tr $(GSGEN)o*.tr $(GSGEN)l*.tr
 
 # A rule to do a quick and dirty compilation attempt when first installing
 # the interpreter.  Many of the compilations will fail:
 # follow this with 'make'.
 
 #****** FOLLOWING IS WRONG, TIED TO INTERPRETER ******
-begin:
-	$(RMN_) $(GLGEN)arch.h $(GLGEN)gconfig*.h $(GLGEN)gconfx*.h
+begin :
+	$(RMN_) $(GSGEN)arch.h $(GSGEN)gconfig*.h $(GSGEN)gconfx*.h
 	$(RMN_) $(GENARCH_XE) $(GS_XE)
-	$(RMN_) $(GLGEN)gconfig*.c $(GLGEN)gscdefs*.c $(GLGEN)iconfig*.c
-	$(RMN_) $(GLGEN)gs_init.c $(BEGINFILES)
-	make $(GLGEN)arch.h $(GLGEN)gconfigv.h
+	$(RMN_) $(GSGEN)gconfig*.c $(GSGEN)gscdefs*.c $(GSGEN)iconfig*.c
+	$(RMN_) $(GSGEN)gs_init.c $(BEGINFILES)
+	make $(GSGEN)arch.h $(GSGEN)gconfigv.h
 	- $(CCBEGIN)
-	$(RMN_) $(GLOBJ)gconfig.$(OBJ) $(GLOBJ)gdev*.$(OBJ)
-	$(RMN_) $(GLOBJ)gp_*.$(OBJ) $(GLOBJ)gscdefs.$(OBJ) $(GLOBJ)gsmisc.$(OBJ)
+	$(RMN_) $(GSOBJ)gconfig.$(OBJ) $(GSOBJ)gdev*.$(OBJ)
+	$(RMN_) $(GSOBJ)gp_*.$(OBJ) $(GSOBJ)gscdefs.$(OBJ) $(GSOBJ)gsmisc.$(OBJ)
 	$(RMN_) $(PSOBJ)icfontab.$(OBJ) $(PSOBJ)iconfig.$(OBJ)
 	$(RMN_) $(PSOBJ)iinit.$(OBJ) $(PSOBJ)interp.$(OBJ)
 
 # Macros for constructing the *.dev files that describe features and
 # devices.
-SETDEV=$(ECHOGS_XE) -e .dev -w- -l-dev -F -s -l-obj
-SETPDEV=$(ECHOGS_XE) -e .dev -w- -l-dev -F -s -l-include -lpage -l-obj
-SETDEV2=$(ECHOGS_XE) -e .dev -w- -l-dev2 -F -s -l-obj
-SETPDEV2=$(ECHOGS_XE) -e .dev -w- -l-dev2 -F -s -l-include -lpage -l-obj
-SETMOD=$(ECHOGS_XE) -e .dev -w- -l-obj
-ADDMOD=$(ECHOGS_XE) -e .dev -a-
+SETDEV=$(EXP)$(ECHOGS_XE) -e .dev -w- -l-dev -b -s -l-obj
+SETPDEV=$(EXP)$(ECHOGS_XE) -e .dev -w- -l-dev -b -s -l-include -l$(GLGENDIR)$(D)page -l-obj
+SETDEV2=$(EXP)$(ECHOGS_XE) -e .dev -w- -l-dev2 -b -s -l-obj
+SETPDEV2=$(EXP)$(ECHOGS_XE) -e .dev -w- -l-dev2 -b -s -l-include -l$(GLGENDIR)$(D)page -l-obj
+SETMOD=$(EXP)$(ECHOGS_XE) -e .dev -w- -l-obj
+ADDMOD=$(EXP)$(ECHOGS_XE) -e .dev -a- $(NULL)
 
 # Define the search lists and compilation switches for the third-party
-# libraries.  The search lists must be enclosed in $(I_) and $(_I).
+# libraries, and the compilation switches for their clients.
+# The search lists must be enclosed in $(I_) and $(_I).
 # Note that we can't define the entire compilation command,
 # because this must include $(GLSRCDIR), which isn't defined yet.
 JI_=$(JSRCDIR)
 JF_=
+JCF_=$(D_)SHARE_JPEG=$(SHARE_JPEG)
 PI_=$(PSRCDIR) $(II)$(ZSRCDIR)
 # PF_ should include PNG_USE_CONST, but this doesn't work.
 #PF_=-DPNG_USE_CONST
 PF_=
+PCF_=$(D_)SHARE_LIBPNG=$(SHARE_LIBPNG)
 ZI_=$(ZSRCDIR)
 ZF_=
+ZCF_=$(D_)SHARE_ZLIB=$(SHARE_ZLIB)
 
 ######################## How to define new 'features' #######################
 #
@@ -311,20 +310,23 @@ ZF_=
 # gs.mak:
 #
 #	abc_=abc1.$(OBJ) ...
-#	abc.dev: $(GS_MAK) $(ECHOGS_XE) $(abc_)
-#		$(SETMOD) abc $(abc_)
-#		$(ADDMOD) abc -obj ... [if needed]
-#		$(ADDMOD) abc -oper ... [if appropriate]
-#		$(ADDMOD) abc -ps ... [if appropriate]
+#	$(PSD)abc.dev : $(GS_MAK) $(ECHOGS_XE) $(abc_)
+#		$(SETMOD) $(PSD)abc $(abc_)
+#		$(ADDMOD) $(PSD)abc -obj ... [if needed]
+#		$(ADDMOD) $(PSD)abc -oper ... [if appropriate]
+#		$(ADDMOD) $(PSD)abc -ps ... [if appropriate]
 #
+# Use PSD for interpreter-related features, GLD for library-related.
 # If the abc feature requires the presence of some other features jkl and
 # pqr, then the rules must look like this:
 #
 #	abc_=abc1.$(OBJ) ...
-#	abc.dev: $(GS_MAK) $(ECHOGS_XE) $(abc_) jkl.dev pqr.dev
-#		$(SETMOD) abc $(abc_)
+#	$(PSD)abc.dev : $(GS_MAK) $(ECHOGS_XE) $(abc_)\
+#	 $(PSD)jkl.dev $(PSD)pqr.dev
+#		$(SETMOD) $(PSD)abc $(abc_)
 #		...
-#		$(ADDMOD) abc -include jkl pqr
+#		$(ADDMOD) $(PSD)abc -include $(PSD)jkl
+#		$(ADDMOD) $(PSD)abc -include $(PSD)pqr
 
 # --------------------- Configuration-dependent files --------------------- #
 
@@ -334,47 +336,62 @@ ZF_=
 # FEATURE_DEVS must precede DEVICE_DEVS so that devices can override
 # features in obscure cases.
 
-DEVS_ALL=$(PLATFORM).dev $(FEATURE_DEVS) \
-  $(DEVICE_DEVS) $(DEVICE_DEVS1) \
-  $(DEVICE_DEVS2) $(DEVICE_DEVS3) $(DEVICE_DEVS4) $(DEVICE_DEVS5) \
-  $(DEVICE_DEVS6) $(DEVICE_DEVS7) $(DEVICE_DEVS8) $(DEVICE_DEVS9) \
-  $(DEVICE_DEVS10) $(DEVICE_DEVS11) $(DEVICE_DEVS12) $(DEVICE_DEVS13) \
-  $(DEVICE_DEVS14) $(DEVICE_DEVS15)
+# FEATURE_DEVS_EXTRA and DEVICE_DEVS_EXTRA are explicitly reserved
+# to be set from the command line.
+FEATURE_DEVS_EXTRA=
+DEVICE_DEVS_EXTRA=
 
-devs_tr=$(GLGEN)devs.tr$(CONFIG)
-$(devs_tr): $(GS_MAK) $(MAKEFILE) $(ECHOGS_XE)
-	$(ECHOGS_XE) -w $(devs_tr) - -include $(PLATFORM).dev
-	$(ECHOGS_XE) -a $(devs_tr) - $(FEATURE_DEVS)
-	$(ECHOGS_XE) -a $(devs_tr) - $(DEVICE_DEVS)
-	$(ECHOGS_XE) -a $(devs_tr) - $(DEVICE_DEVS1)
-	$(ECHOGS_XE) -a $(devs_tr) - $(DEVICE_DEVS2)
-	$(ECHOGS_XE) -a $(devs_tr) - $(DEVICE_DEVS3)
-	$(ECHOGS_XE) -a $(devs_tr) - $(DEVICE_DEVS4)
-	$(ECHOGS_XE) -a $(devs_tr) - $(DEVICE_DEVS5)
-	$(ECHOGS_XE) -a $(devs_tr) - $(DEVICE_DEVS6)
-	$(ECHOGS_XE) -a $(devs_tr) - $(DEVICE_DEVS7)
-	$(ECHOGS_XE) -a $(devs_tr) - $(DEVICE_DEVS8)
-	$(ECHOGS_XE) -a $(devs_tr) - $(DEVICE_DEVS9)
-	$(ECHOGS_XE) -a $(devs_tr) - $(DEVICE_DEVS10)
-	$(ECHOGS_XE) -a $(devs_tr) - $(DEVICE_DEVS11)
-	$(ECHOGS_XE) -a $(devs_tr) - $(DEVICE_DEVS12)
-	$(ECHOGS_XE) -a $(devs_tr) - $(DEVICE_DEVS13)
-	$(ECHOGS_XE) -a $(devs_tr) - $(DEVICE_DEVS14)
-	$(ECHOGS_XE) -a $(devs_tr) - $(DEVICE_DEVS15)
+DEVS_ALL=$(GLGENDIR)$(D)$(PLATFORM).dev\
+ $(FEATURE_DEVS) $(FEATURE_DEVS_EXTRA) \
+ $(DEVICE_DEVS) $(DEVICE_DEVS1) \
+ $(DEVICE_DEVS2) $(DEVICE_DEVS3) $(DEVICE_DEVS4) $(DEVICE_DEVS5) \
+ $(DEVICE_DEVS6) $(DEVICE_DEVS7) $(DEVICE_DEVS8) $(DEVICE_DEVS9) \
+ $(DEVICE_DEVS10) $(DEVICE_DEVS11) $(DEVICE_DEVS12) $(DEVICE_DEVS13) \
+ $(DEVICE_DEVS14) $(DEVICE_DEVS15) $(DEVICE_DEVS16) $(DEVICE_DEVS17) \
+ $(DEVICE_DEVS18) $(DEVICE_DEVS19) $(DEVICE_DEVS20) $(DEVICE_DEVS_EXTRA)
+
+devs_tr=$(GLGENDIR)$(D)devs.tr
+$(devs_tr) : $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE)
+	$(EXP)$(ECHOGS_XE) -w $(devs_tr) - -include $(GLGENDIR)$(D)$(PLATFORM)
+	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(FEATURE_DEVS)
+	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(FEATURE_DEVS_EXTRA)
+	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS)
+	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS1)
+	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS2)
+	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS3)
+	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS4)
+	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS5)
+	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS6)
+	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS7)
+	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS8)
+	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS9)
+	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS10)
+	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS11)
+	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS12)
+	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS13)
+	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS14)
+	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS15)
+	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS16)
+	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS17)
+	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS18)
+	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS19)
+	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS20)
+	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS_EXTRA)
+	$(EXP)$(ECHOGS_XE) -a $(devs_tr) - $(GLGENDIR)$(D)libcore
 
 # GCONFIG_EXTRAS can be set on the command line.
 # Note that it consists of arguments for echogs, i.e.,
 # it isn't just literal text.
 GCONFIG_EXTRAS=
 
-ld_tr=$(GLGEN)ld$(CONFIG).tr
-$(gconfig_h) $(ld_tr) $(GLGEN)lib.tr: \
-  $(GS_MAK) $(MAKEFILE) $(GLSRC)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(devs_tr) $(DEVS_ALL) libcore.dev
-	$(GENCONF_XE) $(devs_tr) libcore.dev -h $(gconfig_h) $(CONFILES) $(CONFLDTR) $(ld_tr)
-	$(ECHOGS_XE) -a $(gconfig_h) -x 23 define -s -u GS_LIB_DEFAULT -x 2022 $(GS_LIB_DEFAULT) -x 22
-	$(ECHOGS_XE) -a $(gconfig_h) -x 23 define -s -u SEARCH_HERE_FIRST -s $(SEARCH_HERE_FIRST)
-	$(ECHOGS_XE) -a $(gconfig_h) -x 23 define -s -u GS_DOCDIR -x 2022 $(GS_DOCDIR) -x 22
-	$(ECHOGS_XE) -a $(gconfig_h) -x 23 define -s -u GS_INIT -x 2022 $(GS_INIT) -x 22
-	$(ECHOGS_XE) -a $(gconfig_h) -x 23 define -s -u GS_REVISION -s $(GS_REVISION)
-	$(ECHOGS_XE) -a $(gconfig_h) -x 23 define -s -u GS_REVISIONDATE -s $(GS_REVISIONDATE)
-	$(ECHOGS_XE) -a $(gconfig_h) $(GCONFIG_EXTRAS)
+ld_tr=$(GLGENDIR)$(D)ld.tr
+$(gconfig_h) $(ld_tr) $(GLGENDIR)$(D)lib.tr : \
+  $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(devs_tr) $(DEVS_ALL) $(GLGENDIR)$(D)libcore.dev
+	$(EXP)$(GENCONF_XE) $(devs_tr) -h $(gconfig_h) $(CONFILES) $(CONFLDTR) $(ld_tr)
+	$(EXP)$(ECHOGS_XE) -a $(gconfig_h) -x 23 define -s -u GS_LIB_DEFAULT -x 2022 $(GS_LIB_DEFAULT) -x 22
+	$(EXP)$(ECHOGS_XE) -a $(gconfig_h) -x 23 define -s -u SEARCH_HERE_FIRST -s $(SEARCH_HERE_FIRST)
+	$(EXP)$(ECHOGS_XE) -a $(gconfig_h) -x 23 define -s -u GS_DOCDIR -x 2022 $(GS_DOCDIR) -x 22
+	$(EXP)$(ECHOGS_XE) -a $(gconfig_h) -x 23 define -s -u GS_INIT -x 2022 $(GS_INIT) -x 22
+	$(EXP)$(ECHOGS_XE) -a $(gconfig_h) -x 23 define -s -u GS_REVISION -s $(GS_REVISION)
+	$(EXP)$(ECHOGS_XE) -a $(gconfig_h) -x 23 define -s -u GS_REVISIONDATE -s $(GS_REVISIONDATE)
+	$(EXP)$(ECHOGS_XE) -a $(gconfig_h) $(GCONFIG_EXTRAS)

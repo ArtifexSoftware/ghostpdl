@@ -1,4 +1,4 @@
-/* Copyright (C) 1990, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1990, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -29,7 +29,13 @@ extern ref binary_token_names;	/* array of size 2 */
 #define user_names_p (binary_token_names.value.refs + 1)
 
 /* Convert an object to its representation in a binary object sequence. */
-int encode_binary_token(P4(const ref * obj, long *ref_offset, long *char_offset,
-			   byte * str));
+int encode_binary_token(P5(i_ctx_t *i_ctx_p, const ref *obj, long *ref_offset,
+			   long *char_offset, byte *str));
+
+/* Define the current binary object format for operators. */
+/* This is a ref so that it can be managed properly by save/restore. */
+#define ref_binary_object_format_container i_ctx_p
+#define ref_binary_object_format\
+  (ref_binary_object_format_container->binary_object_format)
 
 #endif /* btoken_INCLUDED */

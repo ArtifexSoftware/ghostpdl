@@ -21,8 +21,10 @@
 #include "string_.h"
 #include "gx.h"
 #include "gp.h"
+#include "gsstruct.h"
 #include <stat.h>
-#include <stdlib.h>		/* for exit() */
+#include <stdlib.h>		/* for exit() with some compiler versions */
+#include <errno.h>		/* for exit() with other compiler versions */
 #include <unixio.h>
 
 extern char *getenv(P1(const char *));
@@ -338,8 +340,7 @@ gp_free_enumeration(file_enum * pfen)
 /* Begin an enumeration.  See gp.h for details. */
 
 file_enum *
-gp_enumerate_files_init(const char *pat, uint patlen,
-			gs_memory_t * memory)
+gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
 {
     file_enum *pfen;
     uint i, len;

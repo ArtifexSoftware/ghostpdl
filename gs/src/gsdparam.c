@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -37,8 +37,8 @@ private bool param_HWColorMap(P2(gx_device *, byte *));
 
 /* Get the device parameters. */
 int
-gs_get_device_or_hardware_params(gx_device * dev, gs_param_list * plist,
-				 bool is_hardware)
+gs_get_device_or_hw_params(gx_device * dev, gs_param_list * plist,
+			   bool is_hardware)
 {
     gx_device_set_procs(dev);
     fill_dev_proc(dev, get_params, gx_default_get_params);
@@ -63,8 +63,11 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
 
     /* Standard page device parameters: */
 
+    int mns = 1;
+    bool seprs = false;
     gs_param_string dns, pcms;
     gs_param_float_array msa, ibba, hwra, ma;
+    gs_param_string_array scna;
 
 #define set_param_array(a, d, s)\
   (a.data = d, a.size = s, a.persistent = false);
@@ -95,6 +98,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
     set_param_array(msa, dev->MediaSize, 2);
     set_param_array(ibba, dev->ImagingBBox, 4);
     set_param_array(ma, dev->Margins, 2);
+    set_param_array(scna, NULL, 0);
 
     /* Fill in non-standard parameters. */
 
@@ -107,37 +111,47 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
     /* Transmit the values. */
 
     if (
-    /* Standard parameters */
 
-	   (code = param_write_name(plist, "OutputDevice", &dns)) < 0 ||
+	/* Standard parameters */
+
+	(code = param_write_name(plist, "OutputDevice", &dns)) < 0 ||
 #ifdef PAGESIZE_IS_MEDIASIZE
-	   (code = param_write_float_array(plist, "PageSize", &msa)) < 0 ||
+	(code = param_write_float_array(plist, "PageSize", &msa)) < 0 ||
 #endif
-	   (code = (pcms.data == 0 ? 0 :
-		param_write_name(plist, "ProcessColorModel", &pcms))) < 0 ||
-       (code = param_write_float_array(plist, "HWResolution", &hwra)) < 0 ||
-	   (code = (dev->ImagingBBox_set ?
-		    param_write_float_array(plist, "ImagingBBox", &ibba) :
-		    param_write_null(plist, "ImagingBBox"))) < 0 ||
-	   (code = param_write_float_array(plist, "Margins", &ma)) < 0 ||
-	   (code = (dev->NumCopies_set < 0 ||
-		    (*dev_proc(dev, get_page_device))(dev) == 0 ? 0:
-		    dev->NumCopies_set ?
-		    param_write_int(plist, "NumCopies", &dev->NumCopies) :
-		    param_write_null(plist, "NumCopies"))) < 0 ||
+	(code = (pcms.data == 0 ? 0 :
+		 param_write_name(plist, "ProcessColorModel", &pcms))) < 0 ||
+	(code = param_write_float_array(plist, "HWResolution", &hwra)) < 0 ||
+	(code = (dev->ImagingBBox_set ?
+		 param_write_float_array(plist, "ImagingBBox", &ibba) :
+		 param_write_null(plist, "ImagingBBox"))) < 0 ||
+	(code = param_write_float_array(plist, "Margins", &ma)) < 0 ||
+	(code = param_write_int(plist, "MaxSeparations", &mns)) < 0 ||
+	(code = (dev->NumCopies_set < 0 ||
+		 (*dev_proc(dev, get_page_device))(dev) == 0 ? 0:
+		 dev->NumCopies_set ?
+		 param_write_int(plist, "NumCopies", &dev->NumCopies) :
+		 param_write_null(plist, "NumCopies"))) < 0 ||
+	(code = param_write_name_array(plist, "SeparationColorNames", &scna)) < 0 ||
+	(code = param_write_bool(plist, "Separations", &seprs)) < 0 ||
+	(code = param_write_bool(plist, "UseCIEColor", &dev->UseCIEColor)) < 0 ||
 
-    /* Non-standard parameters */
+	/* Non-standard parameters */
 
-	   (code = param_write_int_array(plist, "HWSize", &hwsa)) < 0 ||
-	 (code = param_write_float_array(plist, ".HWMargins", &hwma)) < 0 ||
-	   (code = param_write_float_array(plist, ".MarginsHWResolution", &mhwra)) < 0 ||
-	   (code = param_write_float_array(plist, ".MediaSize", &msa)) < 0 ||
-	   (code = param_write_string(plist, "Name", &dns)) < 0 ||
-	   (code = param_write_int(plist, "Colors", &colors)) < 0 ||
-	   (code = param_write_int(plist, "BitsPerPixel", &depth)) < 0 ||
-	   (code = param_write_int(plist, "GrayValues", &GrayValues)) < 0 ||
-       (code = param_write_long(plist, "PageCount", &dev->PageCount)) < 0 ||
-	   (code = param_write_bool(plist, ".IgnoreNumCopies", &dev->IgnoreNumCopies)) < 0
+	(code = param_write_int_array(plist, "HWSize", &hwsa)) < 0 ||
+	(code = param_write_float_array(plist, ".HWMargins", &hwma)) < 0 ||
+	(code = param_write_float_array(plist, ".MarginsHWResolution", &mhwra)) < 0 ||
+	(code = param_write_float_array(plist, ".MediaSize", &msa)) < 0 ||
+	(code = param_write_string(plist, "Name", &dns)) < 0 ||
+	(code = param_write_int(plist, "Colors", &colors)) < 0 ||
+	(code = param_write_int(plist, "BitsPerPixel", &depth)) < 0 ||
+	(code = param_write_int(plist, "GrayValues", &GrayValues)) < 0 ||
+	(code = param_write_long(plist, "PageCount", &dev->PageCount)) < 0 ||
+	(code = param_write_bool(plist, ".IgnoreNumCopies", &dev->IgnoreNumCopies)) < 0 ||
+	(code = param_write_int(plist, "TextAlphaBits",
+				&dev->color_info.anti_alias.text_bits)) < 0 ||
+	(code = param_write_int(plist, "GraphicsAlphaBits",
+				&dev->color_info.anti_alias.graphics_bits)) < 0
+
 	)
 	return code;
 
@@ -165,14 +179,6 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
 	    if ((code = param_write_string(plist, "HWColorMap", &hwcms)) < 0)
 		return code;
 	}
-    } {
-	int tab = (*dev_proc(dev, get_alpha_bits)) (dev, go_text);
-	int gab = (*dev_proc(dev, get_alpha_bits)) (dev, go_graphics);
-
-	if ((code = param_write_int(plist, "TextAlphaBits", &tab)) < 0 ||
-	    (code = param_write_int(plist, "GraphicsAlphaBits", &gab)) < 0
-	    )
-	    return code;
     }
 
     return 0;
@@ -360,13 +366,11 @@ gdev_end_output_media(gs_param_list * mlist, gs_param_dict * pdict)
 /* ================ Putting parameters ================ */
 
 /* Forward references */
+private int param_anti_alias_bits(P3(gs_param_list *, gs_param_name, int *));
 private int param_MediaSize(P4(gs_param_list *, gs_param_name,
 			       const float *, gs_param_float_array *));
 
-#if 0				/****** not used ***** */
 private int param_check_bool(P4(gs_param_list *, gs_param_name, bool, bool));
-
-#endif /****** not used ***** */
 private int param_check_long(P4(gs_param_list *, gs_param_name, long, bool));
 
 #define param_check_int(plist, pname, ival, defined)\
@@ -409,10 +413,11 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
     gs_param_float_array ma;
     gs_param_float_array hwma;
     gs_param_float_array mhwra;
+    gs_param_string_array scna;
     int nci = dev->NumCopies;
     int ncset = dev->NumCopies_set;
-
     bool ignc = dev->IgnoreNumCopies;
+    bool ucc = dev->UseCIEColor;
     gs_param_float_array ibba;
     bool ibbnull = false;
     int colors = dev->color_info.num_components;
@@ -420,27 +425,36 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
     int GrayValues = dev->color_info.max_gray + 1;
     int RGBValues = dev->color_info.max_color + 1;
     long ColorValues = 1L << depth;
+    int tab = dev->color_info.anti_alias.text_bits;
+    int gab = dev->color_info.anti_alias.graphics_bits;
     gs_param_string cms;
 
+    /*
+     * Template:
+     *   BEGIN_ARRAY_PARAM(param_read_xxx_array, "pname", pxxa, size, pxxe) {
+     *     ... check value if desired ...
+     *     if (success)
+     *       break;
+     *     ... set ecode ...
+     *   } END_ARRAY_PARAM(pxxa, pxxe);
+     */
+
 #define BEGIN_ARRAY_PARAM(pread, pname, pa, psize, e)\
-  switch ( code = pread(plist, (param_name = pname), &(pa)) )\
-  {\
-  case 0:\
+    BEGIN\
+    switch (code = pread(plist, (param_name = pname), &(pa))) {\
+      case 0:\
 	if ( (pa).size != psize )\
 	  ecode = gs_note_error(gs_error_rangecheck);\
-	else {
-/* The body of the processing code goes here. */
-/* If it succeeds, it should do a 'break'; */
-/* if it fails, it should set ecode and fall through. */
+	else
 #define END_ARRAY_PARAM(pa, e)\
-	}\
 	goto e;\
-  default:\
+      default:\
 	ecode = code;\
 e:	param_signal_error(plist, param_name, ecode);\
-  case 1:\
+      case 1:\
 	(pa).data = 0;		/* mark as not filled */\
-  }
+    }\
+    END
 
     /*
      * The HWResolution, HWSize, and MediaSize parameters interact in
@@ -454,28 +468,29 @@ e:	param_signal_error(plist, param_name, ecode);\
      * setting both HWResolution and HWSize.
      */
 
-    BEGIN_ARRAY_PARAM(param_read_float_array, "HWResolution", hwra, 2, hwre)
+    BEGIN_ARRAY_PARAM(param_read_float_array, "HWResolution", hwra, 2, hwre) {
 	if (hwra.data[0] <= 0 || hwra.data[1] <= 0)
-	ecode = gs_note_error(gs_error_rangecheck);
-    else
-	break;
-    END_ARRAY_PARAM(hwra, hwre)
-	BEGIN_ARRAY_PARAM(param_read_int_array, "HWSize", hwsa, 2, hwsa)
-    /* We need a special check to handle the nullpage device, */
-    /* whose size is legitimately [0 0]. */
+	    ecode = gs_note_error(gs_error_rangecheck);
+	else
+	    break;
+    } END_ARRAY_PARAM(hwra, hwre);
+    BEGIN_ARRAY_PARAM(param_read_int_array, "HWSize", hwsa, 2, hwsa) {
+	/* We need a special check to handle the nullpage device, */
+	/* whose size is legitimately [0 0]. */
 	if ((hwsa.data[0] <= 0 && hwsa.data[0] != dev->width) ||
 	    (hwsa.data[1] <= 0 && hwsa.data[1] != dev->height)
 	)
-	ecode = gs_note_error(gs_error_rangecheck);
+	    ecode = gs_note_error(gs_error_rangecheck);
 #define max_coord (max_fixed / fixed_1)
 #if max_coord < max_int
-    else if (hwsa.data[0] > max_coord || hwsa.data[1] > max_coord)
-	ecode = gs_note_error(gs_error_limitcheck);
+	else if (hwsa.data[0] > max_coord || hwsa.data[1] > max_coord)
+	    ecode = gs_note_error(gs_error_limitcheck);
 #endif
 #undef max_coord
-    else
-	break;
-    END_ARRAY_PARAM(hwsa, hwse) {
+	else
+	    break;
+    } END_ARRAY_PARAM(hwsa, hwse);
+    {
 	const float *res = (hwra.data == 0 ? dev->HWResolution : hwra.data);
 
 #ifdef PAGESIZE_IS_MEDIASIZE
@@ -501,22 +516,22 @@ e:	param_signal_error(plist, param_name, ecode);\
 #endif
     }
 
-    BEGIN_ARRAY_PARAM(param_read_float_array, "Margins", ma, 2, me)
+    BEGIN_ARRAY_PARAM(param_read_float_array, "Margins", ma, 2, me) {
 	break;
-    END_ARRAY_PARAM(ma, me)
-	BEGIN_ARRAY_PARAM(param_read_float_array, ".HWMargins", hwma, 4, hwme)
+    } END_ARRAY_PARAM(ma, me);
+    BEGIN_ARRAY_PARAM(param_read_float_array, ".HWMargins", hwma, 4, hwme) {
 	break;
-    END_ARRAY_PARAM(hwma, hwme)
+    } END_ARRAY_PARAM(hwma, hwme);
     /* MarginsHWResolution cannot be changed, only checked. */
-	BEGIN_ARRAY_PARAM(param_read_float_array, ".MarginsHWResolution", mhwra, 2, mhwre)
+    BEGIN_ARRAY_PARAM(param_read_float_array, ".MarginsHWResolution", mhwra, 2, mhwre) {
 	if (mhwra.data[0] != dev->MarginsHWResolution[0] ||
 	    mhwra.data[1] != dev->MarginsHWResolution[1]
 	)
-	ecode = gs_note_error(gs_error_rangecheck);
-    else
-	break;
-    END_ARRAY_PARAM(mhwra, mhwre)
-	switch (code = param_read_bool(plist, (param_name = ".IgnoreNumCopies"), &ignc)) {
+	    ecode = gs_note_error(gs_error_rangecheck);
+	else
+	    break;
+    } END_ARRAY_PARAM(mhwra, mhwre);
+    switch (code = param_read_bool(plist, (param_name = ".IgnoreNumCopies"), &ignc)) {
 	default:
 	    ecode = code;
 	    param_signal_error(plist, param_name, ecode);
@@ -548,7 +563,14 @@ nce:
 	    break;
     }
     }
-
+    if ((code = param_read_bool(plist, (param_name = "UseCIEColor"), &ucc)) < 0) {
+	ecode = code;
+	param_signal_error(plist, param_name, ecode);
+    }
+    if ((code = param_anti_alias_bits(plist, "TextAlphaBits", &tab)) < 0)
+	ecode = code;
+    if ((code = param_anti_alias_bits(plist, "GraphicsAlphaBits", &gab)) < 0)
+	ecode = code;
 
     /* Ignore parameters that only have meaning for printers. */
 #define IGNORE_INT_PARAM(pname)\
@@ -591,6 +613,13 @@ nce:
 	ecode = code;
     if ((code = param_check_string(plist, "ProcessColorModel", pcmsa[colors], colors != 0)) < 0)
 	ecode = code;
+    if ((code = param_check_int(plist, "MaxSeparations", 1, true)) < 0)
+	ecode = code;
+    if ((code = param_check_bool(plist, "Separations", false, true)) < 0)
+	ecode = code;
+    BEGIN_ARRAY_PARAM(param_read_name_array, "SeparationColorNames", scna, 0, scne) {
+	break;
+    } END_ARRAY_PARAM(scna, scne);
     if ((code = param_check_string(plist, "Name", dev->dname, true)) < 0)
 	ecode = code;
     if ((code = param_check_int(plist, "Colors", colors, true)) < 0)
@@ -599,11 +628,8 @@ nce:
 	ecode = code;
     if ((code = param_check_int(plist, "GrayValues", GrayValues, true)) < 0)
 	ecode = code;
-#if 0
-/* taken out to fix problem with multipage PCL files in async mode */
     if ((code = param_check_long(plist, "PageCount", dev->PageCount, true)) < 0)
 	ecode = code;
-#endif
     if ((code = param_check_int(plist, "RedValues", RGBValues, colors > 1)) < 0)
 	ecode = code;
     if ((code = param_check_int(plist, "GreenValues", RGBValues, colors > 1)) < 0)
@@ -623,18 +649,6 @@ nce:
 	if (code < 0)
 	    ecode = code;
     }
-    if ((code =
-	 param_check_int(plist, "TextAlphaBits",
-			 (*dev_proc(dev, get_alpha_bits)) (dev, go_text),
-			 true)) < 0
-	)
-	ecode = code;
-    if ((code =
-	 param_check_int(plist, "GraphicsAlphaBits",
-			 (*dev_proc(dev, get_alpha_bits)) (dev, go_graphics),
-			 true)) < 0
-	)
-	ecode = code;
 
     /* We must 'commit', in order to detect unknown parameters, */
     /* even if there were errors. */
@@ -696,9 +710,35 @@ nce:
     } else if (ibbnull) {
 	dev->ImagingBBox_set = false;
     }
+    dev->UseCIEColor = ucc;
+    dev->color_info.anti_alias.text_bits = tab;
+    dev->color_info.anti_alias.graphics_bits = gab;
     gx_device_decache_colors(dev);
     return 0;
 }
+
+/* Read TextAlphaBits or GraphicsAlphaBits. */
+private int
+param_anti_alias_bits(gs_param_list * plist, gs_param_name param_name, int *pa)
+{
+    int code = param_read_int(plist, param_name, pa);
+
+    switch (code) {
+    case 0:
+	switch (*pa) {
+	case 1: case 2: case 4:
+	    return 0;
+	default:
+	    code = gs_error_rangecheck;
+	}
+    default:
+	param_signal_error(plist, param_name, code);
+    case 1:
+	;
+    }
+    return code;
+}
+
 
 /* Read .MediaSize or, if supported as a synonym, PageSize. */
 private int
@@ -709,25 +749,24 @@ param_MediaSize(gs_param_list * plist, gs_param_name pname,
     int ecode = 0;
     int code;
 
-    BEGIN_ARRAY_PARAM(param_read_float_array, pname, *pa, 2, mse)
+    BEGIN_ARRAY_PARAM(param_read_float_array, pname, *pa, 2, mse) {
 	float width_new = pa->data[0] * res[0] / 72;
-    float height_new = pa->data[1] * res[1] / 72;
+	float height_new = pa->data[1] * res[1] / 72;
 
-    if (width_new < 0 || height_new < 0)
-	ecode = gs_note_error(gs_error_rangecheck);
+	if (width_new < 0 || height_new < 0)
+	    ecode = gs_note_error(gs_error_rangecheck);
 #define max_coord (max_fixed / fixed_1)
 #if max_coord < max_int
-    else if (width_new > max_coord || height_new > max_coord)
-	ecode = gs_note_error(gs_error_limitcheck);
+	else if (width_new > max_coord || height_new > max_coord)
+	    ecode = gs_note_error(gs_error_limitcheck);
 #endif
 #undef max_coord
-    else
-	break;
-    END_ARRAY_PARAM(*pa, mse)
-	return ecode;
+	else
+	    break;
+    } END_ARRAY_PARAM(*pa, mse);
+    return ecode;
 }
 
-#if 0				/****** not used ***** */
 /* Check that a nominally read-only parameter is being set to */
 /* its existing value. */
 private int
@@ -752,7 +791,6 @@ param_check_bool(gs_param_list * plist, gs_param_name pname, bool value,
     }
     return code;
 }
-#endif /****** not used ***** */
 private int
 param_check_long(gs_param_list * plist, gs_param_name pname, long value,
 		 bool defined)

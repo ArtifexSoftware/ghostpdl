@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -114,20 +114,20 @@ void
 gx_set_rop_no_source(const gx_rop_source_t **psource,
 		     gx_rop_source_t *pno_source, gx_device *dev)
 {
+    gx_color_index black;
+
 top:
-    switch (dev->cached_colors.black) {
-    case 0:
+    black = dev->cached_colors.black;
+    if (black == 0)
 	*psource = &gx_rop_no_source_0;
-	break;
-    case 1:
+    else if (black == 1)
 	*psource = &gx_rop_no_source_1;
-	break;
-    case gx_no_color_index:	/* cache not loaded */
+    else if (black == gx_no_color_index) {	/* cache not loaded */
 	discard(gx_device_black(dev));
 	goto top;
-    default:
+    } else {
 	*pno_source = gx_rop_no_source_0;
-        gx_rop_source_set_color(pno_source, dev->cached_colors.black);
+	gx_rop_source_set_color(pno_source, black);
 	*psource = pno_source;
     }
 }
@@ -280,8 +280,7 @@ gx_dc_pure_equal(const gx_device_color * pdevc1, const gx_device_color * pdevc2)
 /* ------ Halftone color initialization ------ */
 
 void
-gx_complete_rgb_halftone(gx_device_color *pdevc,
-			 const gx_device_halftone *pdht)
+gx_complete_rgb_halftone(gx_device_color *pdevc, gx_device_halftone *pdht)
 {
     pdevc->type = gx_dc_type_ht_colored;
     pdevc->colors.colored.c_ht = pdht;
@@ -298,8 +297,7 @@ gx_complete_rgb_halftone(gx_device_color *pdevc,
 }
 
 void
-gx_complete_cmyk_halftone(gx_device_color *pdevc,
-			  const gx_device_halftone *pdht)
+gx_complete_cmyk_halftone(gx_device_color *pdevc, gx_device_halftone *pdht)
 {
     pdevc->type = gx_dc_type_ht_colored;
     pdevc->colors.colored.c_ht = pdht;

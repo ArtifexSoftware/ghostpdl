@@ -131,7 +131,9 @@ pdfmark_process(gx_device_pdf * pdev, const gs_param_string_array * pma)
 
 	for (pmn = mark_name_tables[n]; pmn->mname != 0; ++pmn)
 	    if (pdf_key_eq(pts, pmn->mname)) {
+		gs_memory_t *mem = pdev->pdf_memory;
 		int odd_ok = (pmn->options & pdfmark_odd_ok) != 0;
+		gs_param_string *pairs;
 		int j;
 
 		if (size & !odd_ok)
@@ -145,38 +147,41 @@ pdfmark_process(gx_device_pdf * pdev, const gs_param_string_array * pma)
 							  objname->size)
 				)
 				return_error(gs_error_rangecheck);
-			    break;
+			    /* Save the pairs without the name. */
+			    size -= 2;
+			    pairs = (gs_param_string *)
+				gs_alloc_byte_array(mem, size,
+						    sizeof(gs_param_string),
+						    "pdfmark_process(pairs)");
+			    if (!pairs)
+				return_error(gs_error_VMerror);
+			    memcpy(pairs, data, j * sizeof(*data));
+			    memcpy(pairs + j, data + j + 2,
+				   (size - j) * sizeof(*data));
+			    goto copied;
 			}
 		    }
 		}
-		/* Copy the pairs to a writable array. */
-		{
-		    uint count = (objname ? size - 2 : size);
-		    gs_memory_t *mem = pdev->pdf_memory;
-		    gs_param_string *pairs = (gs_param_string *)
-		    gs_alloc_byte_array(mem, count, sizeof(gs_param_string),
+		/* Save all the pairs. */
+		pairs = (gs_param_string *)
+		    gs_alloc_byte_array(mem, size,
+					sizeof(gs_param_string),
 					"pdfmark_process(pairs)");
-
-		    if (objname) {
-			memcpy(pairs, data, j * sizeof(*data));
-			memcpy(pairs + j, data + j + 2, (count - j) * sizeof(*data));
-			size -= 2;
-		    } else {
-			memcpy(pairs, data, count * sizeof(*data));
+		if (!pairs)
+		    return_error(gs_error_VMerror);
+		memcpy(pairs, data, size * sizeof(*data));
+copied:		/* Substitute object references for names. */
+		for (j = (pmn->options & pdfmark_keep_name ? 1 : 1 - odd_ok);
+		     j < size; j += 2 - odd_ok
+		     ) {
+		    code = pdfmark_replace_names(pdev, &pairs[j], &pairs[j]);
+		    if (code < 0) {
+			gs_free_object(mem, pairs, "pdfmark_process(pairs)");
+			goto out;
 		    }
-		    /* Substitute object references for names. */
-		    for (j = (pmn->options & pdfmark_keep_name ? 1 : 1 - odd_ok);
-			 j < size; j += 2 - odd_ok
-			) {
-			code = pdfmark_replace_names(pdev, &pairs[j], &pairs[j]);
-			if (code < 0) {
-			    gs_free_object(mem, pairs, "pdfmark_process(pairs)");
-			    goto out;
-			}
-		    }
-		    code = (*pmn->proc) (pdev, pairs, size, &ctm, objname);
-		    gs_free_object(mem, pairs, "pdfmark_process(pairs)");
 		}
+		code = (*pmn->proc) (pdev, pairs, size, &ctm, objname);
+		gs_free_object(mem, pairs, "pdfmark_process(pairs)");
 		goto out;
 	    }
     }

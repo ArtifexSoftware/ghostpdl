@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -167,12 +167,6 @@ extern_st(st_device_psdf);
 dev_proc_get_params(gdev_psdf_get_params);
 dev_proc_put_params(gdev_psdf_put_params);
 
-/* Put a Boolean or integer parameter. */
-int psdf_put_bool_param(P4(gs_param_list * plist, gs_param_name param_name,
-			   bool * pval, int ecode));
-int psdf_put_int_param(P4(gs_param_list * plist, gs_param_name param_name,
-			  int *pval, int ecode));
-
 /* ---------------- Vector implementation procedures ---------------- */
 
 	/* Imager state */
@@ -195,8 +189,8 @@ int psdf_setstrokecolor(P2(gx_device_vector * vdev, const gx_drawing_color * pdc
 int psdf_dorect(P6(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,
 		   fixed y1, gx_path_type_t type));
 int psdf_beginpath(P2(gx_device_vector * vdev, gx_path_type_t type));
-int psdf_moveto(P7(gx_device_vector * vdev, floatp x0, floatp y0,
-		   floatp x, floatp y, bool first, gx_path_type_t type));
+int psdf_moveto(P6(gx_device_vector * vdev, floatp x0, floatp y0,
+		   floatp x, floatp y, gx_path_type_t type));
 int psdf_lineto(P6(gx_device_vector * vdev, floatp x0, floatp y0,
 		   floatp x, floatp y, gx_path_type_t type));
 int psdf_curveto(P10(gx_device_vector * vdev, floatp x0, floatp y0,

@@ -1,4 +1,4 @@
-/* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1999 Aladdin Enterprises.  All rights reserved.
   
   This file is part of Aladdin Ghostscript.
   
@@ -273,10 +273,6 @@ gx_device_printer far_data gs_hl7x0_device =
 	0, 0, 0, 0,		/* margins filled in by hl7x0_open */
 	1, hl720_print_page); /* The hl720 and hl730 can both use the same print method */
 
-
-
-#define ppdev ((gx_device_printer *) pdev )
-
 /* Open the printer, adjusting the margins if necessary. */
 
 private int 
@@ -284,7 +280,7 @@ hl7x0_open(gx_device *pdev)
 {	/* Change the margins if necessary. */
 	static const float m_a4[4] = { HL7X0_MARGINS_A4 };
 	static const float m_letter[4] = { HL7X0_MARGINS_LETTER };
-	const float _ds *m =
+	const float *m =
 	  (gdev_pcl_paper_size(pdev) == PAPER_SIZE_A4 ? m_a4 : m_letter);
 
 	gx_device_set_margins(pdev, m, true);
@@ -296,12 +292,14 @@ hl7x0_open(gx_device *pdev)
 private int 
 hl7x0_close(gx_device *pdev)
 {
-         gdev_prn_open_printer(pdev, 1);
-	 fputs("@N@N@N@N@X", ppdev->file) ;
-	 return gdev_prn_close_printer(pdev);
-}
+    gx_device_printer *const ppdev = (gx_device_printer *)pdev;
+    int code = gdev_prn_open_printer(pdev, 1);
 
-#undef ppdev
+    if (code < 0)
+	return code;
+    fputs("@N@N@N@N@X", ppdev->file) ;
+    return gdev_prn_close_printer(pdev);
+}
 
 /* ------ Internal routines ------ */
 

@@ -79,16 +79,32 @@ typedef struct gs_spot_halftone_s {
 
 #define st_spot_halftone_max_ptrs st_screen_halftone_max_ptrs + 1
 
+/* Define common elements for Type 3 and extended Type 3 halftones. */
+#define GS_THRESHOLD_HALFTONE_COMMON\
+    int width;\
+    int height;\
+    gs_mapping_closure_t transfer_closure
+typedef struct gs_threshold_halftone_common_s {
+    GS_THRESHOLD_HALFTONE_COMMON;
+} gs_threshold_halftone_common;
+
 /* Type 3 halftone. */
 typedef struct gs_threshold_halftone_s {
-    int width;
-    int height;
+    GS_THRESHOLD_HALFTONE_COMMON; /* must be first */
     gs_const_string thresholds;
     gs_mapping_proc transfer;	/* OBSOLETE */
-    gs_mapping_closure_t transfer_closure;
 } gs_threshold_halftone;
 
 #define st_threshold_halftone_max_ptrs 2
+
+/* Extended Type 3 halftone. */
+typedef struct gs_threshold2_halftone_s {
+    GS_THRESHOLD_HALFTONE_COMMON; /* must be first */
+    int width2;
+    int height2;
+    int bytes_per_sample;	/* 1 or 2 */
+    gs_const_bytestring thresholds; /* nota bene */
+} gs_threshold2_halftone;
 
 /* Client-defined halftone that generates a halftone order. */
 typedef struct gs_client_order_halftone_s gs_client_order_halftone;
@@ -96,7 +112,6 @@ typedef struct gs_client_order_halftone_s gs_client_order_halftone;
 #ifndef gx_ht_order_DEFINED
 #  define gx_ht_order_DEFINED
 typedef struct gx_ht_order_s gx_ht_order;
-
 #endif
 typedef struct gs_client_order_ht_procs_s {
 
@@ -129,6 +144,7 @@ typedef struct gs_halftone_component_s {
     union {
 	gs_spot_halftone spot;	/* Type 1 */
 	gs_threshold_halftone threshold;	/* Type 3 */
+	gs_threshold2_halftone threshold2;	/* Extended Type 3 */
 	gs_client_order_halftone client_order;	/* client order */
     } params;
 } gs_halftone_component;
@@ -172,6 +188,7 @@ struct gs_halftone_s {
 	gs_colorscreen_halftone colorscreen;	/* setcolorscreen */
 	gs_spot_halftone spot;	/* Type 1 */
 	gs_threshold_halftone threshold;	/* Type 3 */
+	gs_threshold2_halftone threshold2;	/* Extended Type 3 */
 	gs_client_order_halftone client_order;	/* client order */
 	gs_multiple_halftone multiple;	/* Type 5 */
     } params;

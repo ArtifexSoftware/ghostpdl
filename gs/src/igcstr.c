@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -313,7 +313,7 @@ gc_strings_compact(chunk_t * cp)
 	if (gs_debug_c('4') || gs_debug_c('5')) {
 	    byte *base = cp->sbase;
 	    uint i = (lo - base) & -string_data_quantum;
-	    uint n = round_up(hi - base, string_data_quantum);
+	    uint n = ROUND_UP(hi - base, string_data_quantum);
 
 #define R 16
 	    for (; i < n; i += R) {

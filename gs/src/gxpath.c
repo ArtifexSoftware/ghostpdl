@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -253,11 +253,11 @@ gx_path_assign_preserve(gx_path * ppto, gx_path * ppfrom)
  */
 int
 gx_path_assign_free(gx_path * ppto, gx_path * ppfrom)
-{				/*
-				 * Detect the special case where both paths have non-shared local
-				 * segments, since we can avoid allocating new segments in this
-				 * case.
-				 */
+{
+    /*
+     * Detect the special case where both paths have non-shared local
+     * segments, since we can avoid allocating new segments in this case.
+     */
     if (ppto->segments == &ppto->local_segments &&
 	ppfrom->segments == &ppfrom->local_segments &&
 	!gx_path_is_shared(ppto)
@@ -474,7 +474,7 @@ gx_path_add_line_notes(gx_path * ppath, fixed x, fixed y, segment_notes notes)
 /* Add multiple lines to the current path. */
 /* Note that all lines have the same notes. */
 int
-gx_path_add_lines_notes(gx_path * ppath, const gs_fixed_point * ppts, int count,
+gx_path_add_lines_notes(gx_path *ppath, const gs_fixed_point *ppts, int count,
 			segment_notes notes)
 {
     subpath *psub;
@@ -489,10 +489,12 @@ gx_path_add_lines_notes(gx_path * ppath, const gs_fixed_point * ppts, int count,
     path_open();
     psub = ppath->current_subpath;
     prev = psub->last;
-    /* We could do better than the following, but this is a start. */
-    /* Note that we don't make any attempt to undo partial additions */
-    /* if we fail partway through; this is equivalent to what would */
-    /* happen with multiple calls on gx_path_add_line. */
+    /*
+     * We could do better than the following, but this is a start.
+     * Note that we don't make any attempt to undo partial additions
+     * if we fail partway through; this is equivalent to what would
+     * happen with multiple calls on gx_path_add_line.
+     */
     for (i = 0; i < count; i++) {
 	fixed x = ppts[i].x;
 	fixed y = ppts[i].y;
@@ -686,7 +688,8 @@ gx_path_close_subpath_notes(gx_path * ppath, segment_notes notes)
 
     if (!path_subpath_open(ppath))
 	return 0;
-    if (path_last_is_moveto(ppath)) {	/* The last operation was a moveto: create a subpath. */
+    if (path_last_is_moveto(ppath)) {
+	/* The last operation was a moveto: create a subpath. */
 	code = gx_path_new_subpath(ppath);
 	if (code < 0)
 	    return code;

@@ -1,4 +1,4 @@
-#    Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -30,13 +30,14 @@ PCWIN_MAK=$(GLSRC)pcwin.mak
 
 gp_mswin_h=$(GLSRC)gp_mswin.h
 gsdll_h=$(GLSRC)gsdll.h
+gsdllwin_h=$(GLSRC)gsdllwin.h
 
 gdevmswn_h=$(GLSRC)gdevmswn.h $(GDEVH)\
  $(dos__h) $(memory__h) $(string__h) $(windows__h)\
  $(gp_mswin_h)
 
 $(GLOBJ)gdevmswn.$(OBJ): $(GLSRC)gdevmswn.c $(gdevmswn_h) $(gp_h) $(gpcheck_h)\
- $(gsdll_h) $(gsparam_h) $(gdevpccm_h)
+ $(gsdll_h) $(gsdllwin_h) $(gsparam_h) $(gdevpccm_h)
 	$(GLCCWIN) $(GLO_)gdevmswn.$(OBJ) $(C_) $(GLSRC)gdevmswn.c
 
 $(GLOBJ)gdevmsxf.$(OBJ): $(GLSRC)gdevmsxf.c $(ctype__h) $(math__h) $(memory__h) $(string__h)\
@@ -44,21 +45,22 @@ $(GLOBJ)gdevmsxf.$(OBJ): $(GLSRC)gdevmsxf.c $(ctype__h) $(math__h) $(memory__h) 
 	$(GLCCWIN) $(GLO_)gdevmsxf.$(OBJ) $(C_) $(GLSRC)gdevmsxf.c
 
 # An implementation using a DIB filled by an image device.
-$(GLOBJ)gdevwdib.$(OBJ): $(GLSRC)gdevwdib.c $(gdevmswn_h) $(gsdll_h) $(gxdevmem_h)
+$(GLOBJ)gdevwdib.$(OBJ): $(GLSRC)gdevwdib.c\
+ $(gdevmswn_h) $(gsdll_h) $(gsdllwin_h) $(gxdevmem_h)
 	$(GLCCWIN) $(GLO_)gdevwdib.$(OBJ) $(C_) $(GLSRC)gdevwdib.c
 
 mswindll1_=$(GLOBJ)gdevmswn.$(OBJ) $(GLOBJ)gdevmsxf.$(OBJ) $(GLOBJ)gdevwdib.$(OBJ)
 mswindll2_=$(GLOBJ)gdevemap.$(OBJ) $(GLOBJ)gdevpccm.$(OBJ)
 mswindll_=$(mswindll1_) $(mswindll2_)
-mswindll.dev: $(mswindll_)
-	$(SETDEV) mswindll $(mswindll1_)
-	$(ADDMOD) mswindll $(mswindll2_)
+$(GLGEN)mswindll.dev: $(mswindll_)
+	$(SETDEV) $(GLGEN)mswindll $(mswindll1_)
+	$(ADDMOD) $(GLGEN)mswindll $(mswindll2_)
 
 ### -------------------- The MS-Windows DDB 3.n printer ----------------- ###
 
 mswinprn_=$(GLOBJ)gdevwprn.$(OBJ) $(GLOBJ)gdevmsxf.$(OBJ)
-mswinprn.dev: $(mswinprn_)
-	$(SETDEV) mswinprn $(mswinprn_)
+$(DD)mswinprn.dev: $(mswinprn_)
+	$(SETDEV) $(DD)mswinprn $(mswinprn_)
 
 $(GLOBJ)gdevwprn.$(OBJ): $(GLSRC)gdevwprn.c $(gdevmswn_h) $(gp_h)
 	$(GLCCWIN) $(GLO_)gdevwprn.$(OBJ) $(C_) $(GLSRC)gdevwprn.c
@@ -66,8 +68,8 @@ $(GLOBJ)gdevwprn.$(OBJ): $(GLSRC)gdevwprn.c $(gdevmswn_h) $(gp_h)
 ### -------------------- The MS-Windows DIB 3.n printer ----------------- ###
 
 mswinpr2_=$(GLOBJ)gdevwpr2.$(OBJ)
-mswinpr2.dev: $(mswinpr2_) page.dev
-	$(SETPDEV) mswinpr2 $(mswinpr2_)
+$(DD)mswinpr2.dev: $(mswinpr2_) $(GLD)page.dev
+	$(SETPDEV) $(DD)mswinpr2 $(mswinpr2_)
 
 $(GLOBJ)gdevwpr2.$(OBJ): $(GLSRC)gdevwpr2.c $(PDEVH) $(windows__h)\
  $(gdevpccm_h) $(gp_h) $(gp_mswin_h)
@@ -76,16 +78,16 @@ $(GLOBJ)gdevwpr2.$(OBJ): $(GLSRC)gdevwpr2.c $(PDEVH) $(windows__h)\
 ### ------------------ OS/2 Presentation Manager device ----------------- ###
 
 os2pm_=$(GLOBJ)gdevpm.$(OBJ) $(GLOBJ)gdevpccm.$(OBJ)
-os2pm.dev: $(os2pm_)
-	$(SETDEV) os2pm $(os2pm_)
+$(DD)os2pm.dev: $(os2pm_)
+	$(SETDEV) $(DD)os2pm $(os2pm_)
 
 os2dll_=$(GLOBJ)gdevpm.$(OBJ) $(GLOBJ)gdevpccm.$(OBJ)
-os2dll.dev: $(os2dll_)
-	$(SETDEV) os2dll $(os2dll_)
+$(GLGEN)os2dll.dev: $(os2dll_)
+	$(SETDEV) $(GLGEN)os2dll $(os2dll_)
 
 $(GLOBJ)gdevpm.$(OBJ): $(GLSRC)gdevpm.c $(string__h)\
  $(gp_h) $(gpcheck_h)\
- $(gsdll_h) $(gserrors_h) $(gsexit_h) $(gsparam_h)\
+ $(gsdll_h) $(gsdllwin_h) $(gserrors_h) $(gsexit_h) $(gsparam_h)\
  $(gx_h) $(gxdevice_h) $(gxdevmem_h)\
  $(gdevpccm_h) $(GLSRC)gdevpm.h
 	$(GLCC) $(GLO_)gdevpm.$(OBJ) $(C_) $(GLSRC)gdevpm.c
@@ -93,8 +95,8 @@ $(GLOBJ)gdevpm.$(OBJ): $(GLSRC)gdevpm.c $(string__h)\
 ### --------------------------- The OS/2 printer ------------------------ ###
 
 os2prn_=$(GLOBJ)gdevos2p.$(OBJ)
-os2prn.dev: $(os2prn_) page.dev
-	$(SETPDEV) os2prn $(os2prn_)
+$(DD)os2prn.dev: $(os2prn_) $(GLD)page.dev
+	$(SETPDEV) $(DD)os2prn $(os2prn_)
 
 $(GLOBJ)gdevos2p.$(OBJ): gdevos2p.c $(gp_h) $(gdevpccm_h) $(gdevprn_h) $(gscdefs_h)
 	$(GLCC) $(GLO_)gdevos2p.$(OBJ) $(C_) $(GLSRC)gdevos2p.c

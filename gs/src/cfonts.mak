@@ -19,13 +19,26 @@
 # Makefile for compiling PostScript Type 1 fonts into C.
 # For more information about fonts, consult the Fontmap file,
 # and also Fonts.htm.
+# Users of this makefile must define the following:
+#	PSSRCDIR - the source directory holding ccfont.h
+#	PSGENDIR - the directory for files generated during building
+#	PSOBJDIR - the object code directory
 
-# Edit the following 2 lines to reflect your environment.
-OBJ=o
-CCCF=gcc -c -O
-
-CFONTS=.
+# Define the name for invoking the font2c program.
 FONT2C=font2c
+
+# ---------------- End of editable definitions ---------------- #
+
+#CCFONT is defined in int.mak
+
+CFGENDIR=$(PSGENDIR)
+CFOBJDIR=$(PSOBJDIR)
+
+CFGEN=$(CFGENDIR)$(D)
+CFOBJ=$(CFOBJDIR)$(D)
+
+CFCC=$(CC_) $(I_)$(PSSRCDIR)$(_I)
+CFO_=$(O_)$(CFOBJ)
 
 # ---------------------------------------------------------------- #
 
@@ -33,21 +46,25 @@ FONT2C=font2c
 # the de facto commercial standard set of 35 PostScript fonts, and a slightly
 # larger set distributed with the free version of the software.
 
-fonts_standard_o: \
-	AvantGarde_o Bookman_o Courier_o \
-	Helvetica_o NewCenturySchlbk_o Palatino_o \
-	TimesRoman_o Symbol_o ZapfChancery_o ZapfDingbats_o
+fonts_standard_o : \
+AvantGarde_o Bookman_o Courier_o \
+Helvetica_o NewCenturySchlbk_o Palatino_o \
+TimesRoman_o Symbol_o ZapfChancery_o ZapfDingbats_o
+	$(NO_OP)
 
-fonts_standard_c: \
-	AvantGarde_c Bookman_c Courier_c \
-	Helvetica_c NewCenturySchlbk_c Palatino_c \
-	TimesRoman_c Symbol_c ZapfChancery_c ZapfDingbats_c
+fonts_standard_c : \
+AvantGarde_c Bookman_c Courier_c \
+Helvetica_c NewCenturySchlbk_c Palatino_c \
+TimesRoman_c Symbol_c ZapfChancery_c ZapfDingbats_c
+	$(NO_OP)
 
-fonts_free_o: fonts_standard_o \
-	CharterBT_o Cyrillic_o Kana_o Utopia_o
+fonts_free_o : fonts_standard_o \
+CharterBT_o Cyrillic_o Kana_o Utopia_o
+	$(NO_OP)
 
-fonts_free_c: fonts_standard_c \
-	CharterBT_c Cyrillic_c Kana_c Utopia_c
+fonts_free_c : fonts_standard_c \
+CharterBT_c Cyrillic_c Kana_c Utopia_c
+	$(NO_OP)
 
 # ---------------------------------------------------------------- #
 #                                                                  #
@@ -61,282 +78,297 @@ fonts_free_c: fonts_standard_c \
 
 # ---------------- Avant Garde ----------------
 
-AvantGarde_c: $(CFONTS)/0agk.c $(CFONTS)/0agko.c $(CFONTS)/0agd.c \
-	$(CFONTS)/0agdo.c
+AvantGarde_c : $(CFGEN)0agk.c $(CFGEN)0agko.c $(CFGEN)0agd.c $(CFGEN)0agdo.c
+	$(NO_OP)
 
-$(CFONTS)/0agk.c:
-	$(FONT2C) AvantGarde-Book $(CFONTS)/0agk.c agk
+$(CFGEN)0agk.c :
+	$(FONT2C) AvantGarde-Book $(CFGEN)0agk.c agk
 
-$(CFONTS)/0agko.c:
-	$(FONT2C) AvantGarde-BookOblique $(CFONTS)/0agko.c agko
+$(CFGEN)0agko.c :
+	$(FONT2C) AvantGarde-BookOblique $(CFGEN)0agko.c agko
 
-$(CFONTS)/0agd.c:
-	$(FONT2C) AvantGarde-Demi $(CFONTS)/0agd.c agd
+$(CFGEN)0agd.c :
+	$(FONT2C) AvantGarde-Demi $(CFGEN)0agd.c agd
 
-$(CFONTS)/0agdo.c:
-	$(FONT2C) AvantGarde-DemiOblique $(CFONTS)/0agdo.c agdo
+$(CFGEN)0agdo.c :
+	$(FONT2C) AvantGarde-DemiOblique $(CFGEN)0agdo.c agdo
 
-AvantGarde_o: 0agk.$(OBJ) 0agko.$(OBJ) 0agd.$(OBJ) 0agdo.$(OBJ)
+AvantGarde_o : $(CFOBJ)0agk.$(OBJ) $(CFOBJ)0agko.$(OBJ) $(CFOBJ)0agd.$(OBJ) $(CFOBJ)0agdo.$(OBJ)
+	$(NO_OP)
 
-0agk.$(OBJ): $(CFONTS)/0agk.c $(CCFONT)
-	$(CCCF) $(CFONTS)/0agk.c
+$(CFOBJ)0agk.$(OBJ) : $(CFGEN)0agk.c $(CCFONT)
+	$(CFCC) $(CFO_)0agk.$(OBJ) $(C_) $(CFGEN)0agk.c
 
-0agko.$(OBJ): $(CFONTS)/0agko.c $(CCFONT)
-	$(CCCF) $(CFONTS)/0agko.c
+$(CFOBJ)0agko.$(OBJ) : $(CFGEN)0agko.c $(CCFONT)
+	$(CFCC) $(CFO_)0agko.$(OBJ) $(C_) $(CFGEN)0agko.c
 
-0agd.$(OBJ): $(CFONTS)/0agd.c $(CCFONT)
-	$(CCCF) $(CFONTS)/0agd.c
+$(CFOBJ)0agd.$(OBJ) : $(CFGEN)0agd.c $(CCFONT)
+	$(CFCC) $(CFO_)0agd.$(OBJ) $(C_) $(CFGEN)0agd.c
 
-0agdo.$(OBJ): $(CFONTS)/0agdo.c $(CCFONT)
-	$(CCCF) $(CFONTS)/0agdo.c
+$(CFOBJ)0agdo.$(OBJ) : $(CFGEN)0agdo.c $(CCFONT)
+	$(CFCC) $(CFO_)0agdo.$(OBJ) $(C_) $(CFGEN)0agdo.c
 
 # ---------------- Bookman ----------------
 
-Bookman_c: $(CFONTS)/0bkl.c $(CFONTS)/0bkli.c $(CFONTS)/0bkd.c \
-	$(CFONTS)/0bkdi.c
+Bookman_c : $(CFGEN)0bkl.c $(CFGEN)0bkli.c $(CFGEN)0bkd.c $(CFGEN)0bkdi.c
+	$(NO_OP)
 
-$(CFONTS)/0bkl.c:
-	$(FONT2C) Bookman-Light $(CFONTS)/0bkl.c bkl
+$(CFGEN)0bkl.c :
+	$(FONT2C) Bookman-Light $(CFGEN)0bkl.c bkl
 
-$(CFONTS)/0bkli.c:
-	$(FONT2C) Bookman-LightItalic $(CFONTS)/0bkli.c bkli
+$(CFGEN)0bkli.c :
+	$(FONT2C) Bookman-LightItalic $(CFGEN)0bkli.c bkli
 
-$(CFONTS)/0bkd.c:
-	$(FONT2C) Bookman-Demi $(CFONTS)/0bkd.c bkd
+$(CFGEN)0bkd.c :
+	$(FONT2C) Bookman-Demi $(CFGEN)0bkd.c bkd
 
-$(CFONTS)/0bkdi.c:
-	$(FONT2C) Bookman-DemiItalic $(CFONTS)/0bkdi.c bkdi
+$(CFGEN)0bkdi.c :
+	$(FONT2C) Bookman-DemiItalic $(CFGEN)0bkdi.c bkdi
 
-Bookman_o: 0bkl.$(OBJ) 0bkli.$(OBJ) 0bkd.$(OBJ) 0bkdi.$(OBJ)
+Bookman_o : $(CFOBJ)0bkl.$(OBJ) $(CFOBJ)0bkli.$(OBJ) $(CFOBJ)0bkd.$(OBJ) $(CFOBJ)0bkdi.$(OBJ)
+	$(NO_OP)
 
-0bkl.$(OBJ): $(CFONTS)/0bkl.c $(CCFONT)
-	$(CCCF) $(CFONTS)/0bkl.c
+$(CFOBJ)0bkl.$(OBJ) : $(CFGEN)0bkl.c $(CCFONT)
+	$(CFCC) $(CFO_)0bkl.$(OBJ) $(C_) $(CFGEN)0bkl.c
 
-0bkli.$(OBJ): $(CFONTS)/0bkli.c $(CCFONT)
-	$(CCCF) $(CFONTS)/0bkli.c
+$(CFOBJ)0bkli.$(OBJ) : $(CFGEN)0bkli.c $(CCFONT)
+	$(CFCC) $(CFO_)0bkli.$(OBJ) $(C_) $(CFGEN)0bkli.c
 
-0bkd.$(OBJ): $(CFONTS)/0bkd.c $(CCFONT)
-	$(CCCF) $(CFONTS)/0bkd.c
+$(CFOBJ)0bkd.$(OBJ) : $(CFGEN)0bkd.c $(CCFONT)
+	$(CFCC) $(CFO_)0bkd.$(OBJ) $(C_) $(CFGEN)0bkd.c
 
-0bkdi.$(OBJ): $(CFONTS)/0bkdi.c $(CCFONT)
-	$(CCCF) $(CFONTS)/0bkdi.c
+$(CFOBJ)0bkdi.$(OBJ) : $(CFGEN)0bkdi.c $(CCFONT)
+	$(CFCC) $(CFO_)0bkdi.$(OBJ) $(C_) $(CFGEN)0bkdi.c
 
 # ---------------- Courier ----------------
 
-Courier_c: $(CFONTS)/0crr.c $(CFONTS)/0cri.c $(CFONTS)/0crb.c \
-	$(CFONTS)/0crbi.c
+Courier_c : $(CFGEN)0crr.c $(CFGEN)0cri.c $(CFGEN)0crb.c $(CFGEN)0crbi.c
+	$(NO_OP)
 
-$(CFONTS)/0crr.c:
-	$(FONT2C) Courier $(CFONTS)/0crr.c crr
+$(CFGEN)0crr.c :
+	$(FONT2C) Courier $(CFGEN)0crr.c crr
 
-$(CFONTS)/0cri.c:
-	$(FONT2C) Courier-Italic $(CFONTS)/0cri.c cri
+$(CFGEN)0cri.c :
+	$(FONT2C) Courier-Italic $(CFGEN)0cri.c cri
 
-$(CFONTS)/0crb.c:
-	$(FONT2C) Courier-Bold $(CFONTS)/0crb.c crb
+$(CFGEN)0crb.c :
+	$(FONT2C) Courier-Bold $(CFGEN)0crb.c crb
 
-$(CFONTS)/0crbi.c:
-	$(FONT2C) Courier-BoldItalic $(CFONTS)/0crbi.c crbi
+$(CFGEN)0crbi.c :
+	$(FONT2C) Courier-BoldItalic $(CFGEN)0crbi.c crbi
 
-Courier_o: 0crr.$(OBJ) 0cri.$(OBJ) 0crb.$(OBJ) 0crbi.$(OBJ)
+Courier_o : $(CFOBJ)0crr.$(OBJ) $(CFOBJ)0cri.$(OBJ) $(CFOBJ)0crb.$(OBJ) $(CFOBJ)0crbi.$(OBJ)
+	$(NO_OP)
 
-0crr.$(OBJ): $(CFONTS)/0crr.c $(CCFONT)
-	$(CCCF) $(CFONTS)/0crr.c
+$(CFOBJ)0crr.$(OBJ) : $(CFGEN)0crr.c $(CCFONT)
+	$(CFCC) $(CFO_)0crr.$(OBJ) $(C_) $(CFGEN)0crr.c
 
-0cri.$(OBJ): $(CFONTS)/0cri.c $(CCFONT)
-	$(CCCF) $(CFONTS)/0cri.c
+$(CFOBJ)0cri.$(OBJ) : $(CFGEN)0cri.c $(CCFONT)
+	$(CFCC) $(CFO_)0cri.$(OBJ) $(C_) $(CFGEN)0cri.c
 
-0crb.$(OBJ): $(CFONTS)/0crb.c $(CCFONT)
-	$(CCCF) $(CFONTS)/0crb.c
+$(CFOBJ)0crb.$(OBJ) : $(CFGEN)0crb.c $(CCFONT)
+	$(CFCC) $(CFO_)0crb.$(OBJ) $(C_) $(CFGEN)0crb.c
 
-0crbi.$(OBJ): $(CFONTS)/0crbi.c $(CCFONT)
-	$(CCCF) $(CFONTS)/0crbi.c
+$(CFOBJ)0crbi.$(OBJ) : $(CFGEN)0crbi.c $(CCFONT)
+	$(CFCC) $(CFO_)0crbi.$(OBJ) $(C_) $(CFGEN)0crbi.c
 
 # ---------------- Helvetica ----------------
 
-Helvetica_c: $(CFONTS)/0hvr.c $(CFONTS)/0hvro.c \
-	$(CFONTS)/0hvb.c $(CFONTS)/0hvbo.c $(CFONTS)/0hvrrn.c \
-	$(CFONTS)/0hvrorn.c $(CFONTS)/0hvbrn.c $(CFONTS)/0hvborn.c
+Helvetica_c : $(CFGEN)0hvr.c $(CFGEN)0hvro.c \
+$(CFGEN)0hvb.c $(CFGEN)0hvbo.c $(CFGEN)0hvrrn.c \
+$(CFGEN)0hvrorn.c $(CFGEN)0hvbrn.c $(CFGEN)0hvborn.c
+	$(NO_OP)
 
-$(CFONTS)/0hvr.c:
-	$(FONT2C) Helvetica $(CFONTS)/0hvr.c hvr
+$(CFGEN)0hvr.c :
+	$(FONT2C) Helvetica $(CFGEN)0hvr.c hvr
 
-$(CFONTS)/0hvro.c:
-	$(FONT2C) Helvetica-Oblique $(CFONTS)/0hvro.c hvro
+$(CFGEN)0hvro.c :
+	$(FONT2C) Helvetica-Oblique $(CFGEN)0hvro.c hvro
 
-$(CFONTS)/0hvb.c:
-	$(FONT2C) Helvetica-Bold $(CFONTS)/0hvb.c hvb
+$(CFGEN)0hvb.c :
+	$(FONT2C) Helvetica-Bold $(CFGEN)0hvb.c hvb
 
-$(CFONTS)/0hvbo.c:
-	$(FONT2C) Helvetica-BoldOblique $(CFONTS)/0hvbo.c hvbo
+$(CFGEN)0hvbo.c :
+	$(FONT2C) Helvetica-BoldOblique $(CFGEN)0hvbo.c hvbo
 
-$(CFONTS)/0hvrrn.c:
-	$(FONT2C) Helvetica-Narrow $(CFONTS)/0hvrrn.c hvrrn
+$(CFGEN)0hvrrn.c :
+	$(FONT2C) Helvetica-Narrow $(CFGEN)0hvrrn.c hvrrn
 
-$(CFONTS)/0hvrorn.c:
-	$(FONT2C) Helvetica-Narrow-Oblique $(CFONTS)/0hvrorn.c hvrorn
+$(CFGEN)0hvrorn.c :
+	$(FONT2C) Helvetica-Narrow-Oblique $(CFGEN)0hvrorn.c hvrorn
 
-$(CFONTS)/0hvbrn.c:
-	$(FONT2C) Helvetica-Narrow-Bold $(CFONTS)/0hvbrn.c hvbrn
+$(CFGEN)0hvbrn.c :
+	$(FONT2C) Helvetica-Narrow-Bold $(CFGEN)0hvbrn.c hvbrn
 
-$(CFONTS)/0hvborn.c:
-	$(FONT2C) Helvetica-Narrow-BoldOblique $(CFONTS)/0hvborn.c hvborn
+$(CFGEN)0hvborn.c :
+	$(FONT2C) Helvetica-Narrow-BoldOblique $(CFGEN)0hvborn.c hvborn
 
-Helvetica_o: 0hvr.$(OBJ) 0hvro.$(OBJ) 0hvb.$(OBJ) 0hvbo.$(OBJ) \
-	0hvrrn.$(OBJ) 0hvrorn.$(OBJ) 0hvbrn.$(OBJ) 0hvborn.$(OBJ)
+Helvetica_o : $(CFOBJ)0hvr.$(OBJ) $(CFOBJ)0hvro.$(OBJ) $(CFOBJ)0hvb.$(OBJ) $(CFOBJ)0hvbo.$(OBJ) \
+$(CFOBJ)0hvrrn.$(OBJ) $(CFOBJ)0hvrorn.$(OBJ) $(CFOBJ)0hvbrn.$(OBJ) $(CFOBJ)0hvborn.$(OBJ)
+	$(NO_OP)
 
-0hvr.$(OBJ): $(CFONTS)/0hvr.c $(CCFONT)
-	$(CCCF) $(CFONTS)/0hvr.c
+$(CFOBJ)0hvr.$(OBJ) : $(CFGEN)0hvr.c $(CCFONT)
+	$(CFCC) $(CFO_)0hvr.$(OBJ) $(C_) $(CFGEN)0hvr.c
 
-0hvro.$(OBJ): $(CFONTS)/0hvro.c $(CCFONT)
-	$(CCCF) $(CFONTS)/0hvro.c
+$(CFOBJ)0hvro.$(OBJ) : $(CFGEN)0hvro.c $(CCFONT)
+	$(CFCC) $(CFO_)0hvro.$(OBJ) $(C_) $(CFGEN)0hvro.c
 
-0hvb.$(OBJ): $(CFONTS)/0hvb.c $(CCFONT)
-	$(CCCF) $(CFONTS)/0hvb.c
+$(CFOBJ)0hvb.$(OBJ) : $(CFGEN)0hvb.c $(CCFONT)
+	$(CFCC) $(CFO_)0hvb.$(OBJ) $(C_) $(CFGEN)0hvb.c
 
-0hvbo.$(OBJ): $(CFONTS)/0hvbo.c $(CCFONT)
-	$(CCCF) $(CFONTS)/0hvbo.c
+$(CFOBJ)0hvbo.$(OBJ) : $(CFGEN)0hvbo.c $(CCFONT)
+	$(CFCC) $(CFO_)0hvbo.$(OBJ) $(C_) $(CFGEN)0hvbo.c
 
-0hvrrn.$(OBJ): $(CFONTS)/0hvrrn.c $(CCFONT)
-	$(CCCF) $(CFONTS)/0hvrrn.c
+$(CFOBJ)0hvrrn.$(OBJ) : $(CFGEN)0hvrrn.c $(CCFONT)
+	$(CFCC) $(CFO_)0hvrrn.$(OBJ) $(C_) $(CFGEN)0hvrrn.c
 
-0hvrorn.$(OBJ): $(CFONTS)/0hvrorn.c $(CCFONT)
-	$(CCCF) $(CFONTS)/0hvrorn.c
+$(CFOBJ)0hvrorn.$(OBJ) : $(CFGEN)0hvrorn.c $(CCFONT)
+	$(CFCC) $(CFO_)0hvrorn.$(OBJ) $(C_) $(CFGEN)0hvrorn.c
 
-0hvbrn.$(OBJ): $(CFONTS)/0hvbrn.c $(CCFONT)
-	$(CCCF) $(CFONTS)/0hvbrn.c
+$(CFOBJ)0hvbrn.$(OBJ) : $(CFGEN)0hvbrn.c $(CCFONT)
+	$(CFCC) $(CFO_)0hvbrn.$(OBJ) $(C_) $(CFGEN)0hvbrn.c
 
-0hvborn.$(OBJ): $(CFONTS)/0hvborn.c $(CCFONT)
-	$(CCCF) $(CFONTS)/0hvborn.c
+$(CFOBJ)0hvborn.$(OBJ) : $(CFGEN)0hvborn.c $(CCFONT)
+	$(CFCC) $(CFO_)0hvborn.$(OBJ) $(C_) $(CFGEN)0hvborn.c
 
 # ---------------- New Century Schoolbook ----------------
 
-NewCenturySchlbk_c: $(CFONTS)/0ncr.c $(CFONTS)/0ncri.c $(CFONTS)/0ncb.c \
-	$(CFONTS)/0ncbi.c
+NewCenturySchlbk_c : $(CFGEN)0ncr.c $(CFGEN)0ncri.c $(CFGEN)0ncb.c \
+$(CFGEN)0ncbi.c
+	$(NO_OP)
 
-$(CFONTS)/0ncr.c:
-	$(FONT2C) NewCenturySchlbk-Roman $(CFONTS)/0ncr.c ncr
+$(CFGEN)0ncr.c :
+	$(FONT2C) NewCenturySchlbk-Roman $(CFGEN)0ncr.c ncr
 
-$(CFONTS)/0ncri.c:
-	$(FONT2C) NewCenturySchlbk-Italic $(CFONTS)/0ncri.c ncri
+$(CFGEN)0ncri.c :
+	$(FONT2C) NewCenturySchlbk-Italic $(CFGEN)0ncri.c ncri
 
-$(CFONTS)/0ncb.c:
-	$(FONT2C) NewCenturySchlbk-Bold $(CFONTS)/0ncb.c ncb
+$(CFGEN)0ncb.c :
+	$(FONT2C) NewCenturySchlbk-Bold $(CFGEN)0ncb.c ncb
 
-$(CFONTS)/0ncbi.c:
-	$(FONT2C) NewCenturySchlbk-BoldItalic $(CFONTS)/0ncbi.c ncbi
+$(CFGEN)0ncbi.c :
+	$(FONT2C) NewCenturySchlbk-BoldItalic $(CFGEN)0ncbi.c ncbi
 
-NewCenturySchlbk_o: 0ncr.$(OBJ) 0ncri.$(OBJ) 0ncb.$(OBJ) 0ncbi.$(OBJ)
+NewCenturySchlbk_o : $(CFOBJ)0ncr.$(OBJ) $(CFOBJ)0ncri.$(OBJ) $(CFOBJ)0ncb.$(OBJ) $(CFOBJ)0ncbi.$(OBJ)
+	$(NO_OP)
 
-0ncr.$(OBJ): $(CFONTS)/0ncr.c $(CCFONT)
-	$(CCCF) $(CFONTS)/0ncr.c
+$(CFOBJ)0ncr.$(OBJ) : $(CFGEN)0ncr.c $(CCFONT)
+	$(CFCC) $(CFO_)0ncr.$(OBJ) $(C_) $(CFGEN)0ncr.c
 
-0ncri.$(OBJ): $(CFONTS)/0ncri.c $(CCFONT)
-	$(CCCF) $(CFONTS)/0ncri.c
+$(CFOBJ)0ncri.$(OBJ) : $(CFGEN)0ncri.c $(CCFONT)
+	$(CFCC) $(CFO_)0ncri.$(OBJ) $(C_) $(CFGEN)0ncri.c
 
-0ncb.$(OBJ): $(CFONTS)/0ncb.c $(CCFONT)
-	$(CCCF) $(CFONTS)/0ncb.c
+$(CFOBJ)0ncb.$(OBJ) : $(CFGEN)0ncb.c $(CCFONT)
+	$(CFCC) $(CFO_)0ncb.$(OBJ) $(C_) $(CFGEN)0ncb.c
 
-0ncbi.$(OBJ): $(CFONTS)/0ncbi.c $(CCFONT)
-	$(CCCF) $(CFONTS)/0ncbi.c
+$(CFOBJ)0ncbi.$(OBJ) : $(CFGEN)0ncbi.c $(CCFONT)
+	$(CFCC) $(CFO_)0ncbi.$(OBJ) $(C_) $(CFGEN)0ncbi.c
 
 # ---------------- Palatino ----------------
 
-Palatino_c: $(CFONTS)/0plr.c $(CFONTS)/0plri.c $(CFONTS)/0plb.c \
-	$(CFONTS)/0plbi.c
+Palatino_c : $(CFGEN)0plr.c $(CFGEN)0plri.c $(CFGEN)0plb.c $(CFGEN)0plbi.c
+	$(NO_OP)
 
-$(CFONTS)/0plr.c:
-	$(FONT2C) Palatino-Roman $(CFONTS)/0plr.c plr
+$(CFGEN)0plr.c :
+	$(FONT2C) Palatino-Roman $(CFGEN)0plr.c plr
 
-$(CFONTS)/0plri.c:
-	$(FONT2C) Palatino-Italic $(CFONTS)/0plri.c plri
+$(CFGEN)0plri.c :
+	$(FONT2C) Palatino-Italic $(CFGEN)0plri.c plri
 
-$(CFONTS)/0plb.c:
-	$(FONT2C) Palatino-Bold $(CFONTS)/0plb.c plb
+$(CFGEN)0plb.c :
+	$(FONT2C) Palatino-Bold $(CFGEN)0plb.c plb
 
-$(CFONTS)/0plbi.c:
-	$(FONT2C) Palatino-BoldItalic $(CFONTS)/0plbi.c plbi
+$(CFGEN)0plbi.c :
+	$(FONT2C) Palatino-BoldItalic $(CFGEN)0plbi.c plbi
 
-Palatino_o: 0plr.$(OBJ) 0plri.$(OBJ) 0plb.$(OBJ) 0plbi.$(OBJ)
+Palatino_o : $(CFOBJ)0plr.$(OBJ) $(CFOBJ)0plri.$(OBJ) $(CFOBJ)0plb.$(OBJ) $(CFOBJ)0plbi.$(OBJ)
+	$(NO_OP)
 
-0plr.$(OBJ): $(CFONTS)/0plr.c $(CCFONT)
-	$(CCCF) $(CFONTS)/0plr.c
+$(CFOBJ)0plr.$(OBJ) : $(CFGEN)0plr.c $(CCFONT)
+	$(CFCC) $(CFO_)0plr.$(OBJ) $(C_) $(CFGEN)0plr.c
 
-0plri.$(OBJ): $(CFONTS)/0plri.c $(CCFONT)
-	$(CCCF) $(CFONTS)/0plri.c
+$(CFOBJ)0plri.$(OBJ) : $(CFGEN)0plri.c $(CCFONT)
+	$(CFCC) $(CFO_)0plri.$(OBJ) $(C_) $(CFGEN)0plri.c
 
-0plb.$(OBJ): $(CFONTS)/0plb.c $(CCFONT)
-	$(CCCF) $(CFONTS)/0plb.c
+$(CFOBJ)0plb.$(OBJ) : $(CFGEN)0plb.c $(CCFONT)
+	$(CFCC) $(CFO_)0plb.$(OBJ) $(C_) $(CFGEN)0plb.c
 
-0plbi.$(OBJ): $(CFONTS)/0plbi.c $(CCFONT)
-	$(CCCF) $(CFONTS)/0plbi.c
+$(CFOBJ)0plbi.$(OBJ) : $(CFGEN)0plbi.c $(CCFONT)
+	$(CFCC) $(CFO_)0plbi.$(OBJ) $(C_) $(CFGEN)0plbi.c
 
 # ---------------- Times Roman ----------------
 
-TimesRoman_c: $(CFONTS)/0tmr.c $(CFONTS)/0tmri.c $(CFONTS)/0tmb.c \
-	$(CFONTS)/0tmbi.c
+TimesRoman_c : $(CFGEN)0tmr.c $(CFGEN)0tmri.c $(CFGEN)0tmb.c $(CFGEN)0tmbi.c
+	$(NO_OP)
 
-$(CFONTS)/0tmr.c:
-	$(FONT2C) Times-Roman $(CFONTS)/0tmr.c tmr
+$(CFGEN)0tmr.c :
+	$(FONT2C) Times-Roman $(CFGEN)0tmr.c tmr
 
-$(CFONTS)/0tmri.c:
-	$(FONT2C) Times-Italic $(CFONTS)/0tmri.c tmri
+$(CFGEN)0tmri.c :
+	$(FONT2C) Times-Italic $(CFGEN)0tmri.c tmri
 
-$(CFONTS)/0tmb.c:
-	$(FONT2C) Times-Bold $(CFONTS)/0tmb.c tmb
+$(CFGEN)0tmb.c :
+	$(FONT2C) Times-Bold $(CFGEN)0tmb.c tmb
 
-$(CFONTS)/0tmbi.c:
-	$(FONT2C) Times-BoldItalic $(CFONTS)/0tmbi.c tmbi
+$(CFGEN)0tmbi.c :
+	$(FONT2C) Times-BoldItalic $(CFGEN)0tmbi.c tmbi
 
-TimesRoman_o: 0tmr.$(OBJ) 0tmri.$(OBJ) 0tmb.$(OBJ) 0tmbi.$(OBJ)
+TimesRoman_o : $(CFOBJ)0tmr.$(OBJ) $(CFOBJ)0tmri.$(OBJ) $(CFOBJ)0tmb.$(OBJ) $(CFOBJ)0tmbi.$(OBJ)
+	$(NO_OP)
 
-0tmr.$(OBJ): $(CFONTS)/0tmr.c $(CCFONT)
-	$(CCCF) $(CFONTS)/0tmr.c
+$(CFOBJ)0tmr.$(OBJ) : $(CFGEN)0tmr.c $(CCFONT)
+	$(CFCC) $(CFO_)0tmr.$(OBJ) $(C_) $(CFGEN)0tmr.c
 
-0tmri.$(OBJ): $(CFONTS)/0tmri.c $(CCFONT)
-	$(CCCF) $(CFONTS)/0tmri.c
+$(CFOBJ)0tmri.$(OBJ) : $(CFGEN)0tmri.c $(CCFONT)
+	$(CFCC) $(CFO_)0tmri.$(OBJ) $(C_) $(CFGEN)0tmri.c
 
-0tmb.$(OBJ): $(CFONTS)/0tmb.c $(CCFONT)
-	$(CCCF) $(CFONTS)/0tmb.c
+$(CFOBJ)0tmb.$(OBJ) : $(CFGEN)0tmb.c $(CCFONT)
+	$(CFCC) $(CFO_)0tmb.$(OBJ) $(C_) $(CFGEN)0tmb.c
 
-0tmbi.$(OBJ): $(CFONTS)/0tmbi.c $(CCFONT)
-	$(CCCF) $(CFONTS)/0tmbi.c
+$(CFOBJ)0tmbi.$(OBJ) : $(CFGEN)0tmbi.c $(CCFONT)
+	$(CFCC) $(CFO_)0tmbi.$(OBJ) $(C_) $(CFGEN)0tmbi.c
 
 # ---------------- Symbol ----------------
 
-Symbol_c: $(CFONTS)/0syr.c
+Symbol_c : $(CFGEN)0syr.c
+	$(NO_OP)
 
-$(CFONTS)/0syr.c:
-	$(FONT2C) Symbol $(CFONTS)/0syr.c syr
+$(CFGEN)0syr.c :
+	$(FONT2C) Symbol $(CFGEN)0syr.c syr
 
-Symbol_o: 0syr.$(OBJ)
+Symbol_o : $(CFOBJ)0syr.$(OBJ)
+	$(NO_OP)
 
-0syr.$(OBJ): $(CFONTS)/0syr.c $(CCFONT)
-	$(CCCF) $(CFONTS)/0syr.c
+$(CFOBJ)0syr.$(OBJ) : $(CFGEN)0syr.c $(CCFONT)
+	$(CFCC) $(CFO_)0syr.$(OBJ) $(C_) $(CFGEN)0syr.c
 
 # ---------------- Zapf Chancery ----------------
 
-ZapfChancery_c: $(CFONTS)/0zcmi.c
+ZapfChancery_c : $(CFGEN)0zcmi.c
+	$(NO_OP)
 
-$(CFONTS)/0zcmi.c:
-	$(FONT2C) ZapfChancery-MediumItalic $(CFONTS)/0zcmi.c zcmi
+$(CFGEN)0zcmi.c :
+	$(FONT2C) ZapfChancery-MediumItalic $(CFGEN)0zcmi.c zcmi
 
-ZapfChancery_o: 0zcmi.$(OBJ)
+ZapfChancery_o : $(CFOBJ)0zcmi.$(OBJ)
+	$(NO_OP)
 
-0zcmi.$(OBJ): $(CFONTS)/0zcmi.c $(CCFONT)
-	$(CCCF) $(CFONTS)/0zcmi.c
+$(CFOBJ)0zcmi.$(OBJ) : $(CFGEN)0zcmi.c $(CCFONT)
+	$(CFCC) $(CFO_)0zcmi.$(OBJ) $(C_) $(CFGEN)0zcmi.c
 
 # ---------------- Zapf Dingbats ----------------
 
-ZapfDingbats_c: $(CFONTS)/0zdr.c
+ZapfDingbats_c : $(CFGEN)0zdr.c
+	$(NO_OP)
 
-$(CFONTS)/0zdr.c:
-	$(FONT2C) ZapfDingbats $(CFONTS)/0zdr.c zdr
+$(CFGEN)0zdr.c :
+	$(FONT2C) ZapfDingbats $(CFGEN)0zdr.c zdr
 
-ZapfDingbats_o: 0zdr.$(OBJ)
+ZapfDingbats_o : $(CFOBJ)0zdr.$(OBJ)
+	$(NO_OP)
 
-0zdr.$(OBJ): $(CFONTS)/0zdr.c $(CCFONT)
-	$(CCCF) $(CFONTS)/0zdr.c
+$(CFOBJ)0zdr.$(OBJ) : $(CFGEN)0zdr.c $(CCFONT)
+	$(CFCC) $(CFO_)0zdr.$(OBJ) $(C_) $(CFGEN)0zdr.c
 
 # ---------------------------------------------------------------- #
 #                                                                  #
@@ -346,98 +378,104 @@ ZapfDingbats_o: 0zdr.$(OBJ)
 
 # ---------------- Bitstream Charter ----------------
 
-CharterBT_c: $(CFONTS)/bchr.c $(CFONTS)/bchri.c $(CFONTS)/bchb.c \
-	$(CFONTS)/bchbi.c
+CharterBT_c : $(CFGEN)bchr.c $(CFGEN)bchri.c $(CFGEN)bchb.c $(CFGEN)bchbi.c
+	$(NO_OP)
 
-$(CFONTS)/bchr.c:
-	$(FONT2C) Charter-Roman $(CFONTS)/bchr.c chr
+$(CFGEN)bchr.c :
+	$(FONT2C) Charter-Roman $(CFGEN)bchr.c chr
 
-$(CFONTS)/bchri.c:
-	$(FONT2C) Charter-Italic $(CFONTS)/bchri.c chri
+$(CFGEN)bchri.c :
+	$(FONT2C) Charter-Italic $(CFGEN)bchri.c chri
 
-$(CFONTS)/bchb.c:
-	$(FONT2C) Charter-Bold $(CFONTS)/bchb.c chb
+$(CFGEN)bchb.c :
+	$(FONT2C) Charter-Bold $(CFGEN)bchb.c chb
 
-$(CFONTS)/bchbi.c:
-	$(FONT2C) Charter-BoldItalic $(CFONTS)/bchbi.c chbi
+$(CFGEN)bchbi.c :
+	$(FONT2C) Charter-BoldItalic $(CFGEN)bchbi.c chbi
 
-CharterBT_o: bchr.$(OBJ) bchri.$(OBJ) bchb.$(OBJ) bchbi.$(OBJ)
+CharterBT_o : $(CFOBJ)bchr.$(OBJ) $(CFOBJ)bchri.$(OBJ) $(CFOBJ)bchb.$(OBJ) $(CFOBJ)bchbi.$(OBJ)
+	$(NO_OP)
 
-bchr.$(OBJ): $(CFONTS)/bchr.c $(CCFONT)
-	$(CCCF) $(CFONTS)/bchr.c
+$(CFOBJ)bchr.$(OBJ) : $(CFGEN)bchr.c $(CCFONT)
+	$(CFCC) $(CFO_)bchr.$(OBJ) $(C_) $(CFGEN)bchr.c
 
-bchri.$(OBJ): $(CFONTS)/bchri.c $(CCFONT)
-	$(CCCF) $(CFONTS)/bchri.c
+$(CFOBJ)bchri.$(OBJ) : $(CFGEN)bchri.c $(CCFONT)
+	$(CFCC) $(CFO_)bchri.$(OBJ) $(C_) $(CFGEN)bchri.c
 
-bchb.$(OBJ): $(CFONTS)/bchb.c $(CCFONT)
-	$(CCCF) $(CFONTS)/bchb.c
+$(CFOBJ)bchb.$(OBJ) : $(CFGEN)bchb.c $(CCFONT)
+	$(CFCC) $(CFO_)bchb.$(OBJ) $(C_) $(CFGEN)bchb.c
 
-bchbi.$(OBJ): $(CFONTS)/bchbi.c $(CCFONT)
-	$(CCCF) $(CFONTS)/bchbi.c
+$(CFOBJ)bchbi.$(OBJ) : $(CFGEN)bchbi.c $(CCFONT)
+	$(CFCC) $(CFO_)bchbi.$(OBJ) $(C_) $(CFGEN)bchbi.c
 
 # ---------------- Cyrillic ----------------
 
-Cyrillic_c: $(CFONTS)/fcyr.c $(CFONTS)/fcyri.c
+Cyrillic_c : $(CFGEN)fcyr.c $(CFGEN)fcyri.c
+	$(NO_OP)
 
-$(CFONTS)/fcyr.c:
-	$(FONT2C) Cyrillic $(CFONTS)/fcyr.c fcyr
+$(CFGEN)fcyr.c :
+	$(FONT2C) Cyrillic $(CFGEN)fcyr.c fcyr
 
-$(CFONTS)/fcyri.c:
-	$(FONT2C) Cyrillic-Italic $(CFONTS)/fcyri.c fcyri
+$(CFGEN)fcyri.c :
+	$(FONT2C) Cyrillic-Italic $(CFGEN)fcyri.c fcyri
 
-Cyrillic_o: fcyr.$(OBJ) fcyri.$(OBJ)
+Cyrillic_o : $(CFOBJ)fcyr.$(OBJ) $(CFOBJ)fcyri.$(OBJ)
+	$(NO_OP)
 
-fcyr.$(OBJ): $(CFONTS)/fcyr.c $(CCFONT)
-	$(CCCF) $(CFONTS)/fcyr.c
+$(CFOBJ)fcyr.$(OBJ) : $(CFGEN)fcyr.c $(CCFONT)
+	$(CFCC) $(CFO_)fcyr.$(OBJ) $(C_) $(CFGEN)fcyr.c
 
-fcyri.$(OBJ): $(CFONTS)/fcyri.c $(CCFONT)
-	$(CCCF) $(CFONTS)/fcyri.c
+$(CFOBJ)fcyri.$(OBJ) : $(CFGEN)fcyri.c $(CCFONT)
+	$(CFCC) $(CFO_)fcyri.$(OBJ) $(C_) $(CFGEN)fcyri.c
 
 # ---------------- Kana ----------------
 
-Kana_c: $(CFONTS)/fhirw.c $(CFONTS)/fkarw.c
+Kana_c : $(CFGEN)fhirw.c $(CFGEN)fkarw.c
+	$(NO_OP)
 
-$(CFONTS)/fhirw.c:
-	$(FONT2C) Calligraphic-Hiragana $(CFONTS)/fhirw.c fhirw
+$(CFGEN)fhirw.c :
+	$(FONT2C) Calligraphic-Hiragana $(CFGEN)fhirw.c fhirw
 
-$(CFONTS)/fkarw.c:
-	$(FONT2C) Calligraphic-Katakana $(CFONTS)/fkarw.c fkarw
+$(CFGEN)fkarw.c :
+	$(FONT2C) Calligraphic-Katakana $(CFGEN)fkarw.c fkarw
 
-Kana_o: fhirw.$(OBJ) fkarw.$(OBJ)
+Kana_o : $(CFOBJ)fhirw.$(OBJ) $(CFOBJ)fkarw.$(OBJ)
+	$(NO_OP)
 
-fhirw.$(OBJ): $(CFONTS)/fhirw.c $(CCFONT)
-	$(CCCF) $(CFONTS)/fhirw.c
+$(CFOBJ)fhirw.$(OBJ) : $(CFGEN)fhirw.c $(CCFONT)
+	$(CFCC) $(CFO_)fhirw.$(OBJ) $(C_) $(CFGEN)fhirw.c
 
-fkarw.$(OBJ): $(CFONTS)/fkarw.c $(CCFONT)
-	$(CCCF) $(CFONTS)/fkarw.c
+$(CFOBJ)fkarw.$(OBJ) : $(CFGEN)fkarw.c $(CCFONT)
+	$(CFCC) $(CFO_)fkarw.$(OBJ) $(C_) $(CFGEN)fkarw.c
 
 # ---------------- Utopia ----------------
 
-Utopia_c: $(CFONTS)/putr.c $(CFONTS)/putri.c $(CFONTS)/putb.c \
-	$(CFONTS)/putbi.c
+Utopia_c : $(CFGEN)putr.c $(CFGEN)putri.c $(CFGEN)putb.c $(CFGEN)putbi.c
+	$(NO_OP)
 
-$(CFONTS)/putr.c:
-	$(FONT2C) Utopia-Regular $(CFONTS)/putr.c utr
+$(CFGEN)putr.c :
+	$(FONT2C) Utopia-Regular $(CFGEN)putr.c utr
 
-$(CFONTS)/putri.c:
-	$(FONT2C) Utopia-Italic $(CFONTS)/putri.c utri
+$(CFGEN)putri.c :
+	$(FONT2C) Utopia-Italic $(CFGEN)putri.c utri
 
-$(CFONTS)/putb.c:
-	$(FONT2C) Utopia-Bold $(CFONTS)/putb.c utb
+$(CFGEN)putb.c :
+	$(FONT2C) Utopia-Bold $(CFGEN)putb.c utb
 
-$(CFONTS)/putbi.c:
-	$(FONT2C) Utopia-BoldItalic $(CFONTS)/putbi.c utbi
+$(CFGEN)putbi.c :
+	$(FONT2C) Utopia-BoldItalic $(CFGEN)putbi.c utbi
 
-Utopia_o: putr.$(OBJ) putri.$(OBJ) putb.$(OBJ) putbi.$(OBJ)
+Utopia_o : $(CFOBJ)putr.$(OBJ) $(CFOBJ)putri.$(OBJ) $(CFOBJ)putb.$(OBJ) $(CFOBJ)putbi.$(OBJ)
+	$(NO_OP)
 
-putr.$(OBJ): $(CFONTS)/putr.c $(CCFONT)
-	$(CCCF) $(CFONTS)/putr.c
+$(CFOBJ)putr.$(OBJ) : $(CFGEN)putr.c $(CCFONT)
+	$(CFCC) $(CFO_)putr.$(OBJ) $(C_) $(CFGEN)putr.c
 
-putri.$(OBJ): $(CFONTS)/putri.c $(CCFONT)
-	$(CCCF) $(CFONTS)/putri.c
+$(CFOBJ)putri.$(OBJ) : $(CFGEN)putri.c $(CCFONT)
+	$(CFCC) $(CFO_)putri.$(OBJ) $(C_) $(CFGEN)putri.c
 
-putb.$(OBJ): $(CFONTS)/putb.c $(CCFONT)
-	$(CCCF) $(CFONTS)/putb.c
+$(CFOBJ)putb.$(OBJ) : $(CFGEN)putb.c $(CCFONT)
+	$(CFCC) $(CFO_)putb.$(OBJ) $(C_) $(CFGEN)putb.c
 
-putbi.$(OBJ): $(CFONTS)/putbi.c $(CCFONT)
-	$(CCCF) $(CFONTS)/putbi.c
+$(CFOBJ)putbi.$(OBJ) : $(CFGEN)putbi.c $(CCFONT)
+	$(CFCC) $(CFO_)putbi.$(OBJ) $(C_) $(CFGEN)putbi.c

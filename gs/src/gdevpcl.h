@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1994 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1994, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -40,7 +40,10 @@ dev_proc_map_color_rgb(gdev_pcl_3bit_map_color_rgb);
 
 /* Row compression routines */
 typedef ulong word;
-int gdev_pcl_mode2compress(P3(const word * row, const word * end_row, byte * compressed)),
-      gdev_pcl_mode3compress(P4(int bytecount, const byte * current, byte * previous, byte * compressed));
+int
+    gdev_pcl_mode2compress(P3(const word * row, const word * end_row, byte * compressed)),
+    gdev_pcl_mode2compress_padded(P4(const word * row, const word * end_row, byte * compressed, bool pad)),
+    gdev_pcl_mode3compress(P4(int bytecount, const byte * current, byte * previous, byte * compressed)),
+    gdev_pcl_mode9compress(P4(int bytecount, const byte * current, const byte * previous, byte * compressed));
 
 #endif /* gdevpcl_INCLUDED */

@@ -29,24 +29,7 @@
 #ifndef gs_cmap_DEFINED
 #  define gs_cmap_DEFINED
 typedef struct gs_cmap_s gs_cmap;
-
 #endif
-
-/* We only need the structure descriptor for testing. */
-extern_st(st_cmap);
-
-/* Define the structure for CIDSystemInfo. */
-typedef struct gs_cid_system_info_s {
-    gs_const_string Registry;
-    gs_const_string Ordering;
-    int Supplement;
-} gs_cid_system_info;
-/* We only need the structure descriptor for embedding. */
-extern_st(st_cid_system_info);
-#define public_st_cid_system_info() /* in gsfcmap.c */\
-  gs_public_st_const_strings2(st_cid_system_info, gs_cid_system_info,\
-    "gs_cid_system_info", cid_si_enum_ptrs, cid_si_reloc_ptrs,\
-    Registry, Ordering)
 
 /* ---------------- Procedural interface ---------------- */
 

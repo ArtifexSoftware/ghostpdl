@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1994 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1994, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -83,7 +83,8 @@ gdev_pcl_3bit_map_color_rgb(gx_device * dev, gx_color_index color,
  * We will miss a few blocks of identical bytes; tant pis.
  */
 int
-gdev_pcl_mode2compress(const word * row, const word * end_row, byte * compressed)
+gdev_pcl_mode2compress_padded(const word * row, const word * end_row,
+			      byte * compressed, bool pad)
 {
     register const word *exam = row;	/* word being examined in the row to compress */
     register byte *cptr = compressed;	/* output pointer into compressed bytes */
@@ -103,8 +104,9 @@ gdev_pcl_mode2compress(const word * row, const word * end_row, byte * compressed
 
 	/* Find out how long the run is */
 	end_dis = (const byte *)exam;
-	if (exam == end_row) {	/* no run *//* See if any of the last 3 "dissimilar" bytes are 0. */
-	    if (end_dis > compr && end_dis[-1] == 0) {
+	if (exam == end_row) {	/* no run */
+	    /* See if any of the last 3 "dissimilar" bytes are 0. */
+	    if (!pad && end_dis > compr && end_dis[-1] == 0) {
 		if (end_dis[-2] != 0)
 		    end_dis--;
 		else if (end_dis[-3] != 0)
@@ -180,6 +182,12 @@ gdev_pcl_mode2compress(const word * row, const word * end_row, byte * compressed
     }
     return (cptr - compressed);
 }
+int
+gdev_pcl_mode2compress(const word * row, const word * end_row,
+		       byte * compressed)
+{
+    return gdev_pcl_mode2compress_padded(row, end_row, compressed, false);
+}
 
 /*
  * Mode 3 compression routine for the HP LaserJet III family.
@@ -232,6 +240,141 @@ gdev_pcl_mode3compress(int bytecount, const byte * current, byte * previous, byt
 	/* Copy the changed data. */
 	while (diff < cur)
 	    *out++ = *diff++;
+    }
+    return out - compressed;
+}
+
+/*
+ * Mode 9 2D compression for the HP DeskJets . This mode can give
+ * very good compression ratios, especially if there are areas of flat
+ * colour (or blank areas), and so is 'highly recommended' for colour
+ * printing in particular because of the very large amounts of data which
+ * can be generated
+ */
+int
+gdev_pcl_mode9compress(int bytecount, const byte *current,
+		       const byte *previous, byte *compressed)
+{
+    register const byte *cur = current;
+    register const byte *prev = previous;
+    register byte *out = compressed;
+    const byte *end = current + bytecount;
+
+    while (cur < end) {		/* Detect a run of unchanged bytes. */
+	const byte *run = cur;
+	register const byte *diff;
+	int offset;
+
+	while (cur < end && *cur == *prev) {
+	    cur++, prev++;
+	}
+	if (cur == end)
+	    break;		/* rest of row is unchanged */
+	/* Detect a run of changed bytes. */
+	/* We know that *cur != *prev. */
+	diff = cur;
+	do {
+	    prev++;
+	    cur++;
+	}
+	while (cur < end && *cur != *prev);
+	/* Now [run..diff) are unchanged, and */
+	/* [diff..cur) are changed. */
+	offset = diff - run;
+	{
+	    const byte *stop_test = cur - 4;
+	    int dissimilar, similar;
+
+	    while (diff < cur) {
+		const byte *compr = diff;
+		const byte *next;	/* end of run */
+		byte value = 0;
+
+		while (diff <= stop_test &&
+		       ((value = *diff) != diff[1] ||
+			value != diff[2] ||
+			value != diff[3]))
+		    diff++;
+
+		/* Find out how long the run is */
+		if (diff > stop_test)	/* no run */
+		    next = diff = cur;
+		else {
+		    next = diff + 4;
+		    while (next < cur && *next == value)
+			next++;
+		}
+
+#define MAXOFFSETU 15
+#define MAXCOUNTU 7
+		/* output 'dissimilar' bytes, uncompressed */
+		if ((dissimilar = diff - compr)) {
+		    int temp, i;
+
+		    if ((temp = --dissimilar) > MAXCOUNTU)
+			temp = MAXCOUNTU;
+		    if (offset < MAXOFFSETU)
+			*out++ = (offset << 3) | (byte) temp;
+		    else {
+			*out++ = (MAXOFFSETU << 3) | (byte) temp;
+			offset -= MAXOFFSETU;
+			while (offset >= 255) {
+			    *out++ = 255;
+			    offset -= 255;
+			}
+			*out++ = offset;
+		    }
+		    if (temp == MAXCOUNTU) {
+			temp = dissimilar - MAXCOUNTU;
+			while (temp >= 255) {
+			    *out++ = 255;
+			    temp -= 255;
+			}
+			*out++ = (byte) temp;
+		    }
+		    for (i = 0; i <= dissimilar; i++)
+			*out++ = *compr++;
+		    offset = 0;
+		}		/* end uncompressed */
+#undef MAXOFFSETU
+#undef MAXCOUNTU
+
+#define MAXOFFSETC 3
+#define MAXCOUNTC 31
+		/* output 'similar' bytes, run-length encoded */
+		if ((similar = next - diff)) {
+		    int temp;
+
+		    if ((temp = (similar -= 2)) > MAXCOUNTC)
+			temp = MAXCOUNTC;
+		    if (offset < MAXOFFSETC)
+			*out++ = 0x80 | (offset << 5) | (byte) temp;
+		    else {
+			*out++ = 0x80 | (MAXOFFSETC << 5) | (byte) temp;
+			offset -= MAXOFFSETC;
+			while (offset >= 255) {
+			    *out++ = 255;
+			    offset -= 255;
+			}
+			*out++ = offset;
+		    }
+		    if (temp == MAXCOUNTC) {
+			temp = similar - MAXCOUNTC;
+			while (temp >= 255) {
+			    *out++ = 255;
+			    temp -= 255;
+			}
+			*out++ = (byte) temp;
+		    }
+		    *out++ = value;
+		    offset = 0;
+		}		/* end compressed */
+#undef MAXOFFSETC
+#undef MAXCOUNTC
+
+		diff = next;
+	    }
+	}
     }
     return out - compressed;
 }

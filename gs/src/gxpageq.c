@@ -130,6 +130,7 @@ gx_page_queue_init(
     queue->render_done_sema = gx_semaphore_alloc(memory);
     queue->first_in = queue->last_in = 0;
     queue->reserve_entry = gx_page_queue_entry_alloc(queue);
+
     if (queue->monitor && queue->render_req_sema && queue->render_done_sema
 	&& queue->reserve_entry)
 	return 0;

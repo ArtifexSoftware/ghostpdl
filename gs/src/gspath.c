@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -86,21 +86,19 @@ clamp_point(gs_fixed_point * ppt, floatp x, floatp y)
 }
 
 int
-gs_currentpoint(const gs_state * pgs, gs_point * ppt)
+gs_currentpoint(gs_state * pgs, gs_point * ppt)
 {
     gx_path *ppath = pgs->path;
     int code;
     gs_fixed_point pt;
 
     if (path_outside_range(ppath))
-	return gs_itransform((gs_state *) pgs,
-			     ppath->outside_position.x,
+	return gs_itransform(pgs, ppath->outside_position.x,
 			     ppath->outside_position.y, ppt);
     code = gx_path_current_point(pgs->path, &pt);
     if (code < 0)
 	return code;
-    return gs_itransform((gs_state *) pgs,
-			 fixed2float(pt.x), fixed2float(pt.y), ppt);
+    return gs_itransform(pgs, fixed2float(pt.x), fixed2float(pt.y), ppt);
 }
 
 int
@@ -424,18 +422,6 @@ common_clip(gs_state * pgs, int rule)
     pgs->clip_path->rule = rule;
     note_set_clip_path(pgs);
     return 0;
-}
-
-int
-gs_setclipoutside(gs_state * pgs, bool outside)
-{
-    return gx_cpath_set_outside(pgs->clip_path, outside);
-}
-
-bool
-gs_currentclipoutside(const gs_state * pgs)
-{
-    return gx_cpath_is_outside(pgs->clip_path);
 }
 
 /* Establish a rectangle as the clipping path. */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -48,12 +48,15 @@ extern iodev_proc_open_file(iodev_os_open_file);
 /* Import the IODevice table. */
 extern_gx_io_device_table();
 
+/* Import the dtype of the stdio IODevices. */
+extern const char iodev_dtype_stdio[];
+
 /* Forward references: file opening. */
 int file_open(P6(const byte *, uint, const char *, uint, ref *, stream **));
 
 /* Forward references: other. */
-private int execfile_finish(P1(os_ptr));
-private int execfile_cleanup(P1(os_ptr));
+private int execfile_finish(P1(i_ctx_t *));
+private int execfile_cleanup(P1(i_ctx_t *));
 
 /*
  * Since there can be many file objects referring to the same file/stream,
@@ -98,37 +101,38 @@ private int execfile_cleanup(P1(os_ptr));
 const uint file_default_buffer_size = DEFAULT_BUFFER_SIZE;
 
 /* An invalid file object */
-stream *invalid_file_entry;	/* exported for zfileio.c */
+private stream invalid_file_stream;
+stream *const invalid_file_entry = &invalid_file_stream;
 
 /* Initialize the file table */
-private void
-zfile_init(void)
+private int
+zfile_init(i_ctx_t *i_ctx_p)
 {
     /* Create and initialize an invalid (closed) stream. */
     /* Initialize the stream for the sake of the GC, */
     /* and so it can act as an empty input stream. */
 
-    stream *s = s_alloc(imemory_system, "zfile_init");
+    stream *const s = &invalid_file_stream;
 
+    s_init(s, NULL);
     sread_string(s, NULL, 0);
     s->next = s->prev = 0;
     s_init_no_id(s);
-    invalid_file_entry = s;
-    gs_register_struct_root(imemory, NULL, (void **)&invalid_file_entry,
-			    "invalid_file_entry");
+    return 0;
 }
 
 /* Make an invalid file object. */
 void
 make_invalid_file(ref * fp)
 {
-    make_file(fp, avm_system, ~0, invalid_file_entry);
+    make_file(fp, avm_invalid_file_entry, ~0, invalid_file_entry);
 }
 
 /* <name_string> <access_string> file <file> */
 int
-zfile(register os_ptr op)
+zfile(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     char file_access[3];
     parsed_file_name pname;
     const byte *astr;
@@ -162,18 +166,33 @@ zfile(register os_ptr op)
     code = parse_file_name(op - 1, &pname);
     if (code < 0)
 	return code;
-    if (pname.iodev == NULL)
-	pname.iodev = iodev_default;
-    if (pname.fname == NULL)	/* just a device */
+	/*
+	 * HACK: temporarily patch the current context pointer into the
+	 * state pointer for stdio-related devices.  See ziodev.c for
+	 * more information.
+	 */
+    if (pname.iodev && pname.iodev->dtype == iodev_dtype_stdio) {
+	if (pname.fname)
+	    return_error(e_invalidfileaccess);
+	pname.iodev->state = i_ctx_p;
 	code = (*pname.iodev->procs.open_device)(pname.iodev,
 						 file_access, &s, imemory);
-    else {			/* file */
-	iodev_proc_open_file((*open_file)) =
-	    pname.iodev->procs.open_file;
-	if (open_file == 0)
-	    open_file = iodev_os_open_file;
-	code = (*open_file)(pname.iodev, pname.fname, pname.len,
-			    file_access, &s, imemory);
+	pname.iodev->state = NULL;
+    } else {
+	if (pname.iodev == NULL)
+	    pname.iodev = iodev_default;
+	if (pname.fname == NULL)	/* just a device */
+	    code = (*pname.iodev->procs.open_device)(pname.iodev,
+						     file_access, &s, imemory);
+	else {			/* file */
+	    iodev_proc_open_file((*open_file)) =
+		pname.iodev->procs.open_file;
+
+	    if (open_file == 0)
+		open_file = iodev_os_open_file;
+	    code = (*open_file)(pname.iodev, pname.fname, pname.len,
+				file_access, &s, imemory);
+	}
     }
     if (code < 0)
 	return code;
@@ -186,8 +205,9 @@ zfile(register os_ptr op)
 
 /* <string> deletefile - */
 private int
-zdeletefile(register os_ptr op)
+zdeletefile(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     parsed_file_name pname;
     int code = parse_real_file_name(op, &pname, "deletefile");
 
@@ -203,11 +223,12 @@ zdeletefile(register os_ptr op)
 
 /* <template> <proc> <scratch> filenameforall - */
 /****** NOT CONVERTED FOR IODEVICES YET ******/
-private int file_continue(P1(os_ptr));
-private int file_cleanup(P1(os_ptr));
+private int file_continue(P1(i_ctx_t *));
+private int file_cleanup(P1(i_ctx_t *));
 private int
-zfilenameforall(register os_ptr op)
+zfilenameforall(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     file_enum *pfen;
     int code;
 
@@ -227,14 +248,14 @@ zfilenameforall(register os_ptr op)
     make_istruct(esp, 0, pfen);
     *++esp = op[-1];
     pop(3);
-    op -= 3;
-    code = file_continue(op);
+    code = file_continue(i_ctx_p);
     return (code == o_pop_estack ? o_push_estack : code);
 }
 /* Continuation operator for enumerating files */
 private int
-file_continue(register os_ptr op)
+file_continue(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     es_ptr pscratch = esp - 2;
     file_enum *pfen = r_ptr(esp - 1, file_enum);
     uint len = r_size(pscratch);
@@ -257,7 +278,7 @@ file_continue(register os_ptr op)
 }
 /* Cleanup procedure for enumerating files */
 private int
-file_cleanup(os_ptr op)
+file_cleanup(i_ctx_t *i_ctx_p)
 {
     gp_enumerate_files_close(r_ptr(esp + 4, file_enum));
     return 0;
@@ -265,8 +286,9 @@ file_cleanup(os_ptr op)
 
 /* <string1> <string2> renamefile - */
 private int
-zrenamefile(register os_ptr op)
+zrenamefile(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     parsed_file_name pname1, pname2;
     int code = parse_real_file_name(op - 1, &pname1, "renamefile(from)");
 
@@ -293,8 +315,10 @@ zrenamefile(register os_ptr op)
 /* <string> status <pages> <bytes> <ref_time> <creation_time> true */
 /* <string> status false */
 private int
-zstatus(register os_ptr op)
+zstatus(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     switch (r_type(op)) {
 	case t_file:
 	    {
@@ -361,37 +385,40 @@ zstatus(register os_ptr op)
 
 /* <executable_file> .execfile - */
 private int
-zexecfile(register os_ptr op)
+zexecfile(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     check_type_access(*op, t_file, a_executable | a_read | a_execute);
     check_estack(4);		/* cleanup, file, finish, file */
     push_mark_estack(es_other, execfile_cleanup);
     *++esp = *op;
     push_op_estack(execfile_finish);
-    return zexec(op);
+    return zexec(i_ctx_p);
 }
 /* Finish normally. */
 private int
-execfile_finish(os_ptr op)
+execfile_finish(i_ctx_t *i_ctx_p)
 {
     check_ostack(1);
     esp -= 2;
-    execfile_cleanup(op);
+    execfile_cleanup(i_ctx_p);
     return o_pop_estack;
 }
 /* Clean up by closing the file. */
 private int
-execfile_cleanup(os_ptr op)
+execfile_cleanup(i_ctx_t *i_ctx_p)
 {
     check_ostack(1);
     *++osp = esp[2];
-    return zclosefile(osp);
+    return zclosefile(i_ctx_p);
 }
 
 /* <dir> <name> .filenamedirseparator <string> */
 int
-zfilenamedirseparator(os_ptr op)
+zfilenamedirseparator(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     const char *sepr;
 
     check_read_type(*op, t_string);
@@ -409,8 +436,10 @@ zfilenamedirseparator(os_ptr op)
 
 /* - .filenamelistseparator <string> */
 int
-zfilenamelistseparator(os_ptr op)
+zfilenamelistseparator(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(1);
     make_const_string(op, avm_foreign | a_readonly, 1,
 		      (const byte *)&gp_file_name_list_separator);
@@ -419,8 +448,10 @@ zfilenamelistseparator(os_ptr op)
 
 /* <name> .filenamesplit <dir> <base> <extension> */
 int
-zfilenamesplit(os_ptr op)
+zfilenamesplit(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     check_read_type(*op, t_string);
 /****** NOT IMPLEMENTED YET ******/
     return_error(e_undefined);
@@ -429,10 +460,10 @@ zfilenamesplit(os_ptr op)
 /* <string> findlibfile <found_string> <file> true */
 /* <string> findlibfile <string> false */
 int
-zfindlibfile(register os_ptr op)
+zfindlibfile(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code;
-
 #define MAX_CNAME 200
     byte cname[MAX_CNAME];
     uint clen;
@@ -688,7 +719,14 @@ file_open_stream(const char *fname, uint len, const char *file_access,
 		sappend_file(s, file, buffer, buffer_size);
 		break;
 	    case 'r':
-		sread_file(s, file, buffer, buffer_size);
+		/* Defeat buffering for terminals. */
+		{
+		    struct stat rstat;
+
+		    fstat(fileno(file), &rstat);
+		    sread_file(s, file, buffer,
+			       (S_ISCHR(rstat.st_mode) ? 1 : buffer_size));
+		}
 		break;
 	    case 'w':
 		swrite_file(s, file, buffer, buffer_size);
@@ -705,12 +743,15 @@ file_open_stream(const char *fname, uint len, const char *file_access,
     return 0;
 }
 
-/* Report an error by storing it in $error.errorinfo. */
+/* Report an error by storing it in the stream's error_string. */
 int
 filter_report_error(stream_state * st, const char *str)
 {
     if_debug1('s', "[s]stream error: %s\n", str);
-    return gs_errorinfo_put_string(str);
+    strncpy(st->error_string, str, STREAM_MAX_ERROR_STRING);
+    /* Ensure null termination. */
+    st->error_string[STREAM_MAX_ERROR_STRING] = 0;
+    return 0;
 }
 
 /* Open a file stream for a filter. */
@@ -783,8 +824,8 @@ file_alloc_stream(gs_memory_t * mem, client_name_t cname)
     {
 	int i;
 
-	for (i = 0; i < countof(gs_imemory.spaces.indexed); ++i)
-	    if (mem == (gs_memory_t *) gs_imemory.spaces.indexed[i]) {
+	for (i = 0; i < countof(gs_imemory.spaces_indexed); ++i)
+	    if (mem == (gs_memory_t *) gs_imemory.spaces_indexed[i]) {
 		imem = (gs_ref_memory_t *) mem;
 		break;
 	    }

@@ -135,7 +135,11 @@
  * Pattern      colored: (none)                 dictionary
  *              uncolored: base_space dictionary + base space params */
 
-/* Color space type indices */
+/*
+ * Define color space type indices.  NOTE: PostScript code (gs_res.ps,
+ * gs_ll3.ps) and the color space substitution code (gscssub.[hc] and its
+ * clients) assumes values 0-2 for DeviceGray/RGB/CMYK respectively.
+ */
 typedef enum {
 
     /* Supported in all configurations */
@@ -220,16 +224,16 @@ typedef struct gs_separation_params_s {
     gs_indexed_map *map;
 } gs_separation_params;
 
-typedef struct gs_device_n_params_s gs_device_n_params;
-struct gs_device_n_params_s {
+#ifndef gs_device_n_map_DEFINED
+#  define gs_device_n_map_DEFINED
+typedef struct gs_device_n_map_s gs_device_n_map;
+#endif
+typedef struct gs_device_n_params_s {
     gs_separation_name *names;
     uint num_components;
     gs_base_color_space alt_space;
-    int (*tint_transform)
-        (P4(const gs_device_n_params * params, const float *in, float *out,
-	    void *data));
-    void *tint_transform_data;
-};
+    gs_device_n_map *map;
+} gs_device_n_params;
 
 #define gs_direct_cspace_params         \
     gs_base_cspace_params;              \
@@ -375,7 +379,7 @@ void gs_cspace_init_from(P2(gs_color_space * pcsto,
 			    const gs_color_space * pcsfrom));
 
 /* Assign a color space into a previously initialized one. */
-void cs_cspace_assign(P2(gs_color_space * pdest, const gs_color_space * psrc));
+void gs_cspace_assign(P2(gs_color_space * pdest, const gs_color_space * psrc));
 
 /* Prepare to free a color space. */
 void gs_cspace_release(P1(gs_color_space * pcs));

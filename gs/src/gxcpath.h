@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1995, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 1995, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -73,10 +73,9 @@ struct gx_clip_list_s {
     gx_clip_rect single;	/* (has next = prev = 0) */
     gx_clip_rect *head;
     gx_clip_rect *tail;
+    int xmin, xmax;		/* min and max X over all but head/tail */
     int count;			/* # of rectangles not counting */
-    /* head or tail */
-    bool outside;		/* if true, clip to outside of list */
-    /* rather than inside */
+				/* head or tail */
 };
 
 #define private_st_clip_list()	/* in gxcpath.c */\
@@ -90,6 +89,10 @@ struct gx_clip_list_s {
  * This ability, a late addition, currently is used only in a few
  * situations that require breaking up a transfer into pieces,
  * but we suspect it could be used more widely.
+ *
+ * Note that clipping devices cache their clipping box, so the target's
+ * clipping box and the clip list must be const after the clipping device
+ * is opened.
  */
 #ifndef gx_device_clip_DEFINED
 #  define gx_device_clip_DEFINED
@@ -100,12 +103,15 @@ struct gx_device_clip_s {
     gx_clip_list list;		/* set by client */
     gx_clip_rect *current;	/* cursor in list */
     gs_int_point translation;
+    gs_fixed_rect clipping_box;
+    bool clipping_box_set;
 };
 
 extern_st(st_device_clip);
 #define public_st_device_clip()	/* in gxcpath.c */\
-  gs_public_st_composite(st_device_clip, gx_device_clip,\
-    "gx_device_clip", device_clip_enum_ptrs, device_clip_reloc_ptrs)
+  gs_public_st_composite_use_final(st_device_clip, gx_device_clip,\
+    "gx_device_clip", device_clip_enum_ptrs, device_clip_reloc_ptrs,\
+    gx_device_finalize)
 void gx_make_clip_translate_device(P5(gx_device_clip * dev, void *container,
 				const gx_clip_list * list, int tx, int ty));
 
@@ -117,7 +123,7 @@ void gx_make_clip_path_device(P2(gx_device_clip *, const gx_clip_path *));
   if_debug7(ch, "[%c]%s 0x%lx: (%d,%d),(%d,%d)\n", ch, str, (ulong)ar,\
 	    (ar)->xmin, (ar)->ymin, (ar)->xmax, (ar)->ymax)
 
-/* Routines exported from gxcpath.c for gxacpath.c */
+/* Exported by gxcpath.c for gxacpath.c */
 
 /* Initialize a clip list. */
 void gx_clip_list_init(P1(gx_clip_list *));
@@ -127,5 +133,10 @@ void gx_clip_list_free(P2(gx_clip_list *, gs_memory_t *));
 
 /* Set the outer box for a clipping path from its bounding box. */
 void gx_cpath_set_outer_box(P1(gx_clip_path *));
+
+/* Exported by gxcpath.c for gxclip.c */
+
+/* Return the rectangle list of a clipping path (for local use only). */
+const gx_clip_list *gx_cpath_list(P1(const gx_clip_path *pcpath));
 
 #endif /* gxcpath_INCLUDED */

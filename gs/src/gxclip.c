@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -21,8 +21,8 @@
 #include "gx.h"
 #include "gxdevice.h"
 #include "gxclip.h"
-#include "gzpath.h"
-#include "gzcpath.h"
+#include "gxpath.h"
+#include "gxcpath.h"
 
 /* Define whether to look for vertical clipping regions. */
 #define CHECK_VERTICAL_CLIPPING
@@ -98,7 +98,7 @@ void
 gx_make_clip_translate_device(gx_device_clip * dev, void *container,
 			      const gx_clip_list * list, int tx, int ty)
 {
-    gx_device_init((gx_device *) dev, (gx_device *) & gs_clip_device,
+    gx_device_init((gx_device *)dev, (const gx_device *)&gs_clip_device,
 		   NULL, true);
     dev->list = *list;
     dev->translation.x = tx;
@@ -114,7 +114,7 @@ gx_make_clip_path_device(gx_device_clip * dev, const gx_clip_path * pcpath)
 #ifdef DEBUG
 struct stats_clip_s {
     long
-         loops, in, down, up, x, no_x;
+         loops, out, in_y, in, in1, down, up, x, no_x;
 } stats_clip;
 private uint clip_interval = 10000;
 
@@ -130,34 +130,28 @@ private uint clip_interval = 10000;
  * the clipping region.
  */
 private int
-clip_enumerate(gx_device_clip * rdev,
-	       int (*process) (P5(clip_callback_data_t * pccd, int xc, int yc, int xec, int yec)),
-	       clip_callback_data_t * pccd)
+clip_enumerate_rest(gx_device_clip * rdev,
+		    int x, int y, int xe, int ye,
+		    int (*process)(P5(clip_callback_data_t * pccd,
+				      int xc, int yc, int xec, int yec)),
+		    clip_callback_data_t * pccd)
 {
     gx_clip_rect *rptr = rdev->current;		/* const within algorithm */
-    const int x = pccd->x, y = pccd->y;
-    const int xe = x + pccd->w, ye = y + pccd->h;
-    int xc, xec, yc, yec, yep;
+    int yc;
     int code;
 
 #ifdef DEBUG
-    if (INCR(loops) % clip_interval == 0)
-	if_debug6('q',
-		  "[q]loops=%ld in=%ld down=%ld up=%ld x=%ld no_x=%ld\n", \
-		  stats_clip.loops, stats_clip.in,
-		  stats_clip.down, stats_clip.up,
-		  stats_clip.x, stats_clip.no_x);
-#endif
-    if (pccd->w <= 0 || pccd->h <= 0)
-	return 0;
-    /* Check for the region being entirely within the current rectangle. */
-    if (!rdev->list.outside) {
-	if (y >= rptr->ymin && ye <= rptr->ymax &&
-	    x >= rptr->xmin && xe <= rptr->xmax
-	    ) {
-	    return INCR_THEN(in, (*process) (pccd, x, y, xe, ye));
-	}
+    if (INCR(loops) % clip_interval == 0 && gs_debug_c('q')) {
+	dprintf5("[q]loops=%ld out=%ld in_y=%ld in=%ld in1=%ld\n",
+		 stats_clip.loops, stats_clip.out, stats_clip.in,
+		 stats_clip.in_y, stats_clip.in1);
+	dprintf4("[q]   down=%ld up=%ld x=%ld no_x=%ld\n",
+		 stats_clip.down, stats_clip.up, stats_clip.x,
+		 stats_clip.no_x);
     }
+#endif
+    pccd->x = x, pccd->y = y;
+    pccd->w = xe - x, pccd->h = ye - y;
     /*
      * Warp the cursor forward or backward to the first rectangle row
      * that could include a given y value.  Assumes rptr is set, and
@@ -178,85 +172,35 @@ clip_enumerate(gx_device_clip * rdev,
 	while (rptr->prev != 0 && y < rptr->prev->ymax)
 	    INCR_THEN(down, rptr = rptr->prev);
     if (rptr == 0 || (yc = rptr->ymin) >= ye) {
+	INCR(out);
 	if (rdev->list.count > 1)
 	    rdev->current =
 		(rptr != 0 ? rptr :
 		 y >= rdev->current->ymax ? rdev->list.tail :
 		 rdev->list.head);
-	if (rdev->list.outside) {
-	    return (*process) (pccd, x, y, xe, ye);
-	} else
-	    return 0;
+	return 0;
     }
     rdev->current = rptr;
     if (yc < y)
 	yc = y;
-    if (rdev->list.outside) {
-	for (yep = y;;) {
-	    const int ymax = rptr->ymax;
 
-	    xc = x;
-	    if (yc > yep) {
-		yec = yc, yc = yep;
-		xec = xe;
-		code = (*process) (pccd, xc, yc, xec, yec);
-		if (code < 0)
-		    return code;
-		yc = yec;
-	    }
-	    yec = min(ymax, ye);
-	    do {
-		xec = rptr->xmin;
-		if (xec > xc) {
-		    if (xec > xe)
-			xec = xe;
-		    code = (*process) (pccd, xc, yc, xec, yec);
-		    if (code < 0)
-			return code;
-		    xc = rptr->xmax;
-		    if (xc >= xe)
-			xc = max_int;
-		} else {
-		    xec = rptr->xmax;
-		    if (xec > xc)
-			xc = xec;
-		}
-	    }
-	    while ((rptr = rptr->next) != 0 && rptr->ymax == ymax);
-	    if (xc < xe) {
-		xec = xe;
-		code = (*process) (pccd, xc, yc, xec, yec);
-		if (code < 0)
-		    return code;
-	    }
-	    yep = yec;
-	    if (rptr == 0 || (yc = rptr->ymin) >= ye)
-		break;
-	}
-	if (yep < ye) {
-	    xc = x, xec = xe, yc = yep, yec = ye;
-	    code = (*process) (pccd, xc, yc, xec, yec);
-	    if (code < 0)
-		return code;
-	}
-    } else			/* !outside */
-	for (;;) {
-	    const int ymax = rptr->ymax;
-	    gx_clip_rect *nptr;
+    do {
+	const int ymax = rptr->ymax;
+	int yec = min(ymax, ye);
 
-	    yec = min(ymax, ye);
-	    if_debug2('Q', "[Q]yc=%d yec=%d\n", yc, yec);
-	    do {
-		xc = rptr->xmin;
-		xec = rptr->xmax;
-		if (xc < x)
-		    xc = x;
-		if (xec > xe)
-		    xec = xe;
-		if (xec > xc) {
-		    clip_rect_print('Q', "match", rptr);
-		    if_debug2('Q', "[Q]xc=%d xec=%d\n", xc, xec);
-		    INCR(x);
+	if_debug2('Q', "[Q]yc=%d yec=%d\n", yc, yec);
+	do {
+	    int xc = rptr->xmin;
+	    int xec = rptr->xmax;
+
+	    if (xc < x)
+		xc = x;
+	    if (xec > xe)
+		xec = xe;
+	    if (xec > xc) {
+		clip_rect_print('Q', "match", rptr);
+		if_debug2('Q', "[Q]xc=%d xec=%d\n", xc, xec);
+		INCR(x);
 /*
  * Conditionally look ahead to detect unclipped vertical strips.  This is
  * really only valuable for 90 degree rotated images or (nearly-)vertical
@@ -265,33 +209,58 @@ clip_enumerate(gx_device_clip * rdev,
  * take out the code here with no adverse effects.
  */
 #ifdef CHECK_VERTICAL_CLIPPING
-		    if (xec - xc == pccd->w) {	/* full width */
-			/* Look ahead for a vertical swath. */
-			while ((nptr = rptr->next) != 0 &&
-			       nptr->ymin == yec &&
-			       nptr->ymax <= ye &&
-			       nptr->xmin <= x &&
-			       nptr->xmax >= xe
-			    )
-			    yec = nptr->ymax, rptr = nptr;
-		    } else
-			nptr = rptr->next;
+		if (xec - xc == pccd->w) {	/* full width */
+		    /* Look ahead for a vertical swath. */
+		    while ((rptr = rptr->next) != 0 &&
+			   rptr->ymin == yec &&
+			   rptr->ymax <= ye &&
+			   rptr->xmin <= x &&
+			   rptr->xmax >= xe
+			   )
+			yec = rptr->ymax;
+		} else
+		    rptr = rptr->next;
 #else
-		    nptr = rptr->next;
+		rptr = rptr->next;
 #endif
-		    code = (*process) (pccd, xc, yc, xec, yec);
-		    if (code < 0)
-			return code;
-		} else {
-		    INCR_THEN(no_x, nptr = rptr->next);
-		}
+		code = process(pccd, xc, yc, xec, yec);
+		if (code < 0)
+		    return code;
+	    } else {
+		INCR_THEN(no_x, rptr = rptr->next);
 	    }
-	    while ((rptr = nptr) != 0 && rptr->ymax == ymax);
-	    if (rptr == 0 || (yec = rptr->ymin) >= ye)
-		break;
-	    yc = yec;
+	    if (rptr == 0)
+		return 0;
 	}
+	while (rptr->ymax == ymax);
+    } while ((yc = rptr->ymin) < ye);
     return 0;
+}
+
+private int
+clip_enumerate(gx_device_clip * rdev, int x, int y, int w, int h,
+	       int (*process)(P5(clip_callback_data_t * pccd,
+				 int xc, int yc, int xec, int yec)),
+	       clip_callback_data_t * pccd)
+{
+    int xe, ye;
+    const gx_clip_rect *rptr = rdev->current;
+
+    if (w <= 0 || h <= 0)
+	return 0;
+    pccd->tdev = rdev->target;
+    x += rdev->translation.x;
+    xe = x + w;
+    y += rdev->translation.y;
+    ye = y + h;
+    /* Check for the region being entirely within the current rectangle. */
+    if (y >= rptr->ymin && ye <= rptr->ymax &&
+	x >= rptr->xmin && xe <= rptr->xmax
+	) {
+	pccd->x = x, pccd->y = y, pccd->w = w, pccd->h = h;
+	return INCR_THEN(in, process(pccd, x, y, xe, ye));
+    }
+    return clip_enumerate_rest(rdev, x, y, xe, ye, process, pccd);
 }
 
 /* Open a clipping device */
@@ -309,6 +278,7 @@ clip_open(gx_device * dev)
     rdev->width = tdev->width;
     rdev->height = tdev->height;
     gx_device_copy_color_procs(dev, tdev);
+    rdev->clipping_box_set = false;
     return 0;
 }
 
@@ -325,13 +295,45 @@ clip_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 {
     gx_device_clip *rdev = (gx_device_clip *) dev;
     clip_callback_data_t ccdata;
+    /* We handle the fastest cases in-line here. */
+    gx_device *tdev = rdev->target;
+    /*const*/ gx_clip_rect *rptr = rdev->current;
+    int xe, ye;
 
+    if (w <= 0 || h <= 0)
+	return 0;
     x += rdev->translation.x;
+    xe = x + w;
     y += rdev->translation.y;
-    ccdata.tdev = rdev->target;
+    ye = y + h;
+    /* We open-code the most common cases here. */
+    if ((y >= rptr->ymin && ye <= rptr->ymax) ||
+	((rptr = rptr->next) != 0 &&
+	 y >= rptr->ymin && ye <= rptr->ymax)
+	) {
+	rdev->current = rptr;	/* may be redundant, but awkward to avoid */
+	INCR(in_y);
+	if (x >= rptr->xmin && xe <= rptr->xmax) {
+	    INCR(in);
+	    return dev_proc(tdev, fill_rectangle)(tdev, x, y, w, h, color);
+	}
+	else if ((rptr->prev == 0 || rptr->prev->ymax != rptr->ymax) &&
+		 (rptr->next == 0 || rptr->next->ymax != rptr->ymax)
+		 ) {
+	    INCR(in1);
+	    if (x < rptr->xmin)
+		x = rptr->xmin;
+	    if (xe > rptr->xmax)
+		xe = rptr->xmax;
+	    return
+		(x >= xe ? 0 :
+		 dev_proc(tdev, fill_rectangle)(tdev, x, y, xe - x, h, color));
+	}
+    }
+    ccdata.tdev = tdev;
     ccdata.color[0] = color;
-    ccdata.x = x, ccdata.y = y, ccdata.w = w, ccdata.h = h;
-    return clip_enumerate(rdev, clip_call_fill_rectangle, &ccdata);
+    return clip_enumerate_rest(rdev, x, y, xe, ye,
+			       clip_call_fill_rectangle, &ccdata);
 }
 
 /* Copy a monochrome rectangle */
@@ -351,14 +353,30 @@ clip_copy_mono(gx_device * dev,
 {
     gx_device_clip *rdev = (gx_device_clip *) dev;
     clip_callback_data_t ccdata;
+    /* We handle the fastest case in-line here. */
+    gx_device *tdev = rdev->target;
+    const gx_clip_rect *rptr = rdev->current;
+    int xe, ye;
 
+    if (w <= 0 || h <= 0)
+	return 0;
     x += rdev->translation.x;
+    xe = x + w;
     y += rdev->translation.y;
-    ccdata.tdev = rdev->target;
+    ye = y + h;
+    if (y >= rptr->ymin && ye <= rptr->ymax) {
+	INCR(in_y);
+	if (x >= rptr->xmin && xe <= rptr->xmax) {
+	    INCR(in);
+	    return dev_proc(tdev, copy_mono)
+		(tdev, data, sourcex, raster, id, x, y, w, h, color0, color1);
+	}
+    }
+    ccdata.tdev = tdev;
     ccdata.data = data, ccdata.sourcex = sourcex, ccdata.raster = raster;
     ccdata.color[0] = color0, ccdata.color[1] = color1;
-    ccdata.x = x, ccdata.y = y, ccdata.w = w, ccdata.h = h;
-    return clip_enumerate(rdev, clip_call_copy_mono, &ccdata);
+    return clip_enumerate_rest(rdev, x, y, xe, ye,
+			       clip_call_copy_mono, &ccdata);
 }
 
 /* Copy a color rectangle */
@@ -378,12 +396,8 @@ clip_copy_color(gx_device * dev,
     gx_device_clip *rdev = (gx_device_clip *) dev;
     clip_callback_data_t ccdata;
 
-    x += rdev->translation.x;
-    y += rdev->translation.y;
-    ccdata.tdev = rdev->target;
     ccdata.data = data, ccdata.sourcex = sourcex, ccdata.raster = raster;
-    ccdata.x = x, ccdata.y = y, ccdata.w = w, ccdata.h = h;
-    return clip_enumerate(rdev, clip_call_copy_color, &ccdata);
+    return clip_enumerate(rdev, x, y, w, h, clip_call_copy_color, &ccdata);
 }
 
 /* Copy a rectangle with alpha */
@@ -404,13 +418,9 @@ clip_copy_alpha(gx_device * dev,
     gx_device_clip *rdev = (gx_device_clip *) dev;
     clip_callback_data_t ccdata;
 
-    x += rdev->translation.x;
-    y += rdev->translation.y;
-    ccdata.tdev = rdev->target;
     ccdata.data = data, ccdata.sourcex = sourcex, ccdata.raster = raster;
-    ccdata.x = x, ccdata.y = y, ccdata.w = w, ccdata.h = h;
     ccdata.color[0] = color, ccdata.depth = depth;
-    return clip_enumerate(rdev, clip_call_copy_alpha, &ccdata);
+    return clip_enumerate(rdev, x, y, w, h, clip_call_copy_alpha, &ccdata);
 }
 
 /* Fill a region defined by a mask. */
@@ -437,13 +447,9 @@ clip_fill_mask(gx_device * dev,
 	return gx_default_fill_mask(dev, data, sourcex, raster, id,
 				    x, y, w, h, pdcolor, depth, lop,
 				    pcpath);
-    x += rdev->translation.x;
-    y += rdev->translation.y;
-    ccdata.tdev = rdev->target;
-    ccdata.x = x, ccdata.y = y, ccdata.w = w, ccdata.h = h;
     ccdata.data = data, ccdata.sourcex = sourcex, ccdata.raster = raster;
     ccdata.pdcolor = pdcolor, ccdata.depth = depth, ccdata.lop = lop;
-    return clip_enumerate(rdev, clip_call_fill_mask, &ccdata);
+    return clip_enumerate(rdev, x, y, w, h, clip_call_fill_mask, &ccdata);
 }
 
 /* Strip-tile a rectangle. */
@@ -462,14 +468,10 @@ clip_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
     gx_device_clip *rdev = (gx_device_clip *) dev;
     clip_callback_data_t ccdata;
 
-    x += rdev->translation.x;
-    y += rdev->translation.y;
-    ccdata.tdev = rdev->target;
-    ccdata.x = x, ccdata.y = y, ccdata.w = w, ccdata.h = h;
     ccdata.tiles = tiles;
     ccdata.color[0] = color0, ccdata.color[1] = color1;
     ccdata.phase.x = phase_x, ccdata.phase.y = phase_y;
-    return clip_enumerate(rdev, clip_call_strip_tile_rectangle, &ccdata);
+    return clip_enumerate(rdev, x, y, w, h, clip_call_strip_tile_rectangle, &ccdata);
 }
 
 /* Copy a rectangle with RasterOp and strip texture. */
@@ -494,59 +496,58 @@ clip_strip_copy_rop(gx_device * dev,
     gx_device_clip *rdev = (gx_device_clip *) dev;
     clip_callback_data_t ccdata;
 
-    x += rdev->translation.x;
-    y += rdev->translation.y;
-    ccdata.tdev = rdev->target;
-    ccdata.x = x, ccdata.y = y, ccdata.w = w, ccdata.h = h;
     ccdata.data = sdata, ccdata.sourcex = sourcex, ccdata.raster = raster;
     ccdata.scolors = scolors, ccdata.textures = textures,
 	ccdata.tcolors = tcolors;
     ccdata.phase.x = phase_x, ccdata.phase.y = phase_y, ccdata.lop = lop;
-    return clip_enumerate(rdev, clip_call_strip_copy_rop, &ccdata);
+    return clip_enumerate(rdev, x, y, w, h, clip_call_strip_copy_rop, &ccdata);
 }
 
 /* Get the (outer) clipping box, in client coordinates. */
 private void
 clip_get_clipping_box(gx_device * dev, gs_fixed_rect * pbox)
 {
-    gx_device_clip *rdev = (gx_device_clip *) dev;
-    gx_device *tdev = rdev->target;
-    gs_fixed_rect tbox, cbox;
-    fixed tx = int2fixed(rdev->translation.x), ty = int2fixed(rdev->translation.y);
+    gx_device_clip *const rdev = (gx_device_clip *) dev;
 
-    (*dev_proc(tdev, get_clipping_box)) (tdev, &tbox);
-    /*
-     * To get an accurate clipping box quickly in all cases, we should
-     * save the outer box from the clipping path.  However,
-     * this is not currently (or even always guaranteed to be)
-     * available.  Instead, we compromise: if there is more than one
-     * rectangle in the list, we return accurate Y values (which are
-     * easy to obtain, because the list is Y-sorted) but copy the
-     * X values from the target.
-     */
-    if (rdev->list.outside || rdev->list.count == 0) {
-	cbox = tbox;
-    } else if (rdev->list.count == 1) {
-	cbox.p.x = int2fixed(rdev->list.single.xmin);
-	cbox.p.y = int2fixed(rdev->list.single.ymin);
-	cbox.q.x = int2fixed(rdev->list.single.xmax);
-	cbox.q.y = int2fixed(rdev->list.single.ymax);
-    } else {			/* The head and tail elements are dummies.... */
-	cbox.p.x = tbox.p.x;
-	cbox.p.y = int2fixed(rdev->list.head->next->ymin);
-	cbox.q.x = tbox.q.x;
-	cbox.q.y = int2fixed(rdev->list.tail->prev->ymax);
+    if (!rdev->clipping_box_set) {
+	gx_device *tdev = rdev->target;
+	gs_fixed_rect tbox;
+
+	(*dev_proc(tdev, get_clipping_box)) (tdev, &tbox);
+	if (rdev->list.count != 0) {
+	    gs_fixed_rect cbox;
+
+	    if (rdev->list.count == 1) {
+		cbox.p.x = int2fixed(rdev->list.single.xmin);
+		cbox.p.y = int2fixed(rdev->list.single.ymin);
+		cbox.q.x = int2fixed(rdev->list.single.xmax);
+		cbox.q.y = int2fixed(rdev->list.single.ymax);
+	    } else {
+		/* The head and tail elements are dummies.... */
+		cbox.p.x = int2fixed(rdev->list.xmin);
+		cbox.p.y = int2fixed(rdev->list.head->next->ymin);
+		cbox.q.x = int2fixed(rdev->list.xmax);
+		cbox.q.y = int2fixed(rdev->list.tail->prev->ymax);
+	    }
+	    rect_intersect(tbox, cbox);
+	}
+	if (rdev->translation.x | rdev->translation.y) {
+	    fixed tx = int2fixed(rdev->translation.x),
+		ty = int2fixed(rdev->translation.y);
+
+	    if (tbox.p.x != min_fixed)
+		tbox.p.x -= tx;
+	    if (tbox.p.y != min_fixed)
+		tbox.p.y -= ty;
+	    if (tbox.q.x != max_fixed)
+		tbox.q.x -= tx;
+	    if (tbox.q.y != max_fixed)
+		tbox.q.y -= ty;
+	}
+	rdev->clipping_box = tbox;
+	rdev->clipping_box_set = true;
     }
-    rect_intersect(tbox, cbox);
-    if (tbox.p.x != min_fixed)
-	tbox.p.x -= tx;
-    if (tbox.p.y != min_fixed)
-	tbox.p.y -= ty;
-    if (tbox.q.x != max_fixed)
-	tbox.q.x -= tx;
-    if (tbox.q.y != max_fixed)
-	tbox.q.y -= ty;
-    *pbox = tbox;
+    *pbox = rdev->clipping_box;
 }
 
 /* Get bits back from the device. */

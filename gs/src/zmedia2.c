@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -47,8 +47,9 @@ reset_match(match_record_t *match)
     match->priority = match->no_match_priority;
 }
 private int
-zmatchmedia(register os_ptr op)
+zmatchmedia(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     os_ptr preq = op - 3;
     os_ptr pattr = op - 2;
     os_ptr ppol = op - 1;
@@ -223,8 +224,9 @@ no:;
  *   <matrix|null> <med_x> <med_y> true   -or-  false
  */
 private int
-zmatchpagesize(register os_ptr op)
+zmatchpagesize(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_matrix mat;
     float ignore_mismatch = (float)max_long;
     gs_point media_size;

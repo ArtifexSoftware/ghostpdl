@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -24,8 +24,8 @@
 #include "gsmatrix.h"		/* for gscolor2.h */
 #include "gscolor2.h"
 #include "gscolor3.h"
-#include "gspath.h"
 #include "gzstate.h"
+#include "gzpath.h"
 #include "gxshade.h"
 
 /* setsmoothness */
@@ -48,17 +48,15 @@ gs_currentsmoothness(const gs_state * pgs)
 int
 gs_shfill(gs_state * pgs, const gs_shading_t * psh)
 {
-    int code = gs_gsave(pgs);
+    gx_path cpath;
+    int code;
 
+    gx_path_init_local(&cpath, pgs->memory);
+    code = gx_cpath_to_path(pgs->clip_path, &cpath);
     if (code < 0)
 	return code;
-    if ((code = gs_setcolorspace(pgs, psh->params.ColorSpace)) < 0 ||
-	(code = gs_clippath(pgs)) < 0 ||
-	(code = gs_shading_fill_path(psh, pgs->path,
-				     gs_currentdevice(pgs),
-				     (gs_imager_state *)pgs)) < 0
-	)
-	DO_NOTHING;
-    gs_grestore(pgs);
+    code = gs_shading_fill_path(psh, &cpath, NULL, gs_currentdevice(pgs),
+				(gs_imager_state *)pgs, false);
+    gx_path_free(&cpath, "gs_shfill");
     return code;
 }

@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -221,10 +221,10 @@ refs_set_reloc(obj_header_t * hdr, uint reloc, uint size)
 	     */
 #define all_marked (align_packed_per_ref * lp_mark)
 # if align_packed_per_ref == 2
-#  if arch_sizeof_long == arch_sizeof_short * 2
+#  if arch_sizeof_int == arch_sizeof_short * 2
 #    undef all_marked
-#    define all_marked ( ((long)lp_mark << (sizeof(short) * 8)) + lp_mark )
-#    define marked (*(long *)rp & all_marked)
+#    define all_marked ( (lp_mark << (sizeof(short) * 8)) + lp_mark )
+#    define marked (*(int *)rp & all_marked)
 #  else
 #    define marked ((*rp & lp_mark) + (rp[1] & lp_mark))
 #  endif
@@ -233,7 +233,12 @@ refs_set_reloc(obj_header_t * hdr, uint reloc, uint size)
 #    define marked ((*rp & lp_mark) + (rp[1] & lp_mark) +\
 		    (rp[2] & lp_mark) + (rp[3] & lp_mark))
 #  else
-	    uint marked = *rp & lp_mark;
+	    /*
+	     * The value of marked is logically a uint, not an int:
+	     * we declare it as int only to avoid a compiler warning
+	     * message about using a non-int value in a switch statement.
+	     */
+	    int marked = *rp & lp_mark;
 
 	    for (i = 1; i < align_packed_per_ref; i++)
 		marked += rp[i] & lp_mark;
@@ -511,11 +516,11 @@ igc_reloc_refs(ref_packed * from, ref_packed * to, gc_state_t * gcst)
 /* See gsmemory.h for why the argument is const and the result is not. */
 ref_packed *
 igc_reloc_ref_ptr(const ref_packed * prp, gc_state_t * ignored)
-{				/*
-				 * Search forward for relocation.  This algorithm is intrinsically
-				 * very inefficient; we hope eventually to replace it with a better
-				 * one.
-				 */
+{
+    /*
+     * Search forward for relocation.  This algorithm is intrinsically very
+     * inefficient; we hope eventually to replace it with a better one.
+     */
     register const ref_packed *rp = prp;
     uint dec = 0;
 
@@ -526,28 +531,30 @@ igc_reloc_ref_ptr(const ref_packed * prp, gc_state_t * ignored)
      */
     if (r_is_packed(rp)) {
 	if (!r_has_pmark(rp))
-	    return (ref_packed *) rp;
+	    goto ret_rp;
     } else {
 	if (!r_has_attr((const ref *)rp, l_mark))
-	    return (ref_packed *) rp;
+	    goto ret_rp;
     }
     for (;;) {
-	if (r_is_packed(rp)) {	/*
-				 * Normally, an unmarked packed ref will be an
-				 * integer whose value is the amount of relocation.
-				 * However, the relocation value might have been
-				 * too large to fit.  If this is the case, for
-				 * each such unmarked packed ref we pass over,
-				 * we have to decrement the final relocation.
-				 */
+	if (r_is_packed(rp)) {
+	    /*
+	     * Normally, an unmarked packed ref will be an
+	     * integer whose value is the amount of relocation.
+	     * However, the relocation value might have been
+	     * too large to fit.  If this is the case, for
+	     * each such unmarked packed ref we pass over,
+	     * we have to decrement the final relocation.
+	     */
 	    rputc((*rp & lp_mark ? '1' : '0'));
 	    if (!(*rp & lp_mark)) {
 		if (*rp != pt_tag(pt_integer) + packed_max_value) {	/* This is a stored relocation value. */
 		    rputc('\n');
-		    return print_reloc(prp, "ref",
-				       (ref_packed *)
-				       ((const char *)prp -
-					(*rp & packed_value_mask) + dec));
+		    rp = print_reloc(prp, "ref",
+				     (const ref_packed *)
+				     ((const char *)prp -
+				      (*rp & packed_value_mask) + dec));
+		    break;
 		}
 		/*
 		 * We know this is the first of an aligned block
@@ -562,13 +569,22 @@ igc_reloc_ref_ptr(const ref_packed * prp, gc_state_t * ignored)
 	}
 	if (!ref_type_uses_size_or_null(r_type((const ref *)rp))) {	/* reloc is in r_size */
 	    rputc('\n');
-	    return print_reloc(prp, "ref",
-			       (ref_packed *)
-			       (r_size((const ref *)rp) == 0 ? prp :
-				(const ref_packed *)((const char *)prp - r_size((const ref *)rp) + dec)));
+	    rp = print_reloc(prp, "ref",
+			     (const ref_packed *)
+			     (r_size((const ref *)rp) == 0 ? prp :
+			      (const ref_packed *)((const char *)prp - r_size((const ref *)rp) + dec)));
+	    break;
 	}
 	rputc('u');
 	rp += packed_per_ref;
+    }
+ret_rp:
+    /* Use a severely deprecated pun to remove the const property. */
+    {
+	union { const ref_packed *r; ref_packed *w; } u;
+
+	u.r = rp;
+	return u.w;
     }
 }
 

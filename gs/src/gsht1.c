@@ -45,6 +45,9 @@ private int process_spot(P4(gx_ht_order *, gs_state *,
 			    gs_spot_halftone *, gs_memory_t *));
 private int process_threshold(P4(gx_ht_order *, gs_state *,
 				 gs_threshold_halftone *, gs_memory_t *));
+private int process_threshold2(P4(gx_ht_order *, gs_state *,
+				  gs_threshold2_halftone *,
+				  gs_memory_t *));
 private int process_client_order(P4(gx_ht_order *, gs_state *,
 				gs_client_order_halftone *, gs_memory_t *));
 
@@ -69,6 +72,8 @@ ENUM_RETURN((hptr->params.spot.transfer == 0 ?
     case ht_type_threshold:
 ENUM_RETURN_CONST_STRING_PTR(gs_halftone_component,
 			     params.threshold.thresholds);
+    case ht_type_threshold2:
+return ENUM_CONST_BYTESTRING(&hptr->params.threshold2.thresholds);
     case ht_type_client_order:
 ENUM_RETURN(hptr->params.client_order.client_data);
     default:			/* not possible */
@@ -80,8 +85,10 @@ switch (hptr->type) {
 	ENUM_RETURN((hptr->params.threshold.transfer == 0 ?
 		     hptr->params.threshold.transfer_closure.data :
 		     0));
+    case ht_type_threshold2:
+	ENUM_RETURN(hptr->params.threshold2.transfer_closure.data);
     case ht_type_client_order:
-	ENUM_RETURN(hptr->params.threshold.transfer_closure.data);
+	ENUM_RETURN(hptr->params.client_order.transfer_closure.data);
     default:
 	return 0;
 }
@@ -98,6 +105,10 @@ private RELOC_PTRS_BEGIN(halftone_component_reloc_ptrs)
 	    RELOC_CONST_STRING_VAR(hptr->params.threshold.thresholds);
 	    if (hptr->params.threshold.transfer == 0)
 		RELOC_VAR(hptr->params.threshold.transfer_closure.data);
+	    break;
+	case ht_type_threshold2:
+	    RELOC_CONST_BYTESTRING_VAR(hptr->params.threshold2.thresholds);
+	    RELOC_OBJ_VAR(hptr->params.threshold2.transfer_closure.data);
 	    break;
 	case ht_type_client_order:
 	    RELOC_VAR(hptr->params.client_order.client_data);
@@ -244,6 +255,13 @@ gs_sethalftone_prepare(gs_state * pgs, gs_halftone * pht,
 		return code;
 	    pdht->components = 0;
 	    break;
+	case ht_type_threshold2:
+	    code = process_threshold2(&pdht->order, pgs,
+				      &pht->params.threshold2, mem);
+	    if (code < 0)
+		return code;
+	    pdht->components = 0;
+	    break;
 	case ht_type_client_order:
 	    code = process_client_order(&pdht->order, pgs,
 					&pht->params.client_order, mem);
@@ -292,7 +310,11 @@ gs_sethalftone_prepare(gs_state * pgs, gs_halftone * pht,
 			    break;
 			case ht_type_threshold:
 			    code = process_threshold(&poc->corder, pgs,
-					       &phc->params.threshold, mem);
+						&phc->params.threshold, mem);
+			    break;
+			case ht_type_threshold2:
+			    code = process_threshold2(&poc->corder, pgs,
+						&phc->params.threshold2, mem);
 			    break;
 			case ht_type_client_order:
 			    code = process_client_order(&poc->corder, pgs,
@@ -382,37 +404,17 @@ process_spot(gx_ht_order * porder, gs_state * pgs,
 			    &phsp->transfer_closure, mem);
 }
 
-/* Process a threshold plane. */
-private int
-process_threshold(gx_ht_order * porder, gs_state * pgs,
-		  gs_threshold_halftone * phtp, gs_memory_t * mem)
-{
-    int code;
-
-    porder->params.M = phtp->width, porder->params.N = 0;
-    porder->params.R = 1;
-    porder->params.M1 = phtp->height, porder->params.N1 = 0;
-    porder->params.R1 = 1;
-    code = gx_ht_alloc_order(porder, phtp->width, phtp->height,
-			     0, 256, mem);
-    if (code < 0)
-	return code;
-    gx_ht_construct_threshold_order(porder, phtp->thresholds.data);
-    return process_transfer(porder, pgs, phtp->transfer,
-			    &phtp->transfer_closure, mem);
-}
-
 /* Construct the halftone order from a threshold array. */
 void
-gx_ht_construct_threshold_order(gx_ht_order * porder, const byte * thresholds)
+gx_ht_complete_threshold_order(gx_ht_order * porder)
 {
-    uint size = porder->num_bits;
+    int num_levels = porder->num_levels;
     uint *levels = porder->levels;
-    gx_ht_bit *bits = porder->bits;
+    uint size = porder->num_bits;
+    gx_ht_bit *bits = porder->bit_data;
     uint i, j;
 
-    for (i = 0; i < size; i++)
-	bits[i].mask = max(1, thresholds[i]);
+    /* The caller has set bits[i] = max(1, thresholds[i]). */
     gx_sort_ht_order(bits, size);
     /* We want to set levels[j] to the lowest value of i */
     /* such that bits[i].mask > j. */
@@ -424,9 +426,150 @@ gx_ht_construct_threshold_order(gx_ht_order * porder, const byte * thresholds)
 		levels[j++] = i;
 	}
     }
-    while (j < 256)
+    while (j < num_levels)
 	levels[j++] = size;
     gx_ht_construct_bits(porder);
+}
+int
+gx_ht_construct_threshold_order(gx_ht_order * porder, const byte * thresholds)
+{
+    return porder->procs->construct_order(porder, thresholds);
+}
+
+/* Process a threshold plane. */
+private int
+process_threshold(gx_ht_order * porder, gs_state * pgs,
+		  gs_threshold_halftone * phtp, gs_memory_t * mem)
+{
+    int code;
+
+    porder->params.M = phtp->width, porder->params.N = 0;
+    porder->params.R = 1;
+    porder->params.M1 = phtp->height, porder->params.N1 = 0;
+    porder->params.R1 = 1;
+    code = gx_ht_alloc_threshold_order(porder, phtp->width, phtp->height,
+				       256, mem);
+    if (code < 0)
+	return code;
+    gx_ht_construct_threshold_order(porder, phtp->thresholds.data);
+    return process_transfer(porder, pgs, phtp->transfer,
+			    &phtp->transfer_closure, mem);
+}
+
+/* Process an extended threshold plane. */
+private int
+process_threshold2(gx_ht_order * porder, gs_state * pgs,
+		   gs_threshold2_halftone * phtp, gs_memory_t * mem)
+{
+    int code;
+    /*
+     * There are potentially 64K different levels for this plane, but this
+     * is more than we're willing to handle.  Try to reduce the number of
+     * levels by dropping leading or trailing zero bits from the thresholds;
+     * as a last resort, drop (possibly significant) trailing bits.
+     */
+#define LOG2_MAX_HT_LEVELS 14
+#define MAX_HT_LEVELS (1 << LOG2_MAX_HT_LEVELS)
+    int bps = phtp->bytes_per_sample;
+    const byte *data = phtp->thresholds.data;
+    const int w1 = phtp->width, h1 = phtp->height, size1 = w1 * h1;
+    const int w2 = phtp->width2, h2 = phtp->height2, size2 = w2 * h2;
+    const uint size = size1 + size2;
+    const int d = (h2 == 0 ? h1 : igcd(h1, h2));
+    const int sod = size / d;
+    uint num_levels;
+    uint i;
+    int rshift = 0;
+    int shift;
+
+    {
+	uint mask = 0, max_thr = 0;
+
+	for (i = 0; i < size; ++i) {
+	    uint thr =
+		(bps == 1 ? data[i] : (data[i * 2] << 8) + data[i * 2 + 1]);
+
+	    mask |= thr;
+	    max_thr = max(max_thr, thr);
+	}
+	if (mask == 0)
+	    mask = 1, max_thr = 1;
+	while (!(mask & 1) || max_thr > MAX_HT_LEVELS)
+	    mask >>= 1, max_thr >>= 1, rshift++;
+	num_levels = max_thr + 1;
+    }
+    /*
+     * Set nominal values for the params, and don't bother to call
+     * gx_compute_cell_values -- the values are only needed for spot
+     * halftones.
+     */
+    porder->params.M = sod, porder->params.N = d;
+    porder->params.R = 1;
+    porder->params.M1 = d, porder->params.N1 = sod;
+    porder->params.R1 = 1;
+    /*
+     * Determine the shift between strips.  We don't know a closed formula
+     * for this, so we do it by enumeration.
+     */
+    shift = 0;
+    {
+	int x = 0, y = 0;
+
+	do {
+	    if (y < h1)
+		x += w1, y += h2;
+	    else
+		x += w2, y -= h1;
+	} while (y > d);
+	if (y)
+	    shift = x;
+    }
+    code = gx_ht_alloc_ht_order(porder, sod, d, num_levels, size, shift,
+				&ht_order_procs_default, mem);
+    if (code < 0)
+	return code;
+    {
+	gx_ht_bit *bits = (gx_ht_bit *)porder->bit_data;
+	int row, di;
+
+	if_debug7('h', "[h]rect1=(%d,%d), rect2=(%d,%d), strip=(%d,%d), shift=%d\n",
+		  w1, h1, w2, h2, sod, d, shift);
+	for (row = 0, di = 0; row < d; ++row) {
+	    /* Iterate over destination rows. */
+	    int dx, sy = row;	/* sy = row mod d */
+	    int w;
+
+	    for (dx = 0; dx < sod; dx += w) {
+		/* Iterate within a destination row, over source rows. */
+		int si, j;
+
+		if (sy < h1) {
+		    /* Copy a row from rect1. */
+		    si = sy * w1;
+		    w = w1;
+		    sy += h2;
+		} else {
+		    /* Copy a row from rect2. */
+		    si = size1 + (sy - h1) * w2;
+		    w = w2;
+		    sy -= h1;
+		}
+		for (j = 0; j < w; ++j, ++si, ++di) {
+		    uint thr =
+			(bps == 1 ? data[si] :
+			 (data[si * 2] << 8) + data[si * 2 + 1])
+				       >> rshift;
+
+		    if_debug3('H', "[H]sy=%d, si=%d, di=%d\n", sy, si, di);
+		    bits[di].mask = max(thr, 1);
+		}
+	    }
+	}
+    }
+    gx_ht_complete_threshold_order(porder);
+    return process_transfer(porder, pgs, NULL, &phtp->transfer_closure, mem);
+#undef LOG2_MAX_HT_LEVELS
+#undef MAX_HT_LEVELS
 }
 
 /* Process a client-order plane. */

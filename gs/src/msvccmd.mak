@@ -61,9 +61,7 @@ CCAUX_TAIL= /link $(LINK_LIB_SWITCH)
 
 D=\#
 
-EXPP=
 SH=
-SHP=
 O_=-Fo
 
 # Define the arguments for genconf.
@@ -147,7 +145,9 @@ COMPILE_WITHOUT_FRAMES=    # no optimization when debugging
 !else
 CT=
 LCT=$(LINK_LIB_SWITCH)
-COMPILE_FULL_OPTIMIZED=/O2
+# NOTE: With MSVC++ 5.0, /O2 produces a non-working executable.
+# We believe the following list of optimizations works around this bug.
+COMPILE_FULL_OPTIMIZED=/GF /Ot /Oi /Ob2 /Oy /Oa- /Ow-
 COMPILE_WITH_FRAMES=
 COMPILE_WITHOUT_FRAMES=/Oy
 !endif

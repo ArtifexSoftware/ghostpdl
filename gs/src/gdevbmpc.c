@@ -95,14 +95,14 @@ typedef struct bmp_quad_s {
 } bmp_quad;
 
 /* Write the BMP file header. */
-int
-write_bmp_header(gx_device_printer *pdev, FILE *file)
+private int
+write_bmp_depth_header(gx_device_printer *pdev, FILE *file, int depth,
+		       const byte *palette /* [4 << depth] */,
+		       int raster)
 {
-    int raster = gdev_prn_raster(pdev);
     /* BMP scan lines are padded to 32 bits. */
     ulong bmp_raster = raster + (-raster & 3);
     int height = pdev->height;
-    int depth = pdev->color_info.depth;
     int quads = (depth <= 8 ? sizeof(bmp_quad) << depth : 0);
 
     /* Write the file header. */
@@ -151,6 +151,19 @@ write_bmp_header(gx_device_printer *pdev, FILE *file)
 
     /* Write the palette. */
 
+    if (depth <= 8)
+	fwrite(palette, sizeof(bmp_quad), 1 << depth, file);
+
+    return 0;
+}
+
+/* Write the BMP file header. */
+int
+write_bmp_header(gx_device_printer *pdev, FILE *file)
+{
+    int depth = pdev->color_info.depth;
+    bmp_quad palette[256];
+
     if (depth <= 8) {
 	int i;
 	gx_color_value rgb[3];
@@ -163,11 +176,32 @@ write_bmp_header(gx_device_printer *pdev, FILE *file)
 	    q.red = gx_color_value_to_byte(rgb[0]);
 	    q.green = gx_color_value_to_byte(rgb[1]);
 	    q.blue = gx_color_value_to_byte(rgb[2]);
-	    fwrite((const char *)&q, sizeof(q), 1, file);
+	    palette[i] = q;
 	}
     }
+    return write_bmp_depth_header(pdev, file, depth, (const byte *)palette,
+				  gdev_prn_raster(pdev));
+}
 
-    return 0;
+/* Write a BMP header for separated CMYK output. */
+int
+write_bmp_separated_header(gx_device_printer *pdev, FILE *file)
+{
+    int depth = pdev->color_info.depth;
+    int plane_depth = depth / 4;
+    bmp_quad palette[256];
+    bmp_quad q;
+    int i;
+
+    q.reserved = 0;
+    for (i = 0; i < 1 << plane_depth; i++) {
+	q.red = q.green = q.blue =
+	    255 - i * 255 / ((1 << plane_depth) - 1);
+	palette[i] = q;
+    }
+    return write_bmp_depth_header(pdev, file, plane_depth,
+				  (const byte *)palette,
+				  bitmap_raster(pdev->width * plane_depth));
 }
 
 /* 24-bit color mappers (taken from gdevmem2.c). */

@@ -61,10 +61,10 @@ $(GENDIR)/ldl$(CONFIG).tr: FORCE
 	  GLSRCDIR='$(GLSRCDIR)' \
 	  GLGENDIR='$(GLGENDIR)' GLOBJDIR='$(GLOBJDIR)' \
 	  -f $(GLSRCDIR)/ugcclib.mak \
-	  $(GLOBJDIR)/ld$(CONFIG).tr \
-	  $(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gsfemu.o $(GLOBJDIR)/gsnogc.o \
-	  $(GLOBJDIR)/gconfig$(CONFIG).o $(GLOBJDIR)/gscdefs$(CONFIG).o
-	cp $(GLOBJDIR)/ld$(CONFIG).tr $(GENDIR)/ldl$(CONFIG).tr
+	  $(GLOBJDIR)/ld.tr \
+	  $(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gsfemu.o \
+	  $(GLOBJDIR)/gconfig.o $(GLOBJDIR)/gscdefs.o
+	  cp $(GLOBJDIR)/ld.tr $(GENDIR)/ldl$(CONFIG).tr
 
 FORCE:
 
@@ -75,7 +75,7 @@ $(GENDIR)/pconf$(CONFIG).h $(GENDIR)/ldconf$(CONFIG).tr: $(TARGET_DEVS) $(GLOBJD
 # Link a Unix executable.
 $(TARGET_XE): $(GENDIR)/ldl$(CONFIG).tr $(GENDIR)/ldconf$(CONFIG).tr $(MAIN_OBJ)
 	$(ECHOGS_XE) -w $(GENDIR)/ldt.tr -n - $(CCLD) $(LDFLAGS) $(XLIBDIRS) -o $(TARGET_XE)
-	$(ECHOGS_XE) -a $(GENDIR)/ldt.tr -n -s $(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gsnogc.o $(GLOBJDIR)/gconfig$(CONFIG).o $(GLOBJDIR)/gscdefs$(CONFIG).o -s
+	$(ECHOGS_XE) -a $(GENDIR)/ldt.tr -n -s $(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gconfig.o $(GLOBJDIR)/gscdefs.o -s
 	$(ECHOGS_XE) -a $(GENDIR)/ldt.tr -n -s $(XOBJS) -s
 	cat $(GENDIR)/ldl$(CONFIG).tr $(GENDIR)/ldconf$(CONFIG).tr >>$(GENDIR)/ldt.tr
 	$(ECHOGS_XE) -a $(GENDIR)/ldt.tr -s - $(MAIN_OBJ) $(EXTRALIBS) -lm

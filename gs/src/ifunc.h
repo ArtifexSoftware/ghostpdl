@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -22,14 +22,21 @@
 #ifndef ifunc_INCLUDED
 #  define ifunc_INCLUDED
 
+#include "gsfunc.h"
+
 /* Define build procedures for the various function types. */
 #define build_function_proc(proc)\
-  int proc(P4(const_os_ptr op, const gs_function_params_t *params, int depth,\
+  int proc(P4(const ref *op, const gs_function_params_t *params, int depth,\
 	      gs_function_t **ppfn))
-build_function_proc(build_function_undefined);
+typedef build_function_proc((*build_function_proc_t));
 
 /* Define the table of build procedures, indexed by FunctionType. */
-extern build_function_proc((*build_function_procs[5]));
+typedef struct build_function_type_s {
+    int type;
+    build_function_proc_t proc;
+} build_function_type_t;
+extern const build_function_type_t build_function_type_table[];
+extern const uint build_function_type_table_count;
 
 /* Build a function structure from a PostScript dictionary. */
 int fn_build_sub_function(P3(const ref * op, gs_function_t ** ppfn, int depth));

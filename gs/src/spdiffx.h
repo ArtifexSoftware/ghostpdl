@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -22,11 +22,17 @@
 #ifndef spdiffx_INCLUDED
 #  define spdiffx_INCLUDED
 
+/*
+ * Define the maximum value for Colors.  This must be at least 4, but can
+ * be arbitrarily large: the only cost is a larger stream state structure.
+ */
+#define s_PDiff_max_Colors 16
+
 /* PixelDifferenceDecode / PixelDifferenceEncode */
 typedef struct stream_PDiff_state_s {
     stream_state_common;
     /* The client sets the following before initialization. */
-    int Colors;			/* # of colors, 1..4 */
+    int Colors;			/* # of colors, 1..s_PDiff_max_Colors */
     int BitsPerComponent;	/* 1, 2, 4, 8 */
     int Columns;
     /* The init procedure computes the following. */
@@ -35,7 +41,7 @@ typedef struct stream_PDiff_state_s {
     int case_index;		/* switch index for case dispatch */
     /* The following are updated dynamically. */
     uint row_left;		/* # of bytes left in row */
-    byte s0, s1, s2, s3;	/* previous sample */
+    byte prev[s_PDiff_max_Colors];	/* previous sample */
 } stream_PDiff_state;
 
 #define private_st_PDiff_state()	/* in spdiff.c */\

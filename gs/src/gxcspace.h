@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -33,13 +33,11 @@
 #ifndef gx_device_color_DEFINED
 #  define gx_device_color_DEFINED
 typedef struct gx_device_color_s gx_device_color;
-
 #endif
 
 #ifndef gx_device_DEFINED
 #  define gx_device_DEFINED
 typedef struct gx_device_s gx_device;
-
 #endif
 
 /* Color space types (classes): */
@@ -152,7 +150,7 @@ struct gs_color_space_type_s {
     /* Install the color space in a graphics state. */
 
 #define cs_proc_install_cspace(proc)\
-  int proc(P2(gs_color_space *, gs_state *))
+  int proc(P2(const gs_color_space *, gs_state *))
                          cs_proc_install_cspace((*install_cspace));
 
     /* Adjust reference counts of indirect color space components. */
@@ -209,12 +207,6 @@ cs_proc_remap_color(gx_default_remap_color);
 cs_proc_install_cspace(gx_no_install_cspace);
 cs_proc_adjust_cspace_count(gx_no_adjust_cspace_count);
 cs_proc_adjust_color_count(gx_no_adjust_color_count);
-
-/* Standard color space types */
-extern const gs_color_space_type
-    gs_color_space_type_DeviceGray,
-    gs_color_space_type_DeviceRGB,
-    gs_color_space_type_DeviceCMYK;
 
 /* Define the allocator type for color spaces. */
 extern_st(st_color_space);

@@ -122,17 +122,15 @@
  * on the async logic in order to retrieve rendered bits, then transmit
  * them to the appropriate device buffers.
 
- * The complication that is introduced is that which is related to
- * partial pages: A buffer_page call instructs the driver to grab the
- * rendered bits, but to keep the rendered bits available for later
- * instead of marking on media. This implies that a buffer_page call
- * opens a context where subsequent buffer_page's and print_page_copies'
- * must first initialize the rendering buffers with the previous
- * rendering results before calling get_bits. Drivers use the
- * locate_overlay_buffer function to initialize the driver's rendering
- * buffers. The first print_page_copies closes the context that was
- * opened by the initial buffer_page -- the driver must go back to
- * normal rendering until a new buffer_page comes along.
+ * The complication that is introduced is that which is related to partial
+ * pages: A buffer_page call instructs the driver to grab the rendered bits,
+ * but to keep the rendered bits available for later instead of marking on
+ * media. This implies that a buffer_page call opens a context where
+ * subsequent buffer_page's and print_page_copies' must first initialize the
+ * rendering buffers with the previous rendering results before calling
+ * get_bits. The first print_page_copies closes the context that was opened
+ * by the initial buffer_page -- the driver must go back to normal rendering
+ * until a new buffer_page comes along.
  */
 
 /* -------------- Type declarations --------------- */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -192,7 +192,7 @@ c_rop_create_default_compositor(const gs_composite_t * pcte,
      * implementation based on depth and device color space.
      ****** NYI ******
      */
-    cdev->target = dev;
+    gx_device_set_target((gx_device_forward *)cdev, dev);
     cdev->params = prcte->params;
     return 0;
 }

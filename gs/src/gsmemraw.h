@@ -81,11 +81,11 @@ typedef struct gs_raw_memory_s gs_raw_memory_t;
 		 * Resize an object to a new number of elements.  At the raw
 		 * memory level, the "element" is a byte; for object memory
 		 * (gsmemory.h), the object may be an an array of either
-                 * bytes or structures.  The new size may be larger than,
-                 * the same as, or smaller than the old.  If the new size is
-                 * the same as the old, resize_object returns the same
-                 * object; otherwise, it preserves the first min(old_size,
-                 * new_size) bytes of the object's contents.
+		 * bytes or structures.  The new size may be larger than,
+		 * the same as, or smaller than the old.  If the new size is
+		 * the same as the old, resize_object returns the same
+		 * object; otherwise, it preserves the first min(old_size,
+		 * new_size) bytes of the object's contents.
 		 */
 
 #define gs_memory_t_proc_resize_object(proc, mem_t)\

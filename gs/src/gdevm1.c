@@ -132,6 +132,7 @@ mem_mono_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 	(CFETCH_ALIGNED(cptr) >> shift)
 #  define CFETCH_LEFT(cptr, shift, cshift)\
 	(CFETCH_ALIGNED(cptr) << shift)
+#  define CFETCH_USES_CSKEW 0
 /* Fetch a chunk that straddles a chunk boundary. */
 #  define CFETCH2(cptr, cskew, skew)\
     (CFETCH_LEFT(cptr, cskew, skew) +\
@@ -158,6 +159,7 @@ private const bits16 left_masks2[9] =
 	 ((CCONT(cptr, 0) << (shift)) & left_masks2[shift]) +\
 	  (CCONT(cptr, 0) >> (cshift)) :\
 	 ((CCONT(cptr, 0) & 0xff00) >> (cshift)) & 0xff)
+#  define CFETCH_USES_CSKEW 1
 /* Fetch a chunk that straddles a chunk boundary. */
 /* We can avoid testing the shift amount twice */
 /* by expanding the CFETCH_LEFT/right macros in-line. */
@@ -175,7 +177,7 @@ typedef enum {
     COPY_OR = 0, COPY_STORE, COPY_AND, COPY_FUNNY
 } copy_function;
 typedef struct {
-    uint invert;
+    int invert;
     copy_function op;
 } copy_mode;
 
@@ -183,8 +185,7 @@ typedef struct {
  * Map from <color0,color1> to copy_mode.
  * Logically, this is a 2-D array.
  * The indexing is (transparent, 0, 1, unused). */
-private const copy_mode copy_modes[16] =
-{
+private const copy_mode copy_modes[16] = {
     {~0, COPY_FUNNY},		/* NN */
     {~0, COPY_AND},		/* N0 */
     {0, COPY_OR},		/* N1 */
@@ -242,7 +243,7 @@ mem_mono_copy_mono(gx_device * dev,
 	color1 = -1;
 #endif
     mode = copy_modes[((int)color0 << 2) + (int)color1 + 5];
-    invert = mode.invert;	/* load register */
+    invert = (uint)mode.invert;	/* load register */
     SETUP_RECT_VARS(dbptr, byte *, dest_raster);
     bptr = source_data + ((source_x & ~chunk_align_bit_mask) >> 3);
     dbit = x & chunk_align_bit_mask;
@@ -292,12 +293,16 @@ mem_mono_copy_mono(gx_device * dev,
 	    if (skew == 0) {	/* no shift */
 		WRITE1_LOOP(CFETCH_ALIGNED(bptr));
 	    } else {		/* right shift */
+#if CFETCH_USES_CSKEW
 		int cskew = chunk_bits - skew;
+#endif
 
 		WRITE1_LOOP(CFETCH_RIGHT(bptr, skew, cskew));
 	    }
 	} else if (wleft <= skew) {	/* single -> single, left shift */
+#if CFETCH_USES_CSKEW
 	    int cskew = chunk_bits + skew;
+#endif
 
 	    skew = -skew;
 	    WRITE1_LOOP(CFETCH_LEFT(bptr, skew, cskew));
@@ -551,12 +556,16 @@ int tx, int y, int tw, int th, gx_color_index color0, gx_color_index color1,
 	    if (skew == 0) {	/* no shift */
 		WRITE1_LOOP(CFETCH_ALIGNED(bptr));
 	    } else {		/* right shift */
+#if CFETCH_USES_CSKEW
 		int cskew = chunk_bits - skew;
+#endif
 
 		WRITE1_LOOP(CFETCH_RIGHT(bptr, skew, cskew));
 	    }
 	} else if (wleft <= skew) {	/* single -> single, left shift */
+#if CFETCH_USES_CSKEW
 	    int cskew = chunk_bits + skew;
+#endif
 
 	    skew = -skew;
 	    WRITE1_LOOP(CFETCH_LEFT(bptr, skew, cskew));

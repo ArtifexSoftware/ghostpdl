@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -27,7 +27,9 @@
 #include "gxband.h"
 #include "gxbcache.h"
 #include "gxclio.h"
+#include "gxdevbuf.h"
 #include "gxistate.h"
+#include "gxrplane.h"
 
 /*
  * A command list is essentially a compressed list of driver calls.
@@ -160,7 +162,7 @@ typedef struct gx_clist_state_s gx_clist_state;
 		/* See gx_device_clist_writer, below, for more that must be init'd */\
 	/* gx_device *target; */	/* device for which commands */\
 					/* are being buffered */\
-	dev_proc_make_buffer_device((*make_buffer_device));\
+	gx_device_buf_procs_t buf_procs;\
 	gs_memory_t *bandlist_memory;	/* allocator for in-memory bandlist files */\
 	byte *data;			/* buffer area */\
 	uint data_size;			/* size of buffer */\
@@ -217,7 +219,8 @@ typedef struct gx_device_clist_writer_s {
     const gx_clip_path *clip_path;	/* current clip path */
     gs_id clip_path_id;		/* id of current clip path */
     byte color_space;		/* current color space identifier */
-    /* (only used for images) */
+				/* (only used for images) */
+    gs_id color_space_id;	/* ditto */
     gs_indexed_params indexed_params;	/* current indexed space parameters */
     /* (ditto) */
     gs_id transfer_ids[4];	/* ids of transfer maps */
@@ -249,6 +252,8 @@ typedef struct gx_device_clist_writer_s {
 /* For normal rasterizing, pages and num_pages are both 0. */
 typedef struct gx_device_clist_reader_s {
     gx_device_clist_common_members;	/* (must be first) */
+    gx_render_plane_t yplane;		/* current plane, index = -1 */
+					/* means all planes */
     const gx_placed_page *pages;
     int num_pages;
 } gx_device_clist_reader;
@@ -259,17 +264,27 @@ typedef union gx_device_clist_s {
     gx_device_clist_writer writer;
 } gx_device_clist;
 
+extern_st(st_device_clist);
+#define public_st_device_clist()	/* in gxclist.c */\
+  gs_public_st_complex_only(st_device_clist, gx_device_clist,\
+    "gx_device_clist", 0, device_clist_enum_ptrs, device_clist_reloc_ptrs,\
+    gx_device_finalize)
+#define st_device_clist_max_ptrs\
+  (st_device_forward_max_ptrs + st_imager_state_num_ptrs + 1)
+
 /* setup before opening clist device */
-#define clist_init_params(xclist, xdata, xdata_size, xtarget, xmake_buffer, xband_params, xexternal, xmemory, xfree_bandlist, xdisable)\
+#define clist_init_params(xclist, xdata, xdata_size, xtarget, xbuf_procs, xband_params, xexternal, xmemory, xfree_bandlist, xdisable)\
+    BEGIN\
 	(xclist)->common.data = (xdata);\
 	(xclist)->common.data_size = (xdata_size);\
 	(xclist)->common.target = (xtarget);\
-	(xclist)->common.make_buffer_device = (xmake_buffer);\
+	(xclist)->common.buf_procs = (xbuf_procs);\
 	(xclist)->common.band_params = (xband_params);\
 	(xclist)->common.do_not_open_or_close_bandfiles = (xexternal);\
 	(xclist)->common.bandlist_memory = (xmemory);\
 	(xclist)->writer.free_up_bandlist_memory = (xfree_bandlist);\
-	(xclist)->writer.disable_mask = (xdisable)
+	(xclist)->writer.disable_mask = (xdisable);\
+    END
 
 /* Determine whether this clist device is able to recover VMerrors */
 #define clist_test_VMerror_recoverable(cldev)\
@@ -290,6 +305,14 @@ int clist_close_output_file(P1(gx_device *dev));
  */
 int clist_close_page_info(P1(gx_band_page_info_t *ppi));
 
+/*
+ * Compute the colors-used information in the page_info structure from the
+ * information in the individual writer bands.  This is only useful at the
+ * end of a page.  gdev_prn_colors_used calls this procedure if it hasn't
+ * been called since the page was started.  clist_end_page also calls it.
+ */
+void clist_compute_colors_used(P1(gx_device_clist_writer *cldev));
+
 /* Define the abstract type for a printer device. */
 #ifndef gx_device_printer_DEFINED
 #  define gx_device_printer_DEFINED
@@ -299,13 +322,13 @@ typedef struct gx_device_printer_s gx_device_printer;
 /* Do device setup from params passed in the command list. */
 int clist_setup_params(P1(gx_device *dev));
 
-/* Do more rendering to a client-supplied memory image, return results */
-int clist_get_overlay_bits(P4(gx_device_printer *pdev, int y, int line_count,
-			      byte *data));
-
-/* Find out where the band buffer for a given line is going to fall on the */
-/* next call to get_bits. */
-int clist_locate_overlay_buffer(P3(gx_device_printer *pdev, int y,
-				   byte **pdata));
+/*
+ * Render a rectangle to a client-supplied image.  This implements
+ * gdev_prn_render_rectangle for devices that are using banding.
+ */
+int clist_render_rectangle(P5(gx_device_clist *cdev,
+			      const gs_int_rect *prect, gx_device *bdev,
+			      const gx_render_plane_t *render_plane,
+			      bool clear));
 
 #endif /* gxclist_INCLUDED */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -22,63 +22,9 @@
 #ifndef idstack_INCLUDED
 #  define idstack_INCLUDED
 
+#include "iddstack.h"
+#include "idsdata.h"
 #include "istack.h"
-
-/* Define the dictionary stack structure. */
-typedef struct dict_stack_s {
-
-    ref_stack stack;		/* the actual stack of dictionaries */
-
-/*
- * Switching between Level 1 and Level 2 involves inserting and removing
- * globaldict on the dictionary stack.  Instead of truly inserting and
- * removing entries, we replace globaldict by a copy of systemdict in
- * Level 1 mode.  min_dstack_size, the minimum number of entries, does not
- * change depending on language level; the countdictstack and dictstack
- * operators must take this into account.
- */
-    uint min_size;		/* size of stack after clearing */
-
-    int userdict_index;		/* index of userdict on stack */
-
-/*
- * Cache a value for fast checking of def operations.
- * If the top entry on the dictionary stack is a writable dictionary,
- * dsspace is the space of the dictionary; if it is a non-writable
- * dictionary, dsspace = -1.  Then def is legal precisely if
- * r_space(pvalue) <= dsspace.  Note that in order for this trick to work,
- * the result of r_space must be a signed integer; some compilers treat
- * enums as unsigned, probably in violation of the ANSI standard.
- */
-    int def_space;
-
-/*
- * Cache values for fast name lookup.  If the top entry on the dictionary
- * stack is a readable dictionary with packed keys, dtop_keys, dtop_npairs,
- * and dtop_values are keys.value.packed, npairs, and values.value.refs
- * for that dictionary; otherwise, these variables point to a dummy
- * empty dictionary.
- */
-    const ref_packed *top_keys;
-    uint top_npairs;
-    ref *top_values;
-
-/*
- * Cache a copy of the bottom entry on the stack, which is never deleted.
- */
-    ref system_dict;
-
-} dict_stack_t;
-
-/*
- * Reset the cached top values.  Every routine that alters the
- * dictionary stack (including changing the protection or size of the
- * top dictionary on the stack) must call this.
- */
-void dstack_set_top(P1(dict_stack_t *));
-
-/* Check whether a dictionary is one of the permanent ones on the d-stack. */
-bool dstack_dict_is_permanent(P2(const dict_stack_t *, const ref *));
 
 /* Define the type of pointers into the dictionary stack. */
 typedef s_ptr ds_ptr;

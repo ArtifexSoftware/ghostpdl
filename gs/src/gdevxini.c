@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -18,7 +18,6 @@
 
 
 /* X Windows driver initialization for Ghostscript library */
-#include "math_.h"
 #include "memory_.h"
 #include "x_.h"
 #include "gx.h"
@@ -27,110 +26,6 @@
 #include "gdevx.h"
 
 extern char *getenv(P1(const char *));
-
-private XtResource resources[] =
-{
-
-/* (String) casts are here to suppress warnings about discarding `const' */
-#define RINIT(a,b,t,s,o,it,n)\
-  {(String)(a), (String)(b), (String)t, sizeof(s),\
-   XtOffsetOf(gx_device_X, o), (String)it, (n)}
-#define rpix(a,b,o,n)\
-  RINIT(a,b,XtRPixel,Pixel,o,XtRString,(XtPointer)(n))
-#define rdim(a,b,o,n)\
-  RINIT(a,b,XtRDimension,Dimension,o,XtRImmediate,(XtPointer)(n))
-#define rstr(a,b,o,n)\
-  RINIT(a,b,XtRString,String,o,XtRString,(char*)(n))
-#define rint(a,b,o,n)\
-  RINIT(a,b,XtRInt,int,o,XtRImmediate,(XtPointer)(n))
-#define rbool(a,b,o,n)\
-  RINIT(a,b,XtRBoolean,Boolean,o,XtRImmediate,(XtPointer)(n))
-#define rfloat(a,b,o,n)\
-  RINIT(a,b,XtRFloat,float,o,XtRString,(XtPointer)(n))
-
-    rpix(XtNbackground, XtCBackground, background, "XtDefaultBackground"),
-    rpix(XtNborderColor, XtCBorderColor, borderColor, "XtDefaultForeground"),
-    rdim(XtNborderWidth, XtCBorderWidth, borderWidth, 1),
-    rstr("dingbatFonts", "DingbatFonts", dingbatFonts,
-	 "ZapfDingbats: -Adobe-ITC Zapf Dingbats-Medium-R-Normal--"),
-    rpix(XtNforeground, XtCForeground, foreground, "XtDefaultForeground"),
-    rstr(XtNgeometry, XtCGeometry, geometry, NULL),
-    rbool("logExternalFonts", "LogExternalFonts", logXFonts, False),
-    rint("maxGrayRamp", "MaxGrayRamp", maxGrayRamp, 128),
-    rint("maxRGBRamp", "MaxRGBRamp", maxRGBRamp, 5),
-    rstr("palette", "Palette", palette, "Color"),
-
-    /*
-     * I had to compress the whitespace out of the default string to
-     * satisfy certain balky compilers.
-     */
-    rstr("regularFonts", "RegularFonts", regularFonts, "\
-AvantGarde-Book:-Adobe-ITC Avant Garde Gothic-Book-R-Normal--\n\
-AvantGarde-BookOblique:-Adobe-ITC Avant Garde Gothic-Book-O-Normal--\n\
-AvantGarde-Demi:-Adobe-ITC Avant Garde Gothic-Demi-R-Normal--\n\
-AvantGarde-DemiOblique:-Adobe-ITC Avant Garde Gothic-Demi-O-Normal--\n\
-Bookman-Demi:-Adobe-ITC Bookman-Demi-R-Normal--\n\
-Bookman-DemiItalic:-Adobe-ITC Bookman-Demi-I-Normal--\n\
-Bookman-Light:-Adobe-ITC Bookman-Light-R-Normal--\n\
-Bookman-LightItalic:-Adobe-ITC Bookman-Light-I-Normal--\n\
-Courier:-Adobe-Courier-Medium-R-Normal--\n\
-Courier-Bold:-Adobe-Courier-Bold-R-Normal--\n\
-Courier-BoldOblique:-Adobe-Courier-Bold-O-Normal--\n\
-Courier-Oblique:-Adobe-Courier-Medium-O-Normal--\n\
-Helvetica:-Adobe-Helvetica-Medium-R-Normal--\n\
-Helvetica-Bold:-Adobe-Helvetica-Bold-R-Normal--\n\
-Helvetica-BoldOblique:-Adobe-Helvetica-Bold-O-Normal--\n\
-Helvetica-Narrow:-Adobe-Helvetica-Medium-R-Narrow--\n\
-Helvetica-Narrow-Bold:-Adobe-Helvetica-Bold-R-Narrow--\n\
-Helvetica-Narrow-BoldOblique:-Adobe-Helvetica-Bold-O-Narrow--\n\
-Helvetica-Narrow-Oblique:-Adobe-Helvetica-Medium-O-Narrow--\n\
-Helvetica-Oblique:-Adobe-Helvetica-Medium-O-Normal--\n\
-NewCenturySchlbk-Bold:-Adobe-New Century Schoolbook-Bold-R-Normal--\n\
-NewCenturySchlbk-BoldItalic:-Adobe-New Century Schoolbook-Bold-I-Normal--\n\
-NewCenturySchlbk-Italic:-Adobe-New Century Schoolbook-Medium-I-Normal--\n\
-NewCenturySchlbk-Roman:-Adobe-New Century Schoolbook-Medium-R-Normal--\n\
-Palatino-Bold:-Adobe-Palatino-Bold-R-Normal--\n\
-Palatino-BoldItalic:-Adobe-Palatino-Bold-I-Normal--\n\
-Palatino-Italic:-Adobe-Palatino-Medium-I-Normal--\n\
-Palatino-Roman:-Adobe-Palatino-Medium-R-Normal--\n\
-Times-Bold:-Adobe-Times-Bold-R-Normal--\n\
-Times-BoldItalic:-Adobe-Times-Bold-I-Normal--\n\
-Times-Italic:-Adobe-Times-Medium-I-Normal--\n\
-Times-Roman:-Adobe-Times-Medium-R-Normal--\n\
-Utopia-Bold:-Adobe-Utopia-Bold-R-Normal--\n\
-Utopia-BoldItalic:-Adobe-Utopia-Bold-I-Normal--\n\
-Utopia-Italic:-Adobe-Utopia-Regular-I-Normal--\n\
-Utopia-Regular:-Adobe-Utopia-Regular-R-Normal--\n\
-ZapfChancery-MediumItalic:-Adobe-ITC Zapf Chancery-Medium-I-Normal--"),
-
-    rstr("symbolFonts", "SymbolFonts", symbolFonts,
-	 "Symbol: -Adobe-Symbol-Medium-R-Normal--"),
-
-    rbool("useBackingPixmap", "UseBackingPixmap", useBackingPixmap, True),
-    rbool("useExternalFonts", "UseExternalFonts", useXFonts, True),
-    rbool("useFontExtensions", "UseFontExtensions", useFontExtensions, True),
-    rbool("useScalableFonts", "UseScalableFonts", useScalableFonts, True),
-    rbool("useXPutImage", "UseXPutImage", useXPutImage, True),
-    rbool("useXSetTile", "UseXSetTile", useXSetTile, True),
-    rfloat("xResolution", "Resolution", xResolution, "0.0"),
-    rfloat("yResolution", "Resolution", yResolution, "0.0"),
-
-#undef RINIT
-#undef rpix
-#undef rdim
-#undef rstr
-#undef rint
-#undef rbool
-#undef rfloat
-};
-
-private String
-        fallback_resources[] =
-{
-    (String) "Ghostscript*Background: white",
-    (String) "Ghostscript*Foreground: black",
-    NULL
-};
 
 /* Define constants for orientation from ghostview */
 /* Number represents clockwise rotation of the paper in degrees */
@@ -141,26 +36,32 @@ typedef enum {
     Seascape = 270		/* Landscape rotated the wrong way */
 } orientation;
 
-/* Forward references */
-private int gdev_x_setup_colors(P1(gx_device_X *));
+/* Forward/external references */
+int gdev_x_setup_colors(P1(gx_device_X *));
 private void gdev_x_setup_fontmap(P1(gx_device_X *));
 
 /* Catch the alloc error when there is not enough resources for the
  * backing pixmap.  Automatically shut off backing pixmap and let the
  * user know when this happens.
+ *
+ * Because the X API was designed without adequate thought to reentrancy,
+ * these variables must be allocated statically.  We do not see how this
+ * code can work reliably in the presence of multi-threading.
  */
-private Boolean alloc_error;
-private XErrorHandler orighandler;
-private XErrorHandler oldhandler;
+private struct xv_ {
+    Boolean alloc_error;
+    XErrorHandler orighandler;
+    XErrorHandler oldhandler;
+} x_error_handler;
 
 private int
 x_catch_alloc(Display * dpy, XErrorEvent * err)
 {
     if (err->error_code == BadAlloc)
-	alloc_error = True;
-    if (alloc_error)
+	x_error_handler.alloc_error = True;
+    if (x_error_handler.alloc_error)
 	return 0;
-    return oldhandler(dpy, err);
+    return x_error_handler.oldhandler(dpy, err);
 }
 
 int
@@ -168,7 +69,7 @@ x_catch_free_colors(Display * dpy, XErrorEvent * err)
 {
     if (err->request_code == X_FreeColors)
 	return 0;
-    return orighandler(dpy, err);
+    return x_error_handler.orighandler(dpy, err);
 }
 
 /* Open the X device */
@@ -354,18 +255,19 @@ gdev_x_open(register gx_device_X * xdev)
 	return_error(gs_error_ioerror);
     }
     /* Buggy X servers may cause a Bad Access on XFreeColors. */
-    orighandler = XSetErrorHandler(x_catch_free_colors);
+    x_error_handler.orighandler = XSetErrorHandler(x_catch_free_colors);
 
     /* Get X Resources.  Use the toolkit for this. */
     XtToolkitInitialize();
     app_con = XtCreateApplicationContext();
-    XtAppSetFallbackResources(app_con, fallback_resources);
+    XtAppSetFallbackResources(app_con, gdev_x_fallback_resources);
     dpy = XtOpenDisplay(app_con, NULL, "ghostscript", "Ghostscript",
 			NULL, 0, &zero, NULL);
     toplevel = XtAppCreateShell(NULL, "Ghostscript",
 				applicationShellWidgetClass, dpy, NULL, 0);
     XtGetApplicationResources(toplevel, (XtPointer) xdev,
-			      resources, XtNumber(resources), NULL, 0);
+			      gdev_x_resources, gdev_x_resource_count,
+			      NULL, 0);
 
     /* Reserve foreground and background colors under the regular connection. */
     xc.pixel = xdev->foreground;
@@ -580,14 +482,14 @@ gdev_x_clear_window(gx_device_X * xdev)
 {
     if (!xdev->ghostview) {
 	if (xdev->useBackingPixmap) {
-	    oldhandler = XSetErrorHandler(x_catch_alloc);
-	    alloc_error = False;
+	    x_error_handler.oldhandler = XSetErrorHandler(x_catch_alloc);
+	    x_error_handler.alloc_error = False;
 	    xdev->bpixmap =
 		XCreatePixmap(xdev->dpy, xdev->win,
 			      xdev->width, xdev->height,
 			      xdev->vinfo->depth);
 	    XSync(xdev->dpy, False);	/* Force the error */
-	    if (alloc_error) {
+	    if (x_error_handler.alloc_error) {
 		xdev->useBackingPixmap = False;
 #ifdef DEBUG
 		eprintf("Warning: Failed to allocated backing pixmap.\n");
@@ -598,7 +500,8 @@ gdev_x_clear_window(gx_device_X * xdev)
 		    XSync(xdev->dpy, False);	/* Force the error */
 		}
 	    }
-	    oldhandler = XSetErrorHandler(oldhandler);
+	    x_error_handler.oldhandler =
+		XSetErrorHandler(x_error_handler.oldhandler);
 	} else
 	    xdev->bpixmap = (Pixmap) 0;
     }
@@ -626,291 +529,6 @@ gdev_x_clear_window(gx_device_X * xdev)
     xdev->fore_color = xdev->background;
     XSetForeground(xdev->dpy, xdev->gc, xdev->background);
     xdev->colors_or = xdev->colors_and = xdev->background;
-}
-
-/* ------ Initialize color mapping ------ */
-
-#if HaveStdCMap
-/* Get the Standard colormap if available. */
-private XStandardColormap *
-x_get_std_cmap(gx_device_X * xdev, Atom prop)
-{
-    int i;
-    XStandardColormap *scmap, *sp;
-    int nitems;
-
-    if (XGetRGBColormaps(xdev->dpy, RootWindowOfScreen(xdev->scr),
-			 &scmap, &nitems, prop))
-	for (i = 0, sp = scmap; i < nitems; i++, sp++)
-	    if (xdev->cmap == sp->colormap)
-		return sp;
-
-    return NULL;
-}
-#endif
-
-/* Allocate the dynamic color table, if needed and possible. */
-private void
-alloc_dynamic_colors(gx_device_X * xdev, int reserved_colors)
-{
-    /* Allocate space for dynamic colors hash table */
-    xdev->dynamic_colors =
-	(x11color * (*)[])gs_malloc(sizeof(x11color *), xdev->num_rgb,
-				    "x11_dynamic_colors");
-
-    if (xdev->dynamic_colors) {
-	int i;
-
-	xdev->dynamic_size = xdev->num_rgb;
-	for (i = 0; i < xdev->num_rgb; i++) {
-	    (*xdev->dynamic_colors)[i] = NULL;
-	}
-	xdev->max_dynamic_colors = min(256, xdev->vinfo->colormap_size -
-				       reserved_colors);
-    }
-}
-
-/* Free a partially filled color ramp. */
-private void
-free_ramp(gx_device_X * xdev, int num_used, int size)
-{
-    if (num_used - 1 > 0) {
-	XFreeColors(xdev->dpy, xdev->cmap,
-		    xdev->dither_colors + 1,
-		    num_used - 1, 0);
-    }
-    gs_free((char *)xdev->dither_colors, sizeof(x_pixel), size,
-	    "x11_setup_colors");
-    xdev->dither_colors = NULL;
-}
-
-/* Allocate and fill in a color cube or ramp. */
-/* Return true if the operation succeeded. */
-private bool
-setup_cube(gx_device_X * xdev, int ramp_size, bool colors)
-{
-    int step, num_entries;
-    int max_rgb = ramp_size - 1;
-    int index;
-
-    if (colors) {
-	num_entries = ramp_size * ramp_size * ramp_size;
-	step = 1;		/* all colors */
-    } else {
-	num_entries = ramp_size;
-	step = (ramp_size + 1) * ramp_size + 1;		/* gray only */
-    }
-
-    xdev->dither_colors =
-	(x_pixel *) gs_malloc(sizeof(x_pixel), num_entries,
-			      "gdevx setup_cube");
-    if (xdev->dither_colors == NULL)
-	return false;
-
-    xdev->dither_colors[0] = xdev->foreground;
-    xdev->dither_colors[num_entries - 1] = xdev->background;
-    for (index = 1; index < num_entries - 1; index++) {
-	int rgb_index = index * step;
-	int r = rgb_index / (ramp_size * ramp_size);
-	int g = (rgb_index / ramp_size) % ramp_size;
-	int b = rgb_index % ramp_size;
-	XColor xc;
-
-	xc.red = (X_max_color_value * r / max_rgb) & xdev->color_mask;
-	xc.green = (X_max_color_value * g / max_rgb) & xdev->color_mask;
-	xc.blue = (X_max_color_value * b / max_rgb) & xdev->color_mask;
-	if (XAllocColor(xdev->dpy, xdev->cmap, &xc)) {
-	    xdev->dither_colors[index] = xc.pixel;
-	} else {
-	    free_ramp(xdev, index, num_entries);
-	    return false;
-	}
-    }
-
-    return true;
-}
-
-/* Setup color mapping. */
-private int
-gdev_x_setup_colors(gx_device_X * xdev)
-{
-    char palette;
-
-    palette = ((xdev->vinfo->class != StaticGray) &&
-	       (xdev->vinfo->class != GrayScale) ? 'C' :	/* Color */
-	       (xdev->vinfo->colormap_size > 2) ? 'G' :		/* GrayScale */
-	       'M');		/* MonoChrome */
-    if (xdev->ghostview) {
-	Atom gv_colors = XInternAtom(xdev->dpy, "GHOSTVIEW_COLORS", False);
-	Atom type;
-	int format;
-	unsigned long nitems, bytes_after;
-	char *buf;
-
-	/* Delete property if explicit dest is given */
-	if (XGetWindowProperty(xdev->dpy, xdev->win, gv_colors, 0,
-			       256, (xdev->dest != 0), XA_STRING,
-			       &type, &format, &nitems, &bytes_after,
-			       (unsigned char **)&buf) == 0 &&
-	    type == XA_STRING) {
-	    nitems = sscanf(buf, "%*s %ld %ld", &(xdev->foreground),
-			    &(xdev->background));
-	    if (nitems != 2 || (*buf != 'M' && *buf != 'G' && *buf != 'C')) {
-		eprintf("Malformed ghostview color property.\n");
-		return_error(gs_error_rangecheck);
-	    }
-	    palette = max(palette, *buf);
-	}
-    } else {
-	if (xdev->palette[0] == 'c')
-	    xdev->palette[0] = 'C';
-	else if (xdev->palette[0] == 'g')
-	    xdev->palette[0] = 'G';
-	else if (xdev->palette[0] == 'm')
-	    xdev->palette[0] = 'M';
-	palette = max(palette, xdev->palette[0]);
-    }
-
-    /* set up color mappings here */
-    xdev->color_mask = X_max_color_value -
-	(X_max_color_value >> xdev->vinfo->bits_per_rgb);
-    xdev->num_rgb = 1 << xdev->vinfo->bits_per_rgb;
-
-#if HaveStdCMap
-    xdev->std_cmap = NULL;
-#endif
-    xdev->dither_colors = NULL;
-    xdev->dynamic_colors = NULL;
-    xdev->dynamic_size = 0;
-    xdev->dynamic_allocs = 0;
-    switch (xdev->vinfo->depth) {
-    case 1: case 2: case 4: case 8: case 16: case 24: case 32:
-	xdev->color_info.depth = xdev->vinfo->depth;
-	break;
-    case 15:
-	xdev->color_info.depth = 16;
-	break;
-    default:
-	eprintf1("Unsupported X visual depth: %d\n", xdev->vinfo->depth);
-	return_error(gs_error_rangecheck);
-    }
-    if (palette == 'C') {
-	xdev->color_info.num_components = 3;
-	xdev->color_info.max_gray =
-	    xdev->color_info.max_color = xdev->num_rgb - 1;
-#if HaveStdCMap
-	/* Get a standard color map if available */
-	if (xdev->vinfo->visual == DefaultVisualOfScreen(xdev->scr)) {
-	    xdev->std_cmap = x_get_std_cmap(xdev, XA_RGB_DEFAULT_MAP);
-	} else {
-	    xdev->std_cmap = x_get_std_cmap(xdev, XA_RGB_BEST_MAP);
-	}
-	if (xdev->std_cmap) {
-	    xdev->color_info.dither_grays =
-		xdev->color_info.dither_colors =
-		min(xdev->std_cmap->red_max,
-		    min(xdev->std_cmap->green_max,
-			xdev->std_cmap->blue_max)) + 1;
-	} else
-#endif
-	    /* Otherwise set up a rgb cube of our own */
-	    /* The color cube is limited to about 1/2 of the available */
-	    /* colormap, the user specified maxRGBRamp (usually 5), */
-	    /* or the number of representable colors */
-#define cube(r) (r*r*r)
-#define cbrt(r) pow(r, 1.0/3.0)
-	{
-	    int ramp_size =
-	    min((int)cbrt((double)xdev->vinfo->colormap_size / 2.0),
-		min(xdev->maxRGBRamp, xdev->num_rgb));
-
-	    while (!xdev->dither_colors && ramp_size >= 2) {
-		xdev->color_info.dither_grays =
-		    xdev->color_info.dither_colors = ramp_size;
-		if (!setup_cube(xdev, ramp_size, true)) {
-#ifdef DEBUG
-		    eprintf3("Warning: failed to allocate %dx%dx%d RGB cube.\n",
-			     ramp_size, ramp_size, ramp_size);
-#endif
-		    ramp_size--;
-		    continue;
-		}
-	    }
-
-	    if (!xdev->dither_colors) {
-		goto grayscale;
-	    }
-	}
-
-	/* Allocate the dynamic color table. */
-	alloc_dynamic_colors(xdev, cube(xdev->color_info.dither_colors));
-
-#undef cube
-#undef cbrt
-    } else if (palette == 'G') {
-      grayscale:
-	xdev->color_info.num_components = 1;
-	xdev->color_info.max_gray = xdev->num_rgb - 1;
-#if HaveStdCMap
-	/* Get a standard color map if available */
-	xdev->std_cmap = x_get_std_cmap(xdev, XA_RGB_GRAY_MAP);
-	if (xdev->std_cmap != 0) {
-	    xdev->color_info.dither_grays = xdev->std_cmap->red_max +
-		xdev->std_cmap->green_max +
-		xdev->std_cmap->blue_max + 1;
-	} else
-#endif
-	    /* Otherwise set up a gray ramp of our own */
-	    /* The gray ramp is limited to about 1/2 of the available */
-	    /* colormap, the user specified maxGrayRamp (usually 128), */
-	    /* or the number of representable grays */
-	{
-	    int ramp_size = min(xdev->vinfo->colormap_size / 2,
-				min(xdev->maxGrayRamp, xdev->num_rgb));
-
-	    while (!xdev->dither_colors && ramp_size >= 3) {
-		xdev->color_info.dither_grays = ramp_size;
-		if (!setup_cube(xdev, ramp_size, false)) {
-#ifdef DEBUG
-		    eprintf1("Warning: failed to allocate %d level gray ramp.\n",
-			     ramp_size);
-#endif
-		    ramp_size /= 2;
-		    continue;
-		}
-	    }
-	    if (!xdev->dither_colors) {
-		goto monochrome;
-	    }
-	}
-
-	/* Allocate the dynamic color table. */
-	alloc_dynamic_colors(xdev, xdev->color_info.dither_grays);
-
-    } else if (palette == 'M') {
-      monochrome:
-	xdev->color_info.num_components = 1;
-	xdev->color_info.max_gray = 1;
-	xdev->color_info.dither_grays = 2;
-    } else {
-	eprintf1("Unknown palette: %s\n", xdev->palette);
-	return_error(gs_error_rangecheck);
-    }
-    {
-	int count = 1 << min(xdev->color_info.depth, 8);
-
-	xdev->color_to_rgb_size = count;
-	xdev->color_to_rgb =
-	    (x11_rgb_t *) gs_malloc(sizeof(x11_rgb_t), count, "gdevx color_to_rgb");
-	if (xdev->color_to_rgb) {
-	    int i;
-
-	    for (i = 0; i < count; ++i)
-		xdev->color_to_rgb[i].defined = false;
-	} else
-	    xdev->color_to_rgb_size = 0;
-    }
-    return 0;
 }
 
 /* ------ Initialize font mapping ------ */
@@ -1012,10 +630,10 @@ scan_font_resource(const char *resource, x11fontmap ** pmaps)
 	    }
 	    strncpy(font->x11_name, x11_name, x11_name_len - 1);
 	    font->x11_name[x11_name_len - 1] = '\0';
-	    font->std_names = NULL;
-	    font->iso_names = NULL;
-	    font->std_count = -1;
-	    font->iso_count = -1;
+	    font->std.names = NULL;
+	    font->std.count = -1;
+	    font->iso.names = NULL;
+	    font->iso.count = -1;
 	    font->next = *pmaps;
 	    *pmaps = font;
 	}
@@ -1026,6 +644,14 @@ scan_font_resource(const char *resource, x11fontmap ** pmaps)
 private void
 gdev_x_setup_fontmap(gx_device_X * xdev)
 {
+    /*
+     * If this device is a copy of another one, the *_fonts lists
+     * might be dangling references.  Clear them before scanning.
+     */
+    xdev->regular_fonts = 0;
+    xdev->symbol_fonts = 0;
+    xdev->dingbat_fonts = 0;
+
     if (!xdev->useXFonts)
 	return;			/* If no external fonts, don't bother */
 

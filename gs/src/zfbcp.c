@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -43,41 +43,41 @@ no_bcp_request_status(stream_state * st)
 /* <source> BCPEncode/filter <file> */
 /* <source> <dict> BCPEncode/filter <file> */
 private int
-zBCPE(os_ptr op)
+zBCPE(i_ctx_t *i_ctx_p)
 {
-    return filter_write_simple(op, &s_BCPE_template);
+    return filter_write_simple(i_ctx_p, &s_BCPE_template);
 }
 
 /* <target> BCPDecode/filter <file> */
 /* <target> <dict> BCPDecode/filter <file> */
 private int
-zBCPD(os_ptr op)
+zBCPD(i_ctx_t *i_ctx_p)
 {
     stream_BCPD_state state;
 
     state.signal_interrupt = no_bcp_signal_interrupt;
     state.request_status = no_bcp_request_status;
-    return filter_read(op, 0, &s_BCPD_template, (stream_state *) & state, 0);
+    return filter_read(i_ctx_p, 0, &s_BCPD_template, (stream_state *)&state, 0);
 }
 
 /* <source> TBCPEncode/filter <file> */
 /* <source> <dict> TBCPEncode/filter <file> */
 private int
-zTBCPE(os_ptr op)
+zTBCPE(i_ctx_t *i_ctx_p)
 {
-    return filter_write_simple(op, &s_TBCPE_template);
+    return filter_write_simple(i_ctx_p, &s_TBCPE_template);
 }
 
 /* <target> TBCPDecode/filter <file> */
 /* <target> <dict> TBCPDecode/filter <file> */
 private int
-zTBCPD(os_ptr op)
+zTBCPD(i_ctx_t *i_ctx_p)
 {
     stream_BCPD_state state;
 
     state.signal_interrupt = no_bcp_signal_interrupt;
     state.request_status = no_bcp_request_status;
-    return filter_read(op, 0, &s_TBCPD_template, (stream_state *)&state, 0);
+    return filter_read(i_ctx_p, 0, &s_TBCPD_template, (stream_state *)&state, 0);
 }
 
 /* ------ Initialization procedure ------ */

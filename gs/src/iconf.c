@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -25,6 +25,7 @@
 #include "iref.h"
 #include "ivmspace.h"
 #include "opdef.h"
+#include "ifunc.h"
 #include "iminst.h"
 
 /* Define the default values for an interpreter instance. */
@@ -51,18 +52,31 @@ const ref_(const char *) gs_emulator_name_array[] = {
 };
 #undef emulator_
 
+/* Set up the function type table similarly. */
+#define function_type_(i,proc) extern build_function_proc(proc);
+#include "gconf.h"
+#undef function_type_
+#define function_type_(i,proc) {i,proc},
+const build_function_type_t build_function_type_table[] = {
+#include "gconf.h"
+    {0}
+};
+#undef function_type_
+const uint build_function_type_table_count =
+    countof(build_function_type_table) - 1;
+
 /* Initialize the operators. */
 	/* Declare the externs. */
 #define oper_(xx_op_defs) extern const op_def xx_op_defs[];
-#include "gconf.h"
 oper_(interp_op_defs)		/* Interpreter operators */
+#include "gconf.h"
 #undef oper_
  
 const op_def *const op_defs_all[] = {
-     /* Create the table. */
 #define oper_(defs) defs,
-#include "gconf.h"
     oper_(interp_op_defs)	/* Interpreter operators */
+#include "gconf.h"
 #undef oper_ 
-	 0
+    0
 };
+const uint op_def_count = (countof(op_defs_all) - 1) * OP_DEFS_MAX_SIZE;

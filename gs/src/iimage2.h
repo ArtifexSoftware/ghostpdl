@@ -1,4 +1,4 @@
-/* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -35,10 +35,11 @@ typedef struct image_params_s {
 } image_params;
 
 /* Extract and check parameters for an image. */
-int data_image_params(P6(const ref * op, gs_data_image_t * pim,
-			 image_params * pip, bool require_DataSource,
+int data_image_params(P6(const ref *op, gs_data_image_t *pim,
+			 image_params *pip, bool require_DataSource,
 			 int num_components, int max_bits_per_component));
-int pixel_image_params(P4(const ref * op, gs_pixel_image_t * pim,
-			  image_params * pip, int max_bits_per_component));
+int pixel_image_params(P5(i_ctx_t *i_ctx_p, const ref *op,
+			  gs_pixel_image_t *pim, image_params * pip,
+			  int max_bits_per_component));
 
 #endif /* iimage2_INCLUDED */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1994, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -31,14 +31,17 @@
 #include "gxdevice.h"
 #include "gxcmap.h"
 #include "gscolor1.h"
+#include "gscssub.h"
 #include "gxcspace.h"
 #include "icolor.h"
 #include "iimage.h"
 
 /* - currentblackgeneration <proc> */
 private int
-zcurrentblackgeneration(register os_ptr op)
+zcurrentblackgeneration(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(1);
     *op = istate->black_generation;
     return 0;
@@ -46,8 +49,9 @@ zcurrentblackgeneration(register os_ptr op)
 
 /* - currentcmykcolor <cyan> <magenta> <yellow> <black> */
 private int
-zcurrentcmykcolor(register os_ptr op)
+zcurrentcmykcolor(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     float par[4];
 
     gs_currentcmykcolor(igs, par);
@@ -58,8 +62,10 @@ zcurrentcmykcolor(register os_ptr op)
 
 /* - currentcolortransfer <redproc> <greenproc> <blueproc> <grayproc> */
 private int
-zcurrentcolortransfer(register os_ptr op)
+zcurrentcolortransfer(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(4);
     op[-3] = istate->transfer_procs.colored.red;
     op[-2] = istate->transfer_procs.colored.green;
@@ -70,8 +76,10 @@ zcurrentcolortransfer(register os_ptr op)
 
 /* - currentundercolorremoval <proc> */
 private int
-zcurrentundercolorremoval(register os_ptr op)
+zcurrentundercolorremoval(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(1);
     *op = istate->undercolor_removal;
     return 0;
@@ -79,8 +87,9 @@ zcurrentundercolorremoval(register os_ptr op)
 
 /* <proc> setblackgeneration - */
 private int
-zsetblackgeneration(register os_ptr op)
+zsetblackgeneration(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code;
 
     check_proc(*op);
@@ -91,17 +100,17 @@ zsetblackgeneration(register os_ptr op)
 	return code;
     istate->black_generation = *op;
     pop(1);
-    op--;
     push_op_estack(zcolor_remap_color);
-    return zcolor_remap_one(&istate->black_generation, op,
+    return zcolor_remap_one(i_ctx_p, &istate->black_generation,
 			    igs->black_generation, igs,
 			    zcolor_remap_one_finish);
 }
 
 /* <cyan> <magenta> <yellow> <black> setcmykcolor - */
 private int
-zsetcmykcolor(register os_ptr op)
+zsetcmykcolor(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     double par[4];
     int code;
 
@@ -116,8 +125,9 @@ zsetcmykcolor(register os_ptr op)
 
 /* <redproc> <greenproc> <blueproc> <grayproc> setcolortransfer - */
 private int
-zsetcolortransfer(register os_ptr op)
+zsetcolortransfer(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code;
 
     check_proc(op[-3]);
@@ -138,28 +148,32 @@ zsetcolortransfer(register os_ptr op)
 	return code;
     /* Use osp rather than op here, because zcolor_remap_one pushes. */
     pop(4);
-    op -= 4;
     push_op_estack(zcolor_reset_transfer);
-    if ((code = zcolor_remap_one(&istate->transfer_procs.colored.red,
-				 osp, igs->set_transfer.colored.red, igs,
+    if ((code = zcolor_remap_one(i_ctx_p,
+				 &istate->transfer_procs.colored.red,
+				 igs->set_transfer.colored.red, igs,
 				 zcolor_remap_one_finish)) < 0 ||
-	(code = zcolor_remap_one(&istate->transfer_procs.colored.green,
-				 osp, igs->set_transfer.colored.green, igs,
+	(code = zcolor_remap_one(i_ctx_p,
+				 &istate->transfer_procs.colored.green,
+				 igs->set_transfer.colored.green, igs,
 				 zcolor_remap_one_finish)) < 0 ||
-	(code = zcolor_remap_one(&istate->transfer_procs.colored.blue,
-				 osp, igs->set_transfer.colored.blue, igs,
+	(code = zcolor_remap_one(i_ctx_p,
+				 &istate->transfer_procs.colored.blue,
+				 igs->set_transfer.colored.blue, igs,
+				 zcolor_remap_one_finish)) < 0 ||
+	(code = zcolor_remap_one(i_ctx_p, &istate->transfer_procs.colored.gray,
+				 igs->set_transfer.colored.gray, igs,
 				 zcolor_remap_one_finish)) < 0
 	)
 	return code;
-    return zcolor_remap_one(&istate->transfer_procs.colored.gray,
-			    osp, igs->set_transfer.colored.gray, igs,
-			    zcolor_remap_one_finish);
+    return o_push_estack;
 }
 
 /* <proc> setundercolorremoval - */
 private int
-zsetundercolorremoval(register os_ptr op)
+zsetundercolorremoval(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code;
 
     check_proc(*op);
@@ -170,9 +184,8 @@ zsetundercolorremoval(register os_ptr op)
 	return code;
     istate->undercolor_removal = *op;
     pop(1);
-    op--;
     push_op_estack(zcolor_remap_color);
-    return zcolor_remap_one(&istate->undercolor_removal, op,
+    return zcolor_remap_one(i_ctx_p, &istate->undercolor_removal,
 			    igs->undercolor_removal, igs,
 			    zcolor_remap_one_signed_finish);
 }
@@ -180,16 +193,17 @@ zsetundercolorremoval(register os_ptr op)
 /* <width> <height> <bits/comp> <matrix> */
 /*      <datasrc_0> ... <datasrc_ncomp-1> true <ncomp> colorimage - */
 /*      <datasrc> false <ncomp> colorimage - */
-int zimage_multiple(P2(os_ptr op, bool has_alpha));
+int zimage_multiple(P2(i_ctx_t *i_ctx_p, bool has_alpha));
 private int
-zcolorimage(register os_ptr op)
+zcolorimage(i_ctx_t *i_ctx_p)
 {
-    return zimage_multiple(op, false);
+    return zimage_multiple(i_ctx_p, false);
 }
 /* We export zimage_multiple for alphaimage. */
 int
-zimage_multiple(os_ptr op, bool has_alpha)
+zimage_multiple(i_ctx_t *i_ctx_p, bool has_alpha)
 {
+    os_ptr op = osp;
     int spp;			/* samples per pixel */
     int npop = 7;
     os_ptr procp = op - 2;
@@ -200,13 +214,13 @@ zimage_multiple(os_ptr op, bool has_alpha)
     check_type(op[-1], t_boolean);	/* multiproc */
     switch ((spp = (int)(op->value.intval))) {
 	case 1:
-	    pcs = gs_cspace_DeviceGray((const gs_imager_state *)igs);
+	    pcs = gs_current_DeviceGray_space(igs);
 	    break;
 	case 3:
-	    pcs = gs_cspace_DeviceRGB((const gs_imager_state *)igs);
+	    pcs = gs_current_DeviceRGB_space(igs);
 	    goto color;
 	case 4:
-	    pcs = gs_cspace_DeviceCMYK((const gs_imager_state *)igs);
+	    pcs = gs_current_DeviceCMYK_space(igs);
 color:
 	    if (op[-1].value.boolval) {	/* planar format */
 		if (has_alpha)
@@ -219,7 +233,7 @@ color:
 	default:
 	    return_error(e_rangecheck);
     }
-    return zimage_opaque_setup(procp, multi,
+    return zimage_opaque_setup(i_ctx_p, procp, multi,
 		    (has_alpha ? gs_image_alpha_last : gs_image_alpha_none),
 			       pcs, npop);
 }

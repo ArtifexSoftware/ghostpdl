@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -40,9 +40,6 @@ void fn_common_free_params(P2(gs_function_params_t * params, gs_memory_t * mem))
 
 /* Generic free implementation. */
 void fn_common_free(P3(gs_function_t * pfn, bool free_params, gs_memory_t * mem));
-
-/* Free an array of subsidiary Functions. */
-void fn_free_functions(P3(gs_function_t ** Functions, int count, gs_memory_t * mem));
 
 /* Check the values of m, n, Domain, and (if supplied) Range. */
 int fn_check_mnDR(P3(const gs_function_params_t * params, int m, int n));

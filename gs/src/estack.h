@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1992, 1993, 1994, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1992, 1993, 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -23,19 +23,18 @@
 #  define estack_INCLUDED
 
 #include "iestack.h"
+#include "icstate.h"		/* for access to exec_stack */
 
 /* There's only one exec stack right now.... */
 #define esfile (iexec_stack.current_file)
-#define esfile_clear_cache() (esfile = 0)
-#define esfile_set_cache(pref) (esfile = (pref))
-#define esfile_check_cache()\
-  if ( r_has_type_attrs(esp, t_file, a_executable) )\
-    esfile_set_cache(esp)
+#define esfile_clear_cache() estack_clear_cache(&iexec_stack)
+#define esfile_set_cache(pref) estack_set_cache(&iexec_stack, pref)
+#define esfile_check_cache() estack_check_cache(&iexec_stack)
 
-/* Define the execution stack pointers. */
-extern exec_stack_t iexec_stack;
-
+/* Define the execution stack pointers for operators. */
+#define iexec_stack (i_ctx_p->exec_stack)
 #define e_stack (iexec_stack.stack)
+
 #define esbot (e_stack.bot)
 #define esp (e_stack.p)
 #define estop (e_stack.top)
@@ -109,7 +108,7 @@ extern exec_stack_t iexec_stack;
  * Pop a given number of elements off the execution stack,
  * executing cleanup procedures as necessary.
  */
-void pop_estack(P1(uint));
+void pop_estack(P2(i_ctx_t *, uint));
 
 /*
  * The execution stack is implemented as a linked list of blocks;

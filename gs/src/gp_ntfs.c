@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1993, 1994, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1993, 1994, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -51,14 +51,16 @@ gp_set_file_binary(int prnfno, int binary)
 int
 gp_setmode_binary(FILE * pfile, bool binary)
 {
-    /* Use non-standard setmode & fileno fn's that all NT compilers offer */
+    /*
+     * Use non-standard setmode & fileno fn's that almost all NT compilers
+     * offer.
+     */
 #if defined(__STDC__) && !defined(__WATCOMC__)
     int code = _setmode(_fileno(pfile), binary == 0 ? _O_TEXT : _O_BINARY);
-
 #else
     int code = setmode(fileno(pfile), binary == 0 ? O_TEXT : O_BINARY);
-
 #endif
+
     return (code == -1 ? -1 : 0);
 }
 

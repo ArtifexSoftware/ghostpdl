@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -33,7 +33,6 @@
 #ifndef name_table_DEFINED
 #  define name_table_DEFINED
 typedef struct name_table_s name_table;
-
 #endif
 
 typedef uint name_index_t;
@@ -44,8 +43,13 @@ extern const uint name_max_string;
 
 /* ---------------- Procedural interface ---------------- */
 
+#ifndef gs_ref_memory_DEFINED
+#  define gs_ref_memory_DEFINED
+typedef struct gs_ref_memory_s gs_ref_memory_t;
+#endif
+
 /* Allocate and initialize a name table. */
-name_table *names_init(P2(ulong size, gs_memory_t * mem));
+name_table *names_init(P2(ulong size, gs_ref_memory_t *imem));
 
 /* Get the allocator for a name table. */
 gs_memory_t *names_memory(P1(const name_table * nt));

@@ -149,13 +149,11 @@ typedef struct {
 #ifndef gx_path_DEFINED
 #  define gx_path_DEFINED
 typedef struct gx_path_s gx_path;
-
 #endif
 
 #ifndef segment_DEFINED
 #  define segment_DEFINED
 typedef struct segment_s segment;
-
 #endif
 
 /* This is the full state of the Type 1 interpreter. */
@@ -168,6 +166,7 @@ struct gs_type1_state_s {
     gx_path *path;		/* path for appending */
     bool charpath_flag;		/* false if show, true if charpath */
     int paint_type;		/* 0/3 for fill, 1/2 for stroke */
+    void *callback_data;
     fixed_coeff fc;		/* cached fixed coefficients */
     float flatness;		/* flatness for character curves */
     point_scale scale;		/* oversampling scale */
@@ -229,15 +228,11 @@ struct gs_type1_state_s {
 };
 
 extern_st(st_gs_type1_state);
-#define public_st_gs_type1_state() /* in gstype1.c */\
+#define public_st_gs_type1_state() /* in gxtype1.c */\
   gs_public_st_composite(st_gs_type1_state, gs_type1_state, "gs_type1_state",\
     gs_type1_state_enum_ptrs, gs_type1_state_reloc_ptrs)
 
 /* ------ Shared Type 1 / Type 2 interpreter fragments ------ */
-
-/* Declare the array of charstring interpreters, indexed by CharstringType. */
-extern int (*gs_charstring_interpreter[3])
-    (P3(gs_type1_state * pcis, const gs_const_string * str, int *pindex));
 
 /* Copy the operand stack out of the saved state. */
 #define init_cstack(cstack, csp, pcis)\

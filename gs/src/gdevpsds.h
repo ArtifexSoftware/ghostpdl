@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -24,22 +24,24 @@
 
 #include "strimpl.h"
 
-/* Convert between 1/2/4 bits and 8 bits. */
+/* Convert between 1/2/4/12 bits and 8 bits. */
 typedef struct stream_1248_state_s {
     stream_state_common;
     /* The following are set at initialization time. */
     uint samples_per_row;	/* >0 */
-    int bits_per_sample;	/* 1, 2, 4 */
+    int bits_per_sample;	/* 1, 2, 4, 12 */
     /* The following are updated dynamically. */
     uint left;			/* # of samples left in current row */
 } stream_1248_state;
 
-/* Expand N (1, 2, 4) bits to 8. */
+/* Convert N (1, 2, 4, 12) bits to 8. */
 extern const stream_template s_1_8_template;
 extern const stream_template s_2_8_template;
 extern const stream_template s_4_8_template;
+extern const stream_template s_12_8_template;
 
-/* Reduce 8 bits to N (1, 2, 4) */
+/* Reduce 8 bits to N (1, 2, 4). */
+/* We do not currently support converting 8 bits to 12. */
 extern const stream_template s_8_1_template;
 extern const stream_template s_8_2_template;
 extern const stream_template s_8_4_template;

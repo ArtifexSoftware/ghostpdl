@@ -234,15 +234,16 @@ gs_getiodevice(int index)
 gx_io_device *
 gs_findiodevice(const byte * str, uint len)
 {
-    gx_io_device **pftab;
+    int i;
 
     if (len > 1 && str[len - 1] == '%')
 	len--;
-    for (pftab = io_device_table; *pftab != NULL; pftab++) {
-	const char *dname = (*pftab)->dname;
+    for (i = 0; i < gx_io_device_table_count; ++i) {
+	gx_io_device *iodev = io_device_table[i];
+	const char *dname = iodev->dname;
 
 	if (strlen(dname) == len + 1 && !memcmp(str, dname, len))
-	    return *pftab;
+	    return iodev;
     }
     return 0;
 }

@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -149,7 +149,7 @@ clist_fill_rectangle(gx_device * dev, int x, int y, int width, int height,
 
     fit_fill(dev, x, y, width, height);
     FOR_RECTS {
-	pcls->colors_used |= color;
+	pcls->colors_used.or |= color;
 	TRY_RECT {
 	    code = cmd_disable_lop(cdev, pcls);
 	    if (code >= 0 && color != pcls->colors[1])
@@ -185,7 +185,7 @@ clist_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tile,
     FOR_RECTS {
 	ulong offset_temp;
 
-	pcls->colors_used |= colors_used;
+	pcls->colors_used.or |= colors_used;
 	TRY_RECT {
 	    code = cmd_disable_lop(cdev, pcls);
 	} HANDLE_RECT(code);
@@ -248,7 +248,7 @@ clist_copy_mono(gx_device * dev,
 	const byte *row = data + (y - y0) * raster + (data_x >> 3);
 	int code;
 
-	pcls->colors_used |= colors_used;
+	pcls->colors_used.or |= colors_used;
 	TRY_RECT {
 	    code = cmd_disable_lop(cdev, pcls);
 	    if (code >= 0)
@@ -344,7 +344,7 @@ clist_copy_color(gx_device * dev,
 	const byte *row = data + (y - y0) * raster + (data_x_bit >> 3);
 	int code;
 
-	pcls->colors_used |= colors_used;
+	pcls->colors_used.or |= colors_used;
 	TRY_RECT {
 	    code = cmd_disable_lop(cdev, pcls);
 	    if (code >= 0)
@@ -427,7 +427,7 @@ clist_copy_alpha(gx_device * dev, const byte * data, int data_x,
     /* just to change 2 arguments and 1 opcode, */
     /* but I don't see any alternative that doesn't require */
     /* another level of procedure call even in the common case. */
-    int log2_depth = depth >> 1;	/* works for 1,2,4 */
+    int log2_depth = ilog2(depth);
     int y0;
     int data_x_bit;
 
@@ -440,7 +440,7 @@ clist_copy_alpha(gx_device * dev, const byte * data, int data_x,
 	const byte *row = data + (y - y0) * raster + (data_x_bit >> 3);
 	int code;
 
-	pcls->colors_used |= color;
+	pcls->colors_used.or |= color;
 	TRY_RECT {
 	    code = cmd_disable_lop(cdev, pcls);
 	    if (code >= 0)
@@ -535,15 +535,41 @@ clist_strip_copy_rop(gx_device * dev,
     int y0;
     /* Compute the set of possible colors that this operation can generate. */
     gx_color_index all = ((gx_color_index)1 << dev->color_info.depth) - 1;
+    bool subtractive = dev->color_info.num_components == 4; /****** HACK ******/
     gx_color_index S =
 	(scolors ? scolors[0] | scolors[1] : sdata ? all : 0);
     gx_color_index T =
 	(tcolors ? tcolors[0] | tcolors[1] : textures ? all : 0);
+    gs_rop3_t color_rop =
+	(subtractive ? byte_reverse_bits[rop ^ 0xff] : rop);
+    bool slow_rop;
 
     if (scolors != 0 && scolors[0] != scolors[1]) {
 	fit_fill(dev, x, y, width, height);
     } else {
 	fit_copy(dev, sdata, sourcex, sraster, id, x, y, width, height);
+    }
+    /*
+     * On CMYK devices, RasterOps must be executed with complete pixels
+     * if the operation involves the destination.
+     * This is because the black plane interacts with the other planes
+     * in the conversion between RGB and CMYK.  Check for this now.
+     */
+    {
+	gs_rop3_t rop_used = rop;
+
+	if (scolors && (scolors[0] == scolors[1]))
+	    rop_used = (scolors[0] == gx_device_black(dev) ?
+			rop3_know_S_0(rop_used) :
+			scolors[0] == gx_device_white(dev) ?
+			rop3_know_S_1(rop_used) : rop_used);
+	if (tcolors && (tcolors[0] == tcolors[1]))
+	    rop_used = (tcolors[0] == gx_device_black(dev) ?
+			rop3_know_T_0(rop_used) :
+			tcolors[0] == gx_device_white(dev) ?
+			rop3_know_T_1(rop_used) : rop_used);
+	slow_rop = !(rop == rop3_0 || rop == rop3_1 ||
+		     rop == rop3_D || rop == rop3_S || rop == rop3_T);
     }
     y0 = y;
     /*
@@ -552,10 +578,12 @@ clist_strip_copy_rop(gx_device * dev,
      */
     FOR_RECTS {
 	const byte *row = sdata + (y - y0) * sraster;
-	gx_color_index D = pcls->colors_used;
+	gx_color_index D = pcls->colors_used.or;
 	int code;
 
-	pcls->colors_used = (rop_proc_table[rop])(D, S, T) | D;
+	pcls->colors_used.or =
+	    ((rop_proc_table[color_rop])(D, S, T) & all) | D;
+	pcls->colors_used.slow_rop |= slow_rop;
 	if (rop3_uses_T(rop)) {
 	    if (tcolors == 0 || tcolors[0] != tcolors[1]) {
 		ulong offset_temp;

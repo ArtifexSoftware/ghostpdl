@@ -65,7 +65,7 @@ gs_private_st_ptrs2(st_c_param, gs_c_param, "gs_c_param",
 /* ---------------- Utilities ---------------- */
 
 private gs_c_param *
-c_param_find(const gs_c_param_list * plist, gs_param_name pkey, bool any)
+c_param_find(const gs_c_param_list *plist, gs_param_name pkey, bool any)
 {
     gs_c_param *pparam = plist->head;
 
@@ -99,7 +99,7 @@ gs_c_param_list_write(gs_c_param_list * plist, gs_memory_t * mem)
     plist->procs = &c_write_procs;
     plist->memory = mem;
     plist->head = 0;
-    plist->target = 0;                /* not used for writing */
+    plist->target = 0;		/* not used for writing */
     plist->count = 0;
     plist->any_requested = false;
     plist->coll_type = gs_param_collection_dict_any;
@@ -134,8 +134,9 @@ gs_c_param_list_release(gs_c_param_list * plist)
 	    case gs_param_type_string_array:
 	    case gs_param_type_name_array:
 		if (!pparam->value.s.persistent)
-		    gs_free_object(plist->memory, (void *)pparam->value.s.data,
-				   "gs_c_param_list_release data");
+		    gs_free_const_object(plist->memory,
+					 pparam->value.s.data,
+					 "gs_c_param_list_release data");
 		break;
 	    default:
 		break;
@@ -430,11 +431,11 @@ c_param_begin_read_collection(gs_param_list * plist, gs_param_name pkey,
     gs_c_param *pparam = c_param_find(cplist, pkey, false);
 
     if (pparam == 0)
-	 return
-	     (cplist->target ?
-	      param_begin_read_collection(cplist->target,
-	                                  pkey, pvalue, coll_type) :
-	      1);
+	return
+	    (cplist->target ?
+	     param_begin_read_collection(cplist->target,
+					 pkey, pvalue, coll_type) :
+	     1);
     switch (pparam->type) {
 	case gs_param_type_dict:
 	    if (coll_type != gs_param_collection_dict_any)

@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1994, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -32,7 +32,7 @@
 
 /* setcolorspace */
 int
-gs_setcolorspace(gs_state * pgs, gs_color_space * pcs)
+gs_setcolorspace(gs_state * pgs, const gs_color_space * pcs)
 {
     int code;
     gs_color_space cs_old;
@@ -53,6 +53,15 @@ gs_setcolorspace(gs_state * pgs, gs_color_space * pcs)
     cs_full_init_color(pgs->ccolor, pcs);
     (*cs_old.type->adjust_color_count)(&cc_old, &cs_old, -1);
     (*cs_old.type->adjust_cspace_count)(&cs_old, -1);
+    pgs->orig_cspace_index = pcs->type->index;
+    {
+	const gs_color_space *pccs = pcs;
+	const gs_color_space *pbcs;
+
+	while ((pbcs = gs_cspace_base_space(pccs)) != 0)
+	    pccs = pbcs;
+	pgs->orig_base_cspace_index = pccs->type->index;
+    }
     gx_unset_dev_color(pgs);
     return code;
     /* Restore the color space if installation failed. */
@@ -66,6 +75,11 @@ const gs_color_space *
 gs_currentcolorspace(const gs_state * pgs)
 {
     return pgs->color_space;
+}
+gs_color_space_index
+gs_currentcolorspace_index(const gs_state *pgs)
+{
+    return pgs->orig_cspace_index;
 }
 
 /* setcolor */
@@ -95,6 +109,17 @@ gs_currentcolor(const gs_state * pgs)
 
 /* GC descriptors */
 public_st_indexed_map();
+
+/* Define a lookup_index procedure that just returns the map values. */
+int
+lookup_indexed_map(const gs_indexed_params * params, int index, float *values)
+{
+    int m = cs_num_components((const gs_color_space *)&params->base_space);
+    const float *pv = &params->lookup.map->values[index * m];
+
+    memcpy(values, pv, sizeof(*values) * m);
+    return 0;
+}
 
 /* Free an indexed map and its values when the reference count goes to 0. */
 void
@@ -200,10 +225,10 @@ gx_base_space_Indexed(const gs_color_space * pcs)
 /* Color space installation ditto. */
 
 private int
-gx_install_Indexed(gs_color_space * pcs, gs_state * pgs)
+gx_install_Indexed(const gs_color_space * pcs, gs_state * pgs)
 {
     return (*pcs->params.indexed.base_space.type->install_cspace)
-	((gs_color_space *) & pcs->params.indexed.base_space, pgs);
+	((const gs_color_space *) & pcs->params.indexed.base_space, pgs);
 }
 
 /* Color space reference count adjustment ditto. */
@@ -372,8 +397,8 @@ gs_cspace_indexed_value_array(const gs_color_space * pcspace)
  */
 int
 gs_cspace_indexed_set_proc(
-			      gs_color_space * pcspace,
-		   int (*proc) (P3(const gs_indexed_params *, int, float *))
+			   gs_color_space * pcspace,
+			   int (*proc)(P3(const gs_indexed_params *, int, float *))
 )
 {
     if ((gs_color_space_get_index(pcspace) != gs_color_space_index_Indexed) ||
@@ -417,17 +442,17 @@ gx_concretize_Indexed(const gs_client_color * pc, const gs_color_space * pcs,
 {
     float value = pc->paint.values[0];
     int index =
-    (is_fneg(value) ? 0 :
-     value >= pcs->params.indexed.hival ? pcs->params.indexed.hival :
-     (int)value);
+	(is_fneg(value) ? 0 :
+	 value >= pcs->params.indexed.hival ? pcs->params.indexed.hival :
+	 (int)value);
     gs_client_color cc;
     const gs_color_space *pbcs =
-    (const gs_color_space *)&pcs->params.indexed.base_space;
+	(const gs_color_space *)&pcs->params.indexed.base_space;
 
     if (pcs->params.indexed.use_proc) {
 	int code =
-	(*pcs->params.indexed.lookup.map->proc.lookup_index)
-	(&pcs->params.indexed, index, &cc.paint.values[0]);
+	    (*pcs->params.indexed.lookup.map->proc.lookup_index)
+	    (&pcs->params.indexed, index, &cc.paint.values[0]);
 
 	if (code < 0)
 	    return code;
@@ -438,12 +463,18 @@ gx_concretize_Indexed(const gs_client_color * pc, const gs_color_space * pcs,
 	pcs->params.indexed.lookup.table.data + m * index;
 
 	switch (m) {
-	    default:
-		return_error(gs_error_rangecheck);
+	    default: {		/* DeviceN */
+		int i;
+
+		for (i = 0; i < m; ++i)
+		    cc.paint.values[i] = pcomp[i] * (1.0 / 255.0);
+	    }
+		break;
 	    case 4:
 		cc.paint.values[3] = pcomp[3] * (1.0 / 255.0);
 	    case 3:
 		cc.paint.values[2] = pcomp[2] * (1.0 / 255.0);
+	    case 2:
 		cc.paint.values[1] = pcomp[1] * (1.0 / 255.0);
 	    case 1:
 		cc.paint.values[0] = pcomp[0] * (1.0 / 255.0);

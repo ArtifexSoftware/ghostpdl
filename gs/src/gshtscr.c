@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -29,7 +29,7 @@
 
 /* Define whether to force all halftones to be strip halftones, */
 /* for debugging. */
-#define FORCE_STRIP_HALFTONES 0
+static bool FORCE_STRIP_HALFTONES = false;
 
 /* Structure descriptors */
 private_st_gs_screen_enum();
@@ -128,11 +128,10 @@ gx_compute_cell_values(gx_ht_cell_params_t * phcp)
     const int M = phcp->M, N = phcp->N, M1 = phcp->M1, N1 = phcp->N1;
     const uint m = any_abs(M), n = any_abs(N);
     const uint m1 = any_abs(M1), n1 = any_abs(N1);
-    const ulong C = phcp->C = (ulong) m * m1 + (ulong) n * n1;
-    const int D = igcd(m1, n);
-    const int D1 = igcd(m, n1);
+    const ulong C = phcp->C = (ulong)m * m1 + (ulong)n * n1;
+    const int D = phcp->D = igcd(m1, n);
+    const int D1 = phcp->D1 = igcd(m, n1);
 
-    phcp->D = D, phcp->D1 = D1;
     phcp->W = C / D, phcp->W1 = C / D1;
     /* Compute the shift value. */
     /* If M1 or N is zero, the shift is zero. */
@@ -224,10 +223,10 @@ gs_screen_order_init_memory(gx_ht_order * porder, const gs_state * pgs,
 	return code;
     gx_compute_cell_values(&porder->params);
     num_levels = porder->params.W * porder->params.D;
-#if !FORCE_STRIP_HALFTONES
-    if (((ulong)porder->params.W1 * bitmap_raster(porder->params.W) +
-	 num_levels * sizeof(*porder->levels) +
-	 porder->params.W * porder->params.W1 * sizeof(*porder->bits)) <=
+    if (!FORCE_STRIP_HALFTONES &&
+	((ulong)porder->params.W1 * bitmap_raster(porder->params.W) +
+	   num_levels * sizeof(*porder->levels) +
+	   porder->params.W * porder->params.W1 * sizeof(gx_ht_bit)) <=
 	max_size) {
 	/*
 	 * Allocate an order for the entire tile, but only sample one
@@ -240,9 +239,8 @@ gs_screen_order_init_memory(gx_ht_order * porder, const gs_state * pgs,
 				 num_levels, mem);
 	porder->height = porder->orig_height = porder->params.D;
 	porder->shift = porder->orig_shift = porder->params.S;
-    } else
-#endif
-    {	/* Just allocate the order for a single strip. */
+    } else {
+	/* Just allocate the order for a single strip. */
 	code = gx_ht_alloc_order(porder, porder->params.W,
 				 porder->params.D, porder->params.S,
 				 num_levels, mem);
@@ -415,7 +413,11 @@ pick_cell_size(gs_screen_halftone * ph, const gs_matrix * pmat, ulong max_size,
 		better = true;
 		if_debug3('h', "*** best wt_size=%ld, f_diff=%g, a_diff=%g\n",
 			  wt_size, f_diff, a_diff);
-		if (f_err <= 0.01 && a_err <= 0.01)
+		/*
+		 * We want a maximum relative frequency error of 1% and a
+		 * maximum angle error of 1% (of 90 degrees).
+		 */
+		if (f_err <= 0.01 && a_err <= 0.9 /*degrees*/)
 		    goto done;
 	    }
     }
@@ -533,6 +535,7 @@ gs_screen_next(gs_screen_enum * penum, floatp value)
 {
     ht_sample_t sample;
     int width = penum->order.width;
+    gx_ht_bit *bits = (gx_ht_bit *)penum->order.bit_data;
 
     if (value < -1.0 || value > 1.0)
 	return_error(gs_error_rangecheck);
@@ -549,7 +552,7 @@ gs_screen_next(gs_screen_enum * penum, floatp value)
 		  penum->x, penum->y, pt.x, pt.y, value, sample);
     }
 #endif
-    penum->order.bits[penum->y * width + penum->x].mask = sample;
+    bits[penum->y * width + penum->x].mask = sample;
     if (++(penum->x) >= width)
 	penum->x = 0, ++(penum->y);
     return 0;

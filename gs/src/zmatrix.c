@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1997, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -26,21 +26,22 @@
 #include "store.h"
 
 /* Forward references */
-private int common_transform(P3(os_ptr,
+private int common_transform(P3(i_ctx_t *,
 		int (*)(P4(gs_state *, floatp, floatp, gs_point *)),
 		int (*)(P4(floatp, floatp, const gs_matrix *, gs_point *))));
 
 /* - initmatrix - */
 private int
-zinitmatrix(os_ptr op)
+zinitmatrix(i_ctx_t *i_ctx_p)
 {
     return gs_initmatrix(igs);
 }
 
 /* <matrix> defaultmatrix <matrix> */
 private int
-zdefaultmatrix(register os_ptr op)
+zdefaultmatrix(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_matrix mat;
 
     gs_defaultmatrix(igs, &mat);
@@ -49,8 +50,9 @@ zdefaultmatrix(register os_ptr op)
 
 /* - .currentmatrix <xx> <xy> <yx> <yy> <tx> <ty> */
 private int
-zcurrentmatrix(register os_ptr op)
+zcurrentmatrix(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_matrix mat;
     int code = gs_currentmatrix(igs, &mat);
 
@@ -65,8 +67,9 @@ zcurrentmatrix(register os_ptr op)
 
 /* <xx> <xy> <yx> <yy> <tx> <ty> .setmatrix - */
 private int
-zsetmatrix(register os_ptr op)
+zsetmatrix(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_matrix mat;
     int code = float_params(op, 6, &mat.xx);
 
@@ -80,8 +83,9 @@ zsetmatrix(register os_ptr op)
 
 /* <matrix|null> .setdefaultmatrix - */
 private int
-zsetdefaultmatrix(register os_ptr op)
+zsetdefaultmatrix(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code;
 
     if (r_has_type(op, t_null))
@@ -103,8 +107,9 @@ zsetdefaultmatrix(register os_ptr op)
 /* <tx> <ty> translate - */
 /* <tx> <ty> <matrix> translate <matrix> */
 private int
-ztranslate(register os_ptr op)
+ztranslate(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code;
     double trans[2];
 
@@ -133,8 +138,9 @@ ztranslate(register os_ptr op)
 /* <sx> <sy> scale - */
 /* <sx> <sy> <matrix> scale <matrix> */
 private int
-zscale(register os_ptr op)
+zscale(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code;
     double scale[2];
 
@@ -163,8 +169,9 @@ zscale(register os_ptr op)
 /* <angle> rotate - */
 /* <angle> <matrix> rotate <matrix> */
 private int
-zrotate(register os_ptr op)
+zrotate(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code;
     double ang;
 
@@ -192,8 +199,9 @@ zrotate(register os_ptr op)
 
 /* <matrix> concat - */
 private int
-zconcat(register os_ptr op)
+zconcat(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_matrix mat;
     int code = read_matrix(op, &mat);
 
@@ -208,8 +216,9 @@ zconcat(register os_ptr op)
 
 /* <matrix1> <matrix2> <matrix> concatmatrix <matrix> */
 private int
-zconcatmatrix(register os_ptr op)
+zconcatmatrix(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_matrix m1, m2, mp;
     int code;
 
@@ -227,41 +236,42 @@ zconcatmatrix(register os_ptr op)
 /* <x> <y> transform <xt> <yt> */
 /* <x> <y> <matrix> transform <xt> <yt> */
 private int
-ztransform(register os_ptr op)
+ztransform(i_ctx_t *i_ctx_p)
 {
-    return common_transform(op, gs_transform, gs_point_transform);
+    return common_transform(i_ctx_p, gs_transform, gs_point_transform);
 }
 
 /* <dx> <dy> dtransform <dxt> <dyt> */
 /* <dx> <dy> <matrix> dtransform <dxt> <dyt> */
 private int
-zdtransform(register os_ptr op)
+zdtransform(i_ctx_t *i_ctx_p)
 {
-    return common_transform(op, gs_dtransform, gs_distance_transform);
+    return common_transform(i_ctx_p, gs_dtransform, gs_distance_transform);
 }
 
 /* <xt> <yt> itransform <x> <y> */
 /* <xt> <yt> <matrix> itransform <x> <y> */
 private int
-zitransform(register os_ptr op)
+zitransform(i_ctx_t *i_ctx_p)
 {
-    return common_transform(op, gs_itransform, gs_point_transform_inverse);
+    return common_transform(i_ctx_p, gs_itransform, gs_point_transform_inverse);
 }
 
 /* <dxt> <dyt> idtransform <dx> <dy> */
 /* <dxt> <dyt> <matrix> idtransform <dx> <dy> */
 private int
-zidtransform(register os_ptr op)
+zidtransform(i_ctx_t *i_ctx_p)
 {
-    return common_transform(op, gs_idtransform, gs_distance_transform_inverse);
+    return common_transform(i_ctx_p, gs_idtransform, gs_distance_transform_inverse);
 }
 
 /* Common logic for [i][d]transform */
 private int
-common_transform(register os_ptr op,
+common_transform(i_ctx_t *i_ctx_p,
 	int (*ptproc)(P4(gs_state *, floatp, floatp, gs_point *)),
 	int (*matproc)(P4(floatp, floatp, const gs_matrix *, gs_point *)))
 {
+    os_ptr op = osp;
     double opxy[2];
     gs_point pt;
     int code;
@@ -314,8 +324,9 @@ out:
 
 /* <matrix> <inv_matrix> invertmatrix <inv_matrix> */
 private int
-zinvertmatrix(register os_ptr op)
+zinvertmatrix(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_matrix m;
     int code;
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1992, 1993, 1994 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1992, 1993, 1994, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -73,8 +73,6 @@ dev_proc_get_alpha_bits(win_get_alpha_bits);
 #define gx_device_win_common\
 	int BitsPerPixel;\
 	int nColors;\
-	int alpha_text;\
-	int alpha_graphics;\
 	byte *mapped_color_flags;\
 		/* Implementation-specific procedures */\
 	win_proc_alloc_bitmap((*alloc_bitmap));\

@@ -1,4 +1,5 @@
 /* Copyright (C) 1994-1996, Russell Lang.  All rights reserved.
+   Portions Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -21,9 +22,15 @@
 
 #ifndef gsdll_INCLUDED
 #  define gsdll_INCLUDED
+  
+#ifdef __MACINTOSH__
 
-#ifndef _GSDLL_H
-#define _GSDLL_H
+#define HWND char *
+#define GSFAR 
+#include <QDOffscreen.h>
+#pragma export on
+
+#endif
 
 #ifndef GSDLLEXPORT
 #define GSDLLEXPORT
@@ -100,18 +107,6 @@ int GSDLLAPI gsdll_execute_end(void);
 int GSDLLAPI gsdll_exit(void);
 int GSDLLAPI gsdll_lock_device(unsigned char *device, int flag);
 
-#ifdef _Windows
-HGLOBAL GSDLLAPI gsdll_copy_dib(unsigned char GSFAR * device);
-HPALETTE GSDLLAPI gsdll_copy_palette(unsigned char GSFAR * device);
-void GSDLLAPI gsdll_draw(unsigned char GSFAR * device, HDC hdc, LPRECT dest, LPRECT src);
-int GSDLLAPI gsdll_get_bitmap_row(unsigned char *device, LPBITMAPINFOHEADER pbmih,
-		     LPRGBQUAD prgbquad, LPBYTE * ppbyte, unsigned int row);
-
-#else
-unsigned long gsdll_get_bitmap(unsigned char *device, unsigned char **pbitmap);
-
-#endif
-
 /* Function pointer typedefs */
 /* for run time dynamic linking */
 typedef int (GSDLLAPI * PFN_gsdll_revision) (char GSFAR * GSFAR *, char GSFAR * GSFAR *, long GSFAR *, long GSFAR *);
@@ -122,18 +117,8 @@ typedef int (GSDLLAPI * PFN_gsdll_execute_end) (void);
 typedef int (GSDLLAPI * PFN_gsdll_exit) (void);
 typedef int (GSDLLAPI * PFN_gsdll_lock_device) (unsigned char GSFAR *, int);
 
-#ifdef _Windows
-typedef HGLOBAL(GSDLLAPI * PFN_gsdll_copy_dib) (unsigned char GSFAR *);
-typedef HPALETTE(GSDLLAPI * PFN_gsdll_copy_palette) (unsigned char GSFAR *);
-typedef void (GSDLLAPI * PFN_gsdll_draw) (unsigned char GSFAR *, HDC, LPRECT, LPRECT);
-typedef int (GSDLLAPI * PFN_gsdll_get_bitmap_row) (unsigned char *device, LPBITMAPINFOHEADER pbmih,
-		     LPRGBQUAD prgbquad, LPBYTE * ppbyte, unsigned int row);
-
-#else
-typedef long (*GSDLLAPI PFN_gsdll_get_bitmap) (unsigned char *, unsigned char **);
-
-#endif
-
+#ifdef __MACINTOSH__
+#pragma export off
 #endif
 
 #endif /* gsdll_INCLUDED */

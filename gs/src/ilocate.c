@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -117,17 +117,17 @@ ialloc_validate_spaces(const gs_dual_memory_t * dmem)
 	chunk_t cc;
 	uint rsize;
 	ref rlast;
-    } save[countof(dmem->spaces.indexed)];
+    } save[countof(dmem->spaces_indexed)];
 
     state.spaces = dmem->spaces;
-    state.loc.memory = state.spaces.named.local;
+    state.loc.memory = state.space_local;
     state.loc.cp = 0;
 
     /* Save everything we need to reset temporarily. */
 
     for (i = 0; i < countof(save); i++)
-	if (dmem->spaces.indexed[i] != 0) {
-	    gs_ref_memory_t *mem = dmem->spaces.indexed[i];
+	if (dmem->spaces_indexed[i] != 0) {
+	    gs_ref_memory_t *mem = dmem->spaces_indexed[i];
 	    chunk_t *pcc = mem->pcc;
 	    obj_header_t *rcur = mem->cc.rcur;
 
@@ -147,14 +147,14 @@ ialloc_validate_spaces(const gs_dual_memory_t * dmem)
     /* Validate memory. */
 
     for (i = 0; i < countof(save); i++)
-	if (dmem->spaces.indexed[i] != 0)
-	    ialloc_validate_memory(dmem->spaces.indexed[i], &state);
+	if (dmem->spaces_indexed[i] != 0)
+	    ialloc_validate_memory(dmem->spaces_indexed[i], &state);
 
     /* Undo temporary changes. */
 
     for (i = 0; i < countof(save); i++)
-	if (dmem->spaces.indexed[i] != 0) {
-	    gs_ref_memory_t *mem = dmem->spaces.indexed[i];
+	if (dmem->spaces_indexed[i] != 0) {
+	    gs_ref_memory_t *mem = dmem->spaces_indexed[i];
 	    chunk_t *pcc = mem->pcc;
 	    obj_header_t *rcur = mem->cc.rcur;
 

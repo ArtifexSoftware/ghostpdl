@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -24,40 +24,49 @@
 #include <string.h>
 
 /* Usage:
- *    geninit <init-file.ps> <gconfig.h> <merged-init-file.ps>
- *      geninit <init-file.ps> <gconfig.h> -c <merged-init-file.c>
+ *    geninit [-I <prefix>] <init-file.ps> <gconfig.h> <merged-init-file.ps>
+ *    geninit [-I <prefix>] <init-file.ps> <gconfig.h> -c <merged-init-file.c>
  */
 
 /* Forward references */
-private void merge_to_c(P4(const char *inname, FILE * in, FILE * config,
-			   FILE * out));
-private void merge_to_ps(P4(const char *inname, FILE * in, FILE * config,
-			    FILE * out));
+private FILE *prefix_open(P2(const char *prefix, const char *inname));
+private void merge_to_c(P5(const char *prefix, const char *inname, FILE * in,
+			   FILE * config, FILE * out));
+private void merge_to_ps(P5(const char *prefix, const char *inname, FILE * in,
+			    FILE * config, FILE * out));
 
 #define LINE_SIZE 128
 
 int
 main(int argc, char *argv[])
 {
+    int arg_c = argc;
+    char **arg_v = argv;
     const char *fin;
     FILE *in;
     const char *fconfig;
     FILE *config;
     const char *fout;
     FILE *out;
+    const char *prefix = "";
     bool to_c = false;
 
-    if (argc == 4)
-	fin = argv[1], fconfig = argv[2], fout = argv[3];
-    else if (argc == 5 && !strcmp(argv[3], "-c"))
-	fin = argv[1], fconfig = argv[2], fout = argv[4], to_c = true;
+    if (arg_c >= 2 && !strcmp(arg_v[1], "-I")) {
+	prefix = arg_v[2];
+	arg_c -= 2;
+	arg_v += 2;
+    }
+    if (arg_c == 4)
+	fin = arg_v[1], fconfig = arg_v[2], fout = arg_v[3];
+    else if (arg_c == 5 && !strcmp(arg_v[3], "-c"))
+	fin = arg_v[1], fconfig = arg_v[2], fout = arg_v[4], to_c = true;
     else {
 	fprintf(stderr, "\
-Usage: geninit gs_init.ps gconfig.h gs_xinit.ps\n\
-or     geninit gs_init.ps gconfig.h -c gs_init.c\n");
+Usage: geninit [-I lib/] gs_init.ps gconfig.h gs_xinit.ps\n\
+or     geninit [-I lib/] gs_init.ps gconfig.h -c gs_init.c\n");
 	exit(1);
     }
-    in = fopen(fin, "r");
+    in = prefix_open(prefix, fin);
     if (in == 0) {
 	fprintf(stderr, "Cannot open %s for reading.\n", fin);
 	exit(1);
@@ -76,20 +85,55 @@ or     geninit gs_init.ps gconfig.h -c gs_init.c\n");
 	exit(1);
     }
     if (to_c)
-	merge_to_c(fin, in, config, out);
+	merge_to_c(prefix, fin, in, config, out);
     else
-	merge_to_ps(fin, in, config, out);
+	merge_to_ps(prefix, fin, in, config, out);
     fclose(out);
     return 0;
+}
+
+/* Open a file with a name prefix. */
+private FILE *
+prefix_open(const char *prefix, const char *inname)
+{
+    char fname[LINE_SIZE + 1];
+
+    if (strlen(prefix) + strlen(inname) > LINE_SIZE) {
+	fprintf(stderr, "File name > %d characters, too long.\n",
+		LINE_SIZE);
+	exit(1);
+    }
+    strcpy(fname, prefix);
+    strcat(fname, inname);
+    return fopen(fname, "r");
 }
 
 /* Read a line from the input. */
 private bool
 rl(FILE * in, char *str, int len)
 {
-    if (fgets(str, len, in) == NULL)
+    /*
+     * Unfortunately, we can't use fgets here, because the typical
+     * implementation only recognizes the EOL convention of the current
+     * platform.
+     */
+    int i = 0, c = getc(in);
+
+    if (c < 0)
 	return false;
-    str[strlen(str) - 1] = 0;	/* remove newline */
+    while (i < len - 1) {
+	if (c < 0 || c == 10)		/* ^J, Unix EOL */
+	    break;
+	if (c == 13) {		/* ^M, Mac EOL */
+	    c = getc(in);
+	    if (c != 10 && c >= 0)	/* ^M^J, PC EOL */
+		ungetc(c, in);
+	    break;
+	}
+	str[i++] = c;
+	c = getc(in);
+    }
+    str[i] = 0;
     return true;
 }
 
@@ -204,7 +248,8 @@ flush_buf(FILE * out, char *buf, bool to_c)
     }
 }
 private void
-mergefile(const char *inname, FILE * in, FILE * config, FILE * out, bool to_c)
+mergefile(const char *prefix, const char *inname, FILE * in, FILE * config,
+	  FILE * out, bool to_c)
 {
     char line[LINE_SIZE + 1];
     char buf[LINE_SIZE + 1];
@@ -225,12 +270,12 @@ mergefile(const char *inname, FILE * in, FILE * config, FILE * out, bool to_c)
 		FILE *ps;
 
 		psname[strlen(psname) - 1] = 0;
-		ps = fopen(psname + 1, "r");
+		ps = prefix_open(prefix, psname + 1);
 		if (ps == 0) {
 		    fprintf(stderr, "Cannot open %s for reading.\n", psname + 1);
 		    exit(1);
 		}
-		mergefile(psname + 1, ps, config, out, to_c);
+		mergefile(prefix, psname + 1, ps, config, out, to_c);
 	    } else if (!strcmp(psname, "INITFILES")) {
 		/*
 		 * We don't want to bind config.h into geninit, so
@@ -243,12 +288,12 @@ mergefile(const char *inname, FILE * in, FILE * config, FILE * out, bool to_c)
 			char *quote = strchr(psname + 9, '"');
 
 			*quote = 0;
-			ps = fopen(psname + 9, "r");
+			ps = prefix_open(prefix, psname + 9);
 			if (ps == 0) {
 			    fprintf(stderr, "Cannot open %s for reading.\n", psname + 9);
 			    exit(1);
 			}
-			mergefile(psname + 9, ps, config, out, to_c);
+			mergefile(prefix, psname + 9, ps, config, out, to_c);
 		    }
 	    } else {
 		fprintf(stderr, "Unknown %%%% Replace %d %s\n",
@@ -282,7 +327,8 @@ mergefile(const char *inname, FILE * in, FILE * config, FILE * out, bool to_c)
 
 /* Merge and produce a C file. */
 private void
-merge_to_c(const char *inname, FILE * in, FILE * config, FILE * out)
+merge_to_c(const char *prefix, const char *inname, FILE * in, FILE * config,
+	   FILE * out)
 {
     char line[LINE_SIZE + 1];
 
@@ -294,18 +340,19 @@ merge_to_c(const char *inname, FILE * in, FILE * config, FILE * out)
     fputs("/* Pre-compiled interpreter initialization string. */\n", out);
     fputs("\n", out);
     fputs("const unsigned char gs_init_string[] = {\n", out);
-    mergefile(inname, in, config, out, true);
+    mergefile(prefix, inname, in, config, out, true);
     fputs("10};\n", out);
     fputs("const unsigned int gs_init_string_sizeof = sizeof(gs_init_string);\n", out);
 }
 
 /* Merge and produce a PostScript file. */
 private void
-merge_to_ps(const char *inname, FILE * in, FILE * config, FILE * out)
+merge_to_ps(const char *prefix, const char *inname, FILE * in, FILE * config,
+	    FILE * out)
 {
     char line[LINE_SIZE + 1];
 
     while ((rl(in, line, LINE_SIZE), line[0]))
 	fprintf(out, "%s\n", line);
-    mergefile(inname, in, config, out, false);
+    mergefile(prefix, inname, in, config, out, false);
 }

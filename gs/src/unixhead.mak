@@ -30,22 +30,19 @@ PLATFORM=unix_
 
 # Define the syntax for command, object, and executable files.
 
+# Work around the fact that some `make' programs drop trailing spaces
+# or interpret == as a special definition operator.
+NULL=
+
 CMD=
 C_=-c
-I_=-I
-II=-I
-_I=
-
-# Define the syntax for compile command line defines
-# such as defining XYZZY to 0-1: 	 $(D_)XYZZY$(_D_)0-1$(_D)
 D_=-D
 _D_=$(NULL)=
 _D=
-
-# There should be a <space> at the end of the definition of O_,
-# but we have to work around the fact that some `make' programs
-# drop trailing spaces in macro definitions.
-NULL=
+I_=-I
+II=-I
+_I=
+NO_OP=@:
 O_=-o $(NULL)
 OBJ=o
 XE=
@@ -55,11 +52,9 @@ XEAUX=
 
 CAT=cat
 D=/
-EXPP=
-EXP=./
+EXP=
 SHELL=/bin/sh
 SH=$(SHELL)
-SHP=$(SH) $(EXP)
 
 # Define generic commands.
 
@@ -69,7 +64,7 @@ RMN_=rm -f
 
 # Define the arguments for genconf.
 
-CONFILES=-Z -p "%s&s&&" -pl "&-l%s&s&&" -pL "&-L%s&s&&"
+CONFILES=-p "%s&s&&" -pl "&-l%s&s&&" -pL "&-L%s&s&&"
 CONFLDTR=-ol
 
 # Define the compilation rules and flags.
@@ -85,11 +80,7 @@ BEGINFILES=
 PCFBASM=
 
 # Define the default build rule, so the object directories get created
-# automatically.  std must precede std.dev so it will be the default target.
+# automatically.
 
-std: STDDIRS std.dev default
-	echo Done.
-
-std.dev:
-	$(RMN_) *.dev
-	echo Empty file. > std.dev
+std: STDDIRS default
+	$(NO_OP)

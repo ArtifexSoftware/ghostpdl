@@ -1,4 +1,4 @@
-/* Copyright (C) 1994 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -32,11 +32,13 @@
 /* <file> token <obj> -true- */
 /* <string> token <post> <obj> -true- */
 /* <string|file> token -false- */
-private int ztoken_continue(P1(os_ptr));
-private int token_continue(P4(os_ptr, stream *, scanner_state *, bool));
+private int ztoken_continue(P1(i_ctx_t *));
+private int token_continue(P4(i_ctx_t *, stream *, scanner_state *, bool));
 int
-ztoken(register os_ptr op)
+ztoken(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     switch (r_type(op)) {
 	default:
 	    return_op_typecheck(op);
@@ -47,11 +49,11 @@ ztoken(register os_ptr op)
 	    check_read_file(s, op);
 	    check_ostack(1);
 	    scanner_state_init(&state, false);
-	    return token_continue(op, s, &state, true);
+	    return token_continue(i_ctx_p, s, &state, true);
 	}
 	case t_string: {
 	    ref token;
-	    int code = scan_string_token(op, &token);
+	    int code = scan_string_token(i_ctx_p, op, &token);
 
 	    switch (code) {
 	    case scan_EOF:	/* no tokens */
@@ -71,8 +73,9 @@ ztoken(register os_ptr op)
 /* Continue reading a token after an interrupt or callout. */
 /* *op is the scanner state; op[-1] is the file. */
 private int
-ztoken_continue(os_ptr op)
+ztoken_continue(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     stream *s;
     scanner_state *pstate;
 
@@ -80,12 +83,14 @@ ztoken_continue(os_ptr op)
     check_stype(*op, st_scanner_state);
     pstate = r_ptr(op, scanner_state);
     pop(1);
-    return token_continue(osp, s, pstate, false);
+    return token_continue(i_ctx_p, s, pstate, false);
 }
 /* Common code for token reading. */
 private int
-token_continue(os_ptr op, stream * s, scanner_state * pstate, bool save)
+token_continue(i_ctx_t *i_ctx_p, stream * s, scanner_state * pstate,
+	       bool save)
 {
+    os_ptr op = osp;
     int code;
     ref token;
 
@@ -97,7 +102,7 @@ token_continue(os_ptr op, stream * s, scanner_state * pstate, bool save)
     ref_assign(&fref, op);
 again:
     pop(1);
-    code = scan_token(s, &token, pstate);
+    code = scan_token(i_ctx_p, s, &token, pstate);
     op = osp;
     switch (code) {
 	default:		/* error */
@@ -119,7 +124,7 @@ again:
 	case scan_Refill:	/* need more data */
 	    push(1);
 	    ref_assign(op, &fref);
-	    code = scan_handle_refill(op, pstate, save, false,
+	    code = scan_handle_refill(i_ctx_p, op, pstate, save, false,
 				      ztoken_continue);
 	    switch (code) {
 		case 0:	/* state is not copied to the heap */
@@ -139,26 +144,28 @@ again:
 /* Read a token and do what the interpreter would do with it. */
 /* This is different from token + exec because literal procedures */
 /* are not executed (although binary object sequences ARE executed). */
-int ztokenexec_continue(P1(os_ptr));	/* export for interpreter */
-private int tokenexec_continue(P4(os_ptr, stream *, scanner_state *, bool));
+int ztokenexec_continue(P1(i_ctx_t *));	/* export for interpreter */
+private int tokenexec_continue(P4(i_ctx_t *, stream *, scanner_state *, bool));
 int
-ztokenexec(register os_ptr op)
+ztokenexec(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     stream *s;
     scanner_state state;
 
     check_read_file(s, op);
     check_estack(1);
     scanner_state_init(&state, false);
-    return tokenexec_continue(op, s, &state, true);
+    return tokenexec_continue(i_ctx_p, s, &state, true);
 }
 /* Continue reading a token for execution after an interrupt or callout. */
 /* *op is the scanner state; op[-1] is the file. */
 /* We export this because this is how the interpreter handles a */
 /* scan_Refill for an executable file. */
 int
-ztokenexec_continue(os_ptr op)
+ztokenexec_continue(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     stream *s;
     scanner_state *pstate;
 
@@ -166,12 +173,14 @@ ztokenexec_continue(os_ptr op)
     check_stype(*op, st_scanner_state);
     pstate = r_ptr(op, scanner_state);
     pop(1);
-    return tokenexec_continue(osp, s, pstate, false);
+    return tokenexec_continue(i_ctx_p, s, pstate, false);
 }
 /* Common code for token reading + execution. */
 private int
-tokenexec_continue(os_ptr op, stream * s, scanner_state * pstate, bool save)
+tokenexec_continue(i_ctx_t *i_ctx_p, stream * s, scanner_state * pstate,
+		   bool save)
 {
+    os_ptr op = osp;
     int code;
 
     /* Note that scan_token may change osp! */
@@ -182,7 +191,7 @@ tokenexec_continue(os_ptr op, stream * s, scanner_state * pstate, bool save)
     ref_assign(&fref, op);
     pop(1);
 again:
-    code = scan_token(s, (ref *) (esp + 1), pstate);
+    code = scan_token(i_ctx_p, s, (ref *) (esp + 1), pstate);
     op = osp;
     switch (code) {
 	case 0:
@@ -201,7 +210,7 @@ again:
 	    code = 0;
 	    break;
 	case scan_Refill:	/* need more data */
-	    code = scan_handle_refill(&fref, pstate, save, true,
+	    code = scan_handle_refill(i_ctx_p, &fref, pstate, save, true,
 				      ztokenexec_continue);
 	    switch (code) {
 		case 0:	/* state is not copied to the heap */

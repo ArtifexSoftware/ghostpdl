@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -84,6 +84,12 @@ dev_proc_close_device(mem_close);
   private dev_proc_copy_mono(copy_mono);\
   private dev_proc_copy_color(copy_color);\
   private dev_proc_fill_rectangle(fill_rectangle)
+/*
+ * We define one relatively low-usage drawing procedure that is common to
+ * all memory devices so that we have a reliable way to implement
+ * gs_is_memory_device.  It is equivalent to gx_default_draw_thin_line.
+ */
+dev_proc_draw_thin_line(mem_draw_thin_line);
 
 /* The following are used for all except planar or word-oriented devices. */
 dev_proc_open_device(mem_open);
@@ -155,7 +161,7 @@ dev_proc_strip_copy_rop(mem_default_strip_copy_rop);
 		gx_default_fill_trapezoid,\
 		gx_default_fill_parallelogram,\
 		gx_default_fill_triangle,\
-		gx_default_draw_thin_line,\
+		mem_draw_thin_line,	/* see above */\
 		gx_default_begin_image,\
 		gx_default_image_data,\
 		gx_default_end_image,\

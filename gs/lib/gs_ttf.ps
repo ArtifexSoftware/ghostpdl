@@ -1,4 +1,4 @@
-%    Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 %
 % This file is part of Aladdin Ghostscript.
 %
@@ -27,7 +27,9 @@
 % Augment the FONTPATH machinery so it recognizes TrueType fonts.
 
 /.scanfontheaders where {	% only defined if DISKFONTS is recognized
-  pop /.scanfontheaders [ .scanfontheaders aload pop (\000\001\000\000*) ] def
+  pop /.scanfontheaders [
+   .scanfontheaders aload pop (\000\001\000\000*) (true*)
+  ] def
 } if
 
 % <file> <key> .findfontvalue <value> true
@@ -282,6 +284,7 @@ ifelse def
     0 1 255 { } for
   } ifelse
   DEBUG {
+    (cmap: length=) print counttomark =
     ([) print counttomark 1 sub -1 0 { index =only ( ) print } for (]) =
   } if
 } bind def
@@ -391,6 +394,19 @@ ifelse def
   } for ] {
     exch 8 getu32 exch 8 getu32 lt
   } sort def
+	% In certain malformed TrueType fonts, tables overlap.
+	% Truncate tables if necessary.
+  0 1 tabs length 2 sub {
+    dup tabs exch get exch 1 add tabs exch get
+    1 index 8 getu32 2 index 12 getu32 add
+    1 index 8 getu32 gt {
+      (**** Warning: ) print 1 index 0 4 getinterval print
+      ( overlaps ) print dup 0 4 getinterval print
+      (, truncating.) = flush
+      dup 8 getu32 2 index 8 getu32 sub
+      2 index 12 3 -1 roll putu32
+    } if pop pop
+  } for
 } bind def
 
 % - .readttdata -
@@ -428,14 +444,14 @@ ifelse def
 } bind def
 
 % - .makesfnts -
-% Defines checksum, getloca, head, locatable, numglyphs, post, sfnts, upem
+% Defines checksum, getloca, head, locatable, numloca, post, sfnts, upem
 /.makesfnts {
   .readttdata
   /head tabdict /head get def
    /checksum head 8 getu32 def
   /locatable tabdict /loca get def
   /post tabdict /post .knownget not { null } if def
-  /numglyphs
+  /numloca
     locatable dup type /stringtype eq
      { length }
      { 0 exch { length add } forall }
@@ -455,7 +471,7 @@ ifelse def
       dup add locatable exch .indexloca getu16 dup add
     } def
     2 idiv 1 sub
-  } ifelse def		% numglyphs
+  } ifelse def		% numloca
 	% If necessary, re-partition the glyfs.
   tabdict /glyf get dup type /stringtype ne {
     .dividesfnts tabdict /glyf 3 -1 roll put
@@ -496,6 +512,8 @@ ifelse def
   /len1 0 glyfs { length add } forall def
 		% Determine where to split the glyfs by scanning loca.
 		% The very last entry in loca may be bogus.
+		% Note that some loca entries may be odd, but we can only
+		% split at even positions.
 		%
 		% Construct splitarray, the array of final lengths of
 		% the sfnts entries covering the glyfs (i.e., all but
@@ -503,12 +521,12 @@ ifelse def
     /prevsplit 0 def
     /prevboundary 0 def
     /splitarray [
-      0 1 numglyphs 1 sub {
+      0 1 numloca 1 sub {
 	getloca dup prevsplit maxstring add gt {
 	  prevboundary prevsplit sub exch
 	  /prevsplit prevboundary def
 	} if
-	/prevboundary exch def
+	dup 1 and 0 eq { /prevboundary exch def } { pop } ifelse
       } for
       len1 prevsplit sub
     ] def
@@ -601,12 +619,16 @@ ifelse def
    } ifelse
 		% If necessary, fabricate additional glyphencoding entries
 		% to cover all of loca.
-   dup length numglyphs lt {
+   dup length numloca lt {
      [ exch aload pop
-     counttomark 1 numglyphs 1 sub {
+     counttomark 1 numloca 1 sub {
 	=string cvs (_) exch concatstrings cvn
      } for ]
    } if def
+  DEBUG {
+    (numloca=) print numloca =
+    (glyphencoding: length=) print glyphencoding dup length = === flush
+  } if
   /Encoding
     cmaptab cmaparray
     counttomark array astore

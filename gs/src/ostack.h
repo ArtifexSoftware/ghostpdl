@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1994, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 1994, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -23,11 +23,12 @@
 #  define ostack_INCLUDED
 
 #include "iostack.h"
+#include "icstate.h"		/* for access to op_stack */
 
-/* Define the operand stack pointers. */
-extern op_stack_t iop_stack;
-
+/* Define the operand stack pointers for operators. */
+#define iop_stack (i_ctx_p->op_stack)
 #define o_stack (iop_stack.stack)
+
 #define osbot (o_stack.bot)
 #define osp (o_stack.p)
 #define ostop (o_stack.top)

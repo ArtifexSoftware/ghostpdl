@@ -33,8 +33,6 @@
 #include "gxdevmem.h"
 #include "gxpcolor.h"
 #include "gzstate.h"
-#include "gzpath.h"		/* for tweaking sharing flags */
-#include "gzcpath.h"		/* ditto */
 
 /* Define the default size of the Pattern cache. */
 #define max_cached_patterns_LARGE 50
@@ -140,15 +138,15 @@ gx_device_pattern_accum *
 gx_pattern_accum_alloc(gs_memory_t * mem, client_name_t cname)
 {
     gx_device_pattern_accum *adev =
-    gs_alloc_struct(mem, gx_device_pattern_accum,
-		    &st_device_pattern_accum, cname);
+	gs_alloc_struct(mem, gx_device_pattern_accum,
+			&st_device_pattern_accum, cname);
 
     if (adev == 0)
 	return 0;
-    gx_device_init((gx_device *) adev,
+    gx_device_init((gx_device *)adev,
 		   (const gx_device *)&gs_pattern_accum_device,
 		   mem, true);
-    gx_device_forward_fill_in_procs((gx_device_forward *) adev);	/* (should only do once) */
+    gx_device_forward_fill_in_procs((gx_device_forward *)adev);
     return adev;
 }
 
@@ -162,7 +160,7 @@ private int
 pattern_accum_open(gx_device * dev)
 {
     gx_device_pattern_accum *const padev = (gx_device_pattern_accum *) dev;
-    const gs_pattern_instance *pinst = padev->instance;
+    const gs_pattern1_instance_t *pinst = padev->instance;
     gs_memory_t *mem = padev->bitmap_memory;
     gx_device_memory *mask = 0;
     gx_device_memory *bits = 0;
@@ -209,7 +207,7 @@ pattern_accum_open(gx_device * dev)
     if (code >= 0) {
 	switch (pinst->template.PaintType) {
 	    case 2:		/* uncolored */
-		padev->target = target;
+		gx_device_set_target((gx_device_forward *)padev, target);
 		break;
 	    case 1:		/* colored */
 		bits = gs_alloc_struct(mem, gx_device_memory,
@@ -218,7 +216,6 @@ pattern_accum_open(gx_device * dev)
 		if (bits == 0)
 		    code = gs_note_error(gs_error_VMerror);
 		else {
-		    padev->target = (gx_device *) bits;
 		    gs_make_mem_device(bits,
 			gdev_mem_device_for_bits(target->color_info.depth),
 				       mem, -1, target);
@@ -227,6 +224,8 @@ pattern_accum_open(gx_device * dev)
 		    bits->color_info = target->color_info;
 		    bits->bitmap_memory = mem;
 		    code = (*dev_proc(bits, open_device)) ((gx_device *) bits);
+		    gx_device_set_target((gx_device_forward *)padev,
+					 (gx_device *)bits);
 		}
 	}
     }
@@ -256,6 +255,8 @@ pattern_accum_close(gx_device * dev)
 	(*dev_proc(padev->bits, close_device)) ((gx_device *) padev->bits);
 	gs_free_object(mem, padev->bits, "pattern_accum_close(bits)");
 	padev->bits = 0;
+	/* target also points to bits: we mustn't let it be finalized. */
+	padev->target = 0;
     }
     if (padev->mask != 0) {
         (*dev_proc(padev->mask, close_device)) ((gx_device *) padev->mask);
@@ -422,15 +423,21 @@ gstate_set_pattern_cache(gs_state * pgs, gx_pattern_cache * pcache)
 private void
 gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
 {
-    gx_device_memory mdev;
-
     if (ctile->id != gx_no_bitmap_id) {
+	gs_memory_t *mem = pcache->memory;
+	gx_device_memory mdev;
+
+	/*
+	 * We must initialize the memory device properly, even though
+	 * we aren't using it for drawing.
+	 */
+	gs_make_mem_mono_device(&mdev, mem, NULL);
 	if (ctile->tmask.data != 0) {
 	    mdev.width = ctile->tmask.size.x;
 	    mdev.height = ctile->tmask.size.y;
-	    mdev.color_info.depth = 1;
+	    /*mdev.color_info.depth = 1;*/
 	    pcache->bits_used -= gdev_mem_bitmap_size(&mdev);
-	    gs_free_object(pcache->memory, ctile->tmask.data,
+	    gs_free_object(mem, ctile->tmask.data,
 			   "free_pattern_cache_entry(mask data)");
 	    ctile->tmask.data = 0;	/* for GC */
 	}
@@ -439,7 +446,7 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
 	    mdev.height = ctile->tbits.size.y;
 	    mdev.color_info.depth = ctile->depth;
 	    pcache->bits_used -= gdev_mem_bitmap_size(&mdev);
-	    gs_free_object(pcache->memory, ctile->tbits.data,
+	    gs_free_object(mem, ctile->tbits.data,
 			   "free_pattern_cache_entry(bits data)");
 	    ctile->tbits.data = 0;	/* for GC */
 	}
@@ -459,7 +466,7 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
 {
     gx_device_memory *mbits = padev->bits;
     gx_device_memory *mmask = padev->mask;
-    const gs_pattern_instance *pinst = padev->instance;
+    const gs_pattern1_instance_t *pinst = padev->instance;
     gx_pattern_cache *pcache;
     ulong used = 0;
     gx_bitmap_id id = pinst->id;
@@ -560,8 +567,9 @@ int
 gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
 		gx_device * dev, gs_color_select_t select)
 {
-    gx_device_pattern_accum adev;
-    gs_pattern_instance *pinst = pdc->mask.ccolor.pattern;
+    gx_device_pattern_accum *adev;
+    gs_pattern1_instance_t *pinst =
+	(gs_pattern1_instance_t *)pdc->ccolor.pattern;
     gs_state *saved;
     gx_color_tile *ctile;
     gs_memory_t *mem = pis->memory;
@@ -573,31 +581,36 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
     code = ensure_pattern_cache((gs_imager_state *) pis);
     if (code < 0)
 	return code;
-    gx_device_init((gx_device *) & adev,
-		   (const gx_device *)&gs_pattern_accum_device,
-		   NULL, true);
-    gx_device_forward_fill_in_procs((gx_device_forward *) & adev);	/* (should only do once) */
-    adev.target = dev;
-    adev.instance = pinst;
-    adev.bitmap_memory = mem;
-    code = (*dev_proc(&adev, open_device)) ((gx_device *) & adev);
-    if (code < 0)
-	return code;
-    saved = gs_gstate(pinst->saved);
-    if (saved == 0)
+    /*
+     * Note that adev is an internal device, so it will be freed when the
+     * last reference to it from a graphics state is deleted.
+     */
+    adev = gx_pattern_accum_alloc(mem, "gx_pattern_load");
+    if (adev == 0)
 	return_error(gs_error_VMerror);
+    gx_device_set_target((gx_device_forward *)adev, dev);
+    adev->instance = pinst;
+    adev->bitmap_memory = mem;
+    code = dev_proc(adev, open_device)((gx_device *)adev);
+    if (code < 0)
+	goto fail;
+    saved = gs_gstate(pinst->saved);
+    if (saved == 0) {
+	code = gs_note_error(gs_error_VMerror);
+	goto fail;
+    }
     if (saved->pattern_cache == 0)
 	saved->pattern_cache = pis->pattern_cache;
-    gs_setdevice_no_init(saved, (gx_device *) & adev);
-    code = (*pinst->template.PaintProc) (&pdc->mask.ccolor, saved);
+    gs_setdevice_no_init(saved, (gx_device *)adev);
+    code = (*pinst->template.PaintProc)(&pdc->ccolor, saved);
     if (code < 0) {
-	(*dev_proc(&adev, close_device)) ((gx_device *) & adev);
+	dev_proc(adev, close_device)((gx_device *)adev);
+	/* Freeing the state will free the device. */
 	gs_state_free(saved);
 	return code;
     }
     /* We REALLY don't like the following cast.... */
-    code = gx_pattern_cache_add_entry((gs_imager_state *) pis, &adev,
-				      &ctile);
+    code = gx_pattern_cache_add_entry((gs_imager_state *)pis, adev, &ctile);
     if (code >= 0) {
 	if (!gx_pattern_cache_lookup(pdc, pis, dev, select)) {
 	    lprintf("Pattern cache lookup failed after insertion!\n");
@@ -606,33 +619,37 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
     }
     /* Free the bookkeeping structures, except for the bits and mask */
     /* iff they are still needed. */
-    (*dev_proc(&adev, close_device)) ((gx_device *) & adev);
+    dev_proc(adev, close_device)((gx_device *)adev);
 #ifdef DEBUG
     if (gs_debug_c('B')) {
-        if (adev.mask)
-	    debug_dump_bitmap(adev.mask->base, adev.mask->raster,
-			      adev.mask->height, "[B]Pattern mask");
-	if (adev.bits)
-	    debug_dump_bitmap(((gx_device_memory *) adev.target)->base,
-			      ((gx_device_memory *) adev.target)->raster,
-			      adev.target->height, "[B]Pattern bits");
+        if (adev->mask)
+	    debug_dump_bitmap(adev->mask->base, adev->mask->raster,
+			      adev->mask->height, "[B]Pattern mask");
+	if (adev->bits)
+	    debug_dump_bitmap(((gx_device_memory *) adev->target)->base,
+			      ((gx_device_memory *) adev->target)->raster,
+			      adev->target->height, "[B]Pattern bits");
     }
 #endif
+    /* Freeing the state will free the device. */
     gs_state_free(saved);
+    return code;
+fail:
+    gs_free_object(mem, adev, "gx_pattern_load");
     return code;
 }
 
-/* Remap a Pattern color. */
+/* Remap a PatternType 1 color. */
 cs_proc_remap_color(gx_remap_Pattern);	/* check the prototype */
 int
-gx_remap_Pattern(const gs_client_color * pc, const gs_color_space * pcs,
-	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
-		 gs_color_select_t select)
+gs_pattern1_remap_color(const gs_client_color * pc, const gs_color_space * pcs,
+			gx_device_color * pdc, const gs_imager_state * pis,
+			gx_device * dev, gs_color_select_t select)
 {
-    gs_pattern_instance *pinst = pc->pattern;
+    gs_pattern1_instance_t *pinst = (gs_pattern1_instance_t *)pc->pattern;
     int code;
 
-    pdc->mask.ccolor = *pc;
+    pdc->ccolor = *pc;
     if (pinst == 0) {
 	/* Null pattern */
 	color_set_null_pattern(pdc);

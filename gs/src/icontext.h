@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -23,7 +23,7 @@
 #ifndef icontext_INCLUDED
 #  define icontext_INCLUDED
 
-#include "gsstruct.h"		/* for extern_st */
+#include "gsstype.h"		/* for extern_st */
 #include "icstate.h"
 
 /* Declare the GC descriptor for context states. */
@@ -33,7 +33,7 @@ extern_st(st_context_state);
  * Define the procedure for resetting user parameters when switching
  * contexts. This is defined in either zusparam.c or inouparm.c.
  */
-extern int set_user_params(P1(const ref * paramdict));
+extern int set_user_params(P2(i_ctx_t *i_ctx_p, const ref * paramdict));
 
 /* Allocate the state of a context, always in local VM. */
 /* If *ppcst == 0, allocate the state object as well. */
@@ -41,7 +41,8 @@ int context_state_alloc(P2(gs_context_state_t ** ppcst,
 			   const gs_dual_memory_t * dmem));
 
 /* Load the state of the interpreter from a context. */
-int context_state_load(P1(const gs_context_state_t *));
+/* The argument is not const because caches may be updated. */
+int context_state_load(P1(gs_context_state_t *));
 
 /* Store the state of the interpreter into a context. */
 int context_state_store(P1(gs_context_state_t *));

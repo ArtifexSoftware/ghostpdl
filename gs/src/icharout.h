@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -23,7 +23,7 @@
 #  define icharout_INCLUDED
 
 /* Execute an outline defined by a PostScript procedure. */
-int zchar_exec_char_proc(P1(os_ptr));
+int zchar_exec_char_proc(P1(i_ctx_t *));
 
 /*
  * Get the metrics for a character from the Metrics dictionary of a base
@@ -44,10 +44,10 @@ int /*metrics_present*/
  * o_push_estack if we had to call a CDevProc, or if we are skipping the
  * rendering process (only getting the metrics).
  */
-int zchar_set_cache(P8(os_ptr op, const gs_font_base * pbfont,
+int zchar_set_cache(P8(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
 		       const ref * pcnref, const double psb[2],
 		       const double pwidth[2], const gs_rect * pbbox,
-		       int (*cont_fill) (P1(os_ptr)),
-		       int (*cont_stroke) (P1(os_ptr))));
+		       int (*cont_fill) (P1(i_ctx_t *)),
+		       int (*cont_stroke) (P1(i_ctx_t *))));
 
 #endif /* icharout_INCLUDED */

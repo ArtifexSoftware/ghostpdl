@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -28,6 +28,8 @@
 #include "ialloc.h"
 #include "iastruct.h"
 #include "icontext.h"
+#include "icremap.h"
+#include "igstate.h"		/* for handling e_RemapColor */
 #include "inamedef.h"
 #include "iname.h"		/* for the_name_table */
 #include "interp.h"
@@ -36,7 +38,7 @@
 #include "strimpl.h"		/* for sfilter.h */
 #include "sfilter.h"		/* for iscan.h */
 #include "iscan.h"
-#include "idict.h"
+#include "iddict.h"
 #include "isave.h"
 #include "istack.h"
 #include "iutil.h"		/* for array_get */
@@ -63,35 +65,41 @@
  * a little slower.
  */
 
+/* GC descriptors for stacks */
+extern_st(st_ref_stack);
+public_st_dict_stack();
+public_st_exec_stack();
+public_st_op_stack();
+
 /* Imported operator procedures */
 extern int zop_add(P1(os_ptr));
-extern int zop_def(P1(os_ptr));
+extern int zop_def(P1(i_ctx_t *));
 extern int zop_sub(P1(os_ptr));
 
 /* Other imported procedures */
-extern int ztokenexec_continue(P1(os_ptr));
+extern int ztokenexec_continue(P1(i_ctx_t *));
 
 /* 
  * The procedure to call if an operator requests rescheduling.
  * This causes an error unless the context machinery has been installed.
  */
 private int
-no_reschedule(void)
+no_reschedule(i_ctx_t **pi_ctx_p)
 {
     return_error(e_invalidcontext);
 }
-int (*gs_interp_reschedule_proc) (P0()) = no_reschedule;
+int (*gs_interp_reschedule_proc)(P1(i_ctx_t **)) = no_reschedule;
 
 /*
  * The procedure to call for time-slicing.
  * This is a no-op unless the context machinery has been installed.
  */
 int
-no_time_slice_proc(void)
+no_time_slice_proc(i_ctx_t **pi_ctx_p)
 {
     return 0;
 }
-int (*gs_interp_time_slice_proc) (P0()) = no_time_slice_proc;
+int (*gs_interp_time_slice_proc)(P1(i_ctx_t **)) = no_time_slice_proc;
 
 /*
  * The number of interpreter "ticks" between calls on the time_slice_proc.
@@ -106,24 +114,41 @@ int gs_interp_time_slice_ticks = 0x7fff;
  */
 #ifdef DEBUG
 private int
-call_operator(int (*op_proc) (P1(os_ptr)), os_ptr op)
+call_operator(op_proc_t op_proc, i_ctx_t *i_ctx_p)
 {
-    int code = (*op_proc) (op);
+    int code = op_proc(i_ctx_p);
 
     return code;
 }
 #else
-#  define call_operator(proc, op) ((*(proc))(op))
+#  define call_operator(proc, p) ((*(proc))(p))
+#endif
+
+/* Define debugging statistics. */
+#ifdef DEBUG
+struct stats_interp_s {
+    long top;
+    long lit, lit_array, exec_array, exec_operator, exec_name;
+    long x_add, x_def, x_dup, x_exch, x_if, x_ifelse,
+	x_index, x_pop, x_roll, x_sub;
+    long find_name, name_lit, name_proc, name_oparray, name_operator;
+    long p_full, p_exec_operator, p_exec_oparray, p_exec_non_x_operator,
+	p_integer, p_lit_name, p_exec_name;
+    long p_find_name, p_name_lit, p_name_proc;
+} stats_interp;
+# define INCR(v) (++(stats_interp.v))
+#else
+# define INCR(v) DO_NOTHING
 #endif
 
 /* Forward references */
-private int estack_underflow(P1(os_ptr));
-private int interp(P2(ref *, ref *));
-private int interp_exit(P1(os_ptr));
-private void set_gc_signal(P2(int *, int));
-private int copy_stack(P2(const ref_stack *, ref *));
-private int oparray_pop(P1(os_ptr));
-private int oparray_cleanup(P1(os_ptr));
+private int estack_underflow(P1(i_ctx_t *));
+private int interp(P3(i_ctx_t **, const ref *, ref *));
+private int interp_exit(P1(i_ctx_t *));
+private void set_gc_signal(P3(i_ctx_t *, int *, int));
+private int copy_stack(P2(const ref_stack_t *, ref *));
+private int oparray_pop(P1(i_ctx_t *));
+private int oparray_cleanup(P1(i_ctx_t *));
 
 /* Stack sizes */
 
@@ -176,9 +201,6 @@ const int gs_interp_max_op_num_args = MIN_BLOCK_OSTACK;		/* for iinit.c */
  */
 #define MIN_BLOCK_DSTACK 3
 
-/* Interpreter state variables */
-ref ref_language_level;		/* 1 or 2, set by iinit.c */
-
 /* See estack.h for a description of the execution stack. */
 
 /* The logic for managing icount and iref below assumes that */
@@ -191,22 +213,14 @@ extern_st(st_ref_stack);
 #define OS_GUARD_OVER 10
 #define OS_REFS_SIZE(body_size)\
   (stack_block_refs + OS_GUARD_UNDER + (body_size) + OS_GUARD_OVER)
-op_stack_t iop_stack;
 
 #define ES_GUARD_UNDER 1
 #define ES_GUARD_OVER 10
 #define ES_REFS_SIZE(body_size)\
   (stack_block_refs + ES_GUARD_UNDER + (body_size) + ES_GUARD_OVER)
-exec_stack_t iexec_stack;
 
 #define DS_REFS_SIZE(body_size)\
   (stack_block_refs + (body_size))
-dict_stack_t idict_stack;
-
-					  /*#define d_stack (idict_stack.stack) *//* in dstack.h */
-
-/* Define a pointer to the current interpreter context state. */
-gs_context_state_t *gs_interp_context_state_current;
 
 /* Extended types.  The interpreter may replace the type of operators */
 /* in procedures with these, to speed up the interpretation loop. */
@@ -214,10 +228,6 @@ gs_context_state_t *gs_interp_context_state_current;
 /****** you must change the three dispatches in the interpreter loop. */
 /* The operator procedures are declared in opextern.h. */
 #define tx_op t_next_index
-private const op_proc_p special_ops[] =
-{
-    zadd, zdef, zdup, zexch, zif, zifelse, zindex, zpop, zroll, zsub
-};
 typedef enum {
     tx_op_add = tx_op,
     tx_op_def,
@@ -236,24 +246,65 @@ typedef enum {
 const int gs_interp_num_special_ops = num_special_ops;	/* for iinit.c */
 const int tx_next_index = tx_next_op;
 
+/*
+ * Define the interpreter operators, which include the extended-type
+ * operators defined in the list above.  NOTE: if the size of this table
+ * ever exceeds 15 real entries, it will have to be split.
+ */
+const op_def interp_op_defs[] = {
+    /*
+     * The very first entry, which corresponds to operator index 0,
+     * must not contain an actual operator.
+     */
+    op_def_begin_dict("systemdict"),
+    /*
+     * The next entries must be the extended-type operators, in the
+     * correct order.
+     */
+    {"2add", zadd},
+    {"2def", zdef},
+    {"1dup", zdup},
+    {"2exch", zexch},
+    {"2if", zif},
+    {"3ifelse", zifelse},
+    {"1index", zindex},
+    {"1pop", zpop},
+    {"2roll", zroll},
+    {"2sub", zsub},
+    /*
+     * The remaining entries are internal operators.
+     */
+    {"0%interp_exit", interp_exit},
+    {"0%oparray_pop", oparray_pop},
+    op_def_end(0)
+};
+
 #define make_null_proc(pref)\
   make_empty_const_array(pref, a_executable + a_readonly)
 
 /* Initialize the interpreter. */
-void
-gs_interp_init(void)
-{				/* Create and initialize a ocntext state. */
+int
+gs_interp_init(i_ctx_t **pi_ctx_p, const ref *psystem_dict)
+{
+    /* Create and initialize a context state. */
     gs_context_state_t *pcst = 0;
     int code = context_state_alloc(&pcst, &gs_imemory);
 
-    if (code < 0 || (code = context_state_load(pcst)) < 0) {
-	lprintf1("Fatal error %d in gs_interp_init!", code);
-/****** ABORT ******/
+    if (code >= 0) {
+	/*
+	 * We have to initialize the dictionary stack early,
+	 * for far-off references to systemdict.
+	 */
+	pcst->dict_stack.system_dict = *psystem_dict;
+	pcst->dict_stack.stack.extension_size = 0;
+	pcst->dict_stack.min_size = 0;
+	code = context_state_load(pcst);
     }
-    gs_interp_context_state_current = pcst;
-    gs_register_struct_root(imemory_local, NULL,
-			    (void **)&gs_interp_context_state_current,
-			    "gs_interp_init(gs_icst_root)");
+
+    *pi_ctx_p = pcst;
+    if (code < 0)
+	lprintf1("Fatal error %d in gs_interp_init!", code);
+    return code;
 }
 /*
  * Create initial stacks for the interpreter.
@@ -272,46 +323,38 @@ gs_interp_alloc_stacks(gs_ref_memory_t * smem, gs_context_state_t * pcst)
 		       REFS_SIZE_DSTACK, "gs_interp_alloc_stacks");
 
     {
-	ref_stack *pos = pcst->ostack =
-	gs_alloc_struct((gs_memory_t *) smem, ref_stack, &st_ref_stack,
-			"gs_interp_alloc_stacks(ostack)");
+	ref_stack_t *pos = &pcst->op_stack.stack;
 
 	r_set_size(&stk, REFS_SIZE_OSTACK);
-	ref_stack_init(pos, &stk, OS_GUARD_UNDER, OS_GUARD_OVER, NULL,
-		       smem);
-	pos->underflow_error = e_stackunderflow;
-	pos->overflow_error = e_stackoverflow;
+	ref_stack_init(pos, &stk, OS_GUARD_UNDER, OS_GUARD_OVER, NULL, smem);
+	ref_stack_set_error_codes(pos, e_stackunderflow, e_stackoverflow);
 	ref_stack_set_max_count(pos, MAX_OSTACK);
+	stk.value.refs += REFS_SIZE_OSTACK;
     }
 
     {
-	ref_stack *pes = pcst->estack =
-	gs_alloc_struct((gs_memory_t *) smem, ref_stack, &st_ref_stack,
-			"gs_interp_alloc_stacks(estack)");
+	ref_stack_t *pes = &pcst->exec_stack.stack;
 	ref euop;
 
-	stk.value.refs += REFS_SIZE_OSTACK;
 	r_set_size(&stk, REFS_SIZE_ESTACK);
 	make_oper(&euop, 0, estack_underflow);
 	ref_stack_init(pes, &stk, ES_GUARD_UNDER, ES_GUARD_OVER, &euop,
 		       smem);
-	pes->underflow_error = e_ExecStackUnderflow;
-	pes->overflow_error = e_execstackoverflow;
-/**************** E-STACK EXPANSION IS NYI. ****************/
-	pes->allow_expansion = false;
+	ref_stack_set_error_codes(pes, e_ExecStackUnderflow,
+				  e_execstackoverflow);
+	/**************** E-STACK EXPANSION IS NYI. ****************/
+	ref_stack_allow_expansion(pes, false);
 	ref_stack_set_max_count(pes, MAX_ESTACK);
+	stk.value.refs += REFS_SIZE_ESTACK;
     }
 
     {
-	ref_stack *pds = pcst->dstack =
-	gs_alloc_struct((gs_memory_t *) smem, ref_stack, &st_ref_stack,
-			"gs_interp_alloc_stacks(dstack)");
+	ref_stack_t *pds = &pcst->dict_stack.stack;
 
-	stk.value.refs += REFS_SIZE_ESTACK;
 	r_set_size(&stk, REFS_SIZE_DSTACK);
 	ref_stack_init(pds, &stk, 0, 0, NULL, smem);
-	pds->underflow_error = e_dictstackunderflow;
-	pds->overflow_error = e_dictstackoverflow;
+	ref_stack_set_error_codes(pds, e_dictstackunderflow,
+				  e_dictstackoverflow);
 	ref_stack_set_max_count(pds, MAX_DSTACK);
     }
 
@@ -326,17 +369,15 @@ gs_interp_alloc_stacks(gs_ref_memory_t * smem, gs_context_state_t * pcst)
  */
 void
 gs_interp_free_stacks(gs_ref_memory_t * smem, gs_context_state_t * pcst)
-{				/* Free the stacks in inverse order of allocation. */
-    ref_stack_free(pcst->dstack, (gs_memory_t *) smem,
-		   "gs_interp_free_stacks(dstack)");
-    ref_stack_free(pcst->estack, (gs_memory_t *) smem,
-		   "gs_interp_free_stacks(estack)");
-    ref_stack_free(pcst->ostack, (gs_memory_t *) smem,
-		   "gs_interp_free_stacks(ostack)");
+{
+    /* Free the stacks in inverse order of allocation. */
+    ref_stack_release(&pcst->dict_stack.stack);
+    ref_stack_release(&pcst->exec_stack.stack);
+    ref_stack_release(&pcst->op_stack.stack);
 }
 void
-gs_interp_reset(void)
-{				/* Reset the stacks. */
+gs_interp_reset(i_ctx_t *i_ctx_p)
+{   /* Reset the stacks. */
     ref_stack_clear(&o_stack);
     ref_stack_clear(&e_stack);
     esp++;
@@ -347,7 +388,7 @@ gs_interp_reset(void)
 /* Report an e-stack block underflow.  The bottom guard slots of */
 /* e-stack blocks contain a pointer to this procedure. */
 private int
-estack_underflow(os_ptr op)
+estack_underflow(i_ctx_t *i_ctx_p)
 {
     return e_ExecStackUnderflow;
 }
@@ -358,13 +399,14 @@ estack_underflow(os_ptr op)
  * assign it a special type and index.
  */
 void
-gs_interp_make_oper(ref * opref, op_proc_p proc, int idx)
+gs_interp_make_oper(ref * opref, op_proc_t proc, int idx)
 {
-    register int i = num_special_ops;
+    int i;
 
-    while (--i >= 0 && proc != special_ops[i]);
-    if (i >= 0)
-	make_tasv(opref, tx_op + i, a_executable, i + 1, opproc, proc);
+    for (i = num_special_ops; i > 0 && proc != interp_op_defs[i].proc; --i)
+	DO_NOTHING;
+    if (i > 0)
+	make_tasv(opref, tx_op + (i - 1), a_executable, i, opproc, proc);
     else
 	make_tasv(opref, t_operator, a_executable, idx, opproc, proc);
 }
@@ -378,10 +420,12 @@ gs_interp_make_oper(ref * opref, op_proc_p proc, int idx)
  *      is active.)
  * In case of a quit or a fatal error, also store the exit code.
  */
-private int gs_call_interp(P4(ref *, int, int *, ref *));
+private int gs_call_interp(P5(i_ctx_t **, ref *, int, int *, ref *));
 int
-gs_interpret(ref * pref, int user_errors, int *pexit_code, ref * perror_object)
+gs_interpret(i_ctx_t **pi_ctx_p, ref * pref, int user_errors, int *pexit_code,
+	     ref * perror_object)
 {
+    i_ctx_t *i_ctx_p = *pi_ctx_p;
     gs_gc_root_t error_root;
     int code;
 
@@ -389,14 +433,17 @@ gs_interpret(ref * pref, int user_errors, int *pexit_code, ref * perror_object)
 			 (void **)&perror_object, "gs_interpret");
     /* Initialize the error object in case of GC. */
     make_null(perror_object);
-    code = gs_call_interp(pref, user_errors, pexit_code, perror_object);
+    code = gs_call_interp(pi_ctx_p, pref, user_errors, pexit_code,
+			  perror_object);
+    i_ctx_p = *pi_ctx_p;
     gs_unregister_root(imemory_system, &error_root, "gs_interpret");
     /* Avoid a dangling reference to a stack-allocated GC signal. */
-    set_gc_signal(NULL, 0);
+    set_gc_signal(i_ctx_p, NULL, 0);
     return code;
 }
 private int
-gs_call_interp(ref * pref, int user_errors, int *pexit_code, ref * perror_object)
+gs_call_interp(i_ctx_t **pi_ctx_p, ref * pref, int user_errors,
+	       int *pexit_code, ref * perror_object)
 {
     ref *epref = pref;
     ref doref;
@@ -405,10 +452,12 @@ gs_call_interp(ref * pref, int user_errors, int *pexit_code, ref * perror_object
     int code, ccode;
     ref saref;
     int gc_signal = 0;
+    i_ctx_t *i_ctx_p = *pi_ctx_p;
 
     *pexit_code = 0;
     ialloc_reset_requested(idmemory);
-  again:o_stack.requested = e_stack.requested = d_stack.requested = 0;
+again:
+    o_stack.requested = e_stack.requested = d_stack.requested = 0;
     while (gc_signal) {		/* Some routine below triggered a GC. */
 	gs_gc_root_t epref_root;
 
@@ -418,17 +467,20 @@ gs_call_interp(ref * pref, int user_errors, int *pexit_code, ref * perror_object
 	gs_register_ref_root(imemory_system, &epref_root,
 			     (void **)&epref,
 			     "gs_call_interpret(epref)");
+	idmemory->reclaim_data = i_ctx_p;
 	code = (*idmemory->reclaim) (idmemory, -1);
+	*pi_ctx_p = i_ctx_p = idmemory->reclaim_data;
 	gs_unregister_root(imemory_system, &epref_root,
 			   "gs_call_interpret(epref)");
 	if (code < 0)
 	    return code;
     }
-    code = interp(epref, perror_object);
+    code = interp(pi_ctx_p, epref, perror_object);
+    i_ctx_p = *pi_ctx_p;
     /* Prevent a dangling reference to the GC signal in ticks_left */
     /* in the frame of interp, but be prepared to do a GC if */
     /* an allocation in this routine asks for it. */
-    set_gc_signal(&gc_signal, 1);
+    set_gc_signal(i_ctx_p, &gc_signal, 1);
     if (esp < esbot)		/* popped guard entry */
 	esp = esbot;
     switch (code) {
@@ -452,10 +504,12 @@ gs_call_interp(ref * pref, int user_errors, int *pexit_code, ref * perror_object
 	    goto again;
 	case e_VMreclaim:
 	    /* Do the GC and continue. */
+	    idmemory->reclaim_data = i_ctx_p;
 	    code = (*idmemory->reclaim) (idmemory,
 					 (osp->value.intval == 2 ?
 					  avm_global : avm_local));
-/****** What if code < 0? ******/
+	    /****** What if code < 0? ******/
+	    *pi_ctx_p = i_ctx_p = idmemory->reclaim_data;
 	    make_oper(&doref, 0, zpop);
 	    epref = &doref;
 	    goto again;
@@ -511,7 +565,7 @@ gs_call_interp(ref * pref, int user_errors, int *pexit_code, ref * perror_object
 		long limit = ref_stack_max_count(&e_stack) - 10;
 
 		if (count > limit)
-		    pop_estack(count - limit);
+		    pop_estack(i_ctx_p, count - limit);
 	    }
 	    *++osp = saref;
 	    break;
@@ -543,7 +597,7 @@ gs_call_interp(ref * pref, int user_errors, int *pexit_code, ref * perror_object
     }
     if (user_errors < 0)
 	return code;
-    if (gs_errorname(code, &error_name) < 0)
+    if (gs_errorname(i_ctx_p, code, &error_name) < 0)
 	return code;		/* out-of-range error code! */
     if (dict_find_string(systemdict, "errordict", &perrordict) <= 0 ||
 	dict_find(perrordict, &error_name, &epref) <= 0
@@ -557,20 +611,20 @@ gs_call_interp(ref * pref, int user_errors, int *pexit_code, ref * perror_object
     goto again;
 }
 private int
-interp_exit(os_ptr op)
+interp_exit(i_ctx_t *i_ctx_p)
 {
     return e_InterpreterExit;
 }
 
 /* Set the GC signal for all VMs. */
 private void
-set_gc_signal(int *psignal, int value)
+set_gc_signal(i_ctx_t *i_ctx_p, int *psignal, int value)
 {
     gs_memory_gc_status_t stat;
     int i;
 
-    for (i = 0; i < countof(idmemory->spaces.indexed); i++) {
-	gs_ref_memory_t *mem = idmemory->spaces.indexed[i];
+    for (i = 0; i < countof(idmemory->spaces_indexed); i++) {
+	gs_ref_memory_t *mem = idmemory->spaces_indexed[i];
 
 	if (mem != 0) {
 	    gs_memory_gc_status(mem, &stat);
@@ -583,7 +637,7 @@ set_gc_signal(int *psignal, int value)
 
 /* Copy the contents of an overflowed stack into a (local) array. */
 private int
-copy_stack(const ref_stack * pstack, ref * arr)
+copy_stack(const ref_stack_t * pstack, ref * arr)
 {
     uint size = ref_stack_count(pstack);
     uint save_space = ialloc_space(idmemory);
@@ -599,7 +653,7 @@ copy_stack(const ref_stack * pstack, ref * arr)
 
 /* Get the name corresponding to an error number. */
 int
-gs_errorname(int code, ref * perror_name)
+gs_errorname(i_ctx_t *i_ctx_p, int code, ref * perror_name)
 {
     ref *perrordict, *pErrorNames;
 
@@ -613,7 +667,7 @@ gs_errorname(int code, ref * perror_name)
 /* Store an error string in $error.errorinfo. */
 /* This routine is here because of the proximity to the error handler. */
 int
-gs_errorinfo_put_string(const char *str)
+gs_errorinfo_put_string(i_ctx_t *i_ctx_p, const char *str)
 {
     ref rstr;
     ref *pderror;
@@ -623,7 +677,7 @@ gs_errorinfo_put_string(const char *str)
 	return code;
     if (dict_find_string(systemdict, "$error", &pderror) <= 0 ||
 	!r_has_type(pderror, t_dictionary) ||
-	dict_put_string(pderror, "errorinfo", &rstr) < 0
+	idict_put_string(pderror, "errorinfo", &rstr) < 0
 	)
 	return_error(e_Fatal);
     return 0;
@@ -634,19 +688,31 @@ gs_errorinfo_put_string(const char *str)
 /* If an error occurs, leave the current object in *perror_object */
 /* and return a (negative) error code. */
 private int
-interp(ref * pref /* object to interpret */ , ref * perror_object)
-{				/*
-				 * Note that iref is declared as a ref *, but it may actually be
-				 * a ref_packed *.
-				 */
-    register const ref *iref = pref;
+interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
+       const ref * pref /* object to interpret */,
+       ref * perror_object)
+{
+    i_ctx_t *i_ctx_p = *pi_ctx_p;
+    /*
+     * Note that iref may actually be either a ref * or a ref_packed *.
+     * Certain DEC compilers assume that a ref * is ref-aligned even if it
+     * is cast to a short *, and generate code on this assumption, leading
+     * to "unaligned access" errors.  For this reason, we declare
+     * iref_packed, and use a macro to cast it to the more aligned type
+     * where necessary (which is almost everywhere it is used).  This may
+     * lead to compiler warnings about "cast increases alignment
+     * requirements", but this is less harmful than expensive traps at run
+     * time.
+     */
+    register const ref_packed *iref_packed = (const ref_packed *)pref;
+#define IREF ((const ref *)iref_packed)
+#define SET_IREF(rp) (iref_packed = (const ref_packed *)(rp))
     register int icount = 0;	/* # of consecutive tokens at iref */
     register os_ptr iosp = osp;	/* private copy of osp */
     register es_ptr iesp = esp;	/* private copy of esp */
     int code;
     ref token;			/* token read from file or string, */
-
-    /* must be declared in this scope */
+				/* must be declared in this scope */
     register const ref *pvalue;
     os_ptr whichp;
 
@@ -691,7 +757,7 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
      * If we exceed the VMThreshold, set ticks_left to -1
      * to alert the interpreter that we need to garbage collect.
      */
-    set_gc_signal(&ticks_left, -100);
+    set_gc_signal(i_ctx_p, &ticks_left, -100);
 
     esfile_clear_cache();
     /*
@@ -699,22 +765,24 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
      * to the top entry on the execution stack: icount is the count
      * of sequential entries remaining AFTER the current one.
      */
-#define add1_short(pref) (const ref *)((const ushort *)(pref) + 1)
-#define add1_either(pref) (r_is_packed(pref) ? add1_short(pref) : (pref) + 1)
+#define IREF_NEXT(ip)\
+  ((const ref_packed *)((const ref *)(ip) + 1))
+#define IREF_NEXT_EITHER(ip)\
+  ( r_is_packed(ip) ? (ip) + 1 : IREF_NEXT(ip) )
 #define store_state(ep)\
-  ( icount > 0 ? (ep->value.const_refs = iref + 1, r_set_size(ep, icount)) : 0 )
+  ( icount > 0 ? (ep->value.const_refs = IREF + 1, r_set_size(ep, icount)) : 0 )
 #define store_state_short(ep)\
-  ( icount > 0 ? (ep->value.const_refs = add1_short(iref), r_set_size(ep, icount)) : 0 )
+  ( icount > 0 ? (ep->value.packed = iref_packed + 1, r_set_size(ep, icount)) : 0 )
 #define store_state_either(ep)\
-  ( icount > 0 ? (ep->value.const_refs = add1_either(iref), r_set_size(ep, icount)) : 0 )
+  ( icount > 0 ? (ep->value.packed = IREF_NEXT_EITHER(iref_packed), r_set_size(ep, icount)) : 0 )
 #define next()\
-  if ( --icount > 0 ) { iref++; goto top; } else goto out
+  if ( --icount > 0 ) { iref_packed = IREF_NEXT(iref_packed); goto top; } else goto out
 #define next_short()\
   if ( --icount <= 0 ) { if ( icount < 0 ) goto up; iesp--; }\
-  iref = add1_short(iref); goto top
+  ++iref_packed; goto top
 #define next_either()\
   if ( --icount <= 0 ) { if ( icount < 0 ) goto up; iesp--; }\
-  iref = add1_either(iref); goto top
+  iref_packed = IREF_NEXT_EITHER(iref_packed); goto top
 
 #if !PACKED_SPECIAL_OPS
 #  undef next_either
@@ -731,14 +799,16 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
     ++iesp;
     ref_assign_inline(iesp, pref);
     goto bot;
-  top:				/*
-				 * This is the top of the interpreter loop.
-				 * iref points to the ref being interpreted.
-				 * Note that this might be an element of a packed array,
-				 * not a real ref: we carefully arranged the first 16 bits of
-				 * a ref and of a packed array element so they could be distinguished
-				 * from each other.  (See ghost.h and packed.h for more detail.)
-				 */
+  top:
+	/*
+	 * This is the top of the interpreter loop.
+	 * iref points to the ref being interpreted.
+	 * Note that this might be an element of a packed array,
+	 * not a real ref: we carefully arranged the first 16 bits of
+	 * a ref and of a packed array element so they could be distinguished
+	 * from each other.  (See ghost.h and packed.h for more detail.)
+	 */
+    INCR(top);
 #ifdef DEBUG
     /* Do a little validation on the top o-stack entry. */
     if (iosp >= osbot &&
@@ -749,28 +819,20 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
     }
     if (gs_debug['I'] ||
 	(gs_debug['i'] &&
-	 (r_is_packed(iref) ?
-	  r_packed_is_name((const ref_packed *)iref) :
-	  r_has_type(iref, t_name)))
+	 (r_is_packed(iref_packed) ?
+	  r_packed_is_name(iref_packed) :
+	  r_has_type(IREF, t_name)))
 	) {
 	void debug_print_ref(P1(const ref *));
 	os_ptr save_osp = osp;	/* avoid side-effects */
 	es_ptr save_esp = esp;
-	int edepth;
-	char depth[10];
 
 	osp = iosp;
 	esp = iesp;
-	edepth = ref_stack_count(&e_stack);
-	sprintf(depth, "%2d", edepth);
-	dputs(depth);
-	for (edepth -= strlen(depth); edepth >= 5; edepth -= 5)
-	    dputc('*');		/* indent */
-	for (; edepth > 0; --edepth)
-	    dputc('.');
-	dlprintf3("0x%lx(%d)<%d>: ",
-		  (ulong) iref, icount, ref_stack_count(&o_stack));
-	debug_print_ref(iref);
+	dlprintf5("d%u,e%u<%u>0x%lx(%d): ",
+		  ref_stack_count(&d_stack), ref_stack_count(&e_stack),
+		  ref_stack_count(&o_stack), (ulong)IREF, icount);
+	debug_print_ref(IREF);
 	if (iosp >= osbot) {
 	    dputs(" // ");
 	    debug_print_ref(iosp);
@@ -794,7 +856,7 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
      * some compilers to use a dispatch rather than a testing loop.
      * What a nuisance!
      */
-    switch (r_type_xe(iref)) {
+    switch (r_type_xe(iref_packed)) {
 	    /* Access errors. */
 #define cases_invalid()\
   case plain(t__invalid): case plain_exec(t__invalid)
@@ -844,21 +906,28 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
 	  cases_lit_3():
 	  cases_lit_4():
 	  cases_lit_5():
+	    INCR(lit);
+	    break;
 	  cases_lit_array():
+	    INCR(lit_array);
 	    break;
 	    /* Special operators. */
 	case plain_exec(tx_op_add):
-	  x_add:if ((code = zop_add(iosp)) < 0)
+x_add:	    INCR(x_add);
+	    if ((code = zop_add(iosp)) < 0)
 		return_with_error_code_op(2);
 	    iosp--;
 	    next_either();
 	case plain_exec(tx_op_def):
-	  x_def:if ((code = zop_def(iosp)) < 0)
+x_def:	    INCR(x_def);
+	    osp = iosp;	/* sync o_stack */
+	    if ((code = zop_def(i_ctx_p)) < 0)
 		return_with_error_code_op(2);
 	    iosp -= 2;
 	    next_either();
 	case plain_exec(tx_op_dup):
-	  x_dup:if (iosp < osbot)
+x_dup:	    INCR(x_dup);
+	    if (iosp < osbot)
 		return_with_error_iref(e_stackunderflow);
 	    if (iosp >= ostop)
 		return_with_stackoverflow_iref();
@@ -866,14 +935,16 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
 	    ref_assign_inline(iosp, iosp - 1);
 	    next_either();
 	case plain_exec(tx_op_exch):
-	  x_exch:if (iosp <= osbot)
+x_exch:	    INCR(x_exch);
+	    if (iosp <= osbot)
 		return_with_error_iref(e_stackunderflow);
 	    ref_assign_inline(&token, iosp);
 	    ref_assign_inline(iosp, iosp - 1);
 	    ref_assign_inline(iosp - 1, &token);
 	    next_either();
 	case plain_exec(tx_op_if):
-	  x_if:if (!r_has_type(iosp - 1, t_boolean))
+x_if:	    INCR(x_if);
+	    if (!r_has_type(iosp - 1, t_boolean))
 		return_with_error_iref((iosp <= osbot ?
 					e_stackunderflow : e_typecheck));
 	    if (!r_is_proc(iosp))
@@ -889,7 +960,8 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
 	    iosp -= 2;
 	    goto ifup;
 	case plain_exec(tx_op_ifelse):
-	  x_ifelse:if (!r_has_type(iosp - 2, t_boolean))
+x_ifelse:   INCR(x_ifelse);
+	    if (!r_has_type(iosp - 2, t_boolean))
 		return_with_error_iref((iosp < osbot + 2 ?
 					e_stackunderflow : e_typecheck));
 	    if (!r_is_proc(iosp - 1))
@@ -905,35 +977,39 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
 	  ifup:if ((icount = r_size(whichp) - 1) <= 0) {
 		if (icount < 0)
 		    goto up;	/* 0-element proc */
-		iref = whichp->value.refs;	/* 1-element proc */
+		SET_IREF(whichp->value.refs);	/* 1-element proc */
 		if (--ticks_left > 0)
 		    goto top;
 	    }
 	    ++iesp;
 	    /* Do a ref_assign, but also set iref. */
 	    iesp->tas = whichp->tas;
-	    iref = iesp->value.refs = whichp->value.refs;
+	    SET_IREF(iesp->value.refs = whichp->value.refs);
 	    if (--ticks_left > 0)
 		goto top;
 	    goto slice;
 	case plain_exec(tx_op_index):
-	  x_index:osp = iosp;	/* zindex references o_stack */
-	    if ((code = zindex(iosp)) < 0)
+x_index:    INCR(x_index);
+	    osp = iosp;	/* zindex references o_stack */
+	    if ((code = zindex(i_ctx_p)) < 0)
 		return_with_error_code_op(1);
 	    next_either();
 	case plain_exec(tx_op_pop):
-	  x_pop:if (iosp < osbot)
+x_pop:	    INCR(x_pop);
+	    if (iosp < osbot)
 		return_with_error_iref(e_stackunderflow);
 	    iosp--;
 	    next_either();
 	case plain_exec(tx_op_roll):
-	  x_roll:osp = iosp;	/* zroll references o_stack */
-	    if ((code = zroll(iosp)) < 0)
+x_roll:	    INCR(x_roll);
+	    osp = iosp;	/* zroll references o_stack */
+	    if ((code = zroll(i_ctx_p)) < 0)
 		return_with_error_code_op(2);
 	    iosp -= 2;
 	    next_either();
 	case plain_exec(tx_op_sub):
-	  x_sub:if ((code = zop_sub(iosp)) < 0)
+x_sub:	    INCR(x_sub);
+	    if ((code = zop_sub(iosp)) < 0)
 		return_with_error_code_op(2);
 	    iosp--;
 	    next_either();
@@ -942,7 +1018,8 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
 	    goto bot;
 	case plain_exec(t_oparray):
 	    /* Replace with the definition and go again. */
-	    pvalue = (const ref *)iref->value.const_refs;
+	    INCR(exec_array);
+	    pvalue = IREF->value.const_refs;
 	  opst:		/* Prepare to call a t_oparray procedure in *pvalue. */
 	    store_state(iesp);
 	  oppr:		/* Record the stack depths in case of failure. */
@@ -961,7 +1038,7 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
 	    if ((icount = r_size(pvalue) - 1) <= 0) {
 		if (icount < 0)
 		    goto up;	/* 0-element proc */
-		iref = pvalue->value.refs;	/* 1-element proc */
+		SET_IREF(pvalue->value.refs);	/* 1-element proc */
 		if (--ticks_left > 0)
 		    goto top;
 	    }
@@ -970,11 +1047,12 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
 	    ++iesp;
 	    /* Do a ref_assign, but also set iref. */
 	    iesp->tas = pvalue->tas;
-	    iref = iesp->value.refs = pvalue->value.refs;
+	    SET_IREF(iesp->value.refs = pvalue->value.refs);
 	    if (--ticks_left > 0)
 		goto top;
 	    goto slice;
 	case plain_exec(t_operator):
+	    INCR(exec_operator);
 	    if (--ticks_left <= 0) {	/* The following doesn't work, */
 		/* and I can't figure out why. */
 /****** goto sst; ******/
@@ -995,7 +1073,7 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
 	    /* Note that each case must set iosp = osp: */
 	    /* this is so we can switch on code without having to */
 	    /* store it and reload it (for dumb compilers). */
-	    switch (code = call_operator(real_opproc(iref), iosp)) {
+	    switch (code = call_operator(real_opproc(IREF), i_ctx_p)) {
 		case 0:	/* normal case */
 		case 1:	/* alternative success case */
 		    iosp = osp;
@@ -1016,22 +1094,33 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
 		case o_reschedule:
 		    store_state(iesp);
 		    goto res;
-		case e_InsertProc:
-		    store_state(iesp);
-		  oeinsert:ref_assign_inline(iesp + 1, iref);
-		    /* esp = iesp + 2; *esp = the procedure */
-		    iesp = esp;
+		case e_RemapColor:
+oe_remap:	    store_state(iesp);
+remap:		    if (iesp + 2 >= estop) {
+			esp = iesp;
+			code = ref_stack_extend(&e_stack, 2);
+			if (code < 0)
+			    return_with_error_iref(code);
+			iesp = esp;
+		    }
+		    packed_get(iref_packed, iesp + 1);
+		    make_oper(iesp + 2, 0,
+			      r_ptr(&istate->remap_color_info,
+				    int_remap_color_info_t)->proc);
+		    iesp += 2;
 		    goto up;
 	    }
 	    iosp = osp;
 	    iesp = esp;
 	    return_with_code_iref();
 	case plain_exec(t_name):
-	    pvalue = iref->value.pname->pvalue;
+	    INCR(exec_name);
+	    pvalue = IREF->value.pname->pvalue;
 	    if (!pv_valid(pvalue)) {
-		uint nidx = names_index(int_nt, iref);
+		uint nidx = names_index(int_nt, IREF);
 		uint htemp;
 
+		INCR(find_name);
 		if ((pvalue = dict_find_name_by_index_inline(nidx, htemp)) == 0)
 		    return_with_error_iref(e_undefined);
 	    }
@@ -1047,6 +1136,7 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
 		  cases_lit_3():
 		  cases_lit_4():
 		  cases_lit_5():
+		      INCR(name_lit);
 		    /* Just push the value */
 		    if (iosp >= ostop)
 			return_with_stackoverflow(pvalue);
@@ -1056,6 +1146,7 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
 		case exec(t_array):
 		case exec(t_mixedarray):
 		case exec(t_shortarray):
+		    INCR(name_proc);
 		    /* This is an executable procedure, execute it. */
 		    goto prst;
 		case plain_exec(tx_op_add):
@@ -1081,9 +1172,11 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
 		case plain_exec(t_null):
 		    goto bot;
 		case plain_exec(t_oparray):
+		    INCR(name_oparray);
 		    pvalue = (const ref *)pvalue->value.const_refs;
 		    goto opst;
 		case plain_exec(t_operator):
+		    INCR(name_operator);
 		    {		/* Shortcut for operators. */
 			/* See above for the logic. */
 			if (--ticks_left <= 0) {	/* The following doesn't work, */
@@ -1092,7 +1185,9 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
 			}
 			esp = iesp;
 			osp = iosp;
-			switch (code = call_operator(real_opproc(pvalue), iosp)) {
+			switch (code = call_operator(real_opproc(pvalue),
+						     i_ctx_p)
+				) {
 			    case 0:	/* normal case */
 			    case 1:	/* alternative success case */
 				iosp = osp;
@@ -1105,9 +1200,8 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
 			    case o_reschedule:
 				store_state(iesp);
 				goto res;
-			    case e_InsertProc:
-				store_state(iesp);
-				goto oeinsert;
+			    case e_RemapColor:
+				goto oe_remap;
 			}
 			iosp = osp;
 			iesp = esp;
@@ -1120,7 +1214,7 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
 		    /* Not a procedure, reinterpret it. */
 		    store_state(iesp);
 		    icount = 0;
-		    iref = pvalue;
+		    SET_IREF(pvalue);
 		    goto top;
 	    }
 	case exec(t_file):
@@ -1128,12 +1222,12 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
 		stream *s;
 		scanner_state sstate;
 
-		check_read_known_file(s, iref, return_with_error_iref);
+		check_read_known_file(s, IREF, return_with_error_iref);
 	      rt:if (iosp >= ostop)	/* check early */
 		    return_with_stackoverflow_iref();
 		osp = iosp;	/* scan_token uses ostack */
 		scanner_state_init(&sstate, false);
-	      again:code = scan_token(s, &token, &sstate);
+	      again:code = scan_token(i_ctx_p, s, &token, &sstate);
 		iosp = osp;	/* ditto */
 		switch (code) {
 		    case 0:	/* read a token */
@@ -1157,8 +1251,8 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
 			if (iesp >= estop)
 			    return_with_error_iref(e_execstackoverflow);
 			esfile_set_cache(++iesp);
-			ref_assign_inline(iesp, iref);
-			iref = &token;
+			ref_assign_inline(iesp, IREF);
+			SET_IREF(&token);
 			icount = 0;
 			goto top;
 		    case scan_EOF:	/* end of file */
@@ -1172,14 +1266,14 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
 			if (iesp >= estop)
 			    return_with_error_iref(e_execstackoverflow);
 			esfile_set_cache(++iesp);
-			ref_assign_inline(iesp, iref);
+			ref_assign_inline(iesp, IREF);
 			pvalue = &token;
 			goto pr;
 		    case scan_Refill:
 			store_state(iesp);
 			/* iref may point into the exec stack; */
 			/* save its referent now. */
-			ref_assign_inline(&token, iref);
+			ref_assign_inline(&token, IREF);
 			/* Push the file on the e-stack */
 			if (iesp >= estop)
 			    return_with_error_iref(e_execstackoverflow);
@@ -1187,7 +1281,8 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
 			ref_assign_inline(iesp, &token);
 			esp = iesp;
 			osp = iosp;
-			code = scan_handle_refill(&token, &sstate, true, true,
+			code = scan_handle_refill(i_ctx_p, &token, &sstate,
+						  true, true,
 						  ztokenexec_continue);
 			iosp = osp;
 			iesp = esp;
@@ -1213,9 +1308,9 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
 		scanner_state sstate;
 
 		scanner_state_init(&sstate, true);
-		sread_string(&ss, iref->value.bytes, r_size(iref));
+		sread_string(&ss, IREF->value.bytes, r_size(IREF));
 		osp = iosp;	/* scan_token uses ostack */
-		code = scan_token(&ss, &token, &sstate);
+		code = scan_token(i_ctx_p, &ss, &token, &sstate);
 		iosp = osp;	/* ditto */
 		switch (code) {
 		    case 0:	/* read a token */
@@ -1230,13 +1325,13 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
 				if (iesp >= estop)
 				    return_with_error_iref(e_execstackoverflow);
 				++iesp;
-				iesp->tas.type_attrs = iref->tas.type_attrs;
+				iesp->tas.type_attrs = IREF->tas.type_attrs;
 				iesp->value.const_bytes = sbufptr(&ss);
 				r_set_size(iesp, size);
 			    }
 			}
 			if (code == 0) {
-			    iref = &token;
+			    SET_IREF(&token);
 			    icount = 0;
 			    goto top;
 			}
@@ -1257,9 +1352,10 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
 	    {
 		uint index;
 
-		switch (*(const ushort *)iref >> r_packed_type_shift) {
+		switch (*iref_packed >> r_packed_type_shift) {
 		    case pt_full_ref:
 		    case pt_full_ref + 1:
+			INCR(p_full);
 			if (iosp >= ostop)
 			    return_with_stackoverflow_iref();
 			/* We know this can't be an executable object */
@@ -1267,15 +1363,16 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
 			++iosp;
 			/* We know that refs are properly aligned: */
 			/* see packed.h for details. */
-			ref_assign_inline(iosp, iref);
+			ref_assign_inline(iosp, IREF);
 			next();
 		    case pt_executable_operator:
-			index = *(const ushort *)iref & packed_value_mask;
+			index = *iref_packed & packed_value_mask;
 			if (--ticks_left <= 0) {	/* The following doesn't work, */
 			    /* and I can't figure out why. */
 /****** goto sst_short; ******/
 			}
 			if (!op_index_is_operator(index)) {
+			    INCR(p_exec_oparray);
 			    store_state_short(iesp);
 			    /* Call the operator procedure. */
 			    index -= op_def_count;
@@ -1287,6 +1384,7 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
 			    (index - r_size(&op_array_table_global.table)));
 			    goto oppr;
 			}
+			INCR(p_exec_operator);
 			/* See the main plain_exec(t_operator) case */
 			/* for details of what happens here. */
 #if PACKED_SPECIAL_OPS
@@ -1316,9 +1414,10 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
 			}
 #  undef case_xop
 #endif
+			INCR(p_exec_non_x_operator);
 			esp = iesp;
 			osp = iosp;
-			switch (code = call_operator(op_index_proc(index), iosp)) {
+			switch (code = call_operator(op_index_proc(index), i_ctx_p)) {
 			    case 0:
 			    case 1:
 				iosp = osp;
@@ -1336,27 +1435,26 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
 			    case o_reschedule:
 				store_state_short(iesp);
 				goto res;
-			    case e_InsertProc:
+			    case e_RemapColor:
 				store_state_short(iesp);
-				packed_get((const ref_packed *)iref, iesp + 1);
-				/* esp = iesp + 2; *esp = the procedure */
-				iesp = esp;
-				goto up;
+				goto remap;
 			}
 			iosp = osp;
 			iesp = esp;
 			return_with_code_iref();
 		    case pt_integer:
+			INCR(p_integer);
 			if (iosp >= ostop)
 			    return_with_stackoverflow_iref();
 			++iosp;
 			make_int(iosp,
-				 (*(const short *)iref & packed_int_mask) +
+				 ((int)*iref_packed & packed_int_mask) +
 				 packed_min_intval);
 			next_short();
 		    case pt_literal_name:
+			INCR(p_lit_name);
 			{
-			    uint nidx = *(const ushort *)iref & packed_value_mask;
+			    uint nidx = *iref_packed & packed_value_mask;
 
 			    if (iosp >= ostop)
 				return_with_stackoverflow_iref();
@@ -1365,20 +1463,22 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
 			    next_short();
 			}
 		    case pt_executable_name:
+			INCR(p_exec_name);
 			{
-			    uint nidx =
-			    (uint) * (const ushort *)iref & packed_value_mask;
+			    uint nidx = *iref_packed & packed_value_mask;
 
 			    pvalue = name_index_ptr_inline(int_nt, nidx)->pvalue;
 			    if (!pv_valid(pvalue)) {
 				uint htemp;
 
+				INCR(p_find_name);
 				if ((pvalue = dict_find_name_by_index_inline(nidx, htemp)) == 0) {
 				    names_index_ref(int_nt, nidx, &token);
 				    return_with_error(e_undefined, &token);
 				}
 			    }
 			    if (r_has_masked_attrs(pvalue, a_execute, a_execute + a_executable)) {	/* Literal, push it. */
+				INCR(p_name_lit);
 				if (iosp >= ostop)
 				    return_with_stackoverflow_iref();
 				++iosp;
@@ -1387,13 +1487,14 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
 			    }
 			    if (r_is_proc(pvalue)) {	/* This is an executable procedure, */
 				/* execute it. */
+				INCR(p_name_proc);
 				store_state_short(iesp);
 				goto pr;
 			    }
 			    /* Not a literal or procedure, reinterpret it. */
 			    store_state_short(iesp);
 			    icount = 0;
-			    iref = pvalue;
+			    SET_IREF(pvalue);
 			    goto top;
 			}
 			/* default can't happen here */
@@ -1404,24 +1505,25 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
     if (iosp >= ostop)
 	return_with_stackoverflow_iref();
     ++iosp;
-    ref_assign_inline(iosp, iref);
+    ref_assign_inline(iosp, IREF);
   bot:next();
   out:				/* At most 1 more token in the current procedure. */
     /* (We already decremented icount.) */
-    if (!icount) {		/* Pop the execution stack for tail recursion. */
+    if (!icount) {
+	/* Pop the execution stack for tail recursion. */
 	iesp--;
-	iref++;
+	iref_packed = IREF_NEXT(iref_packed);
 	goto top;
     }
   up:if (--ticks_left < 0)
 	goto slice;
     /* See if there is anything left on the execution stack. */
     if (!r_is_proc(iesp)) {
-	iref = iesp--;
+	SET_IREF(iesp--);
 	icount = 0;
 	goto top;
     }
-    iref = iesp->value.refs;	/* next element of array */
+    SET_IREF(iesp->value.refs);	/* next element of array */
     icount = r_size(iesp) - 1;
     if (icount <= 0) {		/* <= 1 more elements */
 	iesp--;			/* pop, or tail recursion */
@@ -1429,9 +1531,12 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
 	    goto up;
     }
     goto top;
-  res:				/* Some operator has asked for context rescheduling. */
+res:
+    /* Some operator has asked for context rescheduling. */
     /* We've done a store_state. */
-    code = (*gs_interp_reschedule_proc) ();
+    *pi_ctx_p = i_ctx_p;
+    code = (*gs_interp_reschedule_proc)(pi_ctx_p);
+    i_ctx_p = *pi_ctx_p;
   sched:			/* We've just called a scheduling procedure. */
     /* The interpreter state is in memory; iref is not current. */
     if (code < 0) {
@@ -1442,7 +1547,7 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
 	 * *perror_object.)
 	 */
 	make_null_proc(&ierror.full);
-	ierror.obj = iref = &ierror.full;
+	SET_IREF(ierror.obj = &ierror.full);
 	goto error_exit;
     }
     /* Reload state information from memory. */
@@ -1463,9 +1568,14 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
     esp = iesp;
     /* If ticks_left <= -100, we need to GC now. */
     if (ticks_left <= -100) {	/* We need to garbage collect now. */
+	idmemory->reclaim_data = i_ctx_p;
 	code = (*idmemory->reclaim) (idmemory, -1);
-    } else
-	code = (*gs_interp_time_slice_proc) ();
+	*pi_ctx_p = i_ctx_p = idmemory->reclaim_data;
+    } else {
+	*pi_ctx_p = i_ctx_p;
+	code = (*gs_interp_time_slice_proc)(pi_ctx_p);
+	i_ctx_p = *pi_ctx_p;
+    }
     ticks_left = gs_interp_time_slice_ticks;
     goto sched;
 
@@ -1474,19 +1584,19 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
   rweci:
     ierror.code = code;
   rwei:
-    ierror.obj = iref;
+    ierror.obj = IREF;
   rwe:
-    if (!r_is_packed(iref))
+    if (!r_is_packed(iref_packed))
 	store_state(iesp);
-    else {			/*
-				 * We need a real object to return as the error object.
-				 * (It only has to last long enough to store in
-				 * *perror_object.)
-				 */
+    else {
+	/*
+	 * We need a real object to return as the error object.
+	 * (It only has to last long enough to store in *perror_object.)
+	 */
 	packed_get((const ref_packed *)ierror.obj, &ierror.full);
 	store_state_short(iesp);
-	if (iref == ierror.obj)
-	    iref = &ierror.full;
+	if (IREF == ierror.obj)
+	    SET_IREF(&ierror.full);
 	ierror.obj = &ierror.full;
     }
   error_exit:
@@ -1499,19 +1609,18 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
 	    code = e_execstackoverflow;
 	else {
 	    iesp++;
-	    ref_assign_inline(iesp, iref);
+	    ref_assign_inline(iesp, IREF);
 	}
     }
     esp = iesp;
     osp = iosp;
     ref_assign_inline(perror_object, ierror.obj);
     return gs_log_error(ierror.code, __FILE__, ierror.line);
-
 }
 
 /* Pop the bookkeeping information for a normal exit from a t_oparray. */
 private int
-oparray_pop(os_ptr op)
+oparray_pop(i_ctx_t *i_ctx_p)
 {
     esp -= 3;
     return o_pop_estack;
@@ -1520,7 +1629,7 @@ oparray_pop(os_ptr op)
 /* Restore the stack pointers after an error inside a t_oparray procedure. */
 /* This procedure is called only from pop_estack. */
 private int
-oparray_cleanup(os_ptr op)
+oparray_cleanup(i_ctx_t *i_ctx_p)
 {				/* esp points just below the cleanup procedure. */
     es_ptr ep = esp;
     uint ocount_old = (uint) ep[2].value.intval;
@@ -1536,13 +1645,3 @@ oparray_cleanup(os_ptr op)
     }
     return 0;
 }
-
-/* ------ Initialization procedure ------ */
-
-const op_def interp_op_defs[] =
-{
-    /* Internal operators */
-    {"0%interp_exit", interp_exit},
-    {"0%oparray_pop", oparray_pop},
-    op_def_end(0)
-};

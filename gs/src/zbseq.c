@@ -1,4 +1,4 @@
-/* Copyright (C) 1990, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1990, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -25,21 +25,13 @@
 #include "btoken.h"
 #include "store.h"
 
-/* Current binary format (in iscan.c) */
-extern ref ref_binary_object_format;
-
 /* System and user name arrays. */
 ref binary_token_names;		/* array of size 2 */
 private ref *const binary_token_names_p = &binary_token_names;
 
-/* Import the Level 2 scanner extensions. */
-typedef struct scanner_state_s scanner_state;
-extern int scan_binary_token(P3(stream *, ref *, scanner_state *));
-extern int (*scan_btoken_proc) (P3(stream *, ref *, scanner_state *));
-
 /* Initialize the binary token machinery. */
-private void
-zbseq_init(void)
+private int
+zbseq_init(i_ctx_t *i_ctx_p)
 {
     /* Initialize fake system and user name tables. */
     /* PostScript code will install the real system name table. */
@@ -47,17 +39,16 @@ zbseq_init(void)
 		     "binary token names");
     make_empty_array(system_names_p, a_readonly);
     make_empty_array(user_names_p, a_all);
-    gs_register_ref_root(imemory, NULL, (void **)&binary_token_names_p,
-			 "binary token names");
-
-    /* Set up Level 2 scanning constants. */
-    scan_btoken_proc = scan_binary_token;
+    return gs_register_ref_root(imemory, NULL, (void **)&binary_token_names_p,
+				"binary token names");
 }
 
 /* <names> .installsystemnames - */
 private int
-zinstallsystemnames(register os_ptr op)
+zinstallsystemnames(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     if (r_space(op) != avm_global)
 	return_error(e_invalidaccess);
     check_read_type(*op, t_shortarray);
@@ -68,8 +59,10 @@ zinstallsystemnames(register os_ptr op)
 
 /* - currentobjectformat <int> */
 private int
-zcurrentobjectformat(register os_ptr op)
+zcurrentobjectformat(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(1);
     *op = ref_binary_object_format;
     return 0;
@@ -77,12 +70,16 @@ zcurrentobjectformat(register os_ptr op)
 
 /* <int> setobjectformat - */
 private int
-zsetobjectformat(register os_ptr op)
+zsetobjectformat(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+    ref cont;
+
     check_type(*op, t_integer);
     if (op->value.intval < 0 || op->value.intval > 4)
 	return_error(e_rangecheck);
-    ref_assign_old(NULL, &ref_binary_object_format, op, "setobjectformat");
+    make_struct(&cont, avm_local, ref_binary_object_format_container);
+    ref_assign_old(&cont, &ref_binary_object_format, op, "setobjectformat");
     pop(1);
     return 0;
 }
@@ -98,8 +95,9 @@ zsetobjectformat(register os_ptr op)
  */
 
 private int
-zbosobject(os_ptr op)
+zbosobject(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code;
 
     check_type(op[-3], t_integer);
@@ -107,7 +105,7 @@ zbosobject(os_ptr op)
     check_write_type(*op, t_string);
     if (r_size(op) < 8)
 	return_error(e_rangecheck);
-    code = encode_binary_token(op - 1, &op[-3].value.intval,
+    code = encode_binary_token(i_ctx_p, op - 1, &op[-3].value.intval,
 			       &op[-2].value.intval, op->value.bytes);
     if (code < 0)
 	return code;

@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -144,7 +144,7 @@ gx_concrete_space_CIE(const gs_color_space * pcs, const gs_imager_state * pis)
 /* We go through an extra level of procedure so that */
 /* interpreters can substitute their own installer. */
 private int
-gx_install_CIE(gs_color_space * pcs, gs_state * pgs)
+gx_install_CIE(const gs_color_space * pcs, gs_state * pgs)
 {
     return (*pcs->params.a->common.install_cspace) (pcs, pgs);
 }

@@ -1,4 +1,4 @@
-#    Copyright (C) 1991, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1991, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -30,7 +30,7 @@
 #	PLATFORM, MAKEFILE, AK, CC*, DEBUG, NOPRIVATE, CP_, RM_, RMN_
 #   Configuration, internal, specific to DOS/Windows:
 #	TDEBUG, USE_ASM, ASM,
-#	COMPDIR, INCDIR, LIBPATHS,
+#	COMPDIR, LIBPATHS,
 #	CPU_TYPE, FPU_TYPE
 
 # We want Unix-compatible behavior.  This is part of it.
@@ -42,6 +42,7 @@
 .EXTENSIONS: .be .z
 
 # Define the ANSI-to-K&R dependency.  Watcom C accepts ANSI syntax.
+
 AK=
 
 # Note that built-in libpng and zlib aren't available.
@@ -52,50 +53,44 @@ SHARE_ZLIB=0
 
 # Define the extensions for command, object, and executable files.
 
+NULL=
+
 CMD=.bat
+D_=-D
+# Watcom C requires quoting parameter values with a - in them!
+_D_=$(NULL)="
+_D="
 I_=-i=
 II=-i=
 _I=
+NO_OP=%null
 O_=-fo=
 OBJ=obj
 XE=.exe
 XEAUX=.exe
 
-# Define the syntax for compile command line defines
-# such as defining XYZZY to 0-1: 	 $(D_)XYZZY$(_D_)0-1$(_D)
-D_=-D
-_D_=$(NULL)="
-_D="
-
-# Define the current directory prefix and shell invocations.
+# Define the executable and shell invocations.
 
 D=\\
 
-EXPP=dos4gw
+EXP=
 SH=
-# The following is needed to work around a problem in wmake.
-SHP=command /c
 
 # Define generic commands.
 
 CP_=call $(GLSRCDIR)\cp.bat
-RM_=erase
+RM_=call $(GLSRCDIR)\rm.bat
 RMN_=call $(GLSRCDIR)\rm.bat
 
 # Define the arguments for genconf.
 
+# wmake interprets & as calling for background execution, and ^ fails on
+# Windows NT.
 CONFILES=-e ~ -p FILE~s~ps
 CONFLDTR=-ol
 
 # Define the names of the Watcom C files.
 # See the comments in watc.mak and watcwin.mak regarding WCVERSION.
-
-# Set some reasonable defaults
-COMP=$(%WATCOM)\bin\wcc386p
-LINK=$(%WATCOM)\bin\wlinkp
-STUB=$(%WATCOM)\binb\wstub.exe
-WRC=$(%WATCOM)\binb\rc.exe
-WAT32=0
 
 !ifeq WCVERSION 11.0
 # 11.0 is currently the same as 10.5.
@@ -103,39 +98,55 @@ COMP=$(%WATCOM)\binw\wcc386
 LINK=$(%WATCOM)\binw\wlink
 STUB=$(%WATCOM)\binw\wstub.exe
 WRC=$(%WATCOM)\binw\wrc.exe
-!endif	# version 11.0
+!endif
 
 !ifeq WCVERSION 10.5
 COMP=$(%WATCOM)\binw\wcc386
 LINK=$(%WATCOM)\binw\wlink
 STUB=$(%WATCOM)\binw\wstub.exe
 WRC=$(%WATCOM)\binw\wrc.exe
-!endif	# version 10.5
+!endif
 
 !ifeq WCVERSION 10.0
 COMP=$(%WATCOM)\binb\wcc386
 LINK=$(%WATCOM)\bin\wlink
 STUB=$(%WATCOM)\binb\wstub.exe
 WRC=$(%WATCOM)\binb\wrc.exe
-!endif	# version 10.0
+!endif
 
 !ifeq WCVERSION 9.5
 COMP=$(%WATCOM)\bin\wcc386
 LINK=$(%WATCOM)\bin\wlinkp
 STUB=$(%WATCOM)\binb\wstub.exe
 WRC=$(%WATCOM)\binb\wrc.exe
-!endif	# version 9.5
+!endif
 
-# 	95/NT Watcom compiler versions
+# 95/NT Watcom compiler versions
+# 10.695 is 10.6 under Windows 95 or NT (32 bit hosted tools)
 !ifeq WCVERSION 10.695
 COMP=$(%WATCOM)\binnt\wcc386
 LINK=$(%WATCOM)\binnt\wlink
 STUB=$(%WATCOM)\binw\wstub.exe
 WRC=$(%WATCOM)\binnt\wrc.exe
 WAT32=1
-!endif	# 10.6 under Windows 95 or NT (32 bit hosted tools)
+!endif
 
-INCDIR=$(%WATCOM)\h -i=$(%WATCOM)\h\nt
+# Defaults
+!ifndef COMP
+COMP=$(%WATCOM)\bin\wcc386p
+LINK=$(%WATCOM)\bin\wlinkp
+STUB=$(%WATCOM)\binb\wstub.exe
+WRC=$(%WATCOM)\binb\rc.exe
+!endif
+!ifndef WAT32
+WAT32=0
+!endif
+
+!ifeq WAT32 0
+INCDIRS=$(%WATCOM)\h
+!else
+INCDIRS=$(%WATCOM)\h;$(%WATCOM)\h\nt
+!endif
 WBIND=$(%WATCOM)\binb\wbind.exe
 
 # Define the generic compilation flags.
@@ -177,22 +188,27 @@ PCFBASM=
 # Make sure we get the right default target for make.
 
 dosdefault: default
-	%null
+	$(NO_OP)
 
 # Define the compilation flags.
 
+# Privacy
 !ifneq NOPRIVATE 0
 CP=-dNOPRIVATE
 !else
 CP=
 !endif
 
+# Run-time debugging and stack checking
 !ifneq DEBUG 0
 CD=-dDEBUG
+CS=
 !else
 CD=
+CS=-oeilnt -s
 !endif
 
+# Debugger symbols
 !ifneq TDEBUG 0
 CT=-d2
 LCT=DEBUG ALL
@@ -201,18 +217,13 @@ CT=-d1
 LCT=DEBUG LINES
 !endif
 
-!ifneq DEBUG 0
-CS=
-!else
-CS=-s
-!endif
-
 GENOPT=$(CP) $(CD) $(CT) $(CS)
 
-CCFLAGS=$(GENOPT) $(PLATOPT) $(FPFLAGS) $(CFLAGS) $(XCFLAGS)
-CC=$(COMP) -oi -i=$(INCDIR) $(CCFLAGS) -zq -zp8
-CCAUX=$(COMP) -oi -i=$(INCDIR) $(FPFLAGS) -zq -zp8
+CCOPT=-i=$(INCDIRS) -zq -zp8
+CCFLAGS=$(CCOPT) $(GENOPT) $(PLATOPT) $(FPFLAGS) $(CFLAGS) $(XCFLAGS)
+CC=$(COMP) -oi $(CCFLAGS)
+CCAUX=$(COMP) -oi $(CCOPT) $(FPFLAGS)
 CC_=$(CC)
 CC_D=$(CC)
-CC_INT=$(COMP) -oit -i=$(INCDIR) $(CCFLAGS)
+CC_INT=$(COMP) -oit $(CCFLAGS)
 CC_LEAF=$(CC_) -s

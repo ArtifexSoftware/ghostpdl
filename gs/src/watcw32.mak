@@ -1,4 +1,4 @@
-#    Copyright (C) 1991-1998 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1991-1999 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -39,7 +39,7 @@ GS_DOCDIR=c:/gs
 # initialization and font files.  Separate multiple directories with \;.
 # Use / to indicate directories, not a single \.
 
-GS_LIB_DEFAULT=.;c:/gs\;c:/gs/fonts
+GS_LIB_DEFAULT=.;c:/gs/lib\;c:/gs/fonts
 
 # Define whether or not searching for initialization files should always
 # look in the current directory first.  This leads to well-known security
@@ -85,15 +85,18 @@ GSDLL=gsdll32
 
 MAKEDLL=1
 
-# Define the source, generated intermediate file, and object directories
+# Define the directory for the final executable, and the
+# source, generated intermediate file, and object directories
 # for the graphics library (GL) and the PostScript/PDF interpreter (PS).
 
-GLSRCDIR=.
-GLGENDIR=.
-GLOBJDIR=.
-PSSRCDIR=.
-PSGENDIR=.
-PSOBJDIR=.
+BINDIR=.\bin
+GLSRCDIR=.\src
+GLGENDIR=.\obj
+GLOBJDIR=.\obj
+PSSRCDIR=.\src
+PSLIBDIR=.\lib
+PSGENDIR=.\obj
+PSOBJDIR=.\obj
 
 # Define the directory where the IJG JPEG library sources are stored,
 # and the major version of the library that is stored there.
@@ -109,16 +112,12 @@ JVERSION=6
 # See libpng.mak for more information.
 
 PSRCDIR=libpng
-PVERSION=96
+PVERSION=10002
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
 
 ZSRCDIR=zlib
-
-# Define the configuration ID.  Read gs.mak carefully before changing this.
-
-CONFIG=
 
 # Define any other compilation flags.
 
@@ -169,11 +168,17 @@ CPU_TYPE=486
 
 FPU_TYPE=0
 
+# Define the .dev module that implements thread and synchronization
+# primitives for this platform.  Don't change this unless you really know
+# what you're doing.
+
+SYNC=winsync
+
 # ------ Devices and features ------ #
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
-FEATURE_DEVS=psl3.dev pdf.dev ttfont.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
@@ -201,8 +206,8 @@ FILE_IMPLEMENTATION=stdio
 
 DEVICE_DEVS=mswindll.dev mswinprn.dev mswinpr2.dev
 DEVICE_DEVS2=epson.dev eps9high.dev eps9mid.dev epsonc.dev ibmpro.dev
-DEVICE_DEVS3=deskjet.dev djet500.dev laserjet.dev ljetplus.dev ljet2p.dev ljet3.dev ljet4.dev
-DEVICE_DEVS4=cdeskjet.dev cdjcolor.dev cdjmono.dev cdj550.dev pj.dev pjxl.dev pjxl300.dev
+DEVICE_DEVS3=deskjet.dev djet500.dev laserjet.dev ljetplus.dev ljet2p.dev
+DEVICE_DEVS4=cdeskjet.dev cdjcolor.dev cdjmono.dev cdj550.dev
 DEVICE_DEVS5=djet500c.dev declj250.dev lj250.dev jetp3852.dev r4081.dev lbp8.dev uniprint.dev
 DEVICE_DEVS6=st800.dev stcolor.dev bj10e.dev bj200.dev m8510.dev necp6.dev bjc600.dev bjc800.dev
 DEVICE_DEVS7=t4693d2.dev t4693d4.dev t4693d8.dev tek4696.dev
@@ -214,22 +219,26 @@ DEVICE_DEVS12=psmono.dev bit.dev bitrgb.dev bitcmyk.dev
 DEVICE_DEVS13=pngmono.dev pnggray.dev png16.dev png256.dev png16m.dev
 DEVICE_DEVS14=jpeg.dev jpeggray.dev
 DEVICE_DEVS15=pdfwrite.dev pswrite.dev epswrite.dev pxlmono.dev pxlcolor.dev
+# Overflow for DEVS3,4,5,6,9
+DEVICE_DEVS16=ljet3.dev ljet3d.dev ljet4.dev ljet4d.dev
+DEVICE_DEVS17=pj.dev pjxl.dev pjxl300.dev
+DEVICE_DEVS18=
+DEVICE_DEVS19=
+DEVICE_DEVS20=
 
 # ---------------------------- End of options ---------------------------- #
 
 # Define the name of the makefile -- used in dependencies.
 
-# The use of multiple file names here is garbage!
-MAKEFILE=$(GLSRCDIR)\watcw32.mak winlib.mak winint.mak
+MAKEFILE=$(GLSRCDIR)\watcw32.mak
+TOP_MAKEFILES=$(MAKEFILE) $(GLSRCDIR)\winlib.mak $(GLSRCDIR)\winint.mak
 
-# Define the current directory prefix and shell invocations.
+# Define the executable and shell invocations.
 
 D=\\
 
-EXPP=
+EXP=
 SH=
-# The following is needed to work around a problem in wmake
-SHP=command /c
 
 # Define the arguments for genconf.
 
@@ -352,7 +361,7 @@ BEGINFILES2=gsdll32.rex gswin32.rex gswin32c.rex
 
 # -------------------------- Auxiliary programs --------------------------- #
 
-$(GLGENDIR)\ccf32.tr: $(MAKEFILE) makefile
+$(GLGENDIR)\ccf32.tr: $(TOP_MAKEFILES)
 	echo $(GENOPT) -I$(INCDIR) -DCHECK_INTERRUPTS -D_Windows -D__WIN32__ -D_WATCOM_ > $(GLGENDIR)\ccf32.tr
 
 # -------------------------------- Library -------------------------------- #
@@ -365,7 +374,7 @@ $(GLGENDIR)\ccf32.tr: $(MAKEFILE) makefile
 LIBCTR=
 
 #rjl
-#$(LIBCTR): $(MAKEFILE) $(ECHOGS_XE)
+#$(LIBCTR): $(TOP_MAKEFILES) $(ECHOGS_XE)
 #        echogs -w $(LIBCTR) $(LIBDIR)\shell32.lib
 #        echogs -a $(LIBCTR) $(LIBDIR)\comdlg32.lib
 

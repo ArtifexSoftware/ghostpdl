@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1991, 1992, 1994 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1991, 1992, 1994, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -27,8 +27,10 @@
 
 /* <obj> pop - */
 int
-zpop(register os_ptr op)
+zpop(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     check_op(1);
     pop(1);
     return 0;
@@ -36,8 +38,9 @@ zpop(register os_ptr op)
 
 /* <obj1> <obj2> exch <obj2> <obj1> */
 int
-zexch(register os_ptr op)
+zexch(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     ref next;
 
     check_op(2);
@@ -49,8 +52,10 @@ zexch(register os_ptr op)
 
 /* <obj> dup <obj> <obj> */
 int
-zdup(register os_ptr op)
+zdup(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     check_op(1);
     push(1);
     ref_assign_inline(op, op - 1);
@@ -59,8 +64,9 @@ zdup(register os_ptr op)
 
 /* <obj_n> ... <obj_0> <n> index <obj_n> ... <obj_0> <obj_n> */
 int
-zindex(register os_ptr op)
+zindex(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     register os_ptr opn;
 
     check_type(*op, t_integer);
@@ -84,8 +90,9 @@ zindex(register os_ptr op)
 /* <obj_n-1> ... <obj_0> <n> <i> roll */
 /*      <obj_(i-1)_mod_ n> ... <obj_0> <obj_n-1> ... <obj_i_mod_n> */
 int
-zroll(register os_ptr op)
+zroll(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     os_ptr op1 = op - 1;
     int count, mod;
     register os_ptr from, to;
@@ -221,7 +228,7 @@ zroll(register os_ptr op)
 /* The function name is changed, because the IRIS library has */
 /* a function called zclear. */
 private int
-zclear_stack(os_ptr op)
+zclear_stack(i_ctx_t *i_ctx_p)
 {
     ref_stack_clear(&o_stack);
     return 0;
@@ -229,8 +236,10 @@ zclear_stack(os_ptr op)
 
 /* |- <obj_n-1> ... <obj_0> count <obj_n-1> ... <obj_0> <n> */
 private int
-zcount(register os_ptr op)
+zcount(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(1);
     make_int(op, ref_stack_count(&o_stack) - 1);
     return 0;
@@ -238,8 +247,10 @@ zcount(register os_ptr op)
 
 /* - mark <mark> */
 private int
-zmark(register os_ptr op)
+zmark(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(1);
     make_mark(op);
     return 0;
@@ -247,7 +258,7 @@ zmark(register os_ptr op)
 
 /* <mark> ... cleartomark */
 int
-zcleartomark(register os_ptr op)
+zcleartomark(i_ctx_t *i_ctx_p)
 {
     uint count = ref_stack_counttomark(&o_stack);
 
@@ -260,8 +271,9 @@ zcleartomark(register os_ptr op)
 /* <mark> <obj_n-1> ... <obj_0> counttomark */
 /*      <mark> <obj_n-1> ... <obj_0> <n> */
 private int
-zcounttomark(os_ptr op)
+zcounttomark(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     uint count = ref_stack_counttomark(&o_stack);
 
     if (count == 0)

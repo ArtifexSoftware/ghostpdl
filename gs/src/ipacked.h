@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1992, 1993, 1994 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 1992, 1993, 1994, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -126,5 +126,11 @@ typedef enum {
 /* Advance to the next element in a packed array. */
 #define packed_next(prp)\
   (r_is_packed(prp) ? prp + 1 : prp + packed_per_ref)
+
+/* Define the current array packing flag (setpacking/currentpacking) */
+/* for operators. */
+/* This is a ref so that it can be managed properly by save/restore. */
+#define ref_array_packing_container i_ctx_p
+#define ref_array_packing (ref_array_packing_container->array_packing)
 
 #endif /* ipacked_INCLUDED */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -22,6 +22,7 @@
 #ifndef gsiparam_INCLUDED
 #  define gsiparam_INCLUDED
 
+#include "gsccolor.h"		/* for GS_CLIENT_COLOR_MAX_COMPONENTS */
 #include "gsmatrix.h"
 
 /* ---------------- Image parameters ---------------- */
@@ -61,11 +62,13 @@ typedef struct gs_image_common_s {
     "gs_image_common_t")
 
 /*
- * Define the maximum number of components in image data.  When we
- * support DeviceN color spaces, we will have to rethink this.
- * 5 is either CMYK + alpha or mask + CMYK.
+ * Define the maximum number of components in image data.
+ * The +1 is for either color + alpha or mask + color.
  */
-#define gs_image_max_components 5
+#define GS_IMAGE_MAX_COLOR_COMPONENTS GS_CLIENT_COLOR_MAX_COMPONENTS
+#define GS_IMAGE_MAX_COMPONENTS (GS_IMAGE_MAX_COLOR_COMPONENTS + 1)
+/* Backward compatibility */
+#define gs_image_max_components GS_IMAGE_MAX_COMPONENTS
 
 /*
  * Define the maximum number of planes in image data.  Since we support
@@ -74,7 +77,9 @@ typedef struct gs_image_common_s {
  * (currently 8 for multi-component bit-planar images, but could be 16
  * someday; 32 or maybe 64 for DevicePixel images).
  */
-#define gs_image_max_planes (gs_image_max_components * 8)
+#define GS_IMAGE_MAX_PLANES (GS_IMAGE_MAX_COMPONENTS * 8)
+/* Backward compatibility */
+#define gs_image_max_planes GS_IMAGE_MAX_PLANES
 
 /*
  * Define the structure for defining data common to ImageType 1 images,
@@ -111,7 +116,7 @@ typedef struct gs_image_common_s {
 		 * For masks, only the first two entries are used;\
 		 * they must be 1,0 for write-0s masks, 0,1 for write-1s.\
 		 */\
-	float Decode[gs_image_max_components * 2];\
+	float Decode[GS_IMAGE_MAX_COMPONENTS * 2];\
 		/*\
 		 * Define whether to smooth the image.\
 		 */\
@@ -256,9 +261,21 @@ void
  * adjust, and Alpha, and the image type.  For masks, write_1s = false
  * paints 0s, write_1s = true paints 1s.  This is consistent with the
  * "polarity" operand of the PostScript imagemask operator.
+ *
+ * init and init_mask initialize adjust to true.  This is a bad decision
+ * which unfortunately we can't undo without breaking backward
+ * compatibility.  That is why we added init_adjust and init_mask_adjust.
+ * Note that for init and init_adjust, adjust is only relevant if
+ * pim->ImageMask is true.
  */
-void gs_image_t_init(P2(gs_image_t * pim, const gs_color_space * pcs));
-void gs_image_t_init_mask(P2(gs_image_t * pim, bool write_1s));
+void gs_image_t_init_adjust(P3(gs_image_t * pim, const gs_color_space * pcs,
+			       bool adjust));
+#define gs_image_t_init(pim, pcs)\
+  gs_image_t_init_adjust(pim, pcs, true)
+void gs_image_t_init_mask_adjust(P3(gs_image_t * pim, bool write_1s,
+				    bool adjust));
+#define gs_image_t_init_mask(pim, write_1s)\
+  gs_image_t_init_mask_adjust(pim, write_1s, true)
 
 /* init_gray and init_color require a (const) imager state. */
 #define gs_image_t_init_gray(pim, pis)\
@@ -282,13 +299,14 @@ void gs_image_t_init_mask(P2(gs_image_t * pim, bool write_1s));
 int gx_map_image_color(P5(gx_device * dev,
 			  const gs_image_t * pim,
 			  const gx_color_rendering_info * pcri,
-			  const uint components[4],
+			  const uint components[GS_IMAGE_MAX_COMPONENTS],
 			  gx_drawing_color * pdcolor));
 
 /*
-   Map a source color to a drawing color.  The components are simply the pixel
-   component values from the input data, i.e., 1 to 4 B-bit numbers from the
-   source data.  Return 0 if the operation succeeded, or a negative error code.
+  Map a source color to a drawing color.  The components are simply the
+  pixel component values from the input data, i.e., 1 to
+  GS_IMAGE_MAX_COMPONENTS B-bit numbers from the source data.  Return 0 if
+  the operation succeeded, or a negative error code.
  */
 
 #endif /*************************************************************** */

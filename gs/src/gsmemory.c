@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -19,6 +19,7 @@
 
 /* Generic allocator support */
 #include "memory_.h"
+#include "gdebug.h"
 #include "gstypes.h"
 #include "gsmemory.h"
 #include "gsmdebug.h"
@@ -44,6 +45,42 @@ public_st_gc_root_t();
 /* The descriptors for elements and arrays of const strings. */
 private_st_const_string();
 public_st_const_string_element();
+
+/* GC procedures for bytestrings */
+gs_ptr_type_t
+enum_bytestring(const void **pep, const gs_bytestring *pbs)
+{
+    return (pbs->bytes ? ENUM_OBJ(pbs->bytes) : ENUM_STRING(pbs));
+}
+gs_ptr_type_t
+enum_const_bytestring(const void **pep, const gs_const_bytestring *pbs)
+{
+    return (pbs->bytes ? ENUM_OBJ(pbs->bytes) : ENUM_CONST_STRING(pbs));
+}
+void
+reloc_bytestring(gs_bytestring *pbs, gc_state_t *gcst)
+{
+    if (pbs->bytes) {
+	byte *bytes = pbs->bytes;
+	long offset = pbs->data - bytes;
+
+	pbs->bytes = bytes = RELOC_OBJ(bytes);
+	pbs->data = bytes + offset;
+    } else
+	RELOC_STRING_VAR(*(gs_string *)pbs);
+}
+void
+reloc_const_bytestring(gs_const_bytestring *pbs, gc_state_t *gcst)
+{
+    if (pbs->bytes) {
+	const byte *bytes = pbs->bytes;
+	long offset = pbs->data - bytes;
+
+	pbs->bytes = bytes = RELOC_OBJ(bytes);
+	pbs->data = bytes + offset;
+    } else
+	RELOC_CONST_STRING_VAR(*(gs_const_string *)pbs);
+}
 
 /* Fill an unoccupied block with a pattern. */
 /* Note that the block size may be too large for a single memset. */
@@ -78,6 +115,26 @@ void
 gs_ignore_free_string(gs_memory_t * mem, byte * data, uint nbytes,
 		      client_name_t cname)
 {
+}
+
+/* Deconstifying freeing procedures. */
+/* These procedures rely on a severely deprecated pun. */
+void
+gs_free_const_object(gs_memory_t * mem, const void *data, client_name_t cname)
+{
+    union { const void *r; void *w; } u;
+
+    u.r = data;
+    gs_free_object(mem, u.w, cname);
+}
+void
+gs_free_const_string(gs_memory_t * mem, const byte * data, uint nbytes,
+		     client_name_t cname)
+{
+    union { const byte *r; byte *w; } u;
+
+    u.r = data;
+    gs_free_string(mem, u.w, nbytes, cname);
 }
 
 /* No-op consolidation procedure */
@@ -121,6 +178,37 @@ gs_register_struct_root(gs_memory_t *mem, gs_gc_root_t *root,
     return gs_register_root(mem, root, ptr_struct_type, pp, cname);
 }
 
+/* ---------------- Reference counting ---------------- */
+
+#ifdef DEBUG
+
+const char *
+rc_object_type_name(const void *vp, const rc_header *prc)
+{
+    gs_memory_type_ptr_t pstype;
+
+    if (prc->memory == 0)
+	return "(unknown)";
+    pstype = gs_object_type(prc->memory, vp);
+    if (prc->free != rc_free_struct_only) {
+	/*
+	 * This object might be stack-allocated or have other unusual memory
+	 * management properties.  Make some reasonableness checks.
+	 * ****** THIS IS A HACK. ******
+	 */
+	long dist;
+
+	dist = (const char *)&dist - (const char *)vp;
+	if (dist < 10000 && dist > -10000)
+	    return "(on stack)";
+	if ((ulong)pstype < 0x10000 || (long)pstype < 0)
+	    return "(anomalous)";
+    }
+    return client_name_string(gs_struct_type_name(pstype));
+}
+
+#endif /* DEBUG */
+
 /* Normal freeing routine for reference-counted structures. */
 void
 rc_free_struct_only(gs_memory_t * mem, void *data, client_name_t cname)
@@ -147,7 +235,6 @@ ENUM_PTRS_BEGIN_PROC(basic_enum_ptrs)
 		return ENUM_STRING((gs_string *) pptr);
 	    case GC_ELT_CONST_STRING:
 		return ENUM_CONST_STRING((gs_string *) pptr);
-	    /****** WHAT ABOUT REFS? ******/
 	}
     }
     if (!psd->super_type)
@@ -178,7 +265,6 @@ RELOC_PTRS_BEGIN(basic_reloc_ptrs)
 	    case GC_ELT_CONST_STRING:
 		RELOC_CONST_STRING_VAR(*(gs_const_string *)pptr);
 		break;
-	    /****** WHAT ABOUT REFS? ******/
 	}
     }
     if (psd->super_type)

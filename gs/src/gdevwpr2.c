@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -22,6 +22,8 @@
  * Original version by Russell Lang and
  * L. Peter Deutsch, Aladdin Enterprises.
  * Modified by rjl 1995-03-29 to use BMP printer code
+ * Modified by Pierre Arnaud 1999-02-18 (see description below)
+ * Modified by lpd 1999-04-03 for compatibility with Borland C++ 4.5.
  */
 
 /* This driver uses the printer default size and resolution and
@@ -31,20 +33,68 @@
  * The code in win_pr2_getdc() does try to set the printer page
  * size from the PostScript PageSize, but it isn't working
  * reliably at the moment.
- * 
+ *
  * This driver doesn't work with some Windows printer drivers.
  * The reason is unknown.  All printers to which I have access
- * work. 
+ * work.
  *
  * rjl 1997-11-20
  */
 
-/* Supported printer parameters are
+/* Additions by Pierre Arnaud (Pierre.Arnaud@iname.com) 1992-02-18
+ *
+ * The driver has been extended in order to provide some run-time
+ * feed-back about the default Windows printer and to give the user
+ * the opportunity to select the printer's properties before the
+ * device gets opened (and any spooling starts).
+ *
+ * The driver returns an additional property named "UserSettings".
+ * This is a dictionary which contens are valid only after setting
+ * the QueryUser property (see below). The UserSettings dict contains
+ * the following keys:
+ *
+ *  DocumentRange  [begin end]		(int array, can be set)
+ *	Defines the range of pages in the document; [1 10] would
+ *	describe a document starting at page 1 and ending at page 10.
+ *
+ *  SelectedRange  [begin end]		(int array, can be set)
+ *	Defines the pages the user wants to print.
+ *
+ *  MediaSize	   [width height]	(float array, read only)
+ *	Current printer's media size.
+ *
+ *  Copies	   n			(integer, can be set)
+ *	User selected number of copies.
+ *
+ *  PrintCopies    n			(integer, read only)
+ *	Number of copies which must be printed by Ghostscript itself.
+ *	This is still experimental.
+ *
+ *  DocumentName   name			(string, can be set)
+ *	Name to be associated with the print job.
+ *
+ *  UserChangedSettings			(bool, read only)
+ *	Set to 'true' if the last QueryUser operation succeeded.
+ */
+
+/* Supported printer parameters are :
+ *
  *  -dBitsPerPixel=n
  *     Override what the Window printer driver returns.
+ *
  *  -dNoCancel
  *     Don't display cancel dialog box.  Useful for unattended or
  *     console EXE operation.
+ *
+ *  -dQueryUser=n
+ *     Query user interactively for the destination printer, before
+ *     the device gets opened. This fills in the UserSettings dict
+ *     and the OutputFile name properties. The following values are
+ *     supported for n:
+ *     1 => show standard Print dialog
+ *     2 => show Print Setup dialog instead
+ *     3 => select default printer
+ *     other, does nothing
  */
 
 #include "gdevprn.h"
@@ -90,8 +140,24 @@ struct gx_device_win_pr2_s {
     gx_prn_device_common;
     HDC hdcprn;
     bool nocancel;
+
+    int doc_page_begin;		/* first page number in document */
+    int doc_page_end;		/* last page number in document */
+    int user_page_begin;	/* user's choice: first page to print */
+    int user_page_end;		/* user's choice: last page to print */
+    int user_copies;		/* user's choice: number of copies */
+    int print_copies;		/* number of times GS should print each page */
+    float user_media_size[2];	/* width/height of media selected by user */
+    char doc_name[200];		/* name of document for the spooler */
+    bool user_changed_settings;	/* true if user validated dialog */
+
+    HANDLE win32_hdevmode;	/* handle to device mode information */
+    HANDLE win32_hdevnames;	/* handle to device names information */
+
     DLGPROC lpfnAbortProc;
     DLGPROC lpfnCancelProc;
+
+    gx_device_win_pr2* original_device;	/* used to detect copies */
 };
 
 gx_device_win_pr2 far_data gs_mswinpr2_device =
@@ -102,11 +168,31 @@ gx_device_win_pr2 far_data gs_mswinpr2_device =
 			0, win_pr2_print_page),		/* depth = 0 */
     0,				/* hdcprn */
     0,				/* nocancel */
+    0,				/* doc_page_begin */
+    0,				/* doc_page_end */
+    0,				/* user_page_begin */
+    0,				/* user_page_end */
+    1,				/* user_copies */
+    1,				/* print_copies */
+    { 0.0, 0.0 },		/* user_media_size */
+    { 0 },			/* doc_name */
+    0,				/* user_changed_settings */
+    NULL,			/* win32_hdevmode */
+    NULL,			/* win32_hdevnames */
     NULL,			/* lpfnAbortProc */
-    NULL			/* lpfnCancelProc */
+    NULL,			/* lpfnCancelProc */
+    NULL			/* original_device */
 };
 
+/********************************************************************************/
+
 private int win_pr2_getdc(gx_device_win_pr2 *);
+private int win_pr2_print_setup_interaction(gx_device_win_pr2 *, int mode);
+private int win_pr2_write_user_settings(gx_device_win_pr2 * dev, gs_param_list * plist);
+private int win_pr2_read_user_settings(gx_device_win_pr2 * dev, gs_param_list * plist);
+private void win_pr2_copy_check(gx_device_win_pr2 * dev);
+
+/********************************************************************************/
 
 /* Open the win_pr2 driver */
 private int
@@ -119,27 +205,58 @@ win_pr2_open(gx_device * dev)
     POINT size;
     float m[4];
     FILE *pfile;
+    DOCINFO docinfo;
+
+    win_pr2_copy_check(wdev);
 
     if ((!wdev->nocancel) && (hDlgModeless)) {
 	/* device cannot opened twice since only one hDlgModeless */
 	fprintf(stderr, "Can't open mswinpr2 device twice\n");
 	return gs_error_limitcheck;
     }
+
     /* get a HDC for the printer */
-    if (!win_pr2_getdc(wdev)) {
+    if ((wdev->win32_hdevmode) &&
+	(wdev->win32_hdevnames)) {
+	/* The user has already had the opportunity to choose the output */
+	/* file interactively. Just use the specified parameters. */
+	
+	LPDEVMODE devmode = (LPDEVMODE) GlobalLock(wdev->win32_hdevmode);
+	LPDEVNAMES devnames = (LPDEVNAMES) GlobalLock(wdev->win32_hdevnames);
+	
+	const char* driver = (char*)(devnames)+(devnames->wDriverOffset);
+	const char* device = (char*)(devnames)+(devnames->wDeviceOffset);
+	const char* output = (char*)(devnames)+(devnames->wOutputOffset);
+	
+	wdev->hdcprn = CreateDC(driver, device, output, devmode);
+	
+	GlobalUnlock(wdev->win32_hdevmode);
+	GlobalUnlock(wdev->win32_hdevnames);
+	
+	if (wdev->hdcprn == NULL) {
+	    return gs_error_Fatal;
+	}
+	
+    } else if (!win_pr2_getdc(wdev)) {
 	/* couldn't get a printer from -sOutputFile= */
 	/* Prompt with dialog box */
 	memset(&pd, 0, sizeof(pd));
 	pd.lStructSize = sizeof(pd);
 	pd.hwndOwner = hwndtext;
-	pd.Flags = PD_PRINTSETUP | PD_RETURNDC;
+	pd.Flags = PD_RETURNDC;
+	pd.nMinPage = wdev->doc_page_begin;
+	pd.nMaxPage = wdev->doc_page_end;
+	pd.nFromPage = wdev->user_page_begin;
+	pd.nToPage = wdev->user_page_end;
+	pd.nCopies = wdev->user_copies;
 	if (!PrintDlg(&pd)) {
 	    /* device not opened - exit ghostscript */
 	    return gs_error_Fatal;	/* exit Ghostscript cleanly */
 	}
 	GlobalFree(pd.hDevMode);
 	GlobalFree(pd.hDevNames);
-	pd.hDevMode = pd.hDevNames = NULL;
+	pd.hDevMode = NULL;
+	pd.hDevNames = NULL;
 	wdev->hdcprn = pd.hDC;
     }
     if (!(GetDeviceCaps(wdev->hdcprn, RASTERCAPS) != RC_DIBTODEV)) {
@@ -157,9 +274,26 @@ win_pr2_open(gx_device * dev)
     wdev->lpfnAbortProc = (DLGPROC) MakeProcInstance((FARPROC) AbortProc, phInstance);
 #endif
 #endif
-    Escape(wdev->hdcprn, SETABORTPROC, 0, (LPSTR) wdev->lpfnAbortProc, NULL);
-    if (Escape(wdev->hdcprn, STARTDOC, lstrlen(szAppName), szAppName, NULL) <= 0) {
-	fprintf(stderr, "Printer Escape STARTDOC failed\n");
+    SetAbortProc(wdev->hdcprn, (ABORTPROC) wdev->lpfnAbortProc);
+
+    /*
+     * Some versions of the Windows headers include lpszDatatype and fwType,
+     * and some don't.  Since we want to set these fields to zero anyway,
+     * we just start by zeroing the whole structure.
+     */
+    memset(&docinfo, 0, sizeof(docinfo));
+    docinfo.cbSize = sizeof(docinfo);
+    docinfo.lpszDocName = wdev->doc_name;
+    /*docinfo.lpszOutput = NULL;*/
+    /*docinfo.lpszDatatype = NULL;*/
+    /*docinfo.fwType = 0;*/
+
+    if (docinfo.lpszDocName[0] == 0) {
+	docinfo.lpszDocName = "Ghostscript output";
+    }
+
+    if (StartDoc(wdev->hdcprn, &docinfo) <= 0) {
+	fprintf(stderr, "Printer StartDoc failed (error %08x)\n", GetLastError());
 #if !defined(__WIN32__) && !defined(__DLL__)
 	FreeProcInstance((FARPROC) wdev->lpfnAbortProc);
 #endif
@@ -168,9 +302,17 @@ win_pr2_open(gx_device * dev)
     }
     dev->x_pixels_per_inch = (float)GetDeviceCaps(wdev->hdcprn, LOGPIXELSX);
     dev->y_pixels_per_inch = (float)GetDeviceCaps(wdev->hdcprn, LOGPIXELSY);
+#if 1
+    size.x = GetDeviceCaps(wdev->hdcprn, PHYSICALWIDTH);
+    size.y = GetDeviceCaps(wdev->hdcprn, PHYSICALHEIGHT);
+    gx_device_set_width_height(dev, (int)size.x, (int)size.y);
+    offset.x = GetDeviceCaps(wdev->hdcprn, PHYSICALOFFSETX);
+    offset.y = GetDeviceCaps(wdev->hdcprn, PHYSICALOFFSETY);
+#else
     Escape(wdev->hdcprn, GETPHYSPAGESIZE, 0, NULL, (LPPOINT) & size);
     gx_device_set_width_height(dev, (int)size.x, (int)size.y);
     Escape(wdev->hdcprn, GETPRINTINGOFFSET, 0, NULL, (LPPOINT) & offset);
+#endif
     /* m[] gives margins in inches */
     m[0] /*left */  = offset.x / dev->x_pixels_per_inch;
     m[3] /*top */  = offset.y / dev->y_pixels_per_inch;
@@ -225,6 +367,8 @@ win_pr2_close(gx_device * dev)
     int code;
     int aborted = FALSE;
 
+    win_pr2_copy_check(wdev);
+
     /* Free resources */
 
     if (!wdev->nocancel) {
@@ -238,14 +382,24 @@ win_pr2_close(gx_device * dev)
 #endif
     }
     if (aborted)
-	Escape(wdev->hdcprn, ABORTDOC, 0, NULL, NULL);
+	AbortDoc(wdev->hdcprn);
     else
-	Escape(wdev->hdcprn, ENDDOC, 0, NULL, NULL);
+	EndDoc(wdev->hdcprn);
 
 #if !defined(__WIN32__) && !defined(__DLL__)
     FreeProcInstance((FARPROC) wdev->lpfnAbortProc);
 #endif
     DeleteDC(wdev->hdcprn);
+
+    if (wdev->win32_hdevmode != NULL) {
+	GlobalFree(wdev->win32_hdevmode);
+	wdev->win32_hdevmode = NULL;
+    }
+    if (wdev->win32_hdevnames != NULL) {
+	GlobalFree(wdev->win32_hdevnames);
+	wdev->win32_hdevnames = NULL;
+    }
+
     code = gdev_prn_close(dev);
     return code;
 }
@@ -256,8 +410,7 @@ win_pr2_close(gx_device * dev)
 #undef wdev
 #define wdev ((gx_device_win_pr2 *)pdev)
 
-/************************************************/
-
+/********************************************************************************/
 
 /* ------ Private definitions ------ */
 
@@ -290,8 +443,8 @@ win_pr2_print_page(gx_device_printer * pdev, FILE * file)
     } bmi;
 
     scan_lines = dev_print_scan_lines(pdev);
-    width = pdev->width - ((dev_l_margin(pdev) + dev_r_margin(pdev) -
-			    dev_x_offset(pdev)) * pdev->x_pixels_per_inch);
+    width = (int)(pdev->width - ((dev_l_margin(pdev) + dev_r_margin(pdev) -
+				  dev_x_offset(pdev)) * pdev->x_pixels_per_inch));
 
     yslice = 65535 / bmp_raster;	/* max lines in 64k */
     bmp_raster_multi = bmp_raster * yslice;
@@ -380,7 +533,7 @@ win_pr2_print_page(gx_device_printer * pdev, FILE * file)
 	if (!wdev->nocancel)
 	    SetWindowText(GetDlgItem(hDlgModeless, CANCEL_PCDONE),
 			  "Ejecting page...");
-	Escape(wdev->hdcprn, NEWFRAME, 0, NULL, NULL);
+	EndPage(wdev->hdcprn);
 	if (!wdev->nocancel)
 	    ShowWindow(hDlgModeless, SW_HIDE);
     }
@@ -475,34 +628,47 @@ win_pr2_set_bpp(gx_device * dev, int depth)
     }
 }
 
+/********************************************************************************/
+
 /* Get device parameters */
 int
-win_pr2_get_params(gx_device * dev, gs_param_list * plist)
+win_pr2_get_params(gx_device * pdev, gs_param_list * plist)
 {
-    int code = gdev_prn_get_params(dev, plist);
+    int code = gdev_prn_get_params(pdev, plist);
+
+    win_pr2_copy_check(wdev);
 
     if (code >= 0)
 	code = param_write_bool(plist, "NoCancel",
-				&(((gx_device_win_pr2 *) dev)->nocancel));
+				&(wdev->nocancel));
+    if (code >= 0)
+	code = win_pr2_write_user_settings(wdev, plist);
+
     return code;
 }
+
 
 /* We implement this ourselves so that we can change BitsPerPixel */
 /* before the device is opened */
 int
-win_pr2_put_params(gx_device * dev, gs_param_list * plist)
+win_pr2_put_params(gx_device * pdev, gs_param_list * plist)
 {
     int ecode = 0, code;
-    int old_bpp = dev->color_info.depth;
+    int old_bpp = pdev->color_info.depth;
     int bpp = old_bpp;
-    bool nocancel = ((gx_device_win_pr2 *) dev)->nocancel;
+    bool nocancel = wdev->nocancel;
+    int queryuser = 0;
+
+    win_pr2_copy_check(wdev);
+
+    code = win_pr2_read_user_settings(wdev, plist);
 
     switch (code = param_read_int(plist, "BitsPerPixel", &bpp)) {
 	case 0:
-	    if (dev->is_open)
+	    if (pdev->is_open)
 		ecode = gs_error_rangecheck;
 	    else {		/* change dev->color_info is valid before device is opened */
-		win_pr2_set_bpp(dev, bpp);
+		win_pr2_set_bpp(pdev, bpp);
 		break;
 	    }
 	    goto bppe;
@@ -515,10 +681,10 @@ win_pr2_put_params(gx_device * dev, gs_param_list * plist)
 
     switch (code = param_read_bool(plist, "NoCancel", &nocancel)) {
 	case 0:
-	    if (dev->is_open)
+	    if (pdev->is_open)
 		ecode = gs_error_rangecheck;
 	    else {
-		((gx_device_win_pr2 *) dev)->nocancel = nocancel;
+		wdev->nocancel = nocancel;
 		break;
 	    }
 	    goto nocancele;
@@ -529,17 +695,32 @@ win_pr2_put_params(gx_device * dev, gs_param_list * plist)
 	    break;
     }
 
+    switch (code = param_read_int(plist, "QueryUser", &queryuser)) {
+	case 0:
+	    if ((queryuser > 0) &&
+		(queryuser < 4)) {
+		win_pr2_print_setup_interaction(wdev, queryuser);
+	    }
+	    break;
+	default:
+	    ecode = code;
+	    param_signal_error(plist, "QueryUser", ecode);
+	case 1:
+	    break;
+    }
+
     if (ecode >= 0)
-	ecode = gdev_prn_put_params(dev, plist);
+	ecode = gdev_prn_put_params(pdev, plist);
     return ecode;
 }
 
 #undef wdev
 
+/********************************************************************************/
+
 #ifndef __WIN32__
 #include <print.h>
 #endif
-
 
 /* Get Device Context for printer */
 private int
@@ -572,7 +753,6 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
     HANDLE hprinter;
 
 #endif
-
 
     /* first try to derive the printer name from -sOutputFile= */
     /* is printer if name prefixed by \\spool\ */
@@ -665,8 +845,8 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
     if ((devcap = gs_malloc(devcapsize, 1, "win_pr2_getdc")) == (LPBYTE) NULL)
 	return FALSE;
     n = pfnDeviceCapabilities(device, output, DC_PAPERSIZE, devcap, NULL);
-    paperwidth = wdev->MediaSize[0] * 254 / 72;
-    paperheight = wdev->MediaSize[1] * 254 / 72;
+    paperwidth = (int)(wdev->MediaSize[0] * 254 / 72);
+    paperheight = (int)(wdev->MediaSize[1] * 254 / 72);
     papername[0] = '\0';
     papersize = 0;
     paperindex = -1;
@@ -799,4 +979,301 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
 
     /* fall back to prompting user */
     return FALSE;
+}
+
+/********************************************************************************/
+
+#define BEGIN_ARRAY_PARAM(pread, pname, pa, psize, e)\
+  switch ( code = pread(dict.list, (param_name = pname), &(pa)) )\
+  {\
+  case 0:\
+	if ( (pa).size != psize )\
+	  ecode = gs_note_error(gs_error_rangecheck);\
+	else {
+/* The body of the processing code goes here. */
+/* If it succeeds, it should do a 'break'; */
+/* if it fails, it should set ecode and fall through. */
+#define END_ARRAY_PARAM(pa, e)\
+	}\
+	goto e;\
+  default:\
+	ecode = code;\
+e:	param_signal_error(dict.list, param_name, ecode);\
+  case 1:\
+	(pa).data = 0;		/* mark as not filled */\
+  }
+
+
+/* Put the user params from UserSettings into our */
+/* internal variables. */
+private int
+win_pr2_read_user_settings(gx_device_win_pr2 * wdev, gs_param_list * plist)
+{
+    gs_param_dict dict;
+    gs_param_string docn = { 0 };
+    const char* dict_name = "UserSettings";
+    const char* param_name = "";
+    int code = 0;
+    int ecode = 0;
+
+    switch (code = param_begin_read_dict(plist, dict_name, &dict, false)) {
+	default:
+	    param_signal_error(plist, dict_name, code);
+	    return code;
+	case 1:
+	    break;
+	case 0:
+	    {
+		gs_param_int_array ia;
+		
+		BEGIN_ARRAY_PARAM(param_read_int_array, "DocumentRange", ia, 2, ia)
+		if ((ia.data[0] < 0) ||
+		    (ia.data[1] < 0) ||
+		    (ia.data[0] > ia.data[1]))
+		    ecode = gs_note_error(gs_error_rangecheck);
+		wdev->doc_page_begin = ia.data[0];
+		wdev->doc_page_end = ia.data[1];
+		END_ARRAY_PARAM(ia, doc_range_error)
+		
+		BEGIN_ARRAY_PARAM(param_read_int_array, "SelectedRange", ia, 2, ia)
+		if ((ia.data[0] < 0) ||
+		    (ia.data[1] < 0) ||
+		    (ia.data[0] > ia.data[1]))
+		    ecode = gs_note_error(gs_error_rangecheck);
+		wdev->user_page_begin = ia.data[0];
+		wdev->user_page_end = ia.data[1];
+		END_ARRAY_PARAM(ia, sel_range_error)
+		
+		param_read_int(dict.list, "Copies", &wdev->user_copies);
+		
+		switch (code = param_read_string(dict.list, (param_name = "DocumentName"), &docn)) {
+		    case 0:
+			if (docn.size < sizeof(wdev->doc_name))
+			    break;
+			code = gs_error_rangecheck;
+			/* fall through */
+		    default:
+			ecode = code;
+			param_signal_error(plist, param_name, ecode);
+			/* fall through */
+		    case 1:
+			docn.data = 0;
+			break;
+		}
+		
+		param_end_read_dict(plist, dict_name, &dict);
+		
+		if (docn.data) {
+		    memcpy(wdev->doc_name, docn.data, docn.size);
+		    wdev->doc_name[docn.size] = 0;
+		}
+		
+		wdev->print_copies = 1;
+		
+		if (wdev->win32_hdevmode) {
+		    LPDEVMODE devmode = (LPDEVMODE) GlobalLock(wdev->win32_hdevmode);
+		    if (devmode) {
+			devmode->dmCopies = wdev->user_copies;
+			GlobalUnlock(wdev->win32_hdevmode);
+		    }
+		}
+	    }
+	    break;
+    }
+
+    return code;
+}
+
+
+private int
+win_pr2_write_user_settings(gx_device_win_pr2 * wdev, gs_param_list * plist)
+{
+    gs_param_dict dict;
+    gs_param_int_array range;
+    gs_param_float_array box;
+    gs_param_string docn;
+    int array[2];
+    const char* pname = "UserSettings";
+    int code;
+
+    dict.size = 7;
+    code = param_begin_write_dict(plist, pname, &dict, false);
+    if (code < 0) return code;
+
+    array[0] = wdev->doc_page_begin;
+    array[1] = wdev->doc_page_end;
+    range.data = array;
+    range.size = 2;
+    range.persistent = false;
+    code = param_write_int_array(dict.list, "DocumentRange", &range);
+    if (code < 0) goto error;
+
+    array[0] = wdev->user_page_begin;
+    array[1] = wdev->user_page_end;
+    range.data = array;
+    range.size = 2;
+    range.persistent = false;
+    code = param_write_int_array(dict.list, "SelectedRange", &range);
+    if (code < 0) goto error;
+
+    box.data = wdev->user_media_size;
+    box.size = 2;
+    box.persistent = false;
+    code = param_write_float_array(dict.list, "MediaSize", &box);
+    if (code < 0) goto error;
+
+    code = param_write_int(dict.list, "Copies", &wdev->user_copies);
+    if (code < 0) goto error;
+
+    code = param_write_int(dict.list, "PrintCopies", &wdev->print_copies);
+    if (code < 0) goto error;
+
+    docn.data = (const byte*)wdev->doc_name;
+    docn.size = strlen(wdev->doc_name);
+    docn.persistent = false;
+
+    code = param_write_string(dict.list, "DocumentName", &docn);
+    if (code < 0) goto error;
+
+    code = param_write_bool(dict.list, "UserChangedSettings", &wdev->user_changed_settings);
+
+error:
+    param_end_write_dict(plist, pname, &dict);
+    return code;
+}
+
+/********************************************************************************/
+
+/*  Show up a dialog for the user to choose a printer and a paper size.
+ *  If mode == 3, then automatically select the default Windows printer
+ *  instead of asking the user.
+ */
+
+private int
+win_pr2_print_setup_interaction(gx_device_win_pr2 * wdev, int mode)
+{
+    PRINTDLG pd;
+    LPDEVMODE  devmode;
+    LPDEVNAMES devnames;
+
+    wdev->user_changed_settings = FALSE;
+
+    memset(&pd, 0, sizeof(pd));
+    pd.lStructSize = sizeof(pd);
+    pd.hwndOwner = hwndtext;
+
+    switch (mode) {
+	case 2:	pd.Flags = PD_PRINTSETUP; break;
+	case 3:	pd.Flags = PD_RETURNDEFAULT; break;
+	default: pd.Flags = 0; break;
+    }
+
+    pd.Flags |= PD_USEDEVMODECOPIES;
+
+    pd.nMinPage = wdev->doc_page_begin;
+    pd.nMaxPage = wdev->doc_page_end;
+    pd.nFromPage = wdev->user_page_begin;
+    pd.nToPage = wdev->user_page_end;
+    pd.nCopies = wdev->user_copies;
+
+    /* Show the Print Setup dialog and let the user choose a printer
+     * and a paper size/orientation.
+     */
+
+    if (!PrintDlg(&pd)) return FALSE;
+
+    devmode = (LPDEVMODE) GlobalLock(pd.hDevMode);
+    devnames = (LPDEVNAMES) GlobalLock(pd.hDevNames);
+
+    wdev->user_changed_settings = TRUE;
+    sprintf(wdev->fname, "\\\\spool\\%s", (char*)(devnames)+(devnames->wDeviceOffset));
+
+    if (mode == 3) {
+	devmode->dmCopies = wdev->user_copies * wdev->print_copies;
+	pd.nCopies = 1;
+    }
+
+    wdev->user_page_begin = pd.nFromPage;
+    wdev->user_page_end = pd.nToPage;
+    wdev->user_copies = devmode->dmCopies;
+    wdev->print_copies = pd.nCopies;
+    wdev->user_media_size[0] = devmode->dmPaperWidth / 254.0 * 72.0;
+    wdev->user_media_size[1] = devmode->dmPaperLength / 254.0 * 72.0;
+
+    {
+	float xppinch = 0;
+	float yppinch = 0;
+	const char* driver = (char*)(devnames)+(devnames->wDriverOffset);
+	const char* device = (char*)(devnames)+(devnames->wDeviceOffset);
+	const char* output = (char*)(devnames)+(devnames->wOutputOffset);
+	
+	HDC hic = CreateIC(driver, device, output, devmode);
+	
+	if (hic) {
+	    xppinch = (float)GetDeviceCaps(hic, LOGPIXELSX);
+	    yppinch = (float)GetDeviceCaps(hic, LOGPIXELSY);
+	    wdev->user_media_size[0] = GetDeviceCaps(hic, PHYSICALWIDTH) * 72.0 / xppinch;
+	    wdev->user_media_size[1] = GetDeviceCaps(hic, PHYSICALHEIGHT) * 72.0 / yppinch;
+	    DeleteDC(hic);
+	}
+    }
+
+    devmode = NULL;
+    devnames = NULL;
+
+    GlobalUnlock(pd.hDevMode);
+    GlobalUnlock(pd.hDevNames);
+
+    if (wdev->win32_hdevmode != NULL) {
+	GlobalFree(wdev->win32_hdevmode);
+    }
+    if (wdev->win32_hdevnames != NULL) {
+	GlobalFree(wdev->win32_hdevnames);
+    }
+
+    wdev->win32_hdevmode = pd.hDevMode;
+    wdev->win32_hdevnames = pd.hDevNames;
+
+    return TRUE;
+}
+
+/*  Check that we are dealing with an original device. If this
+ *  happens to be a copy made by "copydevice", we will have to
+ *  copy the original's handles to the associated Win32 params.
+ */
+
+private void
+win_pr2_copy_check(gx_device_win_pr2 * wdev)
+{
+    HGLOBAL hdevmode = wdev->win32_hdevmode;
+    HGLOBAL hdevnames = wdev->win32_hdevnames;
+    DWORD devmode_len = (hdevmode) ? GlobalSize(hdevmode) : 0;
+    DWORD devnames_len = (hdevnames) ? GlobalSize(hdevnames) : 0;
+
+    if (wdev->original_device == wdev)
+	return;
+
+    wdev->hdcprn = NULL;
+    wdev->win32_hdevmode = NULL;
+    wdev->win32_hdevnames = NULL;
+
+    wdev->original_device = wdev;
+
+    if (devmode_len) {
+	wdev->win32_hdevmode = GlobalAlloc(0, devmode_len);
+	if (wdev->win32_hdevmode) {
+	    memcpy(GlobalLock(wdev->win32_hdevmode), GlobalLock(hdevmode), devmode_len);
+	    GlobalUnlock(wdev->win32_hdevmode);
+	    GlobalUnlock(hdevmode);
+	}
+    }
+
+    if (devnames_len) {
+	wdev->win32_hdevnames = GlobalAlloc(0, devnames_len);
+	if (wdev->win32_hdevnames) {
+	    memcpy(GlobalLock(wdev->win32_hdevnames), GlobalLock(hdevnames), devnames_len);
+	    GlobalUnlock(wdev->win32_hdevnames);
+	    GlobalUnlock(hdevnames);
+	}
+    }
 }

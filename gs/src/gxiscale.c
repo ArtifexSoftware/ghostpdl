@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -33,22 +33,31 @@
 #include "gxcmap.h"
 #include "gxdcolor.h"
 #include "gxistate.h"
-#include "gzpath.h"
 #include "gxdevmem.h"
 #include "gxcpath.h"
 #include "gximage.h"
+#include "stream.h"		/* for s_alloc_state */
+#include "siinterp.h"		/* for spatial interpolation */
+#include "siscale.h"		/* for Mitchell filtering */
+
+/*
+ * Define whether we are using Mitchell filtering or spatial
+ * interpolation to implement Interpolate.  (The latter doesn't work yet.)
+ */
+#define USE_MITCHELL_FILTER
 
 /* ------ Strategy procedure ------ */
 
 /* If we're interpolating, use special logic. */
 private irender_proc(image_render_interpolate);
-private irender_proc_t
-image_strategy_interpolate(gx_image_enum * penum)
+irender_proc_t
+gs_image_class_0_interpolate(gx_image_enum * penum)
 {
     const gs_imager_state *pis = penum->pis;
     gs_memory_t *mem = penum->memory;
-    stream_IScale_state iss;
-    stream_IScale_state *pss;
+    stream_image_scale_params_t iss;
+    stream_image_scale_state *pss;
+    const stream_template *template;
     byte *line;
     const gs_color_space *pcs = penum->pcs;
     const gs_color_space *pccs;
@@ -56,14 +65,29 @@ image_strategy_interpolate(gx_image_enum * penum)
 
     if (!penum->interpolate || penum->use_mask_color)
 	return 0;
-    if (penum->posture != image_portrait || penum->masked ||
-	penum->alpha
-	) {
+    if (penum->posture != image_portrait || penum->masked || penum->alpha) {
 	/* We can't handle these cases yet.  Punt. */
 	penum->interpolate = false;
 	return 0;
     }
-    iss.memory = mem;
+    /*
+     * We used to interpolate using a digital filter, rather than Adobe's
+     * spatial interpolation algorithm: this produced very bad-looking
+     * results if the input resolution was close to the output resolution,
+     * especially if the input had low color resolution, and we resorted to
+     * some hack tests on the input color resolution and scale to suppress
+     * interpolation if we thought the result would look especially bad.
+     * If we use Adobe's spatial interpolation approach, we don't need
+     * to do this.
+     */
+#ifdef USE_MITCHELL_FILTER
+    if (penum->bps < 4 || penum->bps * penum->spp < 8 ||
+	(fabs(penum->matrix.xx) <= 5 && fabs(penum->matrix.yy <= 5))
+	) {
+	penum->interpolate = false;
+	return 0;
+    }
+#endif
     /* Non-ANSI compilers require the following casts: */
     gs_distance_transform((float)penum->rect.w, (float)penum->rect.h,
 			  &penum->matrix, &dst_xy);
@@ -85,19 +109,24 @@ image_strategy_interpolate(gx_image_enum * penum)
     /* Allocate a buffer for one source/destination line. */
     {
 	uint in_size =
-	iss.WidthIn * iss.Colors * (iss.BitsPerComponentIn / 8);
+	    iss.WidthIn * iss.Colors * (iss.BitsPerComponentIn / 8);
 	uint out_size =
-	iss.WidthOut * iss.Colors *
-	max(iss.BitsPerComponentOut / 8, sizeof(gx_color_index));
+	    iss.WidthOut * iss.Colors *
+	    max(iss.BitsPerComponentOut / 8, sizeof(gx_color_index));
 
 	line = gs_alloc_bytes(mem, max(in_size, out_size),
 			      "image scale src line");
     }
-    pss = gs_alloc_struct(mem, stream_IScale_state,
-			  &st_IScale_state, "image scale state");
+#ifdef USE_MITCHELL_FILTER
+    template = &s_IScale_template;
+#else
+    template = &s_IIEncode_template;
+#endif
+    pss = (stream_image_scale_state *)
+	s_alloc_state(mem, template->stype, "image scale state");
     if (line == 0 || pss == 0 ||
-	(*pss = iss,
-	 (*s_IScale_template.init) ((stream_state *) pss) < 0)
+	(pss->params = iss, pss->template = template,
+	 (*pss->template->init) ((stream_state *) pss) < 0)
 	) {
 	gs_free_object(mem, pss, "image scale state");
 	gs_free_object(mem, line, "image scale src line");
@@ -121,33 +150,28 @@ image_strategy_interpolate(gx_image_enum * penum)
     return image_render_interpolate;
 }
 
-void
-gs_gxiscale_init(gs_memory_t * mem)
-{
-    image_strategies.interpolate = image_strategy_interpolate;
-}
-
 /* ------ Rendering for interpolated images ------ */
 
 private int
 image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 			 int data_x, uint iw, int h, gx_device * dev)
 {
-    stream_IScale_state *pss = penum->scaler;
+    stream_image_scale_state *pss = penum->scaler;
     const gs_imager_state *pis = penum->pis;
     const gs_color_space *pcs = penum->pcs;
     gs_logical_operation_t lop = penum->log_op;
-    int c = pss->Colors;
+    int c = pss->params.Colors;
     stream_cursor_read r;
     stream_cursor_write w;
 
     if (h != 0) {
 	/* Convert the unpacked data to concrete values in */
 	/* the source buffer. */
-	uint row_size = pss->WidthIn * c * pss->sizeofPixelIn;
-	const byte *bdata = buffer + data_x * c * pss->sizeofPixelIn;
+	int sizeofPixelIn = pss->params.BitsPerComponentIn / 8;
+	uint row_size = pss->params.WidthIn * c * sizeofPixelIn;
+	const byte *bdata = buffer + data_x * c * sizeofPixelIn;
 
-	if (pss->sizeofPixelIn == 1) {
+	if (sizeofPixelIn == 1) {
 	    /* Easy case: 8-bit device color values. */
 	    r.ptr = bdata - 1;
 	} else {
@@ -160,7 +184,7 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 	    int i;
 
 	    r.ptr = (byte *) psrc - 1;
-	    for (i = 0; i < pss->WidthIn; i++, psrc += c) {
+	    for (i = 0; i < pss->params.WidthIn; i++, psrc += c) {
 		int j;
 
 		if (bps <= 8)
@@ -170,8 +194,7 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 		    for (j = 0; j < dc; pdata += sizeof(frac), ++j) {
 			decode_frac(*(const frac *)pdata, cc, j);
 		    }
-		(*pcs->type->concretize_color) (&cc, pcs, psrc,
-						pis);
+		(*pcs->type->concretize_color) (&cc, pcs, psrc, pis);
 	    }
 	}
 	r.limit = r.ptr + row_size;
@@ -186,7 +209,8 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
     {
 	int xo = penum->xyi.x;
 	int yo = penum->xyi.y;
-	int width = pss->WidthOut;
+	int width = pss->params.WidthOut;
+	int sizeofPixelOut = pss->params.BitsPerComponentOut / 8;
 	int dy;
 	const gs_color_space *pconcs = cs_concrete_space(pcs, pis);
 	int bpp = dev->color_info.depth;
@@ -203,41 +227,56 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 	    gx_device_color devc;
 	    int code;
 
-	    declare_line_accum(penum->line, bpp, xo);
+	    DECLARE_LINE_ACCUM_COPY(penum->line, bpp, xo);
 
 	    w.limit = penum->line + width * c *
 		sizeof(gx_color_index) - 1;
 	    w.ptr = w.limit - width * c *
-		(sizeof(gx_color_index) - pss->sizeofPixelOut);
+		(sizeof(gx_color_index) - sizeofPixelOut);
 	    psrc = (const frac *)(w.ptr + 1);
-	    code = (*s_IScale_template.process)
+	    code = (*pss->template->process)
 		((stream_state *) pss, &r, &w, h == 0);
 	    if (code < 0 && code != EOFC)
 		return_error(gs_error_ioerror);
 	    if (w.ptr == w.limit) {
-		for (x = xo; x < xo + width; x++, psrc += c) {
-		    (*pconcs->type->remap_concrete_color)
-			(psrc, &devc, pis, dev,
-			 gs_color_select_source);
+		int xe = xo + width;
+
+		for (x = xo; x < xe;) {
+		    code = (*pconcs->type->remap_concrete_color)
+			(psrc, &devc, pis, dev, gs_color_select_source);
+		    if (code < 0)
+			return code;
 		    if (color_is_pure(&devc)) {
 			/* Just pack colors into a scan line. */
 			gx_color_index color = devc.colors.pure;
 
-			line_accum(color, bpp);
+			/* Skip RGB runs quickly. */
+			if (c == 3) {
+			    do {
+				LINE_ACCUM(color, bpp);
+				x++, psrc += 3;
+			    } while (x < xe && psrc[-3] == psrc[0] &&
+				     psrc[-2] == psrc[1] &&
+				     psrc[-1] == psrc[2]);
+			} else {
+			    LINE_ACCUM(color, bpp);
+			    x++, psrc += c;
+			}
 		    } else {
 			int rcode;
 
-			line_accum_copy(dev, penum->line, bpp,
+			LINE_ACCUM_COPY(dev, penum->line, bpp,
 					xo, x, raster, ry);
 			rcode = gx_fill_rectangle_device_rop(x, ry,
 						     1, 1, &devc, dev, lop);
 			if (rcode < 0)
 			    return rcode;
-			line_accum_skip(bpp);
+			LINE_ACCUM_SKIP(bpp);
 			l_xprev = x + 1;
+			x++, psrc += c;
 		    }
 		}
-		line_accum_copy(dev, penum->line, bpp,
+		LINE_ACCUM_COPY(dev, penum->line, bpp,
 				xo, x, raster, ry);
 		penum->line_xy++;
 	    }

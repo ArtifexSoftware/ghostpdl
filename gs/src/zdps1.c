@@ -1,4 +1,4 @@
-/* Copyright (C) 1990, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1990, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -41,23 +41,26 @@ public_st_igstate_obj();
 /* This is done with a hack -- we know that gstates are the only */
 /* t_astruct subtype that implements copy. */
 private int
-z1copy(register os_ptr op)
+z1copy(i_ctx_t *i_ctx_p)
 {
-    int code = zcopy(op);
+    os_ptr op = osp;
+    int code = zcopy(i_ctx_p);
 
     if (code >= 0)
 	return code;
     if (!r_has_type(op, t_astruct))
 	return code;
-    return zcopy_gstate(op);
+    return zcopy_gstate(i_ctx_p);
 }
 
 /* ------ Graphics state ------ */
 
 /* <bool> setstrokeadjust - */
 private int
-zsetstrokeadjust(register os_ptr op)
+zsetstrokeadjust(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     check_type(*op, t_boolean);
     gs_setstrokeadjust(igs, op->value.boolval);
     pop(1);
@@ -66,8 +69,10 @@ zsetstrokeadjust(register os_ptr op)
 
 /* - currentstrokeadjust <bool> */
 private int
-zcurrentstrokeadjust(register os_ptr op)
+zcurrentstrokeadjust(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(1);
     make_bool(op, gs_currentstrokeadjust(igs));
     return 0;
@@ -89,8 +94,10 @@ gstate_check_space(int_gstate * isp, uint space)
 
 /* - gstate <gstate> */
 int
-zgstate(register os_ptr op)
+zgstate(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     int code = gstate_check_space(istate, icurrent_space);
     igstate_obj *pigo;
     gs_state *pnew;
@@ -123,8 +130,9 @@ zgstate(register os_ptr op)
 
 /* copy for gstates */
 int
-zcopy_gstate(register os_ptr op)
+zcopy_gstate(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     os_ptr op1 = op - 1;
     gs_state *pgs;
     gs_state *pgs1;
@@ -160,8 +168,9 @@ zcopy_gstate(register os_ptr op)
 
 /* <gstate> currentgstate <gstate> */
 int
-zcurrentgstate(register os_ptr op)
+zcurrentgstate(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_state *pgs;
     int_gstate *pistate;
     int code;
@@ -191,8 +200,9 @@ zcurrentgstate(register os_ptr op)
 
 /* <gstate> setgstate - */
 int
-zsetgstate(register os_ptr op)
+zsetgstate(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code;
 
     check_stype(*op, st_igstate_obj);
@@ -224,8 +234,9 @@ private void rect_release(P1(local_rects_t *));
 /* <x> <y> <width> <height> .rectappend - */
 /* <numarray|numstring> .rectappend - */
 private int
-zrectappend(os_ptr op)
+zrectappend(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     local_rects_t lr;
     int npop = rect_get(&lr, op);
     int code;
@@ -243,8 +254,9 @@ zrectappend(os_ptr op)
 /* <x> <y> <width> <height> rectclip - */
 /* <numarray|numstring> rectclip - */
 private int
-zrectclip(os_ptr op)
+zrectclip(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     local_rects_t lr;
     int npop = rect_get(&lr, op);
     int code;
@@ -262,8 +274,9 @@ zrectclip(os_ptr op)
 /* <x> <y> <width> <height> rectfill - */
 /* <numarray|numstring> rectfill - */
 private int
-zrectfill(os_ptr op)
+zrectfill(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     local_rects_t lr;
     int npop = rect_get(&lr, op);
     int code;
@@ -281,8 +294,9 @@ zrectfill(os_ptr op)
 /* <x> <y> <width> <height> rectstroke - */
 /* <numarray|numstring> rectstroke - */
 private int
-zrectstroke(os_ptr op)
+zrectstroke(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_matrix mat;
     local_rects_t lr;
     int npop, code;
@@ -390,8 +404,9 @@ rect_release(local_rects_t * plr)
 
 /* <llx> <lly> <urx> <ury> setbbox - */
 int
-zsetbbox(register os_ptr op)
+zsetbbox(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     double box[4];
 
     int code = num_params(op, 4, box);

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -96,10 +96,6 @@ private void print_resource_usage(P3(const gs_main_instance *,
 
 /* ------ Initialization ------ */
 
-/* A handy way to declare and execute an initialization procedure: */
-#define call_init(proc)\
-BEGIN extern void proc(P0()); proc(); END
-
 /* Initialization to be done before anything else. */
 void
 gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
@@ -141,15 +137,15 @@ gs_main_init1(gs_main_instance * minst)
 	{
 	    extern bool gs_have_level2(P0());
 
-	    ialloc_init((gs_raw_memory_t *) & gs_memory_default,
-			minst->memory_chunk_size,
-			gs_have_level2());
+	    ialloc_init(idmemory, (gs_raw_memory_t *)&gs_memory_default,
+			minst->memory_chunk_size, gs_have_level2());
 	    gs_lib_init1((gs_memory_t *) imemory_system);
 	    alloc_save_init(idmemory);
 	}
 	{
 	    gs_memory_t *mem = imemory_system;
-	    name_table *nt = names_init(minst->name_table_size, mem);
+	    name_table *nt = names_init(minst->name_table_size,
+					iimemory_system);
 
 	    if (nt == 0) {
 		puts("name_init failed");
@@ -159,14 +155,18 @@ gs_main_init1(gs_main_instance * minst)
 	    gs_register_struct_root(mem, NULL, (void **)&the_gs_name_table,
 				    "the_gs_name_table");
 	}
-	call_init(obj_init);	/* requires name_init */
+	{
+	    extern void obj_init(P1(i_ctx_t **));
+
+	    obj_init(&minst->i_ctx_p);	/* requires name_init */
+	}
 	minst->init_done = 1;
     }
 }
 
 /* Initialization to be done before running any files. */
 private void
-init2_make_string_array(const ref * srefs, const char *aname)
+init2_make_string_array(i_ctx_t *i_ctx_p, const ref * srefs, const char *aname)
 {
     const ref *ifp = srefs;
     ref ifa;
@@ -181,22 +181,30 @@ gs_main_init2(gs_main_instance * minst)
 {
     gs_main_init1(minst);
     if (minst->init_done < 2) {
+	i_ctx_t *i_ctx_p = minst->i_ctx_p;
 	int code, exit_code;
 	ref error_object;
 
-	call_init(igs_init);
-	call_init(zop_init);
+	{
+	    extern void zop_init(P1(i_ctx_t *));
+
+	    zop_init(i_ctx_p);
+	}
 	{
 	    extern void gs_iodev_init(P1(gs_memory_t *));
 
 	    gs_iodev_init(imemory);
 	}
-	call_init(op_init);	/* requires obj_init */
+	{
+	    extern void op_init(P1(i_ctx_t *));
+
+	    op_init(i_ctx_p);	/* requires obj_init */
+	}
 
 	/* Set up the array of additional initialization files. */
-	init2_make_string_array(gs_init_file_array, "INITFILES");
+	init2_make_string_array(i_ctx_p, gs_init_file_array, "INITFILES");
 	/* Set up the array of emulator names. */
-	init2_make_string_array(gs_emulator_name_array, "EMULATORS");
+	init2_make_string_array(i_ctx_p, gs_emulator_name_array, "EMULATORS");
 	/* Pass the search path. */
 	initial_enter_name("LIBPATH", &minst->lib_path.list);
 
@@ -204,13 +212,14 @@ gs_main_init2(gs_main_instance * minst)
 	code = gs_run_init_file(minst, &exit_code, &error_object);
 	if (code < 0) {
 	    if (code != e_Fatal)
-		gs_debug_dump_stack(code, &error_object);
+		gs_main_dump_stack(minst, code, &error_object);
 	    gs_exit_with_code((exit_code ? exit_code : 2), code);
 	}
 	minst->init_done = 2;
     }
     if (gs_debug_c(':'))
 	print_resource_usage(minst, &gs_imemory, "Start");
+    gp_readline_init(&minst->readline_data, imemory_system);
 }
 
 /* ------ Search paths ------ */
@@ -324,7 +333,8 @@ gs_main_run_file(gs_main_instance * minst, const char *file_name, int user_error
 
     if (code < 0)
 	return code;
-    return gs_interpret(&initial_file, user_errors, pexit_code, perror_object);
+    return gs_interpret(&minst->i_ctx_p, &initial_file, user_errors,
+			pexit_code, perror_object);
 }
 int
 gs_main_run_file_open(gs_main_instance * minst, const char *file_name, ref * pfref)
@@ -342,6 +352,7 @@ gs_main_run_file_open(gs_main_instance * minst, const char *file_name, ref * pfr
 private int
 gs_run_init_file(gs_main_instance * minst, int *pexit_code, ref * perror_object)
 {
+    i_ctx_t *i_ctx_p = minst->i_ctx_p;
     ref ifile;
     ref first_token;
     int code;
@@ -361,7 +372,8 @@ gs_run_init_file(gs_main_instance * minst, int *pexit_code, ref * perror_object)
     /* Check to make sure the first token is an integer */
     /* (for the version number check.) */
     scanner_state_init(&state, false);
-    code = scan_token(ifile.value.pfile, &first_token, &state);
+    code = scan_token(i_ctx_p, ifile.value.pfile, &first_token,
+		      &state);
     if (code != 0 || !r_has_type(&first_token, t_integer)) {
 	eprintf1("Initialization file %s does not begin with an integer.\n", gs_init_file);
 	*pexit_code = 255;
@@ -369,7 +381,7 @@ gs_run_init_file(gs_main_instance * minst, int *pexit_code, ref * perror_object)
     }
     *++osp = first_token;
     r_set_attrs(&ifile, a_executable);
-    return gs_interpret(&ifile, minst->user_errors,
+    return gs_interpret(&minst->i_ctx_p, &ifile, minst->user_errors,
 			pexit_code, perror_object);
 }
 
@@ -412,7 +424,8 @@ gs_main_run_string_begin(gs_main_instance * minst, int user_errors,
     gs_main_set_lib_paths(minst);
     make_const_string(&rstr, avm_foreign | a_readonly | a_executable,
 		      strlen(setup), (const byte *)setup);
-    code = gs_interpret(&rstr, user_errors, pexit_code, perror_object);
+    code = gs_interpret(&minst->i_ctx_p, &rstr, user_errors, pexit_code,
+			perror_object);
     return (code == e_NeedInput ? 0 : code == 0 ? e_Fatal : code);
 }
 /* Continue running a string with the option of suspending. */
@@ -426,7 +439,8 @@ gs_main_run_string_continue(gs_main_instance * minst, const char *str,
 	return 0;		/* empty string signals EOF */
     make_const_string(&rstr, avm_foreign | a_readonly, length,
 		      (const byte *)str);
-    return gs_interpret(&rstr, user_errors, pexit_code, perror_object);
+    return gs_interpret(&minst->i_ctx_p, &rstr, user_errors, pexit_code,
+			perror_object);
 }
 /* Signal EOF when suspended. */
 int
@@ -436,7 +450,8 @@ gs_main_run_string_end(gs_main_instance * minst, int user_errors,
     ref rstr;
 
     make_empty_const_string(&rstr, avm_foreign | a_readonly);
-    return gs_interpret(&rstr, user_errors, pexit_code, perror_object);
+    return gs_interpret(&minst->i_ctx_p, &rstr, user_errors, pexit_code,
+			perror_object);
 }
 
 /* ------ Operand stack access ------ */
@@ -444,8 +459,9 @@ gs_main_run_string_end(gs_main_instance * minst, int user_errors,
 /* These are built for comfort, not for speed. */
 
 private int
-push_value(ref * pvalue)
+push_value(gs_main_instance *minst, ref * pvalue)
 {
+    i_ctx_t *i_ctx_p = minst->i_ctx_p;
     int code = ref_stack_push(&o_stack, 1);
 
     if (code < 0)
@@ -460,7 +476,7 @@ gs_push_boolean(gs_main_instance * minst, bool value)
     ref vref;
 
     make_bool(&vref, value);
-    return push_value(&vref);
+    return push_value(minst, &vref);
 }
 
 int
@@ -469,7 +485,7 @@ gs_push_integer(gs_main_instance * minst, long value)
     ref vref;
 
     make_int(&vref, value);
-    return push_value(&vref);
+    return push_value(minst, &vref);
 }
 
 int
@@ -478,7 +494,7 @@ gs_push_real(gs_main_instance * minst, floatp value)
     ref vref;
 
     make_real(&vref, value);
-    return push_value(&vref);
+    return push_value(minst, &vref);
 }
 
 int
@@ -489,11 +505,11 @@ gs_push_string(gs_main_instance * minst, byte * chars, uint length,
 
     make_string(&vref, avm_foreign | (read_only ? a_readonly : a_all),
 		length, (byte *) chars);
-    return push_value(&vref);
+    return push_value(minst, &vref);
 }
 
 private int
-pop_value(ref * pvalue)
+pop_value(i_ctx_t *i_ctx_p, ref * pvalue)
 {
     if (!ref_stack_count(&o_stack))
 	return_error(e_stackunderflow);
@@ -504,8 +520,9 @@ pop_value(ref * pvalue)
 int
 gs_pop_boolean(gs_main_instance * minst, bool * result)
 {
+    i_ctx_t *i_ctx_p = minst->i_ctx_p;
     ref vref;
-    int code = pop_value(&vref);
+    int code = pop_value(i_ctx_p, &vref);
 
     if (code < 0)
 	return code;
@@ -518,8 +535,9 @@ gs_pop_boolean(gs_main_instance * minst, bool * result)
 int
 gs_pop_integer(gs_main_instance * minst, long *result)
 {
+    i_ctx_t *i_ctx_p = minst->i_ctx_p;
     ref vref;
-    int code = pop_value(&vref);
+    int code = pop_value(i_ctx_p, &vref);
 
     if (code < 0)
 	return code;
@@ -532,8 +550,9 @@ gs_pop_integer(gs_main_instance * minst, long *result)
 int
 gs_pop_real(gs_main_instance * minst, float *result)
 {
+    i_ctx_t *i_ctx_p = minst->i_ctx_p;
     ref vref;
-    int code = pop_value(&vref);
+    int code = pop_value(i_ctx_p, &vref);
 
     if (code < 0)
 	return code;
@@ -554,8 +573,9 @@ gs_pop_real(gs_main_instance * minst, float *result)
 int
 gs_pop_string(gs_main_instance * minst, gs_string * result)
 {
+    i_ctx_t *i_ctx_p = minst->i_ctx_p;
     ref vref;
-    int code = pop_value(&vref);
+    int code = pop_value(i_ctx_p, &vref);
 
     if (code < 0)
 	return code;
@@ -588,7 +608,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
 	 * alloc_restore_all will close dynamically allocated devices.
 	 */
     gs_exit_status = exit_status;	/* see above */
-
+    gp_readline_finit(minst->readline_data);
     if (gs_debug_c(':'))
 	print_resource_usage(minst, &gs_imemory, "Final");
     /* Do the equivalent of a restore "past the bottom". */
@@ -623,10 +643,10 @@ print_resource_usage(const gs_main_instance * minst, gs_dual_memory_t * dmem,
     {
 	int i;
 
-	for (i = 0; i < countof(dmem->spaces.indexed); ++i) {
-	    gs_ref_memory_t *mem = dmem->spaces.indexed[i];
+	for (i = 0; i < countof(dmem->spaces_indexed); ++i) {
+	    gs_ref_memory_t *mem = dmem->spaces_indexed[i];
 
-	    if (mem != 0 && (i == 0 || mem != dmem->spaces.indexed[i - 1])) {
+	    if (mem != 0 && (i == 0 || mem != dmem->spaces_indexed[i - 1])) {
 		gs_memory_status_t status;
 
 		gs_memory_status((gs_memory_t *) mem, &status);
@@ -643,9 +663,11 @@ print_resource_usage(const gs_main_instance * minst, gs_dual_memory_t * dmem,
 
 /* Dump the stacks after interpretation */
 void
-gs_debug_dump_stack(int code, ref * perror_object)
+gs_main_dump_stack(gs_main_instance *minst, int code, ref * perror_object)
 {
-    zflush(osp);		/* force out buffered output */
+    i_ctx_t *i_ctx_p = minst->i_ctx_p;
+
+    zflush(i_ctx_p);		/* force out buffered output */
     dprintf1("\nUnexpected interpreter error %d.\n", code);
     if (perror_object != 0) {
 	dputs("Error object: ");
@@ -655,4 +677,10 @@ gs_debug_dump_stack(int code, ref * perror_object)
     debug_dump_stack(&o_stack, "Operand stack");
     debug_dump_stack(&e_stack, "Execution stack");
     debug_dump_stack(&d_stack, "Dictionary stack");
+}
+/* Backward compatibility */
+void
+gs_debug_dump_stack(int code, ref * perror_object)
+{
+    gs_main_dump_stack(gs_main_instance_default(), code, perror_object);
 }

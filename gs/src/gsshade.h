@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -27,6 +27,7 @@
 #include "gsdsrc.h"
 #include "gsfunc.h"
 #include "gsmatrix.h"
+#include "gxfixed.h"
 
 /* ---------------- Types and structures ---------------- */
 
@@ -235,15 +236,20 @@ int gs_shading_Tpp_init(P3(gs_shading_t ** ppsh,
 			   gs_memory_t * mem));
 
 /*
- * Fill a path with a shading.  This is the only externally accessible
- * procedure for rendering a shading.  A NULL path means fill the
- * shading's geometry (shfill).
+ * Fill a path or a (device-space) rectangle with a shading.  Both the path
+ * and the rectangle are optional, but at least one must be non-NULL; if
+ * both are specified, the filled region is their intersection. This is the
+ * only externally accessible procedure for rendering a shading.
+ * fill_background indicates whether to fill portions of the path outside
+ * the shading's geometry: it is true for filling with a pattern, false for
+ * shfill.
  */
 #ifndef gx_path_DEFINED
 #  define gx_path_DEFINED
 typedef struct gx_path_s gx_path;
 #endif
-int gs_shading_fill_path(P4(const gs_shading_t *psh, const gx_path *ppath,
-			    gx_device *dev, gs_imager_state *pis));
+int gs_shading_fill_path(P6(const gs_shading_t *psh, /*const*/ gx_path *ppath,
+			    const gs_fixed_rect *prect, gx_device *dev,
+			    gs_imager_state *pis, bool fill_background));
 
 #endif /* gsshade_INCLUDED */

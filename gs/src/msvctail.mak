@@ -1,4 +1,4 @@
-#    Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -24,7 +24,7 @@
 
 # -------------------------- Auxiliary programs --------------------------- #
 
-$(GLGENDIR)\ccf32.tr: $(MAKEFILE)
+$(GLGENDIR)\ccf32.tr: $(TOP_MAKEFILES)
 	echo $(GENOPT) /I$(INCDIR) -DCHECK_INTERRUPTS -D_Windows -D__WIN32__ > $(GLGENDIR)\ccf32.tr
 
 $(ECHOGS_XE): $(GLSRC)echogs.c
@@ -33,22 +33,27 @@ $(ECHOGS_XE): $(GLSRC)echogs.c
 
 # Don't create genarch if it's not needed
 !ifdef GENARCH_XE
-$(GENARCH_XE): $(GLSRC)genarch.c $(stdpre_h) $(iref_h) $(GLGENDIR)\ccf32.tr
+$(GENARCH_XE): $(GLSRC)genarch.c $(GENARCH_DEPS) $(GLGENDIR)\ccf32.tr
 	$(CCAUX_SETUP)
 	$(CCAUX) @$(GLGENDIR)\ccf32.tr /Fo$(GLOBJ)genarch.obj /Fe$(GENARCH_XE) $(GLSRC)genarch.c $(CCAUX_TAIL)
 !endif
 
-$(GENCONF_XE): $(GLSRC)genconf.c $(stdpre_h)
+$(GENCONF_XE): $(GLSRC)genconf.c $(GENCONF_DEPS)
 	$(CCAUX_SETUP)
 	$(CCAUX) $(GLSRC)genconf.c /Fo$(GLOBJ)genconf.obj /Fe$(GENCONF_XE) $(CCAUX_TAIL)
 
-$(GENDEV_XE): $(GLSRC)gendev.c $(stdpre_h)
+$(GENDEV_XE): $(GLSRC)gendev.c $(GENDEV_DEPS)
 	$(CCAUX_SETUP)
 	$(CCAUX) $(GLSRC)gendev.c /Fo$(GLOBJ)gendev.obj /Fe$(GENDEV_XE) $(CCAUX_TAIL)
 
-$(GENINIT_XE): $(PSSRC)geninit.c $(stdio__h) $(string__h)
+$(GENHT_XE): $(GLSRC)genht.c $(GENHT_DEPS)
 	$(CCAUX_SETUP)
-	$(CCAUX) $(PSSRC)geninit.c /Fo$(GLOBJ)geninit.obj /Fe$(GENINIT_XE) $(CCAUX_TAIL)
+	$(CCAUX) $(GENHT_CFLAGS) $(GLSRC)genht.c /Fo$(GLOBJ)genht.obj /Fe$(GENHT_XE) $(CCAUX_TAIL)
+
+# PSSRC and PSOBJ aren't defined yet, so we spell out the definitions.
+$(GENINIT_XE): $(PSSRCDIR)$(D)geninit.c $(GENINIT_DEPS)
+	$(CCAUX_SETUP)
+	$(CCAUX) $(PSSRCDIR)$(D)geninit.c /Fo$(PSOBJDIR)$(D)geninit.obj /Fe$(GENINIT_XE) $(CCAUX_TAIL)
 
 # -------------------------------- Library -------------------------------- #
 
@@ -58,7 +63,7 @@ $(GENINIT_XE): $(PSSRC)geninit.c $(stdio__h) $(string__h)
 
 LIBCTR=$(GLGEN)libc32.tr
 
-$(LIBCTR): $(MAKEFILE)
+$(LIBCTR): $(TOP_MAKEFILES)
         echo $(LIBDIR)\shell32.lib >$(LIBCTR)
         echo $(LIBDIR)\comdlg32.lib >>$(LIBCTR)
         echo $(LIBDIR)\gdi32.lib >>$(LIBCTR)

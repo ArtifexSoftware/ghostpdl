@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -45,124 +45,190 @@ mesh_init_fill_state(mesh_fill_state_t * pfs, const gs_shading_mesh_t * psh,
     shade_bbox_transform2fixed(rect, pis, &pfs->rect);
 }
 
+/* Initialize the recursion state for filling one triangle. */
+void
+mesh_init_fill_triangle(mesh_fill_state_t * pfs,
+  const mesh_vertex_t *va, const mesh_vertex_t *vb, const mesh_vertex_t *vc,
+  bool check_clipping)
+{
+    pfs->depth = 1;
+    pfs->frames[0].va = *va;
+    pfs->frames[0].vb = *vb;
+    pfs->frames[0].vc = *vc;
+    pfs->frames[0].check_clipping = check_clipping;
+}
+
 #define SET_MIN_MAX_3(vmin, vmax, a, b, c)\
   if ( a < b ) vmin = a, vmax = b; else vmin = b, vmax = a;\
   if ( c < vmin ) vmin = c; else if ( c > vmax ) vmax = c
 
 int
-mesh_fill_triangle(const mesh_fill_state_t * pfs, const mesh_vertex_t *va,
-		   const mesh_vertex_t *vb, const mesh_vertex_t *vc,
-		   bool check)
+mesh_fill_triangle(mesh_fill_state_t * pfs)
 {
     const gs_shading_mesh_t *psh = pfs->pshm;
+    gs_imager_state *pis = pfs->pis;
+    mesh_frame_t *fp = &pfs->frames[pfs->depth - 1];
     int ci;
 
-    /*
-     * Fill the triangle with vertices at va->p, vb->p, and vc->p
-     * with color va->cc.
-     * If check is true, check for whether the triangle is entirely
-     * inside the rectangle, entirely outside, or partly inside;
-     * if check is false, assume the triangle is entirely inside.
-     */
-    if (check) {
-	fixed xmin, ymin, xmax, ymax;
+    for (;;) {
+	bool check = fp->check_clipping;
 
-	SET_MIN_MAX_3(xmin, xmax, va->p.x, vb->p.x, vc->p.x);
-	SET_MIN_MAX_3(ymin, ymax, va->p.y, vb->p.y, vc->p.y);
-	if (xmin >= pfs->rect.p.x && xmax <= pfs->rect.q.x &&
-	    ymin >= pfs->rect.p.y && ymax <= pfs->rect.q.y
-	    ) {
-	    /* The triangle is entirely inside the rectangle. */
-	    check = false;
-	} else if (xmin >= pfs->rect.q.x || xmax <= pfs->rect.p.x ||
-		   ymin >= pfs->rect.q.y || ymax <= pfs->rect.p.y
-	    ) {
-	    /* The triangle is entirely outside the rectangle. */
-	    return 0;
+	/*
+	 * Fill the triangle with vertices at fp->va.p, fp->vb.p, and
+	 * fp->vc.p with color fp->va.cc.  If check is true, check for
+	 * whether the triangle is entirely inside the rectangle, entirely
+	 * outside, or partly inside; if check is false, assume the triangle
+	 * is entirely inside.
+	 */
+	if (check) {
+	    fixed xmin, ymin, xmax, ymax;
+
+	    SET_MIN_MAX_3(xmin, xmax, fp->va.p.x, fp->vb.p.x, fp->vc.p.x);
+	    SET_MIN_MAX_3(ymin, ymax, fp->va.p.y, fp->vb.p.y, fp->vc.p.y);
+	    if (xmin >= pfs->rect.p.x && xmax <= pfs->rect.q.x &&
+		ymin >= pfs->rect.p.y && ymax <= pfs->rect.q.y
+		) {
+		/* The triangle is entirely inside the rectangle. */
+		check = false;
+	    } else if (xmin >= pfs->rect.q.x || xmax <= pfs->rect.p.x ||
+		       ymin >= pfs->rect.q.y || ymax <= pfs->rect.p.y
+		       ) {
+		/* The triangle is entirely outside the rectangle. */
+		goto next;
+	    }
 	}
-    }
-    /* Check whether the colors fall within the smoothness criterion. */
-    for (ci = 0; ci < pfs->num_components; ++ci) {
-	float c0 = va->cc[ci], c1 = vb->cc[ci], c2 = vc->cc[ci];
-	float cmin, cmax;
+	if (fp < &pfs->frames[countof(pfs->frames) - 3]) {
+	/* Check whether the colors fall within the smoothness criterion. */
+	    for (ci = 0; ci < pfs->num_components; ++ci) {
+		float
+		    c0 = fp->va.cc[ci], c1 = fp->vb.cc[ci], c2 = fp->vc.cc[ci];
+		float cmin, cmax;
 
-	SET_MIN_MAX_3(cmin, cmax, c0, c1, c2);
-	if (cmax - cmin > pfs->cc_max_error[ci])
-	    goto recur;
-    }
-    /* Fill the triangle with the color. */
-    {
-	gx_device_color dev_color;
-	const gs_color_space *pcs = psh->params.ColorSpace;
-	gs_imager_state *pis = pfs->pis;
-	gs_client_color fcc;
-	int code;
-
-	memcpy(&fcc.paint, va->cc, sizeof(fcc.paint));
-	(*pcs->type->restrict_color)(&fcc, pcs);
-	(*pcs->type->remap_color)(&fcc, pcs, &dev_color, pis,
-				  pfs->dev, gs_color_select_texture);
-/****** SHOULD ADD adjust ON ANY OUTSIDE EDGES ******/
-#if 0
+		SET_MIN_MAX_3(cmin, cmax, c0, c1, c2);
+		if (cmax - cmin > pfs->cc_max_error[ci])
+		    goto nofill;
+	    }
+	}
+    fill:
+	/* Fill the triangle with the color. */
 	{
-	    gx_path *ppath = gx_path_alloc(pis->memory, "Gt_fill");
+	    gx_device_color dev_color;
+	    const gs_color_space *pcs = psh->params.ColorSpace;
+	    gs_client_color fcc;
+	    int code;
 
-	    gx_path_add_point(ppath, va->p.x, va->p.y);
-	    gx_path_add_line(ppath, vb->p.x, vb->p.y);
-	    gx_path_add_line(ppath, vc->p.x, vc->p.y);
-	    code = shade_fill_path((const shading_fill_state_t *)pfs,
-				   ppath, &dev_color);
-	    gx_path_free(ppath, "Gt_fill");
-	}
+	    memcpy(&fcc.paint, fp->va.cc, sizeof(fcc.paint));
+	    (*pcs->type->restrict_color)(&fcc, pcs);
+	    (*pcs->type->remap_color)(&fcc, pcs, &dev_color, pis,
+				      pfs->dev, gs_color_select_texture);
+	    /****** SHOULD ADD adjust ON ANY OUTSIDE EDGES ******/
+#if 0
+	    {
+		gx_path *ppath = gx_path_alloc(pis->memory, "Gt_fill");
+
+		gx_path_add_point(ppath, fp->va.p.x, fp->va.p.y);
+		gx_path_add_line(ppath, fp->vb.p.x, fp->vb.p.y);
+		gx_path_add_line(ppath, fp->vc.p.x, fp->vc.p.y);
+		code = shade_fill_path((const shading_fill_state_t *)pfs,
+				       ppath, &dev_color);
+		gx_path_free(ppath, "Gt_fill");
+	    }
 #else
-	code = (*dev_proc(pfs->dev, fill_triangle))
-	    (pfs->dev, va->p.x, va->p.y,
-	     vb->p.x - va->p.x, vb->p.y - va->p.y,
-	     vc->p.x - va->p.x, vc->p.y - va->p.y,
-	     &dev_color, pis->log_op);
+	    code = (*dev_proc(pfs->dev, fill_triangle))
+		(pfs->dev, fp->va.p.x, fp->va.p.y,
+		 fp->vb.p.x - fp->va.p.x, fp->vb.p.y - fp->va.p.y,
+		 fp->vc.p.x - fp->va.p.x, fp->vc.p.y - fp->va.p.y,
+		 &dev_color, pis->log_op);
 #endif
-	return code;
-    }
-    /*
-     * Subdivide the triangle and recur.  The only subdivision method
-     * that doesn't seem to create anomalous shapes divides the
-     * triangle in 4, using the midpoints of each side.
-     */
-recur:
-    {
-	mesh_vertex_t vab, vac, vbc;
-	int i;
-	int code;
+	    if (code < 0)
+		return code;
+	}
+    next:
+	if (fp == &pfs->frames[0])
+	    return 0;
+	--fp;
+	continue;
+    nofill:
+	/*
+	 * The colors don't converge.  Does the region color more than
+	 * a single pixel?
+	 */
+	{
+	    gs_fixed_rect region;
+
+	    SET_MIN_MAX_3(region.p.x, region.q.x,
+			  fp->va.p.x, fp->vb.p.x, fp->vc.p.x);
+	    SET_MIN_MAX_3(region.p.y, region.q.y,
+			  fp->va.p.y, fp->vb.p.y, fp->vc.p.y);
+	    if (region.q.x - region.p.x <= fixed_1 &&
+		region.q.y - region.p.y <= fixed_1) {
+		/*
+		 * More precisely, does the bounding box of the region,
+		 * taking fill adjustment into account, span more than 1
+		 * pixel center in either X or Y?
+		 */
+		fixed ax = pis->fill_adjust.x;
+		int nx =
+		    fixed2int_pixround(region.q.x + ax) -
+		    fixed2int_pixround(region.p.x - ax);
+		fixed ay = pis->fill_adjust.y;
+		int ny =
+		    fixed2int_pixround(region.q.y + ay) -
+		    fixed2int_pixround(region.p.y - ay);
+
+		if (!(nx > 1 && ny != 0) || (ny > 1 && nx != 0))
+		    goto fill;
+	    }
+	}
+	/*
+	 * Subdivide the triangle and recur.  The only subdivision method
+	 * that doesn't seem to create anomalous shapes divides the
+	 * triangle in 4, using the midpoints of each side.
+	 *
+	 * If the original vertices are A, B, C, we fill the sub-triangles
+	 * in the following order:
+	 *	(A, AB, AC) - fp[3]
+	 *	(AB, AC, BC) - fp[2]
+	 *	(AC, BC, C) - fp[1]
+	 *	(AB, B, BC) - fp[0]
+	 */
+	{
+#define VAB fp[3].vb
+#define VAC fp[2].vb
+#define VBC fp[1].vb
+	    int i;
 
 #define MIDPOINT_FAST(a,b) arith_rshift_1((a) + (b) + 1)
-	vab.p.x = MIDPOINT_FAST(va->p.x, vb->p.x);
-	vab.p.y = MIDPOINT_FAST(va->p.y, vb->p.y);
-	vac.p.x = MIDPOINT_FAST(va->p.x, vc->p.x);
-	vac.p.y = MIDPOINT_FAST(va->p.y, vc->p.y);
-	vbc.p.x = MIDPOINT_FAST(vb->p.x, vc->p.x);
-	vbc.p.y = MIDPOINT_FAST(vb->p.y, vc->p.y);
+	    VAB.p.x = MIDPOINT_FAST(fp->va.p.x, fp->vb.p.x);
+	    VAB.p.y = MIDPOINT_FAST(fp->va.p.y, fp->vb.p.y);
+	    VAC.p.x = MIDPOINT_FAST(fp->va.p.x, fp->vc.p.x);
+	    VAC.p.y = MIDPOINT_FAST(fp->va.p.y, fp->vc.p.y);
+	    VBC.p.x = MIDPOINT_FAST(fp->vb.p.x, fp->vc.p.x);
+	    VBC.p.y = MIDPOINT_FAST(fp->vb.p.y, fp->vc.p.y);
 #undef MIDPOINT_FAST
-	for (i = 0; i < pfs->num_components; ++i) {
-	    float ta = va->cc[i], tb = vb->cc[i], tc = vc->cc[i];
+	    for (i = 0; i < pfs->num_components; ++i) {
+		float ta = fp->va.cc[i], tb = fp->vb.cc[i], tc = fp->vc.cc[i];
 
-	    vab.cc[i] = (ta + tb) * 0.5;
-	    vac.cc[i] = (ta + tc) * 0.5;
-	    vbc.cc[i] = (tb + tc) * 0.5;
+		VAB.cc[i] = (ta + tb) * 0.5;
+		VAC.cc[i] = (ta + tc) * 0.5;
+		VBC.cc[i] = (tb + tc) * 0.5;
+	    }
+	    /* Fill in the rest of the triangles. */
+	    fp[3].va = fp->va;
+	    fp[3].vc = VAC;
+	    fp[2].va = VAB;
+	    fp[2].vc = VBC;
+	    fp[1].va = VAC;
+	    fp[1].vc = fp->vc;
+	    fp->va = VAB;
+	    fp->vc = VBC;
+	    fp[3].check_clipping = fp[2].check_clipping =
+		fp[1].check_clipping = fp->check_clipping = check;
+#undef VAB
+#undef VAC
+#undef VBC
+	    fp += 3;
 	}
-	/* Do the "A" triangle. */
-	code = mesh_fill_triangle(pfs, va, &vab, &vac, check);
-	if (code < 0)
-	    return code;
-	/* Do the central triangle. */
-	code = mesh_fill_triangle(pfs, &vab, &vac, &vbc, check);
-	if (code < 0)
-	    return code;
-	/* Do the "C" triangle. */
-	code = mesh_fill_triangle(pfs, &vac, &vbc, vc, check);
-	if (code < 0)
-	    return code;
-	/* Do the "B" triangle. */
-	return mesh_fill_triangle(pfs, &vab, vb, &vbc, check);
     }
 }
 
@@ -183,10 +249,11 @@ Gt_next_vertex(const gs_shading_mesh_t * psh, shade_coord_stream_t * cs,
 }
 
 inline private int
-Gt_fill_triangle(const mesh_fill_state_t * pfs, const mesh_vertex_t * va,
+Gt_fill_triangle(mesh_fill_state_t * pfs, const mesh_vertex_t * va,
 		 const mesh_vertex_t * vb, const mesh_vertex_t * vc)
 {
-    return mesh_fill_triangle(pfs, va, vb, vc, true);
+    mesh_init_fill_triangle(pfs, va, vb, vc, true);
+    return mesh_fill_triangle(pfs);
 }
 
 int

@@ -139,8 +139,8 @@ RELOC_PTRS_END
  * when we finalize a scaled font, we unlink it from scaled_fonts.
  * See above for more information.
  */
-     void
-          gs_font_finalize(void *vptr)
+void
+gs_font_finalize(void *vptr)
 {
     gs_font **ppfirst;
     gs_font *next = pfont->next;

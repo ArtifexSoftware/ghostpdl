@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -54,13 +54,19 @@ extern const char *const gs_lib_default_path;
 extern const char *const gs_init_file;
 
 /* Resource tables.  In order to avoid importing a large number of types, */
-/* we only provide macros for the externs, not the externs themselves. */
+/* we only provide macros for some externs, not the externs themselves. */
+
+#define extern_gx_device_halftone_list()\
+  typedef const gx_device_halftone_resource_t *(*gx_dht_proc)(P0());\
+  extern const gx_dht_proc gx_device_halftone_list[]
+
+#define extern_gx_image_class_table()\
+  extern const gx_image_class_t gx_image_class_table[]
+extern const unsigned gx_image_class_table_count;
 
 #define extern_gx_image_type_table()\
   extern const gx_image_type_t * const gx_image_type_table[]
-#ifndef IN_GCONF_C
 extern const unsigned gx_image_type_table_count;
-#endif
 
 /* We need the extra typedef so that the const will apply to the table. */
 #define extern_gx_init_table()\
@@ -69,12 +75,10 @@ extern const unsigned gx_image_type_table_count;
 
 #define extern_gx_io_device_table()\
   extern const gx_io_device * const gx_io_device_table[]
-#ifndef IN_GCONF_C
 extern const unsigned gx_io_device_table_count;
-#endif
 
-/* Return the list of device prototypes, the list of their structure */
-/* descriptors, and (as the value) the length of the lists. */
+/* Return the list of device prototypes, a NULL list of their structure */
+/* descriptors (no longer used), and (as the value) the length of the lists. */
 #define extern_gs_lib_device_list()\
   int gs_lib_device_list(P2(const gx_device * const **plist,\
 			    gs_memory_struct_type_t **pst))

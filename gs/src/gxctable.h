@@ -1,4 +1,4 @@
-/* Copyright (C) 1995 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -29,7 +29,7 @@
  * Define a 3- or 4-D color lookup table.
  * n is the number of dimensions (input indices), 3 or 4.
  * dims[0..n-1] are the table dimensions.
- * m is the number of output values, 3 or 4.
+ * m is the number of output values, typically 3 (RGB) or 4 (CMYK).
  * For n = 3:
  *   table[i], 0 <= i < dims[0], point to strings of length
  *     dims[1] x dims[2] x m.

@@ -123,9 +123,9 @@ enable_hints(stem_hint_table * psht, const byte * mask)
  * error, or >0 when client intervention is required (or allowed).  The int*
  * argument is only for compatibility with the Type 1 charstring interpreter.
  */
-private int
-gs_type2_charstring_interpret(gs_type1_state * pcis,
-			    const gs_const_string * str, int *ignore_pindex)
+int
+gs_type2_interpret(gs_type1_state * pcis, const gs_const_string * str,
+		   int *ignore_pindex)
 {
     gs_font_type1 *pfont = pcis->pfont;
     gs_type1_data *pdata = &pfont->data;
@@ -756,11 +756,4 @@ flex:			{
 		return_error(gs_error_invalidfont);
 	}
     }
-}
-
-/* Register the interpreter. */
-void
-gs_gstype2_init(gs_memory_t * mem)
-{
-    gs_charstring_interpreter[2] = gs_type2_charstring_interpret;
 }

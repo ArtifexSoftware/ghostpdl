@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -33,17 +33,17 @@
 public_st_device_memory();
 
 /* GC procedures */
-#define mptr ((gx_device_memory *)vptr)
 private 
-ENUM_PTRS_BEGIN(device_memory_enum_ptrs)
+ENUM_PTRS_WITH(device_memory_enum_ptrs, gx_device_memory *mptr)
 {
-    return ENUM_USING(st_device_forward, vptr, sizeof(gx_device_forward), index - 2);
+    return ENUM_USING(st_device_forward, vptr, sizeof(gx_device_forward), index - 3);
 }
-case 0:
-ENUM_RETURN((mptr->foreign_bits ? NULL : (void *)mptr->base));
-ENUM_STRING_PTR(1, gx_device_memory, palette);
+case 0: ENUM_RETURN((mptr->foreign_bits ? NULL : (void *)mptr->base));
+case 1: ENUM_RETURN((mptr->foreign_line_pointers ? NULL : (void *)mptr->line_ptrs));
+ENUM_STRING_PTR(2, gx_device_memory, palette);
 ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(device_memory_reloc_ptrs)
+private
+RELOC_PTRS_WITH(device_memory_reloc_ptrs, gx_device_memory *mptr)
 {
     if (!mptr->foreign_bits) {
 	byte *base_old = mptr->base;
@@ -56,69 +56,78 @@ private RELOC_PTRS_BEGIN(device_memory_reloc_ptrs)
 	    mptr->line_ptrs[y] -= reloc;
 	/* Relocate line_ptrs, which also points into the data area. */
 	mptr->line_ptrs = (byte **) ((byte *) mptr->line_ptrs - reloc);
+    } else if (!mptr->foreign_line_pointers) {
+	RELOC_PTR(gx_device_memory, line_ptrs);
     }
     RELOC_CONST_STRING_PTR(gx_device_memory, palette);
     RELOC_USING(st_device_forward, vptr, sizeof(gx_device_forward));
 }
 RELOC_PTRS_END
-#undef mptr
 
 /* Define the palettes for monobit devices. */
-private const byte b_w_palette_string[6] =
-{0xff, 0xff, 0xff, 0, 0, 0};
-const gs_const_string mem_mono_b_w_palette =
-{b_w_palette_string, 6};
-private const byte w_b_palette_string[6] =
-{0, 0, 0, 0xff, 0xff, 0xff};
-const gs_const_string mem_mono_w_b_palette =
-{w_b_palette_string, 6};
+private const byte b_w_palette_string[6] = {
+    0xff, 0xff, 0xff, 0, 0, 0
+};
+const gs_const_string mem_mono_b_w_palette = {
+    b_w_palette_string, 6
+};
+private const byte w_b_palette_string[6] = {
+    0, 0, 0, 0xff, 0xff, 0xff
+};
+const gs_const_string mem_mono_w_b_palette = {
+    w_b_palette_string, 6
+};
 
 /* ------ Generic code ------ */
 
 /* Return the appropriate memory device for a given */
 /* number of bits per pixel (0 if none suitable). */
+private const gx_device_memory *const mem_devices[33] = {
+    0, &mem_mono_device, &mem_mapped2_device, 0, &mem_mapped4_device,
+    0, 0, 0, &mem_mapped8_device,
+    0, 0, 0, 0, 0, 0, 0, &mem_true16_device,
+    0, 0, 0, 0, 0, 0, 0, &mem_true24_device,
+    0, 0, 0, 0, 0, 0, 0, &mem_true32_device
+};
 const gx_device_memory *
 gdev_mem_device_for_bits(int bits_per_pixel)
 {
-    switch (bits_per_pixel) {
-	case 1:
-	    return &mem_mono_device;
-	case 2:
-	    return &mem_mapped2_device;
-	case 4:
-	    return &mem_mapped4_device;
-	case 8:
-	    return &mem_mapped8_device;
-	case 16:
-	    return &mem_true16_device;
-	case 24:
-	    return &mem_true24_device;
-	case 32:
-	    return &mem_true32_device;
-	default:
-	    return 0;
-    }
+    return ((uint)bits_per_pixel > 32 ? (const gx_device_memory *)0 :
+	    mem_devices[bits_per_pixel]);
 }
 /* Do the same for a word-oriented device. */
+private const gx_device_memory *const mem_word_devices[33] = {
+    0, &mem_mono_device, &mem_mapped2_word_device, 0, &mem_mapped4_word_device,
+    0, 0, 0, &mem_mapped8_word_device,
+    0, 0, 0, 0, 0, 0, 0, 0 /*no 16-bit word device*/,
+    0, 0, 0, 0, 0, 0, 0, &mem_true24_word_device,
+    0, 0, 0, 0, 0, 0, 0, &mem_true32_word_device
+};
 const gx_device_memory *
 gdev_mem_word_device_for_bits(int bits_per_pixel)
 {
-    switch (bits_per_pixel) {
-	case 1:
-	    return &mem_mono_word_device;
-	case 2:
-	    return &mem_mapped2_word_device;
-	case 4:
-	    return &mem_mapped4_word_device;
-	case 8:
-	    return &mem_mapped8_word_device;
-	case 24:
-	    return &mem_true24_word_device;
-	case 32:
-	    return &mem_true32_word_device;
-	default:
-	    return 0;
-    }
+    return ((uint)bits_per_pixel > 32 ? (const gx_device_memory *)0 :
+	    mem_word_devices[bits_per_pixel]);
+}
+
+/* Test whether a device is a memory device */
+bool
+gs_device_is_memory(const gx_device * dev)
+{
+    /*
+     * We use the draw_thin_line procedure to mark memory devices.
+     * See gdevmem.h.
+     */
+    int bits_per_pixel = dev->color_info.depth;
+    const gx_device_memory *mdproto;
+
+    if ((uint)bits_per_pixel > 32)
+	return false;
+    mdproto = mem_devices[bits_per_pixel];
+    if (mdproto != 0 && dev_proc(dev, draw_thin_line) == dev_proc(mdproto, draw_thin_line))
+	return true;
+    mdproto = mem_word_devices[bits_per_pixel];
+    return (mdproto != 0 && dev_proc(dev, draw_thin_line) == dev_proc(mdproto, draw_thin_line));
 }
 
 /* Make a memory device. */
@@ -138,7 +147,6 @@ gs_make_mem_device(gx_device_memory * dev, const gx_device_memory * mdproto,
 	    set_dev_proc(dev, get_page_device, gx_page_device_get_page_device);
 	    break;
     }
-    dev->target = target;
     /* Preload the black and white cache. */
     if (target == 0) {
 	if (dev->color_info.depth == 1) {
@@ -150,6 +158,7 @@ gs_make_mem_device(gx_device_memory * dev, const gx_device_memory * mdproto,
 	    dev->cached_colors.white = (1 << dev->color_info.depth) - 1;
 	}
     } else {
+	gx_device_set_target((gx_device_forward *)dev, target);
 	/* Forward the color mapping operations to the target. */
 	gx_device_forward_color_procs((gx_device_forward *) dev);
 	gx_device_copy_color_procs((gx_device *)dev, target);
@@ -168,16 +177,12 @@ void
 gs_make_mem_mono_device(gx_device_memory * dev, gs_memory_t * mem,
 			gx_device * target)
 {
-    gx_device_memory * const mdev = (gx_device_memory *)dev;
-
-    *dev = mem_mono_device;
-    dev->memory = mem;
+    gx_device_init((gx_device *)dev, (const gx_device *)&mem_mono_device,
+		   mem, true);
     set_dev_proc(dev, get_page_device, gx_default_get_page_device);
-    mdev->target = target;
+    gx_device_set_target((gx_device_forward *)dev, target);
     gdev_mem_mono_set_inverted(dev, true);
-    rc_init(dev, mem, 0);
 }
-
 
 /* Define whether a monobit memory device is inverted (black=1). */
 void
@@ -189,24 +194,43 @@ gdev_mem_mono_set_inverted(gx_device_memory * dev, bool black_is_1)
 	dev->palette = mem_mono_w_b_palette;
 }
 
-/* Compute the size of the bitmap storage, */
-/* including the space for the scan line pointer table. */
-/* Note that scan lines are padded to a multiple of align_bitmap_mod bytes, */
-/* and additional padding may be needed if the pointer table */
-/* must be aligned to an even larger modulus. */
-private ulong
-mem_bitmap_bits_size(const gx_device_memory * dev, int width, int height)
+/*
+ * Compute the size of the bitmap storage, including the space for the scan
+ * line pointer table.  Note that scan lines are padded to a multiple of
+ * align_bitmap_mod bytes, and additional padding may be needed if the
+ * pointer table must be aligned to an even larger modulus.
+ *
+ * The computation for planar devices is a little messier.  Each plane
+ * must pad its scan lines, and then we must pad again for the pointer
+ * tables (one table per plane).
+ */
+ulong
+gdev_mem_bits_size(const gx_device_memory * dev, int width, int height)
 {
-    return round_up((ulong) height *
-		    bitmap_raster(width * dev->color_info.depth),
-		    max(align_bitmap_mod, arch_align_ptr_mod));
+    int num_planes = dev->num_planes;
+    gx_render_plane_t plane1;
+    const gx_render_plane_t *planes;
+    ulong size;
+    int pi;
+
+    if (num_planes)
+	planes = dev->planes;
+    else
+	planes = &plane1, plane1.depth = dev->color_info.depth, num_planes = 1;
+    for (size = 0, pi = 0; pi < num_planes; ++pi)
+	size += bitmap_raster(width * planes[pi].depth);
+    return ROUND_UP(size * height, ARCH_ALIGN_PTR_MOD);
+}
+ulong
+gdev_mem_line_ptrs_size(const gx_device_memory * dev, int width, int height)
+{
+    return (ulong)height * sizeof(byte *) * max(dev->num_planes, 1);
 }
 ulong
 gdev_mem_data_size(const gx_device_memory * dev, int width, int height)
 {
-    return mem_bitmap_bits_size(dev, width, height) +
-	(ulong) height *sizeof(byte *);
-
+    return gdev_mem_bits_size(dev, width, height) +
+	gdev_mem_line_ptrs_size(dev, width, height);
 }
 /*
  * Do the inverse computation: given a width (in pixels) and a buffer size,
@@ -216,7 +240,8 @@ int
 gdev_mem_max_height(const gx_device_memory * dev, int width, ulong size)
 {
     ulong max_height = size /
-    (bitmap_raster(width * dev->color_info.depth) + sizeof(byte *));
+	(bitmap_raster(width * dev->color_info.depth) +
+	 sizeof(byte *) * max(dev->num_planes, 1));
     int height = (int)min(max_height, max_int);
 
     /*
@@ -230,18 +255,25 @@ gdev_mem_max_height(const gx_device_memory * dev, int width, ulong size)
 
 /* Open a memory device, allocating the data area if appropriate, */
 /* and create the scan line table. */
-private void mem_set_line_ptrs(P4(gx_device_memory *, byte **, byte *, int));
 int
 mem_open(gx_device * dev)
 {
-    return gdev_mem_open_scan_lines((gx_device_memory *)dev, dev->height);
+    gx_device_memory *const mdev = (gx_device_memory *)dev;
+
+    /* Check that we aren't trying to open a planar device as chunky. */
+    if (mdev->num_planes)
+	return_error(gs_error_rangecheck);
+    return gdev_mem_open_scan_lines(mdev, dev->height);
 }
 int
 gdev_mem_open_scan_lines(gx_device_memory *mdev, int setup_height)
 {
+    bool line_pointers_adjacent = true;
+
     if (setup_height < 0 || setup_height > mdev->height)
 	return_error(gs_error_rangecheck);
-    if (mdev->bitmap_memory != 0) {	/* Allocate the data now. */
+    if (mdev->bitmap_memory != 0) {
+	/* Allocate the data now. */
 	ulong size = gdev_mem_bitmap_size(mdev);
 
 	if ((uint) size != size)
@@ -251,36 +283,69 @@ gdev_mem_open_scan_lines(gx_device_memory *mdev, int setup_height)
 	if (mdev->base == 0)
 	    return_error(gs_error_VMerror);
 	mdev->foreign_bits = false;
-    }
-/*
- * Macro for adding an offset to a pointer when setting up the
- * scan line table.  This isn't just pointer arithmetic, because of
- * the segmenting considerations discussed in gdevmem.h.
- */
-#define huge_ptr_add(base, offset)\
-   ((void *)((byte huge *)(base) + (offset)))
-    mem_set_line_ptrs(mdev,
-		      huge_ptr_add(mdev->base,
-				   mem_bitmap_bits_size(mdev, mdev->width,
-							mdev->height)),
-		      mdev->base, setup_height);
-    return 0;
-}
-/* Set up the scan line pointers of a memory device. */
-/* Sets line_ptrs, base, raster; uses width, color_info.depth. */
-private void
-mem_set_line_ptrs(gx_device_memory * mdev, byte ** line_ptrs, byte * base,
-		  int count /* >= 0 */)
-{
-    byte **pptr = mdev->line_ptrs = line_ptrs;
-    byte **pend = pptr + count;
-    byte *scan_line = mdev->base = base;
-    uint raster = mdev->raster = gdev_mem_raster(mdev);
+    } else if (mdev->line_pointer_memory != 0) {
+	/* Allocate the line pointers now. */
 
-    while (pptr < pend) {
-	*pptr++ = scan_line;
-	scan_line = huge_ptr_add(scan_line, raster);
+	mdev->line_ptrs = (byte **)
+	    gs_alloc_byte_array(mdev->line_pointer_memory, mdev->height,
+				sizeof(byte *) * max(mdev->num_planes, 1),
+				"gdev_mem_open_scan_lines");
+	if (mdev->line_ptrs == 0)
+	    return_error(gs_error_VMerror);
+	mdev->foreign_line_pointers = false;
+	line_pointers_adjacent = false;
     }
+    if (line_pointers_adjacent)
+	mdev->line_ptrs = (byte **)
+	    (mdev->base + gdev_mem_bits_size(mdev, mdev->width, mdev->height));
+    mdev->raster = gdev_mem_raster(mdev);
+    return gdev_mem_set_line_ptrs(mdev, NULL, 0, NULL, setup_height);
+}
+/*
+ * Set up the scan line pointers of a memory device.
+ * See gxdevmem.h for the detailed specification.
+ * Sets or uses line_ptrs, base, raster; uses width, color_info.depth,
+ * num_planes, plane_depths, plane_depth.
+ */
+int
+gdev_mem_set_line_ptrs(gx_device_memory * mdev, byte * base, int raster,
+		       byte **line_ptrs, int setup_height)
+{
+    int num_planes = mdev->num_planes;
+    gx_render_plane_t plane1;
+    const gx_render_plane_t *planes;
+    byte **pline =
+	(line_ptrs ? (mdev->line_ptrs = line_ptrs) : mdev->line_ptrs);
+    byte *data =
+	(base ? (mdev->raster = raster, mdev->base = base) :
+	 (raster = mdev->raster, mdev->base));
+    int pi;
+
+    if (num_planes) {
+	if (base && !mdev->plane_depth)
+	    return_error(gs_error_rangecheck);
+	planes = mdev->planes;
+    } else {
+	planes = &plane1;
+	plane1.depth = mdev->color_info.depth;
+	num_planes = 1;
+    }
+
+    for (pi = 0; pi < num_planes; ++pi) {
+	int raster = bitmap_raster(mdev->width * planes[pi].depth);
+	byte **pptr = pline;
+	byte **pend = pptr + setup_height;
+	byte *scan_line = data;
+
+	while (pptr < pend) {
+	    *pptr++ = scan_line;
+	    scan_line += raster;
+	}
+	data += raster * mdev->height;
+	pline += setup_height;	/* not mdev->height, see gxdevmem.h */
+    }
+
+    return 0;
 }
 
 /* Return the initial transformation matrix */
@@ -297,21 +362,6 @@ mem_get_initial_matrix(gx_device * dev, gs_matrix * pmat)
     pmat->ty = mdev->initial_matrix.ty;
 }
 
-/* Test whether a device is a memory device */
-bool
-gs_device_is_memory(const gx_device * dev)
-{				/* We can't just compare the procs, or even an individual proc, */
-    /* because we might be tracing.  Instead, check the identity of */
-    /* the device name. */
-    const gx_device_memory *bdev =
-    gdev_mem_device_for_bits(dev->color_info.depth);
-
-    if (bdev != 0 && bdev->dname == dev->dname)
-	return true;
-    bdev = gdev_mem_word_device_for_bits(dev->color_info.depth);
-    return (bdev != 0 && bdev->dname == dev->dname);
-}
-
 /* Close a memory device, freeing the data area if appropriate. */
 int
 mem_close(gx_device * dev)
@@ -325,6 +375,10 @@ mem_close(gx_device * dev)
 	 * client that is sloppy about using is_open properly.
 	 */
 	mdev->base = 0;
+    } else if (mdev->line_pointer_memory != 0) {
+	gs_free_object(mdev->line_pointer_memory, mdev->line_ptrs,
+		       "mem_close");
+	mdev->line_ptrs = 0;	/* ibid. */
     }
     return 0;
 }
@@ -359,16 +413,21 @@ mem_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 	)
 	return_error(gs_error_rangecheck);
     {
+	gs_get_bits_params_t copy_params;
 	byte *base = scan_line_base(mdev, y);
-	int code = gx_get_bits_return_pointer(dev, x, h, params,
-				      GB_COLORS_NATIVE | GB_PACKING_CHUNKY |
-					      GB_ALPHA_NONE, base);
+	int code;
 
+	copy_params.options =
+	    GB_COLORS_NATIVE | GB_PACKING_CHUNKY | GB_ALPHA_NONE |
+	    (mdev->raster ==
+	     bitmap_raster(mdev->width * mdev->color_info.depth) ?
+	     GB_RASTER_STANDARD : GB_RASTER_SPECIFIED);
+	copy_params.raster = mdev->raster;
+	code = gx_get_bits_return_pointer(dev, x, h, params,
+					  &copy_params, base);
 	if (code >= 0)
 	    return code;
-	return gx_get_bits_copy(dev, x, w, h, params,
-				GB_COLORS_NATIVE | GB_PACKING_CHUNKY |
-				GB_ALPHA_NONE, base,
+	return gx_get_bits_copy(dev, x, w, h, params, &copy_params, base,
 				gx_device_raster(dev, true));
     }
 }
@@ -507,4 +566,16 @@ mem_mapped_map_color_rgb(gx_device * dev, gx_color_index color,
     prgb[1] = gx_color_value_from_byte(pptr[1]);
     prgb[2] = gx_color_value_from_byte(pptr[2]);
     return 0;
+}
+
+/*
+ * Implement draw_thin_line using a distinguished procedure that serves
+ * as the common marker for all memory devices.
+ */
+int
+mem_draw_thin_line(gx_device *dev, fixed fx0, fixed fy0, fixed fx1, fixed fy1,
+		   const gx_drawing_color *pdcolor,
+		   gs_logical_operation_t lop)
+{
+    return gx_default_draw_thin_line(dev, fx0, fy0, fx1, fy1, pdcolor, lop);
 }

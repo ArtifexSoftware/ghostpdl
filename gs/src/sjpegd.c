@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -20,8 +20,8 @@
 /* Interface routines for IJG decoding code. */
 #include "stdio_.h"
 #include "string_.h"
-#include "jpeglib.h"
-#include "jerror.h"
+#include "jpeglib_.h"
+#include "jerror_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "strimpl.h"

@@ -269,7 +269,7 @@ dict_matrix_param(const ref * pdict, const char *kstr, gs_matrix * pmat)
 /* If there is no uid, return default. */
 int
 dict_uid_param(const ref * pdict, gs_uid * puid, int defaultval,
-	       gs_memory_t * mem)
+	       gs_memory_t * mem, const i_ctx_t *i_ctx_p)
 {
     ref *puniqueid;
 

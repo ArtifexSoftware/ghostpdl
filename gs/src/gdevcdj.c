@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
   
   This file is part of Aladdin Ghostscript.
   
@@ -20,13 +20,15 @@
 /* H-P and Canon colour printer drivers */
 
 /****************************************************************
- * The code in this file has gotten completely out of hand.
- * Too many users have made too many "improvements" without
- * regard to the overall structure; the last three "improvements"
- * required me to spend several hours fixing each one so that
- * the code worked again at all.  For this reason, no further
- * changes to this file will be accepted.  I am planning eventually
- * to get these drivers rewritten from scratch.
+ * The code in this file was contributed by the authors whose names and/or
+ * e-mail addresses appear below: Aladdin Enterprises takes no
+ * responsibility for it.  In the past, we have tried to keep it working,
+ * but too many users have made too many "improvements" without regard to
+ * the overall structure; the last three "improvements" required me to spend
+ * several hours fixing each one so that the code worked again at all.  For
+ * this reason, no further changes to this file will be accepted.  We are
+ * planning eventually to get these drivers rewritten from scratch.
+ *
  *				L. Peter Deutsch
  *				Aladdin Enterprises
  *				February 28, 1996
@@ -594,10 +596,9 @@ gx_device_bjc800 far_data gs_bjc800_device =
 
 /* Forward references */
 private int gdev_pcl_mode1compress(P3(const byte *, const byte *, byte *));
-private int gdev_pcl_mode9compress(P4(int, const byte *, const byte *, byte *));
 private int hp_colour_open(P2(gx_device *, int));
 private int hp_colour_print_page(P3(gx_device_printer *, FILE *, int));
-private int near cdj_put_param_int(P6(gs_param_list *, gs_param_name, int *, int, int, int));
+private int cdj_put_param_int(P6(gs_param_list *, gs_param_name, int *, int, int, int));
 private uint gdev_prn_rasterwidth(P2(const gx_device_printer *, int));
 private int cdj_put_param_bpp(P5(gx_device *, gs_param_list *, int, int, int));
 private int cdj_set_bpp(P3(gx_device *, int, int));
@@ -681,7 +682,7 @@ hp_colour_open(gx_device *pdev, int ptype)
   static float bjc_letter[4] = { BJC_MARGINS_LETTER };  /* Not const! */
   static float bjc_a4[4] = { BJC_MARGINS_A4 };		/* Not const! */
 
-  const float _ds *m = (float _ds*) 0;
+  const float *m = (float *) 0;
 
   /* Set up colour params if put_params has not already done so */
   if (pdev->color_info.num_components == 0)
@@ -732,7 +733,7 @@ hp_colour_open(gx_device *pdev, int ptype)
 
 #ifndef USE_FIXED_MARGINS
     if (ptype == BJC800) {
-	((float _ds*) m)[1] = BJC_HARD_LOWER_LIMIT;
+	((float *) m)[1] = BJC_HARD_LOWER_LIMIT;
     }
 #endif
 
@@ -740,9 +741,9 @@ hp_colour_open(gx_device *pdev, int ptype)
 
 #ifdef BJC_DEFAULT_CENTEREDAREA
     if (m[3] < m[1]) {
-	((float _ds*) m)[3] = m[1];  	/* Top margin = bottom one. */
+	((float *) m)[3] = m[1];  	/* Top margin = bottom one. */
     } else {
-	((float _ds*) m)[1] = m[3];  	/* Bottom margin = top one. */
+	((float *) m)[1] = m[3];  	/* Bottom margin = top one. */
     }
 #endif
 
@@ -757,7 +758,7 @@ hp_colour_open(gx_device *pdev, int ptype)
      */
 
     /**/ {
-	float _ds *bjcm = (float _ds*) m;
+	float *bjcm = (float *) m;
 
 	byte pdimen = (byte)
 	    (pdev->height / pdev->y_pixels_per_inch * 10.
@@ -2102,6 +2103,10 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
     compression = 9;
     break;
   case DNJ650C:
+    if (pdev->x_pixels_per_inch == 600) {
+        /* set resolution to 600dpi 1st through PJL command */
+        fprintf(prn_stream,"\033%%-12345X@PJL SET RESOLUTION = 600\n");
+    }
     fprintf (prn_stream, "\033%%0B"); /* Enter HPGL/2 mode */
     fprintf (prn_stream, "BP5,1"); /* Turn off autorotation */
     fprintf (prn_stream, "PS%d,%d",
@@ -2112,6 +2117,8 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
     fprintf (prn_stream, "\033%%1A"); /* Enter HP-RTL mode */
     fprintf (prn_stream, "\033&a1N"); /* No negative motion - allow plotting
 						while receiving */
+    if (pdev->x_pixels_per_inch == 600) 
+        fprintf (prn_stream, "\033*t600R"); /* request 600dpi via HP RTL */
     { static const char temp[] = {
         033, '*', 'v', '6', 'W',
 	000 /* color model */,
@@ -2608,132 +2615,6 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
 }
 
 /*
- * Mode 9 2D compression for the HP DeskJet 5xxC. This mode can give
- * very good compression ratios, especially if there are areas of flat
- * colour (or blank areas), and so is 'highly recommended' for colour
- * printing in particular because of the very large amounts of data which
- * can be generated
- */
-private int
-gdev_pcl_mode9compress(int bytecount, const byte * current, const byte * previous, byte * compressed)
-{
-  register const byte *cur = current;
-  register const byte *prev = previous;
-  register byte *out = compressed;
-  const byte *end = current + bytecount;
-
-  while (cur < end) {		/* Detect a run of unchanged bytes. */
-    const byte *run = cur;
-    register const byte *diff;
-    int offset;
-    while (cur < end && *cur == *prev) {
-      cur++, prev++;
-    }
-    if (cur == end)
-      break;			/* rest of row is unchanged */
-    /* Detect a run of changed bytes. */
-    /* We know that *cur != *prev. */
-    diff = cur;
-    do {
-      prev++;
-      cur++;
-    }
-    while (cur < end && *cur != *prev);
-    /* Now [run..diff) are unchanged, and */
-    /* [diff..cur) are changed. */
-    offset = diff - run;
-    {
-      const byte *stop_test = cur - 4;
-      int dissimilar, similar;
-
-      while (diff < cur) {
-	const byte *compr = diff;
-	const byte *next;	/* end of run */
-	byte value = 0;
-	while (diff <= stop_test &&
-	       ((value = *diff) != diff[1] ||
-		value != diff[2] ||
-		value != diff[3]))
-	  diff++;
-
-	/* Find out how long the run is */
-	if (diff > stop_test)	/* no run */
-	  next = diff = cur;
-	else {
-	  next = diff + 4;
-	  while (next < cur && *next == value)
-	    next++;
-	}
-
-#define MAXOFFSETU 15
-#define MAXCOUNTU 7
-	/* output 'dissimilar' bytes, uncompressed */
-	if ((dissimilar = diff - compr)) {
-	  int temp, i;
-
-	  if ((temp = --dissimilar) > MAXCOUNTU)
-	    temp = MAXCOUNTU;
-	  if (offset < MAXOFFSETU)
-	    *out++ = (offset << 3) | (byte) temp;
-	  else {
-	    *out++ = (MAXOFFSETU << 3) | (byte) temp;
-	    offset -= MAXOFFSETU;
-	    while (offset >= 255) {
-	      *out++ = 255;
-	      offset -= 255;
-	    }
-	    *out++ = offset;
-	  }
-	  if (temp == MAXCOUNTU) {
-	    temp = dissimilar - MAXCOUNTU;
-	    while (temp >= 255) {
-	      *out++ = 255;
-	      temp -= 255;
-	    }
-	    *out++ = (byte) temp;
-	  }
-	  for (i = 0; i <= dissimilar; i++)
-	    *out++ = *compr++;
-	  offset = 0;
-	}			/* end uncompressed */
-#define MAXOFFSETC 3
-#define MAXCOUNTC 31
-	/* output 'similar' bytes, run-length encoded */
-	if ((similar = next - diff)) {
-	  int temp;
-
-	  if ((temp = (similar -= 2)) > MAXCOUNTC)
-	    temp = MAXCOUNTC;
-	  if (offset < MAXOFFSETC)
-	    *out++ = 0x80 | (offset << 5) | (byte) temp;
-	  else {
-	    *out++ = 0x80 | (MAXOFFSETC << 5) | (byte) temp;
-	    offset -= MAXOFFSETC;
-	    while (offset >= 255) {
-	      *out++ = 255;
-	      offset -= 255;
-	    }
-	    *out++ = offset;
-	  }
-	  if (temp == MAXCOUNTC) {
-	    temp = similar - MAXCOUNTC;
-	    while (temp >= 255) {
-	      *out++ = 255;
-	      temp -= 255;
-	    }
-	    *out++ = (byte) temp;
-	  }
-	  *out++ = value;
-	  offset = 0;
-	}			/* end compressed */
-	diff = next;
-      }
-    }
-  }
-  return out - compressed;
-}
-
-/*
  * Row compression for the H-P PaintJet.
  * Compresses data from row up to end_row, storing the result
  * starting at compressed.  Returns the number of bytes stored.
@@ -3186,7 +3067,7 @@ cdj_expand_line(word *line, int linesize, short cmyk, int bpp, int ebpp)
   }
 }
 
-private int near
+private int
 cdj_put_param_int(gs_param_list *plist, gs_param_name pname, int *pvalue,
   int minval, int maxval, int ecode)
 {	int code, value;

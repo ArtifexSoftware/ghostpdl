@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -18,6 +18,7 @@
 
 
 /* Generic image support */
+#include "memory_.h"
 #include "gx.h"
 #include "gscspace.h"
 #include "gserrors.h"
@@ -77,11 +78,14 @@ gs_pixel_image_t_init(gs_pixel_image_t * pim,
 /* Initialize the common part of an image-processing enumerator. */
 int
 gx_image_enum_common_init(gx_image_enum_common_t * piec,
-			  const gs_image_common_t * pic,
+			  const gs_data_image_t * pic,
 			  const gx_image_enum_procs_t * piep,
-			  gx_device * dev, int bits_per_component,
-			  int num_components, gs_image_format_t format)
+			  gx_device * dev, int num_components,
+			  gs_image_format_t format)
 {
+    int bpc = pic->BitsPerComponent;
+    int i;
+
     piec->image_type = pic->type;
     piec->procs = piep;
     piec->dev = dev;
@@ -89,29 +93,23 @@ gx_image_enum_common_init(gx_image_enum_common_t * piec,
     switch (format) {
 	case gs_image_format_chunky:
 	    piec->num_planes = 1;
-	    piec->plane_depths[0] = bits_per_component * num_components;
+	    piec->plane_depths[0] = bpc * num_components;
 	    break;
 	case gs_image_format_component_planar:
 	    piec->num_planes = num_components;
-	    {
-		int i;
-
-		for (i = 0; i < num_components; ++i)
-		    piec->plane_depths[i] = bits_per_component;
-	    }
+	    for (i = 0; i < num_components; ++i)
+		piec->plane_depths[i] = bpc;
 	    break;
 	case gs_image_format_bit_planar:
-	    piec->num_planes = bits_per_component * num_components;
-	    {
-		int i;
-
-		for (i = 0; i < piec->num_planes; ++i)
-		    piec->plane_depths[i] = 1;
-	    }
+	    piec->num_planes = bpc * num_components;
+	    for (i = 0; i < piec->num_planes; ++i)
+		piec->plane_depths[i] = 1;
 	    break;
 	default:
 	    return_error(gs_error_rangecheck);
     }
+    for (i = 0; i < piec->num_planes; ++i)
+	piec->plane_widths[i] = pic->Width;
     return 0;
 }
 
@@ -130,9 +128,9 @@ gx_data_image_source_size(const gs_imager_state * pis,
 /* Process the next piece of an image with no source data. */
 /* This procedure should never be called. */
 int
-gx_no_image_plane_data(gx_device * dev,
-		       gx_image_enum_common_t * info,
-		       const gx_image_plane_t * planes, int height)
+gx_no_plane_data(gx_image_enum_common_t * info,
+		 const gx_image_plane_t * planes, int height,
+		 int *height_used)
 {
     return_error(gs_error_Fatal);
 }
@@ -140,10 +138,79 @@ gx_no_image_plane_data(gx_device * dev,
 /* Clean up after processing an image with no source data. */
 /* This procedure may be called, but should do nothing. */
 int
-gx_ignore_end_image(gx_device * dev, gx_image_enum_common_t * info,
-		    bool draw_last)
+gx_ignore_end_image(gx_image_enum_common_t * info, bool draw_last)
 {
     return 0;
+}
+
+/* ---------------- Client procedures ---------------- */
+
+int
+gx_image_data(gx_image_enum_common_t * info, const byte ** plane_data,
+	      int data_x, uint raster, int height)
+{
+    int num_planes = info->num_planes;
+    gx_image_plane_t planes[gs_image_max_planes];
+    int i;
+
+#ifdef DEBUG
+    if (num_planes > gs_image_max_planes) {
+	lprintf2("num_planes=%d > gs_image_max_planes=%d!\n",
+		 num_planes, gs_image_max_planes);
+	return_error(gs_error_Fatal);
+    }
+#endif
+    for (i = 0; i < num_planes; ++i) {
+	planes[i].data = plane_data[i];
+	planes[i].data_x = data_x;
+	planes[i].raster = raster;
+    }
+    return gx_image_plane_data(info, planes, height);
+}
+
+int
+gx_image_plane_data(gx_image_enum_common_t * info,
+		    const gx_image_plane_t * planes, int height)
+{
+    int ignore_rows_used;
+
+    return gx_image_plane_data_rows(info, planes, height, &ignore_rows_used);
+}
+
+int
+gx_image_plane_data_rows(gx_image_enum_common_t * info,
+			 const gx_image_plane_t * planes, int height,
+			 int *rows_used)
+{
+    return info->procs->plane_data(info, planes, height, rows_used);
+}
+
+int
+gx_image_flush(gx_image_enum_common_t * info)
+{
+    int (*flush)(P1(gx_image_enum_common_t *)) = info->procs->flush;
+
+    return (flush ? flush(info) : 0);
+}
+
+bool
+gx_image_planes_wanted(const gx_image_enum_common_t *info, byte *wanted)
+{
+    bool (*planes_wanted)(P2(const gx_image_enum_common_t *, byte *)) =
+	info->procs->planes_wanted;
+
+    if (planes_wanted)
+	return planes_wanted(info, wanted);
+    else {
+	memset(wanted, 0xff, info->num_planes);
+	return true;
+    }
+}
+
+int
+gx_image_end(gx_image_enum_common_t * info, bool draw_last)
+{
+    return info->procs->end_image(info, draw_last);
 }
 
 /* ---------------- Serialization ---------------- */
@@ -403,12 +470,12 @@ gx_pixel_image_sget(gs_pixel_image_t *pim, stream *s,
     pim->ColorSpace = pcs;
     num_components = gs_color_space_num_components(pcs);
     num_decode = num_components * 2;
+    if (gs_color_space_get_index(pcs) == gs_color_space_index_Indexed)
+	decode_default_1 = pcs->params.indexed.hival;
     if (control & PI_Decode) {
 	uint dflags = 0x10000;
 	float *dp = pim->Decode;
 
-	if (gs_color_space_get_index(pcs) == gs_color_space_index_Indexed)
-	    decode_default_1 = pcs->params.indexed.hival;
 	for (i = 0; i < num_decode; i += 2, dp += 2, dflags <<= 2) {
 	    if (dflags >= 0x10000) {
 		dflags = sgetc(s) + 0x100;

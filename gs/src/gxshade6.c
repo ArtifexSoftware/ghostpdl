@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -255,7 +255,7 @@ split2_xy(double out[8], const patch_curve_t * curve1,
 }
 
 private int
-patch_fill(const patch_fill_state_t * pfs, const patch_curve_t curve[4],
+patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 	   const gs_fixed_point interior[4],
 	   void (*transform) (P5(gs_fixed_point *, const patch_curve_t[4],
 				 const gs_fixed_point[4], floatp, floatp)))
@@ -407,16 +407,18 @@ patch_fill(const patch_fill_state_t * pfs, const patch_curve_t curve[4],
 		(*transform)(&mv[1].p, curve, interior, u1, v0);
 		(*transform)(&mv[2].p, curve, interior, u1, v1);
 		(*transform)(&mv[3].p, curve, interior, u0, v1);
-		memcpy(&mv[0].cc, cu[0].cc.paint.values, sizeof(mv[0].cc));
-		memcpy(&mv[1].cc, cu[1].cc.paint.values, sizeof(mv[1].cc));
-		memcpy(&mv[2].cc, cu[2].cc.paint.values, sizeof(mv[2].cc));
-		memcpy(&mv[3].cc, cu[3].cc.paint.values, sizeof(mv[3].cc));
-		code = mesh_fill_triangle((const mesh_fill_state_t *)pfs,
-					  &mv[0], &mv[1], &mv[2], check);
+		memcpy(mv[0].cc, cu[0].cc.paint.values, sizeof(mv[0].cc));
+		memcpy(mv[1].cc, cu[1].cc.paint.values, sizeof(mv[1].cc));
+		memcpy(mv[2].cc, cu[2].cc.paint.values, sizeof(mv[2].cc));
+		memcpy(mv[3].cc, cu[3].cc.paint.values, sizeof(mv[3].cc));
+		mesh_init_fill_triangle((mesh_fill_state_t *)pfs,
+					&mv[0], &mv[1], &mv[2], check);
+		code = mesh_fill_triangle((mesh_fill_state_t *)pfs);
 		if (code < 0)
 		    return code;
-		code = mesh_fill_triangle((const mesh_fill_state_t *)pfs,
-					  &mv[2], &mv[3], &mv[0], check);
+		mesh_init_fill_triangle((mesh_fill_state_t *)pfs,
+					&mv[2], &mv[3], &mv[0], check);
+		code = mesh_fill_triangle((mesh_fill_state_t *)pfs);
 		if (code < 0)
 		    return code;
 	    }

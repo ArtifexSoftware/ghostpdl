@@ -16,12 +16,13 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Monitor-locked heap memory allocator */
 
 /* Initial version 2/1/98 by John Desrosiers (soho@crl.com) */
 /* Revised 8/6/98 by L. Peter Deutsch (ghost@aladdin.com) for changes */
 /*   in memory manager API */
+/* Edited 3/23/1999 by L. Peter Deutsch to remove compiler warnings. */
 
 #include "gx.h"
 #include "gsmemlok.h"
@@ -52,7 +53,7 @@ private gs_memory_proc_free_string(gs_locked_free_string);
 private gs_memory_proc_register_root(gs_locked_register_root);
 private gs_memory_proc_unregister_root(gs_locked_unregister_root);
 private gs_memory_proc_enable_free(gs_locked_enable_free);
-private gs_memory_procs_t locked_procs =
+private const gs_memory_procs_t locked_procs =
 {
     /* Raw memory procedures */
     gs_locked_alloc_bytes_immovable,
@@ -119,25 +120,26 @@ gs_memory_locked_target(const gs_memory_locked_t *lmem)
 
 /* -------- Private members just wrap a monitor around a gs_memory_heap --- */
 
+/*
+ * Contrary to our usual practice, we don't use BEGIN/END here, because
+ * that causes some compilers to give bogus error messages.
+ */
+
 #define DO_MONITORED(call_target)\
-    BEGIN\
 	gs_memory_locked_t * const lmem = (gs_memory_locked_t *)mem;\
 \
 	gx_monitor_enter(lmem->monitor);\
 	call_target;\
-	gx_monitor_leave(lmem->monitor);\
-    END
+	gx_monitor_leave(lmem->monitor)
 
 #define RETURN_MONITORED(result_type, call_target)\
-    BEGIN\
 	gs_memory_locked_t * const lmem = (gs_memory_locked_t *)mem;\
 	result_type temp;\
 \
 	gx_monitor_enter(lmem->monitor);\
 	temp = call_target;\
 	gx_monitor_leave(lmem->monitor);\
-	return temp;\
-    END
+	return temp
 
 /* Procedures */
 private void

@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -26,7 +26,7 @@
 #include "gxfcmap.h"
 #include "gxfont.h"
 #include "ialloc.h"
-#include "idict.h"
+#include "iddict.h"
 #include "idparam.h"
 #include "ifont.h"		/* for zfont_mark_glyph_name */
 #include "iname.h"
@@ -49,8 +49,9 @@ free_code_map(gx_code_map * pcmap, gs_memory_t * mem)
 
 /* Convert a code map to internal form. */
 private int
-acquire_code_map(gx_code_map * pcmap, const ref * pref, int depth,
-		 gs_cmap * root, gs_memory_t * mem)
+acquire_code_map(gx_code_map * pcmap, const ref * pref,
+		 const ref *pfxref, int depth, gs_cmap * root,
+		 gs_memory_t * mem)
 {
     pcmap->add_offset = 0;
     pcmap->cmap = root;
@@ -59,10 +60,19 @@ acquire_code_map(gx_code_map * pcmap, const ref * pref, int depth,
 	case t_null:
 	    pcmap->type = cmap_glyph;
 	    pcmap->data.glyph = gs_no_glyph;
+	    pcmap->byte_data.font_index = 0;
 	    return 0;
 	case t_name:
 	    pcmap->type = cmap_glyph;
 	    pcmap->data.glyph = name_index(pref);
+leaf:	    if (!r_has_type(pfxref, t_integer)) {
+		break;
+	    } else {
+		pcmap->byte_data.font_index = pfxref->value.intval;
+		/* Check for overflow. */
+		if (pcmap->byte_data.font_index != pfxref->value.intval)
+		    break;
+	    }
 	    return 0;
 	case t_integer:
 	    if (pref->value.intval < 0 ||
@@ -71,7 +81,7 @@ acquire_code_map(gx_code_map * pcmap, const ref * pref, int depth,
 		break;
 	    pcmap->type = cmap_glyph;
 	    pcmap->data.glyph = pref->value.intval + gs_min_cid_glyph;
-	    return 0;
+	    goto leaf;
 	case t_string:
 	    if (r_size(pref) < 1 || r_size(pref) > 4)
 		break;
@@ -85,9 +95,13 @@ acquire_code_map(gx_code_map * pcmap, const ref * pref, int depth,
 		    chr = (chr << 8) + pref->value.const_bytes[i];
 		pcmap->data.ccode = chr;
 	    }
-	    return 0;
+	    goto leaf;
 	default:
 	    if (!r_is_array(pref) || r_size(pref) < 1 || r_size(pref) > 256)
+		break;
+	    if (!r_has_type(pfxref, t_integer) &&
+		(!r_is_array(pfxref) || r_size(pfxref) < 1 ||
+		 r_size(pfxref) > 256))
 		break;
 	    if (depth >= 4)
 		return_error(e_limitcheck);
@@ -157,6 +171,7 @@ acquire_code_map(gx_code_map * pcmap, const ref * pref, int depth,
 		for (rtype = t_null, i = j = 0; i < size; ++i) {
 		    ref_type prev_type = rtype;
 		    gx_code_map *submap = &subtree[j];
+		    ref rfxsub;
 		    int code;
 
 		    array_get(pref, (long)i, &rsub);
@@ -183,8 +198,12 @@ acquire_code_map(gx_code_map * pcmap, const ref * pref, int depth,
 			    prev_value = rsub.value.intval;
 			    /* falls through */
 			default:
-			    code = acquire_code_map(submap, &rsub, depth + 1,
-						    root, mem);
+			    if (r_has_type(pfxref, t_array))
+				array_get(pfxref, (long)i, &rfxsub);
+			    else
+				rfxsub = *pfxref;
+			    code = acquire_code_map(submap, &rsub, &rfxsub,
+						    depth + 1, root, mem);
 			    if (code < 0) {	/* Release allocated elements. */
 				pcmap->byte_data.count1 = (j ? j - 1 : 0);
 				free_code_map(pcmap, mem);
@@ -201,26 +220,54 @@ acquire_code_map(gx_code_map * pcmap, const ref * pref, int depth,
     return_error(e_rangecheck);
 }
 
-/* Acquire CIDSystemInfo.  If missing, set Registry and Ordering to */
-/* empty strings and Supplement to 0, and return 1. */
-/* Note that this currently does not handle the array format. */
+/*
+ * Acquire the CIDSystemInfo array from a dictionary.  If missing, fabricate
+ * a 0-element array and return 1.
+ */
 private int
-acquire_cid_system_info(gs_cid_system_info * pcidsi, const ref * op)
+acquire_cid_system_info(ref *psia, const ref *op)
 {
     ref *prcidsi;
-    ref *pregistry;
-    ref *pordering;
 
     if (dict_find_string(op, "CIDSystemInfo", &prcidsi) <= 0) {
+	make_empty_array(psia, a_readonly);
+	return 1;
+    }
+    if (r_has_type(prcidsi, t_dictionary)) {
+	make_array(psia, a_readonly, 1, prcidsi);
+	return 0;
+    }
+    if (!r_is_array(prcidsi))
+	return_error(e_typecheck);
+    *psia = *prcidsi;
+    return 0;
+}
+
+/*
+ * Get one element of a CIDSystemInfo array.  If the element is missing or
+ * null (apparently Adobe interpreters accept null, even though the
+ * documentation doesn't allow this), fill in dummy values and return 1.
+ */
+private int
+get_cid_system_info(gs_cid_system_info * pcidsi, const ref * psia, uint index)
+{
+    ref rcidsi;
+    ref *pregistry;
+    ref *pordering;
+    int code;
+
+    code = array_get(psia, (long)index, &rcidsi);
+    if (code < 0 || r_has_type(&rcidsi, t_null)) {
+	/* Return a null value. */
 	pcidsi->Registry.data = 0, pcidsi->Registry.size = 0;
 	pcidsi->Ordering.data = 0, pcidsi->Ordering.size = 0;
 	pcidsi->Supplement = 0;
 	return 1;
     }
-    if (!r_has_type(prcidsi, t_dictionary))
+    if (!r_has_type(&rcidsi, t_dictionary))
 	return_error(e_typecheck);
-    if (dict_find_string(prcidsi, "Registry", &pregistry) <= 0 ||
-	dict_find_string(prcidsi, "Ordering", &pordering) <= 0
+    if (dict_find_string(&rcidsi, "Registry", &pregistry) <= 0 ||
+	dict_find_string(&rcidsi, "Ordering", &pordering) <= 0
 	)
 	return_error(e_rangecheck);
     check_read_type_only(*pregistry, t_string);
@@ -229,8 +276,9 @@ acquire_cid_system_info(gs_cid_system_info * pcidsi, const ref * op)
     pcidsi->Registry.size = r_size(pregistry);
     pcidsi->Ordering.data = pordering->value.const_bytes;
     pcidsi->Ordering.size = r_size(pordering);
-    return dict_int_param(prcidsi, "Supplement", 0, max_int, -1,
+    code = dict_int_param(&rcidsi, "Supplement", 0, max_int, -1,
 			  &pcidsi->Supplement);
+    return (code < 0 ? code : 0);
 }
 
 /* Check compatibility of CIDSystemInfo. */
@@ -253,14 +301,14 @@ cid_system_info_compatible(const gs_cid_system_info * psi1,
 /* Get the CodeMap from a Type 0 font, and check the CIDSystemInfo of */
 /* its subsidiary fonts. */
 int
-ztype0_get_cmap(const gs_cmap ** ppcmap, const ref * pfdepvector, const ref * op)
+ztype0_get_cmap(const gs_cmap **ppcmap, const ref *pfdepvector, const ref *op)
 {
     ref *prcmap;
     ref *pcodemap;
     const gs_cmap *pcmap;
     int code;
-    ref rfdep;
-    gs_cid_system_info cidsi;
+    uint num_fonts;
+    uint i;
 
     if (dict_find_string(op, "CMap", &prcmap) <= 0 ||
 	!r_has_type(prcmap, t_dictionary) ||
@@ -269,17 +317,23 @@ ztype0_get_cmap(const gs_cmap ** ppcmap, const ref * pfdepvector, const ref * op
 	)
 	return_error(e_invalidfont);
     pcmap = r_ptr(pcodemap, gs_cmap);
-    /* Currently we only handle 1-element fonts. */
-    if (r_size(pfdepvector) != 1)
-	return_error(e_rangecheck);
-    array_get(pfdepvector, 0L, &rfdep);
-    code = acquire_cid_system_info(&cidsi, &rfdep);
-    if (code < 0)
-	return code;
-    if (code == 0 &&
-	!cid_system_info_compatible(&cidsi, &pcmap->CIDSystemInfo)
-	)
-	return_error(e_rangecheck);
+    num_fonts = r_size(pfdepvector);
+    for (i = 0; i < num_fonts; ++i) {
+	ref rfdep, rfsi;
+	gs_cid_system_info cidsi;
+
+	array_get(pfdepvector, (long)i, &rfdep);
+	code = acquire_cid_system_info(&rfsi, &rfdep);
+	if (code < 0)
+	    return code;
+	if (code == 0) {
+	    if (r_size(&rfsi) != 1)
+		return_error(e_rangecheck);
+	    get_cid_system_info(&cidsi, &rfsi, 0);
+	    if (!cid_system_info_compatible(&cidsi, pcmap->CIDSystemInfo + i))
+		return_error(e_rangecheck);
+	}
+    }
     *ppcmap = pcmap;
     return 0;
 }
@@ -291,15 +345,23 @@ ztype0_get_cmap(const gs_cmap ** ppcmap, const ref * pfdepvector, const ref * op
  * Create the internal form of a CMap.  The initial CMap must be read-write
  * and have an entry with key = CodeMap and value = null; the result is
  * read-only and has a real CodeMap.
+ *
+ * This operator reads the CIDSystemInfo, WMode, .CodeMaps, and .FontIndices
+ * elements of the CMap dictionary.  For details, see lib/gs_cmap.ps.
  */
 private int
-zbuildcmap(os_ptr op)
+zbuildcmap(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code;
     ref *pcodemaps;
+    ref *pfontindices;
     ref *pcodemap;
-    gs_cmap *pcmap;
-    ref rdef, rnotdef, rcmap;
+    ref rcidsi;
+    gs_cmap *pcmap = 0;
+    gs_cid_system_info *pcidsi = 0;
+    ref rdef, rfxdef, rcmap;
+    uint i;
 
     check_type(*op, t_dictionary);
     check_dict_write(*op);
@@ -308,35 +370,55 @@ zbuildcmap(os_ptr op)
 	code = gs_note_error(e_VMerror);
 	goto fail;
     }
-    if ((code = dict_uid_param(op, &pcmap->uid, 0, imemory)) < 0 ||
+    if ((code = dict_uid_param(op, &pcmap->uid, 0, imemory, i_ctx_p)) < 0 ||
 	(code = dict_int_param(op, "WMode", 0, 1, 0, &pcmap->WMode)) < 0
 	)
 	goto fail;
     if (dict_find_string(op, ".CodeMaps", &pcodemaps) <= 0 ||
 	!r_has_type(pcodemaps, t_array) ||
 	r_size(pcodemaps) != 2 ||
+	dict_find_string(op, ".FontIndices", &pfontindices) <= 0 ||
+	!r_has_type(pfontindices, t_array) ||
+	r_size(pfontindices) != 2 ||
 	dict_find_string(op, "CodeMap", &pcodemap) <= 0 ||
 	!r_has_type(pcodemap, t_null)
 	) {
 	code = gs_note_error(e_rangecheck);
 	goto fail;
     }
-    if ((code = acquire_cid_system_info(&pcmap->CIDSystemInfo, op)) < 0 ||
-	(array_get(pcodemaps, 0L, &rdef),
-    (code = acquire_code_map(&pcmap->def, &rdef, 0, pcmap, imemory)) < 0) ||
-	(array_get(pcodemaps, 1L, &rnotdef),
-	 (code = acquire_code_map(&pcmap->notdef, &rnotdef, 0, pcmap, imemory)) < 0)
-	)
+    if ((code = acquire_cid_system_info(&rcidsi, op)) < 0)
+	goto fail;
+    pcidsi = ialloc_struct_array(r_size(&rcidsi), gs_cid_system_info,
+				 &st_cid_system_info_element,
+				 "zbuildcmap(CIDSystemInfo)");
+    if (pcidsi == 0) {
+	code = gs_note_error(e_VMerror);
+	goto fail;
+    }
+    pcmap->CIDSystemInfo = pcidsi;
+    for (i = 0; i < r_size(&rcidsi); ++i) {
+	code = get_cid_system_info(pcidsi + i, &rcidsi, i);
+	if (code < 0)
+	    goto fail;
+    }
+    array_get(pcodemaps, 0L, &rdef);
+    array_get(pfontindices, 0L, &rfxdef);
+    if ((code = acquire_code_map(&pcmap->def, &rdef, &rfxdef, 0, pcmap, imemory)) < 0)
+	goto fail;
+    array_get(pcodemaps, 1L, &rdef);
+    array_get(pfontindices, 1L, &rfxdef);
+    if ((code = acquire_code_map(&pcmap->notdef, &rdef, &rfxdef, 0, pcmap, imemory)) < 0)
 	goto fail;
     pcmap->mark_glyph = zfont_mark_glyph_name;
     pcmap->mark_glyph_data = 0;
     make_istruct_new(&rcmap, a_readonly, pcmap);
-    code = dict_put_string(op, "CodeMap", &rcmap);
+    code = idict_put_string(op, "CodeMap", &rcmap);
     if (code < 0)
 	goto fail;
-    return zreadonly(op);
+    return zreadonly(i_ctx_p);
 fail:
     ifree_object(pcmap, "zbuildcmap(cmap)");
+    ifree_object(pcidsi, "zbuildcmap(CIDSystemInfo)");
     return code;
 }
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -125,7 +125,7 @@ psdf_beginpath(gx_device_vector * vdev, gx_path_type_t type)
 
 int
 psdf_moveto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
-	    bool first, gx_path_type_t type)
+	    gx_path_type_t type)
 {
     pprintg2(gdev_vector_stream(vdev), "%g %g m\n", x, y);
     return 0;
@@ -198,8 +198,15 @@ psdf_begin_binary(gx_device_psdf * pdev, psdf_binary_writer * pbw)
     pbw->strm = pdev->strm;
     pbw->dev = pdev;
     /* If not binary, set up the encoding stream. */
-    if (!pdev->binary_ok)
-	psdf_encode_binary(pbw, &s_A85E_template, NULL);
+    if (!pdev->binary_ok) {
+	stream_state *st =
+	    s_alloc_state(pdev->v_memory, s_A85E_template.stype,
+			  "psdf_begin_binary");
+
+	if (st == 0)
+	    return_error(gs_error_VMerror);
+	psdf_encode_binary(pbw, &s_A85E_template, st);
+    }
     return 0;
 }
 
@@ -244,8 +251,8 @@ psdf_CFE_binary(psdf_binary_writer * pbw, int w, int h, bool invert)
     gs_memory_t *mem = pdev->v_memory;
     const stream_template *template = &s_CFE_template;
     stream_CFE_state *st =
-    gs_alloc_struct(mem, stream_CFE_state, template->stype,
-		    "psdf_CFE_binary");
+	gs_alloc_struct(mem, stream_CFE_state, template->stype,
+			"psdf_CFE_binary");
     int code;
 
     if (st == 0)
@@ -253,8 +260,9 @@ psdf_CFE_binary(psdf_binary_writer * pbw, int w, int h, bool invert)
     (*template->set_defaults) ((stream_state *) st);
     st->K = -1;
     st->Columns = w;
-    st->Rows = h;
+    st->Rows = 0;
     st->BlackIs1 = !invert;
+    st->EndOfBlock = true;
     code = psdf_encode_binary(pbw, template, (stream_state *) st);
     if (code < 0)
 	gs_free_object(mem, st, "psdf_CFE_binary");
@@ -270,9 +278,16 @@ psdf_end_binary(psdf_binary_writer * pbw)
     /* Close the filters in reverse order. */
     /* Stop before we try to close the file stream. */
     while (pbw->strm != pdev->strm) {
-	stream *next = pbw->strm->strm;
+	stream *s = pbw->strm;
+	gs_memory_t *mem = s->state->memory;
+	byte *sbuf = s->cbuf;
+	stream *next = s->strm;
 
-	sclose(pbw->strm);
+	sclose(s);
+	if (s->state != (stream_state *)s)
+	    gs_free_object(mem, s->state, "psdf_end_binary(state)");
+	gs_free_object(mem, s, "psdf_end_binary(stream)");
+	gs_free_object(mem, sbuf, "psdf_end_binary(buf)");
 	pbw->strm = next;
     }
     return 0;

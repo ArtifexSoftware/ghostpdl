@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1993, 1994, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1993, 1994, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -25,13 +25,11 @@
 #ifndef gs_matrix_DEFINED
 #  define gs_matrix_DEFINED
 typedef struct gs_matrix_s gs_matrix;
-
 #endif
 
 #ifndef gs_uid_DEFINED
 #  define gs_uid_DEFINED
 typedef struct gs_uid_s gs_uid;
-
 #endif
 
 /*
@@ -75,8 +73,8 @@ int dict_proc_param(P4(const ref * pdict, const char *kstr, ref * pproc,
 		       bool defaultval));
 int dict_matrix_param(P3(const ref * pdict, const char *kstr,
 			 gs_matrix * pmat));
-int dict_uid_param(P4(const ref * pdict, gs_uid * puid, int defaultval,
-		      gs_memory_t * mem));
+int dict_uid_param(P5(const ref * pdict, gs_uid * puid, int defaultval,
+		      gs_memory_t * mem, const i_ctx_t *i_ctx_p));
 
 /* Check that a UID in a dictionary is equal to an existing, valid UID. */
 bool dict_check_uid_param(P2(const ref * pdict, const gs_uid * puid));

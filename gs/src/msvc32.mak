@@ -1,4 +1,4 @@
-#    Copyright (C) 1991-1998 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1991-1999 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -21,11 +21,12 @@
 # All configurable options are surrounded by !ifndef/!endif to allow 
 # preconfiguration from within another makefile.
 #
-# Optimization /O2 seems OK with MSVC++ 4.1 & 5.0.
+# Optimization /O2 seems OK with MSVC++ 4.1, but not with 5.0.
 # Created 1997-01-24 by Russell Lang from MSVC++ 2.0 makefile.
 # Enhanced 97-05-15 by JD
 # Common code factored out 1997-05-22 by L. Peter Deutsch.
 # Made pre-configurable by JD 6/4/98
+# Revised to use subdirectories 1998-11-13 by lpd.
 
 # ------------------------------- Options ------------------------------- #
 
@@ -46,7 +47,7 @@ GS_DOCDIR=c:/gs
 # illegal escape.
 
 !ifndef GS_LIB_DEFAULT
-GS_LIB_DEFAULT=.;c:/gs;c:/gs/fonts
+GS_LIB_DEFAULT=.;c:/gs/lib;c:/gs/fonts
 !endif
 
 # Define whether or not searching for initialization files should always
@@ -114,39 +115,33 @@ GSDLL=gsdll32
 MAKEDLL=1
 !endif
 
-# Define the source, generated intermediate file, and object directories
+# Define the directory for the final executable, and the
+# source, generated intermediate file, and object directories
 # for the graphics library (GL) and the PostScript/PDF interpreter (PS).
 
-# If only one of PSSRCDIR or GLSRCDIR defined, use the other as default.
-# If neither defined, use .\
-!ifdef GLSRCDIR
-!elseifdef PSSRCDIR
-GLSRCDIR=$(PSSRCDIR)
-!else
-GLSRCDIR=.
+!ifndef BINDIR
+BINDIR=.\bin
 !endif
-!ifndef PSSRCDIR
-PSSRCDIR=$(GLSRCDIR)
+!ifndef GLSRCDIR
+GLSRCDIR=.\src
 !endif
-
-# If only one of PSOBJDIR or GLOBJDIR defined, use the other as default.
-# If neither defined, use .\obj
-!ifdef GLOBJDIR
-!elseifdef PSOBJDIR
-GLOBJDIR=$(PSOBJDIR)
-!else
+!ifndef GLGENDIR
+GLGENDIR=.\obj
+!endif
+!ifndef GLOBJDIR
 GLOBJDIR=.\obj
 !endif
-!ifndef PSOBJDIR
-PSOBJDIR=$(GLOBJDIR)
+!ifndef PSSRCDIR
+PSSRCDIR=.\src
 !endif
-
-# If GLGENDIR undef'd, make = GLOBJDIR. If PSGENDIR undef'd, make = PSOBJDIR.
-!ifndef GLGENDIR
-GLGENDIR=$(GLOBJDIR)
+!ifndef PSLIBDIR
+PSLIBDIR=.\lib
 !endif
 !ifndef PSGENDIR
-PSGENDIR=$(PSOBJDIR)
+PSGENDIR=.\obj
+!endif
+!ifndef PSOBJDIR
+PSOBJDIR=.\obj
 !endif
 
 # Define the directory where the IJG JPEG library sources are stored,
@@ -166,7 +161,7 @@ JVERSION=6
 
 !ifndef PSRCDIR
 PSRCDIR=libpng
-PVERSION=96
+PVERSION=10002
 !endif
 
 # Define the directory where the zlib sources are stored.
@@ -176,23 +171,24 @@ PVERSION=96
 ZSRCDIR=zlib
 !endif
 
-# Define the configuration ID.  Read gs.mak carefully before changing this.
-
-!ifndef CONFIG
-CONFIG=
-!endif
-
 # Define any other compilation flags.
 
 !ifndef CFLAGS
 CFLAGS=
 !endif
 
-# Define the name of the makefile -- used in dependencies.
+# Do not edit the next group of lines.
 
-!ifndef MAKEFILE
-MAKEFILE=$(GLSRCDIR)\msvc32.mak
-!endif
+#!include $(COMMONDIR)\msvcdefs.mak
+#!include $(COMMONDIR)\pcdefs.mak
+#!include $(COMMONDIR)\generic.mak
+!include $(GLSRCDIR)\version.mak
+# The following is a hack to get around the special treatment of \ at
+# the end of a line.
+NUL=
+DD=$(GLGENDIR)\$(NUL)
+GLD=$(GLGENDIR)\$(NUL)
+PSD=$(PSGENDIR)\$(NUL)
 
 # ------ Platform-specific options ------ #
 
@@ -200,7 +196,7 @@ MAKEFILE=$(GLSRCDIR)\msvc32.mak
 # (currently, 4 & 5 are supported).
 
 !ifndef MSVC_VERSION 
-MSVC_VERSION = 5
+MSVC_VERSION=5
 !endif
 
 # Define the drive, directory, and compiler name for the Microsoft C files.
@@ -221,13 +217,26 @@ DEVSTUDIO=c:\msdev
 ! endif
 COMPBASE=$(DEVSTUDIO)
 SHAREDBASE=$(DEVSTUDIO)
-!else
+!endif
+
+!if $(MSVC_VERSION) == 5
 ! ifndef DEVSTUDIO
-DEVSTUDIO=c:\devstudio
+#DEVSTUDIO=c:\program files\devstudio
+DEVSTUDIO=c:\progra~1\devstu~1
 ! endif
 COMPBASE=$(DEVSTUDIO)\VC
 SHAREDBASE=$(DEVSTUDIO)\SharedIDE
 !endif
+
+!if $(MSVC_VERSION) == 6
+! ifndef DEVSTUDIO
+#DEVSTUDIO=c:\program files\microsoft visual studio
+DEVSTUDIO=c:\progra~1\micros~2
+! endif
+COMPBASE=$(DEVSTUDIO)\VC98
+SHAREDBASE=$(DEVSTUDIO)\Common\MSDev98
+!endif
+
 COMPDIR=$(COMPBASE)\bin
 LINKDIR=$(COMPBASE)\bin
 RCDIR=$(SHAREDBASE)\bin
@@ -278,12 +287,20 @@ FPU_TYPE=0
 
 !endif
 
+# Define the .dev module that implements thread and synchronization
+# primitives for this platform.  Don't change this unless you really know
+# what you're doing.
+
+!ifndef SYNC
+SYNC=winsync
+!endif
+
 # ------ Devices and features ------ #
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
 !ifndef FEATURE_DEVS
-FEATURE_DEVS=psl3.dev pdf.dev ttfont.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev
 !endif
 
 # Choose whether to compile the .ps initialization files into the executable.
@@ -319,21 +336,27 @@ FILE_IMPLEMENTATION=stdio
 # devs.mak and contrib.mak for the list of available devices.
 
 !ifndef DEVICE_DEVS
-DEVICE_DEVS=mswindll.dev mswinprn.dev mswinpr2.dev
-DEVICE_DEVS2=epson.dev eps9high.dev eps9mid.dev epsonc.dev ibmpro.dev
-DEVICE_DEVS3=deskjet.dev djet500.dev laserjet.dev ljetplus.dev ljet2p.dev ljet3.dev ljet4.dev
-DEVICE_DEVS4=cdeskjet.dev cdjcolor.dev cdjmono.dev cdj550.dev pj.dev pjxl.dev pjxl300.dev
-DEVICE_DEVS5=djet500c.dev declj250.dev lj250.dev jetp3852.dev r4081.dev lbp8.dev uniprint.dev
-DEVICE_DEVS6=st800.dev stcolor.dev bj10e.dev bj200.dev m8510.dev necp6.dev bjc600.dev bjc800.dev
-DEVICE_DEVS7=t4693d2.dev t4693d4.dev t4693d8.dev tek4696.dev
-DEVICE_DEVS8=pcxmono.dev pcxgray.dev pcx16.dev pcx256.dev pcx24b.dev pcxcmyk.dev
-DEVICE_DEVS9=pbm.dev pbmraw.dev pgm.dev pgmraw.dev pgnm.dev pgnmraw.dev pnm.dev pnmraw.dev ppm.dev ppmraw.dev
-DEVICE_DEVS10=tiffcrle.dev tiffg3.dev tiffg32d.dev tiffg4.dev tifflzw.dev tiffpack.dev
-DEVICE_DEVS11=bmpmono.dev bmp16.dev bmp256.dev bmp16m.dev tiff12nc.dev tiff24nc.dev
-DEVICE_DEVS12=psmono.dev bit.dev bitrgb.dev bitcmyk.dev
-DEVICE_DEVS13=pngmono.dev pnggray.dev png16.dev png256.dev png16m.dev
-DEVICE_DEVS14=jpeg.dev jpeggray.dev
-DEVICE_DEVS15=pdfwrite.dev pswrite.dev epswrite.dev pxlmono.dev pxlcolor.dev
+DEVICE_DEVS=$(DD)mswindll.dev $(DD)mswinprn.dev $(DD)mswinpr2.dev
+DEVICE_DEVS2=$(DD)epson.dev $(DD)eps9high.dev $(DD)eps9mid.dev $(DD)epsonc.dev $(DD)ibmpro.dev
+DEVICE_DEVS3=$(DD)deskjet.dev $(DD)djet500.dev $(DD)laserjet.dev $(DD)ljetplus.dev $(DD)ljet2p.dev
+DEVICE_DEVS4=$(DD)cdeskjet.dev $(DD)cdjcolor.dev $(DD)cdjmono.dev $(DD)cdj550.dev
+DEVICE_DEVS5=$(DD)djet500c.dev $(DD)declj250.dev $(DD)lj250.dev
+DEVICE_DEVS6=$(DD)st800.dev $(DD)stcolor.dev $(DD)bj10e.dev $(DD)bj200.dev
+DEVICE_DEVS7=$(DD)t4693d2.dev $(DD)t4693d4.dev $(DD)t4693d8.dev $(DD)tek4696.dev
+DEVICE_DEVS8=$(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcx16.dev $(DD)pcx256.dev $(DD)pcx24b.dev $(DD)pcxcmyk.dev
+DEVICE_DEVS9=$(DD)pbm.dev $(DD)pbmraw.dev $(DD)pgm.dev $(DD)pgmraw.dev $(DD)pgnm.dev $(DD)pgnmraw.dev
+DEVICE_DEVS10=$(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev $(DD)tifflzw.dev $(DD)tiffpack.dev
+DEVICE_DEVS11=$(DD)bmpmono.dev $(DD)bmp16.dev $(DD)bmp256.dev $(DD)bmp16m.dev $(DD)tiff12nc.dev $(DD)tiff24nc.dev
+DEVICE_DEVS12=$(DD)psmono.dev $(DD)bit.dev $(DD)bitrgb.dev $(DD)bitcmyk.dev
+DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev
+DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev
+DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)epswrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev
+# Overflow for DEVS3,4,5,6,9
+DEVICE_DEVS16=$(DD)ljet3.dev $(DD)ljet3d.dev $(DD)ljet4.dev $(DD)ljet4d.dev
+DEVICE_DEVS17=$(DD)pj.dev $(DD)pjxl.dev $(DD)pjxl300.dev
+DEVICE_DEVS18=$(DD)jetp3852.dev $(DD)r4081.dev $(DD)lbp8.dev $(DD)uniprint.dev
+DEVICE_DEVS19=$(DD)m8510.dev $(DD)necp6.dev $(DD)bjc600.dev $(DD)bjc800.dev
+DEVICE_DEVS20=$(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev
 !endif
 
 # ---------------------------- End of options ---------------------------- #
@@ -353,6 +376,11 @@ FPU_TYPE=1
 FPU_TYPE=1
 !endif
 
+# Define the name of the makefile -- used in dependencies.
+
+MAKEFILE=$(GLSRCDIR)\msvc32.mak
+TOP_MAKEFILES=$(MAKEFILE) $(GLSRCDIR)\msvccmd.mak $(GLSRCDIR)\msvctail.mak $(GLSRCDIR)\winlib.mak $(GLSRCDIR)\winint.mak
+
 # Define the files to be removed by `make clean'.
 # nmake expands macros when encountered, not when used,
 # so this must precede the !include statements.
@@ -366,10 +394,10 @@ BEGINFILES2=$(GLOBJDIR)\gs*32*.exp $(GLOBJDIR)\gs*32*.ilk $(GLOBJDIR)\gs*32*.pdb
 
 # ----------------------------- Main program ------------------------------ #
 
-GSCONSOLE_XE=$(GLOBJ)$(GSCONSOLE).exe
-GSDLL_DLL=$(GLOBJ)$(GSDLL).dll
+GSCONSOLE_XE=$(BINDIR)\$(GSCONSOLE).exe
+GSDLL_DLL=$(BINDIR)\$(GSDLL).dll
 
-$(GLGEN)lib32.rsp: $(MAKEFILE)
+$(GLGEN)lib32.rsp: $(TOP_MAKEFILES)
 	echo /NODEFAULTLIB:LIBC.lib > $(GLGEN)lib32.rsp
 	echo $(LIBDIR)\libcmt.lib >> $(GLGEN)lib32.rsp
 
@@ -377,48 +405,48 @@ $(GLGEN)lib32.rsp: $(MAKEFILE)
 # The graphical small EXE loader
 $(GS_XE): $(GSDLL_DLL)  $(DWOBJ) $(GSCONSOLE_XE)
 	echo /SUBSYSTEM:WINDOWS > $(GLGEN)gswin32.rsp
-	echo /DEF:$(GLSRC)dwmain32.def /OUT:$(GS_XE) >> $(GLGEN)gswin32.rsp
-        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(DWOBJ) @$(LIBCTR) $(GLOBJ)$(GS).res
+	echo /DEF:$(GLSRCDIR)\dwmain32.def /OUT:$(GS_XE) >> $(GLGEN)gswin32.rsp
+        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(DWOBJ) @$(LIBCTR) $(GS_OBJ).res
 	del $(GLGEN)gswin32.rsp
 
 # The console mode small EXE loader
-$(GSCONSOLE_XE): $(OBJC) $(GLOBJ)$(GS).res $(GLSRC)dw32c.def
+$(GSCONSOLE_XE): $(OBJC) $(GS_OBJ).res $(GLSRCDIR)\dw32c.def
 	echo /SUBSYSTEM:CONSOLE > $(GLGEN)gswin32.rsp
-	echo  /DEF:$(GLSRC)dw32c.def /OUT:$(GSCONSOLE_XE) >> $(GLGEN)gswin32.rsp
+	echo  /DEF:$(GLSRCDIR)\dw32c.def /OUT:$(GSCONSOLE_XE) >> $(GLGEN)gswin32.rsp
 	$(LINK_SETUP)
-        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(OBJC) @$(LIBCTR) $(GLOBJ)$(GS).res
+        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(OBJC) @$(LIBCTR) $(GS_OBJ).res
 	del $(GLGEN)gswin32.rsp
 
 # The big DLL
-$(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ) $(GLOBJ)$(GSDLL).res $(GLGEN)lib32.rsp
-	echo /DLL /DEF:$(GLSRC)gsdll32.def /OUT:$(GSDLL_DLL) > $(GLGEN)gswin32.rsp
+$(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ) $(GSDLL_OBJ).res $(GLGEN)lib32.rsp
+	echo /DLL /DEF:$(GLSRCDIR)\gsdll32.def /OUT:$(GSDLL_DLL) > $(GLGEN)gswin32.rsp
 	$(LINK_SETUP)
-        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(GLOBJ)gsdll @$(ld_tr) $(INTASM) @$(GLGEN)lib.tr @$(GLGEN)lib32.rsp @$(LIBCTR) $(GLOBJ)$(GSDLL).res
+        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(GLOBJ)gsdll @$(ld_tr) $(INTASM) @$(GLGEN)lib.tr @$(GLGEN)lib32.rsp @$(LIBCTR) $(GSDLL_OBJ).res
 	del $(GLGEN)gswin32.rsp
 
 !else
 # The big graphical EXE
-$(GS_XE): $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ) $(DWOBJNO) $(GLOBJ)$(GS).res $(GLSRC)dwmain32.def $(GLGEN)lib32.rsp
+$(GS_XE): $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ) $(DWOBJNO) $(GSDLL_OBJ).res $(GLSRCDIR)\dwmain32.def $(GLGEN)lib32.rsp
 	copy $(ld_tr) $(GLGEN)gswin32.tr
 	echo $(GLOBJ)dwnodll.obj >> $(GLGEN)gswin32.tr
 	echo $(GLOBJ)dwimg.obj >> $(GLGEN)gswin32.tr
 	echo $(GLOBJ)dwmain.obj >> $(GLGEN)gswin32.tr
 	echo $(GLOBJ)dwtext.obj >> $(GLGEN)gswin32.tr
-	echo /DEF:$(GLSRC)dwmain32.def /OUT:$(GS_XE) > $(GLGEN)gswin32.rsp
+	echo /DEF:$(GLSRCDIR)\dwmain32.def /OUT:$(GS_XE) > $(GLGEN)gswin32.rsp
 	$(LINK_SETUP)
-        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(GLOBJ)gsdll @$(GLGEN)gswin32.tr @$(LIBCTR) $(INTASM) @$(GLGEN)lib.tr @$(GLGEN)lib32.rsp $(GLOBJ)$(GSDLL).res
+        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(GLOBJ)gsdll @$(GLGEN)gswin32.tr @$(LIBCTR) $(INTASM) @$(GLGEN)lib.tr @$(GLGEN)lib32.rsp $(GSDLL_OBJ).res
 	del $(GLGEN)gswin32.tr
 	del $(GLGEN)gswin32.rsp
 
 # The big console mode EXE
-$(GSCONSOLE_XE): $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ) $(OBJCNO) $(GLOBJ)$(GS).res $(GLSRC)dw32c.def $(GLGEN)lib32.rsp
+$(GSCONSOLE_XE): $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ) $(OBJCNO) $(GS_OBJ).res $(GLSRCDIR)\dw32c.def $(GLGEN)lib32.rsp
 	copy $(ld_tr) $(GLGEN)gswin32c.tr
 	echo $(GLOBJ)dwnodllc.obj >> $(GLGEN)gswin32c.tr
 	echo $(GLOBJ)dwmainc.obj >> $(GLGEN)gswin32c.tr
 	echo /SUBSYSTEM:CONSOLE > $(GLGEN)gswin32.rsp
-	echo /DEF:$(GLSRC)dw32c.def /OUT:$(GSCONSOLE_XE) >> $(GLGEN)gswin32.rsp
+	echo /DEF:$(GLSRCDIR)\dw32c.def /OUT:$(GSCONSOLE_XE) >> $(GLGEN)gswin32.rsp
 	$(LINK_SETUP)
-        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(GLOBJ)gsdll @$(GLGEN)gswin32c.tr @$(LIBCTR) $(INTASM) @$(GLGEN)lib.tr @$(GLGEN)lib32.rsp $(GLOBJ)$(GS).res
+        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(GLOBJ)gsdll @$(GLGEN)gswin32c.tr @$(LIBCTR) $(INTASM) @$(GLGEN)lib.tr @$(GLGEN)lib32.rsp $(GS_OBJ).res
 	del $(GLGEN)gswin32.rsp
 	del $(GLGEN)gswin32c.tr
 !endif

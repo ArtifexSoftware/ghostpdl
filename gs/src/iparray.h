@@ -1,4 +1,4 @@
-/* Copyright (C) 1994 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -31,6 +31,6 @@
 /* Procedures implemented in zpacked.c */
 
 /* Make a packed array from the top N elements of a stack. */
-int make_packed_array(P4(ref *, ref_stack *, uint, client_name_t));
+int make_packed_array(P4(ref *, ref_stack_t *, uint, client_name_t));
 
 #endif /* iparray_INCLUDED */

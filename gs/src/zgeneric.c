@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1992, 1993, 1994, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1992, 1993, 1994, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -20,9 +20,10 @@
 /* Array/string/dictionary generic operators for PostScript */
 #include "memory_.h"
 #include "ghost.h"
+#include "gsstruct.h"		/* for st_bytes */
 #include "oper.h"
 #include "estack.h"		/* for forall */
-#include "idict.h"
+#include "iddict.h"
 #include "iname.h"
 #include "ipacked.h"
 #include "ivmspace.h"
@@ -37,11 +38,11 @@
 /* more efficient implementation of forall. */
 
 /* Imported operators */
-extern int zcopy_dict(P1(os_ptr));
+extern int zcopy_dict(P1(i_ctx_t *));
 
 /* Forward references */
-private int zcopy_integer(P1(os_ptr));
-private int zcopy_interval(P1(os_ptr));
+private int zcopy_integer(P1(i_ctx_t *));
+private int zcopy_interval(P1(i_ctx_t *));
 private int copy_interval(P4(os_ptr, uint, os_ptr, client_name_t));
 
 /* <various1> <various2> copy <various> */
@@ -49,19 +50,20 @@ private int copy_interval(P4(os_ptr, uint, os_ptr, client_name_t));
 /* Note that this implements copy for arrays and strings, */
 /* but not for dictionaries (see zcopy_dict in zdict.c). */
 int
-zcopy(register os_ptr op)
+zcopy(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int type = r_type(op);
 
     if (type == t_integer)
-	return zcopy_integer(op);
+	return zcopy_integer(i_ctx_p);
     check_op(2);
     switch (type) {
 	case t_array:
 	case t_string:
-	    return zcopy_interval(op);
+	    return zcopy_interval(i_ctx_p);
 	case t_dictionary:
-	    return zcopy_dict(op);
+	    return zcopy_dict(i_ctx_p);
 	default:
 	    return_op_typecheck(op);
     }
@@ -69,8 +71,9 @@ zcopy(register os_ptr op)
 
 /* <obj1> ... <objn> <int> copy <obj1> ... <objn> <obj1> ... <objn> */
 private int
-zcopy_integer(register os_ptr op)
+zcopy_integer(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     os_ptr op1 = op - 1;
     int count, i;
     int code;
@@ -98,8 +101,9 @@ zcopy_integer(register os_ptr op)
 /* <array1> <array2> copy <subarray2> */
 /* <string1> <string2> copy <substring2> */
 private int
-zcopy_interval(register os_ptr op)
+zcopy_interval(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     os_ptr op1 = op - 1;
     int code = copy_interval(op, 0, op1, "copy");
 
@@ -113,8 +117,9 @@ zcopy_interval(register os_ptr op)
 
 /* <array|dict|name|packedarray|string> length <int> */
 private int
-zlength(register os_ptr op)
+zlength(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     switch (r_type(op)) {
 	case t_array:
 	case t_string:
@@ -134,6 +139,12 @@ zlength(register os_ptr op)
 	    make_int(op, r_size(&str));
 	    return 0;
 	}
+	case t_astruct:
+	    if (gs_object_type(imemory, op->value.pstruct) != &st_bytes)
+		return_error(e_typecheck);
+	    check_read(*op);
+	    make_int(op, gs_object_size(imemory, op->value.pstruct));
+	    return 0;
 	default:
 	    return_op_typecheck(op);
     }
@@ -142,8 +153,9 @@ zlength(register os_ptr op)
 /* <array|packedarray|string> <index> get <obj> */
 /* <dict> <key> get <obj> */
 private int
-zget(register os_ptr op)
+zget(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     os_ptr op1 = op - 1;
     ref *pvalue;
 
@@ -181,16 +193,19 @@ zget(register os_ptr op)
 /* <dict> <key> <value> put - */
 /* <string> <index> <int> put - */
 private int
-zput(register os_ptr op)
+zput(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     os_ptr op1 = op - 1;
     os_ptr op2 = op1 - 1;
+    byte *sdata;
+    uint ssize;
 
     switch (r_type(op2)) {
 	case t_dictionary:
 	    check_dict_write(*op2);
 	    {
-		int code = dict_put(op2, op1, op);
+		int code = idict_put(op2, op1, op);
 
 		if (code < 0)
 		    return code;	/* error */
@@ -210,11 +225,19 @@ zput(register os_ptr op)
 	case t_shortarray:
 	    return_error(e_invalidaccess);
 	case t_string:
-	    check_write(*op2);
-	    check_int_ltu(*op1, r_size(op2));
+	    sdata = op2->value.bytes;
+	    ssize = r_size(op2);
+str:	    check_write(*op2);
+	    check_int_ltu(*op1, ssize);
 	    check_int_leu(*op, 0xff);
-	    op2->value.bytes[(uint) op1->value.intval] = (byte) op->value.intval;
+	    sdata[(uint)op1->value.intval] = (byte)op->value.intval;
 	    break;
+	case t_astruct:
+	    if (gs_object_type(imemory, op2->value.pstruct) != &st_bytes)
+		return_error(e_typecheck);
+	    sdata = r_ptr(op2, byte);
+	    ssize = gs_object_size(imemory, op2->value.pstruct);
+	    goto str;
 	default:
 	    return_op_typecheck(op2);
     }
@@ -224,8 +247,9 @@ zput(register os_ptr op)
 
 /* <seq:array|packedarray|string> <index> <count> getinterval <subseq> */
 private int
-zgetinterval(register os_ptr op)
+zgetinterval(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     os_ptr op1 = op - 1;
     os_ptr op2 = op1 - 1;
     uint index;
@@ -270,9 +294,11 @@ zgetinterval(register os_ptr op)
 
 /* <array1> <index> <array2|packedarray2> putinterval - */
 /* <string1> <index> <string2> putinterval - */
+/* <bytestring1> <index> <string2> putinterval - */
 private int
-zputinterval(register os_ptr op)
+zputinterval(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     os_ptr opindex = op - 1;
     os_ptr opto = opindex - 1;
     int code;
@@ -285,11 +311,29 @@ zputinterval(register os_ptr op)
 	    return_error(e_invalidaccess);
 	case t_array:
 	case t_string:
-	    ;
+	    check_write(*opto);
+	    check_int_leu(*opindex, r_size(opto));
+	    code = copy_interval(opto, (uint)(opindex->value.intval), op,
+				 "putinterval");
+	    break;
+	case t_astruct: {
+	    uint dsize, ssize, index;
+
+	    check_write(*opto);
+	    if (gs_object_type(imemory, opto->value.pstruct) != &st_bytes)
+		return_error(e_typecheck);
+	    dsize = gs_object_size(imemory, opto->value.pstruct);
+	    check_int_leu(*opindex, dsize);
+	    index = (uint)opindex->value.intval;
+	    check_read_type(*op, t_string);
+	    ssize = r_size(op);
+	    if (ssize > dsize - index)
+		return_error(e_rangecheck);
+	    memcpy(r_ptr(opto, byte) + index, op->value.const_bytes, ssize);
+	    code = 0;
+	    break;
+	}
     }
-    check_write(*opto);
-    check_int_leu(*opindex, r_size(opto));
-    code = copy_interval(opto, (uint) (opindex->value.intval), op, "putinterval");
     if (code >= 0)
 	pop(3);
     return code;
@@ -298,14 +342,15 @@ zputinterval(register os_ptr op)
 /* <array|packedarray|string> <<element> proc> forall - */
 /* <dict> <<key> <value> proc> forall - */
 private int
-    array_continue(P1(os_ptr)),
-    dict_continue(P1(os_ptr)),
-    string_continue(P1(os_ptr)),
-    packedarray_continue(P1(os_ptr));
-private int forall_cleanup(P1(os_ptr));
+    array_continue(P1(i_ctx_t *)),
+    dict_continue(P1(i_ctx_t *)),
+    string_continue(P1(i_ctx_t *)),
+    packedarray_continue(P1(i_ctx_t *));
+private int forall_cleanup(P1(i_ctx_t *));
 private int
-zforall(register os_ptr op)
+zforall(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     os_ptr obj = op - 1;
     es_ptr ep = esp;
     es_ptr cproc = ep + 4;
@@ -348,13 +393,13 @@ zforall(register os_ptr op)
     ep[3] = *op;
     esp = cproc - 1;
     pop(2);
-    op -= 2;
-    return (*real_opproc(cproc))(op);
+    return (*real_opproc(cproc))(i_ctx_p);
 }
 /* Continuation operator for arrays */
 private int
-array_continue(register os_ptr op)
+array_continue(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     es_ptr obj = esp - 1;
 
     if (r_size(obj)) {		/* continue */
@@ -372,8 +417,9 @@ array_continue(register os_ptr op)
 }
 /* Continuation operator for dictionaries */
 private int
-dict_continue(register os_ptr op)
+dict_continue(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     es_ptr obj = esp - 2;
     int index = (int)esp->value.intval;
 
@@ -391,8 +437,9 @@ dict_continue(register os_ptr op)
 }
 /* Continuation operator for strings */
 private int
-string_continue(register os_ptr op)
+string_continue(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     es_ptr obj = esp - 1;
 
     if (r_size(obj)) {		/* continue */
@@ -410,8 +457,9 @@ string_continue(register os_ptr op)
 }
 /* Continuation operator for packed arrays */
 private int
-packedarray_continue(register os_ptr op)
+packedarray_continue(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     es_ptr obj = esp - 1;
 
     if (r_size(obj)) {		/* continue */
@@ -431,7 +479,7 @@ packedarray_continue(register os_ptr op)
 }
 /* Vacuous cleanup procedure */
 private int
-forall_cleanup(os_ptr op)
+forall_cleanup(i_ctx_t *i_ctx_p)
 {
     return 0;
 }
@@ -485,19 +533,9 @@ copy_interval(os_ptr prto, uint index, os_ptr prfrom, client_name_t cname)
 				     fromsize, cname);
 	    }
 	case t_string:
-	    {			/* We have to worry about aliasing. */
-		const byte *from = prfrom->value.bytes;
-		byte *to = prto->value.bytes + index;
-		uint i;
-
-		if (from + fromsize <= to || to + fromsize <= from)
-		    memcpy(to, from, fromsize);
-		else if (to < from)
-		    for (i = fromsize; i != 0; i--, from++, to++)
-			*to = *from;
-		else
-		    for (i = fromsize, from += i, to += i; i != 0; i--)
-			*--to = *--from;
+	    {	/* memmove takes care of aliasing. */
+		memmove(prto->value.bytes + index, prfrom->value.bytes,
+			fromsize);
 	    }
 	    break;
 	case t_mixedarray:

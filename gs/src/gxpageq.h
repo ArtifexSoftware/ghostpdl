@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -235,7 +235,7 @@ int gx_page_queue_add_page(P4(
     gx_page_queue_t * queue,		/* page queue to add to */
     gx_page_queue_action_t action,		/* action code to queue */
     const gx_band_page_info_t * page_info,	/* bandinfo incl. bandlist */
-    int page_count		/* # of copies to print if final "print,"
+    int page_count		/* # of copies to print if final "print," */
 				   /* 0 if partial page, -1 if cancel */
     ));
 

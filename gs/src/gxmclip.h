@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -55,9 +55,9 @@ typedef struct gx_device_mask_clip_s {
 
 extern_st(st_device_mask_clip);
 #define public_st_device_mask_clip()	/* in gxmclip.c */\
-  gs_public_st_composite(st_device_mask_clip, gx_device_mask_clip,\
+  gs_public_st_composite_use_final(st_device_mask_clip, gx_device_mask_clip,\
     "gx_device_mask_clip", device_mask_clip_enum_ptrs,\
-    device_mask_clip_reloc_ptrs)
+    device_mask_clip_reloc_ptrs, gx_device_finalize)
 
 /*
  * Internal routine to initialize a mask clipping device.

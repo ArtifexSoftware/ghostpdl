@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -22,7 +22,7 @@
 #include "icontext.h"		/* for set_user_params prototype */
 
 int
-set_user_params(const ref * op)
+set_user_params(i_ctx_t *i_ctx_p, const ref *paramdict)
 {
     return 0;
 }

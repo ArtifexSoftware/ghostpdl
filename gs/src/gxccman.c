@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -28,7 +28,7 @@
 #include "gxfixed.h"
 #include "gxmatrix.h"
 #include "gzstate.h"
-#include "gzpath.h"
+#include "gxpath.h"
 #include "gxdevice.h"
 #include "gxdevmem.h"
 #include "gxchar.h"
@@ -39,9 +39,14 @@
 /* Define the descriptors for the cache structures. */
 private_st_cached_fm_pair();
 private_st_cached_fm_pair_elt();
-					/*private_st_cached_char(); *//* unused */
+/*private_st_cached_char(); *//* unused */
 private_st_cached_char_ptr();	/* unused */
 private_st_cached_char_ptr_elt();
+/*
+ * Define a descriptor for the cache data.  This is equivalent to st_bytes,
+ * but it identifies the cache data as such in a memory dump.
+ */
+gs_private_st_simple(st_font_cache_bytes, byte, "font cache bytes");
 /* GC procedures */
 /* We do all the work in font_dir_enum/reloc_ptrs in gsfont.c. */
 /* See gxfcache.h for details. */
@@ -349,7 +354,7 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
 {
     int log2_xscale = pscale->x;
     int log2_yscale = pscale->y;
-    int log2_depth = depth >> 1;	/* works for 1,2,4 */
+    int log2_depth = ilog2(depth);
     uint nwidth_bits = (iwidth >> log2_xscale) << log2_depth;
     ulong isize, icdsize;
     uint iraster;
@@ -379,20 +384,22 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
     if (dev2 == 0) {
 	/* Render to a full (possibly oversampled) bitmap; */
 	/* compress (if needed) when done. */
+	/* Preserve the reference count, if any, and target. */
 	rc_header rc;
+	gx_device *target = pdev->target;
 
-	/* Preserve the reference count, if any. */
 	rc = pdev->rc;
-	gs_make_mem_mono_device(pdev, pdev->memory, pdev->target);
+	gs_make_mem_mono_device(pdev, pdev->memory, NULL);
 	pdev->rc = rc;
+	pdev->target = target;
 	pdev->width = iwidth;
 	pdev->height = iheight;
 	isize = gdev_mem_bitmap_size(pdev);
     } else {
 	/* Use an alpha-buffer device to compress as we go. */
+	/* Preserve the reference counts, if any. */
 	rc_header rc;
 
-	/* Preserve the reference counts, if any. */
 	rc = dev2->rc;
 	gs_make_mem_alpha_device(dev2, dev2->memory, NULL, depth);
 	dev2->rc = rc;
@@ -515,7 +522,7 @@ gx_add_char_bits(gs_font_dir * dir, cached_char * cc,
     uint raster = cc_raster(cc);
     byte *bits = cc_bits(cc);
     int depth = cc_depth(cc);
-    int log2_depth = depth >> 1;	/* works for 1,2,4 */
+    int log2_depth = ilog2(depth);
     uint nwidth_bits, nraster;
     gs_int_rect bbox;
 
@@ -580,24 +587,19 @@ gx_add_char_bits(gs_font_dir * dir, cached_char * cc,
 			     bits, nraster, plog2_scale, log2_depth);
 	bbox.p.x >>= log2_x;
 	bbox.p.y >>= log2_y;
-    } else {			/* No oversampling, just remove white space. */
+    } else {
+	/* No oversampling, just remove white space on all 4 sides. */
 	const byte *from = bits + raster * bbox.p.y + (bbox.p.x >> 3);
 
 	cc->height = bbox.q.y - bbox.p.y;
-	/*
-	 * We'd like to trim off left and right blank space,
-	 * but currently we're only willing to move bytes, not bits.
-	 * (If we ever want to do better, we must remember that
-	 * we can only trim whole pixels, and a pixel may occupy
-	 * more than one bit.)
-	 */
 	bbox.p.x &= ~7;		/* adjust to byte boundary */
 	bbox.p.x >>= log2_depth;	/* bits => pixels */
 	bbox.q.x = (bbox.q.x + depth - 1) >> log2_depth;	/* ditto */
 	cc->width = bbox.q.x - bbox.p.x;
 	nwidth_bits = cc->width << log2_depth;
 	nraster = bitmap_raster(nwidth_bits);
-	if (bbox.p.x != 0 || nraster != raster) {	/* Move the bits down and over. */
+	if (bbox.p.x != 0 || nraster != raster) {
+	    /* Move the bits down and over. */
 	    byte *to = bits;
 	    uint n = cc->height;
 
@@ -624,7 +626,7 @@ gx_add_char_bits(gs_font_dir * dir, cached_char * cc,
 
     cc_set_raster(cc, nraster);
     {
-	uint diff = round_down(cc->head.size - sizeof_cached_char -
+	uint diff = ROUND_DOWN(cc->head.size - sizeof_cached_char -
 			       nraster * cc->height,
 			       align_cached_char_mod);
 
@@ -691,8 +693,9 @@ alloc_char(gs_font_dir * dir, ulong icdsize)
 	    if (cck == 0)
 		return 0;
 	    cdata =
-		gs_alloc_bytes_immovable(mem, cksize,
-					 "char cache chunk(data)");
+		gs_alloc_struct_array_immovable(mem, cksize, byte,
+						&st_font_cache_bytes,
+						"char cache chunk(data)");
 	    if (cdata == 0) {
 		gs_free_object(mem, cck, "char cache chunk");
 		return 0;

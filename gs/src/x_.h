@@ -25,11 +25,6 @@
 /* Some versions of the X library use `private' as a member name, so: */
 #undef private
 
-/* Under DEC C, make sure abs() and exit() are defined. */
-#ifdef __DECC
-#  include <stdlib.h>
-#endif
-
 /* Most X implementations have _Xdebug, but VMS DECWindows doesn't. */
 #ifndef VMS
 #  define have_Xdebug

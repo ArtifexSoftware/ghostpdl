@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -18,11 +18,12 @@
 
 
 /* Interface to platform-specific routines */
-/* Requires gsmemory.h, gstypes.h */
+/* Requires gsmemory.h */
 
 #ifndef gp_INCLUDED
 #  define gp_INCLUDED
 
+#include "gstypes.h"
 /*
  * This file defines the interface to ***ALL*** platform-specific routines,
  * with the exception of the thread/synchronization interface (gpsync.h).
@@ -34,6 +35,11 @@
  * and don't want to include any of the other gs definitions.
  */
 #include "gpgetenv.h"
+/*
+ * The prototype for gp_readline is in srdline.h, since it is shared with
+ * stream.h.
+ */
+#include "srdline.h"
 
 /* ------ Initialization/termination ------ */
 
@@ -80,6 +86,34 @@ void gp_get_realtime(P1(long ptm[2]));
  */
 void gp_get_usertime(P1(long ptm[2]));
 
+/* ------ Reading lines from stdin ------ */
+
+/*
+ * These routines are intended to provide an abstract interface to GNU
+ * readline or to other packages that offer enhanced line-reading
+ * capability.
+ */
+
+/*
+ * Allocate a state structure for line reading.  This is called once at
+ * initialization.  *preadline_data is an opaque pointer that is passed
+ * back to gp_readline and gp_readline_finit.
+ */
+int gp_readline_init(P2(void **preadline_data, gs_memory_t *mem));
+
+/*
+ * See srdline.h for the definition of sreadline_proc.
+ */
+int gp_readline(P9(stream *s_in, stream *s_out, void *readline_data,
+		   gs_const_string *prompt, gs_string *buf,
+		   gs_memory_t *bufmem, uint *pcount, bool *pin_eol,
+		   bool (*is_stdin)(P1(const stream *))));
+
+/*
+ * Free a readline state.
+ */
+void gp_readline_finit(P1(void *readline_data));
+
 /* ------ Screen management ------ */
 
 /*
@@ -91,7 +125,6 @@ void gp_get_usertime(P1(long ptm[2]));
 #ifndef gx_device_DEFINED
 #  define gx_device_DEFINED
 typedef struct gx_device_s gx_device;
-
 #endif
 
 /* Initialize the console. */
@@ -190,7 +223,6 @@ void gp_close_printer(P2(FILE * pfile, const char *fname));
 #  define file_enum_DEFINED
 struct file_enum_s;		/* opaque to client, defined by implementor */
 typedef struct file_enum_s file_enum;
-
 #endif
 
 /*

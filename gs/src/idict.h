@@ -22,6 +22,8 @@
 #ifndef idict_INCLUDED
 #  define idict_INCLUDED
 
+#include "iddstack.h"
+
 /*
  * Contrary to our usual practice, we expose the (first-level)
  * representation of a dictionary in the interface file,
@@ -59,7 +61,6 @@ extern bool dict_auto_expand;
 #ifndef gs_ref_memory_DEFINED
 #  define gs_ref_memory_DEFINED
 typedef struct gs_ref_memory_s gs_ref_memory_t;
-
 #endif
 int dict_alloc(P3(gs_ref_memory_t *, uint maxlength, ref * pdref));
 
@@ -105,22 +106,31 @@ int dict_find_string(P3(const ref * pdref, const char *kstr, ref ** ppvalue));
  * Failure returns are as for dict_find, except that e_dictfull doesn't
  * occur if the dictionary is full but expandable, plus:
  *      e_invalidaccess for an attempt to store a younger key or value into
- *        an older dictionary;
+ *        an older dictionary, or as described just below;
  *      e_VMerror if a VMerror occurred while trying to expand the
  *        dictionary.
+ * Note that this procedure, and all procedures that may change the
+ * contents of a dictionary, take a pointer to a dictionary stack,
+ * so they can update the cached 'top' values and also update the cached
+ * value pointer in names.  A NULL pointer for the dictionary stack is
+ * allowed, but in this case, if the dictionary is present on any dictionary
+ * stack, an e_invalidaccess error will occur if cached values need updating.
+ * THIS ERROR CHECK IS NOT IMPLEMENTED YET.
  */
-int dict_put(P3(ref * pdref, const ref * key, const ref * pvalue));
+int dict_put(P4(ref * pdref, const ref * key, const ref * pvalue,
+		dict_stack_t *pds));
 
 /*
  * Enter a key-value pair where the key is a (constant) C string.
  */
-int dict_put_string(P3(ref * pdref, const char *kstr, const ref * pvalue));
+int dict_put_string(P4(ref * pdref, const char *kstr, const ref * pvalue,
+		       dict_stack_t *pds));
 
 /*
  * Remove a key-value pair from a dictionary.
  * Return 0 or e_undefined.
  */
-int dict_undef(P2(ref * pdref, const ref * key));
+int dict_undef(P3(ref * pdref, const ref * key, dict_stack_t *pds));
 
 /*
  * Return the number of elements in a dictionary.
@@ -144,28 +154,29 @@ uint dict_max_index(P1(const ref * pdref));
  * If new_only is true, only copy entries whose keys
  * aren't already present in the destination.
  */
-int dict_copy_entries(P3(const ref * dfrom, ref * dto, bool new_only));
+int dict_copy_entries(P4(const ref * dfrom, ref * dto, bool new_only,
+			 dict_stack_t *pds));
 
-#define dict_copy(dfrom, dto) dict_copy_entries(dfrom, dto, false)
-#define dict_copy_new(dfrom, dto) dict_copy_entries(dfrom, dto, true)
+#define dict_copy(dfrom, dto, pds) dict_copy_entries(dfrom, dto, false, pds)
+#define dict_copy_new(dfrom, dto, pds) dict_copy_entries(dfrom, dto, true, pds)
 
 /*
  * Grow or shrink a dictionary.
  * Return 0, e_dictfull, or e_VMerror.
  */
-int dict_resize(P2(ref * pdref, uint newmaxlength));
+int dict_resize(P3(ref * pdref, uint newmaxlength, dict_stack_t *pds));
 
 /*
  * Grow a dictionary in the same way as dict_put does.
  * We export this for some special-case code in zop_def.
  */
-int dict_grow(P1(ref * pdref));
+int dict_grow(P2(ref * pdref, dict_stack_t *pds));
 
 /*
  * Ensure that a dictionary uses the unpacked representation for keys.
  * (This is of no interest to ordinary clients.)
  */
-int dict_unpack(P1(ref * pdref));
+int dict_unpack(P2(ref * pdref, dict_stack_t *pds));
 
 /*
  * Prepare to enumerate a dictionary.

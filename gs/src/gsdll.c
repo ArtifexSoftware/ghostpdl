@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -46,16 +46,39 @@
 #include "store.h"
 #include "files.h"		/* requires stream.h */
 #include "interp.h"
+
+/*
+ * The following block of platform-specific conditionals is contrary to
+ * Ghostscript's portability policy.  It is here because it doesn't
+ * represent any useful abstraction, so isn't a good candidate for
+ * encapsulation in a header file either.
+ */
+
 #ifdef _Windows
 #include "windows_.h"
 #ifndef __WIN32__
 #define GSDLLEXPORT _export
 #endif
-#else
+#else  /* !_Windows */
+
+#ifdef __OS2__
 #define INCL_DOS
 #define INCL_WIN
 #include <os2.h>
-#endif
+#else  /* !__OS2__ */
+
+#ifdef __MACINTOSH__
+/* Nothing special for the Mac. */
+#endif  /* !__MACINTOSH__ */
+
+#endif  /* !__OS2__ */
+
+#endif  /* !_Windows */
+
+/*
+ * End of platform-specific conditionals.
+ */
+
 #include "gsdll.h"		/* header for DLLs */
 #include <setjmp.h>
 
@@ -65,8 +88,7 @@ private int gsdll_usage;	/* should be needed only for 16-bit SHARED DATA */
 
 /****** SINGLE-INSTANCE HACK ******/
 private gs_main_instance *gsdll_minst;	/* instance data */
-extern HWND hwndtext;		/* in gp_mswin.h */
-
+extern HWND hwndtext;		/* in gp_mswin.c, gp_os2.c, or gp_mac.c */
 GSDLL_CALLBACK pgsdll_callback;	/* callback for messages and stdio to caller */
 
 

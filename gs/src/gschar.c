@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -235,7 +235,7 @@ gs_awidthshow_n_init(gs_show_enum * penum, gs_state * pgs,
 
 /* kshow[_n] */
 int
-gs_kshow_n_init(register gs_show_enum * penum,
+gs_kshow_n_init(gs_show_enum * penum,
 		gs_state * pgs, const char *str, uint size)
 {
     if (pgs->font->FontType == ft_composite)
@@ -248,14 +248,20 @@ gs_kshow_n_init(register gs_show_enum * penum,
 
 /* xyshow[_n] */
 int
-gs_xyshow_n_init(register gs_show_enum * penum,
+gs_xyshow_n_init(gs_show_enum * penum,
 		 gs_state * pgs, const char *str, uint size)
 {
-    return show_setup(penum, pgs, str, size,
-		      TEXT_FROM_STRING |
-		      TEXT_REPLACE_X_WIDTHS | TEXT_REPLACE_Y_WIDTHS |
-		      TEXT_DO_DRAW | TEXT_INTERVENE | TEXT_RETURN_WIDTH,
-		      true);
+    int code = show_setup(penum, pgs, str, size,
+			  TEXT_FROM_STRING |
+			  TEXT_REPLACE_X_WIDTHS | TEXT_REPLACE_Y_WIDTHS |
+			  TEXT_DO_DRAW | TEXT_INTERVENE | TEXT_RETURN_WIDTH,
+			  true);
+
+    if (code < 0)
+	return code;
+    /* Initialize the pointers for the GC. */
+    penum->text.x_widths = penum->text.y_widths = 0;
+    return code;
 }
 
 /* glyphshow */
@@ -286,9 +292,10 @@ setup_glyph(gs_show_enum * penum, gs_state * pgs, gs_glyph glyph,
 
     if (pgs->font->FontType == ft_composite)
 	return_error(gs_error_invalidfont);
-    code = show_setup(penum, pgs, "\000" /* arbitrary char */ , 1,
-		      TEXT_FROM_GLYPHS | TEXT_RETURN_WIDTH | operation,
+    code = show_setup(penum, pgs, NULL, 1,
+		      TEXT_FROM_SINGLE_GLYPH | TEXT_RETURN_WIDTH | operation,
 		      true);
+    penum->text.data.d_glyph = glyph;
     penum->current_glyph = glyph;
     penum->encode_char = gs_glyphshow_encode_char;
     return code;
@@ -305,7 +312,7 @@ gs_glyphshow_encode_char(gs_show_enum * penum, gs_font * pfont, gs_char * pchr)
 
 /* cshow[_n] */
 int
-gs_cshow_n_init(register gs_show_enum * penum,
+gs_cshow_n_init(gs_show_enum * penum,
 		gs_state * pgs, const char *str, uint size)
 {
     return show_setup(penum, pgs, str, size,
@@ -346,8 +353,8 @@ stringwidth_setup(gs_show_enum * penum, gs_state * pgs, const char *str,
     gs_make_null_device(dev_null, gs_currentdevice_inline(pgs), mem);
     pgs->ctm_default_set = false;
     penum->dev_null = dev_null;
-    /* Account for the extra reference from the enumerator. */
-    rc_increment(dev_null);
+    /* Retain this device, since it is referenced from the enumerator. */
+    gx_device_retain((gx_device *)dev_null, true);
     gs_setdevice_no_init(pgs, (gx_device *) dev_null);
     /* Establish an arbitrary translation and current point. */
     gs_newpath(pgs);
@@ -477,7 +484,7 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
     /* See if we want to cache this character. */
     if (pgs->in_cachedevice)	/* no recursion! */
 	return 0;
-    pgs->in_cachedevice = 1;	/* disable color/gray/image operators */
+    pgs->in_cachedevice = CACHE_DEVICE_NOT_CACHING;	/* disable color/gray/image operators */
     /* We can only use the cache if we know the glyph. */
     glyph = gs_show_current_glyph(penum);
     if (glyph == gs_no_glyph)
@@ -644,7 +651,7 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
 	if ((code = gx_clip_to_rectangle(pgs, &clip_box)) < 0)
 	    return code;
 	gx_set_device_color_1(pgs);	/* write 1's */
-	pgs->in_cachedevice = 2;	/* we are caching */
+	pgs->in_cachedevice = CACHE_DEVICE_CACHING;
     }
     penum->width_status = sws_cache;
     return 1;
@@ -654,7 +661,7 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
 /* Note that this returns 1 if the current show operation is */
 /* non-displaying (stringwidth or cshow). */
 int
-gs_setcharwidth(register gs_show_enum * penum, gs_state * pgs,
+gs_setcharwidth(gs_show_enum * penum, gs_state * pgs,
 		floatp wx, floatp wy)
 {
     int code;
@@ -674,6 +681,13 @@ gs_setcharwidth(register gs_show_enum * penum, gs_state * pgs,
     return !SHOW_IS_DRAWING(penum);
 }
 
+/* Return the cache device status. */
+gs_in_cache_device_t
+gs_incachedevice(const gs_state *pgs)
+{
+    return pgs->in_cachedevice;
+}
+
 /* ------ Enumerator ------ */
 
 /* Do the next step of a show (or stringwidth) operation */
@@ -689,7 +703,7 @@ private int show_move(P1(gs_show_enum * penum));
 private int show_proceed(P1(gs_show_enum * penum));
 private int show_finish(P1(gs_show_enum * penum));
 private int
-continue_show_update(register gs_show_enum * penum)
+continue_show_update(gs_show_enum * penum)
 {
     int code = show_update(penum);
 
@@ -701,14 +715,14 @@ continue_show_update(register gs_show_enum * penum)
     return show_proceed(penum);
 }
 private int
-continue_show(register gs_show_enum * penum)
+continue_show(gs_show_enum * penum)
 {
     return show_proceed(penum);
 }
 /* For kshow, the CTM or font may have changed, so we have to reestablish */
 /* the cached values in the enumerator. */
 private int
-continue_kshow(register gs_show_enum * penum)
+continue_kshow(gs_show_enum * penum)
 {
     int code = show_state_setup(penum);
 
@@ -719,9 +733,9 @@ continue_kshow(register gs_show_enum * penum)
 
 /* Update position */
 private int
-show_update(register gs_show_enum * penum)
+show_update(gs_show_enum * penum)
 {
-    register gs_state *pgs = penum->pgs;
+    gs_state *pgs = penum->pgs;
     cached_char *cc = penum->cc;
     int code;
 
@@ -790,9 +804,9 @@ show_fast_move(gs_state * pgs, gs_fixed_point * pwxy)
     return code;
 }
 private int
-show_move(register gs_show_enum * penum)
+show_move(gs_show_enum * penum)
 {
-    register gs_state *pgs = penum->pgs;
+    gs_state *pgs = penum->pgs;
 
     if (SHOW_IS_XYCSHOW(penum)) {
 	penum->continue_proc = continue_show;
@@ -801,7 +815,7 @@ show_move(register gs_show_enum * penum)
     if (SHOW_IS_ADD_TO_ALL(penum))
 	gs_rmoveto(pgs, penum->text.delta_all.x, penum->text.delta_all.y);
     if (SHOW_IS_ADD_TO_SPACE(penum)) {
-	gs_char chr = penum->current_char;
+	gs_char chr = penum->current_char & 0xff;
 	int fdepth = penum->fstack.depth;
 
 	if (fdepth > 0) {
@@ -809,12 +823,17 @@ show_move(register gs_show_enum * penum)
 	    uint fidx = penum->fstack.items[fdepth].index;
 
 	    switch (((gs_font_type0 *) (penum->fstack.items[fdepth - 1].font))->data.FMapType) {
-		case fmap_1_7:
-		case fmap_9_7:
-		    chr += fidx << 7;
+	    case fmap_1_7:
+	    case fmap_9_7:
+		chr += fidx << 7;
+		break;
+	    case fmap_CMap:
+		chr = penum->current_char;  /* the full character */
+		if (!penum->cmap_code)
 		    break;
-		default:
-		    chr += fidx << 8;
+		/* falls through */
+	    default:
+		chr += fidx << 8;
 	    }
 	}
 	if (chr == penum->text.space.s_char)
@@ -837,9 +856,9 @@ show_move(register gs_show_enum * penum)
 }
 /* Process next character */
 private int
-show_proceed(register gs_show_enum * penum)
+show_proceed(gs_show_enum * penum)
 {
-    register gs_state *pgs = penum->pgs;
+    gs_state *pgs = penum->pgs;
     gs_font *pfont;
     cached_fm_pair *pair = 0;
     gs_font *rfont =
@@ -1025,7 +1044,7 @@ show_proceed(register gs_show_enum * penum)
     pgs->font = pfont;
     /* Reset the in_cachedevice flag, so that a recursive show */
     /* will use the cache properly. */
-    pgs->in_cachedevice = 0;
+    pgs->in_cachedevice = CACHE_DEVICE_NONE;
     /* Reset the sampling scale. */
     penum->log2_current_scale.x = penum->log2_current_scale.y = 0;
     /* Set the charpath data in the graphics context if necessary, */
@@ -1229,7 +1248,7 @@ gs_show_width_only(const gs_show_enum * penum)
 
 /* Initialize a show enumerator. */
 private int
-show_setup(register gs_show_enum * penum, gs_state * pgs, const char *str,
+show_setup(gs_show_enum * penum, gs_state * pgs, const char *str,
 	   uint size, uint operation, bool propagate_charpath)
 {
     int code;
@@ -1408,11 +1427,11 @@ show_cache_setup(gs_show_enum * penum)
     gs_state *pgs = penum->pgs;
     gs_memory_t *mem = pgs->memory;
     gx_device_memory *dev =
-    gs_alloc_struct(mem, gx_device_memory, &st_device_memory,
-		    "show_cache_setup(dev_cache)");
+	gs_alloc_struct(mem, gx_device_memory, &st_device_memory,
+			"show_cache_setup(dev_cache)");
     gx_device_memory *dev2 =
-    gs_alloc_struct(mem, gx_device_memory, &st_device_memory,
-		    "show_cache_setup(dev_cache2)");
+	gs_alloc_struct(mem, gx_device_memory, &st_device_memory,
+			"show_cache_setup(dev_cache2)");
 
     if (dev == 0 || dev2 == 0) {
 	gs_free_object(mem, dev2, "show_cache_setup(dev_cache2)");
@@ -1420,19 +1439,18 @@ show_cache_setup(gs_show_enum * penum)
 	return_error(gs_error_VMerror);
     }
     /*
-     * We only initialize the device for the sake of the GC,
-     * (since we have to re-initialize it as either a mem_mono
+     * We only initialize the devices for the sake of the GC,
+     * (since we have to re-initialize dev as either a mem_mono
      * or a mem_abuf device before actually using it) and also
      * to set its memory pointer.
      */
     gs_make_mem_mono_device(dev, mem, gs_currentdevice_inline(pgs));
     penum->dev_cache = dev;
+    gs_make_mem_mono_device(dev2, mem, gs_currentdevice_inline(pgs));
     penum->dev_cache2 = dev2;
-    /* Initialize dev2 for the sake of the GC. */
-    *dev2 = *dev;
-    /* Account for the extra references from the enumerator. */
-    rc_increment(dev);
-    rc_increment(dev2);
+    /* Retain these devices, since they are referenced from the enumerator. */
+    gx_device_retain((gx_device *)dev, true);
+    gx_device_retain((gx_device *)dev2, true);
     return 0;
 }
 
@@ -1479,7 +1497,14 @@ gs_default_next_glyph(gs_show_enum * penum, gs_char * pchr, gs_glyph * pglyph)
 {
     if (penum->index == penum->text.size)
 	return 2;
-    *pchr = penum->text.data.bytes[penum->index++];
-    *pglyph = gs_no_glyph;
+    if (penum->text.operation & TEXT_FROM_SINGLE_GLYPH) {
+	/* glyphshow or glyphpath */
+	*pchr = gs_no_char;
+	*pglyph = penum->text.data.d_glyph;
+    } else {
+	*pchr = penum->text.data.bytes[penum->index];
+	*pglyph = gs_no_glyph;
+    }
+    penum->index++;
     return 0;
 }

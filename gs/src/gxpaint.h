@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1996, 1997, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -25,25 +25,21 @@
 #ifndef gs_imager_state_DEFINED
 #  define gs_imager_state_DEFINED
 typedef struct gs_imager_state_s gs_imager_state;
-
 #endif
 
 #ifndef gs_state_DEFINED
 #  define gs_state_DEFINED
 typedef struct gs_state_s gs_state;
-
 #endif
 
 #ifndef gx_device_DEFINED
 #  define gx_device_DEFINED
 typedef struct gx_device_s gx_device;
-
 #endif
 
 #ifndef gx_device_color_DEFINED
 #  define gx_device_color_DEFINED
 typedef struct gx_device_color_s gx_device_color;
-
 #endif
 
 /* ------ Graphics-state-aware procedures ------ */
@@ -56,7 +52,9 @@ typedef struct gx_device_color_s gx_device_color;
 int gx_fill_path(P6(gx_path * ppath, gx_device_color * pdevc, gs_state * pgs,
 		    int rule, fixed adjust_x, fixed adjust_y));
 int gx_stroke_fill(P2(gx_path * ppath, gs_state * pgs));
-int gx_stroke_add(P3(gx_path * ppath, gx_path * to_path, gs_state * pgs));
+int gx_stroke_add(P3(gx_path *ppath, gx_path *to_path, const gs_state * pgs));
+int gx_imager_stroke_add(P3(gx_path *ppath, gx_path *to_path,
+			    const gs_imager_state *pis));
 
 /* ------ Imager procedures ------ */
 
@@ -68,11 +66,16 @@ void gx_adjust_if_empty(P2(const gs_fixed_rect *, gs_fixed_point *));
 
 /*
  * Compute the amount by which to expand a stroked bounding box to account
- * for line width, caps and joins.  If the amount is too large to fit in
- * a gs_fixed_point, return gs_error_limitcheck.
+ * for line width, caps and joins.  If the amount is too large to fit in a
+ * gs_fixed_point, return gs_error_limitcheck.  Return 0 if the result is
+ * exact, 1 if it is conservative.
+ *
+ * This procedure is fast, but the result may be conservative by a large
+ * amount if the miter limit is large.  If this matters, use strokepath +
+ * pathbbox.
  */
-int gx_stroke_path_expansion(P3(const gs_imager_state *,
-				const gx_path *, gs_fixed_point *));
+int gx_stroke_path_expansion(P3(const gs_imager_state *pis,
+				const gx_path *ppath, gs_fixed_point *ppt));
 
 /* Backward compatibility */
 #define gx_stroke_expansion(pis, ppt)\
@@ -87,7 +90,6 @@ int gx_stroke_path_expansion(P3(const gs_imager_state *,
 #ifndef gx_fill_params_DEFINED
 #  define gx_fill_params_DEFINED
 typedef struct gx_fill_params_s gx_fill_params;
-
 #endif
 struct gx_fill_params_s {
     int rule;			/* -1 = winding #, 1 = even/odd */

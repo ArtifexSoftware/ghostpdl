@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -20,7 +20,7 @@
 /* DCTEncode filter creation */
 #include "memory_.h"
 #include "stdio_.h"		/* for jpeglib.h */
-#include "jpeglib.h"
+#include "jpeglib_.h"
 #include "ghost.h"
 #include "oper.h"
 #include "gsmalloc.h"		/* for gs_memory_default */
@@ -43,8 +43,9 @@ stream_state_proc_get_params(s_DCTE_get_params, stream_DCT_state);
 
 /* <target> <dict> DCTEncode/filter <file> */
 private int
-zDCTE(os_ptr op)
+zDCTE(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_memory_t *mem = &gs_memory_default;
     stream_DCT_state state;
     dict_param_list list;
@@ -85,7 +86,7 @@ zDCTE(os_ptr op)
     /* Make sure we can write the user markers in a single go. */
     jcdp->template.min_out_size =
 	max(s_DCTE_template.min_out_size, state.Markers.size);
-    code = filter_write(op, npop, &jcdp->template,
+    code = filter_write(i_ctx_p, npop, &jcdp->template,
 			(stream_state *) & state, dspace);
     if (code >= 0)		/* Success! */
 	return code;
@@ -106,8 +107,9 @@ fail:
 #include "files.h"
 /* <dict> <filter> <bool> .dcteparams <dict> */
 private int
-zdcteparams(os_ptr op)
+zdcteparams(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     stream *s;
     dict_param_list list;
     int code;

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+/*$Id: gsmalloc.c */
 /* C heap allocator */
 #include "malloc_.h"
 #include "gdebug.h"
@@ -27,7 +27,8 @@
 #include "gsmdebug.h"
 #include "gsstruct.h"		/* for st_bytes */
 #include "gsmalloc.h"
-#include "gsmemlok.h"
+#include "gsmemlok.h"		/* locking (multithreading) wrapper */
+#include "gsmemret.h"		/* retrying wrapper */
 
 /* ------ Heap allocator ------ */
 
@@ -404,26 +405,45 @@ gs_heap_free_all(gs_memory_t * mem, uint free_mask, client_name_t cname)
 	free(mem);
 }
 
-/* ------ Locking ------ */
+/* ------ Wrapping ------ */
 
-/* Create the locked wrapper for the heap allocator. */
+/* Create the retrying and the locked wrapper for the heap allocator. */
 int
 gs_malloc_wrap(gs_memory_t **wrapped, gs_malloc_memory_t *contents)
 {
     gs_memory_t *cmem = (gs_memory_t *)contents;
     gs_memory_locked_t *lmem = (gs_memory_locked_t *)
 	gs_alloc_bytes_immovable(cmem, sizeof(gs_memory_locked_t),
-				 "gs_malloc_wrap");
+				 "gs_malloc_wrap(locked)");
+    gs_memory_retrying_t *rmem;
     int code;
 
     if (lmem == 0)
 	return_error(gs_error_VMerror);
     code = gs_memory_locked_init(lmem, cmem);
     if (code < 0) {
-	gs_free_object(cmem, lmem, "gs_malloc_wrap");
+	gs_free_object(cmem, lmem, "gs_malloc_wrap(locked)");
 	return code;
     }
-    *wrapped = (gs_memory_t *)lmem;
+
+    rmem = (gs_memory_retrying_t *)
+	gs_alloc_bytes_immovable((gs_memory_t *)lmem,
+				 sizeof(gs_memory_retrying_t),
+				 "gs_malloc_wrap(retrying)");
+    if (rmem == 0) {
+	gs_memory_locked_release(lmem);
+	gs_free_object(cmem, lmem, "gs_malloc_wrap(locked)");
+	return_error(gs_error_VMerror);
+    }
+    code = gs_memory_retrying_init(rmem, (gs_memory_t *)lmem);
+    if (code < 0) {
+	gs_free_object((gs_memory_t *)lmem, rmem, "gs_malloc_wrap(retrying)");
+	gs_memory_locked_release(lmem);
+	gs_free_object(cmem, lmem, "gs_malloc_wrap(locked)");
+	return code;
+    }
+
+    *wrapped = (gs_memory_t *)rmem;
     return 0;
 }
 
@@ -431,7 +451,9 @@ gs_malloc_wrap(gs_memory_t **wrapped, gs_malloc_memory_t *contents)
 gs_malloc_memory_t *
 gs_malloc_wrapped_contents(gs_memory_t *wrapped)
 {
-    gs_memory_locked_t *lmem = (gs_memory_locked_t *)wrapped;
+    gs_memory_retrying_t *rmem = (gs_memory_retrying_t *)wrapped;
+    gs_memory_locked_t *lmem =
+	(gs_memory_locked_t *)gs_memory_retrying_target(rmem);
 
     return (gs_malloc_memory_t *)gs_memory_locked_target(lmem);
 }
@@ -440,11 +462,14 @@ gs_malloc_wrapped_contents(gs_memory_t *wrapped)
 gs_malloc_memory_t *
 gs_malloc_unwrap(gs_memory_t *wrapped)
 {
-    gs_memory_locked_t *lmem = (gs_memory_locked_t *)wrapped;
+    gs_memory_retrying_t *rmem = (gs_memory_retrying_t *)wrapped;
+    gs_memory_locked_t *lmem =
+	(gs_memory_locked_t *)gs_memory_retrying_target(rmem);
     gs_memory_t *contents = gs_memory_locked_target(lmem);
 
+    gs_free_object((gs_memory_t *)lmem, rmem, "gs_malloc_unwrap(retrying)");
     gs_memory_locked_release(lmem);
-    gs_free_object(contents, lmem, "gs_malloc_unwrap");
+    gs_free_object(contents, lmem, "gs_malloc_unwrap(locked)");
     return (gs_malloc_memory_t *)contents;
 }
 

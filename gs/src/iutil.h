@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -41,16 +41,37 @@ bool obj_eq(P2(const ref *, const ref *));
 bool obj_ident_eq(P2(const ref *, const ref *));
 
 /*
- * Create a printable representation of an object, a la cvs (full_print =
- * false) or == (full_print = true).  Return 0 if OK, <0 if the destination
- * wasn't large enough or the object's contents weren't readable.
- * If the object was a string or name, store a pointer to its characters
- * even if it was too large.  Note that if full_print is true, the only
- * allowed types are boolean, integer, and real.
+ * Set *pchars and *plen to point to the data of a name or string, and
+ * return 0.  If the object isn't a name or string, return e_typecheck.
+ * If the object is a string without read access, return e_invalidaccess.
  */
-int obj_cvp(P6(const ref * op, byte * str, uint len, uint * prlen,
-	       const byte ** pchars, bool full_print));
-/* obj_cvs is equivalent to obj_cvp with full_print = false. */
+int obj_string_data(P3(const ref *op, const byte **pchars, uint *plen));
+
+/*
+ * Create a printable representation of an object, a la cvs and =
+ * (full_print = 0), == (full_print = 1), or === (full_print = 2).  Return 0
+ * if OK, 1 if the destination wasn't large enough, e_invalidaccess if the
+ * object's contents weren't readable.  If the return value is 0 or 1,
+ * *prlen contains the amount of data returned.  start_pos is the starting
+ * output position -- the first start_pos bytes of output are discarded.
+ */
+#define CVP_MAX_STRING 200  /* strings are truncated here if full_print = 1 */
+int obj_cvp(P6(const ref * op, byte *str, uint len, uint * prlen,
+	       int full_print, uint start_pos));
+
+/*
+ * Create a printable representation of an object, a la cvs and =.  Return 0
+ * if OK, e_rangecheck if the destination wasn't large enough,
+ * e_invalidaccess if the object's contents weren't readable.  If pchars !=
+ * NULL, then if the object was a string or name, store a pointer to its
+ * characters in *pchars even if it was too large; otherwise, set *pchars =
+ * str.  In any case, store the length in *prlen.
+ *
+ * obj_cvs is different from obj_cvp in two respects: if the printed
+ * representation is too large, it returns e_rangecheck rather than 1;
+ * and it can return a pointer to the data for names and strings, like
+ * obj_string_data.
+ */
 int obj_cvs(P5(const ref * op, byte * str, uint len, uint * prlen,
 	       const byte ** pchars));
 

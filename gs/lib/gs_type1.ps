@@ -107,33 +107,47 @@ ifelse
 % The real work is done in an operator:
 %	<font> <code|name> <name> <charstring> .type1execchar -
 
-(%Type1BuildChar) cvn	% <font> <code> %Type1BuildChar -
- { 1 index /Encoding get 1 index get .type1build
- } bind def
-(%Type1BuildGlyph) cvn	% <font> <name> %Type1BuildGlyph -
- { dup .type1build
- } bind def
-/.type1build		% <font> <code|name> <name> .type1build -
- { 2 index begin
-    dup CharStrings exch .knownget not
-     { 2 copy eq { exch pop /.notdef exch } if
+(%Type1BuildChar)  cvn {	% <font> <code> %Type1BuildChar -
+  1 index /Encoding get 1 index get .type1build .type1execchar
+} bind def
+(%Type1BuildGlyph) cvn {	% <font> <name> %Type1BuildGlyph -
+  dup .type1build .type1execchar
+} bind def
+% Note: this procedure is used for both Type 1 and Type 2 fonts.
+/.type1build {		% <font> <code|name> <name> .type1build
+			%   <font> <code|name> <name> <charstring>
+  2 index begin
+    dup CharStrings exch .knownget not {
+      2 copy eq { exch pop /.notdef exch } if
        QUIET not
 	{ (Substituting .notdef for ) print = flush }
 	{ pop }
        ifelse
        /.notdef CharStrings /.notdef get
-     } if
-   end .type1execchar
- } bind def
+    } if
+  end
+} bind def
 % CCRun is an undocumented procedure provided for Type 4 fonts.
 1183615869 internaldict begin
-/CCRun			% <font> <code|name> <charstring> CCRun -
- { 1 index dup type /integertype eq
-    { 3 index /Encoding get exch get }
-   if exch .type1execchar
- } bind def
+/CCRun {	% <font> <code|name> <charstring> CCRun -
+  1 index dup type /integertype eq {
+    3 index /Encoding get exch get
+  } if exch .type1execchar
+} bind def
 end
 
 % Register the font types for definefont.
 buildfontdict 1 /.buildfont1 cvx put
 buildfontdict 4 /.buildfont4 cvx put
+
+% Add Type 2 support if applicable.
+/.buildfont2 where not { (%END2) .skipeof } if
+pop
+(%Type2BuildChar)  cvn {	% <font> <code> %Type2BuildChar -
+  1 index /Encoding get 1 index get .type1build .type2execchar
+} bind def
+(%Type2BuildGlyph) cvn {	% <font> <name> %Type2BuildGlyph -
+  dup .type1build .type2execchar
+} bind def
+buildfontdict 2 /.buildfont2 cvx put
+%END2

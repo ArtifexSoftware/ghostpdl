@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1992, 1993, 1994, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1992, 1993, 1994, 1996, 1997, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -34,7 +34,7 @@
 
 /* Import the 'for' operator */
 extern int
-    zfor_fraction(P1(os_ptr));
+    zfor_fraction(P1(i_ctx_t *));
 
 /* Imported from gsht.c */
 void gx_set_effective_transfer(P1(gs_state *));
@@ -45,8 +45,10 @@ const int zcolor_remap_one_estack = 3;
 
 /* - currentgray <gray> */
 private int
-zcurrentgray(register os_ptr op)
+zcurrentgray(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(1);
     make_real(op, gs_currentgray(igs));
     return 0;
@@ -54,8 +56,9 @@ zcurrentgray(register os_ptr op)
 
 /* - currentrgbcolor <red> <green> <blue> */
 private int
-zcurrentrgbcolor(register os_ptr op)
+zcurrentrgbcolor(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     float par[3];
 
     gs_currentrgbcolor(igs, par);
@@ -66,8 +69,10 @@ zcurrentrgbcolor(register os_ptr op)
 
 /* - currenttransfer <proc> */
 private int
-zcurrenttransfer(register os_ptr op)
+zcurrenttransfer(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(1);
     *op = istate->transfer_procs.colored.gray;
     return 0;
@@ -77,8 +82,10 @@ zcurrenttransfer(register os_ptr op)
 /* Note: this is an undocumented operator that is not supported */
 /* in Level 2. */
 private int
-zprocesscolors(register os_ptr op)
+zprocesscolors(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(1);
     make_int(op, gs_currentdevice(igs)->color_info.num_components);
     return 0;
@@ -86,8 +93,9 @@ zprocesscolors(register os_ptr op)
 
 /* <gray> setgray - */
 private int
-zsetgray(register os_ptr op)
+zsetgray(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     double gray;
     int code;
 
@@ -102,8 +110,9 @@ zsetgray(register os_ptr op)
 
 /* <red> <green> <blue> setrgbcolor - */
 private int
-zsetrgbcolor(register os_ptr op)
+zsetrgbcolor(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     double par[3];
     int code;
 
@@ -118,8 +127,9 @@ zsetrgbcolor(register os_ptr op)
 
 /* <proc> settransfer - */
 private int
-zsettransfer(register os_ptr op)
+zsettransfer(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code;
 
     check_proc(*op);
@@ -134,8 +144,7 @@ zsettransfer(register os_ptr op)
 	return code;
     push_op_estack(zcolor_reset_transfer);
     pop(1);
-    op--;
-    return zcolor_remap_one(&istate->transfer_procs.colored.gray, op,
+    return zcolor_remap_one(i_ctx_p, &istate->transfer_procs.colored.gray,
 			    igs->set_transfer.colored.gray, igs,
 			    zcolor_remap_one_finish);
 }
@@ -147,10 +156,21 @@ zsettransfer(register os_ptr op)
 /* Use the 'for' operator to gather the values. */
 /* The caller must have done the necessary check_ostack and check_estack. */
 int
-zcolor_remap_one(const ref * pproc, register os_ptr op, gx_transfer_map * pmap,
-		 const gs_state * pgs, int (*finish_proc)(P1(os_ptr)))
+zcolor_remap_one(i_ctx_t *i_ctx_p, const ref * pproc,
+		 gx_transfer_map * pmap, const gs_state * pgs,
+		 op_proc_t finish_proc)
 {
-    osp = op += 4;
+    os_ptr op;
+
+    /*
+     * Detect the identity function, which is a common value for one or
+     * more of these functions.
+     */
+    if (r_size(pproc) == 0) {
+	pmap->proc = gs_identity_transfer;
+	return 0;
+    }
+    op = osp += 4;
     make_int(op - 3, 0);
     make_int(op - 2, 1);
     make_int(op - 1, transfer_map_size - 1);
@@ -165,7 +185,7 @@ zcolor_remap_one(const ref * pproc, register os_ptr op, gx_transfer_map * pmap,
 
 /* Store the result of remapping a component. */
 private int
-zcolor_remap_one_store(os_ptr op, floatp min_value)
+zcolor_remap_one_store(i_ctx_t *i_ctx_p, floatp min_value)
 {
     int i;
     gx_transfer_map *pmap = r_ptr(esp, gx_transfer_map);
@@ -190,26 +210,26 @@ zcolor_remap_one_store(os_ptr op, floatp min_value)
     return o_pop_estack;
 }
 int
-zcolor_remap_one_finish(os_ptr op)
+zcolor_remap_one_finish(i_ctx_t *i_ctx_p)
 {
-    return zcolor_remap_one_store(op, 0.0);
+    return zcolor_remap_one_store(i_ctx_p, 0.0);
 }
 int
-zcolor_remap_one_signed_finish(os_ptr op)
+zcolor_remap_one_signed_finish(i_ctx_t *i_ctx_p)
 {
-    return zcolor_remap_one_store(op, -1.0);
+    return zcolor_remap_one_store(i_ctx_p, -1.0);
 }
 
 /* Finally, reset the effective transfer functions and */
 /* invalidate the current color. */
 int
-zcolor_reset_transfer(os_ptr op)
+zcolor_reset_transfer(i_ctx_t *i_ctx_p)
 {
     gx_set_effective_transfer(igs);
-    return zcolor_remap_color(op);
+    return zcolor_remap_color(i_ctx_p);
 }
 int
-zcolor_remap_color(os_ptr op)
+zcolor_remap_color(i_ctx_t *i_ctx_p)
 {
     gx_unset_dev_color(igs);
     return 0;

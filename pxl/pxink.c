@@ -7,6 +7,7 @@
 
 #include "math_.h"
 #include "stdio_.h"			/* for NULL */
+#include "gdebug.h"
 #include "gstypes.h"
 #include "gsmemory.h"
 #include "pxoper.h"
@@ -272,6 +273,7 @@ px_paint_pattern(const gs_client_color *pcc, gs_state *pgs)
 	  { int y;
 
 	    image.ImageMatrix.tx = -x;
+
 	    code = gs_image_init(penum, &image, false, pgs);
 	    if ( code < 0 )
 	      break;

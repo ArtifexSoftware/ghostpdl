@@ -1,4 +1,4 @@
-#    Copyright (C) 1994, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1994, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -30,8 +30,8 @@
 ## The Desqview/X platform
 
 dvx__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_nofb.$(OBJ) $(GLOBJ)gp_dvx.$(OBJ) $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_dosfs.$(OBJ)
-dvx_.dev: $(dvx__) nosync.dev
-	$(SETMOD) dvx_ $(dvx__) -include nosync
+$(GLGEN)dvx_.dev: $(dvx__) nosync.dev
+	$(SETMOD) $(GLGEN)dvx_ $(dvx__) -include nosync
 
 $(GLOBJ)gp_dvx.$(OBJ): $(GLSRC)gp_dvx.c $(AK) $(string__h) $(gx_h) $(gsexit_h) $(gp_h) \
   $(time__h) $(dos__h)
@@ -48,25 +48,31 @@ $(ECHOGS_XE): echogs.c
 	coff2exe echogs
 	del echogs
 
-$(GENARCH_XE): genarch.c $(stdpre_h)
+$(GENARCH_XE): genarch.c $(GENARCH_DEPS)
 	$(CC) -o genarch genarch.c
 	strip genarch
 	coff2exe genarch
 	del genarch
 
-$(GENCONF_XE): genconf.c $(stdpre_h)
+$(GENCONF_XE): genconf.c $(GENCONF_DEPS)
 	$(CC) -o genconf genconf.c
 	strip genconf
 	coff2exe genconf
 	del genconf
 
-$(GENDEV_XE): gendev.c $(stdpre_h)
+$(GENDEV_XE): gendev.c $(GENDEV_DEPS)
 	$(CC) -o gendev gendev.c
 	strip gendev
 	coff2exe gendev
 	del gendev
 
-$(GENINIT_XE): geninit.c $(stdio__h) $(string__h)
+$(GENHT_XE): genht.c $(GENHT_DEPS)
+	$(CC) -o genht $(GENHT_CFLAGS) genht.c
+	strip genht
+	coff2exe genht
+	del genht
+
+$(GENINIT_XE): geninit.c $(GENINIT_DEPS)
 	$(CC) -o geninit geninit.c
 	strip geninit
 	coff2exe geninit

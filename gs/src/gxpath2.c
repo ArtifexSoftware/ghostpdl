@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -21,6 +21,7 @@
 #include "math_.h"
 #include "gx.h"
 #include "gserrors.h"
+#include "gsstruct.h"
 #include "gxfixed.h"
 #include "gxarith.h"
 #include "gzpath.h"
@@ -59,17 +60,20 @@ gx_path_subpath_start_point(const gx_path * ppath, gs_fixed_point * ppt)
 int
 gx_path_bbox(gx_path * ppath, gs_fixed_rect * pbox)
 {
-    if (ppath->bbox_set) {	/* The bounding box was set by setbbox. */
+    if (ppath->bbox_set) {
+	/* The bounding box was set by setbbox. */
 	*pbox = ppath->bbox;
 	return 0;
     }
-    if (ppath->first_subpath == 0) {	/* The path is empty, use the current point if any. */
+    if (ppath->first_subpath == 0) {
+	/* The path is empty, use the current point if any. */
 	int code = gx_path_current_point(ppath, &pbox->p);
 
-	if (code < 0) {		/*
-				 * Don't return garbage, in case the caller doesn't
-				 * check the return code.
-				 */
+	if (code < 0) {
+	    /*
+	     * Don't return garbage, in case the caller doesn't
+	     * check the return code.
+	     */
 	    pbox->p.x = pbox->p.y = 0;
 	}
 	pbox->q = pbox->p;
@@ -80,40 +84,44 @@ gx_path_bbox(gx_path * ppath, gs_fixed_rect * pbox)
     if (ppath->box_last == ppath->current_subpath->last) {	/* Box is up to date */
 	*pbox = ppath->bbox;
     } else {
-	gs_fixed_rect box;
+	fixed px, py, qx, qy;
 	const segment *pseg = ppath->box_last;
 
 	if (pseg == 0) {	/* box is uninitialized */
 	    pseg = (const segment *)ppath->first_subpath;
-	    box.p.x = box.q.x = pseg->pt.x;
-	    box.p.y = box.q.y = pseg->pt.y;
+	    px = qx = pseg->pt.x;
+	    py = qy = pseg->pt.y;
 	} else {
-	    box = ppath->bbox;
-	    pseg = pseg->next;
+	    px = ppath->bbox.p.x, py = ppath->bbox.p.y;
+	    qx = ppath->bbox.q.x, qy = ppath->bbox.q.y;
 	}
+
 /* Macro for adjusting the bounding box when adding a point */
-#define adjust_bbox(pt)\
-  if ( (pt).x < box.p.x ) box.p.x = (pt).x;\
-  else if ( (pt).x > box.q.x ) box.q.x = (pt).x;\
-  if ( (pt).y < box.p.y ) box.p.y = (pt).y;\
-  else if ( (pt).y > box.q.y ) box.q.y = (pt).y
-	while (pseg) {
+#define ADJUST_BBOX(pt)\
+  if ((pt).x < px) px = (pt).x;\
+  else if ((pt).x > qx) qx = (pt).x;\
+  if ((pt).y < py) py = (pt).y;\
+  else if ((pt).y > qy) qy = (pt).y
+
+	while ((pseg = pseg->next) != 0) {
 	    switch (pseg->type) {
 		case s_curve:
-#define pcurve ((const curve_segment *)pseg)
-		    adjust_bbox(pcurve->p1);
-		    adjust_bbox(pcurve->p2);
-#undef pcurve
+		    ADJUST_BBOX(((const curve_segment *)pseg)->p1);
+		    ADJUST_BBOX(((const curve_segment *)pseg)->p2);
 		    /* falls through */
 		default:
-		    adjust_bbox(pseg->pt);
+		    ADJUST_BBOX(pseg->pt);
 	    }
-	    pseg = pseg->next;
 	}
-#undef adjust_bbox
-	ppath->bbox = box;
+#undef ADJUST_BBOX
+
+#define STORE_BBOX(b)\
+  (b).p.x = px, (b).p.y = py, (b).q.x = qx, (b).q.y = qy;
+	STORE_BBOX(*pbox);
+	STORE_BBOX(ppath->bbox);
+#undef STORE_BBOX
+
 	ppath->box_last = ppath->current_subpath->last;
-	*pbox = box;
     }
     return 0;
 }
@@ -270,26 +278,27 @@ gx_rect_scale_exp2(gs_fixed_rect * pr, int sx, int sy)
     gx_point_scale_exp2(&pr->q, sx, sy);
 }
 int
-gx_path_scale_exp2(gx_path * ppath, int log2_scale_x, int log2_scale_y)
+gx_path_scale_exp2_shared(gx_path * ppath, int log2_scale_x, int log2_scale_y,
+			  bool segments_shared)
 {
     segment *pseg;
 
     gx_rect_scale_exp2(&ppath->bbox, log2_scale_x, log2_scale_y);
-#define update_xy(pt) gx_point_scale_exp2(&pt, log2_scale_x, log2_scale_y)
-    update_xy(ppath->position);
-    for (pseg = (segment *) (ppath->first_subpath); pseg != 0;
-	 pseg = pseg->next
-	)
-	switch (pseg->type) {
+#define SCALE_XY(pt) gx_point_scale_exp2(&pt, log2_scale_x, log2_scale_y)
+    SCALE_XY(ppath->position);
+    if (!segments_shared) {
+	for (pseg = (segment *) (ppath->first_subpath); pseg != 0;
+	     pseg = pseg->next
+	     )
+	    switch (pseg->type) {
 	    case s_curve:
-#define pcseg ((curve_segment *)pseg)
-		update_xy(pcseg->p1);
-		update_xy(pcseg->p2);
-#undef pcseg
+		SCALE_XY(((curve_segment *)pseg)->p1);
+		SCALE_XY(((curve_segment *)pseg)->p2);
 	    default:
-		update_xy(pseg->pt);
-	}
-#undef update_xy
+		SCALE_XY(pseg->pt);
+	    }
+    }
+#undef SCALE_XY
     return 0;
 }
 
@@ -324,7 +333,11 @@ gx_path_copy_reversed(const gx_path * ppath_old, gx_path * ppath)
 	    if (code < 0)
 		return code;
 	}
-	for (;; pseg = prev, prev_notes = notes) {
+	/*
+	 * The odd '1' in the next statement suppresses a "statement not
+	 * reached" warning at the end of the loop from certain compilers.
+	 */
+	for (; 1; pseg = prev, prev_notes = notes) {
 	    int code;
 
 	    prev = pseg->prev;

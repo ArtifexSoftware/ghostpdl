@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -151,6 +151,7 @@ extern dev_proc_fill_path(gdev_pdf_fill_path);	/* in gdevpdfd.c */
 extern dev_proc_stroke_path(gdev_pdf_stroke_path);	/* in gdevpdfd.c */
 extern dev_proc_fill_mask(gdev_pdf_fill_mask);	/* in gdevpdfi.c */
 extern dev_proc_begin_image(gdev_pdf_begin_image);	/* in gdevpdfi.c */
+extern dev_proc_strip_tile_rectangle(gdev_pdf_strip_tile_rectangle);	/* in gdevpdfi.c */
 
 #ifndef X_DPI
 #  define X_DPI 720
@@ -198,7 +199,8 @@ const gx_device_pdf gs_pdfwrite_device =
   NULL,				/* draw_thin_line */
   gdev_pdf_begin_image,
   NULL,				/* image_data */
-  NULL				/* end_image */
+  NULL,				/* end_image */
+  gdev_pdf_strip_tile_rectangle
  },
  psdf_initial_values(psdf_version_level2, 0 /*false */ ),	/* (!ASCII85EncodePages) */
  1.2,				/* CompatibilityLevel */
@@ -236,6 +238,7 @@ const gx_device_pdf gs_pdfwrite_device =
  {
      {
 	 {0}}},			/* resources */
+ 0 /*false*/,			/* have_patterns */
  0,				/* annots */
  0,				/* last_resource */
  {0, 0},			/* catalog_string */
@@ -740,20 +743,24 @@ pdf_begin_aside(gx_device_pdf * pdev, pdf_resource ** plist,
 
 /* Begin a resource of a given type. */
 int
+pdf_begin_resource_body(gx_device_pdf * pdev, pdf_resource_type type,
+			gs_id rid, pdf_resource ** ppres)
+{
+    return pdf_begin_aside(pdev,
+       &pdev->resources[type].chains[gs_id_hash(rid) % num_resource_chains],
+			       resource_structs[type], ppres);
+}
+int
 pdf_begin_resource(gx_device_pdf * pdev, pdf_resource_type type, gs_id rid,
 		   pdf_resource ** ppres)
 {
-    int code = pdf_begin_aside(pdev,
-       &pdev->resources[type].chains[gs_id_hash(rid) % num_resource_chains],
-			       resource_structs[type], ppres);
+    int code = pdf_begin_resource_body(pdev, type, rid, ppres);
 
-    if (code < 0)
-	return code;
-    if (resource_names[type] != 0) {
+    if (code >= 0 && resource_names[type] != 0) {
 	stream *s = pdev->strm;
 
-	pprints1(s, "<< /Type /%s", resource_names[type]);
-	pprintld1(s, " /Name /R%ld", (*ppres)->id);
+	pprints1(s, "<</Type/%s", resource_names[type]);
+	pprintld1(s, "/Name/R%ld", (*ppres)->id);
     }
     return code;
 }
@@ -808,6 +815,7 @@ pdf_reset_page(gx_device_pdf * pdev, bool first_page)
 		for (j = 0; j < num_resource_chains; ++j)
 		    pdev->resources[i].chains[j] = 0;
     }
+    pdev->cs_Pattern = 0;	/* simplest to create one for each page */
     pdev->page_string.data = 0;
     {
 	static const pdf_text_state text_default =

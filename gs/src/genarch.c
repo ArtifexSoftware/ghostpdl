@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -21,24 +21,57 @@
 /* reflecting the machine architecture and compiler characteristics. */
 
 #include "stdpre.h"
+#include <ctype.h>
 #include <stdio.h>
+#include <time.h>
 
 /* We should write the result on stdout, but the original Turbo C 'make' */
 /* can't handle output redirection (sigh). */
 
 private void
-section(FILE * f, char *str)
+section(FILE * f, const char *str)
 {
     fprintf(f, "\n\t /* ---------------- %s ---------------- */\n\n", str);
 }
+
+private clock_t
+time_clear(char *buf, int bsize, int nreps)
+{
+    clock_t t = clock();
+    int i;
+
+    for (i = 0; i < nreps; ++i)
+	memset(buf, 0, bsize);
+    return clock() - t;
+}
+
+private void
+define(FILE *f, const char *str)
+{
+    char upstr[50];
+    int i, c;
+
+    for (i = 0; (c = str[i]) != 0; ++i)
+	upstr[i] = toupper(str[i]);
+    upstr[i] = 0;
+    fprintf(f, "#define %s ", upstr);
+}
+
+private void
+define_int(FILE *f, const char *str, int value)
+{
+    define(f, str);
+    fprintf(f, "%d\n", value);
+}
+
+const char ff_str[] = "ffffffffffffffff";	/* 8 bytes */
 
 int
 main(int argc, char *argv[])
 {
     char *fname = argv[1];
     long one = 1;
-    char *ffs = "ffffffffffffffff";	/* 8 bytes */
-    int ffs_strlen = strlen(ffs);
+    int ff_strlen = sizeof(ff_str) - 1;
     struct {
 	char c;
 	short s;
@@ -81,6 +114,7 @@ main(int argc, char *argv[])
 	int i;
 	long l;
     } f0 , f1, fm1;
+    int floats_are_IEEE;
     FILE *f = fopen(fname, "w");
 
     if (f == NULL) {
@@ -88,54 +122,134 @@ main(int argc, char *argv[])
 	return exit_FAILED;
     }
     fprintf(f, "/* Parameters derived from machine and compiler architecture */\n");
+    /* We have to test the size dynamically here, */
+    /* because the preprocessor can't evaluate sizeof. */
+    f0.f = 0.0, f1.f = 1.0, fm1.f = -1.0;
+    floats_are_IEEE =
+	(size_of(float) == size_of(int) ?
+	 f0.i == 0 && f1.i == (int)0x3f800000 && fm1.i == (int)0xbf800000 :
+	 f0.l == 0 && f1.l == 0x3f800000L && fm1.l == 0xbf800000L);
 
     section(f, "Scalar alignments");
 
 #define OFFSET_IN(s, e) (int)((char *)&s.e - (char *)&s)
-    fprintf(f, "#define arch_align_short_mod %d\n", OFFSET_IN(ss, s));
-    fprintf(f, "#define arch_align_int_mod %d\n", OFFSET_IN(si, i));
-    fprintf(f, "#define arch_align_long_mod %d\n", OFFSET_IN(sl, l));
-    fprintf(f, "#define arch_align_ptr_mod %d\n", OFFSET_IN(sp, p));
-    fprintf(f, "#define arch_align_float_mod %d\n", OFFSET_IN(sf, f));
-    fprintf(f, "#define arch_align_double_mod %d\n", OFFSET_IN(sd, d));
+    define_int(f, "arch_align_short_mod", OFFSET_IN(ss, s));
+    define_int(f, "arch_align_int_mod", OFFSET_IN(si, i));
+    define_int(f, "arch_align_long_mod", OFFSET_IN(sl, l));
+    define_int(f, "arch_align_ptr_mod", OFFSET_IN(sp, p));
+    define_int(f, "arch_align_float_mod", OFFSET_IN(sf, f));
+    define_int(f, "arch_align_double_mod", OFFSET_IN(sd, d));
 #undef OFFSET_IN
 
     section(f, "Scalar sizes");
 
-    fprintf(f, "#define arch_log2_sizeof_short %d\n", log2s[size_of(short)]);
-    fprintf(f, "#define arch_log2_sizeof_int %d\n", log2s[size_of(int)]);
-    fprintf(f, "#define arch_log2_sizeof_long %d\n", log2s[size_of(long)]);
-    fprintf(f, "#define arch_sizeof_ptr %d\n", size_of(char *));
-    fprintf(f, "#define arch_sizeof_float %d\n", size_of(float));
-    fprintf(f, "#define arch_sizeof_double %d\n", size_of(double));
+    define_int(f, "arch_log2_sizeof_short", log2s[size_of(short)]);
+    define_int(f, "arch_log2_sizeof_int", log2s[size_of(int)]);
+    define_int(f, "arch_log2_sizeof_long", log2s[size_of(long)]);
+    define_int(f, "arch_sizeof_ptr", size_of(char *));
+    define_int(f, "arch_sizeof_float", size_of(float));
+    define_int(f, "arch_sizeof_double", size_of(double));
+    if (floats_are_IEEE) {
+	define_int(f, "arch_float_mantissa_bits", 24);
+	define_int(f, "arch_double_mantissa_bits", 53);
+    } else {
+	/*
+	 * There isn't any general way to compute the number of mantissa
+	 * bits accurately, especially if the machine uses hex rather
+	 * than binary exponents.  Use conservative values, assuming
+	 * the exponent is stored in a 16-bit word of its own.
+	 */
+	define_int(f, "arch_float_mantissa_bits", sizeof(float) * 8 - 17);
+	define_int(f, "arch_double_mantissa_bits", sizeof(double) * 8 - 17);
+    }
 
     section(f, "Unsigned max values");
 
 #define PRINT_MAX(str, typ, tstr, l)\
-  fprintf(f, "#define arch_max_%s ((%s)0x%s%s + (%s)0)\n",\
-    str, tstr, ffs + ffs_strlen - size_of(typ) * 2, l, tstr)
-    PRINT_MAX("uchar", unsigned char, "unsigned char", "");
-    PRINT_MAX("ushort", unsigned short, "unsigned short", "");
-    PRINT_MAX("uint", unsigned int, "unsigned int", "");
-    PRINT_MAX("ulong", unsigned long, "unsigned long", "L");
+  define(f, str);\
+  fprintf(f, "((%s)0x%s%s + (%s)0)\n",\
+    tstr, ff_str + ff_strlen - size_of(typ) * 2, l, tstr)
+    PRINT_MAX("arch_max_uchar", unsigned char, "unsigned char", "");
+    PRINT_MAX("arch_max_ushort", unsigned short, "unsigned short", "");
+    /*
+     * For uint and ulong, a different approach is required to keep gcc
+     * with -Wtraditional from spewing out pointless warnings.
+     */
+    define(f, "arch_max_uint");
+    fprintf(f, "((unsigned int)~0 + (unsigned int)0)\n");
+    define(f, "arch_max_ulong");
+    fprintf(f, "((unsigned long)~0L + (unsigned long)0)\n");
 
 #undef PRINT_MAX
 
+    section(f, "Cache sizes");
+
+    /*
+     * Determine the primary and secondary cache sizes by looking for a
+     * non-linearity in the time required to fill blocks with memset.
+     */
+    {
+#define MAX_BLOCK (1 << 20)
+	static char buf[MAX_BLOCK];
+	int bsize = 1 << 10;
+	int nreps = 1;
+	clock_t t = 0;
+	clock_t t_eps;
+
+	/*
+	 * Increase the number of repetitions until the time is
+	 * long enough to exceed the likely uncertainty.
+	 */
+
+	while ((t = time_clear(buf, bsize, nreps)) == 0)
+	    nreps <<= 1;
+	t_eps = t;
+	while ((t = time_clear(buf, bsize, nreps)) < t_eps * 10)
+	    nreps <<= 1;
+
+	/*
+	 * Increase the block size until the time jumps non-linearly.
+	 */
+	for (; bsize <= MAX_BLOCK;) {
+	    clock_t dt = time_clear(buf, bsize, nreps);
+
+	    if (dt > t + (t >> 1)) {
+		t = dt;
+		break;
+	    }
+	    bsize <<= 1;
+	    nreps >>= 1;
+	    if (nreps == 0)
+		nreps = 1, t <<= 1;
+	}
+	define_int(f, "arch_cache1_size", bsize >> 1);
+	/*
+	 * Do the same thing a second time for the secondary cache.
+	 */
+	if (nreps > 1)
+	    nreps >>= 1, t >>= 1;
+	for (; bsize <= MAX_BLOCK;) {
+	    clock_t dt = time_clear(buf, bsize, nreps);
+
+	    if (dt > t * 1.25) {
+		t = dt;
+		break;
+	    }
+	    bsize <<= 1;
+	    nreps >>= 1;
+	    if (nreps == 0)
+		nreps = 1, t <<= 1;
+	}
+	define_int(f, "arch_cache2_size", bsize >> 1);
+    }
+
     section(f, "Miscellaneous");
 
-    fprintf(f, "#define arch_is_big_endian %d\n", 1 - *(char *)&one);
+    define_int(f, "arch_is_big_endian", 1 - *(char *)&one);
     pl0.l = 0;
     pl1.l = -1;
-    fprintf(f, "#define arch_ptrs_are_signed %d\n",
-	    (pl1.p < pl0.p));
-    f0.f = 0.0, f1.f = 1.0, fm1.f = -1.0;
-    /* We have to test the size dynamically here, */
-    /* because the preprocessor can't evaluate sizeof. */
-    fprintf(f, "#define arch_floats_are_IEEE %d\n",
-	    ((size_of(float) == size_of(int) ?
-	  f0.i == 0 && f1.i == (int)0x3f800000 && fm1.i == (int)0xbf800000 :
-	      f0.l == 0 && f1.l == 0x3f800000L && fm1.l == 0xbf800000L)
-	     ? 1 : 0));
+    define_int(f, "arch_ptrs_are_signed", (pl1.p < pl0.p));
+    define_int(f, "arch_floats_are_IEEE", (floats_are_IEEE ? 1 : 0));
 
     /* There are three cases for arithmetic right shift: */
     /* always correct, correct except for right-shifting a long by 1 */
@@ -144,11 +258,10 @@ main(int argc, char *argv[])
     ars = (lr2 != -1 || ir1 != -1 || ir2 != -1 ? 0 :
 	   lr1 != -1 ? 1 :	/* Turbo C problem */
 	   2);
-    fprintf(f, "#define arch_arith_rshift %d\n", ars);
+    define_int(f, "arch_arith_rshift", ars);
     /* Some machines can't handle a variable shift by */
     /* the full width of a long. */
-    fprintf(f, "#define arch_can_shift_full_long %d\n",
-	    um1 >> lwidth == 0);
+    define_int(f, "arch_can_shift_full_long", um1 >> lwidth == 0);
 
 /* ---------------- Done. ---------------- */
 

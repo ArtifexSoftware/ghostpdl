@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1993, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1993, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -35,9 +35,15 @@
 
 /* General color routines */
 const gs_color_space *gs_currentcolorspace(P1(const gs_state *));
-int gs_setcolorspace(P2(gs_state *, gs_color_space *));
+int gs_setcolorspace(P2(gs_state *, const gs_color_space *));
 const gs_client_color *gs_currentcolor(P1(const gs_state *));
 int gs_setcolor(P2(gs_state *, const gs_client_color *));
+
+/*
+ * gs_currentcolorspace_index returns the index of the current color space
+ * *before* any substitution.
+ */
+gs_color_space_index gs_currentcolorspace_index(P1(const gs_state *));
 
 /* CIE-specific routines */
 #ifndef gs_cie_render_DEFINED
@@ -72,13 +78,13 @@ int gs_setcolorrendering(P2(gs_state *, gs_cie_render *));
  * procedures provided by the client are fairly efficient, and there are
  * few instances in which the client would need to replace them.
  */
-extern int gs_cspace_build_Indexed(
+extern int gs_cspace_build_Indexed(P5(
 				      gs_color_space ** ppcspace,
 				      const gs_color_space * pbase_cspace,
 				      uint num_entries,
 				      const gs_const_string * ptbl,
 				      gs_memory_t * pmem
-);
+				      ));
 
 /* Return the number of entries in the palette of an indexed color space. */
 extern int gs_cspace_indexed_num_entries(P1(

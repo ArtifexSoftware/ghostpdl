@@ -35,8 +35,9 @@ private_st_PNGP_state();
 #define cOptimum 15
 #define cEncode -10
 #define cDecode -4
-private const byte pngp_case_needs_prev[] =
-{0, 0, 1, 1, 1, 1};
+private const byte pngp_case_needs_prev[] = {
+    0, 0, 1, 1, 1, 1
+};
 
 /* Set defaults */
 private void
@@ -59,7 +60,7 @@ s_PNGP_reinit(stream_state * st)
     return 0;
 }
 
-/* Initialize PNGPredictorEncode filter. */
+/* Common initialization. */
 private int
 s_pngp_init(stream_state * st, bool need_prev)
 {
@@ -70,8 +71,7 @@ s_pngp_init(stream_state * st, bool need_prev)
 
 #if arch_sizeof_long > arch_sizeof_int
     if (bits_per_row > max_uint * 7L)
-	return ERRC;
-/****** WRONG ******/
+	return ERRC;	/****** WRONG ******/
 #endif
     ss->row_count = (uint) ((bits_per_row + 7) >> 3);
     ss->end_mask = (1 << (-bits_per_row & 7)) - 1;
@@ -80,8 +80,7 @@ s_pngp_init(stream_state * st, bool need_prev)
 	prev_row = gs_alloc_bytes(st->memory, ss->bpp + ss->row_count,
 				  "PNGPredictor prev row");
 	if (prev_row == 0)
-	    return ERRC;
-/****** WRONG ******/
+	    return ERRC;	/****** WRONG ******/
 	memset(prev_row, 0, ss->bpp);
     }
     ss->prev_row = prev_row;
@@ -105,6 +104,16 @@ s_PNGPD_init(stream_state * st)
     return s_pngp_init(st, true);
 }
 
+/* Release a PNGPredictor filter. */
+private void
+s_PNGP_release(stream_state *st)
+{
+    stream_PNGP_state *const ss = (stream_PNGP_state *) st;
+
+    if (ss->prev_row)
+	gs_free_object(st->memory, ss->prev_row, "PNGPredictor prev row");
+}
+
 /*
  * Process a partial buffer.  We pass in current and previous pointers
  * to both the current and preceding scan line.  Note that dprev is
@@ -115,13 +124,12 @@ s_PNGPD_init(stream_state * st)
 private int
 paeth_predictor(int a, int b, int c)
 {
-#undef any_abs			/* just in case */
-#define any_abs(u) ((u) < 0 ? -(u) : (u))
-    int px = a + b - c;
-    int pa = any_abs(px - a), pb = any_abs(px - b), pc = any_abs(px - c);
+    /* The definitions of ac and bc are correct, not a typo. */
+    int ac = b - c, bc = a - c, abcc = ac + bc;
+    int pa = (ac < 0 ? -ac : ac), pb = (bc < 0 ? -bc : bc),
+	pc = (abcc < 0 ? -abcc : abcc);
 
     return (pa <= pb && pa <= pc ? a : pb <= pc ? b : c);
-#undef any_abs
 }
 private void
 s_pngp_process(stream_state * st, stream_cursor_write * pw,
@@ -182,7 +190,7 @@ s_pngp_count(const stream_state * st_const, const stream_cursor_read * pr,
 	     const stream_cursor_write * pw)
 {
     const stream_PNGP_state *const ss_const =
-    (const stream_PNGP_state *)st_const;
+	(const stream_PNGP_state *)st_const;
     uint rcount = pr->limit - pr->ptr;
     uint wcount = pw->limit - pw->ptr;
     uint row_left = ss_const->row_left;
@@ -216,16 +224,17 @@ s_PNGPE_process(stream_state * st, stream_cursor_read * pr,
 {
     stream_PNGP_state *const ss = (stream_PNGP_state *) st;
     int bpp = ss->bpp;
-    int code = 0;
+    int status = 0;
 
     while (pr->ptr < pr->limit) {
 	uint count;
 
-	if (ss->row_left == 0) {	/* Beginning of row, write algorithm byte. */
+	if (ss->row_left == 0) {
+	    /* Beginning of row, write algorithm byte. */
 	    int predictor;
 
 	    if (pw->ptr >= pw->limit) {
-		code = 1;
+		status = 1;
 		break;
 	    }
 	    predictor =
@@ -239,8 +248,9 @@ s_PNGPE_process(stream_state * st, stream_cursor_read * pr,
 	    continue;
 	}
 	count = s_pngp_count(st, pr, pw);
-	if (count == 0) {	/* We know we have input, so output must be full. */
-	    code = 1;
+	if (count == 0) {
+	    /* We know we have input, so output must be full. */
+	    status = 1;
 	    break;
 	} {
 	    byte *up = ss->prev_row + bpp + ss->row_count - ss->row_left;
@@ -250,8 +260,13 @@ s_PNGPE_process(stream_state * st, stream_cursor_read * pr,
 	    s_pngp_process(st, pw, ss->prev, pr, up - bpp, up, n);
 	    if (ss->prev_row)
 		memcpy(up - bpp, ss->prev, n);
-	    if (n < bpp) {	/* We didn't have enough data to use up all of prev. */
-		/* Shift more data into prev and exit. */
+	    if (ss->row_left == 0)
+		continue;
+	    if (n < bpp) {
+		/*
+		 * We didn't have enough data to use up all of prev.
+		 * Shift more data into prev and exit.
+		 */
 		int prev_left = bpp - n;
 
 		memmove(ss->prev, ss->prev + n, prev_left);
@@ -272,7 +287,7 @@ s_PNGPE_process(stream_state * st, stream_cursor_read * pr,
 	    }
 	}
     }
-    return code;
+    return status;
 }
 
 /*
@@ -292,16 +307,17 @@ s_PNGPD_process(stream_state * st, stream_cursor_read * pr,
 {
     stream_PNGP_state *const ss = (stream_PNGP_state *) st;
     int bpp = ss->bpp;
-    int code = 0;
+    int status = 0;
 
     while (pr->ptr < pr->limit) {
 	uint count;
 
-	if (ss->row_left == 0) {	/* Beginning of row, read algorithm byte. */
+	if (ss->row_left == 0) {
+	    /* Beginning of row, read algorithm byte. */
 	    int predictor = pr->ptr[1];
 
 	    if (predictor >= cOptimum - cNone) {
-		code = ERRC;
+		status = ERRC;
 		break;
 	    }
 	    pr->ptr++;
@@ -311,8 +327,9 @@ s_PNGPD_process(stream_state * st, stream_cursor_read * pr,
 	    continue;
 	}
 	count = s_pngp_count(st, pr, pw);
-	if (count == 0) {	/* We know we have input, so output must be full. */
-	    code = 1;
+	if (count == 0) {
+	    /* We know we have input, so output must be full. */
+	    status = 1;
 	    break;
 	} {
 	    byte *up = ss->prev_row + bpp + ss->row_count - ss->row_left;
@@ -322,12 +339,17 @@ s_PNGPD_process(stream_state * st, stream_cursor_read * pr,
 	    s_pngp_process(st, pw, ss->prev, pr, up - bpp, up, n);
 	    if (ss->prev_row)
 		memcpy(up - bpp, ss->prev, n);
-	    if (n < bpp) {	/* We didn't have enough data to use up all of prev. */
+	    if (ss->row_left == 0)
+		continue;
+	    if (n < bpp) {
+		/* We didn't have enough data to use up all of prev. */
 		/* Shift more data into prev and exit. */
 		int prev_left = bpp - n;
 
 		memmove(ss->prev, ss->prev + n, prev_left);
 		memcpy(ss->prev + prev_left, pw->ptr - (n - 1), n);
+		if (pw->ptr >= pw->limit && pr->ptr < pr->limit)
+		    status = 1;
 		break;
 	    }
 	    /* Process bytes whose predecessors are in the output. */
@@ -344,15 +366,15 @@ s_PNGPD_process(stream_state * st, stream_cursor_read * pr,
 	    }
 	}
     }
-    return code;
+    return status;
 }
 
 /* Stream templates */
-const stream_template s_PNGPE_template =
-{&st_PNGP_state, s_PNGPE_init, s_PNGPE_process, 1, 1, 0 /*NULL */ ,
- s_PNGP_set_defaults, s_PNGP_reinit
+const stream_template s_PNGPE_template = {
+    &st_PNGP_state, s_PNGPE_init, s_PNGPE_process, 1, 1, s_PNGP_release,
+    s_PNGP_set_defaults, s_PNGP_reinit
 };
-const stream_template s_PNGPD_template =
-{&st_PNGP_state, s_PNGPD_init, s_PNGPD_process, 1, 1, 0 /*NULL */ ,
- s_PNGP_set_defaults, s_PNGP_reinit
+const stream_template s_PNGPD_template = {
+    &st_PNGP_state, s_PNGPD_init, s_PNGPD_process, 1, 1, s_PNGP_release,
+    s_PNGP_set_defaults, s_PNGP_reinit
 };

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -17,7 +17,7 @@
  */
 
 
-/* Halftone rendering routines for Ghostscript imaging library */
+/* Halftone rendering for imaging library */
 #include "memory_.h"
 #include "gx.h"
 #include "gserrors.h"
@@ -141,10 +141,10 @@ gx_ht_alloc_cache(gs_memory_t * mem, uint max_tiles, uint max_bits)
     gs_alloc_struct(mem, gx_ht_cache, &st_ht_cache,
 		    "alloc_ht_cache(struct)");
     byte *tbits =
-    gs_alloc_bytes(mem, max_bits, "alloc_ht_cache(bits)");
+	gs_alloc_bytes(mem, max_bits, "alloc_ht_cache(bits)");
     gx_ht_tile *ht_tiles =
-    gs_alloc_struct_array(mem, max_tiles, gx_ht_tile, &st_ht_tiles,
-			  "alloc_ht_cache(ht_tiles)");
+	gs_alloc_struct_array(mem, max_tiles, gx_ht_tile, &st_ht_tiles,
+			      "alloc_ht_cache(ht_tiles)");
 
     if (pcache == 0 || tbits == 0 || ht_tiles == 0) {
 	gs_free_object(mem, ht_tiles, "alloc_ht_cache(ht_tiles)");
@@ -181,9 +181,37 @@ gx_check_tile_cache(const gs_imager_state * pis)
 
     if (pcache == 0 || pis->dev_ht == 0)
 	return false;		/* no halftone or cache */
-    if (pcache->order.bits != porder->bits)
+    if (pcache->order.bit_data != porder->bit_data)
 	gx_ht_init_cache(pcache, porder);
-    return pcache->levels_per_tile == 1;
+    if (pcache->tiles_fit >= 0)
+	return (bool)pcache->tiles_fit;
+    {
+	bool fit = false;
+	int bits_per_level;
+
+	if (pcache->num_cached < porder->num_levels)
+	    DO_NOTHING;
+	else if (pcache->levels_per_tile == 1)
+	    fit = true;
+	/*
+	 * All the tiles fit iff bits and levels are exactly N-for-1, where
+	 * N is a multiple of levels_per_tile.
+	 */
+	else if (porder->num_bits % porder->num_levels == 0 &&
+		 (bits_per_level = porder->num_bits / porder->num_levels) %
+		   pcache->levels_per_tile == 0) {
+	    /* Check the N-for-1 property. */
+	    const uint *level = porder->levels;
+	    int i = porder->num_levels, j = 0;
+
+	    for (; i > 0; --i, j += bits_per_level, ++level)
+		if (*level != j)
+		    break;
+	    fit = i == 0;
+	}
+	pcache->tiles_fit = (int)fit;
+	return fit;
+    }
 }
 
 /*
@@ -279,7 +307,7 @@ gx_dc_ht_binary_load(gx_device_color * pdevc, const gs_imager_state * pis,
     gx_ht_cache *pcache =
 	(porder->cache == 0 ? pis->ht_cache : porder->cache);
 
-    if (pcache->order.bits != porder->bits)
+    if (pcache->order.bit_data != porder->bit_data)
 	gx_ht_init_cache(pcache, porder);
     /* Expand gx_render_ht inline for speed. */
     {
@@ -411,6 +439,7 @@ gx_ht_init_cache(gx_ht_cache * pcache, const gx_ht_order * porder)
     pcache->order = *porder;
     pcache->num_cached = num_cached;
     pcache->levels_per_tile = (size + num_cached - 1) / num_cached;
+    pcache->tiles_fit = -1;
     memset(tbits, 0, pcache->bits_size);
     for (i = 0; i < num_cached; i++, tbits += tile_bytes) {
 	register gx_ht_tile *bt = &pcache->ht_tiles[i];
@@ -444,90 +473,23 @@ private int
 render_ht(gx_ht_tile * pbt, int level /* [1..num_bits-1] */ ,
 	  const gx_ht_order * porder, gx_bitmap_id new_id)
 {
-    int old_level = pbt->level;
-    register gx_ht_bit *p = &porder->bits[old_level];
-    register byte *data = pbt->tiles.data;
+    byte *data = pbt->tiles.data;
+    int code;
 
     if_debug7('H', "[H]Halftone cache slot 0x%lx: old=%d, new=%d, w=%d(%d), h=%d(%d):\n",
-	      (ulong) data, old_level, level,
+	      (ulong) data, pbt->level, level,
 	      pbt->tiles.size.x, porder->width,
 	      pbt->tiles.size.y, porder->num_bits / porder->width);
 #ifdef DEBUG
     if (level < 0 || level > porder->num_bits) {
-	lprintf3("Error in render_ht: level=%d, old_level=%d, num_bits=%d\n", level, old_level, porder->num_bits);
+	lprintf3("Error in render_ht: level=%d, old level=%d, num_bits=%d\n",
+		 level, pbt->level, porder->num_bits);
 	return_error(gs_error_Fatal);
     }
 #endif
-    /* Invert bits between the two pointers. */
-    /* Note that we can use the same loop to turn bits either */
-    /* on or off, using xor. */
-    /* The Borland compiler generates truly dreadful code */
-    /* if we don't assign the offset to a temporary. */
-#if arch_ints_are_short
-#  define invert_data(i)\
-     { uint off = p[i].offset; *(ht_mask_t *)&data[off] ^= p[i].mask; }
-#else
-#  define invert_data(i) *(ht_mask_t *)&data[p[i].offset] ^= p[i].mask
-#endif
-#ifdef DEBUG
-#  define invert(i)\
-     { if_debug3('H', "[H]invert level=%d offset=%u mask=0x%x\n",\
-	         (int)(p + i - porder->bits), p[i].offset, p[i].mask);\
-       invert_data(i);\
-     }
-#else
-#  define invert(i) invert_data(i)
-#endif
-  sw:switch (level - old_level) {
-	default:
-	    if (level > old_level) {
-		invert(0);
-		invert(1);
-		invert(2);
-		invert(3);
-		p += 4;
-		old_level += 4;
-	    } else {
-		invert(-1);
-		invert(-2);
-		invert(-3);
-		invert(-4);
-		p -= 4;
-		old_level -= 4;
-	    }
-	    goto sw;
-	case 7:
-	    invert(6);
-	case 6:
-	    invert(5);
-	case 5:
-	    invert(4);
-	case 4:
-	    invert(3);
-	case 3:
-	    invert(2);
-	case 2:
-	    invert(1);
-	case 1:
-	    invert(0);
-	case 0:
-	    break;		/* Shouldn't happen! */
-	case -7:
-	    invert(-7);
-	case -6:
-	    invert(-6);
-	case -5:
-	    invert(-5);
-	case -4:
-	    invert(-4);
-	case -3:
-	    invert(-3);
-	case -2:
-	    invert(-2);
-	case -1:
-	    invert(-1);
-    }
-#undef invert
+    code = porder->procs->render(pbt, level, porder);
+    if (code < 0)
+	return code;
     pbt->level = level;
     pbt->tiles.id = new_id;
     /*

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1992, 1993, 1994, 1995, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1992, 1993, 1994, 1995, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -27,29 +27,63 @@
 /* Include the architecture definitions. */
 #include "arch.h"
 
+/*
+ * Define lower-case versions of the architecture parameters for backward
+ * compatibility.
+ */
+#define arch_align_short_mod ARCH_ALIGN_SHORT_MOD
+#define arch_align_int_mod ARCH_ALIGN_INT_MOD
+#define arch_align_long_mod ARCH_ALIGN_LONG_MOD
+#define arch_align_ptr_mod ARCH_ALIGN_PTR_MOD
+#define arch_align_float_mod ARCH_ALIGN_FLOAT_MOD
+#define arch_align_double_mod ARCH_ALIGN_DOUBLE_MOD
+#define arch_log2_sizeof_short ARCH_LOG2_SIZEOF_SHORT
+#define arch_log2_sizeof_int ARCH_LOG2_SIZEOF_INT
+#define arch_log2_sizeof_long ARCH_LOG2_SIZEOF_LONG
+#define arch_sizeof_ptr ARCH_SIZEOF_PTR
+#define arch_sizeof_float ARCH_SIZEOF_FLOAT
+#define arch_sizeof_double ARCH_SIZEOF_DOUBLE
+#define arch_float_mantissa_bits ARCH_FLOAT_MANTISSA_BITS
+#define arch_double_mantissa_bits ARCH_DOUBLE_MANTISSA_BITS
+#define arch_max_uchar ARCH_MAX_UCHAR
+#define arch_max_ushort ARCH_MAX_USHORT
+#define arch_max_uint ARCH_MAX_UINT
+#define arch_max_ulong ARCH_MAX_ULONG
+#define arch_cache1_size ARCH_CACHE1_SIZE
+#define arch_cache2_size ARCH_CACHE2_SIZE
+#define arch_is_big_endian ARCH_IS_BIG_ENDIAN
+#define arch_ptrs_are_signed ARCH_PTRS_ARE_SIGNED
+#define arch_floats_are_ieee ARCH_FLOATS_ARE_IEEE
+#define arch_arith_rshift ARCH_ARITH_RSHIFT
+#define arch_can_shift_full_long ARCH_CAN_SHIFT_FULL_LONG
+
 /* Define integer data type sizes in terms of log2s. */
-#define arch_sizeof_short (1 << arch_log2_sizeof_short)
-#define arch_sizeof_int (1 << arch_log2_sizeof_int)
-#define arch_sizeof_long (1 << arch_log2_sizeof_long)
-#define arch_ints_are_short (arch_sizeof_int == arch_sizeof_short)
+#define ARCH_SIZEOF_SHORT (1 << ARCH_LOG2_SIZEOF_SHORT)
+#define ARCH_SIZEOF_INT (1 << ARCH_LOG2_SIZEOF_INT)
+#define ARCH_SIZEOF_LONG (1 << ARCH_LOG2_SIZEOF_LONG)
+#define ARCH_INTS_ARE_SHORT (ARCH_SIZEOF_INT == ARCH_SIZEOF_SHORT)
+/* Backward compatibility */
+#define arch_sizeof_short ARCH_SIZEOF_SHORT
+#define arch_sizeof_int ARCH_SIZEOF_INT
+#define arch_sizeof_long ARCH_SIZEOF_LONG
+#define arch_ints_are_short ARCH_INTS_ARE_SHORT
 
 /* Define whether we are on a large- or small-memory machine. */
 /* Currently, we assume small memory and 16-bit ints are synonymous. */
-#define arch_small_memory (arch_sizeof_int <= 2)
+#define ARCH_SMALL_MEMORY (ARCH_SIZEOF_INT <= 2)
+/* Backward compatibility */
+#define arch_small_memory ARCH_SMALL_MEMORY
 
 /* Define unsigned 16- and 32-bit types.  These are needed in */
 /* a surprising number of places that do bit manipulation. */
 #if arch_sizeof_short == 2	/* no plausible alternative! */
 typedef ushort bits16;
-
 #endif
 #if arch_sizeof_int == 4
 typedef uint bits32;
-
 #else
 # if arch_sizeof_long == 4
 typedef ulong bits32;
-
 # endif
 #endif
 
@@ -191,42 +225,47 @@ void dprintf_file_only(P2(FILE *, const char *));
 #define dlprintf12(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12)\
   (_dpl dprintf12(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12))
 
-void eprintf_program_name(P2(FILE *, const char *));
+void printf_program_ident(P3(FILE *f, const char *program_name,
+			     long revision_number));
+void eprintf_program_ident(P3(FILE *f, const char *program_name,
+			      long revision_number));
 const char *gs_program_name(P0());
+long gs_revision_number(P0());
 
-#define _epn eprintf_program_name(estderr, gs_program_name()),
+#define _epi eprintf_program_ident(estderr, gs_program_name(),\
+				   gs_revision_number()),
 
 #define eprintf(str)\
-  (_epn fprintf(estderr, str))
+  (_epi fprintf(estderr, str))
 #define eprintf1(str,arg1)\
-  (_epn fprintf(estderr, str, arg1))
+  (_epi fprintf(estderr, str, arg1))
 #define eprintf2(str,arg1,arg2)\
-  (_epn fprintf(estderr, str, arg1, arg2))
+  (_epi fprintf(estderr, str, arg1, arg2))
 #define eprintf3(str,arg1,arg2,arg3)\
-  (_epn fprintf(estderr, str, arg1, arg2, arg3))
+  (_epi fprintf(estderr, str, arg1, arg2, arg3))
 #define eprintf4(str,arg1,arg2,arg3,arg4)\
-  (_epn fprintf(estderr, str, arg1, arg2, arg3, arg4))
+  (_epi fprintf(estderr, str, arg1, arg2, arg3, arg4))
 #define eprintf5(str,arg1,arg2,arg3,arg4,arg5)\
-  (_epn fprintf(estderr, str, arg1, arg2, arg3, arg4, arg5))
+  (_epi fprintf(estderr, str, arg1, arg2, arg3, arg4, arg5))
 #define eprintf6(str,arg1,arg2,arg3,arg4,arg5,arg6)\
-  (_epn fprintf(estderr, str, arg1, arg2, arg3, arg4, arg5, arg6))
+  (_epi fprintf(estderr, str, arg1, arg2, arg3, arg4, arg5, arg6))
 #define eprintf7(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7)\
-  (_epn fprintf(estderr, str, arg1, arg2, arg3, arg4, arg5, arg6, arg7))
+  (_epi fprintf(estderr, str, arg1, arg2, arg3, arg4, arg5, arg6, arg7))
 #define eprintf8(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8)\
-  (_epn fprintf(estderr, str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8))
+  (_epi fprintf(estderr, str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8))
 #define eprintf9(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9)\
-  (_epn fprintf(estderr, str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9))
+  (_epi fprintf(estderr, str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9))
 #define eprintf10(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10)\
-  (_epn fprintf(estderr, str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10))
+  (_epi fprintf(estderr, str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10))
 
 #if __LINE__			/* compiler provides it */
 void lprintf_file_and_line(P3(FILE *, const char *, int));
 
-#  define _epl _epn lprintf_file_and_line(estderr, __FILE__, __LINE__),
+#  define _epl _epi lprintf_file_and_line(estderr, __FILE__, __LINE__),
 #else
 void lprintf_file_only(P2(FILE *, const char *));
 
-#  define _epl _epn lprintf_file_only(estderr, __FILE__)
+#  define _epl _epi lprintf_file_only(estderr, __FILE__)
 #endif
 
 #define lprintf(str)\

@@ -20,6 +20,7 @@
 #include "pxparse.h"		/* requires pxattr.h, pxvalue.h */
 #include "pxptable.h"		/* requires pxenum.h, pxoper.h, pxvalue.h */
 #include "pxstate.h"
+#include "gsstruct.h"
 
 /* GC structures and procedures */
 gs_private_st_composite(st_px_parser_state, px_parser_state_t,

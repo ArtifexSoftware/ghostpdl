@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1992, 1993, 1994, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1992, 1993, 1994, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -72,8 +72,9 @@ zop_add(register os_ptr op)
     return 0;
 }
 int
-zadd(os_ptr op)
+zadd(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code = zop_add(op);
 
     if (code == 0) {
@@ -84,9 +85,10 @@ zadd(os_ptr op)
 
 /* <num1> <num2> div <real_quotient> */
 private int
-zdiv(register os_ptr op)
+zdiv(i_ctx_t *i_ctx_p)
 {
-    register os_ptr op1 = op - 1;
+    os_ptr op = osp;
+    os_ptr op1 = op - 1;
 
     /* We can't use the non_int_cases macro, */
     /* because we have to check explicitly for op == 0. */
@@ -125,8 +127,10 @@ zdiv(register os_ptr op)
 
 /* <num1> <num2> mul <product> */
 private int
-zmul(register os_ptr op)
+zmul(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     switch (r_type(op)) {
     default:
 	return_op_typecheck(op);
@@ -216,8 +220,9 @@ zop_sub(register os_ptr op)
     return 0;
 }
 int
-zsub(os_ptr op)
+zsub(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code = zop_sub(op);
 
     if (code == 0) {
@@ -228,8 +233,10 @@ zsub(os_ptr op)
 
 /* <num1> <num2> idiv <int_quotient> */
 private int
-zidiv(register os_ptr op)
+zidiv(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     check_type(*op, t_integer);
     check_type(op[-1], t_integer);
     if (op->value.intval == 0)
@@ -245,8 +252,10 @@ zidiv(register os_ptr op)
 
 /* <int1> <int2> mod <remainder> */
 private int
-zmod(register os_ptr op)
+zmod(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     check_type(*op, t_integer);
     check_type(op[-1], t_integer);
     if (op->value.intval == 0)
@@ -258,8 +267,10 @@ zmod(register os_ptr op)
 
 /* <num1> neg <num2> */
 private int
-zneg(register os_ptr op)
+zneg(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     switch (r_type(op)) {
 	default:
 	    return_op_typecheck(op);
@@ -277,8 +288,10 @@ zneg(register os_ptr op)
 
 /* <num1> ceiling <num2> */
 private int
-zceiling(register os_ptr op)
+zceiling(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     switch (r_type(op)) {
 	default:
 	    return_op_typecheck(op);
@@ -291,8 +304,10 @@ zceiling(register os_ptr op)
 
 /* <num1> floor <num2> */
 private int
-zfloor(register os_ptr op)
+zfloor(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     switch (r_type(op)) {
 	default:
 	    return_op_typecheck(op);
@@ -305,8 +320,10 @@ zfloor(register os_ptr op)
 
 /* <num1> round <num2> */
 private int
-zround(register os_ptr op)
+zround(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     switch (r_type(op)) {
 	default:
 	    return_op_typecheck(op);
@@ -319,8 +336,10 @@ zround(register os_ptr op)
 
 /* <num1> truncate <num2> */
 private int
-ztruncate(register os_ptr op)
+ztruncate(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     switch (r_type(op)) {
 	default:
 	    return_op_typecheck(op);
@@ -338,8 +357,10 @@ ztruncate(register os_ptr op)
 
 /* <int1> <int2> .bitadd <sum> */
 private int
-zbitadd(register os_ptr op)
+zbitadd(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     check_type(*op, t_integer);
     check_type(op[-1], t_integer);
     op[-1].value.intval += op->value.intval;

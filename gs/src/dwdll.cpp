@@ -31,6 +31,7 @@ extern "C" {
 #undef public
 #include "gpgetenv.h"
 #include "gsdll.h"
+#include "gsdllwin.h"
 #include "gscdefs.h"
 }
 

@@ -1,4 +1,4 @@
-#    Copyright (C) 1997, 1998 Aladdin Enterprises. All rights reserved.
+#    Copyright (C) 1997, 1998, 1999 Aladdin Enterprises. All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -27,15 +27,30 @@
 # on the make command line specify:
 #	make -fopenvms.mak "OPENVMS={VAX,ALPHA}" "DECWINDOWS={1.2,<blank>}"
 
-# Define the source, generated intermediate file, and object directories
+# Define the directory for the final executable, and the
+# source, generated intermediate file, and object directories
 # for the graphics library (GL) and the PostScript/PDF interpreter (PS).
+# NOTE: If you use GNU make, GLGENDIR and PSGENDIR must not be the
+# current directory ([]).
 
-GLSRCDIR=[]
-GLGENDIR=[]
-GLOBJDIR=[]
-PSSRCDIR=[]
-PSGENDIR=[]
-PSOBJDIR=[]
+BINDIR=[.bin]
+GLSRCDIR=[.src]
+GLGENDIR=[.obj]
+GLOBJDIR=[.obj]
+PSSRCDIR=[.src]
+PSLIBDIR=[.lib]
+PSGENDIR=[.obj]
+PSOBJDIR=[.obj]
+
+# Do not edit the next group of lines.
+
+#include $(COMMONDIR)/vmscdefs.mak
+#include $(COMMONDIR)/vmsdefs.mak
+#include $(COMMONDIR)/generic.mak
+include $(GLSRCDIR)version.mak
+DD=$(GLGENDIR)
+GLD=$(GLGENDIR)
+PSD=$(PSGENDIR)
 
 # ------ Generic options ------ #
 
@@ -89,7 +104,7 @@ GS=GS
 # You may need to change this if the IJG library version changes.
 # See jpeg.mak for more information.
 
-JSRCDIR=[.jpeg-6a]
+JSRCDIR=[.jpeg-6b]
 JVERSION=6
 
 # Define the directory where the PNG library sources are stored,
@@ -97,23 +112,19 @@ JVERSION=6
 # You may need to change this if the libpng version changes.
 # See libpng.mak for more information.
 
-PSRCDIR=[.libpng-0_96]
-PVERSION=96
+PSRCDIR=[.libpng-1_0_3]
+PVERSION=10003
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
 
-ZSRCDIR=[.zlib-1_0_4]
+ZSRCDIR=[.zlib-1_1_3]
 
 # Note that built-in third-party libraries aren't available.
 
 SHARE_JPEG=0
 SHARE_LIBPNG=0
 SHARE_ZLIB=0
-
-# Define the configuration ID.  Read gs.mak carefully before changing this.
-
-CONFIG=
 
 # Define the path to X11 include files
 
@@ -147,7 +158,7 @@ endif
 
 # LINK is the full linker path name
 
-ifdef LDEBUG
+ifdef TDEBUG
 LINKER=LINK/DEBUG/TRACEBACK
 else
 LINKER=LINK/NODEBUG/NOTRACEBACK
@@ -159,29 +170,43 @@ INCDIR=
 # LIBDIR contains the library files
 LIBDIR=
 
+# Define the .dev module that implements thread and synchronization
+# primitives for this platform.  Don't change this unless you really know
+# what you're doing.
+
+SYNC=posync
+
 # ------ Devices and features ------ #
 
 # Choose the device(s) to include.  See devs.mak for details,
 # devs.mak and contrib.mak for the list of available devices.
 
-DEVICE_DEVS=x11.dev x11alpha.dev x11cmyk.dev x11mono.dev
-DEVICE_DEVS3=deskjet.dev djet500.dev laserjet.dev ljetplus.dev ljet2p.dev ljet3.dev ljet4.dev
-DEVICE_DEVS4=cdeskjet.dev cdjcolor.dev cdjmono.dev cdj550.dev pj.dev pjxl.dev pjxl300.dev
-DEVICE_DEVS5=uniprint.dev
-DEVICE_DEVS6=bj10e.dev bj200.dev bjc600.dev bjc800.dev
-DEVICE_DEVS7=faxg3.dev faxg32d.dev faxg4.dev
-DEVICE_DEVS8=pcxmono.dev pcxgray.dev pcx16.dev pcx256.dev pcx24b.dev pcxcmyk.dev
-DEVICE_DEVS9=pbm.dev pbmraw.dev pgm.dev pgmraw.dev pgnm.dev pgnmraw.dev pnm.dev pnmraw.dev ppm.dev ppmraw.dev
-DEVICE_DEVS10=tiffcrle.dev tiffg3.dev tiffg32d.dev tiffg4.dev tifflzw.dev tiffpack.dev
-DEVICE_DEVS11=tiff12nc.dev tiff24nc.dev
-DEVICE_DEVS12=psmono.dev psgray.dev bit.dev bitrgb.dev bitcmyk.dev
-DEVICE_DEVS13=pngmono.dev pnggray.dev png16.dev png256.dev png16m.dev
-DEVICE_DEVS14=jpeg.dev jpeggray.dev
-DEVICE_DEVS15=pdfwrite.dev
+DEVICE_DEVS=$(DD)x11.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev $(DD)x11gray2.dev $(DD)x11gray4.dev $(DD)x11mono.dev
+#DEVICE_DEVS1=$(DD)bmpmono.dev $(DD)bmpamono.dev $(DD)posync.dev
+DEVICE_DEVS1=
+DEVICE_DEVS2=
+DEVICE_DEVS3=$(DD)deskjet.dev $(DD)djet500.dev $(DD)laserjet.dev $(DD)ljetplus.dev $(DD)ljet2p.dev $(DD)ljet3.dev $(DD)ljet3d.dev $(DD)ljet4.dev $(DD)ljet4d.dev
+DEVICE_DEVS4=$(DD)cdeskjet.dev $(DD)cdjcolor.dev $(DD)cdjmono.dev $(DD)cdj550.dev $(DD)pj.dev $(DD)pjxl.dev $(DD)pjxl300.dev
+DEVICE_DEVS5=$(DD)uniprint.dev
+DEVICE_DEVS6=$(DD)bj10e.dev $(DD)bj200.dev $(DD)bjc600.dev $(DD)bjc800.dev
+DEVICE_DEVS7=$(DD)faxg3.dev $(DD)faxg32d.dev $(DD)faxg4.dev
+DEVICE_DEVS8=$(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcx16.dev $(DD)pcx256.dev $(DD)pcx24b.dev $(DD)pcxcmyk.dev
+DEVICE_DEVS9=$(DD)pbm.dev $(DD)pbmraw.dev $(DD)pgm.dev $(DD)pgmraw.dev $(DD)pgnm.dev $(DD)pgnmraw.dev $(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev $(DD)pkm.dev $(DD)pkmraw.dev $(DD)pksm.dev $(DD)pksmraw.dev
+DEVICE_DEVS10=$(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev $(DD)tifflzw.dev $(DD)tiffpack.dev
+DEVICE_DEVS11=$(DD)tiff12nc.dev $(DD)tiff24nc.dev
+DEVICE_DEVS12=$(DD)psmono.dev $(DD)psgray.dev $(DD)psrgb.dev $(DD)bit.dev $(DD)bitrgb.dev $(DD)bitcmyk.dev
+DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev
+DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev
+DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)epswrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev
+DEVICE_DEVS16=
+DEVICE_DEVS17=
+DEVICE_DEVS18=
+DEVICE_DEVS19=
+DEVICE_DEVS20=
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
-FEATURE_DEVS=psl3.dev pdf.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
@@ -219,6 +244,7 @@ PLATFORM=openvms_
 # Define the name of the makefile -- used in dependencies.
 
 MAKEFILE=$(GLSRCDIR)openvms.mak
+TOP_MAKEFILES=$(MAKEFILE)
 
 # Define the platform options
 
@@ -241,6 +267,14 @@ CMD=
 
 D=
 
+# Define the brackets for passing preprocessor definitions to the C compiler.
+
+NULL=
+
+D_=/DEFINE="
+_D_=$(NULL)=
+_D="
+
 # Define the syntax of search paths for the C compiler.
 # The OpenVMS compilers uses /INCLUDE=(dir1, dir2, ...dirn),
 # and only a single /INCLUDE switch is allowed in the command line.
@@ -248,12 +282,6 @@ D=
 I_=/INCLUDE=(
 II=,
 _I=)
-
-# Define the syntax for compile command line defines
-# such as defining XYZZY to 0-1: 	 $(D_)XYZZY$(_D_)0-1$(_D)
-D_=/DEFINE="
-_D_=$(NULL)=
-_D="
 
 # Define the string for specifying the output file from the C compiler.
 
@@ -277,17 +305,20 @@ BEGINFILES=OPENVMS.OPT OPENVMS.COM
 CCA2K=
 
 # Define the C invocation for auxiliary programs (echogs, genarch).
-# We don't need to define this separately.
-
-CCAUX=
+  
+ifeq "$(OPENVMS)"	"VAX"
+CCAUX=CC/VAXC
+else
+CCAUX=CC/DECC
+endif
 
 # Define the C invocation for normal compilation.
 
-CC=$(COMP)/OBJECT=$@ $<
+CC=$(COMP)
 
 # Define the Link invocation.
 
-LINK=$(LINKER)/MAP/EXE=$@ $^,OPENVMS.OPT/OPTION
+LINK=$(LINKER)/MAP/EXE=$@ $^,$(GLGENDIR)OPENVMS.OPT/OPTION
 
 # Define the ANSI-to-K&R dependency.  We don't need this.
 
@@ -297,27 +328,25 @@ AK=
 
 OBJ=obj
 
-# Define the current directory prefix for image invocations.
+# Define the prefix for image invocations.
 
-EXPP=
-EXP=MCR []
+EXP=MCR $(NULL)
 
-# Define the current directory prefix for shell invocations.
+# Define the prefix for shell invocations.
 
 SH=
-SHP=
 
 # Define generic commands.
 
-CP_=$$ @COPY_ONE
+CP_=$$ @$(GLSRCDIR)COPY_ONE
 
 # Define the command for deleting (a) file(s) (including wild cards)
 
-RM_=$$ @RM_ONE
+RM_=$$ @$(GLSRCDIR)RM_ONE
 
 # Define the command for deleting multiple files / patterns.
 
-RMN_=$$ @RM_ALL
+RMN_=$$ @$(GLSRCDIR)RM_ALL
 
 # Define the arguments for genconf.
 
@@ -339,10 +368,10 @@ CONFLDTR=-o
 #include $(COMMONDIR)/ansidefs.mak
 #include $(COMMONDIR)/vmsdefs.mak
 #include $(COMMONDIR)/generic.mak
-include $(GLSRCDIR)version.mak
 include $(GLSRCDIR)gs.mak
 include $(GLSRCDIR)lib.mak
 include $(PSSRCDIR)int.mak
+include $(PSSRCDIR)cfonts.mak
 include $(GLSRCDIR)jpeg.mak
 # zlib.mak must precede libpng.mak
 include $(GLSRCDIR)zlib.mak
@@ -356,62 +385,91 @@ CC_=$(COMP)
 CC_INT=$(CC_)
 CC_LEAF=$(CC_)
 
-JI_=/INCLUDE=($(JSRCDIR))
-PI_=/INCLUDE=($(ZSRCDIR),$(PSRCDIR))
-ZI_=/INCLUDE=($(ZSRCDIR))
-
 # ----------------------------- Main program ------------------------------ #
 
-$(GS_XE): openvms gs.$(OBJ) $(INT_ALL) $(LIB_ALL)
-	$(LINKER)/MAP/EXE=$@ gs.$(OBJ),$(ld_tr)/OPTIONS,OPENVMS.OPT/OPTION
+$(GS_XE) : openvms $(GLOBJDIR)gs.$(OBJ) $(INT_ALL) $(LIB_ALL)
+	$(LINKER)/MAP=$(BINDIR)gs.map/EXE=$@ $(GLOBJ)gs.$(OBJ),$(ld_tr)/OPTIONS,$(GLGENDIR)OPENVMS.OPT/OPTION
 
 # OpenVMS.dev
 
 openvms__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_vms.$(OBJ) $(GLOBJ)gp_nofb.$(OBJ)
-openvms_.dev: $(openvms__) nosync.dev
-	$(SETMOD) openvms_ $(openvms__) -include nosync
+$(GLGEN)openvms_.dev : $(openvms__) $(GLGEN)nosync.dev
+	$(SETMOD) $(GLGEN)openvms_ $(openvms__) -include $(GLGEN)nosync
+
+$(GLOBJ)gp_vms.$(OBJ) : $(GLSRC)gp_vms.c
+	$(CC_)/include=($(GLGENDIR),$(GLSRCDIR))/obj=$(GLOBJ)gp_vms.$(OBJ) $(GLSRC)gp_vms.c
 
 # Interpreter AUX programs
 
-$(ECHOGS_XE):  echogs.$(OBJ) 
-$(GENARCH_XE): genarch.$(OBJ)
-$(GENCONF_XE): genconf.$(OBJ)
-$(GENDEV_XE): gendev.$(OBJ)
-$(GENINIT_XE): geninit.$(OBJ)
+$(ECHOGS_XE) :  $(GLOBJ)echogs.$(OBJ) 
+	LINK/EXE=$@ $(GLOBJ)echogs.$(OBJ)
+
+$(GLOBJ)echogs.$(OBJ) :  $(GLSRC)echogs.c
+	$(CCAUX)/obj=$(GLOBJ)echogs.$(OBJ)  $(GLSRC)echogs.c
+
+$(GENARCH_XE) : $(GLOBJ)genarch.$(OBJ)
+	LINK/EXE=$@ $(GLOBJ)genarch.$(OBJ)
+
+$(GLOBJ)genarch.$(OBJ) :  $(GLSRC)genarch.c $(GENARCH_DEPS)
+	$(CCAUX)/obj=$(GLOBJ)genarch.$(OBJ)  $(GLSRC)genarch.c
+
+$(GENCONF_XE) : $(GLOBJDIR)genconf.$(OBJ)
+	LINK/EXE=$@ $(GLOBJ)genconf.$(OBJ)
+
+$(GLOBJ)genconf.$(OBJ) :  $(GLSRC)genconf.c $(GENCONF_DEPS)
+	$(CCAUX)/obj=$(GLOBJ)genconf.$(OBJ)  $(GLSRC)genconf.c
+
+$(GENDEV_XE) : $(GLOBJDIR)gendev.$(OBJ)
+	LINK/EXE=$@ $(GLOBJ)gendev.$(OBJ)
+
+$(GLOBJ)gendev.$(OBJ) :  $(GLSRC)gendev.c $(GENDEV_DEPS)
+	$(CCAUX)/obj=$(GLOBJ)gendev.$(OBJ)  $(GLSRC)gendev.c
+
+$(GENHT_XE) : $(GLOBJDIR)genht.$(OBJ)
+	LINK/EXE=$@ $(GLOBJ)genht.$(OBJ)
+
+$(GLOBJ)genht.$(OBJ) :  $(GLSRC)genht.c $(GENHT_DEPS)
+	$(CCAUX)/obj=$(GLOBJ)genht.$(OBJ) $(GENHT_CFLAGS) $(GLSRC)genht.c
+
+$(GENINIT_XE) : $(GLOBJDIR)geninit.$(OBJ)
+	LINK/EXE=$@ $(GLOBJ)geninit.$(OBJ)
+
+$(GLOBJ)geninit.$(OBJ) :  $(GLSRC)geninit.c $(GENINIT_DEPS)
+	$(CCAUX)/obj=$(GLOBJ)geninit.$(OBJ)  $(GLSRC)geninit.c
 
 # Preliminary definitions
 
-openvms: openvms.com openvms.opt
-	$$ @OPENVMS
+openvms : $(GLGENDIR)openvms.com $(GLGENDIR)openvms.opt
+	$$ @$(GLGENDIR)OPENVMS
 
-openvms.com: append_l.com
-	$$ @APPEND_L $@ "$$ DEFINE/JOB X11 $(X_INCLUDE)"
-	$$ @APPEND_L $@ "$$ DEFINE/JOB GS_LIB ''F$$ENVIRONMENT(""DEFAULT"")'"
-	$$ @APPEND_L $@ "$$ DEFINE/JOB GS_DOC ''F$$ENVIRONMENT(""DEFAULT"")'"
+$(GLGENDIR)openvms.com : $(GLSRCDIR)append_l.com
+	$$ @$(GLSRCDIR)APPEND_L $@ "$$ DEFINE/JOB X11 $(X_INCLUDE)"
+	$$ @$(GLSRCDIR)APPEND_L $@ "$$ DEFINE/JOB GS_LIB ''F$$ENVIRONMENT(""DEFAULT"")'"
+	$$ @$(GLSRCDIR)APPEND_L $@ "$$ DEFINE/JOB GS_DOC ''F$$ENVIRONMENT(""DEFAULT"")'"
 ifeq "$(OPENVMS)" "VAX"
-	$$ @APPEND_L $@ "$$ DEFINE/JOB C$$INCLUDE ''F$$ENVIRONMENT(""DEFAULT"")', DECW$$INCLUDE, SYS$$LIBRARY"
-	$$ @APPEND_L $@ "$$ DEFINE/JOB VAXC$$INCLUDE C$$INCLUDE"
-	$$ @APPEND_L $@ "$$ DEFINE/JOB SYS SYS$$LIBRARY"
+	$$ @$(GLSRCDIR)APPEND_L $@ "$$ DEFINE/JOB C$$INCLUDE ''F$$ENVIRONMENT(""DEFAULT"")', DECW$$INCLUDE, SYS$$LIBRARY"
+	$$ @$(GLSRCDIR)APPEND_L $@ "$$ DEFINE/JOB VAXC$$INCLUDE C$$INCLUDE"
+	$$ @$(GLSRCDIR)APPEND_L $@ "$$ DEFINE/JOB SYS SYS$$LIBRARY"
 else
-	$$ @APPEND_L $@ "$$ DEFINE/JOB DECC$$USER_INCLUDE ''F$$ENVIRONMENT(""DEFAULT"")', DECW$$INCLUDE, DECC$$LIBRARY_INCLUDE, SYS$$LIBRARY"
-	$$ @APPEND_L $@ "$$ DEFINE/JOB DECC$$SYSTEM_INCLUDE ''F$$ENVIRONMENT(""DEFAULT"")', DECW$$INCLUDE, DECC$$LIBRARY_INCLUDE, SYS$$LIBRARY"
-	$$ @APPEND_L $@ "$$ DEFINE/JOB SYS "DECC$$LIBRARY_INCLUDE,SYS$$LIBRARY"
+	$$ @$(GLSRCDIR)APPEND_L $@ "$$ DEFINE/JOB DECC$$USER_INCLUDE ''F$$ENVIRONMENT(""DEFAULT"")', DECW$$INCLUDE, DECC$$LIBRARY_INCLUDE, SYS$$LIBRARY"
+	$$ @$(GLSRCDIR)APPEND_L $@ "$$ DEFINE/JOB DECC$$SYSTEM_INCLUDE ''F$$ENVIRONMENT(""DEFAULT"")', DECW$$INCLUDE, DECC$$LIBRARY_INCLUDE, SYS$$LIBRARY"
+	$$ @$(GLSRCDIR)APPEND_L $@ "$$ DEFINE/JOB SYS "DECC$$LIBRARY_INCLUDE,SYS$$LIBRARY"
 endif
 
-openvms.opt:
+$(GLGENDIR)openvms.opt:
 ifeq "$(OPENVMS)" "VAX"
-	$$ @APPEND_L $@ "SYS$$SHARE:VAXCRTL.EXE/SHARE"
+	$$ @$(GLSRCDIR)APPEND_L $@ "SYS$$SHARE:VAXCRTL.EXE/SHARE"
 endif
 ifeq "$(DECWINDOWS)" "1.2"
-	$$ @APPEND_L $@ "SYS$$SHARE:DECW$$XMLIBSHR12.EXE/SHARE"
-	$$ @APPEND_L $@ "SYS$$SHARE:DECW$$XTLIBSHRR5.EXE/SHARE"
-	$$ @APPEND_L $@ "SYS$$SHARE:DECW$$XLIBSHR.EXE/SHARE"
+	$$ @$(GLSRCDIR)APPEND_L $@ "SYS$$SHARE:DECW$$XMLIBSHR12.EXE/SHARE"
+	$$ @$(GLSRCDIR)APPEND_L $@ "SYS$$SHARE:DECW$$XTLIBSHRR5.EXE/SHARE"
+	$$ @$(GLSRCDIR)APPEND_L $@ "SYS$$SHARE:DECW$$XLIBSHR.EXE/SHARE"
 else
-	$$ @APPEND_L $@ "SYS$$SHARE:DECW$$XMLIBSHR.EXE/SHARE"
-	$$ @APPEND_L $@ "SYS$$SHARE:DECW$$XTSHR.EXE/SHARE"
-	$$ @APPEND_L $@ "SYS$$SHARE:DECW$$XLIBSHR.EXE/SHARE"
+	$$ @$(GLSRCDIR)APPEND_L $@ "SYS$$SHARE:DECW$$XMLIBSHR.EXE/SHARE"
+	$$ @$(GLSRCDIR)APPEND_L $@ "SYS$$SHARE:DECW$$XTSHR.EXE/SHARE"
+	$$ @$(GLSRCDIR)APPEND_L $@ "SYS$$SHARE:DECW$$XLIBSHR.EXE/SHARE"
 endif
-	$$ @APPEND_L $@ ""Ident="""""GS $(GS_DOT_VERSION)"""""
+	$$ @$(GLSRCDIR)APPEND_L $@ ""Ident="""""GS $(GS_DOT_VERSION)"""""
 
 # The platform-specific makefiles must also include rules for creating
 # certain dynamically generated files:
@@ -423,10 +481,10 @@ endif
 #	    and configuration-specific features derived from definitions
 #	    in the platform-specific makefile.
 
-$(gconfig__h): $(MAKEFILE) $(ECHOGS_XE)
+$(gconfig__h) : $(TOP_MAKEFILES) $(ECHOGS_XE)
 	$(EXP)$(ECHOGS_XE) -w $(gconfig__h) -x 23 define "HAVE_SYS_TIME_H"
 
-$(gconfigv_h): $(MAKEFILE) $(ECHOGS_XE)
+$(gconfigv_h) : $(TOP_MAKEFILES) $(ECHOGS_XE)
 	$(EXP)$(ECHOGS_XE) -w $(gconfigv_h) -x 23 define "USE_ASM" 0
 	$(EXP)$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define "USE_FPU" 1
 	$(EXP)$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define "EXTEND_NAMES" 0$(EXTEND_NAMES)

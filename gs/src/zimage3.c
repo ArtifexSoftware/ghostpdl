@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -34,8 +34,9 @@
 
 /* <dict> .image3 - */
 private int
-zimage3(register os_ptr op)
+zimage3(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_image3_t image;
     int interleave_type;
     ref *pDataDict;
@@ -55,8 +56,9 @@ zimage3(register os_ptr op)
 	dict_find_string(op, "MaskDict", &pMaskDict) <= 0
 	)
 	return_error(e_rangecheck);
-    if ((code = pixel_image_params(pDataDict, (gs_pixel_image_t *)&image,
-				   &ip_data, 12)) < 0 ||
+    if ((code = pixel_image_params(i_ctx_p, pDataDict,
+				   (gs_pixel_image_t *)&image, &ip_data,
+				   12)) < 0 ||
 	(mcode = code = data_image_params(pMaskDict, &image.MaskDict, &ip_mask, false, 1, 12)) < 0 ||
 	(code = dict_int_param(pDataDict, "ImageType", 1, 1, 0, &ignored)) < 0 ||
 	(code = dict_int_param(pMaskDict, "ImageType", 1, 1, 0, &ignored)) < 0
@@ -70,22 +72,23 @@ zimage3(register os_ptr op)
 	mcode != (image.InterleaveType != 3)
 	)
 	return_error(e_rangecheck);
-    if (!mcode) {
+    if (image.InterleaveType == 3) {
 	/* Insert the mask DataSource before the data DataSources. */
 	memmove(&ip_data.DataSource[1], &ip_data.DataSource[0],
 		(countof(ip_data.DataSource) - 1) *
 		sizeof(ip_data.DataSource[0]));
 	ip_data.DataSource[0] = ip_mask.DataSource[0];
     }
-    return zimage_setup((gs_pixel_image_t *)&image,
+    return zimage_setup(i_ctx_p, (gs_pixel_image_t *)&image,
 			&ip_data.DataSource[0],
 			image.CombineWithColor, 1);
 }
 
 /* <dict> .image4 - */
 private int
-zimage4(register os_ptr op)
+zimage4(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_image4_t image;
     image_params ip;
     int num_components =
@@ -95,7 +98,8 @@ zimage4(register os_ptr op)
     int i;
 
     gs_image4_t_init(&image, NULL);
-    code = pixel_image_params(op, (gs_pixel_image_t *)&image, &ip, 12);
+    code = pixel_image_params(i_ctx_p, op, (gs_pixel_image_t *)&image, &ip,
+			      12);
     if (code < 0)
 	return code;
     code = dict_int_array_param(op, "MaskColor", num_components * 2,
@@ -118,7 +122,7 @@ zimage4(register os_ptr op)
 	}
     } else
 	return_error(code < 0 ? code : gs_note_error(e_rangecheck));
-    return zimage_setup((gs_pixel_image_t *)&image, &ip.DataSource[0],
+    return zimage_setup(i_ctx_p, (gs_pixel_image_t *)&image, &ip.DataSource[0],
 			image.CombineWithColor, 1);
 }
 

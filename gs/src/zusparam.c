@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -42,8 +42,8 @@
 extern gs_font_dir *ifont_dir;	/* in zfont.c */
 
 /* Import the GC parameters from zvmem2.c. */
-extern int set_vm_reclaim(P1(long));
-extern int set_vm_threshold(P1(long));
+extern int set_vm_reclaim(P2(i_ctx_t *, long));
+extern int set_vm_threshold(P2(i_ctx_t *, long));
 
 /* Define an individual user or system parameter. */
 /* Eventually this will be made public. */
@@ -55,8 +55,8 @@ typedef struct param_def_s {
 typedef struct long_param_def_s {
     param_def_common;
     long min_value, max_value;
-    long (*current)(P0());
-    int (*set)(P1(long));
+    long (*current)(P1(i_ctx_t *));
+    int (*set)(P2(i_ctx_t *, long));
 } long_param_def_t;
 
 #if arch_sizeof_long > arch_sizeof_int
@@ -66,13 +66,13 @@ typedef struct long_param_def_s {
 #endif
 typedef struct bool_param_def_s {
     param_def_common;
-    bool (*current)(P0());
-    int (*set)(P1(bool));
+    bool (*current)(P1(i_ctx_t *));
+    int (*set)(P2(i_ctx_t *, bool));
 } bool_param_def_t;
 typedef struct string_param_def_s {
     param_def_common;
-    void (*current)(P1(gs_param_string *));
-    int (*set)(P1(gs_param_string *));
+    void (*current)(P2(i_ctx_t *, gs_param_string *));
+    int (*set)(P2(i_ctx_t *, gs_param_string *));
 } string_param_def_t;
 
 /* Define a parameter set (user or system). */
@@ -86,16 +86,17 @@ typedef struct param_set_s {
 } param_set;
 
 /* Forward references */
-private int setparams(P2(gs_param_list *, const param_set *));
-private int currentparams(P2(os_ptr, const param_set *));
-private int currentparam1(P2(os_ptr, const param_set *));
+private int setparams(P3(i_ctx_t *, gs_param_list *, const param_set *));
+private int currentparams(P2(i_ctx_t *, const param_set *));
+private int currentparam1(P2(i_ctx_t *, const param_set *));
 
 /* ------ Passwords ------ */
 
 /* <string|int> .checkpassword <0|1|2> */
 private int
-zcheckpassword(register os_ptr op)
+zcheckpassword(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     ref params[2];
     array_param_list list;
     gs_param_list *const plist = (gs_param_list *)&list;
@@ -124,24 +125,24 @@ zcheckpassword(register os_ptr op)
 
 /* Integer values */
 private long
-current_BuildTime(void)
+current_BuildTime(i_ctx_t *i_ctx_p)
 {
     return gs_buildtime;
 }
 private long
-current_MaxFontCache(void)
+current_MaxFontCache(i_ctx_t *i_ctx_p)
 {
     return gs_currentcachesize(ifont_dir);
 }
 private int
-set_MaxFontCache(long val)
+set_MaxFontCache(i_ctx_t *i_ctx_p, long val)
 {
     return gs_setcachesize(ifont_dir,
 			   (uint)(val < 0 ? 0 : val > max_uint ? max_uint :
 				   val));
 }
 private long
-current_CurFontCache(void)
+current_CurFontCache(i_ctx_t *i_ctx_p)
 {
     uint cstat[7];
 
@@ -149,7 +150,7 @@ current_CurFontCache(void)
     return cstat[0];
 }
 private long
-current_MaxGlobalVM(void)
+current_MaxGlobalVM(i_ctx_t *i_ctx_p)
 {
     gs_memory_gc_status_t stat;
 
@@ -157,7 +158,7 @@ current_MaxGlobalVM(void)
     return stat.max_vm;
 }
 private int
-set_MaxGlobalVM(long val)
+set_MaxGlobalVM(i_ctx_t *i_ctx_p, long val)
 {
     gs_memory_gc_status_t stat;
 
@@ -167,7 +168,7 @@ set_MaxGlobalVM(long val)
     return 0;
 }
 private long
-current_Revision(void)
+current_Revision(i_ctx_t *i_ctx_p)
 {
     return gs_revision;
 }
@@ -183,7 +184,7 @@ private const long_param_def_t system_long_params[] =
 
 /* Boolean values */
 private bool
-current_ByteOrder(void)
+current_ByteOrder(i_ctx_t *i_ctx_p)
 {
     return !arch_is_big_endian;
 }
@@ -194,14 +195,12 @@ private const bool_param_def_t system_bool_params[] =
 
 /* String values */
 private void
-current_RealFormat(gs_param_string * pval)
+current_RealFormat(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
 #if arch_floats_are_IEEE
     static const char *const rfs = "IEEE";
-
 #else
     static const char *const rfs = "not IEEE";
-
 #endif
 
     pval->data = (const byte *)rfs;
@@ -223,8 +222,9 @@ private const param_set system_param_set =
 
 /* <dict> .setsystemparams - */
 private int
-zsetsystemparams(register os_ptr op)
+zsetsystemparams(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code;
     dict_param_list list;
     gs_param_list *const plist = (gs_param_list *)&list;
@@ -267,7 +267,7 @@ zsetsystemparams(register os_ptr op)
 	    if (code < 0)
 		goto out;
     }
-    code = setparams(plist, &system_param_set);
+    code = setparams(i_ctx_p, plist, &system_param_set);
   out:
     iparam_list_release(&list);
     if (code < 0)
@@ -278,83 +278,83 @@ zsetsystemparams(register os_ptr op)
 
 /* - .currentsystemparams <name1> <value1> ... */
 private int
-zcurrentsystemparams(os_ptr op)
+zcurrentsystemparams(i_ctx_t *i_ctx_p)
 {
-    return currentparams(op, &system_param_set);
+    return currentparams(i_ctx_p, &system_param_set);
 }
 
 /* <name> .getsystemparam <value> */
 private int
-zgetsystemparam(os_ptr op)
+zgetsystemparam(i_ctx_t *i_ctx_p)
 {
-    return currentparam1(op, &system_param_set);
+    return currentparam1(i_ctx_p, &system_param_set);
 }
 
 /* ------ User parameters ------ */
 
 /* Integer values */
 private long
-current_JobTimeout(void)
+current_JobTimeout(i_ctx_t *i_ctx_p)
 {
     return 0;
 }
 private int
-set_JobTimeout(long val)
+set_JobTimeout(i_ctx_t *i_ctx_p, long val)
 {
     return 0;
 }
 private long
-current_MaxFontItem(void)
+current_MaxFontItem(i_ctx_t *i_ctx_p)
 {
     return gs_currentcacheupper(ifont_dir);
 }
 private int
-set_MaxFontItem(long val)
+set_MaxFontItem(i_ctx_t *i_ctx_p, long val)
 {
     return gs_setcacheupper(ifont_dir, val);
 }
 private long
-current_MinFontCompress(void)
+current_MinFontCompress(i_ctx_t *i_ctx_p)
 {
     return gs_currentcachelower(ifont_dir);
 }
 private int
-set_MinFontCompress(long val)
+set_MinFontCompress(i_ctx_t *i_ctx_p, long val)
 {
     return gs_setcachelower(ifont_dir, val);
 }
 private long
-current_MaxOpStack(void)
+current_MaxOpStack(i_ctx_t *i_ctx_p)
 {
     return ref_stack_max_count(&o_stack);
 }
 private int
-set_MaxOpStack(long val)
+set_MaxOpStack(i_ctx_t *i_ctx_p, long val)
 {
     return ref_stack_set_max_count(&o_stack, val);
 }
 private long
-current_MaxDictStack(void)
+current_MaxDictStack(i_ctx_t *i_ctx_p)
 {
     return ref_stack_max_count(&d_stack);
 }
 private int
-set_MaxDictStack(long val)
+set_MaxDictStack(i_ctx_t *i_ctx_p, long val)
 {
     return ref_stack_set_max_count(&d_stack, val);
 }
 private long
-current_MaxExecStack(void)
+current_MaxExecStack(i_ctx_t *i_ctx_p)
 {
     return ref_stack_max_count(&e_stack);
 }
 private int
-set_MaxExecStack(long val)
+set_MaxExecStack(i_ctx_t *i_ctx_p, long val)
 {
     return ref_stack_set_max_count(&e_stack, val);
 }
 private long
-current_MaxLocalVM(void)
+current_MaxLocalVM(i_ctx_t *i_ctx_p)
 {
     gs_memory_gc_status_t stat;
 
@@ -362,7 +362,7 @@ current_MaxLocalVM(void)
     return stat.max_vm;
 }
 private int
-set_MaxLocalVM(long val)
+set_MaxLocalVM(i_ctx_t *i_ctx_p, long val)
 {
     gs_memory_gc_status_t stat;
 
@@ -372,7 +372,7 @@ set_MaxLocalVM(long val)
     return 0;
 }
 private long
-current_VMReclaim(void)
+current_VMReclaim(i_ctx_t *i_ctx_p)
 {
     gs_memory_gc_status_t gstat, lstat;
 
@@ -381,7 +381,7 @@ current_VMReclaim(void)
     return (!gstat.enabled ? -2 : !lstat.enabled ? -1 : 0);
 }
 private long
-current_VMThreshold(void)
+current_VMThreshold(i_ctx_t *i_ctx_p)
 {
     gs_memory_gc_status_t stat;
 
@@ -389,22 +389,22 @@ current_VMThreshold(void)
     return stat.vm_threshold;
 }
 private long
-current_WaitTimeout(void)
+current_WaitTimeout(i_ctx_t *i_ctx_p)
 {
     return 0;
 }
 private int
-set_WaitTimeout(long val)
+set_WaitTimeout(i_ctx_t *i_ctx_p, long val)
 {
     return 0;
 }
 private long
-current_MinScreenLevels(void)
+current_MinScreenLevels(i_ctx_t *i_ctx_p)
 {
     return gs_currentminscreenlevels();
 }
 private int
-set_MinScreenLevels(long val)
+set_MinScreenLevels(i_ctx_t *i_ctx_p, long val)
 {
     gs_setminscreenlevels((uint) val);
     return 0;
@@ -438,12 +438,12 @@ private const long_param_def_t user_long_params[] =
 
 /* Boolean values */
 private bool
-current_AccurateScreens(void)
+current_AccurateScreens(i_ctx_t *i_ctx_p)
 {
     return gs_currentaccuratescreens();
 }
 private int
-set_AccurateScreens(bool val)
+set_AccurateScreens(i_ctx_t *i_ctx_p, bool val)
 {
     gs_setaccuratescreens(val);
     return 0;
@@ -464,23 +464,24 @@ private const param_set user_param_set =
 /* <dict> .setuserparams - */
 /* We break this out for use when switching contexts. */
 int
-set_user_params(const ref * op)
+set_user_params(i_ctx_t *i_ctx_p, const ref *paramdict)
 {
     dict_param_list list;
     int code;
 
-    check_type(*op, t_dictionary);
-    code = dict_param_list_read(&list, op, NULL, false);
+    check_type(*paramdict, t_dictionary);
+    code = dict_param_list_read(&list, paramdict, NULL, false);
     if (code < 0)
 	return code;
-    code = setparams((gs_param_list *)&list, &user_param_set);
+    code = setparams(i_ctx_p, (gs_param_list *)&list, &user_param_set);
     iparam_list_release(&list);
     return code;
 }
 private int
-zsetuserparams(register os_ptr op)
+zsetuserparams(i_ctx_t *i_ctx_p)
 {
-    int code = set_user_params(op);
+    os_ptr op = osp;
+    int code = set_user_params(i_ctx_p, op);
 
     if (code >= 0)
 	pop(1);
@@ -489,16 +490,16 @@ zsetuserparams(register os_ptr op)
 
 /* - .currentuserparams <name1> <value1> ... */
 private int
-zcurrentuserparams(os_ptr op)
+zcurrentuserparams(i_ctx_t *i_ctx_p)
 {
-    return currentparams(op, &user_param_set);
+    return currentparams(i_ctx_p, &user_param_set);
 }
 
 /* <name> .getuserparam <value> */
 private int
-zgetuserparam(os_ptr op)
+zgetuserparam(i_ctx_t *i_ctx_p)
 {
-    return currentparam1(op, &user_param_set);
+    return currentparam1(i_ctx_p, &user_param_set);
 }
 
 /* ------ Initialization procedure ------ */
@@ -524,7 +525,7 @@ const op_def zusparam_op_defs[] =
 /* Set the values of a parameter set from a parameter list. */
 /* We don't attempt to back out if anything fails. */
 private int
-setparams(gs_param_list * plist, const param_set * pset)
+setparams(i_ctx_t *i_ctx_p, gs_param_list * plist, const param_set * pset)
 {
     int i, code;
 
@@ -543,7 +544,7 @@ setparams(gs_param_list * plist, const param_set * pset)
 	    case 0:
 		if (val < pdef->min_value || val > pdef->max_value)
 		    return_error(e_rangecheck);
-		code = (*pdef->set)(val);
+		code = (*pdef->set)(i_ctx_p, val);
 		if (code < 0)
 		    return code;
 	}
@@ -556,7 +557,7 @@ setparams(gs_param_list * plist, const param_set * pset)
 	    continue;
 	code = param_read_bool(plist, pdef->pname, &val);
 	if (code == 0)
-	    code = (*pdef->set)(val);
+	    code = (*pdef->set)(i_ctx_p, val);
 	if (code < 0)
 	    return code;
     }
@@ -574,7 +575,7 @@ pname_matches(const char *pname, const ref * psref)
 			psref->value.const_bytes, r_size(psref)));
 }
 private int
-current_param_list(os_ptr op, const param_set * pset,
+current_param_list(i_ctx_t *i_ctx_p, const param_set * pset,
 		   const ref * psref /*t_string */ )
 {
     stack_param_list list;
@@ -586,7 +587,7 @@ current_param_list(os_ptr op, const param_set * pset,
 	const char *pname = pset->long_defs[i].pname;
 
 	if (pname_matches(pname, psref)) {
-	    long val = (*pset->long_defs[i].current)();
+	    long val = (*pset->long_defs[i].current)(i_ctx_p);
 	    int code = param_write_long(plist, pname, &val);
 
 	    if (code < 0)
@@ -597,7 +598,7 @@ current_param_list(os_ptr op, const param_set * pset,
 	const char *pname = pset->bool_defs[i].pname;
 
 	if (pname_matches(pname, psref)) {
-	    bool val = (*pset->bool_defs[i].current)();
+	    bool val = (*pset->bool_defs[i].current)(i_ctx_p);
 	    int code = param_write_bool(plist, pname, &val);
 
 	    if (code < 0)
@@ -611,7 +612,7 @@ current_param_list(os_ptr op, const param_set * pset,
 	    gs_param_string val;
 	    int code;
 
-	    (*pset->string_defs[i].current)(&val);
+	    (*pset->string_defs[i].current)(i_ctx_p, &val);
 	    code = param_write_string(plist, pname, &val);
 	    if (code < 0)
 		return code;
@@ -622,22 +623,23 @@ current_param_list(os_ptr op, const param_set * pset,
 
 /* Get the current values of a parameter set to the stack. */
 private int
-currentparams(os_ptr op, const param_set * pset)
+currentparams(i_ctx_t *i_ctx_p, const param_set * pset)
 {
-    return current_param_list(op, pset, NULL);
+    return current_param_list(i_ctx_p, pset, NULL);
 }
 
 /* Get the value of a single parameter to the stack, or signal an error. */
 private int
-currentparam1(os_ptr op, const param_set * pset)
+currentparam1(i_ctx_t *i_ctx_p, const param_set * pset)
 {
+    os_ptr op = osp;
     ref sref;
     int code;
 
     check_type(*op, t_name);
     check_ostack(2);
     name_string_ref((const ref *)op, &sref);
-    code = current_param_list(op, pset, &sref);
+    code = current_param_list(i_ctx_p, pset, &sref);
     if (code < 0)
 	return code;
     if (osp == op)

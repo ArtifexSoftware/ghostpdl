@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -39,16 +39,16 @@ declare_mem_procs(mem_mapped2_copy_mono, mem_mapped2_copy_color, mem_mapped2_fil
 const gx_device_memory mem_mapped2_device =
 mem_device("image2", 2, 0,
 	   mem_mapped_map_rgb_color, mem_mapped_map_color_rgb,
-  mem_mapped2_copy_mono, mem_mapped2_copy_color, mem_mapped2_fill_rectangle,
-	   mem_gray_strip_copy_rop);
+	   mem_mapped2_copy_mono, mem_mapped2_copy_color,
+	   mem_mapped2_fill_rectangle, mem_gray_strip_copy_rop);
 
 /* Convert x coordinate to byte offset in scan line. */
 #undef x_to_byte
 #define x_to_byte(x) ((x) >> 2)
 
 /* Define the 2-bit fill patterns. */
-static const mono_fill_chunk tile_patterns[4] =
-{fpat(0x00), fpat(0x55), fpat(0xaa), fpat(0xff)
+static const mono_fill_chunk tile_patterns[4] = {
+    fpat(0x00), fpat(0x55), fpat(0xaa), fpat(0xff)
 };
 
 /* Fill a rectangle with a color. */
@@ -67,19 +67,17 @@ mem_mapped2_fill_rectangle(gx_device * dev,
 /* Copy a bitmap. */
 private int
 mem_mapped2_copy_mono(gx_device * dev,
-	       const byte * base, int sourcex, int sraster, gx_bitmap_id id,
-	int x, int y, int w, int h, gx_color_index zero, gx_color_index one)
+		      const byte * base, int sourcex, int sraster,
+		      gx_bitmap_id id, int x, int y, int w, int h,
+		      gx_color_index zero, gx_color_index one)
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     const byte *line;
     int first_bit;
     byte first_mask, b0, b1, bxor, left_mask, right_mask;
-    static const byte btab[4] =
-    {0, 0x55, 0xaa, 0xff};
-    static const byte bmask[4] =
-    {0xc0, 0x30, 0xc, 3};
-    static const byte lmask[4] =
-    {0, 0xc0, 0xf0, 0xfc};
+    static const byte btab[4] = {0, 0x55, 0xaa, 0xff};
+    static const byte bmask[4] = {0xc0, 0x30, 0xc, 3};
+    static const byte lmask[4] = {0, 0xc0, 0xf0, 0xfc};
 
     declare_scan_ptr(dest);
 
@@ -90,7 +88,7 @@ mem_mapped2_copy_mono(gx_device * dev,
     first_mask = bmask[x & 3];
     left_mask = lmask[x & 3];
     right_mask = ~lmask[(x + w) & 3];
-    if ((x & 3) + w <= 4)
+    if ((x & 3) + w <= 3)
 	left_mask = right_mask = left_mask | right_mask;
     b0 = btab[zero & 3];
     b1 = btab[one & 3];
@@ -106,44 +104,46 @@ mem_mapped2_copy_mono(gx_device * dev,
 	/* We have 4 cases, of which only 2 really matter. */
 	if (one != gx_no_color_index) {
 	    if (zero != gx_no_color_index) {	/* Copying an opaque bitmap. */
-		byte data =
-		(*pptr & left_mask) | (b0 & ~left_mask);
+		byte data = (*pptr & left_mask) | (b0 & ~left_mask);
 
-		do {
+		for ( ; ; ) {
 		    if (sbyte & bit)
 			data ^= bxor & mask;
+		    if (--count <= 0)
+			break;
 		    if ((bit >>= 1) == 0)
 			bit = 0x80, sbyte = *sptr++;
 		    if ((mask >>= 2) == 0)
 			mask = 0xc0, *pptr++ = data, data = b0;
 		}
-		while (--count > 0);
 		if (mask != 0xc0)
 		    *pptr =
 			(*pptr & right_mask) | (data & ~right_mask);
 	    } else {		/* Filling a mask. */
-		do {
+		for ( ; ; ) {
 		    if (sbyte & bit)
 			*pptr = (*pptr & ~mask) + (b1 & mask);
+		    if (--count <= 0)
+			break;
 		    if ((bit >>= 1) == 0)
 			bit = 0x80, sbyte = *sptr++;
 		    if ((mask >>= 2) == 0)
 			mask = 0xc0, pptr++;
 		}
-		while (--count > 0);
 	    }
 	} else {		/* Some other case. */
-	    do {
+	    for ( ; ; ) {
 		if (!(sbyte & bit)) {
 		    if (zero != gx_no_color_index)
 			*pptr = (*pptr & ~mask) + (b0 & mask);
 		}
+		if (--count <= 0)
+		    break;
 		if ((bit >>= 1) == 0)
 		    bit = 0x80, sbyte = *sptr++;
 		if ((mask >>= 2) == 0)
 		    mask = 0xc0, pptr++;
 	    }
-	    while (--count > 0);
 	}
 	line += sraster;
 	inc_ptr(dest, draster);
@@ -154,8 +154,8 @@ mem_mapped2_copy_mono(gx_device * dev,
 /* Copy a color bitmap. */
 private int
 mem_mapped2_copy_color(gx_device * dev,
-	       const byte * base, int sourcex, int sraster, gx_bitmap_id id,
-		       int x, int y, int w, int h)
+		       const byte * base, int sourcex, int sraster,
+		       gx_bitmap_id id, int x, int y, int w, int h)
 {
     int code;
 
@@ -185,9 +185,10 @@ declare_mem_procs(mem2_word_copy_mono, mem2_word_copy_color, mem2_word_fill_rect
 const gx_device_memory mem_mapped2_word_device =
 mem_full_device("image2w", 2, 0, mem_open,
 		mem_mapped_map_rgb_color, mem_mapped_map_color_rgb,
-	mem2_word_copy_mono, mem2_word_copy_color, mem2_word_fill_rectangle,
-		gx_default_map_cmyk_color, gx_default_strip_tile_rectangle,
-		gx_no_strip_copy_rop, mem_word_get_bits_rectangle);
+		mem2_word_copy_mono, mem2_word_copy_color,
+		mem2_word_fill_rectangle, gx_default_map_cmyk_color,
+		gx_default_strip_tile_rectangle, gx_no_strip_copy_rop,
+		mem_word_get_bits_rectangle);
 
 /* Fill a rectangle with a color. */
 private int
@@ -211,8 +212,9 @@ mem2_word_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 /* Copy a bitmap. */
 private int
 mem2_word_copy_mono(gx_device * dev,
-	       const byte * base, int sourcex, int sraster, gx_bitmap_id id,
-	int x, int y, int w, int h, gx_color_index zero, gx_color_index one)
+		    const byte * base, int sourcex, int sraster,
+		    gx_bitmap_id id, int x, int y, int w, int h,
+		    gx_color_index zero, gx_color_index one)
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     byte *row;
@@ -233,8 +235,8 @@ mem2_word_copy_mono(gx_device * dev,
 /* Copy a color bitmap. */
 private int
 mem2_word_copy_color(gx_device * dev,
-	       const byte * base, int sourcex, int sraster, gx_bitmap_id id,
-		     int x, int y, int w, int h)
+		     const byte * base, int sourcex, int sraster,
+		     gx_bitmap_id id, int x, int y, int w, int h)
 {
     int code;
 

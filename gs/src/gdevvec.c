@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -34,11 +34,6 @@
 #include "gzpath.h"
 #include "gzcpath.h"
 
-/******
- ****** NOTE: EVERYTHING IN THIS FILE IS SUBJECT TO CHANGE WITHOUT NOTICE.
- ****** USE AT YOUR OWN RISK.
- ******/
-
 /* Structure descriptors */
 public_st_device_vector();
 public_st_vector_image_enum();
@@ -51,77 +46,71 @@ gdev_vector_setflat(gx_device_vector * vdev, floatp flatness)
     return 0;
 }
 
+/*
+ * Put a path on the output file.  If type is stroke and the last
+ * path component is a closepath, omit it and return 1.
+ */
 int
-gdev_vector_dopath(gx_device_vector * vdev, const gx_path * ppath,
-		   gx_path_type_t type)
+gdev_vector_dopath(gx_device_vector *vdev, const gx_path * ppath,
+		   gx_path_type_t type, const gs_matrix *pmat)
 {
     bool do_close = (type & gx_path_type_stroke) != 0;
-    gs_fixed_rect rect;
-    gs_point scale;
-    double x_start = 0, y_start = 0, x_prev, y_prev;
-    bool first = true;
+    gs_fixed_rect rbox;
+    gx_path_rectangular_type rtype = gx_path_is_rectangular(ppath, &rbox);
     gs_path_enum cenum;
+    gdev_vector_dopath_state_t state;
     int code;
 
-    if (gx_path_is_rectangle(ppath, &rect))
-	return (*vdev_proc(vdev, dorect)) (vdev, rect.p.x, rect.p.y, rect.q.x,
-					   rect.q.y, type);
-    scale = vdev->scale;
-    code = (*vdev_proc(vdev, beginpath)) (vdev, type);
+    gdev_vector_dopath_init(&state, vdev, type, pmat);
+    /*
+     * if the path type is stroke, we only recognize closed
+     * rectangles; otherwise, we recognize all rectangles.
+     */
+    if (rtype != prt_none &&
+	!((type & gx_path_type_stroke) && rtype == prt_open) &&
+	(pmat == 0 || is_xxyy(pmat) || is_xyyx(pmat))
+	) {
+	gs_point p, q;
+
+	gs_point_transform_inverse((floatp)rbox.p.x, (floatp)rbox.p.y,
+				   &state.scale_mat, &p);
+	gs_point_transform_inverse((floatp)rbox.q.x, (floatp)rbox.q.y,
+				   &state.scale_mat, &q);
+	return vdev_proc(vdev, dorect)(vdev, (fixed)p.x, (fixed)p.y,
+				       (fixed)q.x, (fixed)q.y, type);
+    }
+    code = vdev_proc(vdev, beginpath)(vdev, type);
+    if (code < 0)
+	return code;
     gx_path_enum_init(&cenum, ppath);
     for (;;) {
-	fixed vs[6];
-	int pe_op = gx_path_enum_next(&cenum, (gs_fixed_point *) vs);
-	double x, y;
+	gs_fixed_point vs[3];
+	int pe_op = gx_path_enum_next(&cenum, vs);
 
-      sw:switch (pe_op) {
+    sw:
+	switch (pe_op) {
 	    case 0:		/* done */
-		return (*vdev_proc(vdev, endpath)) (vdev, type);
-	    case gs_pe_moveto:
-		code = (*vdev_proc(vdev, moveto))
-		    (vdev, x_prev, y_prev, (x = fixed2float(vs[0]) / scale.x),
-		     (y = fixed2float(vs[1]) / scale.y), type);
-		if (first)
-		    x_start = x, y_start = y, first = false;
-		break;
-	    case gs_pe_lineto:
-		code = (*vdev_proc(vdev, lineto))
-		    (vdev, x_prev, y_prev, (x = fixed2float(vs[0]) / scale.x),
-		     (y = fixed2float(vs[1]) / scale.y), type);
-		break;
-	    case gs_pe_curveto:
-		code = (*vdev_proc(vdev, curveto))
-		    (vdev, x_prev, y_prev,
-		     fixed2float(vs[0]) / scale.x,
-		     fixed2float(vs[1]) / scale.y,
-		     fixed2float(vs[2]) / scale.x,
-		     fixed2float(vs[3]) / scale.y,
-		     (x = fixed2float(vs[4]) / scale.x),
-		     (y = fixed2float(vs[5]) / scale.y),
-		     type);
-		break;
+		code = vdev_proc(vdev, endpath)(vdev, type);
+		return (code < 0 ? code : 0);
 	    case gs_pe_closepath:
-		x = x_start, y = y_start;
-		if (do_close) {
-		    code = (*vdev_proc(vdev, closepath))
-			(vdev, x_prev, y_prev, x_start, y_start, type);
-		    break;
+		if (!do_close) {
+		    pe_op = gx_path_enum_next(&cenum, vs);
+		    if (pe_op != 0) {
+			code = gdev_vector_dopath_segment(&state,
+							  gs_pe_closepath, vs);
+			if (code < 0)
+			    return code;
+			goto sw;
+		    }
+		    code = vdev_proc(vdev, endpath)(vdev, type);
+		    return (code < 0 ? code : 1);
 		}
-		pe_op = gx_path_enum_next(&cenum, (gs_fixed_point *) vs);
-		if (pe_op != 0) {
-		    code = (*vdev_proc(vdev, closepath))
-			(vdev, x_prev, y_prev, x_start, y_start, type);
-		    if (code < 0)
-			return code;
-		    goto sw;
-		}
-		return (*vdev_proc(vdev, endpath)) (vdev, type);
-	    default:		/* can't happen */
-		return_error(gs_error_unknownerror);
+		/* falls through */
+	    default:
+		code = gdev_vector_dopath_segment(&state, pe_op, vs);
+		if (code < 0)
+		    return code;
 	}
-	if (code < 0)
-	    return code;
-	x_prev = x, y_prev = y;
     }
 }
 
@@ -369,7 +358,7 @@ gdev_vector_prepare_stroke(gx_device_vector * vdev, const gs_imager_state * pis,
     }
     if (half_width != vdev->state.line_params.half_width) {
 	int code = (*vdev_proc(vdev, setlinewidth))
-	(vdev, pis->line_params.half_width * 2);
+	    (vdev, half_width * 2);
 
 	if (code < 0)
 	    return code;
@@ -377,7 +366,7 @@ gdev_vector_prepare_stroke(gx_device_vector * vdev, const gs_imager_state * pis,
     }
     if (pis->line_params.miter_limit != vdev->state.line_params.miter_limit) {
 	int code = (*vdev_proc(vdev, setmiterlimit))
-	(vdev, pis->line_params.miter_limit);
+	    (vdev, pis->line_params.miter_limit);
 
 	if (code < 0)
 	    return code;
@@ -386,7 +375,7 @@ gdev_vector_prepare_stroke(gx_device_vector * vdev, const gs_imager_state * pis,
     }
     if (pis->line_params.cap != vdev->state.line_params.cap) {
 	int code = (*vdev_proc(vdev, setlinecap))
-	(vdev, pis->line_params.cap);
+	    (vdev, pis->line_params.cap);
 
 	if (code < 0)
 	    return code;
@@ -394,7 +383,7 @@ gdev_vector_prepare_stroke(gx_device_vector * vdev, const gs_imager_state * pis,
     }
     if (pis->line_params.join != vdev->state.line_params.join) {
 	int code = (*vdev_proc(vdev, setlinejoin))
-	(vdev, pis->line_params.join);
+	    (vdev, pis->line_params.join);
 
 	if (code < 0)
 	    return code;
@@ -413,6 +402,141 @@ gdev_vector_prepare_stroke(gx_device_vector * vdev, const gs_imager_state * pis,
 	vdev->stroke_color = *pdcolor;
     }
     return 0;
+}
+
+/*
+ * Compute the scale or transformation matrix for transforming the line
+ * width and dash pattern for a stroke operation.  Return 0 if scaling,
+ * 1 if a full matrix is needed.
+ */
+int
+gdev_vector_stroke_scaling(const gx_device_vector *vdev,
+			   const gs_imager_state *pis,
+			   double *pscale, gs_matrix *pmat)
+{
+    bool set_ctm = true;
+    double scale = 1;
+
+    /*
+     * If the CTM is not uniform, stroke width depends on angle.
+     * We'd like to avoid resetting the CTM, so we check for uniform
+     * CTMs explicitly.  Note that in PDF, unlike PostScript, it is
+     * the CTM at the time of the stroke operation, not the CTM at
+     * the time the path was constructed, that is used for transforming
+     * the points of the path; so if we have to reset the CTM, we must
+     * do it before constructing the path, and inverse-transform all
+     * the coordinates.
+     */
+    if (is_xxyy(&pis->ctm)) {
+	scale = fabs(pis->ctm.xx);
+	set_ctm = fabs(pis->ctm.yy) != scale;
+    } else if (is_xyyx(&pis->ctm)) {
+	scale = fabs(pis->ctm.xy);
+	set_ctm = fabs(pis->ctm.yx) != scale;
+    } else if ((pis->ctm.xx == pis->ctm.yy && pis->ctm.xy == -pis->ctm.yx) ||
+	       (pis->ctm.xx == -pis->ctm.yy && pis->ctm.xy == pis->ctm.yx)
+	) {
+	scale = hypot(pis->ctm.xx, pis->ctm.xy);
+	set_ctm = false;
+    }
+    if (set_ctm) {
+	/*
+	 * Adobe Acrobat Reader can't handle user coordinates larger than
+	 * 32K.  If we scale the matrix down too far, the coordinates will
+	 * get too big: don't allow this to happen.  (This does no harm
+	 * for other output formats.)
+	 */
+	double
+	    mxx = pis->ctm.xx / vdev->scale.x,
+	    mxy = pis->ctm.xy / vdev->scale.y,
+	    myx = pis->ctm.yx / vdev->scale.x,
+	    myy = pis->ctm.yy / vdev->scale.y;
+
+	scale = 0.5 * (fabs(mxx) + fabs(mxy) + fabs(myx) + fabs(myy));
+	pmat->xx = mxx / scale, pmat->xy = mxy / scale;
+	pmat->yx = myx / scale, pmat->yy = myy / scale;
+	pmat->tx = pmat->ty = 0;
+    }
+    *pscale = scale;
+    return (int)set_ctm;
+}
+
+/* Initialize for writing a path using the default implementation. */
+void
+gdev_vector_dopath_init(gdev_vector_dopath_state_t *state,
+			gx_device_vector *vdev, gx_path_type_t type,
+			const gs_matrix *pmat)
+{
+    state->vdev = vdev;
+    state->type = type;
+    if (pmat) {
+	state->scale_mat = *pmat;
+	/*
+	 * The path element writing procedures all divide the coordinates
+	 * by the scale, so we must compensate for that here.
+	 */
+	gs_matrix_scale(&state->scale_mat, 1.0 / vdev->scale.x,
+			1.0 / vdev->scale.y, &state->scale_mat);
+    } else {
+	gs_make_scaling(vdev->scale.x, vdev->scale.y, &state->scale_mat);
+    }
+    state->first = true;
+}
+
+/*
+ * Put a segment of an enumerated path on the output file.
+ * pe_op is assumed to be valid and non-zero.
+ */
+int
+gdev_vector_dopath_segment(gdev_vector_dopath_state_t *state, int pe_op,
+			   gs_fixed_point vs[3])
+{
+    gx_device_vector *vdev = state->vdev;
+    const gs_matrix *const pmat = &state->scale_mat;
+    gs_point vp[3];
+    int code;
+
+    switch (pe_op) {
+	case gs_pe_moveto:
+	    gs_point_transform_inverse(fixed2float(vs[0].x),
+				       fixed2float(vs[0].y), pmat, &vp[0]);
+	    if (state->first)
+		state->start = vp[0], state->first = false;
+	    code = vdev_proc(vdev, moveto)
+		(vdev, state->prev.x, state->prev.y, vp[0].x, vp[0].y,
+		 state->type);
+	    state->prev = vp[0];
+	    break;
+	case gs_pe_lineto:
+	    gs_point_transform_inverse(fixed2float(vs[0].x),
+				       fixed2float(vs[0].y), pmat, &vp[0]);
+	    code = vdev_proc(vdev, lineto)
+		(vdev, state->prev.x, state->prev.y, vp[0].x, vp[0].y,
+		 state->type);
+	    state->prev = vp[0];
+	    break;
+	case gs_pe_curveto:
+	    gs_point_transform_inverse(fixed2float(vs[0].x),
+				       fixed2float(vs[0].y), pmat, &vp[0]);
+	    gs_point_transform_inverse(fixed2float(vs[1].x),
+				       fixed2float(vs[1].y), pmat, &vp[1]);
+	    gs_point_transform_inverse(fixed2float(vs[2].x),
+				       fixed2float(vs[2].y), pmat, &vp[2]);
+	    code = vdev_proc(vdev, curveto)
+		(vdev, state->prev.x, state->prev.y, vp[0].x, vp[0].y,
+		 vp[1].x, vp[1].y, vp[2].x, vp[2].y, state->type);
+	    state->prev = vp[2];
+	    break;
+	case gs_pe_closepath:
+	    code = vdev_proc(vdev, closepath)
+		(vdev, state->prev.x, state->prev.y, state->start.x,
+		 state->start.y, state->type);
+	    state->prev = state->start;
+	    break;
+	default:		/* can't happen */
+	    return -1;
+    }
+    return code;
 }
 
 /* Write a polygon as part of a path. */
@@ -473,23 +597,29 @@ gdev_vector_write_rectangle(gx_device_vector * vdev, fixed x0, fixed y0,
 
 /* Write a clipping path by calling the path procedures. */
 int
-gdev_vector_write_clip_path(gx_device_vector * vdev, const gx_clip_path * pcpath)
+gdev_vector_write_clip_path(gx_device_vector * vdev,
+			    const gx_clip_path * pcpath)
 {
     const gx_clip_rect *prect;
     gx_clip_rect page_rect;
     int code;
 
-    if (pcpath == 0) {		/* There's no special provision for initclip. */
+    if (pcpath == 0) {
+	/* There's no special provision for initclip. */
 	/* Write a rectangle that covers the entire page. */
 	page_rect.xmin = page_rect.ymin = 0;
 	page_rect.xmax = vdev->width;
 	page_rect.ymax = vdev->height;
 	page_rect.next = 0;
 	prect = &page_rect;
-    } else if (pcpath->path_valid)
-	return (*vdev_proc(vdev, dopath)) (vdev, &pcpath->path,
-					   gx_path_type_clip);
-    else {
+    } else if (pcpath->path_valid) {
+	return (*vdev_proc(vdev, dopath))
+	    (vdev, &pcpath->path,
+	     (pcpath->rule <= 0 ?
+	      gx_path_type_clip | gx_path_type_winding_number :
+	      gx_path_type_clip | gx_path_type_even_odd),
+	     NULL);
+    } else {
 	const gx_clip_list *list = gx_cpath_list(pcpath);
 
 	prect = list->head;
@@ -572,10 +702,9 @@ gdev_vector_begin_image(gx_device_vector * vdev,
 	num_components = gs_color_space_num_components(pcs),
 	    bits_per_pixel = pim->BitsPerComponent;
     code = gx_image_enum_common_init((gx_image_enum_common_t *) pie,
-				     (const gs_image_common_t *)pim,
+				     (const gs_data_image_t *)pim,
 				     pprocs, (gx_device *) vdev,
-				     bits_per_pixel, num_components,
-				     format);
+				     num_components, format);
     if (code < 0)
 	return code;
     pie->bits_per_pixel = bits_per_pixel * num_components /
@@ -766,7 +895,8 @@ gdev_vector_fill_path(gx_device * dev, const gs_imager_state * pis,
 	(code = (*vdev_proc(vdev, dopath))
 	 (vdev, ppath,
 	  (params->rule > 0 ? gx_path_type_even_odd :
-	   gx_path_type_winding_number) | gx_path_type_fill)) < 0
+	   gx_path_type_winding_number) | gx_path_type_fill,
+	 NULL)) < 0
 	)
 	return gx_default_fill_path(dev, pis, ppath, params, pdevc, pcpath);
     return code;
@@ -778,17 +908,19 @@ gdev_vector_stroke_path(gx_device * dev, const gs_imager_state * pis,
 	      const gx_drawing_color * pdcolor, const gx_clip_path * pcpath)
 {
     int code;
+    double scale;
+    int set_ctm;
+    gs_matrix mat;
 
-/****** HANDLE SCALE ******/
-    if ((code = gdev_vector_prepare_stroke(vdev, pis, params, pdcolor,
-					   dev->HWResolution[0])) < 0 ||
+    if ((set_ctm = gdev_vector_stroke_scaling(vdev, pis, &scale, &mat)) != 0 ||
+	(code = gdev_vector_prepare_stroke(vdev, pis, params, pdcolor, scale)) < 0 ||
 	(code = gdev_vector_update_clip_path(vdev, pcpath)) < 0 ||
 	(vdev->bbox_device &&
 	 (code = (*dev_proc(vdev->bbox_device, stroke_path))
 	  ((gx_device *) vdev->bbox_device, pis, ppath, params,
 	   pdcolor, pcpath)) < 0) ||
 	(code = (*vdev_proc(vdev, dopath))
-	 (vdev, ppath, gx_path_type_stroke)) < 0
+	 (vdev, ppath, gx_path_type_stroke, NULL)) < 0
 	)
 	return gx_default_stroke_path(dev, pis, ppath, params, pdcolor, pcpath);
     return code;
@@ -864,7 +996,7 @@ gdev_vector_fill_parallelogram(gx_device * dev,
 	    return code;
     }
     points[0].x = px, points[0].y = py;
-    points[1].x = pax, points[0].y = pay;
+    points[1].x = pax, points[1].y = pay;
     points[2].x = pax + bx, points[2].y = pay + by;
     points[3].x = px + bx, points[3].y = py + by;
     return gdev_vector_write_polygon(vdev, points, 4, true,

@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -35,13 +35,13 @@ CONFIG_CONST long gs_buildtime = GS_BUILDTIME;
 
 #ifndef GS_COPYRIGHT
 #  define GS_COPYRIGHT\
-	"Copyright (C) 1998 Aladdin Enterprises, Menlo Park, CA.  All rights reserved."
+	"Copyright (C) 1999 Aladdin Enterprises, Menlo Park, CA.  All rights reserved."
 #endif
 const char *CONFIG_CONST gs_copyright = GS_COPYRIGHT;
 
 #ifndef GS_PRODUCT
 #  define GS_PRODUCT\
-	"Aladdin Ghostscript"
+	"Aladdin Ghostscript TESTER RELEASE"
 #endif
 const char *CONFIG_CONST gs_product = GS_PRODUCT;
 
@@ -53,6 +53,12 @@ gs_program_name(void)
 
 /* GS_REVISION must be defined in the makefile. */
 CONFIG_CONST long gs_revision = GS_REVISION;
+
+long
+gs_revision_number(void)
+{
+    return gs_revision;
+}
 
 /* GS_REVISIONDATE must be defined in the makefile. */
 CONFIG_CONST long gs_revisiondate = GS_REVISIONDATE;

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -62,8 +62,11 @@ int gs_imager_arc_add(P9(gx_path * ppath, gs_imager_state * pis,
 int gs_upmergepath(P1(gs_state *));
 
 /* Path accessors and transformers */
-int gs_currentpoint(P2(const gs_state *, gs_point *)), gs_upathbbox(P3(gs_state *, gs_rect *, bool)),
-      gs_dashpath(P1(gs_state *)), gs_flattenpath(P1(gs_state *)), gs_reversepath(P1(gs_state *)),
+int gs_currentpoint(P2(gs_state *, gs_point *)),
+      gs_upathbbox(P3(gs_state *, gs_rect *, bool)),
+      gs_dashpath(P1(gs_state *)),
+      gs_flattenpath(P1(gs_state *)),
+      gs_reversepath(P1(gs_state *)),
       gs_strokepath(P1(gs_state *));
 
 /* The extra argument for gs_upathbbox controls whether to include */
@@ -84,9 +87,9 @@ int gs_path_enum_next(P2(gs_path_enum *, gs_point[3]));		/* 0 when done */
 void gs_path_enum_cleanup(P1(gs_path_enum *));
 
 /* Clipping */
-int gs_clippath(P1(gs_state *)), gs_initclip(P1(gs_state *)), gs_clip(P1(gs_state *)),
+int gs_clippath(P1(gs_state *)),
+    gs_initclip(P1(gs_state *)),
+    gs_clip(P1(gs_state *)),
     gs_eoclip(P1(gs_state *));
-int gs_setclipoutside(P2(gs_state *, bool));
-bool gs_currentclipoutside(P1(const gs_state *));
 
 #endif /* gspath_INCLUDED */

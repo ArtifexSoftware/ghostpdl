@@ -1,4 +1,4 @@
-#    Copyright (C) 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -22,7 +22,8 @@
 # Define the name of this makefile.
 WCTAIL_MAK=$(GLSRCDIR)\wctail.mak
 
-# Include the generic makefiles, except for devs.mak, contrib.mak, and int.mak.
+# Include the generic makefiles, except for devs.mak, contrib.mak,
+# int.mak, and cfonts.mak.
 #!include $(COMMONDIR)/watcdefs.mak
 #!include $(COMMONDIR)/pcdefs.mak
 #!include $(COMMONDIR)/generic.mak
@@ -36,54 +37,56 @@ WCTAIL_MAK=$(GLSRCDIR)\wctail.mak
 
 # -------------------------- Auxiliary programs --------------------------- #
 
+temp_tr=$(GLOBJ)_temp_.tr
+
 $(ECHOGS_XE): $(AUXGEN)echogs.$(OBJ)
-	echo OPTION STUB=$(STUB) >_temp_.tr
-	echo $(LIBPATHS) >>_temp_.tr
-	$(LINK) @_temp_.tr FILE $(AUXGEN)echogs
+	echo OPTION STUB=$(STUB) >$(temp_tr)
+	echo $(LIBPATHS) >>$(temp_tr)
+	$(LINK) @$(temp_tr) FILE $(AUXGEN)echogs
 
 $(AUXGEN)echogs.$(OBJ): $(GLSRC)echogs.c
 	$(CCAUX) $(GLSRC)echogs.c $(O_)$(AUXGEN)echogs.$(OBJ)
 
 $(GENARCH_XE): $(AUXGEN)genarch.$(OBJ)
-	echo $(LIBPATHS) >_temp_.tr
-	$(LINK) @_temp_.tr FILE $(AUXGEN)genarch
+	echo $(LIBPATHS) >$(temp_tr)
+	$(LINK) @$(temp_tr) FILE $(AUXGEN)genarch
 
 $(AUXGEN)genarch.$(OBJ): $(GLSRC)genarch.c $(stdpre_h)
 	$(CCAUX) $(GLSRC)genarch.c $(O_)$(AUXGEN)genarch.$(OBJ)
 
 $(GENCONF_XE): $(AUXGEN)genconf.$(OBJ)
-	echo OPTION STUB=$(STUB) >_temp_.tr
-	echo OPTION STACK=8k >>_temp_.tr
-	echo $(LIBPATHS) >>_temp_.tr
-	$(LINK) @_temp_.tr FILE $(AUXGEN)genconf
+	echo OPTION STUB=$(STUB) >$(temp_tr)
+	echo OPTION STACK=8k >>$(temp_tr)
+	echo $(LIBPATHS) >>$(temp_tr)
+	$(LINK) @$(temp_tr) FILE $(AUXGEN)genconf
 
 $(AUXGEN)genconf.$(OBJ): $(GLSRC)genconf.c $(stdpre_h)
 	$(CCAUX) $(GLSRC)genconf.c $(O_)$(AUXGEN)genconf.$(OBJ)
 
 $(GENDEV_XE): $(AUXGEN)gendev.$(OBJ)
-	echo OPTION STUB=$(STUB) >_temp_.tr
-	echo OPTION STACK=8k >>_temp_.tr
-	echo $(LIBPATHS) >>_temp_.tr
-	$(LINK) @_temp_.tr FILE $(AUXGEN)gendev
+	echo OPTION STUB=$(STUB) >$(temp_tr)
+	echo OPTION STACK=8k >>$(temp_tr)
+	echo $(LIBPATHS) >>$(temp_tr)
+	$(LINK) @$(temp_tr) FILE $(AUXGEN)gendev
 
 $(AUXGEN)gendev.$(OBJ): $(GLSRC)gendev.c $(stdpre_h)
 	$(CCAUX) $(GLSRC)gendev.c $(O_)$(AUXGEN)gendev.$(OBJ)
 
-$(GENINIT_XE): $(PSOBJ)geninit.$(OBJ)
-	echo OPTION STUB=$(STUB) >_temp_.tr
-	echo OPTION STACK=8k >>_temp_.tr
-	echo $(LIBPATHS) >>_temp_.tr
-	$(LINK) @_temp_.tr FILE $(PSOBJ)geninit
+$(GENINIT_XE): $(AUXGEN)geninit.$(OBJ)
+	echo OPTION STUB=$(STUB) >$(temp_tr)
+	echo OPTION STACK=8k >>$(temp_tr)
+	echo $(LIBPATHS) >>$(temp_tr)
+	$(LINK) @$(temp_tr) FILE $(AUXGEN)geninit
 
-$(PSOBJ)geninit.$(OBJ): $(PSSRC)geninit.c $(stdio__h) $(string__h)
-	$(CCAUX) $(PSSRC)geninit.c $(PSO_)geninit.$(OBJ)
+$(AUXGEN)geninit.$(OBJ): $(GLSRC)geninit.c $(stdpre_h)
+	$(CCAUX) $(GLSRC)geninit.c $(O_)$(AUXGEN)geninit.$(OBJ)
 
 # No special gconfig_.h is needed.
 # Watcom `make' supports output redirection.
 $(gconfig__h): $(WCTAIL_MAK)
 	echo /* This file deliberately left blank. */ >$(gconfig__h)
 
-$(gconfigv_h): $(WCTAIL_MAK) $(MAKEFILE) $(ECHOGS_XE)
+$(gconfigv_h): $(WCTAIL_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE)
 	$(ECHOGS_XE) -w $(gconfigv_h) -x 23 define USE_ASM -x 2028 -q $(USE_ASM)-0 -x 29
 	$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define USE_FPU -x 2028 -q $(FPU_TYPE)-0 -x 29
 	$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define EXTEND_NAMES 0$(EXTEND_NAMES)

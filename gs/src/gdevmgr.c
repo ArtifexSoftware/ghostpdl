@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1993, 1994, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1993, 1994, 1997, 1999 Aladdin Enterprises.  All rights reserved.
   
   This file is part of Aladdin Ghostscript.
   
@@ -105,7 +105,7 @@ typedef struct mgr_cursor_s {
 /* Begin an MGR output page. */
 /* Write the header information and initialize the cursor. */
 private int
-mgr_begin_page(gx_device_mgr *bdev, FILE *pstream, mgr_cursor _ss *pcur)
+mgr_begin_page(gx_device_mgr *bdev, FILE *pstream, mgr_cursor *pcur)
 {	struct b_header head;
 	uint line_size =
 		gdev_prn_raster((gx_device_printer *)bdev) + 3;
@@ -131,7 +131,7 @@ mgr_begin_page(gx_device_mgr *bdev, FILE *pstream, mgr_cursor _ss *pcur)
 
 /* Advance to the next row.  Return 0 if more, 1 if done. */
 private int
-mgr_next_row(mgr_cursor _ss *pcur)
+mgr_next_row(mgr_cursor *pcur)
 {	if ( pcur->lnum >= pcur->dev->height )
 	   {	gs_free((char *)pcur->data, pcur->line_size, 1,
 			"mgr_next_row(done)");

@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -120,8 +120,8 @@ gs_ht_set_spot_comp(
 		       gs_ht * pht,
 		       int comp,
 		       gs_ht_separation_name sepname,
-		       float freq,
-		       float angle,
+		       floatp freq,
+		       floatp angle,
 		       float (*spot_func) (floatp, floatp),
 		       bool accurate,
 		       gs_ht_transfer_proc transfer,
@@ -323,14 +323,14 @@ alloc_ht_order(
 	pmap->id = gs_next_ids(1);
 	if (phtc->cname == gs_ht_separation_Default) {
 	    pocs->corder.levels = 0;
-	    pocs->corder.bits = 0;
+	    pocs->corder.bit_data = 0;
 	    pocs->corder.cache = 0;
 	    pocs->corder.transfer = pmap;
 	    pocs->cname = gs_ht_separation_Default;
 	    comp2order[i] = 0;
 	} else {
 	    pocs[inext].corder.levels = 0;
-	    pocs[inext].corder.bits = 0;
+	    pocs[inext].corder.bit_data = 0;
 	    pocs[inext].corder.cache = 0;
 	    pocs[inext].corder.transfer = pmap;
 	    pocs[inext].cname = phtc->cname;
@@ -379,18 +379,17 @@ build_component(
 	porder->params.M1 = phtc->params.ht_threshold.height;
 	porder->params.N1 = 0;
 	porder->params.R1 = 1;
-	code = gx_ht_alloc_order(porder,
-				 phtc->params.ht_threshold.width,
-				 phtc->params.ht_threshold.height,
-				 0,
-				 256,
-				 pmem
+	code = gx_ht_alloc_threshold_order(porder,
+					   phtc->params.ht_threshold.width,
+					   phtc->params.ht_threshold.height,
+					   256,
+					   pmem
 	    );
 	if (code < 0)
 	    return code;
 	gx_ht_construct_threshold_order(
-					   porder,
-				   phtc->params.ht_threshold.thresholds.data
+				porder,
+				phtc->params.ht_threshold.thresholds.data
 	    );
 	/*
 	 * gx_ht_construct_threshold_order wipes out transfer map pointer,
@@ -561,7 +560,8 @@ create_mask_order(gx_ht_order * porder, gs_state * pgs,
 	porder->levels[i] = num_bits;
 	num_bits += create_mask_bits(prev_mask, prev_mask + bytes_per_mask,
 				     phcop->width, phcop->height,
-				     porder->bits + num_bits);
+				     ((gx_ht_bit *)porder->bit_data) +
+				      num_bits);
     }
     porder->levels[num_levels - 1] = num_bits;
     return 0;

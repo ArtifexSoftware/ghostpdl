@@ -11,13 +11,13 @@ MAKEFILE=../pxl/pxl_ugcc.mak
 GENDIR=./obj
 
 # The sources are taken from these directories:
-GLSRCDIR=../gs
+GLSRCDIR=../gs/src
 PLSRCDIR=../pl
 PXLSRCDIR=../pxl
 COMMONDIR=../common
 
 # specify the location of zlib.  We use zlib for bandlist compression.
-ZSRCDIR=$(GLSRCDIR)/zlib
+ZSRCDIR=../gs/zlib
 ZGENDIR=$(GENDIR)
 ZOBJDIR=$(GENDIR)
 SHARE_ZLIB=0
@@ -55,10 +55,11 @@ XLIBS=Xt SM ICE Xext X11
 
 CCLD=gcc
 
+DD='$(GLGENDIR)$(D)'
 DEVICE_DEVS=$(DD)x11.dev $(DD)x11mono.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev\
  $(DD)djet500.dev $(DD)ljet4.dev $(DD)cljet5.dev $(DD)cljet5c.dev\
  $(DD)pcxmono.dev $(DD)pcxgray.dev\
- $(DD)bmpmono.dev $(DD)bmpamono.dev $(DD)bmpa16m.dev $(DD)posync.dev\
+ $(DD)bmpmono.dev $(DD)bmpamono.dev $(DD)bmpa16m.dev\
  $(DD)pbmraw.dev $(DD)pgmraw.dev $(DD)ppmraw.dev
 
 # Generic makefile

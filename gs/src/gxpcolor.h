@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1995, 1996, 1997, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -17,20 +17,101 @@
  */
 
 
-/* Requires gsmatrix.h, gxdevice.h, gxdevmem.h, gxcolor2.h, gxdcolor.h */
+/* Requires gsmatrix.h, gxcolor2.h, gxdcolor.h */
 
 #ifndef gxpcolor_INCLUDED
 #  define gxpcolor_INCLUDED
 
+#include "gspcolor.h"
+#include "gxcspace.h"
+#include "gxdevice.h"
+#include "gxdevmem.h"
 #include "gxpcache.h"
 
 /*
- * Define the Pattern device color types.  There is one type for
- * colored patterns, and one uncolored pattern type for each non-Pattern
+ * Define the type of a Pattern, also used with Pattern instances.
+ */
+#ifndef gs_pattern_type_DEFINED
+#  define gs_pattern_type_DEFINED
+typedef struct gs_pattern_type_s gs_pattern_type_t;
+#endif
+struct gs_pattern_type_s {
+    int PatternType;
+    struct pp_ {
+
+	/*
+	 * Define whether a Pattern uses the base color space in its color
+	 * space, requiring setcolor to provide values for the base color
+	 * space.  Currently this is true for uncolored PatternType 1
+	 * patterns, false for all others.
+	 */
+
+#define pattern_proc_uses_base_space(proc)\
+  bool proc(P1(const gs_pattern_template_t *))
+
+	pattern_proc_uses_base_space((*uses_base_space));
+
+	/*
+	 * Make an instance of a Pattern.
+	 */
+
+#define pattern_proc_make_pattern(proc)\
+  int proc(P5(gs_client_color *, const gs_pattern_template_t *,\
+	      const gs_matrix *, gs_state *, gs_memory_t *))
+
+	pattern_proc_make_pattern((*make_pattern));
+
+	/*
+	 * Get the template from a Pattern instance.
+	 */
+
+#define pattern_proc_get_pattern(proc)\
+  const gs_pattern_template_t *proc(P1(const gs_pattern_instance_t *))
+
+	pattern_proc_get_pattern((*get_pattern));
+
+	/*
+	 * Remap a Pattern color to a device color.
+	 * cs_proc_remap_color is defined in gxcspace.h.
+	 */
+
+#define pattern_proc_remap_color(proc)\
+  cs_proc_remap_color(proc)
+
+	pattern_proc_remap_color((*remap_color));
+
+    } procs;
+};
+
+/*
+ * Initialize the common part of a pattern template.  This procedure is for
+ * the use of gs_pattern*_init implementations, not clients.
+ */
+void gs_pattern_common_init(P2(gs_pattern_template_t *,
+			       const gs_pattern_type_t *));
+
+/*
+ * Do the generic work for makepattern: allocate the instance and the
+ * saved graphics state, and fill in the common members.
+ */
+int gs_make_pattern_common(P6(gs_client_color *, const gs_pattern_template_t *,
+			      const gs_matrix *, gs_state *, gs_memory_t *,
+			      gs_memory_type_ptr_t));
+
+/* Declare the freeing procedure for Pattern instances. */
+extern rc_free_proc(rc_free_pattern_instance);
+
+/* Declare the Pattern color space type. */
+extern const gs_color_space_type gs_color_space_type_Pattern;
+
+/*
+ * Define the (PatternType 1) Pattern device color types.  There is one type
+ * for colored patterns, and one uncolored pattern type for each non-Pattern
  * device color type.
  */
 extern const gx_device_color_type_t
-      gx_dc_pattern, gx_dc_pure_masked, gx_dc_binary_masked, gx_dc_colored_masked;
+    gx_dc_pattern,
+    gx_dc_pure_masked, gx_dc_binary_masked, gx_dc_colored_masked;
 
 #define gx_dc_type_pattern (&gx_dc_pattern)
 
@@ -76,7 +157,7 @@ struct gx_color_tile_s {
     st_color_tile)
 
 /* Define the Pattern cache. */
-				/*#include "gxpcache.h" *//* (above) */
+/*#include "gxpcache.h" *//* (above) */
 
 /* Allocate a Pattern cache. */
 /* We shorten the procedure names because some VMS compilers */
@@ -99,16 +180,17 @@ typedef struct gx_device_pattern_accum_s {
     gx_device_forward_common;
     /* Client sets these before opening */
     gs_memory_t *bitmap_memory;
-    const gs_pattern_instance *instance;
+    const gs_pattern1_instance_t *instance;
     /* open sets these */
     gx_device_memory *bits;	/* target also points to bits */
     gx_device_memory *mask;
 } gx_device_pattern_accum;
 
 #define private_st_device_pattern_accum() /* in gxpcmap.c */\
-  gs_private_st_suffix_add3(st_device_pattern_accum, gx_device_pattern_accum,\
-    "pattern accumulator", pattern_accum_enum, pattern_accum_reloc,\
-    st_device_forward, instance, bits, mask)
+  gs_private_st_suffix_add3_final(st_device_pattern_accum,\
+    gx_device_pattern_accum, "pattern accumulator", pattern_accum_enum,\
+    pattern_accum_reloc, gx_device_finalize, st_device_forward,\
+    instance, bits, mask)
 
 /* Allocate a pattern accumulator. */
 gx_device_pattern_accum *gx_pattern_accum_alloc(P2(gs_memory_t * memory, client_name_t));

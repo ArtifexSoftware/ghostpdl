@@ -25,7 +25,7 @@
 #include "gxpath.h"
 #include "gsmatrix.h"
 #include "gsrefct.h"
-#include "gsstruct.h"		/* for extern_st */
+#include "gsstype.h"		/* for extern_st */
 
 /*
  * Paths are represented as a linked list of line or curve segments,

@@ -1,4 +1,4 @@
-/* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -26,6 +26,23 @@
 
 #include "gsfcmap.h"
 #include "gsuid.h"
+
+/* Define the structure for CIDSystemInfo. */
+typedef struct gs_cid_system_info_s {
+    gs_const_string Registry;
+    gs_const_string Ordering;
+    int Supplement;
+} gs_cid_system_info;
+/*extern_st(st_cid_system_info);*/
+extern_st(st_cid_system_info_element);
+#define private_st_cid_system_info() /* in gsfcmap.c */\
+  gs_public_st_const_strings2(st_cid_system_info, gs_cid_system_info,\
+    "gs_cid_system_info", cid_si_enum_ptrs, cid_si_reloc_ptrs,\
+    Registry, Ordering)
+#define public_st_cid_system_info_element() /* in gsfcmap.c */\
+  gs_public_st_element(st_cid_system_info_element, gs_cid_system_info,\
+    "gs_cid_system_info[]", cid_si_elt_enum_ptrs, cid_si_elt_reloc_ptrs,\
+    st_cid_system_info)
 
 /*
  * The main body of data in a CMap is two code maps, one for defined
@@ -77,8 +94,9 @@ extern_st(st_code_map_element);
 
 /* A CMap proper is relatively simple. */
 struct gs_cmap_s {
-    gs_cid_system_info CIDSystemInfo;	/* must be first */
     gs_uid uid;
+    gs_cid_system_info *CIDSystemInfo;
+    int num_fonts;
     int WMode;
     gx_code_map def;		/* defined characters (cmap_subtree) */
     gx_code_map notdef;		/* notdef characters (cmap_subtree) */
@@ -86,10 +104,10 @@ struct gs_cmap_s {
     void *mark_glyph_data;	/* closure data */
 };
 
-/*extern_st(st_cmap); */
+extern_st(st_cmap);
 #define public_st_cmap()	/* in gsfcmap.c */\
-  gs_public_st_suffix_add4(st_cmap, gs_cmap, "gs_cmap",\
-    cmap_enum_ptrs, cmap_reloc_ptrs, st_cid_system_info,\
+  gs_public_st_ptrs5(st_cmap, gs_cmap, "gs_cmap",\
+    cmap_enum_ptrs, cmap_reloc_ptrs, CIDSystemInfo,\
     uid.xvalues, def.data.subtree, notdef.data.subtree, mark_glyph_data)
 
 #endif /* gxfcmap_INCLUDED */

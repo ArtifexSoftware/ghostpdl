@@ -58,16 +58,18 @@ RELOC_PTR(gx_code_map, cmap);
 RELOC_PTRS_END
 #undef pcmap
 
-/* CIDSystemInfo structure */
-public_st_cid_system_info();
+/* CIDSystemInfo structure descriptors */
+private_st_cid_system_info();
+public_st_cid_system_info_element();
 
 /* ---------------- Procedures ---------------- */
 
 /*
  * Decode a character from a string using a code map, updating the index.
  * Return 0 for a CID or name, N > 0 for a character code where N is the
- * number of bytes in the code, or an error.  For undefined characters,
- * we set *pglyph = gs_no_glyph and return 0.
+ * number of bytes in the code, or an error.  In the case of a character
+ * code, shift the bytes into *pchr.  For undefined characters, we set
+ * *pglyph = gs_no_glyph and return 0.
  */
 private int
 code_map_decode_next(const gx_code_map * pcmap, const gs_const_string * str,
@@ -91,7 +93,6 @@ leaf:		if (chr > map->last)
 		if (map->add_offset)
 		    *pglyph += chr - map->first;
 		*pfidx = map->byte_data.font_index;
-		*pchr = chr & 0xff;
 		if_debug3('J', " 0x%lx, fidx %u, result %d\n",
 			  *pglyph, *pfidx, result);
 		return result;
@@ -118,6 +119,7 @@ leaf:		if (chr > map->last)
 			else
 			    hi = mid;
 		    }
+		    *pchr = (*pchr << 8) | chr;
 		    map = &map[lo];
 		    continue;
 		}
@@ -142,9 +144,11 @@ gs_cmap_decode_next(const gs_cmap * pcmap, const gs_const_string * str,
 		    gs_char * pchr, gs_glyph * pglyph)
 {
     uint save_index = *pindex;
-    int code =
-	code_map_decode_next(&pcmap->def, str, pindex, pfidx, pchr, pglyph);
+    int code;
 
+    *pchr = 0;
+    code =
+	code_map_decode_next(&pcmap->def, str, pindex, pfidx, pchr, pglyph);
     if (code != 0 || *pglyph != gs_no_glyph)
 	return code;
     /* This is an undefined character.  Use the notdef map. */
@@ -152,6 +156,7 @@ gs_cmap_decode_next(const gs_cmap * pcmap, const gs_const_string * str,
 	uint next_index = *pindex;
 
 	*pindex = save_index;
+	*pchr = 0;
 	code =
 	    code_map_decode_next(&pcmap->notdef, str, pindex, pfidx,
 				 pchr, pglyph);

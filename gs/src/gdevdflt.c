@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -23,8 +23,6 @@
 #include "gsropt.h"
 #include "gxcomp.h"
 #include "gxdevice.h"
-#include "gxdevmem.h"
-#undef mdev
 
 /* ---------------- Default device procedures ---------------- */
 
@@ -66,9 +64,9 @@ gx_device_fill_in_procs(register gx_device * dev)
     fill_dev_proc(dev, draw_thin_line, gx_default_draw_thin_line);
     fill_dev_proc(dev, begin_image, gx_default_begin_image);
     /*
-     * We always replace image_data and end_image with the new
-     * procedures, and, if in a DEBUG configuration, print a warning
-     * if the definitions aren't the default ones.
+     * We always replace get_alpha_bits, image_data, and end_image with the
+     * new procedures, and, if in a DEBUG configuration, print a warning if
+     * the definitions aren't the default ones.
      */
 #ifdef DEBUG
 #  define CHECK_NON_DEFAULT(proc, default, procname)\
@@ -81,6 +79,9 @@ gx_device_fill_in_procs(register gx_device * dev)
 #  define CHECK_NON_DEFAULT(proc, default, procname)\
     DO_NOTHING
 #endif
+    CHECK_NON_DEFAULT(get_alpha_bits, gx_default_get_alpha_bits,
+		      "get_alpha_bits");
+    set_dev_proc(dev, get_alpha_bits, gx_default_get_alpha_bits);
     CHECK_NON_DEFAULT(image_data, gx_default_image_data, "image_data");
     set_dev_proc(dev, image_data, gx_default_image_data);
     CHECK_NON_DEFAULT(end_image, gx_default_end_image, "end_image");
@@ -112,8 +113,8 @@ gx_default_get_initial_matrix(gx_device * dev, register gs_matrix * pmat)
     pmat->xy = 0;
     pmat->yx = 0;
     pmat->yy = dev->HWResolution[1] / -72.0;	/* y_pixels_per_inch */
-/****** tx/y is WRONG for devices with ******/
-/****** arbitrary initial matrix ******/
+    /****** tx/y is WRONG for devices with ******/
+    /****** arbitrary initial matrix ******/
     pmat->tx = 0;
     pmat->ty = dev->height;
 }
@@ -126,8 +127,8 @@ gx_upright_get_initial_matrix(gx_device * dev, register gs_matrix * pmat)
     pmat->xy = 0;
     pmat->yx = 0;
     pmat->yy = dev->HWResolution[1] / 72.0;	/* y_pixels_per_inch */
-/****** tx/y is WRONG for devices with ******/
-/****** arbitrary initial matrix ******/
+    /****** tx/y is WRONG for devices with ******/
+    /****** arbitrary initial matrix ******/
     pmat->tx = 0;
     pmat->ty = 0;
 }
@@ -141,7 +142,7 @@ gx_default_sync_output(gx_device * dev)
 int
 gx_default_output_page(gx_device * dev, int num_copies, int flush)
 {
-    int code = (*dev_proc(dev, sync_output))(dev);
+    int code = dev_proc(dev, sync_output)(dev);
 
     if (code >= 0)
 	code = gx_finish_output_page(dev, num_copies, flush);
@@ -180,7 +181,8 @@ gx_page_device_get_page_device(gx_device * dev)
 int
 gx_default_get_alpha_bits(gx_device * dev, graphics_object_type type)
 {
-    return 1;
+    return (type == go_text ? dev->color_info.anti_alias.text_bits :
+	    dev->color_info.anti_alias.graphics_bits);
 }
 
 int
@@ -208,42 +210,25 @@ gx_get_largest_clipping_box(gx_device * dev, gs_fixed_rect * pbox)
 
 int
 gx_no_create_compositor(gx_device * dev, gx_device ** pcdev,
-			const gs_composite_t * pcte, const gs_imager_state * pis, gs_memory_t * memory)
+			const gs_composite_t * pcte,
+			const gs_imager_state * pis, gs_memory_t * memory)
 {
     return_error(gs_error_unknownerror);	/* not implemented */
 }
 int
 gx_default_create_compositor(gx_device * dev, gx_device ** pcdev,
-			     const gs_composite_t * pcte, const gs_imager_state * pis, gs_memory_t * memory)
+			     const gs_composite_t * pcte,
+			     const gs_imager_state * pis, gs_memory_t * memory)
 {
-    return (*pcte->type->procs.create_default_compositor)
+    return pcte->type->procs.create_default_compositor
 	(pcte, pcdev, dev, pis, memory);
 }
 int
-gx_non_imaging_create_compositor(gx_device * dev, gx_device ** pcdev,
-				 const gs_composite_t * pcte, const gs_imager_state * pis, gs_memory_t * memory)
+gx_null_create_compositor(gx_device * dev, gx_device ** pcdev,
+			  const gs_composite_t * pcte,
+			  const gs_imager_state * pis, gs_memory_t * memory)
 {
     *pcdev = dev;
-    return 0;
-}
-
-/* The following is not really a device procedure.  See gxdevice.h. */
-
-/* Create an ordinary memory device for page or band buffering. */
-int
-gx_default_make_buffer_device(gx_device_memory * mdev,
-		       gx_device * target, gs_memory_t * mem, bool for_band)
-{
-    const gx_device_memory *mdproto =
-    gdev_mem_device_for_bits(target->color_info.depth);
-
-    if (mdproto == 0)
-	return_error(gs_error_rangecheck);
-    if (target == (gx_device *) mdev)
-	assign_dev_procs(mdev, mdproto);
-    else
-	gs_make_mem_device(mdev, mdproto, mem, (for_band ? 1 : 0),
-			   (target == (gx_device *) mdev ? 0 : target));
     return 0;
 }
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -22,6 +22,7 @@
 #include "ghost.h"
 #include "oper.h"
 #include "ialloc.h"
+#include "icremap.h"
 #include "idict.h"
 #include "istruct.h"
 #include "igstate.h"
@@ -29,51 +30,54 @@
 #include "store.h"
 
 /* Forward references */
-private int num_param(P2(const_os_ptr, int (*)(P2(gs_state *, floatp))));
+private int num_param(P2(i_ctx_t *, int (*)(P2(gs_state *, floatp))));
 
 /* Structure descriptors */
 private_st_int_gstate();
+private_st_int_remap_color_info();
 
 /* ------ Operations on the entire graphics state ------ */
-
-/* The current graphics state */
-gs_state *igs;
 
 /* "Client" procedures */
 private void *gs_istate_alloc(P1(gs_memory_t * mem));
 private int gs_istate_copy(P2(void *to, const void *from));
 private void gs_istate_free(P2(void *old, gs_memory_t * mem));
-private const gs_state_client_procs istate_procs =
-{
+private const gs_state_client_procs istate_procs = {
     gs_istate_alloc,
     gs_istate_copy,
     gs_istate_free
 };
 
 /* Initialize the graphics stack. */
-void
-igs_init(void)
-{
-    gs_register_struct_root(imemory, NULL, (void **)&igs, "igs");
-    igs = int_gstate_alloc(iimemory);
-}
 gs_state *
-int_gstate_alloc(gs_ref_memory_t * mem)
+int_gstate_alloc(const gs_dual_memory_t * dmem)
 {
     int_gstate *iigs;
     ref proc0;
-    gs_state *pgs = gs_state_alloc((gs_memory_t *) mem);
+    int_remap_color_info_t *prci;
+    gs_ref_memory_t *lmem = dmem->space_local;
+    gs_ref_memory_t *gmem = dmem->space_global;
+    gs_state *pgs = gs_state_alloc((gs_memory_t *)lmem);
 
-    iigs = gs_alloc_struct((gs_memory_t *) mem, int_gstate, &st_int_gstate,
+    iigs = gs_alloc_struct((gs_memory_t *)lmem, int_gstate, &st_int_gstate,
 			   "int_gstate_alloc(int_gstate)");
     int_gstate_map_refs(iigs, make_null);
     make_empty_array(&iigs->dash_pattern, a_all);
-    gs_alloc_ref_array(mem, &proc0, a_readonly + a_executable, 2,
+    gs_alloc_ref_array(lmem, &proc0, a_readonly + a_executable, 2,
 		       "int_gstate_alloc(proc0)");
     make_oper(proc0.value.refs, 0, zpop);
     make_real(proc0.value.refs + 1, 0.0);
     iigs->black_generation = proc0;
     iigs->undercolor_removal = proc0;
+    /*
+     * Even though the gstate itself is allocated in local VM, the
+     * container for the color remapping procedure must be allocated in
+     * global VM so that the gstate can be copied into global VM.
+     */
+    prci = gs_alloc_struct((gs_memory_t *)gmem, int_remap_color_info_t,
+			   &st_int_remap_color_info,
+			   "int_gstate_alloc(remap color info)");
+    make_struct(&iigs->remap_color_info, imemory_space(gmem), prci);
     clear_pagedevice(iigs);
     gs_state_set_client(pgs, iigs, &istate_procs);
     /* PostScript code wants limit clamping enabled. */
@@ -88,28 +92,28 @@ int_gstate_alloc(gs_ref_memory_t * mem)
 
 /* - gsave - */
 int
-zgsave(register os_ptr op)
+zgsave(i_ctx_t *i_ctx_p)
 {
     return gs_gsave(igs);
 }
 
 /* - grestore - */
 int
-zgrestore(register os_ptr op)
+zgrestore(i_ctx_t *i_ctx_p)
 {
     return gs_grestore(igs);
 }
 
 /* - grestoreall - */
 int
-zgrestoreall(register os_ptr op)
+zgrestoreall(i_ctx_t *i_ctx_p)
 {
     return gs_grestoreall(igs);
 }
 
 /* - initgraphics - */
 private int
-zinitgraphics(register os_ptr op)
+zinitgraphics(i_ctx_t *i_ctx_p)
 {
     /* gs_initgraphics does a setgray; we must clear the interpreter's */
     /* cached copy of the color space object. */
@@ -124,8 +128,10 @@ zinitgraphics(register os_ptr op)
 
 /* <num> setlinewidth - */
 private int
-zsetlinewidth(register os_ptr op)
-{	/*
+zsetlinewidth(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+	/*
 	 * The Red Book doesn't say anything about this, but Adobe
 	 * interpreters return (or perhaps store) the absolute value
 	 * of the width.
@@ -143,8 +149,10 @@ zsetlinewidth(register os_ptr op)
 
 /* - currentlinewidth <num> */
 private int
-zcurrentlinewidth(register os_ptr op)
+zcurrentlinewidth(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(1);
     make_real(op, gs_currentlinewidth(igs));
     return 0;
@@ -152,8 +160,9 @@ zcurrentlinewidth(register os_ptr op)
 
 /* <cap_int> .setlinecap - */
 private int
-zsetlinecap(register os_ptr op)
+zsetlinecap(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int param;
     int code = int_param(op, max_int, &param);
 
@@ -165,8 +174,10 @@ zsetlinecap(register os_ptr op)
 
 /* - currentlinecap <cap_int> */
 private int
-zcurrentlinecap(register os_ptr op)
+zcurrentlinecap(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(1);
     make_int(op, (int)gs_currentlinecap(igs));
     return 0;
@@ -174,8 +185,9 @@ zcurrentlinecap(register os_ptr op)
 
 /* <join_int> .setlinejoin - */
 private int
-zsetlinejoin(register os_ptr op)
+zsetlinejoin(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int param;
     int code = int_param(op, max_int, &param);
 
@@ -187,8 +199,10 @@ zsetlinejoin(register os_ptr op)
 
 /* - currentlinejoin <join_int> */
 private int
-zcurrentlinejoin(register os_ptr op)
+zcurrentlinejoin(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(1);
     make_int(op, (int)gs_currentlinejoin(igs));
     return 0;
@@ -196,15 +210,17 @@ zcurrentlinejoin(register os_ptr op)
 
 /* <num> setmiterlimit - */
 private int
-zsetmiterlimit(register os_ptr op)
+zsetmiterlimit(i_ctx_t *i_ctx_p)
 {
-    return num_param(op, gs_setmiterlimit);
+    return num_param(i_ctx_p, gs_setmiterlimit);
 }
 
 /* - currentmiterlimit <num> */
 private int
-zcurrentmiterlimit(register os_ptr op)
+zcurrentmiterlimit(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(1);
     make_real(op, gs_currentmiterlimit(igs));
     return 0;
@@ -212,8 +228,9 @@ zcurrentmiterlimit(register os_ptr op)
 
 /* <array> <offset> setdash - */
 private int
-zsetdash(register os_ptr op)
+zsetdash(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     os_ptr op1 = op - 1;
     double offset;
     int code = real_param(op, &offset);
@@ -253,8 +270,10 @@ zsetdash(register os_ptr op)
 
 /* - currentdash <array> <offset> */
 private int
-zcurrentdash(register os_ptr op)
+zcurrentdash(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(2);
     ref_assign(op - 1, &istate->dash_pattern);
     make_real(op, gs_currentdash_offset(igs));
@@ -263,15 +282,17 @@ zcurrentdash(register os_ptr op)
 
 /* <num> setflat - */
 private int
-zsetflat(register os_ptr op)
+zsetflat(i_ctx_t *i_ctx_p)
 {
-    return num_param(op, gs_setflat);
+    return num_param(i_ctx_p, gs_setflat);
 }
 
 /* - currentflat <num> */
 private int
-zcurrentflat(register os_ptr op)
+zcurrentflat(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(1);
     make_real(op, gs_currentflat(igs));
     return 0;
@@ -281,8 +302,10 @@ zcurrentflat(register os_ptr op)
 
 /* <bool> .setaccuratecurves - */
 private int
-zsetaccuratecurves(register os_ptr op)
+zsetaccuratecurves(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     check_type(*op, t_boolean);
     gs_setaccuratecurves(igs, op->value.boolval);
     pop(1);
@@ -291,8 +314,10 @@ zsetaccuratecurves(register os_ptr op)
 
 /* - .currentaccuratecurves <bool> */
 private int
-zcurrentaccuratecurves(register os_ptr op)
+zcurrentaccuratecurves(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(1);
     make_bool(op, gs_currentaccuratecurves(igs));
     return 0;
@@ -300,8 +325,9 @@ zcurrentaccuratecurves(register os_ptr op)
 
 /* <adjust.x> <adjust.y> .setfilladjust2 - */
 private int
-zsetfilladjust2(register os_ptr op)
+zsetfilladjust2(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     double adjust[2];
     int code = num_params(op, 2, adjust);
 
@@ -316,8 +342,9 @@ zsetfilladjust2(register os_ptr op)
 
 /* - .currentfilladjust2 <adjust.x> <adjust.y> */
 private int
-zcurrentfilladjust2(register os_ptr op)
+zcurrentfilladjust2(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_point adjust;
 
     push(2);
@@ -329,8 +356,10 @@ zcurrentfilladjust2(register os_ptr op)
 
 /* <bool> .setdashadapt - */
 private int
-zsetdashadapt(register os_ptr op)
+zsetdashadapt(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     check_type(*op, t_boolean);
     gs_setdashadapt(igs, op->value.boolval);
     pop(1);
@@ -339,8 +368,10 @@ zsetdashadapt(register os_ptr op)
 
 /* - .currentdashadapt <bool> */
 private int
-zcurrentdashadapt(register os_ptr op)
+zcurrentdashadapt(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(1);
     make_bool(op, gs_currentdashadapt(igs));
     return 0;
@@ -348,8 +379,9 @@ zcurrentdashadapt(register os_ptr op)
 
 /* <num> <bool> .setdotlength - */
 private int
-zsetdotlength(register os_ptr op)
+zsetdotlength(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     double length;
     int code = real_param(op - 1, &length);
 
@@ -365,8 +397,10 @@ zsetdotlength(register os_ptr op)
 
 /* - .currentdotlength <num> <bool> */
 private int
-zcurrentdotlength(register os_ptr op)
+zcurrentdotlength(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(2);
     make_real(op - 1, gs_currentdotlength(igs));
     make_bool(op, gs_currentdotlength_absolute(igs));
@@ -375,22 +409,22 @@ zcurrentdotlength(register os_ptr op)
 
 /* - .setdotorientation - */
 private int
-zsetdotorientation(os_ptr op)
+zsetdotorientation(i_ctx_t *i_ctx_p)
 {
     return gs_setdotorientation(igs);
 }
 
 /* - .dotorientation - */
 private int
-zdotorientation(os_ptr op)
+zdotorientation(i_ctx_t *i_ctx_p)
 {
     return gs_dotorientation(igs);
 }
 
 /* ------ Initialization procedure ------ */
 
-const op_def zgstate_op_defs[] =
-{
+/* We need to split the table because of the 16-element limit. */
+const op_def zgstate1_op_defs[] = {
     {"0.currentaccuratecurves", zcurrentaccuratecurves},
     {"0currentdash", zcurrentdash},
     {"0.currentdashadapt", zcurrentdashadapt},
@@ -406,6 +440,9 @@ const op_def zgstate_op_defs[] =
     {"0grestoreall", zgrestoreall},
     {"0gsave", zgsave},
     {"0initgraphics", zinitgraphics},
+    op_def_end(0)
+};
+const op_def zgstate2_op_defs[] = {
     {"1.setaccuratecurves", zsetaccuratecurves},
     {"2setdash", zsetdash},
     {"1.setdashadapt", zsetdashadapt},
@@ -446,8 +483,9 @@ gs_istate_free(void *old, gs_memory_t * mem)
 
 /* Get a numeric parameter */
 private int
-num_param(const_os_ptr op, int (*pproc)(P2(gs_state *, floatp)))
+num_param(i_ctx_t *i_ctx_p, int (*pproc)(P2(gs_state *, floatp)))
 {
+    os_ptr op = osp;
     double param;
     int code = real_param(op, &param);
 

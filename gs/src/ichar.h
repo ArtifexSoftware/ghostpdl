@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1996, 1997, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -55,12 +55,13 @@
 #define seproc eseproc(esp)
 
 /* Procedures exported by zchar.c for zchar1.c, zchar2.c, and/or zcharcid.c. */
-gs_show_enum *op_show_find(P0());
-int op_show_setup(P2(os_ptr, gs_show_enum **));
-int op_show_enum_setup(P2(os_ptr, gs_show_enum **));
-void op_show_finish_setup(P3(gs_show_enum *, int, op_proc_p));
-int op_show_continue(P1(os_ptr));
-int op_show_continue_dispatch(P2(os_ptr, int));
-int op_show_free(P1(int));
+gs_show_enum *op_show_find(P1(i_ctx_t *));
+int op_show_setup(P3(i_ctx_t *, os_ptr, gs_show_enum **));
+int op_show_enum_setup(P2(i_ctx_t *, gs_show_enum **));
+void op_show_finish_setup(P4(i_ctx_t *, gs_show_enum *, int, op_proc_t));
+int op_show_continue(P1(i_ctx_t *));
+int op_show_continue_pop(P2(i_ctx_t *, int));
+int op_show_continue_dispatch(P3(i_ctx_t *, int, int));
+int op_show_free(P2(i_ctx_t *, int));
 
 #endif /* ichar_INCLUDED */

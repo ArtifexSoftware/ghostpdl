@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -29,29 +29,30 @@
 #include "store.h"
 
 /* Forward references */
-private int common_arc(P2(os_ptr,
+private int common_arc(P2(i_ctx_t *,
 	  int (*)(P6(gs_state *, floatp, floatp, floatp, floatp, floatp))));
-private int common_arct(P2(os_ptr, float *));
+private int common_arct(P2(i_ctx_t *, float *));
 
 /* <x> <y> <r> <ang1> <ang2> arc - */
 int
-zarc(os_ptr op)
+zarc(i_ctx_t *i_ctx_p)
 {
-    return common_arc(op, gs_arc);
+    return common_arc(i_ctx_p, gs_arc);
 }
 
 /* <x> <y> <r> <ang1> <ang2> arcn - */
 int
-zarcn(os_ptr op)
+zarcn(i_ctx_t *i_ctx_p)
 {
-    return common_arc(op, gs_arcn);
+    return common_arc(i_ctx_p, gs_arcn);
 }
 
 /* Common code for arc[n] */
 private int
-common_arc(os_ptr op,
+common_arc(i_ctx_t *i_ctx_p,
       int (*aproc)(P6(gs_state *, floatp, floatp, floatp, floatp, floatp)))
 {
+    os_ptr op = osp;
     double xyra[5];		/* x, y, r, ang1, ang2 */
     int code = num_params(op, 5, xyra);
 
@@ -65,9 +66,9 @@ common_arc(os_ptr op,
 
 /* <x1> <y1> <x2> <y2> <r> arct - */
 int
-zarct(register os_ptr op)
+zarct(i_ctx_t *i_ctx_p)
 {
-    int code = common_arct(op, (float *)0);
+    int code = common_arct(i_ctx_p, (float *)0);
 
     if (code < 0)
 	return code;
@@ -77,10 +78,11 @@ zarct(register os_ptr op)
 
 /* <x1> <y1> <x2> <y2> <r> arcto <xt1> <yt1> <xt2> <yt2> */
 private int
-zarcto(register os_ptr op)
+zarcto(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     float tanxy[4];		/* xt1, yt1, xt2, yt2 */
-    int code = common_arct(op, tanxy);
+    int code = common_arct(i_ctx_p, tanxy);
 
     if (code < 0)
 	return code;
@@ -94,8 +96,9 @@ zarcto(register os_ptr op)
 
 /* Common code for arct[o] */
 private int
-common_arct(os_ptr op, float *tanxy)
+common_arct(i_ctx_t *i_ctx_p, float *tanxy)
 {
+    os_ptr op = osp;
     double args[5];		/* x1, y1, x2, y2, r */
     int code = num_params(op, 5, args);
 
@@ -106,43 +109,44 @@ common_arct(os_ptr op, float *tanxy)
 
 /* - .dashpath - */
 private int
-zdashpath(register os_ptr op)
+zdashpath(i_ctx_t *i_ctx_p)
 {
     return gs_dashpath(igs);
 }
 
 /* - flattenpath - */
 private int
-zflattenpath(register os_ptr op)
+zflattenpath(i_ctx_t *i_ctx_p)
 {
     return gs_flattenpath(igs);
 }
 
 /* - reversepath - */
 private int
-zreversepath(register os_ptr op)
+zreversepath(i_ctx_t *i_ctx_p)
 {
     return gs_reversepath(igs);
 }
 
 /* - strokepath - */
 private int
-zstrokepath(register os_ptr op)
+zstrokepath(i_ctx_t *i_ctx_p)
 {
     return gs_strokepath(igs);
 }
 
 /* - clippath - */
 private int
-zclippath(register os_ptr op)
+zclippath(i_ctx_t *i_ctx_p)
 {
     return gs_clippath(igs);
 }
 
 /* <bool> .pathbbox <llx> <lly> <urx> <ury> */
 private int
-zpathbbox(register os_ptr op)
+zpathbbox(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_rect box;
     int code;
 
@@ -159,11 +163,12 @@ zpathbbox(register os_ptr op)
 }
 
 /* <moveproc> <lineproc> <curveproc> <closeproc> pathforall - */
-private int path_continue(P1(os_ptr));
-private int path_cleanup(P1(os_ptr));
+private int path_continue(P1(i_ctx_t *));
+private int path_cleanup(P1(i_ctx_t *));
 private int
-zpathforall(register os_ptr op)
+zpathforall(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_path_enum *penum;
     int code;
 
@@ -190,9 +195,9 @@ zpathforall(register os_ptr op)
     return o_push_estack;
 }
 /* Continuation procedure for pathforall */
-private void pf_push(P3(gs_point *, int, os_ptr));
+private void pf_push(P3(i_ctx_t *, gs_point *, int));
 private int
-path_continue(register os_ptr op)
+path_continue(i_ctx_t *i_ctx_p)
 {
     gs_path_enum *penum = r_ptr(esp, gs_path_enum);
     gs_point ppts[3];
@@ -205,21 +210,21 @@ path_continue(register os_ptr op)
     switch (code) {
 	case 0:		/* all done */
 	    esp -= 6;
-	    path_cleanup(op);
+	    path_cleanup(i_ctx_p);
 	    return o_pop_estack;
 	default:		/* error */
 	    return code;
 	case gs_pe_moveto:
 	    esp[2] = esp[-4];	/* moveto proc */
-	    pf_push(ppts, 1, op);
+	    pf_push(i_ctx_p, ppts, 1);
 	    break;
 	case gs_pe_lineto:
 	    esp[2] = esp[-3];	/* lineto proc */
-	    pf_push(ppts, 1, op);
+	    pf_push(i_ctx_p, ppts, 1);
 	    break;
 	case gs_pe_curveto:
 	    esp[2] = esp[-2];	/* curveto proc */
-	    pf_push(ppts, 3, op);
+	    pf_push(i_ctx_p, ppts, 3);
 	    break;
 	case gs_pe_closepath:
 	    esp[2] = esp[-1];	/* closepath proc */
@@ -231,8 +236,10 @@ path_continue(register os_ptr op)
 }
 /* Internal procedure to push one or more points */
 private void
-pf_push(gs_point * ppts, int n, os_ptr op)
+pf_push(i_ctx_t *i_ctx_p, gs_point * ppts, int n)
 {
+    os_ptr op = osp;
+
     while (n--) {
 	op += 2;
 	make_real(op - 1, ppts->x);
@@ -243,7 +250,7 @@ pf_push(gs_point * ppts, int n, os_ptr op)
 }
 /* Clean up after a pathforall */
 private int
-path_cleanup(os_ptr op)
+path_cleanup(i_ctx_t *i_ctx_p)
 {
     gs_path_enum *penum = r_ptr(esp + 6, gs_path_enum);
 
@@ -266,7 +273,7 @@ const op_def zpath1_op_defs[] =
     {"4pathforall", zpathforall},
     {"0reversepath", zreversepath},
     {"0strokepath", zstrokepath},
-    {"0.pathbbox", zpathbbox},
+    {"1.pathbbox", zpathbbox},
 		/* Internal operators */
     {"0%path_continue", path_continue},
     op_def_end(0)

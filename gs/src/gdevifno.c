@@ -18,6 +18,7 @@
  */
 
 #include "gdevprn.h"
+#include "gsparam.h"
 #include "gxlum.h"
 #include <stdlib.h>
 
@@ -49,7 +50,7 @@ private WImage* initwriteimage(FILE *f, Rectangle r, int ldepth);
 private int writeimageblock(WImage *w, uchar *data, int ndata);
 private int bytesperline(Rectangle, int);
 private int rgb2cmap(int, int, int);
-/*private long cmap2rgb(int);*/	/* not used, commented out */
+private long cmap2rgb(int);
 
 #define X_DPI	100
 #define Y_DPI	100
@@ -94,7 +95,7 @@ inferno_device far_data gs_inferno_device =
  * ghostscript asks us how to convert between
  * rgb and color map entries
  */
-gx_color_index 
+private gx_color_index 
 inferno_rgb2cmap(P4(gx_device *dev, gx_color_value red,
   gx_color_value green, gx_color_value blue)) {
 	int shift;
@@ -144,7 +145,7 @@ inferno_rgb2cmap(P4(gx_device *dev, gx_color_value red,
 	return ((((blue<<4)|green)<<4)|red);
 }
 
-int 
+private int 
 inferno_cmap2rgb(P3(gx_device *dev, gx_color_index color,
   gx_color_value rgb[3])) {
 	int shift, i;
@@ -218,7 +219,7 @@ void init_p9color(void)		/* init at run time since p9color[] is so big */
  * inferno_open() is supposed to initialize the device.
  * there's not much to do.
  */
-int
+private int
 inferno_open(P1(gx_device *dev))
 {
 	inferno_device *bdev = (inferno_device*) dev;
@@ -236,7 +237,7 @@ inferno_open(P1(gx_device *dev))
  * inferno_close() is called at the end, once everything
  * is finished.  we have nothing to do.
  */
-int
+private int
 inferno_close(P1(gx_device *dev))
 {
 	int code;
@@ -251,7 +252,7 @@ inferno_close(P1(gx_device *dev))
  * (actually once for each copy of each page, but we won't
  * worry about that).
  */
-int
+private int
 inferno_print_page(P2(gx_device_printer *pdev, FILE *f))
 {
 	uchar buf[16384];	/* == 8192 dots across */
@@ -782,3 +783,4 @@ cmap2rgb(int c)
  *
  *
  */
+

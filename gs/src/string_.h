@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1992, 1993, 1994, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1992, 1993, 1994, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -36,7 +36,7 @@
 #      define memset(dest,chr,cnt) setmem(dest,cnt,chr)
 #    endif
 #  else
-#    ifdef memory__need_memmove
+#    ifdef MEMORY__NEED_MEMMOVE
 #      undef memmove		/* This is disgusting, but so is GCC */
 #    endif
 #    include <string.h>
@@ -44,7 +44,7 @@
 	/* Patch strlen to return a uint rather than a size_t. */
 #      define strlen (uint)strlen
 #    endif
-#    ifdef memory__need_memmove
+#    ifdef MEMORY__NEED_MEMMOVE
 #      define memmove(dest,src,len) gs_memmove(dest,src,len)
 #    endif
 #  endif

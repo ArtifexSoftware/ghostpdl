@@ -318,7 +318,7 @@ private int
 zgetccfont(register os_ptr op)
 {
     int code;
-    ccfont_fproc **fprocs;
+    const ccfont_fproc *fprocs;
     int nfonts;
     int index;
 

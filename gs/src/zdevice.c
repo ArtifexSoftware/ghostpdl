@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -36,8 +36,9 @@
 
 /* <device> copydevice <newdevice> */
 private int
-zcopydevice(register os_ptr op)
+zcopydevice(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gx_device *new_dev;
     int code;
 
@@ -52,8 +53,9 @@ zcopydevice(register os_ptr op)
 
 /* - currentdevice <device> */
 int
-zcurrentdevice(register os_ptr op)
+zcurrentdevice(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gx_device *dev = gs_currentdevice(igs);
     gs_ref_memory_t *mem = (gs_ref_memory_t *) dev->memory;
 
@@ -66,8 +68,9 @@ zcurrentdevice(register os_ptr op)
 
 /* <device> .devicename <string> */
 int
-zdevicename(register os_ptr op)
+zdevicename(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     const char *dname;
 
     check_read_type(*op, t_device);
@@ -79,7 +82,7 @@ zdevicename(register os_ptr op)
 
 /* - .doneshowpage - */
 private int
-zdoneshowpage(register os_ptr op)
+zdoneshowpage(i_ctx_t *i_ctx_p)
 {
     gx_device *dev = gs_currentdevice(igs);
     gx_device *tdev = (*dev_proc(dev, get_page_device)) (dev);
@@ -91,20 +94,21 @@ zdoneshowpage(register os_ptr op)
 
 /* - flushpage - */
 int
-zflushpage(register os_ptr op)
+zflushpage(i_ctx_t *i_ctx_p)
 {
     return gs_flushpage(igs);
 }
 
-/* <device> <x> <y> <width> <max_height> <alpha?> <std_depth> <string> */
+/* <device> <x> <y> <width> <max_height> <alpha?> <std_depth|null> <string> */
 /*   .getbitsrect <height> <substring> */
 private int
-zgetbitsrect(register os_ptr op)
+zgetbitsrect(i_ctx_t *i_ctx_p)
 {	/*
 	 * alpha? is 0 for no alpha, -1 for alpha first, 1 for alpha last.
 	 * std_depth is null for native pixels, depth/component for
 	 * standard color space.
 	 */
+    os_ptr op = osp;
     gx_device *dev;
     gs_int_rect rect;
     gs_get_bits_params_t params;
@@ -112,7 +116,7 @@ zgetbitsrect(register os_ptr op)
     gs_get_bits_options_t options =
 	GB_ALIGN_ANY | GB_RETURN_COPY | GB_OFFSET_0 | GB_RASTER_STANDARD |
 	GB_PACKING_CHUNKY;
-    int std_depth;
+    int depth;
     uint raster;
     int num_rows;
     int code;
@@ -128,27 +132,28 @@ zgetbitsrect(register os_ptr op)
     check_int_leu(op[-3], dev->height);
     h = op[-3].value.intval;
     check_type(op[-2], t_integer);
-    switch (op[-2].value.intval) {
-	case -1:
-	    options |= GB_ALPHA_FIRST;
-	    break;
-	case 0:
-	    options |= GB_ALPHA_NONE;
-	    break;
-	case 1:
-	    options |= GB_ALPHA_LAST;
-	    break;
-	default:
-	    return_error(e_rangecheck);
-    }
-    if (r_has_type(op - 1, t_null))
+    /*
+     * We use if/else rather than switch because the value is long,
+     * which is not supported as a switch value in pre-ANSI C.
+     */
+    if (op[-2].value.intval == -1)
+	options |= GB_ALPHA_FIRST;
+    else if (op[-2].value.intval == 0)
+	options |= GB_ALPHA_NONE;
+    else if (op[-2].value.intval == 1)
+	options |= GB_ALPHA_LAST;
+    else
+	return_error(e_rangecheck);
+    if (r_has_type(op - 1, t_null)) {
 	options |= GB_COLORS_NATIVE;
-    else {
+	depth = dev->color_info.depth;
+    } else {
 	static const gs_get_bits_options_t depths[17] = {
 	    0, GB_DEPTH_1, GB_DEPTH_2, 0, GB_DEPTH_4, 0, 0, 0, GB_DEPTH_8,
 	    0, 0, 0, GB_DEPTH_12, 0, 0, 0, GB_DEPTH_16
 	};
 	gs_get_bits_options_t depth_option;
+	int std_depth;
 
 	check_int_leu(op[-1], 16);
 	std_depth = (int)op[-1].value.intval;
@@ -156,16 +161,11 @@ zgetbitsrect(register os_ptr op)
 	if (depth_option == 0)
 	    return_error(e_rangecheck);
 	options |= depth_option | gb_colors_for_device(dev);
+	depth = (dev->color_info.num_components +
+		 (options & GB_ALPHA_NONE ? 0 : 1)) * std_depth;
     }
+    raster = (w * depth + 7) >> 3;
     check_write_type(*op, t_string);
-    {
-	int depth =
-	    (options & GB_COLORS_NATIVE ? dev->color_info.depth :
-	     (dev->color_info.num_components +
-	      (options & GB_ALPHA_NONE ? 0 : 1)) * std_depth);
-
-	raster = (w * depth + 7) >> 3;
-    }
     num_rows = r_size(op) / raster;
     h = min(h, num_rows);
     if (h == 0)
@@ -186,8 +186,9 @@ zgetbitsrect(register os_ptr op)
 
 /* <int> .getdevice <device> */
 private int
-zgetdevice(register os_ptr op)
+zgetdevice(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     const gx_device *dev;
 
     check_type(*op, t_integer);
@@ -205,8 +206,9 @@ zgetdevice(register os_ptr op)
 
 /* Common functionality of zgethardwareparms & zgetdeviceparams */
 private int
-zget_device_params(os_ptr op, bool is_hardware)
+zget_device_params(i_ctx_t *i_ctx_p, bool is_hardware)
 {
+    os_ptr op = osp;
     ref rkeys;
     gx_device *dev;
     stack_param_list list;
@@ -235,21 +237,22 @@ zget_device_params(os_ptr op, bool is_hardware)
 }
 /* <device> <key_dict|null> .getdeviceparams <mark> <name> <value> ... */
 private int
-zgetdeviceparams(os_ptr op)
+zgetdeviceparams(i_ctx_t *i_ctx_p)
 {
-    return zget_device_params(op, false);
+    return zget_device_params(i_ctx_p, false);
 }
 /* <device> <key_dict|null> .gethardwareparams <mark> <name> <value> ... */
 private int
-zgethardwareparams(os_ptr op)
+zgethardwareparams(i_ctx_t *i_ctx_p)
 {
-    return zget_device_params(op, true);
+    return zget_device_params(i_ctx_p, true);
 }
 
 /* <matrix> <width> <height> <palette> <word?> makewordimagedevice <device> */
 private int
-zmakewordimagedevice(register os_ptr op)
+zmakewordimagedevice(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     os_ptr op1 = op - 1;
     gs_matrix imat;
     gx_device *new_dev;
@@ -264,14 +267,14 @@ zmakewordimagedevice(register os_ptr op)
 	colors = 0;
 	colors_size = -24;	/* 24-bit true color */
     } else if (r_has_type(op1, t_integer)) {
-	switch (op1->value.intval) {
-	    case 16:
-	    case 24:
-	    case 32:
-		break;
-	    default:
-		return_error(e_rangecheck);
-	}
+	/*
+	 * We use if/else rather than switch because the value is long,
+	 * which is not supported as a switch value in pre-ANSI C.
+	 */
+	if (op1->value.intval != 16 && op1->value.intval != 24 &&
+	    op1->value.intval != 32
+	    )
+	    return_error(e_rangecheck);
 	colors = 0;
 	colors_size = -op1->value.intval;
     } else {
@@ -301,7 +304,7 @@ zmakewordimagedevice(register os_ptr op)
 /* - nulldevice - */
 /* Note that nulldevice clears the current pagedevice. */
 private int
-znulldevice(register os_ptr op)
+znulldevice(i_ctx_t *i_ctx_p)
 {
     gs_nulldevice(igs);
     clear_pagedevice(istate);
@@ -310,8 +313,9 @@ znulldevice(register os_ptr op)
 
 /* <num_copies> <flush_bool> .outputpage - */
 private int
-zoutputpage(register os_ptr op)
+zoutputpage(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code;
 
     check_type(op[-1], t_integer);
@@ -334,7 +338,7 @@ zoutputpage(register os_ptr op)
 /* the key will be ignored. */
 /* Note that .putdeviceparams clears the current pagedevice. */
 private int
-zputdeviceparams(os_ptr op)
+zputdeviceparams(i_ctx_t *i_ctx_p)
 {
     uint count = ref_stack_counttomark(&o_stack);
     ref *prequire_all;
@@ -368,7 +372,7 @@ zputdeviceparams(os_ptr op)
 	if (list.results[i] < 0) {
 	    *ref_stack_index(&o_stack, dest) =
 		*ref_stack_index(&o_stack, count - (i << 1) - 2);
-	    gs_errorname(list.results[i],
+	    gs_errorname(i_ctx_p, list.results[i],
 			 ref_stack_index(&o_stack, dest - 1));
 	    dest -= 2;
 	}
@@ -404,8 +408,9 @@ zputdeviceparams(os_ptr op)
 /* <device> .setdevice <eraseflag> */
 /* Note that .setdevice clears the current pagedevice. */
 int
-zsetdevice(register os_ptr op)
+zsetdevice(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code;
 
     check_write_type(*op, t_device);

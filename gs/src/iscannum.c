@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -42,20 +42,20 @@ scan_number(const byte * str, const byte * end, int sign,
 {
     const byte *sp = str;
 #define GET_NEXT(cvar, sp, end_action)\
-  if ( sp >= end ) { end_action; } else cvar = *sp++
+  if (sp >= end) { end_action; } else cvar = *sp++
+
     /*
      * Powers of 10 up to 6 can be represented accurately as
      * a single-precision float.
      */
 #define NUM_POWERS_10 6
-    static const float powers_10[NUM_POWERS_10 + 1] =
-    {
+    static const float powers_10[NUM_POWERS_10 + 1] = {
 	1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6
     };
-    static const double neg_powers_10[NUM_POWERS_10 + 1] =
-    {
+    static const double neg_powers_10[NUM_POWERS_10 + 1] = {
 	1e0, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6
     };
+
     int ival;
     long lval;
     double dval;
@@ -65,10 +65,10 @@ scan_number(const byte * str, const byte * end, int sign,
     const byte *const decoder = scan_char_decoder;
 #define IS_DIGIT(d, c)\
   ((d = decoder[c]) < 10)
-
-    GET_NEXT(c, sp, return_error(e_syntaxerror));
 #define WOULD_OVERFLOW(val, d, maxv)\
   (val >= maxv / 10 && (val > maxv / 10 || d > (int)(maxv % 10)))
+
+    GET_NEXT(c, sp, return_error(e_syntaxerror));
     if (!IS_DIGIT(d, c)) {
 	if (c != '.')
 	    return_error(e_syntaxerror);
@@ -250,7 +250,7 @@ l2d:
 	case '.':
 	    GET_NEXT(c, sp, c = EOFC);
 	    exp10 = 0;
-	    goto fs;
+	    goto fd;
 	default:
 	    *psp = sp;
 	    code = 1;

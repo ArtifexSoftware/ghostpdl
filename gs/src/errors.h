@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -108,12 +108,12 @@ extern const char *const gs_error_names[];
 #define e_InterpreterExit (-102)
 
 /*
- * Internal code that indicates that a procedure has been inserted
- * on the e-stack at (former) esp+2, to be executed before retrying
- * the current token.  This is used for color remapping
- * involving a call back into the interpreter -- inelegant, but effective.
+ * Internal code that indicates that a procedure has been stored in the
+ * remap_proc of the graphics state, and should be called before retrying
+ * the current token.  This is used for color remapping involving a call
+ * back into the interpreter -- inelegant, but effective.
  */
-#define e_InsertProc (-103)
+#define e_RemapColor (-103)
 
 /*
  * Internal code to indicate we have underflowed the top block

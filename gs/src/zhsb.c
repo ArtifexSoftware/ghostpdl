@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1997, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -26,8 +26,9 @@
 
 /* - currenthsbcolor <hue> <saturation> <brightness> */
 private int
-zcurrenthsbcolor(register os_ptr op)
+zcurrenthsbcolor(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     float par[3];
 
     gs_currenthsbcolor(igs, par);
@@ -38,8 +39,9 @@ zcurrenthsbcolor(register os_ptr op)
 
 /* <hue> <saturation> <brightness> sethsbcolor - */
 private int
-zsethsbcolor(register os_ptr op)
+zsethsbcolor(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     double par[3];
     int code;
 

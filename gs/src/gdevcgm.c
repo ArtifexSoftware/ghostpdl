@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -127,7 +127,7 @@ cgm_gs_free(void *private_data, void *obj)
 /* ---------------- Utilities ---------------- */
 
 /* Convert a CGM result code to our error values. */
-private int near
+private int
 cgm_error_code(cgm_result result)
 {
     switch (result) {

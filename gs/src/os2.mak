@@ -1,4 +1,4 @@
-#    Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -34,7 +34,7 @@ GS_DOCDIR=c:/gs
 # initialization and font files.  Separate multiple directories with ;.
 # Use / to indicate directories, not a single \.
 
-GS_LIB_DEFAULT=c:/gs;c:/gs/fonts
+GS_LIB_DEFAULT=c:/gs/lib;c:/gs/fonts
 
 # Define whether or not searching for initialization files should always
 # look in the current directory first.  This leads to well-known security
@@ -82,15 +82,18 @@ IBMCPP=0
 GS=gsos2
 GSDLL=gsdll2
 
-# Define the source, generated intermediate file, and object directories
+# Define the directory for the final executable, and the
+# source, generated intermediate file, and object directories
 # for the graphics library (GL) and the PostScript/PDF interpreter (PS).
 
 # This makefile has never been tested with any other values than these,
 # and almost certainly won't work with other values.
+BINDIR=.
 GLSRCDIR=.
 GLGENDIR=.
 GLOBJDIR=.
 PSSRCDIR=.
+PSLIBDIR=.
 PSGENDIR=.
 PSOBJDIR=.
 
@@ -108,16 +111,12 @@ JVERSION=6
 # See libpng.mak for more information.
 
 PSRCDIR=libpng
-PVERSION=96
+PVERSION=10002
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
 
 ZSRCDIR=zlib
-
-# Define the configuration ID.  Read gs.mak carefully before changing this.
-
-CONFIG=
 
 # ------ Platform-specific options ------ #
 
@@ -177,6 +176,12 @@ CPU_TYPE=386
 
 FPU_TYPE=0
 
+# Define the .dev module that implements thread and synchronization
+# primitives for this platform.  Don't change this unless you really know
+# what you're doing.
+
+SYNC=winsync
+
 # ---------------------------- End of options ---------------------------- #
 
 # Note that built-in libpng and zlib aren't available.
@@ -196,7 +201,8 @@ PLATFORM=os2_
 
 # Define the name of the makefile -- used in dependencies.
 
-MAKEFILE=os2.mak
+MAKEFILE=$(GLSRCDIR)\os2.mak
+TOP_MAKEFILES=$(MAKEFILE)
 
 # Define the files to be deleted by 'make clean'.
 
@@ -226,15 +232,18 @@ dosdefault: default gspmdrv.exe
 
 # Define the extensions for command, object, and executable files.
 
+# Work around the fact that some `make' programs drop trailing spaces
+# or interpret == as a special definition operator.
+NULL=
+
 CMD=.cmd
 C_=-c
+D_=-D
+_D_=$(NULL)=
+_D=
 I_=-I
 II=-I
 _I=
-# There should be a <space> at the end of the definition of O_,
-# but we have to work around the fact that some `make' programs
-# drop trailing spaces in macro definitions.
-NULL=
 O_=-o $(NULL)
 !if $(MAKEDLL)
 OBJ=obj
@@ -251,7 +260,6 @@ D=\#
 EXP=
 QQ="
 SH=
-SHP=
 
 # Define generic commands.
 
@@ -307,10 +315,13 @@ ASMFLAGS=$(ASMCPU) $(ASMFPU) $(ASMDEBUG)
 
 # ---------------------- MS-DOS I/O debugging option ---------------------- #
 
-dosio_=$(GLOBJ)zdosio.$(OBJ)
-dosio.dev: $(dosio_)
-	$(SETMOD) dosio $(dosio_)
-	$(ADDMOD) dosio -oper zdosio
+dosio_=$(PSOBJ)zdosio.$(OBJ)
+dosio.dev: $(PSGEN)dosio.dev
+	$(NO_OP)
+
+$(PSGEN)dosio.dev: $(dosio_)
+	$(SETMOD) $(PSGEN)dosio $(dosio_)
+	$(ADDMOD) $(PSGEN)dosio -oper zdosio
 
 $(PSOBJ)zdosio.$(OBJ): $(PSSRC)zdosio.c $(OP) $(store_h)
 	$(PSCC) $(PSO_)zdosio.$(OBJ) $(C_) $(PSSRC)zdosio.c
@@ -372,7 +383,7 @@ CC_LEAF=$(CC_)
 # Choose the language feature(s) to include.  See gs.mak for details.
 # Since we have a large address space, we include some optional features.
 
-FEATURE_DEVS=psl3.dev pdf.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
@@ -406,8 +417,8 @@ DEVICE_DEVS=os2pm.dev
 #DEVICE_DEVS1=x11.dev x11alpha.dev x11cmyk.dev x11mono.dev
 DEVICE_DEVS1=
 DEVICE_DEVS2=epson.dev eps9high.dev eps9mid.dev epsonc.dev ibmpro.dev
-DEVICE_DEVS3=deskjet.dev djet500.dev laserjet.dev ljetplus.dev ljet2p.dev ljet3.dev ljet4.dev
-DEVICE_DEVS4=cdeskjet.dev cdjcolor.dev cdjmono.dev cdj550.dev pj.dev pjxl.dev pjxl300.dev
+DEVICE_DEVS3=deskjet.dev djet500.dev laserjet.dev ljetplus.dev ljet2p.dev
+DEVICE_DEVS4=cdeskjet.dev cdjcolor.dev cdjmono.dev cdj550.dev
 DEVICE_DEVS5=djet500c.dev declj250.dev lj250.dev jetp3852.dev r4081.dev t4693d2.dev t4693d4.dev t4693d8.dev tek4696.dev lbp8.dev uniprint.dev
 DEVICE_DEVS6=st800.dev stcolor.dev bj10e.dev bj200.dev bjc600.dev bjc800.dev m8510.dev necp6.dev
 DEVICE_DEVS7=dfaxhigh.dev dfaxlow.dev
@@ -419,6 +430,12 @@ DEVICE_DEVS12=psmono.dev psgray.dev bit.dev bitrgb.dev bitcmyk.dev
 DEVICE_DEVS13=pngmono.dev pnggray.dev png16.dev png256.dev png16m.dev
 DEVICE_DEVS14=jpeg.dev jpeggray.dev
 DEVICE_DEVS15=pdfwrite.dev pswrite.dev epswrite.dev pxlmono.dev pxlcolor.dev
+# Overflow for DEVS3,4,5,6,9
+DEVICE_DEVS16=ljet3.dev ljet3d.dev ljet4.dev ljet4d.dev
+DEVICE_DEVS17=pj.dev pjxl.dev pjxl300.dev
+DEVICE_DEVS18=
+DEVICE_DEVS19=
+DEVICE_DEVS20=
 
 # Include the generic makefiles.
 !include "version.mak"
@@ -432,20 +449,21 @@ DEVICE_DEVS15=pdfwrite.dev pswrite.dev epswrite.dev pxlmono.dev pxlcolor.dev
 !include "pcwin.mak"
 !include "contrib.mak"
 !include "int.mak"
+!include "cfonts.mak"
 
 # -------------------------------- Library -------------------------------- #
 
 # The GCC/EMX platform
 
 os2__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_nofb.$(OBJ) $(GLOBJ)gp_os2.$(OBJ)
-os2_.dev: $(os2__) nosync.dev
-	$(SETMOD) os2_ $(os2__) -include nosync
+$(GLGEN)os2_.dev: $(os2__) nosync.dev
+	$(SETMOD) $(GLGEN)os2_ $(os2__) -include nosync
 !if $(MAKEDLL)
 # Using a file device resource to get the console streams re-initialized 
 # is bad architecture (an upward reference to ziodev),                   
 # but it will have to do for the moment.                                 
 #   We need to redirect stdin/out/err to gsdll_callback
-        $(ADDMOD) os2_ -iodev wstdio                                   
+        $(ADDMOD) $(GLGEN)os2_ -iodev wstdio
 !endif
   
 
@@ -468,7 +486,7 @@ $(ECHOGS_XE): echogs.c
 	$(CCAUX) /Fe$(ECHOGS_XE) echogs.c
 !endif
 
-$(GENARCH_XE): genarch.c $(stdpre_h)
+$(GENARCH_XE): genarch.c $(GENARCH_DEPS)
 !if $(EMX)
 	$(CCAUX) -o $(AUXGEN)genarch genarch.c
 	$(COMPDIR)\emxbind $(EMXPATH)/bin/emxl.exe $(AUXGEN)genarch $(GENARCH_XE)
@@ -478,7 +496,7 @@ $(GENARCH_XE): genarch.c $(stdpre_h)
 	$(CCAUX) /Fe$(GENARCH_XE) genarch.c
 !endif
 
-$(GENCONF_XE): genconf.c $(stdpre_h)
+$(GENCONF_XE): genconf.c $(GENCONF_DEPS)
 !if $(EMX)
 	$(CCAUX) -o $(AUXGEN)genconf genconf.c
 	$(COMPDIR)\emxbind $(EMXPATH)/bin/emxl.exe $(AUXGEN)genconf $(GENCONF_XE)
@@ -488,7 +506,7 @@ $(GENCONF_XE): genconf.c $(stdpre_h)
 	$(CCAUX) /Fe$(GENCONF_XE) genconf.c
 !endif
 
-$(GENDEV_XE): gendev.c $(stdpre_h)
+$(GENDEV_XE): gendev.c $(GENDEV_DEPS)
 !if $(EMX)
 	$(CCAUX) -o $(AUXGEN)gendev gendev.c
 	$(COMPDIR)\emxbind $(EMXPATH)/bin/emxl.exe $(AUXGEN)gendev $(GENDEV_XE)
@@ -498,7 +516,17 @@ $(GENDEV_XE): gendev.c $(stdpre_h)
 	$(CCAUX) /Fe$(GENDEV_XE) gendev.c
 !endif
 
-$(GENINIT_XE): $(PSSRC)geninit.c $(stdio__h) $(string__h)
+$(GENHT_XE): $(PSSRC)genht.c $(GENHT_DEPS)
+!if $(EMX)
+	$(CCAUX) -o $(AUXGEN)genht $(GENHT_CFLAGS) $(PSSRC)genht.c
+	$(COMPDIR)\emxbind $(EMXPATH)/bin/emxl.exe $(AUXGEN)genht $(GENHT_XE)
+	del $(AUXGEN)genht
+!endif
+!if $(IBMCPP)
+	$(CCAUX) /Fe$(GENHT_XE) genht.c
+!endif
+
+$(GENINIT_XE): $(PSSRC)geninit.c $(GENINIT_DEPS)
 !if $(EMX)
 	$(CCAUX) -o $(AUXGEN)geninit $(PSSRC)geninit.c
 	$(COMPDIR)\emxbind $(EMXPATH)/bin/emxl.exe $(AUXGEN)geninit $(GENINIT_XE)
@@ -509,16 +537,18 @@ $(GENINIT_XE): $(PSSRC)geninit.c $(stdio__h) $(string__h)
 !endif
 
 # No special gconfig_.h is needed.
-$(gconfig__h): $(MAKEFILE) $(ECHOGS_XE)
+$(gconfig__h): $(TOP_MAKEFILES) $(ECHOGS_XE)
 	$(ECHOGS_XE) -w $(gconfig__h) /* This file deliberately left blank. */
 
-$(gconfigv_h): os2.mak $(MAKEFILE) $(ECHOGS_XE)
+$(gconfigv_h): os2.mak $(TOP_MAKEFILES) $(ECHOGS_XE)
 	$(ECHOGS_XE) -w $(gconfigv_h) -x 23 define USE_ASM -x 2028 -q $(USE_ASM)-0 -x 29
 	$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define USE_FPU -x 2028 -q $(FPU_TYPE)-0 -x 29
 	$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define EXTEND_NAMES 0$(EXTEND_NAMES)
 	$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define SYSTEM_CONSTANTS_ARE_WRITABLE 0$(SYSTEM_CONSTANTS_ARE_WRITABLE)
 
 # ----------------------------- Main program ------------------------------ #
+
+gsdllos2_h=$(GLSRC)gsdllos2.h
 
 # Interpreter main program
 
@@ -529,7 +559,7 @@ ICONS=gsos2.ico gspmdrv.ico
 GS_ALL=$(GLOBJ)gsdll.$(OBJ) $(INT_ALL) $(INTASM)\
   $(LIB_ALL) $(LIBCTR) $(ld_tr) $(GLGEN)lib.tr $(GS).res $(ICONS)
 
-$(GS_XE): $(GSDLL).dll dpmainc.c $(gsdll_h) gsos2.rc gscdefs.$(OBJ)
+$(GS_XE): $(GSDLL).dll dpmainc.c $(gsdll_h) $(gsdllos2_h) gsos2.rc gscdefs.$(OBJ)
 !if $(EMX)
 	$(COMPDIR)\gcc $(CGDB) $(CO) -Zomf -o$(GS_XE) dpmainc.c gscdefs.$(OBJ) gsos2.def
 !endif

@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -21,6 +21,7 @@
 #include "ghost.h"
 #include "oper.h"
 #include "gscolor.h"
+#include "gscssub.h"
 #include "gsmatrix.h"
 #include "gsstruct.h"
 #include "gxcspace.h"
@@ -38,29 +39,34 @@
 #include "igstate.h"
 #include "store.h"
 
-/* Declare a local alias for st_pattern_instance. */
-/* We do this so we can have configurations with */
-/* the base Level 2 color machinery but without patterns. */
-gs_memory_type_ptr_t zcolor2_st_pattern_instance_p = 0;
-
 /* Forward references */
 private int store_color_params(P3(os_ptr, const gs_paint_color *,
 				  const gs_color_space *));
 private int load_color_params(P3(os_ptr, gs_paint_color *,
 				 const gs_color_space *));
 
+/* Test whether a Pattern instance uses a base space. */
+inline private bool
+pattern_instance_uses_base_space(const gs_pattern_instance_t *pinst)
+{
+    return pinst->type->procs.uses_base_space(pinst->type->procs.get_pattern(pinst));
+}
+
 /* - currentcolor <param1> ... <paramN> */
 private int
-zcurrentcolor(register os_ptr op)
+zcurrentcolor(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     const gs_client_color *pc = gs_currentcolor(igs);
     const gs_color_space *pcs = gs_currentcolorspace(igs);
     int n;
 
     check_ostack(5);		/* Worst case: CMYK + pattern */
     if (pcs->type->index == gs_color_space_index_Pattern) {
+	gs_pattern_instance_t *pinst = pc->pattern;
+
 	n = 1;
-	if (pc->pattern != 0 && pc->pattern->template.PaintType == 2)	/* uncolored */
+	if (pinst != 0 && pattern_instance_uses_base_space(pinst))	/* uncolored */
 	    n += store_color_params(op, &pc->paint,
 		   (const gs_color_space *)&pcs->params.pattern.base_space);
 	op[n] = istate->pattern;
@@ -72,28 +78,33 @@ zcurrentcolor(register os_ptr op)
 
 /* - .currentcolorspace <array|int> */
 private int
-zcurrentcolorspace(register os_ptr op)
+zcurrentcolorspace(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     push(1);
-    if (r_has_type(&istate->colorspace.array, t_null)) {
+    *op = istate->colorspace.array;
+    if (r_has_type(op, t_null)) {
 	/*
 	 * Return the color space index.  This is only possible
 	 * for the parameterless color spaces.
 	 */
-	make_int(op, (int)(gs_currentcolorspace(igs)->type->index));
-    } else
-	*op = istate->colorspace.array;
+	gs_color_space_index csi = gs_currentcolorspace_index(igs);
+
+	make_int(op, (int)(csi));
+    }
     return 0;
 }
 
 /* <param1> ... <paramN> setcolor - */
 private int
-zsetcolor(register os_ptr op)
+zsetcolor(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_client_color c;
     const gs_color_space *pcs = gs_currentcolorspace(igs);
     int n, code;
-    gs_pattern_instance *pinst = 0;
+    gs_pattern_instance_t *pinst = 0;
 
     if (pcs->type->index == gs_color_space_index_Pattern) {
 	/* Make sure *op is a real Pattern. */
@@ -101,13 +112,19 @@ zsetcolor(register os_ptr op)
 
 	check_type(*op, t_dictionary);
 	check_dict_read(*op);
+	/*
+	 * We have no way to check for a subclass of st_pattern_instance,
+	 * so just make sure the structure is large enough.
+	 */
 	if (dict_find_string(op, "Implementation", &pImpl) <= 0 ||
-	    !r_has_stype(pImpl, imemory, *zcolor2_st_pattern_instance_p)
+	    !r_is_struct(pImpl) ||
+	    gs_object_size(imemory, r_ptr(pImpl, const void)) <
+	      sizeof(gs_pattern_instance_t)
 	    )
 	    return_error(e_rangecheck);
-	pinst = r_ptr(pImpl, gs_pattern_instance);
+	pinst = r_ptr(pImpl, gs_pattern_instance_t);
 	c.pattern = pinst;
-	if (pinst->template.PaintType == 2) {	/* uncolored */
+	if (pattern_instance_uses_base_space(pinst)) {	/* uncolored */
 	    if (!pcs->params.pattern.has_base_space)
 		return_error(e_rangecheck);
 	    n = load_color_params(op - 1, &c.paint,
@@ -134,8 +151,10 @@ zsetcolor(register os_ptr op)
 
 /* <array> .setcolorspace - */
 private int
-zsetcolorspace(register os_ptr op)
+zsetcolorspace(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     check_type(*op, t_array);
     istate->colorspace.array = *op;
     pop(1);

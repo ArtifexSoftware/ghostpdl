@@ -1,4 +1,4 @@
-/* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -31,24 +31,10 @@
 #include "idparam.h"
 #include "ifunc.h"
 
-/* Initialization */
-private build_function_proc(build_function_0);
-int
-zfunc0_init(gs_memory_t * mem)
-{
-    build_function_procs[0] = build_function_0;
-    return 0;
-}
-
-const op_def zfunc0_op_defs[] =
-{
-    op_def_end(zfunc0_init)
-};
-
 /* Finish building a FunctionType 0 (Sampled) function. */
-private int
-build_function_0(const_os_ptr op, const gs_function_params_t * mnDR, int depth,
-		 gs_function_t ** ppfn)
+int
+gs_build_function_0(const ref *op, const gs_function_params_t * mnDR,
+		    int depth, gs_function_t ** ppfn)
 {
     gs_function_Sd_params_t params;
     ref *pDataSource;

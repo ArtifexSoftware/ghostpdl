@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -31,28 +31,12 @@
 #include "ifunc.h"
 #include "store.h"
 
-/* Initialization */
-private build_function_proc(build_function_2);
-private build_function_proc(build_function_3);
-int
-zfunc3_init(gs_memory_t * mem)
-{
-    build_function_procs[2] = build_function_2;
-    build_function_procs[3] = build_function_3;
-    return 0;
-}
-
-const op_def zfunc3_op_defs[] =
-{
-    op_def_end(zfunc3_init)
-};
-
 /* Define the available Function types. */
 
 /* Finish building a FunctionType 2 (ExponentialInterpolation) function. */
-private int
-build_function_2(const_os_ptr op, const gs_function_params_t * mnDR, int depth,
-		 gs_function_t ** ppfn)
+int
+gs_build_function_2(const ref *op, const gs_function_params_t * mnDR,
+		    int depth, gs_function_t ** ppfn)
 {
     gs_function_ElIn_params_t params;
     int code, n0, n1;
@@ -82,9 +66,9 @@ fail:
 }
 
 /* Finish building a FunctionType 3 (1-Input Stitching) function. */
-private int
-build_function_3(const_os_ptr op, const gs_function_params_t * mnDR, int depth,
-		 gs_function_t ** ppfn)
+int
+gs_build_function_3(const ref *op, const gs_function_params_t * mnDR,
+		    int depth, gs_function_t ** ppfn)
 {
     gs_function_1ItSg_params_t params;
     int code;

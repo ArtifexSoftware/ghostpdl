@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1996, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -22,27 +22,33 @@
 #ifndef icolor_INCLUDED
 #  define icolor_INCLUDED
 
-/* Define the number of stack slots needed for zcolor_remap_one. */
-/* The client is responsible for doing check_e/ostack or the equivalent */
-/* before calling zcolor_remap_one. */
+/*
+ * Define the number of stack slots needed for zcolor_remap_one.
+ * The client is responsible for doing check_e/ostack or the equivalent
+ * before calling zcolor_remap_one.
+ */
 extern const int zcolor_remap_one_ostack;
 extern const int zcolor_remap_one_estack;
 
-/* Schedule the sampling and reloading of a cache. */
-int zcolor_remap_one(P5(const ref *, os_ptr, gx_transfer_map *,
-			const gs_state *, int (*)(P1(os_ptr))));
+/*
+ * Schedule the sampling and reloading of a cache.  Note that if
+ * zcolor_remap_one recognize the procedure as being of a special form,
+ * it may return 0 and not schedule anything.
+ */
+int zcolor_remap_one(P5(i_ctx_t *, const ref *, gx_transfer_map *,
+			const gs_state *, op_proc_t));
 
 /* Reload a cache with entries in [0..1] after sampling. */
-int zcolor_remap_one_finish(P1(os_ptr));
+int zcolor_remap_one_finish(P1(i_ctx_t *));
 
 /* Reload a cache with entries in [-1..1] after sampling. */
-int zcolor_remap_one_signed_finish(P1(os_ptr));
+int zcolor_remap_one_signed_finish(P1(i_ctx_t *));
 
 /* Recompute the effective transfer functions and invalidate the current */
 /* color after cache reloading. */
-int zcolor_reset_transfer(P1(os_ptr));
+int zcolor_reset_transfer(P1(i_ctx_t *));
 
 /* Invalidate the current color after cache reloading. */
-int zcolor_remap_color(P1(os_ptr));
+int zcolor_remap_color(P1(i_ctx_t *));
 
 #endif /* icolor_INCLUDED */

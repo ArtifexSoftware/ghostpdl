@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -19,21 +19,25 @@
 
 /* Miscellaneous LanguageLevel 3 operators */
 #include "ghost.h"
+#include "gscspace.h"		/* for gscolor2.h */
+#include "gsmatrix.h"		/* ditto */
 #include "gsclipsr.h"
+#include "gscolor2.h"
+#include "gscssub.h"
 #include "oper.h"
 #include "igstate.h"
 #include "store.h"
 
 /* - clipsave - */
 private int
-zclipsave(os_ptr op)
+zclipsave(i_ctx_t *i_ctx_p)
 {
     return gs_clipsave(igs);
 }
 
 /* - cliprestore - */
 private int
-zcliprestore(os_ptr op)
+zcliprestore(i_ctx_t *i_ctx_p)
 {
     return gs_cliprestore(igs);
 }
@@ -48,8 +52,9 @@ typedef struct ref2_s {
     ref proc1, proc2;
 } ref2_t;
 private int
-zeqproc(register os_ptr op)
+zeqproc(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     ref2_t stack[MAX_DEPTH + 1];
     ref2_t *top = stack;
 
@@ -111,6 +116,25 @@ zeqproc(register os_ptr op)
     return 0;
 }
 
+/* <index> <bool> .setsubstitutecolorspace - */
+private int
+zsetsubstitutecolorspace(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    int index, code;
+
+    check_type(*op, t_boolean);
+    check_int_leu(op[-1], 2);
+    index = (int)op[-1].value.intval;
+    code = gs_setsubstitutecolorspace(igs, index,
+				      (op->value.boolval ?
+				       gs_currentcolorspace(igs) :
+				       NULL));
+    if (code >= 0)
+	pop(2);
+    return code;
+}
+
 /* ------ Initialization procedure ------ */
 
 const op_def zmisc3_op_defs[] =
@@ -119,5 +143,6 @@ const op_def zmisc3_op_defs[] =
     {"0cliprestore", zcliprestore},
     {"0clipsave", zclipsave},
     {"2.eqproc", zeqproc},
+    {"2.setsubstitutecolorspace", zsetsubstitutecolorspace},
     op_def_end(0)
 };

@@ -1,20 +1,24 @@
 #!/bin/sh
 
 # Pre-process ANSI C files with ansi2knr before compiling.
-# Usage: ccgs "cc switches..." ...switches... -c inputfile ... -o outputfile
+# Usage: ccgs ansi2knr "cc switches..." ...switches... -c inputfile ... -o outputfile
 
 CFILE=""
 OFILE=""
+CSWITCH=""
+A2K=$1
+shift
 CMD=$1
 while [ $# -gt 1 ]
 do
 	shift
 	case "$1" in
-	-c) CFILE=$2; shift;;
+	-c) CSWITCH=$1;;
 	-o) OFILE=$2; shift;;
-	*) CMD="$CMD $1";;
+	-*) CMD="$CMD $1";;
+	*) CFILE="$CFILE $1";;
 	esac
 done
-./ansi2knr $CFILE _temp_$$.c
-$CMD -c _temp_$$.c -o $OFILE
+$A2K $CFILE _temp_$$.c
+$CMD $CSWITCH _temp_$$.c -o $OFILE
 rm -f _temp_$$.c

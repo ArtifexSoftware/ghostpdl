@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -36,7 +36,7 @@
 #include "store.h"
 
 /* Forward references */
-private int access_check(P3(os_ptr, int, bool));
+private int access_check(P3(i_ctx_t *, int, bool));
 private int convert_to_string(P2(os_ptr, os_ptr));
 
 /*
@@ -60,34 +60,11 @@ private const double max_int_real = (ALT_MAX_LONG * 1.0 + 1);
 #define ACCESS_REF(opp)\
   (r_has_type(opp, t_dictionary) ? dict_access_ref(opp) : opp)
 
-/* Initialize the table of type names. */
-private void
-ztype_init(void)
-{
-    static const char *const tnames[] = { type_name_strings };
-    ref type_names;
-    int i;
-
-    ialloc_ref_array(&type_names, a_readonly, t_next_index,
-		     "type names");
-    for (i = 0; i < t_next_index; i++) {
-	if (i >= countof(tnames) || tnames[i] == 0)
-	    make_null(&type_names.value.refs[i]);
-	else {
-	    name_enter_string(tnames[i], &type_names.value.refs[i]);
-	    r_set_attrs(&type_names.value.refs[i], a_executable);
-	}
-    }
-    if (dict_put_string(systemdict, "typenames", &type_names) < 0) {
-	lprintf("Entering typenames in systemdict failed.\n");
-	gs_exit(1);
-    }
-}
-
 /* <obj> <typenames> .type <name> */
 private int
-ztype(register os_ptr op)
+ztype(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     ref tnref;
     int code = array_get(op, (long)r_btype(op - 1), &tnref);
 
@@ -114,10 +91,37 @@ ztype(register os_ptr op)
     return 0;
 }
 
+/* - .typenames <name1|null> ... <nameN|null> */
+private int
+ztypenames(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    static const char *const tnames[] = { REF_TYPE_NAME_STRINGS };
+    int i;
+
+    check_ostack(t_next_index);
+    for (i = 0; i < t_next_index; i++) {
+	ref *const rtnp = op + 1 + i;
+
+	if (i >= countof(tnames) || tnames[i] == 0)
+	    make_null(rtnp);
+	else {
+	    int code = name_enter_string(tnames[i], rtnp);
+
+	    if (code < 0)
+		return code;
+	    r_set_attrs(rtnp, a_executable);
+	}
+    }
+    osp += t_next_index;
+    return 0;
+}
+
 /* <obj> cvlit <obj> */
 private int
-zcvlit(register os_ptr op)
+zcvlit(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     ref *aop;
 
     check_op(1);
@@ -128,8 +132,9 @@ zcvlit(register os_ptr op)
 
 /* <obj> cvx <obj> */
 int
-zcvx(register os_ptr op)
+zcvx(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     ref *aop;
     uint opidx;
 
@@ -140,7 +145,7 @@ zcvx(register os_ptr op)
      */
     if (r_has_type(op, t_operator) &&
 	((opidx = op_index(op)) == 0 ||
-	 op_def_is_internal(op_def_table[opidx]))
+	 op_def_is_internal(op_index_def(opidx)))
 	)
 	return_error(e_rangecheck);
     aop = ACCESS_REF(op);
@@ -150,8 +155,10 @@ zcvx(register os_ptr op)
 
 /* <obj> xcheck <bool> */
 private int
-zxcheck(register os_ptr op)
+zxcheck(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     check_op(1);
     make_bool(op, (r_has_attr(ACCESS_REF(op), a_executable) ? 1 : 0));
     return 0;
@@ -159,18 +166,22 @@ zxcheck(register os_ptr op)
 
 /* <obj:array|packedarray|file|string> executeonly <obj> */
 private int
-zexecuteonly(register os_ptr op)
+zexecuteonly(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     check_op(1);
     if (r_has_type(op, t_dictionary))
 	return_error(e_typecheck);
-    return access_check(op, a_execute, true);
+    return access_check(i_ctx_p, a_execute, true);
 }
 
 /* <obj:array|packedarray|dict|file|string> noaccess <obj> */
 private int
-znoaccess(register os_ptr op)
+znoaccess(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     check_op(1);
     if (r_has_type(op, t_dictionary)) {
 	/*
@@ -184,21 +195,22 @@ znoaccess(register os_ptr op)
 	    )
 	    return_error(e_invalidaccess);
     }
-    return access_check(op, 0, true);
+    return access_check(i_ctx_p, 0, true);
 }
 
 /* <obj:array|packedarray|dict|file|string> readonly <obj> */
 int
-zreadonly(register os_ptr op)
+zreadonly(i_ctx_t *i_ctx_p)
 {
-    return access_check(op, a_readonly, true);
+    return access_check(i_ctx_p, a_readonly, true);
 }
 
 /* <array|packedarray|dict|file|string> rcheck <bool> */
 private int
-zrcheck(register os_ptr op)
+zrcheck(i_ctx_t *i_ctx_p)
 {
-    int code = access_check(op, a_read, false);
+    os_ptr op = osp;
+    int code = access_check(i_ctx_p, a_read, false);
 
     if (code >= 0)
 	make_bool(op, code), code = 0;
@@ -207,9 +219,10 @@ zrcheck(register os_ptr op)
 
 /* <array|packedarray|dict|file|string> wcheck <bool> */
 private int
-zwcheck(register os_ptr op)
+zwcheck(i_ctx_t *i_ctx_p)
 {
-    int code = access_check(op, a_write, false);
+    os_ptr op = osp;
+    int code = access_check(i_ctx_p, a_write, false);
 
     if (code >= 0)
 	make_bool(op, code), code = 0;
@@ -219,8 +232,9 @@ zwcheck(register os_ptr op)
 /* <num> cvi <int> */
 /* <string> cvi <int> */
 private int
-zcvi(register os_ptr op)
+zcvi(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     float fval;
 
     switch (r_type(op)) {
@@ -237,7 +251,7 @@ zcvi(register os_ptr op)
 		int code;
 
 		ref_assign(&str, op);
-		code = scan_string_token(&str, &token);
+		code = scan_string_token(i_ctx_p, &str, &token);
 		switch (code) {
 		    case scan_EOF:	/* no tokens */
 		    case scan_BOS:	/* not allowed */
@@ -266,8 +280,10 @@ zcvi(register os_ptr op)
 
 /* <string> cvn <name> */
 private int
-zcvn(register os_ptr op)
+zcvn(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     check_read_type(*op, t_string);
     return name_from_string(op, op);
 }
@@ -275,8 +291,10 @@ zcvn(register os_ptr op)
 /* <num> cvr <real> */
 /* <string> cvr <real> */
 private int
-zcvr(register os_ptr op)
+zcvr(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     switch (r_type(op)) {
 	case t_integer:
 	    make_real(op, op->value.intval);
@@ -290,7 +308,7 @@ zcvr(register os_ptr op)
 		int code;
 
 		ref_assign(&str, op);
-		code = scan_string_token(&str, &token);
+		code = scan_string_token(i_ctx_p, &str, &token);
 		switch (code) {
 		    case scan_EOF:	/* no tokens */
 		    case scan_BOS:	/* not allowed */
@@ -315,8 +333,9 @@ zcvr(register os_ptr op)
 
 /* <num> <radix_int> <string> cvrs <substring> */
 private int
-zcvrs(register os_ptr op)
+zcvrs(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int radix;
 
     check_type(op[-1], t_integer);
@@ -379,8 +398,9 @@ zcvrs(register os_ptr op)
 
 /* <any> <string> cvs <substring> */
 private int
-zcvs(register os_ptr op)
+zcvs(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     int code;
 
     check_op(2);
@@ -407,9 +427,10 @@ const op_def ztype_op_defs[] =
     {"1rcheck", zrcheck},
     {"1readonly", zreadonly},
     {"2.type", ztype},
+    {"0.typenames", ztypenames},
     {"1wcheck", zwcheck},
     {"1xcheck", zxcheck},
-    op_def_end(ztype_init)
+    op_def_end(0)
 };
 
 /* ------ Internal routines ------ */
@@ -421,10 +442,11 @@ const op_def ztype_op_defs[] =
 /* Return an error code if the object is not of appropriate type, */
 /* or if the object did not have the access already when modify=1. */
 private int
-access_check(os_ptr op,
+access_check(i_ctx_t *i_ctx_p,
 	     int access,	/* mask for attrs */
 	     bool modify)	/* if true, reduce access */
 {
+    os_ptr op = osp;
     ref *aop;
 
     switch (r_type(op)) {

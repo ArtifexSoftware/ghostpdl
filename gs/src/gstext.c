@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -92,15 +92,18 @@ RELOC_PTRS_END
 
 #define eptr ((gs_text_enum_t *)vptr)
 
-private ENUM_PTRS_BEGIN(text_enum_enum_ptrs) ENUM_USING(st_gs_text_params, &eptr->text, sizeof(eptr->text), index - 1);
-case 0:
-return ENUM_OBJ(gx_device_enum_ptr(eptr->dev));
+private ENUM_PTRS_BEGIN(text_enum_enum_ptrs) ENUM_USING(st_gs_text_params, &eptr->text, sizeof(eptr->text), index - 7);
+case 0: return ENUM_OBJ(gx_device_enum_ptr(eptr->dev));
+ENUM_PTR3(1, gs_text_enum_t, pis, orig_font, path);
+ENUM_PTR3(4, gs_text_enum_t, pdcolor, pcpath, current_font);
 ENUM_PTRS_END
 
 private RELOC_PTRS_BEGIN(text_enum_reloc_ptrs)
 {
     RELOC_USING(st_gs_text_params, &eptr->text, sizeof(eptr->text));
     gx_device_reloc_ptr(eptr->dev, gcst);
+    RELOC_PTR3(gs_text_enum_t, pis, orig_font, path);
+    RELOC_PTR3(gs_text_enum_t, pdcolor, pcpath, current_font);
 }
 RELOC_PTRS_END
 
@@ -121,18 +124,27 @@ gx_device_text_begin(gx_device * dev, gs_imager_state * pis,
 	gx_path *tpath =
 	    ((text->operation & TEXT_DO_NONE) &&
 	     !(text->operation & TEXT_RETURN_WIDTH) ? 0 : path);
-	int code =
-	    (*dev_proc(dev, text_begin))
-	    (dev, pis, text, font, tpath,
-	     (text->operation & TEXT_DO_DRAW ? pdcolor : 0),
-	     (text->operation & TEXT_DO_DRAW ? pcpath : 0),
-	     mem, ppte);
+	const gx_device_color *tcolor =
+	    (text->operation & TEXT_DO_DRAW ? pdcolor : 0);
+	const gx_clip_path *tcpath =
+	    (text->operation & TEXT_DO_DRAW ? pcpath : 0);
+	int code = dev_proc(dev, text_begin)
+	    (dev, pis, text, font, tpath, tcolor, tcpath, mem, ppte);
 	gs_text_enum_t *pte = *ppte;
 
 	if (code < 0)
 	    return code;
 	pte->text = *text;
 	pte->dev = dev;
+	pte->pis = pis;
+	pte->orig_font = font;
+	pte->path = tpath;
+	pte->pdcolor = tcolor;
+	pte->pcpath = tcpath;
+	pte->memory = mem;
+	/* text_begin procedure sets procs, rc */
+	pte->current_font = font;
+	pte->scale.x = pte->scale.y = 0;
 	pte->index = 0;
 	return code;
     }
@@ -228,16 +240,17 @@ gs_kshow_begin(gs_state * pgs, const byte * str, uint size,
 int
 gs_xyshow_begin(gs_state * pgs, const byte * str, uint size,
 		const float *x_widths, const float *y_widths,
-		gs_memory_t * mem, gs_text_enum_t ** ppte)
+		uint widths_size, gs_memory_t * mem, gs_text_enum_t ** ppte)
 {
     gs_text_params_t text;
 
     text.operation = TEXT_FROM_STRING |
 	TEXT_REPLACE_X_WIDTHS | TEXT_REPLACE_Y_WIDTHS |
-	TEXT_DO_DRAW | TEXT_INTERVENE | TEXT_RETURN_WIDTH;
+	TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
     text.data.bytes = str, text.size = size;
     text.x_widths = x_widths;
     text.y_widths = y_widths;
+    text.widths_size = widths_size;
     return gs_text_begin(pgs, &text, mem, ppte);
 }
 int
@@ -246,9 +259,9 @@ gs_glyphshow_begin(gs_state * pgs, gs_glyph glyph,
 {
     gs_text_params_t text;
 
-    /****** SET glyphs ******/
+    text.operation = TEXT_FROM_SINGLE_GLYPH | TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
+    text.data.d_glyph = glyph;
     text.size = 1;
-    text.operation = TEXT_FROM_GLYPHS | TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
     return gs_text_begin(pgs, &text, mem, ppte);
 }
 int
@@ -299,9 +312,9 @@ gs_glyphpath_begin(gs_state * pgs, gs_glyph glyph, bool stroke_path,
 {
     gs_text_params_t text;
 
-    text.operation = TEXT_FROM_GLYPHS | TEXT_RETURN_WIDTH |
+    text.operation = TEXT_FROM_SINGLE_GLYPH | TEXT_RETURN_WIDTH |
 	(stroke_path ? TEXT_DO_TRUE_CHARPATH : TEXT_DO_FALSE_CHARPATH);
-    /****** SET glyphs ******/
+    text.data.d_glyph = glyph;
     text.size = 1;
     return gs_text_begin(pgs, &text, mem, ppte);
 }

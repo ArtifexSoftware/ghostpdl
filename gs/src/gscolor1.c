@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1992, 1993, 1994, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1992, 1993, 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -23,6 +23,7 @@
 #include "gsstruct.h"
 #include "gsutil.h"		/* for gs_next_ids */
 #include "gsccolor.h"
+#include "gscssub.h"
 #include "gxcspace.h"
 #include "gxdcconv.h"
 #include "gxdevice.h"		/* for gx_color_index */
@@ -39,21 +40,6 @@ void gx_set_effective_transfer(P1(gs_state *));
 /* Force a parameter into the range [0.0..1.0]. */
 #define FORCE_UNIT(p) (p < 0.0 ? 0.0 : p > 1.0 ? 1.0 : p)
 
-/* Define the CMYK color space type. */
-extern cs_proc_remap_color(gx_remap_DeviceCMYK);
-extern cs_proc_concretize_color(gx_concretize_DeviceCMYK);
-extern cs_proc_remap_concrete_color(gx_remap_concrete_DCMYK);
-const gs_color_space_type gs_color_space_type_DeviceCMYK = {
-    gs_color_space_index_DeviceCMYK, true, true,
-    &st_base_color_space, gx_num_components_4,
-    gx_no_base_space,
-    gx_init_paint_4, gx_restrict01_paint_4,
-    gx_same_concrete_space,
-    gx_concretize_DeviceCMYK, gx_remap_concrete_DCMYK,
-    gx_remap_DeviceCMYK, gx_no_install_cspace,
-    gx_no_adjust_cspace_count, gx_no_adjust_color_count
-};
-
 /* setcmykcolor */
 int
 gs_setcmykcolor(gs_state * pgs, floatp c, floatp m, floatp y, floatp k)
@@ -62,13 +48,14 @@ gs_setcmykcolor(gs_state * pgs, floatp c, floatp m, floatp y, floatp k)
 
     if (pgs->in_cachedevice)
 	return_error(gs_error_undefined);
-    cs_adjust_counts(pgs, -1);
+    gs_cspace_assign(pgs->color_space, gs_current_DeviceCMYK_space(pgs));
+    pgs->orig_cspace_index = pgs->orig_base_cspace_index =
+	gs_color_space_index_DeviceCMYK;
     pcc->paint.values[0] = FORCE_UNIT(c);
     pcc->paint.values[1] = FORCE_UNIT(m);
     pcc->paint.values[2] = FORCE_UNIT(y);
     pcc->paint.values[3] = FORCE_UNIT(k);
     pcc->pattern = 0;		/* for GC */
-    pgs->color_space->type = &gs_color_space_type_DeviceCMYK;
     gx_unset_dev_color(pgs);
     return 0;
 }
@@ -81,10 +68,11 @@ gs_currentcmykcolor(const gs_state * pgs, float pr4[4])
     const gs_color_space *pcs = pgs->color_space;
     const gs_color_space *pbcs = pcs;
     const gs_imager_state *const pis = (const gs_imager_state *)pgs;
+    gs_color_space_index csi = pgs->orig_cspace_index;
     frac fcc[4];
     gs_client_color cc;
 
-  sw:switch (pbcs->type->index) {
+  sw:switch (csi) {
 	case gs_color_space_index_DeviceGray:
 	    pr4[0] = pr4[1] = pr4[2] = 0.0;
 	    pr4[3] = 1.0 - pcc->paint.values[0];
@@ -127,6 +115,7 @@ gs_currentcmykcolor(const gs_state * pgs, float pr4[4])
 	    cc.paint.values[3] = frac2float(fcc[3]);
 	    pcc = &cc;
 	    pcs = pbcs;
+	    csi = pgs->orig_base_cspace_index;
 	    goto sw;
 	default:
 	    break;

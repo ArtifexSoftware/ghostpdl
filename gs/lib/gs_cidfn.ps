@@ -258,22 +258,32 @@ currentdict end
 /.readglyphdata {	% <cid> .readglyphdata <subfont> <string|null>
   currentdict /GlyphDirectory .knownget {
     dup type /arraytype eq {
-      1 index exch get
+      1 index get
     } {
-      1 index exch .knownget not { null } if
+      1 index .knownget not { null } if
     } ifelse
-    dup null eq {
+			% Stack: cid string|null
+    dup null ne { exch pop .readgdirdata } { pop .readbytedata } ifelse
+  } {
+			% Stack: cid
+    .readbytedata
+  } ifelse
+} bind def
+/.readgdirdata {	% <string|null> .readgdirdata <subfont> <string|null>
+  dup null eq {
+    FDepVector 0 get exch
+  } {
+    FDBytes 0 eq {
       FDepVector 0 get exch
     } {
-      FDBytes 0 eq {
-	FDepVector 0 get exch
-      } {
 			% Note: FDBytes > 1 is not supported.
-	dup 0 get FDepVector exch get
-	exch dup length 1 sub 1 exch getinterval
-      }	ifelse
-    } ifelse
-  } {
+      dup 0 get FDepVector exch get
+      exch dup length 1 sub 1 exch getinterval
+    }	ifelse
+  } ifelse
+} bind def
+/.readbytedata {	% <cid> .readbytedata <subfont> <string|null>
+  dup dup 0 ge exch CIDCount lt and {
     FDBytes GDBytes add mul CIDMapOffset add
     dup FDBytes .readint exch
     FDBytes add dup GDBytes .readint
@@ -287,7 +297,9 @@ currentdict end
       dup /CharStrings get gcheck .currentglobal exch .setglobal
 			% Stack: pos len subfont global
       4 2 roll string ReadString exch .setglobal
-    } ifelse  
+    } ifelse
+  } {
+    pop FDepVector 0 get null
   } ifelse
 } bind def
 
@@ -309,7 +321,7 @@ currentdict end
 % next dictionary on the stack.
 /.loadsubrs {
   currentdict /SubrMapOffset .knownget {
-    Subrs 0 get null ne {
+    Subrs length 0 eq { true } { Subrs 0 get null ne } ifelse {
       pop		% We've already loaded the Subrs.
     } {
       currentglobal exch currentdict gcheck setglobal
@@ -338,10 +350,10 @@ currentdict end
 (%Type9BuildGlyph) cvn {	% <cidfont> <cid> %Type9BuildGlyph -
   .currentglobal 3 1 roll 1 index gcheck .setglobal
   1 index begin
-  dup .readglyphdata dup null eq
-   { %**** HANDLE NOTDEF ****
-   }
-  if
+  dup .readglyphdata dup null eq {
+		% Substitute CID 0. **** WRONG ****
+    pop pop 0 .readglyphdata
+  } if
 			% Stack: cidfont cid subfont charstring
 dup null eq { pop pop pop pop } {	%**** WRONG ****
   4 -1 roll pop
@@ -373,23 +385,7 @@ dup null eq { pop pop pop pop } {	%**** WRONG ****
     exch pop
   } ifelse .cvbsi
 			% Stack: cidfont cid glyphindex
-%**************** GlyphDirectory is not supported yet.
-(
-  currentdict /GlyphDirectory .knownget
-) pop false
-   { dup type /arraytype eq
-      { 1 index exch get }
-      { 1 index exch .knownget not { null } if }
-     ifelse
-     dup null eq
-      { %**** HANDLE NOTDEF
-      }
-     if
-     1 index exch .type42execchar
-   }
-   { 1 index exch .type42execchar
-   }
-  ifelse
+  1 index exch .type42execchar
   end
   .setglobal
 } bind def

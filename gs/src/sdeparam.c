@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -19,7 +19,7 @@
 
 /* DCTEncode filter parameter setting and reading */
 #include "memory_.h"
-#include "jpeglib.h"
+#include "jpeglib_.h"
 #include "gserror.h"
 #include "gserrors.h"
 #include "gstypes.h"

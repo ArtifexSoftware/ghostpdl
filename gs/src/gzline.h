@@ -24,9 +24,13 @@
 
 #include "gxline.h"
 
-#define private_st_line_params() /* in gsstate.c */\
-  gs_private_st_ptrs1(st_line_params, gx_line_params, "line_params",\
-    line_params_enum_ptrs, line_params_reloc_ptrs, dash.pattern)
+/*
+ * The GC procedures are complex because we must not attempt to follow
+ * the pattern pointer iff the pattern size is 0.
+ */
+#define private_st_line_params() /* in gsistate.c */\
+  gs_private_st_complex_only(st_line_params, gx_line_params, "line_params",\
+    0, line_params_enum_ptrs, line_params_reloc_ptrs, 0)
 #define st_line_params_num_ptrs 1
 
 /* Internal accessor for line parameters in graphics state */

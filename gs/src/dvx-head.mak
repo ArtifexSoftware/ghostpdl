@@ -29,14 +29,18 @@ PLATFORM=dvx_
 
 # Define the syntax for command, object, and executable files.
 
+# Work around the fact that some `make' programs drop trailing spaces
+# or interpret == as a special definition operator.
+NULL=
+
 CMD=.bat
+D_=-D
+_D_=$(NULL)=
+_D=
 I_=-I
 II=-I
 _I=
-# There should be a <space> at the end of the definition of O_,
-# but we have to work around the fact that some `make' programs
-# drop trailing spaces in macro definitions.
-NULL=
+NO_OP=@:
 O_=-o $(NULL)
 OBJ=o
 XE=.exe
@@ -49,7 +53,6 @@ D=\\
 EXP=
 SHELL=
 SH=
-SHP=
 
 # Define generic commands.
 

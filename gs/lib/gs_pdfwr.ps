@@ -182,6 +182,19 @@ currentdict /.pdfmarkparams .undef
  { .distillerdevice //.distillerparamkeys .getdeviceparams .dicttomark
  } odef
 
+% Patch 'where' so that the distillerparams operators are only visible
+% if the pdfwrite device is the current one, for the benefit of badly
+% designed PostScript files that "know" they have to do something different
+% if a distiller is processing them.
+.wheredict /currentdistillerparams {
+  currentdevice .devicename /pdfwrite eq {
+    .where
+  } {
+    .where pop dup //systemdict eq { pop false } { true } ifelse
+  } ifelse
+} bind put
+.wheredict /setdistillerparams .wheredict /currentdistillerparams get put
+
 % Patch the 'show' operators to pass the data to the device.
 % We use pseudo-parameters named /show and /showxxx to pass the data,
 % as documented in gdevpdft.c.  THIS IS A HACK.
@@ -338,6 +351,7 @@ currentdict /.pdfmarkparams .undef
 /.pdfshow		% <string> -mark- {<cx> <cy> <char>} {<ax> <ay>}
 			%   <showproc> .pdfshow -
  { counttomark 2 add 1 roll .pdfwrite?
+			% Stack: showproc string -mark- ...params... pdfwrite?
     { .pdfdoshow }
     { cleartomark pop false }
    ifelse

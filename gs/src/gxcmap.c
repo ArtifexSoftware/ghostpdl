@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -151,8 +151,14 @@ private const gx_color_map_procs *const cmap_many[] =
 };
 
 /* Determine the color mapping procedures for a device. */
+/* Note that the default procedure doesn't consult the imager state. */
 const gx_color_map_procs *
-gx_device_cmap_procs(const gx_device * dev)
+gx_get_cmap_procs(const gs_imager_state *pis, const gx_device * dev)
+{
+    return (pis->get_cmap_procs)(pis, dev);
+}
+const gx_color_map_procs *
+gx_default_get_cmap_procs(const gs_imager_state *pis, const gx_device * dev)
 {
     return (gx_device_must_halftone(dev) ? cmap_few : cmap_many)
 	[dev->color_info.num_components];
@@ -162,7 +168,7 @@ gx_device_cmap_procs(const gx_device * dev)
 void
 gx_set_cmap_procs(gs_imager_state * pis, const gx_device * dev)
 {
-    pis->cmap_procs = gx_device_cmap_procs(dev);
+    pis->cmap_procs = gx_get_cmap_procs(pis, dev);
 }
 
 /* Remap the color in the graphics state. */
@@ -207,15 +213,14 @@ gx_default_remap_color(const gs_client_color * pcc, const gs_color_space * pcs,
 	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
 		       gs_color_select_t select)
 {
-    frac conc[4];
+    frac conc[GS_CLIENT_COLOR_MAX_COMPONENTS];
     const gs_color_space *pconcs;
-    int code = (*pcs->type->concretize_color) (pcc, pcs, conc, pis);
+    int code = (*pcs->type->concretize_color)(pcc, pcs, conc, pis);
 
     if (code < 0)
 	return code;
     pconcs = cs_concrete_space(pcs, pis);
-    return (*pconcs->type->remap_concrete_color) (conc, pdc, pis, dev,
-						  select);
+    return (*pconcs->type->remap_concrete_color)(conc, pdc, pis, dev, select);
 }
 
 /* Color remappers for the standard color spaces. */
@@ -691,6 +696,13 @@ cmap_rgb_alpha_to_cmyk(frac r, frac g, frac b, frac alpha,
 
 /* ------ Transfer function mapping ------ */
 
+/* Define an identity transfer function. */
+float
+gs_identity_transfer(floatp value, const gx_transfer_map * pmap)
+{
+    return value;
+}
+
 /* Define the generic transfer function for the library layer. */
 /* This just returns what's already in the map. */
 float
@@ -805,12 +817,10 @@ gx_default_rgb_map_rgb_color(gx_device * dev,
 	    ((uint) gx_color_value_to_byte(g) << 8) +
 	    ((ulong) gx_color_value_to_byte(r) << 16);
     else {
-	uint bits_per_color = dev->color_info.depth / 3;
-	ulong max_value = (1 << bits_per_color) - 1;
+	int bpc = dev->color_info.depth / 3;
+	int drop = sizeof(gx_color_value) * 8 - bpc;
 
-	return ((r * max_value / gx_max_color_value) << (bits_per_color * 2)) +
-	    ((g * max_value / gx_max_color_value) << (bits_per_color)) +
-	    (b * max_value / gx_max_color_value);
+	return ((((r >> drop) << bpc) + (g >> drop)) << bpc) + (b >> drop);
     }
 }
 

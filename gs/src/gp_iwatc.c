@@ -176,4 +176,3 @@ gp_fopen(const char *fname, const char *mode)
 {
     return fopen(fname, mode);
 }
-

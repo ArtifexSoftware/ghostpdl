@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1992, 1993 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1992, 1993, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -30,8 +30,9 @@
 
 /* <int> array <array> */
 int
-zarray(register os_ptr op)
+zarray(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     uint size;
     int code;
 
@@ -46,8 +47,9 @@ zarray(register os_ptr op)
 
 /* <array> aload <obj_0> ... <obj_n-1> <array> */
 private int
-zaload(register os_ptr op)
+zaload(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     ref aref;
     uint asize;
 
@@ -85,8 +87,9 @@ zaload(register os_ptr op)
 
 /* <obj_0> ... <obj_n-1> <array> astore <array> */
 private int
-zastore(register os_ptr op)
+zastore(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     uint size;
     int code;
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -20,7 +20,7 @@
 /* DCTDecode filter creation */
 #include "memory_.h"
 #include "stdio_.h"		/* for jpeglib.h */
-#include "jpeglib.h"
+#include "jpeglib_.h"
 #include "ghost.h"
 #include "oper.h"
 #include "gsmalloc.h"		/* for gs_memory_default */
@@ -37,8 +37,9 @@ stream_state_proc_put_params(s_DCTD_put_params, stream_DCT_state);
 /* <source> <dict> DCTDecode/filter <file> */
 /* <source> DCTDecode/filter <file> */
 private int
-zDCTD(os_ptr op)
+zDCTD(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     gs_memory_t *mem = &gs_memory_default;
     stream_DCT_state state;
     dict_param_list list;
@@ -72,7 +73,7 @@ zDCTD(os_ptr op)
 	goto rel;
     /* Create the filter. */
     jddp->template = s_DCTD_template;
-    code = filter_read(op, npop, &jddp->template,
+    code = filter_read(i_ctx_p, npop, &jddp->template,
 		       (stream_state *) & state, dspace);
     if (code >= 0)		/* Success! */
 	return code;

@@ -1,4 +1,4 @@
-#    Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -22,13 +22,16 @@
 
 ####### The following are the only parts of the file you should need to edit.
 
-# Define the source, generated intermediate file, and object directories
+# Define the directory for the final executable, and the
+# source, generated intermediate file, and object directories
 # for the graphics library (GL) and the PostScript/PDF interpreter (PS).
 
-GLSRCDIR=.
+BINDIR=./bin
+GLSRCDIR=./src
 GLGENDIR=./obj
 GLOBJDIR=./obj
-PSSRCDIR=.
+PSSRCDIR=./src
+PSLIBDIR=./lib
 PSGENDIR=./obj
 PSOBJDIR=./obj
 
@@ -37,9 +40,10 @@ PSOBJDIR=./obj
 #include $(COMMONDIR)/ansidefs.mak
 #include $(COMMONDIR)/unixdefs.mak
 #include $(COMMONDIR)/generic.mak
-GLSRC=$(GLSRCDIR)/
-include $(GLSRC)version.mak
-PSSRC=$(PSSRCDIR)/
+include $(GLSRCDIR)/version.mak
+DD=$(GLGENDIR)/
+GLD=$(GLGENDIR)/
+PSD=$(PSGENDIR)/
 
 # ------ Generic options ------ #
 
@@ -71,7 +75,7 @@ GS_DOCDIR=$(docdir)
 # Define the default directory/ies for the runtime initialization and
 # font files.  Separate multiple directories with a :.
 
-GS_LIB_DEFAULT=$(gsdatadir):$(gsdir)/fonts
+GS_LIB_DEFAULT=$(gsdatadir)/lib:$(gsdir)/fonts
 
 # Define whether or not searching for initialization files should always
 # look in the current directory first.  This leads to well-known security
@@ -134,7 +138,7 @@ JPEG_NAME=jpeg
 # See libpng.mak for more information.
 
 PSRCDIR=libpng
-PVERSION=96
+PVERSION=10003
 
 # Choose whether to use a shared version of the PNG library, and if so,
 # what its name is.
@@ -162,10 +166,6 @@ ZLIB_NAME=z
 AR=ar
 ARFLAGS=qc
 RANLIB=ranlib
-
-# Define the configuration ID.  Read gs.mak carefully before changing this.
-
-CONFIG=
 
 # ------ Platform-specific options ------ #
 
@@ -214,6 +214,7 @@ LDFLAGS=$(XLDFLAGS)
 # ISC Unix 2.2 wants -linet.
 # SCO Unix needs -lsocket if you aren't including the X11 driver.
 # SVR4 may need -lnsl.
+# Solaris may need -lnsl -lsocket -lposix4.
 # (Libraries required by individual drivers are handled automatically.)
 
 EXTRALIBS=
@@ -255,11 +256,17 @@ XLIBS=Xt Xext X11
 
 FPU_TYPE=1
 
+# Define the .dev module that implements thread and synchronization
+# primitives for this platform.  Don't change this unless you really know
+# what you're doing.
+
+SYNC=posync
+
 # ------ Devices and features ------ #
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
-FEATURE_DEVS=psl3.dev pdf.dev ttfont.dev pipe.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)pipe.dev
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
@@ -285,29 +292,35 @@ FILE_IMPLEMENTATION=stdio
 # Choose the device(s) to include.  See devs.mak for details,
 # devs.mak and contrib.mak for the list of available devices.
 
-DEVICE_DEVS=x11.dev x11alpha.dev x11cmyk.dev x11mono.dev
+DEVICE_DEVS=$(DD)x11.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev $(DD)x11mono.dev
 DEVICE_DEVS1=
 DEVICE_DEVS2=
-DEVICE_DEVS3=deskjet.dev djet500.dev laserjet.dev ljetplus.dev ljet2p.dev ljet3.dev ljet4.dev
-DEVICE_DEVS4=cdeskjet.dev cdjcolor.dev cdjmono.dev cdj550.dev pj.dev pjxl.dev pjxl300.dev
-DEVICE_DEVS5=uniprint.dev
-DEVICE_DEVS6=bj10e.dev bj200.dev bjc600.dev bjc800.dev
-DEVICE_DEVS7=faxg3.dev faxg32d.dev faxg4.dev
-DEVICE_DEVS8=jpeg.dev jpeggray.dev pcxmono.dev pcxgray.dev pcx16.dev pcx256.dev pcx24b.dev
-DEVICE_DEVS9=pbm.dev pbmraw.dev pgm.dev pgmraw.dev pgnm.dev pgnmraw.dev pnm.dev pnmraw.dev ppm.dev ppmraw.dev
-DEVICE_DEVS10=tiffcrle.dev tiffg3.dev tiffg32d.dev tiffg4.dev tifflzw.dev tiffpack.dev
-DEVICE_DEVS11=tiff12nc.dev tiff24nc.dev
-DEVICE_DEVS12=psmono.dev psgray.dev bit.dev bitrgb.dev bitcmyk.dev
-DEVICE_DEVS13=pngmono.dev pnggray.dev png16.dev png256.dev png16m.dev
+DEVICE_DEVS3=$(DD)deskjet.dev $(DD)djet500.dev $(DD)laserjet.dev $(DD)ljetplus.dev $(DD)ljet2p.dev $(DD)ljet3.dev $(DD)ljet3d.dev $(DD)ljet4.dev $(DD)ljet4d.dev
+DEVICE_DEVS4=$(DD)cdeskjet.dev $(DD)cdjcolor.dev $(DD)cdjmono.dev $(DD)cdj550.dev $(DD)pj.dev $(DD)pjxl.dev $(DD)pjxl300.dev
+DEVICE_DEVS5=$(DD)uniprint.dev
+DEVICE_DEVS6=$(DD)bj10e.dev $(DD)bj200.dev $(DD)bjc600.dev $(DD)bjc800.dev
+DEVICE_DEVS7=$(DD)faxg3.dev $(DD)faxg32d.dev $(DD)faxg4.dev
+DEVICE_DEVS8=$(DD)jpeg.dev $(DD)jpeggray.dev $(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcx16.dev $(DD)pcx256.dev $(DD)pcx24b.dev
+DEVICE_DEVS9=$(DD)pbm.dev $(DD)pbmraw.dev $(DD)pgm.dev $(DD)pgmraw.dev $(DD)pgnm.dev $(DD)pgnmraw.dev $(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev
+DEVICE_DEVS10=$(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev $(DD)tifflzw.dev $(DD)tiffpack.dev
+DEVICE_DEVS11=$(DD)tiff12nc.dev $(DD)tiff24nc.dev
+DEVICE_DEVS12=$(DD)psmono.dev $(DD)psgray.dev $(DD)bit.dev $(DD)bitrgb.dev $(DD)bitcmyk.dev
+DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev
 DEVICE_DEVS14=
-DEVICE_DEVS15=pdfwrite.dev pswrite.dev epswrite.dev pxlmono.dev pxlcolor.dev
+DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)epswrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev
+DEVICE_DEVS16=
+DEVICE_DEVS17=
+DEVICE_DEVS18=
+DEVICE_DEVS19=
+DEVICE_DEVS20=
 
 # ---------------------------- End of options --------------------------- #
 
 # Define the name of the partial makefile that specifies options --
 # used in dependencies.
 
-MAKEFILE=unixansi.mak
+MAKEFILE=$(GLSRCDIR)/unixansi.mak
+TOP_MAKEFILES=$(MAKEFILE) $(GLSRCDIR)/unixhead.mak
 
 # Define the ANSI-to-K&R dependency (none for ANSI compilers).
 
@@ -319,19 +332,22 @@ CCFLAGS=$(GENOPT) $(CFLAGS)
 CC_=$(CC) $(CCFLAGS)
 CCAUX=$(CC)
 CC_LEAF=$(CC_)
+CC_LEAF_PG=$(CC_)
 
 # ---------------- End of platform-specific section ---------------- #
 
-include $(GLSRC)unixhead.mak
-include $(GLSRC)gs.mak
-include $(GLSRC)lib.mak
-include $(PSSRC)int.mak
-include $(GLSRC)jpeg.mak
+include $(GLSRCDIR)/unixhead.mak
+include $(GLSRCDIR)/gs.mak
+include $(GLSRCDIR)/lib.mak
+include $(PSSRCDIR)/int.mak
+include $(PSSRCDIR)/cfonts.mak
+include $(GLSRCDIR)/jpeg.mak
 # zlib.mak must precede libpng.mak
-include $(GLSRC)zlib.mak
-include $(GLSRC)libpng.mak
-include $(GLSRC)devs.mak
-include $(GLSRC)contrib.mak
-include $(GLSRC)unixtail.mak
-include $(GLSRC)unix-end.mak
-include $(GLSRC)unixinst.mak
+include $(GLSRCDIR)/zlib.mak
+include $(GLSRCDIR)/libpng.mak
+include $(GLSRCDIR)/devs.mak
+include $(GLSRCDIR)/contrib.mak
+include $(GLSRCDIR)/unix-aux.mak
+include $(GLSRCDIR)/unixlink.mak
+include $(GLSRCDIR)/unix-end.mak
+include $(GLSRCDIR)/unixinst.mak

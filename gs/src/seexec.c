@@ -146,12 +146,20 @@ s_exD_process(stream_state * st, stream_cursor_read * pr,
     } else {
 	/*
 	 * We only ignore leading whitespace, in an attempt to
-	 * keep from reading beyond the end of the encrypted data.
+	 * keep from reading beyond the end of the encrypted data;
+	 * but some badly coded files require us to ignore % also.
 	 */
-	status = s_hex_process(pr, pw, &ss->odd,
+hp:	status = s_hex_process(pr, pw, &ss->odd,
 			       hex_ignore_leading_whitespace);
-	p = q;
 	count = pw->ptr - q;
+	if (status < 0 && ss->odd < 0) {
+	    if (count) {
+		--p;
+		status = 0;	/* reprocess error next time */
+	    } else if (*p == '%')
+		goto hp;	/* ignore % */
+	}
+	p = q;
     }
     if (skip >= count && skip != 0) {
 	gs_type1_decrypt(q + 1, p + 1, count,

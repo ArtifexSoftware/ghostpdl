@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1992, 1993, 1994, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1992, 1993, 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -23,6 +23,7 @@
 #include "gsstruct.h"
 #include "gsutil.h"		/* for gs_next_ids */
 #include "gsccolor.h"
+#include "gscssub.h"
 #include "gxcspace.h"
 #include "gxdcconv.h"
 #include "gxdevice.h"		/* for gx_color_index */
@@ -111,11 +112,15 @@ void load_transfer_map(P3(gs_state *, gx_transfer_map *, floatp));
 int
 gs_setgray(gs_state * pgs, floatp gray)
 {
+    gs_client_color *pcc = pgs->ccolor;
+
     if (pgs->in_cachedevice)
 	return_error(gs_error_undefined);
-    cs_adjust_counts(pgs, -1);
-    pgs->ccolor->paint.values[0] = FORCE_UNIT(gray);
-    pgs->color_space->type = &gs_color_space_type_DeviceGray;
+    gs_cspace_assign(pgs->color_space, gs_current_DeviceGray_space(pgs));
+    pgs->orig_cspace_index = pgs->orig_base_cspace_index =
+	gs_color_space_index_DeviceGray;
+    pcc->paint.values[0] = FORCE_UNIT(gray);
+    pcc->pattern = 0;		/* for GC */
     gx_unset_dev_color(pgs);
     return 0;
 }
@@ -127,7 +132,7 @@ gs_currentgray(const gs_state * pgs)
     const gs_client_color *pcc = pgs->ccolor;
     const gs_imager_state *const pis = (const gs_imager_state *)pgs;
 
-    switch (pgs->color_space->type->index) {
+    switch (pgs->orig_cspace_index) {
 	case gs_color_space_index_DeviceGray:
 	    return pcc->paint.values[0];
 	case gs_color_space_index_DeviceRGB:
@@ -170,12 +175,13 @@ gs_setrgbcolor(gs_state * pgs, floatp r, floatp g, floatp b)
 
     if (pgs->in_cachedevice)
 	return_error(gs_error_undefined);
-    cs_adjust_counts(pgs, -1);
+    gs_cspace_assign(pgs->color_space, gs_current_DeviceRGB_space(pgs));
+    pgs->orig_cspace_index = pgs->orig_base_cspace_index =
+	gs_color_space_index_DeviceRGB;
     pcc->paint.values[0] = FORCE_UNIT(r);
     pcc->paint.values[1] = FORCE_UNIT(g);
     pcc->paint.values[2] = FORCE_UNIT(b);
     pcc->pattern = 0;		/* for GC */
-    pgs->color_space->type = &gs_color_space_type_DeviceRGB;
     gx_unset_dev_color(pgs);
     return 0;
 }
@@ -188,10 +194,11 @@ gs_currentrgbcolor(const gs_state * pgs, float pr3[3])
     const gs_color_space *pcs = pgs->color_space;
     const gs_color_space *pbcs = pcs;
     const gs_imager_state *const pis = (const gs_imager_state *)pgs;
+    gs_color_space_index csi = pgs->orig_cspace_index;
     frac fcc[4];
     gs_client_color cc;
 
-  sw:switch (pbcs->type->index) {
+  sw:switch (csi) {
 	case gs_color_space_index_DeviceGray:
 	    pr3[0] = pr3[1] = pr3[2] = pcc->paint.values[0];
 	    return 0;
@@ -233,6 +240,7 @@ gs_currentrgbcolor(const gs_state * pgs, float pr3[3])
 	    cc.paint.values[3] = frac2float(fcc[3]);
 	    pcc = &cc;
 	    pcs = pbcs;
+	    csi = pgs->orig_base_cspace_index;
 	    goto sw;
 	default:
 	    break;
@@ -309,12 +317,14 @@ gx_set_device_color_1(gs_state * pgs)
     gx_device_color *pdc = pgs->dev_color;
     gs_client_color *pcc = pgs->ccolor;
 
-    cs_adjust_counts(pgs, -1);
     pcc->paint.values[0] = 0.0;
     pcc->pattern = 0;		/* for GC */
-    pgs->color_space->type = &gs_color_space_type_DeviceGray;
     color_set_pure(pdc, 1);
     pgs->log_op = lop_default;
+    gs_cspace_assign(pgs->color_space,
+		     gs_cspace_DeviceGray((const gs_imager_state *)pgs));
+    pgs->orig_cspace_index = pgs->orig_base_cspace_index =
+	gs_color_space_index_DeviceGray;
 }
 
 /* ------ Internal routines ------ */

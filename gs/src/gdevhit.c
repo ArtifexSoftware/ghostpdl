@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -33,8 +33,8 @@ const int gs_hit_detected = gs_error_hit_detected;
  * It returns e_hit whenever it is asked to actually paint any pixels.
  */
 private dev_proc_fill_rectangle(hit_fill_rectangle);
-const gx_device gs_hit_device =
-{std_device_std_body(gx_device, 0, "hit detector",
+const gx_device gs_hit_device = {
+ std_device_std_body(gx_device, 0, "hit detector",
 		     0, 0, 1, 1),
  {NULL,				/* open_device */
   NULL,				/* get_initial_matrix */

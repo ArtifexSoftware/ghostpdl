@@ -1,4 +1,4 @@
-#    Copyright (C) 1991-1998 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1991-1999 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -93,18 +93,21 @@ NOPRIVATE=0
 GS=gslib
 !endif
 
-# Define the source, generated intermediate file, and object directories
-# for the graphics library (GL).
+# Define the directory for the final executable, and the
+# source, generated intermediate file, and object directories
+# for the graphics library (GL) and the PostScript/PDF interpreter (PS).
 
-# This is a bad joke.  This makefile won't work with any other values!
+!ifndef BINDIR
+BINDIR=.\bin
+!endif
 !ifndef GLSRCDIR
-GLSRCDIR=.
+GLSRCDIR=.\src
 !endif
 !ifndef GLGENDIR
-GLGENDIR=.
+GLGENDIR=.\obj
 !endif
 !ifndef GLOBJDIR
-GLOBJDIR=.
+GLOBJDIR=.\obj
 !endif
 
 # Define the directory where the IJG JPEG library sources are stored,
@@ -124,7 +127,7 @@ JVERSION=6
 
 !ifndef PSRCDIR
 PSRCDIR=libpng
-PVERSION=96
+PVERSION=10002
 !endif
 
 # Define the directory where the zlib sources are stored.
@@ -132,12 +135,6 @@ PVERSION=96
 
 !ifndef ZSRCDIR
 ZSRCDIR=zlib
-!endif
-
-# Define the configuration ID.  Read gs.mak carefully before changing this.
-
-!ifndef CONFIG
-CONFIG=
 !endif
 
 # Define any other compilation flags.
@@ -229,6 +226,14 @@ FPU_TYPE=0
 
 !endif
 
+# Define the .dev module that implements thread and synchronization
+# primitives for this platform.  Don't change this unless you really know
+# what you're doing.
+
+!ifndef SYNC
+SYNC=winsync
+!endif
+
 # ------ Devices and features ------ #
 
 # Choose the language feature(s) to include.  See gs.mak for details.
@@ -270,6 +275,7 @@ FILE_IMPLEMENTATION=stdio
 # devs.mak and contrib.mak for the list of available devices.
 !ifndef DEVICE_DEVS
 DEVICE_DEVS=ljet2p.dev bbox.dev
+DEVICE_DEVS1=
 DEVICE_DEVS2=
 DEVICE_DEVS3=
 DEVICE_DEVS4=
@@ -282,7 +288,13 @@ DEVICE_DEVS10=
 DEVICE_DEVS11=
 DEVICE_DEVS12=
 DEVICE_DEVS13=
+DEVICE_DEVS14=
 DEVICE_DEVS15=
+DEVICE_DEVS16=
+DEVICE_DEVS17=
+DEVICE_DEVS18=
+DEVICE_DEVS19=
+DEVICE_DEVS20=
 !endif
 
 # ---------------------------- End of options ---------------------------- #
@@ -304,8 +316,8 @@ FPU_TYPE=1
 
 # Define the name of the makefile -- used in dependencies.
 
-# The use of multiple file names here is garbage!
-MAKEFILE=$(GLSRCDIR)\msvclib.mak $(GLSRCDIR)\msvccmd.mak $(GLSRCDIR)\msvctail.mak $(GLSRCDIR)\winlib.mak
+MAKEFILE=$(GLSRCDIR)\msvclib.mak
+TOP_MAKEFILES=$(MAKEFILE) $(GLSRCDIR)\msvccmd.mak $(GLSRCDIR)\msvctail.mak $(GLSRCDIR)\winlib.mak
 
 # Define the files to be removed by `make clean'.
 # nmake expands macros when encountered, not when used,
@@ -336,10 +348,9 @@ $(GLOBJ)gp_mslib.$(OBJ): $(GLSRC)gp_mslib.c $(AK)
 
 mslib32__=$(GLOBJ)gp_mslib.$(OBJ)
 
-mslib32_.dev: $(mslib32__) $(ECHOGS_XE) msw32nc_.dev
-        $(SETMOD) mslib32_ $(mslib32__)
-	$(ADDMOD) mslib32_ -include msw32nc_
-
+$(GLGEN)mslib32_.dev: $(mslib32__) $(ECHOGS_XE) $(GLGEN)msw32nc_.dev
+        $(SETMOD) $(GLGEN)mslib32_ $(mslib32__)
+	$(ADDMOD) $(GLGEN)mslib32_ -include $(GLGEN)msw32nc_.dev
 
 # ----------------------------- Main program ------------------------------ #
 

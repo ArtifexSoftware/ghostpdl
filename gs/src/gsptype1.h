@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -28,21 +28,28 @@
 /* ---------------- Types and structures ---------------- */
 
 /* PatternType 1 template */
+
 typedef struct gs_pattern1_template_s {
-    gs_uid uid;			/* must be first, see gspcolor.h */
-    int PaintType;		/* must be second, ditto */
+    /*
+     * The common template must come first.  It defines type, uid,
+     * PatternType, and client_data.
+     */
+    gs_pattern_template_common;
+    int PaintType;
     int TilingType;
     gs_rect BBox;
     float XStep;
     float YStep;
     int (*PaintProc) (P2(const gs_client_color *, gs_state *));
-    void *client_data;		/* additional client data */
 } gs_pattern1_template_t;
 
 #define private_st_pattern1_template() /* in gspcolor.c */\
-  gs_private_st_ptrs2(st_pattern1_template, gs_pattern1_template_t,\
-    "PatternType 1 template", pattern_template_enum_ptrs,\
-    pattern1_template_reloc_ptrs, uid.xvalues, client_data)
+  gs_private_st_suffix_add0(st_pattern1_template,\
+    gs_pattern1_template_t, "gs_pattern1_template_t",\
+    pattern1_template_enum_ptrs, pattern1_template_reloc_ptrs,\
+    st_pattern_template)
+#define st_pattern1_template_max_ptrs st_pattern_template_max_ptrs
+
 /* Backward compatibility */
 typedef gs_pattern1_template_t gs_client_pattern;
 
@@ -52,15 +59,16 @@ typedef gs_pattern1_template_t gs_client_pattern;
  * Construct a PatternType 1 Pattern color space.  If the base space is
  * NULL, the color space can only be used with colored patterns.
  */
-extern int gs_cspace_build_Pattern1(
+extern int gs_cspace_build_Pattern1(P3(
 				       gs_color_space ** ppcspace,
 				       const gs_color_space * pbase_cspace,
 				       gs_memory_t * pmem
-);
+				       ));
 
 /* Initialize a PatternType 1 pattern. */
 void gs_pattern1_init(P1(gs_pattern1_template_t *));
 
+/* Backward compatibility */
 #define gs_client_pattern_init(ppat) gs_pattern1_init(ppat)
 
 /*
@@ -107,29 +115,31 @@ const gs_client_pattern *gs_getpattern(P1(const gs_client_color *));
  *     ensure that all white indices are mapped to the single, given white
  *     index.
  */
-extern int gs_makepixmappattern(gs_client_color * pcc,
-				const gs_depth_bitmap * pbitmap,
-				bool mask,
-				const gs_matrix * pmat,
-				long id,
-				const gs_color_space * pcspace,
-				uint white_index,
-				gs_state * pgs,
-				gs_memory_t * mem
-);
+extern int gs_makepixmappattern(P9(
+				   gs_client_color * pcc,
+				   const gs_depth_bitmap * pbitmap,
+				   bool mask,
+				   const gs_matrix * pmat,
+				   long id,
+				   const gs_color_space * pcspace,
+				   uint white_index,
+				   gs_state * pgs,
+				   gs_memory_t * mem
+				   ));
 
 /*
  *  Backwards compatibility feature, to allow the existing
  *  gs_makebitmappattern operation to still function.
  */
-extern int gs_makebitmappattern_xform(gs_client_color * pcc,
-				      const gx_tile_bitmap * ptile,
-				      bool mask,
-				      const gs_matrix * pmat,
-				      long id,
-				      gs_state * pgs,
-				      gs_memory_t * mem
-);
+extern int gs_makebitmappattern_xform(P7(
+					 gs_client_color * pcc,
+					 const gx_tile_bitmap * ptile,
+					 bool mask,
+					 const gs_matrix * pmat,
+					 long id,
+					 gs_state * pgs,
+					 gs_memory_t * mem
+					 ));
 
 #define gs_makebitmappattern(pcc, tile, mask, pgs, mem)                 \
     gs_makebitmappattern_xform(pcc, tile, mask, 0, no_UniqueID, pgs, mem)

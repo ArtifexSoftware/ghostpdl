@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -40,16 +40,6 @@
 #include "spngpx.h"
 #include "ifilter.h"
 
-/* Import the Level 2 scanner extensions. */
-extern const stream_template *scan_ascii85_template;
-
-/* Initialize the Level 2 scanner for ASCII85 strings. */
-private void
-zfdecode_init(void)
-{
-    scan_ascii85_template = &s_A85D_template;
-}
-
 /* ------ ASCII85 filters ------ */
 
 /* We include both encoding and decoding filters here, */
@@ -58,17 +48,17 @@ zfdecode_init(void)
 /* <target> ASCII85Encode/filter <file> */
 /* <target> <dict> ASCII85Encode/filter <file> */
 private int
-zA85E(os_ptr op)
+zA85E(i_ctx_t *i_ctx_p)
 {
-    return filter_write_simple(op, &s_A85E_template);
+    return filter_write_simple(i_ctx_p, &s_A85E_template);
 }
 
 /* <source> ASCII85Decode/filter <file> */
 /* <source> <dict> ASCII85Decode/filter <file> */
 private int
-zA85D(os_ptr op)
+zA85D(i_ctx_t *i_ctx_p)
 {
-    return filter_read_simple(op, &s_A85D_template);
+    return filter_read_simple(i_ctx_p, &s_A85D_template);
 }
 
 /* ------ CCITTFaxDecode filter ------ */
@@ -92,8 +82,9 @@ zcf_setup(os_ptr op, stream_CF_state * pcfs)
 /* <source> <dict> CCITTFaxDecode/filter <file> */
 /* <source> CCITTFaxDecode/filter <file> */
 private int
-zCFD(os_ptr op)
+zCFD(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     os_ptr dop;
     stream_CFD_state cfs;
     int code;
@@ -106,7 +97,7 @@ zCFD(os_ptr op)
     code = zcf_setup(dop, (stream_CF_state *) & cfs);
     if (code < 0)
 	return code;
-    return filter_read(op, 0, &s_CFD_template, (stream_state *) & cfs, 0);
+    return filter_read(i_ctx_p, 0, &s_CFD_template, (stream_state *) & cfs, 0);
 }
 
 /* ------ Common setup for possibly pixel-oriented decoding filters ------ */
@@ -116,9 +107,10 @@ int zpd_setup(P2(os_ptr op, stream_PDiff_state * ppds));
 int zpp_setup(P2(os_ptr op, stream_PNGP_state * ppps));
 
 int
-filter_read_predictor(os_ptr op, int npop, const stream_template * template,
-		      stream_state * st)
+filter_read_predictor(i_ctx_t *i_ctx_p, int npop,
+		      const stream_template * template, stream_state * st)
 {
+    os_ptr op = osp;
     int predictor, code;
     stream_PDiff_state pds;
     stream_PNGP_state pps;
@@ -151,7 +143,7 @@ filter_read_predictor(os_ptr op, int npop, const stream_template * template,
     } else
 	predictor = 1;
     if (predictor == 1)
-	return filter_read(op, npop, template, st, 0);
+	return filter_read(i_ctx_p, npop, template, st, 0);
     {
 	/* We need to cascade filters. */
 	ref rsource, rdict, rfd;
@@ -160,7 +152,7 @@ filter_read_predictor(os_ptr op, int npop, const stream_template * template,
 	/* Save the operands, just in case. */
 	ref_assign(&rsource, op - 1);
 	ref_assign(&rdict, op);
-	code = filter_read(op, 1, template, st, 0);
+	code = filter_read(i_ctx_p, 1, template, st, 0);
 	if (code < 0)
 	    return code;
 	/* filter_read changed osp.... */
@@ -168,8 +160,8 @@ filter_read_predictor(os_ptr op, int npop, const stream_template * template,
 	ref_assign(&rfd, op);
 	code =
 	    (predictor == 2 ?
-	 filter_read(op, 0, &s_PDiffD_template, (stream_state *) & pds, 0) :
-	  filter_read(op, 0, &s_PNGPD_template, (stream_state *) & pps, 0));
+	 filter_read(i_ctx_p, 0, &s_PDiffD_template, (stream_state *) & pds, 0) :
+	  filter_read(i_ctx_p, 0, &s_PNGPD_template, (stream_state *) & pps, 0));
 	if (code < 0) {
 	    /* Restore the operands.  Don't bother trying to clean up */
 	    /* the first stream. */
@@ -218,8 +210,9 @@ zlz_setup(os_ptr op, stream_LZW_state * plzs)
 /* <source> LZWDecode/filter <file> */
 /* <source> <dict> LZWDecode/filter <file> */
 private int
-zLZWD(os_ptr op)
+zLZWD(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     stream_LZW_state lzs;
     int code = zlz_setup(op, &lzs);
 
@@ -237,7 +230,7 @@ zLZWD(os_ptr op)
 	if (code == 0 /* UnitSize specified */ )
 	    lzs.InitialCodeLength = unit_size + 1;
     }
-    return filter_read_predictor(op, 0, &s_LZWD_template,
+    return filter_read_predictor(i_ctx_p, 0, &s_LZWD_template,
 				 (stream_state *) & lzs);
 }
 
@@ -254,7 +247,7 @@ zpd_setup(os_ptr op, stream_PDiff_state * ppds)
 
     check_type(*op, t_dictionary);
     check_dict_read(*op);
-    if ((code = dict_int_param(op, "Colors", 1, 4, 1,
+    if ((code = dict_int_param(op, "Colors", 1, s_PDiff_max_Colors, 1,
 			       &ppds->Colors)) < 0 ||
 	(code = dict_int_param(op, "BitsPerComponent", 1, 8, 8,
 			       &bpc)) < 0 ||
@@ -269,26 +262,28 @@ zpd_setup(os_ptr op, stream_PDiff_state * ppds)
 
 /* <target> <dict> PixelDifferenceEncode/filter <file> */
 private int
-zPDiffE(os_ptr op)
+zPDiffE(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     stream_PDiff_state pds;
     int code = zpd_setup(op, &pds);
 
     if (code < 0)
 	return code;
-    return filter_write(op, 0, &s_PDiffE_template, (stream_state *) & pds, 0);
+    return filter_write(i_ctx_p, 0, &s_PDiffE_template, (stream_state *) & pds, 0);
 }
 
 /* <source> <dict> PixelDifferenceDecode/filter <file> */
 private int
-zPDiffD(os_ptr op)
+zPDiffD(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     stream_PDiff_state pds;
     int code = zpd_setup(op, &pds);
 
     if (code < 0)
 	return code;
-    return filter_read(op, 0, &s_PDiffD_template, (stream_state *) & pds, 0);
+    return filter_read(i_ctx_p, 0, &s_PDiffD_template, (stream_state *) & pds, 0);
 }
 
 /* ------ PNG pixel predictor filters ------ */
@@ -318,32 +313,33 @@ zpp_setup(os_ptr op, stream_PNGP_state * ppps)
 
 /* <target> <dict> PNGPredictorEncode/filter <file> */
 private int
-zPNGPE(os_ptr op)
+zPNGPE(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     stream_PNGP_state pps;
     int code = zpp_setup(op, &pps);
 
     if (code < 0)
 	return code;
-    return filter_write(op, 0, &s_PNGPE_template, (stream_state *) & pps, 0);
+    return filter_write(i_ctx_p, 0, &s_PNGPE_template, (stream_state *) & pps, 0);
 }
 
 /* <source> <dict> PNGPredictorDecode/filter <file> */
 private int
-zPNGPD(os_ptr op)
+zPNGPD(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     stream_PNGP_state pps;
     int code = zpp_setup(op, &pps);
 
     if (code < 0)
 	return code;
-    return filter_read(op, 0, &s_PNGPD_template, (stream_state *) & pps, 0);
+    return filter_read(i_ctx_p, 0, &s_PNGPD_template, (stream_state *) & pps, 0);
 }
 
 /* ---------------- Initialization procedure ---------------- */
 
-const op_def zfdecode_op_defs[] =
-{
+const op_def zfdecode_op_defs[] = {
     op_def_begin_filter(),
     {"1ASCII85Encode", zA85E},
     {"1ASCII85Decode", zA85D},
@@ -353,5 +349,5 @@ const op_def zfdecode_op_defs[] =
     {"2PixelDifferenceEncode", zPDiffE},
     {"2PNGPredictorDecode", zPNGPD},
     {"2PNGPredictorEncode", zPNGPE},
-    op_def_end(zfdecode_init)
+    op_def_end(0)
 };

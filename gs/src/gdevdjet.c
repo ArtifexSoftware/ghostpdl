@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -28,10 +28,14 @@
  *      Frans van Hoesel (hoesel@chem.rug.nl)
  *      George Cameron (g.cameron@biomed.abdn.ac.uk)
  *      Nick Duffek (nsd@bbc.com)
+ * Thanks for the FS-600 driver to:
+ *	Peter Schildmann (peter.schildmann@etechnik.uni-rostock.de)
  * Thanks for the LJIIID duplex capability to:
  *      PDP (Philip) Brown (phil@3soft-uk.com)
  * Thanks for the OCE 9050 driver to:
  *      William Bader (wbader@EECS.Lehigh.Edu)
+ * Thanks for the LJ4D duplex capability to:
+ *	Les Johnson <les@infolabs.com>
  */
 
 /*
@@ -106,10 +110,11 @@
 #define LJ3	3
 #define DJ	4
 #define DJ500	5
-#define LJ4	6
+#define LJ4	6		/* also Kyocera FS-600 */
 #define LP2563B	7
 #define LJ3D	8
 #define	OCE9050	9
+#define LJ4D	10
 
 /*
  * The notion that there is such a thing as a "PCL printer" is a fiction:
@@ -136,12 +141,14 @@ private dev_proc_open_device(hpjet_open);
 private dev_proc_close_device(hpjet_close);
 private dev_proc_print_page(djet_print_page);
 private dev_proc_print_page(djet500_print_page);
+private dev_proc_print_page(fs600_print_page);
 private dev_proc_print_page(ljet_print_page);
 private dev_proc_print_page(ljetplus_print_page);
 private dev_proc_print_page(ljet2p_print_page);
 private dev_proc_print_page(ljet3_print_page);
 private dev_proc_print_page(ljet3d_print_page);
 private dev_proc_print_page(ljet4_print_page);
+private dev_proc_print_page(ljet4d_print_page);
 private dev_proc_print_page(lp2563_print_page);
 private dev_proc_print_page(oce9050_print_page);
 
@@ -162,6 +169,13 @@ prn_device(prn_hp_procs, "djet500",
 	   X_DPI, Y_DPI,
 	   0, 0, 0, 0,		/* margins filled in by hpjet_open */
 	   1, djet500_print_page);
+
+const gx_device_printer gs_fs600_device =
+prn_device(prn_hp_procs, "fs600",
+	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+	   X_DPI2, Y_DPI2,
+	   0.23, 0.0, 0.23, 0.04,      /* margins */
+	   1, fs600_print_page);
 
 const gx_device_printer gs_laserjet_device =
 prn_device(prn_hp_procs, "laserjet",
@@ -204,6 +218,13 @@ prn_device(prn_hp_procs, "ljet4",
 	   X_DPI2, Y_DPI2,
 	   0, 0, 0, 0,		/* margins */
 	   1, ljet4_print_page);
+
+const gx_device_printer gs_ljet4d_device =
+prn_device(prn_hp_procs, "ljet4d",
+	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+	   X_DPI2, Y_DPI2,
+	   0, 0, 0, 0,		/* margins */
+	   1, ljet4d_print_page);
 
 const gx_device_printer gs_lp2563_device =
 prn_device(prn_hp_procs, "lp2563",
@@ -262,6 +283,8 @@ hpjet_open(gx_device * pdev)
     /* If this is a LJIIID, enable Duplex. */
     if (ppdev->printer_procs.print_page == ljet3d_print_page)
 	ppdev->Duplex = true, ppdev->Duplex_set = 0;
+    if (ppdev->printer_procs.print_page == ljet4d_print_page)
+	ppdev->Duplex = true, ppdev->Duplex_set = 0;
     return gdev_prn_open(pdev);
 }
 
@@ -270,7 +293,10 @@ hpjet_open(gx_device * pdev)
 private int
 hpjet_close(gx_device * pdev)
 {
-    gdev_prn_open_printer(pdev, 1);
+    int code =gdev_prn_open_printer(pdev, 1);
+
+    if (code < 0)
+	return code;
     if (ppdev->Duplex_set >= 0 && ppdev->Duplex)
 	fputs("\033&l0H", ppdev->file);
     fputs("\033E", ppdev->file);
@@ -294,6 +320,19 @@ djet500_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
     return hpjet_print_page(pdev, prn_stream, DJ500, 300, mode_3,
 			    "\033&k1W");
+}
+/* The Kyocera FS-600 laser printer (and perhaps other printers */
+/* which use the PeerlessPrint5 firmware) doesn't handle        */
+/* ESC&l#u and ESC&l#Z correctly.                               */
+private int
+fs600_print_page(gx_device_printer * pdev, FILE * prn_stream)
+{
+    int dots_per_inch = (int)pdev->y_pixels_per_inch;
+    char real_init[60];
+
+    sprintf(real_init, "\033*r0F\033&u%dD", dots_per_inch);
+    return hpjet_print_page(pdev, prn_stream, LJ4, dots_per_inch, mode_3,
+                            real_init);
 }
 /* The LaserJet series II can't compress */
 private int
@@ -343,6 +382,16 @@ ljet4_print_page(gx_device_printer * pdev, FILE * prn_stream)
 
     sprintf(real_init, "\033&l-180u36Z\033*r0F\033&u%dD", dots_per_inch);
     return hpjet_print_page(pdev, prn_stream, LJ4, dots_per_inch, mode_3,
+			    real_init);
+}
+private int
+ljet4d_print_page(gx_device_printer * pdev, FILE * prn_stream)
+{
+    int dots_per_inch = (int)pdev->y_pixels_per_inch;
+    char real_init[60];
+
+    sprintf(real_init, "\033&l-180u36Z\033*r0F\033&u%dD", dots_per_inch);
+    return hpjet_print_page(pdev, prn_stream, LJ4D, dots_per_inch, mode_3,
 			    real_init);
 }
 /* The 2563B line printer can't compress */
@@ -436,7 +485,7 @@ hpjet_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype,
 	    fprintf(prn_stream, "\033&l%dA", paper_size);
 	}
 	/* If printer can duplex, set duplex mode appropriately. */
-	if (ptype == LJ3D) {
+	if (ptype == LJ3D || ptype == LJ4D) {
 	    if (dupset && dup)
 		fputs("\033&l1S", prn_stream);
 	    else if (dupset && !dup)

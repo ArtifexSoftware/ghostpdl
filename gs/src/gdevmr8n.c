@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -68,31 +68,34 @@ mem_gray8_rgb24_strip_copy_rop(gx_device * dev,
 	(lop & lop_S_transparent ? all_ones : gx_no_color_index);
     gx_color_index ttrans =
 	(lop & lop_T_transparent ? all_ones : gx_no_color_index);
-    gx_color_index black = gx_device_black(dev);
-    gx_color_index white = gx_device_white(dev);
 
     /* Check for constant source. */
-    if (scolors != 0 && scolors[0] == scolors[1]) {	/* Constant source */
-	const_source = scolors[0];
-	if (const_source == black)
-	    rop = rop3_know_S_0(rop);
-	else if (const_source == white)
-	    rop = rop3_know_S_1(rop);
-    } else if (!rop3_uses_S(rop))
+    if (!rop3_uses_S(rop))
 	const_source = 0;	/* arbitrary */
+    else if (scolors != 0 && scolors[0] == scolors[1]) {
+	/* Constant source */
+	const_source = scolors[0];
+	if (const_source == gx_device_black(dev))
+	    rop = rop3_know_S_0(rop);
+	else if (const_source == gx_device_white(dev))
+	    rop = rop3_know_S_1(rop);
+    }
 
     /* Check for constant texture. */
-    if (tcolors != 0 && tcolors[0] == tcolors[1]) {	/* Constant texture */
-	const_texture = tcolors[0];
-	if (const_texture == black)
-	    rop = rop3_know_T_0(rop);
-	else if (const_texture == white)
-	    rop = rop3_know_T_1(rop);
-    } else if (!rop3_uses_T(rop))
+    if (!rop3_uses_T(rop))
 	const_texture = 0;	/* arbitrary */
+    else if (tcolors != 0 && tcolors[0] == tcolors[1]) {
+	/* Constant texture */
+	const_texture = tcolors[0];
+	if (const_texture == gx_device_black(dev))
+	    rop = rop3_know_T_0(rop);
+	else if (const_texture == gx_device_white(dev))
+	    rop = rop3_know_T_1(rop);
+    }
 
     if (bpp == 1 &&
-	(black != 0 || white != all_ones || gx_device_has_color(dev))
+	(gx_device_has_color(dev) ||
+	 (gx_device_black(dev) != 0 || gx_device_white(dev) != all_ones))
 	) {
 	/*
 	 * This is an 8-bit device but not gray-scale.  Except in a few
@@ -103,20 +106,16 @@ mem_gray8_rgb24_strip_copy_rop(gx_device * dev,
 
 	switch (rop) {
 	case rop3_0:
-	    bw_pixel = black;
+	    bw_pixel = gx_device_black(dev);
 	    goto bw;
 	case rop3_1:
-	    bw_pixel = white;
-bw:	    switch (bw_pixel) {
-	    case 0x00:
+	    bw_pixel = gx_device_white(dev);
+bw:	    if (bw_pixel == 0x00)
 		rop = rop3_0;
-		break;
-	    case 0xff:
+	    else if (bw_pixel == 0xff)
 		rop = rop3_1;
-		break;
-	    default:
+	    else
 		goto df;
-	    }
 	    break;
 	case rop3_D:
 	    break;

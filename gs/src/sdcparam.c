@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -19,7 +19,7 @@
 
 /* DCT filter parameter setting and reading */
 #include "memory_.h"
-#include "jpeglib.h"
+#include "jpeglib_.h"
 #include "gserror.h"
 #include "gserrors.h"
 #include "gstypes.h"
@@ -157,6 +157,7 @@ s_DCT_get_quantization_tables(gs_param_list * plist,
 	    default_table_ptrs = defaults->data.compress->cinfo.quant_tbl_ptrs;
 	}
     } else {
+	/**************** quant_tables.size NOT INITIALIZED ****************/
 	num_in_tables = quant_tables.size;
 	for (i = 0; i < num_in_tables; ++i)
 	    d_comp_info[i].quant_tbl_no = i;

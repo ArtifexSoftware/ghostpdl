@@ -1,4 +1,4 @@
-/* Copyright (C) 1995 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -17,7 +17,7 @@
  */
 
 
-/* Charpath mode definitions */
+/* Charpath mode and cache device status definitions */
 
 #ifndef gscpm_INCLUDED
 #  define gscpm_INCLUDED
@@ -29,5 +29,11 @@ typedef enum {
     cpm_false_charboxpath,	/* false charboxpath (not standard PS) */
     cpm_true_charboxpath	/* true charboxpath (ditto) */
 } gs_char_path_mode;
+
+typedef enum {
+    CACHE_DEVICE_NONE = 0,	/* default, must be 0 */
+    CACHE_DEVICE_NOT_CACHING,	/* setcachedevice done but not caching */
+    CACHE_DEVICE_CACHING	/* setcachedevice done and caching */
+} gs_in_cache_device_t;
 
 #endif /* gscpm_INCLUDED */

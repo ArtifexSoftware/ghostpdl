@@ -26,10 +26,21 @@
 #include "gxdevcli.h"
 #include "gsparam.h"
 /*
- * Drivers still use gs_malloc and gs_free, so include the interface for
- * these.  (Eventually they should go away.)
+ * Many drivers still use gs_malloc and gs_free, so include the interface
+ * for these.  (Eventually they should go away.)
  */
 #include "gsmalloc.h"
+
+/*
+ * NOTE: if you write code that creates device instances (either with
+ * gs_copydevice or by allocating them explicitly), allocates device
+ * instances as either local or static variables (actual instances, not
+ * pointers to instances), or sets the target of forwarding devices, please
+ * read the documentation in gxdevcli.h about memory management for devices.
+ * The rules for doing these things changed substantially in release 5.68,
+ * in a non-backward-compatible way, and unfortunately we could not find a
+ * way to make the compiler give an error at places that need changing.
+ */
 
 /* ---------------- Auxiliary types and structures ---------------- */
 
@@ -69,9 +80,9 @@
  */
 #define std_device_part1_(devtype, ptr_procs, dev_name, stype, open_init)\
 	sizeof(devtype), ptr_procs, dev_name,\
-	0 /*memory*/, stype, { 0 } /*rc*/,\
-	open_init()		/*is_open, max_fill_band */
-/* color_info goes here */
+	0 /*memory*/, stype, 0 /*stype_is_dynamic*/, 0 /*finalize*/,\
+	{ 0 } /*rc*/, 0 /*retained*/, open_init() /*is_open, max_fill_band*/
+	/* color_info goes here */
 /*
  * The MetroWerks compiler has some bizarre bug that produces a spurious
  * error message if the width and/or height are defined as 0 below,
@@ -84,7 +95,7 @@
 	{ 0, 0, 0, 0 }, 0/*false*/, { x_dpi, y_dpi }, { x_dpi, y_dpi }
 /* offsets and margins go here */
 #define std_device_part3_()\
-	0, 0, 1, 0/*false*/, 0/*false*/,\
+	0, 0, 1, 0/*false*/, 0/*false*/, 0/*false*/,\
 	{ gx_default_install, gx_default_begin_page, gx_default_end_page }
 /*
  * We need a number of different variants of the std_device_ macro simply
@@ -108,10 +119,13 @@
 	margins_macro(),\
 	std_device_part3_()
 
-#define std_device_std_body(dtype, pprocs, dname, w, h, xdpi, ydpi)\
-	std_device_body_with_macros_(dtype, pprocs, dname, 0,\
+#define std_device_std_body_type(dtype, pprocs, dname, stype, w, h, xdpi, ydpi)\
+	std_device_body_with_macros_(dtype, pprocs, dname, stype,\
 	  w, h, xdpi, ydpi,\
 	  open_init_closed, dci_black_and_white_, no_margins_)
+
+#define std_device_std_body(dtype, pprocs, dname, w, h, xdpi, ydpi)\
+	std_device_std_body_type(dtype, pprocs, dname, 0, w, h, xdpi, ydpi)
 
 #define std_device_std_body_type_open(dtype, pprocs, dname, stype, w, h, xdpi, ydpi)\
 	std_device_body_with_macros_(dtype, pprocs, dname, stype,\
@@ -121,19 +135,27 @@
 #define std_device_std_body_open(dtype, pprocs, dname, w, h, xdpi, ydpi)\
 	std_device_std_body_type_open(dtype, pprocs, dname, 0, w, h, xdpi, ydpi)
 
-#define std_device_full_body(dtype, pprocs, dname, w, h, xdpi, ydpi, ncomp, depth, mg, mc, dg, dc, xoff, yoff, lm, bm, rm, tm)\
-	std_device_part1_(dtype, pprocs, dname, 0, open_init_closed),\
+#define std_device_full_body_type(dtype, pprocs, dname, stype, w, h, xdpi, ydpi, ncomp, depth, mg, mc, dg, dc, xoff, yoff, lm, bm, rm, tm)\
+	std_device_part1_(dtype, pprocs, dname, stype, open_init_closed),\
 	dci_values(ncomp, depth, mg, mc, dg, dc),\
 	std_device_part2_(w, h, xdpi, ydpi),\
 	offset_margin_values(xoff, yoff, lm, bm, rm, tm),\
 	std_device_part3_()
 
-#define std_device_dci_type_body(dtype, pprocs, dname, stype, w, h, xdpi, ydpi, ncomp, depth, mg, mc, dg, dc)\
+#define std_device_full_body(dtype, pprocs, dname, w, h, xdpi, ydpi, ncomp, depth, mg, mc, dg, dc, xoff, yoff, lm, bm, rm, tm)\
+	std_device_full_body_type(dtype, pprocs, dname, 0, w, h, xdpi, ydpi,\
+	    ncomp, depth, mg, mc, dg, dc, xoff, yoff, lm, bm, rm, tm)
+
+#define std_device_dci_alpha_type_body(dtype, pprocs, dname, stype, w, h, xdpi, ydpi, ncomp, depth, mg, mc, dg, dc, ta, ga)\
 	std_device_part1_(dtype, pprocs, dname, stype, open_init_closed),\
-	dci_values(ncomp, depth, mg, mc, dg, dc),\
+	dci_alpha_values(ncomp, depth, mg, mc, dg, dc, ta, ga),\
 	std_device_part2_(w, h, xdpi, ydpi),\
 	offset_margin_values(0, 0, 0, 0, 0, 0),\
 	std_device_part3_()
+
+#define std_device_dci_type_body(dtype, pprocs, dname, stype, w, h, xdpi, ydpi, ncomp, depth, mg, mc, dg, dc)\
+	std_device_dci_alpha_type_body(dtype, pprocs, dname, stype, w, h,\
+	  xdpi, ydpi, ncomp, depth, mg, mc, dg, dc, 1, 1)
 
 #define std_device_dci_body(dtype, pprocs, dname, w, h, xdpi, ydpi, ncomp, depth, mg, mc, dg, dc)\
 	std_device_dci_type_body(dtype, pprocs, dname, 0,\
@@ -159,12 +181,16 @@
 	offset_margin_values(0, 0, 0, 0, 0, 0),\
 	std_device_part3_()
 
-#define std_device_std_color_full_body(dtype, pprocs, dname, w, h, xdpi, ydpi, depth, xoff, yoff, lm, bm, rm, tm)\
-	std_device_part1_(dtype, pprocs, dname, 0, open_init_closed),\
+#define std_device_std_color_full_body_type(dtype, pprocs, dname, stype, w, h, xdpi, ydpi, depth, xoff, yoff, lm, bm, rm, tm)\
+	std_device_part1_(dtype, pprocs, dname, stype, open_init_closed),\
 	dci_std_color(depth),\
 	std_device_part2_(w, h, xdpi, ydpi),\
 	offset_margin_values(xoff, yoff, lm, bm, rm, tm),\
 	std_device_part3_()
+
+#define std_device_std_color_full_body(dtype, pprocs, dname, w, h, xdpi, ydpi, depth, xoff, yoff, lm, bm, rm, tm)\
+	std_device_std_color_full_body_type(dtype, pprocs, dname, 0,\
+	    w, h, xdpi, ydpi, depth, xoff, yoff, lm, bm, rm, tm)
 
 /* ---------------- Default implementations ---------------- */
 
@@ -220,12 +246,14 @@ dev_proc_get_bits_rectangle(gx_no_get_bits_rectangle);	/* gives error */
 dev_proc_get_bits_rectangle(gx_default_get_bits_rectangle);
 dev_proc_map_color_rgb_alpha(gx_default_map_color_rgb_alpha);
 dev_proc_create_compositor(gx_no_create_compositor);
-/* default is for ordinary "leaf" devices, non_imaging is for */
+/* default is for ordinary "leaf" devices, null is for */
 /* devices that only care about coverage and not contents. */
 dev_proc_create_compositor(gx_default_create_compositor);
-dev_proc_create_compositor(gx_non_imaging_create_compositor);
+dev_proc_create_compositor(gx_null_create_compositor);
 dev_proc_get_hardware_params(gx_default_get_hardware_params);
 dev_proc_text_begin(gx_default_text_begin);
+/* BACKWARD COMPATIBILITY */
+#define gx_non_imaging_create_compositor gx_null_create_compositor
 
 /* Color mapping routines for black-on-white, gray scale, true RGB, */
 /* true CMYK, and 1-bit CMYK color. */
@@ -233,7 +261,6 @@ dev_proc_map_rgb_color(gx_default_b_w_map_rgb_color);
 dev_proc_map_color_rgb(gx_default_b_w_map_color_rgb);
 dev_proc_map_rgb_color(gx_default_gray_map_rgb_color);
 dev_proc_map_color_rgb(gx_default_gray_map_color_rgb);
-dev_proc_map_rgb_color(gx_default_rgb_map_rgb_color);
 dev_proc_map_color_rgb(gx_default_rgb_map_color_rgb);
 #define gx_default_cmyk_map_cmyk_color cmyk_8bit_map_cmyk_color /*see below*/
 /*
@@ -241,6 +268,7 @@ dev_proc_map_color_rgb(gx_default_rgb_map_color_rgb);
  * that can be propagated through device pipelines and that color
  * processing code can test for.
  */
+dev_proc_map_rgb_color(gx_default_rgb_map_rgb_color);
 dev_proc_map_cmyk_color(cmyk_1bit_map_cmyk_color);
 dev_proc_map_color_rgb(cmyk_1bit_map_color_rgb);
 dev_proc_map_cmyk_color(cmyk_8bit_map_cmyk_color);
@@ -264,7 +292,7 @@ dev_proc_get_xfont_procs(gx_forward_get_xfont_procs);
 dev_proc_get_xfont_device(gx_forward_get_xfont_device);
 dev_proc_map_rgb_alpha_color(gx_forward_map_rgb_alpha_color);
 dev_proc_get_page_device(gx_forward_get_page_device);
-dev_proc_get_alpha_bits(gx_forward_get_alpha_bits);
+#define gx_forward_get_alpha_bits gx_default_get_alpha_bits
 dev_proc_copy_alpha(gx_forward_copy_alpha);
 dev_proc_get_band(gx_forward_get_band);
 dev_proc_copy_rop(gx_forward_copy_rop);
@@ -290,11 +318,6 @@ dev_proc_text_begin(gx_forward_text_begin);
 
 /* ---------------- Implementation utilities ---------------- */
 
-/* Fill in the GC structure descriptor for a device. */
-/* This is only called during initialization. */
-void gx_device_make_struct_type(P2(gs_memory_struct_type_t *,
-				   const gx_device *));
-
 /* Convert the device procedures to the proper form (see above). */
 void gx_device_set_procs(P1(gx_device *));
 
@@ -310,6 +333,16 @@ void gx_device_forward_color_procs(P1(gx_device_forward *));
  * standard ones (saving a level of procedure call at mapping time).
  */
 void gx_device_copy_color_procs(P2(gx_device *dev, const gx_device *target));
+
+/* Get the black and white pixel values of a device. */
+gx_color_index gx_device_black(P1(gx_device *dev));
+#define gx_device_black_inline(dev)\
+  ((dev)->cached_colors.black != gx_no_color_index ?\
+   gx_device_black(dev) : (dev)->cached_colors.black)
+gx_color_index gx_device_white(P1(gx_device *dev));
+#define gx_device_white_inline(dev)\
+  ((dev)->cached_colors.white != gx_no_color_index ?\
+   gx_device_white(dev) : (dev)->cached_colors.white)
 
 /* Clear the black/white pixel cache. */
 void gx_device_decache_colors(P1(gx_device *dev));
@@ -376,13 +409,13 @@ dev_proc_output_page(gx_finish_output_page);
   END
 #define fit_fill_w(dev, x, w)\
   BEGIN\
-	if ( w > dev->width - x )\
-	  w = dev->width - x;\
+	if ( w > (dev)->width - x )\
+	  w = (dev)->width - x;\
   END
 #define fit_fill_h(dev, y, h)\
   BEGIN\
-	if ( h > dev->height - y )\
-	  h = dev->height - y;\
+	if ( h > (dev)->height - y )\
+	  h = (dev)->height - y;\
   END
 #define fit_fill_xywh(dev, x, y, w, h)\
   BEGIN\
@@ -417,8 +450,8 @@ dev_proc_output_page(gx_finish_output_page);
 	  if ( y < 0 )\
 	    h += y, data -= y * raster, id = gx_no_bitmap_id, y = 0;\
 	}\
-	if ( w > dev->width - x )\
-	  w = dev->width - x;\
+	if ( w > (dev)->width - x )\
+	  w = (dev)->width - x;\
   END
 /*
  * Clip all edges, and return from the procedure if the result is empty.
@@ -426,8 +459,8 @@ dev_proc_output_page(gx_finish_output_page);
 #define fit_copy(dev, data, data_x, raster, id, x, y, w, h)\
   BEGIN\
 	fit_copy_xyw(dev, data, data_x, raster, id, x, y, w, h);\
-	if ( h > dev->height - y )\
-	  h = dev->height - y;\
+	if ( h > (dev)->height - y )\
+	  h = (dev)->height - y;\
 	if ( w <= 0 || h <= 0 )\
 	  return 0;\
   END

@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -49,8 +49,8 @@
 #include "ivmspace.h"
 
 /* Import operator procedures */
-extern int zflush(P1(os_ptr));
-extern int zflushpage(P1(os_ptr));
+extern int zflush(P1(i_ctx_t *));
+extern int zflushpage(P1(i_ctx_t *));
 
 #ifndef GS_LIB
 #  define GS_LIB "GS_LIB"
@@ -65,7 +65,7 @@ extern int zflushpage(P1(os_ptr));
 #endif
 
 #ifndef GS_BUG_MAILBOX
-#  define GS_BUG_MAILBOX "ghost@aladdin.com"
+#  define GS_BUG_MAILBOX "bug-gs@aladdin.com"
 #endif
 
 #define MAX_BUFFERED_SIZE 1024
@@ -98,7 +98,7 @@ private int esc_strlen(P1(const char *));
 private void esc_strcat(P2(char *, const char *));
 private void runarg(P5(gs_main_instance *, const char *, const char *, const char *, int));
 private void run_string(P3(gs_main_instance *, const char *, int));
-private void run_finish(P3(int, int, ref *));
+private void run_finish(P4(gs_main_instance *, int, int, ref *));
 
 /* Forward references for help printout */
 private void print_help(P1(gs_main_instance *));
@@ -151,7 +151,8 @@ gs_main_init_with_args(gs_main_instance * minst, int argc, char *argv[])
 	bool helping = false;
 
 	for (i = 1; i < argc; ++i)
-	    if (!strcmp(argv[i], "--")) {	/* A PostScript program will be interpreting all the */
+	    if (!strcmp(argv[i], "--")) {
+		/* A PostScript program will be interpreting all the */
 		/* remaining switches, so stop scanning. */
 		helping = false;
 		break;
@@ -215,20 +216,27 @@ swproc(gs_main_instance * minst, const char *arg, arg_list * pal)
 {
     char sw = arg[1];
     ref vtrue;
+#undef initial_enter_name
+#define initial_enter_name(nstr, pvalue)\
+  i_initial_enter_name(minst->i_ctx_p, nstr, pvalue)
 
     make_true(&vtrue);
     arg += 2;			/* skip - and letter */
     switch (sw) {
 	default:
 	    return -1;
-	case 0:		/* read stdin as a file */
+	case 0:		/* read stdin as a file char-by-char */
+	    /* This is a ******HACK****** for Ghostview. */
+	    minst->stdin_is_interactive = true;
+	    goto run_stdin;
+	case '_':	/* read stdin with normal buffering */
+	    minst->stdin_is_interactive = false;
+run_stdin:
 	    minst->run_start = false;	/* don't run 'start' */
 	    /* Set NOPAUSE so showpage won't try to read from stdin. */
 	    swproc(minst, "-dNOPAUSE", pal);
 	    gs_main_init2(minst);	/* Finish initialization */
-	    /* We delete this only to make Ghostview work properly. */
-/**************** This is WRONG. ****************/
-	    /*gs_stdin_is_interactive = false; */
+	    gs_stdin_is_interactive = minst->stdin_is_interactive;
 	    run_string(minst, ".runstdin", runFlush);
 	    break;
 	case '-':		/* run with command line args */
@@ -466,7 +474,8 @@ swproc(gs_main_instance * minst, const char *arg, arg_list * pal)
 			sread_string(&astream,
 				     (const byte *)eqp, strlen(eqp));
 			scanner_state_init(&state, false);
-			code = scan_token(&astream, &value, &state);
+			code = scan_token(minst->i_ctx_p, &astream, &value,
+					  &state);
 			if (code) {
 			    puts("-dname= must be followed by a valid token");
 			    gs_exit(1);
@@ -518,7 +527,7 @@ swproc(gs_main_instance * minst, const char *arg, arg_list * pal)
 		gs_exit(1);
 	    }
 	    gs_main_init1(minst);
-	    initial_remove_name(arg);
+	    i_initial_remove_name(minst->i_ctx_p, arg);
 	    break;
 	case 'v':		/* print revision */
 	    print_revision();
@@ -631,9 +640,9 @@ run_buffered(gs_main_instance * minst, const char *arg)
 	}
     }
     fclose(in);
-    zflush(osp);
-    zflushpage(osp);
-    run_finish(code, exit_code, &error_object);
+    zflush(minst->i_ctx_p);
+    zflushpage(minst->i_ctx_p);
+    run_finish(minst, code, exit_code, &error_object);
 }
 private void
 runarg(gs_main_instance * minst, const char *pre, const char *arg,
@@ -663,13 +672,14 @@ run_string(gs_main_instance * minst, const char *str, int options)
 				  &exit_code, &error_object);
 
     if ((options & runFlush) || code != 0) {
-	zflush(osp);		/* flush stdout */
-	zflushpage(osp);	/* force display update */
+	zflush(minst->i_ctx_p);		/* flush stdout */
+	zflushpage(minst->i_ctx_p);	/* force display update */
     }
-    run_finish(code, exit_code, &error_object);
+    run_finish(minst, code, exit_code, &error_object);
 }
 private void
-run_finish(int code, int exit_code, ref * perror_object)
+run_finish(gs_main_instance *minst, int code, int exit_code,
+	   ref * perror_object)
 {
     switch (code) {
 	case 0:
@@ -680,7 +690,7 @@ run_finish(int code, int exit_code, ref * perror_object)
 	    eprintf1("Unrecoverable error, exit code %d\n", exit_code);
 	    gs_exit(exit_code);
 	default:
-	    gs_debug_dump_stack(code, perror_object);
+	    gs_main_dump_stack(minst, code, perror_object);
 	    gs_exit_with_code(255, code);
     }
 }
@@ -724,9 +734,8 @@ print_help(gs_main_instance * minst)
 private void
 print_revision(void)
 {
-    fprintf(stdout, "%s ", gs_product);
-    print_version();
-    fprintf(stdout, " (%d-%d-%d)\n%s\n",
+    printf_program_ident(stdout, gs_product, gs_revision);
+    fprintf(stdout, " (%d-%02d-%02d)\n%s\n",
 	    (int)(gs_revisiondate / 10000),
 	    (int)(gs_revisiondate / 100 % 100),
 	    (int)(gs_revisiondate % 100),
@@ -737,9 +746,7 @@ print_revision(void)
 private void
 print_version(void)
 {
-    fprintf(stdout, "%d.%02d",
-	    (int)(gs_revision / 100),
-	    (int)(gs_revision % 100));
+    printf_program_ident(stdout, NULL, gs_revision);
 }
 
 /* Print usage information. */

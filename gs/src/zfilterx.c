@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -33,7 +33,6 @@
 #include "sbtx.h"
 #include "shcgen.h"
 #include "smtf.h"
-#include "spcxx.h"
 #include "ifilter.h"
 
 /* ------ Bounded Huffman code filters ------ */
@@ -116,8 +115,9 @@ bhc_setup(os_ptr op, stream_BHC_state * pbhcs)
 
 /* <target> <dict> BoundedHuffmanEncode/filter <file> */
 private int
-zBHCE(os_ptr op)
+zBHCE(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     stream_BHCE_state bhcs;
     int code = bhc_setup(op, (stream_BHC_state *)&bhcs);
 
@@ -128,14 +128,15 @@ zBHCE(os_ptr op)
 
 /* <source> <dict> BoundedHuffmanDecode/filter <file> */
 private int
-zBHCD(os_ptr op)
+zBHCD(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     stream_BHCD_state bhcs;
     int code = bhc_setup(op, (stream_BHC_state *)&bhcs);
 
     if (code < 0)
 	return code;
-    return filter_read(op, 0, &s_BHCD_template, (stream_state *)&bhcs, 0);
+    return filter_read(i_ctx_p, 0, &s_BHCD_template, (stream_state *)&bhcs, 0);
 }
 
 /* <array> <max_length> .computecodes <array> */
@@ -144,8 +145,9 @@ zBHCD(os_ptr op)
 /* the code values.  This is the form needed for the Tables element of */
 /* the dictionary parameter for the BoundedHuffman filters. */
 private int
-zcomputecodes(os_ptr op)
+zcomputecodes(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     os_ptr op1 = op - 1;
     uint asize;
     hc_definition def;
@@ -218,8 +220,9 @@ bwbs_setup(os_ptr op, stream_BWBS_state * pbwbss)
 
 /* <target> <dict> BWBlockSortEncode/filter <file> */
 private int
-zBWBSE(os_ptr op)
+zBWBSE(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     stream_BWBSE_state bwbss;
     int code;
 
@@ -233,14 +236,15 @@ zBWBSE(os_ptr op)
 
 /* <source> <dict> BWBlockSortDecode/filter <file> */
 private int
-zBWBSD(os_ptr op)
+zBWBSD(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     stream_BWBSD_state bwbss;
     int code = bwbs_setup(op, (stream_BWBS_state *)&bwbss);
 
     if (code < 0)
 	return code;
-    return filter_read(op, 0, &s_BWBSD_template, (stream_state *)&bwbss, 0);
+    return filter_read(i_ctx_p, 0, &s_BWBSD_template, (stream_state *)&bwbss, 0);
 }
 
 /* ------ Byte translation filters ------ */
@@ -259,8 +263,9 @@ bt_setup(os_ptr op, stream_BT_state * pbts)
 /* <target> <table> ByteTranslateEncode/filter <file> */
 /* <target> <table> <dict> ByteTranslateEncode/filter <file> */
 private int
-zBTE(os_ptr op)
+zBTE(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     stream_BT_state bts;
     int code = bt_setup(op, &bts);
 
@@ -272,14 +277,15 @@ zBTE(os_ptr op)
 /* <target> <table> ByteTranslateDecode/filter <file> */
 /* <target> <table> <dict> ByteTranslateDecode/filter <file> */
 private int
-zBTD(os_ptr op)
+zBTD(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
     stream_BT_state bts;
     int code = bt_setup(op, &bts);
 
     if (code < 0)
 	return code;
-    return filter_read(op, 0, &s_BTD_template, (stream_state *)&bts, 0);
+    return filter_read(i_ctx_p, 0, &s_BTD_template, (stream_state *)&bts, 0);
 }
 
 /* ------ Move-to-front filters ------ */
@@ -287,27 +293,21 @@ zBTD(os_ptr op)
 /* <target> MoveToFrontEncode/filter <file> */
 /* <target> <dict> MoveToFrontEncode/filter <file> */
 private int
-zMTFE(os_ptr op)
+zMTFE(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     return filter_write_simple(op, &s_MTFE_template);
 }
 
 /* <source> MoveToFrontDecode/filter <file> */
 /* <source> <dict> MoveToFrontDecode/filter <file> */
 private int
-zMTFD(os_ptr op)
+zMTFD(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+
     return filter_read_simple(op, &s_MTFD_template);
-}
-
-/* ------ PCX decoding filter ------ */
-
-/* <source> PCXDecode/filter <file> */
-/* <source> <dict> PCXDecode/filter <file> */
-private int
-zPCXD(os_ptr op)
-{
-    return filter_read_simple(op, &s_PCXD_template);
 }
 
 /* ================ Initialization procedure ================ */
@@ -325,6 +325,5 @@ const op_def zfilterx_op_defs[] =
     {"2ByteTranslateDecode", zBTD},
     {"1MoveToFrontEncode", zMTFE},
     {"1MoveToFrontDecode", zMTFD},
-    {"1PCXDecode", zPCXD},
     op_def_end(0)
 };

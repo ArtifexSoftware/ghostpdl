@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -98,10 +98,10 @@ gx_concrete_space_Separation(const gs_color_space * pcs,
 
 /* Install a Separation color space. */
 private int
-gx_install_Separation(gs_color_space * pcs, gs_state * pgs)
+gx_install_Separation(const gs_color_space * pcs, gs_state * pgs)
 {
     return (*pcs->params.separation.alt_space.type->install_cspace)
-	((gs_color_space *) & pcs->params.separation.alt_space, pgs);
+	((const gs_color_space *) & pcs->params.separation.alt_space, pgs);
 }
 
 /* Adjust the reference count of a Separation color space. */
@@ -234,7 +234,7 @@ gs_cspace_build_Separation(
  * the separation color space has a cache size of 0.
  */
 float *
-gs_cspace_get_separation_value_array(const gs_color_space * pcspace)
+gs_cspace_get_sepr_value_array(const gs_color_space * pcspace)
 {
     if (gs_color_space_get_index(pcspace) != gs_color_space_index_Separation)
 	return 0;
@@ -245,7 +245,7 @@ gs_cspace_get_separation_value_array(const gs_color_space * pcspace)
  * Set the tint transformation procedure used by a Separation color space.
  */
 int
-gs_cspace_set_tint_transform_proc(gs_color_space * pcspace,
+gs_cspace_set_tint_xform_proc(gs_color_space * pcspace,
 	    int (*proc) (P3(const gs_separation_params *, floatp, float *)))
 {
     if (gs_color_space_get_index(pcspace) != gs_color_space_index_Separation)
