@@ -727,6 +727,7 @@ private dev_proc_fill_trapezoid(null_fill_trapezoid);
 private dev_proc_fill_parallelogram(null_fill_parallelogram);
 private dev_proc_fill_triangle(null_fill_triangle);
 private dev_proc_draw_thin_line(null_draw_thin_line);
+private dev_proc_decode_color(null_decode_color);
 /* We would like to have null implementations of begin/data/end image, */
 /* but we can't do this, because image_data must keep track of the */
 /* Y position so it can return 1 when done. */
@@ -782,10 +783,10 @@ private dev_proc_strip_copy_rop(null_strip_copy_rop);
 	NULL,				/* begin_transparency_mask */\
 	NULL,				/* end_transparency_mask */\
 	NULL,				/* discard_transparency_layer */\
-	gx_forward_get_color_mapping_procs,	/* get_color_mapping_procs */\
-	gx_forward_get_color_comp_index,/* get_color_comp_index */\
-	gx_forward_encode_color,	/* encode_color */\
-	gx_forward_decode_color		/* decode_color */\
+	gx_default_DevGray_get_color_mapping_procs,	/* get_color_mapping_procs */\
+	gx_default_DevGray_get_color_comp_index,/* get_color_comp_index */\
+	gx_default_gray_fast_encode,		/* encode_color */\
+	null_decode_color		/* decode_color */\
 }
 
 const gx_device_null gs_null_device = {
@@ -801,6 +802,13 @@ std_device_std_body_type_open(gx_device_null, 0, "nullpage", &st_device_null,
     null_procs(gx_page_device_get_page_device /* a page device */ ),
     0				/* target */
 };
+
+private int
+null_decode_color(gx_device * dev, gx_color_index cindex, gx_color_value colors[])
+{
+    colors[0] = (cindex & 1) ?  gx_max_color_value : 0;
+    return 0;
+}
 
 private int
 null_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
