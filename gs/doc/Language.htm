@@ -1173,6 +1173,23 @@ otherwise.
 <dd>Returns the error string for the most recent operating system error.
 </dl>
 
+<a name="bindnow"></a>
+<dl>
+<dt><b><tt>.bindnow</tt></b>
+<dd>Execute all bind invocations after binding has been deferred through -dDELAYBIND.
+This and its corresponding commandline options are generally only of use to special-purpose
+applications.
+Note that after calling <tt>.bindnow</tt>, the postscript <tt>bind</tt> operator needs to be
+rebound to the internal implementation <tt>.bind</tt>, as in this fragment from the ps2ascii
+script:
+<blockquote><pre><tt>DELAYBIND {
+  .bindnow
+  /bind /.bind load def
+} if
+</tt></pre></blockquote>
+This is necessary for correct behavior with later code that uses the <tt>bind</tt> operator.
+</dl>
+
 <a name="Runandhide"></a>
 <dl>
 <dt><b><tt>&lt;array&gt; &lt;procedure&gt; .runandhide ... &lt;array&gt;</tt></b>
