@@ -226,7 +226,12 @@ private const char *const psw_procset[] = {
     "/r6{dup 3 -1 roll rG}!/r5{dup 3 1 roll rG}!/r3{dup rG}!",
     "/w/setlinewidth #/J/setlinecap #",
     "/j/setlinejoin #/M/setmiterlimit #/d/setdash #/i/setflat #",
-    "/m/moveto #/l/lineto #/c/rcurveto #/h{p closepath}!/H{P closepath}!",
+    "/m/moveto #/l/lineto #/c/rcurveto #",
+	/* <dx1> <dy1> ... <dxn> <dyn> p - */
+    "/p{N 2 idiv{N -2 roll rlineto}repeat}!",
+	/* <x> <y> <dx1> <dy1> ... <dxn> <dyn> P - */
+    "/P{N 0 gt{N -2 roll moveto p}if}!",
+    "/h{p closepath}!/H{P closepath}!",
 	/* <dx> lx - */
 	/* <dy> ly - */
 	/* <dx2> <dy2> <dx3> <dy3> v - */
@@ -236,10 +241,6 @@ private const char *const psw_procset[] = {
     "/re{4 -2 roll m exch dup lx exch ly neg lx h}!",
 	/* <x> <y> <a> <b> ^ <x> <y> <a> <b> <-x> <-y> */
     "/^{3 index neg 3 index neg}!",
-	/* <x> <y> <dx1> <dy1> ... <dxn> <dyn> P - */
-    "/P{N 0 gt{N -2 roll moveto p}if}!",
-	/* <dx1> <dy1> ... <dxn> <dyn> p - */
-    "/p{N 2 idiv{N -2 roll rlineto}repeat}!",
     "/f{P fill}!/f*{P eofill}!/s{H stroke}!/S{P stroke}!",
     "/q/gsave #/Q/grestore #/rf{re fill}!",
     "/Y{P clip newpath}!/Y*{P eoclip newpath}!/rY{re Y}!",
