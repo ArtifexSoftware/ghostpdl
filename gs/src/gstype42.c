@@ -88,7 +88,7 @@ gs_type42_font_init(gs_font_type42 * pfont)
     numTables = U16(OffsetTable + 4);
     ACCESS(12, numTables * 16, TableDirectory);
     /* Clear optional entries. */
-    memset(pfont->data.metrics, sizeof(pfont->data.metrics), 0);
+    memset(pfont->data.metrics, 0, sizeof(pfont->data.metrics));
     for (i = 0; i < numTables; ++i) {
 	const byte *tab = TableDirectory + i * 16;
 	ulong offset = u32(tab + 8);
