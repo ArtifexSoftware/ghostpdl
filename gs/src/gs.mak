@@ -272,23 +272,6 @@ config-clean :
 	$(RMN_) $(GSGEN)gconfx*.h $(GSGEN)j*.h
 	$(RMN_) $(GSGEN)c*.tr $(GSGEN)o*.tr $(GSGEN)l*.tr
 
-# A rule to do a quick and dirty compilation attempt when first installing
-# the interpreter.  Many of the compilations will fail:
-# follow this with 'make'.
-
-#****** FOLLOWING IS WRONG, TIED TO INTERPRETER ******
-begin :
-	$(RMN_) $(GSGEN)arch.h $(GSGEN)gconfig*.h $(GSGEN)gconfx*.h
-	$(RMN_) $(GENARCH_XE) $(GS_XE)
-	$(RMN_) $(GSGEN)gconfig*.c $(GSGEN)gscdefs*.c $(GSGEN)iconfig*.c
-	$(RMN_) $(GSGEN)gs_init.c $(BEGINFILES)
-	make $(GSGEN)arch.h $(GSGEN)gconfigv.h
-	- $(CCBEGIN)
-	$(RMN_) $(GSOBJ)gconfig.$(OBJ) $(GSOBJ)gdev*.$(OBJ)
-	$(RMN_) $(GSOBJ)gp_*.$(OBJ) $(GSOBJ)gscdefs.$(OBJ) $(GSOBJ)gsmisc.$(OBJ)
-	$(RMN_) $(PSOBJ)icfontab.$(OBJ) $(PSOBJ)iconfig.$(OBJ)
-	$(RMN_) $(PSOBJ)iinit.$(OBJ) $(PSOBJ)interp.$(OBJ)
-
 # Macros for constructing the *.dev files that describe features and
 # devices.
 SETDEV=$(EXP)$(ECHOGS_XE) -e .dev -w- -l-dev -b -s -l-obj
