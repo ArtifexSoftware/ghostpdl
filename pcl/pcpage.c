@@ -325,7 +325,6 @@ new_page_size(
     page_size[0] = width_pts;
     page_size[1] = height_pts;
 
-    put_param1_int(pcs, "TrayOrientation", pcs->tray_orientation);
     put_param1_float_array(pcs, "PageSize", page_size);
 
     /*
