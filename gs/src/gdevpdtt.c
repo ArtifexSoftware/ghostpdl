@@ -166,7 +166,6 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	    code = gx_clip_to_rectangle(penum_s->pgs, &clip_box);
 	    if (code < 0)
 		return code;
-	    penum->charproc_accum = true;
 	    code = pdf_install_charproc_accum(pdev, pte->orig_font, 
 			pw, control, ch, &gnstr);
 	    if (code < 0)

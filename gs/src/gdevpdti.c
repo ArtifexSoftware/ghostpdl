@@ -425,13 +425,15 @@ pdf_install_charproc_accum(gx_device_pdf *pdev, gs_font *font, const double *pw,
     pdfont->u.simple.s.type3.char_procs = pcp;
     pcp->char_code = ch;
     pcp->char_name = *gnstr;
-    pdev->skip_colors = true;
-    if (control == TEXT_SET_CHAR_WIDTH)
+    if (control == TEXT_SET_CHAR_WIDTH) {
+	pdev->skip_colors = false;
 	pprintg2(pdev->strm, "%g %g d0\n", (float)pw[0], (float)pw[1]);
-    else
+    } else {
+	pdev->skip_colors = true;
 	pprintg6(pdev->strm, "%g %g %g %g %g %g d1\n", 
 	    (float)pw[0], (float)pw[1], (float)pw[2], 
 	    (float)pw[3], (float)pw[4], (float)pw[5]);
+    }
     return 0;
 }
 
