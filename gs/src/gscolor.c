@@ -139,6 +139,7 @@ gs_currentgray(const gs_state * pgs, float *pg)
 					float2frac(pcc->paint.values[1]),
 					float2frac(pcc->paint.values[2]),
 					pis));
+	    break;
 	case gs_color_space_index_DeviceCMYK:
 	    *pg = frac2float(color_cmyk_to_gray(
 					float2frac(pcc->paint.values[0]),
