@@ -150,9 +150,9 @@ pdfdict begin
   (>>) cvn /.dicttomark load
   ([) cvn { mark } bind		% ditto
   (]) cvn dup load
-  /true true
-  /false false
-  /null null
+%  /true true		% see .pdfexectoken in pdf_base.ps
+%  /false false		% ibid.
+%  /null null		% ibid.
   /R { /resolveR cvx 3 packedarray cvx } bind	% see Objects below
   /startxref /exit load
 .dicttomark readonly def
