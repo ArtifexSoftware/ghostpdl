@@ -360,7 +360,7 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcs, stream_cursor_read *pr)
 			else
 			  { pst->scan_type = scanning_none;
 			    /* Rescan the out-of-place character. */
-			    --p;
+      			    --p;
 			    continue;
 			  }
 			/* Dispatch on param_class, param_group, and chr. */
@@ -455,6 +455,7 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcs, stream_cursor_read *pr)
 				      { if_debug1('i', "%c", p[1]);
 					++p;
 				      }
+
 				    if_debug0('i', "\n");
 				    code = pcl_text(str, (uint)(p + 1 - str),
 						    pcs, false);
@@ -477,8 +478,7 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcs, stream_cursor_read *pr)
 					cdefn =
 					  pcl_get_command_definition(pst, 0, 0, chr);
 					if ( !cdefn )
-					  { /* Skip only the ESC. */
-					    --p;
+					  { /* Skip the ESC, and current char */
 					    continue;
 					  }
 					if_debug1('i', "   [%s]\n",
