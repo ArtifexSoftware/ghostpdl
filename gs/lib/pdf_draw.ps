@@ -1123,9 +1123,11 @@ end
 		% Stack: scale annot false
     {
       		% Draw appearance
+                % Initialize graphic following "7.4.4 Appearance Streams"
+      q graphicsbeginpage textbeginpage
       1 index annotrect pop pop translate
       2 index dup scale		% Apply scale factor
-      DoForm
+      DoForm Q
     } if
   } if pop pop
 } bdef
