@@ -68,25 +68,16 @@ DingbatsEncoding pop
 % Redefine 'run' so it recognizes PDF files.
 systemdict begin
 /.runps /run load def
-/runpdfstring 5 string def
 /run {
   dup type /filetype ne { (r) file } if
   dup ( ) .peekstring {
     (%) eq {
-      dup (  ) .peekstring {
-	(%P) eq {
-	  dup //runpdfstring {
-		% Some invalid files might have extra-long first lines....
-	    { readstring } .internalstopped not { pop pop exit } if
-	    pop =string
-	  } loop
-	  //runpdfstring (%PDF-) anchorsearch {
-	    pop pop 
+      dup (     ) .peekstring {
+	(%PDF-) eq {
 	    dup (%stdin) (r) file eq {
 	      % Copy PDF from stdin to temporary file then run it.
 	      null (w+) //systemdict /.tempfile get exec exch 3 1 roll
 	      % stack: tempname stdin tempfile
-	      dup //runpdfstring writestring
 	      1024 string
 	      {
 		% stack: tempname stdin tempfile string
@@ -104,19 +95,16 @@ systemdict begin
 	      runpdf
 	    } ifelse
 	  } {
-	    pop cvx .runexec
+	    cvx .runps % doesn't start with %PDF-
 	  } ifelse
 	} {
-	  cvx .runps
+	  pop cvx .runps % didn't read 5 characters
 	} ifelse
-      } {
-	closefile
-      } ifelse
     } {
-      cvx .runps
+      cvx .runps % didn't start with %
     } ifelse
   } {
-    closefile
+    pop closefile % file was empty
   } ifelse
 } bind odef
 currentdict /runpdfstring .undef

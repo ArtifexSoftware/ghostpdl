@@ -207,20 +207,11 @@
 /run
  { dup type /filetype ne { (r) file } if
 		% Check for MS-DOS EPSF file (see Red Book p. 729).
-   true exch 0 1 3
-    {		% Stack: true file index
-      1 index read dup { pop dup .epsfheader 3 index get eq } if
-       { pop pop }	% if matched, don't need the character
-       {	% unread characters (wasn't EPSF)
-	 2 index exch unread     % unread mismatch character
-	 dup {   % loop unreading backwards in .epsfheader
-	   1 sub dup .epsfheader exch get 2 index exch unread
-	 } repeat pop
-	 exch not exch exit	% change true to false
-       }
-      ifelse
-    }
-   for exch	% Stack: file true/false
+ dup (    ) .peekstring 
+  { .epsfheader eq { dup (    ) readstring exch pop } { false } ifelse }
+  { pop false }
+ ifelse
+		% Stack: file true/false
     {		% This block is executed if the file is MS-DOS EPSF.
 		% Build up the little-endian byte offset and length.
       2
