@@ -387,7 +387,7 @@ ps_impl_dnit_job(
 {
     int code = 0; 
     int exit_code = 0;
-    static const char *buf = "\nendjob\n";  /* restore to begin job state */
+    static const char *buf = "\n.endjob\n";  /* restore to begin job state */
     ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
 
     /* take care of a stored pdf file */
