@@ -1292,13 +1292,12 @@ set_driver_configuration(
 	return e_Range;
 
     /* the only device known to support this command */
-#define COLOR_HP_LASERJET_PRINTERS 6
-    if ( driver->device_id != COLOR_HP_LASERJET_PRINTERS )
+    if ( ( driver->device_id != 6 ) /* hp color laserjet */ &&
+         ( driver->device_id != 8 ) ) /* hp 4500 - 4550 */ {
+        dprintf1( "unknown device id %d\n", driver->device_id );
 	return e_Range;
-#undef COLOR_HP_LASERJET_PRINTERS
+    }
 
-    /* return unless the function index indicates lightness or
-       saturation. */
     switch (driver->function_index) {
     case 0: /* lightness */
 	{
@@ -1322,8 +1321,16 @@ set_driver_configuration(
 		return code;
 	}
 	break;
+    case 4:
+        if ( driver->arguments == 3 ) {
+            pcs->useciecolor = false;
+        }
+        else if ( driver->arguments == 6 ) {
+            pcs->useciecolor = true;
+        } else
+            return e_Range;
+        break;
     default:
-	/* out of range or 3, 4, and 5 is not supported. */
 	return e_Range;
     }
     return 0;

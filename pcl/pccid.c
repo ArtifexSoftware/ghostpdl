@@ -292,8 +292,6 @@ substitute_colorimetric_cs(
     floatp max1 = 1.0;
     floatp max2 = 1.0;
     floatp max3 = 1.0;
-    dprintf1("substituting color space srbg for %s\n", 
-             pcid->u.hdr.cspace == pcl_cspace_RGB ? "rgb" : "cmy");
     /* just override the color space we use the other header values
        from the old device dependent color space */
     pcid->original_cspace = pcid->u.hdr.cspace;
@@ -345,7 +343,7 @@ install_cid_data(
     /* check if we should substitute colometric for a device color space */
     if ( (pcl_cid_get_cspace(&cid) >= pcl_cspace_RGB) &&
 	 (pcl_cid_get_cspace(&cid) <= pcl_cspace_CMY) &&
-	 !pjl_proc_compare(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "useciecolor"), "on") )
+         pcs->useciecolor )
 	code = substitute_colorimetric_cs(pcs, &cid);
     else {
 	cid.original_cspace = pcl_cspace_num;
@@ -533,4 +531,17 @@ pcl_cid_do_registration(
     return 0;
 }
 
-const pcl_init_t    pcl_cid_init = { pcl_cid_do_registration, 0, 0 };
+private void
+pcl_cid_do_reset(pcl_state_t *       pcs,
+          pcl_reset_type_t    type
+)
+{
+    /* NB this needs testing */
+    if ( type & pcl_reset_printer ) {
+        /* NOTE the '!' is like strcmp 0 matches */
+        pcs->useciecolor = !pjl_proc_compare(pcs->pjls,
+                              pjl_proc_get_envvar(pcs->pjls, "useciecolor"), "on");
+    }
+}    
+
+const pcl_init_t    pcl_cid_init = { pcl_cid_do_registration, pcl_cid_do_reset, 0 };
