@@ -10,6 +10,7 @@
 #include "gsstate.h"            /* for gscoord.h */
 #include "gscoord.h"
 #include "pgmand.h"
+#include "pcparse.h"
 #include "pgdraw.h"
 #include "pginit.h"
 #include "pggeom.h"
@@ -515,7 +516,10 @@ hpgl_BP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 
 /* Initialization */
 private int
-pgconfig_do_init(gs_memory_t *mem)
+pgconfig_do_registration(
+    pcl_parser_state_t *pcl_parser_state,
+    gs_memory_t *mem
+)
 {		/* Register commands */
 	DEFINE_HPGL_COMMANDS
 	  /* CO has special argument parsing, so it must handle skipping */
@@ -540,5 +544,5 @@ pgconfig_do_init(gs_memory_t *mem)
 	return 0;
 }
 const pcl_init_t pgconfig_init = {
-  pgconfig_do_init, 0
+  pgconfig_do_registration, 0
 };

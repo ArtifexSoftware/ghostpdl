@@ -320,7 +320,8 @@ set_pat_ref_pt(
  * reference point as well.
  */
   private int
-xfm_do_init(
+xfm_do_registration(
+    pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *   pmem
 )
 {
@@ -336,4 +337,4 @@ xfm_do_init(
     return 0;
 }
 
-const pcl_init_t    pcl_xfm_init = { xfm_do_init, 0, 0 };
+const pcl_init_t    pcl_xfm_init = { xfm_do_registration, 0, 0 };

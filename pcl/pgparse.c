@@ -11,46 +11,41 @@
 #include "scommon.h"
 #include "pgmand.h"
 
-/*
- * We register all the HP-GL/2 commands dynamically, for maximum
- * configuration flexibility.  hpgl_command_list points to the individual
- * command definitions; as each command is registered, we enter it in the
- * list, and then store its index in the actual dispatch table
- * (hpgl_command_indices).
- */
-private const hpgl_command_definition_t *hpgl_command_list[100];
-private int hpgl_command_next_index;
-/* Dispatch tables */
-private byte hpgl_command_indices[26][26];
-
 /* ---------------- Command definition ---------------- */
 
 /* Register a command.  Return true if this is a redefinition. */
 private bool
-hpgl_register_command(byte *pindex, const hpgl_command_definition_t *pcmd)
-{	int index = hpgl_command_next_index;
-	byte prev = *pindex;
+hpgl_register_command(hpgl_parser_state_t *pgl_parser_state,
+		      byte *pindex, 
+		      const hpgl_command_definition_t *pcmd)
+{
+    int index = pgl_parser_state->hpgl_command_next_index;
+    byte prev = *pindex;
 
-	if ( prev != 0 && prev <= index && hpgl_command_list[prev] == pcmd )
-	  index = prev;
-	else if ( index != 0 && hpgl_command_list[index] == pcmd )
-	  ;
-	else
-	  hpgl_command_list[hpgl_command_next_index = ++index] = pcmd;
-	*pindex = index;
-	return (prev != 0 && prev != index);
+    if ( prev != 0 && prev <= index && 
+	 pgl_parser_state->hpgl_command_list[prev] == pcmd )
+	index = prev;
+    else if ( index != 0 && pgl_parser_state->hpgl_command_list[index] == pcmd )
+	    ;
+    else
+	pgl_parser_state->hpgl_command_list[pgl_parser_state->hpgl_command_next_index = ++index] = pcmd;
+    *pindex = index;
+    return (prev != 0 && prev != index);
 }
 
 /* Define a list of commands. */
 void
-hpgl_define_commands(const hpgl_named_command_t *pcmds)
+hpgl_define_commands(const hpgl_named_command_t *pcmds,
+		     hpgl_parser_state_t *pgl_parser_state
+)
 {	const hpgl_named_command_t *pcmd = pcmds;
 
 	for ( ; pcmd->char1; ++pcmd )
 #ifdef DEBUG
 	  if (
 #endif
-	  hpgl_register_command(&hpgl_command_indices
+	  hpgl_register_command(pgl_parser_state,
+				&pgl_parser_state->hpgl_command_indices
 				[pcmd->char1 - 'A'][pcmd->char2 - 'A'],
 				&pcmd->defn)
 #ifdef DEBUG
@@ -127,7 +122,7 @@ call:	if ( pst->command )
 		  { pst->first_letter = next;
 		    continue;
 		  }
-		{ int index = hpgl_command_indices[pst->first_letter][next];
+		{ int index = pst->hpgl_command_indices[pst->first_letter][next];
 
 #ifdef DEBUG
 		  if ( gs_debug_c('i') )
@@ -141,7 +136,7 @@ call:	if ( pst->command )
 		      continue;
 		    }
 		  pst->first_letter = -1;
-		  pst->command = hpgl_command_list[index];
+		  pst->command = pst->hpgl_command_list[index];
 		  pst->phase = 0;
 		  pst->done = false;
 		  hpgl_args_init(pst);
@@ -354,9 +349,14 @@ hpgl_arg_units(hpgl_args_t *pargs, hpgl_real_t *pu)
 	return hpgl_arg_real(pargs, pu);
 }
 
-/* initialize the HPGL command counter (for uninitialized BSS) */
+/* initialize the HPGL command counter */
 void
-hpgl_init_command_index(void)
+hpgl_init_command_index(hpgl_parser_state_t *pgl_parser_state)
 {
-    hpgl_command_next_index = 0;
+    pgl_parser_state->hpgl_command_next_index = 0;
+    /* NB fix me the parser should not depend on this behavior the
+       previous design had these in bss which was automatically
+       cleared to zero. */
+    memset(pgl_parser_state->hpgl_command_indices, 0,
+	   sizeof(pgl_parser_state->hpgl_command_indices));
 }

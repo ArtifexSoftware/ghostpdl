@@ -5,6 +5,7 @@
 /* pgpoly.c -  HP-GL/2 polygon commands */
 
 #include "std.h"
+#include "pcparse.h"
 #include "pgmand.h"
 #include "pgdraw.h"
 #include "pggeom.h"
@@ -263,7 +264,9 @@ hpgl_WG(hpgl_args_t *pargs, hpgl_state_t *pgls)
 
 /* Initialization */
 private int
-pgpoly_do_init(gs_memory_t *mem)
+pgpoly_do_registration(
+    pcl_parser_state_t *pcl_parser_state,
+    gs_memory_t *mem)
 {		/* Register commands */
 	DEFINE_HPGL_COMMANDS
 	  HPGL_COMMAND('E', 'A', hpgl_EA, hpgl_cdf_lost_mode_cleared),
@@ -279,5 +282,5 @@ pgpoly_do_init(gs_memory_t *mem)
 	return 0;
 }
 const pcl_init_t pgpoly_init = {
-  pgpoly_do_init, 0
+  pgpoly_do_registration, 0
 };

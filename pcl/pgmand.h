@@ -16,6 +16,11 @@
 typedef struct pcl_state_s hpgl_state_t;
 
 /* Define the type for HP-GL/2 command arguments. */
+#ifndef hpgl_parser_state_DEFINED
+#  define hpgl_parser_state_DEFINED
+typedef struct hpgl_args_s hpgl_parser_state_t;
+#endif
+
 typedef struct hpgl_args_s hpgl_args_t;
 
 /* Define a command processing procedure. */
@@ -72,40 +77,50 @@ typedef struct hpgl_value_s {
 
 /* Define the structure passed to HP-GL/2 commands. */
 struct hpgl_args_s {
-	/* Parsing state */
-  stream_cursor_read source;
-  int first_letter;		/* -1 if we haven't seen the first letter of */
+    /* Parsing state */
+    stream_cursor_read source;
+    int first_letter;		/* -1 if we haven't seen the first letter of */
 				/* a command, the letter (0-25) if we have */
-  bool done;			/* true if we've seen an argument */
+    bool done;			/* true if we've seen an argument */
 				/* terminator */
-  const hpgl_command_definition_t *command; /* command being executed, */
+    hpgl_command_definition_t *command; /* command being executed, */
 				/* 0 if none */
-  jmp_buf exit_to_parser;	/* longjmp here if we ran out of data */
+    jmp_buf exit_to_parser;	/* longjmp here if we ran out of data */
 				/* while scanning an argument, or we */
 				/* found a syntax error */
-  struct arg_ {			/* argument scanning state */
+    struct arg_ {			/* argument scanning state */
 	/* State within the current argument */
-    int have_value;		/* 0 = no value, 1 = int, 2 = real */
-    double frac_scale;		/* 10 ^ # of digits after dot */
-    int sign;			/* 0 = none, +/-1 = sign */
+	int have_value;		/* 0 = no value, 1 = int, 2 = real */
+	double frac_scale;		/* 10 ^ # of digits after dot */
+	int sign;			/* 0 = none, +/-1 = sign */
 	/* State of argument list collection */
-    int count;			/* # of fully scanned arguments */
-    int next;			/* # of next scanned arg to return */
-    hpgl_value_t scanned[21];	/* args already scanned */
-  } arg;
-	/* Command execution state */
-  int phase;			/* phase within command, see above */
+	int count;			/* # of fully scanned arguments */
+	int next;			/* # of next scanned arg to return */
+	hpgl_value_t scanned[21];	/* args already scanned */
+    } arg;
+    /* Command execution state */
+    int phase;			/* phase within command, see above */
+
+    /*
+     * We register all the HP-GL/2 commands dynamically, for maximum
+     * configuration flexibility.  hpgl_command_list points to the individual
+     * command definitions; as each command is registered, we enter it in the
+     * list, and then store its index in the actual dispatch table
+     * (hpgl_command_indices).
+     */
+    hpgl_command_definition_t *hpgl_command_list[100];
+    int hpgl_command_next_index;
+    /* Dispatch tables */
+    byte hpgl_command_indices[26][26];
 };
-/* Note that this is synonymous with the HP-GL/2 parser state. */
-typedef hpgl_args_t hpgl_parser_state_t;
 
 /* Register HP-GL/2 commands. */
 typedef struct {
   char char1, char2;
   hpgl_command_definition_t defn;
 } hpgl_named_command_t;
-void hpgl_init_command_index(P1(void));
-void hpgl_define_commands(P1(const hpgl_named_command_t *));
+void hpgl_init_command_index(P1(hpgl_parser_state_t *pgl_parser_state));
+void hpgl_define_commands(P2(const hpgl_named_command_t *, hpgl_parser_state_t *pgl_parser_state));
 #define DEFINE_HPGL_COMMANDS \
 { static const hpgl_named_command_t defs_[] = {
 #define HPGL_COMMAND(c1, c2, proc, flag)\
@@ -113,7 +128,7 @@ void hpgl_define_commands(P1(const hpgl_named_command_t *));
 #define END_HPGL_COMMANDS\
     {0, 0}\
   };\
-  hpgl_define_commands(defs_);\
+  hpgl_define_commands(defs_, pcl_parser_state->hpgl_parser_state);\
 }
 
 /* Define a return code asking for more data. */

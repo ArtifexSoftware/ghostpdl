@@ -11,17 +11,6 @@
 #include "pcpalet.h"
 #include "pcfrgrnd.h"
 
-/*
- * The default palette. This is allocated once at boot time, and retained
- * thereafter. It could be freed and re-allocated, but it is harder to use
- * memory leak detection tools in that case.
- */
-pcl_palette_t * pdflt_palette;
-
-/* dictionary to hold the palette store */
-private pl_dict_t   palette_store;
-
-
 /* GC routines */
 private_st_palette_t();
 
@@ -69,6 +58,7 @@ dict_free_palette(
  */
   private int
 alloc_palette(
+    pcl_state_t *       pcs,
     pcl_palette_t **    pppalet,
     gs_memory_t *       pmem
 )
@@ -83,7 +73,7 @@ alloc_palette(
                        "allocate pcl palette object"
                        );
     ppalet->rc.free = free_palette;
-    ppalet->id = pcl_next_id();
+    ppalet->id = pcl_next_id(pcs);
     ppalet->pindexed = 0;
     ppalet->pcrd = 0;
     ppalet->pht = 0;
@@ -132,12 +122,12 @@ unshare_palette(
 
     /* check if there is anything to do */
     if ((ppalet != 0) && (ppalet->rc.ref_count == 1)) {
-        ppalet->id = pcl_next_id();
+        ppalet->id = pcl_next_id(pcs);
         return 0;
     }
 
     /* allocate a new palette */
-    if ((code = alloc_palette(&pnew, pcs->memory)) < 0)
+    if ((code = alloc_palette(pcs, &pnew, pcs->memory)) < 0)
         return code;
     if (ppalet != 0) {
         pcl_cs_indexed_init_from(pnew->pindexed, ppalet->pindexed);
@@ -148,7 +138,7 @@ unshare_palette(
     /* redefine the current palette id. */
     pcs->ppalet = pnew;
     id_set_value(key, pcs->sel_palette_id);
-    code = pl_dict_put(&palette_store, id_key(key), 2, pnew);
+    code = pl_dict_put(&pcs->palette_store, id_key(key), 2, pnew);
     return (code == -1 ? e_Memory : 0);
 }
 
@@ -166,16 +156,16 @@ build_default_palette(
     pcl_palette_t * ppalet = 0;
     int             code = 0;
 
-    if (pdflt_palette == 0) {
-        code = alloc_palette(&ppalet, pmem);
+    if (pcs->pdflt_palette == 0) {
+        code = alloc_palette(pcs, &ppalet, pmem);
         if (code == 0)
             code = pcl_cs_indexed_build_default_cspace( &(ppalet->pindexed),
                                                         pmem
                                                        );
-        if ((code == 0) && (pcl_default_crd == 0))
+        if ((code == 0) && (pcs->pcl_default_crd == 0))
             code = pcl_crd_build_default_crd(pcs);
         if (code == 0)
-            pcl_crd_init_from(ppalet->pcrd, pcl_default_crd);
+            pcl_crd_init_from(ppalet->pcrd, pcs->pcl_default_crd);
         if (code == 0)
             code = pcl_ht_build_default_ht(pcs, &(ppalet->pht), pmem);
         if (code < 0) {
@@ -183,14 +173,14 @@ build_default_palette(
                 free_palette(pmem, ppalet, "build default palette");
             return code;
         }
-        pcl_palette_init_from(pdflt_palette, ppalet);
+        pcl_palette_init_from(pcs->pdflt_palette, ppalet);
     } else
-        pcl_palette_init_from(ppalet, pdflt_palette);
+        pcl_palette_init_from(ppalet, pcs->pdflt_palette);
 
 
     /* NB: definitions do NOT record a referece */
     id_set_value(key, pcs->sel_palette_id);
-    code = pl_dict_put(&palette_store, id_key(key), 2, ppalet);
+    code = pl_dict_put(&pcs->palette_store, id_key(key), 2, ppalet);
     if (code < 0)
         return e_Memory;
 
@@ -200,33 +190,15 @@ build_default_palette(
 }
 
 /*
- * Palette stack. This is implemented as a simple linked list, and is opaque
- * outside of this module.
- */
-typedef struct pstack_entry_s {
-    struct pstack_entry_s * pnext;
-    pcl_palette_t *         ppalet;
-} pstack_entry_t;
-
-gs_private_st_ptrs1( st_pstack_entry_t,
-                     pstack_entry_t,
-                     "palette stack entry",
-                     pstack_enum_ptrs,
-                     pstack_reloc_ptrs,
-                     ppalet
-                     );
-
-private pstack_entry_t *    palette_stack;
-
-/*
  * Clear the palette stack.
  */
   private void
 clear_palette_stack(
+    pcl_state_t *       pcs,
     gs_memory_t *       pmem
 )
 {
-    pstack_entry_t *    pentry = palette_stack;
+    pstack_entry_t *    pentry = pcs->palette_stack;
 
     while (pentry != 0) {
         pstack_entry_t *    pnext = pentry->pnext;
@@ -235,7 +207,7 @@ clear_palette_stack(
         gs_free_object(pmem, pentry, "clear palette stack");
         pentry = pnext;
     }
-    palette_stack = 0;
+    pcs->palette_stack = 0;
 }
 
 /*
@@ -270,26 +242,26 @@ push_pop_palette(
             return e_Memory;
 
         pcl_palette_init_from(pentry->ppalet, pcs->ppalet);
-        pentry->pnext = palette_stack;
-        palette_stack = pentry;
+        pentry->pnext = pcs->palette_stack;
+        pcs->palette_stack = pentry;
 
         return 0;
 
     } else if (action == 1) {
-        pstack_entry_t *    pentry = palette_stack;
+        pstack_entry_t *    pentry = pcs->palette_stack;
         int                 code = 0;
 
         if (pentry != 0) {
             pcl_id_t    key;
 
-            palette_stack = pentry->pnext;
+            pcs->palette_stack = pentry->pnext;
 
             /* NB: just set - pcs->ppalet is not a reference */
             pcs->ppalet = pentry->ppalet;
 
             /* the dictionary gets the stack reference on the palette */
             id_set_value(key, pcs->sel_palette_id);
-            code = pl_dict_put(&palette_store, id_key(key), 2, pentry->ppalet);
+            code = pl_dict_put(&pcs->palette_store, id_key(key), 2, pentry->ppalet);
             gs_free_object(pcs->memory, pentry, "pop pcl palette");
         }
 
@@ -645,10 +617,10 @@ pcl_palette_set_view_illuminant(
 
     if ((code == 0) && (pcs->ppalet->pcrd == 0)) {
         if ((code = pcl_crd_build_default_crd(pcs)) == 0)
-            pcl_crd_init_from(pcs->ppalet->pcrd, pcl_default_crd);
+            pcl_crd_init_from(pcs->ppalet->pcrd, pcs->pcl_default_crd);
     }
     if (code == 0)
-        code = pcl_crd_set_view_illuminant(&(pcs->ppalet->pcrd), pwht_pt);
+        code = pcl_crd_set_view_illuminant(pcs, &(pcs->ppalet->pcrd), pwht_pt);
     return code;
 }
 
@@ -684,7 +656,7 @@ pcl_palette_check_complete(
                                                     );
     if ((code == 0) && (ppalet->pcrd == 0)) {
         if ((code = pcl_crd_build_default_crd(pcs)) == 0)
-            pcl_crd_init_from(pcs->ppalet->pcrd, pcl_default_crd);
+            pcl_crd_init_from(pcs->ppalet->pcrd, pcs->pcl_default_crd);
     }
     if ((code == 0) && (ppalet->pht == 0))
         code = pcl_ht_build_default_ht(pcs, &(ppalet->pht), pcs->memory);
@@ -709,7 +681,7 @@ set_sel_palette_id(
 
     /* ignore attempts to select non-existent palettes */
     id_set_value(key, id);
-    if ( pl_dict_lookup( &palette_store,
+    if ( pl_dict_lookup( &pcs->palette_store,
                          id_key(key),
                          2, 
                          (void **)&(pcs->ppalet),
@@ -753,15 +725,15 @@ clear_palette_store(
     gs_const_string plkey;
     int             sel_id = pcs->sel_palette_id;
 
-    pl_dict_enum_begin(&palette_store, &denum);
+    pl_dict_enum_begin(&pcs->palette_store, &denum);
     while (pl_dict_enum_next(&denum, &plkey, &pvalue)) {
         int     id = (((int)plkey.data[0]) << 8) + plkey.data[1];
 
         if (id == sel_id) {
-	    if (pvalue != pdflt_palette)
+	    if (pvalue != pcs->pdflt_palette)
                 build_default_palette(pcs);     /* will redefine sel_id */
         } else
-            pl_dict_undef(&palette_store, plkey.data, plkey.size);
+            pl_dict_undef(&pcs->palette_store, plkey.data, plkey.size);
     }
 }
 
@@ -785,18 +757,18 @@ palette_control(
         break;
 
       case 1:
-        clear_palette_stack(pcs->memory);
+        clear_palette_stack(pcs, pcs->memory);
         break;
 
       case 2:
         if (pcs->ctrl_palette_id == pcs->sel_palette_id) {
-            if ((pcs->ppalet == 0) || (pcs->ppalet != pdflt_palette))
+            if ((pcs->ppalet == 0) || (pcs->ppalet != pcs->pdflt_palette))
                 build_default_palette(pcs);
         } else {
             pcl_id_t  key;
 
             id_set_value(key, pcs->ctrl_palette_id);
-            pl_dict_undef(&palette_store, id_key(key), 2);
+            pl_dict_undef(&pcs->palette_store, id_key(key), 2);
         }
         break;
 
@@ -807,7 +779,7 @@ palette_control(
 
             /* NB: definitions don't incremente refernece counts */
             id_set_value(key, pcs->ctrl_palette_id);
-            code = pl_dict_put(&palette_store, id_key(key), 2, pcs->ppalet);
+            code = pl_dict_put(&pcs->palette_store, id_key(key), 2, pcs->ppalet);
             if (code < 0)
                 return code;
             rc_increment(pcs->ppalet);
@@ -873,7 +845,8 @@ set_print_mode(
  * Initialization routine for palettes.
  */
   private int
-palette_do_init(
+palette_do_registration(
+    pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *    pmem
 )
 {
@@ -946,7 +919,7 @@ palette_do_reset(
 
     /* for initial reset, set up the palette store */
     if ((type & pcl_reset_initial) != 0) {
-        pl_dict_init(&palette_store, pcs->memory, dict_free_palette);
+        pl_dict_init(&pcs->palette_store, pcs->memory, dict_free_palette);
         pcs->ppalet = 0;
         pcs->pfrgrnd = 0;
 
@@ -954,16 +927,16 @@ palette_do_reset(
         pcl_ht_init_render_methods(pcs, pcs->memory);
 
         /* handle possible non-initialization of BSS */
-        pdflt_palette = 0;
-        palette_stack = 0;
-        pcl_default_crd = 0;
-        pcl_cs_base_init();
+        pcs->pdflt_palette = 0;
+        pcs->palette_stack = 0;
+        pcs->pcl_default_crd = 0;
+        pcl_cs_base_init(pcs);
         pcl_cs_indexed_init();
 
     } else if ((type & (pcl_reset_cold | pcl_reset_printer)) != 0) {
 
         /* clear the palette stack and store */
-        clear_palette_stack(pcs->memory);
+        clear_palette_stack(pcs, pcs->memory);
         clear_palette_store(pcs);
     }
 
@@ -1012,14 +985,13 @@ palette_do_copy(
     if ((operation & (pcl_copy_before_call | pcl_copy_before_overlay)) != 0)
         pcl_palette_init_from(psaved->ppalet, pcs->ppalet);
     else if ((operation & pcl_copy_after) != 0) {
-        pcl_id_t    key;
-
+	pcl_id_t    key;
         id_set_value(key, psaved->sel_palette_id);
-        pl_dict_put(&palette_store, id_key(key), 2, psaved->ppalet);
+        pl_dict_put(&pcs->palette_store, id_key(key), 2, psaved->ppalet);
     }
     return 0;
 }
 
 const pcl_init_t    pcl_palette_init = {
-    palette_do_init, palette_do_reset, palette_do_copy
+    palette_do_registration, palette_do_reset, palette_do_copy
 };

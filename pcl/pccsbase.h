@@ -12,7 +12,6 @@
 #include "gsrefct.h"
 #include "gscspace.h"
 #include "pcident.h"
-#include "pcstate.h"
 #include "pcommand.h"
 #include "pccid.h"
 #include "pclookup.h"
@@ -119,7 +118,8 @@ int pcl_cs_base_build_cspace(P3(
  *
  * This routine is usually called once at initialization.
  */
-int pcl_cs_base_build_white_cspace(P2(
+int pcl_cs_base_build_white_cspace(P3(
+    pcl_state_t *       pcs,
     pcl_cs_base_t **    ppbase,
     gs_memory_t *       pmem
 ));
@@ -159,6 +159,6 @@ int pcl_cs_base_install(P2(
  * One-time initialization routine. This exists only to handle possible non-
  * initialization of BSS.
  */
-void pcl_cs_base_init( void );
+void pcl_cs_base_init(P1(pcl_state_t *pcs));
 
 #endif  	/* pccsbase_INCLUDED */

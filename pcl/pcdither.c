@@ -130,7 +130,8 @@ download_dither_matrix(
  * handled at the palette level.
  */
   private int
-udither_do_init(
+udither_do_registration(
+    pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *    pmme
 )
 {
@@ -143,4 +144,4 @@ udither_do_init(
     return 0;
 }
 
-const pcl_init_t    pcl_udither_init = { udither_do_init, 0, 0 };
+const pcl_init_t    pcl_udither_init = { udither_do_registration, 0, 0 };

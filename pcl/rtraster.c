@@ -37,44 +37,44 @@
  * Structure to describe a PCL raster
  */
 typedef struct pcl_raster_s {
-
-    /* memory used to allocate this structure */
-    gs_memory_t *       pmem;
-
-    byte                nplanes;            /* # of planes (seed rows) */
-    byte                bits_per_plane;     /* bits per plane */
-    byte                nsrcs;              /* # of data sources, 1 or 3 */
-
-    uint                transparent:1;      /* 1 ==> source transparency */
-    uint                src_height_set:1;   /* source height was set */
-    uint                indexed:1;          /* != 0 ==> indexed color space */
-    uint                zero_is_white:1;    /* all planes 0 ==> white */
-    uint                zero_is_black:1;    /* all planes 0 ==> solid color */
-
-    int                 wht_indx;           /* white index, for indexed color
-                                               space only */
-    const void *        remap_ary;          /* remap array, if needed */
-
-    pcl_state_t *       pcs;                /* to avoid n extra operand */
-    pcl_cs_indexed_t *  pindexed;           /* color space */
-
-    gs_image_enum *     pen;                /* image enumerator */
-    uint16              plane_index;        /* next plane to be received */
-    uint16              rows_rendered;      /* # of source rows rendered */
-    uint16              src_width;          /* usable raster width */
-    uint16              src_height;         /* remaining usable raster height */
-
-    /* objects required for opaque source/transparent pattern case */
-    gs_image_enum *     mask_pen;           /* enumerator for mask */
-    pcl_cs_indexed_t *  mask_pindexed;      /* special color space for mask */
-    ulong               white_val;          /* value interpreted as white */
-    void                (*gen_mask_row)( struct pcl_raster_s * prast );
-
-    /* buffers */
-    pcl_seed_row_t *    pseed_rows;         /* seed rows, one per plane */
-    byte *              cons_buff;          /* consolidation buffer */
-    byte *              mask_buff;          /* buffer for mask row, if needed */
-
+ 
+     /* memory used to allocate this structure */
+     gs_memory_t *       pmem;
+ 
+     byte                nplanes;            /* # of planes (seed rows) */
+     byte                bits_per_plane;     /* bits per plane */
+     byte                nsrcs;              /* # of data sources, 1 or 3 */
+ 
+     uint                transparent:1;      /* 1 ==> source transparency */
+     uint                src_height_set:1;   /* source height was set */
+     uint                indexed:1;          /* != 0 ==> indexed color space */
+     uint                zero_is_white:1;    /* all planes 0 ==> white */
+     uint                zero_is_black:1;    /* all planes 0 ==> solid color */
+ 
+     int                 wht_indx;           /* white index, for indexed color
+                                                space only */
+     const void *        remap_ary;          /* remap array, if needed */
+ 
+     pcl_state_t *       pcs;                /* to avoid n extra operand */
+     pcl_cs_indexed_t *  pindexed;           /* color space */
+ 
+     gs_image_enum *     pen;                /* image enumerator */
+     uint16              plane_index;        /* next plane to be received */
+     uint16              rows_rendered;      /* # of source rows rendered */
+     uint16              src_width;          /* usable raster width */
+     uint16              src_height;         /* remaining usable raster height */
+ 
+     /* objects required for opaque source/transparent pattern case */
+     gs_image_enum *     mask_pen;           /* enumerator for mask */
+     pcl_cs_indexed_t *  mask_pindexed;      /* special color space for mask */
+     ulong               white_val;          /* value interpreted as white */
+     void                (*gen_mask_row)( struct pcl_raster_s * prast );
+ 
+     /* buffers */
+     pcl_seed_row_t *    pseed_rows;         /* seed rows, one per plane */
+     byte *              cons_buff;          /* consolidation buffer */
+     byte *              mask_buff;          /* buffer for mask row, if needed */
+ 
 } pcl_raster_t;
 
 /* GC routines */
@@ -89,14 +89,6 @@ gs_private_st_ptrs2( st_raster_t,
                      pseed_rows,
                      cons_buff
                      );
-
-/*
- * There is at most one image actively under construction in PCL at one time.
- * This pointer points to that image, if it exists. The pointer will be non-
- * null while in graphic mode.
- */
-private pcl_raster_t *  pcur_raster;
-
 
 /* forward declaration */
 private int     process_zero_rows( pcl_raster_t * prast, int nrows );
@@ -946,7 +938,7 @@ add_raster_plane(
     pcl_state_t *   pcs
 )
 {
-    pcl_raster_t *  prast = pcur_raster;
+    pcl_raster_t *  prast = (pcl_raster_t *)pcs->raster_state.pcur_raster;
     int             comp_mode = pcs->raster_state.compression_mode;
     int             nplanes = 0;
     int             plane_index = 0;
@@ -956,7 +948,7 @@ add_raster_plane(
     if (prast == 0) {
         if ((code = pcl_enter_graphics_mode(pcs, IMPLICIT)) < 0)
             return code;
-        prast = pcur_raster;
+        prast = (pcl_raster_t *)pcs->raster_state.pcur_raster;
     }
 
     /*
@@ -1017,7 +1009,7 @@ pcl_start_raster(
     pcl_state_t *       pcs
 )
 {
-    pcl_raster_t *      prast = pcur_raster;
+    pcl_raster_t *      prast = (pcl_raster_t *)pcs->raster_state.pcur_raster;
     pcl_palette_t *     ppalet = pcs->ppalet;
     pcl_cs_indexed_t *  pindexed = ppalet->pindexed;
     pcl_encoding_type_t penc = pcl_cs_indexed_get_encoding(pindexed);
@@ -1025,7 +1017,7 @@ pcl_start_raster(
 
     /* there can only be one raster object present at a time */
     if (prast != 0)
-        pcl_complete_raster();
+        pcl_complete_raster(pcs);
 
     prast = gs_alloc_struct( pcs->memory,
                              pcl_raster_t,
@@ -1138,7 +1130,7 @@ pcl_start_raster(
     }
 
     prast->pseed_rows = pseed_rows;
-    pcur_raster = prast;
+    pcs->raster_state.pcur_raster = (pcl_raster_type *)prast;
 
     /* see if a mask is required */
     if ( !pcs->source_transparent                                      &&
@@ -1186,9 +1178,9 @@ pcl_start_raster(
  * Complete a raster. This is called when exiting graphics mode.
  */
   void
-pcl_complete_raster(void)
+pcl_complete_raster(pcl_state_t *pcs)
 {
-    pcl_raster_t *  prast = pcur_raster;
+    pcl_raster_t *  prast = (pcl_raster_t *)pcs->raster_state.pcur_raster;
     int             i;
 
     /* if already in raster mode, ignore */
@@ -1236,7 +1228,7 @@ pcl_complete_raster(void)
 
     /* free the PCL raster robject itself */
     gs_free_object(prast->pmem, prast, "Complete PCL raster");
-    pcur_raster = 0;
+    pcs->raster_state.pcur_raster = 0;
 }
 
 /*
@@ -1273,7 +1265,7 @@ transfer_raster_row(
 
     /* complete the row (execpt for adaptive compression) */
     if (comp_mode != ADAPTIVE_COMPRESS && code >= 0)
-        code = process_row(pcur_raster, comp_mode);
+        code = process_row((pcl_raster_t *)pcs->raster_state.pcur_raster, comp_mode);
 
     return code;
 }
@@ -1293,7 +1285,7 @@ raster_y_offset(
     pcl_state_t *   pcs
 )
 {
-    pcl_raster_t *  prast = pcur_raster;
+    pcl_raster_t *  prast = (pcl_raster_t *)pcs->raster_state.pcur_raster;
 
     /* ignored outside of graphics mode */
     if ((prast != 0) && (uint_arg(pargs) > 0)) {
@@ -1309,7 +1301,8 @@ raster_y_offset(
  * at a higher level.
  */
   private int
-raster_do_init(
+raster_do_registration(
+    pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *   pmem    /* ignored */
 )
 {
@@ -1346,7 +1339,7 @@ raster_do_reset(
 )
 {
     if ((type & pcl_reset_initial) != 0)
-        pcur_raster = 0;
+        pcs->raster_state.pcur_raster = 0;
 }
 
-const pcl_init_t    rtraster_init = { raster_do_init, raster_do_reset, 0 };
+const pcl_init_t    rtraster_init = { raster_do_registration, raster_do_reset, 0 };

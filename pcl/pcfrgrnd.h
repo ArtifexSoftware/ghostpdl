@@ -109,9 +109,4 @@ typedef struct pcl_frgrnd_s     pcl_frgrnd_t;
  */
 int pcl_frgrnd_set_default_foreground(P1(pcl_state_t * pcs));
 
-/*
- * Entry point for the set-foreground related routines
- */
-extern  const pcl_init_t   pcl_frgrnd_init;
-
 #endif  /* pcfrgrnd_INCLUDED */

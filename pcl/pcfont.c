@@ -345,7 +345,10 @@ pcl_set_pitch_mode(pcl_args_t *pargs, pcl_state_t *pcs)
 
 /* Initialization */
 private int
-pcfont_do_init(gs_memory_t *mem)
+pcfont_do_registration(
+    pcl_parser_state_t *pcl_parser_state,
+    gs_memory_t *mem
+)
 {		/* Register commands */
 	{ int chr;
 	  /*
@@ -572,5 +575,5 @@ pcfont_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 }
 
 const pcl_init_t pcfont_init = {
-  pcfont_do_init, pcfont_do_reset, 0
+  pcfont_do_registration, pcfont_do_reset, 0
 };

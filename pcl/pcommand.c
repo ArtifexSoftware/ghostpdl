@@ -12,10 +12,11 @@
 #include "gxstate.h"
 #include "gsdevice.h"
 #include "pcommand.h"
+#include "pcparse.h"
 #include "pcstate.h"
 #include "pcparam.h"
 #include "pcident.h"
-
+#include "pgmand.h" /* temporary */
 /*
  * Get the command argument as an int, uint, or float.
  */
@@ -140,6 +141,29 @@ put_param1_float_array(
     return end_param1(&list, pcs);
 }
 
+/* initilialize the parser states */
+ int
+pcl_do_registrations(
+    pcl_state_t *pcs,
+    pcl_parser_state_t *pst
+)
+{
+    const pcl_init_t ** init;
+    /* initialize gl/2 command counter */
+    hpgl_init_command_index(pst->hpgl_parser_state);
+    /* initialize pcl's command counter */
+    pcl_init_command_index(pst);
+    for (init = pcl_init_table; *init; ++init) {
+	if ( (*init)->do_registration ) {
+	    int     code = (*(*init)->do_registration)(pst, pcs->memory);
+	    if (code < 0) {
+		lprintf1("Error %d during initialization!\n", code);
+		return code;
+	    }
+	}
+    }
+    return 0;
+}
 /*
  * Run the reset code of all the modules.
  */
@@ -192,8 +216,7 @@ pcl_init_state(
     pcs->monochrome_mode = false;
     pcs->render_mode = 3;
 
+    pcs->next_id = 8UL;
     pcl_init_gstate_stk(pcs);
 
-    /* the PCL identifier mechanism is not strictly part of the state */
-    pcl_init_id();
 }

@@ -19,83 +19,36 @@
 /* while scanning a macro definition. */
 /*#define DISPLAY_FUNCTIONS_IN_MACRO*/
 
-/* GC structures and procedures */
-gs_private_st_simple(st_pcl_parser_state, pcl_parser_state_t,
-  "pcl_parser_state_t" /*, pcl_pstate_enum_ptrs, pcl_pstate_reloc_ptrs*/);
-
-/* ---------------- Command tables ---------------- */
-
-/*
- * We register all the PCL5* commands dynamically, for maximum configuration
- * flexibility.  pcl_command_list points to the individual command
- * definitions; as each command is registered, we enter it in the list, and
- * then store its index in the actual dispatch table
- * (pcl_xxx_command_xxx_indices).
- */
-private const pcl_command_definition_t *pcl_command_list[256];
-private int pcl_command_next_index;
-/*
- * First-level dispatch for control characters.
- */
-private byte pcl_control_command_indices[33];
-/*
- * Second-level dispatch for 2-character escape sequences.
- */
-#define min_escape_2char '0'
-#define max_escape_2char '~'
-private byte
-  pcl_escape_command_indices[max_escape_2char - min_escape_2char + 1];
-/*
- * Convert escape classes to second level dispatch indices.
- */
-#define min_escape_class '!'
-#define max_escape_class '/'
-private const byte
-  pcl_escape_class_indices[max_escape_class - min_escape_class + 1] = {
-    0, 0, 0, 0, 1/*%*/, 2/*&*/, 0, 3/*(*/, 4/*)*/, 5/***/, 0, 0, 0, 0, 0
-  };
-/*
- * Dispatch on class, group, and command.
- */
-#define min_escape_group '`'
-#define max_escape_group '~'
-#define min_escape_command '@' /* or '`' */
-#define max_escape_command '^' /* or '~' */
-private byte
-  pcl_grouped_command_indices
-    [5 /* number of implemented classes, see escape_class_indices above */]
-    [1 + max_escape_group - min_escape_group + 1]
-    [max_escape_command - min_escape_command + 1];
-
 /* ---------------- Command definition ---------------- */
 
 /* Register a command.  Return true if this is a redefinition. */
 private bool
-pcl_register_command(byte *pindex, const pcl_command_definition_t *pcmd)
-{	int index = pcl_command_next_index;
+pcl_register_command(byte *pindex, pcl_command_definition_t *pcmd, 
+		     pcl_parser_state_t *pcl_parser_state)
+{	int index = pcl_parser_state->pcl_command_next_index;
 	byte prev = *pindex;
 
-	if ( prev != 0 && prev <= index && pcl_command_list[prev] == pcmd )
+	if ( prev != 0 && prev <= index && pcl_parser_state->pcl_command_list[prev] == pcmd )
 	  index = prev;
-	else if ( index != 0 && pcl_command_list[index] == pcmd )
+	else if ( index != 0 && pcl_parser_state->pcl_command_list[index] == pcmd )
 	  ;
 	else
-	  pcl_command_list[pcl_command_next_index = ++index] = pcmd;
+	  pcl_parser_state->pcl_command_list[pcl_parser_state->pcl_command_next_index = ++index] = pcmd;
 	*pindex = index;
 	return (prev != 0 && prev != index);
 }
 
 /* Define a command or list of commands. */
 void
-pcl_define_control_command(int/*char*/ chr,
-  const pcl_command_definition_t *pcmd)
+pcl_define_control_command(int/*char*/ chr, const pcl_command_definition_t *pcmd,
+			   pcl_parser_state_t *pcl_parser_state)
 {
 #ifdef DEBUG
-	if ( chr < 0 || chr >= countof(pcl_control_command_indices) )
+	if ( chr < 0 || chr >= countof(pcl_parser_state->pcl_control_command_indices) )
 	  if_debug1('I', "Invalid control character %d\n", chr);
 	else if (
 #endif
-	pcl_register_command(&pcl_control_command_indices[chr], pcmd)
+	pcl_register_command(&pcl_parser_state->pcl_control_command_indices[chr], pcmd, pcl_parser_state)
 #ifdef DEBUG
 	)
 	  if_debug1('I', "Redefining control character %d\n", chr);
@@ -104,23 +57,33 @@ pcl_define_control_command(int/*char*/ chr,
 }
 void
 pcl_define_escape_command(int/*char*/ chr,
-  const pcl_command_definition_t *pcmd)
+  const pcl_command_definition_t *pcmd, pcl_parser_state_t *pcl_parser_state)
 {
 #ifdef DEBUG
-	if ( chr < min_escape_2char || chr > max_escape_2char )
-	  if_debug1('I', "Invalid escape character %c\n", chr);
-	else if (
+    if ( chr < min_escape_2char || chr > max_escape_2char )
+	if_debug1('I', "Invalid escape character %c\n", chr);
+    else if (
 #endif
-	pcl_register_command(&pcl_escape_command_indices[chr - min_escape_2char], pcmd)
+	     pcl_register_command(&pcl_parser_state->pcl_escape_command_indices
+				  [chr - min_escape_2char], pcmd,
+	                          pcl_parser_state)
 #ifdef DEBUG
-	)
-	  if_debug1('I', "Redefining ESC %c\n", chr)
+	     )
+	if_debug1('I', "Redefining ESC %c\n", chr)
 #endif
-	;
+	    ;
 }
+
+/*
+ * Convert escape classes to second level dispatch indices.
+ */
+private const byte pcl_escape_class_indices[max_escape_class - min_escape_class + 1] = {
+    0, 0, 0, 0, 1/*%*/, 2/*&*/, 0, 3/*(*/, 4/*)*/, 5/***/, 0, 0, 0, 0, 0
+};
+
 void
 pcl_define_class_command(int/*char*/ class, int/*char*/ group,
-  int/*char*/ command, const pcl_command_definition_t *pcmd)
+  int/*char*/ command, const pcl_command_definition_t *pcmd, pcl_parser_state_t *pcl_parser_state)
 {
 #ifdef DEBUG
 	if ( class < min_escape_class || class > max_escape_class ||
@@ -131,10 +94,11 @@ pcl_define_class_command(int/*char*/ class, int/*char*/ group,
 	  if_debug3('I', "Invalid command %c %c %c\n", class, group, command);
 	else if (
 #endif
-	pcl_register_command(&pcl_grouped_command_indices
+	pcl_register_command(&pcl_parser_state->pcl_grouped_command_indices
 			     [pcl_escape_class_indices[class - min_escape_class] - 1]
 			     [group == 0 ? 0 : group - min_escape_group + 1]
-			     [command - min_escape_command], pcmd)
+			     [command - min_escape_command], pcmd,
+			     pcl_parser_state)
 #ifdef DEBUG
 	)
 	  if_debug3('I', "Redefining ESC %c %c %c\n", class,
@@ -144,12 +108,12 @@ pcl_define_class_command(int/*char*/ class, int/*char*/ group,
 }
 void
 pcl_define_class_commands(int/*char*/ class,
-  const pcl_grouped_command_definition_t *pgroup)
+  const pcl_grouped_command_definition_t *pgroup, pcl_parser_state_t *pcl_parser_state)
 {	const pcl_grouped_command_definition_t *pgc = pgroup;
 
 	for ( ; pgc->command != 0; ++pgc )
 	  pcl_define_class_command(class, pgc->group, pgc->command,
-				   &pgc->defn);
+				   &pgc->defn, pcl_parser_state);
 }
 
 /*
@@ -160,19 +124,20 @@ pcl_define_class_commands(int/*char*/ class,
  * The caller is responsible for providing valid arguments.
  */
 private const pcl_command_definition_t *
-pcl_get_command_definition(int/*char*/ class, int/*char*/ group,
+pcl_get_command_definition(pcl_parser_state_t *pcl_parser_state, int/*char*/ class, int/*char*/ group,
   int/*char*/ command)
 {	const pcl_command_definition_t *cdefn = 0;
 
 	if ( class == 0 )
 	  {if ( command >= min_escape_2char && command <= max_escape_2char )
-	    cdefn = pcl_command_list[pcl_escape_command_indices[command - min_escape_2char]];
+	    cdefn = pcl_parser_state->pcl_command_list
+		[pcl_parser_state->pcl_escape_command_indices[command - min_escape_2char]];
 	  }
 	else
 	  { int class_index = pcl_escape_class_indices[class - min_escape_class];
 	    if ( class_index )
-	      cdefn = pcl_command_list
-		[pcl_grouped_command_indices[class_index - 1]
+	      cdefn = pcl_parser_state->pcl_command_list
+		[pcl_parser_state->pcl_grouped_command_indices[class_index - 1]
 		[group ? group - min_escape_group + 1 : 0]
 		[command - min_escape_command]
 		];
@@ -191,18 +156,6 @@ pcl_get_command_definition(int/*char*/ class, int/*char*/ group,
 }
 
 /* ---------------- Parsing ---------------- */
-
-/* Allocate a parser state. */
-pcl_parser_state_t *
-pcl_process_alloc(gs_memory_t *memory)
-{	pcl_parser_state_t *pst = gs_alloc_struct(memory, pcl_parser_state_t,
-						  &st_pcl_parser_state,
-						  "pcl_process_alloc");
-	if ( pst == 0 )
-	  return 0;
-	pcl_process_init(pst);
-	return pst;
-}
 
 /* Initialize the parser state. */
 void
@@ -308,7 +261,8 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcs, stream_cursor_read *pr)
 			  continue;
 			}
 		      /* Invoke the command. */
-		      cdefn = pcl_get_command_definition(pst->param_class,
+		      cdefn = pcl_get_command_definition(pst,
+							 pst->param_class,
 							 pst->param_group,
 							 pst->args.command);
 		      pst->scan_type = scanning_none;
@@ -322,8 +276,8 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcs, stream_cursor_read *pr)
 			  if ( p >= rlimit )
 			    goto x;
 			  if ( p[1] >= min_escape_2char && p[1] <= max_escape_2char &&
-			       (index = pcl_escape_command_indices[p[1] - min_escape_2char]) != 0 &&
-			       pcl_command_list[index]->proc ==
+			       (index = pst->pcl_escape_command_indices[p[1] - min_escape_2char]) != 0 &&
+			       pst->pcl_command_list[index]->proc ==
 			         pcl_disable_display_functions
 			     )
 			    { if ( do_display_functions() )
@@ -415,7 +369,8 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcs, stream_cursor_read *pr)
 			    continue;
 			  }
 			/* Dispatch on param_class, param_group, and chr. */
-			cdefn = pcl_get_command_definition(pst->param_class,
+			cdefn = pcl_get_command_definition(pst,
+							   pst->param_class,
 							   pst->param_group,
 							   chr);
 			if ( cdefn )
@@ -469,10 +424,10 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcs, stream_cursor_read *pr)
 					   chr >= 33 && chr <= 126 ?
 					   "%c\n" : "\\%03o\n"),
 					  chr);
-				cdefn = pcl_command_list
+				cdefn = pst->pcl_command_list
 				  [chr < 33 ?
-				  pcl_control_command_indices[chr] :
-				  pcl_control_command_indices[1]];
+				  pst->pcl_control_command_indices[chr] :
+				  pst->pcl_control_command_indices[1]];
 				if ( (cdefn == 0 ||
 				      cdefn->proc == pcl_plain_char) &&
 				     !in_macro &&
@@ -512,7 +467,7 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcs, stream_cursor_read *pr)
 						   "ESC \\%03o\n"),
 						  chr);
 					cdefn =
-					  pcl_get_command_definition(0, 0, chr);
+					  pcl_get_command_definition(pst, 0, 0, chr);
 					if ( !cdefn )
 					  { /* Skip only the ESC. */
 					    --p;
@@ -613,21 +568,31 @@ x:	pr->ptr = p;
 	return code;
 }
 
+/* inialize the pcl command counter */
+void
+pcl_init_command_index(pcl_parser_state_t *pcl_parser_state)
+{
+    pcl_parser_state->pcl_command_next_index = 0;
+    /* fix me.  This is should be fixed along with
+       hpgl_init_command_index() in pgparse.c */
+#define init_to_zero(foop)\
+    memset(pcl_parser_state->foop, 0, sizeof(pcl_parser_state->foop))
+    init_to_zero(pcl_grouped_command_indices);
+    init_to_zero(pcl_escape_command_indices);
+    init_to_zero(pcl_control_command_indices);
+    init_to_zero(pcl_command_list);
+#undef init_to_zero
+}
+
 /* ---------------- Initialization ---------------- */
 
 private void
 pcparse_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
-{	if ( type & (pcl_reset_initial | pcl_reset_printer) )
-	  { /* Return to PCL mode. */
-            if ( type & pcl_reset_initial )
-                pcl_command_next_index = 0;
-	    if ( !(type & pcl_reset_initial) && pcs->parse_data )
-	      gs_free_object(pcs->memory, pcs->parse_data,
-			     "secondary parser data(reset)");
-	    pcs->parse_data = 0;
-	    pcs->parse_other = 0;
-	  }
+{	
+    if ( type & (pcl_reset_initial | pcl_reset_printer) )
+	pcs->parse_other = 0;
 }
+
 const pcl_init_t pcparse_init = {
   0, pcparse_do_reset
 };

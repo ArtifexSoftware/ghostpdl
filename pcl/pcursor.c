@@ -661,7 +661,8 @@ push_pop_cursor(
  * Initialization
  */
   private int
-pcursor_do_init(
+pcursor_do_registration(
+    pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *   pmem
 )
 {
@@ -790,4 +791,4 @@ pcursor_do_reset(
     }
 }
 
-const pcl_init_t    pcursor_init = { pcursor_do_init, pcursor_do_reset, 0 };
+const pcl_init_t    pcursor_init = { pcursor_do_registration, pcursor_do_reset, 0 };

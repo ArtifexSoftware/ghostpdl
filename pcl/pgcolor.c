@@ -5,6 +5,7 @@
 /* pgcolor.c - HP-GL/2 color vector graphics commands */
 
 #include "std.h"
+#include "pcparse.h"
 #include "pgmand.h"
 #include "pginit.h"
 #include "pgmisc.h"
@@ -117,8 +118,9 @@ hpgl_CR(
  * carried out by the palette mechanism.
  */
   private int
-pgcolor_do_init(
-    gs_memory_t *   mem
+pgcolor_do_registration(
+    pcl_parser_state_t *pcl_parser_state,
+    gs_memory_t *mem
 )
 {
     /* Register commands */
@@ -130,5 +132,4 @@ pgcolor_do_init(
     return 0;
 }
 
-const pcl_init_t    pgcolor_init = { pgcolor_do_init, 0, 0 };
-
+const pcl_init_t    pgcolor_init = { pgcolor_do_registration, 0, 0 };

@@ -152,7 +152,10 @@ pcl_enter_pcl_mode(pcl_args_t *pargs, pcl_state_t *pcs)
 
 /* Initialization */
 private int
-pgframe_do_init(gs_memory_t *mem)
+pgframe_do_registration(
+   pcl_parser_state_t *pcl_parser_state,
+   gs_memory_t *mem
+)
 {		/* Register commands */
 	DEFINE_CLASS('*')
 	  {'c', 'X',
@@ -185,5 +188,5 @@ pgframe_do_init(gs_memory_t *mem)
 	return 0;
 }
 const pcl_init_t pgframe_init = {
-  pgframe_do_init, 0
+  pgframe_do_registration, 0
 };

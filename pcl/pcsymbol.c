@@ -156,7 +156,10 @@ pcl_symbol_set_control(pcl_args_t *pargs, pcl_state_t *pcs)
 
 /* Initialization */
 private int
-pcsymbol_do_init(gs_memory_t *mem)
+pcsymbol_do_registration(
+    pcl_parser_state_t *pcl_parser_state,
+    gs_memory_t *mem
+)
 {		/* Register commands */
 	DEFINE_CLASS_COMMAND_ARGS('*', 'c', 'R', "Symbol Set ID Code",
 				  pcl_symbol_set_id_code,
@@ -307,5 +310,5 @@ pcl_find_symbol_map(const pcl_state_t *pcs, const byte *id,
 }
 
 const pcl_init_t pcsymbol_init = {
-  pcsymbol_do_init, pcsymbol_do_reset, pcsymbol_do_copy
+  pcsymbol_do_registration, pcsymbol_do_reset, pcsymbol_do_copy
 };

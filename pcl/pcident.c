@@ -7,8 +7,7 @@
 #include "gx.h"
 #include "gsuid.h"
 #include "pcident.h"
-
-private pcl_gsid_t  next_id;
+#include "pcstate.h"
 
 /*
  * Return the next unique identifier.
@@ -23,20 +22,11 @@ private pcl_gsid_t  next_id;
  * the graphic library.
  */
   pcl_gsid_t
-pcl_next_id(void)
+pcl_next_id(pcl_state_t *pcs)
 {
-    if (next_id == 0)
-        next_id = 16 * 1024 * 1024;
-    else if (next_id == no_UniqueID)
-        ++next_id;
-    return next_id++;
-}
-
-/*
- * Initialize the next_id value.
- */
-  void
-pcl_init_id(void)
-{
-    next_id = 8UL;
+    if (pcs->next_id == 0)
+        pcs->next_id = 16 * 1024 * 1024;
+    else if (pcs->next_id == no_UniqueID)
+        ++(pcs->next_id);
+    return (pcs->next_id)++;
 }

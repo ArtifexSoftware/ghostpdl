@@ -33,7 +33,9 @@ pcl_disable_display_functions(pcl_args_t *pargs, pcl_state_t *pcs)
 
 /* Initialization */
 private int
-pcmisc_do_init(gs_memory_t *mem)
+pcmisc_do_registration(
+    pcl_parser_state_t *pcl_parser_state,
+    gs_memory_t *mem)
 {		/* Register commands */
 	DEFINE_CLASS_COMMAND_ARGS('&', 's', 'C', "End of Line Wrap",
 				  pcl_end_of_line_wrap,
@@ -52,5 +54,5 @@ pcmisc_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 	  }
 }
 const pcl_init_t pcmisc_init = {
-  pcmisc_do_init, pcmisc_do_reset
+  pcmisc_do_registration, pcmisc_do_reset
 };

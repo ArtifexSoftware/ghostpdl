@@ -307,7 +307,7 @@ pcl_end_graphics_mode(
     gs_matrix       dev2pd;
 
     /* close the raster; exit graphics mode */
-    pcl_complete_raster();
+    pcl_complete_raster(pcs);
     pcs->raster_state.graphics_mode = false;
 
     /* get the new current point; then restore the graphic state */
@@ -578,7 +578,8 @@ end_graphics_mode_C(
  * Initialization
  */
   private int
-gmode_do_init(
+gmode_do_registration(
+    pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *   pmem    /* ignored */
 )
 {
@@ -684,4 +685,4 @@ gmode_do_reset(
     }
 }
 
-const pcl_init_t    rtgmode_init = { gmode_do_init, gmode_do_reset, 0 };
+const pcl_init_t    rtgmode_init = { gmode_do_registration, gmode_do_reset, 0 };

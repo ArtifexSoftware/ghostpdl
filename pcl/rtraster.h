@@ -22,7 +22,7 @@ int pcl_start_raster(P3(
 ));
 
 /* complete a raster (when exiting raster graphics mode) */
-void pcl_complete_raster(void);
+void pcl_complete_raster(pcl_state_t *pcs);
 
 extern  const pcl_init_t    rtraster_init;
 

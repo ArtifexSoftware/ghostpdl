@@ -49,7 +49,7 @@ typedef enum {
  */
 typedef struct pcl_pattern_data_s {
     gs_depth_bitmap     pixinfo;    /* pixmap information; must be first */
-    pcl_entity_common;              /* temporary/permanent/internal flag */
+    pcl_data_storage_t storage;     /* temporary/permanent/internal flag */
     rc_header           rc;
     pcl_pattern_type_t  type;       /* pattern type */
     int                 xres;       /* intended resolution for pattern */

@@ -31,7 +31,8 @@ set_line_path(
  * Initialization
  */
   private int
-rtlrastr_do_init(
+rtlrastr_do_registration(
+    pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *   mem
 )
 {
@@ -47,4 +48,4 @@ rtlrastr_do_init(
    return 0;
 }
 
-const pcl_init_t    rtlrastr_init = { rtlrastr_do_init, 0, 0 };
+const pcl_init_t    rtlrastr_init = { rtlrastr_do_registration, 0, 0 };

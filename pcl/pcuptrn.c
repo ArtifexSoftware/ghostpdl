@@ -514,7 +514,8 @@ delete_cached_patterns_stub(
  * Initialization and reset routines.
  */ 
   private int
-upattern_do_init(
+upattern_do_registration(
+    pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *   pmem
 )
 {
@@ -562,4 +563,4 @@ upattern_do_reset(
     }
 }
 
-const pcl_init_t    pcl_upattern_init = { upattern_do_init, upattern_do_reset };
+const pcl_init_t    pcl_upattern_init = { upattern_do_registration, upattern_do_reset };

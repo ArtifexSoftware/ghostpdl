@@ -153,6 +153,7 @@ free_ccolor(
  */
   private int
 unshare_ccolor(
+    pcl_state_t *   pcs,
     pcl_ccolor_t ** ppccolor,
     gs_memory_t *   pmem
 )
@@ -195,7 +196,7 @@ unshare_ccolor(
 
         /* set the color space to pure white */
         pnew->pbase = 0;
-        (void)pcl_cs_base_build_white_cspace(&(pnew->pbase), pmem);
+        (void)pcl_cs_base_build_white_cspace(pcs, &(pnew->pbase), pmem);
         pnew->ccolor.paint = white_paint;
         pnew->ccolor.pattern = 0;
     }
@@ -233,7 +234,7 @@ set_unpatterned_color(
          (pcur->ccolor.paint.values[2] == ppaint->values[2])   )
         return 0;
 
-    if ( (code = unshare_ccolor(&(pcs->pids->pccolor), pcs->memory)) < 0 )
+    if ( (code = unshare_ccolor(pcs, &(pcs->pids->pccolor), pcs->memory)) < 0 )
         return code;
     pcur = pcs->pids->pccolor;
 
@@ -364,7 +365,7 @@ check_pattern_rendering(
              (pccolor->pbase != pbase)                                ) {
 
             /* get a unique copy, and update the painting information */
-            if (unshare_ccolor(&(pptrn->pmask_ccolor), pcs->memory) < 0)
+            if (unshare_ccolor(pcs, &(pptrn->pmask_ccolor), pcs->memory) < 0)
                 return false;
             pccolor = pptrn->pmask_ccolor;
 
@@ -427,11 +428,11 @@ render_pattern(
 
     /* un-share, or allocate, the appropriate client color */
     if (type == pcl_ccolor_mask_pattern) {
-        code = unshare_ccolor(&(pptrn->pmask_ccolor), pcs->memory);
+        code = unshare_ccolor(pcs, &(pptrn->pmask_ccolor), pcs->memory);
         pccolor = pptrn->pmask_ccolor;
         pcspace = 0;
     } else {    /* type == pcl_ccolor_colored_pattern */
-        code = unshare_ccolor(&(pptrn->pcol_ccolor), pcs->memory);
+        code = unshare_ccolor(pcs, &(pptrn->pcol_ccolor), pcs->memory);
         pccolor = pptrn->pcol_ccolor;
         pcspace = pindexed->pcspace;
         pptrn->transp = pcs->pattern_transparent;
@@ -847,7 +848,7 @@ pattern_set_white(
         return code;
 
     /* build the pure white color space and default halftone if necessary */
-    if ((code = pcl_cs_base_build_white_cspace(&pwhite_cs, pcs->memory)) >= 0)
+    if ((code = pcl_cs_base_build_white_cspace(pcs, &pwhite_cs, pcs->memory)) >= 0)
         code = pcl_ht_build_default_ht(pcs, &pdflt_ht, pcs->memory);
 
     /* set the halftone and color space */
@@ -1311,7 +1312,8 @@ set_driver_configuration(
  * Initialization and reset routines.
  */
   private int
-pattern_do_init(
+pattern_do_registration(
+    pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *   pmem
 )
 {
@@ -1379,4 +1381,4 @@ pattern_do_reset(
     }
 }
 
-const pcl_init_t    pcl_pattern_init = { pattern_do_init, pattern_do_reset, 0 };
+const pcl_init_t    pcl_pattern_init = { pattern_do_registration, pattern_do_reset, 0 };

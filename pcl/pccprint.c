@@ -59,8 +59,9 @@ pcl_pixel_placement(
  * Initialization
  */
   private int
-pccprint_do_init(
-    gs_memory_t *   mem
+pccprint_do_registration(
+    pcl_parser_state_t *pcl_parser_state,
+    gs_memory_t *   pmem
 )
 {
     /* Register commands */
@@ -99,4 +100,4 @@ pccprint_do_reset(
     }
 }
 
-const pcl_init_t    pccprint_init = { pccprint_do_init, pccprint_do_reset, 0 };
+const pcl_init_t    pccprint_init = { pccprint_do_registration, pccprint_do_reset, 0 };

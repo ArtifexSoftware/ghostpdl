@@ -162,7 +162,10 @@ pcl_set_unit_of_measure(pcl_args_t *pargs, pcl_state_t *pcs)
 
 /* Initialization */
 private int
-pcjob_do_init(gs_memory_t *mem)
+pcjob_do_registration(
+    pcl_parser_state_t *pcl_parser_state,
+    gs_memory_t *mem
+)
 {		/* Register commands */
 	DEFINE_ESCAPE('E', "Printer Reset", pcl_printer_reset)
 	DEFINE_CLASS('%')
@@ -209,5 +212,5 @@ pcjob_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 	  }
 }
 const pcl_init_t pcjob_init = {
-  pcjob_do_init, pcjob_do_reset, 0
+  pcjob_do_registration, pcjob_do_reset, 0
 };

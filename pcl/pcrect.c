@@ -212,7 +212,8 @@ pcl_fill_rect_area(
  * Initialization
  */
   private int
-pcrect_do_init(
+pcrect_do_registration(
+    pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *   mem
 )
 {
@@ -272,4 +273,4 @@ pcrect_do_reset(
     }
 }
 
-const pcl_init_t    pcrect_init = { pcrect_do_init, pcrect_do_reset, 0 };
+const pcl_init_t    pcrect_init = { pcrect_do_registration, pcrect_do_reset, 0 };

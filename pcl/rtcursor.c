@@ -38,7 +38,10 @@ rtl_vert_cursor_pos_units(pcl_args_t *pargs, pcl_state_t *pcs)
 
 /* Initialization */
 private int
-rtcursor_do_init(gs_memory_t *mem)
+rtcursor_do_registration(
+    pcl_parser_state_t *pcl_parser_state,
+    gs_memory_t *mem
+)
 {		/* Register commands */
 	DEFINE_CLASS('&')
 	  {'a', 'H',
@@ -77,5 +80,5 @@ rtcursor_do_copy(pcl_state_t *psaved, const pcl_state_t *pcs,
 	return 0;
 }
 const pcl_init_t rtcursor_init = {
-  rtcursor_do_init, rtcursor_do_reset, rtcursor_do_copy
+  rtcursor_do_registration, rtcursor_do_reset, rtcursor_do_copy
 };

@@ -7,6 +7,7 @@
 
 #include "stdio_.h"		/* for gdebug.h */
 #include "gdebug.h"
+#include "pcparse.h"
 #include "pgmand.h"
 #include "pggeom.h"
 #include "pgdraw.h"
@@ -496,7 +497,10 @@ hpgl_RT(hpgl_args_t *pargs, hpgl_state_t *pgls)
 
 /* Initialization */
 private int
-pgvector_do_init(gs_memory_t *mem)
+pgvector_do_registration(
+    pcl_parser_state_t *pcl_parser_state,
+    gs_memory_t *mem
+)
 {	
 	/* Register commands */
 	DEFINE_HPGL_COMMANDS
@@ -516,5 +520,5 @@ pgvector_do_init(gs_memory_t *mem)
 	return 0;
 }
 const pcl_init_t pgvector_init = {
-	pgvector_do_init, 0
+	pgvector_do_registration, 0
 };

@@ -8,10 +8,6 @@
 #include "pcfont.h"
 #include "pcfrgrnd.h"
 
-/* the default foreground, built from the default palette */
-private pcl_frgrnd_t *  pdflt_frgrnd;
-
-
 /* GC routines */
 private_st_frgrnd_t();
 
@@ -44,6 +40,7 @@ free_foreground(
  */
   private int
 alloc_foreground(
+    pcl_state_t *pcs,		 
     pcl_frgrnd_t ** ppfrgrnd,
     gs_memory_t *   pmem
 )
@@ -58,7 +55,7 @@ alloc_foreground(
                        "allocate pcl foreground object"
                        );
     pfrgrnd->rc.free = free_foreground;
-    pfrgrnd->id = pcl_next_id();
+    pfrgrnd->id = pcl_next_id(pcs);
     pfrgrnd->pbase = 0;
     pfrgrnd->pht = 0;
     pfrgrnd->pcrd = 0;
@@ -77,6 +74,7 @@ alloc_foreground(
  */
   private int
 build_foreground(
+    pcl_state_t *               pcs,
     pcl_frgrnd_t **             ppfrgrnd,
     const pcl_palette_t *       ppalet,
     int                         pal_entry,
@@ -100,8 +98,8 @@ build_foreground(
          (num_entries == 2) &&
          (pal_entry == 1)     ) {
         is_default = true;
-        if (pdflt_frgrnd != 0) {
-            pcl_frgrnd_copy_from(*ppfrgrnd, pdflt_frgrnd);
+        if (pcs->pdflt_frgrnd != 0) {
+            pcl_frgrnd_copy_from(*ppfrgrnd, pcs->pdflt_frgrnd);
             return 0;
         }
     }
@@ -112,7 +110,7 @@ build_foreground(
         *ppfrgrnd = 0;
     }
 
-    if ((code = alloc_foreground(ppfrgrnd, pmem)) < 0)
+    if ((code = alloc_foreground(pcs, ppfrgrnd, pmem)) < 0)
         return code;
     pfrgrnd = *ppfrgrnd;
 
@@ -131,7 +129,7 @@ build_foreground(
     pcl_crd_init_from(pfrgrnd->pcrd, ppalet->pcrd);
 
     if (is_default)
-        pcl_frgrnd_init_from(pdflt_frgrnd, pfrgrnd);
+        pcl_frgrnd_init_from(pcs->pdflt_frgrnd, pfrgrnd);
 
     return 0;
 }
@@ -152,7 +150,8 @@ pcl_frgrnd_set_default_foreground(
     if ((code = pcl_palette_check_complete(pcs)) < 0)
         return code;
 
-    return build_foreground( &(pcs->pfrgrnd),
+    return build_foreground( pcs,
+			     &(pcs->pfrgrnd),
                              pcs->ppalet,
                              1,
                              pcs->memory
@@ -178,7 +177,8 @@ set_foreground(
     if ((code = pcl_palette_check_complete(pcs)) < 0)
         return code;
 
-    return build_foreground( &(pcs->pfrgrnd),
+    return build_foreground( pcs,
+			     &(pcs->pfrgrnd),
                              pcs->ppalet,
                              int_arg(pargs),
                              pcs->memory
@@ -193,8 +193,9 @@ set_foreground(
  * by the palette module.
  */
    private int
-frgrnd_do_init(
-    gs_memory_t *   pmem
+frgrnd_do_registration(
+    pcl_parser_state_t *pcl_parser_state,
+    gs_memory_t *mem
 )
 {
     DEFINE_CLASS('*')
@@ -204,10 +205,14 @@ frgrnd_do_init(
     },
     END_CLASS
 
-    /* handle possible non-initialization of BSS */
-    pdflt_frgrnd = 0;
-
     return 0;
+}
+
+private void
+frgrnd_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
+{
+    if ( type & (pcl_reset_initial | pcl_reset_printer) )
+	pcs->pdflt_frgrnd = 0;
 }
 
   private int
@@ -224,4 +229,4 @@ frgrnd_do_copy(
     return 0;
 }
 
-const pcl_init_t    pcl_frgrnd_init = { frgrnd_do_init, 0, frgrnd_do_copy };
+const pcl_init_t    pcl_frgrnd_init = { frgrnd_do_registration, frgrnd_do_reset, frgrnd_do_copy };

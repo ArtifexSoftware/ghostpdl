@@ -8,6 +8,7 @@
 #ifndef pcommand_INCLUDED
 #  define pcommand_INCLUDED
 
+#include "memory_.h"
 #include "gx.h"
 #include "gserrors.h"
 
@@ -81,6 +82,16 @@ typedef struct pcl_args_s {
 typedef struct pcl_state_s pcl_state_t;
 #endif
 
+#ifndef pcl_parser_state_DEFINED
+#  define pcl_parser_state_DEFINED
+typedef struct pcl_parser_state_s pcl_parser_state_t;
+#endif
+
+#ifndef hpgl_parser_state_DEFINED
+#  define hpgl_parser_state_DEFINED
+typedef struct hpgl_args_s hpgl_parser_state_t;
+#endif
+
 /* Define a command processing procedure. */
 #define pcl_command_proc(proc)\
   int proc(P2(pcl_args_t *, pcl_state_t *))
@@ -145,37 +156,38 @@ typedef struct {
 } pcl_grouped_command_definition_t;
 
 /* Register (a) command definition(s). */
-void pcl_define_control_command(P2(int/*char*/,
-				   const pcl_command_definition_t *));
+void pcl_define_control_command(P3(int/*char*/,
+				   const pcl_command_definition_t *, pcl_parser_state_t *));
 #define DEFINE_CONTROL(chr, cname, proc)\
 { static const pcl_command_definition_t defn_ = PCL_COMMAND(cname, proc, 0);\
-  pcl_define_control_command(chr, &defn_);\
+  pcl_define_control_command(chr, &defn_, pcl_parser_state);\
 }
-void pcl_define_escape_command(P2(int/*char*/,
-				  const pcl_command_definition_t *));
+void pcl_define_escape_command(P3(int/*char*/,
+				  const pcl_command_definition_t *, pcl_parser_state_t *));
 #define DEFINE_ESCAPE_ARGS(chr, cname, proc, acts)\
 { static const pcl_command_definition_t defn_ = PCL_COMMAND(cname, proc, acts);\
-  pcl_define_escape_command(chr, &defn_);\
+  pcl_define_escape_command(chr, &defn_, pcl_parser_state);\
 }
 #define DEFINE_ESCAPE(chr, cname, proc)\
   DEFINE_ESCAPE_ARGS(chr, cname, proc, 0)
-void pcl_define_class_command(P4(int/*char*/, int/*char*/, int/*char*/,
-				 const pcl_command_definition_t *));
+void pcl_define_class_command(P5(int/*char*/, int/*char*/, int/*char*/,
+				 const pcl_command_definition_t *, pcl_parser_state_t *));
 #define DEFINE_CLASS_COMMAND_ARGS(cls, group, chr, cname, proc, acts)\
 { static const pcl_command_definition_t defn_ = PCL_COMMAND(cname, proc, acts);\
-  pcl_define_class_command(cls, group, chr, &defn_);\
+  pcl_define_class_command(cls, group, chr, &defn_, pcl_parser_state);\
 }
 #define DEFINE_CLASS_COMMAND(cls, group, chr, cname, proc)\
   DEFINE_CLASS_COMMAND_ARGS(cls, group, chr, cname, proc, 0)
-void pcl_define_class_commands(P2(int/*char*/,
-				  const pcl_grouped_command_definition_t *));
+void pcl_define_class_commands(P3(int/*char*/,
+				  const pcl_grouped_command_definition_t *,
+				  pcl_parser_state_t *));
 #define DEFINE_CLASS(cls)\
 { const byte class_ = cls;\
   static const pcl_grouped_command_definition_t defs_[] = {
 #define END_CLASS\
     {0, 0}\
   };\
-  pcl_define_class_commands(class_, defs_);\
+  pcl_define_class_commands(class_, defs_, pcl_parser_state);\
 }
 
 /*
@@ -209,16 +221,21 @@ typedef enum {
 } pcl_copy_operation_t;
 /* Define the structure for per-module implementation procedures. */
 typedef struct pcl_init_s {
-	/* Register commands and do true one-time initialization. */
-  int (*do_init)(P1(gs_memory_t *mem));
+	/* Register commands */
+    int (*do_registration)(P2(pcl_parser_state_t *pcl_parser_state,
+			      gs_memory_t *mem));
 	/* Initialize state at startup, printer reset, and other times. */
-  void (*do_reset)(P2(pcl_state_t *pcs, pcl_reset_type_t type));
+    void (*do_reset)(P2(pcl_state_t *pcs, pcl_reset_type_t type));
 	/* Partially copy the state for macro call, overlay, and exit. */
-  int (*do_copy)(P3(pcl_state_t *psaved, const pcl_state_t *pcs,
-		    pcl_copy_operation_t operation));
+    int (*do_copy)(P3(pcl_state_t *psaved, const pcl_state_t *pcs,
+		      pcl_copy_operation_t operation));
 } pcl_init_t;
 /* Define the table of pointers to init structures (in pcjob.c). */
 extern const pcl_init_t *pcl_init_table[];
+
+/* run the init code */
+int pcl_do_registrations(P2(pcl_state_t *pcs, pcl_parser_state_t *pst));
+
 /* Run the reset code of all the modules. */
 int pcl_do_resets(P2(pcl_state_t *pcs, pcl_reset_type_t type));
 
@@ -238,14 +255,6 @@ typedef enum {
 #define pcds_all_simms\
   ( ((1 << pcds_simm_max) - 1) << pcds_simm_shift )
 } pcl_data_storage_t;
-
-/* Define the common prefix for all stored entities (macros, patterns, */
-/* fonts, symbol sets). */
-#define pcl_entity_common\
-  pcl_data_storage_t storage
-typedef struct pcl_entity_s {
-  pcl_entity_common;
-} pcl_entity_t;
 
 /* Define the control characters. */
 #define BS 0x8

@@ -7,6 +7,7 @@
 #ifndef rtrstst_INCLUDED
 #define rtrstst_INCLUDED
 
+#include "gsimage.h"
 #include "gx.h"
 #include "pccoord.h"
 
@@ -93,6 +94,11 @@
  *    situations do not arise in practice.
  */
 
+#ifndef pcl_raster_t_DEFINED
+#define pcl_raster_t_DEFINED
+typedef struct pcl_raster_t pcl_raster_type;
+#endif pcl_raster_t_DEFINED
+
 typedef struct pcl_raster_state_s {
     uint    resolution;         /* source resolution, dots per inch */
 
@@ -121,6 +127,12 @@ typedef struct pcl_raster_state_s {
     int     clip_all;           /* on last entry into raster mode, the raster
                                  * origin was at the logical page edge, hence
                                  * the raster needs to be clipped */
+    pcl_raster_type *pcur_raster; /* There is at most one image
+				  * actively under construction in PCL
+				  * at one time.  This pointer points
+				  * to that image, if it exists. The
+				  * pointer will be non-null while in
+				  * graphic mode.  */
 } pcl_raster_state_t;
 
 #endif			/* rtrstst_INCLUDED */

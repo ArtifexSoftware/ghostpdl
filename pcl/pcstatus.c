@@ -14,6 +14,7 @@
 #include "pcstate.h"
 #include "pcfont.h"
 #include "pcsymbol.h"
+#include "pcparse.h"
 #include "pcpatrn.h"
 #include "pcuptrn.h"
 #include "pcpage.h"
@@ -355,7 +356,7 @@ status_macros(stream *s, pcl_state_t *pcs,
 	  return 0;		/* no "currently selected" macro */
 	pl_dict_enum_begin(&pcs->macros, &denum);
 	while ( pl_dict_enum_next(&denum, &key, &value) )
-	  if ( ((pcl_entity_t *)value)->storage & storage )
+	  if ( ((pcl_macro_t *)value)->storage & storage )
 	    { char id_string[6];
 	      sprintf(id_string, "%u", (key.data[0] << 8) + key.data[1]);
 	      status_put_id(s, "IDLIST", id_string);
@@ -678,7 +679,10 @@ pcl_echo(pcl_args_t *pargs, pcl_state_t *pcs)
 
 /* Initialization */
 private int
-pcstatus_do_init(gs_memory_t *mem)
+pcstatus_do_registration(
+    pcl_parser_state_t *pcl_parser_state,
+    gs_memory_t *mem
+)
 {		/* Register commands */
 	DEFINE_CLASS('*')
 	  {'s', 'T',
@@ -718,5 +722,5 @@ pcstatus_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 }
 
 const pcl_init_t pcstatus_init = {
-  pcstatus_do_init, pcstatus_do_reset
+  pcstatus_do_registration, pcstatus_do_reset
 };

@@ -641,7 +641,10 @@ pcl_alphanumeric_id_data(pcl_args_t *pargs, pcl_state_t *pcs)
 	
 /* Initialization */
 private int
-pcsfont_do_init(gs_memory_t *mem)
+pcsfont_do_registration(
+    pcl_parser_state_t *pcl_parser_state,
+    gs_memory_t *mem
+)
 {		/* Register commands */
 	DEFINE_CLASS('*')
 	  {'c', 'D',
@@ -691,5 +694,5 @@ pcsfont_do_copy(pcl_state_t *psaved, const pcl_state_t *pcs,
 	return 0;
 }
 const pcl_init_t pcsfont_init = {
-  pcsfont_do_init, pcsfont_do_reset, pcsfont_do_copy
+  pcsfont_do_registration, pcsfont_do_reset, pcsfont_do_copy
 };

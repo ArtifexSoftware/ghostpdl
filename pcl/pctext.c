@@ -916,7 +916,8 @@ pcl_text_path_direction(
 
 /* ------ Initialization ------ */
   private int
-pctext_do_init(
+pctext_do_registration(
+    pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *   mem
 )
 {
@@ -990,4 +991,4 @@ pctext_do_reset(
     }
 }
 
-const pcl_init_t    pctext_init = { pctext_do_init, pctext_do_reset, 0 };
+const pcl_init_t    pctext_init = { pctext_do_registration, pctext_do_reset, 0 };

@@ -4,6 +4,7 @@
 
 /* pglfill.c - HP-GL/2 line and fill attributes commands */
 #include "memory_.h"
+#include "pcparse.h"
 #include "pgmand.h"
 #include "pginit.h"
 #include "pggeom.h"
@@ -846,7 +847,8 @@ hpgl_WU(
  * Initialization
  */
   private int
-pglfill_do_init(
+pglfill_do_registration(
+    pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *   mem
 )
 {
@@ -875,4 +877,4 @@ pglfill_do_init(
     return 0;
 }
 
-const pcl_init_t    pglfill_init = { pglfill_do_init, 0, 0 };
+const pcl_init_t    pglfill_init = { pglfill_do_registration, 0, 0 };

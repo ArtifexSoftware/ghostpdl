@@ -120,7 +120,8 @@ set_gamma_correction(
  * are handled by the PCL palette module (using macros defined in pclookup.h).
  */
   private int
-lookup_do_init(
+lookup_do_registration(
+    pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *   pmem
 )
 {
@@ -140,4 +141,4 @@ lookup_do_init(
     return 0;
 }
 
-const pcl_init_t    pcl_lookup_tbl_init = { lookup_do_init, 0, 0 };
+const pcl_init_t    pcl_lookup_tbl_init = { lookup_do_registration, 0, 0 };

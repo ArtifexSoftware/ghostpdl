@@ -11,6 +11,9 @@
 #include "gxdevice.h"
 #include "gdevcmap.h"
 #include "scommon.h"
+#include "gscspace.h"
+#include "gscolor2.h"
+#include "gscrd.h"
 #include "gsdcolor.h"		/* for gx_ht_tile */
 #include "gschar.h"
 #include "pldict.h"
@@ -25,6 +28,9 @@
 #include "pcdict.h"             /* PL dictionary key structure */
 #include "rtrstst.h"            /* raster state information */
 #include "pcht.h"
+#include "pcident.h"
+#include "pccsbase.h"           
+
 /*#include "pgstate.h"*/	/* HP-GL/2 state, included below */
 #include "pjparse.h"
 
@@ -39,6 +45,15 @@ typedef enum id_type_enum {
     string_id,
     numeric_id
 } id_type_t;
+
+/*
+ * Palette stack. This is implemented as a simple linked list.  NB
+ * needs to be moved.  
+ */
+typedef struct pstack_entry_s {
+    struct pstack_entry_s * pnext;
+    pcl_palette_t *         ppalet;
+} pstack_entry_t;
 
 #ifndef pcl_state_DEFINED
 #  define pcl_state_DEFINED
@@ -255,9 +270,20 @@ struct pcl_state_s {
     bool                monochrome_mode;/* true ==> monochrome print mode */
     int                 render_mode;    /* raw (unmapped) render algorithm */
     pcl_palette_t *     ppalet;
+    pcl_gsid_t          next_id; /* id's for palette's and foreground
+                                    colors see pcident.h */
     pcl_frgrnd_t *      pfrgrnd;
+    pcl_gsid_t          frgnd_cache_id;
+    
     pcl_gstate_ids_t *  pids;
-
+    /*
+     * Unlike other elements of the PCL "palette", color rendering dictionaries
+     * are for the most part not a feature that can be controlled from the language.
+     * Except for the white point, the parameters of a color rendering dictionary
+     * are determined by the output device rather than the language.
+     */
+    pcl_crd_t *         pcl_default_crd;
+    
     /* internal dithers */
     pcl_ht_builtin_dither_t  ordered_dither;
     pcl_ht_builtin_dither_t  clustered_dither;
@@ -271,6 +297,7 @@ struct pcl_state_s {
      * Several devices are required because the rendering method used by the
      * foreground may not be the same as that used by the current palette.
      */
+    gs_cie_transform_proc3 dflt_TransformPQR;  /* default transform PQR */
     gx_device_cmap  cmap_device_identity;
     gx_device_cmap  cmap_device_snap_to_primaries;
     gx_device_cmap  cmap_device_color_to_black_over_white;
@@ -279,7 +306,12 @@ struct pcl_state_s {
     byte            dflt_rendering_remap[20]; /* NB not convinced this is necessary (review) */
     byte            rendering_remap[20];      /* remap the table of rendering methods */
     pcl_ht_t *      pdflt_ht;                 /* default halftone */
-
+    pcl_cs_base_t * pwhite_cs;
+    pcl_frgrnd_t *  pdflt_frgrnd;
+    pstack_entry_t *palette_stack;
+    pcl_palette_t  *pdflt_palette;           /* default palette */
+    pl_dict_t       palette_store;           /* dictionary to hold the palette store */
+    float           color_comps[3];
     /* Chapter C5 (pccprint.c) */
     byte            logical_op;	    /* (also in graphics state) */
     byte            pp_mode;        /* pixel placement mode */

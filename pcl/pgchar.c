@@ -7,6 +7,7 @@
 #include "math_.h"
 #include "stdio_.h"		/* for gdebug.h */
 #include "gdebug.h"
+#include "pcparse.h"
 #include "pgmand.h"
 #include "pgdraw.h"
 #include "pginit.h"
@@ -479,7 +480,9 @@ hpgl_TD(hpgl_args_t *pargs, hpgl_state_t *pgls)
 
 /* Initialization */
 private int
-pgchar_do_init(gs_memory_t *mem)
+pgchar_do_registration(
+    pcl_parser_state_t *pcl_parser_state,
+    gs_memory_t *mem)
 {		/* Register commands */
 	DEFINE_HPGL_COMMANDS
 	  HPGL_COMMAND('A', 'D', hpgl_AD, 0),		/* kind/value pairs */
@@ -507,5 +510,5 @@ pgchar_do_init(gs_memory_t *mem)
 	return 0;
 }
 const pcl_init_t pgchar_init = {
-  pgchar_do_init, 0
+  pgchar_do_registration, 0
 };

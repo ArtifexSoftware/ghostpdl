@@ -75,17 +75,6 @@ rtl_enter_hpgl_mode(
     else if (i > 3)
 	return 0;
 
-    /**** PARTIAL IMPLEMENTATION ****/
-    if (pcs->parse_data != 0)
-	return 0;		/* already in HP-GL/2 mode */
-
-    pcs->parse_data = gs_alloc_bytes( pcs->memory,
-                                       sizeof(hpgl_parser_state_t),
-			               "hpgl parser data(enter hpgl mode)"
-                                       );
-    if (pcs->parse_data == 0)
-	return_error(e_Memory);
-    hpgl_process_init(pcs->parse_data);
     pcs->parse_other = ( int (*)( void *,
                                    pcl_state_t *,
                                    stream_cursor_read *
@@ -117,7 +106,8 @@ rtl_enter_pcl_mode(
 {
     int             b = int_arg(pargs) & 1;
 
-    if (pcs->parse_data != 0) {
+    if ( pcs->parse_other == 
+	 (int(*)(void *, pcl_state_t *, stream_cursor_read *))hpgl_process ) {
         /* 
          * We were in HP-GL/2 mode.  Destroy the gl/2 polygon path
 	 * and conditionally copy back the cursor position.
@@ -138,12 +128,6 @@ rtl_enter_pcl_mode(
 	    pcs->cap.y = round(pt.y);
 #undef round
 	}
-        gs_free_object( pcs->memory,
-                        pcs->parse_data,
-			"hpgl parser data(enter pcl mode)"
-                        );
-        pcs->parse_data = 0;
-
     } else
 	  b = 0;
 
@@ -203,7 +187,8 @@ pcl_negative_motion(
 
 /* ---------------- Initialization ---------------- */
   private int
-rtmisc_do_init(
+rtmisc_do_registration(
+    pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *   mem
 )
 {
@@ -301,4 +286,4 @@ rtmisc_do_reset(
     }
 }
 
-const pcl_init_t    rtmisc_init = { rtmisc_do_init, rtmisc_do_reset, 0 };
+const pcl_init_t    rtmisc_init = { rtmisc_do_registration, rtmisc_do_reset, 0 };

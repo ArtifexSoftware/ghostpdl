@@ -284,6 +284,15 @@ int pcl_palette_set_view_illuminant(P2(
  */
 int pcl_palette_check_complete(P1(pcl_state_t * pcs));
 
+
+gs_private_st_ptrs1( st_pstack_entry_t,
+                     pstack_entry_t,
+                     "palette stack entry",
+                     pstack_enum_ptrs,
+                     pstack_reloc_ptrs,
+                     ppalet
+                     );
+
 /*
  * Entry points to the palette-related commands.
  */

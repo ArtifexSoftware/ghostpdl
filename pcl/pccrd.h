@@ -107,33 +107,6 @@ extern  pcl_crd_t * pcl_default_crd;
 int pcl_crd_build_default_crd(P1(pcl_state_t *pcs));
 
 /*
- * Build a CRD with device-provided parameters, but with the default PCL
- * white point.
- *
- * Note that this is one of the few routines which accept a memory pointer
- * operand but does not have it as the last operand.
- *
- * Any operands set to NULL will be given their graphic library defaults
- * (which may not be the same as their values in the default PCL CRD).
- *
- * Returns 0 on success, < 0 in the event of an error.
- */
-int pcl_crd_build_dev_crd(P12(
-    gs_memory_t *                   pmem,
-    const gs_vector3 *              BlackPoint,
-    const gs_matrix3 *              MatrixPQR,
-    const gs_range3 *               RangePQR,
-    const gs_cie_transform_proc3 *  TransformPQR,
-    const gs_matrix3 *              MatrixLMN,
-    const gs_cie_render_proc3 *     EncodeLMN,
-    const gs_range3 *               RangeLMN,
-    const gs_matrix3 *              MatrixABC,
-    const gs_cie_render_proc3 *     EncodeABC,
-    const gs_range3 *               RangeABC,
-    const gs_cie_render_table_t *   RenderTable
-));
-
-/*
  * Set the viewing illuminant.
  *
  * Though this code goes through the motions of an "unshare" operation, it
@@ -142,7 +115,8 @@ int pcl_crd_build_dev_crd(P12(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-int pcl_crd_set_view_illuminant(P2(
+int pcl_crd_set_view_illuminant(P3(
+    pcl_state_t *       pcs,
     pcl_crd_t **        ppcrd,
     const gs_vector3 *  pwht_pt
 ));

@@ -6,6 +6,7 @@
 /* PCL5 macro commands */
 #include "stdio_.h"			/* std.h + NULL */
 #include "pcommand.h"
+#include "pgmand.h"
 #include "pcstate.h"
 #include "pcparse.h"
 
@@ -28,30 +29,38 @@ int
 pcl_execute_macro(const pcl_macro_t *pmac, pcl_state_t *pcs,
   pcl_copy_operation_t before, pcl_reset_type_t reset,
   pcl_copy_operation_t after)
-{	pcl_parser_state_t state;
-	pcl_state_t saved;
-	stream_cursor_read r;
-	int code;
+{	
+    pcl_parser_state_t state;
+    hpgl_parser_state_t gstate;
+    pcl_state_t saved;
+    stream_cursor_read r;
+    int code;
 
-	if ( before )
-	  { memcpy(&saved, pcs, sizeof(*pcs));
-	    do_copies(&saved, pcs, before);
-	    pcs->saved = &saved;
-	  }
-	if ( reset )
-	  pcl_do_resets(pcs, reset);
-	pcl_process_init(&state);
-	r.ptr = (const byte *)(pmac + 1) - 1;
-	r.limit =
-	  (const byte *)pmac + (gs_object_size(pcs->memory, pmac) - 1);
-	pcs->macro_level++;
-	code = pcl_process(&state, pcs, &r);
-	pcs->macro_level--;
-	if ( after )
-	  { do_copies(&saved, pcs, after);
-	    memcpy(pcs, &saved, sizeof(*pcs));
-	  }
+    if ( before ) { 
+	memcpy(&saved, pcs, sizeof(*pcs));
+	do_copies(&saved, pcs, before);
+	pcs->saved = &saved;
+    }
+    if ( reset )
+	pcl_do_resets(pcs, reset);
+    state.hpgl_parser_state=&gstate;
+    pcl_process_init(&state);
+    code = pcl_do_registrations(pcs, &state);
+    if ( code < 0 )
+	/* we don't try to clean up here.  If command registration
+           fails, the system is not configured correctly. */
 	return code;
+    r.ptr = (const byte *)(pmac + 1) - 1;
+    r.limit =
+	(const byte *)pmac + (gs_object_size(pcs->memory, pmac) - 1);
+    pcs->macro_level++;
+    code = pcl_process(&state, pcs, &r);
+    pcs->macro_level--;
+    if ( after ) { 
+	do_copies(&saved, pcs, after);
+	memcpy(pcs, &saved, sizeof(*pcs));
+    }
+    return code;
 }
 
 /* ---------------- Commands ---------------- */
@@ -193,7 +202,9 @@ pcl_assign_macro_id(pcl_args_t *pargs, pcl_state_t *pcs)
 
 /* Initialization */
 private int
-pcmacros_do_init(gs_memory_t *mem)
+pcmacros_do_registration(
+    pcl_parser_state_t *pcl_parser_state,
+    gs_memory_t *mem)
 {		/* Register commands */
 	DEFINE_CLASS('&')
 	  {'f', 'X',
@@ -245,5 +256,5 @@ pcmacros_do_copy(pcl_state_t *psaved, const pcl_state_t *pcs,
 	return 0;
 }
 const pcl_init_t pcmacros_init = {
-  pcmacros_do_init, pcmacros_do_reset, pcmacros_do_copy
+  pcmacros_do_registration, pcmacros_do_reset, pcmacros_do_copy
 };

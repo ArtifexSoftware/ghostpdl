@@ -17,6 +17,7 @@
 #include "pcpage.h"
 #include "pgmand.h"
 #include "pginit.h"
+#include "plmain.h"             /* for finish page */
 #include "gsmatrix.h"		/* for gsdevice.h */
 #include "gscoord.h"
 #include "gsdevice.h"
@@ -359,34 +360,6 @@ new_logical_page(
     new_page_size(pcs, psize, reset_initial);
 }
 
-
-/* page end function to use */
-private int     (*end_page)( pcl_state_t * pcs, int num_copies, int flush );
-
-/*
- * Set the page output procedure.
- */
-  void
-pcl_set_end_page(
-    int     (*procp)( pcl_state_t * pcs, int num_copies, int flush )
-)
-{
-    end_page = procp;
-}
-
-/*
- * Stub output page procedure. This will normally be overridden in pcmain.c.
- */
-  private int
-default_end_page(
-    pcl_state_t *   pcs,
-    int             num_copies,
-    int             flush
-)
-{
-    return gs_output_page(pcs->pgs, num_copies, flush);
-}
-
 /*
  * End a page, either unconditionally or only if there are marks on it.
  * Return 1 if the page was actually printed and erased.
@@ -443,7 +416,8 @@ pcl_end_page(
     }
 
     /* output the page */
-    (*end_page)(pcs, pcs->num_copies, true);
+    pl_finish_page((pl_main_instance_t *)pcs->client_data,
+		   pcs->pgs, pcs->num_copies, /* flush = */ true);
     pcl_set_drawing_color(pcs, pcl_pattern_solid_white, 0, false);
     code = gs_erasepage(pcs->pgs);
     /*
@@ -791,7 +765,8 @@ pcl_print_quality(
  * Initialization
  */
   private int
-pcpage_do_init(
+pcpage_do_registration(
+    pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *   pmem    /* ignored */
 )
 {
@@ -924,8 +899,6 @@ pcpage_do_reset(
 )
 {
     if ((type & (pcl_reset_initial | pcl_reset_printer)) != 0) {
-        if ((type & pcl_reset_initial) != 0)
-	    end_page = default_end_page;
 	pcs->paper_source = 0;		/* ??? */
         pcs->xfm_state.left_offset_cp = 0.0;
         pcs->xfm_state.top_offset_cp = 0.0;
@@ -946,4 +919,4 @@ pcpage_do_reset(
     }
 }
 
-const pcl_init_t    pcpage_init = { pcpage_do_init, pcpage_do_reset, 0 };
+const pcl_init_t    pcpage_init = { pcpage_do_registration, pcpage_do_reset, 0 };

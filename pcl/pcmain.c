@@ -57,21 +57,6 @@ const pcl_init_t *    pcl_init_table[] = {
 /* Built-in symbol set initialization procedure */
 extern  bool    pcl_load_built_in_symbol_sets( pcl_state_t * );
 
-/* 
- * If inst.pause is set, pause at the end of each page.
- */
-  private int
-pause_end_page(
-    pcl_state_t *           pcs,
-    int                     num_copies,
-    int                     flush
-)
-{
-    pl_main_instance_t *    pmi = pcs->client_data;
-
-    return pl_finish_page(pmi, pcs->pgs, num_copies, flush);
-}
-
 /*
  * Define the gstate client procedures.
  */
@@ -142,7 +127,8 @@ main(
     pl_main_instance_t  inst;
     gs_state *          pgs;
     pcl_state_t *       pcs;
-    pcl_parser_state_t  pstate;
+    pcl_parser_state_t  pcl_parser_state;
+    hpgl_parser_state_t pgl_parser_state;
     arg_list            args;
     const char *        arg;
 
@@ -203,27 +189,17 @@ main(
 
     /* initialize pjl */
     pcs->pjls = pjl_process_init(mem);
-
-    /* Run initialization code. */
+    pcl_parser_state.hpgl_parser_state = &pgl_parser_state;
     {
-        const pcl_init_t ** init;
-
-        hpgl_init_command_index();
-        for (init = pcl_init_table; *init; ++init) {
-            if ( (*init)->do_init ) {
-                int     code = (*(*init)->do_init)(mem);
-
-                if (code < 0) {
-    	            lprintf1("Error %d during initialization!\n", code);
-    	            exit(code);
-    	        }
-            }
-        }
-        pcl_do_resets(pcs, pcl_reset_initial);
+	/* Run initialization code. */
+	int code = pcl_do_registrations(pcs, &pcl_parser_state);
+	if ( code < 0 )
+	    exit(code);
     }
 
-    pcl_set_end_page(pause_end_page);
-
+    /* glue the initialized gl/2 parser state into pcl's state */
+    pcs->parse_data = &pgl_parser_state;
+    pcl_do_resets(pcs, pcl_reset_initial);
     pcl_load_built_in_symbol_sets(pcs);
 
 #ifdef DEBUG
@@ -274,11 +250,11 @@ process:
     	            break;
     	        else if (code > 0) {
     	            in_pjl = false;
-    	            pcl_process_init(&pstate);
+    	            pcl_process_init(&pcl_parser_state);
     	            goto process;
     	        }
     	    } else {
-                code = pcl_process(&pstate, pcs, &r);
+                code = pcl_process(&pcl_parser_state, pcs, &r);
     	        if (code == e_ExitLanguage)
     	            in_pjl = true;
     	        else if (code < 0)

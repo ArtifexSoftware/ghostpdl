@@ -18,8 +18,8 @@
  * operations performed per symbol set (affecting all mappings). */
 
 typedef struct pcl_symbol_set_s {
-  pcl_entity_common;
-  pl_symbol_map_t *maps[plgv_next];	/* (these may be NULL) */
+    pcl_data_storage_t storage;
+    pl_symbol_map_t *maps[plgv_next];	/* (these may be NULL) */
 } pcl_symbol_set_t;
 
 /* Check whether a symbol map's character requirements are supported by a

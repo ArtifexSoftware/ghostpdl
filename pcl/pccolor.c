@@ -21,7 +21,6 @@
  *     mode (i.e.: they do NOT end graphics mode, as one would expect from the
  *     documentation).
  */
-private float   color_comps[3];
 
 /*
  * ESC * v <cc> A
@@ -33,7 +32,7 @@ set_color_comp_1(
 )
 {
     if (!pcs->raster_state.graphics_mode)
-        color_comps[0] = float_arg(pargs);
+        pcs->color_comps[0] = float_arg(pargs);
     return 0;
 }
 
@@ -47,7 +46,7 @@ set_color_comp_2(
 )
 {
     if (!pcs->raster_state.graphics_mode)
-        color_comps[1] = float_arg(pargs);
+        pcs->color_comps[1] = float_arg(pargs);
     return 0;
 }
 
@@ -61,7 +60,7 @@ set_color_comp_3(
 )
 {
     if (!pcs->raster_state.graphics_mode)
-        color_comps[2] = float_arg(pargs);
+        pcs->color_comps[2] = float_arg(pargs);
     return 0;
 }
 
@@ -87,10 +86,10 @@ assign_color_index(
 
     if (!pcs->raster_state.graphics_mode) {
         if ((indx >= 0) && (indx < pcl_palette_get_num_entries(pcs->ppalet)))
-            pcl_palette_set_color(pcs, indx, color_comps);
-        color_comps[0] = 0.0;
-        color_comps[1] = 0.0;
-        color_comps[2] = 0.0;
+            pcl_palette_set_color(pcs, indx, pcs->color_comps);
+        pcs->color_comps[0] = 0.0;
+        pcs->color_comps[1] = 0.0;
+        pcs->color_comps[2] = 0.0;
     }
     return 0;
 }
@@ -99,8 +98,9 @@ assign_color_index(
  * Initialization
  */
   private int
-color_do_init(
-    gs_memory_t *   mem
+color_do_registration(
+    pcl_parser_state_t *pcl_parser_state,
+    gs_memory_t *   pmem
 )
 {
     /* Register commands */
@@ -151,9 +151,9 @@ color_do_reset(
                                  | pcl_reset_printer );
 
     if ((type & mask) != 0) {
-        color_comps[0] = 0.0;
-        color_comps[1] = 0.0;
-        color_comps[2] = 0.0;
+        pcs->color_comps[0] = 0.0;
+        pcs->color_comps[1] = 0.0;
+        pcs->color_comps[2] = 0.0;
     }
 }
 
@@ -161,4 +161,4 @@ color_do_reset(
  * There is no copy operation for this module, as the color components are
  * just globals.
  */
-const pcl_init_t    pcl_color_init = { color_do_init, color_do_reset, 0 };
+const pcl_init_t    pcl_color_init = { color_do_registration, color_do_reset, 0 };

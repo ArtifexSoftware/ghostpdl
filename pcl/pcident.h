@@ -35,8 +35,12 @@
 
 typedef ulong   pcl_gsid_t;
 
-pcl_gsid_t  pcl_next_id( void );
+/* Define an opaque type for the PCL state. */
+#ifndef pcl_state_DEFINED
+#  define pcl_state_DEFINED
+typedef struct pcl_state_s pcl_state_t;
+#endif
 
-void    pcl_init_id( void );
+pcl_gsid_t  pcl_next_id(P1(pcl_state_t *pcs));
 
 #endif  /* pcident_INCLUDED */

@@ -100,6 +100,7 @@ pcdict_h    = $(PCLSRC)pcdict.h   \
 
 rtrstst_h   = $(PCLSRC)rtrstst.h  \
               $(gx_h)             \
+              $(gsimage_h)        \
               $(pccoord_h)
 
 pcmtx3_h    = $(PCLSRC)pcmtx3.h   \
@@ -1071,6 +1072,7 @@ $(PCLOBJ)pgconfig.$(OBJ): $(PCLSRC)pgconfig.c \
 $(PCLOBJ)pgvector.$(OBJ): $(PCLSRC)pgvector.c \
                           $(stdio__h)         \
                           $(gdebug_h)         \
+		          $(pcparse_h)        \
                           $(pgmand_h)         \
                           $(pggeom_h)         \
                           $(pgdraw_h)         \
@@ -1083,6 +1085,7 @@ $(PCLOBJ)pgvector.$(OBJ): $(PCLSRC)pgvector.c \
 # Chapter 21
 $(PCLOBJ)pgpoly.$(OBJ): $(PCLSRC)pgpoly.c \
                         $(std_h)         \
+                        $(pcparse_h)     \
                         $(pgmand_h)       \
                         $(pgdraw_h)       \
                         $(pggeom_h)       \
@@ -1093,6 +1096,7 @@ $(PCLOBJ)pgpoly.$(OBJ): $(PCLSRC)pgpoly.c \
 # Chapter 22
 $(PCLOBJ)pglfill.$(OBJ): $(PCLSRC)pglfill.c \
                          $(memory__h)       \
+                         $(pcparse_h)       \
                          $(pgmand_h)        \
                          $(pginit_h)        \
                          $(pggeom_h)        \
@@ -1129,6 +1133,7 @@ $(PCLOBJ)pglabel.$(OBJ): $(PCLSRC)pglabel.c  \
                          $(stdio__h)         \
                          $(gdebug_h)         \
                          $(plvalue_h)        \
+			 $(pcparse_h)        \
                          $(pgmand_h)         \
                          $(pginit_h)         \
                          $(pgfont_h)         \

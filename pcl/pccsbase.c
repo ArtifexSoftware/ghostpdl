@@ -15,13 +15,10 @@
 #include "gscie.h"
 #include "pcmtx3.h"
 #include "pccsbase.h"
+#include "pcstate.h"
 
 /* GC routines */
 private_st_cs_base_t();
-
-/* a special "white" color space */
-private pcl_cs_base_t * pwhite_cs;
-
 
 /*
  * Handle min/max values for device-independent color spaces.
@@ -1083,16 +1080,17 @@ pcl_cs_base_build_cspace(
  */
   int
 pcl_cs_base_build_white_cspace(
+    pcl_state_t *           pcs,
     pcl_cs_base_t **        ppbase,
     gs_memory_t *           pmem
 )
 {
     int                     code = 0;
 
-    if (pwhite_cs == 0)
-        code = alloc_base_cspace(&pwhite_cs, pcl_cspace_White, pmem);
+    if (pcs->pwhite_cs == 0)
+        code = alloc_base_cspace(&pcs->pwhite_cs, pcl_cspace_White, pmem);
     if (code >= 0)
-        pcl_cs_base_copy_from(*ppbase, pwhite_cs);
+        pcl_cs_base_copy_from(*ppbase, pcs->pwhite_cs);
     return code;
 }
 
@@ -1185,7 +1183,7 @@ pcl_cs_base_install(
  * initialization of BSS.
  */
   void
-pcl_cs_base_init(void)
+pcl_cs_base_init(pcl_state_t *pcs)
 {
-    pwhite_cs = 0;
+    pcs->pwhite_cs = 0;
 }

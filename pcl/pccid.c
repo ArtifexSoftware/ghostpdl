@@ -429,7 +429,8 @@ pcl_cid_IN(
  * code, as reset is handled at the palette level.
  */
   private int
-pcl_cid_do_init(
+pcl_cid_do_registration(
+    pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *   pmem
 )
 {
@@ -450,4 +451,4 @@ pcl_cid_do_init(
     return 0;
 }
 
-const pcl_init_t    pcl_cid_init = { pcl_cid_do_init, 0, 0 };
+const pcl_init_t    pcl_cid_init = { pcl_cid_do_registration, 0, 0 };

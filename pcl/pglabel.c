@@ -9,6 +9,7 @@
 #include "ctype_.h"
 #include "stdio_.h"		/* for gdebug.h */
 #include "gdebug.h"
+#include "pcparse.h"
 #include "plvalue.h"
 #include "pgmand.h"
 #include "pginit.h"
@@ -1245,7 +1246,10 @@ hpgl_print_symbol_mode_char(hpgl_state_t *pgls)
 
 /* Initialization */
 private int
-pglabel_do_init(gs_memory_t *mem)
+pglabel_do_registration(
+    pcl_parser_state_t *pcl_parser_state,
+    gs_memory_t *mem
+)
 {		/* Register commands */
 	DEFINE_HPGL_COMMANDS
 	  HPGL_COMMAND('C', 'P', hpgl_CP, hpgl_cdf_lost_mode_cleared),
@@ -1255,5 +1259,5 @@ pglabel_do_init(gs_memory_t *mem)
 	return 0;
 }
 const pcl_init_t pglabel_init = {
-  pglabel_do_init, 0
+  pglabel_do_registration, 0
 };
