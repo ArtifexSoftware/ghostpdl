@@ -1378,8 +1378,8 @@ hpgl_set_special_pixel_placement(hpgl_state_t *pgls, hpgl_rendering_mode_t rende
 	hpgl_call(gs_distance_transform(adjust.x, adjust.y, &default_matrix, &distance));
 	/* translate all points in the path by the adjustment.  */
 	hpgl_call(gx_path_translate(ppath,
-		   float2fixed(0.5 * (distance.x / fabs(distance.x))), 
-		   float2fixed(0.5 * (distance.y / fabs(distance.y)))));
+                  float2fixed(distance.x / fabs(distance.x)),
+                  float2fixed(distance.y / fabs(distance.y))));
     }
     return 0;
 }
