@@ -217,7 +217,7 @@ resource_list *read_resource_map(FILE *in, resource_header *header)
     number = malloc(sizeof(*number)*n_types);
     ref_offsets = malloc(sizeof(*ref_offsets)*n_types);
     n_resources = 0;
-    p = buf + type_offset;	// FIXME: this is off by two?!
+    p = buf + type_offset;	/* this seems to be off by two in files!? */
     p = buf + 30;
     for (i = 0; i < n_types; i++) {
         types[i] = get_int32(p);
@@ -235,8 +235,8 @@ resource_list *read_resource_map(FILE *in, resource_header *header)
     for (i = 0; i < n_types; i++) {
     	res_type2string(types[i], type_string);
     	if_debug2('s', "[s] %d resources of type '%s':\n", number[i], type_string);
-        p = buf + type_offset + ref_offsets[i]; // FIXME: also off?
-        //p = buf + 32 + ref_offsets[i];
+        p = buf + type_offset + ref_offsets[i]; /* FIXME: also off? */
+        /* p = buf + 32 + ref_offsets[i]; */
         for (j = 0; j < number[i]; j++) {
             list->resources[k].type = types[i];
             list->resources[k].id = get_int16(p);
