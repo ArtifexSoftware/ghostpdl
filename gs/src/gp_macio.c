@@ -606,6 +606,14 @@ fin:
     return (size);
 }
 
+/* return a list of font names and corresponding paths from 
+ * the native system locations
+ */
+int gp_native_fontmap(char *names[], char *paths[], int *count)
+{
+    return 0;
+}
+
 /* ------ File enumeration ------ */
 
 /****** THIS IS NOT SUPPORTED ON MACINTOSH SYSTEMS. ******/
@@ -805,4 +813,308 @@ gp_file_name_combine(const char *prefix, uint plen, const char *fname, uint flen
 {
     return gp_file_name_combine_generic(prefix, plen, 
 	    fname, flen, no_sibling, buffer, blen);
+}
+
+// FIXME: there must be a system util for this!
+static char *MacStr2c(char *pstring)
+{
+	char *cstring;
+	int len = (pstring[0] < 256) ? pstring[0] : 255;
+
+	if (len == 0) return NULL;
+	
+	cstring = malloc(len + 1);
+	if (cstring != NULL) {
+		memcpy(cstring, &(pstring[1]), len);
+		cstring[len] = '\0';
+	}
+	
+	return(cstring);
+}
+
+/* ------ Font enumeration ------ */
+                                                                                
+ /* This is used to query the native os for a list of font names and
+  * corresponding paths. The general idea is to save the hassle of
+  * building a custom fontmap file
+  */
+
+typedef struct {
+    int size, style, id;
+} refentry;
+
+typedef struct {
+    int entries;
+    refentry *refs;
+} reftable;
+
+static reftable *reftable_new(int entries)
+{
+    reftable *table = malloc(sizeof(reftable));
+    if (table != NULL) {
+        table->entries = entries;
+        table->refs = malloc(entries * sizeof(refentry));
+        if (table->refs == NULL) { free(table); table = NULL; }
+    }
+    return table;
+}
+
+static void reftable_free(reftable *table)
+{
+    if (table != NULL) {
+        if (table->refs) free(table->refs);
+        free(table);
+    }
+}
+
+static reftable *reftable_grow(reftable *table, int entries)
+{
+    if (table == NULL) {
+        table = reftable_new(entries);
+    } else {
+        table->entries += entries;
+        table->refs = realloc(table->refs, table->entries * sizeof(refentry));
+    }
+    return table;
+}
+
+static int get_int16(unsigned char *p) {
+    return (p[0]&0xFF)<<8 | (p[1]&0xFF);
+}
+
+static int get_int32(unsigned char *p) {
+    return (p[0]&0xFF)<<24 | (p[1]&0xFF)<<16 | (p[2]&0xFF)<<8 | (p[3]&0xFF);
+}
+
+/* parse and summarize FOND resource information */
+static reftable * parse_fond(FSSpec *spec)
+{
+    OSErr result = noErr;
+    FSRef specref;
+    Handle fond = NULL;
+    unsigned char *res;
+    reftable *table = NULL;
+    SInt16 ref;
+    char *filename = MacStr2c(spec->name);
+    int i,j, count, n, start;
+    
+    start = 0;
+    
+    result = FSpMakeFSRef(spec,&specref);
+    if (result == noErr)
+      result = FSOpenResourceFile(&specref, 0, NULL, fsRdPerm, &ref);
+    if (result != noErr) {
+      if (result = mapReadErr) {
+        /* this may mean there's no resource map, i.e. it's
+           it's a .ttf or .otf file, but also occurs if the
+           map structure on disk isn't 'internally consistent'
+           which is unfortunately rather common, so we ignore
+           this an hope for the best. */
+        dlprintf("map read error opening resource file...ignoring\n");
+      } else {
+      	dlprintf2("unable to open resource file '%s' (error %d)\n", filename, result);
+      	return NULL;
+      }
+    }
+    if (ref == -1) goto fin;
+    
+    UseResFile(ref);
+    count = Count1Resources('FOND');
+    for (i = 0; i < count; i++) {
+        fond = Get1IndResource('FOND', i+1);
+        if (fond == NULL) {
+            result = ResError();
+            goto fin;
+        }
+        
+        /* The FOND resource structure corresponds to the FamRec and AsscEntry
+           data structures documented in the FontManager reference. However,
+           access to these types is deprecated in Carbon. We therefore access the
+           data by direct offset in the hope that the resource format will not change
+           even in api access to the in-memory versions goes away. */
+        HLock(fond);
+        res = *fond + 52; /* offset to association table */
+        n = get_int16(res) + 1;	res += 2;
+        dlprintf1("found %d fonts in resource file\n", n);
+		table = reftable_grow(table, n);
+        for (j = start; j < start + n; j++ ) {
+            table->refs[j].size = get_int16(res); res += 2;
+            table->refs[j].style = get_int16(res); res += 2;
+            table->refs[j].id = get_int16(res); res += 2;
+        }
+        start += n;
+        HUnlock(fond);
+    }
+fin:
+    CloseResFile(ref);
+    return table;
+}
+
+/* FIXME: should check for uppercase as well */
+static int is_ttf_file(const char *path)
+{
+    int len = strlen(path);
+    return !memcmp(path+len-4,".ttf",4);
+}
+static int is_otf_file(const char *path)
+{
+    int len = strlen(path);
+    return !memcmp(path+len-4,".otf",4);
+}
+
+static void strip_char(char *string, int len, const int c)
+{
+    char *bit;
+    len += 1;
+    while(bit = strchr(string,' ')) {
+        memmove(bit, bit + 1, string + len - bit - 1);
+    }
+}
+
+/* get the macos name for the font instance and mangle it into a PS
+   fontname */
+static char *makePSFontName(FMFontFamily Family, FMFontStyle Style)
+{
+	Str255 Name;
+	OSStatus result;
+	int length;
+	char *stylename, *fontname;
+	char *psname;
+	
+	result = FMGetFontFamilyName(Family, Name);
+	if (result != noErr) return NULL;
+	fontname = MacStr2c(Name);
+	if (fontname == NULL) return NULL;
+	strip_char(fontname, strlen(fontname), ' ');
+	
+	switch (Style) {
+		case 0: stylename=""; break;;
+		case 1: stylename="Bold"; break;;
+		case 2: stylename="Italic"; break;;
+		case 3: stylename="BoldItalic"; break;;
+		default: stylename="Unknown"; break;;
+	}
+	
+	length = strlen(fontname) + strlen(stylename) + 2;
+	psname = malloc(length);
+	if (Style != 0)
+		snprintf(psname, length, "%s-%s", fontname, stylename);
+	else
+		snprintf(psname, length, "%s", fontname);
+		
+	free(fontname);
+	
+	return psname;	
+}
+                                             
+typedef struct {
+    int count;
+    FMFontIterator Iterator;
+    char *name;
+    char *path;
+} fontenum_t;
+                                                                                
+void *gp_enumerate_fonts_init(gs_memory_t *mem)
+{
+    fontenum_t *state = gs_alloc_bytes(mem, sizeof(fontenum_t),
+	"macos font enumerator state");
+	FMFontIterator *Iterator = &state->Iterator;
+	OSStatus result;
+    
+    if (state != NULL) {
+		state->count = 0;
+		state->name = NULL;
+		state->path = NULL;
+		result = FMCreateFontIterator(NULL, NULL,
+			kFMUseGlobalScopeOption, Iterator);
+		if (result != noErr) return NULL;
+    }
+
+    return (void *)state;
+}
+                                   
+int gp_enumerate_fonts_next(void *enum_state, char **name, char **path)
+{
+    fontenum_t *state = (fontenum_t *)enum_state;
+	FMFontIterator *Iterator = &state->Iterator;
+	FMFont Font;
+	FourCharCode Format;
+	FMFontFamily FontFamily;
+	FMFontStyle Style;
+	FSSpec FontContainer;
+	char type[5];
+	char fontpath[256];
+	char *fontname;
+	reftable *table;
+	OSStatus result;
+    	
+	result = FMGetNextFont(Iterator, &Font);
+    if (result != noErr) return 0;
+
+	result = FMGetFontFormat(Font, &Format);
+	type[0] = ((char*)&Format)[0];
+	type[1] = ((char*)&Format)[1];
+	type[2] = ((char*)&Format)[2];
+	type[3] = ((char*)&Format)[3];
+	type[4] = '\0';
+
+ 	FMGetFontFamilyInstanceFromFont(Font, &FontFamily, &Style);
+    if (state->name) free (state->name);
+    
+    fontname = makePSFontName(FontFamily, Style);
+    if (fontname == NULL) {
+		state->name = strdup("GSPlaceHolder");
+	} else {
+		state->name = fontname;
+	}
+    	
+	result = FMGetFontContainer(Font, &FontContainer);
+	if (state->path) {
+		free(state->path);
+		state->path = NULL;
+	}
+	convertSpecToPath(&FontContainer, fontpath, 256);
+    table = parse_fond(&FontContainer);
+    if (table != NULL) {
+    	int i;
+    	for (i = 0; i < table->entries; i++) {
+            if (table->refs[i].size == 0) { /* ignore non-scalable fonts */
+                if (table->refs[i].style == Style) {
+                    int len = strlen(fontpath) + strlen("%macresource%#sfnt+") + 6;
+                	state->path = malloc(len);
+                    snprintf(state->path, len, "%%macresource%%%s#sfnt+%d", 
+                        fontpath, table->refs[i].id);
+                    break;
+                }
+            }
+        }
+        reftable_free(table);
+        if (state->path == NULL) dlprintf1("couldn't find reource matching font '%s'\n",
+        	state->name);
+    } else {
+        /* regular font file */
+        state->path = strdup(fontpath);
+    }
+    
+    *name = state->name;
+    *path = state->path;
+
+	dlprintf2("nativefontenum: returning '%s'\n in '%s'\n", *name, *path);
+	state->count += 1;
+	//return (state->count < 24) ? 1 : 0;
+	return 1;
+}
+                                                                                
+void gp_enumerate_fonts_free(void *enum_state)
+{
+    fontenum_t *state = (fontenum_t *)enum_state;
+	FMFontIterator *Iterator = &state->Iterator;
+	
+	FMDisposeFontIterator(Iterator);
+	
+    /* free any gs_malloc() stuff here */
+    if (state->name) free(state->name);
+    if (state->path) free(state->path);
+    /* the garbage collector will take care of the struct itself */
+    
 }

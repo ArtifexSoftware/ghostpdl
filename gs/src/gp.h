@@ -366,4 +366,28 @@ uint gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen);
  */
 void gp_enumerate_files_close(file_enum * pfen);
 
+
+/* ------ Font enumeration ------ */
+
+/* This is used to query the native os for a list of font names and 
+ * corresponding paths. The general idea is to save the hassle of 
+ * building a custom fontmap file
+ */
+
+/* allocate and initialize the iterator
+   returns a pointer to its local state or NULL on failure */
+void *gp_enumerate_fonts_init(gs_memory_t *mem);
+
+/* get the next element in the font enumeration
+   Takes a pointer to its local state and pointers in which to
+   return C strings. The string 'name' is the font name, 'path'
+   is the access path for the font resource. The returned strings
+   are only safe to reference until until the next call.
+   Returns 0 when no more fonts are available, a positive value 
+   on success, or negative value on error. */
+int gp_enumerate_fonts_next(void *enum_state, char **name, char **path);
+
+/* clean up and deallocate the iterator */
+void gp_enumerate_fonts_free(void *enum_state);
+
 #endif /* gp_INCLUDED */

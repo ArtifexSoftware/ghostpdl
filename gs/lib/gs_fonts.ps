@@ -344,8 +344,42 @@ FONTPATH length 0 eq { (%END FONTPATH) .skipeof } if
 
 %END FONTPATH
 
-% Create the dictionary that registers the .buildfont procedure (called by
-% definefont) for each FontType.
+% Try to enumerate native fonts registered with the os
+% and add them to the fontmap. This relies on a custom
+% operator which calls platform-specific C code. It
+% returns an array of arrays, each containing a pair
+% of strings: what the system thinks is the ps name,
+% and the access path.
+/.buildnativefontmap {
+  QUIET true or not {
+    (Querying operating system for font files...\n)
+    print flush
+  } if
+  false % disabled code:
+  %.getnativefonts
+  {
+    {
+      % stack: [ (name) (path) ]
+      % verify the font name ourselves
+      dup 1 get (r) { file } stopped
+      {
+        % skip the entry if we can't open the returned path 
+        pop pop pop
+      }{
+        % we could open the font file
+        .findfontname
+        not { dup 0 get } if  % stack: (newname) [ (name) (path) ]
+        % DEBUG { (  found ) print dup print (\n) print flush } if 
+        % add entry to the fontmap
+        1 index exch 0 exch cvn put
+        aload pop .definefontmap
+      } ifelse
+    } forall
+  } if
+} bind def
+
+% Create the dictionary that registers the .buildfont procedure
+% (called by definefont) for each FontType.
 /buildfontdict 20 dict def
 
 % Register Type 3 fonts, which are always supported, for definefont.
@@ -356,7 +390,7 @@ buildfontdict 3 /.buildfont3 cvx put
 % the only thing that would be in that file, it's simpler to put it here.
 /.buildfont0 where { pop buildfontdict 0 /.buildfont0 cvx put } if
 
-% Define definefont.  This is a procedure built on a set of operators
+% Define definefont. This is a procedure built on a set of operators
 % that do all the error checking and key insertion.
 /.growfontdict
  {      % Grow the font dictionary, if necessary, to ensure room for an
@@ -782,17 +816,27 @@ $error /SubstituteFont { } put
       counttomark 1 sub { pop } repeat
       .dofindfont
     } {
+                        % We didn't find it in the font path. Try (re)building
+                        % the native font map entries
+      .buildnativefontmap
+      %counttomark 1 sub { pop } repeat
+      .tryfindfont not {
                         % No luck.  Make sure we're not already
                         % looking for the default font.
-      dup defaultfontname eq {
         QUIET not {
-          (Unable to load default font ) print
-          dup =only (!  Giving up.) = flush
+          (Didn't find this font on the system!\n)
+          print
         } if
-        /findfont cvx /invalidfont signalerror
-      } if
+        dup defaultfontname eq {
+          QUIET not {
+            (Unable to load default font ) print
+            dup =only (!  Giving up.) = flush
+          } if
+          /findfont cvx /invalidfont signalerror
+        } if
                         % Substitute for the font.  Don't alias.
-      $error /SubstituteFont get exec .stdsubstfont
+        $error /SubstituteFont get exec .stdsubstfont
+      } if
     } ifelse
   } if
 } bind def

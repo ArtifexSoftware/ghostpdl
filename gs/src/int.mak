@@ -459,6 +459,10 @@ $(PSOBJ)zfont.$(OBJ) : $(PSSRC)zfont.c $(OP)\
  $(bfont_h) $(store_h)
 	$(PSCC) $(PSO_)zfont.$(OBJ) $(C_) $(PSSRC)zfont.c
 
+$(PSOBJ)zfontenum.$(OBJ) : $(PSSRC)zfontenum.c $(OP)\
+ $(memory__h) $(gsstruct_h) $(ialloc_h) $(idict_h)
+	$(PSCC) $(PSO_)zfontenum.$(OBJ) $(C_) $(PSSRC)zfontenum.c
+
 $(PSOBJ)zgstate.$(OBJ) : $(PSSRC)zgstate.c $(OP) $(math__h)\
  $(gsmatrix_h)\
  $(ialloc_h) $(icremap_h) $(idict_h) $(igstate_h) $(istruct_h) $(store_h)
@@ -506,16 +510,16 @@ Z5=$(PSOBJ)zmisc.$(OBJ) $(PSOBJ)zpacked.$(OBJ) $(PSOBJ)zrelbit.$(OBJ)
 Z6=$(PSOBJ)zstack.$(OBJ) $(PSOBJ)zstring.$(OBJ) $(PSOBJ)zsysvm.$(OBJ)
 Z7=$(PSOBJ)ztoken.$(OBJ) $(PSOBJ)ztype.$(OBJ) $(PSOBJ)zvmem.$(OBJ)
 Z8=$(PSOBJ)zbfont.$(OBJ) $(PSOBJ)zchar.$(OBJ) $(PSOBJ)zcolor.$(OBJ)
-Z9=$(PSOBJ)zdevice.$(OBJ) $(PSOBJ)zfont.$(OBJ) $(PSOBJ)zgstate.$(OBJ) $(PSOBJ)zdfilter.$(OBJ)
-Z10=$(PSOBJ)zht.$(OBJ) $(PSOBJ)zimage.$(OBJ) $(PSOBJ)zmatrix.$(OBJ)
+Z9=$(PSOBJ)zdevice.$(OBJ) $(PSOBJ)zfont.$(OBJ) $(PSOBJ)zfontenum.$(OBJ) $(PSOBJ)zgstate.$(OBJ)
+Z10=$(PSOBJ)zdfilter.$(OBJ) $(PSOBJ)zht.$(OBJ) $(PSOBJ)zimage.$(OBJ) $(PSOBJ)zmatrix.$(OBJ)
 Z11=$(PSOBJ)zpaint.$(OBJ) $(PSOBJ)zpath.$(OBJ)
 Z1OPS=zarith zarray zcontrol1 zcontrol2 zcontrol3
 Z2OPS=zdict1 zdict2 zfile zfile1 zfileio1 zfileio2
 Z3_4OPS=zfilter zfproc zgeneric ziodev zmath
 Z5_6OPS=zmisc zpacked zrelbit zstack zstring zsysvm
 Z7_8OPS=ztoken ztype zvmem zbfont zchar zcolor
-Z9OPS=zdevice zfont zgstate1 zgstate2 zgstate3 zdfilter
-Z10OPS=zht zimage zmatrix
+Z9OPS=zdevice zfont zfontenum zgstate1 zgstate2 zgstate3
+Z10OPS=zdfilter zht zimage zmatrix
 Z11OPS=zpaint zpath
 # We have to be a little underhanded with *config.$(OBJ) so as to avoid
 # circular definitions.

@@ -164,3 +164,24 @@ gp_fopen(const char *fname, const char *mode)
 {
     return fopen(fname, mode);
 }
+
+/* ------ Font enumeration ------ */
+ 
+ /* This is used to query the native os for a list of font names and
+  * corresponding paths. The general idea is to save the hassle of
+  * building a custom fontmap file.
+  */
+ 
+void *gp_enumerate_fonts_init(gs_memory_t *mem)
+{
+    return NULL;
+}
+         
+int gp_enumerate_fonts_next(void *enum_state, char **name, char **path)
+{
+    return 0;
+}
+                         
+void gp_enumerate_fonts_free(void *enum_state)
+{
+}           

@@ -900,3 +900,24 @@ gp_file_name_combine(const char *prefix, uint plen, const char *fname, uint flen
     return gp_file_name_combine_generic(prefix, plen, 
 	    fname, flen, no_sibling, buffer, blen);
 }
+
+/* ------ Font enumeration ------ */
+ 
+ /* This is used to query the native os for a list of font names and
+  * corresponding paths. The general idea is to save the hassle of
+  * building a custom fontmap file.
+  */
+ 
+void *gp_enumerate_fonts_init(gs_memory_t *mem)
+{
+    return NULL;
+}
+         
+int gp_enumerate_fonts_next(void *enum_state, char **name, char **path)
+{
+    return 0;
+}
+                         
+void gp_enumerate_fonts_free(void *enum_state)
+{
+}           
