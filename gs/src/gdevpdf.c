@@ -803,8 +803,12 @@ pdf_close(gx_device * dev)
      * if there is at least one complete page, we discard any leftover
      * marks.
      */
-    if (pdev->next_page == 0)
-	pdf_open_document(pdev);
+    if (pdev->next_page == 0) {
+	code = pdf_open_page(pdev, PDF_IN_STREAM);
+
+	if (code < 0)
+	    return code;
+    }
     if (pdev->contents_id != 0)
 	pdf_close_page(pdev);
 
