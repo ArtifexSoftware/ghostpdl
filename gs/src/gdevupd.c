@@ -6,7 +6,7 @@
 
 /* $RCSfile$ $Revision$ */
 /* "uniprint" -- Ugly Printer Driver by Gunther Hess (gunther@elmos.de) */
-/* $Revision$*/
+/* Revision: 1.77 */
 
 /* Revision-History:
    23-Mar-1997 -  1.43: First published version
@@ -870,7 +870,7 @@ Here are several Macros, named "UPD_MM_*" to deal with that.
 
 /** Version-String */
 
-static const char rcsid[] = "$Revision$";
+static const char rcsid[] = "Revision: 1.77";
 
 /** Default-Transfer-curve */
 
