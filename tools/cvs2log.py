@@ -9,18 +9,22 @@ def GetCVSRepository():
             # should search but we cheat.
             fp = open('pcl/CVS/Root', 'r')
         except:
+	    print "Error: Cannot find CVS Root"
             return None
     # get the Root name and strip off the newline
     repos = fp.readline()[:-1]
     fp.close()
     return repos
 
-def GetCurrentWorkingDirectory():
-    import os
-    return os.getcwd()
+# extract root repository directory name this is just the CVS root
+# directory without server and account information
+def GetCVSRootDirName():
+    import string
+    root = GetCVSRepository()
+    # search first / to end of string
+    return root[string.find(root, "/") - 1:]
 
 # figure out what day it is given year month and day
-
 def weekday(year, month, day):
     import time
     seconds = time.mktime(year, month, day, 0, 0, 0, 0, 0, 0)
@@ -49,7 +53,6 @@ def LastLogDate2CtimeTuple(filename):
     day_abbr = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
     month_abbr = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
     date_tuple = (1970, 1, 1, 0, 0, 0, 0, 0, 0)
-    print filename
     try:
 	fp = open(filename, 'r')
     except:
@@ -125,11 +128,11 @@ def BuildLog(log_date_command):
 	    if description != []:
 		# append these items in the sort order we'll want later on.
 		log.append(RcsDate2CtimeTuple(date), author, description,
-			   rcs_file[:-1], revision[:-1])
+			   rcs_file[len(GetCVSRootDirName()):-3], revision[:-1])
 	    reading_description = 0
 	    description = []
-	elif not reading_description and line[:len("Working file: ")] == "Working file: ":
-	    rcs_file = line[len("Working file: "):]
+	elif not reading_description and line[:len("RCS file: ")] == "RCS file: ":
+	    rcs_file = line[len("RCS file: "):]
 	elif not reading_description and line[:len("revision ")] == "revision ":
 	    revision = line[len("revision "):]
 	elif not reading_description and line[:len("date: ")] == "date: ":
@@ -177,9 +180,9 @@ def main():
     recursive=0
     tabwidth=8
     rlog_options=0
-    diffs=1
     logfile=None
     date_option = ""
+    diffs=1
     # override defaults if specified on the command line
     for o, a in opts:
 	if o == '-h' : hostname = a
@@ -221,7 +224,6 @@ def main():
 	    # author, and email address.
 	    entry_dict = {}
 	    print ChangeLogDateNameHeader(date, author, hostname, tabwidth)
-
 	# build string from description list so we can use it as a key
 	# for the entry dictionary
 	description_data = indent * ' '
