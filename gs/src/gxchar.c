@@ -456,7 +456,6 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
     } {
 	const gs_font *pfont = pgs->font;
 	gs_font_dir *dir = pfont->dir;
-	gx_device *dev = gs_currentdevice_inline(pgs);
         int alpha_bits;
 	gs_log2_scale_point log2_scale;
 	gs_fixed_point subpix_origin;
