@@ -966,7 +966,7 @@ $error /SubstituteFont { } put
     pop
     pop dup .fonttempstring /FontResourceDir getsystemparam .genericrfn
     .loadfontloop {
-      exch pop exch pop true
+      //true
     } {
       dup .nametostring .loadfontloop
     } ifelse
