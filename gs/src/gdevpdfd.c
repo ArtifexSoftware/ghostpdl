@@ -228,7 +228,7 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
 
 /*
  * Compute the scaling to ensure that user coordinates for a path are within
- * Acrobat's 15-bit range.  Return true if scaling was needed.
+ * Acrobat's 16K range.  Return true if scaling was needed.
  */
 private bool
 make_path_scaling(const gx_device_pdf *pdev, gx_path *ppath, double *pscale)
@@ -239,7 +239,13 @@ make_path_scaling(const gx_device_pdf *pdev, gx_path *ppath, double *pscale)
     gx_path_bbox(ppath, &bbox);
     bmin = min(bbox.p.x / pdev->scale.x, bbox.p.y / pdev->scale.y);
     bmax = max(bbox.q.x / pdev->scale.x, bbox.q.y / pdev->scale.y);
-#define MAX_USER_COORD 32000
+/*
+ * The PDF reference manual, 2nd ed., claims that the limit for coordinates
+ * is +/- 32767. However, testing indicates that Acrobat Reader 4 for
+ * Windows and Linux fail with coordinates outside +/- 16383. Hence, we
+ * limit coordinates to 16k.
+ */
+#define MAX_USER_COORD 16380
     if (bmin <= int2fixed(-MAX_USER_COORD) ||
 	bmax > int2fixed(MAX_USER_COORD)
 	) {
@@ -318,10 +324,10 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 	    pdev->state.flatness = params->flatness;
 	}
 	if (make_path_scaling(pdev, ppath, &scale)) {
-	    gs_make_scaling(pdev->scale.x / scale, pdev->scale.y / scale,
+	    gs_make_scaling(pdev->scale.x * scale, pdev->scale.y * scale,
 			    &smat);
+            pdf_put_matrix(pdev, "q ", &smat, "cm\n");
 	    psmat = &smat;
-	    pputs(s, "q\n");
 	}
 	gdev_vector_dopath((gx_device_vector *)pdev, ppath,
 			   gx_path_type_fill | gx_path_type_optimize,
@@ -367,7 +373,7 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
     set_ctm = (bool)gdev_vector_stroke_scaling((gx_device_vector *)pdev,
 					       pis, &scale, &mat);
     if (make_path_scaling(pdev, ppath, &path_scale)) {
-	scale *= path_scale;
+	scale /= path_scale;
 	if (set_ctm)
 	    gs_matrix_scale(&mat, path_scale, path_scale, &mat);
 	else {
@@ -383,7 +389,7 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
 				      pcpath);
 
     if (set_ctm)
-	pdf_put_matrix(pdev, "q ", &mat, "cm\n");
+  	pdf_put_matrix(pdev, "q ", &mat, "cm\n");
     code = gdev_vector_dopath((gx_device_vector *)pdev, ppath,
 			      gx_path_type_stroke | gx_path_type_optimize,
 			      (set_ctm ? &mat : (const gs_matrix *)0));
