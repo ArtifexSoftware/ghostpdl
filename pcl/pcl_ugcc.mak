@@ -8,8 +8,8 @@
 MAKEFILE=../pcl/pcl_ugcc.mak
 
 # Directories
-GSDIR=../gs
-GSSRCDIR=../gs
+GSDIR=/home/henrys/gs5.14
+GSSRCDIR=/home/henrys/gs5.14
 PLSRCDIR=../pl
 PLGENDIR=../pl
 PLOBJDIR=../pl
@@ -18,7 +18,12 @@ PCLGENDIR=../pcl
 PCLOBJDIR=../pcl
 COMMONDIR=../common
 
+# Language and configuration.  These are actually platform-independent,
+# but we define them here just to keep all parameters in one place.
+CONFIG=5
+TARGET_DEVS=$(PCLOBJDIR)/pcl5c.dev $(PCLOBJDIR)/hpgl2c.dev
 TARGET_XE=pcl5
+MAIN_OBJ=$(PCLOBJDIR)/pcmain.$(OBJ)
 
 # Assorted definitions.  Some of these should probably be factored out....
 # We use -O0 for debugging, because optimization confuses gdb.
@@ -36,12 +41,13 @@ CCLD=gcc
 
 DEVICE_DEVS=x11mono.dev x11.dev x11alpha.dev x11cmyk.dev\
  djet500.dev ljet4.dev\
- pcxmono.dev pcxgray.dev\
- pbmraw.dev pgmraw.dev ppmraw.dev\
- pxlmono.dev pxlcolor.dev
+ pcx16.dev pcx256.dev\
+ pcxmono.dev pcxcmyk.dev pcxgray.dev\
+ pbmraw.dev pgmraw.dev ppmraw.dev pkmraw.dev\
+ pxlmono.dev pxlcolor.dev\
+ paintjet.dev
 
 # Generic makefile
-include $(PCLSRCDIR)/pcl_conf.mak
 include $(COMMONDIR)/ugcc_top.mak
 
 # Subsystems
