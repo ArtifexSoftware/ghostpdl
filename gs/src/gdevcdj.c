@@ -35,12 +35,17 @@
  ****************************************************************/
 
 /*
+ * Change history:
+ *	2000-08-20 Jonathan Kamens <jik@kamens.brookline.ma.us>:
+ *	  change to support printers with different X and Y resolution.
+ */
+
+/*
  * Important compilation notes (YA).
  *
  * You may also try the cdj550cmyk driver after having defined
  * USE_CDJ550_CMYK and added the needed definition in devs.mak. Not tried!
- * (I have a BJC!) If you ty that, please report success/failure to me,
- * yves.arrouye@usa.net. Also note that modes descriptions of CMYK printing
+ * (I have a BJC!) Also note that modes descriptions of CMYK printing
  * is done under the BJC section of devices.doc.
  *
  * CMYK to RGB conversion is made a la GhostScript unless you define
@@ -1547,7 +1552,7 @@ bjc_raster_cmd(int c_id, int rastsize, byte* data, gx_device_printer* pdev,
 private int
 bjc_init_page(gx_device_printer* pdev, FILE* stream)
 {
-    byte pagemargins[3], resolution[2], paperloading[2];
+    byte pagemargins[3], resolution[4], paperloading[2];
 
     /* Compute page margins. */
 
@@ -1572,8 +1577,10 @@ bjc_init_page(gx_device_printer* pdev, FILE* stream)
 
     /* Initialize resolution argument. */
 
-    resolution[0] = (byte) ((int)pdev->x_pixels_per_inch / 256);
-    resolution[1] = (byte) ((int)pdev->x_pixels_per_inch % 256);
+    resolution[0] = (byte) ((int)pdev->y_pixels_per_inch / 256);
+    resolution[1] = (byte) ((int)pdev->y_pixels_per_inch % 256);
+    resolution[2] = (byte) ((int)pdev->x_pixels_per_inch / 256);
+    resolution[3] = (byte) ((int)pdev->x_pixels_per_inch % 256);
 
     /* Initialize paper loading argument. */
 
@@ -1640,7 +1647,7 @@ bjc_init_page(gx_device_printer* pdev, FILE* stream)
 
     /* Set raster resolution */
 
-    bjc_cmd('d', 2, resolution, pdev, stream);
+    bjc_cmd('d', 4, resolution, pdev, stream);
 
     return 0;
 }
