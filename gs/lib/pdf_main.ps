@@ -343,7 +343,7 @@ pdfdict begin
    (%PDF-) search not {/pdfopen cvx /syntaxerror signalerror} if
    length /PDFoffset exch def pop cvr /PDFversion exch def
 	% Read the last cross-reference table.
-   /pdfemptycount count def
+   count /pdfemptycount exch def
    { initPDFobjects findxref readxref } .internalstopped {
         % Read failed.  Attempt to recover xref data.
      print_xref_warning 
