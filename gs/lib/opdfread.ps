@@ -603,7 +603,16 @@ currentdict end readonly def
 	//PDFR_DEBUG {
 	  (Font dict <<) =
 	  dup {
-	    exch //=only exec ( ) print ==
+	    1 index /sfnts eq {
+	      exch pop
+	      (/sfnts [) print
+	      {
+	        (-string\() print length //=only exec (\)- ) =
+	      } forall
+	      (]) =
+	    } {
+	      exch //=only exec ( ) print ==
+	    } ifelse
 	  } forall
 	  (>>) =
 	} if
@@ -866,7 +875,7 @@ end
     } ifelse 
     /PDFEncoding exch def                        % fo fd
     /CharStrings 2 index //PDFReader /MakeTTCharStrings get exec def
-    /sfnts [ 3 index //MakeStreamReader exec 65535 string readstring ] def
+    /sfnts [ 3 index //MakeStreamReader exec 65535 string readstring pop ] def
     /Encoding StandardEncoding def % A stub - will be replaced by font resource.
     /PaintType 0 def
   currentdict end
@@ -1554,18 +1563,18 @@ end
   } if
 } bind def
 
-/ParseTTcmapHeader  % <file> <TableDirectory> ParseTTcmapHeader <dict>
+/ParseTTcmap  % <file> <TableDirectory> ParseTTcmap <dict>
 { //PDFR_DEBUG {
-    (ParseTTcmapHeader beg) =
+    (ParseTTcmap beg) =
   } if
   /cmap get aload pop					% f o L
   3 1 roll						% L f o
-  //PDFR_DEBUG {
-    (Current position = ) print //TTParser /Pos get =
-    (cmap position = ) print dup =
-  } if
-  1 index exch //SkipToPosition exec			% L f
-  5 dict begin
+  7 dict begin
+    //PDFR_DEBUG {
+      (Current position = ) print //TTParser /Pos get =
+      (cmap position = ) print dup =
+    } if
+    1 index exch //SkipToPosition exec			% L f
     //TTParser /Pos get /TablePos exch def
     dup //readu16 exec pop % version
     dup //readu16 exec /NumEncodings exch def
@@ -1576,7 +1585,7 @@ end
     NumEncodings {
       1 index //readu32 exec % platformID, specificID   % L f null id
       2 index //readu32 exec % offset			% L f null id o
-      2 array dup 3 2 roll 0 exch put			% L f []|null id []
+      3 array dup 3 2 roll 0 exch put			% L f []|null id []
       2 index null ne {
         dup 0 get 3 index 0 get sub			% L f []|null id [] l
 	3 index exch 1 exch put				% L f []|null id []
@@ -1587,7 +1596,6 @@ end
     dup 0 get						% L f [] o
     4 3 roll exch sub					% f [] L-o
     1 exch put						% f
-    pop							%
     //PDFR_DEBUG {
       currentdict {
         exch dup type /integertype eq {
@@ -1599,9 +1607,45 @@ end
     } if
     4 NumEncodings 8 mul add /HeaderLength exch def
     //TTParser /Pos //TTParser /Pos get HeaderLength add put
-  currentdict end
+    0                                                  % f o
+    NumEncodings {
+      16#7FFFFFF null 				       % f o om null|[]
+      % Choosing a table with minimal offset greater than 'o' :
+      currentdict {                                    
+        1 index type /integertype eq {                 % f o om null|[] id []
+          exch pop dup 0 get                           % f o om null|[] [] oi
+          dup 5 index gt {
+            dup 4 index lt {
+              4 1 roll                                 % f o oi om null|[] []
+              exch pop exch pop                        % f o oi []
+            } {
+              pop pop            
+            } ifelse
+          } {
+            pop pop
+          } ifelse                                     % f o oi []
+        } {
+          pop pop
+        } ifelse
+      } forall                                         % f o om' []
+      //PDFR_DEBUG {
+        (Obtaining subtable for ) print dup ==
+      } if
+      3 2 roll pop                                     % f o' []
+      3 copy pop                                       % f o' [] f o'
+      TablePos add //SkipToPosition exec               % f o' []
+      3 copy exch pop 1 get                            % f o' [] l
+      //TTParser /Pos //TTParser /Pos get 3 index add put
+      string                                           % f o' [] f ()
+      readstring not {
+        mark (Can't read a cmap subtable.) //error exec
+      } if                                             % f o' [] ()
+      2 exch put                                       % f o'
+    } repeat
+    pop pop                                            %
+  currentdict end                                      
   //PDFR_DEBUG {
-    (ParseTTcmapHeader end) =
+    (ParseTTcmap end) =
   } if
 } bind def
 
@@ -1609,15 +1653,9 @@ end
 { //PDFR_DEBUG {
     (GetTTEncoding beg) =
   } if
-  1 index exch get					% f c []
-  aload pop						% f c o l
-  3 2 roll /TablePos get				% f o l p
-  3 2 roll add						% f l p+o
-  2 index exch //SkipToPosition exec			% f l
-  //BlockBuffer exch 0 exch getinterval			% f s
-  readstring not {
-    mark (Insufficient data in the stream for GetTTEncoding.) //error exec
-  } if							% s
+  get					   % f []
+  exch pop                                 % []
+  2 get
   10 dict begin % For local variables.
     /TTFDEBUG //PDFR_DEBUG def
     //cmaparray exec
@@ -1754,14 +1792,14 @@ end
     1 index /cmap get 0 get
     lt {
       2 copy //ParseTTpost exec				% f f d
-      //ParseTTcmapHeader exec				% f ch
+      //ParseTTcmap exec				% f ch
     } {
-      2 copy //ParseTTcmapHeader exec			% f f d ch
+      2 copy //ParseTTcmap exec				% f f d ch
       3 1 roll						% f ch f d
       //ParseTTpost exec				% f ch
     } ifelse
   } {
-    //ParseTTcmapHeader exec				% f ch
+    //ParseTTcmap exec					% f ch
   } ifelse
   {
     dup 16#00030001 known {
