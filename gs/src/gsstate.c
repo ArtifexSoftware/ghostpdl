@@ -211,6 +211,19 @@ private const gs_imager_state gstate_initial = {
     gs_imager_state_initial(1.0)
 };
 
+/*
+ * Allocate a path for the graphics state.  We use stable memory because
+ * some PostScript files have Type 3 fonts whose BuildChar procedure
+ * uses the sequence save ... setcachedevice ... restore, and the path
+ * built between the setcachedevice and the restore must not be freed.
+ * If it weren't for this, we don't think stable memory would be needed.
+ */
+private gs_memory_t *
+gstate_path_memory(gs_memory_t *mem)
+{
+    return gs_memory_stable(mem);
+}
+
 /* Allocate and initialize a graphics state. */
 gs_state *
 gs_state_alloc(gs_memory_t * mem)
@@ -243,7 +256,7 @@ gs_state_alloc(gs_memory_t * mem)
 
     /* Initialize other things not covered by initgraphics */
 
-    pgs->path = gx_path_alloc(mem, "gs_state_alloc(path)");
+    pgs->path = gx_path_alloc(gstate_path_memory(mem), "gs_state_alloc(path)");
     pgs->clip_path = gx_cpath_alloc(mem, "gs_state_alloc(clip_path)");
     pgs->clip_stack = 0;
     pgs->view_clip = gx_cpath_alloc(mem, "gs_state_alloc(view_clip)");
@@ -697,11 +710,13 @@ private int
 gstate_alloc_parts(gs_state * parts, const gs_state * shared,
 		   gs_memory_t * mem, client_name_t cname)
 {
+    gs_memory_t *path_mem = gstate_path_memory(mem);
+
     parts->path =
 	(shared ?
-	 gx_path_alloc_shared(shared->path, mem,
+	 gx_path_alloc_shared(shared->path, path_mem,
 			      "gstate_alloc_parts(path)") :
-	 gx_path_alloc(mem, "gstate_alloc_parts(path)"));
+	 gx_path_alloc(path_mem, "gstate_alloc_parts(path)"));
     parts->clip_path =
 	(shared ?
 	 gx_cpath_alloc_shared(shared->clip_path, mem,

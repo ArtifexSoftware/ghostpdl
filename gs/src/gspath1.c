@@ -412,6 +412,7 @@ add:
 int
 gs_dashpath(gs_state * pgs)
 {
+    gx_path *ppath;
     gx_path fpath;
     int code;
 
@@ -420,9 +421,9 @@ gs_dashpath(gs_state * pgs)
     code = gs_flattenpath(pgs);
     if (code < 0)
 	return code;
-    gx_path_init_local(&fpath, pgs->memory);
-    code = gx_path_add_dash_expansion(pgs->path, &fpath,
-				      (gs_imager_state *) pgs);
+    ppath = pgs->path;
+    gx_path_init_local(&fpath, ppath->memory);
+    code = gx_path_add_dash_expansion(ppath, &fpath, (gs_imager_state *)pgs);
     if (code < 0) {
 	gx_path_free(&fpath, "gs_dashpath");
 	return code;
