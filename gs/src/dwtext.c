@@ -479,9 +479,11 @@ text_getch(TW *tw)
     }
 
     do {
-        if (!tw->quitnow && GetMessage(&msg, (HWND)NULL, 0, 0)) {
-	    TranslateMessage(&msg);
-	    DispatchMessage(&msg);
+        if (!tw->quitnow) {
+	    if (GetMessage(&msg, (HWND)NULL, 0, 0)) {
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	    }
 	}
 	else
 	   return EOF;	/* window closed */
@@ -549,6 +551,9 @@ int ch;
 	if (tw->line_end >= sizeof(tw->line_buf))
 	    tw->line_complete = TRUE;
     }
+
+    if (tw->quitnow)
+	return -1;
 
     if (tw->line_complete) {
 	/* We either filled the buffer or got CR, LF or EOF */
@@ -939,7 +944,17 @@ WndTextProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 	    }
 	    break;
 	case WM_CLOSE:
-	    break;
+	    /* Tell user that we heard them */
+	    if (!tw->quitnow) {
+		char title[256];
+		int count = GetWindowText(hwnd, title, sizeof(title)-11);
+		strcpy(title+count, " - closing");
+		SetWindowText(hwnd, title);
+	    }
+	    tw->quitnow = TRUE;
+	    PostQuitMessage(0);
+	    /* wait until Ghostscript exits before destroying window */
+	    return 0;	
 	case WM_DESTROY:
 	    DragAcceptFiles(hwnd, FALSE);
 	    if (tw->hfont)

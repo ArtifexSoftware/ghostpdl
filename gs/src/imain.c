@@ -279,6 +279,8 @@ gs_main_interpret(gs_main_instance *minst, ref * pref, int user_errors,
 			minst->stdin_buf, count);
 	    else
 		count = fread(minst->stdin_buf, 1, count, minst->fstdin);
+	    if (count < 0)
+	        return_error(e_ioerror);
 
 	    /* On return, we need to set 
 	     *  osp[-1] = string buffer, 

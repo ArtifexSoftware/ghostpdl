@@ -455,7 +455,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int cmd
 
     dll_exit_status = new_main(argc, argv);
     
-    if (dll_exit_status) {
+    if (dll_exit_status && !tw->line_eof) {
 	/* display message box so error messages in text window can be read */
 	char buf[80];
 	if (IsIconic(text_get_handle(tw)))
