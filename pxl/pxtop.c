@@ -31,8 +31,11 @@ maybe by Artifex.
 #include "gxalloc.h"
 #include "gxstate.h"
 #include "plparse.h"
-#include "pxattr.h"		/* for pxparse.h */
+#include "pxattr.h"     	/* for pxparse.h */
 #include "pxerrors.h"
+#include "pxoper.h"
+#include "pxstate.h"
+#include "pxfont.h"
 #include "pxvalue.h"		/* for pxparse.h */
 #include "pxparse.h"
 #include "pxptable.h"
@@ -671,23 +674,30 @@ const pl_interp_implementation_t pxl_implementation = {
 /* an error before the session is established. */
 private int
 px_top_init(px_parser_state_t *st, px_state_t *pxs, bool big_endian)
-{	px_process_init(st, big_endian);
-	{ px_args_t args;
-	  px_value_t v[3];
+{
+    px_args_t args;
+    px_value_t v[3];
 
-		/* Measure */
-	  v[0].type = pxd_scalar | pxd_ubyte;
-	  v[0].value.i = eInch;
-	  args.pv[0] = &v[0];
-		/* UnitsPerMeasure */
-	  v[1].type = pxd_xy | pxd_uint16;
-	  v[1].value.ia[0] = v[1].value.ia[1] = 100; /* arbitrary */
-	  args.pv[1] = &v[1];
-		/* ErrorReporting */
-	  v[2].type = pxd_scalar | pxd_ubyte;
-	  v[2].value.i = eErrorPage;
-	  args.pv[2] = &v[2];
-	  return pxBeginSession(&args, pxs);
-	}
+    px_process_init(st, big_endian);
+
+    /* Measure */
+    v[0].type = pxd_scalar | pxd_ubyte;
+    v[0].value.i = eInch;
+    args.pv[0] = &v[0];
+    /* UnitsPerMeasure */
+    v[1].type = pxd_xy | pxd_uint16;
+    v[1].value.ia[0] = v[1].value.ia[1] = 100; /* arbitrary */
+    args.pv[1] = &v[1];
+    /* ErrorReporting */
+    v[2].type = pxd_scalar | pxd_ubyte;
+    v[2].value.i = eErrorPage;
+    args.pv[2] = &v[2];
+    {
+	int code = pxBeginSession(&args, pxs);
+	if ( code < 0 )
+	    return code;
+    }
+    /* HACK */
+    px_font_cleanup(pxs);
+    return 0;
 }
-

@@ -70,6 +70,7 @@ pxstate_h=$(PXLSRC)pxstate.h $(gsmemory_h) $(pxgstate_h) $(pltop_h)
 # since non-Unix operating systems typically don't support rename on files
 # with directory names included).  Normally 'make' would delete the file
 # if the rule fails, but in this case for some reason it doesn't.
+
 $(PXLSRC)pxbfont.psc: $(PXLSRC)pxbfont.ps
 	$(GS_XE) -q -dNODISPLAY $(PXLSRC)pxbfont.ps >$(PXLGEN)pxbfont_.psc
 	$(CP_) $(PXLGEN)pxbfont_.psc $(PXLSRC)pxbfont.psc
@@ -213,11 +214,11 @@ $(PXL_TOP_OBJ): $(PXLSRC)pxtop.c $(AK) $(stdio__h)\
 
 # Note that we must initialize pxfont before pxerrors.
 $(PXLOBJ)pxl.dev: $(PXL_MAK) $(ECHOGS_XE) $(pxl_other_obj) $(pxl_ops_obj)\
- $(PLOBJ)pl.dev $(PLOBJ)pjl.dev
+ $(PLOBJ)pl.dev $(PLOBJ)pjl.dev $(PLOBJ)$(PXL_FONT_SCALER).dev
 	$(SETMOD) $(PXLOBJ)pxl $(pxl_other_obj1)
 	$(ADDMOD) $(PXLOBJ)pxl $(pxl_other_obj2)
 	$(ADDMOD) $(PXLOBJ)pxl $(pxl_ops_obj1)
 	$(ADDMOD) $(PXLOBJ)pxl $(pxl_ops_obj2)
-	$(ADDMOD) $(PXLOBJ)pxl -include $(PLOBJ)pl $(PLOBJ)pjl
+	$(ADDMOD) $(PXLOBJ)pxl -include $(PLOBJ)pl $(PLOBJ)pjl $(PLOBJ)$(PXL_FONT_SCALER)
 	$(ADDMOD) $(PXLOBJ)pxl -init pxfont pxerrors
 

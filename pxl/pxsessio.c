@@ -9,8 +9,8 @@
 #include "stdio_.h"
 #include "pxoper.h"
 #include "pxstate.h"
-#include "pxfont.h"		/* for px_free_font */
-#include "pjparse.h"
+#include "pxfont.h"
+#include "pjparse.h" 
 #include "gschar.h"
 #include "gscoord.h"
 #include "gserrors.h"		/* for gs_error_undefined */
@@ -22,6 +22,7 @@
 #include "gxfcache.h"
 #include "gxdevice.h"
 #include "pjtop.h"
+#include "pllfont.h"
 
 /* Imported operators */
 px_operator_proc(pxCloseDataSource);
@@ -157,14 +158,11 @@ px_end_page_cleanup(px_state_t *pxs)
 	px_purge_pattern_cache(pxs, ePagePattern);
 }
 
-/* Purge characters in non-built-in fonts. */
+/* Purge all */
 private bool
-match_temporary_glyph(cached_char *cc, void *vpxs)
-{	const cached_fm_pair *pair = cc->pair;
-	px_state_t *pxs = vpxs;
-
-	return (uid_is_UniqueID(&pair->UID) &&
-		pair->UID.id > pxs->known_fonts_base_id + px_num_known_fonts);
+purge_all(cached_char *cc, void *dummy)
+{	
+    return true;
 }
 
 /* Clean up at the end of a session. */
@@ -172,8 +170,7 @@ private void
 px_end_session_cleanup(px_state_t *pxs)
 {	if ( pxs->data_source_open )
 	  pxCloseDataSource(NULL, pxs);
-	gx_purge_selected_cached_chars(pxs->font_dir, match_temporary_glyph,
-				       pxs);
+	gx_purge_selected_cached_chars(pxs->font_dir, purge_all, pxs);
 	px_dict_release(&pxs->font_dict);
 	px_dict_release(&pxs->session_pattern_dict);
 	px_purge_pattern_cache(pxs, eSessionPattern);
@@ -190,6 +187,12 @@ px_state_cleanup(px_state_t *pxs)
 	px_end_session_cleanup(pxs);
 	pxs->have_page = false;
 }
+
+void px_font_cleanup(px_state_t *pxs)
+{
+    gx_purge_selected_cached_chars(pxs->font_dir, purge_all, pxs);
+    px_dict_release(&pxs->font_dict);
+}    
 
 /* ---------------- Operators ---------------- */
 
@@ -233,6 +236,15 @@ pxBeginSession(px_args_t *par, px_state_t *pxs)
 	    pxs->media_destination = eDefaultDestination;
 	    pxs->media_type = eDefaultType;
 	    px_dict_init(&pxs->font_dict, pxs->memory, px_free_font);
+	    /* install the built in fonts */
+	    if ( pl_load_built_in_fonts(pjl_proc_fontsource_to_path(pxs->pjls, "I"),
+					pxs->memory,
+					&pxs->font_dict,
+					pxs->font_dir, (int)pxfsInternal, true /* use unicode key names */) < 0 ) {
+		dprintf( "Fatal error - no resident fonts\n");
+		return -1;
+
+	    }
 	}
 	return 0;
 }

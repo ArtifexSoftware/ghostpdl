@@ -32,16 +32,6 @@ typedef enum {
   pxfsMassStorage
 } px_font_storage_t;
 
-/*
- * At the beginning of execution, we acquire a block of N+1 unique IDs for
- * the built-in fonts: if the first ID is B, we assign B through B+N-1 for
- * the built-in fonts, and B+N for the error page font.  (The value B is
- * stored in the known_fonts_base_id element of the px_state_t.)  At the end
- * of each session, we purge from the cache all fonts whose UniqueID is
- * greater than B+N.
- */
-extern const uint px_num_known_fonts;
-
 /* Fill in generic font boilerplate. */
 #define px_fill_in_font(pfont, pxfont, pxs)\
   pl_fill_in_font(pfont, pxfont, pxs->font_dir, pxs->memory)

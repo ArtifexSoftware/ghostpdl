@@ -49,11 +49,10 @@ pxerrors_init(px_state_t *pxs)
 	  { pxfont->storage = pxfsInternal;
 	    pxfont->font_type = plft_Unicode; /* as good as any */
 	    pxfont->data_are_permanent = true;
-	    pxs->known_fonts_base_id = gs_next_ids(px_num_known_fonts + 1);
 	    code =
 	      px_define_font(pxfont, px_bitmap_font_header,
 			     px_bitmap_font_header_size,
-			     pxs->known_fonts_base_id + px_num_known_fonts,
+			     gs_next_ids(1),
 			     pxs);
 	    { const byte *cdata = px_bitmap_font_char_data;
 	      while ( *cdata && code >= 0 )
