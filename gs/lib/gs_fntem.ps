@@ -371,12 +371,17 @@ currentdict end def
       exit
     } if
     dup /CIDFontType known {
-      dup dup /CIDSystemInfo get /Ordering get (.Unicode)        % bool <font> <font> () ()
-      concatstrings cvn                                          % bool <font> <font> /Name
-      /CIDDecoding findresource                                  % bool <font> <font> <D>
-      exch /FontInfo get exch                                    % bool <font> <FI> <D>
+      dup mark exch                                              % bool <font> [ <font>
+      dup /CIDSystemInfo get /Ordering get (.Unicode)            % bool <font> [ <font> () ()
+      concatstrings cvn                                          % bool <font> [ <font> /Name
+      /CIDDecoding { findresource } stopped {
+        % Can't provide a decoding, giving up without creating /GlyphNames2Unicode.
+        cleartomark exit
+      } if                                                       % bool <font> [ <font> <D>
+      exch /FontInfo get exch                                    % bool <font> [ <FI> <D>
       /GlyphNames2Unicode exch
       .forceput % FontInfo can be read-only.
+      pop                                                        % bool <font>
       exit
     } if
     dup /FontInfo get                                            % bool <font> <FI>
