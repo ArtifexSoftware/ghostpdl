@@ -231,9 +231,16 @@
 		% PostScript section.
       dup 4 -1 roll 12 sub () /SubFileDecode filter flushfile
 		% Now interpret the PostScript.
-      exch () /SubFileDecode filter cvx .runexec
+      exch () /SubFileDecode filter cvx run
     }
     { .runnoepsf
     }
    ifelse
  } odef
+
+% rebind .runstdin to use redefined run
+userdict begin
+/.runstdin {
+  { (%stdin) run } execute0
+} bind def
+end
