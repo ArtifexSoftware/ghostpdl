@@ -641,12 +641,14 @@ pcfont_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
         /* free the blasted chunks */
         {
             gx_bits_cache_chunk *chunk = pcs->font_dir->ccache.chunks;
-            while( chunk != chunk->next ) {
-                gx_bits_cache_chunk *tmp_chunk = chunk->next->next;
-                gs_free_object(pcs->memory, chunk->next, "pcfont_do_reset");
-                chunk->next = tmp_chunk;
-            }
-            gs_free_object(pcs->memory, pcs->font_dir->ccache.chunks, "pcfont_do_reset");
+            gx_bits_cache_chunk *tmp_chunk = chunk;
+	    while( pcs->font_dir->ccache.chunks != chunk->next ) {
+	        tmp_chunk = chunk->next;
+		gs_free_object(pcs->memory, chunk->data, "pcfont_do_reset");
+		gs_free_object(pcs->memory, chunk, "pcfont_do_reset");
+		chunk = tmp_chunk;
+	    }
+	    gs_free_object(pcs->memory, chunk, "pcfont_do_reset");
         }
         gs_free_object(pcs->memory, pcs->font_dir->ccache.table, "pcfont_do_reset");
 	gs_free_object(pcs->memory, pcs->font_dir, "pcfont_do_reset");
