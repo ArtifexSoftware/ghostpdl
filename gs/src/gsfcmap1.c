@@ -17,7 +17,6 @@
 /* $Id$ */
 /* Adobe-based CMap character decoding */
 #include "memory_.h"
-#include "errors.h"
 #include "string_.h"
 #include "gx.h"
 #include "gserrors.h"
@@ -497,7 +496,7 @@ gs_cmap_adobe1_decode_next(const gs_cmap_t * pcmap_in,
                   ssize, chr_size_shortest);
             }
             *pglyph = gs_no_glyph;
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
 	}
     }
 }

@@ -17,7 +17,6 @@
 /* $Id$ */
 /* Default implementation of text writing */
 #include "gx.h"
-#include "errors.h"
 #include "memory_.h"
 #include "string_.h"
 #include "gserrors.h"
@@ -271,7 +270,7 @@ gx_show_text_set_cache(gs_text_enum_t *pte, const double *pw,
 		   rewind_code = gs_point_transform2fixed(&pgs->ctm, vx, vy, &rewind_pvxy);
 		   if (rewind_code < 0) {
 		       /* If the control passes here, something is wrong. */
-		       return_error(e_unregistered);
+		       return_error(gs_error_unregistered);
 		   }
 		   /* Rewind the origin by (-vx, -vy) if the cache is failed. */
 		   gx_translate_to_fixed(pgs, rewind_pvxy.x, rewind_pvxy.y);
