@@ -582,7 +582,7 @@ A_fill_region(A_fill_state_t * pfs)
 
 	if ((!(pfn->head.is_monotonic > 0 ||
 	       (ft0 = (float)t0, ft1 = (float)t1,
-		gs_function_is_monotonic(pfn, &ft0, &ft1, EFFORT_MODERATE) > 0)) ||
+		gs_function_is_monotonic(pfn, &ft0, &ft1) > 0)) ||
 	     !shade_colors2_converge(fp->cc,
 				     (const shading_fill_state_t *)pfs)) &&
 	     /*
@@ -872,7 +872,7 @@ R_fill_region(R_fill_state_t * pfs)
 
 	if ((!(pfn->head.is_monotonic > 0 ||
 	       (ft0 = (float)t0, ft1 = (float)t1,
-		gs_function_is_monotonic(pfn, &ft0, &ft1, EFFORT_MODERATE) > 0)) ||
+		gs_function_is_monotonic(pfn, &ft0, &ft1) > 0)) ||
 	     !shade_colors2_converge(fp->cc,
 				     (const shading_fill_state_t *)pfs)) &&
 	    /*

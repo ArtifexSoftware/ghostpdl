@@ -1279,7 +1279,7 @@ is_color_monotonic(const patch_fill_state_t *pfs, const patch_color_t *c0, const
     if (!pfs->Function)
 	return true;
     return (c0->t[0] == c1->t[0] && (pfs->n_color_args == 1 || c0->t[1] == c1->t[1])) ||
-	   gs_function_is_monotonic(pfs->Function, c0->t, c1->t, EFFORT_MODERATE) > 0;
+	   gs_function_is_monotonic(pfs->Function, c0->t, c1->t) > 0;
 }
 
 private inline bool

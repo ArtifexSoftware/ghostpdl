@@ -401,8 +401,7 @@ fn_Sd_evaluate(const gs_function_t * pfn_common, const float *in, float *out)
 /* Test whether a Sampled function is monotonic. */
 private int
 fn_Sd_is_monotonic(const gs_function_t * pfn_common,
-		   const float *lower, const float *upper,
-		   gs_function_effort_t effort)
+		   const float *lower, const float *upper)
 {
     const gs_function_Sd_t *const pfn =
 	(const gs_function_Sd_t *)pfn_common;
@@ -410,10 +409,13 @@ fn_Sd_is_monotonic(const gs_function_t * pfn_common,
     int i;
 
     /*
-     * Testing this in general is very time-consuming, so we don't bother.
-     * However, we do implement it correctly for one special case that is
-     * important in practice: along a line in the domain, when the lower and
-     * upper values are in the same sample cell.
+     * Currently it only checks that the interval is inside a single cell.
+     * In general need to check the cubic surface extremes.
+     * at any boundary of the interval, and inside the interval.
+     *
+     * A right method would be to compute Bezier poles of the the surface.
+     * and then apply an overstrenthened criterion about the
+     * pole coordinate monotonity.
      */
     if (pfn->params.n > sizeof(int) * 4 - 1)
 	return 0;		/* can't represent result */
@@ -660,7 +662,7 @@ gs_function_Sd_init(gs_function_t ** ppfn,
 	    pfn->params.Order = 1;	/* default */
 	pfn->head = function_Sd_head;
 	pfn->head.is_monotonic =
-	    fn_domain_is_monotonic((gs_function_t *)pfn, EFFORT_MODERATE);
+	    fn_domain_is_monotonic((gs_function_t *)pfn);
 	*ppfn = (gs_function_t *) pfn;
     }
     return 0;

@@ -47,13 +47,6 @@ typedef int gs_function_type_t;
     int n;			/* # of outputs */\
     const float *Range		/* 2 x n, optional except for type 0 */
 
-/* Define calculation effort values (currently only used for monotonicity). */
-typedef enum {
-    EFFORT_EASY = 0,
-    EFFORT_MODERATE = 1,
-    EFFORT_ESSENTIAL = 2
-} gs_function_effort_t;
-
 /* Define abstract types. */
 #ifndef gs_data_source_DEFINED
 #  define gs_data_source_DEFINED
@@ -87,7 +80,7 @@ typedef FN_EVALUATE_PROC((*fn_evaluate_proc_t));
 /* Test whether a function is monotonic. */
 #define FN_IS_MONOTONIC_PROC(proc)\
   int proc(const gs_function_t * pfn, const float *lower,\
-	   const float *upper, gs_function_effort_t effort)
+	   const float *upper)
 typedef FN_IS_MONOTONIC_PROC((*fn_is_monotonic_proc_t));
 
 /* Get function information. */
@@ -196,14 +189,14 @@ int alloc_function_array(uint count, gs_function_t *** pFunctions,
   ((pfn)->head.procs.evaluate)(pfn, in, out)
 
 /*
- * Test whether a function is monotonic on a given (closed) interval.  If
- * the test requires too much effort, the procedure may return
- * gs_error_undefined; normally, it returns 0 for false, >0 for true,
- * gs_error_rangecheck if any part of the interval is outside the function's
- * domain.  If lower[i] > upper[i], the result is not defined.
+ * Test whether a function is monotonic on a given (closed) interval.
+ * return 1 if true, 0 if don't know, <0 on error.
+ * If lower[i] > upper[i], the result is not defined.
+ * NOTE : currently it is underimplemented for cubic interpolation functions.
+ *        Need to find the cubic surface extremes.
  */
-#define gs_function_is_monotonic(pfn, lower, upper, effort)\
-  ((pfn)->head.procs.is_monotonic)(pfn, lower, upper, effort)
+#define gs_function_is_monotonic(pfn, lower, upper)\
+  ((pfn)->head.procs.is_monotonic)(pfn, lower, upper)
 
 /* Get function information. */
 #define gs_function_get_info(pfn, pfi)\

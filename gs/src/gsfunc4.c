@@ -545,8 +545,7 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
 /* Test whether a PostScript Calculator function is monotonic. */
 private int
 fn_PtCr_is_monotonic(const gs_function_t * pfn_common,
-		     const float *lower, const float *upper,
-		     gs_function_effort_t effort)
+		     const float *lower, const float *upper)
 {
     /*
      * No reasonable way to tell.  Eventually we should check for
@@ -854,7 +853,7 @@ gs_function_PtCr_init(gs_function_t ** ppfn,
 	pfn->data_source.access = calc_access;
 	pfn->head = function_PtCr_head;
 	pfn->head.is_monotonic =
-	    fn_domain_is_monotonic((gs_function_t *)pfn, EFFORT_MODERATE);
+	    fn_domain_is_monotonic((gs_function_t *)pfn);
 	*ppfn = (gs_function_t *) pfn;
     }
     return 0;
