@@ -154,4 +154,12 @@ extern_st(st_gs_font_type1);
 /* Export font procedures so they can be called from the interpreter. */
 font_proc_glyph_info(gs_type1_glyph_info);
 
+/*
+ * If a Type 1 character is defined with 'seac', store the character codes
+ * in chars[0] and chars[1] and return 1; otherwise, return 0 or <0.
+ * This is exported only for the benefit of font copying.
+ */
+int gs_type1_piece_codes(/*const*/ gs_font_type1 *pfont,
+			 const gs_glyph_data_t *pgd, gs_char *chars);
+
 #endif /* gxfont1_INCLUDED */

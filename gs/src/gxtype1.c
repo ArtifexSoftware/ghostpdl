@@ -459,18 +459,17 @@ gs_type1_endchar(gs_type1_state * pcis)
 
 /* ------ Font procedures ------ */
 
+
 /*
- * Get PIECES and/or NUM_PIECES of a Type 1 glyph.  Sets info->num_pieces
- * and/or stores into info->pieces.  Updates info->members.  This is a
- * single-use procedure broken out only for readability.
+ * If a Type 1 character is defined with 'seac', store the character codes
+ * in chars[0] and chars[1] and return 1; otherwise, return 0 or <0.
+ * This is exported only for the benefit of font copying.
  */
-private int
-gs_type1_glyph_pieces(gs_font_type1 *pfont, const gs_glyph_data_t *pgd,
-		      int members, gs_glyph_info_t *info)
+int
+gs_type1_piece_codes(/*const*/ gs_font_type1 *pfont,
+		     const gs_glyph_data_t *pgd, gs_char *chars)
 {
     gs_type1_data *const pdata = &pfont->data;
-    gs_glyph *pieces =
-	(members & GLYPH_INFO_PIECES ? info->pieces : (gs_glyph *)0);
     /*
      * Decode the CharString looking for seac.  We have to process
      * callsubr, callothersubr, and return operators, but if we see
@@ -495,7 +494,6 @@ gs_type1_glyph_pieces(gs_font_type1 *pfont, const gs_glyph_data_t *pgd,
     int code;
     
     CLEAR_CSTACK(cstack, csp);
-    info->num_pieces = 0;	/* default */
     cip = pgd->bits.data;
  call:
     state = crypt_charstring_seed;
@@ -543,7 +541,7 @@ gs_type1_glyph_pieces(gs_font_type1 *pfont, const gs_glyph_data_t *pgd,
 	    cip = ipsp->cs_data.bits.data;
 	    goto call;
 	case c_return:
-	    gs_glyph_data_free(&ipsp->cs_data, "gs_type1_glyph_info");
+	    gs_glyph_data_free(&ipsp->cs_data, "gs_type1_piece_codes");
 	    --ipsp;
 	    cip = ipsp->ip, state = ipsp->dstate;
 	    goto top;
@@ -556,20 +554,9 @@ gs_type1_glyph_pieces(gs_font_type1 *pfont, const gs_glyph_data_t *pgd,
 		goto out;	/* not seac */
 	do_seac:
 	    /* This is the payoff for all this code! */
-	    if (pieces) {
-		gs_char bchar = fixed2int(csp[-1]);
-		gs_char achar = fixed2int(csp[0]);
-		int bcode =
-		    pdata->procs.seac_data(pfont, bchar,
-					   &pieces[0], NULL);
-		int acode =
-		    pdata->procs.seac_data(pfont, achar,
-					   &pieces[1], NULL);
-
-		code = (bcode < 0 ? bcode : acode);
-	    }
-	    info->num_pieces = 2;
-	    goto out;
+	    chars[0] = fixed2int(csp[-1]);
+	    chars[1] = fixed2int(csp[0]);
+	    return 1;
 	case cx_escape:
 	    charstring_next(*cip, state, c, encrypted);
 	    ++cip;
@@ -610,6 +597,33 @@ gs_type1_glyph_pieces(gs_font_type1 *pfont, const gs_glyph_data_t *pgd,
     }
  out:
     return 0;
+}
+
+/*
+ * Get PIECES and/or NUM_PIECES of a Type 1 glyph.  Sets info->num_pieces
+ * and/or stores into info->pieces.  Updates info->members.  This is a
+ * single-use procedure broken out only for readability.
+ */
+private int
+gs_type1_glyph_pieces(gs_font_type1 *pfont, const gs_glyph_data_t *pgd,
+		      int members, gs_glyph_info_t *info)
+{
+    gs_char chars[2];
+    gs_glyph glyphs[2];
+    int code = gs_type1_piece_codes(pfont, pgd, chars);
+    gs_type1_data *const pdata = &pfont->data;
+    gs_glyph *pieces =
+	(members & GLYPH_INFO_PIECES ? info->pieces : glyphs);
+    int acode, bcode;
+
+    info->num_pieces = 0;	/* default */
+    if (code <= 0)		/* no seac, possibly error */
+	return code;
+    bcode = pdata->procs.seac_data(pfont, chars[0], &pieces[0], NULL);
+    acode = pdata->procs.seac_data(pfont, chars[1], &pieces[1], NULL);
+    code = (bcode < 0 ? bcode : acode);
+    info->num_pieces = 2;
+    return code;
 }
 
 int
