@@ -14,7 +14,7 @@ struct pjl_implementation_s;	/* fwd decl */
 #ifndef PJL_ENVAR_T
 #define PJL_ENVAR_T
 typedef char pjl_envvar_t;	/* opaque decl */
-#endif PJL_ENVVAR_T
+#endif /* PJL_ENVVAR_T */
 
 /*
  * Define PJL-specific procedures

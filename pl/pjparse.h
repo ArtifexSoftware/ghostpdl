@@ -27,7 +27,7 @@ typedef struct pjl_parser_state_s pjl_parser_state;
 #ifndef PJL_ENVAR_T
 #define PJL_ENVAR_T
 typedef char pjl_envvar_t;
-#endif PJL_ENVVAR_T
+#endif /* PJL_ENVVAR_T */
 /* ---------------- Procedural interface ---------------- */
 
 /* Initialize the PJL parser and state. */
