@@ -22,3 +22,7 @@ typedef struct gs_state_s gs_state;
 /* Begin an image with parameters derived from a graphics state. */
 int pl_begin_image(gs_state *pgs, const gs_image_t *pim,
                    void **pinfo);
+
+int pl_setSRGB(gs_state *pgs, float r, float g, float b);
+
+int pl_cspace_init_SRGB(gs_color_space **ppcs, gs_state *pgs);
