@@ -58,7 +58,7 @@
  * however, the current code does not attempt to build the color space
  * "in place" in the graphic state.
  *
- * The procedure will invokes this operator will already have checked that
+ * The procedure that invokes this operator will already have checked that
  * the operand is a dictionary, is readable, and defines the key /N
  * (number of components).
  */
@@ -66,6 +66,7 @@ private int
 zseticcspace(i_ctx_t * i_ctx_p)
 {
     os_ptr                  op = osp;
+    int edepth = ref_stack_count(&e_stack);
     int                     code;
     gs_color_space *        pcs;
     const gs_color_space *  palt_cs;
@@ -108,7 +109,7 @@ zseticcspace(i_ctx_t * i_ctx_p)
      * provided by that color space).
      *
      * Because the icclib code will perform normalization based on color
-     * space, we use the range values only the restrict the set of input
+     * space, we use the range values only to restrict the set of input
      * values; they are not used for normalization.
      */
     code = dict_floats_param( op,
@@ -140,15 +141,20 @@ zseticcspace(i_ctx_t * i_ctx_p)
              palt_cs,
              sizeof(pcs->params.icc.alt_space) );
 
-#if 1
+    code = gx_load_icc_profile(picc_info);
+    if (code < 0)
+	return code;
+
+    code = cie_cache_joint(i_ctx_p, &istate->colorrendering.procs,
+			   (gs_cie_common *)picc_info, igs);
+    if (code < 0)
+	return code;
+
     return cie_set_finish( i_ctx_p,
                            pcs,
                            &istate->colorspace.procs.cie,
-                           ref_stack_count(&e_stack),
+                           edepth,
                            code );
-#else
-    return -1;
-#endif
 }
 
 

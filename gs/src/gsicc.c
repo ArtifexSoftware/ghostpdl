@@ -250,7 +250,7 @@ gx_restrict_CIEICC(gs_client_color * pcc, const gs_color_space * pcs)
 }
 
 /*
- * Return the conrecte space to which this color space will mapy. If the
+ * Return the conrecte space to which this color space will map. If the
  * ICCBased color space is being used in native mode, the concrete space
  * will be dependent on the current color rendering dictionary, as it is
  * for all CIE bases. If the alternate color space is being used, then
@@ -269,7 +269,7 @@ gx_concrete_space_CIEICC(const gs_color_space * pcs, const gs_imager_state * pis
 }
 
 /*
- * Convert an ICCBased color space to a conrete color space.
+ * Convert an ICCBased color space to a concrete color space.
  */
 private int
 gx_concretize_CIEICC(
@@ -312,12 +312,12 @@ gx_concretize_CIEICC(
      * Perform the lookup operation. A return value of 1 indicates that
      * clipping occurred somewhere in the operation, but the result is
      * legitimate. Other non-zero return values indicate an error, which
-     * should only occur in practice.
+     * should not occur in practice.
      */
     if (picc_info->plu->lookup(picc_info->plu, outv, inv) > 1)
         return_error(gs_error_unregistered);
 
-    /* if the outputis in the CIE L*a*b* space, convert to XYZ */
+    /* if the output is in the CIE L*a*b* space, convert to XYZ */
     if (picc_info->pcs_is_cielab) {
         floatp              f[3];
         const gs_vector3 *  pwhtpt = &picc_info->common.points.WhitePoint;
@@ -372,6 +372,162 @@ gx_adjust_cspace_CIEICC(const gs_color_space * pcs, int delta)
                 (const gs_color_space *)&picc_params->alt_space, delta );
 }
 
+int
+gx_load_icc_profile(gs_cie_icc *picc_info)
+{
+    stream *        instrp = picc_info->instrp;
+    icc *           picc = picc_info->picc;
+    icmLuBase * plu = NULL;
+
+    /* verify that the file is legitimate */
+    if (picc_info->file_id != (instrp->read_id | instrp->write_id))
+	return_error(gs_error_ioerror);
+
+    /*
+     * Load the top-level ICC profile.
+     *
+     * Our initial inclination had been to generate an error in the
+     * event that the profile fails to load. This was the only way
+     * to provide a language-visible indication of a problem.
+     * Testing demonstrates, however, that this is not what the
+     * Acrobat reader does. Further, it leads to situations in
+     * which a file may print properly with an interpreter that
+     * does not support the ICCBased color space, but fail on one
+     * that does. For failure to load the profile is now handled
+     * by using the alternate color space.
+     *
+     * Failure to allocate the top-level profile object is considered
+     * a limitcheck rather than a VMerror, as profile data structures
+     * are stored in "foreign" memory.
+     *
+     * The following code employs a false loop, to facilitate use of
+     * break.
+     */
+    if ((picc = new_icc()) == NULL)
+	return_error(gs_error_limitcheck);
+
+    /* false loop, to allow use of break */
+    do {
+	icProfileClassSignature profile_class;
+	icColorSpaceSignature   cspace_type;
+	gs_vector3 *            ppt;
+      
+	if ((picc->read(picc, instrp, 0)) != 0)
+	    break;
+            
+	/* verify the profile type */
+	profile_class = picc->header->deviceClass;
+	if ( profile_class != icSigInputClass     &&
+	     profile_class != icSigDisplayClass   &&
+	     profile_class != icSigOutputClass    &&
+	     profile_class != icSigColorSpaceClass  )
+	    break;
+
+	/* verify the profile connection space */
+	cspace_type = picc->header->pcs;
+	if (cspace_type == icSigLabData)
+	    picc_info->pcs_is_cielab = true;
+	else if (cspace_type == icSigXYZData)
+	    picc_info->pcs_is_cielab = false;
+	else
+	    break;
+
+	/* verify the source color space */
+	cspace_type = picc->header->colorSpace;
+	if (cspace_type == icSigCmykData) {
+	    if (picc_info->num_components != 4)
+		break;
+	} else if ( cspace_type == icSigRgbData ||
+		    cspace_type == icSigLabData   ) {
+	    if (picc_info->num_components != 3)
+		break;
+	} else if (cspace_type == icSigGrayData) {
+	    if (picc_info->num_components != 1)
+		break;
+	}
+
+	/*
+	 * Fetch the lookup object.
+	 *
+	 * PostScript and PDF deal with rendering intent as strictly a
+	 * rendering dictionary facility. ICC profiles allow a rendering
+	 * intent to be specified for both the input (device ==> pcs) and
+	 * output (pcs ==> device) operations. Hence, when using ICCBased
+	 * color spaces with PDF, no clue is provided as to which source
+	 * mapping to select.
+	 *
+	 * In the absence of other information, there are two possible
+	 * selections. If our understanding is correct, when relative
+	 * colorimetry is specified, the icclib code will map source
+	 * color values to XYZ or L*a*b* values such that the relationship
+	 * of the source color, relative to the source white and black
+	 * points, will be the same as the output colors and the
+	 * profile connection space illuminant (currently always D50)
+	 * and pure black ([0, 0, 0]). In this case, the white and black
+	 * points that should be listed in the color space are the
+	 * profile connection space illuminant (D50) and pure black.
+	 *
+	 * If absolute colorimetry is employed, the XYZ or L*a*b* values
+	 * generated will be absolute in the chromatic sense (they are
+	 * not literally "absolute", as we still must have overall
+	 * intensity information inorder to determine weighted spectral
+	 * power levels). To achieve relative colorimetry for the output,
+	 * these colors must be evaluated relative to the source white
+	 * and black points. Hence, in this case, the appropriate white
+	 * and black points to list in the color space are the source
+	 * white and black points provided in the profile tag array.
+	 *
+	 * In this implementation, we will always request relative
+	 * colorimetry from the icclib, and so will use the profile
+	 * connection space illuminant and pure black as the white and
+	 * black points of the color space. This approach is somewhat
+	 * simpler, as it allows the color space white point to also
+	 * be used for L*a*b* to XYZ conversion (otherwise we would
+	 * need to store the profile connection space illuminant
+	 * separately for that purpose). The approach does reduce to
+	 * to some extent the range of mappings that can be achieved
+	 * via the color rendering dictionary, but for now we believe
+	 * this loss is not significant.
+	 *
+	 * For reasons that are not clear to us, the icclib code does
+	 * not support relative colorimetry for all color profiles. For
+	 * this reason, we specify icmDefaultIntent rather than
+	 * icRelativeColormetric.
+	 *
+	 * NB: We are not color experts; our understanding of this area
+	 *     may well be incorrect.
+	 */
+	plu = picc->get_luobj( picc,
+			       icmFwd,
+			       icmDefaultIntent,
+			       icmLuOrdNorm );
+	if (plu == NULL)
+	    break;
+
+	/* 
+	 * Get the appropriate white and black points. See the note on
+	 * rendering intent above for a discussion of why we are using
+	 * the profile space illuminant and pure black. (Pure black need
+	 * not be set explicitly, as it is the default.)
+	 */
+	ppt = &picc_info->common.points.WhitePoint;
+	ppt->u = picc->header->illuminant.X;
+	ppt->v = picc->header->illuminant.Y;
+	ppt->w = picc->header->illuminant.Z;
+
+	picc_info->picc = picc;
+	picc_info->plu = plu;
+
+    } while (false);    /* end of false loop */
+
+    if (picc_info->picc == NULL) {
+	if (plu != NULL)
+	    plu->free(plu);
+	if (picc != NULL)
+	    picc->free(picc);
+    }
+    return 0;
+}
 
 /*
  * Install an ICCBased color space.
@@ -384,161 +540,6 @@ gx_install_CIEICC(const gs_color_space * pcs, gs_state * pgs)
 {
     gs_icc_params * picc_params = (gs_icc_params *)&pcs->params.icc;
     gs_cie_icc *    picc_info = picc_params->picc_info;
-    stream *        instrp = picc_info->instrp;
-    icc *           picc = picc_info->picc;
-
-    /* see if the file profile has already been read */
-    if (picc == NULL) {
-        icmLuBase * plu = NULL;
-
-        /* verify that the file is legitimate */
-        if (picc_info->file_id != (instrp->read_id | instrp->write_id))
-            return_error(gs_error_ioerror);
-
-        /*
-         * Load the top-level ICC profile.
-         *
-         * Our initial inclination had been to generate an error in the
-         * event that the profile fails to load. This was the only way
-         * to provide a language-viisible indication of a problem.
-         * Testing demonstrates, however, that this is not what the
-         * Acrobat reader does. Further, it leads to situations in
-         * which a file may print properly with an interpreter that
-         * does not support the ICCBased color space, but fail on one
-         * that does. For failure to load the profile is now handled
-         * by using the alternate color space.
-         *
-         * Failure to allocate the top-level profile object is considered
-         * a limitcheck rather than a VMerror, as profile data structures
-         * are stored in "foreign" memory.
-         *
-         * The following code employs a false loop, to facilitate use of
-         * break.
-         */
-        if ((picc = new_icc()) == NULL)
-            return_error(gs_error_limitcheck);
-
-        /* false loop, to allow use of break */
-        do {
-            icProfileClassSignature profile_class;
-            icColorSpaceSignature   cspace_type;
-            gs_vector3 *            ppt;
-
-            if ((picc->read(picc, instrp, 0)) != 0)
-                break;
-            
-            /* verify the profile type */
-            profile_class = picc->header->deviceClass;
-            if ( profile_class != icSigInputClass     &&
-                 profile_class != icSigDisplayClass   &&
-                 profile_class != icSigOutputClass    &&
-                 profile_class != icSigColorSpaceClass  )
-                break;
-
-            /* verify the profile connection space */
-            cspace_type = picc->header->pcs;
-            if (cspace_type == icSigLabData)
-                picc_info->pcs_is_cielab = true;
-            else if (cspace_type == icSigXYZData)
-                picc_info->pcs_is_cielab = false;
-            else
-                break;
-
-            /* verify the source color space */
-            cspace_type = picc->header->colorSpace;
-            if (cspace_type == icSigCmykData) {
-                if (picc_info->num_components != 4)
-                    break;
-            } else if ( cspace_type == icSigRgbData ||
-                        cspace_type == icSigLabData   ) {
-                if (picc_info->num_components != 3)
-                    break;
-            } else if (cspace_type == icSigGrayData) {
-                if (picc_info->num_components != 1)
-                    break;
-            }
-
-            /*
-             * Fetch the lookup object.
-             *
-             * PostScript and PDF deal with rendering intent as strictly a
-             * rendering dictionary facility. ICC profiles allow a rendering
-             * intent to be specified for both the input (device ==> pcs) and
-             * output (pcs ==> device) operations. Hence, when using ICCBased
-             * color spaces with PDF, no clue is provided as to which source
-             * mapping to select.
-             *
-             * In the absence of other information, there are two possible
-             * selections. If our understanding is correct, when relative
-             * colorimetry is specified, the icclib code will map source
-             * color values to XYZ or L*a*b* values such that the relationship
-             * of the source color, relative to the source white and black
-             * points, will be the same as the output colors and the
-             * profile connection space illuminant (currently always D50)
-             * and pure black ([0, 0, 0]). In this case, the white and black
-             * points that should be listed in the color space are the
-             * profile connection space illuminant (D50) and pure black.
-             *
-             * If absolute colorimetry is employed, the XYZ or L*a*b* values
-             * generated will be absolute in the chromatic sense (they are
-             * not literally "absolute", as we still must have overall
-             * intensity information inorder to determine weighted spectral
-             * power levels). To achieve relative colorimetry for the output,
-             * these colors must be evaluated relative to the source white
-             * and black points. Hence, in this case, the appropriate white
-             * and black points to list in the color space are the source
-             * white and black points provided in the profile tag array.
-             *
-             * In this implementation, we will always request relative
-             * colorimetry from the icclib, and so will use the profile
-             * connection space illuminant and pure black as the white and
-             * black points of the color space. This approach is somewhat
-             * simpler, as it allows the color space white point to also
-             * be used for L*a*b* to XYZ conversion (otherwise we would
-             * need to store the profile connection space illuminant
-             * separately for that purpose). The approach does reduce to
-             * to some extent the range of mappings that can be achieved
-             * via the color rendering dictionary, but for now we believe
-             * this loss is not significant.
-             *
-             * For reasons that are not clear to us, the icclib code does
-             * not support relative colorimetry for all color profiles. For
-             * this reason, we specify icmDefaultIntent rather than
-             * icRelativeColormetric.
-             *
-             * NB: We are not color experts; our understanding of this area
-             *     may well be incorrect.
-             */
-            plu = picc->get_luobj( picc,
-                                   icmFwd,
-                                   icmDefaultIntent,
-                                   icmLuOrdNorm );
-            if (plu == NULL)
-                break;
-
-            /* 
-             * Get the appropriate white and black points. See the note on
-             * rendering intent above for a discussion of why we are using
-             * the profile space illuminant and pure black. (Pure black need
-             * not be set explicitly, as it is the default.)
-             */
-            ppt = &picc_info->common.points.WhitePoint;
-            ppt->u = picc->header->illuminant.X;
-            ppt->v = picc->header->illuminant.Y;
-            ppt->w = picc->header->illuminant.Z;
-
-            picc_info->picc = picc;
-            picc_info->plu = plu;
-
-        } while (false);    /* end of false loop */
-
-        if (picc_info->picc == NULL) {
-            if (plu != NULL)
-                plu->free(plu);
-            if (picc != NULL)
-                picc->free(picc);
-        }
-    }
 
     /* update the stub information used by the joint caches */
     gx_cie_load_common_cache(&picc_info->common, pgs);
@@ -561,10 +562,10 @@ gs_cspace_build_CIEICC(
     gs_color_space *    pcs;
 
     /*
-     * The gs_cie_iccc_s structure is the only CIE-based color space structure
+     * The gs_cie_icc_s structure is the only CIE-based color space structure
      * which accesses additional memory for which it is responsible. We make
      * use of the finalization procedure to handle this task, so we can use
-     * the generice CIE space build routine (otherwise we would need a
+     * the generic CIE space build routine (otherwise we would need a
      * separate build routine that provided its own reference count freeing
      * procedure).
      */

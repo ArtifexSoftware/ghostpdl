@@ -167,4 +167,7 @@ extern  int     gs_cspace_build_CIEICC( P3( gs_color_space **   ppcspace,
                                             void *              client_data,
                                             gs_memory_t *       pmem ) );
 
+int
+gx_load_icc_profile(gs_cie_icc *picc_info);
+
 #endif /* gsicc_INCLUDED */
