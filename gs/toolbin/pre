@@ -145,6 +145,36 @@ if {$vcur != $version} {
     exit
 }
 
+################ Check the third-party library version #s in the makefiles
+
+proc check_library_version {defname version} {
+    set matches [eval exec grep ${defname}= [glob src/*.mak]]
+    foreach match [split $matches "\n"] {
+	if {![regexp "^(.*):\[ 	\]*${defname}=(\[0-9\]+)(\[^0-9\]|\$)" $match skip file defver]} {
+	    message "Unrecognized result from grep: $match"
+	} elseif {$defver != $version} {
+	    message "$file has ${defname}=$defver, current is $version"
+	}
+    }
+}
+
+set VFILE jpeg/jversion.h
+if ![grep1 {^#define JVERSION[ 	]+"([0-9]+)[^0-9]} $VFILE line] {
+    message "No version number found in $VFILE!"
+    exit
+}
+regexp {^#define JVERSION[ 	]+"([0-9]+)[^0-9]} $line skip jversion
+puts "Current jpeg version is $jversion"
+set VFILE libpng/png.h
+if ![grep1 {^#define PNG_LIBPNG_VER[ 	]+([0-9]+)[^0-9]} $VFILE line] {
+    message "No version number found in $VFILE!"
+    exit
+}
+regexp {^#define PNG_LIBPNG_VER[ 	]+([0-9]+)[^0-9]} $line skip pversion
+puts "Current libpng version is $pversion"
+check_library_version JVERSION $jversion
+check_library_version PVERSION $pversion
+
 ################ If requested, mechanically update doc files.
 
 set dateformat "%-d %B %Y"
@@ -249,7 +279,7 @@ foreach d {examples doc lib man src} {
 ################ Check dates and version #s in documentation files
 
 foreach doc $doclist {
-    set dateline {^(! |)(AFPL |Aladdin |GNU |)Ghostscript version ([0-9.]+), ([0-9]+ [A-Z][a-z]+ [0-9]+)$}
+    set dateline {^(! |<small>)(AFPL |Aladdin |GNU |)Ghostscript version ([0-9.]+), ([0-9]+ [A-Z][a-z]+ [0-9]+)(</small>|)$}
     set idline {[$]Id: [^,]+,v ([^ ]+) ([0-9][0-9][0-9][0-9])/([0-9][0-9])/([0-9][0-9]) }
     if {![grep1 $dateline $doc dstr]} {
 	message "Can't find version # and date in $doc"
