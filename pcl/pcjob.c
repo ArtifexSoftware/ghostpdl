@@ -108,7 +108,7 @@ pcl_duplex_page_side_select(pcl_args_t *pargs, pcl_state_t *pcs)
 	  return 0;
 	/* According to H-P documentation, this command ejects the page */
 	/* even if nothing has been printed on it. */
-	code = pcl_end_page_always(pcs);
+	code = pcl_end_page_if_marked(pcs);
 	if ( code < 0 )
 	  return code;
 	if ( i > 0 && pcs->duplex )
