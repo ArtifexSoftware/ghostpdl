@@ -386,6 +386,7 @@ pcl_impl_set_device(
  pisdEnd:
     switch (stage) {
     case Sdone:	/* don't undo success */
+    case Sinitg: /* can't happen removes warning */
 	break;
 
     case Spclgsave:	/* 2nd gsave failed */
