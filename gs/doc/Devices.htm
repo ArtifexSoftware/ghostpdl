@@ -6315,6 +6315,14 @@ E5 on the printer's display).  Look at the display on the printer itself if
 a "Printer problem with unknown reason" is reported.  Fatal errors cause
 the print job to be terminated.
 
+<p>
+Note: there is some confusion whether the resolution setting should be
+the integers 300 and 400, or the symbolic constants DPI300 and DPI400
+(defined in lpviio.h). Ghostscript releases have had it both ways. It
+is currently the latter. However, INOUE Namihiko reports (in
+SourceForge bug #215256) that the former works better for him. If anyone
+has a definitive answer, please let us know.
+
 <hr>
 
 <h2><a name="Apple"></a>Apple dot matrix printer</h2>
