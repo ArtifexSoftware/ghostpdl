@@ -67,7 +67,7 @@ level2dict begin
     0 1 index { length exch pop add } forall
     .bigstring exch {
 		% Stack: dict filters parms CloseSource string index substring
-      exch 1000 mul exch 2 index 3 1 roll putinterval
+      exch 64000 mul exch 2 index 3 1 roll putinterval
     } forall
 		% Now create the stream on the string.
     1 index .reusablestream
