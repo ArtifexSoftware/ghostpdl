@@ -1,88 +1,29 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
-<HTML>
-<HEAD>
-   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.06 [en] (X11; I; Linux 2.0.32 i586) [Netscape]">
-   <TITLE>GhostPCL Frequently Asked Questions</TITLE>
-</HEAD>
-<BODY>
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.77 [en] (X11; U; Linux 2.2.19-7.0.1 i686) [Netscape]">
+   <title>GhostPCL Frequently Asked Questions</title>
+</head>
+<body>
 
-<H1>
-<IMG SRC="ghost64.gif" HEIGHT=64 WIDTH=56> GhostPCL5e, GhostPCL5c, and
-GhostPXL FAQ&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<IMG SRC="jfconbohrer.gif" ALT="Under construction." HEIGHT=113 WIDTH=100><FONT COLOR="#FF0000">This
-page is under construction.</FONT></H1>
+<h1>
+<img SRC="ghost64.gif" height=64 width=56> GhostPCL5e, GhostPCL5c, and
+GhostPXL FAQ&nbsp;<img SRC="jfconbohrer.gif" ALT="Under construction." height=113 width=100><font color="#FF0000">This
+page is under construction.</font></h1>
 
-<HR>
-<P>This page discusses configuration, compilation and running of the&nbsp;
+<hr>
+<p>This page discusses configuration, compilation and running of the&nbsp;
 PCL family of products:&nbsp; GhostPCL5E, GhostPCL5c and GhostPXL.&nbsp;
 All of the PCL products use the Ghostscript Graphic Library for graphics,
 imaging and driver support.&nbsp; Please see the ghostscript faq for additional
-information:&nbsp;&nbsp; <A HREF="http://www.cs.wisc.edu/~ghost/gsfaq.html">Ghostscript
-FAQ.</A>
-<P><B>Table of Contents</B>
-<P>&nbsp;<A HREF="#1">1. I would like to run rtl/hpgl2 files. Can I do
-this with the pcl5 interpreter?</A>
-<BR><A HREF="#1"></A>&nbsp;
-<P>
-<HR><A NAME="1"></A>
-<H1>
-1.&nbsp; RTL/HPGL2 Configuration</H1>
-The pjl parser file (pjparse.c) contains a structure with factory defaults.&nbsp;
-Included in this list is the pcl "personality".&nbsp; This can be set to
-pcl5c, pcl5e, hpgl, or rtl.&nbsp; Once changed the source has to be recompiled.&nbsp;
-This will likely be changed in the future.
-<P>/* provide factory defaults for pjl commands.&nbsp; Note these are not
-pjl
-<BR>&nbsp;&nbsp; defaults but initial values set in the printer when shipped.&nbsp;
-In an
-<BR>&nbsp;&nbsp; embedded system these would be defined in ROM */
-<BR>private const pjl_envir_var_t pjl_factory_defaults[] = {
-<BR>&nbsp;&nbsp;&nbsp; {"formlines", "60"},
-<BR>&nbsp;&nbsp;&nbsp; {"widea4", "no"},
-<BR>&nbsp;&nbsp;&nbsp; {"fontsource", "I"},
-<BR>&nbsp;&nbsp;&nbsp; {"fontnumber", "0"},
-<BR>&nbsp;&nbsp;&nbsp; {"pitch", "10.00"},
-<BR>&nbsp;&nbsp;&nbsp; {"ptsize", "12.00"},
-<BR>&nbsp;&nbsp;&nbsp; /* NB this is for the 6mp roman8 is used on most
-other HP devices
-<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; other devices */
-<BR>&nbsp;&nbsp;&nbsp; {"symset", "pc8"},
-<BR>&nbsp;&nbsp;&nbsp; {"copies", "1"},
-<BR>&nbsp;&nbsp;&nbsp; {"paper", "letter"},
-<BR>&nbsp;&nbsp;&nbsp; {"orientation", "portrait"},
-<BR>&nbsp;&nbsp;&nbsp; {"duplex", "off"},
-<BR>&nbsp;&nbsp;&nbsp; {"binding", "longedge"},
-<BR>&nbsp;&nbsp;&nbsp; {"manualfeed", "off"},
-<BR>&nbsp;&nbsp;&nbsp; {"fontsource", "I"},
-<BR>&nbsp;&nbsp;&nbsp; {"fontnumber", "0"},
-<BR>&nbsp;&nbsp;&nbsp; {"personality", "pcl5c"},
-<BR>&nbsp;&nbsp;&nbsp; /*&nbsp;&nbsp;&nbsp; {"personality", "rtl"}, */
-<BR>&nbsp;&nbsp;&nbsp; {"", ""}
-<BR>};
-<P>
-<HR><A NAME="1.1"></A>
-<BR>
-<HR><A NAME="1.2"></A>
-<BR>
-<HR><A NAME="1.3"></A>
-<BR>
-<HR><A NAME="1.4"></A>
-<BR>
-<HR><A NAME="1.5"></A>
-<BR>
-<HR><A NAME="1.6"></A>
-<BR>
-<HR><A NAME="1.7"></A>
-<BR>
-<HR><A NAME="1.8"></A>
-<BR>
-<HR><A NAME="1.9"></A>
-<P>
-<HR><A NAME="1.10"></A>
-<BR>
-<HR><A NAME="1.11"></A>
-<BR>
-<HR><A NAME="1.12"></A>
-<BR>&nbsp;
-</BODY>
-</HTML>
+information:&nbsp;&nbsp; <a href="http://www.cs.wisc.edu/~ghost/gsfaq.html">Ghostscript
+FAQ.</a>
+<p>1.&nbsp; Character rasterization at low resolution is poor, what do
+I do?
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Use -dTextAlphaBits=4 to
+enable antialiasing, the default TrueType font scaler does not use hints.
+<p>2.
+<br>&nbsp;
+</body>
+</html>
