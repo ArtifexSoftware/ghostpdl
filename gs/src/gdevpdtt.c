@@ -1168,42 +1168,40 @@ pdf_make_text_glyphs_table_unencoded(gs_font *font, const gs_string *pstr, const
     int i, ei;
     gs_char ch;
     gs_const_string gname;
+    gs_glyph *gid = (gs_glyph *)pstr->data; /* pdf_text_process allocs enough space. */
 
+    /* Translate glyph name indices into gscencs.c indices. */
+    for (i = 0; i < pstr->size; i++) {
+	int code = font->procs.glyph_name(font, gdata[i], &gname);
+
+	if (code < 0)
+	    return code;
+	gid[i] = gs_c_name_glyph(gname.data, gname.size);
+	if (gid[i] == GS_NO_GLYPH)
+	    return_error(gs_error_rangecheck);
+    }
+
+    /* Find an acceptable encodng. */
     for (ei = 0; gs_c_known_encodings[ei]; ei++) {
 	*num_unused_chars = 0;
 	*num_all_chars = 0;
 	for (i = 0; i < pstr->size; i++) {
-	    gs_glyph glyph;
-
-	    {   
-		/* fixme: optimize: move this block outside the ei cycle. 
-		   Maybe pstr->data is a big enough buffer to store 
-		   all values of 'glyph', which currently are re-computed 
-		   for each ei. If the buffer is big enough, first
-		   convert all glyphs with with gs_c_name_glyph,
-		   then try all ei and encode with "pstr->data[i] = (byte)ch;" .*/
-		int code = font->procs.glyph_name(font, gdata[i], &gname);
-
-		if (code < 0)
-		    return code;
-		glyph = gs_c_name_glyph(gname.data, gname.size);
-		if (glyph == GS_NO_GLYPH)
-		    return_error(gs_error_rangecheck);
-	    }
-	    for (ch = 0; ch <= 255; ch++) /* fixme: optimize. A new function to gscencs.c . */
-		if (glyph == gs_c_known_encode(ch, ei))
-		    break;
-	    if (ch > 255)
+	    ch = gs_c_decode(gid[i], ei);
+	    if (ch == GS_NO_CHAR)
 		break;
-	    pstr->data[i] = (byte)ch;
+	    /* pstr->data[i] = (byte)ch; Can't do because pstr->data and gid 
+	       are same pointer. Will do in a separate pass below. */
 	    store_glyphs(glyphs, glyphs_offset,	chars, glyphs_offset,
 			 NULL, 0,
 			 num_all_chars, num_unused_chars,
 			 ch, ch, gdata[i]);
 	}
 	*ps_encoding_index = ei;
-	if (i == pstr->size)
+	if (i == pstr->size) {
+	    for (i = 0; i < pstr->size; i++)
+		pstr->data[i] = (byte)gs_c_decode(gid[i], ei);
 	    return 0;
+	}
     }
     return_error(gs_error_rangecheck);
 }
@@ -1400,7 +1398,7 @@ pdf_obtain_font_resource_unencoded(const gs_text_enum_t *penum,
     byte *glyph_usage = 0;
     double *real_widths = 0;
     int char_cache_size = 0, width_cache_size = 0;
-    int code, i, ps_encoding_index;
+    int code, ps_encoding_index;
 
     if (font->FontType == ft_composite) {
 	/* Must not happen, because we always split composite fonts into descendents. */

@@ -153,6 +153,12 @@ pdf_obtain_font_resource(const gs_text_enum_t *penum,
 		const gs_string *pstr, pdf_font_resource_t **ppdfont);
 
 /*
+ * Create or find a font resource object for a glyphshow text.
+ */
+int pdf_obtain_font_resource_unencoded(const gs_text_enum_t *penum, 
+	    const gs_string *pstr, pdf_font_resource_t **ppdfont, const gs_glyph *gdata);
+
+/*
  * Create or find a CID font resource object for a glyph set.
  */
 int pdf_obtain_cidfont_resource(gx_device_pdf *pdev, gs_font *subfont, 

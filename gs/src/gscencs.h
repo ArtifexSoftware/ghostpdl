@@ -52,6 +52,11 @@ extern const gs_glyph gs_c_min_std_encoding_glyph;
 gs_glyph gs_c_known_encode(gs_char chr, int encoding_index);
 
 /*
+ * Decode a gs_c_glyph_name glyph with a known encoding.
+ */
+gs_char gs_c_decode(gs_glyph glyph, int ei);
+
+/*
  * Convert a glyph number returned by gs_c_known_encode to a string.
  */
 int gs_c_glyph_name(gs_glyph glyph, gs_const_string *pstr);
