@@ -260,8 +260,9 @@ uses the callback.
 
 <p>
 Please note that there is a 64 KB length limit on the passed string.
-If you have more input than that to process at a given time, it must
-be split into separate smaller buffers, each passed on a separate call.
+If you have more than 65535 bytes of input to process at a given time,
+it must be split into separate smaller buffers, each passed on a 
+separate call.
 
 </blockquote>
 

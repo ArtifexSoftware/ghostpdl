@@ -344,8 +344,9 @@ See below for <a href="#return_codes">return codes</a>.
 <p>
 There is a 64 KB length limit on any buffer submitted to a 
 <tt>gsapi_run_*</tt> function for processing. If you have more
-input than that you must split it into smaller pieces and submit
-each in a separate <tt>gsapi_run_string_continue()</tt> call.
+than 65535 bytes of input then you must split it into smaller 
+pieces and submit each in a separate 
+<tt>gsapi_run_string_continue()</tt> call.
 </blockquote>
 
 <h3><a name="exit"></a><b><tt>gsapi_exit()</tt></b></h3>
