@@ -300,6 +300,10 @@ pdf_set_text_matrix(gx_device_pdf * pdev, const gs_matrix * pmat)
 	if (code < 0)
 	    return code;
 	set_text_distance(&dist, &pdev->text.line_start, pmat);
+	if (pdev->text.use_leading) {
+	    /* Leading was deferred: take it into account now. */
+	    dist.y -= pdev->text.leading;
+	}
 	if (dist.x == 0 && dist.y < 0) {
 	    /* Use TL, if needed, + '. */
 	    float dist_y = (float)-dist.y;
