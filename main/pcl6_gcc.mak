@@ -6,7 +6,7 @@ CYGWIN=
 
 # The build process will put all of its output in this directory:
 GENDIR=./obj
-
+PGGENDIR=./pgobj
 # The sources are taken from these directories:
 GLSRCDIR=../gs/src
 PCLSRCDIR=../pcl
@@ -120,11 +120,11 @@ FEATURE_DEVS=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev\
 
 ifeq ($(CYGWIN), TRUE)
 SYNC=
-STDLIBS=-lm
+STDLIBS=-lm -ldl
 DEVICE_DEVS=$(DEVICES_DEVS)
 else
 SYNC=posync
-STDLIBS=-lm -lpthread
+STDLIBS=-lm -lpthread -ldl
 DEVICE_DEVS=$(DD)x11.dev $(DD)x11alpha.dev $(DD)x11mono.dev $(DD)x11cmyk.dev $(DEVICES_DEVS) $(DD)bmpamono.dev $(DD)bmpa16m.dev
 endif
 
