@@ -21,8 +21,16 @@
 /* pcpalet.c - PCL 5c palette object implementation */
 #include "gx.h"
 #include "pldict.h"
+#include "pcdraw.h"
 #include "pcpalet.h"
 #include "pcfrgrnd.h"
+
+/*
+ * The default palette. This is allocated once at boot time, and retained
+ * thereafter. It could be freed and re-allocated, but it is harder to use
+ * memory leak detection tools in that case.
+ */
+pcl_palette_t * pdflt_palette;
 
 /* dictionary to hold the palette store */
 private pl_dict_t   palette_store;
@@ -170,25 +178,39 @@ build_default_palette(
     pcl_id_t        key;
     gs_memory_t *   pmem = pcs->memory;
     pcl_palette_t * ppalet = 0;
-    int             code = alloc_palette(&ppalet, pcs->memory);
+    int             code = 0;
 
-    if (code == 0)
-        code = pcl_cs_indexed_build_default_cspace(&(ppalet->pindexed), pmem);
-    if ((code == 0) && (pcl_default_crd == 0))
-        code = pcl_crd_build_default_crd(pmem);
-    if (code == 0)
-        pcl_crd_init_from(ppalet->pcrd, pcl_default_crd);
-    if (code == 0)
-        code = pcl_ht_build_default_ht(&(ppalet->pht), pmem);
-    if (code < 0)
-        return code;
+    if (pdflt_palette == 0) {
+        code = alloc_palette(&ppalet, pcs->memory);
+        if (code == 0)
+            code = pcl_cs_indexed_build_default_cspace( &(ppalet->pindexed),
+                                                        pmem
+                                                       );
+        if ((code == 0) && (pcl_default_crd == 0))
+            code = pcl_crd_build_default_crd(pmem);
+        if (code == 0)
+            pcl_crd_init_from(ppalet->pcrd, pcl_default_crd);
+        if (code == 0)
+            code = pcl_ht_build_default_ht(&(ppalet->pht), pmem);
+        if (code < 0) {
+            if (ppalet != 0)
+                free_palette(pmem, ppalet, "build default palette");
+            return code;
+        }
+        pcl_palette_init_from(pdflt_palette, ppalet);
+    } else
+        pcl_palette_init_from(ppalet, pdflt_palette);
 
     id_set_value(key, pcs->sel_palette_id);
     pl_dict_undef(&palette_store, id_key(key), 2);
     pcs->ppalet = 0;
+
+    /* NB: definitions do NOT record a referece */
     code = pl_dict_put(&palette_store, id_key(key), 2, ppalet);
     if (code < 0)
         return e_Memory;
+
+    /* the graphic state pointer does not (yet) amount to a reference */
     pcs->ppalet = ppalet;
     return 0;
 }
@@ -277,9 +299,10 @@ push_pop_palette(
 
             palette_stack = pentry->pnext;
 
-            /* NB: USE INIT RATHER THAN COPY (pl_dict_put sets ref. count) */
+            /* NB: USE INIT RATHER THAN COPY - pcs->ppalet is not a reference */
             pcl_palette_init_from(pcs->ppalet, pentry->ppalet);
 
+            /* the dictionary gets the stack reference on the palette */
             id_set_value(key, pcs->sel_palette_id);
             code = pl_dict_put(&palette_store, id_key(key), 2, pentry->ppalet);
             gs_free_object(pcs->memory, pentry, "pop pcl palette");
@@ -517,13 +540,23 @@ pcl_palette_PW(
     pcl_palette_t * ppalet = pcs->ppalet;
 
     if (ppalet != 0) {
+        pcl_cs_indexed_t *  pindexed = ppalet->pindexed;
+
+        if ( (pindexed != 0)                                        &&
+             (pen >= 0)                                             &&
+             (pen < pcl_cs_indexed_get_num_entries(pindexed))       &&
+             (width == pcl_cs_indexed_get_pen_widths(pindexed)[pen])  )
+            return 0;
+
         palette_id = ppalet->id;
         if ((code = unshare_palette(pcs)) < 0)
             return code;
         ppalet = pcs->ppalet;
         ppalet->id = palette_id;
+
     } else if ((code = unshare_palette(pcs)) < 0)
         return code;
+
     return pcl_cs_indexed_set_pen_width(&(ppalet->pindexed), pen, width);
 }
 
@@ -764,12 +797,15 @@ palette_control(
       case 6:
         if (pcs->ctrl_palette_id != pcs->sel_palette_id) {
             pcl_id_t        key;
-            pcl_palette_t * pnew = 0;
+            int             code = 0;
 
-            /* NB: THIS COPY_FROM IS NECESSARY - defn.'s don't ref. count */
-            pcl_palette_copy_from(pnew, pcs->ppalet);
+            /* NB: definitions don't incremente refernece counts */
             id_set_value(key, pcs->ctrl_palette_id);
-            pl_dict_put(&palette_store, id_key(key), 2, pnew);
+            code = pl_dict_put(&palette_store, id_key(key), 2, pcs->ppalet);
+            if (code < 0)
+                return code;
+            rc_increment(pcs->ppalet);
+            
         }
         break;
 
@@ -867,10 +903,13 @@ palette_do_reset(
 
         /* set up the built-in render methods and dithers matrices */
         pcl_ht_init_render_methods(pcs, pcs->memory);
-        palette_stack = 0;
 
         /* handle possible non-initialization of BSS */
+        pdflt_palette = 0;
+        palette_stack = 0;
         pcl_default_crd = 0;
+        pcl_cs_base_init();
+        pcl_cs_indexed_init();
 
     } else {
 
@@ -886,6 +925,9 @@ palette_do_reset(
     /* build the default palette and foreground */
     (void)build_default_palette(pcs);
     (void)pcl_frgrnd_set_default_foreground(pcs);
+
+    /* the following is helpful when working with memory leak detectors */
+    pcl_set_drawing_color(pcs, pcl_pattern_solid_frgrnd, 0, false);
 }
 
 /*
