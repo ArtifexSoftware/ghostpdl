@@ -89,24 +89,6 @@ fails with:
 <hr>
 <h2><a name="Minor_bugs"></a>Minor Bugs.</h2>
 
-<h3>PageSize cannot use packedarray</h3>
-PageSize doesn't accept packed array as an argument if the page size is
-adjusted, for instance, to the whole number of pixels. The following
-program 
-<pre>
-%!
-/x 333.33333333 def /y 666.66666666 def
-
-<< /PageSize x y 2 packedarray >> setpagedevice
-(pached passed)==    % fails
-%EOF
-</pre>
-fails with
-<pre>
-Error: /configurationerror in --setpagedevice--
-Additional information: [/PageSize [333.333344 666.666687]]
-</pre>
-
 <h3> Multiple encode filters in a pipeline fail.</h3>
 The following code fragment should output "3E>". It outputs nothing. 
 <pre>
