@@ -1250,7 +1250,12 @@ readonly def
       }
       ifelse
     }
-    { dup /Subtype get fonttypeprocs exch get exec }
+    { dup /Subtype get fonttypeprocs exch () cvn eq {
+        (   **** Warning: Font missing required Subtype, /Type1 assumed.\n)
+        pdfformaterror
+        /Type1
+      } if get exec
+    }
     ifelse
 	% Stack: font-res font
     1 index 3 1 roll
