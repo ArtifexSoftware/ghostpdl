@@ -460,7 +460,24 @@ userdict /.echo.mode true put
 	//setdash
 } odef
 /setdevice
-	{ .setdevice { erasepage } if } odef
+  {
+    .setdevice
+      {
+        mark
+          { 		% Reset the halftone since the device may differ
+            currenthalftone
+            dup type /dicttype eq
+              { sethalftone }
+              { pop }
+            ifelse
+          }
+        stopped
+        cleartomark
+        erasepage
+      }
+    if
+  }
+odef
 /setlinecap {
 	dup 2 gt { /setlinecap load /rangecheck signalerror } if
 	.setlinecap
