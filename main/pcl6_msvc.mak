@@ -52,8 +52,8 @@ DD=$(GLGENDIR)
 TARGET_XE=$(GENDIR)\pcl6
 
 # Debugging options
-DEBUG=1
-TDEBUG=1
+DEBUG=0
+TDEBUG=0
 NOPRIVATE=0
 
 # Banding options
@@ -91,7 +91,7 @@ PL_SCALER=afs
 # specify agfa library locations and includes.  This is ignored
 # if the current scaler is not the AGFA ufst.  Note we assume the agfa
 # directory is under the shared pcl pxl library ..\pl
-AGFA_ROOT=..\pl\agfa
+AGFA_ROOT=\cygwin\home\Administrator\ufst
 UFST_LIBDIR=$(AGFA_ROOT)\rts\lib
 AGFA_INCLUDES=$(I_)$(AGFA_ROOT)\rts\inc $(I_)$(AGFA_ROOT)\sys\inc $(I_)$(AGFA_ROOT)\rts\fco -DMSVC
 
