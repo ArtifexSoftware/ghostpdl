@@ -281,7 +281,11 @@
       numcodes scode firstcode sub
 		% Hack for fonts that have only 0x0000 and 0xf000 ranges
       dup 16#e000 ge { 255 and } if
-      exch sub 0 .max dup { 0 putglyph } repeat
+      exch sub dup dup 0 ge {
+	{ 0 putglyph } repeat
+      } {
+	code add /code exch def
+      } ifelse
       ecode scode sub 1 add add numcodes add /numcodes exch def
       /delta iddelta i2 gets16 def
       DEBUG {
