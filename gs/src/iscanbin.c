@@ -627,7 +627,7 @@ scan_bos_string_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 {
     scan_binary_state *const pbs = &pstate->s_ss.binary;
     ref rstr;
-    ref *op = pbs->bin_array.value.refs;
+    ref *op;
     int code = scan_bin_string_continue(i_ctx_p, s, &rstr, pstate);
     uint space = ialloc_space(idmemory);
     bool rescan = false;
@@ -635,8 +635,12 @@ scan_bos_string_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 
     if (code != 0)
 	return code;
-    /* Finally, fix up names and dictionaries. */
-    for (i = r_size(&pbs->bin_array); i != 0; i--, op++)
+
+    /* Fix up names.  We must do this before creating dictionaries. */
+
+    for (op = pbs->bin_array.value.refs, i = r_size(&pbs->bin_array);
+	 i != 0; i--, op++
+	 )
 	switch (r_type(op)) {
 	    case t_string:
 		if (r_has_attr(op, a_write))	/* a real string */
@@ -663,6 +667,18 @@ scan_bos_string_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 		}
 		break;
 	    case t_mixedarray:	/* actually a dictionary */
+		rescan = true;
+	}
+
+    /* Create dictionaries, if any. */
+
+    if (rescan) {
+	rescan = false;
+	for (op = pbs->bin_array.value.refs, i = r_size(&pbs->bin_array);
+	     i != 0; i--, op++
+	     )
+	    switch (r_type(op)) {
+	    case t_mixedarray:	/* actually a dictionary */
 		{
 		    uint count = r_size(op);
 		    ref rdict;
@@ -682,8 +698,8 @@ scan_bos_string_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 			while (count) {
 			    count -= 2;
 			    code = idict_put(&rdict,
-					    &op->value.refs[count],
-					    &op->value.refs[count + 1]);
+					     &op->value.refs[count],
+					     &op->value.refs[count + 1]);
 			    if (code < 0)
 				return code;
 			}
@@ -693,9 +709,11 @@ scan_bos_string_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 		    ref_assign(op, &rdict);
 		}
 		break;
-	}
-    /* If there were any forward indirect references, */
-    /* fix them up now. */
+	    }
+    }
+
+    /* If there were any forward indirect references, fix them up now. */
+
     if (rescan)
 	for (op = pbs->bin_array.value.refs, i = r_size(&pbs->bin_array);
 	     i != 0; i--, op++
@@ -710,6 +728,7 @@ scan_bos_string_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 		r_copy_attrs(&rdict, a_executable, op);
 		ref_assign(op, &rdict);
 	    }
+
     ref_assign(pref, &pbs->bin_array);
     r_set_size(pref, pbs->top_size);
     return scan_BOS;
