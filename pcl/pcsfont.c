@@ -152,6 +152,27 @@ pcl_font_control(pcl_args_t *pargs, pcl_state_t *pcs)
                     return code;
             }
             {
+                if ( pcs->font->storage == pcds_internal ) {
+                    pl_dict_enum_t dictp;
+                    gs_const_string key;
+                    void * value;
+                    bool found = false;
+                    pl_dict_enum_begin(&pcs->built_in_fonts, &dictp);
+                    while ( pl_dict_enum_next(&dictp, &key, &value ) )
+                        if ( (void *)(pcs->font) == value ) {
+                            found = true;
+                            break;
+                        }
+                    if ( found == false )
+                        return -1;
+                    pl_dict_put_synonym(&pcs->built_in_fonts, key.data,
+                                        key.size, current_font_id,
+                                        current_font_id_size);
+                    return 0;
+                }
+                    
+                    
+                    
                 pl_font_t *plfont = pl_clone_font(pcs->font,
                                                   pcs->memory,
                                                   "pcl_font_control()");
