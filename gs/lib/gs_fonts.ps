@@ -921,11 +921,15 @@ $error /SubstituteFont { .stdsubstfont } put
 		% Maybe the file had a different FontName.
 		% See if we can get a FontName from the file, and if so,
 		% whether a font by that name exists now.
-	exch (r) file .findfontname
-	 { 2 copy .fontknownget
-	    {	% Yes.  Stack: origfontname fontdirectory filefontname fontdict
-              dup /Path 3 index .putgstringcopy
+	exch dup      % Stack: origfontname fontdirectory path path
+	(r) file .findfontname
+	 {            % Stack: origfontname fontdirectory path filefontname
+	   2 index 1 index .fontknownget
+	    {	% Yes.  Stack: origfontname fontdirectory path filefontname fontdict
+              dup 4 -1 roll /Path exch .putgstringcopy
+                      % Stack: origfontname fontdirectory filefontname fontdict
 	      3 -1 roll pop exch
+	              % Stack: origfontname fontdict filefontname
 	      QUIET
 	       { pop
 	       }
@@ -933,11 +937,13 @@ $error /SubstituteFont { .stdsubstfont } put
 	         ( font for ) print 1 index =only
 	         (.) = flush
 	       }
-	      ifelse true exit
+	      ifelse  % Stack: origfontname fontdict
+	      exch pop true exit
+	              % Stack: fontdict
 	    }
-	   if pop
+	   if pop % Stack: origfontname fontdirectory path
 	 }
-	if pop
+	if pop pop  % Stack: origfontname
 
 		% The font definitely did not load correctly.
 	QUIET not
