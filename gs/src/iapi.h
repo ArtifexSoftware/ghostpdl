@@ -47,6 +47,10 @@
 #ifndef iapi_INCLUDED
 #  define iapi_INCLUDED
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if defined(_WINDOWS_) || defined(__WINDOWS__)
 # ifndef _Windows
 #  define _Windows
@@ -294,6 +298,10 @@ typedef void (GSDLLAPIPTR PFN_gsapi_set_visual_tracer)
 
 #ifdef __MACOS__
 #pragma export off
+#endif
+
+#ifdef __cplusplus
+} /* extern 'C' protection */
 #endif
 
 #endif /* iapi_INCLUDED */
