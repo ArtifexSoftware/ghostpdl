@@ -484,6 +484,7 @@ Other:
 <dt>
 Bitmap processing:
 <dd>
+<a href="../src/gsbitcom.c">src/gsbitcom.c</a>,
 <a href="../src/gsbitmap.h">src/gsbitmap.h</a>,
 <a href="../src/gsbitops.c">src/gsbitops.c</a>,
 <a href="../src/gsbitops.h">src/gsbitops.h</a>,
@@ -1126,6 +1127,8 @@ Accessing rendered bits:
 <dt>
 "Printer" driver support:
 <dd>
+<a href="../src/gdevmeds.c">src/gdevmeds.c</a>,
+<a href="../src/gdevmeds.h">src/gdevmeds.h</a>,
 <a href="../src/gdevppla.c">src/gdevppla.c</a>,
 <a href="../src/gdevppla.h">src/gdevppla.h</a>,
 <a href="../src/gdevprn.c">src/gdevprn.c</a>,
@@ -1334,7 +1337,7 @@ Text and fonts:
 <a href="../src/gdevpdfe.c">src/gdevpdfe.c</a>,
 <a href="../src/gdevpdff.c">src/gdevpdff.c</a>,
 <a href="../src/gdevpdff.h">src/gdevpdff.h</a>,
-<a href="../src/gdevpdft.c">src/gdevpdfs.c</a>,
+<a href="../src/gdevpdfs.c">src/gdevpdfs.c</a>,
 <a href="../src/gdevpdft.c">src/gdevpdft.c</a>,
 <a href="../src/gdevpdfw.c">src/gdevpdfw.c</a>.
 
@@ -1441,7 +1444,9 @@ Microsoft Windows:
 <dd>
 <a href="../src/gdevmswn.c">src/gdevmswn.c</a>,
 <a href="../src/gdevmswn.h">src/gdevmswn.h</a>,
-<a href="../src/gdevmsxf.c">src/gdevmsxf.c</a>.
+<a href="../src/gdevmsxf.c">src/gdevmsxf.c</a>,
+<a href="../src/gdevwddb.c">src/gdevwddb.c</a>,
+<a href="../src/gdevwdib.c">src/gdevwdib.c</a>.
 
 <dt>
 OS/2 Presentation Manager:
@@ -1456,21 +1461,14 @@ OS/2 Presentation Manager:
 <dt>
 Raster file output drivers:
 <dd>
-<a href="../src/gdevbit.c">src/gdevbit.c</a>,
-<a href="../src/gdevbmp.c">src/gdevbmp.c</a>,
-<a href="../src/gdevbmpa.c">src/gdevbmpa.c</a>,
-<a href="../src/gdevcgm.c">src/gdevcgm.c</a>,
-<a href="../src/gdevcgml.c">src/gdevcgml.c</a>,
-<a href="../src/gdevcgml.h">src/gdevcgml.h</a>,
-<a href="../src/gdevcgmx.h">src/gdevcgmx.h</a>,
+
+<dl>
+
+<dt>
+Fax and TIFF:
+<dd>
 <a href="../src/gdevfax.c">src/gdevfax.c</a>,
 <a href="../src/gdevfax.h">src/gdevfax.h</a>,
-<a href="../src/gdevjpeg.c">src/gdevjpeg.c</a>,
-<a href="../src/gdevmiff.c">src/gdevmiff.c</a>,
-<a href="../src/gdevpcx.c">src/gdevpcx.c</a>,
-<a href="../src/gdevpbm.c">src/gdevpbm.c</a>,
-<a href="../src/gdevpng.c">src/gdevpng.c</a>,
-<a href="../src/gdevpsim.c">src/gdevpsim.c</a>,
 <a href="../src/gdevtfax.c">src/gdevtfax.c</a>,
 <a href="../src/gdevtfax.h">src/gdevtfax.h</a>,
 <a href="../src/gdevtifs.c">src/gdevtifs.c</a>,
@@ -1478,12 +1476,65 @@ Raster file output drivers:
 <a href="../src/gdevtfnx.c">src/gdevtfnx.c</a>.
 
 <dt>
+(Low-level) CGM:
+<dd>
+<a href="../src/gdevcgm.c">src/gdevcgm.c</a>,
+<a href="../src/gdevcgml.c">src/gdevcgml.c</a>,
+<a href="../src/gdevcgml.h">src/gdevcgml.h</a>,
+<a href="../src/gdevcgmx.h">src/gdevcgmx.h</a>.
+
+<dt>
+Other raster file formats:
+<dd>
+<a href="../src/gdevbit.c">src/gdevbit.c</a>,
+<a href="../src/gdevbmp.c">src/gdevbmp.c</a>,
+<a href="../src/gdevbmp.h">src/gdevbmp.h</a>,
+<a href="../src/gdevbmpa.c">src/gdevbmpa.c</a>,
+<a href="../src/gdevbmpc.c">src/gdevbmpc.c</a>,
+<a href="../src/gdevjpeg.c">src/gdevjpeg.c</a>,
+<a href="../src/gdevmiff.c">src/gdevmiff.c</a>,
+<a href="../src/gdevpcx.c">src/gdevpcx.c</a>,
+<a href="../src/gdevpbm.c">src/gdevpbm.c</a>,
+<a href="../src/gdevpng.c">src/gdevpng.c</a>,
+<a href="../src/gdevpsim.c">src/gdevpsim.c</a>.
+
+</dl>
+
+<dt>
 Printer drivers:
 <dd>
+
+<dl>
+
+<dt>
+Operating system printer services:
+<dd>
+<a href="../src/gdevos2p.c">src/gdevos2p.c</a>,
+<a href="../src/gdevwpr2.c">src/gdevwpr2.c</a>,
+<a href="../src/gdevwprn.c">src/gdevwprn.c</a>.
+
+<dt>
+H-P monochrome printers:
+<dd>
+<a href="../src/gdevdljm.c">src/gdevdljm.c</a>,
+<a href="../src/gdevdljm.h">src/gdevdljm.h</a>,
+<a href="../src/gdevdjet.c">src/gdevdjet.c</a>,
+<a href="../src/gdevlj56.c">src/gdevlj56.c</a>.
+
+<dt>
+Other printers:
+<dd>
+<a href="../src/gdevatx.c">src/gdevatx.c</a>.
+
+</dl>
 
 </dl>
 
 <h4><a name="Contributed_drivers"></a>Contributed drivers</h4>
+
+<p>
+We don't attempt to list the contributed drivers here.  See <a
+href="../src/contrib.mak">src/contrib.mak</a>.
 
 <h3><a name="PostScript_interpreter"></a>PostScript interpreter</h3>
 
@@ -1733,6 +1784,12 @@ Binary tokens:
 <a href="../src/iscanbin.c">src/iscanbin.c</a>,
 <a href="../src/iscanbin.h">src/iscanbin.h</a>.
 
+<dt>
+DSC parsing:
+<dd>
+<a href="../src/dscparse.c">src/dscparse.c</a>,
+<a href="../src/dscparse.h">src/dscparse.h</a>.
+
 </dl>
 
 <h4><a name="Standard_operators"></a>Standard operators</h4>
@@ -1771,6 +1828,7 @@ File and stream I/O:
 <a href="../src/files.h">src/files.h</a>,
 <a href="../src/itoken.h">src/itoken.h</a>,
 <a href="../src/zbseq.c">src/zbseq.c</a>,
+<a href="../src/zdscpars.c">src/zdscpars.c</a>,
 <a href="../src/zfile.c">src/zfile.c</a>,
 <a href="../src/zfileio.c">src/zfileio.c</a>,
 <a href="../src/ztoken.c">src/ztoken.c</a>.
@@ -1998,6 +2056,7 @@ Miscellaneous support:
 <a href="../src/errors.h">src/errors.h</a>,
 <a href="../src/ghost.h">src/ghost.h</a>,
 <a href="../src/iconf.c">src/iconf.c</a>,
+<a href="../src/iconf.h">src/iconf.h</a>,
 <a href="../src/idparam.c">src/idparam.c</a>,
 <a href="../src/idparam.h">src/idparam.h</a>,
 <a href="../src/ilevel.h">src/ilevel.h</a>,
@@ -2090,6 +2149,7 @@ CID-keyed:
 Other:
 <dd>
 <a href="../lib/gs_kanji.ps">lib/gs_kanji.ps</a>,
+<a href="../lib/gs_pfile.ps">lib/gs_pfile.ps</a>,
 <a href="../lib/gs_typ32.ps">lib/gs_typ32.ps</a>.
 
 </dl>
@@ -2670,6 +2730,7 @@ Script files with PC versions:
 Script files with only PC versions:
 <dd>
 <a href="../lib/gsndt.bat">lib/gsndt.bat</a>,
+<a href="../lib/gssetgs.bat">lib/gssetgs.bat</a>,
 <a href="../lib/gst.bat">lib/gst.bat</a>,
 <a href="../lib/gstt.bat">lib/gstt.bat</a>,
 <a href="../lib/lp386.bat">lib/lp386.bat</a>,
@@ -3326,7 +3387,6 @@ unusually non-standard libraries.
 <dt>
 Files:
 <dd>
-<a href="../src/close_.h">src/close_.h</a>,
 <a href="../src/ctype_.h">src/ctype_.h</a>,
 <a href="../src/dirent_.h">src/dirent_.h</a>,
 <a href="../src/dos_.h">src/dos_.h</a>,
@@ -3342,6 +3402,7 @@ Files:
 <a href="../src/stdio_.h">src/stdio_.h</a>,
 <a href="../src/string_.h">src/string_.h</a>,
 <a href="../src/time_.h">src/time_.h</a>,
+<a href="../src/unistd_.h">src/unistd_.h</a>,
 <a href="../src/vmsmath.h">src/vmsmath.h</a>,
 <a href="../src/windows_.h">src/windows_.h</a>,
 <a href="../src/x_.h">src/x_.h</a>.
