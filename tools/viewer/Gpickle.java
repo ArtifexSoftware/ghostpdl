@@ -1,4 +1,7 @@
+import java.awt.*;
+import java.awt.image.*;
 import java.io.*;
+import com.sun.image.codec.jpeg.*;
 import java.lang.Process;
 import java.lang.Runtime;
 
@@ -9,127 +12,92 @@ public class Gpickle {
     // overriden.
     private int xRes = 100;
     private int yRes = 100;
-    private int bitsPerComponent = 1;
-    private int numComponents = 4;
     private String jobList = "startpage.pcl";
-    private String deviceName = "bitcmyk";
-    private String personality = "PCL5E";
-    private String commandString = "pcl6 " + "-r" + xRes + "x" + yRes +
-	" -sDEVICE=" + deviceName + " -P" + personality +
-	" -dNOPAUSE " + " -sOutputFile=- " + jobList + "\n";
-	
+    private int pageToDisplay = 1;
+
+    // we always use jpeg for output because java has good internal
+    // support for jpeg.
+    private String deviceName = "jpeg";
+
+    // height and width of the generated image
+    private int height;
+    private int width;
     // private methods...
-
-    // NB problem - pcl can set the page size, resolution etc... thus
-    // changing the size of the framebuffer... temporarily hardwired
-    // to letter paper and resolution on entry.
-    private int widthBytes()
+    private String runString()
     {
-	int pixels = (int)((float)8.5 * xRes);
-	return (pixels * bitsPerComponent * numComponents) / 8;
+	return "pcl6 " +  " -dFirstPage=" + pageToDisplay + " -dLastPage=" + pageToDisplay + " -r" +
+	    xRes + "x" + yRes + " -sDEVICE=" + deviceName + " -dNOPAUSE " + " -sOutputFile=- " + jobList + "\n";
     }
 
-    // hardwired to 11.0.
-    private int height() 
-    {
-	return (int)((float)11.0 * yRes);
-    }
-
-    // size of framebuffer.
-    private int frameSizeBytes() 
-    {
-	return widthBytes() * height();
-    }
-
-    // debug dump framebuffer
-    private void dumpFrame(byte framebuf[])
-    {
-	int i;
-	for (i = 0; i < framebuf.length; i++) {
-	    if ( (i % 30) == 0 ) {
-		System.out.println();
-	    } else {
-		System.out.print(framebuf[i] + " ");
-	    }
-	}
-    }
-	
     // public methods.
 
-    // run the pcl interpreter with the current settings.
-    public int runPrinter() {
-	int ch;
+    // run the pcl interpreter with the current settings and return a
+    // buffered image for the page.  Sets height and width as a side
+    // effect.
+
+    public BufferedImage getPrinterOutputPage()
+    {
+        int ch;
 	try {
-	    // command string should contain all the command line
-	    // options - see commandString field above.
-	    Process p = Runtime.getRuntime().exec(commandString);
-	    // get the size the framebuffer.
-	    int bytes_wanted = frameSizeBytes();
-	    byte[] buffer = new byte[bytes_wanted];
+	    Process p = Runtime.getRuntime().exec(runString());
 
-	    // read process output and store it in the framebuffer.
-	    BufferedInputStream in = new BufferedInputStream(p.getInputStream());
-	    int offset = 0;
-	    int bytes_read;
-	    while ((bytes_read = 
-		    in.read(buffer, offset, buffer.length - offset)) > 0) {
-		offset += bytes_read;
-	    }
-
-	    // woops - shouldn't happen.
-	    if ( bytes_wanted != offset ) {
-		System.out.println( "fatal error needed " +
-				    bytes_wanted +
-				    " bytes but only got " + 
-				    offset + " bytes" );
-	    } else {
-		// decimal dump the buffer - here we should do something
-		// like pass the data to the 2d api.
-		dumpFrame(buffer);
-	    }
-	    p.destroy();
-	} catch (IOException ioex) {
-	    ioex.printStackTrace();
+	    // read process output and return a buffered image.
+	    JPEGImageDecoder decoder = JPEGCodec.createJPEGDecoder(p.getInputStream());
+	    BufferedImage bim = decoder.decodeAsBufferedImage();
+	    this.height = bim.getHeight();
+	    this.width = bim.getWidth();
+	    return bim;
+	} catch (Exception e) {
+	    System.out.println(e);
+	    return null;
 	}
-	return 0;
+	    
     }
 
-    
-    // a list of file names that comprise a job.
-    public int setJob(String jobList) {
+    // a list of file names that comprise a job. NB should be an array
+    // of String.
+    public void setJob(String jobList) {
 	this.jobList = jobList;
-	return 0;
-    }
-    // get a page count for the job.
-    public int pageCount() {
-	return -1;
     }
 
     // NB needs error handling.
     // set x and y resolution.
-    public int setRes(int xRes, int yRes) {
+    public void setRes(int xRes, int yRes)
+    {
 	this.xRes = xRes;
 	this.yRes = yRes;
-	return 0;
     }
 
-    // set bits per component.
-    public int setBpc(int bpc) {
-	this.bitsPerComponent = bpc;
-	return 0;
+    public void setPageNumber(int page) 
+    {
+	this.pageToDisplay = page;
     }
 
-	
-    // set number of components.
-    public int setNumComp(int numComp) {
-	this.numComponents = numComp;
-	return 0;
+    // accessors for height and width.
+    public int getHeight()
+    {
+	return height;
     }
 	
+    public int getWidth()
+    {
+	return width;
+    }
+
     // test
     public static void main( String[] args ) {
-	Gpickle p = new Gpickle();
-	p.runPrinter();
-    }
+	Gpickle pcl = new Gpickle();
+	pcl.setRes(72, 72);
+	pcl.setPageNumber(5);
+	pcl.setJob("120pg.bin");
+	System.out.println(pcl.getPrinterOutputPage());
+	System.out.println("Width = " + pcl.getWidth());
+	System.out.println("Height = " + pcl.getWidth());
+	Gpickle pxl = new Gpickle();
+	pxl.setJob("frs96.pxl");
+	System.out.println(pxl.getPrinterOutputPage());
+	System.out.println("Width = " + pxl.getWidth());
+	System.out.println("Height = " + pxl.getWidth());
 
+    }
 }
