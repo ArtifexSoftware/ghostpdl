@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-
+/*$Id$ */
 /* Interface to special color mapping device */
 
 #ifndef gdevcmap_INCLUDED
@@ -61,8 +61,11 @@ extern_st(st_device_cmap);
 int gdev_cmap_init(P3(gx_device_cmap * dev, gx_device * target,
 		      gx_device_color_mapping_method_t mapping_method));
 
-/* Set the color mapping method.  This may be called at any time. */
-int gdev_cmap_set_method(P2(gx_device_cmap * dev,
-			  gx_device_color_mapping_method_t mapping_method));
+/*
+ * Clients can change the color mapping method at any time by setting
+ * the ColorMappingMethod device parameter, but they must then call
+ *	gs_setdevice_no_init(pgs, dev);
+ * for each graphics state that may reference the device.
+ */
 
 #endif /* gdevcmap_INCLUDED */
