@@ -1033,7 +1033,7 @@ void *gp_enumerate_fonts_init(gs_memory_t *mem)
     return (void *)state;
 }
                                    
-int gp_enumerate_fonts_next(void *enum_state, char **name, char **path)
+int gp_enumerate_fonts_next(void *enum_state, char **fontname, char **path)
 {
     fontenum_t *state = (fontenum_t *)enum_state;
 	FMFontIterator *Iterator = &state->Iterator;
@@ -1044,7 +1044,7 @@ int gp_enumerate_fonts_next(void *enum_state, char **name, char **path)
 	FSSpec FontContainer;
 	char type[5];
 	char fontpath[256];
-	char *fontname;
+	char *psname;
 	reftable *table;
 	OSStatus result;
     	
@@ -1061,11 +1061,11 @@ int gp_enumerate_fonts_next(void *enum_state, char **name, char **path)
  	FMGetFontFamilyInstanceFromFont(Font, &FontFamily, &Style);
     if (state->name) free (state->name);
     
-    fontname = makePSFontName(FontFamily, Style);
-    if (fontname == NULL) {
+    psname = makePSFontName(FontFamily, Style);
+    if (psname == NULL) {
 		state->name = strdup("GSPlaceHolder");
 	} else {
-		state->name = fontname;
+		state->name = psname;
 	}
     	
 	result = FMGetFontContainer(Font, &FontContainer);
@@ -1096,10 +1096,10 @@ int gp_enumerate_fonts_next(void *enum_state, char **name, char **path)
         state->path = strdup(fontpath);
     }
     
-    *name = state->name;
+    *fontname = state->name;
     *path = state->path;
 
-	dlprintf2("nativefontenum: returning '%s'\n in '%s'\n", *name, *path);
+	dlprintf2("nativefontenum: returning '%s'\n in '%s'\n", *fontname, *path);
 	state->count += 1;
 	//return (state->count < 24) ? 1 : 0;
 	return 1;

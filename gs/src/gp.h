@@ -385,7 +385,7 @@ void *gp_enumerate_fonts_init(gs_memory_t *mem);
    are only safe to reference until until the next call.
    Returns 0 when no more fonts are available, a positive value 
    on success, or negative value on error. */
-int gp_enumerate_fonts_next(void *enum_state, char **name, char **path);
+int gp_enumerate_fonts_next(void *enum_state, char **fontname, char **path);
 
 /* clean up and deallocate the iterator */
 void gp_enumerate_fonts_free(void *enum_state);

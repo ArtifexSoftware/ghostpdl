@@ -37,7 +37,7 @@
 
 
 typedef struct fontenum_s {
-	char *name, *path;
+	char *fontname, *path;
 	struct fontenum_s *next;
 } fontenum_t;
 
@@ -49,7 +49,7 @@ z_fontenum(i_ctx_t *i_ctx_p)
     void *enum_state;
     int code = 0;
     int e,elements;
-    char *name, *path;
+    char *fontname, *path;
     fontenum_t *r, *results;
     ref array;
     uint length;
@@ -65,15 +65,15 @@ z_fontenum(i_ctx_t *i_ctx_p)
 
     r = results = gs_malloc(1, sizeof(fontenum_t), "fontenum list");
     elements = 0;
-    while((code = gp_enumerate_fonts_next(enum_state, &name, &path )) > 0) {
-	if (name == NULL || path == NULL) {
+    while((code = gp_enumerate_fonts_next(enum_state, &fontname, &path )) > 0) {
+	if (fontname == NULL || path == NULL) {
 	    gp_enumerate_fonts_free(enum_state);
 	    return_error(e_ioerror);
 	}
 
-	length = strlen(name) + 1;
-	r->name = gs_malloc(length, 1, "native font name");
-	memcpy(r->name, name, length);
+	length = strlen(fontname) + 1;
+	r->fontname = gs_malloc(length, 1, "native font name");
+	memcpy(r->fontname, fontname, length);
 
 	length = strlen(path) + 1;
 	    r->path = gs_malloc(length, 1, "native font path");
@@ -94,11 +94,11 @@ z_fontenum(i_ctx_t *i_ctx_p)
 	
 	    code = ialloc_ref_array(&mapping, a_all | icurrent_space, 2, "native font mapping");
 		
-	    length = strlen(r->name);
+	    length = strlen(r->fontname);
 	    string = ialloc_string(length, "native font name");
 	    if (string == NULL)
 		return_error(e_VMerror);
-	    memcpy(string, r->name, length);
+	    memcpy(string, r->fontname, length);
 	    make_string(&(mapping.value.refs[0]), a_all | icurrent_space, length, string);
 	 	
 	    length = strlen(r->path);
@@ -112,7 +112,7 @@ z_fontenum(i_ctx_t *i_ctx_p)
 	    results = r;
 	    r = r->next;
 
-	    gs_free(results->name, strlen(results->name) + 1, 1, "native font name");
+	    gs_free(results->fontname, strlen(results->fontname) + 1, 1, "native font name");
 	    gs_free(results->path, strlen(results->path) + 1, 1, "native font path");
 	    gs_free(results, 1, sizeof(fontenum_t), "fontenum list");
 	}
