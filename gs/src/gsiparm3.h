@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -17,7 +17,7 @@
  */
 
 /*$Id$ */
-/* LanguageLevel 3 (ImageType 3 & 4) image parameter definition */
+/* ImageType 3 image parameter definition */
 
 #ifndef gsiparm3_INCLUDED
 #  define gsiparm3_INCLUDED
@@ -47,7 +47,6 @@ typedef struct gs_image3_s {
     gs_data_image_t MaskDict;
 } gs_image3_t;
 
-/* We export the GC descriptor because ImageType 4 subclasses it. */
 #define public_st_gs_image3()	/* in gximage3.c */\
   gs_public_st_suffix_add0(st_gs_image3, gs_image3_t, "gs_image3_t",\
     image3_enum_ptrs, image3_reloc_ptrs, st_gs_pixel_image)
