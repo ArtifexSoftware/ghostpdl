@@ -97,6 +97,14 @@ MAKEDLL=1
 EMX=1
 IBMCPP=0
 
+# Setting BUILD_X11=1 builds X11 client using Xfree86
+BUILD_X11=0
+!if $(BUILD_X11)
+X11INCLUDE=-I$(X11ROOT)\XFree86\include
+X11LIBS=$(X11ROOT)\XFree86\lib\Xt.lib $(X11ROOT)\XFree86\lib\X11.lib 
+MT_OPT=-Zmtd
+!endif
+
 # Define the name of the executable file.
 
 GS=gsos2
@@ -160,7 +168,7 @@ ASM=
 #   so if you want to use the current directory, use an explicit '.'.
 
 !if $(EMX)
-COMP=gcc
+COMP=gcc $(X11INCLUDE)
 COMPBASE=\emx
 EMXPATH=/emx
 COMPDIR=$(COMPBASE)\bin
@@ -382,7 +390,7 @@ CGDB=
 
 !if $(MAKEDLL)
 !if $(EMX)
-CDLL=-Zdll -Zso -Zsys -Zomf -D__DLL__
+CDLL=-Zdll -Zso -Zsys -Zomf $(MT_OPT) -D__DLL__
 !endif
 !if $(IBMCPP)
 CDLL=/Gd- /Ge- /Gm+ /Gs+ /D__DLL__
@@ -438,8 +446,11 @@ DEVICE_DEVS=$(DD)os2pm.dev $(DD)os2dll.dev $(DD)os2prn.dev
 !else
 DEVICE_DEVS=$(DD)os2pm.dev
 !endif
-#DEVICE_DEVS1=$(DD)x11.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev $(DD)x11mono.dev
+!if $(BUILD_X11)
+DEVICE_DEVS1=$(DD)x11.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev $(DD)x11gray2.dev $(DD)x11gray4.dev $(DD)x11mono.dev
+!else
 DEVICE_DEVS1=
+!endif
 DEVICE_DEVS2=$(DD)epson.dev $(DD)eps9high.dev $(DD)eps9mid.dev $(DD)epsonc.dev $(DD)ibmpro.dev
 DEVICE_DEVS3=$(DD)deskjet.dev $(DD)djet500.dev $(DD)laserjet.dev $(DD)ljetplus.dev $(DD)ljet2p.dev
 DEVICE_DEVS4=$(DD)cdeskjet.dev $(DD)cdjcolor.dev $(DD)cdjmono.dev $(DD)cdj550.dev
@@ -498,7 +509,9 @@ $(GLOBJ)gp_os2.$(OBJ): $(GLSRC)gp_os2.c\
 
 # -------------------------- Auxiliary programs --------------------------- #
 
-CCAUX=$(COMPDIR)\$(COMP) $(CO)
+#CCAUX=$(COMPDIR)\$(COMP) $(CO)
+# emx 0.9d (gcc 2.8.1) crashes when compiling genarch.c with optimizer
+CCAUX=$(COMPDIR)\$(COMP)
 
 $(ECHOGS_XE): $(GLSRCDIR)\echogs.c
 !if $(EMX)
@@ -585,7 +598,7 @@ GS_ALL=$(GLOBJ)gsdll.$(OBJ) $(INT_ALL) $(INTASM)\
 
 $(GS_XE): $(BINDIR)\$(GSDLL).dll $(GLSRC)dpmainc.c $(gsdll_h) $(gsdllos2_h) $(GLSRC)gsos2.rc $(GLOBJ)gscdefs.$(OBJ)
 !if $(EMX)
-	$(COMPDIR)\gcc $(CGDB) $(CO) -Zomf -I$(GLSRCDIR) -I$(GLOBJDIR) -o$(GS_XE) $(GLSRC)dpmainc.c $(GLOBJ)gscdefs.$(OBJ) $(GLSRC)gsos2.def
+	$(COMPDIR)\$(COMP) $(CGDB) $(CO) -Zomf $(MT_OPT) -I$(GLSRCDIR) -I$(GLOBJDIR) -o$(GS_XE) $(GLSRC)dpmainc.c $(GLOBJ)gscdefs.$(OBJ) $(GLSRC)gsos2.def
 !endif
 !if $(IBMCPP)
 	$(CCAUX) -I$(GLSRCDIR) -I$(GLOBJDIR) /Fe$(GX_XE) $(GLSRC)dpmainc.c $(GLOBJ)gscdefs.$(OBJ)
@@ -597,7 +610,7 @@ $(GLOBJ)gsdll.$(OBJ): $(GLSRC)gsdll.c $(gsdll_h) $(ghost_h) $(gscdefs_h)
 
 $(BINDIR)\$(GSDLL).dll: $(GS_ALL) $(ALL_DEVS) $(GLOBJ)gsdll.$(OBJ)
 !if $(EMX)
-	LINK386 /DEBUG $(COMPBASE)\lib\dll0.obj $(COMPBASE)\lib\end.lib @$(ld_tr) $(GLOBJ)gsdll.obj, $(BINDIR)\$(GSDLL).dll, ,$(COMPBASE)\lib\gcc.lib $(COMPBASE)\lib\st\c.lib $(COMPBASE)\lib\st\c_dllso.lib $(COMPBASE)\lib\st\sys.lib $(COMPBASE)\lib\c_alias.lib $(COMPBASE)\lib\os2.lib, $(GLSRC)gsdll2.def
+	LINK386 /DEBUG $(COMPBASE)\lib\dll0.obj $(COMPBASE)\lib\end.lib @$(ld_tr) $(GLOBJ)gsdll.obj, $(BINDIR)\$(GSDLL).dll, ,$(X11LIBS) $(COMPBASE)\lib\gcc.lib $(COMPBASE)\lib\st\c.lib $(COMPBASE)\lib\st\c_dllso.lib $(COMPBASE)\lib\st\sys.lib $(COMPBASE)\lib\c_alias.lib $(COMPBASE)\lib\os2.lib, $(GLSRC)gsdll2.def
 !endif
 !if $(IBMCPP)
 	LINK386 /NOE /DEBUG @$(ld_tr) $(GLOBJ)gsdll.obj, $(BINDIR)\$(GSDLL).dll, , , $(GLSRC)gsdll2.def
@@ -609,7 +622,7 @@ GS_ALL=$(GLOBJ)gs.$(OBJ) $(INT_ALL) $(INTASM)\
   $(LIB_ALL) $(LIBCTR) $(ld_tr) $(GLGEN)lib.tr $(GLOBJ)$(GS).res $(ICONS)
 
 $(GS_XE): $(GS_ALL) $(ALL_DEVS)
-	$(COMPDIR)\gcc $(CGDB) -I$(GLSRCDIR) -o $(GLOBJ)$(GS) $(GLOBJ)gs.$(OBJ) @$(ld_tr) $(INTASM) -lm
+	$(COMPDIR)\$(COMP) $(CGDB) -I$(GLSRCDIR) -o $(GLOBJ)$(GS) $(GLOBJ)gs.$(OBJ) @$(ld_tr) $(INTASM) -lm
 	$(COMPDIR)\emxbind -r$(GLOBJ)$(GS).res $(COMPDIR)\emxl.exe $(GLOBJ)$(GS) $(GS_XE) -ac
 	del $(GLOBJ)$(GS)
 !endif
@@ -629,12 +642,12 @@ $(GLOBJ)$(GS).res: $(GLSRC)$(GS).rc $(GLOBJ)gsos2.ico
 # PM driver program
 
 $(GLOBJ)gspmdrv.o: $(GLSRC)gspmdrv.c $(GLSRC)gspmdrv.h
-	$(COMPDIR)\gcc $(CGDB) $(CO) -I$(GLSRCDIR) -o $(GLOBJ)gspmdrv.o -c $(GLSRC)gspmdrv.c
+	$(COMPDIR)\$(COMP) $(CGDB) $(CO) -I$(GLSRCDIR) -o $(GLOBJ)gspmdrv.o -c $(GLSRC)gspmdrv.c
 
 $(GLOBJ)gspmdrv.res: $(GLSRC)gspmdrv.rc $(GLSRC)gspmdrv.h $(GLOBJ)gspmdrv.ico
 	rc -i $(COMPBASE)\include -i $(GLSRCDIR) -i $(GLOBJDIR) -r $(GLSRC)gspmdrv.rc $(GLOBJ)gspmdrv.res
 
 $(BINDIR)\gspmdrv.exe: $(GLOBJ)gspmdrv.o $(GLOBJ)gspmdrv.res $(GLSRC)gspmdrv.def
-	$(COMPDIR)\gcc $(CGDB) $(CO) -o $(GLOBJ)gspmdrv $(GLOBJ)gspmdrv.o 
+	$(COMPDIR)\$(COMP) $(CGDB) $(CO) -o $(GLOBJ)gspmdrv $(GLOBJ)gspmdrv.o 
 	$(COMPDIR)\emxbind -p -r$(GLOBJ)gspmdrv.res -d$(GLSRC)gspmdrv.def $(COMPDIR)\emxl.exe $(GLOBJ)gspmdrv $(BINDIR)\gspmdrv.exe
 	del $(GLOBJ)gspmdrv
