@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1993, 1994, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1993, 1994, 1996, 2002 Aladdin Enterprises.  All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -100,13 +100,18 @@ struct gx_xfont_procs_s {
     /*
      * Convert a character name to an xglyph code.  encoding_index is
      * actually a gs_encoding_index_t.  Either chr or glyph may be absent
-     * (gs_no_char/glyph), but not both.
+     * (gs_no_char/glyph), but not both.  glyph_name is the glyph's
+     * (string) name if the glyph is not GS_NO_GLYPH and is not a CID.
      */
-    /* OBSOLETE as of release 3.43, but still supported. */
+    /*
+     * This procedure was deprecated as of release 3.43, but still
+     * supported.  In release 7.21, the argument list was changed, and the
+     * procedure is no longer deprecated.
+     */
 
 #define xfont_proc_char_xglyph(proc)\
   gx_xglyph proc(P5(gx_xfont *xf, gs_char chr, int encoding_index,\
-    gs_glyph glyph, gs_proc_glyph_name((*glyph_name))))
+    gs_glyph glyph, const gs_const_string *glyph_name))
     xfont_proc_char_xglyph((*char_xglyph));
 
     /* Get the metrics for a character. */
@@ -134,15 +139,8 @@ struct gx_xfont_procs_s {
   int proc(P2(gx_xfont *xf, gs_memory_t *mem))
     xfont_proc_release((*release));
 
-    /* Convert a character name to an xglyph code. */
-    /* This is the same as char_xglyph, except that */
-    /* it takes a vector of callback procedures. */
-    /* (New in release 3.43.) */
-
-#define xfont_proc_char_xglyph2(proc)\
-  gx_xglyph proc(P5(gx_xfont *xf, gs_char chr, int encoding_index,\
-    gs_glyph glyph, const gx_xfont_callbacks *callbacks))
-    xfont_proc_char_xglyph2((*char_xglyph2));
+    /* (There was a char_xglyph2 procedure here, added in release 3.43, */
+    /* removed in 7.21.) */
 
 };
 

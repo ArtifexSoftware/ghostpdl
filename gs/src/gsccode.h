@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 2000, 2002 Aladdin Enterprises.  All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -54,23 +54,6 @@ typedef ulong gs_glyph;
 /* Define a procedure for marking a gs_glyph during garbage collection. */
 typedef bool (*gs_glyph_mark_proc_t)(gs_glyph glyph, void *proc_data);
 
-/* Define a procedure for mapping a gs_glyph to its (string) name. */
-/*
- * NOTE: As of release 6.21, his procedure is obsolete and deprecated,
- * but it must be supported for backward compatibility for the xfont
- * interface.
- */
-#define gs_proc_glyph_name(proc)\
-  const char *proc(P2(gs_glyph, uint *))
-typedef gs_proc_glyph_name((*gs_proc_glyph_name_t));
-/*
- * This is the updated procedure, which accepts closure data and also can
- * return an error code.
- */
-#define gs_glyph_name_proc(proc)\
-  int proc(P3(gs_glyph glyph, gs_const_string *pstr, void *proc_data))
-typedef gs_glyph_name_proc((*gs_glyph_name_proc_t));
-
 /* Define the indices for known encodings. */
 typedef enum {
     ENCODING_INDEX_UNKNOWN = -1,
@@ -108,18 +91,11 @@ typedef enum gs_glyph_space_s {
 } gs_glyph_space_t;
 
 /*
- * Define a procedure for accessing the known encodings.  Note that if
- * there is a choice, this procedure always returns a glyph name, not a
- * glyph index.
+ * Define a procedure for mapping a glyph to its (string) name.  This is
+ * currently used only for CMaps: it is *not* the same as the glyph_name
+ * procedure in fonts.
  */
-#define gs_proc_known_encode(proc)\
-  gs_glyph proc(P2(gs_char, int))
-typedef gs_proc_known_encode((*gs_proc_known_encode_t));
-
-/* Define the callback procedure vector for character to xglyph mapping. */
-typedef struct gx_xfont_callbacks_s {
-    gs_proc_glyph_name((*glyph_name));
-    gs_proc_known_encode((*known_encode));
-} gx_xfont_callbacks;
+typedef int (*gs_glyph_name_proc_t)(gs_glyph glyph, gs_const_string *pstr,
+				    void *proc_data);
 
 #endif /* gsccode_INCLUDED */

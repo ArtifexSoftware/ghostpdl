@@ -1032,7 +1032,11 @@ pdf_add_encoding_difference(gx_device_pdf *pdev, pdf_font_t *ppf, int chr,
      */
     pdf_glyph_widths_t widths;
     int code = pdf_glyph_widths(ppf, glyph, (gs_font *)bfont, &widths);
+    gs_const_string gstr;
 
+    if (code < 0)
+	return code;
+    code = bfont->procs.glyph_name((gs_font *)bfont, glyph, &gstr);
     if (code < 0)
 	return code;
     if (pdiff == 0) {
@@ -1046,8 +1050,7 @@ pdf_add_encoding_difference(gx_device_pdf *pdev, pdf_font_t *ppf, int chr,
 	ppf->Differences = pdiff;
     }
     pdiff[chr].glyph = glyph;
-    pdiff[chr].str.data = (const byte *)
-	bfont->procs.callbacks.glyph_name(glyph, &pdiff[chr].str.size);
+    pdiff[chr].str = gstr;
     ppf->Widths[chr] = widths.Width;
     ppf->real_widths[chr] = widths.real_width;
     if (code == 0)

@@ -20,6 +20,7 @@
 #include "string_.h"
 #include "ghost.h"
 #include "gsstruct.h"		/* for iscan.h */
+#include "gscencs.h"
 #include "gsmatrix.h"
 #include "gxfont.h"		/* for ifont.h */
 #include "ccfont.h"
@@ -124,9 +125,13 @@ cfont_put_next(ref * pdict, key_enum * kep, const ref * pvalue)
     }
     if (kp->num_enc_keys) {
 	const charindex *skp = kp->enc_keys++;
+	gs_glyph glyph = gs_c_known_encode((gs_char)skp->charx, skp->encx);
+	gs_const_string gstr;
 
-	code = array_get(&registered_Encoding(skp->encx), (long)(skp->charx),
-			 &kname);
+	if (glyph == GS_NO_GLYPH)
+	    code = gs_note_error(e_undefined);
+	else if ((code = gs_c_glyph_name(glyph, &gstr)) >= 0)
+	    code = name_ref(gstr.data, gstr.size, &kname, 0);
 	kp->num_enc_keys--;
     } else {			/* must have kp->num_str_keys != 0 */
 	code = cfont_next_string(&kep->strings);

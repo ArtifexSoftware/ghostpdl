@@ -16,10 +16,12 @@
 
 /* $Id$ */
 /* Fast case character cache routines for Ghostscript library */
+#include "memory_.h"
 #include "gx.h"
 #include "gpcheck.h"
 #include "gserrors.h"
 #include "gsstruct.h"
+#include "gscencs.h"
 #include "gxfixed.h"
 #include "gxmatrix.h"
 #include "gzstate.h"
@@ -126,7 +128,7 @@ gx_lookup_cached_char(const gs_font * pfont, const cached_fm_pair * pair,
 /* Return the cached_char or 0. */
 cached_char *
 gx_lookup_xfont_char(const gs_state * pgs, cached_fm_pair * pair,
-gs_char chr, gs_glyph glyph, const gx_xfont_callbacks * callbacks, int wmode)
+		     gs_char chr, gs_glyph glyph, int wmode)
 {
     gs_font *font = pair->font;
     int enc_index;
@@ -151,20 +153,25 @@ gs_char chr, gs_glyph glyph, const gx_xfont_callbacks * callbacks, int wmode)
 	return NULL;
     {
 	const gx_xfont_procs *procs = xf->common.procs;
+	gs_const_string gstr;
+	int code = font->procs.glyph_name(font, glyph, &gstr);
 
-	if (procs->char_xglyph2 == 0) {		/* The xfont can't recognize reencoded fonts. */
-	    /* Use the registered encoding only if this glyph */
-	    /* is the same as the one in the registered encoding. */
-	    if (enc_index >= 0 &&
-		(*callbacks->known_encode) (chr, enc_index) != glyph
+	if (code < 0)
+	    return NULL;
+	if (enc_index >= 0 && ((gs_font_base *)font)->encoding_index < 0) {
+	    /*
+	     * Use the registered encoding only if this glyph
+	     * is the same as the one in the registered encoding.
+	     */
+	    gs_const_string kstr;
+
+	    if (gs_c_glyph_name(gs_c_known_encode(chr, enc_index), &kstr) < 0 ||
+		kstr.size != gstr.size ||
+		memcmp(kstr.data, gstr.data, kstr.size)
 		)
 		enc_index = -1;
-	    xg = (*procs->char_xglyph) (xf, chr, enc_index, glyph,
-					callbacks->glyph_name);
-	} else {		/* The xfont can recognize reencoded fonts. */
-	    xg = (*procs->char_xglyph2) (xf, chr, enc_index, glyph,
-					 callbacks);
 	}
+	xg = procs->char_xglyph(xf, chr, enc_index, glyph, &gstr);
 	if (xg == gx_no_xglyph)
 	    return NULL;
 	if ((*procs->char_metrics) (xf, xg, wmode, &wxy, &bbox) < 0)

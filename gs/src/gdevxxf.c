@@ -261,7 +261,7 @@ sym:	fmp = find_fontmap(fmp, fname, len);
 /* Convert a character name or index to an xglyph code. */
 private gx_xglyph
 x_char_xglyph(gx_xfont * xf, gs_char chr, int encoding_index,
-	      gs_glyph glyph, gs_proc_glyph_name_t glyph_name_proc)
+	      gs_glyph glyph, const gs_const_string *glyph_name)
 {
     const x_xfont *xxf = (x_xfont *) xf;
 

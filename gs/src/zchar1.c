@@ -28,6 +28,7 @@
 #include "gxtype1.h"
 #include "gzstate.h"		/* for path for gs_type1_init */
 				/* (should only be gsstate.h) */
+#include "gscencs.h"
 #include "gspaint.h"		/* for gs_fill, gs_stroke */
 #include "gspath.h"
 #include "gsrect.h"
@@ -854,27 +855,22 @@ private int
 z1_seac_data(gs_font_type1 *pfont, int ccode, gs_glyph *pglyph,
 	     gs_glyph_data_t *pgd)
 {
-    ref std_glyph;
-    int code = array_get(&StandardEncoding, (long)ccode, &std_glyph);
+    gs_glyph glyph = gs_c_known_encode((gs_char)ccode,
+				       ENCODING_INDEX_STANDARD);
+    int code;
+    gs_const_string gstr;
+    ref rglyph;
 
-    if (code < 0)
+    if (glyph == GS_NO_GLYPH)
+	return_error(e_rangecheck);
+    if ((code = gs_c_glyph_name(glyph, &gstr)) < 0 ||
+	(code = name_ref(gstr.data, gstr.size, &rglyph, 0)) < 0
+	)
 	return code;
-    if (pglyph) {
-	switch (r_type(&std_glyph)) {
-	case t_name:
-	    *pglyph = name_index(&std_glyph);
-	    break;
-	case t_integer:
-	    *pglyph = gs_min_cid_glyph + std_glyph.value.intval;
-	    if (*pglyph < gs_min_cid_glyph || *pglyph > gs_max_glyph)
-		*pglyph = gs_no_glyph;
-	    break;
-	default:
-	    return_error(e_typecheck);
-	}
-    }
+    if (pglyph)
+	*pglyph = glyph;
     if (pgd)
-	code = zchar_charstring_data((gs_font *)pfont, &std_glyph, pgd);
+	code = zchar_charstring_data((gs_font *)pfont, &rglyph, pgd);
     return code;
 }
 

@@ -839,7 +839,7 @@ show_proceed(gs_show_enum * penum)
 			    goto no_cache;
 			if (pfont->BitmapWidths) {
 			    cc = gx_lookup_xfont_char(pgs, pair, chr,
-				     glyph, &pfont->procs.callbacks, wmode);
+				     glyph, wmode);
 			    if (cc == 0)
 				goto no_cache;
 			} else {
@@ -851,7 +851,7 @@ show_proceed(gs_show_enum * penum)
 			    /* We might have an xfont, but we still */
 			    /* want the scalable widths. */
 			    cc = gx_lookup_xfont_char(pgs, pair, chr,
-				     glyph, &pfont->procs.callbacks, wmode);
+				     glyph, wmode);
 			    /* Render up to the point of */
 			    /* setcharwidth or setcachedevice, */
 			    /* just as for stringwidth. */

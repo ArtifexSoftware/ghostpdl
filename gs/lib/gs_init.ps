@@ -1052,18 +1052,11 @@ end
 /rootfont where { pop /findencoding { .findencoding } def } if
 
 % Define .registerencoding.
-% NOTE: the name registeredencodings is known to (initialized by and shared
-% with) the interpreter.
+% NOTE: This procedure no longer does anything, but it must continue to
+% exist for the sake of toolbin/encs2c.ps.
 /.registerencoding {	% <index> <array> .registerencoding -
-	% Check that the array is indexable.
-	% (It might still be a string, but then the .namestring will fail.)
-  dup 0 0 getinterval pop
-	% Check that all the elements of the array are names.
-  dup { .namestring pop } forall
-	% Do the store.
-  //registeredencodings 2 index 2 index readonly put pop pop
+  pop pop
 } bind odef
-systemdict /registeredencodings .undef
 
 % Load StandardEncoding.
 %% Replace 1 (gs_std_e.ps)

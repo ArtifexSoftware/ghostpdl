@@ -410,7 +410,7 @@ $(PSOBJ)zvmem.$(OBJ) : $(PSSRC)zvmem.c $(OP)\
 ### Graphics operators
 
 $(PSOBJ)zbfont.$(OBJ) : $(PSSRC)zbfont.c $(OP) $(memory__h) $(string__h)\
- $(gsmatrix_h) $(gxdevice_h) $(gxfixed_h) $(gxfont_h)\
+ $(gscencs_h) $(gsmatrix_h) $(gxdevice_h) $(gxfixed_h) $(gxfont_h)\
  $(bfont_h) $(ialloc_h) $(idict_h) $(idparam_h) $(ilevel_h)\
  $(iname_h) $(interp_h) $(istruct_h) $(ipacked_h) $(store_h)
 	$(PSCC) $(PSO_)zbfont.$(OBJ) $(C_) $(PSSRC)zbfont.c
@@ -721,7 +721,7 @@ $(PSD)psf1read.dev : $(INT_MAK) $(ECHOGS_XE) $(psf1read_) $(GLD)seexec.dev
 	$(ADDMOD) $(PSD)psf1read -ps gs_type1
 
 $(PSOBJ)zchar1.$(OBJ) : $(PSSRC)zchar1.c $(OP) $(memory__h)\
- $(gspaint_h) $(gspath_h) $(gsrect_h) $(gsstruct_h)\
+ $(gscencs_h) $(gspaint_h) $(gspath_h) $(gsrect_h) $(gsstruct_h)\
  $(gxdevice_h) $(gxfixed_h) $(gxmatrix_h)\
  $(gxfont_h) $(gxfont1_h) $(gxtype1_h) $(gzstate_h)\
  $(estack_h) $(ialloc_h) $(ichar_h) $(ichar1_h) $(icharout_h)\
@@ -952,7 +952,7 @@ $(PSD)ccfonts.dev : $(TOP_MAKEFILES) $(INT_MAK)\
 	$(ADDMOD) $(PSD)ccfonts -ps $(ccfonts_ps)
 
 $(PSOBJ)iccfont.$(OBJ) : $(PSSRC)iccfont.c $(GH) $(string__h)\
- $(gsmatrix_h) $(gsstruct_h) $(gxfont_h)\
+ $(gscencs_h) $(gsmatrix_h) $(gsstruct_h) $(gxfont_h)\
  $(ccfont_h) $(errors_h)\
  $(ialloc_h) $(idict_h) $(ifont_h) $(iname_h) $(isave_h) $(iutil_h)\
  $(oper_h) $(ostack_h) $(store_h) $(stream_h) $(strimpl_h) $(sfilter_h) $(iscan_h)

@@ -283,6 +283,9 @@ $(GLOBJ)vdtrace.$(OBJ) : $(GLSRC)vdtrace.c $(math__h)\
 gsalpha_h=$(GLSRC)gsalpha.h
 gsccode_h=$(GLSRC)gsccode.h
 gsccolor_h=$(GLSRC)gsccolor.h $(gsstype_h)
+# gscedata.[ch] are generated automatically by lib/encs2c.ps.
+gscedata_h=$(GLSRC)gscedata.h
+gscencs_h=$(GLSRC)gscencs.h $(stdpre_h) $(gstypes_h) $(gsccode_h)
 gsclipsr_h=$(GLSRC)gsclipsr.h
 gscsel_h=$(GLSRC)gscsel.h
 gscolor1_h=$(GLSRC)gscolor1.h
@@ -500,7 +503,7 @@ $(GLOBJ)gxbcache.$(OBJ) : $(GLSRC)gxbcache.c $(GX) $(memory__h)\
 	$(GLCC) $(GLO_)gxbcache.$(OBJ) $(C_) $(GLSRC)gxbcache.c
 
 $(GLOBJ)gxccache.$(OBJ) : $(GLSRC)gxccache.c $(GXERR) $(gpcheck_h)\
- $(gscspace_h) $(gsimage_h) $(gsstruct_h)\
+ $(gscencs_h) $(gscspace_h) $(gsimage_h) $(gsstruct_h)\
  $(gxchar_h) $(gxdevice_h) $(gxdevmem_h) $(gxfcache_h)\
  $(gxfixed_h) $(gxfont_h) $(gxhttile_h) $(gxmatrix_h) $(gxxfont_h)\
  $(gzstate_h) $(gzpath_h) $(gzcpath_h)
@@ -657,6 +660,15 @@ $(GLOBJ)gxstroke.$(OBJ) : $(GLSRC)gxstroke.c $(GXERR) $(math__h) $(gpcheck_h)\
 $(GLOBJ)gsalpha.$(OBJ) : $(GLSRC)gsalpha.c $(GX)\
  $(gsalpha_h) $(gxdcolor_h) $(gzstate_h)
 	$(GLCC) $(GLO_)gsalpha.$(OBJ) $(C_) $(GLSRC)gsalpha.c
+
+# gscedata.[ch] are generated automatically by lib/encs2c.ps.
+$(GLOBJ)gscedata.$(OBJ) : $(GLSRC)gscedata.c\
+ $(stdpre_h) $(gstypes_h) $(gscedata_h)
+	$(GLCC) $(GLO_)gscedata.$(OBJ) $(C_) $(GLSRC)gscedata.c
+
+$(GLOBJ)gscencs.$(OBJ) : $(GLSRC)gscencs.c\
+ $(memory__h) $(gscedata_h) $(gscencs_h) $(gserror_h) $(gserrors_h)
+	$(GLCC) $(GLO_)gscencs.$(OBJ) $(C_) $(GLSRC)gscencs.c
 
 $(GLOBJ)gschar.$(OBJ) : $(GLSRC)gschar.c $(GXERR)\
  $(gscoord_h) $(gsmatrix_h) $(gsstruct_h)\
@@ -971,8 +983,8 @@ LIB1s=$(GLOBJ)gsalloc.$(OBJ) $(GLOBJ)gsalpha.$(OBJ)
 LIB2s=$(GLOBJ)gsbitcom.$(OBJ) $(GLOBJ)gsbitops.$(OBJ) $(GLOBJ)gsbittab.$(OBJ)
 # Note: gschar.c is no longer required for a standard build;
 # we include it only for backward compatibility for library clients.
-LIB3s=$(GLOBJ)gschar.$(OBJ) $(GLOBJ)gscolor.$(OBJ) $(GLOBJ)gscoord.$(OBJ)
-LIB4s=$(GLOBJ)gscparam.$(OBJ) $(GLOBJ)gscspace.$(OBJ) $(GLOBJ)gscssub.$(OBJ)
+LIB3s=$(GLOBJ)gscedata.$(OBJ) $(GLOBJ)gscencs.$(OBJ) $(GLOBJ)gschar.$(OBJ) $(GLOBJ)gscolor.$(OBJ)
+LIB4s=$(GLOBJ)gscoord.$(OBJ) $(GLOBJ)gscparam.$(OBJ) $(GLOBJ)gscspace.$(OBJ) $(GLOBJ)gscssub.$(OBJ)
 LIB5s=$(GLOBJ)gsdevice.$(OBJ) $(GLOBJ)gsdevmem.$(OBJ) $(GLOBJ)gsdparam.$(OBJ) $(GLOBJ)gsdfilt.$(OBJ)
 LIB6s=$(GLOBJ)gsfname.$(OBJ) $(GLOBJ)gsfont.$(OBJ) $(GLOBJ)gsgdata.$(OBJ)
 LIB7s=$(GLOBJ)gsht.$(OBJ) $(GLOBJ)gshtscr.$(OBJ)
@@ -1876,24 +1888,6 @@ $(GLOBJ)gstype2.$(OBJ) : $(GLSRC)gstype2.c $(GXERR) $(math__h) $(memory__h)\
 # This is not really a library facility, but one piece of interpreter test
 # code uses it.
 
-# C representation of known encodings.
-# gscedata.[ch] are generated automatically by lib/encs2c.ps.
-
-gscedata_h=$(GLSRC)gscedata.h
-gscencs_h=$(GLSRC)gscencs.h $(stdpre_h) $(gstypes_h) $(gsccode_h)
-
-$(GLOBJ)gscedata.$(OBJ) : $(GLSRC)gscedata.c\
- $(stdpre_h) $(gstypes_h) $(gscedata_h)
-	$(GLCC) $(GLO_)gscedata.$(OBJ) $(C_) $(GLSRC)gscedata.c
-
-$(GLOBJ)gscencs.$(OBJ) : $(GLSRC)gscencs.c\
- $(memory__h) $(gscedata_h) $(gscencs_h) $(gserror_h) $(gserrors_h)
-	$(GLCC) $(GLO_)gscencs.$(OBJ) $(C_) $(GLSRC)gscencs.c
-
-cencs_=$(GLOBJ)gscedata.$(OBJ) $(GLOBJ)gscencs.$(OBJ)
-$(GLD)cencs.dev : $(LIB_MAK) $(ECHOGS_XE) $(cencs_)
-	$(SETMOD) $(GLD)cencs $(cencs_)
-
 # Support for PostScript and PDF font writing
 
 gdevpsf_h=$(GLSRC)gdevpsf.h $(gsccode_h) $(gsgdata_h)
@@ -1902,11 +1896,10 @@ psf_1=$(GLOBJ)gdevpsf1.$(OBJ) $(GLOBJ)gdevpsf2.$(OBJ) $(GLOBJ)gdevpsfm.$(OBJ)
 psf_2=$(GLOBJ)gdevpsft.$(OBJ) $(GLOBJ)gdevpsfu.$(OBJ) $(GLOBJ)gdevpsfx.$(OBJ)
 psf_3=$(GLOBJ)spsdf.$(OBJ)
 psf_=$(psf_1) $(psf_2) $(psf_3)
-$(GLD)psf.dev : $(LIB_MAK) $(ECHOGS_XE) $(psf_) $(GLD)cencs.dev
+$(GLD)psf.dev : $(LIB_MAK) $(ECHOGS_XE) $(psf_)
 	$(SETMOD) $(DD)psf $(psf_1)
 	$(ADDMOD) $(DD)psf -obj $(psf_2)
 	$(ADDMOD) $(DD)psf -obj $(psf_3)
-	$(ADDMOD) $(DD)psf -include $(GLD)cencs
 
 $(GLOBJ)gdevpsf1.$(OBJ) : $(GLSRC)gdevpsf1.c $(GXERR) $(memory__h)\
  $(gsccode_h) $(gsmatrix_h)\

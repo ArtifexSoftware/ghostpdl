@@ -156,13 +156,13 @@ cff_string_sid(cff_writer_t *pcw, const byte *data, uint size)
 private int
 cff_glyph_sid(cff_writer_t *pcw, gs_glyph glyph)
 {
-    uint len;
-    const byte *chars = (const byte *)
-	pcw->pfont->procs.callbacks.glyph_name(glyph, &len);
+    gs_const_string str;
+    int code =
+	pcw->pfont->procs.glyph_name((gs_font *)pcw->pfont, glyph, &str);
 
-    if (chars == 0)
-	return_error(gs_error_rangecheck);
-    return cff_string_sid(pcw, chars, len);
+    if (code < 0)
+	return code;
+    return cff_string_sid(pcw, str.data, str.size);
 }
 
 /* ------ Low level ------ */
@@ -1234,11 +1234,12 @@ psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
     for (j = 0; (glyph = gs_c_known_encode((gs_char)j,
 				ENCODING_INDEX_CFFSTRINGS)) != gs_no_glyph;
 	 ++j) {
-	uint size;
-	const byte *str = (const byte *)gs_c_glyph_name(glyph, &size);
+	gs_const_string str;
 	int ignore;
 
-	cff_string_index(&writer.std_strings, str, size, true, &ignore);
+	gs_c_glyph_name(glyph, &str);
+	cff_string_index(&writer.std_strings, str.data, str.size, true,
+			 &ignore);
     }
     cff_string_table_init(&writer.strings, string_items,
 			  countof(string_items));

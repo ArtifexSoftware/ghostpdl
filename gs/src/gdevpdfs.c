@@ -1165,23 +1165,22 @@ glyph_eq(gs_font *font, gs_glyph g1, gs_glyph g2)
      * independently be in either the normal glyph space or the C encoding
      * glyph space.
      */
-    const char *str1;
-    const char *str2;
-    uint len1, len2;
+    gs_const_string str1, str2;
+    int code1, code2;
 
     if (g1 < gs_c_min_std_encoding_glyph) {
 	if (g2 < gs_c_min_std_encoding_glyph)
 	    return g1 == g2;
-	str1 = font->procs.callbacks.glyph_name(g1, &len1);
-	str2 = gs_c_glyph_name(g2, &len2);
+	code1 = font->procs.glyph_name(font, g1, &str1);
+	code2 = gs_c_glyph_name(g2, &str2);
     } else {
 	if (g2 >= gs_c_min_std_encoding_glyph)
 	    return g1 == g2;
-	str1 = gs_c_glyph_name(g1, &len1);
-	str2 = font->procs.callbacks.glyph_name(g2, &len2);
+	code1 = gs_c_glyph_name(g1, &str1);
+	code2 = font->procs.glyph_name(font, g2, &str2);
     }
-    return (str1 != 0 && str2 != 0 && len1 == len2 &&
-	    !memcmp(str1, str2, len1));
+    return (code1 >= 0 && code2 >= 0 && str1.size == str2.size &&
+	    !memcmp(str1.data, str2.data, str1.size));
 }
 
 private int
@@ -1412,10 +1411,11 @@ pdf_encode_glyph(gx_device_pdf *pdev, int chr, gs_glyph glyph,
 	    if (font_glyph == gs_no_glyph)
 		break;
 	    else if (font_glyph >= gs_c_min_std_encoding_glyph) {
-		uint len;
-		const char *str = gs_c_glyph_name(font_glyph, &len);
+		gs_const_string str;
 
-		if (len == 7 && !memcmp(str, ".notdef", 7))
+		if (gs_c_glyph_name(font_glyph, &str) >= 0 &&
+		    str.size == 7 && !memcmp(str.data, ".notdef", 7)
+		    )
 		    break;
 	    } else if (gs_font_glyph_is_notdef(bfont, font_glyph))
 		break;
@@ -1669,12 +1669,12 @@ encoding_find_glyph(gs_font_base *bfont, gs_glyph font_glyph,
     if (font_glyph >= gs_c_min_std_encoding_glyph)
 	find_glyph = font_glyph;
     else {
-	uint len;
-	const char *str = bfont->procs.callbacks.glyph_name(font_glyph, &len);
+	gs_const_string str;
+	int code = bfont->procs.glyph_name((gs_font *)bfont, font_glyph, &str);
 
-	if (str == 0)
+	if (code < 0)
 	    return -1;
-	find_glyph = gs_c_name_glyph(str, len);
+	find_glyph = gs_c_name_glyph(str.data, str.size);
 	if (find_glyph == gs_no_glyph)
 	    return -1;
     }

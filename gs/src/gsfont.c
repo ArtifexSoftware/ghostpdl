@@ -53,13 +53,10 @@ const gs_font_procs gs_font_procs_default = {
     gs_no_enumerate_glyph,
     gs_default_glyph_info,
     gs_no_glyph_outline,
+    gs_no_glyph_name,
     gs_default_init_fstack,
     gs_default_next_char_glyph,
-    gs_no_build_char,
-    {
-	0,			/* glyph_name */
-	0			/* known_encode */
-    }				/* callbacks */
+    gs_no_build_char
 };
 
 private_st_font_dir();
@@ -816,9 +813,8 @@ gs_font_glyph_is_notdef(gs_font_base *bfont, gs_glyph glyph)
 	return false;
     if (glyph >= gs_min_cid_glyph)
 	return (glyph == gs_min_cid_glyph);
-    gnstr.data = (const byte *)
-	bfont->procs.callbacks.glyph_name(glyph, &gnstr.size);
-    return (gnstr.size == 7 && !memcmp(gnstr.data, ".notdef", 7));
+    return (bfont->procs.glyph_name((gs_font *)bfont, glyph, &gnstr) >= 0 &&
+	    gnstr.size == 7 && !memcmp(gnstr.data, ".notdef", 7));
 }
 
 /* Dummy character encoding procedure */
@@ -895,6 +891,13 @@ gs_default_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 int
 gs_no_glyph_outline(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 		    gx_path *ppath)
+{
+    return_error(gs_error_undefined);
+}
+
+/* Dummy glyph name procedure */
+int
+gs_no_glyph_name(gs_font *font, gs_glyph glyph, gs_const_string *pstr)
 {
     return_error(gs_error_undefined);
 }

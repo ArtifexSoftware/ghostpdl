@@ -17,6 +17,7 @@
 /* $Id$ */
 /* Write an embedded Type 1 font */
 #include "memory_.h"
+#include <assert.h>
 #include "gx.h"
 #include "gserrors.h"
 #include "gsccode.h"
@@ -126,8 +127,7 @@ write_Encoding(stream *s, gs_font_type1 *pfont, int options,
 		    gs_glyph glyph =
 			(*pfont->procs.encode_char)
 			((gs_font *)pfont, (gs_char)i, GLYPH_SPACE_NAME);
-		    const char *namestr;
-		    uint namelen;
+		    gs_const_string namestr;
 
 		    if (subset_glyphs && subset_size) {
 			/*
@@ -140,11 +140,11 @@ write_Encoding(stream *s, gs_font_type1 *pfont, int options,
 			    continue;
 		    }
 		    if (glyph != gs_no_glyph && glyph != notdef &&
-			(namestr = (*pfont->procs.callbacks.glyph_name)
-			 (glyph, &namelen)) != 0
+			pfont->procs.glyph_name((gs_font *)pfont, glyph,
+						&namestr) >= 0
 			) {
 			pprintd1(s, "dup %d /", (int)i);
-			stream_write(s, namestr, namelen);
+			stream_write(s, namestr.data, namestr.size);
 			stream_puts(s, " put\n");
 		    }
 		}
@@ -297,12 +297,13 @@ write_Private(stream *s, gs_font_type1 *pfont,
 	    if (code == 0 &&
 		(code = pdata->procs.glyph_data(pfont, glyph, &gdata)) >= 0
 		) {
-		uint gssize;
-		const char *gstr =
-		    (*pfont->procs.callbacks.glyph_name)(glyph, &gssize);
+		gs_const_string gstr;
+		int code;
 
+		code = pfont->procs.glyph_name((gs_font *)pfont, glyph, &gstr);
+		assert(code >= 0);
 		stream_puts(s, "/");
-		stream_write(s, gstr, gssize);
+		stream_write(s, gstr.data, gstr.size);
 		pprintd1(s, " %d -| ", gdata.bits.size);
 		write_CharString(s, gdata.bits.data, gdata.bits.size);
 		stream_puts(s, " |-\n");

@@ -17,6 +17,7 @@
 /* $Id$ */
 /* Write an embedded TrueType font */
 #include "memory_.h"
+#include <assert.h>
 #include <stdlib.h>		/* for qsort */
 #include "gx.h"
 #include "gscencs.h"
@@ -169,11 +170,12 @@ mac_glyph_index(gs_font *font, int ch, gs_const_string *pstr)
 {
     gs_glyph glyph = font->procs.encode_char(font, (gs_char)ch,
 					     GLYPH_SPACE_NAME);
+    int code;
 
     if (glyph == gs_no_glyph)
 	return 0;		/* .notdef */
-    pstr->data = (const byte *)
-	font->procs.callbacks.glyph_name(glyph, &pstr->size);
+    code = font->procs.glyph_name(font, glyph, pstr);
+    assert(code >= 0);
     if (glyph < gs_min_cid_glyph) {
 	gs_char mac_char;
 	gs_glyph mac_glyph;
@@ -189,7 +191,8 @@ mac_glyph_index(gs_font *font, int ch, gs_const_string *pstr)
 	mac_glyph = gs_c_known_encode(mac_char, ENCODING_INDEX_MACGLYPH);
 	if (mac_glyph == gs_no_glyph)
 	    return -1;
-	mstr.data = (const byte *)gs_c_glyph_name(mac_glyph, &mstr.size);
+	code = gs_c_glyph_name(mac_glyph, &mstr);
+	assert(code >= 0);
 	if (!bytes_compare(pstr->data, pstr->size, mstr.data, mstr.size))
 	    return (int)mac_char;
     }
@@ -799,12 +802,15 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
     {
 	byte *tab = &tables[numTables * 16];
 
-	offset = put_table(tab, "glyf", glyf_checksum, offset, glyf_length);
-	tab += 16;
+	if (!writing_stripped) {
+	    offset = put_table(tab, "glyf", glyf_checksum,
+			       offset, glyf_length);
+	    tab += 16;
 
-	offset = put_table(tab, "loca", loca_checksum[indexToLocFormat],
-			   offset, loca_length);
-	tab += 16;
+	    offset = put_table(tab, "loca", loca_checksum[indexToLocFormat],
+			       offset, loca_length);
+	    tab += 16;
+	}
 
 	if (!have_cmap) {
 	    cmap_length = size_cmap(font, TT_BIAS, 256,

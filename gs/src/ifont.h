@@ -69,15 +69,6 @@ extern_st(st_font_data);
 #define pfont_data(pfont) ((font_data *)((pfont)->client_data))
 #define pfont_dict(pfont) (&pfont_data(pfont)->dict)
 
-/* Registered encodings, for the benefit of platform fonts, `seac', */
-/* and compiled font initialization. */
-/* This is a t_array ref that points to the encodings. */
-#define registered_Encodings_countof NUM_KNOWN_ENCODINGS
-extern ref registered_Encodings;
-
-#define registered_Encoding(i) (registered_Encodings.value.refs[i])
-#define StandardEncoding registered_Encoding(0)
-
 /* ================Internal procedures shared across files ================ */
 
 /* ---------------- Exported by zchar.c ---------------- */

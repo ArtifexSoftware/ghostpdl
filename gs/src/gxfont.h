@@ -259,6 +259,14 @@ typedef struct gs_font_procs_s {
 	      gx_path *ppath))
     font_proc_glyph_outline((*glyph_outline));
 
+    /*
+     * Return the (string) name of a glyph.
+     */
+
+#define font_proc_glyph_name(proc)\
+  int proc(P3(gs_font *font, gs_glyph glyph, gs_const_string *pstr))
+    font_proc_glyph_name((*glyph_name));
+
     /* ------ Glyph rendering procedures ------ */
 
     /*
@@ -297,11 +305,6 @@ typedef struct gs_font_procs_s {
   int proc(P5(gs_text_enum_t *, gs_state *, gs_font *, gs_char, gs_glyph))
     font_proc_build_char((*build_char));
 
-    /* Callback procedures for external font rasterizers */
-    /* (see gsccode.h for details.) */
-
-    gx_xfont_callbacks callbacks;
-
 } gs_font_procs;
 
 /* Default font-level font procedures in gsfont.c */
@@ -316,6 +319,7 @@ font_proc_encode_char(gs_no_encode_char);
 font_proc_enumerate_glyph(gs_no_enumerate_glyph);
 font_proc_glyph_info(gs_default_glyph_info);
 font_proc_glyph_outline(gs_no_glyph_outline);
+font_proc_glyph_name(gs_no_glyph_name);
 /* Default glyph rendering procedures in gstext.c */
 font_proc_init_fstack(gs_default_init_fstack);
 font_proc_next_char_glyph(gs_default_next_char_glyph);

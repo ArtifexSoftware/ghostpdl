@@ -65,30 +65,25 @@ gs_c_known_encode(gs_char ch, int ei)
 /*
  * Convert a glyph number returned by gs_c_known_encode to a string.
  */
-const char *
-gs_c_glyph_name(gs_glyph g, uint *plen)
+int
+gs_c_glyph_name(gs_glyph glyph, gs_const_string *pstr)
 {
-    uint n = (uint)(g - gs_c_min_std_encoding_glyph);
+    uint n = (uint)(glyph - gs_c_min_std_encoding_glyph);
     uint len = N_LEN(n);
     uint off = N_OFFSET(n);
 
+#ifdef DEBUG
     if (len == 0 || len > gs_c_known_encoding_max_length ||
 	off >= gs_c_known_encoding_offsets[len + 1] -
 	  gs_c_known_encoding_offsets[len] ||
 	off % len != 0
 	)
-	return 0;
-    *plen = len;
-    return &gs_c_known_encoding_chars[gs_c_known_encoding_offsets[len] + off];
-}
-int
-gs_c_glyph_name2(gs_glyph g, gs_const_string *pstr, void *proc_data)
-{
-    pstr->data = (const byte *)gs_c_glyph_name(g, &pstr->size);
-    if (pstr->data != 0)
-	return 0;
-    else
 	return_error(gs_error_rangecheck);
+#endif
+    pstr->data = (const byte *)
+	&gs_c_known_encoding_chars[gs_c_known_encoding_offsets[len] + off];
+    pstr->size = len;
+    return 0;
 }
 
 /*
@@ -96,7 +91,7 @@ gs_c_glyph_name2(gs_glyph g, gs_const_string *pstr, void *proc_data)
  * gs_c_glyph_name), or gs_no_glyph if the glyph name is not known.
  */
 gs_glyph
-gs_c_name_glyph(const char *str, uint len)
+gs_c_name_glyph(const byte *str, uint len)
 {
     if (len == 0 || len > gs_c_known_encoding_max_length)
 	return gs_no_glyph;
@@ -140,33 +135,32 @@ gs_c_name_glyph(const char *str, uint len)
 main()
 {
     gs_glyph g;
-    const char *s;
-    uint len;
+    gs_const_string str;
 
     /* Test with a short name. */
     g = gs_c_known_encode((gs_char)0237, 1); /* caron */
     printf("caron is %u, should be %u\n",
 	   g - gs_c_min_std_encoding_glyph, I_caron);
-    s = gs_c_glyph_name(g, &len);
-    fwrite(s, 1, len, stdout);
+    gs_c_glyph_name(g, &str);
+    fwrite(str.data, 1, str.size, stdout);
     printf(" should be caron\n");
 
     /* Test with a long name. */
     g = gs_c_known_encode((gs_char)0277, 2); /* carriagereturn */
     printf("carriagereturn is %u, should be %u\n",
 	   g - gs_c_min_std_encoding_glyph, I_carriagereturn);
-    s = gs_c_glyph_name(g, &len);
-    fwrite(s, 1, len, stdout);
+    gs_c_glyph_name(g, &str);
+    fwrite(str.data, 1, str.size, stdout);
     printf(" should be carriagereturn\n");
 
     /* Test lookup with 3 kinds of names. */
-    g = gs_c_name_glyph("circlemultiply", 14);
+    g = gs_c_name_glyph((const byte *)"circlemultiply", 14);
     printf("circlemultiply is %u, should be %u\n",
 	   g - gs_c_min_std_encoding_glyph, I_circlemultiply);
-    g = gs_c_name_glyph("numbersign", 10);
+    g = gs_c_name_glyph((const byte *)"numbersign", 10);
     printf("numbersign is %u, should be %u\n",
 	   g - gs_c_min_std_encoding_glyph, I_numbersign);
-    g = gs_c_name_glyph("copyright", 9);
+    g = gs_c_name_glyph((const byte *)"copyright", 9);
     printf("copyright is %u, should be %u\n",
 	   g - gs_c_min_std_encoding_glyph, I_copyright);
 

@@ -48,18 +48,17 @@ extern const gs_glyph gs_c_min_std_encoding_glyph;
  * Encode a character in a known encoding.  The only use for glyph numbers
  * returned by this procedure is to pass them to gs_c_glyph_name.
  */
-gs_proc_known_encode(gs_c_known_encode);
+gs_glyph gs_c_known_encode(gs_char chr, int encoding_index);
 
 /*
  * Convert a glyph number returned by gs_c_known_encode to a string.
  */
-gs_proc_glyph_name(gs_c_glyph_name); /* old procedure */
-gs_glyph_name_proc(gs_c_glyph_name2); /* new procedure */
+int gs_c_glyph_name(gs_glyph glyph, gs_const_string *pstr);
 
 /*
  * Return the glyph number corresponding to a string (the inverse of
  * gs_c_glyph_name), or gs_no_glyph if the glyph name is not known.
  */
-gs_glyph gs_c_name_glyph(const char *str, uint len);
+gs_glyph gs_c_name_glyph(const byte *str, uint len);
 
 #endif /* gscencs_INCLUDED */

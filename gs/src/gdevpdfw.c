@@ -234,14 +234,16 @@ pdf_write_FontDescriptor(gx_device_pdf *pdev, const pdf_font_descriptor_t *pfd)
 
 		stream_puts(s, "/CharSet(");
 		for (i = 0; i < subset_size; ++i) {
-		    uint len;
-		    const char *str = font->procs.callbacks.glyph_name
-			(subset_glyphs[i], &len);
+		    gs_const_string str;
+		    int code =
+			font->procs.glyph_name(font, subset_glyphs[i], &str);
 
 		    /* Don't include .notdef. */
-		    if (bytes_compare((const byte *)str, len,
-				      (const byte *)".notdef", 7))
-			pdf_put_name(pdev, (const byte *)str, len);
+		    if (code >= 0 &&
+			bytes_compare(str.data, str.size,
+				      (const byte *)".notdef", 7)
+			)
+			pdf_put_name(pdev, str.data, str.size);
 		}
 		stream_puts(s, ")\n");
 	    }

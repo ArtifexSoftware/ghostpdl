@@ -21,6 +21,7 @@
 #include "ghost.h"
 #include "oper.h"
 #include "gxfixed.h"
+#include "gscencs.h"
 #include "gsmatrix.h"
 #include "gxdevice.h"
 #include "gxfont.h"
@@ -30,35 +31,14 @@
 #include "idparam.h"
 #include "ilevel.h"
 #include "iname.h"
+#include "inamedef.h"		/* for inlining name_index */
 #include "interp.h"		/* for initial_enter_name */
 #include "ipacked.h"
 #include "istruct.h"
 #include "store.h"
 
-/* Registered encodings.  See ifont.h for documentation. */
-ref registered_Encodings;
-private ref *const registered_Encodings_p = &registered_Encodings;
-
 /* Structure descriptor */
 public_st_font_data();
-
-/* Initialize the font building operators */
-private int
-zbfont_init(i_ctx_t *i_ctx_p)
-{
-    /* Initialize the registered Encodings. */
-    int i;
-
-    ialloc_ref_array(&registered_Encodings, a_all,
-		     registered_Encodings_countof,
-		     "registered_Encodings");
-    for (i = 0; i < registered_Encodings_countof; i++)
-	make_empty_array(&registered_Encoding(i), 0);
-    initial_enter_name("registeredencodings", &registered_Encodings);
-    return gs_register_ref_root(imemory, NULL,
-				(void **)&registered_Encodings_p,
-				"registered_Encodings");
-}
 
 /* <string|name> <font_dict> .buildfont3 <string|name> <font> */
 /* Build a type 3 (user-defined) font. */
@@ -95,29 +75,9 @@ zfont_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t ignored)
     return (gs_glyph)name_index(&cname);
 }
 
-/* Encode a character in a known encoding. */
-private gs_glyph
-zfont_known_encode(gs_char chr, int encoding_index)
-{
-    ulong index = chr;		/* work around VAX widening bug */
-    ref cname;
-    int code;
-
-    if (encoding_index < 0)
-	return gs_no_glyph;
-    code = array_get(&registered_Encoding(encoding_index),
-		     (long)index, &cname);
-    if (code < 0 || !r_has_type(&cname, t_name))
-	return gs_no_glyph;
-    return (gs_glyph) name_index(&cname);
-}
-
 /* Get the name of a glyph. */
-/* The following typedef is needed to work around a bug in */
-/* some AIX C compilers. */
-typedef const char *const_chars;
-private const_chars
-zfont_glyph_name(gs_glyph index, uint * plen)
+private int
+zfont_glyph_name(gs_font *font, gs_glyph index, gs_const_string *pstr)
 {
     ref nref, sref;
 
@@ -129,12 +89,13 @@ zfont_glyph_name(gs_glyph index, uint * plen)
 	code = name_ref((const byte *)cid_name, strlen(cid_name),
 			&nref, 1);
 	if (code < 0)
-	    return 0;		/* What can we possibly do here? */
+	    return code;
     } else
 	name_index_ref(index, &nref);
     name_string_ref(&nref, &sref);
-    *plen = r_size(&sref);
-    return (const char *)sref.value.const_bytes;
+    pstr->data = sref.value.const_bytes;
+    pstr->size = r_size(&sref);
+    return 0;
 }
 
 /* ------ Initialization procedure ------ */
@@ -142,7 +103,7 @@ zfont_glyph_name(gs_glyph index, uint * plen)
 const op_def zbfont_op_defs[] =
 {
     {"2.buildfont3", zbuildfont3},
-    op_def_end(zbfont_init)
+    op_def_end(0)
 };
 
 /* ------ Subroutines ------ */
@@ -383,52 +344,59 @@ void
 lookup_gs_simple_font_encoding(gs_font_base * pfont)
 {
     const ref *pfe = &pfont_data(pfont)->Encoding;
-    int index;
+    uint esize = r_size(pfe);
+    int index = -1;
 
-    for (index = NUM_KNOWN_REAL_ENCODINGS; --index >= 0;)
-	if (obj_eq(pfe, &registered_Encoding(index)))
-	    break;
     pfont->encoding_index = index;
-    if (index < 0) {		/* Look for an encoding that's "close". */
+    if (esize <= 256) {
+	/* Look for an encoding that's "close". */
 	int near_index = -1;
-	uint esize = r_size(pfe);
 	uint best = esize / 3;	/* must match at least this many */
+	gs_const_string fstrs[256];
+	int i;
 
-	for (index = NUM_KNOWN_REAL_ENCODINGS; --index >= 0;) {
-	    const ref *pre = &registered_Encoding(index);
-	    bool r_packed = r_has_type(pre, t_shortarray);
-	    bool f_packed = !r_has_type(pfe, t_array);
-	    uint match = esize;
-	    int i;
-	    ref fchar, rchar;
-	    const ref *pfchar = &fchar;
+	/* Get the string names of the glyphs in the font's Encoding. */
+	for (i = 0; i < esize; ++i) {
+	    ref fchar;
 
-	    if (r_size(pre) != esize)
-		continue;
-	    for (i = esize; --i >= 0;) {
-		uint rnidx;
+	    if (array_get(pfe, (long)i, &fchar) < 0 ||
+		!r_has_type(&fchar, t_name)
+		)
+		fstrs[i].data = 0, fstrs[i].size = 0;
+	    else {
+		ref nsref;
 
-		if (r_packed)
-		    rnidx = packed_name_index(pre->value.packed + i);
-		else {
-		    array_get(pre, (long)i, &rchar);
-		    rnidx = name_index(&rchar);
-		}
-		if (f_packed)
-		    array_get(pfe, (long)i, &fchar);
-		else
-		    pfchar = pfe->value.const_refs + i;
-		if (!r_has_type(pfchar, t_name) ||
-		    name_index(pfchar) != rnidx
-		    )
-		    if (--match <= best)
-			break;
+		name_string_ref(&fchar, &nsref);
+		fstrs[i].data = nsref.value.const_bytes;
+		fstrs[i].size = r_size(&nsref);
 	    }
-	    if (match > best)
-		best = match,
-		    near_index = index;
+	}
+	/* Compare them against the known encodings. */
+	for (index = 0; index < NUM_KNOWN_REAL_ENCODINGS; ++index) {
+	    uint match = esize;
+
+	    for (i = esize; --i >= 0;) {
+		gs_const_string rstr;
+
+		gs_c_glyph_name(gs_c_known_encode((gs_char)i, index), &rstr);
+		if (rstr.size == fstrs[i].size &&
+		    !memcmp(rstr.data, fstrs[i].data, rstr.size)
+		    )
+		    continue;
+		if (--match <= best)
+		    break;
+	    }
+	    if (match > best) {
+		best = match;
+		near_index = index;
+		/* If we have a perfect match, stop now. */
+		if (best == esize)
+		    break;
+	    }
 	}
 	index = near_index;
+	if (best == esize)
+	    pfont->encoding_index = index;
     }
     pfont->nearest_encoding_index = index;
 }
@@ -617,8 +585,7 @@ build_gs_sub_font(i_ctx_t *i_ctx_p, const ref *op, gs_font **ppfont,
     pfont->TransformedChar = fbit_use_outlines;
     pfont->WMode = 0;
     pfont->procs.encode_char = zfont_encode_char;
-    pfont->procs.callbacks.glyph_name = zfont_glyph_name;
-    pfont->procs.callbacks.known_encode = zfont_known_encode;
+    pfont->procs.glyph_name = zfont_glyph_name;
     ialloc_set_space(idmemory, space);
     copy_font_name(&pfont->font_name, &fname);
     *ppfont = pfont;

@@ -232,7 +232,7 @@ map_logical_font(HDC hdc, win_xfont * xf)
 /* Convert a character name or index to an xglyph code. */
 gx_xglyph
 win_char_xglyph(gx_xfont * xf, gs_char chr, int encoding_index,
-		gs_glyph glyph, gs_proc_glyph_name_t glyph_name_proc)
+		gs_glyph glyph, const gs_const_string *glyph_name)
 {
     if (chr == gs_no_char)
 	return gx_no_xglyph;	/* can't look up names yet */
