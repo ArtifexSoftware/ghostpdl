@@ -491,6 +491,13 @@ set_page_size(
     int                         code = 0;
     const pcl_paper_size_t *    psize = 0;
 
+    /* oddly the command goes to the next page irrespective of
+       arguments */
+    code = pcl_end_page_if_marked(pcs);
+    if ( code < 0 )
+	return code;
+    pcl_home_cursor(pcs);
+
     for (i = 0; i < countof(paper_sizes); i++) {
         if (tag == paper_sizes[i].tag) {
             psize = &(paper_sizes[i].psize);
@@ -515,17 +522,21 @@ set_paper_source(
 {
     uint            i = uint_arg(pargs);
 
+    /* oddly the command goes to the next page irrespective of
+       arguments */
+    int code = pcl_end_page_if_marked(pcs);
+    if ( code < 0 )
+	return code;
+    pcl_home_cursor(pcs);
+
     /* Note: not all printers support all possible values. */
     if (i <= 6) {
-        int     code = pcl_end_page_if_marked(pcs);
-
-        if ((i > 0) && (code >= 0))
+	code = 0;
+        if (i > 0)
             code = put_param1_int(pcs, "%MediaSource", i);
-        pcl_home_cursor(pcs);
         return (code < 0 ? code : 0);
     } else
         return e_Range;
-
 }
 
 /*
