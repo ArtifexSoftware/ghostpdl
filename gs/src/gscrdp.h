@@ -39,17 +39,17 @@ typedef struct gx_device_s gx_device;
  * should be declared as const gs_cie_render *, but the procedures may
  * cause certain cached (idempotent) values to be computed.
  */
-int param_write_cie_render1(P4(gs_param_list * plist, gs_param_name key,
-			       gs_cie_render * pcrd,
-			       gs_memory_t * mem));
+int param_write_cie_render1(gs_param_list * plist, gs_param_name key,
+			    gs_cie_render * pcrd,
+			    gs_memory_t * mem);
 
 /*
  * For internal use, we also provide an API that writes the CRD directly
  * into a parameter list, rather than as a named parameter in a larger
  * list.
  */
-int param_put_cie_render1(P3(gs_param_list * plist, gs_cie_render * pcrd,
-			     gs_memory_t * mem));
+int param_put_cie_render1(gs_param_list * plist, gs_cie_render * pcrd,
+			  gs_memory_t * mem);
 
 /*
  * Client code that wants to initialize a CRD from a device parameter
@@ -69,18 +69,18 @@ int param_put_cie_render1(P3(gs_param_list * plist, gs_cie_render * pcrd,
 
  * where "ParamName" is the parameter name, e.g., "CRDDefault".
  */
-int gs_cie_render1_param_initialize(P4(gs_cie_render * pcrd,
-				       gs_param_list * plist,
-				       gs_param_name key,
-				       gx_device * dev));
+int gs_cie_render1_param_initialize(gs_cie_render * pcrd,
+				    gs_param_list * plist,
+				    gs_param_name key,
+				    gx_device * dev);
 
 /*
  * Again, we provide an internal procedure that doesn't involve a
  * parameter name.
  */
-int param_get_cie_render1(P3(gs_cie_render * pcrd,
-			     gs_param_list * plist,
-			     gx_device * dev));
+int param_get_cie_render1(gs_cie_render * pcrd,
+			  gs_param_list * plist,
+			  gx_device * dev);
 
 /*
  * The actual representation of the CRD is a slightly modified PostScript

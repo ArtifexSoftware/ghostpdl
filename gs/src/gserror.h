@@ -20,7 +20,7 @@
 #ifndef gserror_INCLUDED
 #  define gserror_INCLUDED
 
-int gs_log_error(P3(int, const char *, int));
+int gs_log_error(int, const char *, int);
 #ifndef DEBUG
 #  define gs_log_error(err, file, line) (err)
 #endif

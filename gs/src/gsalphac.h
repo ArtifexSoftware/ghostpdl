@@ -56,8 +56,8 @@ typedef struct gs_composite_alpha_params_s {
 } gs_composite_alpha_params_t;
 
 /* Create an alpha-compositing object. */
-int gs_create_composite_alpha(P3(gs_composite_t ** ppcte,
-				 const gs_composite_alpha_params_t * params,
-				 gs_memory_t * mem));
+int gs_create_composite_alpha(gs_composite_t ** ppcte,
+			      const gs_composite_alpha_params_t * params,
+			      gs_memory_t * mem);
 
 #endif /* gsalphac_INCLUDED */

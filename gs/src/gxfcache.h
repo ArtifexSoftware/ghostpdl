@@ -252,17 +252,17 @@ struct gs_font_dir_s {
 #define st_font_dir_max_ptrs 4
 
 /* Character cache procedures (in gxccache.c and gxccman.c) */
-int gx_char_cache_alloc(P7(gs_memory_t * struct_mem, gs_memory_t * bits_mem,
-			   gs_font_dir * pdir, uint bmax, uint mmax,
-			   uint cmax, uint upper));
-void gx_char_cache_init(P1(gs_font_dir *));
-void gx_purge_selected_cached_chars(P3(gs_font_dir *, bool(*)(P2(cached_char *, void *)), void *));
+int gx_char_cache_alloc(gs_memory_t * struct_mem, gs_memory_t * bits_mem,
+			gs_font_dir * pdir, uint bmax, uint mmax,
+			uint cmax, uint upper);
+void gx_char_cache_init(gs_font_dir *);
+void gx_purge_selected_cached_chars(gs_font_dir *, bool(*)(cached_char *, void *), void *);
 cached_fm_pair *
-               gx_lookup_fm_pair(P2(gs_font *, const gs_state *));
+               gx_lookup_fm_pair(gs_font *, const gs_state *);
 cached_fm_pair *
-               gx_add_fm_pair(P4(gs_font_dir *, gs_font *, const gs_uid *, const gs_state *));
-void gx_lookup_xfont(P3(const gs_state *, cached_fm_pair *, int));
-void gs_purge_fm_pair(P3(gs_font_dir *, cached_fm_pair *, int));
-void gs_purge_font_from_char_caches(P2(gs_font_dir *, const gs_font *));
+               gx_add_fm_pair(gs_font_dir *, gs_font *, const gs_uid *, const gs_state *);
+void gx_lookup_xfont(const gs_state *, cached_fm_pair *, int);
+void gs_purge_fm_pair(gs_font_dir *, cached_fm_pair *, int);
+void gs_purge_font_from_char_caches(gs_font_dir *, const gs_font *);
 
 #endif /* gxfcache_INCLUDED */

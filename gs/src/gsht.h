@@ -24,7 +24,7 @@
 typedef struct gs_screen_halftone_s {
     float frequency;
     float angle;
-    float (*spot_function) (P2(floatp, floatp));
+    float (*spot_function) (floatp, floatp);
     /* setscreen or sethalftone sets these: */
     /* (a Level 2 feature, but we include them in Level 1) */
     float actual_frequency;
@@ -46,9 +46,9 @@ typedef struct gs_colorscreen_halftone_s {
 #define st_colorscreen_halftone_max_ptrs 0
 
 /* Procedural interface */
-int gs_setscreen(P2(gs_state *, gs_screen_halftone *));
-int gs_currentscreen(P2(const gs_state *, gs_screen_halftone *));
-int gs_currentscreenlevels(P1(const gs_state *));
+int gs_setscreen(gs_state *, gs_screen_halftone *);
+int gs_currentscreen(const gs_state *, gs_screen_halftone *);
+int gs_currentscreenlevels(const gs_state *);
 
 /*
  * Enumeration-style definition of a single screen.  The client must:
@@ -60,11 +60,10 @@ int gs_currentscreenlevels(P1(const gs_state *));
  *      - if desired, call gs_screen_install to install the screen.
  */
 typedef struct gs_screen_enum_s gs_screen_enum;
-gs_screen_enum *gs_screen_enum_alloc(P2(gs_memory_t *, client_name_t));
-int gs_screen_init(P3(gs_screen_enum *, gs_state *,
-		      gs_screen_halftone *));
-int gs_screen_currentpoint(P2(gs_screen_enum *, gs_point *));
-int gs_screen_next(P2(gs_screen_enum *, floatp));
-int gs_screen_install(P1(gs_screen_enum *));
+gs_screen_enum *gs_screen_enum_alloc(gs_memory_t *, client_name_t);
+int gs_screen_init(gs_screen_enum *, gs_state *, gs_screen_halftone *);
+int gs_screen_currentpoint(gs_screen_enum *, gs_point *);
+int gs_screen_next(gs_screen_enum *, floatp);
+int gs_screen_install(gs_screen_enum *);
 
 #endif /* gsht_INCLUDED */

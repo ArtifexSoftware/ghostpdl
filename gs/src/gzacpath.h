@@ -36,18 +36,18 @@ typedef struct gx_device_cpath_accum_s {
 } gx_device_cpath_accum;
 
 /* Start accumulating a clipping path. */
-void gx_cpath_accum_begin(P2(gx_device_cpath_accum * padev, gs_memory_t * mem));
+void gx_cpath_accum_begin(gx_device_cpath_accum * padev, gs_memory_t * mem);
 
 /* Set the accumulator's clipping box. */
-void gx_cpath_accum_set_cbox(P2(gx_device_cpath_accum * padev,
-				const gs_fixed_rect * pbox));
+void gx_cpath_accum_set_cbox(gx_device_cpath_accum * padev,
+			     const gs_fixed_rect * pbox);
 
 /* Finish accumulating a clipping path. */
 /* Note that this releases the old contents of the clipping path. */
-int gx_cpath_accum_end(P2(const gx_device_cpath_accum * padev,
-			  gx_clip_path * pcpath));
+int gx_cpath_accum_end(const gx_device_cpath_accum * padev,
+		       gx_clip_path * pcpath);
 
 /* Discard an accumulator in case of error. */
-void gx_cpath_accum_discard(P1(gx_device_cpath_accum * padev));
+void gx_cpath_accum_discard(gx_device_cpath_accum * padev);
 
 #endif /* gzacpath_INCLUDED */

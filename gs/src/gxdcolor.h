@@ -54,8 +54,8 @@ typedef struct gx_rop_source_s {
   NULL, 0, 0, gx_no_bitmap_id, {black_pixel, black_pixel}, true
 #define gx_rop_source_set_color(prs, pixel)\
   ((prs)->scolors[0] = (prs)->scolors[1] = (pixel))
-void gx_set_rop_no_source(P3(const gx_rop_source_t **psource,
-			     gx_rop_source_t *pno_source, gx_device *dev));
+void gx_set_rop_no_source(const gx_rop_source_t **psource,
+			  gx_rop_source_t *pno_source, gx_device *dev);
 #define set_rop_no_source(source, no_source, dev)\
   gx_set_rop_no_source(&(source), &(no_source), dev)
 
@@ -81,8 +81,8 @@ struct gx_device_color_type_s {
      */
 
 #define dev_color_proc_load(proc)\
-  int proc(P4(gx_device_color *pdevc, const gs_imager_state *pis,\
-    gx_device *dev, gs_color_select_t select))
+  int proc(gx_device_color *pdevc, const gs_imager_state *pis,\
+    gx_device *dev, gs_color_select_t select)
                          dev_color_proc_load((*load));
 
     /*
@@ -92,8 +92,8 @@ struct gx_device_color_type_s {
      */
 
 #define dev_color_proc_fill_rectangle(proc)\
-  int proc(P8(const gx_device_color *pdevc, int x, int y, int w, int h,\
-    gx_device *dev, gs_logical_operation_t lop, const gx_rop_source_t *source))
+  int proc(const gx_device_color *pdevc, int x, int y, int w, int h,\
+    gx_device *dev, gs_logical_operation_t lop, const gx_rop_source_t *source)
                          dev_color_proc_fill_rectangle((*fill_rectangle));
 
     /*
@@ -104,9 +104,9 @@ struct gx_device_color_type_s {
      */
 
 #define dev_color_proc_fill_masked(proc)\
-  int proc(P12(const gx_device_color *pdevc, const byte *data, int data_x,\
+  int proc(const gx_device_color *pdevc, const byte *data, int data_x,\
     int raster, gx_bitmap_id id, int x, int y, int w, int h,\
-    gx_device *dev, gs_logical_operation_t lop, bool invert))
+    gx_device *dev, gs_logical_operation_t lop, bool invert)
                          dev_color_proc_fill_masked((*fill_masked));
 
     /*
@@ -114,7 +114,7 @@ struct gx_device_color_type_s {
      */
 
 #define dev_color_proc_equal(proc)\
-  bool proc(P2(const gx_device_color *pdevc1, const gx_device_color *pdevc2))
+  bool proc(const gx_device_color *pdevc1, const gx_device_color *pdevc2)
                          dev_color_proc_equal((*equal));
 
 };
@@ -146,10 +146,10 @@ extern const gx_device_color_type_t
 
 /* Set up device color 1 for writing into a mask cache */
 /* (e.g., the character cache). */
-void gx_set_device_color_1(P1(gs_state * pgs));
+void gx_set_device_color_1(gs_state * pgs);
 
 /* Remap the color if necessary. */
-int gx_remap_color(P1(gs_state *));
+int gx_remap_color(gs_state *);
 
 #define gx_set_dev_color(pgs)\
   if ( !color_is_set((pgs)->dev_color) )\

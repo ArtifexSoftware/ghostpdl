@@ -297,7 +297,7 @@ typedef struct gs_device_n_map_s gs_device_n_map;
  * names.
  */
 typedef int (gs_callback_func_get_colorname_string)
-    (P3(gs_separation_name colorname, unsigned char **ppstr, unsigned int *plen));
+    (gs_separation_name colorname, unsigned char **ppstr, unsigned int *plen);
 
 typedef struct gs_device_n_params_s {
     gs_separation_name *names;
@@ -422,15 +422,15 @@ typedef struct gs_color_space_s gs_color_space;
  */
 
 extern int
-    gs_cspace_init_DeviceGray(P1(gs_color_space *pcs)),
-    gs_cspace_build_DeviceGray(P2(gs_color_space ** ppcspace,
-				  gs_memory_t * pmem)),
-    gs_cspace_init_DeviceRGB(P1(gs_color_space *pcs)),
-    gs_cspace_build_DeviceRGB(P2(gs_color_space ** ppcspace,
-				 gs_memory_t * pmem)),
-    gs_cspace_init_DeviceCMYK(P1(gs_color_space *pcs)),
-    gs_cspace_build_DeviceCMYK(P2(gs_color_space ** ppcspace,
-				  gs_memory_t * pmem));
+    gs_cspace_init_DeviceGray(gs_color_space *pcs),
+    gs_cspace_build_DeviceGray(gs_color_space ** ppcspace,
+			       gs_memory_t * pmem),
+    gs_cspace_init_DeviceRGB(gs_color_space *pcs),
+    gs_cspace_build_DeviceRGB(gs_color_space ** ppcspace,
+			      gs_memory_t * pmem),
+    gs_cspace_init_DeviceCMYK(gs_color_space *pcs),
+    gs_cspace_build_DeviceCMYK(gs_color_space ** ppcspace,
+			       gs_memory_t * pmem);
 
 /*
  * We preallocate instances of the 3 device color spaces, and provide
@@ -442,50 +442,49 @@ extern int
 typedef struct gs_imager_state_s gs_imager_state;
 #endif
 
-const gs_color_space * gs_cspace_DeviceGray(P1(const gs_imager_state * pis));
-const gs_color_space * gs_cspace_DeviceRGB(P1(const gs_imager_state * pis));
-const gs_color_space * gs_cspace_DeviceCMYK(P1(const gs_imager_state * pis));
+const gs_color_space * gs_cspace_DeviceGray(const gs_imager_state * pis);
+const gs_color_space * gs_cspace_DeviceRGB(const gs_imager_state * pis);
+const gs_color_space * gs_cspace_DeviceCMYK(const gs_imager_state * pis);
 
 /* Copy a color space into one newly allocated by the caller. */
-void gs_cspace_init_from(P2(gs_color_space * pcsto,
-			    const gs_color_space * pcsfrom));
+void gs_cspace_init_from(gs_color_space * pcsto,
+			 const gs_color_space * pcsfrom);
 
 /* Assign a color space into a previously initialized one. */
-void gs_cspace_assign(P2(gs_color_space * pdest, const gs_color_space * psrc));
+void gs_cspace_assign(gs_color_space * pdest, const gs_color_space * psrc);
 
 /* Prepare to free a color space. */
-void gs_cspace_release(P1(gs_color_space * pcs));
+void gs_cspace_release(gs_color_space * pcs);
 
 /* ------ Accessors ------ */
 
 /* Get the index of a color space. */
-gs_color_space_index gs_color_space_get_index(P1(const gs_color_space *));
+gs_color_space_index gs_color_space_get_index(const gs_color_space *);
 
 /* Get the number of components in a color space. */
-int gs_color_space_num_components(P1(const gs_color_space *));
+int gs_color_space_num_components(const gs_color_space *);
 
 /*
  * Test whether two color spaces are equal.  Note that this test is
  * conservative: if it returns true, the color spaces are definitely
  * equal, while if it returns false, they might still be equivalent.
  */
-bool gs_color_space_equal(P2(const gs_color_space *pcs1,
-			     const gs_color_space *pcs2));
+bool gs_color_space_equal(const gs_color_space *pcs1,
+			  const gs_color_space *pcs2);
 
 /* Restrict a color to its legal range. */
 #ifndef gs_client_color_DEFINED
 #  define gs_client_color_DEFINED
 typedef struct gs_client_color_s gs_client_color;
 #endif
-void gs_color_space_restrict_color(P2(gs_client_color *,
-				      const gs_color_space *));
+void gs_color_space_restrict_color(gs_client_color *, const gs_color_space *);
 
 /*
  * Get the base space of an Indexed or uncolored Pattern color space, or the
  * alternate space of a Separation or DeviceN space.  Return NULL if the
  * color space does not have a base/alternative color space.
  */
-const gs_color_space *gs_cspace_base_space(P1(const gs_color_space * pcspace));
+const gs_color_space *gs_cspace_base_space(const gs_color_space * pcspace);
 
 /* backwards compatibility */
 #define gs_color_space_indexed_base_space(pcspace)\

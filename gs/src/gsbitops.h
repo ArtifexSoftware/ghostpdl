@@ -198,27 +198,27 @@
 #else
 #  define mono_fill_make_pattern(byt) (uint)((uint)(byt) * 0x01010101)
 #endif
-void bits_fill_rectangle(P6(byte * dest, int dest_bit, uint raster,
-		      mono_fill_chunk pattern, int width_bits, int height));
+void bits_fill_rectangle(byte * dest, int dest_bit, uint raster,
+    mono_fill_chunk pattern, int width_bits, int height);
 
 /* Replicate a bitmap horizontally in place. */
-void bits_replicate_horizontally(P6(byte * data, uint width, uint height,
-	       uint raster, uint replicated_width, uint replicated_raster));
+void bits_replicate_horizontally(byte * data, uint width, uint height,
+	       uint raster, uint replicated_width, uint replicated_raster);
 
 /* Replicate a bitmap vertically in place. */
-void bits_replicate_vertically(P4(byte * data, uint height, uint raster,
-    uint replicated_height));
+void bits_replicate_vertically(byte * data, uint height, uint raster,
+    uint replicated_height);
 
 /* Find the bounding box of a bitmap. */
-void bits_bounding_box(P4(const byte * data, uint height, uint raster,
-    gs_int_rect * pbox));
+void bits_bounding_box(const byte * data, uint height, uint raster,
+    gs_int_rect * pbox);
 
 /* Compress an oversampled image, possibly in place. */
 /* The width and height must be multiples of the respective scale factors. */
 /* The source must be an aligned bitmap, as usual. */
-void bits_compress_scaled(P9(const byte * src, int srcx, uint width,
+void bits_compress_scaled(const byte * src, int srcx, uint width,
     uint height, uint sraster, byte * dest, uint draster,
-    const gs_log2_scale_point * plog2_scale, int log2_out_bits));
+    const gs_log2_scale_point * plog2_scale, int log2_out_bits);
 
 /* Extract a plane from a pixmap. */
 typedef struct bits_plane_s {
@@ -230,19 +230,19 @@ typedef struct bits_plane_s {
     int depth;
     int x;			/* starting x */
 } bits_plane_t;
-int bits_extract_plane(P5(const bits_plane_t *dest /*write*/,
-    const bits_plane_t *source /*read*/, int shift, int width, int height));
+int bits_extract_plane(const bits_plane_t *dest /*write*/,
+    const bits_plane_t *source /*read*/, int shift, int width, int height);
 
 /* Expand a plane into a pixmap. */
-int bits_expand_plane(P5(const bits_plane_t *dest /*write*/,
-    const bits_plane_t *source /*read*/, int shift, int width, int height));
+int bits_expand_plane(const bits_plane_t *dest /*write*/,
+    const bits_plane_t *source /*read*/, int shift, int width, int height);
 
 /* Fill a rectangle of bytes. */
-void bytes_fill_rectangle(P5(byte * dest, uint raster,
-			     byte value, int width_bytes, int height));
+void bytes_fill_rectangle(byte * dest, uint raster,
+    byte value, int width_bytes, int height);
 
 /* Copy a rectangle of bytes. */
-void bytes_copy_rectangle(P6(byte * dest, uint dest_raster,
-	   const byte * src, uint src_raster, int width_bytes, int height));
+void bytes_copy_rectangle(byte * dest, uint dest_raster,
+    const byte * src, uint src_raster, int width_bytes, int height);
 
 #endif /* gsbitops_INCLUDED */

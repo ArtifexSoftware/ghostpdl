@@ -69,7 +69,7 @@ typedef struct gs_raw_memory_s gs_raw_memory_t;
  * strictly enough to prevent hardware access faults.  Thus, for example,
  * on the x86, malloc need not align blocks at all.  And in fact, we have
  * found one compiler (Microsoft VC 6) that 8-byte aligns 'double' members
- * of structure, but whose malloc only 4-byte aligns its blocks.
+ * of structures, but whose malloc only 4-byte aligns its blocks.
  * Ghostscript allocators could enforce the stricter alignment, but the
  * few dozen lines of code required to implement this were rejected during
  * code review as introducing too much risk for too little payoff.  As a
@@ -97,7 +97,7 @@ typedef struct gs_raw_memory_s gs_raw_memory_t;
 		 */
 
 #define gs_memory_t_proc_alloc_bytes(proc, mem_t)\
-  byte *proc(P3(mem_t *mem, uint nbytes, client_name_t cname))
+  byte *proc(mem_t *mem, uint nbytes, client_name_t cname)
 
 #define gs_alloc_bytes_immovable(mem, nbytes, cname)\
   ((mem)->procs.alloc_bytes_immovable(mem, nbytes, cname))
@@ -114,8 +114,8 @@ typedef struct gs_raw_memory_s gs_raw_memory_t;
 		 */
 
 #define gs_memory_t_proc_resize_object(proc, mem_t)\
-  void *proc(P4(mem_t *mem, void *obj, uint new_num_elements,\
-		client_name_t cname))
+  void *proc(mem_t *mem, void *obj, uint new_num_elements,\
+	     client_name_t cname)
 
 #define gs_resize_object(mem, obj, newn, cname)\
   ((mem)->procs.resize_object(mem, obj, newn, cname))
@@ -127,7 +127,7 @@ typedef struct gs_raw_memory_s gs_raw_memory_t;
 		 */
 
 #define gs_memory_t_proc_free_object(proc, mem_t)\
-  void proc(P3(mem_t *mem, void *data, client_name_t cname))
+  void proc(mem_t *mem, void *data, client_name_t cname)
 
 #define gs_free_object(mem, data, cname)\
   ((mem)->procs.free_object(mem, data, cname))
@@ -137,7 +137,7 @@ typedef struct gs_raw_memory_s gs_raw_memory_t;
 		 */
 
 #define gs_memory_t_proc_status(proc, mem_t)\
-  void proc(P2(mem_t *mem, gs_memory_status_t *status))
+  void proc(mem_t *mem, gs_memory_status_t *status)
 
 #define gs_memory_status(mem, pst)\
   ((mem)->procs.status(mem, pst))
@@ -154,7 +154,7 @@ typedef struct gs_raw_memory_s gs_raw_memory_t;
 		 */
 
 #define gs_memory_t_proc_stable(proc, mem_t)\
-  mem_t *proc(P1(mem_t *mem))
+  mem_t *proc(mem_t *mem)
 
 #define gs_memory_stable(mem)\
   ((mem)->procs.stable(mem))
@@ -177,7 +177,7 @@ typedef struct gs_raw_memory_s gs_raw_memory_t;
   (FREE_ALL_DATA | FREE_ALL_STRUCTURES | FREE_ALL_ALLOCATOR)
 
 #define gs_memory_t_proc_free_all(proc, mem_t)\
-  void proc(P3(mem_t *mem, uint free_mask, client_name_t cname))
+  void proc(mem_t *mem, uint free_mask, client_name_t cname)
 
 #define gs_memory_free_all(mem, free_mask, cname)\
   ((mem)->procs.free_all(mem, free_mask, cname))
@@ -192,7 +192,7 @@ typedef struct gs_raw_memory_s gs_raw_memory_t;
 		 */
 
 #define gs_memory_t_proc_consolidate_free(proc, mem_t)\
-  void proc(P1(mem_t *mem))
+  void proc(mem_t *mem)
 
 #define gs_consolidate_free(mem)\
   ((mem)->procs.consolidate_free(mem))

@@ -56,8 +56,8 @@ struct gx_image_type_s {
      * structure, but ImageType 2 images must compute it.
      */
 #define image_proc_source_size(proc)\
-  int proc(P3(const gs_imager_state *pis, const gs_image_common_t *pic,\
-    gs_int_point *psize))
+  int proc(const gs_imager_state *pis, const gs_image_common_t *pic,\
+    gs_int_point *psize)
 
     image_proc_source_size((*source_size));
 
@@ -67,8 +67,8 @@ struct gx_image_type_s {
      * store it in *ppcs.
      */
 #define image_proc_sput(proc)\
-  int proc(P3(const gs_image_common_t *pic, stream *s,\
-	      const gs_color_space **ppcs))
+  int proc(const gs_image_common_t *pic, stream *s,\
+    const gs_color_space **ppcs)
 
     image_proc_sput((*sput));
 
@@ -78,7 +78,7 @@ struct gx_image_type_s {
      * use pcs.
      */
 #define image_proc_sget(proc)\
-  int proc(P3(gs_image_common_t *pic, stream *s, const gs_color_space *pcs))
+  int proc(gs_image_common_t *pic, stream *s, const gs_color_space *pcs)
 
     image_proc_sget((*sget));
 
@@ -87,7 +87,7 @@ struct gx_image_type_s {
      * Currently this only frees the parameter structure itself.
      */
 #define image_proc_release(proc)\
-  void proc(P2(gs_image_common_t *pic, gs_memory_t *mem))
+  void proc(gs_image_common_t *pic, gs_memory_t *mem)
 
     image_proc_release((*release));
 
@@ -114,17 +114,17 @@ image_proc_release(gx_image_default_release); /* just free the params */
  * Define sput/sget/release procedures for generic pixel images.
  * Note that these procedures take different parameters.
  */
-int gx_pixel_image_sput(P4(const gs_pixel_image_t *pic, stream *s,
-			   const gs_color_space **ppcs, int extra));
-int gx_pixel_image_sget(P3(gs_pixel_image_t *pic, stream *s,
-			   const gs_color_space *pcs));
-void gx_pixel_image_release(P2(gs_pixel_image_t *pic, gs_memory_t *mem));
+int gx_pixel_image_sput(const gs_pixel_image_t *pic, stream *s,
+			const gs_color_space **ppcs, int extra);
+int gx_pixel_image_sget(gs_pixel_image_t *pic, stream *s,
+			const gs_color_space *pcs);
+void gx_pixel_image_release(gs_pixel_image_t *pic, gs_memory_t *mem);
 
 /* Internal procedures for use in sput/sget implementations. */
-bool gx_image_matrix_is_default(P1(const gs_data_image_t *pid));
-void gx_image_matrix_set_default(P1(gs_data_image_t *pid));
-void sput_variable_uint(P2(stream *s, uint w));
-int sget_variable_uint(P2(stream *s, uint *pw));
+bool gx_image_matrix_is_default(const gs_data_image_t *pid);
+void gx_image_matrix_set_default(gs_data_image_t *pid);
+void sput_variable_uint(stream *s, uint w);
+int sget_variable_uint(stream *s, uint *pw);
 #define DECODE_DEFAULT(i, dd1)\
   ((i) == 1 ? dd1 : (i) & 1)
 
@@ -146,8 +146,8 @@ typedef struct gx_image_enum_procs_s {
      */
 
 #define image_enum_proc_plane_data(proc)\
-  int proc(P4(gx_image_enum_common_t *info, const gx_image_plane_t *planes,\
-	      int height, int *rows_used))
+  int proc(gx_image_enum_common_t *info, const gx_image_plane_t *planes,\
+	   int height, int *rows_used)
 
     image_enum_proc_plane_data((*plane_data));
 
@@ -158,7 +158,7 @@ typedef struct gx_image_enum_procs_s {
      */
 
 #define image_enum_proc_end_image(proc)\
-  int proc(P2(gx_image_enum_common_t *info, bool draw_last))
+  int proc(gx_image_enum_common_t *info, bool draw_last)
 
     image_enum_proc_end_image((*end_image));
 
@@ -171,7 +171,7 @@ typedef struct gx_image_enum_procs_s {
      */
 
 #define image_enum_proc_flush(proc)\
-  int proc(P1(gx_image_enum_common_t *info))
+  int proc(gx_image_enum_common_t *info)
 
     image_enum_proc_flush((*flush));
 
@@ -196,7 +196,7 @@ typedef struct gx_image_enum_procs_s {
      */
 
 #define image_enum_proc_planes_wanted(proc)\
-  bool proc(P2(const gx_image_enum_common_t *info, byte *wanted))
+  bool proc(const gx_image_enum_common_t *info, byte *wanted)
 
     image_enum_proc_planes_wanted((*planes_wanted));
 
@@ -233,11 +233,11 @@ extern_st(st_gx_image_enum_common);
 /*
  * Initialize the common part of an image enumerator.
  */
-int gx_image_enum_common_init(P6(gx_image_enum_common_t * piec,
-				 const gs_data_image_t * pic,
-				 const gx_image_enum_procs_t * piep,
-				 gx_device * dev, int num_components,
-				 gs_image_format_t format));
+int gx_image_enum_common_init(gx_image_enum_common_t * piec,
+			      const gs_data_image_t * pic,
+			      const gx_image_enum_procs_t * piep,
+			      gx_device * dev, int num_components,
+			      gs_image_format_t format);
 
 /*
  * Define image_plane_data and end_image procedures for image types that

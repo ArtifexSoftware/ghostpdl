@@ -52,7 +52,7 @@
 
 /* Define the array of debugging flags, indexed by character code. */
 extern char gs_debug[128];
-bool gs_debug_c(P1(int /*char */ ));
+bool gs_debug_c(int /*char */ );
 
 /*
  * Define an alias for a specialized debugging flag
@@ -115,11 +115,11 @@ extern FILE *gs_debug_out;
 #endif
 
 /* Debugging support procedures in gsmisc.c */
-void debug_dump_bytes(P3(const byte * from, const byte * to,
-			 const char *msg));
-void debug_dump_bitmap(P4(const byte * from, uint raster, uint height,
-			  const char *msg));
-void debug_print_string(P2(const byte * str, uint len));
-void debug_print_string_hex(P2(const byte * str, uint len));
+void debug_dump_bytes(const byte * from, const byte * to,
+		      const char *msg);
+void debug_dump_bitmap(const byte * from, uint raster, uint height,
+		       const char *msg);
+void debug_print_string(const byte * str, uint len);
+void debug_print_string_hex(const byte * str, uint len);
 
 #endif /* gdebug_INCLUDED */

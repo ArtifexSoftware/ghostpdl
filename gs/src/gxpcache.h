@@ -43,7 +43,7 @@ struct gx_pattern_cache_s {
     uint next;			/* round-robin index */
     ulong bits_used;
     ulong max_bits;
-    void (*free_all) (P1(gx_pattern_cache *));
+    void (*free_all) (gx_pattern_cache *);
 };
 
 #define private_st_pattern_cache() /* in gxpcmap.c */\

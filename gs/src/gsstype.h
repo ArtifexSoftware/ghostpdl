@@ -45,21 +45,21 @@ typedef struct enum_ptr_s {
 		/* Clear the marks of a structure. */
 
 #define struct_proc_clear_marks(proc)\
-  void proc(P3(void /*obj_header_t*/ *pre, uint size,\
-    const gs_memory_struct_type_t *pstype))
+  void proc(void /*obj_header_t*/ *pre, uint size,\
+    const gs_memory_struct_type_t *pstype)
 
 		/* Enumerate the pointers in a structure. */
 
 #define struct_proc_enum_ptrs(proc)\
-  gs_ptr_type_t proc(P6(EV_CONST void /*obj_header_t*/ *ptr, uint size,\
+  gs_ptr_type_t proc(EV_CONST void /*obj_header_t*/ *ptr, uint size,\
     int index, enum_ptr_t *pep, const gs_memory_struct_type_t *pstype,\
-    gc_state_t *gcst))
+    gc_state_t *gcst)
 
 		/* Relocate all the pointers in this structure. */
 
 #define struct_proc_reloc_ptrs(proc)\
-  void proc(P4(void /*obj_header_t*/ *ptr, uint size,\
-    const gs_memory_struct_type_t *pstype, gc_state_t *gcst))
+  void proc(void /*obj_header_t*/ *ptr, uint size,\
+    const gs_memory_struct_type_t *pstype, gc_state_t *gcst)
 
 		/*
 		 * Finalize this structure just before freeing it.
@@ -74,7 +74,7 @@ typedef struct enum_ptr_s {
 		 */
 
 #define struct_proc_finalize(proc)\
-  void proc(P1(void /*obj_header_t*/ *ptr))
+  void proc(void /*obj_header_t*/ *ptr)
 
 /*
  * A descriptor for an object (structure) type.

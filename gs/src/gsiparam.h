@@ -240,22 +240,23 @@ void
   /*
    * Sets ImageMatrix to the identity matrix.
    */
-     gs_image_common_t_init(P1(gs_image_common_t * pic)),	/*
-								 * Also sets Width = Height = 0, BitsPerComponent = 1,
-								 * format = chunky, Interpolate = false.
-								 * If num_components = N > 0, sets the first N elements of Decode to (0, 1);
-								 * if num_components = N < 0, sets the first -N elements of Decode to (1, 0);
-								 * if num_components = 0, doesn't set Decode.
-								 */
-     gs_data_image_t_init(P2(gs_data_image_t * pim, int num_components)),
+     gs_image_common_t_init(gs_image_common_t * pic),
+  /*
+   * Also sets Width = Height = 0, BitsPerComponent = 1,
+   * format = chunky, Interpolate = false.
+   * If num_components = N > 0, sets the first N elements of Decode to (0, 1);
+   * if num_components = N < 0, sets the first -N elements of Decode to (1, 0);
+   * if num_components = 0, doesn't set Decode.
+   */
+     gs_data_image_t_init(gs_data_image_t * pim, int num_components),
   /*
    * Also sets CombineWithColor = false, ColorSpace = color_space, Alpha =
    * none.  num_components is obtained from ColorSpace; if ColorSpace =
    * NULL or ColorSpace is a Pattern space, num_components is taken as 0
    * (Decode is not initialized).
    */
-    gs_pixel_image_t_init(P2(gs_pixel_image_t * pim,
-			     const gs_color_space * color_space));
+    gs_pixel_image_t_init(gs_pixel_image_t * pim,
+			  const gs_color_space * color_space);
 
 /*
  * Initialize an ImageType 1 image (or imagemask).  Also sets ImageMask,
@@ -269,12 +270,12 @@ void
  * Note that for init and init_adjust, adjust is only relevant if
  * pim->ImageMask is true.
  */
-void gs_image_t_init_adjust(P3(gs_image_t * pim, const gs_color_space * pcs,
-			       bool adjust));
+void gs_image_t_init_adjust(gs_image_t * pim, const gs_color_space * pcs,
+			    bool adjust);
 #define gs_image_t_init(pim, pcs)\
   gs_image_t_init_adjust(pim, pcs, true)
-void gs_image_t_init_mask_adjust(P3(gs_image_t * pim, bool write_1s,
-				    bool adjust));
+void gs_image_t_init_mask_adjust(gs_image_t * pim, bool write_1s,
+				 bool adjust);
 #define gs_image_t_init_mask(pim, write_1s)\
   gs_image_t_init_mask_adjust(pim, write_1s, true)
 
@@ -297,11 +298,11 @@ void gs_image_t_init_mask_adjust(P3(gs_image_t * pim, bool write_1s,
    procedure:
  */
 
-int gx_map_image_color(P5(gx_device * dev,
-			  const gs_image_t * pim,
-			  const gx_color_rendering_info * pcri,
-			  const uint components[GS_IMAGE_MAX_COMPONENTS],
-			  gx_drawing_color * pdcolor));
+int gx_map_image_color(gx_device * dev,
+		       const gs_image_t * pim,
+		       const gx_color_rendering_info * pcri,
+		       const uint components[GS_IMAGE_MAX_COMPONENTS],
+		       gx_drawing_color * pdcolor);
 
 /*
   Map a source color to a drawing color.  The components are simply the

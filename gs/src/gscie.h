@@ -198,29 +198,29 @@ typedef struct gs_range4_s {
 typedef struct gs_cie_common_s gs_cie_common;
 typedef struct gs_cie_wbsd_s gs_cie_wbsd;
 
-typedef float (*gs_cie_a_proc) (P2(floatp, const gs_cie_a *));
+typedef float (*gs_cie_a_proc) (floatp, const gs_cie_a *);
 
-typedef float (*gs_cie_abc_proc) (P2(floatp, const gs_cie_abc *));
+typedef float (*gs_cie_abc_proc) (floatp, const gs_cie_abc *);
 typedef struct gs_cie_abc_proc3_s {
     gs_cie_abc_proc procs[3];
 } gs_cie_abc_proc3;
 
-typedef float (*gs_cie_def_proc) (P2(floatp, const gs_cie_def *));
+typedef float (*gs_cie_def_proc) (floatp, const gs_cie_def *);
 typedef struct gs_cie_def_proc3_s {
     gs_cie_def_proc procs[3];
 } gs_cie_def_proc3;
 
-typedef float (*gs_cie_defg_proc) (P2(floatp, const gs_cie_defg *));
+typedef float (*gs_cie_defg_proc) (floatp, const gs_cie_defg *);
 typedef struct gs_cie_defg_proc4_s {
     gs_cie_defg_proc procs[4];
 } gs_cie_defg_proc4;
 
-typedef float (*gs_cie_common_proc) (P2(floatp, const gs_cie_common *));
+typedef float (*gs_cie_common_proc) (floatp, const gs_cie_common *);
 typedef struct gs_cie_common_proc3_s {
     gs_cie_common_proc procs[3];
 } gs_cie_common_proc3;
 
-typedef float (*gs_cie_render_proc) (P2(floatp, const gs_cie_render *));
+typedef float (*gs_cie_render_proc) (floatp, const gs_cie_render *);
 typedef struct gs_cie_render_proc3_s {
     gs_cie_render_proc procs[3];
 } gs_cie_render_proc3;
@@ -249,8 +249,8 @@ typedef struct gs_cie_render_proc3_s {
  * Note also that since TransformPQR can fail (if the driver doesn't
  * recognize the proc_name), it must return a failure code.
  */
-typedef int (*gs_cie_transform_proc)(P5(int, floatp, const gs_cie_wbsd *,
-					gs_cie_render *, float *));
+typedef int (*gs_cie_transform_proc)(int, floatp, const gs_cie_wbsd *,
+				     gs_cie_render *, float *);
 typedef struct gs_cie_transform_proc3_s {
     gs_cie_transform_proc proc;
     const char *proc_name;
@@ -258,7 +258,7 @@ typedef struct gs_cie_transform_proc3_s {
     const char *driver_name;	/* for mapping proc_name back to procs */
 } gs_cie_transform_proc3;
 
-typedef frac(*gs_cie_render_table_proc) (P2(byte, const gs_cie_render *));
+typedef frac(*gs_cie_render_table_proc) (byte, const gs_cie_render *);
 typedef struct gs_cie_render_table_procs_s {
     gs_cie_render_table_proc procs[4];
 } gs_cie_render_table_procs;
@@ -367,7 +367,7 @@ typedef struct gx_cie_vector_cache3_s {
 
 /* Elements common to all CIE color space dictionaries. */
 struct gs_cie_common_s {
-    int (*install_cspace)(P2(const gs_color_space *, gs_state *));
+    int (*install_cspace)(const gs_color_space *, gs_state *);
     void *client_data;
     gs_range3 RangeLMN;
     gs_cie_common_proc3 DecodeLMN;
@@ -665,19 +665,19 @@ typedef struct gs_sample_loop_params_s {
 } gs_sample_loop_params_t;
 #define SAMPLE_LOOP_VALUE(i, lp)\
   ( (((lp).N - (i)) * (lp).A + (i) * (lp).B) / (lp).N )
-void gs_cie_cache_init(P4(cie_cache_params *, gs_sample_loop_params_t *,
-			  const gs_range *, client_name_t));
+void gs_cie_cache_init(cie_cache_params *, gs_sample_loop_params_t *,
+		       const gs_range *, client_name_t);
 
-void gs_cie_cache_to_fracs(P2(const cie_cache_floats *, cie_cache_fracs *));
-void gs_cie_defg_complete(P1(gs_cie_defg *));
-void gs_cie_def_complete(P1(gs_cie_def *));
-void gs_cie_abc_complete(P1(gs_cie_abc *));
-void gs_cie_a_complete(P1(gs_cie_a *));
-gx_cie_joint_caches *gx_currentciecaches(P1(gs_state *));
-const gs_cie_common *gs_cie_cs_common(P1(const gs_state *));
-int gs_cie_cs_complete(P2(gs_state *, bool));
-int gs_cie_jc_complete(P2(const gs_imager_state *, const gs_color_space *pcs));
-float gs_cie_cached_value(P2(floatp, const cie_cache_floats *));
+void gs_cie_cache_to_fracs(const cie_cache_floats *, cie_cache_fracs *);
+void gs_cie_defg_complete(gs_cie_defg *);
+void gs_cie_def_complete(gs_cie_def *);
+void gs_cie_abc_complete(gs_cie_abc *);
+void gs_cie_a_complete(gs_cie_a *);
+gx_cie_joint_caches *gx_currentciecaches(gs_state *);
+const gs_cie_common *gs_cie_cs_common(const gs_state *);
+int gs_cie_cs_complete(gs_state *, bool);
+int gs_cie_jc_complete(const gs_imager_state *, const gs_color_space *pcs);
+float gs_cie_cached_value(floatp, const cie_cache_floats *);
 
 #define CIE_CLAMP_INDEX(index)\
   index = (index < 0 ? 0 :\
@@ -687,16 +687,16 @@ float gs_cie_cached_value(P2(floatp, const cie_cache_floats *));
  * Compute the source and destination WhitePoint and BlackPoint for
  * the TransformPQR procedure.
  */
-int gs_cie_compute_points_sd(P3(gx_cie_joint_caches *pjc,
-				const gs_cie_common * pcie,
-				const gs_cie_render * pcrd));
+int gs_cie_compute_points_sd(gx_cie_joint_caches *pjc,
+			     const gs_cie_common * pcie,
+			     const gs_cie_render * pcrd);
 
 /*
  * Compute the derived values in a CRD that don't involve the cached
  * procedure values, moving the CRD from "built" to "inited" status.
  * If the CRD is already in "inited" or a later status, do nothing.
  */
-int gs_cie_render_init(P1(gs_cie_render *));
+int gs_cie_render_init(gs_cie_render *);
 
 /*
  * Sample the EncodeLMN, EncodeABC, and RenderTableT CRD procedures, and
@@ -704,7 +704,7 @@ int gs_cie_render_init(P1(gs_cie_render *));
  * If the CRD is already in "sampled" or a later status, do nothing;
  * otherwise, if the CRD is not in "inited" status, return an error.
  */
-int gs_cie_render_sample(P1(gs_cie_render *));
+int gs_cie_render_sample(gs_cie_render *);
 
 /*
  * Finish preparing a CRD for installation, by restricting and/or
@@ -713,7 +713,7 @@ int gs_cie_render_sample(P1(gs_cie_render *));
  * nothing; otherwise, if the CRD is not in "sampled" status, return an
  * error.
  */
-int gs_cie_render_complete(P1(gs_cie_render *));
+int gs_cie_render_complete(gs_cie_render *);
 
 /* ---------------- Procedures ---------------- */
 
@@ -731,14 +731,14 @@ int gs_cie_render_complete(P1(gs_cie_render *));
  * you should call cs_adjust_count(pcspace, -1).  THIS IS A BUG IN THE API.
  */
 extern int
-    gs_cspace_build_CIEA(P3(gs_color_space ** ppcspace, void *client_data,
-			    gs_memory_t * pmem)),
-    gs_cspace_build_CIEABC(P3(gs_color_space ** ppcspace, void *client_data,
-			      gs_memory_t * pmem)),
-    gs_cspace_build_CIEDEF(P3(gs_color_space ** ppcspace, void *client_data,
-			      gs_memory_t * pmem)),
-    gs_cspace_build_CIEDEFG(P3(gs_color_space ** ppcspace, void *client_data,
-			       gs_memory_t * pmem));
+    gs_cspace_build_CIEA(gs_color_space ** ppcspace, void *client_data,
+			 gs_memory_t * pmem),
+    gs_cspace_build_CIEABC(gs_color_space ** ppcspace, void *client_data,
+			   gs_memory_t * pmem),
+    gs_cspace_build_CIEDEF(gs_color_space ** ppcspace, void *client_data,
+			   gs_memory_t * pmem),
+    gs_cspace_build_CIEDEFG(gs_color_space ** ppcspace, void *client_data,
+			    gs_memory_t * pmem);
 
 /* ------ Accessors ------ */
 
@@ -798,7 +798,7 @@ extern int
  * NB: the caller is responsible for deallocating the color table data
  *     when no longer needed.  */
 extern int
-    gs_cie_defx_set_lookup_table(P3(gs_color_space * pcspace, int *pdims,
-				    const gs_const_string * ptable));
+    gs_cie_defx_set_lookup_table(gs_color_space * pcspace, int *pdims,
+				 const gs_const_string * ptable);
 
 #endif /* gscie_INCLUDED */

@@ -71,7 +71,7 @@ struct gs_color_space_type_s {
      */
 
 #define cs_proc_num_components(proc)\
-  int proc(P1(const gs_color_space *))
+  int proc(const gs_color_space *)
 #define cs_num_components(pcs)\
   (*(pcs)->type->num_components)(pcs)
 	cs_proc_num_components((*num_components));
@@ -83,7 +83,7 @@ struct gs_color_space_type_s {
      */
 
 #define cs_proc_base_space(proc)\
-  const gs_color_space *proc(P1(const gs_color_space *))
+  const gs_color_space *proc(const gs_color_space *)
 #define cs_base_space(pcs)\
   (*(pcs)->type->base_space)(pcs)
 	cs_proc_base_space((*base_space));
@@ -95,13 +95,13 @@ struct gs_color_space_type_s {
      */
 
 #define cs_proc_equal(proc)\
-  bool proc(P2(const gs_color_space *, const gs_color_space *))
+  bool proc(const gs_color_space *, const gs_color_space *)
 	cs_proc_equal((*equal));
 
     /* Construct the initial color value for this space. */
 
 #define cs_proc_init_color(proc)\
-  void proc(P2(gs_client_color *, const gs_color_space *))
+  void proc(gs_client_color *, const gs_color_space *)
 #define cs_init_color(pcc, pcs)\
   (*(pcs)->type->init_color)(pcc, pcs)
 #define cs_full_init_color(pcc, pcs)\
@@ -111,7 +111,7 @@ struct gs_color_space_type_s {
     /* Force a client color into its legal range. */
 
 #define cs_proc_restrict_color(proc)\
-  void proc(P2(gs_client_color *, const gs_color_space *))
+  void proc(gs_client_color *, const gs_color_space *)
 #define cs_restrict_color(pcc, pcs)\
   ((pcs)->type->restrict_color(pcc, pcs))
 	cs_proc_restrict_color((*restrict_color));
@@ -120,8 +120,8 @@ struct gs_color_space_type_s {
     /* (Not defined for Pattern spaces.) */
 
 #define cs_proc_concrete_space(proc)\
-  const gs_color_space *proc(P2(const gs_color_space *,\
-				const gs_imager_state *))
+  const gs_color_space *proc(const gs_color_space *,\
+				const gs_imager_state *)
 #define cs_concrete_space(pcs, pis)\
   (*(pcs)->type->concrete_space)(pcs, pis)
 	cs_proc_concrete_space((*concrete_space));
@@ -135,8 +135,8 @@ struct gs_color_space_type_s {
      */
 
 #define cs_proc_concretize_color(proc)\
-  int proc(P4(const gs_client_color *, const gs_color_space *,\
-    frac *, const gs_imager_state *))
+  int proc(const gs_client_color *, const gs_color_space *,\
+    frac *, const gs_imager_state *)
 #define cs_concretize_color(pcc, pcs, values, pis)\
   (*(pcs)->type->concretize_color)(pcc, pcs, values, pis)
 	cs_proc_concretize_color((*concretize_color));
@@ -145,28 +145,28 @@ struct gs_color_space_type_s {
     /* (Only defined for concrete color spaces.) */
 
 #define cs_proc_remap_concrete_color(proc)\
-  int proc(P5(const frac *, gx_device_color *, const gs_imager_state *,\
-    gx_device *, gs_color_select_t))
+  int proc(const frac *, gx_device_color *, const gs_imager_state *,\
+    gx_device *, gs_color_select_t)
 	cs_proc_remap_concrete_color((*remap_concrete_color));
 
     /* Map a color directly to a device color. */
 
 #define cs_proc_remap_color(proc)\
-  int proc(P6(const gs_client_color *, const gs_color_space *,\
+  int proc(const gs_client_color *, const gs_color_space *,\
     gx_device_color *, const gs_imager_state *, gx_device *,\
-    gs_color_select_t))
+    gs_color_select_t)
 	cs_proc_remap_color((*remap_color));
 
     /* Install the color space in a graphics state. */
 
 #define cs_proc_install_cspace(proc)\
-  int proc(P2(const gs_color_space *, gs_state *))
+  int proc(const gs_color_space *, gs_state *)
 	cs_proc_install_cspace((*install_cspace));
 
     /* Adjust reference counts of indirect color space components. */
 
 #define cs_proc_adjust_cspace_count(proc)\
-  void proc(P2(const gs_color_space *, int))
+  void proc(const gs_color_space *, int)
 #define cs_adjust_cspace_count(pgs, delta)\
   (*(pgs)->color_space->type->adjust_cspace_count)((pgs)->color_space, delta)
 	cs_proc_adjust_cspace_count((*adjust_cspace_count));
@@ -180,7 +180,7 @@ struct gs_color_space_type_s {
      */
 
 #define cs_proc_adjust_color_count(proc)\
-  void proc(P3(const gs_client_color *, const gs_color_space *, int))
+  void proc(const gs_client_color *, const gs_color_space *, int)
 #define cs_adjust_color_count(pgs, delta)\
   (*(pgs)->color_space->type->adjust_color_count)\
     ((pgs)->ccolor, (pgs)->color_space, delta)
@@ -241,11 +241,11 @@ extern_st(st_color_space);
  * Initialize the type and memory fields of a color space, possibly
  * allocating it first.  This is only used by color space implementations.
  */
-void gs_cspace_init(P3(gs_color_space *pcs,
-		       const gs_color_space_type *pcstype,
-		       gs_memory_t *mem));
-int gs_cspace_alloc(P3(gs_color_space **ppcspace,
-		       const gs_color_space_type *pcstype,
-		       gs_memory_t *mem));
+void gs_cspace_init(gs_color_space *pcs,
+		    const gs_color_space_type *pcstype,
+		    gs_memory_t *mem);
+int gs_cspace_alloc(gs_color_space **ppcspace,
+		    const gs_color_space_type *pcstype,
+		    gs_memory_t *mem);
 
 #endif /* gxcspace_INCLUDED */

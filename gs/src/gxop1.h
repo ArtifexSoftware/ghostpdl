@@ -60,14 +60,14 @@ typedef gs_op1_state *is_ptr;
     pty += c_fixed(dy, yy);\
     if ( sfc.skewed ) ptx += c_fixed(dy, yx);\
   END
-void accum_xy_proc(P3(is_ptr ps, fixed dx, fixed dy));
+void accum_xy_proc(is_ptr ps, fixed dx, fixed dy);
 
 #define accum_xy(dx,dy)\
   accum_xy_proc(&s, dx, dy)
 
 /* Define operator procedures. */
-int gs_op1_closepath(P1(is_ptr ps));
-int gs_op1_rrcurveto(P7(is_ptr ps, fixed dx1, fixed dy1,
-			fixed dx2, fixed dy2, fixed dx3, fixed dy3));
+int gs_op1_closepath(is_ptr ps);
+int gs_op1_rrcurveto(is_ptr ps, fixed dx1, fixed dy1,
+		     fixed dx2, fixed dy2, fixed dx3, fixed dy3);
 
 #endif /* gxop1_INCLUDED */

@@ -25,21 +25,21 @@
 
 /* Compute M modulo N.  Requires N > 0; guarantees 0 <= imod(M,N) < N, */
 /* regardless of the whims of the % operator for negative operands. */
-int imod(P2(int m, int n));
+int imod(int m, int n);
 
 /* Compute the GCD of two integers. */
-int igcd(P2(int x, int y));
+int igcd(int x, int y);
 
 /*
  * Given A, B, and M, compute X such that A*X = B mod M, 0 < X < M.
  * Requires: M > 0, 0 < A < M, 0 < B < M, gcd(A, M) | gcd(A, B).
  */
-int idivmod(P3(int a, int b, int m));
+int idivmod(int a, int b, int m);
 
 /*
  * Compute floor(log2(N)).  Requires N > 0.
  */
-int ilog2(P1(int n));
+int ilog2(int n);
 
 /* Test whether an integral value fits in a given number of bits. */
 /* This works for all integral types. */

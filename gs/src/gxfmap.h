@@ -54,7 +54,7 @@ extern_st(st_transfer_map);
     transfer_map_enum_ptrs, transfer_map_reloc_ptrs)
 
 /* Set a transfer map to the identity map. */
-void gx_set_identity_transfer(P1(gx_transfer_map *));
+void gx_set_identity_transfer(gx_transfer_map *);
 
 /*
  * Map a color fraction through a transfer map.  If the map is small,
@@ -63,7 +63,7 @@ void gx_set_identity_transfer(P1(gx_transfer_map *));
 #define FRAC_MAP_INTERPOLATE (log2_transfer_map_size <= 8)
 #if FRAC_MAP_INTERPOLATE
 
-frac gx_color_frac_map(P2(frac, const frac *));		/* in gxcmap.c */
+frac gx_color_frac_map(frac, const frac *);		/* in gxcmap.c */
 
 #  define gx_map_color_frac(pgs,cf,m)\
      (pgs->m->proc == gs_identity_transfer ? cf :\
@@ -97,11 +97,11 @@ frac gx_color_frac_map(P2(frac, const frac *));		/* in gxcmap.c */
 
 /* Define a mapping procedure that just looks up the value in the cache. */
 /* (It is equivalent to gx_map_color_float with the arguments swapped.) */
-float gs_mapped_transfer(P2(floatp, const gx_transfer_map *));
+float gs_mapped_transfer(floatp, const gx_transfer_map *);
 
 /* Define an identity mapping procedure. */
 /* Don't store this directly in proc/closure.proc: */
 /* use gx_set_identity_transfer. */
-float gs_identity_transfer(P2(floatp, const gx_transfer_map *));
+float gs_identity_transfer(floatp, const gx_transfer_map *);
 
 #endif /* gxfmap_INCLUDED */

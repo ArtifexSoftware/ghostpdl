@@ -217,15 +217,15 @@ typedef struct gx_device_procs_s gx_device_procs;
 typedef struct gx_page_device_procs_s {
 
 #define dev_page_proc_install(proc)\
-  int proc(P2(gx_device *dev, gs_state *pgs))
+  int proc(gx_device *dev, gs_state *pgs)
     dev_page_proc_install((*install));
 
 #define dev_page_proc_begin_page(proc)\
-  int proc(P2(gx_device *dev, gs_state *pgs))
+  int proc(gx_device *dev, gs_state *pgs)
     dev_page_proc_begin_page((*begin_page));
 
 #define dev_page_proc_end_page(proc)\
-  int proc(P3(gx_device *dev, int reason, gs_state *pgs))
+  int proc(gx_device *dev, int reason, gs_state *pgs)
     dev_page_proc_end_page((*end_page));
 
 } gx_page_device_procs;
@@ -283,7 +283,7 @@ typedef struct gx_device_cached_colors_s {
 					/* may be 0 if static prototype */\
 	bool stype_is_dynamic;		/* if true, free the stype when */\
 					/* freeing the device */\
-	void (*finalize)(P1(gx_device *));  /* finalization to execute */\
+	void (*finalize)(gx_device *);  /* finalization to execute */\
 					/* before closing device, if any */\
 	rc_header rc;			/* reference count from gstates */\
 					/* and targets, +1 if retained */\
@@ -373,84 +373,84 @@ typedef struct gs_param_list_s gs_param_list;
 /* Define macros for declaring device procedures. */
 
 #define dev_t_proc_open_device(proc, dev_t)\
-  int proc(P1(dev_t *dev))
+  int proc(dev_t *dev)
 #define dev_proc_open_device(proc)\
   dev_t_proc_open_device(proc, gx_device)
 
 #define dev_t_proc_get_initial_matrix(proc, dev_t)\
-  void proc(P2(dev_t *dev, gs_matrix *pmat))
+  void proc(dev_t *dev, gs_matrix *pmat)
 #define dev_proc_get_initial_matrix(proc)\
   dev_t_proc_get_initial_matrix(proc, gx_device)
 
 #define dev_t_proc_sync_output(proc, dev_t)\
-  int proc(P1(dev_t *dev))
+  int proc(dev_t *dev)
 #define dev_proc_sync_output(proc)\
   dev_t_proc_sync_output(proc, gx_device)
 
 #define dev_t_proc_output_page(proc, dev_t)\
-  int proc(P3(dev_t *dev, int num_copies, int flush))
+  int proc(dev_t *dev, int num_copies, int flush)
 #define dev_proc_output_page(proc)\
   dev_t_proc_output_page(proc, gx_device)
 
 #define dev_t_proc_close_device(proc, dev_t)\
-  int proc(P1(dev_t *dev))
+  int proc(dev_t *dev)
 #define dev_proc_close_device(proc)\
   dev_t_proc_close_device(proc, gx_device)
 
 #define dev_t_proc_map_rgb_color(proc, dev_t)\
-  gx_color_index proc(P4(dev_t *dev,\
-    gx_color_value red, gx_color_value green, gx_color_value blue))
+  gx_color_index proc(dev_t *dev,\
+    gx_color_value red, gx_color_value green, gx_color_value blue)
 #define dev_proc_map_rgb_color(proc)\
   dev_t_proc_map_rgb_color(proc, gx_device)
 
 #define dev_t_proc_map_color_rgb(proc, dev_t)\
-  int proc(P3(dev_t *dev,\
-    gx_color_index color, gx_color_value rgb[3]))
+  int proc(dev_t *dev,\
+    gx_color_index color, gx_color_value rgb[3])
 #define dev_proc_map_color_rgb(proc)\
   dev_t_proc_map_color_rgb(proc, gx_device)
 
 #define dev_t_proc_fill_rectangle(proc, dev_t)\
-  int proc(P6(dev_t *dev,\
-    int x, int y, int width, int height, gx_color_index color))
+  int proc(dev_t *dev,\
+    int x, int y, int width, int height, gx_color_index color)
 #define dev_proc_fill_rectangle(proc)\
   dev_t_proc_fill_rectangle(proc, gx_device)
 
 #define dev_t_proc_tile_rectangle(proc, dev_t)\
-  int proc(P10(dev_t *dev,\
+  int proc(dev_t *dev,\
     const gx_tile_bitmap *tile, int x, int y, int width, int height,\
     gx_color_index color0, gx_color_index color1,\
-    int phase_x, int phase_y))
+    int phase_x, int phase_y)
 #define dev_proc_tile_rectangle(proc)\
   dev_t_proc_tile_rectangle(proc, gx_device)
 
 #define dev_t_proc_copy_mono(proc, dev_t)\
-  int proc(P11(dev_t *dev,\
+  int proc(dev_t *dev,\
     const byte *data, int data_x, int raster, gx_bitmap_id id,\
     int x, int y, int width, int height,\
-    gx_color_index color0, gx_color_index color1))
+    gx_color_index color0, gx_color_index color1)
 #define dev_proc_copy_mono(proc)\
   dev_t_proc_copy_mono(proc, gx_device)
 
 #define dev_t_proc_copy_color(proc, dev_t)\
-  int proc(P9(dev_t *dev,\
+  int proc(dev_t *dev,\
     const byte *data, int data_x, int raster, gx_bitmap_id id,\
-    int x, int y, int width, int height))
+    int x, int y, int width, int height)
 #define dev_proc_copy_color(proc)\
   dev_t_proc_copy_color(proc, gx_device)
 
 		/* OBSOLETED in release 3.66 */
 
 #define dev_t_proc_draw_line(proc, dev_t)\
-  int proc(P6(dev_t *dev,\
-    int x0, int y0, int x1, int y1, gx_color_index color))
+  int proc(dev_t *dev,\
+    int x0, int y0, int x1, int y1, gx_color_index color)
 #define dev_proc_draw_line(proc)\
   dev_t_proc_draw_line(proc, gx_device)
 
 		/* Added in release 2.4 */
 
 #define dev_t_proc_get_bits(proc, dev_t)\
-  int proc(P4(dev_t *dev,\
-    int y, byte *data, byte **actual_data))
+  int proc(dev_t *dev,\
+    int y, byte *data, byte **actual_data)
 #define dev_proc_get_bits(proc)\
   dev_t_proc_get_bits(proc, gx_device)
 
@@ -458,144 +458,144 @@ typedef struct gs_param_list_s gs_param_list;
 		/* renamed in 2.9.6 */
 
 #define dev_t_proc_get_params(proc, dev_t)\
-  int proc(P2(dev_t *dev, gs_param_list *plist))
+  int proc(dev_t *dev, gs_param_list *plist)
 #define dev_proc_get_params(proc)\
   dev_t_proc_get_params(proc, gx_device)
 
 #define dev_t_proc_put_params(proc, dev_t)\
-  int proc(P2(dev_t *dev, gs_param_list *plist))
+  int proc(dev_t *dev, gs_param_list *plist)
 #define dev_proc_put_params(proc)\
   dev_t_proc_put_params(proc, gx_device)
 
 		/* Added in release 2.6 */
 
 #define dev_t_proc_map_cmyk_color(proc, dev_t)\
-  gx_color_index proc(P5(dev_t *dev,\
+  gx_color_index proc(dev_t *dev,\
     gx_color_value cyan, gx_color_value magenta, gx_color_value yellow,\
-    gx_color_value black))
+    gx_color_value black)
 #define dev_proc_map_cmyk_color(proc)\
   dev_t_proc_map_cmyk_color(proc, gx_device)
 
 #define dev_t_proc_get_xfont_procs(proc, dev_t)\
-  const gx_xfont_procs *proc(P1(dev_t *dev))
+  const gx_xfont_procs *proc(dev_t *dev)
 #define dev_proc_get_xfont_procs(proc)\
   dev_t_proc_get_xfont_procs(proc, gx_device)
 
 		/* Added in release 2.6.1 */
 
 #define dev_t_proc_get_xfont_device(proc, dev_t)\
-  gx_device *proc(P1(dev_t *dev))
+  gx_device *proc(dev_t *dev)
 #define dev_proc_get_xfont_device(proc)\
   dev_t_proc_get_xfont_device(proc, gx_device)
 
 		/* Added in release 2.7.1 */
 
 #define dev_t_proc_map_rgb_alpha_color(proc, dev_t)\
-  gx_color_index proc(P5(dev_t *dev,\
+  gx_color_index proc(dev_t *dev,\
     gx_color_value red, gx_color_value green, gx_color_value blue,\
-    gx_color_value alpha))
+    gx_color_value alpha)
 #define dev_proc_map_rgb_alpha_color(proc)\
   dev_t_proc_map_rgb_alpha_color(proc, gx_device)
 
 		/* Added in release 2.8.1 */
 
 #define dev_t_proc_get_page_device(proc, dev_t)\
-  gx_device *proc(P1(dev_t *dev))
+  gx_device *proc(dev_t *dev)
 #define dev_proc_get_page_device(proc)\
   dev_t_proc_get_page_device(proc, gx_device)
 
 		/* Added in release 3.20, OBSOLETED in 5.65 */
 
 #define dev_t_proc_get_alpha_bits(proc, dev_t)\
-  int proc(P2(dev_t *dev, graphics_object_type type))
+  int proc(dev_t *dev, graphics_object_type type)
 #define dev_proc_get_alpha_bits(proc)\
   dev_t_proc_get_alpha_bits(proc, gx_device)
 
 		/* Added in release 3.20 */
 
 #define dev_t_proc_copy_alpha(proc, dev_t)\
-  int proc(P11(dev_t *dev, const byte *data, int data_x,\
+  int proc(dev_t *dev, const byte *data, int data_x,\
     int raster, gx_bitmap_id id, int x, int y, int width, int height,\
-    gx_color_index color, int depth))
+    gx_color_index color, int depth)
 #define dev_proc_copy_alpha(proc)\
   dev_t_proc_copy_alpha(proc, gx_device)
 
 		/* Added in release 3.38 */
 
 #define dev_t_proc_get_band(proc, dev_t)\
-  int proc(P3(dev_t *dev, int y, int *band_start))
+  int proc(dev_t *dev, int y, int *band_start)
 #define dev_proc_get_band(proc)\
   dev_t_proc_get_band(proc, gx_device)
 
 		/* Added in release 3.44 */
 
 #define dev_t_proc_copy_rop(proc, dev_t)\
-  int proc(P15(dev_t *dev,\
+  int proc(dev_t *dev,\
     const byte *sdata, int sourcex, uint sraster, gx_bitmap_id id,\
     const gx_color_index *scolors,\
     const gx_tile_bitmap *texture, const gx_color_index *tcolors,\
     int x, int y, int width, int height,\
-    int phase_x, int phase_y, gs_logical_operation_t lop))
+    int phase_x, int phase_y, gs_logical_operation_t lop)
 #define dev_proc_copy_rop(proc)\
   dev_t_proc_copy_rop(proc, gx_device)
 
 		/* Added in release 3.60, changed in 3.68. */
 
 #define dev_t_proc_fill_path(proc, dev_t)\
-  int proc(P6(dev_t *dev,\
+  int proc(dev_t *dev,\
     const gs_imager_state *pis, gx_path *ppath,\
     const gx_fill_params *params,\
-    const gx_drawing_color *pdcolor, const gx_clip_path *pcpath))
+    const gx_drawing_color *pdcolor, const gx_clip_path *pcpath)
 #define dev_proc_fill_path(proc)\
   dev_t_proc_fill_path(proc, gx_device)
 
 #define dev_t_proc_stroke_path(proc, dev_t)\
-  int proc(P6(dev_t *dev,\
+  int proc(dev_t *dev,\
     const gs_imager_state *pis, gx_path *ppath,\
     const gx_stroke_params *params,\
-    const gx_drawing_color *pdcolor, const gx_clip_path *pcpath))
+    const gx_drawing_color *pdcolor, const gx_clip_path *pcpath)
 #define dev_proc_stroke_path(proc)\
   dev_t_proc_stroke_path(proc, gx_device)
 
 		/* Added in release 3.60 */
 
 #define dev_t_proc_fill_mask(proc, dev_t)\
-  int proc(P13(dev_t *dev,\
+  int proc(dev_t *dev,\
     const byte *data, int data_x, int raster, gx_bitmap_id id,\
     int x, int y, int width, int height,\
     const gx_drawing_color *pdcolor, int depth,\
-    gs_logical_operation_t lop, const gx_clip_path *pcpath))
+    gs_logical_operation_t lop, const gx_clip_path *pcpath)
 #define dev_proc_fill_mask(proc)\
   dev_t_proc_fill_mask(proc, gx_device)
 
 		/* Added in release 3.66, changed in 3.69 */
 
 #define dev_t_proc_fill_trapezoid(proc, dev_t)\
-  int proc(P8(dev_t *dev,\
+  int proc(dev_t *dev,\
     const gs_fixed_edge *left, const gs_fixed_edge *right,\
     fixed ybot, fixed ytop, bool swap_axes,\
-    const gx_drawing_color *pdcolor, gs_logical_operation_t lop))
+    const gx_drawing_color *pdcolor, gs_logical_operation_t lop)
 #define dev_proc_fill_trapezoid(proc)\
   dev_t_proc_fill_trapezoid(proc, gx_device)
 
 #define dev_t_proc_fill_parallelogram(proc, dev_t)\
-  int proc(P9(dev_t *dev,\
+  int proc(dev_t *dev,\
     fixed px, fixed py, fixed ax, fixed ay, fixed bx, fixed by,\
-    const gx_drawing_color *pdcolor, gs_logical_operation_t lop))
+    const gx_drawing_color *pdcolor, gs_logical_operation_t lop)
 #define dev_proc_fill_parallelogram(proc)\
   dev_t_proc_fill_parallelogram(proc, gx_device)
 
 #define dev_t_proc_fill_triangle(proc, dev_t)\
-  int proc(P9(dev_t *dev,\
+  int proc(dev_t *dev,\
     fixed px, fixed py, fixed ax, fixed ay, fixed bx, fixed by,\
-    const gx_drawing_color *pdcolor, gs_logical_operation_t lop))
+    const gx_drawing_color *pdcolor, gs_logical_operation_t lop)
 #define dev_proc_fill_triangle(proc)\
   dev_t_proc_fill_triangle(proc, gx_device)
 
 #define dev_t_proc_draw_thin_line(proc, dev_t)\
-  int proc(P7(dev_t *dev,\
+  int proc(dev_t *dev,\
     fixed fx0, fixed fy0, fixed fx1, fixed fy1,\
-    const gx_drawing_color *pdcolor, gs_logical_operation_t lop))
+    const gx_drawing_color *pdcolor, gs_logical_operation_t lop)
 #define dev_proc_draw_thin_line(proc)\
   dev_t_proc_draw_thin_line(proc, gx_device)
 
@@ -605,94 +605,94 @@ typedef struct gs_param_list_s gs_param_list;
 		/* begin_image changed in 5.23. */
 
 #define dev_t_proc_begin_image(proc, dev_t)\
-  int proc(P9(dev_t *dev,\
+  int proc(dev_t *dev,\
     const gs_imager_state *pis, const gs_image_t *pim,\
     gs_image_format_t format, const gs_int_rect *prect,\
     const gx_drawing_color *pdcolor, const gx_clip_path *pcpath,\
-    gs_memory_t *memory, gx_image_enum_common_t **pinfo))
+    gs_memory_t *memory, gx_image_enum_common_t **pinfo)
 #define dev_proc_begin_image(proc)\
   dev_t_proc_begin_image(proc, gx_device)
 
 		/* OBSOLETED in release 5.23 */
 
 #define dev_t_proc_image_data(proc, dev_t)\
-  int proc(P6(dev_t *dev,\
+  int proc(dev_t *dev,\
     gx_image_enum_common_t *info, const byte **planes, int data_x,\
-    uint raster, int height))
+    uint raster, int height)
 #define dev_proc_image_data(proc)\
   dev_t_proc_image_data(proc, gx_device)
 
 		/* OBSOLETED in release 5.23 */
 
 #define dev_t_proc_end_image(proc, dev_t)\
-  int proc(P3(dev_t *dev,\
-    gx_image_enum_common_t *info, bool draw_last))
+  int proc(dev_t *dev,\
+    gx_image_enum_common_t *info, bool draw_last)
 #define dev_proc_end_image(proc)\
   dev_t_proc_end_image(proc, gx_device)
 
 		/* Added in release 3.68 */
 
 #define dev_t_proc_strip_tile_rectangle(proc, dev_t)\
-  int proc(P10(dev_t *dev,\
+  int proc(dev_t *dev,\
     const gx_strip_bitmap *tiles, int x, int y, int width, int height,\
     gx_color_index color0, gx_color_index color1,\
-    int phase_x, int phase_y))
+    int phase_x, int phase_y)
 #define dev_proc_strip_tile_rectangle(proc)\
   dev_t_proc_strip_tile_rectangle(proc, gx_device)
 
 #define dev_t_proc_strip_copy_rop(proc, dev_t)\
-  int proc(P15(dev_t *dev,\
+  int proc(dev_t *dev,\
     const byte *sdata, int sourcex, uint sraster, gx_bitmap_id id,\
     const gx_color_index *scolors,\
     const gx_strip_bitmap *textures, const gx_color_index *tcolors,\
     int x, int y, int width, int height,\
-    int phase_x, int phase_y, gs_logical_operation_t lop))
+    int phase_x, int phase_y, gs_logical_operation_t lop)
 #define dev_proc_strip_copy_rop(proc)\
   dev_t_proc_strip_copy_rop(proc, gx_device)
 
 		/* Added in release 4.20 */
 
 #define dev_t_proc_get_clipping_box(proc, dev_t)\
-  void proc(P2(dev_t *dev, gs_fixed_rect *pbox))
+  void proc(dev_t *dev, gs_fixed_rect *pbox)
 #define dev_proc_get_clipping_box(proc)\
   dev_t_proc_get_clipping_box(proc, gx_device)
 
 		/* Added in release 5.20, changed in 5.23 */
 
 #define dev_t_proc_begin_typed_image(proc, dev_t)\
-  int proc(P9(dev_t *dev,\
+  int proc(dev_t *dev,\
     const gs_imager_state *pis, const gs_matrix *pmat,\
     const gs_image_common_t *pim, const gs_int_rect *prect,\
     const gx_drawing_color *pdcolor, const gx_clip_path *pcpath,\
-    gs_memory_t *memory, gx_image_enum_common_t **pinfo))
+    gs_memory_t *memory, gx_image_enum_common_t **pinfo)
 #define dev_proc_begin_typed_image(proc)\
   dev_t_proc_begin_typed_image(proc, gx_device)
 
 		/* Added in release 5.20 */
 
 #define dev_t_proc_get_bits_rectangle(proc, dev_t)\
-  int proc(P4(dev_t *dev, const gs_int_rect *prect,\
-    gs_get_bits_params_t *params, gs_int_rect **unread))
+  int proc(dev_t *dev, const gs_int_rect *prect,\
+    gs_get_bits_params_t *params, gs_int_rect **unread)
 #define dev_proc_get_bits_rectangle(proc)\
   dev_t_proc_get_bits_rectangle(proc, gx_device)
 
 #define dev_t_proc_map_color_rgb_alpha(proc, dev_t)\
-  int proc(P3(dev_t *dev,\
-    gx_color_index color, gx_color_value rgba[4]))
+  int proc(dev_t *dev,\
+    gx_color_index color, gx_color_value rgba[4])
 #define dev_proc_map_color_rgb_alpha(proc)\
   dev_t_proc_map_color_rgb_alpha(proc, gx_device)
 
 #define dev_t_proc_create_compositor(proc, dev_t)\
-  int proc(P5(dev_t *dev,\
+  int proc(dev_t *dev,\
     gx_device **pcdev, const gs_composite_t *pcte,\
-    const gs_imager_state *pis, gs_memory_t *memory))
+    const gs_imager_state *pis, gs_memory_t *memory)
 #define dev_proc_create_compositor(proc)\
   dev_t_proc_create_compositor(proc, gx_device)\
 
 		/* Added in release 5.23 */
 
 #define dev_t_proc_get_hardware_params(proc, dev_t)\
-  int proc(P2(dev_t *dev, gs_param_list *plist))
+  int proc(dev_t *dev, gs_param_list *plist)
 #define dev_proc_get_hardware_params(proc)\
   dev_t_proc_get_hardware_params(proc, gx_device)
 
@@ -703,7 +703,7 @@ typedef struct gs_param_list_s gs_param_list;
 		/* Added in release 6.23 */
 
 #define dev_t_proc_finish_copydevice(proc, dev_t)\
-  int proc(P2(dev_t *dev, const gx_device *from_dev))
+  int proc(dev_t *dev, const gx_device *from_dev)
 #define dev_proc_finish_copydevice(proc)\
   dev_t_proc_finish_copydevice(proc, gx_device)
 
@@ -723,12 +723,12 @@ typedef struct gs_param_list_s gs_param_list;
   parameters.
 */
 #define dev_t_proc_begin_transparency_group(proc, dev_t)\
-  int proc(P6(gx_device *dev,\
+  int proc(gx_device *dev,\
     const gs_transparency_group_params_t *ptgp,\
     const gs_rect *pbbox,\
     gs_imager_state *pis,\
     gs_transparency_state_t **ppts,\
-    gs_memory_t *mem))
+    gs_memory_t *mem)
 #define dev_proc_begin_transparency_group(proc)\
   dev_t_proc_begin_transparency_group(proc, gx_device)
 
@@ -740,9 +740,9 @@ typedef struct gs_param_list_s gs_param_list;
   the stack is *not* popped.
 */
 #define dev_t_proc_end_transparency_group(proc, dev_t)\
-  int proc(P3(gx_device *dev,\
+  int proc(gx_device *dev,\
     gs_imager_state *pis,\
-    gs_transparency_state_t **ppts))
+    gs_transparency_state_t **ppts)
 #define dev_proc_end_transparency_group(proc)\
   dev_t_proc_end_transparency_group(proc, gx_device)
 
@@ -752,12 +752,12 @@ typedef struct gs_param_list_s gs_param_list;
   accumulates coverage values, not full pixel values.
 */
 #define dev_t_proc_begin_transparency_mask(proc, dev_t)\
-  int proc(P6(gx_device *dev,\
+  int proc(gx_device *dev,\
     const gs_transparency_mask_params_t *ptmp,\
     const gs_rect *pbbox,\
     gs_imager_state *pis,\
     gs_transparency_state_t **ppts,\
-    gs_memory_t *mem))
+    gs_memory_t *mem)
 #define dev_proc_begin_transparency_mask(proc)\
   dev_t_proc_begin_transparency_mask(proc, gx_device)
 
@@ -768,8 +768,8 @@ typedef struct gs_param_list_s gs_param_list;
   end_mask fails, the stack is *not* popped.
 */
 #define dev_t_proc_end_transparency_mask(proc, dev_t)\
-  int proc(P2(gx_device *dev,\
-    gs_transparency_mask_t **pptm))
+  int proc(gx_device *dev,\
+    gs_transparency_mask_t **pptm)
 #define dev_proc_end_transparency_mask(proc)\
   dev_t_proc_end_transparency_mask(proc, gx_device)
 
@@ -778,8 +778,8 @@ typedef struct gs_param_list_s gs_param_list;
   either a group or a mask.  Set *ppts to 0 iff the stack is now empty.
 */
 #define dev_t_proc_discard_transparency_layer(proc, dev_t)\
-  int proc(P2(gx_device *dev,\
-    gs_transparency_state_t **ppts))
+  int proc(gx_device *dev,\
+    gs_transparency_state_t **ppts)
 #define dev_proc_discard_transparency_layer(proc)\
   dev_t_proc_discard_transparency_layer(proc, gx_device)
 
@@ -863,20 +863,20 @@ typedef struct gx_image_plane_s {
  * end_image} are now DEPRECATED and will eventually be removed.
  * Their replacements no longer take an ignored dev argument.
  */
-int gx_image_data(P5(gx_image_enum_common_t *info, const byte **planes,
-		     int data_x, uint raster, int height));
+int gx_image_data(gx_image_enum_common_t *info, const byte **planes,
+		  int data_x, uint raster, int height);
 /*
  * Solely for backward compatibility, gx_image_plane_data doesn't return
  * rows_used.
  */
-int gx_image_plane_data(P3(gx_image_enum_common_t *info,
-			   const gx_image_plane_t *planes, int height));
-int gx_image_plane_data_rows(P4(gx_image_enum_common_t *info,
-				const gx_image_plane_t *planes, int height,
-				int *rows_used));
-int gx_image_flush(P1(gx_image_enum_common_t *info));
-bool gx_image_planes_wanted(P2(const gx_image_enum_common_t *info, byte *wanted));
-int gx_image_end(P2(gx_image_enum_common_t *info, bool draw_last));
+int gx_image_plane_data(gx_image_enum_common_t *info,
+			const gx_image_plane_t *planes, int height);
+int gx_image_plane_data_rows(gx_image_enum_common_t *info,
+			     const gx_image_plane_t *planes, int height,
+			     int *rows_used);
+int gx_image_flush(gx_image_enum_common_t *info);
+bool gx_image_planes_wanted(const gx_image_enum_common_t *info, byte *wanted);
+int gx_image_end(gx_image_enum_common_t *info, bool draw_last);
 
 #define gx_device_image_data(dev, info, planes, data_x, raster, height)\
   gx_image_data(info, planes, data_x, raster, height)
@@ -929,8 +929,8 @@ struct_proc_finalize(gx_device_finalize);	/* public for subclasses */
 
 /* Enumerate or relocate a pointer to a device. */
 /* These take the containing space into account properly. */
-gx_device *gx_device_enum_ptr(P1(gx_device *));
-gx_device *gx_device_reloc_ptr(P2(gx_device *, gc_state_t *));
+gx_device *gx_device_enum_ptr(gx_device *);
+gx_device *gx_device_reloc_ptr(gx_device *, gc_state_t *);
 
 /* Define typedefs for some of the device procedures, because */
 /* ansi2knr can't handle dev_proc_xxx((*xxx)) in a formal argument list. */
@@ -985,44 +985,44 @@ extern_st(st_device_null);
  * about what this means.  Normally, devices created for temporary use have
  * internal = true (retained = false).
  */
-void gx_device_init(P4(gx_device * dev, const gx_device * proto,
-		       gs_memory_t * mem, bool internal));
+void gx_device_init(gx_device * dev, const gx_device * proto,
+		    gs_memory_t * mem, bool internal);
 
 /* Make a null device. */
 /* The gs_memory_t argument is 0 if the device is temporary and local, */
 /* or the allocator that was used to allocate it if it is a real object. */
-void gs_make_null_device(P3(gx_device_null *dev_null, gx_device *target,
-			    gs_memory_t *mem));
+void gs_make_null_device(gx_device_null *dev_null, gx_device *target,
+			 gs_memory_t *mem);
 
 /* Set the target of a (forwarding) device. */
-void gx_device_set_target(P2(gx_device_forward *fdev, gx_device *target));
+void gx_device_set_target(gx_device_forward *fdev, gx_device *target);
 
 /* Mark a device as retained or not retained. */
-void gx_device_retain(P2(gx_device *dev, bool retained));
+void gx_device_retain(gx_device *dev, bool retained);
 
 /* Calculate the raster (number of bytes in a scan line), */
 /* with byte or word padding. */
-uint gx_device_raster(P2(const gx_device * dev, bool pad_to_word));
+uint gx_device_raster(const gx_device * dev, bool pad_to_word);
 
 /* Adjust the resolution for devices that only have a fixed set of */
 /* geometries, so that the apparent size in inches remains constant. */
 /* If fit=1, the resolution is adjusted so that the entire image fits; */
 /* if fit=0, one dimension fits, but the other one is clipped. */
-int gx_device_adjust_resolution(P4(gx_device * dev, int actual_width, int actual_height, int fit));
+int gx_device_adjust_resolution(gx_device * dev, int actual_width, int actual_height, int fit);
 
 /* Set the HWMargins to values defined in inches. */
 /* If move_origin is true, also reset the Margins. */
-void gx_device_set_margins(P3(gx_device * dev, const float *margins /*[4] */ ,
-			      bool move_origin));
+void gx_device_set_margins(gx_device * dev, const float *margins /*[4] */ ,
+			   bool move_origin);
 
 /* Set the width and height (in pixels), updating MediaSize. */
-void gx_device_set_width_height(P3(gx_device * dev, int width, int height));
+void gx_device_set_width_height(gx_device * dev, int width, int height);
 
 /* Set the resolution (in pixels per inch), updating width and height. */
-void gx_device_set_resolution(P3(gx_device * dev, floatp x_dpi, floatp y_dpi));
+void gx_device_set_resolution(gx_device * dev, floatp x_dpi, floatp y_dpi);
 
 /* Set the MediaSize (in 1/72" units), updating width and height. */
-void gx_device_set_media_size(P3(gx_device * dev, floatp media_width, floatp media_height));
+void gx_device_set_media_size(gx_device * dev, floatp media_width, floatp media_height);
 
 /****** BACKWARD COMPATIBILITY ******/
 #define gx_device_set_page_size(dev, w, h)\
@@ -1032,22 +1032,22 @@ void gx_device_set_media_size(P3(gx_device * dev, floatp media_width, floatp med
  * Temporarily install a null device, or a special device such as
  * a clipping or cache device.
  */
-void gx_set_device_only(P2(gs_state *, gx_device *));
+void gx_set_device_only(gs_state *, gx_device *);
 
 /* Close a device. */
-int gs_closedevice(P1(gx_device *));
+int gs_closedevice(gx_device *);
 
 /* "Free" a device locally allocated on the stack, by finalizing it. */
-void gx_device_free_local(P1(gx_device *));
+void gx_device_free_local(gx_device *);
 
 /* ------ Device types (an unused concept right now) ------ */
 
 #define dev_type_proc_initialize(proc)\
-  int proc(P1(gx_device *))
+  int proc(gx_device *)
 
 typedef struct gx_device_type_s {
     gs_memory_type_ptr_t stype;
-                         dev_type_proc_initialize((*initialize));
+    dev_type_proc_initialize((*initialize));
 } gx_device_type;
 
 #define device_type(dtname, stype, initproc)\

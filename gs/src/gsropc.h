@@ -45,8 +45,8 @@ typedef struct gs_composite_rop_params_s {
 } gs_composite_rop_params_t;
 
 /* Create a RasterOp-compositing object. */
-int gs_create_composite_rop(P3(gs_composite_t ** ppcte,
-			       const gs_composite_rop_params_t * params,
-			       gs_memory_t * mem));
+int gs_create_composite_rop(gs_composite_t ** ppcte,
+			    const gs_composite_rop_params_t * params,
+			    gs_memory_t * mem);
 
 #endif /* gsropc_INCLUDED */

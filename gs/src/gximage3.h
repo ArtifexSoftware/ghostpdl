@@ -35,8 +35,8 @@
  * The device is closed and freed at the end of processing the image.
  */
 #define IMAGE3_MAKE_MID_PROC(proc)\
-  int proc(P5(gx_device **pmidev, gx_device *dev, int width, int height,\
-	      gs_memory_t *mem))
+  int proc(gx_device **pmidev, gx_device *dev, int width, int height,\
+	   gs_memory_t *mem)
 typedef IMAGE3_MAKE_MID_PROC((*image3_make_mid_proc_t));
 
 /*

@@ -47,15 +47,15 @@ typedef struct gs_composite_type_procs_s {
      * Create the default compositor for a compositing function.
      */
 #define composite_create_default_compositor_proc(proc)\
-  int proc(P5(const gs_composite_t *pcte, gx_device **pcdev,\
-    gx_device *dev, const gs_imager_state *pis, gs_memory_t *mem))
+  int proc(const gs_composite_t *pcte, gx_device **pcdev,\
+    gx_device *dev, const gs_imager_state *pis, gs_memory_t *mem)
     composite_create_default_compositor_proc((*create_default_compositor));
 
     /*
      * Test whether this function is equal to another one.
      */
 #define composite_equal_proc(proc)\
-  bool proc(P2(const gs_composite_t *pcte, const gs_composite_t *pcte2))
+  bool proc(const gs_composite_t *pcte, const gs_composite_t *pcte2)
     composite_equal_proc((*equal));
 
     /*
@@ -68,7 +68,7 @@ typedef struct gs_composite_type_procs_s {
      * not changed.
      */
 #define composite_write_proc(proc)\
-  int proc(P3(const gs_composite_t *pcte, byte *data, uint *psize))
+  int proc(const gs_composite_t *pcte, byte *data, uint *psize)
     composite_write_proc((*write));
 
     /*
@@ -76,8 +76,8 @@ typedef struct gs_composite_type_procs_s {
      * a structure, allocating the structure.
      */
 #define composite_read_proc(proc)\
-  int proc(P4(gs_composite_t **ppcte, const byte *data, uint size,\
-    gs_memory_t *mem))
+  int proc(gs_composite_t **ppcte, const byte *data, uint size,\
+    gs_memory_t *mem)
     composite_read_proc((*read));
 
 } gs_composite_type_procs_t;

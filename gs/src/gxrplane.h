@@ -43,7 +43,7 @@ typedef struct gx_render_plane_s {
  * it will be made a property of the device somehow, perhaps in the
  * color_info.)
  */
-int gx_render_plane_init(P3(gx_render_plane_t *render_plane,
-			    const gx_device *dev, int index));
+int gx_render_plane_init(gx_render_plane_t *render_plane,
+			 const gx_device *dev, int index);
 
 #endif /* gxrplane_INCLUDED */

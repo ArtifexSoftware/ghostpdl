@@ -156,14 +156,14 @@ extern_st(st_device_memory);
  * size includes both the bitmap and the line pointers.
  */
 /* bits only */
-ulong gdev_mem_bits_size(P3(const gx_device_memory *mdev, int width,
-			    int height));
+ulong gdev_mem_bits_size(const gx_device_memory *mdev, int width,
+			 int height);
 /* line pointers only */
-ulong gdev_mem_line_ptrs_size(P3(const gx_device_memory *mdev, int width,
-				 int height));
+ulong gdev_mem_line_ptrs_size(const gx_device_memory *mdev, int width,
+			      int height);
 /* bits + line pointers */
-ulong gdev_mem_data_size(P3(const gx_device_memory *mdev, int width,
-			    int height));
+ulong gdev_mem_data_size(const gx_device_memory *mdev, int width,
+			 int height);
 
 #define gdev_mem_bitmap_size(mdev)\
   gdev_mem_data_size(mdev, (mdev)->width, (mdev)->height)
@@ -172,7 +172,7 @@ ulong gdev_mem_data_size(P3(const gx_device_memory *mdev, int width,
  * Do the inverse computation: given the device width and a buffer size,
  * compute the maximum height.
  */
-int gdev_mem_max_height(P3(const gx_device_memory *, int, ulong));
+int gdev_mem_max_height(const gx_device_memory *, int, ulong);
 
 /*
  * Compute the standard raster (data bytes per line) similarly.
@@ -182,10 +182,10 @@ int gdev_mem_max_height(P3(const gx_device_memory *, int, ulong));
 
 /* Determine the appropriate memory device for a given */
 /* number of bits per pixel (0 if none suitable). */
-const gx_device_memory *gdev_mem_device_for_bits(P1(int));
+const gx_device_memory *gdev_mem_device_for_bits(int);
 
 /* Determine the word-oriented memory device for a given depth. */
-const gx_device_memory *gdev_mem_word_device_for_bits(P1(int));
+const gx_device_memory *gdev_mem_word_device_for_bits(int);
 
 /* Make a memory device. */
 /* mem is 0 if the device is temporary and local, */
@@ -193,24 +193,24 @@ const gx_device_memory *gdev_mem_word_device_for_bits(P1(int));
 /* page_device is 1 if the device should be a page device, */
 /* 0 if it should propagate this property from its target, or */
 /* -1 if it should not be a page device. */
-void gs_make_mem_mono_device(P3(gx_device_memory * mdev, gs_memory_t * mem,
-				gx_device * target));
-void gs_make_mem_device(P5(gx_device_memory * mdev,
-			   const gx_device_memory * mdproto,
-			   gs_memory_t * mem, int page_device,
-			   gx_device * target));
-void gs_make_mem_abuf_device(P6(gx_device_memory * adev, gs_memory_t * mem,
-				gx_device * target,
-				const gs_log2_scale_point * pscale,
-				int alpha_bits, int mapped_x));
-void gs_make_mem_alpha_device(P4(gx_device_memory * adev, gs_memory_t * mem,
-				 gx_device * target, int alpha_bits));
+void gs_make_mem_mono_device(gx_device_memory * mdev, gs_memory_t * mem,
+			     gx_device * target);
+void gs_make_mem_device(gx_device_memory * mdev,
+			const gx_device_memory * mdproto,
+			gs_memory_t * mem, int page_device,
+			gx_device * target);
+void gs_make_mem_abuf_device(gx_device_memory * adev, gs_memory_t * mem,
+			     gx_device * target,
+			     const gs_log2_scale_point * pscale,
+			     int alpha_bits, int mapped_x);
+void gs_make_mem_alpha_device(gx_device_memory * adev, gs_memory_t * mem,
+			      gx_device * target, int alpha_bits);
 
 /*
  * Open a memory device, only setting line pointers to a subset of its
  * scan lines.  Banding devices use this (see gxclread.c).
  */
-int gdev_mem_open_scan_lines(P2(gx_device_memory *mdev, int setup_height));
+int gdev_mem_open_scan_lines(gx_device_memory *mdev, int setup_height);
 
 /*
  * Initialize the line pointers of a memory device.  base and/or line_ptrs
@@ -225,17 +225,17 @@ int gdev_mem_open_scan_lines(P2(gx_device_memory *mdev, int setup_height));
  * in the expectation that the device's height will be reset to
  * setup_height.
  */
-int gdev_mem_set_line_ptrs(P5(gx_device_memory *mdev,
-			      byte *base, int raster, byte **line_ptrs,
-			      int setup_height));
+int gdev_mem_set_line_ptrs(gx_device_memory *mdev,
+			   byte *base, int raster, byte **line_ptrs,
+			   int setup_height);
 
 /* Define whether a monobit memory device is inverted (black=1). */
-void gdev_mem_mono_set_inverted(P2(gx_device_memory * mdev, bool black_is_1));
+void gdev_mem_mono_set_inverted(gx_device_memory * mdev, bool black_is_1);
 
 /* Test whether a device is a memory device. */
-bool gs_device_is_memory(P1(const gx_device *));
+bool gs_device_is_memory(const gx_device *);
 
 /* Test whether a device is an alpha-buffering device. */
-bool gs_device_is_abuf(P1(const gx_device *));
+bool gs_device_is_abuf(const gx_device *);
 
 #endif /* gxdevmem_INCLUDED */

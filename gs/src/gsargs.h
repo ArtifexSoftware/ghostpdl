@@ -41,7 +41,7 @@ typedef struct arg_source_s {
 } arg_source;
 typedef struct arg_list_s {
     bool expand_ats;		/* if true, expand @-files */
-    FILE *(*arg_fopen) (P2(const char *fname, void *fopen_data));
+    FILE *(*arg_fopen) (const char *fname, void *fopen_data);
     void *fopen_data;
     const char **argp;
     int argn;
@@ -51,9 +51,9 @@ typedef struct arg_list_s {
 } arg_list;
 
 /* Initialize an arg list. */
-void arg_init(P5(arg_list * pal, const char **argv, int argc,
-	      FILE * (*arg_fopen) (P2(const char *fname, void *fopen_data)),
-		 void *fopen_data));
+void arg_init(arg_list * pal, const char **argv, int argc,
+	      FILE * (*arg_fopen) (const char *fname, void *fopen_data),
+	      void *fopen_data);
 
 /*
  * Push a string onto an arg list.
@@ -61,21 +61,21 @@ void arg_init(P5(arg_list * pal, const char **argv, int argc,
  * If mem != 0, it is used to free the string when we are done with it.
  * Return 0 on success, non-zero on failure
  */
-int arg_push_memory_string(P3(arg_list * pal, char *str, gs_memory_t * mem));
+int arg_push_memory_string(arg_list * pal, char *str, gs_memory_t * mem);
 
 #define arg_push_string(pal, str)\
   arg_push_memory_string(pal, str, (gs_memory_t *)0);
 
 /* Clean up an arg list before exiting. */
-void arg_finit(P1(arg_list * pal));
+void arg_finit(arg_list * pal);
 
 /*
  * Get the next arg from a list.
  * Note that these are not copied to the heap.
  */
-const char *arg_next(P2(arg_list * pal, int *code));
+const char *arg_next(arg_list * pal, int *code);
 
 /* Copy an argument string to the heap. */
-char *arg_copy(P2(const char *str, gs_memory_t * mem));
+char *arg_copy(const char *str, gs_memory_t * mem);
 
 #endif /* gsargs_INCLUDED */

@@ -86,7 +86,7 @@ typedef struct gx_ht_cell_params_s {
 } gx_ht_cell_params_t;
 
 /* Compute the derived values from the defining values. */
-void gx_compute_cell_values(P1(gx_ht_cell_params_t *));
+void gx_compute_cell_values(gx_ht_cell_params_t *);
 
 /*
  * The whitening order is represented by a pair of arrays.
@@ -170,17 +170,17 @@ typedef struct gx_ht_order_procs_s {
     /* Note that for 16-bit threshold values, */
     /* each value is 2 bytes in big-endian order (Adobe spec). */
 
-    int (*construct_order)(P2(gx_ht_order *order, const byte *thresholds));
+    int (*construct_order)(gx_ht_order *order, const byte *thresholds);
 
     /* Return the (x,y) coordinate of an element of bit_data. */
 
-    int (*bit_index)(P3(const gx_ht_order *order, uint index,
-			gs_int_point *ppt));
+    int (*bit_index)(const gx_ht_order *order, uint index,
+		     gs_int_point *ppt);
 
     /* Update a halftone cache tile to match this order. */
 
-    int (*render)(P3(gx_ht_tile *tile, int new_bit_level,
-		     const gx_ht_order *order));
+    int (*render)(gx_ht_tile *tile, int new_bit_level,
+		  const gx_ht_order *order);
 
 } gx_ht_order_procs_t;
 /*
@@ -303,11 +303,10 @@ extern_st(st_device_halftone);
 #define st_device_halftone_max_ptrs (st_ht_order_max_ptrs + 1)
 
 /* Complete a halftone order defined by a threshold array. */
-void gx_ht_complete_threshold_order(P1(gx_ht_order *porder));
+void gx_ht_complete_threshold_order(gx_ht_order *porder);
 
 /* Release a gx_device_halftone by freeing its components. */
 /* (Don't free the gx_device_halftone itself.) */
-void gx_device_halftone_release(P2(gx_device_halftone * pdht,
-				   gs_memory_t * mem));
+void gx_device_halftone_release(gx_device_halftone * pdht, gs_memory_t * mem);
 
 #endif /* gxdht_INCLUDED */

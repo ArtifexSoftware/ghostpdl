@@ -79,7 +79,7 @@ typedef struct gx_device_s gx_device;
  */
 
 /* Initialize a PatternType 2 pattern. */
-void gs_pattern2_init(P1(gs_pattern2_template_t *));
+void gs_pattern2_init(gs_pattern2_template_t *);
 
 /* Check device color for Pattern Type 2. */
 bool gx_dc_is_pattern2_color(const gx_device_color *pdevc);
@@ -88,6 +88,5 @@ bool gx_dc_is_pattern2_color(const gx_device_color *pdevc);
 int gx_dc_pattern2_fill_path_adjusted(const gx_device_color * pdevc, 
 			      gx_path * ppath, gs_fixed_rect * rect, 
 			      gx_device * dev);
-
 
 #endif /* gsptype2_INCLUDED */

@@ -25,17 +25,17 @@
  *  normally they do exit cleanup and error messaging
  *  without calling system exit() returning to the caller.
  */
-void gs_to_exit(P1(int exit_status));
+void gs_to_exit(int exit_status);
 
 /** some clients prefer this to return the postscript error code
  * to the caller otherwise the same as gs_to_exit()
  */
-void gs_to_exit_with_code(P2(int exit_status, int code));
+void gs_to_exit_with_code(int exit_status, int code);
 
 /** The client must provide this.  
  * After possible cleanup it may call gp_do_exit() which calls exit() in a platform
  * independent way.  This is a fatal error so returning is not a good idea.
  */
-void gs_abort(P0());
+void gs_abort(void);
 
 #endif /* gsexit_INCLUDED */

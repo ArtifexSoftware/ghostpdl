@@ -33,23 +33,23 @@
  */
 
 /* General color routines */
-const gs_color_space *gs_currentcolorspace(P1(const gs_state *));
-int gs_setcolorspace(P2(gs_state *, const gs_color_space *));
-const gs_client_color *gs_currentcolor(P1(const gs_state *));
-int gs_setcolor(P2(gs_state *, const gs_client_color *));
+const gs_color_space *gs_currentcolorspace(const gs_state *);
+int gs_setcolorspace(gs_state *, const gs_color_space *);
+const gs_client_color *gs_currentcolor(const gs_state *);
+int gs_setcolor(gs_state *, const gs_client_color *);
 
 /*
  * gs_currentcolorspace_index returns the index of the current color space
  * *before* any substitution.
  */
-gs_color_space_index gs_currentcolorspace_index(P1(const gs_state *));
+gs_color_space_index gs_currentcolorspace_index(const gs_state *);
 
 /* CIE-specific routines */
 #ifndef gs_cie_render_DEFINED
 #  define gs_cie_render_DEFINED
 typedef struct gs_cie_render_s gs_cie_render;
 #endif
-const gs_cie_render *gs_currentcolorrendering(P1(const gs_state *));
-int gs_setcolorrendering(P2(gs_state *, gs_cie_render *));
+const gs_cie_render *gs_currentcolorrendering(const gs_state *);
+int gs_setcolorrendering(gs_state *, gs_cie_render *);
 
 #endif /* gscolor2_INCLUDED */

@@ -46,7 +46,7 @@ struct gs_pattern_type_s {
 	 */
 
 #define pattern_proc_uses_base_space(proc)\
-  bool proc(P1(const gs_pattern_template_t *))
+  bool proc(const gs_pattern_template_t *)
 
 	pattern_proc_uses_base_space((*uses_base_space));
 
@@ -55,8 +55,8 @@ struct gs_pattern_type_s {
 	 */
 
 #define pattern_proc_make_pattern(proc)\
-  int proc(P5(gs_client_color *, const gs_pattern_template_t *,\
-	      const gs_matrix *, gs_state *, gs_memory_t *))
+  int proc(gs_client_color *, const gs_pattern_template_t *,\
+	   const gs_matrix *, gs_state *, gs_memory_t *)
 
 	pattern_proc_make_pattern((*make_pattern));
 
@@ -65,7 +65,7 @@ struct gs_pattern_type_s {
 	 */
 
 #define pattern_proc_get_pattern(proc)\
-  const gs_pattern_template_t *proc(P1(const gs_pattern_instance_t *))
+  const gs_pattern_template_t *proc(const gs_pattern_instance_t *)
 
 	pattern_proc_get_pattern((*get_pattern));
 
@@ -86,16 +86,16 @@ struct gs_pattern_type_s {
  * Initialize the common part of a pattern template.  This procedure is for
  * the use of gs_pattern*_init implementations, not clients.
  */
-void gs_pattern_common_init(P2(gs_pattern_template_t *,
-			       const gs_pattern_type_t *));
+void gs_pattern_common_init(gs_pattern_template_t *,
+			    const gs_pattern_type_t *);
 
 /*
  * Do the generic work for makepattern: allocate the instance and the
  * saved graphics state, and fill in the common members.
  */
-int gs_make_pattern_common(P6(gs_client_color *, const gs_pattern_template_t *,
-			      const gs_matrix *, gs_state *, gs_memory_t *,
-			      gs_memory_type_ptr_t));
+int gs_make_pattern_common(gs_client_color *, const gs_pattern_template_t *,
+			   const gs_matrix *, gs_state *, gs_memory_t *,
+			   gs_memory_type_ptr_t);
 
 /* Declare the freeing procedure for Pattern instances. */
 extern rc_free_proc(rc_free_pattern_instance);
@@ -161,13 +161,13 @@ struct gx_color_tile_s {
 /* Allocate a Pattern cache. */
 /* We shorten the procedure names because some VMS compilers */
 /* truncate names to 23 characters. */
-uint gx_pat_cache_default_tiles(P0());
-ulong gx_pat_cache_default_bits(P0());
-gx_pattern_cache *gx_pattern_alloc_cache(P3(gs_memory_t *, uint, ulong));
+uint gx_pat_cache_default_tiles(void);
+ulong gx_pat_cache_default_bits(void);
+gx_pattern_cache *gx_pattern_alloc_cache(gs_memory_t *, uint, ulong);
 
 /* Get or set the Pattern cache in a gstate. */
-gx_pattern_cache *gstate_pattern_cache(P1(gs_state *));
-void gstate_set_pattern_cache(P2(gs_state *, gx_pattern_cache *));
+gx_pattern_cache *gstate_pattern_cache(gs_state *);
+void gstate_set_pattern_cache(gs_state *, gx_pattern_cache *);
 
 /*
  * Define a device for accumulating the rendering of a Pattern.
@@ -192,22 +192,22 @@ typedef struct gx_device_pattern_accum_s {
     instance, bits, mask)
 
 /* Allocate a pattern accumulator. */
-gx_device_pattern_accum *gx_pattern_accum_alloc(P2(gs_memory_t * memory, client_name_t));
+gx_device_pattern_accum *gx_pattern_accum_alloc(gs_memory_t * memory, client_name_t);
 
 /* Add an accumulated pattern to the cache. */
 /* Note that this does not free any of the data in the accumulator */
 /* device, but it may zero out the bitmap_memory pointers to prevent */
 /* the accumulated bitmaps from being freed when the device is closed. */
-int gx_pattern_cache_add_entry(P3(gs_imager_state *, gx_device_pattern_accum *,
-				  gx_color_tile **));
+int gx_pattern_cache_add_entry(gs_imager_state *, gx_device_pattern_accum *,
+			       gx_color_tile **);
 
 /* Look up a pattern color in the cache. */
-bool gx_pattern_cache_lookup(P4(gx_device_color *, const gs_imager_state *,
-				gx_device *, gs_color_select_t));
+bool gx_pattern_cache_lookup(gx_device_color *, const gs_imager_state *,
+			     gx_device *, gs_color_select_t);
 
 /* Purge selected entries from the pattern cache. */
-void gx_pattern_cache_winnow(P3(gx_pattern_cache *,
-				bool (*)(P2(gx_color_tile *, void *)),
-				void *));
+void gx_pattern_cache_winnow(gx_pattern_cache *,
+			     bool (*)(gx_color_tile *, void *),
+			     void *);
 
 #endif /* gxpcolor_INCLUDED */

@@ -96,14 +96,14 @@ struct gs_ptr_procs_s {
     /* Unmark the referent of a pointer. */
 
 #define ptr_proc_unmark(proc)\
-  void proc(P2(enum_ptr_t *, gc_state_t *))
+  void proc(enum_ptr_t *, gc_state_t *)
     ptr_proc_unmark((*unmark));
 
     /* Mark the referent of a pointer. */
     /* Return true iff it was unmarked before. */
 
 #define ptr_proc_mark(proc)\
-  bool proc(P2(enum_ptr_t *, gc_state_t *))
+  bool proc(enum_ptr_t *, gc_state_t *)
     ptr_proc_mark((*mark));
 
     /* Relocate a pointer. */
@@ -113,7 +113,7 @@ struct gs_ptr_procs_s {
     /* (the reloc_ptr routines) to the implementations. */
 
 #define ptr_proc_reloc(proc, typ)\
-  typ *proc(P2(const typ *, gc_state_t *))
+  typ *proc(const typ *, gc_state_t *)
     ptr_proc_reloc((*reloc), void);
 
 };
@@ -160,9 +160,9 @@ struct gs_gc_root_s {
  * 'ref' objects.
  */
 #define string_proc_reloc(proc)\
-  void proc(P2(gs_string *, gc_state_t *))
+  void proc(gs_string *, gc_state_t *)
 #define const_string_proc_reloc(proc)\
-  void proc(P2(gs_const_string *, gc_state_t *))
+  void proc(gs_const_string *, gc_state_t *)
 #define gc_procs_common\
 	/* Relocate a pointer to an object. */\
   ptr_proc_reloc((*reloc_struct_ptr), void /*obj_header_t*/);\
@@ -357,11 +357,11 @@ struct_proc_reloc_ptrs(basic_reloc_ptrs);
 #define ENUM_CONST_STRING(sptr)	/* pointer to gs_const_string */\
   ENUM_CONST_STRING2((sptr)->data, (sptr)->size)
 extern gs_ptr_type_t
-    enum_bytestring(P2(enum_ptr_t *pep, const gs_bytestring *pbs));
+    enum_bytestring(enum_ptr_t *pep, const gs_bytestring *pbs);
 #define ENUM_BYTESTRING(ptr)	/* pointer to gs_bytestring */\
   enum_bytestring(pep, ptr)
 extern gs_ptr_type_t
-    enum_const_bytestring(P2(enum_ptr_t *pep, const gs_const_bytestring *pbs));
+    enum_const_bytestring(enum_ptr_t *pep, const gs_const_bytestring *pbs);
 #define ENUM_CONST_BYTESTRING(ptr)  /* pointer to gs_const_bytestring */\
   enum_const_bytestring(pep, ptr)
 
@@ -406,10 +406,10 @@ extern gs_ptr_type_t
   (gc_proc(gcst, reloc_string)(&(ptrvar), gcst))
 #define RELOC_CONST_STRING_VAR(ptrvar)\
   (gc_proc(gcst, reloc_const_string)(&(ptrvar), gcst))
-extern void reloc_bytestring(P2(gs_bytestring *pbs, gc_state_t *gcst));
+extern void reloc_bytestring(gs_bytestring *pbs, gc_state_t *gcst);
 #define RELOC_BYTESTRING_VAR(ptrvar)\
   reloc_bytestring(&(ptrvar), gcst)
-extern void reloc_const_bytestring(P2(gs_const_bytestring *pbs, gc_state_t *gcst));
+extern void reloc_const_bytestring(gs_const_bytestring *pbs, gc_state_t *gcst);
 #define RELOC_CONST_BYTESTRING_VAR(ptrvar)\
   reloc_const_bytestring(&(ptrvar), gcst)
 

@@ -141,7 +141,7 @@ typedef struct MEMFILE {
 
 /* Declare the procedures for returning the prototype filter states */
 /* for compressing and decompressing the band list. */
-const stream_state *clist_compressor_state(P1(void *));
-const stream_state *clist_decompressor_state(P1(void *));
+const stream_state *clist_compressor_state(void *);
+const stream_state *clist_decompressor_state(void *);
 
 #endif /* gxclmem_INCLUDED */

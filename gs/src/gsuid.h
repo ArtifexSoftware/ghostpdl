@@ -61,7 +61,7 @@ struct gs_uid_s {
 
 /* Compare two uids for equality. */
 /* This could be a macro, but the Zortech compiler compiles it wrong. */
-bool uid_equal(P2(const gs_uid *, const gs_uid *));	/* in gsutil.c */
+bool uid_equal(const gs_uid *, const gs_uid *);	/* in gsutil.c */
 
 /* Free the XUID array of a uid if necessary. */
 #define uid_free(puid, mem, cname)\

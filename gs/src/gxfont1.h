@@ -57,13 +57,13 @@ typedef struct gs_type1_data_procs_s {
 
     /* Get the data for any glyph.  Return >= 0 or < 0 as usual. */
 
-    int (*glyph_data)(P3(gs_font_type1 * pfont, gs_glyph glyph,
-			 gs_glyph_data_t *pgd));
+    int (*glyph_data)(gs_font_type1 * pfont, gs_glyph glyph,
+		      gs_glyph_data_t *pgd);
 
     /* Get the data for a Subr.  Return like glyph_data. */
 
-    int (*subr_data)(P4(gs_font_type1 * pfont, int subr_num, bool global,
-			gs_glyph_data_t *pgd));
+    int (*subr_data)(gs_font_type1 * pfont, int subr_num, bool global,
+		     gs_glyph_data_t *pgd);
 
     /*
      * Get the data for a seac character, including the glyph and/or the
@@ -72,8 +72,8 @@ typedef struct gs_type1_data_procs_s {
      * Return like glyph_data.
      */
 
-    int (*seac_data)(P4(gs_font_type1 * pfont, int ccode,
-			gs_glyph * pglyph, gs_glyph_data_t *pgd));
+    int (*seac_data)(gs_font_type1 * pfont, int ccode,
+		     gs_glyph * pglyph, gs_glyph_data_t *pgd);
 
     /*
      * Push (a) value(s) onto the client ('PostScript') stack during
@@ -81,12 +81,12 @@ typedef struct gs_type1_data_procs_s {
      * closure pointer, not the font pointer, as the first argument.
      */
 
-    int (*push_values)(P3(void *callback_data, const fixed *values,
-			  int count));
+    int (*push_values)(void *callback_data, const fixed *values,
+		       int count);
 
     /* Pop a value from the client stack. */
 
-    int (*pop_value)(P2(void *callback_data, fixed *value));
+    int (*pop_value)(void *callback_data, fixed *value);
 
 } gs_type1_data_procs_t;
 

@@ -66,7 +66,6 @@ typedef struct gs_image3x_s {
 /*
  * Initialize an ImageType 3x image.
  */
-void gs_image3x_t_init(P2(gs_image3x_t *pim,
-			  const gs_color_space *color_space));
+void gs_image3x_t_init(gs_image3x_t *pim, const gs_color_space *color_space);
 
 #endif /* gsipar3x_INCLUDED */

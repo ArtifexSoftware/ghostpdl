@@ -25,13 +25,13 @@
 
 /* Set the translation to a fixed value, and translate any existing path. */
 /* Used by gschar.c to prepare for a BuildChar or BuildGlyph procedure. */
-int gx_translate_to_fixed(P3(gs_state *, fixed, fixed));
+int gx_translate_to_fixed(gs_state *, fixed, fixed);
 
 /* Scale the CTM and character matrix for oversampling. */
-int gx_scale_char_matrix(P3(gs_state *, int, int));
+int gx_scale_char_matrix(gs_state *, int, int);
 
 /* Compute the coefficients for fast fixed-point distance transformations */
 /* from a transformation matrix. */
-int gx_matrix_to_fixed_coeff(P3(const gs_matrix *, fixed_coeff *, int));
+int gx_matrix_to_fixed_coeff(const gs_matrix *, fixed_coeff *, int);
 
 #endif /* gxcoord_INCLUDED */

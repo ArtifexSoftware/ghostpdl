@@ -77,8 +77,7 @@ typedef struct gs_font_cid0_data_s {
      * The third argument of glyph_data may be NULL if only the font number
      * is wanted.
      */
-    int (*glyph_data)(P4(gs_font_base *, gs_glyph, gs_glyph_data_t *,
-			 int *));
+    int (*glyph_data)(gs_font_base *, gs_glyph, gs_glyph_data_t *, int *);
     void *proc_data;
 } gs_font_cid0_data;
 struct gs_font_cid0_s {
@@ -124,14 +123,14 @@ typedef struct gs_font_cid2_s gs_font_cid2;
 typedef struct gs_font_cid2_data_s {
     gs_font_cid_data common;
     int MetricsCount;
-    int (*CIDMap_proc)(P2(gs_font_cid2 *, gs_glyph));
+    int (*CIDMap_proc)(gs_font_cid2 *, gs_glyph);
     /*
      * "Wrapper" get_outline and glyph_info procedures are needed, to
      * handle MetricsCount.  Save the original ones here.
      */
     struct o_ {
-	int (*get_outline)(P3(gs_font_type42 *, uint, gs_glyph_data_t *));
-	int (*get_metrics)(P4(gs_font_type42 *, uint, int, float [4]));
+	int (*get_outline)(gs_font_type42 *, uint, gs_glyph_data_t *);
+	int (*get_metrics)(gs_font_type42 *, uint, int, float [4]);
     } orig_procs;
 } gs_font_cid2_data;
 struct gs_font_cid2_s {
@@ -153,7 +152,7 @@ extern_st(st_gs_font_cid2);
  * Get the CIDSystemInfo of a font.  If the font is not a CIDFont,
  * return NULL.
  */
-const gs_cid_system_info_t *gs_font_cid_system_info(P1(const gs_font *));
+const gs_cid_system_info_t *gs_font_cid_system_info(const gs_font *);
 
 /*
  * Provide a default enumerate_glyph procedure for CIDFontType 0 fonts.

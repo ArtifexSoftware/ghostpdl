@@ -36,13 +36,13 @@
  * Serialize the contents of a gs_param_list, including sub-collections,
  * onto a stream.  The list must be in READ mode.
  */
-int gs_param_list_puts(P2(stream *dest, gs_param_list *list));
+int gs_param_list_puts(stream *dest, gs_param_list *list);
 
 /*
  * Unserialize a parameter list, including sub-collections, from a stream.
  * The list must be in WRITE mode.
  */
-int gs_param_list_gets(P3(stream *src, gs_param_list *list, gs_memory_t *mem));
+int gs_param_list_gets(stream *src, gs_param_list *list, gs_memory_t *mem);
 
 #else	/****************/
 
@@ -55,14 +55,14 @@ int gs_param_list_gets(P3(stream *src, gs_param_list *list, gs_memory_t *mem));
  * less than or equal to the buffer size.  Note that the buffer may be
  * NULL, in which case nothing is stored (but the size is still returned).
  */
-int gs_param_list_serialize(P3(gs_param_list *list, byte *buf, int buf_size));
+int gs_param_list_serialize(gs_param_list *list, byte *buf, int buf_size);
 
 /*
  * Unserialize a parameter list from a buffer.  Return the actual number
  * of bytes occupied by the list, or a negative error code.  The buffer
  * must be void * aligned.
  */
-int gs_param_list_unserialize(P2(gs_param_list *list, const byte *buf));
+int gs_param_list_unserialize(gs_param_list *list, const byte *buf);
 
 #endif	/****************/
 

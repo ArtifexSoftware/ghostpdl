@@ -23,45 +23,45 @@
 #include "gslparam.h"
 
 /* Procedures */
-int gs_setlinewidth(P2(gs_state *, floatp));
-float gs_currentlinewidth(P1(const gs_state *));
-int gs_setlinecap(P2(gs_state *, gs_line_cap));
-gs_line_cap gs_currentlinecap(P1(const gs_state *));
-int gs_setlinejoin(P2(gs_state *, gs_line_join));
-gs_line_join gs_currentlinejoin(P1(const gs_state *));
-int gs_setmiterlimit(P2(gs_state *, floatp));
-float gs_currentmiterlimit(P1(const gs_state *));
-int gs_setdash(P4(gs_state *, const float *, uint, floatp));
-uint gs_currentdash_length(P1(const gs_state *));
-const float *gs_currentdash_pattern(P1(const gs_state *));
-float gs_currentdash_offset(P1(const gs_state *));
-int gs_setflat(P2(gs_state *, floatp));
-float gs_currentflat(P1(const gs_state *));
-int gs_setstrokeadjust(P2(gs_state *, bool));
-bool gs_currentstrokeadjust(P1(const gs_state *));
+int gs_setlinewidth(gs_state *, floatp);
+float gs_currentlinewidth(const gs_state *);
+int gs_setlinecap(gs_state *, gs_line_cap);
+gs_line_cap gs_currentlinecap(const gs_state *);
+int gs_setlinejoin(gs_state *, gs_line_join);
+gs_line_join gs_currentlinejoin(const gs_state *);
+int gs_setmiterlimit(gs_state *, floatp);
+float gs_currentmiterlimit(const gs_state *);
+int gs_setdash(gs_state *, const float *, uint, floatp);
+uint gs_currentdash_length(const gs_state *);
+const float *gs_currentdash_pattern(const gs_state *);
+float gs_currentdash_offset(const gs_state *);
+int gs_setflat(gs_state *, floatp);
+float gs_currentflat(const gs_state *);
+int gs_setstrokeadjust(gs_state *, bool);
+bool gs_currentstrokeadjust(const gs_state *);
 
 /* Extensions - device-independent */
-void gs_setdashadapt(P2(gs_state *, bool));
-bool gs_currentdashadapt(P1(const gs_state *));
-int gs_setcurvejoin(P2(gs_state *, int));
-int gs_currentcurvejoin(P1(const gs_state *));
+void gs_setdashadapt(gs_state *, bool);
+bool gs_currentdashadapt(const gs_state *);
+int gs_setcurvejoin(gs_state *, int);
+int gs_currentcurvejoin(const gs_state *);
 
 /* Extensions - device-dependent */
-void gs_setaccuratecurves(P2(gs_state *, bool));
-bool gs_currentaccuratecurves(P1(const gs_state *));
-int gs_setdotlength(P3(gs_state *, floatp, bool));
-float gs_currentdotlength(P1(const gs_state *));
-bool gs_currentdotlength_absolute(P1(const gs_state *));
-int gs_setdotorientation(P1(gs_state *));
-int gs_dotorientation(P1(gs_state *));
+void gs_setaccuratecurves(gs_state *, bool);
+bool gs_currentaccuratecurves(const gs_state *);
+int gs_setdotlength(gs_state *, floatp, bool);
+float gs_currentdotlength(const gs_state *);
+bool gs_currentdotlength_absolute(const gs_state *);
+int gs_setdotorientation(gs_state *);
+int gs_dotorientation(gs_state *);
 
 /* Imager-level procedures */
 #ifndef gs_imager_state_DEFINED
 #  define gs_imager_state_DEFINED
 typedef struct gs_imager_state_s gs_imager_state;
 #endif
-int gs_imager_setflat(P2(gs_imager_state *, floatp));
-bool gs_imager_currentdashadapt(P1(const gs_imager_state *));
-bool gs_imager_currentaccuratecurves(P1(const gs_imager_state *));
+int gs_imager_setflat(gs_imager_state *, floatp);
+bool gs_imager_currentdashadapt(const gs_imager_state *);
+bool gs_imager_currentaccuratecurves(const gs_imager_state *);
 
 #endif /* gsline_INCLUDED */

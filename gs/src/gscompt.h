@@ -46,6 +46,6 @@ typedef struct gs_composite_s gs_composite_t;
  * like halftones, black generation functions, etc., carry a unique ID (time
  * stamp).
  */
-gs_id gs_composite_id(P1(const gs_composite_t * pcte));
+gs_id gs_composite_id(const gs_composite_t * pcte);
 
 #endif /* gscompt_INCLUDED */

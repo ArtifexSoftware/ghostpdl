@@ -47,16 +47,16 @@ typedef struct mesh_fill_state_s {
 /****** NEED GC DESCRIPTOR ******/
 
 /* Initialize the fill state for triangle shading. */
-void mesh_init_fill_state(P5(mesh_fill_state_t * pfs,
-			     const gs_shading_mesh_t * psh,
-			     const gs_rect * rect,
-			     gx_device * dev, gs_imager_state * pis));
+void mesh_init_fill_state(mesh_fill_state_t * pfs,
+			  const gs_shading_mesh_t * psh,
+			  const gs_rect * rect,
+			  gx_device * dev, gs_imager_state * pis);
 
 /* Fill one triangle in a mesh. */
-void mesh_init_fill_triangle(P5(mesh_fill_state_t * pfs,
-				const mesh_vertex_t *va,
-				const mesh_vertex_t *vb,
-				const mesh_vertex_t *vc, bool check_clipping));
-int mesh_fill_triangle(P1(mesh_fill_state_t * pfs));
+void mesh_init_fill_triangle(mesh_fill_state_t * pfs,
+			     const mesh_vertex_t *va,
+			     const mesh_vertex_t *vb,
+			     const mesh_vertex_t *vc, bool check_clipping);
+int mesh_fill_triangle(mesh_fill_state_t * pfs);
 
 #endif /* gxshade4_INCLUDED */

@@ -36,13 +36,13 @@ typedef struct gs_font_type1_s gs_font_type1;
 #ifndef gs_type1_data_s_DEFINED
 struct gs_type1_data_s;
 #endif
-int gs_type1_interp_init(P7(gs_type1_state * pcis, gs_imager_state * pis,
-			gx_path * ppath, const gs_log2_scale_point * pscale,
-			    bool charpath_flag, int paint_type,
-			    gs_font_type1 * pfont));
-void gs_type1_set_callback_data(P2(gs_type1_state *pcis, void *callback_data));
-void gs_type1_set_lsb(P2(gs_type1_state * pcis, const gs_point * psbpt));
-void gs_type1_set_width(P2(gs_type1_state * pcis, const gs_point * pwpt));
+int gs_type1_interp_init(gs_type1_state * pcis, gs_imager_state * pis,
+			 gx_path * ppath, const gs_log2_scale_point * pscale,
+			 bool charpath_flag, int paint_type,
+			 gs_font_type1 * pfont);
+void gs_type1_set_callback_data(gs_type1_state *pcis, void *callback_data);
+void gs_type1_set_lsb(gs_type1_state * pcis, const gs_point * psbpt);
+void gs_type1_set_width(gs_type1_state * pcis, const gs_point * pwpt);
 
 /* Backward compatibility */
 #define gs_type1_init(pcis, penum, psbpt, charpath_flag, paint_type, pfont)\
@@ -61,7 +61,7 @@ void gs_type1_set_width(P2(gs_type1_state * pcis, const gs_point * pwpt));
 
 /* Define the generic procedure type for a CharString interpreter. */
 #define charstring_interpret_proc(proc)\
-  int proc(P3(gs_type1_state *, const gs_glyph_data_t *, int *))
+  int proc(gs_type1_state *, const gs_glyph_data_t *, int *)
 typedef charstring_interpret_proc((*charstring_interpret_proc_t));
 
 /* Define the Type 1 interpreter. */

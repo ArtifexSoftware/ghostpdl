@@ -76,23 +76,23 @@ typedef struct gs_function_info_s {
 
 /* Evaluate a function. */
 #define FN_EVALUATE_PROC(proc)\
-  int proc(P3(const gs_function_t * pfn, const float *in, float *out))
+  int proc(const gs_function_t * pfn, const float *in, float *out)
 typedef FN_EVALUATE_PROC((*fn_evaluate_proc_t));
 
 /* Test whether a function is monotonic. */
 #define FN_IS_MONOTONIC_PROC(proc)\
-  int proc(P4(const gs_function_t * pfn, const float *lower,\
-	      const float *upper, gs_function_effort_t effort))
+  int proc(const gs_function_t * pfn, const float *lower,\
+	   const float *upper, gs_function_effort_t effort)
 typedef FN_IS_MONOTONIC_PROC((*fn_is_monotonic_proc_t));
 
 /* Get function information. */
 #define FN_GET_INFO_PROC(proc)\
-  void proc(P2(const gs_function_t *pfn, gs_function_info_t *pfi))
+  void proc(const gs_function_t *pfn, gs_function_info_t *pfi)
 typedef FN_GET_INFO_PROC((*fn_get_info_proc_t));
 
 /* Put function parameters on a parameter list. */
 #define FN_GET_PARAMS_PROC(proc)\
-  int proc(P2(const gs_function_t *pfn, gs_param_list *plist))
+  int proc(const gs_function_t *pfn, gs_param_list *plist)
 typedef FN_GET_PARAMS_PROC((*fn_get_params_proc_t));
 
 /*
@@ -106,18 +106,18 @@ typedef FN_GET_PARAMS_PROC((*fn_get_params_proc_t));
  * gs_function_free does not free the data source.
  */
 #define FN_MAKE_SCALED_PROC(proc)\
-  int proc(P4(const gs_function_t *pfn, gs_function_t **ppsfn,\
-	      const gs_range_t *pranges, gs_memory_t *mem))
+  int proc(const gs_function_t *pfn, gs_function_t **ppsfn,\
+	   const gs_range_t *pranges, gs_memory_t *mem)
 typedef FN_MAKE_SCALED_PROC((*fn_make_scaled_proc_t));
 
 /* Free function parameters. */
 #define FN_FREE_PARAMS_PROC(proc)\
-  void proc(P2(gs_function_params_t * params, gs_memory_t * mem))
+  void proc(gs_function_params_t * params, gs_memory_t * mem)
 typedef FN_FREE_PARAMS_PROC((*fn_free_params_proc_t));
 
 /* Free a function. */
 #define FN_FREE_PROC(proc)\
-  void proc(P3(gs_function_t * pfn, bool free_params, gs_memory_t * mem))
+  void proc(gs_function_t * pfn, bool free_params, gs_memory_t * mem)
 typedef FN_FREE_PROC((*fn_free_proc_t));
 
 /* Define the generic function structures. */
@@ -167,18 +167,18 @@ typedef struct gs_function_XxYy_params_s {
  * header file, one to allocate and initialize an instance of that type,
  * and one to free the parameters of that type.
 
-int gs_function_XxYy_init(P3(gs_function_t **ppfn,
-			     const gs_function_XxYy_params_t *params,
-			     gs_memory_t *mem));
+int gs_function_XxYy_init(gs_function_t **ppfn,
+			  const gs_function_XxYy_params_t *params,
+			  gs_memory_t *mem));
 
-void gs_function_XxYy_free_params(P2(gs_function_XxYy_params_t *params,
-				     gs_memory_t *mem));
+void gs_function_XxYy_free_params(gs_function_XxYy_params_t *params,
+				  gs_memory_t *mem);
 
  */
 
 /* Allocate an array of function pointers. */
-int alloc_function_array(P3(uint count, gs_function_t *** pFunctions,
-			    gs_memory_t *mem));
+int alloc_function_array(uint count, gs_function_t *** pFunctions,
+			 gs_memory_t *mem);
 
 /* Evaluate a function. */
 #define gs_function_evaluate(pfn, in, out)\

@@ -266,7 +266,7 @@ typedef struct gs_param_list_procs_s {
      */
 
 #define param_proc_xmit_typed(proc)\
-    int proc(P3(gs_param_list *, gs_param_name, gs_param_typed_value *))
+    int proc(gs_param_list *, gs_param_name, gs_param_typed_value *)
 	 param_proc_xmit_typed((*xmit_typed));
 	 /* See below for param_read_[requested_]typed */
 #define param_write_typed(plist, pkey, pvalue)\
@@ -275,8 +275,8 @@ typedef struct gs_param_list_procs_s {
 	 /* Start transmitting a dictionary or heterogenous value. */
 
 #define param_proc_begin_xmit_collection(proc)\
-	 int proc(P4(gs_param_list *, gs_param_name, gs_param_dict *,\
-		     gs_param_collection_type_t))
+	 int proc(gs_param_list *, gs_param_name, gs_param_dict *,\
+		     gs_param_collection_type_t)
 	 param_proc_begin_xmit_collection((*begin_xmit_collection));
 #define param_begin_read_collection(plist, pkey, pvalue, coll_type)\
 	 (*(plist)->procs->begin_xmit_collection)(plist, pkey, pvalue, coll_type)
@@ -294,7 +294,7 @@ typedef struct gs_param_list_procs_s {
 	 /* Finish transmitting a collection value. */
 
 #define param_proc_end_xmit_collection(proc)\
-	 int proc(P3(gs_param_list *, gs_param_name, gs_param_dict *))
+	 int proc(gs_param_list *, gs_param_name, gs_param_dict *)
 	 param_proc_end_xmit_collection((*end_xmit_collection));
 #define param_end_read_collection(plist, pkey, pvalue)\
 	 (*(plist)->procs->end_xmit_collection)(plist, pkey, pvalue)
@@ -310,7 +310,7 @@ typedef struct gs_param_list_procs_s {
 	  */
 
 #define param_proc_next_key(proc)\
-	 int proc(P3(gs_param_list *, gs_param_enumerator_t *, gs_param_key_t *))
+	 int proc(gs_param_list *, gs_param_enumerator_t *, gs_param_key_t *)
 	 param_proc_next_key((*next_key));
 #define param_get_next_key(plist, penum, pkey)\
 	 (*(plist)->procs->next_key)(plist, penum, pkey)
@@ -324,7 +324,7 @@ typedef struct gs_param_list_procs_s {
 	  */
 
 #define param_proc_request(proc)\
-  int proc(P2(gs_param_list *, gs_param_name))
+  int proc(gs_param_list *, gs_param_name)
 	 param_proc_request((*request));
 
 #define param_request(plist, pkey)\
@@ -339,7 +339,7 @@ typedef struct gs_param_list_procs_s {
 	  */
 
 #define param_proc_requested(proc)\
-	 int proc(P2(const gs_param_list *, gs_param_name))
+	 int proc(const gs_param_list *, gs_param_name)
 	 param_proc_requested((*requested));
 #define param_requested(plist, pkey)\
 	 (*(plist)->procs->requested)(plist, pkey)
@@ -348,7 +348,7 @@ typedef struct gs_param_list_procs_s {
 	 /* (Only used when reading.) */
 
 #define param_proc_get_policy(proc)\
-	 int proc(P2(gs_param_list *, gs_param_name))
+	 int proc(gs_param_list *, gs_param_name)
 	 param_proc_get_policy((*get_policy));
 #define param_get_policy(plist, pkey)\
 	 (*(plist)->procs->get_policy)(plist, pkey)
@@ -360,7 +360,7 @@ typedef struct gs_param_list_procs_s {
 	  */
 
 #define param_proc_signal_error(proc)\
-	 int proc(P3(gs_param_list *, gs_param_name, int))
+	 int proc(gs_param_list *, gs_param_name, int)
 	 param_proc_signal_error((*signal_error));
 #define param_signal_error(plist, pkey, code)\
 	 (*(plist)->procs->signal_error)(plist, pkey, code)
@@ -373,7 +373,7 @@ typedef struct gs_param_list_procs_s {
 	  */
 
 #define param_proc_commit(proc)\
-	 int proc(P1(gs_param_list *))
+	 int proc(gs_param_list *)
 	 param_proc_commit((*commit));
 #define param_commit(plist)\
 	 (*(plist)->procs->commit)(plist)
@@ -381,50 +381,50 @@ typedef struct gs_param_list_procs_s {
 } gs_param_list_procs;
 
 /* Transmit typed parameters. */
-int param_read_requested_typed(P3(gs_param_list *, gs_param_name,
-				  gs_param_typed_value *));
+int param_read_requested_typed(gs_param_list *, gs_param_name,
+				  gs_param_typed_value *);
 
 #define param_read_typed(plist, pkey, pvalue)\
   ((pvalue)->type = gs_param_type_any,\
    param_read_requested_typed(plist, pkey, pvalue))
 
 /* Transmit parameters of specific types. */
-int param_read_null(P2(gs_param_list *, gs_param_name));
-int param_write_null(P2(gs_param_list *, gs_param_name));
-int param_read_bool(P3(gs_param_list *, gs_param_name, bool *));
-int param_write_bool(P3(gs_param_list *, gs_param_name, const bool *));
-int param_read_int(P3(gs_param_list *, gs_param_name, int *));
-int param_write_int(P3(gs_param_list *, gs_param_name, const int *));
-int param_read_long(P3(gs_param_list *, gs_param_name, long *));
-int param_write_long(P3(gs_param_list *, gs_param_name, const long *));
-int param_read_float(P3(gs_param_list *, gs_param_name, float *));
-int param_write_float(P3(gs_param_list *, gs_param_name, const float *));
-int param_read_string(P3(gs_param_list *, gs_param_name, gs_param_string *));
-int param_write_string(P3(gs_param_list *, gs_param_name,
-			  const gs_param_string *));
-int param_read_name(P3(gs_param_list *, gs_param_name, gs_param_string *));
-int param_write_name(P3(gs_param_list *, gs_param_name,
-			const gs_param_string *));
-int param_read_int_array(P3(gs_param_list *, gs_param_name,
-			    gs_param_int_array *));
-int param_write_int_array(P3(gs_param_list *, gs_param_name,
-			     const gs_param_int_array *));
-int param_write_int_values(P5(gs_param_list *, gs_param_name,
-			      const int *, uint, bool));
-int param_read_float_array(P3(gs_param_list *, gs_param_name,
-			      gs_param_float_array *));
-int param_write_float_array(P3(gs_param_list *, gs_param_name,
-			       const gs_param_float_array *));
-int param_write_float_values(P5(gs_param_list *, gs_param_name,
-				const float *, uint, bool));
-int param_read_string_array(P3(gs_param_list *, gs_param_name,
-			       gs_param_string_array *));
-int param_write_string_array(P3(gs_param_list *, gs_param_name,
-				const gs_param_string_array *));
-int param_read_name_array(P3(gs_param_list *, gs_param_name,
-			     gs_param_string_array *));
-int param_write_name_array(P3(gs_param_list *, gs_param_name,
-			      const gs_param_string_array *));
+int param_read_null(gs_param_list *, gs_param_name);
+int param_write_null(gs_param_list *, gs_param_name);
+int param_read_bool(gs_param_list *, gs_param_name, bool *);
+int param_write_bool(gs_param_list *, gs_param_name, const bool *);
+int param_read_int(gs_param_list *, gs_param_name, int *);
+int param_write_int(gs_param_list *, gs_param_name, const int *);
+int param_read_long(gs_param_list *, gs_param_name, long *);
+int param_write_long(gs_param_list *, gs_param_name, const long *);
+int param_read_float(gs_param_list *, gs_param_name, float *);
+int param_write_float(gs_param_list *, gs_param_name, const float *);
+int param_read_string(gs_param_list *, gs_param_name, gs_param_string *);
+int param_write_string(gs_param_list *, gs_param_name,
+		       const gs_param_string *);
+int param_read_name(gs_param_list *, gs_param_name, gs_param_string *);
+int param_write_name(gs_param_list *, gs_param_name,
+		     const gs_param_string *);
+int param_read_int_array(gs_param_list *, gs_param_name,
+			 gs_param_int_array *);
+int param_write_int_array(gs_param_list *, gs_param_name,
+			  const gs_param_int_array *);
+int param_write_int_values(gs_param_list *, gs_param_name,
+			   const int *, uint, bool);
+int param_read_float_array(gs_param_list *, gs_param_name,
+			   gs_param_float_array *);
+int param_write_float_array(gs_param_list *, gs_param_name,
+			    const gs_param_float_array *);
+int param_write_float_values(gs_param_list *, gs_param_name,
+			     const float *, uint, bool);
+int param_read_string_array(gs_param_list *, gs_param_name,
+			    gs_param_string_array *);
+int param_write_string_array(gs_param_list *, gs_param_name,
+			     const gs_param_string_array *);
+int param_read_name_array(gs_param_list *, gs_param_name,
+			  gs_param_string_array *);
+int param_write_name_array(gs_param_list *, gs_param_name,
+			   const gs_param_string_array *);
 
 /*
  * Define an abstract parameter list.  Implementations are concrete
@@ -445,10 +445,10 @@ struct gs_param_list_s {
 /* Set whether the keys for param_write_XXX are persistent. */
 /* VMS limits procedure names to 31 characters. */
 #define gs_param_list_set_persistent_keys gs_param_list_set_persist_keys
-void gs_param_list_set_persistent_keys(P2(gs_param_list *, bool));
+void gs_param_list_set_persistent_keys(gs_param_list *, bool);
 
 /* Initialize a parameter list key enumerator. */
-void param_init_enumerator(P1(gs_param_enumerator_t * penum));
+void param_init_enumerator(gs_param_enumerator_t * penum);
 
 /*
  * The following interface provides a convenient way to read and set
@@ -466,23 +466,23 @@ typedef struct gs_param_item_s {
  * For param_write_items, if a parameter value is equal to the value in
  * the optional default_obj, the item isn't transferred.
  */
-int gs_param_read_items(P3(gs_param_list * plist, void *obj,
-			   const gs_param_item_t * items));
-int gs_param_write_items(P4(gs_param_list * plist, const void *obj,
-			    const void *default_obj,
-			    const gs_param_item_t * items));
+int gs_param_read_items(gs_param_list * plist, void *obj,
+			const gs_param_item_t * items);
+int gs_param_write_items(gs_param_list * plist, const void *obj,
+			 const void *default_obj,
+			 const gs_param_item_t * items);
 
 /* Internal procedure to initialize the common part of a parameter list. */
-void gs_param_list_init(P3(gs_param_list *, const gs_param_list_procs *,
-			   gs_memory_t *));
+void gs_param_list_init(gs_param_list *, const gs_param_list_procs *,
+			gs_memory_t *);
 
 /*
  * Internal procedure to read a value, with coercion if requested, needed,
  * and possible.  If mem != 0, we can coerce int arrays to float arrays, and
  * possibly do other coercions later.
  */
-int param_coerce_typed(P3(gs_param_typed_value * pvalue,
-			  gs_param_type req_type, gs_memory_t * mem));
+int param_coerce_typed(gs_param_typed_value * pvalue,
+		       gs_param_type req_type, gs_memory_t * mem);
 
 /* ---------------- Default implementation ---------------- */
 
@@ -533,16 +533,16 @@ typedef struct gs_c_param_list_s {
     c_param_list_enum_ptrs, c_param_list_reloc_ptrs, head, target)
 
 /* Set the target of a C parameter list. */
-void gs_c_param_list_set_target(P2(gs_c_param_list *, gs_param_list *));
+void gs_c_param_list_set_target(gs_c_param_list *, gs_param_list *);
 
 /*
  * Clients normally allocate the gs_c_param_list on the stack, but we
  * provide a procedure for allocating one in memory.
  */
-gs_c_param_list *gs_c_param_list_alloc(P2(gs_memory_t *, client_name_t));
-void gs_c_param_list_write(P2(gs_c_param_list *, gs_memory_t *));
-void gs_c_param_list_write_more(P1(gs_c_param_list *)); /* switch back to writing, no init */
-void gs_c_param_list_read(P1(gs_c_param_list *));	/* switch to reading */
-void gs_c_param_list_release(P1(gs_c_param_list *));
+gs_c_param_list *gs_c_param_list_alloc(gs_memory_t *, client_name_t);
+void gs_c_param_list_write(gs_c_param_list *, gs_memory_t *);
+void gs_c_param_list_write_more(gs_c_param_list *); /* switch back to writing, no init */
+void gs_c_param_list_read(gs_c_param_list *);	/* switch to reading */
+void gs_c_param_list_release(gs_c_param_list *);
 
 #endif /* gsparam_INCLUDED */

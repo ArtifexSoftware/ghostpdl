@@ -31,8 +31,8 @@
  * gs_setcolorrendering.
  */
 int
-    gs_cie_render1_build(P3(gs_cie_render ** ppcrd, gs_memory_t * mem,
-			    client_name_t cname));
+    gs_cie_render1_build(gs_cie_render ** ppcrd, gs_memory_t * mem,
+			 client_name_t cname);
 
 /*
  * Initialize a CRD given all of the relevant parameters.

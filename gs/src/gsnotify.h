@@ -33,7 +33,7 @@
 
 /* Define the structure used to keep track of registrations. */
 #define GS_NOTIFY_PROC(proc)\
-    int proc(P2(void *proc_data, void *event_data))
+    int proc(void *proc_data, void *event_data)
 typedef GS_NOTIFY_PROC((*gs_notify_proc_t));
 typedef struct gs_notify_registration_s gs_notify_registration_t;
 struct gs_notify_registration_s {
@@ -60,32 +60,32 @@ extern_st(st_gs_notify_list);
 #define st_gs_notify_list_max_ptrs 1
 
 /* Initialize a notification list. */
-void gs_notify_init(P2(gs_notify_list_t *nlist, gs_memory_t *mem));
+void gs_notify_init(gs_notify_list_t *nlist, gs_memory_t *mem);
 
 /* Register a client. */
-int gs_notify_register(P3(gs_notify_list_t *nlist, gs_notify_proc_t proc,
-			  void *proc_data));
+int gs_notify_register(gs_notify_list_t *nlist, gs_notify_proc_t proc,
+		       void *proc_data);
 
 /*
  * Unregister a client.  Return 1 if the client was registered, 0 if not.
  * If proc_data is 0, unregister all registrations of that proc; otherwise,
  * unregister only the registration of that procedure with that proc_data.
  */
-int gs_notify_unregister(P3(gs_notify_list_t *nlist, gs_notify_proc_t proc,
-			    void *proc_data));
+int gs_notify_unregister(gs_notify_list_t *nlist, gs_notify_proc_t proc,
+			 void *proc_data);
 
 /* Unregister a client, calling a procedure for each unregistration. */
-int gs_notify_unregister_calling(P4(gs_notify_list_t *nlist,
-				    gs_notify_proc_t proc, void *proc_data,
-				    void (*unreg_proc)(P1(void *pdata))));
+int gs_notify_unregister_calling(gs_notify_list_t *nlist,
+				 gs_notify_proc_t proc, void *proc_data,
+				 void (*unreg_proc)(void *pdata));
 
 /*
  * Notify the clients on a list.  If an error occurs, return the first
  * error code, but notify all clients regardless.
  */
-int gs_notify_all(P2(gs_notify_list_t *nlist, void *event_data));
+int gs_notify_all(gs_notify_list_t *nlist, void *event_data);
 
 /* Release a notification list. */
-void gs_notify_release(P1(gs_notify_list_t *nlist));
+void gs_notify_release(gs_notify_list_t *nlist);
 
 #endif /* gsnotify_INCLUDED */

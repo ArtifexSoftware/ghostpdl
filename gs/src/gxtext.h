@@ -152,14 +152,14 @@ rc_free_proc(rc_free_text_enum);
  * Note that this procedure can return an error, e.g., if attempting
  * a glyph-based operation with a composite font.
  */
-int gs_text_enum_init(P10(gs_text_enum_t *pte,
-			  const gs_text_enum_procs_t *procs,
-			  gx_device *dev, gs_imager_state *pis,
-			  const gs_text_params_t *text,
-			  gs_font *font, gx_path *path,
-			  const gx_device_color *pdcolor,
-			  const gx_clip_path *pcpath,
-			  gs_memory_t *mem));
+int gs_text_enum_init(gs_text_enum_t *pte,
+		      const gs_text_enum_procs_t *procs,
+		      gx_device *dev, gs_imager_state *pis,
+		      const gs_text_params_t *text,
+		      gs_font *font, gx_path *path,
+		      const gx_device_color *pdcolor,
+		      const gx_clip_path *pcpath,
+		      gs_memory_t *mem);
 
 /*
  * Copy the dynamically changing elements from one enumerator to another.
@@ -167,9 +167,9 @@ int gs_text_enum_init(P10(gs_text_enum_t *pte,
  * operation to a subsidiary enumerator.  Note that `returned' is copied
  * iff for_return is true.
  */
-void gs_text_enum_copy_dynamic(P3(gs_text_enum_t *pto,
-				  const gs_text_enum_t *pfrom,
-				  bool for_return));
+void gs_text_enum_copy_dynamic(gs_text_enum_t *pto,
+			       const gs_text_enum_t *pfrom,
+			       bool for_return);
 
 /*
  * Define some convenience macros for testing aspects of a text
@@ -211,7 +211,7 @@ struct gs_text_enum_procs_s {
      */
 
 #define text_enum_proc_resync(proc)\
-  int proc(P2(gs_text_enum_t *pte, const gs_text_enum_t *pfrom))
+  int proc(gs_text_enum_t *pte, const gs_text_enum_t *pfrom)
 
     text_enum_proc_resync((*resync));
 
@@ -241,7 +241,7 @@ struct gs_text_enum_procs_s {
      */
 
 #define text_enum_proc_process(proc)\
-  int proc(P1(gs_text_enum_t *pte))
+  int proc(gs_text_enum_t *pte)
 
     text_enum_proc_process((*process));
 
@@ -252,7 +252,7 @@ struct gs_text_enum_procs_s {
      */
 
 #define text_enum_proc_is_width_only(proc)\
-  bool proc(P1(const gs_text_enum_t *pte))
+  bool proc(const gs_text_enum_t *pte)
 
     text_enum_proc_is_width_only((*is_width_only));
 
@@ -261,7 +261,7 @@ struct gs_text_enum_procs_s {
      */
 
 #define text_enum_proc_current_width(proc)\
-  int proc(P2(const gs_text_enum_t *pte, gs_point *pwidth))
+  int proc(const gs_text_enum_t *pte, gs_point *pwidth)
 
     text_enum_proc_current_width((*current_width));
 
@@ -271,8 +271,8 @@ struct gs_text_enum_procs_s {
      */
 
 #define text_enum_proc_set_cache(proc)\
-  int proc(P3(gs_text_enum_t *pte, const double *values,\
-    gs_text_cache_control_t control))
+  int proc(gs_text_enum_t *pte, const double *values,\
+    gs_text_cache_control_t control)
 
     text_enum_proc_set_cache((*set_cache));
 
@@ -282,7 +282,7 @@ struct gs_text_enum_procs_s {
      */
 
 #define text_enum_proc_retry(proc)\
-  int proc(P1(gs_text_enum_t *pte))
+  int proc(gs_text_enum_t *pte)
 
     text_enum_proc_retry((*retry));
 
@@ -293,7 +293,7 @@ struct gs_text_enum_procs_s {
      */
 
 #define text_enum_proc_release(proc)\
-  void proc(P2(gs_text_enum_t *pte, client_name_t cname))
+  void proc(gs_text_enum_t *pte, client_name_t cname)
 
     text_enum_proc_release((*release));
 

@@ -23,8 +23,8 @@
 #include "gsht.h"
 
 /* Procedural interface */
-int gs_setcolorscreen(P2(gs_state *, gs_colorscreen_halftone *));
-int gs_currentcolorscreen(P2(gs_state *, gs_colorscreen_halftone *));
+int gs_setcolorscreen(gs_state *, gs_colorscreen_halftone *);
+int gs_currentcolorscreen(gs_state *, gs_colorscreen_halftone *);
 
 /*
  * We include sethalftone here, even though it is a Level 2 feature,
@@ -45,8 +45,8 @@ typedef struct gs_halftone_s gs_halftone;
  * copy the top-level structure (using the appropriate allocator), but take
  * ownership of the substructures.
  */
-int gs_sethalftone(P2(gs_state *, gs_halftone *));
-int gs_sethalftone_allocated(P2(gs_state *, gs_halftone *));
-int gs_currenthalftone(P2(gs_state *, gs_halftone *));
+int gs_sethalftone(gs_state *, gs_halftone *);
+int gs_sethalftone_allocated(gs_state *, gs_halftone *);
+int gs_currenthalftone(gs_state *, gs_halftone *);
 
 #endif /* gsht1_INCLUDED */

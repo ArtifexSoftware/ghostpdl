@@ -142,7 +142,7 @@ typedef ulong ufixed;		/* only used in a very few places */
  * the double-length multiply/divide instructions that almost all hardware
  * provides....
  */
-fixed fixed_mult_quo(P3(fixed A, fixed B, fixed C));
+fixed fixed_mult_quo(fixed A, fixed B, fixed C);
 
 /*
  * Transforming coordinates involves multiplying two floats, or a float
@@ -171,12 +171,12 @@ fixed fixed_mult_quo(P3(fixed A, fixed B, fixed C));
  */
 #if USE_FPU_FIXED && arch_sizeof_short == 2
 #define NEED_SET_FMUL2FIXED
-int set_fmul2fixed_(P3(fixed *, long, long));
+int set_fmul2fixed_(fixed *, long, long);
 #define CHECK_FMUL2FIXED_VARS(vr, vfa, vfb, dtemp)\
   set_fmul2fixed_(&vr, *(const long *)&vfa, *(const long *)&vfb)
 #define FINISH_FMUL2FIXED_VARS(vr, dtemp)\
   DO_NOTHING
-int set_dfmul2fixed_(P4(fixed *, ulong, long, long));
+int set_dfmul2fixed_(fixed *, ulong, long, long);
 #  if arch_is_big_endian
 #  define CHECK_DFMUL2FIXED_VARS(vr, vda, vfb, dtemp)\
      set_dfmul2fixed_(&vr, ((const ulong *)&vda)[1], *(const long *)&vfb, *(const long *)&vda)
@@ -213,8 +213,8 @@ int set_dfmul2fixed_(P4(fixed *, ulong, long, long));
  * R and F must be variables, not expressions; V and E may be expressions.
  */
 #if USE_FPU_FIXED
-int set_float2fixed_(P3(fixed *, long, int));
-int set_double2fixed_(P4(fixed *, ulong, long, int));
+int set_float2fixed_(fixed *, long, int);
+int set_double2fixed_(fixed *, ulong, long, int);
 
 # define set_float2fixed_vars(vr,vf)\
     (sizeof(vf) == sizeof(float) ?\
@@ -222,8 +222,8 @@ int set_double2fixed_(P4(fixed *, ulong, long, int));
      set_double2fixed_(&vr, ((const ulong *)&vf)[arch_is_big_endian],\
 		       ((const long *)&vf)[1 - arch_is_big_endian],\
 		       fixed_fraction_bits))
-long fixed2float_(P2(fixed, int));
-void set_fixed2double_(P3(double *, fixed, int));
+long fixed2float_(fixed, int);
+void set_fixed2double_(double *, fixed, int);
 
 /*
  * We need the (double *)&vf cast to prevent compile-time error messages,

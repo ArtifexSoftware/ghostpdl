@@ -32,7 +32,7 @@ typedef struct gs_malloc_memory_s {
 } gs_malloc_memory_t;
 
 /* Allocate and initialize a malloc memory manager. */
-gs_malloc_memory_t *gs_malloc_memory_init(P0());
+gs_malloc_memory_t *gs_malloc_memory_init(void);
 
 /* Release all the allocated blocks, and free the memory manager. */
 /* The cast is unfortunate, but unavoidable. */
@@ -52,8 +52,8 @@ extern gs_memory_t *gs_memory_t_default;  /* may be locked */
  * The following procedures are historical artifacts that we hope to
  * get rid of someday.
  */
-gs_memory_t * gs_malloc_init(P0());
-void gs_malloc_release(P0());
+gs_memory_t * gs_malloc_init(void);
+void gs_malloc_release(void);
 #define gs_malloc(nelts, esize, cname)\
   (void *)gs_alloc_byte_array(&gs_memory_default, nelts, esize, cname)
 #define gs_free(data, nelts, esize, cname)\
@@ -68,12 +68,12 @@ void gs_malloc_release(P0());
 /* ---------------- Locking ---------------- */
 
 /* Create a locked wrapper for a heap allocator. */
-int gs_malloc_wrap(P2(gs_memory_t **wrapped, gs_malloc_memory_t *contents));
+int gs_malloc_wrap(gs_memory_t **wrapped, gs_malloc_memory_t *contents);
 
 /* Get the wrapped contents. */
-gs_malloc_memory_t *gs_malloc_wrapped_contents(P1(gs_memory_t *wrapped));
+gs_malloc_memory_t *gs_malloc_wrapped_contents(gs_memory_t *wrapped);
 
 /* Free the wrapper, and return the wrapped contents. */
-gs_malloc_memory_t *gs_malloc_unwrap(P1(gs_memory_t *wrapped));
+gs_malloc_memory_t *gs_malloc_unwrap(gs_memory_t *wrapped);
 
 #endif /* gsmalloc_INCLUDED */

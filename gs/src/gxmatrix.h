@@ -36,13 +36,13 @@ typedef struct gs_matrix_fixed_s {
 } gs_matrix_fixed;
 
 /* Make a gs_matrix_fixed from a gs_matrix. */
-int gs_matrix_fixed_from_matrix(P2(gs_matrix_fixed *, const gs_matrix *));
+int gs_matrix_fixed_from_matrix(gs_matrix_fixed *, const gs_matrix *);
 
 /* Coordinate transformations to fixed point. */
-int gs_point_transform2fixed(P4(const gs_matrix_fixed *, floatp, floatp,
-				gs_fixed_point *));
-int gs_distance_transform2fixed(P4(const gs_matrix_fixed *, floatp, floatp,
-				   gs_fixed_point *));
+int gs_point_transform2fixed(const gs_matrix_fixed *, floatp, floatp,
+			     gs_fixed_point *);
+int gs_distance_transform2fixed(const gs_matrix_fixed *, floatp, floatp,
+				gs_fixed_point *);
 
 /*
  * Define the fixed-point coefficient structure for avoiding
@@ -68,7 +68,7 @@ typedef struct {
  * prevent overflow for integer arithmetic.  (This is a very custom
  * routine.)  The intermediate value may exceed the size of a long integer.
  */
-fixed fixed_coeff_mult(P4(fixed, long, const fixed_coeff *, int));
+fixed fixed_coeff_mult(fixed, long, const fixed_coeff *, int);
 
 /*
  * Multiply a fixed whose integer part usually does not exceed max_bits

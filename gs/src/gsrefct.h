@@ -39,16 +39,16 @@ struct rc_header_s {
     long ref_count;
     gs_memory_t *memory;
 #define rc_free_proc(proc)\
-  void proc(P3(gs_memory_t *, void *, client_name_t))
+  void proc(gs_memory_t *, void *, client_name_t)
     rc_free_proc((*free));
 };
 
 #ifdef DEBUG
-void rc_trace_init_free(P2(const void *vp, const rc_header *prc));
-void rc_trace_free_struct(P3(const void *vp, const rc_header *prc,
-			     client_name_t cname));
-void rc_trace_increment(P2(const void *vp, const rc_header *prc));
-void rc_trace_adjust(P3(const void *vp, const rc_header *prc, int delta));
+void rc_trace_init_free(const void *vp, const rc_header *prc);
+void rc_trace_free_struct(const void *vp, const rc_header *prc,
+			  client_name_t cname);
+void rc_trace_increment(const void *vp, const rc_header *prc);
+void rc_trace_adjust(const void *vp, const rc_header *prc, int delta);
 #define IF_RC_DEBUG(call) if (gs_debug_c('^')) dlputs(""), call
 #else
 #define IF_RC_DEBUG(call) DO_NOTHING

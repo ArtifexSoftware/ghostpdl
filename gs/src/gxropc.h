@@ -39,7 +39,7 @@ typedef struct gs_composite_rop_s {
  * We make this visible so that clients can allocate gs_composite_rop_t
  * objects on the stack, to reduce memory manager overhead.
  */
-void gx_init_composite_rop(P2(gs_composite_rop_t * pcte,
-			      const gs_composite_rop_params_t * params));
+void gx_init_composite_rop(gs_composite_rop_t * pcte,
+			   const gs_composite_rop_params_t * params);
 
 #endif /* gxropc_INCLUDED */

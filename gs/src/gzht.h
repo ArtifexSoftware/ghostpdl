@@ -28,24 +28,24 @@
 #include "gxhttile.h"
 
 /* Sort a sampled halftone order by sample value. */
-void gx_sort_ht_order(P2(gx_ht_bit *, uint));
+void gx_sort_ht_order(gx_ht_bit *, uint);
 
 /* (Internal) procedures for constructing halftone orders. */
-int gx_ht_alloc_ht_order(P8(gx_ht_order * porder, uint width, uint height,
-			    uint num_levels, uint num_bits, uint strip_shift,
-			    const gx_ht_order_procs_t *procs,
-			    gs_memory_t * mem));
-int gx_ht_alloc_order(P6(gx_ht_order * porder, uint width, uint height,
-			 uint strip_shift, uint num_levels, gs_memory_t *mem));
-int gx_ht_alloc_threshold_order(P5(gx_ht_order * porder, uint width,
-				   uint height, uint num_levels,
-				   gs_memory_t * mem));
-int gx_ht_alloc_client_order(P6(gx_ht_order * porder, uint width, uint height,
-			uint num_levels, uint num_bits, gs_memory_t * mem));
-void gx_ht_construct_spot_order(P1(gx_ht_order *));
-int gx_ht_construct_threshold_order(P2(gx_ht_order *, const byte *));
-void gx_ht_construct_bit(P3(gx_ht_bit * bit, int width, int bit_num));
-void gx_ht_construct_bits(P1(gx_ht_order *));
+int gx_ht_alloc_ht_order(gx_ht_order * porder, uint width, uint height,
+			 uint num_levels, uint num_bits, uint strip_shift,
+			 const gx_ht_order_procs_t *procs,
+			 gs_memory_t * mem);
+int gx_ht_alloc_order(gx_ht_order * porder, uint width, uint height,
+		      uint strip_shift, uint num_levels, gs_memory_t *mem);
+int gx_ht_alloc_threshold_order(gx_ht_order * porder, uint width,
+				uint height, uint num_levels,
+				gs_memory_t * mem);
+int gx_ht_alloc_client_order(gx_ht_order * porder, uint width, uint height,
+			     uint num_levels, uint num_bits, gs_memory_t * mem);
+void gx_ht_construct_spot_order(gx_ht_order *);
+int gx_ht_construct_threshold_order(gx_ht_order *, const byte *);
+void gx_ht_construct_bit(gx_ht_bit * bit, int width, int bit_num);
+void gx_ht_construct_bits(gx_ht_order *);
 
 /* Halftone enumeration structure */
 struct gs_screen_enum_s {
@@ -64,31 +64,31 @@ struct gs_screen_enum_s {
 /*    order.levels, order.bits, pgs) */
 
 /* Prepare a device halftone for installation, but don't install it. */
-int gs_sethalftone_prepare(P3(gs_state *, gs_halftone *,
-			      gx_device_halftone *));
+int gs_sethalftone_prepare(gs_state *, gs_halftone *,
+			   gx_device_halftone *);
 
 /* Allocate and initialize a spot screen. */
 /* This is the first half of gs_screen_init_accurate/memory. */
-int gs_screen_order_alloc(P2(gx_ht_order *, gs_memory_t *));
-int gs_screen_order_init_memory(P5(gx_ht_order *, const gs_state *,
-				   gs_screen_halftone *, bool, gs_memory_t *));
+int gs_screen_order_alloc(gx_ht_order *, gs_memory_t *);
+int gs_screen_order_init_memory(gx_ht_order *, const gs_state *,
+				gs_screen_halftone *, bool, gs_memory_t *);
 
 #define gs_screen_order_init(porder, pgs, phsp, accurate)\
   gs_screen_order_init_memory(porder, pgs, phsp, accurate, pgs->memory)
 
 /* Prepare to sample a spot screen. */
 /* This is the second half of gs_screen_init_accurate/memory. */
-int gs_screen_enum_init_memory(P5(gs_screen_enum *, const gx_ht_order *,
-				  gs_state *, const gs_screen_halftone *,
-				  gs_memory_t *));
+int gs_screen_enum_init_memory(gs_screen_enum *, const gx_ht_order *,
+			       gs_state *, const gs_screen_halftone *,
+			       gs_memory_t *);
 
 #define gs_screen_enum_init(penum, porder, pgs, phsp)\
   gs_screen_enum_init_memory(penum, porder, pgs, phsp, pgs->memory)
 
 /* Process an entire screen plane. */
-int gx_ht_process_screen_memory(P5(gs_screen_enum * penum, gs_state * pgs,
-				   gs_screen_halftone * phsp, bool accurate,
-				   gs_memory_t * mem));
+int gx_ht_process_screen_memory(gs_screen_enum * penum, gs_state * pgs,
+				gs_screen_halftone * phsp, bool accurate,
+				gs_memory_t * mem);
 
 #define gx_ht_process_screen(penum, pgs, phsp, accurate)\
   gx_ht_process_screen_memory(penum, pgs, phsp, accurate, pgs->memory)
@@ -124,7 +124,7 @@ struct gx_ht_cache_s {
 				/* 1 if fit */
     gx_bitmap_id base_id;	/* the base id, to which */
 				/* we add the halftone level */
-    gx_ht_tile *(*render_ht)(P2(gx_ht_cache *, int)); /* rendering procedure */
+    gx_ht_tile *(*render_ht)(gx_ht_cache *, int); /* rendering procedure */
 };
 
 /* We don't mark from the tiles pointer, and we relocate the tiles en masse. */
@@ -148,10 +148,10 @@ extern const gx_color_value *const fc_color_quo[8];
 /* ------ Halftone cache procedures ------ */
 
 /* Allocate/free a halftone cache. */
-uint gx_ht_cache_default_tiles(P0());
-uint gx_ht_cache_default_bits(P0());
-gx_ht_cache *gx_ht_alloc_cache(P3(gs_memory_t *, uint, uint));
-void gx_ht_free_cache(P2(gs_memory_t *, gx_ht_cache *));
+uint gx_ht_cache_default_tiles(void);
+uint gx_ht_cache_default_bits(void);
+gx_ht_cache *gx_ht_alloc_cache(gs_memory_t *, uint, uint);
+void gx_ht_free_cache(gs_memory_t *, gx_ht_cache *);
 
 /* Clear a halftone cache. */
 #define gx_ht_clear_cache(pcache)\
@@ -159,21 +159,21 @@ void gx_ht_free_cache(P2(gs_memory_t *, gx_ht_cache *));
    (pcache)->ht_tiles[0].tiles.data = 0)
 
 /* Initialize a halftone cache with a given order. */
-void gx_ht_init_cache(P2(gx_ht_cache *, const gx_ht_order *));
+void gx_ht_init_cache(gx_ht_cache *, const gx_ht_order *);
 
 /* Check whether the tile cache corresponds to the current order */
-bool gx_check_tile_cache_current(P1(const gs_imager_state * pis));
+bool gx_check_tile_cache_current(const gs_imager_state * pis);
 
 /* Make the cache order current, and return whether */
 /* there is room for all possible tiles in the cache. */
-bool gx_check_tile_cache(P1(const gs_imager_state *));
+bool gx_check_tile_cache(const gs_imager_state *);
 
 /* Determine whether a given (width, y, height) might fit into a */
 /* single tile. If so, return the byte offset of the appropriate row */
 /* from the beginning of the tile, and set *ppx to the x phase offset */
 /* within the tile; if not, return -1. */
-int gx_check_tile_size(P6(const gs_imager_state * pis, int w, int y, int h,
-			  gs_color_select_t select, int *ppx));
+int gx_check_tile_size(const gs_imager_state * pis, int w, int y, int h,
+		       gs_color_select_t select, int *ppx);
 
 /* Make a given level current in a halftone cache. */
 #define gx_render_ht(pcache, b_level)\
@@ -183,31 +183,30 @@ int gx_check_tile_size(P6(const gs_imager_state * pis, int w, int y, int h,
 
 /* Release a gx_ht_order by freeing its components. */
 /* (Don't free the gx_device_halftone itself.) */
-void gx_ht_order_release(P3(gx_ht_order * porder, gs_memory_t * mem, bool free_cache));
+void gx_ht_order_release(gx_ht_order * porder, gs_memory_t * mem, bool free_cache);
 
 /*
  * Install a device halftone in an imager state.  Note that this does not
  * read or update the client halftone.  There is a special check for pdht ==
  * pis->dev_ht, for the benefit of the band rendering code.
  */
-int gx_imager_dev_ht_install(P4(gs_imager_state * pis,
-				const gx_device_halftone * pdht,
-				gs_halftone_type type,
-				const gx_device * dev));
+int gx_imager_dev_ht_install(gs_imager_state * pis,
+			     const gx_device_halftone * pdht,
+			     gs_halftone_type type,
+			     const gx_device * dev);
 
 /*
  * Install a new halftone in the graphics state.  Note that we copy the top
  * level of the gs_halftone and the gx_device_halftone, and take ownership
  * of any substructures.
  */
-int gx_ht_install(P3(gs_state *, const gs_halftone *,
-		     const gx_device_halftone *));
+int gx_ht_install(gs_state *, const gs_halftone *,
+		  const gx_device_halftone *);
 
 /* Reestablish the effective transfer functions, taking into account */
 /* any overrides from halftone dictionaries. */
 /* Some compilers object to names longer than 31 characters.... */
-void gx_imager_set_effective_xfer(P1(gs_imager_state * pis));
-void gx_set_effective_transfer(P1(gs_state * pgs));
-
+void gx_imager_set_effective_xfer(gs_imager_state * pis);
+void gx_set_effective_transfer(gs_state * pgs);
 
 #endif /* gzht_INCLUDED */

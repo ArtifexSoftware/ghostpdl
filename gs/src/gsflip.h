@@ -29,8 +29,8 @@
  * bits_per_sample must be 1, 2, 4, 8, or 12.  Returns -1 if num_planes or
  * bits_per_sample is invalid, otherwise 0.
  */
-extern int image_flip_planes(P6(byte * buffer, const byte ** planes,
-				int offset, int nbytes,
-				int num_planes, int bits_per_sample));
+extern int image_flip_planes(byte * buffer, const byte ** planes,
+			     int offset, int nbytes,
+			     int num_planes, int bits_per_sample);
 
 #endif /* gsflip_INCLUDED */

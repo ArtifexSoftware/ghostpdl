@@ -143,8 +143,8 @@ struct subpath_s {
 /* Test whether a subpath is a rectangle; if so, also return */
 /* the start of the next subpath. */
 gx_path_rectangular_type
-gx_subpath_is_rectangular(P3(const subpath * pstart, gs_fixed_rect * pbox,
-			     const subpath ** ppnext));
+gx_subpath_is_rectangular(const subpath * pstart, gs_fixed_rect * pbox,
+			  const subpath ** ppnext);
 
 #define gx_subpath_is_rectangle(pstart, pbox, ppnext)\
   (gx_subpath_is_rectangular(pstart, pbox, ppnext) != prt_none)
@@ -153,20 +153,20 @@ gx_subpath_is_rectangular(P3(const subpath * pstart, gs_fixed_rect * pbox,
 
 /* Return the smallest value k such that 2^k segments will approximate */
 /* the curve to within the desired flatness. */
-int gx_curve_log2_samples(P4(fixed, fixed, const curve_segment *, fixed));
+int gx_curve_log2_samples(fixed, fixed, const curve_segment *, fixed);
 
 /*
  * If necessary, find the values of t (never more than 2) which split the
  * curve into monotonic parts.  Return the number of split points.
  */
-int gx_curve_monotonic_points(P5(fixed, fixed, fixed, fixed, double[2]));
+int gx_curve_monotonic_points(fixed, fixed, fixed, fixed, double[2]);
 
 /* Split a curve at an arbitrary value of t. */
-void gx_curve_split(P6(fixed, fixed, const curve_segment *, double,
-		       curve_segment *, curve_segment *));
+void gx_curve_split(fixed, fixed, const curve_segment *, double,
+		    curve_segment *, curve_segment *);
 
 /* Flatten a partial curve by sampling (internal procedure). */
-int gx_flatten_sample(P4(gx_path *, int, curve_segment *, segment_notes));
+int gx_flatten_sample(gx_path *, int, curve_segment *, segment_notes);
 
 /* Initialize a cursor for rasterizing a monotonic curve. */
 typedef struct curve_cursor_s {
@@ -184,12 +184,12 @@ typedef struct curve_cursor_s {
 	fixed xl, xd;		/* value */
     } cache;
 } curve_cursor;
-void gx_curve_cursor_init(P5(curve_cursor * prc, fixed x0, fixed y0,
-			     const curve_segment * pc, int k));
+void gx_curve_cursor_init(curve_cursor * prc, fixed x0, fixed y0,
+			  const curve_segment * pc, int k);
 
 /* Return the value of X at a given Y value on a monotonic curve. */
 /* y must lie between prc->p0.y and prc->pt.y. */
-fixed gx_curve_x_at_y(P2(curve_cursor * prc, fixed y));
+fixed gx_curve_x_at_y(curve_cursor * prc, fixed y);
 
 /*
  * The path state flags reflect the most recent operation on the path

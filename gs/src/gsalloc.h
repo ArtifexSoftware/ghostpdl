@@ -41,8 +41,8 @@ typedef struct gs_memory_gc_status_s {
 	/* Set by allocator */
     long requested;		/* amount of last failing request */
 } gs_memory_gc_status_t;
-void gs_memory_gc_status(P2(const gs_ref_memory_t *, gs_memory_gc_status_t *));
-void gs_memory_set_gc_status(P2(gs_ref_memory_t *, const gs_memory_gc_status_t *));
+void gs_memory_gc_status(const gs_ref_memory_t *, gs_memory_gc_status_t *);
+void gs_memory_set_gc_status(gs_ref_memory_t *, const gs_memory_gc_status_t *);
 
 /* ------ Initialization ------ */
 
@@ -50,30 +50,30 @@ void gs_memory_set_gc_status(P2(gs_ref_memory_t *, const gs_memory_gc_status_t *
  * Allocate and mostly initialize the state of an allocator (system, global,
  * or local).  Does not initialize global or space.
  */
-gs_ref_memory_t *ialloc_alloc_state(P2(gs_raw_memory_t *, uint));
+gs_ref_memory_t *ialloc_alloc_state(gs_raw_memory_t *, uint);
 
 /*
  * Add a chunk to an externally controlled allocator.  Such allocators
  * allocate all objects as immovable, are not garbage-collected, and
  * don't attempt to acquire additional memory (or free chunks) on their own.
  */
-int ialloc_add_chunk(P3(gs_ref_memory_t *, ulong, client_name_t));
+int ialloc_add_chunk(gs_ref_memory_t *, ulong, client_name_t);
 
 /* ------ Internal routines ------ */
 
 /* Prepare for a GC. */
-void ialloc_gc_prepare(P1(gs_ref_memory_t *));
+void ialloc_gc_prepare(gs_ref_memory_t *);
 
 /* Initialize after a save. */
-void ialloc_reset(P1(gs_ref_memory_t *));
+void ialloc_reset(gs_ref_memory_t *);
 
 /* Initialize after a save or GC. */
-void ialloc_reset_free(P1(gs_ref_memory_t *));
+void ialloc_reset_free(gs_ref_memory_t *);
 
 /* Set the cached allocation limit of an alloctor from its GC parameters. */
-void ialloc_set_limit(P1(gs_ref_memory_t *));
+void ialloc_set_limit(gs_ref_memory_t *);
 
 /* Consolidate free objects. */
-void ialloc_consolidate_free(P1(gs_ref_memory_t *));
+void ialloc_consolidate_free(gs_ref_memory_t *);
 
 #endif /* gsalloc_INCLUDED */

@@ -52,19 +52,19 @@ typedef struct clip_callback_data_s {
 
 /* Declare the callback procedures. */
 int
-    clip_call_fill_rectangle(P5(clip_callback_data_t * pccd,
-				int xc, int yc, int xec, int yec)),
-    clip_call_copy_mono(P5(clip_callback_data_t * pccd,
-			   int xc, int yc, int xec, int yec)),
-    clip_call_copy_color(P5(clip_callback_data_t * pccd,
-			    int xc, int yc, int xec, int yec)),
-    clip_call_copy_alpha(P5(clip_callback_data_t * pccd,
-			    int xc, int yc, int xec, int yec)),
-    clip_call_fill_mask(P5(clip_callback_data_t * pccd,
-			   int xc, int yc, int xec, int yec)),
-    clip_call_strip_tile_rectangle(P5(clip_callback_data_t * pccd,
-				      int xc, int yc, int xec, int yec)),
-    clip_call_strip_copy_rop(P5(clip_callback_data_t * pccd,
-				int xc, int yc, int xec, int yec));
+    clip_call_fill_rectangle(clip_callback_data_t * pccd,
+			     int xc, int yc, int xec, int yec),
+    clip_call_copy_mono(clip_callback_data_t * pccd,
+			int xc, int yc, int xec, int yec),
+    clip_call_copy_color(clip_callback_data_t * pccd,
+			 int xc, int yc, int xec, int yec),
+    clip_call_copy_alpha(clip_callback_data_t * pccd,
+			 int xc, int yc, int xec, int yec),
+    clip_call_fill_mask(clip_callback_data_t * pccd,
+			int xc, int yc, int xec, int yec),
+    clip_call_strip_tile_rectangle(clip_callback_data_t * pccd,
+				   int xc, int yc, int xec, int yec),
+    clip_call_strip_copy_rop(clip_callback_data_t * pccd,
+			     int xc, int yc, int xec, int yec);
 
 #endif /* gxclip_INCLUDED */

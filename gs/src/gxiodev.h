@@ -79,64 +79,64 @@ typedef struct stream_s stream;
 struct gx_io_device_procs_s {
 
 #define iodev_proc_init(proc)\
-  int proc(P2(gx_io_device *iodev, gs_memory_t *mem))
+  int proc(gx_io_device *iodev, gs_memory_t *mem)
     iodev_proc_init((*init));	/* one-time initialization */
 
 #define iodev_proc_open_device(proc)\
-  int proc(P4(gx_io_device *iodev, const char *access, stream **ps,\
-	      gs_memory_t *mem))
+  int proc(gx_io_device *iodev, const char *access, stream **ps,\
+	   gs_memory_t *mem)
     iodev_proc_open_device((*open_device));
 
 #define iodev_proc_open_file(proc)\
-  int proc(P6(gx_io_device *iodev, const char *fname, uint namelen,\
-	      const char *access, stream **ps, gs_memory_t *mem))
+  int proc(gx_io_device *iodev, const char *fname, uint namelen,\
+	   const char *access, stream **ps, gs_memory_t *mem)
     iodev_proc_open_file((*open_file));
 
     /* fopen was changed in release 2.9.6, */
     /* and again in 3.20 to return the real fname separately */
 
 #define iodev_proc_fopen(proc)\
-  int proc(P6(gx_io_device *iodev, const char *fname, const char *access,\
-	      FILE **pfile, char *rfname, uint rnamelen))
+  int proc(gx_io_device *iodev, const char *fname, const char *access,\
+	   FILE **pfile, char *rfname, uint rnamelen)
     iodev_proc_fopen((*fopen));
 
 #define iodev_proc_fclose(proc)\
-  int proc(P2(gx_io_device *iodev, FILE *file))
+  int proc(gx_io_device *iodev, FILE *file)
     iodev_proc_fclose((*fclose));
 
 #define iodev_proc_delete_file(proc)\
-  int proc(P2(gx_io_device *iodev, const char *fname))
+  int proc(gx_io_device *iodev, const char *fname)
     iodev_proc_delete_file((*delete_file));
 
 #define iodev_proc_rename_file(proc)\
-  int proc(P3(gx_io_device *iodev, const char *from, const char *to))
+  int proc(gx_io_device *iodev, const char *from, const char *to)
     iodev_proc_rename_file((*rename_file));
 
 #define iodev_proc_file_status(proc)\
-  int proc(P3(gx_io_device *iodev, const char *fname, struct stat *pstat))
+  int proc(gx_io_device *iodev, const char *fname, struct stat *pstat)
     iodev_proc_file_status((*file_status));
 
 #define iodev_proc_enumerate_files(proc)\
-  file_enum *proc(P4(gx_io_device *iodev, const char *pat, uint patlen,\
-		     gs_memory_t *mem))
+  file_enum *proc(gx_io_device *iodev, const char *pat, uint patlen,\
+		  gs_memory_t *mem)
     iodev_proc_enumerate_files((*enumerate_files));
 
 #define iodev_proc_enumerate_next(proc)\
-  uint proc(P3(file_enum *pfen, char *ptr, uint maxlen))
+  uint proc(file_enum *pfen, char *ptr, uint maxlen)
     iodev_proc_enumerate_next((*enumerate_next));
 
 #define iodev_proc_enumerate_close(proc)\
-  void proc(P1(file_enum *pfen))
+  void proc(file_enum *pfen)
     iodev_proc_enumerate_close((*enumerate_close));
 
     /* Added in release 2.9 */
 
 #define iodev_proc_get_params(proc)\
-  int proc(P2(gx_io_device *iodev, gs_param_list *plist))
+  int proc(gx_io_device *iodev, gs_param_list *plist)
     iodev_proc_get_params((*get_params));
 
 #define iodev_proc_put_params(proc)\
-  int proc(P2(gx_io_device *iodev, gs_param_list *plist))
+  int proc(gx_io_device *iodev, gs_param_list *plist)
     iodev_proc_put_params((*put_params));
 
 };
@@ -163,20 +163,20 @@ iodev_proc_fopen(iodev_os_fopen);
 iodev_proc_fclose(iodev_os_fclose);
 
 /* Get the N'th IODevice. */
-gx_io_device *gs_getiodevice(P1(int));
+gx_io_device *gs_getiodevice(int);
 
 #define iodev_default (gs_getiodevice(0))
 
 /* Look up an IODevice name. */
-gx_io_device *gs_findiodevice(P2(const byte *, uint));
+gx_io_device *gs_findiodevice(const byte *, uint);
 
 /* Get and put IODevice parameters. */
-int gs_getdevparams(P2(gx_io_device *, gs_param_list *));
-int gs_putdevparams(P2(gx_io_device *, gs_param_list *));
+int gs_getdevparams(gx_io_device *, gs_param_list *);
+int gs_putdevparams(gx_io_device *, gs_param_list *);
 
 /* Convert an OS error number to a PostScript error */
 /* if opening a file fails. */
-int gs_fopen_errno_to_code(P1(int));
+int gs_fopen_errno_to_code(int);
 
 /* Test whether a string is equal to a character. */
 /* (This is used for access testing in file_open procedures.) */

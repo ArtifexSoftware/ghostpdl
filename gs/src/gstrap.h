@@ -69,6 +69,6 @@ typedef struct gs_trap_zone_s {
 
 /* ---------------- Procedures ---------------- */
 
-int gs_settrapparams(P2(gs_trap_params_t * params, gs_param_list * list));
+int gs_settrapparams(gs_trap_params_t * params, gs_param_list * list);
 
 #endif /* gstrap_INCLUDED */

@@ -46,12 +46,12 @@ typedef struct gs_function_Sd_params_s {
 /* ---------------- Procedures ---------------- */
 
 /* Allocate and initialize a Sampled function. */
-int gs_function_Sd_init(P3(gs_function_t ** ppfn,
-			   const gs_function_Sd_params_t * params,
-			   gs_memory_t * mem));
+int gs_function_Sd_init(gs_function_t ** ppfn,
+			const gs_function_Sd_params_t * params,
+			gs_memory_t * mem);
 
 /* Free the parameters of a Sampled function. */
-void gs_function_Sd_free_params(P2(gs_function_Sd_params_t * params,
-				   gs_memory_t * mem));
+void gs_function_Sd_free_params(gs_function_Sd_params_t * params,
+				gs_memory_t * mem);
 
 #endif /* gsfunc0_INCLUDED */

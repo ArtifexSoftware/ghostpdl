@@ -74,8 +74,8 @@ typedef struct gx_device_s gx_device;
  * clipping device if necessary.
  */
 #define SHADING_FILL_RECTANGLE_PROC(proc)\
-  int proc(P4(const gs_shading_t *psh, const gs_rect *prect, gx_device *dev,\
-	      gs_imager_state *pis))
+  int proc(const gs_shading_t *psh, const gs_rect *prect, gx_device *dev,\
+	   gs_imager_state *pis)
 typedef SHADING_FILL_RECTANGLE_PROC((*shading_fill_rectangle_proc_t));
 #define gs_shading_fill_rectangle(psh, prect, dev, pis)\
   ((psh)->head.procs.fill_rectangle(psh, prect, dev, pis))
@@ -210,36 +210,36 @@ typedef struct gs_shading_Tpp_params_s {
 /* ---------------- Procedures ---------------- */
 
 /* Initialize shading parameters of specific types. */
-void gs_shading_Fb_params_init(P1(gs_shading_Fb_params_t * params));
-void gs_shading_A_params_init(P1(gs_shading_A_params_t * params));
-void gs_shading_R_params_init(P1(gs_shading_R_params_t * params));
-void gs_shading_FfGt_params_init(P1(gs_shading_FfGt_params_t * params));
-void gs_shading_LfGt_params_init(P1(gs_shading_LfGt_params_t * params));
-void gs_shading_Cp_params_init(P1(gs_shading_Cp_params_t * params));
-void gs_shading_Tpp_params_init(P1(gs_shading_Tpp_params_t * params));
+void gs_shading_Fb_params_init(gs_shading_Fb_params_t * params);
+void gs_shading_A_params_init(gs_shading_A_params_t * params);
+void gs_shading_R_params_init(gs_shading_R_params_t * params);
+void gs_shading_FfGt_params_init(gs_shading_FfGt_params_t * params);
+void gs_shading_LfGt_params_init(gs_shading_LfGt_params_t * params);
+void gs_shading_Cp_params_init(gs_shading_Cp_params_t * params);
+void gs_shading_Tpp_params_init(gs_shading_Tpp_params_t * params);
 
 /* Create (initialize) shadings of specific types. */
-int gs_shading_Fb_init(P3(gs_shading_t ** ppsh,
-			  const gs_shading_Fb_params_t * params,
-			  gs_memory_t * mem));
-int gs_shading_A_init(P3(gs_shading_t ** ppsh,
-			 const gs_shading_A_params_t * params,
-			 gs_memory_t * mem));
-int gs_shading_R_init(P3(gs_shading_t ** ppsh,
-			 const gs_shading_R_params_t * params,
-			 gs_memory_t * mem));
-int gs_shading_FfGt_init(P3(gs_shading_t ** ppsh,
-			    const gs_shading_FfGt_params_t * params,
-			    gs_memory_t * mem));
-int gs_shading_LfGt_init(P3(gs_shading_t ** ppsh,
-			    const gs_shading_LfGt_params_t * params,
-			    gs_memory_t * mem));
-int gs_shading_Cp_init(P3(gs_shading_t ** ppsh,
-			  const gs_shading_Cp_params_t * params,
-			  gs_memory_t * mem));
-int gs_shading_Tpp_init(P3(gs_shading_t ** ppsh,
-			   const gs_shading_Tpp_params_t * params,
-			   gs_memory_t * mem));
+int gs_shading_Fb_init(gs_shading_t ** ppsh,
+		       const gs_shading_Fb_params_t * params,
+		       gs_memory_t * mem);
+int gs_shading_A_init(gs_shading_t ** ppsh,
+		      const gs_shading_A_params_t * params,
+		      gs_memory_t * mem);
+int gs_shading_R_init(gs_shading_t ** ppsh,
+		      const gs_shading_R_params_t * params,
+		      gs_memory_t * mem);
+int gs_shading_FfGt_init(gs_shading_t ** ppsh,
+			 const gs_shading_FfGt_params_t * params,
+			 gs_memory_t * mem);
+int gs_shading_LfGt_init(gs_shading_t ** ppsh,
+			 const gs_shading_LfGt_params_t * params,
+			 gs_memory_t * mem);
+int gs_shading_Cp_init(gs_shading_t ** ppsh,
+		       const gs_shading_Cp_params_t * params,
+		       gs_memory_t * mem);
+int gs_shading_Tpp_init(gs_shading_t ** ppsh,
+			const gs_shading_Tpp_params_t * params,
+			gs_memory_t * mem);
 
 /*
  * Fill a path or a (device-space) rectangle with a shading.  Both the path
@@ -254,8 +254,8 @@ int gs_shading_Tpp_init(P3(gs_shading_t ** ppsh,
 #  define gx_path_DEFINED
 typedef struct gx_path_s gx_path;
 #endif
-int gs_shading_fill_path(P6(const gs_shading_t *psh, /*const*/ gx_path *ppath,
-			    const gs_fixed_rect *prect, gx_device *dev,
-			    gs_imager_state *pis, bool fill_background));
+int gs_shading_fill_path(const gs_shading_t *psh, /*const*/ gx_path *ppath,
+			 const gs_fixed_rect *prect, gx_device *dev,
+			 gs_imager_state *pis, bool fill_background);
 
 #endif /* gsshade_INCLUDED */

@@ -48,8 +48,8 @@ typedef struct stream_s stream;
  * next call).  Note that this procedure may or may not do bounds checking.
  */
 #define data_source_proc_access(proc)\
-  int proc(P5(const gs_data_source_t *psrc, ulong start, uint length,\
-	      byte *buf, const byte **ptr))
+  int proc(const gs_data_source_t *psrc, ulong start, uint length,\
+	   byte *buf, const byte **ptr)
 
 typedef enum {
     data_source_type_string,

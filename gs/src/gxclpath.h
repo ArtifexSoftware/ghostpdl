@@ -199,36 +199,36 @@ dev_proc_fill_triangle(clist_fill_triangle);
 /* ------ Exported by gxclpath.c ------ */
 
 /* Compute the colors used by a drawing color. */
-gx_color_index cmd_drawing_colors_used(P2(gx_device_clist_writer *cldev,
-					  const gx_drawing_color *pdcolor));
+gx_color_index cmd_drawing_colors_used(gx_device_clist_writer *cldev,
+				       const gx_drawing_color *pdcolor);
 
 /*
  * Compute whether a drawing operation will require the slow (full-pixel)
  * RasterOp implementation.  If pdcolor is not NULL, it is the texture for
  * the RasterOp.
  */
-bool cmd_slow_rop(P3(gx_device *dev, gs_logical_operation_t lop,
-		     const gx_drawing_color *pdcolor));
+bool cmd_slow_rop(gx_device *dev, gs_logical_operation_t lop,
+		  const gx_drawing_color *pdcolor);
 
 /* Write out the color for filling, stroking, or masking. */
 /* Return a cmd_dc_type. */
-int cmd_put_drawing_color(P3(gx_device_clist_writer * cldev,
-			     gx_clist_state * pcls,
-			     const gx_drawing_color * pdcolor));
+int cmd_put_drawing_color(gx_device_clist_writer * cldev,
+			  gx_clist_state * pcls,
+			  const gx_drawing_color * pdcolor);
 
 /* Clear (a) specific 'known' flag(s) for all bands. */
 /* We must do this whenever the value of a 'known' parameter changes. */
-void cmd_clear_known(P2(gx_device_clist_writer * cldev, uint known));
+void cmd_clear_known(gx_device_clist_writer * cldev, uint known);
 
 /* Write out values of any unknown parameters. */
 #define cmd_do_write_unknown(cldev, pcls, must_know)\
   ( ~(pcls)->known & (must_know) ?\
     cmd_write_unknown(cldev, pcls, must_know) : 0 )
-int cmd_write_unknown(P3(gx_device_clist_writer * cldev, gx_clist_state * pcls,
-			 uint must_know));
+int cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
+		      uint must_know);
 
 /* Check whether we need to change the clipping path in the device. */
-bool cmd_check_clip_path(P2(gx_device_clist_writer * cldev,
-			    const gx_clip_path * pcpath));
+bool cmd_check_clip_path(gx_device_clist_writer * cldev,
+			 const gx_clip_path * pcpath);
 
 #endif /* gxclpath_INCLUDED */

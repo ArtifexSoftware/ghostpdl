@@ -163,7 +163,7 @@ typedef struct gs_font_procs_s {
      */
 
 #define font_proc_define_font(proc)\
-  int proc(P2(gs_font_dir *, gs_font *))
+  int proc(gs_font_dir *, gs_font *)
     font_proc_define_font((*define_font));
 
     /*
@@ -172,7 +172,7 @@ typedef struct gs_font_procs_s {
      */
 
 #define font_proc_make_font(proc)\
-  int proc(P4(gs_font_dir *, const gs_font *, const gs_matrix *, gs_font **))
+  int proc(gs_font_dir *, const gs_font *, const gs_matrix *, gs_font **)
     font_proc_make_font((*make_font));
 
     /*
@@ -185,8 +185,8 @@ typedef struct gs_font_procs_s {
      */
 
 #define font_proc_font_info(proc)\
-  int proc(P4(gs_font *font, const gs_point *pscale, int members,\
-	      gs_font_info_t *info))
+  int proc(gs_font *font, const gs_point *pscale, int members,\
+	   gs_font_info_t *info)
     font_proc_font_info((*font_info));
 
     /*
@@ -202,7 +202,7 @@ typedef struct gs_font_procs_s {
 #define FONT_SAME_ENCODING 4
 
 #define font_proc_same_font(proc)\
-  int proc(P3(const gs_font *font, const gs_font *ofont, int mask))
+  int proc(const gs_font *font, const gs_font *ofont, int mask)
     font_proc_same_font((*same_font));
 
     /* ------ Glyph-level procedures ------ */
@@ -216,7 +216,7 @@ typedef struct gs_font_procs_s {
      */
 
 #define font_proc_encode_char(proc)\
-  gs_glyph proc(P3(gs_font *, gs_char, gs_glyph_space_t))
+  gs_glyph proc(gs_font *, gs_char, gs_glyph_space_t)
     font_proc_encode_char((*encode_char));
 
     /*
@@ -227,8 +227,8 @@ typedef struct gs_font_procs_s {
      */
 
 #define font_proc_enumerate_glyph(proc)\
-  int proc(P4(gs_font *font, int *pindex, gs_glyph_space_t glyph_space,\
-	      gs_glyph *pglyph))
+  int proc(gs_font *font, int *pindex, gs_glyph_space_t glyph_space,\
+	   gs_glyph *pglyph)
     font_proc_enumerate_glyph((*enumerate_glyph));
 
     /*
@@ -244,8 +244,8 @@ typedef struct gs_font_procs_s {
      */
 
 #define font_proc_glyph_info(proc)\
-  int proc(P5(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,\
-	      int members, gs_glyph_info_t *info))
+  int proc(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,\
+	   int members, gs_glyph_info_t *info)
     font_proc_glyph_info((*glyph_info));
 
     /*
@@ -255,8 +255,8 @@ typedef struct gs_font_procs_s {
      */
 
 #define font_proc_glyph_outline(proc)\
-  int proc(P4(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,\
-	      gx_path *ppath))
+  int proc(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,\
+	   gx_path *ppath)
     font_proc_glyph_outline((*glyph_outline));
 
     /*
@@ -264,7 +264,7 @@ typedef struct gs_font_procs_s {
      */
 
 #define font_proc_glyph_name(proc)\
-  int proc(P3(gs_font *font, gs_glyph glyph, gs_const_string *pstr))
+  int proc(gs_font *font, gs_glyph glyph, gs_const_string *pstr)
     font_proc_glyph_name((*glyph_name));
 
     /* ------ Glyph rendering procedures ------ */
@@ -276,7 +276,7 @@ typedef struct gs_font_procs_s {
      */
 
 #define font_proc_init_fstack(proc)\
-  int proc(P2(gs_text_enum_t *, gs_font *))
+  int proc(gs_text_enum_t *, gs_font *)
     font_proc_init_fstack((*init_fstack));
 
     /*
@@ -290,7 +290,7 @@ typedef struct gs_font_procs_s {
      */
 
 #define font_proc_next_char_glyph(proc)\
-  int proc(P3(gs_text_enum_t *pte, gs_char *pchar, gs_glyph *pglyph))
+  int proc(gs_text_enum_t *pte, gs_char *pchar, gs_glyph *pglyph)
     font_proc_next_char_glyph((*next_char_glyph));
 
     /*
@@ -302,7 +302,7 @@ typedef struct gs_font_procs_s {
      */
 
 #define font_proc_build_char(proc)\
-  int proc(P5(gs_text_enum_t *, gs_state *, gs_font *, gs_char, gs_glyph))
+  int proc(gs_text_enum_t *, gs_state *, gs_font *, gs_char, gs_glyph)
     font_proc_build_char((*build_char));
 
 } gs_font_procs;
@@ -391,9 +391,9 @@ extern_st(st_gs_font_ptr_element);
 /* Allocate and minimally initialize a font. */
 /* Does not set: FontMatrix, FontType, key_name, font_name. */
 gs_font *
-  gs_font_alloc(P5(gs_memory_t *mem, gs_memory_type_ptr_t pstype,
-		   const gs_font_procs *procs, gs_font_dir *dir,
-		   client_name_t cname));
+  gs_font_alloc(gs_memory_t *mem, gs_memory_type_ptr_t pstype,
+		const gs_font_procs *procs, gs_font_dir *dir,
+		client_name_t cname);
 
 /* Initialize the notification list for a font. */
 void gs_font_notify_init(gs_font *font);
@@ -403,10 +403,10 @@ void gs_font_notify_init(gs_font *font);
  * the clients are only notified when a font is freed.  Note that any
  * such client must unregister itself when *it* is freed.
  */
-int gs_font_notify_register(P3(gs_font *font, gs_notify_proc_t proc,
-			       void *proc_data));
-int gs_font_notify_unregister(P3(gs_font *font, gs_notify_proc_t proc,
-				 void *proc_data));
+int gs_font_notify_register(gs_font *font, gs_notify_proc_t proc,
+			    void *proc_data);
+int gs_font_notify_unregister(gs_font *font, gs_notify_proc_t proc,
+			      void *proc_data);
 
 #ifndef FAPI_server_DEFINED
 #define FAPI_server_DEFINED
@@ -441,14 +441,14 @@ extern_st(st_gs_font_base);
 /* Allocate and minimally initialize a base font. */
 /* Does not set: same elements as gs_alloc_font. */
 gs_font_base *
-  gs_font_base_alloc(P5(gs_memory_t *mem, gs_memory_type_ptr_t pstype,
-			const gs_font_procs *procs, gs_font_dir *dir,
-			client_name_t cname));
+  gs_font_base_alloc(gs_memory_t *mem, gs_memory_type_ptr_t pstype,
+		     const gs_font_procs *procs, gs_font_dir *dir,
+		     client_name_t cname);
 
 /*
  * Test whether a glyph is the notdef glyph for a base font.
  * The test is somewhat adhoc: perhaps this should be a virtual procedure.
  */
-bool gs_font_glyph_is_notdef(P2(gs_font_base *bfont, gs_glyph glyph));
+bool gs_font_glyph_is_notdef(gs_font_base *bfont, gs_glyph glyph);
 
 #endif /* gxfont_INCLUDED */

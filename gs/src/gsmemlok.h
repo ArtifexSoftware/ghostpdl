@@ -40,16 +40,16 @@ typedef struct gs_memory_locked_s {
 /* ---------- Public constructors/destructors ---------- */
 
 /* Initialize a locked memory manager. */
-int gs_memory_locked_init(P2(
-			     gs_memory_locked_t * lmem,	/* allocator to init */
-			     gs_memory_t * target	/* allocator to monitor lock */
-			     ));
+int gs_memory_locked_init(
+			  gs_memory_locked_t * lmem,	/* allocator to init */
+			  gs_memory_t * target	/* allocator to monitor lock */
+			  );
 
 /* Release a locked memory manager. */
 /* Note that this has no effect on the target. */
-void gs_memory_locked_release(P1(gs_memory_locked_t *lmem));
+void gs_memory_locked_release(gs_memory_locked_t *lmem);
 
 /* Get the target of a locked memory manager. */
-gs_memory_t * gs_memory_locked_target(P1(const gs_memory_locked_t *lmem));
+gs_memory_t * gs_memory_locked_target(const gs_memory_locked_t *lmem);
 
 #endif /*!defined(gsmemlok_INCLUDED) */

@@ -81,8 +81,8 @@ typedef struct gx_device_halftone_s gx_device_halftone;
  * routines should err toward false responses if there is any question
  * about the equality of the two device colors.
  */
-bool gx_device_color_equal(P2(const gx_device_color *pdevc1,
-			      const gx_device_color *pdevc2));
+bool gx_device_color_equal(const gx_device_color *pdevc1,
+			   const gx_device_color *pdevc2);
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * The definitions in the following section of the file, plus the ones
@@ -137,8 +137,8 @@ bool gx_device_color_equal(P2(const gx_device_color *pdevc1,
 #define _color_set_c(pdc, i, b, l)\
   ((pdc)->colors.colored.c_base[i] = (b),\
    (pdc)->colors.colored.c_level[i] = (l))
-void gx_complete_rgb_halftone(P2(gx_device_color *pdevc,
-				 gx_device_halftone *pdht));
+void gx_complete_rgb_halftone(gx_device_color *pdevc,
+			      gx_device_halftone *pdht);
 /* Some special clients set the individual components separately. */
 #define color_finish_set_rgb_halftone(pdc, ht)\
   gx_complete_rgb_halftone(pdc, ht)
@@ -149,8 +149,8 @@ void gx_complete_rgb_halftone(P2(gx_device_color *pdevc,
    (pdc)->colors.colored.alpha = (a),\
    color_finish_set_rgb_halftone(pdc, ht))
 /* Some special clients set the individual components separately. */
-void gx_complete_cmyk_halftone(P2(gx_device_color *pdevc,
-				  gx_device_halftone *pdht));
+void gx_complete_cmyk_halftone(gx_device_color *pdevc,
+			       gx_device_halftone *pdht);
 #define color_finish_set_cmyk_halftone(pdc, ht)\
   gx_complete_cmyk_halftone(pdc, ht)
 #define color_set_cmyk_halftone(pdc, ht, bc, lc, bm, lm, by, ly, bk, lk)\

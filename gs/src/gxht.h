@@ -118,10 +118,10 @@ typedef struct gs_client_order_ht_procs_s {
      * (see gzht.h) does everything but fill in the actual data.
      */
 
-    int (*create_order) (P4(gx_ht_order * porder,
-			    gs_state * pgs,
-			    const gs_client_order_halftone * phcop,
-			    gs_memory_t * mem));
+    int (*create_order) (gx_ht_order * porder,
+			 gs_state * pgs,
+			 const gs_client_order_halftone * phcop,
+			 gs_memory_t * mem);
 
 } gs_client_order_ht_procs_t;
 struct gs_client_order_halftone_s {
@@ -208,12 +208,12 @@ extern_st(st_halftone);
  * Set/get the default AccurateScreens value (for set[color]screen).
  * Note that this value is stored in a static variable.
  */
-void gs_setaccuratescreens(P1(bool));
-bool gs_currentaccuratescreens(P0());
+void gs_setaccuratescreens(bool);
+bool gs_currentaccuratescreens(void);
 
 /* Initiate screen sampling with optional AccurateScreens. */
-int gs_screen_init_memory(P5(gs_screen_enum *, gs_state *,
-			     gs_screen_halftone *, bool, gs_memory_t *));
+int gs_screen_init_memory(gs_screen_enum *, gs_state *,
+			  gs_screen_halftone *, bool, gs_memory_t *);
 
 #define gs_screen_init_accurate(penum, pgs, phsp, accurate)\
   gs_screen_init_memory(penum, pgs, phsp, accurate, pgs->memory)
@@ -225,7 +225,7 @@ int gs_screen_init_memory(P5(gs_screen_enum *, gs_state *,
  *
  * Note that this value is stored in a static variable.
  */
-void gs_setminscreenlevels(P1(uint));
-uint gs_currentminscreenlevels(P0());
+void gs_setminscreenlevels(uint);
+uint gs_currentminscreenlevels(void);
 
 #endif /* gxht_INCLUDED */

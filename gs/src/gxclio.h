@@ -40,31 +40,31 @@ typedef void *clist_file_ptr;	/* We can't do any better than this. */
  * and only binary data (but the caller must append the "b" if needed).
  * Mode "r" with *fname = 0 is an error.
  */
-int clist_fopen(P6(char fname[gp_file_name_sizeof], const char *fmode,
-		   clist_file_ptr * pcf,
-		   gs_memory_t * mem, gs_memory_t *data_mem,
-		   bool ok_to_compress));
+int clist_fopen(char fname[gp_file_name_sizeof], const char *fmode,
+		clist_file_ptr * pcf,
+		gs_memory_t * mem, gs_memory_t *data_mem,
+		bool ok_to_compress);
 
 /*
  * Close a file, optionally deleting it.
  */
-int clist_fclose(P3(clist_file_ptr cf, const char *fname, bool delete));
+int clist_fclose(clist_file_ptr cf, const char *fname, bool delete);
 
 /*
  * Delete a file.
  */
-int clist_unlink(P1(const char *fname));
+int clist_unlink(const char *fname);
 
 /* ---------------- Writing ---------------- */
 
 /* clist_space_available returns min(requested, available). */
-long clist_space_available(P1(long requested));
+long clist_space_available(long requested);
 
-int clist_fwrite_chars(P3(const void *data, uint len, clist_file_ptr cf));
+int clist_fwrite_chars(const void *data, uint len, clist_file_ptr cf);
 
 /* ---------------- Reading ---------------- */
 
-int clist_fread_chars(P3(void *data, uint len, clist_file_ptr cf));
+int clist_fread_chars(void *data, uint len, clist_file_ptr cf);
 
 /* ---------------- Position/status ---------------- */
 
@@ -72,25 +72,23 @@ int clist_fread_chars(P3(void *data, uint len, clist_file_ptr cf));
  * Set the low-memory warning threshold.  clist_ferror_code will return 1
  * if fewer than this many bytes of memory are left for storing band data.
  */
-int clist_set_memory_warning(P2(clist_file_ptr cf, int bytes_left));
+int clist_set_memory_warning(clist_file_ptr cf, int bytes_left);
 
 /*
  * clist_ferror_code returns a negative error code per gserrors.h, not a
  * Boolean; 0 means no error, 1 means low-memory warning.
  */
-int clist_ferror_code(P1(clist_file_ptr cf));
+int clist_ferror_code(clist_file_ptr cf);
 
-long clist_ftell(P1(clist_file_ptr cf));
+long clist_ftell(clist_file_ptr cf);
 
 /*
  * We pass the file name to clist_rewind and clist_fseek in case the
  * implementation has to close and reopen the file.  (clist_fseek with
  * offset = 0 and mode = SEEK_END indicates we are about to append.)
  */
-void clist_rewind(P3(clist_file_ptr cf, bool discard_data,
-		     const char *fname));
+void clist_rewind(clist_file_ptr cf, bool discard_data, const char *fname);
 
-int clist_fseek(P4(clist_file_ptr cf, long offset, int mode,
-		   const char *fname));
+int clist_fseek(clist_file_ptr cf, long offset, int mode, const char *fname);
 
 #endif /* gxclio_INCLUDED */

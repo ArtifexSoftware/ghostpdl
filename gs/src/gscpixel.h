@@ -22,6 +22,6 @@
 #  define gscpixel_INCLUDED
 
 /* Initialize a DevicePixel color space. */
-int gs_cspace_init_DevicePixel(P2(gs_color_space * pcs, int depth));
+int gs_cspace_init_DevicePixel(gs_color_space * pcs, int depth);
 
 #endif /* gscpixel_INCLUDED */

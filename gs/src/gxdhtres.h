@@ -42,6 +42,6 @@ struct gx_device_halftone_resource_s {
 };
 
 #define DEVICE_HALFTONE_RESOURCE_PROC(proc)\
-  const gx_device_halftone_resource_t *const *proc(P0())
+  const gx_device_halftone_resource_t *const *proc(void)
 
 #endif /* gxdhtres_INCLUDED */

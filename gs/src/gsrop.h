@@ -24,15 +24,15 @@
 
 /* Procedural interface */
 
-int gs_setrasterop(P2(gs_state *, gs_rop3_t));
-gs_rop3_t gs_currentrasterop(P1(const gs_state *));
-int gs_setsourcetransparent(P2(gs_state *, bool));
-bool gs_currentsourcetransparent(P1(const gs_state *));
-int gs_settexturetransparent(P2(gs_state *, bool));
-bool gs_currenttexturetransparent(P1(const gs_state *));
+int gs_setrasterop(gs_state *, gs_rop3_t);
+gs_rop3_t gs_currentrasterop(const gs_state *);
+int gs_setsourcetransparent(gs_state *, bool);
+bool gs_currentsourcetransparent(const gs_state *);
+int gs_settexturetransparent(gs_state *, bool);
+bool gs_currenttexturetransparent(const gs_state *);
 
 /* Save/restore the combined logical operation. */
-gs_logical_operation_t gs_current_logical_op(P1(const gs_state *));
-int gs_set_logical_op(P2(gs_state *, gs_logical_operation_t));
+gs_logical_operation_t gs_current_logical_op(const gs_state *);
+int gs_set_logical_op(gs_state *, gs_logical_operation_t);
 
 #endif /* gsrop_INCLUDED */

@@ -46,8 +46,8 @@ typedef struct gx_device_s gx_device;
  * of 12-bit samples, which expand to 2 bytes apiece).
  */
 #define irender_proc(proc)\
-  int proc(P6(gx_image_enum *penum, const byte *buffer, int data_x,\
-	      uint w, int h, gx_device *dev))
+  int proc(gx_image_enum *penum, const byte *buffer, int data_x,\
+	   uint w, int h, gx_device *dev)
 typedef irender_proc((*irender_proc_t));
 
 /*
@@ -59,7 +59,7 @@ typedef irender_proc((*irender_proc_t));
  * structure as well as returning the rendering procedure.
  */
 #define iclass_proc(proc)\
-  irender_proc_t proc(P1(gx_image_enum *penum))
+  irender_proc_t proc(gx_image_enum *penum)
 typedef iclass_proc((*gx_image_class_t));
 
 #endif /* gxiclass_INCLUDED */

@@ -48,16 +48,16 @@ typedef struct gx_device_color_s gx_device_color;
  * They are implemented in gxpaint.c.
  */
 
-int gx_fill_path(P6(gx_path * ppath, gx_device_color * pdevc, gs_state * pgs,
-		    int rule, fixed adjust_x, fixed adjust_y));
-int gx_stroke_fill(P2(gx_path * ppath, gs_state * pgs));
-int gx_stroke_add(P3(gx_path *ppath, gx_path *to_path, const gs_state * pgs));
+int gx_fill_path(gx_path * ppath, gx_device_color * pdevc, gs_state * pgs,
+		 int rule, fixed adjust_x, fixed adjust_y);
+int gx_stroke_fill(gx_path * ppath, gs_state * pgs);
+int gx_stroke_add(gx_path *ppath, gx_path *to_path, const gs_state * pgs);
 /*
  * gx_imager_stroke_add needs a device for the sake of absolute-length
  * dots (and for no other reason).
  */
-int gx_imager_stroke_add(P4(gx_path *ppath, gx_path *to_path,
-			    gx_device *dev, const gs_imager_state *pis));
+int gx_imager_stroke_add(gx_path *ppath, gx_path *to_path,
+			 gx_device *dev, const gs_imager_state *pis);
 
 /* ------ Imager procedures ------ */
 
@@ -65,7 +65,7 @@ int gx_imager_stroke_add(P4(gx_path *ppath, gx_path *to_path,
  * Tweak the fill adjustment if necessary so that (nearly) empty
  * rectangles are guaranteed to produce some output.
  */
-void gx_adjust_if_empty(P2(const gs_fixed_rect *, gs_fixed_point *));
+void gx_adjust_if_empty(const gs_fixed_rect *, gs_fixed_point *);
 
 /*
  * Compute the amount by which to expand a stroked bounding box to account
@@ -77,8 +77,8 @@ void gx_adjust_if_empty(P2(const gs_fixed_rect *, gs_fixed_point *));
  * amount if the miter limit is large.  If this matters, use strokepath +
  * pathbbox.
  */
-int gx_stroke_path_expansion(P3(const gs_imager_state *pis,
-				const gx_path *ppath, gs_fixed_point *ppt));
+int gx_stroke_path_expansion(const gs_imager_state *pis,
+			     const gx_path *ppath, gs_fixed_point *ppt);
 
 /* Backward compatibility */
 #define gx_stroke_expansion(pis, ppt)\
@@ -114,10 +114,10 @@ struct gx_stroke_params_s {
     float flatness;
 };
 
-int gx_stroke_path_only(P7(gx_path * ppath, gx_path * to_path, gx_device * dev,
-			   const gs_imager_state * pis,
-			   const gx_stroke_params * params,
-			   const gx_device_color * pdevc,
-			   const gx_clip_path * pcpath));
+int gx_stroke_path_only(gx_path * ppath, gx_path * to_path, gx_device * dev,
+			const gs_imager_state * pis,
+			const gx_stroke_params * params,
+			const gx_device_color * pdevc,
+			const gx_clip_path * pcpath);
 
 #endif /* gxpaint_INCLUDED */

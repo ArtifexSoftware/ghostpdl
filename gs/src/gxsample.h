@@ -53,8 +53,8 @@ extern const bits32 lookup4x1to32_inverted[16];
  * a pointer to the original data.
  */
 #define SAMPLE_UNPACK_PROC(proc)\
-  const byte *proc(P7(byte *bptr, int *pdata_x, const byte *data, int data_x,\
-		      uint dsize, const sample_lookup_t *ptab, int spread))
+  const byte *proc(byte *bptr, int *pdata_x, const byte *data, int data_x,\
+		   uint dsize, const sample_lookup_t *ptab, int spread)
 typedef SAMPLE_UNPACK_PROC((*sample_unpack_proc_t));
 
 /*

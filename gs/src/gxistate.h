@@ -236,7 +236,7 @@ typedef struct gs_transparency_source_s {
 	bool accurate_curves;\
 	float smoothness;\
 	const gx_color_map_procs *\
-	  (*get_cmap_procs)(P2(const gs_imager_state *, const gx_device *));\
+	  (*get_cmap_procs)(const gs_imager_state *, const gx_device *);\
 	gs_color_rendering_state_common
 #define st_imager_state_num_ptrs\
   (st_line_params_num_ptrs + st_cr_state_num_ptrs + 5)
@@ -275,25 +275,25 @@ struct gs_imager_state_s {
 
 /* Initialize an imager state, other than the parts covered by */
 /* gs_imager_state_initial. */
-int gs_imager_state_initialize(P2(gs_imager_state * pis, gs_memory_t * mem));
+int gs_imager_state_initialize(gs_imager_state * pis, gs_memory_t * mem);
 
 /* Make a temporary copy of a gs_imager_state.  Note that this does not */
 /* do all the necessary reference counting, etc. */
 gs_imager_state *
-    gs_imager_state_copy(P2(const gs_imager_state * pis, gs_memory_t * mem));
+    gs_imager_state_copy(const gs_imager_state * pis, gs_memory_t * mem);
 
 /* Increment reference counts to note that an imager state has been copied. */
-void gs_imager_state_copied(P1(gs_imager_state * pis));
+void gs_imager_state_copied(gs_imager_state * pis);
 
 /* Adjust reference counts before assigning one imager state to another. */
-void gs_imager_state_pre_assign(P2(gs_imager_state *to,
-				   const gs_imager_state *from));
+void gs_imager_state_pre_assign(gs_imager_state *to,
+				const gs_imager_state *from);
 
 /* Free device color spaces.  Perhaps this should be declared elsewhere? */
-void gx_device_color_spaces_free(P3(gx_device_color_spaces_t *pdcs,
-				    gs_memory_t *mem, client_name_t cname));
+void gx_device_color_spaces_free(gx_device_color_spaces_t *pdcs,
+				 gs_memory_t *mem, client_name_t cname);
 
 /* Release an imager state. */
-void gs_imager_state_release(P1(gs_imager_state * pis));
+void gs_imager_state_release(gs_imager_state * pis);
 
 #endif /* gxistate_INCLUDED */

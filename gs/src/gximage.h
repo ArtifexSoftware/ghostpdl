@@ -271,8 +271,8 @@ struct gx_image_enum_s {
  * a full byte, and complement and swap them if the map incorporates
  * a Decode = [1 0] inversion.
  */
-void gx_image_scale_mask_colors(P2(gx_image_enum *penum,
-				   int component_index));
+void gx_image_scale_mask_colors(gx_image_enum *penum,
+				int component_index);
 
 /*
  * Do common initialization for processing an ImageType 1 or 4 image.
@@ -280,9 +280,9 @@ void gx_image_scale_mask_colors(P2(gx_image_enum *penum,
  *	rect
  */
 int
-gx_image_enum_alloc(P4(const gs_image_common_t * pic,
-		       const gs_int_rect * prect,
-		       gs_memory_t * mem, gx_image_enum **ppenum));
+gx_image_enum_alloc(const gs_image_common_t * pic,
+		    const gs_int_rect * prect,
+		    gs_memory_t * mem, gx_image_enum **ppenum);
 
 /*
  * Finish initialization for processing an ImageType 1 or 4 image.
@@ -292,17 +292,17 @@ gx_image_enum_alloc(P4(const gs_image_common_t * pic,
  *	masked, adjust
  */
 int
-gx_image_enum_begin(P8(gx_device * dev, const gs_imager_state * pis,
-		       const gs_matrix *pmat, const gs_image_common_t * pic,
-		       const gx_drawing_color * pdcolor,
-		       const gx_clip_path * pcpath,
-		       gs_memory_t * mem, gx_image_enum *penum));
+gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
+		    const gs_matrix *pmat, const gs_image_common_t * pic,
+		    const gx_drawing_color * pdcolor,
+		    const gx_clip_path * pcpath,
+		    gs_memory_t * mem, gx_image_enum *penum);
 
 /*
  * Clear the relevant clues. Exported for use by image_render_*
  * when ht_tile cache is invalidated.
  */
 void
-image_init_clues(P3(gx_image_enum * penum, int bps, int spp));
+image_init_clues(gx_image_enum * penum, int bps, int spp);
 
 #endif /* gximage_INCLUDED */

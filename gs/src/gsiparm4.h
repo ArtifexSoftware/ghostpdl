@@ -51,6 +51,6 @@ typedef struct gs_image4_s {
  * Initialize an ImageType 4 image.  Defaults:
  *      MaskColor_is_range = false
  */
-void gs_image4_t_init(P2(gs_image4_t * pim, const gs_color_space * color_space));
+void gs_image4_t_init(gs_image4_t * pim, const gs_color_space * color_space);
 
 #endif /* gsiparm4_INCLUDED */

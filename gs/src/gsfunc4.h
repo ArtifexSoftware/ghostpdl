@@ -74,12 +74,12 @@ typedef struct gs_function_PtCr_params_s {
 /* ---------------- Procedures ---------------- */
 
 /* Allocate and initialize a PostScript Calculator function. */
-int gs_function_PtCr_init(P3(gs_function_t ** ppfn,
-			     const gs_function_PtCr_params_t * params,
-			     gs_memory_t * mem));
+int gs_function_PtCr_init(gs_function_t ** ppfn,
+			  const gs_function_PtCr_params_t * params,
+			  gs_memory_t * mem);
 
 /* Free the parameters of a PostScript Calculator function. */
-void gs_function_PtCr_free_params(P2(gs_function_PtCr_params_t * params,
-				     gs_memory_t * mem));
+void gs_function_PtCr_free_params(gs_function_PtCr_params_t * params,
+				  gs_memory_t * mem);
 
 #endif /* gsfunc4_INCLUDED */

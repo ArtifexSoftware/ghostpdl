@@ -78,7 +78,7 @@ struct gs_show_enum_s {
     gs_int_rect obox;		/* int version of (outer) clip box */
     int ftx, fty;		/* transformed font translation */
     /* Following are updated dynamically */
-    gs_glyph (*encode_char)(P3(gs_font *, gs_char, gs_glyph_space_t));  /* copied from font */
+    gs_glyph (*encode_char)(gs_font *, gs_char, gs_glyph_space_t);  /* copied from font */
     gs_log2_scale_point fapi_log2_scale; /* scaling factors for oversampling with FAPI, -1 = not valid */
     gx_device_memory *dev_cache;	/* cache device */
     gx_device_memory *dev_cache2;	/* underlying alpha memory device, */
@@ -97,7 +97,7 @@ struct gs_show_enum_s {
     /*gs_point returned.total_width;*/		/* total width of string, set at end */
     show_width_status width_status;
     /*gs_log2_scale_point log2_scale;*/
-    int (*continue_proc) (P1(gs_show_enum *));	/* continuation procedure */
+    int (*continue_proc) (gs_show_enum *);	/* continuation procedure */
 };
 #define gs_show_enum_s_DEFINED
 /* The structure descriptor is public for gschar.c. */
@@ -112,19 +112,18 @@ typedef struct gs_font_dir_s gs_font_dir;
 
 #endif
 cached_char *
-            gx_alloc_char_bits(P7(gs_font_dir *, gx_device_memory *, gx_device_memory *, ushort, ushort, const gs_log2_scale_point *, int));
-void gx_open_cache_device(P2(gx_device_memory *, cached_char *));
-void gx_free_cached_char(P2(gs_font_dir *, cached_char *));
-void gx_add_cached_char(P5(gs_font_dir *, gx_device_memory *, cached_char *, cached_fm_pair *, const gs_log2_scale_point *));
-void gx_add_char_bits(P3(gs_font_dir *, cached_char *, const gs_log2_scale_point *));
+            gx_alloc_char_bits(gs_font_dir *, gx_device_memory *, gx_device_memory *, ushort, ushort, const gs_log2_scale_point *, int);
+void gx_open_cache_device(gx_device_memory *, cached_char *);
+void gx_free_cached_char(gs_font_dir *, cached_char *);
+void gx_add_cached_char(gs_font_dir *, gx_device_memory *, cached_char *, cached_fm_pair *, const gs_log2_scale_point *);
+void gx_add_char_bits(gs_font_dir *, cached_char *, const gs_log2_scale_point *);
 cached_char *
-            gx_lookup_cached_char(P5(const gs_font *, const cached_fm_pair *, gs_glyph, int, int));
+            gx_lookup_cached_char(const gs_font *, const cached_fm_pair *, gs_glyph, int, int);
 cached_char *
-            gx_lookup_xfont_char(P5(const gs_state *, cached_fm_pair *, gs_char, gs_glyph, int));
-int gx_image_cached_char(P2(gs_show_enum *, cached_char *));
-void gx_compute_text_oversampling(P4(const gs_show_enum * penum, const gs_font *pfont, 
-                             int alpha_bits, gs_log2_scale_point *p_log2_scale));
-int set_char_width(P4(gs_show_enum *penum, gs_state *pgs, floatp wx, floatp wy));
-
+            gx_lookup_xfont_char(const gs_state *, cached_fm_pair *, gs_char, gs_glyph, int);
+int gx_image_cached_char(gs_show_enum *, cached_char *);
+void gx_compute_text_oversampling(const gs_show_enum * penum, const gs_font *pfont,
+				  int alpha_bits, gs_log2_scale_point *p_log2_scale);
+int set_char_width(gs_show_enum *penum, gs_state *pgs, floatp wx, floatp wy);
 
 #endif /* gxchar_INCLUDED */

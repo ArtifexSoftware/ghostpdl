@@ -116,9 +116,9 @@ struct shade_coord_stream_s {
     int left;			/* # of bits left in bits */
     const gs_shading_mesh_params_t *params;
     const gs_matrix_fixed *pctm;
-    int (*get_value)(P3(shade_coord_stream_t *cs, int num_bits, uint *pvalue));
-    int (*get_decoded)(P4(shade_coord_stream_t *cs, int num_bits,
-			  const float decode[2], float *pvalue));
+    int (*get_value)(shade_coord_stream_t *cs, int num_bits, uint *pvalue);
+    int (*get_decoded)(shade_coord_stream_t *cs, int num_bits,
+		       const float decode[2], float *pvalue);
 };
 
 /* Define one vertex of a mesh. */
@@ -128,22 +128,22 @@ typedef struct mesh_vertex_s {
 } mesh_vertex_t;
 
 /* Initialize a packed value stream. */
-void shade_next_init(P3(shade_coord_stream_t * cs,
-			const gs_shading_mesh_params_t * params,
-			const gs_imager_state * pis));
+void shade_next_init(shade_coord_stream_t * cs,
+		     const gs_shading_mesh_params_t * params,
+		     const gs_imager_state * pis);
 
 /* Get the next flag value. */
-int shade_next_flag(P2(shade_coord_stream_t * cs, int BitsPerFlag));
+int shade_next_flag(shade_coord_stream_t * cs, int BitsPerFlag);
 
 /* Get one or more coordinate pairs. */
-int shade_next_coords(P3(shade_coord_stream_t * cs, gs_fixed_point * ppt,
-			 int num_points));
+int shade_next_coords(shade_coord_stream_t * cs, gs_fixed_point * ppt,
+		      int num_points);
 
 /* Get a color.  Currently all this does is look up Indexed colors. */
-int shade_next_color(P2(shade_coord_stream_t * cs, float *pc));
+int shade_next_color(shade_coord_stream_t * cs, float *pc);
 
 /* Get the next vertex for a mesh element. */
-int shade_next_vertex(P2(shade_coord_stream_t * cs, mesh_vertex_t * vertex));
+int shade_next_vertex(shade_coord_stream_t * cs, mesh_vertex_t * vertex);
 
 /*
    Currently, all shading fill procedures follow the same algorithm:
@@ -192,21 +192,21 @@ typedef struct shading_fill_state_s {
 } shading_fill_state_t;
 
 /* Initialize the common parts of the recursion state. */
-void shade_init_fill_state(P4(shading_fill_state_t * pfs,
-			      const gs_shading_t * psh, gx_device * dev,
-			      gs_imager_state * pis));
+void shade_init_fill_state(shading_fill_state_t * pfs,
+			   const gs_shading_t * psh, gx_device * dev,
+			   gs_imager_state * pis);
 
 /* Transform a bounding box into device space. */
-int shade_bbox_transform2fixed(P3(const gs_rect * rect,
-				  const gs_imager_state * pis,
-				  gs_fixed_rect * rfixed));
+int shade_bbox_transform2fixed(const gs_rect * rect,
+			       const gs_imager_state * pis,
+			       gs_fixed_rect * rfixed);
 
 /* Fill one piece of a shading. */
 #ifndef gx_device_color_DEFINED
 #  define gx_device_color_DEFINED
 typedef struct gx_device_color_s gx_device_color;
 #endif
-int shade_fill_path(P3(const shading_fill_state_t * pfs, gx_path * ppath,
-		       gx_device_color * pdevc));
+int shade_fill_path(const shading_fill_state_t * pfs, gx_path * ppath,
+		    gx_device_color * pdevc);
 
 #endif /* gxshade_INCLUDED */

@@ -55,6 +55,6 @@ typedef struct gs_image2_s {
  *      UnpaintedPath = 0
  *      PixelCopy = false
  */
-void gs_image2_t_init(P1(gs_image2_t * pim));
+void gs_image2_t_init(gs_image2_t * pim);
 
 #endif /* gsiparm2_INCLUDED */

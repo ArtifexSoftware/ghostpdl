@@ -69,7 +69,7 @@ typedef struct vm_spaces_s vm_spaces;
  * collide with the reclaim member of gs_dual_memory_t.
  */
 #define vm_reclaim_proc(proc)\
-  void proc(P2(vm_spaces *pspaces, bool global))
+  void proc(vm_spaces *pspaces, bool global)
 struct vm_spaces_s {
     vm_reclaim_proc((*vm_reclaim));
     union {

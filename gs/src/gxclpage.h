@@ -32,8 +32,8 @@
  * for later retrieval; in the latter case, the client should free the
  * in-memory structure.
  */
-int gdev_prn_save_page(P3(gx_device_printer * pdev, gx_saved_page * page,
-			  int num_copies));
+int gdev_prn_save_page(gx_device_printer * pdev, gx_saved_page * page,
+		       int num_copies);
 
 /*
  * Render an array of saved pages by setting up a modified get_bits
@@ -50,7 +50,7 @@ int gdev_prn_save_page(P3(gx_device_printer * pdev, gx_saved_page * page,
  * the same as the BandBufferSpace value of all the saved pages, and that
  * the device width is the same as the BandWidth value of the saved pages.
  */
-int gdev_prn_render_pages(P3(gx_device_printer * pdev,
-			     const gx_placed_page * ppages, int count));
+int gdev_prn_render_pages(gx_device_printer * pdev,
+			  const gx_placed_page * ppages, int count);
 
 #endif /* gxclpage_INCLUDED */

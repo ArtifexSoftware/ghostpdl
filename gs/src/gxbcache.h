@@ -96,27 +96,27 @@ typedef struct gx_bits_cache_s {
 
 /* Initialize a cache.  The caller must allocate and initialize */
 /* the first chunk. */
-void gx_bits_cache_init(P2(gx_bits_cache *, gx_bits_cache_chunk *));
+void gx_bits_cache_init(gx_bits_cache *, gx_bits_cache_chunk *);
 
 /* ------ Chunks ------ */
 
 /* Initialize a chunk.  The caller must allocate it and its data. */
-void gx_bits_cache_chunk_init(P3(gx_bits_cache_chunk *, byte *, uint));
+void gx_bits_cache_chunk_init(gx_bits_cache_chunk *, byte *, uint);
 
 /* ------ Individual entries ------ */
 
 /* Attempt to allocate an entry.  If successful, set *pcbh and return 0. */
 /* If there isn't enough room, set *pcbh to an entry requiring freeing, */
 /* or to 0 if we are at the end of the chunk, and return -1. */
-int gx_bits_cache_alloc(P3(gx_bits_cache *, ulong, gx_cached_bits_head **));
+int gx_bits_cache_alloc(gx_bits_cache *, ulong, gx_cached_bits_head **);
 
 /* Shorten an entry by a given amount. */
-void gx_bits_cache_shorten(P4(gx_bits_cache *, gx_cached_bits_head *,
-			      uint, gx_bits_cache_chunk *));
+void gx_bits_cache_shorten(gx_bits_cache *, gx_cached_bits_head *,
+			   uint, gx_bits_cache_chunk *);
 
 /* Free an entry.  The caller is responsible for removing the entry */
 /* from any other structures (like a hash table). */
-void gx_bits_cache_free(P3(gx_bits_cache *, gx_cached_bits_head *,
-			   gx_bits_cache_chunk *));
+void gx_bits_cache_free(gx_bits_cache *, gx_cached_bits_head *,
+			gx_bits_cache_chunk *);
 
 #endif /* gxbcache_INCLUDED */

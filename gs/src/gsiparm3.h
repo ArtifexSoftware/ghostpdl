@@ -52,7 +52,7 @@ typedef struct gs_image3_s {
 /*
  * Initialize an ImageType 3 image.
  */
-void gs_image3_t_init(P3(gs_image3_t * pim, const gs_color_space * color_space,
-			 gs_image3_interleave_type_t interleave_type));
+void gs_image3_t_init(gs_image3_t * pim, const gs_color_space * color_space,
+		      gs_image3_interleave_type_t interleave_type);
 
 #endif /* gsiparm3_INCLUDED */

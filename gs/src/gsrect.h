@@ -61,8 +61,8 @@
  * depending on the data type of the individual values: we'll only implement
  * the variations that we need.
  */
-int int_rect_difference(P3(gs_int_rect * outer, const gs_int_rect * inner,
-			   gs_int_rect * diffs /*[4] */ ));
+int int_rect_difference(gs_int_rect * outer, const gs_int_rect * inner,
+			gs_int_rect * diffs /*[4] */ );
 
 /*
  * Check whether a parallelogram is a rectangle.

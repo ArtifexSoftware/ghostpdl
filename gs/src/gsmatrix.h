@@ -50,33 +50,34 @@ typedef struct gs_matrix_s gs_matrix;
   constant_matrix_body(1, 0, 0, 1, 0, 0)
 
 /* Matrix creation */
-void gs_make_identity(P1(gs_matrix *));
-int gs_make_translation(P3(floatp, floatp, gs_matrix *)),
-    gs_make_scaling(P3(floatp, floatp, gs_matrix *)),
-    gs_make_rotation(P2(floatp, gs_matrix *));
+void gs_make_identity(gs_matrix *);
+int gs_make_translation(floatp, floatp, gs_matrix *),
+    gs_make_scaling(floatp, floatp, gs_matrix *),
+    gs_make_rotation(floatp, gs_matrix *);
 
 /* Matrix arithmetic */
-int gs_matrix_multiply(P3(const gs_matrix *, const gs_matrix *, gs_matrix *)),
-    gs_matrix_invert(P2(const gs_matrix *, gs_matrix *)),
-    gs_matrix_translate(P4(const gs_matrix *, floatp, floatp, gs_matrix *)),
-    gs_matrix_scale(P4(const gs_matrix *, floatp, floatp, gs_matrix *)),
-    gs_matrix_rotate(P3(const gs_matrix *, floatp, gs_matrix *));
+int gs_matrix_multiply(const gs_matrix *, const gs_matrix *, gs_matrix *),
+    gs_matrix_invert(const gs_matrix *, gs_matrix *),
+    gs_matrix_translate(const gs_matrix *, floatp, floatp, gs_matrix *),
+    gs_matrix_scale(const gs_matrix *, floatp, floatp, gs_matrix *),
+    gs_matrix_rotate(const gs_matrix *, floatp, gs_matrix *);
 
 /* Coordinate transformation */
-int gs_point_transform(P4(floatp, floatp, const gs_matrix *, gs_point *)),
-    gs_point_transform_inverse(P4(floatp, floatp, const gs_matrix *, gs_point *)),
-    gs_distance_transform(P4(floatp, floatp, const gs_matrix *, gs_point *)),
-    gs_distance_transform_inverse(P4(floatp, floatp, const gs_matrix *, gs_point *)),
-    gs_points_bbox(P2(const gs_point[4], gs_rect *)), gs_bbox_transform_only(P3(const gs_rect *, const gs_matrix *, gs_point[4])),
-    gs_bbox_transform(P3(const gs_rect *, const gs_matrix *, gs_rect *)),
-    gs_bbox_transform_inverse(P3(const gs_rect *, const gs_matrix *, gs_rect *));
+int gs_point_transform(floatp, floatp, const gs_matrix *, gs_point *),
+    gs_point_transform_inverse(floatp, floatp, const gs_matrix *, gs_point *),
+    gs_distance_transform(floatp, floatp, const gs_matrix *, gs_point *),
+    gs_distance_transform_inverse(floatp, floatp, const gs_matrix *, gs_point *),
+    gs_points_bbox(const gs_point[4], gs_rect *),
+    gs_bbox_transform_only(const gs_rect *, const gs_matrix *, gs_point[4]),
+    gs_bbox_transform(const gs_rect *, const gs_matrix *, gs_rect *),
+    gs_bbox_transform_inverse(const gs_rect *, const gs_matrix *, gs_rect *);
 
 /* Serialization */
 #ifndef stream_DEFINED
 #  define stream_DEFINED
 typedef struct stream_s stream;
 #endif
-int sget_matrix(P2(stream *, gs_matrix *));
-int sput_matrix(P2(stream *, const gs_matrix *));
+int sget_matrix(stream *, gs_matrix *);
+int sput_matrix(stream *, const gs_matrix *);
 
 #endif /* gsmatrix_INCLUDED */

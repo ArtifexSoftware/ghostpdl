@@ -79,7 +79,7 @@ extern const unsigned gx_io_device_table_count;
 /* Return the list of device prototypes, a NULL list of their structure */
 /* descriptors (no longer used), and (as the value) the length of the lists. */
 #define extern_gs_lib_device_list()\
-  int gs_lib_device_list(P2(const gx_device * const **plist,\
-			    gs_memory_struct_type_t **pst))
+  int gs_lib_device_list(const gx_device * const **plist,\
+			 gs_memory_struct_type_t **pst)
 
 #endif /* gscdefs_INCLUDED */

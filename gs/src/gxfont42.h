@@ -33,17 +33,17 @@ typedef struct gs_type42_mtx_s {
 } gs_type42_mtx_t;
 struct gs_type42_data_s {
     /* The following are set by the client. */
-    int (*string_proc) (P4(gs_font_type42 *, ulong, uint, const byte **));
+    int (*string_proc) (gs_font_type42 *, ulong, uint, const byte **);
     void *proc_data;		/* data for procedures */
     /*
      * The following are initialized by ...font_init, but may be reset by
      * the client.
      */
     uint (*get_glyph_index)(gs_font_type42 *pfont, gs_glyph glyph);
-    int (*get_outline)(P3(gs_font_type42 *pfont, uint glyph_index,
-			  gs_glyph_data_t *pgd));
-    int (*get_metrics)(P4(gs_font_type42 *pfont, uint glyph_index, int wmode,
-			  float sbw[4]));
+    int (*get_outline)(gs_font_type42 *pfont, uint glyph_index,
+		       gs_glyph_data_t *pgd);
+    int (*get_metrics)(gs_font_type42 *pfont, uint glyph_index, int wmode,
+		       float sbw[4]);
     /* The following are cached values. */
     ulong cmap;			/* offset to cmap table (not used by */
 				/* renderer, only here for clients) */
@@ -73,19 +73,19 @@ extern_st(st_gs_font_type42);
  * Note that this initializes the type42_data procedures other than
  * string_proc, and the font procedures as well.
  */
-int gs_type42_font_init(P1(gs_font_type42 *));
+int gs_type42_font_init(gs_font_type42 *);
 
 /* Append the outline of a TrueType character to a path. */
-int gs_type42_append(P7(uint glyph_index, gs_imager_state * pis,
-			gx_path * ppath, const gs_log2_scale_point * pscale,
-			bool charpath_flag, int paint_type,
-			gs_font_type42 * pfont));
+int gs_type42_append(uint glyph_index, gs_imager_state * pis,
+		     gx_path * ppath, const gs_log2_scale_point * pscale,
+		     bool charpath_flag, int paint_type,
+		     gs_font_type42 * pfont);
 
 /* Get the metrics of a TrueType character. */
-int gs_type42_get_metrics(P3(gs_font_type42 * pfont, uint glyph_index,
-			     float psbw[4]));
-int gs_type42_wmode_metrics(P4(gs_font_type42 * pfont, uint glyph_index,
-			       int wmode, float psbw[4]));
+int gs_type42_get_metrics(gs_font_type42 * pfont, uint glyph_index,
+			  float psbw[4]);
+int gs_type42_wmode_metrics(gs_font_type42 * pfont, uint glyph_index,
+			    int wmode, float psbw[4]);
 
 /* Export the font procedures so they can be called from the interpreter. */
 font_proc_enumerate_glyph(gs_type42_enumerate_glyph);

@@ -54,18 +54,18 @@
  */
 
 /* If pcs is NULL, it means undo any substitution. */
-int gs_setsubstitutecolorspace(P3(gs_state *pgs, gs_color_space_index csi,
-				  const gs_color_space *pcs));
+int gs_setsubstitutecolorspace(gs_state *pgs, gs_color_space_index csi,
+			       const gs_color_space *pcs);
 const gs_color_space *
-    gs_currentsubstitutecolorspace(P2(const gs_state *pgs,
-				      gs_color_space_index csi));
+    gs_currentsubstitutecolorspace(const gs_state *pgs,
+				   gs_color_space_index csi);
 
 /*
  * The following procedures are primarily for internal use, to provide
  * fast access to specific color spaces.
  */
-const gs_color_space *gs_current_DeviceGray_space(P1(const gs_state *pgs));
-const gs_color_space *gs_current_DeviceRGB_space(P1(const gs_state *pgs));
-const gs_color_space *gs_current_DeviceCMYK_space(P1(const gs_state *pgs));
+const gs_color_space *gs_current_DeviceGray_space(const gs_state *pgs);
+const gs_color_space *gs_current_DeviceRGB_space(const gs_state *pgs);
+const gs_color_space *gs_current_DeviceCMYK_space(const gs_state *pgs);
 
 #endif /* gscssub_INCLUDED */

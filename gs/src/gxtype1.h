@@ -317,39 +317,39 @@ typedef fixed *cs_ptr;
 
 /* ------ Shared Type 1 / Type 2 charstring utilities ------ */
 
-void gs_type1_finish_init(P2(gs_type1_state * pcis, is_ptr ps));
+void gs_type1_finish_init(gs_type1_state * pcis, is_ptr ps);
 
-int gs_type1_sbw(P5(gs_type1_state * pcis, fixed sbx, fixed sby,
-		    fixed wx, fixed wy));
+int gs_type1_sbw(gs_type1_state * pcis, fixed sbx, fixed sby,
+		 fixed wx, fixed wy);
 
 /* blend returns the number of values to pop. */
-int gs_type1_blend(P3(gs_type1_state *pcis, fixed *csp, int num_results));
+int gs_type1_blend(gs_type1_state *pcis, fixed *csp, int num_results);
 
-int gs_type1_seac(P4(gs_type1_state * pcis, const fixed * cstack,
-		     fixed asb_diff, ip_state_t * ipsp));
+int gs_type1_seac(gs_type1_state * pcis, const fixed * cstack,
+		  fixed asb_diff, ip_state_t * ipsp);
 
-int gs_type1_endchar(P1(gs_type1_state * pcis));
+int gs_type1_endchar(gs_type1_state * pcis);
 
 /* ----- Interface between main Type 1 interpreter and hint routines ----- */
 
 /* Font level hints */
-void reset_font_hints(P2(font_hints *, const gs_log2_scale_point *));
-void compute_font_hints(P4(font_hints *, const gs_matrix_fixed *,
-			   const gs_log2_scale_point *,
-			   const gs_type1_data *));
+void reset_font_hints(font_hints *, const gs_log2_scale_point *);
+void compute_font_hints(font_hints *, const gs_matrix_fixed *,
+			const gs_log2_scale_point *,
+			const gs_type1_data *);
 
 /* Character level hints */
 void
-    reset_stem_hints(P1(gs_type1_state *)),
-    update_stem_hints(P1(gs_type1_state *)),
-    type1_replace_stem_hints(P1(gs_type1_state *)),
-    type1_apply_path_hints(P3(gs_type1_state *, bool, gx_path *)),
-    type1_do_hstem(P5(gs_type1_state *, fixed, fixed, bool,
-		      const gs_matrix_fixed *)),
-    type1_do_vstem(P5(gs_type1_state *, fixed, fixed, bool,
-		      const gs_matrix_fixed *)),
-    type1_do_center_vstem(P4(gs_type1_state *, fixed, fixed,
-			     const gs_matrix_fixed *));
+    reset_stem_hints(gs_type1_state *),
+    update_stem_hints(gs_type1_state *),
+    type1_replace_stem_hints(gs_type1_state *),
+    type1_apply_path_hints(gs_type1_state *, bool, gx_path *),
+    type1_do_hstem(gs_type1_state *, fixed, fixed, bool,
+		   const gs_matrix_fixed *),
+    type1_do_vstem(gs_type1_state *, fixed, fixed, bool,
+		   const gs_matrix_fixed *),
+    type1_do_center_vstem(gs_type1_state *, fixed, fixed,
+			  const gs_matrix_fixed *);
 
 #define replace_stem_hints(pcis)\
   (apply_path_hints(pcis, false),\

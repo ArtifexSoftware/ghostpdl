@@ -125,19 +125,19 @@ typedef ulong _f_uint_t;
  * radians, hit exact values at multiples of 90 degrees, and are implemented
  * efficiently on machines with slow (or no) floating point.
  */
-double gs_sin_degrees(P1(double angle));
-double gs_cos_degrees(P1(double angle));
+double gs_sin_degrees(double angle);
+double gs_cos_degrees(double angle);
 typedef struct gs_sincos_s {
     double sin, cos;
     bool orthogonal;		/* angle is multiple of 90 degrees */
 } gs_sincos_t;
-void gs_sincos_degrees(P2(double angle, gs_sincos_t * psincos));
+void gs_sincos_degrees(double angle, gs_sincos_t * psincos);
 
 /*
  * Define an atan2 function that returns an angle in degrees and uses
  * the PostScript quadrant rules.  Note that it may return
  * gs_error_undefinedresult.
  */
-int gs_atan2_degrees(P3(double y, double x, double *pangle));
+int gs_atan2_degrees(double y, double x, double *pangle);
 
 #endif /* gxfarith_INCLUDED */

@@ -27,7 +27,7 @@
  */
 
 /* Set/read alpha value. */
-int gs_setalpha(P2(gs_state *, floatp));
-float gs_currentalpha(P1(const gs_state *));
+int gs_setalpha(gs_state *, floatp);
+float gs_currentalpha(const gs_state *);
 
 #endif /* gsalpha_INCLUDED */

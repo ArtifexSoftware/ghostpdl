@@ -34,8 +34,8 @@ dev_color_proc_fill_rectangle(gx_dc_colored_masked_fill_rect);
 /*
  * Declare the Pattern color mapping procedures exported by gxpcmap.c.
  */
-int gx_pattern_load(P4(gx_device_color *, const gs_imager_state *,
-		       gx_device *, gs_color_select_t));
+int gx_pattern_load(gx_device_color *, const gs_imager_state *,
+		    gx_device *, gs_color_select_t);
 pattern_proc_remap_color(gs_pattern1_remap_color);
 
 #endif /* gxp1impl_INCLUDED */

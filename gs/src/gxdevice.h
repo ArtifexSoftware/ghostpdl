@@ -327,46 +327,46 @@ dev_proc_text_begin(gx_forward_text_begin);
 /* ---------------- Implementation utilities ---------------- */
 
 /* Convert the device procedures to the proper form (see above). */
-void gx_device_set_procs(P1(gx_device *));
+void gx_device_set_procs(gx_device *);
 
 /* Fill in defaulted procedures in a device procedure record. */
-void gx_device_fill_in_procs(P1(gx_device *));
-void gx_device_forward_fill_in_procs(P1(gx_device_forward *));
+void gx_device_fill_in_procs(gx_device *);
+void gx_device_forward_fill_in_procs(gx_device_forward *);
 
 /* Forward the color mapping procedures from a device to its target. */
-void gx_device_forward_color_procs(P1(gx_device_forward *));
+void gx_device_forward_color_procs(gx_device_forward *);
 
 /*
  * Copy the color mapping procedures from the target if they are
  * standard ones (saving a level of procedure call at mapping time).
  */
-void gx_device_copy_color_procs(P2(gx_device *dev, const gx_device *target));
+void gx_device_copy_color_procs(gx_device *dev, const gx_device *target);
 
 /* Get the black and white pixel values of a device. */
-gx_color_index gx_device_black(P1(gx_device *dev));
+gx_color_index gx_device_black(gx_device *dev);
 #define gx_device_black_inline(dev)\
   ((dev)->cached_colors.black != gx_no_color_index ?\
    gx_device_black(dev) : (dev)->cached_colors.black)
-gx_color_index gx_device_white(P1(gx_device *dev));
+gx_color_index gx_device_white(gx_device *dev);
 #define gx_device_white_inline(dev)\
   ((dev)->cached_colors.white != gx_no_color_index ?\
    gx_device_white(dev) : (dev)->cached_colors.white)
 
 /* Clear the black/white pixel cache. */
-void gx_device_decache_colors(P1(gx_device *dev));
+void gx_device_decache_colors(gx_device *dev);
 
 /*
  * Copy the color-related device parameters back from the target:
  * color_info and color mapping procedures.
  */
-void gx_device_copy_color_params(P2(gx_device *dev, const gx_device *target));
+void gx_device_copy_color_params(gx_device *dev, const gx_device *target);
 
 /*
  * Copy device parameters back from a target.  This copies all standard
  * parameters related to page size and resolution, plus color_info
  * and (if appropriate) color mapping procedures.
  */
-void gx_device_copy_params(P2(gx_device *dev, const gx_device *target));
+void gx_device_copy_params(gx_device *dev, const gx_device *target);
 
 /*
  * Parse the output file name for a device, recognizing "-" and "|command",
@@ -375,21 +375,21 @@ void gx_device_copy_params(P2(gx_device *dev, const gx_device *target));
  * character in *pfmt, otherwise store 0 there.  Note that an empty name
  * is currently allowed.
  */
-int gx_parse_output_file_name(P4(gs_parsed_file_name_t *pfn,
-				 const char **pfmt, const char *fname,
-				 uint len));
+int gx_parse_output_file_name(gs_parsed_file_name_t *pfn,
+			      const char **pfmt, const char *fname,
+			      uint len);
 
 /*
  * Open the output file for a device.  Note that if the file name is empty,
  * it may be replaced with the name of a scratch file.
  */
-int gx_device_open_output_file(P5(const gx_device * dev, char *fname,
-				  bool binary, bool positionable,
-				  FILE ** pfile));
+int gx_device_open_output_file(const gx_device * dev, char *fname,
+			       bool binary, bool positionable,
+			       FILE ** pfile);
 
 /* Close the output file for a device. */
-int gx_device_close_output_file(P3(const gx_device * dev, const char *fname,
-				   FILE *file));
+int gx_device_close_output_file(const gx_device * dev, const char *fname,
+				FILE *file);
 
 /*
  * Determine whether a given device needs to halftone.  Eventually this
@@ -506,18 +506,18 @@ typedef struct gdev_input_media_s {
 #define gdev_input_media_default_values { 0, 0, 0, 0 }, 0, 0, 0
 extern const gdev_input_media_t gdev_input_media_default;
 
-void gdev_input_media_init(P1(gdev_input_media_t * pim));
+void gdev_input_media_init(gdev_input_media_t * pim);
 
-int gdev_begin_input_media(P3(gs_param_list * mlist, gs_param_dict * pdict,
-			      int count));
+int gdev_begin_input_media(gs_param_list * mlist, gs_param_dict * pdict,
+			   int count);
 
-int gdev_write_input_page_size(P4(int index, gs_param_dict * pdict,
-				floatp width_points, floatp height_points));
+int gdev_write_input_page_size(int index, gs_param_dict * pdict,
+			       floatp width_points, floatp height_points);
 
-int gdev_write_input_media(P3(int index, gs_param_dict * pdict,
-			      const gdev_input_media_t * pim));
+int gdev_write_input_media(int index, gs_param_dict * pdict,
+			   const gdev_input_media_t * pim);
 
-int gdev_end_input_media(P2(gs_param_list * mlist, gs_param_dict * pdict));
+int gdev_end_input_media(gs_param_list * mlist, gs_param_dict * pdict);
 
 typedef struct gdev_output_media_s {
     const char *OutputType;
@@ -526,12 +526,12 @@ typedef struct gdev_output_media_s {
 #define gdev_output_media_default_values 0
 extern const gdev_output_media_t gdev_output_media_default;
 
-int gdev_begin_output_media(P3(gs_param_list * mlist, gs_param_dict * pdict,
-			       int count));
+int gdev_begin_output_media(gs_param_list * mlist, gs_param_dict * pdict,
+			    int count);
 
-int gdev_write_output_media(P3(int index, gs_param_dict * pdict,
-			       const gdev_output_media_t * pom));
+int gdev_write_output_media(int index, gs_param_dict * pdict,
+			    const gdev_output_media_t * pom);
 
-int gdev_end_output_media(P2(gs_param_list * mlist, gs_param_dict * pdict));
+int gdev_end_output_media(gs_param_list * mlist, gs_param_dict * pdict);
 
 #endif /* gxdevice_INCLUDED */

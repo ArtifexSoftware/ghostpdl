@@ -92,9 +92,9 @@ struct gx_xfont_procs_s {
     /* does not take an xfont * as its first argument. */
 
 #define xfont_proc_lookup_font(proc)\
-  gx_xfont *proc(P7(gx_device *dev, const byte *fname, uint len,\
+  gx_xfont *proc(gx_device *dev, const byte *fname, uint len,\
     int encoding_index, const gs_uid *puid, const gs_matrix *pmat,\
-    gs_memory_t *mem))
+    gs_memory_t *mem)
     xfont_proc_lookup_font((*lookup_font));
 
     /*
@@ -110,16 +110,16 @@ struct gx_xfont_procs_s {
      */
 
 #define xfont_proc_char_xglyph(proc)\
-  gx_xglyph proc(P5(gx_xfont *xf, gs_char chr, int encoding_index,\
-    gs_glyph glyph, const gs_const_string *glyph_name))
+  gx_xglyph proc(gx_xfont *xf, gs_char chr, int encoding_index,\
+    gs_glyph glyph, const gs_const_string *glyph_name)
     xfont_proc_char_xglyph((*char_xglyph));
 
     /* Get the metrics for a character. */
     /* Note: pwidth changed in release 2.9.7. */
 
 #define xfont_proc_char_metrics(proc)\
-  int proc(P5(gx_xfont *xf, gx_xglyph xg, int wmode,\
-    gs_point *pwidth, gs_int_rect *pbbox))
+  int proc(gx_xfont *xf, gx_xglyph xg, int wmode,\
+    gs_point *pwidth, gs_int_rect *pbbox)
     xfont_proc_char_metrics((*char_metrics));
 
     /* Render a character. */
@@ -127,8 +127,8 @@ struct gx_xfont_procs_s {
     /* The target may be any Ghostscript device. */
 
 #define xfont_proc_render_char(proc)\
-  int proc(P7(gx_xfont *xf, gx_xglyph xg, gx_device *target,\
-    int x, int y, gx_color_index color, int required))
+  int proc(gx_xfont *xf, gx_xglyph xg, gx_device *target,\
+    int x, int y, gx_color_index color, int required)
     xfont_proc_render_char((*render_char));
 
     /* Release any external resources associated with an xfont. */
@@ -136,7 +136,7 @@ struct gx_xfont_procs_s {
     /* allocated by lookup_font (including the xfont itself). */
 
 #define xfont_proc_release(proc)\
-  int proc(P2(gx_xfont *xf, gs_memory_t *mem))
+  int proc(gx_xfont *xf, gs_memory_t *mem)
     xfont_proc_release((*release));
 
     /* (There was a char_xglyph2 procedure here, added in release 3.43, */

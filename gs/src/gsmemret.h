@@ -38,7 +38,7 @@ typedef enum {
     RECOVER_STATUS_RETRY_OK
 } gs_memory_recover_status_t;
 typedef gs_memory_recover_status_t (*gs_memory_recover_proc_t)
-     (P2(gs_memory_retrying_t *rmem, void *proc_data));
+     (gs_memory_retrying_t *rmem, void *proc_data);
 
 struct gs_memory_retrying_s {
     gs_memory_common;		/* interface outside world sees */
@@ -50,21 +50,21 @@ struct gs_memory_retrying_s {
 /* ---------- Public constructors/destructors ---------- */
 
 /* Initialize a retrying memory manager. */
-int gs_memory_retrying_init(P2(
-			gs_memory_retrying_t * rmem,	/* allocator to init */
-			gs_memory_t * target	/* allocator to wrap */
-			));
+int gs_memory_retrying_init(
+			    gs_memory_retrying_t * rmem, /* allocator to init */
+			    gs_memory_t * target	/* allocator to wrap */
+			    );
 
 /* Release a retrying memory manager. */
 /* Note that this has no effect on the target. */
-void gs_memory_retrying_release(P1(gs_memory_retrying_t *rmem));
+void gs_memory_retrying_release(gs_memory_retrying_t *rmem);
 
 /* Set the recovery closure of a retrying memory manager. */
-void gs_memory_retrying_set_recover(P3(gs_memory_retrying_t *rmem,
-				       gs_memory_recover_proc_t recover_proc,
-				       void *recover_proc_data));
+void gs_memory_retrying_set_recover(gs_memory_retrying_t *rmem,
+				    gs_memory_recover_proc_t recover_proc,
+				    void *recover_proc_data);
 
 /* Get the target of a retrying memory manager. */
-gs_memory_t * gs_memory_retrying_target(P1(const gs_memory_retrying_t *rmem));
+gs_memory_t * gs_memory_retrying_target(const gs_memory_retrying_t *rmem);
 
 #endif /*!defined(gsmemret_INCLUDED) */

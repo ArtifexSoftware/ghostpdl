@@ -32,6 +32,6 @@
 #define st_line_params_num_ptrs 1
 
 /* Internal accessor for line parameters in graphics state */
-const gx_line_params *gs_currentlineparams(P1(const gs_imager_state *));
+const gx_line_params *gs_currentlineparams(const gs_imager_state *);
 
 #endif /* gzline_INCLUDED */

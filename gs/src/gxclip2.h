@@ -38,15 +38,15 @@ typedef gx_device_mask_clip gx_device_tile_clip;
  * Initialize a tile clipping device from a mask.
  * We supply an explicit phase.
  */
-int tile_clip_initialize(P6(gx_device_tile_clip * cdev,
-			    const gx_strip_bitmap * tiles,
-			    gx_device * tdev, int px, int py,
-			    gs_memory_t *mem));
+int tile_clip_initialize(gx_device_tile_clip * cdev,
+			 const gx_strip_bitmap * tiles,
+			 gx_device * tdev, int px, int py,
+			 gs_memory_t *mem);
 
 /*
  * Set the phase of the tile -- used in the tiling loop when
  * the tile doesn't simply fill the plane.
  */
-void tile_clip_set_phase(P3(gx_device_tile_clip * cdev, int px, int py));
+void tile_clip_set_phase(gx_device_tile_clip * cdev, int px, int py);
 
 #endif /* gxclip2_INCLUDED */
