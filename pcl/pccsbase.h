@@ -171,4 +171,10 @@ extern  int     pcl_cs_base_install(
     pcl_state_t *       pcs
 );
 
+/*
+ * One-time initialization routine. This exists only to handle possible non-
+ * initialization of BSS.
+ */
+extern  void    pcl_cs_base_init( void );
+
 #endif  	/* pccsbase_INCLUDED */
