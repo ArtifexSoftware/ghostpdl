@@ -117,6 +117,7 @@ pxl_tags_dict = {
     'SetSourceTxMode' :         0x7c,
     'Text' :                    0xa8,
     'TextPath' :                0xa9,
+    'VendorUnique' :            0x46,
     'attr_ubyte' :              0xf8,
     'attr_uint16' :             0xf9,
     'embedded_data' :           0xfa,
@@ -293,6 +294,8 @@ pxl_attribute_name_to_attribute_number_dict = {
     'TxMode' : 45,
     'UnitsPerMeasure' : 137,
     'VectorObjects' : 31,
+    'VUExtension' : 145,
+    'VUAttr' : 147,
     'WhiteReferencePoint' : 19, # deprecated.
     'WritingMode' : 173, # deprecated.
     'XSpacingData' : 175, 
