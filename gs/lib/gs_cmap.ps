@@ -359,7 +359,8 @@
     dup length 3 index length exch sub
 				% cid_base code_lo code_hi prefix range_len
     dup 255 gt {
-       (too long coderange specification for current GS\n) print stop
+       (too long coderange specification for current GS\n) print
+       signalerror
     } if
     <00 01 00 02> 4 string copy	% create initialized param
     dup 0 4 -1 roll put		% put range_len into param
