@@ -290,7 +290,7 @@ struct pcl_state_s {
     /* Chapter C2/C3/C4 (pcpalet.c/pcindexed.c/pccsbase.c/etc.) */
     int                 sel_palette_id;
     int                 ctrl_palette_id;
-    int                 monochrome_mode;/* -1 locked mono, 0 off, 1 mono page */
+    int                 monochrome_mode;/* 0=off */
     int                 render_mode;    /* raw (unmapped) render algorithm */
     pcl_palette_t *     ppalet;
     pcl_gsid_t          next_id; /* id's for palette's and foreground
