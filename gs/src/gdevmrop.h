@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -22,12 +22,6 @@
 
 #ifndef gdevmrop_INCLUDED
 #  define gdevmrop_INCLUDED
-
-/*
- * Define whether we implement transparency correctly, or whether we
- * implement it as documented in the H-P manuals.
- */
-#define TRANSPARENCY_PER_H_P
 
 /*
  * Compute the effective RasterOp for the 1-bit case,

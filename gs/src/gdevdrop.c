@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -702,7 +702,11 @@ gs_transparent_rop(gs_logical_operation_t lop)
 #define So rop3_not(rop3_S)
 #define Po rop3_not(rop3_T)
 #ifdef TRANSPARENCY_PER_H_P
-#  define MPo (rop3_uses_S(rop) ? rop3_not(So) | Po : Po)
+/*
+ * Believe it or not, MPo depends on S in this case even if the original
+ * RasterOp didn't depend on S.
+ */
+#  define MPo (rop3_not(So) | Po)
 #else
 #  define MPo Po
 #endif
