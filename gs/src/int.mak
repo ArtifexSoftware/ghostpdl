@@ -1739,12 +1739,14 @@ $(PSOBJ)zicc.$(OBJ) : $(PSSRC)zicc.c  $(OP) $(math__h) $(memory__h)\
 
 # ---------------- Support for %disk IODevices ---------------- #
 
-# Note that we go ahead and create 10 %disk devices. The internal
+# Note that we go ahead and create 7 %disk devices. The internal
 # overhead of any unused %disk structures is minimal.
+# We could have more, but the DynaLab font installer has problems
+# with more than 7 disk devices.
 diskn_=$(GLOBJ)gsiodisk.$(OBJ)
 $(GLD)diskn.dev : $(LIB_MAK) $(ECHOGS_XE) $(diskn_)
 	$(SETMOD) $(GLD)diskn $(diskn_)
-	$(ADDMOD) $(GLD)diskn -iodev disk0 disk1 disk2 disk3 disk4 disk5 disk6 disk7 disk8 disk9
+	$(ADDMOD) $(GLD)diskn -iodev disk0 disk1 disk2 disk3 disk4 disk5 disk6
 	$(ADDMOD) $(GLD)diskn -ps gs_diskn
 
 # ================================ PDF ================================ #

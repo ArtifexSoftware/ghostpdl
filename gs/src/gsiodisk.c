@@ -137,7 +137,7 @@ const gx_io_device varname = \
 }
 
 /*
- * Define the disk0-9 (%diskn%) devices. These devices are
+ * Define the disk0-6 (%diskn%) devices. These devices are
  * used in the device list in gconf.c.
  */
 diskn(gs_iodev_disk0,"%disk0%");
@@ -147,9 +147,8 @@ diskn(gs_iodev_disk3,"%disk3%");
 diskn(gs_iodev_disk4,"%disk4%");
 diskn(gs_iodev_disk5,"%disk5%");
 diskn(gs_iodev_disk6,"%disk6%");
-diskn(gs_iodev_disk7,"%disk7%");
-diskn(gs_iodev_disk8,"%disk8%");
-diskn(gs_iodev_disk9,"%disk9%");
+/* We could have more disks, but the DynaLab font installer */
+/* has problems with more than 7 disks */
 #undef diskn
 
 typedef struct diskn_state_s {

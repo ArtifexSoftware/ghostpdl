@@ -573,7 +573,7 @@ currentdict end
 % defined here, rather than in gs_init.ps, because they require the
 % resource machinery.
 
-/devforall {		% <pattern> <proc> <scratch> devforall -
+/devforall {		% <proc> <scratch> devforall -
   exch {
     1 index currentdevparams
     /Type .knownget { /FileSystem eq } { false } ifelse

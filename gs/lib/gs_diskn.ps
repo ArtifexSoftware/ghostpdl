@@ -77,6 +77,13 @@ systemdict begin
     } {
       % no device specified, so search them all
       pop (*%) 3 index concatstrings
+      % we need to suppress the device when we return the string
+      % in order to match Adobe's behaviour with %disk devices.
+      4 -2 roll		% the callers procedure
+      [ { (%) search { pop pop (%) search { pop pop } if } if } /exec load
+      4 -1 roll		% the callers procedure
+      /exec load ] cvx
+      4 2 roll		% put the modified procedure where it belongs
     } ifelse
     % extract device portion (up to end of string or next %)
     (%) search { exch pop } if	% stack: opat proc scratch npat device
@@ -183,4 +190,14 @@ systemdict begin
   //renamefile
 } bind odef
 
+% redefine devforall to process devices in numeric order
+% Spec's for 'devforall' are unclear, but font downloaders may expect this
+/devforall {		% <proc> <scratch> devforall -
+  [ { dup length string copy } 2 index //devforall ]	
+  % stack: proc scratch array_of_device_names
+  { lt } .sort
+  % We don't really invoke the procedure with the scratch string
+  % but rather with the strings from our array
+  exch pop exch forall
+} odef
 end				% systemdict
