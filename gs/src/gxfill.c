@@ -160,7 +160,7 @@ print_al(const gs_memory_t *mem, const char *label, const active_line * alp)
 	print_active_line(mem, label, alp);
 }
 #else
-#define print_al(label,alp) DO_NOTHING
+#define print_al(mem, label,alp) DO_NOTHING
 #endif
 
 #if TT_GRID_FITTING
