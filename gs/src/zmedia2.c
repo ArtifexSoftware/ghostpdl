@@ -349,17 +349,21 @@ match_page_size(const gs_point * request, const gs_rect * medium, int policy,
 	    make_adjustment_matrix(request, medium, pmat, false, orient < 0 ? 0 : orient);
         } else if ( fit_direct ) {
             int rotate = orient < 0 ? 0 : orient;
-            *best_mismatch = rotate & 1 ? 0.1 : 0;
+
+            *best_mismatch = (rotate & 1 ? 0.1 : 0);
 	    make_adjustment_matrix(request, medium, pmat, false, (rotate + 1) & 2);
         } else if ( fit_rotated ) {
-            int rotate = orient < 0 ? 1 : orient;
-            *best_mismatch = rotate & 1 ? 0 : 0.1;
+            int rotate = (orient < 0 ? 1 : orient);
+
+            *best_mismatch = (rotate & 1 ? 0 : 0.1);
 	    make_adjustment_matrix(request, medium, pmat, false, rotate | 1);
         } else {
-	    int rotate = orient >= 0 ? orient : rx < ry ^ medium->q.x < medium->q.y;
+	    int rotate =
+		(orient >= 0 ? orient :
+		 (rx < ry) ^ (medium->q.x < medium->q.y));
 	    bool larger =
-	    (rotate & 1 ? medium->q.y >= rx && medium->q.x >= ry :
-	     medium->q.x >= rx && medium->q.y >= ry);
+		(rotate & 1 ? medium->q.y >= rx && medium->q.x >= ry :
+		 medium->q.x >= rx && medium->q.y >= ry);
 	    bool adjust = false;
 	    float mismatch = medium->q.x * medium->q.y - rx * ry;
 
