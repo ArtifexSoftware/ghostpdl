@@ -440,7 +440,7 @@ gx_get_bits_std_to_native(gx_device * dev, int x, int w, int h,
             gx_color_value v[GX_DEVICE_COLOR_MAX_COMPONENTS], va = alpha_default;
             gx_color_index pixel;
             bool do_alpha = false;
-            gx_cm_color_map_procs * map_procs;
+            const gx_cm_color_map_procs * map_procs;
 
             map_procs = dev_proc(dev, get_color_mapping_procs)(dev);
 

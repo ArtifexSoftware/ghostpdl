@@ -413,7 +413,8 @@ gx_dc_wts_fill_rectangle_4(const gx_device_color *pdevc,
     }
 
     ctile_data = malloc(ctile_size);
-    wts_repack_tile_4(ctile_data, ctile_raster, tile_data, tile_raster,
+    wts_repack_tile_4(ctile_data, ctile_raster, 
+    		  (const unsigned char **)tile_data, tile_raster,
 		      pdevc->colors.wts.plane_vector, invert, w, h);
  
     /* See gx_dc_ht_binary_fill_rectangle() for explanation. */

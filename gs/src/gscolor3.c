@@ -23,6 +23,7 @@
 #include "gsptype2.h"
 #include "gxcolor2.h"		/* for gxpcolor.h */
 #include "gxcspace.h"		/* for gs_cspace_init */
+#include "gxdcolor.h"		/* for gxpcolor.h */
 #include "gxpcolor.h"		/* for gs_color_space_type_Pattern */
 #include "gzstate.h"
 #include "gzpath.h"
