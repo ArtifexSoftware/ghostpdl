@@ -287,17 +287,21 @@ hpgl_LT(
 		pgls->g.line.current = pgls->g.line.saved;
 	    return 0;
         } else {	
-	    hpgl_real_t length = 0.04;
+	    hpgl_real_t length_or_percent = 4.0;  /* units are mm or percentage */
 	    int         mode = 0;
 
+	    /* NB this is luny unreadable logic */
 	    if ( (type < -8)                                                  ||
                  (type > 8)                                                   ||
-		 ( hpgl_arg_c_real(pargs, &length)                         &&
-		   ((length <= 0)                                       || 
+		 ( hpgl_arg_c_real(pargs, &length_or_percent)                 &&
+		   ((length_or_percent <= 0)                                  || 
                     (hpgl_arg_c_int(pargs, &mode) && ((mode & ~1) != 0))  )  )  )
 		  return e_Range;
-	    pgls->g.line.current.pattern_length = length;
 	    pgls->g.line.current.pattern_length_relative = (mode == 0);
+	    if ( pgls->g.line.current.pattern_length_relative )
+		pgls->g.line.current.pattern_length = length_or_percent / 100.0;
+	    else
+		pgls->g.line.current.pattern_length = length_or_percent;
 	    pgls->g.line.current.is_solid = false;
 	}
     } else {
