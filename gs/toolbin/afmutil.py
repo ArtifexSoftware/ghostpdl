@@ -32,6 +32,8 @@ class fontmetric:
             line = self.file.readline()
         self.file.close()
     def parseline(self, line):
+        # skip blank lines
+        if len(line) == 0: return
         #print "  parsing '"+line+"'"
         bits = string.split(line)
         key = bits[0]
