@@ -337,6 +337,23 @@ dup /DefineResource {
   .buildcidfont
   /Generic /Category findresource /DefineResource get exec
 } put
+% CIDFonts may be defined in CFF OpenType files.
+% Check for this here.
+/.loadcidfontresource {
+  dup .ResourceFile {
+    {.loadfont} .execasresource
+  } {
+    dup /undefinedresource signalerror
+  } ifelse
+} bind def
+dup /.LoadResource {
+  currentglobal {
+    .loadcidfontresource
+  } {
+    true setglobal {.loadcidfontresource} stopped false setglobal {stop} if
+  } ifelse
+} bind put
+
 /Category defineresource pop
 
 % Add the new FontType resources.

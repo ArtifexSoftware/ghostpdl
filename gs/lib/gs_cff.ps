@@ -16,13 +16,61 @@
 % all copies.
 
 % $Id$
-% Loader for CFF (compressed) fonts.
+% Loader for CFF (compressed) fonts, including OpenType CFFs.
 % The following are not implemented yet:
 %	Deleted entries in the Name Index
 %	Embedded PostScript
 %	Multiple Master fonts
 %	Chameleon fonts
 %	Synthetic fonts
+
+% ---------------- Font loading machinery ---------------- %
+
+% Augment the FONTPATH machinery so it recognizes OpenType CFF font sets.
+
+/.scanfontheaders where {
+  pop /.scanfontheaders [
+   .scanfontheaders aload pop (OTTO*)
+  ] def
+} if
+
+% Load a font file that might be an OpenType CFF font set.
+
+% <file> .loadfontfile -
+/.loadnonottofontfile /.loadfontfile load def
+/.loadfontfile {
+  dup 4 string .peekstring pop (OTTO) eq {
+		% If this is a font at all, it's an OpenType CFF font set.
+    .loadottofontfile
+  } {
+		% Not a TrueType font.
+    .loadnonottofontfile
+  } ifelse
+} bind def
+
+% <file> .loadottofontfile -
+/.loadottofontfile {
+  /FontSetInit /ProcSet findresource begin
+  2 dict begin
+  /f exch def /cff null def
+  card32 pop card16 6 { next pop } repeat dup {
+		% Stack: numtables tablesleft
+    dup 0 eq {
+      pop pop /.loadottofontfile cvx /invalidfont signalerror
+    } if
+    f 4 string readstring pop (CFF ) eq { sub exit } if
+    1 sub
+  } loop
+		% Stack: tablesread
+  card32 pop card32 card32
+		% Stack: tablesread start length
+  exch 3 -1 roll 1 add 16 mul 12 add sub
+  f exch subfilefilter flushfile	% skip to start
+  f exch subfilefilter end
+	% Use a random FontSet resource name.  ****** WRONG ******
+  realtime rand xor =string cvs exch false
+  ReadData
+} bind def
 
 30 dict begin
 
@@ -154,6 +202,10 @@ mark
 def
 /card16 {	% - card16 <card16>
   card8 8 bitshift card8 add
+} def
+/card32 {	% - card32 <card32>
+	% Not used by CFF, only by the OpenType loader.
+  card16 16 bitshift card16 add
 } def
 /offset {	% <offsize> offset <offset>
   0 exch { 8 bitshift next add } repeat
