@@ -258,7 +258,7 @@ get_next_char(
 
     /* check if the character is in the font and get the character
        width at the same time */
-    if ( pl_font_char_width(pcs->font, chr, pwidth) == 0 )
+    if ( pl_font_char_width(pcs->font, (void *)(pcs->pgs), chr, pwidth) == 0 )
 	return 0;
     /*
      * The character is not in the font.

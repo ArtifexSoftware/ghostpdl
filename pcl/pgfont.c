@@ -39,7 +39,7 @@ hpgl_stick_arc_encode_char(gs_font *pfont, gs_char chr, gs_glyph not_used)
 
 /* The stick font is fixed-pitch. */
 private int
-hpgl_stick_char_width(const pl_font_t *plfont, uint uni_code, gs_point *pwidth)
+hpgl_stick_char_width(const pl_font_t *plfont, const void *pgs, uint uni_code, gs_point *pwidth)
 {	
     /* NB need an interface function call to verify the character exists */
     if ( (uni_code >= 0x20)  && (uni_code <= 0xff) )
@@ -51,7 +51,7 @@ hpgl_stick_char_width(const pl_font_t *plfont, uint uni_code, gs_point *pwidth)
 }
 
 private int
-hpgl_stick_char_metrics(const pl_font_t *plfont, uint uni_code, float metrics[4])
+hpgl_stick_char_metrics(const pl_font_t *plfont, const void *pgs, uint uni_code, float metrics[4])
 {
     gs_point width;
     /* never a vertical substitute */
@@ -59,7 +59,7 @@ hpgl_stick_char_metrics(const pl_font_t *plfont, uint uni_code, float metrics[4]
     /* no lsb */
     metrics[0] = 0;
     /* just get the width */
-    if ( (hpgl_stick_char_width(plfont, uni_code, &width)) == 1 )
+    if ( (hpgl_stick_char_width(plfont, pgs, uni_code, &width)) == 1 )
 	/* doesn't exist */
 	return 1;
     metrics[2] = width.x;
@@ -68,7 +68,7 @@ hpgl_stick_char_metrics(const pl_font_t *plfont, uint uni_code, float metrics[4]
 
 /* The arc font is proportionally spaced. */
 private int
-hpgl_arc_char_width(const pl_font_t *plfont, uint uni_code, gs_point *pwidth)
+hpgl_arc_char_width(const pl_font_t *plfont, const void *pgs, uint uni_code, gs_point *pwidth)
 {	
     /* NB need an interface function call to verify the character exists */
     if ( (uni_code >= 0x20)  && (uni_code <= 0xff) )
@@ -80,7 +80,7 @@ hpgl_arc_char_width(const pl_font_t *plfont, uint uni_code, gs_point *pwidth)
 }
 
 private int
-hpgl_arc_char_metrics(const pl_font_t *plfont, uint uni_code, float metrics[4])
+hpgl_arc_char_metrics(const pl_font_t *plfont, const void *pgs, uint uni_code, float metrics[4])
 {
     gs_point width;
     /* never a vertical substitute */
@@ -88,7 +88,7 @@ hpgl_arc_char_metrics(const pl_font_t *plfont, uint uni_code, float metrics[4])
     /* no lsb */
     metrics[0] = 0;
     /* just get the width */
-    if ( (hpgl_arc_char_width(plfont, uni_code, &width)) == 1 )
+    if ( (hpgl_arc_char_width(plfont, pgs, uni_code, &width)) == 1 )
 	/* doesn't exist */
 	return 1;
     metrics[2] = width.x;

@@ -512,6 +512,7 @@ image_outline_char(
 private int
 pl_ufst_char_width(
     uint                char_code,
+    const void *        pgs,
     gs_point *          pwidth,
     FONTCONTEXT *       pfc )
 {
@@ -703,7 +704,7 @@ pl_bitmap_encode_char(gs_font *pfont, gs_char chr, gs_glyph not_used)
 /* Get character existence and escapement for a bitmap font. */
 /* This is simple for the same reason. */
 private int
-pl_bitmap_char_width(const pl_font_t *plfont, uint char_code, gs_point *pwidth)
+pl_bitmap_char_width(const pl_font_t *plfont, const void *pgs, uint char_code, gs_point *pwidth)
 {       const byte *cdata = pl_font_lookup_glyph(plfont, char_code)->data;
 
         if ( !pwidth )
@@ -728,7 +729,7 @@ pl_bitmap_char_width(const pl_font_t *plfont, uint char_code, gs_point *pwidth)
 }
 
 private int
-pl_bitmap_char_metrics(const pl_font_t *plfont, uint char_code, float metrics[4])
+pl_bitmap_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code, float metrics[4])
 {
     gs_point width;
     const byte *cdata = pl_font_lookup_glyph(plfont, char_code)->data;
@@ -742,7 +743,7 @@ pl_bitmap_char_metrics(const pl_font_t *plfont, uint char_code, float metrics[4]
         return 0;
     
     metrics[0] = s16(cdata + 6);
-    pl_bitmap_char_width(plfont, char_code, &width);
+    pl_bitmap_char_width(plfont, pgs, char_code, &width);
     metrics[2] = width.x;
     return 0;
 }
@@ -1199,24 +1200,24 @@ pl_set_tt_font(
 
 /* Get character existence and escapement for a TrueType font. */
 private int
-pl_tt_char_width(const pl_font_t *plfont, uint char_code, gs_point *pwidth)
+pl_tt_char_width(const pl_font_t *plfont, const void *pgs, uint char_code, gs_point *pwidth)
 {
     FONTCONTEXT fc;
 
     if (pl_set_tt_font(NULL /* graphics state */, plfont, false, &fc) != 0)
         return 0;
     else
-        return pl_ufst_char_width(char_code, pwidth, &fc);
+        return pl_ufst_char_width(char_code, pgs, pwidth, &fc);
 }
 
 /* Get metrics */
 private int
-pl_tt_char_metrics(const pl_font_t *plfont, uint char_code, float metrics[4])
+pl_tt_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code, float metrics[4])
 {
     /* NB getting lsb from UFST is unimplemented */
     gs_point width;
     metrics[0] = metrics[1] = metrics[2] = metrics[3] = 0;
-    if ( pl_tt_char_width(plfont, char_code, &width) )
+    if ( pl_tt_char_width(plfont, pgs, char_code, &width) )
         metrics[0] = width.x;
     return 0;
 }
@@ -1422,17 +1423,17 @@ pl_intelli_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 
 /* Get character existence and escapement for an Intellifont. */
 int
-pl_intelli_char_width(const pl_font_t *plfont, uint char_code, gs_point *pwidth)
+pl_intelli_char_width(const pl_font_t *plfont, const void *pgs, uint char_code, gs_point *pwidth)
 {
     FONTCONTEXT fc;
 
     if (pl_set_if_font(NULL /* graphics state */, plfont, false, &fc) != 0)
         return 0;
-    return pl_ufst_char_width(char_code, pwidth, &fc);
+    return pl_ufst_char_width(char_code, pgs, pwidth, &fc);
 }
 
 private int
-pl_intelli_char_metrics(const pl_font_t *plfont, uint char_code, float metrics[4])
+pl_intelli_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code, float metrics[4])
 
 {
     gs_point width;
@@ -1460,7 +1461,7 @@ pl_intelli_char_metrics(const pl_font_t *plfont, uint char_code, float metrics[4
         /* never a vertical substitute, doesn't yet handle compound characters */
         metrics[0] = (float)pl_get_int16(intelli_metrics->charSymbolBox[0]);
         metrics[0] /= 8782.0;
-        if ( pl_intelli_char_width(plfont, char_code, &width) )
+        if ( pl_intelli_char_width(plfont, pgs, char_code, &width) )
             metrics[2] = width.x;
         return 0;
     }
@@ -1524,6 +1525,7 @@ pl_mt_build_char(
 private int
 pl_mt_char_width(
     const pl_font_t *       plfont,
+    const void *            pgs,
     uint                    char_code,
     gs_point *              pwidth )
 {
@@ -1532,15 +1534,15 @@ pl_mt_char_width(
     if (pl_set_mt_font(NULL /* graphics state */, plfont, false, &fc) != 0)
         return 0;
     else
-        return pl_ufst_char_width(char_code, pwidth, &fc);
+        return pl_ufst_char_width(char_code, pgs, pwidth, &fc);
 }
 
 private int
-pl_mt_char_metrics(const pl_font_t *plfont, uint char_code, float metrics[4])
+pl_mt_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code, float metrics[4])
 {
     gs_point width;
     metrics[0] = metrics[1] = metrics[2] = metrics[3] = 0;
-    if ( pl_mt_char_width(plfont, char_code, &width) )
+    if ( pl_mt_char_width(plfont, pgs, char_code, &width) )
         metrics[0] = width.x;
     return 0;
 }

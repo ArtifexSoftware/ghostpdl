@@ -239,6 +239,9 @@ afs_obj=$(PLOBJ)plchar.$(OBJ) $(PLOBJ)plfont.$(OBJ) $(PLOBJ)pllfont.$(OBJ)
 # ufst font objects
 ufst_obj=$(PLOBJ)pluchar.$(OBJ) $(PLOBJ)plufont.$(OBJ) $(PLOBJ)plulfont.$(OBJ)
 
+# freetype font objects
+fts_obj=$(PLOBJ)plflfont.$(OBJ) $(PLOBJ)plfchar.$(OBJ) $(PLOBJ)plffont.$(OBJ)
+
 # generic artifex font device.
 $(PLOBJ)afs.dev: $(PL_MAK) $(ECHOGS_XE) $(afs_obj)
 	$(SETMOD) $(PLOBJ)afs $(afs_obj)
@@ -252,14 +255,11 @@ $(PLOBJ)ufst.dev: $(PL_MAK) $(ECHOGS_XE) $(ufst_obj)
 # Bitstream font device
 $(PLOBJ)bfs.dev: $(PL_MAK) $(ECHOGS_XE) $(pl_obj1) $(pl_obj2)
 	$(SETMOD) $(PLOBJ)bfs $(pl_obj1) $(pl_obj2)
-
-# Freetype font device  NB organize.
-$(PLOBJ)fts.dev: $(PL_MAK) $(ECHOGS_XE) $(PLOBJ)plfchar.$(OBJ) $(PLOBJ)pldict.$(OBJ) $(PLOBJ)pldraw.$(OBJ) $(PLOBJ)plffont.$(OBJ) $(PLOBJ)plsymbol.$(OBJ) $(PLOBJ)plvalue.$(OBJ) $(PLOBJ)plvocab.$(OBJ) $(PLOBJ)plflfont.$(OBJ)
-	$(SETMOD) $(PLOBJ)fts $(PLOBJ)plfchar.$(OBJ) $(PLOBJ)pldict.$(OBJ) $(PLOBJ)pldraw.$(OBJ) $(PLOBJ)plffont.$(OBJ) $(PLOBJ)plsymbol.$(OBJ) $(PLOBJ)plvalue.$(OBJ) $(PLOBJ)plvocab.$(OBJ) $(PLOBJ)plflfont.$(OBJ)
-	$(ADDMOD) $(PLOBJ)fts -link $(FT_LIBDIRS)
-	$(ADDMOD) $(PLOBJ)fts -lib $(FT_LIBS)
-
 ### END BROKEN ###
+
+# Freetype font device.
+$(PLOBJ)fts.dev: $(PL_MAK) $(ECHOGS_XE) $(fts_obj)
+	$(SETMOD) $(PLOBJ)fts $(fts_obj)
 
 $(PLOBJ)pl.dev: $(PL_MAK) $(ECHOGS_XE) $(pl_obj)
 	$(SETMOD) $(PLOBJ)pl $(pl_obj1)

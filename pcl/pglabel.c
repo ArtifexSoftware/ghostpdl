@@ -42,7 +42,7 @@
 
 /* convert points 2 plu - agfa uses 72.307 points per inch */
 private floatp
-hpgl_points_2_plu(hpgl_state_t *pgls, floatp points)
+hpgl_points_2_plu(const hpgl_state_t *pgls, floatp points)
 {	
     const pcl_font_selection_t *pfs =
 	&pgls->g.font_selection[pgls->g.font_selected];
@@ -311,9 +311,9 @@ hpgl_get_char_width(const hpgl_state_t *pgls, uint ch, hpgl_real_t *width)
     gs_point gs_width;
     if ( pgls->g.character.size_mode == hpgl_size_not_set ) {
 	if ( pfs->params.proportional_spacing ) {
-	    code = pl_font_char_width(pfs->font, glyph, &gs_width);
+	    code = pl_font_char_width(pfs->font, (void *)(pgls->pgs), glyph, &gs_width);
 	    if ( !pl_font_is_scalable(pfs->font) ) {
-		if ( code == 0 ) 
+		if ( code == 0 )
 		    *width = gs_width.x	* inches_2_plu(1.0 / pfs->font->resolution.x); 
 		else
 		    *width = coord_2_plu(pl_fp_pitch_cp(&pfs->font->params)); 
@@ -339,7 +339,7 @@ hpgl_get_char_width(const hpgl_state_t *pgls, uint ch, hpgl_real_t *width)
 	if ( pfs->params.proportional_spacing && ch != ' ' ) {
 	    /* Get the width of the space character. */
 	    int scode =
-		pl_font_char_width(pfs->font, hpgl_map_symbol(' ', pgls), &gs_width);
+		pl_font_char_width(pfs->font, (void *)(pgls->pgs), hpgl_map_symbol(' ', pgls), &gs_width);
 	    hpgl_real_t extra;
 
 	    if ( scode >= 0 )
@@ -678,7 +678,7 @@ hpgl_print_char(
 	{
 	    float metrics[4];
 	    /* undefined characters are treated as a space */
-	    if ( (pl_font_char_metrics(font, ch, metrics)) == 1 ) {
+	    if ( (pl_font_char_metrics(font, (void *)(pgls->pgs), ch, metrics)) == 1 ) {
 		ch = ' ';
 		lsb = 0;
 	    } else

@@ -44,9 +44,9 @@
 #include "gxchar.h"
 #include "gxfcache.h"
 #include "gzstate.h"
-
-/* freetype stuff */
-#include "freetype.h"
+/* prescribed freetype include file setup */
+#include <ftbuild.h>
+#include FT_FREETYPE_H
 
 /*
  * As of gs library version 5.86, the log2_current_scale member of the
@@ -112,7 +112,7 @@ pl_bitmap_encode_char(gs_font *pfont, gs_char chr, gs_glyph not_used)
 /* Get character existence and escapement for a bitmap font. */
 /* This is simple for the same reason. */
 private int
-pl_bitmap_char_width(const pl_font_t *plfont, uint char_code, gs_point *pwidth)
+pl_bitmap_char_width(const pl_font_t *plfont, const void *pgs, uint char_code, gs_point *pwidth)
 {	
     const byte *cdata = pl_font_lookup_glyph(plfont, char_code)->data;
 
@@ -139,7 +139,7 @@ pl_bitmap_char_width(const pl_font_t *plfont, uint char_code, gs_point *pwidth)
 }
 
 private int
-pl_bitmap_char_metrics(const pl_font_t *plfont, uint char_code, float metrics[4])
+pl_bitmap_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code, float metrics[4])
 {
     gs_point width;
     const byte *cdata = pl_font_lookup_glyph(plfont, char_code)->data;
@@ -153,7 +153,7 @@ pl_bitmap_char_metrics(const pl_font_t *plfont, uint char_code, float metrics[4]
 	return 0;
     
     metrics[0] = s16(cdata + 6);
-    pl_bitmap_char_width(plfont, char_code, &width);
+    pl_bitmap_char_width(plfont, pgs, char_code, &width);
     metrics[2] = width.x;
     return 0;
 }
@@ -498,17 +498,6 @@ pl_tt_lookup_char(const pl_font_t *plfont, gs_glyph glyph)
 	return (result ? result : ptcg);
 }
 
-/* Get a string from a TrueType font. */
-private int
-pl_tt_string_proc(gs_font_type42 *pfont, ulong offset, uint length,
-  const byte **pdata)
-{	pl_font_t *plfont = pfont->client_data;
-
-	*pdata = plfont->header + plfont->offsets.GT +
-	  (plfont->large_sizes ? 6 : 4) + offset;
-	return 0;
-}
-
 /* Get the outline data for a glyph in a downloaded TrueType font. */
 int
 pl_tt_get_outline(gs_font_type42 *pfont, uint index, gs_const_string *pdata)
@@ -663,216 +652,126 @@ pl_cmap_lookup(uint key, const byte *table, uint *pvalue)
 	return 0;
 }
 
-/* Encode a character using the TrueType cmap tables. */
-/* (We think this is never used for downloaded fonts.) */
-private gs_glyph
-pl_tt_cmap_encode_char(gs_font_type42 *pfont, ulong cmap_offset,
-  uint cmap_len, gs_char chr)
-{	const byte *cmap;
-	const byte *cmap_sub;
-	const byte *table;
-	uint value;
-	int code;
-
-	access(cmap_offset, cmap_len, cmap);
-	/* Since the Apple cmap format is of no help in determining */
-	/* the encoding, look for a Microsoft table; but if we can't */
-	/* find one, take the first one. */
-	cmap_sub = cmap + 4;
-	{ uint i;
-	  for ( i = 0; i < u16(cmap + 2); ++i )
-	    { if_debug3('j', "[j]cmap %d: platform %u encoding %u\n",
-			i, u16(cmap_sub + i * 8), u16(cmap_sub + i * 8 + 2));
-	      if ( u16(cmap_sub + i * 8) == 3 )
-		{ cmap_sub += i * 8;
-		  break;
-		}
-	    }
-	}
-	{ uint offset = cmap_offset + u32(cmap_sub + 4);
-	  access(offset, cmap_offset + cmap_len - offset, table);
-	}
-	code = pl_cmap_lookup((uint)chr, table, &value);
-	return (code < 0 ? 0xffff : value);
-}
-
-/* Encode a character using the map built for downloaded TrueType fonts. */
-private gs_glyph
-pl_tt_dynamic_encode_char(const gs_font_type42 *pfont, gs_char chr)
-{	pl_font_t *plfont = pfont->client_data;
-	const pl_tt_char_glyph_t *ptcg = pl_tt_lookup_char(plfont, chr);
-
-	return (ptcg->chr == gs_no_char ? gs_no_glyph : ptcg->glyph);
-}
-
-/* Return the galley character for a character code, if any; */
-/* otherwise return gs_no_char. */
-/* Note that we return 0xffff for a character that is explicitly */
-/* designated as undefined. */
-private gs_char
-pl_font_galley_character(gs_char chr, const pl_font_t *plfont)
-{	long GC = plfont->offsets.GC;
-	const byte *gcseg;
-	uint b0, b1;
-	uint i, len;
-	uint default_char;
-
-	if ( GC < 0 )
-	  return gs_no_char;
-	gcseg = plfont->header + GC;
-	if ( plfont->large_sizes )
-	  len = u32(gcseg + 2),
-	  i = 12;
-	else
-	  len = u16(gcseg + 2),
-	  i = 10;
-	if ( len != u16(gcseg + i - 2) * 6 + 6 ) /* bad data */
-	  return gs_no_char;
-	default_char = u16(gcseg + i - 4); /* default character */
-	len += i - 6;
-	b0 = chr >> 8;
-	b1 = chr & 0xff;
-	for ( ; i < len; i += 6 )
-	  if ( b0 >= gcseg[i] && b0 <= gcseg[i + 1] &&
-	       b1 >= gcseg[i + 2] && b1 <= gcseg[i + 3]
-	     )
-	    return u16(gcseg + i + 4);
-	return default_char;
-}
-
-/* Encode a character for a TrueType font. */
-/* What we actually return is the TT glyph index.  Note that */
-/* we may return either gs_no_glyph or 0 for an undefined character. */
 gs_glyph
 pl_ft_encode_char(gs_font *pfont_generic, gs_char chr, gs_glyph not_used)
 {	
     return (gs_glyph)chr;
 }
 
-/* Return the vertical substitute for a glyph, if it has one; */
-/* otherwise return gs_no_glyph. */
-private gs_glyph
-pl_font_vertical_glyph(gs_glyph glyph, const pl_font_t *plfont)
-{	long VT = plfont->offsets.VT;
-	const byte *vtseg;
-	uint i, len;
-
-	if ( VT < 0 )
-	  return gs_no_glyph;
-	vtseg = plfont->header + VT;
-	if ( plfont->large_sizes )
-	  len = u32(vtseg + 2),
-	  i = 6;
-	else
-	  len = u16(vtseg + 2),
-	  i = 4;
-	len += i;
-	for ( ; i < len; i += 4 )
-	  if ( glyph == u16(vtseg + i) )
-	    return u16(vtseg + i + 2);
-	return gs_no_glyph;
-}
-
 /* get the glyph container for a character, maybe should return the
    instance as well */
-private TT_Error
-ft_get_glyph(const pl_font_t *plfont, uint char_code, TT_Glyph *pftglyph, TT_Instance *ftinstance, bool setscale, floatp xres, floatp yres, floatp pointsize)
+private FT_Error
+ft_get_face(const pl_font_t *plfont, const void *pgs, uint char_code, FT_Face *pface)
 {
     gs_font *pfont = plfont->pfont;
     gs_char chr = char_code;
     gs_glyph unused_glyph = gs_no_glyph;
+    /* NB wrong */
     gs_glyph glyph = pl_ft_encode_char(pfont, chr, unused_glyph);
+    /* HACK - face pointer pickled into the id */
     unsigned long id = ((gs_font_base *)(plfont->pfont))->UID.id;
-    TT_Face face;
-    TT_Error error;
-    TT_CharMap   char_map;
-    TT_Face_Properties properties;
+    FT_Error error;
+    int xres = gs_currentdevice((gs_state *)pgs)->HWResolution[0];
+    int yres = gs_currentdevice((gs_state *)pgs)->HWResolution[1];
+    floatp hx;
+    floatp hy;
+    int pointsize; /* height */
+    int setsize;   /* width */
+    gs_matrix mat;
 
-    int i;
-    unsigned short platform, encoding;
-
-    /* much of this is derived from the sample program ftstring.c in
-       freetype.  Lots of work to get an escapement... */
-    /* NB */
-    face.z = (void *)id;
-    /* Get an instance of the face */
-    error = TT_New_Instance( face, ftinstance );
+    /* same HACK - face pointer pickled into the id */
+    *pface = (FT_Face)id;
+    gs_currentmatrix((gs_state *)pgs, &mat);
+    hx = hypot(mat.xx, mat.xy);
+    hy = hypot(mat.yx, mat.yy);
+    pointsize = (int)((hy  * plfont->pts_per_inch / yres) + 0.5);
+    setsize = (int)((hx * plfont->pts_per_inch / xres) + 0.5);
+    /* NB needs width set the character size 0 for width - height
+       points in 1/64'ths... nb just load then set char size if
+       rendering */
+    error = FT_Set_Char_Size(*pface, 
+                             setsize * 64, /* width */ 
+			     pointsize * 64, /* height */ 
+			     xres, yres);
     if ( error )
-	return 1;
-    if ( setscale ) {
-	error = TT_Set_Instance_Resolutions( *ftinstance, (TT_UShort)xres, (TT_UShort)yres );
-	if ( error )
-	    return 1;
+        return error;
     
-	error = TT_Set_Instance_CharSize( *ftinstance, (TT_F26Dot6)(pointsize * 64) );
-	if ( error )
-	    return 1;
+    /* set transformation for skew - 16.16 fixed */
+    {
+        FT_Matrix m;
+        m.xx = ( 1 << 16 ) * mat.xx / hx;
+        m.xy = ( 1 << 16 ) * -mat.xy / hx;
+        m.yx = ( 1 << 16 ) * mat.yx / hy;
+        m.yy = ( 1 << 16 ) * -mat.yy / hy;
+        FT_Set_Transform(*pface, &m, 0);
     }
-    /* if we have flags set the instance resolution and character size */
-    error = TT_Get_Face_Properties( face, &properties );
-    if ( error )
-	return 1;
-    for ( i = 0; i < properties.num_CharMaps; i++ ) {
-	TT_Get_CharMap_ID( face, i, &platform, &encoding );
-	if ( (platform == 3 && encoding == 1 )  ||
-	     (platform == 0 && encoding == 0 ) ) {
-	    TT_Get_CharMap( face, i, &char_map );
-	    /* yuck */
-	    i = properties.num_CharMaps + 1;
-	}
+    {
+
+        /* find our character map - we always use unicode but we'll do
+           this exercise anyway. */
+        FT_CharMap  found = 0;
+        FT_CharMap  charmap;
+        int         n;
+        for ( n = 0; n < (*pface)->num_charmaps; n++ ) {
+            charmap = (*pface)->charmaps[n];
+            if ( (charmap->platform_id == 3 && charmap->encoding_id == 1 )  ||
+                 (charmap->platform_id == 0 && charmap->encoding_id == 0 ) ) {
+                found = charmap;
+                break;
+            }
+        }
+
+        if ( !found ) {
+            dprintf( "charmap not found\n" );
+            return error;
+        }
+
+        /* now, select the charmap (what we found above) for the face object */
+        error = FT_Set_Charmap( *pface, found );
+        if ( error ) {
+            dprintf( "unable to set charmap not found\n" );
+            return error;
+        }
+        /* load the glyph */
+        error = FT_Load_Glyph( *pface, FT_Get_Char_Index( *pface, (FT_UInt)glyph ), 
+                               FT_LOAD_LINEAR_DESIGN );
+        if ( error ) {
+            dprintf( "unable to load glyph\n" );
+            return error;
+        }
     }
-    if ( i == properties.num_CharMaps )
-	return 1;
-    /* the glyph container */
-    error = TT_New_Glyph( face, pftglyph );
-    if ( error )
-	return 1;
-    /* load the glyph - ftglyph is the glyph handle */
-    error = TT_Load_Glyph( *ftinstance, *pftglyph, TT_Char_Index( char_map, (short)glyph ), 
-			   setscale ? TTLOAD_DEFAULT : 0 /* Em Square coordinates for metrics, funits for building the character */ );
-    if ( error )
-	return 1;
-    else
-	return 0;
+    return 0;
 }
 
 /* Get character existence and escapement for a TrueType font. */
 private int
-pl_ft_char_width(const pl_font_t *plfont, uint char_code, gs_point *pwidth)
+pl_ft_char_width(const pl_font_t *plfont, const void *pgs, uint char_code, gs_point *pwidth)
 {	
-    TT_Glyph ftglyph;
-    TT_Glyph_Metrics metrics;
-    TT_Error error;
-    TT_Instance ftinstance;
-    error = ft_get_glyph(plfont, char_code, &ftglyph, &ftinstance, false, 0, 0, 0);
+    FT_Face face;
+    FT_Error error = ft_get_face(plfont, pgs, char_code, &face);
     if ( error )
 	return -1;
-    error = TT_Get_Glyph_Metrics( ftglyph, &metrics );
-    if ( error )
-	return -1;
-    pwidth->x = (double)metrics.advance / 2048.0;
+    {
+        pwidth->x = (double)face->glyph->linearHoriAdvance / (double)face->units_per_EM;
+        pwidth->y = 0;
+    }
     return 0;
 }
 
 /* Get metrics */
 private int
-pl_ft_char_metrics(const pl_font_t *plfont, uint char_code, float metrics[4])
+pl_ft_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code, float metrics[4])
 {
-    TT_Glyph ftglyph;
-    TT_Glyph_Metrics ftmetrics;
-    TT_Error error;
-    TT_Instance ftinstance;
-    error = ft_get_glyph(plfont, char_code, &ftglyph, &ftinstance, false, 0, 0, 0);
-    if ( error )
-	return -1;
-    error = TT_Get_Glyph_Metrics( ftglyph, &ftmetrics );
+    FT_Face face;
+    FT_Error error = ft_get_face(plfont, pgs, char_code, &face);
     if ( error )
 	return -1;
     /* lsb as proportion of Em square */
-    metrics[0] = (double)ftmetrics.bearingX / 2048.0;
+    dprintf("warning: using 0 for left side bearing\n");
+    metrics[0] = 0;
     metrics[1] = 0;
     /* width as a proportion of em square */
-    metrics[2] = (double)ftmetrics.advance / 2048.0;
+    metrics[2] = (double)face->glyph->linearHoriAdvance / (double)face->units_per_EM;
     metrics[3] = 0;
     return 0;
 }
@@ -887,14 +786,6 @@ pl_ft_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 #define pfont42 ((gs_font_type42 *)pfont)
 	int code;
 	pl_font_t *plfont = (pl_font_t *)pfont->client_data;
-	float bold_fraction = gs_show_in_charpath(penum) != cpm_show ? 0.0 : plfont->bold_fraction;
-	uint bold_added;
-	double scale;
-	float sbw[4], w2[6];
-	int ipx, ipy, iqx, iqy;
-	gx_device_memory mdev;
-	TT_Raster_Map Bit;
-
 #ifdef CACHE_TRUETYPE_CHARS
 #  define tt_set_cache(penum, pgs, w2)\
      gs_setcachedevice(penum, pgs, w2)
@@ -916,108 +807,69 @@ pl_ft_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 	    return code;
 
 	{
-	    TT_Glyph ftglyph;
-	    TT_Outline ftoutline;
-	    TT_Matrix ftmatrix;
+            FT_Face face;
 	    gs_matrix mat;
-	    TT_BBox ftbbox;
 	    gs_image_t image;
-	    TT_Error error;
-	    TT_Instance ftinstance;
-	    TT_Instance_Metrics  imetrics;
-	    extern TT_Engine engine; /* NB */
-	    double scale;
+	    FT_Error error;
 	    /* get the current glyph instance.  With point size and scaling */
-
 	    gs_currentmatrix(pgs, &mat);
-	    error = ft_get_glyph( plfont, chr, &ftglyph, &ftinstance, false, 
-				  gs_currentdevice(pgs)->HWResolution[0],
-				  gs_currentdevice(pgs)->HWResolution[1],
-				  0 /* set_scale */);
+	    error = ft_get_face( plfont, pgs, chr, &face );
 	    if ( error )
 		return -1;
 	    /* get an outline of the glyph... we'll scale the
 	       outline by the ctm and then render the bitmap */
-	    error = TT_Get_Glyph_Outline( ftglyph, &ftoutline );
-	    if ( error )
-		return -1;
 
-	    {
-		TT_Matrix ftmat;
-		ftmat.xx = mat.xx * (1 << 11);
-		ftmat.xy = mat.xy * (1 << 11);
-		ftmat.yx = mat.yx * (1 << 11);
-		ftmat.yy = mat.yy * (1 << 11);
-		TT_Transform_Outline(&ftoutline, &ftmat );
-	    }
-	    {
-		int width, height;
-		unsigned char Buffer[100000];
+            {
+		gs_matrix save_ctm, tmp_ctm;
+                gs_image_enum *ienum;
+                FT_Bitmap *ftb = &face->glyph->bitmap;
+                FT_Render_Glyph(face->glyph, ft_render_mode_mono);
 
-		memset(Buffer, 0, sizeof(Buffer));
-		/* compute its extent */
-		TT_Get_Outline_BBox( &ftoutline, &ftbbox );
-		/* Grid-fit it */
-		ftbbox.xMin &= -64;
-		ftbbox.xMax  = ( ftbbox.xMax + 63 ) & -64;
-		ftbbox.yMin &= -64;
-		ftbbox.yMax  = ( ftbbox.yMax + 63 ) & -64;
-
-		/* Use xMax - xMin for advance probably not right */
-		{ 
-		    w2[2] = ftbbox.xMin / 64; w2[3] = ftbbox.yMin / 64;
-		    w2[4] = ftbbox.xMax / 64; w2[5] = ftbbox.yMax / 64;
-
-		    /* advance x and y */
-		    w2[0] = w2[4] - w2[2];
-		    w2[1] = w2[5] - w2[3];
-
-		    /* no bold yet - set up the cache */
-		    code = tt_set_cache(penum, pgs, w2);
-		}
-		/* compute pixel dimensions */
-		width  = (ftbbox.xMax - ftbbox.xMin) / 64;
-		height = (ftbbox.yMax - ftbbox.yMin) / 64;
-		Bit.rows = height;
-		Bit.width = width;
-		Bit.cols = (Bit.width + 7) / 8;
-		Bit.flow = TT_Flow_Up;
-		Bit.size = Bit.rows * Bit.cols;
-		Bit.bitmap = Buffer;
-#ifdef TRANSFORM
-		/* translate outline */
-		TT_Translate_Outline( &ftoutline, -ftbbox.xMin, -ftbbox.yMin );
-#endif
-		error = TT_Get_Outline_Bitmap( engine, &ftoutline, &Bit );
 		if ( error )
 		    return -1;
-		{
+                /* move to device space */
+                gs_currentmatrix(pgs, &save_ctm);
+                gs_make_identity(&tmp_ctm);
+                tmp_ctm.tx = save_ctm.tx;
+                tmp_ctm.ty = save_ctm.ty;
+                gs_setmatrix(pgs, &tmp_ctm);
+#ifdef DEBUG
+                if ( gs_debug_c('B') ) {
 		    int i;
-		    int pixels = round_up(Bit.width, 8) * Bit.rows;
+		    int pixels = round_up(ftb->width, 8) * ftb->rows;
 		    for ( i = 0; i < pixels; i++ ) {
-			if ( i % round_up(Bit.width, 8) == 0 )
+			if ( i % round_up(ftb->width, 8) == 0 )
 			    dprintf("\n");
-			dprintf1( "%d", Buffer[i >> 3] & (128 >> (i & 7)) ? 1 : 0);
+			dprintf1( "%d", ftb->buffer[i >> 3] & (128 >> (i & 7)) ? 1 : 0);
 		    }
 		    dprintf("\n");
 		}
-		dprintf( "finished ouline\n" );
-	    }
-	    { 
-		gs_matrix save_ctm, tmp_ctm;
-		gs_currentmatrix(pgs, &save_ctm);
-		gs_make_identity(&tmp_ctm);
-		tmp_ctm.tx = save_ctm.tx;
-		tmp_ctm.ty = save_ctm.ty;
-		gs_setmatrix(pgs, &tmp_ctm);
-		gs_image_t_init_mask(&image, true);
-		image.Width = Bit.width;
-		image.Height = Bit.rows;
-		code = image_bitmap_char(penum, &image, Bit.bitmap,
-					 Bit.width, 0, 0, pgs);
-		gs_setmatrix(pgs, &save_ctm);
-	    }
-	}
+#endif
+                /* set up the image */
+                ienum = gs_image_enum_alloc(pgs->memory, "pl_ufst_make_char");
+                if (ienum == 0) {
+                    gs_setmatrix(pgs, &save_ctm);
+                    return_error(gs_error_VMerror);
+                }
+                gs_image_t_init_mask(&image, true);
+                image.Width = ftb->width;
+                image.Height = ftb->rows;
+                gs_make_identity(&image.ImageMatrix);
+                image.ImageMatrix.tx = -face->glyph->bitmap_left;
+                image.ImageMatrix.ty = face->glyph->bitmap_top;
+                image.adjust = true;
+                code = image_bitmap_char( ienum,
+                                          &image,
+                                          (byte *)ftb->buffer,
+                                          ftb->width,
+                                          0,
+                                          NULL,
+                                          pgs );
+                gs_free_object(pgs->memory, ienum, "pl_ufst_make_char");
+                gs_setmatrix(pgs, &save_ctm);
+                return (code < 0 ? code : 0);
+            }
+        }
 	return (code < 0 ? code : 0);
 #undef pfont42
 #undef pbfont
@@ -1169,7 +1021,7 @@ pl_intelli_show_char(gs_state *pgs, const pl_font_t *plfont, gs_glyph glyph)
 
 /* Get character existence and escapement for an Intellifont. */
  private int
-pl_intelli_char_width(const pl_font_t *plfont, uint char_code, gs_point *pwidth)
+pl_intelli_char_width(const pl_font_t *plfont, const void *pgs, uint char_code, gs_point *pwidth)
 {	const byte *cdata = pl_font_lookup_glyph(plfont, char_code)->data;
 	int wx;
 
@@ -1202,8 +1054,7 @@ pl_intelli_char_width(const pl_font_t *plfont, uint char_code, gs_point *pwidth)
 }
 
 private int
-pl_intelli_char_metrics(const pl_font_t *plfont, uint char_code, float metrics[4])
-
+pl_intelli_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code, float metrics[4])
 {
     gs_point width;
     const byte *cdata = pl_font_lookup_glyph(plfont, char_code)->data;
@@ -1230,7 +1081,7 @@ pl_intelli_char_metrics(const pl_font_t *plfont, uint char_code, float metrics[4
 	/* never a vertical substitute, doesn't yet handle compound characters */
 	metrics[0] = (float)pl_get_int16(intelli_metrics->charSymbolBox[0]);
 	metrics[0] /= 8782.0;
-	pl_intelli_char_width(plfont, char_code, &width);
+	pl_intelli_char_width(plfont, pgs, char_code, &width);
 	metrics[2] = width.x;
 	return 0;
     }

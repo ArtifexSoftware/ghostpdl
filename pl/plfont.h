@@ -161,8 +161,8 @@ struct pl_font_s {
   pl_font_scaling_technology_t scaling_technology;
   pl_font_type_t font_type;
   /* Implementation of pl_font_char_width, see below */
-  int (*char_width)(P3(const pl_font_t *plfont, uint char_code, gs_point *pwidth));
-  int (*char_metrics)(P3(const pl_font_t *plfont, uint char_code, float metrics[4]));
+  int (*char_width)(P4(const pl_font_t *plfont, const void *pgs, uint char_code, gs_point *pwidth));
+  int (*char_metrics)(P4(const pl_font_t *plfont, const void *pgs, uint char_code, float metrics[4]));
   bool large_sizes;	/* segment sizes are 32 bits if true, 16 if false */
 			/* (for segmented fonts only) */
   struct { uint x, y; } resolution; /* resolution (for bitmap fonts) */
@@ -210,7 +210,7 @@ int pl_tt_alloc_char_glyphs(P4(pl_font_t *plfont, uint num_chars,
 typedef struct gs_font_dir_s gs_font_dir;
 #endif
 int pl_fill_in_font(P5(gs_font *pfont, pl_font_t *plfont, gs_font_dir *pdir,
-		       gs_memory_t *mem, char *font_name));
+		       gs_memory_t *mem, const char *font_name));
 
 /* Fill in bitmap and intellifont gs_font boilerplate. */
 #ifndef gs_font_base_DEFINED
@@ -279,12 +279,12 @@ int pl_font_add_glyph(P3(pl_font_t *plfont, gs_glyph glyph, byte *data));
 /* If the font is bound, the symbol set is ignored. */
 /* If the character is undefined, set the escapement to (0,0) and return 1. */
 /* If pwidth is NULL, don't store the escapement. */
-int pl_font_char_width(P3(const pl_font_t *plfont, uint char_code, gs_point *pwidth));
+int pl_font_char_width(P4(const pl_font_t *plfont, const void *pgs, uint char_code, gs_point *pwidth));
 
 /* Determine the character metrics.  If vertical substitution is in
    effect metrics[1] = lsb, metrics[3] = width otherwise metrics[0] =
    lsb and metrics 2 = width.   The same rules for character width apply */
-int pl_font_char_metrics(P3(const pl_font_t *plfont, uint char_code, float metrics[4]));
+int pl_font_char_metrics(P4(const pl_font_t *plfont, const void *pgs, uint char_code, float metrics[4]));
 
 /* Look up a glyph in a font.  Return a pointer to the glyph's slot */
 /* (data != 0) or where it should be added (data == 0). */

@@ -96,15 +96,15 @@ pl_known_encode(gs_char chr, int encoding_index)
 /* ---------------- Public procedures ---------------- */
 
 /* character width */
-int pl_font_char_width(const pl_font_t *plfont, uint char_code, gs_point *pwidth)
+int pl_font_char_width(const pl_font_t *plfont, void *pgs, uint char_code, gs_point *pwidth)
 {
-    return (*(plfont)->char_width)(plfont, char_code, pwidth);
+    return (*(plfont)->char_width)(plfont, pgs, char_code, pwidth);
 }
 
 /* character width */
-int pl_font_char_metrics(const pl_font_t *plfont, uint char_code, float metrics[4])
+int pl_font_char_metrics(const pl_font_t *plfont, void *pgs, uint char_code, float metrics[4])
 {
-    return (*(plfont)->char_metrics)(plfont, char_code, metrics);
+    return (*(plfont)->char_metrics)(plfont, pgs, char_code, metrics);
 }
 
 
@@ -128,6 +128,7 @@ pl_alloc_font(gs_memory_t *mem, client_name_t cname)
 	    plfont->params.proportional_spacing = true;
 	    memset(plfont->character_complement, 0xff, 8);
 	    plfont->offsets.GC = plfont->offsets.GT = plfont->offsets.VT = -1;
+	    plfont->pts_per_inch = 72.0;   /* normal value */
 	  }
 	return plfont;
 }
@@ -191,8 +192,8 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
 		gs_alloc_struct(mem, gs_font_base, &st_gs_font_base, cname);
 	      if ( pfont == 0 )
 		return 0;
-	      pl_fill_in_font((gs_font *)pfont, plfont, src->pfont->dir, mem);
-	      pl_fill_in_bitmap_font(pfont, gs_next_ids(1));
+	      pl_fill_in_font((gs_font *)pfont, plfont, src->pfont->dir, mem, "illegal font");
+	      pl_fill_in_bitmap_font(pfont, gs_next_id());
 	      break;
 	    }
 	  case plfst_Intellifont:
@@ -201,8 +202,8 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
 		gs_alloc_struct(mem, gs_font_base, &st_gs_font_base, cname);
 	      if ( pfont == 0 )
 		return 0;
-	      pl_fill_in_font((gs_font *)pfont, plfont, src->pfont->dir, mem);
-	      pl_fill_in_intelli_font(pfont, gs_next_ids(1));
+	      pl_fill_in_font((gs_font *)pfont, plfont, src->pfont->dir, mem, "illegal font");
+	      pl_fill_in_intelli_font(pfont, gs_next_id());
 	      break;
 	    }
 	  case plfst_TrueType:
@@ -216,8 +217,8 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
 		bool downloaded = (pfont_src->data.get_outline == pl_tt_get_outline);
 		if ( pfont == 0 )
 		  return 0;
-		pl_fill_in_font((gs_font *)pfont, plfont, src->pfont->dir, mem);
-		pl_fill_in_tt_font(pfont, downloaded ? NULL : src->header, gs_next_ids(1));
+		pl_fill_in_font((gs_font *)pfont, plfont, src->pfont->dir, mem, "illegal font");
+		pl_fill_in_tt_font(pfont, downloaded ? NULL : src->header, gs_next_id());
 	      }
 	      break;
 	    }
@@ -296,7 +297,7 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
 /* Fill in generic font boilerplate. */
 int
 pl_fill_in_font(gs_font *pfont, pl_font_t *plfont, gs_font_dir *pdir,
-  gs_memory_t *mem)
+  gs_memory_t *mem, const char *font_name)
 {	plfont->pfont = pfont;
 	/* Initialize generic font data. */
 	pfont->next = pfont->prev = 0;
@@ -317,7 +318,7 @@ pl_fill_in_font(gs_font *pfont, pl_font_t *plfont, gs_font_dir *pdir,
 	pfont->procs.font_info = gs_default_font_info;
 	pfont->key_name.size = 0;
 	pfont->font_name.size = 0;
-	pfont->id = gs_next_ids(1);
+	pfont->id = gs_next_id();
 	return 0;
 }
 
@@ -563,7 +564,7 @@ pl_alloc_tt_fontfile_buffer(FILE *in, gs_memory_t *mem, byte **pptt_font_data, u
 /* Load a built-in (TrueType) font from external storage. */
 int
 pl_load_tt_font(FILE *in, gs_font_dir *pdir, gs_memory_t *mem,
-  long unique_id, pl_font_t **pplfont)
+  long unique_id, pl_font_t **pplfont, char *font_name)
 {	
     byte *tt_font_datap;
     ulong size;
@@ -582,7 +583,7 @@ pl_load_tt_font(FILE *in, gs_font_dir *pdir, gs_memory_t *mem,
     if ( pfont == 0 || plfont == 0 )
 	code = gs_note_error(gs_error_VMerror);
     else { /* Initialize general font boilerplate. */
-	code = pl_fill_in_font((gs_font *)pfont, plfont, pdir, mem);
+	code = pl_fill_in_font((gs_font *)pfont, plfont, pdir, mem, "illegal font");
 	if ( code >= 0 ) { /* Initialize TrueType font boilerplate. */
 	    plfont->header = tt_font_datap;
 	    plfont->header_size = size;
