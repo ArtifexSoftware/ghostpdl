@@ -805,6 +805,11 @@ from among the standard 35 fonts.
 
 </ul>
 
+<p>
+Loading truetype fonts directly from <tt>/Resource/CIDFont/</tt> is not
+supported. A <a href="#CIDFontSubstitution"><tt>cidfmap</tt></a> entry
+must be created instead to provide a proper character ordering for the font.
+
 <blockquote><table cellpadding=0 cellspacing=0>
 <tr><th colspan=3 bgcolor="#CCCC00"><hr><font size="+1">Differences between search path and font path</font><hr>
 <tr>	<th>Search path
@@ -1088,7 +1093,13 @@ Examples :
 <blockquote><b><tt>
 /Ryumin-Light   << /FileType /TrueType /Path (F:/WIN2000/Fonts/ARIALUNI.TTF) /SubfontID 3 /CSI [(Japan1) 2] >> ;
 </tt></b></blockquote>
+
 <p>
+Note that loading truetype fonts directly from /Resources/CIDFont is no longer
+supported. There is no reliable way to generate a character ordering for truetype
+fonts. The 7.0x versions of Ghostscript supported this by assuming a Japanese
+character ordering. This is replaced in the 8.0x and later releases with the more
+general <b><tt>cidfmap</tt></b> mechanism.
 
 <hr>
 
