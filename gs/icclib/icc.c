@@ -2986,8 +2986,8 @@ static int icmTable_setup_bwd(
 	/* Assign each output value range bucket lists it intersects */
 	for (i = 0; i < (rt->size-1); i++) {
 		int s, e, j;	/* Start and end indexes (inclusive) */
-		s = ((rt->data[i] - rt->rmin) * rt->qscale);
-		e = ((rt->data[i+1] - rt->rmin) * rt->qscale);
+		s = (int)((rt->data[i] - rt->rmin) * rt->qscale);
+		e = (int)((rt->data[i+1] - rt->rmin) * rt->qscale);
 		if (s > e) {	/* swap */
 			int t;
 			t = s; s = e; e = t;
