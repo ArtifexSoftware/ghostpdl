@@ -268,7 +268,7 @@ else
 	# enable X11 output devices
 	X11DEVS='$(DD)x11.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev $(DD)x11gray2.dev $(DD)x11gray4.dev $(DD)x11mono.dev'
 	# the makefile wants a list of just the library names in XLIBS
-	for item in $X_PRE_LIBS -lXt -lXext -lX11 $X_EXTRA_LIBS; do
+	for item in -lXt $X_PRE_LIBS -lXext -lX11 $X_EXTRA_LIBS; do
 		stripped=`echo "$item" | sed -e 's/-l//'`
 		if test "x$stripped" != "x$item"; then
 			XLIBS="$XLIBS $stripped"
