@@ -26,7 +26,6 @@
 #include "gxfont.h"
 #include "gxfont42.h"
 #include "gxttf.h"
-#include "gxttfb.h"
 #include "gxfcache.h"
 #include "gxistate.h"
 #include "stream.h"

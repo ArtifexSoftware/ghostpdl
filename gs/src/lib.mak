@@ -493,8 +493,6 @@ gxfill_h=$(GLSRC)gxfill.h
 gxfdrop_h=$(GLSRC)gxfdrop.h
 gxdtfill_h=$(GLSRC)gxdtfill.h
 
-ttfoutl_h=$(GLSRC)ttfoutl.h
-gxttfb_h = $(GLSRC)gxttfb.h $(ttfoutl_h)
 gzspotan_h = $(GLSRC)gzspotan.h $(gxdevcli_h)
 
 ### Executable code
@@ -539,7 +537,7 @@ $(GLOBJ)gxccache.$(OBJ) : $(GLSRC)gxccache.c $(GXERR) $(memory__h)\
 $(GLOBJ)gxccman.$(OBJ) : $(GLSRC)gxccman.c $(GXERR) $(memory__h) $(gpcheck_h)\
  $(gsbitops_h) $(gsstruct_h) $(gsutil_h) $(gxfixed_h) $(gxmatrix_h)\
  $(gxdevice_h) $(gxdevmem_h) $(gxfont_h) $(gxfcache_h) $(gxchar_h)\
- $(gxpath_h) $(gxxfont_h) $(gzstate_h) $(gxttfb_h) $(gxttfb_h)
+ $(gxpath_h) $(gxxfont_h) $(gzstate_h)
 	$(GLCC) $(GLO_)gxccman.$(OBJ) $(C_) $(GLSRC)gxccman.c
 
 $(GLOBJ)gxchar.$(OBJ) : $(GLSRC)gxchar.c $(GXERR) $(memory__h) $(string__h)\
@@ -1782,10 +1780,7 @@ $(GLOBJ)gxpageq.$(OBJ) : $(GLSRC)gxpageq.c $(GXERR)\
 
 # ---------------- TrueType and PostScript Type 42 fonts ---------------- #
 
-ttflib_=$(GLOBJ)gstype42.$(OBJ) $(GLOBJ)gxchrout.$(OBJ) \
- $(GLOBJ)ttcalc.$(OBJ) $(GLOBJ)ttfinp.$(OBJ) $(GLOBJ)ttfmain.$(OBJ) $(GLOBJ)ttfmemd.$(OBJ) \
- $(GLOBJ)ttinterp.$(OBJ) $(GLOBJ)ttload.$(OBJ) $(GLOBJ)ttobjs.$(OBJ) \
- $(GLOBJ)gxttfb.$(OBJ) $(GLOBJ)gzspotan.$(OBJ)
+ttflib_=$(GLOBJ)gstype42.$(OBJ) $(GLOBJ)gxchrout.$(OBJ)
 
 $(GLD)ttflib.dev : $(LIB_MAK) $(ECHOGS_XE) $(ttflib_)
 	$(SETMOD) $(GLD)ttflib $(ttflib_)
@@ -1796,57 +1791,8 @@ gxttf_h=$(GLSRC)gxttf.h
 $(GLOBJ)gstype42.$(OBJ) : $(GLSRC)gstype42.c $(GXERR) $(memory__h)\
  $(gsccode_h) $(gsline_h) $(gsmatrix_h) $(gsstruct_h) $(gsutil_h)\
  $(gxchrout_h) $(gxfixed_h) $(gxfont_h) $(gxfont42_h) $(gxistate_h)\
- $(gxpath_h) $(gxttf_h) $(gxttfb_h) $(gxfcache_h) $(stream_h)
+ $(gxpath_h) $(gxttf_h) $(gxfcache_h) $(stream_h)
 	$(GLCC) $(GLO_)gstype42.$(OBJ) $(C_) $(GLSRC)gstype42.c
-
-ttfsfnt_h=$(GLSRC)ttfsfnt.h $(stdint__h)
-ttcommon_h=$(GLSRC)ttcommon.h
-ttconf_h=$(GLSRC)ttconf.h
-ttfinp_h=$(GLSRC)ttfinp.h
-ttfmemd_h=$(GLSRC)ttfmemd.h $(gsstype_h)
-tttype_h=$(GLSRC)tttype.h
-ttconfig_h=$(GLSRC)ttconfig.h $(ttconf_h)
-tttypes_h=$(GLSRC)tttypes.h $(ttconfig_h) $(tttype_h)
-ttmisc_h=$(GLSRC)ttmisc.h $(std_h) $(gx_h) $(string__h) $(math__h) $(tttypes__h)
-tttables_h=$(GLSRC)tttables.h $(tttypes_h)
-ttobjs_h=$(GLSRC)ttobjs.h $(ttcommon_h) $(tttypes_h) $(tttables_h)
-ttcalc_h=$(GLSRC)ttcalc.h $(ttcommon_h) $(tttypes_h)
-ttinterp_h=$(GLSRC)ttinterp.h $(ttcommon_h) $(ttobjs_h)
-ttload_h=$(GLSRC)ttload.h $(ttcommon_h)
-
-$(GLOBJ)ttcalc.$(OBJ) : $(GLSRC)ttcalc.c $(GXERR) $(ttmisc_h) $(ttcalc_h)
-	$(GLCC) $(GLO_)ttcalc.$(OBJ) $(C_) $(GLSRC)ttcalc.c
-
-$(GLOBJ)ttfinp.$(OBJ) : $(GLSRC)ttfinp.c $(GXERR) $(ttmisc_h)\
- $(ttfoutl_h) $(ttfsfnt_h) $(ttfinp_h)
-	$(GLCC) $(GLO_)ttfinp.$(OBJ) $(C_) $(GLSRC)ttfinp.c
-
-$(GLOBJ)ttfmain.$(OBJ) : $(GLSRC)ttfmain.c $(GXERR) $(ttmisc_h)\
- $(ttfoutl_h) $(ttfmemd_h) $(ttfsfnt_h) $(ttobjs_h) $(ttinterp_h) $(ttcalc_h)
-	$(GLCC) $(GLO_)ttfmain.$(OBJ) $(C_) $(GLSRC)ttfmain.c
-
-$(GLOBJ)ttfmemd.$(OBJ) : $(GLSRC)ttfmemd.c $(GXERR) $(ttmisc_h)\
- $(ttfoutl_h) $(ttobjs_h)
-	$(GLCC) $(GLO_)ttfmemd.$(OBJ) $(C_) $(GLSRC)ttfmemd.c
-
-$(GLOBJ)ttinterp.$(OBJ) : $(GLSRC)ttinterp.c $(GXERR) $(ttmisc_h)\
- $(ttfoutl_h) $(tttypes_h) $(ttcalc_h) $(ttinterp_h) $(ttfinp_h) 
-	$(GLCC) $(GLO_)ttinterp.$(OBJ) $(C_) $(GLSRC)ttinterp.c
-
-$(GLOBJ)ttload.$(OBJ) : $(GLSRC)ttload.c $(GXERR) $(ttmisc_h)\
- $(ttfoutl_h) $(tttypes_h) $(ttcalc_h) $(ttobjs_h) $(ttload_h) $(ttfinp_h)
-	$(GLCC) $(GLO_)ttload.$(OBJ) $(C_) $(GLSRC)ttload.c
-
-$(GLOBJ)ttobjs.$(OBJ) : $(GLSRC)ttobjs.c $(GXERR) $(ttmisc_h)\
- $(ttfoutl_h) $(ttobjs_h) $(ttcalc_h) $(ttload_h) $(ttinterp_h)
-	$(GLCC) $(GLO_)ttobjs.$(OBJ) $(C_) $(GLSRC)ttobjs.c
-
-$(GLOBJ)gxttfb.$(OBJ) : $(GLSRC)gxttfb.c $(GXERR) \
- $(gx_h) $(gxfont_h) $(gxfont42_h) $(gxttfb_h) $(gxfcache_h)\
- $(gxmatrix_h) $(gxhintn_h) $(gzpath_h) $(ttfmemd_h)\
- $(gsstruct_h) $(gserrors_h) $(gsfont_h) $(gsdebug_h) $(memory__h) $(math__h)\
- $(gxistate_h) $(gxpaint_h) $(gzspotan_h)
-	$(GLCC) $(GLO_)gxttfb.$(OBJ) $(C_) $(GLSRC)gxttfb.c
 
 $(GLOBJ)gzspotan.$(OBJ) : $(GLSRC)gzspotan.c $(GXERR)\
  $(gx_h) $(gserrors_h) $(gsdevice_h) $(gzspotan_h)\
