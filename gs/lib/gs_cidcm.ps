@@ -44,24 +44,6 @@ languagelevel 2 .setlanguagelevel currentglobal true setglobal
 /path_buffer 255 string def
 /name_buffer 255 string def
 /minus (-) 0 get def             % character code constant for '-'
-
-% dot composed font supports.
-% Ken Lunde, "CJKV Information Processing," O'RELILLY. 1999. pp284.
-% From that page:
-%
-% 	There are also some special one-byte-encoded fonts that make up
-%         Adobe System's PostScript Japanese fonts, indicated as follows
-%         (again, using the OCF version of HeiseiMin-W3 for the example):
-%        
-%           HeiseiMin-W3.Hankaku
-%           HeiseiMin-W3.Hiragana
-%           HeiseiMin-W3.Katakana
-%           HeiseiMin-W3.Roman
-%           HeiseiMin-W3.WP-Symbol
-%
-/dot   (.) 0 get def		 % character code constant for '.'
-/dot_cat_cmap [/Hankaku /Hiragana /Katakana /Roman /WP-Symbol] def
-
 /CMap 10 dict def                % CSI cache for CMaps
 /CIDFont 10 dict def             % CSI cache for CIDFonts
 /enable_cache true def           % set false to disable cache
@@ -259,8 +241,7 @@ currentdict end def
   dup type /stringtype ne {
     //name_buffer cvs
   } if                                  % (FontName)
-  { dup length 2 sub -1 1 {
-      % minus combined font(CIDFont-CMap, CIDFont--CMap)
+  { dup length 2 sub -1 1 {                    
       2 copy get //minus eq {                
         2 copy 2 copy                   % (FontName) i (FontName) i (FontName) i
         2 copy 1 sub get //minus eq {      
@@ -277,46 +258,17 @@ currentdict end def
         } if
         pop pop pop
       } {
-        % dot combined font(CIDFont.CMap)
-	2 copy get //dot eq {                
-	    2 copy 2 copy                   % (FontName) i (FontName) i (FontName) i
-	    0 exch getinterval cvn          % (FontName) i (FontName) i /CIDFontName
-	    3 1 roll                        % (FontName) i /CIDFontName (FontName) i
-	    1 add dup                       % (FontName) i /CIDFontName (FontName) i1 i1
-	    5 index length                  % (FontName) i /CIDFontName (FontName) i1 i1 l
-	    exch sub getinterval cvn        % (FontName) i /CIDFontName /CMapName
-	    2 copy //IsComposedOK exec {    % (FontName) i /CIDFontName /CMapName 
-		4 2 roll pop pop              % /CIDFontName /CMapName
-		stop
-	    } if
-	    pop pop pop
-	} {
-	    pop
-	} ifelse
+        pop
       } ifelse                          % (FontName)
     } for
     pop
   } stopped
 } bind def
 
-% <array> <element> IsArrayMember <boolean>
-% True if element is an arary member.
-/IsArrayMember { 
-    {% stopped
-	exch {% forall
-	    1 index eq {stop} if
-	} forall
-    } stopped exch pop
-} bind def
-
-/ComposeName { % <CIDFont> <CMap> <scr> ComposeName <CIDFont-CMap>|<CIDFont.CMap>
+/ComposeName { % <CIDFont> <CMap> <scr> ComposeName <CIDFont-CMap>
   dup dup 5 2 roll                        % (scr) (scr) /CIDFont /CMap (scr)
   3 2 roll exch cvs length dup            % (scr) (scr) /CMap l0 l0
-  4 -1 roll exch		          % (scr) /CMap l0 (scr) l0
-  % CIDFont-CMap => //minus
-  % CIDFont.CMap => //dot
-  3 index //dot_cat_cmap exch //IsArrayMember exec {//dot} {//minus} ifelse
-  put                                     % (scr) /CMap l0
+  4 -1 roll exch //minus put              % (scr) /CMap l0
   1 add dup                               % (scr) /CMap l1 l1
   3 index dup length                      % (scr) /CMap l1 l1 (scr) L
   2 index sub                             % (scr) /CMap l1 l1 (scr) LT
