@@ -154,9 +154,10 @@ update_xfm_state(
 		   : psize->offset_portrait );
     
     /* we need an extra 1/10 inch on each side to support 80
-       characters vs. 78 at 10 cpi.  HP applies the change to Letter
-       and A4.  We apply it to all paper sizes */
-    if ( pcs->wide_a4 )
+       characters vs. 78 at 10 cpi.  Only apply to A4. */
+    if ( ( pcs->wide_a4 ) &&
+	 (psize->width == 59520) &&
+	 (psize->height == 84168) )
 	offset -= inch2coord(1.0/10.0);
 
     gs_matrix_translate( &(pxfmst->lp2pg_mtx),
@@ -894,7 +895,7 @@ get_default_paper(
     pcs->wide_a4 = false;
     for (i = 0; i < countof(paper_sizes); i++)
         if (!pjl_proc_compare(pcs->pjls, psize, paper_sizes[i].pname)) {
-	    /* we are not sure if widea4 applies to all paper sizes */
+	    /* set wide a4, only used if the paper is a4 */
 	    if (!pjl_proc_compare(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "widea4"), "YES"))
 		pcs->wide_a4 = true;
 	    return &(paper_sizes[i].psize);
