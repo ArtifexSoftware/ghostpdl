@@ -2371,19 +2371,47 @@ end
   exec
 } bind def
 
-/DetachPatternSpace % - DetachPatternSpace -
+/SetColorSpaceSafe % <color_space> SetColorSpaceSafe -
 {
+  % This works against applying a pattern over a pattern space,
+  % which may happen due to duplication of stroking and non-stroking colors.
+  % gs3.70 fails when setting a pattern space and 
+  % the (old) current color space is a pattern space.
+  %
+  % If the new color space is an array and it appears equal to the old one, 
+  % do nothing. Otherwise set the new color space.
   PDFR_DEBUG {
-    (DetachPatternSpace beg) =
+    (SetColorSpaceSafe beg) =
   } if
-  currentcolorspace dup type /arraytype eq {
-    dup 0 get /Pattern eq {
-      dup 1 get setrcolorspace
-    } if
-  } if
-  pop
+  currentcolorspace dup type /arraytype eq {     % cs cs'
+    1 index type /arraytype eq {
+      dup length 2 index length eq {
+        false exch                               % cs b cs'
+        dup length 0 exch 1 exch 1 sub {         % cs b cs' i
+          dup                                    % cs b cs' i i
+          4 index exch get exch                  % cs b cs' csi i
+          2 index exch get                       % cs b cs' csi cs'i
+          ne {                                   % cs b cs'
+            exch pop true exch exit
+          } if
+        } for                                    % cs b cs'
+        pop                                      % cs b
+        { 
+          setcolorspace
+        } {
+          pop
+        } ifelse                                 %
+      } {
+        pop setcolorspace
+      } ifelse
+    } {
+      pop setcolorspace
+    } ifelse
+  } {                                            % cs cs'
+    pop setcolorspace
+  } ifelse
   PDFR_DEBUG {
-    (DetachPatternSpace end) =
+    (SetColorSpaceSafe end) =
   } if
 } bind def
 
@@ -2952,8 +2980,7 @@ currentdict end readonly def
   /g /setgray load def
   /rg /setrgbcolor load def
   /k /setcmykcolor load def
-  /cs { //DetachPatternSpace exec
-        //ResolveColorSpace exec setcolorspace 
+  /cs { //ResolveColorSpace exec //SetColorSpaceSafe exec
       } bind def
   /sc /setcolor load def
   /scn { //SetColor exec } bind def
