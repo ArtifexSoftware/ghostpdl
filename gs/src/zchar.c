@@ -426,9 +426,8 @@ op_show_finish_setup(i_ctx_t *i_ctx_p, gs_text_enum_t * penum, int npop,
     if (endproc == NULL)
 	endproc = finish_show;
     make_null(&esslot(ep));
-    make_int(&esodepth(ep), 0);	/* see gs_show_render case in */
-    /* op_show_continue_dispatch */
-    make_int(&esddepth(ep), 0);	/* ditto */
+    make_int(&esodepth(ep), ref_stack_count_inline(&o_stack) - npop); /* Save stack depth for */
+    make_int(&esddepth(ep), ref_stack_count_inline(&d_stack));        /* correct interrupt processing */
     make_int(&esgslevel(ep), igs->level);
     make_null(&essfont(ep));
     make_null(&esrfont(ep));
