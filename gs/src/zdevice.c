@@ -408,10 +408,15 @@ int
 zsetdevice(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    int code;
+    int code = 0;
 
     check_write_type(*op, t_device);
+#ifndef PSI_INCLUDED
+    /* the language switching build shouldn't install a new device
+       here.  The language switching machinery installs a shared
+       device. */
     code = gs_setdevice_no_erase(igs, op->value.pdevice);
+#endif
     if (code < 0)
 	return code;
     make_bool(op, code != 0);	/* erase page if 1 */

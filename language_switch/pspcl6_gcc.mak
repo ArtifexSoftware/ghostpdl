@@ -68,7 +68,7 @@ PSI_TOP_OBJ=$(PSIOBJDIR)/psitop.$(OBJ)
 MAIN_OBJ=$(PLOBJDIR)/plmain.$(OBJ) $(PLOBJDIR)/plimpl.$(OBJ)
 TOP_OBJ=$(PCL_TOP_OBJ) $(PXL_TOP_OBJ) $(PSI_TOP_OBJ)
 
-COMPILE_INITS=0
+COMPILE_INITS=1
 
 # note agfa gives it libraries incompatible names so they cannot be
 # properly found by the linker.  Change the library names to reflect the

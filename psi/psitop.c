@@ -11,7 +11,7 @@
    San Rafael, CA  94903, (415)492-9861, for further information. */
 /* $Id$ */
 
-/* pxtop.c */
+/* psitop.c */
 /* Top-level API implementation of PS Language Interface */
 
 #include "stdio_.h"
@@ -44,11 +44,6 @@
 /******** Language wrapper implementation (see pltop.h) *****/
 /************************************************************/
 
-typedef struct ps_arg_list_s {
-    struct ps_arg_list_s  *next;
-    const char		  *string;
-} ps_arg_list_t;
-
 /*
  * PS interpreter instance: derived from pl_interp_instance_t
  */
@@ -56,12 +51,11 @@ typedef struct ps_interp_instance_s {
   pl_interp_instance_t     pl;               /* common part: must be first */
   gs_memory_t              *plmemory;        /* memory allocator to use with pl objects */
   gs_main_instance	   *minst;	     /* PS interp main instance */
-  int			   params_set;	     /* == 0 when params need setting */
   gx_device		   *device;	     /* save for deferred param setting */
-  gs_param_list		   *params;	     /* save for deferred param setting */
-  int			   argc;	     /* count of ps specific args */
-  ps_arg_list_t		   *ps_arg_head;     /* ps_only arg list */
-  ps_arg_list_t		   *ps_arg_tail;     /* ps_only arg list */
+  pl_page_action_t         pre_page_action;   /* action before page out */
+  void                     *pre_page_closure; /* closure to call pre_page_action with */
+  pl_page_action_t         post_page_action;  /* action before page out */
+  void                     *post_page_closure;/* closure to call post_page_action with */
 } ps_interp_instance_t;
 
 /* Get implemtation's characteristics */
@@ -125,27 +119,17 @@ ps_impl_allocate_interp_instance(
 	psi->plmemory = mem;
 	psi->minst = gs_main_instance_default();
 	psi->device = NULL;
-	psi->params = NULL;
-	psi->params_set = 0;
-	psi->argc = 0;
-	psi->ps_arg_head = NULL;
-	psi->ps_arg_tail = NULL;
-	code = gs_main_init_with_args(psi->minst, argc, argv);
+	code = gs_main_init_with_args(psi->minst, /* dummy*/ argc, /* dummy */ argv);
 	if (code<0)
 	    return code;
 
 	/* General init of PS interp instance */
-        
-	/* gs_memory_t_default = psi->minst->heap; */ /* while running PS interp */
 	
 	code = gsapi_run_string_begin(psi->minst, 0, &exit_code);
 
 	/* Because PS uses its own 'heap' allocator, we restore to the pl 
 	 * allocator before returning (PostScript will use minst->heap)	  
 	 */
-	
-	/* gs_memory_t_default = psi->plmemory;
-         */
 	if (code<0)
 	    return exit_code;
 
@@ -162,35 +146,6 @@ ps_impl_set_client_instance(
 )
 {
 	return 0;
-}
-
-private int   /* ret 0 arg not handled, +ve arg was handled, else -ve error code */
-ps_impl_arg_handler(
-  pl_interp_instance_t   *instance,     /* interp instance to use */
-  const char		 *string	/* argument string */
-)
-{
-
-	ps_arg_list_t *newarg;
-	ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
-
-	/* check to see if PS handles this arg */
-	if (string[0] != 'I')		/*** -I switch, just for example ***/
-	    return 0;	/* not a PS argument  we handle */
-	/* We just collect all arguments for when we actually need them */
-	/* allocate a new arg list element, attach the data */
-	newarg = (ps_arg_list_t *)gs_alloc_bytes(psi->plmemory,
-		sizeof(ps_arg_list_t), "ps_impl_arg_handler(ps_arg_list)");
-	if (!newarg)
-	    return gs_error_VMerror;
-	newarg->string = string;
-	if (psi->argc++ == 0) {
-	    psi->ps_arg_head = newarg;
-	    psi->ps_arg_tail = newarg;
-	} else {
-	    psi->ps_arg_tail->next = newarg;
-	}
-	return 1;
 }
 
 /* Set an interpreter instance's pre-page action */
@@ -215,15 +170,6 @@ ps_impl_set_post_page_action(
 	return 0;
 }
 
-private int
-ps_impl_putdeviceparams(ps_interp_instance_t *psi)
-{
-	int code = gs_putdeviceparams(
-		gs_currentdevice(psi->minst->i_ctx_p->pgs), psi->params);
-	psi->params_set = 1;
-	return code;
-}
-
 /* Set a device into an interperter instance */
 private int   /* ret 0 ok, else -ve error code */
 ps_impl_set_device(
@@ -231,56 +177,66 @@ ps_impl_set_device(
   gx_device              *device        /* device to set (open or closed) */
 )
 {
-	int code, exit_code;
+	int code;
 	ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
-	char tmpstring[256];
+        gs_state *pgs = psi->minst->i_ctx_p->pgs;
+	enum {Sbegin, Ssetdevice, Sinitg, Sgsave, Serase, Sdone} stage;
+	stage = Sbegin;
+	gs_opendevice(device);
+
+	/* Set the device into the gstate */
+	stage = Ssetdevice;
+	if ((code = gs_setdevice_no_erase(pgs, device)) < 0)	/* can't erase yet */
+	  goto pisdEnd;
+
+	/* Init PS graphics */
+	stage = Sinitg;
+        /* not sure if more initialization is required here */
+	if ((code = gs_initgraphics(pgs)) < 0)
+	  goto pisdEnd;
+
+	/* there are at least 2 gstates on the graphics stack. */
+	/* Ensure that now. */
+	stage = Sgsave;
+	if ( (code = gs_gsave(pgs)) < 0)
+	  goto pisdEnd;
+
+	stage = Serase;
+	if ( (code = gs_erasepage(pgs)) < 0 )
+		goto pisdEnd;
+
+	stage = Sdone;	/* success */
+
+	/* Unwind any errors */
+pisdEnd:
+	switch (stage) {
+	case Sdone:	/* don't undo success */
+	  break;
+
+	case Serase:	/* gs_erasepage failed */
+	  /* undo  gsave */
+	  gs_grestore_only(pgs);	 /* destroys gs_save stack */
+	  /* fall thru to next */
+	case Sgsave:	/* gsave failed */
+	case Sinitg:
+	  /* undo setdevice */
+	  gs_nulldevice(pgs);
+	  /* fall thru to next */
+
+	case Ssetdevice:	/* gs_setdevice failed */
+	case Sbegin:	/* nothing left to undo */
+	  break;
+	}
+	return code;
 
 #if 0
-	/*
-	 * Set the device by having PostScript do it
-	 * This insures that the device allocation, etc. will be correct
-	 * for PostScript
-	 */
-	sprintf(tmpstring, "(%s) selectdevice\n", device->dname);
-        gs_memory_t_default = psi->minst->heap;	/* while running PS interp */
-	code = gsapi_run_string_continue(psi->minst, (const char *)tmpstring,
-		strlen(tmpstring), 0, &exit_code);
-	if (code == e_NeedInput)
-	    code = 0;
-	if (code < 0)
-	    goto set_device_return;
-	psi->device = device;
-	/* We always set params after selecting a new device */
-	code = ps_impl_putdeviceparams(psi);
-set_device_return:
-	psi->params_set = 1;
-	gs_memory_t_default = psi->plmemory;	/* restore for pl */
-#else
-	/*
-	 * gs_opendevice(device);
-	 * code = gs_setdevice_no_erase(psi->minst->i_ctx_p->pgs, device);
-	 * psi->device = device;
-	 */
-	/* hack into ps device 
-	 */
-	psi->device = psi->minst->i_ctx_p->pgs->device;
+    int code;
+    ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
+    gs_opendevice(device);
+    code = gs_setdevice_no_erase(psi->minst->i_ctx_p->pgs, device);
+    psi->device = device;
+    return code;
 #endif
-	return code;
-}
-
-/* Set parameters into PostScript's device */
-private int   /* ret 0 ok, else -ve error code */
-ps_impl_set_device_params(
-  pl_interp_instance_t   *instance,     /* interp instance to use */
-  gx_device              *device,       /* device to set (open or closed) */
-  gs_param_list		 *params	/* parameters */
-)
-{
-	ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
-
-	psi->params = params;		/* save for deferred setting into device */
-	psi->params_set = 0;		/* flag to say we need to set params */
-	return 0;
 }
 
 /* Prepare interp instance for the next "job" */
@@ -321,10 +277,8 @@ ps_impl_process(
 	avail = scan_buffer_for_UEL(cursor);
 
 	/* Send the buffer to Ghostscript */
-        gs_memory_t_default = psi->minst->heap;	/* while running PS interp */
 	code = gsapi_run_string_continue(psi->minst, (const char *)(cursor->ptr + 1),
 		avail, 0, &exit_code);
-	gs_memory_t_default = psi->plmemory;	/* restore for pl */
 	cursor->ptr += avail;
 	if (code == e_NeedInput)
 	   return 0;		/* Not an error */
@@ -366,11 +320,7 @@ ps_impl_process_eof(
 	int code = 0, exit_code;
 	ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
 
-        gs_memory_t_default = psi->minst->heap;	/* while running PS interp */
 	/* put endjob logic here (finish encapsulation) */
-
-	gs_memory_t_default = psi->plmemory;	/* restore for pl */
-
 	return (code < 0) ? exit_code : 0;
 }
 
@@ -423,9 +373,7 @@ ps_impl_deallocate_interp_instance(
 	gs_memory_t *mem = psi->plmemory;
 	
 	/* do total dnit of interp state */
-        gs_memory_t_default = psi->minst->heap;	/* while running PS interp */
 	code = gsapi_run_string_end(psi->minst, 0, &exit_code); 
-	gs_memory_t_default = psi->plmemory;	/* restore for pl */
 	gs_free_object(mem, psi, "ps_impl_deallocate_interp_instance(ps_interp_instance_t)");
 
 	return (code < 0) ? exit_code : 0;
@@ -447,15 +395,9 @@ const pl_interp_implementation_t ps_implementation = {
   ps_impl_allocate_interp,
   ps_impl_allocate_interp_instance,
   ps_impl_set_client_instance,
-#if NOT_YET
-  ps_impl_arg_handler,
-#endif
   ps_impl_set_pre_page_action,
   ps_impl_set_post_page_action,
   ps_impl_set_device,
-#if NOT_YET
-  ps_impl_set_device_params,
-#endif
   ps_impl_init_job,
   ps_impl_process,
   ps_impl_flush_to_eoj,
