@@ -259,13 +259,15 @@ through successive releases.
 <p>
 Ghostscript makes heavy use of object-oriented constructs, including
 analogues of classes, instances, subclassing, and class-associated
-procedures.  See the <a href="C-style.htm#Objects">"Objects"</a> section of
-the C style guide for coding details.
+procedures.  Since Ghostscript is written in C, not C++, implementing these
+constructs requires following coding conventions.  The <a
+href="C-style.htm#Objects">"Objects"</a> section of the C style guide
+explains these.
 
 <p>
 The memory manager API provides run-time type information about each class,
 but this information does not include anything about subclassing.  See under
-<a href="Structure_descriptors">Structure descriptors</a> below.
+<a href="#Structure_descriptors">Structure descriptors</a> below.
 
 <hr>
 
@@ -2746,8 +2748,10 @@ object is freed (either explicitly or automatically).
 </ul>
 
 <p>
-Structure descriptors are read-only, and are normally allocated statically
-using one of a large set of macros.
+Structure descriptors are read-only, and are normally defined statically
+using one of the large set of <b><tt>gs_private_st_</tt></b> or
+<b><tt>gs_public_st_</tt></b> macros in <a
+href="../src/gsstruct.h">src/gsstruct.h</a>.
 
 <p>
 While the structure descriptor normally specifies the size of the object,
@@ -2901,8 +2905,15 @@ referenced by only one pointer.
 <p>
 Objects may be managed by reference counting.  When an object is allocated,
 its reference count may be set to 0 or 1.  Subsequently, when the reference
-count is decremented to 0, the object is freed.  Reference-counted objects
-always have a virtual finalization procedure.
+count is decremented to 0, the object is freed.
+
+<p>
+The reference counting machinery provides its own virtual finalization
+procedure for all reference-counted objects.  The machinery calls this
+procedure when it is about to free the object (but not when the object is
+freed in any other way, which is probably a design bug).  This is in
+addition to (and called before) any finalization procedure associated with
+the object type.
 
 <p>
 Reference counting is as fast as explicit freeing, but takes more space in
@@ -3191,11 +3202,17 @@ string, individually.  Specifically, it marks objects, refs, and strings
 using 3 different mechanisms:
 
 <ul>
+
 <li>Objects have a mark bit in their header: see
 <a href="../src/gxobj.h">src/gxobj.h</a>,
-<li>Refs and packed refs have a reserved mark bit.
+
+<li>Refs and packed refs have a reserved mark bit: see <a
+href="../src/iref.h">src/iref.h</a> and <a
+href="../src/ipacked.h">src/ipacked.h</a>.
+
 <li>Strings use a separate bit table, with one bit per string byte: see
 <a href="../src/gxalloc.h">src/gxalloc.h</a>,
+
 </ul>
 
 <p>
@@ -3203,12 +3220,16 @@ Similarly, it records the relocation information for objects, refs, and
 strings differently:
 
 <ul>
+
 <li>Objects record relocation in the object header.
-<li>Refs record relocation in unused fields of refs such as nulls, which
+
+<li>Refs record relocation in unused fields of refs such as nulls that
 don't use their <b><tt>value</tt></b> field.  Every memory manager object
 that stores ref-containing objects as described above has an extra, unused
 ref at the end for this purpose.
+
 <li>Strings use a separate relocation table.
+
 </ul>
 
 <dl>
@@ -3735,7 +3756,7 @@ details of the terms of using, copying, modifying, and redistributing
 AFPL Ghostscript.</small>
 
 <p>
-<small>Ghostscript version 6.60, 16 October 2000</small>
+<small>Ghostscript version 6.60, 27 December 2000</small>
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
