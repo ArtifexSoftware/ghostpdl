@@ -312,7 +312,7 @@ hpgl_set_graphics_line_attribute_state(
      * is not documented PCLTRM.  Pen widths are maintained in
      * plotter units
      */
-    if (pen_wid <= 14.0) {
+    if ( render_mode != hpgl_rm_character && pen_wid <= 14.0 ) {
 	hpgl_call(gs_setlinejoin(pgls->pgs, gs_join_miter));
 	hpgl_call(gs_setlinecap(pgls->pgs, gs_cap_butt));
 	hpgl_call(gs_setlinewidth(pgls->pgs, pen_wid));
@@ -334,6 +334,7 @@ hpgl_set_graphics_line_attribute_state(
 vector:
 	hpgl_call(gs_setlinejoin(pgls->pgs, join_map[pgls->g.line.join]));
 	hpgl_call(gs_setlinecap(pgls->pgs, cap_map[pgls->g.line.cap]));
+	hpgl_call(gs_setlinewidth(pgls->pgs, pen_wid));
 	break;
 
       default:
@@ -351,7 +352,6 @@ vector:
                                 ) );
 #endif
     hpgl_call(gs_setmiterlimit(pgls->pgs, pgls->g.miter_limit));
-    hpgl_call(gs_setlinewidth(pgls->pgs, pen_wid));
     return 0;
 }
 
