@@ -206,7 +206,8 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 			 Jbig2Segment *segment,
 			 const Jbig2SymbolDictParams *params,
 			 const byte *data, size_t size,
-			 Jbig2ArithCx *GB_stats)
+			 Jbig2ArithCx *GB_stats,
+			 Jbig2ArithCx *GR_stats)
 {
   Jbig2SymbolDict *SDNEWSYMS;
   Jbig2SymbolDict *SDEXSYMS;
@@ -396,7 +397,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 		      rparams.TPGRON = 0;
 		      memcpy(rparams.grat, params->sdrat, 4);
 		      jbig2_decode_refinement_region(ctx, segment, 
-		          &rparams, as, image, GB_stats);
+		          &rparams, as, image, GR_stats);
 
 		      SDNEWSYMS->glyphs[NSYMSDECODED] = image;
 
@@ -484,6 +485,7 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
   int sdat_bytes;
   int offset;
   Jbig2ArithCx *GB_stats = NULL;
+  Jbig2ArithCx *GR_stats = NULL;
   
   if (segment->data_length < 10)
     goto too_short;
@@ -570,6 +572,11 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
 	params.SDTEMPLATE == 1 ? 8192 : 1024;
       GB_stats = jbig2_alloc(ctx->allocator, stats_size);
       memset(GB_stats, 0, stats_size);
+      if (!params.SDRTEMPLATE) {
+	stats_size = params.SDRTEMPLATE ? 1 << 1 : 1 << 13;
+	GR_stats = jbig2_alloc(ctx->allocator, stats_size);
+	memset(GR_stats, 0, stats_size);
+      }
   }
 
   if (flags & 0x0100) {
@@ -581,12 +588,12 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
 				  &params,
 				  segment_data + offset,
 				  segment->data_length - offset,
-				  GB_stats);
+				  GB_stats, GR_stats);
 #ifdef DUMP_SYMDICT
   if (segment->result) jbig2_dump_symbol_dict(ctx, segment);
 #endif
 
-  /* todo: retain or free GB_stats */
+  /* todo: retain or free GB_stats, GR_stats */
 
   return (segment->result != NULL) ? 0 : -1;
 
