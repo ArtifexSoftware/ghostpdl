@@ -182,6 +182,8 @@ struct pcl_state_s {
     pcl_id_t        symbol_set_id;
     pl_dict_t       soft_symbol_sets;
     pl_dict_t       built_in_symbol_sets;
+    pl_dict_t       simm_fonts;
+    pl_dict_t       cartridge_fonts;
     int             default_symbol_set_value;
 
     /* Chapter 9 & 11 (pcsfont.c) */
