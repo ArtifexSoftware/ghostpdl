@@ -1,4 +1,4 @@
-/* Copyright (C) 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 2000-2003 artofcode LLC.  All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -140,7 +140,7 @@ gp_file_name_combine_generic(const char *prefix, uint plen, const char *fname, u
     /*
      * THIS CODE IS SHARED FOR MULTIPLE PLATFORMS.
      * PLEASE DON'T CHANGE IT FOR A SPECIFIC PLATFORM.
-     * Chenge gp_file_name_combine istead.
+     * Change gp_file_name_combine instead.
      */
     char *bp = buffer, *bpe = buffer + *blen;
     const char *ip, *ipe;
