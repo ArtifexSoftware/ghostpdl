@@ -34,6 +34,31 @@
 
 #define MAX_COMPOSITE_PIECES 3	/* adhoc */
 
+/*
+ * The following are only for debugging.  They force various format choices
+ * in the output.  The normal (non-debugging) values for all of these are
+ * as indicated in the comments.
+ *
+ * Note that these options interact.  Here is the complete list of settings
+ * that make sense.
+	0	-1,0,1	N/A	0,1	0,1
+	0xf000	-1	N/A	1	0,1
+	0xf000	0,1	0,1	1	0,1
+ */
+/* Define whether to use the 0xf000 character bias for generated tables. */
+#define TT_BIAS 0xf000		/* 0xf000 */
+/* Define whether to use cmap format 6 never(-1), sometimes(0), always(1). */
+#define TT_FORCE_CMAP_6 0	/* 0 */
+/* Define whether to use the bias for the cmap format 6 "first code". */
+#define TT_BIAS_CMAP_6 0	/* 0 */
+/* Define whether to generate an OS/2 table if none is supplied. */
+#define TT_GENERATE_OS_2 1	/* 1 */
+/* Define whether to adjust the OS/2 range bits. */
+#define TT_ADJUST_OS_2 1	/* 1 */
+/*
+ * End of options.
+ */
+
 /* ---------------- Utilities ---------------- */
 
 #define ACCESS(base, length, vptr)\
@@ -243,12 +268,47 @@ static const byte cmap_sub_initial[] = {
     0, 4,		/* idRangeOffset[0] */
     0, 0		/* idRangeOffset[1] */
 };
+/*
+ * The following nonsense is required because C defines sizeof()
+ * inconsistently.
+ */
+#define CMAP_ENTRIES_SIZE (256 * 2)
+private void
+write_cmap_0(stream *s, byte* entries /*[CMAP_ENTRIES_SIZE]*/, uint num_glyphs)
+{
+    int i;
+
+    memset(entries + 2 * num_glyphs, 0, CMAP_ENTRIES_SIZE - 2 * num_glyphs);
+    stream_write(s, cmap_initial_0, sizeof(cmap_initial_0));
+    for (i = 0; i <= 0xff; ++i)
+	sputc(s, (byte)entries[2 * i + 1]);
+}
+private void
+write_cmap_6(stream *s, byte *entries /*[CMAP_ENTRIES_SIZE]*/, uint first_code,
+	     uint first_entry, uint num_entries)
+{
+    byte cmap_data[sizeof(cmap_initial_6)];
+
+    memcpy(cmap_data, cmap_initial_6, sizeof(cmap_initial_6));
+    put_u16(cmap_data + 18,
+	    U16(cmap_data + 18) + num_entries * 2);  /* offset */
+    put_u16(cmap_data + 22,
+	    U16(cmap_data + 22) + num_entries * 2);  /* length */
+    put_u16(cmap_data + 26,
+#if TT_BIAS_CMAP_6
+	    first_code +
+#endif
+	    first_entry);
+    put_u16(cmap_data + 28, num_entries);
+    stream_write(s, cmap_data, sizeof(cmap_data));
+    stream_write(s, entries + first_entry * 2, num_entries * 2);
+}
 private void
 write_cmap(stream *s, gs_font *font, uint first_code, int num_glyphs,
 	   gs_glyph max_glyph, int options, uint cmap_length)
 {
     byte cmap_sub[sizeof(cmap_sub_initial)];
-    byte entries[256 * 2];
+    byte entries[CMAP_ENTRIES_SIZE];
     int first_entry = 0, end_entry = num_glyphs;
     bool can_use_trimmed = !(options & WRITE_TRUETYPE_NO_TRIMMED_TABLE);
     uint merge = 0;
@@ -277,27 +337,28 @@ write_cmap(stream *s, gs_font *font, uint first_code, int num_glyphs,
     num_entries = end_entry - first_entry;
 
     /* Write the table header and Macintosh sub-table (if any). */
-    if (merge == (byte)merge && (num_entries <= 127 || !can_use_trimmed)) {
-	/* Use byte encoding format. */
-	memset(entries + 2 * num_glyphs, 0,
-	       sizeof(entries) - 2 * num_glyphs);
-	stream_write(s, cmap_initial_0, sizeof(cmap_initial_0));
-	for (i = 0; i <= 0xff; ++i)
-	    sputc(s, (byte)entries[2 * i + 1]);
-    } else if (can_use_trimmed) {
-	/* Use trimmed table format. */
-	byte cmap_data[sizeof(cmap_initial_6)];
 
-	memcpy(cmap_data, cmap_initial_6, sizeof(cmap_initial_6));
-	put_u16(cmap_data + 18,
-		U16(cmap_data + 18) + num_entries * 2);  /* offset */
-	put_u16(cmap_data + 22,
-		U16(cmap_data + 22) + num_entries * 2);  /* length */
-	put_u16(cmap_data + 26, first_code + first_entry);
-	put_u16(cmap_data + 28, num_entries);
-	stream_write(s, cmap_data, sizeof(cmap_data));
-	stream_write(s, entries + first_entry * 2, num_entries * 2);
-    } else {
+#if TT_FORCE_CMAP_6 > 0
+    /* Always use format 6. */
+    write_cmap_6(s, entries, first_code, first_entry, num_entries);
+#else
+# if TT_FORCE_CMAP_6 < 0
+    /* Never use format 6.  Use format 0 if possible. */
+    if (merge == (byte)merge)
+	write_cmap_0(s, entries, num_glyphs);
+    else
+# else /* TT_FORCE_CMAP == 0 */
+    /*
+     * Use format 0 if possible and (economical or format 6 disallowed),
+     * otherwise format 6 if allowed.
+     */
+    if (merge == (byte)merge && (num_entries <= 127 || !can_use_trimmed))
+	write_cmap_0(s, entries, num_glyphs);
+    else if (can_use_trimmed)
+	write_cmap_6(s, entries, first_code, first_entry, num_entries);
+    else
+# endif
+    {
 	/*
 	 * Punt.  Acrobat Reader 3 can't handle any other Mac table format.
 	 * (AR3 for Linux doesn't seem to be able to handle Windows format,
@@ -305,6 +366,7 @@ write_cmap(stream *s, gs_font *font, uint first_code, int num_glyphs,
 	 */
 	stream_write(s, cmap_initial_4, sizeof(cmap_initial_4));
     }
+#endif
 
     /* Write the Windows sub-table. */
 
@@ -368,6 +430,15 @@ update_OS_2(ttf_OS_2_t *pos2, uint first_glyph, int num_glyphs)
 {
     put_u16(pos2->usFirstCharIndex, first_glyph);
     put_u16(pos2->usLastCharIndex, first_glyph + num_glyphs - 1);
+#if TT_ADJUST_OS_2
+    if (first_glyph >= 0xf000) {
+	/* This font is being treated as a symbolic font. */
+	memset(pos2->ulUnicodeRanges, 0, sizeof(pos2->ulUnicodeRanges));
+	pos2->ulUnicodeRanges[7] = 8; /* bit 60, private use range */
+	memset(pos2->ulCodePageRanges, 0, sizeof(pos2->ulCodePageRanges));
+	pos2->ulCodePageRanges[3] = 1; /* bit 31, symbolic */
+    }
+#endif
 }
 private void
 write_OS_2(stream *s, gs_font *font, uint first_glyph, int num_glyphs)
@@ -385,8 +456,6 @@ write_OS_2(stream *s, gs_font *font, uint first_glyph, int num_glyphs)
     put_u16(os2.usWeightClass, 400); /* Normal */
     put_u16(os2.usWidthClass, 5); /* Normal */
     update_OS_2(&os2, first_glyph, num_glyphs);
-    if (first_glyph >= 0xf000)
-	os2.ulCodePageRanges[3] = 1; /* bit 31, symbolic */
     stream_write(s, &os2, sizeof(os2));
     put_pad(s, sizeof(os2));
 }
@@ -731,7 +800,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	tab += 16;
 
 	if (!have_cmap) {
-	    cmap_length = size_cmap(font, 0xf000, 256,
+	    cmap_length = size_cmap(font, TT_BIAS, 256,
 				    gs_min_cid_glyph + max_glyph, options);
 	    offset = put_table(tab, "cmap", 0L /****** NO CHECKSUM ******/,
 			       offset, cmap_length);
@@ -866,13 +935,16 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
     /* If necessary, write cmap, name, and OS/2. */
 
     if (!have_cmap)
-	write_cmap(s, font, 0xf000, 256, gs_min_cid_glyph + max_glyph,
+	write_cmap(s, font, TT_BIAS, 256, gs_min_cid_glyph + max_glyph,
 		   options, cmap_length);
     if (!have_name)
 	write_name(s, &font_name);
+#if TT_GENERATE_OS_2
     if (!have_OS_2)
-	write_OS_2(s, font, 0xf000, 256);
-    else if (!have_cmap) {
+	write_OS_2(s, font, TT_BIAS, 256);
+    else
+#endif
+	if (!have_cmap) {
 	/*
 	 * Adjust the first and last character indices in the OS/2 table
 	 * to reflect the values in the generated cmap.
@@ -882,7 +954,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 
 	ACCESS(OS_2_start, OS_2_length, pos2);
 	memcpy(&os2, pos2, min(OS_2_length, sizeof(os2)));
-	update_OS_2(&os2, 0xf000, 256);
+	update_OS_2(&os2, TT_BIAS, 256);
 	stream_write(s, &os2, OS_2_length);
 	put_pad(s, OS_2_length);
     } else if (!writing_cid) {
