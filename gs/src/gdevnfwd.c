@@ -101,6 +101,7 @@ gx_device_forward_fill_in_procs(register gx_device_forward * dev)
     fill_dev_proc(dev, get_color_comp_index, gx_forward_get_color_comp_index);
     fill_dev_proc(dev, encode_color, gx_forward_encode_color);
     fill_dev_proc(dev, decode_color, gx_forward_decode_color);
+    fill_dev_proc(dev, pattern_manage, gx_forward_pattern_manage);
     gx_device_fill_in_procs((gx_device *) dev);
 }
 
@@ -712,6 +713,22 @@ gx_forward_decode_color(gx_device * dev, gx_color_index cindex, gx_color_value c
     return 0;
 }
 
+int
+gx_forward_pattern_manage(gx_device * dev, gx_bitmap_id id,
+		gs_pattern1_instance_t *pinst, pattern_manage_t function)
+{
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
+    gx_device *tdev = fdev->target;
+
+    /* Note that clist sets fdev->target == fdev, 
+       so this function is unapplicable to clist. */
+    if (tdev == 0)
+	return 0;
+    else
+	dev_proc(tdev, pattern_manage)(tdev, id, pinst, function);
+    return 0;
+}
+
 
 /* ---------------- The null device(s) ---------------- */
 
@@ -786,7 +803,8 @@ private dev_proc_strip_copy_rop(null_strip_copy_rop);
 	gx_default_DevGray_get_color_mapping_procs,	/* get_color_mapping_procs */\
 	gx_default_DevGray_get_color_comp_index,/* get_color_comp_index */\
 	gx_default_gray_fast_encode,		/* encode_color */\
-	null_decode_color		/* decode_color */\
+	null_decode_color,		/* decode_color */\
+	gx_default_pattern_manage\
 }
 
 const gx_device_null gs_null_device = {

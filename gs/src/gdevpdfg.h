@@ -268,4 +268,8 @@ int pdf_choose_compression(pdf_image_writer * piw, bool end_binary);
 int pdf_put_drawing_color(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 			  const psdf_set_color_commands_t *ppscc);
 
+/* Store pattern 1 parameters to cos dictionary. */
+int pdf_store_pattern1_params(gx_device_pdf *pdev, pdf_resource_t *pres, 
+			gs_pattern1_instance_t *pinst);
+
 #endif /* gdevpdfg_INCLUDED */

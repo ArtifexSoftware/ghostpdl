@@ -150,6 +150,14 @@ typedef struct gs_imager_state_s gs_imager_state;
 typedef struct gx_image_enum_common_s gx_image_enum_common_t;
 #endif
 
+/* We need an abstract type for the pattern instance, */
+/* for pattern_manage. */
+#ifndef gs_pattern1_instance_t_DEFINED
+#  define gs_pattern1_instance_t_DEFINED
+typedef struct gs_pattern1_instance_s gs_pattern1_instance_t;
+#endif
+
+
 /* Define the type for colors passed to the higher-level procedures. */
 typedef gx_device_color gx_drawing_color;
 
@@ -1156,6 +1164,28 @@ typedef struct gs_param_list_s gs_param_list;
  */
      /* (end of DeviceN color support) */
 
+/*
+  Pattern management for high level devices.
+  Now we need it for PatternType 1 only.
+  Return codes :
+  1 - the device handles high level patterns.
+  0 - the device needs low level pattern tiles.
+  <0 - error.
+*/
+
+
+typedef enum {
+    pattern_manage__can_accum,
+    pattern_manage__start_accum,
+    pattern_manage__finish_accum,
+    pattern_manage__load
+} pattern_manage_t;
+
+#define dev_t_proc_pattern_manage(proc, dev_t)\
+  int proc(gx_device *pdev, gx_bitmap_id id,\
+		gs_pattern1_instance_t *pinst, pattern_manage_t function)
+#define dev_proc_pattern_manage(proc)\
+  dev_t_proc_pattern_manage(proc, gx_device)
 
 /* Define the device procedure vector template proper. */
 
@@ -1213,6 +1243,7 @@ typedef struct gs_param_list_s gs_param_list;
 	dev_t_proc_get_color_comp_index((*get_color_comp_index), dev_t); \
 	dev_t_proc_encode_color((*encode_color), dev_t); \
 	dev_t_proc_decode_color((*decode_color), dev_t); \
+	dev_t_proc_pattern_manage((*pattern_manage), dev_t); \
 }
 
 

@@ -268,6 +268,7 @@ dev_proc_create_compositor(gx_null_create_compositor);
 dev_proc_get_hardware_params(gx_default_get_hardware_params);
 dev_proc_text_begin(gx_default_text_begin);
 dev_proc_finish_copydevice(gx_default_finish_copydevice);
+dev_proc_pattern_manage(gx_default_pattern_manage);
 /* BACKWARD COMPATIBILITY */
 #define gx_non_imaging_create_compositor gx_null_create_compositor
 
@@ -337,6 +338,7 @@ dev_proc_get_color_mapping_procs(gx_forward_get_color_mapping_procs);
 dev_proc_get_color_comp_index(gx_forward_get_color_comp_index);
 dev_proc_encode_color(gx_forward_encode_color);
 dev_proc_decode_color(gx_forward_decode_color);
+dev_proc_pattern_manage(gx_forward_pattern_manage);
 
 /* ---------------- Implementation utilities ---------------- */
 

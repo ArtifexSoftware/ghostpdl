@@ -100,12 +100,12 @@ pdf_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1, fixed y1,
     if (type & gx_path_type_stroke) {
 	double w = vdev->state.line_params.half_width;
 	double xw = w * (fabs(vdev->state.ctm.xx) + fabs(vdev->state.ctm.yx));
-	double yw = w * (fabs(vdev->state.ctm.xy) + fabs(vdev->state.ctm.yy));
+	int d = float2fixed(xw) + fixed_1;
 
-	xmin = -(float2fixed(xw) + fixed_1);
-	xmax -= xmin;
-	ymin = -(float2fixed(yw) + fixed_1);
-	ymax -= ymin;
+	xmin -= d;
+	xmax += d;
+	ymin -= d;
+	ymax += d;
     }
     if (!(type & gx_path_type_clip) &&
 	(x0 > xmax || x1 < xmin || y0 > ymax || y1 < ymin ||

@@ -164,7 +164,18 @@ const gx_device_pdf gs_pdfwrite_device =
   NULL,				/* map_color_rgb_alpha */
   psdf_create_compositor,	/* create_compositor */
   NULL,				/* get_hardware_params */
-  gdev_pdf_text_begin
+  gdev_pdf_text_begin,
+  NULL,				/* finish_copydevice */
+  NULL,				/* begin_transparency_group */
+  NULL,				/* end_transparency_group */
+  NULL,				/* begin_transparency_mask */
+  NULL,				/* end_transparency_mask */
+  NULL,				/* discard_transparency_layer */
+  NULL,				/* get_color_mapping_procs */
+  NULL,				/* get_color_comp_index */
+  NULL,				/* encode_color */
+  NULL,				/* decode_color */
+  gdev_pdf_pattern_manage 	/* pattern_manage */
  },
  psdf_initial_values(PSDF_VERSION_INITIAL, 0 /*false */ ),  /* (!ASCII85EncodePages) */
  PDF_COMPATIBILITY_LEVEL_INITIAL,  /* CompatibilityLevel */
@@ -251,7 +262,11 @@ const gx_device_pdf gs_pdfwrite_device =
  false,				/* vg_initial_set */
  0,				/* sbstack_size */
  0,				/* sbstack_depth */
- 0				/* sbstack */
+ 0,				/* sbstack */
+ 0,				/* substream_Resources */
+ 1,				/* pcm_color_info_index == DeviceRGB */
+ false,				/* skip_colors */
+ false				/* AR4_save_bug */
 };
 
 /* ---------------- Device open/close ---------------- */
@@ -409,8 +424,20 @@ pdf_initialize_ids(gx_device_pdf * pdev)
 #endif
 /* Update the color mapping procedures after setting ProcessColorModel. */
 void
-pdf_set_process_color_model(gx_device_pdf * pdev)
+pdf_set_process_color_model(gx_device_pdf * pdev, int index)
 {
+
+    static gx_device_color_info pcm_color_info[] = {
+	dci_values(1, 8, 255, 0, 256, 0),
+	dci_values(3, 24, 255, 255, 256, 256),
+	dci_values(4, 32, 255, 255, 256, 256)
+    };
+
+    pcm_color_info[0].separable_and_linear = GX_CINFO_SEP_LIN;
+    pcm_color_info[1].separable_and_linear = GX_CINFO_SEP_LIN;
+    pcm_color_info[2].separable_and_linear = GX_CINFO_SEP_LIN;
+    pdev->color_info = pcm_color_info[index];
+    pdev->pcm_color_info_index = index;
     /*
      * The conversion from PS to PDF should be transparent as possible.
      * Particularly it should not change representation of colors.
@@ -448,7 +475,6 @@ pdf_set_process_color_model(gx_device_pdf * pdev)
     } else {	/* can't happen - see the call from gdev_pdf_put_params. */
  	DO_NOTHING;
     }
-    pdf_set_initial_color(pdev, &pdev->saved_fill_color, &pdev->saved_stroke_color);
 }
 #ifdef __DECC
 #pragma optimize restore
@@ -503,9 +529,7 @@ pdf_open(gx_device * dev)
     pdev->outlines_id = 0;
     pdev->next_page = 0;
     pdev->text = pdf_text_data_alloc(mem);
-    /* Currently we need a single element for charprocs.
-       The Type 1 pattern accumulation is not supported yet. */
-    pdev->sbstack_size = 1;
+    pdev->sbstack_size = count_of(pdev->vgstack); /* Overestimated a few. */
     pdev->sbstack = gs_alloc_struct_array(mem, pdev->sbstack_size, pdf_substream_save,
 				 &st_pdf_substream_save_element, "pdf_open");
     pdev->pages =

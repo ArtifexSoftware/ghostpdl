@@ -732,7 +732,7 @@ devicen_put_params(gx_device * pdev, gs_param_list * plist)
 	         * SeparationColorNames.  If not then error.
 	         */
 	        if ((comp_num = check_pcm_and_separation_names(pdev,
-			sona.data[i].data, sona.data[i].size, 0)) < 0) {
+			(const byte *)sona.data[i].data, sona.data[i].size, 0)) < 0) {
 		    gs_note_error(ecode = gs_error_rangecheck);
 		    break;
 		}

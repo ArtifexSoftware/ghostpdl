@@ -130,6 +130,10 @@ pdf_encode_string(gx_device_pdf *pdev, const pdf_text_enum_t *penum,
     code = pdf_obtain_font_resource((const gs_text_enum_t *)penum, pstr, &pdfont);
     if (code < 0)
 	return code;
+    code = pdf_add_resource(pdev, pdev->substream_Resources, "/Font", (pdf_resource_t *)pdfont);
+    if (code < 0)
+	return code;
+
     /* 
      * Any True Type need ToUnicode, because we write them as symbolic fonts.
      * Also it is needed for Type 1, which has an unknown encoding.

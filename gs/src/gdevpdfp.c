@@ -22,6 +22,7 @@
 #include "gserrors.h"
 #include "gdevpdfx.h"
 #include "gdevpdfo.h"
+#include "gdevpdfg.h"
 #include "gsparamx.h"
 
 /*
@@ -340,21 +341,13 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 	    static const char *const pcm_names[] = {
 		"DeviceGray", "DeviceRGB", "DeviceCMYK", 0
 	    };
-	    static gx_device_color_info pcm_color_info[] = {
-		dci_values(1, 8, 255, 0, 256, 0),
-		dci_values(3, 24, 255, 255, 256, 256),
-		dci_values(4, 32, 255, 255, 256, 256)
-	    };
 	    int pcm = -1;
 
-	    pcm_color_info[0].separable_and_linear = GX_CINFO_SEP_LIN;
-	    pcm_color_info[1].separable_and_linear = GX_CINFO_SEP_LIN;
-	    pcm_color_info[2].separable_and_linear = GX_CINFO_SEP_LIN;
 	    ecode = param_put_enum(plist, "ProcessColorModel", &pcm,
 				   pcm_names, ecode);
 	    if (pcm >= 0) {
-		pdev->color_info = pcm_color_info[pcm];
-		pdf_set_process_color_model(pdev);
+		pdf_set_process_color_model(pdev, pcm);
+		pdf_set_initial_color(pdev, &pdev->saved_fill_color, &pdev->saved_stroke_color);
 	    }
 	}
     }
@@ -400,8 +393,9 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
  fail:
     /* Restore all the parameters to their original state. */
     pdev->version = save_dev.version;
-    pdev->color_info = save_dev.color_info;
-    pdf_set_process_color_model(pdev);
+    pdf_set_process_color_model(pdev, save_dev.pcm_color_info_index);
+    pdev->saved_fill_color = save_dev.saved_fill_color;
+    pdev->saved_stroke_color = save_dev.saved_fill_color;
     {
 	const gs_param_item_t *ppi = pdf_param_items;
 

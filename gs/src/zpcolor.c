@@ -21,6 +21,7 @@
 #include "gscolor.h"
 #include "gsmatrix.h"
 #include "gsstruct.h"
+#include "gscoord.h"
 #include "gxcspace.h"
 #include "gxfixed.h"		/* for gxcolor2.h */
 #include "gxcolor2.h"
@@ -28,6 +29,7 @@
 #include "gxdevice.h"
 #include "gxdevmem.h"		/* for gxpcolor.h */
 #include "gxpcolor.h"
+#include "gxpath.h"
 #include "estack.h"
 #include "ialloc.h"
 #include "icremap.h"
@@ -198,20 +200,36 @@ pattern_paint_prepare(i_ctx_t *i_ctx_p)
     gs_pattern1_instance_t *pinst =
 	(gs_pattern1_instance_t *)gs_currentcolor(pgs)->pattern;
     ref *pdict = &((int_pattern *) pinst->template.client_data)->dict;
-    gx_device_pattern_accum *pdev;
+    gx_device_pattern_accum *pdev = NULL;
+    gx_device *cdev = gs_currentdevice_inline(igs);
     int code;
     ref *ppp;
+    bool internal_accum = true;
 
     check_estack(5);
-    pdev = gx_pattern_accum_alloc(imemory, "pattern_paint_prepare");
-    if (pdev == 0)
-	return_error(e_VMerror);
-    pdev->instance = pinst;
-    pdev->bitmap_memory = gstate_pattern_cache(pgs)->memory;
-    code = (*dev_proc(pdev, open_device)) ((gx_device *) pdev);
-    if (code < 0) {
-	ifree_object(pdev, "pattern_paint_prepare");
+#   if PATTERN_STREAM_ACCUMULATION
+    code = dev_proc(cdev, pattern_manage)(cdev, pinst->id, pinst, 
+			    pattern_manage__can_accum);
+    if (code < 0)
 	return code;
+    internal_accum = (code == 0);
+#   endif
+    if (internal_accum) {
+	pdev = gx_pattern_accum_alloc(imemory, "pattern_paint_prepare");
+	if (pdev == 0)
+	    return_error(e_VMerror);
+	pdev->instance = pinst;
+	pdev->bitmap_memory = gstate_pattern_cache(pgs)->memory;
+	code = (*dev_proc(pdev, open_device)) ((gx_device *) pdev);
+	if (code < 0) {
+	    ifree_object(pdev, "pattern_paint_prepare");
+	    return code;
+	}
+    } else {
+	code = gx_pattern_cache_add_dummy_entry((gs_imager_state *)igs, 
+		    pinst, cdev->color_info.depth);
+	if (code < 0)
+	    return code;
     }
     code = gs_gsave(pgs);
     if (code < 0)
@@ -222,7 +240,32 @@ pattern_paint_prepare(i_ctx_t *i_ctx_p)
 	return code;
     }
     /* gx_set_device_only(pgs, (gx_device *) pdev); */
-    gs_setdevice_no_init(pgs, (gx_device *)pdev);
+    if (internal_accum)
+	gs_setdevice_no_init(pgs, (gx_device *)pdev);
+    else {
+	gs_matrix m;
+	gs_fixed_rect clip_box;
+
+	gs_make_identity(&m);
+	gs_setmatrix(igs, &m);
+	clip_box.p.x = float2fixed(pinst->template.BBox.p.x);
+	clip_box.p.y = float2fixed(pinst->template.BBox.p.y);
+	clip_box.q.x = float2fixed(pinst->template.BBox.q.x);
+	clip_box.q.y = float2fixed(pinst->template.BBox.q.y);
+	code = gx_clip_to_rectangle(igs, &clip_box);
+	if (code < 0) {
+	    gs_grestore(pgs);
+	    return code;
+	}
+#	if PATTERN_STREAM_ACCUMULATION
+	code = dev_proc(cdev, pattern_manage)(cdev, pinst->id, pinst, 
+				pattern_manage__start_accum);
+	if (code < 0) {
+	    gs_grestore(pgs);
+	    return code;
+	}
+#	endif
+    }
     push_mark_estack(es_other, pattern_paint_cleanup);
     ++esp;
     make_istruct(esp, 0, pdev);
@@ -237,12 +280,14 @@ private int
 pattern_paint_finish(i_ctx_t *i_ctx_p)
 {
     gx_device_pattern_accum *pdev = r_ptr(esp, gx_device_pattern_accum);
-    gx_color_tile *ctile;
-    int code = gx_pattern_cache_add_entry((gs_imager_state *)igs,
-					  pdev, &ctile);
 
-    if (code < 0)
-	return code;
+    if (pdev != NULL) {
+	gx_color_tile *ctile;
+	int code = gx_pattern_cache_add_entry((gs_imager_state *)igs,
+					  pdev, &ctile);
+	if (code < 0)
+	    return code;
+    }
     esp -= 2;
     pattern_paint_cleanup(i_ctx_p);
     return o_pop_estack;
@@ -252,10 +297,24 @@ pattern_paint_finish(i_ctx_t *i_ctx_p)
 private int
 pattern_paint_cleanup(i_ctx_t *i_ctx_p)
 {
-    gx_device_pattern_accum *const pdev =
+    gx_device_pattern_accum *const pdev = 
 	r_ptr(esp + 2, gx_device_pattern_accum);
+    int code;
 
-    /* grestore will free the device, so close it first. */
-    (*dev_proc(pdev, close_device)) ((gx_device *) pdev);
-    return gs_grestore(igs);
+    if (pdev != NULL) {
+	/* grestore will free the device, so close it first. */
+	(*dev_proc(pdev, close_device)) ((gx_device *) pdev);
+    }
+    code = gs_grestore(igs);
+#   if PATTERN_STREAM_ACCUMULATION
+    if (pdev == NULL) {
+	gx_device *cdev = gs_currentdevice_inline(igs);
+	int code1 = dev_proc(cdev, pattern_manage)(cdev, gx_no_bitmap_id, NULL, 
+				pattern_manage__finish_accum);
+	
+	if (code == 0 && code1 < 0)
+	    code = code1;
+    }
+#   endif
+    return code;
 }

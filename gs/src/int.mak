@@ -1515,9 +1515,9 @@ $(PSD)patread.dev : $(INT_MAK) $(ECHOGS_XE) $(patread_)
 	$(ADDMOD) $(PSD)patread -oper zpcolor_l2
 
 $(PSOBJ)zpcolor.$(OBJ) : $(PSSRC)zpcolor.c $(OP)\
- $(gscolor_h) $(gsmatrix_h) $(gsstruct_h)\
+ $(gscolor_h) $(gsmatrix_h) $(gsstruct_h) $(gscoord_h)\
  $(gxcolor2_h) $(gxcspace_h) $(gxdcolor_h) $(gxdevice_h) $(gxdevmem_h)\
- $(gxfixed_h) $(gxpcolor_h)\
+ $(gxfixed_h) $(gxpcolor_h) $(gxpath_h)\
  $(estack_h)\
  $(ialloc_h) $(icremap_h) $(idict_h) $(idparam_h) $(igstate_h)\
  $(ipcolor_h) $(istruct_h)\

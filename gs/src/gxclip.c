@@ -97,7 +97,8 @@ private const gx_device_clip gs_clip_device =
   gx_forward_get_color_mapping_procs,
   gx_forward_get_color_comp_index,
   gx_forward_encode_color,
-  gx_forward_decode_color
+  gx_forward_decode_color,
+  gx_forward_pattern_manage
  }
 };
 

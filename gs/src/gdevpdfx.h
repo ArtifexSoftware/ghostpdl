@@ -353,7 +353,7 @@ typedef struct pdf_viewer_state_s {
 
 /*
  * Define a structure for saving context when entering
- * a graphic object accumulation mode (charproc, Type 1 pattern).
+ * a contents stream accumulation mode (charproc, Type 1 pattern).
  */
 typedef struct pdf_substream_save_s {
     pdf_context_t	context;
@@ -362,13 +362,15 @@ typedef struct pdf_substream_save_s {
     gs_id		clip_path_id;
     int			vgstack_bottom;
     stream		*strm;
-    int			stream_start;
+    cos_dict_t		*substream_Resources;
+    pdf_procset_t	procsets;
+    bool		skip_colors;
 } pdf_substream_save;
 
 #define private_st_pdf_substream_save()\
-    gs_private_st_ptrs3(st_pdf_substream_save, pdf_substream_save,\
+    gs_private_st_ptrs4(st_pdf_substream_save, pdf_substream_save,\
 	"pdf_substream_save", pdf_substream_save_enum,\
-	pdf_substream_save_reloc, text_state, clip_path, strm);
+	pdf_substream_save_reloc, text_state, clip_path, strm, substream_Resources);
 #define private_st_pdf_substream_save_element()\
   gs_private_st_element(st_pdf_substream_save_element, pdf_substream_save,\
     "pdf_substream_save[]", pdf_substream_save_elt_enum_ptrs,\
@@ -528,12 +530,10 @@ struct gx_device_pdf_s {
     gs_text_enum_t *pte;
     /* 
      * The viewer's graphic state stack.
-     * We need only 4 elements : one for stream context, 
-     * another one for text context, 
-     * the third one for clipping in char procs,
-     * the fourth one for text context in char procs,
+     * We restrict its length with the strongest PDF spec limitation.
+     * Usually 5 levels is enough, but patterns and charprocs may be nested recursively.
      */
-    pdf_viewer_state vgstack[4];
+    pdf_viewer_state vgstack[11];
     int vgstack_depth;
     int vgstack_bottom;		 /* Stack bottom for the current substream. */
     pdf_viewer_state vg_initial; /* Initial values for viewer's graphic state */
@@ -542,6 +542,10 @@ struct gx_device_pdf_s {
     int sbstack_size;
     int sbstack_depth;
     pdf_substream_save *sbstack;
+    cos_dict_t *substream_Resources;     /* Substream resources */
+    int pcm_color_info_index;    /* Index to pcm_color_info. */
+    bool skip_colors; /* Skip colors while a pattern accumulation with PaintType 2. */
+    bool AR4_save_bug; /* See pdf_put_uncolored_pattern */
 };
 
 #define is_in_page(pdev)\
@@ -563,8 +567,8 @@ struct gx_device_pdf_s {
  m(21, local_named_objects) m(22,NI_stack) m(23,Namespace_stack)\
  m(24,open_graphics) m(25,font_cache) m(26,clip_path)\
  m(27,PageLabels) m(28,PageLabels_current_label)\
- m(29,sbstack)
-#define gx_device_pdf_num_ptrs 30
+ m(29,sbstack) m(30,substream_Resources)
+#define gx_device_pdf_num_ptrs 31
 #define gx_device_pdf_do_strings(m) /* do nothing */
 #define gx_device_pdf_num_strings 0
 #define st_device_pdf_max_ptrs\
@@ -597,6 +601,7 @@ dev_proc_get_params(gdev_pdf_get_params);
 dev_proc_put_params(gdev_pdf_put_params);
     /* In gdevpdft.c */
 dev_proc_text_begin(gdev_pdf_text_begin);
+dev_proc_pattern_manage(gdev_pdf_pattern_manage);
 
 /* ================ Utility procedures ================ */
 
@@ -606,7 +611,7 @@ dev_proc_text_begin(gdev_pdf_text_begin);
 void pdf_initialize_ids(gx_device_pdf * pdev);
 
 /* Update the color mapping procedures after setting ProcessColorModel. */
-void pdf_set_process_color_model(gx_device_pdf * pdev);
+void pdf_set_process_color_model(gx_device_pdf * pdev, int index);
 
 /* Reset the text state parameters to initial values. */
 void pdf_reset_text(gx_device_pdf *pdev);
@@ -1003,10 +1008,15 @@ int pdf_end_charproc_accum(gx_device_pdf *pdev);
 
 /* Enter the substream accumulation mode. */
 int pdf_enter_substream(gx_device_pdf *pdev, pdf_resource_type_t rtype, 
-			    gs_id id, pdf_resource_t **ppres);
+			gs_id id, pdf_resource_t **ppres);
 
 /* Exit the substream accumulation mode. */
 int pdf_exit_substream(gx_device_pdf *pdev);
+/* Add procsets to substream Resources. */
+int pdf_add_procsets(cos_dict_t *pcd, pdf_procset_t procsets);
+/* Add a resource to substream Resources. */
+int pdf_add_resource(gx_device_pdf *pdev, cos_dict_t *pcd, const char *key, pdf_resource_t *pres);
+
 
 /* For gdevpdfu.c */
 

@@ -166,6 +166,10 @@ struct gx_color_tile_s {
     gx_strip_bitmap tmask;	/* data = 0 if no mask */
     /* (i.e., the mask is all 1's) */
     bool is_simple;		/* true if xstep/ystep = tile size */
+    #if PATTERN_STREAM_ACCUMULATION
+    bool is_dummy;		/* if true, the device manages the pattern, 
+                                   and the content of the tile is empty. */
+    #endif
     /* The following is neither key nor value. */
     uint index;			/* the index of the tile within */
     /* the cache (for GC) */
@@ -224,6 +228,10 @@ gx_device_pattern_accum *gx_pattern_accum_alloc(gs_memory_t * memory, client_nam
 /* the accumulated bitmaps from being freed when the device is closed. */
 int gx_pattern_cache_add_entry(gs_imager_state *, gx_device_pattern_accum *,
 			       gx_color_tile **);
+/* Add a dummy Pattern cache entry.  Stubs a pattern tile for interpreter when
+   device handles high level patterns. */
+int gx_pattern_cache_add_dummy_entry(gs_imager_state *pis, gs_pattern1_instance_t *pinst,
+				int depth);
 
 /* Look up a pattern color in the cache. */
 bool gx_pattern_cache_lookup(gx_device_color *, const gs_imager_state *,

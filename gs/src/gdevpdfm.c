@@ -1448,7 +1448,6 @@ pdfmark_EP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	cos_dict_t *pcrd = cos_dict_alloc(pdev, "EP");
 	pdf_page_t page;
 	int i;
-	cos_value_t v;
 
 	if (pcrd == 0)
 	    return_error(gs_error_VMerror);
@@ -1458,6 +1457,7 @@ pdfmark_EP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	for (i = 0; i < countof(page.resource_ids); ++i)
 	    if (page.resource_ids[i]) {
 		char idstr[sizeof(long) / 3 + 1 + 5]; /* %ld 0 R\0 */
+		cos_value_t v;
 
 		sprintf(idstr, "%ld 0 R", page.resource_ids[i]);
 		cos_string_value(&v, (byte *)idstr, strlen(idstr));
@@ -1465,24 +1465,9 @@ pdfmark_EP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 		if (code < 0)
 		    goto fail;
 	    }
-	{
-	    char str[5 + 7 + 7 + 7 + 5 + 2];
-
-	    strcpy(str, "[/PDF");
-	    if (page.procsets & ImageB)
-		strcat(str, "/ImageB");
-	    if (page.procsets & ImageC)
-		strcat(str, "/ImageC");
-	    if (page.procsets & ImageI)
-		strcat(str, "/ImageI");
-	    if (page.procsets & Text)
-		strcat(str, "/Text");
-	    strcat(str, "]");
-	    cos_string_value(&v, (byte *)str, strlen(str));
-	    code = cos_dict_put_c_key(pcrd, "/ProcSet", &v);
-	    if (code < 0)
-		goto fail;
-	}
+	code = pdf_add_procsets(pcrd, page.procsets);
+	if (code < 0)
+	    goto fail;
 	code = cos_dict_put_c_key_object(cos_stream_dict(pcs), "/Resources",
 					 COS_OBJECT(pcrd));
     }

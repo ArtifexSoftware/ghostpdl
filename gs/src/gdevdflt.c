@@ -288,14 +288,14 @@ private int
 
 	/* If separable ande linear then use default */
         if ( dev->color_info.separable_and_linear == GX_CINFO_SEP_LIN )
-            return(gx_default_decode_color);
+            return &gx_default_decode_color;
 
         /* gray devices can be handled based on their polarity */
         if ( dev->color_info.num_components == 1 &&
              dev->color_info.gray_index == 0       )
             return dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE
-                       ? gx_default_1_add_decode_color
-                       : gx_default_1_sub_decode_color;
+                       ? &gx_default_1_add_decode_color
+                       : &gx_default_1_sub_decode_color;
 
         /*
          * There is no accurate way to decode colors for cmyk devices
@@ -312,9 +312,9 @@ private int
          */
         if (is_like_DeviceCMYK(dev)) {
             if (dev_proc(dev, map_color_rgb) == cmyk_1bit_map_color_rgb)
-                return gx_1bit_cmyk_decode_color;
+                return &gx_1bit_cmyk_decode_color;
             else
-                return gx_default_cmyk_decode_color;
+                return &gx_default_cmyk_decode_color;
         }
     }
 
@@ -324,9 +324,9 @@ private int
      * the device doesn't use the decode_color method.
      */
     if (dev->color_info.separable_and_linear == GX_CINFO_SEP_LIN )
-        return gx_default_decode_color;
+        return &gx_default_decode_color;
     else
-        return gx_error_decode_color;
+        return &gx_error_decode_color;
 }
 
 /*
@@ -527,6 +527,8 @@ gx_device_fill_in_procs(register gx_device * dev)
           dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE ||
           dev->color_info.gray_index == GX_CINFO_COMP_NO_INDEX     )  )
 	dev->color_info.opmode = GX_CINFO_OPMODE_NOT;
+
+    fill_dev_proc(dev, pattern_manage, gx_default_pattern_manage);
 }
 
 int
@@ -668,6 +670,13 @@ gx_default_finish_copydevice(gx_device *dev, const gx_device *from_dev)
 {
     /* Only allow copying the prototype. */
     return (from_dev->memory ? gs_note_error(gs_error_rangecheck) : 0);
+}
+
+int
+gx_default_pattern_manage(gx_device *pdev, gx_bitmap_id id,
+		gs_pattern1_instance_t *pinst, pattern_manage_t function)
+{
+    return 0;
 }
 
 /* ---------------- Default per-instance procedures ---------------- */

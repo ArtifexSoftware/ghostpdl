@@ -232,7 +232,7 @@ pdf_reset_color(gx_device_pdf * pdev, const gx_drawing_color *pdc,
      * halftone/pattern IDs separately, we don't need to compare
      * halftone/pattern bodies here.
      */
-    if (!gx_saved_color_update(&temp, pdc))
+    if (!gx_saved_color_update(&temp, pdc) || pdev->skip_colors)
 	return 0;
     /*
      * In principle, we can set colors in either stream or text
@@ -971,6 +971,9 @@ pdf_end_gstate(gx_device_pdf *pdev, pdf_resource_t *pres)
 	if (code < 0)
 	    return code;
 	pprintld1(pdev->strm, "/R%ld gs\n", pdf_resource_id(pres));
+	code = pdf_add_resource(pdev, pdev->substream_Resources, "/ExtGState", pres);
+	if (code < 0)
+	    return code;
     }
     return 0;
 }
@@ -1105,7 +1108,7 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_imager_state *pis,
      * removal, halftone phase, overprint mode, smoothness, blend mode, text
      * knockout.
      */
-    {
+    if (pdev->sbstack_depth == 0) {
 	gs_int_point phase, dev_phase;
 	char hts[5 + MAX_FN_CHARS + 1],
 	    trs[5 + MAX_FN_CHARS * 4 + 6 + 1],
@@ -1162,7 +1165,7 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_imager_state *pis,
 	}
     }
     if (pdev->CompatibilityLevel >= 1.3) {
-	if (pdev->overprint_mode != pdev->params.OPM) {
+	if (pdev->overprint_mode != pdev->params.OPM && pdev->sbstack_depth == 0) {
 	    code = pdf_open_gstate(pdev, ppres);
 	    if (code < 0)
 		return code;

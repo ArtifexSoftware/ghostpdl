@@ -817,6 +817,8 @@ private int
 pdf_pattern_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 		  pdf_resource_t **ppres, const char *cs_name)
 {
+    int code;
+
     if (!*ppres) {
 	int code = pdf_begin_resource_body(pdev, resourceColorSpace, gs_no_id,
 					   ppres);
@@ -827,7 +829,11 @@ pdf_pattern_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	pdf_end_resource(pdev);
 	(*ppres)->object->written = true; /* don't write at end */
 	((pdf_color_space_t *)*ppres)->ranges = 0;
+
     }
+    code = pdf_add_resource(pdev, pdev->substream_Resources, "/ColorSpace", *ppres);
+    if (code < 0)
+	return code;
     cos_resource_value(pvalue, (*ppres)->object);
     return 0;
 }

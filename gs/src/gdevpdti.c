@@ -423,7 +423,6 @@ pdf_install_charproc_accum(gx_device_pdf *pdev, gs_font *font, const double *pw,
     pdfont->u.simple.s.type3.char_procs = pcp;
     pcp->char_code = ch;
     pcp->char_name = *gnstr;
-    pdev->context = PDF_IN_STREAM;
     if (control == TEXT_SET_CHAR_WIDTH)
 	pprintg2(pdev->strm, "%g %g d0\n", (float)pw[0], (float)pw[1]);
     else
@@ -488,9 +487,15 @@ pdf_enter_substream(gx_device_pdf *pdev, pdf_resource_type_t rtype,
     pdev->sbstack[sbstack_ptr].vgstack_bottom = pdev->vgstack_bottom;
     pdev->vgstack_bottom = pdev->vgstack_depth;
     pdev->sbstack[sbstack_ptr].strm = save_strm;
-    pdev->sbstack[sbstack_ptr].stream_start = writer.start;
+    pdev->sbstack[sbstack_ptr].procsets = pdev->procsets;
+    pdev->sbstack[sbstack_ptr].substream_Resources = pdev->substream_Resources;
+    pdev->sbstack[sbstack_ptr].skip_colors = pdev->skip_colors;
     pdev->sbstack_depth++;
+    pdev->procsets = 0;
     pdev->context = PDF_IN_STREAM;
+#   if PATTERN_STREAM_ACCUMULATION
+    pdf_reset_graphics(pdev);
+#   endif
     *ppres = pres;
     return 0;
 }
@@ -504,6 +509,7 @@ pdf_exit_substream(gx_device_pdf *pdev)
     int code = pdf_open_contents(pdev, PDF_IN_STREAM), code1;
     int sbstack_ptr;
     stream *s = pdev->strm;
+    pdf_procset_t procsets;
 
     if (pdev->sbstack_depth <= 0)
 	return_error(gs_error_unregistered); /* Must not happen. */
@@ -532,6 +538,11 @@ pdf_exit_substream(gx_device_pdf *pdev)
     pdev->vgstack_bottom = pdev->sbstack[sbstack_ptr].vgstack_bottom;
     pdev->strm = pdev->sbstack[sbstack_ptr].strm;
     pdev->sbstack[sbstack_ptr].strm = 0;
+    procsets = pdev->procsets;
+    pdev->procsets = pdev->sbstack[sbstack_ptr].procsets;
+    pdev->substream_Resources = pdev->sbstack[sbstack_ptr].substream_Resources;
+    pdev->sbstack[sbstack_ptr].substream_Resources = 0;
+    pdev->skip_colors = pdev->sbstack[sbstack_ptr].skip_colors;
     pdev->sbstack_depth = sbstack_ptr;
     return code;
 }
@@ -544,3 +555,59 @@ pdf_end_charproc_accum(gx_device_pdf *pdev)
 {
     return pdf_exit_substream(pdev);
 }
+
+/* Add procsets to substream Resources. */
+int
+pdf_add_procsets(cos_dict_t *pcd, pdf_procset_t procsets)
+{
+    char str[5 + 7 + 7 + 7 + 5 + 2];
+    cos_value_t v;
+
+    strcpy(str, "[/PDF");
+    if (procsets & ImageB)
+	strcat(str, "/ImageB");
+    if (procsets & ImageC)
+	strcat(str, "/ImageC");
+    if (procsets & ImageI)
+	strcat(str, "/ImageI");
+    if (procsets & Text)
+	strcat(str, "/Text");
+    strcat(str, "]");
+    cos_string_value(&v, (byte *)str, strlen(str));
+    return cos_dict_put_c_key(pcd, "/ProcSet", &v);
+}
+
+/* Add a resource to substream Resources. */
+int
+pdf_add_resource(gx_device_pdf *pdev, cos_dict_t *pcd, const char *key, pdf_resource_t *pres)
+{
+    if (pcd != 0) {
+	const cos_value_t *v = cos_dict_find(pcd, (const byte *)key, strlen(key));
+	cos_dict_t *list;
+	int code;
+	char buf[10 + (sizeof(long) * 8 / 3 + 1)], buf1[sizeof(pres->rname) + 1];
+
+	sprintf(buf, "%ld 0 R\n", pres->object->id);
+	if (v != NULL) {
+	    if (v->value_type != COS_VALUE_OBJECT && 
+		v->value_type != COS_VALUE_RESOURCE)
+		return_error(gs_error_unregistered); /* Must not happen. */
+	    list = (cos_dict_t *)v->contents.object;	
+	    if (list->cos_procs != &cos_dict_procs)
+		return_error(gs_error_unregistered); /* Must not happen. */
+	} else {
+	    list = cos_dict_alloc(pdev, "pdf_add_resource");
+	    if (list == NULL)
+		return_error(gs_error_VMerror);
+	    code = cos_dict_put_c_key_object((cos_dict_t *)pcd, key, (cos_object_t *)list);
+	    if (code < 0)
+		return code;
+	}
+	buf1[0] = '/';
+	strcpy(buf1 + 1, pres->rname);
+	return cos_dict_put_string(list, (const byte *)buf1, strlen(buf1),
+			(const byte *)buf, strlen(buf));
+    }
+    return 0;
+}
+

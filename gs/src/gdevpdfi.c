@@ -28,6 +28,8 @@
 #include "gximage3.h"
 #include "gximag3x.h"
 #include "gsiparm4.h"
+#include "gxdcolor.h"
+#include "gxpcolor.h"
 
 /* Forward references */
 private image_enum_proc_plane_data(pdf_image_plane_data);
@@ -265,6 +267,9 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	is_mask = pim1->ImageMask;
 	if (is_mask) {
 	    /* If parameters are invalid, use the default implementation. */
+#	    if PATTERN_STREAM_ACCUMULATION
+		if (pdcolor->type != &gx_dc_pattern)
+#	    endif
 	    if (pim1->BitsPerComponent != 1 ||
 		!((pim1->Decode[0] == 0.0 && pim1->Decode[1] == 1.0) ||
 		  (pim1->Decode[0] == 1.0 && pim1->Decode[1] == 0.0))
@@ -848,3 +853,52 @@ pdf_image3x_make_mcde(gx_device *dev, const gs_imager_state *pis,
     return cos_dict_put_c_key_object(cos_stream_dict(pmcs), "/SMask",
 				     pmie->writer.pres->object);
 }
+
+/*
+   The pattern management device method.
+   See gxdevcli.h about return codes.
+ */
+int
+gdev_pdf_pattern_manage(gx_device *pdev1, gx_bitmap_id id,
+		gs_pattern1_instance_t *pinst, pattern_manage_t function)
+{   
+#   if !PATTERN_STREAM_ACCUMULATION
+	return 0;
+#   else
+	gx_device_pdf *pdev = (gx_device_pdf *)pdev1;
+	int code;
+	pdf_resource_t *pres;
+
+	switch (function) {
+	    case pattern_manage__can_accum:
+		return 1;
+	    case pattern_manage__start_accum:
+		code = pdf_enter_substream(pdev, resourcePattern, id, &pres);
+		if (code < 0)
+		    return code;
+		pres->rid = id;
+		code = pdf_store_pattern1_params(pdev, pres, pinst);
+		if (code < 0)
+		    return code;
+		return 1;
+	    case pattern_manage__finish_accum:
+		code = pdf_add_procsets(pdev->substream_Resources, pdev->procsets);
+		if (code < 0)
+		    return code;
+		code = pdf_exit_substream(pdev);
+		if (code < 0)
+		    return code;
+		return 1;
+	    case pattern_manage__load:
+		pres = pdf_find_resource_by_gs_id(pdev, resourcePattern, id);
+		if (pres == 0)
+		    return gs_error_undefined;
+		code = pdf_add_resource(pdev, pdev->substream_Resources, "/Pattern", pres);
+		if (code < 0)
+		    return code;
+		return 1;
+	}
+	return_error(gs_error_unregistered);
+#   endif
+}
+

@@ -245,6 +245,7 @@ none_to_stream(gx_device_pdf * pdev)
 	}
     }
     pdev->vgstack_depth = 0;
+    pdev->AR4_save_bug = false;
     return PDF_IN_STREAM;
 }
 /* Enter text context from stream context. */

@@ -270,6 +270,7 @@ gx_device_bbox_init(gx_device_bbox * dev, gx_device * target)
 	set_dev_proc(dev, get_color_comp_index, gx_forward_get_color_comp_index);
 	set_dev_proc(dev, encode_color, gx_forward_encode_color);
 	set_dev_proc(dev, decode_color, gx_forward_decode_color);
+	set_dev_proc(dev, pattern_manage, gx_forward_pattern_manage);
 	gx_device_set_target((gx_device_forward *)dev, target);
     } else {
 	gx_device_fill_in_procs((gx_device *)dev);
