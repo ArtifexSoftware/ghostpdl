@@ -264,11 +264,14 @@ pdfdict begin
 % on the Macintosh) may add up to 2K of garbage after the %%EOF, and some
 % other applications also truncate the %%EOF to %%EO, and/or put the
 % startxref and the following value on the same line.
+% A file reported from Distiller 3.02b for AIX 4.1.1 has 2076 bytes
+% of garbage. The tolerance is increased to 4K to cover future
+% applications and bigger allocation units.
 /findxref {		% - findxref <xrefpos>
   PDFfile dup dup 0 setfileposition bytesavailable
   dup /PDFfilelen exch def
 	% Find the last %%EOF string (within 2048 bytes)
-  2048 sub PDFoffset .max
+  4096 sub PDFoffset .max
   2 copy setfileposition
   PDFfilelen exch sub string 1 index exch readstring pop {
     (\015%%EO) search {		% Adobe can handle truncated key string
