@@ -257,6 +257,7 @@ pclxl_set_color(gx_device_pclxl * xdev, const gx_drawing_color * pdc,
 }
 
 /* Test whether we can handle a given color space in an image. */
+/* We cannot handle ICCBased color spaces. */
 private bool
 pclxl_can_handle_color_space(const gs_color_space * pcs)
 {
@@ -269,7 +270,8 @@ pclxl_can_handle_color_space(const gs_color_space * pcs)
 	    gs_color_space_get_index(gs_color_space_indexed_base_space(pcs));
     }
     return !(index == gs_color_space_index_Separation ||
-	     index == gs_color_space_index_Pattern);
+	     index == gs_color_space_index_Pattern ||
+             index == gs_color_space_index_CIEICC);
 }
 
 /* Set brush, pen, and mode for painting a path. */

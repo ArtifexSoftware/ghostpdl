@@ -26,11 +26,12 @@
 #include "gscie.h"
 #include "gscindex.h"
 #include "gscsepr.h"
+#include "stream.h"
+#include "gsicc.h"
 #include "gserrors.h"
 #include "gdevpdfx.h"
 #include "gdevpdfg.h"
 #include "gdevpdfo.h"
-#include "stream.h"
 #include "strimpl.h"
 #include "sstring.h"
 
@@ -359,14 +360,100 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	    return 0;
 	}
 	break;
+    case gs_color_space_index_CIEICC:
+        /* special early exit for unrecognized ICCBased color spaces */
+        if (pcs->params.icc.picc_info->picc == 0)
+            return pdf_color_space( pdev, pvalue,
+                                    (const gs_color_space *)
+                                        &pcs->params.icc.alt_space,
+                                    pcsn, by_name);
+        break;
     default:
 	break;
     }
+
+
     /* Space has parameters -- create an array. */
     pca = cos_array_alloc(pdev, "pdf_color_space");
     if (pca == 0)
 	return_error(gs_error_VMerror);
     switch (csi) {
+    case gs_color_space_index_CIEICC: {
+        /* this would arise only in a pdf ==> pdf translation, but we
+         * should allow for it anyway */
+        const gs_icc_params * picc_params = &pcs->params.icc;
+        const gs_cie_icc * picc_info = picc_params->picc_info;
+        int ncomps = picc_info->num_components;
+        cos_stream_t * pcstrm;
+        int i;
+        gs_color_space_index alt_csi;
+
+        /* ICCBased color spaces are essentially copied to the output */
+        if ((code = cos_array_add(pca, cos_c_string_value(&v, "/ICCBased"))) < 0)
+            return code;
+
+        /* create a stream for the output */
+        if ((pcstrm = cos_stream_alloc( pdev, "pdf_color_space(stream)")) == 0)
+            return_error(gs_error_VMerror);
+
+        /* indicate the number of components */
+        code = cos_dict_put_c_key_int(cos_stream_dict(pcstrm), "/N", ncomps);
+
+        /* indicate the range, if appropriate */
+        for (i = 0; i < ncomps && picc_info->Range.ranges[i].rmin == 0.0 &&
+             picc_info->Range.ranges[i].rmax == 1.0; i++)
+            ;
+        if (code >= 0 && i != ncomps) {
+            cos_array_t * prngca = cos_array_alloc(pdev,
+                                                   "pdf_color_space(Range)");
+
+            if (prngca == 0)
+                return_error(gs_error_VMerror);
+            for (i = 0; code >= 0 && i < ncomps; i++) {
+                code = cos_array_add_int(prngca,
+                                         picc_info->Range.ranges[i].rmin);
+                if (code >= 0)
+                    code = cos_array_add_int(prngca,
+                                             picc_info->Range.ranges[i].rmax);
+            }
+            if (code < 0 || 
+                (code = cos_dict_put_c_key_object(cos_stream_dict(pcstrm),
+                                                  "/Range",
+                                                  COS_OBJECT(prngca))) < 0)
+                COS_FREE(prngca, "pcf_colos_space(Range)");
+        }
+
+        /* output the alternate color space, if necessary */
+        alt_csi = gs_color_space_get_index(pcs);
+        if (code >= 0 && alt_csi != gs_color_space_index_DeviceGray &&
+            alt_csi != gs_color_space_index_DeviceRGB &&
+            alt_csi != gs_color_space_index_DeviceCMYK) {
+            code = pdf_color_space(pdev, pvalue, 
+                               (const gs_color_space *)&picc_params->alt_space,
+                               &pdf_color_space_names, false);
+            if (code >= 0)
+                code = cos_dict_put_c_key(cos_stream_dict(pcstrm), 
+                                          "/Alternate", pvalue);
+        }
+
+        /* transfer the profile stream */
+        while (code >= 0) {
+            byte    sbuff[256];
+            uint    cnt;
+
+            code = sgets(picc_info->instrp, sbuff, sizeof(sbuff), &cnt);
+            if (cnt == 0)
+                break;
+            if (code >= 0)
+                code = cos_stream_add_bytes(pcstrm, sbuff, cnt);
+        }
+        if (code >= 0)
+            code = cos_array_add(pca, COS_OBJECT_VALUE(&v, pcstrm));
+        else
+            COS_FREE(pcstrm, "pcf_color_space(ICCBased dictionary)");
+        }
+        break;
+
     case gs_color_space_index_CIEA: {
 	/* Check that we can represent this as a CalGray space. */
 	const gs_cie_a *pcie = pcs->params.a;

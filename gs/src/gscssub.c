@@ -26,6 +26,9 @@
 #include "gzstate.h"
 
 /* .setsubstitutecolorspace */
+/* Note that, to support PDF, ICCBased color spaces may be used to substitute
+ * for the Device* color spaces (previously, only CIEBased color spaces could
+ * be used for this purpose). */
 int
 gs_setsubstitutecolorspace(gs_state *pgs, gs_color_space_index csi,
 			   const gs_color_space *pcs)
@@ -45,7 +48,12 @@ gs_setsubstitutecolorspace(gs_state *pgs, gs_color_space_index csi,
     if (index < 0 || index > 2)
 	return_error(gs_error_rangecheck);
     if (pcs) {
-	if (!masks[index] & (1 << gs_color_space_get_index(pcs)))
+        if (gs_color_space_get_index(pcs) == gs_color_space_index_CIEICC) {
+            static const byte dev_ncomps[3] = {1, 3, 4};
+
+             if (dev_ncomps[index] != cs_num_components(pcs))
+                 return_error(gs_error_rangecheck);
+        } else if (!masks[index] && (1 << gs_color_space_get_index(pcs)))
 	    return_error(gs_error_rangecheck);
     }
     pcs_old = pgs->device_color_spaces.indexed[index];

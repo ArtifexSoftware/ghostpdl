@@ -61,6 +61,9 @@ int cie_table_param(P3(const ref * ptable, gx_color_lookup_table * pclt,
 
 /* ------ Internal routines ------ */
 
+int cie_set_finish(P5(i_ctx_t *, gs_color_space *,
+                      const ref_cie_procs *, int, int));
+
 int cie_cache_push_finish(P4(i_ctx_t *i_ctx_p, op_proc_t finish_proc,
 			     gs_ref_memory_t * imem, void *data));
 int cie_prepare_cache(P7(i_ctx_t *i_ctx_p, const gs_range * domain,

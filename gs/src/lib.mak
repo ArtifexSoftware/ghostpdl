@@ -156,6 +156,7 @@ gxbitops_h=$(GLSRC)gxbitops.h $(gsbitops_h)
 # Streams
 scommon_h=$(GLSRC)scommon.h $(gsmemory_h) $(gstypes_h) $(gsstype_h)
 stream_h=$(GLSRC)stream.h $(scommon_h) $(srdline_h)
+gs_stdio_h=$(GLSRC)gs_stdio.h $(stdio__h) $(stream_h)
 
 ### Memory manager
 
@@ -380,6 +381,7 @@ gxfont_h=$(GLSRC)gxfont.h\
  $(gsccode_h) $(gsfont_h) $(gsnotify_h) $(gsstype_h) $(gsuid_h) $(gxftype_h)
 gxiparam_h=$(GLSRC)gxiparam.h $(gsstype_h) $(gxdevcli_h)
 gscie_h=$(GLSRC)gscie.h $(gconfigv_h) $(gsrefct_h) $(gsstype_h) $(gxctable_h)
+gsicc_h=$(GLSRC)gsicc.h $(gscie_h)
 gscrd_h=$(GLSRC)gscrd.h $(gscie_h)
 gscrdp_h=$(GLSRC)gscrdp.h $(gscie_h) $(gsparam_h)
 gscspace_h=$(GLSRC)gscspace.h $(gsmemory_h)
@@ -2049,7 +2051,8 @@ $(GLD)cielib.dev : $(LIB_MAK) $(ECHOGS_XE) $(cielib_)
 
 $(GLOBJ)gscie.$(OBJ) : $(GLSRC)gscie.c $(GXERR) $(math__h) $(memory__h)\
  $(gscolor2_h) $(gsmatrix_h) $(gsstruct_h)\
- $(gxarith_h) $(gxcie_h) $(gxcmap_h) $(gxcspace_h) $(gxdevice_h) $(gzstate_h)
+ $(gxarith_h) $(gxcie_h) $(gxcmap_h) $(gxcspace_h) $(gxdevice_h) $(gzstate_h)\
+ $(gsicc_h)
 	$(GLCC) $(GLO_)gscie.$(OBJ) $(C_) $(GLSRC)gscie.c
 
 $(GLOBJ)gsciemap.$(OBJ) : $(GLSRC)gsciemap.c $(GXERR) $(math__h)\
@@ -2076,6 +2079,20 @@ $(GLOBJ)gscscie.$(OBJ) : $(GLSRC)gscscie.c $(GXERR) $(math__h)\
 $(GLOBJ)gxctable.$(OBJ) : $(GLSRC)gxctable.c $(GX)\
  $(gxfixed_h) $(gxfrac_h) $(gxctable_h)
 	$(GLCC) $(GLO_)gxctable.$(OBJ) $(C_) $(GLSRC)gxctable.c
+
+# ---------------- ICCBased color ---------------- #
+sicclib_=$(GLOBJ)gsicc.$(OBJ)
+$(GLD)sicclib.dev : $(LIB_MAK) $(ECHOGS_XE) $(sicclib_) $(GLD)cielib.dev\
+ $(ICCGENDIR)$(D)icclib.dev
+	$(SETMOD) $(GLD)sicclib $(sicclib_)
+	$(ADDMOD) $(GLD)sicclib -include $(ICCGENDIR)$(D)icclib.dev
+
+icc_h=$(ICCI_)$(D)icc.h
+
+$(GLOBJ)gsicc.$(OBJ) : $(GLSRC)gsicc.c $(GXERR) $(math__h) $(memory__h)\
+ $(gsstruct_h) $(stream_h) $(gxcspace_h) $(gxarith_h) $(gxcie_h)\
+ $(gzstate_h) $(gs_stdio_h) $(icc_h) $(gsicc_h)
+	$(GLCC) $(GLO_)gsicc.$(OBJ) $(C_) $(I_)$(ICCI_)$(_I) $(GLSRC)gsicc.c
 
 # ---------------- Separation colors ---------------- #
 
@@ -2220,7 +2237,8 @@ $(GLOBJ)gsshade.$(OBJ) : $(GLSRC)gsshade.c $(GXERR)\
 
 $(GLOBJ)gxshade.$(OBJ) : $(GLSRC)gxshade.c $(GXERR) $(math__h)\
  $(gscie_h) $(gsrect_h)\
- $(gxcspace_h) $(gxdevcli_h) $(gxdht_h) $(gxistate_h) $(gxpaint_h) $(gxshade_h)
+ $(gxcspace_h) $(gxdevcli_h) $(gxdht_h) $(gxistate_h) $(gxpaint_h) $(gxshade_h)\
+ $(gsicc_h)
 	$(GLCC) $(GLO_)gxshade.$(OBJ) $(C_) $(GLSRC)gxshade.c
 
 $(GLOBJ)gxshade1.$(OBJ) : $(GLSRC)gxshade1.c $(GXERR) $(math__h) $(memory__h)\

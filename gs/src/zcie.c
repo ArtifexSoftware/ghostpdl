@@ -269,8 +269,8 @@ cie_abc_param(const ref * pdref, gs_cie_abc * pcie, ref_cie_procs * pcprocs)
 }
 
 /* Finish setting a CIE space (successful or not). */
-private int
-set_cie_finish(i_ctx_t *i_ctx_p, gs_color_space * pcs,
+int
+cie_set_finish(i_ctx_t *i_ctx_p, gs_color_space * pcs,
 	       const ref_cie_procs * pcprocs, int edepth, int code)
 {
     if (code >= 0)
@@ -278,7 +278,7 @@ set_cie_finish(i_ctx_t *i_ctx_p, gs_color_space * pcs,
     /* Delete the extra reference to the parameter tables. */
     gs_cspace_release(pcs);
     /* Free the top-level object, which was copied by gs_setcolorspace. */
-    gs_free_object(gs_state_memory(igs), pcs, "set_cie_finish");
+    gs_free_object(gs_state_memory(igs), pcs, "cie_set_finish");
     if (code < 0) {
 	ref_stack_pop_to(&e_stack, edepth);
 	return code;
@@ -337,7 +337,7 @@ zsetciedefgspace(i_ctx_t *i_ctx_p)
 	(code = cache_abc_common(i_ctx_p, (gs_cie_abc *)pcie, &procs, pcie, imem)) < 0
 	)
 	DO_NOTHING;
-    return set_cie_finish(i_ctx_p, pcs, &procs, edepth, code);
+    return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
 }
 private int
 cie_defg_finish(i_ctx_t *i_ctx_p)
@@ -395,7 +395,7 @@ zsetciedefspace(i_ctx_t *i_ctx_p)
 	(code = cache_abc_common(i_ctx_p, (gs_cie_abc *)pcie, &procs, pcie, imem)) < 0
 	)
 	DO_NOTHING;
-    return set_cie_finish(i_ctx_p, pcs, &procs, edepth, code);
+    return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
 }
 private int
 cie_def_finish(i_ctx_t *i_ctx_p)
@@ -438,7 +438,7 @@ zsetcieabcspace(i_ctx_t *i_ctx_p)
 	(code = cache_abc_common(i_ctx_p, pcie, &procs, pcie, imem)) < 0
 	)
 	DO_NOTHING;
-    return set_cie_finish(i_ctx_p, pcs, &procs, edepth, code);
+    return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
 }
 private int
 cie_abc_finish(i_ctx_t *i_ctx_p)
@@ -486,7 +486,7 @@ zsetcieaspace(i_ctx_t *i_ctx_p)
 	)
 	DO_NOTHING;
     pcie->DecodeA = DecodeA_default;
-    return set_cie_finish(i_ctx_p, pcs, &procs, edepth, code);
+    return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
 }
 private int
 cie_a_finish(i_ctx_t *i_ctx_p)

@@ -150,6 +150,11 @@ ZSRCDIR=zlib
 SHARE_ZLIB=0
 ZLIB_NAME=gz
 
+# Define the directory where the icclib source are stored.
+# See icclib.mak for more information
+
+ICCSRCDIR=src
+
 # ------ Platform-specific options ------ #
 
 # Define the name of the C compiler.
@@ -330,6 +335,7 @@ include $(GLSRCDIR)/jpeg.mak
 # zlib.mak must precede libpng.mak
 include $(GLSRCDIR)/zlib.mak
 include $(GLSRCDIR)/libpng.mak
+include $(GLSRCDIR)/icclib.mak
 include $(GLSRCDIR)/devs.mak
 include $(GLSRCDIR)/contrib.mak
 include $(GLSRCDIR)/dvx-tail.mak

@@ -1,0 +1,591 @@
+/* Copyright (C) 2001 1999 Aladdin Enterprises.  All rights reserved.
+  
+  This file is part of AFPL Ghostscript.
+  
+  AFPL Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author or
+  distributor accepts any responsibility for the consequences of using it, or
+  for whether it serves any particular purpose or works at all, unless he or
+  she says so in writing.  Refer to the Aladdin Free Public License (the
+  "License") for full details.
+  
+  Every copy of AFPL Ghostscript must include a copy of the License, normally
+  in a plain ASCII text file named PUBLIC.  The License grants you the right
+  to copy, modify and redistribute AFPL Ghostscript, but only under certain
+  conditions described in the License.  Among other things, the License
+  requires that the copyright notice and this notice be preserved on all
+  copies.
+*/
+
+/* $Id$ */
+/* Implementation of the ICCBased color space family */
+
+#include "math_.h"
+#include "memory_.h"
+#include "gx.h"
+#include "gserrors.h"
+#include "gsstruct.h"
+#include "stream.h"
+#include "gxcspace.h"		/* for gxcie.c */
+#include "gxarith.h"
+#include "gxcie.h"
+#include "gzstate.h"
+#include "gs_stdio.h"
+#include "icc.h"		/* must precede icc.h */
+#include "gsicc.h"
+
+
+/* Garbage collection code */
+
+/*
+ * Discard a gs_cie_icc_s structure. This requires that we call the
+ * destructor for ICC profile and lookup objects (which are stored in
+ * "foreign" memory).
+ *
+ * No special action is taken with respect to the stream pointer; that is
+ * the responsibility of the client.
+ */
+private void
+cie_icc_finalize(void * pvicc_info)
+{
+    gs_cie_icc *    picc_info = (gs_cie_icc *)pvicc_info;
+
+    if (picc_info->plu != NULL) {
+        picc_info->plu->free(picc_info->plu);
+        picc_info->plu = NULL;
+    }
+    if (picc_info->picc != NULL) {
+        picc_info->picc->free(picc_info->picc);
+        picc_info->picc = NULL;
+    }
+}
+
+private_st_cie_icc();
+
+/*
+ * Because the color space structure stores alternative color space in-line,
+ * we must enumerate and relocate pointers in these space explicity.
+ */
+gs_private_st_composite( st_color_space_CIEICC,
+                         gs_paint_color_space,
+                         "gs_color_space_CIEICC",
+                         cs_CIEICC_enum_ptrs,
+                         cs_CIEICC_reloc_ptrs );
+
+/* pointer enumeration routine */
+private
+ENUM_PTRS_WITH(cs_CIEICC_enum_ptrs, gs_color_space * pcs)
+        return ENUM_USING( *pcs->params.icc.alt_space.type->stype,
+                           &pcs->params.icc.alt_space,
+                           sizeof(pcs->params.separation.alt_space),
+                           index - 1 );
+
+        ENUM_PTR(0, gs_color_space, params.icc.picc_info);
+ENUM_PTRS_END
+
+/* pointer relocation routine */
+private
+RELOC_PTRS_WITH(cs_CIEICC_reloc_ptrs, gs_color_space * pcs)
+    RELOC_PTR(gs_color_space, params.icc.picc_info);
+    RELOC_USING( *pcs->params.icc.alt_space.type->stype,
+                 &pcs->params.icc.alt_space,
+                 sizeof(pcs->params.separation.alt_space) );
+RELOC_PTRS_END
+
+
+/*
+ * Color space methods for ICCBased color spaces.
+ *
+ * As documented, ICCBased color spaces may be used as both base and
+ * alternative color spaces. Futhermore,, they can themselves contain paint
+ * color spaces as alternative color space. In this implementation we allow
+ * them to be used as base and alternative color spaces, but only to contain
+ * "small" base color spaces (CIEBased or smaller). This arrangement avoids
+ * breaking the color space heirarchy. Providing a more correct arrangement
+ * requires a major change in the color space mechanism.
+ *
+ * Several of the methods used by ICCBased color space apply as well to
+ * DeviceN color spaces, in that they are generic to color spaces having
+ * a variable number of components. We have elected not to attempt to 
+ * extract and combine these operations, because this would save only a
+ * small amount of code, and much more could be saved by intorducing certain
+ * common elements (ranges, number of components, etc.) into the color space
+ * root class.
+ */
+private cs_proc_num_components(gx_num_components_CIEICC);
+private cs_proc_base_space(gx_alt_space_CIEICC);
+private cs_proc_equal(gx_equal_CIEICC);
+private cs_proc_init_color(gx_init_CIEICC);
+private cs_proc_restrict_color(gx_restrict_CIEICC);
+private cs_proc_concrete_space(gx_concrete_space_CIEICC);
+private cs_proc_concretize_color(gx_concretize_CIEICC);
+private cs_proc_adjust_cspace_count(gx_adjust_cspace_CIEICC);
+
+private const gs_color_space_type gs_color_space_type_CIEICC = {
+    gs_color_space_index_CIEICC,    /* index */
+    true,                           /* can_be_base_space */
+    true,                           /* can_be_alt_space */
+    &st_color_space_CIEICC,         /* stype - structure descriptor */
+    gx_num_components_CIEICC,       /* num_components */
+    gx_alt_space_CIEICC,            /* base_space */
+    gx_equal_CIEICC,                /* equal */
+    gx_init_CIEICC,                 /* init_color */
+    gx_restrict_CIEICC,             /* restrict_color */
+    gx_concrete_space_CIEICC,       /* concrete_space */
+    gx_concretize_CIEICC,           /* concreteize_color */
+    NULL,                           /* remap_concrete_color */
+    gx_default_remap_color,         /* remap_color */
+    gx_install_CIE,                 /* install_cpsace */
+    gx_adjust_cspace_CIEICC,        /* adjust_cspace_count */
+    gx_no_adjust_color_count        /* adjust_color_count */
+};
+
+
+/*
+ * Return the number of components used by a ICCBased color space - 1, 3, or 4
+ */
+private int
+gx_num_components_CIEICC(const gs_color_space * pcs)
+{
+    return pcs->params.icc.picc_info->num_components;
+}
+
+/*
+ * Return the alternative space for an ICCBasee color space, but only if
+ * that space is being used.
+ */
+private const gs_color_space *
+gx_alt_space_CIEICC(const gs_color_space * pcs)
+{
+    return (pcs->params.icc.picc_info->picc == NULL)
+                ? (const gs_color_space *)&pcs->params.icc.alt_space
+                : NULL;
+}
+
+/*
+ * Return true if two ICCBased color spaces are equal. This routine is allowed
+ * to return false even if the color spaces are equal (but not the converse),
+ * so the following simple algorithm is used:
+ *
+ *   1. If one color space uses its alternative space, but the other does not,
+ *      the two spaces are not the same.
+ *
+ *   2. If both color spaces use the alternative space, we recursively apply
+ *      the question of equality to the base spaces.
+ *
+ *   3. If neither color space uses the alternative color space, the two
+ *      spaces are considered the same only if they reference the same 
+ *      data stream (which implies they must have the same number of
+ *      components), and make use of the same ranges. No attempt is made to
+ *      look into the stream (profile) contents.
+ */
+private bool
+gx_equal_CIEICC(const gs_color_space * pcs0, const gs_color_space * pcs1)
+{
+    const gs_icc_params *   picc_params0 = &pcs0->params.icc;
+    const gs_icc_params *   picc_params1 = &pcs1->params.icc;
+    const gs_cie_icc *      picc_info0 = picc_params0->picc_info;
+    const gs_cie_icc *      picc_info1 = picc_params1->picc_info;
+
+    if (picc_info0->picc == NULL) {
+        if (picc_info1->picc != NULL)
+            return false;
+        return picc_params0->alt_space.type->equal(
+                        (const gs_color_space *)&picc_params0->alt_space,
+                        (const gs_color_space *)&picc_params1->alt_space );
+    } else if (picc_info1->picc == NULL)
+        return false;
+    else {
+        const gs_range *    pranges0 = picc_info0->Range.ranges;
+        const gs_range *    pranges1 = picc_info1->Range.ranges;
+        int                 i, ncomps = picc_info0->num_components;
+
+        if   ( picc_info0->instrp != picc_info1->instrp  ||
+               picc_info0->file_id != picc_info1->file_id  )
+            return false;
+
+        for ( i = 0;
+               i < ncomps &&
+               pranges0[i].rmin == pranges1[i].rmin &&
+               pranges0[i].rmax == pranges1[i].rmax;
+               i++ )
+            ;
+        return i == ncomps;
+    }
+}
+
+/*
+ * Set the initial client color for an ICCBased color space. The convention
+ * suggested by the ICC specification is to set all components to 0.
+ */
+private void
+gx_init_CIEICC(gs_client_color * pcc, const gs_color_space * pcs)
+{
+    int     i, ncomps = pcs->params.icc.picc_info->num_components;
+
+    for (i = 0; i < ncomps; ++i)
+	pcc->paint.values[i] = 0.0;
+
+    /* make sure that [ 0, ... 0] is in range */
+    gx_restrict_CIEICC(pcc, pcs);
+}
+
+/*
+ * Restrict an color to the range specified for an ICCBased color space.
+ */
+private void
+gx_restrict_CIEICC(gs_client_color * pcc, const gs_color_space * pcs)
+{
+    int                 i, ncomps = pcs->params.icc.picc_info->num_components;
+    const gs_range *    ranges = pcs->params.icc.picc_info->Range.ranges;
+
+    for (i = 0; i < ncomps; ++i) {
+        floatp  v = pcc->paint.values[i];
+        floatp  rmin = ranges[i].rmin, rmax = ranges[i].rmax;
+
+        if (v < rmin)
+            pcc->paint.values[i] = rmin;
+        else if (v > rmax)
+            pcc->paint.values[i] = rmax;
+    }
+}
+
+/*
+ * Return the conrecte space to which this color space will mapy. If the
+ * ICCBased color space is being used in native mode, the concrete space
+ * will be dependent on the current color rendering dictionary, as it is
+ * for all CIE bases. If the alternate color space is being used, then
+ * this question is passed on the the appropriate method of that space.
+ */
+const gs_color_space *
+gx_concrete_space_CIEICC(const gs_color_space * pcs, const gs_imager_state * pis)
+{
+    if (pcs->params.icc.picc_info->picc == NULL) {
+        const gs_color_space *  pacs = (const gs_color_space *)
+                                        &pcs->params.icc.alt_space;
+
+        return cs_concrete_space(pacs, pis);
+    } else
+        return gx_concrete_space_CIE(NULL, pis);
+}
+
+/*
+ * Convert an ICCBased color space to a conrete color space.
+ */
+private int
+gx_concretize_CIEICC(
+    const gs_client_color * pcc,
+    const gs_color_space *  pcs,
+    frac *                  pconc,
+    const gs_imager_state * pis )
+{
+    const gs_icc_params *   picc_params = &pcs->params.icc;
+    const gs_cie_icc *      picc_info = picc_params->picc_info;
+    stream *                instrp = picc_info->instrp;
+    icc *                   picc = picc_info->picc;
+    double                  inv[4], outv[3];
+    cie_cached_vector3      vlmn;
+    gs_client_color         lcc = *pcc;
+    int                     i, ncomps = picc_info->num_components;
+
+    /* use the altenate space concretize if appropriate */
+    if (picc == NULL)
+        return picc_params->alt_space.type->concretize_color(
+                            pcc,
+                            (const gs_color_space *)&picc_params->alt_space,
+                            pconc,
+                            pis );
+
+    /* set up joint cache as required */
+    CIE_CHECK_RENDERING(pcs, pconc, pis, return 0);
+
+    /* verify and update the stream pointer */
+    if (picc_info->file_id != (instrp->read_id | instrp->write_id))
+        return_error(gs_error_ioerror);
+    icc_update_fp(picc, instrp);
+
+    /* translate the input components */
+    gx_restrict_CIEICC(&lcc, pcs);
+    for (i = 0; i < ncomps; i++)
+        inv[i] = lcc.paint.values[i];
+
+    /*
+     * Perform the lookup operation. A return value of 1 indicates that
+     * clipping occurred somewhere in the operation, but the result is
+     * legitimate. Other non-zero return values indicate an error, which
+     * should only occur in practice.
+     */
+    if (picc_info->plu->lookup(picc_info->plu, outv, inv) > 1)
+        return_error(gs_error_unregistered);
+
+    /* if the outputis in the CIE L*a*b* space, convert to XYZ */
+    if (picc_info->pcs_is_cielab) {
+        floatp              f[3];
+        const gs_vector3 *  pwhtpt = &picc_info->common.points.WhitePoint;
+
+
+        f[1] = (outv[0] + 16.0) / 116.0;
+        f[0] = f[1] + outv[1] / 500.0;
+        f[2] = f[1] - outv[2] / 200;
+
+        for (i = 0; i < 3; i++) {
+            if (f[i] >= 6.0 / 29.0)
+                outv[i] = f[i] * f[i] * f[i];
+            else
+                outv[i] = 108.0 * (f[i] - 4.0 / 29.0) / 841.0;
+        }
+
+        /*
+         * The connection space white-point is known to be D50, but we
+         * use the more general form in case of future revisions.
+         */
+        outv[0] *= pwhtpt->u;
+        outv[1] *= pwhtpt->v;
+        outv[2] *= pwhtpt->w;
+    }
+
+    /* translate the output */
+    vlmn.u = float2cie_cached(outv[0]);
+    vlmn.v = float2cie_cached(outv[1]);
+    vlmn.w = float2cie_cached(outv[2]);
+
+    gx_cie_remap_finish(vlmn, pconc, pis, pcs);
+    return 0;
+}
+
+/*
+ * Handle a reference or de-reference of the prameter structure of an
+ * ICCBased color space. For the purposes of this routine, the color space
+ * is considered a reference rather than an object, and is not itself
+ * reference counted (an unintuitive but otherwise legitimate state of
+ * affairs).
+ *
+ * Because color spaces store alternative/base color space inline, these
+ * need to have their reference count adjusted explicitly.
+ */
+private void
+gx_adjust_cspace_CIEICC(const gs_color_space * pcs, int delta)
+{
+    const gs_icc_params *   picc_params = &pcs->params.icc;
+
+    rc_adjust_const(picc_params->picc_info, delta, "gx_adjust_cspace_CIEICC");
+    picc_params->alt_space.type->adjust_cspace_count(
+                (const gs_color_space *)&picc_params->alt_space, delta );
+}
+
+
+/*
+ * Install an ICCBased color space.
+ *
+ * Note that an ICCBased color space must be installed before it is known if
+ * the ICC profile or the alternate color space is to be used.
+ */
+private int
+gx_install_CIEICC(const gs_color_space * pcs, gs_state * pgs)
+{
+    gs_icc_params * picc_params = (gs_icc_params *)&pcs->params.icc;
+    gs_cie_icc *    picc_info = picc_params->picc_info;
+    stream *        instrp = picc_info->instrp;
+    icc *           picc = picc_info->picc;
+
+    /* see if the file profile has already been read */
+    if (picc == NULL) {
+        icmLuBase * plu = NULL;
+
+        /* verify that the file is legitimate */
+        if (picc_info->file_id != (instrp->read_id | instrp->write_id))
+            return_error(gs_error_ioerror);
+
+        /*
+         * Load the top-level ICC profile.
+         *
+         * Our initial inclination had been to generate an error in the
+         * event that the profile fails to load. This was the only way
+         * to provide a language-viisible indication of a problem.
+         * Testing demonstrates, however, that this is not what the
+         * Acrobat reader does. Further, it leads to situations in
+         * which a file may print properly with an interpreter that
+         * does not support the ICCBased color space, but fail on one
+         * that does. For failure to load the profile is now handled
+         * by using the alternate color space.
+         *
+         * Failure to allocate the top-level profile object is considered
+         * a limitcheck rather than a VMerror, as profile data structures
+         * are stored in "foreign" memory.
+         *
+         * The following code employs a false loop, to facilitate use of
+         * break.
+         */
+        if ((picc = new_icc()) == NULL)
+            return_error(gs_error_limitcheck);
+
+        /* false loop, to allow use of break */
+        do {
+            icProfileClassSignature profile_class;
+            icColorSpaceSignature   cspace_type;
+            gs_vector3 *            ppt;
+
+            if ((picc->read(picc, instrp, 0)) != 0)
+                break;
+            
+            /* verify the profile type */
+            profile_class = picc->header->deviceClass;
+            if ( profile_class != icSigInputClass     &&
+                 profile_class != icSigDisplayClass   &&
+                 profile_class != icSigOutputClass    &&
+                 profile_class != icSigColorSpaceClass  )
+                break;
+
+            /* verify the profile connection space */
+            cspace_type = picc->header->pcs;
+            if (cspace_type == icSigLabData)
+                picc_info->pcs_is_cielab = true;
+            else if (cspace_type == icSigXYZData)
+                picc_info->pcs_is_cielab = false;
+            else
+                break;
+
+            /* verify the source color space */
+            cspace_type = picc->header->colorSpace;
+            if (cspace_type == icSigCmykData) {
+                if (picc_info->num_components != 4)
+                    break;
+            } else if ( cspace_type == icSigRgbData ||
+                        cspace_type == icSigLabData   ) {
+                if (picc_info->num_components != 3)
+                    break;
+            } else if (cspace_type == icSigGrayData) {
+                if (picc_info->num_components != 1)
+                    break;
+            }
+
+            /*
+             * Fetch the lookup object.
+             *
+             * PostScript and PDF deal with rendering intent as strictly a
+             * rendering dictionary facility. ICC profiles allow a rendering
+             * intent to be specified for both the input (device ==> pcs) and
+             * output (pcs ==> device) operations. Hence, when using ICCBased
+             * color spaces with PDF, no clue is provided as to which source
+             * mapping to select.
+             *
+             * In the absence of other information, there are two possible
+             * selections. If our understanding is correct, when relative
+             * colorimetry is specified, the icclib code will map source
+             * color values to XYZ or L*a*b* values such that the relationship
+             * of the source color, relative to the source white and black
+             * points, will be the same as the output colors and the
+             * profile connection space illuminant (currently always D50)
+             * and pure black ([0, 0, 0]). In this case, the white and black
+             * points that should be listed in the color space are the
+             * profile connection space illuminant (D50) and pure black.
+             *
+             * If absolute colorimetry is employed, the XYZ or L*a*b* values
+             * generated will be absolute in the chromatic sense (they are
+             * not literally "absolute", as we still must have overall
+             * intensity information inorder to determine weighted spectral
+             * power levels). To achieve relative colorimetry for the output,
+             * these colors must be evaluated relative to the source white
+             * and black points. Hence, in this case, the appropriate white
+             * and black points to list in the color space are the source
+             * white and black points provided in the profile tag array.
+             *
+             * In this implementation, we will always request relative
+             * colorimetry from the icclib, and so will use the profile
+             * connection space illuminant and pure black as the white and
+             * black points of the color space. This approach is somewhat
+             * simpler, as it allows the color space white point to also
+             * be used for L*a*b* to XYZ conversion (otherwise we would
+             * need to store the profile connection space illuminant
+             * separately for that purpose). The approach does reduce to
+             * to some extent the range of mappings that can be achieved
+             * via the color rendering dictionary, but for now we believe
+             * this loss is not significant.
+             *
+             * For reasons that are not clear to us, the icclib code does
+             * not support relative colorimetry for all color profiles. For
+             * this reason, we specify icmDefaultIntent rather than
+             * icRelativeColormetric.
+             *
+             * NB: We are not color experts; our understanding of this area
+             *     may well be incorrect.
+             */
+            plu = picc->get_luobj( picc,
+                                   icmFwd,
+                                   icmDefaultIntent,
+                                   icmLuOrdNorm );
+            if (plu == NULL)
+                break;
+
+            /* 
+             * Get the appropriate white and black points. See the note on
+             * rendering intent above for a discussion of why we are using
+             * the profile space illuminant and pure black. (Pure black need
+             * not be set explicitly, as it is the default.)
+             */
+            ppt = &picc_info->common.points.WhitePoint;
+            ppt->u = picc->header->illuminant.X;
+            ppt->v = picc->header->illuminant.Y;
+            ppt->w = picc->header->illuminant.Z;
+
+            picc_info->picc = picc;
+            picc_info->plu = plu;
+
+        } while (false);    /* end of false loop */
+
+        if (picc_info->picc == NULL) {
+            if (plu != NULL)
+                plu->free(plu);
+            if (picc != NULL)
+                picc->free(picc);
+        }
+    }
+
+    /* update the stub information used by the joint caches */
+    gx_cie_load_common_cache(&picc_info->common, pgs);
+    gx_cie_common_complete(&picc_info->common);
+    return gs_cie_cs_complete(pgs, true);
+}
+
+
+/*
+ * Constructor for ICCBased color space. As with the other color space
+ * constructors, this provides only minimal initialization.
+ */
+int
+gs_cspace_build_CIEICC(
+    gs_color_space **   ppcspace,
+    void *              client_data,
+    gs_memory_t *       pmem )
+{
+    gs_cie_icc *        picc_info;
+    gs_color_space *    pcs;
+
+    /*
+     * The gs_cie_iccc_s structure is the only CIE-based color space structure
+     * which accesses additional memory for which it is responsible. We make
+     * use of the finalization procedure to handle this task, so we can use
+     * the generice CIE space build routine (otherwise we would need a
+     * separate build routine that provided its own reference count freeing
+     * procedure).
+     */
+    picc_info = gx_build_cie_space( ppcspace,
+                                    &gs_color_space_type_CIEICC,
+                                    &st_cie_icc,
+                                    pmem );
+
+    if (picc_info == NULL)
+        return_error(gs_error_VMerror);
+
+    gx_set_common_cie_defaults(&picc_info->common, client_data);
+    picc_info->common.install_cspace = gx_install_CIEICC;
+    picc_info->num_components = 0;
+    picc_info->Range = Range4_default;
+    picc_info->instrp = NULL;
+    picc_info->pcs_is_cielab = false;
+    picc_info->picc = NULL;
+    picc_info->plu = NULL;
+
+    pcs = *ppcspace;
+    pcs->params.icc.picc_info = picc_info;
+    return 0;
+}

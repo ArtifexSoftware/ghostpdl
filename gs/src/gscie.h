@@ -358,9 +358,12 @@ struct gs_cie_common_s {
     } caches;
 };
 
-#define private_st_cie_common()     /* in gscscie.c */\
-  gs_private_st_ptrs1(st_cie_common, gs_cie_common, "gs_cie_common",\
+/* st_cie_common and st_cie_common_elements_t are exported for gsicc.c */
+#define public_st_cie_common()     /* in gscscie.c */\
+  gs_public_st_ptrs1(st_cie_common, gs_cie_common, "gs_cie_common",\
 		      cie_common_enum_ptrs, cie_common_reloc_ptrs, client_data)
+
+/* extern_st(st_cie_common); */ /* in gxcie.h */
 
 #define gs_cie_common_elements\
 	gs_cie_common common;		/* must be first */\
@@ -369,13 +372,15 @@ typedef struct gs_cie_common_elements_s {
     gs_cie_common_elements;
 } gs_cie_common_elements_t;
 
-#define private_st_cie_common_elements() /* in gscscie.c */ \
-  gs_private_st_suffix_add0_local(st_cie_common_elements_t,\
+#define public_st_cie_common_elements() /* in gscscie.c */ \
+  gs_public_st_suffix_add0_local( st_cie_common_elements_t,\
 				  gs_cie_common_elements_t,\
 				  "gs_cie_common_elements_t",\
 				  cie_common_enum_ptrs,\
 				  cie_common_reloc_ptrs,\
 				  st_cie_common)
+
+/* extern_st(st_cie_common_elements_t); */ /* in gxcie.h */
 
 /* A CIEBasedA dictionary. */
 struct gs_cie_a_s {

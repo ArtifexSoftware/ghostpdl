@@ -151,6 +151,13 @@ PVERSION=10008
 ZSRCDIR=zlib
 !endif
 
+# Define the directory where the icclib source are stored.
+# See icclib.mak for more information
+
+!ifndef ICCSRCDIR
+ICCSRCDIR=gs_icclib
+!endif
+
 # Define any other compilation flags.
 
 !ifndef CFLAGS

@@ -581,6 +581,25 @@ sputs(register stream * s, const byte * str, uint wlen, uint * pn)
     return (status >= 0 ? 0 : status);
 }
 
+/* versions of sgets and sputs to implement fread/fwrite */
+int
+sread(void * pbuff, uint sz, uint cnt, stream * s)
+{
+    uint    tot;
+    int     status = sgets(s, pbuff, sz * cnt, &tot);
+
+    return (status < 0) ? status : tot;
+}
+
+int
+swrite(const void * pbuff, uint sz, uint cnt, stream * s)
+{
+    uint    tot;
+    int     status = sputs(s, pbuff, sz * cnt, &tot);
+
+    return (status < 0) ? status : tot;
+}
+
 /* Skip ahead a specified distance in a read stream. */
 /* Return 0 or an exception code. */
 /* Store the number of bytes skipped in *pskipped. */

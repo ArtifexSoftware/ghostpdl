@@ -95,17 +95,23 @@ gs_currentcmykcolor(const gs_state * pgs, float pr4[4])
 	    pr4[2] = pcc->paint.values[2];
 	    pr4[3] = pcc->paint.values[3];
 	    return 0;
+        case gs_color_space_index_CIEICC:
+         icc_cs:if (gs_cspace_base_space(pbcs) != NULL)
+                  goto bcs;
+                break;
 	case gs_color_space_index_DeviceN:
 	case gs_color_space_index_Separation:
 	  ds:if (cs_concrete_space(pbcs, pis) == pbcs)
 		break;		/* not using alternative space */
 	    /* (falls through) */
 	case gs_color_space_index_Indexed:
-	    pbcs = gs_cspace_base_space(pbcs);
+	  bcs:pbcs = gs_cspace_base_space(pbcs);
 	    switch (pbcs->type->index) {
 		case gs_color_space_index_DeviceN:
 		case gs_color_space_index_Separation:
 		    goto ds;
+                case gs_color_space_index_CIEICC:
+                    goto icc_cs;
 		default:	/* outer switch will catch undefined cases */
 		    break;
 	    }

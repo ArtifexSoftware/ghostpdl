@@ -137,6 +137,11 @@ PVERSION=10008
 
 ZSRCDIR=[.zlib-1_1_3]
 
+# Define the directory where the icclib source are stored.
+# See icclib.mak for more information
+
+ICCSRCDIR=[.src]
+
 # Note that built-in third-party libraries aren't available.
 
 SHARE_JPEG=0

@@ -141,6 +141,11 @@ PVERSION=10008
 
 ZSRCDIR=zlib
 
+# Define the directory where the icclib source are stored.
+# See icclib.mak for more information
+
+ICCSRCDIR=src
+
 # The following is a hack to get around the special treatment of \ at
 # the end of a line.
 NUL=
@@ -489,6 +494,7 @@ DEVICE_DEVS20=$(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev
 # zlib.mak must precede libpng.mak
 !include "$(GLSRCDIR)\zlib.mak"
 !include "$(GLSRCDIR)\libpng.mak"
+!include "$(GLSRCDIR)\icclib.mak"
 !include "$(GLSRCDIR)\devs.mak"
 !include "$(GLSRCDIR)\pcwin.mak"
 !include "$(GLSRCDIR)\contrib.mak"

@@ -1676,6 +1676,23 @@ $(PSOBJ)ztrans.$(OBJ) : $(PSSRC)ztrans.c $(OP) $(string__h)\
  $(store_h)
 	$(PSCC) $(PSO_)ztrans.$(OBJ) $(C_) $(PSSRC)ztrans.c
 
+# ---------------- ICCBased color spaces ---------------- #
+
+iccread_=$(PSOBJ)zicc.$(OBJ)
+$(PSD)icc.dev : $(INT_MAK) $(ECHOGS_XE) $(PSD)cie.dev $(iccread_) \
+                $(GLD)sicclib.dev
+	$(SETMOD) $(PSD)icc $(iccread_)
+	$(ADDMOD) $(PSD)icc -oper zicc_ll3
+	$(ADDMOD) $(PSD)icc -ps gs_icc
+	$(ADDMOD) $(PSD)icc -include $(GLD)sicclib $(PSD)cie
+
+$(PSOBJ)zicc.$(OBJ) : $(PSSRC)zicc.c  $(OP) $(math__h) $(memory__h)\
+ $(gsstruct_h) $(gxcspace_h) $(stream_h) $(files_h) $(gscolor2_h)\
+ $(gsicc_h) $(estack_h) $(idict_h) $(idparam_h) $(igstate_h) $(icie_h)
+	$(PSCC) $(PSO_)zicc.$(OBJ) $(C_) $(PSSRC)zicc.c
+
+
+
 # ================================ PDF ================================ #
 
 # We need nearly all of the PostScript LanguageLevel 3 interpreter for PDF,
@@ -1692,11 +1709,12 @@ $(PSOBJ)ztrans.$(OBJ) : $(PSSRC)ztrans.c $(OP) $(string__h)\
 $(PSD)pdf.dev : $(INT_MAK) $(ECHOGS_XE)\
  $(PSD)psbase.dev $(GLD)dps2lib.dev $(PSD)dps2read.dev\
  $(PSD)pdffonts.dev $(PSD)psl3.dev $(PSD)pdfread.dev $(PSD)cff.dev\
- $(PSD)fmd5.dev $(PSD)ttfont.dev $(PSD)type2.dev
+ $(PSD)fmd5.dev $(PSD)ttfont.dev $(PSD)type2.dev $(PSD)icc.dev
 	$(SETMOD) $(PSD)pdf -include $(PSD)psbase $(GLD)dps2lib
 	$(ADDMOD) $(PSD)pdf -include $(PSD)dps2read $(PSD)pdffonts $(PSD)psl3
 	$(ADDMOD) $(PSD)pdf -include $(GLD)psl2lib $(PSD)pdfread $(PSD)cff
 	$(ADDMOD) $(PSD)pdf -include $(PSD)fmd5 $(PSD)ttfont $(PSD)type2
+	$(ADDMOD) $(PSD)pdf -include $(PSD)icc
 	$(ADDMOD) $(PSD)pdf -functiontype 4
 	$(ADDMOD) $(PSD)pdf -emulator PDF
 

@@ -29,6 +29,7 @@
 #include "gxdht.h"		/* for computing # of different colors */
 #include "gxpaint.h"
 #include "gxshade.h"
+#include "gsicc.h"
 
 /* Define a maximum smoothness value. */
 /* smoothness > 0.2 produces severely blocky output. */
@@ -285,6 +286,8 @@ top:
 	case gs_color_space_index_CIEA:
 	    ranges = &pcs->params.a->RangeA;
 	    break;
+        case gs_color_space_index_CIEICC:
+            ranges = pcs->params.icc.picc_info->Range.ranges;
 	default:
 	    break;
 	}

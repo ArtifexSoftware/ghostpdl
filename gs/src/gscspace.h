@@ -35,26 +35,25 @@
  * design.
  *
  * PostScript Level 2 and LanguageLevel 3 add two new kinds of color spaces:
- * color spaces with parameters (CIEBased and DevicePixel spaces), and
+ * color spaces with parameters (CIEBased and DevicePixel spaces),  and
  * compound color spaces (Indexed, Separation, Pattern, and DeviceN spaces),
- * which parameters that include specifying an alternate or underlying color
- * space.  To handle these spaces, we extended the original design to store
- * scalar parameters (i.e., parameters other than the complex color
- * transformation data for CIEBased spaces, the lookup table for Indexed
- * spaces, and the list of component names for DeviceN spaces) in-line in
- * the color space object.  For compound spaces, this requires storing a
- * color space in-line inside another color space, which is clearly
- * impossible.  Therefore, we defined a generality hierarchy for color
- * spaces:
+ * with parameters that include a specification of an alternative or
+ * underlying color space.  To handle these spaces, we extended the original
+ * design to store in-line certain scalar parameters (i.e., parameters other
+ * than the complex color transformation data for CIEBased spaces, the lookup
+ * table for Indexed spaces, and the list of component names for DeviceN
+ * spaces) in the color space object.  For compound spaces, this requires
+ * storing a color space in-line inside another color space, which is clearly
+ * impossible.  Therefore, we defined a generality hierarchy for color spaces:
  *
- *      - Base spaces (DeviceGray/RGB/CMYK/Pixel and CIEBased),
+ *      - Base spaces (DeviceGray/RGB/CMYK/Pixel, CIEBased), whose
  *      whose parameters (if any) don't include other color spaces.
  *
  *	- Direct spaces (base spaces + Separation and DeviceN), which
- *	may have a base space as an alternative space.
+ *      may have a base space as an alternative space.
  *
- *      - Paint spaces (direct spaces + Indexed), which may have a
- *      direct space as the underlying space.
+ *      - Paint spaces (direct spaces + Indexed), which may have a direct
+ *      space as the underlying space
  *
  *      - General spaces (paint spaces + Pattern), which may have a
  *      paint space as the underlying space.
@@ -64,14 +63,39 @@
  * space of a Pattern space) can include a direct space in-line; and a
  * direct space can include a base space in-line.
  *
- * Note that because general, paint, direct, and base spaces are
- * (necessarily) of different sizes, assigning (copying the top object of)
- * color spaces must take into account the actual size of the color space
- * being assigned.  In principle, this also requires checking that the
- * source object will actually fit into the destination.  Currently we rely
- * on the caller to ensure that this is the case; in fact, the current API
- * (gs_cspace_init and gs_cspace_assign) doesn't even provide enough
- * information to make the check.
+ * The introduction of ICCBased color spaces in PDF 1.3 wrecked havoc on
+ * this hierarchy. ICCBased color spaces contain alternative color spaces,
+ * which may be paint spaces. On the other hand, ICCBased spaces may be
+ * use as alternative or underlying color spaces in direct and paint
+ * spaces.
+ *
+ * The proper solution to this problem would be to reference alternative and
+ * underlying color spaces via a pointer. The cost and risk of that approach
+ * is, however, larger than is warranted just by the addition of ICCBased
+ * color spaces. Another alternative is to allow just base color spaces to 
+ * include an alternative color space via a pointer. That would require two
+ * separate mechanisms for dealing with alternative color spaces, which
+ * seems messy and may well cause problems in the future.
+ *
+ * Examination of some PDF files indicates that ICCBased color spaces are
+ * routinely used as alternative spaces for Separation or Device color
+ * spaces, but essentially never make use of alternative color spaces other
+ * than the device-specific spaces. To support this usage, the approach
+ * taken here splits previous base color space class into "small"  and
+ * "regular" base color spaces. Small base color spaces include all of
+ * those color spaces that previously were considered base spaces. Regular
+ * base spaces add the ICCBased color spaces to this set. To maintain
+ * compatibility with the existing code base, regular base spaces make use
+ * of the gs_base_color_space type name.
+ *
+ * Note that because general, paint, direct, regular base, and small base
+ * spaces are (necessarily) of different sizes, assigning (copying the top
+ * object of) color spaces must take into account the actual size of the
+ * color space being assigned.  In principle, this also requires checking
+ * that the source object will actually fit into the destination.  Currently
+ * we rely on the caller to ensure that this is the case; in fact, the
+ * current API (gs_cspace_init and gs_cspace_assign) doesn't even provide
+ * enough information to make the check.
  *
  * In retrospect, we might have gotten a simpler design without significant
  * performance loss by always referencing underlying and alternate spaces
@@ -127,13 +151,15 @@
  * Space        Space parameters                Color parameters
  * -----        ----------------                ----------------
  * Indexed      base_space, hival, lookup       1 int [0-hival]
+ * ICCBased     dictionary, alt_space           1, 3, or 4 reals
  *
  * For non-paint spaces:
  *
  * Space        Space parameters                Color parameters
  * -----        ----------------                ----------------
  * Pattern      colored: (none)                 dictionary
- *              uncolored: base_space dictionary + base space params */
+ *              uncolored: base_space dictionary + base space params
+ */
 
 /*
  * Define color space type indices.  NOTE: PostScript code (gs_res.ps,
@@ -161,14 +187,17 @@ typedef enum {
     gs_color_space_index_CIEA,
     gs_color_space_index_Separation,
     gs_color_space_index_Indexed,
-    gs_color_space_index_Pattern
+    gs_color_space_index_Pattern,
+
+    /* Supported in PDF 1.3 and later only */
+    gs_color_space_index_CIEICC
 
 } gs_color_space_index;
 
 /* We define the names only for debugging printout. */
 #define GS_COLOR_SPACE_TYPE_NAMES\
   "DeviceGray", "DeviceRGB", "DeviceCMYK", "DevicePixel", "DeviceN",\
-  "CIEBasedDEFG", "CIEBasedDEF", "CIEBasedABC", "CIEBasedA",\
+  "ICCBased", "CIEBasedDEFG", "CIEBasedDEF", "CIEBasedABC", "CIEBasedA",\
   "Separation", "Indexed", "Pattern"
 
 /* Define an abstract type for color space types (method structures). */
@@ -192,9 +221,9 @@ typedef struct gs_color_space_type_s gs_color_space_type;
     }                           params
 
 /*
- * Parameters for base color spaces. Of the base color spaces, only
- * DevicePixel and CIE spaces have parameters: see gscie.h for the structure
- * definitions for CIE space parameters.
+ * Parameters for "small" base color spaces. Of the small base color spaces,
+ * only DevicePixel and CIE spaces have parameters: see gscie.h for the
+ * structure definitions for CIE space parameters.
  */
 typedef struct gs_device_pixel_params_s {
     int depth;
@@ -204,12 +233,35 @@ typedef struct gs_cie_abc_s gs_cie_abc;
 typedef struct gs_cie_def_s gs_cie_def;
 typedef struct gs_cie_defg_s gs_cie_defg;
 
-#define gs_base_cspace_params           \
+#define gs_small_base_cspace_params     \
     gs_device_pixel_params   pixel;     \
     gs_cie_defg *            defg;      \
     gs_cie_def *             def;       \
     gs_cie_abc *             abc;       \
     gs_cie_a *               a
+
+typedef struct gs_small_base_color_space_s {
+    gs_cspace_common(gs_small_base_cspace_params);
+} gs_small_base_color_space;
+
+#define gs_small_base_color_space_size sizeof(gs_small_base_color_space)
+
+/*
+ * "Regular" base color spaces include all of the small base color space and
+ * the ICCBased color space, which includes a small base color space as an
+ * alternative color space. See gsicc.h for the structure definition of
+ * gs_cie_icc_s.
+ */
+typedef struct gs_cie_icc_s gs_cie_icc;
+
+typedef struct gs_cieicc_params_s {
+    gs_cie_icc *                picc_info;
+    gs_small_base_color_space   alt_space;
+} gs_icc_params;
+
+#define gs_base_cspace_params   \
+    gs_small_base_cspace_params;\
+    gs_icc_params   icc
 
 typedef struct gs_base_color_space_s {
     gs_cspace_common(gs_base_cspace_params);
@@ -217,8 +269,9 @@ typedef struct gs_base_color_space_s {
 
 #define gs_base_color_space_size sizeof(gs_base_color_space)
 
+
 /*
- * Non-base direct color spaces: Separation and DeviceN spaces.
+ * Non-base direct color spaces: Separation and DeviceN.
  * These include a base alternative color space.
  */
 typedef ulong gs_separation_name;	/* BOGUS */

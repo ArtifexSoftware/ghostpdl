@@ -34,16 +34,14 @@
 /* ---------------- Color space definition ---------------- */
 
 /* GC descriptors */
-private_st_cie_common();
-private_st_cie_common_elements();
+public_st_cie_common();
+public_st_cie_common_elements();
 private_st_cie_a();
 private_st_cie_abc();
 private_st_cie_def();
 private_st_cie_defg();
 
 /* Define the CIE color space types. */
-private cs_proc_concrete_space(gx_concrete_space_CIE);
-private cs_proc_install_cspace(gx_install_CIE);
 
 /* CIEBasedDEFG */
 gs_private_st_ptrs1(st_color_space_CIEDEFG, gs_base_color_space,
@@ -110,7 +108,7 @@ const gs_color_space_type gs_color_space_type_CIEA = {
 };
 
 /* Determine the concrete space underlying a CIEBased space. */
-private const gs_color_space *
+const gs_color_space *
 gx_concrete_space_CIE(const gs_color_space * pcs, const gs_imager_state * pis)
 {
     const gs_cie_render *pcie = pis->cie_render;
@@ -126,7 +124,8 @@ gx_concrete_space_CIE(const gs_color_space * pcs, const gs_imager_state * pis)
 /* Install a CIE space in the graphics state. */
 /* We go through an extra level of procedure so that */
 /* interpreters can substitute their own installer. */
-private int
+/* This procedure is exported for the benefit of gsicc.c */
+int
 gx_install_CIE(const gs_color_space * pcs, gs_state * pgs)
 {
     return (*pcs->params.a->common.install_cspace) (pcs, pgs);
@@ -168,9 +167,11 @@ gx_adjust_cspace_CIEA(const gs_color_space * pcs, int delta)
  * There is no default for the white point, so it is set equal to the
  * black point. If anyone actually uses the color space in that form,
  * the results are likely to be unsatisfactory.
+ *
+ * This procedure is exported for the benefit of gsicc.c.
  */
-private void
-set_common_cie_defaults(gs_cie_common * pcommon, void *client_data)
+void
+gx_set_common_cie_defaults(gs_cie_common * pcommon, void *client_data)
 {
     pcommon->RangeLMN = Range3_default;
     pcommon->DecodeLMN = DecodeLMN_default;
@@ -187,7 +188,7 @@ set_common_cie_defaults(gs_cie_common * pcommon, void *client_data)
 private void
 set_cie_abc_defaults(gs_cie_abc * pabc, void *client_data)
 {
-    set_common_cie_defaults(&pabc->common, client_data);
+    gx_set_common_cie_defaults(&pabc->common, client_data);
     pabc->RangeABC = Range3_default;
     pabc->DecodeABC = DecodeABC_default;
     pabc->MatrixABC = Matrix3_default;
@@ -214,9 +215,11 @@ set_ctbl_defaults(gx_color_lookup_table * plktblp, int num_comps)
 /*
  * Allocate a color space and its parameter structure.
  * Return 0 if VMerror, otherwise the parameter structure.
+ *
+ * This is exported for the benefit of gsicc.c
  */
-private void *
-build_cie_space(gs_color_space ** ppcspace,
+void *
+gx_build_cie_space(gs_color_space ** ppcspace,
 		const gs_color_space_type * pcstype,
 		gs_memory_type_ptr_t stype, gs_memory_t * pmem)
 {
@@ -228,11 +231,11 @@ build_cie_space(gs_color_space ** ppcspace,
 	return 0;
     rc_alloc_struct_1(pdata, gs_cie_common_elements_t, stype, pmem,
 		      {
-		      gs_free_object(pmem, pcspace, "build_cie_space");
+		      gs_free_object(pmem, pcspace, "gx_build_cie_space");
 		      return 0;
 		      }
 		      ,
-		      "build_cie_space(data)");
+		      "gx_build_cie_space(data)");
     *ppcspace = pcspace;
     return (void *)pdata;
 }
@@ -244,12 +247,12 @@ gs_cspace_build_CIEA(gs_color_space ** ppcspace, void *client_data,
 		     gs_memory_t * pmem)
 {
     gs_cie_a *pciea =
-    build_cie_space(ppcspace, &gs_color_space_type_CIEA, &st_cie_a, pmem);
+    gx_build_cie_space(ppcspace, &gs_color_space_type_CIEA, &st_cie_a, pmem);
 
     if (pciea == 0)
 	return_error(gs_error_VMerror);
 
-    set_common_cie_defaults(&pciea->common, client_data);
+    gx_set_common_cie_defaults(&pciea->common, client_data);
     pciea->common.install_cspace = gx_install_CIEA;
     pciea->RangeA = RangeA_default;
     pciea->DecodeA = DecodeA_default;
@@ -264,8 +267,8 @@ gs_cspace_build_CIEABC(gs_color_space ** ppcspace, void *client_data,
 		       gs_memory_t * pmem)
 {
     gs_cie_abc *pabc =
-    build_cie_space(ppcspace, &gs_color_space_type_CIEABC, &st_cie_abc,
-		    pmem);
+    gx_build_cie_space(ppcspace, &gs_color_space_type_CIEABC, &st_cie_abc,
+		       pmem);
 
     if (pabc == 0)
 	return_error(gs_error_VMerror);
@@ -282,8 +285,8 @@ gs_cspace_build_CIEDEF(gs_color_space ** ppcspace, void *client_data,
 		       gs_memory_t * pmem)
 {
     gs_cie_def *pdef =
-    build_cie_space(ppcspace, &gs_color_space_type_CIEDEF, &st_cie_def,
-		    pmem);
+    gx_build_cie_space(ppcspace, &gs_color_space_type_CIEDEF, &st_cie_def,
+		       pmem);
 
     if (pdef == 0)
 	return_error(gs_error_VMerror);
@@ -304,8 +307,8 @@ gs_cspace_build_CIEDEFG(gs_color_space ** ppcspace, void *client_data,
 			gs_memory_t * pmem)
 {
     gs_cie_defg *pdefg =
-    build_cie_space(ppcspace, &gs_color_space_type_CIEDEFG, &st_cie_defg,
-		    pmem);
+    gx_build_cie_space(ppcspace, &gs_color_space_type_CIEDEFG, &st_cie_defg,
+		       pmem);
 
     if (pdefg == 0)
 	return_error(gs_error_VMerror);

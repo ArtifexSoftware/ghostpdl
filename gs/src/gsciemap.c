@@ -39,30 +39,8 @@
 #define LOOKUP_VALUE(vin, pcache)\
   ((pcache)->vecs.values[LOOKUP_INDEX(vin, pcache, 0)])
 
-/*
- * Test whether a CIE rendering has been defined; ensure that the joint
- * caches are loaded.  Note that the procedure may return if no rendering
- * has been defined, and returns if an error occurs.
- */
-#define CIE_CHECK_RENDERING(pcs, pconc, pis, do_exit)\
-  BEGIN\
-    if (pis->cie_render == 0) {\
-	/* No rendering has been defined yet: return black. */\
-	pconc[0] = pconc[1] = pconc[2] = frac_0;\
-	do_exit;\
-    }\
-    if (pis->cie_joint_caches->status != CIE_JC_STATUS_COMPLETED) {\
-	int code = gs_cie_jc_complete(pis, pcs);\
-\
-	if (code < 0)\
-	    return code;\
-    }\
-  END
 
 /* Forward references */
-private int cie_remap_finish(P4(cie_cached_vector3,
-				frac *, const gs_imager_state *,
-				const gs_color_space *));
 private void cie_lookup_mult3(P2(cie_cached_vector3 *,
 				 const gx_cie_vector_cache *));
 
@@ -133,7 +111,7 @@ gx_concretize_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs,
     if (!pis->cie_joint_caches->skipDecodeABC)
 	cie_lookup_map3(&vec3 /* ABC => LMN */, &pcie->caches.DecodeABC[0],
 			"Decode/MatrixABC");
-    cie_remap_finish(vec3, pconc, pis, pcs);
+    gx_cie_remap_finish(vec3, pconc, pis, pcs);
     return 0;
 }
 
@@ -186,7 +164,7 @@ gx_concretize_CIEDEF(const gs_client_color * pc, const gs_color_space * pcs,
     if (!pis->cie_joint_caches->skipDecodeABC)
 	cie_lookup_map3(&vec3 /* ABC => LMN */, &pcie->caches.DecodeABC[0],
 			"Decode/MatrixABC");
-    cie_remap_finish(vec3, pconc, pis, pcs);
+    gx_cie_remap_finish(vec3, pconc, pis, pcs);
     return 0;
 }
 
@@ -216,7 +194,7 @@ gx_remap_CIEABC(const gs_client_color * pc, const gs_color_space * pcs,
 	cie_lookup_map3(&vec3 /* ABC => LMN */, &pcie->caches.DecodeABC[0],
 			"Decode/MatrixABC");
     }
-    switch (cie_remap_finish(vec3 /* LMN */, conc, pis, pcs)) {
+    switch (gx_cie_remap_finish(vec3 /* LMN */, conc, pis, pcs)) {
 	case 4:
 	    if_debug4('c', "[c]=CMYK [%g %g %g %g]\n",
 		      frac2float(conc[0]), frac2float(conc[1]),
@@ -255,7 +233,7 @@ gx_concretize_CIEABC(const gs_client_color * pc, const gs_color_space * pcs,
     if (!pis->cie_joint_caches->skipDecodeABC)
 	cie_lookup_map3(&vec3 /* ABC => LMN */, &pcie->caches.DecodeABC[0],
 			"Decode/MatrixABC");
-    cie_remap_finish(vec3, pconc, pis, pcs);
+    gx_cie_remap_finish(vec3, pconc, pis, pcs);
     return 0;
 }
 
@@ -276,15 +254,16 @@ gx_concretize_CIEA(const gs_client_color * pc, const gs_color_space * pcs,
 	vlmn = LOOKUP_VALUE(a, &pcie->caches.DecodeA);
     else
 	vlmn.u = vlmn.v = vlmn.w = a;
-    cie_remap_finish(vlmn, pconc, pis, pcs);
+    gx_cie_remap_finish(vlmn, pconc, pis, pcs);
     return 0;
 }
 
 /* Common rendering code. */
 /* Return 3 if RGB, 4 if CMYK. */
-private int
-cie_remap_finish(cie_cached_vector3 vec3, frac * pconc,
-		 const gs_imager_state * pis, const gs_color_space *pcs)
+/* this procedure is exported for the benefit of gsicc.c */
+int
+gx_cie_remap_finish(cie_cached_vector3 vec3, frac * pconc,
+      	            const gs_imager_state * pis, const gs_color_space *pcs)
 {
     const gs_cie_render *pcrd = pis->cie_render;
     const gx_cie_joint_caches *pjc = pis->cie_joint_caches;

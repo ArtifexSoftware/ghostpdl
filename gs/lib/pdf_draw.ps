@@ -435,6 +435,7 @@ end
   /DeviceCMYK { pop 4 }
   /CIEBasedA { pop 1 }
   /CIEBasedABC { pop 3 }
+  /ICCBased { 1 oget /N oget }
   /Separation { pop 1 }
   /DeviceN { 2 oget length }
 .dicttomark readonly def
@@ -496,14 +497,14 @@ end
     pop [ /CIEBasedABC currentdict end ]
   }
   /ICCBased {
-		% Since the PostScript interpreter doesn't support these yet,
-		% always substitute an alternate space.
-    1 oget dup /Alternate knownoget {
-      exch pop
-    } {
-      /N get { null /DeviceGray null /DeviceRGB /DeviceCMYK } exch get
-    } ifelse resolvecolorspace
-  }
+    PDFfile fileposition exch
+    dup dup 1 oget
+    mark exch { oforce } forall .dicttomark
+    dup dup true resolvestream
+    /ReusableStreamDecode filter /DataSource exch put
+    1 exch put
+    exch PDFfile exch setfileposition
+  } bind
   /Separation {
     aload pop exch oforce resolvecolorspace exch oforce resolvefnproc
     4 array astore
@@ -704,6 +705,13 @@ end
   /DeviceCMYK { pop //01_4 } bind
   /CIEBasedA { 1 get /RangeA .knownget not { //01_1 } if } bind
   /CIEBasedABC { 1 get /RangeABC .knownget not { //01_3 } if } bind
+  /ICCBased {
+     1 oget dup /Range .knownget {
+       exch pop
+     }{
+       /N get [ exch {0 1} repeat ] readonly
+     } ifelse
+  } bind
   /Separation { pop //01_1 } bind
   /DeviceN {
     1 oget length [ exch {0 1} repeat ] readonly

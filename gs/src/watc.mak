@@ -129,6 +129,11 @@ PVERSION=10008
 
 ZSRCDIR=zlib
 
+# Define the directory where the icclib source are stored.
+# See icclib.mak for more information
+
+ICCSRCDIR=src
+
 # Define any other compilation flags.  Including -DA4 makes A4 paper size
 # the default for most, but not, printer drivers.
 
