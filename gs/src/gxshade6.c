@@ -1272,14 +1272,18 @@ color_norm(const patch_fill_state_t *pfs, const patch_color_t *c)
     return m;
 }
 
-private inline bool
+private inline int
 is_color_monotonic(const patch_fill_state_t *pfs, const patch_color_t *c0, const patch_color_t *c1)
-{
-    /* When pfs->Function is not set, the color is monotonic.
+{   /* When pfs->Function is not set, the color is monotonic.
        Do not call this function because it doesn't check whether pfs->Function is set. 
        Actually pfs->monotonic_color prevents that.
      */
-    return gs_function_is_monotonic(pfs->Function, c0->t, c1->t) > 0;
+    /* returns : 1 = monotonic, 0 = don't know, <0 = error. */
+    int code = gs_function_is_monotonic(pfs->Function, c0->t, c1->t);
+
+    if (code == gs_error_undefined)
+	return 0;
+    return code;
 }
 
 private inline bool
@@ -1360,12 +1364,11 @@ function_linearity(const patch_fill_state_t *pfs, const patch_color_t *c0, const
     return s;
 }
 
-private inline bool
+private inline int
 is_color_linear(const patch_fill_state_t *pfs, const patch_color_t *c0, const patch_color_t *c1)
-{
-
+{   /* returns : 1 = linear, 0 = unlinear, <0 = error. */
     if (pfs->unlinear)
-	return true; /* Disable this check. */
+	return 1; /* Disable this check. */
     else {
 	gs_direct_color_space *cs = 
 		    (gs_direct_color_space *)pfs->direct_space; /* break 'const'. */
@@ -1378,19 +1381,19 @@ is_color_linear(const patch_fill_state_t *pfs, const patch_color_t *c0, const pa
 	float s = function_linearity(pfs, c0, c1);
 
 	if (s > smoothness)
-	    return false;
+	    return 0;
 	code = cs_is_linear(cs, pfs->pis, pfs->dev, 
 		&c0->cc, &c1->cc, NULL, NULL, smoothness - s);
 	if (code <= 0)
-	    return false;
-	return true;
+	    return code;
+	return 1;
     }
 }
 
 private int
 decompose_linear_color(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge *re, 
 	fixed ybot, fixed ytop, bool swap_axes, const patch_color_t *c0, 
-	const patch_color_t *c1)
+	const patch_color_t *c1, int level)
 {
     /* Assuming a very narrow trapezoid - ignore the transversal color variation. */
     /* Assuming the XY span is restricted with curve_samples. 
@@ -1398,6 +1401,8 @@ decompose_linear_color(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge
     int code;
     patch_color_t c;
 
+    if (level > 100)
+	return_error(gs_error_unregistered); /* Must not happen. */
     /* Use the recursive decomposition due to is_color_monotonic
        based on fn_is_monotonic_proc_t is_monotonic, 
        which applies to intervals. */
@@ -1407,9 +1412,18 @@ decompose_linear_color(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge
     else {  
 	bool monotonic_color_save = pfs->monotonic_color;
 
-	if (!pfs->monotonic_color)
-	    pfs->monotonic_color = is_color_monotonic(pfs, c0, c1) &&
-				   is_color_linear(pfs, c0, c1);
+	if (!pfs->monotonic_color) {
+	    code = is_color_monotonic(pfs, c0, c1);
+	    if (code < 0)
+		return code;
+	    if (code) {
+		code = is_color_linear(pfs, c0, c1);
+		if (code < 0)
+		    return code;
+		if (code > 0)
+		    pfs->monotonic_color =  true;
+	    }
+	}
 	if (!pfs->unlinear && pfs->monotonic_color) {
 	    gx_device *pdev = pfs->dev;
 	    frac31 fc[2][GX_DEVICE_COLOR_MAX_COMPONENTS];
@@ -1459,9 +1473,9 @@ decompose_linear_color(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge
 		color_span(pfs, c0, c1) > pfs->smoothness) {
 	    fixed y = (ybot + ytop) / 2;
 
-	    code = decompose_linear_color(pfs, le, re, ybot, y, swap_axes, c0, &c);
+	    code = decompose_linear_color(pfs, le, re, ybot, y, swap_axes, c0, &c, level + 1);
 	    if (code >= 0)
-		code = decompose_linear_color(pfs, le, re, y, ytop, swap_axes, &c, c1);
+		code = decompose_linear_color(pfs, le, re, y, ytop, swap_axes, &c, c1, level + 1);
 	} else
 	    code = constant_color_trapezoid(pfs, le, re, ybot, ytop, swap_axes, &c);
 	pfs->monotonic_color = monotonic_color_save;
@@ -1478,7 +1492,7 @@ linear_color_trapezoid(patch_fill_state_t *pfs, gs_fixed_point q[4], int i0, int
     gs_fixed_edge le, re;
 
     make_trapezoid(q, i0, i1, i2, i3, ybot, ytop, swap_axes, orient, &le, &re);
-    return decompose_linear_color(pfs, &le, &re, ybot, ytop, swap_axes, c0, c1);
+    return decompose_linear_color(pfs, &le, &re, ybot, ytop, swap_axes, c0, c1, 0);
 }
 
 private int
@@ -2108,7 +2122,7 @@ mesh_padding(patch_fill_state_t *pfs, const gs_fixed_point *p0, const gs_fixed_p
     le.end.x = q1.x - adjust;
     re.end.x = q1.x + adjust;
     le.end.y = re.end.y = q1.y + adjust;
-    return decompose_linear_color(pfs, &le, &re, le.start.y, le.end.y, swap_axes, cc0, cc1);
+    return decompose_linear_color(pfs, &le, &re, le.start.y, le.end.y, swap_axes, cc0, cc1, 0);
 }
 
 private int
@@ -2501,50 +2515,68 @@ is_color_span_v_big(const patch_fill_state_t *pfs, const tensor_patch *p)
     return false;
 }
 
-private inline bool
+private inline int
 is_color_span_v_linear(const patch_fill_state_t *pfs, const tensor_patch *p)
-{
+{   /* returns : 1 = linear, 0 = unlinear, <0 = error. */
     int code;
 
     code = is_color_linear(pfs, &p->c[0][0], &p->c[1][0]);
     if (code <= 0)
-	return false;
+	return code;
     code = is_color_linear(pfs, &p->c[0][1], &p->c[1][1]);
     if (code <= 0)
-	return false;
+	return code;
     return true;
 }
 
-private inline bool
+private inline int
 is_color_monotonic_by_v(const patch_fill_state_t *pfs, const tensor_patch *p) 
-{
-    if (!is_color_monotonic(pfs, &p->c[0][0], &p->c[1][0]))
-	return false;
-    if (!is_color_monotonic(pfs, &p->c[0][1], &p->c[1][1]))
-	return false;
-    return true;
+{   /* returns : 1 = monotonic, 0 = don't know, <0 = error. */
+    int code;
+
+    code = is_color_monotonic(pfs, &p->c[0][0], &p->c[1][0]);
+    if (code <= 0)
+	return code;
+    code = is_color_monotonic(pfs, &p->c[0][1], &p->c[1][1]);
+    if (code <= 0)
+	return code;
+    return 1;
 }
 
 private inline bool
 is_quadrangle_color_monotonic(const patch_fill_state_t *pfs, const quadrangle_patch *p, bool *uv) 
-{
-    if (!is_color_monotonic(pfs, &p->p[0][0]->c, &p->p[0][1]->c)) {
+{   /* returns : 1 = monotonic, 0 = don't know, <0 = error. */
+    int code;
+
+    code = is_color_monotonic(pfs, &p->p[0][0]->c, &p->p[0][1]->c);
+    if (code < 0)
+	return code;
+    if (!code) {
         *uv = true;
-	return false;
+	return 0;
     }
-    if (!is_color_monotonic(pfs, &p->p[1][0]->c, &p->p[1][1]->c)) {
+    code = is_color_monotonic(pfs, &p->p[1][0]->c, &p->p[1][1]->c);
+    if (code < 0)
+	return code;
+    if (!code) {
         *uv = true;
-	return false;
+	return 0;
     }
-    if (!is_color_monotonic(pfs, &p->p[0][0]->c, &p->p[1][0]->c)) {
+    code = is_color_monotonic(pfs, &p->p[0][0]->c, &p->p[1][0]->c);
+    if (code < 0)
+	return code;
+    if (!code) {
 	*uv = false;
-	return false;
+	return 0;
     }
-    if (!is_color_monotonic(pfs, &p->p[0][1]->c, &p->p[1][1]->c)) {
+    code = is_color_monotonic(pfs, &p->p[0][1]->c, &p->p[1][1]->c);
+    if (code < 0)
+	return code;
+    if (!code) {
 	*uv = false;
-	return false;
+	return 0;
     }
-    return true;
+    return 1;
 }
 
 private inline bool
@@ -2885,36 +2917,56 @@ make_quadrangle(const tensor_patch *p, shading_vertex_t qq[2][2],
     q->l1000 = &l[3];
 }
 
-private inline bool
+private inline int
 is_quadrangle_color_linear(const patch_fill_state_t *pfs, const quadrangle_patch *p, bool *uv)
-{
+{   /* returns : 1 = linear, 0 = unlinear, <0 = error. */
+    int code;
+
     if (pfs->unlinear)
-	return true; /* Disable this check. */
-    if (!is_color_linear(pfs, &p->p[0][0]->c, &p->p[0][1]->c)) {
+	return 1; /* Disable this check. */
+    code = is_color_linear(pfs, &p->p[0][0]->c, &p->p[0][1]->c);
+    if (code < 0)
+	return code;
+    if (!code) {
 	*uv = true;
-	return false;
+	return 0;
     }
-    if (!is_color_linear(pfs, &p->p[1][0]->c, &p->p[1][1]->c)) {
+    code = is_color_linear(pfs, &p->p[1][0]->c, &p->p[1][1]->c);
+    if (code < 0)
+	return code;
+    if (!code) {
 	*uv = true;
-	return false;
+	return 0;
     }
-    if (!is_color_linear(pfs, &p->p[0][0]->c, &p->p[1][0]->c)) {
+    code = is_color_linear(pfs, &p->p[0][0]->c, &p->p[1][0]->c);
+    if (code < 0)
+	return code;
+    if (!code) {
 	*uv = false;
 	return false;
     }
-    if (!is_color_linear(pfs, &p->p[0][1]->c, &p->p[1][1]->c)) {
+    code = is_color_linear(pfs, &p->p[0][1]->c, &p->p[1][1]->c);
+    if (code < 0)
+	return code;
+    if (!code) {
 	*uv = false;
-	return false;
+	return 0;
     }
-    if (!is_color_linear(pfs, &p->p[0][0]->c, &p->p[1][1]->c)) {
+    code = is_color_linear(pfs, &p->p[0][0]->c, &p->p[1][1]->c);
+    if (code < 0)
+	return code;
+    if (!code) {
 	*uv = true;
-	return false;
+	return 0;
     }
-    if (!is_color_linear(pfs, &p->p[0][1]->c, &p->p[1][0]->c)) {
+    code = is_color_linear(pfs, &p->p[0][1]->c, &p->p[1][0]->c);
+    if (code < 0)
+	return code;
+    if (!code) {
 	*uv = false;
-	return false;
+	return 0;
     }
-    return true;
+    return 1;
 }
 
 typedef enum {
@@ -3033,9 +3085,18 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
 	    return (QUADRANGLES || !pfs->maybe_self_intersecting ? 
 			constant_color_quadrangle : triangles)(pfs, p, 
 			    pfs->maybe_self_intersecting);
-	if (!pfs->monotonic_color)
-	    pfs->monotonic_color = is_quadrangle_color_monotonic(pfs, p, &color_u)
-				&& is_quadrangle_color_linear(pfs, p, &color_u);
+	if (!pfs->monotonic_color) {
+	    code = is_quadrangle_color_monotonic(pfs, p, &color_u);
+	    if (code < 0)
+		return code;
+	    if (code) {
+		code = is_quadrangle_color_linear(pfs, p, &color_u);
+		if (code < 0)
+		    return code;
+		if (code)
+		    pfs->monotonic_color = true;
+	    }
+	}
 	if (!pfs->monotonic_color) {
 	    /* go to divide. */
 	} else switch(quadrangle_color_change(pfs, p, &color_u)) {
@@ -3197,10 +3258,10 @@ decompose_stripe(patch_fill_state_t *pfs, const tensor_patch *p, int ku)
 	int code;
 
 	split_stripe(pfs, &s0, &s1, p);
-#	if 0
-	draw_patch(&s0, true, RGB(0, 128, 128));
-	draw_patch(&s1, true, RGB(0, 128, 128));
-#	endif
+	if (0) { /* Debug purpose only. */
+	    draw_patch(&s0, true, RGB(0, 128, 128));
+	    draw_patch(&s1, true, RGB(0, 128, 128));
+	}
 	code = decompose_stripe(pfs, &s0, ku / 2);
 	if (code < 0)
 	    return code;
@@ -3401,15 +3462,34 @@ is_patch_narrow(const patch_fill_state_t *pfs, const tensor_patch *p)
 private int 
 fill_patch(patch_fill_state_t *pfs, const tensor_patch *p, int kv, int kv0, int kv1)
 {
-    if (kv <= 1 && (is_patch_narrow(pfs, p) || 
-	    ((pfs->monotonic_color || is_color_monotonic_by_v(pfs, p)) && 
-	     ((!pfs->unlinear && is_color_span_v_linear(pfs, p)) || 
-	      !is_color_span_v_big(pfs, p)) &&
-	    !is_bended(p)))) { /* The order of calls is improtant for performance. */
-	draw_patch(p, true, RGB(0, 128, 0));
-	return fill_stripe(pfs, p);
-    } else {
-	tensor_patch s0, s1;
+    if (kv <= 1) {
+	bool b;
+	int code;
+
+	if (is_patch_narrow(pfs, p))
+	    return fill_stripe(pfs, p);
+	b = pfs->monotonic_color;
+	if (!b) {
+	    code = is_color_monotonic_by_v(pfs, p);
+	    if (code < 0)
+		return code;
+	    if (code > 0)
+		b = true;
+	}
+	if (b) {
+	    b = pfs->unlinear;
+	    if (!b) {
+		code = is_color_span_v_linear(pfs, p);
+		if (code < 0)
+		    return code;
+		if (code > 0)
+		    b = true;
+	    }
+	    if ((b || !is_color_span_v_big(pfs, p)) && !is_bended(p))
+		return fill_stripe(pfs, p);
+	}
+    }
+    {	tensor_patch s0, s1;
         shading_vertex_t q0, q1, q2;
 	int code;
 
