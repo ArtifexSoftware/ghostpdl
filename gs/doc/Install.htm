@@ -144,25 +144,14 @@ no responsibility for RPMs created by others.
 
 <p>
 We usually distribute Ghostscript releases for Windows as self-extracting
-archive files, since this is the most convenient form for users.  However,
-we or other parties may distribute releases in the form of plain zip
-archives.
+archive files, since this is the most convenient form for users.  These
+files can also be unpacked as if they were plain zip files.
 
 <p>
 The self-extracting archive is normally named
 <b><tt>gs###w32.exe</tt></b>,
-where ### is the release number (e.g., 403 for Ghostscript 4.03, 
-600 for Ghostscript 6.0).
-
-<p>
-The zip archive is normally named 
-<b><tt>gs###w32.zip</tt></b>, 
-where ### is the release number (e.g., 403 for Ghostscript 4.03, 
-600 for Ghostscript 6.0).
-
-<p>
-Only one of <b><tt>gs###w32.exe</tt></b> or <b><tt>gs###w32.zip</tt></b>
-is required. 
+where ### is the release number (e.g., 650 for Ghostscript 6.50, 
+700 for Ghostscript 7.00).
 
 <h3><a name="Windows4"></a>Windows 95/98 and NT 4</h3>
 
@@ -188,72 +177,24 @@ href="http://www.cs.wisc.edu/~ghost/gsview/"
 class="offsite">http://www.cs.wisc.edu/~ghost/gsview/</a>
 </blockquote>
 
-<h3><a name="Windows3"></a>Win32s (Windows 3.1) and Windows NT 3.5</h3>
-
-<p>
-To install Ghostscript on Win32s (partial 32-bit environment under MS
-Windows 3.1), or Windows NT 3.5 you need the same archive file. 
-However, the self extracting archive will not automatically run 
-and install the Ghostscript.  
-You must manually unzip this archive and install it.
-To install Ghostscript, execute the following commands in a Command Prompt
-window (replacing <em>###</em> with the release number):
-
-<blockquote><b><tt>
-c:
-<br>mkdir \gs
-<br>cd \gs
-<br>ftp get gs<em>###</em>w32.zip
-<br>unzip gs<em>###</em>w32.zip
-</tt></b></blockquote>
-
-If the file is named <b><tt>.zip</tt></b> and not <b><tt>.exe</tt></b>,
-unzip it using
-<blockquote><b><tt>
-unzip gs<em>###</em>w32.zip
-</tt></b></blockquote>
-
-<p>
-After unpacking the archive, create a shortcut to
-
-<blockquote>
-<b><tt>c:\gs\gs<em>#.#</em>\bin\gswin32.exe</tt></b>
-</blockquote>
-
-<p>
-If you place Ghostscript in a different directory, you will need to set
-<b><tt>GS_LIB</tt></b> or use the command line option <b><tt>-I</tt></b>.
-See <a href="Use.htm">Use.htm</a> for details.
-
 <h3><a name="General_Windows"></a>General Windows configuration</h3>
 
 <p>
 The archive includes files in these subdirectories:
 
 <blockquote><b><tt>
-gs<em>#.#</em>\bin
-<br>gs<em>#.#</em>\lib
-<br>gs<em>#.#</em>\examples
-<br>gs<em>#.#</em>\doc
+gs<em>#.##</em>\bin
+<br>gs<em>#.##</em>\lib
+<br>gs<em>#.##</em>\examples
+<br>gs<em>#.##</em>\doc
 <br>fonts
 </tt></b></blockquote>
 
 <p>
-Note that the subdirectory is only <em>#.#</em>, not <em>#.##</em>, if
-the
-release number ends in 00.  E.g., for release 6.0, <em>###</em> is 600,
-but
-<em>#.#</em> is 6.0.
-
-<p>
-The actual executable files, in the <b><tt>gs<em>#.#</em>\bin</tt></b>
+The actual executable files, in the <b><tt>gs<em>#.##</em>\bin</tt></b>
 subdirectory, are:
 
 <blockquote><table cellpadding=0 cellspacing=0>
-<tr valign=top>	<td><b><tt>GS16SPL.EXE</tt></b>
-	<td>&nbsp;&nbsp;&nbsp;
-	<td>Print spooler for Win32s (Windows 3.1) only; must be in the same
-	    directory as <b><tt>GSWIN32.EXE</tt></b>
 <tr valign=top>	<td><b><tt>GSWIN32.EXE</tt></b>
 	<td>&nbsp;
 	<td>32-bit Ghostscript using windows

@@ -40,7 +40,7 @@ BEGIN
     ICON            IDR_MAIN,IDC_STATIC,11,17,20,20
     LTEXT           "This installs",IDC_STATIC,56,6,232,8
     LTEXT           "Product Name",IDC_PRODUCT_NAME,72,16,216,8
-    LTEXT           "Copyright (C) 1994-2000 Aladdin Enterprises, Menlo Park, California, U.S.A.  All rights reserved. See the file PUBLIC for more details.\n\nRequires 10 - 20 Mbytes disk space.",
+    LTEXT           "Copyright (C) 1994-2001 artofcode LLC, Benicia, California, U.S.A.  All rights reserved. See the file PUBLIC for more details.\n\nRequires 10 - 20 Mbytes disk space.",
                     IDC_COPYRIGHT,56,30,232,48
 
     LTEXT           "Install to directory",IDC_STATIC,8,92,56,8
