@@ -231,7 +231,7 @@ gs_begin_transparency_group(gs_state *pgs,
 	};
 
 	dlprintf5("[v](0x%lx)begin_transparency_group [%g %g %g %g]\n",
-		  (ulong)pgs, pbbox->p.x, pbbox->p.y, pbbox->q.x, pbbox->q.x);
+		  (ulong)pgs, pbbox->p.x, pbbox->p.y, pbbox->q.x, pbbox->q.y);
 	if (ptgp->ColorSpace)
 	    dprintf1("     CS = %s",
 		cs_names[(int)gs_color_space_get_index(ptgp->ColorSpace)]);
@@ -281,8 +281,8 @@ gs_begin_transparency_mask(gs_state *pgs,
 {
     /****** NYI, DUMMY ******/
     if_debug8('v', "[v](0x%lx)begin_transparency_mask [%g %g %g %g]\n\
-      subtype=%d has_Background=%d %s\n",
-	      (ulong)pgs, pbbox->p.x, pbbox->p.y, pbbox->q.x, pbbox->q.x,
+      subtype = %d  has_Background = %d  %s\n",
+	      (ulong)pgs, pbbox->p.x, pbbox->p.y, pbbox->q.x, pbbox->q.y,
 	      (int)ptmp->subtype, ptmp->has_Background,
 	      (ptmp->TransferFunction == mask_transfer_identity ? "no TR" :
 	       "has TR"));
