@@ -311,8 +311,9 @@ pdfdict begin
     exch PDFfile exch setfileposition
   } ifelse
 } bind def
-/stderrprint {		% <string> stderrprint -
-  (%stderr) (w) file dup dup 4 -1 roll writestring flushfile closefile
+/stderrfile (%stderr) (w) file def
+/stderrprint {                % <string> stderrprint -
+  //stderrfile dup 3 -1 roll writestring flushfile
 } bind def
 /pdfformaterror {	% <string> pdfformaterror -
   stderrprint
