@@ -295,6 +295,15 @@ level2dict begin
 	     }
 	    ifelse
       } forall
+      % If the device is the distiller device, update distillerparams that
+      % may have been changed by setdistillerparams
+      currentdevice .devicename /pdfwrite eq {
+	currentdistillerparams {
+	      % Stack: current key value
+	  2 index 2 index .knownget { 1 index ne } { //true } ifelse
+	  { 2 index 3 1 roll put } { pop pop } ifelse
+	} forall
+      } if
 		% If the dictionary was global and is now local, copy
 		% any global subsidiary dictionaries to local VM.  This
 		% too is to work around the Word Perfect bug (see above).

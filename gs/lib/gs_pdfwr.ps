@@ -657,6 +657,8 @@ currentdict /.pdf_hook_DSC_Creator undef
       } forall
     } repeat
     currentdict end .setdistillerparams
+    .distillerdevice //null false mark .putdeviceparams 
+    dup type /booleantype eq not { cleartomark pop } if pop pop
   } if
 } bind .schedule_init
 
