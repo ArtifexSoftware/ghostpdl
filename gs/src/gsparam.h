@@ -85,6 +85,11 @@ typedef _param_array_struct(gs_param_string_array_s, gs_param_string) gs_param_s
    (ps).size = strlen((const char *)(ps).data),\
    (ps).persistent = true)
 
+#define param_string_from_transient_string(ps, str)\
+  ((ps).data = (const byte *)(str),\
+   (ps).size = strlen((const char *)(ps).data),\
+   (ps).persistent = false)
+
 /*
  * Define the structure for heterogenous collection values (dictionaries
  * and heterogenous arrays).
