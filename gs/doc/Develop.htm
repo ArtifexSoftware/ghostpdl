@@ -418,6 +418,17 @@ source files.
 
 <h3><a name="Substrate"></a>Substrate</h3>
 
+<h4>Runtime Context</h4>
+
+<dl>
+<dt>
+The libctx provides pointers to memory, stdio, and various other runtime 
+portablility services.
+<dd>
+<a href="../src/gslibctx.h">src/gslibctx.h</a>,
+<a href="../src/gslibctx.c">src/gslibctx.c</a>.
+</dl>
+
 <h4>Memory manager</h4>
 
 <p>
@@ -4194,7 +4205,8 @@ Platform-specific implementation files:
 <a href="../src/gp_vms.c">src/gp_vms.c</a>,
 <a href="../src/gp_wgetv.c">src/gp_wgetv.c</a>,
 <a href="../src/gp_win32.c">src/gp_win32.c</a>,
-<a href="../src/gp_wsync.c">src/gp_wsync.c</a>.
+<a href="../src/gp_wsync.c">src/gp_wsync.c</a>,
+<a href="../src/gs_dll_call.h">src/gs_dll_call.h</a>.
 
 </dl>
 
