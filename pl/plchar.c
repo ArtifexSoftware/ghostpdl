@@ -86,7 +86,7 @@ pl_prepend_xl_dummy_header(gs_memory_t *mem, byte **ppheader)
 }
 
 int
-pl_swap_header(byte *header)
+pl_swap_header(byte *header, uint gifct)
 {
     return 0;
 }

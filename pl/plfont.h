@@ -318,6 +318,6 @@ int pl_store_resident_font_data_in_file(char *font_file, gs_memory_t *mem, pl_fo
 /* agfa requires prepending a dummy header to xl fonts */
 int pl_prepend_xl_dummy_header(gs_memory_t *mem, byte **ppheader);
 /* agfa requires swapping downloaded intellifont headers */
-int pl_swap_header(byte *header);
+int pl_swap_header(byte *header, uint gifct);
 
 #endif				/* plfont_INCLUDED */

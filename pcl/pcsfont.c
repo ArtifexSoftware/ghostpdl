@@ -254,7 +254,13 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcs)
         plfont->storage = pcds_temporary;
         plfont->data_are_permanent = false;
         if (fst == plfst_Intellifont) {
-            code = pl_swap_header(header);
+            /* lunacy not worth explaining */
+            uint gifct_offset;
+            if ( pfh->HeaderFormat == pcfh_intellifont_bound )
+                gifct_offset = 78;
+            else
+                gifct_offset = 78 + 8; /* + 8 for the character complement */
+            code = pl_swap_header(header, pl_get_uint16(header + gifct_offset));
             if ( code != 0 )
                 return code;
         }

@@ -1282,12 +1282,12 @@ pl_prepend_xl_dummy_header(gs_memory_t *mem, byte **ppheader)
 }
 
 int
-pl_swap_header(byte *header)
+pl_swap_header(byte *header, uint gifct)
 {
 #if (BYTEORDER == LOHI)
     /* the second parameter here is undocumented but is in the code,
        I'm not sure what it does */
-    return PCLswapHdr(FSA header, 0);
+    return PCLswapHdr(FSA header, (UW16)gifct);
 #else
     return 0;
 #endif
