@@ -355,14 +355,14 @@ gs_main_init2(gs_main_instance * minst)
 	    return code;
 	minst->init_done = 2;
 	i_ctx_p = minst->i_ctx_p; /* init file may change it */
+	if (minst->display)
+	    code = display_set_callback(minst, minst->display);
+	if (code < 0)
+	    return code;
     }
     if (gs_debug_c(':'))
 	print_resource_usage(minst, &gs_imemory, "Start");
     gp_readline_init(&minst->readline_data, imemory_system);
-    if (minst->display)
-	code = display_set_callback(minst, minst->display);
-    if (code < 0)
-	return code;
     return 0;
 }
 
