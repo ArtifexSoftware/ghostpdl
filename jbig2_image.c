@@ -198,9 +198,11 @@ int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src,
             s += src->stride;
         }
     } else if (shift == 0) {
+	rightmask = (w & 7) ? 0x100 - (1 << (8 - (w & 7))) : 0xFF;
         for (j = 0; j < h; j++) {
-	    for (i = leftbyte; i <= rightbyte; i++)
+	    for (i = leftbyte; i < rightbyte; i++)
 		*d++ |= *s++;
+	    *d |= *s & rightmask;
             d = (dd += dst->stride);
             s = (ss += src->stride);
 	}
