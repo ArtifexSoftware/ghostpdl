@@ -8,12 +8,13 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_image.c,v 1.15 2002/07/04 12:08:02 giles Exp $
+    $Id: jbig2_image.c,v 1.16 2002/07/04 13:34:29 giles Exp $
 */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h> /* memcpy() */
 
 #include "jbig2.h"
 #include "jbig2_priv.h"

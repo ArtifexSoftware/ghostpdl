@@ -8,10 +8,9 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_page.c,v 1.6 2002/06/22 16:05:45 giles Exp $
+    $Id: jbig2_page.c,v 1.7 2002/07/04 13:34:29 giles Exp $
 */
 
-#include <stdio.h>
 #include <stdlib.h>
 
 #include "jbig2.h"
@@ -93,9 +92,8 @@ jbig2_read_page_info (Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_
     
     // FIXME: would be nice if we tried to work around this
     if (segment->data_length < 19) {
-        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
             "segment too short");
-        return NULL;
     }
     
     /* 7.4.8.x */
@@ -138,10 +136,9 @@ jbig2_read_page_info (Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_
         page->image = jbig2_image_new(ctx, page->width, page->height);
     }
     if (page->image == NULL) {
-        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
-            "failed to allocate buffer for page image");
         jbig2_free(ctx->allocator, page);
-        return NULL;
+        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+            "failed to allocate buffer for page image");
     } else {
         jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
             "allocated %dx%d page image (%d bytes)",
@@ -196,7 +193,6 @@ jbig2_complete_page (Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_d
 Jbig2Image *jbig2_get_page(Jbig2Ctx *ctx)
 {
     int index;
-    Jbig2Image *image;
 
     /* search for a completed page */
     for (index=0; index < ctx->max_page_index; index++) {

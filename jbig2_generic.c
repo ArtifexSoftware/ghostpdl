@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2_generic.c,v 1.9 2002/06/24 15:51:57 giles Exp $
+    $Id: jbig2_generic.c,v 1.10 2002/07/04 13:34:29 giles Exp $
 */
 
 /**
@@ -17,6 +17,8 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <string.h> /* memcpy(), memset() */
+
 #ifdef OUTPUT_PBM
 #include <stdio.h>
 #endif
@@ -346,7 +348,8 @@ jbig2_decode_generic_region(Jbig2Ctx *ctx,
   {
     int i;
     for (i = 0; i < 8; i++)
-      printf ("gbat[%d] = %d\n", i, params->gbat[i]);
+      jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
+        "gbat[%d] = %d", i, params->gbat[i]);
   }
   jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
 	      "decode_generic_region: MMR=%d, GBTEMPLATE=%d NYI",

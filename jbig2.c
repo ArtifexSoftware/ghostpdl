@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2.c,v 1.10 2002/06/24 23:28:13 giles Exp $
+    $Id: jbig2.c,v 1.11 2002/07/04 13:34:29 giles Exp $
 */
 
 #include <stdint.h>
@@ -157,7 +157,7 @@ jbig2_get_int16 (const byte *buf)
 int
 jbig2_write (Jbig2Ctx *ctx, const unsigned char *data, size_t size)
 {
-  const int initial_buf_size = 1024;
+  const size_t initial_buf_size = 1024;
 
   if (ctx->buf == NULL)
     {
@@ -182,7 +182,7 @@ jbig2_write (Jbig2Ctx *ctx, const unsigned char *data, size_t size)
       else
 	{
 	  byte *buf;
-	  int buf_size = initial_buf_size;
+	  size_t buf_size = initial_buf_size;
 	  
 	  do
 	    buf_size <<= 1;
@@ -310,7 +310,6 @@ jbig2_ctx_free (Jbig2Ctx *ctx)
 {
   Jbig2Allocator *ca = ctx->allocator;
   int i;
-  uint32_t seg_ix;
 
   jbig2_free(ca, ctx->buf);
   if (ctx->segments != NULL)

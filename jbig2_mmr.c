@@ -4,9 +4,8 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#ifdef OUTPUT_PBM
 #include <stdio.h>
-#endif
+
 #include "jbig2.h"
 #include "jbig2_priv.h"
 #include "jbig2_arith.h"

@@ -8,13 +8,14 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_symbol_dict.c,v 1.13 2002/06/24 19:09:47 giles Exp $
+    $Id: jbig2_symbol_dict.c,v 1.14 2002/07/04 13:34:29 giles Exp $
     
     symbol dictionary segment decode and support
 */
 
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h> /* memset() */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"

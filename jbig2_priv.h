@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2_priv.h,v 1.10 2002/06/24 23:28:13 giles Exp $
+    $Id: jbig2_priv.h,v 1.11 2002/07/04 13:34:29 giles Exp $
     
     shared library internals
 */
@@ -18,6 +18,10 @@ typedef int bool;
 
 #define TRUE 1
 #define FALSE 0
+
+#ifndef NULL
+#define NULL ((void*)0)
+#endif
 
 typedef enum {
   JBIG2_FILE_HEADER,
@@ -36,7 +40,7 @@ struct _Jbig2Ctx {
   void *error_callback_data;
 
   byte *buf;
-  int buf_size;
+  size_t buf_size;
   int buf_rd_ix;
   int buf_wr_ix;
 
@@ -131,6 +135,10 @@ typedef struct {
 void jbig2_get_region_segment_info(Jbig2RegionSegmentInfo *info, const byte *segment_data);
 int jbig2_read_text_info(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data);
 
+/* 7.4 */
+int jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
+			       const uint8_t *segment_data);
+                               
 /* The word stream design is a compromise between simplicity and
    trying to amortize the number of method calls. Each ::get_next_word
    invocation pulls 4 bytes from the stream, packed big-endian into a

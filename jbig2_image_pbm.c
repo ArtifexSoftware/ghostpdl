@@ -8,10 +8,11 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_image_pbm.c,v 1.6 2002/07/03 19:43:21 giles Exp $
+    $Id: jbig2_image_pbm.c,v 1.7 2002/07/04 13:34:29 giles Exp $
 */
 
 #include <stdio.h>
+#include <ctype.h>
 
 #include "jbig2.h"
 #include "jbig2_image.h"
@@ -38,9 +39,6 @@ int jbig2_image_write_pbm_file(Jbig2Image *image, char *filename)
 
 int jbig2_image_write_pbm(Jbig2Image *image, FILE *out)
 {
-        int i;
-        char *p = (char *)image->data;
-        
         // pbm header
         fprintf(out, "P4\n%d %d\n", image->width, image->height);
         
@@ -73,11 +71,10 @@ Jbig2Image *jbig2_image_read_pbm_file(Jbig2Ctx *ctx, char *filename)
 Jbig2Image *jbig2_image_read_pbm(Jbig2Ctx *ctx, FILE *in)
 {
     int i, dim[2];
-    int stride, pbm_stride;
     int done;
     Jbig2Image *image;
-    char c,buf[32];
-    char *data;
+    int c;
+    char buf[32];
     
     // look for 'P4' magic
     while ((c = fgetc(in)) != 'P') {

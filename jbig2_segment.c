@@ -8,11 +8,10 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_segment.c,v 1.9 2002/06/24 23:28:13 giles Exp $
+    $Id: jbig2_segment.c,v 1.10 2002/07/04 13:34:29 giles Exp $
 */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <stdlib.h> /* size_t */
 #include <stdint.h>
 
 #include "jbig2.h"
