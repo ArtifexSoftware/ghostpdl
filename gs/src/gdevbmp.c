@@ -86,12 +86,13 @@ const gx_device_printer gs_bmpsep8_device = {
 private const gx_device_procs bmp16_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		pc_4bit_map_rgb_color, pc_4bit_map_color_rgb);
-const gx_device_printer gs_bmp16_device =
-prn_device(bmp16_procs, "bmp16",
+const gx_device_printer gs_bmp16_device = {
+  prn_device_body(gx_device_printer, bmp16_procs, "bmp16",
 	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	   X_DPI, Y_DPI,
 	   0, 0, 0, 0,		/* margins */
-	   4, bmp_print_page);
+	   3, 4, 3, 2, 4, 3, bmp_print_page)
+};
 
 /* 8-bit (SuperVGA-style) color. */
 /* (Uses a fixed palette of 3,3,2 bits.) */
@@ -99,12 +100,13 @@ prn_device(bmp16_procs, "bmp16",
 private const gx_device_procs bmp256_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		pc_8bit_map_rgb_color, pc_8bit_map_color_rgb);
-const gx_device_printer gs_bmp256_device =
-prn_device(bmp256_procs, "bmp256",
+const gx_device_printer gs_bmp256_device = {
+  prn_device_body(gx_device_printer, bmp256_procs, "bmp256", 
 	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	   X_DPI, Y_DPI,
 	   0, 0, 0, 0,		/* margins */
-	   8, bmp_print_page);
+	   3, 8, 6, 6, 7, 7, bmp_print_page)
+};
 
 /* 24-bit color. */
 
