@@ -20,9 +20,9 @@
 # $Id$
 
 #
-# dump_testdb
+# dump_testdb [<dbfile>]
 #
-# dumps the contents of the testdatadb
+# dumps (prints out) the contents of the testdatadb
 
 import sys, anydbm, gsconf
 
