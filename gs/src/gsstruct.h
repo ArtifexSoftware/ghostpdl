@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -811,6 +811,18 @@ extern void reloc_const_bytestring(P2(gs_const_bytestring *pbs, gc_state_t *gcst
   gs__st_suffix_add1_final(public_st, stname, stype, sname, penum, preloc, pfinal, supstname, e1)
 #define gs_private_st_suffix_add1_final(stname, stype, sname, penum, preloc, pfinal, supstname, e1)\
   gs__st_suffix_add1_final(private_st, stname, stype, sname, penum, preloc, pfinal, supstname, e1)
+
+	/* Suffix subclasses with 1 additional string. */
+
+#define gs__st_suffix_add_strings1(scope_st, stname, stype, sname, penum, preloc, supstname, e1)\
+  BASIC_PTRS(penum) {\
+    GC_STRING_ELT(stype, e1)\
+  };\
+  gs__st_basic_super(scope_st, stname, stype, sname, penum, preloc, &supstname, 0)
+#define gs_public_st_suffix_add_strings1(stname, stype, sname, penum, preloc, supstname, e1)\
+  gs__st_suffix_add_strings1(public_st, stname, stype, sname, penum, preloc, supstname, e1)
+#define gs_private_st_suffix_add_strings1(stname, stype, sname, penum, preloc, supstname, e1)\
+  gs__st_suffix_add_strings1(private_st, stname, stype, sname, penum, preloc, supstname, e1)
 
 	/* Suffix subclasses with 2 additional pointers. */
 
