@@ -400,8 +400,8 @@ extern_st(st_path_enum);
 
 #if FLATTENED_CURVE_ITERATOR
 /* An iterator of flattened segments for a minotonic curve. */
-typedef struct gx_flattened_curve_iterator_s gx_flattened_curve_iterator;
-struct gx_flattened_curve_iterator_s {
+typedef struct gx_flattened_iterator_s gx_flattened_iterator;
+struct gx_flattened_iterator_s {
     /* private : */
     fixed x0, y0, x3, y3;
     fixed cx, bx, ax, cy, by, ay;
@@ -422,13 +422,13 @@ struct gx_flattened_curve_iterator_s {
     fixed lx0, ly0, lx1, ly1;
 };
 
-bool gx_flattened_curve_iterator__init(gx_flattened_curve_iterator *this, 
+bool gx_flattened_iterator__init(gx_flattened_iterator *this, 
 	    fixed x0, fixed y0, const curve_segment *pc, int k, bool reverse, segment_notes notes);
-bool gx_flattened_curve_iterator__init_line(gx_flattened_curve_iterator *this, 
+bool gx_flattened_iterator__init_line(gx_flattened_iterator *this, 
 	    fixed x0, fixed y0, fixed x1, fixed y1, segment_notes notes);
-bool gx_flattened_curve_iterator__next(gx_flattened_curve_iterator *this);
+bool gx_flattened_iterator__next(gx_flattened_iterator *this);
 #if CURVED_TRAPEZOID_FILL_SCANS_BACK
-bool gx_flattened_curve_iterator__prev(gx_flattened_curve_iterator *this);
+bool gx_flattened_iterator__prev(gx_flattened_iterator *this);
 bool gx_flattened_check_near(fixed x0, fixed y0, fixed x1, fixed y1);
 #endif
 

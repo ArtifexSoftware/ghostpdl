@@ -521,7 +521,7 @@ curve_coeffs_ranged(fixed x0, fixed x1, fixed x2, fixed x3,
     Momotonic curves with non-zero length are only allowed.
  */
 bool
-gx_flattened_curve_iterator__init(gx_flattened_curve_iterator *this, 
+gx_flattened_iterator__init(gx_flattened_iterator *this, 
 	    fixed x0, fixed y0, const curve_segment *pc, int k, bool reverse, segment_notes notes)
 {
     /* Note : Immediately after the ininialization it keeps an invalid (zero length) segment. */
@@ -629,7 +629,7 @@ gx_flattened_curve_iterator__init(gx_flattened_curve_iterator *this,
 
 /*  Initialize the iterator with a line. */
 bool
-gx_flattened_curve_iterator__init_line(gx_flattened_curve_iterator *this, 
+gx_flattened_iterator__init_line(gx_flattened_iterator *this, 
 	    fixed x0, fixed y0, fixed x1, fixed y1, segment_notes notes)
 {
     this->x0 = this->lx0 = this->lx1 = x0;
@@ -648,7 +648,7 @@ gx_flattened_curve_iterator__init_line(gx_flattened_curve_iterator *this,
 
 #ifdef DEBUG
 private inline void
-gx_flattened_curve_iterator__print_state(gx_flattened_curve_iterator *this)
+gx_flattened_iterator__print_state(gx_flattened_iterator *this)
 {
     if (!gs_debug_c('3'))
 	return;
@@ -674,7 +674,7 @@ gx_flattened_curve_iterator__print_state(gx_flattened_curve_iterator *this)
  * Note : It can generate collinear segments. 
  */
 bool
-gx_flattened_curve_iterator__next(gx_flattened_curve_iterator *this)
+gx_flattened_iterator__next(gx_flattened_iterator *this)
 {
     /*
      * We can compute successive values by finite differences,
@@ -753,7 +753,7 @@ gx_flattened_curve_iterator__next(gx_flattened_curve_iterator *this)
 	    if (!this->i)
 		break; /* don't bother with last accum */
 #	    ifdef DEBUG
-	    gx_flattened_curve_iterator__print_state(this);
+	    gx_flattened_iterator__print_state(this);
 #	    endif
 #	    define accum(i, r, di, dr, rmask)\
 			if ( (r += dr) > rmask ) r &= rmask, i += di + 1;\
@@ -798,14 +798,14 @@ last:
 
 #if CURVED_TRAPEZOID_FILL_SCANS_BACK
 /* Move back to the previous segment and store it to this->lx0, this->ly0, this->lx1, this->ly1 .
- * This only works for states reached with gx_flattened_curve_iterator__next.
+ * This only works for states reached with gx_flattened_iterator__next.
  * Return true iff there exist more segments.
  * Note : The number of generated segments can be samller than 2^k 
  *	  due to the small segment skipping.
  * Note : It can generate collinear segments. 
  */
 bool
-gx_flattened_curve_iterator__prev(gx_flattened_curve_iterator *this)
+gx_flattened_iterator__prev(gx_flattened_iterator *this)
 {
     fixed x, y;
     bool last; /* i.e. the first one in the forth order. */
@@ -845,7 +845,7 @@ gx_flattened_curve_iterator__prev(gx_flattened_curve_iterator *this)
 		  (((x ^ this->lx1) | (y ^ this->ly1)) & float2fixed(-0.5) ?
 		   "add" : "skip"),
 		  fixed2float(x), fixed2float(y), x, y);
-	gx_flattened_curve_iterator__print_state(this);
+	gx_flattened_iterator__print_state(this);
 #	endif
 	last = (this->i == (1 << this->k) - 1);
 	if (last)
@@ -945,14 +945,14 @@ gx_check_nearly_collinear(fixed x0, fixed y0, fixed x1, fixed y1, fixed x2, fixe
 #endif
 
 private int
-gx_subdivide_curve_rec(gx_flattened_curve_iterator *this, 
+gx_subdivide_curve_rec(gx_flattened_iterator *this, 
 		  gx_path * ppath, int k, curve_segment * pc,
 		  segment_notes notes, gs_fixed_point *points)
 {
     int code;
 
 top :
-    if (!gx_flattened_curve_iterator__init(this, 
+    if (!gx_flattened_iterator__init(this, 
 		ppath->position.x, ppath->position.y, pc, k, false, notes)) {
 	/* Curve is too long.  Break into two pieces and recur. */
 	curve_segment cseg;
@@ -973,7 +973,7 @@ top :
 	bool not_last;
 
 	for(;;) {
-	    not_last = gx_flattened_curve_iterator__next(this);
+	    not_last = gx_flattened_iterator__next(this);
 	    if (ppt > points + 1 && (!FLATTENED_CURVE_ITERATOR0_COMPATIBLE || not_last))
 		if (gx_check_nearly_collinear_inline(ppt[-2].x, ppt[-2].y, 
 				ppt[-1].x, ppt[-1].y, this->lx1, this->ly1))
@@ -1025,7 +1025,7 @@ int
 gx_subdivide_curve(gx_path * ppath, int k, curve_segment * pc, segment_notes notes)
 {
     gs_fixed_point points[max_points + 1];
-    gx_flattened_curve_iterator iter;
+    gx_flattened_iterator iter;
 
     return gx_subdivide_curve_rec(&iter, ppath, k, pc, notes, points);
 }

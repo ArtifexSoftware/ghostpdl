@@ -812,15 +812,15 @@ step_al(active_line *alp, bool move_iterator)
 
     if (move_iterator) {
 	if (forth)
-	    alp->more_flattened = gx_flattened_curve_iterator__next(&alp->fi);
+	    alp->more_flattened = gx_flattened_iterator__next(&alp->fi);
 	else
-	    alp->more_flattened = gx_flattened_curve_iterator__prev(&alp->fi);
+	    alp->more_flattened = gx_flattened_iterator__prev(&alp->fi);
     } else
 	vd_bar(alp->fi.lx0, alp->fi.ly0, alp->fi.lx1, alp->fi.ly1, 1, RGB(0, 0, 255));
 #else
     const bool forth = true;
 
-    alp->more_flattened = gx_flattened_curve_iterator__next(&alp->fi);
+    alp->more_flattened = gx_flattened_iterator__next(&alp->fi);
 #endif
     /* Note that we can get alp->fi.ly0 == alp->fi.ly1 
        with the first or the last piece of the line. */
@@ -829,14 +829,14 @@ step_al(active_line *alp, bool move_iterator)
 #   if FLATTENED_CURVE_ITERATOR0_COMPATIBLE 
 	if (move_iterator) {
 	    if (forth) {
-		gx_flattened_curve_iterator fi = alp->fi;
+		gx_flattened_iterator fi = alp->fi;
 
 		while (alp->more_flattened) {
 		    bool more;
 
 		    if (alp->first_flattened)
 			break;
-		    more = gx_flattened_curve_iterator__next(&fi);
+		    more = gx_flattened_iterator__next(&fi);
 		    if (!more ||
 			!gx_check_nearly_collinear(alp->start.x, alp->start.y, 
 			    fi.lx0, fi.ly0, fi.lx1, fi.ly1)) 
@@ -849,7 +849,7 @@ step_al(active_line *alp, bool move_iterator)
 		    while (alp->more_flattened && 
 		           (alp->fi.i + 1) <= sizeof(alp->skip_points) * 8 &&
 			   !(alp->skip_points[(alp->fi.i + 1) >> 3] & (1 << ((alp->fi.i + 1) & 7)))) {
-			alp->more_flattened = gx_flattened_curve_iterator__prev(&alp->fi);
+			alp->more_flattened = gx_flattened_iterator__prev(&alp->fi);
 		    }
 		    /* CAUTION: if skip_points array is smaller than the
 		       nomber of points, the flattening isn't equal to one
@@ -890,7 +890,7 @@ init_al(active_line *alp, const segment *s0, const segment *s1, fixed fixed_flat
 	if (alp->direction == DIR_UP) {
 	    int k = gx_curve_log2_samples(s0->pt.x, s0->pt.y, (curve_segment *)s1, fixed_flat);
 
-	    assert(gx_flattened_curve_iterator__init(&alp->fi, 
+	    assert(gx_flattened_iterator__init(&alp->fi, 
 		s0->pt.x, s0->pt.y, (curve_segment *)s1, k, false, 0));
 	    step_al(alp, true);
 	} else {
@@ -898,21 +898,21 @@ init_al(active_line *alp, const segment *s0, const segment *s1, fixed fixed_flat
 
 #	    if CURVED_TRAPEZOID_FILL_SCANS_BACK
 		bool more, first = true;
-		gx_flattened_curve_iterator fi;
+		gx_flattened_iterator fi;
 
 		memset(alp->skip_points, 0, sizeof(alp->skip_points));
-		assert(gx_flattened_curve_iterator__init(&alp->fi, 
+		assert(gx_flattened_iterator__init(&alp->fi, 
 		    s1->pt.x, s1->pt.y, (curve_segment *)s0, k, false, 0));
 		alp->more_flattened = false;
 		do {
 		    fixed x = alp->fi.lx1, y = alp->fi.ly1;
 
-		    more = gx_flattened_curve_iterator__next(&alp->fi);
+		    more = gx_flattened_iterator__next(&alp->fi);
 		    alp->more_flattened |= more;
 		    if (!first) {
 			fi = alp->fi;
 			while (more) {
-			    more = gx_flattened_curve_iterator__next(&fi);
+			    more = gx_flattened_iterator__next(&fi);
 			    if (!more) {
 				more = true;
 				break;
@@ -928,13 +928,13 @@ init_al(active_line *alp, const segment *s0, const segment *s1, fixed fixed_flat
 		} while(more);
 		step_al(alp, false);
 #	    else
-		assert(gx_flattened_curve_iterator__init(&alp->fi, 
+		assert(gx_flattened_iterator__init(&alp->fi, 
 		    s1->pt.x, s1->pt.y, (curve_segment *)s0, k, true, 0));
 		step_al(alp, true);
 #	    endif
 	}
     } else {
-	assert(gx_flattened_curve_iterator__init_line(&alp->fi, 
+	assert(gx_flattened_iterator__init_line(&alp->fi, 
 		s0->pt.x, s0->pt.y, s1->pt.x, s1->pt.y, 0));
 	step_al(alp, true);
     }
