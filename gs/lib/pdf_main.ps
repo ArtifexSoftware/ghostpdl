@@ -175,8 +175,13 @@ pdfdict begin
    { PDFfile fileposition PDFfile read pop 32 gt { exit } if pop
    } loop
    PDFfile exch setfileposition
-   PDFfile pdfstring readline pop
-   (xref) linene { /readxref cvx /syntaxerror signalerror } if
+		% The PDF specification says that the 'xref' must be on a line
+		% by itself. The code here formerly used readline and linene to
+		% check this. However, Acrobat Reader only requires the line to
+		% begin with 'xref', and there are enough applications producing
+		% non-compliant PDF files that we have to do this too.
+   PDFfile pdfstring 0 4 getinterval readstring pop
+   (xref) ne { /readxref cvx /syntaxerror signalerror } if
 		% Store the xref table entry position for each object.
 		% We only need to read the run headers, not every entry.
     { PDFfile token pop		% first object # or trailer
