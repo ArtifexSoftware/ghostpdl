@@ -70,10 +70,6 @@ pdfdict begin
   counttomark -1 roll astore exch pop put
 } bdef
 
-/tfopdict mark
-  /true /.true load
-  /false /.false load
-.dicttomark readonly def
 /.resolvefn4 {
   PDFfile fileposition exch
   dup true resolvestream 
@@ -87,8 +83,7 @@ pdfdict begin
     /rangecheck cvx signalerror
   } if
 		% Use .bind to avoid idiom recognition.
-		% Use tfopdict to bind true and false.
-  //tfopdict begin .bind end
+  .bind
   1 index /Function 3 -1 roll put
   .pdfbuildfunction
   exch PDFfile exch setfileposition
