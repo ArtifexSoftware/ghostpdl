@@ -108,7 +108,7 @@ gx_begin_image4(gx_device * dev,
 
 	    if (c1 > max_value)
 		c1 = max_value;
-	    if (c0 > c1) {
+	    if (c0 >= c1) {
 		opaque = true;
 		break;
 	    }
