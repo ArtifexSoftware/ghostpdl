@@ -544,10 +544,10 @@ end readonly def
   dup /Install .knownget {
 			% Don't let the Install procedure get more deeply
 			% nested after every page.
-      dup type /arraytype eq {
+      dup type dup /arraytype eq exch /packedarraytype eq or {
 	dup length 4 eq {
 	  dup 2 get /.pdfshowpage_Install load eq {
-	    1 get dup length 0 ne { 1 get } if
+	    1 get dup length 0 ne { 0 get } if
 	  } if
 	} if
       } if
