@@ -670,49 +670,87 @@ the order in which they occur in the rendering pipeline.
 
 <li>Clients of the graphics library normally specify colors using the
 <em>client color</em> structure (<b><tt>gs_client_color</tt></b>, defined in
-<a href="../src/gsccolor.h">src/gsccolor.h</a>).  This corresponds directly
-to the values that would be passed to the PostScript
+<a href="../src/gsccolor.h">src/gsccolor.h</a>), consisting of one or more
+numeric values and/or a pointer to a Pattern instance.  This corresponds
+directly to the values that would be passed to the PostScript
 <b><tt>setcolor</tt></b> operator: one or more (floating-point) numeric
-components and/or a Pattern.  The associated color space is implicit (in the
-graphics state).
+components and/or a Pattern.  Client colors are interpreted relative to a
+color space (<b><tt>gs_color_space</tt></b>, defined in <a
+href="../src/gscspace.h">src/gscspace.h</a> and <a
+href="../src/gxcspace.h">src/gxcspace.h</a>, with specific color spaces
+defined in other files).  Client colors do not explicitly reference the
+color space in which they are are interpreted: <b><tt>setcolor</tt></b> uses
+the color space in the graphics state, while images and shadings explicitly
+specify the color space to be used.
 
-<li>For ordinary non-Pattern colors, the first step in color rendering is to
-reduce a client color to a <em>concrete</em> color -- a set of values in the
-device's color model (except for possible conversions between DeviceGray,
-DeviceRGB, and DeviceCMYK).  Concrete colors are represented by arrays of
-<b><tt>frac</tt></b> values, defined in <a
-href="../src/gxfrac.h">src/gxfrac.h</a>.  The color space is implicit in the
-control flow.  The procedure for this step is a virtual procedure in the
-color space.
+<li>For ordinary non-Pattern colors, the first step in color rendering
+reduces a client color to a <em>concrete</em> color -- a set of values in a
+color space that corresponds to the device's color model (except for
+possible conversions between DeviceGray, DeviceRGB, and DeviceCMYK),
+together with an identification of the associated color space.  (The
+confusion here between color spaces and color models will have to be cleaned
+up when we implement native Separation/DeviceN colors.)  Concrete colors are
+like the numeric values in a client color, except that they are represented
+by arrays of <b><tt>frac</tt></b> values (defined in <a
+href="../src/gxfrac.h">src/gxfrac.h</a>) rather than floats.  The procedure
+for this step is the virtual <b><tt>concretize_color</tt></b> and
+<b><tt>concrete_space</tt></b> procedures in the (original) color space.
+This step reduces Indexed colors, CIEBased colors, and Separation and
+DeviceN colors that use the alternate space.
 
-<li>The result of finishing mapping a concrete color to the device's color
-mode, followed by halftoning if necessary, is called (inappropriately) a
-<em>device color</em> (<b><tt>gx_device_color</tt></b>, defined in <a
+<li>The final step requires mapping a concrete color to the device's color
+model, done by procedures in <a href="../src/gxcmap.c">src/gxcmap.c</a>.
+These procedures combine the following three conceptual sub-steps:
+
+<ul>
+
+<li>A possible mapping between Device color spaces, possibly involving black
+generation and undercolor removal.  The non-trivial cases are implemented in
+<a href="../src/gxdcconv.c">src/gxdcconv.c</a>.
+
+<li>Application of the transfer function(s) (done in-line).
+
+<li>Halftoning if necessary.  The halftone level is computed in <a
+href="../src/gxdither.c">src/gxdither.c</a>; the actual halftone mask or
+tile is computed in either <a href="../src/gxcht.c">src/gxcht.c</a>, or <a
+href="../src/gxht.c">src/gxht.c</a> and <a
+href="../src/gxhtbit.c">src/gxhtbit.c</a>.
+
+</ul>
+
+The result is called (inappropriately) a <em>device color</em>
+(<b><tt>gx_device_color</tt></b>, defined in <a
 href="../src/gsdcolor.h">src/gsdcolor.h</a> and <a
 href="../src/gxdcolor.h">src/gxdcolor.h</a>).  For ordinary non-Pattern
 colors, a device color is either a pure color, a binary halftone (single
-plane, single bit, with a 2-color palette) halftone, or a multi-plane
-halftone.  The device and color model associated with a device color are
-implicit.  The procedure for this step is also a virtual procedure in the
-color space.
+plane, single bit, with a 2-color palette), or a multi-plane halftone.  The
+device and color model associated with a device color are implicit.  The
+procedure for this step is the virtual <b><tt>remap_concrete_color</tt></b>
+procedure in the color space.
 
 <li>The pure colors that underlie a device color are opaque <em>pixel
 values</em> defined by the device (misnamed <b><tt>gx_color_index</tt></b>,
-defined in <a href="../src/gscindex.h">src/gscindex.h</a>).  The device and
-color model are implicit.  Virtual procedures of the device driver map
-between pixel values and RGB or CMYK.  (This area is untidy and will need to
-be cleaned up when we implement real Separation and DeviceN colors.)
+defined in <a href="../src/gscindex.h">src/gscindex.h</a>).  The device with
+which they are associated is implicit.  Although the format and
+interpretation of a pixel value are known only to the device, the device's
+color model and color representation capabilities are public, defined by a
+<b><tt>gx_color_info</tt></b> structure stored in the device (defined in <a
+href="../src/gxdevcli.h">src/gxdevcli.h</a>).  Virtual procedures of the
+device driver map between pixel values and RGB or CMYK.  (This area is
+untidy and will need to be cleaned up when we implement native
+Separation/DeviceN colors.)
 
 </ol>
 
 <p>
-Steps 2 and 3 are normally combined into a single step for efficiency.
+Steps 2 and 3 are normally combined into a single step for efficiency, as
+the <b><tt>remap_color</tt></b> virtual procedure in a color space.
 
 <p>
 Using a device color to actually paint pixels requires a further step called
-<em>color loading</em>.  This does nothing for pure colors, but loads the
-caches for halftones.  Color loading is a virtual procedure in the device
-color.
+<em>color loading</em>, implemented by the <b><tt>load</tt></b> virtual
+procedure in the device color.  This does nothing for pure colors, but loads
+the caches for halftones and Patterns.
 
 <p>
 All of the above steps -- concretizing, mapping to a device color, and color
@@ -720,9 +758,13 @@ loading -- are done as late as possible, normally not until the color is
 actually needed for painting.
 
 <p>
-All painting operations (fill, stroke, imagemask) eventually call a virtual
-procedure in the device color, either <b><tt>fill_rectangle</tt></b> or
-<b><tt>fill_mask</tt></b> to actually paint pixels.
+All painting operations (fill, stroke, imagemask/show) eventually call a
+virtual procedure in the device color, either <b><tt>fill_rectangle</tt></b>
+or <b><tt>fill_mask</tt></b> to actually paint pixels.  For rectangle fills,
+pure colors call the device's <b><tt>fill_rectangle</tt></b> procedure;
+halftones and tiled Patterns call the device's
+<b><tt>tile_rectangle</tt></b>; shaded Patterns, and painting operations
+that involve a RasterOp, do something more complicated.
 
 <dl>
 
