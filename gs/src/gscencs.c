@@ -100,10 +100,7 @@ gs_c_name_glyph(const char *str, uint len)
 {
     if (len == 0 || len > gs_c_known_encoding_max_length)
 	return gs_no_glyph;
-    /*
-     * Binary search the character table.  Algorithm thanks to
-     * igor@artifex.com.
-     */
+    /* Binary search the character table. */
     {
 	uint base = gs_c_known_encoding_offsets[len];
 	const byte *bot = (const byte *)&gs_c_known_encoding_chars[base];
