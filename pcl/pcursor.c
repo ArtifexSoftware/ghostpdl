@@ -5,6 +5,7 @@
 /* pcursor.c - PCL5 cursor positioning commands */
 
 #include "std.h"
+#include <stdlib.h>        /* for atoi */
 #include "math_.h"
 #include "pcommand.h"
 #include "pcstate.h"

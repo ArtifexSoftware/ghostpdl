@@ -4,7 +4,7 @@
 
 /* pcjob.c -  PCL5 job control commands */
 #include "std.h"
-#include <stdlib.h>
+#include <stdlib.h>            /* for atoi */
 #include "gx.h"
 #include "gsmemory.h"
 #include "gsmatrix.h"		/* for gsdevice.h */
