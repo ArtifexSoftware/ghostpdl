@@ -1,16 +1,17 @@
-This directory contains a patched version of icclib 1.23 for use with
-Ghostscript. The full version of icclib is available from Graeme
-Gill's website: http://web.access.net.au/argyll/color.html
+This directory contains a subset of the icclib 2.0 distribution for
+use with Ghostscript. The full version of icclib is available from
+Graeme Gill's website: http://web.access.net.au/argyll/color.html
 
-Hopefully, a future version of icclib will have the needed flexibility
-to work in the Ghostscript environment unmodified. At that point, we
-will either include the full icclib release, or simply reference it
-as we do the zlib, jpeg, and libpng libraries.
+In the near future, we expect to treat icclib much the same way we
+do libjpeg and friends. At that point, it will be available from
+the Ghostscript download locations, but won't actually be included
+in the Ghostscript distribution proper, or in the source tree.
 
 Raph Levien
-19 March 2001
+18 October 2001
 
-Release notes by Jan Stoeckenius follow:
+Release notes by Jan Stoeckenius follow (lightly edited by Raph Levien
+to reflect the icclib 2.0 integration):
 
 This patch integrates Graeme W. Gill's icclib code into ghostscript,
 to support ICCBased color spaces for both PostScript and PDF.
@@ -73,13 +74,6 @@ New Files:
     Implementation of the .seticcspace operator, which is used to set the
     current color space to be an ICCBased color space.
 
-  src/gs_stdio.h
-    A stub version of stdio.h, which works with graphic library streams
-    as opposed to the usual clib file buffer objects. This file is
-    included only in gs_icclib/icc.c, which was written to work with the
-    clib standard I/O library. The use of this header file is the only
-    change required to allow that file to work with graphic library streams.
-
   src/icclib.mak
     Makefile for building the icclib code (which is in a separate directory).
     The mechanism used is identical to that used by zlib.mak.
@@ -100,18 +94,7 @@ New Files:
   gs_icclib/icc9809.h
     The gs_icclib directory is the default location of the icclib code.
     The files in this directory are identical to those of the usual
-    distribution of this library, with two small exceptions:
-
-      1. In icc.c, inclusion of <stdio.h> is replaced with inclusion of
-         <gs_stdio.h>.
-
-      2. In icc.h, the following macro is added:
-
-         /* macro to allow updating the file pointer on systems with memory relocation */
-         #define icc_update_fp(icc, nfp)  ((icc)->fp = (nfp))
-
-    The latter change is necessary as the profile stream is kept in
-    relocatable memory.
+    distribution of this library.
 
 
 Modified Files:
@@ -178,10 +161,6 @@ Modified Files:
 
     src/icie.h
       Added a prototype for cie_set_finish.
-
-    src/stream.c
-      Added the procedures sread and swrite, which implement the function of
-      fread and fwrite for streams.
 
     src/zcie.c
       Exported cie_set_finish (previously set_cie_finish) for use in zicc.c
@@ -257,7 +236,8 @@ Additional notes by Jan Stoeckenius:
    but we have no simple way of testing for this.
 
 3. Changes were required in an unexpectedly large number of files
-   (9 new files, 34 existing files), though in many cases only a few
+   (9 new files, 34 existing files [these figures refer to the
+   integration into 7.00 - RLL]), though in many cases only a few
    lines needed to be modified.
 
    The primary reason for this is that the graphic library color space
