@@ -1437,20 +1437,27 @@ dsc_parse_pages(CDSC *dsc)
 	n++;
     p = dsc->line + n;
     if (COMPARE(p, "atend")) {
-	int rc = dsc_error(dsc, CDSC_MESSAGE_ATEND, dsc->line, dsc->line_length);
-	switch (rc) {
-	    case CDSC_RESPONSE_OK:
-		/* assume (atend) */
-		/* we should mark it as deferred */
-		break;
-	    case CDSC_RESPONSE_CANCEL:
-		/* ignore it */
-		break;
-	    case CDSC_RESPONSE_IGNORE_ALL:
-		return CDSC_NOTDSC;
+	if (dsc->scan_section != scan_comments)
+	    dsc_unknown(dsc);
+	else {
+	    int rc = dsc_error(dsc, CDSC_MESSAGE_ATEND, 
+		dsc->line, dsc->line_length);
+	    switch (rc) {
+		case CDSC_RESPONSE_OK:
+		    /* assume (atend) */
+		    /* we should mark it as deferred */
+		    break;
+		case CDSC_RESPONSE_CANCEL:
+		    /* ignore it */
+		    break;
+		case CDSC_RESPONSE_IGNORE_ALL:
+		    return CDSC_NOTDSC;
+	    }
 	}
     }
     else if (COMPARE(p, "(atend)")) {
+	if (dsc->scan_section != scan_comments)
+	    dsc_unknown(dsc);
 	/* do nothing */
 	/* we should mark it as deferred */
     }
@@ -1546,21 +1553,27 @@ dsc_parse_bounding_box(CDSC *dsc, CDSCBBOX** pbbox, int offset)
     p = dsc->line + offset;
     
     if (COMPARE(p, "atend")) {
-	int rc = dsc_error(dsc, CDSC_MESSAGE_ATEND, dsc->line, 
-		dsc->line_length);
-	switch (rc) {
-	    case CDSC_RESPONSE_OK:
-		/* assume (atend) */
-		/* we should mark it as deferred */
-		break;
-	    case CDSC_RESPONSE_CANCEL:
-		/* ignore it */
-		break;
-	    case CDSC_RESPONSE_IGNORE_ALL:
-		return CDSC_NOTDSC;
+	if (dsc->scan_section == scan_trailer)
+	    dsc_unknown(dsc);
+	else {
+	    int rc = dsc_error(dsc, CDSC_MESSAGE_ATEND, dsc->line, 
+		    dsc->line_length);
+	    switch (rc) {
+		case CDSC_RESPONSE_OK:
+		    /* assume (atend) */
+		    /* we should mark it as deferred */
+		    break;
+		case CDSC_RESPONSE_CANCEL:
+		    /* ignore it */
+		    break;
+		case CDSC_RESPONSE_IGNORE_ALL:
+		    return CDSC_NOTDSC;
+	    }
 	}
     }
     else if (COMPARE(p, "(atend)")) {
+	if (dsc->scan_section == scan_trailer)
+	    dsc_unknown(dsc);
 	/* do nothing */
 	/* we should mark it as deferred */
     }
@@ -1678,21 +1691,27 @@ dsc_parse_float_bounding_box(CDSC *dsc, CDSCFBBOX** pbbox, int offset)
     p = dsc->line + offset;
     
     if (COMPARE(p, "atend")) {
-	int rc = dsc_error(dsc, CDSC_MESSAGE_ATEND, dsc->line, 
-		dsc->line_length);
-	switch (rc) {
-	    case CDSC_RESPONSE_OK:
-		/* assume (atend) */
-		/* we should mark it as deferred */
-		break;
-	    case CDSC_RESPONSE_CANCEL:
-		/* ignore it */
-		break;
-	    case CDSC_RESPONSE_IGNORE_ALL:
-		return CDSC_NOTDSC;
+	if (dsc->scan_section == scan_trailer)
+	    dsc_unknown(dsc);
+	else {
+	    int rc = dsc_error(dsc, CDSC_MESSAGE_ATEND, dsc->line, 
+		    dsc->line_length);
+	    switch (rc) {
+		case CDSC_RESPONSE_OK:
+		    /* assume (atend) */
+		    /* we should mark it as deferred */
+		    break;
+		case CDSC_RESPONSE_CANCEL:
+		    /* ignore it */
+		    break;
+		case CDSC_RESPONSE_IGNORE_ALL:
+		    return CDSC_NOTDSC;
+	    }
 	}
     }
     else if (COMPARE(p, "(atend)")) {
+	if (dsc->scan_section == scan_trailer)
+	    dsc_unknown(dsc);
 	/* do nothing */
 	/* we should mark it as deferred */
     }
@@ -1754,20 +1773,27 @@ dsc_parse_orientation(CDSC *dsc, unsigned int *porientation, int offset)
     while (IS_WHITE(*p))
 	p++;
     if (COMPARE(p, "atend")) {
-	int rc = dsc_error(dsc, CDSC_MESSAGE_ATEND, dsc->line, dsc->line_length);
-	switch (rc) {
-	    case CDSC_RESPONSE_OK:
-		/* assume (atend) */
-		/* we should mark it as deferred */
-		break;
-	    case CDSC_RESPONSE_CANCEL:
-		/* ignore it */
-		break;
-	    case CDSC_RESPONSE_IGNORE_ALL:
-		return CDSC_NOTDSC;
+	if (dsc->scan_section == scan_trailer)
+	    dsc_unknown(dsc);
+	else {
+	    int rc = dsc_error(dsc, CDSC_MESSAGE_ATEND, 
+		dsc->line, dsc->line_length);
+	    switch (rc) {
+		case CDSC_RESPONSE_OK:
+		    /* assume (atend) */
+		    /* we should mark it as deferred */
+		    break;
+		case CDSC_RESPONSE_CANCEL:
+		    /* ignore it */
+		    break;
+		case CDSC_RESPONSE_IGNORE_ALL:
+		    return CDSC_NOTDSC;
+	    }
 	}
     }
     else if (COMPARE(p, "(atend)")) {
+	if (dsc->scan_section == scan_trailer)
+	    dsc_unknown(dsc);
 	/* do nothing */
 	/* we should mark it as deferred */
     }
@@ -1816,21 +1842,27 @@ dsc_parse_order(CDSC *dsc)
     while (IS_WHITE(*p))
 	p++;
     if (COMPARE(p, "atend")) {
-	int rc = dsc_error(dsc, CDSC_MESSAGE_ATEND, dsc->line, 
-		dsc->line_length);
-	switch (rc) {
-	    case CDSC_RESPONSE_OK:
-		/* assume (atend) */
-		/* we should mark it as deferred */
-		break;
-	    case CDSC_RESPONSE_CANCEL:
-		/* ignore it */
-		break;
-	    case CDSC_RESPONSE_IGNORE_ALL:
-		return CDSC_NOTDSC;
+	if (dsc->scan_section == scan_trailer)
+	    dsc_unknown(dsc);
+	else {
+	    int rc = dsc_error(dsc, CDSC_MESSAGE_ATEND, dsc->line, 
+		    dsc->line_length);
+	    switch (rc) {
+		case CDSC_RESPONSE_OK:
+		    /* assume (atend) */
+		    /* we should mark it as deferred */
+		    break;
+		case CDSC_RESPONSE_CANCEL:
+		    /* ignore it */
+		    break;
+		case CDSC_RESPONSE_IGNORE_ALL:
+		    return CDSC_NOTDSC;
+	    }
 	}
     }
     else if (COMPARE(p, "(atend)")) {
+	if (dsc->scan_section == scan_trailer)
+	    dsc_unknown(dsc);
 	/* do nothing */
 	/* we should mark it as deferred */
     }
@@ -3014,7 +3046,7 @@ dsc_scan_page(CDSC *dsc)
 	    if (dsc->page_count)
 		dsc->page[dsc->page_count-1].end = DSC_START(dsc);
 	    if (dsc->file_length) {
-		if ((!dsc->doseps && 
+		if ((!dsc->doseps_end && 
 			((DSC_END(dsc) + 32768) < dsc->file_length)) ||
 		     ((dsc->doseps_end) && 
 			((DSC_END(dsc) + 32768) < dsc->doseps_end))) {
@@ -3052,8 +3084,10 @@ dsc_scan_page(CDSC *dsc)
 	    if (dsc->page_count)
 		dsc->page[dsc->page_count-1].end = DSC_START(dsc);
 	    if (dsc->file_length) {
-		if ((DSC_END(dsc)+100 < dsc->file_length) ||
-		  (dsc->doseps_end && (DSC_END(dsc) + 100 < dsc->doseps_end))) {
+		if ((!dsc->doseps_end && 
+			((DSC_END(dsc) + 100) < dsc->file_length)) ||
+		     ((dsc->doseps_end) && 
+			((DSC_END(dsc) + 100) < dsc->doseps_end))) {
 		    int rc = dsc_error(dsc, CDSC_MESSAGE_EARLY_EOF, 
 			dsc->line, dsc->line_length);
 		    switch (rc) {
@@ -3264,6 +3298,10 @@ dsc_scan_page(CDSC *dsc)
  * %%Trailer
  * %%EOF
  * %%BoundingBox:
+ * %%CropBox:
+ * %%HiResBoundingBox:
+ * %%DocumentCustomColors:
+ * %%DocumentProcessColors:
  * %%Orientation: 
  * %%Pages: 
  * %%PageOrder: 
@@ -3414,6 +3452,16 @@ dsc_scan_trailer(CDSC *dsc)
 	dsc->id = CDSC_DOCUMENTSUPPLIEDFONTS;
 	/* ignore */
     }
+    else if (IS_DSC(line, "%%DocumentProcessColors:")) {
+	dsc->id = CDSC_DOCUMENTPROCESSCOLORS;
+	if (dsc_parse_process_colours(dsc) != CDSC_OK)
+	    dsc->id = CDSC_UNKNOWNDSC;
+    }
+    else if (IS_DSC(line, "%%DocumentCustomColors:")) {
+	dsc->id = CDSC_DOCUMENTCUSTOMCOLORS;
+	if (dsc_parse_custom_colours(dsc) != CDSC_OK)
+	    dsc->id = CDSC_UNKNOWNDSC;
+    }
     else {
 	/* All other DSC comments are unknown, but not an error */
 	dsc->id = CDSC_UNKNOWNDSC;
@@ -3519,7 +3567,7 @@ dsc_copy_string(char *str, unsigned int slen, char *line,
 	len = slen-1;
     while ( (i<len) && IS_WHITE(line[i]))
 	i++;	/* skip leading spaces */
-    if (line[i]=='(') {
+    if ((i < len) && (line[i]=='(')) {
 	quoted = TRUE;
 	instring++;
 	i++; /* don't copy outside () */
@@ -3689,7 +3737,7 @@ dsc_parse_page(CDSC *dsc)
 	    i--;
 	}
 	while (i > 0) {
-	    if (!isdigit(p[-1]))
+	    if (!isdigit((int)p[-1]))
 		break;
 	    p--;
 	    i--;
@@ -4151,6 +4199,16 @@ dsc_parse_process_colours(CDSC *dsc)
 	    break;
 	}
     }
+    while (IS_WHITE(dsc->line[n]))
+	n++;
+    if (COMPARE(dsc->line+n, "(atend)")) {
+	if (dsc->scan_section == scan_comments)
+	    blank_line = TRUE;
+	else {
+	    dsc_unknown(dsc);
+	    return CDSC_NOTDSC;
+	}
+    }
 
     if (!blank_line) {
 	do {
@@ -4159,7 +4217,8 @@ dsc_parse_process_colours(CDSC *dsc)
 	    n+=i;
 	    if (i && strlen(colourname)) {
 		if ((pcolour = dsc_find_colour(dsc, colourname)) == NULL) {
-		    pcolour = (CDSCCOLOUR *)malloc(sizeof(CDSCCOLOUR));
+		    pcolour = (CDSCCOLOUR *)
+			dsc_memalloc(dsc, sizeof(CDSCCOLOUR));
 		    if (pcolour == NULL)
 			return CDSC_ERROR;	/* out of memory */
 		    memset(pcolour, 0, sizeof(CDSCCOLOUR));
@@ -4241,6 +4300,16 @@ dsc_parse_custom_colours(CDSC *dsc)
 	    break;
 	}
     }
+    while (IS_WHITE(dsc->line[n]))
+	n++;
+    if (COMPARE(dsc->line+n, "(atend)")) {
+	if (dsc->scan_section == scan_comments)
+	    blank_line = TRUE;
+	else {
+	    dsc_unknown(dsc);
+	    return CDSC_NOTDSC;
+	}
+    }
 
     if (!blank_line) {
 	do {
@@ -4249,7 +4318,8 @@ dsc_parse_custom_colours(CDSC *dsc)
 	    n+=i;
 	    if (i && strlen(colourname)) {
 		if ((pcolour = dsc_find_colour(dsc, colourname)) == NULL) {
-		    pcolour = (CDSCCOLOUR *)malloc(sizeof(CDSCCOLOUR));
+		    pcolour = (CDSCCOLOUR *)
+			dsc_memalloc(dsc, sizeof(CDSCCOLOUR));
 		    if (pcolour == NULL)
 			return CDSC_ERROR;	/* out of memory */
 		    memset(pcolour, 0, sizeof(CDSCCOLOUR));
@@ -4321,7 +4391,8 @@ dsc_parse_cmyk_custom_colour(CDSC *dsc)
 	    n+=i;
 	    if (i && strlen(colourname)) {
 		if ((pcolour = dsc_find_colour(dsc, colourname)) == NULL) {
-		    pcolour = (CDSCCOLOUR *)malloc(sizeof(CDSCCOLOUR));
+		    pcolour = (CDSCCOLOUR *)
+			dsc_memalloc(dsc, sizeof(CDSCCOLOUR));
 		    if (pcolour == NULL)
 			return CDSC_ERROR;	/* out of memory */
 		    memset(pcolour, 0, sizeof(CDSCCOLOUR));
@@ -4393,7 +4464,8 @@ dsc_parse_rgb_custom_colour(CDSC *dsc)
 	    n+=i;
 	    if (i && strlen(colourname)) {
 		if ((pcolour = dsc_find_colour(dsc, colourname)) == NULL) {
-		    pcolour = (CDSCCOLOUR *)malloc(sizeof(CDSCCOLOUR));
+		    pcolour = (CDSCCOLOUR *)
+			dsc_memalloc(dsc, sizeof(CDSCCOLOUR));
 		    if (pcolour == NULL)
 			return CDSC_ERROR;	/* out of memory */
 		    memset(pcolour, 0, sizeof(CDSCCOLOUR));
