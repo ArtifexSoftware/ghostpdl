@@ -56,7 +56,9 @@ class Ghostscript:
 		cmd = cmd + '-sDEVICE=%s ' % (self.device,)
 		cmd = cmd + '-sOutputFile=%s ' % (self.outfile,)
 
-		cmd = cmd + ' -c false 0 startjob pop '
+		# as of gs_init 1.93, job server emulation needs -dNOOUTERSAVE so
+		# that the 'exitserver' will restore global VM as expected.
+		cmd = cmd + '-dNOOUTERSAVE -c false 0 startjob pop '
 
 		if string.lower(self.infile[-4:]) == ".pdf":
 			cmd = cmd + ' -dFirstPage=1 -dLastPage=1 '
