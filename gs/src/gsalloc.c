@@ -34,8 +34,8 @@
  *   M is : for movable objects, | for immovable,
  *   O is {alloc = +, free = -, grow = >, shrink = <},
  *   T is {bytes = b, object = <, ref = $, string = >}, and
- *   S is {freelist = F, LIFO = space, own chunk = L, lost = #,
- *      lost own chunk = ~, other = .}.
+ *   S is {small freelist = f, large freelist = F, LIFO = space,
+ *      own chunk = L, lost = #, lost own chunk = ~, other = .}.
  */
 #ifdef DEBUG
 private void
@@ -87,8 +87,12 @@ private RELOC_PTRS_BEGIN(ref_memory_reloc_ptrs)
 RELOC_PTRS_END
 
 /* Forward references */
+private void remove_range_from_freelist(gs_ref_memory_t *mem, void* bottom, void* top);
+private obj_header_t *large_freelist_alloc(gs_ref_memory_t *mem, uint size);
+private obj_header_t *scavenge_low_free(gs_ref_memory_t *mem, unsigned request_size);
 private ulong compute_free_objects(P1(gs_ref_memory_t *));
 private obj_header_t *alloc_obj(P5(gs_ref_memory_t *, ulong, gs_memory_type_ptr_t, bool, client_name_t));
+private void trim_obj(gs_ref_memory_t *mem, obj_header_t *obj, uint size);
 private chunk_t *alloc_acquire_chunk(P4(gs_ref_memory_t *, ulong, bool, client_name_t));
 private chunk_t *alloc_add_chunk(P3(gs_ref_memory_t *, ulong, client_name_t));
 void alloc_close_chunk(P1(gs_ref_memory_t *));
@@ -421,6 +425,14 @@ gs_memory_set_gc_status(gs_ref_memory_t * mem, const gs_memory_gc_status_t * pst
 		/* If debugging, clear the block in an attempt to */\
 		/* track down uninitialized data errors. */\
 		gs_alloc_fill(ptr, gs_alloc_fill_alloc, size);
+#define ELSEIF_BIG_FREELIST_ALLOC(ptr, imem, size, pstype)\
+	}\
+	else if (size > max_freelist_size\
+	 && (ptr = large_freelist_alloc(imem, size)) != 0)\
+	{	ptr[-1].o_type = pstype;\
+		/* If debugging, clear the block in an attempt to */\
+		/* track down uninitialized data errors. */\
+		gs_alloc_fill(ptr, gs_alloc_fill_alloc, size);
 #define ELSEIF_LIFO_ALLOC(ptr, imem, size, pstype)\
 	}\
 	else if ( (imem->cc.ctop - (byte *)(ptr = (obj_header_t *)imem->cc.cbot))\
@@ -447,6 +459,8 @@ i_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname)
     obj_header_t **pfl;
 
     IF_FREELIST_ALLOC(obj, imem, size, &st_bytes, pfl)
+	alloc_trace(":+bf", imem, cname, NULL, size, obj);
+    ELSEIF_BIG_FREELIST_ALLOC(obj, imem, size, &st_bytes)
 	alloc_trace(":+bF", imem, cname, NULL, size, obj);
     ELSEIF_LIFO_ALLOC(obj, imem, size, &st_bytes)
 	alloc_trace(":+b ", imem, cname, NULL, size, obj);
@@ -481,6 +495,8 @@ i_alloc_struct(gs_memory_t * mem, gs_memory_type_ptr_t pstype,
 
     ALLOC_CHECK_SIZE(pstype);
     IF_FREELIST_ALLOC(obj, imem, size, pstype, pfl)
+	alloc_trace(":+<f", imem, cname, pstype, size, obj);
+    ELSEIF_BIG_FREELIST_ALLOC(obj, imem, size, pstype)
 	alloc_trace(":+<F", imem, cname, pstype, size, obj);
     ELSEIF_LIFO_ALLOC(obj, imem, size, pstype)
 	alloc_trace(":+< ", imem, cname, pstype, size, obj);
@@ -701,9 +717,7 @@ i_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 	}
 	/* Don't overwrite even if gs_alloc_debug is set. */
     }
-    if (size <= max_freelist_size &&
-	obj_align_round(size) >= sizeof(obj_header_t *)
-	) {
+    if (obj_align_round(size) >= sizeof(obj_header_t *)) {
 			/*
 			 * Put the object on a freelist, unless it belongs to
 			 * an older save level, in which case we mustn't
@@ -711,15 +725,16 @@ i_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 			 */
 	imem->cfreed.memory = imem;
 	if (chunk_locate(ptr, &imem->cfreed)) {
-	    obj_header_t **pfl =
-	    &imem->freelists[(size + obj_align_mask) >>
-			     log2_obj_align_mod];
+	    obj_header_t **pfl
+	     = size > max_freelist_size ? &imem->freelists[LARGE_FREELIST_INDEX]
+	     : &imem->freelists[(size + obj_align_mask) >> log2_obj_align_mod];
 
 	    pp->o_type = &st_free;	/* don't confuse GC */
 	    gs_alloc_fill(ptr, gs_alloc_fill_free, size);
 	    *(obj_header_t **) ptr = *pfl;
 	    *pfl = (obj_header_t *) ptr;
-	    alloc_trace(":-oF", imem, cname, pstype, size, ptr);
+	    alloc_trace(size > max_freelist_size ? ":-oF" : ":-of",
+	     imem, cname, pstype, size, ptr);
 	    return;
 	}
 	/* Don't overwrite even if gs_alloc_debug is set. */
@@ -884,21 +899,58 @@ compute_free_objects(gs_ref_memory_t * mem)
 
     /* Add up space on free lists. */
     for (i = 0; i < num_freelists; i++) {
-	uint free_size =
-	(i << log2_obj_align_mod) + sizeof(obj_header_t);
 	const obj_header_t *pfree;
-
 	for (pfree = mem->freelists[i]; pfree != 0;
 	     pfree = *(const obj_header_t * const *)pfree
 	    )
-	    unused += free_size;
+	    unused += obj_align_round(pfree[-1].o_size);
     }
     return unused;
+}
+    
+/* Allocate an object from large-object freelist */
+private obj_header_t *	/* rets obj if allocated, else 0 */
+large_freelist_alloc(gs_ref_memory_t *mem, uint size)
+{
+    /* Scan large object freelist. We'll grab an object up to 1/8 bigger */
+    /* right away, else use best fit of entire scan. */
+    uint aligned_size = obj_align_round(size);
+    uint aligned_min_size = obj_align_round(size) + sizeof(obj_header_t);
+    uint aligned_max_size
+     = aligned_min_size + obj_align_round(aligned_min_size / 8);
+    obj_header_t *best_fit = 0;
+    obj_header_t **best_fit_prev;
+    uint best_fit_size = arch_max_uint;
+    obj_header_t *pfree;
+    obj_header_t **ppfprev = &mem->freelists[LARGE_FREELIST_INDEX];
+    while ((pfree = *ppfprev) != 0) {
+	uint free_size = obj_align_round(pfree[-1].o_size);
+        if (free_size == aligned_size
+	 || free_size >= aligned_min_size && free_size < best_fit_size) {
+	    best_fit = pfree;
+	    best_fit_prev = ppfprev;
+	    best_fit_size = pfree[-1].o_size;
+	    if (best_fit_size <= aligned_max_size)
+		break;	/* good enough fit to spare scan of entire list */
+	}
+	ppfprev = (obj_header_t **) pfree;
+    }
+    if (best_fit == 0)
+	return 0;   /* no single free chunk is large enough */
+
+    /* Remove from freelist & return excess memory to free */
+    *best_fit_prev = *(obj_header_t **)best_fit;
+    trim_obj(mem, best_fit, aligned_size);
+
+    /* Pre-init block header; o_large & o_type are already init'd */
+    best_fit[-1].o_size = size;
+
+    return best_fit;
 }
 
 /* Allocate an object.  This handles all but the fastest, simplest case. */
 private obj_header_t *
-alloc_obj(gs_ref_memory_t * mem, ulong lsize, gs_memory_type_ptr_t pstype,
+alloc_obj(gs_ref_memory_t *mem, ulong lsize, gs_memory_type_ptr_t pstype,
 	  bool immovable, client_name_t cname)
 {
     obj_header_t *ptr;
@@ -924,6 +976,7 @@ alloc_obj(gs_ref_memory_t * mem, ulong lsize, gs_memory_type_ptr_t pstype,
     } else {
 	uint asize = obj_size_round((uint) lsize);
 	bool consolidate = mem->is_controlled;
+	bool allocate_success = true;
 
 	while (mem->cc.ctop -
 	       (byte *) (ptr = (obj_header_t *) mem->cc.cbot)
@@ -937,12 +990,22 @@ alloc_obj(gs_ref_memory_t * mem, ulong lsize, gs_memory_type_ptr_t pstype,
 		/* Add another chunk. */
 		chunk_t *cp =
 		    alloc_add_chunk(mem, (ulong)mem->chunk_size, "chunk");
-
-		if (cp == 0)
-		    return 0;
+		if (cp == 0) {
+		    allocate_success = false;
+		    break;
+		}
 	    }
 	}
-	mem->cc.cbot = (byte *) ptr + asize;
+	/* !!!REVIEW THIS LATER!!! */
+	/* If no success, try to scavenge from low free memory. This is */
+	/* only enabled for fixed memory (currently only async renderer) */
+	/* since I don't fully understand the implications wrt save/restore */
+	/* of doing this in the general case. */
+	if (allocate_success)
+	    mem->cc.cbot = (byte *) ptr + asize;
+	else if (!mem->is_controlled
+	 || (ptr = scavenge_low_free(mem, (uint)lsize)) == 0)
+	    return 0;	/* error */
 	ptr->o_large = 0;
 	ptr->o_size = (uint) lsize;
     }
@@ -963,8 +1026,6 @@ ialloc_consolidate_free(gs_ref_memory_t *mem)
 	 * amount of space reclaimed minus the amount of that space that
 	 * was on free lists.
 	 */
-	ulong found = 0;
-
 	alloc_close_chunk(mem);
 
 	/* Visit chunks in reverse order to encourage LIFO behavior. */
@@ -982,25 +1043,8 @@ ialloc_consolidate_free(gs_ref_memory_t *mem)
 	    END_OBJECTS_SCAN
 	    if (begin_free) {
 		/* We found free objects at the top of the object area. */
-		int i;
-
-		found += (byte *)cp->cbot - (byte *)begin_free;
 		/* Remove the free objects from the freelists. */
-		for (i = 0; i < num_freelists; i++) {
-		    obj_header_t *pfree;
-		    obj_header_t **ppfprev = &mem->freelists[i];
-		    uint free_size =
-			(i << log2_obj_align_mod) + sizeof(obj_header_t);
-
-		    while ((pfree = *ppfprev) != 0)
-			if (ptr_ge(pfree, begin_free) &&
-			    ptr_lt(pfree, cp->cbot)
-			    ) {	/* We're removing an object. */
-			    *ppfprev = *(obj_header_t **) pfree;
-			    found -= free_size;
-			} else
-			    ppfprev = (obj_header_t **) pfree;
-		}
+		remove_range_from_freelist(mem, begin_free, cp->cbot);
 	    } else
 		begin_free = (obj_header_t *)cp->cbot;
 	    if (begin_free == (obj_header_t *) cp->cbase &&
@@ -1023,7 +1067,6 @@ ialloc_consolidate_free(gs_ref_memory_t *mem)
 		cp->cbot = (byte *) begin_free;
 	    }
 	}
-	mem->lost.objects -= found;
 	alloc_open_chunk(mem);
 }
 private void
@@ -1031,6 +1074,116 @@ i_consolidate_free(gs_memory_t *mem)
 {
     ialloc_consolidate_free((gs_ref_memory_t *)mem);
 }
+
+/* try to free-up given amount of space from freespace below chunk base */
+private obj_header_t *	/* returns uninitialized object hdr, NULL if none found */
+scavenge_low_free(gs_ref_memory_t *mem, unsigned request_size)
+{
+    /* find 1st range of memory that can be glued back together to fill request */
+    obj_header_t *found_pre = 0;
+
+    /* Visit chunks in forward order */
+    obj_header_t *begin_free = 0;
+    uint found_free;
+    uint request_size_rounded = obj_size_round(request_size);
+    uint need_free = request_size_rounded + sizeof(obj_header_t);    /* room for GC's dummy hdr */
+    chunk_t *cp;
+    for (cp = mem->cfirst; cp != 0; cp = cp->cnext) {
+	begin_free = 0;
+	found_free = 0;
+	SCAN_CHUNK_OBJECTS(cp)
+	DO_ALL
+	    if (pre->o_type == &st_free) {
+	    	if (begin_free == 0) {
+	    	    found_free = 0;
+	    	    begin_free = pre;
+	    	}
+	    	found_free += pre_obj_rounded_size(pre);
+	    	if (begin_free != 0 && found_free >= need_free)
+	    	    break;
+	    } else
+	    	begin_free = 0;
+	END_OBJECTS_SCAN_INCOMPLETE
+
+	/* Found sufficient range of empty memory */
+	if (begin_free != 0 && found_free >= need_free) {
+
+	    /* Fish found pieces out of various freelists */
+	    remove_range_from_freelist(mem, (char*)begin_free,
+	     (char*)begin_free + found_free);
+
+	    /* Prepare found object */
+	    found_pre = begin_free;
+	    found_pre->o_type = &st_free;  /* don't confuse GC if gets lost */
+	    found_pre->o_size = found_free - sizeof(obj_header_t);
+
+	    /* Chop off excess tail piece & toss it back into free pool */
+	    trim_obj(mem, found_pre + 1, request_size);
+     	}
+    }
+    return found_pre;
+}
+
+/* Remove range of memory from a mem's freelists */
+private void
+remove_range_from_freelist(gs_ref_memory_t *mem, void* bottom, void* top)
+{
+    int i;
+    int removed = 0;
+
+    /* Remove the free objects from the freelists. */
+    for (i = 0; i < num_freelists; i++) {
+        obj_header_t *pfree;
+	obj_header_t **ppfprev = &mem->freelists[i];
+	uint free_size = (i << log2_obj_align_mod) + sizeof(obj_header_t);
+
+	while ((pfree = *ppfprev) != 0)
+	    if (ptr_ge(pfree, bottom) && ptr_lt(pfree, top)) {
+		/* We're removing an object. */
+		*ppfprev = *(obj_header_t **) pfree;
+		removed += obj_align_round(pfree[-1].o_size);
+	    } else
+		ppfprev = (obj_header_t **) pfree;
+    }
+    mem->lost.objects -= (char*)top - (char*)bottom + removed;
+}
+
+/* Trim a memory object down to a given size */
+private void
+trim_obj(gs_ref_memory_t *mem, obj_header_t *obj, uint size)
+/* Obj must have rounded size == req'd size, or have enough room for */
+/* trailing dummy obj_header */
+{   uint rounded_size = obj_align_round(size);
+    obj_header_t *pre_obj = obj - 1;
+    obj_header_t *excess_pre = (obj_header_t*)((char*)obj + rounded_size);
+    uint excess_size
+     = obj_align_round(pre_obj->o_size) - rounded_size - sizeof(obj_header_t);
+
+    /* trim object's size to desired */
+    if (obj_align_round(pre_obj->o_size) == rounded_size)
+	return;	/* nothing to do here */
+    pre_obj->o_size = size;
+
+    /* make excess into free obj */
+    excess_pre->o_type = &st_free;  /* don't confuse GC */
+    excess_pre->o_size = excess_size;
+    excess_pre->o_large = 0;
+    if (excess_size >= obj_align_mod) {
+    	/* Put excess object on a freelist */
+    	obj_header_t **pfl;
+	if (excess_size <= max_freelist_size)
+     	    pfl = &mem->freelists[(excess_size + obj_align_mask) >>
+     	     log2_obj_align_mod];
+	else
+	    pfl = &mem->freelists[LARGE_FREELIST_INDEX];
+    	*(obj_header_t **) (excess_pre + 1) = *pfl;
+    	*pfl = excess_pre + 1;
+    	mem->cfreed.memory = mem;
+    } else {
+    	/* excess piece will be "lost" memory */
+    	mem->lost.objects += excess_size + sizeof(obj_header_t);
+    }
+}    
 
 /* ================ Roots ================ */
 

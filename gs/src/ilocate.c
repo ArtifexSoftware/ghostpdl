@@ -198,7 +198,9 @@ ialloc_validate_memory(const gs_ref_memory_t * mem, gc_state_t * gcst)
 			     (ulong) pfree, size, i);
 		    break;
 		}
-		if (size < free_size - obj_align_mask || size > free_size) {
+		if ((i == LARGE_FREELIST_INDEX && size < max_freelist_size) ||
+		 (i != LARGE_FREELIST_INDEX && 
+		 (size < free_size - obj_align_mask || size > free_size))) {
 		    lprintf3("Object 0x%lx(%u) size wrong on freelist %i!\n",
 			     (ulong) pfree, size, i);
 		    break;

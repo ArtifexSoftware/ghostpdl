@@ -72,9 +72,9 @@ PCFBASM=
 # nmake expands macros when encountered, not when used,
 # so this must precede the !include statements.
 
-# ****** WRONG ****** NEED GLOBJ PREFIX ******
-BEGINFILES=gs*.res gs*.ico $(GLGENDIR)\ccf32.tr\
-   $(GSDLL).dll $(GSCONSOLE).exe\
+# *** see comments eleswhere why .ico files are not in obj directory 
+BEGINFILES=$(GLOBJDIR)\gs*.res gs*.ico $(GLGENDIR)\ccf32.tr\
+   $(GSDLL_DLL) $(GSCONSOLE_XE)\
    $(BEGINFILES2)
 
 # Include the generic makefiles.

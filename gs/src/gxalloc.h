@@ -215,6 +215,11 @@ extern_st(st_chunk);
 #define DO_ALL\
 			{	size = pre_obj_contents_size(pre);\
 				{
+#define END_OBJECTS_SCAN_INCOMPLETE\
+				}\
+			}\
+		}\
+	}
 #ifdef DEBUG
 #  define END_OBJECTS_SCAN\
 				}\
@@ -227,11 +232,7 @@ extern_st(st_chunk);
 		}\
 	}
 #else
-#  define END_OBJECTS_SCAN\
-				}\
-			}\
-		}\
-	}
+#  define END_OBJECTS_SCAN END_OBJECTS_SCAN_INCOMPLETE
 #endif
 
 /* Initialize a chunk. */
@@ -305,10 +306,15 @@ typedef struct stream_s stream;
 
 /* Define the number of freelists.  The index in the freelist array */
 /* is the ceiling of the size of the object contents (i.e., not including */
-/* the header) divided by obj_align_mod. */
+/* the header) divided by obj_align_mod. There is an extra entry used to */
+/* keep a list of all free blocks > max_freelist_size. */
 #define max_freelist_size 800	/* big enough for gstate & contents */
-#define num_freelists\
+#define num_small_freelists\
   ((max_freelist_size + obj_align_mod - 1) / obj_align_mod + 1)
+#define num_freelists (num_small_freelists + 1)
+
+/* Define the index of a freelist containing all free mem blocks > max_freelist_size */
+#define LARGE_FREELIST_INDEX	num_small_freelists
 
 /* Define the memory manager subclass for this allocator. */
 struct gs_ref_memory_s {

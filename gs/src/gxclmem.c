@@ -614,7 +614,7 @@ memfile_next_blk(MEMFILE * f)
 	f->log_curr_blk = newbp;
     }				/* end else (when we are compressing)                           */
 
-    return (0);
+    return (ecode);
 }
 
 int	/* returns # of chars actually written */

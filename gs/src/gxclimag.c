@@ -640,7 +640,8 @@ clist_image_plane_data(gx_device * dev,
 	(code < 0 ? (band_code = code) : code) >= 0,\
 	(cmd_clear_known(cdev,\
 	    clist_image_unknowns(dev, pie) | begin_image_known),\
-	 pie->color_map_is_known = false, true)\
+	 pie->color_map_is_known = false,\
+	 cdev->image_enum_id = pie->id, true)\
 	);
     /* Update sub-rect in case memory exhaustion forced end_image */
     if (!pie->image.Interpolate)

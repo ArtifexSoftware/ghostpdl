@@ -117,23 +117,36 @@ MAKEDLL=1
 # Define the source, generated intermediate file, and object directories
 # for the graphics library (GL) and the PostScript/PDF interpreter (PS).
 
-!ifndef GLSRCDIR
+# If only one of PSSRCDIR or GLSRCDIR defined, use the other as default.
+# If neither defined, use .\
+!ifdef GLSRCDIR
+!elseifdef PSSRCDIR
+GLSRCDIR=$(PSSRCDIR)
+!else
 GLSRCDIR=.
 !endif
-!ifndef GLGENDIR
-GLGENDIR=.\obj
+!ifndef PSSRCDIR
+PSSRCDIR=$(GLSRCDIR)
 !endif
-!ifndef GLOBJDIR
+
+# If only one of PSOBJDIR or GLOBJDIR defined, use the other as default.
+# If neither defined, use .\obj
+!ifdef GLOBJDIR
+!elseifdef PSOBJDIR
+GLOBJDIR=$(PSOBJDIR)
+!else
 GLOBJDIR=.\obj
 !endif
-!ifndef PSSRCDIR
-PSSRCDIR=.
+!ifndef PSOBJDIR
+PSOBJDIR=$(GLOBJDIR)
+!endif
+
+# If GLGENDIR undef'd, make = GLOBJDIR. If PSGENDIR undef'd, make = PSOBJDIR.
+!ifndef GLGENDIR
+GLGENDIR=$(GLOBJDIR)
 !endif
 !ifndef PSGENDIR
-PSGENDIR=.\obj
-!endif
-!ifndef PSOBJDIR
-PSOBJDIR=.\obj
+PSGENDIR=$(PSOBJDIR)
 !endif
 
 # Define the directory where the IJG JPEG library sources are stored,
@@ -173,6 +186,12 @@ CONFIG=
 
 !ifndef CFLAGS
 CFLAGS=
+!endif
+
+# Define the name of the makefile -- used in dependencies.
+
+!ifndef MAKEFILE
+MAKEFILE=$(GLSRCDIR)\msvc32.mak
 !endif
 
 # ------ Platform-specific options ------ #
@@ -334,11 +353,6 @@ FPU_TYPE=1
 FPU_TYPE=1
 !endif
 
-# Define the name of the makefile -- used in dependencies.
-
-# The use of multiple file names here is garbage!
-MAKEFILE=$(GLSRCDIR)\msvc32.mak $(GLSRCDIR)\msvccmd.mak $(GLSRCDIR)\msvctail.mak $(GLSRCDIR)\winlib.mak $(GLSRCDIR)\winint.mak
-
 # Define the files to be removed by `make clean'.
 # nmake expands macros when encountered, not when used,
 # so this must precede the !include statements.
@@ -364,27 +378,27 @@ $(GLGEN)lib32.rsp: $(MAKEFILE)
 $(GS_XE): $(GSDLL_DLL)  $(DWOBJ) $(GSCONSOLE_XE)
 	echo /SUBSYSTEM:WINDOWS > $(GLGEN)gswin32.rsp
 	echo /DEF:$(GLSRC)dwmain32.def /OUT:$(GS_XE) >> $(GLGEN)gswin32.rsp
-        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(DWOBJ) @$(LIBCTR) $(GS).res
+        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(DWOBJ) @$(LIBCTR) $(GLOBJ)$(GS).res
 	del $(GLGEN)gswin32.rsp
 
 # The console mode small EXE loader
-$(GSCONSOLE_XE): $(OBJC) $(GS).res $(GLSRC)dw32c.def
+$(GSCONSOLE_XE): $(OBJC) $(GLOBJ)$(GS).res $(GLSRC)dw32c.def
 	echo /SUBSYSTEM:CONSOLE > $(GLGEN)gswin32.rsp
 	echo  /DEF:$(GLSRC)dw32c.def /OUT:$(GSCONSOLE_XE) >> $(GLGEN)gswin32.rsp
 	$(LINK_SETUP)
-        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(OBJC) @$(LIBCTR) $(GS).res
+        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(OBJC) @$(LIBCTR) $(GLOBJ)$(GS).res
 	del $(GLGEN)gswin32.rsp
 
 # The big DLL
-$(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ) $(GSDLL).res $(GLGEN)lib32.rsp
+$(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ) $(GLOBJ)$(GSDLL).res $(GLGEN)lib32.rsp
 	echo /DLL /DEF:$(GLSRC)gsdll32.def /OUT:$(GSDLL_DLL) > $(GLGEN)gswin32.rsp
 	$(LINK_SETUP)
-        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(GLOBJ)gsdll @$(ld_tr) $(INTASM) @$(GLGEN)lib.tr @$(GLGEN)lib32.rsp @$(LIBCTR) $(GSDLL).res
+        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(GLOBJ)gsdll @$(ld_tr) $(INTASM) @$(GLGEN)lib.tr @$(GLGEN)lib32.rsp @$(LIBCTR) $(GLOBJ)$(GSDLL).res
 	del $(GLGEN)gswin32.rsp
 
 !else
 # The big graphical EXE
-$(GS_XE): $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL) gsdll.$(OBJ) $(DWOBJNO) $(GS).res $(GLSRC)dwmain32.def $(GLGEN)lib32.rsp
+$(GS_XE): $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ) $(DWOBJNO) $(GLOBJ)$(GS).res $(GLSRC)dwmain32.def $(GLGEN)lib32.rsp
 	copy $(ld_tr) $(GLGEN)gswin32.tr
 	echo $(GLOBJ)dwnodll.obj >> $(GLGEN)gswin32.tr
 	echo $(GLOBJ)dwimg.obj >> $(GLGEN)gswin32.tr
@@ -392,19 +406,19 @@ $(GS_XE): $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL) gsdll.$(OBJ) $(DWOBJNO) $(GS).re
 	echo $(GLOBJ)dwtext.obj >> $(GLGEN)gswin32.tr
 	echo /DEF:$(GLSRC)dwmain32.def /OUT:$(GS_XE) > $(GLGEN)gswin32.rsp
 	$(LINK_SETUP)
-        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp gsdll @$(GLGEN)gswin32.tr @$(LIBCTR) $(INTASM) @$(GLGEN)lib.tr @$(GLGEN)lib32.rsp $(GSDLL).res
+        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(GLOBJ)gsdll @$(GLGEN)gswin32.tr @$(LIBCTR) $(INTASM) @$(GLGEN)lib.tr @$(GLGEN)lib32.rsp $(GLOBJ)$(GSDLL).res
 	del $(GLGEN)gswin32.tr
 	del $(GLGEN)gswin32.rsp
 
 # The big console mode EXE
-$(GSCONSOLE_XE): $(GS_ALL) $(DEVS_ALL) gsdll.$(OBJ) $(OBJCNO) $(GS).res $(GLSRC)dw32c.def $(GLGEN)lib32.rsp
+$(GSCONSOLE_XE): $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ) $(OBJCNO) $(GLOBJ)$(GS).res $(GLSRC)dw32c.def $(GLGEN)lib32.rsp
 	copy $(ld_tr) $(GLGEN)gswin32c.tr
 	echo $(GLOBJ)dwnodllc.obj >> $(GLGEN)gswin32c.tr
 	echo $(GLOBJ)dwmainc.obj >> $(GLGEN)gswin32c.tr
 	echo /SUBSYSTEM:CONSOLE > $(GLGEN)gswin32.rsp
 	echo /DEF:$(GLSRC)dw32c.def /OUT:$(GSCONSOLE_XE) >> $(GLGEN)gswin32.rsp
 	$(LINK_SETUP)
-        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp gsdll @$(GLGEN)gswin32c.tr @$(LIBCTR) $(INTASM) @$(GLGEN)lib.tr @$(GLGEN)lib32.rsp $(GS).res
+        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(GLOBJ)gsdll @$(GLGEN)gswin32c.tr @$(LIBCTR) $(INTASM) @$(GLGEN)lib.tr @$(GLGEN)lib32.rsp $(GLOBJ)$(GS).res
 	del $(GLGEN)gswin32.rsp
 	del $(GLGEN)gswin32c.tr
 !endif
