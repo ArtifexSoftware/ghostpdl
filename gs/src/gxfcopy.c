@@ -1057,17 +1057,22 @@ same_type1_subrs(const gs_font_type1 *cfont, const gs_font_type1 *ofont,
 						i, global, &gdata0);
 	int code1 = ofont->data.procs.subr_data((gs_font_type1 *)ofont, 
 						i, global, &gdata1);
+	bool missing0, missing1;
 	
+	if (code0 == gs_error_rangecheck && code1 == gs_error_rangecheck)
+	    return 1; /* Both arrays exceeded. */
 	/*  Some fonts use null for skiping elements in subrs array. 
 	    This gives typecheck.
 	*/
-	if ((code0 == gs_error_rangecheck || code0 == gs_error_typecheck) && 
-	    (code1 == gs_error_rangecheck || code1 == gs_error_typecheck))
-	    return 1;
-	if ((code0 == gs_error_rangecheck || code0 == gs_error_typecheck) != 
-	    (code1 == gs_error_rangecheck || code1 == gs_error_typecheck))
+	missing0 = (code0 == gs_error_rangecheck || code0 == gs_error_typecheck);
+	missing1 = (code1 == gs_error_rangecheck || code1 == gs_error_typecheck);
+	if (missing0 && missing1)
 	    continue;
-	else if (code0 < 0)
+	if (missing0 && !missing1)
+	    return 0; /* The copy has insufficient subrs. */
+	if (missing1)
+	    continue;
+	if (code0 < 0)
 	    code = code0, exit = true;
 	else if (code1 < 0)
 	    code = code1, exit = true;
