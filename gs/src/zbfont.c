@@ -516,16 +516,21 @@ sub_font_params(const ref *op, gs_matrix *pmat, gs_matrix *pomat, ref *pfname)
 	read_matrix(pmatrix, pmat) < 0
 	)
 	return_error(e_invalidfont);
+    if (dict_find_string(op, ".OrigFont", &porigfont) <= 0)
+	porigfont = NULL;
     if (pomat!= NULL) {
-	if (dict_find_string(op, ".OrigFont", &porigfont) <= 0 ||
+	if (porigfont == NULL ||
 	    dict_find_string(porigfont, "FontMatrix", &pmatrix) <= 0 ||
 	    read_matrix(pmatrix, pomat) < 0
 	    )
 	    memset(pomat, 0, sizeof(*pomat));
     }
-    if (dict_find_string(op, "FontName", &pfontname) > 0)
+    if (dict_find_string((porigfont != NULL ? porigfont : op), ".Alias", &pfontname) > 0) {
+        /* If we emulate the font, we want the requested name rather than a substitute. */
 	get_font_name(pfname, pfontname);
-    else
+    } else if (dict_find_string((porigfont != NULL ? porigfont : op), "FontName", &pfontname) > 0) {
+	get_font_name(pfname, pfontname);
+    } else
 	make_empty_string(pfname, a_readonly);
     return 0;
 }

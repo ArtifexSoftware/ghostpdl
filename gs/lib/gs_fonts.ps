@@ -495,8 +495,11 @@ buildfontdict 3 /.buildfont3 cvx put
 % we think this matches the observed behavior of Adobe interpreters.
 /.aliasfont             % <name> <font> .aliasfont <newFont>
  { .currentglobal 3 1 roll dup .gcheck .setglobal
-   dup length 2 add dict
-   dup 3 -1 roll { 1 index /FID eq { pop pop } { put dup } ifelse } forall
+                             % <bool> <name> <font>
+   dup length 2 add dict     % <bool> <name> <font> <dict>
+   dup 3 -1 roll             % <bool> <name> <dict> <dict> <font>
+   { 1 index /FID eq { pop pop } { put dup } ifelse } forall
+                             % <bool> <name> <dict> <dict>
                 % Stack: global fontname newfont newfont.
                 % We might be defining a global font whose FontName
                 % is a local string.  This is weird, but legal,
@@ -507,13 +510,34 @@ buildfontdict 3 /.buildfont3 cvx put
                 % garbage value to findfont.  In this case, just don't
                 % call definefont at all.
    2 index dup type /stringtype eq exch .gcheck or 1 index .gcheck not or
-    { /FontName 3 index dup type /stringtype eq { cvn } if put
+    { pop                              % <bool> <name> <dict>
+      1 index dup type /stringtype eq { cvn } if
+                                       % <bool> <name> <dict> <name1>
+           % HACK:
+           % We want to know whether we alias a font,
+           % because in this case its FontName to be replaced with the alias.
+           % There is no simple way to know that at this point.
+           % But if the original font has defaultfontname,
+           % we probably substitute it rather than alias.
+           % Using such condition as an approximation to the strong condition.
+           %
+           % Note it works wrongly if Fontmap maps something to defaultfontname like this :
+           %        /Courier  /NimbusMonL-Regu	;
+           %        /Something /Courier ;
+           % The FontName of Something will not be /Something. It will be /Courier .
+           %
+      1 index /FontName get defaultfontname ne {
+        2 copy /FontName exch put
+      } if
+      1 index exch /.Alias exch put    % <bool> <name> <dict>
+      dup dup /.OrigFont exch .growput
                 % Don't bind in definefont, since Level 2 redefines it.
       /definefont .systemvar exec
     }
     { .completefont pop exch pop
     }
-   ifelse exch .setglobal
+   ifelse
+   exch .setglobal
  } odef         % so findfont will bind it
 
 % Define .loadfontfile for loading a font.  If we recognize Type 1 and/or
@@ -740,11 +764,13 @@ FAKEFONTS not { (%END FAKEFONTS) .skipeof } if
 % The Red Book requires that findfont be a procedure, not an operator,
 % but it still needs to restore the stacks reliably if it fails,
 % so we do all the work in an operator.
-/.findfont {
-  mark 1 index
+/.findfont {             % <fontname> .findfont <font>
+  mark 1 index        % <fontname> mark <fontname>
   //systemdict begin .dofindfont
+                      % <fontname> mark <alias> ... <font>
         % Define any needed aliases.
   counttomark 1 sub { .aliasfont } repeat end
+                      % <fontname> mark <font>
   exch pop exch pop
 } odef
 /findfont {
@@ -780,13 +806,14 @@ FAKEFONTS not { (%END FAKEFONTS) .skipeof } if
 % This is the standard procedure for handling font substitution.
 % Its location is per an Adobe newsgroup posting.
 % It is called with the font name on the stack, standing in for findfont.
-/.stdsubstfont {        % mark <alias1> ... <fontname> .stdsubstfont <font>
+/.stdsubstfont {        % mark <alias1> ... <fontname> .stdsubstfont mark <alias1> ... <aliasN> <font>
       /SUBSTFONT where {
         pop QUIET not {
           (Substituting for font ) print dup =only
           (.) = flush
         } if
                         % No aliasing.
+                        % This mode is incompatible with high level devices.
         cleartomark mark defaultfontname
       } {
         dup .substitutefont
@@ -801,8 +828,6 @@ FAKEFONTS not { (%END FAKEFONTS) .skipeof } if
             ( for ) print 1 index =only (.)
           } ifelse = flush
         } if
-                        % Remove all the accumulated aliases.
-        counttomark 1 add 1 roll cleartomark mark exch
       } ifelse
   .dofindfont
 } bind def
@@ -828,21 +853,22 @@ $error /SubstituteFont { } put
 } bind def
 % Do the work of findfont, including substitution, defaulting, and
 % scanning of FONTPATH.
-/.dofindfont {          % <fontname> .dofindfont <font>
+/.dofindfont {   %  mark <fontname> .dofindfont % mark <alias> ... <font>
   .tryfindfont not {
                         % We didn't find the font.  If we haven't scanned
                         % all the directories in FONTPATH, scan the next one
                         % now and look for the font again.
     .scannextfontdir {
                         % Start over with an empty alias list.
-      counttomark 1 sub { pop } repeat
+      counttomark 1 sub { pop } repeat    % mark <fontname> 
       .dofindfont
     } {
                         % No more directories to scan. Try building the native
                         % font map entries if we haven't already done so.
       systemdict /.nativefontmapbuilt get not {
-        .buildnativefontmap
+        .buildnativefontmap   
         .dofindfont     % start over
+                        % Same stack as at the beginning of .dofindfont.
       } {
       
                         % No luck.  Make sure we're not already
@@ -859,7 +885,16 @@ $error /SubstituteFont { } put
           /findfont cvx /invalidfont signalerror
         } if
                         % Substitute for the font.  Don't alias.
-        $error /SubstituteFont get exec .stdsubstfont
+                        % Same stack as at the beginning of .dofindfont.
+        $error /SubstituteFont get exec
+                         %
+                         % igorm: I guess the surrounding code assumes that .stdsubstfont
+                         % must ADD an alias to allow .checkalias and .findfont to work properly.
+                         % Also I guess that a trailing recursion is 
+                         % used in .dofindfont and through .stdsubstfont
+                         % just to represent a simple iteration,
+                         % which accumulates the aliases after the mark.
+        .stdsubstfont
       } ifelse
     } ifelse
   } if
@@ -935,7 +970,7 @@ $error /SubstituteFont { } put
                 % Hack: check for the presence of the resource machinery.
   /.genericrfn where {
     pop
-    2 copy .fonttempstring /FontResourceDir getsystemparam .genericrfn
+    pop dup .fonttempstring /FontResourceDir getsystemparam .genericrfn
     .loadfontloop {
       exch pop exch pop true
     } {
