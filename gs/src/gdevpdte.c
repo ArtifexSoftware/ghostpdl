@@ -171,11 +171,21 @@ pdf_encode_string(gx_device_pdf *pdev, const pdf_text_enum_t *penum,
 	    if (code < 0)
 		return code;
 	    if (pdfont->base_font == NULL && ccfont != NULL &&
-		    gs_copy_glyph_options(font, glyph, (gs_font *)ccfont, COPY_GLYPH_NO_NEW) != 1) {
+		    (gs_copy_glyph_options(font, glyph, (gs_font *)ccfont, COPY_GLYPH_NO_NEW) != 1 || 
+		     gs_copied_font_add_encoding((gs_font *)ccfont, ch, glyph) < 0)) {
 		/*
 		 * The "complete" copy of the font appears incomplete
 		 * due to incrementally added glyphs. Drop the "complete"
 		 * copy now and continue with subset font only.
+		 *
+		 * Note that we need to add the glyph to the encoding of the
+		 * "complete" font, because "PPI-ProPag 2.6.1.4 (archivePg)"
+		 * creates multiple font copies with reduced encodings
+		 * (we believe it is poorly designed),
+		 * and we can merge the copies back to a single font (see Bug 686875).
+		 * We also check whether the encoding is compatible. 
+		 * It must be compatible here due to the pdf_obtain_font_resource 
+		 * and ccfont logics, but we want to ensure for safety reason.
 		 */
 		ccfont = NULL;
 		pdf_font_descriptor_drop_complete_font(pdfont->FontDescriptor);
