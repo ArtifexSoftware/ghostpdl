@@ -329,7 +329,8 @@ $(PSOBJ)zfproc.$(OBJ) : $(PSSRC)zfproc.c $(GH) $(memory__h)\
 
 $(PSOBJ)zgeneric.$(OBJ) : $(PSSRC)zgeneric.c $(OP) $(memory__h)\
  $(gsstruct_h)\
- $(iddict_h) $(estack_h) $(ivmspace_h) $(iname_h) $(ipacked_h) $(store_h)
+ $(dstack_h) $(estack_h) $(iddict_h) $(iname_h) $(ipacked_h) $(ivmspace_h)\
+ $(store_h)
 	$(PSCC) $(PSO_)zgeneric.$(OBJ) $(C_) $(PSSRC)zgeneric.c
 
 $(PSOBJ)ziodev.$(OBJ) : $(PSSRC)ziodev.c $(OP)\
@@ -675,7 +676,7 @@ $(PSOBJ)zchar1.$(OBJ) : $(PSSRC)zchar1.c $(OP) $(memory__h)\
 $(PSOBJ)zfont1.$(OBJ) : $(PSSRC)zfont1.c $(OP) $(memory__h)\
  $(gsmatrix_h) $(gxdevice_h)\
  $(gxfixed_h) $(gxfont_h) $(gxfont1_h)\
- $(bfont_h) $(ialloc_h) $(icharout_h) $(idict_h) $(idparam_h)\
+ $(bfont_h) $(ialloc_h) $(ichar1_h) $(icharout_h) $(idict_h) $(idparam_h)\
  $(ifont1_h) $(iname_h) $(store_h)
 	$(PSCC) $(PSO_)zfont1.$(OBJ) $(C_) $(PSSRC)zfont1.c
 
@@ -1350,7 +1351,7 @@ $(PSOBJ)zfcid0.$(OBJ) : $(PSSRC)zfcid0.c $(OP) $(memory__h)\
 
 $(PSOBJ)zfcid1.$(OBJ) : $(PSSRC)zfcid1.c $(OP) $(memory__h)\
  $(gsccode_h) $(gsmatrix_h) $(gsstruct_h) $(gxfcid_h)\
- $(bfont_h) $(icid_h) $(idict_h) $(idparam_h) $(ichar1_h)\
+ $(bfont_h) $(icid_h) $(idict_h) $(idparam_h)\
  $(ifcid_h) $(ifont42_h) $(store_h)
 	$(PSCC) $(PSO_)zfcid1.$(OBJ) $(C_) $(PSSRC)zfcid1.c
 
