@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2.c,v 1.6 2002/06/15 14:12:50 giles Exp $
+    $Id: jbig2.c,v 1.7 2002/06/17 21:06:38 giles Exp $
 */
 
 #include <stdint.h>
@@ -133,83 +133,18 @@ jbig2_get_int16 (const byte *buf)
   return (buf[0] << 8) | buf[1];
 }
 
-static Jbig2SegmentHeader *
-jbig2_parse_segment_header (Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size,
-			    size_t *p_header_size)
-{
-  Jbig2SegmentHeader *result;
-  byte	rtscarf;
-  int32_t rtscarf_long;
-  int referred_to_segment_count;
-  int referred_to_segment_size;
-  int pa_size;
-  int offset;
 
-  /* minimum possible size of a jbig2 segment header */
-  if (buf_size < 11)
-    return NULL;
-
-  result = (Jbig2SegmentHeader *)jbig2_alloc(ctx->allocator,
-					     sizeof(Jbig2SegmentHeader));
-
-  /* 7.2.2 */
-  result->segment_number = jbig2_get_int32 (buf);
-
-  /* 7.2.3 */
-  result->flags = buf[4];
-
-  /* 7.2.4 */
-  rtscarf = buf[5];
-  if ((rtscarf & 0xe0) == 0xe0)
-    {
-      rtscarf_long = jbig2_get_int32(buf + 5);
-      referred_to_segment_count = rtscarf_long & 0x1fffffff;
-      offset = 5 + 4 + (referred_to_segment_count + 1) / 8;
-    }
-  else
-    {
-      referred_to_segment_count = (rtscarf >> 5);
-      offset = 5 + 1;
-    }
-  result->referred_to_segment_count = referred_to_segment_count;
-
-  /* 7.2.5 */
-  /* todo: read referred to segment numbers */
-  /* For now, we skip them. */
-  referred_to_segment_size = result->segment_number <= 256 ? 1:
-    result->segment_number <= 65536 ? 2:
-    4;
-  offset += referred_to_segment_count * referred_to_segment_size;
-
-  /* 7.2.6 */
-  pa_size = result->flags & 0x40 ? 4 : 1;
-
-  if (offset + pa_size + 4 > buf_size)
-    {
-      jbig2_free (ctx->allocator, result);
-      return NULL;
-    }
-
-  if (result->flags & 0x40) {
-	result->page_association = jbig2_get_int32(buf + offset);
-	offset += 4;
-  } else {
-	result->page_association = buf[offset++];
-  }
-  
-  /* 7.2.7 */
-  result->data_length = jbig2_get_int32 (buf + offset);
-  *p_header_size = offset + 4;
-
-  return result;
-}
-
-void
-jbig2_free_segment_header (Jbig2Ctx *ctx, Jbig2SegmentHeader *sh)
-{
-  jbig2_free (ctx->allocator, sh);
-}
-
+/**
+ * jbig2_write: submit data for decoding
+ * @ctx: The jbig2dec decoder context
+ * @data: a pointer to the data buffer
+ * @size: the size of the data buffer in bytes
+ *
+ * Copies the specified data into internal storage and attempts
+ * to (continue to) parse it as part of a jbig2 data stream.
+ *
+ * Return code: 0 on success
+ **/
 int
 jbig2_write (Jbig2Ctx *ctx, const unsigned char *data, size_t size)
 {
@@ -231,7 +166,7 @@ jbig2_write (Jbig2Ctx *ctx, const unsigned char *data, size_t size)
     {
       if (ctx->buf_rd_ix <= (ctx->buf_size >> 1) &&
 	  ctx->buf_wr_ix - ctx->buf_rd_ix + size <= ctx->buf_size)
-	{
+        {
 	  memcpy (ctx->buf, ctx->buf + ctx->buf_rd_ix,
 		  ctx->buf_wr_ix - ctx->buf_rd_ix);
 	}
@@ -268,21 +203,26 @@ jbig2_write (Jbig2Ctx *ctx, const unsigned char *data, size_t size)
       switch (ctx->state)
 	{
 	case JBIG2_FILE_HEADER:
+          /* D.4.1 */
 	  if (ctx->buf_wr_ix - ctx->buf_rd_ix < 9)
 	    return 0;
 	  if (memcmp(ctx->buf + ctx->buf_rd_ix, jbig2_id_string, 8))
 	    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1,
 			       "Not a JBIG2 file header");
+          /* D.4.2 */
 	  ctx->file_header_flags = ctx->buf[ctx->buf_rd_ix + 8];
+          /* D.4.3 */
 	  if (!(ctx->file_header_flags & 2))
 	    {
 	      if (ctx->buf_wr_ix - ctx->buf_rd_ix < 13)
 		return 0;
 	      ctx->n_pages = jbig2_get_int32(ctx->buf + ctx->buf_rd_ix + 9);
+              jbig2_error(ctx, JBIG2_SEVERITY_INFO, -1, "file header indicates %d pages", ctx->n_pages);
 	      ctx->buf_rd_ix += 13;
 	    }
 	  else
 	    ctx->buf_rd_ix += 9;
+          /* determine the file organization based on the flags - D.4.2 again */
 	  if (ctx->file_header_flags & 1)
 	    {
 	      ctx->state = JBIG2_FILE_SEQUENTIAL_HEADER;
@@ -318,7 +258,7 @@ jbig2_write (Jbig2Ctx *ctx, const unsigned char *data, size_t size)
 	      if ((sh->flags & 63) == 51) /* end of file */
 		ctx->state = JBIG2_FILE_RANDOM_BODIES;
 	    }
-	  else
+	  else /* JBIG2_FILE_SEQUENTIAL_HEADER */
 	    ctx->state = JBIG2_FILE_SEQUENTIAL_BODY;
 	  break;
 	case JBIG2_FILE_SEQUENTIAL_BODY:
@@ -336,7 +276,7 @@ jbig2_write (Jbig2Ctx *ctx, const unsigned char *data, size_t size)
 	      if (ctx->sh_ix == ctx->n_sh)
 		ctx->state = JBIG2_FILE_EOF;
 	    }
-	  else
+	  else /* JBIG2_FILE_SEQUENCIAL_BODY */
 	    {
 	      ctx->n_sh = 0;
 	      ctx->state = JBIG2_FILE_SEQUENTIAL_HEADER;
@@ -357,14 +297,12 @@ jbig2_write (Jbig2Ctx *ctx, const unsigned char *data, size_t size)
   return 0;
 }
 
-/* get_bits */
-
 void
 jbig2_ctx_free (Jbig2Ctx *ctx)
 {
   Jbig2Allocator *ca = ctx->allocator;
   int i;
-  int32_t seg_ix;
+  uint32_t seg_ix;
 
   jbig2_free(ca, ctx->buf);
   if (ctx->sh_list != NULL)
