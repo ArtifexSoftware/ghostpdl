@@ -313,7 +313,7 @@ pl_xyshow_begin(gs_state * pgs, const gs_char * str, uint size,
     gs_text_params_t text;
 
     text.operation = TEXT_FROM_CHARS | TEXT_REPLACE_WIDTHS |
-	TEXT_DO_DRAW /* | TEXT_RETURN_WIDTH */;
+	TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
     text.data.chars = str;
     text.size = size;
     text.x_widths = x_widths;
