@@ -175,11 +175,15 @@ $(GLOBJ)dwuninst.obj: $(GLSRC)dwuninst.cpp $(GLSRC)dwuninst.h
 
 # ------------------------- Distribution archive -------------------------- #
 
+# ****** Aladdin Enterprises assumes no responsibility whatsoever for the
+# ****** following section of this makefile.  If you have questions, please
+# ****** contact bug-gswin@artifex.com or gsview@ghostgum.com.au.
+
 # Create a self-extracting archive with setup program.
 # This assumes that the current directory is named gs#.## relative to its
 # parent, where #.## is the Ghostscript version, and that the files and
 # directories listed in ZIPTEMPFILE and ZIPFONTFILES are the complete list
-# of needed files and directories.
+# of needed files and directories relative to the current directory's parent.
 
 ZIPTEMPFILE=gs$(GS_DOT_VERSION)\obj\dwfiles.rsp
 ZIPPROGFILE1=gs$(GS_DOT_VERSION)\bin\gsdll32.dll
@@ -189,10 +193,8 @@ ZIPPROGFILE4=gs$(GS_DOT_VERSION)\bin\gs16spl.exe
 ZIPPROGFILE5=gs$(GS_DOT_VERSION)\doc
 ZIPPROGFILE6=gs$(GS_DOT_VERSION)\examples
 ZIPPROGFILE7=gs$(GS_DOT_VERSION)\lib
-# We have to copy the font files, because Windows lacks symbolic links.
 ZIPFONTDIR=fonts
-ZIPFONTFILES=$(ZIPFONTDIR)
-ORIGFONTDIR=gs$(GS_DOT_VERSION)\fonts
+ZIPFONTFILES=$(ZIPFONTDIR)\*.*
 
 # Make the zip archive.
 FILELIST_TXT=filelist.txt
@@ -201,17 +203,6 @@ zip: $(SETUP_XE) $(UNINSTALL_XE)
 	cd ..
 	copy gs$(GS_DOT_VERSION)\$(SETUP_XE) .
 	copy gs$(GS_DOT_VERSION)\$(UNINSTALL_XE) .
-	rem
-	rem	The font files have to be copied, because Windows
-	rem	doesn't have symbolic links.
-	rem
-	-mkdir $(ZIPFONTDIR)
-	-mkdir $(ZIPFONTDIR)\metrics
-	-erase $(ZIPFONTDIR)\*.?f?
-	-erase $(ZIPFONTDIR)\metrics\*.?f?
-	copy /b $(ORIGFONTDIR)\?0??0??l.pfb $(ZIPFONTDIR)
-	copy /b $(ORIGFONTDIR)\metrics\?0??0??l.?fm $(ZIPFONTDIR)\metrics
-	rem
 	echo $(ZIPPROGFILE1) >  $(ZIPTEMPFILE)
 	echo $(ZIPPROGFILE2) >> $(ZIPTEMPFILE)
 	echo $(ZIPPROGFILE3) >> $(ZIPTEMPFILE)
@@ -223,7 +214,7 @@ zip: $(SETUP_XE) $(UNINSTALL_XE)
 	$(SETUP_XE_NAME) -title "Aladdin Ghostscript Fonts" -dir "fonts" -list "$(FONTLIST_TXT)" $(ZIPFONTFILES)
 	-del gs$(GS_VERSION)w32.zip
 	$(ZIP_XE) -9 -r gs$(GS_VERSION)w32.zip $(SETUP_XE_NAME) $(UNINSTALL_XE_NAME) $(FILELIST_TXT) $(FONTLIST_TXT)
-	$(ZIP_XE) -9 -r gs$(GS_VERSION)w32.zip $(ZIPFONTFILES)
+	$(ZIP_XE) -9 -r gs$(GS_VERSION)w32.zip $(ZIPFONTDIR)
 	$(ZIP_XE) -9 -r gs$(GS_VERSION)w32.zip $(ZIPPROGFILE1)
 	$(ZIP_XE) -9 -r gs$(GS_VERSION)w32.zip $(ZIPPROGFILE2)
 	$(ZIP_XE) -9 -r gs$(GS_VERSION)w32.zip $(ZIPPROGFILE3)
