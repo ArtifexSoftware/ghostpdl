@@ -789,11 +789,11 @@ pdfwrite11_=$(GLOBJ)scantab.$(OBJ) $(GLOBJ)sfilter2.$(OBJ)
 pdfwrite_=$(pdfwrite1_) $(pdfwrite2_) $(pdfwrite3_) $(pdfwrite4_)\
  $(pdfwrite5_) $(pdfwrite6_) $(pdfwrite7_) $(pdfwrite8_) $(pdfwrite9_)\
  $(pdfwrite10_) $(pdfwrite11_)
-# Including the DSC parser here is clearly wrong: it requires a PostScript
-# interpreter.  We aren't sure what to do about this yet. 
-# $(PSD)dscparse.dev\
-#	$(ADDMOD) $(DD)pdfwrite -include $(PSD)dscparse
 
+# Note that for ps2pdf operation, we need to parse DSC comments to set
+# the Orientation (Page dict /Rotate value). This is not part of the
+# pdfwrite device, but part of the PS interpreter so that the pdfwrite
+# device can be used with other top level interpreters (such as PCL).
 $(DD)pdfwrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pdfwrite_)\
  $(GLD)cmyklib.dev $(GLD)cfe.dev $(GLD)lzwe.dev\
  $(GLD)rle.dev $(GLD)sdcte.dev $(GLD)sdeparam.dev $(GLD)smd5.dev\

@@ -539,9 +539,12 @@ INT_ALL=$(INT_OBJS) $(INT_CONFIG)
 # dependency requirements and are added to the link list at the very end.
 # zfilter.c shouldn't include the RLE and RLD filters, but we don't want to
 # change this now.
+#
+# We add dscparse.dev here since it can be used with any PS level even
+# though we don't strictly need it unless we have the pdfwrite device.
 $(PSD)psbase.dev : $(INT_MAK) $(ECHOGS_XE) $(INT_OBJS)\
  $(PSD)isupport.dev $(PSD)nobtoken.dev $(PSD)nousparm.dev\
- $(GLD)rld.dev $(GLD)rle.dev $(GLD)sfile.dev
+ $(GLD)rld.dev $(GLD)rle.dev $(GLD)sfile.dev $(PSD)dscparse.dev
 	$(SETMOD) $(PSD)psbase $(INT_MAIN)
 	$(ADDMOD) $(PSD)psbase -obj $(INT_CONFIG)
 	$(ADDMOD) $(PSD)psbase -obj $(INT1)
@@ -572,7 +575,7 @@ $(PSD)psbase.dev : $(INT_MAK) $(ECHOGS_XE) $(INT_OBJS)\
 	$(ADDMOD) $(PSD)psbase -oper $(Z11OPS)
 	$(ADDMOD) $(PSD)psbase -iodev stdin stdout stderr lineedit statementedit
 	$(ADDMOD) $(PSD)psbase -include $(PSD)isupport $(PSD)nobtoken $(PSD)nousparm
-	$(ADDMOD) $(PSD)psbase -include $(GLD)rld $(GLD)rle $(GLD)sfile
+	$(ADDMOD) $(PSD)psbase -include $(GLD)rld $(GLD)rle $(GLD)sfile $(PSD)dscparse
 	$(ADDMOD) $(PSD)psbase -replace $(GLD)gsiodevs
 
 # -------------------------- Feature definitions -------------------------- #
