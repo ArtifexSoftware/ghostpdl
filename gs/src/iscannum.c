@@ -199,10 +199,14 @@ i2l:
 		) {
 		GET_NEXT(c, sp, c = EOFC);
 		dval = -(double)min_long;
-		if (c == 'e' || c == 'E' || c == '.') {
+		if (c == 'e' || c == 'E') {
 		    exp10 = 0;
 		    goto fs;
-		} else if (!IS_DIGIT(d, c)) {
+		} else if (c == '.') {
+                    GET_NEXT(c, sp, c = EOFC);
+		    exp10 = 0;
+		    goto fd;
+                } else if (!IS_DIGIT(d, c)) {
 		    lval = min_long;
 		    break;
 		}
