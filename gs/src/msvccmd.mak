@@ -77,14 +77,13 @@ dosdefault: default
 # Define the compilation flags.
 
 # MSVC 8 (2005) warns about deprecated unsafe common functions like strcpy.
-# MSVC 8 does not support debug compile and continue /Gi /ZI.
 !if ($(MSVC_VERSION) == 8) || defined(WIN64)
 VC8WARN=/wd4996 /wd4224
-CDCC=
 !else
 VC8WARN=
-CDCC=/Gi /ZI
 !endif
+
+CDCC=/Gi /ZI
 
 !if "$(CPU_FAMILY)"=="i386"
 
