@@ -1098,48 +1098,40 @@ store_glyphs(gs_glyph *glyphs, int glyphs_offset,
      */
 }
 
-/*
- * Create or find a font resource object for a text.
- */
-int
-pdf_obtain_font_resource(const gs_text_enum_t *penum, 
-	    const gs_string *pstr, pdf_font_resource_t **ppdfont)
+/* Allocate storage for the glyph set of the text. */
+private int
+pdf_alloc_text_glyphs_table(gx_device_pdf *pdev, const gs_text_enum_t *penum, const gs_string *pstr, 
+	    gs_glyph glyphs0[], int glyphs0_size, 
+	    gs_glyph **glyphs, int *glyphs_offset, gs_char **chars)
 {
-    gx_device_pdf *pdev = (gx_device_pdf *)penum->dev;
-    gs_font *font = (gs_font *)penum->current_font;
-    bool font_is_simple = pdf_is_simple_font(font);
-    int num_unused_chars = 0, num_all_chars = 0;
-    int glyphs_offset = (pstr != NULL ? pstr->size : penum->text.size);
     const int buf_elem_size = sizeof(gs_glyph) * 2 + sizeof(gs_char) * 2;
-    gs_glyph glyphs0[200], *glyphs = glyphs0;
-    gs_char *chars;
-    byte *glyph_usage = 0;
-    double *real_widths;
-    int char_cache_size, width_cache_size;
-    gs_char char_code, cid;
-    gs_glyph glyph;
-    gs_text_enum_t scan;
-    int code;
 
-    if (font->FontType == ft_composite) {
-	/* Must not happen, because we always split composite fonts into descendents. */
-	return_error(gs_error_unregistered);
-    }
-    /* Get attached font resource (maybe NULL) */
-    code = pdf_attached_font_resource(pdev, font, ppdfont,
-			       &glyph_usage, &real_widths, &char_cache_size, &width_cache_size);
-    if (code < 0)
-	return code;
-    /* Allocate memory for the glyph set : */
-    if (glyphs_offset * buf_elem_size > sizeof(glyphs0)) {
-	glyphs = (gs_glyph *)gs_alloc_bytes(pdev->memory, 
-		buf_elem_size * glyphs_offset, "pdf_encode_string");
-	if (glyphs == 0)
+    *glyphs_offset = (pstr != NULL ? pstr->size : penum->text.size);
+    if (*glyphs_offset * buf_elem_size > glyphs0_size) {
+	*glyphs = (gs_glyph *)gs_alloc_bytes(pdev->memory, 
+		buf_elem_size * *glyphs_offset, "pdf_encode_string");
+	if (*glyphs == 0)
 	    return_error(gs_error_VMerror);
     }
-    chars = (gs_char *)(glyphs + glyphs_offset * 2);
-    /* Build the glyph set of the text : */
-    scan = *penum;
+    *chars = (gs_char *)(*glyphs + *glyphs_offset * 2);
+    return 0;
+}
+
+/* Build the glyph set of the text. */
+private int
+pdf_make_text_glyphs_table(const gs_text_enum_t *penum, const gs_string *pstr, 
+		gs_glyph *glyphs, int glyphs_offset, gs_char *chars, 
+		byte *glyph_usage, int char_cache_size, int *num_all_chars, int *num_unused_chars)
+{
+    gs_text_enum_t scan = *penum;
+    gs_font *font = (gs_font *)penum->current_font;
+    bool font_is_simple = pdf_is_simple_font(font);
+    gs_char char_code, cid;
+    gs_glyph glyph;
+    int code;
+
+    *num_unused_chars = 0;
+    *num_all_chars = 0;
     if (pstr != NULL) {
 	scan.text.data.bytes = pstr->data;
 	scan.text.size = pstr->size;
@@ -1153,16 +1145,26 @@ pdf_obtain_font_resource(const gs_text_enum_t *penum,
 	    continue;
 	if (code < 0)
 	    return code;
-	if (num_all_chars > glyphs_offset)
+	if (*num_all_chars > glyphs_offset)
 	    return_error(gs_error_unregistered); /* Must not happen. */
 	if (glyph_usage != 0 && cid > char_cache_size)
 	    continue;
 	store_glyphs(glyphs, glyphs_offset,	chars, glyphs_offset,
 		     glyph_usage, char_cache_size,
-		     &num_all_chars, &num_unused_chars,
+		     num_all_chars, num_unused_chars,
 		     char_code, cid, glyph);
     }
-    /* Get/make font resource for the font : */
+    return 0;
+}
+
+/* Get/make font resource for the font with a known encoding. */
+private int
+pdf_obtain_font_resource_encoded(gx_device_pdf *pdev, gs_font *font, 
+	pdf_font_resource_t **ppdfont, int num_unused_chars, int num_all_chars,
+	gs_glyph *glyphs, int glyphs_offset, gs_char *chars)
+{
+    int code;
+
     if (*ppdfont != 0) {
 	gs_font_base *cfont = pdf_font_resource_font(*ppdfont, false);
         
@@ -1170,7 +1172,7 @@ pdf_obtain_font_resource(const gs_text_enum_t *penum,
 	    code = gs_copied_can_copy_glyphs((gs_font *)cfont, font, 
 			glyphs + glyphs_offset, num_unused_chars, false);
 	    if (code < 0)
-		goto out;
+		return code;
 	} else
 	    code = 1;
 	if (code == 0)
@@ -1209,29 +1211,37 @@ pdf_obtain_font_resource(const gs_text_enum_t *penum,
     	    code = pdf_find_font_resource(pdev, base_font, type, ppdfont, 
 					  glyphs, chars, num_all_chars); 
 	    if (code < 0)
-		goto out;
+		return code;
 	    if (*ppdfont == NULL) {
 		code = pdf_make_font_resource(pdev, base_font, ppdfont, 
 					      glyphs, chars, num_all_chars);
 		if (code < 0)
-		    goto out;
+		    return code;
 	    }
 	    if (base_font != font && same_encoding) {
 		code = pdf_attach_font_resource(pdev, base_font, *ppdfont);
 		if (code < 0) 		    
-		    goto out;
+		    return code;
 	    }
 	}
 	code = pdf_attach_font_resource(pdev, font, *ppdfont);
 	if (code < 0)
-	    goto out;
+	    return code;
     }
-    code = pdf_attached_font_resource(pdev, font, ppdfont, 
-			       &glyph_usage, &real_widths, &char_cache_size, &width_cache_size);
-    if (code < 0)
-	return code;
-    /* Mark glyphs used in the text with the font resources. */
-    scan = *penum;
+    return 0;
+}
+
+/* Mark glyphs used in the text with the font resource. */
+private int
+pdf_mark_text_glyphs(const gs_text_enum_t *penum, const gs_string *pstr,
+	    byte *glyph_usage, int char_cache_size)
+{
+    gs_text_enum_t scan = *penum;
+    gs_font *font = (gs_font *)penum->current_font;
+    bool font_is_simple = pdf_is_simple_font(font);
+    gs_char char_code, cid;
+    gs_glyph glyph;
+
     if (pstr != NULL) {
 	scan.text.data.bytes = pstr->data;
 	scan.text.size = pstr->size;
@@ -1250,6 +1260,56 @@ pdf_obtain_font_resource(const gs_text_enum_t *penum,
 	    continue;
 	glyph_usage[cid / 8] |= 0x80 >> (cid & 7);
     }
+    return 0;
+}
+
+
+/*
+ * Create or find a font resource object for a text.
+ */
+int
+pdf_obtain_font_resource(const gs_text_enum_t *penum, 
+	    const gs_string *pstr, pdf_font_resource_t **ppdfont)
+{
+    gx_device_pdf *pdev = (gx_device_pdf *)penum->dev;
+    gs_font *font = (gs_font *)penum->current_font;
+    int num_unused_chars, num_all_chars;
+    int glyphs_offset;
+    gs_glyph glyphs0[200], *glyphs = glyphs0;
+    gs_char *chars;
+    byte *glyph_usage = 0;
+    double *real_widths;
+    int char_cache_size, width_cache_size;
+    int code;
+
+    if (font->FontType == ft_composite) {
+	/* Must not happen, because we always split composite fonts into descendents. */
+	return_error(gs_error_unregistered);
+    }
+    code = pdf_attached_font_resource(pdev, font, ppdfont,
+			       &glyph_usage, &real_widths, &char_cache_size, &width_cache_size);
+    /* *ppdfont is NULL if no resource attached. */
+    if (code < 0)
+	return code;
+    code = pdf_alloc_text_glyphs_table(pdev, penum, pstr, glyphs0, sizeof(glyphs0), &glyphs, &glyphs_offset, &chars);
+    if (code < 0)
+	return code;
+    code = pdf_make_text_glyphs_table(penum, pstr, glyphs, glyphs_offset, chars, 
+			glyph_usage, char_cache_size, &num_all_chars, &num_unused_chars);
+    if (code < 0)
+	goto out;
+    code = pdf_obtain_font_resource_encoded(pdev, font, ppdfont, 
+		    num_unused_chars, num_all_chars,
+		    glyphs, glyphs_offset, chars);
+    if (code < 0)
+	goto out;
+    code = pdf_attached_font_resource(pdev, font, ppdfont, 
+			       &glyph_usage, &real_widths, &char_cache_size, &width_cache_size);
+    if (code < 0)
+	return code;
+    code = pdf_mark_text_glyphs(penum, pstr, glyph_usage, char_cache_size);
+    if (code < 0)
+	goto out;
 out:
     if (glyphs != glyphs0)
 	gs_free_object(pdev->memory, glyphs, "pdf_encode_string");
