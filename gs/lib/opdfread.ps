@@ -1,6 +1,6 @@
 %!PS-Adobe-2.0
 %
-%    Copyright (C) 2002 artofcode LLC.  All rights reserved.
+%	 Copyright (C) 2002 artofcode LLC.	All rights reserved.
 % 
 % This software is provided AS-IS with no warranty, either express or
 % implied.
@@ -18,8 +18,8 @@
 % $Id$
 % pdfread.ps - A procset for interpreting an ordered PDF 1.3 file.
 
-% This module is defines routines for interpreting a PDF file with
-% a Postscript interpreter. To convert a PDF fine into Postscript 
+% This module defines routines for interpreting a PDF file with
+% a Postscript interpreter. To convert a PDF file into Postscript 
 % just pre-contcatenate this file. The PDF file must satisfy 
 % few constraints :
 %
@@ -27,21 +27,21 @@
 % the PDF 1.3 language. Higher PDF levels must be re-distilled
 % with CompatibilityLevel=1.3 .
 %
-% 2. The object must be ordered so as any resource used in a page must
-% be defined before the page.
+% 2. Objects must be ordered so that any resource be defined before
+% its usage.
 %
 % 3. The PDF file must not include other PDF files.
 % Consequently we have a single instance of the PDF reader.
 % We use this fact to simplify binding of the routines.
 % 
-% 4. The PDF root object must have the object id 1.
+% 4. The PDF root object must always have the object id 1.
 % 
-% 5. No generations besides 0 are allowed.
+% 5. Generations besides 0 are not allowed.
 %
-% 6. The currentfile isn't positionable.
-% As a consequence, it fully ignores xref.
-% xref must be at the end of the PDF file.
-
+% 6. xref must appear after all objects.
+%
+% Assuming the currentfile isn't positionable.
+% As a consequence, the reader fully ignores xref.
 
 
 % !!!!!!!!!!!!!  THIS REVISION IS INCOMPLETE !!!!!!!!!!!!!!!!!!!!
@@ -51,12 +51,14 @@
 true setglobal
 30 dict begin
 
-/DefaultSwitch  % <name> DefaultSwitch -
+% ===================== Debugging =========================================
+
+/DefaultSwitch	% <name> DefaultSwitch -
 {
   dup where {
-    pop pop
+	pop pop
   } {
-    false def
+	false def
   } ifelse
 } bind def
 
@@ -69,44 +71,51 @@ true setglobal
 /PDFR_DEBUG DefaultSwitch
 /PDFR_DUMP DefaultSwitch
 
-/PDFReader currentdict def
-/ObjectRegistry 50 array def % may grow later
-/CurrentObject null def
-
-/error  %  mark <object> .... error -
+/error	%  mark <object> .... error -
 { % A stub for a while.
   counttomark 1 sub -1 0 {
-    index =only
+	index =only
   } for
   (\nostack contains :) =
   cleartomark
-  pstack
-  quit
+  % Assuming ....Undefined is never defined. 
+  % Use it to emit an error.
+  ....Undefined
 } bind def
+
+% ===================== Work Data =========================================
+
+/BlockBuffer 4096 string def
+/PDFReader currentdict def
+/ObjectRegistry 50 array def % may grow later
+/CurrentObject null def
+/DoneDocumentStructure false def
+
+% ===================== Reading PDF objects ===============================
 
 /Register % <DefaultDaemon> <id> <obj> Register -
 {
   exch dup															% d obj id id
   //PDFReader /ObjectRegistry get length gt {
-    //PDFReader /ObjectRegistry get length dup dup 2 div add array  % d obj id length []
-    dup 3 1 roll                                                    % d obj id [] length []
-    exch 0 exch getinterval                                         % d obj id [] []
-    //PDFReader /ObjectRegistry get exch copy pop                   % d obj id []
-    //PDFReader /ObjectRegistry exch put                            % d obj id
+	//PDFReader /ObjectRegistry get length dup dup 2 div add array	% d obj id length []
+	dup 3 1 roll													% d obj id [] length []
+	exch 0 exch getinterval 										% d obj id [] []
+	//PDFReader /ObjectRegistry get exch copy pop					% d obj id []
+	//PDFReader /ObjectRegistry exch put							% d obj id
   } if
   exch //PDFReader /ObjectRegistry get								% d id obj r
   3 1 roll															% d r id obj
   3 copy pop get													% d r id obj e
   dup xcheck {														% d r id obj e
-    5 4 roll pop													% r id obj e
+	5 4 roll pop													% r id obj e
 	% We've got a definition daemon, execute it :
 	exec
   } {																% d r id obj e
-      dup null ne {													% d r id obj e
+	  dup null ne { 												% d r id obj e
 		mark (The object ) 4 index ( already defined : ) 4 index //error exec
 	} {
 	  pop
-    } ifelse
+	} ifelse
 	4 3 roll														% r id obj d
 	% Execute the default daemon :
 	exec
@@ -119,37 +128,33 @@ true setglobal
   //PDFReader /ObjectRegistry get									% id r
   dup length														% id r l
   2 index le {														% id r
-    exch mark exch (Object ) exch ( isn't defined before needed (1).) //error exec 
+	exch mark exch (Object ) exch ( isn't defined before needed (1).) //error exec 
   } if
   1 index get														% id e
   dup xcheck {
-    exch mark exch (Object ) exch ( isn't defined before needed (2).) //error exec 
+	exch mark exch (Object ) exch ( isn't defined before needed (2).) //error exec 
   } { dup null eq {
 		exch mark exch (Object ) exch ( isn't defined before needed (3).) //error exec 
-      } if
+	  } if
 	  exch pop														% e
   } ifelse
 
 } bind def
 
-/ContextDaemon
-{ % The default context daemon does nothing.
-} bind def
-
 /R % <id> <gen> R <daemon>
 { % Make a reference daemon.
   0 ne {
-    exch mark exch (A referred object generation ) exch ( isn't 0.) //error exec
+	exch mark exch (A referred object generation ) exch ( isn't 0.) //error exec
   } if																% id
   [ % <id> proc <obj>
-    exch //GetRegistered /exec load /ContextDaemon cvx
+	exch //GetRegistered /exec load 
   ] cvx
   PDFR_DEBUG {
-    ({ ) print
+	({ ) print
 	dup {
 	  =only ( ) print
 	} forall
-    ( }) =
+	( }) =
   } if
 } bind def
 
@@ -157,13 +162,28 @@ true setglobal
 {
 } def
 
+/RunTypeDaemon  % <id> <obj> RunTypeDaemon <id> <obj>
+{
+  dup type /dicttype eq {
+    dup /Type known { 
+      dup /Type get
+        //PDFReader /TypeDaemons get exch
+	    2 copy known {
+		  get exec
+		} {
+		  pop pop
+		} ifelse
+    } if
+  } if
+} bind def
+
 /obj % <id> <generation> obj <id>
 {
   PDFR_DEBUG {
 	(Defining ) print 1 index =only ( ) print dup =only ( obj) =
   } if
   0 ne {
-    exch mark exch (An object generation ) exch ( isn't 0.) //error exec
+	exch mark exch (An object generation ) exch ( isn't 0.) //error exec
   } if
 } bind def
 
@@ -172,10 +192,9 @@ true setglobal
   PDFR_DEBUG {
 	(Storing ) print 1 index =
   } if
+  //RunTypeDaemon exec
   //DoNothing 3 1 roll //Register exec
 } bind def
-
-/BlockBuffer 4096 string def
 
 /StoreBlock % <buf> StoreBlock -
 { % Stores a (encoded) stream data block to the current object.
@@ -192,23 +211,23 @@ true setglobal
 
 /CheckLength % <val> CheckNumber <val>
 { dup type /integertype ne {
-    mark (Object length isn't an integer.) //error exec
+	mark (Object length isn't an integer.) //error exec
   } if
 } bind def
 
 /UnRefD % <dict> <key> <check> UnRefD <value>
 {
-  3 copy pop get                                                    % <> key {} e
+  3 copy pop get													% <> key {} e
   dup xcheck {
-    % We've got a reference daemon, execute it :
+	% We've got a reference daemon, execute it :
 	exec															% <> key {} val
   } if
-  exch exec															% <> key val
+  exch exec 														% <> key val
   dup 4 1 roll														% val <> key val
   put																% val
 } bind def
 
-/StoreStream  % <id> <obj> StoredStream <id> <obj>
+/StoreStream  % <id> <obj> StoreStream <id> <obj>
 { % Stores a (encoded) data stream copy to the current object.
   dup //PDFReader exch /CurrentObject exch put						% id obj
   //PDFReader /BlockCount 0 put
@@ -216,10 +235,10 @@ true setglobal
   PDFR_DEBUG {
 	(StoreStream Length = ) print dup =
   } if
-  currentfile exch () /SubFileDecode filter							% id obj file
-  {	dup //BlockBuffer readstring {							        % id obj file buf
+  currentfile exch () /SubFileDecode filter 						% id obj file
+  { dup //BlockBuffer readstring {									% id obj file buf
 	  //StoreBlock exec
-    } {
+	} {
 	  //StoreBlock exec
 	  exit
 	} ifelse														% id obj file
@@ -231,11 +250,52 @@ true setglobal
   } if
 } bind def
 
-/stream  % <id> <obj> stream <id> <obj>
-{
-  //StoreStream exec
+/ExecStream  % <id> <obj> ExecStream <id> <obj>
+{ % Executes a (encoded) data stream.
+  dup /Length //CheckLength //UnRefD exec							% id obj l
+  PDFR_DEBUG {
+	(ExecStream Length = ) print dup =
+  } if
+  currentfile exch () /SubFileDecode filter 						% id obj file
+  % We stub it for a while :
+  { dup //BlockBuffer readstring {									% id obj file buf
+	  (Interpreting ) print length =only ( bytes.) =
+	} {
+	  (Interpreting ) print length =only ( bytes.) =
+	  exit
+	} ifelse														% id obj file
+  } loop
+  pop																% id obj
+  PDFR_DEBUG {
+	(ExecStream end.) =
+  } if
 } bind def
 
+/stream  % <id> <obj> stream <id> <obj>
+{ 
+  PDFR_DEBUG {
+	1 index =only ( stream) =
+  } if																% id obj
+  % Run the object definition daemon, if exists :
+  //PDFReader /ObjectRegistry get dup length 3 index                % id obj r l id
+  gt {																% id obj r
+    2 index get 
+	dup xcheck {
+	  exec
+	  % Disable the daemon :
+      //PDFReader /ObjectRegistry get 2 index null put
+	} {
+	  pop
+	} ifelse
+  } {
+    pop
+  } ifelse															% id obj
+  dup /ImmediateExec known {
+	//ExecStream exec
+  } {
+	//StoreStream exec
+  } ifelse
+} bind def
 
 /endstream % <id> <obj> endstream <id> <obj>
 { % Nothing to do.
@@ -244,10 +304,10 @@ true setglobal
 /xref % - xref -
 { 
   PDFR_DEBUG {
-    (xref) =
+	(xref) =
 	PDFR_DUMP {
 	  //PDFReader /ObjectRegistry get ==
-    } if
+	} if
   } if
   end % The procset
   count 0 ne {
@@ -256,5 +316,26 @@ true setglobal
   currentfile flushfile
 } bind def
 
-% Leaving the procset on the dictionary stack.
+% ===================== Restoring the PDF Document Structure ===============
+
+/PageContentsDaemon % <id> <obj> PageContentsDaemon <id> <obj>
+{
+  PDFR_DEBUG {
+	(Executing PageContentsDaemon for ) print 1 index =
+  } if
+  dup /ImmediateExec true put
+} bind def
+
+/TypeDaemons <<  % <id> <obj> proc <id> <obj>
+  /Page 
+  { PDFR_DEBUG {
+	  (Recognized a page.)=
+	} if
+	dup /Contents get 0 get
+	//DoNothing exch //PageContentsDaemon //Register exec
+  } bind
+>> def
+
+% Leaving the procset on the dictionary stack to provide 
+% definitions of obj, endobj, stream, endstream, R, xref.
 %%EndPrologue
