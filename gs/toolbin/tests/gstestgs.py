@@ -58,7 +58,9 @@ class Ghostscript:
 
 		# as of gs_init 1.93, job server emulation needs -dNOOUTERSAVE so
 		# that the 'exitserver' will restore global VM as expected.
-		cmd = cmd + '-dNOOUTERSAVE -c false 0 startjob pop '
+		# As of gs_init 1.111, job server emulation is supported (in a
+		# backward compatible fashion) so we add -dJOBSERVER.
+		cmd = cmd + '-dNOOUTERSAVE -dJOBSERVER -c false 0 startjob pop '
 
 		if string.lower(self.infile[-4:]) == ".pdf":
 			cmd = cmd + ' -dFirstPage=1 -dLastPage=1 '
