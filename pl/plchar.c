@@ -117,7 +117,9 @@ pl_bitmap_char_width(const pl_font_t *plfont, uint char_code, gs_point *pwidth)
     pwidth->x = pwidth->y = 0;
     if ( !pwidth ) {
 	return (cdata == 0 ? 1 : 0);
+#ifdef DEBUG	
 	dprintf( "Warning should not call width function without width\n" );
+#endif
     }
     if ( cdata == 0 ) { 
 	return 1;
@@ -804,7 +806,7 @@ pl_tt_char_metrics(const pl_font_t *plfont, uint char_code, float metrics[4])
 {
     gs_glyph unused_glyph = gs_no_glyph;
     gs_glyph glyph = pl_tt_encode_char(plfont->pfont, char_code, unused_glyph);
-    if ( glyph == 0xffff ) {
+    if ( glyph == gs_no_glyph ) {
 	dprintf("warning tt font glyph not found\n");
 	return 1;
     }
@@ -867,7 +869,7 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
      gs_setcharwidth(penum, pgs, w2[0], w2[1]);
 #endif
 	/* undefined */
-	if ( glyph == 0xffff )
+	if ( glyph == gs_no_glyph )
 	    return 0;
 	/* Check for a vertical substitute. */
 	if ( pfont->WMode & 1 )
