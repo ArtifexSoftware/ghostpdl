@@ -1,21 +1,20 @@
 \documentclass[10pt]{article}
-\usepackage{fullpage, graphicx, url, textcomp, hyperref, qtree}
+\usepackage{fullpage, graphicx, url, textcomp, hyperref}
 \setlength{\parskip}{1ex}
 \setlength{\parindent}{0ex}
 \title{GhostPCL5e, GhostPCL5c, and GhostPXL}
 \begin{document}
 \section*{GhostPCL}
-This page discusses configuration, compilation and running of the 
-GhostPCL family of products:  \emph{PCL5E}, \emph{PCL5C},
-\emph{PCLXL}, and \emph{HPGL/2} with \emph{RTL}, additionally a scaled
-down \emph{PJL} (Printer Job Language) interpreter is provided.  All
-of the PCL products use the Ghostscript Graphic Library for graphics,
-imaging and driver support.  A brief tour of the Ghostscript
-documentation \url{www.ghostscript.com/doc/} will be helpful to
-understand this document.  The relevant ghostscript version used by
-PCL can be found in gs/src/version.mak.  The following is a short
-overview of GhostPCL, immediately followed by a ``hands on''
-discussion of how to build and run the software.
+This document discusses configuration, compilation and running of the 
+GhostPCL family of products:  \emph{PCL5E}~\cite{PCLTRM},
+\emph{PCL5C}~\cite{PCL5CTRM}, \emph{PCLXL}~\cite{PCLXLTRM}, and
+\emph{HPGL/2} with \emph{RTL}~\cite{RTLTRM}, additionally a scaled
+down \emph{PJL}~\cite{PJLTRM} interpreter is provided.  All of the PCL
+products use the Ghostscript Graphic Library for graphics, imaging and
+driver support.  A brief tour of the Ghostscript documentation
+\url{www.ghostscript.com/doc/} will be helpful to understand this
+document.  The relevant ghostscript version used by PCL can be found
+in gs/src/version.mak.
 
 GhostPCL is PCL technology; it is not intended to be a finished
 software application but a collection of software components that will
@@ -91,9 +90,8 @@ have obtained the archived compressed version use:
   
 \item[common] PCL and PXL shared makefiles.  The subdirectory is an
   historical artifact from when PCL and PXL had separate makefiles.
-  The files could be shared by both makefile.  It does contain the
-  makefile to build the ghostscript graphics library.
-
+  It does contain the makefile to build the ghostscript graphics
+  library.
 
 \item[tools] miscellaneous tools and test files.
   
@@ -129,7 +127,7 @@ rearranged with minor modifications to the makefiles.
 The PCL tools are known to build with Visual C/C++ 4.0, 5.0 and 6.0. 
 There are 2 ways of building the PCL components with Microsoft Visual
 C/C++:  Convert the current makefile environment to a Visual C/C++
-project ; or compile the source directly using nmake.  The following
+project; or compile the source directly using nmake.  The following
 steps take you through converting the supplied makefile environment to
 a Visual C++ project:
 
@@ -141,14 +139,17 @@ a Visual C++ project:
 \item Open main/pcl6\_msvc.mak and MSVC++ should wrap the makefile
   automatically and create an MSVC project.
   
-\item Set the project setting (Alt F7).  Cryptically a setting to
-  create a debug build can be set up as follows:
+\item Set the project setting (Alt F7).  To create a debug:
+  
+  \textbf{NMAKE /f pcl6\_msvc.mak DEBUG=1
+    DEVSTUDIO=c:$\backslash$progra~1$\backslash$micros~3}\footnote{DEBUG=1/0
+    on/off will require you manually clean;  del
+    main$\backslash$obj$\backslash$*.*}
+  
+  Now set the name of the executable for debuggging to
+  $.$$\backslash$obj$\backslash$pcl6.exe, and set the program argument
+  to be any pcl6 options wanted and the name of the pcl file.
 
-\textbf{NMAKE /f pcl6\_msvc.mak DEBUG=1 DEVSTUDIO=c:$\backslash$progra~1$\backslash$micros~3}\footnote{DEBUG=1/0 on/off will require you manually clean;  del main$\backslash$obj$\backslash$*.*}
-
-Now set the name of the executable for debuggging,
-$.$$\backslash$obj$\backslash$pcl6.exe, and set the program argument to
-be any pcl6 options wanted and the name of the pcl file.
 \item Now PCL6 is set to be compiled, debugged and use other features
   of the MSVC++ IDE.\footnote{Dos hackers can start up a dos window,
     set the DEVSTUDIO environment variable, and use the same make
@@ -247,27 +248,26 @@ Few things are harder to put up with than a good example.
 \end{quote}
 
 
-All options supplied to the interpreter in the following examples are
-described in the  Ghostscript documentation
-\url{www.ghostscript.com/doc/}
+Most ghostscript options, as described in the  Ghostscript
+documentation \url{www.ghostscript.com/doc/}, hav similar effect in
+the GhostPCL system.  Of course, options specific to the PostScript or
+PDF language are not relevant and are ignored.
 
 
 \textbf{pcl6 mypcl.pcl}
 
 
  
- Interpret a pcl file called mypcl.pcl and render it to the default
- device.  For now the default device on systems with x11 is a full
- color x11 display, other system default to laserjet 4 output suitable
- for a monochrome laser printer.
+Interpret a pcl file called mypcl.pcl and render it to the default
+device.  For now the default device on systems with x11 is a full
+color x11 display, other system default to laserjet 4 output suitable
+for a monochrome laser printer.
 
 
 \textbf{pcl6 -dTextAlphaBits=4 mypcltext.pcl}
 
-When rendering pcl text at low (screen) resolution display device use
-the TextAlphaBits option to enable anti-aliasing.  GhostPCL does not
-support hinting of TrueType fonts because of patent issues.
-
+When rendering pcl text onn a low (screen) resolution display device,
+use the TextAlphaBits option to enable anti-aliasing.
 
 \textbf{pcl6 -sDEVICE=x11 mypcl.pcl}
 
@@ -276,35 +276,24 @@ Interpret a pcl file called mypcl.pcl and render to the x11 device.
 \textbf{pcl6 -sDEVICE=ljet4 -sOutputFile=''$|$ lpr'' -dNOPAUSE mypcl.pcl}
 
 Interpret mypcl.pcl and send the Laserjet 4 formatted output to the
-command lpr, lpr should then send it to a real printer.  Note this is
-for unix systems.
-
+command lpr.
 
 \textbf{pcl6 -sDEVICE=pcxcmyk -sOutputFile=''pcxpage.\%d'' -dNOPAUSE mypcl.pcl}
-
-
 
 Interpret mypcl.pcl and generate CMYK output. Pages are to be put in
 files named pcxpage.1, pcxpage.2, pcxpage.3, etc.
 
-
 \textbf{pcl6 -r72 -sDEVICE=x11mono mypcl.pcl -r100 -sDEVICE=x11 mypcl.pcl}
-
-
 
 Render a pcl file at 72dpi on the monochrome X11 device, then render
 the same file at 100 dpi  on color X11 device.  This demonstrates
 on-the-fly device switching.
 
-
 \textbf{pcl6 -sDEVICE=bmpamono -sOutputFile=foo.bmp mypcl.pcl}
-
-
 
 The bmpamono (1 bit)  and bmpa16m (full color) run asynchronously.  In
 short, the language and graphics library produce bands in one thread
 while the device renders the bands in a second thread.
-
 
 \textbf{pcl6 -sDEVICE=pdfwrite -sOutputFile=mypcl.pdf mypcl.pcl}
 
@@ -328,12 +317,10 @@ The RTL personality can be used to print HPGL/2 RTL plot files.
 
 run the interpreter with the rtl personality.
 
-
 \textbf{pcl6 -PPCL5E -sDEVICE=ljet4 mypcl.pcl}
 
 run the interpreter with the pcl5e personality.  This will threshold
 colors to black and white (ljet4 is a 1 bit device).
-
 
 \textbf{pcl6 -PPCL5C -sDEVICE=ljet4 mypcl.pcl}
 
@@ -343,7 +330,6 @@ pcl interpreter personality will be set to PCL5E if the output device
 is 1 bit per pixel otherwise it is set to PCL5C.  RTL must be
 explicitly set on the command line.  RTL always grayscales and never
 thresholds colors to black and white.
-
 
 \subsection*{Fonts}
 
@@ -360,9 +346,7 @@ customers currently use this solution.  The software can use Hewlett
 Packard FONTSMART version 1.5 or Windows TrueType fonts, using either
 of these font solutions require minor PCL code modifications.
 
-
 \subsection*{PCL Code changes required to use other TrueType fonts.}
-
 
 To use a new set of TrueType fonts requires modifying the C code in
 the file pl/plftable.c.  The C structure resident\_table contains a
@@ -372,7 +356,10 @@ font set.  To use a different font set these names must be replaced
 with the new font names and the code (at least the plftable.c module)
 should be recompiled and linked.  The file tools/fontpage.pcl can be
 run to display font samples and the pcl escape sequences required to
-select the fonts in a pcl stream.
+select the fonts in a pcl stream.  This option is only recommended for
+advanced developers.  It is easiest to simply create a downloaded font
+and embed it in the PCL stream, see the PCL Technical Reference
+Manual~\cite{PCLTRM} for details.
 
 \subsection*{Using the language switching build}
 
@@ -391,10 +378,9 @@ in the section Building with Microsoft Visual C, but this time you
 will wrap the makefile pspcl6\_gcc.mak which is located in the
 directory language\_switch.  For Linux the makefile targets for the
 language switch build are exactly the same except each target is
-prefixed with ``ls''.  So using the pattern from the ``Quick Start''
+prefixed with ``ls\_''.  So using the pattern from the ``Quick Start''
 section we have:
 
-\subsection*{Quick Start For Unix environment with GCC.}
 \begin{tabbing}
 \= tar zxvf ghostpcl-xxx.tar.gz; cd ghostpcl-xxx   \= \# unpack the release and go to the release directory.\\
 \> make ls\_fonts                                  \> \# install the fonts.\\
@@ -412,5 +398,24 @@ send  mail to bug-pcl@ghostscript.com.
 
 \emph{PostScript} is a registered trademark of Adobe Systems Inc.
 \emph{PCL} is a registered trademark of Hewlett-Packard Company.
+
+\begin{thebibliography}{99}
+  
+\bibitem{PCLTRM} \emph{PCL 5 Printer Language Technical Reference
+    Manual}, HP Part No. 5961-0509, First Edition - October 1992
+  
+\bibitem{PCL5CTRM} \emph{PCL 5 Color Technical Reference Manual}
+  Copyright 1999, Hewlett-Packard Company.
+
+\bibitem{PCLXLTRM} \emph{PCL XL Feature Reference}.
+  
+\bibitem{PJLTRM} \emph{Printer Job Language Technical Reference
+    Manual} Edition 10, HP Part No. 5021-0380, October 1997.
+  
+\bibitem{RTLTRM} \emph{The HP-GL/2 and HP RTL Reference Guide A
+    Handbook for Program Developers}, Addison Wesley Publishing
+  Company, 1993.
+
+\end{thebibliography}
 
 \end{document}

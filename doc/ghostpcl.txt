@@ -1,12 +1,10 @@
 GhostPCL
 
-This page discusses configuration, compilation and running of the GhostPCL family of products: PCL5E,
-PCL5C, PCLXL, and HPGL/2 with RTL, additionally a scaled down PJL (Printer Job Language) interpreter
-is provided. All of the PCL products use the Ghostscript Graphic Library for graphics, imaging and driver
-support. A brief tour of the Ghostscript documentation www.ghostscript.com/doc/ will be helpful to
+This document discusses configuration, compilation and running of the GhostPCL family of products:
+PCL5E [1], PCL5C [2], PCLXL [3], and HPGL/2 with RTL [5], additionally a scaled down PJL [4] inter-
+preter is provided. All of the PCL products use the Ghostscript Graphic Library for graphics, imaging and
+driver support. A brief tour of the Ghostscript documentation www.ghostscript.com/doc/ will be helpful to
 understand this document. The relevant ghostscript version used by PCL can be found in gs/src/version.mak.
-The following is a short overview of GhostPCL, immediately followed by a "hands on" discussion of how to
-build and run the software.
 
 GhostPCL is PCL technology; it is not intended to be a finished software application but a collection of
 software components that will ultimately be included in a software application or a real time embedded
@@ -56,8 +54,11 @@ For Windows:
 pkunzip -d <archive name>
 
 
+For Unix::
+
   1If tar "z"' option is not supported: gunzip ghostpcl-xxx.tar.gz; tar xvf ghostpcl-xxx.tar.
   2See Fonts to configure this differently.
+
 
 
 
@@ -65,8 +66,6 @@ pkunzip -d <archive name>
                                                               1
 
 
-For Unix::
-
 gunzip <archive name.gz>
 tar xvf <archive name>
 
@@ -86,8 +85,7 @@ pl This subdirectory contains code that can be shared by PCL and PXL. In particu
      in this directory are prefixed with pl.
 
 common PCL and PXL shared makefiles. The subdirectory is an historical artifact from when PCL and
-     PXL had separate makefiles. The files could be shared by both makefile. It does contain the makefile
-     to build the ghostscript graphics library.
+     PXL had separate makefiles. It does contain the makefile to build the ghostscript graphics library.
 
 tools miscellaneous tools and test files.
 
@@ -118,7 +116,7 @@ Building with Microsoft Visual C/C++
 
 The PCL tools are known to build with Visual C/C++ 4.0, 5.0 and 6.0. There are 2 ways of building the PCL
 components with Microsoft Visual C/C++: Convert the current makefile environment to a Visual C/C++
-project ; or compile the source directly using nmake. The following steps take you through converting the
+project; or compile the source directly using nmake. The following steps take you through converting the
 supplied makefile environment to a Visual C++ project:
 
 
@@ -126,19 +124,20 @@ supplied makefile environment to a Visual C++ project:
 
     Start MSVC++.
 
+    Open main/pcl6 msvc.mak and MSVC++ should wrap the makefile automatically and create an MSVC
+     project.
+
+
 
 
                                                       2
 
 
-    Open main/pcl6 msvc.mak and MSVC++ should wrap the makefile automatically and create an MSVC
-      project.
-
-    Set the project setting (Alt F7). Cryptically a setting to create a debug build can be set up as follows:
+    Set the project setting (Alt F7). To create a debug:
       NMAKE /f pcl6 msvc.mak DEBUG=1 DEVSTUDIO=c:\progra 1\micros 31
 
-      Now set the name of the executable for debuggging, .\obj\pcl6.exe, and set the program argument to
-      be any pcl6 options wanted and the name of the pcl file.
+      Now set the name of the executable for debuggging to .\obj\pcl6.exe, and set the program argument
+      to be any pcl6 options wanted and the name of the pcl file.
 
     Now PCL6 is set to be compiled, debugged and use other features of the MSVC++ IDE.2
 
@@ -187,6 +186,11 @@ subdirectory
 
         ­ Edit pl/pl.mak PJL VOLUME 0 and PJL VOLUME 1 to match desired root
 
+
+All of these can be configured in the top level makefile or can be specified on the make command line.
+
+The following make targets are available:
+
   1DEBUG=1/0 on/off will require you manually clean; del main\obj\*.*
   2Dos hackers can start up a dos window, set the DEVSTUDIO environment variable, and use the same make com-
 mands as above (the DEVSTUDIO variable should be set to the top level of the Microsoft Developer Studio, e gset
@@ -194,16 +198,9 @@ DEVSTUDIO=c:\progra 1\devstu 1" or NMAKE /f pcl6 msvc.mak DEBUG=1 DEVSTUDIO=c:\p
 
 
 
-
-
                                                         3
 
 
-All of these can be configured in the top level makefile or can be specified on the make command line.
-
-The following make targets are available:
-
-
 debug build tools with symbols and debugging information
 
 product builds optimized code.
@@ -240,8 +237,9 @@ Running the products.
       Few things are harder to put up with than a good example. Mark Twain
 
 
-All options supplied to the interpreter in the following examples are described in the Ghostscript documen-
-tation www.ghostscript.com/doc/
+Most ghostscript options, as described in the Ghostscript documentation www.ghostscript.com/doc/, hav
+similar effect in the GhostPCL system. Of course, options specific to the PostScript or PDF language are
+not relevant and are ignored.
 
 pcl6 mypcl.pcl
 
@@ -251,8 +249,8 @@ printer.
 
 pcl6 -dTextAlphaBits=4 mypcltext.pcl
 
-When rendering pcl text at low (screen) resolution display device use the TextAlphaBits option to enable
-anti-aliasing. GhostPCL does not support hinting of TrueType fonts because of patent issues.
+When rendering pcl text onn a low (screen) resolution display device, use the TextAlphaBits option to enable
+anti-aliasing.
 
 pcl6 -sDEVICE=x11 mypcl.pcl
 
@@ -260,23 +258,22 @@ Interpret a pcl file called mypcl.pcl and render to the x11 device.
 
 pcl6 -sDEVICE=ljet4 -sOutputFile="| lpr" -dNOPAUSE mypcl.pcl
 
-Interpret mypcl.pcl and send the Laserjet 4 formatted output to the command lpr, lpr should then send it
-to a real printer. Note this is for unix systems.
+Interpret mypcl.pcl and send the Laserjet 4 formatted output to the command lpr.
 
 pcl6 -sDEVICE=pcxcmyk -sOutputFile="pcxpage.%d" -dNOPAUSE mypcl.pcl
 
 Interpret mypcl.pcl and generate CMYK output. Pages are to be put in files named pcxpage.1, pcxpage.2,
 pcxpage.3, etc.
 
-
-                                                        4
-
-
 pcl6 -r72 -sDEVICE=x11mono mypcl.pcl -r100 -sDEVICE=x11 mypcl.pcl
 
 Render a pcl file at 72dpi on the monochrome X11 device, then render the same file at 100 dpi on color X11
 device. This demonstrates on-the-fly device switching.
 
+
+                                                        4
+
+
 pcl6 -sDEVICE=bmpamono -sOutputFile=foo.bmp mypcl.pcl
 
 The bmpamono (1 bit) and bmpa16m (full color) run asynchronously. In short, the language and graphics
@@ -335,7 +332,12 @@ resident table contains a list of Windows TrueType font names. In the released p
 correspond with the Windows True Type font names in the URW font set. To use a different font set these
 names must be replaced with the new font names and the code (at least the plftable.c module) should be
 recompiled and linked. The file tools/fontpage.pcl can be run to display font samples and the pcl escape
-sequences required to select the fonts in a pcl stream.
+sequences required to select the fonts in a pcl stream. This option is only recommended for advanced
+developers. It is easiest to simply create a downloaded font and embed it in the PCL stream, see the PCL
+Technical Reference Manual [1] for details.
+
+
+
 
 
                                                       5
@@ -354,11 +356,9 @@ Building the Language Switch Environment
 At this time, we have makefile support for Microsoft Visual C and Linux with gcc. For the Microsoft Visual
 C the use the instructions in the section Building with Microsoft Visual C, but this time you will wrap the
 makefile pspcl6 gcc.mak which is located in the directory language switch. For Linux the makefile targets
-for the language switch build are exactly the same except each target is prefixed with "ls". So using the
+for the language switch build are exactly the same except each target is prefixed with "ls ". So using the
 pattern from the "Quick Start" section we have:
 
-
-Quick Start For Unix environment with GCC.
 
 tar zxvf ghostpcl-xxx.tar.gz; cd ghostpcl-xxx # unpack the release and go to the release directory.
 make ls fonts                                # install the fonts.
@@ -378,6 +378,22 @@ Trademark Credits
 
 PostScript is a registered trademark of Adobe Systems Inc. PCL is a registered trademark of Hewlett-Packard
 Company.
+
+
+
+References
+
+ [1] PCL 5 Printer Language Technical Reference Manual, HP Part No. 5961-0509, First Edition - October
+    1992
+
+ [2] PCL 5 Color Technical Reference Manual Copyright 1999, Hewlett-Packard Company.
+
+ [3] PCL XL Feature Reference.
+
+ [4] Printer Job Language Technical Reference Manual Edition 10, HP Part No. 5021-0380, October 1997.
+
+ [5] The HP-GL/2 and HP RTL Reference Guide A Handbook for Program Developers, Addison Wesley
+    Publishing Company, 1993.
 
 
 
