@@ -28,17 +28,17 @@ install: install-exec install-scripts install-data
 # rules, just in case bindir or scriptdir is a subdirectory of any of these.
 
 install-exec: $(GS_XE)
-	-mkdir $(datadir)
-	-mkdir $(gsdir)
-	-mkdir $(gsdatadir)
-	-mkdir $(bindir)
+	-mkdir -p $(datadir)
+	-mkdir -p $(gsdir)
+	-mkdir -p $(gsdatadir)
+	-mkdir -p $(bindir)
 	$(INSTALL_PROGRAM) $(GS_XE) $(bindir)/$(GS)
 
 install-scripts: $(PSLIBDIR)/gsnd
-	-mkdir $(datadir)
-	-mkdir $(gsdir)
-	-mkdir $(gsdatadir)
-	-mkdir $(scriptdir)
+	-mkdir -p $(datadir)
+	-mkdir -p $(gsdir)
+	-mkdir -p $(gsdatadir)
+	-mkdir -p $(scriptdir)
 	$(SH) -c 'for f in \
 gsbj gsdj gsdj500 gslj gslp gsnd \
 bdftops dvipdf eps2eps font2c \
@@ -58,10 +58,10 @@ install-data: install-libdata install-doc install-man install-examples
 # one file from each subdirectory just as a sanity check.
 
 install-libdata: 
-	-mkdir $(datadir)
-	-mkdir $(gsdir)
-	-mkdir $(gsdatadir)
-	-mkdir $(gsdatadir)/lib
+	-mkdir -p $(datadir)
+	-mkdir -p $(gsdir)
+	-mkdir -p $(gsdatadir)
+	-mkdir -p $(gsdatadir)/lib
 	$(SH) -c 'for f in \
 Fontmap Fontmap.GS \
 ht_ccsto.ps \
@@ -100,7 +100,7 @@ DOC_PAGES=PUBLIC README index.html gs.css \
 	   Psfiles.htm Public.htm Readme.htm Release.htm \
 	   Source.htm Tester.htm Unix-lpr.htm Use.htm Xfonts.htm
 install-doc: $(PSDOCDIR)/News.htm
-	-mkdir $(docdir)
+	-mkdir -p $(docdir)
 	$(SH) -c 'for f in $(DOC_PAGES) ;\
 	do if ( test -f $(PSDOCDIR)/$$f ); then $(INSTALL_DATA) $(PSDOCDIR)/$$f $(docdir); fi;\
 	done'
@@ -111,7 +111,7 @@ MAN1_LINKS_PS2PS=eps2eps
 MAN1_LINKS_PS2PDF=ps2pdf12 ps2pdf13
 MAN1_LINKS_GSLP=gsbj gsdj gsdj500 gslj
 install-man: $(PSMANDIR)/gs.1
-	$(SH) -c 'test -d $(mandir) || mkdir $(mandir)'
+	$(SH) -c 'test -d $(mandir) || mkdir -p $(mandir)'
 	$(SH) -c 'for d in $(MAN_LCDIRS) ;\
 	do man1dir=$(mandir)/$$d/man$(man1ext) ;\
 	  ( test -d $$man1dir || mkdir -p $$man1dir ) ;\
@@ -140,7 +140,7 @@ install-man: $(PSMANDIR)/gs.1
 
 # install the example files
 install-examples:
-	-mkdir $(exdir)
+	-mkdir -p $(exdir)
 	for f in \
 alphabet.ps chess.ps colorcir.ps doretree.ps escher.ps \
 golfer.eps grayalph.ps snowflak.ps tiger.eps vasarely.ps waterfal.ps \
