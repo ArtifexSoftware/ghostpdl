@@ -210,6 +210,7 @@ const gx_device_pdf gs_pdfwrite_device =
  {pdf_text_state_default},	/* text */
  {{0}},				/* std_fonts */
  {0},				/* space_char_ids */
+ {{0}},				/* text_rotation */
  0,				/* pages */
  0,				/* num_pages */
  {
@@ -461,6 +462,23 @@ pdf_ferror(gx_device_pdf *pdev)
 	ferror(pdev->pictures.file);
 }
 
+/* Compute the dominant text orientation of a page. */
+private int
+pdf_dominant_rotation(const pdf_text_rotation_t *ptr)
+{
+    int i, imax = 0;
+    long max_count = ptr->counts[0];
+    static const int angles[] = { pdf_text_rotation_angle_values };
+
+    for (i = 1; i < countof(ptr->counts); ++i) {
+	long count = ptr->counts[i];
+
+	if (count > max_count)
+	    imax = i, max_count = count;
+    }
+    return angles[imax];
+}
+
 /* Close the current page. */
 private int
 pdf_close_page(gx_device_pdf * pdev)
@@ -576,6 +594,19 @@ pdf_close_page(gx_device_pdf * pdev)
      */
     if (pdev->CompatibilityLevel <= 1.2)
 	pdev->open_font = 0;
+
+    /* Accumulate text rotation. */
+
+    page->text_rotation.Rotate =
+	(pdev->params.AutoRotatePages == arp_PageByPage ?
+	 pdf_dominant_rotation(&page->text_rotation) : -1);
+    {
+	int i;
+
+	for (i = 0; i < countof(page->text_rotation.counts); ++i)
+	    pdev->text_rotation.counts[i] += page->text_rotation.counts[i];
+    }
+
     pdf_reset_page(pdev);
     return (pdf_ferror(pdev) ? gs_note_error(gs_error_ioerror) : 0);
 }
@@ -592,6 +623,8 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
     s = pdev->strm;
     pprintd2(s, "<</Type/Page/MediaBox [0 0 %d %d]\n",
 	     page->MediaBox.x, page->MediaBox.y);
+    if (page->text_rotation.Rotate >= 0)
+	pprintd1(s, "/Rotate %d", page->text_rotation.Rotate);
     pprintld1(s, "/Parent %ld 0 R\n", pdev->Pages->id);
     pputs(s, "/Resources<</ProcSet[/PDF");
     if (page->procsets & ImageB)
@@ -705,6 +738,9 @@ pdf_close(gx_device * dev)
 	    pprintld1(s, "%ld 0 R\n", pdev->pages[i].Page->id);
     }
     pprintd1(s, "] /Count %d\n", pdev->next_page);
+    if (pdev->params.AutoRotatePages == arp_All)
+	pprintd1(s, "/Rotate %d\n",
+		 pdf_dominant_rotation(&pdev->text_rotation));
     cos_dict_elements_write(pdev->Pages, pdev);
     pputs(s, ">>\n");
     pdf_end_obj(pdev);

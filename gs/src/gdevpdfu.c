@@ -684,6 +684,13 @@ pdf_page_id(gx_device_pdf * pdev, int page_num)
     return Page->id;
 }
 
+/* Get the page structure for the current page. */
+pdf_page_t *
+pdf_current_page(gx_device_pdf *pdev)
+{
+    return &pdev->pages[pdev->next_page];
+}
+
 /* Get the dictionary object for the current page. */
 cos_dict_t *
 pdf_current_page_dict(gx_device_pdf *pdev)

@@ -266,6 +266,17 @@ typedef enum {
 } pdf_procset;
 
 /*
+ * Define the structure for keeping track of text rotation.
+ * There is one for the current page (for AutoRotate /PageByPage)
+ * and one for the whole document (for AutoRotate /All).
+ */
+typedef struct pdf_text_rotation_s {
+    long counts[5];		/* 0, 90, 180, 270, other */
+    int Rotate;			/* computed rotation, -1 means none */
+} pdf_text_rotation_t;
+#define pdf_text_rotation_angle_values 0, 90, 180, 270, -1
+
+/*
  * Define the stored information for a page.  Because pdfmarks may add
  * information to any page anywhere in the document, we have to wait
  * until the end to write out the page dictionaries.
@@ -278,6 +289,7 @@ typedef struct pdf_page_s {
     long resource_ids[resourceFont]; /* resources up to Font, see above */
     long fonts_id;
     cos_array_t *Annots;
+    pdf_text_rotation_t text_rotation;
 } pdf_page_t;
 #define private_st_pdf_page()	/* in gdevpdf.c */\
   gs_private_st_ptrs2(st_pdf_page, pdf_page_t, "pdf_page_t",\
@@ -377,6 +389,7 @@ struct gx_device_pdf_s {
     pdf_text_state_t text;
     pdf_std_font_t std_fonts[PDF_NUM_STD_FONTS];
     long space_char_ids[X_SPACE_MAX - X_SPACE_MIN + 1];
+    pdf_text_rotation_t text_rotation;
 #define initial_num_pages 50
     pdf_page_t *pages;
     int num_pages;
@@ -563,6 +576,9 @@ void pdf_copy_data(P3(stream *s, FILE *file, long count));
 /* Returns 0 if the page number is out of range. */
 long pdf_page_id(P2(gx_device_pdf * pdev, int page_num));
 
+/* Get the page structure for the current page. */
+pdf_page_t *pdf_current_page(P1(gx_device_pdf *pdev));
+
 /* Get the dictionary object for the current page. */
 cos_dict_t *pdf_current_page_dict(P1(gx_device_pdf *pdev));
 
@@ -674,6 +690,5 @@ int pdf_scan_token_composite(P3(const byte **pscan, const byte * end,
 /* Replace object names with object references in a (parameter) string. */
 int pdf_replace_names(P3(gx_device_pdf *pdev, const gs_param_string *from,
 			 gs_param_string *to));
-
 
 #endif /* gdevpdfx_INCLUDED */

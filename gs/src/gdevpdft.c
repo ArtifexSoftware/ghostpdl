@@ -199,6 +199,21 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
     gs_fixed_point cpt;
     int code;
 
+    /* Track the dominant text rotation. */
+    {
+	gs_matrix tmat;
+	int i;
+
+	gs_matrix_multiply(&font->FontMatrix, &ctm_only(pis), &tmat);
+	if (is_xxyy(&tmat))
+	    i = (tmat.xx >= 0 ? 0 : 2);
+	else if (is_xyyx(&tmat))
+	    i = (tmat.xy >= 0 ? 1 : 3);
+	else
+	    i = 4;
+	pdf_current_page(pdev)->text_rotation.counts[i] += text->size;
+    }
+
     if ((text->operation &
 	 ~(TEXT_FROM_STRING | TEXT_FROM_BYTES |
 	   TEXT_ADD_TO_ALL_WIDTHS | TEXT_ADD_TO_SPACE_WIDTH |
