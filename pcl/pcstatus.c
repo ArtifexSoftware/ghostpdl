@@ -637,9 +637,9 @@ pcl_free_space(pcl_args_t *pargs, pcl_state_t *pcs)
 	else
 	  { gs_memory_status_t mstat;
 	    gs_memory_status(pcs->memory, &mstat);
-	    if ( pcs->memory != &gs_memory_default )
+	    if ( pcs->memory != pcs->memory->non_gc_memory )
 	      { gs_memory_status_t dstat;
-	        gs_memory_status(&gs_memory_default, &dstat);
+	        gs_memory_status(pcs->memory->non_gc_memory, &dstat);
 		mstat.allocated += dstat.allocated;
 		mstat.used += dstat.used;
 	      }
