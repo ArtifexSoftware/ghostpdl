@@ -164,8 +164,8 @@
 
 /pdfwritetypes mark
 	% Scalars
-  /nulltype { =string cvs ows }
-  /integertype 1 index
+  /nulltype { pop (null) ows }
+  /integertype { =string cvs ows }
   /booleantype 1 index
   /realtype { OFile exch write===only }
   /stringtype 1 index
