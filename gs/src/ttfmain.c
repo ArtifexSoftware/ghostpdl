@@ -592,7 +592,7 @@ private FontError ttfOutliner__BuildGlyphOutline(ttfOutliner *this, int glyphInd
 		return fNoError;
 	}
     if (r->Eof(r)) {
-	r->ReleaseExtraGlyph(r);
+	r->ReleaseExtraGlyph(r, glyphIndex);
 	return fNoError;
     }
     nPosBeg = r->Tell(r);
@@ -761,6 +761,8 @@ private FontError ttfOutliner__BuildGlyphOutline(ttfOutliner *this, int glyphInd
 		code = Context_Run(exec, FALSE);
 		if (!code)
 		    cur_to_org(nPoints, pts);
+		else
+		    error = code;
 		gOutline->sideBearing = gOutline->xMinB - subglyph.pp1.x;
 		gOutline->advance.x = subglyph.pp2.x - subglyph.pp1.x;
             }
@@ -874,6 +876,8 @@ private FontError ttfOutliner__BuildGlyphOutline(ttfOutliner *this, int glyphInd
 	    code = Context_Run(exec, FALSE );
 	    if (!code)
 		cur_to_org(n_points, pts);
+	    else
+		error = code;
 	    gOutline->sideBearing = gOutline->xMinB - subglyph.pp1.x;
 	    gOutline->advance.x = subglyph.pp2.x - subglyph.pp1.x;
         }
@@ -882,7 +886,7 @@ private FontError ttfOutliner__BuildGlyphOutline(ttfOutliner *this, int glyphInd
 ex:;
     if (usage != NULL)
 	pFont->memory->free(pFont->memory, usage, "ttfOutliner__BuildGlyphOutline");
-    r->ReleaseExtraGlyph(r);
+    r->ReleaseExtraGlyph(r, glyphIndex);
     return error;
 }
 

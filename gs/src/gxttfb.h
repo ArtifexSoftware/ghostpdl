@@ -35,8 +35,9 @@ typedef struct gs_font_type42_s gs_font_type42;
 struct gx_ttfReader_s {
     ttfReader super;
     int pos;
+    bool seeked;
     bool error;
-    bool glyph_data_occupied;
+    int extra_glyph_index;
     gs_glyph_data_t glyph_data;
     gs_font_type42 *pfont;
     gs_memory_t *memory;
@@ -47,5 +48,8 @@ void gx_ttfReader__destroy(gx_ttfReader *this);
 ttfFont *ttfFont__create(gs_memory_t *mem);
 void ttfFont__destroy(ttfFont *this);
 int ttfFont__Open_aux(ttfFont *this, ttfReader *r, unsigned int nTTC);
+int gx_ttf_outline(ttfFont *ttf, gx_ttfReader *r, int wmode, int glyph_index, 
+	const gs_matrix *m, const gs_log2_scale_point * pscale, 
+	gx_path *path);
 
 #endif /* gxttfb_INCLUDED */

@@ -21,10 +21,14 @@
 #include "gxfont.h"
 #include "gxfont42.h"
 #include "gxttfb.h"
+#include "gxfixed.h"
+#include "gxpath.h"
 #include "ttfmemd.h"
 #include "gsstruct.h"
 #include "gserrors.h"
+#include "gdebug.h"
 #include "memory_.h"
+#include <stdarg.h>
 
 gs_public_st_composite(st_gx_ttfReader, gx_ttfReader,
     "gx_ttfReader", gx_ttfReader_enum_ptrs, gx_ttfReader_reloc_ptrs);
@@ -56,8 +60,10 @@ private void gx_ttfReader__Read(ttfReader *this, void *p, int n)
     gx_ttfReader *r = (gx_ttfReader *)this;
     const byte *q;
 
-    if (r->glyph_data_occupied) {
-	q = r->glyph_data.bits.bytes + r->pos;
+    /* We assume no seeks while reading a charstring. 
+       Therefore a seek terminates the reading of an extra glyph. */
+    if (r->extra_glyph_index != -1 && !r->seeked) {
+	q = r->glyph_data.bits.data + r->pos;
 	r->error = (r->glyph_data.bits.size - r->pos < n);
     } else
 	r->error = !!r->pfont->data.string_proc(r->pfont, (ulong)r->pos, (ulong)n, &q);
@@ -74,6 +80,7 @@ private void gx_ttfReader__Seek(ttfReader *this, int nPos)
     gx_ttfReader *r = (gx_ttfReader *)this;
 
     r->pos = nPos;
+    r->seeked = true;
 }
 
 private int gx_ttfReader__Tell(ttfReader *this)
@@ -90,31 +97,43 @@ private bool gx_ttfReader__Error(ttfReader *this)
     return r->error;
 }
 
-private bool gx_ttfReader__SeekExtraGlyph(ttfReader *this, int glyph_index)
+private int gx_ttfReader__SeekExtraGlyph(ttfReader *this, int glyph_index)
 {
     gx_ttfReader *r = (gx_ttfReader *)this;
     gs_font_type42 *pfont = r->pfont;
     int code;
 
-    if (r->glyph_data_occupied)
-	return true;
+    if (r->extra_glyph_index == -1)
+	return 0; /* A subglyph is requested, it can't be an incremental glyph. */
 
     code = pfont->data.get_outline(pfont, (uint)glyph_index, &r->glyph_data);
-    r->glyph_data_occupied = true;
+    r->extra_glyph_index = glyph_index;
     r->pos = 0;
+    r->seeked = false;
     if (code)
 	r->error = true;
-    return false;
+    return 2; /* found */
 }
 
-private void gx_ttfReader__ReleaseExtraGlyph(ttfReader *this)
+private void gx_ttfReader__ReleaseExtraGlyph(ttfReader *this, int glyph_index)
 {
     gx_ttfReader *r = (gx_ttfReader *)this;
 
-    if (!r->glyph_data_occupied)
+    if (r->extra_glyph_index != glyph_index)
 	return;
-    r->glyph_data_occupied = false;
+    r->extra_glyph_index = -1;
     gs_glyph_data_free(&r->glyph_data, "gx_ttfReader__ReleaseExtraGlyph");
+}
+
+private void gx_ttfReader__Reset(gx_ttfReader *this)
+{
+    if (this->extra_glyph_index != -1) {
+	this->extra_glyph_index = -1;
+	gs_glyph_data_free(&this->glyph_data, "gx_ttfReader__Reset");
+    }
+    this->error = false;
+    this->seeked = false;
+    this->pos = 0;
 }
 
 gx_ttfReader *gx_ttfReader__create(gs_memory_t *mem, gs_font_type42 *pfont)
@@ -130,10 +149,13 @@ gx_ttfReader *gx_ttfReader__create(gs_memory_t *mem, gs_font_type42 *pfont)
 	r->super.SeekExtraGlyph = gx_ttfReader__SeekExtraGlyph;
 	r->super.ReleaseExtraGlyph = gx_ttfReader__ReleaseExtraGlyph;
 	r->pos = 0;
+	r->seeked = false;
 	r->error = false;
-	r->glyph_data_occupied = false;
+	r->extra_glyph_index = -1;
+	memset(&r->glyph_data, 0, sizeof(r->glyph_data));
 	r->pfont = pfont;
 	r->memory = mem;
+	gx_ttfReader__Reset(r);
     }
     return r;
 }
@@ -149,8 +171,18 @@ private void DebugRepaint(ttfFont *ttf)
 {
 }
 
-private void DebugPrint(ttfFont *ttf, const char *s, ...)
+private void DebugPrint(ttfFont *ttf, const char *fmt, ...)
 {
+    char buf[500];
+    va_list args;
+    int count;
+
+    if (gs_debug_c('Y')) {
+	va_start(args, fmt);
+	count = vsprintf(buf, fmt, args);
+	outwrite(buf, count);
+	va_end(args);
+    }
 }
 
 /*----------------------------------------------*/
@@ -216,6 +248,110 @@ void ttfFont__destroy(ttfFont *this)
 int ttfFont__Open_aux(ttfFont *this, ttfReader *r, unsigned int nTTC)
 {
     switch(ttfFont__Open(this, r, nTTC)) {
+	case fNoError:
+	    return 0;
+	case fMemoryError:
+	    return_error(gs_error_VMerror);
+	case fUnimplemented:
+	    return_error(gs_error_unregistered);
+	default:
+	    return_error(gs_error_invalidfont);
+    }
+}
+
+/*----------------------------------------------*/
+
+typedef struct gx_ttfExport_s {
+    ttfExport super;
+    gx_path *path;
+    gs_fixed_point w;
+    int error;
+} gx_ttfExport;
+
+private void gx_ttfExport__MoveTo(ttfExport *this, FloatPoint *p)
+{
+    gx_ttfExport *e = (gx_ttfExport *)this;
+
+    if (!e->error)
+	e->error = gx_path_add_point(e->path, float2fixed(p->x), float2fixed(p->y));
+}
+
+private void gx_ttfExport__LineTo(ttfExport *this, FloatPoint *p)
+{
+    gx_ttfExport *e = (gx_ttfExport *)this;
+
+    if (!e->error)
+	e->error = gx_path_add_line_notes(e->path, float2fixed(p->x), float2fixed(p->y), sn_none);
+}
+
+private void gx_ttfExport__CurveTo(ttfExport *this, FloatPoint *p0, FloatPoint *p1, FloatPoint *p2)
+{
+    gx_ttfExport *e = (gx_ttfExport *)this;
+
+    if (!e->error)
+	e->error = gx_path_add_curve_notes(e->path, float2fixed(p0->x), float2fixed(p0->y), 
+				     float2fixed(p1->x), float2fixed(p1->y), 
+				     float2fixed(p2->x), float2fixed(p2->y), sn_none);
+}
+
+private void gx_ttfExport__Close(ttfExport *this)
+{
+    gx_ttfExport *e = (gx_ttfExport *)this;
+
+    if (!e->error)
+	e->error = gx_path_close_subpath_notes(e->path, sn_none);
+}
+
+private void gx_ttfExport__Point(ttfExport *this, FloatPoint *p, bool bOnCurve, bool bNewPath)
+{
+    /* Never called. */
+}
+
+private void gx_ttfExport__SetWidth(ttfExport *this, FloatPoint *p)
+{
+    gx_ttfExport *e = (gx_ttfExport *)this;
+
+    e->w.x = float2fixed(p->x); 
+    e->w.y = float2fixed(p->y); 
+}
+
+private void gx_ttfExport__DebugPaint(ttfExport *this)
+{
+}
+
+/*----------------------------------------------*/
+
+int gx_ttf_outline(ttfFont *ttf, gx_ttfReader *r, int wmode, int glyph_index, 
+	const gs_matrix *m, const gs_log2_scale_point * pscale, 
+	gx_path *path)
+{
+    gx_ttfExport e;
+    ttfOutliner o;
+    FloatMatrix m1;
+
+    m1.a = m->xx;
+    m1.b = m->xy;
+    m1.c = m->yx;
+    m1.d = m->yy;
+    m1.tx = m->tx;
+    m1.ty = m->ty;
+
+    e.super.bPoints = false;
+    e.super.bOutline = true;
+    e.super.MoveTo = gx_ttfExport__MoveTo;
+    e.super.LineTo = gx_ttfExport__LineTo;
+    e.super.CurveTo = gx_ttfExport__CurveTo;
+    e.super.Close = gx_ttfExport__Close;
+    e.super.Point = gx_ttfExport__Point;
+    e.super.SetWidth = gx_ttfExport__SetWidth;
+    e.super.DebugPaint = gx_ttfExport__DebugPaint;
+    e.error = 0;
+    e.path = path;
+    e.w.x = 0;
+    e.w.y = 0;
+    gx_ttfReader__Reset(r);
+    ttfOutliner__init(&o, ttf, &r->super, &e.super, true, false, wmode != 0);
+    switch(ttfOutliner__Outline(&o, glyph_index, &m1)) {
 	case fNoError:
 	    return 0;
 	case fMemoryError:

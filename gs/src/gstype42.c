@@ -41,7 +41,7 @@ public_st_gs_font_type42();
 private int append_outline(uint glyph_index, const gs_matrix_fixed * pmat,
 			   gx_path * ppath, gs_font_type42 * pfont);
 #if NEW_TT_INTERPRETER
-private int append_outline_fitted(uint glyph_index, const gs_matrix_fixed * pmat,
+private int append_outline_fitted(uint glyph_index, const gs_matrix * pmat,
 	       gx_path * ppath, cached_fm_pair * pair, 
 	       const gs_log2_scale_point * pscale, bool grid_fit);
 #endif
@@ -485,13 +485,14 @@ gs_type42_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matri
 
     if (pmat == 0)
 	pmat = &imat;
-    if ((code = gs_matrix_fixed_from_matrix(&fmat, pmat)) < 0 ||
-	(code = gx_path_current_point(ppath, &origin)) < 0 ||
+    if ((code = gx_path_current_point(ppath, &origin)) < 0 ||
 #if NEW_TT_INTERPRETER
-	(code = append_outline_fitted(glyph_index, &fmat, ppath, pair, 
+	(code = append_outline_fitted(glyph_index, pmat, ppath, pair, 
 					&log2_scale, grid_fit)) < 0 ||
 #else
+	(code = gs_matrix_fixed_from_matrix(&fmat, pmat)) < 0 ||
 	(code = append_outline(glyph_index, &fmat, ppath, pfont)) < 0 ||
+	/* fixme : don't call glyph_info. */
 #endif
 	(code = font->procs.glyph_info(font, glyph, pmat,
 				       GLYPH_INFO_WIDTH0 << WMode, &info)) < 0
@@ -712,7 +713,7 @@ gs_type42_append(uint glyph_index, gs_imager_state * pis,
 		 gx_path * ppath, const gs_log2_scale_point * pscale,
 		 bool charpath_flag, int paint_type, cached_fm_pair *pair)
 {
-    int code = append_outline_fitted(glyph_index, &pis->ctm, ppath, 
+    int code = append_outline_fitted(glyph_index, &ctm_only(pis), ppath, 
 			pair, pscale, !charpath_flag);
 
     if (code < 0)
@@ -1079,14 +1080,14 @@ append_outline(uint glyph_index, const gs_matrix_fixed * pmat,
 
 #if NEW_TT_INTERPRETER
 private int
-append_outline_fitted(uint glyph_index, const gs_matrix_fixed * pmat,
+append_outline_fitted(uint glyph_index, const gs_matrix * pmat,
 	       gx_path * ppath, cached_fm_pair * pair, 
 	       const gs_log2_scale_point * pscale, bool grid_fit)
 {
     gs_font_type42 *pfont = (gs_font_type42 *)pair->font;
-    /* fixme : it's a stub with the old code. */
 
-    return append_outline(glyph_index, pmat, ppath, pfont);
+    return gx_ttf_outline(pair->ttf, pair->ttr, pfont->WMode, (uint)glyph_index, 
+	pmat, pscale, ppath);
 }
 #endif
 

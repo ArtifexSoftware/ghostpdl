@@ -72,8 +72,8 @@ struct ttfReader_s {
     void   (*Seek)(ttfReader *, int nPos);
     int    (*Tell)(ttfReader *);
     bool   (*Error)(ttfReader *);
-    bool   (*SeekExtraGlyph)(ttfReader *, int nIndex);
-    void   (*ReleaseExtraGlyph)(ttfReader *);
+    int    (*SeekExtraGlyph)(ttfReader *, int nIndex);
+    void   (*ReleaseExtraGlyph)(ttfReader *, int nIndex);
 };
 
 typedef struct {
