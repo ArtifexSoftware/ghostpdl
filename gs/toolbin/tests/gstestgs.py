@@ -37,6 +37,7 @@ class Ghostscript:
 		else:
 			self.nullfile = '/dev/null'
 		self.outfile = self.nullfile
+		self.gsoptions = ''
 
 	def process(self):
 		bandsize = 10000
