@@ -212,17 +212,21 @@ hpgl_PM(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	    pgls->g.polygon_mode = true;
 	    break;
 	  case 2 :
-	    hpgl_call(hpgl_close_current_path(pgls));
-	    /* make a copy of the path and clear the current path */
-	    hpgl_call(hpgl_copy_current_path_to_polygon_buffer(pgls));
-	    hpgl_call(hpgl_clear_current_path(pgls));
-	    /* return to vector mode */
-	    pgls->g.polygon_mode = false;
-	    /* restore the pen state */
-	    hpgl_restore_pen_state(pgls,
-				   &pgls->g.polygon.pen_state,
-				   hpgl_pen_down | hpgl_pen_pos);
-	    break;
+	      if ( pgls->g.polygon_mode ) {
+		  /* explicitly close the path if the pen is down */
+		  if ( pgls->g.pen_state.move_or_draw & hpgl_pen_down )
+		      hpgl_call(hpgl_close_current_path(pgls));
+		  /* make a copy of the path and clear the current path */
+		  hpgl_call(hpgl_copy_current_path_to_polygon_buffer(pgls));
+		  hpgl_call(hpgl_clear_current_path(pgls));
+		  /* return to vector mode */
+		  pgls->g.polygon_mode = false;
+		  /* restore the pen state */
+		  hpgl_restore_pen_state(pgls,
+					 &pgls->g.polygon.pen_state,
+					 hpgl_pen_down | hpgl_pen_pos);
+	      }
+	      break;
 	  default:
 	    return e_Range;
 	  }
