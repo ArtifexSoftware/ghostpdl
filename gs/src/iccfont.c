@@ -166,6 +166,7 @@ cfont_ref_dict_create(i_ctx_t *i_ctx_p, ref *pdict,
 	if (code < 0)
 	    return code;
     }
+    r_store_attrs(dict_access_ref(pdict), a_all, kp->dict_attrs);
     return 0;
 }
 
@@ -197,6 +198,7 @@ cfont_string_dict_create(i_ctx_t *i_ctx_p, ref *pdict,
 	if (code < 0)
 	    return code;
     }
+    r_store_attrs(dict_access_ref(pdict), a_all, kp->dict_attrs);
     return 0;
 }
 
@@ -228,6 +230,7 @@ cfont_num_dict_create(i_ctx_t *i_ctx_p, ref * pdict,
 	if (code < 0)
 	    return code;
     }
+    r_store_attrs(dict_access_ref(pdict), a_all, kp->dict_attrs);
     return 0;
 }
 
