@@ -1103,7 +1103,7 @@ pdf_update_transfer(gx_device_pdf *pdev, const gs_imager_state *pis,
 		if (tm[i] != NULL) {
 		    code = pdf_write_transfer_map(pdev,
 						  tm[i],
-						  0, false, "", trs + strlen(trs));
+						  0, true, "", trs + strlen(trs));
 		    if (code < 0)
 			return code;
 		    mask |= (code == 0) << i;
