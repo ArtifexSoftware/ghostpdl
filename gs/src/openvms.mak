@@ -165,7 +165,7 @@ else
 COMP:=$(COMP)/NODEBUG/OPTIMIZE
 endif
 
-COMP:=$(COMP)/DECC/PREFIX=ALL/NESTED_INCLUDE=PRIMARY
+COMP:=$(COMP)/DECC/PREFIX=ALL/NESTED_INCLUDE=PRIMARY/NAMES=SHORTENED
 
 # Define any other compilation flags. 
 # Including defines for A4 paper size
@@ -342,7 +342,7 @@ CC=$(COMP)
 
 # Define the Link invocation.
 
-LINK=$(LINKER)/MAP/EXE=$@ $^,$(GLGENDIR)OPENVMS.OPT/OPTION
+LINK=$(LINKER)/EXE=$@ $^,$(GLGENDIR)OPENVMS.OPT/OPTION
 
 # Define the ANSI-to-K&R dependency.  We don't need this.
 
@@ -379,9 +379,9 @@ CONFLDTR=-o
 
 # Define the generic compilation rules.
 
-.suffixes: .c .obj .exe
+..suffixes: .c .obj .exe
 
-.obj.exe:
+..obj.exe:
 	$(LINK)
 
 # ---------------------------- End of options ---------------------------- #
@@ -410,6 +410,7 @@ include $(GLSRCDIR)jpeg.mak
 # zlib.mak must precede libpng.mak
 include $(GLSRCDIR)zlib.mak
 include $(GLSRCDIR)libpng.mak
+include $(GLSRCDIR)icclib.mak
 include $(GLSRCDIR)devs.mak
 include $(GLSRCDIR)contrib.mak
 
@@ -423,7 +424,7 @@ CC_NO_WARN=$(CC_)
 # ----------------------------- Main program ------------------------------ #
 
 $(GS_XE) : openvms $(GLOBJDIR)gs.$(OBJ) $(INT_ALL) $(LIB_ALL)
-	$(LINKER)/MAP=$(BINDIR)gs.map/EXE=$@ $(GLOBJ)gs.$(OBJ),$(ld_tr)/OPTIONS,$(GLGENDIR)OPENVMS.OPT/OPTION
+	$(LINKER)/EXE=$@ $(GLOBJ)gs.$(OBJ),$(ld_tr)/OPTIONS,$(GLGENDIR)OPENVMS.OPT/OPTION
 
 # OpenVMS.dev
 
