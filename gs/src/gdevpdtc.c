@@ -147,6 +147,7 @@ process_composite_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
 		pte->returned.total_width.y = total_width.y +=
 		    out.returned.total_width.y;
 	    }
+	    pdf_text_release_cgp(penum);
 	}
 	if (font_code == 2)
 	    break;
@@ -310,7 +311,11 @@ scan_cmap_text(pdf_text_enum_t *pte)
     uint index = scan.index, xy_index = scan.xy_index;
     uint font_index0 = 0x7badf00d;
     bool done = false;
+    pdf_char_glyph_pairs_t p;
 
+    p.num_all_chars = 1;
+    p.num_unused_chars = 1;
+    p.unused_offset = 0;
     pte->returned.total_width.x = pte->returned.total_width.y = 0;;
     for (;;) {
 	uint break_index, break_xy_index;
@@ -358,7 +363,9 @@ scan_cmap_text(pdf_text_enum_t *pte)
 	    if (glyph == GS_NO_GLYPH)
 		glyph = GS_MIN_CID_GLYPH;
 	    cid = glyph - GS_MIN_CID_GLYPH;
-	    code = pdf_obtain_cidfont_resource(pdev, subfont, &pdsubf, &glyph, 1);
+	    p.s[0].glyph = glyph;
+	    p.s[0].chr = cid;
+	    code = pdf_obtain_cidfont_resource(pdev, subfont, &pdsubf, &p);
 	    if (code < 0)
 		return code;
 	    font_change = (pdsubf != pdsubf0 && pdsubf0 != NULL);
@@ -518,6 +525,7 @@ scan_cmap_text(pdf_text_enum_t *pte)
 	    if (code < 0)
 		return code;
 	} 
+	pdf_text_release_cgp(pte);
 	index = break_index;
 	xy_index = break_xy_index;
 	if (done || rcode != 0)
@@ -561,6 +569,7 @@ process_cmap_text(gs_text_enum_t *penum, void *vbuf, uint bsize)
 int
 process_cid_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
 {
+    pdf_text_enum_t *penum = (pdf_text_enum_t *)pte;
     uint operation = pte->text.operation;
     gs_text_enum_t save;
     gs_font *scaled_font = pte->current_font; /* CIDFont */
@@ -613,7 +622,7 @@ process_cid_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
 
     /* Find or create the CIDFont resource. */
 
-    code = pdf_obtain_font_resource(pte, NULL, &pdsubf);
+    code = pdf_obtain_font_resource(penum, NULL, &pdsubf);
     if (code < 0)
 	return code;
 

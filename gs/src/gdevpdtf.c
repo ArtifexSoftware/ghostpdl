@@ -183,7 +183,7 @@ pdf_find_standard_font_name(const byte *str, uint size)
  */
 private int
 find_std_appearance(const gx_device_pdf *pdev, gs_font_base *bfont,
-		    int mask, gs_glyph *glyphs, int num_glyphs)
+		    int mask, pdf_char_glyph_pair_t *pairs, int num_glyphs)
 {
     bool has_uid = uid_is_UniqueID(&bfont->UID) && bfont->UID.id != 0;
     const pdf_standard_font_t *psf = pdf_standard_fonts(pdev);
@@ -219,7 +219,8 @@ find_std_appearance(const gx_device_pdf *pdev, gs_font_base *bfont,
 	 */
 	code = gs_copied_can_copy_glyphs((const gs_font *)cfont,
 					 (const gs_font *)bfont,
-					 glyphs, num_glyphs, true);
+					 &pairs[0].glyph, num_glyphs, 
+					 sizeof(pdf_char_glyph_pair_t), true);
 	if (code == gs_error_unregistered) /* Debug purpose only. */
 	    return code;
 	/* Note: code < 0 means an error. Skip it here. */
@@ -553,18 +554,18 @@ embed_list_includes(const gs_param_string_array *psa, const byte *chars,
 }
 private bool
 embed_as_standard(gx_device_pdf *pdev, gs_font *font, int index,
-		  gs_glyph *glyphs, int num_glyphs)
+		  pdf_char_glyph_pair_t *pairs, int num_glyphs)
 {
     if (font->is_resource) {
 	return true;
     }
     if (find_std_appearance(pdev, (gs_font_base *)font, -1,
-			    glyphs, num_glyphs) == index)
+			    pairs, num_glyphs) == index)
 	return true;
     if (!scan_for_standard_fonts(pdev, font->dir))
 	return false;
     return (find_std_appearance(pdev, (gs_font_base *)font, -1,
-				glyphs, num_glyphs) == index);
+				pairs, num_glyphs) == index);
 }
 /*
  * Choose a name for embedded font.
@@ -576,7 +577,7 @@ const gs_font_name *pdf_choose_font_name(gs_font *font, bool key_name)
 }
 pdf_font_embed_t
 pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
-		      gs_glyph *glyphs, int num_glyphs)
+		      pdf_char_glyph_pair_t *pairs, int num_glyphs)
 {
     const gs_font_name *fn = pdf_choose_font_name(font, false);
     const byte *chars = fn->chars;
@@ -597,7 +598,7 @@ pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
     if (pdev->CompatibilityLevel < 1.3) {
 	if (index >= 0 && 
 	    (embed_as_standard_called = true,
-	     do_embed_as_standard = embed_as_standard(pdev, font, index, glyphs, num_glyphs)))
+	     do_embed_as_standard = embed_as_standard(pdev, font, index, pairs, num_glyphs)))
 	    return FONT_EMBED_STANDARD;
     }
     /* Check the Embed lists. */
@@ -605,7 +606,7 @@ pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
  	(index >= 0 && 
 	    !(embed_as_standard_called ? do_embed_as_standard :
 	     (embed_as_standard_called = true,
-	      (do_embed_as_standard = embed_as_standard(pdev, font, index, glyphs, num_glyphs)))))
+	      (do_embed_as_standard = embed_as_standard(pdev, font, index, pairs, num_glyphs)))))
  	/* Ignore NeverEmbed for a non-standard font with a standard name */
  	) {
 	if (pdev->params.EmbedAllFonts || font_is_symbolic(font) ||
@@ -614,7 +615,7 @@ pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
     }
     if (index >= 0 && 
 	(embed_as_standard_called ? do_embed_as_standard :
-	 embed_as_standard(pdev, font, index, glyphs, num_glyphs)))
+	 embed_as_standard(pdev, font, index, pairs, num_glyphs)))
 	return FONT_EMBED_STANDARD;
     return FONT_EMBED_NO;
 }

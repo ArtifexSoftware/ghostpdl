@@ -155,7 +155,8 @@ int gs_copy_font_complete(gs_font *font, gs_font *copied);
  * 0 (incompatible), 1 (compatible), < 0 (error)
  */
 int gs_copied_can_copy_glyphs(const gs_font *cfont, const gs_font *ofont, 
-		    gs_glyph *glyphs, int num_glyphs, bool check_hinting);
+		    gs_glyph *glyphs, int num_glyphs, int glyphs_step, 
+		    bool check_hinting);
 
 /* Extension glyphs may be added to a font to resolve 
    glyph name conflicts while conwerting a PDF Widths into Metrics.

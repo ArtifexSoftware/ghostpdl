@@ -725,7 +725,7 @@ compare_arrays(const float *v0, int l0, const float *v1, int l1)
 
 private int
 compare_glyphs(const gs_font *cfont, const gs_font *ofont, gs_glyph *glyphs, 
-			   int num_glyphs, int level)
+			   int num_glyphs, int glyphs_step, int level)
 {
     /* 
      * Checking widths because we can synthesize fonts from random fonts 
@@ -744,7 +744,8 @@ compare_glyphs(const gs_font *cfont, const gs_font *ofont, gs_glyph *glyphs,
      */
     gs_make_identity(&mat);
     for (i = 0; i < num_glyphs; i++) {
-	gs_glyph glyph = glyphs[i], pieces0[40], *pieces = pieces0;
+	gs_glyph glyph = *(gs_glyph *)((byte *)glyphs + i * glyphs_step);
+	gs_glyph pieces0[40], *pieces = pieces0;
 	gs_glyph_info_t info0, info1;
 	int code0 = ofont->procs.glyph_info((gs_font *)ofont, glyph, &mat, members, &info0);
 	int code1 = cfont->procs.glyph_info((gs_font *)cfont, glyph, &mat, members, &info1);
@@ -781,7 +782,7 @@ compare_glyphs(const gs_font *cfont, const gs_font *ofont, gs_glyph *glyphs,
 	    if (code0 >= 0 && code1 >= 0) {
 		code2 = memcmp(info0.pieces, info1.pieces, info0.num_pieces * sizeof(*pieces));
 		if (!code2)
-		    code = compare_glyphs(cfont, ofont, pieces, info0.num_pieces, level + 1);
+		    code = compare_glyphs(cfont, ofont, pieces, info0.num_pieces, glyphs_step, level + 1);
 		else
 		    code = 0; /* Quiet compiler. */
 	    } else
@@ -2122,7 +2123,8 @@ gs_copy_font_complete(gs_font *font, gs_font *copied)
  */
 int
 gs_copied_can_copy_glyphs(const gs_font *cfont, const gs_font *ofont, 
-			  gs_glyph *glyphs, int num_glyphs, bool check_hinting)
+			  gs_glyph *glyphs, int num_glyphs, int glyphs_step,
+			  bool check_hinting)
 {   
     int code = 0;
 
@@ -2178,7 +2180,7 @@ gs_copied_can_copy_glyphs(const gs_font *cfont, const gs_font *ofont,
 	if (code <= 0) /* an error or false */
 	    return code; 
     }
-    return compare_glyphs(cfont, ofont, glyphs, num_glyphs, 0);
+    return compare_glyphs(cfont, ofont, glyphs, num_glyphs, glyphs_step, 0);
 }
 
 /* Extension glyphs may be added to a font to resolve 

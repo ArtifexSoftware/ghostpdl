@@ -83,6 +83,20 @@
 
 /* ---------------- Types and structures ---------------- */
 
+#ifndef pdf_char_glyph_pair_DEFINED
+#  define pdf_char_glyph_pair_DEFINED
+typedef struct pdf_char_glyph_pair_s pdf_char_glyph_pair_t;
+#endif
+
+/* Define a structure for a text characters list. */
+/* It must not contain pointers due to variable length. */
+typedef struct pdf_char_glyph_pairs_s {
+    int num_all_chars;
+    int num_unused_chars;
+    int unused_offset;  /* The origin of the unused character table.*/
+    pdf_char_glyph_pair_t s[1];  /* Variable length. */
+} pdf_char_glyph_pairs_t;
+
 /* Define the text enumerator. */
 typedef struct pdf_text_enum_s {
     gs_text_enum_common;
@@ -91,12 +105,13 @@ typedef struct pdf_text_enum_s {
     bool charproc_accum;
     bool cdevproc_callout;
     double cdevproc_result[10];
+    pdf_char_glyph_pairs_t *cgp;
 } pdf_text_enum_t;
 #define private_st_pdf_text_enum()\
   extern_st(st_gs_text_enum);\
-  gs_private_st_suffix_add1(st_pdf_text_enum, pdf_text_enum_t,\
+  gs_private_st_suffix_add2(st_pdf_text_enum, pdf_text_enum_t,\
     "pdf_text_enum_t", pdf_text_enum_enum_ptrs, pdf_text_enum_reloc_ptrs,\
-    st_gs_text_enum, pte_default)
+    st_gs_text_enum, pte_default, cgp)
 
 /*
  * Define quantities derived from the current font and CTM, used within
@@ -149,13 +164,13 @@ int font_orig_scale(const gs_font *font, double *sx);
  * Create or find a font resource object for a text.
  */
 int
-pdf_obtain_font_resource(const gs_text_enum_t *penum, 
+pdf_obtain_font_resource(pdf_text_enum_t *penum, 
 		const gs_string *pstr, pdf_font_resource_t **ppdfont);
 
 /*
  * Create or find a font resource object for a glyphshow text.
  */
-int pdf_obtain_font_resource_unencoded(const gs_text_enum_t *penum, 
+int pdf_obtain_font_resource_unencoded(pdf_text_enum_t *penum, 
 	    const gs_string *pstr, pdf_font_resource_t **ppdfont, const gs_glyph *gdata);
 
 /*
@@ -163,7 +178,7 @@ int pdf_obtain_font_resource_unencoded(const gs_text_enum_t *penum,
  */
 int pdf_obtain_cidfont_resource(gx_device_pdf *pdev, gs_font *subfont, 
 			    pdf_font_resource_t **ppdsubf, 
-			    gs_glyph *glyphs, int num_glyphs);
+			    pdf_char_glyph_pairs_t *cgp);
 
 /*
  * Create or find a parent Type 0 font resource object for a CID font resource.
@@ -242,6 +257,9 @@ bool pdf_is_CID_font(gs_font *font);
 
 /* Get a synthesized Type 3 font scale. */
 void pdf_font3_scale(gx_device_pdf *pdev, gs_font *font, double *scale);
+
+/* Release a text characters colloction. */
+void pdf_text_release_cgp(pdf_text_enum_t *penum);
 
 
 /* ------ gdevpdtc.c ------ */

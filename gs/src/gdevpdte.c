@@ -41,7 +41,7 @@ private int pdf_char_widths(gx_device_pdf *const pdev,
 			    pdf_font_resource_t *pdfont, int ch,
 			    gs_font_base *font,
 			    pdf_glyph_widths_t *pwidths /* may be NULL */);
-private int pdf_encode_string(gx_device_pdf *pdev, const pdf_text_enum_t *penum,
+private int pdf_encode_string(gx_device_pdf *pdev, pdf_text_enum_t *penum,
 		  const gs_string *pstr, const gs_glyph *gdata,
 		  pdf_font_resource_t **ppdfont);
 private int pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
@@ -174,7 +174,7 @@ pdf_used_charproc_fonts(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
  * Sets *ppdfont.
  */
 private int
-pdf_encode_string(gx_device_pdf *pdev, const pdf_text_enum_t *penum,
+pdf_encode_string(gx_device_pdf *pdev, pdf_text_enum_t *penum,
 		  const gs_string *pstr, const gs_glyph *gdata,
 		  pdf_font_resource_t **ppdfont)
 {
@@ -187,7 +187,7 @@ pdf_encode_string(gx_device_pdf *pdev, const pdf_text_enum_t *penum,
      * In contradiction with pre-7.20 versions of pdfwrite,
      * we never re-encode texts due to possible encoding conflict while font merging.
      */
-    code = pdf_obtain_font_resource((const gs_text_enum_t *)penum, pstr, &pdfont);
+    code = pdf_obtain_font_resource(penum, pstr, &pdfont);
     if (code < 0)
 	return code;
     code = pdf_add_resource(pdev, pdev->substream_Resources, "/Font", (pdf_resource_t *)pdfont);
@@ -972,7 +972,7 @@ process_plain_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
     byte *const buf = vbuf;
     uint count;
     uint operation = pte->text.operation;
-    pdf_text_enum_t *const penum = (pdf_text_enum_t *)pte;
+    pdf_text_enum_t *penum = (pdf_text_enum_t *)pte;
     int code;
     gs_string str;
     pdf_text_process_state_t text_state;
@@ -1052,7 +1052,7 @@ process_plain_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
 
 	    str.data = buf;
 	    str.size = size;
-	    if (pdf_obtain_font_resource_unencoded(pte, &str, &pdfont, gdata) != 0) {
+	    if (pdf_obtain_font_resource_unencoded(penum, &str, &pdfont, gdata) != 0) {
 		/* 
 		 * pdf_text_process will fall back 
 		 * to default implementation.

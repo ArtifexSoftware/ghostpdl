@@ -104,6 +104,16 @@ typedef struct pdf_base_font_s pdf_base_font_t;
 typedef struct pdf_font_descriptor_s pdf_font_descriptor_t;
 #endif
 
+#ifndef pdf_char_glyph_pair_DEFINED
+#  define pdf_char_glyph_pair_DEFINED
+typedef struct pdf_char_glyph_pair_s pdf_char_glyph_pair_t;
+#endif
+
+struct pdf_char_glyph_pair_s {
+    gs_char chr;
+    gs_glyph glyph;
+};
+
 /*
  * The write_contents procedure is set by the implementation when the
  * font resource is created.  It is called after generic code has opened
@@ -344,7 +354,7 @@ gs_font_base *pdf_font_resource_font(const pdf_font_resource_t *pdfont, bool com
  */
 pdf_font_embed_t pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font,
 				       int *pindex,
-				       gs_glyph *glyphs, int num_glyphs);
+				       pdf_char_glyph_pair_t *pairs, int num_glyphs);
 
 /*
  * Compute the BaseFont of a font according to the algorithm described
