@@ -1,6 +1,15 @@
-/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
-   Unauthorized use, copying, and/or distribution prohibited.
- */
+/* Portions Copyright (C) 2001 artofcode LLC.
+   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
+   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
+   This software is based in part on the work of the Independent JPEG Group.
+   All Rights Reserved.
+
+   This software is distributed under license and may not be copied, modified
+   or distributed except as expressly authorized under the terms of that
+   license.  Refer to licensing information at http://www.artifex.com/ or
+   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
+   San Rafael, CA  94903, (415)492-9861, for further information. */
+/*$Id$ */
 
 /* plchar.c */
 /* PCL font handling library -- operations on individual characters */
@@ -682,7 +691,7 @@ pl_tt_cmap_encode_char(gs_font_type42 *pfont, ulong cmap_offset,
 	  access(offset, cmap_offset + cmap_len - offset, table);
 	}
 	code = pl_cmap_lookup((uint)chr, table, &value);
-	return (code < 0 ? 0xffff : value);
+	return (code < 0 ? gs_no_glyph : value);
 }
 
 /* Encode a character using the map built for downloaded TrueType fonts. */
