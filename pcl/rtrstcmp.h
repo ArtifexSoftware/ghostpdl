@@ -72,7 +72,7 @@ typedef struct  pcl_seed_row_s {
 /*
  * The array of decompression functions.
  */
-void (*const pcl_decomp_proc[9 + 1])(P3(pcl_seed_row_t *pout,
+extern void (*const pcl_decomp_proc[9 + 1])(P3(pcl_seed_row_t *pout,
 					const byte *pin,
 					int in_size
                                                  ));
