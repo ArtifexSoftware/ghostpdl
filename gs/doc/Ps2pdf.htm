@@ -250,7 +250,7 @@ The following switches are used for creating encrypted documents :
 
 <dl>
 <dt><b><tt>-sOwnerPassword=</tt></b><em>string</em>
-<dd>Defines that the document to be encrypted with the specified 
+<dd>Defines that the document be encrypted with the specified 
 owner password.
 </dl>
 
@@ -263,8 +263,9 @@ but the owner password is required to edit it.
 
 <dl>
 <dt><b><tt>-dPermissions=</tt></b><em>number</em>
-<dd>Defines the PDF permissions. Negative values are allowed
-to represent unsigned integers with the highest bit set.
+<dd>Defines the PDF permissions flag field. Negative values are allowed
+to represent unsigned integers with the highest bit set. See the PDF
+Reference manual for the meaning of the flag bits.
 </dl>
 
 <dl>
