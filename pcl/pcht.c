@@ -2206,10 +2206,10 @@ pcl_ht_set_halftone(
 {
     pcl_ht_t *           pht = *ppht;
     gx_device_cmap *     pdev = 0;
+    gx_device_cmap *     old_pdev = 0;
     int                  ncomps = 0;
     gs_ht *              pgsht = 0;
     int                  code = 0;
-    const rend_info_t *  pinfo_old = 0;
     const rend_info_t *  pinfo_new = 0;
 
     /* if no halftone yet, create one */
@@ -2229,19 +2229,17 @@ pcl_ht_set_halftone(
      * device. Be sure to preserve the reference count when doing so (unless
      * it is 0).
      */
-    if (pcs->pids->pht != 0)
+    if (pcs->pids->pht != 0) {
+        const rend_info_t *  pinfo_old;
+
         pinfo_old = get_rendering_info( pcs->pids->pht->render_method,
                                         cstype,     /* irrelevant */
                                         for_image   /* irrelevant */
                                         );
-    else
-        pinfo_old = get_rendering_info( 3,
-                                        cstype,     /* irrelevant */
-                                        for_image   /* irrelevant */
-                                        );
+      old_pdev = pinfo_old->pdev;
+    }
     pinfo_new = get_rendering_info(pht->render_method, cstype, for_image);
-    pdev = pinfo_new->pdev;
-    if (pinfo_old->pdev != pdev) {
+    if ((pdev = pinfo_new->pdev) != old_pdev) {
         long    ref_count = pdev->rc.ref_count; /* HACK ALERT */
 
         if (ref_count == 0)     /* HACK ALERT */
