@@ -21,6 +21,7 @@
 #include "iapi.h"
 #include "string_.h"
 #include "gdebug.h"
+#include "gp.h"
 #include "gserrors.h"
 #include "../gs/src/errors.h"	/* FIXME: Microsoft seems to pull in <errors.h> */
 #include "gstypes.h"
@@ -48,14 +49,18 @@
  * PS interpreter instance: derived from pl_interp_instance_t
  */
 typedef struct ps_interp_instance_s {
-  pl_interp_instance_t     pl;               /* common part: must be first */
-  gs_memory_t              *plmemory;        /* memory allocator to use with pl objects */
-  gs_main_instance	   *minst;	     /* PS interp main instance */
-  gx_device		   *device;	     /* save for deferred param setting */
-  pl_page_action_t         pre_page_action;   /* action before page out */
-  void                     *pre_page_closure; /* closure to call pre_page_action with */
-  pl_page_action_t         post_page_action;  /* action before page out */
-  void                     *post_page_closure;/* closure to call post_page_action with */
+    pl_interp_instance_t     pl;                 /* common part: must be first */
+    gs_memory_t              *plmemory;          /* memory allocator to use with pl objects */
+    gs_main_instance	     *minst;	         /* PS interp main instance */
+    pl_page_action_t         pre_page_action;    /* action before page out */
+    void                     *pre_page_closure;  /* closure to call pre_page_action with */
+    pl_page_action_t         post_page_action;   /* action before page out */
+    void                     *post_page_closure; /* closure to call post_page_action with */
+    bool                     fresh_job;          /* true if we are starting a new job */
+    bool                     pdf_stream;         /* current stream is pdf */
+    char                     pdf_file_name[gp_file_name_sizeof];
+    FILE *                   pdf_filep;          /* temporary file for writing out pdf file */
+    ref                      job_save;
 } ps_interp_instance_t;
 
 /* Get implemtation's characteristics */
@@ -69,7 +74,8 @@ ps_impl_characteristics(
 #define PSBUILDDATE NULL
   static const pl_interp_characteristics_t ps_characteristics = {
     "PS",
-    "%!",
+    /* NOTE - we don't look for %! because we want to recognize pdf as well */
+    "%",
     "Artifex",
     PSVERSION,
     PSBUILDDATE,
@@ -109,8 +115,8 @@ ps_impl_allocate_interp_instance(
 )
 {
 	int code = 0, exit_code;
-	int argc = 1;
-	char *argv[1] = { "" };
+	int argc = 3;
+	char *argv[] = { {""}, {"-dNOPAUSE"}, {"-dQUIET"}, {""}};
 
 	ps_interp_instance_t *psi  /****** SHOULD HAVE A STRUCT DESCRIPTOR ******/
 	    = (ps_interp_instance_t *)gs_alloc_bytes( mem,
@@ -125,8 +131,7 @@ ps_impl_allocate_interp_instance(
 	/* Setup pointer to mem used by PostScript */
 	psi->plmemory = mem;
 	psi->minst = gs_main_instance_default();
-	psi->device = NULL;
-	code = gs_main_init_with_args(psi->minst, /* dummy*/ argc, /* dummy */ argv);
+	code = gs_main_init_with_args(psi->minst, argc, argv);
 	if (code<0)
 	    return code;
 
@@ -142,6 +147,11 @@ ps_impl_allocate_interp_instance(
 
 	/* Return success */
 	*instance = (pl_interp_instance_t *)psi;
+        /* inialize fresh job to false so that we can check for a pdf
+           file next job. */
+        psi->fresh_job = true;
+        /* default is a postscript stream */
+        psi->pdf_stream = false;
 	return 0;
 }
 
@@ -192,66 +202,13 @@ ps_impl_set_device(
   gx_device              *device        /* device to set (open or closed) */
 )
 {
-	int code;
-	ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
-        gs_state *pgs = psi->minst->i_ctx_p->pgs;
-	enum {Sbegin, Ssetdevice, Sinitg, Sgsave, Serase, Sdone} stage;
-	stage = Sbegin;
-	gs_opendevice(device);
-
-	/* Set the device into the gstate */
-	stage = Ssetdevice;
-	if ((code = gs_setdevice_no_erase(pgs, device)) < 0)	/* can't erase yet */
-	  goto pisdEnd;
-
-	/* Init PS graphics */
-	stage = Sinitg;
-        /* not sure if more initialization is required here */
-	if ((code = gs_initgraphics(pgs)) < 0)
-	  goto pisdEnd;
-
-	/* there are at least 2 gstates on the graphics stack. */
-	/* Ensure that now. */
-	stage = Sgsave;
-	if ( (code = gs_gsave(pgs)) < 0)
-	  goto pisdEnd;
-
-	stage = Serase;
-	if ( (code = gs_erasepage(pgs)) < 0 )
-		goto pisdEnd;
-
-	stage = Sdone;	/* success */
-
-	/* Unwind any errors */
-pisdEnd:
-	switch (stage) {
-	case Sdone:	/* don't undo success */
-	  break;
-
-	case Serase:	/* gs_erasepage failed */
-	  /* undo  gsave */
-	  gs_grestore_only(pgs);	 /* destroys gs_save stack */
-	  /* fall thru to next */
-	case Sgsave:	/* gsave failed */
-	case Sinitg:
-	  /* undo setdevice */
-	  gs_nulldevice(pgs);
-	  /* fall thru to next */
-
-	case Ssetdevice:	/* gs_setdevice failed */
-	case Sbegin:	/* nothing left to undo */
-	  break;
-	}
-	return code;
-
-#if 0
     int code;
     ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
+    gs_state *pgs = psi->minst->i_ctx_p->pgs;
     gs_opendevice(device);
-    code = gs_setdevice_no_erase(psi->minst->i_ctx_p->pgs, device);
-    psi->device = device;
+    /* Set the device into the gstate */
+    code = gs_setdevice_no_erase(pgs, device);
     return code;
-#endif
 }
 
 /* Prepare interp instance for the next "job" */
@@ -260,39 +217,13 @@ ps_impl_init_job(
 	pl_interp_instance_t   *instance         /* interp instance to start job in */
 )
 {
-	int code = 0; 
-	int exit_code = 0;
-	ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
+    int code = 0; 
+    int exit_code = 0;
+    ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
 
-	/* Insert job server encapsulation here */
-	byte buf[81];
-	stream_cursor_read cursor;		
-
-	/* false (bad password) startjob encapsulate the job.  We
-	 * never pause between pages in postscript this is handled by
-	 * the language swithching machinery so quiet and no pause is set.
-	 */
-	sprintf(buf, "false () startjob pop /QUIET true def /NOPAUSE true def");
-
-	cursor.ptr = buf - 1;
-	/* set the end of data pointer */
-	cursor.limit = cursor.ptr + strlen(buf);
-	
-	/* Send the buffer to Ghostscript */
-	code = gsapi_run_string_continue(psi->minst, (const char *)(cursor.ptr + 1),
-					 strlen(buf), 0, &exit_code);
-
-	return (code < 0) ? exit_code : 0;
-}
-
-private uint
-scan_buffer_for_UEL(
-	stream_cursor_read *cursor
-)
-{
-	uint avail = cursor->limit - (cursor->ptr);
-
-	return avail;
+    /* starting a new job */
+    psi->fresh_job = true;
+    return 0; /* should be return zsave(psi->minst->i_ctx_p); */
 }
 
 /* Parse a buffer full of data */
@@ -302,20 +233,66 @@ ps_impl_process(
 	stream_cursor_read   *cursor           /* data to process */
 )
 {
-	ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
-	int code, exit_code;
-	uint avail;
-
-	/* Process some input */
-	avail = scan_buffer_for_UEL(cursor);
-
-	/* Send the buffer to Ghostscript */
-	code = gsapi_run_string_continue(psi->minst, (const char *)(cursor->ptr + 1),
-		avail, 0, &exit_code);
-	cursor->ptr += avail;
-	if (code == e_NeedInput)
-	   return 0;		/* Not an error */
-	return (code < 0) ? exit_code : 0;
+    ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
+    int code, exit_code;
+    uint avail = cursor->limit - cursor->ptr;
+    /* if we are at the beginning of a job check for pdf and set
+       appropriate state variables to process either a pdf or ps
+       job */
+    if ( psi->fresh_job ) {
+        const char pdf_idstr[] = "%PDF-1.2";
+        /* do we have enough data? */
+        const uint pdf_idstr_len = strlen(pdf_idstr);
+        if ( avail < pdf_idstr_len )
+            /* more data.  NB update ptr ?? */
+            return 0;
+        else
+            /* compare beginning of stream with pdf id */
+            if ( !strncmp(pdf_idstr, cursor->ptr + 1, pdf_idstr_len) ) {
+                char fmode[4];
+                /* open the temporary pdf file.  If the file open
+                   fails PDF fails and we allow the job to be sent
+                   to postscript and generate an error.  It turns
+                   out this is easier than restoring the state and
+                   returning */
+                strcpy(fmode, "w+");
+                strcat(fmode, gp_fmode_binary_suffix);
+                psi->pdf_filep = gp_open_scratch_file(gp_scratch_file_name_prefix,
+                                                      psi->pdf_file_name, fmode);
+                if ( psi->pdf_filep == NULL )
+                    psi->pdf_stream = false;
+                else
+                    psi->pdf_stream = true;
+            }
+            else
+                psi->pdf_stream = false;
+        /* we only check for pdf at the beginning of the job */
+        psi->fresh_job = false;
+    }
+            
+    /* for a pdf stream we append to the open pdf file but for
+       postscript we hand it directly to the ps interpreter.  PDF
+       files are processed subsequently, at end job time */
+    code = 0;
+    if ( psi->pdf_stream ) {
+        uint bytes_written = fwrite((cursor->ptr + 1), 1, avail, psi->pdf_filep);
+        if ( bytes_written != avail )
+            code = gs_error_invalidfileaccess;
+    } else {
+        /* Send the buffer to Ghostscript */
+        code = gsapi_run_string_continue(psi->minst, (const char *)(cursor->ptr + 1),
+                                         avail, 0, &exit_code);
+        /* needs more input this is not an error */
+        if ( code == e_NeedInput )
+            code = 0;
+        /* error - I guess it gets "exit code" - nonsense */
+        if ( code < 0 )
+            code = exit_code;
+    }
+    /* update the cursor */
+    cursor->ptr += avail;
+    /* return the exit code */
+    return code;
 }
 
 /* Skip to end of job ret 1 if done, 0 ok but EOJ not found, else -ve error code */
@@ -350,11 +327,10 @@ ps_impl_process_eof(
 	pl_interp_instance_t *instance        /* interp instance to process data job in */
 )
 {
-	int code = 0, exit_code;
-	ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
-
-	/* put endjob logic here (finish encapsulation) */
-	return (code < 0) ? exit_code : 0;
+    int code = 0, exit_code;
+    ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
+    /* put endjob logic here (finish encapsulation) */
+    return code;
 }
 
 /* Report any errors after running a job */
@@ -367,9 +343,8 @@ ps_impl_report_errors(
    FILE                 *cout              /* stream for back-channel reports */
 )
 {
-	ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
-
-	return code;
+    ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
+    return code;
 }
 
 /* Wrap up interp instance after a "job" */
@@ -378,11 +353,35 @@ ps_impl_dnit_job(
 	pl_interp_instance_t *instance         /* interp instance to wrap up job in */
 )
 {
-	int code = 0; 
-	int exit_code = 0;
-	ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
+    int code = 0; 
+    int exit_code = 0;
+    ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
+    /* take care of a stored pdf file */
+    if ( psi->pdf_stream ) {
+        uint max_command_length = gp_file_name_sizeof +
+            7; /* 6 = space + (run) + new line */
+        byte buf[max_command_length];
+        /* at this point we have finished writing the spooled pdf file
+           and we need to close it */
+        fclose(psi->pdf_filep);
+        /* run the temporary pdf spool file */
+        sprintf(buf, "(%s) run\n", psi->pdf_file_name);
+        /* Send the buffer to Ghostscript */
+        code = gsapi_run_string_continue(psi->minst, buf, strlen(buf), 0, &exit_code);
 
-	return 0;
+        /* indicate we are done with the pdf stream */
+        psi->pdf_stream = false;
+        unlink(psi->pdf_file_name);
+        /* handle errors... normally job deinit failures are
+           considered fatal but pdf runs the spooled job when the job
+           is deinitialized so handle error processing here and return code is always 0. */
+        if ( code < 0 ) {
+            fprintf(gs_stderr, "PDF interpreter exited with exit code %d\n", exit_code);
+            fprintf(gs_stderr, "Flushing to EOJ\n", exit_code);
+        }
+        code = 0;
+    }
+    return 0; /* should be return zrestore(psi->minst->i_ctx_p); */
 }
 
 /* Remove a device from an interperter instance */
@@ -408,7 +407,7 @@ ps_impl_deallocate_interp_instance(
 	gs_memory_t *mem = psi->plmemory;
 	
 	/* do total dnit of interp state */
-	code = gsapi_run_string_end(psi->minst, 0, &exit_code); 
+	code = gsapi_run_string_end(psi->minst, 0, &exit_code);
 
 	gs_free_object(mem, psi, "ps_impl_deallocate_interp_instance(ps_interp_instance_t)");
 
