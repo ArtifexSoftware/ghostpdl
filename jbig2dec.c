@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.c,v 1.3 2001/06/10 07:09:18 giles Exp $
+    $Id: jbig2dec.c,v 1.4 2001/06/12 09:15:13 giles Exp $
 */
 
 #include <stdio.h>
@@ -88,13 +88,14 @@ jbig2_open (FILE *f)
   ctx->flags = buf[8];
   if (ctx->flags & 2)
     {
-      ctx->offset = 9;
+      ctx->offset = 9;	/* number of pages unknown */
+	  ctx->n_pages = 0;
     }
   else
     {
       ctx->offset = 13;
       ctx->n_pages = get_int32 (ctx, 9);
-    }
+	}
   return ctx;
 }
 
@@ -229,6 +230,8 @@ dump_jbig2 (FILE *f)
   bool last;
 
   ctx = jbig2_open (f);
+  if (!ctx) return;
+  
   printf ("Number of pages = %d\n", ctx->n_pages);
   for (;;)
     {
