@@ -341,7 +341,7 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
 	   px_next_char_16little);
 	pfont->WMode =
 	  (pxgs->char_sub_mode == eVerticalSubstitution ? 1 : 0) +
-	  ((int)(pxgs->char_bold_value * 127) * 2);
+	  ((int)(pxgs->char_bold_value * 10e5 * 1.625) * 2);
 	if ( to_path )
 	  { /* TextPath */
 	    /*

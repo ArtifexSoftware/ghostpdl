@@ -385,7 +385,7 @@ pl_bitmap_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 	  image.Height = u16(params + 6);
 	  /* Determine the amount of pseudo-bolding. */
 	  if ( pfont->WMode >> 1 )
-	    { float bold_fraction = (pfont->WMode >> 1) / 127.0;
+	    { float bold_fraction = (pfont->WMode >> 1) / 10e5;
 	      bold = (uint)(image.Height * bold_fraction + 0.5);
 	      bold_lines = alloc_bold_lines(pgs->memory, image.Width, bold,
 					    "pl_bitmap_build_char(bold_line)");
@@ -773,7 +773,7 @@ pl_tt_char_width(const pl_font_t *plfont, const pl_symbol_map_t *map,
 	  }
 	/****** WHAT UNITS FOR WIDTH? ******/
 	/* Recognize 0 as the undefined glyph. */
-	if ( glyph == 0 || glyph == 0xffff || glyph == gs_no_glyph )
+	if ( /* glyph == 0 || */ glyph == 0xffff || glyph == gs_no_glyph )
 	  { /* Use the width of glyph 0, if it exists. */
 	    code = gs_type42_get_metrics((gs_font_type42 *)pfont,
 					 (gs_glyph)0, sbw);
@@ -807,7 +807,7 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 	int code;
 	float bold_fraction =
 	  (gs_show_in_charpath(penum) != cpm_show ? 0.0 :
-	   (pfont->WMode >> 1) / 127.0);
+	   (pfont->WMode >> 1) / 10e5);
 	uint bold_added;
 	double scale;
 	float sbw[4], w2[6];
