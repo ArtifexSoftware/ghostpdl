@@ -559,6 +559,12 @@ listing. Note that the configuration option is only available with the
 unix .tar distributions of the source.
 
 <p>
+Note that if you're building Ghostscript from development source out of
+a repository instead of from a released source package, you should run
+'<tt>./autogen.sh</tt>' instead of <tt>./configure.</tt> This script 
+takes all the same options that configure does.
+
+<p>
 If your system doesn't support the configure script or you don't wish to
 use it, you can use the traditional ghostscript makefile system, editing
 the options by hand to match your system as described below.
