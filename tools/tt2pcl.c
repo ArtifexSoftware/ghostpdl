@@ -118,7 +118,8 @@ write_pcl_header()
     /* truetype */
     hdr.HeaderFormat = 15;
     /* unicode */
-    hdr.FontType = 11;
+    //hdr.FontType = 11;
+    hdr.FontType = 2;
     hdr.Spacing = 1;
     hdr.TypefaceLSB = 100; /* don't know */
     //    hdr.SymbolSet = htons((SYMSET_NUM * 32) + (SYMSET_LETTER - 64));
@@ -398,12 +399,12 @@ get_mac_glyph_index(unsigned char *ptt_data)
 void
 write_symbol_set(unsigned char *ptt_data)
 {
-    unsigned char *table;
-    if ( (table = get_mac_glyph_index(ptt_data)) == 0 ) {
-        fprintf(stderr, "mac table not found\n");
-        exit(EXIT_FAILURE);
-    }
-    write_mac_glyph_pcl_symbol_set(table);
+    //    unsigned char *table;
+    //    if ( (table = get_mac_glyph_index(ptt_data)) == 0 ) {
+    //        fprintf(stderr, "mac table not found\n");
+    //        exit(EXIT_FAILURE);
+    //    }
+    //    write_mac_glyph_pcl_symbol_set(table);
 }
 
 typedef struct character_descriptor_s {
@@ -429,7 +430,7 @@ find_glyph_data(const glyph_index, const unsigned char *ptt_data, unsigned long 
         exit(EXIT_FAILURE);
     }
     indexToLocFormat = pl_get_uint16(ptt_data + offset + 50);
-    fprintf(stderr, "glyphs indexed with %s\n", indexToLocFormat == 0 ? "short format" : "long format");
+    fprintf(stderr, "glyph index %d uses %s\n", glyph_index, indexToLocFormat == 0 ? "short format" : "long format");
     offset = find_table(ptt_data, "loca", &length);
     if ( offset <= 0 ) {
         fprintf(stderr, "could not find loca table\n");
@@ -448,10 +449,10 @@ find_glyph_data(const glyph_index, const unsigned char *ptt_data, unsigned long 
         *glyph_length = pl_get_uint16(pnext_glyph) * 2 - pl_get_uint16(pthis_glyph) * 2;
         return glyf_table + pl_get_uint16(pthis_glyph) * 2;
     } else {
-        unsigned char *pthis_glyph = loca_table + glyph_index * 2;
+        unsigned char *pthis_glyph = loca_table + glyph_index * 4;
         unsigned char *pnext_glyph = pthis_glyph + 4;
-        *glyph_length = pnext_glyph - pthis_glyph;
-        return glyf_table + pl_get_uint16(pthis_glyph) * 2;
+        *glyph_length = pl_get_uint32(pnext_glyph) - pl_get_uint32(pthis_glyph);
+        return glyf_table + pl_get_uint32(pthis_glyph);
     }
 }
 
@@ -504,59 +505,87 @@ write_character_descriptor(unsigned char *ptt_data)
             break;
         fprintf(stderr,  "segment=%d, first char=%d, last char=%d\n", seg, first_char, last_char);
         for (i = 0, this_char = first_char; this_char <= last_char; i++, this_char++) {
+            unsigned long glyph_length;
+            unsigned char *glyph_data;
             unsigned short deltad_char = this_char + pl_get_uint16(id_deltap + seg * 2);
             unsigned short range_offset = pl_get_uint16(id_rangeoffsetp + seg * 2);
             unsigned short glyph;
-            unsigned short pcl_glyph;
             if ( range_offset == 0 )
                 glyph = deltad_char;
             else
                 glyph = pl_get_uint16(id_rangeoffsetp + seg * 2 + range_offset + ((this_char - first_char) * 2));
-            fprintf(stderr,  "this char=%x, char with delta=%d, range offset=%d glyph index %d\n", this_char, deltad_char, range_offset, glyph);
-            pcl_glyph = (glyph == 0 ? htons(0xffff) : htons(glyph));
-            if ( pcl_glyph != 0xffff ) {
-                unsigned long glyph_length;
-                unsigned char *glyph_data;
-                glyph_data = find_glyph_data(glyph, ptt_data, &glyph_length);
-                if (glyph_length == 0)
-                    continue;
-                stdout_offset += fprintf(stdout, "\033*c%dE", i);
-                stdout_offset += fprintf(stdout, "\033(s%dW", sizeof(tt_char_des) + glyph_length);
-                tt_char_des.format = 15;
-                tt_char_des.continuation = 0;
-                tt_char_des.descriptor_size = 4;
-                tt_char_des.class = 15;
-                tt_char_des.addititonal_data[0] = 0; tt_char_des.addititonal_data[1] = 0;
-                tt_char_des.character_data_size = tt_char_des.descriptor_size + glyph_length;
-                tt_char_des.glyph_id = pcl_glyph;
-                fprintf(stderr, "table index=%d glyph index=%d, glyph_length=%d ", i, glyph, glyph_length);
-                {
-                    unsigned long sum = 0;
-                    int i;
-                    for ( i = 0; i < glyph_length; i++ )
-                        sum += glyph_data[i];
+            fprintf(stderr,  "this char=%d, char with delta=%d, range offset=%d glyph index %d\n", this_char, deltad_char, range_offset, glyph);
+            glyph_data = find_glyph_data(glyph, ptt_data, &glyph_length);
+            if (glyph_length == 0)
+                continue;
+            fprintf(stderr,  "contours=%d, minx=%d, miny=%d, maxx=%d, maxy=%d\n", 
+                    pl_get_uint16(glyph_data), (short)pl_get_uint16(glyph_data+2),
+                    (short)pl_get_uint16(glyph_data+4), (short)pl_get_uint16(glyph_data+6),
+                    (short)pl_get_uint16(glyph_data+8));
+            stdout_offset += fprintf(stdout, "\033*c%dE", this_char);
+            stdout_offset += fprintf(stdout, "\033(s%dW", sizeof(tt_char_des) + glyph_length);
+            tt_char_des.format = 15;
+            tt_char_des.continuation = 0;
+            tt_char_des.descriptor_size = 4;
+            tt_char_des.class = 15;
+            tt_char_des.addititonal_data[0] = 0; tt_char_des.addititonal_data[1] = 0;
+            tt_char_des.character_data_size = tt_char_des.descriptor_size + glyph_length;
+            tt_char_des.glyph_id = htons(glyph);
+            {
+                unsigned long sum = 0;
+                int i;
+                for ( i = 0; i < glyph_length; i++ )
+                    sum += glyph_data[i];
                     
-                    fprintf(stderr, "checksum=%d\n", sum);
-                }
-                stdout_offset += fwrite(&tt_char_des, 1, sizeof(character_descriptor_t), stdout);
-                stdout_offset += fwrite(glyph_data, 1, glyph_length, stdout);
+                fprintf(stderr, "checksum=%d\n", sum);
             }
+            stdout_offset += fwrite(&tt_char_des, 1, sizeof(character_descriptor_t), stdout);
+            stdout_offset += fwrite(glyph_data, 1, glyph_length, stdout);
         }
     }
 }
 
 void
-write_test(char *fontname)
+write_test(unsigned char *ptt_data, char *fontname)
 {
-    stdout_offset += fprintf(stdout, "\033(%d%c", SYMSET_NUM, SYMSET_LETTER);
-    stdout_offset += fprintf(stdout, "\033(s1P\033(s14V\033(1X");
-    // fprintf(stdout, "\033&n%dW%c%s", strlen(fontname) + 1, 2 /* operation */ , fontname);
-    {
-        int i;
-        for ( i = 0; i < 256; i++ ) {
-            if ( i  % 39 == 0 )
+    unsigned char *table;
+    character_descriptor_t tt_char_des;
+    unsigned short segment_count, seg;
+    unsigned char *start_charp;
+    unsigned char *end_charp;
+    unsigned char *id_deltap;
+    unsigned char *id_rangeoffsetp;        
+    unsigned char *glyph_id_arrayp;
+    int i;
+
+    if ( (table = get_mac_glyph_index(ptt_data)) == 0 ) {
+        fprintf(stderr, "mac table not found\n");
+        exit(EXIT_FAILURE);
+    }
+    stdout_offset += fprintf(stdout, "\033(s1P\033(s14V\033(1X");    
+    segment_count = pl_get_uint16(table + 6) / 2;
+    end_charp = table + 14;
+    start_charp = end_charp + (segment_count * 2) + 2 /* reservedpad */;
+    id_deltap = start_charp + (segment_count * 2);
+    id_rangeoffsetp = id_deltap + (segment_count * 2);
+    glyph_id_arrayp = id_rangeoffsetp + (segment_count * 2);
+    i = 0;
+    for (seg = 0; seg < segment_count; seg++) {
+        unsigned short first_char = pl_get_uint16(start_charp + 2 * seg);
+        unsigned short last_char = pl_get_uint16(end_charp + 2 * seg);
+        unsigned short this_char;
+
+
+        // NB doesn't handle 0xffff terminating a segment with valid
+        // characters in it - don't think this happens in practice.
+        if ( last_char == 0xffff )
+            break;
+        for (this_char = first_char; this_char <= last_char; this_char++) {
+            if (this_char & 0xff00) continue;
+            if ( (i % 39 == 0) && (i != 0) )
                 stdout_offset += fprintf(stdout, "\r\n");
-            stdout_offset += fprintf(stdout, "\033&p1X%c ", i);
+            i++;
+            stdout_offset += fprintf(stdout, "\033&p1X%c", this_char & 0xff);
         }
     }
 }
@@ -595,6 +624,6 @@ main(int argc, char **argv)
 
     write_symbol_set(ptt_data);
     write_character_descriptor(ptt_data);
-    write_test(argv[1]);
+    write_test(ptt_data, argv[1]);
     return 0;
 }
