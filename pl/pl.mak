@@ -210,7 +210,7 @@ plalloc_h=$(PLSRC)plalloc.h
 
 $(PLOBJ)plalloc.$(OBJ): $(PLSRC)plalloc.c $(AK) \
        $(malloc_h) $(memory_h) $(gdebug_h)\
-       $(gsmemory_h) $(gsstype_h) $(plalloc_h)
+       $(gsmemory_h) $(gsstype_h) $(plalloc_h) $(plftable_h)
 	$(PLCCC) $(PLSRC)plalloc.c $(PLO_)plalloc.$(OBJ)
 
 # freetype font loading module.
