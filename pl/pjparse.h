@@ -69,8 +69,8 @@ int pjl_vartoi(P1(const pjl_envvar_t *s));
 /* pjl envioronment variable to float. */
 floatp pjl_vartof(P1(const pjl_envvar_t *s));
 
-/* convert a pjl designated fontsource to a subdirectory pathname. */
-char *pjl_fontsource_to_path(P2(const pjl_parser_state *pjls, 
+/* convert a pjl designated fontsource to a subdirectory pathname.  */
+char *pjl_fontsource_to_path(P2(const pjl_parser_state *pjls,
 				const pjl_envvar_t *fontsource));
 
 /* get a pjl fontnumber for an internal pcl font.  This must be

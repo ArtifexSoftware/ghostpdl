@@ -14,6 +14,7 @@
 #include "pxoper.h"
 #include "pxstate.h"
 #include "pxfont.h"
+#include "pjtop.h"
 
 /*
  * Define the structure and parameters for doing font substitution.
@@ -83,9 +84,7 @@ typedef struct px_stored_font_s {
   px_font_desc_t descriptor;
   const char *file_name;
 } px_stored_font_t;
-private const char *known_font_file_prefixes[] = {
-  "fonts/", "/windows/system/", "/windows/fonts/", "/win95/fonts/", "/winnt/fonts/", 0
-};
+
 private const px_stored_font_t known_fonts[] = {
   {{{'A','l','b','e','r','t','u','s',' ',' ',' ',' ',' ',' ','X','b'},
     pxffAlbertus | pxff_variable | pxff_sans | pxff_upright | pxff_bold},
@@ -381,23 +380,22 @@ px_widen_font_name(px_value_t *pfnv, px_state_t *pxs)
 
 /* Open the file for a known font. */
 private FILE *
-px_open_font_file(const char *fname)
-{	const char **pprefix = known_font_file_prefixes;
+px_open_font_file(const char *fname, px_state_t *pxs)
+{
+    /* get the internal "I" font source */
+    pjl_envvar_t *fontsource = pjl_proc_get_envvar(pxs->pjls, "fontsource");
+    char file_name[80];
+    FILE *in;
 
-	for ( ; *pprefix; ++pprefix )
-	  { char file_name[80];
-	    FILE *in;
-
-	    strcpy(file_name, *pprefix);
-	    strcat(file_name, fname);
-	    in = fopen(file_name, "rb");
-	    if ( in )
-	      return in;
-	    in = fopen(file_name, "r");
-	    if ( in )
-	      return in;
-	  }
-	return 0;
+    strcpy(file_name, pjl_proc_fontsource_to_path(pxs->pjls, fontsource));
+    strcat(file_name, fname);
+    in = fopen(file_name, "rb");
+    if ( in )
+	return in;
+    in = fopen(file_name, "r");
+    if ( in )
+	return in;
+    return 0;
 }
 
 /* Look up a font name and return its description, if known. */
@@ -453,7 +451,7 @@ px_find_existing_font(px_value_t *pfnv, px_font_t **ppxfont,
 	    return 0;
 
 	  { /* Load the TrueType font data. */
-	    FILE *in = px_open_font_file(psf->file_name);
+	    FILE *in = px_open_font_file(psf->file_name, pxs);
 	    px_font_t *pxfont;
 
 	    if ( in == 0 )

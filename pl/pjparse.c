@@ -42,6 +42,9 @@ typedef struct pjl_parser_state_s {
     /* these are seperated out from the default and environmnet for no good reason */
     pjl_fontsource_t *font_defaults;
     pjl_fontsource_t *font_envir;
+    char *environment_font_path;  /* if there is an operating sytem env
+				     var it is used instead of the
+				     default pjl fontsource */
     gs_memory_t *mem;
 } pjl_parser_state_t;
 
@@ -77,7 +80,7 @@ private const pjl_envir_var_t pjl_factory_defaults[] = {
    ROM SIMM slots).  Simulate cartridge, permanent soft fonts, and
    printer ROM SIMMS with sub directories.  See table below.  Also
    resources can be set up as lists of resources which is useful for
-   host based systems.  Entries are seperated with a colon.  Note
+   host based systems.  Entries are seperated with a semi-colon.  Note
    there is some unnecessary overlap in the factory default and font
    source table. */
 private const pjl_fontsource_t pjl_fontsource_table[] = {
@@ -566,6 +569,10 @@ pjl_vartof(const pjl_envvar_t *s)
 pjl_fontsource_to_path(const pjl_parser_state *pjls, const pjl_envvar_t *fontsource)
 {
     int i;
+    /* if an environment variable is set we use it, otherwise use the PJL
+       machinery */
+    if ( pjls->environment_font_path != NULL )
+	return pjl_check_font_path(pjls->environment_font_path, pjls->mem);
     for (i = 0; pjls->font_envir[i].designator[0]; i++)
 	if (!pjl_compare(pjls->font_envir[i].designator, fontsource))
 	    return pjl_check_font_path(pjls->font_envir[i].pathname, pjls->mem);
@@ -595,6 +602,26 @@ pjl_process_init(gs_memory_t *mem)
     if ( pjlstate == NULL || pjl_env == NULL || pjl_def == NULL )
 	return NULL; /* should be fatal so we don't bother piecemeal frees */
 
+    /* check for an environment variable */
+    {
+	int pathlen, code;
+	/* The environment variable exists if the function fails to
+           fit in the null - odd but it works.  We allow an
+           environment variable to override the font default PJL font
+           path for desktop setups */
+	pathlen = 0;
+	if ( (code = gp_getenv( "FONTSOURCE", (char *)0, &pathlen)) < 0 ) {
+	    char *path = (char *)gs_alloc_bytes(mem, pathlen, "pjl_font_path");
+	    /* if the allocation fails we use the pjl fontsource */
+	    if ( path == NULL )
+		pjlstate->environment_font_path = NULL;
+	    else {
+		gp_getenv("FONTSOURCE", path, &pathlen);   /* can't fail */
+		pjlstate->environment_font_path = path;
+	    }
+	} else /* environmet variable does not exist use pjl fontsource */
+	    pjlstate->environment_font_path = NULL;
+    }
     pjlstate->defaults = pjl_def;
     pjlstate->envir = pjl_env;
     pjlstate->font_envir = pjl_fontenv;
@@ -637,6 +664,8 @@ pjl_process_destroy(pjl_parser_state *pst, gs_memory_t *mem)
     gs_free_object(mem, pst->font_defaults, "pjl_font_defaults");
     gs_free_object(mem, pst->defaults, "pjl_defaults");
     gs_free_object(mem, pst->envir, "pjl_envir");
+    if ( pst->environment_font_path )
+	gs_free_object(mem, pst->environment_font_path, "pjl_state");
     gs_free_object(mem, pst, "pjl_state");
 }
 
