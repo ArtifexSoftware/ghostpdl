@@ -1,3 +1,7 @@
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
+   Unauthorized use, copying, and/or distribution prohibited.
+ */
+
 /* plmain.c */
 /* Main program utilities for PCL interpreters */
 #undef DEBUG
@@ -131,16 +135,16 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal, char **argv,
 		  int vi;
 		  
 		  if ( eqp || (eqp = strchr(arg, '#')) )
-		    eqchar = *eqp, value = eqp + 1;
+		    eqchar = *eqp, *eqp = 0, value = eqp + 1;
 		  else
 		    value = "true";
 		  if ( sscanf(value, "%d", &vi) != 1 )
 		    { fputs("Usage for -d is -d<option>=<integer>\n", gs_stderr);
 		      exit(1);
 		    }
-		  if ( !strncmp(arg, "FirstPage", strlen("FirstPage")) )
+		  if ( !strcmp(arg, "FirstPage") )
 		    pmi->first_page = max(vi, 1);
-		  else if ( !strncmp(arg, "LastPage", strlen("FirstPage")) )
+		  else if ( !strcmp(arg, "LastPage") )
 		    pmi->last_page = vi;
 		  else
 		    code = param_write_int(plist, arg_heap_copy(arg), &vi);
@@ -213,8 +217,8 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal, char **argv,
 		    { fputs("Usage for -s is -s<option>=<string>\n", gs_stderr);
 		      exit(1);
 		    }
-		  eqchar = *eqp, value = eqp + 1;
-		  if ( !strncmp(arg, "DEVICE", strlen("DEVICE")) )
+		  eqchar = *eqp, *eqp = 0, value = eqp + 1;
+		  if ( !strcmp(arg, "DEVICE") )
 		  { int di;
 
 		    if ( pmi->device )
