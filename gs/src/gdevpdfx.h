@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -446,6 +446,9 @@ dev_proc_text_begin(gdev_pdf_text_begin);
 /* Initialize the IDs allocated at startup. */
 void pdf_initialize_ids(P1(gx_device_pdf * pdev));
 
+/* Update the color mapping procedures after setting ProcessColorModel. */
+void pdf_set_process_color_model(P1(gx_device_pdf * pdev));
+
 /* ---------------- Exported by gdevpdfu.c ---------------- */
 
 /* ------ Document ------ */
@@ -475,7 +478,8 @@ void pdf_reset_graphics(P1(gx_device_pdf *pdev));
 
 /* Set the fill or stroke color. */
 int pdf_set_color(P4(gx_device_pdf *pdev, gx_color_index color,
-		     gx_drawing_color *pdcolor, const char *rgs));
+		     gx_drawing_color *pdcolor,
+		     const psdf_set_color_commands_t *ppscc));
 
 /* Write matrix values. */
 void pdf_put_matrix(P4(gx_device_pdf *pdev, const char *before,

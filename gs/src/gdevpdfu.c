@@ -1,4 +1,4 @@
-/* Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1999, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -195,7 +195,8 @@ pdf_reset_graphics(gx_device_pdf * pdev)
 /* Set the fill or stroke color. */
 int
 pdf_set_color(gx_device_pdf * pdev, gx_color_index color,
-	      gx_drawing_color * pdcolor, const char *rgs)
+	      gx_drawing_color * pdcolor,
+	      const psdf_set_color_commands_t *ppscc)
 {
     if (gx_dc_pure_color(pdcolor) != color) {
 	int code;
@@ -226,7 +227,7 @@ pdf_set_color(gx_device_pdf * pdev, gx_color_index color,
 	    return code;
 #endif
 	color_set_pure(pdcolor, color);
-	psdf_set_color((gx_device_vector *) pdev, pdcolor, rgs);
+	psdf_set_color((gx_device_vector *) pdev, pdcolor, ppscc);
     }
     return 0;
 }

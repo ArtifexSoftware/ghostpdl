@@ -40,14 +40,15 @@ gdev_pdf_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 
     /* Make a special check for the initial fill with white, */
     /* which shouldn't cause the page to be opened. */
-    if (color == 0xffffff && !is_in_page(pdev))
+    if (color == pdev->white && !is_in_page(pdev))
 	return 0;
     code = pdf_open_page(pdev, PDF_IN_STREAM);
     if (code < 0)
 	return code;
     /* Make sure we aren't being clipped. */
     pdf_put_clip_path(pdev, NULL);
-    pdf_set_color(pdev, color, &pdev->fill_color, "rg");
+    pdf_set_color(pdev, color, &pdev->fill_color,
+		  &psdf_set_fill_color_commands);
     pprintd4(pdev->strm, "%d %d %d %d re f\n", x, y, w, h);
     return 0;
 }
@@ -236,7 +237,7 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
      * Make a special check for the initial fill with white,
      * which shouldn't cause the page to be opened.
      */
-    if (gx_dc_pure_color(pdcolor) == 0xffffff && !is_in_page(pdev))
+    if (gx_dc_pure_color(pdcolor) == pdev->white && !is_in_page(pdev))
 	return 0;
     have_path = !gx_path_is_void(ppath);
     if (have_path || pdev->context == PDF_IN_NONE ||
@@ -247,7 +248,8 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 	    return code;
     }
     pdf_put_clip_path(pdev, pcpath);
-    pdf_set_color(pdev, gx_dc_pure_color(pdcolor), &pdev->fill_color, "rg");
+    pdf_set_color(pdev, gx_dc_pure_color(pdcolor), &pdev->fill_color,
+		  &psdf_set_fill_color_commands);
     if (have_path) {
 	stream *s = pdev->strm;
 

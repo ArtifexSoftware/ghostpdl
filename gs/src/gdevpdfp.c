@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -102,9 +102,8 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
     gx_device_pdf *pdev = (gx_device_pdf *) dev;
     int ecode = 0;
     int code;
-#ifdef POST60
     gx_device_pdf save_dev;
-#else
+#ifndef POST60
     float cl = (float)pdev->CompatibilityLevel;
     bool rac = pdev->ReAssignCharacters;
     bool rec = pdev->ReEncodeCharacters;
@@ -147,8 +146,8 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 	    param_signal_error(plist, param_name, ecode = gs_error_rangecheck);
     }
 
-#ifdef POST60
     save_dev = *pdev;
+#ifdef POST60
     code = gs_param_read_items(plist, pdev, pdf_param_items);
     if (code < 0)
 	ecode = code;
@@ -237,6 +236,28 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 	case 1:
 	    break;
     }
+    {
+	/*
+	 * Set ProcessColorModel now, because gx_default_put_params checks
+	 * it.
+	 */
+	static const char *pcm_names[] = {
+	    "DeviceGray", "DeviceRGB", "DeviceCMYK", 0
+	};
+	static const gx_device_color_info pcm_color_info[] = {
+	    dci_values(1, 8, 255, 0, 256, 0),
+	    dci_values(3, 24, 255, 255, 256, 256),
+	    dci_values(4, 32, 255, 255, 256, 256)
+	};
+	int pcm = -1;
+
+	ecode = param_put_enum(plist, "ProcessColorModel", &pcm,
+			       pcm_names, ecode);
+	if (pcm >= 0) {
+	    pdev->color_info = pcm_color_info[pcm];
+	    pdf_set_process_color_model(pdev);
+	}
+    }
 
     if (ecode < 0)
 	return ecode;
@@ -250,6 +271,8 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
     code = gdev_psdf_put_params(dev, plist);
     if (code < 0) {
 	pdev->version = save_version;
+	pdev->color_info = save_dev.color_info;
+	pdf_set_process_color_model(pdev);
 	return code;
     }
 

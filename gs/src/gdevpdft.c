@@ -219,7 +219,8 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
 	    return code;
 	pdf_put_clip_path(pdev, pcpath);
     }
-    pdf_set_color(pdev, gx_dc_pure_color(pdcolor), &pdev->fill_color, "rg");
+    pdf_set_color(pdev, gx_dc_pure_color(pdcolor), &pdev->fill_color,
+		  &psdf_set_fill_color_commands);
 
     /* Allocate and initialize the enumerator. */
 

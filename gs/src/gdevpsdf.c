@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -34,6 +34,14 @@
 /* Structure descriptors */
 public_st_device_psdf();
 public_st_psdf_binary_writer();
+
+/* Standard color command names. */
+const psdf_set_color_commands_t psdf_set_fill_color_commands = {
+    "g", "rg", "k", "cs", "sc", "scn"
+};
+const psdf_set_color_commands_t psdf_set_stroke_color_commands = {
+    "G", "RG", "K", "CS", "SC", "SCN"
+};
 
 /* ---------------- Vector implementation procedures ---------------- */
 
@@ -97,13 +105,13 @@ psdf_setlogop(gx_device_vector * vdev, gs_logical_operation_t lop,
 int
 psdf_setfillcolor(gx_device_vector * vdev, const gx_drawing_color * pdc)
 {
-    return psdf_set_color(vdev, pdc, "rg");
+    return psdf_set_color(vdev, pdc, &psdf_set_fill_color_commands);
 }
 
 int
 psdf_setstrokecolor(gx_device_vector * vdev, const gx_drawing_color * pdc)
 {
-    return psdf_set_color(vdev, pdc, "RG");
+    return psdf_set_color(vdev, pdc, &psdf_set_stroke_color_commands);
 }
 
 int
@@ -171,23 +179,58 @@ psdf_closepath(gx_device_vector * vdev, floatp x0, floatp y0,
 
 /* ---------------- Utilities ---------------- */
 
+gx_color_index
+psdf_adjust_color_index(gx_device_vector *vdev, gx_color_index color)
+{
+    /*
+     * Since gx_no_color_index is all 1's, we can't represent
+     * a CMYK color consisting of full ink in all 4 components.
+     * However, this color must be available for registration marks.
+     * gxcmap.c fudges this by changing the K component to 254;
+     * undo this fudge here.
+     */
+    return (color == (gx_no_color_index ^ 1) ? gx_no_color_index : color);
+}
+
 int
 psdf_set_color(gx_device_vector * vdev, const gx_drawing_color * pdc,
-	       const char *rgs)
+	       const psdf_set_color_commands_t *ppscc)
 {
     if (!gx_dc_is_pure(pdc))
 	return_error(gs_error_rangecheck);
     {
 	stream *s = gdev_vector_stream(vdev);
-	gx_color_index color = gx_dc_pure_color(pdc);
-	float r = (color >> 16) / 255.0;
-	float g = ((color >> 8) & 0xff) / 255.0;
-	float b = (color & 0xff) / 255.0;
+	gx_color_index color =
+	    psdf_adjust_color_index(vdev, gx_dc_pure_color(pdc));
+	float
+	    v0 = (color >> 24) / 255.0,
+	    v1 = ((color >> 16) & 0xff) / 255.0,
+	    v2 = ((color >> 8) & 0xff) / 255.0,
+	    v3 = (color & 0xff) / 255.0;
 
-	if (r == g && g == b)
-	    pprintg1(s, "%g", r), pprints1(s, " %s\n", rgs + 1);
-	else
-	    pprintg3(s, "%g %g %g", r, g, b), pprints1(s, " %s\n", rgs);
+	switch (vdev->color_info.num_components) {
+	case 4:
+	    if (v0 == 0 && v1 == 0 && v2 == 0) {
+		v3 = 1.0 - v3;
+		goto g;
+	    }
+	    pprintg4(s, "%g %g %g %g", v0, v1, v2, v3);
+	    pprints1(s, " %s\n", ppscc->setcmykcolor);
+	    break;
+	case 3:
+	    if (v1 == v2 && v2 == v3)
+		goto g;
+	    pprintg3(s, "%g %g %g", v1, v2, v3);
+	    pprints1(s, " %s\n", ppscc->setrgbcolor);
+	    break;
+	case 1:
+	g:
+	    pprintg1(s, "%g", v3);
+	    pprints1(s, " %s\n", ppscc->setgray);
+	    break;
+	default:		/* can't happen */
+	    return_error(gs_error_rangecheck);
+	}
     }
     return 0;
 }

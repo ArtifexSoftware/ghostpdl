@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -673,7 +673,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
 {
     int code;
     gs_color_space cs;
-    byte palette[6];
+    byte palette[sizeof(gx_color_index) * 2];
     gs_image_t image;
     int yi;
     pdf_image_writer writer;
@@ -695,7 +695,8 @@ pdf_copy_mono(gx_device_pdf *pdev,
 	    return 0;
 	/* If a mask has an id, assume it's a character. */
 	if (id != gx_no_bitmap_id && sourcex == 0) {
-	    pdf_set_color(pdev, one, &pdev->fill_color, "rg");
+	    pdf_set_color(pdev, one, &pdev->fill_color,
+			  &psdf_set_fill_color_commands);
 	    pres = pdf_find_resource_by_gs_id(pdev, resourceCharProc, id);
 	    if (pres == 0) {	/* Define the character in an embedded font. */
 		pdf_char_proc_t *pcp;
@@ -736,30 +737,51 @@ pdf_copy_mono(gx_device_pdf *pdev,
 	    pdf_make_bitmap_matrix(&image.ImageMatrix, x, y, w, h, h);
 	    goto rx;
 	}
-	pdf_set_color(pdev, one, &pdev->fill_color, "rg");
+	pdf_set_color(pdev, one, &pdev->fill_color,
+		      &psdf_set_fill_color_commands);
 	gs_image_t_init_mask(&image, false);
 	invert = 0xff;
     } else if (one == gx_no_color_index) {
 	gs_image_t_init_mask(&image, false);
-	pdf_set_color(pdev, zero, &pdev->fill_color, "rg");
-    } else if (zero == 0 && one == 0xffffff) {
+	pdf_set_color(pdev, zero, &pdev->fill_color,
+		      &psdf_set_fill_color_commands);
+    } else if (zero == pdev->black && one == pdev->white) {
 	gs_cspace_init_DeviceGray(&cs);
 	gs_image_t_init(&image, &cs);
-    } else if (zero == 0xffffff && one == 0) {
+    } else if (zero == pdev->white && one == pdev->black) {
 	gs_cspace_init_DeviceGray(&cs);
 	gs_image_t_init(&image, &cs);
 	invert = 0xff;
     } else {
+	/*
+	 * We think this code is never executed when interpreting PostScript
+	 * or PDF: the library never uses monobit non-mask images
+	 * internally, and high-level images don't go through this code.
+	 * However, we still want the code to work.
+	 */
+	gs_color_space cs_base;
+	gx_color_index c[2];
+	int i, j;
+	int ncomp = pdev->color_info.num_components;
+	byte *p;
+
+	switch (ncomp) {
+	case 1: gs_cspace_init_DeviceGray(&cs_base); break;
+	case 3: gs_cspace_init_DeviceRGB(&cs_base); break;
+	case 4: gs_cspace_init_DeviceCMYK(&cs_base); break;
+	default: return_error(gs_error_rangecheck);
+	}
+	c[0] = psdf_adjust_color_index((gx_device_vector *)pdev, zero);
+	c[1] = psdf_adjust_color_index((gx_device_vector *)pdev, one);
 	gs_cspace_init(&cs, &gs_color_space_type_Indexed, NULL);
+	cs.params.indexed.base_space = *(gs_direct_color_space *)&cs_base;
 	cs.params.indexed.hival = 1;
-	palette[0] = (byte) (zero >> 16);
-	palette[1] = (byte) (zero >> 8);
-	palette[2] = (byte) (zero);
-	palette[3] = (byte) (one >> 16);
-	palette[4] = (byte) (one >> 8);
-	palette[5] = (byte) (one);
+	p = palette;
+	for (i = 0; i < 2; ++i)
+	    for (j = ncomp - 1; j >= 0; --j)
+		*p++ = (byte)(c[i] >> (j * 8));
 	cs.params.indexed.lookup.table.data = palette;
-	cs.params.indexed.lookup.table.size = 6;
+	cs.params.indexed.lookup.table.size = p - palette;
 	cs.params.indexed.use_proc = false;
 	gs_image_t_init(&image, &cs);
 	image.BitsPerComponent = 1;
@@ -1276,7 +1298,7 @@ gdev_pdf_begin_image(gx_device * dev,
     pdf_put_clip_path(pdev, pcpath);
     if (pim->ImageMask)
 	pdf_set_color(pdev, gx_dc_pure_color(pdcolor), &pdev->fill_color,
-		      "rg");
+		      &psdf_set_fill_color_commands);
     {
 	gs_matrix mat;
 	gs_matrix bmat;

@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -122,11 +122,12 @@ private dev_proc_close_device(pdf_close);
 #endif
 
 const gx_device_pdf gs_pdfwrite_device =
-{std_device_color_stype_body(gx_device_pdf, 0, "pdfwrite",
-			     &st_device_pdfwrite,
-			     DEFAULT_WIDTH_10THS * X_DPI / 10,
-			     DEFAULT_HEIGHT_10THS * Y_DPI / 10,
-			     X_DPI, Y_DPI, 24, 255, 255),
+{std_device_dci_type_body(gx_device_pdf, 0, "pdfwrite",
+			  &st_device_pdfwrite,
+			  DEFAULT_WIDTH_10THS * X_DPI / 10,
+			  DEFAULT_HEIGHT_10THS * Y_DPI / 10,
+			  X_DPI, Y_DPI,
+			  3, 24, 255, 255, 256, 256),
  {pdf_open,
   gx_upright_get_initial_matrix,
   NULL,				/* sync_output */
@@ -353,6 +354,31 @@ pdf_initialize_ids(gx_device_pdf * pdev)
     /* Allocate the root of the pages tree. */
 
     pdf_create_named_dict(pdev, NULL, &pdev->Pages, 0L);
+}
+
+/* Update the color mapping procedures after setting ProcessColorModel. */
+void
+pdf_set_process_color_model(gx_device_pdf * pdev)
+{
+    switch (pdev->color_info.num_components) {
+    case 1:
+	set_dev_proc(pdev, map_rgb_color, gx_default_gray_map_rgb_color);
+	set_dev_proc(pdev, map_color_rgb, gx_default_gray_map_color_rgb);
+	set_dev_proc(pdev, map_cmyk_color, NULL);
+	break;
+    case 3:
+	set_dev_proc(pdev, map_rgb_color, gx_default_rgb_map_rgb_color);
+	set_dev_proc(pdev, map_color_rgb, gx_default_rgb_map_color_rgb);
+	set_dev_proc(pdev, map_cmyk_color, NULL);
+	break;
+    case 4:
+	set_dev_proc(pdev, map_rgb_color, NULL);
+	set_dev_proc(pdev, map_color_rgb, cmyk_8bit_map_color_rgb);
+	set_dev_proc(pdev, map_cmyk_color, cmyk_8bit_map_cmyk_color);
+	break;
+    default:			/* can't happen */
+	DO_NOTHING;
+    }
 }
 
 /* Open the device. */
