@@ -89,26 +89,6 @@ fails with:
 <hr>
 <h2><a name="Minor_bugs"></a>Minor Bugs.</h2>
 
-<h3>gs-6.31 and gs-6.60 fail running lib/image-qa.ps</h3>
-Running lib/image-qa.ps with gs-6.31 or gs-6.60 produces an error message. 
-<pre>
-Type 1 
-Stencil 
-Mask 
-Error: /ioerror in --fileposition-- 
-</pre>
-SourceForge Bug #223005, November 20, 2000.
-<p>
-<I>
-This is an error in the test file, not GS. fileposition correctly
-throws ioerror when it is used on filtered files.
-<br>
-The test should be written to use .fileposition when running on Ghostscript
-and enclose fileposition in { } stopped when not. Also for portability to
-PostScript interpreters without Ghostscript extensions, '=only' should be
-defined to use '=print' or '='.
-</I>
-
 <h3>PageSize cannot use packedarray</h3>
 PageSize doesn't accept packed array as an argument if the page size is
 adjusted, for instance, to the whole number of pixels. The following
