@@ -667,7 +667,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_const_string * str,
 		    case ce2_hflex:
 			csp[6] = fixed_half;	/* fd/100 */
 			csp[4] = *csp, csp[5] = 0;	/* dx6, dy6 */
-			csp[2] = csp[-1], csp[3] = -csp[-5];	/* dx5, dy5 */
+			csp[2] = csp[-1], csp[3] = -csp[-4];	/* dx5, dy5 */
 			*csp = csp[-2], csp[1] = 0;	/* dx4, dy4 */
 			csp[-2] = csp[-3], csp[-1] = 0;		/* dx3, dy3 */
 			csp[-3] = csp[-4], csp[-4] = csp[-5];	/* dx2, dy2 */
