@@ -4,6 +4,176 @@ ported directly from the latest aladdin release it is not documented
 here.  We provide a reference aladdin release number and the files.
 Please see News.htm for a detailed explanation of these changes.
 
+Version 5.50d (01/01/99)
+========================
+
+Mon Jan 14 05:00:00 1999        Ray Johnston        ray@artifex.com
+
+        * gxp1fill.c [1.6]:
+        Fix for pattern phase (Peter)
+
+Mon Jan 13 06:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * gschar.c [1.4]:
+        The null device installed for stringwidth didn't copy the color
+        mapping information from its target, causing confusion if the current
+        device was a pattern accumulator (Peter).
+        
+        * gxpcmap.c [1.4], gxdevice.h [1.8], gxdevcli.h [1.6], gsdevice.c [1.8]:
+        The null device installed for stringwidth didn't copy the color
+        mapping information from its target, causing confusion if the current
+        device was a pattern accumulator. (Peter)
+
+Mon Jan 13 00:00:00 1999        Ray Johnston        ray@artifex.com
+
+        * ps2ascii.ps [1.6]:
+        I fixed the stdout logic, so that the output can be redirected with
+        the sequence;
+              /.show.stdout (outfile.txt) (w) file def
+        interposed between loading (running) ps2ascii.ps and loading/running
+        the file(s) to be converted.
+        
+        Also added a (\n) to the copypage output for the SIMPLE case to
+        improve readability.
+
+Mon Jan 12 23:00:00 1999        Ray Johnston        ray@artifex.com
+
+        * gdevbmpa.c [1.10]:
+        OOPS! Fix error caused by bad edit. See comment on previous revision.
+
+Mon Jan 12 20:00:00 1999        Ray Johnston        ray@artifex.com
+
+        * gdevbmpa.c [1.9]:
+        Change to make sure BufferSpace allows for writer_space + min_row_space.
+        Keep the code that forces writer and reader to be the same (for now).
+        Replace the *** HACK HACK *** comment with something more informative.
+
+Mon Jan 12 01:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * gdevbmpa.c [1.8]:
+        Hack to set buffer space and band buffer space equal.  I thought this
+        was no longer necessary but bmpamono will not work correctly without
+        the change, although the color bmp driver seems to work.  I have not
+        analyzed this.  Also max_raster and min_band_height was calculated
+        incorrectly.
+
+Mon Dec 28 01:00:00 1998        Henry Stiles        henrys@artifex.com
+
+        * zlib/zlib.3 [1.1], zlib/trees.h [1.1], zlib/maketree.c [1.1], zlib/inffixed.h [1.1], 
+        zlib/algorithm.txt [1.1], zlib/FAQ [1.1]:
+        zlib 1.1.3 release - these files were not added in the original
+        checkin.  We have not analyzed why they were not incorporated the
+        first time.
+
+Mon Dec 28 00:00:00 1998        Henry Stiles        henrys@artifex.com
+
+        * zlib/zutil.h [1.2], zlib/zutil.c [1.2], zlib/zlib.h [1.2], zlib/zconf.h [1.2], 
+        zlib/uncompr.c [1.2], zlib/trees.c [1.2], zlib/os2/zlib.def [1.1], zlib/os2/Makefile.os2 [1.1], 
+        zlib/nt/zlib.dnt [1.1], zlib/nt/Makefile.nt [1.1], zlib/nt/Makefile.gcc [1.1], zlib/nt/Makefile.emx [1.1], 
+        zlib/msdos/zlib.rc [1.1], zlib/msdos/zlib.def [1.1], zlib/msdos/Makefile.wat [1.1], 
+        zlib/msdos/Makefile.w32 [1.1], zlib/msdos/Makefile.tc [1.1], zlib/msdos/Makefile.msc [1.1], 
+        zlib/msdos/Makefile.emx [1.1], zlib/msdos/Makefile.dj2 [1.1], zlib/msdos/Makefile.bor [1.1], 
+        zlib/msdos/Makefile.b32 [1.1], zlib/minigzip.c [1.2], zlib/infutil.h [1.2], zlib/infutil.c [1.2], 
+        zlib/inftrees.h [1.2], zlib/inftrees.c [1.2], zlib/inflate.c [1.2], zlib/inffast.h [1.2], 
+        zlib/inffast.c [1.2], zlib/infcodes.h [1.2], zlib/infcodes.c [1.2], zlib/infblock.h [1.2], 
+        zlib/infblock.c [1.2], zlib/gzio.c [1.2], zlib/example.c [1.2], zlib/deflate.h [1.2], 
+        zlib/deflate.c [1.2], zlib/crc32.c [1.2], zlib/contrib/visual-basic.txt [1.1], zlib/contrib/untgz/untgz.c [1.1], 
+        zlib/contrib/untgz/makefile.w32 [1.1], zlib/contrib/untgz/Makefile [1.1], zlib/contrib/minizip/zlibvc.dsw [1.1], 
+        zlib/contrib/minizip/zlibvc.dsp [1.1], zlib/contrib/minizip/zlibvc.def [1.1], zlib/contrib/minizip/zip.h [1.1], 
+        zlib/contrib/minizip/zip.def [1.1], zlib/contrib/minizip/zip.c [1.1], zlib/contrib/minizip/unzip.h [1.1], 
+        zlib/contrib/minizip/unzip.def [1.1], zlib/contrib/minizip/unzip.c [1.1], zlib/contrib/minizip/readme.txt [1.1], 
+        zlib/contrib/minizip/minizip.c [1.1], zlib/contrib/minizip/miniunz.c [1.1], zlib/contrib/minizip/Makefile [1.1], 
+        zlib/contrib/minizip/ChangeLogUnzip [1.1], zlib/contrib/iostream2/zstream_test.cpp [1.1], 
+        zlib/contrib/iostream2/zstream.h [1.1], zlib/contrib/iostream/zfstream.h [1.1], 
+        zlib/contrib/iostream/zfstream.cpp [1.1], zlib/contrib/iostream/test.cpp [1.1], 
+        zlib/contrib/delphi2/zlib32.cpp [1.1], zlib/contrib/delphi2/zlib32.bpr [1.1], zlib/contrib/delphi2/zlib.pas [1.1], 
+        zlib/contrib/delphi2/zlib.cpp [1.1], zlib/contrib/delphi2/zlib.bpr [1.1], zlib/contrib/delphi2/zlib.bpg [1.1], 
+        zlib/contrib/delphi2/readme.txt [1.1], zlib/contrib/delphi2/d_zlib.cpp [1.1], zlib/contrib/delphi2/d_zlib.bpr [1.1], 
+        zlib/contrib/delphi/zlibdef.pas [1.1], zlib/contrib/delphi/zlib.mak [1.1], zlib/contrib/asm686/match.S [1.1], 
+        zlib/contrib/asm686/README.686 [1.1], zlib/contrib/asm586/match.S [1.1], zlib/contrib/asm586/README.586 [1.1], 
+        zlib/contrib/asm386/zlibvc.dsw [1.1], zlib/contrib/asm386/zlibvc.dsp [1.1], zlib/contrib/asm386/zlibvc.def [1.1], 
+        zlib/contrib/asm386/mkgvmt32.bat [1.1], zlib/contrib/asm386/gvmat32c.c [1.1], zlib/contrib/asm386/gvmat32.asm [1.1], 
+        zlib/contrib/README.contrib [1.1], zlib/configure [1.2], zlib/compress.c [1.2], 
+        zlib/amiga/Makefile.sas [1.1], zlib/amiga/Makefile.pup [1.1], zlib/adler32.c [1.2], 
+        zlib/README [1.2], zlib/Makefile.riscos [1.2], zlib/Makefile.in [1.2], zlib/Makefile [1.2], 
+        zlib/Make_vms.com [1.2], zlib/INDEX [1.2], zlib/ChangeLog [1.2], zlib/Attic/zlib.rc [1.2], 
+        zlib/Attic/zlib.def [1.2], zlib/Attic/minigzip [1.2], zlib/Attic/libz.a [1.2], zlib/Attic/example [1.2], 
+        zlib/Attic/algorithm.doc [1.2], zlib/Attic/Makefile.wat [1.2], zlib/Attic/Makefile.tc [1.2], 
+        zlib/Attic/Makefile.sas [1.2], zlib/Attic/Makefile.msc [1.2], zlib/Attic/Makefile.dj2 [1.2], 
+        zlib/Attic/Makefile.bor [1.2], zlib/Attic/Makefile.b32 [1.2]:
+        updates for zlib 1.1.3
+
+Mon Dec 24 20:00:00 1998        Ray Johnston        ray@artifex.com
+
+        * pdf_draw.ps [1.8]:
+        Fix for PDF files that use Patterns to make sure the /Resources of a
+        Pattern are included in the context during the /PaintProc. (ref #852)
+
+Mon Dec 19 15:00:00 1998        Ray Johnston        ray@artifex.com
+
+        * devs.mak [1.12]:
+        Add 'bmpa16' and 'bmpa256' devices for testing.
+
+Mon Dec 18 21:00:00 1998        Henry Stiles        henrys@artifex.com
+
+        * devs.mak [1.11]:
+        adds bmpa16m.mak
+
+Mon Dec 18 19:00:00 1998        Henry Stiles        henrys@artifex.com
+
+        * gxpageq.c [1.6]:
+        the fix to not free a reserved page entry is no longer handled by
+        initilializing the page queue info structure when it is allocated.
+        Instead we avoid freeing the information by removing the call for the
+        case of reserved entries.
+        
+        * gdevbmpa.c [1.7]:
+        removes hack to set band buffer space and buffer space equal.
+
+Mon Dec 18 17:00:00 1998        Henry Stiles        henrys@artifex.com
+
+        * gdevbbox.c [1.12]:
+        removes comments
+
+Mon Dec 18 06:00:00 1998        Henry Stiles        henrys@artifex.com
+
+        * gscrdp.c [1.5], gscrd.c [1.5]:
+        changes to get C crd interface to work with real data.
+        gs_cie_render1_initialize now calls gs_cie_render_init() to set up
+        DomainLMN, DomainABC, and pqr white and black points.
+        
+        * gdevbmpa.c [1.6]:
+        removes hack to set band buffer size to the buffer size and makes
+        another correction to the calculation of the buffer sizes.
+
+Mon Dec 16 23:00:00 1998        Henry Stiles        henrys@artifex.com
+
+        * gxclread.c [1.7]:
+        fix from johnd that I haven't had time to track down.  Apparently it
+        prevents arace condition in the async code but I am not sure of the
+        details.
+
+Mon Dec 16 08:00:00 1998        Henry Stiles        henrys@artifex.com
+
+        * viewcmyk.ps [1.6]:
+        Peter's fix to print rectangular images.
+
+Mon Dec 10 16:00:00 1998        Henry Stiles        henrys@artifex.com
+
+        * gdevbbox.c [1.11]:
+        *** empty log message ***
+
+Mon Dec 10 08:00:00 1998        Henry Stiles        henrys@artifex.com
+
+        * gxpageq.c [1.5]:
+        properly initializes page information in the page queue entry when it
+        is allocated.
+        
+        * gdevbmpa.c [1.5]:
+        Fixes bug that was confusing band height and band width, also add
+        workaround to set the band buffer space and the buffer space equal.
+        Later the tile size cache is calculated to be different between reader
+        and writer if the band buffer space and the buffer space are equal.
 
 Version 5.50c (note 5.50c includes the 5.55 changes noted below)
 ================================================================

@@ -6,6 +6,32 @@
 This file, NEWS-TLS (tools), describes the changes in the most recent releases of
 Aladdin's utility tools directory in reverse chronological order.
 
+Version 1.03 (01/14/99)
+======================
+
+Mon Jan  4 06:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * cvs2log.py [1.2]:
+        We were assuming that there existed a password entry for the person
+        who made the log entry.
+
+Mon Jan  2 09:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * cvs2log.py [1.1]:
+        initial checkin for cvs2log.py.  Converts log file formats from cvs
+        log output.
+
+Mon Dec 22 21:00:00 1998        Henry Stiles        henrys@artifex.com
+
+        * pcldocs/webup.gif [1.1], pcldocs/pclbug.html [1.1], pcldocs/index.html [1.1], 
+        pcldocs/ghost64.gif [1.1]:
+        pcl html documentation.
+
+Mon Dec  2 21:00:00 1998        Henry Stiles        henrys@artifex.com
+
+        * NEWS-TLS [1.4]:
+        NEWS file message.
+        
 Version 1.02 (12/02/98)
 ======================
 

@@ -10,6 +10,138 @@ generated from the revision control logs.  The dates provided for each
 entry are the dates the sources were committed to the source code
 repository.
 
+Version 1.05 (01/14/99)
+======================
+
+Mon Jan 11 16:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pgdraw.c [1.18], pcpatrn.c [1.14], pcdraw.c [1.8]:
+        pattern_set_pen() modified to correctly install CIE color spaces for
+        pcl raster, as suggested by jan.
+        
+        * pccid.c [1.6]:
+        normalizing min and max ranges is only necessary for the RGB
+        colorimetric color space.
+
+Mon Jan 11 15:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pglfill.c [1.7]:
+        line pattern was not specified correctly.
+
+Mon Jan  9 07:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pcmain.c [1.21]:
+        Explicitly closes pcl's target device, forwarding devices like the
+        color mapper do not close the target device automatically.
+
+Mon Jan  6 22:00:00 1999        Marcos H. Woehrmann        marcos@artifex.com
+
+        * pcmain.c [1.20], pcl_top.mak [1.11]:
+        Fixed problem with version number under msvc (and watcom).
+
+Mon Jan  5 23:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pglfill.c [1.6]:
+        hpgl_RF() was not properly saving and restoring the index when the
+        parser ran out of data and reinvokes hpgl_RF().
+
+Mon Jan  4 14:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pcmain.c [1.19], pcl_top.mak [1.10]:
+        Version number and build date for PCL.
+
+Mon Jan  4 05:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pgdraw.c [1.17]:
+        pixel placement was being applied in gl/2 to graphical objects other
+        than polygons.
+        
+        * Anomalies.txt [1.7]:
+        updates anomalies.
+        
+        * pgconfig.c [1.7]:
+        PP is not reset by IN on the color laserjet but is on the 6MP.
+        
+        * pcpatrn.c [1.13], pccsbase.c [1.8], pccid.c [1.5]:
+        normalizes min max range value when they are parsed from the long form
+        of the cid command.  Previously the decode procedures accounted for
+        the normalization.  Also a hack in pcpatrn.c to force install of cie
+        even if the current pen is white.  The last change is incorrect and
+        will take a different form in the next release.
+
+Mon Dec 29 02:00:00 1998        Henry Stiles        henrys@artifex.com
+
+        * pglabel.c [1.8]:
+        ES (extra space) is independent of the current text direction.
+
+Mon Dec 23 08:00:00 1998        Henry Stiles        henrys@artifex.com
+
+        * pcmain.c [1.18]:
+        changes to use gs standard i/o - gs_stderr, gs_stdout, and gs_stderr.
+
+Mon Dec 23 00:00:00 1998        Henry Stiles        henrys@artifex.com
+
+        * pgdraw.c [1.16]:
+        removes unwanted debugging print statements mistakenly added to the
+        last revision.
+
+Mon Dec 22 20:00:00 1998        Henry Stiles        henrys@artifex.com
+
+        * pcl_watc.mak [1.5], pcl_ugcc.mak [1.18], pcl_top.mak [1.9], pcl_sgi.mak [1.7], 
+        pcl_msvc.mak [1.4]:
+        Prefixes devices with $(DD) and moves zlib configuration variable
+        initialization to the to the top level unix makefiles.  Someone else
+        will need to check the other makefile systems.  This change requires
+        that we set ZLIB variable in # PLATFORMS SUPPORTED * 2 (pcl and XL)
+        places instead of one, but will allow the code to be compiled with
+        gs5.66.
+        
+        * pginit.c [1.9]:
+        adds warning message for resetting the picture frame.  This is handled
+        directly by the picture frame and plot size commands.
+
+Mon Dec 22 19:00:00 1998        Henry Stiles        henrys@artifex.com
+
+        * pgvector.c [1.4]:
+        replaces explicit setting of the ctm with clearing the current path
+        which has the same result for the ctm but also updates gl/2's current
+        path to the correct state.  Specifically, CI adds a point to the path
+        for positioning after drawing to set the current position to the
+        center of the circle.  It is not necessary to leave this moveto in the
+        path, adding the point has already updated the current position.
+        
+        * pgdraw.c [1.15]:
+        (1) comments to indicate setting of the current line width is wrong,
+        (2) Saves and restores the CTM "around" setting plu ctm and stroking
+        gl line fills, and (3) adds warning message for bogus picture frame.
+        
+        * Anomalies.txt [1.6]:
+        identifies fts 2080 anomaly.
+        
+        * pgframe.c [1.5]:
+        Reorganizes picture frame and plot size logic.
+
+Mon Dec 18 17:00:00 1998        Henry Stiles        henrys@artifex.com
+
+        * pcl_ugcc.mak [1.17]:
+        adds full color bmp asyncronous device.
+        
+        * pcstate.h [1.9], pcommand.c [1.9], pcmain.c [1.17], pcl.mak [1.18], pcht.c [1.10], 
+        pccrd.c [1.6]:
+        Change to set the target device in pcl's state.  Adds accessor
+        functions to set and get the target device. Modifies all put param
+        like functions in pcl to use the real device.
+
+Mon Dec 16 08:00:00 1998        Henry Stiles        henrys@artifex.com
+
+        * pcl_ugcc.mak [1.16]:
+        add cljet5 device.
+
+Mon Dec  2 21:00:00 1998        Henry Stiles        henrys@artifex.com
+
+        * NEWS-PCL [1.12]:
+        news file update.
+
 Version 1.04 (12/01/98)
 ======================
 

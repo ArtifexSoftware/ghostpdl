@@ -6,6 +6,50 @@
 This file, NEWS-XL, describes the changes in the most recent releases of
 Aladdin's PCL XL code, in reverse chronological order.
 
+Version 1.20 (01/14/99)
+======================
+
+Mon Jan 14 07:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pxink.c [1.3]:
+        Change to initialize members required for a future release should have
+        no effect on the current code.
+        
+Mon Jan 11 20:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pxink.c [1.2], pxgstate.c [1.3]:
+        removes PC specific keywords.
+
+Mon Jan  4 14:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pxmain.c [1.4]:
+        Version number and build date for PCL.
+
+Mon Dec 23 08:00:00 1998        Henry Stiles        henrys@artifex.com
+
+        * pxparse.c [1.2], pxmain.c [1.3], pxl_top.mak [1.4]:
+        changes to use gs standard i/o - gs_stderr, gs_stdout, and gs_stderr.
+
+Mon Dec 22 20:00:00 1998        Henry Stiles        henrys@artifex.com
+
+        * pxl_ugcc.mak [1.10], pxl_top.mak [1.3], pxl_msvc.mak [1.2]:
+        Prefixes devices with $(DD) and moves zlib configuration variable
+        initialization to the to the top level unix makefiles.  Someone else
+        will need to check the other makefile systems.  This change requires
+        that we set ZLIB variable in # PLATFORMS SUPPORTED * 2 (pcl and XL)
+        places instead of one, but will allow the code to be compiled with
+        gs5.66.
+
+Mon Dec 16 08:00:00 1998        Henry Stiles        henrys@artifex.com
+
+        * pxl_ugcc.mak [1.9]:
+        adds cljet5 device.
+
+Mon Dec  2 21:00:00 1998        Henry Stiles        henrys@artifex.com
+
+        * NEWS-PXL [1.7]:
+        NEWS file update for release.
+
 Version 1.19 (12/02/98)
 ======================
 

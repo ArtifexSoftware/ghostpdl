@@ -7,6 +7,36 @@ This file, NEWS-COM, describes the changes in the most recent releases of
 Aladdin's library code that is shared between all Aladdin products, in
 reverse chronological order.
 
+Version 1.07 (01/01/99)
+=======================
+
+Mon Jan  6 22:00:00 1999        Marcos H. Woehrmann        marcos@artifex.com
+
+        * watcdefs.mak [1.4], sgidefs.mak [1.4], msvcdefs.mak [1.5], gccdefs.mak [1.4]:
+        Fixed problem with version number under msvc (and watcom).
+
+Mon Jan  4 05:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * ugcc_top.mak [1.13]:
+        Changes to allow use of make -f <top level makefile>.  It is no longer
+        necessary to create a copy or link of the top level makefile, thought
+        it is still supported.
+
+Mon Dec 22 20:00:00 1998        Henry Stiles        henrys@artifex.com
+
+        * watc_top.mak [1.3], ugcc_top.mak [1.12], sgi_top.mak [1.6], msvc_top.mak [1.9]:
+        Prefixes devices with $(DD) and moves zlib configuration variable
+        initialization to the to the top level unix makefiles.  Someone else
+        will need to check the other makefile systems.  This change requires
+        that we set ZLIB variable in # PLATFORMS SUPPORTED * 2 (pcl and XL)
+        places instead of one, but will allow the code to be compiled with
+        gs5.66.
+
+Mon Dec  9 05:00:00 1998        Henry Stiles        henrys@artifex.com
+
+        * NEWS-COM [1.8]:
+        This news file should have been checked in with "indiansummer".
+
 Version 1.06 (12/01/98)
 =======================
 
