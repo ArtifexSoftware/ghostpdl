@@ -782,13 +782,13 @@ sreadbuf(stream * s, stream_cursor_write * pbuf)
 		eof = strm->end_status == EOFC;
 	    }
 	    pw = (prev == 0 ? pbuf : &curr->cursor.w);
-	    if_debug4(strm->memory, 's', "[s]read process 0x%lx, nr=%u, nw=%u, eof=%d\n",
+	    if_debug4(s->memory, 's', "[s]read process 0x%lx, nr=%u, nw=%u, eof=%d\n",
 		      (ulong) curr, (uint) (pr->limit - pr->ptr),
 		      (uint) (pw->limit - pw->ptr), eof);
 	    oldpos = pw->ptr;
-	    status = (*curr->procs.process) (strm->memory, curr->state, pr, pw, eof);
+	    status = (*curr->procs.process) (s->memory, curr->state, pr, pw, eof);
 	    pr->limit += left;
-	    if_debug4(strm->memory, 's', "[s]after read 0x%lx, nr=%u, nw=%u, status=%d\n",
+	    if_debug4(s->memory, 's', "[s]after read 0x%lx, nr=%u, nw=%u, status=%d\n",
 		      (ulong) curr, (uint) (pr->limit - pr->ptr),
 		      (uint) (pw->limit - pw->ptr), status);
 	    if (strm == 0 || status != 0)

@@ -170,7 +170,8 @@ s_SFD_init(stream_state * st)
 
 /* Refill the buffer */
 private int
-s_SFD_process(stream_state * st, stream_cursor_read * pr,
+s_SFD_process(const gs_memory_t *mem,
+	      stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {
     stream_SFD_state *const ss = (stream_SFD_state *) st;

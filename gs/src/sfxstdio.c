@@ -24,13 +24,15 @@ private int
     s_file_available(stream *, long *),
     s_file_read_seek(stream *, long),
     s_file_read_close(stream *),
-    s_file_read_process(stream_state *, stream_cursor_read *,
+    s_file_read_process(const gs_memory_t *mem, 
+			stream_state *, stream_cursor_read *,
 			stream_cursor_write *, bool);
 private int
     s_file_write_seek(stream *, long),
     s_file_write_flush(stream *),
     s_file_write_close(stream *),
-    s_file_write_process(stream_state *, stream_cursor_read *,
+    s_file_write_process(const gs_memory_t *mem,
+			 stream_state *, stream_cursor_read *,
 			 stream_cursor_write *, bool);
 private int
     s_file_switch(stream *, bool);
@@ -145,7 +147,8 @@ s_file_read_close(stream * s)
  * This is the first stream in the pipeline, so pr is irrelevant.
  */
 private int
-s_file_read_process(stream_state * st, stream_cursor_read * ignore_pr,
+s_file_read_process(const gs_memory_t *mem, 
+		    stream_state * st, stream_cursor_read * ignore_pr,
 		    stream_cursor_write * pw, bool last)
 {
     stream *s = (stream *)st;	/* no separate state */
@@ -232,7 +235,8 @@ s_file_write_close(register stream * s)
  * This is the last stream in the pipeline, so pw is irrelevant.
  */
 private int
-s_file_write_process(stream_state * st, stream_cursor_read * pr,
+s_file_write_process(const gs_memory_t *mem,
+		     stream_state * st, stream_cursor_read * pr,
 		     stream_cursor_write * ignore_pw, bool last)
 {
     uint count = pr->limit - pr->ptr;
