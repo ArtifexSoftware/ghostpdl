@@ -696,7 +696,7 @@ pl_load_mt_font(SW16 handle, gs_font_dir *pdir, gs_memory_t *mem,
               {   /* Initialize MicroType font boilerplate. */
                   plfont->header = 0;
                   plfont->header_size = 0;
-                  plfont->scaling_technology = plfst_TrueType;
+                  plfont->scaling_technology = plfst_MicroType;
                   plfont->font_type = plft_Unicode;
                   plfont->large_sizes = true;
                   pl_fill_in_mt_font(pfont, handle, unique_id);
