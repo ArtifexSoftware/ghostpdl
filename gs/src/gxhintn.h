@@ -187,5 +187,6 @@ int  t1_hinter__vstem3(t1_hinter * this, fixed y0, fixed y1, fixed y2, fixed y3,
 
 int  t1_hinter__endchar(t1_hinter * this, bool seac_flag);
 int  t1_hinter__endglyph(t1_hinter * this);
+int  t1_hinter__is_x_fitting(t1_hinter * this);
 
 #endif /* gxhintn_INCLUDED */

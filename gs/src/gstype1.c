@@ -369,7 +369,7 @@ rsbw:		/* Give the caller the opportunity to intervene. */
                         code = t1_hinter__vstem3(h, cs0, cs1, cs2, cs3, cs4, cs5);
 			if (code < 0)
 			    return code;
-			if (!pcis->vstem3_set && pcis->fh.use_x_hints) {
+			if (!pcis->vstem3_set && t1_hinter__is_x_fitting(h)) {
 			    /* Adjust the current point */
 			    /* (center_vstem handles everything else). */
 			    ptx += pcis->vs_offset.x;

@@ -40,6 +40,22 @@
 
 #define CE_OFFSET 32		/* offset for extended opcodes */
 
+typedef struct {
+    fixed v0, v1;		/* coordinates */
+    ushort index;		/* sequential index of hint */
+} cv_stem_hint;
+typedef struct {
+    int count;
+    int current;		/* cache cursor for search */
+    /*
+     * For dotsection and Type 1 Charstring hint replacement,
+     * we store active hints at the bottom of the table, and
+     * replaced hints at the top.
+     */
+    int replaced_count;		/* # of replaced hints at top */
+    cv_stem_hint data[max_total_stem_hints];
+} cv_stem_hint_table;
+
 /* Skip over the initial bytes in a Charstring, if any. */
 private void
 skip_iv(gs_type1_state *pcis)
@@ -97,15 +113,15 @@ type1_callsubr(gs_type1_state *pcis, int index)
 
 /* Add 1 or 3 stem hints. */
 private int
-type1_stem1(gs_type1_state *pcis, stem_hint_table *psht, const fixed *pv,
+type1_stem1(gs_type1_state *pcis, cv_stem_hint_table *psht, const fixed *pv,
 	    fixed lsb, byte *active_hints)
 {
     fixed v0 = pv[0] + lsb, v1 = v0 + pv[1];
-    stem_hint *bot = &psht->data[0];
-    stem_hint *orig_top = bot + psht->count;
-    stem_hint *top = orig_top;
+    cv_stem_hint *bot = &psht->data[0];
+    cv_stem_hint *orig_top = bot + psht->count;
+    cv_stem_hint *top = orig_top;
 
-    if (psht->count >= max_stems)
+    if (psht->count >= max_total_stem_hints)
 	return_error(gs_error_limitcheck);
     while (top > bot &&
 	   (v0 < top[-1].v0 || (v0 == top[-1].v0 && v1 < top[-1].v1))
@@ -129,7 +145,7 @@ type1_stem1(gs_type1_state *pcis, stem_hint_table *psht, const fixed *pv,
     return 0;
 }
 private void
-type1_stem3(gs_type1_state *pcis, stem_hint_table *psht, const fixed *pv3,
+type1_stem3(gs_type1_state *pcis, cv_stem_hint_table *psht, const fixed *pv3,
 	    fixed lsb, byte *active_hints)
 {
     type1_stem1(pcis, psht, pv3, lsb, active_hints);
@@ -350,7 +366,7 @@ type2_put_fixed(stream *s, fixed v)
 
 /* Put a stem hint table on a stream. */
 private void
-type2_put_stems(stream *s, int os_count, const stem_hint_table *psht, int op)
+type2_put_stems(stream *s, int os_count, const cv_stem_hint_table *psht, int op)
 {
     fixed prev = 0;
     int pushed = os_count;
@@ -398,6 +414,8 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
 			   gs_font_type1 *pfont)
 {
     gs_type1_state cis;
+    cv_stem_hint_table hstem_hints;	/* horizontal stem hints */
+    cv_stem_hint_table vstem_hints;	/* vertical stem hints */
     bool first = true;
     bool replace_hints = false;
     bool hints_changed = false;
@@ -439,7 +457,8 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
      * Do a first pass to collect hints.  Note that we must also process
      * [h]sbw, because the hint coordinates are relative to the lsb.
      */
-    reset_stem_hints(&cis);
+    hstem_hints.count = hstem_hints.replaced_count = hstem_hints.current = 0;
+    vstem_hints.count = vstem_hints.replaced_count = vstem_hints.current = 0;
     type1_next_init(&cis, pgd, pfont);
     for (;;) {
 	int c = type1_next(&cis);
@@ -455,20 +474,20 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
 	    gs_type1_sbw(&cis, cis.ostack[0], fixed_0, cis.ostack[1], fixed_0);
 	    goto clear;
 	case cx_hstem:
-	    type1_stem1(&cis, &cis.hstem_hints, csp - 1, cis.lsb.y, NULL);
+	    type1_stem1(&cis, &hstem_hints, csp - 1, cis.lsb.y, NULL);
 	    goto clear;
 	case cx_vstem:
-	    type1_stem1(&cis, &cis.vstem_hints, csp - 1, cis.lsb.x, NULL);
+	    type1_stem1(&cis, &vstem_hints, csp - 1, cis.lsb.x, NULL);
 	    goto clear;
 	case CE_OFFSET + ce1_sbw:
 	    gs_type1_sbw(&cis, cis.ostack[0], cis.ostack[1],
 			 cis.ostack[2], cis.ostack[3]);
 	    goto clear;
 	case CE_OFFSET + ce1_vstem3:
-	    type1_stem3(&cis, &cis.vstem_hints, csp - 5, cis.lsb.x, NULL);
+	    type1_stem3(&cis, &vstem_hints, csp - 5, cis.lsb.x, NULL);
 	    goto clear;
 	case CE_OFFSET + ce1_hstem3:
-	    type1_stem3(&cis, &cis.hstem_hints, csp - 5, cis.lsb.y, NULL);
+	    type1_stem3(&cis, &hstem_hints, csp - 5, cis.lsb.y, NULL);
 	clear:
 	    type1_clear(&cis);
 	    continue;
@@ -494,14 +513,14 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
     {
 	int i;
 
-	for (i = 0; i < cis.hstem_hints.count; ++i)
-	    cis.hstem_hints.data[i].index = i;
-	for (i = 0; i < cis.vstem_hints.count; ++i)
-	    cis.vstem_hints.data[i].index = i + cis.hstem_hints.count;
+	for (i = 0; i < hstem_hints.count; ++i)
+	    hstem_hints.data[i].index = i;
+	for (i = 0; i < vstem_hints.count; ++i)
+	    vstem_hints.data[i].index = i + hstem_hints.count;
     }
     if (replace_hints) {
 	hintmask_size =
-	    (cis.hstem_hints.count + cis.vstem_hints.count + 7) / 8;
+	    (hstem_hints.count + vstem_hints.count + 7) / 8;
 	memset(active_hints, 0, hintmask_size);
     } else 
 	hintmask_size = 0;
@@ -535,19 +554,19 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
 	    type1_clear(&cis);
 	    continue;
 	case cx_hstem:
-	    type1_stem1(&cis, &cis.hstem_hints, csp - 1, cis.lsb.y, active_hints);
+	    type1_stem1(&cis, &hstem_hints, csp - 1, cis.lsb.y, active_hints);
 	hint:
 	    HINTS_CHANGED();
 	    type1_clear(&cis);
 	    continue;
 	case cx_vstem:
-	    type1_stem1(&cis, &cis.vstem_hints, csp - 1, cis.lsb.x, active_hints);
+	    type1_stem1(&cis, &vstem_hints, csp - 1, cis.lsb.x, active_hints);
 	    goto hint;
 	case CE_OFFSET + ce1_vstem3:
-	    type1_stem3(&cis, &cis.vstem_hints, csp - 5, cis.lsb.x, active_hints);
+	    type1_stem3(&cis, &vstem_hints, csp - 5, cis.lsb.x, active_hints);
 	    goto hint;
 	case CE_OFFSET + ce1_hstem3:
-	    type1_stem3(&cis, &cis.hstem_hints, csp - 5, cis.lsb.y, active_hints);
+	    type1_stem3(&cis, &hstem_hints, csp - 5, cis.lsb.y, active_hints);
 	    goto hint;
 	case CE_OFFSET + ce1_dotsection:
 	    if (cis.dotsection_flag == dotsection_out) {
@@ -626,17 +645,17 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
 		cis.ostack[0] -= pfont->data.nominalWidthX;
 		cis.os_count = 1;
 	    }
-	    if (cis.hstem_hints.count) {
+	    if (hstem_hints.count) {
 		if (cis.os_count)
 		    type2_put_fixed(s, cis.ostack[0]);
-		type2_put_stems(s, cis.os_count, &cis.hstem_hints,
+		type2_put_stems(s, cis.os_count, &hstem_hints,
 				(replace_hints ? c2_hstemhm : cx_hstem));
 		cis.os_count = 0;
 	    }
-	    if (cis.vstem_hints.count) {
+	    if (vstem_hints.count) {
 		if (cis.os_count)
 		    type2_put_fixed(s, cis.ostack[0]);
-		type2_put_stems(s, cis.os_count, &cis.vstem_hints,
+		type2_put_stems(s, cis.os_count, &vstem_hints,
 				(replace_hints ? c2_vstemhm : cx_vstem));
 		cis.os_count = 0;
 	    }

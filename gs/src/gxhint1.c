@@ -25,6 +25,8 @@
 #include "gxfont1.h"
 #include "gxtype1.h"
 
+#ifdef KEEP_OLD_HINTER
+
 /* Define whether to use font hints. */
 /* Only set this to false for debugging the hint machinery. */
 static bool USE_HINTS = true;
@@ -265,3 +267,5 @@ transform_zone(const gs_matrix_fixed * pmat, const font_hints * pfh,
 	zp->v0 = v1, zp->v1 = v0;
     return 0;
 }
+
+#endif

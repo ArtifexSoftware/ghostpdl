@@ -1224,6 +1224,12 @@ int t1_hinter__endchar(t1_hinter * this, bool seac_flag)
     return 0;
 }
 
+/* --------------------- t1_hinter class members - accessories --------------------*/
+
+int t1_hinter__is_x_fitting(t1_hinter * this)
+{   return this->grid_fit_x;
+}
+
 /* --------------------- t1_hinter class members - the hinting --------------------*/
 
 private inline int t1_hinter__segment_beg(t1_hinter * this, int pole_index)

@@ -28,6 +28,9 @@
 
 /* ------ Path hints ------ */
 
+#ifdef KEEP_OLD_HINTER
+
+
 /* Forward references */
 private void
     apply_hstem_hints(gs_type1_state *, int, gs_fixed_point *),
@@ -561,3 +564,5 @@ search_hints(stem_hint_table * psht, fixed v)
 	}
     return 0;
 }
+
+#endif

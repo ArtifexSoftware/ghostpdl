@@ -26,6 +26,8 @@
 #include "gxfont1.h"
 #include "gxtype1.h"
 
+#ifdef KEEP_OLD_HINTER
+
 /* Define the tolerance for testing whether a point is in a zone, */
 /* in device pixels.  (Maybe this should be variable?) */
 #define STEM_TOLERANCE float2fixed(0.05)
@@ -35,6 +37,7 @@
 private stem_hint *type1_stem(const gs_type1_state *, stem_hint_table *, fixed, fixed);
 private fixed find_snap(fixed, const stem_snap_table *, const pixel_scale *);
 private alignment_zone *find_zone(gs_type1_state *, fixed, fixed);
+
 
 /* Reset the stem hints. */
 void
@@ -410,3 +413,5 @@ find_zone(gs_type1_state * pcis, fixed vbot, fixed vtop)
     }
     return 0;
 }
+
+#endif
