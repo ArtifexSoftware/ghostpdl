@@ -40,12 +40,6 @@
 
 #include "gsdfilt.h"
 
-struct gs_device_filter_stack_s {
-    gs_device_filter_stack_t *next;
-    gs_device_filter_t *df;
-    gx_device *next_device;
-};
-
 gs_private_st_ptrs3(st_gs_device_filter_stack, gs_device_filter_stack_t,
 		    "gs_device_filter_stack",
 		    gs_device_filter_stack_enum_ptrs,
@@ -76,6 +70,7 @@ gs_push_device_filter(gs_memory_t *mem, gs_state *pgs, gs_device_filter_t *df)
     dfs->next = pgs->dfilter_stack;
     pgs->dfilter_stack = dfs;
     dfs->df = df;
+    rc_init(dfs, mem, 1);
     gs_setdevice_no_init(pgs, new_dev);
     rc_decrement_only(new_dev, "gs_push_device_filter");
     return code;
@@ -97,7 +92,8 @@ gs_pop_device_filter(gs_memory_t *mem, gs_state *pgs)
     rc_increment(tos_device);
     gs_setdevice_no_init(pgs, dfs_tos->next_device);
     rc_decrement_only(dfs_tos->next_device, "gs_pop_device_filter");
-    gs_free_object(mem, dfs_tos, "gs_pop_device_filter");
+    dfs_tos->df = NULL;
+    rc_decrement_only(dfs_tos, "gs_pop_device_filter");
     code = df->postpop(df, mem, pgs, tos_device);
     rc_decrement_only(tos_device, "gs_pop_device_filter");
     return code;

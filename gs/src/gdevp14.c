@@ -932,8 +932,10 @@ pdf14_close(gx_device *dev)
 {
     pdf14_device *pdev = (pdf14_device *)dev;
 
-    if (pdev->ctx)
+    if (pdev->ctx) {
 	pdf14_ctx_free(pdev->ctx);
+	pdev->ctx = NULL;
+    }
     return 0;
 }
 

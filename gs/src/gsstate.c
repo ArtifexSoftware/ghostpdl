@@ -321,6 +321,7 @@ gs_gsave(gs_state * pgs)
      *	rc_increment(pnew->clip_stack);
      */
     pnew->clip_stack = 0;
+    rc_increment(pnew->dfilter_stack);
     pgs->saved = pnew;
     if (pgs->show_gstate == pgs)
 	pgs->show_gstate = pnew->show_gstate = pnew;
@@ -478,6 +479,7 @@ gs_state_copy(gs_state * pgs, gs_memory_t * mem)
     pgs->view_clip = 0;
     pnew = gstate_clone(pgs, mem, "gs_gstate", copy_for_gstate);
     rc_increment(pnew->clip_stack);
+    rc_increment(pnew->dfilter_stack);
     pgs->view_clip = view_clip;
     if (pnew == 0)
 	return 0;
@@ -925,6 +927,7 @@ gstate_free_contents(gs_state * pgs)
 
     rc_decrement(pgs->device, cname);
     rc_decrement(pgs->clip_stack, cname);
+    rc_decrement(pgs->dfilter_stack, cname);
     cs_adjust_counts(pgs, -1);
     if (pgs->client_data != 0)
 	(*pgs->client_procs.free) (pgs->client_data, mem);
@@ -981,6 +984,7 @@ gstate_copy(gs_state * pto, const gs_state * pfrom,
     rc_pre_assign(pto->element, pfrom->element, cname)
     RCCOPY(device);
     RCCOPY(clip_stack);
+    RCCOPY(dfilter_stack);
     {
 	struct gx_pattern_cache_s *pcache = pto->pattern_cache;
 	void *pdata = pto->client_data;

@@ -36,8 +36,10 @@
 typedef struct gs_device_filter_stack_s gs_device_filter_stack_t;
 #endif
 
-/* This is the base structure from which device filters are derived. */
+#ifndef gs_device_filter_DEFINED
+#  define gs_device_filter_DEFINED
 typedef struct gs_device_filter_s gs_device_filter_t;
+#endif
 
 struct gs_device_filter_s {
     int (*push)(gs_device_filter_t *self, gs_memory_t *mem, gs_state *pgs,

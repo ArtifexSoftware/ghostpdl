@@ -62,6 +62,24 @@ typedef struct gs_transparency_group_s gs_transparency_group_t;
 typedef struct gs_device_filter_stack_s gs_device_filter_stack_t;
 #endif
 
+/* Device filter stack structure is defined here so that gstate
+   lifecycle operations can access reference count; implementation is
+   in gsdfilt.c.
+ */
+
+#ifndef gs_device_filter_DEFINED
+#  define gs_device_filter_DEFINED
+typedef struct gs_device_filter_s gs_device_filter_t;
+#endif
+
+/* This is the base structure from which device filters are derived. */
+struct gs_device_filter_stack_s {
+    gs_device_filter_stack_t *next;
+    gs_device_filter_t *df;
+    gx_device *next_device;
+    rc_header rc;
+};
+
 /* Graphics state structure. */
 
 struct gs_state_s {
