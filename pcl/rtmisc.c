@@ -122,7 +122,6 @@ rtl_enter_pcl_mode(
          * We were in HP-GL/2 mode.  Destroy the gl/2 polygon path
 	 * and conditionally copy back the cursor position.
          */
-        gx_path_new(&(pcls->g.polygon.buffer.path));
 	if (b != 0) {
             /* the usual user -> device -> user dance. */
 	    gs_point    pt, dev_pt;
