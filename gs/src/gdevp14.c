@@ -293,16 +293,6 @@ const pdf14_mark_device gs_pdf14_mark_device = {
     { 0 }
 };
 
-typedef struct pdf14_text_enum_s {
-    gs_text_enum_common;
-    gs_text_enum_t *target_enum;
-} pdf14_text_enum_t;
-extern_st(st_gs_text_enum);
-gs_private_st_suffix_add1(st_pdf14_text_enum, pdf14_text_enum_t,
-			  "pdf14_text_enum_t", pdf14_text_enum_enum_ptrs,
-			  pdf14_text_enum_reloc_ptrs, st_gs_text_enum,
-			  target_enum);
-
 /* ------ Private definitions ------ */
 
 /**
@@ -891,96 +881,6 @@ pdf14_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
     return code;
 }
 
-private int
-pdf14_text_resync(gs_text_enum_t *pte, const gs_text_enum_t *pfrom)
-{
-    pdf14_text_enum_t *const penum = (pdf14_text_enum_t *)pte;
-
-    if ((pte->text.operation ^ pfrom->text.operation) & ~TEXT_FROM_ANY)
-	return_error(gs_error_rangecheck);
-    if (penum->target_enum) {
-	int code = gs_text_resync(penum->target_enum, pfrom);
-
-	if (code < 0)
-	    return code;
-    }
-    pte->text = pfrom->text;
-    gs_text_enum_copy_dynamic(pte, pfrom, false);
-    return 0;
-}
-
-private int
-pdf14_text_process(gs_text_enum_t *pte)
-{
-    pdf14_text_enum_t *const penum = (pdf14_text_enum_t *)pte;
-    int code;
-
-    code = gs_text_process(penum->target_enum);
-    gs_text_enum_copy_dynamic(pte, penum->target_enum, true);
-    return code;
-}
-
-private bool
-pdf14_text_is_width_only(const gs_text_enum_t *pte)
-{
-    const pdf14_text_enum_t *const penum = (const pdf14_text_enum_t *)pte;
-
-    if (penum->target_enum)
-	return gs_text_is_width_only(penum->target_enum);
-    return false;
-}
-
-private int
-pdf14_text_current_width(const gs_text_enum_t *pte, gs_point *pwidth)
-{
-    const pdf14_text_enum_t *const penum = (const pdf14_text_enum_t *)pte;
-
-    if (penum->target_enum)
-	return gs_text_current_width(penum->target_enum, pwidth);
-    return_error(gs_error_rangecheck); /* can't happen */
-}
-
-private int
-pdf14_text_set_cache(gs_text_enum_t *pte, const double *pw,
-		   gs_text_cache_control_t control)
-{
-    pdf14_text_enum_t *const penum = (pdf14_text_enum_t *)pte;
-
-    if (penum->target_enum)
-	return gs_text_set_cache(penum->target_enum, pw, control);
-    return_error(gs_error_rangecheck); /* can't happen */
-}
-
-private int
-pdf14_text_retry(gs_text_enum_t *pte)
-{
-    pdf14_text_enum_t *const penum = (pdf14_text_enum_t *)pte;
-
-    if (penum->target_enum)
-	return gs_text_retry(penum->target_enum);
-    return_error(gs_error_rangecheck); /* can't happen */
-}
-
-private void
-pdf14_text_release(gs_text_enum_t *pte, client_name_t cname)
-{
-    pdf14_text_enum_t *const penum = (pdf14_text_enum_t *)pte;
-
-    if (penum->target_enum) {
-	gs_text_release(penum->target_enum, cname);
-	penum->target_enum = 0;
-    }
-    gx_default_text_release(pte, cname);
-}
-
-private const gs_text_enum_procs_t pdf14_text_procs = {
-    pdf14_text_resync, pdf14_text_process,
-    pdf14_text_is_width_only, pdf14_text_current_width,
-    pdf14_text_set_cache, pdf14_text_retry,
-    pdf14_text_release
-};
-
-private int
 pdf14_text_begin(gx_device * dev, gs_imager_state * pis,
 		 const gs_text_params_t * text, gs_font * font,
 		 gx_path * path, const gx_device_color * pdcolor,
@@ -989,28 +889,16 @@ pdf14_text_begin(gx_device * dev, gs_imager_state * pis,
 {
     int code;
     gx_device *mdev = pdf14_get_marking_device(dev, pis);
-    pdf14_text_enum_t *penum;
-    gs_text_enum_t *target_enum;
-
+    gs_text_enum_t *penum;
     if (mdev == 0)
 	return_error(gs_error_VMerror);
     if_debug0('v', "[v]pdf14_text_begin\n");
     code = gx_default_text_begin(mdev, pis, text, font, path, pdcolor, pcpath,
-				 memory, &target_enum);
-
-    rc_alloc_struct_1(penum, pdf14_text_enum_t, &st_pdf14_text_enum, memory,
-		      return_error(gs_error_VMerror), "pdf14_text_begin");
-    penum->rc.free = rc_free_text_enum;
-    penum->target_enum = target_enum;
-    code = gs_text_enum_init((gs_text_enum_t *)penum, &pdf14_text_procs,
-			     dev, pis, text, font, path, pdcolor, pcpath,
-			     memory);
-    if (code < 0) {
-	gs_free_object(memory, penum, "pdf14_text_begin");
+				 memory, &penum);
+    if (code < 0)
 	return code;
-    }
-    *ppenum = (gs_text_enum_t *)penum;
     rc_decrement_only(mdev, "pdf14_text_begin");
+    *ppenum = (gs_text_enum_t *)penum;
     return code;
 }
 
