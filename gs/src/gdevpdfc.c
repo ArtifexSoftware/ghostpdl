@@ -575,8 +575,12 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	gs_vector3 expts;
 
 	pciec = (const gs_cie_common *)pcie;
-	if (!pcie->common.MatrixLMN.is_identity)
-	    return_error(gs_error_rangecheck);
+	if (!pcie->common.MatrixLMN.is_identity) {
+	    code = pdf_convert_cie_space(pdev, pca, pcs, "GRAY", pciec,
+					 &pcie->RangeA, ONE_STEP_NOT, NULL,
+					 &ranges);
+	    break;
+	}
 	if (unitary && identityA &&
 	    CIE_CACHE_IS_IDENTITY(&pcie->caches.DecodeA) &&
 	    CIE_SCALAR3_CACHE_IS_EXPONENTIAL(pcie->common.caches.DecodeLMN, expts) &&
