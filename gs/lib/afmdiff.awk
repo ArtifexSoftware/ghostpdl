@@ -51,14 +51,14 @@
 ### Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,   ###
 ### MA 02111-1307 USA                                                ###
 ###                                                                  ###
-### This program may also be distributed as part of Aladdin          ###
+### This program may also be distributed as part of AFPL             ###
 ### Ghostscript, under the terms of the Aladdin Free Public License  ###
 ### (the "License").                                                 ###
 ###                                                                  ###
-### Every copy of Aladdin Ghostscript must include a copy of the     ###
+### Every copy of AFPL Ghostscript must include a copy of the        ###
 ### License, normally in a plain ASCII text file named PUBLIC.  The  ###
 ### License grants you the right to copy, modify and redistribute    ###
-### Aladdin Ghostscript, but only under certain conditions           ###
+### AFPL Ghostscript, but only under certain conditions              ###
 ### described in the License.  Among other things, the License       ###
 ### requires that the copyright notice and this notice be preserved  ###
 ### on all copies.                                                   ###
