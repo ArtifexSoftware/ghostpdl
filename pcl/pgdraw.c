@@ -1245,7 +1245,11 @@ hpgl_add_bezier_to_path(hpgl_state_t *pgls, floatp x1, floatp y1,
 			floatp x2, floatp y2, floatp x3, floatp y3,
 			floatp x4, floatp y4, hpgl_plot_function_t draw)
 {
-    if ( !pgls->g.polygon_mode )
+    gs_fixed_point dummy_pt;
+    /* Don't add superflous points in polygon mode */
+    if ( ( !pgls->g.polygon_mode ) || 
+	 ( gx_path_subpath_start_point(gx_current_path(pgls->pgs),
+				       &dummy_pt) < 0 ) )
 	hpgl_call(hpgl_add_point_to_path(pgls, x1, y1,
 					 hpgl_plot_move_absolute, true));
     if ( draw )
