@@ -513,13 +513,13 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 					/* the rmovetos never really happened, */
 					/* because we don't want to interrupt */
 					/* the current subpath. */
-#					endif
 					gs_fixed_point ept;
+#					endif
 
 #if defined(DEBUG) || !ALWAYS_DO_FLEX_AS_CURVE || NEW_TYPE1_HINTER
 					fixed fheight = csp[-4];
 #endif
-#if defined(DEBUG) || !ALWAYS_DO_FLEX_AS_CURVE
+#if (defined(DEBUG) || !ALWAYS_DO_FLEX_AS_CURVE) && !NEW_TYPE1_HINTER
 					gs_fixed_point hpt;
 #endif
 #					if !NEW_TYPE1_HINTER
