@@ -922,7 +922,7 @@ end
 } bdef
 
 /DoPS {
-  true resolvestream cvx exec
+  DONTPS { pop } { true resolvestream cvx exec } ifelse
 } bdef
 
 drawopdict begin
