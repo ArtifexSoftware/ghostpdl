@@ -239,7 +239,8 @@ shade_next_color(shade_coord_stream_t * cs, float *pc)
 	    pc[i] = cc.paint.values[i];
     } else {
 	int i, code;
-	int ncomp = gs_color_space_num_components(pcs);
+	int ncomp = (cs->params->Function != 0 ? 1 :
+		     gs_color_space_num_components(pcs));
 
 	for (i = 0; i < ncomp; ++i)
 	    if ((code = cs->get_decoded(cs, num_bits, decode + i * 2, &pc[i])) < 0)
