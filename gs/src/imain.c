@@ -323,6 +323,9 @@ gs_main_init2(gs_main_instance * minst)
 	code = zop_init(i_ctx_p);
 	if (code < 0)
 	    return code;
+
+#       ifndef PSI_INCLUDED  
+	/* in a language switch build rely on PCL doing the init/deinit */
 	{
 	    /*
 	     * gs_iodev_init has to be called here (late), rather than
@@ -336,6 +339,8 @@ gs_main_init2(gs_main_instance * minst)
 	    if (code < 0)
 		return code;
 	}
+#       endif
+
 	code = op_init(i_ctx_p);	/* requires obj_init */
 	if (code < 0)
 	    return code;
