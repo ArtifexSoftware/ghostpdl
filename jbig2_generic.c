@@ -16,7 +16,7 @@
     Artifex Software, Inc.,  101 Lucas Valley Road #110,
     San Rafael, CA  94903, U.S.A., +1(415)492-9861.
                                                                                 
-    $Id: jbig2_generic.c,v 1.13 2002/07/20 17:23:15 giles Exp $
+    $Id$
 */
 
 /**
@@ -455,7 +455,7 @@ jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
   
   jbig2_image_compose(ctx, ctx->pages[ctx->current_page].image, image,
 			rsi.x, rsi.y, JBIG2_COMPOSE_OR);
-  jbig2_image_free(ctx, image);
+  jbig2_image_release(ctx, image);
   
   jbig2_free(ctx->allocator, GB_stats);
 

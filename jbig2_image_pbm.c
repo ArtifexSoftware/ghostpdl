@@ -13,7 +13,7 @@
     Artifex Software, Inc.,  101 Lucas Valley Road #110,
     San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
-    $Id: jbig2_image_pbm.c,v 1.12 2002/08/15 14:54:45 giles Exp $
+    $Id$
 */
 
 #ifdef HAVE_CONFIG_H
@@ -134,7 +134,7 @@ Jbig2Image *jbig2_image_read_pbm(Jbig2Ctx *ctx, FILE *in)
     fread(image->data, 1, image->height*image->stride, in);
     if (feof(in)) {
         fprintf(stderr, "unexpected end of pbm file.\n");
-        jbig2_image_free(ctx, image);
+        jbig2_image_release(ctx, image);
         return NULL;
     }    
     /* success */

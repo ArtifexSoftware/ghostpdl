@@ -1,7 +1,7 @@
 /*
     jbig2dec
     
-    Copyright (c) 2001-2002 artofcode LLC.
+    Copyright (c) 2001-2003 artofcode LLC.
     
     This software is distributed under license and may not
     be copied, modified or distributed except as expressly
@@ -55,10 +55,24 @@ Jbig2Image* jbig2_image_new(Jbig2Ctx *ctx, int width, int height)
 	image->width = width;
 	image->height = height;
 	image->stride = stride;
+	image->refcount = 1;
 	
 	return image;
 }
 
+/* clone an image pointer by bumping its reference count */
+Jbig2Image* jbig2_image_clone(Jbig2Ctx *ctx, Jbig2Image *image)
+{
+	image->refcount++;
+	return image;
+}
+
+/* release an image pointer, freeing it it appropriate */
+void jbig2_image_release(Jbig2Ctx *ctx, Jbig2Image *image)
+{
+	image->refcount--;
+	if (!image->refcount) jbig2_image_free(image);
+}
 
 /* free a Jbig2Image structure and its associated memory */
 void jbig2_image_free(Jbig2Ctx *ctx, Jbig2Image *image)

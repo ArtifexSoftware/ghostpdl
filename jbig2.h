@@ -1,7 +1,7 @@
 /*
     jbig2dec
     
-    Copyright (c) 2002 artofcode LLC.
+    Copyright (c) 2002-2003 artofcode LLC.
     
     This software is distributed under license and may not
     be copied, modified or distributed except as expressly
@@ -13,7 +13,7 @@
     Artifex Software, Inc.,  101 Lucas Valley Road #110,
     San Rafael, CA  94903, U.S.A., +1(415)492-9861.
         
-    $Id: jbig2.h,v 1.17 2003/03/05 14:29:35 giles Exp $
+    $Id$
 */
 
 #ifdef __cplusplus
@@ -56,9 +56,12 @@ typedef struct _Jbig2SymbolDictionary Jbig2SymbolDictionary;
 struct _Jbig2Image {
         int             width, height, stride;
         uint8_t        *data;
+	int		refcount;
 };
 
 Jbig2Image*     jbig2_image_new(Jbig2Ctx *ctx, int width, int height);
+Jbig2Image*	jbig2_image_clone(Jbig2Ctx *ctx, Jbig2Image *image);
+void		jbig2_image_release(Jbig2Ctx *ctx, Jbig2Image *image);
 void            jbig2_image_free(Jbig2Ctx *ctx, Jbig2Image *image);
 
 

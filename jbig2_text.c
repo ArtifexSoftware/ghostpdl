@@ -1,7 +1,7 @@
 /*
     jbig2dec
     
-    Copyright (C) 2002 artofcode LLC.
+    Copyright (C) 2002-2003 artofcode LLC.
     
     This software is distributed under license and may not
     be copied, modified or distributed except as expressly
@@ -472,7 +472,7 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
             region_info.width, region_info.height, region_info.x, region_info.y);
         jbig2_image_compose(ctx, page_image, image, region_info.x, region_info.y, JBIG2_COMPOSE_OR);
         if (image != page_image)
-            jbig2_image_free(ctx, image);
+            jbig2_image_release(ctx, image);
     }
     
     /* success */            
