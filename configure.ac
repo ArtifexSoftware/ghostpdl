@@ -10,7 +10,7 @@ AC_CONFIG_SRCDIR([jbig2dec.c])
 AM_INIT_AUTOMAKE([$package], [$version])
 AM_CONFIG_HEADER(config.h)
 
-AC_REVISION([$Revision: 1.4 $])
+AC_REVISION([$Revision: 1.5 $])
 
 # Checks for programs.
 AC_PROG_CC
@@ -18,12 +18,10 @@ AC_PROG_RANLIB
 
 # Checks for libraries.
 AC_CHECK_LIB([png], [png_check_sig], [
-  AC_CHECK_HEADER([png.h], [
-    AC_CHECK_LIB([z], [deflate], [
-	AC_DEFINE(HAVE_LIBPNG, 1, [Define if libpng is available (-lpng)])
-	LIBS="$LIBS -lpng -lz"
-	LIBOBJS="$LIBOBJS jbig2_image_png.o"
-    ])
+  AC_CHECK_LIB([z], [deflate], [
+    AC_DEFINE(HAVE_LIBPNG, 1, [Define if libpng is available (-lpng)])
+    LIBS="$LIBS -lpng -lz"
+    LIBOBJS="$LIBOBJS jbig2_image_png.o"
   ])
 ])
 
