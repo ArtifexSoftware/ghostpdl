@@ -1,21 +1,9 @@
 %    Copyright (C) 1994, 2000 Aladdin Enterprises.  All rights reserved.
 % 
-% This file is part of Aladdin Ghostscript.
-% 
-% Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-% or distributor accepts any responsibility for the consequences of using it,
-% or for whether it serves any particular purpose or works at all, unless he
-% or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-% License (the "License") for full details.
-% 
-% Every copy of Aladdin Ghostscript must include a copy of the License,
-% normally in a plain ASCII text file named PUBLIC.  The License grants you
-% the right to copy, modify and redistribute Aladdin Ghostscript, but only
-% under certain conditions described in the License.  Among other things, the
-% License requires that the copyright notice and this notice be preserved on
-% all copies.
-
-% $Id$
+% This software is licensed to a single customer by Artifex Software Inc.
+% under the terms of a specific OEM agreement.
+%
+% $RCSfile$ $Revision$
 % pdf_draw.ps
 % PDF drawing operations (graphics, text, and images).
 
@@ -506,7 +494,7 @@ end
     1 index /File get dup fileposition 3 1 roll
 		% Stack: dict savepos pos file
     dup 3 -1 roll setfileposition
-    dup 3 index /Length get string readstring pop
+    dup 3 index /Length oget string readstring pop
 		% Stack: dict savepos file string
     3 1 roll exch setfileposition
     1 index /File 3 -1 roll put
@@ -791,24 +779,20 @@ end
 
 % Set an annotation color.
 /annotsetcolor {	% <annot> annotsetcolor -
-  /C knownoget { aload pop setrgbcolor } { 0 setgray } ifelse
+  /C knownoget { setrgbcolor } { 0 setgray } ifelse
 } bdef
 
 % Draw the border.  Currently, we ignore requests for beveling, and we
 % don't round the corners of rectangles.
 /strokeborder {		% <annot> <width> <dash> strokeborder -
-  1 index 0 ne {	% do not draw if border width is 0
-    gsave
-    2 index annotsetcolor
-    0 setdash dup setlinewidth
-    exch annotrect
-    2 { 4 index sub 4 1 roll } repeat
-    2 { 4 index 0.5 mul add 4 1 roll } repeat
-    rectstroke pop
-    grestore
-  } {
-    pop pop pop
-  } ifelse
+  gsave
+  2 index annotsetcolor
+  0 setdash dup setlinewidth
+  exch annotrect
+  2 { 4 index sub 4 1 roll } repeat
+  2 { 4 index 0.5 mul add 4 1 roll } repeat
+  rectstroke pop
+  grestore
 } bdef
 
 % Draw an annotation border.
@@ -831,29 +815,12 @@ end
   grestore
 } bdef
 
-%
-%   The PDF annotation F (flags) integer is bit encoded.
-%   Bit 1 (LSB) Invisible:  1 --> Do not display if no handler.
-%         Note:  We have no handlers but we ignore this bit.
-%   Bit 2 Hidden:  1 --> Do not display.  We will not display if this bit is set.
-%   Bit 3 Print:  1 --> Display if printing.  We will display if this bit set
-%         (and not hidden) and Printed is true
-%   Bit 4 NoZoom:  1 --> Do not zoom annotation even if image is zoomed.
-%   Bit 5 NoRotate:  1 --> Do not rotate annotation even if image is rotated.
-%   Bit 6 NoView:  0 --> Display if this is a 'viewer'.  We will display
-%         if this bit is not set (and not hidden) and Printed is false
-%   Bit 7 Read Only - 1 --> No interaction.  We ignore this bit
-%
-/annotvisible {			% <annot> annotvisible <visible>
-  /F knownoget not { 0 } if 		% Get flag value
-  dup 2 and 0 eq  			% Check hidden flag
-  exch dup 4 and 0 ne Printed and	% Check print flag
-  exch 64 and 0 eq Printed not and	% Check noview flag
-  or					% Combine print and view
-  and 					% Combine with 'hidden' flag test
-} bdef
- 
-/drawwidget {			% <scalefactor> <annot> drawwidget -
+% Draw an annotation.
+/drawannot {		% <annot> drawannot -
+  gsave
+  dup /Subtype get /Widget eq
+  1 index /F knownoget not { 0 } if 2 and 0 eq and {
+    dup drawborder
     dup /AP knownoget {
 	% Always use the Normal appearance.
       /N oget
@@ -881,58 +848,12 @@ end
       dup /Matrix known not  {
 	dup length 1 add dict copy dup /Matrix matrix put
       } if
-    1 index annotrect pop pop translate
-    2 index dup scale		% Apply scale factor
+      gsave 1 index annotrect pop pop translate
       DoForm
-  } if pop pop
+    } if
+  } if pop
+  grestore
 } bdef
-
-%
-%  For stamp object we have to determine the size of the output rectangle
-%  and the size of the BBox for the stamp image.  From these we calculate
-%  a scale factor for drawing the stamp.
-%
-/calcstampscale {		% <annot> calcstampscale scale
-  dup annotrect 4 -2 roll pop pop pop	% get x width
-  dup 0 lt { neg } if		% get magnitude
-  exch /AP knownoget {
-    /N knownoget {
-      /BBox knownoget {
-         aload pop 4 -2 roll pop pop pop
-         div
-      } {
-        pop 1			% default to unity scaling
-      } ifelse			% if we have /BBox
-    } {
-      pop 1
-    } ifelse			% if we have /N
-  } {
-    pop 1
-  } ifelse			% if we have /AP
-} bdef
-
-/drawlink {			% <annot> drawlink -
-  dup drawborder
-  1 exch drawwidget
-} bdef
-
-% Draw an annotation.
-/drawannottypes mark
-  /Link { drawlink } bind
-  /Stamp { dup calcstampscale exch drawwidget } bind
-.dicttomark readonly def
-/drawannot {		% <annot> drawannot -
-  dup annotvisible {
-    gsave
-    dup dup /Subtype get //drawannottypes exch .knownget {
-      exec
-    } {
-      1 exch drawwidget		% Use drawwidget for everything else
-    } ifelse			% type known
-    grestore
-  } if pop			% annotvisible
-} bdef
-currentdict /drawannottypes undef
 
 end			% pdfdict
 end			% GS_PDF_ProcSet
