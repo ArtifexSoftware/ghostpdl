@@ -761,8 +761,10 @@ fill:
 
 	  case hpgl_FT_pattern_RF:
             code = set_proc( pgls,
-                             pgls->g.fill.param.pattern_index,
-                             0
+                             pgls->g.fill.param.user_defined.pattern_index,
+                             (pgls->g.fill.param.user_defined.use_current_pen
+                                  ? pgls->g.pen.selected
+			          : -pgls->g.pen.selected)
                              );
             break;
 
@@ -790,27 +792,23 @@ fill:
 
           case hpgl_SV_pattern_cross_hatch:
             code = set_proc( pgls,
-                             pgls->g.fill.param.pattern_type,
+                             pgls->g.screen.param.pattern_type,
                              pgls->g.pen.selected
                              );
 	    break;
 
-            /*
-             * NB: contrary to the documentation (PCL 5 TRM, 10/92 ed.,
-             *     page 22-50, the option2 parameter seems to be ignored
-             *     for screens defined via RF, for both color and monochrome
-             *     systems.
-             */
           case hpgl_SV_pattern_RF:
             code = set_proc( pgls,
                              pgls->g.screen.param.user_defined.pattern_index,
-                             pgls->g.pen.selected
+                             (pgls->g.screen.param.user_defined.use_current_pen
+                                  ? pgls->g.pen.selected
+			          : -pgls->g.pen.selected)
                              );
             break;
 
 	  case hpgl_SV_pattern_user_defined:
             code = set_proc( pgls,
-                             pgls->g.fill.param.pattern_id,
+                             pgls->g.screen.param.pattern_id,
                              pgls->g.pen.selected
                              );
             break;
@@ -830,7 +828,10 @@ set:
     if (code >= 0) {
         /* PCL and GL/2 no longer use graphic library transparency */
         gs_setrasterop(pgls->pgs, (gs_rop3_t)pgls->logical_op);
-        gs_setfilladjust(pgls->pgs, pgls->grid_adjust, pgls->grid_adjust);
+        if (pgls->pp_mode == 0)
+            gs_setfilladjust(pgls->pgs, 0.5, 0.5);
+        else
+            gs_setfilladjust(pgls->pgs, 0.0, 0.0);
     }
 
     return code;
@@ -851,7 +852,8 @@ hpgl_set_drawing_state(
     /* set up a clipping region */
     hpgl_call(hpgl_set_clipping_region(pgls, render_mode));
 
-    /* set up the hpgl fills. */
+    /* set up the hpgl fills (GL's source transp. is PCL's pattern trasp. */
+    pgls->pattern_transparent = pgls->g.source_transparent;
     hpgl_call(hpgl_set_drawing_color(pgls, render_mode));
 
     return 0;
