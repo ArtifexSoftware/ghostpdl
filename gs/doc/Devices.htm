@@ -22,19 +22,31 @@
 
 <blockquote><ul>
 <li><a href="#Measurements">Notes on measurements</a>
-<li><a href="#IJS">IJS - Inkjet and other raster devices</a>
-<li><a href="#Win">MS Windows printers</a>
-<li><a href="#File_formats">File formats</a>
+<li><a href="#File_formats">Image file formats</a>
 <ul>
+<li><a href="#PNG">PNG file format</a>
 <li><a href="#JFIF">JPEG file format (JFIF)</a>
+<li><a href="#PNM">PNM file format</a>
 <li><a href="#TIFF">TIFF file formats</a>
+<li><a href="#fax">fax file formats</a>
+<li><a href="#BMP">BMP file format</a>
+<li><a href="#PCX">PCX file format</a>
+</ul>
+<li><a href="#High-level">High level formats</a>
+<ul>
+<li><a href="#PDF">PDF file output</a>
+<li><a href="#PS">PostScript file output</a>
+<li><a href="#EPS">EPS file output</a>
+<li><a href="#PXL">PCL-XL file output</a>
 </ul>
 <li><a href="#Display_devices">Display devices</a>
 <ul>
 <li><a href="#x11_devices">X Window System</a>
 </ul>
+<li><a href="#IJS">IJS - Inkjet and other raster devices</a>
 <li><a href="#HP_ijs">HP Deskjet official drivers</a>
-
+<li><a href="#gimp-print">Gimp-Print driver collection</a>
+<li><a href="#Win">MS Windows printers</a>
 <li><a href="#SPARCprinter">Sun SPARCprinter</a>
 <ul>
 <li><a href="#SPARC_install">Installation</a>
@@ -44,6 +56,7 @@
 <li><a href="#Test">Test devices
 <ul>
 <li><a href="#Permute">Permutation (DeviceN color model)</a>
+<li><a href="#bitraw">Raw 'bit' devices</a>
 </ul>
 </ul></blockquote>
 
@@ -114,7 +127,7 @@ to as 'bit depth' or 'pixel depth'.</dd>
 
 <hr>
 
-<h2><a name="File_formats"></a>File formats</h2>
+<h2><a name="File_formats"></a>Image file formats</h2>
 
 <p>
 Ghostscript supports output to a variety of image file formats
@@ -255,7 +268,7 @@ compression options, such as the other DCTEncode filter parameters.
 </p>
 
 
-<h3>PNM</h3>
+<h3><a name="PNM"></a>PNM</h3>
 
 <p>The PNM (portable network map) family of formats are very simple
 uncompressed image formats commonly used on unix-like systems. They
@@ -342,7 +355,7 @@ gs -sDEVICE=tiffg4 -sOutputFile=tiger.tiff -dMaxStripSize=8192 examples/tiger.ep
 </pre></blockquote>
 
 <p>
-If the value of the <b><tt>MaxStripSize</tt></b> parameter is smaller than a
+If the value of the <tt>MaxStripSize</tt> parameter is smaller than a
 single image row, then no error will be generated, and the TIFF file will be
 generated correctly using one row per strip.  Note that smaller strip sizes
 increase the size of the file by increasing the size of the StripOffsets and
@@ -353,7 +366,7 @@ which must start over for each strip.
 If the value of MaxStripSize is 0 (the default), then the entire image will
 be a single strip.
 
-<h3>FAX</h3>
+<h3><a name="fax"></a>FAX</h3>
 
 <p>
 Ghostscript supports a variety of fax encodings, both encapsulated in 
@@ -362,10 +375,10 @@ described here.
 </p>
 
 <p>
-The fax devices are <tt>faxg3</tt>, <tt>faxg32d<tt> and <tt>faxg4</tt>.
+The fax devices are <tt>faxg3</tt>, <tt>faxg32d</tt> and <tt>faxg4</tt>.
 </p>
 
-<h3>BMP</h3>
+<h3><a name="BMP"></a>BMP</h3>
 
 <p>
 BMP is a simple uncompressed image format commonly used on MS Windows.
@@ -373,7 +386,7 @@ It is supported by the devices <tt>bmpmono bmpgray bmpsep1
    bmpsep8 bmp16 bmp256 bmp16m bmp32b</tt>.
 </p>
 
-<h3>PCX</h3>
+<h3><a name="PCX"></a>PCX</h3>
 
 <p>
 PCX is an image format sometimes used on MS Windows. It has some support
@@ -383,29 +396,31 @@ It is supported by the <tt>pcxmono pcxgray pcx16 pcx256 pcx24b pcxcmyk</tt>
 series of devices.
 </p>
 
-<h2>High-level devices</h2>
+
+<h2><a name="High-level"></a>High-level devices</h2>
 
 <p>
 In addition to raster image files, Ghostscript supports output in a number
-of 'high-level' formats. These allow Ghostscript which preserve (as much as
-possible) the drawing elements of the input file.</p>
+of 'high-level' formats. These allow Ghostscript to preserve (as much as
+possible) the drawing elements of the input file maintaining flexibility,
+resolution independence, and editability.</p>
 
-<h3>PDF writer</h3>
+<h3><a name="PDF"></a>PDF writer</h3>
 
 <p>The <tt>pdfwrite</tt> device outputs PDF.</p>
 
-<h3>PS writer</h3>
+<h3><a name="PS"></a>PS writer</h3>
 
 <p>The <tt>pswrite</tt> device outputs postscript.</p>
 
-<h3>EPS writer</h3>
+<h3><a name="EPS"></a>EPS writer</h3>
 
 <p>The <tt>epswrite</tt> device outputs encapsulated postscript.</p>
 
-<h3>PXL</h3>
+<h3><a name="PXL"></a>PXL</h3>
 
 <p>The <tt>pxlmono</tt> and <tt>pxlcolor</tt> devices output HP PCL-XL,
-the graphic language used in many recent laser printers.</p>
+a graphic language understood by many recent laser printers.</p>
 
 <hr>
 
@@ -600,9 +615,6 @@ in taking patches from people who have ported it to non-mainstream
 platforms. And once it's built, you won't have to recompile Ghostscript
 to support new drivers!
 
-
-<hr>
-
 <h2><a name="HP_ijs"></a>HP Deskjet official drivers</h2>
 
 <p>
@@ -641,6 +653,7 @@ As of the 0.97 version, hpijs supports the following printer models:
 <dt><b>DeskJet 990C, PhotoSmart:</b>
  <dd>960C, 980C, 990C, PhotoSmart 1215/1218
 </ul>
+</dl>
 
 <p>You will need to add the following line to your makefile:
 
@@ -656,7 +669,7 @@ especially David Suffield for making this driver available and working to
 integrate it with Ghostscript.
 </p>
 
-<h2><a name="gimp-print"></a>Gimp-Print driver collection</a>
+<h2><a name="gimp-print"></a>Gimp-Print driver collection</a></h2>
 
 <p>
 The Gimp-Print project provides a large collection of printer drivers 
@@ -1021,6 +1034,9 @@ Finally, you can search <b><tt>devdemp.c</tt></b> for
 initialize the printer and reset things when finished, and change them to
 meet your needs.
 
+
+<hr>
+
 <h2><a name="Test"></a>Test devices</h2>
 
 <p>
@@ -1057,7 +1073,7 @@ important to permute the planes of the default halftone accordingly, and
 that any file which sets halftones explicitly will fail a consistency
 check.
 
-<h3>raw 'bit' devices</h3>
+<h3>Raw 'bit' devices</h3>
 
 <p>There are a collection of 'bit' devices that don't do any special formatting
 but output 'raw' binary data for the page images. These are used for benchmarking
