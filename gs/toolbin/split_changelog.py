@@ -35,6 +35,9 @@ class Entry:
 	def add(self, key, value):
 		if not self.data.has_key(key): self.data[key] = value
 		else: self.data[key] = string.join((self.data[key], value))
+	def listadd(self, key, value):
+		if not self.data.has_key(key): self.data[key] = [value]
+		else: self.data[key].append(value)
 	def addmsg(self, value):
 		if not self.data.has_key('msg'): self.data['msg'] = []
 		self.data['msg'].append(value)
@@ -55,13 +58,19 @@ class Entry:
 		if not details and self.has_details:
 			file.write(' (<a href="' + details_fn + '#' + label + '">details</a>)')
 		file.write('</p>\n')
-		file.write('<blockquote><pre>\n')
+		file.write('<blockquote>\n')
+		file.write('<pre>\n')
 		# todo: html-escape the msg lines
 		for line in self.data['msg']:
 			# skip the details unless wanted
 			if not details and self.r.search(line): break
 			file.write(line)
-		file.write('</pre></blockquote>\n')
+		file.write('</pre>\n')
+		file.write('<p>[')
+		file.write(string.join(map(string.join, zip(self.data['name'],self.data['revision'])),', '))
+		#file.write(string.join(self.data['name']))
+		file.write(']</p>\n')
+		file.write('</blockquote>\n')
 
 def write_header(file, details=True):
 	file.write('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"')
@@ -100,6 +109,9 @@ def char_data(data):
 		# whitespace is meaningful inside the msg tag
 		# so treat it specially
 		e.addmsg(data)
+	elif element[-1] == 'name' or element[-1] == 'revision':
+		# keep an ordered list of these elements
+		e.listadd(element[-1], string.strip(data))
 	else:
 		data = string.strip(data)
 		if data:
