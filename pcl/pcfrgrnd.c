@@ -24,7 +24,7 @@ private_st_frgrnd_t();
 /*
  * Free a pcl foreground object.
  */
-  private void
+void
 free_foreground(
     gs_memory_t *   pmem,
     void *          pvfrgrnd,
@@ -221,9 +221,9 @@ private void
 frgrnd_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 {
     if ( type & (pcl_reset_permanent) ) {
-	gs_free_object(pcs->memory, pcs->pfrgrnd,  "foreground reset");
-	gs_free_object(pcs->memory, pcs->pwhite_cs, "pure white color space reset");
-
+        rc_decrement(pcs->pfrgrnd, "foreground reset pfrgrnd");
+        rc_decrement(pcs->pdflt_frgrnd, "foreground reset pdflt_frgrnd");
+	rc_decrement(pcs->pwhite_cs, "foreground reset p_white_cs");
     }
 }
 
