@@ -256,11 +256,14 @@ write_cmap(stream *s, gs_font *font, uint first_code, int num_glyphs,
 	    font->procs.encode_char(font, (gs_char)i, GLYPH_SPACE_INDEX);
 	uint glyph_index;
 
-	if (glyph == gs_no_glyph || glyph < gs_min_cid_glyph ||
-	    glyph > max_glyph
-	    )
+	
+	if (glyph == gs_no_glyph) 
 	    glyph = gs_min_cid_glyph;
-	glyph_index = (uint)(glyph - gs_min_cid_glyph);
+
+        /* ps uses glyphs biases by gs_min_cid_glyph this converts to glyph_index
+	 * pcl does not bias glyph == glyph_index 
+	 */
+	glyph_index = glyph >= gs_min_cid_glyph ? (uint)(glyph - gs_min_cid_glyph) : glyph;
 	merge |= glyph_index;
 	put_u16(entries + 2 * i, glyph_index);
     }
@@ -542,6 +545,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
     ulong OS_2_start;
     uint OS_2_length = OS_2_LENGTH;
     int code;
+    int pcl_mode = false; /* true if unbiased glyph are used; ie pcl, ps is biased */ 
 
     if (alt_font_name)
 	font_name = *alt_font_name;
@@ -644,15 +648,24 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	uint glyph_index;
 	gs_const_string glyph_string;
 
-	if (glyph < gs_min_cid_glyph)
-	    return_error(gs_error_invalidfont);
+	if (glyph < gs_min_cid_glyph) {
+	    /* stefan used to: return_error(gs_error_invalidfont); 
+	     * can ps get here with an invalidfont or was this an assertion?
+	     */
+           /* ps uses glyphs biases by gs_min_cid_glyph this converts to glyph_index
+	    * pcl does not bias glyph == glyph_index 
+            * offset glyph to be like ps for code reuse             
+	    */
+	    glyph += gs_min_cid_glyph; 
+	    pcl_mode = true;
+	} 
 	glyph_index = glyph - gs_min_cid_glyph;
 	if_debug1('L', "[L]glyph_index %u\n", glyph_index);
 	if ((code = pfont->data.get_outline(pfont, glyph_index, &glyph_string)) >= 0) {
 	    max_glyph = max(max_glyph, glyph_index);
 	    glyf_length += glyph_string.size;
 	    if_debug1('L', "[L]  size %u\n", glyph_string.size);
-	    if (code > 0)
+	    if (0 && code > 0) /* stefan foo */
 		gs_free_const_string(pfont->memory, glyph_string.data,
 				     glyph_string.size,
 				     "psf_write_truetype_data");
@@ -729,7 +742,8 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 
 	if (!have_cmap) {
 	    cmap_length = size_cmap(font, 0xf000, 256,
-				    gs_min_cid_glyph + max_glyph, options);
+				    pcl_mode ? max_glyph : gs_min_cid_glyph + max_glyph, 
+				    options);
 	    offset = put_table(tab, "cmap", 0L /****** NO CHECKSUM ******/,
 			       offset, cmap_length);
 	    tab += 16;
@@ -822,14 +836,16 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
     for (offset = 0; psf_enumerate_glyphs_next(penum, &glyph) != 1; ) {
 	gs_const_string glyph_string;
 
-	if ((code = pfont->data.get_outline(pfont, glyph - gs_min_cid_glyph,
-					    &glyph_string)) >= 0
-	    ) {
+	if (pfont->data.get_outline(pfont, 
+				    /* allow both cid offseted glyphs pcl non-offsetted. */
+				    glyph > gs_min_cid_glyph ? 
+				    glyph - gs_min_cid_glyph : glyph,
+				    &glyph_string) >= 0) {
 	    stream_write(s, glyph_string.data, glyph_string.size);
 	    offset += glyph_string.size;
 	    if_debug2('L', "[L]glyf index = %u, size = %u\n",
 		      i, glyph_string.size);
-	    if (code > 0)
+	    if (0 && code > 0) /* stefan foo */
 		gs_free_const_string(pfont->memory, glyph_string.data,
 				     glyph_string.size,
 				     "psf_write_truetype_data");
@@ -844,17 +860,21 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
     /* Write loca. */
 
     psf_enumerate_glyphs_reset(penum);
-    glyph_prev = gs_min_cid_glyph;
+    glyph_prev = pcl_mode ? 0 : gs_min_cid_glyph;
     for (offset = 0; psf_enumerate_glyphs_next(penum, &glyph) != 1; ) {
 	gs_const_string glyph_string;
-
+	
+	/* don't allow illegal glyph indexes */
+	if (pcl_mode && glyph >= gs_min_cid_glyph) 
+	    glyph = glyph - gs_min_cid_glyph;
+			  
 	for (; glyph_prev <= glyph; ++glyph_prev)
 	    put_loca(s, offset, indexToLocFormat);
-	if ((code = pfont->data.get_outline(pfont, glyph - gs_min_cid_glyph,
-				    &glyph_string)) >= 0
-	    ) {
+	/* glyph_index = glyph in pcl; remove offset for ps */
+	if ((code = pfont->data.get_outline(pfont, pcl_mode ? glyph : glyph - gs_min_cid_glyph,
+					    &glyph_string)) >= 0) {
 	    offset += glyph_string.size;
-	    if (code > 0)
+	    if (0 && code > 0) /* stefan foo */
 		gs_free_const_string(pfont->memory, glyph_string.data,
 				     glyph_string.size,
 				     "psf_write_truetype_data");
@@ -862,14 +882,16 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 
     }
     /* Pad to numGlyphs + 1 entries (including the trailing entry). */
-    for (; glyph_prev <= gs_min_cid_glyph + numGlyphs; ++glyph_prev)
+    for (; glyph_prev <= (pcl_mode ? numGlyphs: gs_min_cid_glyph + numGlyphs); 
+	 ++glyph_prev)
 	put_loca(s, offset, indexToLocFormat);
     put_pad(s, loca_length);
 
     /* If necessary, write cmap, name, and OS/2. */
 
     if (!have_cmap)
-	write_cmap(s, font, 0xf000, 256, gs_min_cid_glyph + max_glyph,
+	write_cmap(s, font, 0xf000, 256, 
+		   pcl_mode ? max_glyph : gs_min_cid_glyph + max_glyph,
 		   options, cmap_length);
     if (!have_name)
 	write_name(s, &font_name);
