@@ -486,7 +486,7 @@ pl_font_scan_segments(pl_font_t *plfont, int fst_offset, int start_offset,
 		     */
 		    if ( seg_size < 12 + 5 * 16 ||
 			 memcmp(sdata, "\000\001\000\000", 4) ||
-			 u16(sdata + 4) < 5
+			 u16(sdata + 4) < 3
 		       )
 		      return_scan_error(pfoe->illegal_GT_segment);
 		    plfont->offsets.GT = segment - header;

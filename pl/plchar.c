@@ -1491,7 +1491,6 @@ pl_font_add_glyph(pl_font_t *plfont, gs_glyph glyph, byte *cdata)
 	gs_glyph key = glyph;
 	pl_tt_char_glyph_t *ptcg = 0;
 	pl_font_glyph_t *pfg;
-
 	/*
 	 * If this is a downloaded TrueType font, the "glyph" is actually
 	 * a character code, and the actual TrueType glyph index is in the
@@ -1509,7 +1508,18 @@ tcg:	if ( plfont->char_glyphs.table )
 		  return code;
 		goto tcg;
 	      }
-	    key = pl_get_uint16(cdata + (cdata[0] == 15 ? cdata[2] + 4 : 4));
+            /* Recently we have seen XL format 0 class 1 and 2 fonts
+               that use the character code as a key instead of the
+               glyph id embedded in the downloaded font data.  It is
+               possible that the character code is also used for
+               format 15 and XL format 0 class 0.  Pending further
+               investigation we use the character code as the key for
+               format 0 class 1 and 2 and the glyph id embedde in the
+               font for the other font types. */
+            if (( cdata[0] != 15 ) && (cdata[1] == 1 || cdata[1] == 2))
+                ; /* do nothing use char code as the key */
+            else
+                key = pl_get_uint16(cdata + (cdata[0] == 15 ? cdata[2] + 4 : 4));
 	  }
 fg:	pfg = pl_font_lookup_glyph(plfont, key);
 	if ( pfg->data != 0 )
