@@ -617,6 +617,7 @@ psdf_put_image_dict_param(gs_param_list * plist, const gs_param_name pname,
     gs_c_param_list *plvalue = *pplvalue;
     int code;
 
+    mem = gs_memory_stable(mem);
     switch (code = param_begin_read_dict(plist, pname, &dict, false)) {
 	default:
 	    param_signal_error(plist, pname, code);
