@@ -37,7 +37,8 @@ int
 main(int argc, char *argv[])
 {
     int exit_status = 0;
-    gs_main_instance *minst = gs_main_instance_default();
+    gs_main_instance *minst = gs_main_alloc_instance(gs_malloc_init(NULL));
+
     int code = gs_main_init_with_args(minst, argc, argv);
 
 #ifdef RUN_STRINGS
