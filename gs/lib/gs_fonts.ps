@@ -1019,15 +1019,17 @@ FAKEFONTS { exch } if pop def	% don't bind, .current/setglobal get redefined
 	       % It should be removed after alpha testing the new logic.
 	       systemdict /.filenamedirseparator known {
 	           1 index .filenamedirseparator
-	           exch concatstrings concatstrings
+	           exch concatstrings concatstrings true
                  } {
                    true .file_name_combine
                  } ifelse
-
-
-               dup VMDEBUG
-	       (r) { file } .internalstopped
-		{ pop pop } { .loadFontmap } ifelse
+               {
+                 dup VMDEBUG
+	         (r) { file } .internalstopped
+		 { pop pop } { .loadFontmap } ifelse
+               } {
+                 pop pop
+               } ifelse
 	     }
 	  }
 	 ifelse forall

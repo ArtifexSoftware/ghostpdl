@@ -27,7 +27,8 @@
 #include "opcheck.h"
 #include "store.h"
 
-/* <string> <string> <bool> .file_name_combine <string> */
+/* <string> <string> <bool> .file_name_combine <string> true */
+/* <string> <string> <bool> .file_name_combine <string> <string> false */
 private int
 zfile_name_combine(i_ctx_t *i_ctx_p)
 {
@@ -51,13 +52,16 @@ zfile_name_combine(i_ctx_t *i_ctx_p)
     no_neighbour = op[0].value.boolval;
     if (gp_file_name_combine((const char *)prefix, plen, 
 			     (const char *)fname, flen, no_neighbour,
-		             (char *)buffer, &blen) != gp_combine_success)
-	return_error(e_undefinedfilename);
-    buffer = iresize_string(buffer, blen0, blen, "zfile_name_combine");
-    if (buffer == 0)
-	return_error(e_VMerror);
-    make_string(op - 2, a_read | icurrent_space, blen, buffer);
-    pop(2);
+		             (char *)buffer, &blen) != gp_combine_success) {
+	make_bool(op, false);
+    } else {
+	buffer = iresize_string(buffer, blen0, blen, "zfile_name_combine");
+	if (buffer == 0)
+	    return_error(e_VMerror);
+	make_string(op - 2, a_read | icurrent_space, blen, buffer);
+	make_bool(op - 1, true);
+	pop(1);
+    }
     return 0;
 }
 

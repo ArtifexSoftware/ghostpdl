@@ -1727,7 +1727,9 @@ readonly def
 	  {
 	    % Can't combine with '*', because .makepathtemplate
 	    % encloses it with escape.
-	    (x) true .file_name_combine
+	    (x) true .file_name_combine not {
+	      /.locksafe cvx /unregistered signalerror % must not happen
+	    } if
             .makepathtemplate
             dup dup length 1 sub (*) 0 get put
           }
@@ -1738,9 +1740,9 @@ readonly def
                 currentsystemparams exch get         % templ proc path relpath
                 1 index exch                         % templ proc path path relpath
                 1 index .file_name_parents 3 1 roll  % templ proc path nparent path relpath
-                { true .file_name_combine } stopped {   
+                true .file_name_combine not {   
                   % The platform can't handle it.  
-                  pop pop pop pop                    % templ proc path
+                  pop pop pop                        % templ proc path
                 } {                                  % templ proc path nparent path'
                   dup .file_name_parents             % templ proc path nparent path' nparent1
                   3 2 roll le {                      % templ proc path path'

@@ -252,12 +252,24 @@ pssystemparams begin
     (%diskFontResourceDir) cvn (/Resource/Font/) readonly .forcedef	% pssys'params is r-o
     (%diskGenericResourceDir) cvn (/Resource/) readonly .forcedef	% pssys'params is r-o
   } {
-    /FontResourceDir mark
+    /FontResourceDir
+       systemdict /FontResourceDir .knownget {
+         systemdict /FontResourceDir undef
+       } {
+         mark
     	.file_name_parent (Resource) (Font)
-    	.file_name_dir_concat readonly .forcedef	% pssys'params is r-o
-    /GenericResourceDir mark
+    	.file_name_dir_concat
+       } ifelse	
+       readonly .forcedef	% pssys'params is r-o
+    /GenericResourceDir 
+       systemdict /GenericResourceDir .knownget {
+         systemdict /GenericResourceDir undef
+       } {
+         mark
         .file_name_parent (Resource)
-        .file_name_dir_concat readonly .forcedef	% pssys'params is r-o
+        .file_name_dir_concat 
+       } ifelse
+       readonly .forcedef	% pssys'params is r-o
     /GenericResourcePathSep
     	.file_name_separator readonly .forcedef		% pssys'params is r-o
     (%diskFontResourceDir) cvn mark
@@ -269,6 +281,45 @@ pssystemparams begin
   } ifelse
 end
 end
+
+% The check below for the presence of /.filenamedirseparator
+% is a temporary switch to NEW_COMBINE_PATH logics.
+% It should be removed after alpha testing the new logic.
+systemdict /.filenamedirseparator known not {
+
+  % Check if GenericResourceDir presents in LIBPATH.
+
+  % The value of GenericResourceDir must end with directory separator.
+  % We use .file_name_combine to check it. 
+  % Comments use OpenVMS syntax, because it is the most complicated case.
+  (x) pssystemparams /GenericResourcePathSep get
+  (y) concatstrings concatstrings dup length              % (x]y) l1
+  pssystemparams /GenericResourceDir get dup length exch  % (x]y) l1 l2 (dir)
+  3 index true .file_name_combine not {
+    exch
+    (Configuration error : File name ) print print ( cant combine with ) print =
+    /GenericResourceDir cvx /invalidfileaccess signalerror
+  } if
+  dup length                                              % (x]y) l1 l2 (dir.x]y) l
+  4 2 roll add                                            % (x]y) (dir.x]y) l ll
+  ne {
+    (Configuration error : GenericResourceDir value does not end with directory separator.\n) =
+    /GenericResourceDir cvx /invalidfileaccess signalerror
+  } if
+  true                                                    % (x]y) (dir.x]y) true
+  /LIBPATH .systemvar {                                   % (x]y) (dir.x]y) true (libdir)
+    2 index true .file_name_combine {
+      pop pop false exit
+    } { 
+      pop pop
+    } ifelse
+  } bind forall
+  {
+    (Configuration error : GenericResourceDir value is not listed in LIBPATH.\n) =
+    /LIBPATH cvx /invalidfileaccess signalerror
+  } if
+  pop pop                                                 %
+} if
 
 % Define the generic algorithm for computing resource file names.
 /.rfnstring 100 string def
