@@ -468,6 +468,10 @@ render_pattern(
     } else
         pixinfo = pptrn->ppat_data->pixinfo;
 
+    if (pcspace != 0)
+	code = pcl_cs_indexed_install(&pindexed, pcs);
+    if ( code < 0 )
+	return code;
     /* render the pattern */
     code = gs_makepixmappattern( &(pccolor->ccolor),
                                  &pixinfo,
