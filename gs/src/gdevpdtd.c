@@ -645,7 +645,7 @@ pdf_write_FontDescriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
     pdf_end_separate(pdev);
     pfd->common.object->written = true;
 #   if PDFW_DELAYED_STREAMS
-    {	const cos_object_t *pco = pdf_get_FontFile_object(pfd->base_font);
+    {	const cos_object_t *pco = (const cos_object_t *)pdf_get_FontFile_object(pfd->base_font);
 	if (pco != NULL) {
 	    code = COS_WRITE_OBJECT(pco, pdev);
 	    if (code < 0)
