@@ -255,7 +255,7 @@ DELAYBIND NOBIND not and
     } .bind def
  } if
 
-%**************** BACKWARD COMPATIBILITY
+%**************** BACKWARD COMPATIBILITY ****************
 /hwsizedict mark /HWSize null .dicttomark readonly def
 /copyscanlines {		% <device> <y> <string> copyscanlines <substr>
   0 3 1 roll 3 index //hwsizedict .getdeviceparams
@@ -275,12 +275,15 @@ currentdict /hwsizedict .undef
     }
    if
  } bind odef
-/max { .max } bind def
-/min { .min } bind def
 /.currentfilladjust { .currentfilladjust2 pop } bind odef
 /.setfilladjust { dup .setfilladjust2 } bind odef
-/unread /.unread load def
 /.writecvs { 0 .writecvp } bind odef
+%**************** DEPRECATED PROCEDURES ****************
+%**************** DO NOT USE THESE IN NEW CODE ****************
+/max { .max } bind def		% use .max instead
+/min { .min } bind def		% use .min instead
+/unread /.unread load def	% use .peekstring instead
+%**************** END OF BACKWARD COMPATIBILITY SECTION ****************
 
 % Define predefined procedures substituting for operators,
 % in alphabetical order.
