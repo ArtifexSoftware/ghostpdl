@@ -24,6 +24,11 @@
 #define CHECK_INTERRUPTS
 #define HAVE_SYS_TIME_H
 
+/* use a 64 bit type for color vectors. (from MacTypes.h)
+   this is important for devicen support, but can be safely
+   undef'd to fallback to a 32 bit representation  */
+#define GX_COLOR_INDEX_TYPE UInt64
+
 #define main gs_main
 
 #if (0)
