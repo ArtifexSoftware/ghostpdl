@@ -236,11 +236,11 @@ z11_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph)
 
 private int
 z11_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matrix *pmat,
-		  gx_path *ppath)
+		  gx_path *ppath, double sbw[4])
 {
     return gs_type42_glyph_outline(font, WMode, 
 	    z11_get_glyph_index((gs_font_type42 *)font, glyph) + GS_MIN_GLYPH_INDEX,
-				   pmat, ppath);
+				   pmat, ppath, sbw);
 }
 
 /* ------ Defining ------ */

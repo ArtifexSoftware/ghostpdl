@@ -885,12 +885,17 @@ gs_default_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
     int returned = 0;
     int code;
     int wmode = ((members & GLYPH_INFO_WIDTH1) != 0);
+    double sbw[4] = {0, 0, 0, 0};
+    /* Currently glyph_outline retrieves sbw only with type 1,2,9 fonts. */
+    bool charstrings_font = (font->FontType == ft_encrypted || 
+			     font->FontType == ft_encrypted2 || 
+			     font->FontType == ft_CID_encrypted);
 
     gx_path_init_bbox_accumulator(&path);
     code = gx_path_add_point(&path, fixed_0, fixed_0);
     if (code < 0)
 	goto out;
-    code = font->procs.glyph_outline(font, wmode, glyph, pmat, &path);
+    code = font->procs.glyph_outline(font, wmode, glyph, pmat, &path, sbw);
     if (code < 0)
 	goto out;
     if (members & GLYPH_INFO_WIDTHS) {
@@ -920,6 +925,28 @@ gs_default_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	info->bbox.q.y = fixed2float(bbox.q.y);
 	returned |= GLYPH_INFO_BBOX;
     }
+    if (members & (GLYPH_INFO_WIDTH0 << wmode) && charstrings_font) {
+	if (pmat == 0) {
+	    info->width[wmode].x = sbw[2];
+	    info->width[wmode].y = sbw[3];
+	} else {
+	    code = gs_distance_transform(sbw[2], sbw[3], pmat, &info->width[wmode]);
+	    if (code < 0)
+		return code;
+	}
+	returned |= GLYPH_INFO_WIDTH0 << wmode;
+    }
+    if (members & (GLYPH_INFO_VVECTOR0 << wmode) && charstrings_font) {
+	if (pmat == 0) {
+	    info->v.x = sbw[0];
+	    info->v.y = sbw[1];
+	} else {
+	    gs_distance_transform(sbw[0], sbw[1], pmat, &info->v);
+	    if (code < 0)
+		return code;
+	}
+	returned |= GLYPH_INFO_VVECTOR0 << wmode;
+    }
     if (members & GLYPH_INFO_NUM_PIECES) {
 	info->num_pieces = 0;
 	returned |= GLYPH_INFO_NUM_PIECES;
@@ -933,7 +960,7 @@ gs_default_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 /* Dummy glyph outline procedure */
 int
 gs_no_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matrix *pmat,
-		    gx_path *ppath)
+		    gx_path *ppath, double sbw[4])
 {
     return_error(gs_error_undefined);
 }

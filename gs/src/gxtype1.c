@@ -569,3 +569,16 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
     gs_glyph_data_free(&gdata, "gs_type1_glyph_info");
     return code;
 }
+
+/* Get font parent (a Type 9 font). */
+const gs_font_base *
+gs_font_parent(const gs_font_base *pbfont)
+{
+    if (pbfont->FontType == ft_encrypted || pbfont->FontType == ft_encrypted2) {
+	const gs_font_type1 *pfont1 = (const gs_font_type1 *)pbfont;
+
+	if (pfont1->data.parent != NULL)
+	    return pfont1->data.parent;
+    }
+    return pbfont;
+}

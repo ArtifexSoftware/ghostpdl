@@ -247,4 +247,7 @@ int gs_type1_seac(gs_type1_state * pcis, const fixed * cstack,
 
 int gs_type1_endchar(gs_type1_state * pcis);
 
+/* Get the metrics (l.s.b. and width) from the Type 1 interpreter. */
+void type1_cis_get_metrics(const gs_type1_state * pcis, double psbw[4]);
+
 #endif /* gxtype1_INCLUDED */

@@ -1841,6 +1841,7 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
     int code, rcode = 0;
     gs_point v;
     int allow_cdevproc_callout = (orig_font->FontType == ft_CID_TrueType 
+		|| orig_font->FontType == ft_CID_encrypted 
 		? GLYPH_INFO_CDEVPROC : 0); /* fixme : allow more font types. */
 
     if (ofont->FontType == ft_composite)
@@ -1987,8 +1988,13 @@ pdf_text_process(gs_text_enum_t *pte)
 	if (code < 0)
 	    return code;
     }
-    if (!penum->pte_default)
+    if (!penum->pte_default) {
 	pdev->charproc_just_accumulated = false;
+	if (penum->cdevproc_callout) {
+	    /* Restore after TEXT_PROCESS_CDEVPROC in scan_cmap_text. */
+	    penum->current_font = penum->orig_font;
+	}
+    }
     code = -1;		/* to force default implementation */
 
     /*

@@ -41,6 +41,8 @@ int /*metrics_present*/
 int /*metrics_present*/
   zchar_get_metrics2(const gs_font_base * pbfont, const ref * pcnref,
 		     double pwv[4]);
+/*  Get CDevProc. */
+bool zchar_get_CDevProc(const gs_font_base * pbfont, ref **ppcdevproc);
 
 /*
  * Consult Metrics2 and CDevProc, and call setcachedevice[2].  Return

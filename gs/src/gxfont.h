@@ -279,10 +279,11 @@ typedef struct gs_font_procs_s {
      * because for font descendents it is inherited from an upper font.
      * This is especially important for Type 42 fonts with hmtx and vmtx.
      */
+    /* Currently glyph_outline retrieves sbw only with type 1,2,9 fonts. */
 
 #define font_proc_glyph_outline(proc)\
   int proc(gs_font *font, int WMode, gs_glyph glyph, const gs_matrix *pmat,\
-	   gx_path *ppath)
+	   gx_path *ppath, double sbw[4])
     font_proc_glyph_outline((*glyph_outline));
 
     /*
@@ -478,5 +479,8 @@ gs_font_base *
  * The test is somewhat adhoc: perhaps this should be a virtual procedure.
  */
 bool gs_font_glyph_is_notdef(gs_font_base *bfont, gs_glyph glyph);
+
+/* Get font parent (a Type 9 font). */
+const gs_font_base *gs_font_parent(const gs_font_base *pbfont);
 
 #endif /* gxfont_INCLUDED */

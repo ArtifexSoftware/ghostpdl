@@ -592,7 +592,10 @@ op_show_continue_dispatch(i_ctx_t *i_ctx_p, int npop, int code)
 
 		    code = zchar42_set_cache(i_ctx_p, (gs_font_base *)pfont42, 
 				    &cnref, glyph_index, cont, &exec_cont, false);
-		} else
+		} else if (pfont->FontType == ft_CID_encrypted)
+		    code = z1_set_cache(i_ctx_p, (gs_font_base *)pfont, 
+				    &cnref, glyph, cont, &exec_cont);
+		else
 		    return_error(e_unregistered); /* Unimplemented. */
 		if (exec_cont != 0)
 		    return_error(e_unregistered); /* Must not happen. */

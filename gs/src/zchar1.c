@@ -158,8 +158,6 @@ private int type1_continue_dispatch(i_ctx_t *, gs_type1exec_state *,
 				    const ref *, ref *, int);
 private int op_type1_cleanup(i_ctx_t *);
 private void op_type1_free(i_ctx_t *);
-private void
-     type1_cis_get_metrics(const gs_type1_state * pcis, double psbw[4]);
 private int bbox_getsbw_continue(i_ctx_t *);
 private int type1exec_bbox(i_ctx_t *, gs_type1exec_state *, gs_font *, op_proc_t *exec_cont);
 private int bbox_finish_fill(i_ctx_t *);
@@ -396,7 +394,7 @@ bbox_getsbw_continue(i_ctx_t *i_ctx_p)
 	    type1_cis_get_metrics(pcis, sbw);
 	    bbox = pcxs->char_bbox;
 	    op_type1_free(i_ctx_p);
-	    code = zchar_set_cache(i_ctx_p, pbfont, op, sbw, sbw + 2, &bbox,
+	    code = zchar_set_cache(i_ctx_p, pbfont, op - 1, sbw, sbw + 2, &bbox,
 				   cont, &exec_cont, NULL);
 	    if (code >= 0 && exec_cont != 0)
 		code = (*exec_cont)(i_ctx_p);
@@ -617,7 +615,7 @@ bbox_stroke(i_ctx_t *i_ctx_p)
 /* -------- Common code -------- */
 
 /* Get the metrics (l.s.b. and width) from the Type 1 interpreter. */
-private void
+void
 type1_cis_get_metrics(const gs_type1_state * pcis, double psbw[4])
 {
     psbw[0] = fixed2float(pcis->lsb.x);
@@ -834,7 +832,7 @@ nobbox_finish(i_ctx_t *i_ctx_p, gs_type1exec_state * pcxs)
 	    code = type1exec_bbox(i_ctx_p, pcxs, pfont, &exec_cont);
 	} else {
 	    cont = (pbfont->PaintType == 0 ? nobbox_fill : nobbox_stroke), exec_cont = 0;
-	    code = zchar_set_cache(i_ctx_p, pbfont, op, NULL,
+	    code = zchar_set_cache(i_ctx_p, pbfont, op - 1, NULL,
 				   pcxs->sbw + 2,
 				   &pcxs->char_bbox,
 				   cont, &exec_cont,
@@ -1008,7 +1006,7 @@ const gs_type1_data_procs_t z1_data_procs = {
  */
 int
 zchar1_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matrix *pmat,
-		     gx_path *ppath)
+		     gx_path *ppath, double sbw[4])
 {
     gs_font_type1 *const pfont1 = (gs_font_type1 *)font;
     ref gref;
@@ -1019,7 +1017,7 @@ zchar1_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matrix *
     code = zchar_charstring_data(font, &gref, &gdata);
     if (code < 0)
 	return code;
-    return zcharstring_outline(pfont1, WMode, &gref, &gdata, pmat, ppath);
+    return zcharstring_outline(pfont1, WMode, &gref, &gdata, pmat, ppath, sbw);
 }
 /*
  * Get a glyph outline given a CharString.  The glyph_outline procedure
@@ -1028,26 +1026,26 @@ zchar1_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matrix *
 int
 zcharstring_outline(gs_font_type1 *pfont1, int WMode, const ref *pgref,
 		    const gs_glyph_data_t *pgd_orig,
-		    const gs_matrix *pmat, gx_path *ppath)
+		    const gs_matrix *pmat, gx_path *ppath, double sbw[4])
 {
     const gs_glyph_data_t *pgd = pgd_orig;
     int code;
     gs_type1exec_state cxs;
     gs_type1_state *const pcis = &cxs.cis;
     const gs_type1_data *pdata;
-    const ref *pfdict;
     ref *pcdevproc;
     int value;
     gs_imager_state gis;
-    double sbw[4], wv[4];
+    double wv[4];
     gs_point mpt;
 
     pdata = &pfont1->data;
     if (pgd->bits.size <= max(pdata->lenIV, 0))
 	return_error(e_invalidfont);
-    pfdict = &pfont_data(pfont1)->dict;
-    if (dict_find_string(pfdict, "CDevProc", &pcdevproc) > 0)
+#if 0 /* Ignore CDevProc for now. */   
+    if (zchar_get_CDevProc((const gs_font_base *)pfont1, &pcdevproc))
 	return_error(e_rangecheck); /* can't call CDevProc from here */
+#endif
     switch (WMode) {
     default:
 	code = zchar_get_metrics2((gs_font_base *)pfont1, pgref, wv);
@@ -1103,6 +1101,7 @@ icont:
 	return_error(e_rangecheck); /* can't handle it */
     case type1_result_sbw:	/* [h]sbw, just continue */
 	type1_cis_get_metrics(pcis, cxs.sbw);
+	type1_cis_get_metrics(pcis, sbw);
 	pgd = 0;
 	goto icont;
     }
@@ -1120,7 +1119,6 @@ z1_glyph_info_generic(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
     ref gref;
     ref *pcdevproc;
     gs_font_base *const pbfont = (gs_font_base *)font;
-    const ref *pfdict = &pfont_data(pbfont)->dict;
     int width_members = members & (GLYPH_INFO_WIDTH0 << wmode);
     int outline_widths = members & GLYPH_INFO_OUTLINE_WIDTHS;
     bool modified_widths = false;
@@ -1132,7 +1130,7 @@ z1_glyph_info_generic(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 
     if (!width_members)
 	return (*proc)(font, glyph, pmat, members, info);
-    if (!outline_widths && dict_find_string(pfdict, "CDevProc", &pcdevproc) > 0) {
+    if (!outline_widths && zchar_get_CDevProc(pbfont, &pcdevproc)) {
 	done_members |= GLYPH_INFO_CDEVPROC;
 	if (members & GLYPH_INFO_CDEVPROC) {
 	    info->members = done_members;
@@ -1176,7 +1174,7 @@ z1_glyph_info_generic(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
     }
 
     if (outline_widths) {
-	if (modified_widths || dict_find_string(pfdict, "CDevProc", &pcdevproc) > 0) {
+	if (modified_widths || zchar_get_CDevProc(pbfont, &pcdevproc)) {
 	    /* Discard the modified widths, but indicate they exist. */
 	    width_members |= done_members;
 	    done_members = outline_widths;
@@ -1204,3 +1202,27 @@ z1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 				    &gs_type1_glyph_info, wmode);
 }
 
+/* Get a Type 1 or Type 9 character metrics and set the cache device. */
+int
+z1_set_cache(i_ctx_t *i_ctx_p, gs_font_base *pbfont, ref *cnref, 
+	    gs_glyph glyph, op_proc_t cont, op_proc_t *exec_cont)
+{   /* This function is similar to zchar42_set_cache. */
+    double sbw[4];
+    gs_glyph_info_t info;
+    int wmode = gs_rootfont(igs)->WMode;
+    int code;
+
+    code = gs_default_glyph_info((gs_font *)pbfont, glyph, &pbfont->FontMatrix,
+		((GLYPH_INFO_WIDTH0 | GLYPH_INFO_VVECTOR0) << wmode) | GLYPH_INFO_BBOX,
+	        &info);
+    if (code < 0)
+	return code;
+    sbw[0] = info.v.x;
+    sbw[1] = info.v.y;
+    sbw[2] = info.width[wmode].x;
+    sbw[3] = info.width[wmode].y;
+    return zchar_set_cache(i_ctx_p, pbfont, cnref, NULL,
+			   sbw + 2, &info.bbox,
+			   cont, exec_cont,
+			   wmode ? sbw : NULL);
+}

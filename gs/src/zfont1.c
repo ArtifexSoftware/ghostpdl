@@ -201,6 +201,7 @@ charstring_font_init(gs_font_type1 *pfont, const charstring_font_refs_t *pfr,
 
     pdata = pfont_data(pfont);
     pfont->data = *pdata1;
+    pfont->data.parent = NULL;
     ref_assign(&pdata->u.type1.OtherSubrs, pfr->OtherSubrs);
     ref_assign(&pdata->u.type1.Subrs, pfr->Subrs);
     ref_assign(&pdata->u.type1.GlobalSubrs, pfr->GlobalSubrs);

@@ -947,7 +947,6 @@ readonly def
 /CIDWProc {		% <w0x> <w0y> <llx> <lly> <urx> <ury>
 			%   <w1x> <w1y> <vx> <vy> <cid> <font> CIDWproc
 			%   <w0x'> ... <vy'>
-
   begin % push <font> to currentdict
     % <w1x> <w1y> <vx> <vy> won't be used and replaced, discard now
     5 1 roll pop pop pop pop
@@ -975,7 +974,9 @@ readonly def
       exit
     } loop
 
-    1000 div                    % <w0x'> (normalized W)
+    FontType 11 eq {
+      1000 div                  % <w0x'> (normalized W)
+    } if
     0                           % <w0y'>
 
     % Stack: <w0x> <w0y> <llx> <lly> <urx> <ury> <cid> <w0x'> <w0y'>
@@ -1013,14 +1014,13 @@ readonly def
 
     exch pop                            % discard <cid>
 
-
     % Stack: <w0x'> <w0y'> <llx> <lly> <urx> <ury> <w1x'> { [<vy'> <w1y'>] | [<w1y'> <vx'> <vy'>] }
     dup length 2 eq {                   % this is DW2
-      {1000 div} forall exch
+      FontType 11 eq {{1000 div}} {{}} ifelse forall exch
       4 index 7 index add 2 div         % <vx'> = (<urx> + <llx>) / 2
       exch
     }{                                  % assume W2
-      {1000 div} forall
+      FontType 11 eq {{1000 div}} {{}} ifelse forall
     } ifelse
   end                                   % recover currentdict
 

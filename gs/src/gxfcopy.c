@@ -672,6 +672,7 @@ copied_build_char(gs_text_enum_t *pte, gs_state *pgs, gs_font *font,
     int code;
     gs_glyph_info_t info;
     double wxy[6];
+    double sbw_stub[4]; /* Currently glyph_outline retrieves sbw only with type 1,2,9 fonts. */
 
     if (glyph == GS_NO_GLYPH) {
 	glyph = font->procs.encode_char(font, chr, GLYPH_SPACE_INDEX);
@@ -699,7 +700,7 @@ copied_build_char(gs_text_enum_t *pte, gs_state *pgs, gs_font *font,
     wxy[5] = info.bbox.q.y;
     if ((code = gs_text_setcachedevice(pte, wxy)) < 0 ||
 	(code = font->procs.glyph_outline(font, wmode, glyph, &ctm_only(pgs),
-					  pgs->path)) < 0
+					  pgs->path, sbw_stub)) < 0
 	)
 	return code;
     if (font->PaintType != 0) {
@@ -982,7 +983,7 @@ copy_glyph_type1(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
 
 private int
 copied_type1_glyph_outline(gs_font *font, int WMode, gs_glyph glyph,
-			   const gs_matrix *pmat, gx_path *ppath)
+			   const gs_matrix *pmat, gx_path *ppath, double sbw[4])
 {   /* 
      * 'WMode' may be inherited from an upper font.
      * We ignore in because Type 1,2 charstrings do not depend on it.
@@ -1033,6 +1034,7 @@ copied_type1_glyph_outline(gs_font *font, int WMode, gs_glyph glyph,
 	    return_error(gs_error_rangecheck); /* can't handle it */
 	case type1_result_sbw:	/* [h]sbw, just continue */
 	    pgd = 0;
+    	    type1_cis_get_metrics(&cis, sbw);
 	}
     }
 }
@@ -1511,7 +1513,7 @@ copied_cid0_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 
 private int
 copied_cid0_glyph_outline(gs_font *font, int WMode, gs_glyph glyph,
-			  const gs_matrix *pmat, gx_path *ppath)
+			  const gs_matrix *pmat, gx_path *ppath, double sbw[4])
 {
     gs_font_type1 *subfont1;
     int code = cid0_subfont(font, glyph, &subfont1);
@@ -1519,7 +1521,7 @@ copied_cid0_glyph_outline(gs_font *font, int WMode, gs_glyph glyph,
     if (code < 0)
 	return code;
     return subfont1->procs.glyph_outline((gs_font *)subfont1, WMode, glyph, pmat,
-					 ppath);
+					 ppath, sbw);
 }
 
 private int
@@ -1556,6 +1558,7 @@ copy_font_cid0(gs_font *font, gs_font *copied)
 	if (code < 0)
 	    goto fail;
 	subcopy1 = (gs_font_type1 *)subcopy;
+	subcopy1->data.parent = NULL;
 	subdata = cf_data(subcopy);
 	subdata->parent = copied0;
 	gs_free_object(copied->memory, subdata->Encoding,

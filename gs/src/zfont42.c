@@ -339,10 +339,10 @@ z42_encode_char(gs_font *font, gs_char chr, gs_glyph_space_t glyph_space)
 }
 private int
 z42_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matrix *pmat,
-		  gx_path *ppath)
+		  gx_path *ppath, double sbw[4])
 {
     return gs_type42_glyph_outline(font, WMode, glyph_to_index(font, glyph),
-				   pmat, ppath);
+				   pmat, ppath, sbw);
 }
 private int
 z42_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,

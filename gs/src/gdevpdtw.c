@@ -250,7 +250,7 @@ pdf_compute_CIDFont_default_widths(const pdf_font_resource_t *pdfont, int wmode,
 	    (*(width < 0 ? &neg_count : &pos_count))++;
 	}
     }
-    for (i = 0; i < countof(counts); ++i)
+    for (i = 1; i < countof(counts); ++i)
 	if (counts[i] > dw_count)
 	    dwi = i, dw_count = counts[i];
     *pdw = (neg_count > pos_count ? -dwi : dwi);
@@ -270,7 +270,7 @@ pdf_compute_CIDFont_default_widths(const pdf_font_resource_t *pdfont, int wmode,
 	    }
 	}
     }
-    return (dw_count > 0);
+    return (dw_count + counts[0] > 0);
 }
 
 /*
@@ -310,13 +310,26 @@ pdf_write_CIDFont_widths(gx_device_pdf *pdev,
     psf_enumerate_bits_begin(&genum, NULL, pdfont->used, pdfont->count,
 			     GLYPH_SPACE_INDEX);
     {
-
 	while (!psf_enumerate_glyphs_next(&genum, &glyph)) {
 	    int cid = glyph - GS_MIN_CID_GLYPH;
 	    int width = (int)(w[cid] + 0.5);
 
+#if 0 /* Must write zero widths - see test file of the bug Bug 687681.
+	 We don't enumerate unused glyphs here due to pdfont->used. */
 	    if (width == 0)
 		continue; /* Don't write for unused glyphs. */
+#else
+	    {	/* Check whether copied font really have this glyph.
+	           debugged with 401-01.ps, which uses undefined CIDs. */
+		gs_font_base *pfont = pdf_font_resource_font(pdfont, false);
+		gs_glyph_info_t info;
+
+		if (pdfont != NULL) {
+		    if (pfont->procs.glyph_info((gs_font *)pfont, glyph, NULL, 0, &info) < 0)
+			continue;
+		}
+	    }
+#endif
 	    if (cid == prev + 1) {
 		if (wmode) {
 		    int vx = (int)(pdfont->u.cidfont.v[cid * 2 + 0] + 0.5);

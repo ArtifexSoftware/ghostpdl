@@ -249,7 +249,7 @@ z9_glyph_data(gs_font_base *pbfont, gs_glyph glyph, gs_glyph_data_t *pgd,
 /* Get the outline of a CIDFontType 0 glyph. */
 private int
 z9_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matrix *pmat,
-		 gx_path *ppath)
+		 gx_path *ppath, double sbw[4])
 {
     gs_font_cid0 *const pfcid = (gs_font_cid0 *)font;
     ref gref;
@@ -262,10 +262,21 @@ z9_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matrix *pmat
 	return code;
     glyph_ref(font->memory, glyph, &gref);
     ocode = zcharstring_outline(pfcid->cidata.FDArray[fidx], WMode, &gref, &gdata,
-				pmat, ppath);
+				pmat, ppath, sbw);
     gs_glyph_data_free(&gdata, "z9_glyph_outline");
     return ocode;
 }
+
+private int
+z9_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
+		     int members, gs_glyph_info_t *info)
+{   /* fixme : same as z11_glyph_info. */
+    int wmode = (members & GLYPH_INFO_WIDTH0 ? 0 : 1);
+
+    return z1_glyph_info_generic(font, glyph, pmat, members, info, 
+				    &gs_default_glyph_info, wmode);
+}
+
 
 /*
  * The "fonts" in the FDArray don't have access to their outlines -- the
@@ -349,6 +360,26 @@ fd_array_element(i_ctx_t *i_ctx_p, gs_font_type1 **ppfont, ref *prfd)
     pfont->data.procs.glyph_data = z9_FDArray_glyph_data;
     pfont->data.procs.seac_data = z9_FDArray_seac_data;
     *ppfont = pfont;
+    return 0;
+}
+
+
+
+private int 
+notify_remove_font_type9(void *proc_data, void *event_data)
+{  /* Likely type 9 font descendents are never released explicitly.
+      So releaseing a type 9 font we must reset pointers in descendents.
+    */
+    /* gs_font_finalize passes event_data == NULL, so check it here. */
+    if (event_data == NULL) {
+        gs_font_cid0 *pfcid = proc_data;
+	int i;
+
+	for (i = 0; i < pfcid->cidata.FDArray_size; ++i) {
+	    if (pfcid->cidata.FDArray[i]->data.parent == (gs_font_base *)pfcid)
+		pfcid->cidata.FDArray[i]->data.parent = NULL;
+	}
+    }
     return 0;
 }
 
@@ -437,6 +468,7 @@ zbuildfont9(i_ctx_t *i_ctx_p)
 	goto fail;
     pfont->procs.enumerate_glyph = gs_font_cid0_enumerate_glyph;
     pfont->procs.glyph_outline = z9_glyph_outline;
+    pfont->procs.glyph_info = z9_glyph_info;
     pfcid = (gs_font_cid0 *)pfont;
     pfcid->cidata.common = common;
     pfcid->cidata.CIDMapOffset = CIDMapOffset;
@@ -451,9 +483,13 @@ zbuildfont9(i_ctx_t *i_ctx_p)
     ref_assign(&pfont_data(pfont)->u.cid0.GlyphData, &GlyphData);
     ref_assign(&pfont_data(pfont)->u.cid0.DataSource, &DataSource);
     code = define_gs_font((gs_font *)pfont);
+    if (code >= 0)
+       code = gs_notify_register(&pfont->notify_list, notify_remove_font_type9, pfont);
     if (code >= 0) {
-	for (i = 0; i < FDArray_size; ++i)
+	for (i = 0; i < FDArray_size; ++i) {
 	    FDArray[i]->dir = pfont->dir;
+	    FDArray[i]->data.parent = pfont;
+	}
 	return code;
     }
  fail:

@@ -459,7 +459,7 @@ parse_pieces(gs_font_type42 *pfont, gs_glyph glyph, gs_glyph *pieces,
 /* Define the font procedures for a Type 42 font. */
 int
 gs_type42_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matrix *pmat,
-			gx_path *ppath)
+			gx_path *ppath, double sbw[4])
 {
     gs_font_type42 *const pfont = (gs_font_type42 *)font;
     uint glyph_index = (glyph >= GS_MIN_GLYPH_INDEX 

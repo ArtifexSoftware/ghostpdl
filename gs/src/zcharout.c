@@ -78,7 +78,7 @@ int				/*metrics_present*/
 zchar_get_metrics(const gs_font_base * pbfont, const ref * pcnref,
 		  double psbw[4])
 {
-    const ref *pfdict = &pfont_data(pbfont)->dict;
+    const ref *pfdict = &pfont_data(gs_font_parent(pbfont))->dict;
     ref *pmdict;
 
     if (dict_find_string(pfdict, "Metrics", &pmdict) > 0) {
@@ -122,7 +122,7 @@ int
 zchar_get_metrics2(const gs_font_base * pbfont, const ref * pcnref,
 		   double pwv[4])
 {
-    const ref *pfdict = &pfont_data(pbfont)->dict;
+    const ref *pfdict = &pfont_data(gs_font_parent(pbfont))->dict;
     ref *pmdict;
 
     if (dict_find_string(pfdict, "Metrics2", &pmdict) > 0) {
@@ -143,6 +143,17 @@ zchar_get_metrics2(const gs_font_base * pbfont, const ref * pcnref,
 }
 
 /*
+ * Get CDevProc.
+ */
+bool
+zchar_get_CDevProc(const gs_font_base * pbfont, ref **ppcdevproc)
+{
+    const ref *pfdict = &pfont_data(gs_font_parent(pbfont))->dict;
+
+    return dict_find_string(pfdict, "CDevProc", ppcdevproc) > 0;
+}
+
+/*
  * Consult Metrics2 and CDevProc, and call setcachedevice[2].  Return
  * o_push_estack if we had to call a CDevProc, or if we are skipping the
  * rendering process (only getting the metrics).
@@ -156,7 +167,6 @@ zchar_set_cache(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
 		const double Metrics2_sbw_default[4])
 {
     os_ptr op = osp;
-    const ref *pfdict = &pfont_data(pbfont)->dict;
     ref *pcdevproc;
     int have_cdevproc;
     ref rpop;
@@ -204,7 +214,7 @@ zchar_set_cache(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
 
     /* Check for CDevProc or "short-circuiting". */
 
-    have_cdevproc = dict_find_string(pfdict, "CDevProc", &pcdevproc) > 0;
+    have_cdevproc = zchar_get_CDevProc(pbfont, &pcdevproc);
     if (have_cdevproc || zchar_show_width_only(penum)) {
 	int i;
 	op_proc_t zsetc;
