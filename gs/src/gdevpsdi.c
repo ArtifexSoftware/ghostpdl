@@ -123,6 +123,8 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
 	dict = pdip->ACSDict;
     } else if (!lossless)
 	return gs_error_rangecheck; /* Reject the alternative stream. */   
+    if (pdev->version < psdf_version_ll3 && template == &s_zlibE_template)
+	orig_template = template = lossless_template;
     if (dict) /* NB: rather than dereference NULL lets continue on without a dict */
 	gs_c_param_list_read(dict);	/* ensure param list is in read mode */
     if (template == 0)	/* no compression */
