@@ -689,6 +689,7 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 			    return_error(code);
 			goto pushed;
 		    case ce1_setcurrentpoint:
+			NEW(t1_hinter__setcurrentpoint(h, cs0, cs1));
 			ptx = ftx + pcis->vs_offset.x; 
 			pty = fty + pcis->vs_offset.y;
 			cs0 += pcis->adxy.x;
