@@ -309,8 +309,6 @@ make_output_filename(const char *input_filename, const char *extension)
 static int
 write_page_image(jbig2dec_params_t *params, Jbig2Image *image)
 {
-      FILE *out;
-      
       if (!strncmp(params->output_file, "-", 2))
         {
 	  switch (params->output_format) {
