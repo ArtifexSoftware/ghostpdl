@@ -24,8 +24,6 @@
 #include "gsutil.h"			/* for string_match */
 #include "gxfont.h"
 #include "gxfont42.h"
-/* We really shouldn't need the following, but currently they are needed */
-/* for pgs->path and penum->log2_current_scale in px_build_char. */
 #include "gxfixed.h"
 #include "gxchar.h"
 #include "gxpath.h"
