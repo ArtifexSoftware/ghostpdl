@@ -342,7 +342,14 @@ enum {
 	pe_7bit = 4,		/* use 7-bit encoding */
 	pe_entered = 8         /* we have entered PE once */
 };
-#define pe_fbits_shift 3	/* ... + # of fraction bits << this much */
+
+/* convert pe fixed to float accounting for fractional bits */
+private inline floatp
+pe_fixed2float(int32 x, int32 fbits)
+{
+    return ((floatp)x * (1.0 / (1 << fbits)));
+}
+
 private bool pe_args(P3(hpgl_args_t *, int32 *, int));
 int
 hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
@@ -363,6 +370,7 @@ hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	   the down position.  At least HP documented this bug. */
 	hpgl_save_pen_state(pgls, &pgls->g.pen_state, hpgl_pen_relative);
 	pargs->phase |= pe_entered;
+	pgls->g.fraction_bits = 0;
     }
     while ( p < rlimit ) {
 	byte ch = *(pargs->source.ptr = ++p);
@@ -408,9 +416,7 @@ hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
 		    }
 		if ( fbits < -26 || fbits > 26 )
 		    return e_Range;
-		pargs->phase =
-		    (pargs->phase & (-1 << pe_fbits_shift)) +
-		    (fbits << pe_fbits_shift);
+		pgls->g.fraction_bits = fbits;
 	    }
 	    p = pargs->source.ptr;
 	    continue;
@@ -446,13 +452,15 @@ hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	    {
 		int32 xy[2];
 		hpgl_args_t     args;
+		int32 fbits = pgls->g.fraction_bits;
 		if ( !pe_args(pargs, xy, 2) )
 		    break;
 		if ( pargs->phase & pe_absolute )
 		    pgls->g.relative_coords = hpgl_plot_absolute;
 		else
 		    pgls->g.relative_coords = hpgl_plot_relative;
-		hpgl_args_set_real2(&args, (floatp)xy[0], (floatp)xy[1]);
+		hpgl_args_set_real2(&args, pe_fixed2float(xy[0], fbits),
+				           pe_fixed2float(xy[1], fbits));
 		if ( pargs->phase & pe_pen_up )
 		    hpgl_PU(&args, pgls);
 		else
@@ -506,8 +514,7 @@ pe_args(hpgl_args_t *pargs, int32 *pvalues, int count)
 		}
 	      }
 	    pvalues[i] = (value & 1 ? -(value >> 1) : value >> 1);
-	    if_debug2('I', "  [%ld,%d]", (long)pvalues[i],
-		      (int)arith_rshift(pargs->phase, pe_fbits_shift));
+	    if_debug1('I', "  [%ld]", (long)pvalues[i] );
 	  }
 	pargs->source.ptr = p;
 	return true;
