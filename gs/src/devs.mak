@@ -1065,7 +1065,7 @@ pxm_=$(GLOBJ)gdevpbm.$(OBJ) $(GLOBJ)gdevppla.$(OBJ) $(GLOBJ)gdevmpla.$(OBJ)
 
 $(GLOBJ)gdevpbm.$(OBJ) : $(GLSRC)gdevpbm.c $(PDEVH)\
  $(gdevmpla_h) $(gdevplnx_h) $(gdevppla_h)\
- $(gscdefs_h) $(gxgetbit_h) $(gxlum_h)
+ $(gscdefs_h) $(gscspace_h) $(gxgetbit_h) $(gxiparam_h) $(gxlum_h)
 	$(GLCC) $(GLO_)gdevpbm.$(OBJ) $(C_) $(GLSRC)gdevpbm.c
 
 ### Portable Bitmap (PBM, plain or raw format, magic numbers "P1" or "P4")

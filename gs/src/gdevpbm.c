@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 2000 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -20,16 +20,19 @@
 /* Portable Bit/Gray/PixMap drivers */
 #include "gdevprn.h"
 #include "gscdefs.h"
+#include "gscspace.h" /* For pnm_begin_typed_image(..) */
 #include "gxgetbit.h"
 #include "gxlum.h"
+#include "gxiparam.h" /* For pnm_begin_typed_image(..) */
 #include "gdevmpla.h"
 #include "gdevplnx.h"
 #include "gdevppla.h"
 
 /*
  * Thanks are due to Jos Vos (jos@bull.nl) for an earlier P*M driver,
- * on which this one is based, and Nigel Roles (ngr@cotswold.demon.co.uk),
- * for the plan9bm changes.
+ * on which this one is based; to Nigel Roles (ngr@cotswold.demon.co.uk),
+ * for the plan9bm changes; and to Leon Bottou (leonb@research.att.com)
+ * for the color detection code in pnm_begin_typed_image.
  */
 
 /*
@@ -76,6 +79,7 @@ struct gx_device_pbm_s {
 				/* 2 or 3 if colored (PPM only) */
     bool UsePlanarBuffer;	/* 0 if chunky buffer, 1 if planar */
     dev_proc_copy_alpha((*save_copy_alpha));
+    dev_proc_begin_typed_image((*save_begin_typed_image));
 };
 typedef struct gx_device_pbm_s gx_device_pbm;
 
@@ -111,6 +115,7 @@ private dev_proc_map_color_rgb(pkm_map_color_rgb);
 private dev_proc_get_params(ppm_get_params);
 private dev_proc_put_params(ppm_put_params);
 private dev_proc_copy_alpha(pnm_copy_alpha);
+private dev_proc_begin_typed_image(pnm_begin_typed_image);
 
 /* We need to initialize uses_color when opening the device, */
 /* and after each showpage. */
@@ -211,6 +216,10 @@ ppm_set_dev_procs(gx_device * pdev)
 	bdev->save_copy_alpha = dev_proc(pdev, copy_alpha);
 	if (pdev->color_info.depth > 4)
 	    set_dev_proc(pdev, copy_alpha, pnm_copy_alpha);
+    }
+    if (dev_proc(pdev, begin_typed_image) != pnm_begin_typed_image) {
+        bdev->save_begin_typed_image = dev_proc(pdev, begin_typed_image);
+	set_dev_proc(pdev, begin_typed_image, pnm_begin_typed_image);
     }
     if (bdev->color_info.num_components == 4) {
 	if (bdev->color_info.depth == 4) {
@@ -457,6 +466,46 @@ pnm_copy_alpha(gx_device * pdev, const byte * data, int data_x,
     return (*bdev->save_copy_alpha) (pdev, data, data_x, raster, id,
 				     x, y, width, height, color, depth);
 }
+
+/* Begin processing an image, noting whether we may generate some */
+/* non-black/white colors in the process. */
+private int 
+pnm_begin_typed_image(gx_device *dev,
+                      const gs_imager_state *pis, const gs_matrix *pmat,
+                      const gs_image_common_t *pim, const gs_int_rect *prect,
+                      const gx_drawing_color *pdcolor,
+		      const gx_clip_path *pcpath,
+                      gs_memory_t *memory, gx_image_enum_common_t **pinfo)
+{
+    gx_device_pbm * const bdev = (gx_device_pbm *)dev;
+
+    /* Conservatively guesses whether this operation causes color usage 
+       that might not be otherwise captured by ppm_map_color_rgb. */
+    if (pim && pim->type) {
+	switch (pim->type->index) {
+	case 1: case 3: case 4: {
+	    /* Use colorspace to handle image types 1,3,4 */
+	    const gs_pixel_image_t *pim1 = (const gs_pixel_image_t *)pim;
+
+	    if (pim1->ColorSpace) {
+		if (gs_color_space_get_index(pim1->ColorSpace) == gs_color_space_index_DeviceGray) {
+		    if (pim1->BitsPerComponent > 1)
+			bdev->uses_color |= 1;
+		} else 
+		    bdev->uses_color = 2;
+	    }
+	    break;
+	}
+	default:
+	    /* Conservatively handles other image types */
+	    bdev->uses_color = 2;
+	}
+    }
+    /* Forward to saved routine */
+    return (*bdev->save_begin_typed_image)(dev, pis, pmat, pim, prect, 
+					   pdcolor, pcpath, memory, pinfo);
+}
+
 
 /* ------ Internal routines ------ */
 
