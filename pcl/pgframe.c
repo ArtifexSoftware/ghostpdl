@@ -54,9 +54,8 @@ pcl_horiz_pic_frame_size_decipoints(pcl_args_t *pargs, pcl_state_t *pcls)
 	coord size = (coord)(float_arg(pargs) * 10.0); /* --> centipoints */
 	
 	if ( size == 0 )
-	  pcls->g.picture_frame_width = pcls->xfm_state.lp_size.x;
-	else
-	  pcls->g.picture_frame_width = size;
+	  size = pcls->xfm_state.lp_size.x;
+	pcls->g.picture_frame_width = size;
 	pcl_set_picture_frame_side_effects(pcls);
 	return 0;
 }
@@ -64,16 +63,14 @@ pcl_horiz_pic_frame_size_decipoints(pcl_args_t *pargs, pcl_state_t *pcls)
 int /* ESC * c <h_dp> Y */ 
 pcl_vert_pic_frame_size_decipoints(pcl_args_t *pargs, pcl_state_t *pcls)
 {	
-	coord size = (coord)(float_arg(pargs) * 10.0); /* --> centipoints */
+    coord size = (coord)(float_arg(pargs) * 10.0); /* --> centipoints */
 	
-	/* default to pcl logical page */
-	if ( size == 0 )
-	    size = pcls->xfm_state.lp_size.y - inch2coord(1.0);
-	else
-	    pcls->g.picture_frame_height = size;
-	pcls->g.plot_size_vertical_specified = false;
-	pcl_set_picture_frame_side_effects(pcls);
-	return 0;
+    /* default to pcl logical page */
+    if ( size == 0 )
+	size = pcls->xfm_state.lp_size.y - inch2coord(1.0);
+    pcls->g.picture_frame_height = size;
+    pcl_set_picture_frame_side_effects(pcls);
+    return 0;
 }
 
 /*
@@ -104,39 +101,33 @@ pcl_set_pic_frame_anchor_point(
 int /* ESC * c <w_in> K */ 
 pcl_hpgl_plot_horiz_size(pcl_args_t *pargs, pcl_state_t *pcls)
 {	
-	/* convert to centipoints as to match the picture frame */
-  	float size = float_arg(pargs) * 7200.0;
+    /* convert to centipoints as to match the picture frame */
+    float size = float_arg(pargs) * 7200.0;
 	
-	if ( (coord)size == 0 )
-	  {
-	    pcls->g.plot_width = pcls->g.picture_frame_width;
-	    pcls->g.plot_size_horizontal_specified = false;
-	  }
-	else
-	  {
-	    pcls->g.plot_width = (coord)size;
-	    pcls->g.plot_size_horizontal_specified = true;
-	  }
+    if ( (coord)size == 0 ) {
+	size = pcls->g.picture_frame_width;
+	pcls->g.plot_size_horizontal_specified = false;
+    }
+    else
+	pcls->g.plot_size_horizontal_specified = true;
 
-	return 0;
+    pcls->g.plot_width = (coord)size;
+    return 0;
 }
 
 int /* ESC * c <h_in> L */ 
 pcl_hpgl_plot_vert_size(pcl_args_t *pargs, pcl_state_t *pcls)
 {	
-	/* convert to centipoints as to match the picture frame */
-  	float size = float_arg(pargs) * 7200.0;
-	if ( (coord)size == 0 )
-	  {
-	    pcls->g.plot_height = pcls->g.picture_frame_height;
-	    pcls->g.plot_size_vertical_specified = false;
-	  }
-	else
-	  {
-	    pcls->g.plot_height = (coord)size;
-	    pcls->g.plot_size_vertical_specified = true;
-	  }
-	return 0;
+    /* convert to centipoints as to match the picture frame */
+    float size = float_arg(pargs) * 7200.0;
+    if ( (coord)size == 0 ) {
+	size = pcls->g.picture_frame_height;
+	pcls->g.plot_size_vertical_specified = false;
+    }
+    else
+	pcls->g.plot_size_vertical_specified = true;
+    pcls->g.plot_height = (coord)size;
+    return 0;
 }
 
 /* We redefine this command so we can draw the current GL path */
