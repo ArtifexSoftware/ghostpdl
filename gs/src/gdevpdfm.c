@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -657,7 +657,11 @@ pdfmark_adjust_parent_count(pdf_outline_level_t * plevel)
     }
 }
 
-/* Close the current level of the outline tree. */
+/*
+ * Close the current level of the outline tree.  Note that if we are at
+ * the end of the document, some of the levels may be incomplete if the
+ * Count values were incorrect.
+ */
 int
 pdfmark_close_outline(gx_device_pdf * pdev)
 {
@@ -665,9 +669,11 @@ pdfmark_close_outline(gx_device_pdf * pdev)
     pdf_outline_level_t *plevel = &pdev->outline_levels[depth];
     int code;
 
-    code = pdfmark_write_outline(pdev, &plevel->last, 0);
-    if (code < 0)
-	return code;
+    if (plevel->last.id) {	/* check for incomplete tree */
+	code = pdfmark_write_outline(pdev, &plevel->last, 0);
+	if (code < 0)
+	    return code;
+    }
     if (depth > 0) {
 	plevel[-1].last.last_id = plevel->last.id;
 	pdfmark_adjust_parent_count(plevel);
