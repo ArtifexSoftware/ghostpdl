@@ -1,8 +1,10 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
 <title>The Ghostscript library</title>
 <!-- $Id$ -->
 <!-- Originally: lib.txt -->
+<link rel="stylesheet" type="text/css" href="gs.css" title="Ghostscript Style">
 </head>
 
 <body>
@@ -10,11 +12,7 @@
 
 <!-- [1.1 begin headline] ================================================== -->
 
-<table width="100%" border="0">
-<tr><th align="center" bgcolor="#CCCC00"><font size=6>
-The Ghostscript library
-</font>
-</table>
+<h1>The Ghostscript Library</h1>
 
 <!-- [1.1 end headline] ==================================================== -->
 
@@ -47,7 +45,7 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h1><a name="GS_library"></a>The Ghostscript library</h1>
+<h2><a name="GS_library"></a>The Ghostscript library</h2>
 
 <p>
 This document describes the Ghostscript library, a set of procedures
@@ -68,7 +66,7 @@ for less generality.
 
 <hr>
 
-<h1><a name="PS_operator_API"></a>PostScript operator API</h1>
+<h2><a name="PS_operator_API"></a>PostScript operator API</h2>
 
 <p>
 The highest level of the library, which is the one that most clients will
@@ -284,7 +282,7 @@ hidden from clients, also have names beginning with "<b><tt>gs_</tt></b>",
 that is, the prefix, not the implementation, reflects at what level the
 abstraction is made available.
 
-<h2><a name="Patterns"></a>Patterns</h2>
+<h3><a name="Patterns"></a>Patterns</h3>
 
 <p>
 Patterns are the most complicated PostScript language objects that the
@@ -359,7 +357,7 @@ patterns.  Its API is documented in <b><tt>gscolor2.h</tt></b>; its implementati
 <b><tt>gspcolor.c</tt></b>, may be useful as an example of a pattern using a particularly
 simple <b><tt>PaintProc.</tt></b>
 
-<h2><a name="Lower_level_API"></a>Lower-level API</h2>
+<h3><a name="Lower_level_API"></a>Lower-level API</h3>
 
 <p>
 Files named <b><tt>gx*.c</tt></b> implement the lower level of the graphics
@@ -378,7 +376,7 @@ clients.
 
 <hr>
 
-<h1><a name="Full_example"></a>A full example</h1>
+<h2><a name="Full_example"></a>A full example</h2>
 
 <p>
 The file <b><tt>gslib.c</tt></b> in the Ghostscript fileset is a complete
@@ -474,19 +472,18 @@ is finished, it should execute:
 <!-- [3.0 begin visible trailer] =========================================== -->
 <hr>
 
-<font size=2>
-
-<p>Copyright &copy; 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
-
-<p>This file is part of AFPL Ghostscript.  See the
-<a href="Public.htm">Aladdin Free Public License</a> (the "License") for
-full details of the terms of using, copying, modifying, and redistributing
-AFPL Ghostscript.
+<p>
+<small>Copyright &copy; 1996, 1997, 1998 Aladdin Enterprises.
+All rights reserved.</small>
 
 <p>
-Ghostscript version 6.30, 2 October 2000
+<small>This file is part of AFPL Ghostscript.  See the
+<a href="Public.htm">Aladdin Free Public License</a> (the "License") for
+full details of the terms of using, copying, modifying, and redistributing
+AFPL Ghostscript.</small>
 
-</font>
+<p>
+<small>Ghostscript version 6.30, 2 October 2000</small>
 
 <!-- [3.0 end visible trailer] ============================================= -->
 

@@ -1,8 +1,10 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
 <title>How to install Ghostscript</title>
 <!-- $Id$ -->
 <!-- Originally: install.txt -->
+<link rel="stylesheet" type="text/css" href="gs.css" title="Ghostscript Style">
 </head>
 
 <body>
@@ -10,11 +12,7 @@
 
 <!-- [1.1 begin headline] ================================================== -->
 
-<table width="100%" border="0">
-<tr><th align="center" bgcolor="#CCCC00"><font size=6>
-How to install Ghostscript
-</font>
-</table>
+<h1>How to install Ghostscript</h1>
 
 <!-- [1.1 end headline] ==================================================== -->
 
@@ -50,7 +48,7 @@ code</a>".
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h1><a name="Overview"></a>Overview of how to install Ghostscript</h1>
+<h2><a name="Overview"></a>Overview of how to install Ghostscript</h2>
 
 <p>
 You must have three things to run Ghostscript:
@@ -91,7 +89,7 @@ files.
 
 <hr>
 
-<h1><a name="Install_Unix"></a>Installing Ghostscript on Unix</h1>
+<h2><a name="Install_Unix"></a>Installing Ghostscript on Unix</h2>
 
 <p>
 You need the file <b><tt>gs</tt></b> to run Ghostscript on Unix, and
@@ -120,7 +118,7 @@ Helvetica-Bold, Helvetica-BoldOblique, Helvetica-Oblique, Symbol, Times-Bold,
 Times-BoldItalic, Times-Italic, Times-Roman, ZapfDingbats
 </blockquote>
 
-<h2><a name="Install_Linux"></a>Additional notes on Linux</h2>
+<h3><a name="Install_Linux"></a>Additional notes on Linux</h3>
 
 <p>
 Red Hat Linux 6 and later installs the Ghostscript base 35 fonts in
@@ -142,7 +140,7 @@ Ghostscript and takes no responsibility for RPMs created by others.
 
 <hr>
 
-<h1><a name="Install_Windows"></a>Installing Ghostscript on MS Windows</h1>
+<h2><a name="Install_Windows"></a>Installing Ghostscript on MS Windows</h2>
 
 <p>
 Aladdin Enterprises usually distributes Ghostscript releases for 
@@ -167,7 +165,7 @@ where ### is the release number (e.g., 403 for Ghostscript 4.03,
 Only one of <b><tt>gs###w32.exe</tt></b> or <b><tt>gs###w32.zip</tt></b>
 is required. 
 
-<h2><a name="Windows4"></a>Windows 95/98 and NT 4</h2>
+<h3><a name="Windows4"></a>Windows 95/98 and NT 4</h3>
 
 <p>
 To install a self-extracting Ghostscript archive on Windows 95/98 or
@@ -188,11 +186,11 @@ Information on GSview is available from:
 
 <blockquote>
 <a
-href="http://www.cs.wisc.edu/~ghost/gsview/">http://www.cs.wisc.edu/~ghost
-/gsview/</a>
+href="http://www.cs.wisc.edu/~ghost/gsview/" 
+class="offsite">http://www.cs.wisc.edu/~ghost/gsview/</a>
 </blockquote>
 
-<h2><a name="Windows3"></a>Win32s (Windows 3.1) and Windows NT 3.5</h2>
+<h3><a name="Windows3"></a>Win32s (Windows 3.1) and Windows NT 3.5</h3>
 
 <p>
 To install Ghostscript on Win32s (partial 32-bit environment under MS
@@ -229,7 +227,7 @@ If you place Ghostscript in a different directory, you will need to set
 <b><tt>GS_LIB</tt></b> or use the command line option <b><tt>-I</tt></b>.
 See <a href="Use.htm">Use.htm</a> for details.
 
-<h2><a name="General_Windows"></a>General Windows configuration</h2>
+<h3><a name="General_Windows"></a>General Windows configuration</h3>
 
 <p>
 The archive includes files in these subdirectories:
@@ -360,7 +358,7 @@ The Ghostscript setup program will create registry values
 for the environment variables <b><tt>GS_LIB</tt></b> 
 and <b><tt>GS_DLL</tt></b>.
 
-<h2><a name="Uninstall_Windows"></a>Uninstalling Ghostscript on Windows</h2>
+<h3><a name="Uninstall_Windows"></a>Uninstalling Ghostscript on Windows</h3>
 
 <p>
 To uninstall Ghostscript, use the Control Panel, Add/Remove Programs and
@@ -368,7 +366,7 @@ remove "Aladdin Ghostscript #.##" and "Aladdin Ghostscript Fonts".
 
 <hr>
 
-<h1><a name="Install_VMS"></a>Installing Ghostscript on OpenVMS</h1>
+<h2><a name="Install_VMS"></a>Installing Ghostscript on OpenVMS</h2>
 
 <p>
 You need the file <b><tt>GS.EXE</tt></b> to run Ghostscript on OpenVMS, and
@@ -416,12 +414,9 @@ If you have DECWindows/Motif installed, you may wish to replace the
 <b><tt>FONTMAP.GS</tt></b> file with <b><tt>FONTMAP.VMS</tt></b>.  Read the
 comment at the beginning of the latter file for more information.
 
-<!-- [2.0 end contents] ==================================================== -->
-
-<!-- [3.0 begin visible trailer] =========================================== -->
 <hr>
 
-<h1><a name="Install_DOS"></a>Installing Ghostscript on DOS</h1>
+<h2><a name="Install_DOS"></a>Installing Ghostscript on DOS</h2>
 
 <p>
 You need the files <b><tt>GS386.EXE</tt></b> and <b><tt>DOS4GW.EXE</tt></b>
@@ -452,7 +447,7 @@ Times-BoldItalic, Times-Italic, Times-Roman, ZapfDingbats
 
 <hr>
 
-<h1><a name="Install_OS2"></a>Installing Ghostscript on OS/2 2.x</h1>
+<h2><a name="Install_OS2"></a>Installing Ghostscript on OS/2 2.x</h2>
 
 <p>
 The Ghostscript OS/2 implementation is designed for OS/2 2.1 or later.  A
@@ -486,7 +481,8 @@ can find the package by using a search engine or an ftp lookup service such
 as the one at
 
 <blockquote>
-<a href="http://ftpsearch.lycos.com/">http://ftpsearch.lycos.com/</a>
+<a href="http://ftpsearch.lycos.com/"
+class="offset">http://ftpsearch.lycos.com/</a>
 </blockquote>
 
 <p>
@@ -563,21 +559,23 @@ For printer devices, output goes to the default queue.  To print to a
 specified queue, use <b><tt>-sOutputFile=\\spool\NullLPT1</tt></b>, where
 <b><tt>NullLPT1</tt></b> is the queue's physical name.
 
+<!-- [2.0 end contents] ==================================================== -->
+
+<!-- [3.0 begin visible trailer] =========================================== -->
 <hr>
 
-<font size=2>
-
-<p>Copyright &copy; 1996, 2000 Aladdin Enterprises.  All rights reserved.
-
-<p>This file is part of AFPL Ghostscript.  See the
-<a href="Public.htm">Aladdin Free Public License</a> (the "License") for
-full details of the terms of using, copying, modifying, and redistributing
-AFPL Ghostscript.
+<p>
+<small>Copyright &copy; 1996, 2000 Aladdin Enterprises.  All rights
+reserved.</small>
 
 <p>
-Ghostscript version 6.30, 2 October 2000
+<small>This file is part of AFPL Ghostscript.  See the
+<a href="Public.htm">Aladdin Free Public License</a> (the "License") for
+full details of the terms of using, copying, modifying, and redistributing
+AFPL Ghostscript.</small>
 
-</font>
+<p>
+<small>Ghostscript version 6.30, 2 October 2000</small>
 
 <!-- [3.0 end visible trailer] ============================================= -->
 

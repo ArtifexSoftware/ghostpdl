@@ -1,8 +1,11 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
 <title>Ghostscript and the PostScript language</title>
 <!-- $Id$ -->
 <!-- Originally: language.txt -->
+<link rel="stylesheet" type="text/css" href="gs.css" title="Ghostscript Style">
 </head>
 
 <body>
@@ -10,11 +13,7 @@
 
 <!-- [1.1 begin headline] ================================================== -->
 
-<table width="100%" border="0">
-<tr><th align="center" bgcolor="#CCCC00"><font size=6>
-Ghostscript and the PostScript language
-</font>
-</table>
+<h1>Ghostscript and the PostScript language</h1>
 
 <!-- [1.1 end headline] ==================================================== -->
 
@@ -82,7 +81,7 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h1><a name="Capabilities"></a>Ghostscript's capabilities in relation to PostScript</h1>
+<h2><a name="Capabilities"></a>Ghostscript's capabilities in relation to PostScript</h2>
 
 <p>
 The Ghostscript interpreter, except as noted below, is intended to execute
@@ -195,7 +194,7 @@ are not in the PostScript language defined by Adobe.
 
 <hr>
 
-<h1><a name="Implementation_limits"></a>Implementation limits</h1>
+<h2><a name="Implementation_limits"></a>Implementation limits</h2>
 
 <p>
 The implementation limits show here correspond to those in Tables B.1 and
@@ -204,7 +203,7 @@ Where Ghostscript's limits are different from those of Adobe's
 implementations (as shown in the Third Edition), Adobe's limits are also
 shown.
 
-<h2><a name="Architectural_limits"></a>Architectural limits</h2>
+<h3><a name="Architectural_limits"></a>Architectural limits</h3>
 
 <blockquote><table cellpadding=0 cellspacing=0>
 <tr><th colspan=7 bgcolor="#CCCC00"><hr><font size="+1">Architectural limits (corresponds to Adobe table B.1)</font><hr>
@@ -286,7 +285,7 @@ shown.
 * The limit on the length of a file name is 128 characters if the name
 starts with a %...% IODevice designation, or 124 characters if it does not.
 
-<h2><a name="Typical_memory_limits"></a>Typical memory limits in LanguageLevel 1</h2>
+<h3><a name="Typical_memory_limits"></a>Typical memory limits in LanguageLevel 1</h3>
 
 <blockquote><table cellpadding=0 cellspacing=0>
 
@@ -380,7 +379,7 @@ starts with a %...% IODevice designation, or 124 characters if it does not.
 	<td>3300
 </table></blockquote>
 
-<h2><a name="VM_consumption"></a>Other differences in VM consumption</h2>
+<h3><a name="VM_consumption"></a>Other differences in VM consumption</h3>
 
 <p>
 Packed array elements occupy either 2 bytes or 8 bytes.  The average
@@ -389,11 +388,11 @@ space for the string.
 
 <hr>
 
-<h1><a name="Additional_operators"></a>Additional operators in Ghostscript</h1>
+<h2><a name="Additional_operators"></a>Additional operators in Ghostscript</h2>
 
-<h2><a name="Graphics_and_text"></a>Graphics and text operators</h2>
+<h3><a name="Graphics_and_text"></a>Graphics and text operators</h3>
 
-<h3><a name="Transparency"></a>Transparency</h3>
+<h4><a name="Transparency"></a>Transparency</h4>
 
 <p>
 Ghostscript provides a set of operators for implementing the transparency
@@ -406,7 +405,8 @@ maintains separate alpha and mask values for opacity and shape, rather than
 a single value with a Boolean that says whether it represents opacity or
 shape.  EVERYTHING IN THIS SECTION IS SUBJECT TO CHANGE.
 
-<h4><a name="Transparency_graphics_state_operators">Graphics state operators</h4>
+<h5><a name="Transparency_graphics_state_operators"></a>Graphics state
+operators</h5>
 
 <dl>
 <dt><b><tt>&lt;modename&gt; .setblendmode -</tt></b>
@@ -453,7 +453,8 @@ The initial value of the text knockout flag is <b><tt>true</tt></b>.
 <dd>Returns the current text knockout flag.
 </dl>
 
-<h4><a name="Transparency_rendering_stack_operators">Rendering stack operators</h4>
+<h5><a name="Transparency_rendering_stack_operators"></a>Rendering stack
+operators</h5>
 
 <p>
 The interpreter state is extended to include a (per-context) rendering stack
@@ -533,7 +534,7 @@ the graphics state.
 everywhere.
 </dl>
 
-<h4><a name="Transparency_ImageType">New ImageType</h4>
+<h5><a name="Transparency_ImageType"></a>New ImageType</h5>
 
 <p>
 The transparency extension defines a new ImageType 103, similar to ImageType
@@ -562,7 +563,7 @@ not the <b><tt>DataDict</tt></b>, because each mask has its own
 
 </ul>
 
-<h3><a name="Graphics_state"></a>Other graphics state operators</h3>
+<h4><a name="Graphics_state"></a>Other graphics state operators</h4>
 
 <dl>
 <dt><b><tt>&lt;bool&gt; .setaccuratecurves -</tt></b>
@@ -673,7 +674,7 @@ mode is 0.
 <dd>Returns the current overprint mode.
 </dl>
 
-<h3><a name="Path"></a>Path operators</h3>
+<h4><a name="Path"></a>Path operators</h4>
 
 <dl>
 <dt><b><tt>- .dashpath -</tt></b>
@@ -692,7 +693,7 @@ only if the <b><tt>dps</tt></b> or <b><tt>level2</tt></b> option was
 selected when Ghostscript was built.
 </dl>
 
-<h3><a name="Painting"></a>Painting operators</h3>
+<h4><a name="Painting"></a>Painting operators</h4>
 
 <p>
 Ghostscript supports an experimental extension of the PostScript imaging
@@ -773,7 +774,7 @@ of the "PCL 5 Color Technical Reference Manual",
 <a href="http://www.hp.com/cposupport/printers/support_doc/bpl01354.html">Hewlett-Packard
 Manual Part No. 5961-0635</a>.
 
-<h3><a name="Character"></a>Character operators</h3>
+<h4><a name="Character"></a>Character operators</h4>
 
 <dl>
 <dt><b><tt>&lt;string&gt; &lt;bool&gt; .charboxpath -</tt></b>
@@ -844,9 +845,9 @@ debugging.
 <dd>Provides the Type 1 implementation of <b><tt>BuildGlyph</tt></b>.
 </dl>
 
-<h2><a name="Other"></a>Other operators</h2>
+<h3><a name="Other"></a>Other operators</h3>
 
-<h3><a name="Mathematical"></a>Mathematical operators</h3>
+<h4><a name="Mathematical"></a>Mathematical operators</h4>
 
 <dl>
 <dt><b><tt>&lt;number&gt; arccos &lt;number&gt;</tt></b>
@@ -858,7 +859,7 @@ debugging.
 <dd>Computes the arc sine of a number between -1 and 1.
 </dl>
 
-<h3><a name="String"></a>String operators</h3>
+<h4><a name="String"></a>String operators</h4>
 
 <dl>
 <dt><b><tt>&lt;state&gt; &lt;fromString&gt; &lt;toString&gt; .type1encrypt &lt;newState&gt; &lt;toSubstring&gt;</tt></b>
@@ -878,7 +879,7 @@ Adobe Type 1 fonts, writing the result into <b><tt>toString</tt></b>.
 Other specifications are as for <b><tt>type1encrypt</tt></b>.
 </dl>
 
-<h3><a name="Relational"></a>Relational operators</h3>
+<h4><a name="Relational"></a>Relational operators</h4>
 
 <dl>
 <dt><b><tt>&lt;number|string&gt; &lt;number|string&gt; max &lt;number|string&gt;</tt></b>
@@ -890,7 +891,7 @@ Other specifications are as for <b><tt>type1encrypt</tt></b>.
 <dd>Returns the smaller of two numbers or strings.
 </dl>
 
-<h3><a name="File"></a>File operators</h3>
+<h4><a name="File"></a>File operators</h4>
 
 <dl>
 <dt><b><tt>&lt;string&gt; findlibfile &lt;foundstring&gt; &lt;file&gt; true</tt></b>
@@ -917,7 +918,7 @@ addition to a subset of those defined in the Adobe documentation:
 This is supported only on operating systems that provide
 <b><tt>popen</tt></b> (primarily Unix systems, and not all of those).
 
-<h3><a name="Virtual_memory"></a>Virtual memory operators</h3>
+<h4><a name="Virtual_memory"></a>Virtual memory operators</h4>
 
 <dl>
 <dt><b><tt>&lt;save&gt; .forgetsave -</tt></b>
@@ -925,7 +926,7 @@ This is supported only on operating systems that provide
 happened.
 </dl>
 
-<h3><a name="Miscellaneous"></a>Miscellaneous operators</h3>
+<h4><a name="Miscellaneous"></a>Miscellaneous operators</h4>
 
 <dl>
 <dt><b><tt>&lt;string&gt; getenv &lt;string&gt; true</tt></b>
@@ -967,7 +968,7 @@ otherwise.
 <dd>Returns the error string for the most recent operating system error.
 </dl>
 
-<h3><a name="Device"></a>Device operators</h3>
+<h4><a name="Device"></a>Device operators</h4>
 
 <dl>
 <dt><b><tt>&lt;device&gt; copydevice &lt;device&gt;</tt></b>
@@ -1102,9 +1103,9 @@ show up on the screen; on printers, has no effect.
 
 <hr>
 
-<h1><a name="Filters"></a>Filters</h1>
+<h2><a name="Filters"></a>Filters</h2>
 
-<h2><a name="Standard_filters"></a>Standard filters</h2>
+<h3><a name="Standard_filters"></a>Standard filters</h3>
 
 <p>
 In its usual configuration, Ghostscript supports all the standard PostScript
@@ -1153,7 +1154,7 @@ multiple of <b>N</b> bytes; the decoding filter pads each scan line to a
 multiple of <b>N</b> bytes.
 </dl>
 
-<h2><a name="Non_standard_filters"></a>Non-standard filters</h2>
+<h3><a name="Non_standard_filters"></a>Non-standard filters</h3>
 
 <p>
 In addition to the standard PostScript LanguageLevel 3 filters, Ghostscript
@@ -1294,7 +1295,7 @@ the PostScript <b><tt>Flate</tt></b> filters are actually a combination of
 this filter with an optional predictor filter.
 </dl>
 
-<h2><a name="Unstable_filters"></a>Unstable filters</h2>
+<h3><a name="Unstable_filters"></a>Unstable filters</h3>
 
 <p>
 Some versions of Ghostscript may also support other non-standard filters for
@@ -1357,7 +1358,7 @@ process.
 
 <hr>
 
-<h1><a name="Device_parameters"></a>Device parameters</h1>
+<h2><a name="Device_parameters"></a>Device parameters</h2>
 
 Ghostscript supports the concept of device parameters for all devices, not
 just page devices.  (For non-page devices, these are accessible through
@@ -1500,7 +1501,7 @@ use by viewing programs such as GSview.
 
 <hr>
 
-<h1><a name="User_parameters"></a>User parameters</h1>
+<h2><a name="User_parameters"></a>User parameters</h2>
 
 Ghostscript supports the following non-standard user parameters:
 
@@ -1522,7 +1523,7 @@ comment other than a DSC comment).  The operands are the same as for
 
 <hr>
 
-<h1><a name="Miscellaneous_additions"></a>Miscellaneous additions</h1>
+<h2><a name="Miscellaneous_additions"></a>Miscellaneous additions</h2>
 
 <b><tt>run</tt></b> can take either a string or a file as its argument.  In
 the latter case, it just runs the file, closing it at the end, and trapping
@@ -1533,19 +1534,18 @@ errors just as for the string case.
 <!-- [3.0 begin visible trailer] =========================================== -->
 <hr>
 
-<font size=2>
-
-<p>Copyright &copy; 1996, 2000 Aladdin Enterprises.  All rights reserved.
-
-<p>This file is part of AFPL Ghostscript.  See the
-<a href="Public.htm">Aladdin Free Public License</a> (the "License") for
-full details of the terms of using, copying, modifying, and redistributing
-AFPL Ghostscript.
+<p>
+<small>Copyright &copy; 1996, 2000 Aladdin Enterprises.  All rights
+reserved.</small>
 
 <p>
-Ghostscript version 6.30, 2 October 2000
+<small>This file is part of AFPL Ghostscript.  See the
+<a href="Public.htm">Aladdin Free Public License</a> (the "License") for
+full details of the terms of using, copying, modifying, and redistributing
+AFPL Ghostscript.</small>
 
-</font>
+<p>
+<small>Ghostscript version 6.30, 2 October 2000</small>
 
 <!-- [3.0 end visible trailer] ============================================= -->
 

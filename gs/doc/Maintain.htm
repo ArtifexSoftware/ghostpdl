@@ -1,7 +1,9 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
 <title>AFPL Ghostscript maintenance procedures</title>
 <!-- $Id$ -->
+<link rel="stylesheet" type="text/css" href="gs.css" title="Ghostscript Style">
 </head>
 
 <body>
@@ -9,11 +11,7 @@
 
 <!-- [1.1 begin headline] ================================================== -->
 
-<table width="100%" border="0">
-<tr><th align="center" bgcolor="#CCCC00"><font size=6>
-AFPL Ghostscript maintenance procedures
-</font>
-</table>
+<h1>AFPL Ghostscript maintenance procedures</h1>
 
 <!-- [1.1 end headline] ==================================================== -->
 
@@ -27,6 +25,7 @@ AFPL Ghostscript maintenance procedures
 <ul>
 <li><a href="#Uploading_test_data">Uploading test data</a>
 </ul>
+<li><a href="#CVS">Rules of CVS commits</a>
 </ul></blockquote>
 
 <!-- [1.2 end table of contents] =========================================== -->
@@ -45,7 +44,7 @@ Ghostscript</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h1><a name="Introduction"></a>Introduction</h1>
+<h2><a name="Introduction"></a>Introduction</h2>
 
 <p>
 This document describes various maintenance procedures associated with AFPL
@@ -55,9 +54,9 @@ members of the ghostscript group on SourceForge.
 
 <hr>
 
-<h1><a name="Problem_reporting"></a>Problem reporting</h1>
+<h2><a name="Problem_reporting"></a>Problem reporting</h2>
 
-<h2><a name="#Uploading_test_data"></a>Uploading test data</h2>
+<h3><a name="#Uploading_test_data"></a>Uploading test data</h3>
 
 <p>
 SourceForge currently provides no supported method for associating test data
@@ -113,10 +112,11 @@ cvs3 commit
 
 <hr>
 
-<h1><a name="CVS">Rules for CVS Commits</a></h1>
+<h2><a name="CVS"></a>Rules for CVS Commits</h2>
 
 <p>
-<a href="http://sourceforge.net/cvs/?group_id=1897">Sourceforge
+<a href="http://sourceforge.net/cvs/?group_id=1897"
+class="offsite">Sourceforge
 CVS</a> is the primary repository for Ghostscript code changes.  This
 section describes a few rules intended to make life easier
 for people working with this code base.
@@ -130,11 +130,14 @@ GS_6_5.
 
 <p>
 A concise and useful document for working with CVS branches is Jeff
-Semke's <a href="http://www.psc.edu/~semke/cvs_branches.html">CVS
+Semke's <a href="http://www.psc.edu/~semke/cvs_branches.html"
+class="offsite">CVS
 Branch and Tag Primer</a> (or <a
-href="http://www.ghostscript.com/cvs_branches.html">mirror</a>). A
+href="http://www.ghostscript.com/cvs_branches.html"
+class="offsite">mirror</a>). A
 somewhat more detailed explanation is the <a
-href="http://www.loria.fr/~molli/cvs/doc/cvs_5.html">Branching and
+href="http://www.loria.fr/~molli/cvs/doc/cvs_5.html"
+class="offsite">Branching and
 merging</a> section from the CVS documentation by Pascal Molli.
 
 <p>
@@ -198,19 +201,18 @@ include your snailmail address for a hardcopy assignment form.
 <!-- [3.0 begin visible trailer] =========================================== -->
 <hr>
 
-<font size=2>
-
-<p>Copyright &copy; 2000 artofcode LLC.  All rights reserved.
-
-<p>This file is part of AFPL Ghostscript.  See the <a
-href="Public.htm">Aladdin Free Public License</a> (the "License") for full
-details of the terms of using, copying, modifying, and redistributing
-AFPL Ghostscript.
+<p>
+<small>Copyright &copy; 2000 artofcode LLC.
+All rights reserved.</small>
 
 <p>
-Ghostscript version 6.30, 2 October 2000
+<small>This file is part of AFPL Ghostscript.  See the <a
+href="Public.htm">Aladdin Free Public License</a> (the "License") for full
+details of the terms of using, copying, modifying, and redistributing
+AFPL Ghostscript.</small>
 
-</font>
+<p>
+<small>Ghostscript version 6.30, 2 October 2000</small>
 
 <!-- [3.0 end visible trailer] ============================================= -->
 

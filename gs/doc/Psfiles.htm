@@ -1,8 +1,10 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
 <title>.ps files distributed with Ghostscript</title>
 <!-- $Id$ -->
 <!-- Originally: psfiles.txt -->
+<link rel="stylesheet" type="text/css" href="gs.css" title="Ghostscript Style">
 </head>
 
 <body>
@@ -10,11 +12,7 @@
 
 <!-- [1.1 begin headline] ================================================== -->
 
-<table width="100%" border="0">
-<tr><th align="center" bgcolor="#CCCC00"><font size=6>
-<b><tt>.ps</tt></b> files distributed with Ghostscript
-</font>
-</table>
+<h1>Postscript files distributed with Ghostscript</h1>
 
 <!-- [1.1 end headline] ==================================================== -->
 
@@ -48,7 +46,7 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h1><a name="General"></a>Generally used system files</h1>
+<h2><a name="General"></a>Generally used system files</h2>
 
 <p>
 These files are found in the <b><tt>lib</tt></b> subdirectory of
@@ -56,24 +54,32 @@ the Ghostscript source distribution.
 
 <dl>
 <dt><tt>gs_*_e.ps</tt>
-<dd>These files define the Encodings known to Ghostscript.  All of them
-except <b><tt>gs_std_e.ps</tt></b> and <b><tt>gs_il1_e.ps</tt></b> are
-loaded only if referred to.
-<ul>
+<dd><p>
+These files define the Encodings known to Ghostscript.  All of
+them except <b><tt>gs_std_e.ps</tt></b> and <b><tt>gs_il1_e.ps</tt></b>
+are loaded only if referred to.
 
-<li>PostScript Encodings:
+<dl>
+
+<dt>
+PostScript Encodings:
+<dd>
 <a href="../lib/gs_ce_e.ps"><tt>gs_ce_e.ps</tt></a>,
 <a href="../lib/gs_il1_e.ps"><tt>gs_il1_e.ps</tt></a>,
 <a href="../lib/gs_std_e.ps"><tt>gs_std_e.ps</tt></a>,
 <a href="../lib/gs_sym_e.ps"><tt>gs_sym_e.ps</tt></a>.
 
-<li>PDF Encodings:
+<dt>
+PDF Encodings:
+<dd>
 <a href="../lib/gs_mex_e.ps"><tt>gs_mex_e.ps</tt></a>,
 <a href="../lib/gs_mro_e.ps"><tt>gs_mro_e.ps</tt></a>,
 <a href="../lib/gs_pdf_e.ps"><tt>gs_pdf_e.ps</tt></a>,
 <a href="../lib/gs_wan_e.ps"><tt>gs_wan_e.ps</tt></a>.
 
-<li>Non-standard Encodings:
+<dt>
+Non-standard Encodings:
+<dd>
 <a href="../lib/gs_dbt_e.ps"><tt>gs_dbt_e.ps</tt></a>,
 <a href="../lib/gs_il2_e.ps"><tt>gs_il2_e.ps</tt></a>,
 <a href="../lib/gs_ksb_e.ps"><tt>gs_ksb_e.ps</tt></a>,
@@ -81,13 +87,15 @@ loaded only if referred to.
 <a href="../lib/gs_wl2_e.ps"><tt>gs_wl2_e.ps</tt></a>,
 <a href="../lib/gs_wl5_e.ps"><tt>gs_wl5_e.ps</tt></a>.
 
-<li>Pseudo-encodings:
+<dt>
+Pseudo-encodings:
+<dd>
 <a href="../lib/gs_css_e.ps"><tt>gs_css_e.ps</tt></a>,
 <a href="../lib/gs_lgo_e.ps"><tt>gs_lgo_e.ps</tt></a>,
 <a href="../lib/gs_lgx_e.ps"><tt>gs_lgx_e.ps</tt></a>,
 <a href="../lib/gs_mgl_e.ps"><tt>gs_mgl_e.ps</tt></a>.
 
-</ul>
+</dl>
 </dl>
 
 <dl>
@@ -206,7 +214,7 @@ includes Type 1 font capability (which it normally does).
 
 <hr>
 
-<h1><a name="Obscure"></a>More obscure system files</h1>
+<h2><a name="Obscure"></a>More obscure system files</h2>
 
 <p>
 These files are found in the <b><tt>lib</tt></b> subdirectory of
@@ -279,7 +287,7 @@ included automatically in any configuration.
 
 <hr>
 
-<h1><a name="PDF_specific"></a>PDF-specific system files</h1>
+<h2><a name="PDF_specific"></a>PDF-specific system files</h2>
 
 <p>
 These files are found in the <b><tt>lib</tt></b> subdirectory of
@@ -334,7 +342,7 @@ but potentially useful for other kinds of PDF-processing utilities.
 
 <hr>
 
-<h1><a name="DPS_specific"></a>Display PostScript-specific system files</h1>
+<h2><a name="DPS_specific"></a>Display PostScript-specific system files</h2>
 
 <p>
 These files are found in the <b><tt>lib</tt></b> subdirectory of
@@ -356,7 +364,7 @@ Display PostScript and Level 2 features.
 
 <hr>
 
-<h1><a name="Art"></a>Art and examples</h1>
+<h2><a name="Art"></a>Art and examples</h2>
 
 <p>
 These files are found in the <b><tt>examples</tt></b> subdirectory of
@@ -442,7 +450,7 @@ quality of text rendering.
 
 <hr>
 
-<h1><a name="Utilities"></a>Utilities</h1>
+<h2><a name="Utilities"></a>Utilities</h2>
 
 <p>
 For more information on these utility programs, see the comments at the
@@ -659,7 +667,7 @@ information.
 
 <hr>
 
-<h1><a name="Development_tools"></a>Development tools</h1>
+<h2><a name="Development_tools"></a>Development tools</h2>
 
 <p>
 These files are found in the <b><tt>lib</tt></b> subdirectory of
@@ -753,7 +761,7 @@ standard Ghostscript fonts.
 
 <hr>
 
-<h1><a name="Miscellany"></a>Odds and ends</h1>
+<h2><a name="Miscellany"></a>Odds and ends</h2>
 
 <p>
 These files are found in the <b><tt>lib</tt></b> subdirectory of
@@ -789,19 +797,18 @@ the Ghostscript source distribution.
 <!-- [3.0 begin visible trailer] =========================================== -->
 <hr>
 
-<font size=2>
-
-<p>Copyright &copy; 1996, 2000 Aladdin Enterprises.  All rights reserved.
-
-<p>This file is part of AFPL Ghostscript.  See the
-<a href="Public.htm">Aladdin Free Public License</a> (the "License") for
-full details of the terms of using, copying, modifying, and redistributing
-AFPL Ghostscript.
+<p>
+<small>Copyright &copy; 1996, 2000 Aladdin Enterprises.  All rights
+reserved.</small>
 
 <p>
-Ghostscript version 6.30, 2 October 2000
+<small>This file is part of AFPL Ghostscript.  See the
+<a href="Public.htm">Aladdin Free Public License</a> (the "License") for
+full details of the terms of using, copying, modifying, and redistributing
+AFPL Ghostscript.</small>
 
-</font>
+<p>
+<small>Ghostscript version 6.30, 2 October 2000</small>
 
 <!-- [3.0 end visible trailer] ============================================= -->
 

@@ -1,7 +1,9 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
 <title>Ghostscript projects</title>
 <!-- $Id$ -->
+<link rel="stylesheet" type="text/css" href="gs.css" title="Ghostscript Style">
 </head>
 
 <body>
@@ -9,11 +11,7 @@
 
 <!-- [1.1 begin headline] ================================================== -->
 
-<table width="100%" border="0">
-<tr><th align="center" bgcolor="#CCCC00"><font size=6>
-Ghostscript projects seeking developers
-</font>
-</table>
+<h1>Ghostscript projects seeking developers</h1>
 
 <!-- [1.1 end headline] ==================================================== -->
 
@@ -21,24 +19,15 @@ Ghostscript projects seeking developers
 
 <h2>Table of contents</h2>
 
-<blockquote><ul>
+<ul>
 <li><a href="#Platforms">Platforms</a>
-<li><a href="#Drivers">Drivers</a>
-<ul>
-<li><a href="#Driver_architecture">Architecture</a>
+<li><a href="#Driver_architecture">Driver architecture</a>
 <li><a href="#Specific_drivers">Specific drivers</a>
+<li><a href="#Graphics_functionality">Graphics functionality</a>
+<li><a href="#Performance">Performance</a>
+<li><a href="#Other_functionality">Other functionality</a>
+<li><a href="#Other_implementation">Implementation improvements</a>
 </ul>
-<li><a href="#Graphics">Graphics</a>
-<ul>
-<li><a href="#Graphics_functionality">Functionality</a>
-<li><a href="#Graphics_performance">Performance</a>
-</ul>
-<li><a href="#Other_topics">Other topics</a>
-<ul>
-<li><a href="#Other_functionality">Functionality</a>
-<li><a href="#Other_implementation">Implementation</a>
-</ul>
-</ul></blockquote>
 
 <!-- [1.2 end table of contents] =========================================== -->
 
@@ -63,7 +52,7 @@ href="mailto:raph@artofcode.com">contact us</a>.  Additional comments on
 implementation approaches or project goals are in <I>italic type like
 this</I>.
 
-<h1><a name="Platforms"></a>Additional platforms</h1>
+<h2><a name="Platforms"></a>Additional platforms</h2>
 
 <h3>DOS, Windows and OS/2 builds using gcc.</h3>
 
@@ -77,7 +66,8 @@ happy to include this in our list of supported platforms and to distribute
 the makefiles.  If interested, please consult
 
 <blockquote>
-<a href="http://www.leo.org/pub/comp/os/os2/leo/gnu/emx+gcc/">http://www.leo.org/pub/comp/os/os2/leo/gnu/emx+gcc/</a>
+<a href="http://www.leo.org/pub/comp/os/os2/leo/gnu/emx+gcc/" 
+class="offsite">http://www.leo.org/pub/comp/os/os2/leo/gnu/emx+gcc/</a>
 </blockquote>
 
 <h3>Windows driver using Ghostscript as a language monitor.</h3>
@@ -99,9 +89,9 @@ browser, but not as a plug-in; the latter would integrate it more closely
 with the browser.  We aren't sure what doing this would involve; we've also
 heard by rumor that it's already been done.
 
-<h1><a name="Drivers"></a>Drivers</h1>
+<hr>
 
-<h2><a name="Driver_architecture"></a>Architecture</h2>
+<h2><a name="Driver_architecture"></a>Driver Architecture</h2>
 
 <h3>Improved multi-threaded rendering support.</h3>
 
@@ -294,9 +284,9 @@ is difficult.  <I>This would probably involve extending the library APIs for
 images so that they could pass a stream, possibly including filters, instead
 of the (fully decoded) data rows.</I>
 
-<h1><a name="Graphics"></a>Graphics</h1>
+<hr>
 
-<h2><a name="Graphics_functionality"></a>Functionality</h2>
+<h2><a name="Graphics_functionality"></a>Graphics functionality</h2>
 
 <h3>Support for 64-bit colors on 64-bit platforms.</h3>
 
@@ -373,7 +363,8 @@ these facilities so that they can easily interface to the Even-Toned
 Screening algorithms from artofcode (Raph Levien), to the extent that these
 will be Open Source.</I>
 
-<h3>Improve, or generalize, linearization for stochastic threshold data.</h3>
+<h3>Improve, or generalize, linearization for stochastic threshold
+data.</h3>
 
 <p>
 The Ghostscript distribution includes a stochastic threshold array.  This
@@ -401,7 +392,8 @@ the functions are very non-linear (which we have actually seen in practice).
 severely non-linear, since interpreting the function definition will almost
 always be much slower than interpolating in the table.</I>
 
-<h3>Add optional cubic interpolation to RenderTable and other table lookup.</h3>
+<h3>Add optional cubic interpolation to RenderTable and other table
+lookup.</h3>
 
 <p>
 Currently, if a CIE rendering dictionary uses a lookup table for the final
@@ -419,7 +411,9 @@ doesn't use it.  We expect that the more extensive compositing and alpha
 capabilities of SVG will find their way into PDF (and probably PostScript as
 well) in the course of 2000 and 2001, and we will need to implement them.
 
-<h2><a name="Graphics_performance"></a>Performance</h2>
+<hr>
+
+<h2><a name="Performance"></a>Performance</h2>
 
 <h3>Change band list logic to defer halftoning until rendering.</h3>
 
@@ -515,9 +509,9 @@ clients, using <b><tt>gs_notify_all(list, NULL)</tt></b> and then
 could also be used to improve the output of the PCL XL driver and possibly
 the X and PCL5 drivers.</I>
 
-<h1><a name="Other_topics"></a>Other topics</h1>
+<hr>
 
-<h2><a name="Other_functionality"></a>Functionality</h2>
+<h2><a name="Other_functionality"></a>Other functionality</h2>
 
 <h3>OpenStep (Display PostScript + NeXT) extensions to Ghostscript.</h3>
 
@@ -588,7 +582,7 @@ might be useful to have a program that can repair them.  <I>We think this
 should probably be done as a separate program, possibly in PostScript,
 similar to Ghostscript's PDF linearizer.</I>
 
-<h2><a name="Other_implementation"></a>Implementation</h2>
+<h2><a name="Other_implementation"></a>Implementation improvements</h2>
 
 <h3>Fully re-entrant code.</h3>
 
@@ -608,20 +602,18 @@ ones re-entrant should really be up to the driver author.</I>
 <!-- [3.0 begin visible trailer] =========================================== -->
 <hr>
 
-<font size=2>
-
-<p>Copyright &copy; 2000 Aladdin Enterprises.  All rights
-reserved.
-
-<p>This file is part of AFPL Ghostscript.  See the
-<a href="Public.htm">Aladdin Free Public License</a> (the "License") for
-full details of the terms of using, copying, modifying, and redistributing
-AFPL Ghostscript.
+<p>
+<small>Copyright &copy; 2000 Aladdin Enterprises.  All rights
+reserved.</small>
 
 <p>
-Ghostscript version 6.30, 2 October 2000
+<small>This file is part of AFPL Ghostscript.  See the
+<a href="Public.htm">Aladdin Free Public License</a> (the "License") for
+full details of the terms of using, copying, modifying, and redistributing
+AFPL Ghostscript.</small>
 
-</font>
+<p>
+<small>Ghostscript version 6.30, 2 October 2000</small>
 
 <!-- [3.0 end visible trailer] ============================================= -->
 

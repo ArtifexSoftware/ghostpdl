@@ -1,8 +1,10 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
 <title>Overview of Ghostscript</title>
 <!-- $Id$ -->
 <!-- Originally: README -->
+<link rel="stylesheet" type="text/css" href="gs.css" title="Ghostscript Style">
 </head>
 
 <body>
@@ -10,11 +12,7 @@
 
 <!-- [1.1 begin headline] ================================================== -->
 
-<table width="100%" border="0">
-<tr><th align="center" bgcolor="#CCCC00"><font size=6>
-Overview of Ghostscript
-</font>
-</table>
+<h1>Overview of Ghostscript</h1>
 
 <!-- [1.1 end headline] ==================================================== -->
 
@@ -62,10 +60,8 @@ systems).
 <li><a href="#Theme_roadmap">Document roadmap by theme</a>
 <ul>
 <li><a href="#New_users">What should I read if I'm a new user?</a>
-<ul>
 <li><a href="#Two_Ghostscripts">AFPL Ghostscript and GNU Ghostscript</a>
 <li><a href="#Before_building">Before building Ghostscript</a>
-</ul>
 <li><a href="#Not_a_new_user">What should I read if I'm not a new user?</a>
 <li><a href="#Developer">What if I'm a developer?</a>
 <li><a href="#Writer">What if I'm writing documentation?</a>
@@ -145,9 +141,9 @@ PostScript, and PDF reference documentation</a>
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h1><a name="Theme_roadmap"></a>Document roadmap by theme</h1>
+<h2><a name="Theme_roadmap"></a>Document roadmap by theme</h2>
 
-<h2><a name="New_users"></a>What should I read if I'm a new user?</h2>
+<h3><a name="New_users"></a>What should I read if I'm a new user?</h3>
 
 <p>
 A new user of Ghostscript should begin by reading the material
@@ -318,9 +314,9 @@ Ghostscript's HTML-based documentation.
 
 <hr>
 
-<h1><a name="Web_presence"></a>Presence on the World Wide Web</h1>
+<h2><a name="Web_presence"></a>Presence on the World Wide Web</h2>
 
-<h2><a name="Web_home_page"></a>Ghostscript's home page</h2>
+<h3><a name="Web_home_page"></a>Ghostscript's home page</h3>
 
 <p>
 Ghostscript has a home page on the World Wide Web with helpful information
@@ -329,7 +325,8 @@ and workarounds for the current AFPL Ghostscript release (in the
 "Obtaining" file for that release):
 
 <blockquote>
-<a href="http://www.cs.wisc.edu/~ghost/">http://www.cs.wisc.edu/~ghost/</a>
+<a href="http://www.cs.wisc.edu/~ghost/" 
+class="offsite">http://www.cs.wisc.edu/~ghost/</a>
 </blockquote>
 
 <p>
@@ -339,29 +336,40 @@ More material about Ghostscript can be found at
 <a href="http://www.ghostscript.com/">http://www.ghostscript.com/</a>
 </blockquote>
 
-<h2><a name="Adobe_documentation"></a>Adobe PostScript, Encapsulated
-PostScript, and PDF reference documentation</h2>
+<h3><a name="Adobe_documentation"></a>Adobe PostScript, Encapsulated
+PostScript, and PDF reference documentation</h3>
 
 <p>
 Adobe makes a wealth of
-<a href="http://partners.adobe.com/asn/developer/technotes.html">
+<a href="http://partners.adobe.com/asn/developer/technotes.html"
+class="offsite">
 technical documentation</a> available over the Web, including the
-<a href="http://partners.adobe.com/asn/developer/PDFS/TN/PLRM.pdf">
+<a href="http://partners.adobe.com/asn/developer/PDFS/TN/PLRM.pdf"
+class="offsite">
 PostScript Language Reference Manual (Third Edition)</a>; the
-<a href="http://partners.adobe.com/asn/developer/PDFS/TN/5002.EPSF_Spec.pdf">
+<a
+href="http://partners.adobe.com/asn/developer/PDFS/TN/5002.EPSF_Spec.pdf" 
+class="offsite">
 Encapsulated PostScript</a> (EPS) Format Specification version 3, including
 <a href="#Ps2epsi">Encapsulated PostScript Interchange (EPSI)</a>
 format; the
-<a href="http://partners.adobe.com/asn/developer/acrosdk/DOCS/pdfspec.pdf">
+<a
+href="http://partners.adobe.com/asn/developer/acrosdk/DOCS/pdfspec.pdf"
+class="offsite">
 PDF 1.3 specification</a>; and the
-<a href="http://partners.adobe.com/asn/developer/acrosdk/DOCS/pdfmark.pdf">
+<a
+href="http://partners.adobe.com/asn/developer/acrosdk/DOCS/pdfmark.pdf"
+class="offsite">
 pdfmark</a> and
-<a href="http://partners.adobe.com/asn/developer/acrosdk/DOCS/distparm.pdf">
+<a
+href="http://partners.adobe.com/asn/developer/acrosdk/DOCS/distparm.pdf"
+class="offsite">
 Acrobat Distiller parameters</a> documentation.  Some of these documents
-are also available at <a href="ftp://ftp.adobe.com/pub/adobe/">Adobe's ftp
+are also available at <a href="ftp://ftp.adobe.com/pub/adobe/"
+class="offsite">Adobe's ftp
 site</a>, but not necessarily under the same filenames.
 
-<h2><a name="Web_other"></a>Other material on the WWW</h2>
+<h3><a name="Web_other"></a>Other material on the WWW</h3>
 
 <p>
 Much other material about Ghostscript is available on the World Wide Web,
@@ -373,19 +381,21 @@ There is a good manual for Ghostscript available in PDF form,
 in English and German (and soon in Japanese), at:
 
 <blockquote>
-<a href="http://www.pdflib.com">http://www.pdflib.com/gsmanual</a>
+<a href="http://www.pdflib.com"
+class="offsite">http://www.pdflib.com/gsmanual</a>
 </blockquote>
 
 <p>
 There is a translation of the Ghostscript 'man' pages into Czech at:
 
 <blockquote>
-<a href="http://www.volny.cz/rebus/ghostscript">http://www.volny.cz/rebus/ghostscript</a>
+<a href="http://www.volny.cz/rebus/ghostscript" 
+class="offsite">http://www.volny.cz/rebus/ghostscript</a>
 </blockquote>
 
 <hr>
 
-<h1><a name="Ordered_roadmap"></a>Which document contains what?</h1>
+<h2><a name="Ordered_roadmap"></a>Which document contains what?</h2>
 
 <p> Here is the list in alphabetic order of Ghostscript documentation,
 with explanations of the contents.
@@ -635,19 +645,18 @@ font-rendering mechanism, for developers.
 <!-- [3.0 begin visible trailer] =========================================== -->
 <hr>
 
-<font size=2>
-
-<p>Copyright &copy; 1996, 2000 Aladdin Enterprises.  All rights reserved.
-
-<p>This file is part of AFPL Ghostscript.  See the
-<a href="Public.htm">Aladdin Free Public License</a> (the "License") for
-full details of the terms of using, copying, modifying, and redistributing
-AFPL Ghostscript.
+<p>
+<small>Copyright &copy; 1996, 2000 Aladdin Enterprises.  All rights
+reserved.</small>
 
 <p>
-Ghostscript version 6.30, 2 October 2000
+<small>This file is part of AFPL Ghostscript.  See the
+<a href="Public.htm">Aladdin Free Public License</a> (the "License") for
+full details of the terms of using, copying, modifying, and redistributing
+AFPL Ghostscript.</small>
 
-</font>
+<p>
+<small>Ghostscript version 6.30, 2 October 2000</small>
 
 <!-- [3.0 end visible trailer] ============================================= -->
 

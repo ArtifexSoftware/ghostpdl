@@ -1,7 +1,9 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
 <title>Ghostscript PostScript coding guidelines</title>
 <!-- $Id$ -->
+<link rel="stylesheet" type="text/css" href="gs.css" title="Ghostscript Style">
 </head>
 
 <body>
@@ -9,11 +11,7 @@
 
 <!-- [1.1 begin headline] ================================================== -->
 
-<table width="100%" border="0">
-<tr><th align="center" bgcolor="#CCCC00"><font size=6>
-Ghostscript PostScript coding guidelines
-</font>
-</table>
+<h1>Ghostscript PostScript coding guidelines</h1>
 
 <!-- [1.1 end headline] ==================================================== -->
 
@@ -23,8 +21,6 @@ Ghostscript PostScript coding guidelines
 
 <blockquote><ul>
 <li><a href="#Summary">Summary of the coding guidelines</a>
-<ul>
-</ul>
 <li><a href="#Introduction">Introduction</a>
 <li><a href="#PS_features">Use of PostScript language features</a>
 <ul>
@@ -64,7 +60,7 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h1><a name="Summary"></a>Summary of the coding guidelines</h1>
+<h2><a name="Summary"></a>Summary of the coding guidelines</h2>
 
 <ul>
 
@@ -102,7 +98,7 @@ once.
 
 <hr>
 
-<h1><a name="Introduction"></a>Introduction</h1>
+<h2><a name="Introduction"></a>Introduction</h2>
 
 <p>
 The many rules that Ghostscript's code follows almost everywhere are meant
@@ -113,9 +109,9 @@ it's OK to break it.
 
 <hr>
 
-<h1><a name="PS_features"></a>Use of PostScript language features</h1>
+<h2><a name="PS_features"></a>Use of PostScript language features</h2>
 
-<h2><a name="Restrictions"></a>Restrictions</h2>
+<h3><a name="Restrictions"></a>Restrictions</h3>
 
 <p>
 If you need to store a value temporarily, don't write into a literal in the
@@ -132,7 +128,7 @@ Instead, allocate storage for it:
 1 string dup 0 4 -1 roll put show
 </pre></blockquote>
 
-<h2><a name="Protection"></a>Protection</h2>
+<h3><a name="Protection"></a>Protection</h3>
 
 <p>
 If an object is never supposed to change, use <b><tt>readonly</tt></b> to
@@ -150,9 +146,9 @@ initialization: system code that uses them should always use
 <b><tt>bind</tt></b> and <b><tt>odef</tt></b> (or
 <b><tt>executeonly</tt></b>) to make uses of them inaccessible as well.
 
-<h2><a name="Standard_constructions"></a>Standard constructions</h2>
+<h3><a name="Standard_constructions"></a>Standard constructions</h3>
 
-<h3>Multi-way conditionals</h3>
+<h4>Multi-way conditionals</h4>
 
 <p>
 If you write a block of code with more than about 3 exit points, the usual
@@ -203,7 +199,7 @@ see the structure visually.  As an alternative, you can do it this way:
 <p>
 Don't forget the final exit, to prevent the loop from actually looping.
 
-<h3>Switches</h3>
+<h4>Switches</h4>
 
 <p>
 Use a dictionary or an array of procedures to implement a 'switch', rather
@@ -245,7 +241,7 @@ dup /a eq {
 
 <hr>
 
-<h1><a name="File_structuring"></a>File structuring</h1>
+<h2><a name="File_structuring"></a>File structuring</h2>
 
 <p>
 Every code file should start with comments containing
@@ -268,7 +264,7 @@ update the copyright year and change the file name.
 
 <hr>
 
-<h1><a name="Commenting"></a>Commenting</h1>
+<h2><a name="Commenting"></a>Commenting</h2>
 
 <p>
 If a file has well-defined functional sections, put a comment at the
@@ -324,9 +320,9 @@ comment at the head of the procedure or file respectively.
 
 <hr>
 
-<h1><a name="Formatting"></a>Formatting</h1>
+<h2><a name="Formatting"></a>Formatting</h2>
 
-<h2><a name="Indentation"></a>Indentation</h2>
+<h3><a name="Indentation"></a>Indentation</h3>
 
 <p>
 Indent 2 spaces per indentation level.  You may use tabs at the left margin
@@ -378,7 +374,7 @@ and might consider switching some time in the future.  If you have strong
 feelings either way, please make your opinion known to
 <b><tt>gs-devel@ghostscript.com</tt></b>.
 
-<h2><a name="Spaces"></a>Spaces</h2>
+<h3><a name="Spaces"></a>Spaces</h3>
 
 <p>
 Always put spaces between two adjacent tokens, even if this isn't strictly
@@ -397,7 +393,7 @@ not
 
 <hr>
 
-<h1><a name="Naming"></a>Naming</h1>
+<h2><a name="Naming"></a>Naming</h2>
 
 <p>
 All names should consist only of letters and digits, possibly with an
@@ -421,9 +417,10 @@ codified usage (****** WE NEED A REFERENCE FOR THIS ******).
 
 <hr>
 
-<h1><a name="Miscellany"></a>Miscellany</h1>
+<h2><a name="Miscellany"></a>Miscellany</h2>
 
-<h2><a name="Non_standard_operators"></a>Some useful non-standard operators</h2>
+<h3><a name="Non_standard_operators"></a>Some useful non-standard
+operators</h3>
 
 <dl>
 
@@ -463,7 +460,7 @@ operators in that the stacks will appear to be unchanged if an error occurs.
 
 </dl>
 
-<h2><a name="Useful_procedures"></a>Some useful procedures</h2>
+<h3><a name="Useful_procedures"></a>Some useful procedures</h3>
 
 <dl>
 
@@ -474,7 +471,7 @@ This does exactly what the interpreter does when an error occurs.
 
 </dl>
 
-<h2><a name="Other"></a>Other</h2>
+<h3><a name="Other"></a>Other</h3>
 
 <p>
 If you can avoid it, don't allocate objects (strings, arrays, dictionaries,
@@ -494,19 +491,18 @@ that could be made into a procedure.
 <!-- [3.0 begin visible trailer] =========================================== -->
 <hr>
 
-<font size=2>
-
-<p>Copyright &copy; 2000 Aladdin Enterprises.  All rights reserved.
-
-<p>This file is part of AFPL Ghostscript.  See the <a
-href="Public.htm">Aladdin Free Public License</a> (the "License") for full
-details of the terms of using, copying, modifying, and redistributing AFPL
-Ghostscript.
+<p>
+<small>Copyright &copy; 2000 Aladdin Enterprises.  All rights
+reserved.</small>
 
 <p>
-Ghostscript version 6.60, xx xxxxxx 2000
+<small>This file is part of AFPL Ghostscript.  See the <a
+href="Public.htm">Aladdin Free Public License</a> (the "License") for full
+details of the terms of using, copying, modifying, and redistributing AFPL
+Ghostscript.</small>
 
-</font>
+<p>
+<small>Ghostscript version 6.60, November 2000</small>
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
