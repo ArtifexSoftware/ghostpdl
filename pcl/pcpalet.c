@@ -991,8 +991,10 @@ palette_do_copy(
         pcl_palette_init_from(psaved->ppalet, pcs->ppalet);
     else if ((operation & pcl_copy_after) != 0) {
 	pcl_id_t    key;
+	/* fix the compiler warning resulting from overuse of const */
+	pcl_state_t *pcs2 = (pcl_state_t *)pcs;
         id_set_value(key, psaved->sel_palette_id);
-        pl_dict_put((pcl_state_t *)&pcs->palette_store, id_key(key), 2, psaved->ppalet);
+        pl_dict_put(&pcs2->palette_store, id_key(key), 2, psaved->ppalet);
     }
     return 0;
 }
