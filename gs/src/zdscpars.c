@@ -325,7 +325,7 @@ zparse_dsc_comments(i_ctx_t *i_ctx_p)
     uint ssize, comment_code, code;
     char dsc_buffer[MAX_DSC_MSG_SIZE + 2];
     const cmdlist_t *pCmdList = DSCcmdlist;
-    const char **pBadList = BadCmdlist;
+    const char * const *pBadList = BadCmdlist;
     ref * pvalue;
     CDSC * dsc_data;
 
