@@ -4749,10 +4749,14 @@ static int nInstrCount=0;
     TDefRecord*  def;
     PCallRecord  call;
 
-    if (CUR.opcode > 255) {
+#   if 0     /* The condition below appears always false 
+		due to limited range of data type
+		- skip it to quiet a compiler warning. */
+    if (CUR.opcode > sizeof(CUR.IDefPtr) / sizeof(CUR.IDefPtr[0])) {
 	CUR.error = TT_Err_Invalid_Opcode;
 	return;
     }
+#   endif
     i = CUR.IDefPtr[(Byte)CUR.opcode];
 
     if (i >= CUR.numIDefs) 

@@ -250,7 +250,6 @@ int
 gx_devn_reduce_colored_halftone(gx_device_color *pdevc, gx_device *dev)
 {
     int planes = pdevc->colors.colored.plane_mask;
-    int gray_index = dev->color_info.gray_index;
     int num_colors = dev->color_info.num_components;
     uint max_value[GS_CLIENT_COLOR_MAX_COMPONENTS];
     uint b[GX_DEVICE_COLOR_MAX_COMPONENTS];

@@ -464,7 +464,8 @@ row:
 	    ss->prev[0] = s0;
 	    for (; count >= colors; count -= colors)
 		for (ci = 0; ci < colors; ++ci) {
-		    ti = ((*++p << 8) + *++p) - ss->prev[ci];
+		    ti = *++p << 8;
+		    ti = (ti + *++p) - ss->prev[ci];
 		    *++q = ti >> 8; *++q = ti & 0xff;
 		    ss->prev[ci] = ti;
 		}
@@ -480,9 +481,12 @@ row:
 	case cDecode + cBits16 + 2:
 	    ss->prev[0] = s0;
 	    for (; count >= colors; count -= colors)
-		for (ci = 0; ci < colors; ++ci)
-		    (ss->prev[ci] += (*++p >> 8) + *++p, *++q = ss->prev[ci] >> 8,
-			*++q = ss->prev[ci] & 0xff);
+		for (ci = 0; ci < colors; ++ci) {
+		    ti = *++p >> 8;
+		    ss->prev[ci] += ti + *++p;
+		    *++q = ss->prev[ci] >> 8;
+		    *++q = ss->prev[ci] & 0xff;
+		}
 	    s0 = ss->prev[0];
     dec16:   /* Ignore leftover bytes. */
 	    break;
