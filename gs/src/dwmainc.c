@@ -310,6 +310,8 @@ int main(int argc, char *argv[])
     char dformat[64];
 
     _setmode(fileno(stdin), _O_BINARY);
+    _setmode(fileno(stdout), _O_BINARY);
+    _setmode(fileno(stderr), _O_BINARY);
 
     hwndforeground = GetForegroundWindow();	/* assume this is ours */
     memset(buf, 0, sizeof(buf));

@@ -221,10 +221,13 @@ gs_main_interpret(gs_main_instance *minst, ref * pref, int user_errors,
 		const char *str = (const char *)(esp[0].value.const_bytes); 
 		int count = esp[0].tas.rsize;
 		int rcode = 0;
-		if (minst->stdout_fn)
-		    rcode = (*minst->stdout_fn)(minst->caller_handle, str, count);
-		else 
-		    fwrite(str, 1, count, minst->fstdout);
+		if (str != NULL) {
+		    if (minst->stdout_fn)
+			rcode = (*minst->stdout_fn)(minst->caller_handle, 
+			    str, count);
+		    else 
+			fwrite(str, 1, count, minst->fstdout);
+		}
 		if (rcode < 0)
 		    return_error(e_ioerror);
 	    }
@@ -245,10 +248,13 @@ gs_main_interpret(gs_main_instance *minst, ref * pref, int user_errors,
 		const char *str = (const char *)(esp[0].value.const_bytes); 
 		int count = esp[0].tas.rsize;
 		int rcode = 0;
-		if (minst->stderr_fn)
-		    rcode = (*minst->stderr_fn)(minst->caller_handle, str, count);
-		else 
-		    fwrite(str, 1, count, minst->fstderr);
+		if (str != NULL) {
+		    if (minst->stderr_fn)
+			rcode = (*minst->stderr_fn)(minst->caller_handle, 
+			    str, count);
+		    else 
+			fwrite(str, 1, count, minst->fstderr);
+		}
 		if (rcode < 0)
 		    return_error(e_ioerror);
 	    }
