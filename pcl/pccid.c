@@ -245,6 +245,18 @@ check_cid_hdr(
         break;
     }
 
+    /*
+     * Strange HP-ism: for device independent color spaces, bits per primary
+     * is always 8. For the direct by plane/pixel cases, this will already be
+     * the case, but the indexed by pixel/plane cases may require modification.
+     */
+    if ( (pcid->encoding < pcl_penc_direct_by_plane) &&
+         (pcid->cspace > pcl_cspace_CMY)               ) {
+        pcid->bits_per_primary[0] = 8;
+        pcid->bits_per_primary[1] = 8;
+        pcid->bits_per_primary[2] = 8;
+    }
+
     return 0;
 }
 
