@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -48,7 +48,7 @@
 #define PRN_MIN_MEMORY_LEFT_SMALL 32000
 /* Define parameters for machines with great big hulking RAMs.... */
 #define PRN_MAX_BITMAP_LARGE 10000000L
-#define PRN_BUFFER_SPACE_LARGE 1000000L
+#define PRN_BUFFER_SPACE_LARGE 4000000L
 #define PRN_MIN_MEMORY_LEFT_LARGE 500000L
 /* Define parameters valid on all machines. */
 #define PRN_MIN_BUFFER_SPACE 10000	/* give up if less than this */
