@@ -20,6 +20,7 @@
 #include "string_.h"
 #include "gx.h"
 #include "gserrors.h"
+#include "gsutil.h"
 #include "gdevpdfx.h"
 #include "gdevpdtf.h"
 #include "gdevpdti.h"
@@ -36,13 +37,14 @@ struct pdf_char_proc_s {
     pdf_font_resource_t *font;
     pdf_char_proc_t *char_next;	/* next char_proc for same font */
     int y_offset;		/* of character (0,0) */
-    byte char_code;
+    gs_char char_code;
+    gs_const_string char_name;
 };
 
 /* The descriptor is public for pdf_resource_type_structs. */
-gs_public_st_suffix_add2(st_pdf_char_proc, pdf_char_proc_t,
+gs_public_st_suffix_add2_string1(st_pdf_char_proc, pdf_char_proc_t,
   "pdf_char_proc_t", pdf_char_proc_enum_ptrs, pdf_char_proc_reloc_ptrs,
-  st_pdf_resource, font, char_next);
+  st_pdf_resource, font, char_next, char_name);
 
 /* Define the state structure for tracking bitmap fonts. */
 /*typedef struct pdf_bitmap_fonts_s pdf_bitmap_fonts_t;*/
@@ -62,8 +64,6 @@ pdf_char_proc_id(const pdf_char_proc_t *pcp)
     return pdf_resource_id((const pdf_resource_t *)pcp);
 }
 
-private int write_contents_bitmap(gx_device_pdf *, pdf_font_resource_t *);
-
 /* Assign a code for a char_proc. */
 private int
 assign_char_code(gx_device_pdf * pdev, int width)
@@ -80,13 +80,19 @@ assign_char_code(gx_device_pdf * pdev, int width)
 	/* Start a new synthesized font. */
 	char *pc;
 
-	code = pdf_font_type3_alloc(pdev, &pdfont, write_contents_bitmap);
+	code = pdf_font_type3_alloc(pdev, &pdfont, pdf_write_contents_bitmap);
 	if (code < 0)
 	    return code;
+        pdfont->u.simple.s.type3.bitmap_font = true;
 	if (pbfs->open_font == 0)
 	    pdfont->rname[0] = 0;
 	else
 	    strcpy(pdfont->rname, pbfs->open_font->rname);
+	pdfont->u.simple.s.type3.FontBBox.p.x = 0;
+	pdfont->u.simple.s.type3.FontBBox.p.y = 0;
+	pdfont->u.simple.s.type3.FontBBox.q.x = 1000;
+	pdfont->u.simple.s.type3.FontBBox.q.y = 1000;
+	gs_make_identity(&pdfont->u.simple.s.type3.FontMatrix);
 	/*
 	 * We "increment" the font name as a radix-26 "number".
 	 * This cannot possibly overflow.
@@ -114,32 +120,54 @@ assign_char_code(gx_device_pdf * pdev, int width)
     return c;
 }
 
-/* Write the contents of a Type 3 bitmap font resource. */
-private int
-write_contents_bitmap(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
+/* Write the contents of a Type 3 bitmap or vector font resource. */
+int
+pdf_write_contents_bitmap(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 {
     stream *s = pdev->strm;
+    const pdf_char_proc_t *pcp;
+    long diff_id = 0;
+    int code, i;
 
-    pprintld1(s, "/Encoding %ld 0 R/CharProcs",
-	      pdev->text->bitmap_fonts->bitmap_encoding_id);
-
-    /* Write the CharProcs. */
-    {
-	const pdf_char_proc_t *pcp;
-
-	stream_puts(s, "<<");
-	/* Write real characters. */
-	for (pcp = pdfont->u.simple.s.type3.char_procs; pcp;
-	     pcp = pcp->char_next
-	     ) {
-	    pprintld2(s, "/a%ld\n%ld 0 R", (long)pcp->char_code,
-		      pdf_char_proc_id(pcp));
-	}
-	stream_puts(s, ">>");
+    if (pdfont->u.simple.s.type3.bitmap_font)
+	diff_id = pdev->text->bitmap_fonts->bitmap_encoding_id;
+    else {
+	/* See comment in pdf_write_encoding. */
+        diff_id = pdf_obj_ref(pdev);
     }
-
-    stream_puts(s, "/FontMatrix[1 0 0 1 0 0]");
-    return pdf_finish_write_contents_type3(pdev, pdfont);
+    code = pdf_write_encoding_ref(pdev, pdfont, diff_id);
+    if (code < 0)
+	return code;
+    stream_puts(s, "/CharProcs <<");
+    /* Write real characters. */
+    for (pcp = pdfont->u.simple.s.type3.char_procs; pcp;
+	 pcp = pcp->char_next
+	 ) {
+	if (pdfont->u.simple.s.type3.bitmap_font)
+	    pprintld2(s, "/a%ld %ld 0 R\n", (long)pcp->char_code,
+		      pdf_char_proc_id(pcp));
+	else {
+	    pdf_put_name(pdev, pcp->char_name.data, pcp->char_name.size);
+	    pprintld1(s, " %ld 0 R\n", pdf_char_proc_id(pcp));
+	}
+    }
+    stream_puts(s, ">>");
+    pprintg6(s, "/FontMatrix[%g %g %g %g %g %g]", 
+	    (float)pdfont->u.simple.s.type3.FontMatrix.xx,
+	    (float)pdfont->u.simple.s.type3.FontMatrix.xy,
+	    (float)pdfont->u.simple.s.type3.FontMatrix.yx,
+	    (float)pdfont->u.simple.s.type3.FontMatrix.yy,
+	    (float)pdfont->u.simple.s.type3.FontMatrix.tx,
+	    (float)pdfont->u.simple.s.type3.FontMatrix.ty);
+    code = pdf_finish_write_contents_type3(pdev, pdfont);
+    if (code < 0)
+	return code;
+    if (!pdfont->u.simple.s.type3.bitmap_font && diff_id > 0) {
+	code = pdf_write_encoding(pdev, pdfont, diff_id, 0);
+	if (code < 0)
+	    return code;
+    }
+    return 0;
 }
 
 /* ---------------- Public ---------------- */
@@ -199,39 +227,31 @@ pdf_char_image_y_offset(const gx_device_pdf *pdev, int x, int y, int h)
     return off;
 }
 
-/* Begin a CharProc for a synthesized (bitmap) font. */
-int
-pdf_begin_char_proc(gx_device_pdf * pdev, int w, int h, int x_width,
-		    int y_offset, gs_id id, pdf_char_proc_t ** ppcp,
-		    pdf_stream_position_t * ppos)
+/* Begin a CharProc for a synthesized font. */
+private int
+pdf_begin_char_proc_gerneric(gx_device_pdf * pdev, pdf_font_resource_t *pdfont,
+		    gs_id id, gs_char char_code, gs_const_string *gnstr,
+		    pdf_char_proc_t ** ppcp, pdf_stream_position_t * ppos)
 {
     pdf_resource_t *pres;
     pdf_char_proc_t *pcp;
-    int char_code = assign_char_code(pdev, x_width);
-    pdf_bitmap_fonts_t *const pbfs = pdev->text->bitmap_fonts;
-    pdf_font_resource_t *font = pbfs->open_font; /* Type 3 */
+    /* fixme : obsolete naming. It's not exactly a bitmap font. Should be text->type3_fonts. */
     int code;
 
-    if (char_code < 0)
-	return char_code;
     code = pdf_begin_resource(pdev, resourceCharProc, id, &pres);
     if (code < 0)
 	return code;
     pcp = (pdf_char_proc_t *) pres;
-    pcp->font = font;
-    pcp->char_next = font->u.simple.s.type3.char_procs;
-    font->u.simple.s.type3.char_procs = pcp;
+    pcp->font = pdfont;
+    pcp->char_next = pdfont->u.simple.s.type3.char_procs;
+    pdfont->u.simple.s.type3.char_procs = pcp;
     pcp->char_code = char_code;
-    pcp->y_offset = y_offset;
-    font->u.simple.s.type3.FontBBox.p.y =
-	min(font->u.simple.s.type3.FontBBox.p.y, y_offset);
-    font->u.simple.s.type3.FontBBox.q.x =
-	max(font->u.simple.s.type3.FontBBox.q.x, w);
-    font->u.simple.s.type3.FontBBox.q.y =
-	max(font->u.simple.s.type3.FontBBox.q.y, y_offset + h);
-    font->u.simple.s.type3.max_y_offset =
-	max(font->u.simple.s.type3.max_y_offset, h + (h >> 2));
-    *ppcp = pcp;
+    if (gnstr == 0) {
+	pcp->char_name.data = 0; 
+	pcp->char_name.size = 0;
+    } else
+	pcp->char_name = *gnstr;
+
     {
 	stream *s = pdev->strm;
 
@@ -245,6 +265,32 @@ pdf_begin_char_proc(gx_device_pdf * pdev, int w, int h, int x_width,
 	stream_puts(s, "<</Length       >>stream\n");
 	ppos->start_pos = stell(s);
     }
+    *ppcp = pcp;
+    return 0;
+}
+
+/* Begin a CharProc for a synthesized (bitmap) font. */
+int
+pdf_begin_char_proc(gx_device_pdf * pdev, int w, int h, int x_width,
+		    int y_offset, gs_id id, pdf_char_proc_t ** ppcp,
+		    pdf_stream_position_t * ppos)
+{
+    int char_code = assign_char_code(pdev, x_width);
+    pdf_bitmap_fonts_t *const pbfs = pdev->text->bitmap_fonts; 
+    pdf_font_resource_t *font = pbfs->open_font; /* Type 3 */
+    int code = pdf_begin_char_proc_gerneric(pdev, font, id, char_code, NULL, ppcp, ppos);
+    
+    if (code < 0)
+	return code;
+    (*ppcp)->y_offset = y_offset;
+    font->u.simple.s.type3.FontBBox.p.y =
+	min(font->u.simple.s.type3.FontBBox.p.y, y_offset);
+    font->u.simple.s.type3.FontBBox.q.x =
+	max(font->u.simple.s.type3.FontBBox.q.x, w);
+    font->u.simple.s.type3.FontBBox.q.y =
+	max(font->u.simple.s.type3.FontBBox.q.y, y_offset + h);
+    font->u.simple.s.type3.max_y_offset =
+	max(font->u.simple.s.type3.max_y_offset, h + (h >> 2));
     return 0;
 }
 
@@ -319,4 +365,101 @@ pdf_write_bitmap_fonts_Encoding(gx_device_pdf *pdev)
 	pdf_end_separate(pdev);
     }
     return 0;
+}
+
+/*
+ * Install charproc accumulator for a Type 3 font.
+ */
+int
+pdf_install_charproc_accum(gx_device_pdf *pdev, gs_font *font, const double *pw, 
+		gs_text_cache_control_t control, gs_char ch, gs_const_string *gnstr, 
+		gs_id *pid, pdf_stream_position_t *charproc_pos)
+{
+    pdf_char_proc_t *pcp;
+    gs_id id = gs_next_ids(1);
+    pdf_font_resource_t *pdfont;
+    byte *glyph_usage;
+    double *real_widths;
+    int char_cache_size, width_cache_size;
+    int code;
+
+    code = pdf_attached_font_resource(pdev, font, &pdfont,
+		&glyph_usage, &real_widths, &char_cache_size, &width_cache_size);
+    if (code < 0)
+	return code;
+    if (ch != GS_NO_CHAR) {
+	int i;
+	gs_glyph glyph0 = font->procs.encode_char(font, ch, GLYPH_SPACE_NAME);
+
+	if (ch >= char_cache_size || ch >= width_cache_size)
+	    return_error(gs_error_unregistered);
+	real_widths[ch * 2    ] = pdfont->Widths[ch] = pw[font->WMode ? 6 : 0];
+	real_widths[ch * 2 + 1] = pw[font->WMode ? 7 : 1];
+	glyph_usage[ch / 8] |= 0x80 >> (ch & 7);
+	pdfont->used[ch >> 3] |= 0x80 >> (ch & 7);
+	if (pdfont->u.simple.v != NULL && font->WMode) {
+	    pdfont->u.simple.v[ch].x = pw[8];
+	    pdfont->u.simple.v[ch].y = pw[9];
+	}
+	for (i = 0; i < 256; i++) {
+	    gs_glyph glyph = font->procs.encode_char(font, i, GLYPH_SPACE_NAME);
+
+	    if (glyph == glyph0) {
+		real_widths[i * 2    ] = real_widths[ch * 2    ];
+		real_widths[i * 2 + 1] = real_widths[ch * 2 + 1];
+		glyph_usage[i / 8] |= 0x80 >> (i & 7);
+		pdfont->used[i >> 3] |= 0x80 >> (i & 7);
+		pdfont->u.simple.v[i] = pdfont->u.simple.v[ch];
+		pdfont->Widths[i] = pdfont->Widths[ch];
+	    }
+	}
+    }
+    pdev->accum_char_proc_context_save = pdev->context;
+    pdf_text_state_copy(pdev->accum_char_proc_text_state_save, pdev->text->text_state);
+    pdf_set_text_state_default(pdev->text->text_state);
+    pdev->accum_char_proc_clip_path_save = pdev->clip_path;
+    pdev->accum_char_proc_clip_path_id_save = pdev->clip_path_id;
+    pdev->accum_char_proc_vgstack_depth_save = pdev->vgstack_depth;
+    pdev->clip_path = 0;
+    pdev->clip_path_id = pdev->no_clip_path_id;
+    code = pdf_begin_char_proc_gerneric(pdev, pdfont, id, ch, gnstr, &pcp, charproc_pos);
+    if (code < 0)
+	return code;
+    *pid = id;
+    pdev->accum_char_proc = true;
+    pdev->context = PDF_IN_STREAM;
+    if (control == TEXT_SET_CHAR_WIDTH)
+	pprintg2(pdev->strm, "%g %g d0\n", (float)pw[0], (float)pw[1]);
+    else
+	pprintg6(pdev->strm, "%g %g %g %g %g %g d1\n", 
+	    (float)pw[0], (float)pw[1], (float)pw[2], 
+	    (float)pw[3], (float)pw[4], (float)pw[5]);
+    return 0;
+}
+
+/*
+ * Complete charproc accumulation for a Type 3 font.
+ */
+int
+pdf_end_charproc_accum(gx_device_pdf *pdev, gs_id id, pdf_stream_position_t *ppos) 
+{
+    int code = pdf_open_contents(pdev, PDF_IN_STREAM), code1;
+
+    while (pdev->vgstack_depth > pdev->accum_char_proc_vgstack_depth_save) {
+	code1 = pdf_restore_viewer_state(pdev, pdev->strm);
+	if (code >= 0)
+	    code = code1;
+    }
+    if (pdev->clip_path != 0)
+	gx_path_free(pdev->clip_path, "pdf_end_charproc_accum");
+    pdev->clip_path = pdev->accum_char_proc_clip_path_save;
+    pdev->clip_path_id = pdev->accum_char_proc_clip_path_id_save;
+    pdev->accum_char_proc_vgstack_depth_save = 0;
+    code1 = pdf_end_char_proc(pdev, ppos);
+    if (code >= 0)
+	code = code1;
+    pdev->context = pdev->accum_char_proc_context_save;
+    pdf_text_state_copy(pdev->text->text_state, pdev->accum_char_proc_text_state_save);
+    pdev->accum_char_proc = false;
+    return code;
 }

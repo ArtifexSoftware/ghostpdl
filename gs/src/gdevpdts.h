@@ -63,23 +63,6 @@ typedef struct pdf_text_state_values_s {
 
 /* ================ Procedures ================ */
 
-/* ------ Exported for gdevpdf.c ------ */
-
-/*
- * Allocate and initialize text state bookkeeping.
- */
-pdf_text_state_t *pdf_text_state_alloc(gs_memory_t *mem);
-
-/*
- * Reset the text state at the beginning of the page.
- */
-void pdf_reset_text_page(pdf_text_data_t *ptd);
-
-/*
- * Reset the text state after a grestore.
- */
-void pdf_reset_text_state(pdf_text_data_t *ptd);
-
 /* ------ Exported for gdevpdfu.c ------ */
 
 /*

@@ -107,7 +107,7 @@ int
 pdf_restore_viewer_state(gx_device_pdf *pdev, stream *s)
 {   const int i = --pdev->vgstack_depth;
 
-    if (i < 0)
+    if (i < pdev->accum_char_proc_vgstack_depth_save)
 	return_error(gs_error_unregistered); /* Must not happen. */
     stream_puts(s, "Q\n");
     pdf_load_viewer_state(pdev, pdev->vgstack + i);

@@ -74,6 +74,11 @@ typedef struct cos_object_procs_s cos_object_procs_t;
 typedef const cos_object_procs_t *cos_type_t;
 #define cos_types_DEFINED
 
+#ifndef pdf_text_state_DEFINED
+#  define pdf_text_state_DEFINED
+typedef struct pdf_text_state_s pdf_text_state_t;
+#endif
+
 /* ---------------- Resources ---------------- */
 
 typedef enum {
@@ -500,13 +505,21 @@ struct gx_device_pdf_s {
     gs_text_enum_t *pte;
     /* 
      * The viewer's graphic state stack.
-     * We need only 2 elements : one for stream context, 
-     * and another one for text context.
+     * We need only 4 elements : one for stream context, 
+     * another one for text context, 
+     * the third one for clipping in char procs,
+     * the fourth one for text context in char procs,
      */
-    pdf_viewer_state vgstack[2];
+    pdf_viewer_state vgstack[4];
     int vgstack_depth;
     pdf_viewer_state vg_initial; /* Initial values for viewer's graphic state */
     bool vg_initial_set;
+    bool accum_char_proc;
+    pdf_context_t accum_char_proc_context_save;
+    pdf_text_state_t *accum_char_proc_text_state_save;
+    gx_path *accum_char_proc_clip_path_save;
+    gs_id accum_char_proc_clip_path_id_save;
+    int accum_char_proc_vgstack_depth_save;
 };
 
 #define is_in_page(pdev)\
@@ -527,8 +540,10 @@ struct gx_device_pdf_s {
  m(18,articles) m(19,Dests) m(20,global_named_objects)\
  m(21, local_named_objects) m(22,NI_stack) m(23,Namespace_stack)\
  m(24,open_graphics) m(25,font_cache) m(26,clip_path)\
- m(27,PageLabels) m(28,PageLabels_current_label)
-#define gx_device_pdf_num_ptrs 29
+ m(27,PageLabels) m(28,PageLabels_current_label)\
+ m(29,accum_char_proc_text_state_save)\
+ m(30,accum_char_proc_clip_path_save)
+#define gx_device_pdf_num_ptrs 31
 #define gx_device_pdf_do_strings(m) /* do nothing */
 #define gx_device_pdf_num_strings 0
 #define st_device_pdf_max_ptrs\
@@ -932,6 +947,8 @@ int pdf_close_text_document(gx_device_pdf *pdev);
 /* For gdevpdf.c */
 
 pdf_text_data_t *pdf_text_data_alloc(gs_memory_t *mem);
+void pdf_set_text_state_default(pdf_text_state_t *pts);
+void pdf_text_state_copy(pdf_text_state_t *pts_to, pdf_text_state_t *pts_from);
 void pdf_reset_text_page(pdf_text_data_t *ptd);
 void pdf_reset_text_state(pdf_text_data_t *ptd);
 void pdf_close_text_page(gx_device_pdf *pdev);
@@ -951,6 +968,14 @@ int pdf_end_char_proc(gx_device_pdf * pdev, pdf_stream_position_t * ppos);
 /* Put out a reference to an image as a character in an embedded font. */
 int pdf_do_char_image(gx_device_pdf * pdev, const pdf_char_proc_t * pcp,
 		      const gs_matrix * pimat);
+
+/* Install charproc accumulator for a Type 3 font. */
+int pdf_install_charproc_accum(gx_device_pdf *pdev, gs_font *font, const double *pw, 
+		gs_text_cache_control_t control, gs_char ch, gs_const_string *gnstr, 
+		gs_id *id, pdf_stream_position_t *charproc_pos);
+/* Complete charproc accumulation for aType 3 font. */
+int pdf_end_charproc_accum(gx_device_pdf *pdev, gs_id id, pdf_stream_position_t *ppos);
+
 
 /* For gdevpdfu.c */
 

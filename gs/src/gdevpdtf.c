@@ -103,6 +103,11 @@ RELOC_PTRS_WITH(pdf_font_resource_reloc_ptrs, pdf_font_resource_t *pdfont)
 	    RELOC_CONST_STRING_VAR(pdfont->u.type0.CMapName);
 	RELOC_VAR(pdfont->u.type0.DescendantFont);
 	break;
+    case ft_user_defined:
+	RELOC_VAR(pdfont->u.simple.Encoding);
+	RELOC_VAR(pdfont->u.simple.v);
+	RELOC_VAR(pdfont->u.simple.s.type3.char_procs);
+	break;
     case ft_CID_encrypted:
 	RELOC_VAR(pdfont->u.cidfont.Widths2);
 	RELOC_VAR(pdfont->u.cidfont.v);
@@ -113,9 +118,6 @@ RELOC_PTRS_WITH(pdf_font_resource_reloc_ptrs, pdf_font_resource_t *pdfont)
     default:
 	RELOC_VAR(pdfont->u.simple.Encoding);
 	RELOC_VAR(pdfont->u.simple.v);
-	/* falls through */
-    case ft_user_defined:
-	RELOC_VAR(pdfont->u.simple.s.type3.char_procs);
 	break;
     }
 }
@@ -362,7 +364,7 @@ font_resource_simple_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
     *ppfres = pfres;
     return 0;
 }
-private int
+int
 font_resource_encoded_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 			    gs_id rid, font_type ftype,
 			    pdf_font_write_contents_proc_t write_contents)
@@ -639,7 +641,7 @@ pdf_font_type0_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 
 /* ------ Type 3 ------ */
 
-/* Allocate a Type 3 font resource. */
+/* Allocate a Type 3 font resource for sinthesyzed bitmap fonts. */
 int
 pdf_font_type3_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 		     pdf_font_write_contents_proc_t write_contents)

@@ -29,6 +29,10 @@
 #include "gdevpdti.h"		/* for writing bitmap fonts Encoding */
 #include "gdevpdtw.h"
 
+private const char *const encoding_names[] = {
+    KNOWN_REAL_ENCODING_NAMES
+};
+
 /* ================ Font resource writing ================ */
 
 /* ---------------- Private ---------------- */
@@ -78,59 +82,103 @@ pdf_different_encoding_element(const pdf_font_resource_t *pdfont, int ch, int en
     return 0;
 }
 
-/* Write the Subtype and Encoding for a simple font. */
-private int
-pdf_write_simple_contents(gx_device_pdf *pdev,
-			  const pdf_font_resource_t *pdfont)
+/* Find an index of a different encoding element. */
+int
+pdf_different_encoding_index(const pdf_font_resource_t *pdfont, int ch0)
 {
-    stream *s = pdev->strm;
-    static const char *const encoding_names[] = {
-	KNOWN_REAL_ENCODING_NAMES
-    };
     gs_encoding_index_t base_encoding = pdfont->u.simple.BaseEncoding;
-    long diff_id = 0;
-    int ch = (pdfont->u.simple.Encoding ? 0 : 256);
-    int code = 0;
+    int ch, code;
 
-    for (; ch < 256; ++ch) {
+    for (ch = ch0; ch < 256; ++ch) {
 	code = pdf_different_encoding_element(pdfont, ch, base_encoding);
 	if (code < 0)
 	    return code; /* Must not happen */
 	if (code)
 	    break;
     }
-    if (ch < 256)
-	pprintld1(s, "/Encoding %ld 0 R",
-		  (diff_id = pdf_obj_ref(pdev)));
-    else if (base_encoding > 0)
+    return ch;
+}
+
+/* Write Encoding differencrs. */
+int 
+pdf_write_encoding(gx_device_pdf *pdev, const pdf_font_resource_t *pdfont, long id, int ch)
+{
+    stream *s;
+    gs_encoding_index_t base_encoding = pdfont->u.simple.BaseEncoding;
+    int prev = 256, code;
+
+    pdf_open_separate(pdev, id);
+    s = pdev->strm;
+    stream_puts(s, "<</Type/Encoding");
+    if (base_encoding > 0)
+	pprints1(s, "/BaseEncoding/%s", encoding_names[base_encoding]);
+    stream_puts(s, "/Differences[");
+    for (; ch < 256; ++ch) {
+	code = pdf_different_encoding_element(pdfont, ch, base_encoding);
+	if (code < 0)
+	    return code; /* Must not happen */
+	if (code == 0 && pdfont->FontType == ft_user_defined) {
+	    /* PDF 1.4 spec Appendix H Note 42 says that
+	     * Acrobat 4 can't properly handle Base Encoding. 
+	     * Enforce writing differences against that.
+	     */
+	    if (pdfont->used[ch >> 3] & 0x80 >> (ch & 7))
+		if (pdfont->u.simple.Encoding[ch].str.size)
+		    code = 1;
+	}
+	if (code) {
+	    if (ch != prev + 1)
+		pprintd1(s, "\n%d", ch);
+	    pdf_put_name(pdev, pdfont->u.simple.Encoding[ch].str.data,
+			 pdfont->u.simple.Encoding[ch].str.size);
+	    prev = ch;
+	}
+    }
+    stream_puts(s, "]>>\n");
+    pdf_end_separate(pdev);
+    return 0;
+}
+
+/* Write Encoding reference. */
+int
+pdf_write_encoding_ref(gx_device_pdf *pdev,
+	  const pdf_font_resource_t *pdfont, long id)
+{
+    stream *s = pdev->strm;
+
+    if (id != 0)
+	pprintld1(s, "/Encoding %ld 0 R", id);
+    else if (pdfont->u.simple.BaseEncoding > 0) {
+	gs_encoding_index_t base_encoding = pdfont->u.simple.BaseEncoding;
 	pprints1(s, "/Encoding/%s", encoding_names[base_encoding]);
+    }
+    return 0;
+}
+
+/* Write the Subtype and Encoding for a simple font. */
+private int
+pdf_write_simple_contents(gx_device_pdf *pdev,
+			  const pdf_font_resource_t *pdfont)
+{
+    stream *s = pdev->strm;
+    long diff_id = 0;
+    int ch = (pdfont->u.simple.Encoding ? 0 : 256);
+    int code = 0;
+
+    ch = pdf_different_encoding_index(pdfont, ch);
+    if (ch < 256)
+	diff_id = pdf_obj_ref(pdev);
+    code = pdf_write_encoding_ref(pdev, pdfont, diff_id);
+    if (code < 0)
+	return code;
     pprints1(s, "/Subtype/%s>>\n",
 	     (pdfont->FontType == ft_TrueType ? "TrueType" :
 	      pdfont->u.simple.s.type1.is_MM_instance ? "MMType1" : "Type1"));
     pdf_end_separate(pdev);
     if (diff_id) {
-	int prev = 256;
-
-	pdf_open_separate(pdev, diff_id);
-	s = pdev->strm;
-	stream_puts(s, "<</Type/Encoding");
-	if (base_encoding > 0)
-	    pprints1(s, "/BaseEncoding/%s", encoding_names[base_encoding]);
-	stream_puts(s, "/Differences[");
-	for (; ch < 256; ++ch) {
-	    code = pdf_different_encoding_element(pdfont, ch, base_encoding);
-	    if (code < 0)
-		return code; /* Must not happen */
-	    if (code) {
-		if (ch != prev + 1)
-		    pprintd1(s, "\n%d", ch);
-		pdf_put_name(pdev, pdfont->u.simple.Encoding[ch].str.data,
-			     pdfont->u.simple.Encoding[ch].str.size);
-		prev = ch;
-	    }
-	}
-	stream_puts(s, "]>>\n");
-	pdf_end_separate(pdev);
+	code = pdf_write_encoding(pdev, pdfont, diff_id, ch);
+	if (code < 0)
+	    return code;
     }
     return 0;
 }

@@ -39,7 +39,11 @@ int
   pdf_write_contents_std(gx_device_pdf *pdev, pdf_font_resource_t *pdfont),
   pdf_write_contents_simple(gx_device_pdf *pdev, pdf_font_resource_t *pdfont),
   pdf_write_contents_cid0(gx_device_pdf *pdev, pdf_font_resource_t *pdfont),
-  pdf_write_contents_cid2(gx_device_pdf *pdev, pdf_font_resource_t *pdfont);
+  pdf_write_contents_cid2(gx_device_pdf *pdev, pdf_font_resource_t *pdfont),
+  pdf_different_encoding_index(const pdf_font_resource_t *pdfont, int ch0),
+  pdf_write_encoding(gx_device_pdf *pdev, const pdf_font_resource_t *pdfont, long id, int ch),
+  pdf_write_encoding_ref(gx_device_pdf *pdev, const pdf_font_resource_t *pdfont, long id);
+
 
 /* ---------------- CMap resource writing ---------------- */
 

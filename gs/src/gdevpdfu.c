@@ -342,7 +342,7 @@ pdf_close_contents(gx_device_pdf * pdev, bool last)
 	return 0;
     if (last) {			/* Exit from the clipping path gsave. */
 	pdf_open_contents(pdev, PDF_IN_STREAM);
-	stream_puts(pdev->strm, "Q\n");
+	stream_puts(pdev->strm, "Q\n");	/* See none_to_stream. */
 	pdf_close_text_contents(pdev);
     }
     return pdf_open_contents(pdev, PDF_IN_NONE);
@@ -706,7 +706,7 @@ pdf_unclip(gx_device_pdf * pdev)
 
     if (code < 0)
 	return code;
-    if (pdev->vgstack_depth > 0) {
+    if (pdev->vgstack_depth > pdev->accum_char_proc_vgstack_depth_save) {
 	code = pdf_restore_viewer_state(pdev, pdev->strm);
 	if (code < 0)
 	    return code;

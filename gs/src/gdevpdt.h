@@ -36,6 +36,11 @@
 /* ---------------- Utility (for gdevpdf.c) ---------------- */
 
 /*
+ * Allocate and initialize text state bookkeeping.
+ */
+pdf_text_state_t *pdf_text_state_alloc(gs_memory_t *mem);
+
+/*
  * Allocate and initialize the text data structure.
  */
 pdf_text_data_t *pdf_text_data_alloc(gs_memory_t *mem);	/* gdevpdts.h */

@@ -88,6 +88,8 @@ typedef struct pdf_text_enum_s {
     gs_text_enum_common;
     gs_text_enum_t *pte_default;
     gs_fixed_point origin;
+    gs_id charproc_id;
+    pdf_stream_position_t charproc_pos;
 } pdf_text_enum_t;
 #define private_st_pdf_text_enum()\
   extern_st(st_gs_text_enum);\
@@ -140,6 +142,7 @@ typedef struct pdf_glyph_widths_s {
  * Compute and return the orig_matrix of a font.
  */
 int pdf_font_orig_matrix(const gs_font *font, gs_matrix *pmat);
+int font_orig_scale(const gs_font *font, double *sx);
 
 /*
  * Create or find a font resource object for a text.
@@ -244,5 +247,13 @@ int process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 int
 pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfont, 
 		  gs_glyph glyph, gs_char ch);
+
+/*
+ * Get character code from a glyph code.
+ * An usage of this function is very undesirable,
+ * because a glyph may be unlisted in Encoding.
+ */
+int pdf_encode_glyph(gs_font_base *bfont, gs_glyph glyph0,
+	    byte *buf, int buf_size, int *char_code_length);
 
 #endif /* gdevpdtt_INCLUDED */

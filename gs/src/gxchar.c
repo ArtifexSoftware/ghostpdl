@@ -224,6 +224,19 @@ gx_default_text_begin(gx_device * dev, gs_imager_state * pis,
     return 0;
 }
 
+/* An auxiliary functions for pdfwrite to process type 3 fonts. */
+int
+gx_default_text_restore_state(gs_text_enum_t *pte)
+{
+    gs_show_enum *penum;
+    gs_state *pgs;
+
+    if (SHOW_IS(pte, TEXT_DO_NONE))
+	return 0;
+    penum = (gs_show_enum *)pte;
+    pgs = penum->pgs;
+    return gs_grestore(pgs);
+}
 /* ------ Width/cache setting ------ */
 
 private int

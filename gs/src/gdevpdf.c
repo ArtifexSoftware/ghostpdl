@@ -28,6 +28,7 @@
 #include "gdevpdfx.h"
 #include "gdevpdfg.h"		/* only for pdf_reset_graphics */
 #include "gdevpdfo.h"
+#include "gdevpdt.h"
 
 /* Define the default language level and PDF compatibility level. */
 /* Acrobat 4 (PDF 1.3) is the default. */
@@ -244,7 +245,13 @@ const gx_device_pdf gs_pdfwrite_device =
  },
  0,				/* vgstack_depth */
  {0},				/* vg_initial */
- false				/* vg_initial_set */
+ false,				/* vg_initial_set */
+ 0,				/* accum_char_proc */
+ PDF_IN_NONE,			/* accum_char_proc_context_save */
+ 0,				/* accum_char_proc_text_state_save */
+ 0,				/* accum_char_proc_clip_path_save */
+ 0,				/* accum_char_proc_clip_path_id_save */
+ 0				/* accum_char_proc_vgstack_depth_save */
 };
 
 /* ---------------- Device open/close ---------------- */
@@ -496,10 +503,13 @@ pdf_open(gx_device * dev)
     pdev->outlines_id = 0;
     pdev->next_page = 0;
     pdev->text = pdf_text_data_alloc(mem);
+    pdev->accum_char_proc_text_state_save = pdf_text_state_alloc(mem);
+
     pdev->pages =
 	gs_alloc_struct_array(mem, initial_num_pages, pdf_page_t,
 			      &st_pdf_page_element, "pdf_open(pages)");
-    if (pdev->text == 0 || pdev->pages == 0) {
+    if (pdev->text == 0 || pdev->pages == 0 ||
+	    pdev->accum_char_proc_text_state_save == 0) {
 	code = gs_error_VMerror;
 	goto fail;
     }

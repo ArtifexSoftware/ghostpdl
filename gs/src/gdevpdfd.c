@@ -88,8 +88,10 @@ private int
 pdf_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1, fixed y1,
 	   gx_path_type_t type)
 {
+    gx_device_pdf *pdev = (gx_device_pdf *)vdev;
     fixed xmax = int2fixed(vdev->width), ymax = int2fixed(vdev->height);
-    fixed xmin = 0, ymin = 0;
+    fixed xmin = (pdev->accum_char_proc ? -xmax : 0);
+    fixed ymin = (pdev->accum_char_proc ? -ymax : 0);
 
     /*
      * If we're doing a stroke operation, expand the checking box by the
@@ -283,7 +285,7 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
     if (code < 0)
 	return 0;
     /* Use Q to unwind the old clipping path. */
-    if (pdev->vgstack_depth > 0) {
+    if (pdev->vgstack_depth > pdev->accum_char_proc_vgstack_depth_save) {
 	code = pdf_restore_viewer_state(pdev, s);
 	if (code < 0)
 	    return 0;
@@ -395,7 +397,7 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
     }
     new_clip = pdf_must_put_clip_path(pdev, pcpath);
     if (have_path || pdev->context == PDF_IN_NONE || new_clip) {
-        if (new_clip)
+	if (new_clip)
 	    code = pdf_unclip(pdev);
 	else
 	    code = pdf_open_page(pdev, PDF_IN_STREAM);

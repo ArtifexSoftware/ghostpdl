@@ -72,4 +72,7 @@ pdf_bitmap_fonts_t *pdf_bitmap_fonts_alloc(gs_memory_t *mem);
  */
 int pdf_write_bitmap_fonts_Encoding(gx_device_pdf *pdev);
 
+/* Write the contents of a Type 3 bitmap font resource. */
+int pdf_write_contents_bitmap(gx_device_pdf *pdev, pdf_font_resource_t *pdfont);
+
 #endif /* gdevpdti_INCLUDED */

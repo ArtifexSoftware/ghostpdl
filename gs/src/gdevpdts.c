@@ -285,12 +285,30 @@ pdf_text_state_alloc(gs_memory_t *mem)
 }
 
 /*
+ * Set the text state to default values.
+ */
+void
+pdf_set_text_state_default(pdf_text_state_t *pts)
+{
+    *pts = ts_default;
+}
+
+/*
+ * Copy the text state.
+ */
+void
+pdf_text_state_copy(pdf_text_state_t *pts_to, pdf_text_state_t *pts_from)
+{
+    *pts_to = *pts_from;
+}
+
+/*
  * Reset the text state to its condition at the beginning of the page.
  */
 void
 pdf_reset_text_page(pdf_text_data_t *ptd)
 {
-    *ptd->text_state = ts_default;
+    pdf_set_text_state_default(ptd->text_state);
 }
 
 /*
@@ -398,9 +416,9 @@ sync_text_state(gx_device_pdf *pdev)
 	((pdf_resource_t *)pdfont)->where_used |= pdev->used_mask;
     }
 
-    if (memcmp(&pts->in.matrix, &pts->out.matrix.xx, sizeof(pts->in.matrix)) ||
-	pts->start.x != pts->out_pos.x ||
-	pts->start.y != pts->out_pos.y) {
+    if (memcmp(&pts->in.matrix, &pts->out.matrix, sizeof(pts->in.matrix)) ||
+	 ((pts->start.x != pts->out_pos.x || pts->start.y != pts->out_pos.y) &&
+	  (pts->buffer.count_chars != 0 || pts->buffer.count_moves != 0))) {
 	/* pdf_set_text_matrix sets out.matrix = in.matrix */
 	code = pdf_set_text_matrix(pdev);
 	if (code < 0)
