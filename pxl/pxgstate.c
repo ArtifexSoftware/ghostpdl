@@ -282,7 +282,7 @@ px_gstate_init(px_gstate_t *pxgs, gs_state *pgs)
 	/* halftone.thresholds was initialized at alloc time */
 	px_gstate_reset(pxgs);
 	if ( pgs )
-	  gs_state_set_client(pgs, pxgs, &px_gstate_procs);
+	    gs_state_set_client(pgs, pxgs, &px_gstate_procs, false);
 }
 
 /* Initialize the graphics state for a page. */
