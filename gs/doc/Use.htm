@@ -44,6 +44,7 @@
 <li><a href="#PDF_problems">Problems interpreting a PDF file</a>
 </ul>
 
+<li><a href="#EPS">Using Ghostscript with EPS files</a>
 <li><a href="#Finding_files">How Ghostscript finds files</a>
 <ul>
 <li><a href="#PS_resources">Finding PostScript Level 2 resources</a>
@@ -87,6 +88,7 @@
 <li><a href="#Font_related_parameters">Font-related parameters</a>
 <li><a href="#Interaction_related_parameters">Interaction-related parameters</a>
 <li><a href="#Output_selection_parameters">Device and output selection parameters</a>
+<li><a href="#EPS_parameters">EPS parameters</a>
 <li><a href="#Other_parameters">Other parameters</a>
 </ul>
 </ul>
@@ -557,6 +559,28 @@ Using the special filename <a href="#Pipes">'<tt>-</tt>'</a> you can provide PDF
 	<td>&nbsp;
 	<td>(is <b><em>not</em></b> permissible)
 </table></blockquote>
+
+<h2><a name="EPS"></a>Using Ghostscript with EPS files</h2>
+<p>
+Encapsulated PostScript (EPS) files are intended to be encapsulated 
+in another PostScript document and may not display or print on their 
+own.  An EPS file must conform to the Document Structuring Conventions,
+must include a <b><tt>%%BoundingBox:</tt></b> line to indicate the 
+rectangle in which it will draw, must not use PostScript commands
+which will interfere with the document importing the EPS,
+and can have either zero pages or one page.
+Ghostscript has support for handling EPS files, but requires
+that the <b><tt>%%BoundingBox:</tt></b> be in the header,
+not the trailer.
+To customize EPS handling, see <a href="#EPS_parameters">EPS parameters</a>.
+
+<p>
+For the official description of the EPS file format, please
+refer to the Adobe documentation in their tech note #5002. It
+is available from:
+<a href="http://partners.adobe.com/asn/developer/technotes/postscript.html"
+class="offsite">
+http://partners.adobe.com/asn/developer/technotes/postscript.html</a>
 
 <hr>
 
@@ -1925,6 +1949,27 @@ device</a>.
 <dt><b><tt>-sOutputFile=</tt></b><em>filename</em>
 <dd>Selects an alternate output file (or pipe) for the initial output
 device, as described above.
+</dl>
+
+<h4><a name="EPS_parameters"></a>EPS parameters</h4>
+
+<dl>
+<dt><b><tt>-dEPSCrop</tt></b>
+<dd>Crop an EPS file to the bounding box.  
+This is useful when converting an EPS file to a bitmap.
+</dl>
+
+<dl>
+<dt><b><tt>-dEPSFitPage</tt></b>
+<dd>Resize an EPS file to fit the page.  
+This is useful for enlarging an EPS file to fit the paper size when printing.
+</dl>
+
+<dl>
+<dt><b><tt>-dNOEPS</tt></b>
+<dd>Prevent special processing of EPS files.  
+This is useful when EPS files have incorrect Document
+Structuring Convention comments.
 </dl>
 
 <h4><a name="Other_parameters"></a>Other parameters</h4>

@@ -1,4 +1,4 @@
-%    Copyright (C) 1989, 1996 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1989, 1996, 2002 Aladdin Enterprises.  All rights reserved.
 % 
 % This software is provided AS-IS with no warranty, either express or
 % implied.
@@ -14,8 +14,188 @@
 % San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
 % $Id$
-% Allow the interpreter to recognize MS-DOS EPSF file headers, and skip to
-% the PostScript section of the file.
+% Allow the interpreter to encapsulate EPS files, to recognize MS-DOS 
+% EPSF file headers, and skip to the PostScript section of the file.
+
+% Encapsulate EPS files and optionally resize page or rescale image.
+% To display an EPS file cropped to the bounding box:
+%  gs -dEPSCrop file.eps
+% To display an EPS file scaled to fit the page:
+%  gs -dEPSFitPage file.eps
+% To display a file without EPS encapsulation:
+%  gs -dNOEPS file.ps
+
+% When starting to process an EPS file, state is 0.
+% After %%BoundingBox processed, state is 1.
+% After %%HiResBoundingBox processed, state is 2.
+% After %%EndComments processed, state is 3.
+/EPSBoundingBoxState 3 def
+
+% Parse 4 numbers for a bounding box
+/EPSBoundingBoxParse { % (llx lly urx ury) -- llx lly urx ury true OR false
+    mark exch
+    token {exch token {exch token {exch token {exch pop} if} if} if} if
+    counttomark
+    4 eq {
+      5 -1 roll pop % remove mark
+      true
+    } {
+      cleartomark false
+    } ifelse
+} bind def
+
+% Rescale and translate to fit the BoundingBox on the page
+/EPSBoundingBoxFitPage { % llx lly urx ury --
+  DEBUG { (gs_epsf.ps: Rescaling EPS to fit page\n) print flush } if
+  currentpagedevice /.HWMargins get 5 1 roll
+  initgraphics 4 index dup 0 get exch 1 get exch translate
+  % convert to width/height
+  exch 3 index sub exch 2 index sub % stack: [margins] llx lly urx-llx ury-lly
+  % scale
+  currentpagedevice /PageSize get
+  aload pop % stack: [margins] llx lly urx-llx ury-lly width height
+  6 index dup 1 get exch 3 get add sub
+  exch 6 index dup 0 get exch 2 get add sub exch
+  exch 4 -1 roll div
+  3 1 roll exch div
+  1 index 1 index lt {pop}{exch pop} ifelse
+  dup scale
+  % translate
+  exch neg exch neg translate
+  pop
+} bind def
+
+% Crop the page to the BoundingBox
+/EPSBoundingBoxCrop { % llx lly urx ury --
+  DEBUG { 
+    (gs_epsf.ps: Setting pagesize from EPS bounding box\n) print flush 
+  } if
+  exch 3 index sub exch 2 index sub % stack: llx lly urx-llx ury-lly
+  << /PageSize [ 5 -2 roll ] >> setpagedevice
+  neg exch neg exch translate
+} bind def
+
+
+/EPSBoundingBoxProcess { % (llx lly urx ury) state --
+  //systemdict /EPSBoundingBoxState get 1 index lt {
+    exch EPSBoundingBoxParse 
+    {
+      //systemdict /EPSCrop known {
+        EPSBoundingBoxCrop
+      } {
+        //systemdict /EPSFitPage known {
+          EPSBoundingBoxFitPage
+      } {
+        % Warn if some of the EPS file will be clipped
+        clippath pathbbox
+        { % context for exit
+          5 -1 roll lt { 6 { pop } repeat true exit } if
+          4 -1 roll lt { 4 { pop } repeat true exit } if
+          3 -1 roll gt { 2 { pop } repeat true exit } if
+          exch gt { true exit } if
+          false exit
+        } loop
+        QUIET not and {
+          (\n   **** Warning: Some of the BoundingBox for the EPS file will be clipped.) =
+          (                 Use -dEPSCrop or -dEPSFitPage to avoid clipping.\n) =
+	  flush
+        } if
+        % pop //systemdict /EPSBoundingBoxState get
+      } ifelse
+      } ifelse
+      //systemdict /EPSBoundingBoxState 3 -1 roll .forceput
+    } {
+      pop % state
+    } ifelse
+  } {
+    pop pop
+  } ifelse
+} bind def
+
+/ProcessEPSComment { % file comment --  file comment
+  //systemdict /EPSBoundingBoxState get 3 lt {
+    dup
+    (%%EndComments) anchorsearch {
+      pop pop
+      % ignore any following bounding boxes
+      //systemdict /EPSBoundingBoxState 3 .forceput
+    } {
+      (%%BoundingBox:) anchorsearch {
+	pop 
+	DEBUG { (gs_epsf.ps: found %%BoundingBox\n) print flush } if
+	1 EPSBoundingBoxProcess
+      } {
+	(%%HiResBoundingBox:) anchorsearch {
+	  pop 
+	  DEBUG { (gs_epsf.ps: found %%HiResBoundingBox\n) print flush } if
+	2 EPSBoundingBoxProcess
+	} { 
+	  pop % Not interested in this DSC comment
+	} ifelse
+      } ifelse
+    } ifelse
+  } if
+} bind def
+
+% Install EPS handler for DSC comments, which we do later
+/EPSBoundingBoxInit {
+  systemdict /NOEPS known not {
+    % Merge ProcessEPSComment with existing handler
+    /ProcessEPSComment load /exec load
+    currentuserparams /ProcessDSCComment get 
+    dup null eq {pop {pop pop}} if /exec load
+    4 array astore cvx readonly
+    << /ProcessDSCComment 3 -1 roll >> setuserparams
+  } if
+} bind def
+
+/.runNoEPS /run load def
+
+/.runEPS { % file OR string --
+  /runEPS_save save def
+  //systemdict /EPSBoundingBoxState 0 .forceput
+  .runNoEPS
+  currentpagedevice /PageCount get 0 eq { showpage } if
+  runEPS_save restore
+} bind def
+
+/run { % file OR string --
+  dup type /filetype ne { (r) file } if
+  dup (%!PS-Adobe-) .peekstring {
+    (%!PS-Adobe-) eq {
+      dup (%!PS-Adobe-X.X EPSF-X.X) .peekstring {
+      (EPSF) search {
+        pop pop pop
+        DEBUG {(runEPS: Found EPS\n) print flush} if
+        systemdict /NOEPS known {
+          cvx .runNoEPS
+        } {
+          cvx .runEPS
+        } ifelse
+      } {
+        DEBUG {(runEPS: Normal DSC\n) print flush} if
+        pop
+          cvx .runNoEPS
+
+      } ifelse
+      } {
+        DEBUG {(runEPS: Short DSC\n) print flush} if
+      pop
+        cvx .runNoEPS
+      } ifelse
+    } {
+      DEBUG {(runEPS: Not DSC\n) print flush} if
+      cvx .runNoEPS
+    } ifelse
+  } {
+    DEBUG {(runEPS: Short non-DSC\n) print flush} if
+    pop
+    cvx .runNoEPS
+  } ifelse
+} bind odef
+
+
+% Handle DOS EPS files.
 
 /.runnoepsf /run load def
 /.epsfheader <C5D0D3C6> def

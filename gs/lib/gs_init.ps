@@ -1604,6 +1604,9 @@ gsave
  { currentfile //=string readline { pop } if
  } bind def
 
+% Install the EPS handler if needed
+systemdict /EPSBoundingBoxInit known { EPSBoundingBoxInit } if
+
 % If we want a "safer" system, disable some obvious ways to cause havoc.
 .currentglobal true .setglobal
 /SAFETY 2 dict
