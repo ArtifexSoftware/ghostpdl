@@ -335,7 +335,9 @@ pop pop
   2 copy 0 get .stringmatch {
     dup 3 get begin .LocalInstances end 2 index known not {
       .enumerateresource
-    } if
+    } {
+      pop pop
+    } ifelse
   } {
     pop pop
   } ifelse
