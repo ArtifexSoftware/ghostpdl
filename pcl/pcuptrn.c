@@ -598,13 +598,6 @@ upattern_do_reset(
         pcs->plast_gl2_uptrn = 0;
 
     } else if ((type & (pcl_reset_cold | pcl_reset_printer)) != 0) {
-
-        /* HACK - purge the pattern cache to try to avoid fragmentation */
-        gx_pattern_cache_winnow( gstate_pattern_cache(pcs->pgs),
-                                 delete_cached_patterns_stub,
-                                 NULL
-                                 );
-
         delete_all_pcl_ptrns(true, true, pcs);
         pcl_pattern_clear_bi_patterns(pcs);
         /* GL's IN command takes care of the GL patterns */
