@@ -698,38 +698,14 @@ devicen_put_params(gx_device * pdev, gs_param_list * plist)
     gx_device_color_info save_info;
     gs_param_name param_name;
     int npcmcolors = pdevn->num_std_colorant_names;
-    int bpc = pdevn->bitspercomponent;
     int num_spot = pdevn->separation_names.num_names;
-    int v;
     int ecode = 0;
     int code;
-    const char *vname;
     gs_param_string_array scna;
 
     BEGIN_ARRAY_PARAM(param_read_name_array, "SeparationColorNames", scna, scna.size, scne) {
 	break;
     } END_ARRAY_PARAM(scna, scne);
-
-
-    if ((code = param_read_int(plist, (vname = "GrayValues"), &v)) != 1 ||
-	(code = param_read_int(plist, (vname = "RedValues"), &v)) != 1 ||
-	(code = param_read_int(plist, (vname = "GreenValues"), &v)) != 1 ||
-	(code = param_read_int(plist, (vname = "BlueValues"), &v)) != 1
-	) {
-	if (code < 0)
-	    ecode = code;
-	else
-	    switch (v) {
-		case   2: bpc = 1; break;
-		case   4: bpc = 2; break;
-		case  16: bpc = 4; break;
-		case  32: bpc = 5; break;
-		case 256: bpc = 8; break;
-		default:
-		    param_signal_error(plist, vname,
-				       ecode = gs_error_rangecheck);
-	    }
-    }
 
     /*
      * Save the color_info in case gdev_prn_put_params fails, and for
@@ -754,7 +730,6 @@ devicen_put_params(gx_device * pdev, gs_param_list * plist)
 	if (pdevn->is_open)
 	    gs_closedevice(pdev);
     }
-    pdevn->bitspercomponent = bpc;
     pdevn->color_info.num_components = npcmcolors + num_spot;
     /* 
      * The DeviceN device can have zero components if nothing has been specified.
@@ -763,12 +738,9 @@ devicen_put_params(gx_device * pdev, gs_param_list * plist)
      */
     if (!pdevn->color_info.num_components)
 	pdevn->color_info.num_components = 1;
-    pdevn->color_info.depth = bpc_to_depth(pdevn->color_info.num_components, bpc);
+    pdevn->color_info.depth = bpc_to_depth(pdevn->color_info.num_components, 
+						pdevn->bitspercomponent);
 
-    pdevn->color_info.max_gray = pdevn->color_info.max_color =
-	(pdevn->color_info.dither_grays =
-	 pdevn->color_info.dither_colors =
-	 (1 << bpc)) - 1;
     ecode = gdev_prn_put_params(pdev, plist);
     if (ecode < 0) {
 	pdevn->color_info = save_info;

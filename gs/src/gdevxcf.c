@@ -810,12 +810,9 @@ xcf_put_params(gx_device * pdev, gs_param_list * plist)
     gx_device_color_info save_info;
     gs_param_name param_name;
     int npcmcolors;
-    int bpc = pdevn->bitspercomponent;
     int num_spot = pdevn->separation_names.num_names;
-    int v;
     int ecode = 0;
     int code;
-    const char *vname;
     gs_param_string_array scna;
     gs_param_string po;
     gs_param_string prgb;
@@ -826,27 +823,6 @@ xcf_put_params(gx_device * pdev, gs_param_list * plist)
     BEGIN_ARRAY_PARAM(param_read_name_array, "SeparationColorNames", scna, scna.size, scne) {
 	break;
     } END_ARRAY_PARAM(scna, scne);
-
-
-    if ((code = param_read_int(plist, (vname = "GrayValues"), &v)) != 1 ||
-	(code = param_read_int(plist, (vname = "RedValues"), &v)) != 1 ||
-	(code = param_read_int(plist, (vname = "GreenValues"), &v)) != 1 ||
-	(code = param_read_int(plist, (vname = "BlueValues"), &v)) != 1
-	) {
-	if (code < 0)
-	    ecode = code;
-	else
-	    switch (v) {
-		case   2: bpc = 1; break;
-		case   4: bpc = 2; break;
-		case  16: bpc = 4; break;
-		case  32: bpc = 5; break;
-		case 256: bpc = 8; break;
-		default:
-		    param_signal_error(plist, vname,
-				       ecode = gs_error_rangecheck);
-	    }
-    }
 
     if (code >= 0)
 	code = xcf_param_read_fn(plist, "ProfileOut", &po,
@@ -907,8 +883,6 @@ xcf_put_params(gx_device * pdev, gs_param_list * plist)
 	if (pdevn->is_open)
 	    gs_closedevice(pdev);
     }
-    pdevn->bitspercomponent = bpc;
-
     npcmcolors = pdevn->num_std_colorant_names;
     pdevn->color_info.num_components = npcmcolors + num_spot;
     /* 
@@ -918,11 +892,8 @@ xcf_put_params(gx_device * pdev, gs_param_list * plist)
      */
     if (!pdevn->color_info.num_components)
 	pdevn->color_info.num_components = 1;
-    pdevn->color_info.depth = bpc_to_depth(pdevn->color_info.num_components, bpc);
-    pdevn->color_info.max_gray = pdevn->color_info.max_color =
-	(pdevn->color_info.dither_grays =
-	 pdevn->color_info.dither_colors =
-	 (1 << bpc)) - 1;
+    pdevn->color_info.depth = bpc_to_depth(pdevn->color_info.num_components, 
+						pdevn->bitspercomponent);
     if (pdevn->color_info.depth != save_info.depth) {
 	gs_closedevice(pdev);
     }
