@@ -846,25 +846,25 @@ static char *MacStr2c(char *pstring)
 
 typedef struct {
     int size, style, id;
-} refentry;
+} fond_entry;
 
 typedef struct {
     int entries;
-    refentry *refs;
-} reftable;
+    fond_entry *refs;
+} fond_table;
 
-static reftable *reftable_new(int entries)
+static fond_table *fond_table_new(int entries)
 {
-    reftable *table = malloc(sizeof(reftable));
+    fond_table *table = malloc(sizeof(fond_table));
     if (table != NULL) {
         table->entries = entries;
-        table->refs = malloc(entries * sizeof(refentry));
+        table->refs = malloc(entries * sizeof(fond_entry));
         if (table->refs == NULL) { free(table); table = NULL; }
     }
     return table;
 }
 
-static void reftable_free(reftable *table)
+static void fond_table_free(fond_table *table)
 {
     if (table != NULL) {
         if (table->refs) free(table->refs);
@@ -872,13 +872,13 @@ static void reftable_free(reftable *table)
     }
 }
 
-static reftable *reftable_grow(reftable *table, int entries)
+static fond_table *fond_table_grow(fond_table *table, int entries)
 {
     if (table == NULL) {
-        table = reftable_new(entries);
+        table = fond_table_new(entries);
     } else {
         table->entries += entries;
-        table->refs = realloc(table->refs, table->entries * sizeof(refentry));
+        table->refs = realloc(table->refs, table->entries * sizeof(fond_entry));
     }
     return table;
 }
@@ -892,14 +892,14 @@ static int get_int32(unsigned char *p) {
 }
 
 /* parse and summarize FOND resource information */
-static reftable * parse_fond(FSSpec *spec)
+static fond_table * parse_fond(FSSpec *spec)
 {
     OSErr result = noErr;
     FSRef specref;
     SInt16 ref;
     Handle fond = NULL;
     unsigned char *res;
-    reftable *table = NULL;
+    fond_table *table = NULL;
     int i,j, count, n, start;
         
 	/* FSpOpenResFile will fail for data fork resource (.dfont) files.
@@ -943,7 +943,7 @@ static reftable * parse_fond(FSSpec *spec)
         HLock(fond);
         res = *fond + 52; /* offset to association table */
         n = get_int16(res) + 1;	res += 2;
-		table = reftable_grow(table, n);
+		table = fond_table_grow(table, n);
         for (j = start; j < start + n; j++ ) {
             table->refs[j].size = get_int16(res); res += 2;
             table->refs[j].style = get_int16(res); res += 2;
@@ -1052,7 +1052,7 @@ int gp_enumerate_fonts_next(void *enum_state, char **fontname, char **path)
 	char type[5];
 	char fontpath[256];
 	char *psname;
-	reftable *table = NULL;
+	fond_table *table = NULL;
 	OSStatus result;
     	
 	result = FMGetNextFont(Iterator, &Font);
@@ -1096,7 +1096,7 @@ int gp_enumerate_fonts_next(void *enum_state, char **fontname, char **path)
                 }
             }
         }
-        reftable_free(table);
+        fond_table_free(table);
         if (state->path == NULL) dlprintf1("couldn't find resource matching font '%s'\n",
         	state->name);
     } else {
