@@ -60,7 +60,6 @@
 <li><a href="#VMS_X_Windows">Using X Windows on VMS</a>
 </ul>
 <li><a href="#MS_Windows">MS Windows</a>
-<li><a href="#MS-DOS">MS-DOS</a>
 <li><a href="#X_Windows">X Windows</a>
 <ul>
 <li><a href="#X_resources">X resources</a>
@@ -348,7 +347,7 @@ You can also control the number of digits used in the file name:
 Generally <tt>%03d</tt> is the best option for normal documents.
 
 <p>
-As noted above, on DOS and MS Windows systems, you will have to double the
+As noted above, on MS Windows systems, you will have to double the
 <tt>%</tt> character, e.g.,
 
 <blockquote><tt><b>
@@ -578,7 +577,7 @@ file name specifies an explicit directory.
 <tr>	<td valign=top>Unix
 	<td>&nbsp;
 	<td>Begin with <b><tt><u>/</u></tt></b>, <b><tt><u>./</u></tt></b> or <b><tt><u>../</u></tt></b> ?
-<tr>	<td valign=top>DOS or MS Windows
+<tr>	<td valign=top>MS Windows
 	<td>&nbsp;
 	<td>Have <b><tt><u>:</u></tt></b> as its second character, or
 		begin with <b><tt><u>/</u></tt></b>, <b><tt><u>\</u></tt></b>,
@@ -614,7 +613,7 @@ when this executable was built.
 directory or a list of directories separated by a character appropriate for
 the operating system ("<b><tt>:</tt></b>" on Unix systems,
 "<b><tt>,</tt></b>" on VMS systems, and
-"<b><tt>;</tt></b>" on DOS systems).  We think that trying
+"<b><tt>;</tt></b>" on MS Windows systems).  We think that trying
 the current directory first is a very bad idea -- it opens serious security
 loopholes and can lead to very confusing errors if one has more than one
 version of Ghostscript in one's environment -- but when we attempted to
@@ -886,9 +885,7 @@ in a directory called ...<b><tt>/Acrobat3/Fonts</tt></b>.  There is no
 particular reason to use these instead of the corresponding fonts in the
 Ghostscript distribution (which are of just as good quality), except to save
 about a megabyte of disk space, but the installation documentation explains
-how to do it <a href="Install.htm#Use_Acrobat_fonts_Unix">on Unix</a> and <a
-href="Install.htm#Use_platform_fonts_DOS">on DOS</a> (where you can also use
-Adobe Type Manager fonts).
+how to do it <a href="Install.htm#Use_Acrobat_fonts_Unix">on Unix</a>.
 
 <h3><a name="Temp_files"></a>Temporary files</h3>
 
@@ -901,7 +898,7 @@ Adobe Type Manager fonts).
 	<td>&nbsp;&nbsp;&nbsp;
 	<th align=left>Location
 <tr>	<td colspan=5><hr>
-<tr valign=top>	<td>DOS and OpenVMS
+<tr valign=top>	<td>MS Windows and OpenVMS
 	<td>&nbsp;
 	<td><b><tt>_temp_</tt></b>XX.XXX
 	<td>&nbsp;
@@ -1153,230 +1150,7 @@ the command shell.
 <h3><a name="MS-DOS"></a>MS-DOS</h3>
 
 <p>
-<strong>Note:</strong> Ghostscript is no longer supported on MS-DOS. This
-documentation is included for historical interest only.
-
-<p>
-You must add <em>gs\</em><b><tt>bin</tt></b> and
-<em>gs\</em><b><tt>lib</tt></b> to the <b><tt>PATH</tt></b>, where
-<em>gs</em> is the top-level Ghostscript directory.
-
-<ul>
-<li>
-Ghostscript supports many SuperVGA displays directly, most of them with
-more than 16 colors.  The complete list is in the file
-<b><tt>devs.mak</tt></b>, part of Ghostscript's
-<a href="#Source_code">source code</a>.
-
-<li>
-Some applications, such as Microsoft Word, require a prologue in front of
-the PostScript files they produce.  In the case of MS Word, this prologue
-is one of the *.ini files Microsoft includes with Word.  Other applications
-may require other prologues.  You may specify a prologue on the Ghostscript
-command line, for instance
-
-<blockquote><b><tt>
-	gs386 prologue.ini myfile.ps
-</tt></b></blockquote>
-
-<li>
-If you have a SuperVGA display that supports a 16-color mode with 800x600
-pixels and you know the display mode number for this mode, you can select
-it by using the command line switches
-
-<blockquote>
-<b><tt>-sDEVICE=svga16 -dDisplayMode=</tt></b><em>NNN</em>
-</blockquote>
-
-<p>
-where <em>NNN</em> is the display mode number in decimal.  Here are modes
-for some popular display chipsets; the ones that use the default value are
-marked "*".  If your card's chipset doesn't appear on this list, or if you
-try the value here and it doesn't work, please send the name of the chipset
-and its correct display mode to &lt;<a href="mailto:bug-gs@ghostscript.com">bug-gs@ghostscript.com</a>&gt; to include in
-future releases.
-
-<blockquote><table cellpadding=0 cellspacing=0>
-<tr><th colspan=6 bgcolor="#CCCC00"><hr><font size="+1">Display modes for PC display chipsets</font><hr>
-<tr>	<td>&nbsp;
-	<th>Chipset
-	<td>&nbsp;
-	<th>Decimal
-	<td>&nbsp;
-	<th>Hex
-<tr>	<td colspan=6><hr>
-<tr>	<td>&nbsp;
-	<td>Acumos AVGA2, AVGA3
-	<td>&nbsp;
-	<td align=center>88
-	<td>&nbsp;
-	<td align=right><tt>0x58</tt>
-<tr>	<td>&nbsp;
-	<td>Advance Logic AL2101
-	<td>&nbsp;
-	<td align=center>43
-	<td>&nbsp;
-	<td align=right><tt>0x2B</tt>
-<tr>	<td>&nbsp;
-	<td>Ahead V5000
-	<td>&nbsp;
-	<td align=center>113
-	<td>&nbsp;
-	<td align=right><tt>0x71</tt>
-<tr>	<td>&nbsp;
-	<td>ATI VGAWONDER, Graphics Ultra etc.
-	<td>&nbsp;
-	<td align=center>84
-	<td>&nbsp;
-	<td align=right><tt>0x54</tt>
-<tr>	<td>&nbsp;
-	<td>Chips and Technologies
-	<td>&nbsp;
-	<td align=center>106
-	<td>&nbsp;
-	<td align=right><tt>0x6A</tt>
-<tr>	<td>&nbsp;
-	<td>Cirrus Logic CL-GD 500/600
-	<td>&nbsp;
-	<td align=center>100
-	<td>&nbsp;
-	<td align=right><tt>0x64</tt>
-<tr>	<td>&nbsp;
-	<td>Cirrus Logic GD 5422
-	<td>&nbsp;
-	<td align=center>88
-	<td>&nbsp;
-	<td align=right><tt>0x58</tt>
-<tr>	<td>&nbsp;
-	<td>Compaq VGA
-	<td>&nbsp;
-	<td align=center>89
-	<td>&nbsp;
-	<td align=right><tt>0x59</tt>
-<tr>	<td>&nbsp;
-	<td>CTI
-	<td>&nbsp;
-	<td align=center>106
-	<td>&nbsp;
-	<td align=right><tt>0x6A</tt>
-<tr>	<td>*
-	<td>Genoa 5xxx, Sigma VGA
-	<td>&nbsp;
-	<td align=center>41
-	<td>&nbsp;
-	<td align=right><tt>0x29</tt>
-<tr>	<td>&nbsp;
-	<td>Genoa 6xxx
-	<td>&nbsp;
-	<td align=center>106
-	<td>&nbsp;
-	<td align=right><tt>0x6A</tt>
-<tr>	<td>&nbsp;
-	<td>MXIC MX 68010
-	<td>&nbsp;
-	<td align=center>85
-	<td>&nbsp;
-	<td align=right><tt>0x55</tt>
-<tr>	<td>&nbsp;
-	<td>NCR 77C22
-	<td>&nbsp;
-	<td align=center>88
-	<td>&nbsp;
-	<td align=right><tt>0x58</tt>
-<tr>	<td>&nbsp;
-	<td>OAK Technologies OTI-067, OTI-077, OTI037C
-	<td>&nbsp;
-	<td align=center>82
-	<td>&nbsp;
-	<td align=right><tt>0x52</tt>
-<tr>	<td>&nbsp;
-	<td>OAK Technologies OTI037C w/ NEL BIOS
-	<td>&nbsp;
-	<td align=center>91
-	<td>&nbsp;
-	<td align=right><tt>0x5B</tt>
-<tr>	<td>*
-	<td>Orchid Prodesigner
-	<td>&nbsp;
-	<td align=center>41
-	<td>&nbsp;
-	<td align=right><tt>0x29</tt>
-<tr>	<td>&nbsp;
-	<td>Paradise
-	<td>&nbsp;
-	<td align=center>88
-	<td>&nbsp;
-	<td align=right><tt>0x58</tt>
-<tr>	<td>&nbsp;
-	<td>Poach
-	<td>&nbsp;
-	<td align=center>106
-	<td>&nbsp;
-	<td align=right><tt>0x6A</tt>
-<tr>	<td>&nbsp;
-	<td>Primus
-	<td>&nbsp;
-	<td align=center>42
-	<td>&nbsp;
-	<td align=right><tt>0x2A</tt>
-<tr>	<td>&nbsp;
-	<td>Realtek RT 3106
-	<td>&nbsp;
-	<td align=center>31
-	<td>&nbsp;
-	<td align=right><tt>0x1F</tt>
-<tr>	<td>&nbsp;
-	<td>Tecmar
-	<td>&nbsp;
-	<td align=center>22
-	<td>&nbsp;
-	<td align=right><tt>0x16</tt>
-<tr>	<td>&nbsp;
-	<td>Trident 8900
-	<td>&nbsp;
-	<td align=center>91
-	<td>&nbsp;
-	<td align=right><tt>0x5B</tt>
-<tr>	<td>*
-	<td>Tseng ET-3000, ET-4000
-	<td>&nbsp;
-	<td align=center>41
-	<td>&nbsp;
-	<td align=right><tt>0x29</tt>
-<tr>	<td>*
-	<td>VEGA
-	<td>&nbsp;
-	<td align=center>41
-	<td>&nbsp;
-	<td align=right><tt>0x29</tt>
-<tr>	<td>&nbsp;
-	<td>Video 7 SVGA
-	<td>&nbsp;
-	<td align=center>98
-	<td>&nbsp;
-	<td align=right><tt>0x62</tt>
-<tr>	<td>&nbsp;
-	<td>WD90C11
-	<td>&nbsp;
-	<td align=center>92
-	<td>&nbsp;
-	<td align=right><tt>0x5C</tt>
-<tr>	<td>&nbsp;
-	<td>Western Digital
-	<td>&nbsp;
-	<td align=center>88
-	<td>&nbsp;
-	<td align=right><tt>0x58</tt>
-</table></blockquote>
-</ul>
-
-<p>
-Note that when passing arguments to batch files (as above) and also with the
-DOS executable <b><tt>gs386.exe</tt></b> build with the Watcom C/C++ compiler,
-you must use '<b><tt>#</tt></b>' rather than '<b><tt>=</tt></b>' between a
-command line switch and its argument, because of a strange design decision
-in the Watcom run-time library.
-
+<strong>Note:</strong> Ghostscript is no longer supported on MS-DOS.
 
 <hr>
 
@@ -1688,7 +1462,7 @@ Unless otherwise noted, these switches can be used on all platforms.
 <dl>
 <dt><b><tt>@</tt></b><em>filename</em>
 <dd>Causes Ghostscript to read <em>filename</em> and treat its contents the
-same as the command line.  (This is intended primarily for getting around
+same as the command line.  (This was intended primarily for getting around
 DOS's 128-character limit on the length of a command line.)  Switches or
 file names in the file may be separated by any amount of white space
 (space, tab, line break); there is no limit on the size of the file.
@@ -2026,7 +1800,7 @@ look undesirably different from the scalable fonts.
 <dt><b><tt>-sFONTMAP=</tt></b><em>filename1</em><b><tt>;</tt></b><em>filename2</em><b><tt>;</tt></b><em>...</em>
 <dd>Specifies alternate name or names for the Fontmap file.  Note that the
 names are separated by "<b><tt>:</tt></b>" on Unix systems, by
-"<b><tt>;</tt></b>" on DOS or MS Windows systems, and by
+"<b><tt>;</tt></b>" on MS Windows systems, and by
 "<b><tt>,</tt></b>" on VMS systems, just as for search paths.
 </dl>
 
