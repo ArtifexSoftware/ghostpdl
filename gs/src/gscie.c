@@ -827,7 +827,7 @@ gs_cie_cache_init(cie_cache_params * pcache, gs_sample_loop_params_t * pslp,
      * This should only occurs with zero matrices.  It does occur with
      * Genoa test file 050-01.ps.
      */
-    pcache->factor = (any_abs(delta) < 1e-30 ? 0.0 : N / R);
+    pcache->factor = (any_abs(delta) < 1e-30 ? 1.0 : N / R);
     if_debug4('c', "[c]cache %s 0x%lx base=%g, factor=%g\n",
 	      (const char *)cname, (ulong) pcache,
 	      pcache->base, pcache->factor);
