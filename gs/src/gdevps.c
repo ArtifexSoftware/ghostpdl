@@ -133,26 +133,28 @@ gs_private_st_suffix_add1_final(st_device_pswrite, gx_device_pswrite,
 		NULL/******psw_strip_copy_rop******/\
 	}
 
-const gx_device_pswrite gs_pswrite_device =
-{std_device_dci_type_body(gx_device_pswrite, 0, "pswrite",
-			  &st_device_pswrite,
-	DEFAULT_WIDTH_10THS * X_DPI / 10, DEFAULT_HEIGHT_10THS * Y_DPI / 10,
-			  X_DPI, Y_DPI, 3, 24, 255, 255, 256, 256),
- psw_procs,
- psdf_initial_values(psdf_version_default, 1 /*true */ ),	/* (ASCII85EncodePages) */
- LanguageLevel_default,		/* LanguageLevel */
- 0				/*false *//* ProduceEPS */
+const gx_device_pswrite gs_pswrite_device = {
+    std_device_dci_type_body(gx_device_pswrite, 0, "pswrite",
+			     &st_device_pswrite,
+			     DEFAULT_WIDTH_10THS * X_DPI / 10,
+			     DEFAULT_HEIGHT_10THS * Y_DPI / 10,
+			     X_DPI, Y_DPI, 3, 24, 255, 255, 256, 256),
+    psw_procs,
+    psdf_initial_values(psdf_version_default, 1 /*true */ ),	/* (ASCII85EncodePages) */
+    LanguageLevel_default,		/* LanguageLevel */
+    0 /*false*/				/* ProduceEPS */
 };
 
-const gx_device_pswrite gs_epswrite_device =
-{std_device_dci_type_body(gx_device_pswrite, 0, "epswrite",
-			  &st_device_pswrite,
-	DEFAULT_WIDTH_10THS * X_DPI / 10, DEFAULT_HEIGHT_10THS * Y_DPI / 10,
-			  X_DPI, Y_DPI, 3, 24, 255, 255, 256, 256),
- psw_procs,
- psdf_initial_values(psdf_version_default, 1 /*true */ ),	/* (ASCII85EncodePages) */
- LanguageLevel_default,		/* LanguageLevel */
- 1				/*true *//* ProduceEPS */
+const gx_device_pswrite gs_epswrite_device = {
+    std_device_dci_type_body(gx_device_pswrite, 0, "epswrite",
+			     &st_device_pswrite,
+			     DEFAULT_WIDTH_10THS * X_DPI / 10,
+			     DEFAULT_HEIGHT_10THS * Y_DPI / 10,
+			     X_DPI, Y_DPI, 3, 24, 255, 255, 256, 256),
+    psw_procs,
+    psdf_initial_values(psdf_version_default, 1 /*true */ ),	/* (ASCII85EncodePages) */
+    LanguageLevel_default,		/* LanguageLevel */
+    1 /*true*/				/* ProduceEPS */
 };
 
 /* Vector device implementation */
@@ -199,21 +201,18 @@ private const gx_device_vector_procs psw_vector_procs = {
 
 /* ---------------- File header ---------------- */
 
-private const char *const psw_ps_header[] =
-{
+private const char *const psw_ps_header[] = {
     "%!PS-Adobe-3.0",
     "%%Pages: (atend)",
     0
 };
 
-private const char *const psw_eps_header[] =
-{
+private const char *const psw_eps_header[] = {
     "%!PS-Adobe-3.0 EPSF-3.0",
     0
 };
 
-private const char *const psw_header[] =
-{
+private const char *const psw_header[] = {
     "%%EndComments",
     "%%BeginProlog",
  "% This copyright applies to everything between here and the %%EndProlog:",
@@ -221,8 +220,7 @@ private const char *const psw_header[] =
     0
 };
 
-private const char *const psw_prolog[] =
-{
+private const char *const psw_prolog[] = {
     "%%BeginResource: procset GS_pswrite_ProcSet",
     "/GS_pswrite_ProcSet 80 dict dup begin",
     "/!{bind def}bind def/#{load def}!/N/counttomark #",
@@ -272,13 +270,11 @@ private const char *const psw_prolog[] =
     0
 };
 
-private const char *const psw_1_prolog[] =
-{
+private const char *const psw_1_prolog[] = {
     0
 };
 
-private const char *const psw_1_x_prolog[] =
-{
+private const char *const psw_1_x_prolog[] = {
 	/* <w> <h> <name> <length> <src> |X <w> <h> <data> */
 	/* <w> <h> <name> (<length>|) $X <w> <h> <data> */
     "/|X{exch string readhexstring |=}!/$X{+ @ |X}!",
@@ -290,15 +286,13 @@ private const char *const psw_1_x_prolog[] =
     0
 };
 
-private const char *const psw_1_5_prolog[] =
-{
+private const char *const psw_1_5_prolog[] = {
 	/* <x> <y> <w> <h> <src> <bpc> Ic - */
     "/Ic{exch Ix false 3 colorimage}!",
     0
 };
 
-private const char *const psw_2_prolog[] =
-{
+private const char *const psw_2_prolog[] = {
 	/* <src> <w> <h> -mark- ... F <g4src> */
 	/* <src> <w> <h> FX <g4src> */
     "/F{/Columns counttomark 3 add -2 roll/Rows exch/K -1/BlackIs1 true>>",
@@ -322,8 +316,7 @@ private const char *const psw_2_prolog[] =
     0
 };
 
-private const char *const psw_end_prolog[] =
-{
+private const char *const psw_end_prolog[] = {
     "end readonly def",
     "%%EndResource",
     "%%EndProlog",
@@ -350,7 +343,6 @@ psw_print_bbox(FILE *f, const gs_rect *pbbox)
 	    (int)ceil(pbbox->q.x), (int)ceil(pbbox->q.y));
     fprintf(f, "%%%%HiResBoundingBox: %f %f %f %f\n",
 	    pbbox->p.x, pbbox->p.y, pbbox->q.x, pbbox->q.y);
-
 }
 
 /*
@@ -453,21 +445,23 @@ image_cache_lookup(gx_device_pswrite * pdev, gx_bitmap_id id,
     return -1;
 }
 
-/* Prepare the encoding stream for image data. */
-/* Return 1 if we are using ASCII85 (or, for Level 1, ASCIIHex) encoding. */
+/*
+ * Prepare the encoding stream for image data.
+ * Return 1 if using ASCII (Hex or 85) encoding, 0 if binary.
+ */
 private int
-psw_image_stream_setup(gx_device_pswrite * pdev)
+psw_image_stream_setup(gx_device_pswrite * pdev, bool binary_ok)
 {
-    int code, encode;
+    int code;
+    bool save = pdev->binary_ok;
 
-    if (pdev->LanguageLevel >= 2 || pdev->binary_ok) {
+    if (pdev->LanguageLevel >= 2 || binary_ok) {
+	pdev->binary_ok = binary_ok;
 	code = psdf_begin_binary((gx_device_psdf *)pdev, pdev->image_writer);
-	encode =
-	    (pdev->image_stream->state->template == &s_A85E_template ? 1 : 0);
     } else {
+	/* LanguageLevel 1, binary not OK.  Use ASCIIHex encoding. */
 	pdev->binary_ok = true;
 	code = psdf_begin_binary((gx_device_psdf *)pdev, pdev->image_writer);
-	pdev->binary_ok = false;
 	if (code >= 0) {
 	    stream_state *st =
 		s_alloc_state(pdev->v_memory, s_AXE_template.stype,
@@ -482,9 +476,9 @@ psw_image_stream_setup(gx_device_pswrite * pdev)
 		    ((stream_AXE_state *)st)->EndOfData = false; /* no > */
 	    }
 	}
-	encode = 1;
     }
-    return (code < 0 ? code : encode);
+    pdev->binary_ok = save;
+    return (code < 0 ? code : !binary_ok);
 }
 
 /* Clean up after writing an image. */
@@ -521,16 +515,45 @@ psw_put_bits(stream * s, const byte * data, int data_x_bit, uint raster,
 	}
 }
 private int
+psw_put_image_bits(gx_device_pswrite *pdev, const char *op,
+		   const byte * data, int data_x, uint raster,
+		   int width, int height, int depth)
+{
+    pprints1(pdev->strm, "%s\n", op);
+    psw_put_bits(pdev->image_stream, data, data_x * depth, raster,
+		 width * depth, height);
+    psw_image_cleanup(pdev);
+    return 0;
+}
+private int
+psw_put_image(gx_device_pswrite *pdev, const char *op, int encode,
+	      const byte * data, int data_x, uint raster,
+	      int width, int height, int depth)
+{
+    int code = psw_image_stream_setup(pdev, !(encode & 1));
+
+    if (code < 0)
+	return code;
+    if (encode & 2) {
+	code = psdf_CFE_binary(pdev->image_writer, width, height, false);
+	if (code < 0)
+	    return code;
+    }
+    return psw_put_image_bits(pdev, op, data, data_x, raster,
+			      width, height, depth);
+}
+private int
 psw_image_write(gx_device_pswrite * pdev, const char *imagestr,
 		const byte * data, int data_x, uint raster, gx_bitmap_id id,
 		int x, int y, int width, int height, int depth)
 {
     stream *s = gdev_vector_stream((gx_device_vector *) pdev);
     uint width_bits = width * depth;
-    int data_x_bit = data_x * depth;
     int index = image_cache_lookup(pdev, id, width_bits, height, false);
     char str[40];
+    char endstr[20];
     int code, encode;
+    const char *op;
 
     if (index >= 0) {
 	sprintf(str, "%d%c", index / 26, index % 26 + 'A');
@@ -539,17 +562,12 @@ psw_image_write(gx_device_pswrite * pdev, const char *imagestr,
 	return 0;
     }
     pprintd4(s, "%d %d %d %d ", x, y, width, height);
-    encode = code = psw_image_stream_setup(pdev);
-    if (code < 0)
-	return code;
+    encode = !pdev->binary_ok;
     if (depth == 1 && width > 16 && pdev->LanguageLevel >= 2) {
 	/*
 	 * We should really look at the statistics of the image before
 	 * committing to using G4 encoding....
 	 */
-	code = psdf_CFE_binary(pdev->image_writer, width, height, false);
-	if (code < 0)
-	    return code;
 	encode += 2;
     }
     if (id == gx_no_bitmap_id || width_bits * (ulong) height > 8000) {
@@ -557,27 +575,60 @@ psw_image_write(gx_device_pswrite * pdev, const char *imagestr,
 	    "@", "@X", "@F", "@C"
 	};
 
-	pprints2(s, "%s %s\n", uncached[encode], imagestr);
-	psw_put_bits(pdev->image_stream, data, data_x_bit, raster,
-		     width_bits, height);
-	psw_image_cleanup(pdev);
-	spputc(s, '\n');
+	pputs(s, uncached[encode]);
+	op = imagestr;
+	strcpy(endstr, "\n");
     } else {
 	static const char *const cached[4] = {
 	    "$", "$X", "$F", "$C"
 	};
 
 	index = image_cache_lookup(pdev, id, width_bits, height, true);
-	sprintf(str, "/%d%c ", index / 26, index % 26 + 'A');
+	sprintf(str, "/%d%c", index / 26, index % 26 + 'A');
 	pputs(s, str);
 	if (depth != 1)
-	    pprintld1(s, "%ld ", ((width_bits + 7) >> 3) * (ulong) height);
-	pprints1(s, "%s\n", cached[encode]);
-	psw_put_bits(pdev->image_stream, data, data_x_bit, raster,
-		     width_bits, height);
-	psw_image_cleanup(pdev);
-	pprints1(s, "\n%s\n", imagestr);
+	    pprintld1(s, " %ld", ((width_bits + 7) >> 3) * (ulong) height);
+	op = cached[encode];
+	sprintf(endstr, "\n%s\n", imagestr);
     }
+    /*
+     * In principle, we should put %%BeginData: / %%EndData around all data
+     * sections.  However, as long as the data are ASCII (not binary), they
+     * can't cause problems for a DSC parser as long as all lines are
+     * limited to 255 characters and there is no possibility that %% might
+     * occur at the beginning of a line.  ASCIIHexEncoded data can't contain
+     * % at all, and our implementation of ASCII85Encode also guarantees
+     * the desired property.  Therefore, we only bracket binary data.
+     */
+    if (encode & 1) {
+	/* We're using ASCII encoding. */
+	pputc(s, '\n');
+	code = psw_put_image(pdev, op, encode, data, data_x, raster,
+			     width, height, depth);
+	if (code < 0)
+	    return code;
+    } else {
+	/*
+	 * Do a pre-pass to compute the amount of binary data for the
+	 * %%BeginData DSC comment.
+	 */
+	stream poss;
+
+	swrite_position_only(&poss);
+	pdev->strm = &poss;
+	code = psw_put_image(pdev, op, encode, data, data_x, raster,
+			     width, height, depth);
+	pdev->strm = s;
+	if (code < 0)
+	    return code;
+	pprintld1(s, "\n%%%%BeginData: %ld\n", stell(&poss));
+	code = psw_put_image(pdev, op, encode, data, data_x, raster,
+			     width, height, depth);
+	if (code < 0)
+	    return code;
+	pputs(s, "\n%%EndData");
+    }
+    pputs(s, endstr);
     return 0;
 }
 
@@ -767,6 +818,10 @@ psw_lineto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
 	stream *s = gdev_vector_stream(vdev);
 	gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
 
+	if (pdev->path_state.num_points > 0 &&
+	    !(pdev->path_state.num_points & 7)
+	    )
+	    pputc(s, '\n');	/* limit line length for DSC compliance */
 	if (pdev->path_state.num_points - pdev->path_state.move >= 2 &&
 	    dx == -pdev->path_state.dprev[1].x &&
 	    dy == -pdev->path_state.dprev[1].y
@@ -1214,8 +1269,7 @@ psw_fill_mask(gx_device * dev,
 
 private image_enum_proc_plane_data(psw_image_plane_data);
 private image_enum_proc_end_image(psw_image_end_image);
-private const gx_image_enum_procs_t psw_image_enum_procs =
-{
+private const gx_image_enum_procs_t psw_image_enum_procs = {
     psw_image_plane_data, psw_image_end_image
 };
 
@@ -1237,13 +1291,25 @@ psw_begin_image(gx_device * dev,
     const char *base_name;
     gs_color_space_index index;
     int num_components;
-    bool can_do = prect == 0 &&
-	(pim->format == gs_image_format_chunky ||
-	 pim->format == gs_image_format_component_planar);
+    bool binary = pdev->binary_ok;
+    byte *buffer = 0;		/* image buffer if needed */
+    stream *bs = 0;		/* buffer stream if needed */
+#define MAX_IMAGE_OP 10		/* imagemask\n */
     int code;
 
     if (pie == 0)
 	return_error(gs_error_VMerror);
+    if (prect && !(prect->p.x == 0 && prect->p.y == 0 &&
+		   prect->q.x == pim->Width && prect->q.y == pim->Height)
+	)
+	goto fail;
+    switch (pim->format) {
+    case gs_image_format_chunky:
+    case gs_image_format_component_planar:
+	break;
+    default:
+	goto fail;
+    }
     pie->memory = mem;
     pie->default_info = 0;	/* not used */
     if (pim->ImageMask) {
@@ -1253,7 +1319,7 @@ psw_begin_image(gx_device * dev,
 	index = gs_color_space_get_index(pcs);
 	num_components = gs_color_space_num_components(pcs);
 	if (pim->CombineWithColor)
-	    can_do = false;
+	    goto fail;
 	/*
 	 * We can only handle Device color spaces right now, or Indexed
 	 * color spaces over them, and only the default Decode [0 1 ...]
@@ -1265,8 +1331,7 @@ psw_begin_image(gx_device * dev,
 		pim->Decode[0] != 0 ||
 		pim->Decode[1] != (1 << pim->BitsPerComponent) - 1
 		) {
-		can_do = false;
-		break;
+		goto fail;
 	    }
 	    pbcs = (const gs_color_space *)&pcs->params.indexed.base_space;
 	    switch (gs_color_space_get_index(pbcs)) {
@@ -1277,7 +1342,7 @@ psw_begin_image(gx_device * dev,
 	    case gs_color_space_index_DeviceCMYK:
 		base_name = "DeviceCMYK"; break;
 	    default:
-		can_do = false;
+		goto fail;
 	    }
 	    break;
 	}
@@ -1288,11 +1353,11 @@ psw_begin_image(gx_device * dev,
 
 	    for (i = 0; i < num_components * 2; ++i)
 		if (pim->Decode[i] != (i & 1))
-		    can_do = false;
+		    goto fail;
 	    break;
 	}
 	default:
-	    can_do = false;
+	    goto fail;
 	}
     }
     if (pdev->LanguageLevel < 2 && !pim->ImageMask) {
@@ -1301,17 +1366,51 @@ psw_begin_image(gx_device * dev,
 	 * not indexed.
 	 */
 	if (pim->BitsPerComponent > 8 || pbcs != pcs)
-	    can_do = false;
+	    goto fail;
     }
-    if (!can_do ||
-	gdev_vector_begin_image(vdev, pis, pim, format, prect, pdcolor,
-			     pcpath, mem, &psw_image_enum_procs, pie) < 0 ||
-	(code = psw_image_stream_setup(pdev)) < 0
-	) {
-	gs_free_object(mem, pie, "psw_begin_image");
-	return gx_default_begin_image(dev, pis, pim, format, prect,
-				      pdcolor, pcpath, mem, pinfo);
+    if (gdev_vector_begin_image(vdev, pis, pim, format, prect, pdcolor,
+				pcpath, mem, &psw_image_enum_procs, pie) < 0)
+	goto fail;
+    if (binary) {
+	/*
+	 * We need to buffer the entire image in memory.  Currently, the
+	 * only reason for this is the infamous "short image" problem: the
+	 * image may actually have fewer rows than its height specifies.  If
+	 * it weren't for that, we could know the size of the binary data in
+	 * advance.  However, this will change if we compress images.
+	 */
+	uint bsize = MAX_IMAGE_OP +
+	    ((pie->bits_per_row + 7) >> 3) * pie->height;
+
+	buffer = gs_alloc_bytes(mem, bsize, "psw_begin_image(buffer)");
+	bs = s_alloc(mem, "psw_begin_image(buffer stream)");
+	if (buffer && bs) {
+	    swrite_string(bs, buffer, bsize);
+	} else {
+	    /* An allocation failed. */
+	    gs_free_object(mem, bs, "psw_begin_image(buffer stream)");
+	    gs_free_object(mem, buffer, "psw_begin_image(buffer)");
+	    /*
+	     * Rather than returning VMerror, we fall back to an ASCII
+	     * encoding, which doesn't require a buffer stream.
+	     */
+	    buffer = 0;
+	    bs = 0;
+	    binary = false;
+	}
     }
+    if (binary) {
+	/* Set up the image stream to write into the buffer. */
+	stream *save = pdev->strm;
+
+	pdev->strm = bs;
+	code = psw_image_stream_setup(pdev, true);
+	pdev->strm = save;
+    } else {
+	code = psw_image_stream_setup(pdev, false);
+    }
+    if (code < 0)
+	goto fail;
     /* Update the clipping path now. */
     gdev_vector_update_clip_path(vdev, pcpath);
     /* Write the image/colorimage/imagemask preamble. */
@@ -1319,6 +1418,7 @@ psw_begin_image(gx_device * dev,
 	stream *s = gdev_vector_stream((gx_device_vector *) pdev);
 	const char *source = (code ? "@X" : "@");
 	gs_matrix imat;
+	const char *op;
 
 	pputs(s, "q");
 	(*dev_proc(dev, get_initial_matrix)) (dev, &imat);
@@ -1331,7 +1431,8 @@ psw_begin_image(gx_device * dev,
 	if (pim->ImageMask) {
 	    pputs(s, (pim->Decode[0] == 0 ? "false" : "true"));
 	    psw_put_matrix(s, &pim->ImageMatrix);
-	    pprints1(s, "%s imagemask\n", source);
+	    pputs(s, source);
+	    op = "imagemask";
 	} else {
 	    pprintd1(s, "%d", pim->BitsPerComponent);
 	    psw_put_matrix(s, &pim->ImageMatrix);
@@ -1339,16 +1440,21 @@ psw_begin_image(gx_device * dev,
 		/* This is an Indexed color space. */
 		pprints1(s, "[/Indexed /%s ", base_name);
 		pprintd1(s, "%d\n", pcs->params.indexed.hival);
+		/*
+		 * Don't write the table in binary: it might interfere
+		 * with DSC parsing.
+		 */
 		s_write_ps_string(s, pcs->params.indexed.lookup.table.data,
 				  pcs->params.indexed.lookup.table.size,
-				  (pdev->binary_ok ? PRINT_BINARY_OK : 0) |
 				  PRINT_ASCII85_OK);
-		pprintd1(s, "\n]setcolorspace[0 %d]", (int)pim->Decode[1]),
-		pprints2(s, "%s %s IC\n",
+		pprintd1(s, "\n]setcolorspace[0 %d]", (int)pim->Decode[1]);
+		pprints2(s, "%s %s",
 			 (pim->Interpolate ? "true" : "false"), source);
-	    } else if (index == gs_color_space_index_DeviceGray)
-		pprints1(s, "%s image\n", source);
-	    else {
+		op = "IC";
+	    } else if (index == gs_color_space_index_DeviceGray) {
+		pputs(s, source);
+		op = "image";
+	    } else {
 		if (format == gs_image_format_chunky)
 		    pprints1(s, "%s false", source);
 		else {
@@ -1358,12 +1464,21 @@ psw_begin_image(gx_device * dev,
 			     (pim->Width * pim->BitsPerComponent + 7) >> 3,
 			     num_components);
 		}
-		pprintd1(s, " %d colorimage\n", num_components);
+		pprintd1(s, " %d", num_components);
+		op = "colorimage";
 	    }
 	}
+	pputc(s, '\n');
+	pprints1((bs ? bs : s), "%s\n", op);
     }
     *pinfo = (gx_image_enum_common_t *) pie;
     return 0;
+ fail:
+    gs_free_object(mem, bs, "psw_begin_image(buffer stream)");
+    gs_free_object(mem, buffer, "psw_begin_image(buffer)");
+    gs_free_object(mem, pie, "psw_begin_image");
+    return gx_default_begin_image(dev, pis, pim, format, prect,
+				  pdcolor, pcpath, mem, pinfo);
 }
 
 /* Process the next piece of an image. */
@@ -1379,12 +1494,14 @@ psw_image_plane_data(gx_image_enum_common_t * info,
 	gx_image_plane_data_rows(pie->bbox_info, planes, height, rows_used);
     int pi;
 
-    for (pi = 0; pi < pie->num_planes; ++pi)
+    for (pi = 0; pi < pie->num_planes; ++pi) {
+	if (pie->bits_per_row != pie->width * info->plane_depths[pi])
+	    return_error(gs_error_rangecheck);
 	psw_put_bits(pdev->image_stream, planes[pi].data,
 		     planes[pi].data_x * info->plane_depths[pi],
-		     planes[pi].raster,
-		     pie->width * info->plane_depths[pi],
+		     planes[pi].raster, pie->bits_per_row,
 		     *rows_used);
+    }
     pie->y += *rows_used;
     return code;
 }
@@ -1401,8 +1518,31 @@ psw_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 
     code = gdev_vector_end_image(vdev, pie, draw_last, pdev->white);
     if (code > 0) {
+	stream *s = pdev->strm;
+	stream *bs = pdev->image_stream;
+
+	/* If we were buffering a binary image, write it now. */
+	while (bs != s && bs->strm != 0)
+	    bs = bs->strm;
 	psw_image_cleanup(pdev);
-	pputs(pdev->strm, "\nQ\n");
+	if (bs != s) {
+	    /*
+	     * We were buffering a binary image.  Write it now, with the
+	     * DSC comments.
+	     */
+	    gs_memory_t *mem = bs->memory;
+	    byte *buffer = bs->cbuf;
+	    long len = stell(bs);
+	    uint ignore;
+
+	    pprintld1(s, "%%%%BeginData: %ld\n", len);
+	    sputs(s, buffer, (uint)len, &ignore);
+	    pputs(s, "\n%%EndData");
+	    /* Free the buffer and its stream. */
+	    gs_free_object(mem, bs, "psw_image_end_image(buffer stream)");
+	    gs_free_object(mem, buffer, "psw_image_end_image(buffer)");
+	}
+	pputs(s, "\nQ\n");
     }
     return code;
 }
