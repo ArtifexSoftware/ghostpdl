@@ -715,20 +715,14 @@ const char *glyph_names[] = {
     /*          Glyf 632 -> Mac Glyph # 0*/ ".notdef",
 };
 
-// NB global container
-gs_const_string pl_mystring;
-
 private const char *
 pl_glyph_name(gs_font_type42 *pfont, gs_glyph glyph, gs_const_string *pstr)
 {	
     // should check for overflow on bounds of name array.
-
     if ( glyph >= sizeof(glyph_names) / sizeof(glyph_names[0]))
         glyph = 0;
-    pl_mystring.data = glyph_names[glyph];
-    pl_mystring.size = strlen(pl_mystring.data);
-    pstr = &pl_mystring;
-    // NB assume input is zero
+    pstr->data = glyph_names[glyph];
+    pstr->size = strlen(pstr->data);
     return 0;
 }
 
