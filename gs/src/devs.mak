@@ -241,6 +241,7 @@ gdev8bcm_h=$(GLSRC)gdev8bcm.h
 gdevcbjc_h=$(GLSRC)gdevcbjc.h $(stream_h)
 gdevdcrd_h=$(GLSRC)gdevdcrd.h
 gdevdevn_h=$(GLSRC)gdevdevn.h
+gsequivc_h=$(GLSRC)gsequivc.h
 gdevpccm_h=$(GLSRC)gdevpccm.h
 gdevpcfb_h=$(GLSRC)gdevpcfb.h $(dos__h)
 gdevpcl_h=$(GLSRC)gdevpcl.h
@@ -1195,7 +1196,7 @@ $(GLOBJ)gdevxcf.$(OBJ) : $(GLSRC)gdevxcf.c $(PDEVH) $(math__h)\
 
 ### --------------------------- The PSD device ------------------------- ###
 
-psd_=$(GLOBJ)gdevpsd.$(OBJ)
+psd_=$(GLOBJ)gdevpsd.$(OBJ) $(GLOBJ)gdevdevn.$(OBJ) $(GLOBJ)gsequivc.$(OBJ)
 
 $(DD)psdrgb.dev : $(DEVS_MAK) $(psd_) $(GLD)page.dev
 	$(SETDEV) $(DD)psdrgb $(psd_)
@@ -1205,8 +1206,13 @@ $(DD)psdcmyk.dev : $(DEVS_MAK) $(psd_) $(GLD)page.dev
 
 $(GLOBJ)gdevpsd.$(OBJ) : $(GLSRC)gdevpsd.c $(PDEVH) $(math__h)\
  $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gsparam_h) $(gxlum_h) $(icc_h)\
- $(gstypes_h) $(gxdcconv_h) $(gdevdevn_h)
+ $(gstypes_h) $(gxdcconv_h) $(gdevdevn_h) $(gsequivc_h)
 	$(GLICCCC) $(GLO_)gdevpsd.$(OBJ) $(C_) $(GLSRC)gdevpsd.c
+
+$(GLOBJ)gsequivc.$(OBJ) : $(GLSRC)gsequivc.c $(math__h)\
+ $(PDEVH) $(gsparam_h) $(gstypes_h) $(gxdconv_h) $(gdevdevn_h)\
+ $(gsequivc_h) $(gzstate_h) $(gsstate_h) $(gscspace_h) $(gxcspace_h)
+	$(GLICCCC) $(GLO_)gsequivc.$(OBJ) $(C_) $(GLSRC)gsequivc.c
 
 ### ----------------------- The permutation device --------------------- ###
 

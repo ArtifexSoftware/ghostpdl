@@ -28,6 +28,7 @@
 #include "icc.h"
 #include "gxdcconv.h"
 #include "gdevdevn.h"
+#include "gsequivc.h"
 
 /* Define the device parameters. */
 #ifndef X_DPI
@@ -47,6 +48,11 @@ private dev_proc_get_color_mapping_procs(get_psd_color_mapping_procs);
 private dev_proc_get_color_comp_index(psd_get_color_comp_index);
 private dev_proc_encode_color(psd_encode_color);
 private dev_proc_decode_color(psd_decode_color);
+private dev_proc_fill_path(psd_fill_path);
+private dev_proc_stroke_path(psd_stroke_path);
+private dev_proc_begin_image(psd_begin_image);
+private dev_proc_text_begin(psd_text_begin);
+private dev_proc_fill_rectangle_hl_color(psd_fill_rectangle_hl_color);
 
 /* This is redundant with color_info.cm_name. We may eliminate this
    typedef and use the latter string for everything. */
@@ -67,6 +73,8 @@ typedef struct psd_device_s {
     /*        ... device-specific parameters ... */
 
     gs_devn_params devn_params;		/* DeviceN generated parameters */
+
+    equivalent_cmyk_color_params equiv_cmyk_colors;
 
     psd_color_model color_model;
 
@@ -100,8 +108,8 @@ typedef struct psd_device_s {
 	NULL,				/* copy_color */\
 	NULL,				/* draw_line */\
 	NULL,				/* get_bits */\
-	psd_get_params,		/* get_params */\
-	psd_put_params,		/* put_params */\
+	psd_get_params,			/* get_params */\
+	psd_put_params,			/* put_params */\
 	NULL,				/* map_cmyk_color - not used */\
 	NULL,				/* get_xfont_procs */\
 	NULL,				/* get_xfont_device */\
@@ -111,14 +119,14 @@ typedef struct psd_device_s {
 	NULL,				/* copy_alpha */\
 	NULL,				/* get_band */\
 	NULL,				/* copy_rop */\
-	NULL,				/* fill_path */\
-	NULL,				/* stroke_path */\
+	psd_fill_path,			/* fill_path */\
+	psd_stroke_path,		/* stroke_path */\
 	NULL,				/* fill_mask */\
 	NULL,				/* fill_trapezoid */\
 	NULL,				/* fill_parallelogram */\
 	NULL,				/* fill_triangle */\
 	NULL,				/* draw_thin_line */\
-	NULL,				/* begin_image */\
+	psd_begin_image,		/* begin_image */\
 	NULL,				/* image_data */\
 	NULL,				/* end_image */\
 	NULL,				/* strip_tile_rectangle */\
@@ -129,7 +137,7 @@ typedef struct psd_device_s {
 	NULL,				/* map_color_rgb_alpha */\
 	NULL,				/* create_compositor */\
 	NULL,				/* get_hardware_params */\
-	NULL,				/* text_begin */\
+	psd_text_begin,			/* text_begin */\
 	NULL,				/* finish_copydevice */\
 	NULL,				/* begin_transparency_group */\
 	NULL,				/* end_transparency_group */\
@@ -139,7 +147,9 @@ typedef struct psd_device_s {
 	get_color_mapping_procs,	/* get_color_mapping_procs */\
 	psd_get_color_comp_index,	/* get_color_comp_index */\
 	psd_encode_color,		/* encode_color */\
-	psd_decode_color		/* decode_color */\
+	psd_decode_color,		/* decode_color */\
+	NULL,				/* pattern_manage */\
+	psd_fill_rectangle_hl_color	/* fill_rectangle_hl_color */\
 }
 
 
@@ -169,19 +179,20 @@ const psd_device gs_psdrgb_device =
     	 GX_DEVICE_COLOR_MAX_COMPONENTS, 3,	/* MaxComponents, NumComp */
 	 GX_CINFO_POLARITY_ADDITIVE,		/* Polarity */
 	 24, 0,			/* Depth, Gray_index, */
-	 255, 255, 1, 1,	/* MaxGray, MaxColor, DitherGray, DitherColor */
+	 255, 255, 256, 256,	/* MaxGray, MaxColor, DitherGray, DitherColor */
 	 GX_CINFO_SEP_LIN,      /* Linear & Seperable */
 	 "DeviceRGB",		/* Process color model name */
 	 psd_print_page),	/* Printer page print routine */
     /* devn_params specific parameters */
     { 8,			/* Bits per color - must match ncomp, depth, etc. above */
-    				/* Names of color model colorants */
+      /* Names of color model colorants */
       (fixed_colorant_names_list *) &DeviceRGBComponents,
       3,			/* Number colorants for RGB */
       {0},			/* SeparationNames */
       {0},			/* SeparationOrder names */
       {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
     },
+    { true },			/* equivalent CMYK colors for spot colors */
     /* PSD device specific parameters */
     psd_DEVICE_RGB,		/* Color model */
 };
@@ -197,19 +208,20 @@ const psd_device gs_psdcmyk_device =
     	 GX_DEVICE_COLOR_MAX_COMPONENTS, 4,	/* MaxComponents, NumComp */
 	 GX_CINFO_POLARITY_SUBTRACTIVE,		/* Polarity */
 	 32, 0,			/* Depth, Gray_index, */
-	 255, 255, 1, 1,	/* MaxGray, MaxColor, DitherGray, DitherColor */
+	 255, 255, 256, 256,	/* MaxGray, MaxColor, DitherGray, DitherColor */
 	 GX_CINFO_SEP_LIN,      /* Linear & Separable */
 	 "DeviceCMYK",		/* Process color model name */
 	 psd_print_page),	/* Printer page print routine */
     /* devn_params specific parameters */
     { 8,			/* Bits per color - must match ncomp, depth, etc. above */
-    				/* Names of color model colorants */
+      /* Names of color model colorants */
       (fixed_colorant_names_list *) &DeviceCMYKComponents,
       4,			/* Number colorants for CMYK */
       {0},			/* SeparationNames */
       {0},			/* SeparationOrder names */
       {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
     },
+    { true },			/* equivalent CMYK colors for spot colors */
     /* PSD device specific parameters */
     psd_DEVICE_CMYK,		/* Color model */
 };
@@ -467,6 +479,80 @@ psd_map_color_rgb(gx_device *dev, gx_color_index color, gx_color_value rgb[3])
     return 0;
 }
 
+/*
+ * We implement the high level routines simply so we can check to see if
+ * these operations involve separation colors.  If so then we use them to
+ * capture an equivalent CMYK color for the the separation.
+ */
+private int
+psd_fill_path(gx_device * pdev, const gs_imager_state * pis,
+		     gx_path * ppath, const gx_fill_params * params,
+		 const gx_device_color * pdevc, const gx_clip_path * pcpath)
+{
+    psd_device * psdev = (psd_device *)pdev;
+
+    update_spot_equivalent_cmyk_colors(pdev, pis,
+		    &psdev->devn_params, &psdev->equiv_cmyk_colors);
+    return gx_default_fill_path(pdev, pis, ppath, params, pdevc, pcpath);
+}
+
+private int
+psd_stroke_path(gx_device * pdev, const gs_imager_state * pis,
+		       gx_path * ppath, const gx_stroke_params * params,
+		       const gx_drawing_color * pdcolor,
+		       const gx_clip_path * pcpath)
+{
+    psd_device * psdev = (psd_device *)pdev;
+
+    update_spot_equivalent_cmyk_colors(pdev, pis,
+		    &psdev->devn_params, &psdev->equiv_cmyk_colors);
+    return gx_default_stroke_path(pdev, pis, ppath, params, pdcolor, pcpath);
+}
+
+private int
+psd_begin_image(gx_device * pdev, const gs_imager_state * pis,
+		const gs_image_t * pim, gs_image_format_t format,
+		const gs_int_rect * prect, const gx_drawing_color * pdcolor,
+		const gx_clip_path * pcpath, gs_memory_t * memory,
+		gx_image_enum_common_t ** pinfo)
+{
+    psd_device * psdev = (psd_device *)pdev;
+
+    update_spot_equivalent_cmyk_colors(pdev, pis,
+		    &psdev->devn_params, &psdev->equiv_cmyk_colors);
+    return gx_default_begin_image(pdev, pis, pim, format, prect, pdcolor,
+		    pcpath, memory, pinfo);
+}
+
+private int
+psd_text_begin(gx_device * pdev, gs_imager_state * pis,
+		      const gs_text_params_t * text, gs_font * font,
+		      gx_path * path, const gx_device_color * pdcolor,
+		      const gx_clip_path * pcpath,
+		      gs_memory_t * mem, gs_text_enum_t ** ppte)
+{
+    psd_device * psdev = (psd_device *)pdev;
+
+    update_spot_equivalent_cmyk_colors(pdev, pis,
+		    &psdev->devn_params, &psdev->equiv_cmyk_colors);
+    return gx_default_text_begin(pdev, pis, text, font, path, pdcolor,
+		    pcpath, mem, ppte);
+}
+
+private int
+psd_fill_rectangle_hl_color(gx_device *pdev, 
+    const gs_fixed_rect *rect, 
+    const gs_imager_state *pis, const gx_drawing_color *pdcolor,
+    const gx_clip_path *pcpath)
+{
+    psd_device * psdev = (psd_device *)pdev;
+
+    update_spot_equivalent_cmyk_colors(pdev, pis,
+		    &psdev->devn_params, &psdev->equiv_cmyk_colors);
+    return gx_default_fill_rectangle_hl_color(pdev, rect,
+		    pis, pdcolor, pcpath);
+}
+
 private int
 psd_open_profile(psd_device *xdev, char *profile_fn, icmLuBase **pluo,
 		 int *poutn)
@@ -643,7 +729,8 @@ psd_put_params(gx_device * pdev, gs_param_list * plist)
     gs_param_string pcmyk;
     gs_param_string pcm;
     psd_color_model color_model = pdevn->color_model;
-    gs_devn_params * pparams = &(((psd_device *)pdev)->devn_params);
+    gs_separations saved_separations = pdevn->devn_params.separations;
+    gs_devn_params * pparams = &pdevn->devn_params;
 
     code = psd_param_read_fn(plist, "ProfileOut", &po,
 				 sizeof(pdevn->profile_out_fn));
@@ -685,6 +772,25 @@ psd_put_params(gx_device * pdev, gs_param_list * plist)
 	return ecode;
     }
 
+    /*
+     * If we have any changes in the separations, then we need to setup to
+     * capture equivalent CMYK colors for the separations.
+     */
+    if (memcmp(&pdevn->devn_params.separations, &saved_separations,
+			    size_of(gs_separations)) != 0) {
+	if (pdevn->devn_params.separations.num_separations == 0)
+	    pdevn->equiv_cmyk_colors.all_color_info_valid = true;
+	else {
+	    int i;
+
+	    pdevn->equiv_cmyk_colors.all_color_info_valid = false;
+	    for (i = 0;
+		i < pdevn->devn_params.separations.num_separations; i++)
+		    pdevn->equiv_cmyk_colors.color[i].color_info_valid = false;
+	}
+    }
+
+    /* Open any ICC profiles that have been specified. */
     if (po.data != 0) {
 	memcpy(pdevn->profile_out_fn, po.data, po.size);
 	pdevn->profile_out_fn[po.size] = 0;
@@ -871,7 +977,7 @@ psd_write_header(psd_write_ctx *xc, psd_device *pdev)
     /* Channel Names */
     for (chan_idx = NUM_CMYK_COMPONENTS; chan_idx < xc->num_channels; chan_idx++) {
 	sep_num = xc->chnl_to_orig_sep[chan_idx] - NUM_CMYK_COMPONENTS;
-	separation_name = pdev->devn_params.separations.info[sep_num].name;
+	separation_name = pdev->devn_params.separations.names[sep_num];
 	chan_names_len += (separation_name->size + 1);
     }    
     psd_write_32(xc, 12 + (chan_names_len + (chan_names_len % 2))
@@ -883,7 +989,7 @@ psd_write_header(psd_write_ctx *xc, psd_device *pdev)
     psd_write_32(xc, chan_names_len + (chan_names_len % 2));
     for (chan_idx = NUM_CMYK_COMPONENTS; chan_idx < xc->num_channels; chan_idx++) {
 	sep_num = xc->chnl_to_orig_sep[chan_idx] - NUM_CMYK_COMPONENTS;
-	separation_name = pdev->devn_params.separations.info[sep_num].name;
+	separation_name = pdev->devn_params.separations.names[sep_num];
 	psd_write_8(xc, (byte) separation_name->size);
 	psd_write(xc, separation_name->data, separation_name->size);
     }    
@@ -896,12 +1002,25 @@ psd_write_header(psd_write_ctx *xc, psd_device *pdev)
     psd_write_16(xc, 0); /* PString */
     psd_write_32(xc, 14 * (xc->num_channels - xc->base_bytes_pp)); /* Length */
     for (chan_idx = NUM_CMYK_COMPONENTS; chan_idx < xc->num_channels; chan_idx++) {
+	sep_num = xc->chnl_to_orig_sep[chan_idx] - NUM_CMYK_COMPONENTS;
 	psd_write_16(xc, 02); /* CMYK */
-	psd_write_16(xc, 65535); /* Cyan */
-	psd_write_16(xc, 65535); /* Magenta */
-	psd_write_16(xc, 65535); /* Yellow */
-	psd_write_16(xc, 0); /* Black */
-	psd_write_16(xc, 0); /* Opacity */
+	/* PhotoShop stores all component values as if they were additive. */
+	if (pdev->equiv_cmyk_colors.color[sep_num].color_info_valid) {
+#define convert_color(component) ((bits16)((65535 * ((double)\
+    (frac_1 - pdev->equiv_cmyk_colors.color[sep_num].component)) / frac_1)))
+	    psd_write_16(xc, convert_color(c)); /* Cyan */
+	    psd_write_16(xc, convert_color(m)); /* Magenta */
+	    psd_write_16(xc, convert_color(y)); /* Yellow */
+	    psd_write_16(xc, convert_color(k)); /* Black */
+#undef convert_color
+	}
+	else {	    /* Else set C = M = Y = 0, K = 1 */
+	    psd_write_16(xc, 65535); /* Cyan */
+	    psd_write_16(xc, 65535); /* Magenta */
+	    psd_write_16(xc, 65535); /* Yellow */
+	    psd_write_16(xc, 0); /* Black */
+	}
+	psd_write_16(xc, 0); /* Opacity 0 to 100 */
 	psd_write_8(xc, 2); /* Don't know */
 	psd_write_8(xc, 0); /* Padding - Always Zero */
     }

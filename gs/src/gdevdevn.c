@@ -174,7 +174,7 @@ const spotcmyk_device gs_devicen_device =
 	 spotcmyk_print_page),	/* Printer page print routine */
     /* DeviceN device specific parameters */
     { 8,			/* Bits per color - must match ncomp, depth, etc. above */
-      NULL		,	/* No names for standard DeviceN color model */
+      NULL,			/* No names for standard DeviceN color model */
       0,			/* No standarad colorants for DeviceN */
       {0},			/* SeparationNames */
       {0},			/* SeparationOrder names */
@@ -654,7 +654,7 @@ devicen_put_params_no_sep_order(gx_device * pdev, gs_devn_params * pparams,
 
 	    for (i = num_spot = 0; i < num_names; i++) {
 	        if (!check_process_color_names(pcomp_names, &scna.data[i]))
-	            pparams->separations.info[num_spot++].name = &scna.data[i];
+	            pparams->separations.names[num_spot++] = &scna.data[i];
 	    }
 	    pparams->separations.num_separations = num_spot;
 	    for (i = 0; i < num_spot + npcmcolors; i++)
@@ -825,8 +825,8 @@ check_pcm_and_separation_names(const gx_device * dev,
 		const gs_devn_params * pparams, const char * pname,
 		int name_size, int component_type)
 {
-    const fixed_colorant_names_list * list = pparams->std_colorant_names;
-    const fixed_colorant_name * pcolor = *list;
+    fixed_colorant_names_list * list = pparams->std_colorant_names;
+    fixed_colorant_name * pcolor = *list;
     int color_component_number = 0;
     int i;
 
@@ -846,8 +846,8 @@ check_pcm_and_separation_names(const gx_device * dev,
 	int num_spot = separations->num_separations;
 
 	for (i=0; i<num_spot; i++) {
-	    if (compare_color_names((const char *)separations->info[i].name->data,
-		  separations->info[i].name->size, pname, name_size)) {
+	    if (compare_color_names((const char *)separations->names[i]->data,
+		  separations->names[i]->size, pname, name_size)) {
 		return color_component_number;
 	    }
 	    color_component_number++;

@@ -37,20 +37,11 @@ typedef fixed_colorant_name fixed_colorant_names_list[];
 #define GX_DEVICE_MAX_SEPARATIONS 16
 
 /*
- * Structure for holding Separation information.
- */
-typedef struct gs_separation_info_s {
-    bool has_cmyk_color;
-    const gs_param_string * name;
-} gs_separation_info;
-
-/*
  * Structure for holding SeparationNames elements.
  */
 typedef struct gs_separations_s {
     int num_separations;
-    bool have_all_cmyk_colors;
-    gs_separation_info info[GX_DEVICE_MAX_SEPARATIONS];
+    gs_param_string * names[GX_DEVICE_MAX_SEPARATIONS];
 } gs_separations;
 
 /*
