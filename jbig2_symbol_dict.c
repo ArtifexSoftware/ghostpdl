@@ -243,9 +243,9 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 	  int SBSYMCODELEN;
 	  for (SBSYMCODELEN = 0; (1 << SBSYMCODELEN) < tmp; SBSYMCODELEN++);
 	  IAID = jbig2_arith_iaid_ctx_new(ctx, SBSYMCODELEN);
+	  IARDX = jbig2_arith_int_ctx_new(ctx);
+	  IARDY = jbig2_arith_int_ctx_new(ctx);
       }
-      IARDX = jbig2_arith_int_ctx_new(ctx);
-      IARDY = jbig2_arith_int_ctx_new(ctx);
   } else {
       jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
 	"NYI: huffman coded symbol dictionary");
@@ -487,6 +487,15 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
   jbig2_sd_release(ctx, SDNEWSYMS);
   
   if (!params->SDHUFF) {
+    jbig2_arith_int_ctx_free(ctx, IADH);
+    jbig2_arith_int_ctx_free(ctx, IADW);
+    jbig2_arith_int_ctx_free(ctx, IAEX);
+    jbig2_arith_int_ctx_free(ctx, IAAI);
+    if (params->SDREFAGG) {
+      jbig2_arith_iaid_ctx_free(ctx, IAID);
+      jbig2_arith_int_ctx_free(ctx, IARDX);
+      jbig2_arith_int_ctx_free(ctx, IARDY);
+    }
     jbig2_free(ctx->allocator, as);  
     jbig2_word_stream_buf_free(ctx, ws);
   }
