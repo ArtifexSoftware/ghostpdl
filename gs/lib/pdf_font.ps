@@ -613,6 +613,7 @@ readonly def
 
 /fontloadprocs mark
   /Type1C /readType1C cvx
+  /CIDFontType0C /readCIDFontType0C cvx
 .dicttomark readonly def
 
 % Read an embedded compressed font.
@@ -627,7 +628,19 @@ readonly def
   PDFfile 3 -1 roll setfileposition
   /FontDescriptor oget /FontName oget findfont
   adjustfont
- } bdef
+} bdef
+
+% Read an embedded CFF CIDFont.
+/readCIDFontType0C {  % <font-resource> <stream-dict> readCIDFontType0C <font>
+  PDFfile fileposition 3 1 roll
+  dup true resolvestream dup readfontfilter
+		% Stack: pos resource streamdict stream filter
+  3 index /FontDescriptor oget /FontName oget
+  1 index FRD
+  closefile closefile pop
+  PDFfile 3 -1 roll setfileposition
+  addCIDmetrics dup /CIDFontName get exch /CIDFont defineresource
+} bdef
 
 % ---------------- Font lookup ---------------- %
 
