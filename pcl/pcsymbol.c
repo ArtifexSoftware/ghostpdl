@@ -288,8 +288,8 @@ pcsymbol_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 			 pcsymbol_dict_value_free);
 	    pl_dict_init(&pcs->built_in_symbol_sets, pcs->memory,
 			 pcsymbol_dict_value_free);
-	    // NB.  Symbol sets are require for RTL/HPGL/2 mode for
-	    // stickfonts but we shouldn't load all of them.
+	    /* NB.  Symbol sets are require for RTL/HPGL/2 mode for
+	     * stickfonts but we shouldn't load all of them. */
 	    if ( pcl_load_built_in_symbol_sets(pcs) < 0 )
 		dprintf("Internal error, no symbol sets found");
 	}

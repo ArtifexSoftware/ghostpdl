@@ -212,8 +212,8 @@ private void
 frgrnd_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 {
     if ( type & (pcl_reset_permanent) ) {
-	// Release foreground, NB these releases should be moved to
-	// their corresponding modules.
+	/* Release foreground, NB these releases should be moved to
+	 * their corresponding modules. */
 	pcl_ht_release(pcs->pdflt_ht);
 	pcl_cs_base_release(pcs->pdflt_cs_indexed);
 	pcl_cs_base_release(pcs->pwhite_cs);

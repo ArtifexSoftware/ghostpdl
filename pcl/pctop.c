@@ -254,7 +254,8 @@ pcl_impl_allocate_interp_instance(
 
     /* initialize personality here - NB this needs to be associated
        with the language option. */
-    pcli->pcs.personality = pcl5c;
+    pcli->pcs.personality = pcl5e;
+    /* pcli->pcs.personality = rtl; */
 
     /* zero-init pre/post page actions for now */
     pcli->pre_page_action = 0;
@@ -360,12 +361,12 @@ pcl_impl_set_device(
 	/* Do device-dependent pcl inits */
 	/* These resets will not clear any "permanent" storage (fonts, macros) */
 	/* One of these resets will also install an extra color-mapper device */
-//@@@there is a potential problem because mem from resets is not dealloc'd
+/*@@@there is a potential problem because mem from resets is not dealloc'd */
 	stage = Sreset;
-	//@@@remove color mapper in dnit (think should be in PCL d/nit code)?
+	/*@@@remove color mapper in dnit (think should be in PCL d/nit code)? */
 	if ((code = pcl_do_resets(&pcli->pcs, pcl_reset_initial)) < 0 )
 	  goto pisdEnd;
-//@@@ possibly remove sload - loading symbol set should be part of reset process.
+/*@@@ possibly remove sload - loading symbol set should be part of reset process. */
 	stage = Sload;
 
 	/* provide a PCL graphic state we can return to */
