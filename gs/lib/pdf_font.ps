@@ -129,7 +129,7 @@ pdfdict begin
       1 index /FirstChar oget dup 1 4 index /LastChar oget
        {	% Stack: font font-res mscale first-char index
 	 Encoding 1 index get
-	 Widths 2 index 4 index sub get
+	 Widths 2 index 4 index sub oget
 	 	% Stack: font font-res mscale first-char index charname width
 	 4 index mul
 		% There is a hack here to deal with encodings where the
