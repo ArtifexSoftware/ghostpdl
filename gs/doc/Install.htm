@@ -24,6 +24,7 @@
 <li><a href="#Overview">Overview of how to install Ghostscript</a>
 <li><a href="#Install_Unix">Installing Ghostscript on Unix</a>
 <ul>
+<li><a href="#Shared_object">Ghostscript as a shared object</a>
 <li><a href="#Install_Linux">Additional notes on Linux</a>
 </ul>
 <li><a href="#Install_Windows">Installing Ghostscript on MS Windows</a>
@@ -117,6 +118,12 @@ Courier, Courier-Bold, Courier-BoldOblique, Courier-Oblique, Helvetica,
 Helvetica-Bold, Helvetica-BoldOblique, Helvetica-Oblique, Symbol, Times-Bold,
 Times-BoldItalic, Times-Italic, Times-Roman, ZapfDingbats
 </blockquote>
+
+<h3><a name="Shared_object"></a>Ghostscript as a shared object</h3>
+Instead of using "<b><tt>make install</tt></b>", you should use
+"<b><tt>make soinstall</tt></b>".  
+See <a href="Make.htm#Shared_object">how to build Ghostscript
+as a shared object</a> for more details.
 
 <h3><a name="Install_Linux"></a>Additional notes on Linux</h3>
 

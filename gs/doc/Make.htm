@@ -65,6 +65,7 @@
 <ul>
 <li><a href="#Multi_architecture_makefile">The multi-architecture makefile</a>
 <li><a href="#UNIX_makefile">Setting up "makefile"</a>
+<li><a href="#Shared_object">Shared object</a>
 <li><a href="#Tool_specific_issues">Tool-specific issues</a>
 <ul>
 <li><a href="#gcc_27x">gcc 2.7.*</a>
@@ -1671,6 +1672,33 @@ is included in the makefile rule for compiling <b><tt>.c</tt></b> files.
 <b><tt>_temp_</tt></b><em>$$</em><b><tt>.c</tt></b> to hold the converted
 code, where <em>$$</em> is the process ID.  If for some reason you want to
 change this name, it is defined in a script file <b><tt>ccgs</tt></b>.
+
+<h3><a name="Shared_object"></a>Shared object</h3>
+To build Ghostscript as a shared object with gcc 
+(instead of as a single large executable) use:
+<pre>
+	ln -s src/unix-gcc.mak makefile
+	make so
+</pre>
+<p>
+This will build <b><tt>libgs.so</tt></b> and two programs which use the 
+shared object, <b><tt>gsx</tt></b> which uses Gtk+ and <b><tt>gsc</tt></b> 
+which does not.
+
+<p>
+Do not use <tt>make -f src/unix-gcc.mak</tt> because this will
+break the recursive make used in building the shared object.
+<p>
+To install the shared object and these two programs:
+<pre>
+	make soinstall
+</pre>
+To delete files created by the build process:
+<pre>
+	make soclean
+</pre>
+<p>
+For more details see <a href="../src/unix-dll.mak">unix-dll.mak</a>.
 
 <h3><a name="Tool_specific_issues"></a>Tool-specific issues</h3>
 
