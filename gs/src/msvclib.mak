@@ -16,6 +16,10 @@
 # all copies.
 
 
+# needed by clients that don't use msvc32.mak
+#
+
+!include $(GLSRCDIR)\version.mak
 # makefile for Microsoft Visual C++ 4.1 or later, Windows NT or Windows 95 LIBRARY.
 #
 # All configurable options are surrounded by !ifndef/!endif to allow 
