@@ -123,9 +123,11 @@ bool psf_sorted_glyphs_include(const gs_glyph *glyphs, int count,
  * Type 1, Type 2, and CIDFontType 0 fonts, but someday it might also
  * be usable with TrueType (Type 42) and CIDFontType 2 fonts.
  */
+#define MAX_CFF_SUBGLYPHS 2048 /* 1280 used, Bug 686875. */
 typedef struct psf_outline_glyphs_s {
     gs_glyph notdef;
-    gs_glyph subset_data[256 * 3 + 1]; /* *3 for seac, +1 for .notdef */
+    /* gs_glyph subset_data[256 * 3 + 1]; *3 for seac, +1 for .notdef */
+    gs_glyph subset_data[MAX_CFF_SUBGLYPHS];
     gs_glyph *subset_glyphs;	/* 0 or subset_data */
     uint subset_size;
 } psf_outline_glyphs_t;
