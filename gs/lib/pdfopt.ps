@@ -869,15 +869,8 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
   
 	% Create and open a temporary file.
 
-  { tmpprefix realtime abs =string cvs concatstrings
-    mark 1 index status {
-      cleartomark pop
-    } {
-      pop exit
-    } ifelse
-  } loop
-  /TFileName 1 index def
-  (w) file /TFile exch def
+  null (w) .tempfile /TFile exch def /TFileName exch def
+  .setsafe
 
 	% Read all objects into memory.
 

@@ -2,7 +2,7 @@
 # $Id$
 # Convert PDF to "optimized" form.
 
-OPTIONS="-dSAFER"
+OPTIONS="-dSAFER -dDELAYSAFER"
 while true
 do
 	case "$1" in
