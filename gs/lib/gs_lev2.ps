@@ -432,6 +432,7 @@ end		% serverdict
       pop
       serverdict /.jobsave save put
       serverdict /.jobsavelevel 1 put
+      .userdict /quit /stop load put
     } ifelse
 		% Reset the interpreter state.
   clear cleardictstack
@@ -454,7 +455,6 @@ end		% serverdict
 /startjob {			% <exit_bool> <password> startjob <ok_bool>
 	% This is a hack.  We really need some way to indicate explicitly
 	% to the interpreter that we are under control of a job server.
-  .userdict /quit /stop load put
   { .startnewjob true } .startjob
 } odef
 
