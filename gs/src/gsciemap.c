@@ -100,7 +100,10 @@ gx_concretize_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs,
 	      pc->paint.values[2], pc->paint.values[3]);
     CIE_CHECK_RENDERING(pcs, pconc, pis, return 0);
 
-    /* Apply DecodeDEFG (including restriction to RangeHIJK). */
+    /*
+     * Apply DecodeDEFG, including restriction to RangeHIJK and scaling to
+     * the Table dimensions.
+     */
     for (i = 0; i < 4; ++i) {
 	int tmax = pcie->Table.dims[i] - 1;
 	float value = (pc->paint.values[i] - pcie->RangeDEFG.ranges[i].rmin) *
@@ -144,7 +147,10 @@ gx_concretize_CIEDEF(const gs_client_color * pc, const gs_color_space * pcs,
 	      pc->paint.values[2]);
     CIE_CHECK_RENDERING(pcs, pconc, pis, return 0);
 
-    /* Apply DecodeDEF (including restriction to RangeHIJ). */
+    /*
+     * Apply DecodeDEF, including restriction to RangeHIJ and scaling to
+     * the Table dimensions.
+     */
     for (i = 0; i < 3; ++i) {
 	int tmax = pcie->Table.dims[i] - 1;
 	float value = (pc->paint.values[i] - pcie->RangeDEF.ranges[i].rmin) *
