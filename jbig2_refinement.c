@@ -356,10 +356,10 @@ jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     if (segment->data_length < 22)
       return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
                          "Segment too short");
-    params.grat[0] = (signed char)segment_data[offset + 0];
-    params.grat[1] = (signed char)segment_data[offset + 1];
-    params.grat[2] = (signed char)segment_data[offset + 2];
-    params.grat[3] = (signed char)segment_data[offset + 3];
+    params.grat[0] = segment_data[offset + 0];
+    params.grat[1] = segment_data[offset + 1];
+    params.grat[2] = segment_data[offset + 2];
+    params.grat[3] = segment_data[offset + 3];
     jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,
                    "grat1: (%d, %d) grat2: (%d, %d)", 
                    params.grat[0], params.grat[1],

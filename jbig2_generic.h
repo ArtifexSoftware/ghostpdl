@@ -29,7 +29,7 @@ typedef struct {
   bool TPGDON;
   bool USESKIP;
   /* SKIP */
-  byte gbat[8];
+  int8_t gbat[8];
 } Jbig2GenericRegionParams;
 
 int
@@ -49,7 +49,7 @@ typedef struct {
   Jbig2Image *reference;
   int32_t DX, DY;
   bool TPGRON;
-  byte grat[4];
+  int8_t grat[4];
 } Jbig2RefinementRegionParams;
 
 int
