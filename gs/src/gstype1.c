@@ -105,7 +105,7 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 			    pcis->origin.x, pcis->origin.y);
 	    if (code < 0)
 	    	return code;
-	    code = t1_hinter__set_font_data(h, 2, pdata, pcis->charpath_flag);
+	    code = t1_hinter__set_font_data(h, 1, pdata, pcis->charpath_flag);
 	    if (code < 0)
 	    	return code;
 #	    endif
