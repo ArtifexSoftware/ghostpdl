@@ -243,8 +243,8 @@ os_get_params(gx_io_device * iodev, gs_param_list * plist)
      * correct values in a platform-independent manner.
      */
     BlockSize = 1024;
-    Free = 20000000;
-    LogicalSize = Free / BlockSize * 2;
+    LogicalSize = 2000000000 / BlockSize;	/* about 2 Gb */
+    Free = LogicalSize * 3 / 4;			/* about 1.5 Gb */
 
     if (
 	(code = param_write_bool(plist, "HasNames", &btrue)) < 0 ||
