@@ -491,9 +491,11 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	/*
 	 * Decode the CharString looking for seac.  We have to process
 	 * callsubr, callothersubr, and return operators, but if we see
-	 * any other operators other than [h]sbw, pop, or hint operators,
-	 * we can return immediately.  This includes all Type 2 operators,
-	 * since Type 2 CharStrings don't use seac.
+	 * any other operators other than [h]sbw, pop, hint operators,
+	 * or endchar, we can return immediately.  We have to include
+	 * endchar because it is an (undocumented) equivalent for seac
+	 * in Type 2 CharStrings: see the cx_endchar case in
+	 * gs_type2_interpret in gstype2.c.
 	 *
 	 * It's really unfortunate that we have to duplicate so much parsing
 	 * code, but factoring out the parser from the interpreter would
@@ -563,6 +565,25 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	    case cx_vstem:
 	    case c1_hsbw:
 		cnext;
+	    case cx_endchar:
+		if (csp < cstack + 3)
+		    goto out;	/* not seac */
+	    do_seac:
+		/* This is the payoff for all this code! */
+		if (pieces) {
+		    gs_char bchar = fixed2int(csp[-1]);
+		    gs_char achar = fixed2int(csp[0]);
+		    int bcode =
+			pdata->procs.seac_data(pfont, bchar,
+					       &pieces[0], NULL);
+		    int acode =
+			pdata->procs.seac_data(pfont, achar,
+					       &pieces[1], NULL);
+
+		    code = (bcode < 0 ? bcode : acode);
+		}
+		info->num_pieces = 2;
+		goto out;
 	    case cx_escape:
 		charstring_next(*cip, state, c, encrypted);
 		++cip;
@@ -580,21 +601,7 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 		     */
 		    goto top;
 		case ce1_seac:
-		    /* This is the payoff for all this code! */
-		    if (pieces) {
-			gs_char bchar = fixed2int(csp[-1]);
-			gs_char achar = fixed2int(csp[0]);
-			int bcode =
-			    pdata->procs.seac_data(pfont, bchar,
-						   &pieces[0], NULL);
-			int acode =
-			    pdata->procs.seac_data(pfont, achar,
-						   &pieces[1], NULL);
-
-			code = (bcode < 0 ? bcode : acode);
-		    }
-		    info->num_pieces = 2;
-		    goto out;
+		    goto do_seac;
 		case ce1_callothersubr:
 		    switch (fixed2int_var(*csp)) {
 		    default:
