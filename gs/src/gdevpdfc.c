@@ -333,14 +333,23 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	uint table_size = num_entries * num_components;
 	/* Guess at the extra space needed for ASCII85 encoding. */
 	uint string_size = 1 + table_size * 2 + table_size / 30 + 2;
+	uint string_used;
 	byte buf[100];		/* arbitrary */
 	stream_AXE_state st;
 	stream s, es;
-	byte *table;
+	byte *table =
+	    gs_alloc_string(mem, string_size, "pdf_color_space(table)");
+	byte *palette =
+	    gs_alloc_string(mem, table_size, "pdf_color_space(palette)");
+	gs_color_space cs_gray;
 
-	table = gs_alloc_string(mem, string_size, "pdf_color_space(table)");
-	if (table == 0)
+	if (table == 0 || palette == 0) {
+	    gs_free_string(mem, palette, table_size,
+			   "pdf_color_space(palette)");
+	    gs_free_string(mem, table, string_size,
+			   "pdf_color_space(table)");
 	    return_error(gs_error_VMerror);
+	}
 	swrite_string(&s, table, string_size);
 	s_init(&es, NULL);
 	s_init_state((stream_state *)&st, &s_AXE_template, NULL);
@@ -348,6 +357,8 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	sputc(&s, '<');
 	if (pcs->params.indexed.use_proc) {
 	    gs_client_color cmin, cmax;
+	    byte *pnext = palette;
+
 	    int i, j;
 
 	    /* Find the legal range for the color components. */
@@ -357,7 +368,7 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	    gs_color_space_restrict_color(&cmin, base_space);
 	    gs_color_space_restrict_color(&cmax, base_space);
 	    /*
-	     * Write the palette values, with the legal range for each
+	     * Compute the palette values, with the legal range for each
 	     * one mapped to [0 .. 255].
 	     */
 	    for (i = 0; i < num_entries; ++i) {
@@ -367,26 +378,55 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 		for (j = 0; j < num_components; ++j) {
 		    float v = (cc.paint.values[j] - cmin.paint.values[j])
 			* 255 / (cmax.paint.values[j] - cmin.paint.values[j]);
-		    byte b = (v <= 0 ? 0 : v >= 255 ? 255 : (byte)v);
 
-		    sputc(&es, b);
+		    *pnext++ = (v <= 0 ? 0 : v >= 255 ? 255 : (byte)v);
 		}
 	    }
 	} else
-	    pwrite(&es, pip->lookup.table.data, table_size);
+	    memcpy(palette, pip->lookup.table.data, table_size);
+	if (gs_color_space_get_index(base_space) ==
+	    gs_color_space_index_DeviceRGB
+	    ) {
+	    /* Check for an all-gray palette. */
+	    int i;
+
+	    for (i = table_size; (i -= 3) >= 0; )
+		if (palette[i] != palette[i + 1] ||
+		    palette[i] != palette[i + 2]
+		    )
+		    break;
+	    if (i < 0) {
+		/* Change the color space to DeviceGray. */
+		for (i = 0; i < num_entries; ++i)
+		    palette[i] = palette[i * 3];
+		table_size = num_entries;
+		gs_cspace_init_DeviceGray(&cs_gray);
+		base_space = &cs_gray;
+	    }
+	}
+	pwrite(&es, palette, table_size);
+	gs_free_string(mem, palette, table_size, "pdf_color_space(palette)");
 	sclose(&es);
 	sflush(&s);
-	if ((code = pdf_color_space(pdev, pvalue,
-				    (const gs_color_space *)
-				    &pcs->params.indexed.base_space,
+	string_used = (uint)stell(&s);
+	table = gs_resize_string(mem, table, string_size, string_used,
+				 "pdf_color_space(table)");
+	/*
+	 * Since the array is always referenced by name as a resource
+	 * rather than being written as a value, even for in-line images,
+	 * always use the full name for the color space.
+	 */
+	if ((code = pdf_color_space(pdev, pvalue, base_space,
 				    &pdf_color_space_names, false)) < 0 ||
 	    (code = cos_array_add(pca,
-				  cos_c_string_value(&v, pcsn->Indexed))) < 0 ||
+			cos_c_string_value(&v, 
+					   pdf_color_space_names.Indexed
+					   /*pcsn->Indexed*/))) < 0 ||
 	    (code = cos_array_add(pca, pvalue)) < 0 ||
 	    (code = cos_array_add_int(pca, pip->hival)) < 0 ||
 	    (code = cos_array_add_no_copy(pca,
 					  cos_string_value(&v, table,
-							   stell(&s)))) < 0
+							   string_used))) < 0
 	    )
 	    return code;
     }
