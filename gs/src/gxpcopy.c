@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -237,7 +237,7 @@ adjust_point_to_tangent(segment * pseg, const segment * next,
 	    return;		/* anomalous case */
 	if_debug1('2', "[2]adjusting vertical: DT = %g\n",
 		  fixed2float(DT));
-	if (DT > 0)
+	if ((DT ^ fD) > 0)
 	    pseg->pt.y = DT + y0;
     } else if (fD == 0) {
 	/* Horizontal tangent. */
@@ -245,7 +245,7 @@ adjust_point_to_tangent(segment * pseg, const segment * next,
 
 	if_debug1('2', "[2]adjusting horizontal: CT = %g\n",
 		  fixed2float(CT));
-	if (CT > 0)
+	if ((CT ^ fC) > 0)
 	    pseg->pt.x = CT + x0;
     } else {
 	/* General case. */
