@@ -641,12 +641,17 @@ pdfdict begin
       dup null eq
        { pop }
        { dup 0 oget
-	 dup null eq
-	  { pop }
-	  { dup type /integertype ne { pdfpagenumber } if
-	    /Page exch 4 -2 roll
-	  }
-	 ifelse
+         dup type /dicttype eq {
+           dup /Type knownoget {
+             /Page eq {
+               pdfpagenumber
+             } if
+           } if
+         } if
+         dup type /integertype ne 
+           { pop }
+           { /Page exch 4 -2 roll }
+         ifelse
 	 dup length 1 sub 1 exch getinterval /View exch 3 -1 roll
        }
       ifelse
