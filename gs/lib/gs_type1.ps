@@ -128,7 +128,10 @@ currentdict /closesourcedict .undef
     dup CharStrings exch .knownget not {
       2 copy eq { exch pop /.notdef exch } if
        QUIET not
-	{ (Substituting .notdef for ) print = flush }
+	{ (Substituting .notdef for ) print
+	  =string cvs print ( in the font ) print
+	  1 index /FontName get = flush
+	}
 	{ pop }
        ifelse
        /.notdef CharStrings /.notdef get

@@ -542,6 +542,24 @@ pdf_find_resource_by_gs_id(gx_device_pdf * pdev, pdf_resource_type_t rtype,
     return 0;
 }
 
+/* Find resource by resource id. */
+pdf_resource_t *
+pdf_find_resource_by_resource_id(gx_device_pdf * pdev, pdf_resource_type_t rtype, gs_id id)
+{
+    pdf_resource_t **pchain = pdev->resources[rtype].chains;
+    pdf_resource_t *pres;
+    int i;
+    
+    for (i = 0; i < NUM_RESOURCE_CHAINS; i++) {
+	for (pres = pchain[i]; pres != 0; pres = pres->next) {
+	    if (pres->object->id == id)
+		return pres;
+	}
+    }
+    return 0;
+}
+
+
 /* Find same resource. */
 int
 pdf_find_same_resource(gx_device_pdf * pdev, pdf_resource_type_t rtype, pdf_resource_t **ppres,

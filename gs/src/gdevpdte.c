@@ -128,12 +128,27 @@ pdf_register_charproc_font(gx_device_pdf *pdev, gs_id id)
 	pdf_font_resource_t *pdfont = (pdf_font_resource_t *)pdev->font3;
 	gs_id *used_fonts = pdfont->u.simple.s.type3.used_fonts;
 	int i, used_fonts_count = pdfont->u.simple.s.type3.used_fonts_count;
+	int used_fonts_max = pdfont->u.simple.s.type3.used_fonts_max;
 
 	for (i = 0; i < used_fonts_count; i++)
 	    if (used_fonts[i] == id)
 		return 0;
-	if (used_fonts_count >= count_of(pdfont->u.simple.s.type3.used_fonts))
-	    return_error(gs_error_limitcheck);
+	if (used_fonts_count >= used_fonts_max) {
+	    used_fonts_max += 10;
+	    used_fonts = (gs_id *)gs_alloc_bytes(pdev->pdf_memory, 
+			sizeof(*pdfont->u.simple.s.type3.used_fonts) * used_fonts_max,
+			"pdf_register_charproc_font");
+	    if (!used_fonts)
+		return_error(gs_error_VMerror);
+	    if (used_fonts_count) {
+		memcpy(used_fonts, pdfont->u.simple.s.type3.used_fonts, 
+		    sizeof(*pdfont->u.simple.s.type3.used_fonts) * used_fonts_count);
+		gs_free_object(pdev->pdf_memory, pdfont->u.simple.s.type3.used_fonts, 
+			"pdf_register_charproc_font");
+	    }
+	    pdfont->u.simple.s.type3.used_fonts = used_fonts;
+	    pdfont->u.simple.s.type3.used_fonts_max = used_fonts_max;
+	}
 	used_fonts[used_fonts_count] = id;
 	pdfont->u.simple.s.type3.used_fonts_count = used_fonts_count + 1;
     }
@@ -155,7 +170,7 @@ pdf_used_charproc_fonts(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 
 	for (i = 0; i < used_fonts_count; i++) {
 	    pdf_font_resource_t *pdfont1 = 
-		    (pdf_font_resource_t *)pdf_find_resource_by_gs_id(pdev, 
+		    (pdf_font_resource_t *)pdf_find_resource_by_resource_id(pdev, 
 			    resourceFont, used_fonts[i]);
 	    if (pdfont1 == NULL)
 		return_error(gs_error_unregistered); /* Must not happen. */
@@ -193,7 +208,7 @@ pdf_encode_string(gx_device_pdf *pdev, pdf_text_enum_t *penum,
     code = pdf_add_resource(pdev, pdev->substream_Resources, "/Font", (pdf_resource_t *)pdfont);
     if (code < 0)
 	return code;
-    code = pdf_register_charproc_font(pdev, pdfont->rid);
+    code = pdf_register_charproc_font(pdev, pdf_resource_id((pdf_resource_t *)pdfont));
     if (code < 0)
 	return code;
     cfont = pdf_font_resource_font(pdfont, false);

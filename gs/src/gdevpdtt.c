@@ -1355,10 +1355,11 @@ pdf_obtain_font_resource_encoded(gx_device_pdf *pdev, gs_font *font,
 				    base_font, cgp->s, cgp->num_all_chars))
 		*ppdfont = NULL;
 	}
-	if (*ppdfont == NULL) {
+	if (*ppdfont == NULL || *ppdfont == pdfont_not_allowed) {
 	    pdf_resource_type_t type = 
 		(pdf_is_CID_font(base_font) ? resourceCIDFont 
 					    : resourceFont);
+	    *ppdfont = NULL;
     	    code = pdf_find_font_resource(pdev, base_font, type, ppdfont, cgp);
 	    if (code < 0)
 		return code;

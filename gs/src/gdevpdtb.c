@@ -113,7 +113,7 @@ pdf_has_subset_prefix(const byte *str, uint size)
 }
 
 private ulong
-hash(ulong v, int index, ulong w)
+hash(ulong v, int index, ushort w)
 {
     return v * 3141592653u + w;
 }
@@ -129,18 +129,19 @@ pdf_add_subset_prefix(const gx_device_pdf *pdev, gs_string *pstr, byte *used, in
 				  size + SUBSET_PREFIX_SIZE,
 				  "pdf_add_subset_prefix");
     int len = (count + 7) / 8;
-    ulong v = 0, t = 0;
+    ulong v = 0;
+    ushort t = 0;
     int i;
 
     if (data == 0)
 	return_error(gs_error_VMerror);
     /* Hash the 'used' array. */
-    for (i = 0; i < len; i += sizeof(ulong))
-	v = hash(v, i, *(ulong *)(used + i));
-    i -= sizeof(ulong);
+    for (i = 0; i < len; i += sizeof(ushort))
+	v = hash(v, i, *(ushort *)(used + i));
     if (i < len) {
+	i -= sizeof(ushort);
 	memmove(&t, used + i, len - i);
-	v = hash(v, i, *(ulong *)(used + i));
+	v = hash(v, i, *(ushort *)(used + i));
     }
     memmove(data + SUBSET_PREFIX_SIZE, data, size);
     for (i = 0; i < SUBSET_PREFIX_SIZE - 1; ++i, v /= 26)

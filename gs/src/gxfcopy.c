@@ -38,6 +38,8 @@
 #include "gzstate.h"		/* for path for BuildChar */
 #include "gdevpsf.h"
 
+#define GLYPHS_SIZE_IS_PRIME 1 /* Old code = 0, new code = 1. */
+
 /* ================ Types and structures ================ */
 
 typedef struct gs_copied_glyph_s gs_copied_glyph_t;
@@ -181,7 +183,8 @@ struct gs_copied_font_data_s {
     gs_font_info_t info;	/* from the original font, must be first */
     const gs_copied_font_procs_t *procs;
     gs_copied_glyph_t *glyphs;	/* [glyphs_size] */
-    uint glyphs_size;		/* (a power of 2 for Type 1/2) */
+    uint glyphs_size;		/* (a power of 2 or a prime number for Type 1/2) */
+    uint num_glyphs;		/* The number of glyphs copied. */
     gs_glyph notdef;		/* CID 0 or .notdef glyph */
     /*
      * We don't use a union for the rest of the data, because some of the
@@ -421,13 +424,21 @@ named_glyph_slot_hashed(gs_copied_font_data_t *cfdata, gs_glyph glyph,
     gs_copied_glyph_name_t *names = cfdata->names;
     uint hash = (uint)glyph % gsize;
     /*
-     * gsize is a power of 2, so an odd reprobe interval guarantees that we
+     * gsize is either a prime number or a power of 2.
+     * If it is prime, any positive reprobe below gsize guarantees that we
+     * will touch every slot.
+     * If it is a power of 2, any odd reprobe guarantees that we
      * will touch every slot.
      */
     uint hash2 = ((uint)glyph / gsize * 2 + 1) % gsize;
+    uint tries = gsize;
 
-    while (names[hash].str.data != 0 && names[hash].glyph != glyph)
+    while (names[hash].str.data != 0 && names[hash].glyph != glyph) {
 	hash = (hash + hash2) % gsize;
+	if (!tries)
+	    return gs_error_undefined;
+	tries--;
+    }
     *pslot = &cfdata->glyphs[hash];
     return 0;
 }
@@ -471,7 +482,7 @@ copy_glyph_data(gs_font *font, gs_glyph glyph, gs_font *copied, int options,
 {
     gs_copied_font_data_t *const cfdata = cf_data(copied);
     uint size = pgdata->bits.size;
-    gs_copied_glyph_t *pcg;
+    gs_copied_glyph_t *pcg = 0;
     int code = copied_glyph_slot(cfdata, glyph, &pcg);
 
     switch (code) {
@@ -489,6 +500,8 @@ copy_glyph_data(gs_font *font, gs_glyph glyph, gs_font *copied, int options,
     case gs_error_undefined:
 	if (options & COPY_GLYPH_NO_NEW)
 	    code = gs_note_error(gs_error_undefined);
+	else if (pcg == NULL)
+	    code = gs_note_error(gs_error_undefined);
 	else {
 	    uint str_size = prefix_bytes + size;
 	    byte *str = gs_alloc_string(copied->memory, str_size,
@@ -504,6 +517,7 @@ copy_glyph_data(gs_font *font, gs_glyph glyph, gs_font *copied, int options,
 		pcg->gdata.size = str_size;
 		pcg->used = HAS_DATA;
 		code = 0;
+		cfdata->num_glyphs++;
 	    }
 	}
     default:
@@ -733,16 +747,14 @@ compare_glyphs(const gs_font *cfont, const gs_font *ofont, gs_glyph *glyphs,
      * having same FontName and FontType. 
      * We must request width explicitely because Type 42 stores widths 
      * separately from outline data. We could skip it for Type 1, which doesn't.
+     * We don't care of Metrics, Metrics2 because copied font never has them.
      */
     int i, WMode = ofont->WMode;
     int members = (GLYPH_INFO_WIDTH0 << WMode) | GLYPH_INFO_OUTLINE_WIDTHS | GLYPH_INFO_NUM_PIECES;
     gs_matrix mat;
+    gs_copied_font_data_t *const cfdata = cf_data(cfont);
+    int num_new_glyphs = 0;
 
-    /*
-     *	We don't care of Metrics, Metrics2 because copied font never has them.
-     * 	Perhaps we request and compare widths because True Type 
-     *	stores them separately from glyph data.
-     */
     gs_make_identity(&mat);
     for (i = 0; i < num_glyphs; i++) {
 	gs_glyph glyph = *(gs_glyph *)((byte *)glyphs + i * glyphs_step);
@@ -752,8 +764,14 @@ compare_glyphs(const gs_font *cfont, const gs_font *ofont, gs_glyph *glyphs,
 	int code1 = cfont->procs.glyph_info((gs_font *)cfont, glyph, &mat, members, &info1);
 	int code2, code;
 
-	if (code0 == gs_error_undefined || code1 == gs_error_undefined)
+	if (code0 == gs_error_undefined)
 	    continue;
+	if (code1 == gs_error_undefined) {
+	    num_new_glyphs++;
+	    if (num_new_glyphs > cfdata->glyphs_size - cfdata->num_glyphs)
+		return 0;
+	    continue;
+	}
 	if (code0 < 0)
 	    return code0;
 	if (code1 < 0)
@@ -790,8 +808,14 @@ compare_glyphs(const gs_font *cfont, const gs_font *ofont, gs_glyph *glyphs,
 		code2 = code = 0;
 	    if (pieces != pieces0)
 		gs_free_object(cfont->memory, pieces, "compare_glyphs");
-	    if (code0 == gs_error_undefined || code1 == gs_error_undefined)
+	    if (code0 == gs_error_undefined)
 		continue;
+	    if (code1 == gs_error_undefined) {
+		num_new_glyphs++;
+		if (num_new_glyphs > cfdata->glyphs_size - cfdata->num_glyphs)
+		    return 0;
+		continue;
+	    }
 	    if (code0 < 0)
 		return code0;
 	    if (code1 < 0)
@@ -1814,6 +1838,18 @@ private const gs_font_procs copied_font_procs = {
     copied_build_char
 };
 
+#if GLYPHS_SIZE_IS_PRIME
+private const int some_primes[] = {
+    /* Arbitrary choosen prime numbers, being reasonable for a Type 1|2 font size. 
+       We start with 257 to fit 256 glyphs and .notdef .
+       Smaller numbers aren't useful, because we don't know whether a font
+       will add more glyphs incrementally when we allocate its stable copy.
+    */
+    257, 359, 521, 769, 1031, 2053, 
+    3079, 4099, 5101, 6101, 7109, 8209, 10007, 12007, 14009, 
+    16411, 20107, 26501, 32771, 48857, 65537};
+#endif
+
 /*
  * Copy a font, aside from its glyphs.
  */
@@ -1855,6 +1891,25 @@ gs_copy_font(gs_font *font, const gs_matrix *orig_matrix, gs_memory_t *mem, gs_f
 					       &glyph), index != 0)
 		++glyphs_size;
 	}
+#if GLYPHS_SIZE_IS_PRIME
+	/*
+	 * Make glyphs_size a prime number to ensure termination of the loop in
+	 * named_glyphs_slot_hashed, q.v.
+	 * Also reserve additional slots for the case of font merging and
+	 * for possible font increments.
+	 */
+	glyphs_size = glyphs_size * 3 / 2;
+	if (glyphs_size < 257)
+	    glyphs_size = 257;
+	{ int i;
+	    for (i = 0; i < count_of(some_primes); i++)
+		if (glyphs_size <= some_primes[i])
+		    break;
+	    if (i >= count_of(some_primes))
+		return_error(gs_error_rangecheck);
+	    glyphs_size = some_primes[i];
+	}
+#else
 	/*
 	 * Make names_size a power of 2 to ensure termination of the loop in
 	 * named_glyphs_slot_hashed, q.v.
@@ -1864,6 +1919,7 @@ gs_copy_font(gs_font *font, const gs_matrix *orig_matrix, gs_memory_t *mem, gs_f
 	    glyphs_size = (glyphs_size | (glyphs_size - 1)) + 1;
 	if (glyphs_size < 256)	/* probably incremental font */
 	    glyphs_size = 256;
+#endif
 	have_names = true;
 	break;
     case ft_CID_encrypted:
@@ -1951,6 +2007,7 @@ gs_copy_font(gs_font *font, const gs_matrix *orig_matrix, gs_memory_t *mem, gs_f
     memset(glyphs, 0, glyphs_size * sizeof(*glyphs));
     cfdata->glyphs = glyphs;
     cfdata->glyphs_size = glyphs_size;
+    cfdata->num_glyphs = 0;
     if (names)
 	memset(names, 0, glyphs_size * sizeof(*names));
     cfdata->names = names;

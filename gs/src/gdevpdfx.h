@@ -31,6 +31,7 @@
 
 #define PDFW_DELAYED_STREAMS (PS2WRITE & 1) /* Old code = 0, new code = 1 */
 #define CONVERT_CFF_TO_TYPE1 (PS2WRITE & 0) /* Old code = 0, new code = 1 */
+#define FINE_GLYPH_USAGE 1 /* Old code = 0, new code = 1 */
 
 #ifndef stream_arcfour_state_DEFINED
 #define stream_arcfour_state_DEFINED
@@ -779,6 +780,11 @@ int pdf_alloc_resource(gx_device_pdf * pdev, pdf_resource_type_t rtype,
 int pdf_find_same_resource(gx_device_pdf * pdev, 
 	pdf_resource_type_t rtype, pdf_resource_t **ppres,
 	int (*eq)(gx_device_pdf * pdev, pdf_resource_t *pres0, pdf_resource_t *pres1));
+
+
+/* Find resource by resource id. */
+pdf_resource_t *pdf_find_resource_by_resource_id(gx_device_pdf * pdev, 
+						pdf_resource_type_t rtype, gs_id id);
 
 /* Find a resource of a given type by gs_id. */
 pdf_resource_t *pdf_find_resource_by_gs_id(gx_device_pdf * pdev,
