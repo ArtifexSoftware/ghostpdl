@@ -228,44 +228,50 @@ hpgl_recompute_font(hpgl_state_t *pgls)
 private int
 hpgl_get_char_width(const hpgl_state_t *pgls, uint ch, hpgl_real_t *width)
 {
-	uint glyph = hpgl_map_symbol(ch, pgls);
-	const pcl_font_selection_t *pfs =
-	  &pgls->g.font_selection[pgls->g.font_selected];
-	int code = 0;
-	gs_point gs_width;
-	gs_matrix mat;
+    uint glyph = hpgl_map_symbol(ch, pgls);
+    const pcl_font_selection_t *pfs =
+	&pgls->g.font_selection[pgls->g.font_selected];
+    int code = 0;
+    gs_point gs_width;
+    gs_matrix mat;
+    if ( pgls->g.character.size_mode == hpgl_size_not_set ) {
 	if ( pfs->params.proportional_spacing ) {
-	  gs_make_identity(&mat);
-	  code = pl_font_char_width(pfs->font, pfs->map, &mat, glyph,
-				    &gs_width);
-	  if ( code >= 0 ) {
-	    *width = gs_width.x * points_2_plu(pfs->params.height_4ths / 4.0);
-	    goto add;
-	  }
-	  code = 1;
+	    gs_make_identity(&mat);
+	    code = pl_font_char_width(pfs->font, pfs->map, &mat, glyph,
+				      &gs_width);
+	    if ( code >= 0 ) {
+		*width = gs_width.x * points_2_plu(pfs->params.height_4ths / 4.0);
+		goto add;
+	    }
+	    code = 1;
 	}
 	*width = points_2_plu(pl_fp_pitch_cp(&pfs->params) / 100.0);
-add:	if ( pgls->g.character.extra_space.x != 0 ) {
-	  /* Add extra space. */
-	  if ( pfs->params.proportional_spacing && ch != ' ' ) {
-	    /* Get the width of the space character. */
-	    int scode =
-	      pl_font_char_width(pfs->font, pfs->map, &mat,
-				 hpgl_map_symbol(' ', pgls), &gs_width);
-	    hpgl_real_t extra;
+    } else {
+	*width = pgls->g.character.size.x;
+	if (pgls->g.character.size_mode == hpgl_size_relative)
+	    *width *= pgls->g.P2.x - pgls->g.P1.x;
+    }
+ add:	if ( pgls->g.character.extra_space.x != 0 ) {
+     /* Add extra space. */
+     if ( pfs->params.proportional_spacing && ch != ' ' ) {
+	 /* Get the width of the space character. */
+	 int scode =
+	     pl_font_char_width(pfs->font, pfs->map, &mat,
+				hpgl_map_symbol(' ', pgls), &gs_width);
+	 hpgl_real_t extra;
 
-	    if ( scode >= 0 )
-	      extra = gs_width.x * points_2_plu(pfs->params.height_4ths / 4.0);
-	    else
-	      extra = points_2_plu(pl_fp_pitch_cp(&pfs->params) / 100.0);
-	    *width += extra * pgls->g.character.extra_space.x;
-	  } else {
-	    /* All characters have the same width, */
-	    /* or we're already getting the width of a space. */
-	    *width *= 1.0 + pgls->g.character.extra_space.x;
-	  }
-	}
-	return code;
+	 if ( scode >= 0 )
+	     extra = gs_width.x * points_2_plu(pfs->params.height_4ths / 4.0);
+	 else
+	     extra = points_2_plu(pl_fp_pitch_cp(&pfs->params) / 100.0);
+	 *width += extra * pgls->g.character.extra_space.x;
+     } else {
+	 /* All characters have the same width, */
+	 /* or we're already getting the width of a space. */
+	 *width *= 1.0 + pgls->g.character.extra_space.x;
+     }
+ }
+    return code;
 }
 /* Get the cell height or character height in the current font, */
 /* plus extra space if any. */
@@ -276,13 +282,19 @@ hpgl_get_current_cell_height(const hpgl_state_t *pgls, hpgl_real_t *height,
 	const pcl_font_selection_t *pfs =
 	  &pgls->g.font_selection[pgls->g.font_selected];
 
-	*height =
-	  (pfs->params.proportional_spacing ?
-	   points_2_plu(pfs->params.height_4ths / 4.0) :
-	   1.667 * inches_2_plu(pl_fp_pitch_cp(&pfs->params) / 7200.0)
-	     /****** WRONG ******/);
-	if ( !cell_height )
-	  *height *= 0.75;	/****** HACK ******/
+	if ( pgls->g.character.size_mode == hpgl_size_not_set ) {
+	    *height =
+		(pfs->params.proportional_spacing ?
+		 points_2_plu(pfs->params.height_4ths / 4.0) :
+		 1.667 * inches_2_plu(pl_fp_pitch_cp(&pfs->params) / 7200.0));
+	    if ( !cell_height )
+		*height *= 0.75;	/****** HACK ******/
+	} else {
+	    /* character size is actually the cap height see 23-6 */
+	    *height = pgls->g.character.size.y;
+	    if (pgls->g.character.size_mode == hpgl_size_relative)
+		*height *= pgls->g.P2.y - pgls->g.P1.y;
+	}
 	*height *= 1.0 + pgls->g.character.extra_space.y;
 	return 0;
 }
@@ -557,8 +569,8 @@ hpgl_print_char(
              * HACKS - I am not sure what this should be the
              * actual values ??? 
              */
-	    scale.x = pgls->g.character.size.x * 2.0;
-	    scale.y = pgls->g.character.size.y * (4.0 / 3.0);
+	    scale.x = pgls->g.character.size.x * 3.0/2.0 * 3.0/2.0;
+	    scale.y = pgls->g.character.size.y * 3.0/2.0;
 	    if (pgls->g.character.size_mode == hpgl_size_relative)
 		scale.x *= pgls->g.P2.x - pgls->g.P1.x,
 		scale.y *= pgls->g.P2.y - pgls->g.P1.y;
@@ -573,7 +585,7 @@ hpgl_print_char(
 	            rise = pgls->g.character.direction.y;
 
 	    if (pgls->g.character.direction_relative)
-	        run *= pgls->g.P2.x - pgls->g.P1.x, /* NB is this correct? */
+	        run *= pgls->g.P2.x - pgls->g.P1.x,
 		rise *= pgls->g.P2.y - pgls->g.P1.y;
 	    gs_make_identity(&rmat);
 	    if ((run < 0) || (rise != 0)) {
