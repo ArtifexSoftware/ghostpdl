@@ -34,6 +34,8 @@
 #include "strimpl.h"
 #include "sstring.h"
 #include "gxcspace.h"
+#include "sarc4.h"
+#include <assert.h>
 
 /*
  * PDF doesn't have general CIEBased color spaces.  However, it provides
@@ -380,7 +382,14 @@ pdf_indexed_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
     gs_color_space cs_gray;
     cos_value_t v;
     int code;
+    byte key[16];
+    stream_arcfour_state sarc4;
 
+    if (pdev->KeyLength) {
+	code = s_arcfour_set_key(&sarc4, key, pdf_object_key(pdev, pca->id, key));
+	if (code < 0)
+	    return code;
+    }
     /* PDF doesn't support Indexed color spaces with more than 256 entries. */
     if (num_entries > 256)
 	return_error(gs_error_rangecheck);
@@ -446,6 +455,8 @@ pdf_indexed_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	    base_space = &cs_gray;
 	}
     }
+    if (pdev->KeyLength)
+	s_arcfour_process_buffer(&sarc4, palette, table_size);
     stream_write(&es, palette, table_size);
     gs_free_string(mem, palette, table_size, "pdf_color_space(palette)");
     sclose(&es);
@@ -618,6 +629,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
     pca = cos_array_alloc(pdev, "pdf_color_space");
     if (pca == 0)
 	return_error(gs_error_VMerror);
+    pca->id = pdf_obj_ref(pdev);
 
     switch (csi) {
 
@@ -836,7 +848,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
 
 	if (code < 0 ||
 	    (code = pdf_alloc_resource(pdev, resourceColorSpace, pcs->id,
-				       &pres, 0L)) < 0
+				       &pres, pca->id)) < 0
 	    ) {
 	    COS_FREE(pca, "pdf_color_space");
 	    return code;
@@ -871,7 +883,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
 		*ppranges = copy_ranges;
 	} else
 	    ppcs->ranges = 0;
-	pca->id = pres->object->id;
+	assert(pca->id == pres->object->id);
 	COS_FREE(pres->object, "pdf_color_space");
 	pres->object = (cos_object_t *)pca;
 	cos_write_object(COS_OBJECT(pca), pdev);

@@ -785,7 +785,7 @@ $(GLOBJ)gdevpdfb.$(OBJ) : $(GLSRC)gdevpdfb.c\
 $(GLOBJ)gdevpdfc.$(OBJ) : $(GLSRC)gdevpdfc.c $(GXERR) $(math__h) $(memory__h)\
  $(gdevpdfc_h) $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h)\
  $(gscie_h) $(gscindex_h) $(gscspace_h) $(gscdevn_h) $(gscsepr_h) $(gsicc_h)\
- $(sstring_h) $(stream_h) $(strimpl_h) $(gxcspace_h)
+ $(sstring_h) $(stream_h) $(strimpl_h) $(gxcspace_h) $(sarc4_h)
 	$(GLCC) $(GLO_)gdevpdfc.$(OBJ) $(C_) $(GLSRC)gdevpdfc.c
 
 $(GLOBJ)gdevpdfd.$(OBJ) : $(GLSRC)gdevpdfd.c $(math__h)\
