@@ -163,7 +163,7 @@ You'll be prompted to press <em>return</em> between pages.
 
 <p>to rasterize a whole document:
 <blockquote><pre>gs -dSAFER -dBATCH -dNOPAUSE -sDEVICE=pgmraw -r150 \
-    -dTextAlphaBits=4 -sOutputFile='paper-%00d.pgm' paper.ps</blockquote</pre>
+    -dTextAlphaBits=4 -sOutputFile='paper-%00d.pgm' paper.ps</blockquote></pre>
 
 <p>There are also a number of utility scripts for common
 
@@ -1130,8 +1130,13 @@ and then run Ghostscript by typing <b><tt>gs</tt></b> at the command line.
 <h3><a name="MS_Windows"></a>MS Windows</h3>
 
 <p>
-You must add <em>gs\</em><b><tt>bin</tt></b> and
-<em>gs\</em><b><tt>lib</tt></b> to the <b><tt>PATH</tt></b>, where
+The name of the Ghostscript command line executable on MS Windows is
+<tt>gswin32c</tt> so use this instead of the plain '<tt>gs</tt>' in
+the quickstart examples.
+
+<p>
+You must add <em>gs\</em><tt>bin</tt> and
+<em>gs\</em><tt>lib</tt> to the <b><tt>PATH</tt></b>, where
 <em>gs</em> is the top-level Ghostscript directory.
 
 <p>
@@ -1145,12 +1150,22 @@ ps2pdf -sPAPERSIZE#a4 file.ps file.pdf
 Ghostscript treats '#' the same internally, and the '=' is mangled by
 the command shell.
 
+<p>
+There is also an older version for windows called just <tt>gswin32</tt>
+that provides its own window for the interactive postscript prompt. Except
+on Windows 3.1, gswin32c is the better option since it uses the
+native command prompt window.
+
 <hr>
 
 <h3><a name="MS-DOS"></a>MS-DOS</h3>
 
 <p>
 <strong>Note:</strong> Ghostscript is no longer supported on MS-DOS.
+
+<p>
+Invoking Ghostscript from the command prompt in Windows is supported by
+the Windows executable described above.
 
 <hr>
 
