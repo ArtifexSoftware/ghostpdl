@@ -206,6 +206,7 @@ pdfdict begin
    pdfdict readonly pop		% can't do it any earlier than this
    15 dict begin
    /LocalResources 0 dict def
+   /DefaultMatrix null def	% establish binding
    /PSLevel1 where { pop } { /PSLevel1 false def } ifelse
    cvlit /PDFfile exch def
    /PDFsource PDFfile def
@@ -577,7 +578,7 @@ end readonly def
   2 index /CropBox knownoget {
     boxrect 4 array astore 1 index /ClipRect 3 -1 roll put
   } if
-  dictbeginpage setmatrix
+  dictbeginpage /DefaultMatrix 1 index store setmatrix
    dup /Contents knownoget not { 0 array } if
    dup type /arraytype ne { 1 array astore } if
    count 1 sub /pdfemptycount exch store

@@ -175,7 +175,8 @@ nodict readonly pop
   /Indexed /CIEBasedA load def
   /Pattern
    { dup currentcolorspace eq { pop } { setcolorspace } ifelse
-     dup /Matrix .knownget not { matrix } if makepattern setcolor
+     dup /Matrix .knownget not { matrix } if
+     gsave DefaultMatrix setmatrix makepattern grestore setcolor
    } bdef
 end def
 /setgcolor	% (null | <color...>) <colorspace> setgcolor -

@@ -139,10 +139,14 @@ pdfdict begin
  } bind def
 
 % Execute a file, like .pdfrun, for a marking context.
-% This temporarily rebinds LocalResources.
+% This temporarily rebinds LocalResources and DefaultMatrix.
 /.pdfruncontext {		% <resdict> <file> <opdict> .pdfruncontext -
-  /.pdfrun load /LocalResources LocalResources /store load
-  /LocalResources 8 -1 roll store 4 .execn
+  /.pdfrun load LocalResources DefaultMatrix
+  /LocalResources 7 -1 roll store
+  /DefaultMatrix matrix currentmatrix store
+  3 .execn
+  /DefaultMatrix exch store
+  /LocalResources exch store
 } bind def
 
 % Get the depth of the PDF operand stack.  The main program (pdf_main.ps)
