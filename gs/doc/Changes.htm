@@ -1,5 +1,5 @@
 <html><head>
-<title>Ghostscript 6.22 change history as of 2000-07-05 10:17:49</title>
+<title>Ghostscript 6.22 change history as of 2000-07-05 17:04:57</title>
 </head><body>
 
 <blockquote><ul>
@@ -115,6 +115,20 @@ doc/Language.htm [1.6]: 2000/06/30 00:09:15 lpd)
 Adds a findprotodevice "operator", to find a device prototype by name.
 (doc/Language.htm [1.7]: 2000/07/05 04:49:11 lpd)
 
+Changes the version numbering system back to sequential (not odd/even).
+Between numbered filesets, GS_PRODUCT will say "CVS PRE-RELEASE".
+(doc/History6.htm [1.8], doc/News.htm [1.50]: 2000/07/05 17:23:54 lpd)
+
+Updates documentation related to version numbering, reflecting the move back
+to sequential numbering. (doc/Maintain.htm [1.2], doc/Release.htm [1.14]:
+2000/07/05 18:27:50 lpd)
+
+Updates documentation dates for making a fileset. (doc/Changes.htm [1.13],
+doc/Devices.htm [1.10], doc/Drivers.htm [1.3], doc/History6.htm [1.9],
+doc/Language.htm [1.8], doc/New-user.htm [1.7], doc/News.htm [1.51],
+doc/Ps2pdf.htm [1.14], doc/Readme.htm [1.10], doc/Use.htm [1.7]: 2000/07/06
+00:01:39 lpd)
+
 </pre><h2><a name="6.22 Procedures"></a>Procedures</h2><pre>
 
 Fixes problems:
@@ -154,6 +168,8 @@ documentation date mismatches. (toolbin/pre [1.4]: 2000/07/04 19:19:17 lpd)
 	- Fixes a typo. (contrib.mak [1.16]: 2000/07/04 22:30:10 lpd)
 	- Adds a missing dependency. (devs.mak [1.29]: 2000/07/04 22:30:33
 lpd)
+	- Adds a missing dependency. (contrib.mak [1.17]: 2000/07/06
+00:00:13 lpd)
 
 Increments the version number to 6.23. From now on, we use odd numbers
 during development, even numbers for released filesets. (version.mak [1.15]:
@@ -203,6 +219,10 @@ Removes some third-party drivers with incompatible licenses.
 Finishes working around the fact that Microsoft C, in defiance of multiple
 standards, by default doesn't define the O_ flags for 'open' in fcntl.h (or
 anywhere else). (lib.mak [1.25]: 2000/07/05 00:48:21 lpd)
+
+Changes the version numbering system back to sequential (not odd/even).
+Between numbered filesets, GS_PRODUCT will say "CVS PRE-RELEASE".
+(version.mak [1.16]: 2000/07/05 17:23:54 lpd)
 
 </pre><h2><a name="6.22 Utilities"></a>Utilities</h2><pre>
 
@@ -300,6 +320,8 @@ characters, and didn't mark binary data with %%BeginData:/%%EndData.
 (gdevps.c [1.10]: 2000/07/04 18:34:38 lpd)
 	- Fixes references to undeclared functions. (gdevdfax.c [1.2],
 gdevl256.c [1.2]: 2000/07/04 22:25:08 lpd)
+	- X Windows platform fonts were broken when using multiple device
+instances (windows). (gdevxxf.c [1.4]: 2000/07/05 18:20:41 lpd)
 
 Improves the test for whether compressing an image is worthwhile.
 (gdevpsdi.c [1.11]: 2000/04/30 01:26:41 lpd)
@@ -350,6 +372,10 @@ length. (gdevatx.c [1.5]: 2000/06/22 14:55:53 lpd)
 Removes some third-party drivers with incompatible licenses.
 (gdevcd8.c [1.3], gdevdj9.c [1.4], gdevhl12.c [1.2]: 2000/07/02 22:11:31
 lpd)
+
+Per user request, changes the license on the basic monochrome
+DeskJet/LaserJet drivers from AFPL to dual AFPL/GPL. (gdevdjet.c [1.5],
+gdevdljm.c [1.3], gdevdljm.h [1.3]: 2000/07/05 17:36:14 lpd)
 
 </pre><h2><a name="6.22 PDF writer"></a>PDF writer</h2><pre>
 
@@ -520,6 +546,10 @@ synonym for backward compatibility. (lib/gs_init.ps [1.12], zfileio.c [1.7]:
 Adds a findprotodevice "operator", to find a device prototype by name.
 (lib/gs_init.ps [1.13]: 2000/07/05 04:49:11 lpd)
 
+Changes the version numbering system back to sequential (not odd/even).
+Between numbered filesets, GS_PRODUCT will say "CVS PRE-RELEASE".
+(lib/gs_init.ps [1.14]: 2000/07/05 17:23:54 lpd)
+
 </pre><h2><a name="6.22 Streams"></a>Streams</h2><pre>
 
 Fixes problems:
@@ -659,5 +689,15 @@ Improves some comments in A_fill_stripe. (gxshade1.c [1.3]: 2000/06/04
 Finishes working around the fact that Microsoft C, in defiance of multiple
 standards, by default doesn't define the O_ flags for 'open' in fcntl.h (or
 anywhere else). (fcntl_.h [1.1], gpmisc.c [1.5]: 2000/07/05 00:48:21 lpd)
+
+Adds O_BINARY to the Microsoft compatibility fcntl.h patch. (fcntl_.h [1.2]:
+2000/07/05 17:21:43 lpd)
+
+Changes the version numbering system back to sequential (not odd/even).
+Between numbered filesets, GS_PRODUCT will say "CVS PRE-RELEASE".
+(gscdef.c [1.3]: 2000/07/05 17:23:54 lpd)
+
+Updates GS_PRODUCT for making a fileset. (gscdef.c [1.4]: 2000/07/06
+00:01:03 lpd)
 
 </pre></body></html>
