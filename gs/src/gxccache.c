@@ -206,7 +206,7 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
     int x, y, w, h, depth;
     int code;
     gs_fixed_point pt;
-    gx_device *dev = gs_currentdevice_inline(pgs);
+    gx_device *dev = penum->dev;
     gx_device *orig_dev = dev;
     gx_device_clip cdev;
     gx_xglyph xg = cc->xglyph;
