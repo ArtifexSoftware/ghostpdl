@@ -225,7 +225,13 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
 	   TEXT_ADD_TO_ALL_WIDTHS | TEXT_ADD_TO_SPACE_WIDTH |
 	   TEXT_REPLACE_WIDTHS |
 	   TEXT_DO_DRAW | TEXT_RETURN_WIDTH)) != 0 ||
-	gx_path_current_point(path, &cpt) < 0
+	gx_path_current_point(path, &cpt) < 0 ||
+	/*
+	 * It appears that no version of Acrobat Reader handles stroked
+	 * fonts properly: they all seem to ignore the PaintType.
+	 * Therefore, we can't handle any font with non-zero PaintType.
+	 */
+	font->PaintType != 0
 	)
 	return gx_default_text_begin(dev, pis, text, font, path, pdcolor,
 				     pcpath, mem, ppte);
