@@ -406,13 +406,16 @@ zparse_dsc_comments(i_ctx_t *i_ctx_p)
     dict_param_list list;
 
     /*
-     * Verify operand types and length of DSC comment string.
+     * Verify operand types and length of DSC comment string.  If a comment
+     * is too long then we simply truncate it.  Russell's parser gets to
+     * handle any errors that may result.  (Crude handling but the comment
+     * is bad, so ...).
      */
     check_type(*opString, t_string);
     check_dict_write(*opDict);
     ssize = r_size(opString);
-    if (ssize > MAX_DSC_MSG_SIZE - 2) /* need room for EOL + \0 */
-    	return (gs_note_error(e_rangecheck));
+    if (ssize > MAX_DSC_MSG_SIZE)   /* need room for EOL + \0 */
+        ssize = MAX_DSC_MSG_SIZE;
     /*
      * Pick up the comment string to be parsed.
      */
@@ -439,8 +442,14 @@ zparse_dsc_comments(i_ctx_t *i_ctx_p)
             return code;
         comment_code = dsc_scan_data(dsc_data, dsc_buffer, ssize + 1);
         if_debug1('%', "[%%].parse_dsc_comments: code = %d\n", comment_code);
+	/*
+	 * We ignore any errors from Russell's parser.  The only value that
+	 * it will return for an error is -1 so there is very little information.
+	 * We also do not want bad DSC comments to abort processing of an
+	 * otherwise valid PS file.
+	 */
         if (comment_code < 0)
-	    return_error(comment_code);
+	    comment_code = 0;
     }
     /*
      * Transfer data from DSC structure to postscript variables.
