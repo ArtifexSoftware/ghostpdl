@@ -354,13 +354,13 @@ hpgl_get_selected_pen(hpgl_state_t *pgls)
     /* get the current pen */
     int pen = pgls->g.pen.selected;
     /* 0 is the first pen */
-    int max_pen = pcl_palette_get_num_entries(pgls->ppalet) - 1;
+    int num_entries = pcl_palette_get_num_entries(pgls->ppalet);
     /* this is bad */
-    if ( pen < 0 )
-	pen = -pen;
-    /* try to recover if necessary */
-    while ( pen > max_pen )
-	pen = pen - max_pen;
+    if ((pen < 0) || (pen >= num_entries)) {
+        pen %= num_entries;
+        if (pen < 0)
+            pen += num_entries;
+    }
     return pen;
 }
 
