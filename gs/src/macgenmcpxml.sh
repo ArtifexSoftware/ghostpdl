@@ -194,7 +194,14 @@ WriteSETTINGLIST()
 	WriteValueSetting MWFrontEnd_C_onlystdkeywords 0
 	WriteValueSetting MWFrontEnd_C_enumsalwaysint 0
 	WriteValueSetting MWFrontEnd_C_mpwpointerstyle 1
-	WriteValueSetting MWFrontEnd_C_prefixname 
+	
+	# install the carbon prefix file for carbon targets
+	if test "$OUTPUTNAME" = "GhostscriptLib Carbon"; then
+	  WriteValueSetting MWFrontEnd_C_prefixname macos_carbon_pre.h
+	else
+	  WriteValueSetting MWFrontEnd_C_prefixname        
+	fi
+	
 	WriteValueSetting MWFrontEnd_C_ansistrict 0
 	WriteValueSetting MWFrontEnd_C_mpwcnewline 0
 	WriteValueSetting MWFrontEnd_C_wchar_type 1
