@@ -416,6 +416,7 @@ struct gx_flattened_iterator_s {
 #endif
     fixed lx0, ly0, lx1, ly1;
     /* private data for filtered1 : */
+    int prev_filtered1_i;
     int last_filtered1_i;
     /* public data for filtered1 : */
     fixed gx0, gy0, gx1, gy1;
@@ -424,6 +425,7 @@ struct gx_flattened_iterator_s {
     bool ahead;
     fixed xn, yn;
     int last_filtered2_i;
+    int prev_filtered2_i;
     /* public data for filtered2 : */
     fixed fx0, fy0, fx1, fy1;
     int filtered2_i;
@@ -433,6 +435,10 @@ bool gx_flattened_iterator__init(gx_flattened_iterator *this,
 	    fixed x0, fixed y0, const curve_segment *pc, int k, bool reverse, segment_notes notes);
 bool gx_flattened_iterator__init_line(gx_flattened_iterator *this, 
 	    fixed x0, fixed y0, fixed x1, fixed y1, segment_notes notes);
+void gx_flattened_iterator__switch_to_backscan1(gx_flattened_iterator *this, 
+	    bool first_segment);
+void gx_flattened_iterator__switch_to_backscan2(gx_flattened_iterator *this, 
+	    bool first_segment, bool last_segment);
 bool gx_flattened_iterator__next(gx_flattened_iterator *this);
 bool gx_flattened_iterator__prev(gx_flattened_iterator *this);
 bool gx_flattened_iterator__next_filtered1(gx_flattened_iterator *this);

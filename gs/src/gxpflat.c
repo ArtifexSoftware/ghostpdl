@@ -237,6 +237,8 @@ gx_flattened_iterator__init(gx_flattened_iterator *this,
 	this->curve = true;
 #   endif
     this->ahead = false;
+    this->prev_filtered1_i = 0; /* stub */
+    this->prev_filtered2_i = 0; /* stub */
     vd_curve(this->x0, this->y0, x1, y1, x2, y2, this->x3, this->y3, 0, RGB(255, 255, 255));
     this->k = k;
 #   ifdef DEBUG
@@ -455,7 +457,7 @@ last:
 }
 
 /* Move to the next segment uniting small segments,
- * and store it to this->lx0, this->ly0, this->lx1, this->ly1 .
+ * and store it to this->gx0, this->gy0, this->gx1, this->gy1 .
  * Return true iff there exist more segments.
  * Note : The number of generated segments can be samller than 2^k 
  *	  due to the small segment uniting.
@@ -467,6 +469,9 @@ gx_flattened_iterator__next_filtered1(gx_flattened_iterator *this)
     fixed x0 = this->lx1, y0 = this->ly1;
     bool end = (this->i == 1 << this->k);
 
+    this->gx0 = x0;
+    this->gy0 = y0;
+    this->prev_filtered1_i = this->filtered1_i;
     for (;;) {
 	bool more = gx_flattened_iterator__next(this);
 
@@ -475,16 +480,20 @@ gx_flattened_iterator__next_filtered1(gx_flattened_iterator *this)
 		this->filtered1_i = this->i;
 		if (end)
 		    this->last_filtered1_i = this->i;
-		this->lx0 = x0;
-		this->ly0 = y0;
+		this->gx0 = x0;
+		this->gy0 = y0;
+		this->gx1 = this->lx1;
+		this->gy1 = this->ly1;
 		return false;
 	    }
 #	endif
 	if (!coord_near(x0, this->lx1) || !coord_near(y0, this->ly1)) {
 	    this->last_filtered1_i = this->i;
 	    this->filtered1_i = this->i;
-	    this->lx0 = x0;
-	    this->ly0 = y0;
+	    this->gx0 = x0;
+	    this->gy0 = y0;
+	    this->gx1 = this->lx1;
+	    this->gy1 = this->ly1;
 	    return more;
 	}
     }
@@ -534,8 +543,8 @@ gx_flattened_iterator__next_filtered2(gx_flattened_iterator *this)
 	this->fy0 = this->ly0;
 	this->ahead = false;
 	gx_flattened_iterator__next_filtered1(this);
-	this->fx1 = this->lx1;
-	this->fy1 = this->ly1;
+	this->fx1 = this->gx1;
+	this->fy1 = this->gy1;
 	this->filtered2_i = this->filtered1_i;
 	this->last_filtered2_i = this->filtered1_i;
 	if (this->i != 0) {
@@ -546,26 +555,27 @@ gx_flattened_iterator__next_filtered2(gx_flattened_iterator *this)
     } else {
 	this->fx0 = this->fx1;
 	this->fy0 = this->fy1;
+	this->prev_filtered2_i = this->filtered2_i;
 	for (;;) {
 	    if (!this->i) {
 		/* The unfiltered iterator riched the last segment. */
 		if (!this->ahead) {
-		    this->fx1 = this->lx1;
-		    this->fy1 = this->ly1;
+		    this->fx1 = this->gx1;
+		    this->fy1 = this->gy1;
 		    break;
 		}
 		this->ahead = false;
 		this->filtered2_i = this->filtered1_i;
-		if (this->lx0 == this->fx0 && this->lx0 == this->fx0) {
+		if (this->gx0 == this->fx0 && this->gx0 == this->fx0) {
 		    /* The last segment appears immediately after the first one,
 		       but the first one was yielded immediately. */
-		    this->fx1 = this->lx1;
-		    this->fy1 = this->ly1;
+		    this->fx1 = this->gx1;
+		    this->fy1 = this->gy1;
 		    break;
 		} else {
 		    /* Don't merge the last segment because the old code does not. */
-		    this->fx1 = this->lx0;
-		    this->fy1 = this->ly0;
+		    this->fx1 = this->gx0;
+		    this->fy1 = this->gy0;
 		    vd_bar(this->fx0, this->fy0, this->fx1, this->fy1, 1, RGB(0, 0, 255));
 		    return true;
 		} 
@@ -573,17 +583,17 @@ gx_flattened_iterator__next_filtered2(gx_flattened_iterator *this)
 		this->filtered2_i = this->filtered1_i;
 		if (!gx_flattened_iterator__next_filtered1(this)) {
 		    /* The old code always yields the last segment. */
-		    this->fx1 = this->lx0;
-		    this->fy1 = this->ly0;
+		    this->fx1 = this->gx0;
+		    this->fy1 = this->gy0;
 		    break;
 		}
 		if (!gx_check_nearly_collinear_inline(this->fx0, this->fy0, 
-			this->lx0, this->ly0, this->lx1, this->ly1)) {
-		    this->fx1 = this->lx0;
-		    this->fy1 = this->ly0;
+			this->gx0, this->gy0, this->gx1, this->gy1)) {
+		    this->fx1 = this->gx0;
+		    this->fy1 = this->gy0;
 		    this->last_filtered2_i = this->filtered2_i;
-		    this->xn = this->lx1;
-		    this->yn = this->ly1;
+		    this->xn = this->gx1;
+		    this->yn = this->gy1;
 		    break;
 		}
 	    }
@@ -591,6 +601,21 @@ gx_flattened_iterator__next_filtered2(gx_flattened_iterator *this)
     }
     vd_bar(this->fx0, this->fy0, this->fx1, this->fy1, 1, RGB(0, 0, 255));
     return this->ahead || this->i != 0;
+}
+
+private inline void
+gx_flattened_iterator__unaccum(gx_flattened_iterator *this)
+{
+#   define unaccum(i, r, di, dr, rmask)\
+		    if ( r < dr ) r += rmask + 1 - dr, i -= di + 1;\
+		    else r -= dr, i -= di
+    unaccum(this->id2x, this->rd2x, this->id3x, this->rd3x, this->rmask);
+    unaccum(this->id2y, this->rd2y, this->id3y, this->rd3y, this->rmask);
+    unaccum(this->idx, this->rdx, this->id2x, this->rd2x, this->rmask);
+    unaccum(this->idy, this->rdy, this->id2y, this->rd2y, this->rmask);
+    unaccum(this->x, this->rx, this->idx, this->rdx, this->rmask);
+    unaccum(this->y, this->ry, this->idy, this->rdy, this->rmask);
+#   undef unaccum
 }
 
 /* Move back to the previous segment and store it to this->lx0, this->ly0, this->lx1, this->ly1 .
@@ -603,7 +628,6 @@ gx_flattened_iterator__next_filtered2(gx_flattened_iterator *this)
 bool
 gx_flattened_iterator__prev(gx_flattened_iterator *this)
 {
-    fixed x, y;
     bool last; /* i.e. the first one in the forth order. */
 
     assert(this->i < 1 << this->k);
@@ -622,33 +646,43 @@ gx_flattened_iterator__prev(gx_flattened_iterator *this)
 	vd_bar(this->lx0, this->ly0, this->lx1, this->ly1, 1, RGB(0, 0, 255));
 	return false;
     }
-    x = this->x;
-    y = this->y;
-#   define unaccum(i, r, di, dr, rmask)\
-		    if ( r < dr ) r += rmask + 1 - dr, i -= di + 1;\
-		    else r -= dr, i -= di
-    unaccum(this->id2x, this->rd2x, this->id3x, this->rd3x, this->rmask);
-    unaccum(this->id2y, this->rd2y, this->id3y, this->rd3y, this->rmask);
-    unaccum(this->idx, this->rdx, this->id2x, this->rd2x, this->rmask);
-    unaccum(this->idy, this->rdy, this->id2y, this->rd2y, this->rmask);
-    unaccum(x, this->rx, this->idx, this->rdx, this->rmask);
-    unaccum(y, this->ry, this->idy, this->rdy, this->rmask);
+    gx_flattened_iterator__unaccum(this);
     this->i++;
-#   undef unaccum
 #   ifdef DEBUG
     if_debug5('3', "[3]%s x=%g, y=%g x=%d y=%d\n",
-	      (((x ^ this->lx1) | (y ^ this->ly1)) & float2fixed(-0.5) ?
+	      (((this->x ^ this->lx1) | (this->y ^ this->ly1)) & float2fixed(-0.5) ?
 	       "add" : "skip"),
-	      fixed2float(x), fixed2float(y), x, y);
+	      fixed2float(this->x), fixed2float(this->y), this->x, this->y);
     gx_flattened_iterator__print_state(this);
 #   endif
     last = (this->i == (1 << this->k) - 1);
-    this->lx0 = this->x = x;
-    this->ly0 = this->y = y;
+    this->lx0 = this->x;
+    this->ly0 = this->y;
     vd_bar(this->lx0, this->ly0, this->lx1, this->ly1, 1, RGB(0, 0, 255));
     if (last)
 	assert(this->lx0 == this->x0 && this->ly0 == this->y0);
     return !last;
+}
+
+/* Switching from the forward scanning to the backward scanning for the filtered1. */
+void
+gx_flattened_iterator__switch_to_backscan1(gx_flattened_iterator *this, bool first_segment)
+{
+    /*	When scanning forth, the accumulator stands on the end of a segment,
+	except for the last segment.
+	When scanning back, the accumulator should stand on the beginning of a segment.
+	Asuuming that at least one forward step is done.
+    */
+    if (this->i == 0)
+	return;
+    if (this->k <= 1)
+	return; /* This case doesn't use the accumulator. */
+    gx_flattened_iterator__unaccum(this);
+    if (first_segment)
+	return;
+    while (this->i < this->prev_filtered1_i) {
+	gx_flattened_iterator__prev(this);
+    }
 }
 
 /* Move to the previous segment uniting small segments.
@@ -680,8 +714,6 @@ gx_flattened_iterator__prev_filtered1(gx_flattened_iterator *this)
 	   due to possibly insufficient points to reach 
 	   !coord_near. To get a consistent state we scan 
 	   until the last_filtered1_i with 'prev'. */
-	fixed x1 = this->lx1, y1 = this->ly1;
-
 	this->filtered1_i = this->i;
 	while (this->i < this->last_filtered1_i) {
 	    gx_flattened_iterator__prev(this);
@@ -689,8 +721,6 @@ gx_flattened_iterator__prev_filtered1(gx_flattened_iterator *this)
 	assert(this->i < 1 << this->k);
 	this->gx0 = this->lx1;
 	this->gy0 = this->ly1;
-	this->gx1 = x1;
-	this->gy1 = y1;
 	return true;
     } else {
 	fixed x1 = this->gx0, y1 = this->gy0;
@@ -734,7 +764,56 @@ gx_flattened_iterator__prev_filtered1(gx_flattened_iterator *this)
 #   endif
 }
 
+/* Switching from the forward scanning to the backward scanning for the filtered1. */
+void
+gx_flattened_iterator__switch_to_backscan2(gx_flattened_iterator *this, 
+	    bool first_segment, bool last_segment)
+{
+    if (first_segment || last_segment)
+	return;
+    gx_flattened_iterator__switch_to_backscan1(this, first_segment);
+    while (this->filtered1_i < this->prev_filtered2_i) {
+	this->xn = this->gx1;
+	this->yn = this->gy1;
+	gx_flattened_iterator__prev_filtered1(this);
+    }
+}
+
 #if CHECK_BACKSCAN_CONSISTENCY
+
+#define HEAVY_TEST 1
+
+private void
+gx_flattened_iterator__test_backscan1(gx_flattened_iterator *this, 
+	byte *skip_points, int skip_points_len, bool single_segment)
+{
+    gx_flattened_iterator fi = *this;
+    bool missed_forth1 = false, extra_forth1 = false;
+    int i, j;
+    bool more;
+
+    gx_flattened_iterator__switch_to_backscan1(&fi, single_segment);
+    i = fi.filtered1_i + 1; /* fi.i counts back. */
+    do {
+	if (single_segment) {
+	    /* We stand on the last segment, there is no more. */
+	    break;
+	}
+	more = gx_flattened_iterator__prev_filtered1(&fi);
+	j = fi.filtered1_i;
+	/* The bit index corresponds to the end of a filtered segment. */
+	for (; i < j; i++) {
+	    if (i <= skip_points_len * 8 &&
+		skip_points[i >> 3] & (1 << (i & 7)))
+		assert(missed_forth1);
+	}
+	if (j <= skip_points_len * 8 &&
+	    !(skip_points[j >> 3] & (1 << (j & 7))))
+	    assert(extra_forth1);
+	i = j + 1;
+    } while(more);
+}
+
 void
 gx_flattened_iterator__test_filtered1(gx_flattened_iterator *this)
 {
@@ -743,9 +822,7 @@ gx_flattened_iterator__test_filtered1(gx_flattened_iterator *this)
 			       128 sholuld be fine.
 			       With a smaller value the testing is not guaranteed. */
     gx_flattened_iterator fi = *this;
-    bool more;
-    bool missed_forth1 = false, extra_forth1 = false;
-    int i, j;
+    bool more, single_segment = true;
 
     memset(skip_points, 0, sizeof(skip_points));
     do {
@@ -754,21 +831,10 @@ gx_flattened_iterator__test_filtered1(gx_flattened_iterator *this)
 	    skip_points[fi.i >> 3] |= 1 << (fi.i & 7);
 	    /* The bit index corresponds to the end of an unfiltered segment. */
 	}
-    } while(more);
-    i = 1; /* fi.i counts back. */
-    do {
-	more = gx_flattened_iterator__prev_filtered1(&fi);
-	j = fi.filtered1_i;
-	/* The bit index corresponds to the end of a filtered segment. */
-	for (; i < j; i++) {
-	    if (i <= sizeof(skip_points) * 8 &&
-		skip_points[i >> 3] & (1 << (i & 7)))
-		assert(missed_forth1);
-	}
-	if (j <= sizeof(skip_points) * 8 &&
-	    !(skip_points[j >> 3] & (1 << (j & 7))))
-	    assert(extra_forth1);
-	i = j + 1;
+	if (HEAVY_TEST || !more)
+	    gx_flattened_iterator__test_backscan1(&fi, skip_points, sizeof(skip_points), 
+		    single_segment);
+	single_segment &= !more;
     } while(more);
 }
 #endif
@@ -935,6 +1001,47 @@ gx_flattened_iterator__prev_filtered2(gx_flattened_iterator *this)
 }
 
 #if CHECK_BACKSCAN_CONSISTENCY
+
+private void
+gx_flattened_iterator__test_backscan2(gx_flattened_iterator *this, 
+	gs_fixed_point *points, gs_fixed_point *ppt, byte *skip_points, 
+	int skip_points_len, bool single_segment, bool last_segment)
+{   int i, j;
+    gx_flattened_iterator fi = *this;
+    bool more;
+    bool missed_back2 = false, extra_back2 = false;
+
+    gx_flattened_iterator__switch_to_backscan2(&fi, single_segment, last_segment);
+    i = fi.last_filtered2_i + 1; /* fi.i counts back. */
+    if (points != NULL)
+	ppt--;
+    do {
+	if (single_segment) {
+	    /* We stand on the last segment, there is no more. */
+	    break;
+	}
+	more = gx_flattened_iterator__prev_filtered2(&fi);
+	j = fi.filtered2_i;
+	/* The bit index corresponds to the end of a filtered segment. */
+	for (; i < j; i++) {
+	    if (i <= skip_points_len * 8 &&
+		skip_points[i >> 3] & (1 << (i & 7)))
+		assert(missed_back2);
+	}
+	if (j <= skip_points_len * 8 &&
+	    !(skip_points[j >> 3] & (1 << (j & 7))))
+	    assert(extra_back2);
+	i = j + 1;
+	if (points != NULL) {
+	    ppt--;
+	    assert(ppt >= points);
+	    assert(ppt->x == fi.fx1 && ppt->y == fi.fy1);
+	}
+    } while(more);
+    if (points != NULL)
+	assert(ppt == points);
+}
+
 void
 gx_flattened_iterator__test_filtered2(gx_flattened_iterator *this)
 {
@@ -942,7 +1049,7 @@ gx_flattened_iterator__test_filtered2(gx_flattened_iterator *this)
     byte skip_points[128];
     gx_flattened_iterator fi = *this, fi1;
     bool more, first = true, single_segment = true;
-    bool missed_forth2 = false, extra_forth2 = false, missed_back2 = false, extra_back2 = false;
+    bool missed_forth2 = false, extra_forth2 = false;
     int i, j;
     gs_fixed_point points[100], *ppt = points, *ppe = ppt + count_of(points), *ppp = points;
 
@@ -951,10 +1058,10 @@ gx_flattened_iterator__test_filtered2(gx_flattened_iterator *this)
 	more = gx_flattened_iterator__next_filtered1(&fi);
 	if (ppt > points + 1 && more)
 	    if (gx_check_nearly_collinear_inline(ppt[-2].x, ppt[-2].y, 
-			    ppt[-1].x, ppt[-1].y, fi.lx1, fi.ly1))
+			    ppt[-1].x, ppt[-1].y, fi.gx1, fi.gy1))
 		--ppt;		/* remove middle point */
-	ppt->x = fi.lx1;
-	ppt->y = fi.ly1;
+	ppt->x = fi.gx1;
+	ppt->y = fi.gy1;
 	ppt++;
     } while(more && ppt < ppe);
     fi = *this;
@@ -970,7 +1077,7 @@ gx_flattened_iterator__test_filtered2(gx_flattened_iterator *this)
 		    more = true;
 		    break;
 		}
-		if (!gx_check_nearly_collinear(x, y, fi1.lx0, fi1.ly0, fi1.lx1, fi1.ly1)) 
+		if (!gx_check_nearly_collinear(x, y, fi1.gx0, fi1.gy0, fi1.gx1, fi1.gy1)) 
 		    break;
 		fi = fi1;
 	    }
@@ -983,7 +1090,6 @@ gx_flattened_iterator__test_filtered2(gx_flattened_iterator *this)
     i = (1 << fi.k) - 1; /* fi.i counts back. */
     do {
 	more = gx_flattened_iterator__next_filtered2(&fi);
-	single_segment &= !more;
 	j = fi.filtered2_i;
 	/* The bit index corresponds to the end of a filtered segment. */
 	for (; i > j; i--) {
@@ -1000,37 +1106,14 @@ gx_flattened_iterator__test_filtered2(gx_flattened_iterator *this)
 	    assert(ppp->x == fi.fx1 && ppp->y == fi.fy1);
 	    ppp++;
 	}
+	if (HEAVY_TEST || !more)
+	    gx_flattened_iterator__test_backscan2(&fi, 
+		(ppt < ppe ? points : NULL), ppp, skip_points, 
+		sizeof(skip_points), single_segment, !more);
+	single_segment &= !more;
     } while(more);
     if (ppt < ppe)
 	assert(ppp == ppt);
-    i = fi.last_filtered2_i + 1; /* fi.i counts back. */
-    if (ppt < ppe)
-	ppt--;
-    do {
-	if (single_segment) {
-	    /* We stand on the last segment, there is no more. */
-	    break;
-	}
-	more = gx_flattened_iterator__prev_filtered2(&fi);
-	j = fi.filtered2_i;
-	/* The bit index corresponds to the end of a filtered segment. */
-	for (; i < j; i++) {
-	    if (i <= sizeof(skip_points) * 8 &&
-		skip_points[i >> 3] & (1 << (i & 7)))
-		assert(missed_back2);
-	}
-	if (j <= sizeof(skip_points) * 8 &&
-	    !(skip_points[j >> 3] & (1 << (j & 7))))
-	    assert(extra_back2);
-	i = j + 1;
-	if (ppt < ppe) {
-	    ppt--;
-	    assert(ppt >= points);
-	    assert(ppt->x == fi.fx1 && ppt->y == fi.fy1);
-	}
-    } while(more);
-    if (ppt < ppe)
-	assert(ppt == points);
 }
 #endif
 
