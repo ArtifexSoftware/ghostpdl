@@ -215,7 +215,8 @@ Besides the essential HTML structure elements, Ghostscript HTML document's
 comment:
 
 <blockquote>
-<b><tt>&lt;!-- $Id$ --&gt;</tt></b>
+<!-- The next line must not contain the literal string $,I,d,:! -->
+<b><tt>&lt;!-- $Id</tt><tt>: </tt></b><b><em>{file name}</em></b><b><tt>.htm $ --&gt;</tt></b>
 </blockquote>
 
 <li>For documents converted from another form, an HTML comment line giving
