@@ -112,7 +112,7 @@ extern_st(st_device_spot_analyzer);
     gs_public_st_suffix_add4_final(st_device_spot_analyzer, gx_device_spot_analyzer,\
 	    "gx_device_spot_analyzer", device_spot_analyzer_enum_ptrs,\
 	    device_spot_analyzer_reloc_ptrs, gx_device_finalize, st_device,\
-	    trap_buffer, cont_buffer_last, cont_buffer, cont_buffer_last)
+	    trap_buffer, trap_buffer_last, cont_buffer, cont_buffer_last)
 
 /* -------------- Interface methods ----------------------------- */
 
