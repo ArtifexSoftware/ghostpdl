@@ -252,6 +252,9 @@ psf_check_outline_glyphs(gs_font_base *pfont, psf_glyph_enum_t *ppge,
 		continue;
 	    return code;
 	}
+	if (code > 0)
+	    gs_free_const_string(pfont->memory, gdata.data, gdata.size,
+				 "psf_check_outline_glyphs");
 	/*
 	 * If the font has a CDevProc or calls a non-standard OtherSubr,
 	 * glyph_info will return a rangecheck error.
@@ -311,11 +314,7 @@ psf_get_outline_glyphs(psf_outline_glyphs_t *pglyphs, gs_font_base *pfont,
 	psf_enumerate_glyphs_begin(&genum, (gs_font *)pfont, NULL, 0,
 				    GLYPH_SPACE_NAME);
 	while ((code = psf_enumerate_glyphs_next(&genum, &glyph)) != 1) {
-	    uint namelen;
-	    const char *namestr =
-		(*pfont->procs.callbacks.glyph_name)(glyph, &namelen);
-
-	    if (namestr && namelen == 7 && !memcmp(namestr, ".notdef", 7)) {
+	    if (gs_font_glyph_is_notdef(pfont, glyph)) {
 		notdef = glyph;
 		break;
 	    }

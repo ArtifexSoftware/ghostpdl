@@ -243,21 +243,29 @@ write_Private(stream *s, gs_font_type1 *pfont,
     {
 	int n, i;
 	gs_const_string str;
+	int code;
 
 	for (n = 0;
-	     (*pdata->procs.subr_data)(pfont, n, false, &str) !=
-	     gs_error_rangecheck;
-	    )
+	     (code = pdata->procs.subr_data(pfont, n, false, &str)) !=
+		 gs_error_rangecheck;
+	     ) {
 	    ++n;
+	    if (code > 0)
+		gs_free_const_string(pfont->memory, str.data, str.size,
+				     "write_Private(Subrs)");
+	}
 	pprintd1(s, "/Subrs %d array\n", n);
 	for (i = 0; i < n; ++i)
-	    if ((*pdata->procs.subr_data)(pfont, i, false, &str) >= 0) {
+	    if ((code = pdata->procs.subr_data(pfont, i, false, &str)) >= 0) {
 		char buf[50];
 
 		sprintf(buf, "dup %d %u -| ", i, str.size);
 		pputs(s, buf);
 		write_CharString(s, str.data, str.size);
 		pputs(s, " |\n");
+		if (code > 0)
+		    gs_free_const_string(pfont->memory, str.data, str.size,
+					 "write_Private(Subrs)");
 	    }
 	pputs(s, "|-\n");
     }
@@ -279,14 +287,22 @@ write_Private(stream *s, gs_font_type1 *pfont,
 	for (glyph = gs_no_glyph;
 	     (code = psf_enumerate_glyphs_next(&genum, &glyph)) != 1;
 	     )
-	    if (code == 0 && (*pdata->procs.glyph_data)(pfont, glyph, &gdata) >= 0)
+	    if (code == 0 &&
+		(code = pdata->procs.glyph_data(pfont, glyph, &gdata)) >= 0
+		) {
 		++num_chars;
+		if (code > 0)
+		    gs_free_const_string(pfont->memory, gdata.data, gdata.size,
+					 "write_Private(CharStrings)");
+	    }
 	pprintd1(s, "2 index /CharStrings %d dict dup begin\n", num_chars);
 	psf_enumerate_glyphs_reset(&genum);
 	for (glyph = gs_no_glyph;
 	     (code = psf_enumerate_glyphs_next(&genum, &glyph)) != 1;
 	    )
-	    if (code == 0 && (*pdata->procs.glyph_data)(pfont, glyph, &gdata) >= 0) {
+	    if (code == 0 &&
+		(code = pdata->procs.glyph_data(pfont, glyph, &gdata)) >= 0
+		) {
 		uint gssize;
 		const char *gstr =
 		    (*pfont->procs.callbacks.glyph_name)(glyph, &gssize);
@@ -296,6 +312,9 @@ write_Private(stream *s, gs_font_type1 *pfont,
 		pprintd1(s, " %d -| ", gdata.size);
 		write_CharString(s, gdata.data, gdata.size);
 		pputs(s, " |-\n");
+		if (code > 0)
+		    gs_free_const_string(pfont->memory, gdata.data, gdata.size,
+					 "write_Private(CharStrings)");
 	    }
     }
 

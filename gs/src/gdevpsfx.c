@@ -47,7 +47,7 @@ private void
 skip_iv(gs_type1_state *pcis)
 {
     int skip = pcis->pfont->data.lenIV;
-    ip_state *ipsp = &pcis->ipstack[pcis->ips_count - 1];
+    ip_state_t *ipsp = &pcis->ipstack[pcis->ips_count - 1];
     const byte *cip = ipsp->char_string.data;
     crypt_state state = crypt_charstring_seed;
 
@@ -95,7 +95,7 @@ type1_callsubr(gs_type1_state *pcis, int index)
 	return_error(code);
     pcis->ips_count++;
     skip_iv(pcis);
-    return 0;
+    return code;
 }
 
 /* Add 1 or 3 stem hints. */
@@ -147,7 +147,7 @@ type1_stem3(gs_type1_state *pcis, stem_hint_table *psht, const fixed *pv3,
 private int
 type1_next(gs_type1_state *pcis)
 {
-    ip_state *ipsp = &pcis->ipstack[pcis->ips_count - 1];
+    ip_state_t *ipsp = &pcis->ipstack[pcis->ips_count - 1];
     const byte *cip;
     crypt_state state;
 #define CLEAR (csp = pcis->ostack - 1)
@@ -205,10 +205,15 @@ type1_next(gs_type1_state *pcis)
 	    if (code < 0)
 		return_error(code);
 	    ipsp->ip = cip, ipsp->dstate = state;
+	    ipsp->free_char_string = code;
 	    --csp;
 	    ++ipsp;
 	    goto load;
 	case c_return:
+	    if (ipsp->free_char_string > 0)
+		gs_free_const_string(pcis->pfont->memory,
+				     ipsp->char_string.data,
+				     ipsp->char_string.size, "type1_next");
 	    pcis->ips_count--;
 	    --ipsp;
 	    goto load;
