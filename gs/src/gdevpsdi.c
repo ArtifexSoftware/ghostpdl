@@ -110,10 +110,10 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
 	 * Disregard the requested filter.  What we should do at this point
 	 * is analyze the image to decide whether to use JPEG encoding
 	 * (DCTEncode with ACSDict) or the lossless filter.  However, since
-	 * we don't currently buffer the entire image, we don't have a way
-	 * to make a good decision.  Since it is always safe to use a
-	 * lossless filter, while using DCTEncode may produce very
-	 * bad-looking output, we always use the lossless filter.
+	 * we don't buffer the entire image, we'll make the choice on-fly,
+	 * forking the image data into 3 streams : (1) JPEG, (2) looseless,
+	 * (3) the compression chooser. In this case this function is
+	 * called 2 times with different values of the 'looseless' argument.
 	 */
         if (lossless) {
             orig_template = template = lossless_template;
