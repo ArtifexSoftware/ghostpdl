@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1994, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -231,11 +231,33 @@ os_enumerate(gx_io_device * iodev, const char *pat, uint patlen,
 
 private int
 os_get_params(gx_io_device * iodev, gs_param_list * plist)
-{				/* We aren't going to implement *all* of the Adobe parameters.... */
+{
     int code;
-    bool btrue = true;
+    int i0 = 0, i2 = 2;
+    bool btrue = true, bfalse = false;
+    int BlockSize;
+    long Free, LogicalSize;
 
-    if ((code = param_write_bool(plist, "HasNames", &btrue)) < 0)
+    /*
+     * Return fake values for BlockSize and Free, since we can't get the
+     * correct values in a platform-independent manner.
+     */
+    BlockSize = 1024;
+    Free = 20000000;
+    LogicalSize = Free / BlockSize * 2;
+
+    if (
+	(code = param_write_bool(plist, "HasNames", &btrue)) < 0 ||
+	(code = param_write_int(plist, "BlockSize", &BlockSize)) < 0 ||
+	(code = param_write_long(plist, "Free", &Free)) < 0 ||
+	(code = param_write_int(plist, "InitializeAction", &i0)) < 0 ||
+	(code = param_write_bool(plist, "Mounted", &btrue)) < 0 ||
+	(code = param_write_bool(plist, "Removable", &bfalse)) < 0 ||
+	(code = param_write_bool(plist, "Searchable", &btrue)) < 0 ||
+	(code = param_write_int(plist, "SearchOrder", &i2)) < 0 ||
+	(code = param_write_bool(plist, "Writeable", &btrue)) < 0 ||
+	(code = param_write_long(plist, "LogicalSize", &LogicalSize)) < 0
+	)
 	return code;
     return 0;
 }
