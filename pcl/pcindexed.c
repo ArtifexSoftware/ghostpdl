@@ -27,6 +27,20 @@
 #include "pcindexed.h"
 #include "pcpalet.h"
 
+/* default GL/2 pen width, in plotter units (1016 ploter units per inch) */
+private const float dflt_pen_width = 14.0;
+
+/* the image data configuration for the default color space */
+private const pcl_cid_hdr_t  dflt_cid_hdr = {
+    pcl_cspace_RGB,                /* color space type */
+    pcl_penc_indexed_by_plane,     /* pixel encoding type */
+    1,                             /* bits per index */
+    1, 1, 1                        /* bits per primary (3 components) */
+};
+
+/* the default indexed color space - fixed, 1-bit per index */
+pcl_cs_indexed_t *  pdflt_cs_indexed;
+
 /*
  * GC routines
  */
@@ -502,9 +516,9 @@ set_default_entries(
     if (num > cnt)
         memset(pindexed->palette.data + 3 * (start + cnt), 0, num - cnt);
 
-    /* set the default widths; for the moment, this is 0.35 */
+    /* set the default widths */
     for (i = start; i < start + num; i++)
-        pindexed->pen_widths[i] = 14.0;
+        pindexed->pen_widths[i] = dflt_pen_width;
 
     return 0;
 }
@@ -912,7 +926,21 @@ pcl_cs_indexed_build_cspace(
     floatp                  blk_ref[3];
     pcl_cs_base_t *         pbase = 0;
     int                     num_entries;
+    bool                    is_default = false;
     int                     code = 0;
+
+    /*
+     * Check if the default color space is being requested. Since there are
+     * only three fixed spaces, it is sufficient to check that palette is
+     * fixed and has 1-bit per pixel.
+     */
+    if (fixed && (pcid->u.hdr.bits_per_index == dflt_cid_hdr.bits_per_index)) {
+        is_default = true;
+        if (pdflt_cs_indexed != 0) {
+            pcl_cs_indexed_copy_from(*ppindexed, pdflt_cs_indexed);
+            return 0;
+        }
+    }
 
     /* release the existing color space, if present */
     if (pindexed != 0)
@@ -976,6 +1004,10 @@ pcl_cs_indexed_build_cspace(
     /* now can indicate if the palette is fixed */
     pindexed->fixed = fixed;
 
+    /* record if this is the default */
+    if (is_default)
+        pcl_cs_indexed_init_from(pdflt_cs_indexed, pindexed);
+
     return 0;
 }
 
@@ -991,20 +1023,22 @@ pcl_cs_indexed_build_default_cspace(
     gs_memory_t *               pmem
 )
 {
-    static pcl_cid_data_t       dflt_cid_data;
-    static const pcl_cid_hdr_t  dflt_cid_hdr = { pcl_cspace_RGB,
-                                                 pcl_penc_indexed_by_plane,
-                                                 1,
-                                                 1, 1, 1 };
+    if (pdflt_cs_indexed == 0) {
+        static pcl_cid_data_t    dflt_cid_data;
+        int                      code = 0;
 
-    dflt_cid_data.len = 6;
-    dflt_cid_data.u.hdr = dflt_cid_hdr;
-    return pcl_cs_indexed_build_cspace( ppindexed,
-                                        &dflt_cid_data,
-                                        true,
-                                        false,
-                                        pmem
-                                        );
+        dflt_cid_data.len = 6;
+        dflt_cid_data.u.hdr = dflt_cid_hdr;
+        return pcl_cs_indexed_build_cspace( ppindexed,
+                                            &dflt_cid_data,
+                                            true,
+                                            false,
+                                            pmem
+                                            );
+    } else {
+        pcl_cs_indexed_copy_from(*ppindexed, pdflt_cs_indexed);
+        return 0;
+    }
 }
 
 /*
@@ -1019,7 +1053,7 @@ pcl_cs_indexed_build_default_cspace(
 pcl_cs_indexed_build_special(
     pcl_cs_indexed_t **         ppindexed,
     pcl_cs_base_t *             pbase,
-    byte *                      pcolor1,
+    const byte *                pcolor1,
     gs_memory_t *               pmem
 )
 {
@@ -1054,8 +1088,8 @@ pcl_cs_indexed_build_special(
     }
 
     /* the latter are not strictly necessary */
-    pindexed->pen_widths[0] = 14.0;
-    pindexed->pen_widths[1] = 14.0;
+    pindexed->pen_widths[0] = dflt_pen_width;
+    pindexed->pen_widths[1] = dflt_pen_width;
 
     return 0;
 }
@@ -1129,4 +1163,14 @@ pcl_cs_indexed_0_is_black(
         return false;
     pb = pindexed->palette.data;
     return (pb[0] == 0) && (pb[1] == 0) && (pb[2] == 0);
+}
+
+/*
+ * One time initialization. This exists only because of the possibility that
+ * BSS may not be initialized.
+ */
+  void
+pcl_cs_indexed_init(void)
+{
+    pdflt_cs_indexed = 0;
 }
