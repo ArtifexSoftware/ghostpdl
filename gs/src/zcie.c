@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -103,11 +103,25 @@ dict_range3_param(const ref *pdref, const char *kstr, gs_range3 *prange3)
 int
 dict_matrix3_param(const ref *pdref, const char *kstr, gs_matrix3 *pmat3)
 {
-    int code = dict_float_array_param(pdref, kstr, 9, (float *)pmat3,
-				      (const float *)&Matrix3_default);
+    /*
+     * We can't simply call dict_float_array_param with the matrix
+     * cast to a 9-element float array, because compilers may insert
+     * padding elements after each of the vectors.  However, we can be
+     * confident that there is no padding within a single vector.
+     */
+    float values[9];
+    int code;
 
-    return (code < 0 ? code : code == 9 ? 0 :
-	    gs_note_error(e_rangecheck));
+    memcpy(&values[0], &Matrix3_default.cu, 3 * sizeof(float));
+    memcpy(&values[3], &Matrix3_default.cv, 3 * sizeof(float));
+    memcpy(&values[6], &Matrix3_default.cw, 3 * sizeof(float));
+    code = dict_float_array_param(pdref, kstr, 9, values, values);
+    if (code != 9)
+	return (code < 0 ? code : gs_note_error(e_rangecheck));
+    memcpy(&pmat3->cu, &values[0], 3 * sizeof(float));
+    memcpy(&pmat3->cv, &values[3], 3 * sizeof(float));
+    memcpy(&pmat3->cw, &values[6], 3 * sizeof(float));
+    return 0;
 }
 
 /* Get 3 procedures from a dictionary. */
