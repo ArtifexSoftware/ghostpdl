@@ -23,7 +23,7 @@ include $(GLSRCDIR)/lib.mak
 
 # Configure for debugging
 debug:
-	$(MAKE) -f $(MAKEFILE) GENOPT='-DDEBUG' CFLAGS='-g -O0 $(GCFLAGS) $(XCFLAGS)'
+	$(MAKE) -f $(MAKEFILE) GENOPT='-DDEBUG' CFLAGS='-g -O0 $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS)'
 
 pg-fp-with-cov:
 	$(MAKE) -f $(MAKEFILE) GENOPT='' CFLAGS='-g -pg -O2 -fprofile-arcs -ftest-coverage $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg -fprofile-arcs -ftest-coverage'
@@ -36,11 +36,11 @@ pg-nofp:
 
 # Configure for debugging and no FPU (crude timing configuration)
 nofp:
-	$(MAKE) -f $(MAKEFILE) GCFLAGS='-msoft-float $(GCFLAGS)' CFLAGS='-g -O0 -msoft-float $(GCFLAGS) $(XCFLAGS)' FPU_TYPE=-1 XOBJS='$(GLOBJDIR)/gsfemu.o'
+	$(MAKE) -f $(MAKEFILE) GCFLAGS='-msoft-float $(GCFLAGS)' CFLAGS='-g -O0 -msoft-float $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS)' FPU_TYPE=-1 XOBJS='$(GLOBJDIR)/gsfemu.o'
 
 # Configure for optimization.
 product:
-	$(MAKE) -f $(MAKEFILE) GENOPT='' GCFLAGS='$(GCFLAGS)' CFLAGS='-O2 $(GCFLAGS) $(XCFLAGS)'
+	$(MAKE) -f $(MAKEFILE) GENOPT='' GCFLAGS='$(GCFLAGS)' CFLAGS='-O2 $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS)'
 
 clean_gs:
 	$(MAKE) -f $(GLSRCDIR)/ugcclib.mak \
