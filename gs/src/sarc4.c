@@ -21,6 +21,7 @@
 /* Arcfour cipher and filter implementation */
 
 #include "memory_.h"
+#include "errors.h"
 #include "strimpl.h"
 #include "sarc4.h"
 
