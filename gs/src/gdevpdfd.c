@@ -57,6 +57,32 @@ gdev_pdf_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 /* ---------------- Path drawing ---------------- */
 
 /* ------ Vector device implementation ------ */
+
+private int
+pdf_setlinewidth(gx_device_vector * vdev, floatp width)
+{
+    /* Acrobat Reader doesn't accept negative line widths. */
+    return psdf_setlinewidth(vdev, fabs(width));
+}
+
+private int
+pdf_setfillcolor(gx_device_vector * vdev, const gx_drawing_color * pdc)
+{
+    gx_device_pdf *const pdev = (gx_device_pdf *)vdev;
+
+    return pdf_set_drawing_color(pdev, pdc, &pdev->fill_color,
+				 &psdf_set_fill_color_commands);
+}
+
+private int
+pdf_setstrokecolor(gx_device_vector * vdev, const gx_drawing_color * pdc)
+{
+    gx_device_pdf *const pdev = (gx_device_pdf *)vdev;
+
+    return pdf_set_drawing_color(pdev, pdc, &pdev->stroke_color,
+				 &psdf_set_stroke_color_commands);
+}
+
 private int
 pdf_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1, fixed y1,
 	   gx_path_type_t type)
@@ -97,35 +123,18 @@ pdf_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1, fixed y1,
 	y1 = ymax;
     return psdf_dorect(vdev, x0, y0, x1, y1, type);
 }
+
 private int
 pdf_endpath(gx_device_vector * vdev, gx_path_type_t type)
 {
     return 0;			/* always handled by caller */
 }
 
-private int
-pdf_setfillcolor(gx_device_vector * vdev, const gx_drawing_color * pdc)
-{
-    gx_device_pdf *const pdev = (gx_device_pdf *)vdev;
-
-    return pdf_set_drawing_color(pdev, pdc, &pdev->fill_color,
-				 &psdf_set_fill_color_commands);
-}
-
-private int
-pdf_setstrokecolor(gx_device_vector * vdev, const gx_drawing_color * pdc)
-{
-    gx_device_pdf *const pdev = (gx_device_pdf *)vdev;
-
-    return pdf_set_drawing_color(pdev, pdc, &pdev->stroke_color,
-				 &psdf_set_stroke_color_commands);
-}
-
 private const gx_device_vector_procs pdf_vector_procs = {
 	/* Page management */
     NULL,
 	/* Imager state */
-    psdf_setlinewidth,
+    pdf_setlinewidth,
     psdf_setlinecap,
     psdf_setlinejoin,
     psdf_setmiterlimit,
