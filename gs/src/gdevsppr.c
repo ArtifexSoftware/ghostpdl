@@ -127,7 +127,7 @@ sparc_print_page(gx_device_printer *pdev, FILE *prn)
   lpvipage.resolution = (pdev->x_pixels_per_inch == 300 ? DPI300 : DPI400);
   if (ioctl(fileno(prn),LPVIIOC_SETPAGE,&lpvipage)!=0)
     {
-    errprintf(sparc_print_page: LPVIIOC_SETPAGE failed\n");
+    errprintf("sparc_print_page: LPVIIOC_SETPAGE failed\n");
     return -1;
     }
   out_size=lpvipage.bitmap_width*lpvipage.page_length;
@@ -137,7 +137,7 @@ sparc_print_page(gx_device_printer *pdev, FILE *prn)
     {
     if (ioctl(fileno(prn),LPVIIOC_GETERR,&lpvierr)!=0)
       {
-      errprintf(sparc_print_page: LPVIIOC_GETERR failed\n");
+      errprintf("sparc_print_page: LPVIIOC_GETERR failed\n");
       return -1;
       }
     switch (lpvierr.err_type)
