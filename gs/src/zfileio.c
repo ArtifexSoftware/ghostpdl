@@ -74,15 +74,27 @@ zread(i_ctx_t *i_ctx_p)
     int ch;
 
     check_read_file(s, op);
+    /* We 'push' first in case of ostack block overflow and the */
+    /* usual case is we will need to push anyway. If we get EOF */
+    /* we will need to 'pop' and decrement the 'op' pointer.    */
+    /* This is required since the 'push' macro might return with*/
+    /* stackoverflow which will result in another stack block   */
+    /* added on, then the operator being retried. We can't read */
+    /* (sgetc) prior to having a place on the ostack to return  */
+    /* the character.						*/
+    push(1);
     ch = sgetc(s);
     if (ch >= 0) {
-	push(1);
 	make_int(op - 1, ch);
 	make_bool(op, 1);
-    } else if (ch == EOFC)
+    } else {
+	pop(1);		/* Adjust ostack back from preparatory 'pop' */
+	op--;
+	if (ch == EOFC) 
 	make_bool(op, 0);
     else
 	return handle_read_status(i_ctx_p, ch, op, NULL, zread);
+    }
     return 0;
 }
 
