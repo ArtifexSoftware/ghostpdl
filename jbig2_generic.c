@@ -366,8 +366,8 @@ jbig2_decode_generic_region(Jbig2Ctx *ctx,
   return -1;
 }
 
-/** Handler for immediate generic region segments
- *
+/** 
+ * Handler for immediate generic region segments
  */
 int
 jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment,

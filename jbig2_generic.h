@@ -16,6 +16,10 @@
     $Id$
 */
 
+/**
+ * Headers for Generic and Generic Refinement region handling
+ **/
+
 /* 6.4 Table 2 */
 typedef struct {
   bool MMR;
