@@ -484,6 +484,14 @@ pdf_resize_resource_arrays(gx_device_pdf *pdev, pdf_font_resource_t *pfres, int 
 		return code;
 	}
     }
+    if (pfres->FontType == ft_CID_TrueType) {
+	if (pfres->u.cidfont.CIDToGIDMap != NULL) {
+	    code = pdf_resize_array(mem, (void **)&pfres->u.cidfont.CIDToGIDMap, 
+		    sizeof(*pfres->u.cidfont.CIDToGIDMap), pfres->count, chars_count);
+	    if (code < 0)
+		return code;
+	}
+    }
     pfres->count = chars_count;
     return 0;
 }
@@ -820,6 +828,10 @@ pdf_font_cidfont_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 	return code;
     pdfont->FontDescriptor = pfd;
     pdfont->u.cidfont.CIDToGIDMap = map;
+    /* fixme : Likely pdfont->u.cidfont.CIDToGIDMap duplicates 
+       pdfont->FontDescriptor->base_font->copied->client_data->CIDMap.
+       Only difference is 0xFFFF designates unmapped CIDs.
+     */
     pdfont->u.cidfont.Widths2 = NULL;
     pdfont->u.cidfont.v = NULL;
     pdfont->u.cidfont.parent = NULL;

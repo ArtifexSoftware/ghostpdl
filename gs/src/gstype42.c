@@ -568,11 +568,9 @@ gs_type42_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
     if (glyph >= GS_MIN_GLYPH_INDEX)
 	glyph_index = glyph - GS_MIN_GLYPH_INDEX;
     else {
-	int code = pfont->data.get_glyph_index(pfont, glyph);
-
-	if (code < 0)
-	    return code;
-	glyph_index = (uint)code;
+	glyph_index = pfont->data.get_glyph_index(pfont, glyph);
+	if (glyph_index == GS_NO_GLYPH)
+	    return_error(gs_error_undefined);
     }
     return gs_type42_glyph_info_by_gid(font, glyph, pmat, members, info, glyph_index);
 

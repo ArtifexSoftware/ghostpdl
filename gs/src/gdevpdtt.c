@@ -855,25 +855,29 @@ pdf_obtain_cidfont_resource(gx_device_pdf *pdev, gs_font *subfont,
     int code = 0;
 
     pdf_attached_font_resource(pdev, subfont, ppdsubf, NULL, NULL, NULL, NULL);
-    if (*ppdsubf == NULL) {
-	code = pdf_find_font_resource(pdev, subfont,
-				      resourceCIDFont, ppdsubf, 
-				      glyphs, NULL, num_glyphs); 
+    if (*ppdsubf != NULL) {
+	const gs_font_base *cfont = pdf_font_resource_font(*ppdsubf, false);
+
+	code = gs_copied_can_copy_glyphs((const gs_font *)cfont, subfont, 
+					     glyphs, num_glyphs, true);
+	if (code > 0)
+	    return 0;
 	if (code < 0)
 	    return code;
-	if (*ppdsubf == NULL) {
-	    code = pdf_make_font_resource(pdev, subfont, ppdsubf, 
-					  NULL, NULL, 0);
-	    if (code < 0)
-		return code;
-	}
-	code = pdf_attach_font_resource(pdev, subfont, *ppdsubf);
-    } else {
-	/* If composite fonts share subfonts, their 
-	 * subfont resources to be shared as well.
-	 */
+	*ppdsubf = NULL;
     }
-    return code;
+    code = pdf_find_font_resource(pdev, subfont,
+				  resourceCIDFont, ppdsubf, 
+				  glyphs, NULL, num_glyphs); 
+    if (code < 0)
+	return code;
+    if (*ppdsubf == NULL) {
+	code = pdf_make_font_resource(pdev, subfont, ppdsubf, 
+				      NULL, NULL, 0);
+	if (code < 0)
+	    return code;
+    }
+    return pdf_attach_font_resource(pdev, subfont, *ppdsubf);
 }
 
 /*
