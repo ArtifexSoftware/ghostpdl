@@ -34,6 +34,7 @@
 #include "gdevddrw.h"
 #include "gzspotan.h" /* Only for gx_san_trap_store. */
 #include "memory_.h"
+#include "stdint_.h"
 #include "vdtrace.h"
 /*
 #include "gxfilltr.h" - Do not remove this comment. "gxfilltr.h" is included below.
@@ -1551,7 +1552,7 @@ set_x_next(active_line *endp, active_line *alp, fixed x)
 private inline int
 coord_weight(const active_line *alp)
 {
-    return 1 + (int)min(any_abs(alp->diff.y * 8.0 / alp->diff.x), 256.0);
+    return 1 + min(any_abs((int)((int64_t)alp->diff.y * 8 / alp->diff.x)), 256);
 }
 
 
@@ -1600,10 +1601,17 @@ intersect_al(line_list *ll, fixed y, fixed *y_top, int draw, bool all_bands)
 		    else {
 			fixed nx0 = AL_X_AT_Y(endp, y1);
 			fixed nx1 = AL_X_AT_Y(alp, y1);
-			double w0 = coord_weight(endp);
-			double w1 = coord_weight(alp);
+			if (nx0 != nx1) {
+			    /* Different results due to arithmetic errors.
+			       Choose an imtermediate point. 
+			       We don't like to use floating numbners here,
+			       but the code with int64_t isn't much better. */
+			    int64_t w0 = coord_weight(endp);
+			    int64_t w1 = coord_weight(alp);
 
-			nx = (fixed)((w0 * nx0 + w1 * nx1) / (w0 + w1) + 0.5);
+			    nx = (fixed)((w0 * nx0 + w1 * nx1) / (w0 + w1));
+			} else
+			    nx = nx0;
 		    }
 		    endp->x_next = alp->x_next = nx;  /* Ensure same X. */
 		    draw = 0;
