@@ -4,6 +4,7 @@
 
 /* pcbiptrn.c - code for PCL built-in patterns */
 
+#include "string_.h"
 #include "pcpatrn.h"
 #include "pcuptrn.h"
 #include "pcbiptrn.h"

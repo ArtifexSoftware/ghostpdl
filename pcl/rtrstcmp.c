@@ -4,6 +4,7 @@
 
 /* rtrstcmp.c - raster decompression routines */
 
+#include "string_.h"
 #include "pcstate.h"
 #include "rtrstcmp.h"
 

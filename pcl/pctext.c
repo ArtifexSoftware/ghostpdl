@@ -46,7 +46,7 @@ get_gs_next_char(
     gs_char *           pchr
 )
 {
-    const byte *        pb = penum->text.data.bytes;
+   const byte *        pb = penum->text.data.bytes;
 
     if (penum->index >= 2)
         return 2;

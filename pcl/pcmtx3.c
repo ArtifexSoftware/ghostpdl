@@ -3,8 +3,9 @@
    prohibited.  */
 
 /* pcmtx3.c - 3 x 3 matrix utilities for PCL device independent color spaces */
-#include "gx.h"
+#include "string_.h"
 #include "math_.h"
+#include "gx.h"
 #include "gstypes.h"
 #include "pcommand.h"
 #include "pcmtx3.h"

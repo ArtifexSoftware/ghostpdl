@@ -5,6 +5,7 @@
 /* pcommand.c - Utilities for PCL 5 commands */
 
 #include "std.h"
+#include "memory_.h"
 #include "gstypes.h"
 #include "gsmemory.h"
 #include "gsmatrix.h"

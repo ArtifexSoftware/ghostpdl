@@ -4,8 +4,9 @@
 
 /* pcfont.c */
 /* PCL5 font selection and text printing commands */
-#include "memory_.h"
+#include "std.h"
 #include <stdlib.h>
+#include "memory_.h"
 /* The following are all for gxfont42.h. */
 #include "gx.h"
 #include "gsccode.h"

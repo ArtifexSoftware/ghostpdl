@@ -4,6 +4,7 @@
 
 /* pcuptrn.c - code for PCL and GL/2 user defined patterns */
 
+#include "string_.h"
 #include "gx.h"
 #include "gsuid.h"
 #include "gscsel.h"

@@ -3,6 +3,7 @@
    prohibited.  */
 
 /* pccrd.c - PCL interface to the graphic library color rendering dictionary */
+#include "string_.h"
 #include "gx.h"
 #include "gsmatrix.h"
 #include "gsmemory.h"
@@ -139,7 +140,7 @@ alloc_crd(
     pcrd->is_dflt_illum = true;
     pcrd->pgscrd = 0;
 
-    code == gs_cie_render1_build(&(pcrd->pgscrd), pmem, "pcl allocate CRD");
+    code = gs_cie_render1_build(&(pcrd->pgscrd), pmem, "pcl allocate CRD");
     if (code >= 0)
         *ppcrd = pcrd;
     else

@@ -4,6 +4,7 @@
 
 /* rtraster.c - raster transfer commands */
 
+#include "memory_.h"
 #include "gx.h"
 #include "gsmatrix.h"
 #include "gscoord.h"
