@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_text.c,v 1.16 2002/07/20 17:23:15 giles Exp $
+    $Id: jbig2_text.c,v 1.17 2002/08/05 22:26:21 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -341,7 +341,6 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
     uint16_t flags;
     uint16_t huffman_flags;
     int8_t sbrat[4];
-    int index;
     int code;
     
     /* 7.4.1 */
