@@ -42,7 +42,7 @@ userdict /GS_PDF_ProcSet 127 dict dup begin
 %	self			% identifies the dictionary as one of ours
 %	ClipRect		% (optional)
 %	Show
-%	TextSaveMatrix		% matrix at time of BT
+%	TextSaveMatrix		% matrix at time of BT (iff within BT/ET)
 % (The following correspond directly to PDF state parameters.)
 %	FillColor
 %	FillColorSpace
@@ -246,7 +246,10 @@ end readonly def
   TextFont dup null eq { pop } { setfont } ifelse
 } bdef
 /settextstate {
-  TextSaveMatrix setmatrix settextmatrix
+	% The text state can be set even outside BT/ET.
+  currentdict /TextSaveMatrix known {
+    TextSaveMatrix setmatrix settextmatrix
+  } if
 } bdef
 /settextposition {
 		% Update the TextMatrix translation.
@@ -267,6 +270,7 @@ end readonly def
 } bdef
 /ET {
   TextSaveMatrix setmatrix
+  currentdict /TextSaveMatrix undef
 } bdef
 /Tc { /TextSpacing gput { showfirst } /Show gput } bdef
 /TL { /TextLeading gput } bdef
