@@ -15,7 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# 
+
 # makefile for PC window system (MS Windows and OS/2) -specific device
 # drivers.
 

@@ -15,7 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# 
+
 # makefile for zlib library code.
 # Users of this makefile must define the following:
 #	GSSRCDIR - the GS library source directory

@@ -15,7 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# 
+
 # Partial makefile common to all Unix configurations.
 # This is the last part of the makefile for Unix configurations.
 

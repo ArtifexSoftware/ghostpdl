@@ -332,17 +332,11 @@ public_st_gs_tile_depth_bitmap();
 /*
  *  Structure for holding a gs_depth_bitmap and the corresponding depth and
  *  colorspace information.
- *
- *  The free_proc pointer is needed to hold the original value of the pattern
- *  instance free structure. This pointer in the pattern instance will be
- *  overwritten with free_pixmap_pattern, which will free the pixmap info
- *  structure when it is freed.
  */
 typedef struct pixmap_info_s {
     gs_depth_bitmap bitmap;	/* must be first */
     const gs_color_space *pcspace;
     uint white_index;
-    void (*free_proc)( gs_memory_t *, void *, client_name_t );
 } pixmap_info;
 
 gs_private_st_suffix_add1(st_pixmap_info,
@@ -355,29 +349,6 @@ gs_private_st_suffix_add1(st_pixmap_info,
 );
 
 #define st_pixmap_info_max_ptrs (1 + st_tile_bitmap_max_ptrs)
-
-/*
- *  Free routine for pattern instances created from pixmaps. This overwrites
- *  the free procedure originally stored in the pattern instance, and stores
- *  the pointer to that procedure in the pixmap_info structure. This procedure
- *  will call the original procedure, then free the pixmap_info structure. 
- *
- *  Note that this routine does NOT release the data in the original pixmap;
- *  that remains the responsibility of the client.
- */
-  void
-free_pixmap_pattern(
-    gs_memory_t *           pmem,
-    void *                  pvpinst,
-    client_name_t           cname
-)
-{
-    gs_pattern_instance *   pinst = (gs_pattern_instance *)pvpinst;
-    const pixmap_info *     ppmap = pinst->template.client_data;
-
-    ppmap->free_proc(pmem, pvpinst, cname);
-    gs_free_object(pmem, (void *)ppmap, cname);
-}
 
 /*
  *  PaintProcs for bitmap and pixmap patterns.
@@ -547,10 +518,6 @@ gs_makepixmappattern(
 	 */
 	if (!mask && (white_index >= (1 << pbitmap->pix_depth)))
 	    pcc->pattern->uses_mask = false;
-
-        /* overwrite the free procedure for the pattern instance */
-        ppmap->free_proc = pcc->pattern->rc.free;
-        pcc->pattern->rc.free = free_pixmap_pattern;
     }
     gs_setmatrix(pgs, &smat);
     return code;

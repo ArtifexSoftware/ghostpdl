@@ -15,7 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# 
+
 # wctail.mak
 # Last part of Watcom C/C++ makefile common to MS-DOS and MS Windows.
 

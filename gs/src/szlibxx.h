@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Implementation definitions for zlib interface */
 /* Must be compiled with -I$(ZSRCDIR) */
 

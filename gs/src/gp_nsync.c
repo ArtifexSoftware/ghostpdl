@@ -16,7 +16,7 @@
    all copies.
  */
 
-/*$Id$ */
+
 /* Dummy thread / semaphore / monitor implementation */
 #include "std.h"
 #include "gserror.h"

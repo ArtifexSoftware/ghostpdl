@@ -1816,7 +1816,7 @@ Version 5.23(limited) (5/14/98)
 This fileset adds a number of PostScript LanguageLevel 3 features: library
 support for ImageType 3 and 4 (masked) images, PostScript-level support for
 ImageType 4, and the shfill operator for smooth shading.  It also adds RCS
-
+$Id$ lines to all the files we maintain.  It also changes the Unix makefiles
 so that they create debugging or profiling binaries in separate directories.
 
 This fileset includes an unusually large number of non-backward-compatible
@@ -1936,7 +1936,7 @@ Removes pdf_2ps.ps from the fileset.  (int.mak, unixinst.mak,
 pdf_2ps.ps[deleted])
 
 Ensures that every file that is copyright, maintained, and distributed by
-Aladdin Enterprises has a RCS 
+
 .c and .h files, these lines currently are only comments, but they could be
 converted easily to static strings later if we want to.  We had to touch
 almost every file in the fileset to do this, but we did *not* change the

@@ -17,7 +17,7 @@
  */
 
 
-// 
+
 // Text Window class
 
 

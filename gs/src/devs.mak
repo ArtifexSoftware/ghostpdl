@@ -15,7 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# 
+
 # makefile for Aladdin's device drivers.
 
 # Define the name of this makefile.

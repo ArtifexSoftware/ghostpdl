@@ -15,7 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# 
+
 # makefile for MS-DOS/Watcom C386 platform.
 # We strongly recommend that you read the Watcom section of make.txt
 # before attempting to build Ghostscript with the Watcom compiler.

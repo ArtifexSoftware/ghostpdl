@@ -17,7 +17,7 @@
  */
 
 
-// 
+
 
 class ImageWindow {
     static ImageWindow *first;

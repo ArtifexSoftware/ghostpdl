@@ -1,5 +1,5 @@
 @echo off
-@rem 
+
 rem Convert PostScript to PDF.
 
 rem	NOTE: for questions about using this file on Windows NT, please

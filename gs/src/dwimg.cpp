@@ -16,7 +16,7 @@
   all copies.
 */
 
-// 
+
 
 
 #define STRICT

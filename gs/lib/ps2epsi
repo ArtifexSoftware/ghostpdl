@@ -1,5 +1,5 @@
 #!/bin/sh
-# 
+
 
 tmpfile=/tmp/ps2epsi$$
 

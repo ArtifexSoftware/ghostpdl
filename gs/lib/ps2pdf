@@ -1,5 +1,5 @@
 #!/bin/sh
-# 
+
 # Convert PostScript to PDF.
 
 OPTIONS=""

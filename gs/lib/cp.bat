@@ -1,4 +1,4 @@
-@rem 
+
 @echo off
 if "%2"=="." goto ne
 erase _.tmp

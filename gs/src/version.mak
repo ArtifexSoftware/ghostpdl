@@ -15,7 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# 
+
 # Makefile fragment containing the current revision identification.
 
 # Define the name of this makefile.

@@ -15,7 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# 
+
 # wccommon.mak
 # Section of Watcom C/C++ makefile common to MS-DOS and MS Windows.
 # We strongly recommend that you read the Watcom section of make.txt

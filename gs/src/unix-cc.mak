@@ -15,7 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# 
+
 # makefile for Unix/cc/X11 configuration.
 
 # ------------------------------- Options ------------------------------- #
