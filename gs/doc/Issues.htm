@@ -1,0 +1,280 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Ghostscript Open Issues.</title>
+<!-- $Id$ -->
+<link rel="stylesheet" type="text/css" href="gs.css" title="Ghostscript Style">
+</head>
+
+<body>
+<!-- [1.0 begin visible header] ============================================ -->
+
+<!-- [1.1 begin headline] ================================================== -->
+
+<h1>Known limitations and minor bugs.</h1>
+
+<!-- [1.1 end headline] ==================================================== -->
+
+<!-- [1.2 begin table of contents] ========================================= -->
+
+<h2>Table of contents</h2>
+
+<ul>
+<li><a href="#Known_Limitations">Known Limitations</a>
+<li><a href="#Minor_bugs">Minor bugs</a>
+<li><a href="#Driver_Issues">Specific Driver Issues</a>
+<li><a href="#Performance">Performance</a>
+<li><a href="#Differences_from_Adobe">Differences from Adobe Implementation</a>
+</ul>
+
+<!-- [1.2 end table of contents] =========================================== -->
+
+<!-- [1.3 begin hint] ====================================================== -->
+
+<p>For other information, see the <a href="Projects.htm">Development Projects list
+</a>.
+
+<!-- [1.3 end hint] ======================================================== -->
+
+<hr>
+
+<!-- [1.0 end visible header] ============================================== -->
+
+<!-- [2.0 begin contents] ================================================== -->
+
+<p>
+There are many areas that might make Ghostscript more useful or minor bugs
+that we would like to investigate and possibly fix, but for which we don't
+have enough resources. These may or may not be addressed in future releases.
+<p>
+If you would like to take responsibility for any of these issues, please
+<a href="mailto:raph@artofcode.com">contact us</a>.
+<p>
+Additional comments on implementation approaches or project goals are in
+<I>italic type like this</I>.
+<hr>
+
+<h2><a name="Known_Limitations"></a>Known Limitations.</h2>
+
+<h3>bbox device doesn't allow min coords < 0.</h3>
+Adobe eps specification doesn't say that bbox values must be positive,
+and, for example Adobe Illustrator, can create EPS files with negative bboxes.
+In such case, Ghostscipt returns zero instead of proper negative number. 
+<br>SourceForge Bug #202735 March 09, 2000.
+<p>
+<I>
+This might be able to be fixed by applying a large positive translation to
+the bbox CTM which would be subtracted from coordinates passed to the target
+device as well as from the results the bbox device reports.
+<p>
+If coordinates for the ImagingBBox[0] and [1] values, then negative
+values are handled, but this is not reliable since there are places in
+the graphics library that depend on first quadrant coordinates.
+</I>
+
+<hr>
+
+<h2><a name="Minor_bugs"></a>Minor Bugs.</h2>
+
+<h3>kshow doesn't restore currentfont after running proc.</h3>
+
+According to the PostScript Language Reference manual, kshow must
+restore currentfont after running the client's procedure, but
+Ghostscript doesn't do this. Test case: 
+<pre>
+%! 
+/f1 /Times-Roman findfont 16 scalefont def 
+/f2 /Helvetica findfont 24 scalefont def 
+100 100 moveto 
+/f f1 def 
+f setfont 
+{ 
+    pop pop 
+    /f f f1 eq { f2 } { f1 } ifelse def 
+    f setfont 
+} (abcde) kshow 
+showpage quit 
+</pre>
+Ghostscript writes the characters in alternating fonts, but Acrobats
+Distiller writes them all in the original font (f1). 
+<br>
+SourceForge Bug #221715, November 5, 2000.
+
+<h3>gs-6.31 and gs-6.60 fail running lib/image-qa.ps</h3>
+Running lib/image-qa.ps with gs-6.31 or gs-6.60 produces an error message. 
+<pre>
+Type 1 
+Stencil 
+Mask 
+Error: /ioerror in --fileposition-- 
+</pre>
+SourceForge Bug #223005, November 20, 2000.
+<p>
+<I>
+This is an error in the test file, not GS. fileposition correctly
+throws ioerror when it is used on filtered files.
+<br>
+The test should be written to use .fileposition when running on Ghostscript
+and enclose fileposition in { } stopped when not. Also for portability to
+PostScript interpreters without Ghostscript extensions, '=only' should be
+defined to use '=print' or '='.
+</I>
+
+<h3>PageSize cannot use packedarray</h3>
+PageSize doesn't accept packed array as an argument if the page size is
+adjusted, for instance, to the whole number of pixels. The following
+program 
+<pre>
+%!
+/x 333.33333333 def /y 666.66666666 def
+
+<< /PageSize x y 2 packedarray >> setpagedevice
+(pached passed)==    % fails
+%EOF
+</pre>
+fails with
+<pre>
+Error: /configurationerror in --setpagedevice--
+Additional information: [/PageSize [333.333344 666.666687]]
+</pre>
+
+<h3> Multiple encode filters in a pipeline fail.</h3>
+The following code fragment should output "3E>". It outputs nothing. 
+<pre>
+%!PS 
+(%stdout) (w) file 
+/ASCIIHexEncode filter 
+/ASCIIHexEncode filter 
+closefile 
+</pre>
+SourceForge bug #224134, December 2, 2000.
+<h3>                                              </h3>
+<p>
+
+<hr>
+
+<h2><a name="Driver_Issues"></a>Driver Issues.</h2>
+
+<h3> [ ] Missing text in landscape mode.</h3>
+Using GSWIN32C.EXE with djet500 to print a file in landscape mode
+on a HP 2000C, the first 3 characters on the left margin are missing.<br>
+When the postscript file is editted to use a larger offset (1st moveto
+parameter), the text appears ok.<br>
+When the postscript file is sent to a printer with a builtin postscript
+interpreter, it prints ok.
+<br>SourceForge Bug #206652.
+<p><I>
+A possible work around is to send the following
+postscript file to the printer prior to printing the problem
+file.  This works but it leaves a .5" margin at the top
+and left which is may be ok for some uses.
+</I>
+<pre>
+
+%!PS-Adobe-2.0
+% Reset the offset and margins.
+<<
+    /PageOffset [-12 -18]
+    /Margins [0 0]
+    /.HWMargins [0 0 0 0]
+>>
+setpagedevice
+</pre>
+
+<I>
+This is an instance of the endless struggle with printer margins, especially
+for HP printers. The HP drivers are inconsistent as to whether the user space
+(0,0) should be the physical corner of the page (as it is in PostScript) or
+the corner of the printable area, and if the latterm whether the page should
+be clipped or scaled.
+</I>
+<p>
+
+<hr>
+
+<h2><a name="Performance"></a>Performance.</h2>
+
+<h3>                                              </h3>
+<p>
+
+<hr>
+
+<h2><a name="Differences_from_Adobe"></a>Differences from Adobe Implementation.</h2>
+
+<h3>Filesystem implementation differences.</h3>
+Adobe implementations often treat the filesystem as flat. This means that the
+path separator characters are not handled as special characters in filenames.
+The PLRM states that file names are implementation specific (section 3.8.2)
+and Ghostscript currently implements filenames that conform with the underlying
+operating system as is stated in this section about the %os% device. This
+can result from behaviour that is different from Adobe printer implementations.
+<br><br>
+<I>
+Current implementation is incompatible with most font installers. Installers
+expect that:
+<ul>
+"filenameforall" enumerates all files in all directories using the relative path name.
+Directory names, including . and .. are not enumerated
+</ul>
+<ul>
+characters not supported on the platform are encoded.
+</ul>
+<ul>
+"(w) file" operator creates directories if necessary.
+</ul>
+</I>
+
+<h3>Cannot load Adobe's fonts. </h3>
+The following program fails with Adobe fonts: 
+
+<pre>
+(C*) 
+{ cvn findfont pop 
+} 255 string /Font resourceforall 
+</pre>
+SourceForge Bug #226462, December 20, 2000.
+<p>
+<I>
+The 'findfont' operator and '/Font resourceforall' are very difficult to
+keep consistent, because the same logic algorithms must be implemented
+in two different ways. The problem is likely to be in lib/gs_fonts.ps,
+lib/gs_res.ps, and lib/gs_cidcm.ps.
+</I>
+<h3> There's no %ram% device.</h3>
+GS doesn't have %ram% device reguired on all Level 3 products. 
+It is documented in PS Supplement 3010 and 3011 dated August 30, 1999 
+<br>SourceForge Bug #226943, December 27, 2000.
+<p>
+<I>
+This should be implemented using the (disk) file system rather than
+actual RAM, at least initially, since that will be easy.
+<br>
+On Unix, it should be implemented with a directory /tmp/$$/ (where
+$$ is the process id), which Ghostscript should delete when it exits.
+</I>
+
+<h3>                                              </h3>
+<p>
+
+
+<!-- [2.0 end contents] ==================================================== -->
+
+<!-- [3.0 begin visible trailer] =========================================== -->
+<hr>
+
+<p>
+<small>Copyright &copy; 2000 artofocode LLC.  All rights reserved.</small>
+
+<p>
+<small>This file is part of AFPL Ghostscript.  See the
+<a href="Public.htm">Aladdin Free Public License</a> (the "License") for
+full details of the terms of using, copying, modifying, and redistributing
+AFPL Ghostscript.</small>
+
+<p>
+<small>Ghostscript version 6.60, 31 December 2000
+
+<!-- [3.0 end visible trailer] ============================================= -->
+
+</body>
+</html>
