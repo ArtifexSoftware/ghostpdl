@@ -135,6 +135,7 @@ gs_imager_state_initialize(gs_imager_state * pis, gs_memory_t * mem)
     pis->cie_joint_caches = NULL;
     pis->cmap_procs = cmap_procs_default;
     pis->pattern_cache = NULL;
+    pis->have_pattern_streams = false;
     return 0;
 }
 

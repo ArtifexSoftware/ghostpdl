@@ -225,6 +225,7 @@ typedef struct gs_transparency_source_s {
 	gs_fixed_point fill_adjust;	/* fattening for fill */\
 	bool stroke_adjust;\
 	bool accurate_curves;\
+	bool have_pattern_streams;\
 	float smoothness;\
 	const gx_color_map_procs *\
 	  (*get_cmap_procs)(const gs_imager_state *, const gx_device *);\
@@ -256,7 +257,7 @@ struct gs_imager_state_s {
    { (float)(scale), 0.0, 0.0, (float)(-(scale)), 0.0, 0.0 },\
   lop_default, gx_max_color_value, BLEND_MODE_Compatible,\
    { 1.0, 0 }, { 1.0, 0 }, 0/*false*/, 0, 0, 0/*false*/, 0, 0, 1.0,\
-   { fixed_half, fixed_half }, 0/*false*/, 0/*false*/, 1.0,\
+   { fixed_half, fixed_half }, 0/*false*/, 0/*false*/, 0/*false*/, 1.0,\
   gx_default_get_cmap_procs
 
 /* The imager state structure is public only for subclassing. */

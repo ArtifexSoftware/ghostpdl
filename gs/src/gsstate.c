@@ -282,10 +282,11 @@ fail:
 /* This should only be done to a newly created state. */
 void
 gs_state_set_client(gs_state * pgs, void *pdata,
-		    const gs_state_client_procs * pprocs)
+		    const gs_state_client_procs * pprocs, bool client_has_pattern_streams)
 {
     pgs->client_data = pdata;
     pgs->client_procs = *pprocs;
+    pgs->have_pattern_streams = client_has_pattern_streams;
 }
 
 /* Get the client data from a graphics state. */

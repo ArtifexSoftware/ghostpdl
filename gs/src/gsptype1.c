@@ -928,12 +928,14 @@ gx_pattern_cache_lookup(gx_device_color * pdevc, const gs_imager_state * pis,
     }
     if (pcache != 0) {
 	gx_color_tile *ctile = &pcache->tiles[id % pcache->num_tiles];
-	int code = dev_proc(dev, pattern_manage)(dev, id, NULL, pattern_manage__load);
-	bool internal_accum = (code == 0);
-
-	if (code < 0)
-	    return false;
-	if (ctile->id == id && 
+	bool internal_accum = true;
+	if (pis->have_pattern_streams) {
+	    int code = dev_proc(dev, pattern_manage)(dev, id, NULL, pattern_manage__load);
+	    internal_accum = (code == 0);
+	    if (code < 0)
+		return false;
+	}
+	if (ctile->id == id &&
 	    ctile->is_dummy == !internal_accum &&
 	    (pdevc->type != &gx_dc_pattern ||
 	     ctile->depth == dev->color_info.depth)

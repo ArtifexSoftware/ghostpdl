@@ -137,7 +137,7 @@ int_gstate_alloc(const gs_dual_memory_t * dmem)
 			   "int_gstate_alloc(remap color info)");
     make_struct(&iigs->remap_color_info, imemory_space(gmem), prci);
     clear_pagedevice(iigs);
-    gs_state_set_client(pgs, iigs, &istate_procs);
+    gs_state_set_client(pgs, iigs, &istate_procs, true);
     /* PostScript code wants limit clamping enabled. */
     gs_setlimitclamp(pgs, true);
     /*
