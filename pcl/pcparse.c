@@ -23,7 +23,7 @@
 
 /* Register a command.  Return true if this is a redefinition. */
 private bool
-pcl_register_command(byte *pindex, pcl_command_definition_t *pcmd, 
+pcl_register_command(byte *pindex, const pcl_command_definition_t *pcmd, 
 		     pcl_parser_state_t *pcl_parser_state)
 {	int index = pcl_parser_state->pcl_command_next_index;
 	byte prev = *pindex;
@@ -586,7 +586,7 @@ pcl_init_command_index(pcl_parser_state_t *pcl_parser_state)
 
 /* ---------------- Initialization ---------------- */
 
-private void
+void
 pcparse_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 {	
     if ( type & (pcl_reset_initial | pcl_reset_printer) )
