@@ -17,8 +17,8 @@
 /* $Id$ */
 /* Level 2 sethalftone support */
 
-#ifndef zcname_INCLUDED
-#  define zcname_INCLUDED
+#ifndef zht2_INCLUDED
+#  define zht2_INCLUDED
 
 #include "gscspace.h"            /* for gs_separation_name */
 
@@ -29,4 +29,4 @@
 int gs_get_colorname_string(gs_separation_name colorname_index,
 			unsigned char **ppstr, unsigned int *pname_size);
 
-#endif /* zcname_INCLUDED */
+#endif /* zht2_INCLUDED */
