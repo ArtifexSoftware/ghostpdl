@@ -53,6 +53,12 @@ pcl_simplex_duplex_print(pcl_args_t *pargs, pcl_state_t *pcs)
 {	int code;
 	bool reopen = false;
 
+	/* oddly the command goes to the next page irrespective of
+           arguments */
+	code = pcl_end_page_if_marked(pcs);
+	if ( code < 0 )
+	    return code;
+	pcl_home_cursor(pcs);
 	switch ( int_arg(pargs) )
 	  {
 	  case 0:
@@ -104,13 +110,16 @@ pcl_duplex_page_side_select(pcl_args_t *pargs, pcl_state_t *pcs)
 {	uint i = uint_arg(pargs);
 	int code;
 
-	if ( i > 2 )
-	  return 0;
-	/* According to H-P documentation, this command ejects the page */
-	/* even if nothing has been printed on it. */
+	/* oddly the command goes to the next page irrespective of
+           arguments */
 	code = pcl_end_page_if_marked(pcs);
 	if ( code < 0 )
-	  return code;
+	    return code;
+	pcl_home_cursor(pcs);
+
+	if ( i > 2 )
+	  return 0;
+
 	if ( i > 0 && pcs->duplex )
 	  put_param1_bool(pcs, "FirstSide", i == 1);
 	return 0;
