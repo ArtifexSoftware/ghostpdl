@@ -204,7 +204,9 @@ ialloc_alloc_state(gs_raw_memory_t * parent, uint chunk_size)
     iimem->gc_status.vm_threshold = chunk_size * 3L;
     iimem->gc_status.max_vm = max_long;
     iimem->gc_status.psignal = NULL;
+    iimem->gc_status.signal_value = 0;
     iimem->gc_status.enabled = false;
+    iimem->gc_status.requested = 0;
     iimem->gc_allocated = 0;
     iimem->previous_status.allocated = 0;
     iimem->previous_status.used = 0;
@@ -446,6 +448,36 @@ gs_memory_set_gc_status(gs_ref_memory_t * mem, const gs_memory_gc_status_t * pst
 {
     mem->gc_status = *pstat;
     ialloc_set_limit(mem);
+}
+
+/* Set VM threshold. */
+void
+gs_memory_set_vm_threshold(gs_ref_memory_t * mem, long val)
+{
+    gs_memory_gc_status_t stat;
+    gs_ref_memory_t * stable = (gs_ref_memory_t *)mem->stable_memory;
+
+    gs_memory_gc_status(mem, &stat);
+    stat.vm_threshold = val;
+    gs_memory_set_gc_status(mem, &stat);
+    gs_memory_gc_status(stable, &stat);
+    stat.vm_threshold = val;
+    gs_memory_set_gc_status(stable, &stat);
+}
+
+/* Set VM reclaim. */
+void
+gs_memory_set_vm_reclaim(gs_ref_memory_t * mem, bool enabled)
+{
+    gs_memory_gc_status_t stat;
+    gs_ref_memory_t * stable = (gs_ref_memory_t *)mem->stable_memory;
+
+    gs_memory_gc_status(mem, &stat);
+    stat.enabled = enabled;
+    gs_memory_set_gc_status(mem, &stat);
+    gs_memory_gc_status(stable, &stat);
+    stat.enabled = enabled;
+    gs_memory_set_gc_status(stable, &stat);
 }
 
 /* ================ Objects ================ */

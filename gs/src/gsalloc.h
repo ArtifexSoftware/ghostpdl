@@ -43,6 +43,8 @@ typedef struct gs_memory_gc_status_s {
 } gs_memory_gc_status_t;
 void gs_memory_gc_status(const gs_ref_memory_t *, gs_memory_gc_status_t *);
 void gs_memory_set_gc_status(gs_ref_memory_t *, const gs_memory_gc_status_t *);
+void gs_memory_set_vm_threshold(gs_ref_memory_t * mem, long val);
+void gs_memory_set_vm_reclaim(gs_ref_memory_t * mem, bool enabled);
 
 /* ------ Initialization ------ */
 

@@ -78,8 +78,6 @@ zgcheck(i_ctx_t *i_ctx_p)
 int
 set_vm_threshold(i_ctx_t *i_ctx_p, long val)
 {
-    gs_memory_gc_status_t stat;
-
     if (val < -1)
 	return_error(e_rangecheck);
     else if (val == -1)
@@ -89,12 +87,8 @@ set_vm_threshold(i_ctx_t *i_ctx_p, long val)
 	val = MIN_VM_THRESHOLD;
     else if (val > MAX_VM_THRESHOLD)
 	val = MAX_VM_THRESHOLD;
-    gs_memory_gc_status(idmemory->space_global, &stat);
-    stat.vm_threshold = val;
-    gs_memory_set_gc_status(idmemory->space_global, &stat);
-    gs_memory_gc_status(idmemory->space_local, &stat);
-    stat.vm_threshold = val;
-    gs_memory_set_gc_status(idmemory->space_local, &stat);
+    gs_memory_set_vm_threshold(idmemory->space_global, val);
+    gs_memory_set_vm_threshold(idmemory->space_local, val);
     return 0;
 }
 
@@ -102,17 +96,9 @@ int
 set_vm_reclaim(i_ctx_t *i_ctx_p, long val)
 {
     if (val >= -2 && val <= 0) {
-	gs_memory_gc_status_t stat;
-
-	gs_memory_gc_status(idmemory->space_system, &stat);
-	stat.enabled = val >= -1;
-	gs_memory_set_gc_status(idmemory->space_system, &stat);
-	gs_memory_gc_status(idmemory->space_global, &stat);
-	stat.enabled = val >= -1;
-	gs_memory_set_gc_status(idmemory->space_global, &stat);
-	gs_memory_gc_status(idmemory->space_local, &stat);
-	stat.enabled = val == 0;
-	gs_memory_set_gc_status(idmemory->space_local, &stat);
+	gs_memory_set_vm_reclaim(idmemory->space_system, (val >= -1));
+	gs_memory_set_vm_reclaim(idmemory->space_global, (val >= -1));
+	gs_memory_set_vm_reclaim(idmemory->space_local, (val == 0));
 	return 0;
     } else
 	return_error(e_rangecheck);
