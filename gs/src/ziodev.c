@@ -140,13 +140,11 @@ zfilelineedit(i_ctx_t *i_ctx_p)
 	    "zfilelineedit(buffer)");
 	if (buf->data == 0)
 	    return_error(e_VMerror);
-	buf->size = initial_buf_size;
+        op->value.bytes = buf->data;
+	op->tas.rsize = buf->size = initial_buf_size;
     }
 
 rd:
-    op->value.bytes = buf->data;
-    op->tas.rsize = buf->size;
-
     /*
      * We have to stop 1 character short of the buffer size,
      * because %statementedit must append an EOL.
@@ -154,6 +152,10 @@ rd:
     buf->size--;
     code = zreadline_from(ins, buf, imemory, &count, &in_eol);
     buf->size++;		/* restore correct size */
+
+    op->value.bytes = buf->data; /* zreadline_from sometimes resizes the buffer. */
+    op->tas.rsize = buf->size;
+
     switch (code) {
 	case EOFC:
 	    code = gs_note_error(e_undefinedfilename);
@@ -193,8 +195,8 @@ rd:
 		    code = gs_note_error(e_VMerror);
 		    break;
 		}
-		buf->data = nbuf;
-		buf->size = nsize;
+		op->value.bytes = buf->data = nbuf;
+		op->tas.rsize = buf->size = nsize;
 		goto rd;
 	    }
     }
@@ -232,6 +234,8 @@ sc:
 			   "zfilelineedit(resize buffer)");
     if (buf->data == 0)
 	return_error(e_VMerror);
+    op->value.bytes = buf->data;
+    op->tas.rsize = buf->size;
 
     s = file_alloc_stream(imemory, "zfilelineedit(stream)");
     if (s == 0)
