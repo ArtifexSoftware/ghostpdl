@@ -89,7 +89,8 @@ pdf2dsc.ps pdfopt.ps ;\
 	done'
 
 # install the default resource files
-RES_CATEGORIES=CMap ColorSpace Decoding
+# copy in every category (directory) but CVS
+RES_CATEGORIES=`ls $(PSRESDIR) | grep -v CVS` 
 install-resdata: $(PSRESDIR)/Decoding/Unicode
 	-mkdir -p $(datadir)
 	-mkdir -p $(gsdir)
