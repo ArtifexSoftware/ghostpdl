@@ -173,7 +173,8 @@ pprintb1(stream *s, const char *format, bool b)
 /*
  * Create and write a Function for a gx_transfer_map.  We use this for
  * transfer, BG, and UCR functions.  If check_identity is true, check for
- * an identity map.
+ * an identity map.  Return 1 if the map is the identity map, otherwise
+ * return 0.
  */
 private data_source_proc_access(transfer_map_access); /* check prototype */
 private int
@@ -219,7 +220,7 @@ pdf_write_transfer_map(gx_device_pdf *pdev, const gx_transfer_map *map,
 
     if (map == 0) {
 	*ids = 0;		/* no map */
-	return 0;
+	return 1;
     }
     if (check_identity) {
 	/* Check for an identity map. */
@@ -729,23 +730,29 @@ pdf_update_transfer(gx_device_pdf *pdev, const gs_imager_state *pis,
 	    multiple = true;
     }
     if (update) {
+	int mask;
+
 	if (!multiple) {
 	    code = pdf_write_transfer(pdev, pis->set_transfer.indexed[0],
 				      "/TR", trs);
 	    if (code < 0)
 		return code;
+	    mask = code == 0;
 	} else {
 	    strcpy(trs, "/TR[");
+	    mask = 0;
 	    for (i = 0; i < 4; ++i) {
 		code = pdf_write_transfer_map(pdev,
 					      pis->set_transfer.indexed[i],
 					      0, false, "", trs + strlen(trs));
 		if (code < 0)
 		    return code;
+		mask |= (code == 0) << i;
 	    }
 	    strcat(trs, "]");
 	}
 	memcpy(pdev->transfer_ids, transfer_ids, sizeof(pdev->transfer_ids));
+	pdev->transfer_not_identity = mask;
     }
     return code;
 }
@@ -788,7 +795,7 @@ private int
 pdf_prepare_drawing(gx_device_pdf *pdev, const gs_imager_state *pis,
 		    const char *ca_format, pdf_resource_t **ppres)
 {
-    int code;
+    int code = 0;
 
     if (pdev->CompatibilityLevel >= 1.4) {
 	if (pdev->state.blend_mode != pis->blend_mode) {
@@ -814,23 +821,15 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_imager_state *pis,
 	    )
 	    return_error(gs_error_rangecheck);
     }
-    return 0;
-}
-
-/* Update the graphics state subset common to fill and stroke. */
-private int
-pdf_prepare_vector(gx_device_pdf *pdev, const gs_imager_state *pis,
-		   const char *ca_format, pdf_resource_t **ppres)
-{
+    /*
+     * We originally thought the remaining items were only needed for
+     * fill and stroke, but in fact they are needed for images as well.
+     */
     /*
      * Update halftone, transfer function, black generation, undercolor
      * removal, halftone phase, overprint mode, smoothness, blend mode, text
      * knockout.
      */
-    int code = pdf_prepare_drawing(pdev, pis, ca_format, ppres);
-
-    if (code < 0)
-	return code;
     if (pdev->CompatibilityLevel >= 1.2) {
 	gs_int_point phase, dev_phase;
 	char hts[5 + MAX_FN_CHARS + 1],
@@ -920,7 +919,7 @@ int
 pdf_prepare_fill(gx_device_pdf *pdev, const gs_imager_state *pis)
 {
     pdf_resource_t *pres = 0;
-    int code = pdf_prepare_vector(pdev, pis, "/ca %g", &pres);
+    int code = pdf_prepare_drawing(pdev, pis, "/ca %g", &pres);
 
     if (code < 0)
 	return code;
@@ -950,7 +949,7 @@ int
 pdf_prepare_stroke(gx_device_pdf *pdev, const gs_imager_state *pis)
 {
     pdf_resource_t *pres = 0;
-    int code = pdf_prepare_vector(pdev, pis, "/CA %g", &pres);
+    int code = pdf_prepare_drawing(pdev, pis, "/CA %g", &pres);
 
     if (code < 0)
 	return code;

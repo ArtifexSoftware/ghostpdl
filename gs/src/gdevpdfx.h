@@ -383,6 +383,7 @@ struct gx_device_pdf_s {
     int overprint_mode;
     gs_id halftone_id;
     gs_id transfer_ids[4];
+    int transfer_not_identity;	/* bitmask */
     gs_id black_generation_id, undercolor_removal_id;
     /* Following are set when device is opened. */
     enum {

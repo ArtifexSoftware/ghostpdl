@@ -198,6 +198,7 @@ const gx_device_pdf gs_pdfwrite_device =
  0,				/* overprint_mode */
  gs_no_id,			/* halftone_id */
  {gs_no_id, gs_no_id, gs_no_id, gs_no_id}, /* transfer_ids */
+ 0,				/* transfer_not_identity */
  gs_no_id,			/* black_generation_id */
  gs_no_id,			/* undercolor_removal_id */
  pdf_compress_none,		/* compression */

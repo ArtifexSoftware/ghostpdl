@@ -297,10 +297,22 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     }
     if ((code = pdf_begin_write_image(pdev, &pie->writer, gs_no_id, width,
 				      height, NULL, in_line)) < 0 ||
-	/****** pctm IS WRONG ******/
-	(code = psdf_setup_image_filters((gx_device_psdf *) pdev,
-					 &pie->writer.binary, &image.pixel,
-					 pmat, pis)) < 0 ||
+	/*
+	 * Some regrettable PostScript code (such as LanguageLevel 1 output
+	 * from Microsoft's PSCRIPT.DLL driver) misuses the transfer
+	 * function to accomplish the equivalent of indexed color.
+	 * Downsampling (well, only averaging) or JPEG compression are not
+	 * compatible with this.  Play it safe by using only lossless
+	 * filters if the transfer function(s) is/are other than the
+	 * identity.
+	 */
+	(code = (pdev->transfer_not_identity ?
+		 psdf_setup_lossless_filters((gx_device_psdf *) pdev,
+					     &pie->writer.binary,
+					     &image.pixel) :
+		 psdf_setup_image_filters((gx_device_psdf *) pdev,
+					  &pie->writer.binary, &image.pixel,
+					  pmat, pis))) < 0 ||
 	(code = pdf_begin_image_data(pdev, &pie->writer,
 				     (const gs_pixel_image_t *)&image,
 				     &cs_value)) < 0
