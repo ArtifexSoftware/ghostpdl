@@ -27,6 +27,7 @@
 #include "gsstruct.h"
 #include "gstypes.h"
 #include "gxdevcli.h"
+#include "gxdcolor.h"		/* for gs_state_color_load */
 #include "gxfont.h"		/* for init_fstack */
 #include "gxpath.h"
 #include "gxtext.h"
@@ -205,6 +206,9 @@ gs_text_begin(gs_state * pgs, const gs_text_params_t * text,
 	if (code < 0)
 	    return code;
 	gx_set_dev_color(pgs);
+	code = gs_state_color_load(pgs);
+	if (code < 0)
+	    return code;
     }
     return gx_device_text_begin(pgs->device, (gs_imager_state *) pgs,
 				text, pgs->font, pgs->path, pgs->dev_color,
