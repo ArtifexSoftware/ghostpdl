@@ -111,7 +111,7 @@ private const char *const psw_ps_procset[] = {
          "{ PageSize dup  1",  /* x y /a4 [  ] [  ] 1   */
            "5 -1 roll put 0 "  /* x /a4 [ y] 0          */
            "4 -1 roll put "    /* /a4                   */
-           "dup where"        
+           "dup null eq {false} {dup where} ifelse"
              "{ exch get exec" /* -                     */
              "}",
              "{ pop"           /* -                     */
