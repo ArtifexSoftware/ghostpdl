@@ -40,8 +40,13 @@
 /* multiples of 90 degrees. */
 private const bool CACHE_ROTATED_CHARS = true;
 
-/* Define whether or not to oversample characters at small sizes. */
+/* Define whether or not to oversample characters at small sizes.  */
+/* Oversampling was used as an old dropout prevention method. */
+#if DROPOUT_PREVENTION
+private const bool OVERSAMPLE = false;
+#else
 private const bool OVERSAMPLE = true;
+#endif
 
 /* Define the maximum size of a full temporary bitmap when rasterizing, */
 /* in bits (not bytes). */
@@ -327,6 +332,35 @@ gx_compute_text_oversampling(const gs_show_enum * penum, const gs_font *pfont,
                              int alpha_bits, gs_log2_scale_point *p_log2_scale)
 {
     gs_log2_scale_point log2_scale;
+
+#if DROPOUT_PREVENTION
+    if (alpha_bits == 1 && !OVERSAMPLE) 
+	log2_scale.x = log2_scale.y = 0;
+    else if (pfont->PaintType != 0) {
+	/* Don't oversample artificially stroked fonts. */
+	log2_scale.x = log2_scale.y = 0;
+    } else {
+	/* Get maximal scale according to cached bitmap size. */
+	show_set_scale(penum, &log2_scale);
+	if (!OVERSAMPLE) {
+	    /* Reduce the scale to fit into alpha bits. */
+	    int excess = log2_scale.x + log2_scale.y - alpha_bits;
+
+	    while (excess > 0) {
+		if (log2_scale.y > 0) {
+		    log2_scale.y --; 
+		    excess--;
+		    if (excess == 0)
+			break;
+		}
+		if (log2_scale.x > 0) {
+		    log2_scale.x --; 
+		    excess--;
+		}
+	    }
+	}
+    }
+#else
     show_set_scale(penum, &log2_scale);
     /*
      * If the device wants anti-aliased text,
@@ -351,6 +385,7 @@ gx_compute_text_oversampling(const gs_show_enum * penum, const gs_font *pfont,
 	/* Don't oversample artificially stroked fonts. */
 	log2_scale.x = log2_scale.y = 0;
     }
+#endif
     *p_log2_scale = log2_scale;
 }
 

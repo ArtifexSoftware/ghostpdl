@@ -576,7 +576,7 @@ $(GLOBJ)gxfill.$(OBJ) : $(GLSRC)gxfill.c $(GXERR)\
  $(gsstruct_h)\
  $(gxdcolor_h) $(gxdevice_h) $(gxfixed_h) $(gxhttile_h)\
  $(gxistate_h) $(gxpaint_h) $(gsptype2_h)\
- $(gzcpath_h) $(gzpath_h)
+ $(gzcpath_h) $(gzpath_h) $(vdtrace_h)
 	$(GLCC) $(GLO_)gxfill.$(OBJ) $(C_) $(GLSRC)gxfill.c
 
 $(GLOBJ)gxht.$(OBJ) : $(GLSRC)gxht.c $(GXERR) $(memory__h)\
@@ -654,7 +654,7 @@ $(GLOBJ)gxpath2.$(OBJ) : $(GLSRC)gxpath2.c $(GXERR) $(math__h)\
 	$(GLCC) $(GLO_)gxpath2.$(OBJ) $(C_) $(GLSRC)gxpath2.c
 
 $(GLOBJ)gxpcopy.$(OBJ) : $(GLSRC)gxpcopy.c $(GXERR) $(math__h) $(gconfigv_h)\
- $(gxfarith_h) $(gxfixed_h) $(gxistate_h) $(gzpath_h)
+ $(gxfarith_h) $(gxfixed_h) $(gxistate_h) $(gzpath_h) $(vdtrace_h)
 	$(GLCC) $(GLO_)gxpcopy.$(OBJ) $(C_) $(GLSRC)gxpcopy.c
 
 $(GLOBJ)gxpdash.$(OBJ) : $(GLSRC)gxpdash.c $(GX) $(math__h)\
@@ -663,7 +663,7 @@ $(GLOBJ)gxpdash.$(OBJ) : $(GLSRC)gxpdash.c $(GX) $(math__h)\
 	$(GLCC) $(GLO_)gxpdash.$(OBJ) $(C_) $(GLSRC)gxpdash.c
 
 $(GLOBJ)gxpflat.$(OBJ) : $(GLSRC)gxpflat.c $(GX)\
- $(gxarith_h) $(gxfixed_h) $(gzpath_h)
+ $(gxarith_h) $(gxfixed_h) $(gzpath_h) $(vdtrace_h)
 	$(GLCC) $(GLO_)gxpflat.$(OBJ) $(C_) $(GLSRC)gxpflat.c
 
 $(GLOBJ)gxsample.$(OBJ) : $(GLSRC)gxsample.c $(GX)\
@@ -998,7 +998,8 @@ $(GLOBJ)gdevdbit.$(OBJ) : $(GLSRC)gdevdbit.c $(GXERR) $(gpcheck_h)\
 $(GLOBJ)gdevddrw.$(OBJ) : $(GLSRC)gdevddrw.c $(GXERR) $(math__h) $(memory__h)\
  $(gpcheck_h)\
  $(gsrect_h)\
- $(gxdcolor_h) $(gxdevice_h) $(gxfixed_h) $(gxiparam_h) $(gxistate_h) $(gxmatrix_h)
+ $(gxdcolor_h) $(gxdevice_h) $(gxfixed_h) $(gxiparam_h) $(gxistate_h) $(gxmatrix_h)\
+ $(vtrace_h)
 	$(GLCC) $(GLO_)gdevddrw.$(OBJ) $(C_) $(GLSRC)gdevddrw.c
 
 $(GLOBJ)gdevdflt.$(OBJ) : $(GLSRC)gdevdflt.c $(GXERR)\

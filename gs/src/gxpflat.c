@@ -21,6 +21,11 @@
 #include "gxfixed.h"
 #include "gzpath.h"
 
+#if !DROPOUT_PREVENTION
+#define VD_TRACE 0
+#endif
+#include "vdtrace.h"
+
 /* Define whether to merge nearly collinear line segments when flattening */
 /* curves.  This is very good for performance, but we feel a little */
 /* uneasy about its effects on character appearance. */
@@ -239,6 +244,7 @@ gx_flatten_sample(gx_path * ppath, int k, curve_segment * pc,
 #define in_range(v) (v < max_fast && v > min_fast)
     if (k == 0) {		/* The curve is very short, or anomalous in some way. */
 	/* Just add a line and exit. */
+	vd_lineto(x3, y3);
 	return gx_path_add_line_notes(ppath, x3, y3, notes);
     }
     if (k <= k_sample_max &&
@@ -390,16 +396,19 @@ gx_flatten_sample(gx_path * ppath, int k, curve_segment * pc,
 #undef coords_in_order
 	/* Add a line. */
 	if (ppt == &points[max_points]) {
-	    if (notes & sn_not_first)
+	    if (notes & sn_not_first) {
 		code = gx_path_add_lines_notes(ppath, points, max_points,
 					       notes);
-	    else {
+		vd_lineto_multi(points, max_points);
+	    } else {
 		code = gx_path_add_line_notes(ppath, points[0].x,
 					      points[0].y, notes);
+		vd_lineto(points[0].x, points[0].y);
 		if (code < 0)
 		    return code;
 		code = gx_path_add_lines_notes(ppath, points,
 				      max_points - 1, notes | sn_not_first);
+		vd_lineto_multi(points, max_points - 1);
 	    }
 	    if (code < 0)
 		return code;
@@ -428,14 +437,17 @@ gx_flatten_sample(gx_path * ppath, int k, curve_segment * pc,
 					      points[0].x, points[0].y,
 					      notes);
 
+	    vd_lineto(points[0].x, points[0].y);
 	    if (code < 0)
 		return code;
 	    ++pts, --count;
 	    notes |= sn_not_first;
 	}
 	ppt->x = x3, ppt->y = y3;
+	vd_lineto_multi(pts, count);
 	return gx_path_add_lines_notes(ppath, pts, count, notes);
     }
+    vd_lineto(x3, y3);
     return gx_path_add_line_notes(ppath, x3, y3, notes);
 }
 

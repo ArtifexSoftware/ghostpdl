@@ -421,6 +421,7 @@ gs_type1_endchar(gs_type1_state * pcis)
 				 &pt);
 	gx_path_add_point(ppath, pt.x, pt.y);
     }
+#   if !DROPOUT_PREVENTION
     if (pcis->scale.x.log2_unit + pcis->scale.y.log2_unit == 0) {	/*
 									 * Tweak up the fill adjustment.  This is a hack for when
 									 * we can't oversample.  The values here are based entirely
@@ -453,6 +454,9 @@ gs_type1_endchar(gs_type1_state * pcis)
     } else {			/* Don't do any adjusting. */
 	pis->fill_adjust.x = pis->fill_adjust.y = fixed_0;
     }
+#   else
+    pis->fill_adjust.x = pis->fill_adjust.y = fixed_0;
+#   endif
     /* Set the flatness for curve rendering. */
     if (!pcis->charpath_flag)
 	gs_imager_setflat(pis, pcis->flatness);

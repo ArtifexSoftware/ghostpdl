@@ -29,6 +29,15 @@
 #include "gxiparam.h"
 #include "gxistate.h"
 
+#if !DROPOUT_PREVENTION
+#define VD_TRACE 0
+#endif
+#include "vdtrace.h"
+
+#define CONTIGUOUS_FILL (DROPOUT_PREVENTION && 1) /* Change 1 to 0 for benchmarking. */
+
+#define VD_RECT_COLOR RGB(0, 0, 255)
+
 #define SWAP(a, b, t)\
   (t = a, a = b, b = t)
 
@@ -152,7 +161,8 @@ gx_default_fill_trapezoid(gx_device * dev, const gs_fixed_edge * left,
 	int iy = fixed2int_var(ymin);
 	const int iy1 = fixed2int_var(ymax);
 	trap_line l, r;
-	int rxl, rxr, ry;
+	register int rxl, rxr;
+	int ry;
 	const fixed
 	    x0l = left->start.x, x1l = left->end.x, x0r = right->start.x,
 	    x1r = right->end.x, dxl = x1l - x0l, dxr = x1r - x0r;
@@ -162,6 +172,16 @@ gx_default_fill_trapezoid(gx_device * dev, const gs_fixed_edge * left,
 	bool fill_direct = color_writes_pure(pdevc, lop);
 	int max_rect_height = 1;  /* max height to do fill as rectangle */
 	int code;
+#if CONTIGUOUS_FILL
+	const bool peak = (left->start.x == right->start.x ||
+		           left->end.x == right->end.x);
+	int peak_yl, peak_yu;
+
+	if (peak) {
+	    peak_yl = ybot + fixed_half;
+	    peak_yu = ytop - fixed_half;
+	}
+#endif
 
 	if_debug2('z', "[z]y=[%d,%d]\n", iy, iy1);
 
@@ -183,6 +203,11 @@ gx_default_fill_trapezoid(gx_device * dev, const gs_fixed_edge * left,
 #define FILL_TRAP_RECT_DIRECT(x,y,w,h)\
   (swap_axes ? (*fill_rect)(dev, y, x, h, w, cindex) :\
    (*fill_rect)(dev, x, y, w, h, cindex))
+
+#define VD_RECT_SWAPPED(rxl, ry, rxr, iy)\
+    vd_rect(int2fixed(swap_axes ? ry : rxl), int2fixed(swap_axes ? rxl : ry),\
+            int2fixed(swap_axes ? iy : rxr), int2fixed(swap_axes ? rxr : iy),\
+	    1, VD_RECT_COLOR);
 
 	/* Compute the dx/dy ratios. */
 
@@ -261,37 +286,84 @@ gx_default_fill_trapezoid(gx_device * dev, const gs_fixed_edge * left,
   if ( (tl.xf += tl.ldf) >= 0 ) tl.xf -= tl.h, tl.x++;\
   ix = fixed2int_var(tl.x)
 
+#if CONTIGUOUS_FILL
+/*
+ * If left and right boundary round to same pixel index,
+ * we would not paing the scan and would get a dropout.
+ * Check for this case and choose one of two pixels
+ * which is closer to the "axis". We need to exclude
+ * 'peak' because it would paint an excessive pixel.
+ */
+#define SET_MINIMAL_WIDTH(ixl, ixr, l, r) \
+    if (ixl == ixr) \
+	if (!peak || iy >= peak_yl && iy <= peak_yu) {\
+	    fixed x = int2fixed(ixl) + fixed_half;\
+	    if (x - l.x < r.x - x)\
+		++ixr;\
+	    else\
+		--ixl;\
+	}
+
+#define CONNECT_RECTANGLES(ixl, ixr, rxl, rxr, iy, ry, adj1, adj2, fill)\
+    if (adj1 < adj2) {\
+	if (iy - ry > 1) {\
+	    VD_RECT_SWAPPED(rxl, ry, rxr, iy - 1);\
+	    code = fill(rxl, ry, rxr - rxl, iy - ry - 1);\
+	    if (code < 0)\
+		goto xit;\
+	    ry = iy - 1;\
+	}\
+	adj1 = adj2 = (adj2 + adj2) / 2;\
+    }
+
+#else
+#define SET_MINIMAL_WIDTH(ixl, ixr, l, r) DO_NOTHING
+#define CONNECT_RECTANGLES(ixl, ixr, rxl, rxr, iy, ry, adj1, adj2, fill) DO_NOTHING
+#endif
+
 	if (fill_direct) {
 	    gx_color_index cindex = pdevc->colors.pure;
 	    dev_proc_fill_rectangle((*fill_rect)) =
 		dev_proc(dev, fill_rectangle);
 
+	    SET_MINIMAL_WIDTH(rxl, rxr, l, r);
 	    while (++iy != iy1) {
-		int ixl, ixr;
+		register int ixl, ixr;
 
 		STEP_LINE(ixl, l);
 		STEP_LINE(ixr, r);
+		SET_MINIMAL_WIDTH(ixl, ixr, l, r);
 		if (ixl != rxl || ixr != rxr) {
+		    CONNECT_RECTANGLES(ixl, ixr, rxl, rxr, iy, ry, rxr, ixl, FILL_TRAP_RECT_DIRECT);
+		    CONNECT_RECTANGLES(ixl, ixr, rxl, rxr, iy, ry, ixr, rxl, FILL_TRAP_RECT_DIRECT);
+		    VD_RECT_SWAPPED(rxl, ry, rxr, iy);
 		    code = FILL_TRAP_RECT_DIRECT(rxl, ry, rxr - rxl, iy - ry);
 		    if (code < 0)
 			goto xit;
 		    rxl = ixl, rxr = ixr, ry = iy;
 		}
 	    }
+	    VD_RECT_SWAPPED(rxl, ry, rxr, iy);
 	    code = FILL_TRAP_RECT_DIRECT(rxl, ry, rxr - rxl, iy - ry);
 	} else {
+	    SET_MINIMAL_WIDTH(rxl, rxr, l, r);
 	    while (++iy != iy1) {
-		int ixl, ixr;
+		register int ixl, ixr;
 
 		STEP_LINE(ixl, l);
 		STEP_LINE(ixr, r);
+		SET_MINIMAL_WIDTH(ixl, ixr, l, r);
 		if (ixl != rxl || ixr != rxr) {
+		    CONNECT_RECTANGLES(ixl, ixr, rxl, rxr, iy, ry, rxr, ixl, FILL_TRAP_RECT);
+		    CONNECT_RECTANGLES(ixl, ixr, rxl, rxr, iy, ry, ixr, rxl, FILL_TRAP_RECT);
+		    VD_RECT_SWAPPED(rxl, ry, rxr, iy);
 		    code = FILL_TRAP_RECT(rxl, ry, rxr - rxl, iy - ry);
 		    if (code < 0)
 			goto xit;
 		    rxl = ixl, rxr = ixr, ry = iy;
 		}
 	    }
+	    VD_RECT_SWAPPED(rxl, ry, rxr, iy);
 	    code = FILL_TRAP_RECT(rxl, ry, rxr - rxl, iy - ry);
 	}
 #undef STEP_LINE
