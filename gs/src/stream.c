@@ -110,6 +110,7 @@ s_init(stream *s, gs_memory_t * mem)
     s->error_string[0] = 0;
     s->prev = s->next = 0;	/* clean for GC */
     s->file_name.data = 0;	/* ibid. */
+    s->file_name.size = 0;	
     s->close_strm = false;	/* default */
     s->close_at_eod = true;	/* default */
 }
@@ -172,6 +173,7 @@ s_std_init(register stream * s, byte * ptr, uint len, const stream_procs * pp,
     s->state = (stream_state *) s;	/* hack to avoid separate state */
     s->file = 0;
     s->file_name.data = 0;	/* in case stream is on stack */
+    s->file_name.size = 0;
     if_debug4('s', "[s]init 0x%lx, buf=0x%lx, len=%u, modes=%d\n",
 	      (ulong) s, (ulong) ptr, len, modes);
 }
@@ -307,6 +309,7 @@ s_disable(register stream * s)
 	gs_free_const_string(s->memory, s->file_name.data, s->file_name.size,
 			     "s_disable(file_name)");
 	s->file_name.data = 0;
+	s->file_name.size = 0;
     }
     /****** SHOULD DO MORE THAN THIS ******/
     if_debug1('s', "[s]disable 0x%lx\n", (ulong) s);
