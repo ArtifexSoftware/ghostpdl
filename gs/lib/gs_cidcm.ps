@@ -353,12 +353,25 @@ currentdict end def
 
   4 -1 roll setglobal                     % (templ) proc (scr) <<CIDFont>> <<CMap>> <<Fonts>>
 
-  % Store resource names into local dictionaries :
+  % Store resource identifiers into local dictionaries
+  % A resource instance can have a key that is not a name or a string. In this
+  % case, resourceforall passes the key directly to proc instead of copying it
+  % into the scratch string. This case can arise only for a resource instance
+  % defined in virtual memory by a previous defineresource
+
+  % Discard non-string keys of CIDFont and CMap because <CIDFontName>- -<CMapName>
+  % is only defined for names.
 
   { /.DisableResourceOrdering pop % gs_resmp accesses this through execstack - don't remove !
-    5 index [ 2 index {exch cvn dup put} aload pop ] cvx bind 5 index //ResourceForAll exec
-    (*)     [ 3 index {exch cvn dup put} aload pop ] cvx bind 5 index /CMap resourceforall
-    (*)     [ 4 index {exch cvn dup put} aload pop ] cvx bind 5 index /CIDFont resourceforall
+
+    5 index [ 2 index {exch //null put} aload pop ] cvx bind 5 index //ResourceForAll exec
+
+    (*) [ 3 index {exch dup type /stringtype eq { cvn dup put } { pop pop } ifelse } aload pop
+        ] cvx bind 5 index /CMap resourceforall
+
+    (*) [ 4 index {exch dup type /stringtype eq { cvn dup put } { pop pop } ifelse } aload pop
+        ] cvx bind 5 index /CIDFont resourceforall
+
     exit
   } loop % This loop is a pattern for execstack_lookup - don't remove !
 
@@ -366,6 +379,7 @@ currentdict end def
 
                                           % (templ) proc (scr) <<CIDFont>> <<CMap>> <<Fonts>>
   dup {                                              
+    pop dup
     //ResourceStatus exec {                        
       pop 2 index                         % (templ) proc (scr) <<CIDFont>> <<CMap>> <<Fonts>> /Name nStatus <<Font>>
       3 1 roll put                        % (templ) proc (scr) <<CIDFont>> <<CMap>> <<Fonts>>
