@@ -158,8 +158,12 @@ gx_purge_selected_cached_chars(gs_font_dir * dir,
 /* (This is only exported for gxccache.c.) */
 cached_fm_pair *
 gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
-	       const gs_state * pgs)
+	       const gs_state * pgs, gs_log2_scale_point *log2_scale)
 {
+    int scale_x = 1 << log2_scale->x;
+    int scale_y = 1 << log2_scale->y;
+    float mxx = pgs->char_tm.xx * scale_x, mxy = pgs->char_tm.xy * scale_x, 
+          myx = pgs->char_tm.yx * scale_y, myy = pgs->char_tm.yy * scale_y;
     register cached_fm_pair *pair =
     dir->fmcache.mdata + dir->fmcache.mnext;
     cached_fm_pair *mend =
@@ -189,8 +193,8 @@ gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
     /* The OSF/1 compiler doesn't like casting a pointer to */
     /* a shorter int.... */
     pair->hash = (uint) (ulong) pair % 549;	/* scramble bits */
-    pair->mxx = pgs->char_tm.xx, pair->mxy = pgs->char_tm.xy;
-    pair->myx = pgs->char_tm.yx, pair->myy = pgs->char_tm.yy;
+    pair->mxx = mxx, pair->mxy = mxy;
+    pair->myx = myx, pair->myy = myy;
     pair->num_chars = 0;
     pair->xfont_tried = false;
     pair->xfont = 0;

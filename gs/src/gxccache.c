@@ -97,7 +97,7 @@ gx_lookup_fm_pair(gs_font * pfont, register const gs_state * pgs, gs_log2_scale_
 	    return pair;
 	}
     }
-    return gx_add_fm_pair(dir, pfont, &uid, pgs);
+    return gx_add_fm_pair(dir, pfont, &uid, pgs, log2_scale);
 }
 
 /* Look up a glyph with the right depth in the cache. */
