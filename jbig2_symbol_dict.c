@@ -216,6 +216,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
   uint32_t NSYMSDECODED;
   int32_t SYMWIDTH, TOTWIDTH;
   uint32_t HCFIRSTSYM;
+  Jbig2WordStream *ws = NULL;
   Jbig2ArithState *as = NULL;
   Jbig2ArithIntCtx *IADH = NULL;
   Jbig2ArithIntCtx *IADW = NULL;
@@ -231,7 +232,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
   NSYMSDECODED = 0;
 
   if (!params->SDHUFF) {
-      Jbig2WordStream *ws = jbig2_word_stream_buf_new(ctx, data, size);
+      ws = jbig2_word_stream_buf_new(ctx, data, size);
       as = jbig2_arith_new(ctx, ws);
       IADH = jbig2_arith_int_ctx_new(ctx);
       IADW = jbig2_arith_int_ctx_new(ctx);
@@ -484,6 +485,11 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
   }
   
   jbig2_sd_release(ctx, SDNEWSYMS);
+  
+  if (!params->SDHUFF) {
+    jbig2_free(ctx->allocator, as);  
+    jbig2_word_stream_buf_free(ctx, ws);
+  }
   
   return SDEXSYMS;
 }
