@@ -1218,6 +1218,15 @@ bbox_text_begin(gx_device * dev, gs_imager_state * pis,
     bbox_text_enum *pbte;
     int code;
 
+    if (tdev && 0 == strncmp(tdev->dname, "pdfwrite", 8))
+    {
+	/* stefan HACK update the bounding box for pcl to "mark" the page 
+	 * pdfwrite does NOT correctly implement updating the bounding box for characters.
+	 * This value is wrong but will "mark" and prevent the page from being erased.
+	 */
+	BBOX_ADD_INT_RECT(bdev, 1, 1, 2, 2);
+    }
+
     if (tdev == 0)
 	return gx_default_text_begin(dev, pis, text, font, path, pdcolor,
 				     pcpath, memory, ppenum);
