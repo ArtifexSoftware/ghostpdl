@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -177,6 +177,11 @@ const int gs_interp_max_op_num_args = MIN_BLOCK_OSTACK;		/* for iinit.c */
  * the one created for text processing, which is 8 (snumpush) slots.
  */
 #define MIN_BLOCK_ESTACK 8
+/*
+ * If we get an e-stack overflow, we need to cut it back far enough to
+ * have some headroom for executing the error procedure.
+ */
+#define ES_HEADROOM 20
 
 /*
  * Define the initial maximum size of the dictionary stack (MaxDictStack
@@ -564,24 +569,25 @@ again:
 		return ccode;
 	    {
 		uint count = ref_stack_count(&e_stack);
-		long limit = ref_stack_max_count(&e_stack) - 10;
+		uint limit = ref_stack_max_count(&e_stack) - ES_HEADROOM;
 
 		if (count > limit) {
 		    /*
 		     * If there is an e-stack mark within MIN_BLOCK_ESTACK of
 		     * the new top, cut the stack back to remove the mark.
 		     */
+		    int skip = count - limit;
 		    int i;
 
-		    for (i = 0; i < MIN_BLOCK_ESTACK; ++i) {
-			const ref *ep = ref_stack_index(&e_stack, limit - i);
+		    for (i = skip; i < skip + MIN_BLOCK_ESTACK; ++i) {
+			const ref *ep = ref_stack_index(&e_stack, i);
 
 			if (r_has_type_attrs(ep, t_null, a_executable)) {
-			    limit -= i + 1;
+			    skip = i + 1;
 			    break;
 			}
 		    }
-		    pop_estack(i_ctx_p, count - limit);
+		    pop_estack(i_ctx_p, skip);
 		}
 	    }
 	    *++osp = saref;
