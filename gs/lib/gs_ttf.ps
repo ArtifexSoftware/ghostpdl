@@ -114,6 +114,22 @@
 
 % ---- Utilities ---- %
 
+% Define a serial number for creating unique XUIDs for TrueType fonts.
+% We used to use the checkSumAdjustment value from the font, but this is
+% not reliable, since some fonts don't set it correctly.
+% Note that we must do this in a string to make it immune to save/restore.
+/xuidstring <80000000> def
+/curxuid {		% - curxuid <int>
+  0 xuidstring { exch 8 bitshift exch add } forall
+} bind def
+/nextxuid {		% - nextxuid -
+  3 -1 0 {
+    xuidstring 1 index 2 copy get dup 255 ne {
+      1 add put pop exit
+    } if pop 0 put pop
+  } for
+} bind def
+
 % <string> <index> getu16 <integer>
 /getu16 {
   2 copy get 8 bitshift 3 1 roll 1 add get add
@@ -460,7 +476,6 @@ end readonly def                % .loadttfontdict
 /.makesfnts {
   .readttdata
   /head tabdict /head get def
-   /checksum head 8 getu32 def
   /locatable tabdict /loca get def
   /post tabdict /post .knownget not { null } if def
   /numloca
@@ -591,10 +606,11 @@ end readonly def                % .loadttfontdict
   /upem head 18 getu16 def
   /FontMatrix matrix
   /FontBBox [ 36 2 42 { head exch gets16 upem div } for ]
+  nextxuid
   tabdict /name .knownget {
 		% Find the names from the 'name' table.
     /names exch def
-    /FontName names 6 findname not { checksum 16 8 string cvrs } if
+    /FontName names 6 findname not { curxuid 16 8 string cvrs } if
       /fontname 1 index def
     /FontInfo mark
       names 0 findname { /Notice exch } if
@@ -603,7 +619,7 @@ end readonly def                % .loadttfontdict
       names 5 findname { /Version exch } if
   } {
 		% No name table, fabricate a FontName.
-    /FontName checksum 16 8 string cvrs
+    /FontName curxuid 16 8 string cvrs
       /fontname 1 index def
     /FontInfo mark
   } ifelse
@@ -615,7 +631,7 @@ end readonly def                % .loadttfontdict
     /UnderlineThickness post 10 gets16 upem div
   } if
   counttomark 0 ne { .dicttomark } { pop pop } ifelse
-  /XUID [orgXUID 42 checksum]
+  /XUID [orgXUID 42 curxuid]
   DEBUG {
     tabs { .printtab } forall
     [ sfnts { length } forall ] ==
