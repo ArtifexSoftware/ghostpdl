@@ -192,7 +192,7 @@ seek_bmp_image(Image *self, int y)
 static ImagePnm *
 create_bmp_image(Image *templ, const char *path)
 {
-  int raster = (templ->raster + 3) & ~3;
+  int raster = (templ->width * 3 + 3) & ~3;
   int nImageSize = raster * templ->height;
   int nFileSize = BMP_HEADER_SIZE + nImageSize;
   ImagePnm *pnm = create_pnm_image_struct(templ, path);
@@ -420,7 +420,7 @@ fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
   int tolerance = fparams->tolerance;
   int window_size = fparams->window_size;
   int row_bytes = width * 3;
-  unsigned int out_buffer_size = (image_out ? image_out->super.raster : 0);
+  unsigned int out_buffer_size = (image_out ? row_bytes : 0);
   int half_win = window_size >> 1;
   uchar **buf1 = alloc_window (row_bytes, window_size);
   uchar **buf2 = alloc_window (row_bytes, window_size);
@@ -458,9 +458,10 @@ fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
         {
           image_get_rgb_scan_line (image1, row1);
           image_get_rgb_scan_line (image2, row2);
-	}
+        }
       if (out_buf)
 	memset(out_buf, 0, out_buffer_size);
+
       for (x = 0; x < width; x++)
 	{
 	  if (rowmid1[x * 3] != rowmid2[x * 3] ||
@@ -477,13 +478,14 @@ fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
 		    freport->n_outof_window++;
 		    if (out_buf) {
 		      out_buf[x * 3 + 0] = abs(rowmid1[x * 3 + 0]- rowmid2[x * 3 + 0]);
-		      out_buf[x * 3 + 1] = abs(rowmid1[x * 3 + 2]- rowmid2[x * 3 + 1]);
-		      out_buf[x * 3 + 2] = abs(rowmid1[x * 3 + 3]- rowmid2[x * 3 + 2]);
+		      out_buf[x * 3 + 1] = abs(rowmid1[x * 3 + 1]- rowmid2[x * 3 + 1]);
+		      out_buf[x * 3 + 2] = abs(rowmid1[x * 3 + 2]- rowmid2[x * 3 + 2]);
 		    }
 		  }
 		}
 	    }
 	}
+
       roll_window (buf1, window_size);
       roll_window (buf2, window_size);
       if (out_buf) {
