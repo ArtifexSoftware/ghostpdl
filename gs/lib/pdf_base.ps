@@ -179,8 +179,11 @@ pdfdict begin
   /LocalResources exch store
 } bind def
 
-% Get the depth of the PDF operand stack.  The main program (pdf_main.ps)
-% sets pdfemptycount before calling .pdfrun.
+% Get the depth of the PDF operand stack.  The caller sets pdfemptycount
+% before calling .pdfrun or .pdfruncontext.  It is initially set by
+% pdf_main, and is also set by any routine which changes the operand
+% stack depth (currently .pdfpaintproc, although there are other callers
+% of .pdfrun{context} which have not been checked for opstack depth.
 /.pdfcount {		% - .pdfcount <count>
   count pdfemptycount sub
 } bind def

@@ -624,7 +624,13 @@ end
   PDFfile fileposition 3 1 roll
   q
   null sc1 null SC1
+
+  % save old value of pdfemptycount on opstack, set to new value
+  pdfemptycount /pdfemptycount count 3 sub def 3 1 roll
   exch false resolvestream pdfopdict .pdfruncontext
+  % restore pdfemptycount
+  /pdfemptycount exch def
+
   Q
   DEBUG { (%End PaintProc) = flush } if
   PDFfile exch setfileposition
