@@ -30,11 +30,14 @@ pdfdict begin
 
 % Apply a list of differences to an Encoding.
 % Note that the differences may cause the array to grow.
-/updateencoding {	% <encoding> <differences> updateencoding <enc'>
+/updateencoding {	% <encoding|null> <differences> updateencoding <enc'>
 	% Calculate the length of the result.
   exch 0 2 index {
     dup type /nametype ne { exch pop } { pop 1 add } ifelse
   } forall
+  % if the encoding was null, make one large enough for 
+  % ordinary use (one byte characters) and fill it with .notdef
+  1 index null eq { exch pop [ 256 { /.notdef } repeat ] exch } if
   1 index length .max array dup 0 4 -1 roll putinterval
   exch 0 exch {
 		% Stack: enc' code element
@@ -47,16 +50,7 @@ pdfdict begin
 
 % Get the Encoding for a font.
 /getencoding		% <base-encoding|null> <font-resource> getencoding <enc>
- { 
-   % if the initial encoding is null, construct a valid array of the
-   % required length (LastChar + 1) or default of 256 filled with .notdef
-   1 index null eq {
-     exch pop [
-       1 index /LastChar knownoget { 1 add } { 256 } ifelse
-       { /.notdef } repeat
-     ] exch
-   } if
-   % Grab the Flags entry to see if this font is "symbolic" later
+ { % Grab the Flags entry to see if this font is "symbolic" later
    dup /FontDescriptor knownoget { /Flags get } { 0 } ifelse exch
    /Encoding knownoget
     { dup type /nametype eq
