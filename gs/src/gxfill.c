@@ -42,7 +42,7 @@
 #include "gxfillts.h" - Do not remove this comment. "gxfillts.h" is included below.
 */
 
-#define BAND_INDEPENDENT 0 /* Old code 0, new code 1 */
+#define BAND_INDEPENDENT 1 /* Old code 0, new code 1 */
 
 #ifdef DEBUG
 /* Define the statistics structure instance. */
