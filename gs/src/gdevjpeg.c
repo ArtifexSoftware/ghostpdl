@@ -277,5 +277,4 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
 	gs_free_object(mem, jcdp, "jpeg_print_page(jpeg_compress_data)");
     gs_free_object(mem, in, "jpeg_print_page(in)");
     return code;
-#undef jcdp
 }
