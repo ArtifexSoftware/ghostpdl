@@ -275,7 +275,7 @@ zbegintransparencymask(i_ctx_t *i_ctx_p)
     if (dict_find_string(dop, "TransferFunction", &pparam) >0) {
 	gs_function_t *pfn = ref_function(pparam);
 
-	if (pfn == 0)
+	if (pfn == 0 || pfn->params.m != 1 || pfn->params.n != 1)
 	    return_error(e_rangecheck);
 	params.TransferFunction = tf_using_function;
 	params.TransferFunction_data = pfn;
@@ -337,7 +337,7 @@ zimage3x(i_ctx_t *i_ctx_p)
     int num_components =
 	gs_color_space_num_components(gs_currentcolorspace(igs));
     int ignored;
-    int code;
+    int code, mcode;
 
     check_type(*op, t_dictionary);
     check_dict_read(*op);
@@ -348,7 +348,7 @@ zimage3x(i_ctx_t *i_ctx_p)
 				   (gs_pixel_image_t *)&image, &ip_data,
 				   12)) < 0 ||
 	(code = dict_int_param(pDataDict, "ImageType", 1, 1, 0, &ignored)) < 0 ||
-	(code = dict_floats_param(op, "Matte", num_components, image.Matte, NULL)) < 0
+	(mcode = code = dict_floats_param(op, "Matte", num_components, image.Matte, NULL)) < 0
 	)
 	return code;
     /*
@@ -359,6 +359,9 @@ zimage3x(i_ctx_t *i_ctx_p)
 	(code = mask_dict_param(op, &ip_data, "OpacityMaskDict", &image.Opacity)) < 0
 	)
 	return code;
+    /* If there is no Matte, reset Matted. */
+    if (mcode == 0)
+	image.Opacity.Matted = image.Shape.Matted = false;
     return zimage_setup(i_ctx_p, (gs_pixel_image_t *)&image,
 			&ip_data.DataSource[0],
 			image.CombineWithColor, 1);
