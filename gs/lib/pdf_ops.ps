@@ -368,12 +368,14 @@ end def
 /S { gsave setstrokestate stroke grestore n } bdef
 /f { gsave setfillstate fill grestore n } bdef
 /f* { gsave setfillstate eofill grestore n } bdef
-/n { end clip newpath } bdef
+% Adobe PDF Rendering doesn't change clipping if path is 0 area
+/n { end pathbbox 3 -1 roll sub abs 3 1 roll sub abs add 0 ne { clip } if newpath } bdef
 end readonly def
 /W { //Wdict begin } bdef
 /W*dict 4 dict dup begin
 Wdict { def } forall
-/n { end eoclip newpath } bdef
+% Adobe PDF Rendering doesn't change clipping if path is 0 area
+/n { end pathbbox 3 -1 roll sub abs 3 1 roll sub abs add 0 ne { eoclip } if newpath } bdef
 end readonly def
 /W* { //W*dict begin } bdef
 
