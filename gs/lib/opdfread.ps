@@ -306,6 +306,65 @@ currentdict end readonly def
   } ifelse
 } bind def
 
+/StandardFontNames <<
+  /Times-Roman true 
+  /Helvetica true
+  /Courier true
+  /Symbol true
+  /Times-Bold true
+  /Helvetica-Bold true
+  /Courier-Bold true
+  /ZapfDingbats true
+  /Times-Italic true
+  /Helvetica-Oblique true
+  /Courier-Oblique true
+  /Times-BoldItalic true
+  /Helvetica-BoldOblique true
+  /Courier-BoldOblique true
+>> def
+
+/CleanAllResources % - CleanAllResources  -
+{ //PDFR_DEBUG {
+    (CleanAllResources beg) =
+  } if
+  //PDFReader /ObjectRegistry get
+  dup length 0 exch 1 exch 1 sub {                     % R i
+    2 copy get dup xcheck {
+      % Don't clean a daemon.
+      pop pop
+    } {
+      null eq {
+        pop
+      } {
+        //PDFR_DEBUG {
+          (Dropping ) print dup =
+        } if
+        1 index exch /DroppedObject put
+      } ifelse
+    } ifelse
+  } for
+  pop
+  FontDirectory length dict begin
+  FontDirectory { 
+    pop    
+    dup //StandardFontNames exch known not {
+      dup null def
+    } if
+    pop
+  } forall
+  currentdict
+  end {
+    pop
+    //PDFR_DEBUG {
+       (Undefining font ) print dup =
+    } if
+    undefinefont
+  } forall
+  //PDFR_DEBUG {
+    (CleanAllResources end) =
+  } if
+} bind def
+
 /PrintReference % <array> PrintReference <array>
 {
   //PDFR_DEBUG {
@@ -357,10 +416,17 @@ currentdict end readonly def
 /endobj  % <id> <obj> endobj -
 {
   //PDFR_DEBUG {
-    (Storing ) print 1 index =
+    (endobj ) =
   } if
-  //RunTypeDaemon exec
-  //DoNothing 3 1 roll //Register exec
+  dup type /dicttype eq { dup /ImmediateExec known } { false } ifelse {
+    pop pop
+  } {
+    //PDFR_DEBUG {
+      (Storing ) print 1 index =
+    } if
+    //RunTypeDaemon exec
+    //DoNothing 3 1 roll //Register exec
+  } ifelse
 } bind def
 
 /StoreBlock % <buf> StoreBlock -
@@ -578,6 +644,11 @@ currentdict end readonly def
   } {
     //StoreStream exec
   } ifelse
+  dup /.CleanResources //knownget exec {
+    /All eq {
+      //CleanAllResources exec
+    } if
+  } if
 } bind def
 
 /endstream % <id> <obj> endstream <id> <obj>
@@ -2092,7 +2163,9 @@ end
 
 /ReadSamples % <dimensions> ReadSamples -
 { % The reader in on the dictionary stack.
-  (ReadSamples beg ) print count =
+  //PDFR_DEBUG {
+    (ReadSamples beg ) print count =
+  } if
   dup 1 eq {
     pop
     0 1 Size 0 get 1 sub {
@@ -2118,7 +2191,9 @@ end
       //ReadSamplesRec exec
     } forall
   } ifelse
-  (ReadSamples end ) print count =
+  //PDFR_DEBUG {
+    (ReadSamples end ) print count =
+  } if
 } bind def
 
 //ReadSamplesRec 0 //ReadSamples put
