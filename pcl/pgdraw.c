@@ -814,15 +814,15 @@ hpgl_polyfill(
  private int
 hpgl_fill_polyfill_background(hpgl_state_t *pgls)
 {
+    /* conditionally mark page as dirty */
+    pcl_mark_page_for_path(pgls);
     /* if we are drawing on a transparent background */
     if ( pgls->g.source_transparent )
 	return 0;
     /* preserve the current foreground color */
     hpgl_call(hpgl_gsave(pgls));
-    /* fill a white region.  NB have not experimented with different
-       rasterops and transparency. */
+    /* fill a white region. */
     hpgl_call(gs_setgray(pgls->pgs, 1.0));
-    pcl_mark_page_for_path(pgls);
     hpgl_call(gs_fill(pgls->pgs));
     /* restore the foreground color */
     hpgl_call(hpgl_grestore(pgls));
