@@ -90,6 +90,14 @@ pdf_setfillcolor(gx_device_vector * vdev, const gs_imager_state * pis,
     bool hl_color = (*vdev_proc(vdev, can_handle_hl_color)) (vdev, pis, pdc);
     const gs_imager_state *pis_for_hl_color = (hl_color ? pis : NULL);
 
+    if (PS2WRITE && pdev->OrderResources) {
+	/* opdfread.ps assumes same color for stroking and non-stroking operations. */
+	int code = pdf_set_drawing_color(pdev, pis_for_hl_color, pdc, &pdev->saved_stroke_color,
+				    &pdev->stroke_used_process_color,
+				    &psdf_set_stroke_color_commands);
+	if (code < 0)
+	    return code;
+    }
     return pdf_set_drawing_color(pdev, pis_for_hl_color, pdc, &pdev->saved_fill_color,
 				 &pdev->fill_used_process_color,
 				 &psdf_set_fill_color_commands);
@@ -103,6 +111,14 @@ pdf_setstrokecolor(gx_device_vector * vdev, const gs_imager_state * pis,
     bool hl_color = (*vdev_proc(vdev, can_handle_hl_color)) (vdev, pis, pdc);
     const gs_imager_state *pis_for_hl_color = (hl_color ? pis : NULL);
 
+    if (PS2WRITE && pdev->OrderResources) {
+	/* opdfread.ps assumes same color for stroking and non-stroking operations. */
+	int code = pdf_set_drawing_color(pdev, pis_for_hl_color, pdc, &pdev->saved_fill_color,
+				 &pdev->fill_used_process_color,
+				 &psdf_set_fill_color_commands);
+	if (code < 0)
+	    return code;
+    }
     return pdf_set_drawing_color(pdev, pis_for_hl_color, pdc, &pdev->saved_stroke_color,
 				 &pdev->stroke_used_process_color,
 				 &psdf_set_stroke_color_commands);
