@@ -88,7 +88,7 @@ GCFLAGS=-Wall -Wpointer-arith -Wstrict-prototypes -Wwrite-strings
 CFLAGS=-g -O0 $(GCFLAGS) $(XCFLAGS)
 
 XINCLUDE=-I/usr/local/X/include
-XLIBDIRS=-L/usr/X11/lib
+XLIBDIRS=-L/usr/X11/lib -L/usr/X11R6/lib
 XLIBDIR=
 XLIBS=Xt SM ICE Xext X11
 
