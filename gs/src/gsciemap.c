@@ -378,7 +378,9 @@ gx_cie_real_remap_finish(cie_cached_vector3 vec3, frac * pconc,
 #define EABC(i)\
   cie_interpolate_fracs(pcrd->caches.EncodeABC[i].fixeds.ints.values, tabc[i])
 #define FABC(i)\
-  (EABC(i) << (_fixed_shift - _cie_interpolate_bits))
+  (_fixed_shift >= _cie_interpolate_bits) ? \
+  (EABC(i) <<  (_fixed_shift - _cie_interpolate_bits)) : \
+  (EABC(i) >> -(_fixed_shift - _cie_interpolate_bits))
 	rfix[0] = FABC(0);
 	rfix[1] = FABC(1);
 	rfix[2] = FABC(2);
