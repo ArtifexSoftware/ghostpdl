@@ -341,7 +341,7 @@ currentdict /find_in_diff undef
   /eexec {
 	% Assume the font dictionary is directly below the file on the stack
     count 0 gt { /topFontDict 2 index cvlit store } if
-    55665 /eexecDecode filter
+    //.eexec_param_dict /eexecDecode filter
     //systemdict begin readtype1dictcopy begin cvx stopped
     currentdict readtype1dictcopy eq { end } if
     currentdict //systemdict eq { end } if

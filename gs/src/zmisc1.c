@@ -109,17 +109,22 @@ zexD(i_ctx_t *i_ctx_p)
     (*s_exD_template.set_defaults)((stream_state *)&state);
     if (r_has_type(op, t_dictionary)) {
 	uint cstate;
+        bool is_eexec;
 
 	check_dict_read(*op);
 	if ((code = dict_uint_param(op, "seed", 0, 0xffff, 0x10000,
 				    &cstate)) < 0 ||
 	    (code = dict_int_param(op, "lenIV", 0, max_int, 4,
-				   &state.lenIV)) < 0
+				   &state.lenIV)) < 0 ||
+	    (code = dict_bool_param(op, "eexec", false,
+				   &is_eexec)) < 0
 	    )
 	    return code;
 	state.cstate = cstate;
+        state.binary = (is_eexec ? -1 : 1);
 	code = 1;
     } else {
+        state.binary = 1;
 	code = eexec_param(op, &state.cstate);
     }
     if (code < 0)
@@ -153,7 +158,7 @@ zexD(i_ctx_t *i_ctx_p)
 		pss->binary_to_hex = 0;
 	    }
 	    state.record_left = pss->record_left;
-	}
+	} 
     }
     return filter_read(i_ctx_p, code, &s_exD_template, (stream_state *)&state, 0);
 }

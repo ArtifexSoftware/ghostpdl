@@ -352,9 +352,13 @@ userdict /#copies 1 put
 /.echo /echo load def
 userdict /.echo.mode true put
 /echo	{dup /.echo.mode exch store .echo} odef
+/.eexec_param_dict mark
+  /eexec true
+  /seed 55665
+.dicttomark readonly def
 /eexec {
 	% Rebind .currentresourcefile if it is the source for the eexec.
-  dup 55665 //filterdict /eexecDecode get exec
+  dup //.eexec_param_dict //filterdict /eexecDecode get exec
   cvx exch .currentresourcefile eq
   //systemdict begin { {exec} .execasresource } { exec } ifelse
 	% Only pop systemdict if it is still the top element,

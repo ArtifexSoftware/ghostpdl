@@ -105,20 +105,32 @@ s_exD_process(stream_state * st, stream_cursor_read * pr,
     if (ss->binary < 0) {
 	/*
 	 * This is the very first time we're filling the buffer.
-	 * Determine whether this is ASCII or hex encoding.
 	 */
 	const byte *const decoder = scan_char_decoder;
 	int i;
 
-        if (rcount < 8 && !last)
-            return 0; 
+        if (ss->pfb_state == 0) {
+	    /*
+	     * Skip witespace at the beginning of the input stream,
+	     * because Adobe interpreters do this.
+	     */
+            for (; rcount; rcount--, p++)
+                if (decoder[p[1]] != ctype_space)
+                    break;
+            pr->ptr = p;
+            count = min(wcount, rcount);
+        }
 
 	/*
+	 * Determine whether this is ASCII or hex encoding.
 	 * Adobe's documentation doesn't actually specify the test
 	 * that eexec should use, but we believe the following
 	 * gives correct answers even on certain non-conforming
 	 * PostScript files encountered in practice:
 	 */
+        if (rcount < 8 && !last)
+            return 0; 
+
 	ss->binary = 0;
 	for (i = min(8, rcount); i > 0; i--)
 	    if (!(decoder[p[i]] <= 0xf ||

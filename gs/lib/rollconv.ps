@@ -235,7 +235,7 @@ QUIET not { (Writing ) print CSRName = flush } if
  } }
  { (currentfile eexec) {
    pop out (systemdict begin\n) writestring
-   dup 55665 /eexecDecode filter
+   dup //.eexec_param_dict /eexecDecode filter
  } }
  { (dup/CharStrings ) {
 	% Copy the individual CharStrings to the CSR file,
