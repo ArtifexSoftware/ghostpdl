@@ -135,6 +135,7 @@ cmap_put_code_map(stream *s, const gx_code_map_t *pccmap,
 		    value = (value << 8) + *pvalue++;
 		switch (pclr->value_type) {
 		case CODE_VALUE_CID:
+		case CODE_VALUE_NOTDEF:
 		    pprintld1(s, "%ld", value);
 		    break;
 		case CODE_VALUE_CHARS:
