@@ -611,7 +611,7 @@ px_default_end_page(px_state_t *pxs, int num_copies, int flush)
 }
 
 const byte apxVendorUnique[] = {
-    pxaVUExtension,  pxaVUAttr1
+  pxaVUExtension,  0, pxaVUAttr1, 0
 };
 
 /** we do NOTHING with the vendor unique command.
