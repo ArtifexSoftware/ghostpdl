@@ -84,6 +84,18 @@ true setglobal
   ....Undefined
 } bind def
 
+% ===================== Utilities =========================================
+
+/knownget % <dict> <key> knownget <value> true
+          % <dict> <key> knownget false
+{
+  2 copy known {
+    get true
+  } {
+    pop pop false
+  } ifelse
+} bind def
+
 % ===================== Work Data =========================================
 
 /BlockBuffer 4096 string def
@@ -166,15 +178,12 @@ true setglobal
 /RunTypeDaemon  % <id> <obj> RunTypeDaemon <id> <obj>
 {
   dup type /dicttype eq {
-    dup /Type known { 
-      dup /Type get
-        //PDFReader /TypeDaemons get exch
-	    2 copy known {
-		  get exec
-		} {
-		  pop pop
-		} ifelse
-    } if
+    dup /Type //knownget exec {
+      //PDFReader /TypeDaemons get exch
+	  //knownget exec {
+	    exec
+	  } if
+	} if
   } if
 } bind def
 
@@ -348,6 +357,12 @@ true setglobal
 % ===================== Interpret Data Streams ===============
 
 /TempMatrix matrix def
+/InitialExtGState 20 dict begin
+  /BG2 currentblackgeneration def
+  /UCR2 currentundercolorremoval def
+  /TR2 [ currentcolortransfer ] def
+  /HT currenthalftone def
+currentdict end def
 /InitialGraphicState 20 dict begin
   /FontSize 0 def
   /CharacterSpacing 0 def
@@ -360,8 +375,7 @@ currentdict end def
 currentdict end def
 
 /CheckFont % key val CheckFont key val
-{
-  dup /Type get /Font ne {
+{ dup /Type get /Font ne {
     mark (Resource ) 3 index ( must have /Type/Font.) //error exec
   } if
 } bind def
@@ -462,6 +476,156 @@ currentdict end def
   //ShowTextEnd exec
 } bind def
 
+/CheckFont % key val CheckFont key val
+{ dup /Type get /ExtGState ne {
+    mark (Resource ) 3 index ( must have /Type/ExtGState.) //error exec
+  } if
+} bind def
+
+/SetTransfer % <operand> SetTransfer -
+{
+  dup /Identity eq {
+    pop {} settransfer
+  } {
+    dup type /arraytype eq {
+	  0 4 getinterval aload pop 
+	  FunctionToProc11 4 1 roll
+	  FunctionToProc11 4 1 roll
+	  FunctionToProc11 4 1 roll
+	  FunctionToProc11 4 1 roll
+	  setcolortransfer
+	} {
+	  FunctionToProc11
+	  settransfer
+	} ifelse
+  } iflese
+} bind def
+
+/CheckExtGState % <id> <obj> CheckExtGState <id> <obj>
+{ dup /Type get /ExtGState ne {
+    mark (Resource ) 3 index ( must have /Type/ExtGState.) //error exec
+  } if
+} bind def
+
+/CheckHalftone % <id> <obj> CheckHalftone <id> <obj>
+{ dup /HalftoneType known not {
+    mark (Resource ) 3 index ( must have /HalftoneType.) //error exec
+  } if
+} bind def
+
+/SetExtGState % <name> SetExtGState -
+{
+  //PDFReader /CurrentObject get /Context get /Resources get 
+  /ExtGState //DoNothing //UnRefD exec
+  exch //CheckExtGState //UnRefD exec							% s gs
+  dup /LW //knownget exec {
+    setlinewidth
+  } if
+  dup /LC //knownget exec {
+    setlinecap
+  } if
+  dup /LJ //knownget exec {
+    setlinejoin
+  } if
+  dup /ML //knownget exec {
+    setmeterlimit
+  } if
+  dup /D //knownget exec {
+    setdash
+  } if
+  dup /RI //knownget exec {
+    % Ghostscript never writes it.
+    mark (Unimplemented ExtGState.RI) //error exec
+  } if
+  dup /OP //knownget exec {
+    % pdfwrite must take care of stroking/filling
+    setoverprint
+  } if
+  dup /op //knownget exec {
+    setoverprint
+  } if
+  dup /OPM //knownget exec {
+    % pdfwrite must take care of.
+    mark (Unimplemented ExtGState.OPM) //error exec
+  } if
+  dup /Font //knownget exec {
+    % Ghostscript never writes it.
+    mark (Unimplemented ExtGState.Font) //error exec
+  } if
+  dup /BG //knownget exec {
+    setblackgeneration
+  } if
+  dup /BG2 //knownget exec {
+    dup /Default eq {
+	  //InitialExtGState /BG2 get
+	} if
+	setblackgeneration
+  } if
+  dup /UCR //knownget exec {
+	setundercolorremoval
+  } if
+  dup /UCR2 //knownget exec {
+    dup /Default eq {
+	  //InitialExtGState /UCR2 get
+	} if
+	setundercolorremoval
+  } if
+  dup /TR //knownget exec {
+	//SetTransfer exec
+  } if
+  dup /TR2 //knownget exec {
+	dup /Default eq {
+	  pop //InitialExtGState /TR2 get
+	  aload pop setcolortransfer
+	} {
+	  //SetTransfer exec
+	} ifelse
+  } if
+  dup /HT //knownget exec {
+	dup /Default eq {
+	  pop //InitialExtGState /HT get
+	  sethalftone
+	} {
+	  pop dup /HT //CheckHalftone //UnRefD exec
+	  sethalftone
+	} ifelase
+  } if
+  dup /FL //knownget exec {
+	setflattness
+  } if
+  dup /SM //knownget exec {
+	setsmoothness
+  } if
+  dup /SA //knownget exec {
+	setstrokeadjust
+  } if
+  dup /BM //knownget exec {
+    % pdfwrite must take care of.
+    mark (Unimplemented ExtGState.BM) //error exec
+  } if
+  dup /SMask //knownget exec {
+    % pdfwrite must take care of.
+    mark (Unimplemented ExtGState.SMask) //error exec
+  } if
+  dup /CA //knownget exec {
+    % pdfwrite must take care of.
+    mark (Unimplemented ExtGState.CA) //error exec
+  } if
+  dup /ca //knownget exec {
+    % pdfwrite must take care of.
+    mark (Unimplemented ExtGState.ca) //error exec
+  } if
+  dup /AIS //knownget exec {
+    % pdfwrite must take care of.
+    mark (Unimplemented ExtGState.AIS) //error exec
+  } if
+  dup /TK //knownget exec {
+    % pdfwrite must take care of.
+    mark (Unimplemented ExtGState.TK) //error exec
+  } if
+  pop
+} bind def
+
 /Operators 50 dict begin
   /q /gsave load def
   /Q /grestore load def
@@ -472,7 +636,7 @@ currentdict end def
   /j /setlinejoin load def
   /w /setlinewidth load def
   /M /setmiterlimit load def
-  /gs { (Unimplemented SetExtGState)= pop } bind def
+  /gs { SetExtGState } bind def
 
   /g /setgray load def
   /rg /setrgbcolor load def
