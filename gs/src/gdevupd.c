@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 
   This file is part of Aladdin Ghostscript.
 
@@ -18,7 +18,6 @@
 
 /* $Id$ */
 /* "uniprint" -- Ugly Printer Driver by Gunther Hess (gunther@elmos.de) */
-/* $Revision$*/
 
 /* Revision-History:
    23-Mar-1997 -  1.43: First published version
@@ -34,7 +33,13 @@
     4-Aug-1997 -  1.70: Arrgh: still incomplete Change of PHEIGHT-Treatment
    17-AUG-1997 -  1.71: Fix of BSD-sprintf bug. (returns char * there)
    ...
-   28-Sep-1977 -  1.77: Fixed the byte<>char and casted-lvalue Problems
+   28-Sep-1997 -  1.77: Fixed the byte<>char and casted-lvalue Problems
+   ...
+   12-Mar-1998 -  1.80: Some PJL-Functions, Map-Bug-Fix (by Wonder-Wolfgang)
+   21-Oct-1998 -  1.81: Added RGB2CMY[_]K Modi (Eric Domenjoud)
+   ...
+   27-Feb-2000 -  1.84: CMYKgenerate with forced K-Control [distributed]
+
 */
 
 /* Canon BJC 610 additions from (hr)
@@ -76,9 +81,9 @@ There are two compile-time options for this driver:
 #include "gdevprn.h" /** Printer-superclass header */
 #include "gsparam.h" /** For the Parameter-Handling (optional) */
 
-#include <stdlib.h> /** for rand */
-#include <limits.h> /** for INT_MIN */
-#include <ctype.h>  /** for isupper */
+#include <stdlib.h>  /** for rand */
+#include <limits.h>  /** for INT_MIN */
+#include <ctype.h>   /** for isupper */
 
 #endif /* hess_test_INCLUDED    A private test-Option */
 
@@ -141,7 +146,7 @@ private dev_proc_map_rgb_color( upd_rgb_4color);  /** RGB->WRGB-Index */
 private dev_proc_map_color_rgb(upd_4color_rgb);   /** WRGB-Index->RGB */
 
 /**
-Finally the fourth pair deals with KCMY-Values. The Mapping-Function
+The fourth pair deals with KCMY-Values. The Mapping-Function
 is of a different type, due to the additional argument, but the
 inverse-Function is of the same type, and expects RGB-Values to be
 deliverd into the receiving 3-Component-Array!
@@ -158,6 +163,28 @@ reverse-mapping too.
 
 private dev_proc_map_cmyk_color(upd_cmyk_kcolor); /** adds black generation */
 private dev_proc_map_color_rgb( upd_kcolor_rgb);  /** watches black-gen */
+
+/**
+"ovcolor" is CMYK with Black-Generation and Undercolor-Removal, which
+is suitable for overprinting:
+   CMY' = (CMY-K')/(1-K')
+with
+   K'   = min(C,M,Y)
+*/
+
+private dev_proc_map_rgb_color(upd_rgb_ovcolor);  /** RGB->CMYK-Index */
+#define upd_ovcolor_rgb upd_icolor_rgb            /** CMYK-Index->RGB */
+
+/**
+"novcolor" is CMYK with Black-Generation and Undercolor-Removal, which
+is suitable for CMY / K - Printing:
+   CMY' = CMY-K'
+with
+   K'   = min(C,M,Y)
+*/
+
+private dev_proc_map_rgb_color(upd_rgb_novcolor); /** RGB->CMYK-Index */
+#define upd_novcolor_rgb upd_icolor_rgb           /** CMYK-Index->RGB */
 
 /**
 For the sake of efficiency there is that bunch of functions and they
@@ -179,7 +206,7 @@ prn_std_procs instead of defining their own procedure-table.
 */
 
 #define upd_set_dev_proc(dev, p, proc) \
-   set_dev_proc(dev, p, (dev)->orig_procs.p = (proc))
+   ((dev)->std_procs.p = (dev)->orig_procs.p = (proc))
 
 private gx_device_procs upd_procs = {  /** Table of procedures */
    upd_open,                      /** open-function, upd-special */
@@ -295,6 +322,10 @@ static const char *const upd_mapper[] = { "upColorModel",
 "DeviceCMYK",               /** CMYK-Mapping */
 #define MAP_CMYKGEN     5   /** CMYK-Mapping with Black-Generation */
 "DeviceCMYKgenerate",       /** CMYK-Mapping with Black-Generation */
+#define MAP_RGBOV       6   /** RGB->CMYK with BG and UCR for CMYK */
+"DeviceRGB2CMYK",           /** RGB->CMYK with BG and UCR for CMYK */
+#define MAP_RGBNOV      7   /** RGB->CMYK with BG and UCR for CMY + K */
+"DeviceRGB2CMY_K",          /** RGB->CMYK with BG and UCR for CMY + K */
 NULL
 };
 
@@ -303,6 +334,8 @@ static const char *const upd_render[] = { "upRendering",
 "ErrorDiffusion",           /** Componentwise Floyd-Steinberg */
 #define RND_FSCMYK      2   /** CMYK-specialized 32Bit Floyd-Steinberg */
 "FSCMYK32",                 /** CMYK-specialized 32Bit Floyd-Steinberg */
+#define RND_FSCMY_K     3   /** CMY_K Rendering */
+"FSCMY_K",
 NULL
 };
 
@@ -357,7 +390,7 @@ static const char *const upd_flags[] = {      /** */
 #define B_MEDIASIZE         ((uint32) 1<<9)   /** Adjust Mediasize in BOP */
 "upAdjustMediaSize",                          /** Adjust Mediasize in BOP */
 
-#define B_XABS              ((uint32) 1<<10)   /** Use Absolute X-Values */
+#define B_XABS              ((uint32) 1<<10)  /** Use Absolute X-Values */
 "upFormatXabsolute",                          /** Use Absolute X-Values */
 #define B_YABS              ((uint32) 1<<11)  /** Use Absolute Y-Values */
 "upFormatYabsolute",                          /** Use Absolute Y-Values */
@@ -379,7 +412,10 @@ static const char *const upd_flags[] = {      /** */
 "upWroteData",                                /** Open-Command written */
 
 #define B_YFLIP             ((uint32) 1<<19)  /** Mirrored printing (hr) */
-"upYFlip"                                     /** Mirrored printing (hr) */
+"upYFlip",                                    /** Mirrored printing (hr) */
+
+#define B_REDUCEK           ((uint32) 1<<20)  /** CMY->Black Reduction */
+"upFSReduceK"
 
 };
 
@@ -395,7 +431,7 @@ static const char *const upd_ints[] = {
 "upOutputWidth",
 #define I_PHEIGHT           1                 /** Output-Height */
 "upOutputHeight",
-#define I_NCOMP             2                 /** Output-Components */
+#define I_OCOMP             2                 /** Output-Components */
 "upOutputComponents",
 #define I_NSCNBUF           3                 /** Output-Buffers */
 "upOutputBuffers",
@@ -515,7 +551,9 @@ static const char *const upd_float_a[] = {    /** */
 #define FA_YXFER            7                 /** Yellow-Transfer */
 "upYellowTransfer",                           /** Yellow-Transfer */
 #define FA_MARGINS          8                 /** private Margins */
-"upMargins"                                   /** private Margins */
+"upMargins",                                  /** private Margins */
+#define FA_MAP              9                 /** Color-Map       */
+"upColorMap"                                  /** Color-Map       */
 };                                            /** */
 
 /* ------------------------------------------------------------------- */
@@ -634,9 +672,13 @@ struct upd_s { /* All upd-specific data */
    int                    pwidth;     /* Printing-Width */
    int                    pheight;    /* # scanlines printed */
 
+   int                    ncomp;      /* # Components in gsbuf */
+   int                    nmap;       /* # Entries in color-map */
+
    uint                   nvalbuf;    /* Size of valbuf */
    int                    nscnbuf;    /* Number of entries in scnbuf. */
-   int                    ncomp;      /* # Components in scnbuf */
+
+   int                    ocomp;      /* # Components written */
    int                    nbytes;     /* Size of scnbuf[][].words */
    int                    nlimits;    /* Size of scnbuf[][].xbegin/end */
    int                    scnmsk;     /* Size of scanbuf - 1 */
@@ -715,6 +757,9 @@ private void            upd_close_fscomp(  P1(upd_device *udev));
 
 private void            upd_open_fscmyk(   P1(upd_device *udev));
 private int             upd_fscmyk(        P1(upd_p upd));
+
+private void            upd_open_fscmy_k(  P1(upd_device *udev));
+private int             upd_fscmy_k(       P1(upd_p upd));
 
 /**
 I hope that the formatting stuff can be kept simple and thus most
@@ -1224,13 +1269,128 @@ buffer for the raw raster-data
 
       if(gs_error_VMerror == upd_open_writer(udev)) error = gs_error_VMerror;
 
+      udev->upd->pdwidth  = udev->width;
+      udev->upd->pdheight = udev->height;
+
 #if UPD_MESSAGES & UPD_M_SETUP
+      if((upd->flags & (B_OK4GO | B_ERROR)) == B_OK4GO) {
+        int i,j,l,ln,lv;
+        fprintf(stderr,"\nupd->flags    = 0x%05lx\n",(unsigned long)upd->flags);
+        fprintf(stderr,  "upd->pdwidth  = %5d\n",upd->pdwidth);
+        fprintf(stderr,  "upd->pdheight = %5d\n",upd->pdheight);
+        fprintf(stderr,  "upd->ngsbuf   = %5u\n",upd->ngsbuf);
+        fprintf(stderr,  "upd->gswidth  = %5d\n",upd->gswidth);
+        fprintf(stderr,  "upd->gsheight = %5d\n",upd->gsheight);
+        fprintf(stderr,  "upd->rwidth   = %5d\n",upd->rwidth);
+        fprintf(stderr,  "upd->pwidth   = %5d\n",upd->pwidth);
+        fprintf(stderr,  "upd->pheight  = %5d\n",upd->pheight);
+        fprintf(stderr,  "upd->nvalbuf  = %5u\n",upd->nvalbuf);
+        fprintf(stderr,  "upd->nscnbuf  = %5d\n",upd->nscnbuf);
+        fprintf(stderr,  "upd->ncomp    = %5d\n",upd->ncomp);
+        fprintf(stderr,  "upd->ocomp    = %5d\n",upd->ocomp);
+        fprintf(stderr,  "upd->nbytes   = %5d\n",upd->nbytes);
+        fprintf(stderr,  "upd->nlimits  = %5d\n",upd->nlimits);
+        fprintf(stderr,  "upd->scnmsk   = %5d\n",upd->scnmsk);
+        fprintf(stderr,  "upd->noutbuf  = %5u\n",upd->noutbuf);
+        fprintf(stderr,  "upd->ixpass   = %5d\n",upd->ixpass);
+        fprintf(stderr,  "upd->ipass    = %5d\n",upd->ipass);
+        fprintf(stderr,  "upd->icomp    = %5d\n",upd->icomp);
+        fprintf(stderr,  "upd->lf       = %5d\n",upd->lf);
+        fprintf(stderr,  "upd->xprinter = %5d\n",upd->xprinter);
+        fprintf(stderr,  "upd->yscan    = %5d\n",upd->yscan);
+        fprintf(stderr,  "upd->yprinter = %5d\n",upd->yprinter);
+        fprintf(stderr,  "upd->yscnbuf  = %5d\n",upd->yscnbuf);
+
+        ln = 13;
+        lv = 5;
+        for(i = 0; countof(upd_choice) > i; ++i) {
+          if(!upd_choice[i]) continue;
+          l = strlen(upd_choice[i][0]);
+          if(ln < l) ln = l; 
+          for(j = 1; upd_choice[i][j]; ++j) {
+            l = strlen(upd_choice[i][j]);
+            if(lv < l) lv = l;
+          }
+        }
+
+        for(i = 0; countof(upd_flags) > i; ++i) {
+          if(upd_flags[i]) {
+            l = strlen(upd_flags[i]);
+            if(ln < l) ln = l;
+          }
+        }
+
+        for(i = 0; countof(upd_ints) > i; ++i) {
+          if(upd_ints[i]) {
+            l = strlen(upd_ints[i]);
+            if(ln < l) ln = l;
+          }
+        }
+
+        for(i = 0; countof(upd_int_a) > i; ++i) {
+          if(upd_int_a[i]) {
+            l = strlen(upd_int_a[i]);
+            if(ln < l) ln = l;
+          }
+        }
+
+        for(i = 0; countof(upd_strings) > i; ++i) {
+          if(upd_strings[i]) {
+            l = strlen(upd_strings[i]);
+            if(ln < l) ln = l;
+          }
+        }
+
+        for(i = 0; countof(upd_string_a) > i; ++i) {
+          if(upd_string_a[i]) {
+            l = strlen(upd_string_a[i]);
+            if(ln < l) ln = l;
+          }
+        }
+
+        for(i = 0; countof(upd_float_a) > i; ++i) {
+          if(upd_float_a[i]) {
+            l = strlen(upd_float_a[i]);
+            if(ln < l) ln = l;
+          }
+        }
+
+        for(i = 0; countof(upd_choice) > i; ++i) {
+          if(upd_choice[i]) {
+            fprintf(stderr,"%*s = %-*s (%2d)\n",ln,upd_choice[i][0],
+               lv,upd_choice[i][upd->choice[i]],upd->choice[i]);
+          } else {
+            fprintf(stderr,"%*s[%2d] = %2d\n",ln-4,"upd_choice",i,
+               upd->choice[i]);
+          }
+        }
+
+        for(i = 0; countof(upd_flags) > i; ++i) {
+          if(upd_flags[i]) {
+            fprintf(stderr,"%*s = %s\n",ln,upd_flags[i],
+               ((uint32) 1 << i) & upd->flags ? "true" : "false");
+          } else {
+            fprintf(stderr,"%*s[%2d] = %s\n",ln-4,"upd_flags",i,
+               ((uint32) 1 << i) & upd->flags ? "true" : "false");
+
+          }
+        }
+
+        for(i = 0; countof(upd_ints) > i; ++i) {
+          if(upd_ints[i]) {
+            fprintf(stderr,"%*s = %5d\n",ln,upd_ints[i],upd->ints[i]);
+          } else {
+            fprintf(stderr,"%*s[%2d] = %5d\n",ln-4,"upd_ints",i,upd->ints[i]);
+          }
+        }
+
+      }
+
+
       fprintf(stderr,"\n%sready to print\n\n",
          B_OK4GO != (upd->flags & (B_OK4GO | B_ERROR)) ?
          "NOT " : "");
 #endif
-      udev->upd->pdwidth  = udev->width;
-      udev->upd->pdheight = udev->height;
 
    }
 
@@ -1739,7 +1899,9 @@ In addition to that, Resolution & Margin-Parameters are tested & adjusted.
             case MAP_RGB:      ip[0] = 3; break;
             case MAP_CMYK:     ip[0] = 4; break;
             case MAP_CMYKGEN:  ip[0] = 4; break;
-            default:          ip[0] = color_info.num_components; break;
+            case MAP_RGBOV:    ip[0] = 3; break;
+            case MAP_RGBNOV:   ip[0] = 3; break;
+            default:           ip[0] = color_info.num_components; break;
          }
       }                /* Try to obtain num_components */
 
@@ -1749,6 +1911,8 @@ In addition to that, Resolution & Margin-Parameters are tested & adjusted.
          case MAP_RGB:      ncomp = 3; break;
          case MAP_CMYK:     ncomp = 4; break;
          case MAP_CMYKGEN:  ncomp = 4; break;
+         case MAP_RGBOV:    ncomp = 4; break;
+         case MAP_RGBNOV:   ncomp = 4; break;
          default:           ncomp = ip[0]; break;
       }
       if(UPD_CMAP_MAX < ncomp) ncomp = UPD_CMAP_MAX;
@@ -2220,6 +2384,7 @@ upd_rgb_4color(gx_device *pdev,
 
    return rv;
 }
+
 /* ------------------------------------------------------------------- */
 /* upd_4color_rgb: Stored WRGB-Index back to a RGB                     */
 /* ------------------------------------------------------------------- */
@@ -2280,7 +2445,7 @@ upd_cmyk_kcolor(gx_device *pdev,
 
    } else {
 
-      if(k) {
+      if(k && !(c | m | y)) {
          black = k;
       } else {
          black = c     < m ? c     : m;
@@ -2373,6 +2538,145 @@ upd_kcolor_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
 }
 
 /* ------------------------------------------------------------------- */
+/* upd_rgb_ovcolor: Create an KCMY-Index from RGB                      */
+/* ------------------------------------------------------------------- */
+
+private gx_color_index
+upd_rgb_ovcolor(gx_device *pdev,
+   gx_color_value r, gx_color_value g, gx_color_value b)
+{
+   const upd_p     upd = ((upd_device *)pdev)->upd;
+   gx_color_index  rv;
+   gx_color_value  c,m,y,black;
+
+   if((r == g) && (g == b)) {
+
+      black  = gx_max_color_value - r;
+      rv     = upd_truncate(upd,0,black);
+      c = m = y = 0;
+
+   } else {
+
+      c = gx_max_color_value - r;
+      m = gx_max_color_value - g;
+      y = gx_max_color_value - b;
+
+      black = c     < m ? c     : m; 
+      black = black < y ? black : y;
+
+      if(black != gx_max_color_value) {
+        float tmp,d;
+        
+        d   = gx_max_color_value - black;
+
+        tmp = (float) (c-black) / d;
+        if(      0.0 > tmp) tmp = 0.0;
+        else if( 1.0 < tmp) tmp = 1.0;
+        c   = tmp * gx_max_color_value + 0.499;
+
+        tmp = (float) (m-black) / d;
+        if(      0.0 > tmp) tmp = 0.0;
+        else if( 1.0 < tmp) tmp = 1.0;
+        m   = tmp * gx_max_color_value + 0.499;
+
+        tmp = (float) (y-black) / d;
+        if(      0.0 > tmp) tmp = 0.0;
+        else if( 1.0 < tmp) tmp = 1.0;
+        y   = tmp * gx_max_color_value + 0.499;
+
+      } else {
+
+        c = m = y = gx_max_color_value;
+
+      }
+
+      rv = upd_truncate(upd,0,black) | upd_truncate(upd,1,c) |
+           upd_truncate(upd,2,m)     | upd_truncate(upd,3,y);
+
+/* It might still become a "gx_no_color_value" due to truncation, thus: */
+
+      if(rv == gx_no_color_index) rv ^= 1;
+   }
+
+#if UPD_MESSAGES & UPD_M_MAPCALLS
+  fprintf(stderr,
+   "rgb_ovcolor: (%5.1f,%5.1f,%5.1f) : (%5.1f,%5.1f,%5.1f,%5.1f) : 0x%0*lx\n",
+   255.0 * (double) r / (double) gx_max_color_value,
+   255.0 * (double) g / (double) gx_max_color_value,
+   255.0 * (double) b / (double) gx_max_color_value,
+   255.0 * (double) ((rv >> upd->cmap[1].bitshf) & upd->cmap[1].bitmsk)
+                 / (double) upd->cmap[1].bitmsk,
+   255.0 * (double) ((rv >> upd->cmap[2].bitshf) & upd->cmap[2].bitmsk)
+                 / (double) upd->cmap[2].bitmsk,
+   255.0 * (double) ((rv >> upd->cmap[3].bitshf) & upd->cmap[3].bitmsk)
+                 / (double) upd->cmap[3].bitmsk,
+   255.0 * (double) ((rv >> upd->cmap[0].bitshf) & upd->cmap[0].bitmsk)
+                 / (double) upd->cmap[0].bitmsk,
+   (pdev->color_info.depth + 3)>>2,rv);
+#endif
+
+   return rv;
+}
+
+/* ------------------------------------------------------------------- */
+/* upd_rgb_novcolor: Create an KCMY-Index from RGB                      */
+/* ------------------------------------------------------------------- */
+
+private gx_color_index
+upd_rgb_novcolor(gx_device *pdev,
+   gx_color_value r, gx_color_value g, gx_color_value b)
+{
+   const upd_p     upd = ((upd_device *)pdev)->upd;
+   gx_color_index  rv;
+   gx_color_value  c,m,y,black;
+
+   if((r == g) && (g == b)) {
+
+      black  = gx_max_color_value - r;
+      rv     = upd_truncate(upd,0,black);
+      c = m = y = 0;
+
+   } else {
+
+      c = gx_max_color_value - r;
+      m = gx_max_color_value - g;
+      y = gx_max_color_value - b;
+
+      black = c     < m ? c     : m; 
+      black = black < y ? black : y;
+      c     = c - black;
+      m     = m - black;
+      y     = y - black;
+
+      rv = upd_truncate(upd,0,black) | upd_truncate(upd,1,c) |
+           upd_truncate(upd,2,m)     | upd_truncate(upd,3,y);
+
+/* It might still become a "gx_no_color_value" due to truncation, thus: */
+
+      if(rv == gx_no_color_index) rv ^= 1;
+   }
+
+#if UPD_MESSAGES & UPD_M_MAPCALLS
+  fprintf(stderr,
+   "rgb_ovcolor: (%5.1f,%5.1f,%5.1f) : (%5.1f,%5.1f,%5.1f,%5.1f) : 0x%0*lx\n",
+   255.0 * (double) r / (double) gx_max_color_value,
+   255.0 * (double) g / (double) gx_max_color_value,
+   255.0 * (double) b / (double) gx_max_color_value,
+   255.0 * (double) ((rv >> upd->cmap[1].bitshf) & upd->cmap[1].bitmsk)
+                 / (double) upd->cmap[1].bitmsk,
+   255.0 * (double) ((rv >> upd->cmap[2].bitshf) & upd->cmap[2].bitmsk)
+                 / (double) upd->cmap[2].bitmsk,
+   255.0 * (double) ((rv >> upd->cmap[3].bitshf) & upd->cmap[3].bitmsk)
+                 / (double) upd->cmap[3].bitmsk,
+   255.0 * (double) ((rv >> upd->cmap[0].bitshf) & upd->cmap[0].bitmsk)
+                 / (double) upd->cmap[0].bitmsk,
+   (pdev->color_info.depth + 3)>>2,rv);
+#endif
+
+   return rv;
+}
+
+/* ------------------------------------------------------------------- */
 /* NOTE: Beyond this point only "uniprint"-special-items.              */
 /* ------------------------------------------------------------------- */
 
@@ -2398,8 +2702,7 @@ upd_expand(upd_pc upd,int i,uint32 ci)
 /* ------------------------------------------------------------------- */
 
 private uint32
-upd_truncate(upd_pc upd,int i,gx_color_value v)
-{
+upd_truncate(upd_pc upd,int i,gx_color_value v) {
    const updcmap_pc cmap = upd->cmap + i;
    int32           s; /* step size */
    gx_color_value *p; /* value-pointer */
@@ -2481,6 +2784,18 @@ upd_open_map(upd_device *udev)
             upd->cmap[3].xfer = FA_YXFER;
          break;
          case MAP_CMYKGEN:
+            upd->cmap[0].xfer = FA_KXFER;
+            upd->cmap[1].xfer = FA_CXFER;
+            upd->cmap[2].xfer = FA_MXFER;
+            upd->cmap[3].xfer = FA_YXFER;
+         break;
+         case MAP_RGBOV:
+            upd->cmap[0].xfer = FA_KXFER;
+            upd->cmap[1].xfer = FA_CXFER;
+            upd->cmap[2].xfer = FA_MXFER;
+            upd->cmap[3].xfer = FA_YXFER;
+         break;
+         case MAP_RGBNOV:
             upd->cmap[0].xfer = FA_KXFER;
             upd->cmap[1].xfer = FA_CXFER;
             upd->cmap[2].xfer = FA_MXFER;
@@ -2609,7 +2924,7 @@ upd_open_map(upd_device *udev)
                upd->float_a[upd->cmap[imap].xfer].size-1] ?
             true : false;
          upd->cmap[imap].code     = gs_malloc(upd->cmap[imap].bitmsk+1,
-                        sizeof(upd->cmap[imap].code[0]), "upd/code");
+             sizeof(upd->cmap[imap].code[0]),"upd/code");
          if(!upd->cmap[imap].code) break;
       }
 
@@ -2713,6 +3028,14 @@ upd_open_map(upd_device *udev)
            if(4 > imap) imap = 0;
            upd->ncomp = 4;
          break;
+         case MAP_RGBOV: /* RGB->KCMY with black-generation */
+           if(4 > imap) imap = 0;
+           upd->ncomp = 4;
+         break;
+         case MAP_RGBNOV: /* RGB->KCMY with black-generation */
+           if(4 > imap) imap = 0;
+           upd->ncomp = 4;
+         break;
 
          default:
            imap = 0;
@@ -2752,36 +3075,47 @@ upd_procs_map(upd_device *udev)
    else                           imap = 0;
 
    switch(imap) {
-     case 1: /* Grayscale -> Grayscale */
+     case MAP_GRAY: /* Grayscale -> Grayscale */
        set_dev_proc(udev,map_rgb_color, upd_rgb_1color);
        set_dev_proc(udev,map_cmyk_color,gx_default_map_cmyk_color);
        set_dev_proc(udev,map_color_rgb, upd_1color_rgb);
      break;
-     case 2: /* RGB->RGBW */
+     case MAP_RGBW: /* RGB->RGBW */
        set_dev_proc(udev,map_rgb_color, upd_rgb_4color);
        set_dev_proc(udev,map_cmyk_color,gx_default_map_cmyk_color);
        set_dev_proc(udev,map_color_rgb, upd_4color_rgb);
      break;
-     case 3: /* Plain RGB */
+     case MAP_RGB: /* Plain RGB */
        set_dev_proc(udev,map_rgb_color, upd_rgb_3color);
        set_dev_proc(udev,map_cmyk_color,gx_default_map_cmyk_color);
        set_dev_proc(udev,map_color_rgb, upd_3color_rgb);
      break;
-     case 4: /* Plain KCMY */
+     case MAP_CMYK: /* Plain KCMY */
        set_dev_proc(udev,map_rgb_color, gx_default_map_rgb_color);
        set_dev_proc(udev,map_cmyk_color,upd_cmyk_icolor);
        set_dev_proc(udev,map_color_rgb, upd_icolor_rgb);
      break;
-     case 5: /* KCMY with black-generation */
+     case MAP_CMYKGEN: /* KCMY with black-generation */
        set_dev_proc(udev,map_rgb_color, gx_default_map_rgb_color);
        set_dev_proc(udev,map_cmyk_color,upd_cmyk_kcolor);
        set_dev_proc(udev,map_color_rgb, upd_kcolor_rgb);
-    break;
-    default:
+     break;
+     case MAP_RGBOV: /* RGB -> KCMY with BG and UCR for CMYK-Output */
+       set_dev_proc(udev,map_rgb_color, upd_rgb_ovcolor);
+       set_dev_proc(udev,map_cmyk_color,gx_default_map_cmyk_color);
+       set_dev_proc(udev,map_color_rgb, upd_ovcolor_rgb);
+     break;
+     case MAP_RGBNOV: /* RGB -> KCMY with BG and UCR for CMY+K-Output */
+       set_dev_proc(udev,map_rgb_color, upd_rgb_novcolor);
+       set_dev_proc(udev,map_cmyk_color,gx_default_map_cmyk_color);
+       set_dev_proc(udev,map_color_rgb, upd_novcolor_rgb);
+     break;
+
+     default:
        set_dev_proc(udev,map_rgb_color, gx_default_map_rgb_color);
        set_dev_proc(udev,map_cmyk_color,gx_default_map_cmyk_color);
        set_dev_proc(udev,map_color_rgb, gx_default_map_color_rgb);
-    break;
+     break;
   }
   return 0;
 
@@ -2866,6 +3200,9 @@ upd_open_render(upd_device *udev)
          case RND_FSCMYK:
             upd_open_fscmyk(udev);
          break;
+         case RND_FSCMY_K:
+            upd_open_fscmy_k(udev);
+         break;
          default:
 #if UPD_MESSAGES & UPD_M_WARNING
             fprintf(stderr,"upd_open_render: Unknown rendering type %d\n",
@@ -2929,17 +3266,15 @@ upd_open_fscomp(upd_device *udev)
 #endif
 
    icomp = upd->ncomp;
-   if(0 < upd->ints[I_NCOMP]) icomp = upd->ints[I_NCOMP];
 
    if((0              >= icomp) ||
       (UPD_VALPTR_MAX <  icomp) ||
       (UPD_CMAP_MAX   <  icomp)   ) icomp      = 0;
-   else                             upd->ncomp = icomp;
 
 /**
 This Version of the FS-algorithm works on the mapped components, but
 the printing-order might be different from the order dictated by the
-mapping-routines. The optional RNDCOMP-Array is used for that. The
+mapping-routines. The optional COMPORDER-Array is used for that. The
 initial test checks it's integrity.
 */
    if(icomp) {
@@ -3201,6 +3536,7 @@ upd_fscomp(upd_p upd)
    int32           *rowerr = colerr + upd->ncomp;
    int              pwidth = upd->rwidth;
    int              dir,ibyte;
+   int              iblack,bblack,pxlset;
    uint32       ci;
    byte         bit;
    bool         first = true;
@@ -3277,6 +3613,15 @@ upd_fscomp(upd_p upd)
       upd->pxlptr = ptr;
    }
 /*
+ * Set iblack, if black-reduction is active
+ */
+  iblack = -1;
+  bblack =  0;
+  if((4 == upd->ncomp) && (B_REDUCEK & upd->flags)) {
+    iblack = upd->cmap[0].comp;
+    bblack = 1<<iblack;
+  }
+/*
  * Process all Pixels
  */
    first = true;
@@ -3284,6 +3629,7 @@ upd_fscomp(upd_p upd)
 /*
  *    Execute FS-Algorithm for each active component
  */
+      pxlset = 0;
       ci = upd_pxlget(upd);
       switch(upd->ncomp) {
          case 4:  FS_M_ROWERR(3)
@@ -3291,6 +3637,7 @@ upd_fscomp(upd_p upd)
                   if(pixel[3] >  comp[3]->threshold) { /* "Fire" */
                      pixel[3] -= comp[3]->spotsize;
                       scan[3].bytes[ibyte] |= bit;
+                      pxlset  |= 8;
                   }                                    /* "Fire" */
                   FS_DIST(3)
 
@@ -3299,6 +3646,7 @@ upd_fscomp(upd_p upd)
                   if(pixel[2] >  comp[2]->threshold) { /* "Fire" */
                      pixel[2] -= comp[2]->spotsize;
                       scan[2].bytes[ibyte] |= bit;
+                      pxlset  |= 4;
                   }                                    /* "Fire" */
                   FS_DIST(2)
 
@@ -3307,6 +3655,7 @@ upd_fscomp(upd_p upd)
                   if(pixel[1] >  comp[1]->threshold) { /* "Fire" */
                      pixel[1] -= comp[1]->spotsize;
                       scan[1].bytes[ibyte] |= bit;
+                      pxlset  |= 2;
                   }                                    /* "Fire" */
                   FS_DIST(1)
 
@@ -3315,8 +3664,36 @@ upd_fscomp(upd_p upd)
                   if(pixel[0] >  comp[0]->threshold) { /* "Fire" */
                      pixel[0] -= comp[0]->spotsize;
                       scan[0].bytes[ibyte] |= bit;
+                      pxlset  |= 1;
                   }                                    /* "Fire" */
                   FS_DIST(0)
+      }
+/*
+ *    Black-Reduction
+ */
+      if(bblack) {
+        if(pxlset & bblack) pxlset |= 15;
+        switch(pxlset) {
+          case  0:
+          case  1:
+          case  2:
+          case  4:
+          case  8:
+          case  3:
+          case  5:
+          case  9:
+          case  6:
+          case 10:
+          case 12:
+            break;
+          default:
+            scan[0].bytes[ibyte]      &= ~bit;
+            scan[1].bytes[ibyte]      &= ~bit;
+            scan[2].bytes[ibyte]      &= ~bit;
+            scan[3].bytes[ibyte]      &= ~bit;
+            scan[iblack].bytes[ibyte] |=  bit;
+          break;
+        }
       }
 /*
  *    Adjust rowerr, bit & iword, depending on direction
@@ -3522,6 +3899,180 @@ upd_fscmyk(upd_p upd)
    return 0;
 }
 
+/* ------------------------------------------------------------------- */
+/* upd_open_fscmy_k: Initialize for CMY_K Printing                     */
+/* ------------------------------------------------------------------- */
+
+private void
+upd_open_fscmy_k(upd_device *udev)
+{
+   const upd_p upd = udev->upd;
+
+   upd_open_fscomp(udev);
+
+   if((B_RENDER & upd->flags) &&
+      (4 == upd->ncomp)) {
+      upd->render = upd_fscmy_k;
+   } else {
+      upd->flags &= ~B_RENDER;
+   }
+
+}
+
+/* ------------------------------------------------------------------- */
+/* upd_fscmy_k: CMY_K rendering                                        */
+/* ------------------------------------------------------------------- */
+
+private int
+upd_fscmy_k(upd_p upd)
+{
+   const updscan_p  scan    = upd->scnbuf[upd->yscnbuf & upd->scnmsk];
+   const updcomp_p *comp    = (updcomp_p *) upd->valptr;
+   int32 *const     pixel  = upd->valbuf;
+   int32 *const     colerr = pixel  + upd->ncomp;
+   int32           *rowerr = colerr + upd->ncomp;
+   int              pwidth = upd->rwidth;
+   int              dir,ibyte;
+   uint32       ci;
+   byte         bit;
+   bool         first = true;
+/*
+ * Erase the component-Data
+ */
+   memset(scan[3].bytes,0,upd->nbytes);
+   memset(scan[2].bytes,0,upd->nbytes);
+   memset(scan[1].bytes,0,upd->nbytes);
+   memset(scan[0].bytes,0,upd->nbytes);
+/*
+ * determine the direction
+ */
+   if(upd->flags &   B_REVDIR) { /* This one reverse */
+
+      if(upd->flags & B_YFLIP) {
+         dir     = 4;
+         bit     = 0x80;
+         ibyte   = 0;
+      } else {
+         dir     =  -4;
+         rowerr +=   4 * (pwidth-1);
+         bit     =   0x80 >>     ((pwidth-1) & 7);
+         ibyte   =                (pwidth-1) >> 3;
+      }
+
+      if(!(upd->flags & B_FSWHITE)) {
+         upd_pxlfwd(upd);
+         while((0 < pwidth) && !upd_pxlget(upd)) pwidth--;
+      }
+
+      upd_pxlrev(upd);
+
+   } else {                       /* This one forward */
+
+      if(upd->flags & B_YFLIP) {
+         dir     =  -4;
+         rowerr +=   4          * (pwidth-1);
+         bit     =   0x80 >>     ((pwidth-1) & 7);
+         ibyte   =                (pwidth-1) >> 3;
+      } else {
+         dir     = 4;
+         bit     = 0x80;
+         ibyte   = 0;
+      }
+
+      if(!(upd->flags & B_FSWHITE)) {
+         upd_pxlrev(upd);
+         while((0 < pwidth) && !upd_pxlget(upd)) pwidth--;
+      }
+
+      upd_pxlfwd(upd);
+
+   }                              /* reverse or forward */
+/*
+ * Toggle Direction, if not fixed
+ */
+   if(!(upd->flags & B_FIXDIR)) upd->flags ^= B_REVDIR;
+/*
+ * Skip over leading white-space
+ */
+   if(!(upd->flags & B_FSWHITE)) {
+      upd_proc_pxlget((*fun)) = upd->pxlget;
+      byte             *ptr   = upd->pxlptr;
+      while((0 < pwidth) && !upd_pxlget(upd)) {
+         pwidth--;
+         fun = upd->pxlget;
+         ptr = upd->pxlptr;
+         S_FSTEP
+      }
+      upd->pxlget = fun;
+      upd->pxlptr = ptr;
+   }
+/*
+ * Process all Pixels
+ */
+   first = true;
+   while(0 < pwidth--) {
+
+/*    get the Pixel-Value */
+
+      ci = upd_pxlget(upd);
+
+/*    process all components */
+
+      FS_M_ROWERR(0) FS_GOAL(comp[0]->bitmsk & (ci >> comp[0]->bitshf),0)
+      FS_M_ROWERR(1) FS_GOAL(comp[1]->bitmsk & (ci >> comp[1]->bitshf),1)
+      FS_M_ROWERR(2) FS_GOAL(comp[2]->bitmsk & (ci >> comp[2]->bitshf),2)
+      FS_M_ROWERR(3) FS_GOAL(comp[3]->bitmsk & (ci >> comp[3]->bitshf),3)
+
+      if(pixel[0] >  comp[0]->threshold) { /* Black fires */
+
+        pixel[0]             -= comp[0]->spotsize;
+        scan[0].bytes[ibyte] |= bit;
+
+      } else {                             /* Colors may fire */
+
+         if((pixel[1] <= comp[1]->threshold) ||
+            (pixel[2] <= comp[2]->threshold) ||
+            (pixel[3] <= comp[3]->threshold)   ) { /* Really a Color */
+
+            if(pixel[1] >               comp[1]->threshold) {
+               pixel[1]              -= comp[1]->spotsize;
+                scan[1].bytes[ibyte] |= bit;
+            }
+
+            if(pixel[2] >               comp[2]->threshold) {
+               pixel[2]              -= comp[2]->spotsize;
+                scan[2].bytes[ibyte] |= bit;
+            }
+
+            if(pixel[3] >               comp[3]->threshold) {
+               pixel[3]              -= comp[3]->spotsize;
+                scan[3].bytes[ibyte] |= bit;
+            }
+
+         } else {
+            pixel[1]              -= comp[1]->spotsize;
+            pixel[2]              -= comp[2]->spotsize;
+            pixel[3]              -= comp[3]->spotsize;
+            scan[0].bytes[ibyte] |= bit;
+         }
+      }
+
+      FS_DIST(0)
+      FS_DIST(1)
+      FS_DIST(2)
+      FS_DIST(3)
+
+/*
+ *    Adjust rowerr, bit & iword, depending on direction
+ */
+      S_FSTEP
+   }
+/*
+ * Finally call the limits-Routine
+ */
+   if(0 < upd->nlimits) upd_limits(upd,true);
+   return 0;
+}
 
 /* ------------------------------------------------------------------- */
 /* upd_open_writer: Initialize rendering                               */
@@ -3547,6 +4098,10 @@ upd_open_writer(upd_device *udev)
 /** Rendering should be succesfully initialized */
    if(B_RENDER != ((B_RENDER | B_ERROR) & upd->flags))
       success = false;
+
+/** Create number of components */
+   upd->ocomp = upd->ncomp;
+   if(0 < upd->ints[I_OCOMP]) upd->ocomp = upd->ints[I_OCOMP];
 
 /** Massage some Parameters */
    if(success) {
@@ -3771,11 +4326,11 @@ upd_open_writer(upd_device *udev)
 
 /** SA_SETCOMP must be valid, if present */
    if((0 < upd->string_a[SA_SETCOMP].size) &&
-      (upd->ncomp > upd->string_a[SA_SETCOMP].size)) {
+      (upd->ocomp > upd->string_a[SA_SETCOMP].size)) {
 #if UPD_MESSAGES & UPD_M_WARNING
       fprintf(stderr,
          "upd_open_writer: Only %d SETCOMP-Commands (%d required)\n",
-         (int) upd->string_a[SA_SETCOMP].size,upd->ncomp);
+         (int) upd->string_a[SA_SETCOMP].size,upd->ocomp);
 #endif
       success = false;
    }
@@ -3861,14 +4416,14 @@ upd_open_writer(upd_device *udev)
          int ibuf;
          for(ibuf = 0; ibuf < upd->nscnbuf; ++ibuf) {
             if(success) upd->scnbuf[ibuf] =
-               gs_malloc(upd->ncomp,sizeof(upd->scnbuf[0][0]),"upd/scnbuf[]");
+               gs_malloc(upd->ocomp,sizeof(upd->scnbuf[0][0]),"upd/scnbuf[]");
             else upd->scnbuf[ibuf] = NULL;
 
             if(!upd->scnbuf[ibuf]) {
                success = false;
             } else {
                int icomp;
-               for(icomp = 0; icomp < upd->ncomp; ++icomp) {
+               for(icomp = 0; icomp < upd->ocomp; ++icomp) {
                   if(success) upd->scnbuf[ibuf][icomp].bytes =
                     gs_malloc(upd->nbytes,sizeof(upd->scnbuf[0][0].bytes[0]),
                     "upd/bytes");
@@ -3925,7 +4480,7 @@ upd_close_writer(upd_device *udev)
 
             if(!upd->scnbuf[ibuf]) continue;
 
-            for(icomp = 0; icomp < upd->ncomp; ++icomp) {
+            for(icomp = 0; icomp < upd->ocomp; ++icomp) {
 
                if((0 < upd->nbytes) && upd->scnbuf[ibuf][icomp].bytes)
                   gs_free(upd->scnbuf[ibuf][icomp].bytes,upd->nbytes,
@@ -3944,7 +4499,7 @@ upd_close_writer(upd_device *udev)
             }
 
             if(icomp)
-               gs_free(upd->scnbuf[ibuf],upd->ncomp,sizeof(upd->scnbuf[0][0]),
+               gs_free(upd->scnbuf[ibuf],upd->ocomp,sizeof(upd->scnbuf[0][0]),
                   "upd/scnbuf[]");
             upd->scnbuf[ibuf] = NULL;
 
@@ -3969,7 +4524,7 @@ upd_limits(upd_p upd, bool check)
    int   xs,x,xe,icomp,pass;
    byte *bytes,bit;
 
-   for(icomp = 0; icomp < upd->ncomp; ++icomp) {
+   for(icomp = 0; icomp < upd->ocomp; ++icomp) {
       scan = scans + icomp;
       for(pass = 0; pass < upd->nlimits; ++pass) {
          scan->xbegin[pass] = upd->pwidth;
@@ -3978,7 +4533,7 @@ upd_limits(upd_p upd, bool check)
    }
 
    if(check) { /* Really check */
-      for(icomp = 0; icomp < upd->ncomp; ++icomp) { /* Check Components */
+      for(icomp = 0; icomp < upd->ocomp; ++icomp) { /* Check Components */
          scan  = scans + icomp;
          bytes = scan->bytes;
 
@@ -4034,7 +4589,7 @@ upd_open_rascomp(upd_device *udev)
 
    noutbuf = upd->pwidth;
 
-   if(1 < upd->ncomp) noutbuf *= 8;
+   if(1 < upd->ncomp) noutbuf *= 8; /* ??? upd->ocomp */
 
    noutbuf = ((noutbuf+15)>>4)<<1;
 
@@ -4083,7 +4638,7 @@ upd_start_rascomp(upd_p upd, FILE *out) {
       put32(val,out);
 
 /**   ras_depth */
-      if(1 < upd->ncomp) val = 8;
+      if(1 < upd->ncomp) val = 8; /* ??? upd->ocomp */
       else               val = 1;
       put32(val,out);
 
@@ -4102,11 +4657,11 @@ upd_start_rascomp(upd_p upd, FILE *out) {
       put32(val,out);
 
 /**   ras_maplength */
-      val = 3 * (1 << upd->ncomp);
+      val = 3 * (1 << upd->ncomp); /* ??? upd->ocomp */
       put32(val,out);
 
 /**   R,G,B-Map */
-      if(1 == upd->ncomp) {
+      if(1 == upd->ncomp) { /* ??? upd->ocomp */
          const updcomp_p comp = upd->valptr[0];
 
          if(upd->cmap[comp->cmap].rise) {
@@ -4119,7 +4674,7 @@ upd_start_rascomp(upd_p upd, FILE *out) {
             putc((char) 0xff,out); putc((char) 0x00,out);
          }
 
-      } else if(3 == upd->ncomp) {
+      } else if(3 == upd->ncomp) { /* ??? upd->ocomp */
          int rgb;
 
          for( rgb = 0; rgb < 3; ++rgb) {
@@ -4173,7 +4728,7 @@ upd_rascomp(upd_p upd, FILE *out) {
    updscan_p scan = upd->scnbuf[upd->yscan & upd->scnmsk];
    uint bits = upd->pwidth;
 
-   if(1 == upd->ncomp) {
+   if(1 == upd->ncomp) { /* ??? upd->ocomp */
       uint nbytes;
 
       nbytes = (bits+7)>>3;
@@ -4187,7 +4742,7 @@ upd_rascomp(upd_p upd, FILE *out) {
 
       while(0 < bits--) {
          byte val = 0;
-         switch(upd->ncomp) {
+         switch(upd->ncomp) { /* ??? upd->ocomp */
             case 4:  if(scan[3].bytes[ibyte] & bit) val |= 8;
             case 3:  if(scan[2].bytes[ibyte] & bit) val |= 4;
                      if(scan[1].bytes[ibyte] & bit) val |= 2;
@@ -4279,7 +4834,7 @@ upd_open_wrtescp(upd_device *udev)
    }
 
 /** SA_WRITECOMP must be valid */
-   if(upd->ncomp > upd->string_a[SA_WRITECOMP].size) {
+   if(upd->ncomp > upd->string_a[SA_WRITECOMP].size) { /* ??? upd->ocomp */
 #if UPD_MESSAGES & UPD_M_WARNING
       fprintf(stderr,
          "ESC/P-Open: WRITECOMP-Commands must be given\n");
@@ -4319,14 +4874,14 @@ It must hold:
 
       if(0 < upd->string_a[SA_SETCOMP].size) {
          need = 0;
-         for(i = 0; i < upd->ncomp; ++i)
+         for(i = 0; i < upd->ocomp; ++i)
             if(need < upd->string_a[SA_SETCOMP].data[i].size)
                need = upd->string_a[SA_SETCOMP].data[i].size;
          noutbuf += need;
       }
 
       need = 0;
-      for(i = 0; i < upd->ncomp; ++i)
+      for(i = 0; i < upd->ocomp; ++i)
          if(need < upd->string_a[SA_WRITECOMP].data[i].size)
             need = upd->string_a[SA_WRITECOMP].data[i].size;
       noutbuf += need + 2;
@@ -4393,7 +4948,7 @@ upd_wrtescp(upd_p upd, FILE *out)
 
       scan = upd->scnbuf[y & upd->scnmsk];
 
-      for(icomp = 0; icomp < upd->ncomp; ++icomp) { /* Compwise test */
+      for(icomp = 0; icomp < upd->ocomp; ++icomp) { /* Compwise test */
          if(xbegin > scan[icomp].xbegin[ixpass])
             xbegin = scan[icomp].xbegin[ixpass];
          if(xend   < scan[icomp].xend[  ixpass])
@@ -4470,7 +5025,7 @@ upd_wrtescp(upd_p upd, FILE *out)
 /*
  * Now write the required components
  */
-      for(icomp = 0; icomp < upd->ncomp; ++icomp) { /* Component-Print */
+      for(icomp = 0; icomp < upd->ocomp; ++icomp) { /* Component-Print */
 /*
  *       First check, wether this Component needs printing
  */
@@ -4785,7 +5340,7 @@ upd_open_wrtescp2(upd_device *udev)
       gs_param_string *ap;
       int   i;
 
-      if(4 == upd->ncomp) { /* Establish Component-Selection */
+      if(4 == upd->ocomp) { /* Establish Component-Selection */
          UPD_MM_DEL_APARAM(upd->string_a[SA_SETCOMP]);
          UPD_MM_GET_ARRAY(ap,4);
          upd->string_a[SA_SETCOMP].data = ap;
@@ -4806,10 +5361,10 @@ upd_open_wrtescp2(upd_device *udev)
       }                     /* Establish Component-Selection */
 
       UPD_MM_DEL_APARAM(upd->string_a[SA_WRITECOMP]);
-      UPD_MM_GET_ARRAY(ap,upd->ncomp);
+      UPD_MM_GET_ARRAY(ap,upd->ocomp);
       upd->string_a[SA_WRITECOMP].data = ap;
       upd->string_a[SA_WRITECOMP].size = upd->ncomp;
-      for(i = 0; i < upd->ncomp; ++i) {
+      for(i = 0; i < upd->ocomp; ++i) {
          UPD_MM_GET_ARRAY(bp,6);
          ap[i].size = 6;
          ap[i].data = bp;
@@ -4823,7 +5378,7 @@ upd_open_wrtescp2(upd_device *udev)
    }                                                /* Default-commands */
 
 /** SA_WRITECOMP must be valid */
-   if(upd->ncomp > upd->string_a[SA_WRITECOMP].size) {
+   if(upd->ocomp > upd->string_a[SA_WRITECOMP].size) {
 #if UPD_MESSAGES & UPD_M_WARNING
       fprintf(stderr,
          "ESC/P2-Open: WRITECOMP-Commands must be given\n");
@@ -4901,14 +5456,14 @@ It must hold:
 
       if(0 < upd->string_a[SA_SETCOMP].size) {
          need = 0;
-         for(i = 0; i < upd->ncomp; ++i)
+         for(i = 0; i < upd->ocomp; ++i)
             if(need < upd->string_a[SA_SETCOMP].data[i].size)
                need = upd->string_a[SA_SETCOMP].data[i].size;
          noutbuf += need;
       }
 
       need = 0;
-      for(i = 0; i < upd->ncomp; ++i)
+      for(i = 0; i < upd->ocomp; ++i)
          if(need < upd->string_a[SA_WRITECOMP].data[i].size)
             need = upd->string_a[SA_WRITECOMP].data[i].size;
       noutbuf += need + 2;
@@ -4961,7 +5516,7 @@ upd_wrtescp2(upd_p upd, FILE *out)
 
       scan = upd->scnbuf[y & upd->scnmsk];
 
-      for(icomp = 0; icomp < upd->ncomp; ++icomp) { /* Compwise test */
+      for(icomp = 0; icomp < upd->ocomp; ++icomp) { /* Compwise test */
          obytes = scan[icomp].bytes;
 
          for(x = 0; x < xbegin && !obytes[x]; x++);
@@ -5023,7 +5578,7 @@ upd_wrtescp2(upd_p upd, FILE *out)
 /*
  * Now write the required components
  */
-      for(icomp = 0; icomp < upd->ncomp; ++icomp) { /* Component-Print */
+      for(icomp = 0; icomp < upd->ocomp; ++icomp) { /* Component-Print */
 /*
  *       First check, wether this Component needs printing
  */
@@ -5202,7 +5757,7 @@ upd_wrtescp2x(upd_p upd, FILE *out)
 
       scan = upd->scnbuf[y & upd->scnmsk];
 
-      for(icomp = 0; icomp < upd->ncomp; ++icomp) { /* Compwise test */
+      for(icomp = 0; icomp < upd->ocomp; ++icomp) { /* Compwise test */
          if(xbegin > scan[icomp].xbegin[ixpass])
             xbegin = scan[icomp].xbegin[ixpass];
          if(xend   < scan[icomp].xend[  ixpass])
@@ -5260,7 +5815,7 @@ upd_wrtescp2x(upd_p upd, FILE *out)
 /*
  * Now write the required components
  */
-      for(icomp = 0; icomp < upd->ncomp; ++icomp) { /* Component-Print */
+      for(icomp = 0; icomp < upd->ocomp; ++icomp) { /* Component-Print */
 /*
  *       First check, wether this Component needs printing
  */
@@ -5483,111 +6038,446 @@ upd_open_wrtrtl(upd_device *udev)
    if(0 < upd->strings[S_BEGIN].size) { /* BOP-Checker */
 
      int   i,j,state = 0;
-     char  cv[16];
+     char  cv[24];
      byte  *bp;
      uint  ncv,nbp;
 
      j = -1;
      for(i = 0; i < upd->strings[S_BEGIN].size; ++i) {
+       const int c = upd->strings[S_BEGIN].data[i];
 
-        switch(state) {
-           case  0:
-              if(0x1b == upd->strings[S_BEGIN].data[i]) state = 1;
-           break;
-           case  1:
-              if('*'  == upd->strings[S_BEGIN].data[i]) state = 2;
-              else                                      state = 0;
-           break;
-           case  2:
-              if('r'  == upd->strings[S_BEGIN].data[i])     state = 3;
-              else if('t' == upd->strings[S_BEGIN].data[i]) state = 4;
-              else                                          state = 0;          
-           break;
+       switch(state) {
+         case  0:
+           if(        c == 0x1b) state =  1; /* ESC */
+         break;
 
-           case  3:
+         case  1:
+           if(        c == 0x2a) state =  2; /* ESC * */
+           else if(   c == 0x25) state =  5; /* ESC % */
+           else                  state =  0;
+         break;
 
-              if((B_PAGEWIDTH & upd->flags) &&
-                 (('s' == upd->strings[S_BEGIN].data[i]) ||
-                  ('S' == upd->strings[S_BEGIN].data[i])   )) {
+         case  2:
+           j = i; /* This character is not part of the replaced text */
+           if(        c == 0x72) state =  3; /* ESC * r */
+           else if(   c == 0x74) state =  4; /* ESC * t */
+           else                  state =  0;
+         break;
 
-                 sprintf(cv,"%d",upd->pwidth);
-                 ncv = strlen(cv);
+         case  3:
 
-                 nbp = (j+1) + ncv + (upd->strings[S_BEGIN].size-i);
-                 UPD_MM_GET_ARRAY(bp,nbp);
+           if(       (B_PAGEWIDTH  & upd->flags) &&
+                     ((c == 0x73) || (c == 0x53))  ) { /* esc * r # S */
 
-                 if(0 <= j) memcpy(bp,upd->strings[S_BEGIN].data,j+1);
-                 memcpy(bp+j+1,    cv,ncv);
-                 memcpy(bp+j+1+ncv,upd->strings[S_BEGIN].data+i,
-                                   upd->strings[S_BEGIN].size-i);
-                 i = j+1+ncv;
-                 UPD_MM_DEL_PARAM(upd->strings[S_BEGIN]);
-                 upd->strings[S_BEGIN].data = bp;
-                 upd->strings[S_BEGIN].size = nbp;
+             sprintf(cv,"%d",upd->pwidth);
+             ncv = strlen(cv);
 
-              } else if((B_PAGELENGTH & upd->flags) &&
-                 (('t' == upd->strings[S_BEGIN].data[i]) ||
-                  ('T' == upd->strings[S_BEGIN].data[i])   )) {
+             nbp = (j+1) + ncv + (upd->strings[S_BEGIN].size-i);
+             UPD_MM_GET_ARRAY(bp,nbp);
 
-                 sprintf(cv,"%d",upd->pheight);
-                 ncv = strlen(cv);
+             if(0 <= j) memcpy(bp,upd->strings[S_BEGIN].data,j+1);
+             memcpy(bp+j+1,    cv,ncv);
+             memcpy(bp+j+1+ncv,upd->strings[S_BEGIN].data+i,
+                               upd->strings[S_BEGIN].size-i);
+             i = j+1+ncv;
+             UPD_MM_DEL_PARAM(upd->strings[S_BEGIN]);
+             upd->strings[S_BEGIN].data = bp;
+             upd->strings[S_BEGIN].size = nbp;
 
-                 nbp = (j+1) + ncv + (upd->strings[S_BEGIN].size-i);
-                 UPD_MM_GET_ARRAY(bp,nbp);
+           } else if((B_PAGELENGTH & upd->flags) &&
+                     ((c == 0x74) || (c == 0x54))  ) { /* esc * r # T */
 
-                 if(0 <= j) memcpy(bp,upd->strings[S_BEGIN].data,j+1);
-                 memcpy(bp+j+1,    cv,ncv);
-                 memcpy(bp+j+1+ncv,upd->strings[S_BEGIN].data+i,
-                                   upd->strings[S_BEGIN].size-i);
-                 i = j+1+ncv;
-                 UPD_MM_DEL_PARAM(upd->strings[S_BEGIN]);
-                 upd->strings[S_BEGIN].data = bp;
-                 upd->strings[S_BEGIN].size = nbp;
+             sprintf(cv,"%d",upd->pheight);
+             ncv = strlen(cv);
 
-              }
-              if(isupper(upd->strings[S_BEGIN].data[i])) state = 0;
+             nbp = (j+1) + ncv + (upd->strings[S_BEGIN].size-i);
+             UPD_MM_GET_ARRAY(bp,nbp);
 
-           break;
+             if(0 <= j) memcpy(bp,upd->strings[S_BEGIN].data,j+1);
+             memcpy(bp+j+1,    cv,ncv);
+             memcpy(bp+j+1+ncv,upd->strings[S_BEGIN].data+i,
+                               upd->strings[S_BEGIN].size-i);
+             i = j+1+ncv;
+             UPD_MM_DEL_PARAM(upd->strings[S_BEGIN]);
+             upd->strings[S_BEGIN].data = bp;
+             upd->strings[S_BEGIN].size = nbp;
 
-           case 4:
+           }
 
-              if((B_RESOLUTION & upd->flags) &&
-                 (('r' == upd->strings[S_BEGIN].data[i]) ||
-                  ('R' == upd->strings[S_BEGIN].data[i])   )) {
+           if(       (0x40 < c) && (c < 0x5b))  state = 0; /* Term. cmd. */
+           else if(!((0x2f < c) && (c < 0x3a))) j     = i; /* Non-Number */
 
-                 sprintf(cv,"%d",(int)
-                  ((udev->y_pixels_per_inch < udev->x_pixels_per_inch ?
-                    udev->x_pixels_per_inch : udev->y_pixels_per_inch)
-                    +0.5));
-                 ncv = strlen(cv);
+         break;
+           
+         case  4: /* esc * t */
 
-                 nbp = (j+1) + ncv + (upd->strings[S_BEGIN].size-i);
-                 UPD_MM_GET_ARRAY(bp,nbp);
+           if(        (B_RESOLUTION  & upd->flags) &&
+                     ((c == 0x72) || (c == 0x52))  ) { /* esc * t # R */
 
-                 if(0 <= j) memcpy(bp,upd->strings[S_BEGIN].data,j+1);
-                 memcpy(bp+j+1,    cv,ncv);
-                 memcpy(bp+j+1+ncv,upd->strings[S_BEGIN].data+i,
-                                   upd->strings[S_BEGIN].size-i);
-                 i = j+1+ncv;
-                 UPD_MM_DEL_PARAM(upd->strings[S_BEGIN]);
-                 upd->strings[S_BEGIN].data = bp;
-                 upd->strings[S_BEGIN].size = nbp;
+             sprintf(cv,"%d",(int)
+               ((udev->y_pixels_per_inch < udev->x_pixels_per_inch ?
+                 udev->x_pixels_per_inch : udev->y_pixels_per_inch)
+               +0.5));
+             ncv = strlen(cv);
 
-              }
-              if(isupper(upd->strings[S_BEGIN].data[i])) state = 0;
+             nbp = (j+1) + ncv + (upd->strings[S_BEGIN].size-i);
+             UPD_MM_GET_ARRAY(bp,nbp);
 
-           break;
-        }
+             if(0 <= j) memcpy(bp,upd->strings[S_BEGIN].data,j+1);
+             memcpy(bp+j+1,    cv,ncv);
+             memcpy(bp+j+1+ncv,upd->strings[S_BEGIN].data+i,
+                               upd->strings[S_BEGIN].size-i);
+             i = j+1+ncv;
+             UPD_MM_DEL_PARAM(upd->strings[S_BEGIN]);
+             upd->strings[S_BEGIN].data = bp;
+             upd->strings[S_BEGIN].size = nbp;
 
-        if((0x30 > upd->strings[S_BEGIN].data[i]) ||
-           (0x39 < upd->strings[S_BEGIN].data[i])   ) j = i;
+           }
 
+           if(       (0x40 < c) && (c < 0x5b))  state = 0; /* Term. cmd. */
+           else if(!((0x2f < c) && (c < 0x3a))) j     = i; /* Non-Number */
+
+         break;
+
+         case  5: /* ESC % - 1 2 3 4 5 X */
+           if( c == 0x2d) state =  6; /* ESC % - */
+           else           state =  0;
+         break;
+
+         case  6: /* ESC %  - 1 2 3 4 5 X */
+           if( c == 0x31) state =  7; /* ESC % - 1 */
+           else           state =  0;
+         break;
+
+         case  7: /* ESC %  - 1 2 3 4 5 X */
+           if( c == 0x32) state =  8; /* ESC % - 1 2 */
+           else           state =  0;
+         break;
+
+         case  8: /* ESC %  - 1 2 3 4 5 X */
+           if( c == 0x33) state =  9; /* ESC % - 1 2 3 */
+           else           state =  0;
+         break;
+
+         case  9: /* ESC %  - 1 2 3 4 5 X */
+           if( c == 0x34) state = 10; /* ESC % - 1 2 3 4 */
+           else           state =  0;
+         break;
+
+         case 10: /* ESC %  - 1 2 3 4 5 X */
+           if( c == 0x35) state = 11; /* ESC % - 1 2 3 4 5 */
+           else           state =  0;
+         break;
+
+         case 11: /* ESC %  - 1 2 3 4 5 X */
+           if( c == 0x58) state = 12; /* ESC % - 1 2 3 4 5 X */
+           else           state =  0;
+         break;
+
+         case 12: /* PJL-BOL:  @ P J L ws */
+           if( c == 0x40) state = 13; /* @ */
+           else           state =  0;
+         break;
+
+         case 13: /* PJL-BOL  @ P J L ws */
+           if( c == 0x50) state = 14; /* @ P */
+           else           state =  0;
+         break;
+
+         case 14: /* PJL-BOL  @ P J L ws */
+           if( c == 0x4a) state = 15; /* @ P J */
+           else           state =  0;
+         break;
+
+         case 15: /* PJL-BOL  @ P J L ws */
+           if( c == 0x4c) state = 16; /* @ P J L */
+           else           state =  0;
+         break;
+
+         case 16: /* PJL-BOL  @ P J L ws */
+           if((c == 0x20) || (c == 0x09)) state = 19; /* @ P J L ws */
+           else if(           c == 0x0d ) state = 17;
+           else if(           c == 0x0a ) state = 12;
+           else                           state =  0; /* PJL-Error */
+         break;
+
+         case 17: /* PJL-EOL  */
+           if( c == 0x0a) state = 12; /* Next PJL-Command */
+           else           state =  0; /* PJL-Error */
+         break;
+
+         case 18: /* PJL-Eatup: Expect Newline */
+           if( c == 0x0a) state = 12;
+         break;
+
+         case 19: /* Begin of PJL-Command */
+           if(     (c == 0x53) || (c == 0x73)) state = 20; /* S E T*/
+           else if( c == 0x0a                ) state = 12; /* BOL */
+           else if( c == 0x0d                ) state = 17;
+         break;
+
+         case 20: /* PJL-Set: S E T  */
+           if(     (c == 0x45) || (c == 0x65)) state = 21; /* S E */
+           else if( c == 0x0a                ) state = 12; /* BOL */
+           else                                state = 18;
+         break;
+
+         case 21: /* PJL-Set: S E T  */
+           if(     (c == 0x54) || (c == 0x74)) state = 22; /* S E T */
+           else if( c == 0x0a                ) state = 12; /* BOL */
+           else                                state = 18;
+         break;
+
+         case 22: /* PJL-Set: S E T ws  */
+           if(     (c == 0x20) || (c == 0x09)) state = 23; /* S E T ws */
+           else if( c == 0x0a                ) state = 12; /* BOL */
+           else                                state = 18;
+         break;
+
+         case 23: /* PJL-Set: S E T ws  */
+           if(     (c == 0x50) || (c == 0x70)) state = 24; /* set paper... */
+           else if((c == 0x52) || (c == 0x72)) state = 41; /* set resolution */
+           else if( c == 0x0a                ) state = 12; /* BOL */
+           else                                state = 18;
+         break;
+
+         case 24: /* PJL-Set: set paper...  */
+           if(     (c == 0x41) || (c == 0x61)) state = 25; /* set pa */
+           else if( c == 0x0a                ) state = 12; /* BOL */
+           else                                state = 18;
+         break;
+
+         case 25: /* PJL-Set: set paper...  */
+           if(     (c == 0x50) || (c == 0x70)) state = 26; /* set pap */
+           else if( c == 0x0a                ) state = 12; /* BOL */
+           else                                state = 18;
+         break;
+
+         case 26: /* PJL-Set: set paper...  */
+           if(     (c == 0x45) || (c == 0x65)) state = 27; /* set pape */
+           else if( c == 0x0a                ) state = 12; /* BOL */
+           else                                state = 18;
+         break;
+
+         case 27: /* PJL-Set: set paper...  */
+           if(     (c == 0x52) || (c == 0x72)) state = 28; /* set paper */
+           else if( c == 0x0a                ) state = 12; /* BOL */
+           else                                state = 18;
+         break;
+
+         case 28: /* PJL-Set: set paper?  */
+           if(     (c == 0x4c) || (c == 0x6c)) state = 29; /* set paperlength */
+           else if((c == 0x57) || (c == 0x77)) state = 36; /* set paperwidth */
+           else if( c == 0x0a                ) state = 12; /* BOL */
+           else                                state = 18;
+         break;
+
+         case 29: /* PJL: set paperlength  */
+           if(     (c == 0x45) || (c == 0x65)) state = 30; /* set paperle */
+           else if( c == 0x0a                ) state = 12; /* BOL */
+           else                                state = 18;
+         break;
+
+         case 30: /* PJL: set paperlength  */
+           if(     (c == 0x4e) || (c == 0x6e)) state = 31; /* set paperlen */
+           else if( c == 0x0a                ) state = 12; /* BOL */
+           else                                state = 18;
+         break;
+
+         case 31: /* PJL: set paperlength  */
+           if(     (c == 0x47) || (c == 0x67)) state = 32; /* set paperleng */
+           else if( c == 0x0a                ) state = 12; /* BOL */
+           else                                state = 18;
+         break;
+
+         case 32: /* PJL: set paperlength  */
+           if(     (c == 0x54) || (c == 0x74)) state = 33; /* set paperlengt */
+           else if( c == 0x0a                ) state = 12; /* BOL */
+           else                                state = 18;
+         break;
+
+         case 33: /* PJL: set paperlength  */
+           if(     (c == 0x48) || (c == 0x68)) state = 34; /* set paperlength */
+           else if( c == 0x0a                ) state = 12; /* BOL */
+           else                                state = 18;
+         break;
+
+         case 34: /* PJL: set paperlength  */
+           if(      c == 0x3d                ) state = 35; /* set paperlength */
+           else if( c == 0x0a                ) state = 12; /* BOL */
+           else if((c != 0x20) && (c != 0x09)) state = 18;
+         break;
+
+         case 35: /* PJL: set paperlength */
+           if(c == 0x30) { /* Replace this Zero */
+
+             sprintf(cv,"%d",(int)
+               (720.0 * udev->height / udev->y_pixels_per_inch));
+             ncv = strlen(cv);
+
+             nbp = upd->strings[S_BEGIN].size + ncv - 1;
+             UPD_MM_GET_ARRAY(bp,nbp);
+
+             if(0 < i) memcpy(bp,upd->strings[S_BEGIN].data,i);
+             memcpy(bp+i,cv,ncv);
+             if(upd->strings[S_BEGIN].size > (i+1))
+               memcpy(bp+i+ncv,upd->strings[S_BEGIN].data+i+1,
+                               upd->strings[S_BEGIN].size-i-1);
+
+             i += ncv - 1;
+             UPD_MM_DEL_PARAM(upd->strings[S_BEGIN]);
+             upd->strings[S_BEGIN].data = bp;
+             upd->strings[S_BEGIN].size = nbp;
+
+           } else if(              c == 0x0a )                state = 12;
+           else if((c != 0x20) && (c != 0x09) && (c != 0x3d)) state = 18;
+
+         break;
+
+         case 36: /* PJL: set paperwidth  */
+           if(     (c == 0x49) || (c == 0x69)) state = 37; /* set paperwi */
+           else if( c == 0x0a                ) state = 12; /* BOL */
+           else                                state = 18;
+         break;
+
+         case 37: /* PJL: set paperwidth */
+           if(     (c == 0x44) || (c == 0x64)) state = 38; /* set paperwid */
+           else if( c == 0x0a                ) state = 12; /* BOL */
+           else                                state = 18;
+         break;
+
+         case 38: /* PJL: set paperwidth  */
+           if(     (c == 0x54) || (c == 0x74)) state = 39; /* set paperwidt */
+           else if( c == 0x0a                ) state = 12; /* BOL */
+           else                                state = 18;
+         break;
+
+         case 39: /* PJL: set paperwidth  */
+           if(     (c == 0x48) || (c == 0x68)) state = 40; /* set paperwidth */
+           else if( c == 0x0a                ) state = 12; /* BOL */
+           else                                state = 18;
+         break;
+
+         case 40: /* PJL: set paperwidth */
+           if(c == 0x30) { /* Replace this Zero */
+
+             sprintf(cv,"%d",(int)
+               (720.0 * udev->width / udev->x_pixels_per_inch));
+             ncv = strlen(cv);
+
+             nbp = upd->strings[S_BEGIN].size + ncv - 1;
+             UPD_MM_GET_ARRAY(bp,nbp);
+
+             if(0 < i) memcpy(bp,upd->strings[S_BEGIN].data,i);
+             memcpy(bp+i,cv,ncv);
+             if(upd->strings[S_BEGIN].size > (i+1))
+               memcpy(bp+i+ncv,upd->strings[S_BEGIN].data+i+1,
+                               upd->strings[S_BEGIN].size-i-1);
+
+             i += ncv - 1;
+             UPD_MM_DEL_PARAM(upd->strings[S_BEGIN]);
+             upd->strings[S_BEGIN].data = bp;
+             upd->strings[S_BEGIN].size = nbp;
+
+           } else if(              c == 0x0a )                state = 12;
+           else if((c != 0x20) && (c != 0x09) && (c != 0x3d)) state = 18;
+
+         break;
+
+         case 41: /* PJL: set resolution */
+           if(     (c == 0x45) || (c == 0x65)) state = 42; /* set re */
+           else if( c == 0x0a                ) state = 12; /* BOL */
+           else                                state = 18;
+         break;
+
+         case 42: /* PJL: set resolution */
+           if(     (c == 0x53) || (c == 0x73)) state = 43; /* set res */
+           else if( c == 0x0a                ) state = 12; /* BOL */
+           else                                state = 18;
+         break;
+
+         case 43: /* PJL: set resolution */
+           if(     (c == 0x4f) || (c == 0x6f)) state = 44; /* set reso */
+           else if( c == 0x0a                ) state = 12; /* BOL */
+           else                                state = 18;
+         break;
+
+         case 44: /* PJL: set resolution */
+           if(     (c == 0x4c) || (c == 0x6c)) state = 45; /* set resol */
+           else if( c == 0x0a                ) state = 12; /* BOL */
+           else                                state = 18;
+         break;
+
+         case 45: /* PJL: set resolution */
+           if(     (c == 0x55) || (c == 0x75)) state = 46; /* set resolu */
+           else if( c == 0x0a                ) state = 12; /* BOL */
+           else                                state = 18;
+         break;
+
+         case 46: /* PJL: set resolution */
+           if(     (c == 0x54) || (c == 0x74)) state = 47; /* set resolut */
+           else if( c == 0x0a                ) state = 12; /* BOL */
+           else                                state = 18;
+         break;
+
+         case 47: /* PJL: set resolution */
+           if(     (c == 0x49) || (c == 0x69)) state = 48; /* set resoluti */
+           else if( c == 0x0a                ) state = 12; /* BOL */
+           else                                state = 18;
+         break;
+
+         case 48: /* PJL: set resolution */
+           if(     (c == 0x4f) || (c == 0x6f)) state = 49; /* set resolutio */
+           else if( c == 0x0a                ) state = 12; /* BOL */
+           else                                state = 18;
+         break;
+
+         case 49: /* PJL: set resolution */
+           if(     (c == 0x4e) || (c == 0x6e)) state = 50; /* set resolution */
+           else if( c == 0x0a                ) state = 12; /* BOL */
+           else                                state = 18;
+         break;
+
+         case 50: /* PJL: set resolution */
+           if(c == 0x30) { /* Replace this Zero */
+
+             sprintf(cv,"%d",(int)
+               ((udev->y_pixels_per_inch < udev->x_pixels_per_inch ?
+                 udev->x_pixels_per_inch : udev->y_pixels_per_inch)
+               +0.5));
+             ncv = strlen(cv);
+
+             nbp = upd->strings[S_BEGIN].size + ncv - 1;
+             UPD_MM_GET_ARRAY(bp,nbp);
+
+             if(0 < i) memcpy(bp,upd->strings[S_BEGIN].data,i);
+             memcpy(bp+i,cv,ncv);
+             if(upd->strings[S_BEGIN].size > (i+1))
+               memcpy(bp+i+ncv,upd->strings[S_BEGIN].data+i+1,
+                               upd->strings[S_BEGIN].size-i-1);
+
+             i += ncv - 1;
+             UPD_MM_DEL_PARAM(upd->strings[S_BEGIN]);
+             upd->strings[S_BEGIN].data = bp;
+             upd->strings[S_BEGIN].size = nbp;
+
+           } else if(              c == 0x0a )                state = 12;
+           else if((c != 0x20) && (c != 0x09) && (c != 0x3d)) state = 18;
+
+         break;
+
+         default:
+#if UPD_MESSAGES & UPD_M_ERROR
+           fprintf(stderr,"UNIPRINT-Coding error, wrrtl, state = %d\n",state);
+#endif
+           state = 0;
+         break;
+       }
      }
    }                                    /* BOP-Checker */
 
-
 /** SA_WRITECOMP must be valid */
-   if(upd->ncomp > upd->string_a[SA_WRITECOMP].size) {
+   if(upd->ocomp > upd->string_a[SA_WRITECOMP].size) {
 #if UPD_MESSAGES & UPD_M_WARNING
       fprintf(stderr,
          "PCL-Open: WRITECOMP-Commands must be given\n");
@@ -5609,7 +6499,7 @@ It must hold:
          sprintf(tmp,"%d",upd->pheight);
          ny = upd->strings[S_YMOVE].size + strlen(tmp);
       } else {
-         ny = 1 + upd->string_a[SA_WRITECOMP].data[upd->ncomp-1].size;
+         ny = 1 + upd->string_a[SA_WRITECOMP].data[upd->ocomp-1].size;
          ny *= upd->pheight;
       }
 
@@ -5650,7 +6540,7 @@ upd_wrtrtl(upd_p upd, FILE *out)
 /** Determine Width of this scan */
 
    xend   = -1;
-   for(icomp = 0; icomp < upd->ncomp; ++icomp) {
+   for(icomp = 0; icomp < upd->ocomp; ++icomp) {
 
       data = scan[icomp].bytes;
 
@@ -5672,7 +6562,7 @@ upd_wrtrtl(upd_p upd, FILE *out)
             ioutbuf += strlen((char *)upd->outbuf+ioutbuf);
          } else {
             while(upd->yscan > upd->yprinter) {
-               for(icomp = 0; icomp < upd->ncomp; ++icomp) {
+               for(icomp = 0; icomp < upd->ocomp; ++icomp) {
                   sprintf((char *)upd->outbuf+ioutbuf,
                      (char *) upd->string_a[SA_WRITECOMP].data[icomp].data,0);
                   ioutbuf += strlen((char *)upd->outbuf+ioutbuf);
@@ -5689,7 +6579,7 @@ upd_wrtrtl(upd_p upd, FILE *out)
 /*
  * Now write the all! components
  */
-      for(icomp = 0; icomp < upd->ncomp; ++icomp) { /* Component-Print */
+      for(icomp = 0; icomp < upd->ocomp; ++icomp) { /* Component-Print */
          data = scan[icomp].bytes;
          for(x = 0; x <= xend; ++x) if(data[x]) break;
          if(x <= xend) {
@@ -5752,7 +6642,7 @@ upd_wrtcanon(upd_p upd, FILE *out)
 
   /* Check length of the printable date */
   xend = -1;
-  for(icomp = 0; icomp < upd->ncomp; ++icomp) {
+  for(icomp = 0; icomp < upd->ocomp; ++icomp) {
     data = scan[icomp].bytes;
 
     for(x = upd->nbytes-1; 0 <= x; --x) if(data[x]) break;
@@ -5780,7 +6670,7 @@ upd_wrtcanon(upd_p upd, FILE *out)
       upd->yprinter = upd->yscan;
     }
 
-    for(icomp = 0; icomp < upd->ncomp; ++icomp) {
+    for(icomp = 0; icomp < upd->ocomp; ++icomp) {
 
       /* Are there date to print for the selected color component */
       data = scan[icomp].bytes;
@@ -5801,7 +6691,18 @@ upd_wrtcanon(upd_p upd, FILE *out)
       fputc('A',            out);
       fputc(LOW(ioutbuf1),  out);
       fputc(HIGH(ioutbuf1), out);
-      fputc("YMCK"[icomp],  out);
+      switch(upd->ocomp) {
+        case 1:  fputc('K',out); break;
+        case 3:
+        case 4:  fputc("YMCK"[icomp],out); break;
+/*
+ *      Please Note: 
+ *         the validity of the NCOMP-setting should be checked
+ *         in the put_params-routine, thus the default-case is
+ *         just a matter of coding-style.
+ */
+        default: fputc('K',out); break;  
+      }    
 
       fwrite(upd->outbuf, 1, ioutbuf, out);
 

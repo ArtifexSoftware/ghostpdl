@@ -3823,13 +3823,37 @@ gs @stc.upp -sOutputFile=/dev/lp1 tiger.ps -c quit
 	<td>&nbsp;
 	<td>high resolution paper
 <tr>	<td>&nbsp;
-<tr>	<th align=left colspan=6>HP DeskJet 550C
+<tr>	<th align=left colspan=6>HP Ink-Printers
 <tr valign=top>	<td>&nbsp;
 	<td><b><tt>cdj550.upp</tt></b>
 	<td>&nbsp;
 	<td>300&times;300dpi
 	<td>&nbsp;
 	<td>32-bit CMYK
+<tr valign=top>	<td>&nbsp;
+	<td><b><tt>cdj690.upp</tt></b>
+	<td>&nbsp;
+	<td>300&times;300dpi
+	<td>&nbsp;
+	<td>Normal mode
+<tr valign=top>	<td>&nbsp;
+	<td><b><tt>cdj690ec.upp</tt></b>
+	<td>&nbsp;
+	<td>300&times;300dpi
+	<td>&nbsp;
+	<td>Economy mode
+<tr valign=top>	<td>&nbsp;
+	<td><b><tt>dnj750c.upp</tt></b>
+	<td>&nbsp;
+	<td>300&times;300dpi
+	<td>&nbsp;
+	<td>Color
+<tr valign=top>	<td>&nbsp;
+	<td><b><tt>dnj750m.upp</tt></b>
+	<td>&nbsp;
+	<td>600&times;600dpi
+	<td>&nbsp;
+	<td>Monochrome
 <tr>	<td>&nbsp;
 <tr>	<th align=left colspan=6>NEC P2X
 <tr valign=top>	<td>&nbsp;
@@ -3844,6 +3868,12 @@ gs @stc.upp -sOutputFile=/dev/lp1 tiger.ps -c quit
 	<td><b><tt>stcany.upp</tt></b>
 	<td>&nbsp;
 	<td>360&times;360dpi
+	<td>&nbsp;
+	<td>4-bit, PostScript halftoning
+<tr valign=top>	<td>&nbsp;
+	<td><b><tt>stcany_h.upp</tt></b>
+	<td>&nbsp;
+	<td>720&times;720dpi
 	<td>&nbsp;
 	<td>4-bit, PostScript halftoning
 <tr>	<td>&nbsp;
@@ -3867,6 +3897,7 @@ gs @stc.upp -sOutputFile=/dev/lp1 tiger.ps -c quit
 	<td>&nbsp;
 	<td>32-bit CMYK, 15-pin Weave
 <tr>	<td>&nbsp;
+<tr>	<th align=left colspan=6>Epson Stylus Color II
 <tr valign=top>	<td>&nbsp;
 	<td><b><tt>stc2.upp</tt></b>
 	<td>&nbsp;
@@ -3885,6 +3916,14 @@ gs @stc.upp -sOutputFile=/dev/lp1 tiger.ps -c quit
 	<td>720&times;720dpi
 	<td>&nbsp;
 	<td>32-bit CMYK, 20-pin, Epson Stylus Color IIs
+<tr>	<td>&nbsp;
+<tr>	<th align=left colspan=6>Epson Stylus Color 200
+<tr valign=top>	<td>&nbsp;
+	<td><b><tt>stc200.upp</tt></b>
+	<td>&nbsp;
+	<td>360&times;720dpi
+	<td>&nbsp;
+	<td>Plain Paper
 <tr>	<td>&nbsp;
 <tr>	<th align=left colspan=6>Epson Stylus Color 500 (good transfer curves for plain paper)
 <tr valign=top>	<td>&nbsp;
@@ -3919,6 +3958,14 @@ gs @stc.upp -sOutputFile=/dev/lp1 tiger.ps -c quit
 	<td>1440&times;720dpi
 	<td>&nbsp;
 	<td>32-bit CMYK, 30-pin, inkjet paper
+<tr>	<td>&nbsp;
+<tr>	<th align=left colspan=6>Epson Stylus Color 640
+<tr valign=top>	<td>&nbsp;
+	<td><b><tt>stc640p.upp</tt></b>
+	<td>&nbsp;
+	<td>720&times;720dpi
+	<td>&nbsp;
+	<td>plain paper?
 <tr>	<td>&nbsp;
 <tr>	<th align=left colspan=6>Epson Stylus Color 800, 64/180-inch weaving
 <tr valign=top>	<td>&nbsp;
@@ -3986,19 +4033,10 @@ gs @stc.upp -sOutputFile=/dev/lp1 tiger.ps -c quit
 </table></blockquote>
 
 <p>
-Thanks to Mark Goldberg for help with the Epson Stylus Color 500 and 600.
-There may be more parameter files available. I am trying to keep them
-together with the latest version of the driver sources and some additional
-stuff at
-
-<blockquote>
-<a href="http://www-md.e-technik.uni-rostock.de/ma/gunther/gs/index.html">http://www-md.e-technik.uni-rostock.de/ma/gunther/gs/index.html</a>
-</blockquote>
+Thanks to Danilo Beuche, Guido Classen, Mark Goldberg and  Hans-Heinrich Viehmann for providing the files for the stc200, hp690, stc500 and the stc640.
 
 <p>
-At the time of this writing (September 1997) the contents of the website
-are outdated, but I still live in the hope to update it.  Please note the
-following:
+Please note the following:
 
 <blockquote><ul>
 <li>Changing the resolution with Ghostscript's
@@ -4025,7 +4063,7 @@ Helmut Riegler.
 <p>
 Uli addresses features of the more recent DeskJet models that will not be
 available in <b><tt>uniprint</tt></b> soon. Martin taught me a lesson on
-HP-PCL3 headers that will be available soon in <b><tt>uniprint</tt></b>
+HP-PCL3 headers that will be available in <b><tt>uniprint</tt></b>
 soon. Helmut in turn followed an almost similar idea, but targetted
 primarily for printing on Canon printers from the pbmplus library. Starting
 with version 1.68 of uniprint, BJC support is available. Work on the
@@ -4111,7 +4149,7 @@ brief</a>.
 -sDEVICE=uniprint                    -- Select the driver
 -dNOPAUSE                            -- Useful with printers
 -dSAFER                              -- Provides some security
--dupColorModel=/DeviceCMYKgenerate   -- Selects the color mapping
+-dupColorModel=/DeviceCMYK           -- Selects the color mapping
 -dupRendering=/ErrorDiffusion        -- Selects the color rendering
 -dupOutputFormat=/EscP2              -- Selects the output format
 -r360x360                            -- Adjusts the resolution
@@ -4781,8 +4819,8 @@ here for <b><tt>uniprint</tt></b>:
 
 <address>
 Gunther Hess<br>
-Richard Wagner Strasse 112<br>
-D-47057 Duisburg<br>
+Duesseldorfer Landstr. 16b<br>
+D-47249 Duisburg<br>
 Germany<br>
 +49 203 376273 telephone (MET evening hours)<br>
 &lt;<a href="mailto:ghess@elmos.de">ghess@elmos.de</a>&gt;

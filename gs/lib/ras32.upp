@@ -2,7 +2,7 @@
 -sDEVICE=uniprint
 -dNOPAUSE
 -dSAFER
--dupColorModel=/DeviceCMYKgenerate
--dupRendering=/FSCMYK32
+-dupColorModel=/DeviceCMYK
+-dupRendering=/ErrorDiffusion
 -dupOutputFormat=/SunRaster
 

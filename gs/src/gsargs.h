@@ -28,7 +28,7 @@
  * Defining a maximum argument length and a maximum nesting depth
  * decreases generality, but eliminates the need for dynamic allocation.
  */
-#define arg_str_max 512
+#define arg_str_max 2048
 #define arg_depth_max 10
 typedef struct arg_source_s {
     bool is_file;

@@ -1,17 +1,16 @@
--supModel="Epson Stylus Color II / IIs, 360x360DpI, Plain Paper"
+-supModel="Epson Stylus Color 200 , 360x720DpI"
 -sDEVICE=uniprint
 -dNOPAUSE
 -dSAFER
 -dupColorModel=/DeviceCMYK
 -dupRendering=/ErrorDiffusion
--dupOutputFormat=/EscP2
--r360x360
+-dupOutputFormat=/EscP2XY
+-r360x720
 -dupMargins="{ 9.0 39.96 9.0 9.0}"
--dupWeaveYPasses=3
--dupOutputPins=20
--dupWeaveYFeeds="{20 20 20}"
--dupWeaveInitialYFeeds="{1  1 19}"
--dupWeaveInitialPins="{  7 20 13}"
+-dupOutputPins=19
+-dupWeaveYPasses=6
+-dupWeaveXPasses=1
+-dupWeaveYFeeds="{19 19 19 19 19 19}"
 -dupBlackTransfer="{
        0.0000 0.0034 0.0185 0.0377 0.0574 0.0769 0.0952 0.1147
        0.1337 0.1540 0.1759 0.1985 0.2209 0.2457 0.2706 0.2949
@@ -39,9 +38,9 @@
 -dupBeginPageCommand="<
    1b40   1b40
    1b2847 0100 01
-   1b2869 0100 00
-   1b2855 0100 0A
-   1b5500
+   1b2855 0100 05
+   1b5501
+   1b2865 0200 0001
    1b2843 0200 0000
    1b2863 0400 0000 0000
 >"
@@ -50,4 +49,3 @@
 -dupAdjustBottomMarginCommand
 -dupEndPageCommand="(\033@\014)"
 -dupAbortCommand="(\033@\15\12\12\12\12    Printout-Aborted\15\014)"
-
