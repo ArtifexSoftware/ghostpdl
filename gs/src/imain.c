@@ -765,7 +765,8 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
      * alloc_restore_all will close dynamically allocated devices.
      */
     /* Flush stdout and stderr */
-    gs_main_run_string(minst, 
+    if (i_ctx_p != NULL)
+      gs_main_run_string(minst, 
 	"(%stdout) (w) file closefile (%stderr) (w) file closefile quit",
 	0 , &exit_code, &error_object);
     gp_readline_finit(minst->readline_data);

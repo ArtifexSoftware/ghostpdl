@@ -134,7 +134,7 @@ JVERSION=6
 # See libpng.mak for more information.
 
 PSRCDIR=libpng
-PVERSION=10009
+PVERSION=10010
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
@@ -179,6 +179,9 @@ EMXPATH=/emx
 COMPDIR=$(COMPBASE)\bin
 INCDIR=$(EMXPATH)/include
 LIBDIR=$(EMXPATH)/lib
+!if $(PVERSION) >= 10009
+CPNG=-DPNGAPI=
+!endif
 !endif
 
 !if $(IBMCPP)
@@ -408,7 +411,7 @@ CDLL=
 CEXE=-Zomf
 !endif
 
-GENOPT=$(CP) $(CD) $(CGDB) $(CDLL) $(CO)
+GENOPT=$(CP) $(CD) $(CGDB) $(CDLL) $(CO) $(CPNG)
 
 CCFLAGS0=$(GENOPT) $(PLATOPT) -D__OS2__
 CCFLAGS=$(CCFLAGS0) 

@@ -25,7 +25,7 @@
 #	PNGGENDIR - the generated intermediate file directory
 #	PNGOBJDIR - the object directory
 #	PNGVERSION - the library version number ("89", "90", "95", "96",
-#	  "10001", "10002", "10003", "10005", "10008", "10009").
+#	  "10001", "10002", "10003", "10005", "10008", "10009", "10010").
 #	  For historical reasons, "101" and "102" are also acceptable,
 #	  even though they don't match libpng's numbering scheme
 #	  (see png.h for more details).
@@ -48,7 +48,7 @@
 # for more convenient access.
 #
 # The makefile is known to work with the following library versions:
-# 0.89, 0.90, 0.95, 0.96, 1.0.1, 1.0.2, 1.0.3, 1.0.5, 1.0.8, 1.0.9.
+# 0.89, 0.90, 0.95, 0.96, 1.0.1, 1.0.2, 1.0.3, 1.0.5, 1.0.8, 1.0.9, 1.0.10.
 #
 # NOTE: the archive for libpng 0.95 may be inconsistent: if you have
 # compilation problems, use an older version.
@@ -166,3 +166,6 @@ $(PNGGEN)lpg10008.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(PNGOBJ)pngwio.$(OBJ) $(PZGE
         
 $(PNGGEN)lpg10009.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(PNGOBJ)pngwio.$(OBJ) $(PZGEN)crc32.dev
 	$(SETMOD) $(PNGGEN)lpg10009 $(PNGOBJ)pngwio.$(OBJ) -include $(PZGEN)crc32.dev
+        
+$(PNGGEN)lpg10010.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(PNGOBJ)pngwio.$(OBJ) $(PZGEN)crc32.dev
+	$(SETMOD) $(PNGGEN)lpg10010 $(PNGOBJ)pngwio.$(OBJ) -include $(PZGEN)crc32.dev
