@@ -28,6 +28,7 @@
 #include "gxcldev.h"
 #include "gxclpath.h"
 #include "gxcolor2.h"
+#include "gxdcolor.h"
 #include "gxpaint.h"		/* for gx_fill/stroke_params */
 #include "gzpath.h"
 #include "gzcpath.h"
@@ -712,9 +713,10 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 }
 
 /*
- * Fill_parallelogram and fill_triangle aren't very efficient.  This
- * isn't important right now, since they are only used for smooth
- * shading.
+ * Fill_parallelogram and fill_triangle aren't very efficient.  This isn't
+ * important right now, since the non-degenerate case is only used for
+ * smooth shading.  However, the rectangular case of fill_parallelogram is
+ * sometimes used for images, so its performance does matter.
  */
 
 private int
@@ -774,6 +776,13 @@ clist_fill_parallelogram(gx_device *dev, fixed px, fixed py,
     gs_fixed_point pts[3];
     int code;
 
+    if (PARALLELOGRAM_IS_RECT(ax, ay, bx, by)) {
+	gs_int_rect r;
+
+	INT_RECT_FROM_PARALLELOGRAM(&r, px, py, ax, ay, bx, by);
+	return gx_fill_rectangle_device_rop(r.p.x, r.p.y, r.q.x - r.p.x,
+					    r.q.y - r.p.y, pdcolor, dev, lop);
+    }
     if ( (cdev->disable_mask & clist_disable_fill_path) ||
 	 gs_debug_c(',')
 	 ) {

@@ -23,6 +23,7 @@
 #include "gx.h"
 #include "gpcheck.h"
 #include "gserrors.h"
+#include "gsrect.h"
 #include "gxfixed.h"
 #include "gxmatrix.h"
 #include "gxdcolor.h"
@@ -234,38 +235,32 @@ gx_default_fill_parallelogram(gx_device * dev,
 {
     fixed t;
     fixed qx, qy, ym;
-
     dev_proc_fill_trapezoid((*fill_trapezoid));
     gs_fixed_edge left, right;
     int code;
 
-    /* Ensure ay >= 0, by >= 0. */
-    if (ay < 0)
-	px += ax, py += ay, ax = -ax, ay = -ay;
-    if (by < 0)
-	px += bx, py += by, bx = -bx, by = -by;
-    qx = px + ax + bx;
     /* Make a special fast check for rectangles. */
-    if ((ay | bx) == 0 || (by | ax) == 0) {	/* If a point falls exactly on the middle of a pixel, */
-	/* we must round it down, not up. */
-	int rx = fixed2int_pixround(px);
-	int ry = fixed2int_pixround(py);
+    if (PARALLELOGRAM_IS_RECT(ax, ay, bx, by)) {
+	gs_int_rect r;
 
-	/* Exactly one of (ax,bx) and one of (ay,by) is non-zero. */
-	int w = fixed2int_pixround(qx) - rx;
-
-	if (w < 0)
-	    rx += w, w = -w;
-	return gx_fill_rectangle_device_rop(rx, ry, w,
-				      fixed2int_pixround(py + ay + by) - ry,
-					    pdevc, dev, lop);
+	INT_RECT_FROM_PARALLELOGRAM(&r, px, py, ax, ay, bx, by);
+	return gx_fill_rectangle_device_rop(r.p.x, r.p.y, r.q.x - r.p.x,
+					    r.q.y - r.p.y, pdevc, dev, lop);
     }
     /*
      * Not a rectangle.  Ensure that the 'a' line is to the left of
      * the 'b' line.  Testing ax <= bx is neither sufficient nor
      * necessary: in general, we need to compare the slopes.
      */
+    /* Ensure ay >= 0, by >= 0. */
+    if (ay < 0)
+	px += ax, py += ay, ax = -ax, ay = -ay;
+    if (by < 0)
+	px += bx, py += by, bx = -bx, by = -by;
+    qx = px + ax + bx;
+
 #define swap(r, s) (t = r, r = s, s = t)
+
     if ((ax ^ bx) < 0) {	/* In this case, the test ax <= bx is sufficient. */
 	if (ax > bx)
 	    swap(ax, bx), swap(ay, by);
@@ -346,7 +341,6 @@ gx_default_fill_triangle(gx_device * dev,
 {
     fixed t;
     fixed ym;
-
     dev_proc_fill_trapezoid((*fill_trapezoid)) =
 	dev_proc(dev, fill_trapezoid);
     gs_fixed_edge left, right;
