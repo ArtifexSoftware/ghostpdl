@@ -163,6 +163,25 @@ update_DeviceN_spot_equivalent_cmyk_colors(gx_device * pdev,
 {
     int i;
     unsigned int j;
+    unsigned int cs_sep_name_size;
+    unsigned char * pcs_sep_name;
+
+    /*
+     * Check if the color space contains components named 'None'.  If so then
+     * our capture logic does not work properly.  When present, the 'None'
+     * components contain alternate color information.  However this info is
+     * specified as part of the 'color' and not part of the color space.  Thus
+     * we do not have this data when this routine is called.  See the 
+     * description of DeviceN color spaces in section 4.5 of the PDF spec.
+     * In this situation we exit rather than produce invalid values.
+     */
+     for (j = 0; j < pcs->params.device_n.num_components; j++) {
+	pcs->params.device_n.get_colorname_string
+			    (pcs->params.device_n.names[j], &pcs_sep_name,
+			    &cs_sep_name_size);
+	if (compare_color_names("None", 4, pcs_sep_name, cs_sep_name_size))
+	    return;
+    }
 
     /* 
      * Check if the color space's separation names matches any of the
@@ -174,9 +193,6 @@ update_DeviceN_spot_equivalent_cmyk_colors(gx_device * pdev,
 			    pdevn_params->separations.names[i];
 
 	    for (j = 0; j < pcs->params.device_n.num_components; j++) {
-	        unsigned int cs_sep_name_size;
-	        unsigned char * pcs_sep_name;
-
 	        pcs->params.device_n.get_colorname_string
 			    (pcs->params.device_n.names[j], &pcs_sep_name,
 			    &cs_sep_name_size);
