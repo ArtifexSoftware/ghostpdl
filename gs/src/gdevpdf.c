@@ -579,47 +579,73 @@ pdf_ferror(gx_device_pdf *pdev)
 private int
 pdf_dominant_rotation(const pdf_text_rotation_t *ptr)
 {
-    int i, imax = 0;
-    long max_count = ptr->counts[0];
+    int i, imax = -1;
+    long max_count = -1;
     static const int angles[] = { pdf_text_rotation_angle_values };
 
-    for (i = 1; i < countof(ptr->counts); ++i) {
+    for (i = 0; i < countof(ptr->counts); ++i) {
 	long count = ptr->counts[i];
 
 	if (count > max_count)
 	    imax = i, max_count = count;
     }
-    return angles[imax];
+    return (imax < 0 ? imax : angles[imax]);
 }
 
-/* Print a Rotate command for an orientation specified by a DSC comment. */
+/* Print a Rotate command, if requested and possible. */
 private void
-pdf_print_dsc_rotate(stream *s, const gs_point *pbox, int orient)
+pdf_print_orientation(gx_device_pdf * pdev, pdf_page_t *page)
 {
-    int ori = orient;
+    stream *s = pdev->strm;
+    int dsc_orientation = -1;
+    const pdf_page_dsc_info_t *ppdi;
 
-    if (pbox->x > pbox->y) {
-	/*
-	 * The page is in landscape format.  Adjust the rotation
-	 * accordingly.
-	 */
-	ori ^= 1;
+    if (pdev->params.AutoRotatePages == arp_None)
+	return; /* Not requested. */
+
+    ppdi = (page != NULL ? &page->dsc_info : &pdev->doc_dsc_info);
+
+    /* Determine DSC orientation : */
+    if (ppdi->viewing_orientation >= 0)
+	dsc_orientation = ppdi->viewing_orientation;
+    else if (ppdi->orientation >= 0)
+	dsc_orientation = ppdi->orientation;
+    if ((page == NULL && pdev->params.AutoRotatePages == arp_All) || /* document */
+        (&page != NULL && page->text_rotation.Rotate >= 0) || /* page */
+	dsc_orientation >= 0 /* have DSC */) {
+        const pdf_text_rotation_t *ptr = 
+	    (page != NULL ? &page->text_rotation : &pdev->text_rotation);
+	int angle = -1;
+	const gs_point *pbox = &(page != NULL ? page : &pdev->pages[0])->MediaBox;
+
+	if (dsc_orientation >= 0 && pbox->x > pbox->y) {
+	    /* The page is in landscape format. Adjust the rotation accordingly. */
+	    dsc_orientation ^= 1;
+	}
+
+	/* Combine DSC rotation with text rotation : */
+	if (dsc_orientation == 0) {
+	    if (ptr->Rotate == 0 || ptr->Rotate == 180)
+		angle = ptr->Rotate;
+	} else if (dsc_orientation == 1) {
+	    if (ptr->Rotate == 90 || ptr->Rotate == 270)
+		angle = ptr->Rotate;
+	}
+
+	/* If not combinable, prefer text rotation : */
+	if (angle < 0) {
+	    if (ptr->Rotate >= 0)
+		angle = ptr->Rotate;
+	    else
+		angle = dsc_orientation * 90;
+	}
+
+	/* If got some, write it out : */
+	if (angle >= 0)
+	    pprintd1(s, "/Rotate %d", angle);
     }
-    pprintd1(s, "/Rotate %d", ori * 90);
 }
-private bool
-pdf_print_dsc_orientation(stream *s, const gs_point *pbox,
-			  const pdf_page_dsc_info_t *ppdi)
-{
-    if (ppdi->viewing_orientation >= 0) {
-	pdf_print_dsc_rotate(s, pbox, ppdi->viewing_orientation);
-	return true;
-    } else if (ppdi->orientation >= 0) {
-	pdf_print_dsc_rotate(s, pbox, ppdi->orientation);
-	return true;
-    }
-    return false;
-}
+
 
 /* Close the current page. */
 private int
@@ -710,13 +736,7 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
     pprintg2(s, "<</Type/Page/MediaBox [0 0 %g %g]\n",
 	     round_box_coord(page->MediaBox.x),
 	     round_box_coord(page->MediaBox.y));
-    /*
-     * In decreasing priority order, check for %%PageViewingOrientation,
-     * %%PageOrientation, and AutoRotatePages == /PageByPage.
-     */
-    if (!pdf_print_dsc_orientation(s, &page->MediaBox, &page->dsc_info))
-	if (page->text_rotation.Rotate >= 0)
-	    pprintd1(s, "/Rotate %d", page->text_rotation.Rotate);
+    pdf_print_orientation(pdev, page);
     pprintld1(s, "/Parent %ld 0 R\n", pdev->Pages->id);
     stream_puts(s, "/Resources<</ProcSet[/PDF");
     if (page->procsets & ImageB)
@@ -834,21 +854,8 @@ pdf_close(gx_device * dev)
 	    pprintld1(s, "%ld 0 R\n", pdev->pages[i].Page->id);
     }
     pprintd1(s, "] /Count %d\n", pdev->next_page);
-    /*
-     * In decreasing priority order, check for %%ViewingOrientation,
-     * %%Orientation, and AutoRotatePages == /All.  Use the MediaBox of
-     * the first page to determine the document's native portrait vs.
-     * landscape orientation.
-     */
-    {
-	const pdf_page_t *page = &pdev->pages[0];
-
-	if (!pdf_print_dsc_orientation(s, &page->MediaBox,
-				       &pdev->doc_dsc_info))
-	    if (pdev->params.AutoRotatePages == arp_All)
-		pprintd1(s, "/Rotate %d\n",
-			 pdf_dominant_rotation(&pdev->text_rotation));
-    }
+    pdev->text_rotation.Rotate = pdf_dominant_rotation(&pdev->text_rotation);
+    pdf_print_orientation(pdev, NULL);
     cos_dict_elements_write(pdev->Pages, pdev);
     stream_puts(s, ">>\n");
     pdf_end_obj(pdev);
