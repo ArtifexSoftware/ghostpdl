@@ -110,8 +110,8 @@ process_composite_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
 
 	    gs_matrix_multiply(&curr.current_font->FontMatrix, psmat,
 			       &fmat);
-	    code = pdf_process_string(&curr, &str, &fmat, false, &text_state,
-				      &index);
+	    code = pdf_encode_process_string(&curr, &str, &fmat, &text_state,
+					     &index);
 	    if (code < 0)
 		return code;
 	    gs_text_enum_copy_dynamic(pte, (gs_text_enum_t *)&curr, true);

@@ -463,7 +463,7 @@ pdf_set_text_state_values(gx_device_pdf *pdev, pdf_text_state_values_t *ptsv,
 			  int members)
 {
     pdf_text_state_t *pts = pdev->text->text_state;
-    int skip = 0;
+    int reset = members & pts->members;
 
     if (members & TEXT_STATE_SET_MATRIX) {
 	int code = add_text_delta_move(pdev, &ptsv->matrix);
@@ -472,15 +472,18 @@ pdf_set_text_state_values(gx_device_pdf *pdev, pdf_text_state_values_t *ptsv,
 	    members &= ~TEXT_STATE_SET_MATRIX;
     }
 
-    if (pts->in.character_spacing == ptsv->character_spacing)
-	skip |= TEXT_STATE_SET_CHARACTER_SPACING;
-    if (pts->in.pdfont == ptsv->pdfont && pts->in.size == ptsv->size)
-	skip |= TEXT_STATE_SET_FONT_AND_SIZE;
-    if (pts->in.render_mode == ptsv->render_mode)
-	skip |= TEXT_STATE_SET_RENDER_MODE;
-    if (pts->in.word_spacing == ptsv->word_spacing)
-	skip |= TEXT_STATE_SET_WORD_SPACING;
-    members &= ~(skip & pts->members);
+    if ((reset & TEXT_STATE_SET_CHARACTER_SPACING) &&
+	pts->in.character_spacing == ptsv->character_spacing)
+	members -= TEXT_STATE_SET_CHARACTER_SPACING;
+    if ((reset & TEXT_STATE_SET_FONT_AND_SIZE) &&
+	pts->in.pdfont == ptsv->pdfont && pts->in.size == ptsv->size)
+	members -= TEXT_STATE_SET_FONT_AND_SIZE;
+    if ((reset & TEXT_STATE_SET_RENDER_MODE) &&
+	pts->in.render_mode == ptsv->render_mode)
+	members -= TEXT_STATE_SET_RENDER_MODE;
+    if ((reset & TEXT_STATE_SET_WORD_SPACING) &&
+	pts->in.word_spacing == ptsv->word_spacing)
+	members -= TEXT_STATE_SET_WORD_SPACING;
 
     if (pts->buffer.count_chars > 0 && members != 0) {
 	int code = sync_text_state(pdev);

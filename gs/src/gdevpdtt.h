@@ -128,17 +128,11 @@ PROCESS_TEXT_PROC(process_cid_text);
 PROCESS_TEXT_PROC(process_plain_text);
 
 /*
- * Internal procedure to process a string in a simple font.
- * Doesn't use or set penum->{data,size,index}; may use/set penum->xy_index;
- * may set penum->returned.total_width.  Sets ppts->values.
- *
- * Note that the caller is responsible for re-encoding the string, if
- * necessary; for adding Encoding entries in pdfont; and for copying any
- * necessary glyphs.  penum->current_font provides the gs_font for getting
- * glyph metrics, but this font's Encoding is not used.
+ * Given a text string and a simple gs_font, process it in chunks
+ * as needed to parcel it out using multiple font resources.
  */
-int pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
-		       pdf_font_resource_t *pdfont, const gs_matrix *pfmat,
-		       pdf_text_process_state_t *ppts, int *pindex);
+int pdf_encode_process_string(pdf_text_enum_t *penum, gs_string *pstr,
+			      const gs_matrix *pfmat,
+			      pdf_text_process_state_t *ppts, int *pindex);
 
 #endif /* gdevpdtt_INCLUDED */

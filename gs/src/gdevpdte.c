@@ -35,6 +35,53 @@
 #include "gdevpdtt.h"
 
 /*
+ * Given a text string and a simple gs_font, process it in chunks
+ * determined by pdf_encode_string.
+ */
+private int pdf_encode_string(gx_device_pdf *pdev, gs_font_base *font,
+			      const gs_string *pstr, int *pindex,
+			      pdf_font_resource_t **ppdfont);
+private int pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
+			       pdf_font_resource_t *pdfont,
+			       const gs_matrix *pfmat,
+			       pdf_text_process_state_t *ppts, int *pindex);
+int
+pdf_encode_process_string(pdf_text_enum_t *penum, gs_string *pstr,
+			  const gs_matrix *pfmat,
+			  pdf_text_process_state_t *ppts, int *pindex)
+{
+    gx_device_pdf *const pdev = (gx_device_pdf *)penum->dev;
+    gs_font_base *font;
+    int code = 0;
+
+    switch (penum->current_font->FontType) {
+    case ft_TrueType:
+    case ft_encrypted:
+    case ft_encrypted2:
+	break;
+    default:
+	return_error(gs_error_rangecheck);
+    }
+    font = (gs_font_base *)penum->current_font;
+
+    while (*pindex < pstr->size) {
+	int index = *pindex;
+	uint end = pstr->size;
+	pdf_font_resource_t *pdfont;
+
+	code = pdf_encode_string(pdev, font, pstr, &index, &pdfont);
+	if (index == *pindex)
+	    break;
+	pstr->size = index;
+	code = pdf_process_string(penum, pstr, pdfont, pfmat, ppts, pindex);
+	pstr->size = end;
+	if (code < 0 || *pindex < index)
+	    break;
+    }
+    return code;
+}
+
+/*
  * Given a text string and a simple gs_font, return a font resource suitable
  * for a prefix of the text string, possibly re-encoding the string.  This
  * may involve creating a font resource and/or adding glyphs and/or Encoding
@@ -111,46 +158,6 @@ pdf_encode_string(gx_device_pdf *pdev, gs_font_base *font,
 }
 
 /*
- * Given a text string and a simple gs_font, process it in chunks
- * determined by pdf_encode_string.
- */
-private int
-pdf_encode_process_string(pdf_text_enum_t *penum, gs_string *pstr,
-			  const gs_matrix *pfmat,
-			  pdf_text_process_state_t *ppts, int *pindex)
-{
-    gx_device_pdf *const pdev = (gx_device_pdf *)penum->dev;
-    gs_font_base *font;
-    int code = 0;
-
-    switch (penum->current_font->FontType) {
-    case ft_TrueType:
-    case ft_encrypted:
-    case ft_encrypted2:
-	break;
-    default:
-	return_error(gs_error_rangecheck);
-    }
-    font = (gs_font_base *)penum->current_font;
-
-    while (*pindex < pstr->size) {
-	int index = *pindex;
-	uint end = pstr->size;
-	pdf_font_resource_t *pdfont;
-
-	code = pdf_encode_string(pdev, font, pstr, &index, &pdfont);
-	if (index == *pindex)
-	    break;
-	pstr->size = index;
-	code = pdf_process_string(penum, pstr, pdfont, pfmat, ppts, pindex);
-	pstr->size = end;
-	if (code < 0 || *pindex < index)
-	    break;
-    }
-    return code;
-}
-
-/*
  * Internal procedure to process a string in a non-composite font.
  * Doesn't use or set pte->{data,size,index}; may use/set pte->xy_index;
  * may set penum->returned.total_width.  Sets ppts->values.
@@ -171,7 +178,7 @@ private int process_text_add_width(gs_text_enum_t *pte,
 				   pdf_text_process_state_t *ppts,
 				   const gs_const_string *pstr,
 				   int *pindex, gs_point *pdpt);
-int
+private int
 pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
 		   pdf_font_resource_t *pdfont, const gs_matrix *pfmat,
 		   pdf_text_process_state_t *ppts, int *pindex)

@@ -41,13 +41,15 @@ private_st_pdf_outline_fonts();
 /* ---------------- Private ---------------- */
 
 private
-ENUM_PTRS_WITH(pdf_font_resource_enum_ptrs, pdf_font_resource_t *pdfont) return 0;
+ENUM_PTRS_WITH(pdf_font_resource_enum_ptrs, pdf_font_resource_t *pdfont)
+ENUM_PREFIX(st_pdf_resource, 8);
 case 0: return ENUM_STRING(&pdfont->BaseFont);
 case 1: ENUM_RETURN(pdfont->FontDescriptor);
 case 2: ENUM_RETURN(pdfont->Widths);
 case 3: ENUM_RETURN(pdfont->real_widths);
-case 4: ENUM_RETURN(pdfont->ToUnicode);
-case 5: switch (pdfont->FontType) {
+case 4: ENUM_RETURN(pdfont->used);
+case 5: ENUM_RETURN(pdfont->ToUnicode);
+case 6: switch (pdfont->FontType) {
  case ft_composite:
      ENUM_RETURN(pdfont->u.type0.DescendantFont);
  case ft_CID_encrypted:
@@ -55,22 +57,23 @@ case 5: switch (pdfont->FontType) {
      ENUM_RETURN(pdfont->u.cidfont.glyphshow_font);
  default:
      ENUM_RETURN(pdfont->u.simple.Encoding);
-case 6: switch (pdfont->FontType) {
+case 7: switch (pdfont->FontType) {
  case ft_composite:
-     return (pdfont->u.type0.cmap_is_standard ? 0 :
+     return (pdfont->u.type0.cmap_is_standard ? ENUM_OBJ(0) :
 	     ENUM_CONST_STRING(&pdfont->u.type0.CMapName));
  case ft_CID_TrueType:
      ENUM_RETURN(pdfont->u.cidfont.CIDToGIDMap);
  case ft_user_defined:
      ENUM_RETURN(pdfont->u.simple.s.type3.char_procs);
  default:
-     return 0;
+     ENUM_RETURN(0);
 }
 }
 ENUM_PTRS_END
 private
 RELOC_PTRS_WITH(pdf_font_resource_reloc_ptrs, pdf_font_resource_t *pdfont)
 {
+    RELOC_PREFIX(st_pdf_resource);
     RELOC_STRING_VAR(pdfont->BaseFont);
     RELOC_VAR(pdfont->FontDescriptor);
     RELOC_VAR(pdfont->Widths);
