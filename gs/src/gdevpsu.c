@@ -18,6 +18,8 @@
 /* PostScript-writing utilities */
 #include "math_.h"
 #include "time_.h"
+#include "stat_.h"
+#include "unistd_.h"
 #include "gx.h"
 #include "gscdefs.h"
 #include "gxdevice.h"
@@ -144,6 +146,19 @@ private const char *const psw_end_prolog[] = {
     0
 };
 
+/* Return true when the file is seekable.
+ * On Windows NT ftell() returns some non-EOF value when used on pipes.
+ */
+private bool
+is_seekable(FILE *f)
+{ 
+    struct stat buf;
+
+    if(fstat(fileno(f), &buf))
+      return 0;
+    return S_ISREG(buf.st_mode);
+}
+
 /*
  * Write the file header, up through the BeginProlog.  This must write to a
  * file, not a stream, because it may be called during finalization.
@@ -156,7 +171,7 @@ psw_begin_file_header(FILE *f, const gx_device *dev, const gs_rect *pbbox,
     if (pbbox) {
 	psw_print_bbox(f, pbbox);
 	pdpc->bbox_position = 0;
-    } else if (ftell(f) < 0) {	/* File is not seekable. */
+    } else if (!is_seekable(f)) {	/* File is not seekable. */
 	pdpc->bbox_position = -1;
 	fputs("%%BoundingBox: (atend)\n", f);
 	fputs("%%HiResBoundingBox: (atend)\n", f);

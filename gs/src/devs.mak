@@ -274,6 +274,7 @@ $(GLOBJ)gdevdcrd.$(OBJ) : $(GLSRC)gdevdcrd.c $(AK)\
 
 # Support for writing PostScript (high- or low-level).
 $(GLOBJ)gdevpsu.$(OBJ) : $(GLSRC)gdevpsu.c $(GX) $(GDEV) $(math__h) $(time__h)\
+ $(stat__h) $(unistd__h)\
  $(gdevpsu_h) $(gscdefs_h) $(gxdevice_h)\
  $(spprint_h) $(stream_h)
 	$(GLCC) $(GLO_)gdevpsu.$(OBJ) $(C_) $(GLSRC)gdevpsu.c
