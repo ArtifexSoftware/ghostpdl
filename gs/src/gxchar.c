@@ -107,6 +107,7 @@ gs_show_enum_alloc(gs_memory_t * mem, gs_state * pgs, client_name_t cname)
     penum->dev_cache = 0;
     penum->dev_cache2 = 0;
     penum->fapi_log2_scale.x = penum->fapi_log2_scale.y = -1;
+    penum->fapi_glyph_shift.x = penum->fapi_glyph_shift.y = 0;
     penum->dev_null = 0;
     penum->fstack.depth = -1;
     return penum;

@@ -550,6 +550,22 @@ private bool sfnt_get_glyph_offset(ref *pdr, gs_font_type42 *pfont42, int index,
     return r.error;
 }
 
+private int get_GlyphDirectory_data_ptr(ref *pdr, int char_code, const byte **ptr)
+{
+    ref *GlyphDirectory, glyph0, *glyph = &glyph0, glyph_index;
+    if ((dict_find_string(pdr, "GlyphDirectory", &GlyphDirectory) > 0 &&
+         (r_type(GlyphDirectory) == t_dictionary &&
+          ( make_int(&glyph_index, char_code),
+            dict_find(GlyphDirectory, &glyph_index, &glyph) > 0))) ||
+        ((r_type(GlyphDirectory) == t_array &&
+          array_get(GlyphDirectory, char_code, &glyph0) >= 0) &&
+         r_type(glyph) == t_string)) {
+        *ptr = glyph->value.const_bytes;
+	return r_size(glyph);
+    }
+    return -1;
+}
+
 private ushort FAPI_FF_get_glyph(FAPI_font *ff, int char_code, byte *buf, ushort buf_length)
 {   /* 
      * We assume that renderer requests glyph data with multiple consequtive
@@ -607,17 +623,19 @@ private ushort FAPI_FF_get_glyph(FAPI_font *ff, int char_code, byte *buf, ushort
             glyph_length = get_type1_data(ff, glyph, buf, buf_length);
         }
     } else { /* type 42 */
-        ref *GlyphDirectory, glyph0, *glyph = &glyph0, glyph_index;
-        if ((dict_find_string(pdr, "GlyphDirectory", &GlyphDirectory) > 0 &&
-             (r_type(GlyphDirectory) == t_dictionary &&
-              ( make_int(&glyph_index, char_code),
-                dict_find(GlyphDirectory, &glyph_index, &glyph) > 0))) ||
-            ((r_type(GlyphDirectory) == t_array &&
-              array_get(GlyphDirectory, char_code, &glyph0) >= 0) &&
-             r_type(glyph) == t_string)) {
-            glyph_length = r_size(glyph);
+	const byte *data_ptr;
+	int l = get_GlyphDirectory_data_ptr(pdr, char_code, &data_ptr);
+	if (l >= 0) {
+	    int MetricsCount = 0, mc;
+	    if (ff->is_cid) {
+		gs_font_cid2 *pfcid = (gs_font_cid2 *)ff->client_font_data;
+
+		MetricsCount = pfcid->cidata.MetricsCount;
+	    }
+	    mc = MetricsCount << 1;
+            glyph_length = max((ushort)(l - mc), 0); /* safety */
             if (buf != 0 && glyph_length > 0)
-                memcpy(buf, glyph->value.const_bytes, min(glyph_length, buf_length)/* safety */);
+                memcpy(buf, data_ptr + mc, min(glyph_length, buf_length)/* safety */);
         } else {
             gs_font_type42 *pfont42 = (gs_font_type42 *)ff->client_font_data;
             ulong offset0, offset1;
@@ -1032,6 +1050,9 @@ private int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_
             if ((code = gs_moveto(pgs->show_gstate, pt.x, pt.y)) < 0)
 		return code;
         } else {
+	    int rast_orig_x =   rast.orig_x - (int)(penum_s->fapi_glyph_shift.x * (1 << frac_pixel_shift));
+	    int rast_orig_y = - rast.orig_y - (int)(penum_s->fapi_glyph_shift.y * (1 << frac_pixel_shift));
+
             if ((code = renderer_retcode(i_ctx_p, I, code)) < 0)
 		return code;
             if (pgs->in_cachedevice == CACHE_DEVICE_CACHING) { /* Using GS cache */
@@ -1043,16 +1064,16 @@ private int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_
                 */              
                 int shift_rd = _fixed_shift  - frac_pixel_shift;
                 int rounding = 1 << (frac_pixel_shift - 1);
-                int dx = arith_rshift_slow((pgs->ctm.tx_fixed >> shift_rd) + rast.orig_x + rounding, frac_pixel_shift);
-                int dy = arith_rshift_slow((pgs->ctm.ty_fixed >> shift_rd) - rast.orig_y + rounding, frac_pixel_shift);
+                int dx = arith_rshift_slow((pgs->ctm.tx_fixed >> shift_rd) + rast_orig_x + rounding, frac_pixel_shift);
+                int dy = arith_rshift_slow((pgs->ctm.ty_fixed >> shift_rd) + rast_orig_y + rounding, frac_pixel_shift);
                 if ((code = fapi_copy_mono(dev1, &rast, dx, dy)) < 0)
 		    return code;
             } else { /* Not using GS cache */
 	        const gx_clip_path * pcpath = i_ctx_p->pgs->clip_path; 
                 const gx_drawing_color * pdcolor = penum->pdcolor;
 	        if ((code = dev_proc(dev, fill_mask)(dev, rast.p, 0, rast.line_step, 0,
-			          (int)(penum_s->pgs->ctm.tx + (double)rast.orig_x / (1 << frac_pixel_shift) + 0.5), 
-			          (int)(penum_s->pgs->ctm.ty - (double)rast.orig_y / (1 << frac_pixel_shift) + 0.5), 
+			          (int)(penum_s->pgs->ctm.tx + (double)rast_orig_x / (1 << frac_pixel_shift) + 0.5), 
+			          (int)(penum_s->pgs->ctm.ty + (double)rast_orig_y / (1 << frac_pixel_shift) + 0.5), 
 			          rast.width, rast.height,
 			          pdcolor, 1, rop3_default, pcpath)) < 0)
 				    return code;
@@ -1077,9 +1098,13 @@ private int fapi_finish_render(i_ctx_t *i_ctx_p)
     return code;
 }
 
+#define GET_U16_MSB(p) (((uint)((p)[0]) << 8) + (p)[1])
+#define GET_S16_MSB(p) (int)((GET_U16_MSB(p) ^ 0x8000) - 0x8000)
+
 private int FAPI_do_char(i_ctx_t *i_ctx_p, gs_font_base *pbfont, gx_device *dev, char *font_file_path, bool bBuildGlyph, ref *charstring)
 {   /* Stack : <font> <code|name> --> - */
     os_ptr op = osp;
+    ref *pdr = op - 1;
     gs_text_enum_t *penum = op_show_find(i_ctx_p);
     gs_show_enum *penum_s = (gs_show_enum *)penum;
     /* 
@@ -1103,12 +1128,14 @@ private int FAPI_do_char(i_ctx_t *i_ctx_p, gs_font_base *pbfont, gx_device *dev,
 			      font_file_path == NULL);
     bool bCID = (IsCIDFont(pbfont) || charstring != NULL);
     bool bIsType1GlyphData = IsType1GlyphData(pbfont);
+    bool bMetricsFromGlyphDirectory = false;
+    bool bReplacedLSB = false;
     FAPI_font ff = ff_stub;
     gs_log2_scale_point log2_scale = {0, 0};
     int alpha_bits = (*dev_proc(dev, get_alpha_bits)) (dev, go_text);
     int oversampling_x, oversampling_y;
     double FontMatrix_div = (bCID && bIsType1GlyphData && font_file_path == NULL ? 1000 : 1);
-    bool bVertical = (gs_rootfont(igs)->WMode != 0);
+    bool bVertical = (gs_rootfont(igs)->WMode != 0), bVertical0 = bVertical;
     double sbw[4] = {0, 0};
     double em_scale_x, em_scale_y;
     gs_rect char_bbox;
@@ -1157,14 +1184,14 @@ retry_oversampling:
     HWResolution[1] = (FracInt)((double)dev->HWResolution[1] * oversampling_y * scale);
 
     /* Prepare font data : */
-    if (dict_find_string(osp - 1, "SubfontId", &SubfontId) > 0 && r_has_type(SubfontId, t_integer))
+    if (dict_find_string(pdr, "SubfontId", &SubfontId) > 0 && r_has_type(SubfontId, t_integer))
         subfont = SubfontId->value.intval;
     ff.font_file_path = font_file_path;
     ff.is_type1 = bIsType1GlyphData;
     ff.is_cid = bCID;
     ff.client_ctx_p = i_ctx_p;
     ff.client_font_data = pbfont;
-    ff.client_font_data2 = op - 1;
+    ff.client_font_data2 = pdr;
     ff.server_font_data = pbfont->FAPI_font_data;
     if ((code = renderer_retcode(i_ctx_p, I, I->get_scaled_font(I, &ff, subfont, matrix, HWResolution, NULL, bVertical))) < 0)
 	return code;
@@ -1178,7 +1205,7 @@ retry_oversampling:
 	/* Translate from PS encoding to char name : */
 	ref *Encoding;
 	int_param(op, 0xFF, &client_char_code);
-        if (dict_find_string(osp - 1, "Encoding", &Encoding) > 0 && 
+        if (dict_find_string(pdr, "Encoding", &Encoding) > 0 && 
             (r_has_type(Encoding, t_array) || r_has_type(Encoding, t_shortarray))) {
 	    if (array_get(Encoding, client_char_code, &char_name) < 0)
 	        if ((code = name_ref((const byte *)".notdef", 7, &char_name, -1)) < 0)
@@ -1193,9 +1220,9 @@ retry_oversampling:
         if (font_file_path != NULL) {
             ref *Decoding, *SubstNWP;
             int SubstNWP_length, i;
-            if (dict_find_string(osp - 1, "Decoding", &Decoding) <= 0 || !r_has_type(Decoding, t_dictionary))
+            if (dict_find_string(pdr, "Decoding", &Decoding) <= 0 || !r_has_type(Decoding, t_dictionary))
                 return_error(e_invalidfont);
-            if (dict_find_string(osp - 1, "SubstNWP", &SubstNWP) <= 0 || !r_has_type(SubstNWP, t_array))
+            if (dict_find_string(pdr, "SubstNWP", &SubstNWP) <= 0 || !r_has_type(SubstNWP, t_array))
                 return_error(e_invalidfont);
             SubstNWP_length = r_size(SubstNWP);
             if (!TT_char_code_from_CID(Decoding, client_char_code, &cr)) {
@@ -1228,7 +1255,7 @@ retry_oversampling:
     } else if (is_TT_from_type42) {
         /* This font must not use 'cmap', so compute glyph index from CharStrings : */
 	ref *CharStrings, *glyph_index;
-        if (dict_find_string(osp - 1, "CharStrings", &CharStrings) <= 0 || !r_has_type(CharStrings, t_dictionary))
+        if (dict_find_string(pdr, "CharStrings", &CharStrings) <= 0 || !r_has_type(CharStrings, t_dictionary))
             return_error(e_invalidfont);
         if (dict_find(CharStrings, &char_name, &glyph_index) < 0) {
             cr.char_code = 0; /* .notdef */
@@ -1273,7 +1300,7 @@ retry_oversampling:
         }
     } 
 
-    /* Render : */
+    /* Compute metrics : */
     if (ff.is_type1 && ff.is_cid)
         ff.char_data = charstring;
     else {
@@ -1308,8 +1335,41 @@ retry_oversampling:
     char_bbox.p.y = metrics.bbox_y0 / em_scale_y;
     char_bbox.q.x = metrics.bbox_x1 / em_scale_x;
     char_bbox.q.y = metrics.bbox_y1 / em_scale_y;
+    penum_s->fapi_glyph_shift.x = penum_s->fapi_glyph_shift.y = 0;
 
-    if (bVertical) {
+    if(bCID && !bIsType1GlyphData) {
+	gs_font_cid2 *pfcid = (gs_font_cid2 *)pbfont;
+	int MetricsCount = pfcid->cidata.MetricsCount;
+
+	if (MetricsCount > 0) {
+	    const byte *data_ptr;
+	    int l = get_GlyphDirectory_data_ptr(pdr, cr.char_code, &data_ptr);
+
+	    if (MetricsCount == 2 && l >= 4) {
+		if (!bVertical0) {
+		    sbw[0] = GET_S16_MSB(data_ptr + 2) / em_scale_x;
+		    sbw[1] = 0;
+		    sbw[2] = GET_U16_MSB(data_ptr + 0) / em_scale_x;
+		    sbw[3] = 0;
+		    bMetricsFromGlyphDirectory = bReplacedLSB = true;
+		}
+	    } else if (l >= 8){
+		if (bVertical0) {
+		    sbw[0] = - GET_S16_MSB(data_ptr + 2) / em_scale_x;
+		    sbw[1] = 0;
+		    sbw[2] = - (int)GET_U16_MSB(data_ptr + 0) / em_scale_x;
+		    sbw[3] = 0;
+		} else {
+		    sbw[0] = GET_S16_MSB(data_ptr + 6) / em_scale_x;
+		    sbw[1] = 0;
+		    sbw[2] = GET_U16_MSB(data_ptr + 4) / em_scale_x;
+		    sbw[3] = 0;
+		}
+		bMetricsFromGlyphDirectory = bReplacedLSB = true;
+	    }
+	}
+    }
+    if (!bMetricsFromGlyphDirectory && bVertical) {
 	double pwv[4];
 	code = zchar_get_metrics2(pbfont, &char_name, pwv);
 	if (code < 0)
@@ -1320,16 +1380,18 @@ retry_oversampling:
 		sbw[1] = pbfont->FontBBox.q.y;
 		sbw[2] = 0;
 		sbw[3] = - pbfont->FontBBox.q.x; /* Sic ! */
+		bReplacedLSB = true;
 	    } else
 		bVertical = false;
 	} else {
-	    sbw [0] = pwv[2];
-	    sbw [1] = pwv[3];
-	    sbw [2] = pwv[0];
-	    sbw [3] = pwv[1];
+	    sbw[0] = pwv[2];
+	    sbw[1] = pwv[3];
+	    sbw[2] = pwv[0];
+	    sbw[3] = pwv[1];
+	    bReplacedLSB = true;
 	}
     }
-    if (!bVertical) {
+    if (!bMetricsFromGlyphDirectory && !bVertical) {
 	code = zchar_get_metrics(pbfont, &char_name, sbw);
 	if (code < 0)
 	    return code;
@@ -1342,6 +1404,69 @@ retry_oversampling:
 	    }
 	} 
     }
+    if (bReplacedLSB) {
+	/* 
+	 * We need to replace lsb specified in glyph code
+	 * with lsb specified in Metrics[2] or with MetricsCount.
+	 * For doing this properly we should pass the replaced lsb 
+	 * to the renderer becuse glyph raster depends on it 
+	 * (especially with non-integral pixel shift).
+	 * Unfortunately UFST and FreeType currently cannot handle it.
+	 * To work around we compute a displacement in integral pixels
+	 * and later shift the bitmap to it. 
+	 *
+	 * Note that UFST doesn't work properly with TT fonts
+	 * which doesn't include hmtx/vmtx : it takes a random data 
+	 * from memory instead lsb and widths. Due to it UFST may crash 
+	 * while accessing the data from absenting vmtx/hmtx,
+	 * and/or occasionally truncate the bitmap using a wrong bbox.
+	 *
+	 * A good way for passing the replaced metrics to renderer
+	 * is to modify FAPI_FF_get_glyph so that it passes metrics
+	 * in an additional area when a glyph is requested.
+	 */
+	char_bbox.q.x -= char_bbox.p.x;
+	char_bbox.p.x = 0;
+	gs_distance_transform((metrics.bbox_x0 / em_scale_x - sbw[0]), 
+		              0, ctm, &penum_s->fapi_glyph_shift);
+	penum_s->fapi_glyph_shift.x *= oversampling_x;
+	penum_s->fapi_glyph_shift.y *= oversampling_y;
+    }
+
+    /* Setup cache and render : */
+
+    /*
+     * We assume that if bMetricsFromGlyphDirectory is true,
+     * the font does not specify Metrics[2] and/or CDevProc
+     * If someday we meet a font contradicting this assumption,
+     * zchar_set_cache to be improved with additional flag,
+     * to ignore Metrics[2] and CDevProc.
+     *
+     * Note that for best quality the result of CDevProc
+     * to be passed to I->get_char_raster_metrics, because
+     * both raster and metrics depend on replaced lsb.
+     * Perhaps in many cases the metrics from font is
+     * used as an argument for CDevProc. Only way to resolve
+     * is to call I->get_char_raster_metrics twice (before
+     * and after CDevProc), or better to split it into
+     * smaller functions. Unfortunately UFST cannot retrieve metrics 
+     * quickly and separately from raster. Only way to resolve is 
+     * to devide the replaced lsb into 2 parts, which correspond to
+     * integral and fractinal pixels, then pass the fractional shift
+     * to renderer and apply the integer shift after it.
+     *
+     * Note that em_scale_* isn't needed for passing lsb to renderer,
+     * so the "vicious cycle" can be resolved with dividing
+     * the code about Metrics[2] and MetricsCount into 2 parts :
+     * first obtain data without em_scale_* and pass them
+     * to renderer, then apply em_scale_* for seting up the cache.
+     *
+     * Besides that, we are not sure what to do if a font
+     * contains both Metrics[2] and CDevProc. Should
+     * CDevProc to be applied to Metrics[2] or to the metrics
+     * from glyph code ? Currently we keep a compatibility
+     * to the native GS font renderer without a deep analyzis.
+     */
     code = zchar_set_cache(i_ctx_p, pbfont, &char_name,
 		           NULL, sbw + 2, &char_bbox,
 			   fapi_finish_render, fapi_finish_render, sbw);
