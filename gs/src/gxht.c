@@ -131,8 +131,14 @@ gx_ht_alloc_cache(gs_memory_t * mem, uint max_tiles, uint max_bits)
     gx_ht_tile *ht_tiles =
 	gs_alloc_struct_array(mem, max_tiles, gx_ht_tile, &st_ht_tiles,
 			      "alloc_ht_cache(ht_tiles)");
+    /* This gets resized when initializing the halftone cache.  Only
+         allocate one element table here. */
+    gx_bitmap_id *id_table =
+    	gs_alloc_bytes(mem->stable_memory, (1 * sizeof(gx_bitmap_id)),
+			       "alloc_ht_cache(id_table)");
 
-    if (pcache == 0 || tbits == 0 || ht_tiles == 0) {
+    if (pcache == 0 || tbits == 0 || ht_tiles == 0 || id_table == 0) {
+        gs_free_object(mem->stable_memory, id_table, "free_ht_cache(id_table)"); 
 	gs_free_object(mem, ht_tiles, "alloc_ht_cache(ht_tiles)");
 	gs_free_object(mem, tbits, "alloc_ht_cache(bits)");
 	gs_free_object(mem, pcache, "alloc_ht_cache(struct)");
@@ -144,11 +150,9 @@ gx_ht_alloc_cache(gs_memory_t * mem, uint max_tiles, uint max_bits)
     pcache->num_tiles = max_tiles;
     pcache->order.cache = pcache;
     pcache->order.transfer = 0;
-    /* This gets resized when initializing the halftone cache.  Only
-         allocate one element table here. */
-    pcache->id_table = 	gs_alloc_bytes(mem,
-				       (1 * sizeof(gx_bitmap_id)),
-				       "alloc_ht_cache(id_table)");
+    pcache->id_table = id_table;
+	/* tuck away allocator for id_table resize */
+    pcache->data_memory = mem;
     gx_ht_clear_cache(pcache);
     return pcache;
 }
@@ -157,6 +161,10 @@ gx_ht_alloc_cache(gs_memory_t * mem, uint max_tiles, uint max_bits)
 void
 gx_ht_free_cache(gs_memory_t * mem, gx_ht_cache * pcache)
 {
+    /* as elsewhere, we free in the opposite order of  */
+    /* allocate to minimize sandbars */
+    gs_free_object(mem->stable_memory, pcache->id_table,
+    	"free_ht_cache(id_table)"); 
     gs_free_object(mem, pcache->ht_tiles, "free_ht_cache(ht_tiles)");
     gs_free_object(mem, pcache->bits, "free_ht_cache(bits)");
     gs_free_object(mem, pcache->id_table, "free_ht_cache(id_table)"); 
@@ -427,7 +435,7 @@ gx_ht_init_cache(gx_ht_cache * pcache, const gx_ht_order * porder)
 	raster = bitmap_raster(width_unit);
 	tile_bytes = raster * height;
     }
-    pcache->id_table = (gx_bitmap_id *)gs_resize_object(porder->data_memory,
+    pcache->id_table = (gx_bitmap_id *)gs_resize_object(pcache->data_memory->stable_memory,
 			pcache->id_table,
 			sizeof(gx_bitmap_id) * porder->num_levels,
 			"gx_ht_init_cache id table");
