@@ -336,11 +336,10 @@ void digest_to_hex(const uint8_t digest[SHA1_DIGEST_SIZE], char *output)
     
 int main(int argc, char** argv)
 {
-    int i, j,k;
+    int k;
     SHA1_CTX context;
     uint8_t digest[20];
     char output[80];
-    char *c;
 
     fprintf(stdout, "verifying SHA-1 implementation... ");
     
