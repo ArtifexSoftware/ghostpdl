@@ -171,25 +171,23 @@ context_state_load(gs_context_state_t * i_ctx_p)
     gs_ref_memory_t *lmem = iimemory_local;
     ref *system_dict = systemdict;
     uint space = r_space(system_dict);
+    dict_stack_t *dstack = &idict_stack;
     int code;
 
     /*
-     * Set systemdict.userparams to the saved copy, and then
-     * set the actual user parameters.  Be careful to disable both
-     * space checking and save checking while we do this.
+     * Disable save checking, and space check for systemdict, while
+     * copying dictionaries.
      */
-    r_set_space(system_dict, avm_max);
     alloc_set_not_in_save(idmemory);
-    code = dict_put_string(system_dict, "userparams", &i_ctx_p->userparams,
-			   &idict_stack);
-    if (code >= 0)
-	code = set_user_params(i_ctx_p, &i_ctx_p->userparams);
-    if (iimemory_local != lmem) {
-	/*
-	 * Switch references in systemdict to local objects.
-	 * userdict.localdicts holds these objects.
-	 */
-	dict_stack_t *dstack = &idict_stack;
+    r_set_space(system_dict, avm_max);
+    /*
+     * Switch references from systemdict to local objects.
+     * userdict.localdicts holds these objects.  We could optimize this by
+     * only doing it if we're changing to a different local VM relative to
+     * the same global VM, but the cost is low enough relative to other
+     * things that we don't bother.
+     */
+    {
 	ref_stack_t *rdstack = &dstack->stack;
 	const ref *puserdict =
 	    ref_stack_index(rdstack, ref_stack_count(rdstack) - 1 -
@@ -202,6 +200,17 @@ context_state_load(gs_context_state_t * i_ctx_p)
 	    dict_copy(plocaldicts, system_dict, dstack);
 	}
     }
+    /*
+     * Set systemdict.userparams to the saved copy, and then
+     * set the actual user parameters.  Note that we must disable both
+     * space checking and save checking while doing this.  Also,
+     * we must do this after copying localdicts (if required), because
+     * userparams also appears in localdicts.
+     */
+    code = dict_put_string(system_dict, "userparams", &i_ctx_p->userparams,
+			   dstack);
+    if (code >= 0)
+	code = set_user_params(i_ctx_p, &i_ctx_p->userparams);
     r_set_space(system_dict, space);
     if (lmem->save_level > 0)
 	alloc_set_in_save(idmemory);
