@@ -288,10 +288,28 @@ new_page_size(
     bool                        reset_initial
 )
 {
-    gx_device_set_media_size( gs_currentdevice(pcs->pgs),
-                              psize->width * 0.01,  /* convert to points */
-                              psize->height * 0.01
-                              );
+    floatp                      width_pts = psize->width * 0.01;
+    floatp                      height_pts = psize->height * 0.01;
+    gs_state *                  pgs = pcs->pgs;
+    gs_matrix                   mat;
+
+    gx_device_set_media_size(gs_currentdevice(pgs), width_pts, height_pts);
+
+    /*
+     * Reset the default transformation.
+     *
+     * The graphic library provides a coordinate system in points, with the
+     * origin at the lower left corner of the page. The PCL code uses a
+     * coordinate system in centi-points, with the origin at the upper left
+     * corner of the page.
+     */
+    gs_setdefaultmatrix(pgs, NULL);
+    gs_initmatrix(pgs);
+    gs_currentmatrix(pgs, &mat);
+    gs_matrix_translate(&mat, 0.0, height_pts, &mat);
+    gs_matrix_scale(&mat, 0.01, -0.01, &mat);
+    gs_setdefaultmatrix(pgs, &mat);
+
     pcs->xfm_state.paper_size = psize;
     pcs->overlay_enabled = false;
     update_xfm_state(pcs);
