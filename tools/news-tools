@@ -6,7 +6,17 @@
 This file, NEWS-TLS (tools), describes the changes in the most recent releases of
 Aladdin's utility tools directory in reverse chronological order.
 
-this is a test.
+Version 1.02 (12/02/98)
+======================
+
+Mon Nov  9 04:28:14 1998  Henry Stiles  <henrys@meerkat>
+
+	* NEWS-TLS:
+	test check in to see if cvs properly does not get this file with -rfirstsnow
+
+Sun Nov  8 09:00:55 1998  Henry Stiles  <henrys@meerkat>
+
+	* NEWS-TLS: *** empty log message ***
 
 Version 1.01 (11/06/98)
 =======================
