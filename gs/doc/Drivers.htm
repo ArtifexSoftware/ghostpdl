@@ -32,6 +32,10 @@
 <ul>
 <li><a href="#Coordinate_system">Coordinate system</a>
 <li><a href="#Color_definition">Color definition</a>
+<ul>
+<li><a href="#sep_and_linear_fields">Separable and linear fields</a>
+<li><a href="#Changing_color_info_data">Changing color_info data</a>           
+</ul>
 <li><a href="#Types">Types</a>
 </ul>
 <li><a href="#Coding_conventions">Coding conventions</a>
@@ -380,7 +384,7 @@ DeviceN, etc.) represented as <b><tt>frac</tt></b> values. Device colorants
 are represented as <b><tt>gx_color_value</tt></b> values.  For many
 procedures, colors are represented in a type called
 <b><tt>gx_color_index</tt></b>.
-All three types are described in more detail in <a href="#Types">Types</a>             
+All three types are described in more detail in <a href="#Types">Types</a>
 
 <p>
 The <b><tt>color_info</tt></b> member of the device structure defines the
@@ -530,6 +534,10 @@ typedef struct gx_device_color_info_s {
 </blockquote>
 
 <p>
+Note: See <a href="#Changing_color_info_data">Changing color_info data</a> before changing
+any information in the <b><tt>color_info structure</tt></b> for a device.           
+
+<p>
 It is recommended that the values for this structure be defined using one
 of the standard macros provided for this purpose. This allows for future
 changes to be made to the structure without changes being required in the
@@ -553,9 +561,16 @@ single bit monochrome device (For example: a typical monochrome printer device.)
 The <b><tt>#define dci_color(depth,maxv,dither)</tt></b> macro can be used
 to define a 24 bit RGB device or a 4 or 32 bit CMYK device.
 
-<p> There also exist various other macros that allow more general devices. The 
-<b><tt>dci_extended_alpha_values</tt></b> macro specifies each of the current 
-fields in the structure.
+<p>
+The <b><tt>#define dci_extended_alpha_values</tt></b> macro (in
+<a href="../src/gxdevcli.h">gxdevcli.h</a>) 
+specifies most of the current fields in the structure. However this macro allows 
+only the default setting for the comp_shift, comp_bits, and comp_mask fields 
+to be set. Any device which requires a non-default setting for these fields 
+has to correctly these fields during the device open procedure.
+See 
+<a href="#sep_and_linear_fields">Separable and linear fields></a> and
+<a href="#Changing_color_info_data">Changing color_info data</a>.
 
 <p>
 The idea is that a device has a certain number of gray levels
@@ -591,6 +606,57 @@ Ghostscript assumes that the device can represent
 distinct colors, equally spaced throughout the color cube, and uses two of
 the nearest ones to the desired color for halftoning.
 </blockquote>
+
+<h4><a name="sep_and_linear_fields"></a>Separable and linear fields</h4>
+<p>
+The three fields <b><tt>comp_shift</tt></b>, <b><tt>comp_bits</tt></b>, and 
+<b><tt>comp_mask</tt></b> are only used if the <b><tt>separable_and_linear</tt></b> 
+field is set to <b><tt>GX_CINFO_SEP_LIN</tt></b>. In this situation a <b><tt>gx_color_index</tt></b> 
+value must represent a combination created by or'ing bits for each of the devices's 
+output colorants. The <b><tt>comp_shift</tt></b> array defines the location 
+(shift count) of each colorants bits in the output gx_color_index value. The 
+<b><tt>comp_bits</tt></b> array defines the number of bits for each colorant. 
+The <b><tt>comp_mask</tt></b> array contains a mask which can be used to isolate 
+the bits for each colorant. These fields must be set if the device supports 
+more than four colorants.
+
+<h4><a name="Changing_color_info_data"></a>Changing color_info data</h4>
+
+<p> For most devices, the information in the device's <tt><b>color_info</b></tt> 
+structure is defined by the various device definition macros and the data remains 
+constant during the entire existence of the device. In general the Ghostscript 
+graphics assumes that the information is constant. However some devices want 
+to modify the data in this structure.
+
+<p>
+The device's <b><tt>put_params</tt></b> procedure may change
+<b><tt>color_info</tt></b> field values.
+After the data has been modified then the 
+device should be closed (via a call to <tt><b>gs_closedevice</b></tt>). Closing
+the device will erase the current page so these changes should only be made
+before anything has been drawn on a page.
+
+<p> The device's <tt><b>open_device</b></tt> procedure may change
+<b><tt>color_info</tt></b> field values. These changes should be done before
+calling any other procedures are called.
+
+<p>
+The Ghostscript graphics library
+uses some of the data in <b><tt>color_info</tt></b> to set the default
+procedures for the 
+<b><tt>get_color_mapping_procs</tt></b>,
+<b><tt>get_color_comp_index</tt></b>,
+<b><tt>encode_color</tt></b>, and
+<b><tt>decode_color</tt></b> procedures.
+These default procedures are set when the
+device is originally created. If any changes are made to the
+<b><tt>color_info</tt></b> fields then the device's <b><tt>open_device</tt></b>
+procedure
+has responsibility for insuring that the correct procedures are contained
+in the device structure. (For an example, see the display device open procedure
+<b><tt>display_open</tt></b> and its subroutine <b><tt>display_set_color_format
+</tt></b> (in <a href="../src/gdevdisp.c">gdevdisp</a>).
+
 
 <h3><a name="Types"></a>Types</h3>
 
@@ -1063,7 +1129,6 @@ nothing.  <b>NOTE</b>: Clients should never call a device's
 <b><tt>close_device</tt></b> procedure directly: they should always call
 <b><tt>gs_closedevice</tt></b> instead. 
 </dl>
-
 <h3><a name="Color_mapping"></a>Color and alpha mapping</h3>
 
 <p>
@@ -1081,7 +1146,17 @@ in the device procedure list for backward compatibility. See the
 below. To insure that older device drivers are changed to use the new
 <b><tt>encode_color</tt></b> and <b><tt>decode_color</tt></b> procedures.
 The parameters for the older procedures have been changed to
-match the new procedures.
+match the new procedures.  To minimize changes in devices that have
+already been written, the map_rgb_color and map_cmyk_color routines
+are used as the default value for the encode_color routine.  The
+map_cmyk_color routine is used if the number of components is four.
+The map_rgb_color routine is used if the number of components is one
+or three. This works okay for RGB and CMYK process color model devices.
+However this does not work properly for gray devices. The encode_color
+routine for a gray device is only passed one component. Thus the
+map_rgb_color routine must be modified to only use a single input (instead
+of three).  (See the encode_color and decode_color routines below.)
+
 
 <p>
 Colors can be specified to the Ghostscript graphics library in a variety
