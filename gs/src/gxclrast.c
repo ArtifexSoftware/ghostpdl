@@ -36,6 +36,8 @@
 #include "gxcmap.h"
 #include "gxcolor2.h"
 #include "gxcspace.h"		/* for gs_color_space_type */
+#include "gxht.h"
+#include "gxdht.h"
 #include "gxdhtres.h"
 #include "gxgetbit.h"
 #include "gxpaint.h"		/* for gx_fill/stroke_params */
@@ -44,6 +46,7 @@
 #include "gzpath.h"
 #include "gzcpath.h"
 #include "gzacpath.h"
+#include "gzht.h"
 #include "stream.h"
 #include "strimpl.h"
 
