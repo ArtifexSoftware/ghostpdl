@@ -87,6 +87,11 @@ over TEMP.
 	- On MS-DOS, MS Windows, and OS/2 platforms, the batch files that
 invoke Ghostscript now use a default name of gswin32 or gswin32c rather than
 simply gs.
+(Drivers)
+	- The PCL drivers now select a given paper size if the requested
+height is at least 0.1" greater than the height of the next smaller paper
+size, rather than if the requested height is at least as large as that of
+the given paper size.
 (Library)
 	- The macro for declaring the fill_rectangle procedure of a shading
 is now upper-case.  The fill_rectangle procedure is now a member of a procs
