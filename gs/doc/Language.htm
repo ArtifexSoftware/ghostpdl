@@ -1544,9 +1544,9 @@ PostScript programs from being able to change potentially dangerous
 device paramters such as OutputFile. This parameter cannot be set false
 if it is already true.
 <p>
-If this parameter is true for the current device, attempt to set a
-new device that has .LockSafetyParams false will signal an <tt><b>
-invalidaccess</b></tt> error.
+If this parameter is true for the current device, attempt to set a new
+device that has <b><tt>.LockSafetyParams</tt></b> false will signal an
+<tt><b> invalidaccess</b></tt> error.
 </dl>
 
 <dl>
@@ -1584,6 +1584,18 @@ measurements</a> in the documentation on devices).
 <dd>The number of bits of anti-aliasing information for text or graphics
 respectively.  Legal values are 1 (no anti-aliasing, the default for most
 devices), 2, or 4.
+</dl>
+
+<p>
+Ghostscript also supports the following read-only parameter that is not a
+true device parameter:
+
+<dl>
+<dt><b><tt>.EmbedFontObjects &lt;integer&gt</tt></b>
+<dd>If non-zero, indicates that the device may embed font objects (as
+opposed to bitmaps for individual characters) in the output.  The purpose of
+this parameter is to disable third-party font renderers for such devices.
+(This is zero for almost all devices.)
 </dl>
 
 <p>
@@ -1673,15 +1685,9 @@ use the same buffer size as for the interpretation pass.
 </dl>
 
 <p>
-A special parameter <b><tt>.EmbedFontObjects &lt;integer&gt</tt></b> is being provided
-with <b><tt>currentpagedevice</tt></b> only for devices which
-embed font objects to output. The purpose of this parameter is
-to disable 3d party's font renderers for such devices.
-
-<p>
-In addition, Ghostscript supports the following parameter for
+Ghostscript supports the following parameter for
 <b><tt>setpagedevice</tt></b> and <b><tt>currentpagedevice</tt></b> that is
-<b><em>not</em></b> a device parameter per se:
+not a device parameter per se:
 
 <dl>
 <dt><b><tt>ViewerPreProcess &lt;procedure&gt;</tt></b>
