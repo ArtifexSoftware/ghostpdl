@@ -81,7 +81,7 @@ typedef struct jpeg_compress_data_s {
 } jpeg_compress_data;
 
 extern_st(st_jpeg_compress_data);
-#define public_st_jpeg_compress_data()	/* in zfdcte.c */\
+#define public_st_jpeg_compress_data()	/* in sdcte.c */\
   gs_public_st_ptrs1(st_jpeg_compress_data, jpeg_compress_data,\
     "JPEG compress data", jpeg_compress_data_enum_ptrs, jpeg_compress_data_reloc_ptrs, blocks)
 
