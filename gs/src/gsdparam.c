@@ -444,9 +444,10 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
     BEGIN\
     switch (code = pread(plist, (param_name = pname), &(pa))) {\
       case 0:\
-	if ( (pa).size != psize )\
+	if ((pa).size != psize) {\
 	  ecode = gs_note_error(gs_error_rangecheck);\
-	else
+	  (pa).data = 0;	/* mark as not filled */\
+	} else
 #define END_ARRAY_PARAM(pa, e)\
 	goto e;\
       default:\
