@@ -75,7 +75,7 @@ true setglobal
 /error	%  mark <object> .... error -
 { % A stub for a while.
   counttomark 1 sub -1 0 {
-	index =only
+	index dup type /arraytype eq { == } { =only } ifelse
   } for
   () =
   cleartomark
@@ -113,6 +113,7 @@ currentdict end def
 /TempMatrix matrix def
 /GraphicStateStack 20 array def
 /GraphicStateStackPointer 0 def
+/PDFColorSpaces 50 dict def
 
 % We need some structures in local VM, put then into the userdict :
 currentglobal false setglobal
@@ -128,6 +129,7 @@ setglobal
   /TR2 [ currentcolortransfer ] def
   /HT currenthalftone def
 currentdict end readonly def
+
 /InitialGraphicState 20 dict begin
   /FontSize 0 def
   /CharacterSpacing 0 def
@@ -136,13 +138,12 @@ currentdict end readonly def
   /WordSpacing 0 def
 currentdict end readonly def
 
-
 % ===================== Reading PDF objects ===============================
 
 /Register % <DefaultDaemon> <id> <obj> Register -
 {
   exch dup															% d obj id id
-  //PDFReader /ObjectRegistry get length gt {
+  //PDFReader /ObjectRegistry get length ge {
 	dup dup 2 idiv add array dup									% d obj id [n] [n]
 	//PDFReader /ObjectRegistry get dup	length						% d obj id [n] [n] [o] l
 	3 2 roll exch													% d obj id [n] [o] [n] l
@@ -398,11 +399,15 @@ currentdict end readonly def
   { //PDFR_DEBUG {
 	  (Recognized a page.)=
 	} if
-	dup /Contents get 0 get	//DoNothing exch 						% id obj dn id1
-	[ % <id> <obj> proc <id> <obj>
-	  3 index //PageContentsDaemon /exec load
-	] cvx															% id obj {}
-	//Register exec													% id obj
+	dup /Contents //knownget exec {
+	  0 get	//DoNothing exch 										% id obj dn id1
+	  [ % <id> <obj> proc <id> <obj>
+	    3 index //PageContentsDaemon /exec load
+	  ] cvx															% id obj {}
+	  //Register exec												% id obj
+    } {
+      (fixme: page with no Contents won't be printed.) =
+    } ifelse
   } bind
 >> def
 
@@ -676,112 +681,6 @@ currentdict end readonly def
   exch scalefont setfont
 } bind def
 
-% ===================== Images ===============================
-
-/ImageKeys 15 dict begin
-  /BPC /BitsPerComponent def
-  /CS /ColorSpace def
-  /D /Decode def
-  /DP /DecodeParams def
-  /F /Filter def
-  /H /Height def
-  /IM /ImageMask def
-  % /Intent is undefined - pdfwrite must take care of.
-  /I /Interpolate def
-  /W /Width def
-currentdict end def
-
-/ImageValues 15 dict begin
-  /G   /DeviceGray def
-  /RGB /DeviceRGB def
-  /CMYK /DeviceCMYK def 
-  /I   /Indexed def
-  /AHx /ASCIIHexDecode def
-  /A85 /ASCII85Decode def
-  /LZW /LZWDecode def
-  /Fl  /FlateDecode def
-  /RL  /RunLengthDecode def
-  /CCF /CCITTFaxDecode def
-  /DCT /DCTDecode def
-currentdict end def
-
-/DecodeArrays 15 dict begin
-  /DeviceGray { [0 1] } def
-  /DeviceRGB { [0 1 0 1 0 1] } def
-  /DeviceCMYK { [0 1 0 1 0 1 0 1] } def 
-  /Indexed { MakeIndexedDecode } def
-  /CalGray { [0 1] } def
-  /CalRGB { [0 1 0 1 0 1] } def
-currentdict end def
-
-/Substitute % <key> <dict> Substitute <key>
-{ 1 index //knownget exec {
-    exch pop
-  } if
-} bind def
-
-/DebugImagePrinting  % <image_dict> DebugImagePrinting <image_dict>
-{
-  //PDFR_DEBUG {
-    (Image :) =
-    dup { exch //=only exec ( ) print == 
-	} forall
-  } if
-} bind def
-
-/CompleteImage  % <dict> CompleteInlineImage <image_dict>
-{
-  dup /Decode known not {
-    dup /ColorSpace //knownget exec { 
-	  //DecodeArrays exch get exec 
-	} {
-	  [0 1]
-	} ifelse
-	1 index exch /Decode exch put
-  } if
-  dup /ImageMatrix [2 index /Width get 0 0 5 index /Height get neg 
-					0 7 index /Height get] put % Not sure why upside down ?
-  //DebugImagePrinting exec
-} bind def
-
-/CompleteInlineImage  % <dict> CompleteInlineImage <image_dict>
-{
-  dup /ImageType known not {
-	dup /ImageType 1 put
-  } if
-  dup length dict exch {					% d key val
-      exch //ImageKeys //Substitute exec
-	dup /Filter eq {
-	  exch //ImageValues //Substitute exec exch
-	} if
-	dup /ColorSpace eq {
-	  exch //ImageValues //Substitute exec exch
-	} if
-	exch
-	2 index 3 1 roll put
-  } forall
-  //CompleteImage exec
-} bind def
-
-/CompleteOutlineImage  % <dict> CompleteInlineImage <image_dict>
-{
-  dup /ImageType known not {
-	dup /ImageType 1 put
-    //CompleteImage exec
-  } if
-  dup dup //MakeStreamReader exec /DataSource exch put
-  % todo: ResetStreamReader if DataSource already exists.
-} bind def
-
-/DoImage % <image_dict> DoImage -
-{
-  gsave
-  dup /ColorSpace //knownget exec { setcolorspace } if
-  dup /ImageMask //knownget exec not { false } if
-  { imagemask } { image } ifelse 
-  grestore
-} bind def
-
 % ===================== Color Spaces and Colors ==============
 
 /CheckColorSpace %  <key> <val> CheckColorSpace  <key> <val>
@@ -792,10 +691,52 @@ currentdict end def
 } bind def
 
 /ResolveColorSpace  % <name> ResolveColorSpace <color_space>
-{
-  //PDFReader /CurrentObject get /Context get /Resources get 
-  /ColorSpace //DoNothing //ResolveD exec
-  exch //CheckColorSpace //ResolveD exec
+{ dup //PDFColorSpaces exch //knownget exec {
+    exch pop
+  } {
+    dup															% n n
+    //PDFReader /CurrentObject get /Context get /Resources get 
+    /ColorSpace //DoNothing //ResolveD exec
+    exch //CheckColorSpace //ResolveD exec						% n cs
+	{ dup type /arraytype eq {
+	    dup 0 get /Pattern eq {
+		  exch pop
+		  exit
+	    } if
+	    dup 0 get /CalGray eq {
+	      1 get													% n dict
+		  dup /Gamma //knownget exec {
+		    [ exch /exp load ] cvx
+		    1 index exch /DecodeLMN exch put
+		  } if				
+		  [ exch /CIEBasedA exch ] dup							% n [] []
+		  //PDFColorSpaces 4 2 roll put							% []
+		  exit
+	    } if
+	    dup 0 get /CalRGB eq {
+	      1 get													% n dict
+		  dup /Matrix //knownget exec { 
+		    1 index exch /MatrixLMN exch put
+		  } if
+		  dup /Gamma //knownget exec {
+		    aload pop
+		    [ exch /exp load ] cvx
+		    3 1 roll
+		    [ exch /exp load ] cvx
+		    3 1 roll
+		    [ exch /exp load ] cvx
+		    3 1 roll
+		    3 array astore
+		    1 index exch /DecodeLMN exch put
+		  } if				
+		  [ exch /CIEBasedABC exch ] dup						% n [] []
+		  //PDFColorSpaces 4 2 roll put							% []
+		  exit
+	    } if
+      } if
+	  mark exch (Unimplemented color space ) exch //error exec
+ 	} loop
+  } ifelse
 } bind def
 
 /CheckPattern %  <key> <val> CheckPattern  <key> <val>
@@ -844,9 +785,124 @@ currentdict end def
     0 get /Pattern eq {
 	  ResolvePattern setpattern
 	} {
-	  mark exch (Unimplemented color space) exch //error exec
+	  setcolor
 	} ifelse
   } ifelse
+} bind def
+
+% ===================== Images ===============================
+
+/ImageKeys 15 dict begin
+  /BPC /BitsPerComponent def
+  /CS /ColorSpace def
+  /D /Decode def
+  /DP /DecodeParams def
+  /F /Filter def
+  /H /Height def
+  /IM /ImageMask def
+  % /Intent is undefined - pdfwrite must take care of.
+  /I /Interpolate def
+  /W /Width def
+currentdict end def
+
+/ImageValues 15 dict begin
+  /G   /DeviceGray def
+  /RGB /DeviceRGB def
+  /CMYK /DeviceCMYK def 
+  /I   /Indexed def
+  /AHx /ASCIIHexDecode def
+  /A85 /ASCII85Decode def
+  /LZW /LZWDecode def
+  /Fl  /FlateDecode def
+  /RL  /RunLengthDecode def
+  /CCF /CCITTFaxDecode def
+  /DCT /DCTDecode def
+currentdict end def
+
+/DecodeArrays 15 dict begin
+  /DeviceGray { [0 1] } def
+  /DeviceRGB { [0 1 0 1 0 1] } def
+  /DeviceCMYK { [0 1 0 1 0 1 0 1] } def 
+  /Indexed { MakeIndexedDecode } def
+  /CIEBasedA { [0 1] } def
+  /CIEBasedABC { [0 1 0 1 0 1] } def
+currentdict end def
+
+/Substitute % <key> <dict> Substitute <key>
+{ 1 index //knownget exec {
+    exch pop
+  } if
+} bind def
+
+/DebugImagePrinting  % <image_dict> DebugImagePrinting <image_dict>
+{
+  //PDFR_DEBUG {
+    (Image :) =
+    dup { exch //=only exec ( ) print == 
+	} forall
+  } if
+} bind def
+
+/CompleteImage  % <dict> CompleteInlineImage <image_dict>
+{
+  dup /Decode known not {
+    dup /ColorSpace //knownget exec { 
+	  dup type /arraytype eq {
+	    0 get
+	  } if
+	  //DecodeArrays exch get exec 
+	} {
+	  [0 1]
+	} ifelse
+	1 index exch /Decode exch put
+  } if
+  dup /ImageMatrix [2 index /Width get 0 0 5 index /Height get neg 
+					0 7 index /Height get] put % Not sure why upside down ?
+  //DebugImagePrinting exec
+} bind def
+
+/CompleteInlineImage  % <dict> CompleteInlineImage <image_dict>
+{
+  dup /ImageType known not {
+	dup /ImageType 1 put
+  } if
+  dup length dict exch {					% d key val
+      exch //ImageKeys //Substitute exec
+	dup /Filter eq {
+	  exch //ImageValues //Substitute exec exch
+	} if
+	dup /ColorSpace eq {
+	  exch 
+	  dup //ImageValues exch //knownget exec {
+	    exch pop
+	  } {
+	    //ResolveColorSpace exec
+	  } ifelse
+	  exch
+	} if
+	exch
+	2 index 3 1 roll put
+  } forall
+  //CompleteImage exec
+} bind def
+
+/CompleteOutlineImage  % <dict> CompleteOutlineImage <image_dict>
+{ 
+  dup /ImageType known not {
+	dup /ImageType 1 put
+    //CompleteImage exec
+  } if
+  dup dup //MakeStreamReader exec /DataSource exch put
+  % todo: ResetStreamReader if DataSource already exists.
+} bind def
+
+/DoImage % <image_dict> DoImage -
+{
+  gsave
+  dup /ColorSpace //knownget exec { setcolorspace } if
+  dup /ImageMask //knownget exec not { false } if
+  { imagemask } { image } ifelse 
+  grestore
 } bind def
 
 % ===================== Viewer State ===============
