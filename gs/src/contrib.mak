@@ -758,7 +758,7 @@ $(DD)dfaxhigh.dev : $(dfax_) $(DD)tfax.dev
 	$(ADDMOD) $(GLGEN)dfaxhigh -include $(DD)tfax
 
 $(GLOBJ)gdevdfax.$(OBJ) : $(GLSRC)gdevdfax.c $(PDEVH)\
- $(gdevtfax_h) $(scfx_h) $(strimpl_h)
+ $(gdevfax_h) $(gdevtfax_h) $(scfx_h) $(strimpl_h)
 	$(GLCC) $(GLO_)gdevdfax.$(OBJ) $(C_) $(GLSRC)gdevdfax.c
 
 ###### --------------------- Raster file formats --------------------- ######
