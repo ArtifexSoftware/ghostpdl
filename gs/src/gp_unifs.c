@@ -33,7 +33,7 @@
 /* Provide a definition of the maximum path length in case the system
  * headers don't define it. This should be gp_file_name_sizeof from
  * gp.h once that value is properly sent in a system-dependent way.
- * HP-UX 11i 11.11 incorrectly defines FILENAME_MAX as 14 .
+ * HP-UX 11i 11.11 incorrectly defines FILENAME_MAX as 14.
  */
 #ifdef FILENAME_MAX
 #  if FILENAME_MAX < 80  /* arbitrary */
@@ -87,10 +87,10 @@ gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
 #ifdef HAVE_MKSTEMP
     {
 	    int file;
-	    char ofname[gp_filename_sizeof];
+	    char ofname[gp_file_name_sizeof];
 
 	    /* save the old filename template in case mkstemp fails */
-	    memcpy(ofname, fname, gp_filename_sizeof);
+	    memcpy(ofname, fname, gp_file_name_sizeof);
 
 	    file = mkstemp(fname);
 	    if (file < -1) {
