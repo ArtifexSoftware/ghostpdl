@@ -607,8 +607,9 @@ gx_dc_ht_binary_read(
     devc.colors.binary.b_tile = 0;
 
     /* verify the minimum amount of information */
-    if ((size -= 1) < 0)
+    if (size == 0)
         return_error(gs_error_rangecheck);
+    size --;
     flag_bits = *pdata++;
 
     /* read the other information provided */
@@ -641,8 +642,9 @@ gx_dc_ht_binary_read(
         size -= pdata - pdata_start;
     }
     if ((flag_bits & dc_ht_binary_has_index) != 0) {
-        if (--size < 0)
+        if (size == 0)
             return_error(gs_error_rangecheck);
+	--size;
         devc.colors.binary.b_index = *pdata++;
     }
 

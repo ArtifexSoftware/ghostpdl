@@ -57,6 +57,7 @@ ENUM_PTRS_WITH(gx_ttfReader_enum_ptrs, gx_ttfReader *mptr)
 ENUM_PTRS_END
 
 private RELOC_PTRS_WITH(gx_ttfReader_reloc_ptrs, gx_ttfReader *mptr)
+    DISCARD(mptr);
     RELOC_PTR(gx_ttfReader, memory);
 RELOC_PTRS_END
 

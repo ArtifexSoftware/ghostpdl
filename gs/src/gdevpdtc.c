@@ -410,7 +410,7 @@ scan_cmap_text(pdf_text_enum_t *pte)
 		cid = 0, code = 1;  /* undefined glyph. */
 	    } else if (code < 0)
 		return code;
-	    if (cid < 0 || cid >= char_cache_size || cid >= width_cache_size)
+	    if (cid >= char_cache_size || cid >= width_cache_size)
 		return_error(gs_error_unregistered); /* Must not happen */
 	    if (code == 0 /* just copied */ || pdsubf->Widths[cid] == 0) {
 		pdf_glyph_widths_t widths;

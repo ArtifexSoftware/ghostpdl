@@ -117,8 +117,9 @@ gx_ht_read_tf(
     gx_transfer_map *   pmap;
 
     /* read the type byte */
-    if (--size < 0)
+    if (size == 0)
         return_error(gs_error_rangecheck);
+    --size;
     tf_type = (gx_ht_tf_type_t)*data++;
 
     /* if no transfer function, exit now */
@@ -299,8 +300,9 @@ gx_ht_read_component(
     const gx_dht_proc *     phtrp = gx_device_halftone_list;
 
     /* check the order type */
-    if (--size < 0)
+    if (size == 0)
         return_error(gs_error_rangecheck);
+    --size;
     order_type = (gx_ht_order_type_t)*data++;
 
     /* currently only the traditional halftone order are supported */

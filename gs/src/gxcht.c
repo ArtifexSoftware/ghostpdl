@@ -382,8 +382,9 @@ gx_dc_ht_colored_read(
      * exhausted the buffer. This should not cause a problem in
      * practice.
      */
-    if (--size < 0)
+    if (size == 0)
         return_error(gs_error_rangecheck);
+    size--;
     flag_bits = *pdata++;
 
     /* read the other components provided */
@@ -393,15 +394,17 @@ gx_dc_ht_colored_read(
             int             num_bytes = (num_comps + 7) >> 3;
             int             i, shift = 0;
 
-            if ((size -= num_bytes) < 0)
+            if (size < num_bytes)
                 return_error(gs_error_rangecheck);
+	    size -= num_bytes;
             for (i = 0; i < num_bytes; i++, shift += 8)
                 base_mask |= (gx_color_index)(*pdata++) << shift;
             for (i = 0; i < num_comps; i++, base_mask >>= 1)
                 devc.colors.colored.c_base[i] = base_mask & 0x1;
         } else {
-            if ((size -= num_comps) < 0)
+            if (size < num_comps)
                 return_error(gs_error_rangecheck);
+	    size -= num_comps;
             memcpy(devc.colors.colored.c_base, pdata, num_comps);
             pdata += num_comps;
         }
