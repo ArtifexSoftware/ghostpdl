@@ -112,7 +112,8 @@ gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
     /* because it detects attempts to run 80N86 executables (N>0) */
     /* on incompatible processors. */
     gp_init();
-    gp_stdin_init(fileno(in));
+    if (!minst->stdin_fn)
+	gp_stdin_init(fileno(in));
     gp_get_usertime(minst->base_time);
     /* Initialize the imager. */
     heap = gs_lib_init0(gs_stdout);
