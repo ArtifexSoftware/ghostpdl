@@ -7,6 +7,22 @@ This file, NEWS-COM, describes the changes in the most recent releases of
 Aladdin's library code that is shared between all Aladdin products, in
 reverse chronological order.
 
+Version 1.06 (12/01/98)
+=======================
+
+Tue Nov 24 20:42:27 1998  Henry Stiles  <henrys@meerkat>
+
+	* msvc_top.mak: Does mkdir before ccf32.tr.
+
+	* ugcc_top.mak, msvc_top.mak: fixes to properly clean gs files
+
+	* ugcc_top.mak:
+	Adds necessary definitions for proper zlib compilation for unix.
+
+Sun Nov  8 09:00:52 1998  Henry Stiles  <henrys@meerkat>
+
+	* NEWS-COM: *** empty log message ***
+
 Version 1.05 (11/06/98)
 =====================
 
