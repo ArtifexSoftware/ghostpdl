@@ -42,7 +42,7 @@
 #ifndef iapi_INCLUDED
 #  define iapi_INCLUDED
 
-#include "gswindose.h"
+#include "gs_dll_call.h"
 
 #ifndef gs_main_instance_DEFINED
 # define gs_main_instance_DEFINED

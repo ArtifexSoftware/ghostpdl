@@ -15,7 +15,7 @@
 
 #include "std.h"
 #include "stdio.h"
-#include "gswindose.h"
+#include "gs_dll_call.h"
 
 
 typedef struct name_table_s *name_table_ptr;
