@@ -75,7 +75,7 @@ GDEV=$(AK) $(ECHOGS_XE) $(GDEVH)
 #   ****** NOTE: For direct frame buffer addressing under SCO Unix or Xenix,
 #   ****** edit the definition of EGAVGA below.
 # *	lvga256  Linux vgalib, 256-color VGA modes  [Linux only]
-# +	vgalib	Linux PC with VGALIB   [Linux only]
+# +	vgalib	Linux vgalib, 16-color VGA modes   [Linux only]
 #	x11	X Windows version 11, release >=4   [Unix and VMS only]
 #	x11alpha  X Windows masquerading as a device with alpha capability
 #	x11cmyk  X Windows masquerading as a 1-bit-per-plane CMYK device
@@ -375,6 +375,7 @@ $(GLOBJ)gdevs3ga.$(OBJ) : $(GLSRC)gdevs3ga.c $(GDEV) $(gdevpcfb_h) $(gdevsvga_h)
 ###       Ludger Kunz (ludger.kunz@fernuni-hagen.de).                     ###
 ### For questions about the vgalib driver, please contact                 ###
 ###       Erik Talvola (talvola@gnu.ai.mit.edu).                          ###
+### Note that the vgalib device supports only 16-color VGA modes.         ###
 
 lvga256_=$(GLOBJ)gdevl256.$(OBJ)
 $(DD)lvga256.dev : $(DEVS_MAK) $(lvga256_)
