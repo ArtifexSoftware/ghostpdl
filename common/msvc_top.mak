@@ -12,30 +12,32 @@
 # XE isn't defined yet.
 default: $(TARGET_XE).exe
 
-# Platform-specific files that need to be deleted when 'nmake clean'
-CLEAN_PLATFORM_FILES=$(TARGET_XE).ilk $(TARGET_XE).pdb
-
 # Define the ANSI-to-K&R dependency.  Borland C, Microsoft C and
 # Watcom C all accept ANSI syntax, but we need to preconstruct ccf32.tr 
 # to get around the limit on the maximum length of a command line.
 
 AK=$(GLGENDIR)\ccf32.tr
 
-# clean gs files using the
+# clean gs files using the, we also clean up the platform files here
+# this should be separate.  TODO remove genarch.ilk and genarch.pdb as
+# well.
+
 clean_gs:
 	nmake /f $(GLSRCDIR)\msvclib.mak \
 	GLSRCDIR=$(GLSRCDIR) GLGENDIR=$(GLGENDIR) \
 	GLOBJDIR=$(GLOBJDIR) clean
-
+	erase $(TARGET_XE).ilk
+	erase $(TARGET_XE).pdb
+	
 # Define names of utility programs
 AUXGENDIR=$(GLGENDIR)
 AUXGEN=$(AUXGENDIR)$(D)
-ANSI2KNR_XE=$(AUXGEN)ansi2knr$(XEAUX)
-ECHOGS_XE=$(AUXGEN)echogs$(XEAUX)
-GENARCH_XE=$(AUXGEN)genarch$(XEAUX)
-GENCONF_XE=$(AUXGEN)genconf$(XEAUX)
-GENDEV_XE=$(AUXGEN)gendev$(XEAUX)
-GENINIT_XE=$(AUXGEN)geninit$(XEAUX)
+ANSI2KNR_XE=$(AUXGEN)ansi2knr.exe
+ECHOGS_XE=$(AUXGEN)echogs.exe
+GENARCH_XE=$(AUXGEN)genarch.exe
+GENCONF_XE=$(AUXGEN)genconf.exe
+GENDEV_XE=$(AUXGEN)gendev.exe
+GENINIT_XE=$(AUXGEN)geninit.exe
 
 
 # Platform specification
@@ -55,38 +57,31 @@ GLOBJ=$(GLOBJDIR)$(D)
 !include $(COMMONDIR)\generic.mak
 !include $(GLSRCDIR)\msvccmd.mak
 !include $(GLSRCDIR)\version.mak
+!include $(GLSRCDIR)\lib.mak
 !include $(GLSRCDIR)\msvctail.mak
 
-mkdirs:
+FORCE:
+
+# Build the required GS library files.  It's simplest always to build
+# the floating point emulator, even though we don't always link it in.
+# HACK * HACK * HACK - we force this make to occur since we have no
+# way to determine if gs .c files are out of date.
+$(GENDIR)/ldl$(CONFIG).tr: FORCE
 	-mkdir $(GLGENDIR)
 	-mkdir $(GLOBJDIR)
-
-# Build the required files in the GS directory.
-$(GENDIR)/ldl$(CONFIG).tr: $(MAKEFILE) mkdirs $(AK)
-	echo MSVC_VERSION=$(MSVC_VERSION) >$(GENDIR)\_vc_temp.mak
-	echo GLSRCDIR=$(GLSRCDIR) >>$(GENDIR)\_vc_temp.mak
-	echo GLGENDIR=$(GLGENDIR) >>$(GENDIR)\_vc_temp.mak
-	echo GLOBJDIR=$(GLOBJDIR) >>$(GENDIR)\_vc_temp.mak
-	echo PSRCDIR=$(PSRCDIR) >>$(GENDIR)\_vc_temp.mak
-	echo PVERSION=$(PVERSION) >>$(GENDIR)\_vc_temp.mak
-	echo JSRCDIR=$(JSRCDIR) >>$(GENDIR)\_vc_temp.mak
-	echo JVERSION=$(JVERSION) >>$(GENDIR)\_vc_temp.mak
-	echo ZSRCDIR=$(ZSRCDIR) >>$(GENDIR)\_vc_temp.mak
-	echo DEVSTUDIO=$(DEVSTUDIO) >>$(GENDIR)\_vc_temp.mak
-	echo FEATURE_DEVS=$(FEATURE_DEVS) >>$(GENDIR)\_vc_temp.mak
-	echo DEVICE_DEVS=$(DEVICE_DEVS) $(DD)bbox.dev >>$(GENDIR)\_vc_temp.mak
-	echo BAND_LIST_STORAGE=memory >>$(GENDIR)\_vc_temp.mak
-	echo BAND_LIST_COMPRESSOR=zlib >>$(GENDIR)\_vc_temp.mak
-	echo FPU_TYPE=$(FPU_TYPE) >>$(GENDIR)\_vc_temp.mak
-	echo CPU_TYPE=$(CPU_TYPE) >>$(GENDIR)\_vc_temp.mak
-	echo CONFIG=$(CONFIG) >>$(GENDIR)\_vc_temp.mak
-	echo !include $(GLSRCDIR)\msvclib.mak >>$(GENDIR)\_vc_temp.mak
-	$(MAKE) /F $(GENDIR)\_vc_temp.mak CONFIG=$(CONFIG) $(GLOBJDIR)\gsargs.$(OBJ) $(GLOBJDIR)\gsnogc.$(OBJ) $(GLOBJDIR)\echogs.exe
-	$(MAKE) /F $(GENDIR)\_vc_temp.mak CONFIG=$(CONFIG) $(GLOBJDIR)\ld$(CONFIG).tr $(GLOBJDIR)\gconfig$(CONFIG).$(OBJ) $(GLOBJDIR)\gscdefs$(CONFIG).$(OBJ)
-	rem --------------------
-	del $(GENDIR)\_vc_temp.mak
-	rem Use type rather than copy to update the creation time
-	type $(GENDIR)\ld$(CONFIG).tr >$(GENDIR)\ldl$(CONFIG).tr
+	$(MAKE) /F $(GLSRCDIR)\msvclib.mak MSVC_VERSION="$(MSVC_VERSION)" \
+	GLSRCDIR="$(GLSRCDIR)" \
+	GLGENDIR="$(GLGENDIR)" GLOBJDIR="$(GLOBJDIR)" \
+	PSRCDIR="$(PSRCDIR)" PVERSION="$(PVERSION)" \
+	JSRCDIR="$(JSRCDIR)" JVERSION="$(JVERSION)" \
+	ZSRCDIR="$(ZSRCDIR)" DEVSTUDIO="$(DEVSTUDIO)" \
+	FEATURE_DEVS="$(FEATURE_DEVS)" DEVICE_DEVS="$(DEVICE_DEVS)" \
+	BAND_LIST_STORAGE=memory BAND_LIST_COMPRESSOR=zlib \
+	FPU_TYPE="$(FPU_TYPE)" CPU_TYPE="$(CPU_TYPE)" CONFIG="$(CONFIG)" \
+	$(GLOBJDIR)\gsargs.$(OBJ) $(GLOBJDIR)\gsnogc.$(OBJ) $(GLOBJDIR)\echogs.exe \
+	$(GLOBJDIR)\ld$(CONFIG).tr $(GLOBJDIR)\gconfig$(CONFIG).$(OBJ) \
+	$(GLOBJDIR)\gscdefs$(CONFIG).$(OBJ)
+	$(CP_) $(GENDIR)\ld$(CONFIG).tr >$(GENDIR)\ldl$(CONFIG).tr
 
 # Build the configuration file.
 $(GENDIR)\pconf$(CONFIG).h $(GENDIR)\ldconf$(CONFIG).tr: $(TARGET_DEVS) $(GLOBJDIR)\genconf$(XE)
