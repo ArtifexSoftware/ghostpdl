@@ -39,6 +39,8 @@ pdf_write_Widths(gx_device_pdf *pdev, int first, int last, const int *widths)
     stream *s = pdev->strm;
     int i;
 
+    if (first > last)
+	first = last = 0;
     pprintd2(s, "/FirstChar %d/LastChar %d/Widths[", first, last);
     for (i = first; i <= last; ++i)
 	pprintd1(s, (i & 15 ? " %d" : "\n%d"), widths[i]);

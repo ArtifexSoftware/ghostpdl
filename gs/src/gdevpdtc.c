@@ -218,7 +218,7 @@ scan_cmap_text(gs_text_enum_t *pte, gs_font_type0 *font /*fmap_CMap*/,
 		w += widths.real_width;
 	    } else
 		w += pdsubf->real_widths[cid];
-	    if (cid <= pdsubf->count)
+	    if (cid < pdsubf->count)
 		pdsubf->used[cid >> 3] |= 0x80 >> (cid & 7);
 	}
     }
@@ -364,7 +364,7 @@ process_cmap_text_common(gs_text_enum_t *pte, const void *vdata, void *vbuf,
 	    return code;
 	str.data = vdata;
 	str.size = size;
-	if ((acode = pdf_write_text_process_state(pdev, pte, &text_state, &str)) < 0 ||
+	if ((acode = pdf_set_text_process_state(pdev, pte, &text_state, &str)) < 0 ||
 	    (acode = pdf_text_distance_transform(wxy.x, wxy.y,
 						 pdev->text->text_state,
 						 &dist)) < 0 ||

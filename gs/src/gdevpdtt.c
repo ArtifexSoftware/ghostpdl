@@ -261,7 +261,8 @@ pdf_font_orig_matrix(const gs_font *font, gs_matrix *pmat)
 }
 
 /*
- * Find or create the font resource for a gs_font.
+ * Find or create the font resource for a gs_font.  Return 1 if the font
+ * was newly created.
  */
 int
 pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
@@ -272,6 +273,7 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
     pdf_resource_type_t rtype;
     int (*font_alloc)(gx_device_pdf *, pdf_font_resource_t **,
 		      gs_id, pdf_font_descriptor_t *);
+    int code = 0;
 
     switch (font->FontType) {
     case ft_CID_encrypted:
@@ -292,7 +294,6 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 	    gs_font_type0 *const pfont = (gs_font_type0 *)font;
 	    gs_font *subfont = pfont->data.FDepVector[0];
 	    pdf_font_resource_t *pdsubf;
-	    int code;
 
 	    code = pdf_make_font_resource(pdev, subfont, &pdsubf);
 	    if (code < 0)
@@ -300,17 +301,16 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 	    code = pdf_font_type0_alloc(pdev, &pdfont, font->id, pdsubf);
 	    if (code < 0)
 		return code;
+	    code = 1;
 	}
 	*ppdfont = pdfont;
-	return 0;
+	return code;
     default:
 	return_error(gs_error_invalidfont);
     }
     pdfont = (pdf_font_resource_t *)
 	pdf_find_resource_by_gs_id(pdev, rtype, font->id);
     if (pdfont == 0) {
-	int code;
-
 	if ((code = pdf_font_descriptor_alloc(pdev, &pfd,
 					      (gs_font_base *)font,
 		pdf_font_embed_status(pdev, font, NULL, NULL) ==
@@ -318,9 +318,10 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 	    (code = font_alloc(pdev, &pdfont, font->id, pfd)) < 0
 	    )
 	    return code;
+	code = 1;
     }
     *ppdfont = pdfont;
-    return 0;
+    return code;
 }
 
 /*
@@ -328,7 +329,8 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
  * parameters, current_font, and pis->ctm.  Return either an error code (<
  * 0) or a mask of operation attributes that the caller must emulate.
  * Currently the only such attributes are TEXT_ADD_TO_ALL_WIDTHS and
- * TEXT_ADD_TO_SPACE_WIDTH.
+ * TEXT_ADD_TO_SPACE_WIDTH.  Note that this procedure fills in all the
+ * values in ppts->values, not just the ones that need to be set now.
  */
 private int
 transform_delta_inverse(const gs_point *pdelta, const gs_matrix *pmat,
@@ -436,7 +438,9 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
 }
 
 /*
- * Write commands to make the output state match the processing state.
+ * Set up commands to make the output state match the processing state.
+ * General graphics state commands are written now; text state commands
+ * are written later.  Update ppts->values to reflect all current values.
  */
 private double
 font_matrix_scaling(const gs_font *font)
@@ -445,10 +449,10 @@ font_matrix_scaling(const gs_font *font)
 		 font->FontMatrix.yx));
 }
 int
-pdf_write_text_process_state(gx_device_pdf *pdev,
-			     const gs_text_enum_t *pte,	/* for pdcolor, pis */
-			     const pdf_text_process_state_t *ppts,
-			     const gs_const_string *pstr)
+pdf_set_text_process_state(gx_device_pdf *pdev,
+			   const gs_text_enum_t *pte,	/* for pdcolor, pis */
+			   pdf_text_process_state_t *ppts,
+			   const gs_const_string *pstr)
 {
     /*
      * Setting the stroke parameters may exit text mode, causing the

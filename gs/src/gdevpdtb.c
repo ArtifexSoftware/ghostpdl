@@ -435,9 +435,10 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont)
 	goto finish;
 
     case ft_TrueType: {
+#define TRUETYPE_OPTIONS (WRITE_TRUETYPE_NAME | WRITE_TRUETYPE_HVMTX)
+	/****** WHEN SHOULD WE USE WRITE_TRUETYPE_CMAP? ******/
 	/* Acrobat Reader 3 doesn't handle cmap format 6 correctly. */
-	const int options = WRITE_TRUETYPE_CMAP | WRITE_TRUETYPE_NAME |
-	    WRITE_TRUETYPE_HVMTX |
+	const int options = TRUETYPE_OPTIONS |
 	    (pdev->CompatibilityLevel <= 1.2 ?
 	     WRITE_TRUETYPE_NO_TRIMMED_TABLE : 0);
 	stream poss;

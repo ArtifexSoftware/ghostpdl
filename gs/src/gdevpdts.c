@@ -459,8 +459,8 @@ pdf_render_mode_uses_stroke(const gx_device_pdf *pdev,
  * Set text state values (as seen by client).
  */
 int
-pdf_set_text_state_values(gx_device_pdf *pdev,
-			  const pdf_text_state_values_t *ptsv, int members)
+pdf_set_text_state_values(gx_device_pdf *pdev, pdf_text_state_values_t *ptsv,
+			  int members)
 {
     pdf_text_state_t *pts = pdev->text->text_state;
     int skip = 0;
@@ -491,14 +491,24 @@ pdf_set_text_state_values(gx_device_pdf *pdev,
 
     if (members & TEXT_STATE_SET_CHARACTER_SPACING)
 	pts->in.character_spacing = ptsv->character_spacing;
+    else
+	ptsv->character_spacing = pts->in.character_spacing;
     if (members & TEXT_STATE_SET_FONT_AND_SIZE)
 	pts->in.pdfont = ptsv->pdfont, pts->in.size = ptsv->size;
+    else
+	ptsv->pdfont = pts->in.pdfont, ptsv->size = pts->in.size;
     if (members & TEXT_STATE_SET_MATRIX)
 	pts->in.matrix = ptsv->matrix;
+    else
+	ptsv->matrix = pts->in.matrix;
     if (members & TEXT_STATE_SET_RENDER_MODE)
 	pts->in.render_mode = ptsv->render_mode;
+    else
+	ptsv->render_mode = pts->in.render_mode;
     if (members & TEXT_STATE_SET_WORD_SPACING)
 	pts->in.word_spacing = ptsv->word_spacing;
+    else
+	ptsv->word_spacing = pts->in.word_spacing;
 
     pts->members |= members;
     return 0;

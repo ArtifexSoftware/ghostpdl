@@ -505,6 +505,7 @@ pdf_finish_FontDescriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
 int
 pdf_write_FontDescriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
 {
+    font_type ftype = pfd->FontType;
     long cidset_id = 0;
     int code = 0;
     stream *s;
@@ -513,7 +514,7 @@ pdf_write_FontDescriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
 	return 0;
 
     /* If this is a CIDFont subset, write the CIDSet now. */
-    switch (pfd->FontType) {
+    switch (ftype) {
     case ft_CID_encrypted:
     case ft_CID_TrueType:
 	if (pdf_do_subset_font(pdev, pfd->base_font)) {
@@ -545,7 +546,9 @@ pdf_write_FontDescriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
     s = pdev->strm;
     if (cidset_id != 0)
 	pprintld1(s, "/CIDSet %ld 0 R\n", cidset_id);
-    else if (pdf_do_subset_font(pdev, pfd->base_font)) {
+    else if (pdf_do_subset_font(pdev, pfd->base_font) &&
+	     (ftype == ft_encrypted || ftype == ft_encrypted2)
+	     ) {
 	stream_puts(s, "/CharSet");
 	code = pdf_write_CharSet(pdev, pfd->base_font);
 	if (code < 0)

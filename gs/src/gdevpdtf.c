@@ -139,6 +139,8 @@ font_resource_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 	    code = gs_note_error(gs_error_VMerror);
 	    goto fail;
 	}
+	memset(widths, 0, chars_count * sizeof(*widths));
+	memset(real_widths, 0, chars_count * sizeof(*real_widths));
 	memset(used, 0, size);
     }
     code = pdf_alloc_resource(pdev, rtype, rid, (pdf_resource_t **)&pfres, 0L);
@@ -171,6 +173,7 @@ font_resource_simple_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 
     if (code < 0)
 	return code;
+    pfres->u.simple.FirstChar = 256;
     pfres->u.simple.LastChar = -1;
     pfres->u.simple.BaseEncoding = -1;
     *ppfres = pfres;

@@ -76,7 +76,8 @@ typedef struct pdf_glyph_widths_s {
 int pdf_font_orig_matrix(const gs_font *font, gs_matrix *pmat);
 
 /*
- * Find or create the font resource for a gs_font.
+ * Find or create the font resource for a gs_font.  Return 1 if the font
+ * was newly created.
  */
 int pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 			   pdf_font_resource_t **ppdfont);
@@ -86,19 +87,22 @@ int pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
  * parameters, current_font, and pis->ctm.  Return either an error code (<
  * 0) or a mask of operation attributes that the caller must emulate.
  * Currently the only such attributes are TEXT_ADD_TO_ALL_WIDTHS and
- * TEXT_ADD_TO_SPACE_WIDTH.
+ * TEXT_ADD_TO_SPACE_WIDTH.  Note that this procedure fills in all the
+ * values in ppts->values, not just the ones that need to be set now.
  */
 int pdf_update_text_state(pdf_text_process_state_t *ppts,
 			  const pdf_text_enum_t *penum,
 			  pdf_font_resource_t *pdfont, const gs_matrix *pfmat);
 
 /*
- * Write commands to make the output state match the processing state.
+ * Set up commands to make the output state match the processing state.
+ * General graphics state commands are written now; text state commands
+ * are written later.  Update ppts->values to reflect all current values.
  */
-int pdf_write_text_process_state(gx_device_pdf *pdev,
+int pdf_set_text_process_state(gx_device_pdf *pdev,
 			const gs_text_enum_t *pte, /* for pdcolor, pis */
-				 const pdf_text_process_state_t *ppts,
-				 const gs_const_string *pstr);
+			       pdf_text_process_state_t *ppts,
+			       const gs_const_string *pstr);
 
 /*
  * Get the widths (unmodified and possibly modified) of a glyph in a (base)
@@ -124,12 +128,17 @@ PROCESS_TEXT_PROC(process_cid_text);
 PROCESS_TEXT_PROC(process_plain_text);
 
 /*
- * Internal procedure to process a string in a non-composite font.
+ * Internal procedure to process a string in a simple font.
  * Doesn't use or set penum->{data,size,index}; may use/set penum->xy_index;
- * may set penum->returned.total_width.
+ * may set penum->returned.total_width.  Sets ppts->values.
+ *
+ * Note that the caller is responsible for re-encoding the string, if
+ * necessary; for adding Encoding entries in pdfont; and for copying any
+ * necessary glyphs.  penum->current_font provides the gs_font for getting
+ * glyph metrics, but this font's Encoding is not used.
  */
 int pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
-		       const gs_matrix *pfmat, bool encoded,
-		       pdf_text_process_state_t *pts, int *pindex);
+		       pdf_font_resource_t *pdfont, const gs_matrix *pfmat,
+		       pdf_text_process_state_t *ppts, int *pindex);
 
 #endif /* gdevpdtt_INCLUDED */

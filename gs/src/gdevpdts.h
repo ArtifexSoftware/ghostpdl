@@ -102,10 +102,11 @@ bool pdf_render_mode_uses_stroke(const gx_device_pdf *pdev,
 				 const pdf_text_state_values_t *ptsv);
 
 /*
- * Set text state values (as seen by client).
+ * Set text state values (as seen by client).  Also update any values in
+ * *ptsv that are not being set.
  */
 int pdf_set_text_state_values(gx_device_pdf *pdev,
-			      const pdf_text_state_values_t *ptsv,
+			      pdf_text_state_values_t *ptsv,
 			      int members);
 
 /*
