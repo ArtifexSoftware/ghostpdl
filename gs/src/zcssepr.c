@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -32,6 +32,7 @@
 #include "ialloc.h"
 #include "icsmap.h"
 #include "igstate.h"
+#include "iname.h"
 #include "ivmspace.h"
 #include "store.h"
 
@@ -71,18 +72,24 @@ zsetseparationspace(i_ctx_t *i_ctx_p)
     ref_colorspace cspace_old;
     uint edepth = ref_stack_count(&e_stack);
     gs_indexed_map *map;
+    ref sname;
     int code;
 
     check_read_type(*op, t_array);
     if (r_size(op) != 4)
 	return_error(e_rangecheck);
     pcsa = op->value.const_refs + 1;
-    switch (r_type(pcsa)) {
+    sname = *pcsa;
+    switch (r_type(&sname)) {
 	default:
 	    return_error(e_typecheck);
 	case t_string:
+	    code = name_from_string(&sname, &sname);
+	    if (code < 0)
+		return code;
+	    /* falls through */
 	case t_name:
-	    ;
+	    break;
     }
     check_proc(pcsa[2]);
     cs = *gs_currentcolorspace(igs);
@@ -98,6 +105,7 @@ zsetseparationspace(i_ctx_t *i_ctx_p)
     memmove(&cs.params.separation.alt_space, &cs,
 	    sizeof(cs.params.separation.alt_space));
     gs_cspace_init(&cs, &gs_color_space_type_Separation, NULL);
+    cs.params.separation.sname = name_index(&sname);
     cs.params.separation.map = map;
     cspace_old = istate->colorspace;
     istate->colorspace.procs.special.separation.layer_name = pcsa[0];
