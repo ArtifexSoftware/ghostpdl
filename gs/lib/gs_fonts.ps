@@ -462,10 +462,10 @@ buildfontdict 3 /.buildfont3 cvx put
 % properties from it.  Later entries take priority over earlier.
 /.substitutefaces [
 	% Guess at suitable substitutions for random unknown fonts.
-  [(Chancery) /ZapfChancery-MediumItalic 0]
-  [(Grot) /Times 0]
-  [(Roman) /Times 0]
   [(Book) /NewCenturySchlbk 0]
+  [(Grot) /Helvetica 0]
+  [(Roman) /Times 0]
+  [(Chancery) /ZapfChancery-MediumItalic 0]
 	% If the family name appears in the font name,
 	% use a font from that family.
   [(Arial) /Helvetica 0]
@@ -483,7 +483,6 @@ buildfontdict 3 /.buildfont3 cvx put
   [(Swiss) /Helvetica 0]
   [(Symbol) /Symbol 0]
   [(Times) /Times 0]
-  [(Univers) /Helvetica 0]
 	% Substitute for Adobe Multiple Master fonts.
   [(Minion) /Times 0]
   [(Myriad) /Helvetica 0]
@@ -492,18 +491,18 @@ buildfontdict 3 /.buildfont3 cvx put
   [(Typewriter) /Courier 0]
 	% Define substitutes for the other Adobe PostScript 3 fonts.
 	% For some of them, the substitution is pretty bad!
-  [(Albertus) /NewCenturySchlbk 0]
+  [(Albertus) /Palatino 0]
   [(AntiqueOlive) /Helvetica 0]
-  [(Bodoni) /Palatino 0]
+  [(Bodoni) /NewCenturySchlbk 0]
   [(Chicago) /Helvetica 2]
   [(Clarendon) /Bookman 0]
   [(Cooper) /NewCenturySchlbk 0]
   [(Copperplate) /AvantGarde 0]	% inappropriate, small-cap font
   [(Coronet) /ZapfChancery-MediumItalic 0]
-  [(Eurostile) /AvantGarde 0]	% inappropriate
+  [(Eurostile) /Helvetica 0]
   [(Geneva) /Courier 2]		% should be fixed-pitch sans demi
-  [(GillSans) /AvantGarde 2]
-  [(GillSans-Light) /AvantGarde 0]
+  [(GillSans) /Helvetica 2]
+  [(GillSans-Light) /Helvetica 0]
   [(Goudy) /Palatino 0]
   [(Hoefler) /NewCenturySchlbk 0]
   [(Joanna) /Times 0]
@@ -515,8 +514,8 @@ buildfontdict 3 /.buildfont3 cvx put
   [(Monaco) /Courier 2]		% should be fixed-pitch sans demi
   [(Optima) /Helvetica 0]
   [(Oxford) /ZapfChancery-MediumItalic 0]
-  [(Tekton) /AvantGarde 0]
-  [(Univers) /AvantGarde 0]
+  [(Tekton) /Helvetica 0]
+  [(Univers) /Helvetica 0]
 ] readonly def
 /.substituteproperties [
   [(It) 9] [(Oblique) 1]
