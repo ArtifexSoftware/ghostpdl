@@ -503,6 +503,7 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 	case char_EOL:
 	case char_NULL:
 	    goto top;
+        case 0x4:	/* ^D is a self-delimiting token */
 	case '[':
 	case ']':
 	    s1[0] = (byte) c;
