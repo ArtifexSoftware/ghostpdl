@@ -818,5 +818,52 @@ def
   } if setcolor
 } odef
 
+% The following functions emulate the actions of findcmykcustomcolor and
+% setcustomcolor.  These functions are described in Adobe's TN 5044.  That
+% same document also says "The following “operators” are not defined in the
+% PostScript Language Reference Manual, but should be used as pseudo-operators
+% in your PostScript language output. Separation applications from Adobe
+% Systems and other vendors will redefine these convention operators to
+% separate your documents.  Your application should conditionally define
+% procedures with these special names, as shown later in this document."
+%
+% We are providing these functions because we have found files created by
+% "QuarkXPress: pictwpstops filter 1.0" which produce bad shading dictionaries
+% if these operators are not defined. 
+
+% TN 5044 does not define the contents of the array.  We are simply putting
+% the values given into an array.  This is consistent with what we see when
+% testing with Adobe Distiller 6.0.
+%   <cyan> <magenta> <yellow> <black> <key> findcmykcustomcolor <array>
+/findcmykcustomcolor { 5 array astore } bind def
+
+% Build a tint transform function for use by setcustomcolor.  This function
+% is for a Separation color space which has a DeviceCMYK base color space
+% (i.e. 1 input and 4 outputs).  The input to buildcustomtinttransform is the
+% array created by findcmykcustomcolor.  The resulting function is:
+%   { dup cyan mul exch dup magenta mul exch dup yellow mul exch black mul }
+%   Where cyan, magenta, yellow, and black are values from the array.
+/buildcustomtinttransform	% <array> buildcustomtinttransform <function>
+{ [ /dup load 2 index 0 get /mul load
+  /exch load /dup load 6 index 1 get /mul load
+  /exch load /dup load 10 index 2 get /mul load
+  /exch load 13 index 3 get /mul load
+  ] cvx bind
+  exch pop			% Remove the input array
+} bind def
+
+% Set a custom color based upon a tint and array which describes the custom
+% color.  See findcmykcustomcolor.  First we create and then set a Separation
+% colorspace.  Then we set the specified color.
+/setcustomcolor			% <array> <tint> setcustomcolor -
+{ % Start building Separation colorspace
+  [ /Separation 3 index 4 get	% Get separation name from array's key
+  /DeviceCMYK
+  5 index buildcustomtinttransform ]	% build the tint transform function
+  setcolorspace			% Set the Separation color space as current
+  setcolor			% Set the tint as the current color
+  pop				% Remove the input array
+} bind def
+
 
 end				% level2dict
