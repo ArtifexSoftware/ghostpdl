@@ -483,8 +483,11 @@ clist_begin_typed_image(gx_device * dev,
 		gs_client_color cc;
 		gx_drawing_color dcolor;
 		int i;
+		int max_value = (1 << bits_per_pixel) - 1;
+		double denom = (indexed ? 1 : max_value);
 
-		for (i = 0; i < bits_per_pixel; ++i) {
+		for (i = 0; i <= max_value; ++i) {
+		    cc.paint.values[0] = ((double)i) / denom;
 		    remap_color(&cc, pcs, &dcolor, pis, dev,
 				gs_color_select_source);
 		    colors_used |= cmd_drawing_colors_used(cdev, &dcolor);
