@@ -222,7 +222,11 @@ again:
 		case o_push_estack:
 		    return code;
 	    }
-	    /* falls through */
+	    break;		/* error */
+	case scan_Comment:
+	case scan_DSC_Comment:
+	    return ztoken_handle_comment(i_ctx_p, &fref, pstate, esp + 1, code,
+					 save, true, ztokenexec_continue);
 	default:		/* error */
 	    break;
     }
@@ -285,7 +289,7 @@ ztoken_handle_comment(i_ctx_t *i_ctx_p, const ref *fop, scanner_state *sstate,
 	op = osp += 2;
 	*osp = *ptoken;
     }
-    osp[-1] = *fop;
+    op[-1] = *fop;
     /*
      * Push the continuation, scanner state, file, and callout name on the
      * e-stack.
