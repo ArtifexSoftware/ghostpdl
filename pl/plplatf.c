@@ -70,3 +70,4 @@ gs_exit(int exit_status)
 {	pl_platform_dnit(exit_status);
 	pl_exit(exit_status);	/* must be implemeted by caller */
 }
+

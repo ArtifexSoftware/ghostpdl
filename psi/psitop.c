@@ -356,8 +356,7 @@ ps_impl_dnit_job(
     ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
     /* take care of a stored pdf file */
     if ( psi->pdf_stream ) {
-        uint max_command_length = gp_file_name_sizeof +
-            7; /* 6 = space + (run) + new line */
+#define max_command_length (gp_file_name_sizeof + 7) /* 6 = space + (run) + new line */
         byte buf[max_command_length];
         /* at this point we have finished writing the spooled pdf file
            and we need to close it */

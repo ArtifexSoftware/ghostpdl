@@ -60,6 +60,39 @@ GLOBJ=$(GLOBJDIR)$(D)
 !include $(GLSRCDIR)\lib.mak
 !include $(GLSRCDIR)\msvctail.mak
 
+!IF "$(PSICFLAGS)" == "/DPSI_INCLUDED"
+
+# Build the required GS library files.  It's simplest always to build
+# the floating point emulator, even though we don't always link it in.
+# HACK * HACK * HACK - we force this make to occur since we have no
+# way to determine if gs .c files are out of date.
+FORCE:
+
+$(GENDIR)/ldgs.tr: FORCE
+	-mkdir $(GLGENDIR)
+	-mkdir $(GLOBJDIR)
+	$(MAKE) /F $(GLSRCDIR)\msvc32.mak MSVC_VERSION="$(MSVC_VERSION)" \
+	GLSRCDIR="$(GLSRCDIR)" DEBUG=$(DEBUG) NOPRIVATE=$(NOPRIVATE) \
+	GLGENDIR="$(GLGENDIR)" GLOBJDIR="$(GLOBJDIR)" \
+	ICCSRCDIR="$(ICCSRCDIR)" \
+	PSRCDIR="$(PSRCDIR)" PVERSION="$(PVERSION)" \
+	JSRCDIR="$(JSRCDIR)" JVERSION="$(JVERSION)" \
+	ZSRCDIR="$(ZSRCDIR)" ZGENDIR="$(ZGENDIR)" ZOBJDIR="$(ZOBJDIR)" ZLIB_NAME="$(ZLIB_NAME)" SHARE_ZLIB="$(SHARE_ZLIB)" \
+	PSSRCDIR=$(PSSRCDIR) PSGENDIR=$(GENDIR) \
+	PSLIBDIR=$(PSLIBDIR) \
+	DEVSTUDIO="$(DEVSTUDIO)" \
+	XCFLAGS="$(XCFLAGS)" \
+	FEATURE_DEVS="$(FEATURE_DEVS)" DEVICE_DEVS="$(DEVICE_DEVS)" \
+	BAND_LIST_STORAGE=$(BAND_LIST_STORAGE) BAND_LIST_COMPRESSOR=$(BAND_LIST_COMPRESSOR) \
+	FPU_TYPE="$(FPU_TYPE)" CPU_TYPE="$(CPU_TYPE)" CONFIG="$(CONFIG)" \
+	$(GLOBJDIR)\gsargs.$(OBJ) $(GLOBJDIR)\echogs.exe \
+	$(GLOBJDIR)\ld.tr $(GLOBJDIR)\gconfig.$(OBJ) \
+	$(GLOBJDIR)\gscdefs.$(OBJ) $(GLOBJDIR)\iconfig.$(OBJ) \
+  	$(GLOBJDIR)/iccinit$(COMPILE_INITS).$(OBJ)
+	$(CP_) $(GENDIR)\ld.tr $(GENDIR)\ldgs.tr
+
+!ELSE
+
 FORCE:
 
 # Build the required GS library files.  It's simplest always to build
@@ -67,6 +100,7 @@ FORCE:
 # HACK * HACK * HACK - we force this make to occur since we have no
 # way to determine if gs .c files are out of date.
 $(GENDIR)/ldgs.tr: FORCE
+	-echo $(PSICFLAGS)
 	-mkdir $(GLGENDIR)
 	-mkdir $(GLOBJDIR)
 	$(MAKE) /F $(GLSRCDIR)\msvclib.mak MSVC_VERSION="$(MSVC_VERSION)" \
@@ -78,11 +112,14 @@ $(GENDIR)/ldgs.tr: FORCE
 	DEVSTUDIO="$(DEVSTUDIO)" \
 	FEATURE_DEVS="$(FEATURE_DEVS)" DEVICE_DEVS="$(DEVICE_DEVS)" \
 	BAND_LIST_STORAGE=$(BAND_LIST_STORAGE) BAND_LIST_COMPRESSOR=$(BAND_LIST_COMPRESSOR) \
+	GLOBJ=$(GLOBJ) GLGEN=$(GLGEN) \
 	FPU_TYPE="$(FPU_TYPE)" CPU_TYPE="$(CPU_TYPE)" CONFIG="$(CONFIG)" \
 	$(GLOBJDIR)\gsargs.$(OBJ) $(GLOBJDIR)\echogs.exe \
 	$(GLOBJDIR)\ld.tr $(GLOBJDIR)\gconfig.$(OBJ) \
 	$(GLOBJDIR)\gscdefs.$(OBJ)
 	$(CP_) $(GENDIR)\ld.tr $(GENDIR)\ldgs.tr
+
+!ENDIF
 
 # Build the configuration file.
 $(GENDIR)\pconf.h $(GENDIR)\ldconf.tr: $(TARGET_DEVS) $(GLOBJDIR)\genconf$(XE)
@@ -115,5 +152,4 @@ $(TARGET_XE)$(XE): $(GENDIR)\ldall.tr $(MAIN_OBJ) $(TOP_OBJ) $(LIBCTR) $(FONTLIB
 $(TARGET_XE)$(XE): $(GENDIR)\ldall.tr $(MAIN_OBJ) $(TOP_OBJ) $(LIBCTR)
 	$(LINK_SETUP)
 	$(LINK) $(LCT) /OUT:$(TARGET_XE)$(XE) $(MAIN_OBJ) $(TOP_OBJ) @$(GENDIR)\ldall.tr @$(LIBCTR)
-
 !ENDIF

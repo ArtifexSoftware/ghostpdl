@@ -144,9 +144,6 @@ DEVICE_DEVS=$(DD)x11.dev $(DD)x11mono.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev\
  $(DD)pxlmono.dev $(DD)pxlcolor.dev\
  $(DD)bmpmono.dev $(DD)bmpamono.dev $(DD)pbmraw.dev $(DD)pgmraw.dev $(DD)ppmraw.dev $(DD)jpeg.dev
 
-# GS options
-# Even though FEATURE_DEVS is defined in pcl_top.mak, define identically here
-# for msvc_top.mak because nmake defines macros eagerly (i.e. here & now).
 FEATURE_DEVS    = \
 		  $(DD)psl3.dev		\
 		  $(DD)pdf.dev		\

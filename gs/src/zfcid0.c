@@ -522,9 +522,12 @@ zwritefont9(i_ctx_t *i_ctx_p)
 	return_error(e_invalidfont);
     check_write_file(s, op - 1);
     pfcid = (gs_font_cid0 *)pfont;
+    code = -1;
+    /* !!!!! NB NB - this needs to be moved see latest gs release !!!!!
     code = psf_write_cid0_font(s, pfcid,
 			       WRITE_TYPE2_NO_LENIV | WRITE_TYPE2_CHARSTRINGS,
 			       NULL, 0, NULL);
+    */
     if (code >= 0)
 	pop(2);
     return code;

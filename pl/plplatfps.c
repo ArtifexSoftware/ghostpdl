@@ -59,3 +59,10 @@ void
 gs_reloc_const_string(gs_const_string *sptr, gc_state_t *gcst)
 {
 }
+
+int
+gp_check_interrupts(void)
+{
+    return 0;
+}
+

@@ -37,9 +37,13 @@ JVERSION=6
 # If you want to build the individual packages in their own directories,
 # you can define this here, although normally you won't need to do this:
 GLGENDIR=$(GENDIR)
+ICCGENDIR=$(GENDIR)
+ICCOBJDIR=$(GENDIR)
 PSGENDIR=$(GENDIR)
 PSOBJDIR=$(GENDIR)
 GLOBJDIR=$(GENDIR)
+GLOBJ=$(GENDIR)
+GLGEN=$(GENDIR)
 PLGENDIR=$(GENDIR)
 PLOBJDIR=$(GENDIR)
 PXLGENDIR=$(GENDIR)
@@ -125,7 +129,9 @@ AGFA_INCLUDES=$(I_)$(AGFA_ROOT)\rts\inc $(I_)$(AGFA_ROOT)\sys\inc $(I_)$(AGFA_RO
 # We use -O0 for debugging, because optimization confuses gdb.
 # Note that the omission of -Dconst= rules out the use of gcc versions
 # between 2.7.0 and 2.7.2 inclusive.  (2.7.2.1 is OK.)
-PSICFLAGS=-DPSI_INCLUDED
+
+XCFLAGS=/DPSI_INCLUDED
+PSICFLAGS=/DPSI_INCLUDED
 
 # #define xxx_BIND is in std.h
 # putting compile time bindings here will have the side effect of having different options
@@ -143,35 +149,14 @@ DEVICE_DEVS=$(DD)\ljet4.dev $(DD)\cljet5pr.dev $(DD)\cljet5c.dev\
  $(DD)\bmpmono.dev $(DD)\bmpamono.dev $(DD)\pbmraw.dev $(DD)\pgmraw.dev\
  $(DD)\ppmraw.dev $(DD)\jpeg.dev
 
-# GS options
-# Even though FEATURE_DEVS is defined in pcl_top.mak, define identically here
-# for msvc_top.mak because nmake defines macros eagerly (i.e. here & now).
-#FEATURE_DEVS    = \
-#		  $(DD)\psl3.dev		\
-#		  $(DD)\pdf.dev		\
-#		  $(DD)\dpsnext.dev	\
-#                  $(DD)\htxlib.dev	\
-#                  $(DD)\roplib.dev	\
-#		  $(DD)\ttfont.dev	\
-#		  $(DD)\pipe.dev
-
-FEATURE_DEVS    = $(DD)\dps2lib.dev   \
-                  $(DD)\path1lib.dev  \
-                  $(DD)\patlib.dev    \
-                  $(DD)\rld.dev       \
-                  $(DD)\psl2cs.dev    \
-                  $(DD)\roplib.dev    \
-                  $(DD)\ttflib.dev    \
-                  $(DD)\colimlib.dev  \
-                  $(DD)\cielib.dev    \
-                  $(DD)\htxlib.dev    \
-                  $(DD)\psl3lib.dev   \
-                  $(DD)\seprlib.dev   \
-                  $(DD)\translib.dev  \
-                  $(DD)\cidlib.dev    \
-                  $(DD)\psf1lib.dev   \
-		  $(DD)\psf0lib.dev   \
-                  $(DD)\sdctd.dev
+FEATURE_DEVS    = \
+		  $(DD)\psl3.dev		\
+		  $(DD)\pdf.dev		\
+		  $(DD)\dpsnext.dev	\
+                  $(DD)\htxlib.dev	\
+                  $(DD)\roplib.dev	\
+		  $(DD)\ttfont.dev	\
+		  $(DD)\pipe.dev
 
 
 # Main program.
