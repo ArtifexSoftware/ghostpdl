@@ -34,6 +34,7 @@
 #include "pcpalet.h"
 #include "pcindexed.h"
 #include "pcwhtindx.h"
+#include "pcdraw.h"
 #include "rtgmode.h"
 #include "rtrstcmp.h"
 #include "rtraster.h"
@@ -70,7 +71,7 @@ typedef struct pcl_raster_s {
                                                space only */
     const void *        remap_ary;          /* remap array, if needed */
 
-    gs_state *          pgs;                /* image graphic state */
+    pcl_state_t *       pcs;                /* to avoid n extra operand */
     pcl_cs_indexed_t *  pindexed;           /* color space */
 
     gs_image_enum *     pen;                /* image enumerator */
@@ -79,9 +80,16 @@ typedef struct pcl_raster_s {
     uint16              src_width;          /* usable raster width */
     uint16              src_height;         /* remaining usable raster height */
 
+    /* objects required for opaque source/transparent pattern case */
+    gs_image_enum *     mask_pen;           /* enumerator for mask */
+    pcl_cs_indexed_t *  mask_pindexed;      /* special color space for mask */
+    ulong               white_val;          /* value interpreted as white */
+    void                (*gen_mask_row)( struct pcl_raster_s * prast );
+
     /* buffers */
     pcl_seed_row_t *    pseed_rows;         /* seed rows, one per plane */
     byte *              cons_buff;          /* consolidation buffer */
+    byte *              mask_buff;          /* buffer for mask row, if needed */
 
 } pcl_raster_t;
 
@@ -139,6 +147,155 @@ clear_cons_buff(
 }
 
 /*
+ * Clear the mask buffer, allocating it if it does not exist.
+ *
+ * Returns 0 on success, < 0 in the event of an error.
+ */
+  private int
+clear_mask_buff(
+    pcl_raster_t *  prast
+)
+{
+    byte *          pmask = prast->mask_buff;
+    int             nbytes = (prast->src_width + 7) / 8;
+
+    if (pmask == 0) {
+        pmask = gs_alloc_bytes( prast->pmem,
+                                nbytes,
+                                "PCL raster mask buffer"
+                                );
+        if (pmask == 0)
+            return e_Memory;
+        prast->mask_buff = pmask;
+    }
+    memset(pmask, 0, nbytes);
+
+    return 0;
+
+}
+
+/*
+ * Generate a mask row in case there are multiple data sources (in the graphic
+ * library sense). This code takes much advantage of the knowledge that the
+ * mutliple source case is always direct and one bit per pixel.
+ */
+  private void
+gen_mask_multisrc(
+    pcl_raster_t *  prast
+)
+{
+    byte *          ip0 = prast->pseed_rows[0].pdata;
+    byte *          ip1 = prast->pseed_rows[1].pdata;
+    byte *          ip2 = prast->pseed_rows[2].pdata;
+    byte *          op = prast->mask_buff;
+    uint            m0 = (prast->white_val >> 16) & 0xff;
+    uint            m1 = (prast->white_val >> 8) & 0xff;
+    uint            m2 = prast->white_val & 0xff;
+    int             nbytes = prast->pseed_rows[0].size;
+    int             i;
+
+    for (i = 0; i < nbytes; i++)
+        *op++ = (*ip0++ ^ m0) & (*ip1++ ^ m1) & (*ip2++ ^ m2);
+}
+
+/*
+ * Generate a mask from input data that is less than one byte. For PCL rasters
+ * as implemented by this routine, such situations only occur when an integral
+ * number of pixels fit within one byte, and this routine takes advantage of
+ * that situation.
+ */
+  private void
+gen_mask_subbyte(
+    pcl_raster_t *  prast
+)
+{
+    byte *          ip = prast->pseed_rows[0].pdata;
+    byte *          op = prast->mask_buff;
+    int             ishift = prast->bits_per_plane;
+    uint            targ = prast->white_val;
+    int             size = prast->src_width;
+    uint            ival, oval, imask, omask;
+    int             i;
+
+    for (i = 0, ival = 0, oval = 0, imask = 0, omask = 0x80; i < size; i++) {
+        if ((imask >>= ishift) == 0) {
+            imask = 0xff - (0xff >> ishift);
+            ival = *ip++;
+        }
+        if (((ival ^ targ) & imask) == 0)
+            oval |= omask;
+        if ((omask >>= 1) == 0) {
+            *op++ = oval;
+            omask = 0x80;
+            oval = 0;
+        }
+    }
+    if (omask != 0x80)
+        *op++ = oval;
+}
+
+/*
+ * Generate a mask from input data that has one byte per pixel.
+ */
+  private void
+gen_mask_1byte(
+    pcl_raster_t *  prast
+)
+{
+    byte *          ip = (prast->nplanes == 1 ? prast->pseed_rows[0].pdata
+                                              : prast->cons_buff);
+    byte *          op = prast->mask_buff;
+    uint            targ = prast->white_val;
+    int             size = prast->src_width;
+    uint            oval, omask;
+    int             i;
+
+    for (i = 0, oval = 0, omask = 0x80; i < size; i++) {
+        if (*ip++ == targ)
+            oval |= omask;
+        if ((omask >>= 1) == 0) {
+            *op++ = oval;
+            omask = 0x80;
+            oval = 0;
+        }
+    }
+    if (omask != 0x80)
+        *op++ = oval;
+}
+
+/*
+ * Generate a mask row in the case that more than one byte is required per
+ * pixel. The only possible such case in PCL is 8-bits per primary 3 color,
+ * so this routine handles only that case.
+ */
+  void
+gen_mask_multibyte(
+    pcl_raster_t *  prast
+)
+{
+    byte *          ip = prast->pseed_rows[0].pdata;
+    byte *          op = prast->mask_buff;
+    int             size = prast->src_width;
+    ulong           targ = prast->white_val;
+    uint            oval, omask;
+    int             i;
+
+    for (i = 0, oval = 0, omask = 0x80; i < size; i++, ip += 3) {
+        ulong   ival = (((ulong)ip[0]) << 16) | (((ulong)ip[1]) << 8) | ip[2];
+
+        if (ival == targ)
+            oval |= omask;
+        if ((omask >>= 1) == 0) {
+            *op++ = oval;
+            omask = 0x80;
+            oval = 0;
+        }
+    }
+    if (omask != 0x80)
+        *op++ = oval;
+}
+
+/*
  * Consolidate a set of seed rows into the consolidated row buffer.
  *
  * This routine will only be called if:
@@ -186,6 +343,78 @@ consolidate_row(
     }
 
     return 0;
+}
+
+/*
+ * Create an enumerator for the mask portion of an image (if required).
+ *
+ * Returns 0 on success, < 0 in the event of an error.
+ */
+  private int
+create_mask_enumerator(
+    pcl_raster_t *              prast
+)
+{
+    gs_image4_t                 image;
+    gs_image_enum *             pen = gs_image_enum_alloc( prast->pmem,
+                                                 "Create image for PCL raster" );
+    int                         code = 0;
+    const byte *                pcolor = 0;
+    gx_image_enum_common_t *    pie = 0;
+    pcl_state_t *               pcs = prast->pcs;
+
+    if (pen == 0)
+        return e_Memory;
+
+    pcl_set_drawing_color(pcs, pcl_pattern_solid_white, 0, true);
+
+    /* generate the special two entry indexed color space required */
+    if (prast->indexed)
+        pcolor = prast->pindexed->palette.data + 3 * prast->wht_indx;
+    else {
+        static const byte   cwhite[3] = { 1.0, 1.0, 1.0 };
+
+        pcolor = cwhite;
+    }
+    code = pcl_cs_indexed_build_special( &(prast->mask_pindexed),
+                                         prast->pindexed->pbase,
+                                         pcolor,
+                                         prast->pmem
+                                         );
+
+    if (code >= 0) {
+        gs_image4_t_init(&image, prast->mask_pindexed->pcspace);
+        image.Width = prast->src_width;
+        image.Height = prast->src_height;
+        image.CombineWithColor = true;
+        image.format = gs_image_format_chunky;
+        image.BitsPerComponent = 1;
+        image.Decode[0] = 0.0;
+        image.Decode[1] = 1.0;
+        image.MaskColor[0] = 0.0;
+
+        code = gs_image_begin_typed( (const gs_image_common_t *)&image,
+                                     pcs->pgs,
+                                     true,
+                                     &pie
+                                     );
+
+        if (code >= 0)
+            code = gs_image_common_init( pen,
+                                         pie,
+                                         (gs_data_image_t *)&image,
+                                         prast->pmem,
+                                         gs_currentdevice_inline(pcs->pgs)
+                                         );
+    }
+
+    if (code < 0)
+        gs_free_object(prast->pmem, pen, "Create image for PCL raster");
+    else
+        prast->mask_pen = pen;
+
+    pcl_set_drawing_color(pcs, pcs->pattern_type, pcs->pattern_id, true);
+    return code;
 }
 
 /*
@@ -242,17 +471,18 @@ create_image_enumerator(
             image.Decode[2 * i] = prast->pindexed->Decode[2 * i];
             image.Decode[2 * i + 1] = prast->pindexed->Decode[2 * i + 1];
 
-            if (image.Decode[2 * i] == 1.0)
-                image.MaskColor[i] = 0;
-            else if (image.Decode[2 * i + 1] == 1.0)
-                image.MaskColor[i] = (1 << image.BitsPerComponent) - 1;
-            else
-                image.MaskColor[i] = (1 << image.BitsPerComponent);
+            image.MaskColor[i] = (1 << image.BitsPerComponent);
+            if (prast->transparent) {
+                if (image.Decode[2 * i] == 1.0)
+                    image.MaskColor[i] = 0;
+                else if (image.Decode[2 * i + 1] == 1.0)
+                    image.MaskColor[i] = (1 << image.BitsPerComponent) - 1;
+            }
         }
     }
 
     code = gs_image_begin_typed( (const gs_image_common_t *)&image,
-                                 prast->pgs,
+                                 prast->pcs->pgs,
                                  true,
                                  &pie
                                  );
@@ -261,7 +491,7 @@ create_image_enumerator(
                                      pie,
                                      (gs_data_image_t *)&image,
                                      prast->pmem,
-                                     gs_currentdevice_inline(prast->pgs)
+                                     gs_currentdevice_inline(prast->pcs->pgs)
                                      );
     if (code < 0) {
         gs_free_object(prast->pmem, pen, "Create image for PCL raster");
@@ -300,9 +530,96 @@ close_raster(
         gs_free_object(prast->pmem, prast->pen, "Close PCL raster");
         prast->pen = 0;
     }
-    gs_translate(prast->pgs, 0.0, (floatp)(prast->rows_rendered));
+    if (prast->mask_pen != 0) {
+        gs_image_cleanup(prast->mask_pen);
+        gs_free_object(prast->pmem, prast->mask_pen, "Close PCL raster");
+        prast->mask_pen = 0;
+    }
+    gs_translate(prast->pcs->pgs, 0.0, (floatp)(prast->rows_rendered));
     prast->src_height -= prast->rows_rendered;
     prast->rows_rendered = 0;
+}
+
+
+/*
+ * Generate the white-mask corresponding to an image scanline. This is
+ * necessary to implement the opaque source/transparent texture case.
+ *
+ * HP's specification of transparency includes one unintuitive case: opaque
+ * source and transparent texture. In this case, the texture applies only to
+ * the non-white portion of the source; the white portion should be rendered
+ * in a solid white.
+ *
+ * Since the graphic library does not support mutliple textures in a single
+ * rendering operation, it is necessary to split objects that have both a
+ * foreground and a background into two transparent objects: one having just
+ * the foreground, the other just the background. In the case of rasters it
+ * is necessary to form a mask object that is the inverse of the background,
+ * and "paint" it with "white". The following code accomplishes this task.
+ *
+ * It is, unfortunately, not possible to use the graphic libraries image mask
+ * feature to implement the "white mask", because image masks in the graphic
+ * library are not implemented as mask objects. Rather, they are implemented
+ * as transparent colored patterns, with the foreground color taken from the
+ * current color at the time the image mask is begun. Instead, a two entry
+ * transparent colored image is used, whose foreground color is the current
+ * white and whose background color is a transparent white.
+ *
+ * As always, what is considered "white" is evaluated in the source color space;
+ * this varies from HP's practice, and can give unexpected results if an
+ * inverting color lookup table is used.
+ */
+  private int
+process_mask_row(
+    pcl_raster_t *  prast
+)
+{
+    int             code = clear_mask_buff(prast);
+    gs_image_enum * pen = prast->mask_pen;
+
+    if ( (code >= 0)                                                  &&
+         ((pen != 0) || ((code = create_mask_enumerator(prast)) >= 0))  ) {
+        uint            dummy;
+        pcl_state_t *   pcs = prast->pcs;
+
+        pen = prast->mask_pen;
+        pcl_set_drawing_color(pcs, pcl_pattern_solid_white, 0, true);
+        prast->gen_mask_row(prast);
+        code = gs_image_next( pen,
+                              prast->mask_buff,
+                              (prast->src_width + 7) / 8,
+                              &dummy
+                              );
+        pcl_set_drawing_color(pcs, pcs->pattern_type, pcs->pattern_id, true);
+    }
+    return code;
+}
+
+  private int
+process_zero_mask_rows(
+    pcl_raster_t *  prast,
+    int             nrows
+)
+{
+    int             code = clear_mask_buff(prast);
+    gs_image_enum * pen = prast->mask_pen;
+
+    if ( (code >= 0)                                                  &&
+         ((pen != 0) || ((code = create_mask_enumerator(prast)) >= 0))  ) {
+        uint            dummy;
+        pcl_state_t *   pcs = prast->pcs;
+        gs_rop3_t       rop = (gs_rop3_t)(pcs->logical_op);
+        int             nbytes = (prast->src_width + 7) / 8;
+
+        pen = prast->mask_pen;
+        memset(prast->mask_buff, 0xff, nbytes);
+        pcl_set_drawing_color(pcs, pcl_pattern_solid_white, 0, true);
+        gs_setrasterop(pcs->pgs, (gs_rop3_t)rop3_know_S_1((int)0xff));
+        while ((nrows-- > 0) && (code >= 0))
+            code = gs_image_next(pen, prast->mask_buff, nbytes, &dummy);
+        pcl_set_drawing_color(pcs, pcs->pattern_type, pcs->pattern_id, true);
+    }
+    return code;
 }
 
 /*
@@ -366,7 +683,7 @@ process_zero_rows(
     /* render as raster or rectangle */
     if ( ((nrows * nbytes > 1024) || (prast->pen == 0)) && 
          (prast->zero_is_white || prast->zero_is_black)   ) {
-        gs_state *  pgs = prast->pgs;
+        gs_state *  pgs = prast->pcs->pgs;
 
         close_raster(prast, false);
         if ((prast->zero_is_black) || !prast->transparent) {
@@ -381,7 +698,7 @@ process_zero_rows(
                 gs_setrasterop( pgs,
                                 (gs_rop3_t)rop3_invert_S(gs_currentrasterop(pgs))
                                 );
-            gs_rectfill(prast->pgs, &tmp_rect, 1);
+            gs_rectfill(pgs, &tmp_rect, 1);
             if (invert)
                 gs_setrasterop( pgs,
                                 (gs_rop3_t)rop3_invert_S(gs_currentrasterop(pgs))
@@ -391,6 +708,8 @@ process_zero_rows(
 
         prast->src_height -= nrows;
         gs_translate(pgs, 0.0, (floatp)nrows);
+
+        return 0;
 
     } else {
         int             nsrcs = prast->nsrcs;
@@ -424,9 +743,12 @@ process_zero_rows(
                 return code;
         }
         prast->rows_rendered += nrows;
-    }
 
-    return 0;
+        if (prast->gen_mask_row != 0)
+            code = process_zero_mask_rows(prast, nrows);
+
+        return code;
+    }
 }
   
 /*
@@ -491,7 +813,7 @@ process_row(
                                   prast->src_width
                                   );
 
-        return gs_image_next(pen, pb, nbytes, &dummy);
+        code = gs_image_next(pen, pb, nbytes, &dummy);
 
     } else {
         uint    dummy;
@@ -503,8 +825,11 @@ process_row(
                                   prast->pseed_rows[i].size,
                                   &dummy
                                   );
-        return code;
     }
+
+    if ((prast->gen_mask_row != 0) && (code >= 0))
+        code = process_mask_row(prast);
+    return code;
 }
 
 /*
@@ -557,6 +882,8 @@ process_adaptive_compress(
                 uint    dummy;
 
                 code = gs_image_next(pen, pdata, row_size, &dummy);
+                if ((prast->gen_mask_row != 0) && (code >= 0))
+                    code = process_mask_row(prast);
             }
 
         } else
@@ -632,6 +959,14 @@ add_raster_plane(
  * Create a PCL raster object. This procedure is called when entering graphics
  * mode.
  *
+ * Note that a raster must be considered "transparent" if either source or
+ * pattern transparency is in effect. If only pattern transparency is set, an
+ * addition mask object must be created to fill the "white" regions of the
+ * raster. This object does not use the current texture; it sets the texture
+ * to opaque white when it is rendered. This is in conformance with HP's
+ * somewhat unintuitive interpretation of the opaque source/transparent
+ * pattern situation.
+ *
  * Returns 0 on success, < 0 in the event of an error.
  */
   int
@@ -663,9 +998,9 @@ pcl_start_raster(
 
     prast->pmem = pcs->memory;
 
-    prast->transparent = pcs->source_transparent;
+    prast->transparent = (pcs->source_transparent || pcs->pattern_transparent);
     prast->src_height_set = pcs->raster_state.src_height_set;
-    prast->pgs = pcs->pgs;
+    prast->pcs = pcs;
     pcl_cs_indexed_init_from(prast->pindexed, pindexed);
 
     prast->pen = 0;
@@ -673,9 +1008,13 @@ pcl_start_raster(
     prast->rows_rendered = 0;
     prast->src_width = src_width;
     prast->src_height = src_height;
+    prast->mask_pen = 0;
+    prast->mask_pindexed = 0;
+    prast->gen_mask_row = 0;
 
-    /* the conslidation buffer is created when first needed */
+    /* the conslidation and mask buffers are created when first needed */
     prast->cons_buff = 0;
+    prast->mask_buff = 0;
 
     if (penc <= pcl_penc_indexed_by_pixel) {
         int     b_per_i = pcl_cs_indexed_get_bits_per_index(pindexed);
@@ -740,23 +1079,68 @@ pcl_start_raster(
         }
 
         /* check if everything was successful */
-        if (i == prast->nplanes) {
-            prast->pseed_rows = pseed_rows;
-            pcur_raster = prast;
-            return 0;
+        if (i < nplanes) {
+
+            /* memory exhaustion; release the already allocated seed rows */
+            for (j = 0; j < i; j++)
+                gs_free_object( prast->pmem, 
+                                pseed_rows[i].pdata,
+                                "start PCL raster"
+                                );
+            gs_free_object(prast->pmem, pseed_rows, "start PCL raster");
+            pseed_rows = 0;
         }
-
-        /* memory exhaustion; release the already allocated seed rows */
-        for (j = 0; j < i; j++)
-            gs_free_object(prast->pmem, pseed_rows[i].pdata, "start PCL raster");
-
-        gs_free_object(prast->pmem, pseed_rows, "start PCL raster");
     }
 
-    /* must have failed due to memory exhaustion; release the raster object */
-    gs_free_object(prast->pmem, prast, "start PCL raster");
+    /* check for memory exhaustion */
+    if (pseed_rows == 0) {
+        gs_free_object(prast->pmem, prast, "start PCL raster");
+        return e_Memory;
+    }
 
-    return e_Memory;
+    prast->pseed_rows = pseed_rows;
+    pcur_raster = prast;
+
+    /* see if a mask is required */
+    if ( !pcs->source_transparent                                      &&
+         pcs->pattern_transparent                                      &&
+         (!prast->indexed                                           || 
+          (prast->wht_indx
+                    < (1 << prast->nplanes * prast->bits_per_plane))  )  ) {
+
+        if (!prast->indexed) {
+            ulong   white_val = 0UL;
+
+            /* direct by plane or by pixel, one or 8 bits per primary */
+            prast->gen_mask_row = (prast->nsrcs > 1 ? gen_mask_multisrc
+                                                    : gen_mask_multibyte);
+            if (prast->pindexed->Decode[1] == 1.0)
+                white_val |= ((ulong)0xff) << 16;
+            if (prast->pindexed->Decode[3] == 1.0)
+                white_val |= ((ulong)0xff) << 8;
+            if (prast->pindexed->Decode[5] == 1.0)
+                white_val |= 0xff;
+            prast->white_val = white_val;
+
+        } else if ((prast->nplanes > 1) || (prast->bits_per_plane == 8)){
+
+            /* indexed by plane or direct by pixel, 8 bits per pixel */
+            prast->gen_mask_row = gen_mask_1byte;
+            prast->white_val = prast->wht_indx;
+
+        } else {
+            ulong   white_val = prast->wht_indx;
+            int     n = 8 / prast->bits_per_plane;
+
+            /* indexed by pixel, < 8 bits per pixel */
+            prast->gen_mask_row = gen_mask_subbyte;
+            while (n-- > 0)
+                white_val |= (white_val << prast->bits_per_plane);
+            prast->white_val = white_val;
+        }
+    }
+
+    return 0;
 }
 
 /*
@@ -788,6 +1172,10 @@ pcl_complete_raster(void)
         pcl_cs_indexed_release(prast->pindexed);
         prast->pindexed = 0;
     }
+    if (prast->mask_pindexed != 0) {
+        pcl_cs_indexed_release(prast->mask_pindexed);
+        prast->mask_pindexed = 0;
+    }
 
     if (prast->pseed_rows != 0) {
         for (i = 0; i < prast->nplanes; i++) {
@@ -803,6 +1191,8 @@ pcl_complete_raster(void)
 
     if (prast->cons_buff != 0)
         gs_free_object(prast->pmem, prast->cons_buff, "Complete PCL raster");
+    if (prast->mask_buff != 0)
+        gs_free_object(prast->pmem, prast->mask_buff, "Complete PCL raster");
     
 
     /* free the PCL raster robject itself */
