@@ -1,4 +1,4 @@
-/* Copyright (C) 1999, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1999, 2000, 2001 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -528,7 +528,10 @@ cff_write_Top_common(cff_writer_t *pcw, gs_font_base *pbfont,
 	cff_put_string_value(pcw, pinfo->FamilyName.data,
 			     pinfo->FamilyName.size, TOP_FamilyName);
     /* (Weight) */
-    {
+    if (pbfont->FontBBox.p.x != 0 || pbfont->FontBBox.p.y != 0 ||
+	pbfont->FontBBox.q.x != 0 || pbfont->FontBBox.q.y != 0
+	) {
+	/* An omitted FontBBox is equivalent to an empty one. */
 	cff_put_real(pcw, pbfont->FontBBox.p.x);
 	cff_put_real(pcw, pbfont->FontBBox.p.y);
 	cff_put_real(pcw, pbfont->FontBBox.q.x);
