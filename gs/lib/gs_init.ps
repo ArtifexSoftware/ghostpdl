@@ -1591,9 +1591,12 @@ if
 
 (END INITFILES) VMDEBUG
 
-%% Replace 1 (gs_stres.ps)
-(gs_stres.ps) dup runlibfile VMDEBUG
-(END STATIC RESOURCES) VMDEBUG
+% language switching builds do not include the unicode decoding resources
+% this is to save space in a rom build 
+% 
+% %% Replace 1 (gs_stres.ps)
+% (gs_stres.ps) dup runlibfile VMDEBUG
+% (END STATIC RESOURCES) VMDEBUG
 
 % Create a null font.  This is the initial font.
 8 dict dup begin
