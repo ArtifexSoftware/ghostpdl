@@ -155,6 +155,9 @@ hpgl_do_reset(
 	hpgl_PM(&hpgl_args, pcls);
     }
 
+    if ((type & pcl_reset_overlay) != 0) 
+        hpgl_reset_overlay(pcls);
+
     if ((type & (pcl_reset_plot_size)) != 0) {
 	/* HAS reset picture frame scaling factors */
     }
