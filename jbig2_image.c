@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_image.c,v 1.12 2002/07/03 19:43:21 giles Exp $
+    $Id: jbig2_image.c,v 1.13 2002/07/03 19:54:43 giles Exp $
 */
 
 #include <stdio.h>
@@ -75,9 +75,10 @@ int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src,
     }
 
     /* clip */
-    // FIXME: this isn't sufficient
     w = src->width;
     h = src->height;
+    ss = src->data;
+    // FIXME: this isn't sufficient for the < 0 cases
     if (x < 0) { w += x; x = 0; }
     if (y < 0) { h += y; y = 0; } 
     w = (x + w < dst->width) ? w : dst->width - x;
@@ -93,7 +94,6 @@ int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src,
         return 0;
     }
 
-    /* general OR case */
     leftbyte = x >> 3;
     leftbits = x & 7;
     rightbyte = (x + w) >> 3;
@@ -101,8 +101,9 @@ int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src,
     fprintf(stderr, "left byte:bits %d:%d right byte:bits %d:%d\n",
         leftbyte, leftbits, rightbyte, rightbits);
 
-    s = ss = src->data;
-    d = dd = dst->data + y*dst->stride + leftbyte;    
+    /* general OR case */    
+    d = ss;
+    d = dd = dst->data + y*dst->stride + leftbyte;
     if (leftbyte == rightbyte) {
         mask = (1 << (w & 7)) - 1;
         for (j = 0; j < h; j++) {
@@ -112,13 +113,15 @@ int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src,
         }
     } else {
         mask = 1 << (8 - leftbits) - 1;
+        highmask = (1 << rightbits) - 1;
         for (j = 0; j < h; j++) {
             *d++ |= (*s & mask) << leftbits;
             for(i = leftbyte; i < rightbyte; i++) {
                 *d |= (*s++ & ~mask) >> leftbits;
                 *d++ |= (*s & mask) << leftbits;
             }
-            *d |= (*++s & highmask) << (8 - rightbits);
+            *d |= (*s++ & ~mask) >> leftbits;
+            *d |= (*s & highmask) << leftbits;
             d = (dd += dst->stride);
             s = (ss += src->stride);
         }
