@@ -276,7 +276,6 @@ clj_put_params(
     int                     code = 0;
     int                     pagesize_flag = 0;
     bool                    rotate = 0;
-    const clj_paper_size    *psize;
 
     if ( (param_read_float_array(plist, "HWResolution", &fres) == 0) &&
           !is_supported_resolution(fres.data) ) 
@@ -481,9 +480,13 @@ clj_print_page(
     	imageable_height = pdev->height - (2 * psize->offsets.x) * fs_res;
     }
 
-    /* start the page */
+    /* start the page.  The pcl origin (0, 150 dots by default, y
+       increasing down the long edge side of the page) needs to be
+       offset such that it coincides with the offsets of the imageable
+       area.  This calculation should be independant of rotation but
+       only the rotated case has been tested with a real device. */
     fprintf( prn_stream,
-             "\033E\033&u300D\033&l%da1x%dO\033*p0x0y-150Y\033*t%dR"
+             "\033E\033&u300D\033&l%da1x%dO\033*p0x0y+50x-100Y\033*t%dR"
 #ifdef USE_FAST_MODE
 	     "\033*r-3U"
 #else
