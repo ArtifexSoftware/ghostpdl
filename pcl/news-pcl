@@ -6,10 +6,12 @@
 This file, NEWS-PCL, describes the changes in the most recent releases of
 Aladdin's PCL5 code, in reverse chronological order.
 
-Version 0.34 (8/9/97)
-=====================
+Version 0.35 (8/15/97)
+======================
 
-Fixes more FTS problems.
+Fixes more FTS problems.  Note that getting the full benefit of the fixes
+requires pl version 1.15 or later (for #12 and #19) and graphics library
+version 5.10 or later (for #55).
 
 Here is the current bug list: bugs believed fixed are marked with a *; bugs
 deliberately (or necessarily) not fixed at this time are marked with (*).
@@ -20,7 +22,8 @@ univers typeface.  We do not have a univers typeface in our font repotoire.
 *3. empty.
 *4. page rotation wrong - 70-78, 90-98, 580-585, 2130.
 *5. improper clipping - 1470.
-6. spacing or font selection - 284, 291-294, 300, 301, 1710, 2240, 2241, 2242 (lots more).
+*6. spacing or font selection - 284, 291-294, 300, 301, 1710, 2240, 2241, 2242
+(lots more).
 (*)7. right margin clipping - 121, 124.  (same problem as #8, q.v.)
 (*)8. hmi problem - 141.  (requires fonts with the same metrics as H-P's
 fonts, including same space width)
@@ -28,14 +31,15 @@ fonts, including same space width)
 (*)10. missing crosshatch fill - 174, 184, 194, 204, 214, 224.  (only
 missing on display: printer is OK, so we won't bother tracking it down now)
 *11. horizontal column position - 206, 216, 226.
-12. missing glyphs - 260, 261, 270, 271, 420, 421, 1151, 1300-1470, 2330.
-13. symbol set selection side effect - 274, 2050, 2130, 2261.
+(*)12. missing/incorrect glyphs - 260, 261, 270, 271, 420, 421, 1151,
+1300-1470, 2330.  (remaining missing glyphs require expanded fonts)
+*13. symbol set selection side effect - 274, 2050, 2130, 2261.
 *14. pitch mode - 320
 *15. extra underlines - 412-415
 *16. raster y offset - 600, 602, 2250
 *17. extra pages in raster mode - 600-
 *18. extra raster row - 618
-19. unmapped chars print as boxes - 622 & many others.
+*19. unmapped chars print as boxes - 622 & many others.
 *20. missing raster pages - 618-641
 *21. pattern/raster interaction - 661-663, 1851.
 *22. pattern selection - 665
@@ -47,11 +51,11 @@ missing on display: printer is OK, so we won't bother tracking it down now)
 *27. out of phase dashed line 1062, 1082, 1116, 1132.
 *28. misplaced line - probably position error after hpgl/2 line fill - 1094
 *29. wrong fill - 1113.
-30. spacing/proportional font problem - 1161.
+*30. spacing/proportional font problem - 1161.
 *31. font height - 1181.
 *32. stroke weight - 1201.
-33. outline fonts not filled or edged - 1220-1223.
-34. bitmap font at non-orthogonal skew - 1241.
+*33. outline fonts not filled or edged - 1220-1223.
+*34. bitmap font at non-orthogonal skew - 1241.
 *35. variable text path - 1270-1274.
 *36. extra space - 1280-1282.
 *37. missing wedges 1472.
@@ -59,20 +63,22 @@ missing on display: printer is OK, so we won't bother tracking it down now)
 *39. extra black rectangles 1860, 1861-1890.
 *40. captions misplaced 2013, 2020
 41. text & bitmap transparency 2020, 2021
-42. hpgl/2 pcl user defined patterns unsupported - 2030-2042, 2290, 2291, 1486.
+*42. hpgl/2 pcl user defined patterns unsupported - 2030-2042, 2290, 2291,
+1486.
 *43. test pages rotated 180 degrees. 2221-
 *44. si enhanced 2253
 *45. bezier 2340-2330.
-46. caption font placement (obvious in 960)
+*46. caption font placement (obvious in 960, 965)
 47. missing extra white box in raster (probably #12 missing glyph) - 820, 821, 822 
 48. anchor corner still slightly off - 1470.
 49. fill angle and spacing (possibly #48) - 1482, 1483, 1484, 1487
 *50. Triangular end instead of round - 1490.
 *51. Line attribute state not correct - 1493, 1502, 1504, 1810.
 *52. out of phase dashed line - 1507.
-53. giant stick font characters - 1523, 1810 note: problem might obscure other problems in this test.
+*53. giant stick font characters - 1513, 1810 note: problem might obscure
+other problems in this test.
 54. pen color wrong - 1512.
-55. left offset clipped incorrectly - 1761.
+*55. left offset clipped incorrectly - 1761.
 
 The following PCL5e commands and facilities are still unimplemented:
 	- Select default font (ESC (|) 3 @).  (pcfont.c)
@@ -80,6 +86,132 @@ The following PCL5e commands and facilities are still unimplemented:
 	- Continuation blocks for character data (for ESC ( s # W).
 (pcsfont.c)
 	- Variable text path (ESC & c # T).  (pctext.c)
+
+(LPD) Fixes bugs:
+	- GL/2 characters were scaled to user units if neither SI nor SR was
+in effect.  Fixes #53.  (pgdraw.h, pgdraw.c, pglabel.c)
+	- A forward declaration was lacking for
+hpgl_compute_user_units_to_plu_ctm.  It turned out we needed it to be
+exported anyway.  (pgdraw.h, pgdraw.c)
+	- The arc font wasn't actually proportionally spaced.  Fixes #30.
+(pgfdata.h, pgfont.h, pgfdata.c, pgfont.c)
+	- Fixed-spacing PCL fonts did some extra work if HMI wasn't set
+explicitly.  (This may not have had any effect on the output.)  (pctext.c)
+	- Floating-point arguments to PCL commands were parsed as garbage!
+It's amazing that this wasn't detected before.  Fixes missing lines in FTS
+frames 281 and 291, and maybe some other bits of #6.  (pcparse.c)
+	- The pitch wasn't set properly for Intellifonts.  Fixes #6 for
+frame 284.  (pcsfont.c)
+	- The offsets of Intellifont outline auxiliary points were
+interpreted as unsigned rather than signed, causing some characters to be
+distorted.  (pcifont.c)
+	- The decoding of curves and lines in Intellifont outlines was
+interchanged, causing some characters to be distorted.  (pcifont.c)
+	- The computation of GL/2 label origin didn't distinguish correctly
+between font height and cell height, causing labels to be misplaced
+vertically for some LO values.  Fixes #46.  (pglabel.c)
+	- The limited rotation rule for bitmap fonts wasn't implemented.
+Fixes #34.  (pglabel.c)
+	- In PCL text, undefined characters printed as boxes rather than as
+spaces.  Fixes #19, but requires a pl library fix introduced in version
+1.15.  (pctext.c)
+	- A BS followed by an undefined character caused the interpreter to
+exit with an error.  (pctext.c)
+
+We aren't sure what combination of the above did it, but #6 and #13 are
+fixed, at least for the specific frames listed under them.
+
+#55 was caused by incorrect margin settings in the graphics library's
+LaserJet drivers.  The fix for this will be in library version 5.10.
+
+The fixable part of #12 was caused by incorrect symbol set information in
+the pl library.  The fix is in pl version 1.15.
+
+(LPD) Implements the following unimplemented features:
+	- Intellifont compound characters.  Fixes #13 for frame 274.
+(pcsfont.c, pcifont.c)
+
+(LPD)
+	- Collapses the two switches for LO into one.  (pglabel.c)
+	- Removes the current_render_mode variable from the GL/2 state.
+(pgdraw.h, pgstate.h, pgdraw.c, pginit.c, pglabel.c)
+	- Changes the bookkeeping for GL/2 character scaling mode from two
+Booleans to an enum, which reflects the underlying logic better.
+(pgstate.h, pgchar.c, pglabel.c)
+	- Adds debugging tracing for the Intellifont outline interpreter.
+(pcifont.c)
+	- Adds fake Univers Condensed fonts.  (pcfont.c)
+	- Makes GL/2 text use show rather than charpath/fill in the most
+common cases.  This enables use of the library's character cache, which is
+required to obtain reasonable performance.  (pglabel.c)
+	- Splits off the initial font loading code into a separate file,
+since it's not functionally tied to the font-related PCL commands.
+(pcfont.c, pclfont.c)
+
+(HAS) ChangeLog:
+
+	* pgdraw.c (hpgl_set_drawing_color): call vector routines for
+	appropriate character fill cases.  Fixes #33.  There is still a
+	line width and edging problem for 1220 - 1223 but that is a
+	different bug.
+
+	* pcdraw.h (pcl_set_drawing_color): modified to always pass the
+	pcl state pattern dictionary to pcl_set_drawing_color().  (see
+	next entry)
+
+	* pgdraw.c (hpgl_set_drawing_color): modified to accept a
+	pattern dictionary as a parameter.
+
+	* pcprint.c (pcl_user_defined_pattern): split out into two
+	routines, one to parse the data and the other to store the
+	pattern.  The latter is used by hpgl/2 RF to convert RF to user
+	defined pcl patterns.  Also new file pcprint.h that exports this.
+
+	* pgdraw.c (hpgl_add_point_to_path): added parameter to optionally
+	set the ctm (i.e. clients can now provide their own ctm by setting
+	it in the state and setting the parameter to false).  Changes to
+	all pg files to support the change.
+
+	* pglfill.c (hpgl_RF): rewrriten to use dictionaries and pcl user
+ 	defined pattern code.  ARGH - There is a serious problem in this
+ 	code.  Currently, temporary pattern data is allocated in static
+ 	variables because dynamically allocating the buffer seems to
+ 	unmask a bug in the parser (??).  When allocated dynamically the
+ 	data buffer is stepped on while calling hpgl_arg_c_int().  It seems
+ 	to be near a longjmp().  I spent some time looking at this
+ 	and decided to put the temporary hack in and continue on.  We have
+	"reasonable" output now for tests listed in #42.  Pcl user
+	defined output is correct and hpgl/2 user defined output is 
+	slightly different.  design change also affects: pginit.c pgstate.h.
+
+	* pgdraw.c (pcl_angle): changed pcl_angle to range 0..3
+
+	* pgconfig.c (hpgl_RO): When maintaining the pen in device space
+	the code was not checking that the current mode was absolute vs
+	relative.  part of #42 (2031 and 2041).
+
+	* pcdraw.h (pcl_set_drawing_color): uses pcls->patterns as default
+	for pcl code.  hpgl/2 will use a different pattern.  part of #42
+	PETER: you may want to do this differently.  This was the minimal
+	pcl code change to support the hpgl/2 fill implementation.
+
+	* pcdraw.c (pcl_set_drawing_color_rotation): new parameter -
+	pointer to a dictionary containing pattern data to be used for the
+	cases of pcl and hpgl user defined pattern.  part of #42
+
+	* pgdraw.c (hpgl_set_drawing_color): set up pcl user defined fill
+	types in pgdraw.c.  Fixes part of #42.
+	(hpgl_set_drawing_color): removed return when filling vector
+	lines.  It turns out that screen (filled) vectors can be used as
+	fills.  Fills of fills.  Fixes part of #42 (FTS - 2042)
+
+	* pgdraw.c (hpgl_set_drawing_color): moved setting of source
+	transparency from hpgl_TR() -- silly mistake.
+
+Version 0.34 (8/9/97)
+=====================
+
+Fixes more FTS problems.
 
 (LPD) Fixes bugs:
 	- DV didn't interact properly with LO.  Mostly fixes #35.  (pglabel.c)

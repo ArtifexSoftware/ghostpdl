@@ -53,9 +53,9 @@ typedef struct hpgl_path_state_s {
   gx_path path; 
 } hpgl_path_state_t;
 
-/* Define the current rendering mode - character, polygon, or vector.
-   This will affect the line attributes chosen see
-   hpgl_set_graphics_line_attribute_state.  And defines if we use
+/* Define rendering modes - character, polygon, or vector.
+   This affects the line attributes chosen (see
+   hpgl_set_graphics_line_attribute_state) and whether we use
    stroke or fill on the path.  */
 typedef enum {
 	hpgl_rm_vector,
@@ -165,7 +165,6 @@ typedef struct pcl_hpgl_state_s {
         gs_point pos;
         /* used to track the line drawing state in hpgl */
         gs_point first_point;
-	hpgl_rendering_mode_t current_render_mode; /* HAS revisit */
 
 		/* Chapter 21 (pgpoly.c) */
 	struct polygon_ {
@@ -222,7 +221,6 @@ typedef struct pcl_hpgl_state_s {
 	hpgl_line_type_t fixed_line_type[8];
 	hpgl_line_type_t adaptive_line_type[8];
 	gs_point anchor_corner;
-	gx_bitmap fill_pattern[8];
 	bool source_transparent;
 	struct scr_ {
 	  enum {
@@ -240,11 +238,20 @@ typedef struct pcl_hpgl_state_s {
 	  } param;
 	} screen;
 	    /* Temporary while downloading raster fill pattern */
+	    /****** NOT USED NOW, BUT MAY BE USED AGAIN ******/
 	struct rf_ {
 	  int index, width, height;
 	  uint raster;
 	  byte *data;
 	} raster_fill;
+	/* dictionary of raster patterns, actually raster fill
+	   patterns are passed on to the pcl pattern drawing machinary
+	   masquerading as pcl user defined patterns */
+	pl_dict_t raster_patterns;
+	    /****** FOLLOWING MAY BE DELETED AGAIN ******/
+	/* derived from the current raster fill index */
+	pcl_id_t raster_pattern_id;
+	uint raster_fill_index;
 
 		/* Chapter 23 (pgchar.c, pglabel.c) */
 
@@ -266,8 +273,11 @@ typedef struct pcl_hpgl_state_s {
 	  int line_feed_direction; /* +1 = normal, -1 = reversed */
 	  gs_point extra_space;
 	  gs_point size;
-	  bool size_relative;
-	  bool size_set;
+	  enum {
+	    hpgl_size_not_set,
+	    hpgl_size_absolute,
+	    hpgl_size_relative
+	  } size_mode;
 	  hpgl_real_t slant;
 	  enum {
 	    hpgl_char_solid_edge = 0,

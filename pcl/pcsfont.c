@@ -261,7 +261,10 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcls)
 	      return code;
 	    pcl_fill_in_intelli_font(pfont, gs_next_ids(1));
 	    /* pfh->Pitch is design unit width for scalable fonts. */
-	    /****** HOW TO SET THIS? ******/
+	    { uint pitch_cp =
+		pl_get_uint16(pfh->Pitch) * 100 * pfont->FontMatrix.xx;
+	      pl_fp_set_pitch_cp(&plfont->params, pitch_cp);
+	    }
 	    break;
 	  }
 	  default:
@@ -371,7 +374,7 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcls)
 	    }
 	    break;
 	  case pccd_intellifont:
-	    if ( data[2] != 2 || count < 14 ||
+	    if ( data[2] != 2 ||
 		 (format != pcfh_intellifont_bound &&
 		  format != pcfh_intellifont_unbound)
 	       )
@@ -379,6 +382,9 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcls)
 	    switch ( data[3] )
 	      {
 	      case 3:		/* non-compound character */
+		/* See TRM Figure 11-16 (p. 11-67) for the following. */
+		if ( count < 14 )
+		  return e_Range;
 		{ uint data_size = pl_get_uint16(data + 4);
 		  uint contour_offset = pl_get_uint16(data + 6);
 		  uint metric_offset = pl_get_uint16(data + 8);
@@ -398,7 +404,21 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcls)
 		}
 		break;
 	      case 4:		/* compound character */
-		/* We don't handle compound characters yet. */
+		/* See TRM Figure 11-18 (p. 11-68) and 11-19 (p. 11-73) */
+		/* for the following. */
+		if ( count < 8 )
+		  return e_Range;
+		{ /*
+		   * TRM Figure 11-18 is wrong: the number of components
+		   * is a byte, not a 16-bit quantity.  (It is identified
+		   * correctly as a UB on p. 11-70, however.)
+		   */
+		  uint num_components = data[6];
+
+		  if ( count != 8 + num_components * 6 + 2 )
+		    return e_Range;
+		}
+		break;
 	      default:
 		return e_Range;
 	      }

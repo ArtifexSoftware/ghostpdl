@@ -75,30 +75,21 @@ hpgl_default_coordinate_system(hpgl_state_t *pcls)
 /* Reset a fill pattern to solid fill.  The index is 1-origin, */
 /* as for the RF command.  free = true means free the old pattern if any. */
 void
-hpgl_default_fill_pattern(hpgl_state_t *pgls, int index, bool free)
-{	int index0 = index - 1;
-
-	if ( free )
-	  gs_free_object(pgls->memory, pgls->g.fill_pattern[index0].data,
-			 "fill pattern(reset)");
-	pgls->g.fill_pattern[index0].data = 0;
+hpgl_default_fill_pattern(hpgl_state_t *pgls, int index)
+{	
+	pcl_id_t id;
+	id_set_value(id, index);
+	pl_dict_undef(&pgls->g.raster_patterns, id_key(id), 2);
 }
 /* Reset all the fill patterns to solid fill. */
 void
-hpgl_default_all_fill_patterns(hpgl_state_t *pgls, bool free)
+hpgl_default_all_fill_patterns(hpgl_state_t *pgls)
 {	int i;
 
-        for ( i = 1; i <= countof(pgls->g.fill_pattern); ++i )
-	  hpgl_default_fill_pattern(pgls, i, free);
+        for ( i = 1; i <= 8; ++i )
+	  hpgl_default_fill_pattern(pgls, i);
 }
 
-/* HAS this is necessary to support graphics operations in character
-   mode.  The setup should be revisited. */
-void
-hpgl_default_render_mode(pcl_state_t *pcls)
-{
-	pcls->g.current_render_mode = hpgl_rm_vector;
-}
 /* fill the state with a bogus value -- debug only.  */
 
  private void
@@ -124,7 +115,8 @@ hpgl_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 	    if ( type & (pcl_reset_initial | pcl_reset_cold) )
 	      {
 		hpgl_clear_state(pcls);
-		hpgl_default_all_fill_patterns(pcls, false);
+		pl_dict_init(&pcls->g.raster_patterns, pcls->memory, NULL);
+		hpgl_default_all_fill_patterns(pcls);
 		gx_path_init(&pcls->g.polygon.buffer.path,
 			     pcls->memory);
 	      }
@@ -139,8 +131,6 @@ hpgl_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
                needs investigation since we should not have a path at
                the end of gl/2 invocation.  */
 	    hpgl_clear_current_path(pcls);
-	    /* set rendering mode to default */
-	    hpgl_default_render_mode(pcls);
 	    /* Initialize stick/arc font instances */
 	    pcls->g.stick_font[0][0].pfont =
 	      pcls->g.stick_font[0][1].pfont =

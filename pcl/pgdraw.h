@@ -8,15 +8,22 @@
 #ifndef pgdraw_INCLUDED
 #  define pgdraw_INCLUDED
 
-/* set ctm global for SC command only */
+/* set plu ctm, exported only so that labels can ignore scaling */
+int hpgl_set_plu_ctm(P1(hpgl_state_t *pgls));
+
+/* compute the scaling transformation from plu to user units */
+int hpgl_compute_user_units_to_plu_ctm(P2(const hpgl_state_t *pgls,
+					  gs_matrix *pmat));
+
+/* set (user units) ctm */
 int hpgl_set_ctm(P1(hpgl_state_t *pgls));
 
 /* function to get the current hpgl/2 state position */
 int hpgl_get_current_position(P2(hpgl_state_t *pgls, gs_point *pt));
 
 /* puts a point into the path using the operation specified by func */
-int hpgl_add_point_to_path(P4(hpgl_state_t *pgls, floatp x, floatp y, 
-			      hpgl_plot_function_t func));
+int hpgl_add_point_to_path(P5(hpgl_state_t *pgls, floatp x, floatp y, 
+			      hpgl_plot_function_t func, bool set_ctm));
 
 /* puts an arc into the current path.  start moveto indicates that we
    use moveto to go from the arc center to arc circumference. */

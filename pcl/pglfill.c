@@ -10,6 +10,8 @@
 #include "pggeom.h"
 #include "pgdraw.h"
 #include "pgmisc.h"
+#include "pcprint.h"
+#include "pcdraw.h"
 #include "gsuid.h"		/* for gxbitmap.h */
 #include "gstypes.h"		/* for gxbitmap.h */
 #include "gsstate.h"            /* needed by gsrop.h */
@@ -105,7 +107,7 @@ hatch:	    { hpgl_real_t spacing = params->spacing;
 	      if ( hpgl_arg_c_int(pargs, &index) )
 		{ if ( index < 1 || index > 8 )
 		    return e_Range;
-		  pgls->g.fill.param.pattern_index = index;
+		  pgls->g.raster_fill_index = index;
 		}
 	    }
 	    break;
@@ -312,23 +314,29 @@ hpgl_PW(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	return 0;
 }
 
+/* FIXME -- static global here because parser's longjmp clobbers the
+   dynamic allocation. */
+char data[1024];
+static char *pattern_data;
+
 /* RF [index[,width,height,pen...]]; */
 int
 hpgl_RF(hpgl_args_t *pargs, hpgl_state_t *pgls)
-{	int index, width, height;
-	uint raster;
-
+{	
+	uint index, width, height;
+	int build_pat;
 	if ( pargs->phase == 0 )
-	  { if ( !hpgl_arg_c_int(pargs, &index) )
-	      { hpgl_default_all_fill_patterns(pgls, true);
-	        /**** INVALIDATE ANY CACHED VALUES ****/
+	  { 
+	    if ( !hpgl_arg_c_int(pargs, &index) )
+	      { 
+		hpgl_default_all_fill_patterns(pgls);
 		return 0;
 	      }
 	    if ( index < 1 || index > 8 )
 	      return e_Range;
 	    if ( !hpgl_arg_c_int(pargs, &width) )
-	      { hpgl_default_fill_pattern(pgls, index, true);
-	        /**** INVALIDATE ANY CACHED VALUES ****/
+	      { 
+		hpgl_default_fill_pattern(pgls, index);
 		return 0;
 	      }
 	    if ( width < 1 || width > 255 ||
@@ -336,43 +344,57 @@ hpgl_RF(hpgl_args_t *pargs, hpgl_state_t *pgls)
 		 height < 1 || height > 255
 	       )
 	      return e_Range;
-	    pgls->g.raster_fill.width = width;
-	    pgls->g.raster_fill.height = height;
-	    /**** MODIFY FOLLOWING FOR COLOR ****/
-	    raster = bitmap_raster(width);
-	    pgls->g.raster_fill.raster = raster;
-	    pgls->g.raster_fill.data =
-	      gs_alloc_byte_array(pgls->memory, height, raster, "hpgl_RF");
-	    if ( pgls->g.raster_fill.data == 0 )
-	      return_error(e_Memory);
-	    memset(pgls->g.raster_fill.data, 0, raster * height);
-	    pgls->g.raster_fill.index = index;
-	    hpgl_next_phase(pargs);
+#define bitmap_width ((width + 7) >> 3)
+	    /* FIXME -- somehow the pg parser steps on this data while
+               parsing pixels */
+               
+#ifdef CLOBBER
+	    data = gs_alloc_bytes(pgls->memory,
+				  height * bitmap_width +
+				  sizeof(pcl_pattern_t),
+				  "hpgl raster fill");
+#endif
+	    if ( data == 0 )
+	      return e_Memory;
+
+	    /* format, continuation, pixel encoding, reserved, height
+               in pixels, width in pixels, and resolution */
+	    sprintf(data, "%c%c%c%c%c%c%c%c%c%c%c%c", 0, 0, 1, 0,
+		    height >> 8, height & 0xff, width >> 8, width & 0xff,
+		    ((uint)floor(pgls->resolution.x + 0.5)) >> 8,
+		    ((uint)floor(pgls->resolution.x + 0.5)) & 0xff,
+		    ((uint)floor(pgls->resolution.y + 0.5)) >> 8,
+		    ((uint)floor(pgls->resolution.y + 0.5)) & 0xff );
+		     
+	    id_set_value(pgls->g.raster_pattern_id, index);
+	    pattern_data = data + pattern_data_offset;
+	    memset(pattern_data, 0, height * bitmap_width);
 	  }
-	else
-	  { width = pgls->g.raster_fill.width;
-	    height = pgls->g.raster_fill.height;
-	    raster = pgls->g.raster_fill.raster;
-	  }
-	/* We use the phase to count pixel values, 1-origin. */
-	while ( pargs->phase <= width * height )
-	  { int pixel;
+	while ( pargs->phase < width * height )
+	  { 
+	    int pixel;
 	    if ( !hpgl_arg_c_int(pargs, &pixel) )
 	      break;
-	    /* HAS does not handle color */
-	    if ( pixel )
-	      {
-		int bitindx = pargs->phase - 1;
-		pgls->g.raster_fill.data[bitindx >> 3] |= (128 >> (bitindx & 7));
-	      }
-	    hpgl_next_phase(pargs);
+	      if ( pixel )
+		pattern_data[pargs->phase >> 3] |= (128 >> (pargs->phase & 7));
+	      pargs->phase++;
 	  }
-	index = pgls->g.raster_fill.index - 1; /* make 0-origin */
-	gs_free_object(pgls->memory, pgls->g.fill_pattern[index].data,
-		       "hpgl_RF(old pattern)");
-	pgls->g.fill_pattern[index].data = pgls->g.raster_fill.data;
-	/**** FILL IN REST OF fill_pattern ELEMENT ****/
-	return e_Unimplemented;
+	build_pat = 
+	  pcl_store_user_defined_pattern(pgls, &pgls->g.raster_patterns,
+					 pgls->g.raster_pattern_id, 
+					 data,
+					 height * bitmap_width + 
+					 sizeof(pcl_pattern_t));
+#undef bitmap_width
+#ifdef CLOBBER
+	gs_free_object(pgls->memory, data, "hpgl raster fill");
+#endif
+	if ( build_pat != 0) 
+	  { 
+	    dprintf( "bug\n" );
+	    return 0;
+	  }
+	return 0;
 }
 
 /* SM [char]; */
@@ -483,7 +505,6 @@ hpgl_TR(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	if ( hpgl_arg_c_int(pargs, &mode) && (mode & ~1) )
 	  return e_Range;
 	pgls->g.source_transparent = mode;
-	gs_setsourcetransparent(pgls->pgs, pgls->g.source_transparent);
 	return 0;
 }
 

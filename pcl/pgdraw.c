@@ -80,10 +80,89 @@ hpgl_set_pcl_to_plu_ctm(hpgl_state_t *pgls)
 	return 0;
 }
 
- private int
-hpgl_set_plu_to_device_ctm(hpgl_state_t *pgls)
+/* Set the CTM to map PLU to device units, regardless of scaling. */
+/* (We need this for labels when scaling is on.) */
+ int
+hpgl_set_plu_ctm(hpgl_state_t *pgls)
 {
 	hpgl_call(hpgl_set_pcl_to_plu_ctm(pgls));
+	return 0;
+}
+
+/* The CTM maps PLU to device units; adjust it to handle scaling, if any. */
+ int
+hpgl_compute_user_units_to_plu_ctm(const hpgl_state_t *pgls, gs_matrix *pmat)
+{	floatp origin_x = pgls->g.P1.x, origin_y = pgls->g.P1.y;
+
+	switch ( pgls->g.scaling_type )
+	  {
+	  case hpgl_scaling_none:
+	    gs_make_identity(pmat);
+	    break;
+	  case hpgl_scaling_point_factor:
+	    gs_make_translation(origin_x, origin_y, pmat);
+	    gs_matrix_scale(pmat, pgls->g.scaling_params.factor.x,
+			    pgls->g.scaling_params.factor.y, pmat);
+	    gs_matrix_translate(pmat, -pgls->g.scaling_params.pmin.x,
+				-pgls->g.scaling_params.pmin.y, pmat);
+	    break;
+	  default:
+	  /*case hpgl_scaling_anisotropic:*/
+	  /*case hpgl_scaling_isotropic:*/
+	    {
+	      floatp window_x = pgls->g.P2.x - origin_x,
+		range_x = pgls->g.scaling_params.pmax.x -
+		  pgls->g.scaling_params.pmin.x,
+		scale_x = window_x / range_x;
+	      floatp window_y = pgls->g.P2.y - origin_y,
+		range_y = pgls->g.scaling_params.pmax.y -
+		  pgls->g.scaling_params.pmin.y,
+		scale_y = window_y / range_y;
+
+	      if ( pgls->g.scaling_type == hpgl_scaling_isotropic )
+		{ if ( scale_x > scale_y )
+		    { /* Reduce the X scaling. */
+		      origin_x += range_x * (scale_x - scale_y) *
+			pgls->g.scaling_params.left;
+		      scale_x = scale_y;
+		    }
+		  else if ( scale_y > scale_x )
+		    { /* Reduce the Y scaling. */
+		      origin_y += range_y * (scale_y - scale_x) *
+			pgls->g.scaling_params.bottom;
+		      scale_y = scale_x;
+		    }
+		}
+	      gs_make_translation(origin_x, origin_y, pmat);
+	      gs_matrix_scale(pmat, scale_x, scale_y, pmat);
+	      gs_matrix_translate(pmat, -pgls->g.scaling_params.pmin.x,
+				  -pgls->g.scaling_params.pmin.y, pmat);
+	      break;
+	    }
+	  }
+	return 0;
+
+}
+ private int
+hpgl_set_user_units_to_plu_ctm(hpgl_state_t *pgls)
+{
+	if ( pgls->g.scaling_type != hpgl_scaling_none )
+	  {
+	    gs_matrix mat;
+
+	    hpgl_call(hpgl_compute_user_units_to_plu_ctm(pgls, &mat));
+	    hpgl_call(gs_concat(pgls->pgs, &mat));
+	  }
+	return 0;
+}
+
+/* set up ctm's.  Uses the current render mode to figure out which ctm
+   is appropriate */
+ int
+hpgl_set_ctm(hpgl_state_t *pgls)
+{
+	hpgl_call(hpgl_set_plu_ctm(pgls));
+	hpgl_call(hpgl_set_user_units_to_plu_ctm(pgls));
 	return 0;
 }
 
@@ -385,98 +464,13 @@ hpgl_set_clipping_region(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 	return 0;
 }
 
-/* The CTM maps PLU to device units; adjust it to handle scaling, if any. */
- private int
-hpgl_compute_user_units_to_plu_ctm(const hpgl_state_t *pgls, gs_matrix *pmat)
-{	floatp origin_x = pgls->g.P1.x, origin_y = pgls->g.P1.y;
-
-	switch ( pgls->g.scaling_type )
-	  {
-	  case hpgl_scaling_none:
-	    gs_make_identity(pmat);
-	    break;
-	  case hpgl_scaling_point_factor:
-	    gs_make_translation(origin_x, origin_y, pmat);
-	    gs_matrix_scale(pmat, pgls->g.scaling_params.factor.x,
-			    pgls->g.scaling_params.factor.y, pmat);
-	    gs_matrix_translate(pmat, -pgls->g.scaling_params.pmin.x,
-				-pgls->g.scaling_params.pmin.y, pmat);
-	    break;
-	  default:
-	  /*case hpgl_scaling_anisotropic:*/
-	  /*case hpgl_scaling_isotropic:*/
-	    {
-	      floatp window_x = pgls->g.P2.x - origin_x,
-		range_x = pgls->g.scaling_params.pmax.x -
-		  pgls->g.scaling_params.pmin.x,
-		scale_x = window_x / range_x;
-	      floatp window_y = pgls->g.P2.y - origin_y,
-		range_y = pgls->g.scaling_params.pmax.y -
-		  pgls->g.scaling_params.pmin.y,
-		scale_y = window_y / range_y;
-
-	      if ( pgls->g.scaling_type == hpgl_scaling_isotropic )
-		{ if ( scale_x > scale_y )
-		    { /* Reduce the X scaling. */
-		      origin_x += range_x * (scale_x - scale_y) *
-			pgls->g.scaling_params.left;
-		      scale_x = scale_y;
-		    }
-		  else if ( scale_y > scale_x )
-		    { /* Reduce the Y scaling. */
-		      origin_y += range_y * (scale_y - scale_x) *
-			pgls->g.scaling_params.bottom;
-		      scale_y = scale_x;
-		    }
-		}
-	      gs_make_translation(origin_x, origin_y, pmat);
-	      gs_matrix_scale(pmat, scale_x, scale_y, pmat);
-	      gs_matrix_translate(pmat, -pgls->g.scaling_params.pmin.x,
-				  -pgls->g.scaling_params.pmin.y, pmat);
-	      break;
-	    }
-	  }
-	return 0;
-
-}
- private int
-hpgl_set_user_units_to_plu_ctm(hpgl_state_t *pgls)
-{
-	if ( pgls->g.scaling_type != hpgl_scaling_none )
-	  {
-	    gs_matrix mat;
-
-	    hpgl_call(hpgl_compute_user_units_to_plu_ctm(pgls, &mat));
-	    hpgl_call(gs_concat(pgls->pgs, &mat));
-	  }
-	return 0;
-}
-
-/* set up ctm's.  Uses the current render mode to figure out which ctm
-   is appropriate */
- int
-hpgl_set_ctm(hpgl_state_t *pgls)
-{
-	/* convert pcl->device to plu->device */
-	hpgl_call(hpgl_set_plu_to_device_ctm(pgls));
-
-	/* concatenate on user units ctm unless in character mode
-	   with absolute size */
-	if ( !(pgls->g.current_render_mode == hpgl_rm_character &&
-	       pgls->g.character.size_set && !pgls->g.character.size_relative)
-	   )
-	  hpgl_call(hpgl_set_user_units_to_plu_ctm(pgls));
-
-	return 0;
-}
-
 /* Plot one vector for vector fill all these use absolute coordinates. */
 private int
 hpgl_draw_vector_absolute(hpgl_state_t *pgls, hpgl_real_t x0, hpgl_real_t y0,
 			   hpgl_real_t x1, hpgl_real_t y1)
 {
-	hpgl_call(hpgl_add_point_to_path(pgls, x0, y0, hpgl_plot_move_absolute));
-	hpgl_call(hpgl_add_point_to_path(pgls, x1, y1, hpgl_plot_draw_absolute));
+	hpgl_call(hpgl_add_point_to_path(pgls, x0, y0, hpgl_plot_move_absolute, false));
+	hpgl_call(hpgl_add_point_to_path(pgls, x1, y1, hpgl_plot_draw_absolute, false));
 	return 0;      
 }
 
@@ -647,10 +641,10 @@ hpgl_map_fill_type(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 		/* should not hit next two cases in polygon mode and here
                    (i.e. implies hpgl_rm_vector_fill) */
 	      case hpgl_fill_hatch: 
-	      case hpgl_fill_crosshatch: break;
+	      case hpgl_fill_crosshatch: return pcpt_user_defined;
 	      case hpgl_fill_pcl_crosshatch: return pcpt_cross_hatch;
 	      case hpgl_fill_shaded: return pcpt_shading;
-	      case hpgl_fill_pcl_user_defined: /* HAS - unsupported */
+	      case hpgl_fill_pcl_user_defined: return pcpt_user_defined;
 	      default: break;
 	      }
 	    break;
@@ -660,9 +654,9 @@ hpgl_map_fill_type(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 	      {
 	      case hpgl_screen_none: return hpgl_map_pen_color(pgls);
 	      case hpgl_screen_shaded_fill: return pcpt_shading;
-	      case hpgl_screen_hpgl_user_defined: break; /* unsupported */
+	      case hpgl_screen_hpgl_user_defined: return pcpt_user_defined;
 	      case hpgl_screen_crosshatch: return pcpt_cross_hatch;
-	      case hpgl_screen_pcl_user_defined: /* unsupported */
+	      case hpgl_screen_pcl_user_defined: return pcpt_user_defined;
 	      default: break;
 	      }
 	  default: break;
@@ -711,6 +705,7 @@ hpgl_map_id_type(hpgl_state_t *pgls, pcl_id_t *id, hpgl_rendering_mode_t render_
 		return
 		  hpgl_setget_pcl_id(id, pgls->g.fill.param.shading);
 	      case hpgl_fill_pcl_user_defined : /* HAS - not supported */
+		return hpgl_setget_pcl_id(id, pgls->g.fill.param.pattern_id);
 	      default: break;
 	      }
 	    break;
@@ -727,6 +722,7 @@ hpgl_map_id_type(hpgl_state_t *pgls, pcl_id_t *id, hpgl_rendering_mode_t render_
 		return 
 		  hpgl_setget_pcl_id(id, pgls->g.screen.param.pattern_type);
 	      case hpgl_screen_pcl_user_defined: /* unsupported */
+		return hpgl_setget_pcl_id(id, pgls->g.screen.param.pattern_id);
 	      default: break;
 	      }
 	    break;
@@ -740,31 +736,36 @@ hpgl_map_id_type(hpgl_state_t *pgls, pcl_id_t *id, hpgl_rendering_mode_t render_
 hpgl_set_drawing_color(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 {
 	pcl_id_t pcl_id;
-
-	if ( render_mode == hpgl_rm_vector_fill )
-	  return 0;
-	/* set the pattern orientation */
-	/*
-	 * pcl_set_... expects the rotation to be 0..3;
-	 * we store it as an angle in degrees.
-	 */
-#if 0
-	/*
-	 * Also, since the PCL and GL/2 coordinate systems have opposite
-	 * handedness, we need to negate the angle as well.
-	 * (This is actually handled in pcl_makebitmappattern.)
-	 */
-#  define pcl_angle(pgls) (-(pgls->g.rotation / 90) & 3)
-#else
-#  define pcl_angle(pgls) (pgls->g.rotation)
-#endif
+	pl_dict_t pattern_dict;
+	pcl_pattern_type_t pat_type;
+	bool user_defined = ( (pgls->g.fill.type == hpgl_fill_hpgl_user_defined) ||
+			      (pgls->g.screen.type == hpgl_screen_hpgl_user_defined) );
+	if ( user_defined )
+	  {
+	    void *value; /* ignored */
+	    id_set_value(pcl_id, pgls->g.raster_fill_index);
+	    pattern_dict = pgls->g.raster_patterns;
+	    if ( !pl_dict_find(&pattern_dict, id_key(pcl_id), 2, &value) )
+	      pat_type = pcpt_solid_black;
+	    else
+	      pat_type = pcpt_user_defined;
+	  }
+	else
+	  {
+	    pat_type = hpgl_map_fill_type(pgls, render_mode);
+	    hpgl_map_id_type(pgls, &pcl_id, render_mode);
+	    pattern_dict = pgls->patterns;
+	  }
 	hpgl_call(pcl_set_drawing_color_rotation(pgls,
-			hpgl_map_fill_type(pgls, render_mode),
-			hpgl_map_id_type(pgls, &pcl_id, render_mode), 
-			pcl_angle(pgls)));
-#undef pcl_angle
-
-	if ( render_mode == hpgl_rm_clip_and_fill_polygon )
+						 pat_type,
+						 &pcl_id,
+						 &pattern_dict,
+						 (pgls->g.rotation / 90) & 3));
+	gs_setsourcetransparent(pgls->pgs, pgls->g.source_transparent);
+	if ( (render_mode == hpgl_rm_clip_and_fill_polygon) ||
+	     ((render_mode == hpgl_rm_character) &&
+	      ((pgls->g.character.fill_mode == hpgl_char_fill) ||
+	       (pgls->g.character.fill_mode == hpgl_char_fill_edge))) )
 	  hpgl_call(hpgl_polyfill_using_current_line_type(pgls));
 	return 0;
 }
@@ -803,7 +804,7 @@ hpgl_set_current_position(hpgl_state_t *pgls, gs_point *pt)
 
  int
 hpgl_add_point_to_path(hpgl_state_t *pgls, floatp x, floatp y,
-		       hpgl_plot_function_t func)
+		       hpgl_plot_function_t func, bool set_ctm)
 {	
 	static const int (*gs_procs[])(P3(gs_state *, floatp, floatp)) = {
 	  hpgl_plot_function_procedures
@@ -815,7 +816,8 @@ hpgl_add_point_to_path(hpgl_state_t *pgls, floatp x, floatp y,
 	    gs_point current_pt;
 	    gs_point new_pt;
 	    new_pt.x = x; new_pt.y = y;
-	    hpgl_call(hpgl_set_ctm(pgls));
+	    if ( set_ctm )
+	      hpgl_call(hpgl_set_ctm(pgls));
 	    hpgl_call(gs_newpath(pgls->pgs));
 
 	    /* moveto the current position */
@@ -874,7 +876,7 @@ hpgl_add_pcl_point_to_path(hpgl_state_t *pgls, const gs_point *pcl_pt)
 	hpgl_call(hpgl_set_ctm(pgls));
 	hpgl_call(gs_itransform(pgls->pgs, dev_pt.x, dev_pt.y, &hpgl_pt));
 	hpgl_call(hpgl_add_point_to_path(pgls, hpgl_pt.x, hpgl_pt.y,
-					 hpgl_plot_move_absolute));
+					 hpgl_plot_move_absolute, true));
 	return 0;
 }
 
@@ -900,7 +902,7 @@ hpgl_add_arc_to_path(hpgl_state_t *pgls, floatp center_x, floatp center_y,
 	hpgl_call(hpgl_add_point_to_path(pgls, arccoord_x, arccoord_y, 
 					 (draw && !start_moveto ? 
 					 hpgl_plot_draw_absolute :
-					 hpgl_plot_move_absolute)));
+					 hpgl_plot_move_absolute), true));
 
 	/* HAS - pen up/down is invariant in the loop */
 	for ( i = 0; i < num_chords; i++ ) 
@@ -911,7 +913,7 @@ hpgl_add_arc_to_path(hpgl_state_t *pgls, floatp center_x, floatp center_y,
 				    &arccoord_x, &arccoord_y);
 	    hpgl_call(hpgl_add_point_to_path(pgls, arccoord_x, arccoord_y, 
 					     (draw ? hpgl_plot_draw_absolute :
-					     hpgl_plot_move_absolute)));
+					     hpgl_plot_move_absolute), true));
 	  }
 	return 0;
 }
@@ -928,15 +930,15 @@ hpgl_add_arc_3point_to_path(hpgl_state_t *pgls, floatp start_x, floatp
 				inter_x, inter_y, 
 				end_x, end_y) )
 	  {
-	    hpgl_call(hpgl_add_point_to_path(pgls, start_x, start_y, draw));
+	    hpgl_call(hpgl_add_point_to_path(pgls, start_x, start_y, draw, true));
 	    return 0;
 	  }
 	if ( hpgl_3_no_intermediate(start_x, start_y, 
 				    inter_x, inter_y,
 				    end_x, end_y) )
 	  {
-	    hpgl_call(hpgl_add_point_to_path(pgls, start_x, start_y, draw));
-	    hpgl_call(hpgl_add_point_to_path(pgls, end_x, end_y, draw));
+	    hpgl_call(hpgl_add_point_to_path(pgls, start_x, start_y, draw, true));
+	    hpgl_call(hpgl_add_point_to_path(pgls, end_x, end_y, draw, true));
 	    return 0;
 	  }
 	if ( hpgl_3_same_endpoints(start_x, start_y, 
@@ -958,14 +960,14 @@ hpgl_add_arc_3point_to_path(hpgl_state_t *pgls, floatp start_x, floatp
 					     inter_x, inter_y, 
 					     end_x, end_y) ) 
 	      {
-		hpgl_call(hpgl_add_point_to_path(pgls, start_x, start_y, draw));
-		hpgl_call(hpgl_add_point_to_path(pgls, end_x, end_x, draw));
+		hpgl_call(hpgl_add_point_to_path(pgls, start_x, start_y, draw, true));
+		hpgl_call(hpgl_add_point_to_path(pgls, end_x, end_x, draw, true));
 	      }
 	    else 
 	      {
-		hpgl_call(hpgl_add_point_to_path(pgls, start_x, start_y, draw));
-		hpgl_call(hpgl_add_point_to_path(pgls, inter_x, inter_y, draw));
-		hpgl_call(hpgl_add_point_to_path(pgls, end_x, end_y, draw));
+		hpgl_call(hpgl_add_point_to_path(pgls, start_x, start_y, draw, true));
+		hpgl_call(hpgl_add_point_to_path(pgls, inter_x, inter_y, draw, true));
+		hpgl_call(hpgl_add_point_to_path(pgls, end_x, end_y, draw, true));
 	      }
 	    return 0;
 	  }
@@ -1035,14 +1037,14 @@ hpgl_add_bezier_to_path(hpgl_state_t *pgls, floatp x1, floatp y1,
 			floatp x4, floatp y4, bool draw)
 {
 	hpgl_call(hpgl_add_point_to_path(pgls, x1, y1, 
-					 hpgl_plot_move_absolute));
+					 hpgl_plot_move_absolute, true));
 	if ( draw )
 	  hpgl_call(gs_curveto(pgls->pgs, x2, y2, x3, y3, x4, y4));
 
 	/* this is done simply to set gl/2's current position */
 	hpgl_call(hpgl_add_point_to_path(pgls, x4, y4, 
 					 draw ? hpgl_plot_draw_absolute :
-					 hpgl_plot_move_absolute));
+					 hpgl_plot_move_absolute, true));
 	return 0;
 }
 
@@ -1075,8 +1077,6 @@ hpgl_close_path(hpgl_state_t *pgls)
 	return 0;
 }
 	
-	  
-
 /* HAS -- There will need to be compression phase here note that
    extraneous PU's do not result in separate subpaths.  */
 
@@ -1146,8 +1146,8 @@ char_edge:	  if ( pgls->g.bitmap_fonts_allowed )
 	  case hpgl_rm_vector_fill:
 	    /* we reset the ctm before stroking to preserve the line width
 	       information */
-	    hpgl_call(hpgl_set_plu_to_device_ctm(pgls));
-	    hpgl_call(gs_stroke(pgs));
+	    hpgl_call(hpgl_set_plu_ctm(pgls));
+	    hpgl_call(gs_stroke(pgls->pgs));
 	    break;
 	  default :
 	    dprintf("unknown render mode\n");

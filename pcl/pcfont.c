@@ -5,11 +5,12 @@
 /* pcfont.c */
 /* PCL5 font selection and text printing commands */
 #include "memory_.h"
-/* XXX #include tangle:  We need pl_load_tt_font, which is only supplied
- * by plfont.h if stdio.h is included, but pcstate.h back-door includes
- * plfont.h, so we have to pull in stdio.h here even though it should only
- * be down local to the font-init-hack code. */
-#include "stdio_.h"
+/* The following are all for gxfont42.h. */
+#include "gx.h"
+#include "gsccode.h"
+#include "gsmatrix.h"
+#include "gxfont.h"
+#include "gxfont42.h"
 #include "pcommand.h"
 #include "pcstate.h"
 #include "pcfont.h"
@@ -431,131 +432,6 @@ pcfont_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 	    pcls->font_selected = 0;
 	    pcls->font = 0;
 	  }
-}
-
-/* Load some built-in fonts.  This must be done at initialization time, but
- * after the state and memory are set up.  Return an indication of whether
- * at least one font was successfully loaded.
- * XXX The existing code is more than a bit of a hack; however it does
- * allow us to see some text.  Approach: expect to find some fonts in
- * one or more of a given list of directories with names
- * *.ttf.  Load whichever ones are found in the table below.  Probably
- * very little of this code can be salvaged for later.
- */
-bool
-pcl_load_built_in_fonts(pcl_state_t *pcls, const char *prefixes[])
-{	const char **pprefix;
-#include "string_.h"
-#include "gp.h"
-#include "gsutil.h"
-#include "gxfont.h"
-	typedef struct font_hack {
-	  const char *ext_name;
-	  pl_font_params_t params;
-	  byte character_complement[8];
-	} font_hack_t;
-	static const font_hack_t hack_table[] = {
-	    /*
-	     * Symbol sets, typeface family values, and character complements
-	     * are faked; they do not (necessarily) match the actual fonts.
-	     */
-#define C(b) ((byte)((b) ^ 0xff))
-#define cc_alphabetic\
-  { C(0), C(0), C(0), C(0), C(0xff), C(0xc0), C(0), C(plgv_Unicode) }
-#define cc_symbol\
-  { C(0), C(0), C(0), C(4), C(0), C(0), C(0), C(plgv_Unicode) }
-#define cc_dingbats\
-  { C(0), C(0), C(0), C(1), C(0), C(0), C(0), C(plgv_Unicode) }
-#define pitch_1 fp_pitch_value_cp(1)
-	  /*
-	   * Per TRM 23-87, PCL5 printers are supposed to have Univers
-	   * and CG Times fonts.  Substitute Arial for Univers and
-	   * Times for CG Times.
-	   */
-#define tf_arial 4148		/* Univers; should be 16602 */
-#define tf_cour 4099
-#define tf_times 4101		/* CG Times; should be 16901 */
-	    {"arial",	{0, 1, pitch_1, 0, 0, 0, tf_arial}, cc_alphabetic },
-	    {"arialbd",	{0, 1, pitch_1, 0, 0, 3, tf_arial}, cc_alphabetic },
-	    {"arialbi",	{0, 1, pitch_1, 0, 1, 3, tf_arial}, cc_alphabetic },
-	    {"ariali",	{0, 1, pitch_1, 0, 1, 0, tf_arial}, cc_alphabetic },
-	    {"cour",	{0, 0, pitch_1, 0, 0, 0, tf_cour}, cc_alphabetic },
-	    {"courbd",	{0, 0, pitch_1, 0, 0, 3, tf_cour}, cc_alphabetic },
-	    {"courbi",	{0, 0, pitch_1, 0, 1, 3, tf_cour}, cc_alphabetic },
-	    {"couri",	{0, 0, pitch_1, 0, 1, 0, tf_cour}, cc_alphabetic },
-	    {"times",	{0, 1, pitch_1, 0, 0, 0, tf_times}, cc_alphabetic },
-	    {"timesbd",	{0, 1, pitch_1, 0, 0, 3, tf_times}, cc_alphabetic },
-	    {"timesbi",	{0, 1, pitch_1, 0, 1, 3, tf_times}, cc_alphabetic },
-	    {"timesi",	{0, 1, pitch_1, 0, 1, 0, tf_times}, cc_alphabetic },
-	    {"symbol",	{621,1,pitch_1, 0, 0, 0, 16686}, cc_symbol },
-	    {"wingding",{2730,1,pitch_1,0, 0, 0, 19114}, cc_dingbats },
-	    {NULL,	{0, 0, pitch_1, 0, 0, 0, 0} }
-#undef C
-#undef cc_alphabetic
-#undef cc_symbol
-#undef cc_dingbats
-	};
-	const font_hack_t *hackp;
-	byte font_found[countof(hack_table)];
-	bool found_some = false;
-	byte key[3];
-
-	/* This initialization was moved from the do_reset procedures to
-	 * this point to localize the font initialization in the state
-	 * and have it in a place where memory allocation is safe. */
-	pcls->font_dir = gs_font_dir_alloc(pcls->memory);
-	pl_dict_init(&pcls->built_in_fonts, pcls->memory, pl_free_font);
-	pl_dict_init(&pcls->soft_fonts, pcls->memory, pl_free_font);
-	pl_dict_set_parent(&pcls->soft_fonts, &pcls->built_in_fonts);
-
-	    /* Load only those fonts we know about. */
-	memset(font_found, 0, sizeof(font_found));
-	/* We use a 3-byte key so the built-in fonts don't have */
-	/* IDs that could conflict with user-defined ones. */
-	key[0] = key[1] = key[2] = 0;
-	for ( pprefix = prefixes; *pprefix != 0; ++pprefix )
-	  for ( hackp = hack_table; hackp->ext_name != 0; ++hackp )
-	    if ( !font_found[hackp - hack_table] )
-	      { char fname[150];
-	        FILE *fnp;
-		pl_font_t *plfont;
-
-	        strcpy(fname, *pprefix);
-		strcat(fname, hackp->ext_name);
-		strcat(fname, ".ttf");
-		if ( (fnp=fopen(fname, gp_fmode_rb)) == NULL )
-		  continue;
-		if ( pl_load_tt_font(fnp, pcls->font_dir, pcls->memory,
-				     gs_next_ids(1), &plfont) < 0 )
-		  {
-#ifdef DEBUG
-		    lprintf1("Failed loading font %s\n", fname);
-#endif
-		    continue;
-		  }
-#ifdef DEBUG
-		dprintf1("Loaded %s\n", fname);
-#endif
-		plfont->storage = pcds_internal;
-		if ( hackp->params.symbol_set != 0 )
-		  plfont->font_type = plft_8bit;
-		/*
-		 * Don't smash the pitch, which was obtained
-		 * from the actual font.
-		 */
-		{ pl_font_pitch_t save_pitch;
-		  save_pitch = plfont->params.pitch;
-		  plfont->params = hackp->params;
-		  plfont->params.pitch = save_pitch;
-		}
-		memcpy(plfont->character_complement,
-		       hackp->character_complement, 8);
-		pl_dict_put(&pcls->built_in_fonts, key, sizeof(key), plfont);
-		key[sizeof(key) - 1]++;
-		font_found[hackp - hack_table] = 1;
-		found_some = true;
-	    }
-	return found_some;
 }
 
 const pcl_init_t pcfont_init = {

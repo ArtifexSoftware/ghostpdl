@@ -56,16 +56,16 @@ pcl_select_pattern(pcl_args_t *pargs, pcl_state_t *pcls)
 	return 0;
 }
 
-private int /* ESC * c <nbytes> W */
-pcl_user_defined_pattern(pcl_args_t *pargs, pcl_state_t *pcls)
-{	uint count = arg_data_size(pargs);
-	const byte *data = arg_data(pargs);
+/* build a pattern and create a dictionary entry for it.  Also used by
+   hpgl/2 for raster fills. */
+int
+pcl_store_user_defined_pattern(pcl_state_t *pcls, pl_dict_t *pattern_dict, 
+			       pcl_id_t pattern_id, 
+			       const byte *data, uint size)
+{
 	uint height, width;
 	uint raster, bytes, start, stored_raster;
 	byte *header;
-
-	if ( count < 8 )
-	  return e_Range;
 #define ppat ((const pcl_pattern_t *)(data - pattern_extra))
 	/* Amazingly enough, H-P added X and Y resolution fields */
 	/* in the LJ4, but didn't change the format number! */
@@ -74,7 +74,13 @@ pcl_user_defined_pattern(pcl_args_t *pargs, pcl_state_t *pcls)
 	if ( ppat->format != 0 || ppat->continuation != 0 ||
 	     ppat->encoding != 1 || ppat->reserved != 0
 	   )
-	  return e_Range;
+	  {
+	    dprintf1( "format %c\n", ppat->format);
+	    dprintf1( "encoding %c\n", ppat->encoding);
+	    dprintf1( "reserved %c\n", ppat->reserved);
+	    dprintf1( "encoding %c\n", ppat->continuation);
+	    return e_Range;
+	  }
 	height = pl_get_uint16(ppat->height);
 	width = pl_get_uint16(ppat->width);
 #undef ppat
@@ -87,11 +93,11 @@ pcl_user_defined_pattern(pcl_args_t *pargs, pcl_state_t *pcls)
 	 */
 	raster = (width + 7) >> 3;
 	bytes = height * raster;
-	if ( bytes + 8 > count )
+	if ( bytes + 8 > size )
 	  return e_Range;
-	start = count - bytes;	/* start of downloaded bitmap data */
+	start = size - bytes;	/* start of downloaded bitmap data */
 	stored_raster = bitmap_raster(width);
-	pl_dict_undef(&pcls->patterns, id_key(pcls->pattern_id), 2);
+	pl_dict_undef(pattern_dict, id_key(pattern_id), 2);
 	header = gs_alloc_bytes(pcls->memory,
 				pattern_data_offset +
 				((height + 7) & -8) * stored_raster,
@@ -114,13 +120,31 @@ pcl_user_defined_pattern(pcl_args_t *pargs, pcl_state_t *pcls)
 #undef ppat
 	bytes_copy_rectangle(header + pattern_data_offset, stored_raster,
 			     data + start, raster, raster, height);
-	pl_dict_put(&pcls->patterns, id_key(pcls->pattern_id), 2, header);
+	pl_dict_put(pattern_dict, id_key(pattern_id), 2, header);
+	return 0;
+}
+
+private int /* ESC * c <nbytes> W */
+pcl_user_defined_pattern(pcl_args_t *pargs, pcl_state_t *pcls)
+{	uint count = arg_data_size(pargs);
+	const byte *data = arg_data(pargs);
+	if ( count < 8 )
+	  return e_Range;
+
+	{ int code = pcl_store_user_defined_pattern(pcls, &pcls->patterns, 
+						    pcls->pattern_id,
+						    data, count);
+
+	  if ( code != 0)
+	    { lprintf1("Invalid return from storing pattern: %d\n", code);
+	      return code;
+	    }
+	}
 	if ( pcls->pattern_type == pcpt_user_defined &&
 	     id_value(pcls->current_pattern_id) == id_value(pcls->pattern_id)
 	   )
 	  pcls->pattern_set = false;
 	return 0;
-#undef ppat
 }
 
 private int /* ESC * p <fixed?> R */

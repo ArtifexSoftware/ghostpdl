@@ -413,7 +413,7 @@ pcl_makebitmappattern(gs_client_color *pcc, const gx_tile_bitmap *tile,
 	s_reflected = smat.xy * smat.yx > smat.xx * smat.yy;
 	if ( s_reflected != d_reflected )
 	  mat.yy = -mat.yy;
-	else
+	else 
 	  angle = -angle;
 	gs_matrix_rotate(&mat, angle, &mat);
 	gs_makepattern(pcc, &pat, &mat, pgs, (gs_memory_t *)0);
@@ -449,7 +449,7 @@ pcl_bitmap_PaintProc(const gs_client_color *pcolor, gs_state *pgs)
 /* Note that we pass the pattern rotation explicitly. */
 int
 pcl_set_drawing_color_rotation(pcl_state_t *pcls, pcl_pattern_type_t type,
-  const pcl_id_t *pid, int rotation)
+  const pcl_id_t *pid, pl_dict_t *patterns, int rotation)
 {	gs_state *pgs = pcls->pgs;
 	gs_pattern_instance **ppi;
 	gs_pattern_instance *pi[4];	/* for user-defined pattern hack */
@@ -525,7 +525,7 @@ pcl_set_drawing_color_rotation(pcl_state_t *pcls, pcl_pattern_type_t type,
 	  case pcpt_user_defined:
 	    { void *value;
 
-	      if ( !pl_dict_find(&pcls->patterns, id_key(*pid), 2, &value) )
+	      if ( !pl_dict_find(patterns, id_key(*pid), 2, &value) )
 		{ /*
 		   * No pattern with this ID exists.  Apparently the correct
 		   * action is to set a null color (one which doesn't draw

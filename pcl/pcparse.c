@@ -375,7 +375,8 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcls, stream_cursor_read *pr)
 			  avalue.type |= pcv_pos;
 			else if ( chr == '.' )
 			  avalue.type |= pcv_float,
-			  pst->scale = 1.0;
+			    avalue.fraction = 0,
+			    pst->scale = 1.0;
 			else if ( chr >= ' ' && chr <= '?' )
 			  { /* Ignore garbage nearby in the code space. */
 			    continue;

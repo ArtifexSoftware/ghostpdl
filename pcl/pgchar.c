@@ -350,11 +350,10 @@ hpgl_SI(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	      return e_Range;
 	    pgls->g.character.size.x = mm_2_plu(width_cm * 10);
 	    pgls->g.character.size.y = mm_2_plu(height_cm * 10);
-	    pgls->g.character.size_relative = false;
-	    pgls->g.character.size_set = true;
+	    pgls->g.character.size_mode = hpgl_size_absolute;
 	  }
 	else
-	  pgls->g.character.size_set = false;
+	  pgls->g.character.size_mode = hpgl_size_not_set;
 	return 0;
 }
 
@@ -383,8 +382,7 @@ hpgl_SR(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	  { pgls->g.character.size.x = 0.0075;
 	    pgls->g.character.size.y = 0.015;
 	  }
-	pgls->g.character.size_relative = true;
-	pgls->g.character.size_set = true;
+	pgls->g.character.size_mode = hpgl_size_relative;
 	return 0;
 }
 

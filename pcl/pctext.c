@@ -78,10 +78,34 @@ pcl_next_char_proc(gs_show_enum *penum, gs_char *pchr)
 {	const pcl_state_t *pcls = gs_state_client_data(penum->pgs);
 	int code = pcl_next_char(&penum->str, &penum->index,
 				 pcls->text_parsing_method, pchr);
+	uint mapped_char;
 
 	if ( code )
 	  return code;
-	*pchr = pcl_map_symbol(*pchr, penum);
+	mapped_char = pcl_map_symbol(*pchr, penum);
+	/*
+	 * Undefined characters should print as spaces.
+	 * We don't currently have any fallback if the symbol set
+	 * doesn't include the space character at position ' ',
+	 * or if the font doesn't include the space character.
+	 * If it turns out that undefined characters should print as a
+	 * space control code (with possibly modified HMI), we'll have to
+	 * do something more complicated in pcl_text and pcl_show_chars.
+	 *
+	 * Checking whether a font includes a character is expensive.
+	 * We'll have to find a better way to do this eventually.
+	 */
+	{ const pl_font_t *plfont =
+	    (const pl_font_t *)(gs_currentfont(penum->pgs)->client_data);
+	  gs_matrix ignore_mat;
+
+	  if ( !pl_font_includes_char(plfont, NULL, &ignore_mat, mapped_char)
+	     )
+	    mapped_char = 0xffff;
+	}
+	if ( mapped_char == 0xffff )
+	  mapped_char = pcl_map_symbol(' ', penum);
+	*pchr = mapped_char;
 	return 0;
 }
 
@@ -348,10 +372,10 @@ pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 	 * If this is a fixed-pitch font and we have an explicitly set HMI,
 	 * override the HMI.
 	 */
-	if ( !pcls->font->params.proportional_spacing &&
-	     pcls->hmi_set == hmi_set_explicitly
-	   )
-	  adjust = char_adjust_all;
+	if ( !pcls->font->params.proportional_spacing )
+	  { if ( pcls->hmi_set == hmi_set_explicitly )
+	      adjust = char_adjust_all;
+	  }
 	else
 	  { /*
 	     * If the string has any spaces and the font doesn't define the
@@ -364,7 +388,7 @@ pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 
 	    for ( i = 0; !pcl_next_char(&gstr, &i, tpm, &chr); )
 	      if ( chr == ' ' )
-		{ if ( (pcls->font->storage & ~pcds_downloaded) ||
+		{ if ( (pcls->font->storage & pcds_internal) ||
 		       !pl_font_includes_char(pcls->font, pcls->map, &font_ctm, ' ')
 		     )
 		    adjust = char_adjust_space;
@@ -386,7 +410,12 @@ pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 	    gs_make_scaling(scale.x, scale.y, &font_only_mat);
 	    if ( (code = pl_font_char_width(pcls->font, pcls->map,
 		&font_only_mat, chr, &gs_width)) != 0 )
-	      goto x;
+	      {
+		/* BS followed by an undefined character. Treat as a space. */
+		if ( (code = pl_font_char_width(pcls->font, pcls->map,
+			&font_only_mat, ' ', &gs_width)) != 0 )
+		  goto x;
+	      }
 
 	    this_width.x = gs_width.x;	/* XXX just swapping types??? */
 	    this_width.y = gs_width.y;

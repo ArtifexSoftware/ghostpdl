@@ -163,7 +163,7 @@ hpgl_plot(hpgl_args_t *pargs, hpgl_state_t *pgls, hpgl_plot_function_t func)
 	while ( hpgl_arg_units(pargs, &x) && hpgl_arg_units(pargs, &y) ) 
 	  { 
 	    pargs->phase = 1;	/* we have arguments */
-	    hpgl_call(hpgl_add_point_to_path(pgls, x, y, func));
+	    hpgl_call(hpgl_add_point_to_path(pgls, x, y, func, true));
 	    /* Prepare for the next set of points. */
 	    hpgl_args_init(pargs);
 	  }
@@ -174,7 +174,7 @@ hpgl_plot(hpgl_args_t *pargs, hpgl_state_t *pgls, hpgl_plot_function_t func)
 	    /* HAS needs investigation -- NO ARGS case in relative mode */
 	    if ( hpgl_plot_is_relative(func) )
 	      {
-		hpgl_call(hpgl_add_point_to_path(pgls, 0.0, 0.0, func));
+		hpgl_call(hpgl_add_point_to_path(pgls, 0.0, 0.0, func, true));
 	      }
 	    else
 	      {
@@ -182,7 +182,7 @@ hpgl_plot(hpgl_args_t *pargs, hpgl_state_t *pgls, hpgl_plot_function_t func)
 
 		hpgl_call(hpgl_get_current_position(pgls, &cur_point));
 		hpgl_call(hpgl_add_point_to_path(pgls, cur_point.x, 
-						 cur_point.y, func));
+						 cur_point.y, func, true));
 	      }
 	  }
 
@@ -393,7 +393,7 @@ hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
 		  (pargs->phase & pe_absolute ? hpgl_plot_absolute :
 		   hpgl_plot_relative);
 		hpgl_call(hpgl_add_point_to_path(pgls, (floatp)xy[0],
-						 (floatp)xy[1], func));
+						 (floatp)xy[1], func, true));
 	      }
 	      pargs->phase &= ~(pe_pen_up | pe_absolute);
 	      p = pargs->source.ptr;

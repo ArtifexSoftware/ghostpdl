@@ -381,18 +381,21 @@ hpgl_RO(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	    hpgl_args_t args;
 	    
 	    hpgl_pen_state_t saved_pen_state;
-	    hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_down);
+	    hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_down | hpgl_pen_relative);
 	    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 	    pgls->g.rotation = angle;
 	    hpgl_call(hpgl_set_ctm(pgls));
 	    hpgl_call(gs_itransform(pgls->pgs, dev_pt.x, dev_pt.y, &point));
+	    /* set the pen to the up position */
+	    hpgl_args_setup(&args);
+	    hpgl_PU(&args, pgls);
 	    /* now add a moveto the using the current ctm */
 	    hpgl_args_set_real(&args, point.x);
 	    hpgl_args_add_real(&args, point.y);
-	    hpgl_call(hpgl_PU(&args, pgls));
+	    hpgl_call(hpgl_PA(&args, pgls));
 	    /* HAS this is added to clear first moveto yuck */
 	    hpgl_call(hpgl_clear_current_path(pgls));
-	    hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_down);
+	    hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_down | hpgl_pen_relative);
 	  }
 	return 0;
 }

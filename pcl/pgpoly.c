@@ -41,10 +41,10 @@ hpgl_rectangle(hpgl_args_t *pargs, hpgl_state_t *pgls, int flags)
 	  hpgl_call(gs_point_transform(x1, y1, &pgls->g.polygon.ctm, &p1));
 	  hpgl_call(gs_point_transform(x2, y2, &pgls->g.polygon.ctm, &p2));
 
-	  hpgl_call(hpgl_add_point_to_path(pgls, p1.x, p1.y, hpgl_plot_move_absolute));
-	  hpgl_call(hpgl_add_point_to_path(pgls, p2.x, p1.y, hpgl_plot_draw_absolute));
-	  hpgl_call(hpgl_add_point_to_path(pgls, p2.x, p2.y, hpgl_plot_draw_absolute));
-	  hpgl_call(hpgl_add_point_to_path(pgls, p1.x, p2.y, hpgl_plot_draw_absolute));
+	  hpgl_call(hpgl_add_point_to_path(pgls, p1.x, p1.y, hpgl_plot_move_absolute, true));
+	  hpgl_call(hpgl_add_point_to_path(pgls, p2.x, p1.y, hpgl_plot_draw_absolute, true));
+	  hpgl_call(hpgl_add_point_to_path(pgls, p2.x, p2.y, hpgl_plot_draw_absolute, true));
+	  hpgl_call(hpgl_add_point_to_path(pgls, p1.x, p2.y, hpgl_plot_draw_absolute, true));
 	  /* polygons are implicitly closed */
 	}
 	/* exit polygon mode PM2 */
@@ -91,9 +91,9 @@ hpgl_wedge(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	  hpgl_call(gs_point_transform(x3, y3, &pgls->g.polygon.ctm, &p3));
 
 	  hpgl_call(hpgl_add_point_to_path(pgls, pgls->g.pos.x, pgls->g.pos.y,
-					   hpgl_plot_move_absolute));
+					   hpgl_plot_move_absolute, true));
 	  hpgl_call(hpgl_add_point_to_path(pgls, p1.x, p1.y,
-					   hpgl_plot_draw_absolute));
+					   hpgl_plot_draw_absolute, true));
 	  hpgl_call(hpgl_add_arc_3point_to_path(pgls, 
 						p1.x, p1.y, 
 						p2.x, p2.y,
@@ -207,7 +207,7 @@ hpgl_PM(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	  {
 	  case 0 : 
 	    /* clear the current path if there is one */
-	    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
+	    hpgl_call(hpgl_clear_current_path(pgls));
 	    pgls->g.polygon_mode = true;
 	    /* save the pen state, to be restored by PM2 */
 	    hpgl_save_pen_state(pgls, 
