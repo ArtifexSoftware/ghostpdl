@@ -603,7 +603,7 @@ pcl_set_current_font_environment(pcl_state_t *pcs)
 }
 
 private bool
-purge_all(cached_char * cc, void *dummy)
+purge_all(const gs_memory_t *mem, cached_char * cc, void *dummy)
 {
     return true;
 }
