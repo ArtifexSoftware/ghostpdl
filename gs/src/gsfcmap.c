@@ -104,9 +104,10 @@ code_map_decode_next(const gx_code_map_t * pcmap, const gs_const_string * pstr,
 
     for (i = 0; i < pcmap->num_lookup; ++i) {
 	const gx_code_lookup_range_t *pclr = &pcmap->lookup[i];
-	int pre_size = pclr->key_prefix_size, key_size = pclr->key_size;
+	int pre_size = pclr->key_prefix_size, key_size = pclr->key_size,
+	    chr_size = pre_size + key_size;
 
-	if (ssize < pre_size + key_size)
+	if (ssize < chr_size)
 	    continue;
 	if (memcmp(str, pclr->key_prefix, pre_size))
 	    continue;
@@ -131,7 +132,8 @@ code_map_decode_next(const gx_code_map_t * pcmap, const gs_const_string * pstr,
 	    if (k == pclr->num_keys)
 		continue;
 	    /* We have a match.  Return the result. */
-	    *pindex += pre_size + key_size;
+	    *pchr = (*pchr << (chr_size * 8)) + bytes2int(str, chr_size);
+	    *pindex += chr_size;
 	    *pfidx = pclr->font_index;
 	    pvalue = pclr->values.data + k * pclr->value_size;
 	    switch (pclr->value_type) {
@@ -145,7 +147,7 @@ code_map_decode_next(const gx_code_map_t * pcmap, const gs_const_string * pstr,
 		*pglyph = bytes2int(pvalue, pclr->value_size);
 		return 0;
 	    case CODE_VALUE_CHARS:
-		*pchr = (*pchr << (pclr->value_size * 8)) +
+		*pglyph =
 		    bytes2int(pvalue, pclr->value_size) +
 		    bytes2int(str + pre_size, key_size) -
 		    bytes2int(key, key_size);
@@ -156,7 +158,6 @@ code_map_decode_next(const gx_code_map_t * pcmap, const gs_const_string * pstr,
 	}
     }
     /* No mapping. */
-    *pchr = 0;
     *pglyph = gs_no_glyph;
     return 0;
 }
