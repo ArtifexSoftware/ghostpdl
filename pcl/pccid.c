@@ -24,6 +24,32 @@
 /* GC memory descriptor for the pcl_cid_data_t structure */
 private_st_cid_data_t();
 
+/* CID accessors */
+pcl_cspace_type_t
+pcl_cid_get_cspace(pcl_cid_data_t *pcid) 
+{
+    return pcid->u.hdr.cspace;
+}
+
+pcl_encoding_type_t
+pcl_cid_get_encoding(pcl_cid_data_t *pcid)
+{
+    return pcid->u.hdr.bits_per_index;
+}
+
+byte
+pcl_cid_get_bits_per_index(pcl_cid_data_t *pcid)
+{
+    return pcid->u.hdr.bits_per_index;
+}
+
+byte
+pcl_cid_get_bits_per_primary(pcl_cid_data_t *pcid, int index)
+{
+    return pcid->u.hdr.bits_per_primary[index];
+}
+
+
 /*
  * Convert a 32-bit floating point number stored in HP's big-endian form
  * into the native form required by the host processor.
@@ -536,12 +562,14 @@ pcl_cid_do_reset(pcl_state_t *       pcs,
           pcl_reset_type_t    type
 )
 {
-    /* NB this needs testing */
-    if ( type & pcl_reset_printer ) {
-        /* NOTE the '!' is like strcmp 0 matches */
+    static const uint mask = (pcl_reset_initial | 
+                              pcl_reset_cold |
+                              pcl_reset_printer);
+
+    if ( (type & mask) != 0 ) {
         pcs->useciecolor = !pjl_proc_compare(pcs->pjls,
-                              pjl_proc_get_envvar(pcs->pjls, "useciecolor"), "on");
+                            pjl_proc_get_envvar(pcs->pjls, "useciecolor"), "on");
     }
 }    
 
-const pcl_init_t    pcl_cid_init = { pcl_cid_do_registration, pcl_cid_do_reset, 0 };
+const pcl_init_t pcl_cid_init = { pcl_cid_do_registration, pcl_cid_do_reset, 0 };
