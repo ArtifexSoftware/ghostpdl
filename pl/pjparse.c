@@ -198,7 +198,7 @@ unsigned char pjl_permanent_soft_fonts[MAX_PERMANENT_FONTS / 8];
 /* ----- private functions and definitions ------------ */
 
 /* forward declaration */
-private int pjl_set(P4(pjl_parser_state_t *pst, char *variable, char *value, bool defaults));
+private int pjl_set(pjl_parser_state_t *pst, char *variable, char *value, bool defaults);
 
 /* handle pjl variables which affect the state of other variables - we
    don't handle all of these yet.  NB not complete. */

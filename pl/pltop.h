@@ -40,7 +40,7 @@ typedef struct pl_interp_instance_s {
 } pl_interp_instance_t;
 
 /* Param data types */
-typedef int (*pl_page_action_t)(P2(pl_interp_instance_t *, void *));
+typedef int (*pl_page_action_t)(pl_interp_instance_t *, void *);
 
 /*
  * Implementation characteristics descriptor
@@ -97,14 +97,14 @@ typedef struct pl_interp_characteristics_s {
 /*
  * Define interp procedures: See comments in pltop.c for descriptions/ret vals
  */
-const pl_interp_characteristics_t * pl_characteristics(P1(const pl_interp_implementation_t *));
-typedef const pl_interp_characteristics_t * (*pl_interp_proc_characteristics_t)(P1(const pl_interp_implementation_t *));
+const pl_interp_characteristics_t * pl_characteristics(const pl_interp_implementation_t *);
+typedef const pl_interp_characteristics_t * (*pl_interp_proc_characteristics_t)(const pl_interp_implementation_t *);
 
-int pl_allocate_interp(P3(pl_interp_t **, const pl_interp_implementation_t *, gs_memory_t *));
-typedef int (*pl_interp_proc_allocate_interp_t)(P3(pl_interp_t **, const pl_interp_implementation_t *, gs_memory_t *));
+int pl_allocate_interp(pl_interp_t **, const pl_interp_implementation_t *, gs_memory_t *);
+typedef int (*pl_interp_proc_allocate_interp_t)(pl_interp_t **, const pl_interp_implementation_t *, gs_memory_t *);
 
-int pl_allocate_interp_instance(P3(pl_interp_instance_t **, pl_interp_t *, gs_memory_t *));
-typedef int (*pl_interp_proc_allocate_interp_instance_t)(P3(pl_interp_instance_t **, pl_interp_t *, gs_memory_t *));
+int pl_allocate_interp_instance(pl_interp_instance_t **, pl_interp_t *, gs_memory_t *);
+typedef int (*pl_interp_proc_allocate_interp_instance_t)(pl_interp_instance_t **, pl_interp_t *, gs_memory_t *);
 
 /* clients that can be set into an interpreter's state */
 typedef enum { 
@@ -115,47 +115,47 @@ typedef enum {
 } pl_interp_instance_clients_t;
 
 
-int pl_set_client_instance(P3(pl_interp_instance_t *, pl_interp_instance_t *, pl_interp_instance_clients_t client));
-typedef int (*pl_interp_proc_set_client_instance_t)(P3(pl_interp_instance_t *, pl_interp_instance_t *, pl_interp_instance_clients_t client));
+int pl_set_client_instance(pl_interp_instance_t *, pl_interp_instance_t *, pl_interp_instance_clients_t client);
+typedef int (*pl_interp_proc_set_client_instance_t)(pl_interp_instance_t *, pl_interp_instance_t *, pl_interp_instance_clients_t client);
 
-int pl_set_pre_page_action(P3(pl_interp_instance_t *, pl_page_action_t, void *));
-typedef int (*pl_interp_proc_set_pre_page_action_t)(P3(pl_interp_instance_t *, pl_page_action_t, void *));
+int pl_set_pre_page_action(pl_interp_instance_t *, pl_page_action_t, void *);
+typedef int (*pl_interp_proc_set_pre_page_action_t)(pl_interp_instance_t *, pl_page_action_t, void *);
 
-int pl_set_post_page_action(P3(pl_interp_instance_t *, pl_page_action_t, void *));
-typedef int (*pl_interp_proc_set_post_page_action_t)(P3(pl_interp_instance_t *, pl_page_action_t, void *));
+int pl_set_post_page_action(pl_interp_instance_t *, pl_page_action_t, void *);
+typedef int (*pl_interp_proc_set_post_page_action_t)(pl_interp_instance_t *, pl_page_action_t, void *);
 
-int pl_set_device(P2(pl_interp_instance_t *, gx_device *));
-typedef int (*pl_interp_proc_set_device_t)(P2(pl_interp_instance_t *, gx_device *));
+int pl_set_device(pl_interp_instance_t *, gx_device *);
+typedef int (*pl_interp_proc_set_device_t)(pl_interp_instance_t *, gx_device *);
 
-int pl_init_job(P1(pl_interp_instance_t *));
-typedef int (*pl_interp_proc_init_job_t)(P1(pl_interp_instance_t *));
+int pl_init_job(pl_interp_instance_t *);
+typedef int (*pl_interp_proc_init_job_t)(pl_interp_instance_t *);
 
-int pl_process(P2(pl_interp_instance_t *, stream_cursor_read *));
-typedef int (*pl_interp_proc_process_t)(P2(pl_interp_instance_t *, stream_cursor_read *));
+int pl_process(pl_interp_instance_t *, stream_cursor_read *);
+typedef int (*pl_interp_proc_process_t)(pl_interp_instance_t *, stream_cursor_read *);
 
-int pl_flush_to_eoj(P2(pl_interp_instance_t *, stream_cursor_read *));
-typedef int (*pl_interp_proc_flush_to_eoj_t)(P2(pl_interp_instance_t *,  stream_cursor_read *));
+int pl_flush_to_eoj(pl_interp_instance_t *, stream_cursor_read *);
+typedef int (*pl_interp_proc_flush_to_eoj_t)(pl_interp_instance_t *,  stream_cursor_read *);
 
-int pl_process_eof(P1(pl_interp_instance_t *));
-typedef int (*pl_interp_proc_process_eof_t)(P1(pl_interp_instance_t *));
+int pl_process_eof(pl_interp_instance_t *);
+typedef int (*pl_interp_proc_process_eof_t)(pl_interp_instance_t *);
 
-int pl_report_errors(P5(pl_interp_instance_t *, int, long, bool, FILE *));
-typedef int (*pl_interp_proc_report_errors_t)(P5(pl_interp_instance_t *, int, long, bool, FILE *));
+int pl_report_errors(pl_interp_instance_t *, int, long, bool, FILE *);
+typedef int (*pl_interp_proc_report_errors_t)(pl_interp_instance_t *, int, long, bool, FILE *);
 
-int pl_dnit_job(P1(pl_interp_instance_t *));
-typedef int (*pl_interp_proc_dnit_job_t)(P1(pl_interp_instance_t *));
+int pl_dnit_job(pl_interp_instance_t *);
+typedef int (*pl_interp_proc_dnit_job_t)(pl_interp_instance_t *);
 
-int pl_remove_device(P1(pl_interp_instance_t *));
-typedef int (*pl_interp_proc_remove_device_t)(P1(pl_interp_instance_t *));
+int pl_remove_device(pl_interp_instance_t *);
+typedef int (*pl_interp_proc_remove_device_t)(pl_interp_instance_t *);
 
-int pl_deallocate_interp_instance(P1(pl_interp_instance_t *));
-typedef int (*pl_interp_proc_deallocate_interp_instance_t)(P1(pl_interp_instance_t *));
+int pl_deallocate_interp_instance(pl_interp_instance_t *);
+typedef int (*pl_interp_proc_deallocate_interp_instance_t)(pl_interp_instance_t *);
 
-int pl_deallocate_interp(P1(pl_interp_t *));
-typedef int (*pl_interp_proc_deallocate_interp_t)(P1(pl_interp_t *));
+int pl_deallocate_interp(pl_interp_t *);
+typedef int (*pl_interp_proc_deallocate_interp_t)(pl_interp_t *);
 
-int pl_get_device_memory(P2(pl_interp_instance_t *, gs_memory_t **));
-typedef int (*pl_interp_proc_get_device_memory_t)(P2(pl_interp_instance_t *, gs_memory_t **));
+int pl_get_device_memory(pl_interp_instance_t *, gs_memory_t **);
+typedef int (*pl_interp_proc_get_device_memory_t)(pl_interp_instance_t *, gs_memory_t **);
 
 /*
  * Define a generic interpreter implementation

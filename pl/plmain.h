@@ -61,28 +61,28 @@ typedef struct pl_main_instance_s {
 void pl_main_init_standard_io(void);
 
 /* Initialize the instance parameters. */
-void pl_main_init(P2(pl_main_instance_t *pmi, gs_memory_t *memory));
+void pl_main_init(pl_main_instance_t *pmi, gs_memory_t *memory);
 
 /* Allocate and initialize the first graphics state. */
 #ifndef gs_state_DEFINED
 #  define gs_state_DEFINED
 typedef struct gs_state_s gs_state;
 #endif
-int pl_main_make_gstate(P2(pl_main_instance_t *pmi, gs_state **ppgs));
+int pl_main_make_gstate(pl_main_instance_t *pmi, gs_state **ppgs);
 
 #ifdef DEBUG
 /* Print memory and time usage. */
-void pl_print_usage(P3(gs_memory_t *mem, const pl_main_instance_t *pmi,
-		       const char *msg));
+void pl_print_usage(gs_memory_t *mem, const pl_main_instance_t *pmi,
+                    const char *msg);
 #endif
 
 /* Finish a page, possibly printing usage statistics and/or pausing. */
-int pl_finish_page(P4(pl_main_instance_t *pmi, gs_state *pgs,
-		      int num_copies, int flush));
+int pl_finish_page(pl_main_instance_t *pmi, gs_state *pgs,
+                   int num_copies, int flush);
 
 /* determine if a device is high level NB - should be
    pl_high_level_device.  NBB - this is a hack to do unusual tricks
    when pdfwrite is the active device. */
-bool high_level_device(P1(gx_device *device));
+bool high_level_device(gx_device *device);
 
 #endif				/* plmain_INCLUDED */

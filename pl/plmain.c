@@ -86,7 +86,7 @@ Options: -dNOPAUSE -E[#] -h -C -L<PCL|PCLXL> -n -K<maxK> -P<PCL5C|PCL5E|RTL> -Z.
 /* ---------------- Forward decls ------------------ */
 /* Functions to encapsulate pl_main_universe_t */
 int   /* 0 ok, else -1 error */
-pl_main_universe_init(P8(
+pl_main_universe_init(
 	pl_main_universe_t     *universe,            /* universe to init */
 	char                   *err_str,             /* RETURNS error str if error */
 	gs_memory_t            *mem,                 /* deallocator for devices */
@@ -96,12 +96,12 @@ pl_main_universe_init(P8(
 	pl_main_instance_t     *inst,                /* instance for pre/post print */
 	pl_page_action_t       pl_pre_finish_page,   /* pre-page action */
 	pl_page_action_t       pl_post_finish_page   /* post-page action */
-));
+);
 int   /* 0 ok, else -1 error */
-pl_main_universe_dnit(P2(
+pl_main_universe_dnit(
 	pl_main_universe_t     *universe,            /* universe to dnit */
 	char                   *err_str              /* RETRUNS errmsg if error return */
-));
+);
 pl_interp_instance_t *    /* rets current interp_instance, 0 if err */
 pl_main_universe_select(
 	pl_main_universe_t               *universe,              /* universe to select from */
@@ -113,72 +113,72 @@ pl_main_universe_select(
 );
 
 private pl_interp_implementation_t const *
-pl_auto_sense(P3(
+pl_auto_sense(
    const char*                      name,         /* stream  */
    int                              buffer_length, /* length of stream */
    pl_interp_implementation_t const * const impl_array[] /* implementations to choose from */
-));
+);
 
 private pl_interp_implementation_t const *
-pl_select_implementation(P3(
+pl_select_implementation(
   pl_interp_instance_t *pjl_instance,
   pl_main_instance_t *pmi, 
   pl_top_cursor_t r
-));
+);
 
 
 /* Process the options on the command line. */
-private FILE *pl_main_arg_fopen(P2(const char *fname, void *ignore_data));
+private FILE *pl_main_arg_fopen(const char *fname, void *ignore_data);
 
 /* Initialize the instance parameters. */
-void pl_main_init_instance(P2(pl_main_instance_t *pmi, gs_memory_t *memory));
-void pl_main_reinit_instance(P1(pl_main_instance_t *pmi));
+void pl_main_init_instance(pl_main_instance_t *pmi, gs_memory_t *memory);
+void pl_main_reinit_instance(pl_main_instance_t *pmi);
 
 #ifdef DEBUG
 /* Print memory and time usage. */
-void pl_print_usage(P3(gs_memory_t *mem, const pl_main_instance_t *pmi,
-		       const char *msg));
+void pl_print_usage(gs_memory_t *mem, const pl_main_instance_t *pmi,
+		       const char *msg);
 #endif
 
 /* Process the options on the command line, including making the
    initial device and setting its parameters.  */
-int pl_main_process_options(P5(pl_main_instance_t *pmi, arg_list *pal,
+int pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 			       gs_c_param_list *params,
                                pl_interp_instance_t *pjl_instance,
-                               pl_interp_implementation_t const * const impl_array[]));
+                               pl_interp_implementation_t const * const impl_array[]);
 
 /* Find default language implementation */
 pl_interp_implementation_t const *
-pl_auto_sense(P3(const char* buf, int buf_len, pl_interp_implementation_t const * const impl_array[]));
+pl_auto_sense(const char* buf, int buf_len, pl_interp_implementation_t const * const impl_array[]);
 
 private pl_interp_implementation_t const *
-pl_pjl_select(P2(pl_interp_instance_t *pjl_instance,
-	      pl_interp_implementation_t const * const impl_array[]));
+pl_pjl_select(pl_interp_instance_t *pjl_instance,
+	      pl_interp_implementation_t const * const impl_array[]);
 
 /* Pre-page portion of page finishing routine */
 int	/* ret 0 if page should be printed, 1 if no print, else -ve error */
-pl_pre_finish_page(P2(pl_interp_instance_t *interp, void *closure));
+pl_pre_finish_page(pl_interp_instance_t *interp, void *closure);
 
 /* Post-page portion of page finishing routine */
 int	/* ret 0, else -ve error */
-pl_post_finish_page(P2(pl_interp_instance_t *interp, void *closure));
+pl_post_finish_page(pl_interp_instance_t *interp, void *closure);
 
       /* -------------- Read file cursor operations ---------- */
 /* Open a read cursor w/specified file */
-int pl_main_cursor_open(P4(pl_top_cursor_t *, const char *, byte *, unsigned));
+int pl_main_cursor_open(pl_top_cursor_t *, const char *, byte *, unsigned);
 
 #ifdef DEBUG
 /* Refill from input, avoid extra call level for efficiency */
-int pl_main_cursor_next(P1(pl_top_cursor_t *cursor));
+int pl_main_cursor_next(pl_top_cursor_t *cursor);
 #else
  #define pl_main_cursor_next(curs) (pl_top_cursor_next(curs))
 #endif
 
 /* Read back curr file position */
-long pl_main_cursor_position(P1(pl_top_cursor_t *cursor));
+long pl_main_cursor_position(pl_top_cursor_t *cursor);
 
 /* Close read cursor */
-void pl_main_cursor_close(P1(pl_top_cursor_t *cursor));
+void pl_main_cursor_close(pl_top_cursor_t *cursor);
 
 
 /* return index in gs device list -1 if not found */
@@ -271,7 +271,7 @@ pl_main(
 	 * some hacks specific to MS Windows for patching the
 	 * stdxxx IODevices.
 	 */
-	extern void gs_iodev_init(P1(gs_memory_t *));
+	extern void gs_iodev_init(gs_memory_t *);
 	gs_iodev_init(pjl_mem);
     }
 

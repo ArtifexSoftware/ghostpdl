@@ -319,10 +319,12 @@ pl_resize_object(gs_memory_t * mem, void *obj, uint new_num_elements, client_nam
     /* get new object's size */
     ulong new_size = (objs_type->ssize * new_num_elements) + header_size;
     /* replace the size field */
-    pl_mem_node_remove(mem, &bptr[-header_size]);
     ptr = (byte *)realloc(&bptr[-header_size], new_size);
-    if ( !ptr || pl_mem_node_add(mem, ptr, cname) )
+    if ( !ptr ) 
 	return NULL;
+
+    pl_mem_node_remove(mem, &bptr[-header_size]);
+    pl_mem_node_add(mem, ptr, cname);
     /* da for debug allocator - so scripts can parse the trace */
     if_debug2('A', "[da]:realloc:%x:%s\n", ptr, cname );
     /* we reset size and type - the type in case realloc moved us */
@@ -445,7 +447,7 @@ no_recover_proc(gs_memory_retrying_t *rmem, void *proc_data)
 
 
 /* forward decl */
-private gs_memory_t * pl_stable(P1(gs_memory_t *mem));
+private gs_memory_t * pl_stable(gs_memory_t *mem);
 
 
 gs_memory_retrying_t pl_mem = {

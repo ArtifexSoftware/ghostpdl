@@ -35,8 +35,8 @@
 private_st_pl_font();
 
 /* Imported procedures */
-int gs_type42_get_metrics(P3(gs_font_type42 *pfont, uint glyph_index,
-  float psbw[4]));
+int gs_type42_get_metrics(gs_font_type42 *pfont, uint glyph_index,
+  float psbw[4]);
 
 /* Define accessors for unaligned, big-endian quantities. */
 #define u16(bptr) pl_get_uint16(bptr)

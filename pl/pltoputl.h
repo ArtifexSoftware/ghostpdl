@@ -31,15 +31,15 @@ typedef struct pl_top_cursor_s {
 } pl_top_cursor_t;
 
 /* Init a read cursor w/specified open stream */
-int pl_top_cursor_init(P4(pl_top_cursor_t *cursor, FILE *strm, byte *buffer, unsigned bufferLength));
+int pl_top_cursor_init(pl_top_cursor_t *cursor, FILE *strm, byte *buffer, unsigned bufferLength);
 
 /* Refill from input */
-int pl_top_cursor_next(P1(pl_top_cursor_t *cursor));
+int pl_top_cursor_next(pl_top_cursor_t *cursor);
 
 /* Close read cursor */
-int pl_top_cursor_close(P1(pl_top_cursor_t *cursor));
+int pl_top_cursor_close(pl_top_cursor_t *cursor);
 
 /* Deinit a read cursor */
-void pl_top_cursor_dnit(P1(pl_top_cursor_t *cursor));
+void pl_top_cursor_dnit(pl_top_cursor_t *cursor);
 
 #endif				/* pltoputl_INCLUDED */

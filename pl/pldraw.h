@@ -20,5 +20,5 @@ typedef struct gs_state_s gs_state;
 #endif
 
 /* Begin an image with parameters derived from a graphics state. */
-int pl_begin_image(P3(gs_state *pgs, const gs_image_t *pim,
-		      void **pinfo));
+int pl_begin_image(gs_state *pgs, const gs_image_t *pim,
+                   void **pinfo);

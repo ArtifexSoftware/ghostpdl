@@ -161,8 +161,8 @@ struct pl_font_s {
   pl_font_scaling_technology_t scaling_technology;
   pl_font_type_t font_type;
   /* Implementation of pl_font_char_width, see below */
-  int (*char_width)(P4(const pl_font_t *plfont, const void *pgs, uint char_code, gs_point *pwidth));
-  int (*char_metrics)(P4(const pl_font_t *plfont, const void *pgs, uint char_code, float metrics[4]));
+  int (*char_width)(const pl_font_t *plfont, const void *pgs, uint char_code, gs_point *pwidth);
+  int (*char_metrics)(const pl_font_t *plfont, const void *pgs, uint char_code, float metrics[4]);
   bool large_sizes;	/* segment sizes are 32 bits if true, 16 if false */
 			/* (for segmented fonts only) */
   struct { uint x, y; } resolution; /* resolution (for bitmap fonts) */
@@ -191,52 +191,52 @@ struct pl_font_s {
 /* ---------------- Procedural interface ---------------- */
 
 /* Allocate and minimally initialize a font. */
-pl_font_t *pl_alloc_font(P2(gs_memory_t *mem, client_name_t cname));
+pl_font_t *pl_alloc_font(gs_memory_t *mem, client_name_t cname);
 
 /* copy a font */
-pl_font_t *pl_clone_font(P3(const pl_font_t *src, gs_memory_t *mem, client_name_t cname));
+pl_font_t *pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname);
 
 /* Allocate the glyph table.  num_glyphs is just an estimate -- the table */
 /* expands automatically as needed. */
-int pl_font_alloc_glyph_table(P4(pl_font_t *plfont, uint num_glyphs,
-				 gs_memory_t *mem, client_name_t cname));
+int pl_font_alloc_glyph_table(pl_font_t *plfont, uint num_glyphs,
+                              gs_memory_t *mem, client_name_t cname);
 
 /* Allocate the glyph-to-character map for a downloaded TrueType font. */
-int pl_tt_alloc_char_glyphs(P4(pl_font_t *plfont, uint num_chars,
-			       gs_memory_t *mem, client_name_t cname));
+int pl_tt_alloc_char_glyphs(pl_font_t *plfont, uint num_chars,
+                            gs_memory_t *mem, client_name_t cname);
 
 /* Fill in generic gs_font boilerplate. */
 #ifndef gs_font_dir_DEFINED
 #  define gs_font_dir_DEFINED	
 typedef struct gs_font_dir_s gs_font_dir;
 #endif
-int pl_fill_in_font(P5(gs_font *pfont, pl_font_t *plfont, gs_font_dir *pdir,
-		       gs_memory_t *mem, const char *font_name));
+int pl_fill_in_font(gs_font *pfont, pl_font_t *plfont, gs_font_dir *pdir,
+                    gs_memory_t *mem, const char *font_name);
 
 /* Fill in bitmap and intellifont gs_font boilerplate. */
 #ifndef gs_font_base_DEFINED
 #  define gs_font_base_DEFINED
 typedef struct gs_font_base_s gs_font_base;
 #endif
-void pl_fill_in_bitmap_font(P2(gs_font_base *pfont, long unique_id));
-void pl_fill_in_intelli_font(P2(gs_font_base *pfont, long unique_id));
+void pl_fill_in_bitmap_font(gs_font_base *pfont, long unique_id);
+void pl_fill_in_intelli_font(gs_font_base *pfont, long unique_id);
 /* Initialize the callback procedures for a bitmap and intellifont
    fonts. */
-void pl_bitmap_init_procs(P1(gs_font_base *pfont));
-void pl_intelli_init_procs(P1(gs_font_base *pfont));
+void pl_bitmap_init_procs(gs_font_base *pfont);
+void pl_intelli_init_procs(gs_font_base *pfont);
 /* Fill in TrueType gs_font boilerplate. */
 /* data = NULL for downloaded fonts, the TT data for complete fonts. */
 #ifndef gs_font_type42_DEFINED
 #  define gs_font_type42_DEFINED
 typedef struct gs_font_type42_s gs_font_type42;
 #endif
-void pl_fill_in_tt_font(P3(gs_font_type42 *pfont, void *data,
-			   long unique_id));
+void pl_fill_in_tt_font(gs_font_type42 *pfont, void *data,
+                        long unique_id);
 
 /* Initialize the callback procedures for a TrueType font. */
-void pl_tt_init_procs(P1(gs_font_type42 *pfont));
+void pl_tt_init_procs(gs_font_type42 *pfont);
 /* Finish initializing a TrueType font. */
-void pl_tt_finish_init(P2(gs_font_type42 *pfont, bool downloaded));
+void pl_tt_finish_init(gs_font_type42 *pfont, bool downloaded);
 
 /*
  * Set large_sizes, scaling_technology, character_complement, offsets
@@ -259,38 +259,38 @@ typedef struct pl_font_offset_errors_s {
   int illegal_VT_segment;
   int illegal_BR_segment;
 } pl_font_offset_errors_t;
-int pl_font_scan_segments(P6(pl_font_t *plfont, int fst_offset,
-			     int start_offset, long end_offset,
-			     bool large_sizes,
-			     const pl_font_offset_errors_t *pfoe));
+int pl_font_scan_segments(pl_font_t *plfont, int fst_offset,
+                          int start_offset, long end_offset,
+                          bool large_sizes,
+                          const pl_font_offset_errors_t *pfoe);
 
 /* Load a built-in (TrueType) font from external storage. */
-int pl_load_tt_font(P6(FILE *in, gs_font_dir *pdir, gs_memory_t *mem,
-		       long unique_id, pl_font_t **pplfont, char *font_name));
+int pl_load_tt_font(FILE *in, gs_font_dir *pdir, gs_memory_t *mem,
+                    long unique_id, pl_font_t **pplfont, char *font_name);
 
 /* allocate, read in and free tt font files to and from memory */
-int pl_alloc_tt_fontfile_buffer(P4(FILE *in, gs_memory_t *mem, byte **pptt_font_data, ulong *size));
-int pl_free_tt_fontfile_buffer(P2(gs_memory_t *mem, byte *ptt_font_data));
+int pl_alloc_tt_fontfile_buffer(FILE *in, gs_memory_t *mem, byte **pptt_font_data, ulong *size);
+int pl_free_tt_fontfile_buffer(gs_memory_t *mem, byte *ptt_font_data);
 
 
 /* Add a glyph to a font.  Return -1 if the table is full. */
-int pl_font_add_glyph(P3(pl_font_t *plfont, gs_glyph glyph, byte *data));
+int pl_font_add_glyph(pl_font_t *plfont, gs_glyph glyph, byte *data);
 
 /* Determine the escapement of a character in a font / symbol set. */
 /* If the font is bound, the symbol set is ignored. */
 /* If the character is undefined, set the escapement to (0,0) and return 1. */
 /* If pwidth is NULL, don't store the escapement. */
-int pl_font_char_width(P4(const pl_font_t *plfont, const void *pgs, uint char_code, gs_point *pwidth));
+int pl_font_char_width(const pl_font_t *plfont, const void *pgs, uint char_code, gs_point *pwidth);
 
 /* Determine the character metrics.  If vertical substitution is in
    effect metrics[1] = lsb, metrics[3] = width otherwise metrics[0] =
    lsb and metrics 2 = width.   The same rules for character width apply */
-int pl_font_char_metrics(P4(const pl_font_t *plfont, const void *pgs, uint char_code, float metrics[4]));
+int pl_font_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code, float metrics[4]);
 
 /* Look up a glyph in a font.  Return a pointer to the glyph's slot */
 /* (data != 0) or where it should be added (data == 0). */
-pl_font_glyph_t *pl_font_lookup_glyph(P2(const pl_font_t *plfont,
-					 gs_glyph glyph));
+pl_font_glyph_t *pl_font_lookup_glyph(const pl_font_t *plfont,
+                                      gs_glyph glyph);
 
 /* Determine whether a font, with a given symbol set, includes a given */
 /* character.  If the font is bound, the symbol set is ignored. */
@@ -298,15 +298,15 @@ pl_font_glyph_t *pl_font_lookup_glyph(P2(const pl_font_t *plfont,
   (pl_font_char_width(plfont, maps, matrix, char_code, (gs_point *)0) == 0)
 
 /* Remove a glyph from a font.  Return 1 if the glyph was present. */
-int pl_font_remove_glyph(P2(pl_font_t *plfont, gs_glyph glyph));
+int pl_font_remove_glyph(pl_font_t *plfont, gs_glyph glyph);
 
 /* Free a font.  This is the freeing procedure in the font dictionary. */
-void pl_free_font(P3(gs_memory_t *mem, void *plf, client_name_t cname));
+void pl_free_font(gs_memory_t *mem, void *plf, client_name_t cname);
 
 /* load resident font data to ram */
-int pl_load_resident_font_data_from_file(P2(gs_memory_t *mem, pl_font_t *plfont));
+int pl_load_resident_font_data_from_file(gs_memory_t *mem, pl_font_t *plfont);
 
 /* keep resident font data in its original file */
-int pl_store_resident_font_data_in_file(P3(char *font_file, gs_memory_t *mem, pl_font_t *plfont));
+int pl_store_resident_font_data_in_file(char *font_file, gs_memory_t *mem, pl_font_t *plfont);
 
 #endif				/* plfont_INCLUDED */
