@@ -32,9 +32,41 @@ typedef ulong gs_char;
 #define gs_no_char GS_NO_CHAR
 
 /*
- * Define a character glyph code, a.k.a. character name.
- * gs_glyphs from 0 to 2^31-1 are (PostScript) names; gs_glyphs 2^31 and
- * above are CIDs, biased by 2^31.
+ * Define a character glyph code, a.k.a. character name.  The space of
+ * glyph codes is divided into four sections:
+ *
+ *	- Codes >= GS_MIN_CID_GLYPH represent (non-negative) integers biased
+ *	  by GS_MIN_CID_GLYPH.  Depending on the context, they may represent
+ *	  either PostScript CIDs or TrueType GIDs.
+ *
+ *	+ Codes < GS_MIN_CID_GLYPH represent named glyphs.  There are
+ *	  three sub-sections:
+ *
+ *	  - GS_NO_GLYPH, which means "no known glyph value".  Note that
+ *	    it is not the same as /.notdef or CID 0 or GID 0: it means
+ *	    that the identity of the glyph is unknown, as opposed to a
+ *	    known glyph that is used for rendering an unknown character
+ *	    code.
+ *
+ *	  - Codes < gs_c_min_std_encoding_glyph represent names in some
+ *	    global space that the graphics library doesn't attempt to
+ *	    interpret.  (When the client is the PostScript interpreter,
+ *	    these codes are PostScript name indices, but the graphics
+ *	    library doesn't know or rely on this.)  The graphics library
+ *	    *does* assume that such codes denote the same names across
+ *	    all fonts, and that they can be converted to a string name
+ *	    by the font's glyph_name virtual procedure.
+ *
+ *	  - Codes >= gs_c_min_std_encoding_glyph (and < GS_MIN_CID_GLYPH)
+ *	    represent names in a special space used for the 11 built-in
+ *	    Encodings.  The API is defined in gscencs.h.  The only
+ *	    procedures that generate or recognize such codes are the ones
+ *	    declared in that file: clients must be careful not to mix
+ *	    such codes with codes in the global space.
+ *
+ * Client code may assume that GS_NO_GLYPH < GS_MIN_CID_GLYPH (i.e., it is a
+ * "name", not an integer), but should not make assumptions about whether
+ * GS_NO_GLYPH is less than or greater than gs_c_min_std_encoding_glyph.
  */
 typedef ulong gs_glyph;
 
