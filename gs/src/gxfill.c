@@ -1231,7 +1231,7 @@ private int store_margin(line_list * ll, margin_set * set, int ii0, int ii1)
 		    mf->next = ll->free_margin_list;
 		    ll->free_margin_list = mb;
 		    i0 = min(i0, mb->ibeg);
-		    i1 = min(i1, mf->iend);
+		    i1 = max(i1, mf->iend);
 		    /* 'prev' links are not used in ll->free_margin_list. */
 		}
 	    }
