@@ -552,6 +552,37 @@
 
 % -----------------------------------------------------------------------
 % 
+%  Procedure to handle fileposition. Ghostscript has a private
+%  operator .fileposition that works when fileposition does not
+% 
+%    <file> tryfilepos
+% 	Returns:	fileposition true	if successful
+%			0 false			if not
+/tryfilepos {	
+  /.fileposition where
+    { pop /.fileposition load }	% most likely to succeed
+    { /fileposition load }
+  ifelse
+  stopped
+    { pop 0 false }
+    { true }
+  ifelse
+} bind def
+
+% -----------------------------------------------------------------------
+% 
+% Procedure to provide =only operator if not present. Suggested
+% by Alex Cherepanov to use =print operator present on some Adobe
+% implementations.
+/=only where
+  { pop }
+  { /=print where { pop /=print load } { /print load } ifelse
+    /=only exch def
+  }
+ifelse
+
+% -----------------------------------------------------------------------
+% 
 %  Procedure to make sure that the file is at the EOF.
 %  added above (string == FileTailString.
 %
@@ -563,10 +594,10 @@
 /CheckFileTail {
   dup
   status not dup	% status false says no longer valid
-  { (Unexpected EOF: XX,YY=) print XX =only (,) print YY = }
-  { 1 index fileposition 4 index length ne dup
+  { (Unexpected EOF: XX,YY=) print XX =only (,) print YY = false }
+  { 1 index tryfilepos not exch 5 index length ne or dup
     { 3 index print ( fileposition = ) print
-      2 index fileposition =only
+      2 index tryfilepos pop =only
       ( doesn't match expected = ) print 4 index length = flush
     }
     if
