@@ -32,7 +32,7 @@ int pl_stdio_init( gs_memory_t *mem )
 {
     pl_stdio_t *pio = 0;
 
-    if ( mem != 0 ) 
+    if ( mem == 0 ) 
 	return -1;  /* assert mem != 0 */
 
     if (mem->pl_stdio) /* one time initialization */
