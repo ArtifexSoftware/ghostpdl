@@ -199,7 +199,7 @@ RANLIB=ranlib
 
 # Define the name of the C compiler.
 
-CC=cc
+CC=gcc2
 
 # Define the name of the linker for the final link step.
 # Normally this is the same as the C compiler.
