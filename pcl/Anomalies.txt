@@ -643,6 +643,12 @@ Difference in specific tests of the PCL 5c FTS
     behavior, and the behavior of HP devices other than the CLJ 5/5M. The
     behavior of the CLJ 5/5M is apparently a bug.
         
+1070:
+    The artifex interpreter always fills along +x and +y for hpgl/2
+    vector fills.  HP apparently fills in a direction related to the
+    direction of the graphical objects.  We believe our interpretation
+    is follows the HP spec.
+
 1272:
 
    The gl/2 interpreter places scalable characters slightly to the
@@ -652,6 +658,15 @@ Difference in specific tests of the PCL 5c FTS
    select the same font and print the same string.  The Artifex
    interpreter produces the same output for each string, the expected
    result.  HP does not.
+
+begin 664 gl2chbug.pcl
+M&T4;)3!"24X[4%<P.T94-"PV,RXU+#`[4$$P+#`[4E(U,#`P,"PU,#`P,#M0
+M5S`N,C4[1E0T+#4P."PP.U!!,"PP.U)2-3`P,#`L-3`P,#`[4%<P+C4[1E0T
+M+#$P,38L,#M003`L,#M24C4P,#`P+#4P,#`P.QLE,4))3CM34#$[25`[4%<P
+M+C`T.U-$-"PQ-#0L,BPQ+#<L-#$P,3M003`L-3`P,#M,0E!#3`-003`L,#L;
+5)3%!&RAS,30T5ALH<S%04$-,&T4*
+`
+end
 
 1402 (et. al.):
 
@@ -806,239 +821,18 @@ fp309k22.bin:
      rasterizer anomaly.  The clipboard is a winding bitmap font and
      images correctly at 600 dpi but is slightly clipped at 300 dpi.
 
-Attachment 1.  (HP GL/2 character placement bug)
+Qp606w21.bin:
 
-begin 664 gl2chbug.pcl
-M&T4;11LE,$))3E-0,3M)4#M05S`N,#0["E!!,"PP.U!$,"PP.U!2.#$R."PP
-M+#`L,3`Q-C`L+3@Q,C@L,"PP+"TQ,#$V,#M053L*4$$P+#`[4$0P+#`[4%(Q
-M,#$V+#`L,"PQ,#$V,"PQ,#$V+#`L,"PM,3`Q-C`L,3`Q-BPP+#`L,3`Q-C`L
-M,3`Q-BPP+#`L+3$P,38P+#$P,38L,"PP+#$P,38P+#$P,38L,"PP+"TQ,#$V
-M,"PQ,#$V+#`L,"PQ,#$V,"PQ,#$V+#`L,"PM,3`Q-C`[4%4["E!!,"PP.U!$
-M,"PP.U!2,"PQ,#$V+#@Q,C@L,"PP+#$P,38L+3@Q,C@L,"PP+#$P,38L.#$R
-M."PP+#`L,3`Q-BPM.#$R."PP+#`L,3`Q-BPX,3(X+#`L,"PQ,#$V+"TX,3(X
-M+#`L,"PQ,#$V+#@Q,C@L,"PP+#$P,38L+3@Q,C@L,"PP+#$P,38L.#$R."PP
-M+#`L,3`Q-BPM.#$R."PP.U!5.PI,5"TR.U!!-C,N-3`P,#`P+#!01#M04C`L
-M,3`Q.3([4%4[4%4["E!!,3(W+C`P,#`P,"PP4$0[4%(P+#$P,3DR.U!5.U!5
-M.PI003$Y,"XU,#`P,#`L,%!$.U!2,"PQ,#$Y,CM053M053L*4$$R-30N,#`P
-M,#`P+#!01#M04C`L,3`Q.3([4%4[4%4["E!!,S$W+C4P,#`P,"PP4$0[4%(P
-M+#$P,3DR.U!5.U!5.PI003,X,2XP,#`P,#`L,%!$.U!2,"PQ,#$Y,CM053M0
-M53L*4$$T-#0N-3`P,#`P+#!01#M04C`L,3`Q.3([4%4[4%4["E!!-3`X+C`P
-M,#`P,"PP4$0[4%(P+#$P,3DR.U!5.U!5.PI0034W,2XU,#`P,#`L,%!$.U!2
-M,"PQ,#$Y,CM053M053L*4$$V,S4N,#`P,#`P+#!01#M04C`L,3`Q.3([4%4[
-M4%4["E!!-CDX+C4P,#`P,"PP4$0[4%(P+#$P,3DR.U!5.U!5.PI003<V,BXP
-M,#`P,#`L,%!$.U!2,"PQ,#$Y,CM053M053L*4$$X,C4N-3`P,#`P+#!01#M0
-M4C`L,3`Q.3([4%4[4%4["E!!.#@Y+C`P,#`P,"PP4$0[4%(P+#$P,3DR.U!5
-M.U!5.PI003DU,BXU,#`P,#`L,%!$.U!2,"PQ,#$Y,CM053M053L*4$$Q,#$V
-M+C`P,#`P,"PP4$0[4%(P+#$P,3DR.U!5.U!5.PI003$P-SDN-3`P,#`P+#!0
-M1#M04C`L,3`Q.3([4%4[4%4["E!!,3$T,RXP,#`P,#`L,%!$.U!2,"PQ,#$Y
-M,CM053M053L*4$$Q,C`V+C4P,#`P,"PP4$0[4%(P+#$P,3DR.U!5.U!5.PI0
-M03$R-S`N,#`P,#`P+#!01#M04C`L,3`Q.3([4%4[4%4["E!!,3,S,RXU,#`P
-M,#`L,%!$.U!2,"PQ,#$Y,CM053M053L*4$$Q,SDW+C`P,#`P,"PP4$0[4%(P
-M+#$P,3DR.U!5.U!5.PI003$T-C`N-3`P,#`P+#!01#M04C`L,3`Q.3([4%4[
-M4%4["E!!,34R-"XP,#`P,#`L,%!$.U!2,"PQ,#$Y,CM053M053L*4$$Q-3@W
-M+C4P,#`P,"PP4$0[4%(P+#$P,3DR.U!5.U!5.PI003$V-3$N,#`P,#`P+#!0
-M1#M04C`L,3`Q.3([4%4[4%4["E!!,3<Q-"XU,#`P,#`L,%!$.U!2,"PQ,#$Y
-M,CM053M053L*4$$Q-S<X+C`P,#`P,"PP4$0[4%(P+#$P,3DR.U!5.U!5.PI0
-M03$X-#$N-3`P,#`P+#!01#M04C`L,3`Q.3([4%4[4%4["E!!,3DP-2XP,#`P
-M,#`L,%!$.U!2,"PQ,#$Y,CM053M053L*4$$Q.38X+C4P,#`P,"PP4$0[4%(P
-M+#$P,3DR.U!5.U!5.PI003(P,S(N,#`P,#`P+#!01#M04C`L,3`Q.3([4%4[
-M4%4["E!!,C`Y-2XU,#`P,#`L,%!$.U!2,"PQ,#$Y,CM053M053L*4$$R,34Y
-M+C`P,#`P,"PP4$0[4%(P+#$P,3DR.U!5.U!5.PI003(R,C(N-3`P,#`P+#!0
-M1#M04C`L,3`Q.3([4%4[4%4["E!!,C(X-BXP,#`P,#`L,%!$.U!2,"PQ,#$Y
-M,CM053M053L*4$$R,S0Y+C4P,#`P,"PP4$0[4%(P+#$P,3DR.U!5.U!5.PI0
-M03(T,3,N,#`P,#`P+#!01#M04C`L,3`Q.3([4%4[4%4["E!!,C0W-BXU,#`P
-M,#`L,%!$.U!2,"PQ,#$Y,CM053M053L*4$$R-30P+C`P,#`P,"PP4$0[4%(P
-M+#$P,3DR.U!5.U!5.PI003(V,#,N-3`P,#`P+#!01#M04C`L,3`Q.3([4%4[
-M4%4["E!!,C8V-RXP,#`P,#`L,%!$.U!2,"PQ,#$Y,CM053M053L*4$$R-S,P
-M+C4P,#`P,"PP4$0[4%(P+#$P,3DR.U!5.U!5.PI003(W.30N,#`P,#`P+#!0
-M1#M04C`L,3`Q.3([4%4[4%4["E!!,C@U-RXU,#`P,#`L,%!$.U!2,"PQ,#$Y
-M,CM053M053L*4$$R.3(Q+C`P,#`P,"PP4$0[4%(P+#$P,3DR.U!5.U!5.PI0
-M03(Y.#0N-3`P,#`P+#!01#M04C`L,3`Q.3([4%4[4%4["E!!,S`T."XP,#`P
-M,#`L,%!$.U!2,"PQ,#$Y,CM053M053L*4$$S,3$Q+C4P,#`P,"PP4$0[4%(P
-M+#$P,3DR.U!5.U!5.PI003,Q-S4N,#`P,#`P+#!01#M04C`L,3`Q.3([4%4[
-M4%4["E!!,S(S."XU,#`P,#`L,%!$.U!2,"PQ,#$Y,CM053M053L*4$$S,S`R
-M+C`P,#`P,"PP4$0[4%(P+#$P,3DR.U!5.U!5.PI003,S-C4N-3`P,#`P+#!0
-M1#M04C`L,3`Q.3([4%4[4%4["E!!,S0R.2XP,#`P,#`L,%!$.U!2,"PQ,#$Y
-M,CM053M053L*4$$S-#DR+C4P,#`P,"PP4$0[4%(P+#$P,3DR.U!5.U!5.PI0
-M03,U-38N,#`P,#`P+#!01#M04C`L,3`Q.3([4%4[4%4["E!!,S8Q.2XU,#`P
-M,#`L,%!$.U!2,"PQ,#$Y,CM053M053L*4$$S-C@S+C`P,#`P,"PP4$0[4%(P
-M+#$P,3DR.U!5.U!5.PI003,W-#8N-3`P,#`P+#!01#M04C`L,3`Q.3([4%4[
-M4%4["E!!,S@Q,"XP,#`P,#`L,%!$.U!2,"PQ,#$Y,CM053M053L*4$$S.#<S
-M+C4P,#`P,"PP4$0[4%(P+#$P,3DR.U!5.U!5.PI003,Y,S<N,#`P,#`P+#!0
-M1#M04C`L,3`Q.3([4%4[4%4["E!!-#`P,"XU,#`P,#`L,%!$.U!2,"PQ,#$Y
-M,CM053M053L*4$$T,#8T+C`P,#`P,"PP4$0[4%(P+#$P,3DR.U!5.U!5.PI0
-M030Q,C<N-3`P,#`P+#!01#M04C`L,3`Q.3([4%4[4%4["E!!-#$Y,2XP,#`P
-M,#`L,%!$.U!2,"PQ,#$Y,CM053M053L*4$$T,C4T+C4P,#`P,"PP4$0[4%(P
-M+#$P,3DR.U!5.U!5.PI0030S,3@N,#`P,#`P+#!01#M04C`L,3`Q.3([4%4[
-M4%4["E!!-#,X,2XU,#`P,#`L,%!$.U!2,"PQ,#$Y,CM053M053L*4$$T-#0U
-M+C`P,#`P,"PP4$0[4%(P+#$P,3DR.U!5.U!5.PI0030U,#@N-3`P,#`P+#!0
-M1#M04C`L,3`Q.3([4%4[4%4["E!!-#4W,BXP,#`P,#`L,%!$.U!2,"PQ,#$Y
-M,CM053M053L*4$$T-C,U+C4P,#`P,"PP4$0[4%(P+#$P,3DR.U!5.U!5.PI0
-M030V.3DN,#`P,#`P+#!01#M04C`L,3`Q.3([4%4[4%4["E!!-#<V,BXU,#`P
-M,#`L,%!$.U!2,"PQ,#$Y,CM053M053L*4$$T.#(V+C`P,#`P,"PP4$0[4%(P
-M+#$P,3DR.U!5.U!5.PI0030X.#DN-3`P,#`P+#!01#M04C`L,3`Q.3([4%4[
-M4%4["E!!-#DU,RXP,#`P,#`L,%!$.U!2,"PQ,#$Y,CM053M053L*4$$U,#$V
-M+C4P,#`P,"PP4$0[4%(P+#$P,3DR.U!5.U!5.PI0034P.#`N,#`P,#`P+#!0
-M1#M04C`L,3`Q.3([4%4[4%4["E!!-3$T,RXU,#`P,#`L,%!$.U!2,"PQ,#$Y
-M,CM053M053L*4$$U,C`W+C`P,#`P,"PP4$0[4%(P+#$P,3DR.U!5.U!5.PI0
-M034R-S`N-3`P,#`P+#!01#M04C`L,3`Q.3([4%4[4%4["E!!-3,S-"XP,#`P
-M,#`L,%!$.U!2,"PQ,#$Y,CM053M053L*4$$U,SDW+C4P,#`P,"PP4$0[4%(P
-M+#$P,3DR.U!5.U!5.PI0034T-C$N,#`P,#`P+#!01#M04C`L,3`Q.3([4%4[
-M4%4["E!!-34R-"XU,#`P,#`L,%!$.U!2,"PQ,#$Y,CM053M053L*4$$U-3@X
-M+C`P,#`P,"PP4$0[4%(P+#$P,3DR.U!5.U!5.PI0034V-3$N-3`P,#`P+#!0
-M1#M04C`L,3`Q.3([4%4[4%4["E!!-3<Q-2XP,#`P,#`L,%!$.U!2,"PQ,#$Y
-M,CM053M053L*4$$U-S<X+C4P,#`P,"PP4$0[4%(P+#$P,3DR.U!5.U!5.PI0
-M034X-#(N,#`P,#`P+#!01#M04C`L,3`Q.3([4%4[4%4["E!!-3DP-2XU,#`P
-M,#`L,%!$.U!2,"PQ,#$Y,CM053M053L*4$$U.38Y+C`P,#`P,"PP4$0[4%(P
-M+#$P,3DR.U!5.U!5.PI0038P,S(N-3`P,#`P+#!01#M04C`L,3`Q.3([4%4[
-M4%4["E!!-C`Y-BXP,#`P,#`L,%!$.U!2,"PQ,#$Y,CM053M053L*4$$V,34Y
-M+C4P,#`P,"PP4$0[4%(P+#$P,3DR.U!5.U!5.PI0038R,C,N,#`P,#`P+#!0
-M1#M04C`L,3`Q.3([4%4[4%4["E!!-C(X-BXU,#`P,#`L,%!$.U!2,"PQ,#$Y
-M,CM053M053L*4$$V,S4P+C`P,#`P,"PP4$0[4%(P+#$P,3DR.U!5.U!5.PI0
-M038T,3,N-3`P,#`P+#!01#M04C`L,3`Q.3([4%4[4%4["E!!-C0W-RXP,#`P
-M,#`L,%!$.U!2,"PQ,#$Y,CM053M053L*4$$V-30P+C4P,#`P,"PP4$0[4%(P
-M+#$P,3DR.U!5.U!5.PI0038V,#0N,#`P,#`P+#!01#M04C`L,3`Q.3([4%4[
-M4%4["E!!-C8V-RXU,#`P,#`L,%!$.U!2,"PQ,#$Y,CM053M053L*4$$V-S,Q
-M+C`P,#`P,"PP4$0[4%(P+#$P,3DR.U!5.U!5.PI0038W.30N-3`P,#`P+#!0
-M1#M04C`L,3`Q.3([4%4[4%4["E!!-C@U."XP,#`P,#`L,%!$.U!2,"PQ,#$Y
-M,CM053M053L*4$$V.3(Q+C4P,#`P,"PP4$0[4%(P+#$P,3DR.U!5.U!5.PI0
-M038Y.#4N,#`P,#`P+#!01#M04C`L,3`Q.3([4%4[4%4["E!!-S`T."XU,#`P
-M,#`L,%!$.U!2,"PQ,#$Y,CM053M053L*4$$W,3$R+C`P,#`P,"PP4$0[4%(P
-M+#$P,3DR.U!5.U!5.PI003<Q-S4N-3`P,#`P+#!01#M04C`L,3`Q.3([4%4[
-M4%4["E!!-S(S.2XP,#`P,#`L,%!$.U!2,"PQ,#$Y,CM053M053L*4$$W,S`R
-M+C4P,#`P,"PP4$0[4%(P+#$P,3DR.U!5.U!5.PI003<S-C8N,#`P,#`P+#!0
-M1#M04C`L,3`Q.3([4%4[4%4["E!!-S0R.2XU,#`P,#`L,%!$.U!2,"PQ,#$Y
-M,CM053M053L*4$$W-#DS+C`P,#`P,"PP4$0[4%(P+#$P,3DR.U!5.U!5.PI0
-M03<U-38N-3`P,#`P+#!01#M04C`L,3`Q.3([4%4[4%4["E!!-S8R,"XP,#`P
-M,#`L,%!$.U!2,"PQ,#$Y,CM053M053L*4$$W-C@S+C4P,#`P,"PP4$0[4%(P
-M+#$P,3DR.U!5.U!5.PI003<W-#<N,#`P,#`P+#!01#M04C`L,3`Q.3([4%4[
-M4%4["E!!-S@Q,"XU,#`P,#`L,%!$.U!2,"PQ,#$Y,CM053M053L*4$$W.#<T
-M+C`P,#`P,"PP4$0[4%(P+#$P,3DR.U!5.U!5.PI003<Y,S<N-3`P,#`P+#!0
-M1#M04C`L,3`Q.3([4%4[4%4["E!!.#`P,2XP,#`P,#`L,%!$.U!2,"PQ,#$Y
-M,CM053M053L*4$$X,#8T+C4P,#`P,"PP4$0[4%(P+#$P,3DR.U!5.U!5.PI0
-M03@Q,C@N,#`P,#`P+#!01#M04C`L,3`Q.3([4%4[4%4["E!!,"PV,RXU,#`P
-M,#!01#M04C@Q-C`L,#M053M053L*4$$P+#$R-RXP,#`P,#!01#M04C@Q-C`L
-M,#M053M053L*4$$P+#$Y,"XU,#`P,#!01#M04C@Q-C`L,#M053M053L*4$$P
-M+#(U-"XP,#`P,#!01#M04C@Q-C`L,#M053M053L*4$$P+#,Q-RXU,#`P,#!0
-M1#M04C@Q-C`L,#M053M053L*4$$P+#,X,2XP,#`P,#!01#M04C@Q-C`L,#M0
-M53M053L*4$$P+#0T-"XU,#`P,#!01#M04C@Q-C`L,#M053M053L*4$$P+#4P
-M."XP,#`P,#!01#M04C@Q-C`L,#M053M053L*4$$P+#4W,2XU,#`P,#!01#M0
-M4C@Q-C`L,#M053M053L*4$$P+#8S-2XP,#`P,#!01#M04C@Q-C`L,#M053M0
-M53L*4$$P+#8Y."XU,#`P,#!01#M04C@Q-C`L,#M053M053L*4$$P+#<V,BXP
-M,#`P,#!01#M04C@Q-C`L,#M053M053L*4$$P+#@R-2XU,#`P,#!01#M04C@Q
-M-C`L,#M053M053L*4$$P+#@X.2XP,#`P,#!01#M04C@Q-C`L,#M053M053L*
-M4$$P+#DU,BXU,#`P,#!01#M04C@Q-C`L,#M053M053L*4$$P+#$P,38N,#`P
-M,#`P4$0[4%(X,38P+#`[4%4[4%4["E!!,"PQ,#<Y+C4P,#`P,%!$.U!2.#$V
-M,"PP.U!5.U!5.PI003`L,3$T,RXP,#`P,#!01#M04C@Q-C`L,#M053M053L*
-M4$$P+#$R,#8N-3`P,#`P4$0[4%(X,38P+#`[4%4[4%4["E!!,"PQ,C<P+C`P
-M,#`P,%!$.U!2.#$V,"PP.U!5.U!5.PI003`L,3,S,RXU,#`P,#!01#M04C@Q
-M-C`L,#M053M053L*4$$P+#$S.3<N,#`P,#`P4$0[4%(X,38P+#`[4%4[4%4[
-M"E!!,"PQ-#8P+C4P,#`P,%!$.U!2.#$V,"PP.U!5.U!5.PI003`L,34R-"XP
-M,#`P,#!01#M04C@Q-C`L,#M053M053L*4$$P+#$U.#<N-3`P,#`P4$0[4%(X
-M,38P+#`[4%4[4%4["E!!,"PQ-C4Q+C`P,#`P,%!$.U!2.#$V,"PP.U!5.U!5
-M.PI003`L,3<Q-"XU,#`P,#!01#M04C@Q-C`L,#M053M053L*4$$P+#$W-S@N
-M,#`P,#`P4$0[4%(X,38P+#`[4%4[4%4["E!!,"PQ.#0Q+C4P,#`P,%!$.U!2
-M.#$V,"PP.U!5.U!5.PI003`L,3DP-2XP,#`P,#!01#M04C@Q-C`L,#M053M0
-M53L*4$$P+#$Y-C@N-3`P,#`P4$0[4%(X,38P+#`[4%4[4%4["E!!,"PR,#,R
-M+C`P,#`P,%!$.U!2.#$V,"PP.U!5.U!5.PI003`L,C`Y-2XU,#`P,#!01#M0
-M4C@Q-C`L,#M053M053L*4$$P+#(Q-3DN,#`P,#`P4$0[4%(X,38P+#`[4%4[
-M4%4["E!!,"PR,C(R+C4P,#`P,%!$.U!2.#$V,"PP.U!5.U!5.PI003`L,C(X
-M-BXP,#`P,#!01#M04C@Q-C`L,#M053M053L*4$$P+#(S-#DN-3`P,#`P4$0[
-M4%(X,38P+#`[4%4[4%4["E!!,"PR-#$S+C`P,#`P,%!$.U!2.#$V,"PP.U!5
-M.U!5.PI003`L,C0W-BXU,#`P,#!01#M04C@Q-C`L,#M053M053L*4$$P+#(U
-M-#`N,#`P,#`P4$0[4%(X,38P+#`[4%4[4%4["E!!,"PR-C`S+C4P,#`P,%!$
-M.U!2.#$V,"PP.U!5.U!5.PI003`L,C8V-RXP,#`P,#!01#M04C@Q-C`L,#M0
-M53M053L*4$$P+#(W,S`N-3`P,#`P4$0[4%(X,38P+#`[4%4[4%4["E!!,"PR
-M-SDT+C`P,#`P,%!$.U!2.#$V,"PP.U!5.U!5.PI003`L,C@U-RXU,#`P,#!0
-M1#M04C@Q-C`L,#M053M053L*4$$P+#(Y,C$N,#`P,#`P4$0[4%(X,38P+#`[
-M4%4[4%4["E!!,"PR.3@T+C4P,#`P,%!$.U!2.#$V,"PP.U!5.U!5.PI003`L
-M,S`T."XP,#`P,#!01#M04C@Q-C`L,#M053M053L*4$$P+#,Q,3$N-3`P,#`P
-M4$0[4%(X,38P+#`[4%4[4%4["E!!,"PS,3<U+C`P,#`P,%!$.U!2.#$V,"PP
-M.U!5.U!5.PI003`L,S(S."XU,#`P,#!01#M04C@Q-C`L,#M053M053L*4$$P
-M+#,S,#(N,#`P,#`P4$0[4%(X,38P+#`[4%4[4%4["E!!,"PS,S8U+C4P,#`P
-M,%!$.U!2.#$V,"PP.U!5.U!5.PI003`L,S0R.2XP,#`P,#!01#M04C@Q-C`L
-M,#M053M053L*4$$P+#,T.3(N-3`P,#`P4$0[4%(X,38P+#`[4%4[4%4["E!!
-M,"PS-34V+C`P,#`P,%!$.U!2.#$V,"PP.U!5.U!5.PI003`L,S8Q.2XU,#`P
-M,#!01#M04C@Q-C`L,#M053M053L*4$$P+#,V.#,N,#`P,#`P4$0[4%(X,38P
-M+#`[4%4[4%4["E!!,"PS-S0V+C4P,#`P,%!$.U!2.#$V,"PP.U!5.U!5.PI0
-M03`L,S@Q,"XP,#`P,#!01#M04C@Q-C`L,#M053M053L*4$$P+#,X-S,N-3`P
-M,#`P4$0[4%(X,38P+#`[4%4[4%4["E!!,"PS.3,W+C`P,#`P,%!$.U!2.#$V
-M,"PP.U!5.U!5.PI003`L-#`P,"XU,#`P,#!01#M04C@Q-C`L,#M053M053L*
-M4$$P+#0P-C0N,#`P,#`P4$0[4%(X,38P+#`[4%4[4%4["E!!,"PT,3(W+C4P
-M,#`P,%!$.U!2.#$V,"PP.U!5.U!5.PI003`L-#$Y,2XP,#`P,#!01#M04C@Q
-M-C`L,#M053M053L*4$$P+#0R-30N-3`P,#`P4$0[4%(X,38P+#`[4%4[4%4[
-M"E!!,"PT,S$X+C`P,#`P,%!$.U!2.#$V,"PP.U!5.U!5.PI003`L-#,X,2XU
-M,#`P,#!01#M04C@Q-C`L,#M053M053L*4$$P+#0T-#4N,#`P,#`P4$0[4%(X
-M,38P+#`[4%4[4%4["E!!,"PT-3`X+C4P,#`P,%!$.U!2.#$V,"PP.U!5.U!5
-M.PI003`L-#4W,BXP,#`P,#!01#M04C@Q-C`L,#M053M053L*4$$P+#0V,S4N
-M-3`P,#`P4$0[4%(X,38P+#`[4%4[4%4["E!!,"PT-CDY+C`P,#`P,%!$.U!2
-M.#$V,"PP.U!5.U!5.PI003`L-#<V,BXU,#`P,#!01#M04C@Q-C`L,#M053M0
-M53L*4$$P+#0X,C8N,#`P,#`P4$0[4%(X,38P+#`[4%4[4%4["E!!,"PT.#@Y
-M+C4P,#`P,%!$.U!2.#$V,"PP.U!5.U!5.PI003`L-#DU,RXP,#`P,#!01#M0
-M4C@Q-C`L,#M053M053L*4$$P+#4P,38N-3`P,#`P4$0[4%(X,38P+#`[4%4[
-M4%4["E!!,"PU,#@P+C`P,#`P,%!$.U!2.#$V,"PP.U!5.U!5.PI003`L-3$T
-M,RXU,#`P,#!01#M04C@Q-C`L,#M053M053L*4$$P+#4R,#<N,#`P,#`P4$0[
-M4%(X,38P+#`[4%4[4%4["E!!,"PU,C<P+C4P,#`P,%!$.U!2.#$V,"PP.U!5
-M.U!5.PI003`L-3,S-"XP,#`P,#!01#M04C@Q-C`L,#M053M053L*4$$P+#4S
-M.3<N-3`P,#`P4$0[4%(X,38P+#`[4%4[4%4["E!!,"PU-#8Q+C`P,#`P,%!$
-M.U!2.#$V,"PP.U!5.U!5.PI003`L-34R-"XU,#`P,#!01#M04C@Q-C`L,#M0
-M53M053L*4$$P+#4U.#@N,#`P,#`P4$0[4%(X,38P+#`[4%4[4%4["E!!,"PU
-M-C4Q+C4P,#`P,%!$.U!2.#$V,"PP.U!5.U!5.PI003`L-3<Q-2XP,#`P,#!0
-M1#M04C@Q-C`L,#M053M053L*4$$P+#4W-S@N-3`P,#`P4$0[4%(X,38P+#`[
-M4%4[4%4["E!!,"PU.#0R+C`P,#`P,%!$.U!2.#$V,"PP.U!5.U!5.PI003`L
-M-3DP-2XU,#`P,#!01#M04C@Q-C`L,#M053M053L*4$$P+#4Y-CDN,#`P,#`P
-M4$0[4%(X,38P+#`[4%4[4%4["E!!,"PV,#,R+C4P,#`P,%!$.U!2.#$V,"PP
-M.U!5.U!5.PI003`L-C`Y-BXP,#`P,#!01#M04C@Q-C`L,#M053M053L*4$$P
-M+#8Q-3DN-3`P,#`P4$0[4%(X,38P+#`[4%4[4%4["E!!,"PV,C(S+C`P,#`P
-M,%!$.U!2.#$V,"PP.U!5.U!5.PI003`L-C(X-BXU,#`P,#!01#M04C@Q-C`L
-M,#M053M053L*4$$P+#8S-3`N,#`P,#`P4$0[4%(X,38P+#`[4%4[4%4["E!!
-M,"PV-#$S+C4P,#`P,%!$.U!2.#$V,"PP.U!5.U!5.PI003`L-C0W-RXP,#`P
-M,#!01#M04C@Q-C`L,#M053M053L*4$$P+#8U-#`N-3`P,#`P4$0[4%(X,38P
-M+#`[4%4[4%4["E!!,"PV-C`T+C`P,#`P,%!$.U!2.#$V,"PP.U!5.U!5.PI0
-M03`L-C8V-RXU,#`P,#!01#M04C@Q-C`L,#M053M053L*4$$P+#8W,S$N,#`P
-M,#`P4$0[4%(X,38P+#`[4%4[4%4["E!!,"PV-SDT+C4P,#`P,%!$.U!2.#$V
-M,"PP.U!5.U!5.PI003`L-C@U."XP,#`P,#!01#M04C@Q-C`L,#M053M053L*
-M4$$P+#8Y,C$N-3`P,#`P4$0[4%(X,38P+#`[4%4[4%4["E!!,"PV.3@U+C`P
-M,#`P,%!$.U!2.#$V,"PP.U!5.U!5.PI003`L-S`T."XU,#`P,#!01#M04C@Q
-M-C`L,#M053M053L*4$$P+#<Q,3(N,#`P,#`P4$0[4%(X,38P+#`[4%4[4%4[
-M"E!!,"PW,3<U+C4P,#`P,%!$.U!2.#$V,"PP.U!5.U!5.PI003`L-S(S.2XP
-M,#`P,#!01#M04C@Q-C`L,#M053M053L*4$$P+#<S,#(N-3`P,#`P4$0[4%(X
-M,38P+#`[4%4[4%4["E!!,"PW,S8V+C`P,#`P,%!$.U!2.#$V,"PP.U!5.U!5
-M.PI003`L-S0R.2XU,#`P,#!01#M04C@Q-C`L,#M053M053L*4$$P+#<T.3,N
-M,#`P,#`P4$0[4%(X,38P+#`[4%4[4%4["E!!,"PW-34V+C4P,#`P,%!$.U!2
-M.#$V,"PP.U!5.U!5.PI003`L-S8R,"XP,#`P,#!01#M04C@Q-C`L,#M053M0
-M53L*4$$P+#<V.#,N-3`P,#`P4$0[4%(X,38P+#`[4%4[4%4["E!!,"PW-S0W
-M+C`P,#`P,%!$.U!2.#$V,"PP.U!5.U!5.PI003`L-S@Q,"XU,#`P,#!01#M0
-M4C@Q-C`L,#M053M053L*4$$P+#<X-S0N,#`P,#`P4$0[4%(X,38P+#`[4%4[
-M4%4["E!!,"PW.3,W+C4P,#`P,%!$.U!2.#$V,"PP.U!5.U!5.PI003`L.#`P
-M,2XP,#`P,#!01#M04C@Q-C`L,#M053M053L*4$$P+#@P-C0N-3`P,#`P4$0[
-M4%(X,38P+#`[4%4[4%4["E!!,"PX,3(X+C`P,#`P,%!$.U!2.#$V,"PP.U!5
-M.U!5.PI003`L.#$Y,2XU,#`P,#!01#M04C@Q-C`L,#M053M053L*4$$P+#@R
-M-34N,#`P,#`P4$0[4%(X,38P+#`[4%4[4%4["E!!,"PX,S$X+C4P,#`P,%!$
-M.U!2.#$V,"PP.U!5.U!5.PI003`L.#,X,BXP,#`P,#!01#M04C@Q-C`L,#M0
-M53M053L*4$$P+#@T-#4N-3`P,#`P4$0[4%(X,38P+#`[4%4[4%4["E!!,"PX
-M-3`Y+C`P,#`P,%!$.U!2.#$V,"PP.U!5.U!5.PI003`L.#4W,BXU,#`P,#!0
-M1#M04C@Q-C`L,#M053M053L*4$$P+#@V,S8N,#`P,#`P4$0[4%(X,38P+#`[
-M4%4[4%4["E!!,"PX-CDY+C4P,#`P,%!$.U!2.#$V,"PP.U!5.U!5.PI003`L
-M.#<V,RXP,#`P,#!01#M04C@Q-C`L,#M053M053L*4$$P+#@X,C8N-3`P,#`P
-M4$0[4%(X,38P+#`[4%4[4%4["E!!,"PX.#DP+C`P,#`P,%!$.U!2.#$V,"PP
-M.U!5.U!5.PI003`L.#DU,RXU,#`P,#!01#M04C@Q-C`L,#M053M053L*4$$P
-M+#DP,3<N,#`P,#`P4$0[4%(X,38P+#`[4%4[4%4["E!!,"PY,#@P+C4P,#`P
-M,%!$.U!2.#$V,"PP.U!5.U!5.PI003`L.3$T-"XP,#`P,#!01#M04C@Q-C`L
-M,#M053M053L*4$$P+#DR,#<N-3`P,#`P4$0[4%(X,38P+#`[4%4[4%4["E!!
-M,"PY,C<Q+C`P,#`P,%!$.U!2.#$V,"PP.U!5.U!5.PI003`L.3,S-"XU,#`P
-M,#!01#M04C@Q-C`L,#M053M053L*4$$P+#DS.3@N,#`P,#`P4$0[4%(X,38P
-M+#`[4%4[4%4["E!!,"PY-#8Q+C4P,#`P,%!$.U!2.#$V,"PP.U!5.U!5.PI0
-M03`L.34R-2XP,#`P,#!01#M04C@Q-C`L,#M053M053L*4$$P+#DU.#@N-3`P
-M,#`P4$0[4%(X,38P+#`[4%4[4%4["E!!,"PY-C4R+C`P,#`P,%!$.U!2.#$V
-M,"PP.U!5.U!5.PI003`L.3<Q-2XU,#`P,#!01#M04C@Q-C`L,#M053M053L*
-M4$$P+#DW-SDN,#`P,#`P4$0[4%(X,38P+#`[4%4[4%4["E!!,"PY.#0R+C4P
-M,#`P,%!$.U!2.#$V,"PP.U!5.U!5.PI003`L.3DP-BXP,#`P,#!01#M04C@Q
-M-C`L,#M053M053L*4$$P+#DY-CDN-3`P,#`P4$0[4%(X,38P+#`[4%4[4%4[
-M"E!!,"PQ,#`S,RXP,#`P,#!01#M04C@Q-C`L,#M053M053L*4$$P+#$P,#DV
-M+C4P,#`P,%!$.U!2.#$V,"PP.U!5.U!5.PI003`L,3`Q-C`N,#`P,#`P4$0[
-M4%(X,38P+#`[4%4[4%4["ALE,4))3CM34#$[25`[4%<P+C`T.U-$-"PQ-#0L
-M,BPQ+#<L-#$P,3M003`L-3`P,#M,0DA%3E)9`U!!,"PP.QLE,4$;*',Q-#16
--&RAS,5!(14Y261M%"@``
+      It is possible for the artifex interpreter to miss closing a
+      path in polygon mode under certain unusual conditions, due to
+      rounding problems.  Here is a very simple example that
+      demonstrates the problem.  This problem has only manifested in
+      problems of low visibility so we have not fixed it.
+
+begin 664 Qp606w21.bin.small
+M&R4M,3(S-#580%!*3"!3150@4$%'15!23U1%0U0]05543PI`4$I,(%-%5"!2
+M15-/3%5424]./38P,`I`4$I,($5.5$52($Q!3D=504=%/5!#3`H;11LE,$))
+M3E-0,5!!4%<N-3M053(Q,C`L,SDT-CM033`[4$0[4%(M."PM,BPM-#8L+3$Q
+?+#(R,2PM.#8W+"TQ-C<L.#@P.U!-,CM%4!LE,$$;10``
 `
 end
