@@ -53,6 +53,12 @@ typedef struct gs_color_space_s gs_color_space;
 #endif
 
 /*
+ * Create a local Device{Gray,RGB,CMYK} color space corresponding to the
+ * given number of components.
+ */
+int pdf_cspace_init_Device(P2(gs_color_space *pcs, int num_components));
+
+/*
  * Create a PDF color space corresponding to a PostScript color space.
  * For parameterless color spaces, set *pvalue to a (literal) string with
  * the color space name; for other color spaces, create a cos_array_t if
@@ -66,8 +72,8 @@ int pdf_color_space(P5(gx_device_pdf *pdev, cos_value_t *pvalue,
 		       bool by_name));
 
 /* Create colored and uncolored Pattern color spaces. */
-int pdf_cs_Pattern(P2(gx_device_pdf *pdev, cos_value_t *pvalue));
-int pdf_cs_Pattern_RGB(P2(gx_device_pdf *pdev, cos_value_t *pvalue));
+int pdf_cs_Pattern_colored(P2(gx_device_pdf *pdev, cos_value_t *pvalue));
+int pdf_cs_Pattern_uncolored(P2(gx_device_pdf *pdev, cos_value_t *pvalue));
 
 /* Write a color value. */
 int pdf_put_drawing_color(P3(gx_device_pdf *pdev, const gx_drawing_color *pdc,

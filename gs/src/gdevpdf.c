@@ -223,8 +223,7 @@ const gx_device_pdf gs_pdfwrite_device =
  {
      {
 	 {0}}},			/* resources */
- 0,				/* cs_Pattern */
- 0,				/* cs_Pattern_RGB */
+ {0},				/* cs_Patterns */
  0,				/* last_resource */
  {
      {
@@ -291,8 +290,7 @@ pdf_reset_page(gx_device_pdf * pdev)
     pdev->contents_id = 0;
     pdf_reset_graphics(pdev);
     pdev->procsets = NoMarks;
-    pdev->cs_Pattern = 0;	/* simplest to create one for each page */
-    pdev->cs_Pattern_RGB = 0;	/* ibid. */
+    memset(pdev->cs_Patterns, 0, sizeof(pdev->cs_Patterns));	/* simplest to create for each page */
     {
 	static const pdf_text_state_t text_default = {
 	    pdf_text_state_default

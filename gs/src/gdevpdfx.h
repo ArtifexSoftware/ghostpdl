@@ -404,8 +404,8 @@ struct gx_device_pdf_s {
     pdf_page_t *pages;
     int num_pages;
     pdf_resource_list_t resources[NUM_RESOURCE_TYPES];
-    pdf_resource_t *cs_Pattern;
-    pdf_resource_t *cs_Pattern_RGB;
+    /* cs_Patterns[0] is colored; 1,3,4 are uncolored + Gray,RGB,CMYK */
+    pdf_resource_t *cs_Patterns[5];
     pdf_resource_t *last_resource;
     pdf_outline_level_t outline_levels[MAX_OUTLINE_DEPTH];
     int outline_depth;
@@ -430,9 +430,11 @@ struct gx_device_pdf_s {
  m(8,open_font)\
  m(9,Catalog) m(10,Info) m(11,Pages)\
  m(12,text.font) m(13,pages)\
- m(14,cs_Pattern) m(15,cs_Pattern_RGB) m(16,last_resource)\
- m(17,articles) m(18,Dests) m(19,named_objects) m(20,open_graphics)
-#define gx_device_pdf_num_ptrs 21
+ m(14,cs_Patterns[0])\
+ m(15,cs_Patterns[1]) m(16,cs_Patterns[3]) m(17,cs_Patterns[4])\
+ m(18,last_resource)\
+ m(19,articles) m(20,Dests) m(21,named_objects) m(22,open_graphics)
+#define gx_device_pdf_num_ptrs 23
 #define gx_device_pdf_do_strings(m) /* do nothing */
 #define gx_device_pdf_num_strings 0
 #define st_device_pdf_max_ptrs\

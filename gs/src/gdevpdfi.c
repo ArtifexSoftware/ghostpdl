@@ -291,12 +291,9 @@ pdf_copy_mono(gx_device_pdf *pdev,
 	int ncomp = pdev->color_info.num_components;
 	byte *p;
 
-	switch (ncomp) {
-	case 1: gs_cspace_init_DeviceGray(&cs_base); break;
-	case 3: gs_cspace_init_DeviceRGB(&cs_base); break;
-	case 4: gs_cspace_init_DeviceCMYK(&cs_base); break;
-	default: return_error(gs_error_rangecheck);
-	}
+	code = pdf_cspace_init_Device(&cs_base, ncomp);
+	if (code < 0)
+	    return code;
 	c[0] = psdf_adjust_color_index((gx_device_vector *)pdev, zero);
 	c[1] = psdf_adjust_color_index((gx_device_vector *)pdev, one);
 	gs_cspace_init(&cs, &gs_color_space_type_Indexed, NULL);
@@ -424,17 +421,14 @@ pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
     gs_color_space cs;
     cos_value_t cs_value;
     ulong nbytes;
-    int code;
+    int code = pdf_cspace_init_Device(&cs, bytes_per_pixel);
     const byte *row_base;
     int row_step;
     long pos;
     bool in_line;
 
-    switch(bytes_per_pixel) {
-    case 3: gs_cspace_init_DeviceRGB(&cs); break;
-    case 4: gs_cspace_init_DeviceCMYK(&cs); break;
-    default: gs_cspace_init_DeviceGray(&cs);
-    }
+    if (code < 0)
+	return code;		/* can't happen */
     gs_image_t_init(pim, &cs);
     pdf_make_bitmap_image(pim, x, y, w, h);
     pim->BitsPerComponent = 8;
@@ -568,13 +562,13 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 	mask = true;
 	depth = 1;
 	copy_data = pdf_copy_mask_data;
-	code = pdf_cs_Pattern_RGB(pdev, &cs_value);
+	code = pdf_cs_Pattern_uncolored(pdev, &cs_value);
     } else {
 	/* This is a colored pattern. */
 	mask = false;
 	depth = pdev->color_info.depth;
 	copy_data = pdf_copy_color_data;
-	code = pdf_cs_Pattern(pdev, &cs_value);
+	code = pdf_cs_Pattern_colored(pdev, &cs_value);
     }
     if (code < 0)
 	goto use_default;

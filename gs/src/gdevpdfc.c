@@ -132,6 +132,22 @@ const pdf_color_space_names_t pdf_color_space_names_short = {
     PDF_COLOR_SPACE_NAMES_SHORT
 };
 
+/*
+ * Create a local Device{Gray,RGB,CMYK} color space corresponding to the
+ * given number of components.
+ */
+int
+pdf_cspace_init_Device(gs_color_space *pcs, int num_components)
+{
+    switch (num_components) {
+    case 1: gs_cspace_init_DeviceGray(pcs); break;
+    case 3: gs_cspace_init_DeviceRGB(pcs); break;
+    case 4: gs_cspace_init_DeviceCMYK(pcs); break;
+    default: return_error(gs_error_rangecheck);
+    }
+    return 0;
+}
+
 /* Add a 3-element vector to a Cos array or dictionary. */
 private int
 cos_array_add_vector3(cos_array_t *pca, const gs_vector3 *pvec)
@@ -530,15 +546,22 @@ pdf_pattern_space(gx_device_pdf *pdev, cos_value_t *pvalue,
     return 0;
 }
 int
-pdf_cs_Pattern(gx_device_pdf *pdev, cos_value_t *pvalue)
+pdf_cs_Pattern_colored(gx_device_pdf *pdev, cos_value_t *pvalue)
 {
-    return pdf_pattern_space(pdev, pvalue, &pdev->cs_Pattern, "[/Pattern]");
+    return pdf_pattern_space(pdev, pvalue, &pdev->cs_Patterns[0],
+			     "[/Pattern]");
 }
 int
-pdf_cs_Pattern_RGB(gx_device_pdf *pdev, cos_value_t *pvalue)
+pdf_cs_Pattern_uncolored(gx_device_pdf *pdev, cos_value_t *pvalue)
 {
-    return pdf_pattern_space(pdev, pvalue, &pdev->cs_Pattern_RGB,
-			     "[/Pattern /DeviceRGB]");
+    int ncomp = pdev->color_info.num_components;
+    static const char *const pcs_names[5] = {
+	0, "[/Pattern /DeviceGray]", 0, "[/Pattern /DeviceRGB]",
+	"[/Pattern /DeviceCMYK]"
+    };
+
+    return pdf_pattern_space(pdev, pvalue, &pdev->cs_Patterns[ncomp],
+			     pcs_names[ncomp]);
 }
 
 /* ---------------- Color values ---------------- */
@@ -704,7 +727,7 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
     const gx_color_tile *m_tile = pdc->mask.m_tile;
     const gx_color_tile *p_tile = pdc->colors.pattern.p_tile;
     int w = p_tile->tbits.rep_width, h = p_tile->tbits.rep_height;
-    gs_color_space cs_RGB;
+    gs_color_space cs_Device;
     cos_value_t cs_value;
     pdf_image_writer writer;
     gs_image1_t image;
@@ -712,16 +735,16 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
     cos_stream_t *pcs_mask = 0;
     cos_value_t v;
     long pos;
-    int code = pdf_cs_Pattern(pdev, &v);
+    int code = pdf_cs_Pattern_colored(pdev, &v);
 
     if (code < 0)
 	return code;
-    gs_cspace_init_DeviceRGB(&cs_RGB);
-    code = pdf_color_space(pdev, &cs_value, &cs_RGB,
+    pdf_cspace_init_Device(&cs_Device, pdev->color_info.num_components);
+    code = pdf_color_space(pdev, &cs_value, &cs_Device,
 			   &pdf_color_space_names, true);
     if (code < 0)
 	return code;
-    gs_image_t_init_adjust(&image, &cs_RGB, false);
+    gs_image_t_init_adjust(&image, &cs_Device, false);
     image.BitsPerComponent = 8;
     pdf_set_pattern_image((gs_data_image_t *)&image, &p_tile->tbits);
     if (m_tile) {
@@ -751,7 +774,7 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
     if (code < 0)
 	return code;
     cos_value_write(&v, pdev);
-    pprints1(pdev->strm, " %s ", ppscc->setcolorspace);
+    pprints1(pdev->strm, " %s", ppscc->setcolorspace);
     return 0;
 }
 private int
@@ -759,12 +782,13 @@ pdf_put_uncolored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 			  const psdf_set_color_commands_t *ppscc,
 			  pdf_resource_t **ppres)
 {
-    gx_color_index color = gx_dc_pure_color(pdc);
     const gx_color_tile *m_tile = pdc->mask.m_tile;
     cos_value_t v;
     stream *s = pdev->strm;
-    int code = pdf_cs_Pattern_RGB(pdev, &v);
+    int code = pdf_cs_Pattern_uncolored(pdev, &v);
     cos_stream_t *pcs_image;
+    gx_drawing_color dc_pure;
+    static const psdf_set_color_commands_t no_scc = {0, 0, 0};
 
     if (code < 0 ||
 	(code = pdf_put_pattern_mask(pdev, m_tile, &pcs_image)) < 0 ||
@@ -773,8 +797,8 @@ pdf_put_uncolored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 	return code;
     cos_value_write(&v, pdev);
     pprints1(s, " %s ", ppscc->setcolorspace);
-    pprintg3(s, "%g %g %g ", (color >> 16) / 255.0,
-	     ((color >> 8) & 0xff) / 255.0, (color & 0xff) / 255.0);
+    color_set_pure(&dc_pure, gx_dc_pure_color(pdc));
+    psdf_set_color((gx_device_vector *)pdev, &dc_pure, &no_scc);
     return 0;
 }
 int

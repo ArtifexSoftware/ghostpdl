@@ -204,6 +204,8 @@ int
 psdf_set_color(gx_device_vector * vdev, const gx_drawing_color * pdc,
 	       const psdf_set_color_commands_t *ppscc)
 {
+    const char *setcolor;
+
     if (!gx_dc_is_pure(pdc))
 	return_error(gs_error_rangecheck);
     {
@@ -223,22 +225,24 @@ psdf_set_color(gx_device_vector * vdev, const gx_drawing_color * pdc,
 		goto g;
 	    }
 	    pprintg4(s, "%g %g %g %g", v0, v1, v2, v3);
-	    pprints1(s, " %s\n", ppscc->setcmykcolor);
+	    setcolor = ppscc->setcmykcolor;
 	    break;
 	case 3:
 	    if (v1 == v2 && v2 == v3)
 		goto g;
 	    pprintg3(s, "%g %g %g", v1, v2, v3);
-	    pprints1(s, " %s\n", ppscc->setrgbcolor);
+	    setcolor = ppscc->setrgbcolor;
 	    break;
 	case 1:
 	g:
 	    pprintg1(s, "%g", v3);
-	    pprints1(s, " %s\n", ppscc->setgray);
+	    setcolor = ppscc->setgray;
 	    break;
 	default:		/* can't happen */
 	    return_error(gs_error_rangecheck);
 	}
+	if (setcolor)
+	    pprints1(s, " %s\n", setcolor);
     }
     return 0;
 }
