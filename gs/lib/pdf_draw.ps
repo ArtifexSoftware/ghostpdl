@@ -1064,29 +1064,39 @@ end
   or					% Combine print and view
   and 					% Combine with 'hidden' flag test
 } bdef
- 
+
 /drawwidget {			% <scalefactor> <annot> drawwidget -
-    dup /AP knownoget {
+  dup /AP knownoget {
 	% Always use the Normal appearance.
-      /N oget
+    /N oget
 		% Acrobat Distiller produces files in which this Form
 		% XObject lacks Type and Subtype keys.  This is illegal,
 		% but Acrobat Reader accepts it.  The only way we can
 		% tell whether this is a Form or a set of sub-appearances
 		% is by testing for the stream Length key.
-      dup /Length known not {
-	1 index /AS knownoget not { () } if
+    dup /Length known {
+      		% If this is a form then simply use it
+      true
+    } {
+      1 index /AS knownoget not {
+      		% If we do not have AS then use any appearance
+	{ exch pop oforce exit } forall true
+      } { 
 		% Stack: annot Ndict AS
-	2 copy knownoget {
-	  exch pop exch pop
-	} {
-		% Pick any one.
-	  pop { exch pop oforce exit } forall
-	} ifelse
-      } if
-    1 index annotrect pop pop translate
-    2 index dup scale		% Apply scale factor
+		% Get the specified appearance.  If no appearance, then
+		% display nothing - set stack = false.
+	knownoget
+      } ifelse
+    } ifelse
+
+		% Stack: scale annot appearance true
+		% Stack: scale annot false
+    {
+      		% Draw appearance
+      1 index annotrect pop pop translate
+      2 index dup scale		% Apply scale factor
       DoForm
+    } if
   } if pop pop
 } bdef
 
