@@ -190,12 +190,17 @@ The following SourceForge bug numbers were open at the time of the last release:
 
 <p>
 A few regressions remain. See the <a
-href="http://www.ghostscript.com/pipermail/gs-regression/2002-October/thread.html">archives</>
-of the regression report for more details.
+href="http://www.ghostscript.com/pipermail/gs-regression/2002-October/thread.html">archives</a>
+of the regression report for more details. Another known issue is slow
+rendering of PDF's from GSView and Ghostview family viewers.
 
 <h3><a name="7.31_Incompatible_changes"></a>Incompatible changes</h3>
 
-<p>No known incompatible changes since the last release.
+<p>
+The <b><tt>-dDOPS</tt></b> flag (to enable DoPS processing) is now
+disabled by default, as it is a more reasonable default. Thus, any
+files which depend on DoPS will now break unless this flag is set.
+
 <pre>
 </pre>
 

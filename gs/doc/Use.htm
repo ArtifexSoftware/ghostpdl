@@ -2114,12 +2114,13 @@ blending.
 </dl>
 
 <dl>
-<dt><b><tt>-dDONTPS</tt></b>
-<dd>Disables processing of DoPS directives in PDF files. DoPS has in
-fact been deprecated for some time. Use of this option is recommended
-in security-conscious applications, as it reduces the scope for
-malicious code. <b><tt>-dDONTPS</tt></b> has no effect on processing
-of PostScript source files.
+<dt><b><tt>-dDOPS</tt></b>
+<dd>Enables processing of DoPS directives in PDF files. DoPS has in
+fact been deprecated for some time. Use of this option is not
+recommended in security-conscious applications, as it increases the
+scope for malicious code. <b><tt>-dDOPS</tt></b> has no effect on
+processing of PostScript source files. Note: in releases 7.30 and
+earlier, processing of DoPS was always enabled.
 </dl>
 
 <h4><a name="Page_parameters"></a>Page parameters</h4>
