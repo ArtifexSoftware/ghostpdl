@@ -145,8 +145,8 @@ proc main {argv} {
 	if {![info exists FROM($f)]} {lappend list $f}
     }
     if {$list != {}} {
-	puts "Files defined but not referenced:"
-	foreach f [lsort $list] {puts "    $f"}
+	puts "        ****** Files defined but not referenced ******"
+	foreach f [lsort $list] {puts $f}
     }
     set list {}
     foreach f [array names FROM] {
@@ -158,8 +158,8 @@ proc main {argv} {
 	}
     }
     if {$list != {}} {
-	puts "Files referenced but not defined:"
-	foreach f [lsort $list] {puts "    $f"}
+	puts "        ****** Files referenced but not defined ******"
+	foreach f [lsort $list] {puts $f}
     }
 }
 
