@@ -17,7 +17,7 @@ int hpgl_compute_user_units_to_plu_ctm(P2(const hpgl_state_t *pgls,
 
 /* The following 2 functions can be used together to calculate a ctm
    without picture frame scaling.  */
-int hpgl_set_pcl_to_plu_ctm(P1(const hpgl_state_t *pgls));
+int hpgl_set_pcl_to_plu_ctm(P1(hpgl_state_t *pgls));
 
 int hpgl_set_user_units_to_plu_ctm(P1(const hpgl_state_t *pgls));
 
@@ -31,6 +31,9 @@ int hpgl_set_drawing_color(P2(hpgl_state_t *pgls, hpgl_rendering_mode_t render_m
 
 /* function to get the current hpgl/2 state position */
 int hpgl_get_current_position(P2(hpgl_state_t *pgls, gs_point *pt));
+
+/* function to set the current hpgl/2 state position */
+int hpgl_set_current_position(P2(hpgl_state_t *pgls, gs_point *pt));
 
 /* puts a point into the path using the operation specified by func */
 int hpgl_add_point_to_path(P5(hpgl_state_t *pgls, floatp x, floatp y,
@@ -47,7 +50,6 @@ int hpgl_add_arc_to_path(P10(hpgl_state_t *pgls, floatp center_x,
 /* puts a 3 point arc into the current path.  Note that the
    decomposition is a bit different for 3 point arcs since the polygon
    wedge routines use this function as well */
-
 int hpgl_add_arc_3point_to_path(P9(hpgl_state_t *pgls, floatp start_x, floatp
 				   start_y, floatp inter_x, floatp inter_y,
 				   floatp end_x, floatp end_y, floatp chord_angle,
@@ -85,7 +87,7 @@ int hpgl_clear_current_path(P1(hpgl_state_t *pgls));
 int hpgl_close_current_path(P1(hpgl_state_t *pgls));
 
 /* adds a pcl point to the current path */
-int hpgl_add_pcl_point_to_path(P2(hpgl_state_t *pgls, gs_point *pcl_point));
+int hpgl_add_pcl_point_to_path(P2(hpgl_state_t *pgls, const gs_point *pcl_point));
 
 /* initialize the path machinery */
 #define hpgl_init_path(state) ((state)->g.have_first_moveto = false)

@@ -140,7 +140,7 @@ status_put_floating(stream *s, double v)
 /* Print font status information. */
 /* font_set = -1 for font list, 0 or 1 for current font. */
 private int
-status_put_font(stream *s, const pcl_state_t *pcls,
+status_put_font(stream *s, pcl_state_t *pcls,
   uint font_id, uint internal_id,
   pl_font_t *plfont, int font_set, bool extended)
 {	char paren = (font_set > 0 ? ')' : '(');
@@ -426,8 +426,7 @@ status_add_symbol_id(ushort *idlist, int nid, ushort new_id)
 }
 
 private int
-status_symbol_sets(stream *s, const pcl_state_t *pcls,
-  pcl_data_storage_t storage)
+status_symbol_sets(stream *s, pcl_state_t *pcls, pcl_data_storage_t storage)
 {	gs_const_string key;
 	void *value;
 	pl_dict_enum_t denum;

@@ -199,7 +199,7 @@ struct pcl_palette_state_s {
   gs_halftone *halftone;	/* downloaded dither matrix/ces */
   float gamma;
   union cu_ {
-    const byte *i[5];		/* indexed by color space */
+    byte *i[5];			/* indexed by color space */
     struct {
       const byte *rgb;
       const byte *cmy;		/* identical to rgb */
@@ -393,7 +393,7 @@ struct pcl_state_s {
 	bool source_transparent;	/* (also in graphics state) */
 	bool pattern_transparent;	/* (also in graphics state) */
 	bool shift_patterns;
-	gs_int_point pattern_reference_point;	/* (also in graphics state) */
+	gs_point pattern_reference_point;	/* (also in graphics state) */
 	bool rotate_patterns;
 	pl_dict_t patterns;
 		/* Internal variables */

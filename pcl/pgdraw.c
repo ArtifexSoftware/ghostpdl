@@ -149,7 +149,7 @@ hpgl_compute_user_units_to_plu_ctm(const hpgl_state_t *pgls, gs_matrix *pmat)
 
 }
  int
-hpgl_set_user_units_to_plu_ctm(hpgl_state_t *pgls)
+hpgl_set_user_units_to_plu_ctm(const hpgl_state_t *pgls)
 {
 	if ( pgls->g.scaling_type != hpgl_scaling_none )
 	  {
@@ -761,7 +761,7 @@ hpgl_set_current_position(hpgl_state_t *pgls, gs_point *pt)
 hpgl_add_point_to_path(hpgl_state_t *pgls, floatp x, floatp y,
 		       hpgl_plot_function_t func, bool set_ctm)
 {	
-	static const int (*gs_procs[])(P3(gs_state *, floatp, floatp)) = {
+	static int (*gs_procs[])(P3(gs_state *, floatp, floatp)) = {
 	  hpgl_plot_function_procedures
 	};
 
