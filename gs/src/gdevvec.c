@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -876,7 +876,16 @@ gdev_vector_put_params(gx_device * dev, gs_param_list * plist)
 	     */
 	    if (ofns.size > fname_size)
 		ecode = gs_error_limitcheck;
-	    else if (dev->is_open && vdev->strm != 0 && stell(vdev->strm) != 0)
+	    else if (!bytes_compare(ofns.data, ofns.size,
+				    (const byte *)vdev->fname,
+				    strlen(vdev->fname))
+		     ) {
+		/* The new name is the same as the old name.  Do nothing. */
+		ofns.data = 0;
+		break;
+	    } else if (dev->is_open && vdev->strm != 0 &&
+		       stell(vdev->strm) != 0
+		       )
 		ecode = gs_error_rangecheck;
 	    else
 		break;
@@ -902,10 +911,7 @@ gdev_vector_put_params(gx_device * dev, gs_param_list * plist)
     if (code < 0)
 	return code;
 
-    if (ofns.data != 0 &&
-	bytes_compare(ofns.data, ofns.size,
-		      (const byte *)vdev->fname, strlen(vdev->fname))
-	) {
+    if (ofns.data != 0) {
 	memcpy(vdev->fname, ofns.data, ofns.size);
 	vdev->fname[ofns.size] = 0;
 	if (vdev->file != 0) {
