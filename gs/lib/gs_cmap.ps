@@ -86,6 +86,7 @@
   /FontMatrices [] def
   /.FontIndex 0 def
   /.TempMaps [20 dict 50 dict 50 dict] def
+  /CodeMap null def		% for .buildcmap
 } bind def
 /endcmap {		% - endcmap -
   10 dict begin 0 1 2 {
@@ -103,9 +104,6 @@
   currentdict /.TempMaps undef
   /.CodeMapData .CodeMapData .endmap def
   /FontMatrices FontMatrices .endmap def
-  /CodeMap null def		% for .buildcmap
-  currentdict end
-  .buildcmap begin
 } bind def
 
 /.putmore {		% <array> <i> <array2> .putmore <array> <i+len(array2)>
@@ -348,6 +346,24 @@ currentdict end
 languagelevel exch 2 .setlanguagelevel
 
 /CMap /Generic /Category findresource dup length dict .copydict
+dup /InstanceType /dicttype put
+dup /DefineResource {
+		% The AdobePS5 Windows driver emits code that attempts to
+		% create CMaps without the require CMapName entry.
+		% Work around this here.
+  dup /CMapName known not {
+    dup wcheck not {
+      .currentglobal exch dup wcheck .setglobal
+      dup length dict .copydict exch .setglobal
+    } if
+    dup gcheck 2 index gcheck not and {
+      exch .currentglobal exch true .setglobal
+      dup length string copy exch .setglobal exch
+    } if dup /CMapName 3 index put
+  } if
+  dup /CodeMap get null eq { .buildcmap } if
+  /Generic /Category findresource /DefineResource get exec
+} put
 /Category defineresource pop
 	% We might have loaded CID font support already.
 /CIDInit /ProcSet 2 copy { findresource } .internalstopped

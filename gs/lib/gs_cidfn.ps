@@ -311,12 +311,10 @@ languagelevel exch 2 .setlanguagelevel
 % Define the CIDInit ProcSet resource.
 % The ProcSet dictionary is still on the stack.
 
-/CMap /Generic /Category findresource dup length dict .copydict
-/Category defineresource pop
-	% We might have loaded CMap support already.  However, Adobe's
-	% protected font downloader defines a CIDInit ProcSet that will be
-	% loaded from the filesystem later, so we must check specifically
-	% for the ProcSet being defined in VM.
+% We might have loaded CMap support already.  However, Adobe's
+% protected font downloader defines a CIDInit ProcSet that will be
+% loaded from the filesystem later, so we must check specifically
+% for the ProcSet being defined in VM.
 /CIDInit /ProcSet 2 copy resourcestatus { pop 0 eq } { false } ifelse {
   pop pop findresource dup length 4 index length add dict .copydict
   4 -1 roll exch .copydict
