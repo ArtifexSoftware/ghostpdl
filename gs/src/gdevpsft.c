@@ -621,10 +621,14 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	    return_error(gs_error_invalidfont);
 	glyph_index = glyph - gs_min_cid_glyph;
 	if_debug1('L', "[L]glyph_index %u\n", glyph_index);
-	if (pfont->data.get_outline(pfont, glyph_index, &glyph_string) >= 0) {
+	if ((code = pfont->data.get_outline(pfont, glyph_index, &glyph_string)) >= 0) {
 	    max_glyph = max(max_glyph, glyph_index);
 	    glyf_length += glyph_string.size;
 	    if_debug1('L', "[L]  size %u\n", glyph_string.size);
+	    if (code > 0)
+		gs_free_const_string(pfont->memory, glyph_string.data,
+				     glyph_string.size,
+				     "psf_write_truetype_data");
 	}
     }
     if_debug2('l', "[l]max_glyph = %lu, glyf_length = %lu\n",
@@ -783,12 +787,17 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
     for (offset = 0; psf_enumerate_glyphs_next(penum, &glyph) != 1; ) {
 	gs_const_string glyph_string;
 
-	if (pfont->data.get_outline(pfont, glyph - gs_min_cid_glyph,
-				    &glyph_string) >= 0) {
+	if ((code = pfont->data.get_outline(pfont, glyph - gs_min_cid_glyph,
+					    &glyph_string)) >= 0
+	    ) {
 	    pwrite(s, glyph_string.data, glyph_string.size);
 	    offset += glyph_string.size;
 	    if_debug2('L', "[L]glyf index = %u, size = %u\n",
 		      i, glyph_string.size);
+	    if (code > 0)
+		gs_free_const_string(pfont->memory, glyph_string.data,
+				     glyph_string.size,
+				     "psf_write_truetype_data");
 	}
     }
     if_debug1('l', "[l]glyf final offset = %lu\n", offset);
@@ -803,9 +812,16 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 
 	for (; glyph_prev <= glyph; ++glyph_prev)
 	    put_loca(s, offset, indexToLocFormat);
-	if (pfont->data.get_outline(pfont, glyph - gs_min_cid_glyph,
-				    &glyph_string) >= 0)
+	if ((code = pfont->data.get_outline(pfont, glyph - gs_min_cid_glyph,
+				    &glyph_string)) >= 0
+	    ) {
 	    offset += glyph_string.size;
+	    if (code > 0)
+		gs_free_const_string(pfont->memory, glyph_string.data,
+				     glyph_string.size,
+				     "psf_write_truetype_data");
+	}
+
     }
     /* Pad to numGlyphs + 1 entries (including the trailing entry). */
     for (; glyph_prev <= gs_min_cid_glyph + numGlyphs; ++glyph_prev)

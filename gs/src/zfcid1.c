@@ -148,9 +148,10 @@ z11_get_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
     gs_const_string gstr;
     const byte *pmetrics;
     int lsb, width;
+    int code = 0;
 
     if (wmode > skip >> 2 ||
-	pfcid->cidata.orig_procs.get_outline(pfont, glyph_index, &gstr) < 0 ||
+	(code = pfcid->cidata.orig_procs.get_outline(pfont, glyph_index, &gstr)) < 0 ||
 	gstr.size < skip
 	)
 	return pfcid->cidata.orig_procs.get_metrics(pfont, glyph_index, wmode,
@@ -169,6 +170,9 @@ z11_get_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
 	    sbw[2] = width * factor, sbw[3] = 0;
 	}
     }
+    if (code > 0)
+	gs_free_const_string(pfont->memory, gstr.data, gstr.size,
+			     "z11_get_metrics");
     return 0;
 }
 
