@@ -17,6 +17,9 @@
 /* $Id$ */
 /* Visual tracer service interface */
 
+#ifndef vdtrace_INCLUDED
+#  define vdtrace_INCLUDED
+
 /*  Painting contract :
     
     First use vd_get_dc.
@@ -161,3 +164,4 @@ void vd_setflag(char f, char v);
 #    define vd_wait
 #endif
 
+#endif /* vdtrace_INCLUDED */
