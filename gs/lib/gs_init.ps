@@ -1710,46 +1710,50 @@ readonly def
     <<
       /PermitFileReading [
         currentuserparams /PermitFileReading get aload pop
-	{ .makepathtemplate 
-
-	  % The check below for the presence of /.filenamedirseparator
-	  % is a temporary switch to NEW_COMBINE_PATH logics.
-	  % It should be removed after alpha testing the new logic.
-	  systemdict /.filenamedirseparator known {
-            dup .filenamedirseparator concatstrings (*) concatstrings
-	  } {
-            (*) .file_name_combine
-	  } ifelse
-
-	  exch		% put string below this procedure
-	}
-        /LIBPATH .systemvar { 1 index exec } forall
-        /FONTPATH .systemvar  { 1 index exec } forall
 
 	% The check below for the presence of /.filenamedirseparator
 	% is a temporary switch to NEW_COMBINE_PATH logics.
 	% It should be removed after alpha testing the new logic.
 	systemdict /.filenamedirseparator known {
+	  { .makepathtemplate
+            dup .filenamedirseparator concatstrings (*) concatstrings
+	    exch		% put string below this procedure
+	  }
+          /LIBPATH .systemvar { 1 index exec } forall
+          /FONTPATH .systemvar  { 1 index exec } forall
 	  currentsystemparams /GenericResourceDir get 1 index exec 
 	  currentsystemparams /FontResourceDir get exch exec
 	} {
-	  [/GenericResourceDir /FontResourceDir] {
-	    currentsystemparams exch get           % {proc} (relpath)
-	    /LIBPATH .systemvar {                  % {proc} (relpath) (libpath)
-	      1 index .file_name_combine           % {proc} (relpath) (path)
-	      dup .file_name_parents 0 eq {
-	        2 index exec                       % {proc} (path) (relpath)
-	        3 2 roll exch                      % (path) {proc} (relpath)
-	      } {
-	        pop                                % {proc} (relpath)
-	      } ifelse
-	    } forall
-	    pop                                    % (path1) ... (pathN) {proc}
-	  } forall
-	  pop                                      % (path1) ... (pathN)
+	  {
+	    % Can't combine with '*', because .makepathtemplate
+	    % encloses it with escape.
+	    (x) .file_name_combine
+            .makepathtemplate
+            dup dup length 1 sub (*) 0 get put
+          }
+          [ /LIBPATH /FONTPATH] {
+            .systemvar {                           % proc path
+              dup 2 index exec 3 1 roll            % templ proc path
+              [/GenericResourceDir /FontResourceDir] {
+                currentsystemparams exch get       % templ proc path relpath
+                1 index exch                       % templ proc path path relpath
+                { .file_name_combine } stopped {   
+                  % The platform can't handle it.  
+                  pop pop                          % templ proc path
+                } {
+                  dup .file_name_parents 0 eq {    % templ proc path path'
+                    2 index exec 3 1 roll          % templ templ' proc path
+                  } {
+                    pop
+                  } ifelse
+                } ifelse
+              } forall
+              pop                                  % templ templ' proc
+            } forall
+          } forall                                 % templ1 .... templN proc
+          pop                                      % templ1 .... templN
 	} ifelse
-      ]
-      /LockFilePermissions true
+      ] /LockFilePermissions true
     >> setuserparams
   }
   if
