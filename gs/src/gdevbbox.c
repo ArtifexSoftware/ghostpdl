@@ -222,7 +222,7 @@ bbox_copy_params(gx_device_bbox * bdev, bool remap_colors)
 
     if (tdev != 0)
 	gx_device_copy_params((gx_device *)bdev, tdev);
-    if (remap_colors) {
+    if (remap_colors && bdev->is_open) {
 	bdev->black = gx_device_black((gx_device *)bdev);
 	bdev->white = gx_device_white((gx_device *)bdev);
 	bdev->transparent =
