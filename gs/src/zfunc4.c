@@ -149,7 +149,7 @@ check_psc_function(const ref *pref, int depth, byte *ops, int *psize)
 	    int i = elt.value.intval;
 
 #if ARCH_SIZEOF_INT < ARCH_SIZEOF_LONG
-	    if (i != elt->value.intval)
+	    if (i != elt.value.intval) /* check for truncation */
 		return_error(e_rangecheck);
 #endif
 	    if (i == (byte)i) {
