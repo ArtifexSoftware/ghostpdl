@@ -124,9 +124,11 @@ hpgl_bezier(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 		hpgl_call(hpgl_update_carriage_return_pos(pgls));
 		/* draw the path */
 		if ( !pgls->g.polygon_mode ) {
-		    /* NB - needs documentation */
+		    /* apparently only round and beveled joins are
+                       allowed 5 is bevel and 4 is round */
 		    int save_join = pgls->g.line.join;
-		    pgls->g.line.join = 0;
+		    if ( pgls->g.line.join != 1 && pgls->g.line.join != 4 )
+			pgls->g.line.join = 1; /* bevel */
 		    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 		    pgls->g.line.join = save_join;
 		}
