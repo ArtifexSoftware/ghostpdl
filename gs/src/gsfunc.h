@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 2000, 2002 Aladdin Enterprises.  All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -19,6 +19,8 @@
 
 #ifndef gsfunc_INCLUDED
 #  define gsfunc_INCLUDED
+
+#include "gstypes.h"		/* for gs_range_t */
 
 /* ---------------- Types and structures ---------------- */
 
@@ -93,6 +95,21 @@ typedef FN_GET_INFO_PROC((*fn_get_info_proc_t));
   int proc(P2(const gs_function_t *pfn, gs_param_list *plist))
 typedef FN_GET_PARAMS_PROC((*fn_get_params_proc_t));
 
+/*
+ * Create a new function with scaled output.  The i'th output value is
+ * transformed linearly so that [0 .. 1] are mapped to [pranges[i].rmin ..
+ * pranges[i].rmax].  Any necessary parameters or subfunctions of the
+ * original function are copied, not shared, even if their values aren't
+ * changed, so that the new function can be freed without having to worry
+ * about freeing data that should be kept.  Note that if there is a "data
+ * source", it is shared, not copied: this should not be a problem, since
+ * gs_function_free does not free the data source.
+ */
+#define FN_MAKE_SCALED_PROC(proc)\
+  int proc(P4(const gs_function_t *pfn, gs_function_t **ppsfn,\
+	      const gs_range_t *pranges, gs_memory_t *mem))
+typedef FN_MAKE_SCALED_PROC((*fn_make_scaled_proc_t));
+
 /* Free function parameters. */
 #define FN_FREE_PARAMS_PROC(proc)\
   void proc(P2(gs_function_params_t * params, gs_memory_t * mem))
@@ -109,6 +126,7 @@ typedef struct gs_function_procs_s {
     fn_is_monotonic_proc_t is_monotonic;
     fn_get_info_proc_t get_info;
     fn_get_params_proc_t get_params;
+    fn_make_scaled_proc_t make_scaled;
     fn_free_params_proc_t free_params;
     fn_free_proc_t free;
 } gs_function_procs_t;
@@ -158,6 +176,10 @@ void gs_function_XxYy_free_params(P2(gs_function_XxYy_params_t *params,
 
  */
 
+/* Allocate an array of function pointers. */
+int alloc_function_array(P3(uint count, gs_function_t *** pFunctions,
+			    gs_memory_t *mem));
+
 /* Evaluate a function. */
 #define gs_function_evaluate(pfn, in, out)\
   ((pfn)->head.procs.evaluate)(pfn, in, out)
@@ -186,6 +208,10 @@ void gs_function_XxYy_free_params(P2(gs_function_XxYy_params_t *params,
 /* Write function parameters. */
 #define gs_function_get_params(pfn, plist)\
   ((pfn)->head.procs.get_params(pfn, plist))
+
+/* Create a scaled function. */
+#define gs_function_make_scaled(pfn, ppsfn, pranges, mem)\
+  ((pfn)->head.procs.make_scaled(pfn, ppsfn, pranges, mem))
 
 /* Free function parameters. */
 #define gs_function_free_params(pfn, mem)\

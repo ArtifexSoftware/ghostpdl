@@ -58,7 +58,7 @@ typedef struct calc_value_s {
 } calc_value_t;
 
 /* Store a float. */
-private void
+private inline void
 store_float(calc_value_t *vsp, floatp f)
 {
     vsp->value.f = f;
@@ -695,6 +695,58 @@ fn_PtCr_get_info(const gs_function_t *pfn_common, gs_function_info_t *pfi)
     }
 }
 
+/* Make a scaled copy of a PostScript Calculator function. */
+private int
+fn_PtCr_make_scaled(const gs_function_PtCr_t *pfn, gs_function_PtCr_t **ppsfn,
+		    const gs_range_t *pranges, gs_memory_t *mem)
+{
+    gs_function_PtCr_t *psfn =
+	gs_alloc_struct(mem, gs_function_PtCr_t, &st_function_PtCr,
+			"fn_PtCr_make_scaled");
+    /* We are adding {<int> 1 roll <float> mul <float> add} for each output. */
+    int n = pfn->params.n;
+    uint opsize = pfn->params.ops.size + (9 + 2 * sizeof(float)) * n;
+    byte *ops = gs_alloc_string(mem, opsize, "fn_PtCr_make_scaled(ops)");
+    byte *p;
+    int code, i;
+
+    if (psfn == 0 || ops == 0) {
+	gs_free_string(mem, ops, opsize, "fn_PtCr_make_scaled(ops)");
+	gs_free_object(mem, psfn, "fn_PtCr_make_scaled");
+	return_error(gs_error_VMerror);
+    }
+    psfn->params = pfn->params;
+    psfn->params.ops.data = ops;
+    psfn->params.ops.size = opsize;
+    code = fn_common_scale((gs_function_t *)psfn, (const gs_function_t *)pfn,
+			   pranges, mem);
+    if (code < 0) {
+	gs_function_free((gs_function_t *)psfn, true, mem);
+	return code;
+    }
+    memcpy(ops, pfn->params.ops.data, pfn->params.ops.size - 1); /* minus return */
+    p = ops + pfn->params.ops.size - 1;
+    for (i = 0; i < n; ++i) {
+	float base = pranges[i].rmin;
+	float factor = pranges[i].rmax - base;
+
+	p[0] = PtCr_byte; p[1] = (byte)n;
+	p[2] = PtCr_byte; p[3] = 1;
+	p[4] = PtCr_roll;
+	p[5] = PtCr_float; memcpy(p + 6, &factor, sizeof(float));
+	p += 6 + sizeof(float);
+	p[0] = PtCr_mul;
+	p[1] = PtCr_float; memcpy(p + 2, &base, sizeof(float));
+	p += 2 + sizeof(float);
+	p[0] = PtCr_add;
+	p += 1;
+    }
+    *p = PtCr_return;
+    *ppsfn = psfn;
+    return 0;
+}
+
+
 /* Free the parameters of a PostScript Calculator function. */
 void
 gs_function_PtCr_free_params(gs_function_PtCr_params_t * params, gs_memory_t * mem)
@@ -714,7 +766,8 @@ gs_function_PtCr_init(gs_function_t ** ppfn,
 	    (fn_evaluate_proc_t) fn_PtCr_evaluate,
 	    (fn_is_monotonic_proc_t) fn_PtCr_is_monotonic,
 	    (fn_get_info_proc_t) fn_PtCr_get_info,
-	    (fn_get_params_proc_t) fn_common_get_params,
+	    fn_common_get_params,
+	    (fn_make_scaled_proc_t) fn_PtCr_make_scaled,
 	    (fn_free_params_proc_t) gs_function_PtCr_free_params,
 	    fn_common_free
 	}

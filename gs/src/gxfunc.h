@@ -49,7 +49,29 @@ int fn_domain_is_monotonic(P2(const gs_function_t *pfn,
 /* Generic get_info implementation (no Functions or DataSource). */
 FN_GET_INFO_PROC(gs_function_get_info_default);
 
-/* Write generic parameters (FunctionType, Domain, Range) on a parameter list. */
+/*
+ * Write generic parameters (FunctionType, Domain, Range) on a parameter list.
+ */
 int fn_common_get_params(P2(const gs_function_t *pfn, gs_param_list *plist));
+
+/*
+ * Copy an array of numeric values when scaling a function.
+ */
+void *fn_copy_values(const void *pvalues, int count, int size,
+		     gs_memory_t *mem);
+
+/*
+ * If necessary, scale the Range or Decode array for fn_make_scaled.
+ * Note that we must always allocate a new array.
+ */
+int fn_scale_pairs(const float **ppvalues, const float *pvalues, int npairs,
+		   const gs_range_t *pranges, gs_memory_t *mem);
+
+/*
+ * Scale the generic part of a function (Domain and Range).
+ * The client must have copied the parameters already.
+ */
+int fn_common_scale(gs_function_t *psfn, const gs_function_t *pfn,
+		    const gs_range_t *pranges, gs_memory_t *mem);
 
 #endif /* gxfunc_INCLUDED */

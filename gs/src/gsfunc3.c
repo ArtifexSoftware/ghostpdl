@@ -17,6 +17,7 @@
 /* $Id$ */
 /* Implementation of LL3 Functions */
 #include "math_.h"
+#include "memory_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsfunc3.h"
@@ -43,6 +44,39 @@ fn_free_functions(const gs_function_t *const * Functions, int count,
 	if (Functions[i])
 	    gs_function_free((gs_function_t *)Functions[i], true, mem);
     gs_free_const_object(mem, Functions, "Functions");
+}
+
+/*
+ * Scale an array of subsidiary functions.  Note that the scale may either
+ * be propagated unchanged (step_ranges = false) or divided among the
+ * (1-output) subfunctions (step_ranges = true).
+ */
+private int
+fn_scale_functions(gs_function_t ***ppsfns, const gs_function_t *const *pfns,
+		   int count, const gs_range_t *pranges, bool step_ranges,
+		   gs_memory_t *mem)
+{
+    gs_function_t **psfns;
+    int code = alloc_function_array(count, &psfns, mem);
+    const gs_range_t *ranges = pranges;
+    int i;
+    
+    if (code < 0)
+	return code;
+    for (i = 0; i < count; ++i)
+	psfns[i] = 0;
+    for (i = 0; i < count; ++i) {
+	int code = gs_function_make_scaled(pfns[i], &psfns[i], ranges, mem);
+
+	if (code < 0) {
+	    fn_free_functions((const gs_function_t *const *)psfns, count, mem);
+	    return code;
+	}
+	if (step_ranges)
+	    ++ranges;
+    }
+    *ppsfns = psfns;
+    return 0;
 }
 
 /* ---------------- Exponential Interpolation functions ---------------- */
@@ -144,6 +178,45 @@ fn_ElIn_get_params(const gs_function_t *pfn_common, gs_param_list *plist)
     return ecode;
 }
 
+/* Make a scaled copy of an Exponential Interpolation function. */
+private int
+fn_ElIn_make_scaled(const gs_function_ElIn_t *pfn,
+		     gs_function_ElIn_t **ppsfn,
+		     const gs_range_t *pranges, gs_memory_t *mem)
+{
+    gs_function_ElIn_t *psfn =
+	gs_alloc_struct(mem, gs_function_ElIn_t, &st_function_ElIn,
+			"fn_ElIn_make_scaled");
+    float *c0;
+    float *c1;
+    int code, i;
+
+    if (psfn == 0)
+	return_error(gs_error_VMerror);
+    psfn->params = pfn->params;
+    psfn->params.C0 = c0 =
+	fn_copy_values(pfn->params.C0, pfn->params.n, sizeof(float), mem);
+    psfn->params.C1 = c1 =
+	fn_copy_values(pfn->params.C1, pfn->params.n, sizeof(float), mem);
+    if ((code = ((c0 == 0 && pfn->params.C0 != 0) ||
+		 (c1 == 0 && pfn->params.C1 != 0) ?
+		 gs_note_error(gs_error_VMerror) : 0)) < 0 ||
+	(code = fn_common_scale((gs_function_t *)psfn,
+				(const gs_function_t *)pfn,
+				pranges, mem)) < 0) {
+	gs_function_free((gs_function_t *)psfn, true, mem);
+	return code;
+    }
+    for (i = 0; i < pfn->params.n; ++i) {
+	double base = pranges[i].rmin, factor = pranges[i].rmax - base;
+
+	c1[i] = c1[i] * factor + base;
+	c0[i] = c0[i] * factor + base;
+    }
+    *ppsfn = psfn;
+    return 0;
+}
+
 /* Free the parameters of an Exponential Interpolation function. */
 void
 gs_function_ElIn_free_params(gs_function_ElIn_params_t * params,
@@ -167,6 +240,7 @@ gs_function_ElIn_init(gs_function_t ** ppfn,
 	    (fn_is_monotonic_proc_t) fn_ElIn_is_monotonic,
 	    gs_function_get_info_default,
 	    (fn_get_params_proc_t) fn_ElIn_get_params,
+	    (fn_make_scaled_proc_t) fn_ElIn_make_scaled,
 	    (fn_free_params_proc_t) gs_function_ElIn_free_params,
 	    fn_common_free
 	}
@@ -335,6 +409,42 @@ fn_1ItSg_get_params(const gs_function_t *pfn_common, gs_param_list *plist)
     return ecode;
 }
 
+/* Make a scaled copy of a 1-Input Stitching function. */
+private int
+fn_1ItSg_make_scaled(const gs_function_1ItSg_t *pfn,
+		     gs_function_1ItSg_t **ppsfn,
+		     const gs_range_t *pranges, gs_memory_t *mem)
+{
+    gs_function_1ItSg_t *psfn =
+	gs_alloc_struct(mem, gs_function_1ItSg_t, &st_function_1ItSg,
+			"fn_1ItSg_make_scaled");
+    int code;
+
+    if (psfn == 0)
+	return_error(gs_error_VMerror);
+    psfn->params = pfn->params;
+    psfn->params.Functions = 0;	/* in case of failure */
+    psfn->params.Bounds =
+	fn_copy_values(pfn->params.Bounds, pfn->params.k - 1, sizeof(float),
+		       mem);
+    psfn->params.Encode =
+	fn_copy_values(pfn->params.Encode, 2 * pfn->params.k, sizeof(float),
+		       mem);
+    if ((code = (psfn->params.Bounds == 0 || psfn->params.Encode == 0 ?
+		 gs_note_error(gs_error_VMerror) : 0)) < 0 ||
+	(code = fn_common_scale((gs_function_t *)psfn,
+				(const gs_function_t *)pfn,
+				pranges, mem)) < 0 ||
+	(code = fn_scale_functions((gs_function_t ***)&psfn->params.Functions,
+				   pfn->params.Functions,
+				   pfn->params.n, pranges, false, mem)) < 0) {
+	gs_function_free((gs_function_t *)psfn, true, mem);
+	return code;
+    }
+    *ppsfn = psfn;
+    return 0;
+}
+
 /* Free the parameters of a 1-Input Stitching function. */
 void
 gs_function_1ItSg_free_params(gs_function_1ItSg_params_t * params,
@@ -358,6 +468,7 @@ gs_function_1ItSg_init(gs_function_t ** ppfn,
 	    (fn_is_monotonic_proc_t) fn_1ItSg_is_monotonic,
 	    (fn_get_info_proc_t) fn_1ItSg_get_info,
 	    (fn_get_params_proc_t) fn_1ItSg_get_params,
+	    (fn_make_scaled_proc_t) fn_1ItSg_make_scaled,
 	    (fn_free_params_proc_t) gs_function_1ItSg_free_params,
 	    fn_common_free
 	}
@@ -465,6 +576,33 @@ fn_AdOt_get_info(const gs_function_t *pfn_common, gs_function_info_t *pfi)
     pfi->num_Functions = pfn->params.n;
 }
 
+/* Make a scaled copy of a PostScript Calculator function. */
+private int
+fn_AdOt_make_scaled(const gs_function_AdOt_t *pfn, gs_function_AdOt_t **ppsfn,
+		    const gs_range_t *pranges, gs_memory_t *mem)
+{
+    gs_function_AdOt_t *psfn =
+	gs_alloc_struct(mem, gs_function_AdOt_t, &st_function_AdOt,
+			"fn_AdOt_make_scaled");
+    int code;
+
+    if (psfn == 0)
+	return_error(gs_error_VMerror);
+    psfn->params = pfn->params;
+    psfn->params.Functions = 0;	/* in case of failure */
+    if ((code = fn_common_scale((gs_function_t *)psfn,
+				(const gs_function_t *)pfn,
+				pranges, mem)) < 0 ||
+	(code = fn_scale_functions((gs_function_t ***)&psfn->params.Functions,
+				   pfn->params.Functions,
+				   pfn->params.n, pranges, true, mem)) < 0) {
+	gs_function_free((gs_function_t *)psfn, true, mem);
+	return code;
+    }
+    *ppsfn = psfn;
+    return 0;
+}
+
 /* Free the parameters of an Arrayed Output function. */
 void
 gs_function_AdOt_free_params(gs_function_AdOt_params_t * params,
@@ -486,6 +624,7 @@ gs_function_AdOt_init(gs_function_t ** ppfn,
 	    (fn_is_monotonic_proc_t) fn_AdOt_is_monotonic,
 	    (fn_get_info_proc_t) fn_AdOt_get_info,
 	    fn_common_get_params,	/****** WHAT TO DO ABOUT THIS? ******/
+	    (fn_make_scaled_proc_t) fn_AdOt_make_scaled,
 	    (fn_free_params_proc_t) gs_function_AdOt_free_params,
 	    fn_common_free
 	}

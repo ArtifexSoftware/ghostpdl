@@ -28,24 +28,17 @@
 #include "ifunc.h"
 #include "store.h"
 
+/*#define TEST*/
+
 /* Define the maximum depth of nesting of subsidiary functions. */
 #define MAX_SUB_FUNCTION_DEPTH 3
 
-/* GC descriptors */
-gs_private_st_ptr(st_function_ptr, gs_function_t *, "gs_function_t *",
-		  function_ptr_enum_ptrs, function_ptr_reloc_ptrs);
-gs_private_st_element(st_function_ptr_element, gs_function_t *,
-		      "gs_function_t *[]", function_ptr_element_enum_ptrs,
-		      function_ptr_element_reloc_ptrs, st_function_ptr);
-
 /* ------ Operators ------ */
 
-/* <dict> .buildfunction <function_struct> */
+/* Create a function procedure from a function structure. */
 private int
-zbuildfunction(i_ctx_t *i_ctx_p)
+make_function_proc(i_ctx_t *i_ctx_p, ref *op, gs_function_t *pfn)
 {
-    os_ptr op = osp;
-    gs_function_t *pfn;
     ref cref;			/* closure */
     int code;
 
@@ -53,16 +46,75 @@ zbuildfunction(i_ctx_t *i_ctx_p)
 			    ".buildfunction");
     if (code < 0)
 	return code;
-    code = fn_build_function(i_ctx_p, op, &pfn, imemory);
-    if (code < 0) {
-	ifree_ref_array(&cref, ".buildfunction");
-	return code;
-    }
     make_istruct_new(cref.value.refs, a_executable | a_execute, pfn);
     make_oper_new(cref.value.refs + 1, 0, zexecfunction);
     ref_assign(op, &cref);
     return 0;
 }
+
+/* <dict> .buildfunction <function_proc> */
+private int
+zbuildfunction(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    gs_function_t *pfn;
+    int code = fn_build_function(i_ctx_p, op, &pfn, imemory);
+
+    if (code < 0)
+	return code;
+    code = make_function_proc(i_ctx_p, op, pfn);
+    if (code < 0)
+	gs_function_free(pfn, true, imemory);
+    return 0;
+}
+
+#ifdef TEST
+
+/* <function_proc> <array> .scalefunction <function_proc> */
+private int
+zscalefunction(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    gs_function_t *pfn;
+    gs_function_t *psfn;
+    gs_range_t *ranges;
+    int code;
+    uint i;
+
+    check_proc(op[-1]);
+    pfn = ref_function(op - 1);
+    if (pfn == 0 || !r_is_array(op))
+	return_error(e_typecheck);
+    if (r_size(op) != 2 * pfn->params.n)
+	return_error(e_rangecheck);
+    ranges = (gs_range_t *)
+	gs_alloc_byte_array(imemory, pfn->params.n, sizeof(gs_range_t),
+			    "zscalefunction");
+    if (ranges == 0)
+	return_error(e_VMerror);
+    for (i = 0; i < pfn->params.n; ++i) {
+	ref rval[2];
+	float val[2];
+
+	if ((code = array_get(op, 2 * i, &rval[0])) < 0 ||
+	    (code = array_get(op, 2 * i + 1, &rval[1])) < 0 ||
+	    (code = float_params(rval + 1, 2, val)) < 0)
+	    return code;
+	ranges[i].rmin = val[0];
+	ranges[i].rmax = val[1];
+    }
+    code = gs_function_make_scaled(pfn, &psfn, ranges, imemory);
+    gs_free_object(imemory, ranges, "zscalefunction");
+    if (code < 0 ||
+	(code = make_function_proc(i_ctx_p, op - 1, psfn)) < 0) {
+	gs_function_free(psfn, true, imemory);
+	return code;
+    }
+    pop(1);
+    return 0;
+}
+
+#endif /* TEST */
 
 /* <in1> ... <function_struct> %execfunction <out1> ... */
 int
@@ -128,14 +180,14 @@ zexecfunction(i_ctx_t *i_ctx_p)
 }
 
 /*
- * <proc> .isencapfunction bool
+ * <proc> .isencapfunction <bool>
  *
  * This routine checks if a given Postscript procedure is an "encapsulated"
  * function of the type made by .buildfunction.  These functions can then
  * be executed without executing the interpreter.  These functions can be
  * executed directly from within C code inside the graphics library.
  */
-int
+private int
 zisencapfunction(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -192,24 +244,6 @@ fail:
     gs_free_const_object(mem, params.Range, "Range");
     gs_free_const_object(mem, params.Domain, "Domain");
     return code;
-}
-
-/* Allocate an array of function objects. */
-int
-alloc_function_array(uint count, gs_function_t *** pFunctions,
-		     gs_memory_t *mem)
-{
-    gs_function_t **ptr;
-
-    if (count == 0)
-	return_error(e_rangecheck);
-    ptr = gs_alloc_struct_array(mem, count, gs_function_t *,
-				&st_function_ptr_element, "Functions");
-    if (ptr == 0)
-	return_error(e_VMerror);
-    memset(ptr, 0, sizeof(*ptr) * count);
-    *pFunctions = ptr;
-    return 0;
 }
 
 /*
@@ -274,6 +308,9 @@ ref_function(const ref *op)
 const op_def zfunc_op_defs[] =
 {
     {"1.buildfunction", zbuildfunction},
+#ifdef TEST
+    {"2.scalefunction", zscalefunction},
+#endif /* TEST */
     {"1%execfunction", zexecfunction},
     {"1.isencapfunction", zisencapfunction},
     op_def_end(0)

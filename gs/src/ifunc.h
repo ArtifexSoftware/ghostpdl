@@ -42,10 +42,6 @@ int fn_build_function(P4(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn
 int fn_build_sub_function(P5(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn,
 			     int depth, gs_memory_t *mem));
 
-/* Allocate an array of function objects. */
-int alloc_function_array(P3(uint count, gs_function_t *** pFunctions,
-			    gs_memory_t *mem));
-
 /*
  * Collect a heap-allocated array of floats.  If the key is missing, set
  * *pparray = 0 and return 0; otherwise set *pparray and return the number

@@ -512,6 +512,38 @@ fn_Sd_get_params(const gs_function_t *pfn_common, gs_param_list *plist)
     return ecode;
 }
 
+/* Make a scaled copy of a Sampled function. */
+private int
+fn_Sd_make_scaled(const gs_function_Sd_t *pfn, gs_function_Sd_t **ppsfn,
+		  const gs_range_t *pranges, gs_memory_t *mem)
+{
+    gs_function_Sd_t *psfn =
+	gs_alloc_struct(mem, gs_function_Sd_t, &st_function_Sd,
+			"fn_Sd_make_scaled");
+    int code;
+
+    if (psfn == 0)
+	return_error(gs_error_VMerror);
+    psfn->params = pfn->params;
+    psfn->params.Encode = 0;		/* in case of failure */
+    psfn->params.Decode = 0;
+    psfn->params.Size =
+	fn_copy_values(pfn->params.Size, pfn->params.m, sizeof(int), mem);
+    if ((code = (psfn->params.Size == 0 ?
+		 gs_note_error(gs_error_VMerror) : 0)) < 0 ||
+	(code = fn_common_scale((gs_function_t *)psfn,
+				(const gs_function_t *)pfn,
+				pranges, mem)) < 0 ||
+	(code = fn_scale_pairs(&psfn->params.Encode, pfn->params.Encode,
+			       pfn->params.m, NULL, mem)) < 0 ||
+	(code = fn_scale_pairs(&psfn->params.Decode, pfn->params.Decode,
+			       pfn->params.n, pranges, mem)) < 0) {
+	gs_function_free((gs_function_t *)psfn, true, mem);
+    } else
+	*ppsfn = psfn;
+    return code;
+}
+
 /* Free the parameters of a Sampled function. */
 void
 gs_function_Sd_free_params(gs_function_Sd_params_t * params, gs_memory_t * mem)
@@ -534,6 +566,7 @@ gs_function_Sd_init(gs_function_t ** ppfn,
 	    (fn_is_monotonic_proc_t) fn_Sd_is_monotonic,
 	    (fn_get_info_proc_t) fn_Sd_get_info,
 	    (fn_get_params_proc_t) fn_Sd_get_params,
+	    (fn_make_scaled_proc_t) fn_Sd_make_scaled,
 	    (fn_free_params_proc_t) gs_function_Sd_free_params,
 	    fn_common_free
 	}
