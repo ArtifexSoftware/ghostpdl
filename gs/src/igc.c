@@ -144,7 +144,7 @@ gc_validate_spaces(gs_ref_memory_t **spaces, int max_space, gc_state_t *gcst)
 	    ialloc_validate_memory(mem, gcst);
 }
 #else  /* !DEBUG */
-#  define end_phase(str) DO_NOTHING
+#  define end_phase(mem, str) DO_NOTHING
 #endif /* DEBUG */
 void
 gs_gc_reclaim(vm_spaces * pspaces, bool global)

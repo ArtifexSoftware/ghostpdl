@@ -86,7 +86,7 @@ cie_lookup_map3(const gs_memory_t *mem, cie_cached_vector3 * pvec,
 	      cie_cached2float(pvec->w));
 }
 #else
-#  define cie_lookup_map3(pvec, pc, cname) cie_lookup_mult3(pvec, pc)
+#  define cie_lookup_map3(mem, pvec, pc, cname) cie_lookup_mult3(mem, pvec, pc)
 #endif
 
 /* Render a CIEBasedDEFG color. */

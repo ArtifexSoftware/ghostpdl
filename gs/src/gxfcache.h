@@ -266,7 +266,11 @@ int gx_char_cache_alloc(gs_memory_t * struct_mem, gs_memory_t * bits_mem,
 			gs_font_dir * pdir, uint bmax, uint mmax,
 			uint cmax, uint upper);
 void gx_char_cache_init(gs_font_dir *);
-void gx_purge_selected_cached_chars(gs_font_dir *, bool(*)(cached_char *, void *), void *);
+void gx_purge_selected_cached_chars(gs_font_dir *, 
+				    bool(*)(const gs_memory_t *,
+					    cached_char *, 
+					    void *), 
+				    void *);
 cached_fm_pair *
                gx_lookup_fm_pair(gs_font *, const gs_state *);
 cached_fm_pair *

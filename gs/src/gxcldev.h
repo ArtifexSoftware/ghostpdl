@@ -380,7 +380,7 @@ byte *cmd_put_op(gx_device_clist_writer * cldev, gx_clist_state * pcls, uint siz
 #define set_cmd_put_op(dp, cldev, pcls, op, csize)\
   ( (dp = cmd_put_op(cldev, pcls, csize)) == 0 ?\
       (cldev)->error_code :\
-    (*dp = cmd_count_op(cldev->memory, op, csize), 0) )
+    (*dp = cmd_count_op((const gs_memory_t *)cldev->memory, op, csize), 0) )
 
 /* Add a command for all bands or a range of bands. */
 byte *cmd_put_range_op(gx_device_clist_writer * cldev, int band_min,
@@ -392,7 +392,7 @@ byte *cmd_put_range_op(gx_device_clist_writer * cldev, int band_min,
 #define set_cmd_put_range_op(dp, cldev, op, bmin, bmax, csize)\
   ( (dp = cmd_put_range_op(cldev, bmin, bmax, csize)) == 0 ?\
       (cldev)->error_code :\
-    (*dp = cmd_count_op(cldev->memory, op, csize), 0) )
+    (*dp = cmd_count_op((const gs_memory_t *)cldev->memory, op, csize), 0) )
 #define set_cmd_put_all_op(dp, cldev, op, csize)\
   set_cmd_put_range_op(dp, cldev, op, 0, (cldev)->nbands - 1, csize)
 

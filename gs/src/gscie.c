@@ -168,8 +168,8 @@ if_debug_matrix3(const gs_memory_t *mem, const char *str, const gs_matrix3 *mat)
 	       mat->cw.u, mat->cw.v, mat->cw.w);
 }
 #else
-#  define if_debug_vector3(str, vec) DO_NOTHING
-#  define if_debug_matrix3(str, mat) DO_NOTHING
+#  define if_debug_vector3(mem, str, vec) DO_NOTHING
+#  define if_debug_matrix3(mem, str, mat) DO_NOTHING
 #endif
 
 /* ------ Default values for CIE dictionary elements ------ */

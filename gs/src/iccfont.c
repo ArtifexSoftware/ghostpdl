@@ -111,6 +111,7 @@ cfont_put_next(ref * pdict, key_enum * kep, const ref * pvalue)
     cfont_dict_keys * const kp = &kep->keys;
     ref kname;
     int code;
+    gs_memory_t *mem = imemory;
 
     if (pdict->value.pdict == 0) {
 	/* First time, create the dictionary. */
@@ -125,15 +126,15 @@ cfont_put_next(ref * pdict, key_enum * kep, const ref * pvalue)
 	gs_const_string gstr;
 
 	if (glyph == GS_NO_GLYPH)
-	    code = gs_note_error(e_undefined);
-	else if ((code = gs_c_glyph_name(glyph, &gstr)) >= 0)
-	    code = name_ref(gstr.data, gstr.size, &kname, 0);
+	    code = gs_note_error(mem, e_undefined);
+	else if ((code = gs_c_glyph_name(mem, glyph, &gstr)) >= 0)
+	    code = name_ref(mem, gstr.data, gstr.size, &kname, 0);
 	kp->num_enc_keys--;
     } else {			/* must have kp->num_str_keys != 0 */
 	code = cfont_next_string(&kep->strings);
 	if (code != 1)
-	    return (code < 0 ? code : gs_note_error(e_Fatal));
-	code = name_ref(kep->strings.next.value.const_bytes,
+	    return (code < 0 ? code : gs_note_error(mem, e_Fatal));
+	code = name_ref(mem, kep->strings.next.value.const_bytes,
 			r_size(&kep->strings.next), &kname, 0);
 	kp->num_str_keys--;
     }
@@ -246,8 +247,8 @@ cfont_name_array_create(i_ctx_t *i_ctx_p, ref * parray, cfont_string_array ksa,
 	int code = cfont_next_string(&senum);
 
 	if (code != 1)
-	    return (code < 0 ? code : gs_note_error(e_Fatal));
-	code = name_ref(senum.next.value.const_bytes,
+	    return (code < 0 ? code : gs_note_error(imemory, e_Fatal));
+	code = name_ref(imemory, senum.next.value.const_bytes,
 			r_size(&senum.next), &nref, 0);
 	if (code < 0)
 	    return code;
@@ -310,7 +311,7 @@ cfont_scalar_array_create(i_ctx_t *i_ctx_p, ref * parray,
 private int
 cfont_name_create(i_ctx_t *i_ctx_p, ref * pnref, const char *str)
 {
-    return name_ref((const byte *)str, strlen(str), pnref, 0);
+    return name_ref(imemory, (const byte *)str, strlen(str), pnref, 0);
 }
 
 /* Create an object by parsing a string. */
@@ -320,11 +321,12 @@ cfont_ref_from_string(i_ctx_t *i_ctx_p, ref * pref, const char *str, uint len)
     scanner_state sstate;
     stream s;
     int code;
-
+    
+    s_stack_init(&s, imemory);
     scanner_state_init(&sstate, false);
     sread_string(&s, (const byte *)str, len);
     code = scan_token(i_ctx_p, &s, pref, &sstate);
-    return (code <= 0 ? code : gs_note_error(e_Fatal));
+    return (code <= 0 ? code : gs_note_error(imemory, e_Fatal));
 }
 
 /* ------ Initialization ------ */
@@ -354,16 +356,16 @@ zgetccfont(i_ctx_t *i_ctx_p)
 
     code = ccfont_fprocs(&nfonts, &fprocs);
     if (code != ccfont_version)
-	return_error(e_invalidfont);
+	return_error(imemory, e_invalidfont);
 
     if (r_has_type(op, t_null)) {
 	make_int(op, nfonts);
 	return 0;
     }
-    check_type(*op, t_integer);
+    check_type(imemory, *op, t_integer);
     index = op->value.intval;
     if (index < 0 || index >= nfonts)
-	return_error(e_rangecheck);
+	return_error(imemory, e_rangecheck);
 
     return (*fprocs[index]) (i_ctx_p, &ccfont_procs, op);
 }

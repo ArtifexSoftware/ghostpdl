@@ -18,7 +18,7 @@
 
 int gs_log_error(const gs_memory_t *mem, int, const char *, int);
 #ifndef DEBUG
-#  define gs_log_error(mem, err, file, line) (mem, err)
+#  define gs_log_error(mem, err, file, line) (err)
 #endif
 #define gs_note_error(mem, err) gs_log_error(mem, err, __FILE__, __LINE__)
 #define return_error(mem, err) return gs_note_error(mem, err)

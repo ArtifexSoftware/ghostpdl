@@ -91,7 +91,7 @@ gs_memory_retrying_init(
     rmem->procs = retrying_procs;
     rmem->target = target;
     rmem->gs_lib_ctx = target->gs_lib_ctx;
-    rmem->non_gc_memory = rmem;
+    rmem->non_gc_memory = (gs_memory_t *)rmem;
     gs_memory_retrying_set_recover(rmem, no_recover_proc, NULL);
     return 0;
 }

@@ -256,7 +256,7 @@ check_line_list(const gs_memory_t *mem, const active_line * flp)
     return 0;
 }
 #else
-#define print_al(label,alp) DO_NOTHING
+#define print_al(mem, label,alp) DO_NOTHING
 #endif
 
 /*  The structure margin_set and related structures and functions are used for 

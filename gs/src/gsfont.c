@@ -205,7 +205,7 @@ RELOC_PTRS_END
 
 /* Allocate a font directory */
 private bool
-cc_no_mark_glyph(gs_glyph glyph, void *ignore_data)
+cc_no_mark_glyph(const gs_memory_t *mem, gs_glyph glyph, void *ignore_data)
 {
     return false;
 }
