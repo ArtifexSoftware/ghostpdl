@@ -166,10 +166,7 @@ private bool end_x_line(active_line *, const line_list *, bool);
 private void step_al(active_line *alp, bool move_iterator);
 
 
-#define FILL_LOOP_PROC(proc)\
-int proc(line_list *, gx_device *,\
-  const gx_fill_params *, const gx_device_color *, gs_logical_operation_t,\
-  const gs_fixed_rect *, fixed, fixed, fixed, fixed, fixed)
+#define FILL_LOOP_PROC(proc) int proc(line_list *, fixed band_mask)
 private FILL_LOOP_PROC(fill_loop_by_scan_lines);
 private FILL_LOOP_PROC(fill_loop_by_trapezoids);
 
@@ -281,7 +278,6 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
     gx_path ffpath;
     gx_path *pfpath;
     int code;
-    fixed adjust_left, adjust_right, adjust_below, adjust_above;
     int max_fill_band = dev->max_fill_band;
 #define NO_BAND_MASK ((fixed)(-1) << (sizeof(fixed) * 8 - 1))
     bool fill_by_trapezoids;
@@ -373,15 +369,15 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
      * they fell exactly on pixel boundaries.)
      */
     if (adjust.x == fixed_half)
-	adjust_left = fixed_half - fixed_epsilon,
-	    adjust_right = fixed_half /* + fixed_epsilon */ ;	/* see above */
+	lst.adjust_left = fixed_half - fixed_epsilon,
+	    lst.adjust_right = fixed_half /* + fixed_epsilon */ ;	/* see above */
     else
-	adjust_left = adjust_right = adjust.x;
+	lst.adjust_left = lst.adjust_right = adjust.x;
     if (adjust.y == fixed_half)
-	adjust_below = fixed_half - fixed_epsilon,
-	    adjust_above = fixed_half /* + fixed_epsilon */ ;	/* see above */
+	lst.adjust_below = fixed_half - fixed_epsilon,
+	    lst.adjust_above = fixed_half /* + fixed_epsilon */ ;	/* see above */
     else
-	adjust_below = adjust_above = adjust.y;
+	lst.adjust_below = lst.adjust_above = adjust.y;
     /* Initialize the active line list. */
     init_line_list(&lst, ppath->memory);
     lst.pseudo_rasterization = pseudo_rasterization;
@@ -390,8 +386,15 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
     lst.fixed_flat = float2fixed(params->flatness);
     lst.ymin = ibox.p.y;
     lst.ymax = ibox.q.y;
-    lst.adjust_below = adjust_below;
-    lst.adjust_above = adjust_above;
+    lst.dev = dev;
+    lst.lop = lop;
+    lst.pbox = &ibox;
+    lst.rule = params->rule;
+    lst.is_spotan = is_spotan_device(dev);
+    lst.fill_direct = color_writes_pure(pdevc, lop);
+    lst.fill_rect = (lst.fill_direct ? dev_proc(dev, fill_rectangle) : NULL);
+    lst.fill_trap = dev_proc(dev, fill_trapezoid);
+
     /*
      * We have a choice of two different filling algorithms:
      * scan-line-based and trapezoid-based.  They compare as follows:
@@ -418,10 +421,10 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	gs_fixed_rect rbox;
 
 	if (gx_path_is_rectangular(ppath, &rbox)) {
-	    int x0 = fixed2int_pixround(rbox.p.x - adjust_left);
-	    int y0 = fixed2int_pixround(rbox.p.y - adjust_below);
-	    int x1 = fixed2int_pixround(rbox.q.x + adjust_right);
-	    int y1 = fixed2int_pixround(rbox.q.y + adjust_above);
+	    int x0 = fixed2int_pixround(rbox.p.x - lst.adjust_left);
+	    int y0 = fixed2int_pixround(rbox.p.y - lst.adjust_below);
+	    int x1 = fixed2int_pixround(rbox.q.x + lst.adjust_right);
+	    int y1 = fixed2int_pixround(rbox.q.y + lst.adjust_above);
 
 	    return gx_fill_rectangle_device_rop(x0, y0, x1 - x0, y1 - y0,
 						pdevc, dev, lop);
@@ -487,9 +490,7 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	    init_section(lst.margin_set1.sect, 0, lst.bbox_width);
 	}
 	code = (*fill_loop)
-	    (&lst, dev, params, pdevc, lop, &ibox,
-	     adjust_left, adjust_right, adjust_below, adjust_above,
-	   (max_fill_band == 0 ? NO_BAND_MASK : int2fixed(-max_fill_band)));
+	    (&lst, (max_fill_band == 0 ? NO_BAND_MASK : int2fixed(-max_fill_band)));
 	if (lst.margin_set0.sect != lst.local_section0 && 
 	    lst.margin_set0.sect != lst.local_section1)
 	    gs_free_object(pdev->memory, min(lst.margin_set0.sect, lst.margin_set1.sect), "section");
@@ -1486,16 +1487,13 @@ process_h_segments(line_list *ll, fixed y)
 }
 
 private int
-loop_fill_trap(gx_device * dev, fixed fx0, fixed fw0, fixed fy0,
-	       fixed fx1, fixed fw1, fixed fh, const gs_fixed_rect * pbox,
-	       const gx_device_color * pdevc, gs_logical_operation_t lop,
-	       int flags)
+loop_fill_trap(const line_list *ll, fixed fx0, fixed fw0, fixed fy0,
+	       fixed fx1, fixed fw1, fixed fh, int flags)
 {
     fixed fy1 = fy0 + fh;
-    fixed ybot = max(fy0, pbox->p.y);
-    fixed ytop = min(fy1, pbox->q.y);
+    fixed ybot = max(fy0, ll->pbox->p.y);
+    fixed ytop = min(fy1, ll->pbox->q.y);
     gs_fixed_edge left, right;
-    dev_proc_fill_trapezoid((*fill_trap)) = dev_proc(dev, fill_trapezoid);
 
     if (ybot >= ytop)
 	return 0;
@@ -1506,17 +1504,14 @@ loop_fill_trap(gx_device * dev, fixed fx0, fixed fw0, fixed fy0,
     right.end.x = (left.end.x = fx1) + fw1;
     if (flags & ftf_pseudo_rasterization)
 	return gx_fill_trapezoid_narrow
-	    (dev, &left, &right, ybot, ytop, flags, pdevc, lop);
-    return (*fill_trap)
-	(dev, &left, &right, ybot, ytop, false, pdevc, lop);
+	    (ll->dev, &left, &right, ybot, ytop, flags, ll->pdevc, ll->lop);
+    return (*ll->fill_trap)
+	(ll->dev, &left, &right, ybot, ytop, false, ll->pdevc, ll->lop);
 }
 
 private int
-fill_trap_slanted(gx_device * dev, const gs_fixed_rect * pbox,
-	    const gx_device_color * pdevc, gs_logical_operation_t lop,
-	    bool fill_direct, 
-	    fixed xlbot, fixed xbot, fixed xltop, fixed xtop, fixed y, fixed y1,
-	    fixed adjust_below, fixed adjust_above)
+fill_trap_slanted(const line_list *ll, 
+	fixed xlbot, fixed xbot, fixed xltop, fixed xtop, fixed y, fixed y1)
 {
     /*
      * We want to get the effect of filling an area whose
@@ -1529,7 +1524,6 @@ fill_trap_slanted(gx_device * dev, const gs_fixed_rect * pbox,
     fixed wbot = xbot - xlbot;
     fixed wtop = xtop - xltop;
     fixed height = y1 - y;
-    dev_proc_fill_rectangle((*fill_rect)) = dev_proc(dev, fill_rectangle);
     int xli = fixed2int_var_pixround(xltop);
     int code = 0;
     /*
@@ -1554,86 +1548,69 @@ fill_trap_slanted(gx_device * dev, const gs_fixed_rect * pbox,
      * i.e.
      *	fixed_fraction(y + _fixed_pixround_v + above) < below + above
      */
-    fixed y_span_delta = _fixed_pixround_v + adjust_above;
-    fixed y_span_limit = adjust_below + adjust_above;
+    fixed y_span_delta = _fixed_pixround_v + ll->adjust_above;
+    fixed y_span_limit = ll->adjust_below + ll->adjust_above;
 
 #define ADJUSTED_Y_SPANS_PIXEL(y)\
   (fixed_fraction((y) + y_span_delta) < y_span_limit)
 
     if (xltop <= xlbot) {
 	if (xtop >= xbot) {	/* Top wider than bottom. */
-	    code = loop_fill_trap(dev, xlbot, wbot, y - adjust_below,
-			xltop, wtop, height, pbox, pdevc, lop, 0);
+	    code = loop_fill_trap(ll, xlbot, wbot, y - ll->adjust_below,
+			xltop, wtop, height, 0);
 	    if (ADJUSTED_Y_SPANS_PIXEL(y1)) {
 		if (code < 0)
 		    return code;
 		INCR(afill);
-		code = LOOP_FILL_RECTANGLE_DIRECT(
-		 xli, fixed2int_pixround(y1 - adjust_below),
+		code = LOOP_FILL_RECTANGLE_DIRECT(ll, 
+		 xli, fixed2int_pixround(y1 - ll->adjust_below),
 		     fixed2int_var_pixround(xtop) - xli, 1);
-		vd_rect(xltop, y1 - adjust_below, xtop, y1, 1, VD_TRAP_COLOR);
+		vd_rect(xltop, y1 - ll->adjust_below, xtop, y1, 1, VD_TRAP_COLOR);
 	    }
 	} else {	/* Slanted trapezoid. */
 	    code = fill_slant_adjust(xlbot, xbot, y,
-			  xltop, xtop, height, adjust_below,
-				     adjust_above, pbox,
-				     pdevc, dev, lop);
+			  xltop, xtop, height, ll->adjust_below,
+				     ll->adjust_above, ll->pbox,
+				     ll->pdevc, ll->dev, ll->lop);
 	}
     } else {
 	if (xtop <= xbot) {	/* Bottom wider than top. */
 	    if (ADJUSTED_Y_SPANS_PIXEL(y)) {
 		INCR(afill);
 		xli = fixed2int_var_pixround(xlbot);
-		code = LOOP_FILL_RECTANGLE_DIRECT(
-		  xli, fixed2int_pixround(y - adjust_below),
+		code = LOOP_FILL_RECTANGLE_DIRECT(ll, 
+		  xli, fixed2int_pixround(y - ll->adjust_below),
 		     fixed2int_var_pixround(xbot) - xli, 1);
-		vd_rect(xltop, y - adjust_below, xbot, y, 1, VD_TRAP_COLOR);
+		vd_rect(xltop, y - ll->adjust_below, xbot, y, 1, VD_TRAP_COLOR);
 		if (code < 0)
 		    return code;
 	    }
-	    code = loop_fill_trap(dev, xlbot, wbot, y + adjust_above,
-			xltop, wtop, height, pbox, pdevc, lop, 0);
+	    code = loop_fill_trap(ll, xlbot, wbot, y + ll->adjust_above,
+			xltop, wtop, height, 0);
 	} else {	/* Slanted trapezoid. */
 	    code = fill_slant_adjust(xlbot, xbot, y,
-			  xltop, xtop, height, adjust_below,
-				     adjust_above, pbox,
-				     pdevc, dev, lop);
+			  xltop, xtop, height, ll->adjust_below,
+				     ll->adjust_above, ll->pbox,
+				     ll->pdevc, ll->dev, ll->lop);
 	}
     }
     return code;
 }
 
 private int
-fill_trap_or_rect(gx_device * dev, const gs_fixed_rect * pbox,
-	    const gx_device_color * pdevc, gs_logical_operation_t lop,
-	    bool fill_direct, 
+fill_trap_or_rect(gx_device* dev, const line_list *ll,
 	    fixed xlbot, fixed xbot, fixed xltop, fixed xtop, fixed y, fixed y1,
-	    fixed adjust_below, fixed adjust_above,
-	    active_line *flp, active_line *alp, 
-	    line_list *ll, const bool pseudo_rasterization)
+	    active_line *flp, active_line *alp)
 {
-    /* xlbot, xbot, xltop, xtop, y, y1 must be consistent with flp, alp,
-     * except for adjusted rectangles.
-     * Rather pseudo_rasterization == ll->pseudo_rasterization
-     * we pass it as a separate argument to allow inline optimization.
-     */
     int code;
 
-    /* We can't pass data through the device interface because 
-       we need to pass segment pointers. We're unhappy of that. */
-    if (is_spotan_device(dev)) {
-	return gx_san_trap_store((gx_device_spot_analyzer *)dev, 
-	    y, y1, xlbot, xbot, xltop, xtop, flp->pseg, alp->pseg, 
-	    flp->direction, alp->direction);
-    }
     if (xltop == xlbot && xtop == xbot) {
-	int yi = fixed2int_pixround(y - adjust_below);
-	int wi = fixed2int_pixround(y1 + adjust_above) - yi;
+	int yi = fixed2int_pixround(y - ll->adjust_below);
+	int wi = fixed2int_pixround(y1 + ll->adjust_above) - yi;
 	int xli = fixed2int_var_pixround(xltop);
 	int xi = fixed2int_var_pixround(xtop);
-	dev_proc_fill_rectangle((*fill_rect)) = dev_proc(dev, fill_rectangle);
 
-	if (pseudo_rasterization && xli == xi) {
+	if (ll->pseudo_rasterization && xli == xi) {
 	    /*
 	     * The scan is empty but we should paint something 
 	     * against a dropout. Choose one of two pixels which 
@@ -1646,20 +1623,20 @@ fill_trap_or_rect(gx_device * dev, const gs_fixed_rect * pbox,
 	    else
 		--xli;
 	}
-	code = LOOP_FILL_RECTANGLE_DIRECT(xli, yi, xi - xli, wi);
+	code = LOOP_FILL_RECTANGLE_DIRECT(ll, xli, yi, xi - xli, wi);
 	vd_rect(xltop, y, xtop, y1, 1, VD_TRAP_COLOR);
     } else {
 	int flags = 0;
 
-	if (pseudo_rasterization) {
+	if (ll->pseudo_rasterization) {
 	    flags |= ftf_pseudo_rasterization;
 	    if (flp->start.x == alp->start.x && flp->start.y == y)
 		flags |= ftf_peak0;
 	    if (flp->end.x == alp->end.x && flp->end.y == y1)
 		flags |= ftf_peak0;
 	}
-	code = loop_fill_trap(dev, xlbot, xbot - xlbot, y, xltop, 
-			xtop - xltop, y1 - y, pbox, pdevc, lop, flags);
+	code = loop_fill_trap(ll, xlbot, xbot - xlbot, y, xltop, 
+			xtop - xltop, y1 - y, flags);
     }
     return code;
 }
@@ -1900,30 +1877,19 @@ intersect_al(line_list *ll, fixed y, fixed *y_top, int draw, bool all_bands)
 /* x_list as needed.  band_mask limits the size of each band, */
 /* by requiring that ((y1 - 1) & band_mask) == (y0 & band_mask). */
 private int
-fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
-	       const gx_fill_params * params, const gx_device_color * pdevc,
-		     gs_logical_operation_t lop, const gs_fixed_rect * pbox,
-			fixed adjust_left, fixed adjust_right,
-		    fixed adjust_below, fixed adjust_above, fixed band_mask)
+fill_loop_by_trapezoids(line_list *ll, fixed band_mask)
 {
-    int rule = params->rule;
-    const fixed y_limit = pbox->q.y;
-    active_line *yll = ll->y_list;
+    const line_list * const l0 = ll;
+    int rule = ll->rule;
+    const fixed y_limit = l0->pbox->q.y;
+    active_line *yll = l0->y_list;
     fixed y;
     int code;
-    bool fill_direct = color_writes_pure(pdevc, lop);
-    const bool pseudo_rasterization = ll->pseudo_rasterization;
-    const bool all_bands = (is_spotan_device(dev));
-    dev_proc_fill_rectangle((*fill_rect));
+    const bool all_bands = l0->is_spotan;
 
     if (yll == 0)
 	return 0;		/* empty list */
-    if (fill_direct)
-	fill_rect = dev_proc(dev, fill_rectangle);
-    else
-	fill_rect = 0; /* unused. */
     y = yll->start.y;		/* first Y value */
-    ll->fill_direct = fill_direct;
     ll->x_list = 0;
     ll->x_head.x_current = min_fixed;	/* stop backward scan */
     ll->margin_set0.y = fixed_pixround(y) - fixed_half;
@@ -1944,26 +1910,26 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 	    if (ynext != NULL)
 		ynext->prev = NULL;
 	    if (yll->direction == DIR_HORIZONTAL) {
-		if (!pseudo_rasterization) {
+		if (!l0->pseudo_rasterization) {
 		    /*
 		     * This is a hack to make sure that isolated horizontal
 		     * lines get stroked.
 		     */
-		    int yi = fixed2int_pixround(y - adjust_below);
+		    int yi = fixed2int_pixround(y - l0->adjust_below);
 		    int xi, wi;
 
 		    if (yll->start.x <= yll->end.x) {
-			xi = fixed2int_pixround(yll->start.x - adjust_left);
-			wi = fixed2int_pixround(yll->end.x + adjust_right) - xi;
+			xi = fixed2int_pixround(yll->start.x - l0->adjust_left);
+			wi = fixed2int_pixround(yll->end.x + l0->adjust_right) - xi;
 		    } else {
-			xi = fixed2int_pixround(yll->end.x - adjust_left);
-			wi = fixed2int_pixround(yll->start.x + adjust_right) - xi;
+			xi = fixed2int_pixround(yll->end.x - l0->adjust_left);
+			wi = fixed2int_pixround(yll->start.x + l0->adjust_right) - xi;
 		    }
 		    VD_RECT(xi, yi, wi, 1, VD_TRAP_COLOR);
-		    code = LOOP_FILL_RECTANGLE_DIRECT(xi, yi, wi, 1);
+		    code = LOOP_FILL_RECTANGLE_DIRECT(l0, xi, yi, wi, 1);
 		    if (code < 0)
 			return code;
-		} else if (pseudo_rasterization)
+		} else if (l0->pseudo_rasterization)
 		    insert_h_new(yll, ll);
 	    } else
 		insert_x_new(yll, ll);
@@ -2023,14 +1989,14 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 	if (y >= y_limit)
 	    break;
 	/* Now look for line intersections before y1. */
-	covering_pixel_centers = COVERING_PIXEL_CENTERS(y, y1, adjust_below, adjust_above);
+	covering_pixel_centers = COVERING_PIXEL_CENTERS(y, y1, l0->adjust_below, l0->adjust_above);
 	if (y != y1) {
 	    intersect_al(ll, y, &y1, (covering_pixel_centers ? 1 : -1), all_bands); /* May change y1. */
-	    covering_pixel_centers = COVERING_PIXEL_CENTERS(y, y1, adjust_below, adjust_above);
+	    covering_pixel_centers = COVERING_PIXEL_CENTERS(y, y1, l0->adjust_below, l0->adjust_above);
 	}
 	/* Prepare dropout prevention. */
-	if (pseudo_rasterization) {
-	    code = start_margin_set(dev, ll, y1);
+	if (l0->pseudo_rasterization) {
+	    code = start_margin_set(ll->dev, ll, y1);
 	    if (code < 0)
 		return code;
 	}
@@ -2063,21 +2029,26 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 		    continue;
 		/* We just went from inside to outside, so fill the region. */
 		INCR(band_fill);
-		if ((adjust_left | adjust_right) != 0) {
-		    xlbot -= adjust_left;
-		    xbot += adjust_right;
-		    xltop -= adjust_left;
-		    xtop += adjust_right;
+		if ((l0->adjust_left | l0->adjust_right) != 0) {
+		    xlbot -= l0->adjust_left;
+		    xbot += l0->adjust_right;
+		    xltop -= l0->adjust_left;
+		    xtop += l0->adjust_right;
 		}
-		if (!(xltop == xlbot && xtop == xbot) && (adjust_below | adjust_above) != 0) {
+		if (!(xltop == xlbot && xtop == xbot) && (l0->adjust_below | l0->adjust_above) != 0) {
 		    /* Assuming pseudo_rasterization = false. */
-		    code = fill_trap_slanted(dev, pbox, pdevc, lop, fill_direct, 
-				xlbot, xbot, xltop, xtop, y, y1, adjust_below, adjust_above);
+		    code = fill_trap_slanted(ll, xlbot, xbot, xltop, xtop, y, y1);
 		} else {
-		    code = fill_trap_or_rect(dev, pbox, pdevc, lop, fill_direct, 
-				xlbot, xbot, xltop, xtop, y, y1, adjust_below, adjust_above,
-				flp, alp, ll, pseudo_rasterization);
-		    if (pseudo_rasterization) {
+		    if (l0->is_spotan) {
+			/* We can't pass data through the device interface because 
+			   we need to pass segment pointers. We're unhappy of that. */
+			code = gx_san_trap_store((gx_device_spot_analyzer *)ll->dev, 
+			    y, y1, xlbot, xbot, xltop, xtop, flp->pseg, alp->pseg, 
+			    flp->direction, alp->direction);
+		    } else
+			code = fill_trap_or_rect(ll->dev, l0, 
+				xlbot, xbot, xltop, xtop, y, y1, flp, alp);
+		    if (l0->pseudo_rasterization) {
 			if (code < 0)
 			    return code;
 			code = complete_margin(ll, flp, alp, y, y1);
@@ -2098,7 +2069,7 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 	    }
 	} else {
 	    /* No trapezoids generation needed. */
-	    if (pseudo_rasterization) {
+	    if (l0->pseudo_rasterization) {
 		/* Process dropouts near trapezoids. */
 		active_line *flp = NULL;
 		int inside = 0;
@@ -2134,14 +2105,14 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 	ll->h_list0 = 0;
 	y = y1;
     }
-    if (pseudo_rasterization) {
+    if (l0->pseudo_rasterization) {
 	code = process_h_lists(ll, 0, 0, 0, y, y + 1 /*stub*/);
 	if (code < 0)
 	    return code;
-	code = close_margins(dev, ll, &ll->margin_set1);
+	code = close_margins(ll->dev, ll, &ll->margin_set1);
 	if (code < 0)
 	    return code;
-	return close_margins(dev, ll, &ll->margin_set0);
+	return close_margins(ll->dev, ll, &ll->margin_set0);
     } 
     return 0;
 }
@@ -2368,31 +2339,58 @@ range_list_add(coord_range_list_t *pcrl, coord_value_t rmin, coord_value_t rmax)
     return 0;
 }
 
+/*
+ * Merge regions for active segments starting at a given Y, or all active
+ * segments, up to the end of the sampling band or the end of the segment,
+ * into the range list.
+ */
+private int
+merge_ranges(coord_range_list_t *pcrl, const line_list *ll, fixed y_min, fixed y_top)
+{
+    active_line *alp, *nlp;
+    int code = 0;
+
+    range_list_rescan(pcrl);
+    for (alp = ll->x_list; alp != 0 && code >= 0; alp = nlp) {
+	fixed x0 = alp->x_current, x1, xt;
+
+	nlp = alp->next;
+	if (alp->start.y < y_min)
+	    continue;
+	if (alp->end.y < y_top)
+	    x1 = alp->end.x;
+#	if !SCANLINE_USES_ITERATOR
+	    else if (alp->curve_k < 0)
+		x1 = AL_X_AT_Y(alp, y_top);
+	    else
+		x1 = gx_curve_x_at_y(&alp->cursor, y_top);
+#	else
+	    else
+		x1 = AL_X_AT_Y(alp, y_top);
+#	endif
+	if (x0 > x1)
+	    xt = x0, x0 = x1, x1 = xt;
+	code = range_list_add(pcrl,
+			      fixed2int_pixround(x0 - ll->adjust_left),
+			      fixed2int_rounded(x1 + ll->adjust_right));
+    }
+    return code;
+}
+
 /* ---------------- Scan line filling loop ---------------- */
 
-/* Forward references */
-private int merge_ranges(coord_range_list_t *pcrl, line_list *ll,
-			 fixed y_min, fixed y_top,
-			 fixed adjust_left, fixed adjust_right);
 #if !SCANLINE_USES_ITERATOR
+/* Forward references */
 private void set_scan_line_points(active_line *, fixed);
 #endif
 
 /* Main filling loop. */
 private int
-fill_loop_by_scan_lines(line_list *ll, gx_device * dev,
-			const gx_fill_params * params,
-			const gx_device_color * pdevc,
-			gs_logical_operation_t lop, const gs_fixed_rect * pbox,
-			fixed adjust_left, fixed adjust_right,
-			fixed adjust_below, fixed adjust_above,
-			fixed band_mask)
+fill_loop_by_scan_lines(line_list *ll, fixed band_mask)
 {
-    int rule = params->rule;
-    bool fill_direct = color_writes_pure(pdevc, lop);
-    dev_proc_fill_rectangle((*fill_rect)) = NULL;
+    const line_list * const l0 = ll;
     active_line *yll = ll->y_list;
-    fixed y_limit = pbox->q.y;
+    fixed y_limit = ll->pbox->q.y;
     /*
      * The meaning of adjust_below (B) and adjust_above (A) is that the
      * pixels that would normally be painted at coordinate Y get "smeared"
@@ -2403,10 +2401,10 @@ fill_loop_by_scan_lines(line_list *ll, gx_device * dev,
      * epsilon.)
      */
     fixed y_frac_min =
-	(adjust_above == fixed_0 ? fixed_half :
-	 fixed_half + fixed_epsilon - adjust_above);
+	(l0->adjust_above == fixed_0 ? fixed_half :
+	 fixed_half + fixed_epsilon - l0->adjust_above);
     fixed y_frac_max =
-	fixed_half + adjust_below;
+	fixed_half + l0->adjust_below;
     int y0 = fixed2int(min_fixed);
     fixed y_bot = min_fixed;	/* normally int2fixed(y0) + y_frac_min */
     fixed y_top = min_fixed;	/* normally int2fixed(y0) + y_frac_max */
@@ -2418,8 +2416,6 @@ fill_loop_by_scan_lines(line_list *ll, gx_device * dev,
     if (yll == 0)		/* empty list */
 	return 0;
     range_list_init(&rlist, rlocal, countof(rlocal), ll->memory);
-    if (fill_direct)
-	fill_rect = dev_proc(dev, fill_rectangle);
     ll->x_list = 0;
     ll->x_head.x_current = min_fixed;	/* stop backward scan */
     while (code >= 0) {
@@ -2460,7 +2456,7 @@ fill_loop_by_scan_lines(line_list *ll, gx_device * dev,
 	    } else {
 		insert_x_new(yll, ll);
 #		if !SCANLINE_USES_ITERATOR
-		    set_scan_line_points(yll, ll->fixed_flat);
+		    set_scan_line_points(yll, l0->fixed_flat);
 #		endif
 	    }
 	    yll = ynext;
@@ -2477,7 +2473,7 @@ fill_loop_by_scan_lines(line_list *ll, gx_device * dev,
 		if (end_x_line(alp, ll, true))
 		    continue;
 #		if !SCANLINE_USES_ITERATOR
-		    set_scan_line_points(alp, ll->fixed_flat);
+		    set_scan_line_points(alp, l0->fixed_flat);
 #		else
 		    if (alp->more_flattened)
 			if (alp->end.y <= y || alp->start.y == alp->end.y)
@@ -2528,7 +2524,7 @@ fill_loop_by_scan_lines(line_list *ll, gx_device * dev,
 		if_debug4('Q', "[Qr]draw 0x%lx: [%d,%d),%d\n", (ulong)pcr,
 			  x0, x1, y0);
 		VD_RECT(x0, y0, x1 - x0, 1, VD_TRAP_COLOR);
-		code = LOOP_FILL_RECTANGLE_DIRECT(x0, y0, x1 - x0, 1);
+		code = LOOP_FILL_RECTANGLE_DIRECT(l0, x0, y0, x1 - x0, 1);
 		if_debug3('F', "[F]drawing [%d:%d),%d\n", x0, x1, y0);
 		if (code < 0)
 		    goto done;
@@ -2565,14 +2561,14 @@ fill_loop_by_scan_lines(line_list *ll, gx_device * dev,
 
 		INCR(band);
 		for (alp = ll->x_list; alp != 0; alp = alp->next) {
-		    int x0 = fixed2int_pixround(alp->x_current - adjust_left);
+		    int x0 = fixed2int_pixround(alp->x_current - l0->adjust_left);
 
 		    for (;;) {
 			/* We're inside a filled region. */
 			print_al("step", alp);
 			INCR(band_step);
 			inside += alp->direction;
-			if (!INSIDE_PATH_P(inside, rule))
+			if (!INSIDE_PATH_P(inside, l0->rule))
 			    break;
 			/*
 			 * Since we're dealing with closed paths, the test
@@ -2586,7 +2582,7 @@ fill_loop_by_scan_lines(line_list *ll, gx_device * dev,
 		    /* We just went from inside to outside, so fill the region. */
 		    code = range_list_add(&rlist, x0,
 					  fixed2int_rounded(alp->x_current +
-							    adjust_right));
+							    l0->adjust_right));
 		    if (code < 0)
 			goto done;
 		}
@@ -2594,51 +2590,11 @@ fill_loop_by_scan_lines(line_list *ll, gx_device * dev,
 		y_min = min_fixed;
 	    } else
 		y_min = y;
-	    code = merge_ranges(&rlist, ll, y_min, y_top, adjust_left,
-				adjust_right);
+	    code = merge_ranges(&rlist, l0, y_min, y_top);
 	} /* else y < y_bot + 1, do nothing */
     }
  done:
     range_list_free(&rlist);
-    return code;
-}
-
-/*
- * Merge regions for active segments starting at a given Y, or all active
- * segments, up to the end of the sampling band or the end of the segment,
- * into the range list.
- */
-private int
-merge_ranges(coord_range_list_t *pcrl, line_list *ll, fixed y_min, fixed y_top,
-	     fixed adjust_left, fixed adjust_right)
-{
-    active_line *alp, *nlp;
-    int code = 0;
-
-    range_list_rescan(pcrl);
-    for (alp = ll->x_list; alp != 0 && code >= 0; alp = nlp) {
-	fixed x0 = alp->x_current, x1, xt;
-
-	nlp = alp->next;
-	if (alp->start.y < y_min)
-	    continue;
-	if (alp->end.y < y_top)
-	    x1 = alp->end.x;
-#	if !SCANLINE_USES_ITERATOR
-	    else if (alp->curve_k < 0)
-		x1 = AL_X_AT_Y(alp, y_top);
-	    else
-		x1 = gx_curve_x_at_y(&alp->cursor, y_top);
-#	else
-	    else
-		x1 = AL_X_AT_Y(alp, y_top);
-#	endif
-	if (x0 > x1)
-	    xt = x0, x0 = x1, x1 = xt;
-	code = range_list_add(pcrl,
-			      fixed2int_pixround(x0 - adjust_left),
-			      fixed2int_rounded(x1 + adjust_right));
-    }
     return code;
 }
 

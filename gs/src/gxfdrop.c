@@ -478,15 +478,11 @@ private inline int compute_padding(section *s)
 	    fixed_half - s->y0 < s->y1 - fixed_half ? 1 : 0);
 }
 
-private int fill_margin(gx_device * dev, line_list * ll, margin_set *ms, int i0, int i1)
+private int fill_margin(gx_device * dev, const line_list * ll, margin_set *ms, int i0, int i1)
 {   /* Returns the new index (positive) or return code (negative). */
     section *sect = ms->sect;
     int iy = fixed2int_var_pixround(ms->y);
     int i, ir, h = -2, code;
-    dev_proc_fill_rectangle((*fill_rect)) = dev_proc(dev, fill_rectangle);
-    const gx_device_color * pdevc = ll->pdevc;
-    gs_logical_operation_t lop = ll->lop;
-    bool fill_direct = ll->fill_direct;
 
     assert(i0 >= 0 && i1 <= ll->bbox_width);
     ir = i0;
@@ -555,7 +551,7 @@ private int fill_margin(gx_device * dev, line_list * ll, margin_set *ms, int i0,
 	if (h != hh) {
 	    if (h >= 0) {
 		VD_RECT(ir + ll->bbox_left, iy + h, i - ir, 1, VD_MARG_COLOR);
-		code = LOOP_FILL_RECTANGLE_DIRECT(ir + ll->bbox_left, iy + h, i - ir, 1);
+		code = LOOP_FILL_RECTANGLE_DIRECT(ll, ir + ll->bbox_left, iy + h, i - ir, 1);
 		if (code < 0)
 		    return code;
 	    }
@@ -565,7 +561,7 @@ private int fill_margin(gx_device * dev, line_list * ll, margin_set *ms, int i0,
     }
     if (h >= 0) {
 	VD_RECT(ir + ll->bbox_left, iy + h, i - ir, 1, VD_MARG_COLOR);
-	code = LOOP_FILL_RECTANGLE_DIRECT(ir + ll->bbox_left, iy + h, i - ir, 1);
+	code = LOOP_FILL_RECTANGLE_DIRECT(ll, ir + ll->bbox_left, iy + h, i - ir, 1);
 	if (code < 0)
 	    return code;
     }

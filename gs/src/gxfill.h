@@ -134,19 +134,26 @@ struct line_list_s {
     bool fill_direct;
     fixed fixed_flat;
     bool fill_by_trapezoids;
+    fixed adjust_left, adjust_right;
     fixed adjust_below, adjust_above;
     fixed ymin, ymax;
     int main_dir;
     fixed y_break;
     fixed coords_near_threshold;
+    gx_device *dev;
+    const gs_fixed_rect * pbox;
+    bool is_spotan;
+    int rule;
+    dev_proc_fill_rectangle((*fill_rect));
+    dev_proc_fill_trapezoid((*fill_trap));
 };
 
 #define LOOP_FILL_RECTANGLE(x, y, w, h)\
   gx_fill_rectangle_device_rop(x, y, w, h, pdevc, dev, lop)
-#define LOOP_FILL_RECTANGLE_DIRECT(x, y, w, h)\
-  (fill_direct ?\
-   (*fill_rect)(dev, x, y, w, h, pdevc->colors.pure) :\
-   gx_fill_rectangle_device_rop(x, y, w, h, pdevc, dev, lop))
+#define LOOP_FILL_RECTANGLE_DIRECT(ll, x, y, w, h)\
+  (ll->fill_direct ?\
+   (*ll->fill_rect)(ll->dev, x, y, w, h, ll->pdevc->colors.pure) :\
+   gx_fill_rectangle_device_rop(x, y, w, h, ll->pdevc, ll->dev, ll->lop))
 
 /* ---------------- Statistics ---------------- */
 
