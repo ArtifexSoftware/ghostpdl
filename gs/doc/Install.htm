@@ -373,16 +373,43 @@ remove "Aladdin Ghostscript #.##" and "Aladdin Ghostscript Fonts".
 <p>
 You need the file <b><tt>GS.EXE</tt></b> to run Ghostscript on OpenVMS, and
 installing Ghostscript on an OpenVMS system requires building it first:
-please
-read <a href="Make.htm#VMS_build">how to build Ghostscript on VMS</a> in the
-documentation on building Ghostscript.
+please read <a href="Make.htm#VMS_build">how to build Ghostscript on VMS</a>
+in the documentation on building Ghostscript.
 
 <p>
-Install all the files, including the fonts, in the same directory as the
-executable and initialization files.  By default, this is the directory in
-which you did the compilation.  Consult the
-<a href="Make.htm#VMS_build">documentation on building Ghostscript</a> for
-more details.
+The following installation steps assume that the Ghostscript directory is
+<b><tt>DISK1:[DIR.GHOSTSCRIPT]</tt></b>.  Yours will almost certainly be in
+a different location so adjust the following commands accordingly.
+
+<ul>
+
+<li>Download the fonts and unpack them into
+<b><tt>DISK1:[DIR.GHOSTSCRIPT.LIB]</tt></b>.
+
+<li>Enable access to the program and support files for all users with:
+
+<blockquote><pre>
+$ set file/prot=w:re DISK1:[DIR]GHOSTSCRIPT.dir
+$ set file/prot=w:re DISK1:[DIR.GHOSTSCRIPT...]*.*
+</pre></blockquote>
+
+<li>Optionally, add the Ghostscript help instructions to your system wide
+help file:
+
+<blockquote><pre>
+$ lib/help sys$help:HELPLIB.HLB DISK1:[DIR.GHOSTSCRIPT.DOC]GS-VMS.HLP
+</pre></blockquote>
+
+<li>Lastly, add the following lines to the appropriate system wide or user
+specific login script.
+
+<blockquote><pre>
+$ define gs_exe DISK1:[DIR.GHOSTSCRIPT.BIN]
+$ define gs_lib DISK1:[DIR.GHOSTSCRIPT.EXE]
+$ gs :== $gs_exe:gs.exe
+</pre></blockquote>
+
+</ul>
 
 <p>
 If you have DECWindows/Motif installed, you may wish to replace the
