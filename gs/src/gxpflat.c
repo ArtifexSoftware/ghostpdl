@@ -20,6 +20,7 @@
 #include "gxarith.h"
 #include "gxfixed.h"
 #include "gzpath.h"
+#include "memory_.h"
 #include "vdtrace.h"
 #include <assert.h>
 
