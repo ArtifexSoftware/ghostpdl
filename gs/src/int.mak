@@ -1627,6 +1627,7 @@ $(PSD)psl3.dev : $(INT_MAK) $(ECHOGS_XE)\
  $(GLD)psl3lib.dev $(PSD)psl3read.dev
 	$(SETMOD) $(PSD)psl3 -include $(PSD)psl2 $(PSD)cspixel $(PSD)frsd $(PSD)func
 	$(ADDMOD) $(PSD)psl3 -include $(GLD)psl3lib $(PSD)psl3read
+	$(ADDMOD) $(PSD)psl3 -emulator PostScript PostScriptLevel2 PostScriptLevel3
 
 $(PSOBJ)zcsdevn.$(OBJ) : $(PSSRC)zcsdevn.c $(OP) $(memory__h)\
  $(gscolor2_h) $(gscdevn_h) $(gxcdevn_h) $(gxcspace_h)\
