@@ -347,6 +347,7 @@ gx_ht_move_ht_order(gx_ht_order * pdest, gx_ht_order * psrc)
 {
     uint    width = psrc->width, height = psrc->height, shift = psrc->shift;
 
+    pdest->params = psrc->params;
     pdest->wse = psrc->wse;
     pdest->wts = 0;
     pdest->width = width;

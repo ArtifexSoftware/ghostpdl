@@ -473,9 +473,7 @@ pdf_write_spot_halftone(gx_device_pdf *pdev, const gs_spot_halftone *psht,
      * See if we can recognize the spot function, by comparing its sampled
      * values against those in the order.
      */
-    if (/* A hack : is porder->params initialized ? */
-	    porder->params.M != 0 && porder->params.N != 0) {
-	gs_screen_enum senum;
+    {	gs_screen_enum senum;
 	gx_ht_order order;
 	int code;
 
