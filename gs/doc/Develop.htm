@@ -78,10 +78,6 @@ Information for Ghostscript developers
 <li><a href="#Portability">Portability</a>
 <ul>
 <li><a href="#Structural">Structural</a>
-<ul>
-<li><a href="#Makefiles">Makefiles</a>,
-    <a href="#Other_files">Other files</a>
-</ul>
 <li><a href="#Coding">Coding</a>
 </ul>
 <li><a href="#Adding_features_and_options">Adding features and options</a>
@@ -296,26 +292,210 @@ Stable allocators + when to use them
 <h1><a name="Portability"></a>Portability</h1>
 
 <p>
-This section of the document discusses the mechanisms for supporting
-portability of the code across CPUs, compilers, and operating systems.
+One of Ghostscript's most important features is its great portability across
+platforms (CPUs, operating systems, compilers, and build tools).  The code
+supports portability through two mechanisms:
+
+<ul>
+
+<li><a href="#Structural">Structural mechanisms</a> -- segregating
+platform-dependent information into files in a particular way.
+
+<li><a href="#Coding">Coding standards</a> -- avoiding relying on byte
+order, scalar size, and platform-specific compiler or library features.
+
+</ul>
 
 <h2><a name="Structural"></a>Structural</h2>
 
-<h3><a name="makefiles"></a>makefiles</h3>
+<h3>CPU and compiler characteristics</h3>
 
 <p>
-*.mak files
-
-<h3><a name="Other_files"></a>Other files</h3>
+Ghostscript attempts to discover characteristics of the CPU and compiler
+automatically during the build process, by compiling and then executing a
+program called <b><tt>genarch</tt></b>.  <b><tt>genarch</tt></b> generates a
+file <b><tt>obj/arch.h</tt></b>, which almost all Ghostscript files then
+include.  This works well for things like word size, byte order, and
+floating point representation, but it can't determine whether or not a
+compiler supports a particular feature, because if a feature is absent, the
+compilation may fail.
 
 <p>
-*_.h files
+Files:
+<a href="../src/genarch.c">src/genarch.c</a>,
+<a href="../obj/arch.h">obj/arch.h</a>.
+
+<h3>Library headers</h3>
 
 <p>
-arch.h
+Despite the supposed standardization of ANSI C, platforms vary considerably
+in where (and whether) they provide various standard library facilities.
+Currently, Ghostscript's build process doesn't attempt to sort this out
+automatically.  Instead, for each library header file
+<b><tt>&lt;</tt></b><em>xxx</em><b><tt>.h&gt;</tt></b> there is a
+corresponding Ghostscript source file
+<b><tt>src/</tt></b><em>xxx</em><b><tt>_.h</tt></b>, containing a set of
+compile-time conditionals that attempt to select the correct platform header
+file, or in some cases substitute Ghostscript's own code for a missing
+facility.  You may need to edit these files when moving to platforms with
+unusually non-standard libraries.
 
 <p>
-gp*.h, gp_*.c
+Files:
+<a href="../src/close_.h">src/close_.h</a>,
+<a href="../src/ctype_.h">src/ctype_.h</a>,
+<a href="../src/dirent_.h">src/dirent_.h</a>,
+<a href="../src/dos_.h">src/dos_.h</a>,
+<a href="../src/errno_.h">src/errno_.h</a>,
+<a href="../src/fcntl_.h">src/fcntl_.h</a>,
+<a href="../src/jerror_.h">src/jerror_.h</a>,
+<a href="../src/malloc_.h">src/malloc_.h</a>,
+<a href="../src/math_.h">src/math_.h</a>,
+<a href="../src/memory_.h">src/memory_.h</a>,
+<a href="../src/pipe_.h">src/pipe_.h</a>,
+<a href="../src/png_.h">src/png_.h</a>,
+<a href="../src/stat_.h">src/stat_.h</a>,
+<a href="../src/stdio_.h">src/stdio_.h</a>,
+<a href="../src/string_.h">src/string_.h</a>,
+<a href="../src/time_.h">src/time_.h</a>,
+<a href="../src/vmsmath.h">src/vmsmath.h</a>,
+<a href="../src/windows_.h">src/windows_.h</a>,
+<a href="../src/x_.h">src/x_.h</a>.
+
+<p>
+(It has been suggested that the GNU 'configure' scripts do the above better
+than Ghostscript's current system.  While this is probably true, we've
+consciously chosen not to include the incomprehensible multi-thousand-line
+'configure' scripts in our source code.)
+
+<h3>Cross-platform APIs</h3>
+
+<p>
+For a few library facilities that are available on all platforms but are not
+well standardized, or that may need to be changed for special environments,
+Ghostscript defines its own APIs.  It is an architectural property of
+Ghostscript that the implementations of these APIs are the only .c files
+that are linked into an executable depending on the platform (as opposed to
+depending on choices of drivers or optional features).
+
+<p>
+API files:
+<a href="../src/gp.h">src/gp.h</a>,
+<a href="../src/gpcheck.h">src/gpcheck.h</a>,
+<a href="../src/gpgetenv.h">src/gpgetenv.h</a>,
+<a href="../src/gpmisc.h">src/gpmisc.h</a>,
+<a href="../src/gpsync.h">src/gpsync.h</a>.
+
+<p>
+Implementation files shared among multiple platforms:
+<a href="../src/gp_getnv.c">src/gp_getnv.c</a>,
+<a href="../src/gp_mktmp.c">src/gp_mktmp.c</a>,
+<a href="../src/gp_nsync.c">src/gp_nsync.c</a>,
+<a href="../src/gp_psync.c">src/gp_psync.c</a>,
+<a href="../src/gp_strdl.c">src/gp_strdl.c</a>.
+
+<p>
+Platform-specific implementation files:
+<a href="../src/gp_dosfe.c">src/gp_dosfe.c</a>,
+<a href="../src/gp_dosfs.c">src/gp_dosfs.c</a>,
+<a href="../src/gp_dvx.c">src/gp_dvx.c</a>,
+<a href="../src/gp_iwatc.c">src/gp_iwatc.c</a>,
+<a href="../src/gp_msdos.c">src/gp_msdos.c</a>,
+<a href="../src/gp_mshdl.c">src/gp_mshdl.c</a>,
+<a href="../src/gp_msio.c">src/gp_msio.c</a>,
+<a href="../src/gp_mslib.c">src/gp_mslib.c</a>,
+<a href="../src/gp_mswin.c">src/gp_mswin.c</a>,
+<a href="../src/gp_mswin.h">src/gp_mswin.h</a>,
+<a href="../src/gp_ntfs.c">src/gp_ntfs.c</a>,
+<a href="../src/gp_os2.c">src/gp_os2.c</a>,
+<a href="../src/gp_os9.c">src/gp_os9.c</a>,
+<a href="../src/gp_sysv.c">src/gp_sysv.c</a>,
+<a href="../src/gp_unifn.c">src/gp_unifn.c</a>,
+<a href="../src/gp_unifs.c">src/gp_unifs.c</a>,
+<a href="../src/gp_unix.c">src/gp_unix.c</a>,
+<a href="../src/gp_vms.c">src/gp_vms.c</a>,
+<a href="../src/gp_wgetv.c">src/gp_wgetv.c</a>,
+<a href="../src/gp_win32.c">src/gp_win32.c</a>,
+<a href="../src/gp_wsync.c">src/gp_wsync.c</a>.
+
+<h3>Makefiles</h3>
+
+<p>
+Ghostscript's makefiles are structured very similarly to the cross-platform
+library files.  The great majority of the makefiles are portable across all
+platforms and all versions of <b><tt>make</tt></b>.  To achieve this, the
+platform-independent makefiles must obey two constraints beyond those of the
+POSIX <b><tt>make</tt></b> program:
+
+<ul>
+
+<li>No conditionals or <b><tt>include</tt></b>s are allowed.  While most
+<b><tt>make</tt></b> programs now provide some form of conditional execution
+and some form of inclusion, there is no agreement on the syntax.
+(Conditionals and includes are allowed in platform-dependent makefiles; in
+fact, an inclusion facility is required.)
+
+<li>There must be a space on both sides of the : that separates the target
+of a rule from its dependencies.  This is required for compatibility with
+the OpenVMS <b><tt>MMS</tt></b> and <b><tt>MMK</tt></b> programs.
+
+</ul>
+
+<p>
+The top-level makefile for each platform (where "platform" includes the OS,
+the compiler, and the flavor of <b><tt>make</tt></b>) contains all the build
+options, plus <b><tt>include</tt></b>s for the generic makefiles and any
+platform-dependent makefiles that are shared among multiple platforms.
+
+<p>
+Platform-independent makefiles:
+<a href="../src/cfonts.mak">src/cfonts.mak</a>,
+<a href="../src/contrib.mak">src/contrib.mak</a>,
+<a href="../src/devs.mak">src/devs.mak</a>,
+<a href="../src/gs.mak">src/gs.mak</a>,
+<a href="../src/int.mak">src/int.mak</a>,
+<a href="../src/jpeg.mak">src/jpeg.mak</a>,
+<a href="../src/lib.mak">src/lib.mak</a>,
+<a href="../src/libpng.mak">src/libpng.mak</a>,
+<a href="../src/version.mak">src/version.mak</a>,
+<a href="../src/wmin.mak">src/wmin.mak</a>,
+<a href="../src/zlib.mak">src/zlib.mak</a>.
+
+<p>
+Shared platform-dependent makefiles:
+<a href="../src/dvx-head.mak">src/dvx-head.mak</a>,
+<a href="../src/dvx-tail.mak">src/dvx-tail.mak</a>,
+<a href="../src/msvccmd.mak">src/msvccmd.mak</a>,
+<a href="../src/msvctail.mak">src/msvctail.mak</a>,
+<a href="../src/pcwin.mak">src/pcwin.mak</a>,
+<a href="../src/unix-aux.mak">src/unix-aux.mak</a>,
+<a href="../src/unix-end.mak">src/unix-end.mak</a>,
+<a href="../src/unixhead.mak">src/unixhead.mak</a>,
+<a href="../src/unixinst.mak">src/unixinst.mak</a>,
+<a href="../src/unixlink.mak">src/unixlink.mak</a>,
+<a href="../src/wccommon.mak">src/wccommon.mak</a>,
+<a href="../src/wctail.mak">src/wctail.mak</a>,
+<a href="../src/winint.mak">src/winint.mak</a>,
+<a href="../src/winlib.mak">src/winlib.mak</a>,
+<a href="../src/winplat.mak">src/winplat.mak</a>.
+
+<p>
+Platform top-level makefiles:
+<a href="../src/all-arch.mak">src/all-arch.mak</a>,
+<a href="../src/bcwin32.mak">src/bcwin32.mak</a>,
+<a href="../src/dvx-gcc.mak">src/dvx-gcc.mak</a>,
+<a href="../src/msvc32.mak">src/msvc32.mak</a>,
+<a href="../src/msvclib.mak">src/msvclib.mak</a>,
+<a href="../src/openvms.mak">src/openvms.mak</a>,
+<a href="../src/openvms.mmk">src/openvms.mmk</a>,
+<a href="../src/os2.mak">src/os2.mak</a>,
+<a href="../src/ugcclib.mak">src/ugcclib.mak</a>,
+<a href="../src/unix-gcc.mak">src/unix-gcc.mak</a>,
+<a href="../src/unixansi.mak">src/unixansi.mak</a>,
+<a href="../src/unixtrad.mak">src/unixtrad.mak</a>,
+<a href="../src/watc.mak">src/watc.mak</a>,
+<a href="../src/watclib.mak">src/watclib.mak</a>,
+<a href="../src/watcw32.mak">src/watcw32.mak</a>,
 
 <h2><a name="Coding"></a>Coding</h2>
 
