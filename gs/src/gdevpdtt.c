@@ -425,15 +425,16 @@ pdf_attach_font_resource(gx_device_pdf *pdev, gs_font *font,
 /*
  * Compute and return the orig_matrix of a font.
  */
-private double
-font_orig_scale(const gs_font *font)
+private int
+font_orig_scale(const gs_font *font, double *sx, double *sy)
 {
     switch (font->FontType) {
     case ft_composite:		/* subfonts have their own FontMatrix */
     case ft_TrueType:
     case ft_CID_TrueType:
 	/* The TrueType FontMatrix is 1 unit per em, which is what we want. */
-	return 1.0;
+	*sx = *sy = 1.0;
+	return 0;
     case ft_encrypted:
     case ft_encrypted2:
     case ft_CID_encrypted:
@@ -466,23 +467,26 @@ font_orig_scale(const gs_font *font)
 		base_font->FontMatrix.yx == 0 &&
 		any_abs(base_font->FontMatrix.yy) == 1.0/2048
 		)
-		return 1.0/2048;
+		*sx = *sy = 1.0/2048;
 	    else
-		return 0.001;
+		*sx = *sy = 0.001;
+	    if (base_font->FontMatrix.yy < 0)
+		*sy = -*sy;
 	}
-	break;
+	return 0;
     default:
-	return 0;		/* error */
+	return_error(gs_error_rangecheck);
     }
 }
 int
 pdf_font_orig_matrix(const gs_font *font, gs_matrix *pmat)
 {
-    double scale = font_orig_scale(font);
+    double sx, sy;
+    int code = font_orig_scale(font, &sx, &sy);
 
-    if (scale == 0)
-	return_error(gs_error_rangecheck);
-    gs_make_scaling(scale, scale, pmat);
+    if (code < 0)
+	return code;
+    gs_make_scaling(sx, sy, pmat);
     return 0;
 }
 
@@ -1246,10 +1250,18 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, gs_glyph glyph,
     /*
      * orig_scale is 1.0 for TrueType, 0.001 or 1.0/2048 for Type 1.
      */
-    double scale_c = font_orig_scale((const gs_font *)cfont) * 1000.0;
-    double scale_o = font_orig_scale((const gs_font *)ofont) * 1000.0;
+    double sxc, syc, sxo, syo;
+    double scale_c, scale_o;
     int code, rcode = 0;
 
+    code = font_orig_scale((const gs_font *)cfont, &sxc, &syc);
+    if (code < 0)
+	return code;
+    code = font_orig_scale((const gs_font *)ofont, &sxo, &syo);
+    if (code < 0)
+	return code;
+    scale_c = sxc * 1000.0;
+    scale_o = sxo * 1000.0;
     pwidths->v.x = pwidths->v.y = 0;
     if (glyph != GS_NO_GLYPH &&
 	(code = cfont->procs.glyph_info((gs_font *)cfont, glyph, NULL,
