@@ -323,10 +323,14 @@ pdf14_buf_new(gs_int_rect *rect, bool has_alpha_g, bool has_shape,
     int planestride;
     double dsize = (((double) rowstride) * height) * n_planes;
 
-    if (dsize > (double)max_uint ||
-        (result = gs_alloc_struct(memory, pdf14_buf, &st_pdf14_buf,
-				"pdf14_buf_new")) == NULL)
-	return NULL;
+    if (dsize > (double)max_uint)
+      return NULL;
+
+    result = gs_alloc_struct(memory, pdf14_buf, &st_pdf14_buf,
+			     "pdf14_buf_new");
+    if (result == NULL)
+	return result;
+
     result->isolated = false;
     result->knockout = false;
     result->has_alpha_g = has_alpha_g;
@@ -363,10 +367,13 @@ pdf14_ctx_new(gs_int_rect *rect, int n_chan, gs_memory_t *memory)
     pdf14_ctx *result;
     pdf14_buf *buf;
 
-    if ((result = gs_alloc_struct(memory, pdf14_ctx, &st_pdf14_ctx,
-			     "pdf14_ctx_new")) == NULL) 
-    	return NULL;
-    if ((buf = pdf14_buf_new(rect, false, false, n_chan, memory)) == NULL) {
+    result = gs_alloc_struct(memory, pdf14_ctx, &st_pdf14_ctx,
+			     "pdf14_ctx_new");
+    if (result == NULL)
+	return result;
+
+    buf = pdf14_buf_new(rect, false, false, n_chan, memory);
+    if (buf == NULL) {
 	gs_free_object(memory, result, "pdf14_ctx_new");
 	return NULL;
     }
