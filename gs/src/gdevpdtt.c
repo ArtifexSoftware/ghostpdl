@@ -1126,10 +1126,12 @@ pdf_make_text_glyphs_table(const gs_text_enum_t *penum, const gs_string *pstr,
 
     *num_unused_chars = 0;
     *num_all_chars = 0;
+#ifdef COMMENT
     if (pstr != NULL) {
 	scan.text.data.bytes = pstr->data;
 	scan.text.size = pstr->size;
     }
+#endif
     for (;;) {
 	code = pdf_next_char_glyph(&scan, pstr, font, font_is_simple, 
 				   &char_code, &cid, &glyph);
@@ -1284,10 +1286,12 @@ pdf_mark_text_glyphs(const gs_text_enum_t *penum, const gs_string *pstr,
     gs_char char_code, cid;
     gs_glyph glyph;
 
+#ifdef COMMENT
     if (pstr != NULL) {
 	scan.text.data.bytes = pstr->data;
 	scan.text.size = pstr->size;
     }
+#endif
     for (;;) {
 	int code = pdf_next_char_glyph(&scan, pstr, font, font_is_simple, 
 				       &char_code, &cid, &glyph);
