@@ -33,7 +33,7 @@
 #endif
 
 /* The device descriptor */
-private dev_proc_map_rgb_color(bit_mono_map_rgb_color);
+private dev_proc_map_rgb_color(bit_mono_map_color);
 private dev_proc_map_rgb_color(bit_forcemono_map_rgb_color);
 private dev_proc_map_color_rgb(bit_map_color_rgb);
 private dev_proc_map_cmyk_color(bit_map_cmyk_color);
@@ -41,14 +41,14 @@ private dev_proc_get_params(bit_get_params);
 private dev_proc_put_params(bit_put_params);
 private dev_proc_print_page(bit_print_page);
 
-#define bit_procs(map_rgb_color, map_cmyk_color)\
+#define bit_procs(encode_color)\
 {	gdev_prn_open,\
 	gx_default_get_initial_matrix,\
 	NULL,	/* sync_output */\
 	gdev_prn_output_page,\
 	gdev_prn_close,\
-	map_rgb_color,\
-	bit_map_color_rgb,\
+	encode_color,	/* map_rgb_color */\
+	bit_map_color_rgb,	/* map_color_rgb */\
 	NULL,	/* fill_rectangle */\
 	NULL,	/* tile_rectangle */\
 	NULL,	/* copy_mono */\
@@ -57,11 +57,44 @@ private dev_proc_print_page(bit_print_page);
 	NULL,	/* get_bits */\
 	bit_get_params,\
 	bit_put_params,\
-	map_cmyk_color,\
+	encode_color,	/* map_cmyk_color */\
 	NULL,	/* get_xfont_procs */\
 	NULL,	/* get_xfont_device */\
 	NULL,	/* map_rgb_alpha_color */\
-	gx_page_device_get_page_device	/* get_page_device */\
+	gx_page_device_get_page_device,	/* get_page_device */\
+	NULL,	/* get_alpha_bits */\
+	NULL,	/* copy_alpha */\
+	NULL,	/* get_band */\
+	NULL,	/* copy_rop */\
+	NULL,	/* fill_path */\
+	NULL,	/* stroke_path */\
+	NULL,	/* fill_mask */\
+	NULL,	/* fill_trapezoid */\
+	NULL,	/* fill_parallelogram */\
+	NULL,	/* fill_triangle */\
+	NULL,	/* draw_thin_line */\
+	NULL,	/* begin_image */\
+	NULL,	/* image_data */\
+	NULL,	/* end_image */\
+	NULL,	/* strip_tile_rectangle */\
+	NULL,	/* strip_copy_rop */\
+	NULL,	/* get_clipping_box */\
+	NULL,	/* begin_typed_image */\
+	NULL,	/* get_bits_rectangle */\
+	NULL,	/* map_color_rgb_alpha */\
+	NULL,	/* create_compositor */\
+	NULL,	/* get_hardware_params */\
+	NULL,	/* text_begin */\
+	NULL,	/* finish_copydevice */\
+	NULL,	/* begin_transparency_group */\
+	NULL,	/* end_transparency_group */\
+	NULL,	/* begin_transparency_mask */\
+	NULL,	/* end_transparency_mask */\
+	NULL,	/* discard_transparency_layer */\
+	NULL,	/* get_color_mapping_procs */\
+	NULL,	/* get_color_comp_index */\
+	encode_color,		/* encode_color */\
+	bit_map_color_rgb	/* decode_color */\
 }
 
 /*
@@ -76,7 +109,7 @@ private dev_proc_print_page(bit_print_page);
 				  dev->dname[3] == 'r' ? 3 : 1)
 
 private const gx_device_procs bitmono_procs =
-bit_procs(bit_mono_map_rgb_color, NULL);
+bit_procs(bit_mono_map_color);
 const gx_device_printer gs_bit_device =
 {prn_device_body(gx_device_printer, bitmono_procs, "bit",
 		 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
@@ -86,7 +119,7 @@ const gx_device_printer gs_bit_device =
 };
 
 private const gx_device_procs bitrgb_procs =
-bit_procs(gx_default_rgb_map_rgb_color, NULL);
+bit_procs(gx_default_rgb_map_rgb_color);
 const gx_device_printer gs_bitrgb_device =
 {prn_device_body(gx_device_printer, bitrgb_procs, "bitrgb",
 		 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
@@ -96,7 +129,7 @@ const gx_device_printer gs_bitrgb_device =
 };
 
 private const gx_device_procs bitcmyk_procs =
-bit_procs(bit_forcemono_map_rgb_color, bit_map_cmyk_color);
+bit_procs(bit_map_cmyk_color);
 const gx_device_printer gs_bitcmyk_device =
 {prn_device_body(gx_device_printer, bitcmyk_procs, "bitcmyk",
 		 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
@@ -108,16 +141,11 @@ const gx_device_printer gs_bitcmyk_device =
 /* Map gray to color. */
 /* Note that 1-bit monochrome is a special case. */
 private gx_color_index
-bit_mono_map_rgb_color(gx_device * dev, const gx_color_value cv[])
+bit_mono_map_color(gx_device * dev, const gx_color_value cv[])
 {
     int bpc = dev->color_info.depth;
     int drop = sizeof(gx_color_value) * 8 - bpc;
-    gx_color_value gray =
-    (cv[0] * (unsigned long)lum_red_weight +
-     cv[1] * (unsigned long)lum_green_weight +
-     cv[2] * (unsigned long)lum_blue_weight +
-     (lum_all_weights / 2))
-    / lum_all_weights;
+    gx_color_value gray = cv[0];
 
     return (bpc == 1 ? gx_max_color_value - gray : gray) >> drop;
 }
@@ -147,7 +175,7 @@ bit_forcemono_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 /* Map color to RGB.  This has 3 separate cases, but since it is rarely */
 /* used, we do a case test rather than providing 3 separate routines. */
 private int
-bit_map_color_rgb(gx_device * dev, gx_color_index color, gx_color_value rgb[3])
+bit_map_color_rgb(gx_device * dev, gx_color_index color, gx_color_value cv[4])
 {
     int depth = dev->color_info.depth;
     int ncomp = REAL_NUM_COMPONENTS(dev);
@@ -158,7 +186,7 @@ bit_map_color_rgb(gx_device * dev, gx_color_index color, gx_color_value rgb[3])
 
     switch (ncomp) {
 	case 1:		/* gray */
-	    rgb[0] = rgb[1] = rgb[2] =
+	    cv[0] =
 		(depth == 1 ? (color ? 0 : gx_max_color_value) :
 		 cvalue(color));
 	    break;
@@ -166,14 +194,13 @@ bit_map_color_rgb(gx_device * dev, gx_color_index color, gx_color_value rgb[3])
 	    {
 		gx_color_index cshift = color;
 
-		rgb[2] = cvalue(cshift & mask);
+		cv[2] = cvalue(cshift & mask);
 		cshift >>= bpc;
-		rgb[1] = cvalue(cshift & mask);
-		rgb[0] = cvalue(cshift >> bpc);
+		cv[1] = cvalue(cshift & mask);
+		cv[0] = cvalue(cshift >> bpc);
 	    }
 	    break;
 	case 4:		/* CMYK */
-	    /* Map CMYK back to RGB. */
 	    {
 		gx_color_index cshift = color;
 		uint c, m, y, k;
@@ -184,10 +211,10 @@ bit_map_color_rgb(gx_device * dev, gx_color_index color, gx_color_value rgb[3])
 		cshift >>= bpc;
 		m = cshift & mask;
 		c = cshift >> bpc;
-		/* We use our improved conversion rule.... */
-		rgb[0] = cvalue((mask - c) * (mask - k) / mask);
-		rgb[1] = cvalue((mask - m) * (mask - k) / mask);
-		rgb[2] = cvalue((mask - y) * (mask - k) / mask);
+		cv[0] = cvalue(c);
+		cv[1] = cvalue(m);
+		cv[2] = cvalue(y);
+		cv[3] = cvalue(k);
 	    }
 	    break;
     }
