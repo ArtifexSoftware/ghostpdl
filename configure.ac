@@ -1,16 +1,13 @@
 # Process this file with autoconf to produce a configure script.
 
-package=jbig2dec
-version=0.1
-
-AC_INIT([$package], [$version], [jbig2-dev@ghostscript.com])
+AC_INIT([jbig2dec], [0.1], [jbig2-dev@ghostscript.com])
 AC_PREREQ(2.52)
 AC_CONFIG_SRCDIR([jbig2dec.c])
 
-AM_INIT_AUTOMAKE([$package], [$version])
+AM_INIT_AUTOMAKE([AC_PACKAGE_NAME], [AC_PACKAGE_VERSION])
 AM_CONFIG_HEADER(config.h)
 
-AC_REVISION([$Revision: 1.5 $])
+AC_REVISION([$Revision: 1.6 $])
 
 # Checks for programs.
 AC_PROG_CC
