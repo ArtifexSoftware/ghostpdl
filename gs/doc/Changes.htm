@@ -1,10 +1,10 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html><head>
-<title>Ghostscript 7.20 change history as of 2002-04-02 23:23:02</title>
+<title>Ghostscript 7.20 change history as of 2002-04-03 10:32:49</title>
 <link rel=stylesheet type="text/css" href="gs.css">
 </head><body>
 
-<!-- cvs command: cvs -d /cvs/ghostscript -Q log  -b -->
+<!-- cvs command: cvs -d giles@cvs.ghostscript.com:/cvs/ghostscript -Q log  -b -->
 
 <ul>
 <li><a href="#7.20-Documentation">Documentation</a>,
@@ -867,6 +867,11 @@ giles)
 
 Update documentation for 7.20rc3 (version.mak [1.45]: 2002/04/03 06:56:08
 giles)
+
+Returns the bbox device to the default build in response to user requests.
+(devs.mak [1.56], macosx.mak [1.10], msvc32.mak [1.28], openvms.mak [1.23],
+os2.mak [1.24], unix-gcc.mak [1.32], unixansi.mak [1.23]: 2002/04/03
+18:25:03 giles)
 
 </pre><h2><a name="7.20-Utilities"></a>Utilities</h2><pre>
 
@@ -2784,10 +2789,7 @@ Try the standard gcc compile flags only if we think we're using gcc to avoid
 generating spurious warnings with some other compilers.
 (configure.ac [1.16]: 2002/04/02 01:15:16 giles)
 
-The file gs/lib/CIDFnmap used in Ghostscript 6.53 and 7.0x to map CIDFont
-resource is no longer supported. Now it is replaced with gs/lib/cidfmap.
-CID font substitution with TrueType is not implemented yet.
-(2002/04/03 09:07:17 mpsuzuki)
-
+Returns the bbox device to the default build in response to user requests.
+(Makefile.in [1.13]: 2002/04/03 18:25:03 giles)
 
 </pre></body></html>
