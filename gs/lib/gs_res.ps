@@ -227,14 +227,38 @@ systemdict begin
 % is a temporary switch to NEW_COMBINE_PATH logics.
 % It should be removed after alpha testing the new logic.
 systemdict /.filenamedirseparator known not {
-  %     mark <string> <string> ... .file_name_dir_concat <string>
-  /.file_name_dir_concat
-  { 0 string
-    { 1 index mark eq { exit } if
-      .file_name_directory_separator exch concatstrings
-      concatstrings
-    } loop
-    exch pop
+  %     - .default_resource_dir <string>
+  /.default_resource_dir {
+    .file_name_parent .file_name_directory_separator concatstrings
+    (Resource) concatstrings
+    /LIBPATH .systemvar {
+      dup .file_name_current eq {
+        pop
+      } {
+        1 index false .file_name_combine {
+          exch pop exit
+        } {
+          pop pop
+        } ifelse
+      } ifelse
+    } forall
+  } bind def
+
+  %  <path> <name> <string> .resource_dir_name <path> <name> <string>
+  /.resource_dir_name
+  {  systemdict 2 index .knownget {
+       exch pop
+       systemdict 1 index undef
+     } {
+      dup () ne {
+        .file_name_directory_separator concatstrings
+      } if
+      2 index exch false .file_name_combine not {
+        (Error: .default_resource_dir returned ) print exch print ( that can't combine with ) print =
+        /.default_resource_dir /configurationerror .signalerror
+      } if
+    } ifelse
+    dup =
   } bind def
 } if
 
@@ -252,32 +276,16 @@ pssystemparams begin
     (%diskFontResourceDir) cvn (/Resource/Font/) readonly .forcedef	% pssys'params is r-o
     (%diskGenericResourceDir) cvn (/Resource/) readonly .forcedef	% pssys'params is r-o
   } {
-    /FontResourceDir
-       systemdict /FontResourceDir .knownget {
-         systemdict /FontResourceDir undef
-       } {
-         mark
-    	.file_name_current (Resource) (Font)
-    	.file_name_dir_concat
-       } ifelse	
+    .default_resource_dir
+    /FontResourceDir (Font) .resource_dir_name
        readonly .forcedef	% pssys'params is r-o
-    /GenericResourceDir 
-       systemdict /GenericResourceDir .knownget {
-         systemdict /GenericResourceDir undef
-       } {
-         mark
-        .file_name_current (Resource)
-        .file_name_dir_concat 
-       } ifelse
+    /GenericResourceDir () .resource_dir_name
        readonly .forcedef	% pssys'params is r-o
+    pop % .default_resource_dir
     /GenericResourcePathSep
     	.file_name_separator readonly .forcedef		% pssys'params is r-o
-    (%diskFontResourceDir) cvn mark
-    	.file_name_current (Resource) (Font)
-    	.file_name_dir_concat readonly .forcedef	% pssys'params is r-o
-    (%diskGenericResourceDir) cvn mark
-    	.file_name_current (Resource)
-	.file_name_dir_concat readonly .forcedef	% pssys'params is r-o
+    (%diskFontResourceDir) cvn (/Resource/Font/) readonly .forcedef	% pssys'params is r-o
+    (%diskGenericResourceDir) cvn (/Resource/) readonly .forcedef	% pssys'params is r-o
   } ifelse
 end
 end
@@ -620,35 +628,59 @@ systemdict /.filenamedirseparator known {
 	 ifelse
 	} bind
 /.ResourceFile
+
+  % The check below for the presence of /.filenamedirseparator
+  % is a temporary switch to NEW_COMBINE_PATH logics.
+  % It should be removed after alpha testing the new logic.
+  systemdict /.filenamedirseparator known {
 	{ currentdict /ResourceFileName known
 	   { mark 1 index 100 string { ResourceFileName }
 	     .internalstopped
 	      { cleartomark false }
-              % The check below for the presence of /.filenamedirseparator
-              % is a temporary switch to NEW_COMBINE_PATH logics.
-              % It should be removed after alpha testing the new logic.
-              systemdict /.filenamedirseparator known {
-	        { exch pop findlibfile
-		   { exch pop exch pop true }
-		   { pop false }
-		  ifelse
-	        }
-	      } {
-	        { exch pop
-                  dup status {
-	            pop pop pop pop
-	            exch pop
-	            (r) file true
-	          } {
-	            pop false
-	          } ifelse
-	        }
-	      } ifelse
+	      { exch pop findlibfile
+		 { exch pop exch pop true }
+		 { pop false }
+		ifelse
+	      }
 	     ifelse
 	   }
 	   { false }
 	  ifelse
 	} bind
+  } {
+        {
+          Category //.rfnstring cvs length                      % key l
+          dup //.rfnstring dup length 2 index sub               % key l l (buf) L-l
+          3 2 roll exch getinterval                             % key l ()
+          .file_name_directory_separator exch copy length add   % key l1
+          dup //.rfnstring dup length 2 index sub               % key l1 l1 (buf) L-l
+          3 2 roll exch getinterval                             % key l1 ()
+          2 index exch cvs length add                           % key l2
+          //.rfnstring exch 0 exch getinterval                  % key (relative_path)
+          .libfile {
+            exch pop true
+          } {
+            pop
+            currentdict /ResourceFileName known {
+	      mark 1 index //.rfnstring { ResourceFileName } .internalstopped {
+	        cleartomark false
+	      } {
+	        dup status {
+	          pop pop pop pop
+	          (r) file
+	          exch pop exch pop true
+	        } {
+	          cleartomark false
+	        } ifelse
+	      } ifelse
+	     } {
+	       pop false
+	     } ifelse
+          } ifelse
+	} bind
+  } ifelse
+
+
 
 .dicttomark
 /Category defineresource pop

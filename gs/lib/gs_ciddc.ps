@@ -176,13 +176,27 @@ begin
     /ParseCMap_Inverse /ProcSet findresource         % [CMaps] <CMapCategory> <PCI>
     3 2 roll {                                       % <CMapCategory> <PCI> /CMapName
       3 2 roll begin                                 % <PCI> /CMapName
-      dup =string ResourceFileName                   % <PCI> /CMapName (path)
-      currentdict end exch                           % <PCI> /CMapName <CMapCategory> (path)
-      { (r) file true } stopped { false } if         % <PCI> /CMapName <CMapCategory> (path)
-      not {
-        (Can't find ) print print ( building a CIDDecoding resource. ) =
-        /findresource cvx /undefinedresource signalerror
-      } if                                           % <PCI> /CMapName <CMapCategory> file
+
+
+      % The check below for the presence of /.filenamedirseparator
+      % is a temporary switch to NEW_COMBINE_PATH logics.
+      % It should be removed after alpha testing the new logic.
+      systemdict /.filenamedirseparator known {
+        dup =string ResourceFileName                 % <PCI> /CMapName (path)
+        currentdict end exch                         % <PCI> /CMapName <CMapCategory> (path)
+        { (r) file true } stopped { false } if       % <PCI> /CMapName <CMapCategory> (path)
+        not {
+          pop (Can't find ) print print ( building a CIDDecoding resource. ) =
+          /findresource cvx /undefinedresource signalerror
+        } if                                         % <PCI> /CMapName <CMapCategory> file
+      } {
+        dup .ResourceFile not {
+          (Can't find CMap ) print =string cvs print ( building a CIDDecoding resource. ) =
+          /findresource cvx /undefinedresource signalerror
+        } if
+        currentdict end exch                         % <PCI> /CMapName <CMapCategory> file
+      } ifelse
+
       3 index begin
       cvx exec                                       % <PCI> /CMapName <CMapCategory>
       end
