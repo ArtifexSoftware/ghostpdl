@@ -321,45 +321,45 @@ The following options are available:
 
 <blockquote>
 <dl>
-<dt><b><tt>/NoCancel <em>boolean</em></tt></b>
+<dt><b><tt>/NoCancel <em>boolean</em></tt></b></dt>
 <dd>Disables (hides) the progress dialog when set to <em><tt>true</tt></em> or
-show the progress dialog if not set or set to <em><tt>false</tt></em>.</dd></dt>
+show the progress dialog if not set or set to <em><tt>false</tt></em>.</dd>
 
-<dt><b><tt>/OutputFile <em>string</em></b></tt></dt>
+<dt><b><tt>/OutputFile <em>string</em></tt></b></dt>
 <dd>Specifies which printer should be used. The string should be of the form
 <tt><b>\\spool\<em>printer_name</em></b></tt>, where the <em>printer_name</em> should be
-typed exactly as it appears in the Printers control panel, including spaces.</dd></dt>
+typed exactly as it appears in the Printers control panel, including spaces.</dd>
 
-<dt><b><tt>/QueryUser <em>integer</em></tt></b>
+<dt><b><tt>/QueryUser <em>integer</em></tt></b></dt>
 <dd>Shows the standard printer dialog (<tt><b>1</b></tt> or any other value),
 shows the <em>printer setup dialog</em> (<tt><b>2</b></tt>) or selects the
-<em>default Windows printer</em> without any user interaction (<tt><b>3</b></tt>).</dd></dt>
+<em>default Windows printer</em> without any user interaction (<tt><b>3</b></tt>).</dd>
 
-<dt><b><tt>/BitsPerPixel <em>integer</em></tt></b>
+<dt><b><tt>/BitsPerPixel <em>integer</em></tt></b></dt>
 <dd>Sets the device depth to the specified bits per pixel. Currently supported
 values are <tt><b>1</b></tt> (monochrome), <tt><b>4</b></tt> (CMYK with screening
 handled by Ghostscript) and <tt><b>24</b></tt> (True Color, dithering handled by
-the Windows printer driver; this option can produce huge print jobs).</dd></dt>
+the Windows printer driver; this option can produce huge print jobs).</dd>
 
-<dt><b><tt>/UserSettings <em>dict</em></tt></b>
+<dt><b><tt>/UserSettings <em>dict</em></tt></b></dt>
 <dd>Sets additional options, defined in a dictionary. The following properties can
-be set:</dd>
+be set:
 
 <dl>
-<dt><b><tt>/DocumentName <em>string</em></tt></b>
+<dt><b><tt>/DocumentName <em>string</em></tt></b></dt>
 <dd>Defines the user friendly document name which will be displayed by the
-Windows spooler.</dd></dt>
+Windows spooler.</dd>
 
-<dt><b><tt>/DocumentRange <em>[n1 n2]</em></tt></b>
+<dt><b><tt>/DocumentRange <em>[n1 n2]</em></tt></b></dt>
 <dd>Defines the range of pages contained in the document. This information can
-be used by the printer dialog, in conjunction with the following property.</dd></dt>
+be used by the printer dialog, in conjunction with the following property.</dd>
 
-<dt><b><tt>/SelectedRange <em>[n1 n2]</em></tt></b>
+<dt><b><tt>/SelectedRange <em>[n1 n2]</em></tt></b></dt>
 <dd>Defines the selected range of pages. This information will be displayed in
 the printer dialog and will be updated after the user interaction. A PostScript
-program could check these values and print only the selected page range.</dd></dt>
+program could check these values and print only the selected page range.</dd>
 
-<dt><b><tt>/MaxResolution <em>dpi</em></tt></b>
+<dt><b><tt>/MaxResolution <em>dpi</em></tt></b></dt>
 <dd>Specifies the maximum tolerated output resolution. If the selected printer has
 a higher resolution than <tt><b>dpi</b></tt>, then Ghostscript will render the
 document with a submultiple of the printer resolution. For example, if 
@@ -367,10 +367,9 @@ document with a submultiple of the printer resolution. For example, if
 up to 1200 dpi, then Ghostscript renders the document with an internal
 resolution of 1200/4=300 dpi. This can be very useful to reduce the memory
 requirements when printing in True Color on some high resolution ink-jet color
-printers.</dd></dt>
+printers.</dd>
 
-</dl>
-</dt>
+</dl></dd>
 
 </dl>
 </blockquote>
@@ -2521,13 +2520,13 @@ mark % prepare stack for "putdeviceprops"
 <p>
 insert these lines, which define page size and margins in points:
 
-<blockquote><font size="-1">
+<blockquote>
 <pre>/.HWMargins [9.0 39.96 12.6 9.0]     % Left, bottom, right, top (1/72")
 /PageSize   [597.6 842.4]            % Paper, including margins (1/72")
 /Margins [ % neg. Offset to Left/Top in Pixels
    4 index 0 get STCold /HWResolution get 0 get mul 72 div neg
    5 index 3 get STCold /HWResolution get 1 get mul 72 div neg
-]</pre></font></blockquote>
+]</pre></blockquote>
 
 <p>
 Feel free to change the values of <b><tt>.HWMargins</tt></b> and
@@ -4508,8 +4507,8 @@ gs @stc.upp -sOutputFile=/dev/lp1 tiger.ps -c quit
 <p>
 Thanks to Danilo Beuche, Guido Classen, Mark Goldberg and Hans-Heinrich
 Viehmann for providing the files for the stc200, hp690, stc500 and the
-stc640.  Thanks to Michael Lossin <losse@germanymail.com> for the newer
-st640 parameter sets.
+stc640.  Thanks to Michael Lossin &lt;losse@germanymail.com&gt; for the
+newer st640 parameter sets.
 
 <p>
 Please note the following:
@@ -5406,19 +5405,18 @@ meet your needs.
 <!-- [3.0 begin visible trailer] =========================================== -->
 <hr>
 
-<font size=2>
-
-<p>Copyright &copy; 1996, 2000 Aladdin Enterprises.  All rights reserved.
-
-<p>This file is part of AFPL Ghostscript.  See the
-<a href="Public.htm">Aladdin Free Public License</a> (the "License") for
-full details of the terms of using, copying, modifying, and redistributing
-AFPL Ghostscript.
+<p>
+<small>Copyright &copy; 1996, 2000 Aladdin Enterprises.
+All rights reserved.</small>
 
 <p>
-Ghostscript version 6.30, 2 October 2000
+<small>This file is part of AFPL Ghostscript.  See the
+<a href="Public.htm">Aladdin Free Public License</a> (the "License") for
+full details of the terms of using, copying, modifying, and redistributing
+AFPL Ghostscript.</small>
 
-</font>
+<p>
+<small>Ghostscript version 6.30, 2 October 2000</small>
 
 <!-- [3.0 end visible trailer] ============================================= -->
 

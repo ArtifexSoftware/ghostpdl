@@ -1500,7 +1500,7 @@ static const gx_color_index white2[2] = { 1, 1 };
 Note that <b><tt>rop3_S</tt></b> may be replaced by any other Boolean operation.
 For monobit devices, we assume that black = 1.
 
-<blockquote><font size="-1">
+<blockquote>
 <pre>/* For all devices: */
 (*fill_rectangle)(dev, x, y, w, h, color) ==&gt;
 
@@ -1550,8 +1550,8 @@ For monobit devices, we assume that black = 1.
         (*dev_proc(dev, copy_rop))(dev, NULL, 0, 0, gx_no_bitmap_id,
                                    white2 /*irrelevant*/,
                                    tile, NULL,
-                                   x, y, w, h, px, py, rop3_T)</pre>
-</font></blockquote>
+                                   x, y, w, h, px, py, rop3_T)
+</pre></blockquote>
 
 <h3><a name="Polygon_level_drawing"></a>Polygon-level drawing</h3>
 
@@ -2082,7 +2082,7 @@ const&nbsp;gx_device_color&nbsp;*pdcolor,
 const&nbsp;gx_clip_path&nbsp;*pcpath, gs_memory_t&nbsp;*memory,
 gs_text_enum_t&nbsp;**ppte))</tt></b> <b><em>[OPTIONAL]</em></b>
 
-<p>
+<dd>
 Begin processing text, by creating a state structure and storing it in
 <b><tt>*ppte</tt></b>.  The parameters of <b><tt>text_begin</tt></b> are as
 follows:
@@ -2205,11 +2205,11 @@ comments in <a href="../src/gxtext.h">gxtext.h</a> for details.
 const&nbsp;gs_int_rect&nbsp;*prect, gs_get_bits_params_t&nbsp;*params,
 gs_int_rect&nbsp;**unread))</tt></b> <b><em>[OPTIONAL]</em></b>
 
-<p>
+<dd>
 Read a rectangle of bits back from the device.  The <b><tt>params</tt></b>
 structure consists of:
 
-<blockquote><table cellpadding=0 cellspacing=0>
+<table cellpadding=0 cellspacing=0>
 <tr valign=top>	<td><b><tt>options</tt></b>
 	<td>&nbsp;
 	<td>the allowable formats for returning the data
@@ -2222,7 +2222,7 @@ structure consists of:
 <tr valign=top>	<td><b><tt>raster</tt></b>
 	<td>&nbsp;
 	<td>the distance between scan lines in the returned data
-</table></blockquote>
+</table>
 
 <p>
 <b><tt>options</tt></b> is a bit mask specifying what formats the client is
@@ -2514,19 +2514,18 @@ clipping region.  For all but a few specialized devices, this is
 <!-- [3.0 begin visible trailer] =========================================== -->
 <hr>
 
-<font size=2>
-
-<p>Copyright &copy; 1996, 2000 Aladdin Enterprises.  All rights reserved.
-
-<p>This file is part of AFPL Ghostscript.  See the
-<a href="Public.htm">Aladdin Free Public License</a> (the "License") for
-full details of the terms of using, copying, modifying, and redistributing
-AFPL Ghostscript.
+<p>
+<small>Copyright &copy; 1996, 2000 Aladdin Enterprises.
+All rights reserved.</small>
 
 <p>
-Ghostscript version 6.30, 2 October 2000
+<small>This file is part of AFPL Ghostscript.  See the
+<a href="Public.htm">Aladdin Free Public License</a> (the "License") for
+full details of the terms of using, copying, modifying, and redistributing
+AFPL Ghostscript.</small>
 
-</font>
+<p>
+<small>Ghostscript version 6.30, 2 October 2000</small>
 
 <!-- [3.0 end visible trailer] ============================================= -->
 

@@ -20,7 +20,7 @@
 
 <h2>Table of contents</h2>
 
-<blockquote><ul>
+<ul>
 <li><a href="#DLL">What is the Ghostscript DLL?</a>
 <li><a href="#Common_functions">Platform-independent DLL functions</a>
 <ul>
@@ -46,7 +46,7 @@
 <li><a href="#Win_get_row"><b><tt>gsdll_get_bitmap_row()</tt></b></a>
 </ul>
 <li><a href="#Win16">Ghostscript DLL Device for 16-bit MS Windows</a>
-</ul></blockquote>
+</ul>
 
 <!-- [1.2 end table of contents] =========================================== -->
 
@@ -256,6 +256,7 @@ When executing a string with <b><tt>gsdll_execute_cont()</tt></b>,
 <b><tt>currentfile</tt></b> is the input from
 <b><tt>gsdll_execute_cont()</tt></b>.  Reading from <b><tt>%stdin</tt></b>
 uses the callback.
+
 </blockquote>
 
 <h3><a name="execute_end"></a><b><tt>gsdll_execute_end()</tt></b></h3>
@@ -350,7 +351,7 @@ The Pascal calling convention is not used.  An example callback function
 is:
 
 <blockquote>
-<font size="-1"><pre>int
+<pre>int
 gsdll_callback(int message, char *str, unsigned long count)
 {
 char *p;
@@ -387,7 +388,7 @@ char *p;
     }
     return 0;
 }
-</pre></font>
+</pre>
 
 <table cellpadding=0 cellspacing=0>
 <tr><th colspan=5 bgcolor="#CCCC00"><hr><font size="+1">Messages used by callback</font><hr>
@@ -489,7 +490,7 @@ The example here shows a minimal usage of the Ghostscript DLL under OS/2.
 The sample callback function above is needed.
 
 <blockquote>
-<font size="-1"><pre>#define INCL_DOS
+<pre>#define INCL_DOS
 #include &lt;os2.h&gt;
 #include &lt;stdio.h&gt;
 #include "gsdll.h"
@@ -539,7 +540,7 @@ APIRET rc;
     fprintf(stdout,"DosFreeModule returns %d\n", rc);
     return 0;
 }
-</pre></font></blockquote>
+</pre></blockquote>
 
 <hr>
 

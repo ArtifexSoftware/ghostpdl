@@ -811,10 +811,11 @@ eventually causes the interpreter to run the pattern's PaintProc, loading
 the rendering into the cache, and then re-execute the original drawing
 operator.
 
-<ul>
+<dl>
 
-<li>
+<dt>
 Patterns:
+<dd>
 <a href="../src/gspcolor.c">src/gspcolor.c</a>,
 <a href="../src/gspcolor.h">src/gspcolor.h</a>,
 <a href="../src/gsptype1.c">src/gsptype1.c</a>,
@@ -825,17 +826,18 @@ Patterns:
 <a href="../src/gxpcmap.c">src/gxpcmap.c</a>,
 <a href="../src/gxpcolor.h">src/gxpcolor.h</a>.
 
-</ul>
+</dl>
 
 <p>
 The device color for a shading (PatternType 2) pattern also contains a
 pointer to a pattern instance.  Shadings are not cached: painting with a
 shading runs the shading algorithm every time.
 
-<ul>
+<dl>
 
-<li>
+<dt>
 Shading:
+<dd>
 <a href="../src/gsptype2.c">src/gsptype2.c</a>,
 <a href="../src/gsptype2.h">src/gsptype2.h</a>,
 <a href="../src/gsshade.c">src/gsshade.c</a>,
@@ -847,7 +849,7 @@ Shading:
 <a href="../src/gxshade4.h">src/gxshade4.h</a>,
 <a href="../src/gxshade6.c">src/gxshade6.c</a>.
 
-</ul>
+</dl>
 
 <p>
 In addition to the PostScript graphics model, Ghostscript supports RasterOp,
@@ -857,15 +859,17 @@ scattered: only RasterOp is really implemented fully.  There is a general
 compositing architecture, but it is hardly used at all, and in particular is
 not used for RasterOp.  ****** TO BE COMPLETED ******
 
-<ul>
+<dl>
 
-<li>
+<dt>
 Compositing architecture:
+<dd>
 <a href="../src/gscompt.h">src/gscompt.h</a>,
 <a href="../src/gxcomp.h">src/gxcomp.h</a>.
 
-<li>
+<dt>
 RasterOp:
+<dd>
 <a href="../src/gdevdrop.c">src/gdevdrop.c</a>,
 <a href="../src/gdevrops.c">src/gdevrops.c</a>,
 <a href="../src/gsnorop.c">src/gsnorop.c</a>,
@@ -878,8 +882,9 @@ RasterOp:
 <a href="../src/gxdevrop.h">src/gxdevrop.h</a>,
 <a href="../src/gxropc.h">src/gxropc.h</a>.
 
-<li>
+<dt>
 Alpha channel and compositing:
+<dd>
 <a href="../src/gsalpha.c">src/gsalpha.c</a>,
 <a href="../src/gsalpha.h">src/gsalpha.h</a>,
 <a href="../src/gsalphac.c">src/gsalphac.c</a>,
@@ -887,18 +892,22 @@ Alpha channel and compositing:
 <a href="../src/gsdpnext.h">src/gsdpnext.h</a>,
 <a href="../src/gxalpha.h">src/gxalpha.h</a>.
 
-<li>
+<dt>
 Advanced transparency:
+<dd>
 <a href="../src/gstparam.h">src/gstparam.h</a>,
 <a href="../src/gstrans.c">src/gstrans.c</a>,
 <a href="../src/gstrans.h">src/gstrans.h</a>.
 
-</ul>
+</dl>
 
 <h4><a name="Other_graphics"></a>Other graphics</h4>
 
-<p>
+<dl>
+
+<dt>
 Miscellaneous graphics state:
+<dd>
 <a href="../src/gsclipsr.c">src/gsclipsr.c</a>,
 <a href="../src/gsclipsr.h">src/gsclipsr.h</a>,
 <a href="../src/gsdps.c">src/gsdps.c</a>,
@@ -919,10 +928,15 @@ Miscellaneous graphics state:
 <a href="../src/gzline.h">src/gzline.h</a>,
 <a href="../src/gzstate.h">src/gzstate.h</a>.
 
+</dl>
+
 <h4><a name="Driver_support"></a>Driver support</h4>
 
-<p>
+<dl>
+
+<dt>
 Generic driver support:
+<dd>
 <a href="../src/gdevdcrd.c">src/gdevdcrd.c</a>,
 <a href="../src/gdevdcrd.h">src/gdevdcrd.h</a>,
 <a href="../src/gdevemap.c">src/gdevemap.c</a>,
@@ -936,15 +950,17 @@ Generic driver support:
 <a href="../src/gxrplane.h">src/gxrplane.h</a>,
 <a href="../src/gxxfont.h">src/gxxfont.h</a>.
 
-<p>
+<dt>
 Accessing rendered bits:
+<dd>
 <a href="../src/gdevdbit.c">src/gdevdbit.c</a>,
 <a href="../src/gdevdgbr.c">src/gdevdgbr.c</a>,
 <a href="../src/gxbitfmt.h">src/gxbitfmt.h</a>,
 <a href="../src/gxgetbit.h">src/gxgetbit.h</a>.
 
-<p>
+<dt>
 "Printer" driver support:
+<dd>
 <a href="../src/gdevppla.c">src/gdevppla.c</a>,
 <a href="../src/gdevppla.h">src/gdevppla.h</a>,
 <a href="../src/gdevprn.c">src/gdevprn.c</a>,
@@ -955,13 +971,15 @@ Accessing rendered bits:
 <a href="../src/gxpageq.c">src/gxpageq.c</a>,
 <a href="../src/gxpageq.h">src/gxpageq.h</a>.
 
-<p>
+<dt>
 High-level device support:
+<dd>
 <a href="../src/gdevvec.c">src/gdevvec.c</a>,
 <a href="../src/gdevvec.h">src/gdevvec.h</a>.
 
-<p>
+<dt>
 Banding:
+<dd>
 <a href="../src/gxclbits.c">src/gxclbits.c</a>,
 <a href="../src/gxcldev.h">src/gxcldev.h</a>,
 <a href="../src/gxclfile.c">src/gxclfile.c</a>,
@@ -982,6 +1000,8 @@ Banding:
 <a href="../src/gxclutil.c">src/gxclutil.c</a>,
 <a href="../src/gxclzlib.c">src/gxclzlib.c</a>.
 
+</dl>
+
 <h3><a name="Device_drivers"></a>Device drivers</h3>
 
 <h4><a name="Internal_devices"></a>Internal devices</h4>
@@ -991,9 +1011,11 @@ There are a number of "devices" that serve internal purposes.  Some of these
 are meant to be real rendering targets; others are intended for use in
 device pipelines.  The rendering targets are:
 
-<ul>
+<dl>
 
-<li>Memory devices:
+<dt>
+Memory devices:
+<dd>
 <a href="../src/gdevmem.c">src/gdevmem.c</a>,
 <a href="../src/gdevmem.h">src/gdevmem.h</a>,
 <a href="../src/gdevm1.c">src/gdevm1.c</a>,
@@ -1012,11 +1034,15 @@ device pipelines.  The rendering targets are:
 <a href="../src/gsdevmem.c">src/gsdevmem.c</a>,
 <a href="../src/gxdevmem.h">src/gxdevmem.h</a>.
 
-<li>Alpha-related devices:
+<dt>
+Alpha-related devices:
+<dd>
 <a href="../src/gdevabuf.c">src/gdevabuf.c</a>,
 <a href="../src/gdevalph.c">src/gdevalph.c</a>.
 
-<li>Other devices:
+<dt>
+Other devices:
+<dd>
 <a href="../src/gdevdflt.c">src/gdevdflt.c</a>,
 <a href="../src/gdevhit.c">src/gdevhit.c</a>,
 <a href="../src/gdevht.c">src/gdevht.c</a>,
@@ -1028,18 +1054,22 @@ device pipelines.  The rendering targets are:
 <a href="../src/gxacpath.c">src/gxacpath.c</a>,
 <a href="../src/gzacpath.h">src/gzacpath.h</a>.
 
-</ul>
+</dl>
 
 <p>
 The forwarding devices meant for use in pipelines are:
 
-<ul>
+<dl>
 
-<li>The bounding box device:
+<dt>
+The bounding box device:
+<dd>
 <a href="../src/gdevbbox.h">src/gdevbbox.h</a>,
 <a href="../src/gdevbbox.c">src/gdevbbox.c</a>.
 
-<li>Clipping devices:
+<dt>
+Clipping devices:
+<dd>
 <a href="../src/gxclip.c">src/gxclip.c</a>,
 <a href="../src/gxclip.h">src/gxclip.h</a>,
 <a href="../src/gxclip2.c">src/gxclip2.c</a>,
@@ -1049,12 +1079,14 @@ The forwarding devices meant for use in pipelines are:
 <a href="../src/gxmclip.c">src/gxmclip.c</a>,
 <a href="../src/gxmclip.h">src/gxmclip.h</a>.
 
-<li>Other devices:
+<dt>
+Other devices:
+<dd>
 <a href="../src/gdevcmap.c">src/gdevcmap.c</a>,
 <a href="../src/gdevcmap.h">src/gdevcmap.h</a>,
 <a href="../src/gdevnfwd.c">src/gdevnfwd.c</a>.
 
-</ul>
+</dl>
 
 <h4><a name="High_level_devices"></a>High-level devices</h4>
 
@@ -1069,8 +1101,11 @@ therefore must implement the high-level operations.
 Currently, the CGM driver is raster-only.  If anyone cares seriously about
 CGM in the future, this driver should be upgraded to a higher level.
 
-<p>
+<dl>
+
+<dt>
 PostScript/PDF output device support:
+<dd>
 <a href="../src/gdevpsdf.h">src/gdevpsdf.h</a>,
 <a href="../src/gdevpsdi.c">src/gdevpsdi.c</a>,
 <a href="../src/gdevpsdp.c">src/gdevpsdp.c</a>,
@@ -1085,14 +1120,16 @@ PostScript/PDF output device support:
 <a href="../src/gdevpsfu.c">src/gdevpsfu.c</a>,
 <a href="../src/gdevpsfx.c">src/gdevpsfx.c</a>.
 
-<p>
+<dt>
 PostScript output device ([e]pswrite):
-<a href="../src/gdevps.c">src/gdevps.c</a>,
+<dd>
+b<a href="../src/gdevps.c">src/gdevps.c</a>,
 <a href="../src/gdevpsu.c">src/gdevpsu.c</a>,
 <a href="../src/gdevpsu.h">src/gdevpsu.h</a>.
 
-<p>
+<dt>
 PDF output device (pdfwrite):
+<dd>
 <a href="../src/gdevpdf.c">src/gdevpdf.c</a>,
 <a href="../src/gdevpdfb.c">src/gdevpdfb.c</a>,
 <a href="../src/gdevpdfc.c">src/gdevpdfc.c</a>,
@@ -1115,8 +1152,9 @@ PDF output device (pdfwrite):
 <a href="../src/gdevpdfw.c">src/gdevpdfw.c</a>,
 <a href="../src/gdevpdfx.h">src/gdevpdfx.h</a>.
 
-<p>
+<dt>
 PCL XL output device (pxlmono, pxlcolor):
+<dd>
 <a href="../src/gdevpx.c">src/gdevpx.c</a>,
 <a href="../src/gdevpxat.h">src/gdevpxat.h</a>,
 <a href="../src/gdevpxen.h">src/gdevpxen.h</a>,
@@ -1124,9 +1162,12 @@ PCL XL output device (pxlmono, pxlcolor):
 <a href="../src/gdevpxut.c">src/gdevpxut.c</a>,
 <a href="../src/gdevpxut.h">src/gdevpxut.h</a>.
 
-<p>
+<dt>
 Other high-level devices:
+<dd>
 <a href="../src/gdevtrac.c">src/gdevtrac.c</a>.
+
+</dl>
 
 <h4><a name="Other_maintained_drivers"></a>Other maintained drivers</h4>
 
@@ -1135,8 +1176,11 @@ The standard Ghostscript distribution includes a collection of drivers,
 mostly written by Aladdin Enterprises, that are "maintained" in the same
 sense as the Ghostscript core code.
 
-<p>
+<dl>
+
+<dt>
 Display drivers:
+<dd>
 <a href="../src/gdev8bcm.c">src/gdev8bcm.c</a>,
 <a href="../src/gdev8bcm.h">src/gdev8bcm.h</a>,
 <a href="../src/gdevegaa.asm">src/gdevegaa.asm</a>,
@@ -1152,8 +1196,9 @@ Display drivers:
 <a href="../src/gdevsvga.h">src/gdevsvga.h</a>,
 <a href="../src/gdevvglb.c">src/gdevvglb.c</a>.
 
-<p>
+<dt>
 Window system drivers:
+<dd>
 <a href="../src/gdevmswn.c">src/gdevmswn.c</a>,
 <a href="../src/gdevmswn.h">src/gdevmswn.h</a>,
 <a href="../src/gdevmsxf.c">src/gdevmsxf.c</a>,
@@ -1168,8 +1213,9 @@ Window system drivers:
 <a href="../src/gdevxres.c">src/gdevxres.c</a>,
 <a href="../src/gdevxxf.c">src/gdevxxf.c</a>.
 
-<p>
+<dt>
 Raster file output drivers:
+<dd>
 <a href="../src/gdevbit.c">src/gdevbit.c</a>,
 <a href="../src/gdevbmp.c">src/gdevbmp.c</a>,
 <a href="../src/gdevbmpa.c">src/gdevbmpa.c</a>,
@@ -1191,17 +1237,25 @@ Raster file output drivers:
 <a href="../src/gdevtifs.h">src/gdevtifs.h</a>,
 <a href="../src/gdevtfnx.c">src/gdevtfnx.c</a>.
 
-<p>
+<dt>
 Printer drivers:
+<dd>
+
+</dl>
 
 <h4><a name="Contributed_drivers"></a>Contributed drivers</h4>
 
 <h3><a name="PostScript_interpreter"></a>PostScript interpreter</h3>
 
-<p>
+<dl>
+
+<dt>
 Files:
+<dd>
 <a href="../src/interp.c">src/interp.c</a>,
 <a href="../src/interp.h">src/interp.h</a>.
+
+</dl>
 
 <h4><a name="Main_program"></a>Main program</h4>
 
@@ -1214,8 +1268,11 @@ completely different one designed for Windows DLLs.  These should be unified
 as soon as possible, since there are two steadily growing incompatible
 bodies of client code.
 
-<p>
+<dl>
+
+<dt>
 Files:
+<dd>
 <a href="../src/gs.c">src/gs.c</a>,
 <a href="../src/gserver.c">src/gserver.c</a>,
 <a href="../src/iccinit0.c">src/iccinit0.c</a>,
@@ -1228,6 +1285,8 @@ Files:
 <a href="../src/iminst.h">src/iminst.h</a>,
 <a href="../src/main.h">src/main.h</a>.
 
+</dl>
+
 <h4><a name="PostScript_interpreter_support"></a>Support</h4>
 
 <p>
@@ -1237,8 +1296,11 @@ href="#PostScript_interpreter_extensions">below</a>.
 <p>
 Data structures (stacks, names, dicts, contexts)
 
-<p>
+<dl>
+
+<dt>
 General data structures:
+<dd>
 <a href="../src/icontext.c">src/icontext.c</a>,
 <a href="../src/icontext.h">src/icontext.h</a>,
 <a href="../src/icstate.h">src/icstate.h</a>,
@@ -1257,8 +1319,9 @@ General data structures:
 <a href="../src/istack.h">src/istack.h</a>,
 <a href="../src/istkparm.h">src/istkparm.h</a>.
 
-<p>
+<dt>
 Specific stacks (dictionary, execution, operand):
+<dd>
 <a href="../src/dstack.h">src/dstack.h</a>,
 <a href="../src/estack.h">src/estack.h</a>,
 <a href="../src/iddstack.h">src/iddstack.h</a>,
@@ -1271,14 +1334,16 @@ Specific stacks (dictionary, execution, operand):
 <a href="../src/iostack.h">src/iostack.h</a>,
 <a href="../src/ostack.h">src/ostack.h</a>.
 
-<p>
+<dt>
 File implementation:
+<dd>
 <a href="../src/files.h">src/files.h</a>,
 <a href="../src/zfile.c">src/zfile.c</a>,
 <a href="../src/zfileio.c">src/zfileio.c</a>.
 
-<p>
+<dt>
 Streams and filters:
+<dd>
 <a href="../src/ifilter.h">src/ifilter.h</a>,
 <a href="../src/ifilter2.h">src/ifilter2.h</a>,
 <a href="../src/ifrpred.h">src/ifrpred.h</a>,
@@ -1296,8 +1361,9 @@ Streams and filters:
 <a href="../src/zfrsd.c">src/zfrsd.c</a>,
 <a href="../src/zfzlib.c">src/zfzlib.c</a>.
 
-<p>
+<dt>
 Miscellaneous support:
+<dd>
 <a href="../src/errors.h">src/errors.h</a>,
 <a href="../src/ghost.h">src/ghost.h</a>,
 <a href="../src/iconf.c">src/iconf.c</a>,
@@ -1314,10 +1380,15 @@ Miscellaneous support:
 <a href="../src/iutil2.h">src/iutil2.h</a>,
 <a href="../src/iutilasm.asm">src/iutilasm.asm</a>.
 
+</dl>
+
 <h4><a name="Scanning_parsing"></a>Scanning/parsing</h4>
 
-<p>
+<dl>
+
+<dt>
 Files:
+<dd>
 <a href="../src/btoken.h">src/btoken.h</a>,
 <a href="../src/ibnum.c">src/ibnum.c</a>,
 <a href="../src/ibnum.h">src/ibnum.h</a>,
@@ -1334,16 +1405,18 @@ Files:
 
 <h4><a name="Standard_operators"></a>Standard operators</h4>
 
-<p>
+<dt>
 Operator support:
+<dd>
 <a href="../src/oparc.h">src/oparc.h</a>,
 <a href="../src/opcheck.h">src/opcheck.h</a>,
 <a href="../src/opdef.h">src/opdef.h</a>,
 <a href="../src/oper.h">src/oper.h</a>,
 <a href="../src/opextern.h">src/opextern.h</a>.
 
-<p>
+<dt>
 Non-output-related operators:
+<dd>
 <a href="../src/ifunc.h">src/ifunc.h</a>,
 <a href="../src/ivmem2.h">src/ivmem2.h</a>,
 <a href="../src/zarith.c">src/zarith.c</a>,
@@ -1376,8 +1449,9 @@ Non-output-related operators:
 <a href="../src/zvmem.c">src/zvmem.c</a>,
 <a href="../src/zvmem2.c">src/zvmem2.c</a>.
 
-<p>
+<dt>
 Device-related operators:
+<dd>
 <a href="../src/zdevcal.c">src/zdevcal.c</a>,
 <a href="../src/zdevice.c">src/zdevice.c</a>,
 <a href="../src/zdevice2.c">src/zdevice2.c</a>,
@@ -1386,8 +1460,9 @@ Device-related operators:
 <a href="../src/ziodevs.c">src/ziodevs.c</a>,
 <a href="../src/zmedia2.c">src/zmedia2.c</a>.
 
-<p>
+<dt>
 Font and text related operators:
+<dd>
 <a href="../src/bfont.h">src/bfont.h</a>,
 <a href="../src/ccfont.h">src/ccfont.h</a>,
 <a href="../src/iccfont.c">src/iccfont.c</a>,
@@ -1422,8 +1497,9 @@ Font and text related operators:
 <a href="../src/zfont32.c">src/zfont32.c</a>,
 <a href="../src/zfont42.c">src/zfont42.c</a>.
 
-<p>
+<dt>
 Color, pattern, and halftone related operators:
+<dd>
 <a href="../src/icie.h">src/icie.h</a>,
 <a href="../src/icolor.h">src/icolor.h</a>,
 <a href="../src/icremap.h">src/icremap.h</a>,
@@ -1447,16 +1523,18 @@ Color, pattern, and halftone related operators:
 <a href="../src/zshade.c">src/zshade.c</a>,
 <a href="../src/ztrans.c">src/ztrans.c</a>.
 
-<p>
+<dt>
 Image-related operators:
+<dd>
 <a href="../src/iimage.h">src/iimage.h</a>,
 <a href="../src/iimage2.h">src/iimage2.h</a>,
 <a href="../src/zimage.c">src/zimage.c</a>,
 <a href="../src/zimage2.c">src/zimage2.c</a>,
 <a href="../src/zimage3.c">src/zimage3.c</a>.
 
-<p>
+<dt>
 Other graphics-related operators:
+<dd>
 <a href="../src/igstate.h">src/igstate.h</a>,
 <a href="../src/zdpnext.c">src/zdpnext.c</a>,
 <a href="../src/zdps.c">src/zdps.c</a>,
@@ -1468,6 +1546,8 @@ Other graphics-related operators:
 <a href="../src/zrop.c">src/zrop.c</a>,
 <a href="../src/ztrap.c">src/ztrap.c</a>,
 <a href="../src/zupath.c">src/zupath.c</a>.
+
+</dl>
 
 <h4><a name="Non_standard_operators"></a>Non-standard operators</h4>
 
@@ -1515,14 +1595,19 @@ files, the interpreter provides some procedures in <a
 href="../lib/pdf_main.ps">lib/pdf_main.ps</a> that are meant to be called
 from applications such as previewers.
 
-<p>
+<dl>
+
+<dt>
 Files:
+<dd>
 <a href="../lib/pdf_base.ps">lib/pdf_base.ps</a>,
 <a href="../lib/pdf_draw.ps">lib/pdf_draw.ps</a>,
 <a href="../lib/pdf_font.ps">lib/pdf_font.ps</a>,
 <a href="../lib/pdf_main.ps">lib/pdf_main.ps</a>,
 <a href="../lib/pdf_ops.ps">lib/pdf_ops.ps</a>,
 <a href="../lib/pdf_sec.ps">lib/pdf_sec.ps</a>.
+
+</dl>
 
 <h3><a name="Build_support"></a>Build support</h3>
 
@@ -1531,8 +1616,11 @@ Ghostscript's build procedure is somewhat unusual in that it compiles and
 then executes some support programs during the build process.  See the
 individual programs for information about what they do.
 
-<p>
+<dl>
+
+<dt>
 Files:
+<dd>
 <a href="../src/bench.c">src/bench.c</a>,
 <a href="../src/echogs.c">src/echogs.c</a>,
 <a href="../src/genarch.c">src/genarch.c</a>,
@@ -1541,12 +1629,17 @@ Files:
 <a href="../src/genht.c">src/genht.c</a>,
 <a href="../src/geninit.c">src/geninit.c</a>.
 
+</dl>
+
 <p>
 There are also a number of programs, scripts, and configuration files that
 exist only for the sake of the build process.
 
-<p>
+<dl>
+
+<dt>
 Files for PC environments:
+<dd>
 <a href="../src/bcc32.cfg">src/bcc32.cfg</a>,
 <a href="../src/cp.bat">src/cp.bat</a>,
 <a href="../src/cp.cmd">src/cp.cmd</a>,
@@ -1588,19 +1681,23 @@ Files for PC environments:
 <a href="../src/rm.cmd">src/rm.cmd</a>,
 <a href="../src/turboc.cfg">src/turboc.cfg</a>.
 
-<p>
+<dt>
 Files for OpenVMS:
+<dd>
 <a href="../src/append_l.com">src/append_l.com</a>,
 <a href="../src/copy_one.com">src/copy_one.com</a>,
 <a href="../src/rm_all.com">src/rm_all.com</a>,
 <a href="../src/rm_one.com">src/rm_one.com</a>.
 
-<p>
+<dt>
 Other files:
+<dd>
 <a href="../src/ansi2knr.c">src/ansi2knr.c</a>,
 <a href="../src/catmake">src/catmake</a>,
 <a href="../src/ccgs">src/ccgs</a>,
 <a href="../src/instcopy">src/instcopy</a>.
+
+</dl>
 
 <h3><a name="Utilities"></a>Utilities</h3>
 
@@ -1625,8 +1722,11 @@ should all be documented somewhere, but currently, many of them have man
 pages, a few have their own documentation in the doc directory, and some
 aren't documented at all.
 
-<p>
+<dl>
+
+<dt>
 Script files without PC versions:
+<dd>
 <a href="../lib/afmdiff.awk">lib/afmdiff.awk</a>,
 <a href="../lib/dvipdf">lib/dvipdf</a>,
 <a href="../lib/fixmswrd.pl">lib/fixmswrd.pl</a>,
@@ -1640,8 +1740,9 @@ Script files without PC versions:
 <a href="../lib/unix-lpr.sh">lib/unix-lpr.sh</a>,
 <a href="../lib/wftopfa">lib/wftopfa</a>.
 
-<p>
+<dt>
 Script files with PC versions:
+<dd>
 <a href="../lib/bdftops">lib/bdftops</a>,
 <a href="../lib/bdftops.bat">lib/bdftops.bat</a>,
 <a href="../lib/bdftops.cmd">lib/bdftops.cmd</a>,
@@ -1695,8 +1796,9 @@ Script files with PC versions:
 <a href="../lib/ps2ps.bat">lib/ps2ps.bat</a>,
 <a href="../lib/ps2ps.cmd">lib/ps2ps.cmd</a>.
 
-<p>
+<dt>
 Script files with only PC versions:
+<dd>
 <a href="../lib/gsndt.bat">lib/gsndt.bat</a>,
 <a href="../lib/gst.bat">lib/gst.bat</a>,
 <a href="../lib/gstt.bat">lib/gstt.bat</a>,
@@ -1706,6 +1808,8 @@ Script files with only PC versions:
 <a href="../lib/lpr2.bat">lib/lpr2.bat</a>,
 <a href="../lib/pftogsf.bat">lib/pftogsf.bat</a>,
 <a href="../lib/wmakebat.bat">lib/wmakebat.bat</a>.
+
+</dl>
 
 <hr>
 
@@ -1814,10 +1918,13 @@ descriptor for it, and use that descriptor to allocate it.  The process of
 creating accurate descriptors for all structures was long and painful, and
 accounted for many hard-to-diagnose bugs.
 
-<p>
+<dl>
+<dt>
 Files:
+<dd>
 <a href="../src/gsstruct.h">src/gsstruct.h</a>,
 <a href="../src/gsstype.h">src/gsstype.h</a>.
+</dl>
 
 <h4><a name="Garbage_collection"></a>Garbage collection</h4>
 
@@ -1839,11 +1946,14 @@ described <a href="#Interpreter_GC">below</a>;
 <li>A "non" garbage collector that only merges adjacent free blocks.
 </ul>
 
-<p>
+<dl>
+<dt>
 Files:
+<dd>
 <a href="../src/gsgc.h">src/gsgc.h</a>,
 <a href="../src/gsnogc.c">src/gsnogc.c</a>,
 <a href="../src/gsnogc.h">src/gsnogc.h</a>.
+</dl>
 
 <h4><a name="Movability"></a>Movability</h4>
 
@@ -1891,13 +2001,16 @@ interpreter: the concept of stable allocators.  See the section on <a
 href="#save_forgetsave_restore"><b><tt>save</tt></b> and
 <b><tt>restore</tt></b></a> below for details.
 
-<p>
+<dl>
+<dt>
 Files:
+<dd>
 <a href="../src/gsmemraw.h">src/gsmemraw.h</a>,
 <a href="../src/gsmemory.c">src/gsmemory.c</a>,
 <a href="../src/gsmemory.h">src/gsmemory.h</a>,
 <a href="../src/gsstruct.h">src/gsstruct.h</a>,
 <a href="../src/gsstype.h">src/gsstype.h</a>.
+</dl>
 
 <h3><a name="Freeing_storage"></a>Freeing storage</h3>
 
@@ -1947,9 +2060,12 @@ referenced only from a small set of pointers.  Note that reference counting
 cannot free objects that are involved in a pointer cycle (e.g., A -> B -> C
 -> A).
 
-<p>
+<dl>
+<dt>
 Files:
+<dd>
 <a href="../src/gsrefct.h">src/gsrefct.h</a>.
+</dl>
 
 <h4><a name="Real_garbage_collection"></a>(Real) garbage collection</h4>
 
@@ -1966,10 +2082,13 @@ As mentioned <a href="#Parent_hierarchy">above</a>, the ultimate ancestor of
 all allocators with an expandable pool is one that calls
 <b><tt>malloc</tt></b>.
 
-<p>
+<dl>
+<dt>
 Files:
+<dd>
 <a href="../src/gsmalloc.h">src/gsmalloc.h</a>,
 <a href="../src/gsmalloc.c">src/gsmalloc.c</a>.
+</dl>
 
 <h4><a name="Locking"></a>Locking</h4>
 
@@ -1982,10 +2101,13 @@ of a <em>wrapper</em> allocator, that simply forwards all calls to a
 <em>target</em> allocator under protection of a mutex.  Using the wrapper
 technique, any allocator can be made thread-safe.
 
-<p>
+<dl>
+<dt>
 Files:
+<dd>
 <a href="../src/gsmemlok.h">src/gsmemlok.h</a>,
 <a href="../src/gsmemlok.c">src/gsmemlok.c</a>.
+</dl>
 
 <h4><a name="Retrying"></a>Retrying</h4>
 
@@ -1997,10 +2119,13 @@ to free memory, then ask for the original allocation to be retried.  For
 example, such a procedure can wait for a queue to empty, or can free memory
 occupied by caches.
 
-<p>
+<dl>
+<dt>
 Files:
+<dd>
 <a href="../src/gsmemret.h">src/gsmemret.h</a>,
 <a href="../src/gsmemret.c">src/gsmemret.c</a>.
+</dl>
 
 <h3><a name="Standard_implementation"></a>Standard implementation</h3>
 
@@ -2025,12 +2150,15 @@ interpreter to aid in the efficient allocation of PostScript composite
 objects (arrays and dictionaries).  See the section on <a
 href="#Refs">Refs</a> below for details.
 
-<p>
+<dl>
+<dt>
 Files:
+<dd>
 <a href="../src/gsalloc.c">src/gsalloc.c</a>,
 <a href="../src/gsalloc.h">src/gsalloc.h</a>,
 <a href="../src/gxalloc.h">src/gxalloc.h</a>,
 <a href="../src/gxobj.h">src/gxobj.h</a>.
+</dl>
 
 <h3><a name="PostScript_interpreter_extensions"></a>PostScript interpreter extensions</h3>
 
@@ -2049,10 +2177,13 @@ href="../src/iref.h">src/iref.h</a>; packed refs, used for the elements of
 packed arrays, are defined in <a href="../src/ipacked.h">src/ipacked.h</a>.
 See those files for detailed information.
 
-<p>
+<dl>
+<dt>
 Files:
+<dd>
 <a href="../src/ipacked.h">src/ipacked.h</a>,
 <a href="../src/iref.h">src/iref.h</a>.
+</dl>
 
 <p>
 The PLRM calls for two types of "virtual memory" (VM) space: global and
@@ -2076,9 +2207,12 @@ href="../src/ivmspace.h">src/ivmspace.h</a>, <a
 href="../src/iref.h">src/iref.h</a>, and <a
 href="../src/store.h">src/store.h</a> for details.
 
-<p>
+<dl>
+<dt>
 Files:
+<dd>
 <a href="../src/ivmspace.h">src/ivmspace.h</a>.
+</dl>
 
 <p>
 PostScript composite objects (arrays and dictionaries) are usually small.
@@ -2098,8 +2232,10 @@ composite object, and therefore can point into the middle of a memory
 manager object.  This requires special handling by the garbage collector (<a
 href="#Interpreter_GC">q.v.</a>).
 
-<p>
+<dl>
+<dt>
 Files:
+<dd>
 <a href="../src/ialloc.c">src/ialloc.c</a>,
 <a href="../src/ialloc.h">src/ialloc.h</a>,
 <a href="../src/iastate.h">src/iastate.h</a>,
@@ -2107,6 +2243,7 @@ Files:
 <a href="../src/ilocate.c">src/ilocate.c</a>,
 <a href="../src/imemory.h">src/imemory.h</a>,
 <a href="../src/istruct.h">src/istruct.h</a>.
+</dl>
 
 <h4><a name="save_forgetsave_restore"></a>save/.forgetsave/restore</h4>
 
@@ -2122,13 +2259,16 @@ make work, but it's in the code now, and should be maintained.  See the
 extensive comments in <a href="../src/isave.c">src/isave.c</a> for more
 information about how these operations work.
 
-<p>
+<dl>
+<dt>
 Files:
+<dd>
 <a href="../src/idosave.h">src/idosave.h</a>,
 <a href="../src/isave.c">src/isave.c</a>,
 <a href="../src/isave.h">src/isave.h</a>,
 <a href="../src/isstate.h">src/isstate.h</a>,
 <a href="../src/store.h">src/store.h</a>.
+</dl>
 
 <h4><a name="Stable_allocators"></a>Stable allocators</h4>
 
@@ -2220,14 +2360,17 @@ ref at the end for this purpose.
 <li>Strings use a separate relocation table.
 </ul>
 
-<p>
+<dl>
+<dt>
 Files:
+<dd>
 <a href="../src/igc.c">src/igc.c</a>,
 <a href="../src/igc.h">src/igc.h</a>,
 <a href="../src/igcref.c">src/igcref.c</a>,
 <a href="../src/igcstr.c">src/igcstr.c</a>,
 <a href="../src/igcstr.h">src/igcstr.h</a>,
 <a href="../src/ireclaim.c">src/ireclaim.c</a>.
+</dl>
 
 <hr>
 
@@ -2262,10 +2405,13 @@ floating point representation, but it can't determine whether or not a
 compiler supports a particular feature, because if a feature is absent, the
 compilation may fail.
 
-<p>
+<dl>
+<dt>
 Files:
+<dd>
 <a href="../src/genarch.c">src/genarch.c</a>,
 <a href="../obj/arch.h">obj/arch.h</a>.
+</dl>
 
 <h4><a name="Library_headers"></a>Library headers</h4>
 
@@ -2282,8 +2428,10 @@ file, or in some cases substitute Ghostscript's own code for a missing
 facility.  You may need to edit these files when moving to platforms with
 unusually non-standard libraries.
 
-<p>
+<dl>
+<dt>
 Files:
+<dd>
 <a href="../src/close_.h">src/close_.h</a>,
 <a href="../src/ctype_.h">src/ctype_.h</a>,
 <a href="../src/dirent_.h">src/dirent_.h</a>,
@@ -2303,6 +2451,7 @@ Files:
 <a href="../src/vmsmath.h">src/vmsmath.h</a>,
 <a href="../src/windows_.h">src/windows_.h</a>,
 <a href="../src/x_.h">src/x_.h</a>.
+</dl>
 
 <p>
 It has been suggested that the GNU 'configure' scripts do the above better,
@@ -2322,16 +2471,20 @@ Ghostscript that the implementations of these APIs are the only .c files
 that are linked into an executable depending on the platform (as opposed to
 depending on choices of drivers or optional features).
 
-<p>
+<dl>
+
+<dt>
 API:
+<dd>
 <a href="../src/gp.h">src/gp.h</a>,
 <a href="../src/gpcheck.h">src/gpcheck.h</a>,
 <a href="../src/gpgetenv.h">src/gpgetenv.h</a>,
 <a href="../src/gpmisc.h">src/gpmisc.h</a>,
 <a href="../src/gpsync.h">src/gpsync.h</a>.
 
-<p>
+<dt>
 Implementation files shared among multiple platforms:
+<dd>
 <a href="../src/gp_getnv.c">src/gp_getnv.c</a>,
 <a href="../src/gp_mktmp.c">src/gp_mktmp.c</a>,
 <a href="../src/gp_nsync.c">src/gp_nsync.c</a>,
@@ -2339,8 +2492,9 @@ Implementation files shared among multiple platforms:
 <a href="../src/gp_strdl.c">src/gp_strdl.c</a>.
 <a href="../src/gpmisc.c">src/gpmisc.c</a>,
 
-<p>
+<dt>
 Platform-specific implementation files:
+<dd>
 <a href="../src/gp_dosfe.c">src/gp_dosfe.c</a>,
 <a href="../src/gp_dosfs.c">src/gp_dosfs.c</a>,
 <a href="../src/gp_dvx.c">src/gp_dvx.c</a>,
@@ -2362,6 +2516,8 @@ Platform-specific implementation files:
 <a href="../src/gp_wgetv.c">src/gp_wgetv.c</a>,
 <a href="../src/gp_win32.c">src/gp_win32.c</a>,
 <a href="../src/gp_wsync.c">src/gp_wsync.c</a>.
+
+</dl>
 
 <h4><a name="Makefiles"></a>Makefiles</h4>
 
@@ -2467,12 +2623,16 @@ often require editing to deal with differing library path names and/or
 library names.  For details, see <a href="Make.htm#Unix_build">the Unix
 section</a> of the documentation for building Ghostscript.
 
-<p>
+<dl>
+
+<dt>
 Library test program:
+<dd>
 <a href="../src/gslib.c">src/gslib.c</a>.
 
-<p>
+<dt>
 Platform-independent makefiles:
+<dd>
 <a href="../src/cfonts.mak">src/cfonts.mak</a>,
 <a href="../src/contrib.mak">src/contrib.mak</a>,
 <a href="../src/devs.mak">src/devs.mak</a>,
@@ -2485,8 +2645,9 @@ Platform-independent makefiles:
 <a href="../src/wmin.mak">src/wmin.mak</a>,
 <a href="../src/zlib.mak">src/zlib.mak</a>.
 
-<p>
+<dt>
 Shared platform-dependent makefiles:
+<dd>
 <a href="../src/dvx-head.mak">src/dvx-head.mak</a>,
 <a href="../src/dvx-tail.mak">src/dvx-tail.mak</a>,
 <a href="../src/msvccmd.mak">src/msvccmd.mak</a>,
@@ -2502,6 +2663,8 @@ Shared platform-dependent makefiles:
 <a href="../src/winint.mak">src/winint.mak</a>,
 <a href="../src/winlib.mak">src/winlib.mak</a>,
 <a href="../src/winplat.mak">src/winplat.mak</a>.
+
+</dl>
 
 <h3><a name="Coding"></a>Coding</h3>
 
@@ -2524,10 +2687,13 @@ always defined in a .h file, either automatically in <b><tt>arch.h</tt></b>,
 or explicitly in a <em>xxx</em><b><tt>_.h</tt></b> file, as described in
 earlier sections.
 
-<p>
+<dl>
+<dt>
 Files:
+<dd>
 <a href="../src/std.h">src/std.h</a>,
 <a href="../src/stdpre.h">src/stdpre.h</a>.
+</dl>
 
 <h4><a name="Implicit_dependencies"></a>Implicit dependencies</h4>
 
@@ -2583,7 +2749,10 @@ standard Ghostscript package).
 
 </ul>
 
+<dl>
+<dt>
 MS Windows files:
+<dd>
 <a href="../src/dpmainc.c">src/dpmainc.c</a>,
 <a href="../src/dwdll.cpp">src/dwdll.cpp</a>,
 <a href="../src/dwdll.h">src/dwdll.h</a>,
@@ -2602,6 +2771,7 @@ MS Windows files:
 <a href="../src/dwuninst.cpp">src/dwuninst.cpp</a>,
 <a href="../src/dwuninst.h">src/dwuninst.h</a>,
 <a href="../src/gs16spl.c">src/gs16spl.c</a>.
+</dl>
 
 <hr>
 
@@ -2631,14 +2801,16 @@ the procedures in <a href="../src/idebug.c">src/idebug.c</a> (for the
 PostScript interpreter) and the <b><tt>debug_dump_</tt></b> procedures in <a
 href="../src/gsmisc.c">src/gsmisc.c</a>.
 
-<p>
+<dl>
+<dt>
 Files:
+<dd>
 <a href="Use.htm#Debugging">doc/Use.htm#Debugging</a>,
 <a href="../src/gdebug.h">src/gdebug.h</a>,
 <a href="../src/gsmdebug.h">src/gsmdebug.h</a>,
 <a href="../src/idebug.h">src/idebug.h</a>,
 <a href="../src/idebug.c">src/idebug.c</a>.
-
+</dl>
 
 <!-- [2.0 end contents] ==================================================== -->
 
