@@ -651,7 +651,10 @@ zfilename(i_ctx_t *i_ctx_p)
 	return_error(e_VMerror);
     memcpy(str, fname.data, fname.size);
     push(1);			/* can't fail */
-    make_const_string(op - 1, a_all, fname.size, str);
+    make_const_string(op - 1, 
+		      a_all | imemory_space(imemory), 
+		      fname.size, 
+		      str);
     make_true(op);
     return 0;
 }
