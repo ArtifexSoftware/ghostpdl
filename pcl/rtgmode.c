@@ -178,7 +178,6 @@ pcl_enter_graphics_mode(
     uint                    src_wid, src_hgt;
     int                     rot;
     int                     code = 0;
-    bool                    marked;
 
     /*
      * Check if the raster is to be clipped fully; see rtrstst.h for details.

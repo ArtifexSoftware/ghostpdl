@@ -94,7 +94,7 @@ struct hpgl_args_s {
 				/* a command, the letter (0-25) if we have */
     bool done;			/* true if we've seen an argument */
 				/* terminator */
-    hpgl_command_definition_t *command; /* command being executed, */
+    const hpgl_command_definition_t *command; /* command being executed, */
 				/* 0 if none */
     jmp_buf exit_to_parser;	/* longjmp here if we ran out of data */
 				/* while scanning an argument, or we */

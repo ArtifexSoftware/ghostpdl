@@ -37,7 +37,7 @@ hpgl_register_command(hpgl_parser_state_t *pgl_parser_state,
     else if ( index != 0 && pgl_parser_state->hpgl_command_list[index] == pcmd )
 	    ;
     else
-	pgl_parser_state->hpgl_command_list[pgl_parser_state->hpgl_command_next_index = ++index] = pcmd;
+	pgl_parser_state->hpgl_command_list[pgl_parser_state->hpgl_command_next_index = ++index] = (hpgl_command_definition_t *)pcmd;
     *pindex = index;
     return (prev != 0 && prev != index);
 }

@@ -19,6 +19,7 @@
 #include "pcursor.h"
 #include "pcpalet.h"
 #include "pcfrgrnd.h"
+#include "pccrd.h"
 #include "gsparam.h"
 #include "gsdevice.h"
 #include "gxcmap.h"

@@ -17,6 +17,8 @@
 #include "gsuid.h"
 #include "gsmatrix.h"
 #include "gspcolor.h"
+#include "gxdcolor.h"
+#include "gxpcolor.h"
 #include "pccid.h"
 #include "pcfont.h"
 #include "pcpalet.h"
