@@ -113,11 +113,11 @@
   readninit
 
   (1) { f read4 =only } (least # objs/page) ptag
-  (2) { f read4 =only } (offset of p. 1 object) ptag
+  (2) { f read4 =only } (offset of p. 1 object (+PHS length if beyond PHS)) ptag
   (3) { f read2 dup =only /nb3 exch def } (# bits for # objs/page delta) ptag
   (4) { f read4 =only } (least # bytes/page) ptag
   (5) { f read2 dup =only /nb5 exch def } (# bits for # bytes/page delta) ptag
-  (6) { f read4 =only } (least content stream offset) ptag
+  (6) { f read4 =only } (least content stream offset-in-page) ptag
   (7) { f read2 dup =only /nb7 exch def } (# bits for content stream offset delta) ptag
   (8) { f read4 =only } (least content stream length) ptag
   (9) { f read2 dup =only /nb9 exch def } (# bits for content stream length delta) ptag
@@ -131,7 +131,7 @@
   (*3) { [ npages { f nb10 readn } repeat ] dup ==only /nso exch def } (# of shared obj refs (see 10)) ptag
   (*4) { [ nso { [ exch { f nb11 readn } repeat ] } forall ] ==only } (shared obj indices (see 11)) ptag
   (*5) { [ nso { [ exch { f nb12 readn } repeat ] } forall ] ==only } (shared obj ref pos numerators (see 12)) ptag
-  (*6) { [ npages { f nb7 readn } repeat ] ==only } (content stream offset deltas (see 6,7)) ptag
+  (*6) { [ npages { f nb7 readn } repeat ] ==only } (content stream offset-in-page deltas (see 6,7)) ptag
   (*7) { [ npages { f nb9 readn } repeat ] ==only } (content stream length deltas (see 8,9)) ptag
 
   end		% temp dict
@@ -146,7 +146,7 @@
   readninit
 
   (1) { f read4 =only } (first shared obj #) ptag
-  (2) { f read4 =only } (first shared obj offset) ptag
+  (2) { f read4 =only } (first shared obj offset (+PHS length if beyond PHS)) ptag
   (3) { f read4 dup =only /n3 exch def } (# of p. 1 shared objs) ptag
   (4) { f read4 dup =only /n4 exch def } (total # of shared objs) ptag
   (5) { f read2 dup =only /nb5 exch def } (# bits for # of shared objs/group) ptag
