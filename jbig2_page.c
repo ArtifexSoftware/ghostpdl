@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_page.c,v 1.13 2002/07/20 17:23:15 giles Exp $
+    $Id: jbig2_page.c,v 1.14 2002/08/05 22:46:00 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -164,8 +164,6 @@ jbig2_parse_page_info (Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment
 int
 jbig2_complete_page (Jbig2Ctx *ctx)
 {
-    uint32_t page_number = ctx->pages[ctx->current_page].number;
-        
     ctx->pages[ctx->current_page].state = JBIG2_PAGE_COMPLETE;
 
     return 0;
