@@ -1,22 +1,22 @@
 <html><head>
-<title>Ghostscript 6.24 change history as of 2000-09-19 14:39:07</title>
+<title>Ghostscript 6.30 change history as of 2000-10-03 22:26:50</title>
 </head><body>
 
 <blockquote><ul>
-<li><a href="#6.24 Documentation">Documentation</a>,
-    <a href="#6.24 Procedures">Procedures</a>,
-    <a href="#6.24 Utilities">Utilities</a>,
-    <a href="#6.24 Drivers">Drivers</a>,
-    <a href="#6.24 PDF writer">PDF writer</a>,
-    <a href="#6.24 Interpreter (PDF)">Interpreter (PDF)</a>,
-    <a href="#6.24 Interpreter">Interpreter</a>,
-    <a href="#6.24 Streams">Streams</a>,
-    <a href="#6.24 Library">Library</a>,
-    <a href="#6.24 ???Other???">???Other???</a>
+<li><a href="#6.30 Documentation">Documentation</a>,
+    <a href="#6.30 Procedures">Procedures</a>,
+    <a href="#6.30 Utilities">Utilities</a>,
+    <a href="#6.30 Drivers">Drivers</a>,
+    <a href="#6.30 PDF writer">PDF writer</a>,
+    <a href="#6.30 Interpreter (PDF)">Interpreter (PDF)</a>,
+    <a href="#6.30 Interpreter">Interpreter</a>,
+    <a href="#6.30 Streams">Streams</a>,
+    <a href="#6.30 Library">Library</a>,
+    <a href="#6.30 ???Other???">???Other???</a>
 </ul>
 </ul></blockquote>
 
-<h2><a name="6.24 Documentation"></a>Documentation</h2><pre>
+<h2><a name="6.30 Documentation"></a>Documentation</h2><pre>
 
 Fixes problems:
 	- the "User parameters" section was incorrectly titled "Device
@@ -95,7 +95,60 @@ Adds a paragraph explaining why and how the AFPL is not an Open Source /
 Free Software license. (doc/PUBLIC [1.2], doc/Public.htm [1.2]: 2000/09/18
 22:26:32 lpd)
 
-</pre><h2><a name="6.24 Procedures"></a>Procedures</h2><pre>
+Updates the license notices to reflect the name change from Aladdin
+Ghostscript to AFPL Ghostscript; also updates many internal references from
+Aladdin Ghostscript to AFPL Ghostscript, and from Aladdin Enterprises to
+artofcode LLC. (doc/Bug-form.htm [1.8], doc/Bug-info.htm [1.6],
+doc/C-style.htm [1.3], doc/Changes.htm [1.17], doc/Commprod.htm [1.2],
+doc/Copying.htm [1.2], doc/Current.htm [1.2], doc/DLL.htm [1.2],
+doc/Devices.htm [1.12], doc/Drivers.htm [1.7], doc/Fonts.htm [1.7],
+doc/Helpers.htm [1.3], doc/History1.htm [1.2], doc/History2.htm [1.2],
+doc/History3.htm [1.2], doc/History4.htm [1.2], doc/History5.htm [1.4],
+doc/History6.htm [1.12], doc/Htmstyle.htm [1.5], doc/Install.htm [1.6],
+doc/Language.htm [1.18], doc/Lib.htm [1.2], doc/Maintain.htm [1.3],
+doc/Make.htm [1.14], doc/New-user.htm [1.11], doc/News.htm [1.62],
+doc/PUBLIC [1.3], doc/Projects.htm [1.17], doc/Ps2epsi.htm [1.3],
+doc/Ps2pdf.htm [1.17], doc/Psfiles.htm [1.7], doc/Public.htm [1.3],
+doc/Readme.htm [1.12], doc/Release.htm [1.18], doc/Source.htm [1.2],
+doc/Tester.htm [1.2], doc/Unix-lpr.htm [1.2], doc/Use.htm [1.12],
+doc/Xfonts.htm [1.2], doc/gs-vms.hlp [1.2]: 2000/09/19 21:37:50 lpd)
+
+Updates README from Readme.htm. (doc/README [1.3]: 2000/09/19 23:39:31 lpd)
+
+Changes the default Windows installation directory from c:\Aladdin to c:\gs.
+(doc/Install.htm [1.7], doc/News.htm [1.63]: 2000/09/22 05:32:17 lpd)
+
+Replaces the OpenVMS installation instructions with an improved set
+contributed by a user. (doc/Helpers.htm [1.4], doc/Install.htm [1.8]:
+2000/09/22 20:33:19 lpd)
+
+Adds a project for fixing PDF files that have gotten mangled by EOL
+conversion. (doc/Projects.htm [1.18]: 2000/09/25 14:40:37 lpd)
+
+Adds a reference to PreScript, another free text extraction program based on
+Ghostscript. (doc/New-user.htm [1.12]: 2000/09/26 01:04:40 lpd)
+
+Documentation changes in preparation for 6.30 release. Replaced some contact
+information, updated version numbers. (doc/Bug-form.htm [1.9],
+doc/Bug-info.htm [1.7], doc/Commprod.htm [1.3], doc/Copying.htm [1.3],
+doc/Current.htm [1.3], doc/DLL.htm [1.3], doc/Devices.htm [1.13],
+doc/Drivers.htm [1.8], doc/Fonts.htm [1.8], doc/Helpers.htm [1.5],
+doc/History1.htm [1.3], doc/History2.htm [1.3], doc/History3.htm [1.3],
+doc/History4.htm [1.3], doc/History5.htm [1.5], doc/History6.htm [1.13],
+doc/Htmstyle.htm [1.6], doc/Install.htm [1.9], doc/Language.htm [1.19],
+doc/Lib.htm [1.3], doc/Maintain.htm [1.4], doc/Make.htm [1.15],
+doc/New-user.htm [1.13], doc/News.htm [1.64], doc/Projects.htm [1.19],
+doc/Ps2epsi.htm [1.4], doc/Ps2pdf.htm [1.18], doc/Psfiles.htm [1.8],
+doc/README [1.4], doc/Readme.htm [1.13], doc/Release.htm [1.19],
+doc/Source.htm [1.3], doc/Tester.htm [1.3], doc/Unix-lpr.htm [1.3],
+doc/Use.htm [1.13], doc/Xfonts.htm [1.3], doc/gs-vms.hlp [1.3]: 2000/10/04
+04:33:27 raph)
+
+Bring version numbers and dates up to date. Small bug fix in toolbin/pre to
+make it able to handle months with leading zeros. (doc/C-style.htm [1.4],
+doc/Helpers.htm [1.6], man/ps2ps.1 [1.7]: 2000/10/04 05:18:54 raph)
+
+</pre><h2><a name="6.30 Procedures"></a>Procedures</h2><pre>
 
 Fixes problems:
 	- The PostScript image writing drivers (psmono/gray/rgb) didn't set
@@ -114,6 +167,12 @@ the PostScript LL3 features needed to interpret PDF 1.3 et seq.
 (int.mak [1.33]: 2000/09/07 06:35:06 lpd)
 	- Cleans up some missing and incorrect dependencies.
 (devs.mak [1.33], int.mak [1.34], lib.mak [1.35]: 2000/09/11 04:43:09 lpd)
+	- The definition of PSRCDIR was inconsistent with the definition of
+PVERSION. (openvms.mak [1.5]: 2000/09/22 04:05:40 lpd)
+	- The pgnm and pnm drivers didn't properly detect the presence of
+gray shades or color in images, sometimes causing gray or color information
+to be lost in the output. (fix contributed by a user) (devs.mak [1.35]:
+2000/09/23 04:52:56 lpd)
 
 Initializes files for the 6.24 fileset. (version.mak [1.19]: 2000/08/09
 16:54:02 lpd)
@@ -205,11 +264,39 @@ version.mak [1.21], watc.mak [1.5], watclib.mak [1.5], watcw32.mak [1.4],
 wccommon.mak [1.3], wctail.mak [1.2], winint.mak [1.5], winlib.mak [1.4],
 winplat.mak [1.2], wmin.mak [1.2], zlib.mak [1.2]: 2000/09/19 19:00:52 lpd)
 
-</pre><h2><a name="6.24 Utilities"></a>Utilities</h2><pre>
+Add commands to make the target GLGENDIR and BINDIR directories so that a
+clean build works automatically. (msvctail.mak [1.5]: 2000/09/21 15:14:37
+rayjj)
+
+Changes the default Windows installation directory from c:\Aladdin to c:\gs.
+(dwsetup.rc [1.3]: 2000/09/22 05:32:17 lpd)
+
+Changes the default Windows Start Menu Folder from "Aladdin" to
+"Ghostscript". (dwsetup.rc [1.4]: 2000/09/22 05:35:02 lpd)
+
+Updates the makefiles from libpng version 1.0.5 to 1.0.8.
+(all-arch.mak [1.6], bcwin32.mak [1.4], dvx-gcc.mak [1.5], libpng.mak [1.3],
+msvc32.mak [1.6], msvclib.mak [1.6], openvms.mak [1.6], openvms.mmk [1.6],
+os2.mak [1.8], ugcclib.mak [1.5], unix-gcc.mak [1.8], unixansi.mak [1.6],
+unixtrad.mak [1.6], watc.mak [1.6], watclib.mak [1.6], watcw32.mak [1.5]:
+2000/09/25 15:06:28 lpd)
+
+Documentation changes in preparation for 6.30 release. Replaced some contact
+information, updated version numbers. (version.mak [1.22]: 2000/10/04
+04:33:29 raph)
+
+Bring version numbers and dates up to date. Small bug fix in toolbin/pre to
+make it able to handle months with leading zeros. (toolbin/pre [1.8]:
+2000/10/04 05:18:54 raph)
+
+</pre><h2><a name="6.30 Utilities"></a>Utilities</h2><pre>
 
 Fixes problems:
 	- ps2pdf13.cmd set the output PDF version to 1.2 rather than 1.3.
 (lib/ps2pdf13.cmd [1.2]: 2000/09/10 19:32:44 lpd)
+	- The OpenVMS Fontmap had gotten badly out of date; specifically, it
+didn't reference the URW++ fonts distributed with Ghostscript.
+(lib/Fontmap.VMS [1.2]: 2000/09/22 03:30:21 lpd)
 
 Puts the logic for detecting garbage after %%EOF (and some similar invalid
 constructs) back into the main code, making it produce a message on stderr.
@@ -272,7 +359,13 @@ Updates the license notices to reflect the name change from Aladdin
 Ghostscript to AFPL Ghostscript, as well as some internal references to the
 program name. (zdosio.c [1.2]: 2000/09/19 19:00:53 lpd)
 
-</pre><h2><a name="6.24 Drivers"></a>Drivers</h2><pre>
+When GSC environment variable is not set, gssetgs.bat fails to set it, which
+makes ps2pdf.bat and several other scripts fail on Windows NT 4.0 with the
+following misleading error message: "_.at" This file doesn't have a program
+associated with it ... This change fixes the problem.
+(lib/gssetgs.bat [1.2]: 2000/10/01 15:25:37 alexcher)
+
+</pre><h2><a name="6.30 Drivers"></a>Drivers</h2><pre>
 
 Fixes problems:
 	- The PostScript image writing drivers (psmono/gray/rgb) didn't set
@@ -299,6 +392,10 @@ be freed while the device still referred to them. (gdevpsdp.c [1.7]:
 	- Works around a gcc code generation bug that sometimes caused gray
 colors to be written out as RGB in PDF files. (Minor performance issue
 only.) (gdevpsdu.c [1.6]: 2000/09/11 21:12:12 lpd)
+	- The pgnm and pnm drivers didn't properly detect the presence of
+gray shades or color in images, sometimes causing gray or color information
+to be lost in the output. (fix contributed by a user) (gdevpbm.c [1.3]:
+2000/09/23 04:52:57 lpd)
 
 In the X Windows driver, changes XFlush() to XSync(False) so that updates
 will actually complete before the command prompt appears. (gdevx.c [1.5],
@@ -366,7 +463,7 @@ Updates the license notices to reflect the name change from Aladdin
 Ghostscript to AFPL Ghostscript, as well as some internal references to the
 program name. (x_.h [1.2]: 2000/09/19 19:00:52 lpd)
 
-</pre><h2><a name="6.24 PDF writer"></a>PDF writer</h2><pre>
+</pre><h2><a name="6.30 PDF writer"></a>PDF writer</h2><pre>
 
 Fixes problems:
 	- The SrcPg entry in ANN pdfmarks was (effectively) ignored. (bug
@@ -401,7 +498,7 @@ gdevpdfm.c [1.7], gdevpdfo.c [1.5], gdevpdfo.h [1.5], gdevpdfp.c [1.10],
 gdevpdfr.c [1.4], gdevpdft.c [1.16], gdevpdfu.c [1.12], gdevpdfv.c [1.3],
 gdevpdfw.c [1.5], gdevpdfx.h [1.22]: 2000/09/19 19:00:17 lpd)
 
-</pre><h2><a name="6.24 Interpreter (PDF)"></a>Interpreter (PDF)</h2><pre>
+</pre><h2><a name="6.30 Interpreter (PDF)"></a>Interpreter (PDF)</h2><pre>
 
 Fixes problems:
 	- PDF files with embedded CID fonts with FontName != BaseFont
@@ -465,7 +562,7 @@ references. (lib/pdf_base.ps [1.10], lib/pdf_draw.ps [1.22],
 lib/pdf_font.ps [1.12], lib/pdf_main.ps [1.19], lib/pdf_ops.ps [1.15],
 lib/pdf_sec.ps [1.2]: 2000/09/19 18:29:11 lpd)
 
-</pre><h2><a name="6.24 Interpreter"></a>Interpreter</h2><pre>
+</pre><h2><a name="6.30 Interpreter"></a>Interpreter</h2><pre>
 
 Fixes problems:
 	- The FlateEncode and zlibEncode filters didn't implement the
@@ -492,6 +589,15 @@ it no longer worked in configurations without a PostScript interpreter.
 Fixing this required factoring out the stdin/out/err IODevices and providing
 an implementation that didn't reference the PostScript interpreter.
 (ziodev.c [1.2], ziodevs.c [1.1]: 2000/09/07 06:14:45 lpd)
+	- .LocalDefaults was stored in a local array in the (global)
+ColorSpace category dictionary, causing memory anomalies with multiple
+contexts. (lib/gs_ll3.ps [1.6], lib/gs_res.ps [1.13]: 2000/09/20 07:15:11
+lpd)
+	- A missing cast caused the picky OpenVMS compiler to complain.
+(zdevcal.c [1.3]: 2000/09/22 04:18:17 lpd)
+	- Attempting to show an undefined character code in a TrueType font
+with no .notdef entry caused an error. (lib/gs_ttf.ps [1.8]: 2000/09/23
+18:47:06 lpd)
 
 Initializes files for the 6.24 fileset. (lib/gs_init.ps [1.21]: 2000/08/09
 16:54:02 lpd)
@@ -662,7 +768,21 @@ zsysvm.c [1.2], ztoken.c [1.6], ztrans.c [1.12], ztrap.c [1.2],
 ztype.c [1.3], zupath.c [1.2], zusparam.c [1.3], zvmem.c [1.2],
 zvmem2.c [1.2]: 2000/09/19 19:00:53 lpd)
 
-</pre><h2><a name="6.24 Streams"></a>Streams</h2><pre>
+Change to avoid multiply defined rect_param when NOPRIVATE is used. This
+module uses 4 element X/Y/width/Height, not a gs_rect so xywh_param is a
+better name. (zdpnext.c [1.3]: 2000/09/21 15:12:01 rayjj)
+
+Changes the default Windows installation directory from c:\Aladdin to c:\gs.
+(dwsetup.cpp [1.4]: 2000/09/22 05:32:17 lpd)
+
+Changes the default Windows Start Menu Folder from "Aladdin" to
+"Ghostscript". (dwsetup.cpp [1.5]: 2000/09/22 05:35:02 lpd)
+
+Documentation changes in preparation for 6.30 release. Replaced some contact
+information, updated version numbers. (lib/gs_init.ps [1.25]: 2000/10/04
+04:33:29 raph)
+
+</pre><h2><a name="6.30 Streams"></a>Streams</h2><pre>
 
 Fixes problems:
 	- s_add_filter used min_out_size rather than min_in_size for the
@@ -695,7 +815,7 @@ stdio_.h [1.2], stdpre.h [1.2], stream.c [1.8], stream.h [1.7],
 strimpl.h [1.2], string_.h [1.2], szlibc.c [1.2], szlibd.c [1.2],
 szlibe.c [1.2], szlibx.h [1.2], szlibxx.h [1.2]: 2000/09/19 19:00:50 lpd)
 
-</pre><h2><a name="6.24 Library"></a>Library</h2><pre>
+</pre><h2><a name="6.30 Library"></a>Library</h2><pre>
 
 Fixes problems:
 	- Parameter lists didn't have proper GC descriptors; garbage
@@ -734,6 +854,18 @@ were incorrect. (gstrans.c [1.10]: 2000/09/12 20:35:05 lpd)
 	- Printing the program name and version didn't use fprintf, so it
 didn't work properly with the stdout redirection on Windows. (fix from
 Artifex) (gsmisc.c [1.7]: 2000/09/18 06:22:35 lpd)
+	- Undefined characters in CID-keyed (FMapType 9) composite fonts
+caused an infinite loop, because the parsing index was never advanced past
+the character. (gsfcmap.c [1.7]: 2000/09/21 02:44:44 lpd)
+	- CID-keyed (FMapType 9) composite fonts didn't return the correct
+parsed character code, possibly causing widthshow or cshow to produce
+incorrect output. (gsfcmap.c [1.8], gsfcmap.h [1.4]: 2000/09/21 03:02:03
+lpd)
+	- Works around ANSI C's unreasonable new aliasing restrictions.
+(gsnogc.c [1.5]: 2000/09/22 04:17:52 lpd)
+	- The 'head' table in embedded TrueType fonts had a length of 56; it
+should have a length of 54 and be followed by 2 padding bytes.
+(gdevpsft.c [1.4]: 2000/09/26 06:42:05 lpd)
 
 Initializes files for the 6.24 fileset. (gscdef.c [1.7]: 2000/08/09 16:54:02
 lpd)
@@ -987,7 +1119,11 @@ Ghostscript to AFPL Ghostscript, as well as some internal references to the
 program name. (time_.h [1.2], vmsmath.h [1.2], windows_.h [1.2]: 2000/09/19
 19:00:51 lpd)
 
-</pre><h2><a name="6.24 ???Other???"></a>???Other???</h2><pre>
+Bring version numbers and dates up to date. Small bug fix in toolbin/pre to
+make it able to handle months with leading zeros. (gscdef.c [1.9]:
+2000/10/04 05:18:54 raph)
+
+</pre><h2><a name="6.30 ???Other???"></a>???Other???</h2><pre>
 
 Updates the license notices to reflect the name change from Aladdin
 Ghostscript to AFPL Ghostscript, as well as some internal references to the
