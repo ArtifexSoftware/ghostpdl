@@ -275,7 +275,7 @@ typedef unsigned long ulong;
    typedef unsigned int            uint32_t;
    /* no uint64_t */
 # endif
-# ifdef VMS /* OpenVMS provides these types in inttypes.h */
+# if defined(__VMS) /* OpenVMS provides these types in inttypes.h */
 #  include <inttypes.h>
 # endif
    /* other archs may want to add defines here */
