@@ -568,7 +568,7 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
      * pixel writing must be avoided, and the trapezoid algorithm otherwise.
      * However, we always use the trapezoid algorithm for rectangles.
      */
-#define DOUBLE_WRITE_OK() lop_is_idempotent(lop)
+
 #ifdef FILL_SCAN_LINES
 #  ifdef FILL_TRAPEZOIDS
     fill_by_trapezoids =
@@ -580,7 +580,7 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
     fill_by_trapezoids = true;
 #endif
 #ifdef FILL_TRAPEZOIDS
-    if (fill_by_trapezoids && !DOUBLE_WRITE_OK()) {
+    if (fill_by_trapezoids) {
 	/* Avoid filling rectangles by scan line. */
 	gs_fixed_rect rbox;
 
@@ -593,10 +593,12 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	    return gx_fill_rectangle_device_rop(x0, y0, x1 - x0, y1 - y0,
 						pdevc, dev, lop);
 	}
-	fill_by_trapezoids = false; /* avoid double write */
+	if ( !lop_is_idempotent(lop) && (adjust.x != 0 || adjust.y != 0))
+	    /* avoid double write on destination ROPS and adjust */
+	    fill_by_trapezoids = false; 
     }
 #endif
-#undef DOUBLE_WRITE_OK
+
     /*
      * Pre-process curves.  When filling by trapezoids, we need to
      * flatten the path completely; when filling by scan lines, we only
