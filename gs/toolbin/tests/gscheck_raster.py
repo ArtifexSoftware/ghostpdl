@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-#    Copyright (C) 2001 Artifex Software Inc.
+#    Copyright (C) 2001-2004 Artifex Software Inc.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -25,7 +25,8 @@
 #
 
 
-import os, string, calendar, time
+import os, stat
+import string, calendar, time
 import gstestutils
 import gssum, gsconf, gstestgs, gsparamsets
 
@@ -36,7 +37,7 @@ class GSCompareTestCase(gstestgs.GhostscriptTestCase):
 	if not os.access(rasterfilename, os.F_OK):
 		os.system(gsconf.codedir + "update_baseline " + os.path.basename(self.file))
 	try:
-		ct = time.localtime(os.stat(rasterfilename)[9])
+		ct = time.localtime(os.stat(rasterfilename)[stat.ST_MTIME])
 		baseline_date = "%s %d, %4d %02d:%02d" % ( calendar.month_abbr[ct[1]], ct[2], ct[0], ct[3], ct[4] )
 	except:
 		if self.band:
