@@ -698,6 +698,7 @@ pdfdict begin
 } bind def
 
 % Write the outline structure for a file.  Uses linkdest (below).
+% omit links to pages that don't exist.
 /writeoutline		% <outlinedict> writeoutline -
  { mark
    0 2 index /First knownoget
@@ -705,12 +706,17 @@ pdfdict begin
    if
 		% stack: dict mark count
    dup 0 eq
-    { pop 1 index
-    }
+    { pop 1 index }
     { 2 index /Count knownoget { 0 lt { neg } if } if
       /Count exch 3 index
     }
-   ifelse linkdest /Title oget /Title exch /OUT pdfmark
+   ifelse { linkdest } stopped 
+    {
+      cleartomark	% ignore this link
+    } {
+      /Title oget /Title exch /OUT pdfmark
+    }
+   ifelse
    /First knownoget
     { { dup writeoutline /Next knownoget not { exit } if } loop }
    if
