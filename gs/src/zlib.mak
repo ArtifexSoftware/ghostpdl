@@ -134,7 +134,8 @@ zlibd1_=$(ZOBJ)infblock.$(OBJ) $(ZOBJ)infcodes.$(OBJ) $(ZOBJ)inffast.$(OBJ)
 zlibd2_=$(ZOBJ)inflate.$(OBJ) $(ZOBJ)inftrees.$(OBJ) $(ZOBJ)infutil.$(OBJ) $(ZOBJ)crc32.$(OBJ)
 
 # shorter list of files for zlib 1.2.x
-zlibd_=$(ZOBJ)inffast.$(OBJ) $(ZOBJ)inflate.$(OBJ) $(ZOBJ)inftrees.$(OBJ)
+zlibd_=$(ZOBJ)inffast.$(OBJ) $(ZOBJ)inflate.$(OBJ) $(ZOBJ)inftrees.$(OBJ) $(ZOBJ)uncompr.$(OBJ)
+
 
 $(ZGEN)zlibd_0.dev : $(ZLIB_MAK) $(ECHOGS_XE) $(ZGEN)zlibc.dev $(zlibd_)
 	$(SETMOD) $(ZGEN)zlibd_0 $(zlibd_)
@@ -157,3 +158,8 @@ $(ZOBJ)inftrees.$(OBJ) : $(ZSRC)inftrees.c $(ZDEP)
 
 $(ZOBJ)infutil.$(OBJ) : $(ZSRC)infutil.c $(ZDEP)
 	$(ZCC) $(ZO_)infutil.$(OBJ) $(C_) $(ZSRC)infutil.c
+
+# new file in zlib 1.2.x
+$(ZOBJ)uncompr.$(OBJ) : $(ZSRC)uncompr.c $(ZDEP)
+	$(ZCC) $(ZO_)uncompr.$(OBJ) $(C_) $(ZSRC)uncompr.c
+
