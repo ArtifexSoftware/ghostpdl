@@ -817,7 +817,7 @@ start_al_pair_from_min(line_list *ll, contour_cursor *q)
 	dir = compute_dir(ll, q->fi.fy0, q->fi.fy1);
 	if (dir == DIR_UP && ll->main_dir == DIR_DOWN && q->fi.fy0 >= ll->ymin) {
 	    code = add_y_curve_part(ll, q->prev, q->pseg, DIR_DOWN, &fi, 
-			    !q->first_flattened, more_fi);
+			    !q->first_flattened, !more_fi);
 	    if (code < 0) 
 		return code; 
 	    code = add_y_curve_part(ll, q->prev, q->pseg, DIR_UP, &q->fi, 
@@ -831,7 +831,7 @@ start_al_pair_from_min(line_list *ll, contour_cursor *q)
 		return code; 
 	} else if (q->fi.fy0 >= ll->ymin && q->fi.fy1 < ll->ymin) {
 	    code = add_y_curve_part(ll, q->prev, q->pseg, DIR_DOWN, &q->fi, 
-			    q->more_flattened, q->more_flattened);
+			    true, !q->more_flattened);
 	    if (code < 0) 
 		return code; 
 	}
