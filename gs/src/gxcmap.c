@@ -172,11 +172,11 @@ gx_set_cmap_procs_to_gray(gs_imager_state * pis, const gx_device * dev, bool gra
 {
     if ( dev->color_info.force_mono != 1 ) {
         if (gray && dev->color_info.num_components >= 3 ) {
-	    dev->color_info.num_cmap_components = 1;
+	    ((gx_device*)dev)->color_info.num_cmap_components = 1;
 	    gx_set_cmap_procs(pis, dev);
 	} else if ( gray == false && (dev->color_info.num_components != 
 				      dev->color_info.num_cmap_components) ) {
-  	    dev->color_info.num_cmap_components = dev->color_info.num_components;
+  	    ((gx_device*)dev)->color_info.num_cmap_components = dev->color_info.num_components;
 	    gx_set_cmap_procs(pis, dev);
 	}
 	gx_unset_dev_color((gs_state*)pis);
