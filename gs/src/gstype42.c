@@ -71,14 +71,20 @@ gs_type42_font_init(gs_font_type42 * pfont)
     ulong loca_size = 0;
 
     ACCESS(0, 12, OffsetTable);
-    {
-	static const byte version1_0[4] = {0, 1, 0, 0};
-	static const byte version_true[4] = {'t', 'r', 'u', 'e'};
-
-	if (memcmp(OffsetTable, version1_0, 4) &&
-	    memcmp(OffsetTable, version_true, 4))
-	    return_error(gs_error_invalidfont);
-    }
+    /* pulling invalid font test, based on customer test that contains garbage here
+     * 0x30, 0xc0, 0x60, 0xa0) hplj doesn't complain :( 
+     * NB real garbage in won't be caught here . 
+     * {
+     *	static const byte version1_0[4] = {0, 1, 0, 0};
+     *	static const byte version_true[4] = {'t', 'r', 'u', 'e'};
+     *
+     *	if (memcmp(OffsetTable, version1_0, 4) &&
+     *	    memcmp(OffsetTable, version_true, 4))
+     *
+     *	    return_error(gs_error_invalidfont);
+     *
+     * }
+     */
     numTables = U16(OffsetTable + 4);
     ACCESS(12, numTables * 16, TableDirectory);
     /* Clear optional entries. */
