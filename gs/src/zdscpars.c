@@ -253,8 +253,13 @@ dsc_bounding_box(gs_param_list *plist, const CDSC *pData)
 private int
 dsc_page(gs_param_list *plist, const CDSC *pData)
 {
-    return dsc_put_int(plist, "PageNum",
-		       pData->page[pData->page_count - 1].ordinal );
+    int page_num = pData->page_count;
+
+    if (page_num)		/* If we have page information */
+        return dsc_put_int(plist, "PageNum",
+		       pData->page[page_num - 1].ordinal );
+    else			/* No page info - so return page=0 */
+        return dsc_put_int(plist, "PageNum", 0 );
 }
 
 private int
