@@ -333,6 +333,10 @@ ialloc_reset_free(gs_ref_memory_t * mem)
     mem->largest_free_size = 0;
 }
 
+/* The following limit is rather arbitrary. Benchmarks have shown that */
+/* the resulting GC's are not so freqnent that oerformance is degraded */
+#define FORCE_GC_LIMIT 8000000
+
 /* Set the allocation limit after a change in one or more of */
 /* vm_threshold, max_vm, or enabled, or after a GC. */
 void
@@ -358,7 +362,7 @@ ialloc_set_limit(register gs_ref_memory_t * mem)
 	    mem->limit = min(limit, max_allocated);
 	}
     } else
-	mem->limit = max_allocated;
+	mem->limit = min(max_allocated, mem->gc_allocated + FORCE_GC_LIMIT);
     if_debug7('0', "[0]space=%d, max_vm=%ld, prev.alloc=%ld, enabled=%d,\n\
       gc_alloc=%ld, threshold=%ld => limit=%ld\n",
 	      mem->space, (long)mem->gc_status.max_vm,
