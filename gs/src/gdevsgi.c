@@ -32,12 +32,15 @@ const gx_device_printer far_data gs_sgirgb_device =
   sgi_prn_device(sgi_procs, "sgirgb", 3, 24, 255, 255, sgi_print_page);
 
 private gx_color_index
-sgi_map_rgb_color(gx_device *dev, ushort r, ushort g, ushort b)
+sgi_map_rgb_color(gx_device * dev, const ushort cv[])
 {      ushort bitspercolor = dev->color_info.depth / 3;
        ulong max_value = (1 << bitspercolor) - 1;
-       return ((r*max_value / gx_max_color_value) << (bitspercolor * 2)) +
-	      ((g*max_value / gx_max_color_value) << bitspercolor) +
-	      (b*max_value / gx_max_color_value);
+       ushort red, green, blue;
+       red = cv[0]; green = cv[1]; blue = cv[2];
+
+       return ((red*max_value / gx_max_color_value) << (bitspercolor * 2)) +
+	      ((green*max_value / gx_max_color_value) << bitspercolor) +
+	      (blue*max_value / gx_max_color_value);
 }
 
 private int
@@ -45,12 +48,12 @@ sgi_map_color_rgb(gx_device *dev, gx_color_index color, ushort prgb[3])
 {	ushort bitspercolor = dev->color_info.depth / 3;
 	ushort colormask = (1 << bitspercolor) - 1;
 
-	prgb[0] = ((color >> (bitspercolor * 2)) & colormask) *
-		(ulong)gx_max_color_value / colormask;
-	prgb[1] = ((color >> bitspercolor) & colormask) *
-		(ulong)gx_max_color_value / colormask;
-	prgb[2] = (color & colormask) *
-		(ulong)gx_max_color_value / colormask;
+	prgb[0] = (ushort)(((color >> (bitspercolor * 2)) & colormask) *
+		(ulong)gx_max_color_value / colormask);
+	prgb[1] = (ushort)(((color >> bitspercolor) & colormask) *
+		(ulong)gx_max_color_value / colormask);
+	prgb[2] = (ushort)((color & colormask) *
+		(ulong)gx_max_color_value / colormask);
 	return 0;
 }
 
@@ -114,7 +117,7 @@ sgi_print_page(gx_device_printer *pdev, FILE *pstream)
        int separation;
        long *rowsizes=(long*)gs_malloc(4,3*bdev->height,"sgi_print_page");
        byte *edata ;
-       long lastval; byte*sptr;
+       long lastval;
        int rownumber;
 #define aref2(a,b) a*bdev->height+b
        edata =  (byte*)gs_malloc(cur.line_size, 1, "sgi_begin_page");
