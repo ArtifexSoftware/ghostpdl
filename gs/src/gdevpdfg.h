@@ -199,11 +199,10 @@ typedef struct pdf_image_writer_s {
     cos_dict_t *named;		/* named dictionary from NI */
 } pdf_image_writer;
 extern_st(st_pdf_image_writer);	/* public for gdevpdfi.c */
-#define public_st_pdf_image_writer()\
-  gs_public_st_suffix_add3(st_pdf_image_writer, pdf_image_writer,\
-    "pdf_image_writer", pdf_image_writer_enum_ptrs,\
-    pdf_image_writer_reloc_ptrs, st_psdf_binary_writer, pres, data, named)
-#define pdf_image_writer_max_ptrs (psdf_binary_writer_max_ptrs + 2)
+#define public_st_pdf_image_writer() /* in gdevpdfj.c */\
+  gs_public_st_composite(st_pdf_image_writer, pdf_image_writer,\
+    "pdf_image_writer", pdf_image_writer_enum_ptrs, pdf_image_writer_reloc_ptrs)
+#define pdf_image_writer_max_ptrs (psdf_binary_writer_max_ptrs * 3 + 3)
 
 /*
  * Begin writing an image, creating the resource if not in-line, and setting

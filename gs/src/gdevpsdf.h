@@ -304,7 +304,7 @@ extern_st(st_psdf_binary_writer);
   gs_public_st_ptrs3(st_psdf_binary_writer, psdf_binary_writer,\
     "psdf_binary_writer", psdf_binary_writer_enum_ptrs,\
     psdf_binary_writer_reloc_ptrs, target, strm, dev)
-#define psdf_binary_writer_max_ptrs 4
+#define psdf_binary_writer_max_ptrs 3
 
 /* Begin writing binary data. */
 int psdf_begin_binary(gx_device_psdf * pdev, psdf_binary_writer * pbw);

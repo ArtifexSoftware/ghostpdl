@@ -32,6 +32,34 @@
 
 /* GC descriptors */
 public_st_pdf_image_writer();
+private ENUM_PTRS_WITH(pdf_image_writer_enum_ptrs, pdf_image_writer *piw)
+     index -= 3;
+     if (index < psdf_binary_writer_max_ptrs * 3) {
+	 gs_ptr_type_t ret =
+	     ENUM_USING(st_psdf_binary_writer, &piw->binary[index % 3],
+			sizeof(psdf_binary_writer), index / 3);
+
+	 if (ret == 0)		/* don't stop early */
+	     ENUM_RETURN(0);
+	 return ret;
+    }
+    return 0;
+case 0: ENUM_RETURN(piw->pres);
+case 1: ENUM_RETURN(piw->data);
+case 2: ENUM_RETURN(piw->named);
+ENUM_PTRS_END
+private RELOC_PTRS_WITH(pdf_image_writer_reloc_ptrs, pdf_image_writer *piw)
+{
+    int i;
+
+    for (i = 0; i < piw->alt_writer_count; ++i)
+	RELOC_USING(st_psdf_binary_writer, &piw->binary[i],
+		    sizeof(psdf_binary_writer));
+    RELOC_VAR(piw->pres);
+    RELOC_VAR(piw->data);
+    RELOC_VAR(piw->named);
+}
+RELOC_PTRS_END
 
 /* ---------------- Image stream dictionaries ---------------- */
 
