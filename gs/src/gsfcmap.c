@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -65,9 +65,8 @@ public_st_cid_system_info_element();
 /*
  * Decode a character from a string using a code map, updating the index.
  * Return 0 for a CID or name, N > 0 for a character code where N is the
- * number of bytes in the code, or an error.  In the case of a character
- * code, shift the bytes into *pchr.  For undefined characters, we set
- * *pglyph = gs_no_glyph and return 0.
+ * number of bytes in the code, or an error.  Shift the decoded bytes into
+ * *pchr.  For undefined characters, set *pglyph = gs_no_glyph and return 0.
  */
 private int
 code_map_decode_next(const gx_code_map * pcmap, const gs_const_string * str,
