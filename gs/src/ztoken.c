@@ -274,10 +274,18 @@ ztoken_handle_comment(i_ctx_t *i_ctx_p, const ref *fop, scanner_state *sstate,
 	*pstate = *sstate;
     } else
 	pstate = sstate;
-    /* Push the file and comment string on the o-stack. */
-    op = osp += 2;
+    /*
+     * Push the file and comment string on the o-stack.
+     * If we were inside { }, the comment string is already on the stack.
+     */
+    if (pstate->s_pstack) {
+	op = ++osp;
+	*op = op[-1];
+    } else {
+	op = osp += 2;
+	*osp = *ptoken;
+    }
     osp[-1] = *fop;
-    *osp = *ptoken;
     /*
      * Push the continuation, scanner state, file, and callout name on the
      * e-stack.
