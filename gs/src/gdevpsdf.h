@@ -235,7 +235,7 @@ typedef struct gx_device_psdf_s {
 	!(ascii),\
 	false,\
 	false,\
-	3010,\
+	psdf_version_ll3,\
 	 { psdf_general_param_defaults(ascii),\
 	   psdf_color_image_param_defaults,\
 	   psdf_gray_image_param_defaults,\
