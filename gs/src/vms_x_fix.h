@@ -886,4 +886,4 @@ extern void XtFree(char*);
 }
 #endif
 
-#endif
+#endif /* vms_x_fix_INCLUDED */

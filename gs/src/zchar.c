@@ -35,10 +35,10 @@
 #include "store.h"
 
 /* Forward references */
-private bool map_glyph_to_char(P3(const ref *, const ref *, ref *));
-private int finish_show(P1(i_ctx_t *));
-private int op_show_cleanup(P1(i_ctx_t *));
-private int op_show_return_width(P3(i_ctx_t *, uint, double *));
+private bool map_glyph_to_char(const ref *, const ref *, ref *);
+private int finish_show(i_ctx_t *);
+private int op_show_cleanup(i_ctx_t *);
+private int op_show_return_width(i_ctx_t *, uint, double *);
 
 /* <string> show - */
 private int
@@ -198,8 +198,8 @@ finish_stringwidth(i_ctx_t *i_ctx_p)
 /* Common code for charpath and .charboxpath. */
 private int
 zchar_path(i_ctx_t *i_ctx_p,
-	   int (*begin)(P6(gs_state *, const byte *, uint,
-			   bool, gs_memory_t *, gs_text_enum_t **)))
+	   int (*begin)(gs_state *, const byte *, uint,
+			bool, gs_memory_t *, gs_text_enum_t **))
 {
     os_ptr op = osp;
     gs_text_enum_t *penum;
@@ -397,7 +397,12 @@ op_show_finish_setup(i_ctx_t *i_ctx_p, gs_text_enum_t * penum, int npop,
 		       TEXT_FROM_STRING | TEXT_DO_NONE | TEXT_INTERVENE) &&
 	SHOW_IS_ALL_OF(penum, TEXT_FROM_STRING | TEXT_RETURN_WIDTH) &&
 	(glyph = gs_text_current_glyph(osenum)) != gs_no_glyph &&
-	glyph >= gs_min_cid_glyph
+	glyph >= gs_min_cid_glyph &&
+
+        /* According to PLRM, we don't need to raise a rangecheck error,
+           if currentfont is changed in the proc of the operator 'cshow'. */
+	gs_default_same_font (gs_text_current_font(osenum), 
+			      gs_text_current_font(penum), true)
 	) {
 	gs_text_params_t text;
 
@@ -435,7 +440,11 @@ op_show_finish_setup(i_ctx_t *i_ctx_p, gs_text_enum_t * penum, int npop,
 int
 op_show_continue(i_ctx_t *i_ctx_p)
 {
-    return op_show_continue_dispatch(i_ctx_p, 0, gs_text_process(senum));
+    int code = gs_text_update_dev_color(igs, senum);
+
+    if (code >= 0)
+	code = op_show_continue_dispatch(i_ctx_p, 0, gs_text_process(senum));
+    return code;
 }
 int
 op_show_continue_pop(i_ctx_t *i_ctx_p, int npop)

@@ -228,7 +228,7 @@ psf_check_outline_glyphs(gs_font_base *pfont, psf_glyph_enum_t *ppge,
     int code;
 
     while ((code = psf_enumerate_glyphs_next(ppge, &glyph)) != 1) {
-	gs_const_string gdata;
+	gs_glyph_data_t gdata;
 	gs_font_type1 *ignore_font;
 	gs_glyph_info_t info;
 
@@ -246,9 +246,7 @@ psf_check_outline_glyphs(gs_font_base *pfont, psf_glyph_enum_t *ppge,
 		continue;
 	    return code;
 	}
-	if (code > 0)
-	    gs_free_const_string(pfont->memory, gdata.data, gdata.size,
-				 "psf_check_outline_glyphs");
+	gs_glyph_data_free(&gdata, "psf_check_outline_glyphs");
 	/*
 	 * If the font has a CDevProc or calls a non-standard OtherSubr,
 	 * glyph_info will return a rangecheck error.
@@ -324,13 +322,30 @@ psf_get_outline_glyphs(psf_outline_glyphs_t *pglyphs, gs_font_base *pfont,
 	int code = psf_add_subset_pieces(subset_glyphs, &subset_size,
 					  countof(pglyphs->subset_data) - 1, 2,
 					  (gs_font *)pfont);
+	uint keep_size, i;
 
 	if (code < 0)
 	    return code;
 	/* Subset fonts require .notdef. */
 	if (notdef == gs_no_glyph)
 	    return_error(gs_error_rangecheck);
-	/* Sort the glyphs now.  Make sure .notdef is included. */
+	/* Remove undefined glyphs. */
+	for (i = 0, keep_size = 0; i < subset_size; ++i) {
+	    gs_glyph_info_t info;
+	    gs_glyph glyph = subset_glyphs[i];
+
+	    /*
+	     * The documentation for the glyph_info procedure says that
+	     * using members = 0 is an inexpensive way to find out
+	     * whether a given glyph exists, but the implementations
+	     * don't actually do this.  Request an inexpensive value.
+	     */
+	    if (pfont->procs.glyph_info((gs_font *)pfont, glyph, NULL,
+					GLYPH_INFO_NUM_PIECES, &info) >= 0)
+		subset_glyphs[keep_size++] = glyph;
+	}
+	subset_size = keep_size;
+	/* Sort the glyphs.  Make sure .notdef is included. */
 	subset_glyphs[subset_size++] = notdef;
 	subset_size = psf_sort_glyphs(subset_glyphs, subset_size);
     }

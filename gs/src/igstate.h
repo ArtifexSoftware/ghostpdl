@@ -20,6 +20,7 @@
 #include "gxstate.h"		/* for 'client data' access */
 #include "imemory.h"
 #include "istruct.h"		/* for gstate obj definition */
+#include "gxcindex.h"
 
 /*
  * From the interpreter's point of view, the graphics state is largely opaque,
@@ -114,12 +115,8 @@ typedef struct int_gstate_s {
     /* Screen_procs are only relevant if setscreen was */
     /* executed more recently than sethalftone */
     /* (for this graphics context). */
-    union {
-	ref indexed[4];
-	struct {
-	    /* The components must be in this order: */
-	    ref red, green, blue, gray;
-	} colored;
+    struct {
+	ref red, green, blue, gray;
     } screen_procs,		/* halftone screen procedures */
           transfer_procs;	/* transfer procedures */
     ref black_generation;	/* (procedure) */
@@ -134,6 +131,17 @@ typedef struct int_gstate_s {
 	ref dict;		/* CIE color rendering dictionary */
 	ref_cie_render_procs procs;	/* (see above) */
     } colorrendering;
+    /*
+     * Use_cie_color tracks the UseCIEColor parameter of the page
+     * device. This parameter may, during initialization, be read
+     * through the .getuseciecolor operator, and set (in Level 3)
+     * via the .setuseciecolor operator.
+     *
+     * Previously, the UseCIEColor color space substitution feature
+     * was implemented in the graphic library. It is now implemented
+     * strictly in the interpreter.
+     */
+    ref use_cie_color;
     /*
      * Halftone is relevant only if sethalftone was executed
      * more recently than setscreen for this graphics context.
@@ -186,7 +194,7 @@ typedef struct int_gstate_s {
 
 /* Create the gstate for a new context. */
 /* We export this so that fork can use it. */
-gs_state *int_gstate_alloc(P1(const gs_dual_memory_t * dmem));
+gs_state *int_gstate_alloc(const gs_dual_memory_t * dmem);
 
 /* Get the int_gstate from a gs_state. */
 #define gs_int_gstate(pgs) ((int_gstate *)gs_state_client_data(pgs))

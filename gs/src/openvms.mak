@@ -124,24 +124,41 @@ JVERSION=6
 # You may need to change this if the libpng version changes.
 # See libpng.mak for more information.
 
-PSRCDIR=[.libpng-1_0_12]
-PVERSION=10012
+PSRCDIR=[.libpng-1_2_5]
+PVERSION=10204
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
 
-ZSRCDIR=[.zlib-1_1_3]
+ZSRCDIR=[.zlib-1_1_4]
+
+# Define the jbig2dec library source location.
+# See jbig2.mak for more information.
+
+JBIG2SRCDIR=[.jbig2dec-0_2]
 
 # Define the directory where the icclib source are stored.
 # See icclib.mak for more information
 
 ICCSRCDIR=[.icclib]
 
+# IJS has not been ported to OpenVMS. If you do the port,
+# you'll need to set these values. You'll also need to
+# include the ijs.mak makefile (right after icclib.mak).
+#
+# Define the directory where the ijs source is stored,
+# and the process forking method to use for the server.
+# See ijs.mak for more information.
+ 
+#IJSSRCDIR=[.ijs]
+#IJSEXECTYPE=unix
+
 # Note that built-in third-party libraries aren't available.
 
 SHARE_JPEG=0
 SHARE_LIBPNG=0
 SHARE_ZLIB=0
+SHARE_JBIG2=0
 
 # Define the path to X11 include files
 
@@ -157,7 +174,12 @@ COMP=CC
 ifdef DEBUG
 COMP:=$(COMP)/DEBUG/NOOPTIMIZE
 else
-COMP:=$(COMP)/NODEBUG/OPTIMIZE
+# This should include /OPTIMIZE, but some OpenVMS compilers have an
+# optimizer bug that causes them to generate incorrect code for gdevpsfx.c,
+# so we must disable optimization.  (Eventually we will check for the bug
+# in genarch and enable optimization if it is safe.)
+#COMP:=$(COMP)/NODEBUG/OPTIMIZE
+COMP:=$(COMP)/NODEBUG/NOOPTIMIZE
 endif
 
 COMP:=$(COMP)/DECC/PREFIX=ALL/NESTED_INCLUDE=PRIMARY/NAMES=SHORTENED
@@ -207,19 +229,20 @@ DEVICE_DEVS9=$(DD)pbm.dev $(DD)pbmraw.dev $(DD)pgm.dev $(DD)pgmraw.dev $(DD)pgnm
 DEVICE_DEVS10=$(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev $(DD)tifflzw.dev $(DD)tiffpack.dev
 DEVICE_DEVS11=$(DD)tiff12nc.dev $(DD)tiff24nc.dev
 DEVICE_DEVS12=$(DD)psmono.dev $(DD)psgray.dev $(DD)psrgb.dev $(DD)bit.dev $(DD)bitrgb.dev $(DD)bitcmyk.dev
-DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev
+DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev $(DD)pngalpha.dev
 DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev
 DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)epswrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev
+DEVICE_DEVS16=$(DD)bbox.dev
 # Overflow from DEVS9
-DEVICE_DEVS16=$(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev $(DD)pkm.dev $(DD)pkmraw.dev $(DD)pksm.dev $(DD)pksmraw.dev
-DEVICE_DEVS17=
+DEVICE_DEVS17=$(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev $(DD)pkm.dev $(DD)pkmraw.dev $(DD)pksm.dev $(DD)pksmraw.dev
 DEVICE_DEVS18=
 DEVICE_DEVS19=
 DEVICE_DEVS20=
+DEVICE_DEVS21=
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(PSD)fapi.dev
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
@@ -245,7 +268,7 @@ FILE_IMPLEMENTATION=stdio
 # Choose the implementation of stdio: '' for file I/O and 'c' for callouts
 # See gs.mak and ziodevs.c/ziodevsc.c for more details.
 
-STDIO_IMPLEMENTATION= 
+STDIO_IMPLEMENTATION=c
 
 # Define the name table capacity size of 2^(16+n).
 
@@ -323,10 +346,6 @@ XEAUX=.exe
 
 BEGINFILES=$(GLGENDIR)OPENVMS.OPT $(GLGENDIR)OPENVMS.COM
 
-# Define the C invocation for the ansi2knr program.  We don't use this.
-
-CCA2K=
-
 # Define the C invocation for auxiliary programs (echogs, genarch).
   
 CCAUX=CC/DECC
@@ -339,7 +358,7 @@ CC=$(COMP)
 
 LINK=$(LINKER)/EXE=$@ $^,$(GLGENDIR)OPENVMS.OPT/OPTION
 
-# Define the ANSI-to-K&R dependency.  We don't need this.
+# Define the auxiliary program dependency. We don't need this.
 
 AK=
 
@@ -405,6 +424,7 @@ include $(GLSRCDIR)jpeg.mak
 # zlib.mak must precede libpng.mak
 include $(GLSRCDIR)zlib.mak
 include $(GLSRCDIR)libpng.mak
+include $(GLSRCDIR)jbig2.mak
 include $(GLSRCDIR)icclib.mak
 include $(GLSRCDIR)devs.mak
 include $(GLSRCDIR)contrib.mak
@@ -423,12 +443,15 @@ $(GS_XE) : openvms $(GLOBJDIR)gs.$(OBJ) $(INT_ALL) $(LIB_ALL)
 
 # OpenVMS.dev
 
-openvms__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_vms.$(OBJ)
+openvms__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_vms.$(OBJ) $(GLOBJ)gp_stdia.$(OBJ)
 $(GLGEN)openvms_.dev : $(openvms__) $(GLGEN)nosync.dev
 	$(SETMOD) $(GLGEN)openvms_ $(openvms__) -include $(GLGEN)nosync
 
-$(GLOBJ)gp_vms.$(OBJ) : $(GLSRC)gp_vms.c
+$(GLOBJ)gp_vms.$(OBJ) : $(GLSRC)gp_vms.c $(string__h) $(memory__h) $(gx_h) $(gp_h) $(gsstruct_h)
 	$(CC_)/include=($(GLGENDIR),$(GLSRCDIR))/obj=$(GLOBJ)gp_vms.$(OBJ) $(GLSRC)gp_vms.c
+
+$(GLOBJ)gp_stdia.$(OBJ): $(GLSRC)gp_stdia.c $(AK) $(stdio__h) $(time__h) $(unistd__h) $(gx_h) $(gp_h)
+	$(CC_)/obj=$(GLOBJ)gp_stdia.$(OBJ) $(GLSRC)gp_stdia.c
 
 # Interpreter AUX programs
 

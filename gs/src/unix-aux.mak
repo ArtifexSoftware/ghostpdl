@@ -27,7 +27,7 @@ UNIX_AUX_MAK=$(GLSRC)unix-aux.mak
 
 # Unix platforms other than System V, and also System V Release 4
 # (SVR4) platforms.
-unix__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_unix.$(OBJ) $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_unifn.$(OBJ)
+unix__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_unix.$(OBJ) $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_unifn.$(OBJ) $(GLOBJ)gp_stdia.$(OBJ)
 $(GLGEN)unix_.dev: $(unix__) $(GLD)nosync.dev
 	$(SETMOD) $(GLGEN)unix_ $(unix__) -include $(GLD)nosync
 
@@ -35,6 +35,11 @@ $(GLOBJ)gp_unix.$(OBJ): $(GLSRC)gp_unix.c $(AK)\
  $(pipe__h) $(string__h) $(time__h)\
  $(gx_h) $(gsexit_h) $(gp_h)
 	$(GLCC) $(GLO_)gp_unix.$(OBJ) $(C_) $(GLSRC)gp_unix.c
+
+# assume all Unix platforms support unbuffered read
+$(GLOBJ)gp_stdia.$(OBJ): $(GLSRC)gp_stdia.c $(AK)\
+  $(stdio__h) $(time__h) $(unistd__h) $(gx_h) $(gp_h)
+	$(GLCC) $(GLO_)gp_stdia.$(OBJ) $(C_) $(GLSRC)gp_stdia.c
 
 # System V platforms other than SVR4, which lack some system calls,
 # but have pipes.
@@ -46,9 +51,6 @@ $(GLOBJ)gp_sysv.$(OBJ): $(GLSRC)gp_sysv.c $(stdio__h) $(time__h) $(AK)
 	$(GLCC) $(GLO_)gp_sysv.$(OBJ) $(C_) $(GLSRC)gp_sysv.c
 
 # -------------------------- Auxiliary programs --------------------------- #
-
-$(ANSI2KNR_XE): $(GLSRC)ansi2knr.c
-	$(CCA2K) $(O_)$(ANSI2KNR_XE) $(GLSRC)ansi2knr.c
 
 $(ECHOGS_XE): $(GLSRC)echogs.c $(AK) $(stdpre_h)
 	$(CCAUX) $(I_)$(GLSRCDIR)$(_I) $(O_)$(ECHOGS_XE) $(GLSRC)echogs.c
@@ -83,3 +85,4 @@ $(gconfig__h): $(UNIX_AUX_MAK) $(ECHOGS_XE)
 	if ( test -f $(INCLUDE)/sys/ndir.h ); then $(ECHOGS_XE) -a $(gconfig__h) -x 23 define HAVE_SYS_NDIR_H; else true; fi
 	if ( test -f $(INCLUDE)/sys/time.h ); then $(ECHOGS_XE) -a $(gconfig__h) -x 23 define HAVE_SYS_TIME_H; else true; fi
 	if ( test -f $(INCLUDE)/sys/times.h ); then $(ECHOGS_XE) -a $(gconfig__h) -x 23 define HAVE_SYS_TIMES_H; else true; fi
+	if ( test -f $(JSRCDIR)/jmemsys.h); then true; else $(ECHOGS_XE) -a $(gconfig__h) -x 23 define DONT_HAVE_JMEMSYS_H; fi

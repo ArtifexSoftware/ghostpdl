@@ -18,7 +18,6 @@
 
 #include "string_.h"
 #include <stdlib.h>
-#include "dos_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gxdevice.h"
@@ -31,9 +30,9 @@
 typedef struct gx_device_win_s gx_device_win;
 
 /* Utility routines in gdevmswn.c */
-LPLOGPALETTE win_makepalette(P1(gx_device_win *));
-int win_nomemory(P0());
-void win_update(P1(gx_device_win *));
+LPLOGPALETTE win_makepalette(gx_device_win *);
+int win_nomemory(void);
+void win_update(gx_device_win *);
 
 /* Device procedures shared by all implementations. */
 /* Implementations may wrap their own code around _open and _close. */
@@ -51,16 +50,16 @@ dev_proc_get_alpha_bits(win_get_alpha_bits);
 /* Common part of the device descriptor. */
 
 #define win_proc_copy_to_clipboard(proc)\
-  void proc(P1(gx_device_win *))
+  void proc(gx_device_win *)
 
 #define win_proc_repaint(proc)\
-  void proc(P8(gx_device_win *, HDC, int, int, int, int, int, int))
+  void proc(gx_device_win *, HDC, int, int, int, int, int, int)
 
 #define win_proc_alloc_bitmap(proc)\
-  int proc(P2(gx_device_win *, gx_device *))
+  int proc(gx_device_win *, gx_device *)
 
 #define win_proc_free_bitmap(proc)\
-  void proc(P1(gx_device_win *))
+  void proc(gx_device_win *)
 
 #define win_gsview_sizeof 80
 
@@ -83,8 +82,8 @@ struct gx_device_win_s {
 
 /* Initial values for width and height */
 #define INITIAL_RESOLUTION 96.0
-#define INITIAL_WIDTH (INITIAL_RESOLUTION * 85 / 10 + 1)
-#define INITIAL_HEIGHT (INITIAL_RESOLUTION * 11 + 1)
+#define INITIAL_WIDTH (int)(INITIAL_RESOLUTION * 85 / 10 + 0.5)
+#define INITIAL_HEIGHT (int)(INITIAL_RESOLUTION * 11 + 0.5)
 
 /* A macro for casting the device argument */
 #define wdev ((gx_device_win *)dev)

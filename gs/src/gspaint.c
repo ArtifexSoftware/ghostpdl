@@ -321,7 +321,7 @@ gs_stroke(gs_state * pgs)
 	     */
 	    float xxyy = fabs(pgs->ctm.xx) + fabs(pgs->ctm.yy);
 	    float xyyx = fabs(pgs->ctm.xy) + fabs(pgs->ctm.yx);
-	    float scale = 1 << (abits / 2);
+	    float scale = (float)(1 << (abits / 2));
 	    float orig_width = gs_currentlinewidth(pgs);
 	    float new_width = orig_width * scale;
 	    fixed extra_adjust =
@@ -373,7 +373,7 @@ gs_strokepath(gs_state * pgs)
     gx_path spath;
     int code;
 
-    gx_path_init_local(&spath, pgs->memory);
+    gx_path_init_local(&spath, pgs->path->memory);
     code = gx_stroke_add(pgs->path, &spath, pgs);
     if (code < 0) {
 	gx_path_free(&spath, "gs_strokepath");

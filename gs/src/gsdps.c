@@ -24,7 +24,7 @@
 /* ---------------- View clipping ---------------- */
 
 /* Forward references */
-private int common_viewclip(P2(gs_state *, int));
+private int common_viewclip(gs_state *, int);
 
 int
 gs_initviewclip(gs_state * pgs)

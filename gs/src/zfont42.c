@@ -28,8 +28,9 @@
 #include "store.h"
 
 /* Forward references */
-private int z42_string_proc(P4(gs_font_type42 *, ulong, uint, const byte **));
-private int z42_gdir_get_outline(P3(gs_font_type42 *, uint, gs_const_string *));
+private int z42_string_proc(gs_font_type42 *, ulong, uint, const byte **);
+private uint z42_get_glyph_index(gs_font_type42 *, gs_glyph);
+private int z42_gdir_get_outline(gs_font_type42 *, uint, gs_glyph_data_t *);
 private font_proc_enumerate_glyph(z42_enumerate_glyph);
 private font_proc_enumerate_glyph(z42_gdir_enumerate_glyph);
 private font_proc_encode_char(z42_encode_char);
@@ -90,6 +91,7 @@ build_gs_TrueType_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_type42 **ppfont,
      * The procedures that access glyph information must accept either
      * glyph names or glyph indexes.
      */
+    pfont->data.get_glyph_index = z42_get_glyph_index;
     pfont->procs.encode_char = z42_encode_char;
     pfont->procs.glyph_info = z42_glyph_info;
     pfont->procs.glyph_outline = z42_glyph_outline;
@@ -156,6 +158,8 @@ font_GlyphDirectory_param(os_ptr op, ref *pGlyphDirectory)
  * Access a given byte offset and length in an array of strings.
  * This is used for sfnts and for CIDMap.  The int argument is 2 for sfnts
  * (because of the strange behavior of odd-length strings), 1 for CIDMap.
+ * Return code : 0 - success, <0 - error, 
+ *               >0 - number of accessible bytes (client must cycle).
  */
 int
 string_array_access_proc(const ref *psa, int modulus, ulong offset,
@@ -180,9 +184,9 @@ string_array_access_proc(const ref *psa, int modulus, ulong offset,
 	 */
 	size = r_size(&rstr) & -modulus;
 	if (left < size) {
-	    if (left + length > size)
-		return_error(e_rangecheck);
 	    *pdata = rstr.value.const_bytes + left;
+	    if (left + length > size)
+		return size - left;
 	    return 0;
 	}
 	left -= size;
@@ -196,47 +200,6 @@ const op_def zfont42_op_defs[] =
     {"2.buildfont42", zbuildfont42},
     op_def_end(0)
 };
-
-/*
- * Get a glyph outline from GlyphDirectory.  Return an empty string if
- * the glyph is missing or out of range.
- */
-int
-font_gdir_get_outline(const ref *pgdir, long glyph_index,
-		      gs_const_string * pgstr)
-{
-    ref iglyph;
-    ref gdef;
-    ref *pgdef;
-    int code;
-
-    if (r_has_type(pgdir, t_dictionary)) {
-	make_int(&iglyph, glyph_index);
-	code = dict_find(pgdir, &iglyph, &pgdef) - 1; /* 0 => not found */
-    } else {
-	code = array_get(pgdir, glyph_index, &gdef);
-	pgdef = &gdef;
-    }
-    if (code < 0) {
-	pgstr->data = 0;
-	pgstr->size = 0;
-    } else if (!r_has_type(pgdef, t_string)) {
-	return_error(e_typecheck);
-    } else {
-	pgstr->data = pgdef->value.const_bytes;
-	pgstr->size = r_size(pgdef);
-    }
-    return 0;
-}
-private int
-z42_gdir_get_outline(gs_font_type42 * pfont, uint glyph_index,
-		     gs_const_string * pgstr)
-{
-    const font_data *pfdata = pfont_data(pfont);
-    const ref *pgdir = &pfdata->u.type42.GlyphDirectory;
-
-    return font_gdir_get_outline(pgdir, (long)glyph_index, pgstr);
-}
 
 /* Reduce a glyph name to a glyph index if needed. */
 private gs_glyph
@@ -257,6 +220,51 @@ glyph_to_index(const gs_font *font, gs_glyph glyph)
 	    return index_glyph;
     }
     return gs_min_cid_glyph;	/* glyph 0 is notdef */
+}
+private uint
+z42_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph)
+{
+    return glyph_to_index((gs_font *)pfont, glyph) - GS_MIN_CID_GLYPH;
+}
+
+/*
+ * Get a glyph outline from GlyphDirectory.  Return an empty string if
+ * the glyph is missing or out of range.
+ */
+int
+font_gdir_get_outline(const ref *pgdir, long glyph_index,
+		      gs_glyph_data_t *pgd)
+{
+    ref iglyph;
+    ref gdef;
+    ref *pgdef;
+    int code;
+
+    if (r_has_type(pgdir, t_dictionary)) {
+	make_int(&iglyph, glyph_index);
+	code = dict_find(pgdir, &iglyph, &pgdef) - 1; /* 0 => not found */
+    } else {
+	code = array_get(pgdir, glyph_index, &gdef);
+	pgdef = &gdef;
+    }
+    if (code < 0) {
+	gs_glyph_data_from_null(pgd);
+    } else if (!r_has_type(pgdef, t_string)) {
+	return_error(e_typecheck);
+    } else {
+	gs_glyph_data_from_string(pgd, pgdef->value.const_bytes, r_size(pgdef),
+				  NULL);
+    }
+    return 0;
+}
+private int
+z42_gdir_get_outline(gs_font_type42 * pfont, uint glyph_index,
+		     gs_glyph_data_t *pgd)
+{
+    const font_data *pfdata = pfont_data(pfont);
+    const ref *pgdir = &pfdata->u.type42.GlyphDirectory;
+
+    return font_gdir_get_outline(pgdir, (long)glyph_index, pgd);
 }
 
 /* Enumerate glyphs from CharStrings or loca / glyf. */
@@ -314,10 +322,10 @@ z42_encode_char(gs_font *font, gs_char chr, gs_glyph_space_t glyph_space)
 	    glyph_to_index(font, glyph) : glyph);
 }
 private int
-z42_glyph_outline(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
+z42_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matrix *pmat,
 		  gx_path *ppath)
 {
-    return gs_type42_glyph_outline(font, glyph_to_index(font, glyph),
+    return gs_type42_glyph_outline(font, WMode, glyph_to_index(font, glyph),
 				   pmat, ppath);
 }
 private int
@@ -328,7 +336,10 @@ z42_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 				pmat, members, info);
 }
 
-/* Procedure for accessing the sfnts array. */
+/* Procedure for accessing the sfnts array.
+ * Return code : 0 - success, <0 - error, 
+ *               >0 - number of accessible bytes (client must cycle).
+ */
 private int
 z42_string_proc(gs_font_type42 * pfont, ulong offset, uint length,
 		const byte ** pdata)

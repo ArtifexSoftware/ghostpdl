@@ -78,8 +78,14 @@ private const byte bin_token_num_formats[NUM_BIN_TOKEN_TYPES] =
 {
     num_msb + num_float_IEEE,	/* BT_SEQ_IEEE_MSB */
     num_lsb + num_float_IEEE,	/* BT_SEQ_IEEE_LSB */
+#if ARCH_FLOATS_ARE_IEEE && BYTE_SWAP_IEEE_NATIVE_REALS
+    /* Treat native floats like IEEE floats for byte swapping. */
+    num_msb + num_float_IEEE,	/* BT_SEQ_NATIVE_MSB */
+    num_lsb + num_float_IEEE,	/* BT_SEQ_NATIVE_LSB */
+#else
     num_msb + num_float_native,	/* BT_SEQ_NATIVE_MSB */
     num_lsb + num_float_native,	/* BT_SEQ_NATIVE_LSB */
+#endif
     num_msb + num_int32,	/* BT_INT32_MSB */
     num_lsb + num_int32,	/* BT_INT32_LSB */
     num_msb + num_int16,	/* BT_INT16_MSB */
@@ -125,12 +131,12 @@ typedef enum {
 #define SIZEOF_BIN_SEQ_OBJ ((uint)8)
 
 /* Forward references */
-private int scan_bin_get_name(P3(const ref *, int, ref *));
-private int scan_bin_num_array_continue(P4(i_ctx_t *, stream *, ref *, scanner_state *));
-private int scan_bin_string_continue(P4(i_ctx_t *, stream *, ref *, scanner_state *));
-private int scan_bos_continue(P4(i_ctx_t *, stream *, ref *, scanner_state *));
-private byte *scan_bos_resize(P4(i_ctx_t *, scanner_state *, uint, uint));
-private int scan_bos_string_continue(P4(i_ctx_t *, stream *, ref *, scanner_state *));
+private int scan_bin_get_name(const ref *, int, ref *);
+private int scan_bin_num_array_continue(i_ctx_t *, stream *, ref *, scanner_state *);
+private int scan_bin_string_continue(i_ctx_t *, stream *, ref *, scanner_state *);
+private int scan_bos_continue(i_ctx_t *, stream *, ref *, scanner_state *);
+private byte *scan_bos_resize(i_ctx_t *, scanner_state *, uint, uint);
+private int scan_bos_string_continue(i_ctx_t *, stream *, ref *, scanner_state *);
 
 /* Scan a binary token.  Called from the main scanner */
 /* when it encounters an ASCII code 128-159, */
@@ -275,8 +281,7 @@ scan_binary_token(i_ctx_t *i_ctx_p, stream *s, ref *pref,
 		 * the executable, it is probably actually read-only.
 		 */
 		s_end_inline(s, p, rlimit);
-		make_string(pref, a_all | avm_foreign, arg,
-			    (byte *)sbufptr(s));
+		make_const_string(pref, a_all | avm_foreign, arg, sbufptr(s));
 		sbufskip(s, arg);
 		return 0;
 	    } else {
@@ -363,6 +368,10 @@ scan_bin_string_continue(i_ctx_t *i_ctx_p, stream * s, ref * pref,
     uint wanted = pstate->s_da.limit - q;
     uint rcnt;
 
+    /* We don't check the return status from 'sgets' here.
+       If there is an error in sgets, the condition rcnt==wanted
+       would be false and this function will return scan_Refill.
+    */
     sgets(s, q, wanted, &rcnt);
     if (rcnt == wanted) {
 	/* Finished collecting the string. */
@@ -466,7 +475,8 @@ scan_bos_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 		    osize = sdecodeushort(p + 3, num_format);
 		    if (osize != 0) {	/* fixed-point number */
 			value = sdecodelong(p + 5, num_format);
-			vreal = (float)ldexp((double)value, -osize);
+			/* ldexp requires a signed 2nd argument.... */
+			vreal = (float)ldexp((double)value, -(int)osize);
 		    } else {
 			vreal = sdecodefloat(p + 5, num_format);
 		    }
@@ -614,7 +624,7 @@ scan_bos_string_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 {
     scan_binary_state *const pbs = &pstate->s_ss.binary;
     ref rstr;
-    ref *op = pbs->bin_array.value.refs;
+    ref *op;
     int code = scan_bin_string_continue(i_ctx_p, s, &rstr, pstate);
     uint space = ialloc_space(idmemory);
     bool rescan = false;
@@ -622,8 +632,12 @@ scan_bos_string_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 
     if (code != 0)
 	return code;
-    /* Finally, fix up names and dictionaries. */
-    for (i = r_size(&pbs->bin_array); i != 0; i--, op++)
+
+    /* Fix up names.  We must do this before creating dictionaries. */
+
+    for (op = pbs->bin_array.value.refs, i = r_size(&pbs->bin_array);
+	 i != 0; i--, op++
+	 )
 	switch (r_type(op)) {
 	    case t_string:
 		if (r_has_attr(op, a_write))	/* a real string */
@@ -650,6 +664,18 @@ scan_bos_string_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 		}
 		break;
 	    case t_mixedarray:	/* actually a dictionary */
+		rescan = true;
+	}
+
+    /* Create dictionaries, if any. */
+
+    if (rescan) {
+	rescan = false;
+	for (op = pbs->bin_array.value.refs, i = r_size(&pbs->bin_array);
+	     i != 0; i--, op++
+	     )
+	    switch (r_type(op)) {
+	    case t_mixedarray:	/* actually a dictionary */
 		{
 		    uint count = r_size(op);
 		    ref rdict;
@@ -663,14 +689,14 @@ scan_bos_string_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 			    continue;
 			}
 		    } else {
-			code = dict_create(count >> 1, &rdict, &i_ctx_p->dict_stack.dict_defaults);
+			code = dict_create(count >> 1, &rdict);
 			if (code < 0)
 			    return code;
 			while (count) {
 			    count -= 2;
 			    code = idict_put(&rdict,
-					    &op->value.refs[count],
-					    &op->value.refs[count + 1]);
+					     &op->value.refs[count],
+					     &op->value.refs[count + 1]);
 			    if (code < 0)
 				return code;
 			}
@@ -680,9 +706,11 @@ scan_bos_string_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 		    ref_assign(op, &rdict);
 		}
 		break;
-	}
-    /* If there were any forward indirect references, */
-    /* fix them up now. */
+	    }
+    }
+
+    /* If there were any forward indirect references, fix them up now. */
+
     if (rescan)
 	for (op = pbs->bin_array.value.refs, i = r_size(&pbs->bin_array);
 	     i != 0; i--, op++
@@ -697,6 +725,7 @@ scan_bos_string_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 		r_copy_attrs(&rdict, a_executable, op);
 		ref_assign(op, &rdict);
 	    }
+
     ref_assign(pref, &pbs->bin_array);
     r_set_size(pref, pbs->top_size);
     return scan_BOS;
@@ -710,6 +739,7 @@ encode_binary_token(i_ctx_t *i_ctx_p, const ref *obj, long *ref_offset,
 {
     bin_seq_type_t type;
     uint size = 0;
+    int format = (int)ref_binary_object_format.value.intval;
     long value;
     ref nstr;
 
@@ -726,13 +756,17 @@ encode_binary_token(i_ctx_t *i_ctx_p, const ref *obj, long *ref_offset,
 	    break;
 	case t_real:
 	    type = BS_TYPE_REAL;
-	    /***** DOESN'T HANDLE NON-IEEE NATIVE *****/
-	    if (sizeof(obj->value.realval) == sizeof(int)) {
-		value = *(const int *)&obj->value.realval;
-	    } else {
-		/****** CAN'T HANDLE IT ******/
+	    if (sizeof(obj->value.realval) != sizeof(int)) {
+		/* The PLRM allocates exactly 4 bytes for reals. */
 		return_error(e_rangecheck);
 	    }
+	    value = *(const int *)&obj->value.realval;
+#if !(ARCH_FLOATS_ARE_IEEE && BYTE_SWAP_IEEE_NATIVE_REALS)
+	    if (format >= 3) {
+		/* Never byte-swap native reals -- use native byte order. */
+		format = 4 - ARCH_IS_BIG_ENDIAN;
+	    }
+#endif
 	    break;
 	case t_boolean:
 	    type = BS_TYPE_BOOLEAN;
@@ -766,18 +800,17 @@ nos:
     }
     {
 	byte s0 = (byte) size, s1 = (byte) (size >> 8);
-	byte v0 = (byte) value, v1 = (byte) (value >> 8), v2 = (byte) (value >> 16),
-	     v3 = (byte) (value >> 24);
-	int order = (int)ref_binary_object_format.value.intval - 1;
+	byte v0 = (byte) value, v1 = (byte) (value >> 8),
+	    v2 = (byte) (value >> 16), v3 = (byte) (value >> 24);
 
-	if (order & 1) {
-	    /* Store little-endian */
-	    str[2] = s0, str[3] = s1;
-	    str[4] = v0, str[5] = v1, str[6] = v2, str[7] = v3;
-	} else {
+	if (format & 1) {
 	    /* Store big-endian */
 	    str[2] = s1, str[3] = s0;
 	    str[4] = v3, str[5] = v2, str[6] = v1, str[7] = v0;
+	} else {
+	    /* Store little-endian */
+	    str[2] = s0, str[3] = s1;
+	    str[4] = v0, str[5] = v1, str[6] = v2, str[7] = v3;
 	}
     }
 tx:

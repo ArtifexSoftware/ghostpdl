@@ -71,11 +71,9 @@ typedef struct gs_font_cid0_data_s {
     int FDBytes;		/* optional, for standard glyph_data */
     /*
      * The third argument of glyph_data may be NULL if only the font number
-     * is wanted.  glyph_data returns 1 if the string is newly allocated
-     * (using the font's allocator) and can be freed by the client.
+     * is wanted.
      */
-    int (*glyph_data)(P4(gs_font_base *, gs_glyph, gs_const_string *,
-			 int *));
+    int (*glyph_data)(gs_font_base *, gs_glyph, gs_glyph_data_t *, int *);
     void *proc_data;
 } gs_font_cid0_data;
 struct gs_font_cid0_s {
@@ -90,6 +88,9 @@ extern_st(st_gs_font_cid0);
     font_cid0_enum_ptrs, font_cid0_reloc_ptrs, gs_font_finalize)
 #define st_gs_font_cid0_max_ptrs\
   (st_gs_font_max_ptrs + st_gs_font_cid_data_num_ptrs + 2)
+
+/* Define a GC descriptor for allocating FDArray. */
+extern_st(st_gs_font_type1_ptr_element); /* in gsfcid.c */
 
 /* CIDFontType 1 doesn't reference any additional structures. */
 
@@ -118,14 +119,14 @@ typedef struct gs_font_cid2_s gs_font_cid2;
 typedef struct gs_font_cid2_data_s {
     gs_font_cid_data common;
     int MetricsCount;
-    int (*CIDMap_proc)(P2(gs_font_cid2 *, gs_glyph));
+    int (*CIDMap_proc)(gs_font_cid2 *, gs_glyph);
     /*
      * "Wrapper" get_outline and glyph_info procedures are needed, to
      * handle MetricsCount.  Save the original ones here.
      */
     struct o_ {
-	int (*get_outline)(P3(gs_font_type42 *, uint, gs_const_string *));
-	int (*get_metrics)(P4(gs_font_type42 *, uint, int, float [4]));
+	int (*get_outline)(gs_font_type42 *, uint, gs_glyph_data_t *);
+	int (*get_metrics)(gs_font_type42 *, uint, int, float [4]);
     } orig_procs;
 } gs_font_cid2_data;
 struct gs_font_cid2_s {
@@ -147,7 +148,7 @@ extern_st(st_gs_font_cid2);
  * Get the CIDSystemInfo of a font.  If the font is not a CIDFont,
  * return NULL.
  */
-const gs_cid_system_info_t *gs_font_cid_system_info(P1(const gs_font *));
+const gs_cid_system_info_t *gs_font_cid_system_info(const gs_font *);
 
 /*
  * Provide a default enumerate_glyph procedure for CIDFontType 0 fonts.
@@ -155,4 +156,12 @@ const gs_cid_system_info_t *gs_font_cid_system_info(P1(const gs_font *));
  */
 font_proc_enumerate_glyph(gs_font_cid0_enumerate_glyph);
 
+/*
+ * Check CIDSystemInfo compatibility.
+ */
+bool gs_is_CIDSystemInfo_compatible(const gs_cid_system_info_t *info0, 
+				    const gs_cid_system_info_t *info1);
+
+/* Return the font from the FDArray at the given index */
+const gs_font *gs_cid0_indexed_font(const gs_font *, int);
 #endif /* gxfcid_INCLUDED */

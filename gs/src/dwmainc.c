@@ -18,12 +18,22 @@
 #include <fcntl.h>
 #include "errors.h"
 #include "iapi.h"
+#include "vdtrace.h"
 #include "gdevdsp.h"
 #include "dwdll.h"
 #include "dwimg.h"
+#include "dwtrace.h"
+
+/* Patch by Rod Webster (rodw) */
+/* Added conditional below to allow Borland Compilation (Tested on 5.5) */
+/* It would be better to place this code in an include file but no dwmainc.h exists */
+#ifdef __BORLANDC__
+#define _isatty isatty
+#define _setmode setmode
+#endif
 
 GSDLL gsdll;
-void *instance;
+struct gs_main_instance_s *instance;
 BOOL quitnow = FALSE;
 HANDLE hthread;
 DWORD thread_id;
@@ -34,23 +44,11 @@ char start_string[] = "systemdict /start get exec\n";
 
 /*********************************************************************/
 /* stdio functions */
+
 static int GSDLLCALL
 gsdll_stdin(void *instance, char *buf, int len)
 {
-    int ch;
-    int count = 0;
-    while (count < len) {
-	ch = fgetc(stdin);
-	if (ch == EOF)
-	    return count;
-	*buf++ = ch;
-	count++;
-	if (ch == '\r')
-	    break;
-	if (ch == '\n')
-	    break;
-    }
-    return count;
+    return _read(fileno(stdin), buf, len);
 }
 
 static int GSDLLCALL
@@ -327,6 +325,11 @@ int main(int argc, char *argv[])
 	return 1;
     }
 
+#ifdef DEBUG
+    visual_tracer_init();
+    gsdll.set_visual_tracer(&visual_tracer);
+#endif
+
     if (_beginthread(winthread, 65535, NULL) == -1) {
 	fprintf(stderr, "GUI thread creation failed\n");
     }
@@ -353,6 +356,7 @@ int main(int argc, char *argv[])
 		DISPLAY_DEPTH_1 | DISPLAY_LITTLEENDIAN | DISPLAY_BOTTOMFIRST;
 	HDC hdc = GetDC(NULL);	/* get hdc for desktop */
 	int depth = GetDeviceCaps(hdc, PLANES) * GetDeviceCaps(hdc, BITSPIXEL);
+        ReleaseDC(NULL, hdc);
 	if (depth == 32)
  	    format = DISPLAY_COLORS_RGB | DISPLAY_UNUSED_LAST | 
 		DISPLAY_DEPTH_8 | DISPLAY_LITTLEENDIAN | DISPLAY_BOTTOMFIRST;
@@ -383,6 +387,10 @@ int main(int argc, char *argv[])
     gsdll.exit(instance);
 
     gsdll.delete_instance(instance);
+
+#ifdef DEBUG
+    visual_tracer_close();
+#endif
 
     unload_dll(&gsdll);
 

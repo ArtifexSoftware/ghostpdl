@@ -76,14 +76,14 @@ GSROOTDIR=$(AROOTDIR)/gs$(GS_DOT_VERSION)
 GS_DOCDIR=$(GSROOTDIR)/doc
 !endif
 
-# Define the default directory/ies for the runtime initialization and
+# Define the default directory/ies for the runtime initialization, resource and
 # font files.  Separate multiple directories with ';'.
 # Use / to indicate directories, not \.
 # MSVC will not allow \'s here because it sees '\;' CPP-style as an
 # illegal escape.
 
 !ifndef GS_LIB_DEFAULT
-GS_LIB_DEFAULT=$(GSROOTDIR)/lib;$(AROOTDIR)/fonts
+GS_LIB_DEFAULT=$(GSROOTDIR)/lib;$(GSROOTDIR)/Resource;$(AROOTDIR)/fonts
 !endif
 
 # Define whether or not searching for initialization files should always
@@ -180,7 +180,7 @@ JVERSION=6
 
 !ifndef PSRCDIR
 PSRCDIR=libpng
-PVERSION=10012
+PVERSION=10204
 !endif
 
 # Define the directory where the zlib sources are stored.
@@ -190,11 +190,39 @@ PVERSION=10012
 ZSRCDIR=zlib
 !endif
 
+# Define the jbig2dec library source location.
+# See jbig2.mak for more information.
+
+!ifndef JBIG2SRCDIR
+JBIG2SRCDIR=jbig2dec
+!endif
+
 # Define the directory where the icclib source are stored.
 # See icclib.mak for more information
 
 !ifndef ICCSRCDIR
 ICCSRCDIR=icclib
+!endif
+
+# Define the directory where the ijs source is stored,
+# and the process forking method to use for the server.
+# See ijs.mak for more information.
+
+!ifndef IJSSRCDIR
+IJSSRCDIR=ijs
+IJSEXECTYPE=win
+!endif
+
+# 1 --> Use 64 bits for gx_color_index.  This is required only for
+# non standard devices or DeviceN process color model devices.
+USE_LARGE_COLOR_INDEX=1
+
+!if $(USE_LARGE_COLOR_INDEX) == 1
+# Definitions to force gx_color_index to 64 bits
+LARGEST_UINTEGER_TYPE=unsigned __int64
+GX_COLOR_INDEX_TYPE=$(LARGEST_UINTEGER_TYPE)
+
+CFLAGS=/DGX_COLOR_INDEX_TYPE="$(GX_COLOR_INDEX_TYPE)"
 !endif
 
 # Define any other compilation flags.
@@ -203,6 +231,7 @@ ICCSRCDIR=icclib
 CFLAGS=
 !endif
 
+#
 # Do not edit the next group of lines.
 
 #!include $(COMMONDIR)\msvcdefs.mak
@@ -219,10 +248,10 @@ PSD=$(PSGENDIR)\$(NUL)
 # ------ Platform-specific options ------ #
 
 # Define which major version of MSVC is being used
-# (currently, 4 & 5 are supported).
+# (currently, 4, 5, and 6 are supported).
 
 !ifndef MSVC_VERSION 
-MSVC_VERSION=5
+MSVC_VERSION=6
 !endif
 
 # Define the drive, directory, and compiler name for the Microsoft C files.
@@ -268,6 +297,19 @@ SHAREDBASE=
 !else
 COMPBASE=$(DEVSTUDIO)\VC98
 SHAREDBASE=$(DEVSTUDIO)\Common\MSDev98
+!endif
+!endif
+
+!if $(MSVC_VERSION) == 7
+! ifndef DEVSTUDIO
+DEVSTUDIO=C:\Program Files\Microsoft Visual Studio .NET
+! endif
+!if "$(DEVSTUDIO)"==""
+COMPBASE=
+SHAREDBASE=
+!else
+COMPBASE=$(DEVSTUDIO)\Vc7
+SHAREDBASE=$(DEVSTUDIO)\Vc7\
 !endif
 !endif
 
@@ -419,7 +461,7 @@ SYNC=winsync
 # Choose the language feature(s) to include.  See gs.mak for details.
 
 !ifndef FEATURE_DEVS
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)mshandle.dev $(PSD)msprinter.dev $(GLD)pipe.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(PSD)mshandle.dev $(PSD)msprinter.dev $(PSD)mspoll.dev $(GLD)pipe.dev $(PSD)fapi.dev $(PSD)jbig2.dev
 !endif
 
 # Choose whether to compile the .ps initialization files into the executable.
@@ -462,28 +504,32 @@ STDIO_IMPLEMENTATION=c
 # devs.mak and contrib.mak for the list of available devices.
 
 !ifndef DEVICE_DEVS
-DEVICE_DEVS=$(DD)display.dev $(DD)mswindll.dev $(DD)mswinprn.dev $(DD)mswinpr2.dev
+DEVICE_DEVS=$(DD)display.dev $(DD)mswindll.dev $(DD)mswinpr2.dev
 DEVICE_DEVS2=$(DD)epson.dev $(DD)eps9high.dev $(DD)eps9mid.dev $(DD)epsonc.dev $(DD)ibmpro.dev
 DEVICE_DEVS3=$(DD)deskjet.dev $(DD)djet500.dev $(DD)laserjet.dev $(DD)ljetplus.dev $(DD)ljet2p.dev
 DEVICE_DEVS4=$(DD)cdeskjet.dev $(DD)cdjcolor.dev $(DD)cdjmono.dev $(DD)cdj550.dev
-DEVICE_DEVS5=$(DD)djet500c.dev $(DD)declj250.dev $(DD)lj250.dev
+DEVICE_DEVS5=$(DD)uniprint.dev $(DD)djet500c.dev $(DD)declj250.dev $(DD)lj250.dev $(DD)ijs.dev
 DEVICE_DEVS6=$(DD)st800.dev $(DD)stcolor.dev $(DD)bj10e.dev $(DD)bj200.dev
 DEVICE_DEVS7=$(DD)t4693d2.dev $(DD)t4693d4.dev $(DD)t4693d8.dev $(DD)tek4696.dev
 DEVICE_DEVS8=$(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcx16.dev $(DD)pcx256.dev $(DD)pcx24b.dev $(DD)pcxcmyk.dev
-DEVICE_DEVS9=$(DD)pbm.dev $(DD)pbmraw.dev $(DD)pgm.dev $(DD)pgmraw.dev $(DD)pgnm.dev $(DD)pgnmraw.dev
+DEVICE_DEVS9=$(DD)pbm.dev $(DD)pbmraw.dev $(DD)pgm.dev $(DD)pgmraw.dev $(DD)pgnm.dev $(DD)pgnmraw.dev $(DD)pkmraw.dev
 DEVICE_DEVS10=$(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev $(DD)tifflzw.dev $(DD)tiffpack.dev
 DEVICE_DEVS11=$(DD)bmpmono.dev $(DD)bmpgray.dev $(DD)bmp16.dev $(DD)bmp256.dev $(DD)bmp16m.dev $(DD)tiff12nc.dev $(DD)tiff24nc.dev
 DEVICE_DEVS12=$(DD)psmono.dev $(DD)bit.dev $(DD)bitrgb.dev $(DD)bitcmyk.dev
-DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev
+DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev $(DD)pngalpha.dev
 DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev
 DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)epswrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev
+DEVICE_DEVS16=$(DD)bbox.dev
 # Overflow for DEVS3,4,5,6,9
-DEVICE_DEVS16=$(DD)ljet3.dev $(DD)ljet3d.dev $(DD)ljet4.dev $(DD)ljet4d.dev
-DEVICE_DEVS17=$(DD)pj.dev $(DD)pjxl.dev $(DD)pjxl300.dev
-DEVICE_DEVS18=$(DD)jetp3852.dev $(DD)r4081.dev $(DD)lbp8.dev $(DD)uniprint.dev
-DEVICE_DEVS19=$(DD)m8510.dev $(DD)necp6.dev $(DD)bjc600.dev $(DD)bjc800.dev
+DEVICE_DEVS17=$(DD)ljet3.dev $(DD)ljet3d.dev $(DD)ljet4.dev $(DD)ljet4d.dev 
+DEVICE_DEVS18=$(DD)pj.dev $(DD)pjxl.dev $(DD)pjxl300.dev $(DD)jetp3852.dev $(DD)r4081.dev
+DEVICE_DEVS19=$(DD)lbp8.dev $(DD)m8510.dev $(DD)necp6.dev $(DD)bjc600.dev $(DD)bjc800.dev
 DEVICE_DEVS20=$(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev
+DEVICE_DEVS21= $(DD)spotcmyk.dev $(DD)devicen.dev $(DD)bmpsep1.dev $(DD)bmpsep8.dev $(DD)bmp16m.dev $(DD)bmp32b.dev $(DD)psdcmyk.dev $(DD)psdrgb.dev
 !endif
+
+# FAPI compilation options :
+UFST_CFLAGS=-DMSVC
 
 # ---------------------------- End of options ---------------------------- #
 
@@ -504,8 +550,8 @@ FPU_TYPE=1
 
 # Define the name of the makefile -- used in dependencies.
 
-MAKEFILE=$(GLSRCDIR)\msvc32.mak
-TOP_MAKEFILES=$(MAKEFILE) $(GLSRCDIR)\msvccmd.mak $(GLSRCDIR)\msvctail.mak $(GLSRCDIR)\winlib.mak $(GLSRCDIR)\winint.mak
+MAKEFILE=$(PSSRCDIR)\msvc32.mak
+TOP_MAKEFILES=$(MAKEFILE) $(GLSRCDIR)\msvccmd.mak $(GLSRCDIR)\msvctail.mak $(GLSRCDIR)\winlib.mak $(PSSRCDIR)\winint.mak
 
 # Define the files to be removed by `make clean'.
 # nmake expands macros when encountered, not when used,
@@ -513,92 +559,95 @@ TOP_MAKEFILES=$(MAKEFILE) $(GLSRCDIR)\msvccmd.mak $(GLSRCDIR)\msvctail.mak $(GLS
 
 BEGINFILES2=$(GLGENDIR)\lib32.rsp\
  $(GLOBJDIR)\*.exp $(GLOBJDIR)\*.ilk $(GLOBJDIR)\*.pdb $(GLOBJDIR)\*.lib\
- $(BINDIR)\*.exp $(BINDIR)\*.ilk $(BINDIR)\*.pdb $(BINDIR)\*.lib
+ $(BINDIR)\*.exp $(BINDIR)\*.ilk $(BINDIR)\*.pdb $(BINDIR)\*.lib obj.pdb
 
 !include $(GLSRCDIR)\msvccmd.mak
 !include $(GLSRCDIR)\winlib.mak
 !include $(GLSRCDIR)\msvctail.mak
-!include $(GLSRCDIR)\winint.mak
+!include $(PSSRCDIR)\winint.mak
 
 # ----------------------------- Main program ------------------------------ #
 
 GSCONSOLE_XE=$(BINDIR)\$(GSCONSOLE).exe
 GSDLL_DLL=$(BINDIR)\$(GSDLL).dll
-GSDLL_OBJS=$(GLOBJ)gsdll.$(OBJ) $(GLOBJ)gp_msdll.$(OBJ)
+GSDLL_OBJS=$(PSOBJ)gsdll.$(OBJ) $(GLOBJ)gp_msdll.$(OBJ)
 
-$(GLGEN)lib32.rsp: $(TOP_MAKEFILES)
-	echo /NODEFAULTLIB:LIBC.lib > $(GLGEN)lib32.rsp
-	echo libcmt.lib >> $(GLGEN)lib32.rsp
+$(PSGEN)lib32.rsp: $(TOP_MAKEFILES)
+	echo /NODEFAULTLIB:LIBC.lib > $(PSGEN)lib32.rsp
+	echo libcmt.lib >> $(PSGEN)lib32.rsp
 
 !if $(MAKEDLL)
 # The graphical small EXE loader
 $(GS_XE): $(GSDLL_DLL)  $(DWOBJ) $(GSCONSOLE_XE) $(SETUP_XE) $(UNINSTALL_XE)
-	echo /SUBSYSTEM:WINDOWS > $(GLGEN)gswin32.rsp
-	echo /DEF:$(GLSRCDIR)\dwmain32.def /OUT:$(GS_XE) >> $(GLGEN)gswin32.rsp
-        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(DWOBJ) @$(LIBCTR) $(GS_OBJ).res
-	del $(GLGEN)gswin32.rsp
+	echo /SUBSYSTEM:WINDOWS > $(PSGEN)gswin32.rsp
+	echo /DEF:$(PSSRCDIR)\dwmain32.def /OUT:$(GS_XE) >> $(PSGEN)gswin32.rsp
+	$(LINK) $(LCT) @$(PSGEN)gswin32.rsp $(DWOBJ) @$(LIBCTR) $(GS_OBJ).res
+	del $(PSGEN)gswin32.rsp
 
 # The console mode small EXE loader
-$(GSCONSOLE_XE): $(OBJC) $(GS_OBJ).res $(GLSRCDIR)\dw32c.def
-	echo /SUBSYSTEM:CONSOLE > $(GLGEN)gswin32.rsp
-	echo  /DEF:$(GLSRCDIR)\dw32c.def /OUT:$(GSCONSOLE_XE) >> $(GLGEN)gswin32.rsp
-        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(OBJC) @$(LIBCTR) $(GS_OBJ).res
-	del $(GLGEN)gswin32.rsp
+$(GSCONSOLE_XE): $(OBJC) $(GS_OBJ).res $(PSSRCDIR)\dw32c.def
+	echo /SUBSYSTEM:CONSOLE > $(PSGEN)gswin32.rsp
+	echo  /DEF:$(PSSRCDIR)\dw32c.def /OUT:$(GSCONSOLE_XE) >> $(PSGEN)gswin32.rsp
+	$(LINK) $(LCT) @$(PSGEN)gswin32.rsp $(OBJC) @$(LIBCTR) $(GS_OBJ).res
+	del $(PSGEN)gswin32.rsp
 
 # The big DLL
-$(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(GSDLL_OBJ).res $(GLGEN)lib32.rsp
-	echo /DLL /DEF:$(GLSRCDIR)\gsdll32.def /OUT:$(GSDLL_DLL) > $(GLGEN)gswin32.rsp
-        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(GSDLL_OBJS) @$(ld_tr) $(INTASM) @$(GLGEN)lib.tr @$(GLGEN)lib32.rsp @$(LIBCTR) $(GSDLL_OBJ).res
-	del $(GLGEN)gswin32.rsp
+$(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(GSDLL_OBJ).res $(PSGEN)lib32.rsp
+	echo /DLL /DEF:$(PSSRCDIR)\gsdll32.def /OUT:$(GSDLL_DLL) > $(PSGEN)gswin32.rsp
+	$(LINK) $(LCT) @$(PSGEN)gswin32.rsp $(GSDLL_OBJS) @$(ld_tr) $(INTASM) @$(GLGEN)lib.tr @$(PSGEN)lib32.rsp @$(LIBCTR) $(GSDLL_OBJ).res
+	del $(PSGEN)gswin32.rsp
 
 !else
 # The big graphical EXE
-$(GS_XE): $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(DWOBJNO) $(GSDLL_OBJ).res $(GLSRCDIR)\dwmain32.def $(GLGEN)lib32.rsp
-	copy $(ld_tr) $(GLGEN)gswin32.tr
-	echo $(GLOBJ)dwnodll.obj >> $(GLGEN)gswin32.tr
-	echo $(GLOBJ)dwimg.obj >> $(GLGEN)gswin32.tr
-	echo $(GLOBJ)dwmain.obj >> $(GLGEN)gswin32.tr
-	echo $(GLOBJ)dwtext.obj >> $(GLGEN)gswin32.tr
-	echo /DEF:$(GLSRCDIR)\dwmain32.def /OUT:$(GS_XE) > $(GLGEN)gswin32.rsp
-        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(GLOBJ)gsdll @$(GLGEN)gswin32.tr @$(LIBCTR) $(INTASM) @$(GLGEN)lib.tr @$(GLGEN)lib32.rsp $(GSDLL_OBJ).res
-	del $(GLGEN)gswin32.tr
-	del $(GLGEN)gswin32.rsp
+$(GS_XE): $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(DWOBJNO) $(GSDLL_OBJ).res $(PSSRCDIR)\dwmain32.def $(PSGEN)lib32.rsp
+	copy $(ld_tr) $(PSGEN)gswin32.tr
+	echo $(PSOBJ)dwnodll.obj >> $(PSGEN)gswin32.tr
+	echo $(GLOBJ)dwimg.obj >> $(PSGEN)gswin32.tr
+	echo $(PSOBJ)dwmain.obj >> $(PSGEN)gswin32.tr
+	echo $(GLOBJ)dwtext.obj >> $(PSGEN)gswin32.tr
+	echo $(GLOBJ)dwreg.obj >> $(PSGEN)gswin32.tr
+	echo /DEF:$(PSSRCDIR)\dwmain32.def /OUT:$(GS_XE) > $(PSGEN)gswin32.rsp
+	$(LINK) $(LCT) @$(PSGEN)gswin32.rsp $(GLOBJ)gsdll @$(PSGEN)gswin32.tr @$(LIBCTR) $(INTASM) @$(GLGEN)lib.tr @$(PSGEN)lib32.rsp $(GSDLL_OBJ).res
+	del $(PSGEN)gswin32.tr
+	del $(PSGEN)gswin32.rsp
 
 # The big console mode EXE
-$(GSCONSOLE_XE): $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(OBJCNO) $(GS_OBJ).res $(GLSRCDIR)\dw32c.def $(GLGEN)lib32.rsp
-	copy $(ld_tr) $(GLGEN)gswin32c.tr
-	echo $(GLOBJ)dwnodllc.obj >> $(GLGEN)gswin32c.tr
-	echo $(GLOBJ)dwmainc.obj >> $(GLGEN)gswin32c.tr
-	echo /SUBSYSTEM:CONSOLE > $(GLGEN)gswin32.rsp
-	echo /DEF:$(GLSRCDIR)\dw32c.def /OUT:$(GSCONSOLE_XE) >> $(GLGEN)gswin32.rsp
-        $(LINK) $(LCT) @$(GLGEN)gswin32.rsp $(GLOBJ)gsdll @$(GLGEN)gswin32c.tr @$(LIBCTR) $(INTASM) @$(GLGEN)lib.tr @$(GLGEN)lib32.rsp $(GS_OBJ).res
-	del $(GLGEN)gswin32.rsp
-	del $(GLGEN)gswin32c.tr
+$(GSCONSOLE_XE): $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(OBJCNO) $(GS_OBJ).res $(PSSRCDIR)\dw32c.def $(PSGEN)lib32.rsp
+	copy $(ld_tr) $(PSGEN)gswin32c.tr
+	echo $(PSOBJ)dwnodllc.obj >> $(PSGEN)gswin32c.tr
+	echo $(GLOBJ)dwimg.obj >> $(PSGEN)gswin32c.tr
+	echo $(PSOBJ)dwmainc.obj >> $(PSGEN)gswin32c.tr
+	echo $(PSOBJ)dwreg.obj >> $(PSGEN)gswin32c.tr
+	echo /SUBSYSTEM:CONSOLE > $(PSGEN)gswin32.rsp
+	echo /DEF:$(PSSRCDIR)\dw32c.def /OUT:$(GSCONSOLE_XE) >> $(PSGEN)gswin32.rsp
+	$(LINK) $(LCT) @$(PSGEN)gswin32.rsp $(GLOBJ)gsdll @$(PSGEN)gswin32c.tr @$(LIBCTR) $(INTASM) @$(GLGEN)lib.tr @$(PSGEN)lib32.rsp $(GS_OBJ).res
+	del $(PSGEN)gswin32.rsp
+	del $(PSGEN)gswin32c.tr
 !endif
 
 # ---------------------- Setup and uninstall programs ---------------------- #
 
 !if $(MAKEDLL)
 
-$(SETUP_XE): $(GLOBJ)dwsetup.obj $(GLOBJ)dwinst.obj $(GLOBJ)dwsetup.res $(GLSRC)dwsetup.def
-	echo /DEF:$(GLSRC)dwsetup.def /OUT:$(SETUP_XE) > $(GLGEN)dwsetup.rsp
-	echo $(GLOBJ)dwsetup.obj $(GLOBJ)dwinst.obj >> $(GLGEN)dwsetup.rsp
-	copy $(LIBCTR) $(GLGEN)dwsetup.tr
-        echo ole32.lib >> $(GLGEN)dwsetup.tr
-        echo uuid.lib >> $(GLGEN)dwsetup.tr
-        $(LINK) $(LCT) @$(GLGEN)dwsetup.rsp @$(GLGEN)dwsetup.tr $(GLOBJ)dwsetup.res
-	del $(GLGEN)dwsetup.rsp
-	del $(GLGEN)dwsetup.tr
+$(SETUP_XE): $(PSOBJ)dwsetup.obj $(PSOBJ)dwinst.obj $(PSOBJ)dwsetup.res $(PSSRC)dwsetup.def
+	echo /DEF:$(PSSRC)dwsetup.def /OUT:$(SETUP_XE) > $(PSGEN)dwsetup.rsp
+	echo $(PSOBJ)dwsetup.obj $(PSOBJ)dwinst.obj >> $(PSGEN)dwsetup.rsp
+	copy $(LIBCTR) $(PSGEN)dwsetup.tr
+	echo ole32.lib >> $(PSGEN)dwsetup.tr
+	echo uuid.lib >> $(PSGEN)dwsetup.tr
+	$(LINK) $(LCT) @$(PSGEN)dwsetup.rsp @$(PSGEN)dwsetup.tr $(PSOBJ)dwsetup.res
+	del $(PSGEN)dwsetup.rsp
+	del $(PSGEN)dwsetup.tr
 
-$(UNINSTALL_XE): $(GLOBJ)dwuninst.obj $(GLOBJ)dwuninst.res $(GLSRC)dwuninst.def
-	echo /DEF:$(GLSRC)dwuninst.def /OUT:$(UNINSTALL_XE) > $(GLGEN)dwuninst.rsp
-	echo $(GLOBJ)dwuninst.obj >> $(GLGEN)dwuninst.rsp
-	copy $(LIBCTR) $(GLGEN)dwuninst.tr
-        echo ole32.lib >> $(GLGEN)dwuninst.tr
-        echo uuid.lib >> $(GLGEN)dwuninst.tr
-        $(LINK) $(LCT) @$(GLGEN)dwuninst.rsp @$(GLGEN)dwuninst.tr $(GLOBJ)dwuninst.res
-	del $(GLGEN)dwuninst.rsp
-	del $(GLGEN)dwuninst.tr
+$(UNINSTALL_XE): $(PSOBJ)dwuninst.obj $(PSOBJ)dwuninst.res $(PSSRC)dwuninst.def
+	echo /DEF:$(PSSRC)dwuninst.def /OUT:$(UNINSTALL_XE) > $(PSGEN)dwuninst.rsp
+	echo $(PSOBJ)dwuninst.obj >> $(PSGEN)dwuninst.rsp
+	copy $(LIBCTR) $(PSGEN)dwuninst.tr
+	echo ole32.lib >> $(PSGEN)dwuninst.tr
+	echo uuid.lib >> $(PSGEN)dwuninst.tr
+	$(LINK) $(LCT) @$(PSGEN)dwuninst.rsp @$(PSGEN)dwuninst.tr $(PSOBJ)dwuninst.res
+	del $(PSGEN)dwuninst.rsp
+	del $(PSGEN)dwuninst.tr
 
 !endif
 

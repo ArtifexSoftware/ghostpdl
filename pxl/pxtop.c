@@ -43,8 +43,8 @@
 
 typedef int  (*px_init_proc) ( px_state_t * );
 
-int pxfont_init(P1(px_state_t *pxs ));
-int pxerrors_init(P1(px_state_t *pxs ));
+int pxfont_init(px_state_t *pxs );
+int pxerrors_init(px_state_t *pxs );
 
 const px_init_proc px_init_table[] = {
     &pxfont_init,
@@ -57,8 +57,8 @@ px_operator_proc(pxEndPage);
 px_operator_proc(pxBeginSession);
 
 /* Forward decls */
-private int pxl_end_page_top(P3(px_state_t *pxs, int num_copies, int flush));
-private int px_top_init(P3(px_parser_state_t *st, px_state_t *pxs, bool big_endian));
+private int pxl_end_page_top(px_state_t *pxs, int num_copies, int flush);
+private int px_top_init(px_parser_state_t *st, px_state_t *pxs, bool big_endian);
 
 
 /* ------------ PCXL stream header processor ------- */

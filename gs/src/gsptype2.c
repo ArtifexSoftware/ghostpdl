@@ -23,6 +23,7 @@
 #include "gxpcolor.h"
 #include "gxstate.h"            /* for gs_state_memory */
 #include "gzpath.h"
+#include "gzstate.h"
 
 /* GC descriptors */
 private_st_pattern2_template();
@@ -52,10 +53,12 @@ private pattern_proc_uses_base_space(gs_pattern2_uses_base_space);
 private pattern_proc_make_pattern(gs_pattern2_make_pattern);
 private pattern_proc_get_pattern(gs_pattern2_get_pattern);
 private pattern_proc_remap_color(gs_pattern2_remap_color);
+private pattern_proc_set_color(gs_pattern2_set_color);
 private const gs_pattern_type_t gs_pattern2_type = {
     2, {
         gs_pattern2_uses_base_space, gs_pattern2_make_pattern,
-        gs_pattern2_get_pattern, gs_pattern2_remap_color
+        gs_pattern2_get_pattern, gs_pattern2_remap_color,
+        gs_pattern2_set_color,
     }
 };
 
@@ -108,17 +111,23 @@ gs_private_st_ptrs_add0(st_dc_pattern2, gx_device_color, "dc_pattern2",
                         dc_pattern2_enum_ptrs, dc_pattern2_reloc_ptrs,
                         st_client_color, ccolor);
 
+private dev_color_proc_get_dev_halftone(gx_dc_pattern2_get_dev_halftone);
 private dev_color_proc_load(gx_dc_pattern2_load);
 private dev_color_proc_fill_rectangle(gx_dc_pattern2_fill_rectangle);
 private dev_color_proc_equal(gx_dc_pattern2_equal);
+private dev_color_proc_save_dc(gx_dc_pattern2_save_dc);
 /*
  * Define the PatternType 2 Pattern device color type.  This is public only
  * for testing when writing PDF or PostScript.
  */
 const gx_device_color_type_t gx_dc_pattern2 = {
     &st_dc_pattern2,
+    gx_dc_pattern2_save_dc, gx_dc_pattern2_get_dev_halftone,
+    gx_dc_ht_get_phase,
     gx_dc_pattern2_load, gx_dc_pattern2_fill_rectangle,
-    gx_dc_default_fill_masked, gx_dc_pattern2_equal
+    gx_dc_default_fill_masked, gx_dc_pattern2_equal,
+    gx_dc_pattern_write, gx_dc_pattern_read,
+    gx_dc_pattern_get_nonzero_comps
 };
 
 /* Check device color for Pattern Type 2. */
@@ -126,6 +135,16 @@ bool
 gx_dc_is_pattern2_color(const gx_device_color *pdevc)
 {
     return pdevc->type == &gx_dc_pattern2;
+}
+
+/*
+ * The device halftone used by a PatternType 2 patter is that current in
+ * the graphic state at the time of the makepattern call.
+ */
+private const gx_device_halftone *
+gx_dc_pattern2_get_dev_halftone(const gx_device_color * pdevc)
+{
+    return ((gs_pattern2_instance_t *)pdevc->ccolor.pattern)->saved->dev_ht;
 }
 
 /* Load a PatternType 2 color into the cache.  (No effect.) */
@@ -146,6 +165,25 @@ gs_pattern2_remap_color(const gs_client_color * pc, const gs_color_space * pcs,
     pdc->type = &gx_dc_pattern2;
     pdc->ccolor = *pc;
     return 0;
+}
+
+/*
+ * Perform actions required at set_color time. Since PatternType 2
+ * patterns specify a color space, we must update the overprint
+ * information as required by that color space. We temporarily disable
+ * overprint_mode, as it is never applicable when using shading patterns.
+ */
+private int
+gs_pattern2_set_color(const gs_client_color * pcc, gs_state * pgs)
+{
+    gs_pattern2_instance_t * pinst = (gs_pattern2_instance_t *)pcc->pattern;
+    gs_color_space * pcs = pinst->template.Shading->params.ColorSpace;
+    int code, save_overprint_mode = pgs->overprint_mode;
+
+    pgs->overprint_mode = 0;
+    code = pcs->type->set_overprint(pcs, pgs);
+    pgs->overprint_mode = save_overprint_mode;
+    return code;
 }
 
 /* Fill path or rect, with adjustment, and with a PatternType 2 color. */
@@ -204,3 +242,24 @@ gx_dc_pattern2_equal(const gx_device_color * pdevc1,
     return pdevc2->type == pdevc1->type &&
         pdevc1->ccolor.pattern == pdevc2->ccolor.pattern;
 }
+
+/*
+ * Currently patterns cannot be passed through the command list,
+ * however vector devices need to save a color for comparing
+ * it with another color, which appears later.
+ * We provide a minimal support, which is necessary
+ * for the current implementation of pdfwrite.
+ * It is not sufficient for restoring the pattern from the saved color.
+ */
+private void
+gx_dc_pattern2_save_dc(
+    const gx_device_color * pdevc, 
+    gx_device_color_saved * psdc )
+{
+    gs_pattern2_instance_t * pinst = (gs_pattern2_instance_t *)pdevc->ccolor.pattern;
+
+    psdc->type = pdevc->type;
+    psdc->colors.pattern2.id = pinst->pattern_id;
+}
+
+

@@ -39,24 +39,22 @@
 #include <StringCompare.h>
 #include <Gestalt.h>
 #include <Folders.h>
+#include <Files.h>
 #include <Fonts.h>
 #include <FixMath.h>
 #include <Resources.h>
-#include "math_.h"
-#include <string.h>
-#include <stdlib.h>
 
-//#include <stdio.h>
-//#include <cstdio.h>
-
-#include "sys/stat.h"
 #include "stdio_.h"
+#include "math_.h"
+#include "string_.h"
 #include <stdlib.h>
+#include <stdarg.h>
+#include <console.h>
+
 #include "gx.h"
 #include "gp.h"
 #include "gxdevice.h"
-#include <stdarg.h>
-#include <console.h>
+
 #include "gp_mac.h"
 
 #include "stream.h"
@@ -71,21 +69,21 @@ extern void
 convertSpecToPath(FSSpec * s, char * p, int pLen)
 {
 	OSStatus	err = noErr;
-	DirInfo		block;
+	CInfoPBRec	params;
 	Str255		dirName;
-	int			totLen = 0, dirLen = 0;
+	int		totLen = 0, dirLen = 0;
 
 	memcpy(p, s->name + 1, s->name[0]);
 	totLen += s->name[0];
 	
-	block.ioNamePtr = dirName;
-	block.ioVRefNum = s->vRefNum;
-	block.ioDrParID = s->parID;
-	block.ioFDirIndex = -1;
+	params.dirInfo.ioNamePtr = dirName;
+	params.dirInfo.ioVRefNum = s->vRefNum;
+	params.dirInfo.ioDrParID = s->parID;
+	params.dirInfo.ioFDirIndex = -1;
 	
 	do {
-		block.ioDrDirID = block.ioDrParID;
-		err = PBGetCatInfoSync((CInfoPBPtr)&block);
+		params.dirInfo.ioDrDirID = params.dirInfo.ioDrParID;
+		err = PBGetCatInfoSync(&params);
 		
 		if ((err != noErr) || (totLen + dirName[0] + 2 > pLen)) {
 			p[0] = 0;
@@ -96,14 +94,26 @@ convertSpecToPath(FSSpec * s, char * p, int pLen)
 		memmove(p + dirName[0], p, totLen);
 		memcpy(p, dirName + 1, dirName[0]);
 		totLen += dirName[0];
-	} while (block.ioDrParID != fsRtParID);
+	} while (params.dirInfo.ioDrParID != fsRtParID);
 	
 	p[totLen] = 0;
 	
 	return;
 }
 
-
+OSErr
+convertPathToSpec(const char *path, const int pathlength, FSSpec * spec)
+{
+	Str255 filename;
+	
+	/* path must be shorter than 255 bytes */
+	if (pathlength > 254) return bdNamErr;
+	
+	*filename = pathlength;
+	memcpy(filename + 1, path, pathlength);
+	
+	return FSMakeFSSpec(0, 0, filename, spec);
+}
 
 /* ------ File name syntax ------ */
 
@@ -272,8 +282,9 @@ private int
 mac_stdin_read_process(stream_state *st, stream_cursor_read *ignore_pr,
   stream_cursor_write *pw, bool last)
 {
-    uint count;
-/* callback to get more input */
+    uint count = pw->limit - pw->ptr;
+    /* callback to get more input */
+    if (pgsdll_callback == NULL) return EOFC;
     count = (*pgsdll_callback) (GSDLL_STDIN, (char*)pw->ptr + 1, count);
 	pw->ptr += count;	
 	return 1;
@@ -285,6 +296,7 @@ mac_stdout_write_process(stream_state *st, stream_cursor_read *pr,
   stream_cursor_write *ignore_pw, bool last)
 {	uint count = pr->limit - pr->ptr;
  
+    if (pgsdll_callback == NULL) return EOFC;
     (*pgsdll_callback) (GSDLL_STDOUT, (char *)(pr->ptr + 1), count);
 	pr->ptr = pr->limit;
 	return 0;
@@ -295,6 +307,7 @@ mac_stderr_write_process(stream_state *st, stream_cursor_read *pr,
   stream_cursor_write *ignore_pw, bool last)
 {	uint count = pr->limit - pr->ptr;
 
+    if (pgsdll_callback == NULL) return EOFC;
     (*pgsdll_callback) (GSDLL_STDOUT, (char *)(pr->ptr + 1), count);
 	pr->ptr = pr->limit;
 	return 0;
@@ -317,7 +330,6 @@ fprintf(FILE *file, const char *fmt, ...)
 	int		count;
 	va_list	args;
 	char	buf[1024];
-    int i;
 	
 	va_start(args,fmt);
 	
@@ -336,9 +348,6 @@ fprintf(FILE *file, const char *fmt, ...)
 int
 fputs(const char *string, FILE *file)
 {
-	int i,count;
-	char buf[1024];
-	
 	if (file != stdout  &&  file != stderr) {
 		return fwrite(string, strlen(string), 1, file);
 	}
@@ -410,6 +419,8 @@ gp_open_scratch_file (const char *prefix, char *fname, const char *mode)
 	short foundVRefNum;
 	long foundDirID;
 	FSSpec fSpec;
+	FILE *f;
+
 	strcpy (fname, (char *) prefix);
 	{
 		char newName[50];
@@ -425,7 +436,7 @@ gp_open_scratch_file (const char *prefix, char *fname, const char *mode)
 			&foundVRefNum, &foundDirID);
 		if ( myErr != noErr ) {
 			fprintf(stderr,"Can't find temp folder.\n");
-			return;
+			return (NULL);
 		}
 		FSMakeFSSpec(foundVRefNum, foundDirID,thepfname, &fSpec);
 		convertSpecToPath(&fSpec, thefname, sizeof(thefname) - 1);
@@ -436,7 +447,10 @@ gp_open_scratch_file (const char *prefix, char *fname, const char *mode)
 	   thepfname[0]=strlen(thefname);
    }
 
-	return gp_fopen (thefname, mode);
+    f = gp_fopen (thefname, mode);
+    if (f == NULL)
+	eprintf1("**** Could not open temporary file %s\n", fname);
+    return f;
 }
 
 /*
@@ -460,71 +474,143 @@ gp_open_scratch_file (const char *prefix, char *fname, const char *mode)
 }
 */
 
-/* Answer whether a file name contains a directory/device specification, */
-/* i.e. is absolute (not directory- or device-relative). */
+#if !NEW_COMBINE_PATH
+/* Answer whether a path_string can meaningfully have a prefix applied */
+int
+gp_pathstring_not_bare(const char *fname, unsigned len) {
+    /* Macintosh paths are not 'bare' i.e., cannot have a prefix	*/
+    /* applied with predictable results if the string contains '::'	*/
+    /* If a pathstring starts with ':' we also call it not_bare since	*/
+    /* prefixing a 'somedir:' string would end up with '::' which will	*/
+    /* move up a directory level.					*/
+    /* While MacHD:somedir:xyz is a "root" or "absolute" reference we	*/
+    /* assume that this syntax is actually somedir:subdir:xyz since the	*/
+    /* HardDrive name will vary from site to site ("root" or "absolute"	*/
+    /* references aren't really practical on Macintosh pre OS/X)	*/
+    /* As far as we can tell, this whole area is confused on Mac since	*/
+    /* root level references and current_directory references look the	*/
+    /* same.								*/
 
-	int
-gp_file_name_is_absolute (const char *fname, register uint len)
+    if (len != 0) {
+	if (*fname == ':') {	/* leading ':' */
+	    return 1;		/* cannot be prefixed - not_bare, but	*/
+				/* *IS* relative to the current dir.	*/
+	} else {
+	    char *p;
+	    bool lastWasColon;
 
+	    for (len, p = (char *)fname, lastWasColon = 0; len > 0; len--, p++) {
+		if (*p == ':') {
+		    if (lastWasColon != 0) 
+			return 1;
+		    else 
+			lastWasColon = 1;
+		} else
+		    lastWasColon = 0;
+	    }
+	    return 0;	/* pathstring *ASSUMED* bare */
+	    /* fixme: if the start of the pathstring up to the first ':'*/
+	    /* matches a drive name, then this is really an absolute	*/
+	    /* pathstring, and thus should be not_bare (return 1).	*/
+	}
+    } else 
+	return 0;	/* empty path ?? */
+}
+
+/* Answer whether the file_name references the directory	*/
+/* containing the specified path (parent). 			*/
+bool
+gp_file_name_references_parent(const char *fname, unsigned len)
 {
-	if (len /* > 0 */)
-	{
-		if (*fname == ':')
-		{
-			return 0;
-		}
-		else
-		{
-			register char  *p;
-			register char	lastWasColon;
-			register char	sawColon;
+    int i = 0, last_sep_pos = -1;
 
-
-			for (len, p = (char *) fname, lastWasColon = 0, sawColon = 0;
-				 len /* > 0 */;
-				 len--, p++)
-			{
-				if (*p == ':')
-				{
-					sawColon = 1;
-
-					if (lastWasColon /* != 0 */)
-					{
-						return 0;
-					}
-					else
-					{
-						lastWasColon = 1;
-					}
-				}
-				else
-				{
-					lastWasColon = 0;
-				}
-			}
-
-			return sawColon;
-		}
+    /* A file name references its parent directory if it starts */
+    /* with ..: or ::  or if one of these strings follows : */
+    while (i < len) {
+	if (fname[i] == ':') {
+	    if (last_sep_pos == i - 1)
+	        return true;	/* also returns true is starts with ':' */
+	    last_sep_pos = i++;
+	    continue;
 	}
-	else
-	{
-		return 0;
-	}
+	if (fname[i++] != '.')
+	    continue;
+        if (i > last_sep_pos + 2 || (i < len && fname[i] != '.'))
+	    continue;
+	i++;
+	/* have separator followed by .. */
+	if (i < len && (fname[i] == ':'))
+	    return true;
+    }
+    return false;
 }
 
 /* Answer the string to be used for combining a directory/device prefix */
-/* with a base file name.  The file name is known to not be absolute. */
-
+/* with a base file name. The prefix directory/device is examined to	*/
+/* determine if a separator is needed and may return an empty string	*/
 const char *
-gp_file_name_concat_string (const char *prefix, uint plen, const char *fname, uint len)
-
+gp_file_name_concat_string (const char *prefix, uint plen)
 {
 	if ( plen > 0 && prefix[plen - 1] == ':' )
 		return "";
 	return ":";
 }
 
+#endif /* !NEW_COMBINE_PATH */
 
+
+/* read a resource and copy the data into a buffer */
+/* we don't have access to an allocator, nor any context for local  */
+/* storage, so we implement the following idiom: we return the size */
+/* of the requested resource and copy the data into buf iff it's    */
+/* non-NULL. Thus, the caller can pass NULL for buf the first time, */
+/* allocate the appropriate sized buffer, and then call us a second */
+/* time to actually transfer the data.                              */
+int
+gp_read_macresource(byte *buf, const char *fname, const uint type, const ushort id)
+{
+    Handle resource = NULL;
+    SInt32 size = 0;
+    FSSpec spec;
+    SInt16 fileref;
+    OSErr result;
+    
+    /* open file */
+    result = convertPathToSpec(fname, strlen(fname), &spec);
+    if (result != noErr) goto fin;
+    fileref = FSpOpenResFile(&spec, fsRdPerm);
+    if (fileref == -1) goto fin;
+    
+    dlprintf1("loading resource from fileref %d\n", fileref);
+
+    /* load resource */
+    resource = Get1Resource((ResType)type, (SInt16)id);
+    if (resource == NULL) goto fin;
+    
+    dlprintf1("loaded resource at handle 0x%08x\n", resource);
+      
+    /* allocate res */
+    /* GetResourceSize() is probably good enough */
+    //size = GetResourceSizeOnDisk(resource);
+    size = GetMaxResourceSize(resource);
+    
+    dlprintf1("size on disk is %d bytes\n", size);
+    
+    /* if we don't have a buffer to fill, just return */
+    if (buf == NULL) goto fin;
+
+    /* otherwise, copy resource into res from handle */
+    HLock(resource);
+    memcpy(buf, *resource, size);
+    HUnlock(resource);
+    
+fin:
+    /* free resource, if necessary */
+    ReleaseResource(resource);
+    CloseResFile(fileref);
+    
+    return (size);
+}
 
 /* ------ File enumeration ------ */
 
@@ -578,11 +664,10 @@ gp_enumerate_files_close (file_enum *pfen)
 }
 
 FILE * 
-gp_fopen (const char * fname, const char * mode ) {
+gp_fopen (const char * fname, const char * mode) {
 
    char thefname[256];
    FILE *fid;
-   int ans;
 
 //sprintf((char*)&thefname[0],"\n%s\n",fname);
 //(*pgsdll_callback) (GSDLL_STDOUT, thefname, strlen(fname));
@@ -600,10 +685,80 @@ gp_fopen (const char * fname, const char * mode ) {
 
 FILE * 
 popen (const char * fname, const char * mode ) {
-return gp_fopen (fname,  mode );
+	return gp_fopen (fname,  mode);
 }
 
 int
 pclose (FILE * pipe ) {
-return fclose (pipe );
+	return fclose (pipe);
+}
+
+/* -------------- Helpers for gp_file_name_combine_generic ------------- */
+
+uint gp_file_name_root(const char *fname, uint len)
+{   int i;
+
+    if (len > 0 && fname[0] == ':')
+	return 0; /* A relative path, no root. */
+    /* Root includes the separator after the volume name : */
+    for (i = 0; i < len; i++)
+	if (fname[i] == ':')
+	    return i + 1;
+    return 0;
+}
+
+uint gs_file_name_check_separator(const char *fname, int len, const char *item)
+{   if (len > 0) {
+	if (fname[0] == ':') {
+	    if (fname == item + 1 && item[0] == ':')
+		return 1; /* It is a separator after parent. */
+	    if (len > 1 && fname[1] == ':')
+		return 0; /* It is parent, not a separator. */
+	    return 1;
+	}
+    } else if (len < 0) {
+	if (fname[-1] == ':')
+	    return 1;
+    }
+    return 0;
+}
+
+bool gp_file_name_is_parent(const char *fname, uint len)
+{   return len == 1 && fname[0] == ':';
+}
+
+bool gp_file_name_is_current(const char *fname, uint len)
+{   return len == 0;
+}
+
+const char *gp_file_name_separator(void)
+{   return ":";
+}
+
+const char *gp_file_name_directory_separator(void)
+{   return ":";
+}
+
+const char *gp_file_name_parent(void)
+{   return ":";
+}
+
+const char *gp_file_name_current(void)
+{   return ":";
+}
+
+bool gp_file_name_is_partent_allowed(void)
+{   return true;
+}
+
+bool gp_file_name_is_empty_item_meanful(void)
+{   return true;
+}
+
+gp_file_name_combine_result
+gp_file_name_combine(const char *prefix, uint plen, const char *fname, uint flen, 
+		    bool no_sibling, char *buffer, uint *blen)
+{
+    return gp_file_name_combine_generic(prefix, plen, 
+	    fname, flen, no_sibling, buffer, blen);
 }

@@ -26,7 +26,6 @@
 #include "store.h"
 #include "idict.h"		/* interface definition */
 #include "idictdef.h"
-#include "idsdata.h"            /* directory stack */
 #include "iutil.h"
 #include "ivmspace.h"		/* for store check */
 
@@ -52,6 +51,12 @@
  */
 const uint dict_max_size = max_array_size - 1;
 
+/* Define whether dictionaries expand automatically when full. */
+bool dict_auto_expand = false;
+
+/* Define whether dictionaries are packed by default. */
+bool dict_default_pack = true;
+
 /*
  * Define the check for whether we can set the 1-element cache.
  * We only set the cache if we aren't inside a save.
@@ -61,31 +66,18 @@ const uint dict_max_size = max_array_size - 1;
   (pds && dstack_dict_is_permanent(pds, pdref) && !ref_saving_in(mem))
 
 /* Forward references */
-private int dict_create_contents(P3(uint size, const ref * pdref, bool pack));
+private int dict_create_contents(uint size, const ref * pdref, bool pack);
 
 /* Debugging statistics */
+#ifdef DEBUG
 struct stats_dict_s {
     long lookups;		/* total lookups */
     long probe1;		/* successful lookups on only 1 probe */
     long probe2;		/* successful lookups on 2 probes */
 } stats_dict;
 
-void dict_defaults_default(dict_defaults_t *dict_defaults)
-{
-    /* changes based on postscript language level.
-     * postscript level 2+ uses true else false.
-     * non-postscript uses are fixed size.
-     */
-    dict_defaults->auto_expand = false;
- 
-   /* compile time option 
-     */
-    dict_defaults->default_packed = true;
-}
-
-#ifdef DEBUG
 /* Wrapper for dict_find */
-int real_dict_find(P3(const ref * pdref, const ref * key, ref ** ppvalue));
+int real_dict_find(const ref * pdref, const ref * key, ref ** ppvalue);
 int
 dict_find(const ref * pdref, const ref * pkey, ref ** ppvalue)
 {
@@ -136,7 +128,7 @@ dict_round_size_large(uint rsize)
 
 /* Create a dictionary using the given allocator. */
 int
-dict_alloc(gs_ref_memory_t * mem, uint size, ref * pdref, const dict_defaults_t *dict_defaults)
+dict_alloc(gs_ref_memory_t * mem, uint size, ref * pdref)
 {
     ref arr;
     int code =
@@ -152,7 +144,7 @@ dict_alloc(gs_ref_memory_t * mem, uint size, ref * pdref, const dict_defaults_t 
 	     r_space(&arr) | imemory_new_mask(mem) | a_all,
 	     pdict, pdict);
     make_struct(&pdict->memory, avm_foreign, mem);
-    code = dict_create_contents(size, &dref, dict_defaults->default_packed);
+    code = dict_create_contents(size, &dref, dict_default_pack);
     if (code < 0) {
 	gs_free_ref_array(mem, &arr, "dict_alloc");
 	return code;
@@ -452,7 +444,7 @@ dict_put(ref * pdref /* t_dictionary */ , const ref * pkey, const ref * pvalue,
 	    case 0:
 		break;
 	    case e_dictfull:
-		if (!pds->dict_defaults.auto_expand)
+		if (!dict_auto_expand)
 		    return_error(e_dictfull);
 		code = dict_grow(pdref, pds);
 		if (code < 0)
@@ -723,14 +715,14 @@ dict_resize(ref * pdref, uint new_size, dict_stack_t *pds)
     int code;
 
     if (new_size < d_length(pdict)) {
-	if (!pds->dict_defaults.auto_expand)
+	if (!dict_auto_expand)
 	    return_error(e_dictfull);
 	new_size = d_length(pdict);
     }
     make_tav(&drto, t_dictionary, r_space(pdref) | a_all | new_mask,
 	     pdict, &dnew);
     dnew.memory = pdict->memory;
-    if ((code = dict_create_contents(new_size, &drto, pds->dict_defaults.default_packed)) < 0)
+    if ((code = dict_create_contents(new_size, &drto, dict_is_packed(pdict))) < 0)
 	return code;
     /*
      * We must suppress the store check, in case we are expanding

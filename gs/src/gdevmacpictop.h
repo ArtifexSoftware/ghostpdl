@@ -661,5 +661,4 @@
 			PICT_RGBBkCol(ptr, rgb[0], rgb[1], rgb[2]);										\
 		}
 
-
-
+#endif /* gdevmacpictop_INCLUDED */

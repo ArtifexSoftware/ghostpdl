@@ -17,7 +17,6 @@
 #  define idsdata_INCLUDED
 
 #include "isdata.h"
-#include "idict.h"
 
 /* Define the dictionary stack structure. */
 #ifndef dict_stack_DEFINED
@@ -67,9 +66,6 @@ struct dict_stack_s {
  */
     ref system_dict;
 
-/** Defaults for dictionary construction
- */
-    dict_defaults_t dict_defaults;
 };
 
 /*

@@ -12,6 +12,7 @@
 
 /*$RCSfile$ $Revision$ */
 /* Default polygon and image drawing device procedures */
+#include <assert.h>
 #include "math_.h"
 #include "memory_.h"
 #include "gx.h"
@@ -24,6 +25,18 @@
 #include "gxdevice.h"
 #include "gxiparam.h"
 #include "gxistate.h"
+#include "gdevddrw.h"
+/*
+#include "gxdtfill.h" - Do not remove this comment.
+                        "gxdtfill.h" is included below.
+*/
+
+#if !DROPOUT_PREVENTION
+#define VD_TRACE 0
+#endif
+#include "vdtrace.h"
+
+#define VD_RECT_COLOR RGB(0, 0, 255)
 
 #define SWAP(a, b, t)\
   (t = a, a = b, b = t)
@@ -128,175 +141,27 @@ compute_ldx(trap_line *tl, fixed ys)
 }
 
 /*
- * Fill a trapezoid.  left.start => left.end and right.start => right.end
- * define the sides; ybot and ytop define the top and bottom.  Requires:
- *      {left,right}->start.y <= ybot <= ytop <= {left,right}->end.y.
- * Lines where left.x >= right.x will not be drawn.  Thanks to Paul Haeberli
- * for an early floating point version of this algorithm.
+ * Fill a trapezoid.
+ * Since we need 2 statically defined variants of this algorithm,
+ * we stored it in gxdtfill.h and include it configuring with
+ * macros defined here.
  */
-int
-gx_default_fill_trapezoid(gx_device * dev, const gs_fixed_edge * left,
-    const gs_fixed_edge * right, fixed ybot, fixed ytop, bool swap_axes,
-    const gx_device_color * pdevc, gs_logical_operation_t lop)
-{
-    const fixed ymin = fixed_pixround(ybot) + fixed_half;
-    const fixed ymax = fixed_pixround(ytop);
+#define GX_FILL_TRAPEZOID gx_default_fill_trapezoid
+#define CONTIGUOUS_FILL 0
+#define SWAP_AXES 1
+#define FLAGS_TYPE bool
+#include "gxdtfill.h"
 
-    if (ymin >= ymax)
-	return 0;		/* no scan lines to sample */
-    {
-	int iy = fixed2int_var(ymin);
-	const int iy1 = fixed2int_var(ymax);
-	trap_line l, r;
-	int rxl, rxr, ry;
-	const fixed
-	    x0l = left->start.x, x1l = left->end.x, x0r = right->start.x,
-	    x1r = right->end.x, dxl = x1l - x0l, dxr = x1r - x0r;
-	const fixed	/* partial pixel offset to first line to sample */
-	    ysl = ymin - left->start.y, ysr = ymin - right->start.y;
-	fixed fxl;
-	bool fill_direct = color_writes_pure(pdevc, lop);
-	int max_rect_height = 1;  /* max height to do fill as rectangle */
-	int code;
-
-	if_debug2('z', "[z]y=[%d,%d]\n", iy, iy1);
-
-	l.h = left->end.y - left->start.y;
-	r.h = right->end.y - right->start.y;
-	l.x = x0l + (fixed_half - fixed_epsilon);
-	r.x = x0r + (fixed_half - fixed_epsilon);
-	ry = iy;
-
-/*
- * Free variables of FILL_TRAP_RECT:
- *	swap_axes, pdevc, dev, lop
- * Free variables of FILL_TRAP_RECT_DIRECT:
- *	swap_axes, fill_rect, dev, cindex
- */
-#define FILL_TRAP_RECT(x,y,w,h)\
-  (swap_axes ? gx_fill_rectangle_device_rop(y, x, h, w, pdevc, dev, lop) :\
-   gx_fill_rectangle_device_rop(x, y, w, h, pdevc, dev, lop))
-#define FILL_TRAP_RECT_DIRECT(x,y,w,h)\
-  (swap_axes ? (*fill_rect)(dev, y, x, h, w, cindex) :\
-   (*fill_rect)(dev, x, y, w, h, cindex))
-
-	/* Compute the dx/dy ratios. */
-
-	/*
-	 * Compute the x offsets at the first scan line to sample.  We need
-	 * to be careful in computing ys# * dx#f {/,%} h# because the
-	 * multiplication may overflow.  We know that all the quantities
-	 * involved are non-negative, and that ys# is usually less than 1 (as
-	 * a fixed, of course); this gives us a cheap conservative check for
-	 * overflow in the multiplication.
-	 */
-#define YMULT_QUO(ys, tl)\
-  (ys < fixed_1 && tl.df < YMULT_LIMIT ? ys * tl.df / tl.h :\
-   fixed_mult_quo(ys, tl.df, tl.h))
-
-	/*
-	 * It's worth checking for dxl == dxr, since this is the case
-	 * for parallelograms (including stroked lines).
-	 * Also check for left or right vertical edges.
-	 */
-	if (fixed_floor(l.x) == fixed_pixround(x1l)) {
-	    /* Left edge is vertical, we don't need to increment. */
-	    l.di = 0, l.df = 0;
-	    fxl = 0;
-	} else {
-	    compute_dx(&l, dxl, ysl);
-	    fxl = YMULT_QUO(ysl, l);
-	    l.x += fxl;
-	}
-	if (fixed_floor(r.x) == fixed_pixround(x1r)) {
-	    /* Right edge is vertical.  If both are vertical, */
-	    /* we have a rectangle. */
-	    if (l.di == 0 && l.df == 0)
-		max_rect_height = max_int;
-	    else
-		r.di = 0, r.df = 0;
-	}
-	/*
-	 * The test for fxl != 0 is required because the right edge might
-	 * cross some pixel centers even if the left edge doesn't.
-	 */
-	else if (dxr == dxl && fxl != 0) {
-	    if (l.di == 0)
-		r.di = 0, r.df = l.df;
-	    else		/* too hard to do adjustments right */
-		compute_dx(&r, dxr, ysr);
-	    if (ysr == ysl && r.h == l.h)
-		r.x += fxl;
-	    else
-		r.x += YMULT_QUO(ysr, r);
-	} else {
-	    compute_dx(&r, dxr, ysr);
-	    r.x += YMULT_QUO(ysr, r);
-	}
-	rxl = fixed2int_var(l.x);
-	rxr = fixed2int_var(r.x);
-
-	/*
-	 * Take a shortcut if we're only sampling a single scan line,
-	 * or if we have a rectangle.
-	 */
-	if (iy1 - iy <= max_rect_height) {
-	    iy = iy1 - 1;
-	    if_debug2('z', "[z]rectangle, x=[%d,%d]\n", rxl, rxr);
-	} else {
-	    /* Compute one line's worth of dx/dy. */
-	    compute_ldx(&l, ysl);
-	    if (dxr == dxl && ysr == ysl && r.h == l.h)
-		r.ldi = l.ldi, r.ldf = l.ldf, r.xf = l.xf;
-	    else
-		compute_ldx(&r, ysr);
-	}
-
-#define STEP_LINE(ix, tl)\
-  tl.x += tl.ldi;\
-  if ( (tl.xf += tl.ldf) >= 0 ) tl.xf -= tl.h, tl.x++;\
-  ix = fixed2int_var(tl.x)
-
-	if (fill_direct) {
-	    gx_color_index cindex = pdevc->colors.pure;
-	    dev_proc_fill_rectangle((*fill_rect)) =
-		dev_proc(dev, fill_rectangle);
-
-	    while (++iy != iy1) {
-		int ixl, ixr;
-
-		STEP_LINE(ixl, l);
-		STEP_LINE(ixr, r);
-		if (ixl != rxl || ixr != rxr) {
-		    code = FILL_TRAP_RECT_DIRECT(rxl, ry, rxr - rxl, iy - ry);
-		    if (code < 0)
-			goto xit;
-		    rxl = ixl, rxr = ixr, ry = iy;
-		}
-	    }
-	    code = FILL_TRAP_RECT_DIRECT(rxl, ry, rxr - rxl, iy - ry);
-	} else {
-	    while (++iy != iy1) {
-		int ixl, ixr;
-
-		STEP_LINE(ixl, l);
-		STEP_LINE(ixr, r);
-		if (ixl != rxl || ixr != rxr) {
-		    code = FILL_TRAP_RECT(rxl, ry, rxr - rxl, iy - ry);
-		    if (code < 0)
-			goto xit;
-		    rxl = ixl, rxr = ixr, ry = iy;
-		}
-	    }
-	    code = FILL_TRAP_RECT(rxl, ry, rxr - rxl, iy - ry);
-	}
-#undef STEP_LINE
-xit:	if (code < 0 && fill_direct)
-	    return_error(code);
-	return_if_interrupt();
-	return code;
-    }
-}
+#if DROPOUT_PREVENTION
+#undef GX_FILL_TRAPEZOID
+#undef CONTIGUOUS_FILL 
+#undef SWAP_AXES
+#define FLAGS_TYPE int
+#define GX_FILL_TRAPEZOID gx_fill_trapezoid_narrow
+#define CONTIGUOUS_FILL 1
+#define SWAP_AXES 0
+#include "gxdtfill.h"
+#endif
 
 /* Fill a parallelogram whose points are p, p+a, p+b, and p+a+b. */
 /* We should swap axes to get best accuracy, but we don't. */

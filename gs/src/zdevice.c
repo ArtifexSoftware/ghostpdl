@@ -157,7 +157,7 @@ zgetbitsrect(i_ctx_t *i_ctx_p)
 	depth_option = depths[std_depth];
 	if (depth_option == 0)
 	    return_error(e_rangecheck);
-	options |= depth_option | gb_colors_for_device(dev);
+	options |= depth_option | GB_COLORS_NATIVE;
 	depth = (dev->color_info.num_components +
 		 (options & GB_ALPHA_NONE ? 0 : 1)) * std_depth;
     }
@@ -317,12 +317,8 @@ zoutputpage(i_ctx_t *i_ctx_p)
 
     check_type(op[-1], t_integer);
     check_type(*op, t_boolean);
-#ifdef PSI_INCLUDED
-    code = ps_end_page_top((int)op[-1].value.intval, op->value.boolval);
-#else
     code = gs_output_page(igs, (int)op[-1].value.intval,
 			  op->value.boolval);
-#endif
     if (code < 0)
 	return code;
     pop(2);
@@ -411,16 +407,16 @@ zputdeviceparams(i_ctx_t *i_ctx_p)
 int
 zsetdevice(i_ctx_t *i_ctx_p)
 {
+    gx_device *dev = gs_currentdevice(igs);
     os_ptr op = osp;
-    int code = 0;
+    int code;
 
     check_write_type(*op, t_device);
-#ifndef PSI_INCLUDED
-    /* the language switching build shouldn't install a new device
-       here.  The language switching machinery installs a shared
-       device. */
+    if (dev->LockSafetyParams) {	  /* do additional checking if locked  */
+        if(op->value.pdevice != dev) 	  /* don't allow a different device    */
+	    return_error(e_invalidaccess);
+    }
     code = gs_setdevice_no_erase(igs, op->value.pdevice);
-#endif
     if (code < 0)
 	return code;
     make_bool(op, code != 0);	/* erase page if 1 */

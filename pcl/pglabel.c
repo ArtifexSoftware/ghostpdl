@@ -211,9 +211,9 @@ hpgl_select_stick_font(hpgl_state_t *pgls)
 	    if ( code < 0 )
 	      return code;
 	    if ( pfs->params.proportional_spacing )
-	      hpgl_fill_in_arc_font(pfont, gs_next_id());
+	      hpgl_fill_in_arc_font(pfont, gs_next_ids(1));
 	    else
-	      hpgl_fill_in_stick_font(pfont, gs_next_id());
+	      hpgl_fill_in_stick_font(pfont, gs_next_ids(1));
 	    font->pfont = (gs_font *)pfont;
 	    font->scaling_technology = plfst_TrueType;/****** WRONG ******/
 	    font->font_type = plft_Unicode;
@@ -874,9 +874,9 @@ hpgl_print_char(
             if (use_show) {
 		hpgl_call(hpgl_set_drawing_color(pgls, hpgl_rm_character));
 
-		if ( pgls->g.label.double_byte ) /* tell pdfwrite about 16bit chars */
-		    code = gs_ushow_begin(pgs, (char *)str, 1, pgls->memory, &penum);
-		else
+                // NB		if ( pgls->g.label.double_byte ) /* tell pdfwrite about 16bit chars */
+		// NB    code = gs_ushow_begin(pgs, (char *)str, 1, pgls->memory, &penum);
+		// NB else
 		    code = gs_show_begin(pgs, (char *)str, 1, pgls->memory, &penum);
 	    } else 
 		code = gs_charpath_begin(pgs, (char *)str, 1, true, pgls->memory, &penum);

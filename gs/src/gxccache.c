@@ -12,10 +12,12 @@
 
 /*$RCSfile$ $Revision$ */
 /* Fast case character cache routines for Ghostscript library */
+#include "memory_.h"
 #include "gx.h"
 #include "gpcheck.h"
 #include "gserrors.h"
 #include "gsstruct.h"
+#include "gscencs.h"
 #include "gxfixed.h"
 #include "gxmatrix.h"
 #include "gzstate.h"
@@ -32,7 +34,7 @@
 #include "gxhttile.h"
 
 /* Forward references */
-private byte *compress_alpha_bits(P2(const cached_char *, gs_memory_t *));
+private byte *compress_alpha_bits(const cached_char *, gs_memory_t *);
 
 /* Define a scale factor of 1. */
 static const gs_log2_scale_point scale_log2_1 =
@@ -97,7 +99,8 @@ gx_lookup_fm_pair(gs_font * pfont, register const gs_state * pgs)
 /* Return the cached_char or 0. */
 cached_char *
 gx_lookup_cached_char(const gs_font * pfont, const cached_fm_pair * pair,
-		      gs_glyph glyph, int wmode, int alt_depth)
+		      gs_glyph glyph, int wmode, int alt_depth, 
+		      gs_fixed_point *subpix_origin)
 {
     gs_font_dir *dir = pfont->dir;
     uint chi = chars_head_index(glyph, pair);
@@ -105,6 +108,8 @@ gx_lookup_cached_char(const gs_font * pfont, const cached_fm_pair * pair,
 
     while ((cc = dir->ccache.table[chi & dir->ccache.table_mask]) != 0) {
 	if (cc->code == glyph && cc_pair(cc) == pair &&
+	    cc->subpix_origin.x == subpix_origin->x && 
+	    cc->subpix_origin.y == subpix_origin->y &&
 	    cc->wmode == wmode && (cc_depth(cc) == 1 || cc_depth(cc) == alt_depth)
 	    ) {
 	    if_debug4('K', "[K]found 0x%lx (depth=%d) for glyph=0x%lx, wmode=%d\n",
@@ -122,7 +127,7 @@ gx_lookup_cached_char(const gs_font * pfont, const cached_fm_pair * pair,
 /* Return the cached_char or 0. */
 cached_char *
 gx_lookup_xfont_char(const gs_state * pgs, cached_fm_pair * pair,
-gs_char chr, gs_glyph glyph, const gx_xfont_callbacks * callbacks, int wmode)
+		     gs_char chr, gs_glyph glyph, int wmode)
 {
     gs_font *font = pair->font;
     int enc_index;
@@ -147,28 +152,34 @@ gs_char chr, gs_glyph glyph, const gx_xfont_callbacks * callbacks, int wmode)
 	return NULL;
     {
 	const gx_xfont_procs *procs = xf->common.procs;
+	gs_const_string gstr;
+	int code = font->procs.glyph_name(font, glyph, &gstr);
 
-	if (procs->char_xglyph2 == 0) {		/* The xfont can't recognize reencoded fonts. */
-	    /* Use the registered encoding only if this glyph */
-	    /* is the same as the one in the registered encoding. */
-	    if (enc_index >= 0 &&
-		(*callbacks->known_encode) (chr, enc_index) != glyph
+	if (code < 0)
+	    return NULL;
+	if (enc_index >= 0 && ((gs_font_base *)font)->encoding_index < 0) {
+	    /*
+	     * Use the registered encoding only if this glyph
+	     * is the same as the one in the registered encoding.
+	     */
+	    gs_const_string kstr;
+
+	    if (gs_c_glyph_name(gs_c_known_encode(chr, enc_index), &kstr) < 0 ||
+		kstr.size != gstr.size ||
+		memcmp(kstr.data, gstr.data, kstr.size)
 		)
 		enc_index = -1;
-	    xg = (*procs->char_xglyph) (xf, chr, enc_index, glyph,
-					callbacks->glyph_name);
-	} else {		/* The xfont can recognize reencoded fonts. */
-	    xg = (*procs->char_xglyph2) (xf, chr, enc_index, glyph,
-					 callbacks);
 	}
+	xg = procs->char_xglyph(xf, chr, enc_index, glyph, &gstr);
 	if (xg == gx_no_xglyph)
 	    return NULL;
 	if ((*procs->char_metrics) (xf, xg, wmode, &wxy, &bbox) < 0)
 	    return NULL;
     }
     log2_scale.x = log2_scale.y = 1;
-    cc = gx_alloc_char_bits(font->dir, NULL, NULL, bbox.q.x - bbox.p.x,
-			    bbox.q.y - bbox.p.y, &log2_scale, 1);
+    cc = gx_alloc_char_bits(font->dir, NULL, NULL, 
+		(ushort)(bbox.q.x - bbox.p.x), (ushort)(bbox.q.y - bbox.p.y), 
+		&log2_scale, 1);
     if (cc == 0)
 	return NULL;
     /* Success.  Make the cache entry. */
@@ -258,6 +269,7 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
 	(*dev_proc(imaging_dev, open_device)) (imaging_dev);
 	if_debug0('K', "[K](clipping)\n");
     }
+    gx_set_dev_color(pgs);
     /* If an xfont can render this character, use it. */
     if (xg != gx_no_xglyph && (xf = cc_pair(cc)->xfont) != 0) {
 	int cx = x + fixed2int(cc->offset.x);
@@ -312,7 +324,15 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
      * by taking the high-order alpha bit.
      */
     bits = cc_bits(cc);
+#   if DROPOUT_PREVENTION
+    /* With 4x2 scale, depth == 3. 
+     * An example is -dTextAlphaBits=4 comparefiles/fonttest.pdf .
+     * We need to map 4 bitmap bits to 2 alpha bits.
+     */
+    depth = (cc_depth(cc) == 3 ? 2 : cc_depth(cc));
+#   else
     depth = cc_depth(cc);
+#   endif
     if (dev_proc(orig_dev, fill_mask) != gx_default_fill_mask ||
 	!lop_no_S_is_T(pgs->log_op)
 	) {
@@ -341,8 +361,8 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
 		return 1;	/* VMerror, but recoverable */
 	}
 	code = (*dev_proc(imaging_dev, copy_mono))
-	    (imaging_dev, bits, 0, cc_raster(cc), cc->id,
-	     x, y, w, h, gx_no_color_index, pdevc->colors.pure);
+	    (imaging_dev, bits, 0, bitmap_raster(w), gs_no_id,
+	     x, y, w, h, gx_no_color_index, color);
 	goto done;
     }
     if (depth > 1) {		/* Complex color or fill_mask / copy_alpha failed, */
@@ -357,7 +377,9 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
 	    gs_image_enum_alloc(mem, "image_char(image_enum)");
 	gs_image_t image;
 	int iy;
-	uint used;
+	uint used, raster = (bits == cc_bits(cc) ? cc_raster(cc)
+			     : bitmap_raster(cc->width) );
+	int code1;
 
 	if (pie == 0) {
 	    if (bits != cc_bits(cc))
@@ -383,9 +405,11 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
 		break;
 	    case 0:
 		for (iy = 0; iy < h && code >= 0; iy++)
-		    code = gs_image_next(pie, bits + iy * cc_raster(cc),
+		    code = gs_image_next(pie, bits + iy * raster,
 					 (w + 7) >> 3, &used);
-		gs_image_cleanup(pie);
+		code1 = gs_image_cleanup(pie);
+		if (code >= 0 && code1 < 0)
+		    code = code1;
 	}
 	gs_free_object(mem, pie, "image_char(image_enum)");
     }
@@ -408,10 +432,9 @@ compress_alpha_bits(const cached_char * cc, gs_memory_t * mem)
     const byte *data = cc_const_bits(cc);
     uint width = cc->width;
     uint height = cc->height;
-    int log2_scale = cc_depth(cc);
-    int scale = 1 << log2_scale;
+    int depth = cc_depth(cc);
     uint sraster = cc_raster(cc);
-    uint sskip = sraster - ((width * scale + 7) >> 3);
+    uint sskip = sraster - ((width * depth + 7) >> 3);
     uint draster = bitmap_raster(width);
     uint dskip = draster - ((width + 7) >> 3);
     byte *mask = gs_alloc_bytes(mem, draster * height,
@@ -431,15 +454,19 @@ compress_alpha_bits(const cached_char * cc, gs_memory_t * mem)
 	for (w = width; w; --w) {
 	    if (*sptr & sbit)
 		d += dbit;
-	    if (!(sbit >>= log2_scale))
+	    if (!(sbit >>= depth))
 		sbit = 0x80, sptr++;
-	    if (!(dbit >>= 1))
-		dbit = 0x80, dptr++, d = 0;
+	    if (!(dbit >>= 1)) {
+		*dptr++ = d;
+		dbit = 0x80, d = 0;
+	    }
 	}
 	if (dbit != 0x80)
 	    *dptr++ = d;
 	for (w = dskip; w != 0; --w)
 	    *dptr++ = 0;
+	if (sbit != 0x80)
+	    ++sptr;
 	sptr += sskip;
     }
     return mask;

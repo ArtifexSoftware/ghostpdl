@@ -46,23 +46,19 @@ mem_full_alpha_device("image1", 0, 1, mem_open,
 
 /* Map color to/from RGB.  This may be inverted. */
 private gx_color_index
-mem_mono_map_rgb_color(gx_device * dev, gx_color_value r, gx_color_value g,
-		       gx_color_value b)
+mem_mono_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
-
-    return (gx_default_w_b_map_rgb_color(dev, r, g, b) ^
-	    mdev->palette.data[0]) & 1;
+    return (gx_default_w_b_map_rgb_color(dev, cv) ^ mdev->palette.data[0]) & 1;
 }
+
 private int
 mem_mono_map_color_rgb(gx_device * dev, gx_color_index color,
 		       gx_color_value prgb[3])
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
-
-    return gx_default_w_b_map_color_rgb(dev,
-					(color ^ mdev->palette.data[0]) & 1,
-					prgb);
+    /* NB code doesn't make sense... map_color_rgb procedures return an error code */
+    return (gx_default_w_b_map_color_rgb(dev, color, prgb) ^ mdev->palette.data[0]) & 1;
 }
 
 /* Fill a rectangle with a color. */
@@ -80,7 +76,7 @@ mem_mono_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 #else
     fit_fill(dev, x, y, w, h);
     bits_fill_rectangle(scan_line_base(mdev, y), x, mdev->raster,
-			-(mono_fill_chunk) color, w, h);
+			-(int)(mono_fill_chunk) color, w, h);
     return 0;
 #endif
 }
@@ -492,7 +488,7 @@ int tx, int y, int tw, int th, gx_color_index color0, gx_color_index color1,
 	return gx_default_strip_tile_rectangle(dev, tiles, tx, y, tw, th,
 					       color0, color1, px, py);
     fit_fill(dev, tx, y, tw, th);
-    invert = -(uint) color0;
+    invert = (uint)(-(int) color0);
     source_raster = tiles->raster;
     source_data = tiles->data + ((y + py) % tiles->rep_height) * source_raster;
     tile_bits_size = tiles->size.y * source_raster;
@@ -709,7 +705,7 @@ mem1_word_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     base = scan_line_base(mdev, y);
     raster = mdev->raster;
     mem_swap_byte_rect(base, raster, x, w, h, true);
-    bits_fill_rectangle(base, x, raster, -(mono_fill_chunk) color, w, h);
+    bits_fill_rectangle(base, x, raster, -(int)(mono_fill_chunk) color, w, h);
     mem_swap_byte_rect(base, raster, x, w, h, true);
     return 0;
 }

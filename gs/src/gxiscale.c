@@ -61,13 +61,24 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     gs_point dst_xy;
     uint in_size;
 
-    if (!penum->interpolate || penum->use_mask_color)
+    if (!penum->interpolate) 
 	return 0;
-    if (penum->posture != image_portrait || penum->masked || penum->alpha) {
+    if (penum->use_mask_color || penum->posture != image_portrait ||
+    	penum->masked || penum->alpha ||
+	penum->dev->color_info.max_gray < 15 ||
+        (penum->dev->color_info.num_components > 1 &&
+         penum->dev->color_info.max_color < 15)
+       ) {
 	/* We can't handle these cases yet.  Punt. */
 	penum->interpolate = false;
 	return 0;
     }
+/*
+ * USE_CONSERVATIVE_INTERPOLATION_RULES is normally NOT defined since
+ * the MITCHELL digital filter seems OK as long as we are going out to
+ * a device that can produce > 15 shades.
+ */
+#if defined(USE_MITCHELL_FILTER) && defined(USE_CONSERVATIVE_INTERPOLATION_RULES)
     /*
      * We interpolate using a digital filter, rather than Adobe's
      * spatial interpolation algorithm: this produces very bad-looking
@@ -78,7 +89,6 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
      * If we used Adobe's spatial interpolation approach, we wouldn't need
      * to do this, but the spatial interpolation filter doesn't work yet.
      */
-#ifdef USE_MITCHELL_FILTERX
     if (penum->bps < 4 || penum->bps * penum->spp < 8 ||
 	(fabs(penum->matrix.xx) <= 5 && fabs(penum->matrix.yy <= 5))
 	) {
@@ -149,7 +159,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     }
     penum->xyi.y = fixed2int_pixround(dda_current(penum->dda.pixel0.y));
     if_debug0('b', "[b]render=interpolate\n");
-    return image_render_interpolate;
+    return &image_render_interpolate;
 }
 
 /* ------ Rendering for interpolated images ------ */
@@ -281,7 +291,7 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 		    }
 #endif
 		    code = (*pconcs->type->remap_concrete_color)
-			(psrc, &devc, pis, dev, gs_color_select_source);
+			(psrc, pcs, &devc, pis, dev, gs_color_select_source);
 		    if (code < 0)
 			return code;
 		    if (color_is_pure(&devc)) {

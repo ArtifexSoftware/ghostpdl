@@ -18,8 +18,10 @@ CONTRIB_MAK=$(GLSRC)contrib.mak
 
 ###### --------------------------- Catalog -------------------------- ######
 
-# The following drivers are user-contributed, and maintained (if at all)
-# by users.  Please do not ask Aladdin about problems with these drivers.
+# The following drivers are user-contributed, and maintained (if at all) by
+# users.  Please report problems in these drivers to their authors, whose
+# e-mail addresses appear below: do not report them to mailing lists or
+# mailboxes for general Ghostscript problems.
 
 # Displays:
 #   MS-DOS (note: not usable with Desqview/X):
@@ -491,34 +493,6 @@ $(DD)uniprint.dev : $(uniprint_) $(DD)page.dev
 $(GLOBJ)gdevupd.$(OBJ) : $(GLSRC)gdevupd.c $(PDEVH) $(gsparam_h)
 	$(GLCC) $(GLO_)gdevupd.$(OBJ) $(C_) $(GLSRC)gdevupd.c
 
-### ------------- Hewlett-Packard Co. Inkjet Driver -------------- ###
-
-hpijs_=$(GLOBJ)gdevhpij.$(OBJ)
-
-$(GLOBJ)gdevhpij.$(OBJ) : $(GLSRC)gdevhpij.c $(PDEVH)
-	$(GLCC) $(GLO_)gdevhpij.$(OBJ) $(C_) $(GLSRC)gdevhpij.c
-
-$(DD)DJ630.dev : $(hpijs_) $(DD)page.dev
-	$(SETPDEV) $(DD)DJ630 $(hpijs_)
-
-$(DD)DJ6xx.dev : $(hpijs_) $(DD)page.dev
-	$(SETPDEV) $(DD)DJ6xx $(hpijs_)
-
-$(DD)DJ6xxP.dev : $(hpijs_) $(DD)page.dev
-	$(SETPDEV) $(DD)DJ6xxP $(hpijs_)
-
-$(DD)DJ8xx.dev : $(hpijs_) $(DD)page.dev
-	$(SETPDEV) $(DD)DJ8xx $(hpijs_)
-
-$(DD)DJ9xx.dev : $(hpijs_) $(DD)page.dev
-	$(SETPDEV) $(DD)DJ9xx $(hpijs_)
-
-$(DD)DJ9xxVIP.dev : $(hpijs_) $(DD)page.dev
-	$(SETPDEV) $(DD)DJ9xxVIP $(hpijs_)
-
-$(DD)AP21xx.dev : $(hpijs_) $(DD)page.dev
-	$(SETPDEV) $(DD)AP21xx $(hpijs_)
-
 ### ------------ The H-P PaintJet color printer device ----------------- ###
 ### Note: this driver also supports the DEC LJ250 color printer, which   ###
 ###       has a PaintJet-compatible mode, and the PaintJet XL.           ###
@@ -872,3 +846,4 @@ $(DD)sunhmono.dev : $(sunr_) $(DD)page.dev
 
 $(GLOBJ)gdevsunr.$(OBJ) : $(GLSRC)gdevsunr.c $(PDEVH)
 	$(GLCC) $(GLO_)gdevsunr.$(OBJ) $(C_) $(GLSRC)gdevsunr.c
+

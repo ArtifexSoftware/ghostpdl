@@ -15,9 +15,10 @@
 
 #ifndef gsdll_INCLUDED
 #  define gsdll_INCLUDED
-  
 
-#ifdef __MACINTOSH__
+#include "iapi.h"
+
+#ifdef __MACOS__
 #define HWND char *
 #include <QDOffscreen.h>
 #pragma export on
@@ -84,7 +85,7 @@ typedef int (GSDLLAPIPTR PFN_gsdll_execute_end) (void);
 typedef int (GSDLLAPIPTR PFN_gsdll_exit) (void);
 typedef int (GSDLLAPIPTR PFN_gsdll_lock_device) (unsigned char *, int);
 
-#ifdef __MACINTOSH__
+#ifdef __MACOS__
 #pragma export off
 #endif
 

@@ -26,14 +26,15 @@
 #include "ifunc.h"
 #include "igstate.h"
 #include "iimage.h"
-#include "iimage2.h"
 #include "iname.h"
 #include "store.h"
+#include "gsdfilt.h"
+#include "gdevp14.h"
 
 /* ------ Utilities ------ */
 
 private int
-set_float_value(i_ctx_t *i_ctx_p, int (*set_value)(P2(gs_state *, floatp)))
+set_float_value(i_ctx_t *i_ctx_p, int (*set_value)(gs_state *, floatp))
 {
     os_ptr op = osp;
     double value;
@@ -49,7 +50,7 @@ set_float_value(i_ctx_t *i_ctx_p, int (*set_value)(P2(gs_state *, floatp)))
 
 private int
 current_float_value(i_ctx_t *i_ctx_p,
-		    float (*current_value)(P1(const gs_state *)))
+		    float (*current_value)(const gs_state *))
 {
     os_ptr op = osp;
 
@@ -179,7 +180,7 @@ rect_param(gs_rect *prect, os_ptr op)
 
 private int
 mask_op(i_ctx_t *i_ctx_p,
-	int (*mask_proc)(P2(gs_state *, gs_transparency_channel_selector_t)))
+	int (*mask_proc)(gs_state *, gs_transparency_channel_selector_t))
 {
     int csel;
     int code = int_param(osp, 1, &csel);
@@ -238,7 +239,7 @@ zendtransparencygroup(i_ctx_t *i_ctx_p)
 }
 
 /* <paramdict> <llx> <lly> <urx> <ury> .begintransparencymask - */
-private int tf_using_function(P3(floatp, float *, void *));
+private int tf_using_function(floatp, float *, void *);
 private int
 zbegintransparencymask(i_ctx_t *i_ctx_p)
 {
@@ -320,8 +321,8 @@ zinittransparencymask(i_ctx_t *i_ctx_p)
 /* ------ Soft-mask images ------ */
 
 /* <dict> .image3x - */
-private int mask_dict_param(P5(os_ptr, image_params *, const char *, int,
-			       gs_image3x_mask_t *));
+private int mask_dict_param(os_ptr, image_params *, const char *, int,
+			    gs_image3x_mask_t *);
 private int
 zimage3x(i_ctx_t *i_ctx_p)
 {
@@ -341,7 +342,7 @@ zimage3x(i_ctx_t *i_ctx_p)
 	return_error(e_rangecheck);
     if ((code = pixel_image_params(i_ctx_p, pDataDict,
 				   (gs_pixel_image_t *)&image, &ip_data,
-				   12)) < 0 ||
+				   12, false)) < 0 ||
 	(code = dict_int_param(pDataDict, "ImageType", 1, 1, 0, &ignored)) < 0
 	)
 	return code;
@@ -372,7 +373,8 @@ mask_dict_param(os_ptr op, image_params *pip_data, const char *dict_name,
 
     if (dict_find_string(op, dict_name, &pMaskDict) <= 0)
 	return 1;
-    if ((mcode = code = data_image_params(pMaskDict, &pixm->MaskDict, &ip_mask, false, 1, 12)) < 0 ||
+    if ((mcode = code = data_image_params(pMaskDict, &pixm->MaskDict,
+					  &ip_mask, false, 1, 12, false)) < 0 ||
 	(code = dict_int_param(pMaskDict, "ImageType", 1, 1, 0, &ignored)) < 0 ||
 	(code = dict_int_param(pMaskDict, "InterleaveType", 1, 3, -1,
 			       &pixm->InterleaveType)) < 0 ||
@@ -398,9 +400,32 @@ mask_dict_param(os_ptr op, image_params *pip_data, const char *dict_name,
     return 0;
 }
 
+/* depth .pushpdf14devicefilter - */
+/* this is a filter operator, but we include it here to maintain
+   modularity of the pdf14 transparency support */
+private int
+zpushpdf14devicefilter(i_ctx_t *i_ctx_p)
+{
+    gs_device_filter_t *df;
+    int code;
+    gs_memory_t *mem = gs_memory_stable(imemory);
+    os_ptr op = osp;
+
+    check_type(*op, t_integer);
+    code = gs_pdf14_device_filter(&df, op->value.intval, mem);
+    if (code < 0)
+        return code;
+    code = gs_push_device_filter(mem, igs, df); 
+    if (code < 0)
+        return code;
+    pop(1);
+    return 0;
+}
+
 /* ------ Initialization procedure ------ */
 
-const op_def ztrans_op_defs[] = {
+/* We need to split the table because of the 16-element limit. */
+const op_def ztrans1_op_defs[] = {
     {"1.setblendmode", zsetblendmode},
     {"0.currentblendmode", zcurrentblendmode},
     {"1.setopacityalpha", zsetopacityalpha},
@@ -409,6 +434,9 @@ const op_def ztrans_op_defs[] = {
     {"0.currentshapealpha", zcurrentshapealpha},
     {"1.settextknockout", zsettextknockout},
     {"0.currenttextknockout", zcurrenttextknockout},
+    op_def_end(0)
+};
+const op_def ztrans2_op_defs[] = {
     {"5.begintransparencygroup", zbegintransparencygroup},
     {"0.discardtransparencygroup", zdiscardtransparencygroup},
     {"0.endtransparencygroup", zendtransparencygroup},
@@ -417,5 +445,6 @@ const op_def ztrans_op_defs[] = {
     {"1.endtransparencymask", zendtransparencymask},
     {"1.inittransparencymask", zinittransparencymask},
     {"1.image3x", zimage3x},
+    {"1.pushpdf14devicefilter", zpushpdf14devicefilter},
     op_def_end(0)
 };

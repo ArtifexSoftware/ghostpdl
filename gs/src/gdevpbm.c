@@ -30,7 +30,7 @@
  */
 
 /*
- * There are 7 (families of) drivers here, plus one less related one:
+ * There are 8 (families of) drivers here, plus one less related one:
  *      pbm[raw] - outputs PBM (black and white).
  *      pgm[raw] - outputs PGM (gray-scale).
  *      pgnm[raw] - outputs PBM if the page contains only black and white,
@@ -41,6 +41,7 @@
  *        otherwise PPM.
  *      pkm[raw] - computes internally in CMYK, outputs PPM (RGB).
  *      pksm[raw] - computes internally in CMYK, outputs 4 PBM pages.
+ *      pam - outputs CMYK as PAM
  *      plan9bm - outputs Plan 9 bitmap format.
  */
 
@@ -55,6 +56,7 @@
  *      ppmraw, pnmraw: 4(3x1), 8(3x2), 16(3x5), 24(3x8).  [3-24]
  *      pkm, pkmraw: 4(4x1), 8(4x2), 16(4x4), 32(4x8).  [4-32]
  *	pksm, pksmraw: ibid.
+ *      pam: 32 (CMYK)
  */
 
 /* Structure for P*M devices, which extend the generic printer device. */
@@ -96,7 +98,7 @@ typedef struct gx_device_pbm_s gx_device_pbm;
 	 { 0 },\
 	is_raw,\
 	optimize,\
-	0, 0, 0, 0\
+	0, 0, 0\
 }
 
 /* For all but PBM, we need our own color mapping and alpha procedures. */
@@ -123,6 +125,12 @@ private dev_proc_print_page(pgm_print_page);
 private dev_proc_print_page(ppm_print_page);
 private dev_proc_print_page(pkm_print_page);
 private dev_proc_print_page(psm_print_page);
+private dev_proc_print_page(psm_print_page);
+private dev_proc_print_page(pam_print_page);
+
+private int pam_print_row(gx_device_printer * pdev, byte * data, int depth,
+	       FILE * pstream);
+private int pam_print_page(gx_device_printer * pdev, FILE * pstream);
 
 /* The device procedures */
 
@@ -149,12 +157,14 @@ private const gx_device_procs pnm_procs =
 private const gx_device_procs pkm_procs =
     pgpm_procs(ppm_open, NULL, ppm_get_params,
 	       NULL, cmyk_1bit_map_color_rgb, cmyk_1bit_map_cmyk_color);
+private const gx_device_procs pam_procs =
+    pgpm_procs(ppm_open, NULL, ppm_get_params,
+	       NULL, cmyk_8bit_map_color_rgb, cmyk_8bit_map_cmyk_color);
 
 /* The device descriptors themselves */
 const gx_device_pbm gs_pbm_device =
 pbm_prn_device(pbm_procs, "pbm", '1', 0, 1, 1, 1, 0, 0,
 	       X_DPI, Y_DPI, pbm_print_page);
-
 const gx_device_pbm gs_pbmraw_device =
 pbm_prn_device(pbm_procs, "pbmraw", '4', 1, 1, 1, 1, 1, 0,
 	       X_DPI, Y_DPI, pbm_print_page);
@@ -194,6 +204,9 @@ pbm_prn_device(pkm_procs, "pksm", '1', 0, 4, 4, 1, 1, 0,
 const gx_device_pbm gs_pksmraw_device =
 pbm_prn_device(pkm_procs, "pksmraw", '4', 1, 4, 4, 1, 1, 0,
 	       X_DPI, Y_DPI, psm_print_page);
+const gx_device_pbm gs_pam_device =
+pbm_prn_device(pam_procs, "pam", '7', 1, 4, 32, 255, 255, 0,
+	       X_DPI, Y_DPI, pam_print_page);
 
 /* Plan 9 bitmaps default to 100 dpi. */
 const gx_device_pbm gs_plan9bm_device =
@@ -218,7 +231,10 @@ ppm_set_dev_procs(gx_device * pdev)
 	set_dev_proc(pdev, begin_typed_image, pnm_begin_typed_image);
     }
     if (bdev->color_info.num_components == 4) {
-	if (bdev->color_info.depth == 4) {
+	if (bdev->magic == 7) {
+	    set_dev_proc(pdev, map_color_rgb, cmyk_8bit_map_color_rgb);
+	    set_dev_proc(pdev, map_cmyk_color, cmyk_8bit_map_cmyk_color);
+	} else if (bdev->color_info.depth == 4) {
 	    set_dev_proc(pdev, map_color_rgb, cmyk_1bit_map_color_rgb);
 	    set_dev_proc(pdev, map_cmyk_color, cmyk_1bit_map_cmyk_color);
 	} else {
@@ -241,6 +257,8 @@ ppm_open(gx_device * pdev)
 
     if (code < 0)
 	return code;
+    pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
+    set_linear_color_bits_mask_shift(pdev);
     bdev->uses_color = 0;
     ppm_set_dev_procs(pdev);
     return code;
@@ -265,15 +283,22 @@ ppm_output_page(gx_device * pdev, int num_copies, int flush)
 /* Map an RGB color to a PGM gray value. */
 /* Keep track of whether the image is black-and-white or gray. */
 private gx_color_index
-pgm_map_rgb_color(gx_device * pdev, gx_color_value r, gx_color_value g,
-		  gx_color_value b)
+pgm_map_rgb_color(gx_device * pdev, const gx_color_value cv[])
 {				/* We round the value rather than truncating it. */
-    gx_color_value gray =
-    ((r * (ulong) lum_red_weight) +
+    gx_color_value gray;
+    /* TO_DO_DEVICEN  - Kludge to emulate pre DeviceN math errors */
+#if 1
+    gx_color_value r, g, b;
+
+    r = cv[0]; g = cv[0]; b = cv[0];
+    gray = ((r * (ulong) lum_red_weight) +
      (g * (ulong) lum_green_weight) +
      (b * (ulong) lum_blue_weight) +
      (lum_all_weights / 2)) / lum_all_weights
     * pdev->color_info.max_gray / gx_max_color_value;
+#else	    /* Should be ... */
+    gray = cv[0] * pdev->color_info.max_gray / gx_max_color_value;
+#endif
 
     if (!(gray == 0 || gray == pdev->color_info.max_gray)) {
 	gx_device_pbm * const bdev = (gx_device_pbm *)pdev;
@@ -300,15 +325,13 @@ pgm_map_color_rgb(gx_device * dev, gx_color_index color,
 /* Map an RGB color to a PPM color tuple. */
 /* Keep track of whether the image is black-and-white, gray, or colored. */
 private gx_color_index
-ppm_map_rgb_color(gx_device * pdev, gx_color_value r, gx_color_value g,
-		  gx_color_value b)
+ppm_map_rgb_color(gx_device * pdev, const gx_color_value cv[])
 {
     gx_device_pbm * const bdev = (gx_device_pbm *)pdev;
-    gx_color_index color = gx_default_rgb_map_rgb_color(pdev, r, g, b);
+    gx_color_index color = gx_default_encode_color(pdev, cv);
     int bpc = pdev->color_info.depth / 3;
     gx_color_index mask =
 	((gx_color_index)1 << (pdev->color_info.depth - bpc)) - 1;
-
     if (!(((color >> bpc) ^ color) & mask)) { /* gray shade */
 	if (color != 0 && (~color & mask))
 	    bdev->uses_color |= 1;
@@ -337,15 +360,14 @@ ppm_map_color_rgb(gx_device * dev, gx_color_index color,
 
 /* Map a CMYK color to a pixel value. */
 private gx_color_index
-pkm_map_cmyk_color(gx_device * pdev, gx_color_value c, gx_color_value m,
-		   gx_color_value y, gx_color_value k)
+pkm_map_cmyk_color(gx_device * pdev, const gx_color_value cv[])
 {
     uint bpc = pdev->color_info.depth >> 2;
     uint max_value = pdev->color_info.max_color;
-    uint cc = c * max_value / gx_max_color_value;
-    uint mc = m * max_value / gx_max_color_value;
-    uint yc = y * max_value / gx_max_color_value;
-    uint kc = k * max_value / gx_max_color_value;
+    uint cc = cv[0] * max_value / gx_max_color_value;
+    uint mc = cv[1] * max_value / gx_max_color_value;
+    uint yc = cv[2] * max_value / gx_max_color_value;
+    uint kc = cv[3] * max_value / gx_max_color_value;
     gx_color_index color =
 	(((((cc << bpc) + mc) << bpc) + yc) << bpc) + kc;
 
@@ -386,7 +408,7 @@ ppm_get_params(gx_device * pdev, gs_param_list * plist)
     int ecode;
 
     if (code < 0) {
-        if ((ecode = param_write_int(plist, "TrayOrientation", &bdev->TrayOrientation)) < 0) {
+        if ((ecode = param_write_int(plist, "TrayOrientation", 0 /* NB &bdev->TrayOrientation*/)) < 0) {
 	   code = ecode;
 	}
     }
@@ -407,7 +429,6 @@ ppm_put_params(gx_device * pdev, gs_param_list * plist)
     const char *vname;
 
     save_info = pdev->color_info;
-
     if ((code = param_read_long(plist, (vname = "GrayValues"), &v)) != 1 ||
 	(code = param_read_long(plist, (vname = "RedValues"), &v)) != 1 ||
 	(code = param_read_long(plist, (vname = "GreenValues"), &v)) != 1 ||
@@ -453,13 +474,13 @@ ppm_put_params(gx_device * pdev, gs_param_list * plist)
             param_signal_error(plist, "TrayOrientation",
                                ecode = gs_error_rangecheck);
         else 
-	    ((gx_device_pbm *)pdev)->TrayOrientation = t;
+            ; /* NB fixme tray orientation broken */
+        /* 	    ((gx_device_pbm *)pdev)->TrayOrientation = t; */
     }
     if ((code = ecode) < 0 ||
 	(code = gdev_prn_put_params_planar(pdev, plist, &bdev->UsePlanarBuffer)) < 0
 	)
 	pdev->color_info = save_info;
-
     ppm_set_dev_procs(pdev);
     return code;
 }
@@ -522,6 +543,7 @@ pnm_begin_typed_image(gx_device *dev,
 					   pdcolor, pcpath, memory, pinfo);
 }
 
+
 /* ------ Internal routines ------ */
 
 private void pbm_get_initial_matrix( gx_device *pdev, gs_matrix *pmat)
@@ -530,8 +552,8 @@ private void pbm_get_initial_matrix( gx_device *pdev, gs_matrix *pmat)
     floatp ss_res = pdev->HWResolution[1] / 72.0;
     
     /* NB this device has no paper margins */
-
-    switch(((gx_device_pbm *)pdev)->TrayOrientation) {
+    /* NB fixme tray orientation broken */
+    switch(0) { /* ((gx_device_pbm *)pdev)->TrayOrientation) { */
     case 0:
         pmat->xx = fs_res;
         pmat->xy = 0;
@@ -572,7 +594,7 @@ private void pbm_get_initial_matrix( gx_device *pdev, gs_matrix *pmat)
 /* Print a page using a given row printing routine. */
 private int
 pbm_print_page_loop(gx_device_printer * pdev, char magic, FILE * pstream,
-	     int (*row_proc) (P4(gx_device_printer *, byte *, int, FILE *)))
+	     int (*row_proc) (gx_device_printer *, byte *, int, FILE *))
 {
     gx_device_pbm * const bdev = (gx_device_pbm *)pdev;
     uint raster = gdev_prn_raster(pdev);
@@ -586,6 +608,23 @@ pbm_print_page_loop(gx_device_printer * pdev, char magic, FILE * pstream,
     if (magic == '9')
 	fprintf(pstream, "%11d %11d %11d %11d %11d ",
 		0, 0, 0, pdev->width, pdev->height);
+    else if (magic == '7') {
+	int ncomps = pdev->color_info.num_components;
+	fprintf(pstream, "P%c\n", magic);
+	fprintf(pstream, "WIDTH %d\n", pdev->width);
+	fprintf(pstream, "HEIGHT %d\n", pdev->height);
+	fprintf(pstream, "DEPTH %d\n", ncomps);
+	fprintf(pstream, "MAXVAL %d\n", pdev->color_info.max_gray);
+	fprintf(pstream, "TUPLTYPE %s\n",
+	    (ncomps == 4) ? "CMYK" :
+	    ((ncomps == 3) ? "RGB" : "GRAYSCALE"));
+	if (bdev->comment[0])
+	    fprintf(pstream, "# %s\n", bdev->comment);
+	else
+	    fprintf(pstream, "# Image generated by %s (device=%s)\n",
+		    gs_product, pdev->dname);
+	fprintf(pstream, "ENDHDR\n");
+    }
     else {
 	fprintf(pstream, "P%c\n", magic);
 	if (bdev->comment[0])
@@ -598,6 +637,7 @@ pbm_print_page_loop(gx_device_printer * pdev, char magic, FILE * pstream,
     switch (magic) {
 	case '1':		/* pbm */
 	case '4':		/* pbmraw */
+	case '7':		/* pam */
 	case '9':		/* plan9bm */
 	    break;
 	default:
@@ -661,7 +701,7 @@ pgm_print_row(gx_device_printer * pdev, byte * data, int depth,
      * If we're writing planes for a CMYK device, we have 0 = white,
      * mask = black, which is the opposite of the pgm convention.
      */
-    uint invert = (pdev->color_info.num_components == 4 ? mask : 0);
+    uint invert = (pdev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE);
     byte *bp;
     uint x;
     int shift;
@@ -744,7 +784,7 @@ pgm_print_page(gx_device_printer * pdev, FILE * pstream)
     gx_device_pbm * const bdev = (gx_device_pbm *)pdev;
 
     return (bdev->uses_color == 0 && bdev->optimize ?
-	    pbm_print_page_loop(pdev, bdev->magic - 1, pstream,
+	    pbm_print_page_loop(pdev, (char)((int)bdev->magic - 1), pstream,
 				pxm_pbm_print_row) :
 	    pbm_print_page_loop(pdev, bdev->magic, pstream,
 				pgm_print_row));
@@ -838,10 +878,28 @@ ppm_print_page(gx_device_printer * pdev, FILE * pstream)
 	    pbm_print_page_loop(pdev, bdev->magic, pstream,
 				ppm_print_row) :
 	    bdev->uses_color == 1 ?
-	    pbm_print_page_loop(pdev, bdev->magic - 1, pstream,
+	    pbm_print_page_loop(pdev, (char)((int)bdev->magic - 1), pstream,
 				ppm_pgm_print_row) :
-	    pbm_print_page_loop(pdev, bdev->magic - 2, pstream,
+	    pbm_print_page_loop(pdev, (char)((int)bdev->magic - 2), pstream,
 				pxm_pbm_print_row));
+}
+
+private int
+pam_print_row(gx_device_printer * pdev, byte * data, int depth,
+	       FILE * pstream)
+{
+    if (depth == 32)
+	fwrite(data, 1, pdev->width * (depth / 8), pstream);
+    return 0;
+}
+
+private int
+pam_print_page(gx_device_printer * pdev, FILE * pstream)
+{
+    gx_device_pbm * const bdev = (gx_device_pbm *)pdev;
+
+    return pbm_print_page_loop(pdev, bdev->magic, pstream,
+				pam_print_row);
 }
 
 /* Print a faux CMYK page. */

@@ -35,7 +35,7 @@ zdict(i_ctx_t *i_ctx_p)
     if (op->value.intval < 0)
 	return_error(e_rangecheck);
 #endif
-    return dict_create((uint) op->value.intval, op, &i_ctx_p->dict_stack.dict_defaults);
+    return dict_create((uint) op->value.intval, op);
 }
 
 /* <dict> maxlength <int> */
@@ -260,7 +260,7 @@ zcopy_dict(i_ctx_t *i_ctx_p)
     check_type(*op1, t_dictionary);
     check_dict_read(*op1);
     check_dict_write(*op);
-    if (!i_ctx_p->dict_stack.dict_defaults.auto_expand &&
+    if (!dict_auto_expand &&
 	(dict_length(op) != 0 || dict_maxlength(op) < dict_length(op1))
 	)
 	return_error(e_rangecheck);
@@ -342,7 +342,7 @@ zdictcopynew(i_ctx_t *i_ctx_p)
     check_type(*op, t_dictionary);
     check_dict_write(*op);
     /* This is only recognized in Level 2 mode. */
-   if (!i_ctx_p->dict_stack.dict_defaults.auto_expand)
+    if (!dict_auto_expand)
 	return_error(e_undefined);
     code = idict_copy_new(op1, op);
     if (code < 0)
@@ -367,7 +367,7 @@ zdicttomark(i_ctx_t *i_ctx_p)
     count2--;
     if ((count2 & 1) != 0)
 	return_error(e_rangecheck);
-    code = dict_create(count2 >> 1, &rdict, &i_ctx_p->dict_stack.dict_defaults);
+    code = dict_create(count2 >> 1, &rdict);
     if (code < 0)
 	return code;
     /* << /a 1 /a 2 >> => << /a 1 >>, i.e., */

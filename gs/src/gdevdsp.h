@@ -13,15 +13,15 @@
 /*$RCSfile$ $Revision$ */
 /* gdevdisp.h - callback structure for DLL based display device */
 
-#ifndef gdevdisp_INCLUDED
-#  define gdevdisp_INCLUDED
+#ifndef gdevdsp_INCLUDED
+#  define gdevdsp_INCLUDED
 
 /*
  * The callback structure must be provided by calling the
  * Ghostscript APIs in the following order:
  *  gsapi_new_instance(&minst);
  *  gsapi_set_display_callback(minst, callback);
- *  gsapi_init_with_arg(minst, argc, argv);
+ *  gsapi_init_with_args(minst, argc, argv);
  *
  * Supported parameters and default values are:
  * -dDisplayHandle=0                      long
@@ -74,7 +74,7 @@ typedef enum {
     DISPLAY_UNUSED_FIRST = (1<<6),	/* e.g. Mac xRGB */
     DISPLAY_UNUSED_LAST  = (1<<7)	/* e.g. Windows BGRx */
 } DISPLAY_FORMAT_ALPHA;
-#define DISPLAY_ALPHA_MASK 0x0070L
+#define DISPLAY_ALPHA_MASK 0x00f0L
 
 /* Define the depth per component for DISPLAY_COLORS_GRAY, 
  * DISPLAY_COLORS_RGB and DISPLAY_COLORS_CMYK, 
@@ -195,4 +195,4 @@ struct display_callback_s {
 };
 
 
-#endif /* gdevdisp_INCLUDED */
+#endif /* gdevdsp_INCLUDED */

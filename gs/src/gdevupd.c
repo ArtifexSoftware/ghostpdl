@@ -134,11 +134,11 @@ RGB-Values, but promises to deal with R==G==B-Values when asking to map.
 The second pair deals with RGB-Values.
 */
 
-private dev_proc_map_rgb_color( upd_rgb_1color);  /** RGB->Gray-Index */
-private dev_proc_map_color_rgb( upd_1color_rgb);  /** Gray-Index->RGB */
+private dev_proc_encode_color( upd_rgb_1color);  /** Gray-Gray->Index */
+private dev_proc_decode_color( upd_1color_rgb);  /** Gray-Index->Gray */
 
-private dev_proc_map_rgb_color( upd_rgb_3color);  /** RGB->RGB-Index */
-private dev_proc_map_color_rgb( upd_3color_rgb);  /** RGB-Index->RGB */
+private dev_proc_encode_color( upd_rgb_3color);  /** RGB->RGB-Index */
+private dev_proc_decode_color( upd_3color_rgb);  /** RGB-Index->RGB */
 
 /**
 The third pair maps RGB-Values into four components, which one might
@@ -146,8 +146,8 @@ expect to be KCMY-Values, but they are not: "uniprint" considers this four
 Values as White+RGB Values!
 */
 
-private dev_proc_map_rgb_color( upd_rgb_4color);  /** RGB->WRGB-Index */
-private dev_proc_map_color_rgb(upd_4color_rgb);   /** WRGB-Index->RGB */
+private dev_proc_encode_color( upd_rgb_4color);  /** RGB->WRGB-Index */
+private dev_proc_decode_color(upd_4color_rgb);   /** WRGB-Index->RGB */
 
 /**
 The fourth pair deals with KCMY-Values. The Mapping-Function
@@ -156,8 +156,8 @@ inverse-Function is of the same type, and expects RGB-Values to be
 deliverd into the receiving 3-Component-Array!
 */
 
-private dev_proc_map_cmyk_color(upd_cmyk_icolor); /** KCMY->KCMY-Index */
-private dev_proc_map_color_rgb( upd_icolor_rgb);  /** KCMY->RGB-Index */
+private dev_proc_encode_color(upd_cmyk_icolor); /** KCMY->KCMY-Index */
+private dev_proc_decode_color( upd_icolor_rgb);  /** KCMY->RGB-Index */
 
 /**
 The difference between the icolor-pair and the kcolor-pair is the enforced
@@ -165,8 +165,8 @@ black-generation in the forward-mapping. that is taken into account by the
 reverse-mapping too.
 */
 
-private dev_proc_map_cmyk_color(upd_cmyk_kcolor); /** adds black generation */
-private dev_proc_map_color_rgb( upd_kcolor_rgb);  /** watches black-gen */
+private dev_proc_encode_color(upd_cmyk_kcolor); /** adds black generation */
+private dev_proc_decode_color( upd_kcolor_rgb);  /** watches black-gen */
 
 /**
 "ovcolor" is CMYK with Black-Generation and Undercolor-Removal, which
@@ -176,7 +176,7 @@ with
    K'   = min(C,M,Y)
 */
 
-private dev_proc_map_rgb_color(upd_rgb_ovcolor);  /** RGB->CMYK-Index */
+private dev_proc_encode_color(upd_rgb_ovcolor);  /** RGB->CMYK-Index */
 #define upd_ovcolor_rgb upd_icolor_rgb            /** CMYK-Index->RGB */
 
 /**
@@ -187,7 +187,7 @@ with
    K'   = min(C,M,Y)
 */
 
-private dev_proc_map_rgb_color(upd_rgb_novcolor); /** RGB->CMYK-Index */
+private dev_proc_encode_color(upd_rgb_novcolor); /** RGB->CMYK-Index */
 #define upd_novcolor_rgb upd_icolor_rgb           /** CMYK-Index->RGB */
 
 /**
@@ -197,7 +197,7 @@ only active, if there is a valid device-structure for then.
 upd_procs_map performs this task.
 */
 
-private int             upd_procs_map( P1(upd_device *udev));
+private int             upd_procs_map( upd_device *udev);
 
 /* ------------------------------------------------------------------- */
 /* Prototype of the Device-Structure (the only thing exported!)        */
@@ -581,6 +581,10 @@ Floyd-Steinberg Algorithm and instead of gx_color_index. The
 since gdevprn.c does (currently) support only 32-Bit Rasterdata.
 */
 
+#undef INT32_MIN
+#undef INT32_MAX
+#undef UINT32_MAX
+
 #if     arch_log2_sizeof_int < 2  /* int is too small */
    typedef          long  int32;
 #define                   INT32_MIN  LONG_MIN
@@ -642,9 +646,9 @@ typedef struct updscan_s { /* Single Scanline (1 Bit/Pixel) */
 #define UPD_CMAP_MAX     4 /** Number of Colormaps provided */
 #define UPD_VALPTR_MAX  32 /** Number of valbuf-Pointers */
 
-#define upd_proc_pxlget(name) uint32 name(P1(upd_p upd))
-#define upd_proc_render(name) int name(P1(upd_p upd))
-#define upd_proc_writer(name) int name(P2(upd_p upd,FILE *out))
+#define upd_proc_pxlget(name) uint32 name(upd_p upd)
+#define upd_proc_render(name) int name(upd_p upd)
+#define upd_proc_writer(name) int name(upd_p upd,FILE *out)
 
 struct upd_s { /* All upd-specific data */
 
@@ -739,8 +743,8 @@ Most prominent are "upd_open_map" and "upd_close_map", which
 do the proper actions when opening and closing the device.
 */
 
-private int             upd_open_map( P1(upd_device *udev));
-private int             upd_close_map(P1(upd_device *udev));
+private int             upd_open_map( upd_device *udev);
+private int             upd_close_map(upd_device *udev);
 
 /**
 But "upd_truncate" and "upd_expand" are also mentionable. They are
@@ -750,8 +754,8 @@ and this is what "upd_truncate" does, in the most general manner i can
 think of and with O(log(n)) in time. "upd_expand" is required for the
 reverse mapping-functions and is a constant-time `algorithm'.
 */
-private uint32          upd_truncate(P3(upd_pc,int,gx_color_value));
-private gx_color_value  upd_expand(  P3(upd_pc,int,uint32));
+private uint32          upd_truncate(upd_pc,int,gx_color_value);
+private gx_color_value  upd_expand(  upd_pc,int,uint32);
 
 /**
 The next group of internal functions adresses the rendering. Besides
@@ -762,18 +766,18 @@ is called for each scanline. Actually a fourth function is provided,
 that is invoked at the beginning of each page to be printed, but the
 current algorithms do not need it.
 */
-private void            upd_open_render(   P1(upd_device *udev));
-private void            upd_close_render(  P1(upd_device *udev));
+private void            upd_open_render(   upd_device *udev);
+private void            upd_close_render(  upd_device *udev);
 
-private void            upd_open_fscomp(   P1(upd_device *udev));
-private int             upd_fscomp(        P1(upd_p upd));
-private void            upd_close_fscomp(  P1(upd_device *udev));
+private void            upd_open_fscomp(   upd_device *udev);
+private int             upd_fscomp(        upd_p upd);
+private void            upd_close_fscomp(  upd_device *udev);
 
-private void            upd_open_fscmyk(   P1(upd_device *udev));
-private int             upd_fscmyk(        P1(upd_p upd));
+private void            upd_open_fscmyk(   upd_device *udev);
+private int             upd_fscmyk(        upd_p upd);
 
-private void            upd_open_fscmy_k(  P1(upd_device *udev));
-private int             upd_fscmy_k(       P1(upd_p upd));
+private void            upd_open_fscmy_k(  upd_device *udev);
+private int             upd_fscmy_k(       upd_p upd);
 
 /**
 I hope that the formatting stuff can be kept simple and thus most
@@ -782,10 +786,10 @@ During open, there is a call to a format-specific open-function, but
 this is only for checking and determining the amount of of bytes required
 for the output-buffer (and limit-values in the scan-buffer).
 */
-private int             upd_open_writer(   P1(upd_device *udev));
-private void            upd_close_writer(  P1(upd_device *udev));
+private int             upd_open_writer(   upd_device *udev);
+private void            upd_close_writer(  upd_device *udev);
 #if UPD_SIGNAL
-private void            upd_signal_handler(P1(int sig));
+private void            upd_signal_handler(int sig);
 #endif
 
 /**
@@ -796,9 +800,9 @@ it is a violation of UPD's rules: the start-routine computes the Begin-Page
 sequence (the Rasterfile header) since it would be a nuisance to provide
 this code within each (test-)personalization in PostScript.
 */
-private int             upd_open_rascomp(   P1(upd_device *udev));
-private int             upd_start_rascomp(  P2(upd_p upd, FILE *out));
-private int             upd_rascomp(        P2(upd_p upd, FILE *out));
+private int             upd_open_rascomp(   upd_device *udev);
+private int             upd_start_rascomp(  upd_p upd, FILE *out);
+private int             upd_rascomp(        upd_p upd, FILE *out);
 
 /**
 The second format is ESC/P, the format introduced with the first Epson
@@ -807,9 +811,9 @@ It is also uncompressed. This formatter supports X- and Y-Weaving,
 which makes it the most sophisticated one inside this driver.
 */
 
-private void            upd_limits(        P2(upd_p upd, bool check));
-private int             upd_open_wrtescp(  P1(upd_device *udev));
-private int             upd_wrtescp(       P2(upd_p upd, FILE *out));
+private void            upd_limits(        upd_p upd, bool check);
+private int             upd_open_wrtescp(  upd_device *udev);
+private int             upd_wrtescp(       upd_p upd, FILE *out);
 
 /**
 The third format is ESC/P2, the format use by the newer Epson-Printers.
@@ -818,40 +822,40 @@ This formatter does not allow for X-Weaving.
 
 The fourth writer is a ESC/P2-Writer, that supports X-Weaving
 */
-private int             upd_rle(P3(byte *out,const byte *in,int nbytes));
-private int             upd_open_wrtescp2( P1(upd_device *udev));
-private int             upd_wrtescp2(      P2(upd_p upd, FILE *out));
-private int             upd_wrtescp2x(     P2(upd_p upd, FILE *out));
+private int             upd_rle(byte *out,const byte *in,int nbytes);
+private int             upd_open_wrtescp2( upd_device *udev);
+private int             upd_wrtescp2(      upd_p upd, FILE *out);
+private int             upd_wrtescp2x(     upd_p upd, FILE *out);
 
 /**
 The fifth writer is a HP-RTL/PCL-Writer
 */
 
-private int             upd_open_wrtrtl(   P1(upd_device *udev));
-private int             upd_wrtrtl(        P2(upd_p upd, FILE *out));
+private int             upd_open_wrtrtl(   upd_device *udev);
+private int             upd_wrtrtl(        upd_p upd, FILE *out);
 
 /**
 The sixth writer is for Canon Extended Mode (currently BJC610) (hr)
 */
 
-private int             upd_open_wrtcanon( P1(upd_device *udev));
-private int             upd_wrtcanon(      P2(upd_p upd, FILE *out));
+private int             upd_open_wrtcanon( upd_device *udev);
+private int             upd_wrtcanon(      upd_p upd, FILE *out);
 
 /**
 The seventh writer is for ESC P/2 Nozzle Map Mode (currently Stylus Color 300) (GR)
 */
 
-private int             upd_wrtescnm(      P2(upd_p upd, FILE *out));
+private int             upd_wrtescnm(      upd_p upd, FILE *out);
 
 
 /**
 Generalized Pixel Get & Read
 */
-private uint32 upd_pxlfwd(P1(upd_p upd));
-private uint32 upd_pxlrev(P1(upd_p upd));
+private uint32 upd_pxlfwd(upd_p upd);
+private uint32 upd_pxlrev(upd_p upd);
 #define upd_pxlget(UPD) (*UPD->pxlget)(UPD)
 
-private void *upd_cast(P1(const void *));
+private void *upd_cast(const void *);
 
 /* ------------------------------------------------------------------- */
 /* Macros to deal with the Parameter-Memory                            */
@@ -1023,8 +1027,8 @@ upd_print_page(gx_device_printer *pdev, FILE *out)
    int error,need,yfill;
 
 #if UPD_SIGNAL /* variables required for signal-handling only */
-   void (*oldint )(P1(int)) = NULL;
-   void (*oldterm)(P1(int)) = NULL;
+   void (*oldint )(int) = NULL;
+   void (*oldterm)(int) = NULL;
    upd_p  oldupd            = sigupd;
 #endif         /* variables required for signal-handling only */
 
@@ -1274,10 +1278,10 @@ It determines the size of the printed image and allocates the
 buffer for the raw raster-data
 */
       upd->gswidth  = udev->width -
-         (dev_l_margin(udev)+dev_r_margin(udev))*udev->x_pixels_per_inch;
+         (int)((dev_l_margin(udev)+dev_r_margin(udev))*udev->x_pixels_per_inch);
 
       upd->gsheight = udev->height -
-         (dev_t_margin(udev)+dev_b_margin(udev))*udev->y_pixels_per_inch;
+         (int)((dev_t_margin(udev)+dev_b_margin(udev))*udev->y_pixels_per_inch);
 
       upd->ngsbuf = 0;    /* Ensure sane values */
       upd->gsbuf  = NULL; /* Ensure sane values */
@@ -2141,11 +2145,12 @@ reverses this in the reverse-mapping procedures.
 */
 
 private gx_color_index
-upd_cmyk_icolor(gx_device *pdev,
-   gx_color_value c, gx_color_value m, gx_color_value y,gx_color_value k)
+upd_cmyk_icolor(gx_device *pdev, const gx_color_value cv[])
 {
    const upd_p     upd = ((upd_device *)pdev)->upd;
    gx_color_index  rv;
+   gx_color_value c, m, y, k;
+   c = cv[0]; m = cv[1]; y = cv[2]; k = cv[3];
 
 /**
 All 4-Component-Modi have to deal with the Problem, that a value
@@ -2157,7 +2162,7 @@ in the W- or K-Component.
 
    if((c == m) && (m == y)) {
 
-      rv = upd_truncate(upd,0,c > k ? c : k);
+      rv = upd_truncate(upd,0,(gx_color_value)(c > k ? c : k));
 
    } else {
 
@@ -2251,24 +2256,23 @@ upd_icolor_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
 }
 
 /* ------------------------------------------------------------------- */
-/* upd_rgb_1color: Grayscale-RGB->Grayscale-index-Mapping              */
+/* upd_rgb_1color: Grayscale->Grayscale-index-Mapping              */
 /* ------------------------------------------------------------------- */
 
 private gx_color_index
-upd_rgb_1color(gx_device *pdev,
-   gx_color_value r, gx_color_value g, gx_color_value b)
+upd_rgb_1color(gx_device *pdev, const gx_color_value cv[])
 {
    const upd_p     upd = ((upd_device *)pdev)->upd;
    gx_color_index  rv;
+   gx_color_value g;
 
-   rv = upd_truncate(upd,0,r);
+   g = cv[0];
+   rv = upd_truncate(upd,0,g);
 
 #if UPD_MESSAGES & UPD_M_MAPCALLS
    errprintf(
-      "rgb_1color: (%5.1f,%5.1f,%5.1f) : (%5.1f) : 0x%0*lx\n",
-      255.0 * (double) r  / (double) gx_max_color_value,
+      "rgb_1color: (%5.1f) : (%5.1f) : 0x%0*lx\n",
       255.0 * (double) g  / (double) gx_max_color_value,
-      255.0 * (double) b  / (double) gx_max_color_value,
       255.0 * (double) ((rv >> upd->cmap[0].bitshf) & upd->cmap[0].bitmsk)
                     / (double) upd->cmap[0].bitmsk,
       (pdev->color_info.depth + 3)>>2,rv);
@@ -2282,15 +2286,13 @@ upd_rgb_1color(gx_device *pdev,
 /* ------------------------------------------------------------------- */
 
 private int
-upd_1color_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
+upd_1color_rgb(gx_device *pdev, gx_color_index color, gx_color_value cv[1])
 {
    const upd_p     upd = ((upd_device *)pdev)->upd;
 /*
  * Actual task: expand to full range of gx_color_value
  */
-   prgb[0] = upd_expand(upd,0,color);
-
-   prgb[2] = prgb[1] = prgb[0];
+   cv[0] = upd_expand(upd,0,color);
 
 #if UPD_MESSAGES & UPD_M_MAPCALLS
    errprintf("1color_rgb: 0x%0*lx -> %5.1f -> (%5.1f,%5.1f,%5.1f)\n",
@@ -2298,8 +2300,8 @@ upd_1color_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
       255.0 * (double) ((color >> upd->cmap[0].bitshf) & upd->cmap[0].bitmsk)
                        / (double) upd->cmap[0].bitmsk,
       255.0 * (double) prgb[0] / (double) gx_max_color_value,
-      255.0 * (double) prgb[1] / (double) gx_max_color_value,
-      255.0 * (double) prgb[2] / (double) gx_max_color_value);
+      255.0 * (double) prgb[0] / (double) gx_max_color_value,
+      255.0 * (double) prgb[0] / (double) gx_max_color_value);
 #endif
 
    return 0;
@@ -2310,11 +2312,12 @@ upd_1color_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
 /* ------------------------------------------------------------------- */
 
 private gx_color_index
-upd_rgb_3color(gx_device *pdev,
-   gx_color_value r, gx_color_value g, gx_color_value b)
+upd_rgb_3color(gx_device *pdev, const gx_color_value cv[])
 {
    const upd_p     upd = ((upd_device *)pdev)->upd;
    gx_color_index  rv;
+   gx_color_value r, g, b;
+   r = cv[0]; g = cv[1]; b = cv[2];
 
    rv = upd_truncate(upd,0,r) | upd_truncate(upd,1,g) | upd_truncate(upd,2,b);
    if(rv == gx_no_color_index) rv ^= 1;
@@ -2374,11 +2377,13 @@ upd_3color_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
 /* ------------------------------------------------------------------- */
 
 private gx_color_index
-upd_rgb_4color(gx_device *pdev,
-   gx_color_value r, gx_color_value g, gx_color_value b)
+upd_rgb_4color(gx_device *pdev, const gx_color_value cv[])
 {
    const upd_p     upd = ((upd_device *)pdev)->upd;
    gx_color_index  rv;
+   gx_color_value r, g, b;
+
+   r = cv[0]; g = cv[1]; b = cv[2];
 
    if((r == g) && (g == b)) {
 
@@ -2462,12 +2467,14 @@ upd_4color_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
 /* ------------------------------------------------------------------- */
 
 private gx_color_index
-upd_cmyk_kcolor(gx_device *pdev,
-   gx_color_value c, gx_color_value m, gx_color_value y,gx_color_value k)
+upd_cmyk_kcolor(gx_device *pdev, const gx_color_value cv[])
 {
    const upd_p     upd = ((upd_device *)pdev)->upd;
    gx_color_index  rv;
    gx_color_value  black;
+
+   gx_color_value c, m, y, k;
+   c = cv[0]; m = cv[1]; y = cv[2]; k = cv[3];
 
    if((c == m) && (m == y)) {
 
@@ -2573,13 +2580,13 @@ upd_kcolor_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
 /* ------------------------------------------------------------------- */
 
 private gx_color_index
-upd_rgb_ovcolor(gx_device *pdev,
-   gx_color_value r, gx_color_value g, gx_color_value b)
+upd_rgb_ovcolor(gx_device *pdev, const gx_color_value cv[])
 {
    const upd_p     upd = ((upd_device *)pdev)->upd;
    gx_color_index  rv;
    gx_color_value  c,m,y,black;
-
+   gx_color_value r, g, b;
+   r = cv[0]; g = cv[1]; b = cv[2];
    if((r == g) && (g == b)) {
 
       black  = gx_max_color_value - r;
@@ -2598,22 +2605,22 @@ upd_rgb_ovcolor(gx_device *pdev,
       if(black != gx_max_color_value) {
         float tmp,d;
         
-        d   = gx_max_color_value - black;
+        d   = (float)(gx_max_color_value - black);
 
         tmp = (float) (c-black) / d;
         if(      0.0 > tmp) tmp = 0.0;
         else if( 1.0 < tmp) tmp = 1.0;
-        c   = tmp * gx_max_color_value + 0.499;
+        c   = (gx_color_value)(tmp * gx_max_color_value + 0.499);
 
         tmp = (float) (m-black) / d;
         if(      0.0 > tmp) tmp = 0.0;
         else if( 1.0 < tmp) tmp = 1.0;
-        m   = tmp * gx_max_color_value + 0.499;
+        m   = (gx_color_value)(tmp * gx_max_color_value + 0.499);
 
         tmp = (float) (y-black) / d;
         if(      0.0 > tmp) tmp = 0.0;
         else if( 1.0 < tmp) tmp = 1.0;
-        y   = tmp * gx_max_color_value + 0.499;
+        y   = (gx_color_value)(tmp * gx_max_color_value + 0.499);
 
       } else {
 
@@ -2654,12 +2661,13 @@ upd_rgb_ovcolor(gx_device *pdev,
 /* ------------------------------------------------------------------- */
 
 private gx_color_index
-upd_rgb_novcolor(gx_device *pdev,
-   gx_color_value r, gx_color_value g, gx_color_value b)
+upd_rgb_novcolor(gx_device *pdev, const gx_color_value cv[])
 {
    const upd_p     upd = ((upd_device *)pdev)->upd;
    gx_color_index  rv;
    gx_color_value  c,m,y,black;
+   gx_color_value r, g, b;
+   r = cv[0]; g = cv[1]; b = cv[2];
 
    if((r == g) && (g == b)) {
 
@@ -3026,7 +3034,7 @@ upd_open_map(upd_device *udev)
             fx  = fx < 0.0 ? 0.0 :
                  (fx > gx_max_color_value ? gx_max_color_value : fx);
 
-            cmap->code[ly] = fx;
+            cmap->code[ly] = (gx_color_value)fx;
             if((fx - cmap->code[ly]) >= 0.5) cmap->code[ly] += 1;
          }
 
@@ -3107,42 +3115,58 @@ upd_procs_map(upd_device *udev)
 
    switch(imap) {
      case MAP_GRAY: /* Grayscale -> Grayscale */
+       set_dev_proc(udev,encode_color, upd_rgb_1color); 
+       set_dev_proc(udev,decode_color, upd_1color_rgb); 
        set_dev_proc(udev,map_rgb_color, upd_rgb_1color);
        set_dev_proc(udev,map_cmyk_color,gx_default_map_cmyk_color);
        set_dev_proc(udev,map_color_rgb, upd_1color_rgb);
      break;
      case MAP_RGBW: /* RGB->RGBW */
+       set_dev_proc(udev,encode_color, upd_rgb_4color); 
+       set_dev_proc(udev,decode_color, upd_4color_rgb); 
        set_dev_proc(udev,map_rgb_color, upd_rgb_4color);
        set_dev_proc(udev,map_cmyk_color,gx_default_map_cmyk_color);
        set_dev_proc(udev,map_color_rgb, upd_4color_rgb);
      break;
      case MAP_RGB: /* Plain RGB */
+       set_dev_proc(udev,encode_color, upd_rgb_3color); 
+       set_dev_proc(udev,decode_color, upd_3color_rgb); 
        set_dev_proc(udev,map_rgb_color, upd_rgb_3color);
        set_dev_proc(udev,map_cmyk_color,gx_default_map_cmyk_color);
        set_dev_proc(udev,map_color_rgb, upd_3color_rgb);
      break;
      case MAP_CMYK: /* Plain KCMY */
+       set_dev_proc(udev,encode_color, upd_cmyk_icolor); 
+       set_dev_proc(udev,decode_color, upd_icolor_rgb); 
        set_dev_proc(udev,map_rgb_color, gx_default_map_rgb_color);
        set_dev_proc(udev,map_cmyk_color,upd_cmyk_icolor);
        set_dev_proc(udev,map_color_rgb, upd_icolor_rgb);
      break;
      case MAP_CMYKGEN: /* KCMY with black-generation */
+       set_dev_proc(udev,encode_color, upd_cmyk_kcolor); 
+       set_dev_proc(udev,decode_color, upd_kcolor_rgb); 
        set_dev_proc(udev,map_rgb_color, gx_default_map_rgb_color);
        set_dev_proc(udev,map_cmyk_color,upd_cmyk_kcolor);
        set_dev_proc(udev,map_color_rgb, upd_kcolor_rgb);
      break;
      case MAP_RGBOV: /* RGB -> KCMY with BG and UCR for CMYK-Output */
+       set_dev_proc(udev,encode_color, upd_rgb_ovcolor); 
+       set_dev_proc(udev,decode_color, upd_ovcolor_rgb); 
        set_dev_proc(udev,map_rgb_color, upd_rgb_ovcolor);
        set_dev_proc(udev,map_cmyk_color,gx_default_map_cmyk_color);
        set_dev_proc(udev,map_color_rgb, upd_ovcolor_rgb);
      break;
      case MAP_RGBNOV: /* RGB -> KCMY with BG and UCR for CMY+K-Output */
+       set_dev_proc(udev,encode_color, upd_rgb_novcolor); 
+       set_dev_proc(udev,decode_color, upd_novcolor_rgb); 
        set_dev_proc(udev,map_rgb_color, upd_rgb_novcolor);
        set_dev_proc(udev,map_cmyk_color,gx_default_map_cmyk_color);
        set_dev_proc(udev,map_color_rgb, upd_novcolor_rgb);
      break;
 
      default:
+       set_dev_proc(udev,encode_color, gx_default_map_rgb_color); 
+       set_dev_proc(udev,decode_color, gx_default_map_color_rgb); 
        set_dev_proc(udev,map_rgb_color, gx_default_map_rgb_color);
        set_dev_proc(udev,map_cmyk_color,gx_default_map_cmyk_color);
        set_dev_proc(udev,map_color_rgb, gx_default_map_color_rgb);
@@ -3409,18 +3433,18 @@ If anything was ok. up to now, memory get's allocated.
 
          for(i = 0; i < 32; ++i) { /* Attempt Ideal */
 
-            highval = (ymax-ymin) * (double) comp->spotsize + 0.5;
+            highval = (int32)((ymax-ymin) * (double) comp->spotsize + 0.5);
 
             if(!(highmod = highval % nsteps)) break; /* Gotcha */
 
             highval += nsteps - highmod;
-            comp->spotsize = (double) highval / (ymax-ymin) + 0.5;
+            comp->spotsize = (int32)((double) highval / (ymax-ymin) + 0.5);
 
             if(!(comp->spotsize % 2)) comp->spotsize++;
 
          }                         /* Attempt Ideal */
 
-         comp->offset    = ymin * (double) comp->spotsize + (double) 0.5;
+         comp->offset    = (int32)(ymin * (double) comp->spotsize + (double) 0.5);
          comp->scale     = highval / nsteps;
          comp->threshold = comp->spotsize / 2;
 
@@ -3460,9 +3484,9 @@ Optional Random Initialization of the value-Buffer
             upd->valbuf[i] = v;
          }
          scale = (float) comp->threshold / (float) (hv - lv);
-         lv   += comp->threshold / (2*scale);
+         lv   += (int32)(comp->threshold / (2*scale));
          for(i = icomp; i < upd->nvalbuf; i += upd->ncomp)
-            upd->valbuf[i] = scale * (upd->valbuf[i] - lv);
+            upd->valbuf[i] = (int32)(scale * (upd->valbuf[i] - lv));
       }
    }
 
@@ -4820,8 +4844,8 @@ upd_open_wrtescp(upd_device *udev)
            break;
            case  2:
               if(bp[i]) {
-                 value = 0.5 + udev->height * (float) bp[i]
-                               / udev->y_pixels_per_inch;
+                 value = (int)(0.5 + udev->height * (float) bp[i]
+                               / udev->y_pixels_per_inch);
                  if(       0 >= value) bp[i] = 1;
                  else if(128 >  value) bp[i] = value;
                  else                  bp[i] = 127;
@@ -4831,7 +4855,7 @@ upd_open_wrtescp(upd_device *udev)
               }
            break;
            case  3:
-              value = 0.5 + udev->height / udev->y_pixels_per_inch;
+              value = (int)(0.5 + udev->height / udev->y_pixels_per_inch);
               if(       0 >= value) bp[i] = 1;
               else if( 22 >  value) bp[i] = value;
               else                  bp[i] = 22;
@@ -5252,8 +5276,8 @@ upd_open_wrtescp2(upd_device *udev)
            break;
            case  8:
               if(B_PAGELENGTH & upd->flags) {
-                 value = 0.5 + udev->height
-                               * pixels_per_inch / udev->y_pixels_per_inch;
+                 value = (int)(0.5 + udev->height
+                               * pixels_per_inch / udev->y_pixels_per_inch);
                  bp[i] =  value     & 0xff;
               }
               state = 9;
@@ -5274,7 +5298,7 @@ upd_open_wrtescp2(upd_device *udev)
            break;
            case  12:
               if(B_TOPMARGIN & upd->flags) {
-                 value =  dev_t_margin(udev) * pixels_per_inch;
+                 value =  (int)(dev_t_margin(udev) * pixels_per_inch);
                  bp[i] =  value     & 0xff;
               }
               state = 13;
@@ -5287,9 +5311,9 @@ upd_open_wrtescp2(upd_device *udev)
            break;
            case  14:
               if(B_BOTTOMMARGIN & upd->flags) {
-                 value = 0.5 + udev->height
+                 value = (int)(0.5 + udev->height
                                * pixels_per_inch / udev->y_pixels_per_inch
-                       - dev_b_margin(udev) * pixels_per_inch;
+                       - dev_b_margin(udev) * pixels_per_inch);
                  bp[i] =  value     & 0xff;
               }
               state = 15;
@@ -5334,7 +5358,7 @@ upd_open_wrtescp2(upd_device *udev)
       byte *bp;
       int ratio;
 
-      ratio = (udev->y_pixels_per_inch + .5) / udev->x_pixels_per_inch;
+      ratio = (int)((udev->y_pixels_per_inch + 0.5) / udev->x_pixels_per_inch);
 
       if(0 == upd->ints[I_XSTEP]) { /* Adjust scale-factor too! */
          if(ratio > 1) upd->ints[I_XSTEP] = -ratio;
@@ -5449,10 +5473,10 @@ upd_open_wrtescp2(upd_device *udev)
          switch(upd->choice[C_FORMAT]){
             case FMT_ESCP2Y:
             case FMT_ESCP2XY:
-               *bp++ = 3600.0 * upd->ints[I_NYPASS] / 
-                                 udev->y_pixels_per_inch + 0.5;
-               *bp++ = 3600.0 * upd->ints[I_NXPASS] /
-                                 udev->x_pixels_per_inch + 0.5;
+               *bp++ = (byte)(3600.0 * upd->ints[I_NYPASS] / 
+                                 udev->y_pixels_per_inch + 0.5);
+               *bp++ = (byte)(3600.0 * upd->ints[I_NXPASS] /
+                                 udev->x_pixels_per_inch + 0.5);
                *bp++ = upd->ints[I_PINS2WRITE];
             break;
             case FMT_ESCNMY:

@@ -70,6 +70,7 @@ gsapi_new_instance(gs_main_instance **pinstance, void *caller_handle)
     minst->stderr_fn = NULL;
     minst->poll_fn = NULL;
     minst->display = NULL;
+    minst->i_ctx_p = NULL;
     *pinstance = minst;
     return 0;
 }
@@ -154,7 +155,7 @@ gsapi_run_string_begin(gs_main_instance *minst, int user_errors,
 	return e_Fatal;
 
     return gs_main_run_string_begin(minst, 
-	0, pexit_code, &minst->error_object);
+	user_errors, pexit_code, &minst->error_object);
 }
 
 
@@ -166,7 +167,7 @@ gsapi_run_string_continue(gs_main_instance *minst,
 	return e_Fatal;
 
     return gs_main_run_string_continue(minst,
-	str, length, 0, pexit_code, &minst->error_object);
+	str, length, user_errors, pexit_code, &minst->error_object);
 }
 
 GSDLLEXPORT int GSDLLAPI 
@@ -177,7 +178,7 @@ gsapi_run_string_end(gs_main_instance *minst,
 	return e_Fatal;
 
     return gs_main_run_string_end(minst,
-	0, pexit_code, &minst->error_object);
+	user_errors, pexit_code, &minst->error_object);
 }
 
 GSDLLEXPORT int GSDLLAPI 
@@ -188,7 +189,7 @@ gsapi_run_string_with_length(gs_main_instance *minst,
 	return e_Fatal;
 
     return gs_main_run_string_with_length(minst,
-	str, length, 0, pexit_code, &minst->error_object);
+	str, length, user_errors, pexit_code, &minst->error_object);
 }
 
 GSDLLEXPORT int GSDLLAPI 
@@ -218,8 +219,16 @@ gsapi_exit(gs_main_instance *minst)
     if (minst == NULL)
 	return e_Fatal;
 
-    gs_exit(0);
+    gs_to_exit(0);
     return 0;
+}
+
+/* Visual tracer : */
+struct vd_trace_interface_s;
+extern struct vd_trace_interface_s * vd_trace0;
+GSDLLEXPORT void GSDLLAPI
+gsapi_set_visual_tracer(struct vd_trace_interface_s *I)
+{   vd_trace0 = I;
 }
 
 /* end of iapi.c */

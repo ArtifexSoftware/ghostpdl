@@ -55,20 +55,19 @@ typedef struct gx_line_params_s {
   ((plp)->half_width = (wid) / 2)
 #define gx_current_line_width(plp)\
   ((plp)->half_width * 2)
-int gx_set_miter_limit(P2(gx_line_params *, floatp));
+int gx_set_miter_limit(gx_line_params *, floatp);
 
 #define gx_current_miter_limit(plp)\
   ((plp)->miter_limit)
-int gx_set_dash(P5(gx_dash_params *, const float *, uint, floatp,
-		   gs_memory_t *));
+int gx_set_dash(gx_dash_params *, const float *, uint, floatp, gs_memory_t *);
 
 #define gx_set_dash_adapt(pdp, adpt) ((pdp)->adapt = (adpt))
-int gx_set_dot_length(P3(gx_line_params *, floatp, bool));
+int gx_set_dot_length(gx_line_params *, floatp, bool);
 
 /* See gsline.c for the computation of miter_check. */
 #define gx_line_params_initial\
  0.0, gs_cap_butt, gs_join_miter, gs_join_bevel /* for Adobe compatibility */,\
- 10.0, 0.20305866, 0.0, 0/*false*/,\
+ 10.0, (float)0.20305866, 0.0, 0/*false*/,\
   { identity_matrix_body }, { gx_dash_params_initial }
 
 #endif /* gxline_INCLUDED */

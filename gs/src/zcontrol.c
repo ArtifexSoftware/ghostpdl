@@ -23,16 +23,16 @@
 #include "store.h"
 
 /* Forward references */
-private int no_cleanup(P1(i_ctx_t *));
-private uint count_exec_stack(P2(i_ctx_t *, bool));
-private uint count_to_stopped(P2(i_ctx_t *, long));
-private int unmatched_exit(P2(os_ptr, op_proc_t));
+private int no_cleanup(i_ctx_t *);
+private uint count_exec_stack(i_ctx_t *, bool);
+private uint count_to_stopped(i_ctx_t *, long);
+private int unmatched_exit(os_ptr, op_proc_t);
 
 /* See the comment in opdef.h for an invariant which allows */
 /* more efficient implementation of for, loop, and repeat. */
 
 /* <[test0 body0 ...]> .cond - */
-private int cond_continue(P1(i_ctx_t *));
+private int cond_continue(i_ctx_t *);
 private int
 zcond(i_ctx_t *i_ctx_p)
 {
@@ -148,7 +148,7 @@ zexecn(i_ctx_t *i_ctx_p)
 }
 
 /* <obj> superexec - */
-private int end_superexec(P1(i_ctx_t *));
+private int end_superexec(i_ctx_t *);
 private int
 zsuperexec(i_ctx_t *i_ctx_p)
 {
@@ -172,6 +172,77 @@ private int
 end_superexec(i_ctx_t *i_ctx_p)
 {
     i_ctx_p->in_superexec--;
+    return 0;
+}
+
+/* <array> <executable> .runandhide <obj>				*/
+/* 	before executing  <executable>, <array> is been removed from	*/
+/*	the operand stack and placed on the execstack with attributes	*/
+/* 	changed to 'noaccess'.						*/
+/* 	After execution, the array will be placed on  the top of the	*/
+/*	operand stack (on top of any elemetns pushed by <executable>	*/
+/*	for both the normal case and for the error case.		*/
+private int end_runandhide(i_ctx_t *);
+private int err_end_runandhide(i_ctx_t *);
+private int
+zrunandhide(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    es_ptr ep;
+
+    check_op(2);
+    if (!r_is_array(op - 1))
+	return_op_typecheck(op);
+    if (!r_has_attr(op, a_executable))
+	return 0;		/* literal object just gets pushed back */
+    check_estack(5);
+    ep = esp += 5;
+    make_mark_estack(ep - 4, es_other, err_end_runandhide); /* error case */
+    make_op_estack(ep - 1,  end_runandhide); /* normal case */
+    ref_assign(ep, op);
+    /* Store the object we are hiding  and it's current tas.type_attrs */
+    /* on the exec stack then change to 'noaccess' */
+    make_int(ep - 3, (int)op[-1].tas.type_attrs);
+    ref_assign(ep - 2, op - 1);
+    r_clear_attrs(ep - 2, a_all);
+    /* replace the array with a special kind of mark that has a_read access */
+    esfile_check_cache();
+    pop(2);
+    return o_push_estack;
+}
+private int
+runandhide_restore_hidden(i_ctx_t *i_ctx_p, ref *obj, ref *attrs)
+{
+    os_ptr op = osp;
+
+    push(1);
+    /* restore the hidden_object and its type_attrs */
+    ref_assign(op, obj);
+    r_clear_attrs(op, a_all);
+    r_set_attrs(op, attrs->value.intval);
+    return 0;
+}
+
+/* - %end_runandhide hiddenobject */
+private int
+end_runandhide(i_ctx_t *i_ctx_p)
+{
+    int code;
+
+    if ((code = runandhide_restore_hidden(i_ctx_p, esp, esp - 1)) < 0)
+        return code;
+    esp -= 2;		/* pop the hidden value and its atributes */
+    return o_pop_estack;
+}
+
+/* restore hidden object for error returns */
+private int
+err_end_runandhide(i_ctx_t *i_ctx_p)
+{
+    int code;
+
+    if ((code = runandhide_restore_hidden(i_ctx_p, esp + 3, esp + 2)) < 0)
+        return code;
     return 0;
 }
 
@@ -216,9 +287,9 @@ zifelse(i_ctx_t *i_ctx_p)
 
 /* <init> <step> <limit> <proc> for - */
 private int
-    for_pos_int_continue(P1(i_ctx_t *)),
-    for_neg_int_continue(P1(i_ctx_t *)),
-    for_real_continue(P1(i_ctx_t *));
+    for_pos_int_continue(i_ctx_t *),
+    for_neg_int_continue(i_ctx_t *),
+    for_real_continue(i_ctx_t *);
 int
 zfor(i_ctx_t *i_ctx_p)
 {
@@ -228,7 +299,7 @@ zfor(i_ctx_t *i_ctx_p)
     check_estack(7);
     ep = esp + 6;
     check_proc(*op);
-    /* Push a mark, the control variable, the initial value, */
+    /* Push a mark, the control variable set to the initial value, */
     /* the increment, the limit, and the procedure, */
     /* and invoke the continuation operator. */
     if (r_has_type(op - 3, t_integer) &&
@@ -332,38 +403,62 @@ for_real_continue(i_ctx_t *i_ctx_p)
     return o_push_estack;
 }
 
-/* Here we provide an internal variant of 'for' that enumerates the */
-/* values 0, 1/N, 2/N, ..., 1 precisely.  The arguments must be */
-/* the integers 0, 1, and N.  We need this for */
-/* loading caches such as the transfer function cache. */
-private int for_fraction_continue(P1(i_ctx_t *));
+/*
+ * Here we provide an internal variant of 'for' that enumerates the values
+ * A, ((N-1)*A+1*B)/N, ((N-2)*A+2*B)/N, ..., B precisely.  The arguments are
+ * A (real), N (integer), and B (real).  We need this for loading caches such
+ * as the transfer function cache.
+ *
+ * NOTE: This computation must match the SAMPLE_LOOP_VALUE macro in gscie.h.
+ */
+private int for_samples_continue(i_ctx_t *);
+/* <first> <count> <last> <proc> %for_samples - */
 int
-zfor_fraction(i_ctx_t *i_ctx_p)
+zfor_samples(i_ctx_t *i_ctx_p)
 {
-    int code = zfor(i_ctx_p);
+    os_ptr op = osp;
+    es_ptr ep;
 
-    if (code < 0)
-	return code;		/* shouldn't ever happen! */
-    make_op_estack(esp, for_fraction_continue);
-    return code;
+    check_type(op[-3], t_real);
+    check_type(op[-2], t_integer);
+    check_type(op[-1], t_real);
+    check_proc(*op);
+    check_estack(8);
+    ep = esp + 7;
+    make_mark_estack(ep - 6, es_for, no_cleanup);
+    make_int(ep - 5, 0);
+    memcpy(ep - 4, op - 3, 3 * sizeof(ref));
+    ref_assign(ep - 1, op);
+    make_op_estack(ep, for_samples_continue);
+    esp = ep;
+    pop(4);
+    return o_push_estack;
 }
 /* Continuation procedure */
 private int
-for_fraction_continue(i_ctx_t *i_ctx_p)
+for_samples_continue(i_ctx_t *i_ctx_p)
 {
-    register es_ptr ep = esp;
-    int code = for_pos_int_continue(i_ctx_p);
+    os_ptr op = osp;
+    es_ptr ep = esp;
+    long var = ep[-4].value.intval;
+    float a = ep[-3].value.realval;
+    long n = ep[-2].value.intval;
+    float b = ep[-1].value.realval;
 
-    if (code != o_push_estack)
-	return code;
-    /* We must use osp instead of op here, because */
-    /* for_pos_int_continue pushes a value on the o-stack. */
-    make_real(osp, (float)osp->value.intval / ep[-1].value.intval);
-    return code;
+    if (var > n) {
+	esp -= 6;		/* pop everything */
+	return o_pop_estack;
+    }
+    push(1);
+    make_real(op, ((n - var) * a + var * b) / n);
+    ep[-4].value.intval = var + 1;
+    ref_assign_inline(ep + 2, ep);	/* saved proc */
+    esp = ep + 2;
+    return o_push_estack;
 }
 
 /* <int> <proc> repeat - */
-private int repeat_continue(P1(i_ctx_t *));
+private int repeat_continue(i_ctx_t *);
 private int
 zrepeat(i_ctx_t *i_ctx_p)
 {
@@ -399,7 +494,7 @@ repeat_continue(i_ctx_t *i_ctx_p)
 }
 
 /* <proc> loop */
-private int loop_continue(P1(i_ctx_t *));
+private int loop_continue(i_ctx_t *);
 private int
 zloop(i_ctx_t *i_ctx_p)
 {
@@ -623,8 +718,8 @@ zcountexecstack1(i_ctx_t *i_ctx_p)
 /* <array> <include_marks> .execstack <subarray> */
 /* <array> execstack <subarray> */
 /* execstack is an operator solely for the sake of the Genoa tests. */
-private int execstack_continue(P1(i_ctx_t *));
-private int execstack2_continue(P1(i_ctx_t *));
+private int execstack_continue(i_ctx_t *);
+private int execstack2_continue(i_ctx_t *);
 private int
 push_execstack(i_ctx_t *i_ctx_p, os_ptr op1, bool include_marks,
 	       op_proc_t cont)
@@ -755,7 +850,7 @@ zquit(i_ctx_t *i_ctx_p)
 }
 
 /* - currentfile <file> */
-private ref *zget_current_file(P1(i_ctx_t *));
+private ref *zget_current_file(i_ctx_t *);
 private int
 zcurrentfile(i_ctx_t *i_ctx_p)
 {
@@ -844,13 +939,15 @@ const op_def zcontrol3_op_defs[] = {
     {"0%for_pos_int_continue", for_pos_int_continue},
     {"0%for_neg_int_continue", for_neg_int_continue},
     {"0%for_real_continue", for_real_continue},
-    {"4%for_fraction", zfor_fraction},
-    {"0%for_fraction_continue", for_fraction_continue},
+    {"4%for_samples", zfor_samples},
+    {"0%for_samples_continue", for_samples_continue},
     {"0%loop_continue", loop_continue},
     {"0%repeat_continue", repeat_continue},
     {"0%stopped_push", stopped_push},
     {"1superexec", zsuperexec},
     {"0%end_superexec", end_superexec},
+    {"2.runandhide", zrunandhide},
+    {"0%end_runandhide", end_runandhide},
     op_def_end(0)
 };
 

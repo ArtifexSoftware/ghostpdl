@@ -56,9 +56,9 @@ exdir=$(gsdatadir)/examples
 GS_DOCDIR=$(docdir)
 
 # Define the default directory/ies for the runtime
-# initialization and font files.  Separate multiple directories with a ;.
+# initialization, resource and font files.  Separate multiple directories with a ;.
 
-GS_LIB_DEFAULT="$(gsdatadir)/lib;$(gsfontdir)"
+GS_LIB_DEFAULT="$(gsdatadir)/lib;$(gsdatadir)/Resource;$(gsfontdir)"
 
 # Define whether or not searching for initialization files should always
 # look in the current directory first.  This leads to well-known security
@@ -109,15 +109,11 @@ BUILD_TIME_GS=gs
 JSRCDIR=jpeg
 JVERSION=6
 
-# Choose whether to use a shared version of the IJG JPEG library (-ljpeg).
-# DON'T DO THIS. If you do, the resulting executable will not be able to
-# read some PostScript files containing JPEG data, because Adobe chose to
-# define PostScript's JPEG capabilities in a way that is slightly
-# incompatible with the JPEG standard.  Note also that if you set SHARE_JPEG
-# to 1, you must still have the library header files available to compile
-# Ghostscript.  See doc/Make.htm for more information.
+# Note: if a shared library is used, it may not contain the
+# D_MAX_BLOCKS_IN_MCU patch, and thus may not be able to read
+# some older JPEG streams that violate the standard. If the JPEG
+# library built from local sources, the patch will be applied.
 
-# DON'T SET THIS TO 1!  See the comment just above.
 SHARE_JPEG=0
 JPEG_NAME=jpeg
 
@@ -127,7 +123,7 @@ JPEG_NAME=jpeg
 # See libpng.mak for more information.
 
 PSRCDIR=libpng
-PVERSION=10012
+PVERSION=10205
 
 # Choose whether to use a shared version of the PNG library (-lpng).
 # See gs.mak and Make.htm for more information.
@@ -145,10 +141,28 @@ ZSRCDIR=zlib
 SHARE_ZLIB=0
 ZLIB_NAME=gz
 
+# Choose shared or compiled in libjbig2dec and source location
+
+SHARE_JBIG2=0
+JBIG2SRCDIR=jbig2dec
+
 # Define the directory where the icclib source are stored.
 # See icclib.mak for more information
 
 ICCSRCDIR=icclib
+
+# IJS has not been ported to DesqView/X. If you do the port,
+# you'll need to set these values. You'll also need to
+# include the ijs.mak makefile (right after icclib.mak).
+#
+# Define the directory where the ijs source is stored,
+# and the process forking method to use for the server.
+# See ijs.mak for more information.
+ 
+#IJSSRCDIR=ijs
+#IJSEXECTYPE=unix
+
+
 
 # ------ Platform-specific options ------ #
 
@@ -247,7 +261,7 @@ SYNC=posync
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(GLD)pipe.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(GLD)pipe.dev $(PSD)fapi.dev
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
@@ -273,7 +287,7 @@ FILE_IMPLEMENTATION=stdio
 # Choose the implementation of stdio: '' for file I/O and 'c' for callouts
 # See gs.mak and ziodevs.c/ziodevsc.c for more details.
 
-STDIO_IMPLEMENTATION= 
+STDIO_IMPLEMENTATION=c
 
 # Choose the device(s) to include.  See devs.mak for details,
 # devs.mak and contrib.mak for the list of available devices.
@@ -308,7 +322,7 @@ DEVICE_DEVS20=
 MAKEFILE=$(GLSRCDIR)/dvx-gcc.mak
 TOP_MAKEFILES=$(MAKEFILE) $(GLSRCDIR)/dvx-head.mak
 
-# Define the ANSI-to-K&R dependency.  (gcc accepts ANSI syntax.)
+# Define the auxiliary programs dependency.
 
 AK=
 
@@ -330,7 +344,9 @@ include $(GLSRCDIR)/jpeg.mak
 # zlib.mak must precede libpng.mak
 include $(GLSRCDIR)/zlib.mak
 include $(GLSRCDIR)/libpng.mak
+include $(GLSRCDIR)/jbig2.mak
 include $(GLSRCDIR)/icclib.mak
+include $(GLSRCDIR)/ijs.mak
 include $(GLSRCDIR)/devs.mak
 include $(GLSRCDIR)/contrib.mak
 include $(GLSRCDIR)/dvx-tail.mak

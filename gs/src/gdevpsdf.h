@@ -252,63 +252,67 @@ dev_proc_put_params(gdev_psdf_put_params);
 /* ---------------- Vector implementation procedures ---------------- */
 
 	/* Imager state */
-int psdf_setlinewidth(P2(gx_device_vector * vdev, floatp width));
-int psdf_setlinecap(P2(gx_device_vector * vdev, gs_line_cap cap));
-int psdf_setlinejoin(P2(gx_device_vector * vdev, gs_line_join join));
-int psdf_setmiterlimit(P2(gx_device_vector * vdev, floatp limit));
-int psdf_setdash(P4(gx_device_vector * vdev, const float *pattern,
-		    uint count, floatp offset));
-int psdf_setflat(P2(gx_device_vector * vdev, floatp flatness));
-int psdf_setlogop(P3(gx_device_vector * vdev, gs_logical_operation_t lop,
-		     gs_logical_operation_t diff));
+int psdf_setlinewidth(gx_device_vector * vdev, floatp width);
+int psdf_setlinecap(gx_device_vector * vdev, gs_line_cap cap);
+int psdf_setlinejoin(gx_device_vector * vdev, gs_line_join join);
+int psdf_setmiterlimit(gx_device_vector * vdev, floatp limit);
+int psdf_setdash(gx_device_vector * vdev, const float *pattern,
+		 uint count, floatp offset);
+int psdf_setflat(gx_device_vector * vdev, floatp flatness);
+int psdf_setlogop(gx_device_vector * vdev, gs_logical_operation_t lop,
+		  gs_logical_operation_t diff);
 
 	/* Other state */
-int psdf_setfillcolor(P2(gx_device_vector * vdev, const gx_drawing_color * pdc));
-int psdf_setstrokecolor(P2(gx_device_vector * vdev, const gx_drawing_color * pdc));
+int psdf_setfillcolor(gx_device_vector * vdev, const gx_drawing_color * pdc);
+int psdf_setstrokecolor(gx_device_vector * vdev, const gx_drawing_color * pdc);
 
 	/* Paths */
 #define psdf_dopath gdev_vector_dopath
-int psdf_dorect(P6(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,
-		   fixed y1, gx_path_type_t type));
-int psdf_beginpath(P2(gx_device_vector * vdev, gx_path_type_t type));
-int psdf_moveto(P6(gx_device_vector * vdev, floatp x0, floatp y0,
-		   floatp x, floatp y, gx_path_type_t type));
-int psdf_lineto(P6(gx_device_vector * vdev, floatp x0, floatp y0,
-		   floatp x, floatp y, gx_path_type_t type));
-int psdf_curveto(P10(gx_device_vector * vdev, floatp x0, floatp y0,
-		     floatp x1, floatp y1, floatp x2,
-		     floatp y2, floatp x3, floatp y3, gx_path_type_t type));
-int psdf_closepath(P6(gx_device_vector * vdev, floatp x0, floatp y0,
-		      floatp x_start, floatp y_start, gx_path_type_t type));
+int psdf_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,
+		fixed y1, gx_path_type_t type);
+int psdf_beginpath(gx_device_vector * vdev, gx_path_type_t type);
+int psdf_moveto(gx_device_vector * vdev, floatp x0, floatp y0,
+		floatp x, floatp y, gx_path_type_t type);
+int psdf_lineto(gx_device_vector * vdev, floatp x0, floatp y0,
+		floatp x, floatp y, gx_path_type_t type);
+int psdf_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
+		 floatp x1, floatp y1, floatp x2,
+		 floatp y2, floatp x3, floatp y3, gx_path_type_t type);
+int psdf_closepath(gx_device_vector * vdev, floatp x0, floatp y0,
+		   floatp x_start, floatp y_start, gx_path_type_t type);
 
 /* ---------------- Binary (image) data procedures ---------------- */
 
 /* Define the structure for writing binary data. */
 typedef struct psdf_binary_writer_s {
     gs_memory_t *memory;
-    stream *A85E;		/* optional ASCII85Encode stream */
     stream *target;		/* underlying stream */
-    stream *strm;		/* may point to A85E.s */
+    stream *strm;
     gx_device_psdf *dev;	/* may be unused */
+    /* Due to recently introduced field cos_object_t::input_strm
+     * the binary writer may be simplified significantly.
+     * Keeping the old structure until we have time
+     * for this optimization.
+     */
 } psdf_binary_writer;
 extern_st(st_psdf_binary_writer);
 #define public_st_psdf_binary_writer() /* in gdevpsdu.c */\
-  gs_public_st_ptrs4(st_psdf_binary_writer, psdf_binary_writer,\
+  gs_public_st_ptrs3(st_psdf_binary_writer, psdf_binary_writer,\
     "psdf_binary_writer", psdf_binary_writer_enum_ptrs,\
-    psdf_binary_writer_reloc_ptrs, A85E, target, strm, dev)
-#define psdf_binary_writer_max_ptrs 4
+    psdf_binary_writer_reloc_ptrs, target, strm, dev)
+#define psdf_binary_writer_max_ptrs 3
 
 /* Begin writing binary data. */
-int psdf_begin_binary(P2(gx_device_psdf * pdev, psdf_binary_writer * pbw));
+int psdf_begin_binary(gx_device_psdf * pdev, psdf_binary_writer * pbw);
 
 /* Add an encoding filter.  The client must have allocated the stream state, */
 /* if any, using pdev->v_memory. */
-int psdf_encode_binary(P3(psdf_binary_writer * pbw,
-		      const stream_template * template, stream_state * ss));
+int psdf_encode_binary(psdf_binary_writer * pbw,
+		       const stream_template * template, stream_state * ss);
 
 /* Add a 2-D CCITTFax encoding filter. */
 /* Set EndOfBlock iff the stream is not ASCII85 encoded. */
-int psdf_CFE_binary(P4(psdf_binary_writer * pbw, int w, int h, bool invert));
+int psdf_CFE_binary(psdf_binary_writer * pbw, int w, int h, bool invert);
 
 /*
  * Acquire parameters, and optionally set up the filter for, a DCTEncode
@@ -316,28 +320,33 @@ int psdf_CFE_binary(P4(psdf_binary_writer * pbw, int w, int h, bool invert));
  * filter parameters when they are set, rather than waiting until they are
  * used.  pbw = NULL means just set up the stream state.
  */
-int psdf_DCT_filter(P6(gs_param_list *plist /* may be NULL */,
-		       stream_state /*stream_DCTE_state*/ *st,
-		       int Columns, int Rows, int Colors,
-		       psdf_binary_writer *pbw /* may be NULL */));
+int psdf_DCT_filter(gs_param_list *plist /* may be NULL */,
+		    stream_state /*stream_DCTE_state*/ *st,
+		    int Columns, int Rows, int Colors,
+		    psdf_binary_writer *pbw /* may be NULL */);
 
 /* Set up compression and downsampling filters for an image. */
 /* Note that this may modify the image parameters. */
 /* If pctm is NULL, downsampling is not used. */
 /* pis only provides UCR and BG information for CMYK => RGB conversion. */
-int psdf_setup_image_filters(P5(gx_device_psdf *pdev, psdf_binary_writer *pbw,
-				gs_pixel_image_t *pim, const gs_matrix *pctm,
-				const gs_imager_state * pis));
+int psdf_setup_image_filters(gx_device_psdf *pdev, psdf_binary_writer *pbw,
+			     gs_pixel_image_t *pim, const gs_matrix *pctm,
+			     const gs_imager_state * pis, bool lossless);
 
 /* Set up compression filters for a lossless image, with no downsampling, */
 /* no color space conversion, and only lossless filters. */
 /* Note that this may modify the image parameters. */
-int psdf_setup_lossless_filters(P3(gx_device_psdf *pdev,
-				   psdf_binary_writer *pbw,
-				   gs_pixel_image_t *pim));
+int psdf_setup_lossless_filters(gx_device_psdf *pdev, psdf_binary_writer *pbw,
+				gs_pixel_image_t *pim);
 
 /* Finish writing binary data. */
-int psdf_end_binary(P1(psdf_binary_writer * pbw));
+int psdf_end_binary(psdf_binary_writer * pbw);
+
+/* Set up image compression chooser. */
+int psdf_setup_compression_chooser(psdf_binary_writer *pbw,
+				   gx_device_psdf *pdev,
+				   int width, int height, int depth,
+				   int bits_per_sample);
 
 /* ---------------- Symbolic data printing ---------------- */
 
@@ -370,11 +379,18 @@ extern const psdf_set_color_commands_t
  * Adjust a gx_color_index to compensate for the fact that the bit pattern
  * of gx_color_index isn't representable.
  */
-gx_color_index psdf_adjust_color_index(P2(gx_device_vector *vdev,
-					  gx_color_index color));
+gx_color_index psdf_adjust_color_index(gx_device_vector *vdev,
+				       gx_color_index color);
 
 /* Set the fill or stroke color. */
-int psdf_set_color(P3(gx_device_vector *vdev, const gx_drawing_color *pdc,
-		      const psdf_set_color_commands_t *ppscc));
+int psdf_set_color(gx_device_vector *vdev, const gx_drawing_color *pdc,
+		   const psdf_set_color_commands_t *ppscc);
+
+/* stubs to disable get_bits, get_bits_rectangle */
+dev_proc_get_bits(psdf_get_bits);
+dev_proc_get_bits_rectangle(psdf_get_bits_rectangle);
+
+/* intercept and ignore overprint compositor creation */
+dev_proc_create_compositor(psdf_create_compositor);
 
 #endif /* gdevpsdf_INCLUDED */

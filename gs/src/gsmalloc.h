@@ -28,7 +28,7 @@ typedef struct gs_malloc_memory_s {
 } gs_malloc_memory_t;
 
 /* Allocate and initialize a malloc memory manager. */
-gs_malloc_memory_t *gs_malloc_memory_init(P0());
+gs_malloc_memory_t *gs_malloc_memory_init(void);
 
 /* Release all the allocated blocks, and free the memory manager. */
 /* The cast is unfortunate, but unavoidable. */
@@ -40,62 +40,36 @@ gs_malloc_memory_t *gs_malloc_memory_init(P0());
  * Define a default allocator that allocates from the C heap.
  * (We would really like to get rid of this.)
  */
-#ifndef NO_GS_MEMORY_GLOBALS
 extern gs_malloc_memory_t *gs_malloc_memory_default;
 extern gs_memory_t *gs_memory_t_default;  /* may be locked */
 #define gs_memory_default (*gs_memory_t_default)
-#endif
 
-/** initialize heap allocator
+/*
+ * The following procedures are historical artifacts that we hope to
+ * get rid of someday.
  */
-int gs_malloc_init(P1(gs_memory_t **heap));
-
-/** free heap allocator
- */
-void gs_malloc_release(P1(gs_memory_t **heap));
-
-
-#ifndef NO_GS_MEMORY_GLOBALS
-/** Now in  gsmalloc_dep.h */
-
+gs_memory_t * gs_malloc_init(void);
+void gs_malloc_release(void);
 #define gs_malloc(nelts, esize, cname)\
   (void *)gs_alloc_byte_array(&gs_memory_default, nelts, esize, cname)
 #define gs_free(data, nelts, esize, cname)\
   gs_free_object(&gs_memory_default, data, cname)
-#endif 
 
-#ifndef NO_GS_MEMORY_GLOBALS
-/** public global variable accessors 
- */
-# ifndef NO_WRAPPED_MEMORY_BIND
-   /* Define an accessor for the limit on the total allocated heap space. */
-#  define gs_malloc_limit (gs_malloc_memory_default->limit)
-   /* Define an accessor for the maximum amount ever allocated from the heap. */
-#  define gs_malloc_max (gs_malloc_memory_default->max_used)
-# else
-#  define gs_malloc_limit (((gs_malloc_memory_t *)gs_memory_t_default)->limit)
-#  define gs_malloc_max (((gs_malloc_memory_t *)gs_memory_t_default)->max_used)
-# endif
-#else
+/* Define an accessor for the limit on the total allocated heap space. */
+#define gs_malloc_limit (gs_malloc_memory_default->limit)
 
-int get_gs_malloc_limit(gs_memory_t * mem);
-void set_gs_malloc_limit(gs_memory_t * mem, int limit);
-
-int get_gs_malloc_max(gs_memory_t * mem);
-void set_gs_malloc_max(gs_memory_t * mem, int limit);
-
-#endif
-
+/* Define an accessor for the maximum amount ever allocated from the heap. */
+#define gs_malloc_max (gs_malloc_memory_default->max_used)
 
 /* ---------------- Locking ---------------- */
 
 /* Create a locked wrapper for a heap allocator. */
-int gs_malloc_wrap(P2(gs_memory_t **wrapped, gs_malloc_memory_t *contents));
+int gs_malloc_wrap(gs_memory_t **wrapped, gs_malloc_memory_t *contents);
 
 /* Get the wrapped contents. */
-gs_malloc_memory_t *gs_malloc_wrapped_contents(P1(gs_memory_t *wrapped));
+gs_malloc_memory_t *gs_malloc_wrapped_contents(gs_memory_t *wrapped);
 
 /* Free the wrapper, and return the wrapped contents. */
-gs_malloc_memory_t *gs_malloc_unwrap(P1(gs_memory_t *wrapped));
+gs_malloc_memory_t *gs_malloc_unwrap(gs_memory_t *wrapped);
 
 #endif /* gsmalloc_INCLUDED */

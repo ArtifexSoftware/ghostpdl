@@ -30,13 +30,19 @@
 #include "gxfcache.h"
 #include "gspath.h"
 #include "gzpath.h"
+#include "gxfcid.h"
 
 /* Define whether or not to cache characters rotated by angles other than */
 /* multiples of 90 degrees. */
 private const bool CACHE_ROTATED_CHARS = true;
 
-/* Define whether or not to oversample characters at small sizes. */
+/* Define whether or not to oversample characters at small sizes.  */
+/* Oversampling was used as an old dropout prevention method. */
+#if DROPOUT_PREVENTION
+private const bool OVERSAMPLE = false;
+#else
 private const bool OVERSAMPLE = true;
+#endif
 
 /* Define the maximum size of a full temporary bitmap when rasterizing, */
 /* in bits (not bytes). */
@@ -53,7 +59,7 @@ extern_st(st_gs_text_enum);
 extern_st(st_gs_state);		/* only for testing */
 private 
 ENUM_PTRS_BEGIN(show_enum_enum_ptrs)
-     return ENUM_USING(st_gs_text_enum, vptr, size, index);
+     return ENUM_USING(st_gs_text_enum, vptr, size, index - 5);
 ENUM_PTR(0, gs_show_enum, pgs);
 ENUM_PTR(1, gs_show_enum, show_gstate);
 ENUM_PTR3(2, gs_show_enum, dev_cache, dev_cache2, dev_null);
@@ -68,13 +74,13 @@ private RELOC_PTRS_WITH(show_enum_reloc_ptrs, gs_show_enum *eptr)
 RELOC_PTRS_END
 
 /* Forward declarations */
-private int continue_kshow(P1(gs_show_enum *));
-private int continue_show(P1(gs_show_enum *));
-private int continue_show_update(P1(gs_show_enum *));
-private void show_set_scale(P1(gs_show_enum *));
-private int show_cache_setup(P1(gs_show_enum *));
-private int show_state_setup(P1(gs_show_enum *));
-private int show_origin_setup(P4(gs_state *, fixed, fixed, gs_char_path_mode));
+private int continue_kshow(gs_show_enum *);
+private int continue_show(gs_show_enum *);
+private int continue_show_update(gs_show_enum *);
+private void show_set_scale(const gs_show_enum *, gs_log2_scale_point *log2_scale);
+private int show_cache_setup(gs_show_enum *);
+private int show_state_setup(gs_show_enum *);
+private int show_origin_setup(gs_state *, fixed, fixed, gs_char_path_mode);
 
 /* Accessors for current_char and current_glyph. */
 #define CURRENT_CHAR(penum) ((penum)->returned.current_char)
@@ -101,6 +107,8 @@ gs_show_enum_alloc(gs_memory_t * mem, gs_state * pgs, client_name_t cname)
     penum->show_gstate = 0;
     penum->dev_cache = 0;
     penum->dev_cache2 = 0;
+    penum->fapi_log2_scale.x = penum->fapi_log2_scale.y = -1;
+    penum->fapi_glyph_shift.x = penum->fapi_glyph_shift.y = 0;
     penum->dev_null = 0;
     penum->fstack.depth = -1;
     return penum;
@@ -212,13 +220,24 @@ gx_default_text_begin(gx_device * dev, gs_imager_state * pis,
     return 0;
 }
 
+/* An auxiliary functions for pdfwrite to process type 3 fonts. */
+int
+gx_default_text_restore_state(gs_text_enum_t *pte)
+{
+    gs_show_enum *penum;
+    gs_state *pgs;
+
+    if (SHOW_IS(pte, TEXT_DO_NONE))
+	return 0;
+    penum = (gs_show_enum *)pte;
+    pgs = penum->pgs;
+    return gs_grestore(pgs);
+}
 /* ------ Width/cache setting ------ */
 
 private int
-    set_char_width(P4(gs_show_enum *penum, gs_state *pgs,
-		      floatp wx, floatp wy)),
-    set_cache_device(P6(gs_show_enum *penum, gs_state *pgs,
-			floatp llx, floatp lly, floatp urx, floatp ury));
+    set_cache_device(gs_show_enum *penum, gs_state *pgs,
+		     floatp llx, floatp lly, floatp urx, floatp ury);
 
 /* This is the default implementation of text enumerator set_cache. */
 private int
@@ -236,15 +255,20 @@ gx_show_text_set_cache(gs_text_enum_t *pte, const double *pw,
 
 	if (code < 0)
 	    return code;
+	if (SHOW_IS_ALL_OF(penum, TEXT_DO_NONE | TEXT_INTERVENE)) /* cshow */
+            return code;
 	return set_cache_device(penum, pgs, pw[2], pw[3], pw[4], pw[5]);
     }
     case TEXT_SET_CACHE_DEVICE2: {
 	int code;
+	bool retry = (penum->width_status == sws_retry);
 
 	if (gs_rootfont(pgs)->WMode) {
 	    float vx = pw[8], vy = pw[9];
 	    gs_fixed_point pvxy, dvxy;
-	    cached_char *cc;
+
+	    gs_fixed_point rewind_pvxy;
+	    int rewind_code;
 
 	    if ((code = gs_point_transform2fixed(&pgs->ctm, -vx, -vy, &pvxy)) < 0 ||
 		(code = gs_distance_transform2fixed(&pgs->ctm, vx, vy, &dvxy)) < 0
@@ -252,18 +276,31 @@ gx_show_text_set_cache(gs_text_enum_t *pte, const double *pw,
 		return 0;		/* don't cache */
 	    if ((code = set_char_width(penum, pgs, pw[6], pw[7])) < 0)
 		return code;
+	    if (SHOW_IS_ALL_OF(penum, TEXT_DO_NONE | TEXT_INTERVENE))
+		return code;
 	    /* Adjust the origin by (vx, vy). */
 	    gx_translate_to_fixed(pgs, pvxy.x, pvxy.y);
 	    code = set_cache_device(penum, pgs, pw[2], pw[3], pw[4], pw[5]);
-	    if (code != 1)
+	    if (code != 1) {
+	        if (retry) {
+		   rewind_code = gs_point_transform2fixed(&pgs->ctm, vx, vy, &rewind_pvxy);
+		   if (rewind_code < 0) {
+		       /* If the control passes here, something is wrong. */
+		       return_error(gs_error_unregistered);
+		   }
+		   /* Rewind the origin by (-vx, -vy) if the cache is failed. */
+		   gx_translate_to_fixed(pgs, rewind_pvxy.x, rewind_pvxy.y);
+		}
 		return code;
+	    }
 	    /* Adjust the character origin too. */
-	    cc = penum->cc;
-	    cc->offset.x += dvxy.x;
-	    cc->offset.y += dvxy.y;
+	    (penum->cc)->offset.x += dvxy.x;
+	    (penum->cc)->offset.y += dvxy.y;
 	} else {
 	    code = set_char_width(penum, pgs, pw[0], pw[1]);
 	    if (code < 0)
+		return code;
+	    if (SHOW_IS_ALL_OF(penum, TEXT_DO_NONE | TEXT_INTERVENE))
 		return code;
 	    code = set_cache_device(penum, pgs, pw[2], pw[3], pw[4], pw[5]);
 	}
@@ -277,12 +314,12 @@ gx_show_text_set_cache(gs_text_enum_t *pte, const double *pw,
 /* Set the character width. */
 /* Note that this returns 1 if the current show operation is */
 /* non-displaying (stringwidth or cshow). */
-private int
+int
 set_char_width(gs_show_enum *penum, gs_state *pgs, floatp wx, floatp wy)
 {
     int code;
 
-    if (penum->width_status != sws_none)
+    if (penum->width_status != sws_none && penum->width_status != sws_retry)
 	return_error(gs_error_undefined);
     if ((code = gs_distance_transform2fixed(&pgs->ctm, wx, wy, &penum->wxy)) < 0)
 	return code;
@@ -294,7 +331,106 @@ set_char_width(gs_show_enum *penum, gs_state *pgs, floatp wx, floatp wy)
     } else {
 	penum->width_status = sws_no_cache;
     }
+    if (SHOW_IS_ALL_OF(penum, TEXT_DO_NONE | TEXT_INTERVENE)) /* cshow */
+	gs_nulldevice(pgs);
     return !SHOW_IS_DRAWING(penum);
+}
+
+void
+gx_compute_text_oversampling(const gs_show_enum * penum, const gs_font *pfont, 
+                             int alpha_bits, gs_log2_scale_point *p_log2_scale)
+{
+    gs_log2_scale_point log2_scale;
+
+#if DROPOUT_PREVENTION
+    if (alpha_bits == 1 && !OVERSAMPLE) 
+	log2_scale.x = log2_scale.y = 0;
+    else if (pfont->PaintType != 0) {
+	/* Don't oversample artificially stroked fonts. */
+	log2_scale.x = log2_scale.y = 0;
+    } else {
+	/* Get maximal scale according to cached bitmap size. */
+	show_set_scale(penum, &log2_scale);
+	if (!OVERSAMPLE) {
+	    /* Reduce the scale to fit into alpha bits. */
+	    int excess = log2_scale.x + log2_scale.y - alpha_bits;
+
+	    while (excess > 0) {
+		if (log2_scale.y > 0) {
+		    log2_scale.y --; 
+		    excess--;
+		    if (excess == 0)
+			break;
+		}
+		if (log2_scale.x > 0) {
+		    log2_scale.x --; 
+		    excess--;
+		}
+	    }
+	}
+    }
+#else
+    show_set_scale(penum, &log2_scale);
+    /*
+     * If the device wants anti-aliased text,
+     * increase the sampling scale to ensure that
+     * if we want N bits of alpha, we generate
+     * at least 2^N sampled bits per pixel.
+     */
+    if (alpha_bits > 1) {
+	int more_bits =
+	alpha_bits - (log2_scale.x + log2_scale.y);
+
+	if (more_bits > 0) {
+	    if (log2_scale.x <= log2_scale.y) {
+		log2_scale.x += (more_bits + 1) >> 1;
+		log2_scale.y += more_bits >> 1;
+	    } else {
+		log2_scale.x += more_bits >> 1;
+		log2_scale.y += (more_bits + 1) >> 1;
+	    }
+	}
+    } else if (!OVERSAMPLE || pfont->PaintType != 0) {
+	/* Don't oversample artificially stroked fonts. */
+	log2_scale.x = log2_scale.y = 0;
+    }
+#endif
+    *p_log2_scale = log2_scale;
+}
+
+/* Compute glyph raster parameters */
+private int
+compute_glyph_raster_params(gs_show_enum *penum, bool in_setcachedevice, int *alpha_bits, 
+		    gs_fixed_point *subpix_origin, gs_log2_scale_point *log2_scale)
+{
+    gs_state *pgs = penum->pgs;
+    gx_device *dev = gs_currentdevice_inline(pgs);
+    int code;
+    
+    *alpha_bits = (*dev_proc(dev, get_alpha_bits)) (dev, go_text);
+    if (in_setcachedevice) {
+	/* current point should already be in penum->origin */
+    } else {
+	code = gx_path_current_point_inline(pgs->path, &penum->origin);
+	if (code < 0) {
+	    /* For cshow, having no current point is acceptable. */
+	    if (!SHOW_IS(penum, TEXT_DO_NONE))
+		return code;
+	    penum->origin.x = penum->origin.y = 0;	/* arbitrary */
+	}
+    }
+    if (penum->fapi_log2_scale.x != -1)
+	*log2_scale = penum->fapi_log2_scale;
+    else
+	gx_compute_text_oversampling(penum, penum->current_font, *alpha_bits, log2_scale);
+    if (gs_currentaligntopixels(penum->current_font->dir) == 0) {
+	subpix_origin->x = fixed2int_pixround(penum->origin.x) & ((fixed_1 << log2_scale->x) - 1); /* see gx_lookup_cached_char */
+	subpix_origin->y = fixed2int_pixround(penum->origin.y) & ((fixed_1 << log2_scale->y) - 1);
+	subpix_origin->x &= ((1 << log2_scale->x) - 1);
+	subpix_origin->y &= ((1 << log2_scale->y) - 1);
+    } else
+	subpix_origin->x = subpix_origin->y = 0;
+    return 0;
 }
 
 /* Set up the cache device if relevant. */
@@ -331,17 +467,16 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
     } {
 	const gs_font *pfont = pgs->font;
 	gs_font_dir *dir = pfont->dir;
-	gx_device *dev = gs_currentdevice_inline(pgs);
-	int alpha_bits =
-	(*dev_proc(dev, get_alpha_bits)) (dev, go_text);
+        int alpha_bits;
 	gs_log2_scale_point log2_scale;
-	static const fixed max_cdim[3] =
-	{
+	gs_fixed_point subpix_origin;
+        static const fixed max_cdim[3] =
+        {
 #define max_cd(n)\
 	    (fixed_1 << (arch_sizeof_short * 8 - n)) - (fixed_1 >> n) * 3
 	    max_cd(0), max_cd(1), max_cd(2)
 #undef max_cd
-	};
+        };
 	ushort iwidth, iheight;
 	cached_char *cc;
 	gs_fixed_rect clip_box;
@@ -379,13 +514,11 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
 	if (clr.y < cll.y)
 	    cll.y = clr.y, cur.y = cul.y;
 	/* Now cll and cur are the extrema of the box. */
-	cdim.x = cur.x - cll.x;
-	cdim.y = cur.y - cll.y;
-	show_set_scale(penum);
-	log2_scale.x = penum->log2_suggested_scale.x;
-	log2_scale.y = penum->log2_suggested_scale.y;
+	code = compute_glyph_raster_params(penum, true, &alpha_bits, &subpix_origin, &log2_scale);
+	if (code < 0)
+	    return code;
 #ifdef DEBUG
-	if (gs_debug_c('k')) {
+        if (gs_debug_c('k')) {
 	    dlprintf6("[k]cbox=[%g %g %g %g] scale=%dx%d\n",
 		      fixed2float(cll.x), fixed2float(cll.y),
 		      fixed2float(cur.x), fixed2float(cur.y),
@@ -393,31 +526,10 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
 	    dlprintf6("[p]  ctm=[%g %g %g %g %g %g]\n",
 		      pgs->ctm.xx, pgs->ctm.xy, pgs->ctm.yx, pgs->ctm.yy,
 		      pgs->ctm.tx, pgs->ctm.ty);
-	}
+        }
 #endif
-	/*
-	 * If the device wants anti-aliased text,
-	 * increase the sampling scale to ensure that
-	 * if we want N bits of alpha, we generate
-	 * at least 2^N sampled bits per pixel.
-	 */
-	if (alpha_bits > 1) {
-	    int more_bits =
-	    alpha_bits - (log2_scale.x + log2_scale.y);
-
-	    if (more_bits > 0) {
-		if (log2_scale.x <= log2_scale.y) {
-		    log2_scale.x += (more_bits + 1) >> 1;
-		    log2_scale.y += more_bits >> 1;
-		} else {
-		    log2_scale.x += more_bits >> 1;
-		    log2_scale.y += (more_bits + 1) >> 1;
-		}
-	    }
-	} else if (!OVERSAMPLE || pfont->PaintType != 0) {
-	    /* Don't oversample artificially stroked fonts. */
-	    log2_scale.x = log2_scale.y = 0;
-	}
+	cdim.x = cur.x - cll.x;
+	cdim.y = cur.y - cll.y;
 	if (cdim.x > max_cdim[log2_scale.x] ||
 	    cdim.y > max_cdim[log2_scale.y]
 	    )
@@ -464,6 +576,7 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
 	cc->code = glyph;
 	cc->wmode = gs_rootfont(pgs)->WMode;
 	cc->wxy = penum->wxy;
+	cc->subpix_origin = subpix_origin;
 	/* Install the device */
 	gx_set_device_only(pgs, (gx_device *) penum->dev_cache);
 	pgs->ctm_default_set = false;
@@ -544,10 +657,10 @@ gx_show_text_process(gs_text_enum_t *pte)
 }
 
 /* Continuation procedures */
-private int show_update(P1(gs_show_enum * penum));
-private int show_move(P1(gs_show_enum * penum));
-private int show_proceed(P1(gs_show_enum * penum));
-private int show_finish(P1(gs_show_enum * penum));
+private int show_update(gs_show_enum * penum);
+private int show_move(gs_show_enum * penum);
+private int show_proceed(gs_show_enum * penum);
+private int show_finish(gs_show_enum * penum);
 private int
 continue_show_update(gs_show_enum * penum)
 {
@@ -593,6 +706,7 @@ show_update(gs_show_enum * penum)
     /* Update position for last character */
     switch (penum->width_status) {
 	case sws_none:
+        case sws_retry:	  
 	    /* Adobe interpreters assume a character width of 0, */
 	    /* even though the documentation says this is an error.... */
 	    penum->wxy.x = penum->wxy.y = 0;
@@ -654,6 +768,35 @@ show_fast_move(gs_state * pgs, gs_fixed_point * pwxy)
 	code = 0;
     return code;
 }
+
+/* Get the current character code. */
+int gx_current_char(const gs_text_enum_t * pte)
+{
+    const gs_show_enum *penum = (const gs_show_enum *)pte;
+    gs_char chr = CURRENT_CHAR(penum) & 0xff;
+    int fdepth = penum->fstack.depth;
+
+    if (fdepth > 0) {
+	/* Add in the shifted font number. */
+	uint fidx = penum->fstack.items[fdepth].index;
+
+	switch (((gs_font_type0 *) (penum->fstack.items[fdepth - 1].font))->data.FMapType) {
+	case fmap_1_7:
+	case fmap_9_7:
+	    chr += fidx << 7;
+	    break;
+	case fmap_CMap:
+	    chr = CURRENT_CHAR(penum);  /* the full character */
+	    if (!penum->cmap_code)
+		break;
+	    /* falls through */
+	default:
+	    chr += fidx << 8;
+	}
+    }
+    return chr;
+}
+
 private int
 show_move(gs_show_enum * penum)
 {
@@ -668,27 +811,8 @@ show_move(gs_show_enum * penum)
 	double dx = 0, dy = 0;
 
 	if (SHOW_IS_ADD_TO_SPACE(penum)) {
-	    gs_char chr = CURRENT_CHAR(penum) & 0xff;
-	    int fdepth = penum->fstack.depth;
+	    gs_char chr = gx_current_char((const gs_text_enum_t *)penum);
 
-	    if (fdepth > 0) {
-		/* Add in the shifted font number. */
-		uint fidx = penum->fstack.items[fdepth].index;
-
-		switch (((gs_font_type0 *) (penum->fstack.items[fdepth - 1].font))->data.FMapType) {
-		case fmap_1_7:
-		case fmap_9_7:
-		    chr += fidx << 7;
-		    break;
-		case fmap_CMap:
-		    chr = CURRENT_CHAR(penum);  /* the full character */
-		    if (!penum->cmap_code)
-			break;
-		    /* falls through */
-		default:
-		    chr += fidx << 8;
-		}
-	    }
 	    if (chr == penum->text.space.s_char) {
 		dx = penum->text.delta_space.x;
 		dy = penum->text.delta_space.y;
@@ -743,8 +867,6 @@ show_proceed(gs_show_enum * penum)
     gs_glyph glyph;
     int code;
     cached_char *cc;
-    gx_device *dev = gs_currentdevice_inline(pgs);
-    int alpha_bits = (*dev_proc(dev, get_alpha_bits)) (dev, go_text);
 
     if (penum->charpath_flag == cpm_show && SHOW_USES_OUTLINE(penum)) {
 	code = gs_state_color_load(pgs);
@@ -782,18 +904,33 @@ show_proceed(gs_show_enum * penum)
 		     * do it here.
 		     */
 		    SET_CURRENT_CHAR(penum, chr);
+		    /*
+		     * Store glyph now, because pdfwrite needs it while
+		     * synthezising bitmap fonts (see assign_char_code).
+		     */
 		    if (glyph == gs_no_glyph) {
 			glyph = (*penum->encode_char)(pfont, chr,
 						      GLYPH_SPACE_NAME);
+			SET_CURRENT_GLYPH(penum, glyph);
 			if (glyph == gs_no_glyph) {
 			    cc = 0;
 			    goto no_cache;
 			}
-		    }
+		    } else
+    			SET_CURRENT_GLYPH(penum, glyph);
 		    if (pair == 0)
 			pair = gx_lookup_fm_pair(pfont, pgs);
-		    cc = gx_lookup_cached_char(pfont, pair, glyph, wmode,
-					       alpha_bits);
+		    {
+			int alpha_bits;
+			gs_log2_scale_point log2_scale;
+			gs_fixed_point subpix_origin;
+
+			code = compute_glyph_raster_params(penum, false, &alpha_bits, &subpix_origin, &log2_scale);
+			if (code < 0)
+			    return code;
+			cc = gx_lookup_cached_char(pfont, pair, glyph, wmode,
+						   alpha_bits, &subpix_origin);
+		    }
 		    if (cc == 0) {
 			/* Character is not in cache. */
 			/* If possible, try for an xfont before */
@@ -804,7 +941,7 @@ show_proceed(gs_show_enum * penum)
 			    goto no_cache;
 			if (pfont->BitmapWidths) {
 			    cc = gx_lookup_xfont_char(pgs, pair, chr,
-				     glyph, &pfont->procs.callbacks, wmode);
+				     glyph, wmode);
 			    if (cc == 0)
 				goto no_cache;
 			} else {
@@ -816,7 +953,7 @@ show_proceed(gs_show_enum * penum)
 			    /* We might have an xfont, but we still */
 			    /* want the scalable widths. */
 			    cc = gx_lookup_xfont_char(pgs, pair, chr,
-				     glyph, &pfont->procs.callbacks, wmode);
+				     glyph, wmode);
 			    /* Render up to the point of */
 			    /* setcharwidth or setcachedevice, */
 			    /* just as for stringwidth. */
@@ -879,8 +1016,7 @@ show_proceed(gs_show_enum * penum)
 		    } else
 			code = show_fast_move(pgs, &cc->wxy);
 		    if (code) {
-			/* Might be kshow, so store the state. */
-			SET_CURRENT_GLYPH(penum, glyph);
+			/* Might be kshow, glyph is stored above. */
 			return code;
 		    }
 	    }
@@ -905,6 +1041,7 @@ show_proceed(gs_show_enum * penum)
 	if (glyph == gs_no_glyph) {
 	    glyph = (*penum->encode_char)(pfont, chr, GLYPH_SPACE_NAME);
 	}
+        SET_CURRENT_GLYPH(penum, glyph);
 	cc = 0;
     }
   no_cache:
@@ -913,10 +1050,9 @@ show_proceed(gs_show_enum * penum)
      * we only do this if the character is not cached (cc = 0);
      * however, we also must do this if we have an xfont but
      * are using scalable widths.  In this case, and only this case,
-     * we get here with cc != 0.  penum->current_char has already
-     * been set, but not penum->current_glyph.
+     * we get here with cc != 0.  penum->current_char and penum->current_glyph
+     * has already been set.
      */
-    SET_CURRENT_GLYPH(penum, glyph);
     if ((code = gs_gsave(pgs)) < 0)
 	return code;
     /* Set the font to the current descendant font. */
@@ -1036,7 +1172,7 @@ gx_show_text_retry(gs_text_enum_t *pte)
 	penum->cc = 0;
     }
     gs_grestore(penum->pgs);
-    penum->width_status = sws_none;
+    penum->width_status = sws_retry;
     penum->log2_scale.x = penum->log2_scale.y = 0;
     return 0;
 }
@@ -1128,6 +1264,22 @@ gs_show_current_font(const gs_show_enum * penum)
 
 /* ------ Internal routines ------ */
 
+private inline bool
+is_matrix_good_for_caching(const gs_matrix_fixed *m)
+{
+    /* Skewing or non-rectangular rotation are not supported,
+       but we ignore a small noise skew. */
+    const float axx = any_abs(m->xx), axy = any_abs(m->xy);
+    const float ayx = any_abs(m->yx), ayy = any_abs(m->yy);
+    const float thr = 5000; /* examples/alphabet.ps */
+
+    if (ayx * thr < axx || axy * thr < ayy)
+	return true;
+    if (axx * thr < ayx || ayy * thr < axy)
+	return true;
+    return false;
+}
+
 /* Initialize the gstate-derived parts of a show enumerator. */
 /* We do this both when starting the show operation, */
 /* and when returning from the kshow callout. */
@@ -1151,14 +1303,16 @@ show_state_setup(gs_show_enum * penum)
 	pfont = pfsi->font;
 	gs_matrix_multiply(&pfont->FontMatrix,
 			   &pfsi[-1].font->FontMatrix, &mat);
+	if (pfont->FontType == ft_CID_encrypted) {
+	    /* concatenate the Type9 leaf's matrix */
+	    gs_matrix_multiply(&mat,
+		&(gs_cid0_indexed_font(pfont, pfsi->index)->FontMatrix), &mat);
+	}
 	gs_setcharmatrix(pgs, &mat);
     }
     penum->current_font = pfont;
     /* Skewing or non-rectangular rotation are not supported. */
-    if (!CACHE_ROTATED_CHARS &&
-	(is_fzero2(pgs->char_tm.xy, pgs->char_tm.yx) ||
-	 is_fzero2(pgs->char_tm.xx, pgs->char_tm.yy))
-	)
+    if (!CACHE_ROTATED_CHARS && is_matrix_good_for_caching(&pgs->char_tm))
 	penum->can_cache = 0;
     if (penum->can_cache >= 0 &&
 	gx_effective_clip_path(pgs, &pcpath) >= 0
@@ -1205,7 +1359,7 @@ show_state_setup(gs_show_enum * penum)
 
 /* Set the suggested oversampling scale for character rendering. */
 private void
-show_set_scale(gs_show_enum * penum)
+show_set_scale(const gs_show_enum * penum, gs_log2_scale_point *log2_scale)
 {
     /*
      * Decide whether to oversample.
@@ -1218,8 +1372,7 @@ show_set_scale(gs_show_enum * penum)
 	SHOW_USES_OUTLINE(penum) &&
 	gx_path_is_void_inline(pgs->path) &&
     /* Oversampling rotated characters doesn't work well. */
-	(is_fzero2(pgs->char_tm.xy, pgs->char_tm.yx) ||
-	 is_fzero2(pgs->char_tm.xx, pgs->char_tm.yy))
+	is_matrix_good_for_caching(&pgs->char_tm)
 	) {
 	const gs_font_base *pfont = (gs_font_base *) pgs->font;
 	gs_fixed_point extent;
@@ -1231,13 +1384,13 @@ show_set_scale(gs_show_enum * penum)
 	if (code >= 0) {
 	    int sx =
 	    (extent.x == 0 ? 0 :
-	     any_abs(extent.x) < int2fixed(25) ? 2 :
-	     any_abs(extent.x) < int2fixed(60) ? 1 :
+	     any_abs(extent.x) < int2fixed(60) ? 2 :
+	     any_abs(extent.x) < int2fixed(200) ? 1 :
 	     0);
 	    int sy =
 	    (extent.y == 0 ? 0 :
-	     any_abs(extent.y) < int2fixed(25) ? 2 :
-	     any_abs(extent.y) < int2fixed(60) ? 1 :
+	     any_abs(extent.y) < int2fixed(60) ? 2 :
+	     any_abs(extent.y) < int2fixed(200) ? 1 :
 	     0);
 
 	    /* If we oversample at all, make sure we do it */
@@ -1246,14 +1399,13 @@ show_set_scale(gs_show_enum * penum)
 		sx = 1;
 	    else if (sy == 0 && sx != 0)
 		sy = 1;
-	    penum->log2_suggested_scale.x = sx;
-	    penum->log2_suggested_scale.y = sy;
+	    log2_scale->x = sx;
+	    log2_scale->y = sy;
 	    return;
 	}
     }
     /* By default, don't scale. */
-    penum->log2_suggested_scale.x =
-	penum->log2_suggested_scale.y = 0;
+    log2_scale->x = log2_scale->y = 0;
 }
 
 /* Set up the cache device and related information. */

@@ -82,7 +82,7 @@ typedef struct gx_placed_page_s {
  * probably by rendering current bandlist contents.
  */
 #define proc_free_up_bandlist_memory(proc)\
-  int proc(P2(gx_device *dev, bool flush_current))
+  int proc(gx_device *dev, bool flush_current)
 
 /* ---------------- Internal structures ---------------- */
 
@@ -249,6 +249,7 @@ typedef struct gx_device_clist_writer_s {
 #define clist_disable_complex_clip (1 << 3)
 #define clist_disable_nonrect_hl_image (1 << 4)
 #define clist_disable_pass_thru_params (1 << 5)	/* disable EXCEPT at top of page */
+#define clist_disable_copy_alpha (1 << 6) /* target does not support copy_alpha */
 
 /* Define the state of a band list when reading. */
 /* For normal rasterizing, pages and num_pages are both 0. */
@@ -296,16 +297,16 @@ extern_st(st_device_clist);
 extern const gx_device_procs gs_clist_device_procs;
 
 /* Reset (or prepare to append to) the command list after printing a page. */
-int clist_finish_page(P2(gx_device * dev, bool flush));
+int clist_finish_page(gx_device * dev, bool flush);
 
 /* Close the band files and delete their contents. */
-int clist_close_output_file(P1(gx_device *dev));
+int clist_close_output_file(gx_device *dev);
 
 /*
  * Close and delete the contents of the band files associated with a
  * page_info structure (a page that has been separated from the device).
  */
-int clist_close_page_info(P1(gx_band_page_info_t *ppi));
+int clist_close_page_info(gx_band_page_info_t *ppi);
 
 /*
  * Compute the colors-used information in the page_info structure from the
@@ -313,7 +314,7 @@ int clist_close_page_info(P1(gx_band_page_info_t *ppi));
  * end of a page.  gdev_prn_colors_used calls this procedure if it hasn't
  * been called since the page was started.  clist_end_page also calls it.
  */
-void clist_compute_colors_used(P1(gx_device_clist_writer *cldev));
+void clist_compute_colors_used(gx_device_clist_writer *cldev);
 
 /* Define the abstract type for a printer device. */
 #ifndef gx_device_printer_DEFINED
@@ -322,7 +323,7 @@ typedef struct gx_device_printer_s gx_device_printer;
 #endif
 
 /* Do device setup from params passed in the command list. */
-int clist_setup_params(P1(gx_device *dev));
+int clist_setup_params(gx_device *dev);
 
 /*
  * Render a rectangle to a client-supplied image.  This implements
@@ -335,9 +336,9 @@ int clist_setup_params(P1(gx_device *dev));
  * some rectangle smaller than ((0, 0), (bdev->width, bdev->height)), it
  * must set up a clipping device.
  */
-int clist_render_rectangle(P5(gx_device_clist *cdev,
-			      const gs_int_rect *prect, gx_device *bdev,
-			      const gx_render_plane_t *render_plane,
-			      bool clear));
+int clist_render_rectangle(gx_device_clist *cdev,
+			   const gs_int_rect *prect, gx_device *bdev,
+			   const gx_render_plane_t *render_plane,
+			   bool clear);
 
 #endif /* gxclist_INCLUDED */

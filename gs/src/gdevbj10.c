@@ -118,12 +118,32 @@ const gx_device_printer far_data gs_bj200_device =
 
 /*
  * (<simon@pogner.demon.co.uk>, aka <sjwright@cix.compulink.co.uk>):
- * My bj10ex, which as far as I can tell is just like a bj10e, works
- * fine with the bj200 setup here.
+ * My bj10ex, which as far as I can tell is just like a bj10e, needs a
+ * bottom margin of 0.4" (actually, you must not print within 0.5" of
+ * the bottom; somewhere, an extra 0.1" is creeping in).
+ *
+ * (<jim.hague@acm.org>):
+ * I have a BJ10sx and the BJ10sx manual. This states that the top and
+ * bottom margins for the BJ10sx are 0.33" and 0.5". The latter may
+ * explain Simon's finding. The manual also instructs Win31 users to
+ * select 'BJ10e' as their driver, so presumably the margins will be
+ * identical and thus also correct for BJ10e. The values for the side
+ * margins given are identical to those above.
+ *
+ * As of 2nd Nov 2001 the BJ10 sx manual is at
+ * http://www.precision.com/Printer%20Manuals/Canon%20BJ-10sx%20Manual.pdf.
  */
 
+#define BJ10E_TOP_MARGIN		0.33
+#define BJ10E_BOTTOM_MARGIN		(0.50 + 0.04)
+
+private dev_proc_open_device(bj10e_open);
+
+private gx_device_procs prn_bj10e_procs =
+  prn_procs(bj10e_open, gdev_prn_output_page, gdev_prn_close);
+
 const gx_device_printer far_data gs_bj10e_device =
-  prn_device(prn_bj200_procs, "bj10e",
+  prn_device(prn_bj10e_procs, "bj10e",
 	DEFAULT_WIDTH_10THS,
 	DEFAULT_HEIGHT_10THS,
 	360,				/* x_dpi */
@@ -189,12 +209,32 @@ bj200_open(gx_device *pdev)
 	   printer centres the 8" print line on the page. */
 
 	static const float a4_margins[4] =
-	 {	BJ200_A4_SIDE_MARGIN, BJ200_BOTTOM_MARGIN,
-		BJ200_A4_SIDE_MARGIN, BJ200_TOP_MARGIN
+	 {	(float)BJ200_A4_SIDE_MARGIN, (float)BJ200_BOTTOM_MARGIN,
+		(float)BJ200_A4_SIDE_MARGIN, (float)BJ200_TOP_MARGIN
 	 };
 	static const float letter_margins[4] =
-	 {	BJ200_LETTER_SIDE_MARGIN, BJ200_BOTTOM_MARGIN,
-		BJ200_LETTER_SIDE_MARGIN, BJ200_TOP_MARGIN
+	 {	(float)BJ200_LETTER_SIDE_MARGIN, (float)BJ200_BOTTOM_MARGIN,
+		(float)BJ200_LETTER_SIDE_MARGIN, (float)BJ200_TOP_MARGIN
+	 };
+
+	gx_device_set_margins(pdev,
+		(pdev->width / pdev->x_pixels_per_inch <= 8.4 ?
+		 a4_margins : letter_margins),
+		true);
+	return gdev_prn_open(pdev);
+}
+
+private int
+bj10e_open(gx_device *pdev)
+{
+        /* See bj200_open() */
+	static const float a4_margins[4] =
+	 {	(float)BJ200_A4_SIDE_MARGIN, (float)BJ10E_BOTTOM_MARGIN,
+		(float)BJ200_A4_SIDE_MARGIN, (float)BJ10E_TOP_MARGIN
+	 };
+	static const float letter_margins[4] =
+	 {	(float)BJ200_LETTER_SIDE_MARGIN, (float)BJ10E_BOTTOM_MARGIN,
+		(float)BJ200_LETTER_SIDE_MARGIN, (float)BJ10E_TOP_MARGIN
 	 };
 
 	gx_device_set_margins(pdev,
@@ -208,8 +248,8 @@ bj200_open(gx_device *pdev)
 private int
 bj10e_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {	int line_size = gx_device_raster((gx_device *)pdev, 0);
-	int xres = pdev->x_pixels_per_inch;
-	int yres = pdev->y_pixels_per_inch;
+	int xres = (int)pdev->x_pixels_per_inch;
+	int yres = (int)pdev->y_pixels_per_inch;
 	int mode = (yres == 180 ?
 			(xres == 180 ? 11 : 12) :
 			(xres == 180 ? 14 : 16));

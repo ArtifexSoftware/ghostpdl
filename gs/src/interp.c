@@ -42,6 +42,7 @@
 #include "files.h"		/* for file_check_read */
 #include "oper.h"
 #include "store.h"
+#include "gpcheck.h"
 
 /*
  * We may or may not optimize the handling of the special fast operators
@@ -65,6 +66,30 @@ extern_st(st_ref_stack);
 public_st_dict_stack();
 public_st_exec_stack();
 public_st_op_stack();
+
+/* 
+ * The procedure to call if an operator requests rescheduling.
+ * This causes an error unless the context machinery has been installed.
+ */
+private int
+no_reschedule(i_ctx_t **pi_ctx_p)
+{
+    return_error(e_invalidcontext);
+}
+int (*gs_interp_reschedule_proc)(i_ctx_t **) = no_reschedule;
+
+/*
+ * The procedure to call for time-slicing.
+ * This is a no-op unless the context machinery has been installed.
+ */
+int (*gs_interp_time_slice_proc)(i_ctx_t **) = 0;
+
+/*
+ * The number of interpreter "ticks" between calls on the time_slice_proc.
+ * Currently, the clock ticks before each operator, and at each
+ * procedure return.
+ */
+int gs_interp_time_slice_ticks = 0x7fff;
 
 /*
  * Apply an operator.  When debugging, we route all operator calls
@@ -100,15 +125,15 @@ struct stats_interp_s {
 #endif
 
 /* Forward references */
-private int estack_underflow(P1(i_ctx_t *));
-private int interp(P3(i_ctx_t **, const ref *, ref *));
-private int interp_exit(P1(i_ctx_t *));
-private void set_gc_signal(P3(i_ctx_t *, int *, int));
-private int copy_stack(P3(i_ctx_t *, const ref_stack_t *, ref *));
-private int oparray_pop(P1(i_ctx_t *));
-private int oparray_cleanup(P1(i_ctx_t *));
-private int zsetstackprotect(P1(i_ctx_t *));
-private int zcurrentstackprotect(P1(i_ctx_t *));
+private int estack_underflow(i_ctx_t *);
+private int interp(i_ctx_t **, const ref *, ref *);
+private int interp_exit(i_ctx_t *);
+private void set_gc_signal(i_ctx_t *, int *, int);
+private int copy_stack(i_ctx_t *, const ref_stack_t *, ref *);
+private int oparray_pop(i_ctx_t *);
+private int oparray_cleanup(i_ctx_t *);
+private int zsetstackprotect(i_ctx_t *);
+private int zcurrentstackprotect(i_ctx_t *);
 
 /* Stack sizes */
 
@@ -252,13 +277,12 @@ const op_def interp_op_defs[] = {
 
 /* Initialize the interpreter. */
 int
-gs_interp_init(i_ctx_t **pi_ctx_p, const ref *psystem_dict, 
-	       const dict_defaults_t *dict_defaults,
+gs_interp_init(i_ctx_t **pi_ctx_p, const ref *psystem_dict,
 	       gs_dual_memory_t *dmem)
 {
     /* Create and initialize a context state. */
     gs_context_state_t *pcst = 0;
-    int code = context_state_alloc(&pcst, psystem_dict, dict_defaults, dmem);
+    int code = context_state_alloc(&pcst, psystem_dict, dmem);
 
     if (code >= 0)
 	code = context_state_load(pcst);
@@ -403,7 +427,7 @@ interp_reclaim(i_ctx_t **pi_ctx_p, int space)
  * In case of a quit or a fatal error, also store the exit code.
  * Set *perror_object to null or the error object.
  */
-private int gs_call_interp(P5(i_ctx_t **, ref *, int, int *, ref *));
+private int gs_call_interp(i_ctx_t **, ref *, int, int *, ref *);
 int
 gs_interpret(i_ctx_t **pi_ctx_p, ref * pref, int user_errors, int *pexit_code,
 	     ref * perror_object)
@@ -769,7 +793,7 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
   { o_stack.requested = 1; return_with_error(e_stackoverflow, objp); }
 #define return_with_stackoverflow_iref()\
   { o_stack.requested = 1; return_with_error_iref(e_stackoverflow); }
-    int ticks_left = i_ctx_p->interp_time_slice_ticks;
+    int ticks_left = gs_interp_time_slice_ticks;
 
     /*
      * If we exceed the VMThreshold, set ticks_left to -1
@@ -841,7 +865,7 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
 	  r_packed_is_name(iref_packed) :
 	  r_has_type(IREF, t_name)))
 	) {
-	void debug_print_ref(P1(const ref *));
+	void debug_print_ref(const ref *);
 	os_ptr save_osp = osp;	/* avoid side-effects */
 	es_ptr save_esp = esp;
 
@@ -1275,6 +1299,8 @@ remap:		    if (iesp + 2 >= estop) {
 			SET_IREF(&token);
 			icount = 0;
 			goto top;
+		    case e_undefined:	/* //name undefined */
+			return_with_error(code, &token);
 		    case scan_EOF:	/* end of file */
 			esfile_clear_cache();
 			goto bot;
@@ -1349,6 +1375,7 @@ remap:		    if (iesp + 2 >= estop) {
 		scanner_state sstate;
 
 		scanner_state_init_options(&sstate, SCAN_FROM_STRING);
+		s_init(&ss, NULL);
 		sread_string(&ss, IREF->value.bytes, r_size(IREF));
 		osp = iosp;	/* scan_token uses ostack */
 		code = scan_token(i_ctx_p, &ss, &token, &sstate);
@@ -1576,7 +1603,7 @@ res:
     /* Some operator has asked for context rescheduling. */
     /* We've done a store_state. */
     *pi_ctx_p = i_ctx_p;
-    code = i_ctx_p->interp_reschedule_proc(pi_ctx_p);
+    code = (*gs_interp_reschedule_proc)(pi_ctx_p);
     i_ctx_p = *pi_ctx_p;
   sched:			/* We've just called a scheduling procedure. */
     /* The interpreter state is in memory; iref is not current. */
@@ -1612,13 +1639,14 @@ res:
 	*pi_ctx_p = i_ctx_p;
 	code = interp_reclaim(pi_ctx_p, -1);
 	i_ctx_p = *pi_ctx_p;
-    } else if (i_ctx_p->interp_time_slice_proc) {
+    } else if (gs_interp_time_slice_proc) {
 	*pi_ctx_p = i_ctx_p;
-	code = i_ctx_p->interp_time_slice_proc(pi_ctx_p);
+	code = (*gs_interp_time_slice_proc)(pi_ctx_p);
 	i_ctx_p = *pi_ctx_p;
     } else
 	code = 0;
-    ticks_left = i_ctx_p->interp_time_slice_ticks;
+    ticks_left = gs_interp_time_slice_ticks;
+    set_code_on_interrupt(&code);
     goto sched;
 
     /* Error exits. */

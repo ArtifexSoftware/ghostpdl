@@ -13,6 +13,7 @@
 /*$RCSfile$ $Revision$ */
 /* VAX/VMS specific routines for Ghostscript */
 #include "string_.h"
+#include "memory_.h"
 #include "gx.h"
 #include "gp.h"
 #include "gsstruct.h"
@@ -21,7 +22,7 @@
 #include <errno.h>		/* for exit() with other compiler versions */
 #include <unixio.h>
 
-extern char *getenv(P1(const char *));
+extern char *getenv(const char *);
 
 /* Apparently gcc doesn't allow extra arguments for fopen: */
 #ifdef VMS			/* DEC C */
@@ -213,12 +214,16 @@ FILE *
 gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
 		     const char *mode)
 {
+    FILE *f;
+
     if (strlen(prefix) + 6 >= gp_file_name_sizeof)
 	return 0;		/* file name too long */
     strcpy(fname, prefix);
     strcat(fname, "XXXXXX");
     mktemp(fname);
-    return fopen(fname, mode);
+    f = fopen(fname, mode);
+    if (f == NULL)
+	eprintf1("**** Could not open temporary file %s\n", fname);
 }
 
 /* Open a file with the given name, as a stream of uninterpreted bytes. */
@@ -245,6 +250,7 @@ gp_setmode_binary(FILE * pfile, bool binary)
     return 0;			/* Noop under VMS */
 }
 
+#if !NEW_COMBINE_PATH
 /*  Answer whether a file name contains a directory/device specification, i.e.,
  *  is absolute (not directory- or device-relative).  Since for VMS, the concept
  *  of an "absolute" file reference has no meaning.  As Ghostscript is here
@@ -257,7 +263,7 @@ gp_setmode_binary(FILE * pfile, bool binary)
  */
 
 bool
-gp_file_name_is_absolute(const char *fname, uint len)
+gp_pathstring_not_bare(const char *fname, unsigned len)
 {
     descrip str_desc;
 
@@ -287,11 +293,37 @@ gp_file_name_is_absolute(const char *fname, uint len)
 	return false;
 }
 
+/* Answer whether the file_name references the directory	*/
+/* containing the specified path (parent). 			*/
+bool
+gp_file_name_references_parent(const char *fname, unsigned len)
+{
+    int i = 0, last_sep_pos = -gp_file_name_sizeof;
+
+    /* A file name references its parent directory if it contains -. */
+    /* inside the [ ] part of the file specification */
+    while (i < len && fname[i] != ']') {
+	if (fname[i] == '.' || fname[i] == '[') {
+	    last_sep_pos = i++;
+	    continue;
+	}
+	if (fname[i++] != '-')
+	    continue;
+        if (i > last_sep_pos + 2 || (i < len &&
+		(fname[i] != '.') && fname[i] != ']')
+	   ) 
+	    continue;
+	/* have separator followed by -. or -] */
+	return true;
+    }
+    return false;
+}
+
 /* Answer the string to be used for combining a directory/device prefix */
-/* with a base file name.  The file name is known to not be absolute. */
+/* with a base file name. The prefix directory/device is examined to	*/
+/* determine if a separator is needed and may return an empty string	*/
 const char *
-gp_file_name_concat_string(const char *prefix, uint plen,
-			   const char *fname, uint len)
+gp_file_name_concat_string(const char *prefix, uint plen)
 {
     /*  Full VAX/VMS paths are of the form:
 
@@ -318,6 +350,7 @@ gp_file_name_concat_string(const char *prefix, uint plen,
 	};
     return ":";
 }
+#endif
 
 /* ------ Wild card file search procedures ------ */
 
@@ -341,10 +374,11 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
     file_enum *pfen;
     uint i, len;
     char *c, *newpat;
+    bool dot_in_filename = false;
 
     pfen = gs_alloc_struct(mem, file_enum, &st_file_enum,
 			   "GP_ENUM(file_enum)");
-    newpat = (char *)gs_alloc_bytes(mem, patlen, "GP_ENUM(pattern)");
+    newpat = (char *)gs_alloc_bytes(mem, patlen + 2, "GP_ENUM(pattern)");
     if (pfen == 0 || newpat == 0) {
 	gs_free_object(mem, newpat, "GP_ENUM(pattern)");
 	gs_free_object(mem, pfen, "GP_ENUM(file_enum)");
@@ -355,6 +389,11 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
      *  (VAX/VMS uses the wildcard '%' to represent exactly one character
      *  and '*' to represent zero or more characters.  Any combination and
      *  number of interspersed wildcards is permitted.)
+     *
+     *  Since VMS requires "*.*" to actually return all files, we add a
+     *  special check for a path ending in "*" and change it into "*.*"
+     *  if a "." wasn't part of the file spec. Thus "[P.A.T.H]*" becomes
+     *  "[P.A.T.H]*.*" but "[P.A.T.H]*.*" or "[P.A.T.H]*.X*" are unmodified.
      */
     c = newpat;
     for (i = 0; i < patlen; pat++, i++)
@@ -367,10 +406,18 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
 		if (i < patlen)
 		    *c++ = *++pat;
 		break;
+	    case '.':
+	    case ']':
+		dot_in_filename = *pat == '.'; 
 	    default:
 		*c++ = *pat;
 		break;
 	}
+    /* Check for trailing "*" and see if we need to add ".*" */
+    if (pat[-1] == '*' && !dot_in_filename) {
+	*c++ = '.';
+	*c++ = '*';
+    }
     len = c - newpat;
 
     /* Pattern may not exceed 255 characters */
@@ -441,3 +488,195 @@ gp_strerror(int errnum)
 {
     return NULL;
 }
+
+/* -------------- Helpers for gp_file_name_combine_generic ------------- */
+
+uint gp_file_name_root(const char *fname, uint len)
+{   
+    /*
+     *    The root for device:[root.][directory.subdirectory]filename.extension;version
+     *	    is device:[root.][
+     *    The root for device:[directory.subdirectory]filename.extension;version
+     *	    is device:[
+     *    The root for logical:filename.extension;version
+     *	    is logical:
+     */
+    int i, j;
+
+    if (len == 0)
+	return 0;
+    /* Search for ':' */
+    for (i = 0; i < len; i++)
+	if (fname[i] == ':')
+	    break;
+    if (i == len)
+	return 0; /* No root. */
+    if (fname[i] == ':')
+	i++;
+    if (i == len || fname[i] != '[')
+	return i; 
+    /* Search for ']' */
+    i++;
+    for (j = i; j < len; j++)
+	if (fname[j] == ']')
+	    break;
+    if (j == len)
+	return i; /* No ']'. Allowed as a Ghostscript specifics. */
+    j++;
+    if (j == len)
+	return i; /* Appending "device:[directory.subdirectory]" with "filename.extension;version". */
+    if (fname[j] != '[')
+	return i; /* Can't append anything, but pass through for checking an absolute path. */
+    return j + 1; /* device:[root.][ */
+}
+
+uint gs_file_name_check_separator(const char *fname, int len, const char *item)
+{   
+    if (len > 0) {
+	/* 
+	 * Ghostscript specifics : an extended syntax like Mac OS.
+	 * We intentionally don't consider ':' and '[' as separators
+	 * in forward search, see gp_file_name_combine. 
+	 */
+	if (fname[0] == ']')
+	    return 1; /* It is a file separator. */
+	if (fname[0] == '.')
+	    return 1; /* It is a directory separator. */
+	if (fname[0] == '-') {
+	    if (fname == item + 1 && item[0] == '-')
+		return 1; /* Two or more parents, cut the first one. */
+	    return 1;
+	}
+    } else if (len < 0) {
+	if (fname[-1] == '.' || fname[-1] == ':' || fname[-1] == '[')
+	    return 1;
+    }
+    return 0;
+}
+
+bool gp_file_name_is_parent(const char *fname, uint len)
+{   /* Ghostscript specifics : an extended syntax like Mac OS. */
+    return len == 1 && fname[0] == '-';
+}
+
+bool gp_file_name_is_current(const char *fname, uint len)
+{   /* Ghostscript specifics : an extended syntax like Mac OS. */
+    return len == 0;
+}
+
+const char *gp_file_name_separator(void)
+{   return "]";
+}
+
+const char *gp_file_name_directory_separator(void)
+{   return ".";
+}
+
+const char *gp_file_name_parent(void)
+{   return "-";
+}
+
+const char *gp_file_name_current(void)
+{   return "";
+}
+
+bool gp_file_name_is_partent_allowed(void)
+{   return false;
+}
+
+bool gp_file_name_is_empty_item_meanful(void)
+{   return true;
+}
+
+gp_file_name_combine_result
+gp_file_name_combine(const char *prefix, uint plen, const char *fname, uint flen, 
+		    bool no_sibling, char *buffer, uint *blen)
+{
+    /*
+     * Reduce it to the general case.
+     *
+     * Implementation restriction : fname must not contain a part of 
+     * "device:[root.]["
+     */
+    uint rlen, flen1 = flen, plen1 = plen;
+    const char *fname1 = fname;
+
+    if (plen == 0 && flen == 0) {
+	/* Not sure that we need this case. */
+	if (*blen == 0)
+	    return gp_combine_small_buffer;
+	buffer[0] = '.';
+	*blen = 1;
+    }
+    rlen = gp_file_name_root(fname, flen);
+    if (rlen > 0 || plen == 0 || flen == 0) {
+	if (rlen == 0 && plen != 0) {
+	    fname1 = prefix;
+	    flen1 = plen;
+	}
+	if (flen1 + 1 > *blen)
+	    return gp_combine_small_buffer;
+	memcpy(buffer, fname1, flen1);
+	buffer[flen1] = 0;
+	*blen = flen1;
+	return gp_combine_success;
+    }
+   
+   if ( prefix[plen - 1] == ']' && fname[ 0 ] == '-' )
+     {
+	memcpy(buffer, prefix, plen - 1 );
+	fname1 = fname + 1;
+	flen1 = flen - 1;
+	memcpy(buffer + plen - 1 , fname1, flen1);
+	memcpy(buffer + plen + flen1 - 1 , "]" , 1 );
+	buffer[plen + flen1] = 0;
+	*blen = plen + flen1;
+	return gp_combine_success;
+     }
+
+   if ( prefix[plen - 1] == ':' || (prefix[plen - 1] == ']' &&
+				     memchr(fname, ']', flen) == 0) )
+       {
+	/* Just concatenate. */
+	if (plen + flen + 1 > *blen)
+	    return gp_combine_small_buffer;
+	memcpy(buffer, prefix, plen);
+	memcpy(buffer + plen, fname, flen);
+	buffer[plen + flen] = 0;
+	*blen = plen + flen;
+	return gp_combine_success;
+    }
+   if ( memchr( prefix , '[' , plen ) == 0 &&
+	memchr( prefix , '.' , plen ) == 0 )
+     {
+	if (plen + flen + 2 > *blen)
+	    return gp_combine_small_buffer;
+	memcpy(buffer, prefix, plen);
+	memcpy(buffer + plen , ":" , 1 );
+	memcpy(buffer + plen + 1, fname, flen);
+	if ( memchr( fname , '.' , flen ) != 0 )
+	  {
+	     buffer[plen + flen + 1] = 0;
+	     *blen = plen + flen + 1;
+	  }
+	else
+	  {
+	     memcpy(buffer + plen + flen + 1 , "." , 1 );
+	     buffer[plen + flen + 2] = 0;
+	     *blen = plen + flen + 2;
+	  }
+	return gp_combine_success;
+     }
+    if (prefix[plen - 1] != ']' && fname[0] == '[')
+        return gp_combine_cant_handle;
+    /* Unclose "][" :*/
+    if (fname[0] == '[') {
+	fname1 = fname + 1;
+	flen1 = flen - 1;
+    }
+    if (prefix[plen - 1] == ']')
+        plen1 = plen - 1;
+    return gp_file_name_combine_generic(prefix, plen1, 
+	    fname1, flen1, no_sibling, buffer, blen);
+}
+

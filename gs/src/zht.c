@@ -28,9 +28,9 @@
 #include "store.h"
 
 /* Forward references */
-private int screen_sample(P1(i_ctx_t *));
-private int set_screen_continue(P1(i_ctx_t *));
-private int screen_cleanup(P1(i_ctx_t *));
+private int screen_sample(i_ctx_t *);
+private int set_screen_continue(i_ctx_t *);
+private int screen_cleanup(i_ctx_t *);
 
 /* - .currenthalftone <dict> 0 */
 /* - .currenthalftone <frequency> <angle> <proc> 1 */
@@ -47,23 +47,37 @@ zcurrenthalftone(i_ctx_t *i_ctx_p)
 	    push(4);
 	    make_real(op - 3, ht.params.screen.frequency);
 	    make_real(op - 2, ht.params.screen.angle);
-	    op[-1] = istate->screen_procs.colored.gray;
+	    op[-1] = istate->screen_procs.gray;
 	    make_int(op, 1);
 	    break;
 	case ht_type_colorscreen:
 	    push(13);
 	    {
-		int i;
+		os_ptr opc = op - 12;
+		gs_screen_halftone *pht = 
+		    &ht.params.colorscreen.screens.colored.red;
 
-		for (i = 0; i < 4; i++) {
-		    os_ptr opc = op - 12 + i * 3;
-		    gs_screen_halftone *pht =
-		    &ht.params.colorscreen.screens.indexed[i];
+		make_real(opc, pht->frequency);
+		make_real(opc + 1, pht->angle);
+		opc[2] = istate->screen_procs.red;
 
-		    make_real(opc, pht->frequency);
-		    make_real(opc + 1, pht->angle);
-		    opc[2] = istate->screen_procs.indexed[i];
-		}
+		opc = op - 9;
+		pht = &ht.params.colorscreen.screens.colored.green;
+		make_real(opc, pht->frequency);
+		make_real(opc + 1, pht->angle);
+		opc[2] = istate->screen_procs.green;
+
+		opc = op - 6;
+		pht = &ht.params.colorscreen.screens.colored.blue;
+		make_real(opc, pht->frequency);
+		make_real(opc + 1, pht->angle);
+		opc[2] = istate->screen_procs.blue;
+
+		opc = op - 3;
+		pht = &ht.params.colorscreen.screens.colored.gray;
+		make_real(opc, pht->frequency);
+		make_real(opc + 1, pht->angle);
+		opc[2] = istate->screen_procs.gray;
 	    }
 	    make_int(op, 2);
 	    break;
@@ -102,7 +116,7 @@ zcurrentscreenlevels(i_ctx_t *i_ctx_p)
 #define senum r_ptr(esp, gs_screen_enum)
 
 /* Forward references */
-private int setscreen_finish(P1(i_ctx_t *));
+private int setscreen_finish(i_ctx_t *);
 
 /* <frequency> <angle> <proc> setscreen - */
 private int
@@ -133,7 +147,7 @@ zsetscreen(i_ctx_t *i_ctx_p)
 int
 zscreen_enum_init(i_ctx_t *i_ctx_p, const gx_ht_order * porder,
 		  gs_screen_halftone * psp, ref * pproc, int npop,
-		  int (*finish_proc)(P1(i_ctx_t *)), gs_memory_t * mem)
+		  int (*finish_proc)(i_ctx_t *), gs_memory_t * mem)
 {
     gs_screen_enum *penum;
     int code;
@@ -209,10 +223,10 @@ private int
 setscreen_finish(i_ctx_t *i_ctx_p)
 {
     gs_screen_install(senum);
-    istate->screen_procs.colored.red = sproc;
-    istate->screen_procs.colored.green = sproc;
-    istate->screen_procs.colored.blue = sproc;
-    istate->screen_procs.colored.gray = sproc;
+    istate->screen_procs.red = sproc;
+    istate->screen_procs.green = sproc;
+    istate->screen_procs.blue = sproc;
+    istate->screen_procs.gray = sproc;
     make_null(&istate->halftone);
     return 0;
 }

@@ -55,7 +55,7 @@ typedef struct arc_curve_params_s {
 } arc_curve_params_t;
 
 /* Forward declarations */
-private int arc_add(P2(const arc_curve_params_t *arc, bool is_quadrant));
+private int arc_add(const arc_curve_params_t *arc, bool is_quadrant);
 
 int
 gs_arc(gs_state * pgs,
@@ -470,7 +470,7 @@ gs_upathbbox(gs_state * pgs, gs_rect * pbox, bool include_moveto)
 {
     gs_fixed_rect fbox;		/* box in device coordinates */
     gs_rect dbox;
-    int code = gx_path_bbox(pgs->path, &fbox);
+    int code = gx_path_bbox_set(pgs->path, &fbox);
 
     if (code < 0)
 	return code;

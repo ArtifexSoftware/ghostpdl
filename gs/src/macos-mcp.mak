@@ -44,9 +44,9 @@ PSD=$(PSGENDIR)/
 # ------ Generic options ------ #
 
 # Define the default directory/ies for the runtime
-# initialization and font files.  Separate multiple directories with a :.
+# initialization, resource and font files.  Separate multiple directories with a :.
 
-GS_LIB_DEFAULT=:,:lib,:files,:fonts,:examples
+GS_LIB_DEFAULT=:,:lib,:Resource,:files,:fonts,:examples
 
 GS_DOCDIR=:doc
 
@@ -92,6 +92,7 @@ PLATFORM=macos_
 SHARE_LIBPNG=0
 SHARE_JPEG=0
 SHARE_ZLIB=0
+SHARE_JBIG2=0
 
 # Define the directory where the IJG JPEG library sources are stored,
 # and the major version of the library that is stored there.
@@ -107,17 +108,33 @@ JVERSION=6
 # See libpng.mak for more information.
 
 PSRCDIR=libpng
-PVERSION=10012
+PVERSION=10204
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
 
 ZSRCDIR=zlib
 
+# Define the jbig2dec library source location.
+# See jbig2.mak for more information.
+
+JBIG2SRCDIR=jbig2dec
+
 # Define the directory where the icclib source are stored.
 # See icclib.mak for more information
 
 ICCSRCDIR=icclib
+
+# IJS has not been ported to MacOS Classic. If you do the port,
+# you'll need to set these values. You'll also need to
+# include the ijs.mak makefile (right after icclib.mak).
+#
+# Define the directory where the ijs source is stored,
+# and the process forking method to use for the server.
+# See ijs.mak for more information.
+ 
+#IJSSRCDIR=ijs
+#IJSEXECTYPE=unix
 
 # ------ Platform-specific options ------ #
 
@@ -152,11 +169,11 @@ SYNC=nosync
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(GLD)pipe.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(GLD)pipe.dev $(PSD)jbig2.dev $(PSD)macpoll.dev
 #FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev
 #FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)rasterop.dev $(GLD)pipe.dev
 # The following is strictly for testing.
-FEATURE_DEVS_ALL=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)rasterop.dev $(PSD)double.dev $(PSD)trapping.dev $(PSD)stocht.dev $(GLD)pipe.dev
+FEATURE_DEVS_ALL=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)rasterop.dev $(PSD)double.dev $(PSD)trapping.dev $(PSD)stocht.dev $(GLD)pipe.dev $(GLD)macres.dev $(PSD)jbig2.dev $(PSD)macpoll.dev
 #FEATURE_DEVS=$(FEATURE_DEVS_ALL)
 
 # Choose whether to compile the .ps initialization files into the executable.
@@ -193,7 +210,7 @@ EXTEND_NAMES=0
 # Choose the device(s) to include.  See devs.mak for details,
 # devs.mak and contrib.mak for the list of available devices.
 
-DEVICE_DEVS=$(DD)macos.dev $(DD)macos_.dev
+DEVICE_DEVS=$(DD)macos.dev $(DD)macos_.dev $(DD)display.dev
 
 #DEVICE_DEVS1=
 #DEVICE_DEVS2=
@@ -232,7 +249,7 @@ DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $
 DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev
 DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)epswrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev
 
-DEVICE_DEVS16=
+DEVICE_DEVS16=$(DD)bbox.dev
 DEVICE_DEVS17=
 DEVICE_DEVS18=
 DEVICE_DEVS19=
@@ -247,18 +264,16 @@ MAKEFILE=$(GLSRCDIR)/macos-mcp.mak
 TOP_MAKEFILES=
 
 
-# Define the ANSI-to-K&R dependency.  There isn't one, but we do have to
-# detect whether we're running a version of gcc with the const optimization
-# bug.
+# Define the auxilary program dependency. (we don't have any)
 
-AK=$(GLGENDIR)/cc.tr
+AK=
 
 # Define the compilation rules and flags.
 
 CCFLAGS=$(GENOPT) $(CFLAGS)
 CC_=$(CC) $(CCFLAGS)
-# define CCAUX as the real cc compiler, we need to build the aux tools
-CCAUX=cc `cat $(AK)`
+# define CCAUX as the real cc compiler, we use this to build the code generation tools
+CCAUX=cc
 CC_LEAF=$(CC_) -fomit-frame-pointer
 # gcc can't use -fomit-frame-pointer with -pg.
 CC_LEAF_PG=$(CC_)
@@ -281,6 +296,7 @@ include $(GLSRCDIR)/jpeg.mak
 # zlib.mak must precede libpng.mak
 include $(GLSRCDIR)/zlib.mak
 include $(GLSRCDIR)/libpng.mak
+include $(GLSRCDIR)/jbig2.mak
 include $(GLSRCDIR)/icclib.mak
 include $(GLSRCDIR)/devs.mak
 include $(GLSRCDIR)/contrib.mak
@@ -318,31 +334,30 @@ gconfig_h=$(GLOBJ)gconfig.h
 gconfigv_h=$(GLOBJ)gconfigv.h
 
 macsystypes_h=$(GLSRC)macsystypes.h
-macsysstat_h=$(GLSRC)macsysstat.h
-systypes_h=$(GLOBJ)sys\:types.h
-systime_h=$(GLOBJ)sys\:time.h
-sysstat_h=$(GLOBJ)sys\:stat.h
+systypes_h=$(GLOBJ)sys/types.h
 
 $(GLOBJ)gp_mac.$(OBJ): $(GLSRC)gp_mac.c
 $(GLOBJ)gp_macio.$(OBJ): $(GLSRC)gp_macio.c
-
-# does not work for systime_h?!?!
-#$(systypes_h):
-#	$(CP_) $(macsystypes_h) $(systypes_h)
-#$(systime_h):
-#	echo "/* This file deliberately left blank. */" > $(systime_h)
-#$(sysstat_h):
-#	$(CP_) $(macsysstat_h) $(sysstat_h)
+$(GLOBJ)gp_stdin.$(OBJ): $(GLSRC)gp_stdin.c $(AK) $(stdio__h) $(gx_h) $(gp_h)
 
 # ------------------------------------------------------------------- #
 
-MAC1=$(GLOBJ)gp_macio.$(OBJ) $(GLOBJ)gp_mac.$(OBJ) $(GLOBJ)gdevmacxf.$(OBJ)
+MAC1=$(GLOBJ)gp_macio.$(OBJ) $(GLOBJ)gp_mac.$(OBJ) $(GLOBJ)gdevmacxf.$(OBJ) $(GLOBJ)gp_stdin.$(OBJ)
 MAC2=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_nsync.$(OBJ) $(GLOBJ)gdevemap.$(OBJ) $(GLOBJ)gsdll.$(OBJ)
 
 $(GLD)macos_.dev: $(MAC1)
 	$(SETMOD) $(DD)macos_ $(MAC1) $(MAC)
 	$(ADDMOD) $(DD)macos_ -obj $(MAC2)
 	$(ADDMOD) $(DD)macos_ -iodev macstdio  # stdout does not work with MSL!!!
+
+# Define polling as a separable feature because it is not needed by the gslib.
+macpoll_=$(GLOBJ)gp_macpoll.$(OBJ)
+$(GLD)macpoll.dev: $(ECHOGS_XE) $(macpoll_)
+	$(SETMOD) $(GLD)macpoll $(macpoll_)
+
+$(GLOBJ)gp_macpoll.$(OBJ): $(GLSRC)gp_macpoll.c $(AK)\
+ $(gx_h) $(gp_h) $(gpcheck_h) $(iapi_h) $(iref_h) $(iminst_h) $(imain_h)
+
 
 # ------------------------------------------------------------------- #
 
@@ -377,9 +392,8 @@ ldt_tr=$(PSOBJ)ldt.tr
 CWPROJ_XML=./ghostscript.mcp.xml
 
 $(CWPROJ_XML):
+	-mkdir -p obj/sys
 	$(CP_) $(macsystypes_h) $(systypes_h)
-	echo "/* This file deliberately left blank. */" > $(systime_h)
-	$(CP_) $(macsysstat_h) $(sysstat_h)
 	$(SH) $(GLSRC)macgenmcpxml.sh `$(CAT) $(ld_tr)` >  $(CWPROJ_XML)
 	$(CP_) $(GLSRC)gconf.c $(GLOBJ)gconfig.c
 	$(CP_) $(GLSRC)iconf.c $(GLOBJ)iconfig.c

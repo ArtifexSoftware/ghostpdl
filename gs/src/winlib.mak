@@ -23,6 +23,7 @@
 SHARE_JPEG=0
 SHARE_LIBPNG=0
 SHARE_ZLIB=0
+SHARE_JBIG2=0
 
 # Define the platform name.
 
@@ -30,9 +31,9 @@ SHARE_ZLIB=0
 PLATFORM=mswin32_
 !endif
 
-# Define the ANSI-to-K&R dependency.  Borland C, Microsoft C and
-# Watcom C all accept ANSI syntax, but we need to preconstruct ccf32.tr 
-# to get around the limit on the maximum length of a command line.
+# Define the auxiliary program dependency. We use this to 
+# preconstruct ccf32.tr to get around the limit on the maximum
+# length of a command line.
 
 AK=$(GLGENDIR)\ccf32.tr
 
@@ -72,6 +73,18 @@ PLATOPT=
 INTASM=
 PCFBASM=
 
+# Define conditinal name for UFST bridge :
+!ifdef UFST_ROOT
+UFST_BRIDGE = 1
+UFST_LIB_EXT=.lib
+!endif
+
+# Define conditinal name for FreeType bridge :
+!ifdef FT_ROOT
+FT_BRIDGE = 1
+FT_LIB_EXT=.lib
+!endif
+
 # Define the files to be removed by `make clean'.
 # nmake expands macros when encountered, not when used,
 # so this must precede the !include statements.
@@ -91,7 +104,9 @@ BEGINFILES=$(GLGENDIR)\ccf32.tr\
 # zlib.mak must precede libpng.mak
 !include $(GLSRCDIR)\zlib.mak
 !include $(GLSRCDIR)\libpng.mak
+!include $(GLSRCDIR)\jbig2.mak
 !include $(GLSRCDIR)\icclib.mak
+!include $(GLSRCDIR)\ijs.mak
 !include $(GLSRCDIR)\devs.mak
 !include $(GLSRCDIR)\contrib.mak
 
@@ -109,10 +124,9 @@ GSDLL_OBJ=$(GLOBJ)$(GSDLL)
 
 # -------------------------- Auxiliary files --------------------------- #
 
-# No special gconfig_.h is needed.
-# Assume `make' supports output redirection.
+# No special gconfig_.h is needed.	/* This file deliberately left blank. */
 $(gconfig__h): $(TOP_MAKEFILES)
-	echo /* This file deliberately left blank. */ >$(gconfig__h)
+	$(ECHOGS_XE) -w $(gconfig__h) -x 2f2a20 This file deliberately left blank. -x 2a2f
 
 $(gconfigv_h): $(TOP_MAKEFILES) $(ECHOGS_XE)
 	$(ECHOGS_XE) -w $(gconfigv_h) -x 23 define USE_ASM -x 2028 -q $(USE_ASM)-0 -x 29
@@ -124,7 +138,7 @@ $(gconfigv_h): $(TOP_MAKEFILES) $(ECHOGS_XE)
 
 # The Windows Win32 platform
 
-mswin32__=$(GLOBJ)gp_mswin.$(OBJ) $(GLOBJ)gp_wgetv.$(OBJ)
+mswin32__=$(GLOBJ)gp_mswin.$(OBJ) $(GLOBJ)gp_wgetv.$(OBJ) $(GLOBJ)gp_stdia.$(OBJ)
 mswin32_inc=$(GLD)nosync.dev $(GLD)winplat.dev
 
 $(GLGEN)mswin32_.dev:  $(mswin32__) $(ECHOGS_XE) $(mswin32_inc)
@@ -132,12 +146,17 @@ $(GLGEN)mswin32_.dev:  $(mswin32__) $(ECHOGS_XE) $(mswin32_inc)
 	$(ADDMOD) $(GLGEN)mswin32_ -include $(mswin32_inc)
 
 $(GLOBJ)gp_mswin.$(OBJ): $(GLSRC)gp_mswin.c $(AK) $(gp_mswin_h) \
- $(ctype__h) $(dos__h) $(malloc__h) $(memory__h) $(string__h) $(windows__h) \
+ $(ctype__h) $(dos__h) $(malloc__h) $(memory__h) $(pipe__h) \
+ $(stdio__h) $(string__h) $(windows__h) \
  $(gx_h) $(gp_h) $(gpcheck_h) $(gpmisc_h) $(gserrors_h) $(gsexit_h)
 	$(GLCCWIN) $(GLO_)gp_mswin.$(OBJ) $(C_) $(GLSRC)gp_mswin.c
 
 $(GLOBJ)gp_wgetv.$(OBJ): $(GLSRC)gp_wgetv.c $(AK) $(gscdefs_h)
 	$(GLCCWIN) $(GLO_)gp_wgetv.$(OBJ) $(C_) $(GLSRC)gp_wgetv.c
+
+$(GLOBJ)gp_stdia.$(OBJ): $(GLSRC)gp_stdia.c $(AK)\
+  $(stdio__h) $(time__h) $(unistd__h) $(gx_h) $(gp_h)
+	$(GLCCWIN) $(GLO_)gp_stdia.$(OBJ) $(C_) $(GLSRC)gp_stdia.c
 
 # Define MS-Windows handles (file system) as a separable feature.
 
@@ -162,5 +181,15 @@ $(GLOBJ)gp_msprn.$(OBJ): $(GLSRC)gp_msprn.c $(AK)\
  $(ctype__h) $(errno__h) $(stdio__h) $(string__h)\
  $(gserror_h) $(gsmemory_h) $(gstypes_h) $(gxiodev_h)
 	$(GLCCWIN) $(GLO_)gp_msprn.$(OBJ) $(C_) $(GLSRC)gp_msprn.c
+
+# Define MS-Windows polling as a separable feature
+# because it is not needed by the gslib.
+mspoll_=$(GLOBJ)gp_mspol.$(OBJ)
+$(GLD)mspoll.dev: $(ECHOGS_XE) $(mspoll_)
+	$(SETMOD) $(GLD)mspoll $(mspoll_)
+
+$(GLOBJ)gp_mspol.$(OBJ): $(GLSRC)gp_mspol.c $(AK)\
+ $(gx_h) $(gp_h) $(gpcheck_h) $(iapi_h) $(iref_h) $(iminst_h) $(imain_h)
+	$(GLCCWIN) $(GLO_)gp_mspol.$(OBJ) $(C_) $(GLSRC)gp_mspol.c
 
 # end of winlib.mak

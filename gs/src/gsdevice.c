@@ -30,6 +30,7 @@
 #include "gxdevice.h"
 #include "gxdevmem.h"
 #include "gxiodev.h"
+#include "gxcspace.h"
 
 /* Include the extern for the device list. */
 extern_gs_lib_device_list();
@@ -91,7 +92,6 @@ gx_device_enum_ptr(gx_device * dev)
 gx_device *
 gx_device_reloc_ptr(gx_device * dev, gc_state_t * gcst)
 {
-
     if (dev == 0 || dev->memory == 0)
 	return dev;
     return RELOC_OBJ(dev);	/* gcst implicit */
@@ -397,9 +397,15 @@ gs_setdevice_no_init(gs_state * pgs, gx_device * dev)
      * Just set the device, possibly changing color space but no other
      * device parameters.
      */
+    if (pgs->device != NULL && pgs->device->rc.ref_count == 1) {
+	int code = gs_closedevice(pgs->device);
+
+	if (code < 0)
+	    return code;
+    }
     rc_assign(pgs->device, dev, "gs_setdevice_no_init");
     gs_state_update_device(pgs);
-    return 0;
+    return pgs->overprint ? gs_do_set_overprint(pgs) : 0;
 }
 
 /* Initialize a just-allocated device. */
@@ -433,10 +439,7 @@ gx_device_retain(gx_device *dev, bool retained)
 
     if (delta) {
 	dev->retained = retained; /* do first in case dev is freed */
-	if ( retained )
-	    rc_adjust(dev, delta, "gx_device_retain true");
-	else
-	    rc_adjust(dev, delta, "gx_device_retain false");
+	rc_adjust_only(dev, delta, "gx_device_retain");
     }
 }
 
@@ -470,9 +473,9 @@ gs_closedevice(gx_device * dev)
 
     if (dev->is_open) {
 	code = (*dev_proc(dev, close_device))(dev);
+	dev->is_open = false;
 	if (code < 0)
 	    return_error(code);
-	dev->is_open = false;
     }
     return code;
 }
@@ -534,24 +537,6 @@ gx_device_set_margins(gx_device * dev, const float *margins /*[4] */ ,
     }
 }
 
-
-/* Handle 90 and 270 degree rotation of the Tray
- * Device must support TrayOrientation in its InitialMatrix and get/put params
- */
-private void
-gx_device_TrayOrientationRotate(gx_device *dev)
-{
-  if ( dev->TrayOrientation == 90 || dev->TrayOrientation == 270) {
-    /* page sizes don't rotate, height and width do rotate 
-     * HWResolution, HWSize, and MediaSize parameters interact, 
-     * and must be set before TrayOrientation
-     */
-    floatp tmp = dev->height;
-    dev->height = dev->width;
-    dev->width = tmp;
-  }
-}
-
 /* Set the width and height, updating MediaSize to remain consistent. */
 void
 gx_device_set_width_height(gx_device * dev, int width, int height)
@@ -560,7 +545,6 @@ gx_device_set_width_height(gx_device * dev, int width, int height)
     dev->height = height;
     dev->MediaSize[0] = width * 72.0 / dev->HWResolution[0];
     dev->MediaSize[1] = height * 72.0 / dev->HWResolution[1];
-    gx_device_TrayOrientationRotate(dev);
 }
 
 /* Set the resolution, updating width and height to remain consistent. */
@@ -569,9 +553,8 @@ gx_device_set_resolution(gx_device * dev, floatp x_dpi, floatp y_dpi)
 {
     dev->HWResolution[0] = x_dpi;
     dev->HWResolution[1] = y_dpi;
-    dev->width = dev->MediaSize[0] * x_dpi / 72.0 + 0.5;
-    dev->height = dev->MediaSize[1] * y_dpi / 72.0 + 0.5;
-    gx_device_TrayOrientationRotate(dev);
+    dev->width = (int)(dev->MediaSize[0] * x_dpi / 72.0 + 0.5);
+    dev->height = (int)(dev->MediaSize[1] * y_dpi / 72.0 + 0.5);
 }
 
 /* Set the MediaSize, updating width and height to remain consistent. */
@@ -580,9 +563,8 @@ gx_device_set_media_size(gx_device * dev, floatp media_width, floatp media_heigh
 {
     dev->MediaSize[0] = media_width;
     dev->MediaSize[1] = media_height;
-    dev->width = media_width * dev->HWResolution[0] / 72.0 + 0.499;
-    dev->height = media_height * dev->HWResolution[1] / 72.0 + 0.499;      
-    gx_device_TrayOrientationRotate(dev);
+    dev->width = (int)(media_width * dev->HWResolution[0] / 72.0 + 0.499);
+    dev->height = (int)(media_height * dev->HWResolution[1] / 72.0 + 0.499);
 }
 
 /*
@@ -816,14 +798,18 @@ gx_device_open_output_file(const gx_device * dev, char *fname,
 	if (!parsed.fname)
 	    return_error(gs_error_undefinedfilename);
 	strcpy(fmode, gp_fmode_wb);
-	if (positionable)
-	    strcat(fmode, "+");
-	return parsed.iodev->procs.fopen(parsed.iodev, parsed.fname, fmode,
-					 pfile, NULL, 0);
+  	if (positionable)
+  	    strcat(fmode, "+");
+ 	code = parsed.iodev->procs.fopen(parsed.iodev, parsed.fname, fmode,
+  					 pfile, NULL, 0);
+ 	if (code)
+     	    eprintf1("**** Could not open the file %s .\n", parsed.fname);
+ 	return code;
     }
     *pfile = gp_open_printer((fmt ? pfname : fname), binary);
     if (*pfile)
-	return 0;
+  	return 0;
+    eprintf1("**** Could not open the file %s .\n", (fmt ? pfname : fname));
     return_error(gs_error_invalidfileaccess);
 }
 

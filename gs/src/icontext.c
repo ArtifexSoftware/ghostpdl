@@ -83,21 +83,10 @@ private RELOC_PTRS_WITH(context_state_reloc_ptrs, gs_context_state_t *pcst);
 RELOC_PTRS_END
 public_st_context_state();
 
-/* 
- * The procedure to call if an operator requests rescheduling.
- * This causes an error unless the context machinery has been installed.
- */
-VIRTUAL int
-no_reschedule(i_ctx_t **pi_ctx_p)
-{
-    return_error(e_invalidcontext);
-}
-
 /* Allocate the state of a context. */
 int
 context_state_alloc(gs_context_state_t ** ppcst,
 		    const ref *psystem_dict,
-		    const dict_defaults_t *dict_defaults,
 		    const gs_dual_memory_t * dmem)
 {
     gs_ref_memory_t *mem = dmem->space_local;
@@ -120,13 +109,7 @@ context_state_alloc(gs_context_state_t ** ppcst,
      */
     pcst->dict_stack.system_dict = *psystem_dict;
     pcst->dict_stack.min_size = 0;
-    pcst->dict_stack.dict_defaults.auto_expand = dict_defaults->auto_expand;
-    pcst->dict_stack.dict_defaults.default_packed = dict_defaults->default_packed;
-    
-    pcst->interp_reschedule_proc = no_reschedule;
-    pcst->interp_time_slice_proc = 0;
-    pcst->interp_time_slice_ticks = 0x7FFF;
-
+    pcst->dict_stack.userdict_index = 0;
     pcst->pgs = int_gstate_alloc(dmem);
     if (pcst->pgs == 0) {
 	code = gs_note_error(e_VMerror);
@@ -140,6 +123,7 @@ context_state_alloc(gs_context_state_t ** ppcst,
     pcst->usertime_total = 0;
     pcst->keep_usertime = false;
     pcst->in_superexec = 0;
+    pcst->plugin_list = 0;
     {	/*
 	 * Create an empty userparams dictionary of the right size.
 	 * If we can't determine the size, pick an arbitrary one.
@@ -151,13 +135,18 @@ context_state_alloc(gs_context_state_t ** ppcst,
 	if (dict_find_string(system_dict, "userparams", &puserparams) >= 0)
 	    size = dict_length(puserparams);
 	else
-	    size = 20;
-	code = dict_alloc(pcst->memory.space_local, size, &pcst->userparams, &pcst->dict_stack.dict_defaults);
+	    size = 25;
+	code = dict_alloc(pcst->memory.space_local, size, &pcst->userparams);
 	if (code < 0)
 	    goto x2;
 	/* PostScript code initializes the user parameters. */
     }
     pcst->scanner_options = 0;
+    pcst->LockFilePermissions = false;
+#if NEW_COMBINE_PATH
+    pcst->starting_arg_file = false;
+#endif
+    pcst->filearg = NULL;
     /* The initial stdio values are bogus.... */
     make_file(&pcst->stdio[0], a_readonly | avm_invalid_file_entry, 1,
 	      invalid_file_entry);

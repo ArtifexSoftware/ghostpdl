@@ -132,7 +132,7 @@ const gx_device_printer far_data gs_ibmpro_device =
 /* ------ Driver procedures ------ */
 
 /* Forward references */
-private void eps_output_run(P6(byte *, int, int, char, FILE *, int));
+private void eps_output_run(byte *, int, int, char, FILE *, int);
 
 /* Send the page to the printer. */
 #define DD 0x40				/* double density flag */
@@ -162,7 +162,7 @@ eps_print_page(gx_device_printer *pdev, FILE *prn_stream, int y_9pin_high,
 	byte *in = buf1;
 	byte *out = buf2;
 	int out_y_mult = (y_24pin ? 3 : 1);
-	int x_dpi = pdev->x_pixels_per_inch;
+	int x_dpi = (int)pdev->x_pixels_per_inch;
 	char start_graphics =
 		(y_24pin ? graphics_modes_24 : graphics_modes_9)[x_dpi / 60];
 	int first_pass = (start_graphics & DD ? 1 : 0);
@@ -405,7 +405,7 @@ eps_output_run(byte *data, int count, int y_mult,
 	fputc(033, prn_stream);
 	if ( !(start_graphics & ~3) )
 	{	
-		fputc("KLYZ"[start_graphics], prn_stream);
+		fputc("KLYZ"[(int)start_graphics], prn_stream);
 	}
 	else
 	{	

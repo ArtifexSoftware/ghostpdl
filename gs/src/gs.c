@@ -57,7 +57,7 @@ main(int argc, char *argv[])
 	    fprintf(stdout, " => code = %d\n", code);
 	    fflush(stdout);
 	    if (code < 0) {
-		gs_exit(1);
+		gs_to_exit(1);
 		return 1;
 	    }
 	}
@@ -80,7 +80,15 @@ main(int argc, char *argv[])
 	    exit_status = 255;
     }
 
-    gs_exit_with_code(exit_status, code);
+    gs_to_exit_with_code(exit_status, code);
 
+    switch (exit_status) {
+	case 0:
+	    exit_status =  exit_OK;
+	    break;
+	case 1:
+	    exit_status =  exit_FAILED;
+	    break;
+    }
     return exit_status;
 }

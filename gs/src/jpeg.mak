@@ -17,7 +17,8 @@
 #	JSRCDIR - the source directory
 #	JGENDIR - the generated intermediate file directory
 #	JOBJDIR - the object directory
-#	JVERSION - the library major version number (currently "6")
+#	JVERSION - the library major version number (currently "6",
+#	   "6b", "62" and "6a" are also supported)
 #	SHARE_JPEG - 0 to compile the library, 1 to share
 #	JPEG_NAME - if SHARE_JPEG = 1, the name of the shared library
 #
@@ -43,10 +44,11 @@
 #	ftp://ftp.cs.wisc.edu/ghost/3rdparty/
 # for more convenient access.
 #
-# If the version number, and hence the subdirectory name, changes, you
-# will probably want to change the definitions of JSRCDIR and possibly
-# JVERSION (in the platform-specific makefile, not here) to reflect this,
-# since that way you can use the IJG archive without change.
+# The platform-specific makefiles expect the jpeg source to be in a
+# directory named 'jpeg' at the top level of the source tree, as per
+# the instructions in Make.htm. If you'd prefer to use the versioned
+# directory name of the native library source, you can override this
+# by setting JSRCSDIR in the platform-specific makefile.
 #
 # NOTE: For some obscure reason (probably a bug in djtarx), if you are
 # compiling on a DesqView/X system, you should use the zip version of the
@@ -97,7 +99,7 @@ $(GLGEN)jconfig_.h : $(GLGEN)jconfig$(SHARE_JPEG).h $(MAKEFILE)
 	$(CP_) $(GLGEN)jconfig$(SHARE_JPEG).h $(GLGEN)jconfig_.h
 
 $(GLGEN)jconfig0.h : $(ECHOGS_XE) $(GLSRC)gsjconf.h $(stdpre_h) $(MAKEFILE)
-	$(EXP)$(ECHOGS_XE) -w $(GLGEN)jconfig0.h -+R $(GLSRC)stdpre.h -+R $(GLSRC)gsjconf.h
+	$(EXP)$(ECHOGS_XE) -w $(GLGEN)jconfig0.h -+R $(GLSRC)stdpn.h -+R $(GLSRC)stdpre.h -+R $(GLSRC)gsjconf.h
 	$(RM_) $(GLGEN)jconfig1.h
 
 $(GLGEN)jconfig1.h : $(ECHOGS_XE) $(JPEG_MAK)
@@ -198,8 +200,13 @@ $(JGEN)jpege.dev : $(TOP_MAKEFILES) $(JPEG_MAK) $(JGEN)jpege_$(SHARE_JPEG).dev
 $(JGEN)jpege_1.dev : $(TOP_MAKEFILES) $(JPEG_MAK) $(ECHOGS_XE)
 	$(SETMOD) $(JGEN)jpege_1 -lib $(JPEG_NAME)
 
-$(JGEN)jpege_0.dev : $(TOP_MAKEFILES) $(JPEG_MAK) $(JGEN)jpege$(JVERSION).dev
-	$(CP_) $(JGEN)jpege$(JVERSION).dev $(JGEN)jpege_0.dev
+# we actually ignore the setting of JVERSION here, which could be used
+# to substitute for jpeg[ed]6.dev to handle differences. However, the
+# build requirements for all supported versions are identical, and
+# new versions are unlikely to be different. We therefore treat all
+# subversions the same.
+$(JGEN)jpege_0.dev : $(TOP_MAKEFILES) $(JPEG_MAK) $(JGEN)jpege6.dev
+	$(CP_) $(JGEN)jpege6.dev $(JGEN)jpege_0.dev
 
 jpege6=$(JOBJ)jcapimin.$(OBJ) $(JOBJ)jcapistd.$(OBJ) $(JOBJ)jcinit.$(OBJ)
 
@@ -292,8 +299,8 @@ $(JGEN)jpegd.dev : $(TOP_MAKEFILES) $(JPEG_MAK) $(JGEN)jpegd_$(SHARE_JPEG).dev
 $(JGEN)jpegd_1.dev : $(TOP_MAKEFILES) $(JPEG_MAK) $(ECHOGS_XE)
 	$(SETMOD) $(JGEN)jpegd_1 -lib $(JPEG_NAME)
 
-$(JGEN)jpegd_0.dev : $(TOP_MAKEFILES) $(JPEG_MAK) $(JGEN)jpegd$(JVERSION).dev
-	$(CP_) $(JGEN)jpegd$(JVERSION).dev $(JGEN)jpegd_0.dev
+$(JGEN)jpegd_0.dev : $(TOP_MAKEFILES) $(JPEG_MAK) $(JGEN)jpegd6.dev
+	$(CP_) $(JGEN)jpegd6.dev $(JGEN)jpegd_0.dev
 
 jpegd6=$(JOBJ)jdapimin.$(OBJ) $(JOBJ)jdapistd.$(OBJ) $(JOBJ)jdinput.$(OBJ) $(JOBJ)jdphuff.$(OBJ)
 

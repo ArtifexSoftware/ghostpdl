@@ -164,12 +164,13 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
 	const byte *row;
 	gs_memory_t *mem = dev->memory;
 	int bpp = dev->color_info.depth;
+	int ncomps = dev->color_info.num_components;
 	uint in_size = gx_device_raster(dev, false);
 	byte *lin;
 	uint out_size;
 	byte *lout;
 	int code = 0;
-	gx_color_value color_rgb[3];
+	gx_color_value color_cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
 	int ry;
 
 	fit_copy(dev, data, data_x, raster, id, x, y, width, height);
@@ -181,7 +182,7 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
 	    code = gs_note_error(gs_error_VMerror);
 	    goto out;
 	}
-	(*dev_proc(dev, map_color_rgb)) (dev, color, color_rgb);
+	(*dev_proc(dev, decode_color)) (dev, color, color_cv);
 	for (ry = y; ry < y + height; row += raster, ++ry) {
 	    byte *line;
 	    int sx, rx;
@@ -210,13 +211,25 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
 			    const byte *src = line + (bit >> 3);
 
 			    previous =
-				(*src >> (8 - (bit + bpp))) &
+				(*src >> (8 - ((bit & 7) + bpp))) &
 				((1 << bpp) - 1);
 			} else {
 			    const byte *src = line + (rx * (bpp >> 3));
 
 			    previous = 0;
 			    switch (bpp >> 3) {
+				case 8:
+				    previous += (gx_color_index) * src++ 
+					<< sample_bound_shift(previous, 56);
+				case 7:
+				    previous += (gx_color_index) * src++
+					<< sample_bound_shift(previous, 48);
+				case 6:
+				    previous += (gx_color_index) * src++
+					<< sample_bound_shift(previous, 40);
+				case 5:
+				    previous += (gx_color_index) * src++
+					<< sample_bound_shift(previous, 32);
 				case 4:
 				    previous += (gx_color_index) * src++ << 24;
 				case 3:
@@ -230,10 +243,11 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
 		    }
 		    if (alpha == 0) {	/* Just write the old color. */
 			composite = previous;
-		    } else {	/* Blend RGB values. */
-			gx_color_value rgb[3];
+		    } else {	/* Blend values. */
+			gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
+			int i;
 
-			(*dev_proc(dev, map_color_rgb)) (dev, previous, rgb);
+			(*dev_proc(dev, decode_color)) (dev, previous, cv);
 #if arch_ints_are_short
 #  define b_int long
 #else
@@ -241,14 +255,12 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
 #endif
 #define make_shade(old, clr, alpha, amax) \
   (old) + (((b_int)(clr) - (b_int)(old)) * (alpha) / (amax))
-			rgb[0] = make_shade(rgb[0], color_rgb[0], alpha, 15);
-			rgb[1] = make_shade(rgb[1], color_rgb[1], alpha, 15);
-			rgb[2] = make_shade(rgb[2], color_rgb[2], alpha, 15);
+			for (i=0; i<ncomps; i++)
+			    cv[i] = make_shade(cv[i], color_cv[i], alpha, 15);
 #undef b_int
 #undef make_shade
 			composite =
-			    (*dev_proc(dev, map_rgb_color)) (dev, rgb[0],
-							     rgb[1], rgb[2]);
+			    (*dev_proc(dev, encode_color)) (dev, cv);
 			if (composite == gx_no_color_index) {	/* The device can't represent this color. */
 			    /* Move the alpha value towards 0 or 1. */
 			    if (alpha == 7)	/* move 1/2 towards 1 */
@@ -288,19 +300,7 @@ gx_default_fill_mask(gx_device * orig_dev,
 {
     gx_device *dev;
     gx_device_clip cdev;
-    gx_color_index colors[2];
-    gx_strip_bitmap *tile;
 
-    if (gx_dc_is_pure(pdcolor)) {
-	tile = 0;
-	colors[0] = gx_no_color_index;
-	colors[1] = gx_dc_pure_color(pdcolor);
-    } else if (gx_dc_is_binary_halftone(pdcolor)) {
-	tile = gx_dc_binary_tile(pdcolor);
-	colors[0] = gx_dc_binary_color0(pdcolor);
-	colors[1] = gx_dc_binary_color1(pdcolor);
-    } else
-	return_error(gs_error_unknownerror);	/* not implemented */
     if (pcpath != 0) {
 	gx_make_clip_path_device(&cdev, pcpath);
 	cdev.target = orig_dev;
@@ -311,88 +311,11 @@ gx_default_fill_mask(gx_device * orig_dev,
     if (depth > 1) {
 	/****** CAN'T DO ROP OR HALFTONE WITH ALPHA ******/
 	return (*dev_proc(dev, copy_alpha))
-	    (dev, data, dx, raster, id, x, y, w, h, colors[1], depth);
-    }
-    if (lop != lop_default) {
-	gx_color_index scolors[2];
-
-	scolors[0] = gx_device_white(dev);
-	scolors[1] = gx_device_black(dev);
-	if (tile == 0)
-	    colors[0] = colors[1];	/* pure color */
-	/*
-	 * We want to write only where the mask is a 1, so enable source
-	 * transparency.  We have to include S in the operation,
-	 * otherwise S_transparent will be ignored.
-	 */
-	return (*dev_proc(dev, strip_copy_rop))
-	    (dev, data, dx, raster, id, scolors, tile, colors,
-	     x, y, w, h,
-	     gx_dc_phase(pdcolor).x, gx_dc_phase(pdcolor).y,
-	     lop | (rop3_S | lop_S_transparent));
-    }
-    if (tile == 0) {
-	return (*dev_proc(dev, copy_mono))
 	    (dev, data, dx, raster, id, x, y, w, h,
-	     gx_no_color_index, colors[1]);
-    }
-    /*
-     * Use the same approach as the default copy_mono (above).  We
-     * should really clip to the intersection of the bounding boxes of
-     * the device and the clipping path, but it's too much work.
-     */
-    fit_copy(orig_dev, data, dx, raster, id, x, y, w, h);
-    {
-	dev_proc_strip_tile_rectangle((*tile_proc)) =
-	    dev_proc(dev, strip_tile_rectangle);
-	const byte *row = data + (dx >> 3);
-	int dx_bit = dx & 7;
-	int wdx = w + dx_bit;
-	int iy;
-
-	for (row = data, iy = 0; iy < h; row += raster, iy++) {
-	    int ix;
-
-	    for (ix = dx_bit; ix < wdx;) {
-		int i0;
-		uint b;
-		uint len;
-		int code;
-
-		/* Skip 0-bits. */
-		b = row[ix >> 3];
-		len = byte_bit_run_length[ix & 7][b ^ 0xff];
-		if (len) {
-		    ix += ((len - 1) & 7) + 1;
-		    continue;
-		}
-		/* Scan 1-bits. */
-		i0 = ix;
-		for (;;) {
-		    b = row[ix >> 3];
-		    len = byte_bit_run_length[ix & 7][b];
-		    if (!len)
-			break;
-		    ix += ((len - 1) & 7) + 1;
-		    if (ix >= wdx) {
-			ix = wdx;
-			break;
-		    }
-		    if (len < 8)
-			break;
-		}
-		/* Now color the run from i0 to ix. */
-		code = (*tile_proc)
-		    (dev, tile, i0 - dx_bit + x, iy + y, ix - i0, 1,
-		     colors[0], colors[1],
-		     gx_dc_phase(pdcolor).x, gx_dc_phase(pdcolor).y);
-		if (code < 0)
-		    return code;
-#undef row_bit
-	    }
-	}
-    }
-    return 0;
+	     gx_dc_pure_color(pdcolor), depth);
+    } else
+        return pdcolor->type->fill_masked(pdcolor, data, dx, raster, id,
+				          x, y, w, h, dev, lop, false);
 }
 
 /* Default implementation of strip_tile_rectangle */
@@ -472,7 +395,7 @@ gx_default_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 	int code;
 
 	if (color0 == gx_no_color_index && color1 == gx_no_color_index)
-	    proc_color = dev_proc(dev, copy_color);
+	    proc_color = dev_proc(dev, copy_color), proc_mono = 0;
 	else
 	    proc_color = 0, proc_mono = dev_proc(dev, copy_mono);
 
@@ -501,7 +424,7 @@ gx_default_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 		int ex = x + w;
 		int fex = ex - width;
 		int cx = x + icw;
-		gs_id id = (h == height ? tile_id : gs_no_bitmap_id);
+		ulong id = (h == height ? tile_id : gs_no_bitmap_id);
 
 		copy_tile(irx, x, y, icw, h, gs_no_bitmap_id);
 		while (cx <= fex) {
@@ -517,7 +440,7 @@ gx_default_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 	    int ey = y + h;
 	    int fey = ey - height;
 	    int cy = y + ch;
-	    gs_id id = (w == width ? tile_id : gs_no_bitmap_id);
+	    ulong id = (w == width ? tile_id : gs_no_bitmap_id);
 
 	    copy_tile(irx, x, y, w, ch, (ch == height ? id : gs_no_bitmap_id));
 	    row = tiles->data;
@@ -537,7 +460,7 @@ gx_default_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 	    int cx, cy;
 
 	    for (cy = y;;) {
-		gs_id id = (ch == height ? tile_id : gs_no_bitmap_id);
+		ulong id = (ch == height ? tile_id : gs_no_bitmap_id);
 
 		if (icw >= w) {
 		    copy_tile(irx, x, cy, w, ch,

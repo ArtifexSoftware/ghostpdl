@@ -42,6 +42,7 @@
 
 
 static const char szImgName2[] = "Ghostscript Image";
+static const char szTrcName2[] = "Ghostscript Graphical Trace";
 
 /* Forward references */
 LRESULT CALLBACK WndImg2Proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
@@ -375,6 +376,7 @@ create_window(IMAGE *img)
     HBRUSH hbrush;
     LOGBRUSH lb;
     char winposbuf[256];
+    char window_title[256];
     int len = sizeof(winposbuf);
     int x, y, cx, cy;
 
@@ -394,7 +396,7 @@ create_window(IMAGE *img)
     img->nVscrollPos = img->nVscrollMax = 0;
     img->nHscrollPos = img->nHscrollMax = 0;
     img->x = img->y = img->cx = img->cy = CW_USEDEFAULT;
-    if (win_get_reg_value("Image", winposbuf, &len) == 0) {
+    if (win_get_reg_value((img->device != NULL ? "Image" : "Tracer"), winposbuf, &len) == 0) {
 	if (sscanf(winposbuf, "%d %d %d %d", &x, &y, &cx, &cy) == 4) {
 	    img->x = x;
 	    img->y = y;
@@ -402,13 +404,44 @@ create_window(IMAGE *img)
 	    img->cy = cy;
 	}
     }
+    strcpy(window_title, (img->device != NULL ? (LPSTR)szImgName2 : (LPSTR)szTrcName2));
+    {  /*
+        *   This section is for debug purpose only.
+	*   It allows to replace window title so that user can identify window
+	*   when multiple instances of the application run in same time.
+	*   Create gs\bin\gswin32.ini or gs\bin\gswin32c.ini and
+	*   put an identifier to there like this :
+	*
+	*	[Window]
+	*	Title=Current Revision
+	*
+	*   It is useful to compare images generated with different revisions.
+	*/
+        char ini_path[MAX_PATH];
+	DWORD ini_path_length;
 
+	ini_path_length = GetModuleFileName(NULL, ini_path, sizeof(ini_path));
+	if (ini_path_length > 0) {
+	    int i = ini_path_length - 1;
+	    for (; i>=0; i--)
+		if(ini_path[i] == '.')
+		    break;
+	    if (i < sizeof(ini_path) - 4) {
+		strcpy(ini_path + i, ".ini");
+		GetPrivateProfileString("Window", "Title", 
+			(img->device != NULL ? (LPSTR)szImgName2 : (LPSTR)szTrcName2), 
+ 			window_title, sizeof(window_title), ini_path);
+	    }
+	}
+    }
     /* create window */
-    img->hwnd = CreateWindow(szImgName2, (LPSTR)szImgName2,
+    img->hwnd = CreateWindow(szImgName2, window_title,
 	      WS_OVERLAPPEDWINDOW,
 	      img->x, img->y, img->cx, img->cy, 
 	      NULL, NULL, GetModuleHandle(NULL), (void *)img);
-    ShowWindow(img->hwnd, SW_SHOWMINNOACTIVE);
+    if (img->device == NULL)
+        MoveWindow(img->hwnd, img->x, img->y, img->cx, img->cy, FALSE);
+    ShowWindow(img->hwnd, (img->device != NULL ? SW_SHOWMINNOACTIVE : SW_SHOW));
 
     /* modify the menu to have the new items we want */
     sysmenu = GetSystemMenu(img->hwnd, 0);	/* get the sysmenu */
@@ -509,11 +542,15 @@ image_color(unsigned int format, int index,
 		    *r = *g = *b = (index ? 0 : 255);
 		    break;
 		case DISPLAY_DEPTH_4:
-		    {
-		    int one = index & 8 ? 255 : 128;
-		    *r = (index & 4 ? one : 0);
-		    *g = (index & 2 ? one : 0);
-		    *b = (index & 1 ? one : 0);
+		    if (index == 7)
+			*r = *g = *b = 170;
+		    else if (index == 8)
+			*r = *g = *b = 85;
+		    else {
+			int one = index & 8 ? 255 : 128;
+			*r = (index & 4 ? one : 0);
+			*g = (index & 2 ? one : 0);
+			*b = (index & 1 ? one : 0);
 		    }
 		    break;
 		case DISPLAY_DEPTH_8:
@@ -1199,7 +1236,7 @@ WndImg2Proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		char winposbuf[64];
 		sprintf(winposbuf, "%d %d %d %d", img->x, img->y, 
 		    img->cx, img->cy);
-		win_set_reg_value("Image", winposbuf);
+		win_set_reg_value((img->device != NULL ? "Image" : "Tracer"), winposbuf);
 	    }
 	    DragAcceptFiles(hwnd, FALSE);
 	    break;
@@ -1227,6 +1264,9 @@ draw(IMAGE *img, HDC hdc, int dx, int dy, int wx, int wy,
     long ny;
     unsigned char *bits;
     BOOL directcopy = FALSE;
+
+    if (img->device == NULL)
+        return;
 
     memset(&bmi.h, 0, sizeof(bmi.h));
     

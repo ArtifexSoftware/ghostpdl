@@ -31,8 +31,8 @@
 /* <file> token <obj> -true- */
 /* <string> token <post> <obj> -true- */
 /* <string|file> token -false- */
-private int ztoken_continue(P1(i_ctx_t *));
-private int token_continue(P4(i_ctx_t *, stream *, scanner_state *, bool));
+private int ztoken_continue(i_ctx_t *);
+private int token_continue(i_ctx_t *, stream *, scanner_state *, bool);
 int
 ztoken(i_ctx_t *i_ctx_p)
 {
@@ -145,8 +145,8 @@ again:
 /* Read a token and do what the interpreter would do with it. */
 /* This is different from token + exec because literal procedures */
 /* are not executed (although binary object sequences ARE executed). */
-int ztokenexec_continue(P1(i_ctx_t *));	/* export for interpreter */
-private int tokenexec_continue(P4(i_ctx_t *, stream *, scanner_state *, bool));
+int ztokenexec_continue(i_ctx_t *);	/* export for interpreter */
+private int tokenexec_continue(i_ctx_t *, stream *, scanner_state *, bool);
 int
 ztokenexec(i_ctx_t *i_ctx_p)
 {
@@ -334,9 +334,10 @@ ztoken_scanner_options(const ref *upref, int old_options)
 	const char *pname;
 	int option;
     } named_scanner_option_t;
-    static const named_scanner_option_t named_options[2] = {
+    static const named_scanner_option_t named_options[3] = {
 	{"ProcessComment", SCAN_PROCESS_COMMENTS},
-	{"ProcessDSCComment", SCAN_PROCESS_DSC_COMMENTS}
+	{"ProcessDSCComment", SCAN_PROCESS_DSC_COMMENTS},
+	{"PDFScanRules", SCAN_PDF_RULES}
     };
     int options = old_options;
     int i;

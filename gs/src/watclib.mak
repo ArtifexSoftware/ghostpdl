@@ -19,7 +19,7 @@ libdefault: $(GLOBJ)gslib.exe
 AROOTDIR=c:/gs
 GSROOTDIR=$(AROOTDIR)/gs$(GS_DOT_VERSION)
 GS_DOCDIR=$(GSROOTDIR)/doc
-GS_LIB_DEFAULT=$(GSROOTDIR)/lib\;$(AROOTDIR)/fonts
+GS_LIB_DEFAULT=$(GSROOTDIR)/lib\;$(GSROOTDIR)/resource\;$(AROOTDIR)/fonts
 SEARCH_HERE_FIRST=1
 GS_INIT=gs_init.ps
 
@@ -64,11 +64,18 @@ JVERSION=6
 PSRCDIR=libpng
 !endif
 !ifndef PVERSION
-PVERSION=10012
+PVERSION=10204
 !endif
 
 !ifndef ZSRCDIR
 ZSRCDIR=zlib
+!endif
+
+# Define the jbig2dec library source location.
+# See jbig2.mak for more information.
+
+!ifndef JBIG2SRCDIR
+JBIG2SRCDIR=jbig2dec
 !endif
 
 # Define the directory where the icclib source are stored.
@@ -76,6 +83,15 @@ ZSRCDIR=zlib
 
 !ifndef ICCSRCDIR
 ICCSRCDIR=icclib
+!endif
+
+# Define the directory where the ijs source is stored,
+# and the process forking method to use for the server.
+# See ijs.mak for more information.
+
+!ifndef IJSSRCDIR
+IJSSRCDIR=ijs
+IJSEXECTYPE=win
 !endif
 
 CFLAGS=
@@ -105,7 +121,7 @@ PLATOPT=
 !include $(GLSRCDIR)\wccommon.mak
 
 !ifndef FEATURE_DEVS
-FEATURE_DEVS=$(GLD)patlib.dev $(GLD)path1lib.dev $(GLD)hsblib.dev
+FEATURE_DEVS=$(GLD)patlib.dev $(GLD)path1lib.dev
 !endif
 !ifndef DEVICE_DEVS
 DEVICE_DEVS=$(DD)vga.dev

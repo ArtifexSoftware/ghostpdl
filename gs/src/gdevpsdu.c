@@ -15,12 +15,9 @@
 #include "stdio_.h"		/* for FILE for jpeglib.h */
 #include "jpeglib_.h"		/* for sdct.h */
 #include "memory_.h"
-#include <stdlib.h>		/* for qsort */
 #include "gx.h"
 #include "gserrors.h"
 #include "gdevpsdf.h"
-#include "gxfont.h"
-#include "scanchar.h"
 #include "strimpl.h"
 #include "sa85x.h"
 #include "scfx.h"
@@ -28,6 +25,7 @@
 #include "sjpeg.h"
 #include "spprint.h"
 #include "sstring.h"
+#include "gsovrc.h"
 
 /* Structure descriptors */
 public_st_device_psdf();
@@ -266,6 +264,7 @@ psdf_begin_binary(gx_device_psdf * pdev, psdf_binary_writer * pbw)
 
     pbw->target = pdev->strm;
     pbw->dev = pdev;
+    pbw->strm = 0;		/* for GC in case of failure */
     /* If not binary, set up the encoding stream. */
     if (!pdev->binary_ok) {
 #define BUF_SIZE 100		/* arbitrary */
@@ -284,9 +283,8 @@ psdf_begin_binary(gx_device_psdf * pdev, psdf_binary_writer * pbw)
 	ss->template = &s_A85E_template;
 	s_init_filter(s, (stream_state *)ss, buf, BUF_SIZE, pdev->strm);
 #undef BUF_SIZE
-	pbw->strm = pbw->A85E = s;
+	pbw->strm = s;
     } else {
-	pbw->A85E = 0;		/* for GC */
 	pbw->strm = pdev->strm;
     }
     return 0;
@@ -402,9 +400,51 @@ psdf_CFE_binary(psdf_binary_writer * pbw, int w, int h, bool invert)
 int
 psdf_end_binary(psdf_binary_writer * pbw)
 {
-    int code = s_close_filters(&pbw->strm, pbw->target);
+    int status = s_close_filters(&pbw->strm, pbw->target);
 
-    /* s_close_filters freed the A85E stream, if any. */
-    pbw->A85E = 0;		/* for GC */
-    return code;
+    return (status >= 0 ? 0 : gs_note_error(gs_error_ioerror));
+}
+
+/* ---------------- Overprint, Get Bits ---------------- */
+
+/*
+ * High level devices cannot perform get_bits or get_bits_rectangle
+ * operations, for obvious reasons.
+ */
+int
+psdf_get_bits(gx_device * dev, int y, byte * data, byte ** actual_data)
+{
+    return_error(gs_error_unregistered);
+}
+
+int
+psdf_get_bits_rectangle(
+    gx_device *             dev,
+    const gs_int_rect *     prect,
+    gs_get_bits_params_t *  params,
+    gs_int_rect **          unread )
+{
+    return_error(gs_error_unregistered);
+}
+
+/*
+ * Create compositor procedure for PostScript/PDF writer. Since these
+ * devices directly support overprint (and have access to the imager
+ * state), no compositor is required for overprint support. Hence, this
+ * routine just recognizes and discards invocations of the overprint
+ * compositor.
+ */
+int
+psdf_create_compositor(
+    gx_device *             dev,
+    gx_device **            pcdev,
+    const gs_composite_t *  pct,
+    const gs_imager_state * pis,
+    gs_memory_t *           mem )
+{
+    if (gs_is_overprint_compositor(pct)) {
+        *pcdev = dev;
+        return 0;
+    } else
+        return gx_default_create_compositor(dev, pcdev, pct, pis, mem);
 }

@@ -19,13 +19,12 @@
 #include "gp.h"
 #include <signal.h>
 #include <stdlib.h>		/* for exit */
-#include <sys/param.h>		/* for MAXPATHLEN */
 
 int interrupted;
 
 /* Forward declarations */
-private void signalhandler(P1(int));
-private FILE *rbfopen(P2(char *, char *));
+private void signalhandler(int);
+private FILE *rbfopen(char *, char *);
 
 /* Do platform-dependent initialization */
 void
@@ -44,6 +43,7 @@ gp_exit(int exit_status, int code)
 void
 gp_do_exit(int exit_status)
 {
+    exit(exit_status);
 }
 
 private void

@@ -19,11 +19,15 @@
 #include "gsstype.h"
 
 /* Define the structure for CIDSystemInfo. */
-typedef struct gs_cid_system_info_s {
+#ifndef gs_cid_system_info_DEFINED
+#  define gs_cid_system_info_DEFINED
+typedef struct gs_cid_system_info_s gs_cid_system_info_t;
+#endif
+struct gs_cid_system_info_s {
     gs_const_string Registry;
     gs_const_string Ordering;
     int Supplement;
-} gs_cid_system_info_t;
+};
 extern_st(st_cid_system_info);
 extern_st(st_cid_system_info_element);
 #define public_st_cid_system_info() /* in gsfcid.c */\
@@ -40,7 +44,7 @@ extern_st(st_cid_system_info_element);
  * The CIDSystemInfo of a CMap may be null.  We represent this by setting
  * Registry and Ordering to empty strings, and Supplement to 0.
  */
-void cid_system_info_set_null(P1(gs_cid_system_info_t *));
-bool cid_system_info_is_null(P1(const gs_cid_system_info_t *));
+void cid_system_info_set_null(gs_cid_system_info_t *);
+bool cid_system_info_is_null(const gs_cid_system_info_t *);
 
 #endif /* gxcid_INCLUDED */

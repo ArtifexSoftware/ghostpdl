@@ -250,7 +250,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
 
 		/* load the font file into memory.  NOTE: this closes the file - argh... */
 		if ( pl_load_tt_font(in, pdir, mem,
-				     gs_next_id(), &plfont,
+				     gs_next_ids(1), &plfont,
 				     buffer) < 0 )  {
 		    /* vm error but we continue anyway */
 		    dprintf1("Failed loading font %s\n", tmp_path_copy);

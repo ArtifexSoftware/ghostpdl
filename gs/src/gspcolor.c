@@ -17,7 +17,7 @@
 #include "gserrors.h"
 #include "gsrop.h"
 #include "gsstruct.h"
-#include "gsutil.h"		/* for gs_next_id */
+#include "gsutil.h"		/* for gs_next_ids */
 #include "gxarith.h"
 #include "gxfixed.h"
 #include "gxmatrix.h"
@@ -48,16 +48,18 @@ private cs_proc_remap_color(gx_remap_Pattern);
 private cs_proc_init_color(gx_init_Pattern);
 private cs_proc_restrict_color(gx_restrict_Pattern);
 private cs_proc_install_cspace(gx_install_Pattern);
+private cs_proc_set_overprint(gx_set_overprint_Pattern);
 private cs_proc_adjust_cspace_count(gx_adjust_cspace_Pattern);
 private cs_proc_adjust_color_count(gx_adjust_color_Pattern);
 const gs_color_space_type gs_color_space_type_Pattern = {
     gs_color_space_index_Pattern, false, false,
     &st_color_space_Pattern, gx_num_components_Pattern,
-    gx_base_space_Pattern, gx_cspace_not_equal,
+    gx_base_space_Pattern,
     gx_init_Pattern, gx_restrict_Pattern,
     gx_no_concrete_space,
     gx_no_concretize_color, NULL,
     gx_remap_Pattern, gx_install_Pattern,
+    gx_set_overprint_Pattern,
     gx_adjust_cspace_Pattern, gx_adjust_color_Pattern
 };
 
@@ -109,6 +111,7 @@ gs_make_pattern_common(gs_client_color *pcc,
     gs_newpath(saved);
     pinst->saved = saved;
     pcc->pattern = pinst;
+    pcc->pattern->pattern_id = gs_next_ids(1);
     return 0;
 }
 
@@ -152,8 +155,6 @@ gs_setpatternspace(gs_state * pgs)
 	    *(gs_paint_color_space *) pgs->color_space;
 	cs.params.pattern.has_base_space = true;
 	*pgs->color_space = cs;
-	/* Don't change orig_base_cspace_index. */
-	pgs->orig_cspace_index = gs_color_space_index_Pattern;
 	cs_full_init_color(pgs->ccolor, &cs);
 	gx_unset_dev_color(pgs);
     }
@@ -264,6 +265,16 @@ gx_install_Pattern(const gs_color_space * pcs, gs_state * pgs)
 	return 0;
     return (*pcs->params.pattern.base_space.type->install_cspace)
 	((const gs_color_space *) & pcs->params.pattern.base_space, pgs);
+}
+
+/*
+ * Set the overprint compositor for a Pattern color space. This does nothing;
+ * for patterns the overprint compositor is set at set_device_color time.
+*/
+private int
+gx_set_overprint_Pattern(const gs_color_space * pcs, gs_state * pgs)
+{
+    return 0;
 }
 
 /* Adjust the reference counts for Pattern color spaces or colors. */

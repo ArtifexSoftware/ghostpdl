@@ -10,8 +10,8 @@
    contact Artifex Software, Inc., 101 Lucas Valley Road #110,
    San Rafael, CA  94903, (415)492-9861, for further information. */
 
-/*$RCSfile$ $Revision$ */
 /* idisp.c */
+/* $Id$ */
 
 /*
  * This allows the interpreter to set the callback structure 
@@ -89,8 +89,10 @@ display_set_callback(gs_main_instance *minst, display_callback *callback)
 
 	if (was_open) {
 	    code = gs_opendevice(dev);
-	    if (code < 0)
+	    if (code < 0) {
+		dprintf("**** Unable to open the display device, quitting.\n");
 		return_error(code);
+	    }
 	}
 	pop(1);	/* device */
     }

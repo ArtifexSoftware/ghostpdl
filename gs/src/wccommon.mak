@@ -36,15 +36,16 @@
 
 .EXTENSIONS: .be .z
 
-# Define the ANSI-to-K&R dependency.  Watcom C accepts ANSI syntax.
+# Define the auxiliary program dependency. We don't use this.
 
 AK=
 
-# Note that built-in libpng and zlib aren't available.
+# Note that built-in third-party libraries aren't available.
 
 SHARE_JPEG=0
 SHARE_LIBPNG=0
 SHARE_ZLIB=0
+SHARE_JBIG2=0
 
 # Define the extensions for command, object, and executable files.
 

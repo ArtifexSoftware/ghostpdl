@@ -722,7 +722,7 @@ pxBeginRastPattern(px_args_t *par, px_state_t *pxs)
 	pattern->palette.data = pdata;
 	pattern->palette.size = psize;
 	pattern->data = data;
-	pattern->id = gs_next_id();
+	pattern->id = gs_next_ids(1);
 	pxenum->pattern = pattern;
 	pxs->pattern_enum = pxenum;
 	return 0;

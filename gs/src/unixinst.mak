@@ -25,42 +25,44 @@ install: install-exec install-scripts install-data
 # rules, just in case bindir or scriptdir is a subdirectory of any of these.
 
 install-exec: $(GS_XE)
-	-mkdir $(datadir)
-	-mkdir $(gsdir)
-	-mkdir $(gsdatadir)
-	-mkdir $(bindir)
+	-mkdir -p $(datadir)
+	-mkdir -p $(gsdir)
+	-mkdir -p $(gsdatadir)
+	-mkdir -p $(bindir)
 	$(INSTALL_PROGRAM) $(GS_XE) $(bindir)/$(GS)
 
 install-scripts: $(PSLIBDIR)/gsnd
-	-mkdir $(datadir)
-	-mkdir $(gsdir)
-	-mkdir $(gsdatadir)
-	-mkdir $(scriptdir)
+	-mkdir -p $(datadir)
+	-mkdir -p $(gsdir)
+	-mkdir -p $(gsdatadir)
+	-mkdir -p $(scriptdir)
 	$(SH) -c 'for f in \
 gsbj gsdj gsdj500 gslj gslp gsnd \
 bdftops dvipdf eps2eps font2c \
 pdf2dsc pdf2ps pdfopt pf2afm pfbtopfa printafm \
-ps2ascii ps2epsi ps2pdf ps2pdf12 ps2pdf13 ps2pdfwr ps2ps wftopfa \
+ps2ascii ps2epsi ps2pdf ps2pdf12 ps2pdf13 ps2pdf14 ps2pdfwr ps2ps wftopfa \
 fixmswrd.pl lprsetup.sh pj-gs.sh pv.sh sysvlp.sh unix-lpr.sh ;\
 	do if ( test -f $(PSLIBDIR)/$$f ); then $(INSTALL_PROGRAM) $(PSLIBDIR)/$$f $(scriptdir); fi;\
 	done'
 
+PSRESDIR=$(PSLIBDIR)/../Resource
 PSDOCDIR=$(PSLIBDIR)/../doc
 PSEXDIR=$(PSLIBDIR)/../examples
 PSMANDIR=$(PSLIBDIR)/../man
 
-install-data: install-libdata install-doc install-man install-examples
+install-data: install-libdata install-resdata install-doc install-man install-examples
 
 # There's no point in providing a complete dependency list: we include
 # one file from each subdirectory just as a sanity check.
 
 install-libdata: 
-	-mkdir $(datadir)
-	-mkdir $(gsdir)
-	-mkdir $(gsdatadir)
-	-mkdir $(gsdatadir)/lib
+	-mkdir -p $(datadir)
+	-mkdir -p $(gsdir)
+	-mkdir -p $(gsdatadir)
+	-mkdir -p $(gsdatadir)/lib
 	$(SH) -c 'for f in \
-Fontmap Fontmap.GS \
+Fontmap Fontmap.GS cidfmap \
+FAPIcidfmap FAPIconfig FAPIfontmap xlatmap \
 ht_ccsto.ps \
 acctest.ps addxchar.ps align.ps bdftops.ps \
 caption.ps cid2code.ps decrypt.ps docie.ps \
@@ -83,6 +85,20 @@ pdf2dsc.ps pdfopt.ps ;\
 	do $(INSTALL_DATA) $$f $(gsdatadir)/lib ;\
 	done'
 
+# install the default resource files
+RES_CATEGORIES=CMap Decoding
+install-resdata: $(PSRESDIR)/Decoding/Unicode
+	-mkdir -p $(datadir)
+	-mkdir -p $(gsdir)
+	-mkdir -p $(gsdatadir)/Resource
+	$(SH) -c 'for dir in $(RES_CATEGORIES); do \
+	  rdir=$(gsdatadir)/Resource/$$dir ; \
+	  test -d $$rdir || mkdir -p $$rdir ; \
+	  for file in $(PSRESDIR)/$$dir/*; do \
+	    if test -f $$file; then $(INSTALL_DATA) $$file $$rdir ; fi \
+	  done \
+	done'
+
 # install html documentation
 DOC_PAGES=PUBLIC README index.html gs.css \
 	   API.htm Bug-form.htm Bug-info.htm \
@@ -97,7 +113,7 @@ DOC_PAGES=PUBLIC README index.html gs.css \
 	   Psfiles.htm Public.htm Readme.htm Release.htm \
 	   Source.htm Tester.htm Unix-lpr.htm Use.htm Xfonts.htm
 install-doc: $(PSDOCDIR)/News.htm
-	-mkdir $(docdir)
+	-mkdir -p $(docdir)
 	$(SH) -c 'for f in $(DOC_PAGES) ;\
 	do if ( test -f $(PSDOCDIR)/$$f ); then $(INSTALL_DATA) $(PSDOCDIR)/$$f $(docdir); fi;\
 	done'
@@ -108,7 +124,7 @@ MAN1_LINKS_PS2PS=eps2eps
 MAN1_LINKS_PS2PDF=ps2pdf12 ps2pdf13
 MAN1_LINKS_GSLP=gsbj gsdj gsdj500 gslj
 install-man: $(PSMANDIR)/gs.1
-	$(SH) -c 'test -d $(mandir) || mkdir $(mandir)'
+	$(SH) -c 'test -d $(mandir) || mkdir -p $(mandir)'
 	$(SH) -c 'for d in $(MAN_LCDIRS) ;\
 	do man1dir=$(mandir)/$$d/man$(man1ext) ;\
 	  ( test -d $$man1dir || mkdir -p $$man1dir ) ;\
@@ -116,31 +132,31 @@ install-man: $(PSMANDIR)/gs.1
 	    do $(INSTALL_DATA) $$f $$man1dir ;\
 	    if ( test -f $$man1dir/ps2ps.$(man1ext) ) ;\
 	      then for f in $(MAN1_LINKS_PS2PS) ;\
-	        do rm -f $$man1dir/$$f.$(man1ext) ;\
-		ln -s $$man1dir/ps2ps.$(man1ext) $$man1dir/$$f.$(man1ext) ;\
+	        do ( cd $$man1dir; rm -f $$f.$(man1ext) ;\
+			  ln -s ps2ps.$(man1ext) $$f.$(man1ext) ) ;\
 	      done ;\
 	    fi ;\
 	    if ( test -f $$man1dir/ps2pdf.$(man1ext) ) ;\
 	      then for f in $(MAN1_LINKS_PS2PDF) ;\
-	        do rm -f $$man1dir/$$f.$(man1ext) ;\
-	        ln -s $$man1dir/ps2pdf.$(man1ext) $$man1dir/$$f.$(man1ext) ;\
- 	      done ;\
+	        do ( cd $$man1dir; rm -f $$f.$(man1ext) ;\
+			  ln -s ps2pdf.$(man1ext) $$f.$(man1ext) ) ;\
+	      done ;\
 	    fi ;\
-	    if ( test -f $$man1dir/gslp.$(man1ext) ) ;\
+	    if ( test -f $$man1dir/ps2ps.$(man1ext) ) ;\
 	      then for f in $(MAN1_LINKS_GSLP) ;\
-	        do rm -f $$man1dir/$$f.$(man1ext) ;\
-	        ln -s $$man1dir/gslp.$(man1ext) $$man1dir/$$f.$(man1ext) ;\
- 	      done ;\
- 	    fi ;\
+	        do ( cd $$man1dir; rm -f $$f.$(man1ext) ;\
+			  ln -s gslp.$(man1ext) $$f.$(man1ext) ) ;\
+	      done ;\
+	    fi ;\
 	  done ;\
 	done'
 
 # install the example files
 install-examples:
-	-mkdir $(exdir)
+	-mkdir -p $(exdir)
 	for f in \
-alphabet.ps chess.ps cheq.ps colorcir.ps doretree.ps escher.ps \
-golfer.ps grayalph.ps snowflak.ps tiger.ps vasarely.ps waterfal.ps \
+alphabet.ps chess.ps colorcir.ps doretree.ps escher.ps \
+golfer.eps grayalph.ps snowflak.ps tiger.eps vasarely.ps waterfal.ps \
 ridt91.eps ;\
 	do $(INSTALL_DATA) $(PSEXDIR)/$$f $(exdir) ;\
 	done

@@ -305,7 +305,7 @@ gs_points_bbox(const gs_point pts[4], gs_rect * pbox)
 private int
 bbox_transform_either_only(const gs_rect * pbox_in, const gs_matrix * pmat,
 			   gs_point pts[4],
-     int (*point_xform) (P4(floatp, floatp, const gs_matrix *, gs_point *)))
+     int (*point_xform) (floatp, floatp, const gs_matrix *, gs_point *))
 {
     int code;
 
@@ -321,7 +321,7 @@ bbox_transform_either_only(const gs_rect * pbox_in, const gs_matrix * pmat,
 private int
 bbox_transform_either(const gs_rect * pbox_in, const gs_matrix * pmat,
 		      gs_rect * pbox_out,
-     int (*point_xform) (P4(floatp, floatp, const gs_matrix *, gs_point *)))
+     int (*point_xform) (floatp, floatp, const gs_matrix *, gs_point *))
 {
     int code;
 
@@ -411,13 +411,15 @@ gs_point_transform2fixed(const gs_matrix_fixed * pmat,
 	    if ((code = CHECK_DFMUL2FIXED_VARS(t, x, pmat->xx, xtemp)) < 0)
 		return code;
 	    FINISH_DFMUL2FIXED_VARS(t, xtemp);
-	    px += t;		/* should check for overflow */
+	    if ((code = CHECK_SET_FIXED_SUM(px, px, t)) < 0)
+	        return code;
 	}
 	if (!is_fzero(pmat->yy)) {
 	    if ((code = CHECK_DFMUL2FIXED_VARS(t, y, pmat->yy, ytemp)) < 0)
 		return code;
 	    FINISH_DFMUL2FIXED_VARS(t, ytemp);
-	    py += t;		/* should check for overflow */
+	    if ((code = CHECK_SET_FIXED_SUM(py, py, t)) < 0)
+	        return code;
 	}
     } else {
 	if ((code = CHECK_DFMUL2FIXED_VARS(px, x, pmat->xx, xtemp)) < 0 ||
@@ -430,11 +432,13 @@ gs_point_transform2fixed(const gs_matrix_fixed * pmat,
 	    if ((code = CHECK_DFMUL2FIXED_VARS(t, y, pmat->yx, ytemp)) < 0)
 		return code;
 	    FINISH_DFMUL2FIXED_VARS(t, ytemp);
-	    px += t;		/* should check for overflow */
+	    if ((code = CHECK_SET_FIXED_SUM(px, px, t)) < 0)
+	        return code;
 	}
     }
-    ppt->x = px + pmat->tx_fixed;	/* should check for overflow */
-    ppt->y = py + pmat->ty_fixed;	/* should check for overflow */
+    if (((code = CHECK_SET_FIXED_SUM(ppt->x, px, pmat->tx_fixed)) < 0) ||
+        ((code = CHECK_SET_FIXED_SUM(ppt->y, py, pmat->ty_fixed)) < 0) )
+        return code;
     return 0;
 }
 
@@ -457,13 +461,15 @@ gs_distance_transform2fixed(const gs_matrix_fixed * pmat,
 	if ((code = CHECK_DFMUL2FIXED_VARS(t, dy, pmat->yx, ytemp)) < 0)
 	    return code;
 	FINISH_DFMUL2FIXED_VARS(t, ytemp);
-	px += t;		/* should check for overflow */
+	if ((code = CHECK_SET_FIXED_SUM(px, px, t)) < 0)
+	    return code;
     }
     if (!is_fzero(pmat->xy)) {
 	if ((code = CHECK_DFMUL2FIXED_VARS(t, dx, pmat->xy, xtemp)) < 0)
 	    return code;
 	FINISH_DFMUL2FIXED_VARS(t, xtemp);
-	py += t;		/* should check for overflow */
+	if ((code = CHECK_SET_FIXED_SUM(py, py, t)) < 0)
+	    return code;
     }
     ppt->x = px;
     ppt->y = py;
@@ -555,8 +561,8 @@ sget_matrix(stream *s, gs_matrix *pmat)
 	    float value;
 
 	    status = sgets(s, (byte *)&value, sizeof(value), &nread);
-	    if (status < 0)
-		return status;
+	    if (status < 0 && status != EOFC)
+		return_error(gs_error_ioerror);
 	    coeff[i] = value;
 	    switch ((b >> 6) & 3) {
 		case 1:
@@ -568,15 +574,15 @@ sget_matrix(stream *s, gs_matrix *pmat)
 		case 3:
 		    status = sgets(s, (byte *)&coeff[i ^ 3],
 				   sizeof(coeff[0]), &nread);
-		    if (status < 0)
-			return status;
+		    if (status < 0 && status != EOFC)
+			return_error(gs_error_ioerror);
 	    }
 	}
     for (; i < 6; ++i, b <<= 1)
 	if (b & 0x80) {
 	    status = sgets(s, (byte *)&coeff[i], sizeof(coeff[0]), &nread);
-	    if (status < 0)
-		return status;
+	    if (status < 0 && status != EOFC)
+		return_error(gs_error_ioerror);
 	} else
 	    coeff[i] = 0.0;
     pmat->xx = coeff[0];

@@ -33,8 +33,8 @@
 #include "store.h"
 
 /* <font> <code|name> <name> <glyph_index> .type42execchar - */
-private int type42_fill(P1(i_ctx_t *));
-private int type42_stroke(P1(i_ctx_t *));
+private int type42_fill(i_ctx_t *);
+private int type42_stroke(i_ctx_t *);
 private int
 ztype42execchar(i_ctx_t *i_ctx_p)
 {
@@ -45,6 +45,8 @@ ztype42execchar(i_ctx_t *i_ctx_p)
     gs_text_enum_t *penum = op_show_find(i_ctx_p);
     int present;
     double sbw[4];
+    double w[2];
+    op_proc_t cont, exec_cont = 0;
 
     if (code < 0)
 	return code;
@@ -86,27 +88,67 @@ ztype42execchar(i_ctx_t *i_ctx_p)
 	float sbw42[4];
 	int i;
 
-	code = gs_type42_get_metrics((gs_font_type42 *) pfont,
-				     (uint) op->value.intval, sbw42);
+	code = gs_type42_wmode_metrics((gs_font_type42 *) pfont,
+				       (uint) op->value.intval, false, sbw42);
 	if (code < 0)
 	    return code;
+	present = metricsSideBearingAndWidth;
 	for (i = 0; i < 4; ++i)
 	    sbw[i] = sbw42[i];
+	w[0] = sbw[2];
+	w[1] = sbw[3];
+	if (gs_rootfont(igs)->WMode) { /* for vertically-oriented metrics */
+	    code = gs_type42_wmode_metrics((gs_font_type42 *) pfont,
+					   (uint) op->value.intval,
+					   true, sbw42);
+	    if (code < 0) { /* no vertical metrics */
+		if (pfont->FontType == ft_CID_TrueType) {
+		    sbw[0] = sbw[2] / 2;
+		    sbw[1] = pbfont->FontBBox.q.y;
+		    sbw[2] = 0;
+		    sbw[3] = pbfont->FontBBox.p.y - pbfont->FontBBox.q.y;
+		}
+	    } else {
+		sbw[0] = sbw[2] / 2;
+		sbw[1] = (pbfont->FontBBox.q.y + pbfont->FontBBox.p.y - sbw42[3]) / 2;
+		sbw[2] = sbw42[2];
+		sbw[3] = sbw42[3];
+	    }
+	}
+    } else {
+        w[0] = sbw[2];
+        w[1] = sbw[3];
     }
-    return zchar_set_cache(i_ctx_p, pbfont, op - 1,
+    cont = (pbfont->PaintType == 0 ? type42_fill : type42_stroke), exec_cont = 0;
+    code = zchar_set_cache(i_ctx_p, pbfont, op - 1,
 			   (present == metricsSideBearingAndWidth ?
 			    sbw : NULL),
-			   sbw + 2, &pbfont->FontBBox,
-			   type42_fill, type42_stroke, NULL);
+			   w, &pbfont->FontBBox,
+			   cont, &exec_cont,
+			   gs_rootfont(igs)->WMode ? sbw : NULL);
+    if (code >= 0 && exec_cont != 0)
+	code = (*exec_cont)(i_ctx_p);
+    return code;
 }
 
 /* Continue after a CDevProc callout. */
-private int type42_finish(P2(i_ctx_t *i_ctx_p,
-			     int (*cont)(P1(gs_state *))));
+private int type42_finish(i_ctx_t *i_ctx_p,
+			  int (*cont)(gs_state *));
 private int
 type42_fill(i_ctx_t *i_ctx_p)
 {
+#if !DROPOUT_PREVENTION
     return type42_finish(i_ctx_p, gs_fill);
+#else
+    int code;
+    gs_fixed_point fa = i_ctx_p->pgs->fill_adjust;
+
+    i_ctx_p->pgs->fill_adjust.x = i_ctx_p->pgs->fill_adjust.y = 0;
+    code = type42_finish(i_ctx_p, gs_fill);
+    i_ctx_p->pgs->fill_adjust = fa; /* Not sure whether we need to restore it,
+                                       but this isn't harmful. */
+    return code;
+#endif
 }
 private int
 type42_stroke(i_ctx_t *i_ctx_p)
@@ -116,7 +158,7 @@ type42_stroke(i_ctx_t *i_ctx_p)
 /* <font> <code|name> <name> <glyph_index> <sbx> <sby> %type42_{fill|stroke} - */
 /* <font> <code|name> <name> <glyph_index> %type42_{fill|stroke} - */
 private int
-type42_finish(i_ctx_t *i_ctx_p, int (*cont) (P1(gs_state *)))
+type42_finish(i_ctx_t *i_ctx_p, int (*cont) (gs_state *))
 {
     os_ptr op = osp;
     gs_font *pfont;

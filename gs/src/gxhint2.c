@@ -28,9 +28,9 @@
 
 /* Forward references */
 
-private stem_hint *type1_stem(P4(const gs_type1_state *, stem_hint_table *, fixed, fixed));
-private fixed find_snap(P3(fixed, const stem_snap_table *, const pixel_scale *));
-private alignment_zone *find_zone(P3(gs_type1_state *, fixed, fixed));
+private stem_hint *type1_stem(const gs_type1_state *, stem_hint_table *, fixed, fixed);
+private fixed find_snap(fixed, const stem_snap_table *, const pixel_scale *);
+private alignment_zone *find_zone(gs_type1_state *, fixed, fixed);
 
 /* Reset the stem hints. */
 void
@@ -163,7 +163,7 @@ detect_edge_hint(fixed *xy, fixed *dxy)
 
 /* Add a horizontal stem hint. */
 void
-type1_do_hstem(gs_type1_state * pcis, fixed y, fixed dy,
+type1_do_hstem(gs_type1_state * pcis, fixed y, fixed dy, bool add_lsb,
 	       const gs_matrix_fixed * pmat)
 {
     stem_hint *psh;
@@ -175,7 +175,9 @@ type1_do_hstem(gs_type1_state * pcis, fixed y, fixed dy,
     if (!pcis->fh.use_y_hints || !pmat->txy_fixed_valid)
 	return;
     detect_edge_hint(&y, &dy);
-    y += pcis->lsb.y + pcis->adxy.y;
+    if (add_lsb)
+	y += pcis->lsb.y;
+    y += pcis->adxy.y;
     if (pcis->fh.axes_swapped) {
 	psp = &pcis->scale.x;
 	v = pcis->vs_offset.x + c_fixed(y, yx) + pmat->tx_fixed;
@@ -243,7 +245,7 @@ type1_do_hstem(gs_type1_state * pcis, fixed y, fixed dy,
 
 /* Add a vertical stem hint. */
 void
-type1_do_vstem(gs_type1_state * pcis, fixed x, fixed dx,
+type1_do_vstem(gs_type1_state * pcis, fixed x, fixed dx, bool add_lsb,
 	       const gs_matrix_fixed * pmat)
 {
     stem_hint *psh;
@@ -253,7 +255,9 @@ type1_do_vstem(gs_type1_state * pcis, fixed x, fixed dx,
     if (!pcis->fh.use_x_hints)
 	return;
     detect_edge_hint(&x, &dx);
-    x += pcis->lsb.x + pcis->adxy.x;
+    if (add_lsb)
+	x += pcis->lsb.x;
+    x += pcis->adxy.x;
     if (pcis->fh.axes_swapped) {
 	psp = &pcis->scale.y;
 	v = pcis->vs_offset.y + c_fixed(x, xy) + pmat->ty_fixed;

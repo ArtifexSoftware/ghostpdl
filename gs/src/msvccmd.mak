@@ -133,9 +133,14 @@ COMPILE_WITHOUT_FRAMES=    # no optimization when debugging
 !else
 CT=
 LCT=
+
+!if $(MSVC_VERSION) == 5
 # NOTE: With MSVC++ 5.0, /O2 produces a non-working executable.
 # We believe the following list of optimizations works around this bug.
 COMPILE_FULL_OPTIMIZED=/GF /Ot /Oi /Ob2 /Oy /Oa- /Ow-
+!else
+COMPILE_FULL_OPTIMIZED=/GF /O2
+!endif
 COMPILE_WITH_FRAMES=
 COMPILE_WITHOUT_FRAMES=/Oy
 !endif
@@ -154,10 +159,12 @@ COMPILE_FOR_DLL=
 COMPILE_FOR_EXE=
 COMPILE_FOR_CONSOLE_EXE=
 
+# Specify warning message level
+WARNOPT=/W2
 
 # The /MT is for multi-threading.  We would like to make this an option,
 # but it's too much work right now.
-GENOPT=$(CP) $(CD) $(CT) $(CS) /W2 /nologo /MT
+GENOPT=$(CP) $(CD) $(CT) $(CS) $(WARNOPT) /nologo /MT
 
 CCFLAGS=$(PLATOPT) $(FPFLAGS) $(CPFLAGS) $(CFLAGS) $(XCFLAGS)
 CC=$(COMP) /c $(CCFLAGS) @$(GLGENDIR)\ccf32.tr
@@ -167,9 +174,17 @@ WX=$(COMPILE_FOR_DLL)
 !else
 WX=$(COMPILE_FOR_EXE)
 !endif
+
+!if $(COMPILE_INITS)
+ZM=/Zm600
+!else
+ZM=
+!endif
+
+
 # /Za disables the MS-specific extensions & enables ANSI mode.
 CC_WX=$(CC) $(WX)
-CC_=$(CC_WX) $(COMPILE_FULL_OPTIMIZED) /Za
+CC_=$(CC_WX) $(COMPILE_FULL_OPTIMIZED) /Za $(ZM)
 CC_D=$(CC_WX) $(COMPILE_WITH_FRAMES)
 CC_INT=$(CC_)
 CC_LEAF=$(CC_) $(COMPILE_WITHOUT_FRAMES)

@@ -38,11 +38,13 @@ const gx_device_printer gs_t4693d4_device = t4693d_prn_device("t4693d4",16, 15);
 const gx_device_printer gs_t4693d8_device = t4693d_prn_device("t4693d8",24, 255);
 
 private gx_color_index
-gdev_t4693d_map_rgb_color(gx_device *dev,
-	gx_color_value r, gx_color_value g, gx_color_value b)
+gdev_t4693d_map_rgb_color(gx_device *dev, const gx_color_value cv[])
 {
 	ushort bitspercolor = prn_dev->color_info.depth / 3;
 	ulong max_value = (1 << bitspercolor) - 1;
+
+        gx_color_value r, g, b;
+        r = cv[0]; g = cv[1]; b = cv[2];
 
 	if (bitspercolor == 5) {
 		bitspercolor--;
@@ -57,10 +59,17 @@ gdev_t4693d_map_rgb_color(gx_device *dev,
 private int
 gdev_t4693d_map_color_rgb(gx_device *dev, gx_color_index color, ushort prgb[3])
 {
-	gx_color_value gray = color*gx_max_color_value/dev->color_info.max_gray;
-	prgb[0] = gray;
-	prgb[1] = gray;
-	prgb[2] = gray;
+        ushort bitspercolor = prn_dev->color_info.depth / 3;
+	ulong max_value = (1 << bitspercolor) - 1;
+
+	if (bitspercolor == 5) {
+		bitspercolor--;
+		max_value = (1 << bitspercolor) - 1;
+	}
+
+	prgb[0] = (color >> (bitspercolor*2)) * gx_max_color_value / max_value;
+	prgb[1] = ((color >> bitspercolor) & max_value) * gx_max_color_value / max_value;
+	prgb[2] = (color & max_value) * gx_max_color_value / max_value;
 	return(0);
 }
 
@@ -83,26 +92,26 @@ t4693d_print_page(gx_device_printer *dev, FILE *ps_stream)
 	if (data == 0) return_error(gs_error_VMerror);
 	/* build header. */
 	p = header;
-	*p++ = 0x14;	/* Print request */
-	*p++ = 0xc0|20;	/* Length of header */
-	*p++ = 0xc0 | ((prn_dev->width >> 6)&0x3f);
-	*p++ = 0x80 | (prn_dev->width&0x3f);
-	*p++ = 0xc0 | ((prn_dev->height >> 6)&0x3f);
-	*p++ = 0x80 | (prn_dev->height&0x3f);
-	*p++ = 0xc1;	/* Handshake */
-	*p++ = 0xc0;	/* Get number of prints from printer. */
-	*p++ = 0xc0;	/* Get pixel shape from printer. */
-	*p++ = (depth == 8) ? 0xcb : (depth == 16) ? 0xcc : 0xcd;
-	*p++ = 0xc1;	/* Pixel-data order 1. */
-	*p++ = 0xc3;	/* Interpolate to maximum size. */
-	*p++ = 0xc3;	/* Full color range 1. */
-	*p++ = 0xc0;	/* Color conversion from printer. */
-	*p++ = 0xc0;	/* Color manipulation from printer. */
-	*p++ = 0xc0;	/* B/W inversion from printer. */
-	*p++ = 0xc3;	/* Portrait mode centered. */
-	*p++ = 0xc9;	/* Use printer default for media and printing. */
-	*p++ = 0x95;
-	*p++ = 0x81;
+	*p++ = (char)0x14;	/* Print request */
+	*p++ = (char)0xc0|20;	/* Length of header */
+	*p++ = (char)0xc0 | ((prn_dev->width >> 6)&0x3f);
+	*p++ = (char)0x80 | (prn_dev->width&0x3f);
+	*p++ = (char)0xc0 | ((prn_dev->height >> 6)&0x3f);
+	*p++ = (char)0x80 | (prn_dev->height&0x3f);
+	*p++ = (char)0xc1;	/* Handshake */
+	*p++ = (char)0xc0;	/* Get number of prints from printer. */
+	*p++ = (char)0xc0;	/* Get pixel shape from printer. */
+	*p++ = (char)(depth == 8) ? 0xcb : (depth == 16) ? 0xcc : 0xcd;
+	*p++ = (char)0xc1;	/* Pixel-data order 1. */
+	*p++ = (char)0xc3;	/* Interpolate to maximum size. */
+	*p++ = (char)0xc3;	/* Full color range 1. */
+	*p++ = (char)0xc0;	/* Color conversion from printer. */
+	*p++ = (char)0xc0;	/* Color manipulation from printer. */
+	*p++ = (char)0xc0;	/* B/W inversion from printer. */
+	*p++ = (char)0xc3;	/* Portrait mode centered. */
+	*p++ = (char)0xc9;	/* Use printer default for media and printing. */
+	*p++ = (char)0x95;
+	*p++ = (char)0x81;
 
 	for (checksum = 0, i = 0; &header[i] != p; i++)
 		checksum += header[i];

@@ -15,6 +15,8 @@
 #include "ctype_.h"
 #include "memory_.h"
 #include "string_.h"
+#include <stdlib.h>	/* for qsort */
+
 #include "ghost.h"
 #include "gp.h"
 #include "gsargs.h"
@@ -43,10 +45,11 @@
 #include "interp.h"
 #include "iutil.h"
 #include "ivmspace.h"
+#include "vdtrace.h"
 
 /* Import operator procedures */
-extern int zflush(P1(i_ctx_t *));
-extern int zflushpage(P1(i_ctx_t *));
+extern int zflush(i_ctx_t *);
+extern int zflushpage(i_ctx_t *);
 
 #ifndef GS_LIB
 #  define GS_LIB "GS_LIB"
@@ -78,24 +81,26 @@ extern int zflushpage(P1(i_ctx_t *));
 #define runInit 1
 #define runFlush 2
 #define runBuffer 4
-private int swproc(P3(gs_main_instance *, const char *, arg_list *));
-private int argproc(P2(gs_main_instance *, const char *));
-private int run_buffered(P2(gs_main_instance *, const char *));
-private int esc_strlen(P1(const char *));
-private void esc_strcat(P2(char *, const char *));
-private int runarg(P5(gs_main_instance *, const char *, const char *, const char *, int));
-private int run_string(P3(gs_main_instance *, const char *, int));
-private int run_finish(P4(gs_main_instance *, int, int, ref *));
+private int swproc(gs_main_instance *, const char *, arg_list *);
+private int argproc(gs_main_instance *, const char *);
+private int run_buffered(gs_main_instance *, const char *);
+private int esc_strlen(const char *);
+private void esc_strcat(char *, const char *);
+private int runarg(gs_main_instance *, const char *, const char *, const char *, int);
+private int run_string(gs_main_instance *, const char *, int);
+private int run_finish(gs_main_instance *, int, int, ref *);
+private int try_stdout_redirect(gs_main_instance * minst, 
+				const char *command, const char *filename);
 
 /* Forward references for help printout */
-private void print_help(P1(gs_main_instance *));
-private void print_revision(P1(const gs_main_instance *));
-private void print_version(P1(const gs_main_instance *));
-private void print_usage(P1(const gs_main_instance *));
-private void print_devices(P1(const gs_main_instance *));
-private void print_emulators(P1(const gs_main_instance *));
-private void print_paths(P1(gs_main_instance *));
-private void print_help_trailer(P1(const gs_main_instance *));
+private void print_help(gs_main_instance *);
+private void print_revision(const gs_main_instance *);
+private void print_version(const gs_main_instance *);
+private void print_usage(const gs_main_instance *);
+private void print_devices(const gs_main_instance *);
+private void print_emulators(const gs_main_instance *);
+private void print_paths(gs_main_instance *);
+private void print_help_trailer(const gs_main_instance *);
 
 /* ------ Main program ------ */
 
@@ -105,6 +110,14 @@ gs_main_arg_fopen(const char *fname, void *vminst)
 {
     gs_main_set_lib_paths((gs_main_instance *) vminst);
     return lib_fopen(fname);
+}
+private void
+set_debug_flags(const char *arg, char *flags)
+{
+    byte value = (*arg == '-' ? (++arg, 0) : 0xff);
+
+    while (*arg)
+	flags[*arg++ & 127] = value;
 }
 #define arg_heap_copy(str) arg_copy(str, &gs_memory_default)
 int
@@ -391,7 +404,8 @@ run_stdin:
 		long width, height;
 		ref value;
 
-		gs_main_init1(minst);
+		if ((code = gs_main_init1(minst)) < 0)
+		    return code;
 		if (sscanf((const char *)arg, "%ldx%ld", &width, &height) != 2) {
 		    puts("-g must be followed by <width>x<height>");
 		    return e_Fatal;
@@ -467,7 +481,8 @@ run_stdin:
 	    }
 	    break;
 	case 'q':		/* quiet startup */
-	    gs_main_init1(minst);
+	    if ((code = gs_main_init1(minst)) < 0)
+		return code;
 	    initial_enter_name("QUIET", &vtrue);
 	    break;
 	case 'r':		/* define device resolution */
@@ -475,7 +490,8 @@ run_stdin:
 		float xres, yres;
 		ref value;
 
-		gs_main_init1(minst);
+		if ((code = gs_main_init1(minst)) < 0)
+		    return code;
 		switch (sscanf((const char *)arg, "%fx%f", &xres, &yres)) {
 		    default:
 			puts("-r must be followed by <res> or <xres>x<yres>");
@@ -509,7 +525,8 @@ run_stdin:
 		    eqp = strchr(adef, '#');
 		/* Initialize the object memory, scanner, and */
 		/* name table now if needed. */
-		gs_main_init1(minst);
+		if ((code = gs_main_init1(minst)) < 0)
+		    return code;
 		if (eqp == adef) {
 		    puts("Usage: -dname, -dname=token, -sname=string");
 		    return e_Fatal;
@@ -573,6 +590,8 @@ run_stdin:
 			make_const_string(&value,
 					  a_readonly | avm_foreign,
 					  len, (const byte *)str);
+			if ((code = try_stdout_redirect(minst, adef, eqp)) < 0)
+			    return code;
 		    }
 		    ialloc_set_space(idmemory, space);
 		}
@@ -580,12 +599,16 @@ run_stdin:
 		initial_enter_name(adef, &value);
 		break;
 	    }
+	case 'T':
+            set_debug_flags(arg, vd_flags);
+	    break;
 	case 'u':		/* undefine name */
 	    if (!*arg) {
 		puts("-u requires a name to undefine.");
 		return e_Fatal;
 	    }
-	    gs_main_init1(minst);
+	    if ((code = gs_main_init1(minst)) < 0)
+		return code;
 	    i_initial_remove_name(minst->i_ctx_p, arg);
 	    break;
 	case 'v':		/* print revision */
@@ -618,12 +641,7 @@ run_stdin:
 	    return e_Quit;
 /*#endif */
 	case 'Z':
-	    {
-		byte value = (*arg == '-' ? (++arg, 0) : 0xff);
-
-		while (*arg)
-		    gs_debug[*arg++ & 127] = value;
-	    }
+            set_debug_flags(arg, gs_debug);
 	    break;
     }
     return 0;
@@ -660,12 +678,23 @@ esc_strcat(char *dest, const char *src)
 private int
 argproc(gs_main_instance * minst, const char *arg)
 {
+    int code = gs_main_init1(minst);		/* need i_ctx_p to proceed */
+    char *filearg;
+
+    if (code < 0)
+        return code;
+    filearg = arg_heap_copy(arg);
+    if (filearg == NULL)
+        return e_Fatal;
+#if !NEW_COMBINE_PATH
+    minst->i_ctx_p->filearg = filearg;	/* allow reading this file if SAFER set */
+#endif
     if (minst->run_buffer_size) {
 	/* Run file with run_string. */
-	return run_buffered(minst, arg);
+	return run_buffered(minst, filearg);
     } else {
 	/* Run file directly in the normal way. */
-	return runarg(minst, "", arg, ".runfile", runInit | runFlush);
+	return runarg(minst, "", filearg, ".runfile", runInit | runFlush);
     }
 }
 private int
@@ -712,10 +741,11 @@ runarg(gs_main_instance * minst, const char *pre, const char *arg,
        const char *post, int options)
 {
     int len = strlen(pre) + esc_strlen(arg) + strlen(post) + 1;
+    int code;
     char *line;
 
     if (options & runInit) {
-	int code = gs_main_init2(minst);	/* Finish initialization */
+	code = gs_main_init2(minst);	/* Finish initialization */
 
 	if (code < 0)
 	    return code;
@@ -728,7 +758,14 @@ runarg(gs_main_instance * minst, const char *pre, const char *arg,
     strcpy(line, pre);
     esc_strcat(line, arg);
     strcat(line, post);
-    return run_string(minst, line, options);
+#if NEW_COMBINE_PATH
+    minst->i_ctx_p->starting_arg_file = true;
+#endif
+    code = run_string(minst, line, options);
+#if NEW_COMBINE_PATH
+    minst->i_ctx_p->starting_arg_file = false;
+#endif
+    return code;
 }
 private int
 run_string(gs_main_instance * minst, const char *str, int options)
@@ -761,6 +798,45 @@ run_finish(gs_main_instance *minst, int code, int exit_code,
     return code;
 }
 
+/* Redirect stdout to a file:
+ *  -sstdout=filename
+ *  -sstdout=-
+ *  -sstdout=%stdout
+ *  -sstdout=%stderr
+ * -sOutputFile=- is not affected.
+ * File is closed at program exit (if not stdout/err)
+ * or when -sstdout is used again.
+ */
+private int 
+try_stdout_redirect(gs_main_instance * minst, 
+    const char *command, const char *filename)
+{
+    if (strcmp(command, "stdout") == 0) {
+	minst->stdout_to_stderr = 0;
+	minst->stdout_is_redirected = 0;
+	/* If stdout already being redirected and it is not stdout
+	 * or stderr, close it
+	 */
+	if (minst->fstdout2 && (minst->fstdout2 != minst->fstdout)
+		&& (minst->fstdout2 != minst->fstderr)) {
+	    fclose(minst->fstdout2);
+	    minst->fstdout2 = (FILE *)NULL;
+	}
+	/* If stdout is being redirected, set minst->fstdout2 */
+	if ( (filename != 0) && strlen(filename) &&
+	    strcmp(filename, "-") && strcmp(filename, "%stdout") ) {
+	    if (strcmp(filename, "%stderr") == 0) {
+		minst->stdout_to_stderr = 1;
+	    }
+	    else if ((minst->fstdout2 = fopen(filename, "w")) == (FILE *)NULL)
+		return_error(e_invalidfileaccess);
+	    minst->stdout_is_redirected = 1;
+	}
+	return 0;
+    }
+    return 1;
+}
+
 /* ---------------- Print information ---------------- */
 
 /*
@@ -778,9 +854,10 @@ private const char help_usage2[] = "\
  -sOutputFile=<file> select output file: - for stdout, |command for pipe,\n\
                                          embed %d or %ld for page #\n";
 private const char help_trailer[] = "\
-For more information, see %s%sUse.htm.\n\
+For more information, see %s.\n\
 Report bugs to %s, using the form in Bug-form.htm.\n";
 private const char help_devices[] = "Available devices:";
+private const char help_default_device[] = "Default output device:";
 private const char help_emulators[] = "Input formats:";
 private const char help_paths[] = "Search path:";
 
@@ -826,24 +903,55 @@ print_usage(const gs_main_instance *minst)
     outprintf("%s", help_usage2);
 }
 
+/* compare function for qsort */
+private int
+cmpstr(const void *v1, const void *v2)
+{
+    return strcmp( *(char * const *)v1, *(char * const *)v2 );
+}
+
 /* Print the list of available devices. */
 private void
 print_devices(const gs_main_instance *minst)
 {
+    outprintf("%s", help_default_device);
+    outprintf(" %s\n", gs_devicename(gs_getdevice(0)));
     outprintf("%s", help_devices);
     {
 	int i;
 	int pos = 100;
 	const gx_device *pdev;
+	const char **names;
+	size_t ndev = 0;
 
-	for (i = 0; (pdev = gs_getdevice(i)) != 0; i++) {
-	    const char *dname = gs_devicename(pdev);
-	    int len = strlen(dname);
+	for (i = 0; (pdev = gs_getdevice(i)) != 0; i++)
+	    ;
+	ndev = (size_t)i;
+	names = (const char **)gs_alloc_bytes(minst->heap, ndev * sizeof(const char*), "print_devices");
+	if (names == (const char **)NULL) { /* old-style unsorted device list */
+	    for (i = 0; (pdev = gs_getdevice(i)) != 0; i++) {
+		const char *dname = gs_devicename(pdev);
+		int len = strlen(dname);
 
-	    if (pos + 1 + len > 76)
-		outprintf("\n  "), pos = 2;
-	    outprintf(" %s", dname);
-	    pos += 1 + len;
+		if (pos + 1 + len > 76)
+		    outprintf("\n  "), pos = 2;
+		outprintf(" %s", dname);
+		pos += 1 + len;
+	    }
+	}
+	else {				/* new-style sorted device list */
+	    for (i = 0; (pdev = gs_getdevice(i)) != 0; i++)
+		names[i] = gs_devicename(pdev);
+	    qsort((void*)names, ndev, sizeof(const char*), cmpstr);
+	    for (i = 0; i < ndev; i++) {
+		int len = strlen(names[i]);
+
+		if (pos + 1 + len > 76)
+		    outprintf("\n  "), pos = 2;
+		outprintf(" %s", names[i]);
+		pos += 1 + len;
+	    }
+	    gs_free((char *)names, ndev * sizeof(const char*), 1, "print_devices");
 	}
     }
     outprintf("\n");
@@ -917,9 +1025,12 @@ print_paths(gs_main_instance * minst)
 private void
 print_help_trailer(const gs_main_instance *minst)
 {
-    outprintf(help_trailer, gs_doc_directory,
-	    gp_file_name_concat_string(gs_doc_directory,
-				       strlen(gs_doc_directory),
-				       "Use.htm", 7),
-	    GS_BUG_MAILBOX);
+    char buffer[gp_file_name_sizeof];
+    const char *use_htm = "Use.htm", *p = buffer;
+    uint blen = sizeof(buffer);
+
+    if (gp_file_name_combine(gs_doc_directory, strlen(gs_doc_directory), 
+	    use_htm, strlen(use_htm), false, buffer, &blen) != gp_combine_success)
+	p = use_htm;
+    outprintf(help_trailer, p, GS_BUG_MAILBOX);
 }

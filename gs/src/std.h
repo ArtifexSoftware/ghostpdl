@@ -31,6 +31,7 @@
 #define arch_align_ptr_mod ARCH_ALIGN_PTR_MOD
 #define arch_align_float_mod ARCH_ALIGN_FLOAT_MOD
 #define arch_align_double_mod ARCH_ALIGN_DOUBLE_MOD
+#define arch_align_struct_mod ARCH_ALIGN_STRUCT_MOD
 #define arch_log2_sizeof_short ARCH_LOG2_SIZEOF_SHORT
 #define arch_log2_sizeof_int ARCH_LOG2_SIZEOF_INT
 #define arch_log2_sizeof_long ARCH_LOG2_SIZEOF_LONG
@@ -50,6 +51,15 @@
 #define arch_floats_are_IEEE ARCH_FLOATS_ARE_IEEE
 #define arch_arith_rshift ARCH_ARITH_RSHIFT
 #define arch_can_shift_full_long ARCH_CAN_SHIFT_FULL_LONG
+/*
+ * Define the alignment that the memory manager must preserve.
+ * We assume all alignment moduli are powers of 2.
+ * NOTE: we require that malloc align blocks at least this strictly.
+ */
+#define ARCH_ALIGN_MEMORY_MOD\
+  (((ARCH_ALIGN_LONG_MOD - 1) | (ARCH_ALIGN_PTR_MOD - 1) |\
+    (ARCH_ALIGN_DOUBLE_MOD - 1) | (ARCH_ALIGN_STRUCT_MOD - 1)) + 1)
+#define arch_align_memory_mod ARCH_ALIGN_MEMORY_MOD
 
 /* Define integer data type sizes in terms of log2s. */
 #define ARCH_SIZEOF_SHORT (1 << ARCH_LOG2_SIZEOF_SHORT)
@@ -154,10 +164,10 @@ typedef ulong bits32;
 /* To allow stdout and stderr to be redirected, all stdout goes 
  * though outwrite and all stderr goes through errwrite.
  */
-int outwrite(P2(const char *str, int len));
-int errwrite(P2(const char *str, int len));
-void outflush(P0());
-void errflush(P0());
+int outwrite(const char *str, int len);
+int errwrite(const char *str, int len);
+void outflush(void);
+void errflush(void);
 /* Formatted output to outwrite and errwrite.
  * The maximum string length is 1023 characters.
  */
@@ -171,14 +181,14 @@ int errprintf();
 
 /* Print the program line # for debugging. */
 #if __LINE__			/* compiler provides it */
-void dprintf_file_and_line(P2(const char *, int));
+void dprintf_file_and_line(const char *, int);
 #  define _dpl dprintf_file_and_line(__FILE__, __LINE__),
 #else
-void dprintf_file_only(P1(const char *));
+void dprintf_file_only(const char *);
 #  define _dpl dprintf_file_only(__FILE__),
 #endif
 
-void dflush(P0());		/* flush stderr */
+void dflush(void);		/* flush stderr */
 #define dputc(chr) dprintf1("%c", chr)
 #define dlputc(chr) dlprintf1("%c", chr)
 #define dputs(str) dprintf1("%s", str)
@@ -236,12 +246,10 @@ void dflush(P0());		/* flush stderr */
 #define dlprintf12(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12)\
   (_dpl dprintf12(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12))
 
-void printf_program_ident(P2(const char *program_name,
-			     long revision_number));
-void eprintf_program_ident(P2(const char *program_name,
-			      long revision_number));
-const char *gs_program_name(P0());
-long gs_revision_number(P0());
+void printf_program_ident(const char *program_name, long revision_number);
+void eprintf_program_ident(const char *program_name, long revision_number);
+const char *gs_program_name(void);
+long gs_revision_number(void);
 
 #define _epi eprintf_program_ident(gs_program_name(), gs_revision_number()),
 
@@ -269,10 +277,10 @@ long gs_revision_number(P0());
   (_epi epf(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10))
 
 #if __LINE__			/* compiler provides it */
-void lprintf_file_and_line(P2(const char *, int));
+void lprintf_file_and_line(const char *, int);
 #  define _epl _epi lprintf_file_and_line(__FILE__, __LINE__),
 #else
-void lprintf_file_only(P1(const char *));
+void lprintf_file_only(const char *);
 #  define _epl _epi lprintf_file_only(__FILE__)
 #endif
 
@@ -308,17 +316,6 @@ void lprintf_file_only(P1(const char *));
 typedef struct gs_memory_s gs_memory_t;
 #endif
 #define init_proc(proc)\
-  int proc(P1(gs_memory_t *))
-
-/* disable decorators to gsmalloc.h memory definition of "heap"
- * the decorators/wrappers implement retry and locking
- */
-/* #define NO_WRAPPED_MEMORY_BIND
- */
-
-/* define a xxx_BIND mechanism used only to test the mechanism.
- */
-#define TESTING_MECH_BIND
-
+  int proc(gs_memory_t *)
 
 #endif /* std_INCLUDED */

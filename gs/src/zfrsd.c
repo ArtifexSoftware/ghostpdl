@@ -14,6 +14,7 @@
 /* ReusableStreamDecode filter support */
 #include "memory_.h"
 #include "ghost.h"
+#include "gsfname.h"		/* for gs_parse_file_name */
 #include "gxiodev.h"
 #include "oper.h"
 #include "stream.h"
@@ -111,11 +112,11 @@ zrsdparams(i_ctx_t *i_ctx_p)
  * Reusable streams are also reusable sources, but they look just like
  * ordinary file or string streams.
  */
-private int make_rss(P8(i_ctx_t *i_ctx_p, os_ptr op, const byte * data,
-			uint size, int space, long offset, long length,
-			bool is_bytestring));
-private int make_rfs(P5(i_ctx_t *i_ctx_p, os_ptr op, stream *fs,
-			long offset, long length));
+private int make_rss(i_ctx_t *i_ctx_p, os_ptr op, const byte * data,
+		     uint size, int space, long offset, long length,
+		     bool is_bytestring);
+private int make_rfs(i_ctx_t *i_ctx_p, os_ptr op, stream *fs,
+		     long offset, long length);
 private int
 zreusablestream(i_ctx_t *i_ctx_p)
 {
@@ -219,17 +220,23 @@ private int
 make_rfs(i_ctx_t *i_ctx_p, os_ptr op, stream *fs, long offset, long length)
 {
     gs_const_string fname;
+    gs_parsed_file_name_t pname;
     stream *s;
     int code;
 
     if (sfilename(fs, &fname) < 0)
 	return_error(e_ioerror);
-    if (fname.data[0] == '%')
+    code = gs_parse_file_name(&pname, (const char *)fname.data, fname.size);
+    if (code < 0)
+	return code;
+    if (pname.len == 0)		/* %stdin% etc. won't have a filename */
 	return_error(e_invalidfileaccess); /* can't reopen */
+    if (pname.iodev == NULL)
+	pname.iodev = iodev_default;
     /* Open the file again, to be independent of the source. */
-    code = file_open_stream((const char *)fname.data, fname.size, "r",
-			    fs->cbsize, &s, iodev_default->procs.fopen,
-			    imemory);
+    code = file_open_stream((const char *)pname.fname, pname.len, "r",
+			    fs->cbsize, &s, pname.iodev,
+			    pname.iodev->procs.fopen, imemory);
     if (code < 0)
 	return code;
     if (sread_subfile(s, offset, length) < 0) {

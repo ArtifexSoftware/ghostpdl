@@ -184,13 +184,13 @@ reduce_drawing_color(gx_device_color *ppdc, gx_device_plane_extract *edev,
 	    }
 	ppdc->colors.colored.plane_mask &= 1 << plane;
 	if (ppdc->colors.colored.c_level[plane] == 0) {
-	    gx_reduce_colored_halftone(ppdc, (gx_device *)edev, true);
+	    gx_devn_reduce_colored_halftone(ppdc, (gx_device *)edev);
 	    ppdc->colors.pure = COLOR_PIXEL(edev, ppdc->colors.pure);
 	    reduced = REDUCE_PURE(edev, gx_dc_pure_color(ppdc));
 	} else if (ppdc->colors.colored.alpha != gx_max_color_value)
 	    return REDUCE_FAILED; /* can't reduce */
 	else {
-	    gx_reduce_colored_halftone(ppdc, (gx_device *)edev, true);
+	    gx_devn_reduce_colored_halftone(ppdc, (gx_device *)edev);
 	    ppdc->colors.binary.color[0] =
 		COLOR_PIXEL(edev, ppdc->colors.binary.color[0]);
 	    ppdc->colors.binary.color[1] =
@@ -973,7 +973,7 @@ plane_begin_typed_image(gx_device * dev,
     *((gx_image_enum_common_t *)info) = *info->info;
     info->procs = &plane_image_enum_procs;
     info->dev = (gx_device *)edev;
-    info->id = gs_next_id();
+    info->id = gs_next_ids(1);
     info->memory = memory;
     info->pis = pis;
     info->pis_image = pis_image;

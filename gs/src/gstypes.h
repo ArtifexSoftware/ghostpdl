@@ -22,7 +22,7 @@
  * These IDs bear no relation to any other ID space; we generate them all
  * ourselves.
  */
-typedef long gs_id;
+typedef ulong gs_id;
 
 #define gs_no_id 0L
 
@@ -30,6 +30,11 @@ typedef long gs_id;
  * Define a sensible representation of a string, as opposed to
  * the C char * type (which can't store arbitrary data, represent
  * substrings, or perform concatenation without destroying aliases).
+ *
+ * If a byte * pointer P is the result of allocating a string of size N,
+ * then any substring of [P .. P+N) is a valid gs_string, i.e., any
+ * gs_string S is valid (until the string is deallocated) if it has P <=
+ * S.data and S.data + S.size <= P + N.
  */
 #define GS_STRING_COMMON\
     byte *data;\
@@ -46,8 +51,12 @@ typedef struct gs_const_string_s {
 
 /*
  * Since strings are allocated differently from ordinary objects, define a
- * structure that can reference either a string (if bytes == 0) or a byte
- * object (if bytes != 0, in which case data+size point within the object).
+ * structure that can reference either a string or a byte object.  If bytes
+ * == 0, data and size are the same as for a gs_string.  If bytes != 0, data
+ * and size point within the object addressed by bytes (i.e., the bytes
+ * member plays the role of P in the consistency condition given for
+ * gs_string above).  Thus in either case, code can process the string using
+ * only data and size: bytes is only relevant for garbage collection.
  *
  * Note: for garbage collection purposes, the string_common members must
  * come first.
@@ -96,5 +105,14 @@ typedef struct gs_rect_s {
 typedef struct gs_int_rect_s {
     gs_int_point p, q;
 } gs_int_rect;
+
+/*
+ * Define a type for a floating-point parameter range.  Note that unlike
+ * the intervals for gs_rect and gs_int_rect, these intervals are closed
+ * (i.e., they represent rmin <= x <= rmax, not rmin <= x < rmax).
+ */
+typedef struct gs_range_s {
+    float rmin, rmax;
+} gs_range_t;
 
 #endif /* gstypes_INCLUDED */

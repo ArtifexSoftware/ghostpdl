@@ -21,10 +21,15 @@
 #include "gxistate.h"		/* for access to line params */
 #include "gzpath.h"
 
+#if !DROPOUT_PREVENTION
+#define VD_TRACE 0
+#endif
+#include "vdtrace.h"
+
 /* Forward declarations */
-private void adjust_point_to_tangent(P3(segment *, const segment *,
-					const gs_fixed_point *));
-private int monotonize_internal(P2(gx_path *, const curve_segment *));
+private void adjust_point_to_tangent(segment *, const segment *,
+				     const gs_fixed_point *);
+private int monotonize_internal(gx_path *, const curve_segment *);
 
 /* Copy a path, optionally flattening or monotonizing it. */
 /* If the copy fails, free the new path. */
@@ -57,12 +62,14 @@ gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
 	expansion.y =
 	    float2fixed((fabs(pis->ctm.xy) + fabs(pis->ctm.yy)) * width) * 2;
     }
+    vd_setcolor(RGB(255,255,0));
     pseg = (const segment *)(ppath_old->first_subpath);
     while (pseg) {
 	switch (pseg->type) {
 	    case s_start:
 		code = gx_path_add_point(ppath,
 					 pseg->pt.x, pseg->pt.y);
+		vd_moveto(pseg->pt.x, pseg->pt.y);
 		break;
 	    case s_curve:
 		{
@@ -136,6 +143,7 @@ gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
 							  notes);
 			    if (code < 0)
 				break;
+			    vd_lineto(x0, y0);
 			    start = ppath->current_subpath->last;
 			    notes |= sn_not_first;
 			    cseg = *pc;
@@ -147,6 +155,7 @@ gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
 			     * they line up with the tangents.
 			     */
 			    end = ppath->current_subpath->last;
+			    vd_lineto(ppath->position.x, ppath->position.y);
 			    if ((code = gx_path_add_line_notes(ppath,
 							  ppath->position.x,
 							  ppath->position.y,
@@ -166,9 +175,11 @@ gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
 	    case s_line:
 		code = gx_path_add_line_notes(ppath,
 				       pseg->pt.x, pseg->pt.y, pseg->notes);
+		vd_lineto(pseg->pt.x, pseg->pt.y);
 		break;
 	    case s_line_close:
 		code = gx_path_close_subpath(ppath);
+		vd_closepath;
 		break;
 	    default:		/* can't happen */
 		code = gs_note_error(gs_error_unregistered);
@@ -544,7 +555,7 @@ gx_curve_x_at_y(curve_cursor * prc, fixed y)
 	    if (xd < HALF_FIXED_BITS)
 		return (ufixed)xd * (ufixed)yrel / (ufixed)yd + xl;
 	} else {
-	    if (xd > -HALF_FIXED_BITS) {
+	    if (xd > -(fixed)HALF_FIXED_BITS) {
 		/* Be careful to take the floor of the result. */
 		ufixed num = (ufixed)(-xd) * (ufixed)yrel;
 		ufixed quo = num / (ufixed)yd;

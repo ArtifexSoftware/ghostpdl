@@ -50,9 +50,9 @@ const gx_device_procs prn_std_procs =
     prn_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close);
 
 /* Forward references */
-int gdev_prn_maybe_realloc_memory(P4(gx_device_printer *pdev, 
-				     gdev_prn_space_params *old_space,
-				     int old_width, int old_height));
+int gdev_prn_maybe_realloc_memory(gx_device_printer *pdev, 
+				  gdev_prn_space_params *old_space,
+				  int old_width, int old_height);
 
 /* ------ Open/close ------ */
 
@@ -381,6 +381,10 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
 	COPY_PROC(get_clipping_box);
 	COPY_PROC(map_color_rgb_alpha);
 	COPY_PROC(get_hardware_params);
+	COPY_PROC(get_color_mapping_procs);
+	COPY_PROC(get_color_comp_index);
+	COPY_PROC(encode_color);
+	COPY_PROC(decode_color);
 #undef COPY_PROC
 	/* If using a command list, already opened the device. */
 	if (is_command_list)
@@ -584,7 +588,13 @@ label:\
 
     switch (code = param_read_string(plist, (param_name = "OutputFile"), &ofs)) {
 	case 0:
-	    code = validate_output_file(&ofs);
+	    if (pdev->LockSafetyParams &&
+		    bytes_compare(ofs.data, ofs.size,
+			(const byte *)ppdev->fname, strlen(ppdev->fname))) {
+	        code = gs_error_invalidaccess;
+	    }
+	    else
+		code = validate_output_file(&ofs);
 	    if (code >= 0)
 		break;
 	    /* falls through */
@@ -968,6 +978,7 @@ gx_default_create_buf_device(gx_device **pbdev, gx_device *target,
     if (target == (gx_device *)mdev) {
 	/* The following is a special hack for setting up printer devices. */
 	assign_dev_procs(mdev, mdproto);
+	gx_device_fill_in_procs((gx_device *)mdev);
     } else
 	gs_make_mem_device(mdev, mdproto, mem, (for_band ? 1 : 0),
 			   (target == (gx_device *)mdev ? NULL : target));

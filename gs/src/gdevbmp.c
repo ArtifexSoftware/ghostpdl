@@ -36,12 +36,13 @@ prn_device(prn_std_procs, "bmpmono",
 private const gx_device_procs bmpgray_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb);
-const gx_device_printer gs_bmpgray_device =
-prn_device(bmpgray_procs, "bmpgray",
+const gx_device_printer gs_bmpgray_device = {
+  prn_device_body(gx_device_printer, bmpgray_procs, "bmpgray",
 	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	   X_DPI, Y_DPI,
 	   0, 0, 0, 0,		/* margins */
-	   8, bmp_print_page);
+	   1, 8, 255, 0, 256, 0, bmp_print_page)
+};
 
 /* 1-bit-per-plane separated CMYK color. */
 
@@ -80,12 +81,13 @@ const gx_device_printer gs_bmpsep8_device = {
 private const gx_device_procs bmp16_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		pc_4bit_map_rgb_color, pc_4bit_map_color_rgb);
-const gx_device_printer gs_bmp16_device =
-prn_device(bmp16_procs, "bmp16",
+const gx_device_printer gs_bmp16_device = {
+  prn_device_body(gx_device_printer, bmp16_procs, "bmp16",
 	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	   X_DPI, Y_DPI,
 	   0, 0, 0, 0,		/* margins */
-	   4, bmp_print_page);
+	   3, 4, 3, 2, 4, 3, bmp_print_page)
+};
 
 /* 8-bit (SuperVGA-style) color. */
 /* (Uses a fixed palette of 3,3,2 bits.) */
@@ -93,12 +95,13 @@ prn_device(bmp16_procs, "bmp16",
 private const gx_device_procs bmp256_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		pc_8bit_map_rgb_color, pc_8bit_map_color_rgb);
-const gx_device_printer gs_bmp256_device =
-prn_device(bmp256_procs, "bmp256",
+const gx_device_printer gs_bmp256_device = {
+  prn_device_body(gx_device_printer, bmp256_procs, "bmp256", 
 	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	   X_DPI, Y_DPI,
 	   0, 0, 0, 0,		/* margins */
-	   8, bmp_print_page);
+	   3, 8, 6, 6, 7, 7, bmp_print_page)
+};
 
 /* 24-bit color. */
 
@@ -133,7 +136,7 @@ bmp_print_page(gx_device_printer * pdev, FILE * file)
 {
     uint raster = gdev_prn_raster(pdev);
     /* BMP scan lines are padded to 32 bits. */
-    uint bmp_raster = raster + (-raster & 3);
+    uint bmp_raster = raster + (-(int)raster & 3);
     byte *row = gs_alloc_bytes(pdev->memory, bmp_raster, "bmp file buffer");
     int y;
     int code;		/* return code */
@@ -169,7 +172,7 @@ bmp_cmyk_print_page(gx_device_printer * pdev, FILE * file)
     int plane_depth = pdev->color_info.depth / 4;
     uint raster = bitmap_raster(pdev->width * plane_depth);
     /* BMP scan lines are padded to 32 bits. */
-    uint bmp_raster = raster + (-raster & 3);
+    uint bmp_raster = raster + (-(int)raster & 3);
     byte *row = gs_alloc_bytes(pdev->memory, bmp_raster, "bmp file buffer");
     int y;
     int code = 0;		/* return code */

@@ -26,8 +26,8 @@
 
 /* Forward references */
 private void
-     apply_hstem_hints(P3(gs_type1_state *, int, gs_fixed_point *)), apply_vstem_hints(P3(gs_type1_state *, int, gs_fixed_point *));
-
+    apply_hstem_hints(gs_type1_state *, int, gs_fixed_point *),
+    apply_vstem_hints(gs_type1_state *, int, gs_fixed_point *);
 
 /*
  * Apply hints along a newly added tail of a subpath.
@@ -364,7 +364,7 @@ apply_wrapped_hints(gs_type1_state * pcis, subpath * psub, segment * pseg,
  * the hints.
  */
 void
-type1_apply_path_hints(gs_type1_state * pcis, bool closing, gx_path * ppath)
+type1_do_apply_path_hints(gs_type1_state * pcis, bool closing, gx_path * ppath)
 {
     segment *pseg = pcis->hint_next;
     segment *pnext;
@@ -384,7 +384,7 @@ type1_apply_path_hints(gs_type1_state * pcis, bool closing, gx_path * ppath)
      * and hint members of the state haven't been set up yet.  In this
      * case, we know there are no relevant hints.
      */
-    if (pcis->init_done < 0)
+    if (pcis->init_done < 0 || !(pcis->fh.use_x_hints | pcis->fh.use_y_hints))
 	return;
     if (pseg == 0) {
 	/* Start at the beginning of the subpath. */
@@ -472,10 +472,19 @@ type1_apply_path_hints(gs_type1_state * pcis, bool closing, gx_path * ppath)
 	pcis->hints_pending = hints;
     }
 }
+void
+type1_apply_path_hints(gs_type1_state * pcis, bool closing, gx_path * ppath)
+{
+    if (ppath->segments != 0)
+	type1_do_apply_path_hints(pcis, closing, ppath);
+    else {
+	/* We compute glyph bbox without hinting */
+    }
+}
 
 /* ------ Individual hints ------ */
 
-private const stem_hint *search_hints(P2(stem_hint_table *, fixed));
+private const stem_hint *search_hints(stem_hint_table *, fixed);
 
 /*
  * Adjust a point according to the relevant hints.

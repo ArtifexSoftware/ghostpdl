@@ -44,10 +44,10 @@ GSROOTDIR=$(AROOTDIR)/gs$(GS_DOT_VERSION)
 GS_DOCDIR=$(GSROOTDIR)/doc
 
 # Define the default directory/ies for the runtime
-# initialization and font files.  Separate multiple directories with \;.
+# initialization, resource and font files.  Separate multiple directories with \;.
 # Use / to indicate directories, not a single \.
 
-GS_LIB_DEFAULT=$(GSROOTDIR)/lib\;$(AROOTDIR)/fonts
+GS_LIB_DEFAULT=$(GSROOTDIR)/lib\;$(GSROOTDIR)/Resource\;$(AROOTDIR)/fonts
 
 # Define whether or not searching for initialization files should always
 # look in the current directory first.  This leads to well-known security
@@ -124,7 +124,7 @@ JVERSION=6
 # See libpng.mak for more information.
 
 PSRCDIR=libpng
-PVERSION=10012
+PVERSION=10204
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
@@ -135,6 +135,13 @@ ZSRCDIR=zlib
 # See icclib.mak for more information
 
 ICCSRCDIR=icclib
+
+# Define the directory where the ijs source is stored,
+# and the process forking method to use for the server.
+# See ijs.mak for more information.
+ 
+IJSSRCDIR=ijs
+IJSEXECTYPE=win
 
 # Define any other compilation flags.
 
@@ -156,7 +163,8 @@ PSD=$(PSGENDIR)\$(NUL)
 # ------ Platform-specific options ------ #
 
 # Define the drive, directory, and compiler name for the Borland C files.
-# BUILDER_VERSION=0 for BC++4.5, 3 for C++Builder3, 4 for C++Builder4
+# BUILDER_VERSION=0 for BC++4.5, 3 for C++Builder3, 4 for C++Builder4,
+#  5 for C++Builder5.
 # COMPDIR contains the compiler and linker (normally \bc\bin).
 # INCDIR contains the include files (normally \bc\include).
 # LIBDIR contains the library files (normally \bc\lib).
@@ -167,6 +175,14 @@ PSD=$(PSGENDIR)\$(NUL)
 # LINK is the full linker path name (normally \bc\bin\tlink32).
 # Note that these prefixes are always followed by a \,
 #   so if you want to use the current directory, use an explicit '.'.
+
+# Rod Webster (rodw)
+# If C++Builder is later than 4 then you need to 
+# define BUILDER_VERSION explicity uisng BUILDER_VERSION=5 because 
+# C++Builder 4 and above all use Make Version 5.2 so point we can no 
+# longer tell the Compiler version from the __MAKE__ version number.
+
+BUILDER_VERSION=5
 
 !ifndef BUILDER_VERSION
 !if $(__MAKE__) >= 0x520
@@ -193,6 +209,10 @@ COMPBASE16=c:\bc
 COMPBASE=c:\Progra~1\Borland\CBuilder4
 COMPBASE16=c:\bc
 !endif
+!if $(BUILDER_VERSION) == 5
+COMPBASE=c:\Borland\BCC55
+#COMPBASE16=$(COMPBASE)
+!endif
 
 COMPDIR=$(COMPBASE)\bin
 INCDIR=$(COMPBASE)\include
@@ -209,8 +229,9 @@ COMPAUX=$(COMPDIR)\bcc32
 
 !if $(BUILDER_VERSION) == 4
 LINK=$(COMPDIR)\ilink32
-!else
-LINK=$(COMPDIR)\tlink32
+!endif
+!if $(BUILDER_VERSION) == 5
+LINK=$(COMPDIR)\ilink32
 !endif
 
 # If you don't have an assembler, set USE_ASM=0.  Otherwise, set USE_ASM=1,
@@ -251,7 +272,7 @@ SYNC=winsync
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)mshandle.dev $(GLD)pipe.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(PSD)mshandle.dev $(PSD)mspoll.dev $(GLD)pipe.dev $(PSD)fapi.dev
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
@@ -277,12 +298,12 @@ FILE_IMPLEMENTATION=stdio
 # Choose the implementation of stdio: '' for file I/O and 'c' for callouts
 # See gs.mak and ziodevs.c/ziodevsc.c for more details.
 
-STDIO_IMPLEMENTATION= 
+STDIO_IMPLEMENTATION=c
 
 # Choose the device(s) to include.  See devs.mak for details,
 # devs.mak and contrib.mak for the list of available devices.
 
-DEVICE_DEVS=$(DD)mswindll.dev $(DD)mswinprn.dev $(DD)mswinpr2.dev
+DEVICE_DEVS=$(DD)display.dev $(DD)mswindll.dev $(DD)mswinpr2.dev
 DEVICE_DEVS2=$(DD)epson.dev $(DD)eps9high.dev $(DD)eps9mid.dev $(DD)epsonc.dev $(DD)ibmpro.dev
 DEVICE_DEVS3=$(DD)deskjet.dev $(DD)djet500.dev $(DD)laserjet.dev $(DD)ljetplus.dev $(DD)ljet2p.dev
 DEVICE_DEVS4=$(DD)cdeskjet.dev $(DD)cdjcolor.dev $(DD)cdjmono.dev $(DD)cdj550.dev
@@ -294,7 +315,7 @@ DEVICE_DEVS9=$(DD)pbm.dev $(DD)pbmraw.dev $(DD)pgm.dev $(DD)pgmraw.dev $(DD)pgnm
 DEVICE_DEVS10=$(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev $(DD)tifflzw.dev $(DD)tiffpack.dev
 DEVICE_DEVS11=$(DD)bmpmono.dev $(DD)bmp16.dev $(DD)bmp256.dev $(DD)bmp16m.dev $(DD)tiff12nc.dev $(DD)tiff24nc.dev
 DEVICE_DEVS12=$(DD)psmono.dev $(DD)bit.dev $(DD)bitrgb.dev $(DD)bitcmyk.dev
-DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev
+DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev $(DD)pngalpha.dev
 DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev
 DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)epswrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev
 # Overflow for DEVS3,4,5,6,9
@@ -308,8 +329,8 @@ DEVICE_DEVS20=$(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev
 
 # Define the name of the makefile -- used in dependencies.
 
-MAKEFILE=$(GLSRCDIR)\bcwin32.mak
-TOP_MAKEFILES=$(MAKEFILE) $(GLSRCDIR)\winlib.mak $(GLSRCDIR)\winint.mak
+MAKEFILE=$(PSSRCDIR)\bcwin32.mak
+TOP_MAKEFILES=$(MAKEFILE) $(GLSRCDIR)\winlib.mak $(PSSRCDIR)\winint.mak
 
 # Define the current directory prefix and shell invocations.
 
@@ -332,8 +353,12 @@ PCFBASM=
 
 # Make sure we get the right default target for make.
 
+# Rod Webster (rodw)
+# CBuilder 5 does not support 16 bit compilation 
+# so add conditional to skip attempts to build 16 bit version
+!if $(BUILDER_VERSION) !=5
 dosdefault: default $(BINDIR)\gs16spl.exe
-
+!endif
 # Define the switches for the compilers.
 
 C_=-c
@@ -439,7 +464,7 @@ BEGINFILES2=$(BINDIR)\gs16spl.exe *.tr
 # Include the generic makefiles.
 
 !include $(GLSRCDIR)\winlib.mak
-!include $(GLSRCDIR)\winint.mak
+!include $(PSSRCDIR)\winint.mak
 
 # -------------------------- Auxiliary programs --------------------------- #
 
@@ -487,7 +512,7 @@ $(GENINIT_XE): $(PSSRCDIR)\geninit.c $(GENINIT_DEPS)
 
 # ----------------------------- Main program ------------------------------ #
 
-LIBCTR=$(GLGEN)libc32.tr
+LIBCTR=$(PSGEN)libc32.tr
 GSCONSOLE_XE=$(BINDIR)\$(GSCONSOLE).exe
 GSDLL_DLL=$(BINDIR)\$(GSDLL).dll
 
@@ -505,64 +530,82 @@ SETUP_TARGETS=$(SETUP_XE) $(UNINSTALL_XE)
 !if $(MAKEDLL)
 # The graphical small EXE loader
 $(GS_XE): $(GSDLL_DLL)  $(DWOBJ) $(GSCONSOLE_XE)\
- $(GS_OBJ).res $(GLSRCDIR)\dwmain32.def $(SETUP_TARGETS)
+ $(GS_OBJ).res $(PSSRCDIR)\dwmain32.def $(SETUP_TARGETS)
 	$(LINK) /Tpe /aa $(LCT) @&&!
 $(LIBDIR)\c0w32 +
 $(DWOBJ) +
-,$(GS_XE),$(GLOBJ)$(GS), +
+,$(GS_XE),$(PSOBJ)$(GS), +
 $(LIBDIR)\import32 +
 $(LIBDIR)\cw32, +
-$(GLSRCDIR)\dwmain32.def, +
+$(PSSRCDIR)\dwmain32.def, +
 $(GS_OBJ).res
 !
 
 # The console mode small EXE loader
-$(GSCONSOLE_XE): $(OBJC) $(GS_OBJ).res $(GLSRCDIR)\dw32c.def
+!if $(BUILDER_VERSION) == 5
+$(GSCONSOLE_XE): $(OBJC) $(GS_OBJ).res $(PSSRCDIR)\dw32c.def
+	$(LINK) /Tpe /ap $(LCT) $(DEBUGLINK) @&&!
+$(LIBDIR)\c0x32 +
+$(OBJC) +
+,$(GSCONSOLE_XE),$(PSOBJ)$(GSCONSOLE), +
+$(LIBDIR)\import32 +
+$(LIBDIR)\cw32mt, +
+$(PSSRCDIR)\dw32c.def, +
+$(GS_OBJ).res
+!
+!else
+
+$(GSCONSOLE_XE): $(OBJC) $(GS_OBJ).res $(PSSRCDIR)\dw32c.def
 	$(LINK) /Tpe /ap $(LCT) $(DEBUGLINK) @&&!
 $(LIBDIR)\c0w32 +
 $(OBJC) +
-,$(GSCONSOLE_XE),$(GLOBJ)$(GSCONSOLE), +
+,$(GSCONSOLE_XE),$(PSOBJ)$(GSCONSOLE), +
 $(LIBDIR)\import32 +
 $(LIBDIR)\cw32, +
-$(GLSRCDIR)\dw32c.def, +
+$(PSSRCDIR)\dw32c.def, +
 $(GS_OBJ).res
 !
+!endif
 
 # The big DLL
-$(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(GLOBJ)gsdll.$(OBJ)\
- $(GSDLL_OBJ).res $(GLSRCDIR)\gsdll32.def
-	-del $(GLGEN)gswin32.tr
-	copy $(ld_tr) $(GLGEN)gswin32.tr
-	echo $(LIBDIR)\c0d32 $(GLOBJ)gsdll + >> $(GLGEN)gswin32.tr
-	$(LINK) $(LCT) /Tpd /aa @$(GLGEN)gswin32.tr $(INTASM) ,$(GSDLL_DLL),$(GLOBJ)$(GSDLL),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(GLSRCDIR)\gsdll32.def,$(GSDLL_OBJ).res
+$(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(PSOBJ)gsdll.$(OBJ)\
+ $(GSDLL_OBJ).res $(PSSRCDIR)\gsdll32.def
+	-del $(PSGEN)gswin32.tr
+	copy $(ld_tr) $(PSGEN)gswin32.tr
+	echo $(LIBDIR)\c0d32 $(PSOBJ)gsdll + >> $(PSGEN)gswin32.tr
+	$(LINK) $(LCT) /Tpd /aa @$(PSGEN)gswin32.tr $(INTASM) ,$(GSDLL_DLL),$(PSOBJ)$(GSDLL),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(PSSRCDIR)\gsdll32.def,$(GSDLL_OBJ).res
 
 !else
 # The big graphical EXE
 $(GS_XE):   $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL)\
- $(GLOBJ)gsdll.$(OBJ) $(DWOBJNO) $(GS_OBJ).res $(GLSRCDIR)\dwmain32.def
-	-del $(GLGEN)gswin32.tr
-	copy $(ld_tr) $(GLGEN)gswin32.tr
-	echo $(LIBDIR)\c0w32 $(GLOBJ)gsdll + >> $(GLGEN)gswin32.tr
-	echo $(DWOBJNO) $(INTASM) >> $(GLGEN)gswin32.tr
-	$(LINK) $(LCT) /Tpe /aa @$(GLGEN)gswin32.tr ,$(GS_XE),$(GLOBJ)$(GS),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(GLSRCDIR)\dwmain32.def,$(GS_OBJ).res
+ $(PSOBJ)gsdll.$(OBJ) $(DWOBJNO) $(GS_OBJ).res $(PSSRCDIR)\dwmain32.def
+	-del $(PSGEN)gswin32.tr
+	copy $(ld_tr) $(PSGEN)gswin32.tr
+	echo $(LIBDIR)\c0w32 $(PSOBJ)gsdll + >> $(PSGEN)gswin32.tr
+	echo $(DWOBJNO) $(INTASM) >> $(PSGEN)gswin32.tr
+	$(LINK) $(LCT) /Tpe /aa @$(PSGEN)gswin32.tr ,$(GS_XE),$(PSOBJ)$(GS),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(PSSRCDIR)\dwmain32.def,$(GS_OBJ).res
 
 # The big console mode EXE
 $(GSCONSOLE_XE):  $(GS_ALL) $(DEVS_ALL)\
- $(GLOBJ)gsdll.$(OBJ) $(OBJCNO) $(GS_OBJ).res $(GLSRCDIR)\dw32c.def
-	-del $(GLGEN)gswin32.tr
-	copy $(ld_tr) $(GLGEN)gswin32.tr
-	echo $(LIBDIR)\c0w32 $(GLOBJ)gsdll + >> $(GLGEN)gswin32.tr
-	echo $(OBJCNO) $(INTASM) >> $(GLGEN)gswin32.tr
-	$(LINK) $(LCT) /Tpe /ap @$(GLGEN)gswin32.tr ,$(GSCONSOLE_XE),$(GLOBJ)$(GSCONSOLE),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(GLSRCDIR)\dw32c.def,$(GS_OBJ).res
+ $(PSOBJ)gsdll.$(OBJ) $(OBJCNO) $(GS_OBJ).res $(PSSRCDIR)\dw32c.def
+	-del $(PSGEN)gswin32.tr
+	copy $(ld_tr) $(PSGEN)gswin32.tr
+	echo $(LIBDIR)\c0w32 $(PSOBJ)gsdll + >> $(PSGEN)gswin32.tr
+	echo $(OBJCNO) $(INTASM) >> $(PSGEN)gswin32.tr
+	$(LINK) $(LCT) /Tpe /ap @$(PSGEN)gswin32.tr ,$(GSCONSOLE_XE),$(PSOBJ)$(GSCONSOLE),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(PSSRCDIR)\dw32c.def,$(GS_OBJ).res
 !endif
 
 # Access to 16 spooler from Win32s
+# Rod Webster (rodw)
+# CBuilder 5 does not support 16 bit compilation 
+# so add conditional to skip attempts to build 16 bit version
+!if $(BUILDER_VERSION !=5)
 
 GSSPL_XE=$(BINDIR)\gs16spl.exe
 
-$(GSSPL_XE): $(GLSRCDIR)\gs16spl.c $(GLSRCDIR)\gs16spl.rc
-	$(ECHOGS_XE) -w $(GLGEN)_spl.rc -x 23 define -s gstext_ico $(GLGENDIR)/gstext.ico
-	$(ECHOGS_XE) -a $(GLGEN)_spl.rc -x 23 define -s gsgraph_ico $(GLGENDIR)/gsgraph.ico
+$(GSSPL_XE): $(GLSRCDIR)\gs16spl.c $(GLSRCDIR)\gs16spl.rc $(GLGENDIR)/gswin.ico
+	$(ECHOGS_XE) -w $(GLGEN)_spl.rc -x 23 define -s gstext_ico $(GLGENDIR)/gswin.ico
+	$(ECHOGS_XE) -a $(GLGEN)_spl.rc -x 23 define -s gsgraph_ico $(GLGENDIR)/gswin.ico
 	$(ECHOGS_XE) -a $(GLGEN)_spl.rc -R $(GLSRC)gs16spl.rc
 	$(COMPBASE16)\bin\bcc -W -ms -v -I$(COMPBASE16)\include $(GLO_)gs16spl.obj -c $(GLSRCDIR)\gs16spl.c
 	$(COMPBASE16)\bin\brcc -i$(COMPBASE16)\include -r -fo$(GLOBJ)gs16spl.res $(GLGEN)_spl.rc
@@ -576,33 +619,34 @@ $(COMPBASE16)\lib\cws, +
 $(GLSRCDIR)\gs16spl.def
 !
 	$(COMPBASE16)\bin\rlink -t $(GLOBJ)gs16spl.res $(GSSPL_XE)
+!endif
 
 # ---------------------- Setup and uninstall programs ---------------------- #
 
 !if $(MAKEDLL)
 
-$(SETUP_XE): $(GLOBJ)dwsetup.obj $(GLOBJ)dwinst.obj $(GLOBJ)dwsetup.res $(GLSRC)dwsetup.def
+$(SETUP_XE): $(PSOBJ)dwsetup.obj $(PSOBJ)dwinst.obj $(PSOBJ)dwsetup.res $(PSSRC)dwsetup.def
 	$(LINK) /Tpe /aa $(LCT) $(DEBUGLINK) -L$(LIBDIR) @&&!
 $(LIBDIR)\c0w32 +
-$(GLOBJ)dwsetup.obj $(GLOBJ)dwinst.obj +
-,$(SETUP_XE),$(GLOBJ)dwsetup, +
+$(PSOBJ)dwsetup.obj $(PSOBJ)dwinst.obj +
+,$(SETUP_XE),$(PSOBJ)dwsetup, +
 $(LIBDIR)\import32 +
 $(LIBDIR)\ole2w32 +
 $(LIBDIR)\cw32, +
-$(GLSRCDIR)\dwsetup.def, +
-$(GLOBJ)dwsetup.res
+$(PSSRCDIR)\dwsetup.def, +
+$(PSOBJ)dwsetup.res
 !
 
-$(UNINSTALL_XE): $(GLOBJ)dwuninst.obj $(GLOBJ)dwuninst.res $(GLSRC)dwuninst.def
+$(UNINSTALL_XE): $(PSOBJ)dwuninst.obj $(PSOBJ)dwuninst.res $(PSSRC)dwuninst.def
 	$(LINK) /Tpe /aa $(LCT) $(DEBUGLINK) -L$(LIBDIR) @&&!
 $(LIBDIR)\c0w32 +
-$(GLOBJ)dwuninst.obj +
-,$(UNINSTALL_XE),$(GLOBJ)dwuninst, +
+$(PSOBJ)dwuninst.obj +
+,$(UNINSTALL_XE),$(PSOBJ)dwuninst, +
 $(LIBDIR)\import32 +
 $(LIBDIR)\ole2w32 +
 $(LIBDIR)\cw32, +
-$(GLSRCDIR)\dwuninst.def, +
-$(GLOBJ)dwuninst.res
+$(PSSRCDIR)\dwuninst.def, +
+$(PSOBJ)dwuninst.res
 !
 
 
@@ -610,3 +654,4 @@ $(GLOBJ)dwuninst.res
 
 
 # end of makefile
+

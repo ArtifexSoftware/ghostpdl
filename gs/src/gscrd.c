@@ -103,17 +103,17 @@ EncodeABC_cached_C(floatp in, const gs_cie_render * pcrd)
 private float
 EncodeLMN_cached_L(floatp in, const gs_cie_render * pcrd)
 {
-    return gs_cie_cached_value(in, &pcrd->caches.EncodeLMN[0].floats);
+    return gs_cie_cached_value(in, &pcrd->caches.EncodeLMN.caches[0].floats);
 }
 private float
 EncodeLMN_cached_M(floatp in, const gs_cie_render * pcrd)
 {
-    return gs_cie_cached_value(in, &pcrd->caches.EncodeLMN[1].floats);
+    return gs_cie_cached_value(in, &pcrd->caches.EncodeLMN.caches[1].floats);
 }
 private float
 EncodeLMN_cached_N(floatp in, const gs_cie_render * pcrd)
 {
-    return gs_cie_cached_value(in, &pcrd->caches.EncodeLMN[2].floats);
+    return gs_cie_cached_value(in, &pcrd->caches.EncodeLMN.caches[2].floats);
 }
 
 private frac
@@ -251,7 +251,7 @@ gs_cie_render1_build(gs_cie_render ** ppcrd, gs_memory_t * mem,
 
     rc_alloc_struct_1(pcrd, gs_cie_render, &st_cie_render1, mem,
 		      return_error(gs_error_VMerror), cname);
-    pcrd->id = gs_next_id();
+    pcrd->id = gs_next_ids(1);
     /* Initialize pointers for the GC. */
     pcrd->client_data = 0;
     pcrd->RenderTable.lookup.table = 0;
@@ -290,7 +290,7 @@ gs_cie_render1_init_from(gs_cie_render * pcrd, void *client_data,
 			 const gs_range3 * RangeABC,
 			 const gs_cie_render_table_t * RenderTable)
 {
-    pcrd->id = gs_next_id();
+    pcrd->id = gs_next_ids(1);
     pcrd->client_data = client_data;
     pcrd->points.WhitePoint = *WhitePoint;
     pcrd->points.BlackPoint =
@@ -305,7 +305,7 @@ gs_cie_render1_init_from(gs_cie_render * pcrd, void *client_data,
 	!memcmp(&pcrd->EncodeLMN, &EncodeLMN_from_cache,
 		sizeof(EncodeLMN_from_cache))
 	)
-	memcpy(pcrd->caches.EncodeLMN, pfrom_crd->caches.EncodeLMN,
+	memcpy(&pcrd->caches.EncodeLMN, &pfrom_crd->caches.EncodeLMN,
 	       sizeof(pcrd->caches.EncodeLMN));
     pcrd->RangeLMN = *(RangeLMN ? RangeLMN : &Range3_default);
     pcrd->MatrixABC = *(MatrixABC ? MatrixABC : &Matrix3_default);

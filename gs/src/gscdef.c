@@ -29,7 +29,7 @@ CONFIG_CONST long gs_buildtime = GS_BUILDTIME;
 
 #ifndef GS_COPYRIGHT
 #  define GS_COPYRIGHT\
-	"Copyright (C) 2001 artofcode LLC, Benicia, CA.  All rights reserved."
+	"Copyright (C) 2002 artofcode LLC, Benicia, CA.  All rights reserved."
 #endif
 const char *CONFIG_CONST gs_copyright = GS_COPYRIGHT;
 
@@ -41,7 +41,7 @@ const char *CONFIG_CONST gs_productfamily = GS_PRODUCTFAMILY;
 
 #ifndef GS_PRODUCT
 #  define GS_PRODUCT\
-	"AFPL Ghostscript"
+	"AFPL Ghostscript CVS PRE-RELEASE"
 #endif
 const char *CONFIG_CONST gs_product = GS_PRODUCT;
 

@@ -18,7 +18,7 @@
 #include "gserrors.h"
 #include "gsstruct.h"
 #include "gsbitops.h"
-#include "gsutil.h"		/* for gs_next_id */
+#include "gsutil.h"		/* for gs_next_ids */
 #include "gxfixed.h"
 #include "gxmatrix.h"
 #include "gzstate.h"
@@ -54,11 +54,11 @@ private RELOC_PTRS_BEGIN(cc_ptr_reloc_ptrs)
 RELOC_PTRS_END
 
 /* Forward references */
-private gx_xfont * lookup_xfont_by_name(P6(gx_device *, const gx_xfont_procs *, gs_font_name *, int, const cached_fm_pair *, const gs_matrix *));
-private cached_char *alloc_char(P2(gs_font_dir *, ulong));
-private cached_char *alloc_char_in_chunk(P2(gs_font_dir *, ulong));
-private void hash_remove_cached_char(P2(gs_font_dir *, uint));
-private void shorten_cached_char(P3(gs_font_dir *, cached_char *, uint));
+private gx_xfont * lookup_xfont_by_name(gx_device *, const gx_xfont_procs *, gs_font_name *, int, const cached_fm_pair *, const gs_matrix *);
+private cached_char *alloc_char(gs_font_dir *, ulong);
+private cached_char *alloc_char_in_chunk(gs_font_dir *, ulong);
+private void hash_remove_cached_char(gs_font_dir *, uint);
+private void shorten_cached_char(gs_font_dir *, cached_char *, uint);
 
 /* ====== Initialization ====== */
 
@@ -132,7 +132,7 @@ gx_char_cache_init(register gs_font_dir * dir)
 /* a client-supplied procedure. */
 void
 gx_purge_selected_cached_chars(gs_font_dir * dir,
-		   bool(*proc) (P2(cached_char *, void *)), void *proc_data)
+		   bool(*proc) (cached_char *, void *), void *proc_data)
 {
     int chi;
     int cmax = dir->ccache.table_mask;
@@ -344,10 +344,20 @@ lookup_xfont_by_name(gx_device * fdev, const gx_xfont_procs * procs,
 cached_char *
 gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
 		   gx_device_memory * dev2, ushort iwidth, ushort iheight,
-		   const gs_log2_scale_point * pscale, int depth)
+		   const gs_log2_scale_point * pscale, int depth1)
 {
     int log2_xscale = pscale->x;
     int log2_yscale = pscale->y;
+#   if !DROPOUT_PREVENTION
+    int depth = depth1;
+#   else
+     /*	With DROPOUT_PREVENTION we never oversample over the device 
+      * alpha_bits, so we don't need to scale down. Perhaps it may happen 
+      * that we underuse alpha_bits due to a big character raster,
+      * so we must compute log2_depth more accurately :
+      */
+    int depth = (log2_xscale + log2_yscale == 0 ? 1 : min(log2_xscale + log2_yscale, depth1));
+#   endif
     int log2_depth = ilog2(depth);
     uint nwidth_bits = (iwidth >> log2_xscale) << log2_depth;
     ulong isize, icdsize;
@@ -434,6 +444,7 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
     cc_set_raster(cc, gdev_mem_raster(pdev2));
     cc_set_pair_only(cc, 0);	/* not linked in yet */
     cc->id = gx_no_bitmap_id;
+    cc->subpix_origin.x = cc->subpix_origin.y = 0;
 
     /* Open the cache device(s). */
 
@@ -639,7 +650,7 @@ gx_add_char_bits(gs_font_dir * dir, cached_char * cc,
 
     /* Assign a bitmap id. */
 
-    cc->id = gs_next_id();
+    cc->id = gs_next_ids(1);
 }
 
 /* Purge from the caches all references to a given font. */

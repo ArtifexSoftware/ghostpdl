@@ -72,9 +72,6 @@ zsetalpha(i_ctx_t *i_ctx_p)
  *   (including halftoning if needed).
  */
 
-/* Imported procedures */
-int zimage_multiple(P2(i_ctx_t *i_ctx_p, bool has_alpha));  /* in zcolor1.c */
-
 /*
  * Define the operand and bookeeping structure for a compositing operation.
  */
@@ -88,18 +85,17 @@ typedef struct alpha_composite_state_s {
 } alpha_composite_state_t;
 
 /* Forward references */
-private int begin_composite(P2(i_ctx_t *, alpha_composite_state_t *));
-private void end_composite(P2(i_ctx_t *, alpha_composite_state_t *));
-private int xywh_param(P2(os_ptr, double[4]));
+private int begin_composite(i_ctx_t *, alpha_composite_state_t *);
+private void end_composite(i_ctx_t *, alpha_composite_state_t *);
+private int xywh_param(os_ptr, double[4]);
 
-/* <width> <height> <bits/comp> <matrix> */
-/*      <datasrc_0> ... <datasrc_ncomp-1> true <ncomp> alphaimage - */
-/*      <datasrc> false <ncomp> alphaimage - */
+/* <dict> .alphaimage - */
+/* This is the dictionary version of the alphaimage operator, which is */
+/* now a pseudo-operator (see gs_dpnxt.ps). */
 private int
 zalphaimage(i_ctx_t *i_ctx_p)
 {
-    /* Essentially the whole implementation is shared with colorimage. */
-    return zimage_multiple(i_ctx_p, true);
+    return image1_setup(i_ctx_p, true);
 }
 
 /* <destx> <desty> <width> <height> <op> compositerect - */
@@ -216,11 +212,11 @@ zdissolve(i_ctx_t *i_ctx_p)
 
 /* ------ Image reading ------ */
 
-private int device_is_true_color(P1(gx_device * dev));
+private int device_is_true_color(gx_device * dev);
 
 /* <x> <y> <width> <height> <matrix> .sizeimagebox */
 /*   <dev_x> <dev_y> <dev_width> <dev_height> <matrix> */
-private void box_confine(P3(int *pp, int *pq, int wh));
+private void box_confine(int *pp, int *pq, int wh);
 private int
 zsizeimagebox(i_ctx_t *i_ctx_p)
 {
@@ -332,7 +328,7 @@ const op_def zdpnext_op_defs[] =
 {
     {"0currentalpha", zcurrentalpha},
     {"1setalpha", zsetalpha},
-    {"7alphaimage", zalphaimage},
+    {"1.alphaimage", zalphaimage},
     {"8composite", zcomposite},
     {"5compositerect", zcompositerect},
     {"8dissolve", zdissolve},
@@ -415,9 +411,9 @@ device_is_true_color(gx_device * dev)
 	    if (max_v != (1 << depth) - 1)
 		return 0;
 	    for (i = 0; i <= max_v; ++i) {
-		gx_color_value v = CV(i);
-
-		if ((*dev_proc(dev, map_rgb_color)) (dev, v, v, v) != i)
+		gx_color_value v[3];
+                v[0] = v[1] = v[2] = CV(i);
+		if ((*dev_proc(dev, map_rgb_color)) (dev, v) != i)
 		    return 0;
 	    }
 	    return true;
@@ -429,13 +425,17 @@ device_is_true_color(gx_device * dev)
 		const int gs = depth / 3, rs = gs * 2;
 
 		for (i = 0; i <= max_v; ++i) {
-		    gx_color_value v = CV(i);
-
-		    if ((*dev_proc(dev, map_rgb_color)) (dev, v, CV0, CV0) !=
+		    gx_color_value red[3];
+                    gx_color_value green[3];
+                    gx_color_value blue[3];
+                    red[0] = CV(i); red[1] = CV0, red[2] = CV0;
+                    green[0] = CV0; green[1] = CV(i); green[2] = CV0;
+                    blue[0] = CV0; blue[1] = CV0; blue[2] = CV(i);
+		    if ((*dev_proc(dev, map_rgb_color)) (dev, red) !=
 			i << rs ||
-			(*dev_proc(dev, map_rgb_color)) (dev, CV0, v, CV0) !=
+			(*dev_proc(dev, map_rgb_color)) (dev, green) !=
 			i << gs ||
-			(*dev_proc(dev, map_rgb_color)) (dev, CV0, CV0, v) !=
+			(*dev_proc(dev, map_rgb_color)) (dev, blue) !=
 			i	/*<< bs */
 			)
 			return 0;
@@ -450,15 +450,22 @@ device_is_true_color(gx_device * dev)
 		const int ys = depth / 4, ms = ys * 2, cs = ys * 3;
 
 		for (i = 0; i <= max_v; ++i) {
-		    gx_color_value v = CV(i);
-
-		    if ((*dev_proc(dev, map_cmyk_color)) (dev, v, CV0, CV0, CV0) !=
+                    
+		    gx_color_value cyan[4];
+                    gx_color_value magenta[4];
+                    gx_color_value yellow[4];
+                    gx_color_value black[4];
+                    cyan[0] = CV(i); cyan[1] = cyan[2] = cyan[3] = CV0;
+                    magenta[1] = CV(i); magenta[0] = magenta[2] = magenta[3] = CV0;
+                    yellow[2] = CV(i); yellow[0] = yellow[1] = yellow[3] = CV0;
+                    black[3] = CV(i); black[0] = black[1] = black[2] = CV0;
+		    if ((*dev_proc(dev, map_cmyk_color)) (dev, cyan) !=
 			i << cs ||
-			(*dev_proc(dev, map_cmyk_color)) (dev, CV0, v, CV0, CV0) !=
+			(*dev_proc(dev, map_cmyk_color)) (dev, magenta) !=
 			i << ms ||
-			(*dev_proc(dev, map_cmyk_color)) (dev, CV0, CV0, v, CV0) !=
+			(*dev_proc(dev, map_cmyk_color)) (dev, yellow) !=
 			i << ys ||
-			(*dev_proc(dev, map_cmyk_color)) (dev, CV0, CV0, CV0, v) !=
+			(*dev_proc(dev, map_cmyk_color)) (dev, black) !=
 			i	/*<< ks */
 			)
 			return 0;

@@ -177,7 +177,7 @@ gx_begin_image3(gx_device * dev,
  * Begin a generic ImageType 3 image, with client handling the creation of
  * the mask image and mask clip devices.
  */
-private bool check_image3_extent(P2(floatp mask_coeff, floatp data_coeff));
+private bool check_image3_extent(floatp mask_coeff, floatp data_coeff);
 int
 gx_begin_image3_generic(gx_device * dev,
 			const gs_imager_state *pis, const gs_matrix *pmat,
@@ -324,8 +324,8 @@ gx_begin_image3_generic(gx_device * dev,
 	(code = gs_bbox_transform(&mrect, &mat, &mrect)) < 0
 	)
 	return code;
-    origin.x = floor(mrect.p.x);
-    origin.y = floor(mrect.p.y);
+    origin.x = (int)floor(mrect.p.x);
+    origin.y = (int)floor(mrect.p.y);
     code = make_mid(&mdev, dev, (int)ceil(mrect.q.x) - origin.x,
 		    (int)ceil(mrect.q.y) - origin.y, mem);
     if (code < 0)
@@ -366,8 +366,14 @@ gx_begin_image3_generic(gx_device * dev,
     gs_image_t_init(&i_pixel, pim->ColorSpace);
     {
 	const gx_image_type_t *type1 = i_pixel.type;
+        const bool mask = i_pixel.ImageMask;
 
+        /* On gcc 2.95.4 for Alpha all structures are padded to 8 byte
+         * boundary but sizeof(bool) == 4. First member of the subclass
+         * is restored because it is overwritten by padding data.
+         */
 	*(gs_pixel_image_t *)&i_pixel = *(const gs_pixel_image_t *)pim;
+	i_pixel.ImageMask = mask;
 	i_pixel.type = type1;
     }
     code = make_mcde(dev, pis, pmat, (const gs_image_common_t *)&i_pixel,

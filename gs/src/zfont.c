@@ -29,8 +29,9 @@
 #include "ivmspace.h"
 
 /* Forward references */
-private int make_font(P2(i_ctx_t *, const gs_matrix *));
-private void make_uint_array(P3(os_ptr, const uint *, int));
+private int make_font(i_ctx_t *, const gs_matrix *);
+private void make_uint_array(os_ptr, const uint *, int);
+private int setup_unicode_decoder(i_ctx_t *i_ctx_p, ref *Decoding);
 
 /* The (global) font directory */
 gs_font_dir *ifont_dir = 0;	/* needed for buildfont */
@@ -191,6 +192,22 @@ zregisterfont(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+
+/* <Decoding> .setupUnicodeDecoder - */
+private int
+zsetupUnicodeDecoder(i_ctx_t *i_ctx_p)
+{   /* The allocation mode must be global. */
+    os_ptr op = osp;
+    int code;
+
+    check_type(*op, t_dictionary);
+    code = setup_unicode_decoder(i_ctx_p, op);
+    if (code < 0)
+	return code;
+    pop(1);
+    return 0;
+}
+
 /* ------ Initialization procedure ------ */
 
 const op_def zfont_op_defs[] =
@@ -204,6 +221,7 @@ const op_def zfont_op_defs[] =
     {"1setcacheparams", zsetcacheparams},
     {"0currentcacheparams", zcurrentcacheparams},
     {"1.registerfont", zregisterfont},
+    {"1.setupUnicodeDecoder", zsetupUnicodeDecoder},
     op_def_end(zfont_init)
 };
 
@@ -337,7 +355,6 @@ zdefault_make_font(gs_font_dir * pdir, const gs_font * oldfont,
     ref newdict, newmat, scalemat;
     uint dlen = dict_maxlength(fp);
     uint mlen = dict_length(fp) + 3;	/* FontID, OrigFont, ScaleMatrix */
-    dict_defaults_t dict_defaults;
     int code;
 
     if (dlen < mlen)
@@ -350,8 +367,7 @@ zdefault_make_font(gs_font_dir * pdir, const gs_font * oldfont,
      * This dictionary is newly created: it's safe to pass NULL as the
      * dstack pointer to dict_copy and dict_put_string.
      */
-    dict_defaults_default(&dict_defaults);
-    if ((code = dict_alloc(imem, dlen, &newdict, &dict_defaults)) < 0 ||
+    if ((code = dict_alloc(imem, dlen, &newdict)) < 0 ||
 	(code = dict_copy(fp, &newdict, NULL)) < 0 ||
 	(code = gs_alloc_ref_array(imem, &newmat, a_all, 12,
 				   "make_font(matrices)")) < 0
@@ -545,4 +561,52 @@ zfont_info(gs_font *font, const gs_point *pscale, int members,
 	zfont_info_has(pfontinfo, "FullName", &info->FullName))
 	info->members |= FONT_INFO_FULL_NAME;
     return code;
+}
+
+/* -------------------- Utilities --------------*/
+
+typedef struct gs_unicode_decoder_s {
+    ref data;
+} gs_unicode_decoder;
+
+/* GC procedures */
+private 
+CLEAR_MARKS_PROC(unicode_decoder_clear_marks)
+{   gs_unicode_decoder *const pptr = vptr;
+
+    r_clear_attrs(&pptr->data, l_mark);
+}
+private 
+ENUM_PTRS_WITH(unicode_decoder_enum_ptrs, gs_unicode_decoder *pptr) return 0;
+case 0:
+ENUM_RETURN_REF(&pptr->data);
+ENUM_PTRS_END
+private RELOC_PTRS_WITH(unicode_decoder_reloc_ptrs, gs_unicode_decoder *pptr);
+RELOC_REF_VAR(pptr->data);
+r_clear_attrs(&pptr->data, l_mark);
+RELOC_PTRS_END
+
+gs_private_st_complex_only(st_unicode_decoder, gs_unicode_decoder,\
+    "unicode_decoder", unicode_decoder_clear_marks, unicode_decoder_enum_ptrs, 
+    unicode_decoder_reloc_ptrs, 0);
+
+/* Get the Unicode value for a glyph. */
+const ref *
+zfont_get_to_unicode_map(gs_font_dir *dir)
+{
+    const gs_unicode_decoder *pud = (gs_unicode_decoder *)dir->glyph_to_unicode_table;
+    
+    return (pud == NULL ? NULL : &pud->data);
+}
+
+private int
+setup_unicode_decoder(i_ctx_t *i_ctx_p, ref *Decoding)
+{
+    gs_unicode_decoder *pud = gs_alloc_struct(imemory, gs_unicode_decoder, 
+                             &st_unicode_decoder, "setup_unicode_decoder");
+    if (pud == NULL)
+	return_error(e_VMerror);
+    ref_assign_new(&pud->data, Decoding);
+    ifont_dir->glyph_to_unicode_table = pud;
+    return 0;
 }

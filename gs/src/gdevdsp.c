@@ -36,6 +36,7 @@
 #include "string_.h"
 #include "gx.h"
 #include "gserrors.h"
+#include "gsdevice.h"		/* for gs_copydevice */
 #include "gxdevice.h"
 
 #include "gp.h"
@@ -49,8 +50,8 @@
 
 /* Initial values for width and height */
 #define INITIAL_RESOLUTION 96
-#define INITIAL_WIDTH (INITIAL_RESOLUTION * 85 / 10 + 1)
-#define INITIAL_HEIGHT (INITIAL_RESOLUTION * 11 + 1)
+#define INITIAL_WIDTH ((INITIAL_RESOLUTION * 85 + 5) / 10)
+#define INITIAL_HEIGHT ((INITIAL_RESOLUTION * 110 + 5) / 10)
 
 /* Device procedures */
 
@@ -78,10 +79,7 @@ private dev_proc_copy_color(display_copy_color);
 private dev_proc_get_bits(display_get_bits);
 private dev_proc_get_params(display_get_params);
 private dev_proc_put_params(display_put_params);
-private dev_proc_map_rgb_alpha_color(display_map_rgb_alpha_color);
-private dev_proc_map_color_rgb_alpha(display_map_color_rgb_alpha);
 private dev_proc_finish_copydevice(display_finish_copydevice);
-
 
 private const gx_device_procs display_procs =
 {
@@ -129,7 +127,12 @@ private const gx_device_procs display_procs =
     NULL,				/* create_compositor */
     NULL,				/* get_hardware_params */
     NULL,				/* text_begin */
-    display_finish_copydevice		/* finish_copydevice */
+    display_finish_copydevice,		/* finish_copydevice */
+    NULL,				/* begin_transparency_group */
+    NULL,				/* end_transparency_group */
+    NULL,				/* begin_transparency_mask */
+    NULL,				/* end_transparency_mask */
+    NULL				/* discard_transparency_layer */
 };
 
 /* GC descriptor */
@@ -140,15 +143,6 @@ ENUM_PTRS_WITH(display_enum_ptrs, gx_device_display *ddev) return 0;
     case 0: 
 	if (ddev->mdev) {
 	    return ENUM_OBJ(gx_device_enum_ptr((gx_device *)ddev->mdev));
-	}
-	return 0;	/* if mdev is NULL, then pBitmap will be also */
-    case 1: 
-        if (ddev->callback && 
-	    !ddev->callback->display_memalloc && 
-	    !ddev->callback->display_memfree &&
-	    ddev->pBitmap) {
-	    /* we allocated the bitmap */
-	    return ENUM_OBJ(ddev->pBitmap);
 	}
 	return 0;
 ENUM_PTRS_END
@@ -304,18 +298,21 @@ display_close(gx_device * dev)
     return 0;
 }
 
+/*
+ * This routine will encode a 1 Black on white color.
+ */
+private gx_color_index
+gx_b_w_gray_encode(gx_device * dev, const gx_color_value cv[])
+{
+    return 1 - (cv[0] >> (gx_color_value_bits - 1));
+}
 
 /* DISPLAY_COLORS_NATIVE, 4bit/pixel */
 /* Map a r-g-b color to a color code */
 private gx_color_index
-display_map_rgb_color_device4(gx_device * dev, 
-    gx_color_value r, gx_color_value g, gx_color_value b)
+display_map_rgb_color_device4(gx_device * dev, const gx_color_value cv[])
 {
-    gx_device_display *ddev = (gx_device_display *) dev;
-    if ((r == g) && (g == b) && (r >= gx_max_color_value / 3 * 2 - 1)
-	&& (r < gx_max_color_value / 4 * 3))
-	return ((gx_color_index) 8);	/* light gray */
-    return pc_4bit_map_rgb_color(dev, r, g, b);
+    return pc_4bit_map_rgb_color(dev, cv);
 }
 
 /* Map a color code to r-g-b. */
@@ -323,21 +320,20 @@ private int
 display_map_color_rgb_device4(gx_device * dev, gx_color_index color,
 		 gx_color_value prgb[3])
 {
-    if (color == 8)	/* VGA light grey */
-	prgb[0] = prgb[1] = prgb[2] = (gx_max_color_value / 4 * 3);
-    else
-	pc_4bit_map_color_rgb(dev, color, prgb);
+    pc_4bit_map_color_rgb(dev, color, prgb);
     return 0;
 }
 
 /* DISPLAY_COLORS_NATIVE, 8bit/pixel */
 /* Map a r-g-b color to a color code */
 private gx_color_index
-display_map_rgb_color_device8(gx_device * dev, 
-    gx_color_value r, gx_color_value g, gx_color_value b)
+display_map_rgb_color_device8(gx_device * dev, const gx_color_value cv[])
 {
     /* palette of 96 colors */
     /* 0->63 = 00RRGGBB, 64->95 = 010YYYYY */
+    gx_color_value r = cv[0];
+    gx_color_value g = cv[1];
+    gx_color_value b = cv[2];
     if ((r == g) && (g == b))
 	return ((r >> (gx_color_value_bits - 5)) + 0x40);
     return ((r >> (gx_color_value_bits - 2)) << 4) +
@@ -355,13 +351,14 @@ display_map_color_rgb_device8(gx_device * dev, gx_color_index color,
     /* 0->63 = 00RRGGBB, 64->95 = 010YYYYY */
     if (color < 64) {
 	one = (gx_color_value) (gx_max_color_value / 3);
-	prgb[0] = ((color >> 4) & 3) * one;
-	prgb[1] = ((color >> 2) & 3) * one;
-	prgb[2] = ((color) & 3) * one;
+	prgb[0] = (gx_color_value) (((color >> 4) & 3) * one);
+	prgb[1] = (gx_color_value) (((color >> 2) & 3) * one);
+	prgb[2] = (gx_color_value) (((color) & 3) * one);
     }
     else if (color < 96) {
 	one = (gx_color_value) (gx_max_color_value / 31);
-	prgb[0] = prgb[1] = prgb[2] = (color & 0x1f) * one;
+	prgb[0] = prgb[1] = prgb[2] = 
+	    (gx_color_value) ((color & 0x1f) * one);
     }
     else {
 	prgb[0] = prgb[1] = prgb[2] = 0;
@@ -373,10 +370,12 @@ display_map_color_rgb_device8(gx_device * dev, gx_color_index color,
 /* DISPLAY_COLORS_NATIVE, 16bit/pixel */
 /* Map a r-g-b color to a color code */
 private gx_color_index
-display_map_rgb_color_device16(gx_device * dev, 
-    gx_color_value r, gx_color_value g, gx_color_value b)
+display_map_rgb_color_device16(gx_device * dev, const gx_color_value cv[])
 {
     gx_device_display *ddev = (gx_device_display *) dev;
+    gx_color_value r = cv[0];
+    gx_color_value g = cv[1];
+    gx_color_value b = cv[2];
     if ((ddev->nFormat & DISPLAY_ENDIAN_MASK) == DISPLAY_BIGENDIAN) {
 	if ((ddev->nFormat & DISPLAY_555_MASK) == DISPLAY_NATIVE_555)
 	    /* byte0=0RRRRRGG byte1=GGGBBBBB */
@@ -412,59 +411,71 @@ display_map_color_rgb_device16(gx_device * dev, gx_color_index color,
 		 gx_color_value prgb[3])
 {
     gx_device_display *ddev = (gx_device_display *) dev;
-    gx_color_value one;
     ushort value;
 
     if ((ddev->nFormat & DISPLAY_ENDIAN_MASK) == DISPLAY_BIGENDIAN) {
 	if ((ddev->nFormat & DISPLAY_555_MASK) == DISPLAY_NATIVE_555) {
 	    /* byte0=0RRRRRGG byte1=GGGBBBBB */
-	    value = color >> 10;
-	    prgb[0] = ((value << 11) + (value << 6) + (value << 1) + 
-		(value >> 4)) >> (16 - gx_color_value_bits);
-	    value = (color >> 5) & 0x1f;
-	    prgb[1] = ((value << 11) + (value << 6) + (value << 1) + 
-		(value >> 4)) >> (16 - gx_color_value_bits);
-	    value = color & 0x1f;
-	    prgb[2] = ((value << 11) + (value << 6) + (value << 1) + 
-		(value >> 4)) >> (16 - gx_color_value_bits);
+	    value = (ushort) (color >> 10);
+	    prgb[0] = (gx_color_value)
+		(((value << 11) + (value << 6) + (value << 1) + 
+		(value >> 4)) >> (16 - gx_color_value_bits));
+	    value = (ushort) ((color >> 5) & 0x1f);
+	    prgb[1] = (gx_color_value)
+		(((value << 11) + (value << 6) + (value << 1) + 
+		(value >> 4)) >> (16 - gx_color_value_bits));
+	    value = (ushort) (color & 0x1f);
+	    prgb[2] = (gx_color_value)
+		(((value << 11) + (value << 6) + (value << 1) + 
+		(value >> 4)) >> (16 - gx_color_value_bits));
 	}
 	else {
 	    /* byte0=RRRRRGGG byte1=GGGBBBBB */
-	    value = color >> 11;
+	    value = (ushort) (color >> 11);
 	    prgb[0] = ((value << 11) + (value << 6) + (value << 1) + 
 		(value >> 4)) >> (16 - gx_color_value_bits);
-	    value = (color >> 5) & 0x3f;
-	    prgb[1] = ((value << 10) + (value << 4) + (value >> 2))
+	    value = (ushort) ((color >> 5) & 0x3f);
+	    prgb[1] = (gx_color_value)
+		((value << 10) + (value << 4) + (value >> 2))
 		      >> (16 - gx_color_value_bits);
-	    value = color & 0x1f;
-	    prgb[2] = ((value << 11) + (value << 6) + (value << 1) + 
+	    value = (ushort) (color & 0x1f);
+	    prgb[2] = (gx_color_value)
+		((value << 11) + (value << 6) + (value << 1) + 
 		(value >> 4)) >> (16 - gx_color_value_bits);
 	}
     }
     else {
 	if ((ddev->nFormat & DISPLAY_555_MASK) == DISPLAY_NATIVE_555) {
 	    /* byte0=GGGBBBBB byte1=0RRRRRGG */
-	    value = (color >> 2) & 0x1f;
-	    prgb[0] = ((value << 11) + (value << 6) + (value << 1) + 
+	    value = (ushort) ((color >> 2) & 0x1f);
+	    prgb[0] = (gx_color_value)
+		((value << 11) + (value << 6) + (value << 1) + 
 		(value >> 4)) >> (16 - gx_color_value_bits);
-	    value = ((color << 3) & 0x18) +  ((color >> 13) & 0x7);
-	    prgb[1] = ((value << 11) + (value << 6) + (value << 1) + 
-	    (value >> 4)) >> (16 - gx_color_value_bits);
-	    value = color & 0x1f;
-	    prgb[2] = ((value << 11) + (value << 6) + (value << 1) + 
+	    value = (ushort)
+		(((color << 3) & 0x18) +  ((color >> 13) & 0x7));
+	    prgb[1] = (gx_color_value)
+		((value << 11) + (value << 6) + (value << 1) + 
+		(value >> 4)) >> (16 - gx_color_value_bits);
+	    value = (ushort) ((color >> 8) & 0x1f);
+	    prgb[2] = (gx_color_value)
+		((value << 11) + (value << 6) + (value << 1) + 
 		(value >> 4)) >> (16 - gx_color_value_bits);
 	}
 	else {
 	    /* byte0=GGGBBBBB byte1=RRRRRGGG */
-	    value = (color >> 3) & 0x1f;
-	    prgb[0] = ((value << 11) + (value << 6) + (value << 1) + 
-		(value >> 4)) >> (16 - gx_color_value_bits);
-	    value = ((color << 3) & 0x38) +  ((color >> 13) & 0x7);
-	    prgb[1] = ((value << 10) + (value << 4) + (value >> 2))
-		      >> (16 - gx_color_value_bits);
-	    value = color & 0x1f;
-	    prgb[2] = ((value << 11) + (value << 6) + (value << 1) + 
-		(value >> 4)) >> (16 - gx_color_value_bits);
+	    value = (ushort) ((color >> 3) & 0x1f);
+	    prgb[0] = (gx_color_value)
+		(((value << 11) + (value << 6) + (value << 1) + 
+		(value >> 4)) >> (16 - gx_color_value_bits));
+	    value = (ushort)
+		(((color << 3) & 0x38) +  ((color >> 13) & 0x7));
+	    prgb[1] = (gx_color_value)
+		(((value << 10) + (value << 4) + (value >> 2))
+		      >> (16 - gx_color_value_bits));
+	    value = (ushort) ((color >> 8) & 0x1f);
+	    prgb[2] = (gx_color_value)
+		(((value << 11) + (value << 6) + (value << 1) + 
+		(value >> 4)) >> (16 - gx_color_value_bits));
 	}
     }
     return 0;
@@ -473,10 +484,12 @@ display_map_color_rgb_device16(gx_device * dev, gx_color_index color,
 
 /* Map a r-g-b color to a color code */
 private gx_color_index
-display_map_rgb_color_rgb(gx_device * dev, gx_color_value r, gx_color_value g,
-		 gx_color_value b)
+display_map_rgb_color_rgb(gx_device * dev, const gx_color_value cv[])
 {
     gx_device_display *ddev = (gx_device_display *) dev;
+    gx_color_value r = cv[0];
+    gx_color_value g = cv[1];
+    gx_color_value b = cv[2];
     int drop;
     gx_color_value red, green, blue;
 
@@ -490,22 +503,25 @@ display_map_rgb_color_rgb(gx_device * dev, gx_color_value r, gx_color_value g,
 
     switch (ddev->nFormat & DISPLAY_ALPHA_MASK) {
 	case DISPLAY_ALPHA_NONE:
-	    if ((ddev->nFormat & DISPLAY_ENDIAN_MASK) == DISPLAY_BIGENDIAN)
-		return gx_default_rgb_map_rgb_color(dev, r, g, b); /* RGB */
+	    if ((ddev->nFormat & DISPLAY_ENDIAN_MASK) == DISPLAY_BIGENDIAN) {
+                gx_color_value rgb[3];
+                rgb[0] = r; rgb[1] = g; rgb[2] = b;
+		return gx_default_rgb_map_rgb_color(dev, rgb); /* RGB */
+            }
 	    else
 		return (blue<<16) + (green<<8) + red;		/* BGR */
 	case DISPLAY_ALPHA_FIRST:
 	case DISPLAY_UNUSED_FIRST:
 	    if ((ddev->nFormat & DISPLAY_ENDIAN_MASK) == DISPLAY_BIGENDIAN)
-		return (red<<16) + (green<<8) + blue;		/* xRGB */
+		return ((gx_color_index)red<<16) + (green<<8) + blue;		/* xRGB */
 	    else
-		return (blue<<16) + (green<<8) + red;		/* xBGR */
+		return ((gx_color_index)blue<<16) + (green<<8) + red;		/* xBGR */
 	case DISPLAY_ALPHA_LAST:
 	case DISPLAY_UNUSED_LAST:
 	    if ((ddev->nFormat & DISPLAY_ENDIAN_MASK) == DISPLAY_BIGENDIAN)
-		return (red<<24) + (green<<16) + (blue<<8);	/* RGBx */
+		return ((gx_color_index)red<<24) + (green<<16) + (blue<<8);	/* RGBx */
 	    else
-		return (blue<<24) + (green<<16) + (red<<8);	/* BGRx */
+		return ((gx_color_index)blue<<24) + (green<<16) + (red<<8);	/* BGRx */
     }
     return 0;
 }
@@ -531,54 +547,67 @@ display_map_color_rgb_rgb(gx_device * dev, gx_color_index color,
 		return gx_default_rgb_map_color_rgb(dev, color, prgb); /* RGB */
 	    else {
 		/* BGR */
-		prgb[0] = ((color) & color_mask) * 
-			(ulong) gx_max_color_value / color_mask;
-		prgb[1] = ((color >> bits_per_color)   & color_mask) * 
-			(ulong) gx_max_color_value / color_mask;
-		prgb[2] = ((color >> 2*bits_per_color) & color_mask) * 
-			(ulong) gx_max_color_value / color_mask;
+		prgb[0] = (gx_color_value) (((color) & color_mask) * 
+			(ulong) gx_max_color_value / color_mask);
+		prgb[1] = (gx_color_value)
+			(((color >> bits_per_color) & color_mask) * 
+			(ulong) gx_max_color_value / color_mask);
+		prgb[2] = (gx_color_value)
+			(((color >> 2*bits_per_color) & color_mask) * 
+			(ulong) gx_max_color_value / color_mask);
 	    }
 	    break;
 	case DISPLAY_ALPHA_FIRST:
 	case DISPLAY_UNUSED_FIRST:
 	    if ((ddev->nFormat & DISPLAY_ENDIAN_MASK) == DISPLAY_BIGENDIAN) {
 		/* xRGB */
-		prgb[0] = ((color) & 2*color_mask) * 
-			(ulong) gx_max_color_value / color_mask;
-		prgb[1] = ((color >> bits_per_color)   & color_mask) * 
-			(ulong) gx_max_color_value / color_mask;
-		prgb[2] = ((color) & color_mask) * 
-			(ulong) gx_max_color_value / color_mask;
+		prgb[0] = (gx_color_value)
+			(((color >> 2*bits_per_color) & color_mask) * 
+			(ulong) gx_max_color_value / color_mask);
+		prgb[1] = (gx_color_value) 
+			(((color >> bits_per_color) & color_mask) * 
+			(ulong) gx_max_color_value / color_mask);
+		prgb[2] = (gx_color_value) (((color) & color_mask) * 
+			(ulong) gx_max_color_value / color_mask);
 	    }
 	    else {
 		/* xBGR */
-		prgb[0] = ((color) & color_mask) * 
-			(ulong) gx_max_color_value / color_mask;
-		prgb[1] = ((color >> bits_per_color)   & color_mask) * 
-			(ulong) gx_max_color_value / color_mask;
-		prgb[2] = ((color >> 2*bits_per_color) & color_mask) * 
-			(ulong) gx_max_color_value / color_mask;
+		prgb[0] = (gx_color_value)
+			(((color) & color_mask) * 
+			(ulong) gx_max_color_value / color_mask);
+		prgb[1] = (gx_color_value)
+			(((color >> bits_per_color)   & color_mask) * 
+			(ulong) gx_max_color_value / color_mask);
+		prgb[2] = (gx_color_value)
+			(((color >> 2*bits_per_color) & color_mask) * 
+			(ulong) gx_max_color_value / color_mask);
 	    }
 	    break;
 	case DISPLAY_ALPHA_LAST:
 	case DISPLAY_UNUSED_LAST:
 	    if ((ddev->nFormat & DISPLAY_ENDIAN_MASK) == DISPLAY_BIGENDIAN) {
 		/* RGBx */
-		prgb[0] = ((color >> 3*bits_per_color) & color_mask) * 
-			(ulong) gx_max_color_value / color_mask;
-		prgb[1] = ((color >> 2*bits_per_color) & color_mask) * 
-			(ulong) gx_max_color_value / color_mask;
-		prgb[2] = ((color >> bits_per_color)   & color_mask) * 
-			(ulong) gx_max_color_value / color_mask;
+		prgb[0] = (gx_color_value)
+			(((color >> 3*bits_per_color) & color_mask) * 
+			(ulong) gx_max_color_value / color_mask);
+		prgb[1] = (gx_color_value)
+			(((color >> 2*bits_per_color) & color_mask) * 
+			(ulong) gx_max_color_value / color_mask);
+		prgb[2] = (gx_color_value)
+			(((color >> bits_per_color)   & color_mask) * 
+			(ulong) gx_max_color_value / color_mask);
 	    }
 	    else {
 		/* BGRx */
-		prgb[0] = ((color >> bits_per_color)   & color_mask) * 
-			(ulong) gx_max_color_value / color_mask;
-		prgb[1] = ((color >> 2*bits_per_color) & color_mask) * 
-			(ulong) gx_max_color_value / color_mask;
-		prgb[2] = ((color >> 3*bits_per_color) & color_mask) * 
-			(ulong) gx_max_color_value / color_mask;
+		prgb[0] = (gx_color_value)
+			(((color >> bits_per_color)   & color_mask) * 
+			(ulong) gx_max_color_value / color_mask);
+		prgb[1] = (gx_color_value)
+			(((color >> 2*bits_per_color) & color_mask) * 
+			(ulong) gx_max_color_value / color_mask);
+		prgb[2] = (gx_color_value)
+			(((color >> 3*bits_per_color) & color_mask) * 
+			(ulong) gx_max_color_value / color_mask);
 	    }
     }
     return 0;
@@ -586,9 +615,11 @@ display_map_color_rgb_rgb(gx_device * dev, gx_color_index color,
 
 /* Map a r-g-b color to a color code */
 private gx_color_index
-display_map_rgb_color_bgr24(gx_device * dev, gx_color_value r, gx_color_value g,
-		 gx_color_value b)
+display_map_rgb_color_bgr24(gx_device * dev, const gx_color_value cv[])
 {
+    gx_color_value r = cv[0];
+    gx_color_value g = cv[1];
+    gx_color_value b = cv[2];
     return (gx_color_value_to_byte(b)<<16) +
            (gx_color_value_to_byte(g)<<8) +
             gx_color_value_to_byte(r);
@@ -756,7 +787,7 @@ display_put_params(gx_device * dev, gs_param_list * plist)
     }
 
 
-    if ( is_open && 
+    if ( is_open && ddev->callback &&
 	((old_width != dev->width) || (old_height != dev->height)) ) {
 	/* We can resize this device while it is open, but we cannot
 	 * change the color format or handle.
@@ -778,8 +809,12 @@ display_put_params(gx_device * dev, gs_param_list * plist)
 	display_free_bitmap(ddev);
 
 	code = display_alloc_bitmap(ddev, dev);
-	if (code < 0)
+	if (code < 0) {
+	    /* No bitmap, so tell the caller it is zero size */
+	    (*ddev->callback->display_size)(ddev->pHandle, dev, 
+	        0, 0, 0, ddev->nFormat, NULL);
 	    return_error(code);
+        }
     
 	/* tell caller about the new size */
 	if ((*ddev->callback->display_size)(ddev->pHandle, dev, 
@@ -855,7 +890,7 @@ display_free_bitmap(gx_device_display * ddev)
 		ddev->pBitmap);
 	}
 	else {
-	    gs_free_object(gs_memory_stable(ddev->memory), 
+	    gs_free_object(&gs_memory_default,
 		ddev->pBitmap, "display_free_bitmap");
 	}
 	ddev->pBitmap = NULL;
@@ -864,7 +899,7 @@ display_free_bitmap(gx_device_display * ddev)
     }
     if (ddev->mdev) {
 	dev_proc(ddev->mdev, close_device)((gx_device *)ddev->mdev);
-        gx_device_retain(ddev->mdev, false);
+        gx_device_retain((gx_device *)(ddev->mdev), false);
 	ddev->mdev = NULL;
     }
 }
@@ -886,36 +921,44 @@ display_alloc_bitmap(gx_device_display * ddev, gx_device * param_dev)
     if (mdproto == 0)
 	return_error(gs_error_rangecheck);
     
-    ccode = gs_copydevice((gx_device **)&(ddev->mdev),
-			     (const gx_device *)mdproto,
-			     gs_memory_stable(ddev->memory));
-    if (ccode < 0)
-	return ccode;
+    ddev->mdev = gs_alloc_struct(gs_memory_stable(ddev->memory), 
+	    gx_device_memory, &st_device_memory, "display_memory_device");
+    if (ddev->mdev == 0)
+        return_error(gs_error_VMerror);
+
     gs_make_mem_device(ddev->mdev, mdproto, gs_memory_stable(ddev->memory), 
 	0, (gx_device *) NULL);
     gx_device_fill_in_procs((gx_device *)(ddev->mdev));
     /* Mark the memory device as retained.  When the bitmap is closed,
      * we will clear this and the memory device will be then be freed.
      */
-    gx_device_retain(ddev->mdev, true);
+    gx_device_retain((gx_device *)(ddev->mdev), true);
     
     ddev->mdev->width = param_dev->width;
     ddev->mdev->height = param_dev->height;
-    ddev->ulBitmapSize = gdev_mem_bitmap_size(ddev->mdev);
+    /* Tell the memory device to allocate the line pointers separately
+     * so we can place the bitmap in special memory.
+     */
+    ddev->mdev->line_pointer_memory = ddev->mdev->memory;
+    ddev->ulBitmapSize = gdev_mem_bits_size(ddev->mdev,
+	ddev->mdev->width, ddev->mdev->height);
 
-    /* allocate bitmap */
+    /* allocate bitmap using an allocator not subject to GC */
     if (ddev->callback->display_memalloc 
 	&& ddev->callback->display_memfree) {
         ddev->pBitmap = (*ddev->callback->display_memalloc)(ddev->pHandle, 
 	    ddev, ddev->ulBitmapSize);
     }
     else {
-	ddev->pBitmap = gs_alloc_bytes_immovable(gs_memory_stable(ddev->memory),
-		(uint)ddev->ulBitmapSize, "display_alloc_bitmap");
+	ddev->pBitmap = gs_alloc_byte_array_immovable(&gs_memory_default,
+		(uint)ddev->ulBitmapSize, 1, "display_alloc_bitmap");
     }
 
-    if (ddev->pBitmap == NULL)
+    if (ddev->pBitmap == NULL) {
+	ddev->mdev->width = 0;
+	ddev->mdev->height = 0;
 	return_error(gs_error_VMerror);
+    }
 
     ddev->mdev->base = (byte *) ddev->pBitmap;
     ddev->mdev->foreign_bits = true;
@@ -925,19 +968,121 @@ display_alloc_bitmap(gx_device_display * ddev, gx_device * param_dev)
 	display_free_bitmap(ddev);
 
     /* erase bitmap - before display gets redrawn */
-    if (ccode == 0)
+    if (ccode == 0) {
+	int i;
+        gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
+	for (i=0; i<GX_DEVICE_COLOR_MAX_COMPONENTS; i++)
+	    cv[i] = (ddev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
+		? gx_max_color_value : 0;
 	dev_proc(ddev, fill_rectangle)((gx_device *)ddev,
-	    0, 0, ddev->width, ddev->height,
-	    ddev->procs.map_rgb_color((gx_device *)ddev, 
-	    gx_max_color_value, gx_max_color_value, gx_max_color_value));
+                 0, 0, ddev->width, ddev->height,
+                 ddev->procs.encode_color((gx_device *)ddev, cv));
+    }
 
     return ccode;
+}
+
+/*
+ * This is a utility routine to build the display device's color_info
+ * structure (except for the anti alias info).
+ */
+private void
+set_color_info(gx_device_color_info * pdci, int nc, int depth, int maxgray, int maxcolor)
+{
+    pdci->num_components = pdci->max_components = nc;
+    pdci->depth = depth;
+    pdci->gray_index = 0;
+    pdci->max_gray = maxgray;
+    pdci->max_color = maxcolor;
+    pdci->dither_grays = maxgray + 1;
+    pdci->dither_colors = maxcolor + 1;
+    pdci->separable_and_linear = GX_CINFO_UNKNOWN_SEP_LIN;
+    switch (nc) {
+	case 1:
+	    pdci->polarity = GX_CINFO_POLARITY_ADDITIVE;
+	    pdci->cm_name = "DeviceGray";
+	    break;
+	case 3:
+	    pdci->polarity = GX_CINFO_POLARITY_ADDITIVE;
+	    pdci->cm_name = "DeviceRGB";
+	    break;
+	case 4:
+	    pdci->polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
+	    pdci->cm_name = "DeviceCMYK";
+	    break;
+	default:
+	    break;
+    }
+}
+
+/*
+ * This is an utility routine to set up the color procs for the display
+ * device.  The display device can change its setup.
+ */
+private void
+set_color_procs(gx_device * pdev, 
+	dev_t_proc_encode_color((*encode_color), gx_device),
+	dev_t_proc_decode_color((*decode_color), gx_device),
+	dev_t_proc_get_color_mapping_procs((*get_color_mapping_procs), gx_device),
+	dev_t_proc_get_color_comp_index((*get_color_comp_index), gx_device))
+{
+#if 0				/* These procs are no longer used */
+    pdev->procs.map_rgb_color = encode_color;
+    pdev->procs.map_color_rgb = decode_color;
+#endif
+    pdev->procs.get_color_mapping_procs = get_color_mapping_procs;
+    pdev->procs.get_color_comp_index = get_color_comp_index;
+    pdev->procs.encode_color = encode_color;
+    pdev->procs.decode_color = decode_color;
+}
+
+/*
+ * This is an utility routine to set up the color procs for the display
+ * device.  This routine is used when the display device is Gray.
+ */
+private void
+set_gray_color_procs(gx_device * pdev, 
+	dev_t_proc_encode_color((*encode_color), gx_device),
+	dev_t_proc_decode_color((*decode_color), gx_device))
+{
+    set_color_procs(pdev, encode_color, decode_color,
+	gx_default_DevGray_get_color_mapping_procs,
+	gx_default_DevGray_get_color_comp_index);
+}
+
+/*
+ * This is an utility routine to set up the color procs for the display
+ * device.  This routine is used when the display device is RGB.
+ */
+private void
+set_rgb_color_procs(gx_device * pdev, 
+	dev_t_proc_encode_color((*encode_color), gx_device),
+	dev_t_proc_decode_color((*decode_color), gx_device))
+{
+    set_color_procs(pdev, encode_color, decode_color,
+	gx_default_DevRGB_get_color_mapping_procs,
+	gx_default_DevRGB_get_color_comp_index);
+}
+
+/*
+ * This is an utility routine to set up the color procs for the display
+ * device.  This routine is used when the display device is CMYK.
+ */
+private void
+set_cmyk_color_procs(gx_device * pdev, 
+	dev_t_proc_encode_color((*encode_color), gx_device),
+	dev_t_proc_decode_color((*decode_color), gx_device))
+{
+    set_color_procs(pdev, encode_color, decode_color,
+	gx_default_DevCMYK_get_color_mapping_procs,
+	gx_default_DevCMYK_get_color_comp_index);
 }
 
 /* Set the color_info and mapping functions for this instance of the device */
 private int
 display_set_color_format(gx_device_display *ddev, int nFormat)
 {
+    gx_device * pdev = (gx_device *) ddev;
     gx_device_color_info dci = ddev->color_info;
     int bpc;	/* bits per component */
     int bpp;	/* bits per pixel */
@@ -972,116 +1117,77 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
 	    switch (nFormat & DISPLAY_DEPTH_MASK) {
 		case DISPLAY_DEPTH_1: 
 		    /* 1bit/pixel, black is 1, white is 0 */
-		    dci.num_components = 1;
-		    dci.depth = 1;
-		    dci.max_gray = 1;
-		    dci.max_color = 0;
-		    dci.dither_grays = 2;
-		    dci.dither_colors = 0;
-		    ddev->procs.map_rgb_color = gx_default_b_w_map_rgb_color;
-		    ddev->procs.map_color_rgb = gx_default_b_w_map_color_rgb;
+	    	    set_color_info(&dci, 1, 1, 1, 0);
+		    set_gray_color_procs(pdev, gx_b_w_gray_encode,
+		    				gx_default_b_w_map_color_rgb);
 		    break;
 		case DISPLAY_DEPTH_4:
 		    /* 4bit/pixel VGA color */
-		    dci.num_components = 3;
-		    dci.depth = 4;
-		    dci.max_gray = 3;
-		    dci.max_color = 2;
-		    dci.dither_grays = 4;
-		    dci.dither_colors = 3;
-		    ddev->procs.map_rgb_color = display_map_rgb_color_device4;
-		    ddev->procs.map_color_rgb = display_map_color_rgb_device4;
+	    	    set_color_info(&dci, 3, 4, 3, 2);
+		    set_rgb_color_procs(pdev, display_map_rgb_color_device4,
+		    				display_map_color_rgb_device4);
 		    break;
 		case DISPLAY_DEPTH_8:
 		    /* 8bit/pixel 96 color palette */
-		    dci.num_components = 3;
-		    dci.depth = 8;
-		    dci.max_gray = 31;
-		    dci.max_color = 3;
-		    dci.dither_grays = 32;
-		    dci.dither_colors = 4;
-		    ddev->procs.map_rgb_color = display_map_rgb_color_device8;
-		    ddev->procs.map_color_rgb = display_map_color_rgb_device8;
+	    	    set_color_info(&dci, 3, 8, 31, 3);
+		    set_rgb_color_procs(pdev, display_map_rgb_color_device8,
+		    				display_map_color_rgb_device8);
 		    break;
 		case DISPLAY_DEPTH_16:
 		    /* Windows 16-bit display */
-		    dci.num_components = 3;
-		    dci.depth = 16;
-		    dci.max_gray = 63;
-		    dci.max_color = 63;
-		    dci.dither_grays = 64;
-		    dci.dither_colors = 64;
-		    ddev->procs.map_rgb_color = display_map_rgb_color_device16;
-		    ddev->procs.map_color_rgb = display_map_color_rgb_device16;
+		    /* Is maxgray = maxcolor = 63 correct? */
+	    	    set_color_info(&dci, 3, 16, 63, 63);
+		    set_rgb_color_procs(pdev, display_map_rgb_color_device16,
+		    				display_map_color_rgb_device16);
 		    break;
 		default:
 		    return_error(gs_error_rangecheck);
 	    }
 	    break;
 	case DISPLAY_COLORS_GRAY:
-	    dci.num_components = 1;
-	    dci.depth = bpc;
-	    dci.max_gray = maxvalue;
-	    dci.max_color = 0;
-	    dci.dither_grays = maxvalue+1;
-	    dci.dither_colors = 0;
-	    if (bpc == 1) {
-		ddev->procs.map_rgb_color = gx_default_w_b_map_rgb_color;
-		ddev->procs.map_color_rgb = gx_default_w_b_map_color_rgb;
-	    }
-	    else {
-		ddev->procs.map_rgb_color = gx_default_gray_map_rgb_color;
-		ddev->procs.map_color_rgb = gx_default_gray_map_color_rgb;
-	    }
+	    set_color_info(&dci, 1, bpc, maxvalue, 0);
+	    if (bpc == 1)
+	    	set_gray_color_procs(pdev, gx_default_gray_encode,
+						gx_default_w_b_map_color_rgb);
+	    else
+	    	set_gray_color_procs(pdev, gx_default_gray_encode,
+						gx_default_gray_map_color_rgb);
 	    break;
 	case DISPLAY_COLORS_RGB:
 	    if ((nFormat & DISPLAY_ALPHA_MASK) == DISPLAY_ALPHA_NONE)
 		bpp = bpc * 3;
 	    else
-		bpp = bpc * 4;
-	    dci.num_components = 3;
-	    dci.depth = bpp;
-	    dci.max_gray = maxvalue;
-	    dci.max_color = maxvalue;
-	    dci.dither_grays = maxvalue+1;
-	    dci.dither_colors = maxvalue+1;
+		bpp = bpc * 4; 
+	    set_color_info(&dci, 3, bpp, maxvalue, maxvalue);
 	    if (((nFormat & DISPLAY_DEPTH_MASK) == DISPLAY_DEPTH_8) &&
 	 	((nFormat & DISPLAY_ALPHA_MASK) == DISPLAY_ALPHA_NONE)) {
-		if ((nFormat & DISPLAY_ENDIAN_MASK) == DISPLAY_BIGENDIAN) {
-		    ddev->procs.map_rgb_color = gx_default_rgb_map_rgb_color;
-		    ddev->procs.map_color_rgb = gx_default_rgb_map_color_rgb;
-		}
-		else {
-		    ddev->procs.map_rgb_color = display_map_rgb_color_bgr24;
-		    ddev->procs.map_color_rgb = display_map_color_rgb_bgr24;
-		}
+		if ((nFormat & DISPLAY_ENDIAN_MASK) == DISPLAY_BIGENDIAN)
+	    	    set_rgb_color_procs(pdev, gx_default_rgb_map_rgb_color,
+		    				gx_default_rgb_map_color_rgb);
+		else
+	    	    set_rgb_color_procs(pdev, display_map_rgb_color_bgr24,
+		    				display_map_color_rgb_bgr24);
 	    }
 	    else {
 		/* slower flexible functions for alpha/unused component */
-		ddev->procs.map_rgb_color = display_map_rgb_color_rgb;
-		ddev->procs.map_color_rgb = display_map_color_rgb_rgb;
+	    	set_rgb_color_procs(pdev, display_map_rgb_color_rgb,
+						display_map_color_rgb_rgb);
 	    }
 	    break;
 	case DISPLAY_COLORS_CMYK:
-	    dci.num_components = 4;
-	    dci.depth = bpc * 4;
-	    dci.max_gray = maxvalue;
-	    dci.max_color = maxvalue;
-	    dci.dither_grays = maxvalue+1;
-	    dci.dither_colors = maxvalue+1;
+	    bpp = bpc * 4;
+	    set_color_info(&dci, 4, bpp, maxvalue, maxvalue);
 	    if ((nFormat & DISPLAY_ALPHA_MASK) != DISPLAY_ALPHA_NONE)
 		return_error(gs_error_rangecheck);
 	    if ((nFormat & DISPLAY_ENDIAN_MASK) != DISPLAY_BIGENDIAN)
 		return_error(gs_error_rangecheck);
 
-	    if ((nFormat & DISPLAY_DEPTH_MASK) == DISPLAY_DEPTH_1) {
-		ddev->procs.map_cmyk_color = cmyk_1bit_map_cmyk_color;
-		ddev->procs.map_color_rgb = cmyk_1bit_map_color_rgb;
-	    }
-	    else if ((nFormat & DISPLAY_DEPTH_MASK) == DISPLAY_DEPTH_8) {
-		ddev->procs.map_cmyk_color = cmyk_8bit_map_cmyk_color;
-		ddev->procs.map_color_rgb = cmyk_8bit_map_color_rgb;
-	    }
+	    if ((nFormat & DISPLAY_DEPTH_MASK) == DISPLAY_DEPTH_1)
+	    	set_cmyk_color_procs(pdev, cmyk_1bit_map_cmyk_color,
+						cmyk_1bit_map_color_cmyk);
+	    else if ((nFormat & DISPLAY_DEPTH_MASK) == DISPLAY_DEPTH_8)
+	    	set_cmyk_color_procs(pdev, cmyk_8bit_map_cmyk_color,
+						cmyk_8bit_map_color_cmyk);
 	    else
 		return_error(gs_error_rangecheck);
 	    break;
@@ -1091,8 +1197,9 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
 
     /* restore old anti_alias info */
     dci.anti_alias = ddev->color_info.anti_alias;
-
     ddev->color_info = dci;
+    /* Set the mask bits, etc. even though we are setting linear: unkown */
+    set_linear_color_bits_mask_shift(pdev);
     ddev->nFormat = nFormat;
 
     return 0;
@@ -1162,7 +1269,7 @@ void
 test(int index)
 {
     char buf[1024];
-    sprintf(buf, "gs -dDisplayFormat=%d examples/colorcir.ps -c quit", test_modes[index].format);
+    sprintf(buf, "gs -dDisplayFormat=16#%x examples/colorcir.ps -c quit", test_modes[index].format);
     system(buf);
 }
 
@@ -1179,8 +1286,8 @@ int main(int argc, char *argv[])
 	}
     }
     for (i=0; i < sizeof(test_modes)/sizeof(test_mode); i++) {
-	fprintf(stdout, "%d: %s\n", test_modes[i].format,
-		test_modes[i].name);
+	fprintf(stdout, "16#%x or %d: %s\n", test_modes[i].format,
+		test_modes[i].format, test_modes[i].name);
 	if (dotest)
 	    test(i);
     }

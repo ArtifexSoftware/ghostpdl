@@ -1203,7 +1203,7 @@ static  const byte  monochrome_remap[20] = {  5,  5,  2,  5,
  * only the K plane.  This is a work around for PCL not having a gray colorspace.
  * Should match the behavior of hp clj 4500, 4550 printers.
  */
-static const bool ENABLE_AUTO_GRAY_RENDER_METHODS = true;
+static const bool ENABLE_AUTO_GRAY_RENDER_METHODS = false;
 
 /*
  * Update built-in rendering information. Attempts to changed fixed rendering
@@ -1790,9 +1790,9 @@ pcl_ht_remap_render_method(
 	if (is_gray != (*ppht)->is_gray_render_method ) {
 
 	    /* gray may be forced, -dForceMono=1 */ 
-	    is_gray = gx_set_cmap_procs_to_gray(pcs->pgs, 
-                                                gs_currentdevice(pcs->pgs),
-						is_gray);
+            //	    is_gray = gx_set_cmap_procs_to_gray(pcs->pgs, 
+            //                                  gs_currentdevice(pcs->pgs),
+            //				is_gray);
 
 	    if( is_gray ) {
 	        render_method = monochrome_remap[pcs->rendering_remap[render_method]];
@@ -2051,8 +2051,8 @@ set_threshold_ht(
     pcl_ht_t *                  pht,
     gs_ht *                     pgsht,
     const pcl_rend_info_t *     pinfo,
-    int                         comp,
-    const gs_ht_separation_name sepname
+    int                         comp
+    /*    const gs_ht_separation_name sepname */
 )
 {
     int                         icomp = (comp == 3 ? 0 : comp);
@@ -2103,7 +2103,7 @@ set_threshold_ht(
 
         return gs_ht_set_threshold_comp( pgsht,
                                          comp,
-                                         sepname,
+                                         /* sepname, */
                                          dt.u.thresh.width,
                                          dt.u.thresh.height,
                                          (gs_const_string *)
@@ -2121,7 +2121,7 @@ set_threshold_ht(
 
         return gs_ht_set_mask_comp( pgsht,
                                     comp,
-                                    sepname,
+                                    // NB                                    sepname,
                                     dt.u.tdither.width,
                                     dt.u.tdither.height,
                                     dt.u.tdither.nlevels,
@@ -2139,25 +2139,25 @@ set_threshold_ht(
  * The RGB space uses four components so as to provide a default component
  * (which is required by the graphic library code).
  */
-private const gs_ht_separation_name sepnames_cmyk[4] = {
-    gs_ht_separation_Cyan,
-    gs_ht_separation_Magenta,
-    gs_ht_separation_Yellow,
-    gs_ht_separation_Default    /* Cyan is arbitrarily made the default */
-};
+// NB private const gs_ht_separation_name sepnames_cmyk[4] = {
+// NB    gs_ht_separation_Cyan,
+// NB    gs_ht_separation_Magenta,
+// NB    gs_ht_separation_Yellow,
+// NB    gs_ht_separation_Default    /* Cyan is arbitrarily made the default */
+// NB };
 
-private const gs_ht_separation_name sepnames_rgb[4] = {
-    gs_ht_separation_Red,
-    gs_ht_separation_Green,
-    gs_ht_separation_Blue,
-    gs_ht_separation_Default,   /* Red is arbitrarily made the default */
-};
-
-private const gs_ht_separation_name sepnames_gray[1] = {
-    gs_ht_separation_Default
-};
-
-
+// NB private const gs_ht_separation_name sepnames_rgb[4] = {
+// NB     gs_ht_separation_Red,
+// NB     gs_ht_separation_Green,
+// NB     gs_ht_separation_Blue,
+// NB     gs_ht_separation_Default,   /* Red is arbitrarily made the default */
+// NB };
+// NB 
+// NB private const gs_ht_separation_name sepnames_gray[1] = {
+// NB     gs_ht_separation_Default
+// NB };
+// NB 
+// NB 
 /*
  * Create the graphic library halftone objects corresponding to a PCL halftone
  * object.
@@ -2178,7 +2178,7 @@ create_gs_halftones(
     int                             code = 0;
     const pcl_rend_info_t *         pinfo = 0;
     int                             i;
-    const gs_ht_separation_name *   sepnames = 0;
+    // NB  const gs_ht_separation_name *   sepnames = 0;
 
     /* see if there is anything to do */
     if ( (pht->pfg_ht != 0) && (pht->pim_ht != 0))
@@ -2189,15 +2189,15 @@ create_gs_halftones(
     pinfo = get_rendering_info(pcs, pht->render_method, cstype, false);
 
     /* make the typical assumption concerning the color space */
-    if (ncomps == 4)
-        sepnames = sepnames_cmyk;
-    else if (ncomps == 3) {
-        sepnames = sepnames_rgb;
-        ncomps = 4;
-    } else if (ncomps == 1)
-        sepnames = sepnames_gray;
-    else
-        return e_Range;
+// NB     if (ncomps == 4)
+// NB         sepnames = sepnames_cmyk;
+// NB     else if (ncomps == 3) {
+// NB         sepnames = sepnames_rgb;
+// NB         ncomps = 4;
+// NB     } else if (ncomps == 1)
+// NB        sepnames = sepnames_gray;
+// NB    else
+    return e_Range;
 
     /* create the top-level halftone graphic object */
     if ((code = gs_ht_build(&(pht->pfg_ht), ncomps, pht->rc.memory)) < 0)
@@ -2205,7 +2205,7 @@ create_gs_halftones(
 
     /* create the halftone components (allow for 4-color device) */
     for (i = 0; i < ncomps; i++) {
-        code = set_threshold_ht(pcs, pht, pht->pfg_ht, pinfo, i, sepnames[i]);
+        code = set_threshold_ht(pcs, pht, pht->pfg_ht, pinfo, i /*, NB NB sepnames[i] */);
         if (code < 0)
             break;
     }

@@ -13,8 +13,8 @@
 /*$RCSfile$ $Revision$ */
 /* gdevdsp2.c */
 
-#ifndef gx_device_display_DEFINED
-#  define gx_device_display_DEFINED
+#ifndef gdevdsp2_INCLUDED
+#  define gdevdsp2_INCLUDED
 
 typedef struct gx_device_display_s gx_device_display;
 
@@ -38,6 +38,4 @@ extern_st(st_device_display);
     "gx_device_display", display_enum_ptrs, display_reloc_ptrs,\
     gx_device_finalize)
 
-
-#endif
-
+#endif /* gdevdsp2_INCLUDED */

@@ -31,6 +31,8 @@ set_stdfiles(FILE * stdfiles[3])
 #include "gsmatrix.h"		/* for gxdevice.h */
 #include "gsutil.h"		/* for bytes_compare */
 #include "gxdevice.h"
+#include "gxalloc.h"
+#include "gzstate.h"
 #include "errors.h"
 #include "oper.h"
 #include "iconf.h"		/* for gs_init_* imports */
@@ -53,6 +55,7 @@ set_stdfiles(FILE * stdfiles[3])
 #include "interp.h"
 #include "ivmspace.h"
 #include "idisp.h"		/* for setting display device callback */
+#include "iplugin.h"
 
 /* ------ Exported data ------ */
 
@@ -75,10 +78,9 @@ name_table *the_gs_name_table;
 
 /* ------ Forward references ------ */
 
-private int gs_run_init_file(P3(gs_main_instance *, int *, ref *));
-private void print_resource_usage(P3(const gs_main_instance *,
-				     gs_dual_memory_t *,
-				     const char *));
+private int gs_run_init_file(gs_main_instance *, int *, ref *);
+private void print_resource_usage(const gs_main_instance *,
+				  gs_dual_memory_t *, const char *);
 
 /* ------ Initialization ------ */
 
@@ -94,13 +96,13 @@ int
 gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
 	      int max_lib_paths)
 {
+    gs_memory_t *heap;
     ref *paths;
 
     /* Set our versions of stdin/out/err. */
     gs_stdin = minst->fstdin = in;
     gs_stdout = minst->fstdout = out;
     gs_stderr = minst->fstderr = err;
-
     /* Do platform-dependent initialization. */
     /* We have to do this as the very first thing, */
     /* because it detects attempts to run 80N86 executables (N>0) */
@@ -108,19 +110,19 @@ gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
     gp_init();
     gp_get_usertime(minst->base_time);
     /* Initialize the imager. */
-    /* Initialize the large allocator, C heap */
-    if (gs_lib_init0(minst, gs_stdout))
+    heap = gs_lib_init0(gs_stdout);
+    if (heap == 0)
 	return_error(e_VMerror);
-
+    minst->heap = heap;
     /* Initialize the file search paths. */
-    paths = (ref *) gs_alloc_byte_array(minst->heap, max_lib_paths, sizeof(ref),
+    paths = (ref *) gs_alloc_byte_array(heap, max_lib_paths, sizeof(ref),
 					"lib_path array");
     if (paths == 0) {
-	gs_lib_finit(minst, 1, e_VMerror);
+	gs_lib_finit(1, e_VMerror);
 	return_error(e_VMerror);
     }
     make_array(&minst->lib_path.container, avm_foreign, max_lib_paths,
-	       (ref *) gs_alloc_byte_array(minst->heap, max_lib_paths, sizeof(ref),
+	       (ref *) gs_alloc_byte_array(heap, max_lib_paths, sizeof(ref),
 					   "lib_path array"));
     make_array(&minst->lib_path.list, avm_foreign | a_readonly, 0,
 	       minst->lib_path.container.value.refs);
@@ -131,11 +133,6 @@ gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
     minst->init_done = 0;
     return 0;
 }
-
-#ifndef NO_GS_MEMORY_GLOBALS_BIND
-gs_memory_t *gs_memory_t_default;
-gs_malloc_memory_t *gs_malloc_memory_default;
-#endif
 
 /* Initialization to be done before constructing any objects. */
 int
@@ -168,6 +165,9 @@ gs_main_init1(gs_main_instance * minst)
 		return code;
 	}
 	code = obj_init(&minst->i_ctx_p, &idmem);  /* requires name_init */
+	if (code < 0)
+	    return code;
+        code = i_plugin_init(minst->i_ctx_p);
 	if (code < 0)
 	    return code;
 	minst->init_done = 1;
@@ -221,13 +221,8 @@ gs_main_interpret(gs_main_instance *minst, ref * pref, int user_errors,
 		const char *str = (const char *)(esp[0].value.const_bytes); 
 		int count = esp[0].tas.rsize;
 		int rcode = 0;
-		if (str != NULL) {
-		    if (minst->stdout_fn)
-			rcode = (*minst->stdout_fn)(minst->caller_handle, 
-			    str, count);
-		    else 
-			fwrite(str, 1, count, minst->fstdout);
-		}
+		if (str != NULL)
+		    rcode = gs_main_outwrite(minst, str, count);
 		if (rcode < 0)
 		    return_error(e_ioerror);
 	    }
@@ -248,13 +243,8 @@ gs_main_interpret(gs_main_instance *minst, ref * pref, int user_errors,
 		const char *str = (const char *)(esp[0].value.const_bytes); 
 		int count = esp[0].tas.rsize;
 		int rcode = 0;
-		if (str != NULL) {
-		    if (minst->stderr_fn)
-			rcode = (*minst->stderr_fn)(minst->caller_handle, 
-			    str, count);
-		    else 
-			fwrite(str, 1, count, minst->fstderr);
-		}
+		if (str != NULL)
+		    rcode = gs_main_errwrite(minst, str, count);
 		if (rcode < 0)
 		    return_error(e_ioerror);
 	    }
@@ -272,13 +262,12 @@ gs_main_interpret(gs_main_instance *minst, ref * pref, int user_errors,
 	     *  esp[-1] = file, stdin stream
 	     * We read from stdin then pop these 2 items.
 	     */
-	    if (gs_stdin_is_interactive)
-		count = 1;
 	    if (minst->stdin_fn)
 		count = (*minst->stdin_fn)(minst->caller_handle, 
 			minst->stdin_buf, count);
 	    else
-		count = fread(minst->stdin_buf, 1, count, minst->fstdin);
+		count = gp_stdin_read(minst->stdin_buf, count, 
+		    minst->stdin_is_interactive, minst->fstdin);
 	    if (count < 0)
 	        return_error(e_ioerror);
 
@@ -323,9 +312,6 @@ gs_main_init2(gs_main_instance * minst)
 	code = zop_init(i_ctx_p);
 	if (code < 0)
 	    return code;
-
-#       ifndef PSI_INCLUDED  
-	/* in a language switch build rely on PCL doing the init/deinit */
 	{
 	    /*
 	     * gs_iodev_init has to be called here (late), rather than
@@ -339,8 +325,6 @@ gs_main_init2(gs_main_instance * minst)
 	    if (code < 0)
 		return code;
 	}
-#       endif
-
 	code = op_init(i_ctx_p);	/* requires obj_init */
 	if (code < 0)
 	    return code;
@@ -477,7 +461,9 @@ gs_main_lib_open(gs_main_instance * minst, const char *file_name, ref * pfile)
     byte fn[maxfn];
     uint len;
 
-    return lib_file_open(file_name, strlen(file_name), fn, maxfn,
+    return lib_file_open(NULL /* Don't check permissions here, because permlist 
+                                 isn't ready running init files. */
+			 , file_name, strlen(file_name), fn, maxfn,
 			 &len, pfile, imemory);
 }
 
@@ -755,53 +741,136 @@ gs_pop_string(gs_main_instance * minst, gs_string * result)
 
 /* ------ Termination ------ */
 
-/* Free all resources and exit. */
+/* Get the names of temporary files.
+ * Each name is null terminated, and the last name is 
+ * terminated by a double null.
+ * We retrieve the names of temporary files just before
+ * the interpreter finishes, and then delete the files 
+ * after the interpreter has closed all files.
+ */
+private char *gs_main_tempnames(gs_main_instance *minst)
+{
+    i_ctx_t *i_ctx_p = minst->i_ctx_p;
+    ref *SAFETY;
+    ref *tempfiles;
+    ref keyval[2];	/* for key and value */
+    char *tempnames = NULL;
+    int i;
+    int idict;
+    int len = 0;
+    const byte *data = NULL;
+    uint size;
+    if (minst->init_done >= 2) {
+        if (dict_find_string(systemdict, "SAFETY", &SAFETY) <= 0 ||
+	    dict_find_string(SAFETY, "tempfiles", &tempfiles) <= 0)
+	    return NULL;
+	/* get lengths of temporary filenames */
+	idict = dict_first(tempfiles);
+	while ((idict = dict_next(tempfiles, idict, &keyval[0])) >= 0) {
+	    if (obj_string_data(&keyval[0], &data, &size) >= 0)
+		len += size + 1;
+	}
+	if (len != 0)
+	    tempnames = (char *)malloc(len+1);
+	if (tempnames) {
+	    memset(tempnames, 0, len+1);
+	    /* copy temporary filenames */
+	    idict = dict_first(tempfiles);
+	    i = 0;
+	    while ((idict = dict_next(tempfiles, idict, &keyval[0])) >= 0) {
+		if (obj_string_data(&keyval[0], &data, &size) >= 0) {
+		    memcpy(tempnames+i, (const char *)data, size);
+		    i+= size;
+		    tempnames[i++] = '\0';
+		}
+	    }
+	}
+    }
+    return tempnames;
+}
+
+/* Free all resources and return. */
 void
 gs_main_finit(gs_main_instance * minst, int exit_status, int code)
 {
     i_ctx_t *i_ctx_p = minst->i_ctx_p;
     int exit_code;
     ref error_object;
-
+    char *tempnames;
     /*
      * Previous versions of this code closed the devices in the
      * device list here.  Since these devices are now prototypes,
      * they cannot be opened, so they do not need to be closed;
      * alloc_restore_all will close dynamically allocated devices.
      */
+    tempnames = gs_main_tempnames(minst);
+    /* 
+     * Close the "main" device, because it may need to write out
+     * data before destruction. pdfwrite needs so.
+     */
+    if (minst->init_done >= 1) {
+	if (i_ctx_p->pgs != NULL && i_ctx_p->pgs->device != NULL) {
+	    gx_device *pdev = i_ctx_p->pgs->device;
+	    int code = gs_closedevice(pdev);
+	    
+	    if (code < 0)
+		eprintf2("ERROR %d closing the device.\n", code, i_ctx_p->pgs->device->dname);
+	    if (exit_status == 0)
+		exit_status = code;
+	}
+    }
     /* Flush stdout and stderr */
     if (minst->init_done >= 2)
       gs_main_run_string(minst, 
-	"(%stdout) (w) file closefile (%stderr) (w) file closefile quit",
+	"(%stdout) (w) file closefile (%stderr) (w) file closefile "
+        "serverdict /.jobsavelevel get 0 eq {/quit} {/stop} ifelse .systemvar exec",
 	0 , &exit_code, &error_object);
     gp_readline_finit(minst->readline_data);
     if (gs_debug_c(':'))
 	print_resource_usage(minst, &gs_imemory, "Final");
     /* Do the equivalent of a restore "past the bottom". */
     /* This will release all memory, close all open files, etc. */
-    if (minst->init_done >= 1)
-	alloc_restore_all(idmemory);
-    gs_lib_finit(minst, exit_status, code);
+    if (minst->init_done >= 1) {
+        gs_raw_memory_t *mem_raw = i_ctx_p->memory.current->parent;
+        i_plugin_holder *h = i_ctx_p->plugin_list;
+        alloc_restore_all(idmemory);
+        i_plugin_finit(mem_raw, h);
+    }
+    /* clean up redirected stdout */
+    if (minst->fstdout2 && (minst->fstdout2 != minst->fstdout)
+	    && (minst->fstdout2 != minst->fstderr)) {
+	fclose(minst->fstdout2);
+	minst->fstdout2 = (FILE *)NULL;
+    }
+    minst->stdout_is_redirected = 0;
+    minst->stdout_to_stderr = 0;
+    /* remove any temporary files, after ghostscript has closed files */
+    if (tempnames) {
+	char *p = tempnames;
+	while (*p) {
+	    unlink(p);
+	    p += strlen(p) + 1;
+	}
+	free(tempnames);
+    }
+    gs_lib_finit(exit_status, code);
 }
 void
-gs_exit_with_code(int exit_status, int code)
+gs_to_exit_with_code(int exit_status, int code)
 {
     gs_finit(exit_status, code);
-    gp_do_exit(exit_status);
 }
 void
-gs_exit(int exit_status)
+gs_to_exit(int exit_status)
 {
-    gs_exit_with_code(exit_status, 0);
+    gs_to_exit_with_code(exit_status, 0);
 }
-
 void
 gs_abort(void)
 {
-    gs_exit(1);
-    /* This is the ONLY reference to exit() */
-    /* Even this one should be removed */
-    exit(1);	
+    gs_to_exit(1);
+    /* it's fatal calling OS independent exit() */
+    gp_do_exit(1);	
 }
 
 /* ------ Debugging ------ */
@@ -867,7 +936,6 @@ gs_debug_dump_stack(int code, ref * perror_object)
     gs_main_dump_stack(gs_main_instance_default(), code, perror_object);
 }
 
-#ifndef PSI_INCLUDED 
 
 /* Provide a single point for all "C" stdout and stderr.
  * Eventually these will always be referenced through an instance structure. 
@@ -875,34 +943,72 @@ gs_debug_dump_stack(int code, ref * perror_object)
  * instance is possible) so use the default instance.
  */
 
+int
+gs_main_outwrite(gs_main_instance *minst, const char *str, int len)
+{
+    int code;
+    FILE *fout;
+    if (len == 0)
+	return 0;
+    if (minst->stdout_is_redirected) {
+	if (minst->stdout_to_stderr)
+	    return gs_main_errwrite(minst, str, len);
+	fout = minst->fstdout2;
+    }
+    else if (minst->stdout_fn) {
+	return (*minst->stdout_fn)(minst->caller_handle, str, len);
+    }
+    else {
+	fout = minst->fstdout;
+    }
+    code = fwrite(str, 1, len, fout);
+    fflush(fout);
+    return code;
+}
+
+int
+gs_main_errwrite(gs_main_instance *minst, const char *str, int len)
+{
+    int code;
+    if (len == 0)
+	return 0;
+    if (minst->stderr_fn)
+	return (*minst->stderr_fn)(minst->caller_handle, str, len);
+    code = fwrite(str, 1, len, minst->fstderr);
+    fflush(minst->fstderr);
+    return code;
+}
+
 int outwrite(const char *str, int len)
 {
-    gs_main_instance * minst = gs_main_instance_default();
-    if (minst->stdout_fn)
-	return (*minst->stdout_fn)(minst->caller_handle, str, len);
-    return fwrite(str, 1, len, minst->fstdout);
+    return gs_main_outwrite(gs_main_instance_default(), str, len);
 }
 
 int errwrite(const char *str, int len)
 {
-    gs_main_instance * minst = gs_main_instance_default();
-    if (minst->stderr_fn)
-	return (*minst->stderr_fn)(minst->caller_handle, str, len);
-    return fwrite(str, 1, len, minst->fstderr);
+    return gs_main_errwrite(gs_main_instance_default(), str, len);
 }
 
-void outflush()
+void outflush(void)
 {
     gs_main_instance * minst = gs_main_instance_default();
-    if (!minst->stdout_fn)
+    if (minst->stdout_is_redirected) {
+	if (minst->stdout_to_stderr) {
+	    if (!minst->stderr_fn)
+		fflush(minst->fstderr);
+	}
+	else
+	    fflush(minst->fstdout2);
+    }
+    else if (!minst->stdout_fn)
         fflush(minst->fstdout);
 }
 
-void errflush()
+void errflush(void)
 {
     gs_main_instance * minst = gs_main_instance_default();
     if (!minst->stderr_fn)
         fflush(minst->fstderr);
 }
 
-#endif
+

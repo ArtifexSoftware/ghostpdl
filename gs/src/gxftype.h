@@ -30,8 +30,7 @@ typedef enum {
     ft_CID_TrueType = 11,	/* CIDFontType 2 */
     ft_Chameleon = 14,
     ft_CID_bitmap = 32,		/* CIDFontType 4 */
-    ft_TrueType = 42,
-    ft_MicroType = 51           /* MicroType 51 is arbitrary */
+    ft_TrueType = 42
 } font_type;
 
 /* Define the bitmap font behaviors. */

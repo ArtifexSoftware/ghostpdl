@@ -29,7 +29,9 @@ WCTAIL_MAK=$(GLSRCDIR)\wctail.mak
 # zlib.mak must precede libpng.mak
 !include $(GLSRCDIR)\zlib.mak
 !include $(GLSRCDIR)\libpng.mak
+!include $(GLSRCDIR)\jbig2.mak
 !include $(GLSRCDIR)\icclib.mak
+!include $(GLSRCDIR)\ijs.mak
 
 # -------------------------- Auxiliary programs --------------------------- #
 

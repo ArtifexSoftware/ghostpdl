@@ -17,6 +17,7 @@
 #include "gserrors.h"
 #include "gsstruct.h"
 #include "gsfcmap.h"
+#include "gxfcmap.h"
 #include "gxfixed.h"
 #include "gxdevice.h"
 #include "gxfont.h"
@@ -71,7 +72,8 @@ gs_type0_init_fstack(gs_text_enum_t *pte, gs_font * pfont)
   if (fdepth == MAX_FONT_STACK)\
     return_error(gs_error_invalidfont);\
   pfont = pdata->FDepVector[pdata->Encoding[fidx]];\
-  if (++fdepth > orig_depth || pfont != pte->fstack.items[fdepth].font)\
+  if (++fdepth > orig_depth || pfont != pte->fstack.items[fdepth].font ||\
+      orig_index != fidx)\
     pte->fstack.items[fdepth].font = pfont, changed = 1;\
   pte->fstack.items[fdepth].index = fidx
 
@@ -96,6 +98,7 @@ gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
     const byte *end = str + pte->text.size;
     int fdepth = pte->fstack.depth;
     int orig_depth = fdepth;
+    int orig_index = pte->fstack.items[fdepth].index;
     gs_font *pfont;
 
 #define pfont0 ((gs_font_type0 *)pfont)
@@ -354,10 +357,40 @@ gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
 		    uint mindex = p - str - 1;	/* p was incremented */
 		    int code;
 
-		    cstr.data = str;
-		    cstr.size = end - str;
-		    code = gs_cmap_decode_next(pdata->CMap, &cstr, &mindex,
+                    /*
+                     * When decoding an FMapType4 or 5, the value
+                     * of chr is modified; when an FMapType9 (CMap)
+                     * composite font is used as a decendant font,
+                     * we have to pass the text including a modified
+                     * chr. Check whether chr has been modified, and
+                     * if so, construct and pass a modified buffer.
+                     */
+		    if (*(p - 1) != chr) {
+			byte substr[MAX_CMAP_CODE_SIZE];
+			int submindex = 0;
+			if_debug2('j', "[j] *(p-1) 0x%02x != chr 0x%02x, modified str should be passed\n",
+				*(p-1), (byte)chr);
+			memcpy(substr, p - 1,
+				min(MAX_CMAP_CODE_SIZE, end - p + 1));
+			substr[0] = chr;
+			cstr.data = substr;
+			cstr.size = min(MAX_CMAP_CODE_SIZE, end - p + 1);
+			if (gs_debug_c('j')) {
+			    dlprintf("[j] original str(");
+			    debug_print_string_hex(str, end - str);
+			    dlprintf(") -> modified substr(");
+			    debug_print_string_hex(cstr.data, cstr.size);
+			    dlprintf(")\n");
+			}
+			code = gs_cmap_decode_next(pdata->CMap, &cstr,
+					(uint*) &submindex, &fidx, &chr, &glyph);
+			mindex += submindex;
+		    } else {
+			cstr.data = str;
+			cstr.size = end - str;
+			code = gs_cmap_decode_next(pdata->CMap, &cstr, &mindex,
 					       &fidx, &chr, &glyph);
+		    }
 		    if (code < 0)
 			return code;
 		    pte->cmap_code = code; /* hack for widthshow */
@@ -375,7 +408,6 @@ gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
 		    /****** RESCAN chr IF DESCENDANT IS CMAP'ED ******/
 		    break;
 		}
-
 	}
 
 	select_descendant(pfont, pdata, fidx, fdepth);
@@ -403,5 +435,5 @@ done:
 	      fdepth, (ulong) pte->fstack.items[fdepth].font,
 	      pte->fstack.items[fdepth].index, changed);
     return changed;
-#undef pfont0
 }
+#undef pfont0

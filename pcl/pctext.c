@@ -293,7 +293,7 @@ show_char_foreground(
 	gs_rotate(pcs->pgs, 90); /* caller will unrotate */
     }
 
-    code = gs_ushow_begin(pcs->pgs, pbuff, 1, pcs->memory, &penum);
+    code = gs_show_begin(pcs->pgs, pbuff, 1, pcs->memory, &penum);
 
     if (code >= 0)
         code = gs_text_process(penum);

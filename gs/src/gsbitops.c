@@ -20,6 +20,7 @@
 #include "gstypes.h"
 #include "gsbittab.h"
 #include "gxbitops.h"
+#include "gxcindex.h"
 
 /* ---------------- Bit-oriented operations ---------------- */
 
@@ -73,20 +74,13 @@ bits_fill_rectangle(byte * dest, int dest_bit, uint draster,
 
     if (last_bit < 0) {		/* <=1 chunk */
 	set_mono_thin_mask(right_mask, width_bits, bit);
-	switch ((byte) pattern) {
-	    case 0:
-		FOR_EACH_LINE(*ptr &= ~right_mask;
-		    );
-		break;
-	    case 0xff:
-		FOR_EACH_LINE(*ptr |= right_mask;
-		    );
-		break;
-	    default:
-		FOR_EACH_LINE(
-		       *ptr = (*ptr & ~right_mask) | (pattern & right_mask);
-		    );
-	}
+	if (pattern == 0)
+	    FOR_EACH_LINE(*ptr &= ~right_mask;);
+	else if (pattern == (mono_fill_chunk)(-1))
+	    FOR_EACH_LINE(*ptr |= right_mask;);
+	else
+	    FOR_EACH_LINE(
+		*ptr = (*ptr & ~right_mask) | (pattern & right_mask); );
     } else {
 	chunk mask;
 	int last = last_bit >> chunk_log2_bits;
@@ -95,75 +89,141 @@ bits_fill_rectangle(byte * dest, int dest_bit, uint draster,
 	set_mono_right_mask(right_mask, (last_bit & chunk_bit_mask) + 1);
 	switch (last) {
 	    case 0:		/* 2 chunks */
-		switch ((byte) pattern) {
-		    case 0:
-			FOR_EACH_LINE(*ptr &= ~mask;
-				      ptr[1] &= ~right_mask;
-			    );
-			break;
-		    case 0xff:
-			FOR_EACH_LINE(*ptr |= mask;
-				      ptr[1] |= right_mask;
-			    );
-			break;
-		    default:
-			FOR_EACH_LINE(
-				   *ptr = (*ptr & ~mask) | (pattern & mask);
-					 ptr[1] = (ptr[1] & ~right_mask) | (pattern & right_mask);
-			    );
-		}
+		if (pattern == 0)
+		    FOR_EACH_LINE(*ptr &= ~mask; ptr[1] &= ~right_mask;);
+		else if (pattern == (mono_fill_chunk)(-1))
+		    FOR_EACH_LINE(*ptr |= mask; ptr[1] |= right_mask;);
+		else
+		    FOR_EACH_LINE(
+		        *ptr = (*ptr & ~mask) | (pattern & mask);
+			ptr[1] = (ptr[1] & ~right_mask) | (pattern & right_mask); );
 		break;
 	    case 1:		/* 3 chunks */
-		switch ((byte) pattern) {
-		    case 0:
-			FOR_EACH_LINE(
-					 *ptr &= ~mask;
-					 ptr[1] = 0;
-					 ptr[2] &= ~right_mask;
-			    );
-			break;
-		    case 0xff:
-			FOR_EACH_LINE(
-					 *ptr |= mask;
-					 ptr[1] = ~(chunk) 0;
-					 ptr[2] |= right_mask;
-			    );
-			break;
-		    default:
-			FOR_EACH_LINE(
-				   *ptr = (*ptr & ~mask) | (pattern & mask);
-					 ptr[1] = pattern;
-					 ptr[2] = (ptr[2] & ~right_mask) | (pattern & right_mask);
-			    );
-		}
+		if (pattern == 0)
+		    FOR_EACH_LINE( *ptr &= ~mask;
+				   ptr[1] = 0;
+				   ptr[2] &= ~right_mask; );
+		else if (pattern == (mono_fill_chunk)(-1))
+		    FOR_EACH_LINE( *ptr |= mask;
+				   ptr[1] = ~(chunk) 0;
+				   ptr[2] |= right_mask; );
+		else
+		    FOR_EACH_LINE( *ptr = (*ptr & ~mask) | (pattern & mask);
+				    ptr[1] = pattern;
+				    ptr[2] = (ptr[2] & ~right_mask) | (pattern & right_mask); );
 		break;
 	    default:{		/* >3 chunks */
 		    uint byte_count = (last_bit >> 3) & -chunk_bytes;
 
-		    switch ((byte) pattern) {
-			case 0:
-			    FOR_EACH_LINE(
-					     *ptr &= ~mask;
-					     memset(ptr + 1, 0, byte_count);
-					     ptr[last + 1] &= ~right_mask;
-				);
-			    break;
-			case 0xff:
-			    FOR_EACH_LINE(
-					     *ptr |= mask;
-					  memset(ptr + 1, 0xff, byte_count);
-					     ptr[last + 1] |= right_mask;
-				);
-			    break;
-			default:
-			    FOR_EACH_LINE(
-				   *ptr = (*ptr & ~mask) | (pattern & mask);
+		    if (pattern == 0)
+			FOR_EACH_LINE( *ptr &= ~mask;
+				       memset(ptr + 1, 0, byte_count);
+				       ptr[last + 1] &= ~right_mask; );
+		    else if (pattern == (mono_fill_chunk)(-1))
+			FOR_EACH_LINE( *ptr |= mask;
+				       memset(ptr + 1, 0xff, byte_count);
+				       ptr[last + 1] |= right_mask; );
+		    else
+			FOR_EACH_LINE(
+				*ptr = (*ptr & ~mask) | (pattern & mask);
 				memset(ptr + 1, (byte) pattern, byte_count);
-					     ptr[last + 1] =
-					     (ptr[last + 1] & ~right_mask) |
-					     (pattern & right_mask);
-				);
-		    }
+				ptr[last + 1] = (ptr[last + 1] & ~right_mask) |
+					        (pattern & right_mask); 	);
+		}
+	}
+    }
+#undef FOR_EACH_LINE
+}
+
+/*
+ * Similar to bits_fill_rectangle, but with an additional source mask.
+ * The src_mask variable is 1 for those bits of the original that are
+ * to be retained. The mask argument must consist of the requisite value
+ * in every byte, in the same manner as the pattern.
+ */
+void
+bits_fill_rectangle_masked(byte * dest, int dest_bit, uint draster,
+		    mono_fill_chunk pattern, mono_fill_chunk src_mask,
+		    int width_bits, int height)
+{
+    uint bit;
+    chunk right_mask;
+    int line_count = height;
+    chunk *ptr;
+    int last_bit;
+
+#define FOR_EACH_LINE(stat)\
+	do { stat } while ( inc_ptr(ptr, draster), --line_count )
+
+    dest += (dest_bit >> 3) & -chunk_align_bytes;
+    ptr = (chunk *) dest;
+    bit = dest_bit & chunk_align_bit_mask;
+    last_bit = width_bits + bit - (chunk_bits + 1);
+
+    if (last_bit < 0) {		/* <=1 chunk */
+	set_mono_thin_mask(right_mask, width_bits, bit);
+	right_mask &= ~src_mask;
+	if (pattern == 0)
+	    FOR_EACH_LINE(*ptr &= ~right_mask;);
+	else if (pattern == (mono_fill_chunk)(-1))
+	    FOR_EACH_LINE(*ptr |= right_mask;);
+	else
+	    FOR_EACH_LINE(
+		*ptr = (*ptr & ~right_mask) | (pattern & right_mask); );
+    } else {
+	chunk mask;
+	int last = last_bit >> chunk_log2_bits;
+
+	set_mono_left_mask(mask, bit);
+	set_mono_right_mask(right_mask, (last_bit & chunk_bit_mask) + 1);
+	mask &= ~src_mask;
+	right_mask &= ~src_mask;
+	switch (last) {
+	    case 0:		/* 2 chunks */
+		if (pattern == 0)
+		    FOR_EACH_LINE(*ptr &= ~mask; ptr[1] &= ~right_mask;);
+		else if (pattern == (mono_fill_chunk)(-1))
+		    FOR_EACH_LINE(*ptr |= mask; ptr[1] |= right_mask;);
+		else
+		    FOR_EACH_LINE(
+		        *ptr = (*ptr & ~mask) | (pattern & mask);
+			ptr[1] = (ptr[1] & ~right_mask) | (pattern & right_mask); );
+		break;
+	    case 1:		/* 3 chunks */
+		if (pattern == 0)
+		    FOR_EACH_LINE( *ptr &= ~mask;
+				   ptr[1] &= src_mask;
+				   ptr[2] &= ~right_mask; );
+		else if (pattern == (mono_fill_chunk)(-1))
+		    FOR_EACH_LINE( *ptr |= mask;
+				   ptr[1] |= ~src_mask;
+				   ptr[2] |= right_mask; );
+		else
+		    FOR_EACH_LINE( *ptr = (*ptr & ~mask) | (pattern & mask);
+				    ptr[1] =(ptr[1] & src_mask) | pattern;
+				    ptr[2] = (ptr[2] & ~right_mask) | (pattern & right_mask); );
+		break;
+	    default:{		/* >3 chunks */
+                    int     i;
+
+		    if (pattern == 0)
+			FOR_EACH_LINE( *ptr++ &= ~mask;
+				       for (i = 0; i < last; i++)
+					   *ptr++ &= src_mask;
+				       *ptr &= ~right_mask; );
+		    else if (pattern == (mono_fill_chunk)(-1))
+			FOR_EACH_LINE( *ptr++ |= mask;
+				       for (i = 0; i < last; i++)
+					   *ptr++ |= ~src_mask;
+					*ptr |= right_mask; );
+		    else
+			FOR_EACH_LINE(
+			    /* note: we know (pattern & ~src_mask) == pattern */
+			    *ptr = (*ptr & ~mask) | (pattern & mask);
+			    ++ptr;
+			    for (i = 0; i < last; i++, ptr++)
+                                *ptr = (*ptr & src_mask) | pattern;
+				*ptr = (*ptr & ~right_mask) | (pattern & right_mask); );
 		}
 	}
     }
@@ -205,7 +265,7 @@ bits_replicate_horizontally(byte * data, uint width, uint height,
 	/*
 	 * This algorithm is inefficient, but probably not worth improving.
 	 */
-	uint bit_count = width & -width;  /* lowest bit: 1, 2, or 4 */
+	uint bit_count = width & (uint)(-(int)width);  /* lowest bit: 1, 2, or 4 */
 	uint left_mask = (0xff00 >> bit_count) & 0xff;
 
 	for (y = height; y-- > 0;
@@ -474,10 +534,10 @@ bits_extract_plane(const bits_plane_t *dest /*write*/,
 
 	    sample_store_preload(dbbyte, dptr, dbit, dest_depth);
 	    for (x = width; x > 0; --x) {
-		bits32 color;
+		gx_color_index color;
 		uint pixel;
 
-		sample_load_next32(color, sptr, sbit, source_depth);
+		sample_load_next_any(color, sptr, sbit, source_depth);
 		pixel = (color >> shift) & plane_mask;
 		sample_store_next8(pixel, dptr, dbit, dest_depth, dbbyte);
 	    }
@@ -560,11 +620,11 @@ bits_expand_plane(const bits_plane_t *dest /*write*/,
 	    sample_store_preload(dbbyte, dptr, dbit, dest_depth);
 	    for (x = width; x > 0; --x) {
 		uint color;
-		bits32 pixel;
+		gx_color_index pixel;
 
 		sample_load_next8(color, sptr, sbit, source_depth);
 		pixel = color << shift;
-		sample_store_next32(pixel, dptr, dbit, dest_depth, dbbyte);
+		sample_store_next_any(pixel, dptr, dbit, dest_depth, dbbyte);
 	    }
 	    sample_store_flush(dptr, dbit, dest_depth, dbbyte);
 	}

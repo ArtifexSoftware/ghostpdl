@@ -181,7 +181,7 @@ debug_print_ref_packed(const ref_packed *rpp)
 	debug_print_packed_ref(rpp);
     else
 	debug_print_full_ref((const ref *)rpp);
-    errflush();
+    dflush();
 }
 void
 debug_print_ref(const ref * pref)
@@ -190,17 +190,17 @@ debug_print_ref(const ref * pref)
 }
 
 /* Dump one ref. */
-private void print_ref_data(P1(const ref *));
+private void print_ref_data(const ref *);
 void
 debug_dump_one_ref(const ref * p)
 {
     uint attrs = r_type_attrs(p);
     uint type = r_type(p);
-    static const attr_print_mask apm[] = {
-	attr_print_masks,
+    static const ref_attr_print_mask_t apm[] = {
+	REF_ATTR_PRINT_MASKS,
 	{0, 0, 0}
     };
-    const attr_print_mask *ap = apm;
+    const ref_attr_print_mask_t *ap = apm;
 
     if (type >= tx_next_index)
 	dprintf1("0x%02x?? ", type);
@@ -213,7 +213,7 @@ debug_dump_one_ref(const ref * p)
 	    dputc(ap->print);
     dprintf2(" 0x%04x 0x%08lx", r_size(p), *(const ulong *)&p->value);
     print_ref_data(p);
-    errflush();
+    dflush();
 }
 private void
 print_ref_data(const ref *p)

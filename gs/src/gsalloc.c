@@ -22,6 +22,15 @@
 #include "stream.h"		/* for clearing stream list */
 
 /*
+ * Define whether to try consolidating space before adding a new chunk.
+ * The default is not to do this, because it is computationally
+ * expensive and doesn't seem to help much.  However, this is done for
+ * "controlled" spaces whether or not the #define is in effect.
+ */
+/*#define CONSOLIDATE_BEFORE_ADDING_CHUNK */
+
+
+/*
  * This allocator produces tracing messages of the form
  *      [aNMOTS]...
  * where
@@ -87,7 +96,7 @@ private RELOC_PTRS_WITH(ref_memory_reloc_ptrs, gs_ref_memory_t *mptr)
 RELOC_PTRS_END
 
 /*
- * Define flags for the alloc_obj, which implements all but the fastest
+ * Define the flags for alloc_obj, which implements all but the fastest
  * case of allocation.
  */
 typedef enum {
@@ -96,16 +105,16 @@ typedef enum {
 } alloc_flags_t;
 
 /* Forward references */
-private void remove_range_from_freelist(P3(gs_ref_memory_t *mem, void* bottom, void* top));
-private obj_header_t *large_freelist_alloc(P2(gs_ref_memory_t *mem, uint size));
-private obj_header_t *scavenge_low_free(P2(gs_ref_memory_t *mem, unsigned request_size));
-private ulong compute_free_objects(P1(gs_ref_memory_t *));
-private obj_header_t *alloc_obj(P5(gs_ref_memory_t *, ulong, gs_memory_type_ptr_t, alloc_flags_t, client_name_t));
-private void consolidate_chunk_free(P2(chunk_t *cp, gs_ref_memory_t *mem));
-private void trim_obj(P4(gs_ref_memory_t *mem, obj_header_t *obj, uint size, chunk_t *cp));
-private chunk_t *alloc_acquire_chunk(P4(gs_ref_memory_t *, ulong, bool, client_name_t));
-private chunk_t *alloc_add_chunk(P3(gs_ref_memory_t *, ulong, client_name_t));
-void alloc_close_chunk(P1(gs_ref_memory_t *));
+private void remove_range_from_freelist(gs_ref_memory_t *mem, void* bottom, void* top);
+private obj_header_t *large_freelist_alloc(gs_ref_memory_t *mem, uint size);
+private obj_header_t *scavenge_low_free(gs_ref_memory_t *mem, unsigned request_size);
+private ulong compute_free_objects(gs_ref_memory_t *);
+private obj_header_t *alloc_obj(gs_ref_memory_t *, ulong, gs_memory_type_ptr_t, alloc_flags_t, client_name_t);
+private void consolidate_chunk_free(chunk_t *cp, gs_ref_memory_t *mem);
+private void trim_obj(gs_ref_memory_t *mem, obj_header_t *obj, uint size, chunk_t *cp);
+private chunk_t *alloc_acquire_chunk(gs_ref_memory_t *, ulong, bool, client_name_t);
+private chunk_t *alloc_add_chunk(gs_ref_memory_t *, ulong, client_name_t);
+void alloc_close_chunk(gs_ref_memory_t *);
 
 /*
  * Define the standard implementation (with garbage collection)
@@ -172,8 +181,8 @@ const gs_memory_procs_t gs_ref_memory_procs =
  * Allocate and mostly initialize the state of an allocator (system, global,
  * or local).  Does not initialize global or space.
  */
-private void *ialloc_solo(P3(gs_raw_memory_t *, gs_memory_type_ptr_t,
-			     chunk_t **));
+private void *ialloc_solo(gs_raw_memory_t *, gs_memory_type_ptr_t,
+			  chunk_t **);
 gs_ref_memory_t *
 ialloc_alloc_state(gs_raw_memory_t * parent, uint chunk_size)
 {
@@ -191,7 +200,10 @@ ialloc_alloc_state(gs_raw_memory_t * parent, uint chunk_size)
     iimem->gc_status.vm_threshold = chunk_size * 3L;
     iimem->gc_status.max_vm = max_long;
     iimem->gc_status.psignal = NULL;
+    iimem->gc_status.signal_value = 0;
     iimem->gc_status.enabled = false;
+    iimem->gc_status.requested = 0;
+    iimem->gc_allocated = 0;
     iimem->previous_status.allocated = 0;
     iimem->previous_status.used = 0;
     ialloc_reset(iimem);
@@ -327,6 +339,14 @@ ialloc_reset_free(gs_ref_memory_t * mem)
     mem->largest_free_size = 0;
 }
 
+/*
+ * Set an arbitrary limit so that the amount of allocated VM does not grow
+ * indefinitely even when GC is disabled.  Benchmarks have shown that
+ * the resulting GC's are infrequent enough not to degrade performance
+ * significantly.
+ */
+#define FORCE_GC_LIMIT 8000000
+
 /* Set the allocation limit after a change in one or more of */
 /* vm_threshold, max_vm, or enabled, or after a GC. */
 void
@@ -352,7 +372,7 @@ ialloc_set_limit(register gs_ref_memory_t * mem)
 	    mem->limit = min(limit, max_allocated);
 	}
     } else
-	mem->limit = max_allocated;
+	mem->limit = min(max_allocated, mem->gc_allocated + FORCE_GC_LIMIT);
     if_debug7('0', "[0]space=%d, max_vm=%ld, prev.alloc=%ld, enabled=%d,\n\
       gc_alloc=%ld, threshold=%ld => limit=%ld\n",
 	      mem->space, (long)mem->gc_status.max_vm,
@@ -424,6 +444,36 @@ gs_memory_set_gc_status(gs_ref_memory_t * mem, const gs_memory_gc_status_t * pst
 {
     mem->gc_status = *pstat;
     ialloc_set_limit(mem);
+}
+
+/* Set VM threshold. */
+void
+gs_memory_set_vm_threshold(gs_ref_memory_t * mem, long val)
+{
+    gs_memory_gc_status_t stat;
+    gs_ref_memory_t * stable = (gs_ref_memory_t *)mem->stable_memory;
+
+    gs_memory_gc_status(mem, &stat);
+    stat.vm_threshold = val;
+    gs_memory_set_gc_status(mem, &stat);
+    gs_memory_gc_status(stable, &stat);
+    stat.vm_threshold = val;
+    gs_memory_set_gc_status(stable, &stat);
+}
+
+/* Set VM reclaim. */
+void
+gs_memory_set_vm_reclaim(gs_ref_memory_t * mem, bool enabled)
+{
+    gs_memory_gc_status_t stat;
+    gs_ref_memory_t * stable = (gs_ref_memory_t *)mem->stable_memory;
+
+    gs_memory_gc_status(mem, &stat);
+    stat.enabled = enabled;
+    gs_memory_set_gc_status(mem, &stat);
+    gs_memory_gc_status(stable, &stat);
+    stat.enabled = enabled;
+    gs_memory_set_gc_status(stable, &stat);
 }
 
 /* ================ Objects ================ */
@@ -578,6 +628,13 @@ i_alloc_struct_array(gs_memory_t * mem, uint num_elements,
     obj_header_t *obj;
 
     ALLOC_CHECK_SIZE(pstype);
+#ifdef DEBUG
+    if (pstype->enum_ptrs == basic_enum_ptrs) {
+	dprintf2("  i_alloc_struct_array: called with incorrect structure type (not element), struct='%s', client='%s'\n",
+		pstype->sname, cname);
+	return NULL;		/* fail */
+    }
+#endif
     obj = alloc_obj(imem,
 		    (ulong) num_elements * pstype->ssize,
 		    pstype, ALLOC_DIRECT, cname);
@@ -795,14 +852,37 @@ i_alloc_string(gs_memory_t * mem, uint nbytes, client_name_t cname)
 {
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     byte *str;
+    /*
+     * Cycle through the chunks at the current save level, starting
+     * with the currently open one.
+     */
+    chunk_t *cp_orig = imem->pcc;
 
-top:if (imem->cc.ctop - imem->cc.cbot > nbytes) {
+    if (cp_orig == 0) {
+	/* Open an arbitrary chunk. */
+	cp_orig = imem->pcc = imem->cfirst;
+	alloc_open_chunk(imem);
+    }
+top:
+    if (imem->cc.ctop - imem->cc.cbot > nbytes) {
 	if_debug4('A', "[a%d:+> ]%s(%u) = 0x%lx\n",
 		  alloc_trace_space(imem), client_name_string(cname), nbytes,
 		  (ulong) (imem->cc.ctop - nbytes));
 	str = imem->cc.ctop -= nbytes;
 	gs_alloc_fill(str, gs_alloc_fill_alloc, nbytes);
 	return str;
+    }
+    /* Try the next chunk. */
+    {
+	chunk_t *cp = imem->cc.cnext;
+
+	alloc_close_chunk(imem);
+	if (cp == 0)
+	    cp = imem->cfirst;
+	imem->pcc = cp;
+	alloc_open_chunk(imem);
+	if (cp != cp_orig)
+	    goto top;
     }
     if (nbytes > string_space_quanta(max_uint - sizeof(chunk_head_t)) *
 	string_data_quantum
@@ -1066,40 +1146,102 @@ alloc_obj(gs_ref_memory_t *mem, ulong lsize, gs_memory_type_ptr_t pstype,
 	cp->cbot += asize;
 	ptr->o_alone = 1;
 	ptr->o_size = lsize;
-    } else if (lsize > max_freelist_size && (flags & ALLOC_DIRECT) &&
-	      (ptr = large_freelist_alloc(mem, lsize)) != 0) {
-	/* We hadn't checked the large block freelist yet. */
-	--ptr;			/* must point to header */
-	goto done;
     } else {
+	/*
+	 * Cycle through the chunks at the current save level, starting
+	 * with the currently open one.
+	 */
+	chunk_t *cp_orig = mem->pcc;
 	uint asize = obj_size_round((uint) lsize);
-	bool consolidate = mem->is_controlled;
-	bool allocate_success = true;
+	bool allocate_success = false;
 
-	while (mem->cc.ctop -
-	       (byte *) (ptr = (obj_header_t *) mem->cc.cbot)
-	       <= asize + sizeof(obj_header_t)) {
-	    if (consolidate) {
+	if (lsize > max_freelist_size && (flags & ALLOC_DIRECT)) {
+	    /* We haven't checked the large block freelist yet. */
+	    if ((ptr = large_freelist_alloc(mem, lsize)) != 0) {
+		--ptr;			/* must point to header */
+		goto done;
+	    }
+	}
+
+	if (cp_orig == 0) {
+	    /* Open an arbitrary chunk. */
+	    cp_orig = mem->pcc = mem->cfirst;
+	    alloc_open_chunk(mem);
+	}
+
+#define CAN_ALLOC_AT_END(cp)\
+  ((cp)->ctop - (byte *) (ptr = (obj_header_t *) (cp)->cbot)\
+   > asize + sizeof(obj_header_t))
+
+	do {
+	    if (CAN_ALLOC_AT_END(&mem->cc)) {
+		allocate_success = true;
+		break;
+	    } else if (mem->is_controlled) {
 		/* Try consolidating free space. */
 		gs_consolidate_free((gs_memory_t *)mem);
-		consolidate = false;
-		continue;
-	    } else {
-		/* Add another chunk. */
-		chunk_t *cp =
-		    alloc_add_chunk(mem, (ulong)mem->chunk_size, "chunk");
-
-		if (cp == 0) {
-		    allocate_success = false;
+		if (CAN_ALLOC_AT_END(&mem->cc)) {
+		    allocate_success = true;
 		    break;
 		}
 	    }
+	    /* No luck, go on to the next chunk. */
+	    {
+		chunk_t *cp = mem->cc.cnext;
+
+		alloc_close_chunk(mem);
+		if (cp == 0)
+		    cp = mem->cfirst;
+		mem->pcc = cp;
+		alloc_open_chunk(mem);
+	    }
+	} while (mem->pcc != cp_orig);
+
+#ifdef CONSOLIDATE_BEFORE_ADDING_CHUNK
+	if (!allocate_success) {
+	    /*
+	     * Try consolidating free space before giving up.
+	     * It's not clear this is a good idea, since it requires quite
+	     * a lot of computation and doesn't seem to improve things much.
+	     */
+	    if (!mem->is_controlled) { /* already did this if controlled */
+		chunk_t *cp = cp_orig;
+
+		alloc_close_chunk(mem);
+		do {
+		    consolidate_chunk_free(cp, mem);
+		    if (CAN_ALLOC_AT_END(cp)) {
+			mem->pcc = cp;
+			alloc_open_chunk(mem);
+			allocate_success = true;
+			break;
+		    }
+		    if ((cp = cp->cnext) == 0)
+			cp = mem->cfirst;
+		} while (cp != cp_orig);
+	    }
 	}
+#endif
+
+#undef CAN_ALLOC_AT_END
+
+	if (!allocate_success) {
+	    /* Add another chunk. */
+	    chunk_t *cp =
+		alloc_add_chunk(mem, (ulong)mem->chunk_size, "chunk");
+			
+	    if (cp) {
+		/* mem->pcc == cp, mem->cc == *mem->pcc. */
+		ptr = (obj_header_t *)cp->cbot;
+		allocate_success = true;
+	    }
+	}
+
 	/*
-	 * If no success, try to scavenge from low free memory. This is only
-	 * enabled for controlled memory (currently only async renderer)
-	 * because it's too much work to prevent it from examining outer
-	 * save levels in the general case.
+	 * If no success, try to scavenge from low free memory. This is
+	 * only enabled for controlled memory (currently only async
+	 * renderer) because it's too much work to prevent it from
+	 * examining outer save levels in the general case.
 	 */
 	if (allocate_success)
 	    mem->cc.cbot = (byte *) ptr + asize;
@@ -1214,7 +1356,7 @@ scavenge_low_free(gs_ref_memory_t *mem, unsigned request_size)
 	    	    break;
 	    } else
 	    	begin_free = 0;
-	END_OBJECTS_SCAN_INCOMPLETE
+	END_OBJECTS_SCAN_NO_ABORT
 
 	/* Found sufficient range of empty memory */
 	if (begin_free != 0 && found_free >= need_free) {
@@ -1917,11 +2059,7 @@ debug_dump_chunk(const chunk_t * cp, const dump_control_t * control)
 				  control)
 	)
 	debug_print_object(pre + 1, control);
-/* Temporarily redefine gs_exit so a chunk parsing error */
-/* won't actually exit. */
-#define gs_exit(n) DO_NOTHING
-    END_OBJECTS_SCAN
-#undef gs_exit
+    END_OBJECTS_SCAN_NO_ABORT
 }
 void 
 debug_print_chunk(const chunk_t * cp)
@@ -1970,11 +2108,7 @@ debug_find_pointers(const gs_ref_memory_t *mem, const void *target)
 			dprintf1("Index %d in", index);
 			debug_print_object(pre + 1, &control);
 		    }
-/* Temporarily redefine gs_exit so a chunk parsing error */
-/* won't actually exit. */
-#define gs_exit(n) DO_NOTHING
-	END_OBJECTS_SCAN
-#undef gs_exit
+	END_OBJECTS_SCAN_NO_ABORT
     }
 }
 

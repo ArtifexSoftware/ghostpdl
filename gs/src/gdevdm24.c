@@ -44,15 +44,15 @@ const gx_device_printer gs_lq850_device =
 /* ------ Internal routines ------ */
 
 /* Forward references */
-private void dot24_output_run (P4 (byte *, int, int, FILE *));
-private void dot24_improve_bitmap (P2 (byte *, int));
+private void dot24_output_run (byte *, int, int, FILE *);
+private void dot24_improve_bitmap (byte *, int);
 
 /* Send the page to the printer. */
 private int
 dot24_print_page (gx_device_printer *pdev, FILE *prn_stream, char *init_string, int init_len)
 {
-  int xres = pdev->x_pixels_per_inch;
-  int yres = pdev->y_pixels_per_inch;
+  int xres = (int)pdev->x_pixels_per_inch;
+  int yres = (int)pdev->y_pixels_per_inch;
   int x_high = (xres == 360);
   int y_high = (yres == 360);
   int bits_per_column = (y_high ? 48 : 24);

@@ -21,14 +21,6 @@
 #include "gp.h"
 #include "gslib.h"		/* interface definition */
 
-#include "iref.h"
-#include "iapi.h"
-#include "iminst.h"
-
-#include "errors.h"
-#include "gserror.h"
-
-
 /* Imported from gsmisc.c */
 extern FILE *gs_debug_out;
 
@@ -39,27 +31,19 @@ extern_gx_init_table();
 int
 gs_lib_init(FILE * debug_out)
 {
-#ifndef NO_GS_MEMORY_GLOBALS_BIND
-    return -1;
-#else
     return gs_lib_init1(gs_lib_init0(debug_out));
-#endif
 }
-
-int 
-gs_lib_init0(gs_main_instance * minst, FILE * debug_out)
+gs_memory_t *
+gs_lib_init0(FILE * debug_out)
 {
+    gs_memory_t *mem;
+
     gs_debug_out = debug_out;
-
-    /* Initialize the large allocator, C heap */
-    if (gs_malloc_init(&minst->heap))
-	return_error(e_VMerror);
-
+    mem = (gs_memory_t *) gs_malloc_init();
     /* Reset debugging flags */
     memset(gs_debug, 0, 128);
     gs_log_errors = 0;
-
-    return 0;
+    return mem;
 }
 int
 gs_lib_init1(gs_memory_t * mem)
@@ -76,9 +60,9 @@ gs_lib_init1(gs_memory_t * mem)
 
 /* Clean up after execution. */
 void
-gs_lib_finit(gs_main_instance * minst, int exit_status, int code)
+gs_lib_finit(int exit_status, int code)
 {
     /* Do platform-specific cleanup. */
-    gp_exit(exit_status, code);    
-    gs_malloc_release(&minst->heap);
+    gp_exit(exit_status, code);
+    gs_malloc_release();
 }

@@ -13,6 +13,9 @@
 
 // $RCSfile$ $Revision$
 
+#ifndef dwsetup_INCLUDED
+#  define dwsetup_INCLUDED
+
 // Definitions for Ghostscript setup program
 
 #ifndef IDC_STATIC
@@ -42,3 +45,5 @@
 #define IDC_ALLUSERS                    1009
 #define IDC_COPYRIGHT                   1010
 
+
+#endif /* dwsetup_INCLUDED */

@@ -41,8 +41,7 @@
 /* ------ EGA/VGA (4-bit) color mapping ------ */
 
 gx_color_index
-pc_4bit_map_rgb_color(gx_device * dev, gx_color_value r, gx_color_value g,
-		      gx_color_value b)
+pc_4bit_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
 #define Nb gx_color_value_bits
     static const byte grays[4] =
@@ -65,6 +64,8 @@ pc_4bit_map_rgb_color(gx_device * dev, gx_color_value r, gx_color_value g,
 
 #undef tab3
 #define q4mask (-1 << (Nb - 2))
+    gx_color_value r, g, b;
+    r = cv[0]; g = cv[1]; b = cv[2];
     if (!((r ^ g) & q4mask) && !((g ^ b) & q4mask))	/* gray */
 #undef q4mask
 	return (gx_color_index) grays[r >> (Nb - 2)];
@@ -110,11 +111,13 @@ pc_4bit_map_color_rgb(gx_device * dev, gx_color_index color,
  */
 
 gx_color_index
-pc_8bit_map_rgb_color(gx_device * dev, gx_color_value r, gx_color_value g,
-		      gx_color_value b)
+pc_8bit_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
-    uint rv = r / (gx_max_color_value / 7 + 1);
-    uint gv = g / (gx_max_color_value / 7 + 1);
+    gx_color_value r, g, b;
+    uint rv, gv;
+    r = cv[0]; g = cv[1]; b = cv[2];
+    rv = r / (gx_max_color_value / 7 + 1);
+    gv = g / (gx_max_color_value / 7 + 1);
 
     return (gx_color_index)
 	(rv == gv && gv == b / (gx_max_color_value / 7 + 1) ?

@@ -13,6 +13,9 @@
 
 // $RCSfile$ $Revision$
 
+#ifndef dwinst_INCLUDED
+#  define dwinst_INCLUDED
+
 // Definitions for Ghostscript installer
 
 #ifndef MAXSTR
@@ -101,8 +104,11 @@ private:
 	BOOL SetRegistryValue(HKEY hkey, const char *value_name, const char *value);
 	BOOL CreateShellLink(LPCSTR description, LPCSTR program, LPCSTR arguments, LPCSTR icon = NULL, int nIconIndex = 0);
 	void CopyFileContents(FILE *df, FILE *sf);
+	void ResetReadonly(const char *filename);
 
 	void(*AddMessageFn)(const char *);
 
 };
 
+
+#endif /* dwinst_INCLUDED */

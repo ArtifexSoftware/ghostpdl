@@ -194,8 +194,8 @@ gdev_tiff_begin_page(gx_device_printer * pdev, gdev_tiff_state * tifs,
     if (tifs->StripOffsets == 0)
 	return_error(gs_error_VMerror);
     std_entries.PageNumber.value = (TIFF_ulong) pdev->PageCount;
-    std_values.xresValue[0] = pdev->x_pixels_per_inch;
-    std_values.yresValue[0] = pdev->y_pixels_per_inch;
+    std_values.xresValue[0] = (TIFF_ulong)pdev->x_pixels_per_inch;
+    std_values.yresValue[0] = (TIFF_ulong)pdev->y_pixels_per_inch;
     {
 	char revs[10];
 
@@ -215,7 +215,7 @@ gdev_tiff_begin_page(gx_device_printer * pdev, gdev_tiff_state * tifs,
 	tms = *localtime(&t);
 	sprintf(std_values.dateTimeValue,
 		"%04d:%02d:%02d %02d:%02d:%02d",
-		tms.tm_year + 1900, tms.tm_mon, tms.tm_mday,
+		tms.tm_year + 1900, tms.tm_mon + 1, tms.tm_mday,
 		tms.tm_hour, tms.tm_min, tms.tm_sec);
     }
 
@@ -267,11 +267,10 @@ gdev_tiff_begin_page(gx_device_printer * pdev, gdev_tiff_state * tifs,
     /* Write the indirect values. */
     fwrite((const char *)&std_values, sizeof(std_values), 1, fp);
     fwrite((const char *)values, value_size, 1, fp);
-    /* If StripOffsets and ByteCounts are indirect, write placeholders for them. */
-    if (tifs->strip_count > 1) 
-	fwrite(tifs->StripOffsets, sizeof(TIFF_ulong), 2 * tifs->strip_count, fp);
+    /* Write placeholders for the strip offsets. */
+    fwrite(tifs->StripOffsets, sizeof(TIFF_ulong), 2 * tifs->strip_count, fp);
     tifs->strip_index = 0;
-    tifs->StripOffsets[0] = ftell(fp);	/* start of the first strip data */
+    tifs->StripOffsets[0] = ftell(fp);
     return 0;
 }
 

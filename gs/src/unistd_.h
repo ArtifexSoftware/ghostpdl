@@ -25,9 +25,17 @@
  * otherwise) for where to find these definitions.
  */
 
-#if defined(_MSC_VER) && defined(__WIN32__)
+#ifdef __OS2__
 #  include <io.h>
+#endif
+#ifdef __WIN32__
+#  include <io.h>
+#endif
+
+#if defined(_MSC_VER) || defined(__BORLANDC__) && defined(__WIN32__) 
 #  define fsync(handle) _commit(handle)
+#  define read(fd, buf, len) _read(fd, buf, len)
+#  define fstat(fd, buf) _fstat(fd, buf)
 #else
 #  include <unistd.h>
 #endif

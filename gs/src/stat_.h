@@ -18,7 +18,13 @@
 
 /* We must include std.h before any file that includes sys/types.h. */
 #include "std.h"
+
+/* Metrowerks Standard Library doesn't use subdirs */
+#ifdef __MWERKS__
+#include <stat.h>
+#else
 #include <sys/stat.h>
+#endif
 
 /*
  * Many environments, including the MS-DOS compilers, don't define
@@ -56,19 +62,22 @@
 /*
  * Some systems have S_IFMT and S_IFCHR but not S_ISCHR.
  */
-#ifndef S_ISCHR
+#if !defined(S_ISCHR) || !defined(S_ISREG)
 #  ifndef S_IFMT
 #    ifdef _S_IFMT
 #      define S_IFMT _S_IFMT
 #      define S_IFCHR _S_IFCHR
+#      define S_IFREG _S_IFREG
 #    else
 #    ifdef __S_IFMT
 #      define S_IFMT __S_IFMT
 #      define S_IFCHR __S_IFCHR
+#      define S_IFREG __S_IFREG
 #    endif
 #    endif
 #  endif
 #  define S_ISCHR(mode) (((mode) & S_IFMT) == S_IFCHR)
+#  define S_ISREG(mode) (((mode) & S_IFMT) == S_IFREG)
 #endif
 
 /*

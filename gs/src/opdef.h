@@ -20,26 +20,24 @@
  * Define the structure for initializing the operator table.  Each operator
  * file zxxx.c declares an array of these as follows:
 
- const op_def * const zxxx_op_defs[] = {
-    {"1name", zname},
-    ...
-    op_def_end(iproc)
- };
+   const op_def * const zxxx_op_defs[] = {
+      {"1name", zname},
+      ...
+      op_def_end(iproc)
+   };
 
- * where iproc is an initialization procedure for the file, or 0.  This
- * definition always appears at the END of the file, to avoid the need for
- * forward declarations for all the operator procedures.  For backward
- * compatibility with an older convention, we also allow (deprecated)
-
- BEGIN_OP_DEFS(my_defs) {
-    {"1name", zname},
-    ...
- END_OP_DEFS(iproc) }
-
+ * where iproc is an initialization procedure for the file or 0, and, for
+ * each operator defined, the initial digit of the name string indicates
+ * the number of arguments and zname is the address of the associated C
+ * function to invoke.
+ *
+ * The array definition always appears at the END of the file, to avoid
+ * the need for forward declarations for all the operator procedures.
+ *
  * Operators may be stored in dictionaries other than systemdict.
  * We support this with op_def entries of a special form:
 
- op_def_begin_dict("dictname"),
+   op_def_begin_dict("dictname"),
 
  */
 typedef struct {
@@ -70,25 +68,6 @@ typedef struct {
 extern const op_def *const op_defs_all[];
 
 /*
- * Formerly, we needed to define each op_defs table as a procedure that
- * returns the actual table, because of cross-segment linking restrictions
- * in the 16-bit Borland C compiler for MS Windows.  This is no longer
- * relevant, but for backward compatibility, we need to retain
- * BEGIN/END_OP_DEFS with the same syntax.  This involves a kludge to create
- * a dummy procedure to match up with a closing brace, and another kludge to
- * prevent a "defined but not used" warning.
- */
-
-#define BEGIN_OP_DEFS(xx_op_defs)\
-const op_def xx_op_defs[] =
-
-#define END_OP_DEFS(iproc)\
-    op_def_end(iproc)\
-};\
-static int op_defs_dummy(void)\
-{	return 1 || op_defs_dummy();	/* generates the least wasted code */
-
-/*
  * Internal operators whose names begin with %, such as continuation
  * operators, do not appear in systemdict.  Ghostscript assumes
  * that these operators cannot appear anywhere (in executable form)
@@ -107,7 +86,7 @@ static int op_defs_dummy(void)\
  * however, internal operators have a `size' of 0, and their true index
  * must be found by searching the table for their procedure address.
  */
-ushort op_find_index(P1(const ref *));
+ushort op_find_index(const ref *);
 
 #define op_index(opref)\
   (r_size(opref) == 0 ? op_find_index(opref) : r_size(opref))
@@ -155,6 +134,6 @@ extern op_array_table
  * This is only used for debugging and for 'get' from packed arrays,
  * so it doesn't have to be very fast.
  */
-void op_index_ref(P2(uint, ref *));
+void op_index_ref(uint, ref *);
 
 #endif /* opdef_INCLUDED */

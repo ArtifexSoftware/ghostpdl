@@ -38,7 +38,7 @@
  * if they do, the declaration will be compatible with this one, as long
  * as const has not been disabled by defining it to be the empty string.
  */
-int unlink(P1(const char *));
+int unlink(const char *);
 #endif
 
 #endif
@@ -62,6 +62,10 @@ int unlink(P1(const char *));
 #endif
 #ifndef SEEK_END
 #  define SEEK_END 2
+#endif
+
+#if defined(_MSC_VER)
+#define fdopen(handle,mode) _fdopen(handle,mode)
 #endif
 
 #endif /* stdio__INCLUDED */

@@ -51,9 +51,16 @@
 #	    and linking libgz/libz explicitly.
 #	ZLIB_NAME - the name of the shared zlib, either gz (for libgz, -lgz)
 #	    or z (for libz, -lz).
+#	SHARE_JBIG2 - normally 0; if set to 1, asks the linker to use
+#	    an existing complied libjbig2dec instead of compiling and linking
+#	    in from a local copy of the source
+#	JBIG2SRCDIR - the name of the jbig2dec library source directory
+#	    typically 'jbig2dec' or 'jbig2dec-/version/'
+#	ICCSRCDIR - the name of the ICC lib source dir, currently
+#	    always icclib (compiled in statically)
 #	DEVICE_DEVS - the devices to include in the executable.
 #	    See devs.mak for details.
-#	DEVICE_DEVS1...DEVICE_DEVS20 - additional devices, if the definition
+#	DEVICE_DEVS1...DEVICE_DEVS21 - additional devices, if the definition
 #	    of DEVICE_DEVS doesn't fit on one line.  See devs.mak for details.
 #	FEATURE_DEVS - what features to include in the executable.
 #	    Normally this is one of:
@@ -82,6 +89,9 @@
 #			Included automatically in the psl2 feature.
 #		    dct - support for DCTEncode/Decode filters.
 #			Included automatically in the psl2 feature.
+#                   diskn - support for %disk IODevice emulation. Adds support
+#                       for %disk0 thru %disk9. Use requires setting the /Root
+#                       paramter for each %disk (see Language.htm).
 #		    dps - (partial) support for Display PostScript extensions:
 #			see Language.htm for details.
 #		    dpsnext - (partial) support for Display PostScript
@@ -102,6 +112,7 @@
 #			Included automatically in the psl2 feature.
 #		    type42 - support for Type 42 (embedded TrueType) fonts.
 #			Included automatically in the psl2 feature.
+#                   fapi - Font API (3d party font renderer interface).
 #		There are quite a number of other sub-features that can be
 #		selectively included in or excluded from a configuration,
 #		but the above are the ones that are most likely to be of
@@ -119,8 +130,9 @@
 #	    both, provides both implementations with different procedure
 #	    names for the fd-based implementation (see sfxfd.c for
 #	    more information).
-#	STDIO_IMPLEMENTATION - normally '' which uses file based stdio
-#	    in ziodevs.c; 'c' uses callouts and ziodevsc.c.
+#	STDIO_IMPLEMENTATION - normally 'c' which uses callouts and 
+#	    ziodevsc.c, but ghostscript library must use '' for file 
+#	    based stdio in ziodevs.c. 
 #           Callouts use procedure based streams and return back to
 #           to gs_main_interpret() in imain.c whenever stdio is needed.
 #	EXTEND_NAMES - a value N between 0 and 6, indicating that the name
@@ -146,13 +158,9 @@
 #	OBJ - the extension for relocatable object files (e.g., o or obj).
 #	XE - the extension for executable files (e.g., null or .exe).
 #	XEAUX - the extension for the executable files (e.g., null or .exe)
-#		for the utility programs (ansi2knr and those compiled with
-#		CCAUX).
+#		for the utility programs (those compiled with CCAUX).
 #	BEGINFILES - the list of additional files that `make clean' should
 #		delete.
-#	CCA2K - the C invocation for the ansi2knr program, which is the only
-#		one that doesn't use ANSI C syntax.  (It is only needed if
-#		the main C compiler also isn't an ANSI compiler.)
 #	CCAUX - the C invocation for auxiliary programs (echogs, genarch,
 #		genconf, gendev, genht, geninit).
 #	CC_ - the C invocation for normal compilation.
@@ -167,10 +175,9 @@
 #		leaf procedures, which don't need to build stack frames.
 #		This is needed only because many compilers aren't able to
 #		recognize leaf procedures on their own.
-#	AK - if source files must be converted from ANSI to K&R syntax,
-#		this is $(ANSI2KNR_XE); if not, it is null.
-#		If a particular platform requires other utility programs
-#		to be built, AK must include them too.
+#	AK - if a particular platform requires any programs or data files
+#		to be built before compiling the source code, AK must list
+#		them.
 #	EXP - the prefix for invoking an executable program in a specified
 #		directory (MCR on OpenVMS, null on all other platforms).
 #	SH - the shell for scripts (null on MS-DOS, sh on Unix).
@@ -204,8 +211,12 @@ PNGGENDIR=$(GLGENDIR)
 PNGOBJDIR=$(GLOBJDIR)
 ZGENDIR=$(GLGENDIR)
 ZOBJDIR=$(GLOBJDIR)
+JBIG2GENDIR=$(GLGENDIR)
+JBIG2OBJDIR=$(GLOBJDIR)
 ICCGENDIR=$(GLGENDIR)
 ICCOBJDIR=$(GLOBJDIR)
+IJSGENDIR=$(GLGENDIR)
+IJSOBJDIR=$(GLOBJDIR)
 #**************** END PATCHES
 
 GSGEN=$(GLGENDIR)$(D)
@@ -220,7 +231,6 @@ GS_MAK=$(GLSRCDIR)$(D)gs.mak
 GS_XE=$(BINDIR)$(D)$(GS)$(XE)
 AUXGENDIR=$(GLGENDIR)
 AUXGEN=$(AUXGENDIR)$(D)
-ANSI2KNR_XE=$(AUXGEN)ansi2knr$(XEAUX)
 ECHOGS_XE=$(AUXGEN)echogs$(XEAUX)
 GENARCH_XE=$(AUXGEN)genarch$(XEAUX)
 GENCONF_XE=$(AUXGEN)genconf$(XEAUX)
@@ -236,8 +246,11 @@ gconfigf_h=$(GLGENDIR)$(D)gconfxc.h
 all default : $(GS_XE)
 	$(NO_OP)
 
-#****** ON UNIX PLATFORMS, SHOULD REMOVE `makefile' ******
-distclean maintainer-clean realclean : clean
+# the distclean and maintainer-clean targets (if any)
+# are the responsibility of the platform-specific
+# makefiles. We only handle the internal build system
+# apparatus here.
+realclean : clean
 	$(NO_OP)
 
 clean : mostlyclean
@@ -250,8 +263,8 @@ mostlyclean : config-clean
 	$(RMN_) $(GSGEN)deflate.h $(GSGEN)zutil.h
 	$(RMN_) $(GSGEN)gconfig*.c $(GSGEN)gscdefs*.c $(GSGEN)iconfig*.c
 	$(RMN_) $(GSGEN)_temp_* $(GSGEN)_temp_*.* $(GSOBJ)*.map $(GSOBJ)*.sym
-	$(RMN_) $(ANSI2KNR_XE) $(ECHOGS_XE)
 	$(RMN_) $(GENARCH_XE) $(GENCONF_XE) $(GENDEV_XE) $(GENHT_XE) $(GENINIT_XE)
+	$(RMN_) $(ECHOGS_XE)
 	$(RMN_) $(GSGEN)gs_init.c $(BEGINFILES)
 
 # Remove only configuration-dependent information.
@@ -261,23 +274,6 @@ config-clean :
 	$(RMN_) $(GSGEN)gconfx*.h $(GSGEN)j*.h
 	$(RMN_) $(GSGEN)c*.tr $(GSGEN)o*.tr $(GSGEN)l*.tr
 
-# A rule to do a quick and dirty compilation attempt when first installing
-# the interpreter.  Many of the compilations will fail:
-# follow this with 'make'.
-
-#****** FOLLOWING IS WRONG, TIED TO INTERPRETER ******
-begin :
-	$(RMN_) $(GSGEN)arch.h $(GSGEN)gconfig*.h $(GSGEN)gconfx*.h
-	$(RMN_) $(GENARCH_XE) $(GS_XE)
-	$(RMN_) $(GSGEN)gconfig*.c $(GSGEN)gscdefs*.c $(GSGEN)iconfig*.c
-	$(RMN_) $(GSGEN)gs_init.c $(BEGINFILES)
-	make $(GSGEN)arch.h $(GSGEN)gconfigv.h
-	- $(CCBEGIN)
-	$(RMN_) $(GSOBJ)gconfig.$(OBJ) $(GSOBJ)gdev*.$(OBJ)
-	$(RMN_) $(GSOBJ)gp_*.$(OBJ) $(GSOBJ)gscdefs.$(OBJ) $(GSOBJ)gsmisc.$(OBJ)
-	$(RMN_) $(PSOBJ)icfontab.$(OBJ) $(PSOBJ)iconfig.$(OBJ)
-	$(RMN_) $(PSOBJ)iinit.$(OBJ) $(PSOBJ)interp.$(OBJ)
-
 # Macros for constructing the *.dev files that describe features and
 # devices.
 SETDEV=$(EXP)$(ECHOGS_XE) -e .dev -w- -l-dev -b -s -l-obj
@@ -286,12 +282,22 @@ SETDEV2=$(EXP)$(ECHOGS_XE) -e .dev -w- -l-dev2 -b -s -l-obj
 SETPDEV2=$(EXP)$(ECHOGS_XE) -e .dev -w- -l-dev2 -b -s -l-include -l$(GLGENDIR)$(D)page -l-obj
 SETMOD=$(EXP)$(ECHOGS_XE) -e .dev -w- -l-obj
 ADDMOD=$(EXP)$(ECHOGS_XE) -e .dev -a- $(NULL)
+SETCOMP=$(EXP)$(ECHOGS_XE) -e .dev -w- -l-comp
+ADDCOMP=$(EXP)$(ECHOGS_XE) -e .dev -a- -l-comp
 
 # Define the search lists and compilation switches for the third-party
 # libraries, and the compilation switches for their clients.
 # The search lists must be enclosed in $(I_) and $(_I).
 # Note that we can't define the entire compilation command,
 # because this must include $(GLSRCDIR), which isn't defined yet.
+ICCI_=$(ICCSRCDIR)
+ICCF_=
+# Currently there is no option for sharing icclib.
+ICCCF_=
+IJSI_=$(IJSSRCDIR)
+IJSF_=
+# Currently there is no option for sharing ijs.
+IJSCF_=
 JI_=$(JSRCDIR)
 JF_=
 JCF_=$(D_)SHARE_JPEG=$(SHARE_JPEG)$(_D)
@@ -302,9 +308,9 @@ PF_=
 PCF_=$(D_)SHARE_LIBPNG=$(SHARE_LIBPNG)$(_D)
 ZI_=$(ZSRCDIR)
 ZF_=
-ICCI_=$(ICCSRCDIR)
-ICCF_=
 ZCF_=$(D_)SHARE_ZLIB=$(SHARE_ZLIB)$(_D)
+JB2I_=$(JBIG2SRCDIR)
+JB2CF_=
 
 ######################## How to define new 'features' #######################
 #
@@ -351,7 +357,8 @@ DEVS_ALL=$(GLGENDIR)$(D)$(PLATFORM).dev\
  $(DEVICE_DEVS6) $(DEVICE_DEVS7) $(DEVICE_DEVS8) $(DEVICE_DEVS9) \
  $(DEVICE_DEVS10) $(DEVICE_DEVS11) $(DEVICE_DEVS12) $(DEVICE_DEVS13) \
  $(DEVICE_DEVS14) $(DEVICE_DEVS15) $(DEVICE_DEVS16) $(DEVICE_DEVS17) \
- $(DEVICE_DEVS18) $(DEVICE_DEVS19) $(DEVICE_DEVS20) $(DEVICE_DEVS_EXTRA)
+ $(DEVICE_DEVS18) $(DEVICE_DEVS19) $(DEVICE_DEVS20) $(DEVICE_DEVS21) \
+ $(DEVICE_DEVS_EXTRA)
 
 devs_tr=$(GLGENDIR)$(D)devs.tr
 $(devs_tr) : $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE)
@@ -379,6 +386,7 @@ $(devs_tr) : $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE)
 	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS18)
 	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS19)
 	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS20)
+	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS21)
 	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS_EXTRA)
 	$(EXP)$(ECHOGS_XE) -a $(devs_tr) - $(GLGENDIR)$(D)libcore
 
@@ -388,7 +396,7 @@ $(devs_tr) : $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE)
 GCONFIG_EXTRAS=
 
 ld_tr=$(GLGENDIR)$(D)ld.tr
-$(gconfig_h) $(ld_tr) $(GLGENDIR)$(D)lib.tr : \
+$(gconfig_h) : \
   $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(devs_tr) $(DEVS_ALL) $(GLGENDIR)$(D)libcore.dev
 	$(EXP)$(GENCONF_XE) $(devs_tr) -h $(gconfig_h) $(CONFILES) $(CONFLDTR) $(ld_tr)
 	$(EXP)$(ECHOGS_XE) -a $(gconfig_h) -x 23 define -s -u GS_LIB_DEFAULT -x 2022 $(GS_LIB_DEFAULT) -x 22
@@ -398,3 +406,11 @@ $(gconfig_h) $(ld_tr) $(GLGENDIR)$(D)lib.tr : \
 	$(EXP)$(ECHOGS_XE) -a $(gconfig_h) -x 23 define -s -u GS_REVISION -s $(GS_REVISION)
 	$(EXP)$(ECHOGS_XE) -a $(gconfig_h) -x 23 define -s -u GS_REVISIONDATE -s $(GS_REVISIONDATE)
 	$(EXP)$(ECHOGS_XE) -a $(gconfig_h) $(GCONFIG_EXTRAS)
+
+$(ld_tr) $(GLGENDIR)$(D)lib.tr : $(gconfig_h)
+	
+# The line above is an empty command; don't delete.
+
+obj_tr=$(GLGENDIR)$(D)obj.tr
+$(obj_tr) : $(ld_tr)
+	$(EXP)$(GENCONF_XE) $(devs_tr) $(CONFILES) -o $(obj_tr)

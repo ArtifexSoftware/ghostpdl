@@ -17,7 +17,7 @@
 #include "gx.h"
 #include "gserrors.h"
 #include "gsstruct.h"
-#include "gsutil.h"		/* for gs_next_id */
+#include "gsutil.h"		/* for gs_next_ids */
 #include "gxfixed.h"
 #include "gxmatrix.h"
 #include "gxcspace.h"		/* for gscolor2.h */
@@ -26,6 +26,7 @@
 #include "gxdevice.h"
 #include "gxdevmem.h"
 #include "gxpcolor.h"
+#include "gxp1impl.h"
 #include "gzstate.h"
 
 /* Define the default size of the Pattern cache. */
@@ -117,10 +118,19 @@ private const gx_device_pattern_accum gs_pattern_accum_device =
      gx_default_begin_typed_image,
      pattern_accum_get_bits_rectangle,
      NULL,
-     NULL,
+     gx_default_create_compositor,
      NULL,
      gx_default_text_begin,
-     gx_default_finish_copydevice
+     gx_default_finish_copydevice,
+     NULL,
+     NULL,
+     NULL,
+     NULL,
+     NULL,
+     NULL,
+     NULL,
+     NULL,
+     NULL
  },
  0,				/* target */
  0, 0, 0, 0			/* bitmap_memory, bits, mask, instance */
@@ -292,6 +302,9 @@ pattern_accum_copy_mono(gx_device * dev, const byte * data, int data_x,
 {
     gx_device_pattern_accum *const padev = (gx_device_pattern_accum *) dev;
 
+    /* opt out early if nothing to render (some may think this a bug) */
+    if (color0 == gx_no_color_index && color1 == gx_no_color_index)
+        return 0;
     if (padev->bits)
 	(*dev_proc(padev->target, copy_mono))
 	    (padev->target, data, data_x, raster, id, x, y, w, h,
@@ -363,16 +376,16 @@ gx_pattern_alloc_cache(gs_memory_t * mem, uint num_tiles, ulong max_bits)
 {
     gx_pattern_cache *pcache =
     gs_alloc_struct(mem, gx_pattern_cache, &st_pattern_cache,
-		    "pattern_cache_alloc(struct)");
+		    "gx_pattern_alloc_cache(struct)");
     gx_color_tile *tiles =
     gs_alloc_struct_array(mem, num_tiles, gx_color_tile,
 			  &st_color_tile_element,
-			  "pattern_cache_alloc(tiles)");
+			  "gx_pattern_alloc_cache(tiles)");
     uint i;
 
     if (pcache == 0 || tiles == 0) {
-	gs_free_object(mem, tiles, "pattern_cache_alloc(tiles)");
-	gs_free_object(mem, pcache, "pattern_cache_alloc(struct)");
+	gs_free_object(mem, tiles, "gx_pattern_alloc_cache(tiles)");
+	gs_free_object(mem, pcache, "gx_pattern_alloc_cache(struct)");
 	return 0;
     }
     pcache->memory = mem;
@@ -464,7 +477,7 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
  * device, but it may zero out the bitmap_memory pointers to prevent
  * the accumulated bitmaps from being freed when the device is closed.
  */
-private void make_bitmap(P3(gx_strip_bitmap *, const gx_device_memory *, gx_bitmap_id));
+private void make_bitmap(gx_strip_bitmap *, const gx_device_memory *, gx_bitmap_id);
 int
 gx_pattern_cache_add_entry(gs_imager_state * pis,
 		   gx_device_pattern_accum * padev, gx_color_tile ** pctile)
@@ -522,8 +535,11 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
     ctile->step_matrix = pinst->step_matrix;
     ctile->bbox = pinst->bbox;
     ctile->is_simple = pinst->is_simple;
+#   if PATTERN_STREAM_ACCUMULATION
+    ctile->is_dummy = false;
+#   endif
     if (mbits != 0) {
-	make_bitmap(&ctile->tbits, mbits, gs_next_id());
+	make_bitmap(&ctile->tbits, mbits, gs_next_ids(1));
 	mbits->bitmap_memory = 0;	/* don't free the bits */
     } else
 	ctile->tbits.data = 0;
@@ -535,6 +551,40 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
     pcache->bits_used += used;
     pcache->tiles_used++;
     *pctile = ctile;
+    return 0;
+}
+
+/* Add a dummy Pattern cache entry.  Stubs a pattern tile for interpreter when
+   device handles high level patterns. */
+int
+gx_pattern_cache_add_dummy_entry(gs_imager_state *pis, 
+	    gs_pattern1_instance_t *pinst, int depth)
+{
+    gx_color_tile *ctile;
+    gx_pattern_cache *pcache;
+    gx_bitmap_id id = pinst->id;
+    int code = ensure_pattern_cache(pis);
+
+    if (code < 0)
+	return code;
+    pcache = pis->pattern_cache;
+    ctile = &pcache->tiles[id % pcache->num_tiles];
+    gx_pattern_cache_free_entry(pcache, ctile);
+    ctile->id = id;
+    ctile->depth = depth;
+    ctile->uid = pinst->template.uid;
+    ctile->tiling_type = pinst->template.TilingType;
+    ctile->step_matrix = pinst->step_matrix;
+    ctile->bbox = pinst->bbox;
+    ctile->is_simple = pinst->is_simple;
+#   if PATTERN_STREAM_ACCUMULATION
+    ctile->is_dummy = true;
+#   endif
+    memset(&ctile->tbits, 0 , sizeof(ctile->tbits));
+    ctile->tbits.size = pinst->size;
+    ctile->tbits.id = gs_no_bitmap_id;
+    memset(&ctile->tmask, 0 , sizeof(ctile->tmask));
+    pcache->tiles_used++;
     return 0;
 }
 private void
@@ -552,7 +602,7 @@ make_bitmap(register gx_strip_bitmap * pbm, const gx_device_memory * mdev,
 /* Purge selected entries from the pattern cache. */
 void
 gx_pattern_cache_winnow(gx_pattern_cache * pcache,
-  bool(*proc) (P2(gx_color_tile * ctile, void *proc_data)), void *proc_data)
+  bool(*proc) (gx_color_tile * ctile, void *proc_data), void *proc_data)
 {
     uint i;
 
@@ -636,8 +686,6 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
     /* Free the bookkeeping structures, except for the bits and mask */
     /* data iff they are still needed. */
     dev_proc(adev, close_device)((gx_device *)adev);
-    /* extra decrement to force free */
-    rc_decrement(adev, "gx_pattern_load(pattern_accum_device)");
     /* Freeing the state will free the device. */
     gs_state_free(saved);
     return code;

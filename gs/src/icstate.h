@@ -45,18 +45,19 @@ struct gs_context_state_s {
     /* View clipping is handled in the graphics state. */
     ref userparams;		/* t_dictionary */
     int scanner_options;	/* derived from userparams */
+    bool LockFilePermissions;	/* accessed from userparams */
+#if NEW_COMBINE_PATH
+    bool starting_arg_file;	/* starting a file specified in command line. */
+#else
+    char *filearg;		/* C string of the file being run */
+				/* (allocated on the C heap, no gc needed) */
+#endif
     ref stdio[3];		/* t_file */
- 
-    /* interp reads/calls, zcontext writes
-     */
-    int (*interp_reschedule_proc)(P1(i_ctx_t **));
-    int (*interp_time_slice_proc)(P1(i_ctx_t **));
-    int interp_time_slice_ticks; 
-
     /* Put the stacks at the end to minimize other offsets. */
     dict_stack_t dict_stack;
     exec_stack_t exec_stack;
     op_stack_t op_stack;
+    struct i_plugin_holder_s *plugin_list;
 };
 extern const long rand_state_initial; /* in zmath.c */
 

@@ -31,7 +31,7 @@ build_function_proc(gs_build_function_3);
 
 /* Finish building a FunctionType 2 (ExponentialInterpolation) function. */
 int
-gs_build_function_2(const ref *op, const gs_function_params_t * mnDR,
+gs_build_function_2(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t * mnDR,
 		    int depth, gs_function_t ** ppfn, gs_memory_t *mem)
 {
     gs_function_ElIn_params_t params;
@@ -41,8 +41,8 @@ gs_build_function_2(const ref *op, const gs_function_params_t * mnDR,
     params.C0 = 0;
     params.C1 = 0;
     if ((code = dict_float_param(op, "N", 0.0, &params.N)) != 0 ||
-	(code = n0 = fn_build_float_array(op, "C0", false, false, &params.C0, mem)) < 0 ||
-	(code = n1 = fn_build_float_array(op, "C1", false, false, &params.C1, mem)) < 0
+	(code = n0 = fn_build_float_array_forced(op, "C0", false, &params.C0, mem)) < 0 ||
+	(code = n1 = fn_build_float_array_forced(op, "C1", false, &params.C1, mem)) < 0
 	)
 	goto fail;
     if (params.C0 == 0)
@@ -63,7 +63,7 @@ fail:
 
 /* Finish building a FunctionType 3 (1-Input Stitching) function. */
 int
-gs_build_function_3(const ref *op, const gs_function_params_t * mnDR,
+gs_build_function_3(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t * mnDR,
 		    int depth, gs_function_t ** ppfn, gs_memory_t *mem)
 {
     gs_function_1ItSg_params_t params;
@@ -90,7 +90,7 @@ gs_build_function_3(const ref *op, const gs_function_params_t * mnDR,
 	    ref subfn;
 
 	    array_get(pFunctions, (long)i, &subfn);
-	    code = fn_build_sub_function(&subfn, &ptr[i], depth, mem);
+	    code = fn_build_sub_function(i_ctx_p, &subfn, &ptr[i], depth, mem);
 	    if (code < 0)
 		goto fail;
 	}

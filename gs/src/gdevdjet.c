@@ -81,14 +81,14 @@
  * inexact paperlength which is set to 117 10ths.
  * Somebody should check for letter sized paper. I left it at 0.07".
  */
-#define DESKJET_MARGINS_LETTER  0.2, 0.45, 0.3, 0.05
-#define DESKJET_MARGINS_A4	0.125, 0.5, 0.143, 0.09
+#define DESKJET_MARGINS_LETTER  (float)0.2, (float)0.45, (float)0.3, (float)0.05
+#define DESKJET_MARGINS_A4	(float)0.125, (float)0.5, (float)0.143, (float)0.09
 /* Similar margins for the LaserJet. */
 /* These are defined in the PCL 5 Technical Reference Manual. */
 /* Note that for PCL 5 printers, we get the printer to translate the */
 /* coordinate system: the margins only define the unprintable area. */
-#define LASERJET_MARGINS_A4	0.167, 0.167, 0.167, 0.167
-#define LASERJET_MARGINS_LETTER	0.167, 0.167, 0.167, 0.167
+#define LASERJET_MARGINS_A4	(float)0.167, (float)0.167, (float)0.167, (float)0.167
+#define LASERJET_MARGINS_LETTER	(float)0.167, (float)0.167, (float)0.167, (float)0.167
 
 /* See gdevdljm.h for the definitions of the PCL_ features. */
 
@@ -247,9 +247,13 @@ hpjet_close(gx_device * pdev)
 
     if (code < 0)
 	return code;
-    if (ppdev->Duplex_set >= 0 && ppdev->Duplex)
-	fputs("\033&l0H", ppdev->file);
-    fputs("\033E", ppdev->file);
+    if (ppdev->PageCount > 0) {
+	if (ppdev->Duplex_set >= 0 && ppdev->Duplex)
+	    fputs("\033&l0H", ppdev->file);
+
+	fputs("\033E", ppdev->file);
+    }
+
     return gdev_prn_close(pdev);
 }
 

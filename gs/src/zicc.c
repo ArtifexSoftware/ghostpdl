@@ -12,6 +12,7 @@
 
 /*$RCSfile$ $Revision$ */
 /* ICCBased color operators */
+
 #include "math_.h"
 #include "memory_.h"
 #include "ghost.h"
@@ -134,6 +135,11 @@ zseticcspace(i_ctx_t * i_ctx_p)
     memmove( &pcs->params.icc.alt_space,
              palt_cs,
              sizeof(pcs->params.icc.alt_space) );
+    /*
+     * Increment reference counts for current cspace since it is the
+     * alternate color space for the ICC space.
+     */
+    gx_increment_cspace_count(palt_cs);
 
     code = gx_load_icc_profile(picc_info);
     if (code < 0)

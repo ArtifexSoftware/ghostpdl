@@ -14,9 +14,10 @@
 /* Utilities for Ghostscript library */
 #include "string_.h"
 #include "memory_.h"
-#include "gp.h"
 #include "gstypes.h"
 #include "gconfigv.h"		/* for USE_ASM */
+#include "gserror.h"
+#include "gserrors.h"
 #include "gsmemory.h"		/* for init procedure */
 #include "gsrect.h"		/* for prototypes */
 #include "gsuid.h"
@@ -24,16 +25,24 @@
 
 /* ------ Unique IDs ------ */
 
-gs_id
-gs_next_id()
+/* Generate a block of unique IDs. */
+static ulong gs_next_id;
+
+init_proc(gs_gsutil_init);	/* check prototype */
+int
+gs_gsutil_init(gs_memory_t *mem)
 {
-    static long global_id = 0;
-    /* id's need to be in the range 0 - 2^24 - 1 to be consistent with
-         postscript uids */
-    gs_id next_id = global_id % (1 << 24);
-    /* increment global */
-    global_id++;
-    return next_id;
+    gs_next_id = 1;
+    return 0;
+}
+
+ulong
+gs_next_ids(uint count)
+{
+    ulong id = gs_next_id;
+
+    gs_next_id += count;
+    return id;
 }
 
 /* ------ Memory utilities ------ */
@@ -64,17 +73,17 @@ memflip8x8(const byte * inp, int line_size, byte * outp, int dist)
     if (aceg == bdfh && (aceg >> 8) == (aceg & 0xffffff)) {
 	if (aceg == 0)
 	    goto store;
-	*outp = -((aceg >> 7) & 1);
-	outp[dist] = -((aceg >> 6) & 1);
+	*outp = (byte)-(int)((aceg >> 7) & 1);
+	outp[dist] = (byte)-(int)((aceg >> 6) & 1);
 	outp += dist << 1;
-	*outp = -((aceg >> 5) & 1);
-	outp[dist] = -((aceg >> 4) & 1);
+	*outp = (byte)-(int)((aceg >> 5) & 1);
+	outp[dist] = (byte)-(int)((aceg >> 4) & 1);
 	outp += dist << 1;
-	*outp = -((aceg >> 3) & 1);
-	outp[dist] = -((aceg >> 2) & 1);
+	*outp = (byte)-(int)((aceg >> 3) & 1);
+	outp[dist] = (byte)-(int)((aceg >> 2) & 1);
 	outp += dist << 1;
-	*outp = -((aceg >> 1) & 1);
-	outp[dist] = -(aceg & 1);
+	*outp = (byte)-(int)((aceg >> 1) & 1);
+	outp[dist] = (byte)-(int)(aceg & 1);
 	return;
     } {
 	register uint temp;
@@ -148,7 +157,7 @@ bytes_compare(const byte * s1, uint len1, const byte * s2, uint len2)
 /* Test whether a string matches a pattern with wildcards. */
 /* '*' = any substring, '?' = any character, '\' quotes next character. */
 const string_match_params string_match_params_default = {
-    '*', '?', '\\', false
+    '*', '?', '\\', false, false
 };
 
 bool
@@ -182,7 +191,9 @@ string_match(const byte * str, uint len, const byte * pstr, uint plen,
 	    return false;	/* str too short */
 	if (*sp == ch ||
 	    (psmp->ignore_case && (*sp ^ ch) == 0x20 &&
-	     (ch &= ~0x20) >= 0x41 && ch <= 0x5a)
+	     (ch &= ~0x20) >= 0x41 && ch <= 0x5a) ||
+	     (psmp->slash_equiv && ((ch == '\\' && *sp == '/') ||
+	     (ch == '/' && *sp == '\\')))
 	    )
 	    p++, sp++;
 	else if (pback == 0)
@@ -220,6 +231,23 @@ uid_equal(register const gs_uid * puid1, register const gs_uid * puid2)
 	!memcmp((const char *)puid1->xvalues,
 		(const char *)puid2->xvalues,
 		(uint) - (puid1->id) * sizeof(long));
+}
+
+/* Copy the XUID data for a uid, if needed, updating the uid in place. */
+int
+uid_copy(gs_uid *puid, gs_memory_t *mem, client_name_t cname)
+{
+    if (uid_is_XUID(puid)) {
+	uint xsize = uid_XUID_size(puid);
+	long *xvalues = (long *)
+	    gs_alloc_byte_array(mem, xsize, sizeof(long), cname);
+
+	if (xvalues == 0)
+	    return_error(gs_error_VMerror);
+	memcpy(xvalues, uid_XUID_values(puid), xsize * sizeof(long));
+	puid->xvalues = xvalues;
+    }
+    return 0;
 }
 
 /* ------ Rectangle utilities ------ */

@@ -18,6 +18,7 @@
 #include "gsmatrix.h"
 #include "gsccode.h"
 #include "gsstruct.h"
+#include "gsgcache.h"
 #include "gxfcid.h"
 #include "bfont.h"
 #include "icid.h"
@@ -26,6 +27,8 @@
 #include "ifcid.h"
 #include "ifont42.h"
 #include "store.h"
+#include "stream.h"
+#include "files.h"
 
 /* ---------------- CIDFontType 1 (FontType 10) ---------------- */
 
@@ -48,7 +51,6 @@ zbuildfont10(i_ctx_t *i_ctx_p)
     code = build_gs_simple_font(i_ctx_p, op, &pfont, ft_CID_user_defined,
 				&st_gs_font_cid1, &build,
 				bf_Encoding_optional |
-				bf_FontBBox_required |
 				bf_UniqueID_ignored);
     if (code < 0)
 	return code;
@@ -95,6 +97,8 @@ z11_CIDMap_proc(gs_font_cid2 *pfont, gs_glyph glyph)
 
 	if (code < 0)
 	    return code;
+	if ( code > 0 ) 
+	    return_error(e_invalidfont);
     }
     for (i = 0; i < gdbytes; ++i)
 	gnum = (gnum << 8) + data[i];
@@ -104,55 +108,48 @@ z11_CIDMap_proc(gs_font_cid2 *pfont, gs_glyph glyph)
 /* Handle MetricsCount when accessing outline or metrics information. */
 private int
 z11_get_outline(gs_font_type42 * pfont, uint glyph_index,
-		gs_const_string * pgstr)
+		gs_glyph_data_t *pgd)
 {
     gs_font_cid2 *const pfcid = (gs_font_cid2 *)pfont;
     int skip = pfcid->cidata.MetricsCount << 1;
-    int code = pfcid->cidata.orig_procs.get_outline(pfont, glyph_index, pgstr);
+    int code = pfcid->cidata.orig_procs.get_outline(pfont, glyph_index, pgd);
 
     if (code >= 0) {
-	byte *data = (byte *)pgstr->data;  /* break const */
-	uint size = pgstr->size;
+	uint size = pgd->bits.size;
 
 	if (size <= skip) {
-	    if (code > 0 && size != 0)
-		gs_free_string(pfont->memory, data, size, "z11_get_outline");
-	    pgstr->data = 0, pgstr->size = 0;
+	    gs_glyph_data_free(pgd, "z11_get_outline");
+	    gs_glyph_data_from_null(pgd);
 	} else {
-	    if (code > 0) {
-		/* Newly allocated, freeble string. */
-		memmove(data, data + skip, size - skip);
-		pgstr->data = gs_resize_string(pfont->memory, data,
-					       size, size - skip,
-					       "z11_get_outline");
-	    } else {
-		pgstr->data += skip;
-	    }
-	    pgstr->size = size - skip;
+	    gs_glyph_data_substring(pgd, skip, size - skip);
 	}
     }
     return code;
 }
+
+#define GET_U16_MSB(p) (((uint)((p)[0]) << 8) + (p)[1])
+#define GET_S16_MSB(p) (int)((GET_U16_MSB(p) ^ 0x8000) - 0x8000)
+
 private int
 z11_get_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
 		float sbw[4])
 {
     gs_font_cid2 *const pfcid = (gs_font_cid2 *)pfont;
     int skip = pfcid->cidata.MetricsCount << 1;
-    gs_const_string gstr;
+    gs_glyph_data_t gdata;
     const byte *pmetrics;
     int lsb, width;
     int code = 0;
 
-    if (wmode > skip >> 2 ||
-	(code = pfcid->cidata.orig_procs.get_outline(pfont, glyph_index, &gstr)) < 0 ||
-	gstr.size < skip
+    if (wmode >= skip >> 2 ||
+	(code = pfcid->cidata.orig_procs.get_outline(pfont, glyph_index, &gdata)) < 0 ||
+	gdata.bits.size < skip
 	)
 	return pfcid->cidata.orig_procs.get_metrics(pfont, glyph_index, wmode,
 						    sbw);
-    pmetrics = gstr.data + skip - (wmode << 2);
-    lsb = (pmetrics[2] << 8) + pmetrics[3];
-    width = (pmetrics[0] << 8) + pmetrics[1];
+    pmetrics = gdata.bits.data + skip - 4 - (wmode << 2);
+    lsb = GET_S16_MSB(pmetrics + 2);
+    width = GET_U16_MSB(pmetrics + 0);
     {
 	double factor = 1.0 / pfont->data.unitsPerEm;
 
@@ -164,9 +161,7 @@ z11_get_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
 	    sbw[2] = width * factor, sbw[3] = 0;
 	}
     }
-    if (code > 0)
-	gs_free_const_string(pfont->memory, gstr.data, gstr.size,
-			     "z11_get_metrics");
+    gs_glyph_data_free(&gdata, "z11_get_metrics");
     return 0;
 }
 
@@ -181,15 +176,43 @@ zbuildfont11(i_ctx_t *i_ctx_p)
     gs_font_type42 *pfont;
     gs_font_cid2 *pfcid;
     int MetricsCount;
-    ref rcidmap, ignore_gdir;
+    ref rcidmap, ignore_gdir, *file, cfnstr, *CIDFontName;
+    ulong loca_glyph_pos[2][2];
     int code = cid_font_data_param(op, &common, &ignore_gdir);
 
     if (code < 0 ||
+	(code = dict_find_string(op, "CIDFontName", &CIDFontName)) <= 0 ||
 	(code = dict_int_param(op, "MetricsCount", 0, 4, 0, &MetricsCount)) < 0
 	)
 	return code;
     if (MetricsCount & 1)	/* only allowable values are 0, 2, 4 */
 	return_error(e_rangecheck);
+    code = dict_find_string(op, "File", &file);
+    if (code < 0)
+	return code;
+    if (code > 0) {
+	ref *file_table_pos, *a, v;
+	const char *name[2] = {"loca", "glyf"};
+	int i, j;
+	
+        check_read_type(*file, t_file);
+	code = dict_find_string(op, "file_table_pos", &file_table_pos);
+	if (code <= 0 || r_type(file_table_pos) != t_dictionary)
+	    return_error(e_invalidfont);
+	for (i = 0; i < 2; i++) {
+	    code = dict_find_string(file_table_pos, name[i], &a);
+	    if (code <= 0 || r_type(a) != t_array)
+		return_error(e_invalidfont);
+	    for (j = 0; j < 2; j++) {
+		code = array_get(a, j, &v); 
+		if (code < 0 || r_type(&v) != t_integer)
+		    return_error(e_invalidfont);
+		loca_glyph_pos[i][j] = v.value.intval;
+	    }
+	}
+
+    } else
+	file = NULL;
     code = font_string_array_param(op, "CIDMap", &rcidmap);
     switch (code) {
     case 0:			/* in PLRM3 */
@@ -216,7 +239,6 @@ zbuildfont11(i_ctx_t *i_ctx_p)
 				  &st_gs_font_cid2,
 				  (const char *)0, "%Type11BuildGlyph",
 				  bf_Encoding_optional |
-				  bf_FontBBox_required |
 				  bf_UniqueID_ignored |
 				  bf_CharStrings_optional);
     if (code < 0)
@@ -226,12 +248,26 @@ zbuildfont11(i_ctx_t *i_ctx_p)
     pfcid->cidata.MetricsCount = MetricsCount;
     ref_assign(&pfont_data(pfont)->u.type42.CIDMap, &rcidmap);
     pfcid->cidata.CIDMap_proc = z11_CIDMap_proc;
+    get_font_name(&cfnstr, CIDFontName);
+    copy_font_name(&pfcid->font_name, &cfnstr);
     if (MetricsCount) {
 	/* "Wrap" the glyph accessor procedures. */
 	pfcid->cidata.orig_procs.get_outline = pfont->data.get_outline;
 	pfont->data.get_outline = z11_get_outline;
 	pfcid->cidata.orig_procs.get_metrics = pfont->data.get_metrics;
 	pfont->data.get_metrics = z11_get_metrics;
+    } else if(file != NULL) {
+        /* 
+	 * We assume that disk fonts has no MetricsCount.
+	 * We could do not, but the number of virtual function wariants increases.
+	 */
+	stream *s;
+
+	check_read_file(s, file);
+	pfont->data.loca = loca_glyph_pos[0][0];
+	pfont->data.glyf = loca_glyph_pos[1][0];
+	pfont->data.get_outline = gs_get_glyph_data_cached;
+   	pfont->data.gdcache = gs_glyph_cache__alloc(pfont, s, gs_type42_get_outline_from_TT_file);
     }
     return define_gs_font((gs_font *)pfont);
 }
@@ -246,16 +282,48 @@ ztype11mapcid(i_ctx_t *i_ctx_p)
 
     if (code < 0)
 	return code;
-    if (pfont->FontType != ft_CID_TrueType)
-	return_error(e_invalidfont);
     check_type(*op, t_integer);
-    code = z11_CIDMap_proc((gs_font_cid2 *)pfont,
-			   (gs_glyph)(gs_min_cid_glyph + op->value.intval));
+#if defined(TEST)
+    /* Allow a Type 42 font here, for testing .wrapfont. */
+    if (pfont->FontType == ft_TrueType) {
+	/* Use the CID as the glyph index. */
+	if (op->value.intval < 0 ||
+	    op->value.intval >= ((gs_font_type42 *)pfont)->data.numGlyphs
+	    )
+	    return_error(e_rangecheck);
+	code = (int)op->value.intval;
+    } else
+#endif
+    {
+	if (pfont->FontType != ft_CID_TrueType)
+	    return_error(e_invalidfont);
+	code = z11_CIDMap_proc((gs_font_cid2 *)pfont,
+			(gs_glyph)(gs_min_cid_glyph + op->value.intval));
+    }
     if (code < 0)
 	return code;
     make_int(op - 1, code);
     pop(1);
     return 0;
+}
+
+/* <Decoding> <TT_cmap> <SubstNWP> <GDBytes> <CIDMap> .fillCIDMap - */
+private int
+zfillCIDMap(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    ref *Decoding = op - 4, *TT_cmap = op - 3, *SubstNWP = op - 2, 
+        *GDBytes = op - 1, *CIDMap = op;
+    int code;
+
+    check_type(*Decoding, t_dictionary);
+    check_type(*TT_cmap, t_array);
+    check_type(*SubstNWP, t_array);
+    check_type(*GDBytes, t_integer);
+    check_type(*CIDMap, t_array);
+    code = cid_fill_CIDMap(Decoding, TT_cmap, SubstNWP, GDBytes->value.intval, CIDMap);
+    pop(5);
+    return code;
 }
 
 /* ------ Initialization procedure ------ */
@@ -265,5 +333,6 @@ const op_def zfcid1_op_defs[] =
     {"2.buildfont10", zbuildfont10},
     {"2.buildfont11", zbuildfont11},
     {"2.type11mapcid", ztype11mapcid},
+    {"2.fillCIDMap", zfillCIDMap},
     op_def_end(0)
 };

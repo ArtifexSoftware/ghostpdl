@@ -16,11 +16,11 @@
 #ifndef gxht_INCLUDED
 #  define gxht_INCLUDED
 
-#include "gscsepnm.h"
 #include "gsht1.h"
 #include "gsrefct.h"
 #include "gxhttype.h"
 #include "gxtmap.h"
+#include "gscspace.h"
 
 /*
  * Halftone types. Note that for this implementation there are only
@@ -114,10 +114,10 @@ typedef struct gs_client_order_ht_procs_s {
      * (see gzht.h) does everything but fill in the actual data.
      */
 
-    int (*create_order) (P4(gx_ht_order * porder,
-			    gs_state * pgs,
-			    const gs_client_order_halftone * phcop,
-			    gs_memory_t * mem));
+    int (*create_order) (gx_ht_order * porder,
+			 gs_state * pgs,
+			 const gs_client_order_halftone * phcop,
+			 gs_memory_t * mem);
 
 } gs_client_order_ht_procs_t;
 struct gs_client_order_halftone_s {
@@ -133,7 +133,8 @@ struct gs_client_order_halftone_s {
 
 /* Define the elements of a Type 5 halftone. */
 typedef struct gs_halftone_component_s {
-    gs_ht_separation_name cname;
+    int comp_number;
+    int cname;
     gs_halftone_type type;
     union {
 	gs_spot_halftone spot;	/* Type 1 */
@@ -161,6 +162,8 @@ extern_st(st_ht_component_element);
 typedef struct gs_multiple_halftone_s {
     gs_halftone_component *components;
     uint num_comp;
+    int (*get_colorname_string)(gs_separation_name colorname_index,
+		unsigned char **ppstr, unsigned int *pname_size);
 } gs_multiple_halftone;
 
 #define st_multiple_halftone_max_ptrs 1
@@ -204,12 +207,18 @@ extern_st(st_halftone);
  * Set/get the default AccurateScreens value (for set[color]screen).
  * Note that this value is stored in a static variable.
  */
-void gs_setaccuratescreens(P1(bool));
-bool gs_currentaccuratescreens(P0());
+void gs_setaccuratescreens(bool);
+bool gs_currentaccuratescreens(void);
+
+/*
+ * Set/get the value for UseWTS. Also a static, but it's going away.
+ */
+void gs_setusewts(bool);
+bool gs_currentusewts(void);
 
 /* Initiate screen sampling with optional AccurateScreens. */
-int gs_screen_init_memory(P5(gs_screen_enum *, gs_state *,
-			     gs_screen_halftone *, bool, gs_memory_t *));
+int gs_screen_init_memory(gs_screen_enum *, gs_state *,
+			  gs_screen_halftone *, bool, gs_memory_t *);
 
 #define gs_screen_init_accurate(penum, pgs, phsp, accurate)\
   gs_screen_init_memory(penum, pgs, phsp, accurate, pgs->memory)
@@ -221,7 +230,7 @@ int gs_screen_init_memory(P5(gs_screen_enum *, gs_state *,
  *
  * Note that this value is stored in a static variable.
  */
-void gs_setminscreenlevels(P1(uint));
-uint gs_currentminscreenlevels(P0());
+void gs_setminscreenlevels(uint);
+uint gs_currentminscreenlevels(void);
 
 #endif /* gxht_INCLUDED */

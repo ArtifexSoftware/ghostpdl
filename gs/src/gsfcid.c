@@ -17,6 +17,7 @@
 #include "gsmatrix.h"		/* for gsfont.h */
 #include "gsstruct.h"
 #include "gxfcid.h"
+#include "gserrors.h"
 
 /* CIDSystemInfo structure descriptors */
 public_st_cid_system_info();
@@ -78,6 +79,13 @@ RELOC_PTRS_WITH(font_cid2_reloc_ptrs, gs_font_cid2 *pfcid2);
 		sizeof(st_gs_font_cid_data));
 RELOC_PTRS_END
 
+/* GC descriptor for allocating FDArray for CIDFontType 0 fonts. */
+gs_private_st_ptr(st_gs_font_type1_ptr, gs_font_type1 *, "gs_font_type1 *",
+  font1_ptr_enum_ptrs, font1_ptr_reloc_ptrs);
+gs_public_st_element(st_gs_font_type1_ptr_element, gs_font_type1 *,
+  "gs_font_type1 *[]", font1_ptr_element_enum_ptrs,
+  font1_ptr_element_reloc_ptrs, st_gs_font_type1_ptr);
+
 /*
  * The CIDSystemInfo of a CMap may be null.  We represent this by setting
  * Registry and Ordering to empty strings, and Supplement to 0.
@@ -114,6 +122,28 @@ gs_font_cid_system_info(const gs_font *pfont)
 }
 
 /*
+ * Check CIDSystemInfo compatibility.
+ */
+bool 
+gs_is_CIDSystemInfo_compatible(const gs_cid_system_info_t *info0, 
+			       const gs_cid_system_info_t *info1)
+{
+    if (info0 == NULL || info1 == NULL)
+	return false;
+    if (info0->Registry.size != info1->Registry.size)
+	return false;
+    if (info0->Ordering.size !=	info1->Ordering.size)
+	return false;
+    if (memcmp(info0->Registry.data, info1->Registry.data, 
+	       info0->Registry.size))
+	return false;
+    if (memcmp(info0->Ordering.data, info1->Ordering.data,
+	       info0->Ordering.size))
+	return false;
+    return true;
+}
+
+/*
  * Provide a default enumerate_glyph procedure for CIDFontType 0 fonts.
  * Built for simplicity, not for speed.
  */
@@ -126,20 +156,32 @@ gs_font_cid0_enumerate_glyph(gs_font *font, int *pindex,
     gs_font_cid0 *const pfont = (gs_font_cid0 *)font;
 
     while (*pindex < pfont->cidata.common.CIDCount) {
-	gs_const_string gstr;
+	gs_glyph_data_t gdata;
 	int fidx;
 	gs_glyph glyph = (gs_glyph)(gs_min_cid_glyph + (*pindex)++);
 	int code = pfont->cidata.glyph_data((gs_font_base *)pfont, glyph,
-					    &gstr, &fidx);
+					    &gdata, &fidx);
 
-	if (code < 0 || gstr.size == 0)
+	if (code < 0 || gdata.bits.size == 0)
 	    continue;
 	*pglyph = glyph;
-	if (code > 0)
-	    gs_free_const_string(font->memory, gstr.data, gstr.size,
-				 "gs_font_cid0_enumerate_glyphs");
+	gs_glyph_data_free(&gdata, "gs_font_cid0_enumerate_glyphs");
 	return 0;
     }
     *pindex = 0;
     return 0;
+}
+/* Get the FontMatrix for the current type0 font 	*/
+/* Assumes that the glyph has already been accessed and	*/
+/* the index is valid.					*/
+const gs_font *
+gs_cid0_indexed_font(const gs_font *font, int fidx)
+{
+    gs_font_cid0 *const pfont = (gs_font_cid0 *)font;
+
+    if (font->FontType != ft_CID_encrypted) {
+	eprintf1("Unexpected font type: %d\n", font->FontType);
+        return 0;
+    }
+    return (const gs_font*) (pfont->cidata.FDArray[fidx]);
 }

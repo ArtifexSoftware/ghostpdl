@@ -139,8 +139,8 @@ struct subpath_s {
 /* Test whether a subpath is a rectangle; if so, also return */
 /* the start of the next subpath. */
 gx_path_rectangular_type
-gx_subpath_is_rectangular(P3(const subpath * pstart, gs_fixed_rect * pbox,
-			     const subpath ** ppnext));
+gx_subpath_is_rectangular(const subpath * pstart, gs_fixed_rect * pbox,
+			  const subpath ** ppnext);
 
 #define gx_subpath_is_rectangle(pstart, pbox, ppnext)\
   (gx_subpath_is_rectangular(pstart, pbox, ppnext) != prt_none)
@@ -149,20 +149,20 @@ gx_subpath_is_rectangular(P3(const subpath * pstart, gs_fixed_rect * pbox,
 
 /* Return the smallest value k such that 2^k segments will approximate */
 /* the curve to within the desired flatness. */
-int gx_curve_log2_samples(P4(fixed, fixed, const curve_segment *, fixed));
+int gx_curve_log2_samples(fixed, fixed, const curve_segment *, fixed);
 
 /*
  * If necessary, find the values of t (never more than 2) which split the
  * curve into monotonic parts.  Return the number of split points.
  */
-int gx_curve_monotonic_points(P5(fixed, fixed, fixed, fixed, double[2]));
+int gx_curve_monotonic_points(fixed, fixed, fixed, fixed, double[2]);
 
 /* Split a curve at an arbitrary value of t. */
-void gx_curve_split(P6(fixed, fixed, const curve_segment *, double,
-		       curve_segment *, curve_segment *));
+void gx_curve_split(fixed, fixed, const curve_segment *, double,
+		    curve_segment *, curve_segment *);
 
 /* Flatten a partial curve by sampling (internal procedure). */
-int gx_flatten_sample(P4(gx_path *, int, curve_segment *, segment_notes));
+int gx_flatten_sample(gx_path *, int, curve_segment *, segment_notes);
 
 /* Initialize a cursor for rasterizing a monotonic curve. */
 typedef struct curve_cursor_s {
@@ -180,12 +180,12 @@ typedef struct curve_cursor_s {
 	fixed xl, xd;		/* value */
     } cache;
 } curve_cursor;
-void gx_curve_cursor_init(P5(curve_cursor * prc, fixed x0, fixed y0,
-			     const curve_segment * pc, int k));
+void gx_curve_cursor_init(curve_cursor * prc, fixed x0, fixed y0,
+			  const curve_segment * pc, int k);
 
 /* Return the value of X at a given Y value on a monotonic curve. */
 /* y must lie between prc->p0.y and prc->pt.y. */
-fixed gx_curve_x_at_y(P2(curve_cursor * prc, fixed y));
+fixed gx_curve_x_at_y(curve_cursor * prc, fixed y);
 
 /*
  * The path state flags reflect the most recent operation on the path
@@ -284,6 +284,19 @@ typedef enum {
     path_allocated_on_heap	/* on the heap */
 } gx_path_allocation_t;
 
+/*
+ * Define virtual path interface functions.
+ * This is a minimal set of functions required by
+ * Type 1,2, TrueType interpreters.
+ */
+typedef struct gx_path_procs_s {
+    int (*add_point)(gx_path *, fixed, fixed);
+    int (*add_line)(gx_path *, fixed, fixed, segment_notes);
+    int (*add_curve)(gx_path *, fixed, fixed, fixed, fixed, fixed, fixed, segment_notes);
+    int (*close_subpath)(gx_path *, segment_notes);
+    byte (*state_flags)(gx_path *, byte);
+} gx_path_procs;
+
 /* Here is the actual structure of a path. */
 struct gx_path_s {
     /*
@@ -315,12 +328,14 @@ struct gx_path_s {
     byte /*gx_path_state_flags*/ start_flags;		/* flags of moveto */
     byte /*gx_path_state_flags*/ state_flags;		/* (see above) */
     byte /*bool*/ bbox_set;	/* true if setbbox is in effect */
+    byte /*bool*/ bbox_accurate;/* true if bbox is accurate */
     byte _pad;			/* just in case the compiler doesn't do it */
     int subpath_count;
     int curve_count;
     gs_fixed_point position;	/* current position */
     gs_point outside_position;	/* position if outside_range is set */
     gs_point outside_start;	/* outside_position of last moveto */
+    gx_path_procs *procs;
 };
 
 /* st_path should be private, but it's needed for the clip_path subclass. */
@@ -355,13 +370,13 @@ extern_st(st_path_enum);
 #define gx_path_has_curves(ppath)\
   gx_path_has_curves_inline(ppath)
 #define gx_path_is_void_inline(ppath)\
-  ((ppath)->first_subpath == 0)
+  ((ppath)->segments != 0 && (ppath)->first_subpath == 0)
 #define gx_path_is_void(ppath)\
   gx_path_is_void_inline(ppath)
 #define gx_path_subpath_count(ppath)\
   ((ppath)->subpath_count)
 #define gx_path_is_shared(ppath)\
-  ((ppath)->segments->rc.ref_count > 1)
+  ((ppath)->segments != 0 && (ppath)->segments->rc.ref_count > 1)
 
 /* Macros equivalent to a few heavily used procedures. */
 /* Be aware that these macros may evaluate arguments more than once. */

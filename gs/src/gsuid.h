@@ -21,7 +21,6 @@
 #ifndef gs_uid_DEFINED
 #  define gs_uid_DEFINED
 typedef struct gs_uid_s gs_uid;
-
 #endif
 struct gs_uid_s {
     /* id >= 0 is a UniqueID, xvalues is 0. */
@@ -57,7 +56,10 @@ struct gs_uid_s {
 
 /* Compare two uids for equality. */
 /* This could be a macro, but the Zortech compiler compiles it wrong. */
-bool uid_equal(P2(const gs_uid *, const gs_uid *));	/* in gsutil.c */
+bool uid_equal(const gs_uid *, const gs_uid *);	/* in gsutil.c */
+
+/* Copy the XUID data for a uid, if needed, updating the uid in place. */
+int uid_copy(gs_uid *puid, gs_memory_t *mem, client_name_t cname);
 
 /* Free the XUID array of a uid if necessary. */
 #define uid_free(puid, mem, cname)\

@@ -84,7 +84,17 @@ private const gx_device_clip gs_clip_device =
   gx_no_create_compositor,
   gx_forward_get_hardware_params,
   gx_default_text_begin,
-  gx_default_finish_copydevice
+  gx_default_finish_copydevice,
+  NULL,			/* begin_transparency_group */
+  NULL,			/* end_transparency_group */
+  NULL,			/* begin_transparency_mask */
+  NULL,			/* end_transparency_mask */
+  NULL,			/* discard_transparency_layer */
+  gx_forward_get_color_mapping_procs,
+  gx_forward_get_color_comp_index,
+  gx_forward_encode_color,
+  gx_forward_decode_color,
+  gx_forward_pattern_manage
  }
 };
 
@@ -128,8 +138,8 @@ private const uint clip_interval = 10000;
 private int
 clip_enumerate_rest(gx_device_clip * rdev,
 		    int x, int y, int xe, int ye,
-		    int (*process)(P5(clip_callback_data_t * pccd,
-				      int xc, int yc, int xec, int yec)),
+		    int (*process)(clip_callback_data_t * pccd,
+				   int xc, int yc, int xec, int yec),
 		    clip_callback_data_t * pccd)
 {
     gx_clip_rect *rptr = rdev->current;		/* const within algorithm */
@@ -235,8 +245,8 @@ clip_enumerate_rest(gx_device_clip * rdev,
 
 private int
 clip_enumerate(gx_device_clip * rdev, int x, int y, int w, int h,
-	       int (*process)(P5(clip_callback_data_t * pccd,
-				 int xc, int yc, int xec, int yec)),
+	       int (*process)(clip_callback_data_t * pccd,
+			      int xc, int yc, int xec, int yec),
 	       clip_callback_data_t * pccd)
 {
     int xe, ye;
@@ -275,6 +285,7 @@ clip_open(gx_device * dev)
     rdev->height = tdev->height;
     gx_device_copy_color_procs(dev, tdev);
     rdev->clipping_box_set = false;
+    rdev->memory = tdev->memory;
     return 0;
 }
 

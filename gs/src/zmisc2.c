@@ -28,7 +28,7 @@
 #include "store.h"
 
 /* Forward references */
-private int set_language_level(P2(i_ctx_t *, int));
+private int set_language_level(i_ctx_t *, int);
 
 /* ------ Language level operators ------ */
 
@@ -78,9 +78,9 @@ const op_def zmisc2_op_defs[] =
  * This is used for the .setlanguagelevel operator,
  * and (perhaps someday) after a restore.
  */
-private int swap_level_dict(P2(i_ctx_t *i_ctx_p, const char *dict_name));
-private int swap_entry(P4(i_ctx_t *i_ctx_p, ref elt[2], ref * pdict,
-			  ref * pdict2));
+private int swap_level_dict(i_ctx_t *i_ctx_p, const char *dict_name);
+private int swap_entry(i_ctx_t *i_ctx_p, ref elt[2], ref * pdict,
+		       ref * pdict2);
 private int
 set_language_level(i_ctx_t *i_ctx_p, int new_level)
 {
@@ -121,7 +121,7 @@ set_language_level(i_ctx_t *i_ctx_p, int new_level)
 		    *pgdict = *pdict;
 		}
 		/* Set other flags for Level 2 operation. */
-		i_ctx_p->dict_stack.dict_defaults.auto_expand = true; 
+		dict_auto_expand = true;
 		}
 		code = swap_level_dict(i_ctx_p, "level2dict");
 		if (code < 0)
@@ -153,7 +153,7 @@ set_language_level(i_ctx_t *i_ctx_p, int new_level)
 		/* Overwrite globaldict in the dictionary stack. */
 		*pgdict = *systemdict;
 		/* Set other flags for Level 1 operation. */
-		i_ctx_p->dict_stack.dict_defaults.auto_expand = false; 
+		dict_auto_expand = false;
 		}
 		code = swap_level_dict(i_ctx_p, "level2dict");
 		break;

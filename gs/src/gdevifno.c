@@ -99,8 +99,8 @@ inferno_device far_data gs_inferno_device =
  * rgb and color map entries
  */
 private gx_color_index 
-inferno_rgb2cmap(P4(gx_device *dev, gx_color_value red,
-  gx_color_value green, gx_color_value blue)) {
+inferno_rgb2cmap(gx_device *dev, gx_color_value red,
+  gx_color_value green, gx_color_value blue) {
 	int shift;
 	inferno_device *bdev = (inferno_device*) dev;
 	int nbits = bdev->nbits;
@@ -149,8 +149,8 @@ inferno_rgb2cmap(P4(gx_device *dev, gx_color_value red,
 }
 
 private int 
-inferno_cmap2rgb(P3(gx_device *dev, gx_color_index color,
-  gx_color_value rgb[3])) {
+inferno_cmap2rgb(gx_device *dev, gx_color_index color,
+  gx_color_value rgb[3]) {
 	int shift, i;
 	inferno_device *bdev = (inferno_device*) dev;
 	int nbits = bdev->nbits;
@@ -223,7 +223,7 @@ void init_p9color(void)		/* init at run time since p9color[] is so big */
  * there's not much to do.
  */
 private int
-inferno_open(P1(gx_device *dev))
+inferno_open(gx_device *dev)
 {
 	inferno_device *bdev = (inferno_device*) dev;
 	bdev->color = bdev->gray = 0;
@@ -240,7 +240,7 @@ inferno_open(P1(gx_device *dev))
  * is finished.  we have nothing to do.
  */
 private int
-inferno_close(P1(gx_device *dev))
+inferno_close(gx_device *dev)
 {
 	int code;
 	code = gdev_prn_close(dev);
@@ -255,7 +255,7 @@ inferno_close(P1(gx_device *dev))
  * worry about that).
  */
 private int
-inferno_print_page(P2(gx_device_printer *pdev, FILE *f))
+inferno_print_page(gx_device_printer *pdev, FILE *f)
 {
 	uchar buf[16384];	/* == 8192 dots across */
 	uchar *p;

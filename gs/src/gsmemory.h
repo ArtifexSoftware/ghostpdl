@@ -18,6 +18,13 @@
  * aligned and cannot have pointers to their interior, and strings, which
  * are not aligned and which can have interior references.
  *
+ * Note: OBJECTS ARE NOT GUARANTEED to be aligned any more strictly than
+ * required by the hardware, regardless of the value of obj_align_mod.  In
+ * other words, whether ALIGNMENT_MOD(ptr, obj_align_mod) will be zero
+ * depends on the alignment provided by the underlying allocator.
+ * Most systems ensure this, but Microsoft VC 6 in particular does not.
+ * See gsmemraw.h for more information about this.
+ *
  * The standard allocator is designed to interface to a garbage collector,
  * although it does not include or call one.  The allocator API recognizes
  * that the garbage collector may move objects, relocating pointers to them;
@@ -30,6 +37,7 @@
 #  define gsmemory_INCLUDED
 
 #include "gsmemraw.h"
+#include "gstypes.h"		/* for gs_bytestring */
 
 /* Define the opaque type for a structure descriptor. */
 typedef struct gs_memory_struct_type_s gs_memory_struct_type_t;
@@ -54,10 +62,10 @@ typedef struct gs_gc_root_s gs_gc_root_t;
 typedef client_name_t struct_name_t;
 
 /* Get the size of a structure from the descriptor. */
-uint gs_struct_type_size(P1(gs_memory_type_ptr_t));
+uint gs_struct_type_size(gs_memory_type_ptr_t);
 
 /* Get the name of a structure from the descriptor. */
-struct_name_t gs_struct_type_name(P1(gs_memory_type_ptr_t));
+struct_name_t gs_struct_type_name(gs_memory_type_ptr_t);
 
 #define gs_struct_type_name_string(styp)\
   ((const char *)gs_struct_type_name(styp))
@@ -100,8 +108,8 @@ typedef struct gs_memory_procs_s {
      */
 
 #define gs_memory_proc_alloc_struct(proc)\
-  void *proc(P3(gs_memory_t *mem, gs_memory_type_ptr_t pstype,\
-    client_name_t cname))
+  void *proc(gs_memory_t *mem, gs_memory_type_ptr_t pstype,\
+    client_name_t cname)
 #define gs_alloc_struct(mem, typ, pstype, cname)\
   (typ *)(*(mem)->procs.alloc_struct)(mem, pstype, cname)
     gs_memory_proc_alloc_struct((*alloc_struct));
@@ -114,8 +122,8 @@ typedef struct gs_memory_procs_s {
      */
 
 #define gs_memory_proc_alloc_byte_array(proc)\
-  byte *proc(P4(gs_memory_t *mem, uint num_elements, uint elt_size,\
-    client_name_t cname))
+  byte *proc(gs_memory_t *mem, uint num_elements, uint elt_size,\
+    client_name_t cname)
 #define gs_alloc_byte_array(mem, nelts, esize, cname)\
   (*(mem)->procs.alloc_byte_array)(mem, nelts, esize, cname)
     gs_memory_proc_alloc_byte_array((*alloc_byte_array));
@@ -128,8 +136,8 @@ typedef struct gs_memory_procs_s {
      */
 
 #define gs_memory_proc_alloc_struct_array(proc)\
-  void *proc(P4(gs_memory_t *mem, uint num_elements,\
-    gs_memory_type_ptr_t pstype, client_name_t cname))
+  void *proc(gs_memory_t *mem, uint num_elements,\
+    gs_memory_type_ptr_t pstype, client_name_t cname)
 #define gs_alloc_struct_array(mem, nelts, typ, pstype, cname)\
   (typ *)(*(mem)->procs.alloc_struct_array)(mem, nelts, pstype, cname)
     gs_memory_proc_alloc_struct_array((*alloc_struct_array));
@@ -142,7 +150,7 @@ typedef struct gs_memory_procs_s {
      */
 
 #define gs_memory_proc_object_size(proc)\
-  uint proc(P2(gs_memory_t *mem, const void *obj))
+  uint proc(gs_memory_t *mem, const void *obj)
 #define gs_object_size(mem, obj)\
   (*(mem)->procs.object_size)(mem, obj)
     gs_memory_proc_object_size((*object_size));
@@ -154,7 +162,7 @@ typedef struct gs_memory_procs_s {
      */
 
 #define gs_memory_proc_object_type(proc)\
-  gs_memory_type_ptr_t proc(P2(gs_memory_t *mem, const void *obj))
+  gs_memory_type_ptr_t proc(gs_memory_t *mem, const void *obj)
 #define gs_object_type(mem, obj)\
   (*(mem)->procs.object_type)(mem, obj)
     gs_memory_proc_object_type((*object_type));
@@ -164,7 +172,7 @@ typedef struct gs_memory_procs_s {
      */
 
 #define gs_memory_proc_alloc_string(proc)\
-  byte *proc(P3(gs_memory_t *mem, uint nbytes, client_name_t cname))
+  byte *proc(gs_memory_t *mem, uint nbytes, client_name_t cname)
 #define gs_alloc_string(mem, nbytes, cname)\
   (*(mem)->procs.alloc_string)(mem, nbytes, cname)
     gs_memory_proc_alloc_string((*alloc_string));
@@ -178,8 +186,8 @@ typedef struct gs_memory_procs_s {
      */
 
 #define gs_memory_proc_resize_string(proc)\
-  byte *proc(P5(gs_memory_t *mem, byte *data, uint old_num, uint new_num,\
-    client_name_t cname))
+  byte *proc(gs_memory_t *mem, byte *data, uint old_num, uint new_num,\
+    client_name_t cname)
 #define gs_resize_string(mem, data, oldn, newn, cname)\
   (*(mem)->procs.resize_string)(mem, data, oldn, newn, cname)
     gs_memory_proc_resize_string((*resize_string));
@@ -189,8 +197,8 @@ typedef struct gs_memory_procs_s {
      */
 
 #define gs_memory_proc_free_string(proc)\
-  void proc(P4(gs_memory_t *mem, byte *data, uint nbytes,\
-    client_name_t cname))
+  void proc(gs_memory_t *mem, byte *data, uint nbytes,\
+    client_name_t cname)
 #define gs_free_string(mem, data, nbytes, cname)\
   (*(mem)->procs.free_string)(mem, data, nbytes, cname)
     gs_memory_proc_free_string((*free_string));
@@ -203,8 +211,8 @@ typedef struct gs_memory_procs_s {
      */
 
 #define gs_memory_proc_register_root(proc)\
-  int proc(P5(gs_memory_t *mem, gs_gc_root_t *root, gs_ptr_type_t ptype,\
-    void **pp, client_name_t cname))
+  int proc(gs_memory_t *mem, gs_gc_root_t *root, gs_ptr_type_t ptype,\
+    void **pp, client_name_t cname)
 #define gs_register_root(mem, root, ptype, pp, cname)\
   (*(mem)->procs.register_root)(mem, root, ptype, pp, cname)
     gs_memory_proc_register_root((*register_root));
@@ -215,7 +223,7 @@ typedef struct gs_memory_procs_s {
      */
 
 #define gs_memory_proc_unregister_root(proc)\
-  void proc(P3(gs_memory_t *mem, gs_gc_root_t *root, client_name_t cname))
+  void proc(gs_memory_t *mem, gs_gc_root_t *root, client_name_t cname)
 #define gs_unregister_root(mem, root, cname)\
   (*(mem)->procs.unregister_root)(mem, root, cname)
     gs_memory_proc_unregister_root((*unregister_root));
@@ -230,7 +238,7 @@ typedef struct gs_memory_procs_s {
      */
 
 #define gs_memory_proc_enable_free(proc)\
-  void proc(P2(gs_memory_t *mem, bool enable))
+  void proc(gs_memory_t *mem, bool enable)
 #define gs_enable_free(mem, enable)\
   (*(mem)->procs.enable_free)(mem, enable)
     gs_memory_proc_enable_free((*enable_free));
@@ -243,22 +251,31 @@ typedef struct gs_memory_procs_s {
  * structure contains a pointer member whose referent is declared as const
  * because it is const for all ordinary clients.
  */
-void gs_free_const_object(P3(gs_memory_t *mem, const void *data,
-			     client_name_t cname));
-void gs_free_const_string(P4(gs_memory_t *mem, const byte *data, uint nbytes,
-			     client_name_t cname));
+void gs_free_const_object(gs_memory_t *mem, const void *data,
+			  client_name_t cname);
+void gs_free_const_string(gs_memory_t *mem, const byte *data, uint nbytes,
+			  client_name_t cname);
+
+/*
+ * Free a [const] bytestring.  Note that this is *not* a member procedure of
+ * the allocator: it calls the free_object or free_string procedure.
+ */
+void gs_free_bytestring(gs_memory_t *mem, gs_bytestring *pbs,
+			client_name_t cname);
+void gs_free_const_bytestring(gs_memory_t *mem, gs_const_bytestring *pbs,
+			      client_name_t cname);
 
 /*
  * Either allocate (if obj == 0) or resize (if obj != 0) a structure array.
  * If obj != 0, pstype is used only for checking (in DEBUG configurations).
  */
-void *gs_resize_struct_array(P5(gs_memory_t *mem, void *obj, uint num_elements,
-				gs_memory_type_ptr_t pstype,
-				client_name_t cname));
+void *gs_resize_struct_array(gs_memory_t *mem, void *obj, uint num_elements,
+			     gs_memory_type_ptr_t pstype,
+			     client_name_t cname);
 
 /* Register a structure root.  This just calls gs_register_root. */
-int gs_register_struct_root(P4(gs_memory_t *mem, gs_gc_root_t *root,
-			       void **pp, client_name_t cname));
+int gs_register_struct_root(gs_memory_t *mem, gs_gc_root_t *root,
+			    void **pp, client_name_t cname);
 
 /* Define no-op freeing procedures for use by enable_free. */
 gs_memory_proc_free_object(gs_ignore_free_object);
@@ -273,10 +290,9 @@ gs_memory_proc_consolidate_free(gs_ignore_consolidate_free);
  * void *, and does not take the type of the returned pointer as a
  * parameter.
  */
-void *gs_raw_alloc_struct_immovable(P3(gs_raw_memory_t * rmem,
-				       gs_memory_type_ptr_t pstype,
-				       client_name_t cname));
-
+void *gs_raw_alloc_struct_immovable(gs_raw_memory_t * rmem,
+				    gs_memory_type_ptr_t pstype,
+				    client_name_t cname);
 
 typedef struct pl_mem_node_s pl_mem_node_t;
 

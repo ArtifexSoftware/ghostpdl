@@ -80,7 +80,7 @@ pixel_resize(psdf_binary_writer * pbw, int width, int num_components,
 /* Add the appropriate image compression filter, if any. */
 private int
 setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
-			const gs_pixel_image_t * pim)
+			const gs_pixel_image_t * pim, bool lossless)
 {
     gx_device_psdf *pdev = pbw->dev;
     gs_memory_t *mem = pdev->v_memory;
@@ -103,18 +103,22 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
 	return 0;
     if (pdip->AutoFilter) {
 	/*
-	 * Disregard the requested filter: use DCTEncode with ACSDict
-	 * instead (or the lossless filter if the conditions for JPEG
-	 * encoding aren't met).
-	 *
-	 * Even though this isn't obvious from the Adobe Tech Note,
-	 * it appears that if UseFlateCompression is true, the default
-	 * compressor for AutoFilter is FlateEncode, not LZWEncode.
-         */
-	orig_template = template = 
-          ( pim->Width < 64 || pim->Height < 64 ) ? lossless_template : &s_DCTE_template;
+	 * Disregard the requested filter.  What we should do at this point
+	 * is analyze the image to decide whether to use JPEG encoding
+	 * (DCTEncode with ACSDict) or the lossless filter.  However, since
+	 * we don't buffer the entire image, we'll make the choice on-fly,
+	 * forking the image data into 3 streams : (1) JPEG, (2) lossless,
+	 * (3) the compression chooser. In this case this function is
+	 * called 2 times with different values of the 'lossless' argument.
+	 */
+        if (lossless) {
+            orig_template = template = lossless_template;
+        } else {
+            orig_template = template = &s_DCTE_template;
+        }
 	dict = pdip->ACSDict;
     }
+    gs_c_param_list_read(dict);	/* ensure param list is in read mode */
     if (template == 0)	/* no compression */
 	return 0;
     if (pim->Width * pim->Height * Colors * pim->BitsPerComponent <= 160)	/* not worth compressing */
@@ -204,7 +208,7 @@ do_downsample(const psdf_image_params *pdip, const gs_pixel_image_t *pim,
 /* Assumes do_downsampling() is true. */
 private int
 setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
-		   gs_pixel_image_t * pim, floatp resolution)
+		   gs_pixel_image_t * pim, floatp resolution, bool lossless)
 {
     gx_device_psdf *pdev = pbw->dev;
     /* Note: Bicubic is currently interpreted as Average. */
@@ -244,7 +248,7 @@ setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
 			(double)pim->Height / orig_height,
 			&pim->ImageMatrix);
 	/****** NO ANTI-ALIASING YET ******/
-	if ((code = setup_image_compression(pbw, pdip, pim)) < 0 ||
+	if ((code = setup_image_compression(pbw, pdip, pim, lossless)) < 0 ||
 	    (code = pixel_resize(pbw, pim->Width, ss->Colors,
 				 8, pdip->Depth)) < 0 ||
 	    (code = psdf_encode_binary(pbw, template, st)) < 0 ||
@@ -263,7 +267,7 @@ setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
 int
 psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
 			 gs_pixel_image_t * pim, const gs_matrix * pctm,
-			 const gs_imager_state * pis)
+			 const gs_imager_state * pis, bool lossless)
 {
     /*
      * The following algorithms are per Adobe Tech Note # 5151,
@@ -316,7 +320,9 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
 	gs_point pt;
 
 	/* We could do both X and Y, but why bother? */
-	gs_distance_transform_inverse(1.0, 0.0, &pim->ImageMatrix, &pt);
+	code = gs_distance_transform_inverse(1.0, 0.0, &pim->ImageMatrix, &pt);
+	if (code < 0)
+	    return code;
 	gs_distance_transform(pt.x, pt.y, pctm, &pt);
 	resolution = 1.0 / hypot(pt.x / pdev->HWResolution[0],
 				 pt.y / pdev->HWResolution[1]);
@@ -335,9 +341,9 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
 		params.filter_template = pdev->params.GrayImage.filter_template;
 		params.Dict = pdev->params.GrayImage.Dict;
 	    }
-	    code = setup_downsampling(pbw, &params, pim, resolution);
+	    code = setup_downsampling(pbw, &params, pim, resolution, lossless);
 	} else {
-	    code = setup_image_compression(pbw, &params, pim);
+	    code = setup_image_compression(pbw, &params, pim, lossless);
 	}
 	if (code < 0)
 	    return code;
@@ -349,15 +355,18 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
 	    pis != 0 &&
 	    gs_color_space_get_index(pim->ColorSpace) ==
 	    gs_color_space_index_DeviceCMYK;
+	gs_color_space rgb_cs;
 
-	if (cmyk_to_rgb)
-	    pim->ColorSpace = gs_cspace_DeviceRGB(pis);
+	if (cmyk_to_rgb) {
+	    gs_cspace_init_DeviceRGB(&rgb_cs);  /* idempotent initialization */
+	    pim->ColorSpace = &rgb_cs;
+	}
 	if (params.Depth == -1)
 	    params.Depth = (cmyk_to_rgb ? 8 : bpc_out);
 	if (do_downsample(&params, pim, resolution)) {
-	    code = setup_downsampling(pbw, &params, pim, resolution);
+	    code = setup_downsampling(pbw, &params, pim, resolution, lossless);
 	} else {
-	    code = setup_image_compression(pbw, &params, pim);
+	    code = setup_image_compression(pbw, &params, pim, lossless);
 	}
 	if (cmyk_to_rgb) {
 	    gs_memory_t *mem = pdev->v_memory;
@@ -404,5 +413,27 @@ psdf_setup_lossless_filters(gx_device_psdf *pdev, psdf_binary_writer *pbw,
     ipdev.params.GrayImage.Downsample = false;
     ipdev.params.GrayImage.Filter = "FlateEncode";
     ipdev.params.GrayImage.filter_template = &s_zlibE_template;
-    return psdf_setup_image_filters(&ipdev, pbw, pim, NULL, NULL);
+    return psdf_setup_image_filters(&ipdev, pbw, pim, NULL, NULL, true);
+}
+
+/* Set up image compression chooser. */
+int
+psdf_setup_compression_chooser(psdf_binary_writer *pbw, gx_device_psdf *pdev,
+		    int width, int height, int depth, int bits_per_sample)
+{
+    int code;
+    stream_state *ss = s_alloc_state(pdev->memory, s_compr_chooser_template.stype, 
+                                     "psdf_setup_compression_chooser");
+
+    if (ss == 0)
+	return_error(gs_error_VMerror);
+    pbw->memory = pdev->memory;
+    pbw->strm = pdev->strm; /* just a stub - will not write to it. */
+    pbw->dev = pdev;
+    code = psdf_encode_binary(pbw, &s_compr_chooser_template, ss);
+    if (code < 0)
+	return code;
+    code = s_compr_chooser_set_dimensions((stream_compr_chooser_state *)ss, 
+		    width, height, depth, bits_per_sample);
+    return code;
 }

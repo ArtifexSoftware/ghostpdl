@@ -41,14 +41,16 @@ extern gs_font_dir *ifont_dir;	/* in zfont.c */
 /* Eventually this will be made public. */
 #define param_def_common\
     const char *pname
+
 typedef struct param_def_s {
     param_def_common;
 } param_def_t;
+
 typedef struct long_param_def_s {
     param_def_common;
     long min_value, max_value;
-    long (*current)(P1(i_ctx_t *));
-    int (*set)(P2(i_ctx_t *, long));
+    long (*current)(i_ctx_t *);
+    int (*set)(i_ctx_t *, long);
 } long_param_def_t;
 
 #if arch_sizeof_long > arch_sizeof_int
@@ -56,15 +58,17 @@ typedef struct long_param_def_s {
 #else
 #  define MAX_UINT_PARAM max_long
 #endif
+
 typedef struct bool_param_def_s {
     param_def_common;
-    bool (*current)(P1(i_ctx_t *));
-    int (*set)(P2(i_ctx_t *, bool));
+    bool (*current)(i_ctx_t *);
+    int (*set)(i_ctx_t *, bool);
 } bool_param_def_t;
+
 typedef struct string_param_def_s {
     param_def_common;
-    void (*current)(P2(i_ctx_t *, gs_param_string *));
-    int (*set)(P2(i_ctx_t *, gs_param_string *));
+    void (*current)(i_ctx_t *, gs_param_string *);
+    int (*set)(i_ctx_t *, gs_param_string *);
 } string_param_def_t;
 
 /* Define a parameter set (user or system). */
@@ -78,9 +82,9 @@ typedef struct param_set_s {
 } param_set;
 
 /* Forward references */
-private int setparams(P3(i_ctx_t *, gs_param_list *, const param_set *));
-private int currentparams(P2(i_ctx_t *, const param_set *));
-private int currentparam1(P2(i_ctx_t *, const param_set *));
+private int setparams(i_ctx_t *, gs_param_list *, const param_set *);
+private int currentparams(i_ctx_t *, const param_set *);
+private int currentparam1(i_ctx_t *, const param_set *);
 
 /* ------ Passwords ------ */
 
@@ -243,7 +247,8 @@ zsetsystemparams(i_ctx_t *i_ctx_p)
 	    break;
 	case 0:
 	    code = dict_write_password(&pass, systemdict,
-				       "StartJobPassword");
+				       "StartJobPassword",
+				       ! i_ctx_p->LockFilePermissions);
 	    if (code < 0)
 		goto out;
     }
@@ -255,7 +260,8 @@ zsetsystemparams(i_ctx_t *i_ctx_p)
 	    break;
 	case 0:
 	    code = dict_write_password(&pass, systemdict,
-				       "SystemParamsPassword");
+				       "SystemParamsPassword",
+				       ! i_ctx_p->LockFilePermissions);
 	    if (code < 0)
 		goto out;
     }
@@ -401,6 +407,17 @@ set_MinScreenLevels(i_ctx_t *i_ctx_p, long val)
     gs_setminscreenlevels((uint) val);
     return 0;
 }
+private long
+current_AlignToPixels(i_ctx_t *i_ctx_p)
+{
+    return gs_currentaligntopixels(ifont_dir);
+}
+private int
+set_AlignToPixels(i_ctx_t *i_ctx_p, long val)
+{
+    gs_setaligntopixels(ifont_dir, (uint)val);
+    return 0;
+}
 private const long_param_def_t user_long_params[] =
 {
     {"JobTimeout", 0, MAX_UINT_PARAM,
@@ -425,7 +442,9 @@ private const long_param_def_t user_long_params[] =
      current_WaitTimeout, set_WaitTimeout},
     /* Extensions */
     {"MinScreenLevels", 0, MAX_UINT_PARAM,
-     current_MinScreenLevels, set_MinScreenLevels}
+     current_MinScreenLevels, set_MinScreenLevels},
+    {"AlignToPixels", 0, 1,
+     current_AlignToPixels, set_AlignToPixels}
 };
 
 /* Boolean values */
@@ -440,9 +459,37 @@ set_AccurateScreens(i_ctx_t *i_ctx_p, bool val)
     gs_setaccuratescreens(val);
     return 0;
 }
+/* Boolean values */
+private bool
+current_UseWTS(i_ctx_t *i_ctx_p)
+{
+    return gs_currentusewts();
+}
+private int
+set_UseWTS(i_ctx_t *i_ctx_p, bool val)
+{
+    gs_setusewts(val);
+    return 0;
+}
+private bool
+current_LockFilePermissions(i_ctx_t *i_ctx_p)
+{
+    return i_ctx_p->LockFilePermissions;
+}
+private int
+set_LockFilePermissions(i_ctx_t *i_ctx_p, bool val)
+{
+    /* allow locking even if already locked */
+    if (i_ctx_p->LockFilePermissions && !val)
+	return_error(e_invalidaccess);
+    i_ctx_p->LockFilePermissions = val;
+    return 0;
+}
 private const bool_param_def_t user_bool_params[] =
 {
-    {"AccurateScreens", current_AccurateScreens, set_AccurateScreens}
+    {"AccurateScreens", current_AccurateScreens, set_AccurateScreens},
+    {"UseWTS", current_UseWTS, set_UseWTS},
+    {"LockFilePermissions", current_LockFilePermissions, set_LockFilePermissions}
 };
 
 /* The user parameter set */
@@ -450,7 +497,7 @@ private const param_set user_param_set =
 {
     user_long_params, countof(user_long_params),
     user_bool_params, countof(user_bool_params),
-    0, 0
+    0, 0 
 };
 
 /* <dict> .setuserparams - */

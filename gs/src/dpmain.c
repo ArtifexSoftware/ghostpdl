@@ -29,6 +29,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <io.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/select.h>
 #include "gscdefs.h"
 #define GS_REVISION gs_revision
 #include "errors.h"
@@ -281,23 +285,11 @@ gs_load_dll(void)
 
 /*********************************************************************/
 /* stdio functions */
+
 static int 
 gsdll_stdin(void *instance, char *buf, int len)
 {
-    int ch;
-    int count = 0;
-    while (count < len) {
-	ch = fgetc(stdin);
-	if (ch == EOF)
-	    return count;
-	*buf++ = ch;
-	count++;
-	if (ch == '\r')
-	    break;
-	if (ch == '\n')
-	    break;
-    }
-    return count;
+    return read(fileno(stdin), buf, len);
 }
 
 static int 
@@ -467,11 +459,15 @@ image_color(unsigned int format, int index,
 		    *r = *g = *b = (index ? 0 : 255);
 		    break;
 		case DISPLAY_DEPTH_4:
-		    {
-		    int one = index & 8 ? 255 : 128;
-		    *r = (index & 4 ? one : 0);
-		    *g = (index & 2 ? one : 0);
-		    *b = (index & 1 ? one : 0);
+		    if (index == 7)
+			*r = *g = *b = 170;
+		    else if (index == 8)
+			*r = *g = *b = 85;
+		    else {
+			int one = index & 8 ? 255 : 128;
+			*r = (index & 4 ? one : 0);
+			*g = (index & 2 ? one : 0);
+			*b = (index & 1 ? one : 0);
 		    }
 		    break;
 		case DISPLAY_DEPTH_8:

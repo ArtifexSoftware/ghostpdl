@@ -24,7 +24,7 @@
  * sizeof(gx_color_index) * 8, since for larger values, there aren't enough
  * bits in a gx_color_index to have even 1 bit per component.
  */
-#define GX_DEVICE_COLOR_MAX_COMPONENTS 6
+#define GX_DEVICE_COLOR_MAX_COMPONENTS 16
 
 /*
  * We might change gx_color_index to a pointer or a structure in the
@@ -50,7 +50,11 @@ typedef struct { ulong value[2]; } gx_color_index_data;
 #else  /* !TEST_CINDEX_STRUCT */
 
 /* Define the type for device color index (pixel value) data. */
+#ifdef GX_COLOR_INDEX_TYPE
+typedef GX_COLOR_INDEX_TYPE gx_color_index_data;
+#else
 typedef ulong gx_color_index_data;
+#endif
 
 #endif /* (!)TEST_CINDEX_STRUCT */
 
@@ -70,14 +74,16 @@ extern const gx_color_index_data gx_no_color_index_data;
 typedef gx_color_index_data gx_color_index;
 #define arch_sizeof_color_index arch_sizeof_long
 
-/* Define the 'transparent' color index. */
-#define gx_no_color_index_value (-1)	/* no cast -> can be used in #if */
-
-/* The SGI C compiler provided with Irix 5.2 gives error messages */
-/* if we use the proper definition of gx_no_color_index: */
-/*#define gx_no_color_index ((gx_color_index)gx_no_color_index_value) */
-/* Instead, we must spell out the typedef: */
-#define gx_no_color_index ((unsigned long)gx_no_color_index_value)
+/*
+ * Define the 'transparent' or 'undefined' color index.
+ */
+#define gx_no_color_index_value (~0)	/* no cast -> can be used in #if */
+/*
+ * There was a comment here about the SGI C compiler provided with Irix 5.2
+ * giving error messages.  I hope that was fixed when the value of gx_no_color_index
+ * was changed from (-1) to (~0).  If not then let us know.
+ */
+#define gx_no_color_index ((gx_color_index)gx_no_color_index_value)
 
 #endif /* (!)TEST_CINDEX_POINTER */
 
@@ -90,7 +96,7 @@ typedef gx_color_index_data gx_color_index;
  *          LINE_ACCUM(color, bpp);
  *      }
  * This code must be enclosed in { }, since DECLARE_LINE_ACCUM declares
- * variables.  Supported values of bpp are 1, 2, 4, 8, 12, 16, 24, 32.
+ * variables.  Supported values of bpp are 1, 2, 4, or n * 8, where n <= 8.
  *
  * Note that DECLARE_LINE_ACCUM declares the variables l_dptr, l_dbyte, and
  * l_dbit.  Other code in the loop may use these variables.
@@ -98,7 +104,7 @@ typedef gx_color_index_data gx_color_index;
 #define DECLARE_LINE_ACCUM(line, bpp, xo)\
 	sample_store_declare_setup(l_dptr, l_dbit, l_dbyte, line, 0, bpp)
 #define LINE_ACCUM(color, bpp)\
-	sample_store_next32(color, l_dptr, l_dbit, bpp, l_dbyte)
+	sample_store_next_any(color, l_dptr, l_dbit, bpp, l_dbyte)
 #define LINE_ACCUM_SKIP(bpp)\
 	sample_store_skip_next(l_dptr, l_dbit, bpp, l_dbyte)
 #define LINE_ACCUM_STORE(bpp)\

@@ -71,18 +71,18 @@ static char rgb_color[2][2][2] =	{
 /* Map an RGB color to a printer color. */
 #define cv_shift (sizeof(gx_color_value) * 8 - 1)
 private gx_color_index
-epson_map_rgb_color(gx_device *dev,
-  gx_color_value r, gx_color_value g, gx_color_value b)
+epson_map_rgb_color(gx_device *dev, const gx_color_value cv[])
 {
-if (gx_device_has_color(dev))
-	{
+
+    gx_color_value r = cv[0];
+    gx_color_value g = cv[1];
+    gx_color_value b = cv[2];
+    
+    if (gx_device_has_color(dev))
 /* use ^7 so WHITE is 0 for internal calculations */
-	return (gx_color_index)rgb_color[r >> cv_shift][g >> cv_shift][b >> cv_shift] ^ 7;	
-	}
-else
-	{
-	return gx_default_map_rgb_color(dev, r, g, b);
-	}
+        return (gx_color_index)rgb_color[r >> cv_shift][g >> cv_shift][b >> cv_shift] ^ 7;	
+    else
+	return gx_default_map_rgb_color(dev, cv);
 }
 
 /* Map the printer color back to RGB. */
@@ -133,16 +133,16 @@ const gx_device_printer far_data gs_epsonc_device =
 /* ------ Internal routines ------ */
 
 /* Forward references */
-private void epsc_output_run(P6(byte *, int, int, char, FILE *, int));
+private void epsc_output_run(byte *, int, int, char, FILE *, int);
 
 /* Send the page to the printer. */
 #define DD 0x80				/* double density flag */
 private int
 epsc_print_page(gx_device_printer *pdev, FILE *prn_stream)
-{	static char graphics_modes_9[5] =
+{	static int graphics_modes_9[5] =
 	   {	-1, 0 /*60*/, 1	/*120*/, -1, DD+3 /*240*/
 	   };
-	static char graphics_modes_24[7] =
+	static int graphics_modes_24[7] =
 	   {	-1, 32 /*60*/, 33 /*120*/, 39 /*180*/,
 		-1, -1, DD+40 /*360*/
 	   };
@@ -153,9 +153,9 @@ epsc_print_page(gx_device_printer *pdev, FILE *prn_stream)
 	byte *in = (byte *)gs_malloc(in_size+1, 1, "epsc_print_page(in)");
 	int out_size = ((pdev->width + 7) & -8) * y_mult;
 	byte *out = (byte *)gs_malloc(out_size+1, 1, "epsc_print_page(out)");
-	int x_dpi = pdev->x_pixels_per_inch;
-	char start_graphics =
-		(y_24pin ? graphics_modes_24 : graphics_modes_9)[x_dpi / 60];
+	int x_dpi = (int)pdev->x_pixels_per_inch;
+	char start_graphics = (char)
+		((y_24pin ? graphics_modes_24 : graphics_modes_9)[x_dpi / 60]);
 	int first_pass = (start_graphics & DD ? 1 : 0);
 	int last_pass = first_pass * 2;
 	int dots_per_space = x_dpi / 10;	/* pica space = 1/10" */
@@ -255,7 +255,7 @@ epsc_print_page(gx_device_printer *pdev, FILE *prn_stream)
 
 		if (gx_device_has_color(pdev))
 			{
-			register i,j;
+			register int i,j;
 			register byte *outbuf, *realbuf;
 			byte current_color;
 			int end_next_bits = whole_bits;
@@ -429,7 +429,7 @@ epsc_output_run(byte *data, int count, int y_mult,
 {	int xcount = count / y_mult;
 	fputc(033, prn_stream);
 	if ( !(start_graphics & ~3) )
-	   {	fputc("KLYZ"[start_graphics], prn_stream);
+	   {	fputc("KLYZ"[(int)start_graphics], prn_stream);
 	   }
 	else
 	   {	fputc('*', prn_stream);

@@ -53,7 +53,7 @@
 #endif
 /* The size of level2dict, if applicable, can be set in the makefile. */
 #ifndef LEVEL2DICT_SIZE
-#  define LEVEL2DICT_SIZE 233
+#  define LEVEL2DICT_SIZE 251
 #endif
 /* Ditto the size of ll3dict. */
 #ifndef LL3DICT_SIZE
@@ -65,7 +65,7 @@
 #endif
 /* Define an arbitrary size for the operator procedure tables. */
 #ifndef OP_ARRAY_TABLE_SIZE
-#  define OP_ARRAY_TABLE_SIZE 180
+#  define OP_ARRAY_TABLE_SIZE 300
 #endif
 #ifndef OP_ARRAY_TABLE_GLOBAL_SIZE
 #  define OP_ARRAY_TABLE_GLOBAL_SIZE OP_ARRAY_TABLE_SIZE
@@ -204,7 +204,7 @@ make_initial_dict(i_ctx_t *i_ctx_p, const char *iname, ref idicts[])
 		gs_ref_memory_t *mem =
 		    (initial_dictionaries[i].local ?
 		     iimemory_local : iimemory_global);
-		int code = dict_alloc(mem, dsize, dref, &i_ctx_p->dict_stack.dict_defaults);
+		int code = dict_alloc(mem, dsize, dref);
 
 		if (code < 0)
 		    return 0;	/* disaster */
@@ -227,7 +227,6 @@ obj_init(i_ctx_t **pi_ctx_p, gs_dual_memory_t *idmem)
 {
     int level = gs_op_language_level();
     ref system_dict;
-    dict_defaults_t dict_defaults;
     i_ctx_t *i_ctx_p;
     int code;
 
@@ -235,17 +234,15 @@ obj_init(i_ctx_t **pi_ctx_p, gs_dual_memory_t *idmem)
      * Create systemdict.  The context machinery requires that
      * we do this before initializing the interpreter.
      */
-    dict_defaults_default(&dict_defaults);
     code = dict_alloc(idmem->space_global,
 		      (level >= 3 ? SYSTEMDICT_LL3_SIZE :
 		       level >= 2 ? SYSTEMDICT_LEVEL2_SIZE : SYSTEMDICT_SIZE),
-		      &system_dict,
-		      &dict_defaults);
+		      &system_dict);
     if (code < 0)
 	return code;
 
     /* Initialize the interpreter. */
-    code = gs_interp_init(pi_ctx_p, &system_dict, &dict_defaults, idmem);
+    code = gs_interp_init(pi_ctx_p, &system_dict, idmem);
     if (code < 0)
 	return code;
     i_ctx_p = *pi_ctx_p;
@@ -460,8 +457,10 @@ op_init(i_ctx_t *i_ctx_p)
 		uint opidx = (tptr - op_defs_all) * OP_DEFS_MAX_SIZE +
 		    index_in_table;
 
-		if (index_in_table >= OP_DEFS_MAX_SIZE)
-		    dprintf1("opdef overrun: %s\n", def->oname);
+		if (index_in_table >= OP_DEFS_MAX_SIZE) {
+		    lprintf1("opdef overrun! %s\n", def->oname);
+		    return_error(e_Fatal);
+		}
 		gs_interp_make_oper(&oper, def->proc, opidx);
 		/* The first character of the name is a digit */
 		/* giving the minimum acceptable number of operands. */

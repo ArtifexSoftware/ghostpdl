@@ -17,3 +17,7 @@
 
 #define GSTEXT_ICON	50
 #define GSIMAGE_ICON	51
+
+extern HWND hwndtext;
+
+#endif /* dwmain_INCLUDED */

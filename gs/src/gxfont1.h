@@ -47,23 +47,22 @@ typedef struct gs_font_type1_s gs_font_type1;
 #define stem_table(size)\
 	float_array(size)
 
+#ifndef gs_type1_data_DEFINED
+#define gs_type1_data_DEFINED
 typedef struct gs_type1_data_s gs_type1_data;
+#endif
 
 typedef struct gs_type1_data_procs_s {
 
-    /*
-     * Get the data for any glyph.  Return 1 if the string is newly
-     * allocated (using the font's allocator) and should be freed by the
-     * caller, 0 if the string should not be freed, < 0 on error.
-     */
+    /* Get the data for any glyph.  Return >= 0 or < 0 as usual. */
 
-    int (*glyph_data)(P3(gs_font_type1 * pfont, gs_glyph glyph,
-			 gs_const_string * pgdata));
+    int (*glyph_data)(gs_font_type1 * pfont, gs_glyph glyph,
+		      gs_glyph_data_t *pgd);
 
     /* Get the data for a Subr.  Return like glyph_data. */
 
-    int (*subr_data)(P4(gs_font_type1 * pfont, int subr_num, bool global,
-			gs_const_string * psdata));
+    int (*subr_data)(gs_font_type1 * pfont, int subr_num, bool global,
+		     gs_glyph_data_t *pgd);
 
     /*
      * Get the data for a seac character, including the glyph and/or the
@@ -72,8 +71,8 @@ typedef struct gs_type1_data_procs_s {
      * Return like glyph_data.
      */
 
-    int (*seac_data)(P4(gs_font_type1 * pfont, int ccode,
-			gs_glyph * pglyph, gs_const_string * pcdata));
+    int (*seac_data)(gs_font_type1 * pfont, int ccode,
+		     gs_glyph * pglyph, gs_glyph_data_t *pgd);
 
     /*
      * Push (a) value(s) onto the client ('PostScript') stack during
@@ -81,12 +80,12 @@ typedef struct gs_type1_data_procs_s {
      * closure pointer, not the font pointer, as the first argument.
      */
 
-    int (*push_values)(P3(void *callback_data, const fixed *values,
-			  int count));
+    int (*push_values)(void *callback_data, const fixed *values,
+		       int count);
 
     /* Pop a value from the client stack. */
 
-    int (*pop_value)(P2(void *callback_data, fixed *value));
+    int (*pop_value)(void *callback_data, fixed *value);
 
 } gs_type1_data_procs_t;
 
@@ -153,5 +152,13 @@ extern_st(st_gs_font_type1);
 
 /* Export font procedures so they can be called from the interpreter. */
 font_proc_glyph_info(gs_type1_glyph_info);
+
+/*
+ * If a Type 1 character is defined with 'seac', store the character codes
+ * in chars[0] and chars[1] and return 1; otherwise, return 0 or <0.
+ * This is exported only for the benefit of font copying.
+ */
+int gs_type1_piece_codes(/*const*/ gs_font_type1 *pfont,
+			 const gs_glyph_data_t *pgd, gs_char *chars);
 
 #endif /* gxfont1_INCLUDED */

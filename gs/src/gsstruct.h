@@ -92,14 +92,14 @@ struct gs_ptr_procs_s {
     /* Unmark the referent of a pointer. */
 
 #define ptr_proc_unmark(proc)\
-  void proc(P2(enum_ptr_t *, gc_state_t *))
+  void proc(enum_ptr_t *, gc_state_t *)
     ptr_proc_unmark((*unmark));
 
     /* Mark the referent of a pointer. */
     /* Return true iff it was unmarked before. */
 
 #define ptr_proc_mark(proc)\
-  bool proc(P2(enum_ptr_t *, gc_state_t *))
+  bool proc(enum_ptr_t *, gc_state_t *)
     ptr_proc_mark((*mark));
 
     /* Relocate a pointer. */
@@ -109,7 +109,7 @@ struct gs_ptr_procs_s {
     /* (the reloc_ptr routines) to the implementations. */
 
 #define ptr_proc_reloc(proc, typ)\
-  typ *proc(P2(const typ *, gc_state_t *))
+  typ *proc(const typ *, gc_state_t *)
     ptr_proc_reloc((*reloc), void);
 
 };
@@ -156,9 +156,9 @@ struct gs_gc_root_s {
  * 'ref' objects.
  */
 #define string_proc_reloc(proc)\
-  void proc(P2(gs_string *, gc_state_t *))
+  void proc(gs_string *, gc_state_t *)
 #define const_string_proc_reloc(proc)\
-  void proc(P2(gs_const_string *, gc_state_t *))
+  void proc(gs_const_string *, gc_state_t *)
 #define gc_procs_common\
 	/* Relocate a pointer to an object. */\
   ptr_proc_reloc((*reloc_struct_ptr), void /*obj_header_t*/);\
@@ -331,13 +331,8 @@ struct_proc_reloc_ptrs(basic_reloc_ptrs);
 
      /* Begin enumeration */
 
-#ifdef __PROTOTYPES__
-#  define ENUM_PTRS_BEGIN_PROC(proc)\
-    gs_ptr_type_t proc(EV_CONST void *vptr, uint size, int index, enum_ptr_t *pep, const gs_memory_struct_type_t *pstype, gc_state_t *gcst)
-#else
-#  define ENUM_PTRS_BEGIN_PROC(proc)\
-    gs_ptr_type_t proc(vptr, size, index, pep, pstype, gcst) EV_CONST void *vptr; uint size; int index; enum_ptr_t *pep; const gs_memory_struct_type_t *pstype; gc_state_t *gcst;
-#endif
+#define ENUM_PTRS_BEGIN_PROC(proc)\
+  gs_ptr_type_t proc(EV_CONST void *vptr, uint size, int index, enum_ptr_t *pep, const gs_memory_struct_type_t *pstype, gc_state_t *gcst)
 #define ENUM_PTRS_BEGIN(proc)\
   ENUM_PTRS_BEGIN_PROC(proc)\
   { switch ( index ) { default:
@@ -358,11 +353,11 @@ struct_proc_reloc_ptrs(basic_reloc_ptrs);
 #define ENUM_CONST_STRING(sptr)	/* pointer to gs_const_string */\
   ENUM_CONST_STRING2((sptr)->data, (sptr)->size)
 extern gs_ptr_type_t
-    enum_bytestring(P2(enum_ptr_t *pep, const gs_bytestring *pbs));
+    enum_bytestring(enum_ptr_t *pep, const gs_bytestring *pbs);
 #define ENUM_BYTESTRING(ptr)	/* pointer to gs_bytestring */\
   enum_bytestring(pep, ptr)
 extern gs_ptr_type_t
-    enum_const_bytestring(P2(enum_ptr_t *pep, const gs_const_bytestring *pbs));
+    enum_const_bytestring(enum_ptr_t *pep, const gs_const_bytestring *pbs);
 #define ENUM_CONST_BYTESTRING(ptr)  /* pointer to gs_const_bytestring */\
   enum_const_bytestring(pep, ptr)
 
@@ -390,13 +385,8 @@ extern gs_ptr_type_t
 
     /* Begin relocation */
 
-#ifdef __PROTOTYPES__
-#  define RELOC_PTRS_BEGIN(proc)\
-    void proc(void *vptr, uint size, const gs_memory_struct_type_t *pstype, gc_state_t *gcst) {
-#else
-#  define RELOC_PTRS_BEGIN(proc)\
-    void proc(vptr, size, pstype, gcst) void *vptr; uint size; const gs_memory_struct_type_t *pstype; gc_state_t *gcst; {
-#endif
+#define RELOC_PTRS_BEGIN(proc)\
+  void proc(void *vptr, uint size, const gs_memory_struct_type_t *pstype, gc_state_t *gcst) {
 #define RELOC_PTRS_WITH(proc, stype_ptr)\
     RELOC_PTRS_BEGIN(proc) stype_ptr = vptr;
 
@@ -412,10 +402,10 @@ extern gs_ptr_type_t
   (gc_proc(gcst, reloc_string)(&(ptrvar), gcst))
 #define RELOC_CONST_STRING_VAR(ptrvar)\
   (gc_proc(gcst, reloc_const_string)(&(ptrvar), gcst))
-extern void reloc_bytestring(P2(gs_bytestring *pbs, gc_state_t *gcst));
+extern void reloc_bytestring(gs_bytestring *pbs, gc_state_t *gcst);
 #define RELOC_BYTESTRING_VAR(ptrvar)\
   reloc_bytestring(&(ptrvar), gcst)
-extern void reloc_const_bytestring(P2(gs_const_bytestring *pbs, gc_state_t *gcst));
+extern void reloc_const_bytestring(gs_const_bytestring *pbs, gc_state_t *gcst);
 #define RELOC_CONST_BYTESTRING_VAR(ptrvar)\
   reloc_const_bytestring(&(ptrvar), gcst)
 
@@ -521,13 +511,8 @@ extern void reloc_const_bytestring(P2(gs_const_bytestring *pbs, gc_state_t *gcst
 /*
  * Boilerplate for clear_marks procedures.
  */
-#ifdef __PROTOTYPES__
-#  define CLEAR_MARKS_PROC(proc)\
-    void proc(void *vptr, uint size, const gs_memory_struct_type_t *pstype)
-#else
-#  define CLEAR_MARKS_PROC(proc)\
-    void proc(vptr, size, pstype) void *vptr; uint size; const gs_memory_struct_type_t *pstype;
-#endif
+#define CLEAR_MARKS_PROC(proc)\
+  void proc(void *vptr, uint size, const gs_memory_struct_type_t *pstype)
 
 	/* Complex structures with their own clear_marks, */
 	/* enum, reloc, and finalize procedures. */
@@ -849,6 +834,19 @@ extern void reloc_const_bytestring(P2(gs_const_bytestring *pbs, gc_state_t *gcst
 #define gs_private_st_suffix_add2(stname, stype, sname, penum, preloc, supstname, e1, e2)\
   gs__st_suffix_add2(private_st, stname, stype, sname, penum, preloc, supstname, e1, e2)
 
+	/* Suffix subclasses with 2 additional pointers and 1 string. */
+
+#define gs__st_suffix_add2_string1(scope_st, stname, stype, sname, penum, preloc, supstname, e1, e2, e3)\
+  BASIC_PTRS(penum) {\
+    GC_OBJ_ELT2(stype, e1, e2),\
+    GC_STRING_ELT(stype, e3)\
+  };\
+  gs__st_basic_super(scope_st, stname, stype, sname, penum, preloc, &supstname, 0)
+#define gs_public_st_suffix_add2_string1(stname, stype, sname, penum, preloc, supstname, e1, e2, e3)\
+  gs__st_suffix_add2_string1(public_st, stname, stype, sname, penum, preloc, supstname, e1, e2, e3)
+#define gs_private_st_suffix_add2_string1(stname, stype, sname, penum, preloc, supstname, e1, e2, e3)\
+  gs__st_suffix_add2_string1(private_st, stname, stype, sname, penum, preloc, supstname, e1, e2, e3)
+
 	/* Suffix subclasses with 2 additional pointers and finalization. */
 	/* See above regarding finalization and subclasses. */
 
@@ -873,6 +871,19 @@ extern void reloc_const_bytestring(P2(gs_const_bytestring *pbs, gc_state_t *gcst
   gs__st_suffix_add3(public_st, stname, stype, sname, penum, preloc, supstname, e1, e2, e3)
 #define gs_private_st_suffix_add3(stname, stype, sname, penum, preloc, supstname, e1, e2, e3)\
   gs__st_suffix_add3(private_st, stname, stype, sname, penum, preloc, supstname, e1, e2, e3)
+
+	/* Suffix subclasses with 3 additional pointers and 1 string. */
+
+#define gs__st_suffix_add3_string1(scope_st, stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4)\
+  BASIC_PTRS(penum) {\
+    GC_OBJ_ELT3(stype, e1, e2, e3),\
+    GC_STRING_ELT(stype, e4)\
+  };\
+  gs__st_basic_super(scope_st, stname, stype, sname, penum, preloc, &supstname, 0)
+#define gs_public_st_suffix_add3_string1(stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4)\
+  gs__st_suffix_add3_string1(public_st, stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4)
+#define gs_private_st_suffix_add3_string1(stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4)\
+  gs__st_suffix_add3_string1(private_st, stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4)
 
 	/* Suffix subclasses with 3 additional pointers and finalization. */
 	/* See above regarding finalization and subclasses. */
@@ -975,6 +986,19 @@ extern void reloc_const_bytestring(P2(gs_const_bytestring *pbs, gc_state_t *gcst
 #define gs_private_st_suffix_add9(stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4, e5, e6, e7, e8, e9)\
   gs__st_suffix_add9(private_st, stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4, e5, e6, e7, e8, e9)
 
+	/* Suffix subclasses with 10 additional pointers. */
+
+#define gs__st_suffix_add10(scope_st, stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10)\
+  BASIC_PTRS(penum) {\
+    GC_OBJ_ELT3(stype, e1, e2, e3), GC_OBJ_ELT3(stype, e4, e5, e6),\
+    GC_OBJ_ELT3(stype, e7, e8, e9), GC_OBJ_ELT(stype, e10)\
+  };\
+  gs__st_basic_super(scope_st, stname, stype, sname, penum, preloc, &supstname, 0)
+#define gs_public_st_suffix_add10(stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10)\
+  gs__st_suffix_add10(public_st, stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10)
+#define gs_private_st_suffix_add10(stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10)\
+  gs__st_suffix_add10(private_st, stname, stype, sname, penum, preloc, supstname, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10)
+
 /* ---------------- General subclasses ---------------- */
 
 	/* General subclasses with no additional pointers. */
@@ -1009,17 +1033,5 @@ extern void reloc_const_bytestring(P2(gs_const_bytestring *pbs, gc_state_t *gcst
   gs__st_ptrs_add2(public_st, stname, stype, sname, penum, preloc, supstname, member, e1, e2)
 #define gs_private_st_ptrs_add2(stname, stype, sname, penum, preloc, supstname, member, e1, e2)\
   gs__st_ptrs_add2(private_st, stname, stype, sname, penum, preloc, supstname, member, e1, e2)
-
-	/* General subclasses with 3 additional pointers. */
-
-#define gs__st_ptrs_add3(scope_st, stname, stype, sname, penum, preloc, supstname, member, e1, e2, e3)\
-  BASIC_PTRS(penum) {\
-    GC_OBJ_ELT3(stype, e1, e2, e3)\
-  };\
-  gs__st_basic_super(scope_st, stname, stype, sname, penum, preloc, &supstname, offset_of(stype, member))
-#define gs_public_st_ptrs_add3(stname, stype, sname, penum, preloc, supstname, member, e1, e2, e3)\
-  gs__st_ptrs_add3(public_st, stname, stype, sname, penum, preloc, supstname, member, e1, e2, e3)
-#define gs_private_st_ptrs_add3(stname, stype, sname, penum, preloc, supstname, member, e1, e2, e3)\
-  gs__st_ptrs_add3(private_st, stname, stype, sname, penum, preloc, supstname, member, e1, e2, e3)
 
 #endif /* gsstruct_INCLUDED */

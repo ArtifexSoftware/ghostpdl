@@ -30,8 +30,8 @@
 #ifdef __PROTOTYPES__
 #  include <stdlib.h>		/* for exit and getenv */
 #else
-extern void exit(P1(int));
-extern char *getenv(P1(const char *));
+extern void exit(int);
+extern char *getenv(const char *);
 
 #endif
 
@@ -51,6 +51,7 @@ gp_exit(int exit_status, int code)
 void
 gp_do_exit(int exit_status)
 {
+    exit(exit_status);
 }
 
 /* ------ Miscellaneous ------ */
@@ -62,6 +63,16 @@ const char *
 gp_strerror(int errnum)
 {
     return NULL;
+}
+
+/* read in a MacOS 'resource' from an extended attribute. */
+/* we don't try to implemented this since it requires support */
+/* for Apple's HFS(+) filesystem */
+int
+gp_read_macresource(byte *buf, const char *filename, 
+                    const uint type, const ushort id)
+{
+    return 0;
 }
 
 /* ------ Date and time ------ */

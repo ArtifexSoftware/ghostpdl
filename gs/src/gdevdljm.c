@@ -68,8 +68,8 @@ dljet_mono_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 #define out_row_alt ((byte *)out_row_alt_words)
 #define prev_row ((byte *)prev_row_words)
     byte *out_data;
-    int x_dpi = pdev->x_pixels_per_inch;
-    int y_dpi = pdev->y_pixels_per_inch;
+    int x_dpi = (int)pdev->x_pixels_per_inch;
+    int y_dpi = (int)pdev->y_pixels_per_inch;
     int y_dots_per_pixel = dots_per_inch / y_dpi;
     int num_rows = dev_print_scan_lines(pdev);
 
@@ -120,6 +120,9 @@ dljet_mono_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
     fputs("\033&l0o0l0E", prn_stream);
     fputs(page_init, prn_stream);
     fprintf(prn_stream, "\033&l%dX", num_copies);	/* # of copies */
+    if (features & PCL_CAN_SET_PAPER_SIZE){ 
+        fprintf(prn_stream, "\033&|%dA", paper_size); 
+    } 
 
     /* End raster graphics, position cursor at top. */
     fputs("\033*rB\033*p0x0Y", prn_stream);

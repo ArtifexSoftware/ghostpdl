@@ -54,13 +54,13 @@ no_comment_proc(const byte * str, uint len)
 
 /* Procedure for handling DSC comments if desired. */
 /* Set at initialization if a DSC handling module is included. */
-int (*scan_dsc_proc) (P2(const byte *, uint)) = NULL;
+int (*scan_dsc_proc) (const byte *, uint) = NULL;
 
 /* Procedure for handling all comments if desired. */
 /* Set at initialization if a comment handling module is included. */
 /* If both scan_comment_proc and scan_dsc_proc are set, */
 /* scan_comment_proc is called only for non-DSC comments. */
-int (*scan_comment_proc) (P2(const byte *, uint)) = NULL;
+int (*scan_comment_proc) (const byte *, uint) = NULL;
 
 /*
  * Level 2 includes some changes in the scanner:
@@ -304,7 +304,7 @@ scan_comment(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate,
 #ifdef DEBUG
 	if (gs_debug_c('%')) {
 	    dlprintf2("[%%%%%s%c]", sstr, (len >= 3 ? '+' : '-'));
-	    fwrite(base, 1, len, dstderr);
+	    debug_print_string(base, len);
 	    dputs("\n");
 	}
 #endif
@@ -322,7 +322,7 @@ scan_comment(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate,
     else {
 	if (gs_debug_c('%')) {
 	    dlprintf2("[%% %s%c]", sstr, (len >= 2 ? '+' : '-'));
-	    fwrite(base, 1, len, dstderr);
+	    debug_print_string(base, len);
 	    dputs("\n");
 	}
     }
@@ -361,6 +361,7 @@ scan_string_token_options(i_ctx_t *i_ctx_p, ref * pstr, ref * pref,
 
     if (!r_has_attr(pstr, a_read))
 	return_error(e_invalidaccess);
+    s_init(s, NULL);
     sread_string(s, pstr->value.bytes, r_size(pstr));
     scanner_state_init_options(&state, options | SCAN_FROM_STRING);
     switch (code = scan_token(i_ctx_p, s, pref, &state)) {
@@ -437,6 +438,7 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
     int status;
     int sign;
     const bool check_only = (pstate->s_options & SCAN_CHECK_ONLY) != 0;
+    const bool PDFScanRules = (i_ctx_p->scanner_options & SCAN_PDF_RULES) != 0;
     scanner_state sstate;
 
 #define pstack sstate.s_pstack
@@ -738,16 +740,14 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 #define comment_line da.buf
 		--sptr;
 		comment_line[1] = 0;
-		if (scan_comment_proc != NULL ||
-		    ((sptr == base || base[1] == '%') &&
-		     scan_dsc_proc != NULL)
-		    ) {		/* Could be an externally processable comment. */
+		{
+		    /* Could be an externally processable comment. */
 		    uint len = sptr + 1 - base;
+		    if (len > sizeof(comment_line))
+			len = sizeof(comment_line);
 
 		    memcpy(comment_line, base, len);
 		    daptr = comment_line + len;
-		} else {	/* Not a DSC comment. */
-		    daptr = comment_line + (max_comment_line + 1);
 		}
 		da.base = comment_line;
 		da.is_dynamic = false;
@@ -781,7 +781,7 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 		    case char_EOL:
 		    case '\f':
 		      end_comment:
-			retcode = scan_comment(i_ctx_p, pref, &sstate,
+			retcode = scan_comment(i_ctx_p, myref, &sstate,
 					       comment_line, daptr, true);
 			if (retcode != 0)
 			    goto comment;
@@ -838,7 +838,7 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 	     */
 	    retcode = scan_number(sptr + (sign & 1),
 		    endptr /*(*endptr == char_CR ? endptr : endptr + 1) */ ,
-				  sign, myref, &newptr);
+				  sign, myref, &newptr, PDFScanRules);
 	    if (retcode == 1 && decoder[newptr[-1]] == ctype_space) {
 		sptr = newptr - 1;
 		if (*sptr == char_CR && sptr[1] == char_EOL)
@@ -1047,7 +1047,7 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 		const byte *base = da.base;
 
 		scan_sign(sign, base);
-		retcode = scan_number(base, daptr, sign, myref, &newptr);
+		retcode = scan_number(base, daptr, sign, myref, &newptr, PDFScanRules);
 		if (retcode == 1) {
 		    ref_mark_new(myref);
 		    retcode = 0;
@@ -1115,9 +1115,12 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
     }
   sret:if (retcode < 0) {
 	scan_end_inline();
-	if (pstack != 0)
+	if (pstack != 0) {
+	    if (retcode == e_undefined)
+		*pref = *osp;	/* return undefined name as error token */
 	    ref_stack_pop(&o_stack,
 			  ref_stack_count(&o_stack) - (pdepth - 1));
+	}
 	return retcode;
     }
     /* If we are at the top level, return the object, */

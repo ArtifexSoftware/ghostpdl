@@ -27,13 +27,13 @@
 #include "store.h"		/* for make_array */
 
 /* Import preparation and cleanup routines. */
-extern void ialloc_gc_prepare(P1(gs_ref_memory_t *));
+extern void ialloc_gc_prepare(gs_ref_memory_t *);
 
 /* Forward references */
-private void gs_vmreclaim(P2(gs_dual_memory_t *, bool));
+private void gs_vmreclaim(gs_dual_memory_t *, bool);
 
 /* Initialize the GC hook in the allocator. */
-private int ireclaim(P2(gs_dual_memory_t *, int));
+private int ireclaim(gs_dual_memory_t *, int);
 private int
 ireclaim_init(i_ctx_t *i_ctx_p)
 {
@@ -41,7 +41,7 @@ ireclaim_init(i_ctx_t *i_ctx_p)
     return 0;
 }
 
-/* GC hook called when the allocator returns a VMerror (space = -1), */
+/* GC hook called when the allocator signals a GC is needed (space = -1), */
 /* or for vmreclaim (space = the space to collect). */
 private int
 ireclaim(gs_dual_memory_t * dmem, int space)
@@ -50,9 +50,7 @@ ireclaim(gs_dual_memory_t * dmem, int space)
     gs_ref_memory_t *mem;
 
     if (space < 0) {
-	/* Determine which allocator got the VMerror. */
-	gs_memory_status_t stats;
-	ulong allocated;
+	/* Determine which allocator exceeded the limit. */
 	int i;
 
 	mem = dmem->space_global;	/* just in case */
@@ -65,6 +63,22 @@ ireclaim(gs_dual_memory_t * dmem, int space)
 		)
 		break;
 	}
+    } else {
+	mem = dmem->spaces_indexed[space >> r_space_shift];
+    }
+    if_debug3('0', "[0]GC called, space=%d, requestor=%d, requested=%ld\n",
+	      space, mem->space, (long)mem->gc_status.requested);
+    global = mem->space != avm_local;
+    /* Since dmem may move, reset the request now. */
+    ialloc_reset_requested(dmem);
+    gs_vmreclaim(dmem, global);
+    ialloc_set_limit(mem);
+    if (space < 0) {
+	gs_memory_status_t stats;
+	ulong allocated;
+
+	/* If the ammount still allocated after the GC is complete */
+	/* exceeds the max_vm setting, then return a VMerror       */
 	gs_memory_status((gs_memory_t *) mem, &stats);
 	allocated = stats.allocated;
 	if (mem->stable_memory != (gs_memory_t *)mem) {
@@ -75,17 +89,7 @@ ireclaim(gs_dual_memory_t * dmem, int space)
 	    /* We can't satisfy this request within max_vm. */
 	    return_error(e_VMerror);
 	}
-    } else {
-	mem = dmem->spaces_indexed[space >> r_space_shift];
     }
-    if_debug3('0', "[0]GC called, space=%d, requestor=%d, requested=%ld\n",
-	      space, mem->space, (long)mem->gc_status.requested);
-    global = mem->space != avm_local;
-    /* Since dmem may move, reset the request now. */
-    ialloc_reset_requested(dmem);
-    gs_vmreclaim(dmem, global);
-
-    ialloc_set_limit(mem);
     return 0;
 }
 

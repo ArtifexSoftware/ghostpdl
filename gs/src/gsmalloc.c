@@ -95,13 +95,13 @@ struct gs_malloc_block_s {
     malloc_block_data;
 /* ANSI C does not allow zero-size arrays, so we need the following */
 /* unnecessary and wasteful workaround: */
-#define _npad (-size_of(struct malloc_block_data_s) & 7)
-    byte _pad[(_npad == 0 ? 8 : _npad)];	/* pad to double */
+#define _npad (-size_of(struct malloc_block_data_s) & (arch_align_memory_mod - 1))
+    byte _pad[(_npad == 0 ? arch_align_memory_mod : _npad)];
 #undef _npad
 };
 
 /* Initialize a malloc allocator. */
-private long heap_available(P0());
+private long heap_available(void);
 gs_malloc_memory_t *
 gs_malloc_memory_init(void)
 {
@@ -171,6 +171,13 @@ gs_heap_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname)
 	else {
 	    gs_malloc_block_t *bp = (gs_malloc_block_t *) ptr;
 
+	    /*
+	     * We would like to check that malloc aligns blocks at least as
+	     * strictly as the compiler (as defined by arch_align_memory_mod).
+	     * However, Microsoft VC 6 does not satisfy this requirement.
+	     * See gsmemraw.h for more explanation.
+	     */
+	    set_msg(ok_msg);
 	    if (mmem->allocated)
 		mmem->allocated->prev = bp;
 	    bp->next = mmem->allocated;
@@ -179,7 +186,6 @@ gs_heap_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname)
 	    bp->type = &st_bytes;
 	    bp->cname = cname;
 	    mmem->allocated = bp;
-	    set_msg(ok_msg);
 	    ptr = (byte *) (bp + 1);
 	    gs_alloc_fill(ptr, gs_alloc_fill_alloc, size);
 	    mmem->used += size + sizeof(gs_malloc_block_t);
@@ -475,78 +481,28 @@ gs_malloc_unwrap(gs_memory_t *wrapped)
     return (gs_malloc_memory_t *)contents;
 }
 
-/** Create the default heap allocator. 
- *  pre conditions
- *     ASSERT( heap != 0 ) 
- *     ASSERT( *heap == 0 ) 
- *     otherwize it assumed to be already initialized and will stop.
- *     assumption may or may not be correct so call this once.
- *  post conditions
- *     heap pointer points to new default allocator. 
- *     returns true on error, false on ok
- *  usage:
- *  gs_memory *heap = 0;
- *  gs_malloc_init( &heap; )
- */
-bool
-gs_malloc_init( gs_memory_t **heap )
+/* ------ Historical single-instance artifacts ------ */
+
+/* Define the default allocator. */
+gs_malloc_memory_t *gs_malloc_memory_default;
+gs_memory_t *gs_memory_t_default;
+
+/* Create the default allocator. */
+gs_memory_t *
+gs_malloc_init(void)
 {
-    gs_malloc_memory_t *unwrapped_heap;
-
-    if ( *heap == 0 ) {
-	unwrapped_heap = gs_malloc_memory_init();
-
-#ifdef NO_WRAPPED_MEMORY_BIND
-	*heap = (gs_memory_t *) unwrapped_heap;
-#else
-	gs_malloc_wrap(heap, unwrapped_heap);
-#endif
-
-#ifndef NO_GS_MEMORY_GLOBALS_BIND
-	/*
-	 * foo get set globals 
-	 */
-
-# ifndef NO_WRAPPED_MEMORY_BIND 
-	gs_malloc_memory_default = unwrapped_heap;
-# endif
-	gs_memory_t_default = *heap;
-    }
-    else {
-        
-	*heap = gs_memory_t_default;
-#endif
-    }
-
-
-    return (*heap == 0);  /* true on error */
+    gs_malloc_memory_default = gs_malloc_memory_init();
+    gs_malloc_wrap(&gs_memory_t_default, gs_malloc_memory_default);
+    gs_memory_t_default->stable_memory = gs_memory_t_default;
+    return gs_memory_t_default;
 }
 
-/** Release the default allocator. 
- */
+/* Release the default allocator. */
 void
-gs_malloc_release(gs_memory_t **heap)
+gs_malloc_release(void)
 {
-
-#ifdef TESTING_MECH_BIND 
-    /* #error "def BIND" */
-#else 
-    /* #error "ndef BIND" */
-#endif
-
-#ifdef NO_WRAPPED_MEMORY_BIND 
-    gs_malloc_memory_release((gs_malloc_memory_t *) *heap);
-#else
-    gs_malloc_memory_release(gs_malloc_unwrap(*heap));
-#endif
-
-    *heap = 0;
-
-#ifndef NO_GS_MEMORY_GLOBALS_BIND
-# ifndef NO_WRAPPED_MEMORY_BIND 
-    gs_malloc_memory_default = 0;
-# endif
+    gs_malloc_unwrap(gs_memory_t_default);
     gs_memory_t_default = 0;
-#endif
-
+    gs_malloc_memory_release(gs_malloc_memory_default);
+    gs_malloc_memory_default = 0;
 }

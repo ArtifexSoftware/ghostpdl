@@ -46,10 +46,10 @@ GSROOTDIR=$(AROOTDIR)/gs$(GS_DOT_VERSION)
 GS_DOCDIR=$(GSROOTDIR)/doc
 
 # Define the default directory/ies for the runtime
-# initialization and font files.  Separate multiple directories with ;.
+# initialization, resource and font files.  Separate multiple directories with ;.
 # Use / to indicate directories, not a single \.
 
-GS_LIB_DEFAULT=$(GSROOTDIR)/lib;$(AROOTDIR)/fonts
+GS_LIB_DEFAULT=$(GSROOTDIR)/lib;$(GSROOTDIR)/Resource;$(AROOTDIR)/fonts
 
 # Define whether or not searching for initialization files should always
 # look in the current directory first.  This leads to well-known security
@@ -129,17 +129,33 @@ JVERSION=6
 # See libpng.mak for more information.
 
 PSRCDIR=libpng
-PVERSION=10012
+PVERSION=10204
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
 
 ZSRCDIR=zlib
 
+# Define the jbig2dec library source location.
+# See jbig2.mak for more information.
+
+JBIG2SRCDIR=jbig2dec
+
 # Define the directory where the icclib source are stored.
 # See icclib.mak for more information
 
 ICCSRCDIR=icclib
+
+# IJS has not been ported to OS/2. If you do the port,
+# you'll need to set these values. You'll also need to
+# include the ijs.mak makefile (right after icclib.mak).
+#
+# Define the directory where the ijs source is stored,
+# and the process forking method to use for the server.
+# See ijs.mak for more information.
+ 
+#IJSSRCDIR=ijs
+#IJSEXECTYPE=win
 
 # The following is a hack to get around the special treatment of \ at
 # the end of a line.
@@ -223,6 +239,7 @@ SYNC=winsync
 SHARE_JPEG=0
 SHARE_LIBPNG=0
 SHARE_ZLIB=0
+SHARE_JBIG2=0
 
 # Swapping `make' out of memory makes linking much faster.
 # only used by Borland MAKER.EXE
@@ -235,14 +252,14 @@ PLATFORM=os2_
 
 # Define the name of the makefile -- used in dependencies.
 
-MAKEFILE=$(GLSRCDIR)\os2.mak
+MAKEFILE=$(PSSRCDIR)\os2.mak
 TOP_MAKEFILES=$(MAKEFILE)
 
 # Define the files to be deleted by 'make clean'.
 
 BEGINFILES=$(BINDIR)\gspmdrv.exe $(GLOBJDIR)\gspmdrv.o $(GLOBJDIR)\gs*.res $(GLOBJDIR)\gs*.ico $(BINDIR)\$(GSDLL).dll
 
-# Define the ANSI-to-K&R dependency.
+# Define the auxiliary program dependency. We don't use this.
 
 AK=
 
@@ -422,7 +439,7 @@ CC_NO_WARN=$(CC_)
 # Choose the language feature(s) to include.  See gs.mak for details.
 # Since we have a large address space, we include some optional features.
 
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
@@ -466,7 +483,7 @@ DEVICE_DEVS1=
 DEVICE_DEVS2=$(DD)epson.dev $(DD)eps9high.dev $(DD)eps9mid.dev $(DD)epsonc.dev $(DD)ibmpro.dev
 DEVICE_DEVS3=$(DD)deskjet.dev $(DD)djet500.dev $(DD)laserjet.dev $(DD)ljetplus.dev $(DD)ljet2p.dev
 DEVICE_DEVS4=$(DD)cdeskjet.dev $(DD)cdjcolor.dev $(DD)cdjmono.dev $(DD)cdj550.dev
-DEVICE_DEVS5=$(DD)djet500c.dev $(DD)declj250.dev $(DD)lj250.dev
+DEVICE_DEVS5=$(DD)uniprint.dev $(DD)djet500c.dev $(DD)declj250.dev $(DD)lj250.dev
 DEVICE_DEVS6=$(DD)st800.dev $(DD)stcolor.dev $(DD)bj10e.dev $(DD)bj200.dev
 DEVICE_DEVS7=$(DD)t4693d2.dev $(DD)t4693d4.dev $(DD)t4693d8.dev $(DD)tek4696.dev
 DEVICE_DEVS8=$(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcx16.dev $(DD)pcx256.dev $(DD)pcx24b.dev
@@ -474,14 +491,14 @@ DEVICE_DEVS9=$(DD)pbm.dev $(DD)pbmraw.dev $(DD)pgm.dev $(DD)pgmraw.dev $(DD)pgnm
 DEVICE_DEVS10=$(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev $(DD)tifflzw.dev $(DD)tiffpack.dev
 DEVICE_DEVS11=$(DD)bmpmono.dev $(DD)bmp16.dev $(DD)bmp256.dev $(DD)bmp16m.dev $(DD)tiff12nc.dev $(DD)tiff24nc.dev
 DEVICE_DEVS12=$(DD)psmono.dev $(DD)bit.dev $(DD)bitrgb.dev $(DD)bitcmyk.dev
-DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev
+DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev $(DD)pngalpha.dev
 DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev
 DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)epswrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev
+DEVICE_DEVS16=$(DD)bbox.dev
 # Overflow for DEVS3,4,5,6,9
-DEVICE_DEVS16=$(DD)ljet3.dev $(DD)ljet3d.dev $(DD)ljet4.dev $(DD)ljet4d.dev
-DEVICE_DEVS17=$(DD)pj.dev $(DD)pjxl.dev $(DD)pjxl300.dev
-DEVICE_DEVS18=$(DD)jetp3852.dev $(DD)r4081.dev $(DD)lbp8.dev $(DD)uniprint.dev
-DEVICE_DEVS19=$(DD)m8510.dev $(DD)necp6.dev $(DD)bjc600.dev $(DD)bjc800.dev
+DEVICE_DEVS17=$(DD)ljet3.dev $(DD)ljet3d.dev $(DD)ljet4.dev $(DD)ljet4d.dev
+DEVICE_DEVS18=$(DD)pj.dev $(DD)pjxl.dev $(DD)pjxl300.dev $(DD)jetp3852.dev $(DD)r4081.dev
+DEVICE_DEVS19=$(DD)lbp8.dev $(DD)m8510.dev $(DD)necp6.dev $(DD)bjc600.dev $(DD)bjc800.dev
 DEVICE_DEVS20=$(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev
 
 # Include the generic makefiles.
@@ -492,18 +509,19 @@ DEVICE_DEVS20=$(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev
 # zlib.mak must precede libpng.mak
 !include "$(GLSRCDIR)\zlib.mak"
 !include "$(GLSRCDIR)\libpng.mak"
+!include "$(GLSRCDIR)\jbig2.mak"
 !include "$(GLSRCDIR)\icclib.mak"
 !include "$(GLSRCDIR)\devs.mak"
 !include "$(GLSRCDIR)\pcwin.mak"
 !include "$(GLSRCDIR)\contrib.mak"
-!include "$(GLSRCDIR)\int.mak"
-!include "$(GLSRCDIR)\cfonts.mak"
+!include "$(PSSRCDIR)\int.mak"
+!include "$(PSSRCDIR)\cfonts.mak"
 
 # -------------------------------- Library -------------------------------- #
 
 # The GCC/EMX platform
 
-os2__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_os2.$(OBJ)
+os2__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_os2.$(OBJ) $(GLOBJ)gp_stdia.$(OBJ)
 $(GLGEN)os2_.dev: $(os2__) $(GLD)nosync.dev
 	$(SETMOD) $(GLGEN)os2_ $(os2__) -include $(GLD)nosync
 
@@ -511,6 +529,10 @@ $(GLOBJ)gp_os2.$(OBJ): $(GLSRC)gp_os2.c\
  $(dos__h) $(pipe__h) $(string__h) $(time__h)\
  $(gsdll_h) $(gx_h) $(gsexit_h) $(gsutil_h) $(gp_h) $(gpmisc_h)
 	$(GLCC) $(GLO_)gp_os2.$(OBJ) $(C_) $(GLSRC)gp_os2.c
+
+$(GLOBJ)gp_stdia.$(OBJ): $(GLSRC)gp_stdia.c $(AK)\
+  $(stdio__h) $(time__h) $(unistd__h) $(gx_h) $(gp_h)
+	$(GLCC) $(GLO_)gp_stdia.$(OBJ) $(C_) $(GLSRC)gp_stdia.c
 
 # -------------------------- Auxiliary programs --------------------------- #
 
@@ -584,7 +606,7 @@ $(GENINIT_XE): $(PSSRC)geninit.c $(GENINIT_DEPS)
 $(gconfig__h): $(TOP_MAKEFILES) $(ECHOGS_XE)
 	$(ECHOGS_XE) -w $(gconfig__h) /* This file deliberately left blank. */
 
-$(gconfigv_h): $(GLSRCDIR)\os2.mak $(TOP_MAKEFILES) $(ECHOGS_XE)
+$(gconfigv_h): $(PSSRCDIR)\os2.mak $(TOP_MAKEFILES) $(ECHOGS_XE)
 	$(ECHOGS_XE) -w $(gconfigv_h) -x 23 define USE_ASM -x 2028 -q $(USE_ASM)-0 -x 29
 	$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define USE_FPU -x 2028 -q $(FPU_TYPE)-0 -x 29
 	$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define EXTEND_NAMES 0$(EXTEND_NAMES)
@@ -596,58 +618,58 @@ gsdllos2_h=$(GLSRC)gsdllos2.h
 
 # Interpreter main program
 
-ICONS=$(GLOBJ)gsos2.ico $(GLOBJ)gspmdrv.ico
+ICONS=$(PSOBJ)gsos2.ico $(GLOBJ)gspmdrv.ico
 
-$(GLOBJ)dpmain.$(OBJ): $(GLSRC)dpmain.c $(AK)\
+$(PSOBJ)dpmain.$(OBJ): $(PSSRC)dpmain.c $(AK)\
  $(gdevdsp_h) $(iapi_h) $(gscdefs_h) $(errors_h)
-	$(CC) $(CEXE) -I$(GLSRCDIR) -I$(GLGENDIR) $(GLO_)dpmain.$(OBJ) $(C_) $(GLSRC)dpmain.c
+	$(CC) $(CEXE) -I$(PSSRCDIR) -I$(GLSRCDIR) -I$(GLGENDIR) $(PSO_)dpmain.$(OBJ) $(C_) $(PSSRC)dpmain.c
 
 !if $(MAKEDLL)
 #making a DLL
-GS_ALL=$(GLOBJ)gsdll.$(OBJ) $(INT_ALL) $(INTASM)\
-  $(LIB_ALL) $(LIBCTR) $(ld_tr) $(GLGEN)lib.tr $(GLOBJ)$(GS).res $(ICONS)
+GS_ALL=$(PSOBJ)gsdll.$(OBJ) $(INT_ALL) $(INTASM)\
+  $(LIB_ALL) $(LIBCTR) $(ld_tr) $(GLGEN)lib.tr $(PSOBJ)$(GS).res $(ICONS)
 
-$(GS_XE): $(BINDIR)\$(GSDLL).dll $(GLSRC)dpmain.c $(gsdll_h) $(gsdllos2_h) $(GLSRC)gsos2.rc $(GLOBJ)gscdefs.$(OBJ)
+$(GS_XE): $(BINDIR)\$(GSDLL).dll $(PSSRC)dpmain.c $(gsdll_h) $(gsdllos2_h) $(PSSRC)gsos2.rc $(GLOBJ)gscdefs.$(OBJ)
 !if $(EMX)
-	$(COMPDIR)\$(COMP) $(CGDB) $(CO) -Zomf $(MT_OPT) -I$(GLSRCDIR) -I$(GLOBJDIR) -o$(GS_XE) $(GLSRC)dpmain.c $(GLOBJ)gscdefs.$(OBJ) $(GLSRC)gsos2.def
+	$(COMPDIR)\$(COMP) $(CGDB) $(CO) -Zomf $(MT_OPT) -I$(PSSRCDIR) -I$(GLSRCDIR) -I$(PSOBJDIR) -I$(GLOBJDIR) -o$(GS_XE) $(PSSRC)dpmain.c $(GLOBJ)gscdefs.$(OBJ) $(PSSRC)gsos2.def
 !endif
 !if $(IBMCPP)
-	$(CCAUX) -I$(GLSRCDIR) -I$(GLOBJDIR) /Fe$(GX_XE) $(GLSRC)dpmain.c $(GLOBJ)gscdefs.$(OBJ)
+	$(CCAUX) -I$(PSSRCDIR) -I$(GLSRCDIR) -I$(PSOBJDIR) -I$(GLOBJDIR) /Fe$(GX_XE) $(PSSRC)dpmain.c $(GLOBJ)gscdefs.$(OBJ)
 !endif
-	rc $(GLOBJ)$(GS).res $(GS_XE)
+	rc $(PSOBJ)$(GS).res $(GS_XE)
 
-$(GLOBJ)gsdll.$(OBJ): $(GLSRC)gsdll.c $(gsdll_h) $(ghost_h) $(gscdefs_h)
-	$(PSCC) $(GLO_)gsdll.$(OBJ) $(C_) $(GLSRC)gsdll.c
+$(PSOBJ)gsdll.$(OBJ): $(PSSRC)gsdll.c $(gsdll_h) $(ghost_h) $(gscdefs_h)
+	$(PSCC) $(PSO_)gsdll.$(OBJ) $(C_) $(PSSRC)gsdll.c
 
-$(BINDIR)\$(GSDLL).dll: $(GS_ALL) $(ALL_DEVS) $(GLOBJ)gsdll.$(OBJ)
+$(BINDIR)\$(GSDLL).dll: $(GS_ALL) $(ALL_DEVS) $(PSOBJ)gsdll.$(OBJ)
 !if $(EMX)
-	LINK386 /DEBUG $(COMPBASE)\lib\dll0.obj $(COMPBASE)\lib\end.lib @$(ld_tr) $(GLOBJ)gsdll.obj, $(BINDIR)\$(GSDLL).dll, ,$(X11LIBS) $(COMPBASE)\lib\gcc.lib $(COMPBASE)\lib\st\c.lib $(COMPBASE)\lib\st\c_dllso.lib $(COMPBASE)\lib\st\sys.lib $(COMPBASE)\lib\c_alias.lib $(COMPBASE)\lib\os2.lib, $(GLSRC)gsdll2.def
+	LINK386 /DEBUG $(COMPBASE)\lib\dll0.obj $(COMPBASE)\lib\end.lib @$(ld_tr) $(PSOBJ)gsdll.obj, $(BINDIR)\$(GSDLL).dll, ,$(X11LIBS) $(COMPBASE)\lib\gcc.lib $(COMPBASE)\lib\st\c.lib $(COMPBASE)\lib\st\c_dllso.lib $(COMPBASE)\lib\st\sys.lib $(COMPBASE)\lib\c_alias.lib $(COMPBASE)\lib\os2.lib, $(PSSRC)gsdll2.def
 !endif
 !if $(IBMCPP)
-	LINK386 /NOE /DEBUG @$(ld_tr) $(GLOBJ)gsdll.obj, $(BINDIR)\$(GSDLL).dll, , , $(GLSRC)gsdll2.def
+	LINK386 /NOE /DEBUG @$(ld_tr) $(PSOBJ)gsdll.obj, $(BINDIR)\$(GSDLL).dll, , , $(PSSRC)gsdll2.def
 !endif
 
 !else
 #making an EXE
-GS_ALL=$(GLOBJ)gs.$(OBJ) $(INT_ALL) $(INTASM)\
-  $(LIB_ALL) $(LIBCTR) $(ld_tr) $(GLGEN)lib.tr $(GLOBJ)$(GS).res $(ICONS)
+GS_ALL=$(PSOBJ)gs.$(OBJ) $(INT_ALL) $(INTASM)\
+  $(LIB_ALL) $(LIBCTR) $(ld_tr) $(GLGEN)lib.tr $(PSOBJ)$(GS).res $(ICONS)
 
 $(GS_XE): $(GS_ALL) $(ALL_DEVS)
-	$(COMPDIR)\$(COMP) $(CGDB) -I$(GLSRCDIR) -o $(GLOBJ)$(GS) $(GLOBJ)gs.$(OBJ) @$(ld_tr) $(INTASM) -lm
-	$(COMPDIR)\emxbind -r$(GLOBJ)$(GS).res $(COMPDIR)\emxl.exe $(GLOBJ)$(GS) $(GS_XE) -ac
-	del $(GLOBJ)$(GS)
+	$(COMPDIR)\$(COMP) $(CGDB) I$(PSSRCDIR) -I$(GLSRCDIR) -o $(PSOBJ)$(GS) $(PSOBJ)gs.$(OBJ) @$(ld_tr) $(INTASM) -lm
+	$(COMPDIR)\emxbind -r$(PSOBJ)$(GS).res $(COMPDIR)\emxl.exe $(PSOBJ)$(GS) $(GS_XE) -ac
+	del $(PSOBJ)$(GS)
 !endif
 
 # Make the icons from their text form.
 
-$(GLOBJ)gsos2.ico: $(GLSRC)gsos2.icx $(ECHOGS_XE)
-	$(ECHOGS_XE) -wb $(GLOBJ)gsos2.ico -n -X -r $(GLSRC)gsos2.icx
+$(PSOBJ)gsos2.ico: $(PSSRC)gsos2.icx $(ECHOGS_XE)
+	$(ECHOGS_XE) -wb $(PSOBJ)gsos2.ico -n -X -r $(PSSRC)gsos2.icx
 
 $(GLOBJ)gspmdrv.ico: $(GLSRC)gspmdrv.icx $(ECHOGS_XE)
 	$(ECHOGS_XE) -wb $(GLOBJ)gspmdrv.ico -n -X -r $(GLSRC)gspmdrv.icx
 
-$(GLOBJ)$(GS).res: $(GLSRC)$(GS).rc $(GLOBJ)gsos2.ico
-	rc -i $(COMPBASE)\include -i $(GLSRCDIR) -i $(GLOBJDIR) -r $(GLSRC)$(GS).rc $(GLOBJ)$(GS).res
+$(PSOBJ)$(GS).res: $(PSSRC)$(GS).rc $(PSOBJ)gsos2.ico
+	rc -i $(COMPBASE)\include -i $(PSSRCDIR) -i $(PSOBJDIR) -r $(PSSRC)$(GS).rc $(PSOBJ)$(GS).res
 	
 
 # PM driver program

@@ -23,11 +23,13 @@
 #define GSREVISION gs_revision
 #include "errors.h"
 #include "iapi.h"
+#include "vdtrace.h"
 
 #include "dwmain.h"
 #include "dwdll.h"
 #include "dwtext.h"
 #include "dwimg.h"
+#include "dwtrace.h"
 #include "dwreg.h"
 #include "gdevdsp.h"
 
@@ -45,7 +47,7 @@ const LPSTR szIniSection = "Text";
 
 
 GSDLL gsdll;
-void *instance;
+gs_main_instance *instance;
 HWND hwndtext;
 
 char start_string[] = "systemdict /start get exec\n";
@@ -264,6 +266,11 @@ int new_main(int argc, char *argv[])
 	return 1;
     }
 
+#ifdef DEBUG
+    visual_tracer_init();
+    gsdll.set_visual_tracer(&visual_tracer);
+#endif
+
     gsdll.set_stdio(instance, gsdll_stdin, gsdll_stdout, gsdll_stderr);
     gsdll.set_poll(instance, gsdll_poll);
     gsdll.set_display_callback(instance, &display);
@@ -273,6 +280,7 @@ int new_main(int argc, char *argv[])
 		DISPLAY_DEPTH_1 | DISPLAY_LITTLEENDIAN | DISPLAY_BOTTOMFIRST;
 	HDC hdc = GetDC(NULL);	/* get hdc for desktop */
 	int depth = GetDeviceCaps(hdc, PLANES) * GetDeviceCaps(hdc, BITSPIXEL);
+        ReleaseDC(NULL, hdc);
 	if (depth == 32)
  	    format = DISPLAY_COLORS_RGB | DISPLAY_UNUSED_LAST | 
 		DISPLAY_DEPTH_8 | DISPLAY_LITTLEENDIAN | DISPLAY_BOTTOMFIRST;
@@ -303,6 +311,10 @@ int new_main(int argc, char *argv[])
     gsdll.exit(instance);
 
     gsdll.delete_instance(instance);
+
+#ifdef DEBUG
+    visual_tracer_close();
+#endif
 
     unload_dll(&gsdll);
 
@@ -461,12 +473,11 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int cmd
 	/* display error message in text window */
 	char buf[80];
 	MSG msg;
+	text_puts(tw, "\nClose this window with the close button on the title bar or the system menu.\n");
 	if (IsIconic(text_get_handle(tw)))
 	    ShowWindow(text_get_handle(tw), SW_SHOWNORMAL);
 	BringWindowToTop(text_get_handle(tw));  /* make text window visible */
-	sprintf(buf, "Exit code %d\nSee text window for details",
-	    dll_exit_status);
-	MessageBox(text_get_handle(tw), buf, szAppName, MB_OK | MB_ICONSTOP);
+	FlashWindow(text_get_handle(tw), TRUE);
 	/* Wait until error message is read */
 	while (!tw->quitnow && GetMessage(&msg, (HWND)NULL, 0, 0)) {
 	    TranslateMessage(&msg);

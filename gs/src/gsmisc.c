@@ -48,6 +48,9 @@ orig_sqrt(double x)
 /* Define private replacements for stdin, stdout, and stderr. */
 FILE *gs_stdio[3];
 
+
+/* ------ Redirected stdout and stderr  ------ */
+
 #include <stdarg.h>
 #define PRINTF_BUF_LENGTH 1024
 
@@ -528,7 +531,7 @@ ilog2(int n)
     while (m >= 16)
 	m >>= 4, l += 4;
     return
-	(m <= 1 ? 0 :
+	(m <= 1 ? l :
 	 "\000\000\001\001\002\002\002\002\003\003\003\003\003\003\003\003"[m] + l);
 }
 

@@ -50,7 +50,7 @@ s_DCTE_set_defaults(stream_state * st)
 
     s_DCT_set_defaults(st);
     ss->QFactor = 1.0;
-    ss->ColorTransform = 0;
+    ss->ColorTransform = -1;
     ss->Markers.data = 0;
     ss->Markers.size = 0;
     ss->NoMarker = true;
@@ -81,12 +81,19 @@ s_DCTE_process(stream_state * st, stream_cursor_read * pr,
     jpeg_compress_data *jcdp = ss->data.compress;
     struct jpeg_destination_mgr *dest = jcdp->cinfo.dest;
 
+    if_debug2('w', "[wde]process avail=%u, last=%d\n",
+	      (uint) (pr->limit - pr->ptr), last);
     dest->next_output_byte = pw->ptr + 1;
     dest->free_in_buffer = pw->limit - pw->ptr;
     switch (ss->phase) {
 	case 0:		/* not initialized yet */
 	    if (gs_jpeg_start_compress(ss, TRUE) < 0)
 		return ERRC;
+	    if_debug4('w', "[wde]width=%u, height=%u, components=%d, scan_line_size=%u\n",
+		      jcdp->cinfo.image_width,
+		      jcdp->cinfo.image_height,
+		      jcdp->cinfo.input_components,
+		      ss->scan_line_size);
 	    pw->ptr = dest->next_output_byte - 1;
 	    ss->phase = 1;
 	    /* falls through */
@@ -135,6 +142,8 @@ s_DCTE_process(stream_state * st, stream_cursor_read * pr,
 		 */
 		/*const */ byte *samples = (byte *) (pr->ptr + 1);
 
+		if_debug1('w', "[wde]next_scanline=%u\n",
+			  jcdp->cinfo.next_scanline);
 		if ((uint) (pr->limit - pr->ptr) < ss->scan_line_size) {
 		    if (last)
 			return ERRC;	/* premature EOD */
@@ -143,6 +152,10 @@ s_DCTE_process(stream_state * st, stream_cursor_read * pr,
 		written = gs_jpeg_write_scanlines(ss, &samples, 1);
 		if (written < 0)
 		    return ERRC;
+		if_debug3('w', "[wde]write returns %d, used=%u, written=%u\n",
+			  written,
+			  (uint) (samples - 1 - pr->ptr),
+			  (uint) (dest->next_output_byte - 1 - pw->ptr));
 		pw->ptr = dest->next_output_byte - 1;
 		if (!written)
 		    return 1;	/* output full */
@@ -168,6 +181,7 @@ s_DCTE_process(stream_state * st, stream_cursor_read * pr,
 		int count = min(jcdp->fcb_size - jcdp->fcb_pos,
 				pw->limit - pw->ptr);
 
+		if_debug1('w', "[wde]copying final %d\n", count);
 		memcpy(pw->ptr + 1, jcdp->finish_compress_buf + jcdp->fcb_pos,
 		       count);
 		jcdp->fcb_pos += count;

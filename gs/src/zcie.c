@@ -147,8 +147,8 @@ cie_points_param(const ref * pdref, gs_cie_wb * pwb)
 /* Process a 3- or 4-dimensional lookup table from a dictionary. */
 /* The caller has set pclt->n and pclt->m. */
 /* ptref is known to be a readable array of size at least n+1. */
-private int cie_3d_table_param(P4(const ref * ptable, uint count, uint nbytes,
-				  gs_const_string * strings));
+private int cie_3d_table_param(const ref * ptable, uint count, uint nbytes,
+			       gs_const_string * strings);
 int
 cie_table_param(const ref * ptref, gx_color_lookup_table * pclt,
 		gs_memory_t * mem)
@@ -283,13 +283,13 @@ cie_set_finish(i_ctx_t *i_ctx_p, gs_color_space * pcs,
 }
 
 /* Forward references */
-private int cache_common(P5(i_ctx_t *, gs_cie_common *, const ref_cie_procs *,
-			    void *, gs_ref_memory_t *));
-private int cache_abc_common(P5(i_ctx_t *, gs_cie_abc *, const ref_cie_procs *,
-				void *, gs_ref_memory_t *));
+private int cache_common(i_ctx_t *, gs_cie_common *, const ref_cie_procs *,
+			 void *, gs_ref_memory_t *);
+private int cache_abc_common(i_ctx_t *, gs_cie_abc *, const ref_cie_procs *,
+			     void *, gs_ref_memory_t *);
 
 /* <dict> .setciedefgspace - */
-private int cie_defg_finish(P1(i_ctx_t *));
+private int cie_defg_finish(i_ctx_t *);
 private int
 zsetciedefgspace(i_ctx_t *i_ctx_p)
 {
@@ -340,6 +340,7 @@ cie_defg_finish(i_ctx_t *i_ctx_p)
     gs_cie_defg *pcie = r_ptr(op, gs_cie_defg);
 
     pcie->DecodeDEFG = DecodeDEFG_from_cache;
+    pcie->DecodeABC = DecodeABC_from_cache;
     pcie->common.DecodeLMN = DecodeLMN_from_cache;
     gs_cie_defg_complete(pcie);
     pop(1);
@@ -347,7 +348,7 @@ cie_defg_finish(i_ctx_t *i_ctx_p)
 }
 
 /* <dict> .setciedefspace - */
-private int cie_def_finish(P1(i_ctx_t *));
+private int cie_def_finish(i_ctx_t *);
 private int
 zsetciedefspace(i_ctx_t *i_ctx_p)
 {
@@ -398,6 +399,7 @@ cie_def_finish(i_ctx_t *i_ctx_p)
     gs_cie_def *pcie = r_ptr(op, gs_cie_def);
 
     pcie->DecodeDEF = DecodeDEF_from_cache;
+    pcie->DecodeABC = DecodeABC_from_cache;
     pcie->common.DecodeLMN = DecodeLMN_from_cache;
     gs_cie_def_complete(pcie);
     pop(1);
@@ -405,7 +407,7 @@ cie_def_finish(i_ctx_t *i_ctx_p)
 }
 
 /* <dict> .setcieabcspace - */
-private int cie_abc_finish(P1(i_ctx_t *));
+private int cie_abc_finish(i_ctx_t *);
 private int
 zsetcieabcspace(i_ctx_t *i_ctx_p)
 {
@@ -448,7 +450,7 @@ cie_abc_finish(i_ctx_t *i_ctx_p)
 }
 
 /* <dict> .setcieaspace - */
-private int cie_a_finish(P1(i_ctx_t *));
+private int cie_a_finish(i_ctx_t *);
 private int
 zsetcieaspace(i_ctx_t *i_ctx_p)
 {
@@ -505,7 +507,7 @@ cache_abc_common(i_ctx_t *i_ctx_p, gs_cie_abc * pcie,
     int code =
 	cie_prepare_cache3(i_ctx_p, &pcie->RangeABC,
 			   pcprocs->Decode.ABC.value.const_refs,
-			   &pcie->caches.DecodeABC[0], pcie, imem,
+			   pcie->caches.DecodeABC.caches, pcie, imem,
 			   "Decode.ABC");
 
     return (code < 0 ? code :
@@ -526,44 +528,30 @@ cache_common(i_ctx_t *i_ctx_p, gs_cie_common * pcie,
 /* ------ Internal routines ------ */
 
 /* Prepare to cache the values for one or more procedures. */
-private int cie_cache_finish1(P1(i_ctx_t *));
-private int cie_cache_finish(P1(i_ctx_t *));
+private int cie_cache_finish1(i_ctx_t *);
+private int cie_cache_finish(i_ctx_t *);
 int
 cie_prepare_cache(i_ctx_t *i_ctx_p, const gs_range * domain, const ref * proc,
 		  cie_cache_floats * pcache, void *container,
 		  gs_ref_memory_t * imem, client_name_t cname)
 {
     int space = imemory_space(imem);
-    gs_for_loop_params flp;
+    gs_sample_loop_params_t lp;
     es_ptr ep;
 
-    gs_cie_cache_init(&pcache->params, &flp, domain, cname);
+    gs_cie_cache_init(&pcache->params, &lp, domain, cname);
     pcache->params.is_identity = r_size(proc) == 0;
-    /*
-     * If a matrix was singular, it is possible that flp.step = 0.
-     * In this case, flp.limit = flp.init as well.
-     * Execute the procedure once, and replicate the result.
-     */
-    if (flp.step == 0) {
-	check_estack(5);
-	ep = esp;
-	make_real(ep + 5, flp.init);
-	ep[4] = *proc;
-	make_op_estack(ep + 3, cie_cache_finish1);
-	esp += 5;
-    } else {
-	check_estack(9);
-	ep = esp;
-	make_real(ep + 9, flp.init);
-	make_real(ep + 8, flp.step);
-	make_real(ep + 7, flp.limit);
-	ep[6] = *proc;
-	r_clear_attrs(ep + 6, a_executable);
-	make_op_estack(ep + 5, zcvx);
-	make_op_estack(ep + 4, zfor);
-	make_op_estack(ep + 3, cie_cache_finish);
-	esp += 9;
-    }
+    check_estack(9);
+    ep = esp;
+    make_real(ep + 9, lp.A);
+    make_int(ep + 8, lp.N);
+    make_real(ep + 7, lp.B);
+    ep[6] = *proc;
+    r_clear_attrs(ep + 6, a_executable);
+    make_op_estack(ep + 5, zcvx);
+    make_op_estack(ep + 4, zfor_samples);
+    make_op_estack(ep + 3, cie_cache_finish);
+    esp += 9;
     /*
      * The caches are embedded in the middle of other
      * structures, so we represent the pointer to the cache

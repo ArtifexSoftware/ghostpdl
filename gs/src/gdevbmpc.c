@@ -138,9 +138,9 @@ write_bmp_depth_header(gx_device_printer *pdev, FILE *file, int depth,
 	 */
 #define INCHES_PER_METER (100 /*cm/meter*/ / 2.54 /*cm/inch*/)
 	BMP_ASSIGN_DWORD(ihdr.xPelsPerMeter,
-			 (dword)(pdev->x_pixels_per_inch * INCHES_PER_METER));
+		 (dword)(pdev->x_pixels_per_inch * INCHES_PER_METER + 0.5));
 	BMP_ASSIGN_DWORD(ihdr.yPelsPerMeter,
-			 (dword)(pdev->y_pixels_per_inch * INCHES_PER_METER));
+		 (dword)(pdev->y_pixels_per_inch * INCHES_PER_METER + 0.5));
 #undef INCHES_PER_METER
 	BMP_ASSIGN_DWORD(ihdr.clrUsed, 0);
 	BMP_ASSIGN_DWORD(ihdr.clrImportant, 0);
@@ -170,6 +170,9 @@ write_bmp_header(gx_device_printer *pdev, FILE *file)
 
 	q.reserved = 0;
 	for (i = 0; i != 1 << depth; i++) {
+	    /* Note that the use of map_color_rgb is deprecated in
+	       favor of decode_color. This should work, though, because
+	       backwards compatibility is preserved. */
 	    (*dev_proc(pdev, map_color_rgb))((gx_device *)pdev,
 					     (gx_color_index)i, rgb);
 	    q.red = gx_color_value_to_byte(rgb[0]);
@@ -208,9 +211,11 @@ write_bmp_separated_header(gx_device_printer *pdev, FILE *file)
 
 /* Map a r-g-b color to a color index. */
 gx_color_index
-bmp_map_16m_rgb_color(gx_device * dev, gx_color_value r, gx_color_value g,
-		  gx_color_value b)
+bmp_map_16m_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
+
+    gx_color_value r, g, b;
+    r = cv[0]; g = cv[1]; b = cv[2];
     return gx_color_value_to_byte(r) +
 	((uint) gx_color_value_to_byte(g) << 8) +
 	((ulong) gx_color_value_to_byte(b) << 16);

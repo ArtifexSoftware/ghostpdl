@@ -28,7 +28,7 @@
 /* ================ Getting parameters ================ */
 
 /* Forward references */
-private bool param_HWColorMap(P2(gx_device *, byte *));
+private bool param_HWColorMap(gx_device *, byte *);
 
 /* Get the device parameters. */
 int
@@ -61,12 +61,6 @@ gs_get_device_or_hw_params(gx_device * orig_dev, gs_param_list * plist,
     return code;
 }
 
-/* Standard ProcessColorModel values. */
-static const char *const pcmsa[] =
-{
-    "", "DeviceGray", "", "DeviceRGB", "DeviceCMYK"
-};
-
 /* Get standard parameters. */
 int
 gx_default_get_params(gx_device * dev, gs_param_list * plist)
@@ -97,11 +91,11 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
 
     param_string_from_string(dns, dev->dname);
     {
-	const char *cms = pcmsa[colors];
+	const char *cms = get_process_color_model_name(dev);
 
 	/* We might have an uninitialized device with */
 	/* color_info.num_components = 0.... */
-	if (*cms != 0)
+	if ((cms != NULL) && (*cms != '\0'))
 	    param_string_from_string(pcms, cms);
 	else
 	    pcms.data = 0;
@@ -163,8 +157,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
 				&dev->color_info.anti_alias.text_bits)) < 0 ||
 	(code = param_write_int(plist, "GraphicsAlphaBits",
 				&dev->color_info.anti_alias.graphics_bits)) < 0 ||
-	(code = param_write_int(plist, "ForceMono", 
-				&dev->color_info.force_mono)) < 0 
+	(code = param_write_bool(plist, ".LockSafetyParams", &dev->LockSafetyParams)) < 0 
 	)
 	return code;
 
@@ -172,7 +165,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
 
     if (colors > 1) {
 	int RGBValues = dev->color_info.max_color + 1;
-	long ColorValues = 1L << depth;
+	long ColorValues = (depth >= 32 ? -1 : 1L << depth);
 
 	if ((code = param_write_int(plist, "RedValues", &RGBValues)) < 0 ||
 	    (code = param_write_int(plist, "GreenValues", &RGBValues)) < 0 ||
@@ -181,7 +174,6 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
 	    )
 	    return code;
     }
-
     if (param_requested(plist, "HWColorMap")) {
 	byte palette[3 << 8];
 
@@ -323,8 +315,8 @@ gdev_write_input_page_size(int index, gs_param_dict * pdict,
 {
     gdev_input_media_t media;
 
-    media.PageSize[0] = media.PageSize[2] = width_points;
-    media.PageSize[1] = media.PageSize[3] = height_points;
+    media.PageSize[0] = media.PageSize[2] = (float) width_points;
+    media.PageSize[1] = media.PageSize[3] = (float) height_points;
     media.MediaColor = 0;
     media.MediaWeight = 0;
     media.MediaType = 0;
@@ -380,19 +372,19 @@ gdev_end_output_media(gs_param_list * mlist, gs_param_dict * pdict)
 /* ================ Putting parameters ================ */
 
 /* Forward references */
-private int param_anti_alias_bits(P3(gs_param_list *, gs_param_name, int *));
-private int param_MediaSize(P4(gs_param_list *, gs_param_name,
-			       const float *, gs_param_float_array *));
+private int param_anti_alias_bits(gs_param_list *, gs_param_name, int *);
+private int param_MediaSize(gs_param_list *, gs_param_name,
+			    const float *, gs_param_float_array *);
 
-private int param_check_bool(P4(gs_param_list *, gs_param_name, bool, bool));
-private int param_check_long(P4(gs_param_list *, gs_param_name, long, bool));
-
-#define param_check_int(plist, pname, ival, defined)\
-  param_check_long(plist, pname, (long)(ival), defined)
-private int param_check_bytes(P5(gs_param_list *, gs_param_name, const byte *, uint, bool));
-
-#define param_check_string(plist, pname, str, defined)\
-  param_check_bytes(plist, pname, (const byte *)str, strlen(str), defined)
+private int param_check_bool(gs_param_list *, gs_param_name, bool, bool);
+private int param_check_long(gs_param_list *, gs_param_name, long, bool);
+#define param_check_int(plist, pname, ival, is_defined)\
+  param_check_long(plist, pname, (long)(ival), is_defined)
+private int param_check_bytes(gs_param_list *, gs_param_name, const byte *,
+			      uint, bool);
+#define param_check_string(plist, pname, str, is_defined)\
+  param_check_bytes(plist, pname, (const byte *)(str), \
+                    (is_defined) ? strlen(str) : 0, is_defined)
 
 /* Set the device parameters. */
 /* If the device was open and the put_params procedure closed it, */
@@ -432,16 +424,14 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
     int ncset = dev->NumCopies_set;
     bool ignc = dev->IgnoreNumCopies;
     bool ucc = dev->UseCIEColor;
+    bool locksafe = dev->LockSafetyParams;
     gs_param_float_array ibba;
-    bool ibbnull = false;    
-    bool force_mono;
-
-
+    bool ibbnull = false;
     int colors = dev->color_info.num_components;
     int depth = dev->color_info.depth;
     int GrayValues = dev->color_info.max_gray + 1;
     int RGBValues = dev->color_info.max_color + 1;
-    long ColorValues = 1L << depth;
+    long ColorValues = (depth >= 32 ? -1 : 1L << depth);
     int tab = dev->color_info.anti_alias.text_bits;
     int gab = dev->color_info.anti_alias.graphics_bits;
     gs_param_string cms;
@@ -585,30 +575,23 @@ nce:
 	ecode = code;
 	param_signal_error(plist, param_name, ecode);
     }
-    switch (code = param_read_int(plist, (param_name = "ForceMono"), &force_mono)) {
-    case 0:
-	if (force_mono == 1) {
-	    dev->color_info.num_cmap_components = 1;
-	    dev->color_info.force_mono = 1;
-	    break;
-	}
-	else if (force_mono == 0) {
-	    dev->color_info.num_cmap_components = dev->color_info.num_components;
-    	    dev->color_info.force_mono = 0;
-	    break;
-	}
-	code = gs_error_rangecheck;
-    default:
-	ecode = code;
-	param_signal_error(plist, param_name, ecode);
-    case 1:
-	break;
-    }
     if ((code = param_anti_alias_bits(plist, "TextAlphaBits", &tab)) < 0)
 	ecode = code;
     if ((code = param_anti_alias_bits(plist, "GraphicsAlphaBits", &gab)) < 0)
 	ecode = code;
 
+    switch (code = param_read_bool(plist, (param_name = ".LockSafetyParams"), &locksafe)) {
+	case 0:
+	    if (dev->LockSafetyParams && !locksafe)
+		code = gs_note_error(gs_error_invalidaccess);
+	    else
+		break;
+	default:
+	    ecode = code;
+	    param_signal_error(plist, param_name, ecode);
+	case 1:
+	    break;
+    }
     /* Ignore parameters that only have meaning for printers. */
 #define IGNORE_INT_PARAM(pname)\
   { int igni;\
@@ -645,18 +628,26 @@ nce:
 	    break;
     }
 
-    /* Now check nominally read-only parameters. */
-    if ((code = param_check_string(plist, "OutputDevice", dev->dname, true)) < 0)
-	ecode = code;
-    if ((code = param_check_string(plist, "ProcessColorModel", pcmsa[colors], colors != 0)) < 0)
-	ecode = code;
+    /* Separation, DeviceN Color, and ProcessColorModel related parameters. */
+    {
+	const char * pcms = get_process_color_model_name(dev);
+        /* the device should have set a process model name at this point */
+	if ((code = param_check_string(plist, "ProcessColorModel", pcms, (pcms != NULL))) < 0)
+	    ecode = code;
+    }
     if ((code = param_check_int(plist, "MaxSeparations", 1, true)) < 0)
 	ecode = code;
     if ((code = param_check_bool(plist, "Separations", false, true)) < 0)
 	ecode = code;
-    BEGIN_ARRAY_PARAM(param_read_name_array, "SeparationColorNames", scna, 0, scne) {
+
+    BEGIN_ARRAY_PARAM(param_read_name_array, "SeparationColorNames", scna, scna.size, scne) {
 	break;
     } END_ARRAY_PARAM(scna, scne);
+
+
+    /* Now check nominally read-only parameters. */
+    if ((code = param_check_string(plist, "OutputDevice", dev->dname, true)) < 0)
+	ecode = code;
     if ((code = param_check_string(plist, "Name", dev->dname, true)) < 0)
 	ecode = code;
     if ((code = param_check_int(plist, "Colors", colors, true)) < 0)
@@ -750,6 +741,7 @@ nce:
     dev->UseCIEColor = ucc;
     dev->color_info.anti_alias.text_bits = tab;
     dev->color_info.anti_alias.graphics_bits = gab;
+    dev->LockSafetyParams = locksafe;
     gx_device_decache_colors(dev);
     return 0;
 }
@@ -808,14 +800,14 @@ param_MediaSize(gs_param_list * plist, gs_param_name pname,
 /* its existing value. */
 private int
 param_check_bool(gs_param_list * plist, gs_param_name pname, bool value,
-		 bool defined)
+		 bool is_defined)
 {
     int code;
     bool new_value;
 
     switch (code = param_read_bool(plist, pname, &new_value)) {
 	case 0:
-	    if (defined && new_value == value)
+	    if (is_defined && new_value == value)
 		break;
 	    code = gs_note_error(gs_error_rangecheck);
 	    goto e;
@@ -830,14 +822,14 @@ param_check_bool(gs_param_list * plist, gs_param_name pname, bool value,
 }
 private int
 param_check_long(gs_param_list * plist, gs_param_name pname, long value,
-		 bool defined)
+		 bool is_defined)
 {
     int code;
     long new_value;
 
     switch (code = param_read_long(plist, pname, &new_value)) {
 	case 0:
-	    if (defined && new_value == value)
+	    if (is_defined && new_value == value)
 		break;
 	    code = gs_note_error(gs_error_rangecheck);
 	    goto e;
@@ -852,14 +844,14 @@ param_check_long(gs_param_list * plist, gs_param_name pname, long value,
 }
 private int
 param_check_bytes(gs_param_list * plist, gs_param_name pname, const byte * str,
-		  uint size, bool defined)
+		  uint size, bool is_defined)
 {
     int code;
     gs_param_string new_value;
 
     switch (code = param_read_string(plist, pname, &new_value)) {
 	case 0:
-	    if (defined && new_value.size == size &&
+	    if (is_defined && new_value.size == size &&
 		!memcmp((const char *)str, (const char *)new_value.data,
 			size)
 		)

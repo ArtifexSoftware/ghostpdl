@@ -123,6 +123,9 @@ struct gs_cie_icc_s {
 
     /* "lookup" data structure in the ICC profile */
     struct _icmLuBase * plu;
+
+    /* icclib file object for ICC stream */
+    struct _icmFile   * pfile;
 };
 
 /*
@@ -157,11 +160,17 @@ struct gs_cie_icc_s {
  * The client is responsible for initializing the alternative color space
  * information.
  */
-extern  int     gs_cspace_build_CIEICC( P3( gs_color_space **   ppcspace,
-                                            void *              client_data,
-                                            gs_memory_t *       pmem ) );
+extern  int     gs_cspace_build_CIEICC( gs_color_space **   ppcspace,
+					void *              client_data,
+					gs_memory_t *       pmem );
 
 int
 gx_load_icc_profile(gs_cie_icc *picc_info);
+
+/*
+ * Increment color space reference counts.
+ */
+void
+gx_increment_cspace_count(const gs_color_space * pcs);
 
 #endif /* gsicc_INCLUDED */

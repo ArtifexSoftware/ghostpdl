@@ -214,19 +214,24 @@ gs_text_begin(gs_state * pgs, const gs_text_params_t * text,
 				pcpath, mem, ppte);
 }
 
-/** unicode show_begin
- * str contains 16bit unicode characters 
- * size is number of elements, NOT number of bytes!
+/*
+ * Update the device color to be used with text (because a kshow or
+ * cshow procedure may have changed the current color).
  */
 int
-gs_ushow_begin(gs_state * pgs, const byte * str, uint size,
-	      gs_memory_t * mem, gs_text_enum_t ** ppte)
+gs_text_update_dev_color(gs_state * pgs, gs_text_enum_t * pte)
 {
-    gs_text_params_t text;
-
-    text.operation = TEXT_FROM_STRING | TEXT_DO_DRAW | TEXT_RETURN_WIDTH | TEXT_IS_UNICODE;
-    text.data.bytes = str, text.size = size;
-    return gs_text_begin(pgs, &text, mem, ppte);
+    /*
+     * The text enumerator holds a device color pointer, which may be a
+     * null pointer or a pointer to the same device color as the graphic
+     * state points to. In the former case the text is not to be
+     * rendered, and hence of no interest here. In the latter case the
+     * update of the graphic state color will update the text color as
+     * well.
+     */
+    if (pte->pdcolor != 0)
+        gx_set_dev_color(pgs);
+    return 0;
 }
 
 /* Begin PostScript-equivalent text operations. */
@@ -312,16 +317,36 @@ gs_xyshow_begin(gs_state * pgs, const byte * str, uint size,
     text.widths_size = widths_size;
     return gs_text_begin(pgs, &text, mem, ppte);
 }
+
+private void
+setup_FontBBox_as_Metrics2 (gs_text_enum_t * pte, gs_font * pfont)
+{
+    /* When we exec a operator like `show' that has a a chance to get
+       a glyph from a char, we can set FontBBox_as_Metrics2 in
+       gschar0.c:gs_type0_next_char_glyph.  In other hand, when we
+       exec a operator like `glyphshow' that get a glyph directly from
+       an input file, gschar0.c:gs_type0_next_char_glyph is exec'ed.
+       For the later case, we set up FontBBox_as_Metrics2 with using
+       this procedure.. */
+    if (pfont->FontType == ft_CID_encrypted
+	|| pfont->FontType == ft_CID_TrueType)
+        pte->FontBBox_as_Metrics2 = ((gs_font_base *)pfont)->FontBBox.q;
+}
+
 int
 gs_glyphshow_begin(gs_state * pgs, gs_glyph glyph,
 		   gs_memory_t * mem, gs_text_enum_t ** ppte)
 {
     gs_text_params_t text;
+    int result;
 
     text.operation = TEXT_FROM_SINGLE_GLYPH | TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
     text.data.d_glyph = glyph;
     text.size = 1;
-    return gs_text_begin(pgs, &text, mem, ppte);
+    result = gs_text_begin(pgs, &text, mem, ppte);
+    if (result == 0)
+      setup_FontBBox_as_Metrics2(*ppte, pgs->font);
+    return result;
 }
 int
 gs_cshow_begin(gs_state * pgs, const byte * str, uint size,
@@ -370,23 +395,31 @@ gs_glyphpath_begin(gs_state * pgs, gs_glyph glyph, bool stroke_path,
 		   gs_memory_t * mem, gs_text_enum_t ** ppte)
 {
     gs_text_params_t text;
+    int result;
 
     text.operation = TEXT_FROM_SINGLE_GLYPH | TEXT_RETURN_WIDTH |
 	(stroke_path ? TEXT_DO_TRUE_CHARPATH : TEXT_DO_FALSE_CHARPATH);
     text.data.d_glyph = glyph;
     text.size = 1;
-    return gs_text_begin(pgs, &text, mem, ppte);
+    result = gs_text_begin(pgs, &text, mem, ppte);
+    if (result == 0)
+      setup_FontBBox_as_Metrics2(*ppte, pgs->font);
+    return result;
 }
 int
 gs_glyphwidth_begin(gs_state * pgs, gs_glyph glyph,
 		    gs_memory_t * mem, gs_text_enum_t ** ppte)
 {
     gs_text_params_t text;
+    int result;
 
     text.operation = TEXT_FROM_SINGLE_GLYPH | TEXT_DO_NONE | TEXT_RETURN_WIDTH;
     text.data.d_glyph = glyph;
     text.size = 1;
-    return gs_text_begin(pgs, &text, mem, ppte);
+    result = gs_text_begin(pgs, &text, mem, ppte);
+    if (result == 0)
+      setup_FontBBox_as_Metrics2(*ppte, pgs->font);
+    return result;
 }
 
 /* Restart processing with different parameters. */
@@ -398,6 +431,7 @@ gs_text_restart(gs_text_enum_t *pte, const gs_text_params_t *text)
     tenum = *pte;
     tenum.text = *text;
     gs_text_enum_init_dynamic(&tenum, pte->orig_font);
+    setup_FontBBox_as_Metrics2(pte, pte->orig_font);
     return gs_text_resync(pte, &tenum);
 }
 

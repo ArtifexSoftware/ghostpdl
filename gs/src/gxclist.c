@@ -23,6 +23,7 @@
 #include "gxcldev.h"
 #include "gxclpath.h"
 #include "gsparams.h"
+#include "gxdcolor.h"
 
 /* GC information */
 #define CLIST_IS_WRITER(cdev) ((cdev)->common.ymin < 0)
@@ -70,7 +71,7 @@ private dev_proc_get_band(clist_get_band);
 /* Driver procedures defined in other files are declared in gxcldev.h. */
 
 /* Other forward declarations */
-private int clist_put_current_params(P1(gx_device_clist_writer *cldev));
+private int clist_put_current_params(gx_device_clist_writer *cldev);
 
 /* The device procedures */
 const gx_device_procs gs_clist_device_procs = {
@@ -117,7 +118,17 @@ const gx_device_procs gs_clist_device_procs = {
     clist_create_compositor,
     gx_forward_get_hardware_params,
     gx_default_text_begin,
-    gx_default_finish_copydevice
+    gx_default_finish_copydevice,
+    NULL,			/* begin_transparency_group */
+    NULL,			/* end_transparency_group */
+    NULL,			/* begin_transparency_mask */
+    NULL,			/* end_transparency_mask */
+    NULL,			/* discard_transparency_layer */
+    gx_forward_get_color_mapping_procs,
+    gx_forward_get_color_comp_index,
+    gx_forward_encode_color,
+    gx_forward_decode_color,
+    gx_default_pattern_manage
 };
 
 /* ------ Define the command set and syntax ------ */
@@ -283,6 +294,10 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
 
     /* Call create_buf_device to get the memory planarity set up. */
     cdev->buf_procs.create_buf_device(&pbdev, target, NULL, NULL, true);
+    /* HACK - if the buffer device can't do copy_alpha, disallow */
+    /* copy_alpha in the commmand list device as well. */
+    if (dev_proc(pbdev, copy_alpha) == gx_no_copy_alpha)
+	cdev->disable_mask |= clist_disable_copy_alpha;
     if (band_height) {
 	/*
 	 * The band height is fixed, so the band buffer requirement

@@ -96,9 +96,9 @@ zsave(i_ctx_t *i_ctx_p)
 }
 
 /* <save> restore - */
-private int restore_check_operand(P3(os_ptr, alloc_save_t **, gs_dual_memory_t *));
-private int restore_check_stack(P3(const ref_stack_t *, const alloc_save_t *, bool));
-private void restore_fix_stack(P3(ref_stack_t *, const alloc_save_t *, bool));
+private int restore_check_operand(os_ptr, alloc_save_t **, gs_dual_memory_t *);
+private int restore_check_stack(const ref_stack_t *, const alloc_save_t *, bool);
+private void restore_fix_stack(ref_stack_t *, const alloc_save_t *, bool);
 int
 zrestore(i_ctx_t *i_ctx_p)
 {
@@ -162,6 +162,12 @@ zrestore(i_ctx_t *i_ctx_p)
     dict_set_top();		/* reload dict stack cache */
     if (I_VALIDATE_AFTER_RESTORE)
 	ivalidate_clean_spaces(i_ctx_p);
+    /* If the i_ctx_p LockFilePermissions is true, but the userparams */
+    /* we just restored is false, we need to make sure that we do not */
+    /* cause an 'invalidaccess' in setuserparams. Temporarily set     */
+    /* LockFilePermissions false until the gs_lev2.ps can do a        */
+    /* setuserparams from the restored userparam dictionary.          */
+    i_ctx_p->LockFilePermissions = false;
     return 0;
 }
 /* Check the operand of a restore. */

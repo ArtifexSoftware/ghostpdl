@@ -23,13 +23,13 @@
 #include "gpmisc.h"
 
 /* Library routines not declared in a standard header */
-extern char *mktemp(P1(char *));	/* in gp_mktmp.c */
+extern char *mktemp(char *);	/* in gp_mktmp.c */
 
 /* Define a substitute for stdprn (see below). */
 private FILE *gs_stdprn;
 
 /* Forward declarations */
-private void handle_FPE(P1(int));
+private void handle_FPE(int);
 
 /* Do platform-dependent initialization. */
 void
@@ -59,6 +59,7 @@ gp_exit(int exit_status, int code)
 void
 gp_do_exit(int exit_status)
 {
+    exit(exit_status);
 }
 
 /* ------ Printer accessing ------ */
@@ -66,7 +67,7 @@ gp_do_exit(int exit_status)
 /* Open a connection to a printer.  A null file name means use the */
 /* standard printer connected to the machine, if any. */
 /* Return NULL if the connection could not be opened. */
-extern void gp_set_file_binary(P2(int, int));
+extern void gp_set_file_binary(int, int);
 FILE *
 gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
 {
@@ -119,9 +120,18 @@ gp_close_printer(FILE * pfile, const char *fname)
 FILE *
 gp_open_scratch_file(const char *prefix, char *fname, const char *mode)
 {	      /* The -7 is for XXXXXXX */
-    int len = gp_file_name_sizeof - strlen(prefix) - 7;
+    int prefix_length = strlen(prefix);
+    int len = gp_file_name_sizeof - prefix_length - 7;
+    FILE *f;
 
-    if (gp_gettmpdir(fname, &len) != 0)
+    if (
+#if !NEW_COMBINE_PATH
+        gp_pathstring_not_bare(prefix, prefix_length) ||
+#else
+	gp_file_name_is_absolute(prefix, prefix_length) ||
+#endif
+	gp_gettmpdir(fname, &len) != 0
+	)
 	*fname = 0;
     else {
 	char *temp;
@@ -132,10 +142,15 @@ gp_open_scratch_file(const char *prefix, char *fname, const char *mode)
 	if (strlen(fname) && (fname[strlen(fname) - 1] != '\\'))
 	    strcat(fname, "\\");
     }
+    if (strlen(fname) + prefix_length + 7 >= gp_file_name_sizeof)
+	return 0;		/* file name too long */
     strcat(fname, prefix);
     strcat(fname, "XXXXXX");
     mktemp(fname);
-    return gp_fopentemp(fname, mode);
+    f = gp_fopentemp(fname, mode);
+    if (f == NULL)
+	eprintf1("**** Could not open temporary file %s\n", fname);
+    return f;
 }
 
 

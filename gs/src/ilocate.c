@@ -281,8 +281,8 @@ object_size_valid(const obj_header_t * pre, uint size, const chunk_t * cp)
 }
 
 /* Validate all the objects in a chunk. */
-private void ialloc_validate_ref(P2(const ref *, gc_state_t *));
-private void ialloc_validate_ref_packed(P2(const ref_packed *, gc_state_t *));
+private void ialloc_validate_ref(const ref *, gc_state_t *);
+private void ialloc_validate_ref_packed(const ref_packed *, gc_state_t *);
 void
 ialloc_validate_chunk(const chunk_t * cp, gc_state_t * gcst)
 {
@@ -313,13 +313,14 @@ ialloc_validate_chunk(const chunk_t * cp, gc_state_t * gcst)
 	gs_ptr_type_t ptype;
 
 	if (proc != gs_no_struct_enum_ptrs)
-	    for (; (ptype = (*proc) (pre + 1, size, index, &eptr, pre->o_type, NULL)) != 0; ++index)
+	    for (; (ptype = (*proc) (pre + 1, size, index, &eptr, pre->o_type, NULL)) != 0; ++index) {
 		if (eptr.ptr == 0)
 		    DO_NOTHING;
 		else if (ptype == ptr_struct_type)
 		    ialloc_validate_object(eptr.ptr, NULL, gcst);
 		else if (ptype == ptr_ref_type)
 		    ialloc_validate_ref_packed(eptr.ptr, gcst);
+	    }
     }
     END_OBJECTS_SCAN
 }
@@ -471,8 +472,10 @@ ialloc_validate_object(const obj_header_t * ptr, const chunk_t * cp,
 	(oname = struct_type_name_string(otype),
 	 *oname < 33 || *oname > 126)
 	) {
-	lprintf4("Bad object 0x%lx(%lu), ssize = %u, in chunk 0x%lx!\n",
-		 (ulong) ptr, (ulong) size, otype->ssize, (ulong) cp);
+	lprintf2("Bad object 0x%lx(%lu),\n",
+		 (ulong) ptr, (ulong) size);
+	dprintf2(" ssize = %u, in chunk 0x%lx!\n",
+		 otype->ssize, (ulong) cp);
 	gs_abort();
     }
 }

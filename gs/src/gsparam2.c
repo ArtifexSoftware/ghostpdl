@@ -26,8 +26,8 @@
 /* ---------------- Serializer ---------------- */
 
 /* Forward references */
-private int sput_word(P2(stream *dest, uint value));
-private int sput_bytes(P3(stream *dest, const byte *data, uint size));
+private int sput_word(stream *dest, uint value);
+private int sput_bytes(stream *dest, const byte *data, uint size);
 
 /*
  * Serialize the contents of a gs_param_list, including sub-dictionaries,
@@ -186,8 +186,8 @@ sput_bytes(stream *dest, const byte *data, uint size)
 /* ---------------- Unserializer ---------------- */
 
 /* Forward references */
-private int sget_word(P2(stream *src, uint *pvalue));
-private int sget_bytes(P3(stream *src, byte *data, uint size));
+private int sget_word(stream *src, uint *pvalue);
+private int sget_bytes(stream *src, byte *data, uint size);
 
 /*
  * Unserialize a parameter list from a stream.  The list must be in WRITE
@@ -370,5 +370,11 @@ sget_bytes(stream *src, byte *data, uint size)
 {
     uint ignore_count;
 
-    return sgets(src, data, size, &ignore_count);
+    int status = sgets(src, data, size, &ignore_count);
+
+    if (status < 0 && status != EOFC)
+	return_error(gs_error_ioerror);
+    };
+
+    return 0;
 }

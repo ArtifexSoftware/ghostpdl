@@ -14,6 +14,9 @@
 // $RCSfile$ $Revision$
 // Text Window class
 
+#ifndef dwtext_INCLUDED
+#  define dwtext_INCLUDED
+
 
 #ifdef _WINDOWS
 #define _Windows
@@ -136,3 +139,6 @@ void text_drag(TW *tw, const char *pre_drag, const char *post_drag);
 HWND text_get_handle(TW *tw);
 
 /* ================================== */
+
+
+#endif /* dwtext_INCLUDED */

@@ -490,7 +490,7 @@ pl_main(
     arg_finit(&args);
 
     /* free iodev */
-    gs_iodev_free(pjl_mem);
+    // NB this is gone    gs_iodev_free(pjl_mem);
    
     if ( gs_debug_c('A') )
 	dprintf( "Final time" );

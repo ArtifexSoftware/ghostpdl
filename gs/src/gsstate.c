@@ -16,14 +16,13 @@
 #include "memory_.h"
 #include "gserrors.h"
 #include "gsstruct.h"
-#include "gsutil.h"		/* for gs_next_id */
+#include "gsutil.h"		/* for gs_next_ids */
 #include "gzstate.h"
 #include "gxcspace.h"		/* here for gscolor2.h */
 #include "gsalpha.h"
 #include "gscolor2.h"
 #include "gscoord.h"		/* for gs_initmatrix */
 #include "gscie.h"
-#include "gscssub.h"
 #include "gxclipsr.h"
 #include "gxcmap.h"
 #include "gxdevice.h"
@@ -33,15 +32,18 @@
 #include "gspath.h"
 #include "gzpath.h"
 #include "gzcpath.h"
+#include "gsovrc.h"
+#include "gxcolor2.h"
+#include "gxpcolor.h"
 
 /* Forward references */
-private gs_state *gstate_alloc(P3(gs_memory_t *, client_name_t,
-				  const gs_state *));
-private gs_state *gstate_clone(P4(gs_state *, gs_memory_t *, client_name_t,
-				  gs_state_copy_reason_t));
-private void gstate_free_contents(P1(gs_state *));
-private int gstate_copy(P4(gs_state *, const gs_state *,
-			   gs_state_copy_reason_t, client_name_t));
+private gs_state *gstate_alloc(gs_memory_t *, client_name_t,
+			       const gs_state *);
+private gs_state *gstate_clone(gs_state *, gs_memory_t *, client_name_t,
+			       gs_state_copy_reason_t);
+private void gstate_free_contents(gs_state *);
+private int gstate_copy(gs_state *, const gs_state *,
+			gs_state_copy_reason_t, client_name_t);
 
 /*
  * Graphics state storage management is complicated.  There are many
@@ -77,9 +79,6 @@ private int gstate_copy(P4(gs_state *, const gs_state *,
  *
  *   (3b) Objects whose lifetimes are associated with something else.
  *      Currently these are:
- *              ht_cache, which is associated with the entire gstate
- *                stack, is allocated with the very first graphics state,
- *                and currently is never freed;
  *              pattern_cache, which is associated with the entire
  *                stack, is allocated when first needed, and currently
  *                is never freed;
@@ -88,10 +87,7 @@ private int gstate_copy(P4(gs_state *, const gs_state *,
  *                back to the save) and is managed specially;
  *		transparency_stack, which is associated with the entire
  *		  stack but only stored in the topmost graphics state.
- * 
- *         gs_free_ht_cache() can be called to free ht_cache and view_clip.
- *         in a non garbage collection environment.
- * 
+ *
  * (4) Objects that are referenced directly by exactly one gstate and that
  *      are not referenced (except transiently) from any other object.
  *      These fall into two groups:
@@ -238,24 +234,22 @@ gs_state_alloc(gs_memory_t * mem)
     rc_alloc_struct_1(pgs->halftone, gs_halftone, &st_halftone, mem,
 		      goto fail, "gs_state_alloc(halftone)");
     pgs->halftone->type = ht_type_none;
-    pgs->ht_cache = gx_ht_alloc_cache(mem,
-				      gx_ht_cache_default_tiles(),
-				      gx_ht_cache_default_bits());
+
     /* Initialize other things not covered by initgraphics */
+
+    pgs->path = gx_path_alloc(gstate_path_memory(mem), "gs_state_alloc(path)");
+    pgs->clip_path = gx_cpath_alloc(mem, "gs_state_alloc(clip_path)");
     pgs->clip_stack = 0;
     pgs->view_clip = gx_cpath_alloc(mem, "gs_state_alloc(view_clip)");
     pgs->view_clip->rule = 0;	/* no clipping */
     pgs->effective_clip_id = pgs->clip_path->id;
     pgs->effective_view_clip_id = gs_no_id;
+    pgs->effective_clip_path = pgs->clip_path;
+    pgs->effective_clip_shared = true;
     /* Initialize things so that gx_remap_color won't crash. */
     gs_cspace_init_DeviceGray(pgs->color_space);
-    {
-	int i;
-
-	for (i = 0; i < countof(pgs->device_color_spaces.indexed); ++i)
-	    pgs->device_color_spaces.indexed[i] = 0;
-    }
-    gx_set_device_color_1(pgs);
+    pgs->in_cachedevice = 0;
+    gx_set_device_color_1(pgs); /* sets colorspace and client color */
     pgs->device = 0;		/* setting device adjusts refcts */
     gs_nulldevice(pgs);
     gs_setalpha(pgs, 1.0);
@@ -267,13 +261,12 @@ gs_state_alloc(gs_memory_t * mem)
     pgs->font = 0;		/* Not right, but acceptable until the */
     /* PostScript code does the first setfont. */
     pgs->root_font = 0;		/* ditto */
-    pgs->in_cachedevice = 0;
     pgs->in_charpath = (gs_char_path_mode) 0;
     pgs->show_gstate = 0;
     pgs->level = 0;
     pgs->dfilter_stack = 0;
     pgs->transparency_group_stack = 0;
-    if (gs_initgraphics(pgs) >= 0)
+    if (gs_initgraphics(pgs) >= 0) 
 	return pgs;
     /* Something went very wrong. */
 fail:
@@ -344,8 +337,6 @@ gs_gsave_for_save(gs_state * pgs, gs_state ** psaved)
     int code;
     gx_clip_path *old_cpath = pgs->view_clip;
     gx_clip_path *new_cpath;
-    gx_device_color_spaces_t save_spaces;
-    int i;
 
     if (old_cpath) {
 	new_cpath =
@@ -359,27 +350,6 @@ gs_gsave_for_save(gs_state * pgs, gs_state ** psaved)
     code = gs_gsave(pgs);
     if (code < 0)
 	goto fail;
-    for (i = 0; i < countof(save_spaces.indexed); ++i) {
-	gs_color_space *pcs = pgs->device_color_spaces.indexed[i];
-
-	if (pcs) {
-	    pgs->device_color_spaces.indexed[i] = 0;
-	    code = gs_setsubstitutecolorspace(pgs, (gs_color_space_index)i,
-					      pcs);
-	    if (code < 0) {
-		/*
-		 * Patch the second saved pointer so we won't try to
-		 * gsave after the grestore.
-		 */
-		if (pgs->saved->saved == 0)
-		    pgs->saved->saved = pgs;
-		gs_grestore(pgs);
-		if (pgs->saved == pgs)
-		    pgs->saved = 0;
-		goto fail;
-	    }
-	}
-    }
     if (pgs->effective_clip_path == pgs->view_clip)
 	pgs->effective_clip_path = new_cpath;
     pgs->view_clip = new_cpath;
@@ -401,6 +371,7 @@ gs_grestore_only(gs_state * pgs)
     void *pdata = pgs->client_data;
     void *sdata;
     gs_transparency_state_t *tstack = pgs->transparency_stack;
+    bool prior_overprint = pgs->overprint;
 
     if_debug2('g', "[g]grestore 0x%lx, level was %d\n",
 	      (ulong) saved, pgs->level);
@@ -420,7 +391,12 @@ gs_grestore_only(gs_state * pgs)
     if (pgs->show_gstate == saved)
 	pgs->show_gstate = pgs;
     gs_free_object(pgs->memory, saved, "gs_grestore");
-    return 0;
+
+    /* update the overprint compositor, if necessary */
+    if (prior_overprint || pgs->overprint)
+        return gs_do_set_overprint(pgs);
+    else
+        return 0;
 }
 
 /* Restore the graphics state per PostScript semantics */
@@ -446,7 +422,6 @@ int
 gs_grestoreall_for_restore(gs_state * pgs, gs_state * saved)
 {
     int code;
-    gx_device_color_spaces_t freed_spaces;
 
     while (pgs->saved->saved) {
 	code = gs_grestore(pgs);
@@ -454,16 +429,12 @@ gs_grestoreall_for_restore(gs_state * pgs, gs_state * saved)
 	    return code;
     }
     /* Make sure we don't leave dangling pointers in the caches. */
-    gx_ht_clear_cache(pgs->ht_cache);
     if (pgs->pattern_cache)
 	(*pgs->pattern_cache->free_all) (pgs->pattern_cache);
     pgs->saved->saved = saved;
-    freed_spaces = pgs->device_color_spaces;
     code = gs_grestore(pgs);
     if (code < 0)
 	return code;
-    gx_device_color_spaces_free(&freed_spaces, pgs->memory,
-				"gs_grestoreall_for_restore");
     if (pgs->view_clip) {
 	gx_cpath_free(pgs->view_clip, "gs_grestoreall_for_restore");
 	pgs->view_clip = 0;
@@ -491,15 +462,7 @@ gs_grestoreall(gs_state * pgs)
 gs_state *
 gs_gstate(gs_state * pgs)
 {
-    gs_state *copied = gs_state_copy(pgs, pgs->memory);
-    int i;
-
-    if (copied == 0)
-	return 0;
-    /* Don't capture the substituted color spaces. */
-    for (i = 0; i < countof(copied->device_color_spaces.indexed); ++i)
-	copied->device_color_spaces.indexed[i] = 0;
-    return copied;
+    return gs_state_copy(pgs, pgs->memory);
 }
 gs_state *
 gs_state_copy(gs_state * pgs, gs_memory_t * mem)
@@ -569,7 +532,9 @@ gs_setgstate(gs_state * pgs, const gs_state * pfrom)
     pgs->show_gstate =
 	(pgs->show_gstate == pfrom ? pgs : saved_show);
     pgs->transparency_stack = tstack;
-    return 0;
+
+    /* update the overprint compositor */
+    return gs_do_set_overprint(pgs);
 }
 
 /* Get the allocator pointer of a graphics state. */
@@ -613,7 +578,118 @@ gs_state_swap_memory(gs_state * pgs, gs_memory_t * mem)
 
 /* ------ Operations on components ------ */
 
-/* Reset most of the graphics state */
+/*
+ * Push an overprint compositor onto the current device. Note that if
+ * the current device already is an overprint compositor, the
+ * create_compositor will update its parameters but not create a new
+ * compositor device.
+ */
+int
+gs_state_update_overprint(gs_state * pgs, const gs_overprint_params_t * pparams)
+{
+    gs_composite_t *    pct = 0;
+    gs_imager_state *   pis = (gs_imager_state *)pgs;
+    int                 code;
+    gx_device *         dev = pgs->device;
+    gx_device *         ovptdev;
+
+    if ( (code = gs_create_overprint(&pct, pparams, pgs->memory)) >= 0 &&
+         (code = dev_proc(dev, create_compositor)( dev,
+                                                   &ovptdev,
+                                                   pct,
+                                                   pis,
+                                                   pgs->memory )) >= 0   ) {
+        if (ovptdev != dev)
+            gx_set_device_only(pgs, ovptdev);
+    }
+    if (pct != 0)
+        gs_free_object(pgs->memory, pct, "gs_state_update_overprint");
+
+    /* the following hack handles devices that don't support compositors */
+    if (code == gs_error_unknownerror && !pparams->retain_any_comps)
+        code = 0;
+    return code;
+}
+
+/*
+ * Reset the overprint mode for the current color space and color. This
+ * routine should be called  whenever the current device (i.e.: color
+ * model), overprint, overprint mode, color space, or color are modified.
+ *
+ * The need reason this routine must be called for changes in the current
+ * color and must consider the current color involves the Pattern color
+ * space. In that space, the "color" (pattern) can determine if the base
+ * color space is used (PatternType 1 with PaintType 2), or may provide
+ * is own color space (PatternType 1 with PaintType 1, PatternType 2).
+ *
+ * The most general situation (PatternType 1 with PaintType 1) cannot be
+ * handled properly due to limitations of the pattern cache mechanism,
+ * so in this case overprint is effectively disable by making all color
+ * components "drawn".
+ */
+int
+gs_do_set_overprint(gs_state * pgs)
+{
+    const gs_color_space *  pcs = pgs->color_space;
+    const gs_client_color * pcc = pgs->ccolor;
+    int                     code = 0;
+
+    if (cs_num_components(pcs) < 0 && pcc->pattern != 0)
+        code = pcc->pattern->type->procs.set_color(pcc, pgs);
+    else
+        pcs->type->set_overprint(pcs, pgs);
+    return code;
+}
+
+/* setoverprint */
+void
+gs_setoverprint(gs_state * pgs, bool ovp)
+{
+    bool    prior_ovp = pgs->overprint;
+
+    pgs->overprint = ovp;
+    if (prior_ovp != ovp)
+        (void)gs_do_set_overprint(pgs);
+}
+
+/* currentoverprint */
+bool
+gs_currentoverprint(const gs_state * pgs)
+{
+    return pgs->overprint;
+}
+
+/* setoverprintmode */
+int
+gs_setoverprintmode(gs_state * pgs, int mode)
+{
+    int     prior_mode = pgs->effective_overprint_mode;
+    int     code = 0;
+
+    if (mode < 0 || mode > 1)
+	return_error(gs_error_rangecheck);
+    pgs->overprint_mode = mode;
+    if (pgs->overprint && prior_mode != mode)
+        code = gs_do_set_overprint(pgs);
+    return code;
+}
+
+/* currentoverprintmode */
+int
+gs_currentoverprintmode(const gs_state * pgs)
+{
+    return pgs->overprint_mode;
+}
+
+
+/*
+ * Reset most of the graphics state.
+ *
+ * NB: This routine no longer resets the current color or current color
+ *     space. It cannot do this for PostScript, due to color substitution.
+ *     Clients should perform the appropriate color/colorspace
+ *     initializaion themselves.
+ */
 int
 gs_initgraphics(gs_state * pgs)
 {
@@ -630,7 +706,6 @@ gs_initgraphics(gs_state * pgs)
 	(gs_setdashadapt(pgs, false),
 	 (code = gs_setdotlength(pgs, 0.0, false))) < 0 ||
 	(code = gs_setdotorientation(pgs)) < 0 ||
-	(code = gs_setgray(pgs, 0.0)) < 0 ||
 	(code = gs_setmiterlimit(pgs, gstate_initial.line_params.miter_limit)) < 0
 	)
 	return code;
@@ -846,10 +921,8 @@ gstate_copy(gs_state * pto, const gs_state * pfrom,
 	    gs_state_copy_reason_t reason, client_name_t cname)
 {
     gs_state_parts parts;
-    gx_device_color_spaces_t saved_spaces;
 
     GSTATE_ASSIGN_PARTS(&parts, pto);
-    saved_spaces = pto->device_color_spaces;
     /* Copy the dash pattern if necessary. */
     if (pfrom->line_params.dash.pattern || pto->line_params.dash.pattern) {
 	int code = gstate_copy_dash(pto, pfrom);
@@ -898,7 +971,7 @@ gstate_copy(gs_state * pto, const gs_state * pfrom,
 	float *pattern = pto->line_params.dash.pattern;
 
 	gs_imager_state_pre_assign((gs_imager_state *)pto,
-				   (gs_imager_state *)pfrom);
+				   (const gs_imager_state *)pfrom);
 	*pto = *pfrom;
 	pto->client_data = pdata;
 	pto->memory = mem;
@@ -913,20 +986,8 @@ gstate_copy(gs_state * pto, const gs_state * pfrom,
 	}
     }
     GSTATE_ASSIGN_PARTS(pto, &parts);
-    pto->device_color_spaces = saved_spaces;
 #undef RCCOPY
     pto->show_gstate =
 	(pfrom->show_gstate == pfrom ? pto : 0);
     return 0;
-}
-
-void gs_free_ht_cache(gs_memory_t *mem, gs_state *pgs) 
-{
-    gx_ht_free_cache(mem, pgs->ht_cache);
-    gx_cpath_free(pgs->view_clip, "gs_free_ht_cache free view_clip");    
-    if (pgs->pattern_cache) {
-	(*pgs->pattern_cache->free_all) (pgs->pattern_cache);
-	gs_free_object(mem, pgs->pattern_cache->tiles, "gs_free_ht_cache free tiles");
-	gs_free_object(mem, pgs->pattern_cache, "gs_free_ht_cache free struct");
-    }
 }

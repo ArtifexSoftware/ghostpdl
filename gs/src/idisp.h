@@ -10,7 +10,6 @@
    contact Artifex Software, Inc., 101 Lucas Valley Road #110,
    San Rafael, CA  94903, (415)492-9861, for further information. */
 
-/*$RCSfile$ $Revision$ */
 #ifndef display_callback_DEFINED
 # define display_callback_DEFINED
 typedef struct display_callback_s display_callback;
@@ -19,3 +18,5 @@ typedef struct display_callback_s display_callback;
 /* Called from imain.c to set the display callback in the device instance. */
 int display_set_callback(gs_main_instance *minst, display_callback *callback);
 
+
+#endif /* idisp_INCLUDED */

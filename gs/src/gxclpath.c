@@ -27,6 +27,7 @@
 #include "gzpath.h"
 #include "gzcpath.h"
 #include "stream.h"
+#include "gsserial.h"
 
 /* Statistics */
 #ifdef DEBUG
@@ -34,10 +35,10 @@ ulong stats_cmd_diffs[5];
 #endif
 
 /* Forward declarations */
-private int cmd_put_path(P8(gx_device_clist_writer * cldev,
-			    gx_clist_state * pcls, const gx_path * ppath,
-			    fixed ymin, fixed ymax, byte op,
-			    bool implicit_close, segment_notes keep_notes));
+private int cmd_put_path(gx_device_clist_writer * cldev,
+			 gx_clist_state * pcls, const gx_path * ppath,
+			 fixed ymin, fixed ymax, byte op,
+			 bool implicit_close, segment_notes keep_notes);
 
 /* ------ Utilities ------ */
 
@@ -95,114 +96,84 @@ int
 cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		      const gx_drawing_color * pdcolor)
 {
-    ulong offset_temp;
-    int type;
+    const gx_device_halftone * pdht = pdcolor->type->get_dev_halftone(pdcolor);
+    int                        code, di;
+    uint                       dc_size = 0, req_size;
+    gx_device_color_saved *    psdc = &pcls->sdc;
+    byte *                     dp;
+    byte *                     dp0;
+    gs_int_point               color_phase;
 
-    if (gx_dc_is_pure(pdcolor)) {
-	gx_color_index color1 = gx_dc_pure_color(pdcolor);
-
-	pcls->colors_used.or |= color1;
-	if (color1 != pcls->colors[1]) {
-	    int code = cmd_set_color1(cldev, pcls, color1);
-
-	    if (code < 0)
-		return code;
-	}
-	return cmd_dc_type_pure;
+    /* see if the halftone must be inserted in the command list */
+    if ( pdht != NULL                          &&
+         pdht->id != cldev->device_halftone_id   ) {
+        if ((code = cmd_put_halftone(cldev, pdht)) < 0)
+            return code;
+        color_unset(psdc);
     }
-    if (gx_dc_is_binary_halftone(pdcolor)) {
-	const gx_strip_bitmap *tile = gx_dc_binary_tile(pdcolor);
-	gx_color_index color0 = gx_dc_binary_color0(pdcolor);
-	gx_color_index color1 = gx_dc_binary_color1(pdcolor);
-	int code;
 
-	pcls->colors_used.or |= color0 | color1;
-	/* Set up tile and colors as for clist_tile_rectangle. */
-	if (!cls_has_tile_id(cldev, pcls, tile->id, offset_temp)) {
-	    int depth =
-	    (color1 == gx_no_color_index &&
-	     color0 == gx_no_color_index ?
-	     cldev->color_info.depth : 1);
+    /* see if phase informaiton must be inserted in the command list */
+    if ( pdcolor->type->get_phase(pdcolor, &color_phase) &&
+         (color_phase.x != pcls->tile_phase.x ||
+          color_phase.y != pcls->tile_phase.y   )        &&
+	 (code = cmd_set_tile_phase( cldev,
+                                     pcls,
+                                     color_phase.x,
+                                     color_phase.y )) < 0  )
+        return code;
 
-	    if (tile->id == gx_no_bitmap_id)
-		return_error(-1);	/* can't cache tile */
-	    if ((code = clist_change_tile(cldev, pcls, tile, depth)) < 0)
-		return code;
-	}
-	if (color1 != pcls->tile_colors[1] ||
-	    color0 != pcls->tile_colors[0]
-	    ) {
-	    if ((code = cmd_set_tile_colors(cldev, pcls, color0, color1)) < 0)
-		return code;
-	}
-	type = cmd_dc_type_ht;
-    } else if (gx_dc_is_colored_halftone(pdcolor)) {
-	const gx_device_halftone *pdht = pdcolor->colors.colored.c_ht;
-	int num_comp = cldev->color_info.num_components;
-	byte buf[4 + 4 * cmd_max_intsize(sizeof(pdcolor->colors.colored.c_level[0]))];
-	byte *bp = buf;
-	int i;
-	byte cmd;
-	uint short_bases = 0;
-	ulong bases = 0;
-	byte flags = 0;
-	byte *dp;
-	int code;
+    /*
+     * Get the device color type index and the required size.
+     *
+     * The complete cmd_opv_ext_put_drawing_color consists of:
+     *  comand code (2 bytes)
+     *  device color type index (1)
+     *  length of serialized device color (enc_u_sizew(dc_size))
+     *  the serialized device color itself (dc_size)
+     */
+    di = gx_get_dc_type_index(pdcolor); 
+    code = pdcolor->type->write( pdcolor,
+                                 psdc,
+                                 (gx_device *)cldev,
+                                 0,
+                                 &dc_size );
 
-	pcls->colors_used.or |=
-	    colored_halftone_colors_used(cldev, pdcolor);
-	/****** HOW TO TELL IF COLOR IS ALREADY SET? ******/
-	if (pdht->id != cldev->device_halftone_id) {
-	    int code = cmd_put_halftone(cldev, pdht, pdht->type);
+    /* if the returned value is > 0, no change in the color is necessary */
+    if (code > 0)
+        return 0;
+    else if (code < 0 && code != gs_error_rangecheck)
+        return code;
+    req_size = dc_size + 2 + 1 + enc_u_sizew(dc_size);
 
-	    if (code < 0)
-		return code;
-	    cldev->device_halftone_id = pdht->id;
-	}
-	for (i = 0; i < num_comp; ++i) {
-	    uint base = pdcolor->colors.colored.c_base[i];
-
-	    if (base > 31)
-		return_error(gs_error_rangecheck);
-	    bases |= base << ((3 - i) * 5);
-	    short_bases |= base << (3 - i);
-	    if (pdcolor->colors.colored.c_level[i])
-		flags |= 0x80 >> i;
-	}
-	if (bases & 0xf7bde) {
-	    /* Some base value requires more than 1 bit. */
-	    cmd = cmd_opv_set_color;
-	    *bp++ = flags | (byte)(bases >> 16);
-	    *bp++ = (byte) (bases >> 8);
-	    *bp++ = (byte) bases;
-	} else {
-	    /* The bases all fit in 1 bit each. */
-	    cmd = cmd_opv_set_color_short;
-	    *bp++ = flags | (byte)short_bases;
-	}
-	for (i = 0; i < num_comp; ++i)
-	    if (flags & (0x80 >> i))
-		bp = cmd_put_w((uint)pdcolor->colors.colored.c_level[i], bp);
-	/****** IGNORE alpha ******/
-	code = set_cmd_put_op(dp, cldev, pcls, cmd, bp - buf + 1);
-	if (code < 0)
-	    return code;
-	memcpy(dp + 1, buf, bp - buf);
-	type = cmd_dc_type_color;
-    } else
-	return_error(-1);	/* the color type was not known - unknown error */
-    /* Any non-pure color will require the phase. */
-    {
-	int px = pdcolor->phase.x, py = pdcolor->phase.y;
-
-	if (px != pcls->tile_phase.x || py != pcls->tile_phase.y) {
-	    int code = cmd_set_tile_phase(cldev, pcls, px, py);
-
-	    if (code < 0)
-		return code;
-	}
+    /*
+     * Encoded device colors are small in comparison to the command
+     * buffer size (< 64 bytes), so we can just clear space in the
+     * command buffer for them.
+     */
+    if ((code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_extend, req_size)) < 0)
+        return code;
+    dp0 = dp;
+    dp[1] = cmd_opv_ext_put_drawing_color;
+    dp += 2;
+    *dp++ = di;
+    enc_u_putw(dc_size, dp);
+    code = pdcolor->type->write( pdcolor,
+                                 &pcls->sdc,
+                                 (gx_device *)cldev,
+                                 dp,
+                                 &dc_size );
+    if (code < 0) {
+        cldev->cnext = dp0;
+        return code;
     }
-    return type;
+
+    /* should properly calculate colors_used, but for now just punt */
+    pcls->colors_used.or = ((gx_color_index)1 << cldev->color_info.depth) - 1;
+
+    /* record the color we have just serialized color */
+    pdcolor->type->save_dc(pdcolor, &pcls->sdc);
+
+    return code;
 }
 
 /* Compute the colors used by a drawing color. */
@@ -277,6 +248,12 @@ cmd_check_fill_known(gx_device_clist_writer *cdev, const gs_imager_state *pis,
 	*punknown |= flatness_known;
 	cdev->imager_state.flatness = flatness;
     }
+    /*
+     * Note: overprint and overprint_mode are implemented via a compositor
+     * device, which is passed separately through the command list. Hence,
+     * though both parameters are passed in the state as well, this usually
+     * has no effect.
+     */
     if (state_neq(overprint) || state_neq(overprint_mode) ||
 	state_neq(blend_mode) || state_neq(text_knockout)
 	) {
@@ -457,7 +434,7 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		code = cmd_put_path(cldev, pcls, &pcpath->path,
 				    int2fixed(ymin - 1),
 				    int2fixed(ymax + 1),
-				    (pcpath->rule == gx_rule_even_odd ?
+				    (byte)(pcpath->rule == gx_rule_even_odd ?
 				     cmd_opv_eofill : cmd_opv_fill),
 				    true, sn_not_first);
 	    } else {
@@ -621,7 +598,7 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	code = cmd_put_path(cdev, pcls, ppath,
 			    int2fixed(max(y - 1, y0)),
 			    int2fixed(min(y + height + 1, y1)),
-			    op + code,	/* cmd_dc_type */
+			    op,
 			    true, sn_none /* fill doesn't need the notes */ );
 	if (code < 0)
 	    return code;
@@ -767,7 +744,7 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 		ymax = max_fixed;
 	    }
 	    code = cmd_put_path(cdev, pcls, ppath, ymin, ymax,
-				cmd_opv_stroke + code,	/* cmd_dc_type */
+				cmd_opv_stroke,
 				false, (segment_notes)~0);
 	    if (code < 0)
 		return code;
@@ -821,7 +798,7 @@ clist_put_polyfill(gx_device *dev, fixed px, fixed py,
 	code = cmd_put_path(cdev, pcls, &path,
 			    int2fixed(max(y - 1, y0)),
 			    int2fixed(min(y + height + 1, y1)),
-			    cmd_opv_polyfill + code,
+			    cmd_opv_polyfill,
 			    true, sn_none /* fill doesn't need the notes */ );
 	if (code < 0)
 	    goto out;
@@ -1247,14 +1224,16 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		 * subpath was skipped.
 		 */
 		if (implicit_close || open <= 0) {
-		    open = 0;
 		    /*
 		     * Force writing an explicit moveto if the next subpath
 		     * starts with a moveto to the same point where this one
 		     * ends.
 		     */
 		    set_first_point();
-		    continue;
+		    if (side != 0) {
+			open = 0;
+			continue;
+		    }
 		}
 		open = 0;
 		px = first.x, py = first.y;

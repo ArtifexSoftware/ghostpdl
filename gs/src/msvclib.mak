@@ -37,14 +37,14 @@ GSROOTDIR=$(AROOTDIR)/gs$(GS_DOT_VERSION)
 GS_DOCDIR=$(GSROOTDIR)/doc
 !endif
 
-# Define the default directory/ies for the runtime initialization and
+# Define the default directory/ies for the runtime initialization, resource and
 # font files.  Separate multiple directories with ';'.
 # Use / to indicate directories, not \.
 # MSVC will not allow \'s here because it sees '\;' CPP-style as an
 # illegal escape.
 
 !ifndef GS_LIB_DEFAULT
-GS_LIB_DEFAULT=$(GSROOTDIR)/lib;$(AROOTDIR)/fonts
+GS_LIB_DEFAULT=$(GSROOTDIR)/lib;$(GSROOTDIR)/Resource;$(AROOTDIR)/fonts
 !endif
 
 # Define whether or not searching for initialization files should always
@@ -136,7 +136,7 @@ JVERSION=6
 
 !ifndef PSRCDIR
 PSRCDIR=libpng
-PVERSION=10012
+PVERSION=10204
 !endif
 
 # Define the directory where the zlib sources are stored.
@@ -144,6 +144,13 @@ PVERSION=10012
 
 !ifndef ZSRCDIR
 ZSRCDIR=zlib
+!endif
+
+# Define the jbig2dec library source location.
+# See jbig2.mak for more information.
+
+!ifndef JBIG2SRCDIR
+JBIG2SRCDIR=jbig2dec
 !endif
 
 # Define the directory where the icclib source are stored.
@@ -161,10 +168,10 @@ CFLAGS=
 
 # ------ Platform-specific options ------ #
 
-# Define which major version of MSVC is being used (currently, 4 & 5 supported)
+# Define which major version of MSVC is being used (currently, 4, 5 & 6 supported)
 
 !ifndef MSVC_VERSION
-MSVC_VERSION = 5
+MSVC_VERSION = 6
 !endif
 
 # Define the drive, directory, and compiler name for the Microsoft C files.
@@ -361,7 +368,7 @@ SYNC=winsync
 # Choose the language feature(s) to include.  See gs.mak for details.
 
 !ifndef FEATURE_DEVS
-FEATURE_DEVS=$(GLD)psl3lib.dev $(GLD)path1lib.dev $(GLD)dps2lib.dev $(GLD)psl2cs.dev $(GLD)cielib.dev $(GLD)imasklib.dev $(GLD)patlib.dev $(GLD)htxlib.dev $(GLD)roplib.dev $(GLD)bbox.dev $(GLD)pipe.dev
+FEATURE_DEVS=$(GLD)psl3lib.dev $(GLD)path1lib.dev $(GLD)dps2lib.dev $(GLD)psl2cs.dev $(GLD)cielib.dev $(GLD)imasklib.dev $(GLD)patlib.dev $(GLD)htxlib.dev $(GLD)roplib.dev $(GLD)devcmap.dev $(GLD)bbox.dev $(GLD)pipe.dev
 !endif
 
 # Choose whether to compile the .ps initialization files into the executable.

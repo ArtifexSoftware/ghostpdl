@@ -12,6 +12,7 @@
 
 /*$RCSfile$ $Revision$ */
 /* Image handling for PDF-writing driver */
+#include "memory_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsdevice.h"
@@ -23,6 +24,8 @@
 #include "gximage3.h"
 #include "gximag3x.h"
 #include "gsiparm4.h"
+#include "gxdcolor.h"
+#include "gxpcolor.h"
 
 /* Forward references */
 private image_enum_proc_plane_data(pdf_image_plane_data);
@@ -78,130 +81,118 @@ private RELOC_PTRS_WITH(pdf_image_enum_reloc_ptrs, pdf_image_enum *pie)
 RELOC_PTRS_END
 
 /*
- * Test whether we can write an image in-line.  Before PDF 1.2, this is only
- * allowed for masks, images in built-in color spaces, and images in Indexed
- * color spaces based on these with a string lookup table.
+ * Test whether we can write an image in-line.  This is always true,
+ * because we only support PDF 1.2 and later.
  */
 private bool
 can_write_image_in_line(const gx_device_pdf *pdev, const gs_image_t *pim)
 {
-    const gs_color_space *pcs;
-
-    if (pim->ImageMask)
-	return true;
-    if (pdev->CompatibilityLevel >= 1.2)
-	return true;
-    pcs = pim->ColorSpace;
- cs:
-    switch (gs_color_space_get_index(pcs)) {
-    case gs_color_space_index_DeviceGray:
-    case gs_color_space_index_DeviceRGB:
-    case gs_color_space_index_DeviceCMYK:
-	return true;
-    case gs_color_space_index_Indexed:
-	if (pcs->params.indexed.use_proc)
-	    return false;
-	pcs = (const gs_color_space *)&pcs->params.indexed.base_space;
-	goto cs;
-    default:
-	return false;
-    }
+    return true;
 }
 
 /*
  * Convert a Type 4 image to a Type 1 masked image if possible.
+ * Type 1 masked images are more compact, and are supported in all PDF
+ * versions, whereas general masked images require PDF 1.3 or higher.
+ * Also, Acrobat 5 for Windows has a bug that causes an error for images
+ * with a color-key mask, at least for 1-bit-deep images using an Indexed
+ * color space.
  */
 private int
 color_is_black_or_white(gx_device *dev, const gx_drawing_color *pdcolor)
 {
     return (!color_is_pure(pdcolor) ? -1 :
-          gx_dc_pure_color(pdcolor) == gx_device_black(dev) ? 0 :
-          gx_dc_pure_color(pdcolor) == gx_device_white(dev) ? 1 : -1);
+	    gx_dc_pure_color(pdcolor) == gx_device_black(dev) ? 0 :
+	    gx_dc_pure_color(pdcolor) == gx_device_white(dev) ? 1 : -1);
 }
 private int
 pdf_convert_image4_to_image1(gx_device_pdf *pdev,
-                           const gs_imager_state *pis,
-                           const gx_drawing_color *pbcolor,
-                           const gs_image4_t *pim4, gs_image_t *pim1,
-                           gx_drawing_color *pdcolor)
+			     const gs_imager_state *pis,
+			     const gx_drawing_color *pbcolor,
+			     const gs_image4_t *pim4, gs_image_t *pim1,
+			     gx_drawing_color *pdcolor)
 {
     if (pim4->BitsPerComponent == 1 &&
-      (pim4->MaskColor_is_range ?
-       pim4->MaskColor[0] | pim4->MaskColor[1] :
-       pim4->MaskColor[0]) <= 1
-      ) {
-      gx_device *const dev = (gx_device *)pdev;
-      const gs_color_space *pcs = pim4->ColorSpace;
-      bool write_1s = !pim4->MaskColor[0];
-      gs_client_color cc;
-      int code;
-      /*
-       * Prepare the drawing color.  (pdf_prepare_imagemask will set it.)
-       * This is the other color in the image (the one that isn't the
-       * mask key), taking Decode into account.
-       */
-      cc.paint.values[0] = pim4->Decode[(int)write_1s];
-      cc.pattern = 0;
-      code = pcs->type->remap_color(&cc, pcs, pdcolor, pis, dev,
-                                    gs_color_select_texture);
-      if (code < 0)
-          return code;
+	(pim4->MaskColor_is_range ?
+	 pim4->MaskColor[0] | pim4->MaskColor[1] :
+	 pim4->MaskColor[0]) <= 1
+	) {
+	gx_device *const dev = (gx_device *)pdev;
+	const gs_color_space *pcs = pim4->ColorSpace;
+	bool write_1s = !pim4->MaskColor[0];
+	gs_client_color cc;
+	int code;
 
-      /*
-       * The PDF imaging model doesn't support RasterOp.  We can convert a
-       * Type 4 image to a Type 1 imagemask only if the effective RasterOp
-       * passes through the source color unchanged.  "Effective" means we
-       * take into account CombineWithColor, and whether the source and/or
-       * texture are black, white, or neither.
-       */
-      {
-          gs_logical_operation_t lop = pis->log_op;
-          int black_or_white = color_is_black_or_white(dev, pdcolor);
+	/*
+	 * Prepare the drawing color.  (pdf_prepare_imagemask will set it.)
+	 * This is the other color in the image (the one that isn't the
+	 * mask key), taking Decode into account.
+	 */
 
-          switch (black_or_white) {
-          case 0: lop = lop_know_S_0(lop); break;
-          case 1: lop = lop_know_S_1(lop); break;
-          default: DO_NOTHING;
-          }
-          if (pim4->CombineWithColor)
-              switch (color_is_black_or_white(dev, pbcolor)) {
-              case 0: lop = lop_know_T_0(lop); break;
-              case 1: lop = lop_know_T_1(lop); break;
-              default: DO_NOTHING;
-              }
-          else
-              lop = lop_know_T_0(lop);
-          switch (lop_rop(lop)) {
-          case rop3_0:
-              if (black_or_white != 0)
-                  return -1;
-              break;
-          case rop3_1:
-              if (black_or_white != 1)
-                  return -1;
-              break;
-          case rop3_S:
-              break;
-          default:
-              return -1;
-          }
-          if ((lop & lop_S_transparent) && black_or_white == 1)
-              return -1;
-      }
-      /* All conditions are met.  Convert to a masked image. */
-      gs_image_t_init_mask_adjust(pim1, write_1s, false);
+	cc.paint.values[0] = pim4->Decode[(int)write_1s];
+	cc.pattern = 0;
+	code = pcs->type->remap_color(&cc, pcs, pdcolor, pis, dev,
+				      gs_color_select_texture);
+	if (code < 0)
+	    return code;
+
+	/*
+	 * The PDF imaging model doesn't support RasterOp.  We can convert a
+	 * Type 4 image to a Type 1 imagemask only if the effective RasterOp
+	 * passes through the source color unchanged.  "Effective" means we
+	 * take into account CombineWithColor, and whether the source and/or
+	 * texture are black, white, or neither.
+	 */
+	{
+	    gs_logical_operation_t lop = pis->log_op;
+	    int black_or_white = color_is_black_or_white(dev, pdcolor);
+
+	    switch (black_or_white) {
+	    case 0: lop = lop_know_S_0(lop); break;
+	    case 1: lop = lop_know_S_1(lop); break;
+	    default: DO_NOTHING;
+	    }
+	    if (pim4->CombineWithColor)
+		switch (color_is_black_or_white(dev, pbcolor)) {
+		case 0: lop = lop_know_T_0(lop); break;
+		case 1: lop = lop_know_T_1(lop); break;
+		default: DO_NOTHING;
+		}
+	    else
+		lop = lop_know_T_0(lop);
+	    switch (lop_rop(lop)) {
+	    case rop3_0:
+		if (black_or_white != 0)
+		    return -1;
+		break;
+	    case rop3_1:
+		if (black_or_white != 1)
+		    return -1;
+		break;
+	    case rop3_S:
+		break;
+	    default:
+		return -1;
+	    }
+	    if ((lop & lop_S_transparent) && black_or_white == 1)
+		return -1;
+	}
+
+	/* All conditions are met.  Convert to a masked image. */
+
+	gs_image_t_init_mask_adjust(pim1, write_1s, false);
 #define COPY_ELEMENT(e) pim1->e = pim4->e
-      COPY_ELEMENT(ImageMatrix);
-      COPY_ELEMENT(Width);
-      COPY_ELEMENT(Height);
-      pim1->BitsPerComponent = 1;
-      /* not Decode */
-      COPY_ELEMENT(Interpolate);
-      pim1->format = gs_image_format_chunky; /* BPC = 1, doesn't matter */
+	COPY_ELEMENT(ImageMatrix);
+	COPY_ELEMENT(Width);
+	COPY_ELEMENT(Height);
+	pim1->BitsPerComponent = 1;
+	/* not Decode */
+	COPY_ELEMENT(Interpolate);
+	pim1->format = gs_image_format_chunky; /* BPC = 1, doesn't matter */
 #undef COPY_ELEMENT
-      return 0;
+	return 0;
     }
-    return -1;                        /* arbitrary <0 */
+    return -1;			/* arbitrary <0 */
 }
 
 /*
@@ -223,8 +214,9 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 		      gx_image_enum_common_t ** pinfo,
 		      pdf_typed_image_context_t context)
 {
+    cos_dict_t *pnamed = 0;
     const gs_pixel_image_t *pim;
-    int code;
+    int code, i;
     pdf_image_enum *pie;
     gs_image_format_t format;
     const gs_color_space *pcs;
@@ -244,9 +236,22 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	gs_image3_t type3;
 	gs_image3x_t type3x;
 	gs_image4_t type4;
-    } image;
+    } image[2];
     ulong nbytes;
     int width, height;
+    const gs_range_t *pranges = 0;
+    int alt_writer_count;
+
+    /*
+     * Pop the image name from the NI stack.  We must do this, to keep the
+     * stack in sync, even if it turns out we can't handle the image.
+     */
+    {
+	cos_value_t ni_value;
+
+	if (cos_array_unadd(pdev->NI_stack, &ni_value) >= 0)
+	    pnamed = (cos_dict_t *)ni_value.contents.object;
+    }
 
     /* Check for the image types we can handle. */
     switch (pic->type->index) {
@@ -256,9 +261,20 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	if (pim1->Alpha != gs_image_alpha_none)
 	    goto nyi;
 	is_mask = pim1->ImageMask;
+	if (is_mask) {
+	    /* If parameters are invalid, use the default implementation. */
+#	    if PATTERN_STREAM_ACCUMULATION
+		if (pdcolor->type != &gx_dc_pattern)
+#	    endif
+	    if (pim1->BitsPerComponent != 1 ||
+		!((pim1->Decode[0] == 0.0 && pim1->Decode[1] == 1.0) ||
+		  (pim1->Decode[0] == 1.0 && pim1->Decode[1] == 0.0))
+		)
+		goto nyi;
+	}
 	in_line = context == PDF_IMAGE_DEFAULT &&
 	    can_write_image_in_line(pdev, pim1);
-	image.type1 = *pim1;
+	image[0].type1 = *pim1;
 	break;
     }
     case 3: {
@@ -295,24 +311,24 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 					pdf_image3x_make_mcde, pinfo);
     }
     case 4: {
-	/*
-	 * Regardless of PDF level, try to convert the image to a plain
-	 * masked image, since these are more compact.
-	 */
+	/* Try to convert the image to a plain masked image. */
 	gx_drawing_color icolor;
 
 	if (pdf_convert_image4_to_image1(pdev, pis, pdcolor,
 					 (const gs_image4_t *)pic,
-					 &image.type1, &icolor) >= 0) {
+					 &image[0].type1, &icolor) >= 0) {
+	    /* Undo the pop of the NI stack if necessary. */
+	    if (pnamed)
+		cos_array_add_object(pdev->NI_stack, COS_OBJECT(pnamed));
 	    return pdf_begin_typed_image(pdev, pis, pmat,
-					 (gs_image_common_t *)&image.type1,
+					 (gs_image_common_t *)&image[0].type1,
 					 prect, &icolor, pcpath, mem,
 					 pinfo, context);
 	}
-	/* No luck.  Masked images require PDF 1.3 or higher. */	
+	/* No luck.  Masked images require PDF 1.3 or higher. */
 	if (pdev->CompatibilityLevel < 1.3)
 	    goto nyi;
-	image.type4 = *(const gs_image4_t *)pic;
+	image[0].type4 = *(const gs_image4_t *)pic;
 	break;
     }
     default:
@@ -327,13 +343,21 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     default:
 	goto nyi;
     }
+    /* AR5 on Windows doesn't support 0-size images. Skipping. */
+    if (pim->Width == 0 || pim->Height == 0)
+	goto nyi;
+    /* PDF doesn't support images with more than 8 bits per component. */
+    if (pim->BitsPerComponent > 8)
+	goto nyi;
     pcs = pim->ColorSpace;
     num_components = (is_mask ? 1 : gs_color_space_num_components(pcs));
 
-    code = pdf_open_page(pdev, PDF_IN_STREAM);
+    if (pdf_must_put_clip_path(pdev, pcpath))
+	code = pdf_unclip(pdev);
+    else 
+	code = pdf_open_page(pdev, PDF_IN_STREAM);
     if (code < 0)
 	return code;
-    pdf_put_clip_path(pdev, pcpath);
     if (context == PDF_IMAGE_TYPE3_MASK) {
 	/*
 	 * The soft mask for an ImageType 3x image uses a DevicePixel
@@ -348,6 +372,9 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	code = pdf_prepare_image(pdev, pis);
     if (code < 0)
 	goto nyi;
+    code = pdf_put_clip_path(pdev, pcpath);
+    if (code < 0)
+	return code;
     if (prect)
 	rect = *prect;
     else {
@@ -358,6 +385,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 			  "pdf_begin_image");
     if (pie == 0)
 	return_error(gs_error_VMerror);
+    memset(pie, 0, sizeof(*pie)); /* cleanup entirely for GC to work in all cases. */
     *pinfo = (gx_image_enum_common_t *) pie;
     gx_image_enum_common_init(*pinfo, (const gs_data_image_t *) pim,
 			      (context == PDF_IMAGE_TYPE3_MASK ?
@@ -373,7 +401,8 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     pie->rows_left = height;
     nbytes = (((ulong) pie->width * pie->bits_per_pixel + 7) >> 3) *
 	pie->num_planes * pie->rows_left;
-    in_line &= nbytes <= MAX_INLINE_IMAGE_BYTES;
+    /* Don't in-line the image if it is named. */
+    in_line &= nbytes <= MAX_INLINE_IMAGE_BYTES && pnamed == 0;
     if (rect.p.x != 0 || rect.p.y != 0 ||
 	rect.q.x != pim->Width || rect.q.y != pim->Height ||
 	(is_mask && pim->CombineWithColor)
@@ -398,9 +427,18 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	    gs_free_object(mem, pie, "pdf_begin_image");
 	    return code;
 	}
+	/* AR3,AR4 show no image when CTM is singular; AR5 reports an error */
+	if (pie->mat.xx * pie->mat.yy == pie->mat.xy * pie->mat.yx) {
+	    gs_free_object(mem, pie, "pdf_begin_image");
+	    goto nyi;
+	}
     }
+    alt_writer_count = (in_line || 
+				    (pim->Width <= 64 && pim->Height <= 64) ||
+				    pdev->transfer_not_identity ? 1 : 2);
+    image[1] = image[0];
     if ((code = pdf_begin_write_image(pdev, &pie->writer, gs_no_id, width,
-				      height, NULL, in_line)) < 0 ||
+				      height, pnamed, in_line, alt_writer_count)) < 0 ||
 	/*
 	 * Some regrettable PostScript code (such as LanguageLevel 1 output
 	 * from Microsoft's PSCRIPT.DLL driver) misuses the transfer
@@ -410,30 +448,66 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	 * filters if the transfer function(s) is/are other than the
 	 * identity.
 	 */
-	(code = (pdev->transfer_not_identity ?
+	(code = (pie->writer.alt_writer_count == 1 ?
 		 psdf_setup_lossless_filters((gx_device_psdf *) pdev,
-					     &pie->writer.binary,
-					     &image.pixel) :
+					     &pie->writer.binary[0],
+					     &image[0].pixel) :
 		 psdf_setup_image_filters((gx_device_psdf *) pdev,
-					  &pie->writer.binary, &image.pixel,
-					  pmat, pis))) < 0 ||
+					  &pie->writer.binary[0], &image[0].pixel,
+					  pmat, pis, true))) < 0 ||
 	/* SRZB 2001-04-25/Bl
 	 * Since psdf_setup_image_filters may change the color space
 	 * (in case of pdev->params.ConvertCMYKImagesToRGB == true),
 	 * we postpone the selection of the PDF color space to here:
 	 */
 	(!is_mask &&
-	 pdf_color_space(pdev, &cs_value, image.pixel.ColorSpace,
-			 (in_line ? &pdf_color_space_names_short :
-			  &pdf_color_space_names), in_line) < 0) ||
-	(code = pdf_begin_image_data(pdev, &pie->writer,
-				     (const gs_pixel_image_t *)&image,
-				     &cs_value)) < 0
-	) {
-	/****** SHOULD FREE STRUCTURES AND CLEAN UP HERE ******/
-	return code;
+	 (code = pdf_color_space(pdev, &cs_value, &pranges,
+				 image[0].pixel.ColorSpace,
+				 (in_line ? &pdf_color_space_names_short :
+				  &pdf_color_space_names), in_line)) < 0)
+	)
+	goto fail;
+    if (pie->writer.alt_writer_count > 1) {
+        code = pdf_make_alt_stream(pdev, &pie->writer.binary[1]);
+        if (code)
+            goto fail;
+	code = psdf_setup_image_filters((gx_device_psdf *) pdev,
+				  &pie->writer.binary[1], &image[1].pixel,
+				  pmat, pis, false);
+        if (code)
+            goto fail;
+	pie->writer.alt_writer_count = 2;
+    }
+    for (i = 0; i < pie->writer.alt_writer_count; i++) {
+	if (pranges) {
+	    /* Rescale the Decode values for the image data. */
+	    const gs_range_t *pr = pranges;
+	    float *decode = image[i].pixel.Decode;
+	    int j;
+
+	    for (j = 0; j < num_components; ++j, ++pr, decode += 2) {
+		double vmin = decode[0], vmax = decode[1];
+		double base = pr->rmin, factor = pr->rmax - base;
+
+		decode[1] = (vmax - vmin) / factor + (vmin - base);
+		decode[0] = vmin - base;
+	    }
+	}
+        if ((code = pdf_begin_image_data(pdev, &pie->writer,
+				         (const gs_pixel_image_t *)&image[i],
+				         &cs_value, i)) < 0)
+  	    goto fail;
+    }
+    if (pie->writer.alt_writer_count == 2) {
+        psdf_setup_compression_chooser(&pie->writer.binary[2], 
+	     (gx_device_psdf *)pdev, pim->Width, pim->Height, 
+	     num_components, pim->BitsPerComponent);
+	pie->writer.alt_writer_count = 3;
     }
     return 0;
+ fail:
+    /****** SHOULD FREE STRUCTURES AND CLEAN UP HERE ******/
+    /* Fall back to the default implementation. */
  nyi:
     return gx_default_begin_typed_image
 	((gx_device *)pdev, pis, pmat, pic, prect, pdcolor, pcpath, mem,
@@ -456,11 +530,10 @@ gdev_pdf_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
 
 /* Process the next piece of an image. */
 private int
-pdf_image_plane_data(gx_image_enum_common_t * info,
+pdf_image_plane_data_alt(gx_image_enum_common_t * info,
 		     const gx_image_plane_t * planes, int height,
-		     int *rows_used)
+		     int *rows_used, int alt_writer_index)
 {
-    gx_device_pdf *pdev = (gx_device_pdf *)info->dev;
     pdf_image_enum *pie = (pdf_image_enum *) info;
     int h = height;
     int y;
@@ -470,14 +543,10 @@ pdf_image_plane_data(gx_image_enum_common_t * info,
     uint bcount = (width_bits + 7) >> 3;
     uint ignore;
     int nplanes = pie->num_planes;
-    stream *s = pdev->streams.strm;
-    long pos = stell(s);
-    int code;
     int status = 0;
 
     if (h > pie->rows_left)
 	h = pie->rows_left;
-    pie->rows_left -= h;
     for (y = 0; y < h; ++y) {
 	if (nplanes > 1) {
 	    /*
@@ -513,15 +582,15 @@ pdf_image_plane_data(gx_image_enum_common_t * info,
 		}
 		image_flip_planes(row, bit_planes, offset, flip_count,
 				  nplanes, pie->plane_depths[0]);
-		status = sputs(pie->writer.binary.strm, row, flipped_count,
-			       &ignore);
+		status = sputs(pie->writer.binary[alt_writer_index].strm, row, 
+			       flipped_count, &ignore);
 		if (status < 0)
 		    break;
 		offset += flip_count;
 		count -= flip_count;
 	    }
 	} else {
-	    status = sputs(pie->writer.binary.strm,
+	    status = sputs(pie->writer.binary[alt_writer_index].strm,
 			   planes[0].data + planes[0].raster * y, bcount,
 			   &ignore);
 	}
@@ -531,9 +600,26 @@ pdf_image_plane_data(gx_image_enum_common_t * info,
     *rows_used = h;
     if (status < 0)
 	return_error(gs_error_ioerror);
-    code = cos_stream_add_since(pie->writer.data, pos);
-    return (code < 0 ? code : !pie->rows_left);
+    return !pie->rows_left;
 #undef ROW_BYTES
+}
+
+private int
+pdf_image_plane_data(gx_image_enum_common_t * info,
+		     const gx_image_plane_t * planes, int height,
+		     int *rows_used)
+{
+    pdf_image_enum *pie = (pdf_image_enum *) info;
+    int i;
+    for (i = 0; i < pie->writer.alt_writer_count; i++) {
+        int code = pdf_image_plane_data_alt(info, planes, height, rows_used, i);
+        if (code)
+            return code;
+    }
+    pie->rows_left -= *rows_used;
+    if (pie->writer.alt_writer_count > 1)
+        pdf_choose_compression(&pie->writer, false);
+    return !pie->rows_left;
 }
 
 /* Clean up by releasing the buffers. */
@@ -549,23 +635,27 @@ pdf_image_end_image_data(gx_image_enum_common_t * info, bool draw_last,
 
     if (pie->writer.pres)
 	((pdf_x_object_t *)pie->writer.pres)->data_height = data_height;
-    else
-	pdf_put_image_matrix(pdev, &pie->mat,
-			     (height == 0 || data_height == 0 ? 1.0 :
-			      (double)data_height / height));
-    code = pdf_end_image_binary(pdev, &pie->writer, data_height);
-    if (code < 0)
-	return code;
-    code = pdf_end_write_image(pdev, &pie->writer);
-    switch (code) {
-    default:
-	return code;	/* error */
-    case 1:
-	code = 0;
-	break;
-    case 0:
-	if (do_image)
-	    code = pdf_do_image(pdev, pie->writer.pres, &pie->mat, true);
+    else if (data_height > 0)
+	pdf_put_image_matrix(pdev, &pie->mat, (double)data_height / height);
+    if (data_height > 0) {
+	code = pdf_complete_image_data(pdev, &pie->writer, data_height,
+			pie->width, pie->bits_per_pixel);
+	if (code < 0)
+	    return code;
+	code = pdf_end_image_binary(pdev, &pie->writer, data_height);
+	if (code < 0)
+ 	    return code;
+	code = pdf_end_write_image(pdev, &pie->writer);
+	switch (code) {
+	default:
+	    return code;	/* error */
+	case 1:
+	    code = 0;
+	    break;
+	case 0:
+	    if (do_image)
+		code = pdf_do_image(pdev, pie->writer.pres, &pie->mat, true);
+	}
     }
     gs_free_object(pie->memory, pie, "pdf_end_image");
     return code;
@@ -759,3 +849,52 @@ pdf_image3x_make_mcde(gx_device *dev, const gs_imager_state *pis,
     return cos_dict_put_c_key_object(cos_stream_dict(pmcs), "/SMask",
 				     pmie->writer.pres->object);
 }
+
+/*
+   The pattern management device method.
+   See gxdevcli.h about return codes.
+ */
+int
+gdev_pdf_pattern_manage(gx_device *pdev1, gx_bitmap_id id,
+		gs_pattern1_instance_t *pinst, pattern_manage_t function)
+{   
+#   if !PATTERN_STREAM_ACCUMULATION
+	return 0;
+#   else
+	gx_device_pdf *pdev = (gx_device_pdf *)pdev1;
+	int code;
+	pdf_resource_t *pres;
+
+	switch (function) {
+	    case pattern_manage__can_accum:
+		return 1;
+	    case pattern_manage__start_accum:
+		code = pdf_enter_substream(pdev, resourcePattern, id, &pres);
+		if (code < 0)
+		    return code;
+		pres->rid = id;
+		code = pdf_store_pattern1_params(pdev, pres, pinst);
+		if (code < 0)
+		    return code;
+		return 1;
+	    case pattern_manage__finish_accum:
+		code = pdf_add_procsets(pdev->substream_Resources, pdev->procsets);
+		if (code < 0)
+		    return code;
+		code = pdf_exit_substream(pdev);
+		if (code < 0)
+		    return code;
+		return 1;
+	    case pattern_manage__load:
+		pres = pdf_find_resource_by_gs_id(pdev, resourcePattern, id);
+		if (pres == 0)
+		    return gs_error_undefined;
+		code = pdf_add_resource(pdev, pdev->substream_Resources, "/Pattern", pres);
+		if (code < 0)
+		    return code;
+		return 1;
+	}
+	return_error(gs_error_unregistered);
+#   endif
+}
+

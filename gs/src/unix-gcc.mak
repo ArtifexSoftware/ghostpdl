@@ -67,9 +67,9 @@ exdir=$(gsdatadir)/examples
 GS_DOCDIR=$(docdir)
 
 # Define the default directory/ies for the runtime
-# initialization and font files.  Separate multiple directories with a :.
+# initialization, resource and font files.  Separate multiple directories with a :.
 
-GS_LIB_DEFAULT=$(gsdatadir)/lib:$(gsdir)/fonts
+GS_LIB_DEFAULT=$(gsdatadir)/lib:$(gsdatadir)/Resource:$(gsdir)/fonts
 
 # Define whether or not searching for initialization files should always
 # look in the current directory first.  This leads to well-known security
@@ -135,15 +135,11 @@ PGRELDIR=../pgobj
 JSRCDIR=jpeg
 JVERSION=6
 
-# Choose whether to use a shared version of the IJG JPEG library (-ljpeg).
-# DON'T DO THIS. If you do, the resulting executable will not be able to
-# read some PostScript files containing JPEG data, because Adobe chose to
-# define PostScript's JPEG capabilities in a way that is slightly
-# incompatible with the JPEG standard.  Note also that if you set SHARE_JPEG
-# to 1, you must still have the library header files available to compile
-# Ghostscript.  See doc/Make.htm for more information.
+# Note: if a shared library is used, it may not contain the
+# D_MAX_BLOCKS_IN_MCU patch, and thus may not be able to read
+# some older JPEG streams that violate the standard. If the JPEG
+# library built from local sources, the patch will be applied.
 
-# DON'T SET THIS TO 1!  See the comment just above.
 SHARE_JPEG=0
 JPEG_NAME=jpeg
 
@@ -153,7 +149,7 @@ JPEG_NAME=jpeg
 # See libpng.mak for more information.
 
 PSRCDIR=libpng
-PVERSION=10012
+PVERSION=10205
 
 # Choose whether to use a shared version of the PNG library, and if so,
 # what its name is.
@@ -175,10 +171,21 @@ SHARE_ZLIB=0
 #ZLIB_NAME=gz
 ZLIB_NAME=z
 
+# Choose shared or compiled in libjbig2dec and source location
+SHARE_JBIG2=0
+JBIG2SRCDIR=jbig2dec
+
 # Define the directory where the icclib source are stored.
 # See icclib.mak for more information
 
 ICCSRCDIR=icclib
+
+# Define the directory where the ijs source is stored,
+# and the process forking method to use for the server.
+# See ijs.mak for more information.
+
+IJSSRCDIR=ijs
+IJSEXECTYPE=unix
 
 # Define how to build the library archives.  (These are not used in any
 # standard configuration.)
@@ -209,7 +216,7 @@ GCFLAGS=-Wall -Wstrict-prototypes -Wmissing-declarations -Wmissing-prototypes -f
 # and shared object builds.
 
 CFLAGS_STANDARD=-O2
-CFLAGS_DEBUG=-g -O
+CFLAGS_DEBUG=-g -O0
 CFLAGS_PROFILE=-pg -O2
 CFLAGS_SO=-fPIC
 
@@ -237,7 +244,7 @@ CFLAGS=$(CFLAGS_STANDARD) $(GCFLAGS) $(XCFLAGS)
 # XLDFLAGS can be set from the command line.
 XLDFLAGS=
 
-LDFLAGS=$(XLDFLAGS) -fno-common
+LDFLAGS=$(XLDFLAGS)
 
 # Define any extra libraries to link into the executable.
 # ISC Unix 2.2 wants -linet.
@@ -312,7 +319,7 @@ SYNC=nosync
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(GLD)pipe.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(GLD)pipe.dev $(PSD)fapi.dev
 #FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev
 #FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)rasterop.dev $(GLD)pipe.dev
 # The following is strictly for testing.
@@ -343,7 +350,7 @@ FILE_IMPLEMENTATION=stdio
 # Choose the implementation of stdio: '' for file I/O and 'c' for callouts
 # See gs.mak and ziodevs.c/ziodevsc.c for more details.
 
-STDIO_IMPLEMENTATION= 
+STDIO_IMPLEMENTATION=c
 
 # Override the default device.  This is set to 'display' by 
 # unix-dll.mak when building a shared object.
@@ -380,11 +387,11 @@ DEVICE_DEVS=$(DISPLAY_DEV) $(DD)x11.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev $(DD)
 #DEVICE_DEVS19=
 #DEVICE_DEVS20=
 
-DEVICE_DEVS1=$(DD)bmpmono.dev $(DD)bmpgray.dev $(DD)bmpsep1.dev $(DD)bmpsep8.dev $(DD)bmp16.dev $(DD)bmp256.dev $(DD)bmp16m.dev $(DD)bmp32b.dev
-DEVICE_DEVS2=
+DEVICE_DEVS1=$(DD)bmpmono.dev $(DD)bmpgray.dev $(DD)bmpsep1.dev $(DD)bmpsep8.dev $(DD)bmp16.dev $(DD)bmp256.dev $(DD)bmp16m.dev $(DD)bmp32b.dev $(DD)stcolor.dev
+DEVICE_DEVS2=$(DD)epson.dev $(DD)eps9high.dev $(DD)eps9mid.dev $(DD)epsonc.dev $(DD)ibmpro.dev
 DEVICE_DEVS3=$(DD)deskjet.dev $(DD)djet500.dev $(DD)laserjet.dev $(DD)ljetplus.dev $(DD)ljet2p.dev $(DD)ljet3.dev $(DD)ljet3d.dev $(DD)ljet4.dev $(DD)ljet4d.dev $(DD)lj5mono.dev $(DD)lj5gray.dev
 DEVICE_DEVS4=$(DD)cdeskjet.dev $(DD)cdjcolor.dev $(DD)cdjmono.dev $(DD)cdj550.dev $(DD)pj.dev $(DD)pjxl.dev $(DD)pjxl300.dev
-DEVICE_DEVS5=$(DD)uniprint.dev
+DEVICE_DEVS5=$(DD)uniprint.dev $(DD)ijs.dev
 DEVICE_DEVS6=$(DD)bj10e.dev $(DD)bj200.dev $(DD)bjc600.dev $(DD)bjc800.dev
 DEVICE_DEVS7=$(DD)faxg3.dev $(DD)faxg32d.dev $(DD)faxg4.dev
 DEVICE_DEVS8=$(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcx16.dev $(DD)pcx256.dev $(DD)pcx24b.dev $(DD)pcxcmyk.dev
@@ -392,15 +399,16 @@ DEVICE_DEVS9=$(DD)pbm.dev $(DD)pbmraw.dev $(DD)pgm.dev $(DD)pgmraw.dev $(DD)pgnm
 DEVICE_DEVS10=$(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev $(DD)tifflzw.dev $(DD)tiffpack.dev
 DEVICE_DEVS11=$(DD)tiff12nc.dev $(DD)tiff24nc.dev
 DEVICE_DEVS12=$(DD)psmono.dev $(DD)psgray.dev $(DD)psrgb.dev $(DD)bit.dev $(DD)bitrgb.dev $(DD)bitcmyk.dev
-DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev
+DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev $(DD)pngalpha.dev
 DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev
 DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)epswrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev
+DEVICE_DEVS16=$(DD)bbox.dev
 
-DEVICE_DEVS16=
 DEVICE_DEVS17=
 DEVICE_DEVS18=
 DEVICE_DEVS19=
 DEVICE_DEVS20=$(DD)cljet5.dev $(DD)cljet5c.dev
+DEVICE_DEVS21=$(DD)spotcmyk.dev $(DD)devicen.dev $(DD)xcf.dev $(DD)bmpsep1.dev $(DD)bmpsep8.dev $(DD)bmp16m.dev $(DD)bmp32b.dev $(DD)psdcmyk.dev $(DD)psdrgb.dev
 
 # ---------------------------- End of options --------------------------- #
 
@@ -410,15 +418,15 @@ DEVICE_DEVS20=$(DD)cljet5.dev $(DD)cljet5c.dev
 MAKEFILE=$(GLSRCDIR)/unix-gcc.mak
 TOP_MAKEFILES=$(MAKEFILE) $(GLSRCDIR)/unixhead.mak
 
-# Define the ANSI-to-K&R dependency.  There isn't one, but we do have to
-# detect whether we're running a version of gcc with the const optimization
-# bug.
+# Define the auxiliary programs dependency. There aren't any, but we use
+# this as a hook to detect whether we're running a version of gcc with
+# the const optimization bug.
 
 AK=$(GLGENDIR)/cc.tr
 
 # Define the compilation rules and flags.
 
-CCFLAGS=$(GENOPT) $(CAPOPT) $(CFLAGS)
+CCFLAGS=$(GENOPT) $(CAPOPT) $(CFLAGS) -DGX_COLOR_INDEX_TYPE='unsigned long long'
 CC_=$(CC) `cat $(AK)` $(CCFLAGS)
 CCAUX=$(CC) `cat $(AK)`
 CC_LEAF=$(CC_) -fomit-frame-pointer
@@ -439,7 +447,9 @@ include $(GLSRCDIR)/jpeg.mak
 # zlib.mak must precede libpng.mak
 include $(GLSRCDIR)/zlib.mak
 include $(GLSRCDIR)/libpng.mak
+include $(GLSRCDIR)/jbig2.mak
 include $(GLSRCDIR)/icclib.mak
+include $(GLSRCDIR)/ijs.mak
 include $(GLSRCDIR)/devs.mak
 include $(GLSRCDIR)/contrib.mak
 include $(GLSRCDIR)/unix-aux.mak
@@ -451,3 +461,14 @@ include $(GLSRCDIR)/unixinst.mak
 # This has to come last so it won't be taken as the default target.
 $(AK):
 	if ( $(CC) --version | egrep "^2\.7\.([01]|2(\.[^1-9]|$$))" >/dev/null ); then echo -Dconst= >$(AK); else echo -Wcast-qual -Wwrite-strings >$(AK); fi
+
+# platform-specific clean-up
+# this makefile is intended to be hand edited so we don't distribute
+# the (presumedly modified) version in the top level directory
+distclean : clean config-clean
+	-$(RM) Makefile
+
+maintainer-clean : disclean
+	# nothing special to do
+
+

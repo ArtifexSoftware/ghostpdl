@@ -37,27 +37,27 @@
 private_st_device_X();
 
 /* Forward references */
-private int x_copy_image(P8(gx_device_X * xdev, const byte * base, int sourcex,
-			    int raster, int x, int y, int w, int h));
-private int set_tile(P2(gx_device *, const gx_strip_bitmap *));
-private void free_cp(P1(gx_device *));
+private int x_copy_image(gx_device_X * xdev, const byte * base, int sourcex,
+			 int raster, int x, int y, int w, int h);
+private int set_tile(gx_device *, const gx_strip_bitmap *);
+private void free_cp(gx_device *);
 
 /* Screen updating machinery */
-private void update_init(P1(gx_device_X *));
-private void update_do_flush(P1(gx_device_X *));
+private void update_init(gx_device_X *);
+private void update_do_flush(gx_device_X *);
 
 #define flush_text(xdev)\
   if (IN_TEXT(xdev)) do_flush_text(xdev)
-private void do_flush_text(P1(gx_device_X *));
+private void do_flush_text(gx_device_X *);
 
 /* Driver procedures */
 /* (External procedures are declared in gdevx.h.) */
-/*extern int gdev_x_open(P1(gx_device_X *));*/
+/*extern int gdev_x_open(gx_device_X *);*/
 private dev_proc_open_device(x_open);
 private dev_proc_get_initial_matrix(x_get_initial_matrix);
 private dev_proc_sync_output(x_sync);
 private dev_proc_output_page(x_output_page);
-/*extern int gdev_x_close(P1(gx_device_X *));*/
+/*extern int gdev_x_close(gx_device_X *);*/
 private dev_proc_close_device(x_close);
 /*extern dev_proc_map_rgb_color(gdev_x_map_rgb_color);*/
 /*extern dev_proc_map_color_rgb(gdev_x_map_color_rgb);*/
@@ -74,154 +74,167 @@ private dev_proc_get_bits_rectangle(x_get_bits_rectangle);
 /*extern dev_proc_get_xfont_procs(gdev_x_finish_copydevice);*/
 
 /* The device descriptor */
-const gx_device_X gs_x11_device = {
-    std_device_color_stype_body(gx_device_X, 0, "x11", &st_device_X,
-			  FAKE_RES * DEFAULT_WIDTH_10THS / 10,
-			  FAKE_RES * DEFAULT_HEIGHT_10THS / 10,	/* x and y extent (nominal) */
-			  FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
-			  /*dci_color( */ 24, 255, 256 /*) */ ),
-    {				/* std_procs */
-	x_open,
-	x_get_initial_matrix,
-	x_sync,
-	x_output_page,
-	x_close,
-	gdev_x_map_rgb_color,
-	gdev_x_map_color_rgb,
-	x_fill_rectangle,
-	NULL,			/* tile_rectangle */
-	x_copy_mono,
-	x_copy_color,
-	NULL,			/* draw_line */
-	NULL,			/* get_bits */
-	gdev_x_get_params,
-	gdev_x_put_params,
-	NULL,			/* map_cmyk_color */
-	gdev_x_get_xfont_procs,
-	NULL,			/* get_xfont_device */
-	NULL,			/* map_rgb_alpha_color */
-	x_get_page_device,
-	NULL,			/* get_alpha_bits */
-	NULL,			/* copy_alpha */
-	NULL,			/* get_band */
-	NULL,			/* copy_rop */
-	NULL,			/* fill_path */
-	NULL,			/* stroke_path */
-	NULL,			/* fill_mask */
-	NULL,			/* fill_trapezoid */
-	NULL,			/* fill_parallelogram */
-	NULL,			/* fill_triangle */
-	NULL,			/* draw_thin_line */
-	NULL,			/* begin_image */
-	NULL,			/* image_data */
-	NULL,			/* end_image */
-	x_strip_tile_rectangle,
-	NULL,			/* strip_copy_rop */
-	NULL,			/* get_clipping_box */
-	x_begin_typed_image,
-	x_get_bits_rectangle,
-	NULL,			/* map_color_rgb_alpha */
-	NULL,			/* create_compositor */
-	NULL,			/* get_hardware_params */
-	NULL,			/* text_begin */
-	gdev_x_finish_copydevice
-    },
-    gx_device_bbox_common_initial(0 /*false*/, 1 /*true*/, 1 /*true*/),
-    0 /*false*/,		/* is_buffered */
-    1 /*true*/,			/* IsPageDevice */
-    0,				/* MaxBitmap */
-    NULL,			/* buffer */
-    0,				/* buffer_size */
-    {				/* image */
-	0, 0,			/* width, height */
-	0, XYBitmap, NULL,	/* xoffset, format, data */
-	MSBFirst, 8,		/* byte-order, bitmap-unit */
-	MSBFirst, 8, 1,		/* bitmap-bit-order, bitmap-pad, depth */
-	0, 1,			/* bytes_per_line, bits_per_pixel */
-	0, 0, 0,		/* red_mask, green_mask, blue_mask */
-	NULL,			/* *obdata */
-	{NULL,			/* *(*create_image)() */
-	 NULL,			/* (*destroy_image)() */
-	 NULL,			/* (*get_pixel)() */
-	 NULL,			/* (*put_pixel)() */
-	 NULL,			/* *(*sub_image)() */
-	 NULL			/* (*add_pixel)() */
-	},
-    },
-    NULL, NULL,			/* dpy, scr */
-				/* (connection not initialized) */
-    NULL,			/* vinfo */
-    (Colormap) None,		/* cmap */
-    (Window) None,		/* win */
-    NULL,			/* gc */
-    (Window) None,		/* pwin */
-    (Pixmap) 0,			/* bpixmap */
-    0,				/* ghostview */
-    (Window) None,		/* mwin */
-    {identity_matrix_body},	/* initial matrix (filled in) */
-    (Atom) 0, (Atom) 0, (Atom) 0,	/* Atoms: NEXT, PAGE, DONE */
-    {				/* update */
-	{			/* box */
-	    {max_int_in_fixed, max_int_in_fixed},
-	    {min_int_in_fixed, min_int_in_fixed}
-	},
-	0,			/* area */
-	0,			/* total */
-	0			/* count */
-    },
-    (Pixmap) 0,			/* dest */
-    0L, (ulong)~0L,		/* colors_or, colors_and */
-    {				/* cp */
-	(Pixmap) 0,		/* pixmap */
-	NULL,			/* gc */
-	-1, -1			/* raster, height */
-    },
-    {				/* ht */
-	(Pixmap) None,		/* pixmap */
-	(Pixmap) None,		/* no_pixmap */
-	gx_no_bitmap_id,	/* id */
-	0, 0, 0,		/* width, height, raster */
-	0, 0			/* fore_c, back_c */
-    },
-    GXcopy,			/* function */
-    FillSolid,			/* fill_style */
-    0,				/* font */
-    0, 0,			/* back_color, fore_color */
-    0, 0,			/* background, foreground */
-    { 0 },			/* cman */
-    0, 0,			/* borderColor, borderWidth */
-    NULL,			/* geometry */
-    128, 5,			/* maxGrayRamp, maxRGBRamp */
-    NULL,			/* palette */
-    NULL, NULL, NULL,		/* regularFonts, symbolFonts, dingbatFonts */
-    NULL, NULL, NULL,		/* regular_fonts, symbol_fonts, dingbat_fonts */
-    1, 1,			/* useXFonts, useFontExtensions */
-    1, 0,			/* useScalableFonts, logXFonts */
-    0.0, 0.0,			/* xResolution, yResolution */
-    1,				/* useBackingPixmap */
-    1, 1,			/* useXPutImage, useXSetTile */
-
-    0 /*false*/,		/* AlwaysUpdate */
-    20000,			/* MaxTempPixmap */
-    5000,			/* MaxTempImage */
-    100000,			/* MaxBufferedTotal */
-    100000,			/* MaxBufferedArea */
-    max_int,			/* MaxBufferedCount */
-
-    {				/* text */
-	0,			/* item_count */
-	0,			/* char_count */
-	{0, 0},			/* origin */
-	0,			/* x */
-	{
-	    {0}},		/* items */
-	{0}			/* chars */
-    }
+#define x_device(this_device, dev_body, max_bitmap) \
+const gx_device_X this_device = { \
+    dev_body, \
+    {				/* std_procs */ \
+	x_open, \
+	x_get_initial_matrix, \
+	x_sync, \
+	x_output_page, \
+	x_close, \
+	gdev_x_map_rgb_color, \
+	gdev_x_map_color_rgb, \
+	x_fill_rectangle, \
+	NULL,			/* tile_rectangle */ \
+	x_copy_mono, \
+	x_copy_color, \
+	NULL,			/* draw_line */ \
+	NULL,			/* get_bits */ \
+	gdev_x_get_params, \
+	gdev_x_put_params, \
+	NULL,			/* map_cmyk_color */ \
+	gdev_x_get_xfont_procs, \
+	NULL,			/* get_xfont_device */ \
+	NULL,			/* map_rgb_alpha_color */ \
+	x_get_page_device, \
+	NULL,			/* get_alpha_bits */ \
+	NULL,			/* copy_alpha */ \
+	NULL,			/* get_band */ \
+	NULL,			/* copy_rop */ \
+	NULL,			/* fill_path */ \
+	NULL,			/* stroke_path */ \
+	NULL,			/* fill_mask */ \
+	NULL,			/* fill_trapezoid */ \
+	NULL,			/* fill_parallelogram */ \
+	NULL,			/* fill_triangle */ \
+	NULL,			/* draw_thin_line */ \
+	NULL,			/* begin_image */ \
+	NULL,			/* image_data */ \
+	NULL,			/* end_image */ \
+	x_strip_tile_rectangle, \
+	NULL,			/* strip_copy_rop */ \
+	NULL,			/* get_clipping_box */ \
+	x_begin_typed_image, \
+	x_get_bits_rectangle, \
+	NULL,			/* map_color_rgb_alpha */ \
+	NULL,			/* create_compositor */ \
+	NULL,			/* get_hardware_params */ \
+	NULL,			/* text_begin */ \
+	gdev_x_finish_copydevice \
+    }, \
+    gx_device_bbox_common_initial(0 /*false*/, 1 /*true*/, 1 /*true*/), \
+    0 /*false*/,		/* is_buffered */ \
+    1 /*true*/,			/* IsPageDevice */ \
+    max_bitmap,			/* MaxBitmap */ \
+    NULL,			/* buffer */ \
+    0,				/* buffer_size */ \
+    {				/* image */ \
+	0, 0,			/* width, height */ \
+	0, XYBitmap, NULL,	/* xoffset, format, data */ \
+	MSBFirst, 8,		/* byte-order, bitmap-unit */ \
+	MSBFirst, 8, 1,		/* bitmap-bit-order, bitmap-pad, depth */ \
+	0, 1,			/* bytes_per_line, bits_per_pixel */ \
+	0, 0, 0,		/* red_mask, green_mask, blue_mask */ \
+	NULL,			/* *obdata */ \
+	{NULL,			/* *(*create_image)() */ \
+	 NULL,			/* (*destroy_image)() */ \
+	 NULL,			/* (*get_pixel)() */ \
+	 NULL,			/* (*put_pixel)() */ \
+	 NULL,			/* *(*sub_image)() */ \
+	 NULL			/* (*add_pixel)() */ \
+	}, \
+    }, \
+    NULL, NULL,			/* dpy, scr */ \
+				/* (connection not initialized) */ \
+    NULL,			/* vinfo */ \
+    (Colormap) None,		/* cmap */ \
+    (Window) None,		/* win */ \
+    NULL,			/* gc */ \
+    (Window) None,		/* pwin */ \
+    (Pixmap) 0,			/* bpixmap */ \
+    0,				/* ghostview */ \
+    (Window) None,		/* mwin */ \
+    {identity_matrix_body},	/* initial matrix (filled in) */ \
+    (Atom) 0, (Atom) 0, (Atom) 0,	/* Atoms: NEXT, PAGE, DONE */ \
+    {				/* update */ \
+	{			/* box */ \
+	    {max_int_in_fixed, max_int_in_fixed}, \
+	    {min_int_in_fixed, min_int_in_fixed} \
+	}, \
+	0,			/* area */ \
+	0,			/* total */ \
+	0			/* count */ \
+    }, \
+    (Pixmap) 0,			/* dest */ \
+    0L, (ulong)~0L,		/* colors_or, colors_and */ \
+    {				/* cp */ \
+	(Pixmap) 0,		/* pixmap */ \
+	NULL,			/* gc */ \
+	-1, -1			/* raster, height */ \
+    }, \
+    {				/* ht */ \
+	(Pixmap) None,		/* pixmap */ \
+	(Pixmap) None,		/* no_pixmap */ \
+	gx_no_bitmap_id,	/* id */ \
+	0, 0, 0,		/* width, height, raster */ \
+	0, 0			/* fore_c, back_c */ \
+    }, \
+    GXcopy,			/* function */ \
+    FillSolid,			/* fill_style */ \
+    0,				/* font */ \
+    0, 0,			/* back_color, fore_color */ \
+    0, 0,			/* background, foreground */ \
+    { 0 },			/* cman */ \
+    0, 0,			/* borderColor, borderWidth */ \
+    NULL,			/* geometry */ \
+    128, 5,			/* maxGrayRamp, maxRGBRamp */ \
+    NULL,			/* palette */ \
+    NULL, NULL, NULL,		/* regularFonts, symbolFonts, dingbatFonts */ \
+    NULL, NULL, NULL,		/* regular_fonts, symbol_fonts, dingbat_fonts */ \
+    1, 1,			/* useXFonts, useFontExtensions */ \
+    1, 0,			/* useScalableFonts, logXFonts */ \
+    0.0, 0.0,			/* xResolution, yResolution */ \
+    1,				/* useBackingPixmap */ \
+    1, 1,			/* useXPutImage, useXSetTile */ \
+ \
+    0 /*false*/,		/* AlwaysUpdate */ \
+    20000,			/* MaxTempPixmap */ \
+    5000,			/* MaxTempImage */ \
+    100000,			/* MaxBufferedTotal */ \
+    100000,			/* MaxBufferedArea */ \
+    max_int,			/* MaxBufferedCount */ \
+ \
+    {				/* text */ \
+	0,			/* item_count */ \
+	0,			/* char_count */ \
+	{0, 0},			/* origin */ \
+	0,			/* x */ \
+	{ \
+	    {0}},		/* items */ \
+	{0}			/* chars */ \
+    } \
 };
 
+x_device(gs_x11_device,
+	 std_device_color_stype_body(gx_device_X, 0, "x11", &st_device_X,
+				     FAKE_RES * DEFAULT_WIDTH_10THS / 10,
+				     FAKE_RES * DEFAULT_HEIGHT_10THS / 10,	/* x and y extent (nominal) */
+				     FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
+				     24, 255, 256 ),
+	 0)
+
+x_device(gs_x11alpha_device,
+	 std_device_dci_alpha_type_body(gx_device_X, 0, "x11alpha", &st_device_X,
+					FAKE_RES * DEFAULT_WIDTH_10THS / 10,
+					FAKE_RES * DEFAULT_HEIGHT_10THS / 10,	/* x and y extent (nominal) */
+					FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
+					3, 24, 255, 255, 256, 256, 4, 4 ),
+	 50000000)
+
 /* If XPutImage doesn't work, do it ourselves. */
-private int alt_put_image(P11(gx_device * dev, Display * dpy, Drawable win,
-GC gc, XImage * pi, int sx, int sy, int dx, int dy, unsigned w, unsigned h));
+private int alt_put_image(gx_device * dev, Display * dpy, Drawable win,
+GC gc, XImage * pi, int sx, int sy, int dx, int dy, unsigned w, unsigned h);
 
 #define put_image(dpy,win,gc,im,sx,sy,x,y,w,h)\
   BEGIN\
@@ -330,9 +343,10 @@ x_output_page(gx_device * dev, int num_copies, int flush)
 /* Fill a rectangle with a color. */
 private int
 x_fill_rectangle(gx_device * dev,
-		 int x, int y, int w, int h, gx_color_index color)
+		 int x, int y, int w, int h, gx_color_index gscolor)
 {
     gx_device_X *xdev = (gx_device_X *) dev;
+    unsigned long color = (unsigned long) gscolor;
 
     fit_fill(dev, x, y, w, h);
     flush_text(xdev);
@@ -387,10 +401,12 @@ x_copy_mono(gx_device * dev,
 {
     gx_device_X *xdev = (gx_device_X *) dev;
     int function = GXcopy;
-
+    unsigned long
+	lzero = zero,
+	lone = one;
     x_pixel
-	bc = zero,
-	fc = one;
+	bc = lzero,
+	fc = lone;
 
     fit_copy(dev, base, sourcex, raster, id, x, y, w, h);
     flush_text(xdev);
@@ -437,9 +453,9 @@ x_copy_mono(gx_device * dev,
 	XSetForeground(xdev->dpy, xdev->gc, (xdev->fore_color = fc));
     }
     if (zero != gx_no_color_index)
-	NOTE_COLOR(xdev, zero);
+	NOTE_COLOR(xdev, lzero);
     if (one != gx_no_color_index)
-	NOTE_COLOR(xdev, one);
+	NOTE_COLOR(xdev, lone);
     put_image(xdev->dpy, xdev->dest, xdev->gc, &xdev->image,
 	      sourcex, 0, x, y, w, h);
 
@@ -474,11 +490,11 @@ x_copy_mono(gx_device * dev,
     if (one == gx_no_color_index) {	/* invert */
 	XSetBackground(xdev->dpy, xdev->cp.gc, (x_pixel) 1);
 	XSetForeground(xdev->dpy, xdev->cp.gc, (x_pixel) 0);
-	X_SET_FORE_COLOR(xdev, zero);
+	X_SET_FORE_COLOR(xdev, lzero);
     } else {
 	XSetBackground(xdev->dpy, xdev->cp.gc, (x_pixel) 0);
 	XSetForeground(xdev->dpy, xdev->cp.gc, (x_pixel) 1);
-	X_SET_FORE_COLOR(xdev, one);
+	X_SET_FORE_COLOR(xdev, lone);
     }
     put_image(xdev->dpy, xdev->cp.pixmap, xdev->cp.gc,
 	      &xdev->image, sourcex, 0, 0, 0, w, h);
@@ -554,7 +570,7 @@ x_copy_image(gx_device_X * xdev, const byte * base, int sourcex, int raster,
 	xdev->image.height = h;
 	xdev->image.format = ZPixmap;
 	xdev->image.data = (char *)base;
-	xdev->image.depth = depth;
+	xdev->image.depth = xdev->vinfo->depth;
 	xdev->image.bytes_per_line = raster;
 	xdev->image.bits_per_pixel = depth;
 	if (XInitImage(&xdev->image) == 0)
@@ -562,6 +578,10 @@ x_copy_image(gx_device_X * xdev, const byte * base, int sourcex, int raster,
 	XPutImage(xdev->dpy, xdev->dest, xdev->gc, &xdev->image,
 		  sourcex, 0, x, y, w, h);
 	xdev->image.depth = xdev->image.bits_per_pixel = 1;
+
+	/* give up on optimization */
+	xdev->colors_or = (x_pixel)(-1);
+	xdev->colors_and = 0;
     }
     return 0;
 }
@@ -599,6 +619,9 @@ x_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 		       int px, int py)
 {
     gx_device_X *xdev = (gx_device_X *) dev;
+    unsigned long lzero = (unsigned long) zero;
+    unsigned long lone = (unsigned long) one;
+
 
     /* Give up if one color is transparent, or if the tile is colored. */
     /* We should implement the latter someday, since X can handle it. */
@@ -631,7 +654,7 @@ x_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 	    for (i = x + w; --i >= x;) {
 		uint tx = i % tiles->rep_width;
 		byte mask = 0x80 >> (tx & 7);
-		x_pixel pixel = (ptr[tx >> 3] & mask ? one : zero);
+		x_pixel pixel = (ptr[tx >> 3] & mask ? lone : lzero);
 
 		X_SET_FORE_COLOR(xdev, pixel);
 		XDrawPoint(xdev->dpy, xdev->dest, xdev->gc, i, j);
@@ -650,11 +673,11 @@ x_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
      * bites when using grayscale -- you may want to change
      * fg/bg but use the same halftone screen.
      */
-    if ((zero != xdev->ht.back_c) || (one != xdev->ht.fore_c))
+    if ((lzero != xdev->ht.back_c) || (lone != xdev->ht.fore_c))
 	xdev->ht.id = ~tiles->id;	/* force reload */
 
-    X_SET_BACK_COLOR(xdev, zero);
-    X_SET_FORE_COLOR(xdev, one);
+    X_SET_BACK_COLOR(xdev, lzero);
+    X_SET_FORE_COLOR(xdev, lone);
     if (!set_tile(dev, tiles)) {	/* Bad news.  Fall back to the default algorithm. */
 	return gx_default_strip_tile_rectangle(dev, tiles, x, y, w, h,
 					       zero, one, px, py);
@@ -667,7 +690,7 @@ x_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 	x_update_add(xdev, x, y, w, h);
     }
     if_debug6('F', "[F] tile (%d,%d):(%d,%d) %ld,%ld\n",
-	      x, y, w, h, (long)zero, (long)one);
+	      x, y, w, h, lzero, lone);
     return 0;
 }
 

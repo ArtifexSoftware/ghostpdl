@@ -54,11 +54,10 @@ gs_make_mem_alpha_device(gx_device_memory * adev, gs_memory_t * mem,
 
 /* Reimplement color mapping. */
 private gx_color_index
-mem_alpha_map_rgb_color(gx_device * dev, gx_color_value r, gx_color_value g,
-			gx_color_value b)
+mem_alpha_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
-    gx_color_index color = gx_forward_map_rgb_color(dev, r, g, b);
+    gx_color_index color = gx_forward_map_rgb_color(dev, cv);
 
     return (color == 0 || color == gx_no_color_index ? color :
 	    (gx_color_index) ((1 << mdev->log2_alpha_bits) - 1));
@@ -77,7 +76,11 @@ mem_alpha_map_rgb_alpha_color(gx_device * dev, gx_color_value r,
 		   gx_color_value g, gx_color_value b, gx_color_value alpha)
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
-    gx_color_index color = gx_forward_map_rgb_color(dev, r, g, b);
+    gx_color_index color;
+    gx_color_value cv[3];
+
+    cv[0] = r; cv[1] = g; cv[2] = b;
+    color = gx_forward_map_rgb_color(dev, cv);
 
     return (color == 0 || color == gx_no_color_index ? color :
 	    (gx_color_index) (alpha >> (gx_color_value_bits -
@@ -143,7 +146,7 @@ private const gx_device_memory mem_alpha_buffer_device =
 mem_device("image(alpha buffer)", 0, 1,
 	   gx_forward_map_rgb_color, gx_forward_map_color_rgb,
 	 mem_abuf_copy_mono, gx_default_copy_color, mem_abuf_fill_rectangle,
-	   gx_default_strip_copy_rop);
+	   gx_no_strip_copy_rop);
 
 /* Make an alpha-buffer memory device. */
 /* We use abuf instead of alpha_buffer because */

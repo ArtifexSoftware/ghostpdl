@@ -226,7 +226,7 @@ typedef rop_params _ss *rop_ptr;
 /* Assembly language routines */
 
 #if USE_ASM
-void memsetcol(P1(rop_ptr));	/* dest, draster, height, data */
+void memsetcol(rop_ptr);	/* dest, draster, height, data */
 #else
 #define memsetcol cmemsetcol
 private void
@@ -246,7 +246,7 @@ cmemsetcol(rop_ptr rop)
 #endif
 
 #if USE_ASM
-void memsetrect(P1(rop_ptr));	/* dest, draster, width, height, data */
+void memsetrect(rop_ptr);	/* dest, draster, width, height, data */
 #else
 #define memsetrect cmemsetrect
 private void
@@ -287,7 +287,7 @@ cmemsetrect(rop_ptr rop)
 #endif
 
 #if USE_ASM
-void memrwcol(P1(rop_ptr));	/* dest, draster, src, sraster, height, shift, invert */
+void memrwcol(rop_ptr);	/* dest, draster, src, sraster, height, shift, invert */
 #  define memrwcol0(rop) memrwcol(rop)	/* same except shift = 0 */
 #else
 #  define memrwcol cmemrwcol
@@ -328,7 +328,7 @@ cmemrwcol0(rop_ptr rop)
 #endif
 
 #if USE_ASM
-void memrwcol2(P1(rop_ptr));	/* dest, draster, src, sraster, height, shift, invert */
+void memrwcol2(rop_ptr);	/* dest, draster, src, sraster, height, shift, invert */
 #else
 #define memrwcol2 cmemrwcol2
 private void
@@ -350,9 +350,9 @@ cmemrwcol2(rop_ptr rop)
 #endif
 
 /* Forward definitions */
-int ega_write_dot(P4(gx_device *, int, int, gx_color_index));
-private void fill_rectangle(P4(rop_ptr, int, int, int));
-private void fill_row_only(P4(byte *, int, int, int));
+int ega_write_dot(gx_device *, int, int, gx_color_index);
+private void fill_rectangle(rop_ptr, int, int, int);
+private void fill_row_only(byte *, int, int, int);
 
 /* Clean up after writing */
 #define dot_end()\

@@ -153,7 +153,8 @@ jpeg_get_params(gx_device * dev, gs_param_list * plist)
 	code = ecode;
     if ((ecode = param_write_float(plist, "ViewTransY", &jdev->ViewTrans.y)) < 0)
 	code = ecode;
-    if ((ecode = param_write_int(plist, "TrayOrientation", &jdev->TrayOrientation)) < 0)
+    /* NB fixme tray orientation broken */
+    if ((ecode = param_write_int(plist, "TrayOrientation", 0 /* &jdev->TrayOrientation */)) < 0)
         code = ecode;
 
 
@@ -254,7 +255,9 @@ jpeg_put_params(gx_device * dev, gs_param_list * plist)
             param_signal_error(plist, "TrayOrientation",
                                ecode = gs_error_rangecheck);
         else {
-	    jdev->TrayOrientation = t;
+            /* NB fixme tray orientation broken */
+            ;
+	    /* jdev->TrayOrientation = t; */
         }
     }
     code = gdev_prn_put_params(dev, plist);
@@ -307,8 +310,8 @@ jpeg_get_initial_matrix(gx_device *dev, gs_matrix *pmat)
     floatp ss_res = (dev->HWResolution[1] / 72.0) * pdev->ViewScale.y; 
 
     /* NB this device has no paper margins */
-
-    switch(pdev->TrayOrientation) {
+    /* NB fixme tray orientation broken */
+    switch(0) { /* (pdev->TrayOrientation) { */
     case 0:
         pmat->xx = fs_res;
         pmat->xy = 0;
@@ -416,8 +419,8 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
     }
     jcdp->cinfo.restart_interval = 0;
     jcdp->cinfo.density_unit = 1;	/* dots/inch (no #define or enum) */
-    jcdp->cinfo.X_density = pdev->HWResolution[0];
-    jcdp->cinfo.Y_density = pdev->HWResolution[1];
+    jcdp->cinfo.X_density = (UINT16)pdev->HWResolution[0];
+    jcdp->cinfo.Y_density = (UINT16)pdev->HWResolution[1];
     /* Create the filter. */
     /* Make sure we get at least a full scan line of input. */
     state.scan_line_size = jcdp->cinfo.input_components *

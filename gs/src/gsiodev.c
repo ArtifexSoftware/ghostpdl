@@ -102,18 +102,6 @@ gs_iodev_init(gs_memory_t * mem)
     return (code < 0 ? code : gs_note_error(gs_error_VMerror));
 }
 
-void
-gs_iodev_free(gs_memory_t * mem) 
-{
-    gx_io_device **table = io_device_table;
-    int i = 0;
-    for (i = 0; i < gx_io_device_table_count; ++i)
-	gs_free_object(mem, table[i], "gs_iodev_init(iodev)");
-    gs_free_object(mem, table, "gs_iodev_init(table)");
-    io_device_table = 0;
-}	
-
-
 /* ------ Default (unimplemented) IODevice procedures ------ */
 
 int

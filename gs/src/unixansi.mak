@@ -65,10 +65,10 @@ docdir=$(gsdatadir)/doc
 exdir=$(gsdatadir)/examples
 GS_DOCDIR=$(docdir)
 
-# Define the default directory/ies for the runtime initialization and
+# Define the default directory/ies for the runtime initialization, resource and
 # font files.  Separate multiple directories with a :.
 
-GS_LIB_DEFAULT=$(gsdatadir)/lib:$(gsdir)/fonts
+GS_LIB_DEFAULT=$(gsdatadir)/lib:$(gsdatadir)/Resource:$(gsdir)/fonts
 
 # Define whether or not searching for initialization files should always
 # look in the current directory first.  This leads to well-known security
@@ -125,15 +125,11 @@ PGRELDIR=../pgobj
 JSRCDIR=jpeg
 JVERSION=6
 
-# Choose whether to use a shared version of the IJG JPEG library (-ljpeg).
-# DON'T DO THIS. If you do, the resulting executable will not be able to
-# read some PostScript files containing JPEG data, because Adobe chose to
-# define PostScript's JPEG capabilities in a way that is slightly
-# incompatible with the JPEG standard.  Note also that if you set SHARE_JPEG
-# to 1, you must still have the library header files available to compile
-# Ghostscript.  See doc/Make.htm for more information.
+# Note: if a shared library is used, it may not contain the
+# D_MAX_BLOCKS_IN_MCU patch, and thus may not be able to read
+# some older JPEG streams that violate the standard. If the JPEG
+# library built from local sources, the patch will be applied.
 
-# DON'T SET THIS TO 1!  See the comment just above.
 SHARE_JPEG=0
 JPEG_NAME=jpeg
 
@@ -143,7 +139,7 @@ JPEG_NAME=jpeg
 # See libpng.mak for more information.
 
 PSRCDIR=libpng
-PVERSION=10012
+PVERSION=10204
 
 # Choose whether to use a shared version of the PNG library, and if so,
 # what its name is.
@@ -165,10 +161,21 @@ SHARE_ZLIB=0
 #ZLIB_NAME=gz
 ZLIB_NAME=z
 
+# Choose shared or compiled in libjbig2dec and source location
+SHARE_JBIG2=0
+JBIG2SRCDIR=jbig2dec
+
 # Define the directory where the icclib source are stored.
 # See icclib.mak for more information
 
 ICCSRCDIR=icclib
+
+# Define the directory where the ijs source is stored,
+# and the process forking method to use for the server.
+# See ijs.mak for more information.
+ 
+IJSSRCDIR=ijs
+IJSEXECTYPE=unix
 
 # Define how to build the library archives.  (These are not used in any
 # standard configuration.)
@@ -293,7 +300,7 @@ SYNC=nosync
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(GLD)pipe.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(GLD)pipe.dev $(PSD)fapi.dev
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
@@ -319,7 +326,7 @@ FILE_IMPLEMENTATION=stdio
 # Choose the implementation of stdio: '' for file I/O and 'c' for callouts
 # See gs.mak and ziodevs.c/ziodevsc.c for more details.
 
-STDIO_IMPLEMENTATION= 
+STDIO_IMPLEMENTATION=c
 
 # Choose the device(s) to include.  See devs.mak for details,
 # devs.mak and contrib.mak for the list of available devices.
@@ -337,12 +344,12 @@ DEVICE_DEVS9=$(DD)pbm.dev $(DD)pbmraw.dev $(DD)pgm.dev $(DD)pgmraw.dev $(DD)pgnm
 DEVICE_DEVS10=$(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev $(DD)tifflzw.dev $(DD)tiffpack.dev
 DEVICE_DEVS11=$(DD)tiff12nc.dev $(DD)tiff24nc.dev
 DEVICE_DEVS12=$(DD)psmono.dev $(DD)psgray.dev $(DD)psrgb.dev $(DD)bit.dev $(DD)bitrgb.dev $(DD)bitcmyk.dev
-DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev
+DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev $(DD)pngalpha.dev
 DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev
 DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)epswrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev
+DEVICE_DEVS16=$(DD)bbox.dev
 # Overflow from DEVS9
-DEVICE_DEVS16=$(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev $(DD)pkm.dev $(DD)pkmraw.dev $(DD)pksm.dev $(DD)pksmraw.dev
-DEVICE_DEVS17=
+DEVICE_DEVS17=$(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev $(DD)pkm.dev $(DD)pkmraw.dev $(DD)pksm.dev $(DD)pksmraw.dev
 DEVICE_DEVS18=
 DEVICE_DEVS19=
 DEVICE_DEVS20=
@@ -355,7 +362,7 @@ DEVICE_DEVS20=
 MAKEFILE=$(GLSRCDIR)/unixansi.mak
 TOP_MAKEFILES=$(MAKEFILE) $(GLSRCDIR)/unixhead.mak
 
-# Define the ANSI-to-K&R dependency (none for ANSI compilers).
+# Define the auxilary program dependency.
 
 AK=
 
@@ -379,10 +386,22 @@ include $(GLSRCDIR)/jpeg.mak
 # zlib.mak must precede libpng.mak
 include $(GLSRCDIR)/zlib.mak
 include $(GLSRCDIR)/libpng.mak
+include $(GLSRCDIR)/jbig2.mak
 include $(GLSRCDIR)/icclib.mak
+include $(GLSRCDIR)/ijs.mak
 include $(GLSRCDIR)/devs.mak
 include $(GLSRCDIR)/contrib.mak
 include $(GLSRCDIR)/unix-aux.mak
 include $(GLSRCDIR)/unixlink.mak
 include $(GLSRCDIR)/unix-end.mak
 include $(GLSRCDIR)/unixinst.mak
+
+# platform-specific clean-up  
+# this makefile is intended to be hand edited so we don't distribute
+# the (presumedly modified) version in the top level directory
+distclean : clean config-clean
+        -$(RM) Makefile
+
+maintainer-clean : disclean
+        # nothing special to do
+

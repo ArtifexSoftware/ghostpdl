@@ -24,11 +24,10 @@
 #include "gpcheck.h"
 #include "gsparam.h"
 #include "gdevpccm.h"
-#include "iapi.h"
 #include "gsdll.h"
 
 /* Forward references */
-private int win_set_bits_per_pixel(P2(gx_device_win *, int));
+private int win_set_bits_per_pixel(gx_device_win *, int);
 
 #define TIMER_ID 1
 
@@ -114,9 +113,11 @@ win_close(gx_device * dev)
 
 /* Map a r-g-b color to the colors available under Windows */
 gx_color_index
-win_map_rgb_color(gx_device * dev, gx_color_value r, gx_color_value g,
-		  gx_color_value b)
+win_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
+    gx_color_value r = cv[0];
+    gx_color_value g = cv[1];
+    gx_color_value b = cv[2];
     switch (wdev->BitsPerPixel) {
 	case 24:
 	    return (((unsigned long)b >> (gx_color_value_bits - 8)) << 16) +
@@ -215,9 +216,9 @@ win_map_rgb_color(gx_device * dev, gx_color_value r, gx_color_value g,
 	    if ((r == g) && (g == b) && (r >= gx_max_color_value / 3 * 2 - 1)
 		&& (r < gx_max_color_value / 4 * 3))
 		return ((gx_color_index) 8);	/* light gray */
-	    return pc_4bit_map_rgb_color(dev, r, g, b);
+	    return pc_4bit_map_rgb_color(dev, cv);
     }
-    return (gx_default_map_rgb_color(dev, r, g, b));
+    return (gx_default_map_rgb_color(dev, cv));
 }
 
 /* Map a color code to r-g-b. */
@@ -475,6 +476,23 @@ win_set_bits_per_pixel(gx_device_win * wdev, int bpp)
 	gs_free(wdev->mapped_color_flags, 4096, 1, "win_set_bits_per_pixel");
 	wdev->mapped_color_flags = 0;
     }
+
+    /* copy encode/decode procedures */
+    wdev->procs.encode_color = wdev->procs.map_rgb_color;
+    wdev->procs.decode_color = wdev->procs.map_color_rgb;
+    if (bpp == 1) {
+	wdev->procs.get_color_mapping_procs = 
+	    gx_default_DevGray_get_color_mapping_procs;
+	wdev->procs.get_color_comp_index = 
+	    gx_default_DevGray_get_color_comp_index;
+    }
+    else {
+	wdev->procs.get_color_mapping_procs = 
+	    gx_default_DevRGB_get_color_mapping_procs;
+	wdev->procs.get_color_comp_index = 
+	    gx_default_DevRGB_get_color_comp_index;
+    }
+
     /* restore old anti_alias info */
     wdev->color_info.anti_alias = anti_alias;
     return 0;

@@ -21,8 +21,8 @@
 /* if set to 0, old FM calls that are "not recommended" for carbon are used */
 /* for now, we'll set it to 0, as classic and carbon targets don't generate link errors, */
 /* but the carbon target would be better built with this macro set to 1 */
-/* In the case that it is set, the classic target should link in FontManagerLib */
-#define USE_RECOMMENDED_CARBON_FONTMANAGER_CALLS 0
+/* In the case that it is set, the classic target should link in FontManager(Lib) */
+#define USE_RECOMMENDED_CARBON_FONTMANAGER_CALLS 1
 
 
 
@@ -207,9 +207,9 @@ mac_lookup_font(gx_device *dev, const byte *fname, uint len,
 
 private gx_xglyph
 mac_char_xglyph(gx_xfont *xf, gs_char chr, int encoding_index,
-				gs_glyph glyph, gs_proc_glyph_name_t glyph_name_proc)
+		gs_glyph glyph, const gs_const_string *glyph_name)
 {
-#pragma unused(glyph_name_proc,glyph)
+#pragma unused(glyph_name,glyph)
 	mac_xfont			* macxf = (mac_xfont*) xf;
 	
 	/* can't look up names yet */

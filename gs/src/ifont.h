@@ -32,6 +32,7 @@ typedef struct font_data_s {
     ref BuildGlyph;
     ref Encoding;
     ref CharStrings;
+    ref GlyphNames2Unicode;
     union _fs {
 	struct _f1 {
 	    ref OtherSubrs;	/* from Private dictionary */
@@ -65,15 +66,6 @@ extern_st(st_font_data);
 #define pfont_data(pfont) ((font_data *)((pfont)->client_data))
 #define pfont_dict(pfont) (&pfont_data(pfont)->dict)
 
-/* Registered encodings, for the benefit of platform fonts, `seac', */
-/* and compiled font initialization. */
-/* This is a t_array ref that points to the encodings. */
-#define registered_Encodings_countof NUM_KNOWN_ENCODINGS
-extern ref registered_Encodings;
-
-#define registered_Encoding(i) (registered_Encodings.value.refs[i])
-#define StandardEncoding registered_Encoding(0)
-
 /* ================Internal procedures shared across files ================ */
 
 /* ---------------- Exported by zchar.c ---------------- */
@@ -82,7 +74,7 @@ extern ref registered_Encodings;
  * Get the FontBBox from a font dictionary, if any; if none, or if invalid,
  * return 4 zeros.
  */
-int font_bbox_param(P2(const ref * pfdict, double bbox[4]));
+int font_bbox_param(const ref * pfdict, double bbox[4]);
 
 /* ---------------- Exported by zfont.c ---------------- */
 
@@ -95,14 +87,14 @@ typedef struct gs_font_s gs_font;
  * Check a parameter that should be a valid font dictionary, and return
  * the gs_font stored in its FID entry.
  */
-int font_param(P2(const ref * pfdict, gs_font ** ppfont));
+int font_param(const ref * pfdict, gs_font ** ppfont);
 
 /*
  * Mark a glyph as a PostScript name (if it isn't a CID) for the garbage
  * collector.  Return true if a mark was just added.  This procedure is
  * intended to be used as the mark_glyph procedure in the character cache.
  */
-bool zfont_mark_glyph_name(P2(gs_glyph glyph, void *ignore_data));
+bool zfont_mark_glyph_name(gs_glyph glyph, void *ignore_data);
 
 /*
  * Return information about a font, including information from the FontInfo

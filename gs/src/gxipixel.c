@@ -97,14 +97,14 @@ private RELOC_PTRS_WITH(image_enum_reloc_ptrs, gx_image_enum *eptr)
 RELOC_PTRS_END
 
 /* Forward declarations */
-private int color_draws_b_w(P2(gx_device * dev,
-			       const gx_drawing_color * pdcolor));
-private void image_init_map(P3(byte * map, int map_size, const float *decode));
-private void image_init_colors(P9(gx_image_enum * penum, int bps, int spp,
-				  gs_image_format_t format,
-				  const float *decode,
-				  const gs_imager_state * pis, gx_device * dev,
-				  const gs_color_space * pcs, bool * pdcb));
+private int color_draws_b_w(gx_device * dev,
+			    const gx_drawing_color * pdcolor);
+private void image_init_map(byte * map, int map_size, const float *decode);
+private void image_init_colors(gx_image_enum * penum, int bps, int spp,
+			       gs_image_format_t format,
+			       const float *decode,
+			       const gs_imager_state * pis, gx_device * dev,
+			       const gs_color_space * pcs, bool * pdcb);
 
 /* Procedures for unpacking the input data into bytes or fracs. */
 /*extern SAMPLE_UNPACK_PROC(sample_unpack_copy); *//* declared above */
@@ -248,10 +248,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 	y_extent.y = float2fixed(rh * mat.yy + mat.ty) - mty;
     }
     if (masked) {	/* This is imagemask. */
-	if (bps != 1 || pcs != NULL || penum->alpha ||
-	    !((decode[0] == 0.0 && decode[1] == 1.0) ||
-	      (decode[0] == 1.0 && decode[1] == 0.0))
-	    ) {
+	if (bps != 1 || pcs != NULL || penum->alpha || decode[0] == decode[1]) {
 	    gs_free_object(mem, penum, "gx_default_begin_image");
 	    return_error(gs_error_rangecheck);
 	}
@@ -259,7 +256,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 	color_set_pure(&penum->icolor0, gx_no_color_index);
 	penum->icolor1 = *pdcolor;
 	memcpy(&penum->map[0].table.lookup4x1to32[0],
-	       (decode[0] == 0 ? lookup4x1to32_inverted :
+	       (decode[0] < decode[1] ? lookup4x1to32_inverted :
 		lookup4x1to32_identity),
 	       16 * 4);
 	penum->map[0].decoding = sd_none;
@@ -267,6 +264,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 	lop = rop3_know_S_0(lop);
     } else {			/* This is image, not imagemask. */
 	const gs_color_space_type *pcst = pcs->type;
+	int b_w_color;
 
 	spp = cs_num_components(pcs);
 	if (spp < 0) {		/* Pattern not allowed */
@@ -290,7 +288,8 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 	device_color = (*pcst->concrete_space) (pcs, pis) == pcs;
 	image_init_colors(penum, bps, spp, format, decode, pis, dev,
 			  pcs, &device_color);
-
+	/* Try to transform non-default RasterOps to something */
+	/* that we implement less expensively. */
 	if (!pim->CombineWithColor)
 	    lop = rop3_know_T_0(lop) & ~lop_T_transparent;
 	else {
@@ -305,6 +304,53 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 		    default:
 			;
 		}
+	}
+	if (lop != rop3_S &&	/* if best case, no more work needed */
+	    !rop3_uses_T(lop) && bps == 1 && spp == 1 &&
+	    (b_w_color =
+	     color_draws_b_w(dev, &penum->icolor0)) >= 0 &&
+	    color_draws_b_w(dev, &penum->icolor1) == (b_w_color ^ 1)
+	    ) {
+	    if (b_w_color) {	/* Swap the colors and invert the RasterOp source. */
+		gx_device_color dcolor;
+
+		dcolor = penum->icolor0;
+		penum->icolor0 = penum->icolor1;
+		penum->icolor1 = dcolor;
+		lop = rop3_invert_S(lop);
+	    }
+	    /*
+	     * At this point, we know that the source pixels
+	     * correspond directly to the S input for the raster op,
+	     * i.e., icolor0 is black and icolor1 is white.
+	     */
+	    switch (lop) {
+		case rop3_D & rop3_S:
+		    /* Implement this as an inverted mask writing 0s. */
+		    penum->icolor1 = penum->icolor0;
+		    /* (falls through) */
+		case rop3_D | rop3_not(rop3_S):
+		    /* Implement this as an inverted mask writing 1s. */
+		    memcpy(&penum->map[0].table.lookup4x1to32[0],
+			   lookup4x1to32_inverted, 16 * 4);
+		  rmask:	/* Fill in the remaining parameters for a mask. */
+		    penum->masked = masked = true;
+		    color_set_pure(&penum->icolor0, gx_no_color_index);
+		    penum->map[0].decoding = sd_none;
+		    lop = rop3_T;
+		    break;
+		case rop3_D & rop3_not(rop3_S):
+		    /* Implement this as a mask writing 0s. */
+		    penum->icolor1 = penum->icolor0;
+		    /* (falls through) */
+		case rop3_D | rop3_S:
+		    /* Implement this as a mask writing 1s. */
+		    memcpy(&penum->map[0].table.lookup4x1to32[0],
+			   lookup4x1to32_identity, 16 * 4);
+		    goto rmask;
+		default:
+		    ;
+	    }
 	}
     }
     penum->device_color = device_color;
@@ -565,28 +611,20 @@ color_draws_b_w(gx_device * dev, const gx_drawing_color * pdcolor)
     return -1;
 }
 
-/* Initialize the color mapping tables for a non-mask image. */
-private void
-image_init_colors(gx_image_enum * penum, int bps, int spp,
-		  gs_image_format_t format, const float *decode /*[spp*2] */ ,
-		  const gs_imager_state * pis, gx_device * dev,
-		  const gs_color_space * pcs, bool * pdcb)
+/* Export this for use by image_render_ functions */
+void
+image_init_clues(gx_image_enum * penum, int bps, int spp)
 {
-    int ci;
-    static const float default_decode[] = {
-	0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0
-    };
-
     /* Initialize the color table */
-
 #define ictype(i)\
   penum->clues[i].dev_color.type
+
     switch ((spp == 1 ? bps : 8)) {
 	case 8:		/* includes all color images */
 	    {
 		register gx_image_clue *pcht = &penum->clues[0];
-		register int n = 64;
-
+		register int n = 64;	/* 8 bits means 256 clues, do	*/
+					/* 4 at a time for efficiency	*/
 		do {
 		    pcht[0].dev_color.type =
 			pcht[1].dev_color.type =
@@ -612,9 +650,23 @@ image_init_colors(gx_image_enum * penum, int bps, int spp,
 	    ictype(5 * 17) = ictype(10 * 17) = gx_dc_type_none;
 #undef ictype
     }
+}
+
+/* Initialize the color mapping tables for a non-mask image. */
+private void
+image_init_colors(gx_image_enum * penum, int bps, int spp,
+		  gs_image_format_t format, const float *decode /*[spp*2] */ ,
+		  const gs_imager_state * pis, gx_device * dev,
+		  const gs_color_space * pcs, bool * pdcb)
+{
+    int ci;
+    static const float default_decode[] = {
+	0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0
+    };
+
+    image_init_clues(penum, bps, spp);
 
     /* Initialize the maps from samples to intensities. */
-
     for (ci = 0; ci < spp; ci++) {
 	sample_map *pmap = &penum->map[ci];
 
@@ -719,8 +771,8 @@ image_init_map(byte * map, int map_size, const float *decode)
 
     if (diff_v == 1 || diff_v == -1) {	/* We can do the stepping with integers, without overflow. */
 	byte *limit = map + map_size;
-	uint value = min_v * 0xffffL;
-	int diff = diff_v * (0xffffL / (map_size - 1));
+	uint value = (uint)(min_v * 0xffffL);
+	int diff = (int)(diff_v * (0xffffL / (map_size - 1)));
 
 	for (; map != limit; map++, value += diff)
 	    *map = value >> 8;
