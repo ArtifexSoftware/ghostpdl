@@ -580,6 +580,16 @@ gs_type42_append(uint glyph_index, gs_imager_state * pis,
     return gs_imager_setflat(pis, gs_char_flatness(pis, 1.0));
 }
 
+/* Add 2nd degree Bezier to the path */
+private int
+add_quadratic_curve(gx_path * const ppath, const gs_fixed_point * const a,
+     const gs_fixed_point * const b, const gs_fixed_point * const c)
+{
+    return gx_path_add_curve(ppath, (a->x + 2*b->x)/3, (a->y + 2*b->y)/3,
+	(c->x + 2*b->x)/3, (c->y + 2*b->y)/3, c->x, c->y);
+}
+
+
 /*
  * Append a simple glyph outline to a path (ppath != 0) and/or return
  * its list of points (ppts != 0).
@@ -646,13 +656,16 @@ append_simple(const byte *gdata, float sbw[4], const gs_matrix_fixed *pmat,
 				 0.0, &pt);
 	for (i = 0, np = 0; i < numContours; ++i) {
 	    bool move = true;
-	    uint last_point = U16(pends + i * 2);
+	    bool off_curve = false;
+            bool is_start_off = false;
+            uint last_point = U16(pends + i * 2);
 	    float dx, dy;
-	    int off_curve = 0;
-	    gs_fixed_point start;
-	    gs_fixed_point cpoints[3];
+	    gs_fixed_point start,pt_start_off;
+	    gs_fixed_point cpoints[2];
 
-	    for (; np <= last_point; --reps, ++np) {
+            if_debug1('1', "[1t]start %d\n", i);
+            
+            for (; np <= last_point; --reps, ++np) {
 		gs_fixed_point dpt;
 
 		if (reps == 0) {
@@ -686,63 +699,85 @@ append_simple(const byte *gdata, float sbw[4], const gs_matrix_fixed *pmat,
 		if (code < 0)
 		    return code;
 		pt.x += dpt.x, pt.y += dpt.y;
-		if (ppts)	/* return the points */
+		
+                if (ppts)	/* return the points */
 		    ppts[np] = pt;
-		if (ppath) {	/* append to a path */
-#define control1(xy) cpoints[1].xy
-#define control2(xy) cpoints[2].xy
-#define control3off(xy) ((cpoints[1].xy + pt.xy) / 2)
-#define control4off(xy) ((cpoints[0].xy + 2 * cpoints[1].xy) / 3)
-#define control5off(xy) ((2 * cpoints[1].xy + cpoints[2].xy) / 3)
-#define control6off(xy) ((2 * cpoints[1].xy + pt.xy) / 3)
-#define control7off(xy) ((2 * cpoints[1].xy + start.xy) / 3)
-		    if (move) {
-			if_debug2('1', "[1t]start (%g,%g)\n",
-				  fixed2float(pt.x), fixed2float(pt.y));
-			start = pt;
-			code = gx_path_add_point(ppath, pt.x, pt.y);
-			cpoints[0] = pt;
-			move = false;
+		
+                if (ppath) {
+                    /* append to a path */
+		    if_debug3('1', "[1t]%s (%g %g)\n",
+		    	(flags & gf_OnCurve ? "on " : "off"), fixed2float(pt.x), fixed2float(pt.y));
+                    
+                    if (move) {
+                        if(is_start_off) {
+                            if(flags & gf_OnCurve)
+                                start = pt;
+                            else { 
+                                start.x = (pt_start_off.x + pt.x)/2;
+			        start.y = (pt_start_off.y + pt.y)/2;
+                                cpoints[1]=pt;
+			        off_curve=true;
+                            }
+                            move = false;
+                            cpoints[0] = start;
+                            code = gx_path_add_point(ppath, start.x, start.y);
+                        } else { 
+                            if(flags & gf_OnCurve) { 
+                                cpoints[0] = start = pt;
+			        code = gx_path_add_point(ppath, pt.x, pt.y);
+			        move = false;
+                            } else { 
+                                is_start_off = true;
+                                pt_start_off = pt;
+                            }
+                        }
 		    } else if (flags & gf_OnCurve) {
-			if_debug2('1', "[1t]ON (%g,%g)\n",
-				  fixed2float(pt.x), fixed2float(pt.y));
-			if (off_curve)
-			    code = gx_path_add_curve(ppath, control4off(x),
-						control4off(y), control6off(x),
-						control6off(y), pt.x, pt.y);
+                        if (off_curve)
+			    code = add_quadratic_curve(ppath, cpoints, cpoints+1, &pt);
 			else
 			    code = gx_path_add_line(ppath, pt.x, pt.y);
 			cpoints[0] = pt;
-			off_curve = 0;
+			off_curve = false;
 		    } else {
-			if_debug2('1', "[1t]...off (%g,%g)\n",
-				  fixed2float(pt.x), fixed2float(pt.y));
-			switch (off_curve++) {
-			default:	/* >= 1 */
-			    control2(x) = control3off(x);
-			    control2(y) = control3off(y);
-			    code = gx_path_add_curve(ppath,
-						control4off(x), control4off(y),
-						control5off(x), control5off(y),
-						control2(x), control2(y));
-			    cpoints[0] = cpoints[2];
-			    off_curve = 1;
-			    /* falls through */
-			case 0:
-			    cpoints[1] = pt;
+                        if(off_curve) {
+			    gs_fixed_point p;
+                            p.x = (cpoints[1].x + pt.x)/2;
+			    p.y = (cpoints[1].y + pt.y)/2;
+			    code = add_quadratic_curve(ppath, cpoints, cpoints+1, &p);
+			    cpoints[0] = p;
 			}
+                        off_curve = true;
+		        cpoints[1] = pt;
 		    }
 		    if (code < 0)
 			return code;
 		}
 	    }
 	    if (ppath) {
-		if (off_curve)
-		    code = gx_path_add_curve(ppath,
-					control4off(x), control4off(y),
-					control7off(x), control7off(y),
-					start.x, start.y);
-		code = gx_path_close_subpath(ppath);
+		if (is_start_off) { 
+                    if (off_curve) { 
+                        gs_fixed_point p;
+                        p.x = (cpoints[1].x + pt_start_off.x)/2;
+	                p.y = (cpoints[1].y + pt_start_off.y)/2;
+                        code = add_quadratic_curve(ppath, cpoints, cpoints+1, &p);
+		        if (code < 0)
+		            return code;
+                        code = add_quadratic_curve(ppath, &p, &pt_start_off, &start);
+		        if (code < 0)
+		            return code;
+                    } else { 
+                        code = add_quadratic_curve(ppath, cpoints, &pt_start_off, &start);
+		        if (code < 0)
+		            return code;
+                    }
+                } else { 
+                    if (off_curve) { 
+                        code = add_quadratic_curve(ppath, cpoints, cpoints+1, &start);
+		        if (code < 0)
+		            return code;
+                    }
+                }
+                code = gx_path_close_subpath(ppath);
 		if (code < 0)
 		    return code;
 	    }
