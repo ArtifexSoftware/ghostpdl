@@ -69,6 +69,16 @@ gp_strerror(int errnum)
     return NULL;
 }
 
+/* read in a MacOS 'resource' from an extended attribute. */
+/* we don't try to implemented this since it requires support */
+/* for Apple's HFS(+) filesystem */
+int
+gp_read_macresource(byte *buf, const char *filename, 
+                    const uint type, const ushort id)
+{
+    return 0;
+}
+
 /* ------ Date and time ------ */
 
 /* Read the current time (in seconds since Jan. 1, 1970) */

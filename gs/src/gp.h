@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991-2002 artofcode LLC.  All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -292,6 +292,14 @@ bool gp_file_name_is_partent_allowed(void);
 /*	mac:	yes	    */
 /*	VMS:	yes         */
 bool gp_file_name_is_empty_item_meanful(void);
+
+/* Read a 'resource' stored in a special database indexed by a 32 bit  */
+/* 'type' and 16 bit 'id' in an extended attribute of a file. The is   */
+/* primarily for accessing fonts on MacOS, which classically used this */
+/* format. Presumedly a 'nop' on systems that don't support Apple HFS. */
+int gp_read_macresource(byte *buf, const char *fname, 
+                                     const uint type, const ushort id);
+
 
 /* ------ Printer accessing ------ */
 

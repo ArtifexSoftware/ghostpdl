@@ -41,20 +41,18 @@
 #include <Fonts.h>
 #include <FixMath.h>
 #include <Resources.h>
-#include "math_.h"
-#include <string.h>
-#include <stdlib.h>
-
-//#include <stdio.h>
-//#include <cstdio.h>
 
 #include "stdio_.h"
+#include "math_.h"
+#include "string_.h"
 #include <stdlib.h>
+#include <stdarg.h>
+#include <console.h>
+
 #include "gx.h"
 #include "gp.h"
 #include "gxdevice.h"
-#include <stdarg.h>
-#include <console.h>
+
 #include "gp_mac.h"
 
 #include "stream.h"
@@ -101,7 +99,19 @@ convertSpecToPath(FSSpec * s, char * p, int pLen)
 	return;
 }
 
-
+OSErr
+convertPathToSpec(const char *path, const int pathlength, FSSpec * spec)
+{
+	Str255 filename;
+	
+	/* path must be shorter than 255 bytes */
+	if (pathlength > 254) return bdNamErr;
+	
+	*filename = pathlength;
+	memcpy(filename + 1, path, pathlength);
+	
+	return FSMakeFSSpec(0, 0, filename, spec);
+}
 
 /* ------ File name syntax ------ */
 
@@ -543,8 +553,62 @@ gp_file_name_concat_string (const char *prefix, uint plen)
 		return "";
 	return ":";
 }
-#endif
 
+#endif /* !NEW_COMBINE_PATH */
+
+
+/* read a resource and copy the data into a buffer */
+/* we don't have access to an allocator, nor any context for local  */
+/* storage, so we implement the following idiom: we return the size */
+/* of the requested resource and copy the data into buf iff it's    */
+/* non-NULL. Thus, the caller can pass NULL for buf the first time, */
+/* allocate the appropriate sized buffer, and then call us a second */
+/* time to actually transfer the data.                              */
+int
+gp_read_macresource(byte *buf, const char *fname, const uint type, const ushort id)
+{
+    Handle resource = NULL;
+    SInt32 size = 0;
+    FSSpec spec;
+    SInt16 fileref;
+    OSErr result;
+    
+    /* open file */
+    result = convertPathToSpec(fname, strlen(fname), &spec);
+    if (result != noErr) goto fin;
+    fileref = FSpOpenResFile(&spec, fsRdPerm);
+    if (fileref == -1) goto fin;
+    
+    dlprintf1("loading resource from fileref %d\n", fileref);
+
+    /* load resource */
+    resource = Get1Resource((ResType)type, (SInt16)id);
+    if (resource == NULL) goto fin;
+    
+    dlprintf1("loaded resource at handle 0x%08x\n", resource);
+      
+    /* allocate res */
+    /* GetResourceSize() is probably good enough */
+    //size = GetResourceSizeOnDisk(resource);
+    size = GetMaxResourceSize(resource);
+    
+    dlprintf1("size on disk is %d bytes\n", size);
+    
+    /* if we don't have a buffer to fill, just return */
+    if (buf == NULL) goto fin;
+
+    /* otherwise, copy resource into res from handle */
+    HLock(resource);
+    memcpy(buf, *resource, size);
+    HUnlock(resource);
+    
+fin:
+    /* free resource, if necessary */
+    ReleaseResource(resource);
+    CloseResFile(fileref);
+    
+    return (size);
+}
 
 /* ------ File enumeration ------ */
 

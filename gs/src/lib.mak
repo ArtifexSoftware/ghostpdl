@@ -2445,11 +2445,24 @@ $(GLD)shadelib.dev : $(LIB_MAK) $(ECHOGS_XE) $(shadelib_)\
 	$(ADDMOD) $(GLD)shadelib -include $(GLD)funclib $(GLD)patlib
 
 # ---------------- Support for %disk IODevices ---------------- #
-# The following module is included only of the diskn.dev FEATURE is included
+# The following module is included only if the diskn.dev FEATURE is included
 $(GLOBJ)gsiodisk.$(OBJ) : $(GLSRC)gsiodisk.c $(GXERR)\
  $(errno__h) $(string__h) $(unistd__h)\
  $(gp_h) $(gscdefs_h) $(gsparam_h) $(gsstruct_h) $(gxiodev_h) $(gsutil_h)
 	$(GLCC) $(GLO_)gsiodisk.$(OBJ) $(C_) $(GLSRC)gsiodisk.c
+
+# ------------ Support for %macresource% IODevice ------------- #
+# This is used to load native-format fonts on MacOS
+# Define the macres.dev FEATURE
+macres_=$(GLOBJ)gsiomacres.$(OBJ)
+$(GLD)macres.dev : $(LIB_MAK) $(ECHOGS_XE) $(macres_)
+	$(SETMOD) $(GLD)macres $(macres_)
+	$(ADDMOD) $(GLD)macres -iodev macresource
+
+# The following module is included only if the macres.dev FEATURE is enabled
+$(GLOBJ)gsiomacres.$(OBJ) : $(GLSRC)gsiomacres.c \
+ $(std_h) $(gstypes_h) $(gsmemory_h) $(gxiodev_h)
+	$(GLCC) $(GLO_)gsiomacres.$(OBJ) $(C_) $(GLSRC)gsiomacres.c
 
 # ---------------- Font API ---------------- #
 
