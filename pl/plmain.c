@@ -961,12 +961,7 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
         return -1;
     }
     gs_c_param_list_read(params);
-#ifndef PSI_INCLUDED  /* ps has a default device */  
     pl_top_create_device(pmi, 0, true); /* create default device if needed */
-#else
-    /* hack and pull the device out of postscript */   
-    pl_top_create_device(pmi, 0, true); /* create default device if needed */
-#endif
     /* The last argument wasn't a switch, so push it back. */
     if (arg)
 	arg_push_string(pal, (char*)arg);  /* cast const away for bad prototype */
