@@ -1,4 +1,4 @@
-%    Copyright (C) 1989, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -180,6 +180,9 @@ statusdict begin
 
  /checkpassword {statusdict begin .password eq end} bind def
  /defaulttimeouts {statusdict begin .timeouts aload pop end} bind def
+ /diskonline {
+    false (%disk*%) { pop not exit } 100 string /IODevice resourceforall
+ } bind def
 %/dostartpage
  /eescratch {pop 0} bind def
  /idlefonts {statusdict begin mark .idlefonts aload pop end} bind def
@@ -292,6 +295,51 @@ mark setidlefonts
 product setprintername
 
 end	% statusdict
+
+%%%%%% The following documented compatibility "operators" are in systemdict,
+%%%%%% not in statusdict.
+
+systemdict begin
+.currentglobal true .setglobal
+
+/devforall {		% <pattern> <proc> <scratch> devforall -
+  exch {
+    1 index currentdevparams
+    /Type .knownget { /FileSystem eq } { false } ifelse
+    { exec } { pop pop } ifelse
+  } /exec load 3 packedarray cvx exch
+  (*) 3 1 roll /IODevice resourceforall
+} odef
+
+/devstatus {		% <(%disk*%)> devstatus <searchable> <writable>
+			%   <hasNames> <mounted> <removable> <searchOrder>
+			%   <freePages> <size> true
+			% <string> devstatus false
+  dup length 5 ge {
+    dup 0 5 getinterval (%disk) eq {
+      dup /IODevice resourcestatus {
+	pop pop dup currentdevparams
+	dup /Searchable get
+	exch dup /Writeable get
+	exch dup /HasNames get
+	exch dup /Mounted get
+	exch dup /Removable get
+	exch dup /SearchOrder get
+	exch dup /Free get
+	exch /LogicalSize get
+	9 -1 roll pop true
+      } {
+	pop false
+      } ifelse
+    } {
+      pop false
+    } ifelse
+  } {
+    pop false
+  } ifelse
+} odef
+
+.setglobal end	% systemdict
 
 % The following contents of serverdict are a complete guess,
 % based on some observed LaserWriter boilerplate.
