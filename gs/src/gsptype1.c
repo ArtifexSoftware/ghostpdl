@@ -118,7 +118,7 @@ gs_pattern1_init(gs_pattern1_template_t * ppat)
 
 /* Make an instance of a PatternType 1 pattern. */
 private int compute_inst_matrix(gs_pattern1_instance_t * pinst,
-				const gs_state * saved, gs_rect * pbbox);
+	const gs_state * saved, gs_rect * pbbox, int width, int height);
 int
 gs_makepattern(gs_client_color * pcc, const gs_pattern1_template_t * pcp,
 	       const gs_matrix * pmat, gs_state * pgs, gs_memory_t * mem)
@@ -138,6 +138,9 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
     gs_state *saved;
     gs_rect bbox;
     gs_fixed_rect cbox;
+    gx_device * pdev = pgs->device;
+    int dev_width = pdev->width;
+    int dev_height = pdev->height;
     int code = gs_make_pattern_common(pcc, (const gs_pattern_template_t *)pcp,
 				      pmat, pgs, mem,
 				      &st_pattern1_instance);
@@ -161,9 +164,10 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
 	    goto fsaved;
     }
     inst.template = *pcp;
-    code = compute_inst_matrix(&inst, saved, &bbox);
+    code = compute_inst_matrix(&inst, saved, &bbox, dev_width, dev_height);
     if (code < 0)
 	goto fsaved;
+
 #define mat inst.step_matrix
     if_debug6('t', "[t]step_matrix=[%g %g %g %g %g %g]\n",
 	      mat.xx, mat.xy, mat.yx, mat.yy, mat.tx, mat.ty);
@@ -202,7 +206,8 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
 		) {
 		gs_scale(saved, fabs(inst.size.x / mat.xx),
 			 fabs(inst.size.y / mat.yy));
-		code = compute_inst_matrix(&inst, saved, &bbox);
+		code = compute_inst_matrix(&inst, saved, &bbox,
+						dev_width, dev_height);
 		if (code < 0)
 		    goto fsaved;
 		if (ADJUST_SCALE_FOR_THIN_LINES) {
@@ -284,16 +289,122 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
     gs_free_object(mem, pinst, "gs_makepattern");
     return code;
 }
+
+/*
+ * Clamp the bound box for a pattern to the region of the pattern that will
+ * actually be on our page.  We need to do this becuase some applications
+ * create patterns which specify a bounding box which is much larger than
+ * the page.  We allocate a buffer for holding the pattern.  We need to
+ * prevent this buffer from getting too large.
+ */
+private int
+clamp_pattern_bbox(gs_pattern1_instance_t * pinst, gs_rect * pbbox,
+		    int width, int height, const gs_matrix * pmat)
+{
+    double xstep = pinst->template.XStep;
+    double ystep = pinst->template.YStep;
+    double xmin = pbbox->q.x;
+    double xmax = pbbox->p.x;
+    double ymin = pbbox->q.y;
+    double ymax = pbbox->p.y;
+    int ixpat, iypat, iystart;
+    double xpat, ypat;
+    double xlower, xupper, ylower, yupper;
+    double xdev, ydev;
+    gs_rect dev_page, pat_page;
+    gs_point dev_pat_origin, dev_step;
+    int code;
+
+    /*
+     * Scan across the page.  We determine the region to be scanned
+     * by working in the pattern coordinate space.  This is logically
+     * simpler since XStep and YStep are on axis in the pattern space.
+     */
+    /*
+     * Convert the page dimensions from device coordinates into the
+     * pattern coordinate frame.
+     */
+    dev_page.p.x = dev_page.p.y = 0;
+    dev_page.q.x = width;
+    dev_page.q.y = height;
+    code = gs_bbox_transform_inverse(&dev_page, pmat, &pat_page);
+    if (code < 0)
+	return code;
+    /*
+     * Determine the location of the pattern origin in device coordinates.
+     */
+    gs_point_transform(0.0, 0.0, pmat, &dev_pat_origin);
+    /*
+     * Determine our starting point.  We start with a postion that puts the
+     * pattern below and to the left of the page (in pattern space) and scan
+     * until the pattern is above and right of the page.
+     */
+    ixpat = (int) floor((pat_page.p.x - pinst->template.BBox.q.x) / xstep);
+    iystart = (int) floor((pat_page.p.y - pinst->template.BBox.q.y) / ystep);
+
+    /* Now do the scan */
+    for (; ; ixpat++) {
+        xpat = ixpat * xstep;
+	for (iypat = iystart; ; iypat++) {
+            ypat = iypat * ystep;
+            /*
+	     * Calculate the shift in the pattern's location.
+	     */
+	    gs_point_transform(xpat, ypat, pmat, &dev_step);
+	    xdev = dev_step.x - dev_pat_origin.x;
+	    ydev = dev_step.y - dev_pat_origin.y;
+	    /*
+	     * Check if the pattern bounding box intersects the page.
+	     */
+	    xlower = (xdev + pbbox->p.x > 0) ? pbbox->p.x : -xdev;
+	    xupper = (xdev + pbbox->q.x < width) ? pbbox->q.x : -xdev + width;
+	    ylower = (ydev + pbbox->p.y > 0) ? pbbox->p.y : -ydev;
+	    yupper = (ydev + pbbox->q.y < height) ? pbbox->q.y : -ydev + height;
+	    if (xlower < xupper && ylower < yupper) {
+		/*
+		 * The pattern intersects the page.  Expand required area if
+		 * needed.
+		 */
+		if (xlower < xmin)
+		    xmin = xlower;
+		if (xupper > xmax)
+		    xmax = xupper;
+		if (ylower < ymin)
+		    ymin = ylower;
+		if (yupper > ymax)
+		    ymax = yupper;
+	    }
+	    if (ypat > pat_page.q.y - pinst->template.BBox.p.y)
+	        break;
+	}
+	if (xpat > pat_page.q.x - pinst->template.BBox.p.x)
+	    break;
+    }
+    /* Update the bounding box. */
+    if (xmin < xmax && ymin < ymax) {
+	pbbox->p.x = xmin;
+	pbbox->q.x = xmax;
+	pbbox->p.y = ymin;
+	pbbox->q.y = ymax;
+    } else {
+	/* The pattern is never on the page.  Set bbox = 1, 1 */
+	pbbox->p.x = pbbox->p.y = 0;
+	pbbox->q.x = pbbox->q.y = 1;
+    }
+    return 0;
+}
+
 /* Compute the stepping matrix and device space instance bounding box */
 /* from the step values and the saved matrix. */
 private int
 compute_inst_matrix(gs_pattern1_instance_t * pinst, const gs_state * saved,
-		    gs_rect * pbbox)
+			    gs_rect * pbbox, int width, int height)
 {
     double xx = pinst->template.XStep * saved->ctm.xx;
     double xy = pinst->template.XStep * saved->ctm.xy;
     double yx = pinst->template.YStep * saved->ctm.yx;
     double yy = pinst->template.YStep * saved->ctm.yy;
+    int code;
 
     /* Adjust the stepping matrix so all coefficients are >= 0. */
     if (xx == 0 || yy == 0) {	/* We know that both xy and yx are non-zero. */
@@ -313,8 +424,18 @@ compute_inst_matrix(gs_pattern1_instance_t * pinst, const gs_state * saved,
     pinst->step_matrix.yy = yy;
     pinst->step_matrix.tx = saved->ctm.tx;
     pinst->step_matrix.ty = saved->ctm.ty;
-    return gs_bbox_transform(&pinst->template.BBox, &ctm_only(saved),
-			     pbbox);
+    code = gs_bbox_transform(&pinst->template.BBox, &ctm_only(saved), pbbox);
+    /*
+     * Some applications produce patterns that are larger than the page.
+     * If the bounding box for the pattern is larger than the page. clamp
+     * the pattern to the page size.
+     */
+    if (code >= 0 &&
+	(pbbox->q.x - pbbox->p.x > width || pbbox->q.y - pbbox->p.y > height))
+	code = clamp_pattern_bbox(pinst, pbbox, width,
+					height, &ctm_only(saved));
+
+    return code;
 }
 
 /* Test whether a PatternType 1 pattern uses a base space. */
