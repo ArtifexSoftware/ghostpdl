@@ -1642,23 +1642,24 @@ $(PSOBJ)ztrans.$(OBJ) : $(PSSRC)ztrans.c $(OP) $(string__h)\
 # ================================ PDF ================================ #
 
 # We need nearly all of the PostScript LanguageLevel 3 interpreter for PDF,
-# but not all of it. In fact, we don't even need all of a Level 1 interpreter.
+# but not all of it: we could do without the arc operators (Level 1),
+# the Encode filters (Level 2), and some LL3 features (clipsave/cliprestore,
+# UseCIEColor, IdiomSets).  However, we've decided it isn't worth the
+# trouble to do the fine-grain factoring to enable this, since code size
+# is not at a premium for PDF interpreters.
 
 # Because of the way the PDF encodings are defined, they must get loaded
 # before we install the Level 2 resource machinery.
 # On the other hand, the PDF .ps files must get loaded after
 # level2dict is defined.
 $(PSD)pdf.dev : $(INT_MAK) $(ECHOGS_XE)\
- $(PSD)psbase.dev $(PSD)color.dev $(PSD)compfont.dev $(GLD)dps2lib.dev $(PSD)dps2read.dev\
- $(PSD)fdecode.dev $(PSD)type1.dev $(PSD)pdffonts.dev $(GLD)psl2lib.dev $(PSD)psl2read.dev $(PSD)pdfread.dev\
- $(PSD)cff.dev $(PSD)cidfont.dev $(PSD)cie.dev $(PSD)cmapread.dev $(PSD)dctd.dev\
- $(PSD)fmd5.dev $(PSD)func.dev $(PSD)ttfont.dev $(PSD)type2.dev
-	$(SETMOD) $(PSD)pdf -include $(PSD)psbase $(PSD)color $(PSD)compfont $(GLD)dps2lib
-	$(ADDMOD) $(PSD)pdf -include $(PSD)dps2read $(PSD)fdecode $(PSD)type1 $(PSD)pdffonts
-	$(ADDMOD) $(PSD)pdf -include $(GLD)psl2lib $(PSD)psl2read $(PSD)pdfread
-	$(ADDMOD) $(PSD)pdf -include $(PSD)cff $(PSD)cidfont $(PSD)cie
-	$(ADDMOD) $(PSD)pdf -include $(PSD)cmapread $(PSD)dctd $(PSD)fmd5
-	$(ADDMOD) $(PSD)pdf -include $(PSD)func $(PSD)ttfont $(PSD)type2
+ $(PSD)psbase.dev $(GLD)dps2lib.dev $(PSD)dps2read.dev\
+ $(PSD)pdffonts.dev $(PSD)psl3.dev $(PSD)pdfread.dev $(PSD)cff.dev\
+ $(PSD)fmd5.dev $(PSD)ttfont.dev $(PSD)type2.dev
+	$(SETMOD) $(PSD)pdf -include $(PSD)psbase $(GLD)dps2lib
+	$(ADDMOD) $(PSD)pdf -include $(PSD)dps2read $(PSD)pdffonts $(PSD)psl3
+	$(ADDMOD) $(PSD)pdf -include $(GLD)psl2lib $(PSD)pdfread $(PSD)cff
+	$(ADDMOD) $(PSD)pdf -include $(PSD)fmd5 $(PSD)ttfont $(PSD)type2
 	$(ADDMOD) $(PSD)pdf -functiontype 4
 	$(ADDMOD) $(PSD)pdf -emulator PDF
 
