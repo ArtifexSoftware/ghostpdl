@@ -235,11 +235,14 @@ hpgl_arg(hpgl_parser_state_t *pst)
 		parg->have_value = 2;
 		parg->frac_scale = 1.0;
 		break;
-	      case HT: case LF: case FF: case CR: case ';':
-		++p;
+	      case ';':
 		pst->done = true;
 		check_value();
 		goto out;
+	      case HT: case LF: case FF: case CR: 
+		/* control charachers are ignored during parsing hpgl
+		 */
+		continue;
 	      case SP: case ',':
 		/*
 		 * The specification doesn't say what to do with extra
