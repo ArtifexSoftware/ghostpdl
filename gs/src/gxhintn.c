@@ -17,7 +17,6 @@
 /* $Id$ */
 /* Type 1 hinter, a new algorithm */
 
-#include <assert.h>
 #include "memory_.h"
 #include "math_.h"
 #include "gx.h"
@@ -142,6 +141,7 @@ static const char *s_stem_snap_array = "t1_hinter stem_snap array";
 #define member_prt(type, ptr, offset) (type *)((char *)(ptr) + (offset))
 
 typedef int32_t int24;
+#define HAVE_INT64_T
 
 private const unsigned int split_bits = 12;
 private const unsigned int max_coord_bits = 24; /* = split_bits * 2 */
@@ -150,28 +150,30 @@ private const unsigned int g2o_bitshift = 12; /* <= matrix_bits + max_coord_bits
 private const int32_t FFFFF000 = ~(int32_t)0xFFF; /* = ~(((int32_t)1 << split_bits) - 1) */
 /* Constants above must satisfy expressions given in comments. */
 
+/* Computes (a*b)>>s, s <= 12 */
 private inline int32_t mul_shift(int24 a, int19 b, unsigned int s) 
-{   /* Computes (a*b)>>s, s <= 12 */
-    if (sizeof(int32_t) == 4) { /* We believe that compiler optimizes this check. */
+{   
+#ifdef HAVE_INT64_T
+    return ( (int64_t)a * (int64_t)b ) >> s; /* unrounded result */
+#else
+    { /* 32 bit fallback */
         int32_t aa = a & FFFFF000, a0 = a - aa, a1 = aa >> s;
-
         return ((a0 * b) >> s) + a1 * b; /* unrounded result */
-    } else if (sizeof(int32_t) == 8) {
-        return (a * b) >> s; /* unrounded result */
-    } else
-        assert(("Unsupported platform." == 0));
+    }
+#endif
 }
 
+/* Computes (a*b)>>s, s <= 12, with rounding */
 private inline int32_t mul_shift_round(int24 a, int19 b, unsigned int s) 
-{   /* Computes (a*b)>>s, s <= 12 */
-    if (sizeof(int32_t) == 4) { /* We believe that compiler optimizes this check. */
+{
+#ifdef HAVE_INT64_T
+    return (( ( (int64_t)a * (int64_t)b ) >> (s - 1)) + 1) >> 1;
+#else
+    { /* 32 bit version */
         int32_t aa = a & FFFFF000, a0 = a - aa, a1 = aa >> s;
-
         return ((((a0 * b) >> (s - 1)) + 1) >> 1) + a1 * b; /* rounded result */
-    } else if (sizeof(int32_t) == 8) {
-        return (((a * b) >> (s -1)) + 1) >> 1; /* rounded result */
-    } else
-        assert(("Unsupported platform." == 0));
+    }
+#endif
 }
 
 private inline int32_t shift_rounded(int32_t v, unsigned int s)
