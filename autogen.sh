@@ -1,7 +1,7 @@
 #!/bin/sh
 # Run this to set up the build system: configure, makefiles, etc.
 
-# $Id: autogen.sh,v 1.3 2003/03/04 15:24:58 giles Exp $
+# $Id: autogen.sh,v 1.4 2003/03/04 15:39:00 giles Exp $
 
 package="jbig2dec"
 AUTOMAKE_FLAGS="--foreign $AUTOMAKE_FLAGS"
@@ -39,7 +39,7 @@ if test -r Makefile.am; then
     for am in automake-$AM_NEEDED automake$AM_NEEDED automake; do
       ($am --version < /dev/null > /dev/null 2>&1) || continue
       ver=`$am --version < /dev/null | head -1 | $VERSIONGREP`
-      if test 0$ver = 0$AM_NEEDED; then
+      if test $ver = $AM_NEEDED; then
         AUTOMAKE=$am
         echo $AUTOMAKE
         break
@@ -50,7 +50,7 @@ if test -r Makefile.am; then
     for ac in aclocal-$AM_NEEDED aclocal$AM_NEEDED aclocal; do
       ($ac --version < /dev/null > /dev/null 2>&1) || continue
       ver=`$ac --version < /dev/null | head -1 | $VERSIONGREP`
-      if test 0$ver = $AM_NEEDED; then
+      if test $ver = $AM_NEEDED; then
         ACLOCAL=$ac
         echo $ACLOCAL
         break
@@ -58,7 +58,7 @@ if test -r Makefile.am; then
     done
     test -z $ACLOCAL && echo "no"
   fi
-  test -z $AUTOMAKE && {
+  test -z $AUTOMAKE || test -z $ACLOCAL && {
         echo
         echo "You must have automake installed to compile $package."
         echo "Download the appropriate package for your distribution,"
