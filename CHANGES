@@ -1,6 +1,10 @@
-Version 0.5 (not yet released)
+Version 0.5 (2003 December 4)
 
  * compiler warning fixes
+ * Properly handle the export specification for symbol
+   dictionaries.
+ * successfully decodes multipage documents from the
+   Adobe encoder.
 
 Version 0.4 (released 2003 August 1)
 
