@@ -335,10 +335,12 @@ try_unite_last_trap(gx_device_spot_analyzer *padev, fixed xlbot)
 	   unite it and release the last trapezoid and the last contact. */
 	if (t != NULL && t->upper != NULL && last->xrbot < xlbot && 
 		(last->prev == last || last->prev->xrbot < last->xlbot)) {
-	    if (t->upper->next == t->upper &&
-		    t->l == last->l && t->r == last->r) {
+	    if ((t->next == NULL || t->xrtop < t->next->xltop) &&
+	        (t->upper->next == t->upper &&
+		    t->l == last->l && t->r == last->r)) {
 		if (padev->bot_current == t)
 		    padev->bot_current = (t == band_list_last(padev->bot_band) ? NULL : t->next);
+		assert(t->upper->upper == last); 
 		band_list_remove(&padev->top_band, last);
 		band_list_remove(&padev->bot_band, t);
 		band_list_insert_last(&padev->top_band, t);
@@ -804,7 +806,7 @@ gx_san_generate_stems(gx_device_spot_analyzer *padev,
 {
     int code;
 
-    vd_get_dc('h');
+    vd_get_dc('f');
     vd_set_shift(0, 0);
     vd_set_scale(VD_SCALE);
     vd_set_origin(0, 0);
