@@ -49,7 +49,8 @@ private int ztransform_DeviceN(P5(const gs_device_n_params * params,
  * to the graphics library) into a character string pointer and a
  * string length.
  */
-int gs_get_colorname_string(gs_separation_name colorname_index,
+private int
+gs_get_colorname_string(gs_separation_name colorname_index,
 			unsigned char **ppstr, unsigned int *pname_size)
 {
     ref nref;
