@@ -39,19 +39,19 @@ extern_st(st_gx_image_enum_common);
 /* ---------------- Internal utilities ---------------- */
 
 private void
-trace_drawing_color(const char *prefix, const gx_drawing_color *pdcolor)
+trace_drawing_color(gs_memory_t *mem, const char *prefix, const gx_drawing_color *pdcolor)
 {
-    dprintf1("%scolor=", prefix);
+    dprintf1(mem, "%scolor=", prefix);
     if (pdcolor->type == gx_dc_type_none)
-	dputs("none");
+	dprintf(mem, "none");
     else if (pdcolor->type == gx_dc_type_null)
-	dputs("null");
+	dprintf(mem, "null");
     else if (pdcolor->type == gx_dc_type_pure)
-	dprintf1("0x%lx", (ulong)pdcolor->colors.pure);
+	dprintf1(mem, "0x%lx", (ulong)pdcolor->colors.pure);
     else if (pdcolor->type == gx_dc_type_ht_binary) {
 	int ci = pdcolor->colors.binary.b_index;
 
-	dprintf5("binary(0x%lx, 0x%lx, %d/%d, index=%d)",
+	dprintf5(mem, "binary(0x%lx, 0x%lx, %d/%d, index=%d)",
 		 (ulong)pdcolor->colors.binary.color[0],
 		 (ulong)pdcolor->colors.binary.color[1],
 		 pdcolor->colors.binary.b_level,
@@ -62,27 +62,27 @@ trace_drawing_color(const char *prefix, const gx_drawing_color *pdcolor)
 	ulong plane_mask = pdcolor->colors.colored.plane_mask;
 	int ci;
 
-	dprintf1("colored(mask=%lu", plane_mask);
+	dprintf1(mem, "colored(mask=%lu", plane_mask);
 	for (ci = 0; plane_mask != 0; ++ci, plane_mask >>= 1)
 	    if (plane_mask & 1) {
-		dprintf2(", (base=%u, level=%u)",
+		dprintf2(mem, ", (base=%u, level=%u)",
 			 pdcolor->colors.colored.c_base[ci],
 			 pdcolor->colors.colored.c_level[ci]);
 	    } else
-		dputs(", -");
+		dprintf(mem, ", -");
     } else {
-	dputs("**unknown**");
+	dprintf(mem, "**unknown**");
     }
 }
 
 private void
-trace_lop(gs_logical_operation_t lop)
+trace_lop(gs_memory_t *mem, gs_logical_operation_t lop)
 {
-    dprintf1(", lop=0x%x", (uint)lop);
+    dprintf1(mem, ", lop=0x%x", (uint)lop);
 }
 
 private void
-trace_path(const gx_path *path)
+trace_path(gs_memory_t *mem, const gx_path *path)
 {
     gs_path_enum penum;
 
@@ -92,21 +92,21 @@ trace_path(const gx_path *path)
 
 	switch (gx_path_enum_next(&penum, pts)) {
 	case gs_pe_moveto:
-	    dprintf2("    %g %g moveto\n", fixed2float(pts[0].x),
+	    dprintf2(mem, "    %g %g moveto\n", fixed2float(pts[0].x),
 		     fixed2float(pts[0].y));
 	    continue;
 	case gs_pe_lineto:
-	    dprintf2("    %g %g lineto\n", fixed2float(pts[0].x),
+	    dprintf2(mem, "    %g %g lineto\n", fixed2float(pts[0].x),
 		     fixed2float(pts[0].y));
 	    continue;
 	case gs_pe_curveto:
-	    dprintf6("    %g %g %g %g %g %g curveto\n", fixed2float(pts[0].x),
+	    dprintf6(mem, "    %g %g %g %g %g %g curveto\n", fixed2float(pts[0].x),
 		     fixed2float(pts[0].y), fixed2float(pts[1].x),
 		     fixed2float(pts[1].y), fixed2float(pts[2].x),
 		     fixed2float(pts[2].y));
 	    continue;
 	case gs_pe_closepath:
-	    dputs("    closepath\n");
+	    dprintf(mem, "    closepath\n");
 	    continue;
 	default:
 	    break;
@@ -116,7 +116,7 @@ trace_path(const gx_path *path)
 }
 
 private void
-trace_clip(gx_device *dev, const gx_clip_path *pcpath)
+trace_clip(gs_memory_t *mem, gx_device *dev, const gx_clip_path *pcpath)
 {
     if (pcpath == 0)
 	return;
@@ -125,12 +125,12 @@ trace_clip(gx_device *dev, const gx_clip_path *pcpath)
 				    int2fixed(dev->height))
 	)
 	return;
-    dputs(", clip={");
+    dprintf(mem, ", clip={");
     if (pcpath->path_valid)
-	trace_path(&pcpath->path);
+	trace_path(mem, &pcpath->path);
     else
-	dputs("NO PATH");
-    dputs("}");
+	dprintf(mem, "NO PATH");
+    dprintf(mem, "}");
 }
 
 /* ---------------- Low-level driver procedures ---------------- */
@@ -139,7 +139,7 @@ private int
 trace_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 		     gx_color_index color)
 {
-    dprintf5("fill_rectangle(%d, %d, %d, %d, 0x%lx)\n",
+    dprintf5(dev->memory, "fill_rectangle(%d, %d, %d, %d, 0x%lx)\n",
 	     x, y, w, h, (ulong)color);
     return 0;
 }
@@ -150,9 +150,9 @@ trace_copy_mono(gx_device * dev, const byte * data,
 		int x, int y, int w, int h,
 		gx_color_index zero, gx_color_index one)
 {
-    dprintf7("copy_mono(x=%d, y=%d, w=%d, h=%d, dx=%d, raster=%d, id=0x%lx,\n",
+    dprintf7(dev->memory, "copy_mono(x=%d, y=%d, w=%d, h=%d, dx=%d, raster=%d, id=0x%lx,\n",
 	     x, y, w, h, dx, raster, (ulong)id);
-    dprintf2("    colors=(0x%lx,0x%lx))\n", (ulong)zero, (ulong)one);
+    dprintf2(dev->memory, "    colors=(0x%lx,0x%lx))\n", (ulong)zero, (ulong)one);
     return 0;
 }
 
@@ -161,7 +161,7 @@ trace_copy_color(gx_device * dev, const byte * data,
 		 int dx, int raster, gx_bitmap_id id,
 		 int x, int y, int w, int h)
 {
-    dprintf7("copy_color(x=%d, y=%d, w=%d, h=%d, dx=%d, raster=%d, id=0x%lx)\n",
+    dprintf7(dev->memory, "copy_color(x=%d, y=%d, w=%d, h=%d, dx=%d, raster=%d, id=0x%lx)\n",
 	     x, y, w, h, dx, raster, (ulong)id);
     return 0;
 }
@@ -171,9 +171,9 @@ trace_copy_alpha(gx_device * dev, const byte * data, int dx, int raster,
 		 gx_bitmap_id id, int x, int y, int w, int h,
 		 gx_color_index color, int depth)
 {
-    dprintf7("copy_alpha(x=%d, y=%d, w=%d, h=%d, dx=%d, raster=%d, id=0x%lx,\n",
+    dprintf7(dev->memory, "copy_alpha(x=%d, y=%d, w=%d, h=%d, dx=%d, raster=%d, id=0x%lx,\n",
 	     x, y, w, h, dx, raster, (ulong)id);
-    dprintf2("    color=0x%lx, depth=%d)\n", (ulong)color, depth);
+    dprintf2(dev->memory, "    color=0x%lx, depth=%d)\n", (ulong)color, depth);
     return 0;
 }
 
@@ -184,13 +184,13 @@ trace_fill_mask(gx_device * dev,
 		const gx_drawing_color * pdcolor, int depth,
 		gs_logical_operation_t lop, const gx_clip_path * pcpath)
 {
-    dprintf7("fill_mask(x=%d, y=%d, w=%d, h=%d, dx=%d, raster=%d, id=0x%lx,\n",
+    dprintf7(dev->memory, "fill_mask(x=%d, y=%d, w=%d, h=%d, dx=%d, raster=%d, id=0x%lx,\n",
 	     x, y, w, h, dx, raster, (ulong)id);
-    trace_drawing_color("    ", pdcolor);
-    dprintf1(", depth=%d", depth);
-    trace_lop(lop);
-    trace_clip(dev, pcpath);
-    dputs(")\n");
+    trace_drawing_color(dev->memory, "    ", pdcolor);
+    dprintf1(dev->memory, ", depth=%d", depth);
+    trace_lop(dev->memory, lop);
+    trace_clip(dev->memory, dev, pcpath);
+    dprintf(dev->memory, ")\n");
     return 0;
 }
 
@@ -202,7 +202,7 @@ trace_fill_trapezoid(gx_device * dev,
 		     const gx_drawing_color * pdcolor,
 		     gs_logical_operation_t lop)
 {
-    dputs("**fill_trapezoid**\n");
+    dprintf(dev->memory, "**fill_trapezoid**\n");
     return 0;
 }
 
@@ -212,12 +212,12 @@ trace_fill_parallelogram(gx_device * dev,
 			 fixed bx, fixed by, const gx_drawing_color * pdcolor,
 			 gs_logical_operation_t lop)
 {
-    dprintf6("fill_parallelogram((%g,%g), (%g,%g), (%g,%g)",
+    dprintf6(dev->memory, "fill_parallelogram((%g,%g), (%g,%g), (%g,%g)",
 	     fixed2float(px), fixed2float(py), fixed2float(ax),
 	     fixed2float(ay), fixed2float(bx), fixed2float(by));
-    trace_drawing_color(", ", pdcolor);
-    trace_lop(lop);
-    dputs(")\n");
+    trace_drawing_color(dev->memory, ", ", pdcolor);
+    trace_lop(dev->memory, lop);
+    dprintf(dev->memory, ")\n");
     return 0;
 }
 
@@ -227,12 +227,12 @@ trace_fill_triangle(gx_device * dev,
 		    const gx_drawing_color * pdcolor,
 		    gs_logical_operation_t lop)
 {
-    dprintf6("fill_triangle((%g,%g), (%g,%g), (%g,%g)",
+    dprintf6(dev->memory, "fill_triangle((%g,%g), (%g,%g), (%g,%g)",
 	     fixed2float(px), fixed2float(py), fixed2float(ax),
 	     fixed2float(ay), fixed2float(bx), fixed2float(by));
-    trace_drawing_color(", ", pdcolor);
-    trace_lop(lop);
-    dputs(")\n");
+    trace_drawing_color(dev->memory, ", ", pdcolor);
+    trace_lop(dev->memory, lop);
+    dprintf(dev->memory, ")\n");
     return 0;
 }
 
@@ -242,12 +242,12 @@ trace_draw_thin_line(gx_device * dev,
 		     const gx_drawing_color * pdcolor,
 		     gs_logical_operation_t lop)
 {
-    dprintf4("draw_thin_line((%g,%g), (%g,%g)",
+    dprintf4(dev->memory, "draw_thin_line((%g,%g), (%g,%g)",
 	     fixed2float(fx0), fixed2float(fy0), fixed2float(fx1),
 	     fixed2float(fy1));
-    trace_drawing_color(", ", pdcolor);
-    trace_lop(lop);
-    dputs(")\n");
+    trace_drawing_color(dev->memory, ", ", pdcolor);
+    trace_lop(dev->memory, lop);
+    dprintf(dev->memory, ")\n");
     return 0;
 }
 
@@ -257,9 +257,9 @@ trace_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 			   gx_color_index color0, gx_color_index color1,
 			   int px, int py)
 {
-    dprintf6("strip_tile_rectangle(x=%d, y=%d, w=%d, h=%d, colors=(0x%lx,0x%lx),\n",
+    dprintf6(dev->memory, "strip_tile_rectangle(x=%d, y=%d, w=%d, h=%d, colors=(0x%lx,0x%lx),\n",
 	     x, y, w, h, (ulong)color0, (ulong)color1);
-    dprintf8("    size=(%d,%d) shift %u, rep=(%u,%u) shift %u, phase=(%d,%d))\n",
+    dprintf8(dev->memory, "    size=(%d,%d) shift %u, rep=(%u,%u) shift %u, phase=(%d,%d))\n",
 	     tiles->size.x, tiles->size.y, tiles->shift,
 	     tiles->rep_width, tiles->rep_height, tiles->rep_shift, px, py);
     return 0;
@@ -274,7 +274,7 @@ trace_strip_copy_rop(gx_device * dev, const byte * sdata, int sourcex,
 		     int x, int y, int width, int height,
 		     int phase_x, int phase_y, gs_logical_operation_t lop)
 {
-    dputs("**strip_copy_rop**\n");
+    dprintf(dev->memory, "**strip_copy_rop**\n");
     return 0;
 }
 
@@ -286,16 +286,16 @@ trace_fill_path(gx_device * dev, const gs_imager_state * pis,
 		const gx_drawing_color * pdcolor,
 		const gx_clip_path * pcpath)
 {
-    dputs("fill_path({\n");
-    trace_path(ppath);
-    trace_drawing_color("}, ", pdcolor);
-    dprintf5(", rule=%d, adjust=(%g,%g), flatness=%g, fill_zero_width=%s",
+    dprintf(dev->memory, "fill_path({\n");
+    trace_path(dev->memory, ppath);
+    trace_drawing_color(dev->memory, "}, ", pdcolor);
+    dprintf5(dev->memory, ", rule=%d, adjust=(%g,%g), flatness=%g, fill_zero_width=%s",
 	     params->rule, fixed2float(params->adjust.x),
 	     fixed2float(params->adjust.y), params->flatness,
 	     (params->fill_zero_width ? "true" : "false"));
-    trace_clip(dev, pcpath);
+    trace_clip(dev->memory, dev, pcpath);
     /****** pis ******/
-    dputs(")\n");
+    dprintf(dev->memory, ")\n");
     return 0;
 }
 
@@ -305,13 +305,13 @@ trace_stroke_path(gx_device * dev, const gs_imager_state * pis,
 		  const gx_drawing_color * pdcolor,
 		  const gx_clip_path * pcpath)
 {
-    dputs("stroke_path({\n");
-    trace_path(ppath);
-    trace_drawing_color("}, ", pdcolor);
-    dprintf1(", flatness=%g", params->flatness);
-    trace_clip(dev, pcpath);
+    dprintf(dev->memory, "stroke_path({\n");
+    trace_path(dev->memory, ppath);
+    trace_drawing_color(dev->memory, "}, ", pdcolor);
+    dprintf1(dev->memory, ", flatness=%g", params->flatness);
+    trace_clip(dev->memory, dev, pcpath);
     /****** pis ******/
-    dputs(")\n");
+    dprintf(dev->memory, ")\n");
     return 0;
 }
 
@@ -332,16 +332,16 @@ trace_plane_data(gx_image_enum_common_t * info,
     trace_image_enum_t *pie = (trace_image_enum_t *)info;
     int i;
 
-    dprintf1("image_plane_data(height=%d", height);
+    dprintf1(pie->memory, "image_plane_data(height=%d", height);
     for (i = 0; i < pie->num_planes; ++i) {
 	if (planes[i].data)
-	    dprintf4(", {depth=%d, width=%d, dx=%d, raster=%u}",
+	    dprintf4(pie->memory, ", {depth=%d, width=%d, dx=%d, raster=%u}",
 		     pie->plane_depths[i], pie->plane_widths[i],
 		     planes[i].data_x, planes[i].raster);
 	else
-	    dputs(", -");
+	    dprintf(pie->memory, ", -");
     }
-    dputs(")\n");
+    dprintf(pie->memory, ")\n");
     *rows_used = height;
     return (pie->rows_left -= height) <= 0;
 }
@@ -370,7 +370,7 @@ trace_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
     const gs_pixel_image_t *ppi = (const gs_pixel_image_t *)pim;
     int ncomp;
 
-    dprintf7("begin_typed_image(type=%d, ImageMatrix=[%g %g %g %g %g %g]",
+    dprintf7(dev->memory, "begin_typed_image(type=%d, ImageMatrix=[%g %g %g %g %g %g]",
 	     pim->type->index, pim->ImageMatrix.xx, pim->ImageMatrix.xy,
 	     pim->ImageMatrix.yx, pim->ImageMatrix.yy,
 	     pim->ImageMatrix.tx, pim->ImageMatrix.ty);
@@ -388,7 +388,7 @@ trace_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
 	ncomp = gs_color_space_num_components(ppi->ColorSpace) + 1;
 	break;
     case 2:			/* no data */
-	dputs(")\n");
+	dprintf(dev->memory, ")\n");
 	return 1;
     default:
 	goto dflt;
@@ -403,14 +403,14 @@ trace_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
 				  ppi->format) < 0
 	)
 	goto dflt;
-    dprintf4("\n    Width=%d, Height=%d, BPC=%d, num_components=%d)\n",
+    dprintf4(dev->memory, "\n    Width=%d, Height=%d, BPC=%d, num_components=%d)\n",
 	     ppi->Width, ppi->Height, ppi->BitsPerComponent, ncomp);
     pie->memory = memory;
     pie->rows_left = ppi->Height;
     *pinfo = (gx_image_enum_common_t *)pie;
     return 0;
  dflt:
-    dputs(") DEFAULTED\n");
+    dprintf(dev->memory, ") DEFAULTED\n");
     return gx_default_begin_typed_image(dev, pis, pmat, pim, prect, pdcolor,
 					pcpath, memory, pinfo);
 }
@@ -444,55 +444,55 @@ trace_text_begin(gx_device * dev, gs_imager_state * pis,
     gs_text_enum_t *pte;
     int code;
 
-    dputs("text_begin(");
+    dprintf(dev->memory, "text_begin(");
     for (i = 0; i < countof(tags); ++i)
 	if (text->operation & (1 << i)) {
 	    if (tags[i])
-		dprintf1("%s ", tags[i]);
+		dprintf1(dev->memory, "%s ", tags[i]);
 	    else
-		dprintf1("%d? ", i);
+		dprintf1(dev->memory, "%d? ", i);
 	}
-    dprintf1("font=%s\n           text=(", font->font_name.chars);
+    dprintf1(dev->memory, "font=%s\n           text=(", font->font_name.chars);
     if (text->operation & TEXT_FROM_SINGLE_CHAR)
-	dprintf1("0x%lx", (ulong)text->data.d_char);
+	dprintf1(dev->memory, "0x%lx", (ulong)text->data.d_char);
     else if (text->operation & TEXT_FROM_SINGLE_GLYPH)
-	dprintf1("0x%lx", (ulong)text->data.d_glyph);
+	dprintf1(dev->memory, "0x%lx", (ulong)text->data.d_glyph);
     else
 	for (i = 0; i < text->size; ++i) {
 	    if (text->operation & TEXT_FROM_STRING)
-		dputc(text->data.bytes[i]);
+		dprintf1(dev->memory, "%c", text->data.bytes[i]);
 	    else
-		dprintf1("0x%lx ",
+		dprintf1(dev->memory, "0x%lx ",
 			 (text->operation & TEXT_FROM_GLYPHS ?
 			  (ulong)text->data.glyphs[i] :
 			  (ulong)text->data.chars[i]));
     }
-    dprintf1(")\n           size=%u", text->size);
+    dprintf1(dev->memory, ")\n           size=%u", text->size);
     if (text->operation & TEXT_ADD_TO_ALL_WIDTHS)
-	dprintf2(", delta_all=(%g,%g)", text->delta_all.x, text->delta_all.y);
+	dprintf2(dev->memory, ", delta_all=(%g,%g)", text->delta_all.x, text->delta_all.y);
     if (text->operation & TEXT_ADD_TO_SPACE_WIDTH) {
-	dprintf3(", space=0x%lx, delta_space=(%g,%g)",
+	dprintf3(dev->memory, ", space=0x%lx, delta_space=(%g,%g)",
 		 (text->operation & TEXT_FROM_GLYPHS ?
 		  (ulong)text->space.s_glyph : (ulong)text->space.s_char),
 		 text->delta_space.x, text->delta_space.y);
     }
     if (text->operation & TEXT_REPLACE_WIDTHS) {
-	dputs("\n           widths=");
+	dprintf(dev->memory, "\n           widths=");
 	for (i = 0; i < text->widths_size; ++i) {
 	    if (text->x_widths)
-		dprintf1("(%g,", text->x_widths[i]);
+		dprintf1(dev->memory, "(%g,", text->x_widths[i]);
 	    else
-		dputs("(,");
+		dprintf(dev->memory, "(,");
 	    if (text->y_widths)
-		dprintf1("%g)",
+		dprintf1(dev->memory, "%g)",
 			 (text->y_widths == text->x_widths ?
 			  text->y_widths[++i] : text->y_widths[i]));
 	    else
-		dputs(")");
+		dprintf(dev->memory, ")");
 	}
     }
     if (text->operation & TEXT_DO_DRAW)
-	trace_drawing_color(", ", pdcolor);
+	trace_drawing_color(dev->memory, ", ", pdcolor);
     /*
      * We can't do it if CHAR*PATH or INTERVENE, or if (RETURN_WIDTH and not
      * REPLACE_WIDTHS and we can't get the widths from the font).
@@ -549,7 +549,7 @@ trace_text_begin(gx_device * dev, gs_imager_state * pis,
 	    if (ch == text->space.s_char)
 		++num_spaces;
 	}
-	gs_distance_transform(w.x * scale, w.y * scale,
+	gs_distance_transform(dev->memory, w.x * scale, w.y * scale,
 			      &font->FontMatrix, &dpt);
 	if (text->operation & TEXT_ADD_TO_ALL_WIDTHS) {
 	    int num_chars = text->size;
@@ -562,20 +562,20 @@ trace_text_begin(gx_device * dev, gs_imager_state * pis,
 	    dpt.y += text->delta_space.y * num_spaces;
 	}
 	pte->returned.total_width = dpt;
-	gs_distance_transform(dpt.x, dpt.y, &ctm_only(pis), &dpt);
+	gs_distance_transform(dev->memory, dpt.x, dpt.y, &ctm_only(pis), &dpt);
 	code = gx_path_add_point(path,
 				 origin.x + float2fixed(dpt.x),
 				 origin.y + float2fixed(dpt.y));
 	if (code < 0)
 	    goto dfree;
     }
-    dputs(")\n");
+    dprintf(dev->memory, ")\n");
     *ppenum = pte;
     return 0;
  dfree:
     gs_free_object(memory, pte, "trace_text_begin");
  dflt:
-    dputs(") DEFAULTED\n");
+    dprintf(dev->memory, ") DEFAULTED\n");
     return gx_default_text_begin(dev, pis, text, font, path, pdcolor,
 				 pcpath, memory, ppenum);
 }
