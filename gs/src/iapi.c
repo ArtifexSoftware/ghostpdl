@@ -77,6 +77,7 @@ gsapi_new_instance(gs_main_instance **pinstance, void *caller_handle)
     minst->stderr_fn = NULL;
     minst->poll_fn = NULL;
     minst->display = NULL;
+    minst->i_ctx_p = NULL;
     *pinstance = minst;
     return 0;
 }

@@ -752,9 +752,6 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
     i_ctx_t *i_ctx_p = minst->i_ctx_p;
     int exit_code;
     ref error_object;
-    i_plugin_holder *h = (i_ctx_p != 0 ? i_ctx_p->plugin_list : 0);
-    gs_raw_memory_t *mem_raw = i_ctx_p->memory.current->parent;
-
     /*
      * Previous versions of this code closed the devices in the
      * device list here.  Since these devices are now prototypes,
@@ -771,8 +768,12 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
 	print_resource_usage(minst, &gs_imemory, "Final");
     /* Do the equivalent of a restore "past the bottom". */
     /* This will release all memory, close all open files, etc. */
-    if (minst->init_done >= 1)
-	alloc_restore_all(idmemory);
+    if (minst->init_done >= 1) {
+        gs_raw_memory_t *mem_raw = i_ctx_p->memory.current->parent;
+        i_plugin_holder *h = i_ctx_p->plugin_list;
+        alloc_restore_all(idmemory);
+        i_plugin_finit(mem_raw, h);
+    }
     /* clean up redirected stdout */
     if (minst->fstdout2 && (minst->fstdout2 != minst->fstdout)
 	    && (minst->fstdout2 != minst->fstderr)) {
@@ -781,7 +782,6 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
     }
     minst->stdout_is_redirected = 0;
     minst->stdout_to_stderr = 0;
-    i_plugin_finit(mem_raw, h);
     gs_lib_finit(exit_status, code);
 }
 void
