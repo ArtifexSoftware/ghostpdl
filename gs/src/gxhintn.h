@@ -37,7 +37,7 @@ typedef int32 t1_hinter_space_coord; /* measured in internal outliner's space un
 typedef int32 int19;
 
 enum t1_hint_type
-{   hstem, vstem, dot, replace
+{   hstem, vstem, dot
 };
 
 enum t1_pole_type
@@ -76,16 +76,13 @@ typedef struct t1_hint_s
     t1_glyph_space_coord g0, g1; /* starting and ending transversal coord of the stem */
     t1_glyph_space_coord ag0, ag1; /* starting and ending transversal aligned coord of the stem */
     enum t1_align_type aligned0, aligned1; /* ag0, ag1 is aligned */
-    short start_pole; /* outline pole to search for stem the stem from */
-    short beg_pole, end_pole; /* outline interval of the stem */
     unsigned int stem3_index; /* 1,2,3 for stem3 (not used yet), 0 for other types */
-    short complex_link; /* the index of next member of same complex */
-    int contour_index;
     int range_index; /* type 2 only */
 } t1_hint;
 
 typedef struct t1_hint_range_s
 {   short beg_pole, end_pole;
+    int contour_index;
     int next;
 } t1_hint_range; /* type 2 only */
 
