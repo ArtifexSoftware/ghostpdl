@@ -95,7 +95,7 @@ pl_font_lookup_glyph(const pl_font_t *plfont, gs_glyph glyph)
 	      result = pfg;
 	    index = (index >= skip ? index : index + size) - skip;
 	  }
-	return (!pfg->data && result) ? result : pfg;
+ 	return (!pfg->data && result) ? result : pfg;
 }
 
 /* ---------------- Bitmap font support ---------------- */
@@ -1508,18 +1508,14 @@ tcg:	if ( plfont->char_glyphs.table )
 		  return code;
 		goto tcg;
 	      }
-            /* Recently we have seen XL format 0 class 1 and 2 fonts
-               that use the character code as a key instead of the
-               glyph id embedded in the downloaded font data.  It is
-               possible that the character code is also used for
-               format 15 and XL format 0 class 0.  Pending further
-               investigation we use the character code as the key for
-               format 0 class 1 and 2 and the glyph id embedde in the
-               font for the other font types. */
-            if (( cdata[0] != 15 ) && (cdata[1] == 1 || cdata[1] == 2))
-                ; /* do nothing use char code as the key */
+	    /* get glyph id from character download */
+            if ( cdata[0] == 1 )
+		/* pxl truetype format 1, 
+		 * class 0 at offset 4, class 1 at offset 8 or class 2 at 10  */
+                key = pl_get_uint16(cdata + ((cdata[1] == 0) ? 4 : ((cdata[1] == 1) ? 8 : 10)));
             else
-                key = pl_get_uint16(cdata + (cdata[0] == 15 ? cdata[2] + 4 : 4));
+		/* pcl truetype format 15 */ 
+                key = pl_get_uint16(cdata + cdata[2] + 4);
 	  }
 fg:	pfg = pl_font_lookup_glyph(plfont, key);
 	if ( pfg->data != 0 )
