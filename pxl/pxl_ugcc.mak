@@ -63,6 +63,8 @@ DEVICE_DEVS=$(DD)x11.dev $(DD)x11mono.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev\
  $(DD)bmpmono.dev $(DD)bmpamono.dev $(DD)bmpa16m.dev\
  $(DD)pbmraw.dev $(DD)pgmraw.dev $(DD)ppmraw.dev
 
+FEATURE_DEVS=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev $(DD)patlib.dev $(DD)psl2cs.dev $(DD)rld.dev $(DD)roplib.dev $(DD)ttflib.dev  $(DD)cielib.dev $(DD)pipe.dev
+
 # Generic makefile
 
 include $(COMMONDIR)/ugcc_top.mak
