@@ -488,7 +488,11 @@ end
       /exp load 2 packedarray cvx /DecodeA exch def
     } if
     dup /BlackPoint knownoget { /BlackPoint exch def } if
-    dup /WhitePoint knownoget { /WhitePoint exch def } if
+    dup /WhitePoint knownoget {
+      dup /WhitePoint exch def 
+      dup /MatrixA exch def
+      /RangeLMN [ 3 2 roll { 0 exch } forall ] def
+    } if
     /PDFColorSpace exch def [ /CIEBasedA currentdict end ]
   }
   /CalRGB {
