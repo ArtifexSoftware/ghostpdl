@@ -132,18 +132,16 @@ gs_font_cid0_enumerate_glyph(gs_font *font, int *pindex,
     gs_font_cid0 *const pfont = (gs_font_cid0 *)font;
 
     while (*pindex < pfont->cidata.common.CIDCount) {
-	gs_const_string gstr;
+	gs_glyph_data_t gdata;
 	int fidx;
 	gs_glyph glyph = (gs_glyph)(gs_min_cid_glyph + (*pindex)++);
 	int code = pfont->cidata.glyph_data((gs_font_base *)pfont, glyph,
-					    &gstr, &fidx);
+					    &gdata, &fidx);
 
-	if (code < 0 || gstr.size == 0)
+	if (code < 0 || gdata.bits.size == 0)
 	    continue;
 	*pglyph = glyph;
-	if (code > 0)
-	    gs_free_const_string(font->memory, gstr.data, gstr.size,
-				 "gs_font_cid0_enumerate_glyphs");
+	gs_glyph_data_free(&gdata, "gs_font_cid0_enumerate_glyphs");
 	return 0;
     }
     *pindex = 0;

@@ -1,4 +1,4 @@
-/* Copyright (C) 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 2000, 2001 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -77,10 +77,9 @@ typedef struct gs_font_cid0_data_s {
     int FDBytes;		/* optional, for standard glyph_data */
     /*
      * The third argument of glyph_data may be NULL if only the font number
-     * is wanted.  glyph_data returns 1 if the string is newly allocated
-     * (using the font's allocator) and can be freed by the client.
+     * is wanted.
      */
-    int (*glyph_data)(P4(gs_font_base *, gs_glyph, gs_const_string *,
+    int (*glyph_data)(P4(gs_font_base *, gs_glyph, gs_glyph_data_t *,
 			 int *));
     void *proc_data;
 } gs_font_cid0_data;
@@ -130,7 +129,7 @@ typedef struct gs_font_cid2_data_s {
      * handle MetricsCount.  Save the original ones here.
      */
     struct o_ {
-	int (*get_outline)(P3(gs_font_type42 *, uint, gs_const_string *));
+	int (*get_outline)(P3(gs_font_type42 *, uint, gs_glyph_data_t *));
 	int (*get_metrics)(P4(gs_font_type42 *, uint, int, float [4]));
     } orig_procs;
 } gs_font_cid2_data;

@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 2000, 2001 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -57,19 +57,15 @@ typedef struct gs_type1_data_s gs_type1_data;
 
 typedef struct gs_type1_data_procs_s {
 
-    /*
-     * Get the data for any glyph.  Return 1 if the string is newly
-     * allocated (using the font's allocator) and should be freed by the
-     * caller, 0 if the string should not be freed, < 0 on error.
-     */
+    /* Get the data for any glyph.  Return >= 0 or < 0 as usual. */
 
     int (*glyph_data)(P3(gs_font_type1 * pfont, gs_glyph glyph,
-			 gs_const_string * pgdata));
+			 gs_glyph_data_t *pgd));
 
     /* Get the data for a Subr.  Return like glyph_data. */
 
     int (*subr_data)(P4(gs_font_type1 * pfont, int subr_num, bool global,
-			gs_const_string * psdata));
+			gs_glyph_data_t *pgd));
 
     /*
      * Get the data for a seac character, including the glyph and/or the
@@ -79,7 +75,7 @@ typedef struct gs_type1_data_procs_s {
      */
 
     int (*seac_data)(P4(gs_font_type1 * pfont, int ccode,
-			gs_glyph * pglyph, gs_const_string * pcdata));
+			gs_glyph * pglyph, gs_glyph_data_t *pgd));
 
     /*
      * Push (a) value(s) onto the client ('PostScript') stack during

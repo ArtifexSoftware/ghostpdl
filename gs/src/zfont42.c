@@ -35,7 +35,7 @@
 
 /* Forward references */
 private int z42_string_proc(P4(gs_font_type42 *, ulong, uint, const byte **));
-private int z42_gdir_get_outline(P3(gs_font_type42 *, uint, gs_const_string *));
+private int z42_gdir_get_outline(P3(gs_font_type42 *, uint, gs_glyph_data_t *));
 private font_proc_enumerate_glyph(z42_enumerate_glyph);
 private font_proc_enumerate_glyph(z42_gdir_enumerate_glyph);
 private font_proc_encode_char(z42_encode_char);
@@ -209,7 +209,7 @@ const op_def zfont42_op_defs[] =
  */
 int
 font_gdir_get_outline(const ref *pgdir, long glyph_index,
-		      gs_const_string * pgstr)
+		      gs_glyph_data_t *pgd)
 {
     ref iglyph;
     ref gdef;
@@ -224,24 +224,23 @@ font_gdir_get_outline(const ref *pgdir, long glyph_index,
 	pgdef = &gdef;
     }
     if (code < 0) {
-	pgstr->data = 0;
-	pgstr->size = 0;
+	gs_glyph_data_from_null(pgd);
     } else if (!r_has_type(pgdef, t_string)) {
 	return_error(e_typecheck);
     } else {
-	pgstr->data = pgdef->value.const_bytes;
-	pgstr->size = r_size(pgdef);
+	gs_glyph_data_from_string(pgd, pgdef->value.const_bytes, r_size(pgdef),
+				  NULL);
     }
     return 0;
 }
 private int
 z42_gdir_get_outline(gs_font_type42 * pfont, uint glyph_index,
-		     gs_const_string * pgstr)
+		     gs_glyph_data_t *pgd)
 {
     const font_data *pfdata = pfont_data(pfont);
     const ref *pgdir = &pfdata->u.type42.GlyphDirectory;
 
-    return font_gdir_get_outline(pgdir, (long)glyph_index, pgstr);
+    return font_gdir_get_outline(pgdir, (long)glyph_index, pgd);
 }
 
 /* Reduce a glyph name to a glyph index if needed. */

@@ -48,7 +48,7 @@ skip_iv(gs_type1_state *pcis)
 {
     int skip = pcis->pfont->data.lenIV;
     ip_state_t *ipsp = &pcis->ipstack[pcis->ips_count - 1];
-    const byte *cip = ipsp->char_string.data;
+    const byte *cip = ipsp->cs_data.bits.data;
     crypt_state state = crypt_charstring_seed;
 
     for (; skip > 0; ++cip, --skip)
@@ -64,7 +64,7 @@ skip_iv(gs_type1_state *pcis)
  *	data.lenIV
  */
 private void
-type1_next_init(gs_type1_state *pcis, const gs_const_string *pstr,
+type1_next_init(gs_type1_state *pcis, const gs_glyph_data_t *pgd,
 		gs_font_type1 *pfont)
 {
     static const gs_log2_scale_point no_scale = {0, 0};
@@ -72,8 +72,7 @@ type1_next_init(gs_type1_state *pcis, const gs_const_string *pstr,
     gs_type1_interp_init(pcis, NULL, NULL, &no_scale, false, 0, pfont);
     pcis->flex_count = flex_max;
     pcis->dotsection_flag = dotsection_out;
-    pcis->ipstack[0].char_string = *pstr;
-    pcis->ipstack[0].free_char_string = 0;
+    pcis->ipstack[0].cs_data = *pgd;
     skip_iv(pcis);
 }
 
@@ -91,11 +90,10 @@ type1_callsubr(gs_type1_state *pcis, int index)
     gs_font_type1 *pfont = pcis->pfont;
     ip_state_t *ipsp1 = &pcis->ipstack[pcis->ips_count];
     int code = pfont->data.procs.subr_data(pfont, index, false,
-					   &ipsp1->char_string);
+					   &ipsp1->cs_data);
 
     if (code < 0)
 	return_error(code);
-    ipsp1->free_char_string = code;
     pcis->ips_count++;
     skip_iv(pcis);
     return code;
@@ -212,10 +210,7 @@ type1_next(gs_type1_state *pcis)
 	    ++ipsp;
 	    goto load;
 	case c_return:
-	    if (ipsp->free_char_string > 0)
-		gs_free_const_string(pcis->pfont->memory,
-				     ipsp->char_string.data,
-				     ipsp->char_string.size, "type1_next");
+	    gs_glyph_data_free(&ipsp->cs_data, "type1_next");
 	    pcis->ips_count--;
 	    --ipsp;
 	    goto load;
@@ -395,7 +390,7 @@ type2_put_hintmask(stream *s, const byte *mask, uint size)
  */
 #define MAX_STACK ostack_size
 int
-psf_convert_type1_to_type2(stream *s, const gs_const_string *pstr,
+psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
 			   gs_font_type1 *pfont)
 {
     gs_type1_state cis;
@@ -437,7 +432,7 @@ psf_convert_type1_to_type2(stream *s, const gs_const_string *pstr,
 
     /* Do a first pass to collect hints. */
     reset_stem_hints(&cis);
-    type1_next_init(&cis, pstr, pfont);
+    type1_next_init(&cis, pgd, pfont);
     for (;;) {
 	int c = type1_next(&cis);
 	fixed *csp = &cis.ostack[cis.os_count - 1];
@@ -497,7 +492,7 @@ psf_convert_type1_to_type2(stream *s, const gs_const_string *pstr,
 	hintmask_size = 0;
 
     /* Do a second pass to write the result. */
-    type1_next_init(&cis, pstr, pfont);
+    type1_next_init(&cis, pgd, pfont);
     CLEAR_OP();
     for (;;) {
 	int c = type1_next(&cis);

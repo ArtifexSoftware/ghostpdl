@@ -1,4 +1,4 @@
-/* Copyright (C) 1998, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 2000, 2001 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -41,7 +41,7 @@ font_proc_glyph_outline(zchar1_glyph_outline);
  * for CIDFontType 0 fonts uses this.
  */
 int zcharstring_outline(P5(gs_font_type1 *pfont, const ref *pgref,
-			   const gs_const_string *pgstr,
+			   const gs_glyph_data_t *pgd,
 			   const gs_matrix *pmat, gx_path *ppath));
 
 #endif /* ichar1_INCLUDED */

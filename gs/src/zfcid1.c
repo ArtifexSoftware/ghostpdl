@@ -1,4 +1,4 @@
-/* Copyright (C) 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 2000, 2001 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -110,31 +110,20 @@ z11_CIDMap_proc(gs_font_cid2 *pfont, gs_glyph glyph)
 /* Handle MetricsCount when accessing outline or metrics information. */
 private int
 z11_get_outline(gs_font_type42 * pfont, uint glyph_index,
-		gs_const_string * pgstr)
+		gs_glyph_data_t *pgd)
 {
     gs_font_cid2 *const pfcid = (gs_font_cid2 *)pfont;
     int skip = pfcid->cidata.MetricsCount << 1;
-    int code = pfcid->cidata.orig_procs.get_outline(pfont, glyph_index, pgstr);
+    int code = pfcid->cidata.orig_procs.get_outline(pfont, glyph_index, pgd);
 
     if (code >= 0) {
-	byte *data = (byte *)pgstr->data;  /* break const */
-	uint size = pgstr->size;
+	uint size = pgd->bits.size;
 
 	if (size <= skip) {
-	    if (code > 0 && size != 0)
-		gs_free_string(pfont->memory, data, size, "z11_get_outline");
-	    pgstr->data = 0, pgstr->size = 0;
+	    gs_glyph_data_free(pgd, "z11_get_outline");
+	    gs_glyph_data_from_null(pgd);
 	} else {
-	    if (code > 0) {
-		/* Newly allocated, freeble string. */
-		memmove(data, data + skip, size - skip);
-		pgstr->data = gs_resize_string(pfont->memory, data,
-					       size, size - skip,
-					       "z11_get_outline");
-	    } else {
-		pgstr->data += skip;
-	    }
-	    pgstr->size = size - skip;
+	    gs_glyph_data_substring(pgd, skip, size - skip);
 	}
     }
     return code;
@@ -145,18 +134,18 @@ z11_get_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
 {
     gs_font_cid2 *const pfcid = (gs_font_cid2 *)pfont;
     int skip = pfcid->cidata.MetricsCount << 1;
-    gs_const_string gstr;
+    gs_glyph_data_t gdata;
     const byte *pmetrics;
     int lsb, width;
     int code = 0;
 
     if (wmode > skip >> 2 ||
-	(code = pfcid->cidata.orig_procs.get_outline(pfont, glyph_index, &gstr)) < 0 ||
-	gstr.size < skip
+	(code = pfcid->cidata.orig_procs.get_outline(pfont, glyph_index, &gdata)) < 0 ||
+	gdata.bits.size < skip
 	)
 	return pfcid->cidata.orig_procs.get_metrics(pfont, glyph_index, wmode,
 						    sbw);
-    pmetrics = gstr.data + skip - (wmode << 2);
+    pmetrics = gdata.bits.data + skip - (wmode << 2);
     lsb = (pmetrics[2] << 8) + pmetrics[3];
     width = (pmetrics[0] << 8) + pmetrics[1];
     {
@@ -170,9 +159,7 @@ z11_get_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
 	    sbw[2] = width * factor, sbw[3] = 0;
 	}
     }
-    if (code > 0)
-	gs_free_const_string(pfont->memory, gstr.data, gstr.size,
-			     "z11_get_metrics");
+    gs_glyph_data_free(&gdata, "z11_get_metrics");
     return 0;
 }
 

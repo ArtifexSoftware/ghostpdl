@@ -1,4 +1,4 @@
-/* Copyright (C) 1990, 1995, 1996, 1997, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1990, 1995, 1996, 1997, 1999, 2001 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -63,7 +63,7 @@ void gs_type1_set_width(P2(gs_type1_state * pcis, const gs_point * pwpt));
 
 /* Define the generic procedure type for a CharString interpreter. */
 #define charstring_interpret_proc(proc)\
-  int proc(P3(gs_type1_state *, const gs_const_string *, int *))
+  int proc(P3(gs_type1_state *, const gs_glyph_data_t *, int *))
 typedef charstring_interpret_proc((*charstring_interpret_proc_t));
 
 /* Define the Type 1 interpreter. */

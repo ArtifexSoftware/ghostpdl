@@ -51,7 +51,7 @@
  * argument is where the othersubr # is stored for callothersubr.
  */
 int
-gs_type1_interpret(gs_type1_state * pcis, const gs_const_string * str,
+gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		   int *pindex)
 {
     gs_font_type1 *pfont = pcis->pfont;
@@ -97,11 +97,10 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_const_string * str,
     s.pcis = pcis;
     INIT_CSTACK(cstack, csp, pcis);
 
-    if (str == 0)
+    if (pgd == 0)
 	goto cont;
-    ipsp->char_string = *str;
-    ipsp->free_char_string = 0;	/* don't free caller-supplied strings */
-    cip = str->data;
+    ipsp->cs_data = *pgd;
+    cip = pgd->bits.data;
   call:state = crypt_charstring_seed;
     if (encrypted) {
 	int skip = pdata->lenIV;
@@ -190,21 +189,16 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_const_string * str,
 	    case c_callsubr:
 		c = fixed2int_var(*csp) + pdata->subroutineNumberBias;
 		code = pdata->procs.subr_data
-		    (pfont, c, false, &ipsp[1].char_string);
+		    (pfont, c, false, &ipsp[1].cs_data);
 		if (code < 0)
 		    return_error(code);
 		--csp;
 		ipsp->ip = cip, ipsp->dstate = state;
 		++ipsp;
-		ipsp->free_char_string = code;
-		cip = ipsp->char_string.data;
+		cip = ipsp->cs_data.bits.data;
 		goto call;
 	    case c_return:
-		if (ipsp->free_char_string > 0)
-		    gs_free_const_string(pfont->memory,
-					 ipsp->char_string.data,
-					 ipsp->char_string.size,
-					 "gs_type1_interpret");
+		gs_glyph_data_free(&ipsp->cs_data, "gs_type1_interpret");
 		--ipsp;
 		goto cont;
 	    case c_undoc15:
@@ -260,7 +254,7 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_const_string * str,
 		    /* do accent of seac */
 		    spt = pcis->position;
 		    ipsp = &pcis->ipstack[pcis->ips_count - 1];
-		    cip = ipsp->char_string.data;
+		    cip = ipsp->cs_data.bits.data;
 		    goto call;
 		}
 		return code;
@@ -396,7 +390,7 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 			    return code;
 			}
 			clear;
-			cip = ipsp->char_string.data;
+			cip = ipsp->cs_data.bits.data;
 			goto call;
 		    case ce1_sbw:
 			gs_type1_sbw(pcis, cs0, cs1, cs2, cs3);

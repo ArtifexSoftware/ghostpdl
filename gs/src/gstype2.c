@@ -121,7 +121,7 @@ enable_hints(stem_hint_table * psht, const byte * mask)
  * argument is only for compatibility with the Type 1 charstring interpreter.
  */
 int
-gs_type2_interpret(gs_type1_state * pcis, const gs_const_string * str,
+gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		   int *ignore_pindex)
 {
     gs_font_type1 *pfont = pcis->pfont;
@@ -162,11 +162,10 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_const_string * str,
     s.pcis = pcis;
     INIT_CSTACK(cstack, csp, pcis);
 
-    if (str == 0)
+    if (pgd == 0)
 	goto cont;
-    ipsp->char_string = *str;
-    ipsp->free_char_string = 0;	/* don't free caller-supplied strings */
-    cip = str->data;
+    ipsp->cs_data = *pgd;
+    cip = pgd->bits.data;
   call:state = crypt_charstring_seed;
     if (encrypted) {
 	int skip = pdata->lenIV;
@@ -226,7 +225,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_const_string * str,
 	    case c_callsubr:
 		c = fixed2int_var(*csp) + pdata->subroutineNumberBias;
 		code = pdata->procs.subr_data
-		    (pfont, c, false, &ipsp[1].char_string);
+		    (pfont, c, false, &ipsp[1].cs_data);
 	      subr:if (code < 0) {
 	            /* Calling a Subr with an out-of-range index is clearly a error:
 	             * the Adobe documentation says the results of doing this are
@@ -241,15 +240,10 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_const_string * str,
 		--csp;
 		ipsp->ip = cip, ipsp->dstate = state;
 		++ipsp;
-		ipsp->free_char_string = code;
-		cip = ipsp->char_string.data;
+		cip = ipsp->cs_data.bits.data;
 		goto call;
 	    case c_return:
-		if (ipsp->free_char_string > 0)
-		    gs_free_const_string(pfont->memory,
-					 ipsp->char_string.data,
-					 ipsp->char_string.size,
-					 "gs_type2_interpret");
+		gs_glyph_data_free(&ipsp->cs_data, "gs_type2_interpret");
 		--ipsp;
 		goto cont;
 	    case c_undoc15:
@@ -340,7 +334,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_const_string * str,
 		    if (code < 0)
 			return code;
 		    clear;
-		    cip = ipsp->char_string.data;
+		    cip = ipsp->cs_data.bits.data;
 		    goto call;
 		}
 		/*
@@ -360,7 +354,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_const_string * str,
 		    /* do accent of seac */
 		    spt = pcis->position;
 		    ipsp = &pcis->ipstack[pcis->ips_count - 1];
-		    cip = ipsp->char_string.data;
+		    cip = ipsp->cs_data.bits.data;
 		    goto call;
 		}
 		return code;
@@ -563,7 +557,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_const_string * str,
 	    case c2_callgsubr:
 		c = fixed2int_var(*csp) + pdata->gsubrNumberBias;
 		code = pdata->procs.subr_data
-		    (pfont, c, true, &ipsp[1].char_string);
+		    (pfont, c, true, &ipsp[1].cs_data);
 		goto subr;
 	    case cx_escape:
 		charstring_next(*cip, state, c, encrypted);

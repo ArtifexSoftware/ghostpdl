@@ -271,9 +271,9 @@ zchar_set_cache(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
  * if it isn't a string.
  */
 private bool charstring_is_notdef_proc(P1(const ref *));
-private int charstring_make_notdef(P2(gs_const_string *, const gs_font *));
+private int charstring_make_notdef(P2(gs_glyph_data_t *, gs_font *));
 int
-zchar_charstring_data(gs_font *font, const ref *pgref, gs_const_string *pstr)
+zchar_charstring_data(gs_font *font, const ref *pgref, gs_glyph_data_t *pgd)
 {
     ref *pcstr;
 
@@ -288,17 +288,16 @@ zchar_charstring_data(gs_font *font, const ref *pgref, gs_const_string *pstr)
 	 * (with our present font-writing code), we recognize this as a
 	 * special case and return a Type 1 CharString consisting of
 	 *	0 0 hsbw endchar
-	 * Note that we rely on garbage collection to free this string.
 	 */
 	if (font->FontType == ft_encrypted &&
 	    charstring_is_notdef_proc(pcstr)
 	    )
-	    return charstring_make_notdef(pstr, font);
+	    return charstring_make_notdef(pgd, font);
 	else
 	    return_error(e_typecheck);
     }
-    pstr->data = pcstr->value.const_bytes;
-    pstr->size = r_size(pcstr);
+    gs_glyph_data_from_string(pgd, pcstr->value.const_bytes, r_size(pcstr),
+			      NULL);
     return 0;
 }
 private bool
@@ -328,9 +327,9 @@ charstring_is_notdef_proc(const ref *pcstr)
     return false;
 }
 private int
-charstring_make_notdef(gs_const_string *pstr, const gs_font *font)
+charstring_make_notdef(gs_glyph_data_t *pgd, gs_font *font)
 {
-    const gs_font_type1 *const pfont = (const gs_font_type1 *)font;
+    gs_font_type1 *const pfont = (gs_font_type1 *)font;
     static const byte char_data[4] = {
 	139,			/* 0 */
 	139,			/* 0 */
@@ -342,8 +341,7 @@ charstring_make_notdef(gs_const_string *pstr, const gs_font *font)
 
     if (chars == 0)
 	return_error(e_VMerror);
-    pstr->data = chars;
-    pstr->size = len;
+    gs_glyph_data_from_string(pgd, chars, len, font);
     if (pfont->data.lenIV < 0)
 	memcpy(chars, char_data, sizeof(char_data));
     else {

@@ -648,20 +648,17 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	 (code = psf_enumerate_glyphs_next(penum, &glyph)) != 1;
 	 ) {
 	uint glyph_index;
-	gs_const_string glyph_string;
+	gs_glyph_data_t glyph_data;
 
 	if (glyph < gs_min_cid_glyph)
 	    return_error(gs_error_invalidfont);
 	glyph_index = glyph - gs_min_cid_glyph;
 	if_debug1('L', "[L]glyph_index %u\n", glyph_index);
-	if ((code = pfont->data.get_outline(pfont, glyph_index, &glyph_string)) >= 0) {
+	if ((code = pfont->data.get_outline(pfont, glyph_index, &glyph_data)) >= 0) {
 	    max_glyph = max(max_glyph, glyph_index);
-	    glyf_length += glyph_string.size;
-	    if_debug1('L', "[L]  size %u\n", glyph_string.size);
-	    if (code > 0)
-		gs_free_const_string(pfont->memory, glyph_string.data,
-				     glyph_string.size,
-				     "psf_write_truetype_data");
+	    glyf_length += glyph_data.bits.size;
+	    if_debug1('L', "[L]  size %u\n", glyph_data.bits.size);
+	    gs_glyph_data_free(&glyph_data, "psf_write_truetype_data");
 	}
     }
     /* Acrobat Reader won't accept fonts with empty glyfs. */
@@ -826,19 +823,16 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	psf_enumerate_glyphs_begin(penum, font, NULL, max_glyph + 1,
 				   GLYPH_SPACE_INDEX);
     for (offset = 0; psf_enumerate_glyphs_next(penum, &glyph) != 1; ) {
-	gs_const_string glyph_string;
+	gs_glyph_data_t glyph_data;
 
 	if ((code = pfont->data.get_outline(pfont, glyph - gs_min_cid_glyph,
-					    &glyph_string)) >= 0
+					    &glyph_data)) >= 0
 	    ) {
-	    stream_write(s, glyph_string.data, glyph_string.size);
-	    offset += glyph_string.size;
+	    stream_write(s, glyph_data.bits.data, glyph_data.bits.size);
+	    offset += glyph_data.bits.size;
 	    if_debug2('L', "[L]glyf index = %u, size = %u\n",
-		      i, glyph_string.size);
-	    if (code > 0)
-		gs_free_const_string(pfont->memory, glyph_string.data,
-				     glyph_string.size,
-				     "psf_write_truetype_data");
+		      i, glyph_data.bits.size);
+	    gs_glyph_data_free(&glyph_data, "psf_write_truetype_data");
 	}
     }
     if_debug1('l', "[l]glyf final offset = %lu\n", offset);
@@ -852,18 +846,15 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
     psf_enumerate_glyphs_reset(penum);
     glyph_prev = gs_min_cid_glyph;
     for (offset = 0; psf_enumerate_glyphs_next(penum, &glyph) != 1; ) {
-	gs_const_string glyph_string;
+	gs_glyph_data_t glyph_data;
 
 	for (; glyph_prev <= glyph; ++glyph_prev)
 	    put_loca(s, offset, indexToLocFormat);
 	if ((code = pfont->data.get_outline(pfont, glyph - gs_min_cid_glyph,
-				    &glyph_string)) >= 0
+				    &glyph_data)) >= 0
 	    ) {
-	    offset += glyph_string.size;
-	    if (code > 0)
-		gs_free_const_string(pfont->memory, glyph_string.data,
-				     glyph_string.size,
-				     "psf_write_truetype_data");
+	    offset += glyph_data.bits.size;
+	    gs_glyph_data_free(&glyph_data, "psf_write_truetype_data");
 	}
 
     }

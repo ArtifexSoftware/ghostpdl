@@ -553,15 +553,15 @@ type1_continue_dispatch(i_ctx_t *i_ctx_p, gs_type1exec_state *pcxs,
 {
     int value;
     int code;
-    gs_const_string charstring;
-    gs_const_string *pchars;
+    gs_glyph_data_t cs_data;
+    gs_glyph_data_t *pcsd;
 
     if (pcref == 0) {
-	pchars = 0;
+	pcsd = 0;
     } else {
-	charstring.data = pcref->value.const_bytes;
-	charstring.size = r_size(pcref);
-	pchars = &charstring;
+	gs_glyph_data_from_string(&cs_data, pcref->value.const_bytes,
+				  r_size(pcref), NULL);
+	pcsd = &cs_data;
     }
     /*
      * Since OtherSubrs may push or pop values on the PostScript operand
@@ -575,7 +575,7 @@ type1_continue_dispatch(i_ctx_t *i_ctx_p, gs_type1exec_state *pcxs,
     memcpy(pcxs->save_args, osp - (num_args - 1), num_args * sizeof(ref));
     osp -= num_args;
     gs_type1_set_callback_data(&pcxs->cis, pcxs);
-    code = pcxs->cis.pfont->data.interpret(&pcxs->cis, pchars, &value);
+    code = pcxs->cis.pfont->data.interpret(&pcxs->cis, pcsd, &value);
     switch (code) {
 	case type1_result_callothersubr: {
 	    /*
@@ -805,17 +805,17 @@ const op_def zchar1_op_defs[] =
 /* ------ Auxiliary procedures for type 1 fonts ------ */
 
 private int
-z1_glyph_data(gs_font_type1 * pfont, gs_glyph glyph, gs_const_string * pstr)
+z1_glyph_data(gs_font_type1 * pfont, gs_glyph glyph, gs_glyph_data_t *pgd)
 {
     ref gref;
 
     glyph_ref(glyph, &gref);
-    return zchar_charstring_data((gs_font *)pfont, &gref, pstr);
+    return zchar_charstring_data((gs_font *)pfont, &gref, pgd);
 }
 
 private int
 z1_subr_data(gs_font_type1 * pfont, int index, bool global,
-	     gs_const_string * pstr)
+	     gs_glyph_data_t *pgd)
 {
     const font_data *pfdata = pfont_data(pfont);
     ref subr;
@@ -827,14 +827,14 @@ z1_subr_data(gs_font_type1 * pfont, int index, bool global,
     if (code < 0)
 	return code;
     check_type_only(subr, t_string);
-    pstr->data = subr.value.const_bytes;
-    pstr->size = r_size(&subr);
+    gs_glyph_data_from_string(pgd, subr.value.const_bytes, r_size(&subr),
+			      NULL);
     return 0;
 }
 
 private int
 z1_seac_data(gs_font_type1 *pfont, int ccode, gs_glyph *pglyph,
-	     gs_const_string *pstr)
+	     gs_glyph_data_t *pgd)
 {
     ref std_glyph;
     int code = array_get(&StandardEncoding, (long)ccode, &std_glyph);
@@ -855,8 +855,8 @@ z1_seac_data(gs_font_type1 *pfont, int ccode, gs_glyph *pglyph,
 	    return_error(e_typecheck);
 	}
     }
-    if (pstr)
-	code = zchar_charstring_data((gs_font *)pfont, &std_glyph, pstr);
+    if (pgd)
+	code = zchar_charstring_data((gs_font *)pfont, &std_glyph, pgd);
     return code;
 }
 
@@ -908,14 +908,14 @@ zchar1_glyph_outline(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 {
     gs_font_type1 *const pfont1 = (gs_font_type1 *)font;
     ref gref;
-    gs_const_string charstring;
+    gs_glyph_data_t gdata;
     int code;
 
     glyph_ref(glyph, &gref);
-    code = zchar_charstring_data(font, &gref, &charstring);
+    code = zchar_charstring_data(font, &gref, &gdata);
     if (code < 0)
 	return code;
-    return zcharstring_outline(pfont1, &gref, &charstring, pmat, ppath);
+    return zcharstring_outline(pfont1, &gref, &gdata, pmat, ppath);
 }
 /*
  * Get a glyph outline given a CharString.  The glyph_outline procedure
@@ -923,10 +923,10 @@ zchar1_glyph_outline(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
  */
 int
 zcharstring_outline(gs_font_type1 *pfont1, const ref *pgref,
-		    const gs_const_string *pgstr,
+		    const gs_glyph_data_t *pgd_orig,
 		    const gs_matrix *pmat, gx_path *ppath)
 {
-    const gs_const_string *pchars = pgstr;
+    const gs_glyph_data_t *pgd = pgd_orig;
     int code;
     gs_type1exec_state cxs;
     gs_type1_state *const pcis = &cxs.cis;
@@ -940,7 +940,7 @@ zcharstring_outline(gs_font_type1 *pfont1, const ref *pgref,
     gs_point mpt;
 
     pdata = &pfont1->data;
-    if (pgstr->size <= max(pdata->lenIV, 0))
+    if (pgd->bits.size <= max(pdata->lenIV, 0))
 	return_error(e_invalidfont);
     pfdict = &pfont_data(pfont1)->dict;
     if (dict_find_string(pfdict, "CDevProc", &pcdevproc) > 0)
@@ -986,7 +986,7 @@ zcharstring_outline(gs_font_type1 *pfont1, const ref *pgref,
     }
     /* Continue interpreting. */
 icont:
-    code = pfont1->data.interpret(pcis, pchars, &value);
+    code = pfont1->data.interpret(pcis, pgd, &value);
     switch (code) {
     case 0:		/* all done */
 	/* falls through */
@@ -996,7 +996,7 @@ icont:
 	return_error(e_rangecheck); /* can't handle it */
     case type1_result_sbw:	/* [h]sbw, just continue */
 	type1_cis_get_metrics(pcis, cxs.sbw);
-	pchars = 0;
+	pgd = 0;
 	goto icont;
     }
 }

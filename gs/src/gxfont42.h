@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 2000, 2001 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -39,11 +39,10 @@ struct gs_type42_data_s {
     void *proc_data;		/* data for procedures */
     /*
      * The following are initialized by ...font_init, but may be reset by
-     * the client.  get_outline returns 1 if the string is newly allocated
-     * (using the font's allocator) and can be freed by the client.
+     * the client.
      */
     int (*get_outline)(P3(gs_font_type42 *pfont, uint glyph_index,
-			  gs_const_string *pgstr));
+			  gs_glyph_data_t *pgd));
     int (*get_metrics)(P4(gs_font_type42 *pfont, uint glyph_index, int wmode,
 			  float sbw[4]));
     /* The following are cached values. */

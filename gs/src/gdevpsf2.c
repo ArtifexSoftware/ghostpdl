@@ -370,12 +370,11 @@ cff_put_CharString(cff_writer_t *pcw, const byte *data, uint size,
     stream *s = pcw->strm;
 
     if (cff_convert_charstrings(pcw, (gs_font_base *)pfont)) {
-	gs_const_string str;
+	gs_glyph_data_t gdata;
 	int code;
 
-	str.data = data;
-	str.size = size;
-	code = psf_convert_type1_to_type2(s, &str, pfont);
+	gs_glyph_data_from_string(&gdata, data, size, NULL);
+	code = psf_convert_type1_to_type2(s, &gdata, pfont);
 	if (code < 0)
 	    return code;
     } else if (lenIV < 0 || !(pcw->options & WRITE_TYPE2_NO_LENIV))
@@ -807,28 +806,26 @@ cff_write_CharStrings_offsets(cff_writer_t *pcw, psf_glyph_enum_t *penum,
     for (glyph = gs_no_glyph, count = 0, offset = 1;
 	 (code = psf_enumerate_glyphs_next(penum, &glyph)) != 1;
 	 ++count) {
-	gs_const_string str;
+	gs_glyph_data_t gdata;
 	gs_font_type1 *pfd;
 	int gcode;
 
 	if (code == 0 &&
-	    (gcode = pcw->glyph_data(pfont, glyph, &str, &pfd)) >= 0
+	    (gcode = pcw->glyph_data(pfont, glyph, &gdata, &pfd)) >= 0
 	    ) {
 	    int extra_lenIV;
 
-	    if (str.size >= (extra_lenIV = cff_extra_lenIV(pcw, pfd))) {
+	    if (gdata.bits.size >= (extra_lenIV = cff_extra_lenIV(pcw, pfd))) {
 		if (cff_convert_charstrings(pcw, (gs_font_base *)pfd)) {
 		    swrite_position_only(&poss);
-		    code = psf_convert_type1_to_type2(&poss, &str, pfd);
+		    code = psf_convert_type1_to_type2(&poss, &gdata, pfd);
 		    if (code < 0)
 			return code;
 		    offset += stell(&poss);
 		} else
-		    offset += str.size - extra_lenIV;
+		    offset += gdata.bits.size - extra_lenIV;
 	    }
-	    if (gcode > 0)
-		gs_free_const_string(pfont->memory, str.data, str.size,
-				     "cff_write_CharStrings_offsets");
+	    gs_glyph_data_free(&gdata, "cff_write_CharStrings_offsets");
 	}
 	put_offset(pcw, offset);
     }
@@ -850,16 +847,14 @@ cff_write_CharStrings(cff_writer_t *pcw, psf_glyph_enum_t *penum,
     for (glyph = gs_no_glyph;
 	 (code = psf_enumerate_glyphs_next(penum, &glyph)) != 1;
 	 ) {
-	gs_const_string str;
+	gs_glyph_data_t gdata;
 	gs_font_type1 *pfd;
 
 	if (code == 0 &&
-	    (code = pcw->glyph_data(pfont, glyph, &str, &pfd)) >= 0
+	    (code = pcw->glyph_data(pfont, glyph, &gdata, &pfd)) >= 0
 	    ) {
-	    cff_put_CharString(pcw, str.data, str.size, pfd);
-	    if (code > 0)
-		gs_free_const_string(pfont->memory, str.data, str.size,
-				     "cff_write_CharStrings");
+	    cff_put_CharString(pcw, gdata.bits.data, gdata.bits.size, pfd);
+	    gs_glyph_data_free(&gdata, "cff_write_CharStrings");
 	}
     }
 }
@@ -878,18 +873,16 @@ cff_write_Subrs_offsets(cff_writer_t *pcw, uint *pcount, gs_font_type1 *pfont)
     int extra_lenIV = cff_extra_lenIV(pcw, pfont);
     int j, offset;
     int code;
-    gs_const_string str;
+    gs_glyph_data_t gdata;
 
     for (j = 0, offset = 1;
-	 (code = pfont->data.procs.subr_data(pfont, j, false, &str)) !=
+	 (code = pfont->data.procs.subr_data(pfont, j, false, &gdata)) !=
 	     gs_error_rangecheck;
 	 ++j) {
-	if (code >= 0 && str.size >= extra_lenIV)
-	    offset += str.size - extra_lenIV;
+	if (code >= 0 && gdata.bits.size >= extra_lenIV)
+	    offset += gdata.bits.size - extra_lenIV;
 	put_offset(pcw, offset);
-	if (code > 0)
-	    gs_free_const_string(pfont->memory, str.data, str.size,
-				 "cff_write_Subrs_offsets");
+	gs_glyph_data_free(&gdata, "cff_write_Subrs_offsets");
     }
     *pcount = j;
     return offset - 1;
@@ -900,20 +893,18 @@ cff_write_Subrs(cff_writer_t *pcw, uint subrs_count, uint subrs_size,
 {
     int j;
     uint ignore_count;
-    gs_const_string str;
+    gs_glyph_data_t gdata;
     int code;
 
     cff_put_Index_header(pcw, subrs_count, subrs_size);
     cff_write_Subrs_offsets(pcw, &ignore_count, pfont);
     for (j = 0;
-	 (code = pfont->data.procs.subr_data(pfont, j, false, &str)) !=
+	 (code = pfont->data.procs.subr_data(pfont, j, false, &gdata)) !=
 	     gs_error_rangecheck;
 	 ++j) {
 	if (code >= 0) {
-	    cff_put_CharString(pcw, str.data, str.size, pfont);
-	    if (code > 0)
-		gs_free_const_string(pfont->memory, str.data, str.size,
-				     "cff_write_Subrs");
+	    cff_put_CharString(pcw, gdata.bits.data, gdata.bits.size, pfont);
+	    gs_glyph_data_free(&gdata, "cff_write_Subrs");
 	}
     }
 }
@@ -1414,12 +1405,12 @@ psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
 
 /* Write the CFF definition of a CIDFontType 0 font (CIDFont). */
 private int
-cid0_glyph_data(gs_font_base *pbfont, gs_glyph glyph, gs_const_string *pstr,
+cid0_glyph_data(gs_font_base *pbfont, gs_glyph glyph, gs_glyph_data_t *pgd,
 		gs_font_type1 **ppfont)
 {
     gs_font_cid0 *const pfont = (gs_font_cid0 *)pbfont;
     int font_index;
-    int code = pfont->cidata.glyph_data(pbfont, glyph, pstr, &font_index);
+    int code = pfont->cidata.glyph_data(pbfont, glyph, pgd, &font_index);
 
     if (code >= 0)
 	*ppfont = pfont->cidata.FDArray[font_index];

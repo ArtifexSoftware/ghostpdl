@@ -41,12 +41,12 @@
 /* Gather glyph information for a Type 1 or Type 2 font. */
 int
 psf_type1_glyph_data(gs_font_base *pbfont, gs_glyph glyph,
-		     gs_const_string *pstr, gs_font_type1 **ppfont)
+		     gs_glyph_data_t *pgd, gs_font_type1 **ppfont)
 {
     gs_font_type1 *const pfont = (gs_font_type1 *)pbfont;
 
     *ppfont = pfont;
-    return pfont->data.procs.glyph_data(pfont, glyph, pstr);
+    return pfont->data.procs.glyph_data(pfont, glyph, pgd);
 }
 int
 psf_get_type1_glyphs(psf_outline_glyphs_t *pglyphs, gs_font_type1 *pfont,
@@ -244,30 +244,26 @@ write_Private(stream *s, gs_font_type1 *pfont,
 
     {
 	int n, i;
-	gs_const_string str;
+	gs_glyph_data_t gdata;
 	int code;
 
 	for (n = 0;
-	     (code = pdata->procs.subr_data(pfont, n, false, &str)) !=
+	     (code = pdata->procs.subr_data(pfont, n, false, &gdata)) !=
 		 gs_error_rangecheck;
 	     ) {
 	    ++n;
-	    if (code > 0)
-		gs_free_const_string(pfont->memory, str.data, str.size,
-				     "write_Private(Subrs)");
+	    gs_glyph_data_free(&gdata, "write_Private(Subrs)");
 	}
 	pprintd1(s, "/Subrs %d array\n", n);
 	for (i = 0; i < n; ++i)
-	    if ((code = pdata->procs.subr_data(pfont, i, false, &str)) >= 0) {
+	    if ((code = pdata->procs.subr_data(pfont, i, false, &gdata)) >= 0) {
 		char buf[50];
 
-		sprintf(buf, "dup %d %u -| ", i, str.size);
+		sprintf(buf, "dup %d %u -| ", i, gdata.bits.size);
 		stream_puts(s, buf);
-		write_CharString(s, str.data, str.size);
+		write_CharString(s, gdata.bits.data, gdata.bits.size);
 		stream_puts(s, " |\n");
-		if (code > 0)
-		    gs_free_const_string(pfont->memory, str.data, str.size,
-					 "write_Private(Subrs)");
+		gs_glyph_data_free(&gdata, "write_Private(Subrs)");
 	    }
 	stream_puts(s, "|-\n");
     }
@@ -280,7 +276,7 @@ write_Private(stream *s, gs_font_type1 *pfont,
 	int num_chars = 0;
 	gs_glyph glyph;
 	psf_glyph_enum_t genum;
-	gs_const_string gdata;
+	gs_glyph_data_t gdata;
 	int code;
 
 	psf_enumerate_glyphs_begin(&genum, (gs_font *)pfont, subset_glyphs,
@@ -293,9 +289,7 @@ write_Private(stream *s, gs_font_type1 *pfont,
 		(code = pdata->procs.glyph_data(pfont, glyph, &gdata)) >= 0
 		) {
 		++num_chars;
-		if (code > 0)
-		    gs_free_const_string(pfont->memory, gdata.data, gdata.size,
-					 "write_Private(CharStrings)");
+		gs_glyph_data_free(&gdata, "write_Private(CharStrings)");
 	    }
 	pprintd1(s, "2 index /CharStrings %d dict dup begin\n", num_chars);
 	psf_enumerate_glyphs_reset(&genum);
@@ -311,12 +305,10 @@ write_Private(stream *s, gs_font_type1 *pfont,
 
 		stream_puts(s, "/");
 		stream_write(s, gstr, gssize);
-		pprintd1(s, " %d -| ", gdata.size);
-		write_CharString(s, gdata.data, gdata.size);
+		pprintd1(s, " %d -| ", gdata.bits.size);
+		write_CharString(s, gdata.bits.data, gdata.bits.size);
 		stream_puts(s, " |-\n");
-		if (code > 0)
-		    gs_free_const_string(pfont->memory, gdata.data, gdata.size,
-					 "write_Private(CharStrings)");
+		gs_glyph_data_free(&gdata, "write_Private(CharStrings)");
 	    }
     }
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 2000, 2001 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -43,7 +43,7 @@ int font_GlyphDirectory_param(P2(os_ptr, ref *));
  * Get a glyph outline from GlyphDirectory.  Return an empty string if
  * the glyph is missing or out of range.
  */
-int font_gdir_get_outline(P3(const ref *, long, gs_const_string *));
+int font_gdir_get_outline(P3(const ref *, long, gs_glyph_data_t *));
 
 /*
  * Access a given byte offset and length in an array of strings.

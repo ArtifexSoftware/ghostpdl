@@ -1,4 +1,4 @@
-/* Copyright (C) 1990, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1990, 2000, 2001 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -23,6 +23,7 @@
 #  define gxtype1_INCLUDED
 
 #include "gscrypt1.h"
+#include "gsgdata.h"
 #include "gstype1.h"
 #include "gxop1.h"
 
@@ -132,10 +133,8 @@ typedef struct {
 typedef struct {
     const byte *ip;
     crypt_state dstate;
-    gs_const_string char_string;	/* original CharString or Subr, */
-					/* for GC */
-    int free_char_string;		/* if > 0, free char_string */
-					/* after executing it */
+    gs_glyph_data_t cs_data;	/* original CharString or Subr, */
+				/* for GC */
 } ip_state_t;
 
 /* Get the next byte from a CharString.  It may or may not be encrypted. */

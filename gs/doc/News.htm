@@ -77,11 +77,17 @@ The following SourceForge bug numbers are currently open:
 
 <h3><a name="7.10_Incompatible_changes"></a>Incompatible changes</h3>
 
-<p>
-No incompatible changes have been recorded for this version. Yet.
-
 <pre>
-
+(Interpreter)
+	- Updates clients and implementors for the new glyph outline data
+structure.
+(Library)
+	- Changes all procedures for getting glyph outline data to return
+the data by storing it into a gs_glyph_data_t structure that includes memory
+management information.  This is a NON-BACKWARD-COMPATIBLE change to both
+implementors and clients.  It corrects a significant design error: formerly
+these procedures encoded memory management information in their return code,
+which was obscure and error-prone.  See src/gsgdata.[hc].
 </pre>
 
 <!-- [2.0 end contents] ==================================================== -->

@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -61,7 +61,7 @@ int zchar_set_cache(P9(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
  * if it isn't a string.
  */
 int zchar_charstring_data(P3(gs_font *font, const ref *pgref,
-			     gs_const_string *pstr));
+			     gs_glyph_data_t *pgd));
 
 /*
  * Enumerate the next glyph from a directory.  This is essentially a

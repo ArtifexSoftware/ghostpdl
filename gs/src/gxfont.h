@@ -25,6 +25,7 @@
 
 #include "gsccode.h"
 #include "gsfont.h"
+#include "gsgdata.h"
 #include "gsnotify.h"
 #include "gsuid.h"
 #include "gsstype.h"		/* for extern_st */

@@ -1,4 +1,4 @@
-/* Copyright (C) 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 2000, 2001 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -23,6 +23,7 @@
 #  define gdevpsf_INCLUDED
 
 #include "gsccode.h"
+#include "gsgdata.h"
 
 /* ---------------- Embedded font writing ---------------- */
 
@@ -141,7 +142,7 @@ typedef struct gs_font_type1_s gs_font_type1;
 
 /* Define the type for the glyph data callback procedure. */
 typedef int (*glyph_data_proc_t)(P4(gs_font_base *, gs_glyph,
-				    gs_const_string *, gs_font_type1 **));
+				    gs_glyph_data_t *, gs_font_type1 **));
 
 /* Check that all selected glyphs can be written. */
 int psf_check_outline_glyphs(P3(gs_font_base *pfont,
@@ -163,7 +164,7 @@ int psf_get_outline_glyphs(P5(psf_outline_glyphs_t *pglyphs,
 /* ------ Exported by gdevpsf1.c ------ */
 
 /* Gather glyph information for a Type 1 or Type 2 font. */
-int psf_type1_glyph_data(P4(gs_font_base *, gs_glyph, gs_const_string *,
+int psf_type1_glyph_data(P4(gs_font_base *, gs_glyph, gs_glyph_data_t *,
 			    gs_font_type1 **));
 int psf_get_type1_glyphs(P4(psf_outline_glyphs_t *pglyphs,
 			    gs_font_type1 *pfont,
@@ -278,7 +279,7 @@ int psf_write_cid2_font(P6(stream *s, gs_font_cid2 *pfont, int options,
  * This procedure does not allocate or free any data.
  * NOTE: this procedure expands all Subrs in-line.
  */
-int psf_convert_type1_to_type2(P3(stream *s, const gs_const_string *pstr,
+int psf_convert_type1_to_type2(P3(stream *s, const gs_glyph_data_t *pgd,
 				  gs_font_type1 *pfont));
 
 #endif /* gdevpsf_INCLUDED */
