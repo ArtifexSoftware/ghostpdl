@@ -498,7 +498,7 @@ lcvd_fill_rectangle_shifted_from_mdev(gx_device *dev, int x, int y, int width, i
 	x - cvd->mdev.mapped_x, y - cvd->mdev.mapped_y, width, height, color);
 }
 private void 
-lcvd_get_clipping_box_from_tadget(gx_device *dev, gs_fixed_rect *pbox)
+lcvd_get_clipping_box_from_target(gx_device *dev, gs_fixed_rect *pbox)
 {
     gx_device_memory *mdev = (gx_device_memory *)dev;
 
@@ -874,12 +874,12 @@ pdf_setup_masked_image_converter(gx_device_pdf *pdev, gs_memory_t *mem, const gs
 
     cvd->pdev = pdev;
     gs_make_mem_device(&cvd->mdev, gdev_mem_device_for_bits(pdev->color_info.depth),
-		pdev->memory, 0, (gx_device *)pdev);
+		mem, 0, (gx_device *)pdev);
     cvd->mdev.width  = w;
     cvd->mdev.height = h;
     cvd->mdev.mapped_x = x;
     cvd->mdev.mapped_y = y;
-    cvd->mdev.bitmap_memory = pdev->memory;
+    cvd->mdev.bitmap_memory = mem;
     cvd->mdev.color_info = pdev->color_info;
     cvd->path_is_empty = true;
     cvd->mask_is_empty = true;
@@ -897,10 +897,10 @@ pdf_setup_masked_image_converter(gx_device_pdf *pdev, gs_memory_t *mem, const gs
 	if (mask == NULL)
 	    return_error(gs_error_VMerror);
 	cvd->mask = mask;
-	gs_make_mem_mono_device(mask, pdev->memory, (gx_device *)pdev);
+	gs_make_mem_mono_device(mask, mem, (gx_device *)pdev);
 	mask->width = cvd->mdev.width;
 	mask->height = cvd->mdev.height;
-	mask->bitmap_memory = pdev->memory;
+	mask->bitmap_memory = mem;
 	code = (*dev_proc(mask, open_device))((gx_device *)mask);
 	if (code < 0)
 	    return code;
@@ -919,7 +919,7 @@ pdf_setup_masked_image_converter(gx_device_pdf *pdev, gs_memory_t *mem, const gs
 							  : lcvd_fill_rectangle_shifted);
     } else
 	dev_proc(&cvd->mdev, fill_rectangle) = lcvd_fill_rectangle_shifted_from_mdev;
-    dev_proc(&cvd->mdev, get_clipping_box) = lcvd_get_clipping_box_from_tadget;
+    dev_proc(&cvd->mdev, get_clipping_box) = lcvd_get_clipping_box_from_target;
     dev_proc(&cvd->mdev, pattern_manage) = lcvd_pattern_manage;
     dev_proc(&cvd->mdev, fill_path) = lcvd_handle_fill_path_as_shading_coverage;
     cvd->m = *m;

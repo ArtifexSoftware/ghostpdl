@@ -41,6 +41,7 @@ private image_enum_proc_plane_data(pdf_image_plane_data);
 private image_enum_proc_end_image(pdf_image_end_image);
 private image_enum_proc_end_image(pdf_image_end_image_object);
 private image_enum_proc_end_image(pdf_image_end_image_object2);
+private image_enum_proc_end_image(pdf_image_end_image_cvd);
 private IMAGE3_MAKE_MID_PROC(pdf_image3_make_mid);
 private IMAGE3_MAKE_MCDE_PROC(pdf_image3_make_mcde);
 private IMAGE3X_MAKE_MID_PROC(pdf_image3x_make_mid);
@@ -57,6 +58,11 @@ private const gx_image_enum_procs_t pdf_image_object_enum_procs = {
 private const gx_image_enum_procs_t pdf_image_object_enum_procs2 = {
     pdf_image_plane_data,
     pdf_image_end_image_object2
+};
+private const gx_image_enum_procs_t pdf_image_cvd_enum_procs = {
+    gx_image1_plane_data,
+    pdf_image_end_image_cvd,
+    gx_image1_flush
 };
 
 /* ---------------- Driver procedures ---------------- */
@@ -277,6 +283,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     const gs_range_t *pranges = 0;
     const pdf_color_space_names_t *names;
     bool convert_to_process_colors = false;
+    pdf_lcvd_t *cvd = NULL;
 
     /*
      * Pop the image name from the NI stack.  We must do this, to keep the
@@ -385,6 +392,46 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	if (pdev->CompatibilityLevel < 1.2 || 
 		(pdev->CompatibilityLevel < 1.3 && (!PS2WRITE || !pdev->OrderResources)))
 	    goto nyi;
+	if (PS2WRITE && pdev->OrderResources && !pdev->PatternImagemask) {
+	    gs_matrix m, m1, mi;
+	    gs_point p;
+	    gs_int_point q;
+	    extern_st(st_pdf_lcvd_t);
+	    gs_image4_t pi4 = *(const gs_image4_t *)pic;
+
+	    gs_make_identity(&m1);
+	    gs_matrix_invert(&pic->ImageMatrix, &mi);
+	    gs_matrix_multiply(&mi, &ctm_only(pis), &m);
+	    cvd = gs_alloc_struct(mem, pdf_lcvd_t, &st_pdf_lcvd_t, "pdf_begin_typed_image");
+	    if (cvd == NULL)
+		return_error(gs_error_VMerror);
+	    gs_distance_transform_inverse(pis->ctm.tx * pdev->HWResolution[0] / 72, 
+					  pis->ctm.ty * pdev->HWResolution[0] / 72, &ctm_only(pis), &p);
+	    q.x = (int)floor(pis->ctm.tx);
+	    q.y = (int)floor(pis->ctm.ty);
+	    code = pdf_setup_masked_image_converter(pdev, mem, &m, cvd, 
+				 true, 0, 0, pi4.Width, pi4.Height, false);
+	    if (code < 0)
+		return code;
+	    cvd->mask->target = 0; /* fixme : move the initialization out from 
+				   pdf_setup_masked_image_converter because it unuseful here. */
+	    cvd->mdev.is_open = true; /* fixme: same as above. */
+	    cvd->mask->is_open = true; /* fixme: same as above. */
+	    cvd->mask_is_empty = false;
+	    code = (*dev_proc(cvd->mask, fill_rectangle))((gx_device *)cvd->mask, 
+			0, 0, cvd->mask->width, cvd->mask->height, (gx_color_index)0);
+	    if (code < 0)
+		return code;
+	    gx_device_retain((gx_device *)cvd, true);
+	    gx_device_retain((gx_device *)cvd->mask, true);
+	    gs_make_identity(&pi4.ImageMatrix);
+	    code = gx_default_begin_typed_image((gx_device *)cvd, 
+		pis, &m1, (gs_image_common_t *)&pi4, prect, pdcolor, NULL, mem, pinfo);
+	    if (code < 0)
+		return code;
+	    (*pinfo)->procs = &pdf_image_cvd_enum_procs;
+	    return 0;
+	}
 	image[0].type4 = *(const gs_image4_t *)pic;
 	break;
     }
@@ -439,22 +486,22 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	rect.q.x = pim->Width, rect.q.y = pim->Height;
     }
     pie = gs_alloc_struct(mem, pdf_image_enum, &st_pdf_image_enum,
-			  "pdf_begin_image");
+			"pdf_begin_image");
     if (pie == 0)
 	return_error(gs_error_VMerror);
     memset(pie, 0, sizeof(*pie)); /* cleanup entirely for GC to work in all cases. */
     *pinfo = (gx_image_enum_common_t *) pie;
     gx_image_enum_common_init(*pinfo, (const gs_data_image_t *) pim,
-			((!PS2WRITE || !pdev->OrderResources) ? 
-			      (context == PDF_IMAGE_TYPE3_MASK ?
-			       &pdf_image_object_enum_procs :
-			       &pdf_image_enum_procs) :
-			      context == PDF_IMAGE_TYPE3_MASK ?
-			       &pdf_image_object_enum_procs :
-			      context == PDF_IMAGE_TYPE3_DATA ?
-			       &pdf_image_object_enum_procs2 :
-			       &pdf_image_enum_procs),
-			    (gx_device *)pdev, num_components, format);
+		    ((!PS2WRITE || !pdev->OrderResources) ? 
+			    (context == PDF_IMAGE_TYPE3_MASK ?
+			    &pdf_image_object_enum_procs :
+			    &pdf_image_enum_procs) :
+			    context == PDF_IMAGE_TYPE3_MASK ?
+			    &pdf_image_object_enum_procs :
+			    context == PDF_IMAGE_TYPE3_DATA ?
+			    &pdf_image_object_enum_procs2 :
+			    &pdf_image_enum_procs),
+			(gx_device *)pdev, num_components, format);
     pie->memory = mem;
     width = rect.q.x - rect.p.x;
     pie->width = width;
@@ -916,6 +963,19 @@ pdf_image_end_image(gx_image_enum_common_t * info, bool draw_last)
     return pdf_image_end_image_data(info, draw_last, USE_AS_IMAGE);
 }
 
+/* End an image converted with pdf_lcvd_t. */
+private int
+pdf_image_end_image_cvd(gx_image_enum_common_t * info, bool draw_last)
+{   pdf_lcvd_t *cvd = (pdf_lcvd_t *)info->dev;
+    int code = pdf_dump_converted_image(cvd->pdev, cvd);
+    int code1 = gx_image1_end_image(info, draw_last);
+    int code2 = gs_closedevice((gx_device *)cvd->mask);
+    int code3 = gs_closedevice((gx_device *)cvd);
+
+    gs_free_object(cvd->mask->memory, (gx_device *)cvd->mask, "pdf_image_end_image_cvd");
+    gs_free_object(cvd->mdev.memory, (gx_device *)cvd, "pdf_image_end_image_cvd");
+    return code < 0 ? code : code1 < 0 ? code1 : code2 < 0 ? code2 : code3;
+}
 /* ---------------- Type 3/3x images ---------------- */
 
 /*
