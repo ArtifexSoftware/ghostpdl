@@ -626,14 +626,14 @@ main (int argc, char **argv)
   if (image_out)
     image_pnm_close (&image_out->super);
 
-
-  if (freport.n_outof_window > 0)
+  if (freport.n_diff > 0)
     {
       printf ("%s: %d different, %d out of tolerance, %d out of window\n",
 	      fn[0], freport.n_diff, freport.n_outof_tolerance,
 	      freport.n_outof_window);
       return 1;
     }
-  else
-    return 0;
+  if (freport.n_outof_window > 0)
+      return 1;
+  return 0;
 }
