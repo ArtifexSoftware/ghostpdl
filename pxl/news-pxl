@@ -6,7 +6,7 @@
 This file, NEWS-XL, describes the changes in the most recent releases of
 Aladdin's PCL XL code, in reverse chronological order.
 
-Version 1.16 (xx/xx/98)
+Version 1.16 (08/17/98)
 ======================
 
 Fixes bugs
@@ -21,6 +21,8 @@ working directory (pxl_ugcc.mak)
 pxbfont.c.  This avoids a circular reference in the makefile when
 PXLGEN==PXLSRC and it's generally better not to be have a different
 file for each output.
+- minor interface change for adjust color count (pxgstate.c) for
+gs5.34.
 
 Known Problems:
 
