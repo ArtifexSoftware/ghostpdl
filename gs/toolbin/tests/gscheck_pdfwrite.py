@@ -57,14 +57,17 @@ class GSPDFWriteCompareTestCase(gstestgs.GhostscriptTestCase):
 
 		gs.device = 'pdfwrite'
 		gs.outfile = file1
-		gs.process()
+		if not gs.process():
+			self.fail("non-zero exit code trying to create pdf file from " + self.file)
 
 		# do PDF->device (pbmraw, pgmraw, ppmraw, pkmraw)
 		
 		gs.device = self.device
 		gs.infile = file1
 		gs.outfile = file2
-		gs.process()
+		if not gs.process():
+			self.fail("non-zero exit code trying to"\
+				  " rasterize " + file1)
 
 		# compare baseline
 		

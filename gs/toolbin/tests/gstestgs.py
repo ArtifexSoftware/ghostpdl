@@ -147,12 +147,20 @@ class GSCompareTestCase(GhostscriptTestCase):
 		if self.log_stderr:
 			gs.log_stderr = self.log_stderr
 
-		gs.process()
-		sum = gssum.make_sum(file)
+		if gs.process():
+			sum = gssum.make_sum(file)
+		else:
+			sum = ''
 		os.unlink(file)
 
 		# add test result to daily database
 		if self.track_daily:
 			gssum.add_file(file, dbname=gsconf.dailydb, sum=sum)
-		
-		self.assertEqual(sum, gssum.get_sum(file), 'md5sum did not match baseline (' + file + ') for file: ' + self.file)
+
+		if not sum:
+			self.fail("output file could not be created"\
+				  "for file: " + self.file)
+		else:
+			self.assertEqual(sum, gssum.get_sum(file),
+					 'md5sum did not match baseline (' +
+					 file + ') for file: ' + self.file)

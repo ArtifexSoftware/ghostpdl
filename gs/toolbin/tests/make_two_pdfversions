@@ -35,11 +35,11 @@ def make_version(ifile, ofile, device, dpi, baseline=0):
     gs.log_stderr = gsconf.log_stderr
 
     if baseline:
-	    gs.gsoptions = gsconf.baselineoptions
-	    gs.command = gsconf.baselinegs
+        gs.gsoptions = gsconf.baselineoptions
+	gs.command = gsconf.baselinegs
     else:
-	    gs.gsoptions = gsconf.compareoptions
-	    gs.command = gsconf.comparegs
+        gs.gsoptions = gsconf.compareoptions
+	gs.command = gsconf.comparegs
 
     gs.infile = gsconf.comparefiledir + ifile
     gs.dpi = dpi
@@ -51,25 +51,26 @@ def make_version(ifile, ofile, device, dpi, baseline=0):
     gs.device = 'pdfwrite'
 
     if not gs.process():
-        print "error."
+        print "error creating pdf."
         return
 
     gs.infile = tfile
     gs.outfile = ofile
     gs.device = device
 
-    gs.process()
+    if not gs.process():
+        print "error rasterizing pdf."
     os.unlink(tfile)
 
 file = sys.argv[1]
 if len(sys.argv) > 2:
-	device = sys.argv[2]
+    device = sys.argv[2]
 else:
-	device = 'ppmraw'
+    device = 'ppmraw'
 if len(sys.argv) > 3:
-	res = int(sys.argv[3])
+    res = int(sys.argv[3])
 else:
-	res = 72
+    res = 72
 
 ofile = "%s.pdf.%s.baseline.pnm" % (file, device)
 

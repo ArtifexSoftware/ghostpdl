@@ -52,7 +52,9 @@ gs.gsoptions = gsconf.baselineoptions
 gs.log_stdout = gsconf.log_stdout
 gs.log_stderr = gsconf.log_stderr
 
-gs.process()
+if not gs.process():
+    print "Error occurred running baseline Ghostscript."
+    sys.exit(1)
 
 ofile = "%s.%s.compare.pnm" % (file, device)
 
@@ -67,4 +69,6 @@ gs.gsoptions = gsconf.compareoptions
 gs.log_stdout = gsconf.log_stdout
 gs.log_stderr = gsconf.log_stderr
 
-gs.process()
+if not gs.process():
+    print "Error occurred running compare Ghostscript."
+    sys.exit(1)
