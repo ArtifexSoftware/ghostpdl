@@ -26,6 +26,9 @@
 % of objects or binary data streams.  It often succeeds with files that
 % have had its end of lines converted between unix and dos versions.
 
+% if true --> we have an object with duplicate object and generation numbers.
+/dup_obj_gen_num false def
+
 % Note:  This routine is also used by non-rebuild code.
 % Store a line in the xref array (Actually Objects and Generations arrays)
 % <obj num> <obj loc> <gen num>  setxrefentry <obj num> <obj loc> <gen num>
@@ -62,6 +65,8 @@
       Objects 3 index 3 index cvx lput	% Save object location
       Generations 3 index 2 index lput	% Save geenration number
     } if
+	% Set error flag if we have equal object and generation numbers
+    Generations 3 index lget 1 index eq { /dup_obj_gen_num true def } if
   } ifelse
 } bind def
 
@@ -199,7 +204,7 @@
 % supposed to be only a line termination.  However many real life files
 % contain some garbage.  This routine checks how much.  We then ignore this
 % stuff when we are scanning for objects.
-/determine_post_eof_count
+/determine_post_eof_count		% - determine_post_eof_count <count>
 { % Position to read block of data from the end of the file. 
   PDFfile 0 setfileposition
   PDFfile bytesavailable	% size of file
@@ -222,6 +227,8 @@
 { % Reset the Objects and Generations larrays
   /Objects larray def
   /Generations lstring def
+  % reset duplicate object and generation numbers error flag
+  /dup_obj_gen_num false def
   % Determine how many bytes are in the file after the final %%EOF
   /post_eof_count determine_post_eof_count def
   % Start at the beginning of the file
@@ -272,6 +279,14 @@
     PDFfile bytesavailable post_eof_count sub 20 lt { exit } if
   } loop				% loop through the entire file
   pop pop				% remove working string and its length
+  % Output warning if we have two objects with the same object and generation
+  % numbers.
+  dup_obj_gen_num {
+    (   **** Warning:  There are objects with matching oject and generation\n)
+    pdfformaterror
+    (   **** numbers.  The accuracy of the resulting image is unknown.\n)
+    pdfformaterror
+  } if
 } bind def
 
 % Print xref warning message
