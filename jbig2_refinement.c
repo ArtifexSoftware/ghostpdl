@@ -52,6 +52,54 @@ jbig2_decode_refinement_template0(Jbig2Ctx *ctx,
     "refinement region template 0 NYI");
 }
 
+static int
+jbig2_decode_refinement_template1_unopt(Jbig2Ctx *ctx,
+                              Jbig2Segment *segment,
+                              const Jbig2RefinementRegionParams *params,
+                              Jbig2ArithState *as,
+                              Jbig2Image *image,
+                              Jbig2ArithCx *GB_stats)
+{
+  const int GBW = image->width;
+  const int GBH = image->height;
+  const int dx = params->DX;
+  const int dy = params->DY;
+  Jbig2Image *ref = params->reference;
+  uint32_t CONTEXT;
+  int x,y;
+  bool bit;
+
+  for (y = 0; y < GBH; y++) {
+    for (x = 0; x < GBH; x++) {
+      CONTEXT = 0;
+      CONTEXT |= jbig2_image_get_pixel(image, x - 1, y + 0) << 0; 
+      CONTEXT |= jbig2_image_get_pixel(image, x + 1, y - 1) << 1; 
+      CONTEXT |= jbig2_image_get_pixel(image, x + 0, y - 1) << 2; 
+      CONTEXT |= jbig2_image_get_pixel(image, x - 1, y - 1) << 3; 
+      CONTEXT |= jbig2_image_get_pixel(ref, x-dx+1, y-dy+1) << 4;
+      CONTEXT |= jbig2_image_get_pixel(ref, x-dx+0, y-dy+1) << 5;
+      CONTEXT |= jbig2_image_get_pixel(ref, x-dx+1, y-dy+0) << 6;
+      CONTEXT |= jbig2_image_get_pixel(ref, x-dx+0, y-dy+0) << 7;
+      CONTEXT |= jbig2_image_get_pixel(ref, x-dx-1, y-dy+0) << 8;
+      CONTEXT |= jbig2_image_get_pixel(ref, x-dx+0, y-dy-1) << 9;
+      bit = jbig2_arith_decode(as, &GB_stats[CONTEXT]);
+      jbig2_image_set_pixel(image, x, y, bit);
+    }
+  }
+
+  {
+    static count = 0;
+    char name[32];
+    snprintf(name, 32, "refin-%d.pbm", count);
+    jbig2_image_write_pbm_file(ref, name);
+    snprintf(name, 32, "refout-%d.pbm", count);
+    jbig2_image_write_pbm_file(image, name);
+    count++;
+  }
+
+  return 0;
+}
+
 
 static int
 jbig2_decode_refinement_template1_unopt(Jbig2Ctx *ctx,
@@ -367,7 +415,6 @@ jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     as = jbig2_arith_new(ctx, ws);
     code = jbig2_decode_refinement_region(ctx, segment, &params,
                               as, image, GB_stats);
-    jbig2_image_write_pbm_file(image, "result.pbm");
 
     /* TODO: free ws, as */
     jbig2_free(ctx->allocator, GB_stats);
