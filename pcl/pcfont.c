@@ -268,7 +268,7 @@ pcl_font_selection_id(pcl_args_t *pargs, pcl_state_t *pcs, int set)
 	  case 0:
 	    if ( pcs->font_selected == set )
 	      pcs->font = pfs->font;
-	    pcl_decache_hmi(pcs);
+	    pcl_decache_font(pcs, set);
 	  case 1:		/* not found */
 	    return 0;
 	  }
@@ -300,22 +300,22 @@ pcl_select_default_font_secondary(pcl_args_t *pargs, pcl_state_t *pcs)
 
 private int /* SO */
 pcl_SO(pcl_args_t *pargs, pcl_state_t *pcs)
-{	if ( pcs->font_selected != 1 )
-	  { pcs->font_selected = secondary;
-	    pcs->font = pcs->font_selection[1].font;
-	    pcl_decache_hmi(pcs);
-	  }
-	return 0;
+{	
+    if ( pcs->font_selected != 1 ) { 
+	pcs->font_selected = secondary;
+	pcl_decache_font(pcs, secondary);
+    }
+    return 0;
 }
 
 private int /* SI */
 pcl_SI(pcl_args_t *pargs, pcl_state_t *pcs)
-{	if ( pcs->font_selected != 0 )
-	  { pcs->font_selected = primary;
-	    pcs->font = pcs->font_selection[0].font;
-	    pcl_decache_hmi(pcs);
-	  }
-	return 0;
+{	
+    if ( pcs->font_selected != 0 ) { 
+	pcs->font_selected = primary;
+	pcl_decache_font(pcs, primary);
+    }
+    return 0;
 }
 
 /* This command is listed only on p. A-7 of the PCL5 Comparison Guide. */
