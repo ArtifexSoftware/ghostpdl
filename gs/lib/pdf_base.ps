@@ -757,7 +757,8 @@ pdfdict begin
     exch 2 index exch knownoget {
 		% Both filters and parameters.
       exch dup type /nametype eq {
-	1 array astore exch 1 array astore exch
+	1 array astore exch
+	dup type /arraytype ne { 1 array astore } if exch
       } if
     } {
 		% Filters, but no parameters.
