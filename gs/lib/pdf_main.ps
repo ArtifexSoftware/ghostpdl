@@ -538,12 +538,19 @@ end readonly def
      { /Rect /Border }
      { 2 copy knownoget { 3 -1 roll } { pop } ifelse }
     forall dup /A knownoget {
-      dup /D knownoget {
-	exch pop exch dup length dict copy dup /Dest 4 -1 roll put
+      dup /URI known {
+        /A mark 3 2 roll    % <<>> /A [ <<action>>
+        { oforce } forall
+        .dicttomark
+        3 2 roll
       } {
-	/N knownoget {		% Assume /S /Named
-	  namedactions exch .knownget { exec } if
-	} if
+        dup /D knownoget {
+	  exch pop exch dup length dict copy dup /Dest 4 -1 roll put
+        } {
+	  /N knownoget {		% Assume /S /Named
+	     namedactions exch .knownget { exec } if
+	  } if
+        } ifelse
       } ifelse
     } if
     linkdest pop /LNK pdfmark
