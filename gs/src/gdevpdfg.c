@@ -1150,7 +1150,7 @@ pdf_update_transfer(gx_device_pdf *pdev, const gs_imager_state *pis,
  */
 private int
 pdf_update_alpha(gx_device_pdf *pdev, const gs_imager_state *pis,
-		 const char *ca_format, pdf_resource_t **ppres)
+		 pdf_resource_t **ppres)
 {
     bool ais;
     floatp alpha;
@@ -1170,7 +1170,9 @@ pdf_update_alpha(gx_device_pdf *pdev, const gs_imager_state *pis,
     if (code < 0)
 	return code;
     pprintb1(pdev->strm, "/AIS %s", ais);
-    pprintg1(pdev->strm, ca_format, alpha);
+    /* we never do the 'both' operations (b, B, b*, B*) so we set both */
+    /* CA and ca the same so that we stay in sync with state.*.alpha   */
+    pprintg2(pdev->strm, "/CA %g /ca %g", alpha, alpha);
     return 0;
 }
 
@@ -1179,7 +1181,7 @@ pdf_update_alpha(gx_device_pdf *pdev, const gs_imager_state *pis,
  */
 private int
 pdf_prepare_drawing(gx_device_pdf *pdev, const gs_imager_state *pis,
-		    const char *ca_format, pdf_resource_t **ppres)
+		    pdf_resource_t **ppres)
 {
     int code = 0;
 
@@ -1193,7 +1195,7 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_imager_state *pis,
 	    pprints1(pdev->strm, "/BM/%s", bm_names[pis->blend_mode]);
 	    pdev->state.blend_mode = pis->blend_mode;
 	}
-	code = pdf_update_alpha(pdev, pis, ca_format, ppres);
+	code = pdf_update_alpha(pdev, pis, ppres);
 	if (code < 0)
 	    return code;
     } else {
@@ -1305,7 +1307,7 @@ private int
 pdf_try_prepare_fill(gx_device_pdf *pdev, const gs_imager_state *pis)
 {
     pdf_resource_t *pres = 0;
-    int code = pdf_prepare_drawing(pdev, pis, "/ca %g", &pres);
+    int code = pdf_prepare_drawing(pdev, pis, &pres);
 
     if (code < 0)
 	return code;
@@ -1349,7 +1351,7 @@ private int
 pdf_try_prepare_stroke(gx_device_pdf *pdev, const gs_imager_state *pis)
 {
     pdf_resource_t *pres = 0;
-    int code = pdf_prepare_drawing(pdev, pis, "/CA %g", &pres);
+    int code = pdf_prepare_drawing(pdev, pis, &pres);
 
     if (code < 0)
 	return code;
