@@ -189,6 +189,22 @@ hpgl_set_graphics_line_attribute_state(hpgl_state_t *pgls,
 					   gs_join_bevel,    /* 5 bevel join */
 					   gs_join_none};    /* 6 no join */
 
+	  /* HP appears to use default line attributes if the the pen
+             width is less than or equal to .35mm or 14.0 plu.  This
+             is not documented PCLTRM.  Pen widths are maintained in
+             plotter units */
+	  if ( pgls->g.pen.width[pgls->g.pen.selected] <= 14.0 )
+	    {
+	      hpgl_call(gs_setlinejoin(pgls->pgs, 
+				       gs_join_miter)); 
+	      hpgl_call(gs_setlinecap(pgls->pgs, 
+				      gs_cap_butt));
+	      hpgl_call(gs_setlinewidth(pgls->pgs, 
+					pgls->g.pen.width[pgls->g.pen.selected]));
+	      hpgl_call(gs_setmiterlimit(pgls->pgs, 5.0));
+	      return 0;
+	    }
+
 	  switch( render_mode )
 	    {
 	    case hpgl_rm_character:
@@ -237,31 +253,73 @@ vector:	      hpgl_call(gs_setlinejoin(pgls->pgs,
    avoid overhanging lines. */
 
  private int
-hpgl_polyfill_bbox(hpgl_state_t *pgls, gs_rect *bbox)
+hpgl_polyfill_anchored_bbox(hpgl_state_t *pgls, gs_rect *bbox, 
+			    hpgl_real_t spacing, hpgl_real_t direction)
 {
   	/* get the bounding box we only need this for the upper right
            corner.  The lower left is supplied by AC */
 	hpgl_call(gs_pathbbox(pgls->pgs, bbox));
-	/* replace lower left coordinates with anchor corner. HAS not
-           very efficient as it makes the bbox larger than
-           necessary. HAS not sure what to do if AC is in front of box
-           origin. -- revisit */
-	bbox->p.x = min(bbox->p.x, pgls->g.anchor_corner.x);
-	bbox->p.y = min(bbox->p.y, pgls->g.anchor_corner.y);
 	/* expand the box */
-#ifdef DOESNOTWORK
-	/* HAS revisit.  We clip to the bounding box of the rectangle
-           but we must guarantee the endpoints of the line extend
-           slightly beyond the actual box for thick lines to be
-           clipped cleanly.  Unfortunately, this method will have
-           unwanted side effects with the anchor corner so the problem
-           must be solved differently.  Simply extending each segment
-           of the fill as it is drawn should suffice. */
-	bbox->p.x -= pgls->g.pen.width[pgls->g.pen.selected];
-	bbox->p.y -= pgls->g.pen.width[pgls->g.pen.selected];
-	bbox->q.x += pgls->g.pen.width[pgls->g.pen.selected];
-	bbox->q.y += pgls->g.pen.width[pgls->g.pen.selected]; 
+
+	{
+#define sin_dir sincos.sin
+#define cos_dir sincos.cos
+	  gs_matrix mat, imat;
+	  gs_sincos_t sincos;
+	  gs_point fill_increment;
+	  gs_point anchor = pgls->g.anchor_corner;
+	  /* calculate integer number of fill lines between the origin
+             of the bbox and the anchor corner in X and Y directions.
+             Then use the coordinates of the n'th fill line as the
+             anchor corner.  Also make sure anchor corner is in front of bbox */
+#if 0
+	  int fill_line_num;
 #endif
+	  hpgl_call(hpgl_compute_user_units_to_plu_ctm(pgls, &mat));
+	  hpgl_call(gs_matrix_invert(&mat, &imat));
+	  hpgl_call(gs_point_transform(pgls->g.anchor_corner.x, 
+				       pgls->g.anchor_corner.y,
+				       &imat,
+				       &anchor));
+	  gs_sincos_degrees(direction, &sincos);
+	  /* HAS anchor in front of polygon origin is not documented */
+	  bbox->p.x = min(anchor.x, bbox->p.x);
+	  bbox->p.y = min(anchor.y, bbox->p.y);
+
+#if 0
+	  if ( sin_dir != 0 )
+	    {
+	      fill_increment.x = fabs(spacing / sin_dir);
+	      /* move the anchor back if necessary.  note that we
+                 treat x and y exclusively */
+	      while ( bbox->p.x < anchor.x ) anchor.x -= fill_increment.x;
+	      /* integer number of fill lines */
+
+	      fill_line_num =
+		(int)fabs(bbox->p.x - anchor.x) / fill_increment.x;
+	      /* new origin at last fill line below origin */
+	      bbox->p.x = fill_line_num * fill_increment.x;
+	    }
+	  /* same for y */
+	  if ( cos_dir != 0 )
+	    {
+	      fill_increment.y = fabs(spacing / cos_dir);
+	      while ( bbox->p.y < anchor.y ) anchor.y -= fill_increment.y;
+	      fill_line_num =
+		(int)fabs(bbox->p.y - anchor.y) / fill_increment.y;
+	      bbox->p.y = fill_line_num * fill_increment.y;
+	    }
+	  bbox->p = anchor;
+
+	{
+	  hpgl_real_t half_width = pgls->g.pen.width[pgls->g.pen.selected] / 2.0;
+	  bbox->p.x -= half_width;
+	  bbox->p.y -= half_width;
+	  bbox->q.x += half_width;
+	  bbox->q.y += half_width;
+	}
+#endif
+	}
 	return 0;
 }
 
@@ -441,16 +499,6 @@ hpgl_polyfill(hpgl_state_t *pgls)
 	hpgl_real_t direction = params->angle;
 	/* save the pen position */
 	hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_pos);
-	/* get the bounding box */
-        hpgl_call(hpgl_polyfill_bbox(pgls, &bbox));
-	/* HAS calculate the offset for dashing - we do not need this
-           for solid lines */
-	/* HAS calculate the diagonals magnitude.  Note we clip this
-           latter in the library.  If desired we could clip to the
-           actual bbox here to save processing time.  For now we simply
-           draw all fill lines using the diagonals magnitude */
-	diag_mag = 
-	  hpgl_compute_distance(bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y);
 	if ( spacing == 0 )
 	  { /* Per TRM 22-12, use 1% of the P1/P2 distance. */
 	    gs_matrix mat;
@@ -462,6 +510,17 @@ hpgl_polyfill(hpgl_state_t *pgls)
 	    /****** WHAT IF ANISOTROPIC SCALING? ******/
 	    spacing /= min(fabs(mat.xx), fabs(mat.yy));
 	  }
+	/* get the bounding box */
+        hpgl_call(hpgl_polyfill_anchored_bbox(pgls, &bbox, spacing, direction));
+	/* HAS calculate the offset for dashing - we do not need this
+           for solid lines */
+	/* HAS calculate the diagonals magnitude.  Note we clip this
+           latter in the library.  If desired we could clip to the
+           actual bbox here to save processing time.  For now we simply
+           draw all fill lines using the diagonals magnitude */
+	diag_mag = 
+	  hpgl_compute_distance(bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y);
+
 	/* if the line width exceeds the spacing we use the line width
            to avoid overlapping of the fill lines.  HAS this can be
            integrated with the logic above for spacing as not to
@@ -494,6 +553,7 @@ start:	gs_sincos_degrees(direction, &sincos);
 
 	    while ( endx += x_fill_increment,
 		    (startx += x_fill_increment) <= bbox.q.x
+
 		  )
 	      hpgl_call(hpgl_draw_vector_absolute(pgls, startx, starty, endx, endy));
 	    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector_fill));
@@ -549,6 +609,17 @@ hpgl_polyfill_using_current_line_type(hpgl_state_t *pgls)
 	return 0;
 }	      
 
+/* HAS no color support yet!!!  maps hpgl/2 pen colors to pcl
+   patterns.  Separate function as hpgl/2 color will be more
+   elaborate. */
+ private pcl_pattern_type_t
+hpgl_map_pen_color(hpgl_state_t *pgls)
+{
+	/* HAS no color support yet.  Should use pcl_set_foreground_color(). */
+	return pgls->g.pen.selected == 0 ? pcpt_solid_white : pcpt_solid_black;
+
+}
+
 /* maps current hpgl fill type to pcl pattern type.  */
 /* HAS note that hpgl_map_fill_type() and hpgl_map_id() can/should be
    merged into one function of one albeit large switch statement.  It
@@ -587,7 +658,7 @@ hpgl_map_fill_type(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 	  case hpgl_rm_vector_fill:
 	    switch( pgls->g.screen.type )
 	      {
-	      case hpgl_screen_none: return pcpt_solid_black;
+	      case hpgl_screen_none: return hpgl_map_pen_color(pgls);
 	      case hpgl_screen_shaded_fill: return pcpt_shading;
 	      case hpgl_screen_hpgl_user_defined: break; /* unsupported */
 	      case hpgl_screen_crosshatch: return pcpt_cross_hatch;
@@ -1024,28 +1095,43 @@ hpgl_draw_current_path(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 	switch ( render_mode )
 	  {
 	  case hpgl_rm_character:
-	    switch ( pgls->g.character.fill_mode )
-	      {
-	      case hpgl_char_solid_edge:
-		gs_setgray(pgs, 0.0);	/* solid fill */
-		hpgl_call(gs_fill(pgs));
-		/* falls through */
-	      case hpgl_char_edge:
-char_edge:	if ( pgls->g.character.edge_pen != 0 )
-		  { gs_setgray(pgs, 0.0);	/* solid edge */
-		    gs_setlinewidth(pgs, 0.1);
-		    hpgl_call(gs_stroke(pgs));
-		  }
-		break;
-	      case hpgl_char_fill:
-		/****** SHOULD USE VECTOR FILL ******/
-		hpgl_call(gs_fill(pgs));
-		break;
-	      case hpgl_char_fill_edge:
-		/****** SHOULD USE VECTOR FILL ******/
-		hpgl_call(gs_fill(pgs));
-		goto char_edge;
-	      }
+	    {
+	      /* HAS need to set attributes in set_drawing color (next 2) */
+
+	      /* Intellifonts require eofill, but TrueType require fill. */
+	      /****** HACK: look at the scaling technology of ******/
+	      /****** the current font to decide. ******/
+	      int (*fill)(P1(gs_state *));
+
+	      if ( pgls->g.font->scaling_technology == plfst_Intellifont )
+		fill = gs_eofill;
+	      else
+		fill = gs_fill;
+	      switch ( pgls->g.character.fill_mode )
+		{
+		case hpgl_char_solid_edge:
+		  gs_setgray(pgs, 0.0);	/* solid fill */
+		  hpgl_call((*fill)(pgs));
+		  /* falls through */
+		case hpgl_char_edge:
+char_edge:	  if ( pgls->g.bitmap_fonts_allowed )
+		    break;	/* no edging */
+		  if ( pgls->g.character.edge_pen != 0 )
+		    { gs_setgray(pgs, 0.0);	/* solid edge */
+		      gs_setlinewidth(pgs, 0.1);
+		      hpgl_call(gs_stroke(pgs));
+		    }
+		  break;
+		case hpgl_char_fill:
+		  /****** SHOULD USE VECTOR FILL ******/
+		  hpgl_call((*fill)(pgs));
+		  break;
+		case hpgl_char_fill_edge:
+		  /****** SHOULD USE VECTOR FILL ******/
+		  hpgl_call((*fill)(pgs));
+		  goto char_edge;
+		}
+	    }
 	    break;
 	  case hpgl_rm_polygon:
 	    if ( pgls->g.fill_type == hpgl_even_odd_rule )

@@ -6,8 +6,8 @@
 This file, NEWS-PCL, describes the changes in the most recent releases of
 Aladdin's PCL5 code, in reverse chronological order.
 
-Version 0.33 (7/31/97)
-======================
+Version 0.34 (8/9/97)
+=====================
 
 Fixes more FTS problems.
 
@@ -20,7 +20,7 @@ univers typeface.  We do not have a univers typeface in our font repotoire.
 *3. empty.
 *4. page rotation wrong - 70-78, 90-98, 580-585, 2130.
 *5. improper clipping - 1470.
-6. spacing or font selection - 284, 291-294, 300, 301 (lots more).
+6. spacing or font selection - 284, 291-294, 300, 301, 1710, 2240, 2241, 2242 (lots more).
 (*)7. right margin clipping - 121, 124.  (same problem as #8, q.v.)
 (*)8. hmi problem - 141.  (requires fonts with the same metrics as H-P's
 fonts, including same space width)
@@ -44,7 +44,7 @@ missing on display: printer is OK, so we won't bother tracking it down now)
 *25. missing macro line 791.
 *26. missing several pages, blows up when starting gl/2 characters - 820, 960,
 1480, 1810, 2350.
-27. out of phase dashed line 1062, 1082, 1116, 1132.
+*27. out of phase dashed line 1062, 1082, 1116, 1132.
 *28. misplaced line - probably position error after hpgl/2 line fill - 1094
 *29. wrong fill - 1113.
 30. spacing/proportional font problem - 1161.
@@ -52,17 +52,79 @@ missing on display: printer is OK, so we won't bother tracking it down now)
 *32. stroke weight - 1201.
 33. outline fonts not filled or edged - 1220-1223.
 34. bitmap font at non-orthogonal skew - 1241.
-35. variable text path - 1270-1274.
-36. extra space - 1280-1282.
+*35. variable text path - 1270-1274.
+*36. extra space - 1280-1282.
 *37. missing wedges 1472.
 *38. raster graphics restoring X=0 position 1840, 1841
 *39. extra black rectangles 1860, 1861-1890.
 *40. captions misplaced 2013, 2020
 41. text & bitmap transparency 2020, 2021
-42. hpgl/2 pcl user defined patterns unsupported - 2030-2042, 2290, 2291
+42. hpgl/2 pcl user defined patterns unsupported - 2030-2042, 2290, 2291, 1486.
 *43. test pages rotated 180 degrees. 2221-
 *44. si enhanced 2253
 *45. bezier 2340-2330.
+46. caption font placement (obvious in 960)
+47. missing extra white box in raster (probably #12 missing glyph) - 820, 821, 822 
+48. anchor corner still slightly off - 1470.
+49. fill angle and spacing (possibly #48) - 1482, 1483, 1484, 1487
+*50. Triangular end instead of round - 1490.
+*51. Line attribute state not correct - 1493, 1502, 1504, 1810.
+*52. out of phase dashed line - 1507.
+53. giant stick font characters - 1523, 1810 note: problem might obscure other problems in this test.
+54. pen color wrong - 1512.
+55. left offset clipped incorrectly - 1761.
+
+The following PCL5e commands and facilities are still unimplemented:
+	- Select default font (ESC (|) 3 @).  (pcfont.c)
+	- Assign font id to copy of current font (ESC * c 6 F).  (pcsfont.c)
+	- Continuation blocks for character data (for ESC ( s # W).
+(pcsfont.c)
+	- Variable text path (ESC & c # T).  (pctext.c)
+
+(LPD) Fixes bugs:
+	- DV didn't interact properly with LO.  Mostly fixes #35.  (pglabel.c)
+	- Line feeds didn't work properly with vertical text paths.
+Finishes fixing #35.  (pglabel.c)
+	- SO within a LB string selected a font with an invalid index,
+causing unpredictable problems.  (pglabel.c)
+	- GL/2 bitmap fonts with proportional spacing weren't scaled
+correctly.  (pglabel.c)
+	- Downloaded Intellifonts were filled incorrectly because the fill
+rule was winding-number rather than even-odd.  (pgdraw.c)
+	- In GL/2 text, the SP code did nothing if no space character was
+defined in the current font, rather than treating it as a control character.
+Together with the fix for proportionally spaced bitmaps, fixes #36.
+(pglabel.c)
+	- The comment on the pen structure in pgstate.h was wrong: there is
+only a single pen width, not a separate width for each pen.  (pgstate.h)
+	- CF edging wasn't disabled when SB1 was in effect.  (pgdraw.c)
+
+(LPD) Implements the following unimplemented PCL features:
+	- Compressed bitmap fonts (for ESC ( s # S).  (pcsfont.c)
+
+(HAS) ChangeLog (bug fixes):
+
+	* pgpoly.c (hpgl_rectangle): changed order of segment drawing in
+	rectangle code to fix the out of phase dashed lines #27 and #52.
+
+	* pgdraw.c (hpgl_map_pen_color): map an hpgl color to a pcl
+        foreground color.
+
+	* pglfill.c (hpgl_SP): needed to stroke current path when
+	selecting pen.
+	(hpgl_TR): added call to set source transparency.
+
+	* pgdraw.c (hpgl_set_graphics_line_attribute_state): HP sets line
+	joins caps and joins to default values for line with pen width <=
+	.35.  Fixes #50 and #51.
+
+	* pglfill.c (hpgl_LA): upper limit for parsing the cap value was
+ 	incorrectly specified as > 3.  It is now > 4.
+
+Version 0.33 (7/31/97)
+======================
+
+Fixes more FTS problems.
 
 (LPD) Fixes bugs:
 	- Patterns sometimes weren't created properly, because the CTM
@@ -75,7 +137,7 @@ in handling coordinate transformations.  Fixes #24 for frame 742.
 	- GL/2 labels didn't set up the CTM explicitly, possibly causing
 text to be misplaced after drawing in a rotated coordinate system.
 (pglabel.c)
-	- The default GL/2 picture frame size was the current PCL text
+	- The default GL/2 picture frame height was the current PCL text
 length, not the default PCL text length for the current page orientation.
 Fixing this required a structural change in the handling of margins.  Fixes
 #40.  (pcdraw.h, pcstate.h, pcdraw.c, pcpage.c, pctext.c, pcursor.c,

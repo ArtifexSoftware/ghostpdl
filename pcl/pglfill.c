@@ -5,14 +5,16 @@
 /* pglfill.c */
 /* HP-GL/2 line and fill attributes commands */
 #include "memory_.h"
-#include "gsuid.h"		/* for gxbitmap.h */
-#include "gstypes.h"		/* for gxbitmap.h */
-#include "gxbitmap.h"
 #include "pgmand.h"
 #include "pginit.h"
 #include "pggeom.h"
 #include "pgdraw.h"
 #include "pgmisc.h"
+#include "gsuid.h"		/* for gxbitmap.h */
+#include "gstypes.h"		/* for gxbitmap.h */
+#include "gsstate.h"            /* needed by gsrop.h */
+#include "gsrop.h"              /* for source transparency */
+#include "gxbitmap.h"
 
 /* AC [x,y]; Anchor corner for fill offsets, note that this is
    different than the anchor corner of the pcl picture frame. */
@@ -146,7 +148,7 @@ hpgl_LA(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	    switch ( kind )
 	      {
 	      case 1:		/* line ends */
-		if ( !hpgl_arg_c_int(pargs, &cap) || cap < 1 || cap > 3 )
+		if ( !hpgl_arg_c_int(pargs, &cap) || cap < 1 || cap > 4 )
 		  return e_Range;
 		break;
 	      case 2:		/* line joins */
@@ -282,7 +284,7 @@ hpgl_PW(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	if ( hpgl_arg_c_real(pargs, &width) )
 	  { 
 	    if ( hpgl_arg_c_int(pargs, &pmin) ) 
-	      if ( pmin < 0 || pmin >= pmax ) 
+	      if ( pmin < 0 || pmin > pmax ) 
 		return e_Range;
 	      else 
 		pmax = pmin;
@@ -415,6 +417,7 @@ hpgl_SP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	     (pen < 0 || pen >= pgls->g.number_of_pens)
 	   )
 	  return e_Range;
+	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 	pgls->g.pen.selected = pen;
 	return 0;
 }
@@ -480,6 +483,7 @@ hpgl_TR(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	if ( hpgl_arg_c_int(pargs, &mode) && (mode & ~1) )
 	  return e_Range;
 	pgls->g.source_transparent = mode;
+	gs_setsourcetransparent(pgls->pgs, pgls->g.source_transparent);
 	return 0;
 }
 

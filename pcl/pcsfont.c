@@ -4,12 +4,14 @@
 
 /* pcsfont.c */
 /* PCL5 soft font creation commands */
+#include "memory_.h"
 #include "stdio_.h"		/* needed for pl_load_tt_font */
 #include "pcommand.h"
 #include "pcfont.h"
 #include "pcstate.h"
 #include "pldict.h"
 #include "plvalue.h"
+#include "gsbitops.h"
 #include "gsccode.h"
 #include "gsmatrix.h"
 #include "gsutil.h"
@@ -291,7 +293,7 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcls)
 	void *value;
 #define plfont ((pl_font_t *)value)
 	pcl_font_header_format_t format;
-	byte *char_data;
+	byte *char_data = 0;
 
 	if ( !pl_dict_find(&pcls->soft_fonts, id_key(pcls->font_id), 2, &value) )
 	  return 0;		/* font not found */
@@ -320,7 +322,49 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcls)
 		    return e_Range;
 		  break;
 		case 2:		/* compressed bitmap */
-		  return e_Unimplemented;
+		  { uint y = 0;
+		    const byte *src = data + 16;
+		    const byte *end = data + count;
+		    uint width_bytes = (width + 7) >> 3;
+		    byte *row;
+
+		    char_data =
+		      gs_alloc_bytes(pcls->memory, 16 + width_bytes * height,
+				     "pcl_character_data(compressed bitmap)");
+		    if ( char_data == 0 )
+		      return_error(e_Memory);
+		    memcpy(char_data, data, 16);
+		    memset(char_data + 16, 0, width_bytes * height);
+		    row = char_data + 16;
+		    while ( src < end && y < height )
+		      { /* Read the next compressed row. */
+		        uint x;
+			int color = 0;
+			uint reps = *src++;
+
+			for ( x = 0; src < end && x < width; color ^= 1 )
+			  { /* Read the next run. */
+			    uint rlen = *src++;
+
+			    if ( rlen > width - x )
+			      return e_Range;  /* row overrun */
+			    if ( color )
+			      { /* Set the run to black. */
+				bits_fill_rectangle(row, x, width_bytes,
+						    ~(mono_fill_chunk)0,
+						    rlen, 1);
+			      }
+			    x += rlen;
+			  }
+			row += width_bytes;
+			++y;
+			/* Replicate the row if needed. */
+			for ( ; reps > 0 && y < height;
+			      --reps, ++y, row += width_bytes
+			    )
+			  memcpy(row, row - width_bytes, width_bytes);
+		      }
+		  } break;
 		default:
 		  return e_Range;
 		}
@@ -370,10 +414,15 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcls)
 	  }
 	/* Register the character. */
 	/**** FREE PREVIOUS DEFINITION ****/
-	char_data = gs_alloc_bytes(pcls->memory, count, "pcl_character_data");
+	/* Compressed bitmaps have already allocated and filled in */
+	/* the character data structure. */
 	if ( char_data == 0 )
-	  return_error(e_Memory);
-	memcpy(char_data, data, count);
+	  { char_data = gs_alloc_bytes(pcls->memory, count,
+				       "pcl_character_data");
+	    if ( char_data == 0 )
+	      return_error(e_Memory);
+	    memcpy(char_data, data, count);
+	  }
 	return pl_font_add_glyph(plfont, pcls->character_code, char_data);
 #undef plfont
 }

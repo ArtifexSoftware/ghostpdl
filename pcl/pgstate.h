@@ -189,7 +189,6 @@ typedef struct pcl_hpgl_state_s {
 	} line;
 	float miter_limit;
 	struct pen_ {
-	  /**** FOLLOWING SHOULD BE [number_of_pens] ****/
 	  float width[2];	/* millimeters or % */
 	  bool width_relative;
 	  int selected;		/* currently selected pen # */
