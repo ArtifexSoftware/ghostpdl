@@ -54,7 +54,6 @@ zbuildfont10(i_ctx_t *i_ctx_p)
     code = build_gs_simple_font(i_ctx_p, op, &pfont, ft_CID_user_defined,
 				&st_gs_font_cid1, &build,
 				bf_Encoding_optional |
-				bf_FontBBox_required |
 				bf_UniqueID_ignored);
     if (code < 0)
 	return code;
@@ -209,7 +208,6 @@ zbuildfont11(i_ctx_t *i_ctx_p)
 				  &st_gs_font_cid2,
 				  (const char *)0, "%Type11BuildGlyph",
 				  bf_Encoding_optional |
-				  bf_FontBBox_required |
 				  bf_UniqueID_ignored |
 				  bf_CharStrings_optional);
     if (code < 0)

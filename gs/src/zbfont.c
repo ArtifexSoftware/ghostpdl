@@ -347,10 +347,6 @@ build_gs_simple_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base ** ppfont,
     code = font_bbox_param(op, bbox);
     if (code < 0)
 	return code;
-    if ((options & bf_FontBBox_required) &&
-	bbox[0] == 0 && bbox[1] == 0 && bbox[2] == 0 && bbox[3] == 0
-	)
-	return_error(e_invalidfont);
     code = dict_uid_param(op, &uid, 0, imemory, i_ctx_p);
     if (code < 0)
 	return code;

@@ -437,7 +437,6 @@ zbuildfont9(i_ctx_t *i_ctx_p)
     code = build_gs_simple_font(i_ctx_p, op, &pfont, ft_CID_encrypted,
 				&st_gs_font_cid0, &build,
 				bf_Encoding_optional |
-				bf_FontBBox_required |
 				bf_UniqueID_ignored);
     if (code < 0)
 	goto fail;

@@ -45,7 +45,6 @@ typedef struct build_proc_refs_s {
 typedef enum {
     bf_options_none = 0,
     bf_Encoding_optional = 1,	/* build_gs_font */
-    bf_FontBBox_required = 2,	/* build_gs_simple_font */
     bf_UniqueID_ignored = 4,	/* build_gs_simple_font */
     bf_CharStrings_optional = 8,	/* build_gs_primitive_font */
     bf_notdef_required = 16	/* build_gs_primitive_font */
