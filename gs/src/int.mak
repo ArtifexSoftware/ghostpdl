@@ -1627,8 +1627,9 @@ $(PSD)transpar.dev : $(INT_MAK) $(ECHOGS_XE)\
 	$(ADDMOD) $(PSD)transpar -include $(PSD)psl2read $(GLD)translib
 
 $(PSOBJ)ztrans.$(OBJ) : $(PSSRC)ztrans.c $(OP) $(string__h)\
- $(gsiparam_h) $(gstrans_h) $(stream_h)\
- $(files_h) $(igstate_h) $(iimage2_h) $(iname_h) $(store_h)
+ $(gscolor2_h) $(gscspace_h) $(gsipar3x_h) $(gstrans_h) $(gxiparam_h)\
+ $(idict_h) $(idparam_h) $(igstate_h) $(iimage_h) $(iimage2_h) $(iname_h)\
+ $(store_h)
 	$(PSCC) $(PSO_)ztrans.$(OBJ) $(C_) $(PSSRC)ztrans.c
 
 # ================================ PDF ================================ #

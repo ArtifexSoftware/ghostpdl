@@ -25,11 +25,14 @@
 #include "gserrors.h"
 #include "gsbitops.h"
 #include "gscspace.h"
+#include "gscpixel.h"
 #include "gsstruct.h"
 #include "gxdevice.h"
 #include "gxdevmem.h"
 #include "gximag3x.h"
 #include "gxistate.h"
+
+extern_st(st_color_space);
 
 /* Forward references */
 private dev_proc_begin_typed_image(gx_begin_image3x);
@@ -203,7 +206,18 @@ gx_begin_image3x_generic(gx_device * dev,
     for (i = 0; i < NUM_MASKS; ++i) {
 	gs_rect mrect;
 	gx_device *mdev;
+	/*
+	 * The mask data has to be defined in a DevicePixel color space
+	 * of the correct depth so that no color mapping will occur.
+	 */
+	/****** FREE COLOR SPACE ON ERROR OR AT END ******/
+	gs_color_space *pmcs =
+	    gs_alloc_struct(mem, gs_color_space, &st_color_space,
+			    "gx_begin_image3x_generic");
 
+	if (pmcs == 0)
+	    return_error(gs_error_VMerror);
+	gs_cspace_init_DevicePixel(pmcs, penum->mask[i].depth);
 	mrect.p.x = mrect.p.y = 0;
 	mrect.q.x = penum->mask[i].width;
 	mrect.q.y = penum->mask[i].height;
@@ -222,7 +236,8 @@ gx_begin_image3x_generic(gx_device * dev,
 	penum->mask[i].mdev = mdev;
 	midev[i] = mdev;
 	minfo[i] = penum->mask[i].info;
-	gs_image_t_init_mask(&mask[i].image, false);
+	gs_image_t_init_gray(&mask[i].image, pis); /* gray is bogus */
+	mask[i].image.ColorSpace = pmcs;
 	mask[i].image.adjust = false;
 	{
 	    const gx_image_type_t *type1 = mask[i].image.type;
@@ -234,10 +249,8 @@ gx_begin_image3x_generic(gx_device * dev,
 	    mask[i].image.BitsPerComponent = pixm->MaskDict.BitsPerComponent;
 	}
 	{
-	    gx_drawing_color dcolor;
 	    gs_matrix m_mat;
 
-	    color_set_pure(&dcolor, 1);
 	    /*
 	     * Adjust the translation for rendering the mask to include a
 	     * negative translation by origin.{x,y} in device space.
@@ -248,10 +261,12 @@ gx_begin_image3x_generic(gx_device * dev,
 	    /*
 	     * Note that pis = NULL here, since we don't want to have to
 	     * create another imager state with default log_op, etc.
+	     * dcolor = NULL is OK because this is an opaque image with
+	     * CombineWithColor = false.
 	     */
 	    code = gx_device_begin_typed_image(mdev, NULL, &m_mat,
 			       (const gs_image_common_t *)&mask[i].image,
-					       &mask[i].rect, &dcolor, NULL,
+					       &mask[i].rect, NULL, NULL,
 					       mem, &penum->mask[i].info);
 	    if (code < 0)
 		goto out2;
@@ -406,15 +421,16 @@ check_image3x_mask(const gs_image3x_t *pim, const gs_image3x_mask_t *pimm,
 	return_error(gs_error_rangecheck);
     pmcv->rect.p.x = ppcv->rect.p.x * mask_width / pim->Width;
     pmcv->rect.p.y = ppcv->rect.p.y * mask_height / pim->Height;
-    pmcv->rect.q.x = (ppcv->rect.q.x + pim->Width - 1) * mask_width /
+    pmcv->rect.q.x = (ppcv->rect.q.x * mask_width + pim->Width - 1) /
 	pim->Width;
-    pmcv->rect.q.y = (ppcv->rect.q.y + pim->Height - 1) * mask_height /
+    pmcv->rect.q.y = (ppcv->rect.q.y * mask_height + pim->Height - 1) /
 	pim->Height;
     /* Initialize the channel state in the enumerator. */
     pmcs->InterleaveType = pimm->InterleaveType;
     pmcs->width = pmcv->rect.q.x - pmcv->rect.p.x;
     pmcs->height = pmcv->rect.q.y - pmcv->rect.p.y;
     pmcs->full_height = pimm->MaskDict.Height;
+    pmcs->depth = pimm->MaskDict.BitsPerComponent;
     if (pmcs->InterleaveType == interleave_chunky) {
 	/* Allocate a buffer for the data. */
 	pmcs->data =
