@@ -65,6 +65,13 @@ ZLIB_NAME=z
 
 ICCSRCDIR=icclib
 
+# Define the directory where the ijs source is stored,
+# and the process forking method to use for the server.
+# See ijs.mak for more information.
+ 
+IJSSRCDIR=ijs
+IJSEXECTYPE=unix
+
 CC=gcc
 CCLD=$(CC)
 
@@ -139,6 +146,7 @@ include $(GLSRCDIR)/jpeg.mak
 include $(GLSRCDIR)/zlib.mak
 include $(GLSRCDIR)/libpng.mak
 include $(GLSRCDIR)/icclib.mak
+include $(GLSRCDIR)/ijs.mak
 include $(GLSRCDIR)/devs.mak
 include $(GLSRCDIR)/contrib.mak
 include $(GLSRCDIR)/unix-aux.mak

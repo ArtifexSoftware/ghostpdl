@@ -202,6 +202,15 @@ ZSRCDIR=zlib
 ICCSRCDIR=icclib
 !endif
 
+# Define the directory where the ijs source is stored,
+# and the process forking method to use for the server.
+# See ijs.mak for more information.
+
+!ifndef IJSSRCDIR
+IJSSRCDIR=ijs
+IJSEXECTYPE=win
+!endif
+
 # Define any other compilation flags.
 
 !ifndef CFLAGS

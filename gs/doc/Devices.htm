@@ -298,6 +298,36 @@ bottom.
 include DeviceGray, DeviceRGB, and DeviceCMYK.
 </dl>
 
+<h3>Building IJS</h3>
+
+<p> IJS is included by default on Unix gcc builds, and also in
+autoconf'ed builds. Others may need some makefile tweaking. First,
+make sure the IJS device is selected:
+
+<blockquote>
+DEVICE_DEVS2=$(DD)ijs.dev
+</blockquote>
+
+<p> Next, make sure that the path and execution type are set in
+the toplevel makefile. The values for Unix are as follows:
+
+<blockquote>
+IJSSRCDIR=ijs
+IJSEXECTYPE=unix
+</blockquote>
+
+<p> At present, "unix" and "win" are the only supported values for
+IJSEXECTYPE. If neither sounds appropriate for your system, it's
+possible that more porting work is needed.
+
+<p> Last, make sure that ijs.mak is included in the toplevel makefile.
+It should be present right after the include of icclib.mak.
+
+<p> IJS is not inherently platform-specific. We're very much interested
+in taking patches from people who have ported it to non-mainstream
+platforms. And once it's built, you won't have to recompile Ghostscript
+to support new drivers!
+
 <h2><a name="Win"></a>MS Windows printers</h2>
 
 <p>
@@ -749,6 +779,12 @@ This version of Ghostscript includes the patch from version 0.97 of
 the hpijs software. If you are installing hpijs from an RPM, you will
 only need the hpijs RPM, not the ghostscript-hpijs one, as the code
 needed to work with hpijs is already included.
+
+<p>
+Note that newer version of the hpijs drivers support the IJS protocol.
+If you can, you should consider using the ijs driver instead. Among
+other things, the hpijs Ghostscript driver is Unix-only, and is untested
+on older Unix platforms.
 
 <p>
 As of the 0.97 version, hpijs supports the following printer models:

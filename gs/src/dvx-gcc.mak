@@ -155,6 +155,19 @@ ZLIB_NAME=gz
 
 ICCSRCDIR=icclib
 
+# IJS has not been ported to DesqView/X. If you do the port,
+# you'll need to set these values. You'll also need to
+# include the ijs.mak makefile (right after icclib.mak).
+#
+# Define the directory where the ijs source is stored,
+# and the process forking method to use for the server.
+# See ijs.mak for more information.
+ 
+#IJSSRCDIR=ijs
+#IJSEXECTYPE=unix
+
+
+
 # ------ Platform-specific options ------ #
 
 # Define the name of the C compiler.
@@ -336,6 +349,7 @@ include $(GLSRCDIR)/jpeg.mak
 include $(GLSRCDIR)/zlib.mak
 include $(GLSRCDIR)/libpng.mak
 include $(GLSRCDIR)/icclib.mak
+include $(GLSRCDIR)/ijs.mak
 include $(GLSRCDIR)/devs.mak
 include $(GLSRCDIR)/contrib.mak
 include $(GLSRCDIR)/dvx-tail.mak

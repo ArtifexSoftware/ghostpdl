@@ -85,7 +85,8 @@ $(IJSOBJ)ijs_exec_unix.$(OBJ) : $(IJSSRC)ijs_exec_unix.c \
 
 $(IJSOBJ)ijs_exec_win.$(OBJ) : $(IJSSRC)ijs_exec_win.c \
     $(IJSDEP) $(ijs_h) $(ijs_client_h)
-	$(IJS_CC) $(IJSO_)ijs_exec_win.$(OBJ) $(C_) $(IJSSRC)ijs_exec_win.c
+# This can't be compiled with /Za because it needs windows.h.
+	$(CC_WX) $(IJS_CCFLAGS) $(IJSO_)ijs_exec_win.$(OBJ) $(C_) $(IJSSRC)ijs_exec_win.c
 
 
 #

@@ -146,6 +146,17 @@ ZSRCDIR=zlib
 
 ICCSRCDIR=icclib
 
+# IJS has not been ported to OS/2. If you do the port,
+# you'll need to set these values. You'll also need to
+# include the ijs.mak makefile (right after icclib.mak).
+#
+# Define the directory where the ijs source is stored,
+# and the process forking method to use for the server.
+# See ijs.mak for more information.
+ 
+#IJSSRCDIR=ijs
+#IJSEXECTYPE=win
+
 # The following is a hack to get around the special treatment of \ at
 # the end of a line.
 NUL=
