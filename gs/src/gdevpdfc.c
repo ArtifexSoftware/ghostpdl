@@ -578,6 +578,7 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	if (code < 0)
 	    return_error(gs_error_unregistered); /* Must not happen. */
 	serialized_size = stell(&s);
+	sclose(&s);
 	if (serialized_size <= sizeof(serialized0))
 	    serialized = serialized0;
 	else {
@@ -585,16 +586,13 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	    if (serialized == NULL)
 		return_error(gs_error_VMerror);
 	}
-	/*  fixme : optimize :
-	    It would be more effective to apply a "comparizing" stream
-	    (i.e. to comare during the serialization),
-	    but we haven't got such. So serialize and comapre. */
 	swrite_string(&s, serialized, serialized_size);
 	code = cs_serialize(pcs, &s);
 	if (code < 0)
 	    return_error(gs_error_unregistered); /* Must not happen. */
 	if (stell(&s) != serialized_size) 
 	    return_error(gs_error_unregistered); /* Must not happen. */
+	sclose(&s);
 	pres = pdf_find_cspace_resource(pdev, serialized, serialized_size);
 	if (pres != NULL) {
 	    if (serialized != serialized0)
