@@ -187,6 +187,12 @@ varying by bit depth. For normal use we recommend <tt>png16m</tt> for 24-bit RGB
 or <tt>pnggray</tt> for grayscale. The png256, png16 and pngmono devices respectively
 provide 8-bit color, 4-bit color and black-and-white for special needs.</p>
 
+<p>The pngalpha device is 32-bit RGBA color with transparency 
+indicating pixel coverage.  The background is transparent unless
+it has been explicitly filled.  PDF 1.4 transparent files do not
+give a transparent background with this device.  Text and graphics 
+anti-aliasing are enabled by default.</p>
+
 <h4>Options</h4>
 
 <p>The png devices have no special options.</p>

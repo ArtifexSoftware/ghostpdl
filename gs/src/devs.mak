@@ -172,6 +172,7 @@ GDEV=$(AK) $(ECHOGS_XE) $(GDEVH)
 #	png16	4-bit color Portable Network Graphics (PNG)
 #	png256	8-bit color Portable Network Graphics (PNG)
 #	png16m	24-bit color Portable Network Graphics (PNG)
+#	pngalpha 32-bit RGBA color Portable Network Graphics (PNG)
 #	psmono	PostScript (Level 1) monochrome image
 #	psgray	PostScript (Level 1) 8-bit gray image
 #	psrgb	PostScript (Level 2) 24-bit color image
@@ -1340,6 +1341,10 @@ $(DD)png256.dev : $(DEVS_MAK) $(libpng_dev) $(png_) $(GLD)page.dev
 $(DD)png16m.dev : $(DEVS_MAK) $(libpng_dev) $(png_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)png16m $(png_)
 	$(ADDMOD) $(DD)png16m $(png_i_)
+
+$(DD)pngalpha.dev : $(DEVS_MAK) $(libpng_dev) $(png_) $(GLD)page.dev
+	$(SETPDEV2) $(DD)pngalpha $(png_)
+	$(ADDMOD) $(DD)pngalpha $(png_i_)
 
 ### -------------------- PNG with transparency -------------------- ###
 

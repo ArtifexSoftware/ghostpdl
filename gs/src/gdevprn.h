@@ -331,6 +331,7 @@ prn_dev_proc_buffer_page(gx_default_buffer_page); /* returns an error */
 	NULL,	/* strip_copy_rop, */\
 	NULL,	/* get_clipping_box */\
 	NULL,	/* begin_typed_image */\
+	NULL,	/* get_bits_rectangle */\
 	NULL,	/* map_color_rgb_alpha */\
 	NULL,	/* create_compositor */\
 	NULL,	/* get_hardware_params */\
