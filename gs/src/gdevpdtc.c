@@ -210,16 +210,21 @@ scan_cmap_text(gs_text_enum_t *pte, gs_font_type0 *font /*fmap_CMap*/,
 	       gs_font_base *subfont /*CIDFont*/)
 {
     pdf_font_descriptor_t *pfd = pdsubf->FontDescriptor;
+    gx_device_pdf *dev= (gx_device_pdf *)pte->dev;
     gs_text_enum_t scan = *pte;
     pdf_font_resource_t *pdfont;
+    int wmode = font->WMode, code;
 
-    pdf_attached_font_resource((gx_device_pdf *)pte->dev, (gs_font *)font, &pdfont, 
-				NULL, NULL, NULL);
+    pdf_attached_font_resource(dev, (gs_font *)font, &pdfont, NULL, NULL, NULL);
     for ( ; ; ) {
 	gs_char chr;
 	gs_glyph glyph;
-	int code = font->procs.next_char_glyph(&scan, &chr, &glyph);
+	code = font->procs.next_char_glyph(&scan, &chr, &glyph);
 
+	/* Commonly subfont may vary depending on scan.
+	   The PDF spec doesn't allow such cases yet. 
+	   fixme : remove 'pdsubf', 'subfont' arguments.
+	 */
 	if (code == 2)		/* end of string */
 	    break;
 	if (code < 0)
@@ -229,11 +234,18 @@ scan_cmap_text(gs_text_enum_t *pte, gs_font_type0 *font /*fmap_CMap*/,
 	    gx_device_pdf *const pdev = (gx_device_pdf *)pte->dev;
 	    pdf_font_resource_t *pdsubf1;
 	    byte *glyph_usage;
-	    double *real_widths;
+	    double *real_widths, *w, *v;
 	    int char_cache_size;
 
 	    pdf_attached_font_resource(pdev, (gs_font *)subfont, &pdsubf1, 
 				       &glyph_usage, &real_widths, &char_cache_size);
+	    /* We can't check pdsubf->used[cid >> 3] here,
+	       because it mixed data for different values of WMode. 
+	       Perhaps pdf_font_used_glyph returns fast with reused glyphs.
+	     */
+	    code = pdf_obtain_cidfont_widths_arrays(dev, pdsubf, wmode, &w, &v);
+	    if (code < 0)
+		return code;
 	    code = pdf_font_used_glyph(pfd, glyph, subfont);
 	    if (code < 0)
 		return code;
@@ -244,16 +256,17 @@ scan_cmap_text(gs_text_enum_t *pte, gs_font_type0 *font /*fmap_CMap*/,
 	    if (code == 0 /* just copied */ || pdsubf->Widths[cid] == 0) {
 		pdf_glyph_widths_t widths;
 
-		code = pdf_glyph_widths(pdsubf, glyph, (gs_font *)subfont, &widths);
+		code = pdf_glyph_widths(pdsubf, wmode, glyph, (gs_font *)subfont, &widths);
 		if (code < 0)
 		    return code;
-		/* Taking the width for WMode 0 (even if 'font' has different), 
-		 * because pdf_write_CIDFont_widths wants so.
-		 * (it doesn't implement DW2).
-		 * fixme: to be improved.
-		 */
 		if (code == 0) { /* OK to cache */
-		    pdsubf->Widths[cid] = widths.Width.w;
+		    if (cid > pdsubf->count)
+			return_error(gs_error_unregistered); /* Must not happen. */
+		    w[cid] = widths.Width.w;
+		    if (v != NULL) {
+			v[cid * 2 + 0] = widths.Width.v.x;
+			v[cid * 2 + 1] = widths.Width.v.y;
+		    }
 		    real_widths[cid] = widths.real_width.w;
 		}
 		if (pdsubf->u.cidfont.CIDToGIDMap != 0) {

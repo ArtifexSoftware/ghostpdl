@@ -135,12 +135,68 @@ pdf_write_simple_contents(gx_device_pdf *pdev,
 }
 
 /*
+ * Write the W[2] entries for a CIDFont.  *pdfont is known to be a
+ * CIDFont (type 0 or 2).
+ */
+private bool
+pdf_compute_CIDFont_default_widths(const pdf_font_resource_t *pdfont, int wmode, int *pdw, int *pdv)
+{
+    psf_glyph_enum_t genum;
+    gs_glyph glyph;
+    ushort counts[1500]; /* Some CID fonts use vertical widths 1026 .*/
+    int dw_count = 0, i, dwi = 0, neg_count = 0, pos_count = 0;
+    double *w = (wmode ? pdfont->u.cidfont.Widths2 : pdfont->Widths);
+
+    /* We don't wont to scan for both negative and positive widths,
+     * to save the C stack space.
+     * Doubtly they both are used in same font.
+     * So just count positive and negative widths separately
+     * and use the corresponding sign.
+     * fixme : implement 2 hystograms.
+     */
+    psf_enumerate_bits_begin(&genum, NULL, pdfont->used, pdfont->count,
+			     GLYPH_SPACE_INDEX);
+    memset(counts, 0, sizeof(counts));
+    while (!psf_enumerate_glyphs_next(&genum, &glyph)) {
+        int i = glyph - GS_MIN_CID_GLYPH;
+
+	if ( i < pdfont->count) { /* safety */
+	    int width = (int)(w[i] + 0.5);
+
+	    counts[min(any_abs(width), countof(counts) - 1)]++;
+	    (*(width < 0 ? &neg_count : &pos_count))++;
+	}
+    }
+    for (i = 0; i < countof(counts); ++i)
+	if (counts[i] > dw_count)
+	    dwi = i, dw_count = counts[i];
+    *pdw = (neg_count > pos_count ? -dwi : dwi);
+    *pdv = 0;
+    if (wmode) {
+	psf_enumerate_glyphs_reset(&genum);
+	while (!psf_enumerate_glyphs_next(&genum, &glyph)) {
+	    int i = glyph - GS_MIN_CID_GLYPH;
+
+	    if ( i < pdfont->count) { /* safety */
+		int width = (int)(w[i] + 0.5);
+
+		if (min(any_abs(width), countof(counts) - 1) == any_abs(dwi)) {
+		    *pdv = (int)(pdfont->u.cidfont.v[i * 2 + 1] + 0.5);
+		    break;
+		}
+	    }
+	}
+    }
+    return (dw_count > 0);
+}
+
+/*
  * Write the [D]W[2] entries for a CIDFont.  *pdfont is known to be a
  * CIDFont (type 0 or 2).
  */
 private int
 pdf_write_CIDFont_widths(gx_device_pdf *pdev,
-			 const pdf_font_resource_t *pdfont)
+			 const pdf_font_resource_t *pdfont, int wmode)
 {
     /*
      * The values of the CIDFont width keys are as follows:
@@ -148,63 +204,65 @@ pdf_write_CIDFont_widths(gx_device_pdf *pdev,
      *   W = [{c [w ...] | cfirst clast w}*]
      *   DW2 = [vy w1y] (default [880 -1000])
      *   W2 = [{c [w1y vx vy ...] | cfirst clast w1y vx vy}*]
-     * Currently we only write DW and W.
      */
     stream *s = pdev->strm;
     psf_glyph_enum_t genum;
     gs_glyph glyph;
-    int dw = 0;
+    int dw = 0, dv = 0, prev = -2;
+    char *Widths_key = (wmode ? "/W2" : "/W");
+    double *w = (wmode ? pdfont->u.cidfont.Widths2 : pdfont->Widths);
 
-    psf_enumerate_bits_begin(&genum, NULL, pdfont->used, pdfont->count,
-			     GLYPH_SPACE_INDEX);
-
-    /* Use the most common width as DW. */
-
-    {
-	ushort counts[1001];
-	int dw_count = 0, i;
-
-	memset(counts, 0, sizeof(counts));
-	while (!psf_enumerate_glyphs_next(&genum, &glyph)) {
-	    int width = (int)(pdfont->Widths[glyph - GS_MIN_CID_GLYPH] + 0.5);
-
-	    counts[min(width, countof(counts) - 1)]++;
-	}
-	for (i = 0; i < countof(counts); ++i)
-	    if (counts[i] > dw_count)
-		dw = i, dw_count = counts[i];
-	if (dw != 0)
+    /* Compute and write default width : */
+    if (pdf_compute_CIDFont_default_widths(pdfont, wmode, &dw, &dv)) {
+	if (wmode) {
+	    pprintd2(s, "/DW2 [%d %d]\n", dv, dw);
+	} else
 	    pprintd1(s, "/DW %d\n", dw);
     }
 
     /*
-     * Now write all widths different from DW.  Currently we make no
+     * Now write all widths different from the default one.  Currently we make no
      * attempt to optimize this: we write every width individually.
      */
-
-    psf_enumerate_glyphs_reset(&genum);
+    psf_enumerate_bits_begin(&genum, NULL, pdfont->used, pdfont->count,
+			     GLYPH_SPACE_INDEX);
     {
-	int prev = -2;
 
 	while (!psf_enumerate_glyphs_next(&genum, &glyph)) {
 	    int cid = glyph - GS_MIN_CID_GLYPH;
-	    int width = (int)(pdfont->Widths[cid] + 0.5);
+	    int width = (int)(w[cid] + 0.5);
 
-	    if (cid == prev + 1)
-		pprintd1(s, "\n%d", width);
-	    else if (width == dw)
+	    if (width == 0)
+		continue; /* Don't write for unused glyphs. */
+	    if (cid == prev + 1) {
+		if (wmode) {
+		    int vx = (int)(pdfont->u.cidfont.v[cid * 2 + 0] + 0.5);
+		    int vy = (int)(pdfont->u.cidfont.v[cid * 2 + 1] + 0.5);
+
+		    pprintd3(s, "\n%d %d %d", width, vx, vy);
+		} else
+		    pprintd1(s, "\n%d", width);
+	    } else if (width == dw)
 		continue;
 	    else {
 		if (prev >= 0)
 		    stream_puts(s, "]\n");
-		else
-		    stream_puts(s, "/W[");
-		pprintd2(s, "%d[%d", cid, width);
+		else {
+		    stream_puts(s, Widths_key);
+		    stream_puts(s, "[");
+		}
+		if (wmode) {
+		    int vx = (int)(pdfont->u.cidfont.v[cid * 2 + 0] + 0.5);
+		    int vy = (int)(pdfont->u.cidfont.v[cid * 2 + 1] + 0.5);
+
+		    pprintd4(s, "%d[%d %d %d", cid, width, vx, vy);
+		} else
+		    pprintd2(s, "%d[%d", cid, width);
 	    }
 	    prev = cid;
 	}
 	if (prev >= 0)
-	    stream_puts(s, "]]");
+	    stream_puts(s, "]]\n");
     }    
 
     return 0;
@@ -272,10 +330,18 @@ write_contents_cid_common(gx_device_pdf *pdev, pdf_font_resource_t *pdfont,
 {
     /* Write [D]W[2], CIDSystemInfo, and Subtype, and close the object. */
     stream *s = pdev->strm;
-    int code = pdf_write_CIDFont_widths(pdev, pdfont);
+    int code;
 
-    if (code < 0)
-	return code;
+    if (pdfont->Widths != 0) {
+	code = pdf_write_CIDFont_widths(pdev, pdfont, 0);
+	if (code < 0)
+	    return code;
+    }
+    if (pdfont->u.cidfont.Widths2 != 0) {
+	code = pdf_write_CIDFont_widths(pdev, pdfont, 1);
+	if (code < 0)
+	    return code;
+    }
     if (pdfont->u.cidfont.CIDSystemInfo_id)
 	pprintld1(s, "/CIDSystemInfo %ld 0 R",
 		  pdfont->u.cidfont.CIDSystemInfo_id);

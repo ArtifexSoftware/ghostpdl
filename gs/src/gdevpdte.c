@@ -404,12 +404,11 @@ pdf_char_widths(gx_device_pdf *const pdev,
 	/* Might be an unused char, or just not cached. */
 	gs_glyph glyph = pdfont->u.simple.Encoding[ch].glyph;
 
-	code = pdf_glyph_widths(pdfont, glyph, (gs_font *)font, pwidths);
+	code = pdf_glyph_widths(pdfont, font->WMode, glyph, (gs_font *)font, pwidths);
 	if (code < 0)
 	    return code;
-	pdfont->u.simple.v[ch] = pwidths->v;
 	if (font->WMode != 0 && code > 0 &&
-	    pwidths->v.x == 0 && pwidths->v.y == 0) {
+	    pwidths->real_width.v.x == 0 && pwidths->real_width.v.y == 0) {
 	    /*
 	     * The font has no Metrics2, so it must write
 	     * horizontally due to PS spec.
@@ -420,9 +419,11 @@ pdf_char_widths(gx_device_pdf *const pdev,
 	    int save_WMode = font->WMode;
 	    font->WMode = 0; /* Temporary patch font because font->procs.glyph_info
 	                        has no WMode argument. */
-	    code = pdf_glyph_widths(pdfont, glyph, (gs_font *)font, pwidths);
+	    code = pdf_glyph_widths(pdfont, font->WMode, glyph, (gs_font *)font, pwidths);
 	    font->WMode = save_WMode;
 	}
+	pdfont->u.simple.v[ch].x = pwidths->real_width.v.x - pwidths->Width.v.x;
+	pdfont->u.simple.v[ch].y = pwidths->real_width.v.y - pwidths->Width.v.y;
 	if (code == 0) {
 	    pdfont->Widths[ch] = pwidths->Width.w;
 	    real_widths[ch] = pwidths->real_width.w;
@@ -430,7 +431,7 @@ pdf_char_widths(gx_device_pdf *const pdev,
     } else {
 	pwidths->Width.w = pdfont->Widths[ch];
 	pwidths->real_width.w = real_widths[ch];
-	pwidths->v = pdfont->u.simple.v[ch];
+	pwidths->Width.v = pdfont->u.simple.v[ch];
 	if (font->WMode) {
 	    pwidths->Width.xy.x = 0;
 	    pwidths->Width.xy.y = pwidths->Width.w;
@@ -574,7 +575,7 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 	if (code < 0)
 	    return code;
 	if (composite) /* from process_cmap_text */
-	    code = pdf_glyph_widths(ppts->values.pdfont->u.type0.DescendantFont, glyph, font, &cw);
+	    code = pdf_glyph_widths(ppts->values.pdfont->u.type0.DescendantFont, font->WMode, glyph, font, &cw);
 	else /* must be a base font */
 	    code = pdf_char_widths((gx_device_pdf *)pte->dev,
 	                           ppts->values.pdfont, chr, (gs_font_base *)font,

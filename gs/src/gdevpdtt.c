@@ -1265,11 +1265,10 @@ pdf_set_text_process_state(gx_device_pdf *pdev,
 private int store_glyph_width(pdf_glyph_width_t *pwidth, int wmode,
 			      double scale, const gs_glyph_info_t *pinfo);
 int
-pdf_glyph_widths(pdf_font_resource_t *pdfont, gs_glyph glyph,
+pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
 		 gs_font *orig_font, pdf_glyph_widths_t *pwidths)
 {
     gs_font_base *cfont = pdf_font_resource_font(pdfont);
-    int wmode = orig_font->WMode;
     gs_font *ofont = orig_font;
     gs_glyph_info_t info;
     /*
@@ -1292,7 +1291,8 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, gs_glyph glyph,
 	return code;
     scale_c = sxc * 1000.0;
     scale_o = sxo * 1000.0;
-    pwidths->v.x = pwidths->v.y = 0;
+    pwidths->Width.v.x = pwidths->Width.v.y = 0;
+    pwidths->real_width.v.x = pwidths->real_width.v.y = 0;
     if (glyph != GS_NO_GLYPH &&
 	(code = cfont->procs.glyph_info((gs_font *)cfont, glyph, NULL,
 				        (GLYPH_INFO_WIDTH0 << wmode) |
@@ -1328,13 +1328,14 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, gs_glyph glyph,
 		 * so checking it here.
 		 */
 		if (info.v.x != 0 || info.v.y != 0) {
-		    pwidths->v.x = info.v.x - v.x;
-		    pwidths->v.y = info.v.y - v.y;
+		    pwidths->Width.v = v;
+		    pwidths->real_width.v = info.v;
 		} else {
 		    /* 
 		     * Probably there is no side bearing in Metrics, 
 		     * use zero shift.
 		     */
+		    pwidths->Width.v = pwidths->real_width.v = info.v;
 		}
 	    } else {
 		/*
@@ -1344,8 +1345,7 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, gs_glyph glyph,
 		 * are different, so checking it here.
 		 */
 		if (info.v.x != v.x || info.v.y != v.y) {
-		    pwidths->v.x = info.v.x;
-		    pwidths->v.y = info.v.y;
+		    pwidths->Width.v = pwidths->real_width.v = info.v;
 		} else {
 		    /* 
 		     * Probably there is no Metrics2, use zero shift.
@@ -1353,6 +1353,8 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, gs_glyph glyph,
 		     * outline specifies the shift for vertical writing.
 		     * Perhaps we never met such fonts.
 		     */
+		     pwidths->Width.v.x = pwidths->real_width.v.x = 0;
+		     pwidths->Width.v.y = pwidths->real_width.v.y = 0;
 		} 
 	    }
 	} else
@@ -1402,6 +1404,8 @@ store_glyph_width(pdf_glyph_width_t *pwidth, int wmode, double scale,
     if (v != 0)
 	return 1;
     pwidth->w = w;
+    pwidth->v.x = pinfo->v.x * scale;
+    pwidth->v.y = pinfo->v.y * scale;
     return 0;
 }
 

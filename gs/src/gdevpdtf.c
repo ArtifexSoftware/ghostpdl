@@ -55,9 +55,8 @@ case 7: switch (pdfont->FontType) {
  case ft_composite:
      ENUM_RETURN(pdfont->u.type0.DescendantFont);
  case ft_CID_encrypted:
-     ENUM_RETURN(0);
  case ft_CID_TrueType:
-     ENUM_RETURN(pdfont->u.cidfont.CIDToGIDMap);
+     ENUM_RETURN(pdfont->u.cidfont.Widths2);
  default:
      ENUM_RETURN(pdfont->u.simple.Encoding);
 }
@@ -70,12 +69,19 @@ case 8: switch (pdfont->FontType) {
  case ft_TrueType:
  case ft_user_defined:
      ENUM_RETURN(pdfont->u.simple.v);
+ case ft_CID_encrypted:
+ case ft_CID_TrueType:
+     ENUM_RETURN(pdfont->u.cidfont.v);
  default:
      ENUM_RETURN(0);
 }
 case 9: switch (pdfont->FontType) {
  case ft_user_defined:
      ENUM_RETURN(pdfont->u.simple.s.type3.char_procs);
+ case ft_CID_encrypted:
+     ENUM_RETURN(0);
+ case ft_CID_TrueType:
+     ENUM_RETURN(pdfont->u.cidfont.CIDToGIDMap);
  default:
      ENUM_RETURN(0);
 }
@@ -97,6 +103,10 @@ RELOC_PTRS_WITH(pdf_font_resource_reloc_ptrs, pdf_font_resource_t *pdfont)
 	    RELOC_CONST_STRING_VAR(pdfont->u.type0.CMapName);
 	RELOC_VAR(pdfont->u.type0.DescendantFont);
 	break;
+    case ft_CID_encrypted:
+	RELOC_VAR(pdfont->u.cidfont.Widths2);
+	RELOC_VAR(pdfont->u.cidfont.v);
+	/* falls through */
     case ft_CID_TrueType:
 	RELOC_VAR(pdfont->u.cidfont.CIDToGIDMap);
 	break;
@@ -296,18 +306,24 @@ font_resource_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
     double *widths = 0;
     byte *used = 0;
     int code;
+    bool is_CID_font = (ftype == ft_CID_encrypted || ftype == ft_CID_TrueType);
 
     if (chars_count != 0) {
 	uint size = (chars_count + 7) / 8;
 
-	widths = (void *)gs_alloc_byte_array(mem, chars_count, sizeof(*widths),
-					     "font_resource_alloc(Widths)");
+	if (!is_CID_font) {
+    	    widths = (void *)gs_alloc_byte_array(mem, chars_count, sizeof(*widths),
+						"font_resource_alloc(Widths)");
+	} else {
+	    /*  Delay allocation because we don't know which WMode will be used. */
+	}
 	used = gs_alloc_bytes(mem, size, "font_resource_alloc(used)");
-	if (widths == 0 || used == 0) {
+	if ((!is_CID_font && widths == 0) || used == 0) {
 	    code = gs_note_error(gs_error_VMerror);
 	    goto fail;
 	}
-	memset(widths, 0, chars_count * sizeof(*widths));
+	if (!is_CID_font)
+	    memset(widths, 0, chars_count * sizeof(*widths));
 	memset(used, 0, size);
     }
     code = pdf_alloc_resource(pdev, rtype, rid, (pdf_resource_t **)&pfres, 0L);
@@ -709,6 +725,8 @@ pdf_font_cidfont_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 	return code;
     pdfont->FontDescriptor = pfd;
     pdfont->u.cidfont.CIDToGIDMap = map;
+    pdfont->u.cidfont.Widths2 = NULL;
+    pdfont->u.cidfont.v = NULL;
     /*
      * Write the CIDSystemInfo now, so we don't try to access it after
      * the font may no longer be available.
@@ -722,6 +740,41 @@ pdf_font_cidfont_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
     }
     *ppfres = pdfont;
     return pdf_compute_BaseFont(pdev, pdfont);
+}
+
+int
+pdf_obtain_cidfont_widths_arrays(gx_device_pdf *pdev, pdf_font_resource_t *pdfont, 
+                                 int wmode, double **w, double **v)
+{
+    gs_memory_t *mem = pdev->pdf_memory;
+    double *ww, *vv = 0;
+    int chars_count = pdfont->count;
+
+    *v = (wmode ? pdfont->u.cidfont.v : NULL);
+    *w = (wmode ? pdfont->u.cidfont.Widths2 : pdfont->Widths);
+    if (*w != NULL)
+	return 0;
+    ww = (double *)gs_alloc_byte_array(mem, chars_count, sizeof(*ww),
+						"pdf_obtain_cidfont_widths_arrays");
+    if (wmode)
+	vv = (double *)gs_alloc_byte_array(mem, chars_count, sizeof(*vv) * 2,
+						"pdf_obtain_cidfont_widths_arrays");
+    if (ww == 0 || (wmode && vv == 0)) {
+	gs_free_object(mem, ww, "pdf_obtain_cidfont_widths_arrays");
+	gs_free_object(mem, vv, "pdf_obtain_cidfont_widths_arrays");
+	return_error(gs_error_VMerror);
+    }
+    if (wmode)
+	memset(vv, 0, chars_count * sizeof(*vv));
+    memset(ww, 0, chars_count * sizeof(*ww));
+    if (wmode) {
+	pdfont->u.cidfont.Widths2 = *w = ww;	
+	pdfont->u.cidfont.v = *v = vv;	
+    } else {
+	pdfont->Widths = *w = ww;
+	*v = NULL;
+    }
+    return 0;
 }
 
 /* ---------------- CMap resources ---------------- */

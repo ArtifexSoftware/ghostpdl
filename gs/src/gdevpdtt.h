@@ -116,11 +116,11 @@ typedef struct pdf_text_process_state_s {
 typedef struct pdf_glyph_width_s {
     double w;
     gs_point xy;
+    gs_point v;				/* glyph origin shift */
 } pdf_glyph_width_t;
 typedef struct pdf_glyph_widths_s {
     pdf_glyph_width_t Width;		/* unmodified, for Widths */
     pdf_glyph_width_t real_width;	/* possibly modified, for rendering */
-    gs_point v;				/* glyph origin for WMode 1 */
 } pdf_glyph_widths_t;
 
 /* ---------------- Procedures ---------------- */
@@ -190,7 +190,7 @@ int pdf_set_text_process_state(gx_device_pdf *pdev,
  * return 0; if only the xy values are valid, or the width is not cachable
  * for some other reason, return 1.
  */
-int pdf_glyph_widths(pdf_font_resource_t *pdfont, gs_glyph glyph,
+int pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
 		     gs_font *font, pdf_glyph_widths_t *pwidths);
 
 /*
