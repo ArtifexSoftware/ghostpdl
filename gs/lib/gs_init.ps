@@ -1286,37 +1286,47 @@ devicedict /Default devicedict .defaultdevicename get put
     }
    ifelse
 } bind def
-/.sethiresscreen {	% <dpi> .sethiresscreen -
-  .sethireshalftone
-			% Stack: doscreen
-    {	% Set the transfer function to lighten up the grays.
-	% We correct at the high end so that very light grays
-	% don't disappear completely if they darken <1 screen pixel.
-	% Parameter values closer to 1 are better for devices with
-	% less dot spreading; lower values are better with more spreading.
-	% The value 0.8 is a compromise that will probably please no one!
-	%
-	% Because of a bug in FrameMaker, we have to accept operands
-	% outside the valid range of [0..1].
-      { dup dup 0.0 gt exch 1.0 lt and
-	 { 0.8 exp dup dup 0.9375 gt exch 0.999 lt and	% > 15/16
-	    { .currentscreenlevels 1 sub	% tweak to avoid boundary
-	      1 exch div 1 exch sub .min
-	    }
-	   if
-	 }
-	if
+/.sethiresscreen {	% <dpi> .sethiresscreen 
+  .sethireshalftone     % pushes true if a screen halftone used
+			% Stack: doscree
+  {
+    % Set the transfer function to lighten up the grays.
+    % We correct at the high end so that very light grays
+    % don't disappear completely if they darken <1 screen pixel.
+    % Parameter values closer to 1 are better for devices with
+    % less dot spreading; lower values are better with more spreading.
+    % The value 0.8 is a compromise that will probably please no one!
+    %
+    % Because of a bug in FrameMaker, we have to accept operands
+    % outside the valid range of [0..1].
+    {
+      dup dup 0.0 gt exch 1.0 lt and
+      {
+        0.8 exp
+        dup 0.998 lt   % 254.5 / 255
+        {	% Keep at least one halftone dot if not saturated color
+          .currentscreenlevels 1 sub dup 1 sub exch div
+	  .min
+        }
+        if
       }
+      if
     }
-    {	% Set the transfer function to the identity.
-      0 array cvx		% Genoa CET won't accept a packed array!
-    }
-   ifelse settransfer
-   /setstrokeadjust where { pop false setstrokeadjust } if
-	% Increase fill adjustment so that we effectively use Adobe's
-	% any-part-of-pixel rule.
-   0.5 .setfilladjust
-} bind def
+  }
+  {
+     % Set the transfer function to the identity.
+     0 array cvx     % Genoa CET won't accept a packed array!
+  }
+  ifelse
+  settransfer
+  /setstrokeadjust where
+  { pop false setstrokeadjust }
+  if
+
+  % Increase fill adjustment so that we effectively use Adobe's
+  % any-part-of-pixel rule.
+  0.5 .setfilladjust
+}
 % Set the default screen and BG/UCR.
 /.setdefaultbgucr {
   systemdict /setblackgeneration known {
