@@ -21,8 +21,10 @@ CONTRIB_MAK=$(GLSRC)contrib.mak
 
 ###### --------------------------- Catalog -------------------------- ######
 
-# The following drivers are user-contributed, and maintained (if at all)
-# by users.  Please do not ask Aladdin about problems with these drivers.
+# The following drivers are user-contributed, and maintained (if at all) by
+# users.  Please report problems in these drivers to their authors, whose
+# e-mail addresses appear below: do not report them to mailing lists or
+# mailboxes for general Ghostscript problems.
 
 # Displays:
 #   MS-DOS (note: not usable with Desqview/X):

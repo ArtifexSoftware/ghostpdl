@@ -208,9 +208,9 @@ $(GLOBJ)dwuninst.obj: $(GLSRC)dwuninst.cpp $(GLSRC)dwuninst.h
 
 # ------------------------- Distribution archive -------------------------- #
 
-# ****** Aladdin Enterprises assumes no responsibility whatsoever for the
-# ****** following section of this makefile.  If you have questions, please
-# ****** contact bug-gswin@artifex.com or gsview@ghostgum.com.au.
+# The following section of this makefile was developed by, and is maintained
+# by, the developer of GSview.  If you have any questions about it, please
+# contact bug-gswin@ghostscript.com.
 
 # Create a self-extracting archive with setup program.
 # This assumes that the current directory is named gs#.## relative to its
