@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -479,6 +479,7 @@ hpjet_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype,
     /* Initialize printer. */
     if (pdev->PageCount == 0) {
 	fputs("\033E", prn_stream);	/* reset printer */
+	fputs("\033&l1X", prn_stream);	/* # of copies = 1 */
 	/* If the printer supports it, set the paper size */
 	/* based on the actual requested size. */
 	if (!(ptype == LJ || ptype == LJplus)) {
