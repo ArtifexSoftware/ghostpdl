@@ -25,7 +25,16 @@ import os
 
 def message(str):
     import sys
-    sys.stderr.write(str + '\n')
+    sys.stderr.write('**** ' + str + '\n')
+
+################ Check that there are no files in the top-level directory.
+################ (All files must be in subdirectories.)
+
+def checkEmptyTopDirectory():
+    import glob, os.path
+    for f in glob.glob('*'):
+        if not (os.path.isdir(f) or os.path.islink(f)):
+            message(f + ' is a file in the top-level directory.')
 
 ################ Check that the set of files in the directories is the
 ################ same as the set of files registered with CVS.
@@ -51,8 +60,6 @@ def checkDirsAgainstCVS():
         for f in glob.glob(d + "/*") + glob.glob(d + "/.[a-zA-Z0-9_-]*"):
             if f[-8:] != '.mak.tcl' and not os.path.isdir(f):
                 Files[os.path.basename(f)] = 1
-        if Files.has_key('CVS'):
-            del Files['CVS']
         print "In %s/, %d files, %d CVS entries" % (d, len(Files), len(Entries))
         for f in Entries.keys():
             if not Files.has_key(f):
@@ -91,5 +98,6 @@ def checkForIdLines():
                     message(found.group(1) + ' line in ' + f + ' has incorrect filename ' + found.group(2))                    
 
 if __name__ == "__main__":
+    checkEmptyTopDirectory()
     checkDirsAgainstCVS()
     checkForIdLines()
