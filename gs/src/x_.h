@@ -120,7 +120,9 @@
 
 #    define CADDR_T		/* Without this DEFINE, VAX GNUC    */
 					/* gets trashed reading Intrinsic.h */
-#  endif			/* ifdef __GNUC__ */
+#else
+#include <vms_x_fix.h>
+#   endif			/* ifdef __GNUC__ */
 
 #  include <decw$include/Xlib.h>
 #  include <decw$include/Xproto.h>

@@ -51,18 +51,19 @@ ICCO_=$(O_)$(ICCOBJ)
 # We need D_, _D_, and _D because the OpenVMS compiler uses different
 # syntax from other compilers.
 # ICCI_ and ICCF_ are defined in gs.mak.
-ICC_INCL=$(I_)$(ICCI_)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I)
+ICC_INCL=$(I_)$(ICCI_)$(II)$(GLSRCDIR)$(II)$(GLGENDIR)$(_I)
 ICC_CCFLAGS=$(ICC_INCL) $(ICCF_) 
 ICC_CC=$(CC_) $(ICC_CCFLAGS)
 
 # Define the name of this makefile.
-ICCLIB_MAK=$(GLSRC)icclib.mak
+ICCLIB_MAK=$(GLSRCDIR)icclib.mak
 
 icc.clean : icc.config-clean icc.clean-not-config-clean
 
 ### WRONG.  MUST DELETE OBJ AND GEN FILES SELECTIVELY.
 icc.clean-not-config-clean :
-	echo $(ICCSRC) $(ICCGEN) $(ICCOBJ) $(ICCO_)
+#	echo $(ICCSRC) $(ICCGEN) $(ICCOBJ) $(ICCO_)
+	$(EXP)$(ECHOGS_XE) $(ICCSRC) $(ICCGEN) $(ICCOBJ) $(ICCO_)
 	$(RM_) $(ICCOBJ)*.$(OBJ)
 
 icc.config-clean :
@@ -76,8 +77,9 @@ icclib_=$(ICCOBJ)icc.$(OBJ)
 $(ICCGEN)icclib.dev : $(ICCLIB_MAK) $(ECHOGS_XE) $(icclib_)
 	$(SETMOD) $(ICCGEN)icclib $(icclib_)
 
-icc_h=$(ICCSRC)/icc.h $(ICCSRC)/icc$(ICCPROFVER).h
+icc_h=$(ICCSRC)$(D)icc.h $(ICCSRC)$(D)icc$(ICCPROFVER).h
 
 $(ICCOBJ)icc.$(OBJ) : $(ICCSRC)icc.c $(ICCDEP)  $(gs_stdio_h) $(icc_h)
-	echo $(ICC_CCFLAGS)
+#	echo $(ICC_CCFLAGS)
+	$(EXP)$(ECHOGS_XE) $(ICC_CCFLAGS)
 	$(ICC_CC) $(ICCO_)icc.$(OBJ) $(C_) $(ICCSRC)icc.c

@@ -115,7 +115,7 @@ gp_get_realtime(long *pdt)
     struct {
 	uint _l0, _l1;
     } binary_date, now, difference;
-    long lib$ediv(), lib$subx(), sys$bintim(), sys$gettim();
+    long LIB$EDIV(), LIB$SUBX(), SYS$BINTIM(), SYS$GETTIM();
     long units_per_second = 10000000;
     char *jan_1_1980 = "1-JAN-1980 00:00:00.00";
     descrip str_desc;
@@ -132,14 +132,14 @@ gp_get_realtime(long *pdt)
     /* Convert January 1, 1980 into a binary absolute time */
     str_desc.dsc$w_length = strlen(jan_1_1980);
     str_desc.dsc$a_pointer = jan_1_1980;
-    (void)sys$bintim(&str_desc, &binary_date);
+    (void)SYS$BINTIM(&str_desc, &binary_date);
 
     /* Compute number of 100 nanosecond units since January 1, 1980.  */
-    (void)sys$gettim(&now);
-    (void)lib$subx(&now, &binary_date, &difference);
+    (void)SYS$GETTIM(&now);
+    (void)LIB$SUBX(&now, &binary_date, &difference);
 
     /* Convert to seconds and nanoseconds.  */
-    (void)lib$ediv(&units_per_second, &difference, &pdt[0], &pdt[1]);
+    (void)LIB$EDIV(&units_per_second, &difference, &pdt[0], &pdt[1]);
     pdt[1] *= 100;
 }
 

@@ -327,6 +327,9 @@ gs_nogc_reclaim(vm_spaces * pspaces, bool global)
 	    use_string_freelists((gs_ref_memory_t *)mem->stable_memory);
     }
 }
+#ifdef VMS
+#pragma optimize ansi_alias=off
+#endif
 private void
 use_string_freelists(gs_ref_memory_t *rmem)
 {
