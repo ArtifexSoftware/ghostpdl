@@ -1109,15 +1109,25 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
     if (code < 0)
 	return code;
 
-    /* Get the original matrix from the base font, if available. */
+    /* Get the original matrix of the base font. */
 
     {
 	gs_font_base *cfont = pdf_font_resource_font(pdfont);
 
-	if (cfont != 0)
-	    pdf_font_orig_matrix((gs_font *)cfont, &orig_matrix);
-	else
+	if (cfont != 0) {
+	    /*
+	     * The text matrix to be computed relatively to the 
+	     * embedded font matrix.
+	     */
+	    orig_matrix = cfont->FontMatrix;
+	} else {
+	    /*
+	     * We don't embed the font.
+	     * The text matrix to be computed relatively to
+	     * standard font matrix.
+	     */
 	    pdf_font_orig_matrix(font, &orig_matrix);
+	}
     }
 
     /* Compute the scaling matrix and combined matrix. */
