@@ -1872,9 +1872,9 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
 	if (code < 0)
 	    return code;
 	rcode |= code;
+	pwidths->real_width.v.x = info.v.x * scale_o;
+	pwidths->real_width.v.y = info.v.y * scale_o;
     }
-    pwidths->real_width.v.x = info.v.x * scale_o;
-    pwidths->real_width.v.y = info.v.y * scale_o;
     return rcode;
 }
 /* ---------------- Main entry ---------------- */

@@ -343,7 +343,7 @@ process_text_estimate_bbox(pdf_text_enum_t *pte, gs_font_base *font,
 		wanted.x += tpt.x;
 		wanted.y += tpt.y;
 	    }
-	    if (pstr->data[i] == space_char) {
+	    if (pstr->data[i] == space_char && pte->text.operation & TEXT_ADD_TO_SPACE_WIDTH) {
 		gs_distance_transform(pte->text.delta_space.x,
 				      pte->text.delta_space.y,
 				      &ctm_only(pte->pis), &tpt);
@@ -870,7 +870,7 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 		wanted.x += tpt.x;
 		wanted.y += tpt.y;
 	    }
-	    if (chr == space_char) {
+	    if (chr == space_char && pte->text.operation & TEXT_ADD_TO_SPACE_WIDTH) {
 		gs_distance_transform(pte->text.delta_space.x,
 				      pte->text.delta_space.y,
 				      &ctm_only(pte->pis), &tpt);
