@@ -345,7 +345,7 @@ proc makewin {} {
 
 # Move the tar archives to the 'master' directory.
 proc makemaster {} {
-    global Num3
+    global Dot Num3
 
     set todir master/$Num3
 
