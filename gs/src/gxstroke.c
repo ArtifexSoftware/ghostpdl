@@ -947,6 +947,7 @@ stroke_fill(gx_path * ppath, int first, register pl_ptr plp, pl_ptr nplp,
 	    ) {
 	    gs_fixed_point points[6];
 	    int npoints, code;
+	    fixed ax, ay, bx, by;
 
 	    npoints = cap_points((first == 0 ? cap : gs_cap_butt),
 				 &plp->o, points);
@@ -957,7 +958,17 @@ stroke_fill(gx_path * ppath, int first, register pl_ptr plp, pl_ptr nplp,
 					(uniform ? (gs_matrix *) 0 :
 					 &ctm_only(pis)), join);
 	    if (code < 0)
-		return code;
+		goto general;
+	    /* Make sure the parallelogram fill won't overflow. */
+#define SUB_OVERFLOWS(r, u, v)\
+  (((r = u - v) ^ u) < 0 && (u ^ v) < 0)
+	    if (SUB_OVERFLOWS(ax, points[0].x, points[1].x) ||
+		SUB_OVERFLOWS(ay, points[0].y, points[1].y) ||
+		SUB_OVERFLOWS(bx, points[2].x, points[1].x) ||
+		SUB_OVERFLOWS(by, points[2].y, points[1].y)
+		)
+		goto general;
+#undef SUB_OVERFLOWS
 	    if (nplp != 0) {
 		if (join == gs_join_miter) {
 		    /* Make sure we have a bevel and not a miter. */
@@ -988,10 +999,7 @@ stroke_fill(gx_path * ppath, int first, register pl_ptr plp, pl_ptr nplp,
 	    /* Fill the body of the stroke. */
 	    return (*dev_proc(dev, fill_parallelogram)) (dev,
 						   points[1].x, points[1].y,
-						  points[0].x - points[1].x,
-						  points[0].y - points[1].y,
-						  points[2].x - points[1].x,
-						  points[2].y - points[1].y,
+							 ax, ay, bx, by,
 							 pdevc, pis->log_op);
 	  fill:
 	    code = add_points(ppath, points, npoints + code, true);
@@ -1001,6 +1009,7 @@ stroke_fill(gx_path * ppath, int first, register pl_ptr plp, pl_ptr nplp,
 	}
     }
     /* General case: construct a path for the fill algorithm. */
+ general:
     return stroke_add(ppath, first, plp, nplp, pdevc, dev, pis, params,
 		      pbbox, uniform, join);
 }
