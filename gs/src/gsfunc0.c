@@ -164,27 +164,6 @@ private int (*const fn_get_samples[]) (P3(const gs_function_Sd_t * pfn,
 };
 
 /*
- * Compute a value by quadratic interpolation.
- * f[] = f(0), f(1), f(2); 0 < x < 1.
- */
-private double
-interpolate_quadratic(floatp x, floatp f0, floatp f1, floatp f2)
-{
-    /*
-     * We want f(0) = f0, f(1) = f1, f'(1) = (f2 - 2 * f1 + f0) / 2.
-     * From there, it's a simple matter of algebra.
-     */
-    const double
-	s = (f2 - f0) * 0.5,
-	a = s - f1 + f0, b = f1 - a - f0;
-    const double c = a * x * x + b * x + f0;
-
-    if_debug5('~', "[~](%g, %g, %g)order2(%g) => %g\n",
-	      f0, f1, f2, x, c);
-    return c;
-}
-
-/*
  * Compute a value by cubic interpolation.
  * f[] = f(0), f(1), f(2), f(3); 1 < x < 2.
  * The formula is derived from those presented in
@@ -214,6 +193,20 @@ interpolate_cubic(floatp x, floatp f0, floatp f1, floatp f2, floatp f3)
 #undef a
 #undef SQR
 #undef CUBE
+}
+
+/*
+ * Compute a value by quadratic interpolation.
+ * f[] = f(0), f(1), f(2); 0 < x < 1.
+ *
+ * We used to use a quadratic formula for this, derived from
+ * f(0) = f0, f(1) = f1, f'(1) = (f2 - f0) / 2, but now we
+ * match what we believe is Acrobat Reader's behavior.
+ */
+inline private double
+interpolate_quadratic(floatp x, floatp f0, floatp f1, floatp f2)
+{
+    return interpolate_cubic(x + 1, f0, f0, f1, f2);
 }
 
 /* Calculate a result by multicubic interpolation. */
