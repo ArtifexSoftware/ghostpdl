@@ -451,21 +451,43 @@ true setglobal
 	} {
 	  1
 	} ifelse													% fr W E M s
-	4 index /FirstChar //knownget exec not {
+	4 index /MissingWidth //knownget exec not {
 	  0
-	} if														% fr W E M s c0
-	5 4 roll													% fr E M s c0 W
-	dup 0 exch 1 exch length 1 sub {							% fr E M s c0 W i
-	  2 copy get												% fr E M s c0 W i w
-	  4 index div						
-	  exch 3 index add											% fr E M s c0 W w c
-	  6 index exch get											% fr E M s c0 W w n
-	  5 index 3 1 roll exch										% fr E M s c0 W M n w
-	  put														% fr E M s c0 W
+	} if														% fr W E M s mw
+	5 index /FirstChar //knownget exec not {
+	  0
+	} if														% fr W E M s mw c0
+	6 5 roll													% fr E M s mw c0 W
+	dup 0 exch 1 exch length 1 sub {							% fr E M s mw c0 W i
+	  2 copy get												% fr E M s mw c0 W i w
+	  exch 3 index add											% fr E M s mw c0 W w c
+	  7 index exch get											% fr E M s mw c0 W w n
+	  dup null ne {
+	    6 index 3 1 roll exch									% fr E M s mw c0 W M n w
+	    dup 0 eq {
+	      pop 5 index
+	    } if
+	    6 index div						
+	    put														% fr E M s mw c0 W
+	  } {
+	    pop pop
+	  } ifelse
 	} for
-	pop pop pop exch pop										% fr M
+	pop pop pop pop exch pop									% fr M
 	1 index exch /Metrics put									% fr
-  } if
+  } {
+	dup /MissingWidth //knownget exec {							% fr mw
+	  256 dict													% fr mw M
+	  2 index /Encoding get {									% fr mw M e
+	    dup null ne {
+		  3 copy 3 2 roll put									% fr mw M e
+		} if
+		pop														% fr mw M
+	  } forall
+	  exch pop													% fr M
+	  1 index exch /Metrics put									% fr
+	} if
+  } ifelse
 } bind def
 
 % ===================== Interpret Data Streams ===============
