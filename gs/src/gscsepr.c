@@ -373,7 +373,8 @@ gx_concretize_Separation(const gs_client_color *pc, const gs_color_space *pcs,
 
     if (pcs->params.separation.sep_type == SEP_ALL) {
 	/* "All" means setting all device components to same value. */
-	int i, n = cs_num_components(pacs);
+	const gs_color_space *pconcs = cs_concrete_space(pacs, pis);
+	int i, n = cs_num_components(pconcs);
 	frac conc;
 	gs_client_color hack_color = *pc;
 
@@ -384,7 +385,7 @@ gx_concretize_Separation(const gs_client_color *pc, const gs_color_space *pcs,
          * wrong.
          */
 	if(n==1 || n==3)
-          hack_color.paint.values[0] = 1 - pc->paint.values[0];
+	    hack_color.paint.values[0] = 1 - pc->paint.values[0];
 	/* hack: using DeviceGray's function to concretize single component color : */
 	code = gx_concretize_DeviceGray(&hack_color, pacs, &conc, pis);
 
