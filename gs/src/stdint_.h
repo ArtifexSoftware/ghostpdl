@@ -44,7 +44,7 @@
 # include <stdint.h>
 # define STDINT_TYPES_DEFINED
 #elif defined(SYS_TYPES_HAS_STDINT_TYPES)
-# /* std.h will have included sys/types.h */
+  /* std.h will have included sys/types.h */
 # define STDINT_TYPES_DEFINED
 #endif
 
