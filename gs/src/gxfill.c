@@ -1474,9 +1474,8 @@ private inline fixed Y_AT_X(active_line *alp, fixed xp)
 {   return alp->start.y + fixed_mult_quo(xp - alp->start.x,  alp->diff.y, alp->diff.x);
 }
 
-private int margin_boundary(line_list * ll, margin_set * set, active_line * alp, fixed y0, fixed y1, int dir)
+private int margin_boundary(line_list * ll, margin_set * set, active_line * alp, fixed yy0, fixed yy1, int dir)
 {   section *sect = set->sect;
-    fixed yy0 = max(max(y0, alp->start.y), set->y), yy1 = min(min(y1, alp->end.y), set->y + fixed_1);
     fixed x0, x1, xmin, xmax;
     int xp0, xp;
     int i0, i;
@@ -1522,42 +1521,30 @@ private int margin_boundary(line_list * ll, margin_set * set, active_line * alp,
 	}
 #   else
 	xp0 = fixed_floor(xmin) + fixed_half;
-	i = i0 = fixed2int(xp0) - ll->bbox_left;
-	i1 = fixed2int_ceiling(xmax) - ll->bbox_left;
-	if (xp0 < xmin)
+	i0 = fixed2int(xp0) - ll->bbox_left;
+	if (xp0 < xmin) {
 	    i0++;
-	assert(i >= 0 && i1 <= ll->bbox_width);
-	for (xp = xp0; i < i1; xp += fixed_1, i++) {
-	    section *s = &sect[i];
-
-	    if (xp >= xmin && xp <= xmax) {
-		fixed y = (alp->start.y == alp->end.y ? alp->start.y : Y_AT_X(alp, xp));
-		fixed dy = y - set->y;
-		bool ud;
-		short *b, h;
-
-		if (dy < 0)
-		    dy = 0; /* fix rounding errors in AL_X_AT_Y */
-		if (dy >= fixed_1)
-		    dy = fixed_1; /* safety */
-		vd_circle(xp, y, 2, 0);
-		ud = ((alp->start.x - alp->end.x) * dir > 0);
-		b = (ud ? &s->y0 : &s->y1);
-		h = (short)dy;
-		if (*b == -1 || (*b != -2 && ( ud ? *b > h : *b < h)))
-		    *b = h;
-	    }
-#	    if ADJUST_SERIF
-	    {   int x_pixel = int2fixed(i + ll->bbox_left);
-		int xl = max(xmin - x_pixel, 0);
-		int xu = min(xmax - x_pixel, fixed_1);
-
-		s->x0 = min(s->x0, xl);
-		s->x1 = max(s->x1, xu);
-		x_pixel+=0; /* Just a place for breakpoint */
-	    }
-#	    endif
+	    xp0 += fixed_1;
 	}
+	for (i = i0, xp = xp0; xp < xmax; xp += fixed_1, i++) {
+	    section *s = &sect[i];
+	    fixed y = (alp->start.y == alp->end.y ? alp->start.y : Y_AT_X(alp, xp));
+	    fixed dy = y - set->y;
+	    bool ud;
+	    short *b, h;
+
+	    if (dy < 0)
+		dy = 0; /* fix rounding errors in AL_X_AT_Y */
+	    if (dy >= fixed_1)
+		dy = fixed_1; /* safety */
+	    vd_circle(xp, y, 2, 0);
+	    ud = ((alp->start.x - alp->end.x) * dir > 0);
+	    b = (ud ? &s->y0 : &s->y1);
+	    h = (short)dy;
+	    if (*b == -1 || (*b != -2 && ( ud ? *b > h : *b < h)))
+		*b = h;
+	}
+	assert(i0 >= 0 && i <= ll->bbox_width);
 #	endif
     if (i > i0)
 	return store_margin(ll, set, i0, i);
@@ -1566,24 +1553,42 @@ private int margin_boundary(line_list * ll, margin_set * set, active_line * alp,
 
 private inline int continue_margin_common(line_list * ll, margin_set * set, active_line * flp, active_line * alp, fixed y0, fixed y1)
 {   int code;
+#   if ADJUST_SERIF
+    section *sect = set->sect;
+    fixed yy0 = max(max(y0, alp->start.y), set->y);
+    fixed yy1 = min(min(y1, alp->end.y), set->y + fixed_1);
+    fixed x00 = AL_X_AT_Y(flp, yy0), x10 = AL_X_AT_Y(alp, yy0);
+    fixed x01 = AL_X_AT_Y(flp, yy1), x11 = AL_X_AT_Y(alp, yy1);
+    fixed xmin = min(x00, x01), xmax = max(x10, x11);
 
-    code = margin_boundary(ll, set, flp, y0, y1, 1);
+    int i0 = fixed2int(xmin) - ll->bbox_left, i;
+    int i1 = fixed2int_ceiling(xmax) - ll->bbox_left;
+   
+    for (i = i0; i < i1; i++) {
+	section *s = &sect[i];
+        int x_pixel = int2fixed(i + ll->bbox_left);
+	int xl = max(xmin - x_pixel, 0);
+	int xu = min(xmax - x_pixel, fixed_1);
+
+	s->x0 = min(s->x0, xl);
+	s->x1 = max(s->x1, xu);
+	x_pixel+=0; /* Just a place for breakpoint */
+    }
+    code = store_margin(ll, &ll->margin_set1, i0, i1);
     if (code < 0)
 	return code;
-    return margin_boundary(ll, set, alp, y0, y1, -1);
+#   endif
+
+    code = margin_boundary(ll, set, flp, yy0, yy1, 1);
+    if (code < 0)
+	return code;
+    return margin_boundary(ll, set, alp, yy0, yy1, -1);
 }
 
 private int add_margin(line_list * ll, active_line * flp, active_line * alp, fixed y0, fixed y1)
-{   int yy = fixed_floor(y1 - fixed_half) + fixed_half;
-    fixed x0 = AL_X_AT_Y(flp, yy), x1 = AL_X_AT_Y(alp, yy);
-    int ix0 = fixed2int_var_pixround(x0) - ll->bbox_left;
-    int ix1 = fixed2int_var_pixround(x1) - ll->bbox_left;
-
-    if (ix1 < 0 || ix0 > ll->bbox_width)
-	return 0; /* Outside clip box */
-    vd_bar(alp->start.x, alp->start.y, alp->end.x, alp->end.y, 1, RGB(255, 255, 255));
+{   vd_bar(alp->start.x, alp->start.y, alp->end.x, alp->end.y, 1, RGB(255, 255, 255));
     vd_bar(flp->start.x, flp->start.y, flp->end.x, flp->end.y, 1, RGB(255, 255, 255));
-    return continue_margin_common(ll, &ll->margin_set0, flp, alp, ll->margin_set0.y, y1);
+    return continue_margin_common(ll, &ll->margin_set0, flp, alp, y0, y1);
 }
 
 private int add_horiz_margin(line_list * ll, active_line * alp)
@@ -1592,13 +1597,6 @@ private int add_horiz_margin(line_list * ll, active_line * alp)
     int ix1 = fixed2int_var_pixround(x1) - ll->bbox_left;
 
     vd_bar(alp->start.x, alp->start.y, alp->end.x, alp->end.y, 1, RGB(128, 0, 255));
-    if (ix0 < ix1) {
-	if (ix1 < 0 || ix0 > ll->bbox_width)
-	    return 0; /* Outside clip box */
-    } else if (ix0 > ix1) {
-	if (ix0 < 0 || ix1 > ll->bbox_width)
-	    return 0; /* Outside clip box */
-    }
     return margin_boundary(ll, &ll->margin_set0, alp, alp->start.y, alp->start.y, -1);
 }
 
@@ -1622,38 +1620,13 @@ private int complete_margin(line_list * ll, active_line * flp, active_line * alp
     int i1 = fixed2int_var_pixround(alp->x_current);
     int ii0 = max(0, i0 - ll->bbox_left), ii1 = min(i1 - ll->bbox_left, ll->bbox_width);
 
-#   if !CHECK_SPOT_CONTIGUITY
-	if (ii0 < ii1) {
-	    for (i = ii0; i < ii1; i++)
-		sect[i].y0 = sect[i].y1 = -2;
-	    code = store_margin(ll, &ll->margin_set1, ii0, ii1);
-	    if (code < 0)
-		return code;
-	}
-#   else
-	int xmin = flp->x_current;
-	int xmax = alp->x_current;
-	int imin = fixed2int(xmin) - ll->bbox_left;
-	int imax = fixed2int_ceiling(xmax) - ll->bbox_left;
-
-	assert(imin >= 0 && imax <= ll->bbox_width);
-#	if ADJUST_SERIF && CHECK_SPOT_CONTIGUITY
-	for (i = imin; i < imax; i++) {
-	    section *s = &sect[i];
-	    int x_pixel = int2fixed(i + ll->bbox_left);
-	    int xl = max(xmin - x_pixel, 0);
-	    int xu = min(xmax - x_pixel, fixed_1);
-
-	    s->x0 = min(s->x0, xl);
-	    s->x1 = max(s->x1, xu);
-	}
+    if (ii0 < ii1) {
 	for (i = ii0; i < ii1; i++)
 	    sect[i].y0 = sect[i].y1 = -2;
-#	endif
-	code = store_margin(ll, &ll->margin_set1, imin, imax);
+	code = store_margin(ll, &ll->margin_set1, ii0, ii1);
 	if (code < 0)
 	    return code;
-#   endif
+    }
     return continue_margin_common(ll, &ll->margin_set1, flp, alp, y0, y1);
 }
 

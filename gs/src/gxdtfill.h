@@ -65,14 +65,10 @@ GX_FILL_TRAPEZOID(gx_device * dev, const gs_fixed_edge * left,
 	int max_rect_height = 1;  /* max height to do fill as rectangle */
 	int code;
 #if CONTIGUOUS_FILL
-	const bool peak = (left->start.x == right->start.x ||
-		           left->end.x == right->end.x);
-	int peak_yl, peak_yu;
-
-	if (peak) {
-	    peak_yl = ybot + fixed_half;
-	    peak_yu = ytop - fixed_half;
-	}
+	const bool peak0 = (left->start.x == right->start.x);
+	const bool peak1 = (left->end.x == right->end.x);
+	int peak_y0 = ybot + fixed_half;
+	int peak_y1 = ytop - fixed_half;
 #endif
 
 	if_debug2('z', "[z]y=[%d,%d]\n", iy, iy1);
@@ -195,7 +191,7 @@ GX_FILL_TRAPEZOID(gx_device * dev, const gs_fixed_edge * left,
  */
 #define SET_MINIMAL_WIDTH(ixl, ixr, l, r) \
     if (ixl == ixr) \
-	if (!peak || (iy >= peak_yl && iy <= peak_yu)) {\
+	if ((!peak0 || iy >= peak_y0) && (!peak1 || iy <= peak_y1)) {\
 	    fixed x = int2fixed(ixl) + fixed_half;\
 	    if (x - l.x < r.x - x)\
 		++ixr;\
