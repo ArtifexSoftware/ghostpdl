@@ -71,8 +71,8 @@ private dev_proc_close_device(display_close);
 
 private dev_proc_map_rgb_color(display_map_rgb_color_device4);
 private dev_proc_map_color_rgb(display_map_color_rgb_device4);
-private dev_proc_map_rgb_color(display_map_rgb_color_device8);
-private dev_proc_map_color_rgb(display_map_color_rgb_device8);
+private dev_proc_encode_color(display_encode_color_device8);
+private dev_proc_decode_color(display_decode_color_device8);
 private dev_proc_map_rgb_color(display_map_rgb_color_device16);
 private dev_proc_map_color_rgb(display_map_color_rgb_device16);
 private dev_proc_map_rgb_color(display_map_rgb_color_rgb);
@@ -377,26 +377,47 @@ display_map_color_rgb_device4(gx_device * dev, gx_color_index color,
 }
 
 /* DISPLAY_COLORS_NATIVE, 8bit/pixel */
-/* Map a r-g-b color to a color code */
+/* Map a r-g-b-k color to a color code */
 private gx_color_index
-display_map_rgb_color_device8(gx_device * dev, const gx_color_value cv[])
+display_encode_color_device8(gx_device * dev, const gx_color_value cv[])
 {
     /* palette of 96 colors */
     /* 0->63 = 00RRGGBB, 64->95 = 010YYYYY */
     gx_color_value r = cv[0];
     gx_color_value g = cv[1];
     gx_color_value b = cv[2];
-    if ((r == g) && (g == b))
-	return ((r >> (gx_color_value_bits - 5)) + 0x40);
-    return ((r >> (gx_color_value_bits - 2)) << 4) +
-	((g >> (gx_color_value_bits - 2)) << 2) +
-	((b >> (gx_color_value_bits - 2)));
+    gx_color_value k = cv[3]; /* 0 = black */
+    if ((r == 0) && (g == 0) && (b == 0)) {
+	k = ((k >> (gx_color_value_bits - 6)) + 1) >> 1;
+	if (k > 0x1f)
+	    k = 0x1f;
+	return (k + 0x40);
+    }
+    if (k > 0) {
+	/* The RGB->RGBK color mapping shouldn't generate this. */
+	r = ((r+k) > gx_max_color_value) ? gx_max_color_value : 
+	    (gx_color_value)(r+k);
+	g = ((g+k) > gx_max_color_value) ? gx_max_color_value : 
+	    (gx_color_value)(g+k);
+	b = ((b+k) > gx_max_color_value) ? gx_max_color_value : 
+	    (gx_color_value)(b+k);
+    }
+    r = ((r >> (gx_color_value_bits - 3)) + 1) >> 1;
+    if (r > 0x3)
+	r = 0x3;
+    g = ((g >> (gx_color_value_bits - 3)) + 1) >> 1;
+    if (g > 0x3)
+	g = 0x3;
+    b = ((b >> (gx_color_value_bits - 3)) + 1) >> 1;
+    if (b > 0x3)
+	b = 0x3;
+    return (r << 4) + (g << 2) + b;
 }
 
-/* Map a color code to r-g-b. */
+/* Map a color code to r-g-b-k. */
 private int
-display_map_color_rgb_device8(gx_device * dev, gx_color_index color,
-		 gx_color_value prgb[3])
+display_decode_color_device8(gx_device * dev, gx_color_index color,
+		 gx_color_value prgb[4])
 {
     gx_color_value one;
     /* palette of 96 colors */
@@ -406,14 +427,15 @@ display_map_color_rgb_device8(gx_device * dev, gx_color_index color,
 	prgb[0] = (gx_color_value) (((color >> 4) & 3) * one);
 	prgb[1] = (gx_color_value) (((color >> 2) & 3) * one);
 	prgb[2] = (gx_color_value) (((color) & 3) * one);
+	prgb[3] = 0;
     }
     else if (color < 96) {
 	one = (gx_color_value) (gx_max_color_value / 31);
-	prgb[0] = prgb[1] = prgb[2] = 
-	    (gx_color_value) ((color & 0x1f) * one);
+	prgb[0] = prgb[1] = prgb[2] = 0;
+	prgb[3] = (gx_color_value) ((color & 0x1f) * one);
     }
     else {
-	prgb[0] = prgb[1] = prgb[2] = 0;
+	prgb[0] = prgb[1] = prgb[2] = prgb[3] = 0;
     }
     return 0;
 }
@@ -1331,12 +1353,21 @@ display_set_separations(gx_device_display *dev)
     return 0;
 }
 
+typedef enum DISPLAY_MODEL_e {
+    DISPLAY_MODEL_GRAY=0,
+    DISPLAY_MODEL_RGB=1,
+    DISPLAY_MODEL_RGBK=2,
+    DISPLAY_MODEL_CMYK=3,
+    DISPLAY_MODEL_SEP=4
+} DISPLAY_MODEL;
+
 /*
  * This is a utility routine to build the display device's color_info
  * structure (except for the anti alias info).
  */
 private void
-set_color_info(gx_device_color_info * pdci, int nc, int depth, int maxgray, int maxcolor)
+set_color_info(gx_device_color_info * pdci, DISPLAY_MODEL model, 
+    int nc, int depth, int maxgray, int maxcolor)
 {
     pdci->num_components = pdci->max_components = nc;
     pdci->depth = depth;
@@ -1346,23 +1377,29 @@ set_color_info(gx_device_color_info * pdci, int nc, int depth, int maxgray, int 
     pdci->dither_grays = maxgray + 1;
     pdci->dither_colors = maxcolor + 1;
     pdci->separable_and_linear = GX_CINFO_UNKNOWN_SEP_LIN;
-    switch (nc) {
-	case 1:
+    switch (model) {
+	case DISPLAY_MODEL_GRAY:
 	    pdci->polarity = GX_CINFO_POLARITY_ADDITIVE;
 	    pdci->cm_name = "DeviceGray";
 	    pdci->gray_index = 0;
 	    break;
-	case 3:
+	case DISPLAY_MODEL_RGB:
 	    pdci->polarity = GX_CINFO_POLARITY_ADDITIVE;
 	    pdci->cm_name = "DeviceRGB";
 	    pdci->gray_index = GX_CINFO_COMP_NO_INDEX;
 	    break;
-	case 4:
+	case DISPLAY_MODEL_RGBK:
+	    pdci->polarity = GX_CINFO_POLARITY_ADDITIVE;
+	    pdci->cm_name = "DeviceRGBK";
+	    pdci->gray_index = 3;
+	    break;
+	case DISPLAY_MODEL_CMYK:
 	    pdci->polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
 	    pdci->cm_name = "DeviceCMYK";
 	    pdci->gray_index = 3;
 	    break;
 	default:
+	case DISPLAY_MODEL_SEP:
 	    /* Anything else is separations */
 	    pdci->polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
 	    pdci->cm_name = "DeviceCMYK";
@@ -1418,6 +1455,20 @@ set_rgb_color_procs(gx_device * pdev,
     set_color_procs(pdev, encode_color, decode_color,
 	gx_default_DevRGB_get_color_mapping_procs,
 	gx_default_DevRGB_get_color_comp_index);
+}
+
+/*
+ * This is an utility routine to set up the color procs for the display
+ * device.  This routine is used when the display device is RGBK.
+ */
+private void
+set_rgbk_color_procs(gx_device * pdev, 
+	dev_t_proc_encode_color((*encode_color), gx_device),
+	dev_t_proc_decode_color((*decode_color), gx_device))
+{
+    set_color_procs(pdev, encode_color, decode_color,
+	gx_default_DevRGBK_get_color_mapping_procs,
+	gx_default_DevRGBK_get_color_comp_index);
 }
 
 /*
@@ -1483,33 +1534,33 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
 	    switch (nFormat & DISPLAY_DEPTH_MASK) {
 		case DISPLAY_DEPTH_1: 
 		    /* 1bit/pixel, black is 1, white is 0 */
-	    	    set_color_info(&dci, 1, 1, 1, 0);
+ 	    	    set_color_info(&dci, DISPLAY_MODEL_GRAY, 1, 1, 1, 0);
                     dci.separable_and_linear = GX_CINFO_SEP_LIN_NONE;
 		    set_gray_color_procs(pdev, gx_b_w_gray_encode,
 		    				gx_default_b_w_map_color_rgb);
 		    break;
 		case DISPLAY_DEPTH_4:
 		    /* 4bit/pixel VGA color */
-	    	    set_color_info(&dci, 3, 4, 1, 1);
+ 	    	    set_color_info(&dci, DISPLAY_MODEL_RGB, 3, 4, 3, 2);
                     dci.separable_and_linear = GX_CINFO_SEP_LIN_NONE;
 		    set_rgb_color_procs(pdev, display_map_rgb_color_device4,
 		    				display_map_color_rgb_device4);
 		    break;
 		case DISPLAY_DEPTH_8:
 		    /* 8bit/pixel 96 color palette */
-	    	    set_color_info(&dci, 3, 8, 31, 3);
+ 	    	    set_color_info(&dci, DISPLAY_MODEL_RGBK, 4, 8, 31, 3);
                     dci.separable_and_linear = GX_CINFO_SEP_LIN_NONE;
-		    set_rgb_color_procs(pdev, display_map_rgb_color_device8,
-		    				display_map_color_rgb_device8);
+		    set_rgbk_color_procs(pdev, display_encode_color_device8,
+		    				display_decode_color_device8);
 		    break;
 		case DISPLAY_DEPTH_16:
 		    /* Windows 16-bit display */
 		    /* Is maxgray = maxcolor = 63 correct? */
 	            if ((ddev->nFormat & DISPLAY_555_MASK) 
 			== DISPLAY_NATIVE_555)
-	    	        set_color_info(&dci, 3, 16, 31, 31);
+ 	    	        set_color_info(&dci, DISPLAY_MODEL_RGB, 3, 16, 31, 31);
 		    else
-	    	        set_color_info(&dci, 3, 16, 63, 63);
+ 	    	        set_color_info(&dci, DISPLAY_MODEL_RGB, 3, 16, 63, 63);
 		    set_rgb_color_procs(pdev, display_map_rgb_color_device16,
 		    				display_map_color_rgb_device16);
 		    break;
@@ -1519,7 +1570,7 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
 	    dci.gray_index = GX_CINFO_COMP_NO_INDEX;
 	    break;
 	case DISPLAY_COLORS_GRAY:
-	    set_color_info(&dci, 1, bpc, maxvalue, 0);
+	    set_color_info(&dci, DISPLAY_MODEL_GRAY, 1, bpc, maxvalue, 0);
 	    if (bpc == 1)
 	    	set_gray_color_procs(pdev, gx_default_gray_encode,
 						gx_default_w_b_map_color_rgb);
@@ -1532,7 +1583,7 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
 		bpp = bpc * 3;
 	    else
 		bpp = bpc * 4; 
-	    set_color_info(&dci, 3, bpp, maxvalue, maxvalue);
+	    set_color_info(&dci, DISPLAY_MODEL_RGB, 3, bpp, maxvalue, maxvalue);
 	    if (((nFormat & DISPLAY_DEPTH_MASK) == DISPLAY_DEPTH_8) &&
 	 	((nFormat & DISPLAY_ALPHA_MASK) == DISPLAY_ALPHA_NONE)) {
 		if ((nFormat & DISPLAY_ENDIAN_MASK) == DISPLAY_BIGENDIAN)
@@ -1550,7 +1601,7 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
 	    break;
 	case DISPLAY_COLORS_CMYK:
 	    bpp = bpc * 4;
-	    set_color_info(&dci, 4, bpp, maxvalue, maxvalue);
+	    set_color_info(&dci, DISPLAY_MODEL_CMYK, 4, bpp, maxvalue, maxvalue);
 	    if ((nFormat & DISPLAY_ALPHA_MASK) != DISPLAY_ALPHA_NONE)
 		return_error(gs_error_rangecheck);
 	    if ((nFormat & DISPLAY_ENDIAN_MASK) != DISPLAY_BIGENDIAN)
@@ -1569,7 +1620,8 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
 	    if ((nFormat & DISPLAY_ENDIAN_MASK) != DISPLAY_BIGENDIAN)
 		return_error(gs_error_rangecheck);
 	    bpp = sizeof(gx_color_index)*8;
-	    set_color_info(&dci, bpp/bpc, bpp, maxvalue, maxvalue);
+	    set_color_info(&dci, DISPLAY_MODEL_SEP, bpp/bpc, bpp, 
+		maxvalue, maxvalue);
 	    if ((nFormat & DISPLAY_DEPTH_MASK) == DISPLAY_DEPTH_8) {
 		ddev->devn_params.bitspercomponent = bpc;
 		set_color_procs(pdev, 
@@ -1594,6 +1646,8 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
 	    ddev->color_info.gray_index = GX_CINFO_COMP_NO_INDEX;
 	    if ((nFormat & DISPLAY_DEPTH_MASK) == DISPLAY_DEPTH_1)
 	        ddev->color_info.gray_index = 0;
+	    else if ((nFormat & DISPLAY_DEPTH_MASK) == DISPLAY_DEPTH_8)
+	        ddev->color_info.gray_index = 3;
 	    break;
 	case DISPLAY_COLORS_RGB:
 	    ddev->color_info.gray_index = GX_CINFO_COMP_NO_INDEX;

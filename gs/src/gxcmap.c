@@ -232,6 +232,43 @@ cmyk_cs_to_rgb_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 }
 
 static void
+gray_cs_to_rgbk_cm(gx_device * dev, frac gray, frac out[])
+{
+    out[0] = out[1] = out[2] = frac_0;
+    out[3] = gray;
+}
+
+static void
+rgb_cs_to_rgbk_cm(gx_device * dev, const gs_imager_state *pis,
+				  frac r, frac g, frac b, frac out[])
+{
+    if ((r == g) && (g == b)) {
+	out[0] = out[1] = out[2] = frac_0;
+	out[3] = r;
+    }
+    else {
+	out[0] = r;
+	out[1] = g;
+	out[2] = b;
+	out[3] = frac_0;
+    }
+}
+
+static void
+cmyk_cs_to_rgbk_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
+{
+    frac rgb[3];
+    if ((c == frac_0) && (m == frac_0) && (y == frac_0)) {
+	out[0] = out[1] = out[2] = frac_0;
+	out[3] = frac_1 - k;
+    }
+    else {
+	color_cmyk_to_rgb(c, m, y, k, NULL, rgb);
+	rgb_cs_to_rgbk_cm(dev, NULL, rgb[0], rgb[1], rgb[2], out);
+    }
+}
+
+static void
 gray_cs_to_cmyk_cm(gx_device * dev, frac gray, frac out[])
 {
     out[0] = out[1] = out[2] = frac_0;
@@ -294,6 +331,10 @@ static const gx_cm_color_map_procs DeviceCMYK_procs = {
     gray_cs_to_cmyk_cm, rgb_cs_to_cmyk_cm, cmyk_cs_to_cmyk_cm
 };
 
+static const gx_cm_color_map_procs DeviceRGBK_procs = {
+    gray_cs_to_rgbk_cm, rgb_cs_to_rgbk_cm, cmyk_cs_to_rgbk_cm
+};
+
 /*
  * These are the default handlers for returning the list of color space
  * to color model conversion routines.
@@ -314,6 +355,12 @@ const gx_cm_color_map_procs *
 gx_default_DevCMYK_get_color_mapping_procs(const gx_device * dev)
 {
     return &DeviceCMYK_procs;
+}
+
+const gx_cm_color_map_procs *
+gx_default_DevRGBK_get_color_mapping_procs(const gx_device * dev)
+{
+    return &DeviceRGBK_procs;
 }
 
 const gx_cm_color_map_procs *
@@ -371,6 +418,23 @@ gx_default_DevCMYK_get_color_comp_index(gx_device * dev, const char * pname,
     if (compare_color_names(pname, name_size, "Magenta"))
         return 1;
     if (compare_color_names(pname, name_size, "Yellow"))
+        return 2;
+    if (compare_color_names(pname, name_size, "Black"))
+        return 3;
+    else
+        return -1;		    /* Indicate that the component name is "unknown" */
+}
+
+/* Default color component to index for a DeviceRGBK color model */
+int
+gx_default_DevRGBK_get_color_comp_index(gx_device * dev, const char * pname,
+					    int name_size, int component_type)
+{
+    if (compare_color_names(pname, name_size, "Red"))
+        return 0;
+    if (compare_color_names(pname, name_size, "Green"))
+        return 1;
+    if (compare_color_names(pname, name_size, "Blue"))
         return 2;
     if (compare_color_names(pname, name_size, "Black"))
         return 3;

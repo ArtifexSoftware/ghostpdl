@@ -242,6 +242,7 @@ dev_proc_get_color_comp_index(gx_error_get_color_comp_index);
 dev_proc_get_color_comp_index(gx_default_DevGray_get_color_comp_index);
 dev_proc_get_color_comp_index(gx_default_DevRGB_get_color_comp_index);
 dev_proc_get_color_comp_index(gx_default_DevCMYK_get_color_comp_index);
+dev_proc_get_color_comp_index(gx_default_DevRGBK_get_color_comp_index);
 
 /*
  * These are the default routines for getting the color space conversion
@@ -251,6 +252,7 @@ dev_proc_get_color_mapping_procs(gx_error_get_color_mapping_procs);
 dev_proc_get_color_mapping_procs(gx_default_DevGray_get_color_mapping_procs);
 dev_proc_get_color_mapping_procs(gx_default_DevRGB_get_color_mapping_procs);
 dev_proc_get_color_mapping_procs(gx_default_DevCMYK_get_color_mapping_procs);
+dev_proc_get_color_mapping_procs(gx_default_DevRGBK_get_color_mapping_procs);
 
 /*
  * These are the default routines for converting a colorant value list

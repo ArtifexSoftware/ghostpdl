@@ -487,23 +487,24 @@ zcolor_test(i_ctx_t *i_ctx_p)
     gx_device *dev = gs_currentdevice(igs);
     int ncomp = dev->color_info.num_components;
     gx_color_index color;
+    os_ptr op = osp - (ncomp-1);
     int i;
     if (ref_stack_count(&o_stack) < ncomp)
 	return_error(e_stackunderflow);
-    for (i=0; i<ncomp; i++) {
-	if (r_has_type(&osp[-i], t_real))
+    for (i = 0; i < ncomp; i++) {
+	if (r_has_type(op+i, t_real))
 	    cv[i] = (gx_color_value)
-		(osp[-i].value.realval * gx_max_color_value);
-	else if (r_has_type(&osp[-i], t_integer))
+		(op[i].value.realval * gx_max_color_value);
+	else if (r_has_type(op+i, t_integer))
 	    cv[i] = (gx_color_value)
-		(osp[-i].value.intval * gx_max_color_value);
+		(op[i].value.intval * gx_max_color_value);
 	else
 	    return_error(e_typecheck);
     }
     color = (*dev_proc(dev, encode_color)) (dev, cv);
     (*dev_proc(dev, decode_color)) (dev, color, cv);
-    for (i=0; i<ncomp; i++)
-        make_real(&osp[-i], (float)cv[i] / (float)gx_max_color_value);
+    for (i = 0; i < ncomp; i++)
+        make_real(op+i, (float)cv[i] / (float)gx_max_color_value);
     return 0;
 }
 
@@ -544,7 +545,7 @@ zcolor_test_all(i_ctx_t *i_ctx_p)
     if (!r_has_type(&osp[0], t_integer))
         return_error(e_typecheck);
     steps = osp[0].value.intval;
-    for (i=0; i<ncomp; i++) {
+    for (i = 0; i < ncomp; i++) {
         counter[i] = 0; 
 	cvbad[i] = 0;
     }
@@ -560,7 +561,7 @@ zcolor_test_all(i_ctx_t *i_ctx_p)
       dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE ?"Subtractive":
       "Unknown");
     /* Indicate color index value with all colorants = zero */
-    for (i=0; i<ncomp; i++)
+    for (i = 0; i < ncomp; i++)
 	cv[i] = 0;
     color = (*dev_proc(dev, encode_color)) (dev, cv);
     dprintf1("Zero color index:  %8x\n", color);
@@ -575,7 +576,7 @@ zcolor_test_all(i_ctx_t *i_ctx_p)
         dprintf1("gray_index = %d\n", dev->color_info.gray_index);
     if (linsep) {
         dprintf(" Shift     Mask  Bits\n");
-        for (i=0; i<ncomp; i++) {
+        for (i = 0; i < ncomp; i++) {
             dprintf3(" %5d %8x  %4d\n",
 		(int)(dev->color_info.comp_shift[i]),
 		(int)(dev->color_info.comp_mask[i]),
@@ -584,8 +585,8 @@ zcolor_test_all(i_ctx_t *i_ctx_p)
     }
 
     while (!finished) {
-	for (j=0; j<=steps; j++) {
-	    for (i=0; i<ncomp; i++)
+	for (j = 0; j <= steps; j++) {
+	    for (i = 0; i < ncomp; i++)
 		cv[i] = counter[i] * gx_max_color_value / steps;
 	    color = (*dev_proc(dev, encode_color)) (dev, cv);
 	    if (linsep) {
@@ -594,7 +595,7 @@ zcolor_test_all(i_ctx_t *i_ctx_p)
 		if ((color != lscolor) && (linsepfailed < 5)) {
 		    linsepfailed++;
 		    dprintf("Failed separable_and_linear for");
-		    for (i=0; i<ncomp; i++)
+		    for (i = 0; i < ncomp; i++)
 			dprintf1(" %d", cv[i]);
 		    dprintf("\n");
 		    dprintf2("encode_color=%x  gx_default_encode_color=%x\n",
@@ -602,19 +603,19 @@ zcolor_test_all(i_ctx_t *i_ctx_p)
 		}
 	    }
 	    (*dev_proc(dev, decode_color)) (dev, color, cvout);
-	    for (i=0; i<ncomp; i++) {
+	    for (i = 0; i < ncomp; i++) {
 		err = (int)cvout[i] - (int)cv[i];
 		if (err < 0)
 		    err = -err;
 		if (err > maxerror) {
 		    maxerror = err;
-		    for (k=0; k<ncomp; k++)
+		    for (k=0; k < ncomp; k++)
 			cvbad[k] = cv[k];
 		}
 	    }
 	    if (linsep) {
 	        gx_default_decode_color(dev, color, cvout);
-		for (i=0; i<ncomp; i++) {
+		for (i = 0; i < ncomp; i++) {
 		    err = (int)cvout[i] - (int)cv[i];
 		    if (err < 0)
 			err = -err;
@@ -654,7 +655,7 @@ zcolor_test_all(i_ctx_t *i_ctx_p)
     /* push worst value */
     push(ncomp-1);
     op -= ncomp - 1;
-    for (i=0; i<ncomp; i++)
+    for (i = 0; i < ncomp; i++)
         make_real(op+i, (float)cvbad[i] / (float)gx_max_color_value);
 
     return 0;
