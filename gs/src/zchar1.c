@@ -388,33 +388,30 @@ bbox_getsbw_continue(i_ctx_t *i_ctx_p)
     }
 }
 
-/* An auxiliary procedure for filling a path in 2 steps.
- * The first step prepares device (possibly installing cache device).
- * The second step performs actual painting.
- */
-private inline int
-fill_with_cont(i_ctx_t *i_ctx_p, int (*draw_beg)(i_ctx_t *, int (*)(gs_state *), op_proc_t *), op_proc_t draw_end)
-{
-    op_proc_t exec_cont = 0;
-    int code = (*draw_beg)(i_ctx_p, draw_end, &exec_cont);
-
-    if (code >= 0 && exec_cont != 0)
-	code = (*exec_cont)(i_ctx_p);
-    return code;
-}
-
 /* <font> <code|name> <name> <charstring> <sbx> <sby> %bbox_{fill|stroke} - */
 /* <font> <code|name> <name> <charstring> %bbox_{fill|stroke} - */
 private int bbox_finish(i_ctx_t *i_ctx_p, op_proc_t cont, op_proc_t *exec_cont);
 private int
 bbox_finish_fill(i_ctx_t *i_ctx_p)
 {
-    return fill_with_cont(i_ctx_p, bbox_finish, bbox_fill);
+    op_proc_t exec_cont = 0;
+    int code;
+
+    code = bbox_finish(i_ctx_p, bbox_fill, &exec_cont);
+    if (code >= 0 && exec_cont != 0)
+	code = exec_cont(i_ctx_p);
+    return code;
 }
 private int
 bbox_finish_stroke(i_ctx_t *i_ctx_p)
 {
-    return fill_with_cont(i_ctx_p, bbox_finish, bbox_stroke);
+    op_proc_t exec_cont = 0;
+    int code;
+
+    code = bbox_finish(i_ctx_p, bbox_stroke, &exec_cont);
+    if (code >= 0 && exec_cont != 0)
+	code = exec_cont(i_ctx_p);
+    return code;
 }
 
 private int
@@ -579,13 +576,25 @@ bbox_draw(i_ctx_t *i_ctx_p, int (*draw)(gs_state *), op_proc_t *exec_cont)
 private int
 bbox_fill(i_ctx_t *i_ctx_p)
 {
+    op_proc_t exec_cont = 0;
+    int code;
+
     /* See above re GS_CHAR_FILL. */
-    return fill_with_cont(i_ctx_p, bbox_draw, GS_CHAR_FILL);
+    code = bbox_draw(i_ctx_p, GS_CHAR_FILL, &exec_cont);
+    if (code >= 0 && exec_cont != 0)
+	code = (*exec_cont)(i_ctx_p);
+    return code;
 }
 private int
 bbox_stroke(i_ctx_t *i_ctx_p)
 {
-    return fill_with_cont(i_ctx_p, bbox_draw, gs_stroke);
+    op_proc_t exec_cont = 0;
+    int code;
+
+    code = bbox_draw(i_ctx_p, gs_stroke, &exec_cont);
+    if (code >= 0 && exec_cont != 0)
+	code = (*exec_cont)(i_ctx_p);
+    return code;
 }
 
 /* -------- Common code -------- */
