@@ -130,11 +130,6 @@ filter_write_predictor(i_ctx_t *i_ctx_p, int npop,
 
 /* <target> LZWEncode/filter <file> */
 /* <target> <dict> LZWEncode/filter <file> */
-/*
- * Note: the default implementation of this filter, in slzwce.c,
- * does not use any algorithms that could reasonably be claimed
- * to be subject to Unisys' Welch Patent.
- */
 private int
 zLZWE(i_ctx_t *i_ctx_p)
 {

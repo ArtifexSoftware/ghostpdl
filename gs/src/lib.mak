@@ -1319,7 +1319,7 @@ $(GLOBJ)sddparam.$(OBJ) : $(GLSRC)sddparam.c $(AK) $(std_h)\
 # ---------------- LZW filters ---------------- #
 # These are used by Level 2 in general.
 
-lzwe_=$(GLOBJ)slzwce.$(OBJ) $(GLOBJ)slzwc.$(OBJ)
+lzwe_=$(GLOBJ)slzwe.$(OBJ) $(GLOBJ)slzwc.$(OBJ)
 $(GLD)lzwe.dev : $(LIB_MAK) $(ECHOGS_XE) $(lzwe_)
 	$(SETMOD) $(GLD)lzwe $(lzwe_)
 
@@ -1327,9 +1327,9 @@ $(GLD)lzwe.dev : $(LIB_MAK) $(ECHOGS_XE) $(lzwe_)
 $(GLD)slzwe.dev : $(GLD)lzwe.dev
 	$(CP_) $(GLD)lzwe.dev $(GLD)slzwe.dev
 
-$(GLOBJ)slzwce.$(OBJ) : $(GLSRC)slzwce.c $(AK) $(stdio__h) $(gdebug_h)\
+$(GLOBJ)slzwe.$(OBJ) : $(GLSRC)slzwe.c $(AK) $(stdio__h) $(gdebug_h)\
  $(slzwx_h) $(strimpl_h)
-	$(GLCC) $(GLO_)slzwce.$(OBJ) $(C_) $(GLSRC)slzwce.c
+	$(GLCC) $(GLO_)slzwe.$(OBJ) $(C_) $(GLSRC)slzwe.c
 
 $(GLOBJ)slzwc.$(OBJ) : $(GLSRC)slzwc.c $(AK) $(std_h)\
  $(slzwx_h) $(strimpl_h)

@@ -210,8 +210,7 @@ entirely redone later): compressing images.  Currently the driver only
 compresses character bitmaps, and doesn't compress other images at all.
 <I>It should use the <b><tt>CCITTFaxEncode</tt></b> filter for 1-bit-deep
 images, and plane-separated <b><tt>LZWEncode</tt></b> compression for color
-images, using the <b><tt>miGIF</tt></b> algorithms that are believed to be
-free of the Welch patent for the latter.  When generating LL3 PS, the
+images.  When generating LL3 PS, the
 <b><tt>Flate</tt></b> compression will work better than miGIF. It may be
 worth trying several methods on each image and use the one that works best.</I>
 

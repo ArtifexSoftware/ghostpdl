@@ -105,21 +105,6 @@ class="offsite">#615165</a>, September 26, 2002.
 <hr>
 <h2><a name="Minor_bugs"></a>Minor Bugs.</h2>
 
-<h3> Multiple encode filters in a pipeline fail.</h3>
-The following code fragment should output "3E>". It outputs nothing. 
-<blockquote><pre>
-%!PS 
-(%stdout) (w) file 
-/ASCIIHexEncode filter 
-/ASCIIHexEncode filter 
-closefile 
-</pre></blockquote>
-Bug <a href="http://bugs.ghostscript.com/show_bug.cgi?id=224134"
-class="offsite">#224134</a>, December 2, 2000.
-<p>
-<i>LPD reports that this behavior is in fact according to spec and 
-programs cannot rely on this behavior.</i>
-
 <h3> Bad JPEG stream in PDF generated when source ends prematurely</h3>
 When GS converts the source image to JPEG stream in PDF file and the
 source data end prematurely, it generates bad JPEG stream. 

@@ -389,8 +389,7 @@ BAND_LIST_STORAGE=file
 !endif
 
 # Choose which compression method to use when storing band lists in memory.
-# The choices are 'lzw' or 'zlib'.  lzw is not recommended, because the
-# LZW-compatible code in Ghostscript doesn't actually compress its input.
+# The choices are 'lzw' or 'zlib'.
 
 !ifndef BAND_LIST_COMPRESSOR
 BAND_LIST_COMPRESSOR=zlib

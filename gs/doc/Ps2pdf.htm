@@ -397,10 +397,11 @@ Flate compression.  If you want to force JPEG compression, use
 <p>
 <a name="note_2">(note 2)</a>
 Because of Unisys's threats regarding the Welch patent,
-<b><tt>ps2pdf</tt></b> cannot actually use LZW compression: instead, it
+<b><tt>ps2pdf</tt></b> does not actually use LZW compression: instead, it
 treats all requests for LZW compression as calling for Flate compression.
 Concomitantly, <tt>UseFlateCompression</tt> is treated as always on, and
-the value of this parameter is ignored as with note 0.
+the value of this parameter is ignored as with note 0. Now that the patent
+has expired, we could change this should it become worthwhile.
 
 <p>
 <a name="note_3">(note 3)</a>
