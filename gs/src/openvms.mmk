@@ -193,15 +193,15 @@ SW_DEBUG=/DEBUG/NOOPTIMIZE
 SW_DEBUG=/NODEBUG/NOOPTIMIZE
 .endif
 
-SW_PLATFORM=/DECC/PREFIX=ALL/NESTED_INCLUDE=PRIMARY/name=(as_is,short)
+SW_PLATFORM=/DECC/PREFIX=ALL/NESTED_INCLUDE=PRIMARY/name=(as_is,short)/nowarn
 
 # Define any other compilation flags. 
 # Including defines for A4 paper size
 
 .ifdef A4_PAPER
-SW_PAPER=/DEFINE=("A4","HAVE_MKSTEMP","GX_COLOR_INDEX_TYPE=unsigned __int64")
+SW_PAPER=/DEFINE=("A4","HAVE_MKSTEMP")
 .else
-SW_PAPER=/DEFINE=("HAVE_MKSTEMP","GX_COLOR_INDEX_TYPE=unsigned __int64")
+SW_PAPER=/DEFINE=("HAVE_MKSTEMP")
 .endif
 
 .ifdef IEEE
