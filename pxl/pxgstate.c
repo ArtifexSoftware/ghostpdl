@@ -493,6 +493,9 @@ pxSetCharAngle(px_args_t *par, px_state_t *pxs)
 	return 0;
 }
 
+/* confusion in the 3.0 spec - this argument identifier WritingMode
+   173 is now being used by SelectPCLFont */
+#ifdef PXL21
 const byte apxSetCharAttributes[] = {
     pxaWritingMode, 0, 0
 };
@@ -502,6 +505,7 @@ pxSetCharAttributes(px_args_t *par, px_state_t *pxs)
     pxs->pxgs->writing_mode = par->pv[0]->value.i;
     return 0;
 }
+#endif
 
 const byte apxSetCharScale[] = {
   pxaCharScale, 0, 0
@@ -801,6 +805,24 @@ int
 pxSetLineCap(px_args_t *par, px_state_t *pxs)
 {	static const gs_line_cap cap_map[] = pxeLineCap_to_library;
 	return gs_setlinecap(pxs->pgs, cap_map[par->pv[0]->value.i]);
+}
+
+const byte apxBeginUserDefinedLineCap[] = { 0, 0 };
+int
+pxBeginUserDefinedLineCap(px_args_t *par, px_state_t *pxs)
+{
+
+    dprintf( "undocumented\n" );
+    return 0;
+}
+
+const byte apxEndUserDefinedLineCap[] = { 0, 0 };
+int
+pxEndUserDefinedLineCap(px_args_t *par, px_state_t *pxs)
+{
+
+    dprintf( "undocumented\n" );
+    return 0;
 }
 
 const byte apxSetLineJoin[] = {

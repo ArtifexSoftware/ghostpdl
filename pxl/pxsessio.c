@@ -72,6 +72,7 @@ private const struct {
     const char *pname;
     pxeMediaSize_t paper_enum;
 } pxl_paper_sizes[] = {
+    { "defaultpaper", eDefaultPaperSize },
     { "letter", eLetterPaper },
     { "legal", eLegalPaper },
     { "a4", eA4Paper },
@@ -85,11 +86,15 @@ private const struct {
     { "jisb4", eJB4Paper },
     { "jisb5", eJB5Paper },       
     { "b5", eB5Envelope },
+    { "b5paper", eB5Paper }, /* 3.0 not sure about pjl name */
     { "jpost", eJPostcard },
     { "jpostd", eJDoublePostcard },
     { "a5", eA5Paper },        
     { "a6", eA6Paper },
-    { "jisb6", eJB6Paper },       
+    { "jisb6", eJB6Paper },
+    { "jis8K", eJIS8K },
+    { "jis16K", eJIS16K },
+    { "jisexec", eJISExec },
 };
 
 /* system paper size string (same as pjl paper size) to pxl enumeration type */
@@ -647,4 +652,13 @@ int
 pxCloseDataSource(px_args_t *par, px_state_t *pxs)
 {	pxs->data_source_open = false;
 	return 0;
+}
+
+const byte apxPassthrough[] = {0, 0};
+
+int
+pxPassthrough(px_args_t *par, px_state_t *pxs)
+{
+    dprintf( "unimplemented\n");
+    return 0;
 }

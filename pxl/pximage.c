@@ -107,16 +107,14 @@ typedef struct px_image_enum_s px_image_enum_t;
 struct px_image_enum_s {
   gs_color_space color_space;	/* must be first, for subclassing */
   gs_image_t image;
-  byte *rows;			/* buffer for rows */
-  int num_rows;
-  int next_row;
+  byte *row;			/* buffer for one row of data */
   uint raster;
   void *info;			/* state structure for driver */
   px_bitmap_enum_t benum;
 };
 gs_private_st_suffix_add2(st_px_image_enum, px_image_enum_t, "px_image_enum_t",
   px_image_enum_enum_ptrs, px_image_enum_reloc_ptrs, st_color_space,
-  image.ColorSpace, rows);
+  image.ColorSpace, row);
 
 /* ---------------- Utilities ---------------- */
 
@@ -160,6 +158,159 @@ stream_error(stream_state * st, const char *str)
     return 0;
 }
 
+
+private int
+read_jpeg_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
+{
+    uint data_per_row = benum->data_per_row; /* jpeg doesn't pad */
+    uint avail = par->source.available;
+    uint end_pos = data_per_row * par->pv[1]->value.i;
+    uint pos_in_row = par->source.position % data_per_row;
+    const byte *data = par->source.data;
+    stream_DCT_state *ss = (&benum->dct_stream_state);
+    stream_cursor_read r;
+    stream_cursor_write w;
+    uint used;
+
+    if ( par->source.position >= end_pos ) {
+        /* shutdown jpeg filter if necessary */
+        if (benum->initialized)
+            gs_jpeg_destroy((&benum->dct_stream_state));
+        return 0;
+    }
+
+    if ( !benum->initialized ) {
+        jpeg_decompress_data *jddp = &(benum->jdd);
+        /* use the graphics library support for DCT streams */
+        s_DCTD_template.set_defaults((stream_state *)ss);
+        ss->report_error = stream_error;
+        ss->data.decompress = jddp;
+        /* set now for allocation */
+        jddp->memory = ss->jpeg_memory = benum->mem;
+        /* set this early for safe error exit */
+        jddp->scanline_buffer = NULL;
+        if ( gs_jpeg_create_decompress(ss) < 0 )
+            return_error(errorInsufficientMemory);
+        (*s_DCTD_template.init)((stream_state *)ss);
+        jddp->template = s_DCTD_template;
+        benum->initialized = true;
+    }
+    r.ptr = data - 1;
+    r.limit = r.ptr + avail;
+    if ( pos_in_row < data_per_row ) {
+        /* Read more of the current row. */
+        byte *data = *pdata;
+
+        w.ptr = data + pos_in_row - 1;
+        w.limit = data + data_per_row - 1;
+        (*s_DCTD_template.process)((stream_state *)ss, &r, &w, false);
+        used = w.ptr + 1 - data - pos_in_row;
+        pos_in_row += used;
+        par->source.position += used;
+    }
+    used = r.ptr + 1 - data;
+    par->source.data = r.ptr + 1;
+    par->source.available = avail - used;
+    return (pos_in_row < data_per_row ? pxNeedData : 1);
+}
+
+private int
+read_uncompressed_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
+{
+    int code;
+    uint avail = par->source.available;
+    uint pad = 4; /* default padding */
+    const byte *data = par->source.data;
+    uint pos_in_row, data_per_row, data_per_row_padded, used;
+
+    /* overrided default padding */
+    if ( par->pv[3] )
+        pad = par->pv[3]->value.i;
+
+    data_per_row_padded = round_up(benum->data_per_row, pad);
+    pos_in_row = par->source.position % data_per_row_padded;
+
+    if ( avail >= data_per_row_padded && pos_in_row == 0 ) { 
+        /* Use the data directly from the input buffer. */
+        *pdata = (byte *)data;
+        used = data_per_row_padded;
+        code = 1;
+    } else { 
+        used = min(avail, data_per_row_padded - pos_in_row);
+        if ( pos_in_row < data_per_row )
+            memcpy(*pdata + pos_in_row, data,
+                   min(used, data_per_row - pos_in_row));
+        code = (pos_in_row + used < data_per_row_padded ?
+                pxNeedData : 1);
+    }
+    par->source.position += used;
+    par->source.data = data + used;
+    par->source.available = avail - used;
+    return code;
+}
+
+private int
+read_rle_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
+{
+    stream_RLD_state *ss = (&benum->rld_stream_state);
+    uint avail = par->source.available;
+    const byte *data = par->source.data;
+    uint pad = 4;
+    stream_cursor_read r;
+    stream_cursor_write w;
+    uint pos_in_row, data_per_row, data_per_row_padded, used;
+
+    /* overrided default padding */
+    if ( par->pv[3] )
+        pad = par->pv[3]->value.i;
+    data_per_row = benum->data_per_row;
+    data_per_row_padded = round_up(benum->data_per_row, pad);
+    pos_in_row = par->source.position % data_per_row_padded;
+
+    if ( !benum->initialized ) {
+        ss->EndOfData = false;
+        s_RLD_init_inline(ss);
+        benum->initialized = true;
+    }
+    r.ptr = data - 1;
+    r.limit = r.ptr + avail;
+    if ( pos_in_row < data_per_row ) { 
+        /* Read more of the current row. */
+        byte *data = *pdata;
+
+        w.ptr = data + pos_in_row - 1;
+        w.limit = data + data_per_row - 1;
+        (*s_RLD_template.process)((stream_state *)ss, &r, &w, false);
+        used = w.ptr + 1 - data - pos_in_row;
+        pos_in_row += used;
+        par->source.position += used;
+    }
+    if ( pos_in_row >= data_per_row && pos_in_row < data_per_row_padded )
+        { /* We've read all the real data; skip the padding. */
+            byte pad[3];	/* maximum padding per row */
+		    
+            w.ptr = pad - 1;
+            w.limit = w.ptr + data_per_row_padded - pos_in_row;
+            (*s_RLD_template.process)((stream_state *)ss, &r, &w, false);
+            used = w.ptr + 1 - pad;
+            pos_in_row += used;
+            par->source.position += used;
+        }
+
+    used = r.ptr + 1 - data;
+    par->source.data = r.ptr + 1;
+    par->source.available = avail - used;
+    return (pos_in_row < data_per_row_padded ? pxNeedData : 1);
+}
+
+private int
+read_deltarow_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
+{
+    return -1;
+}
+
+
+
 /*
  * Read a (possibly partial) row of bitmap data.  This is most of the
  * implementation of ReadImage and ReadRastPattern.  We use source.position
@@ -173,139 +324,20 @@ stream_error(stream_state * st, const char *str)
  */
 private int
 read_bitmap(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
-{	uint input_per_row = round_up(benum->data_per_row, 4);
-	ulong end_pos;
-
-	/* set the padding if there is a param, the default is 4 */
-	if ( par->pv[3] )
-	    input_per_row = round_up(benum->data_per_row, par->pv[3]->value.i);
-
-	/* jpeg is never padded (undocumented)*/
-	if ( par->pv[2]->value.i == eJPEGCompression )
-	    input_per_row = benum->data_per_row;
-
-	end_pos = (ulong)input_per_row * par->pv[1]->value.i;
-	if ( par->source.position >= end_pos ) {
-	    /* shutdown jpeg filter if necessar */
-	    if ( (par->pv[2]->value.i == eJPEGCompression) &&
-		 (benum->initialized) )
-		gs_jpeg_destroy((&benum->dct_stream_state));
-	    return 0;
-	}
-	{ uint data_per_row = benum->data_per_row;
-	  uint pos_in_row = par->source.position % input_per_row;
-	  const byte *data = par->source.data;
-	  uint avail = par->source.available;
-	  uint used;
-
-	    if ( par->pv[2]->value.i == eRLECompression )
-	      { /* RLE decompress the input. */
-        	stream_RLD_state *ss = (&benum->rld_stream_state);
-		stream_cursor_read r;
-		stream_cursor_write w;
-
-		if ( !benum->initialized )
-		  { ss->EndOfData = false;
-		    s_RLD_init_inline(ss);
-		    benum->initialized = true;
-		  }
-		r.ptr = data - 1;
-		r.limit = r.ptr + avail;
-		if ( pos_in_row < data_per_row )
-		  { /* Read more of the current row. */
-		    byte *data = *pdata;
-
-		    w.ptr = data + pos_in_row - 1;
-		    w.limit = data + data_per_row - 1;
-		    (*s_RLD_template.process)((stream_state *)ss, &r, &w, false);
-		    used = w.ptr + 1 - data - pos_in_row;
-		    pos_in_row += used;
-		    par->source.position += used;
-		  }
-		if ( pos_in_row >= data_per_row && pos_in_row < input_per_row )
-		  { /* We've read all the real data; skip the padding. */
-		    byte pad[3];	/* maximum padding per row */
-		    
-		    w.ptr = pad - 1;
-		    w.limit = w.ptr + input_per_row - pos_in_row;
-		    (*s_RLD_template.process)((stream_state *)ss, &r, &w, false);
-		    used = w.ptr + 1 - pad;
-		    pos_in_row += used;
-		    par->source.position += used;
-		  }
-		used = r.ptr + 1 - data;
-		par->source.data = r.ptr + 1;
-		par->source.available = avail - used;
-		return (pos_in_row < input_per_row ? pxNeedData : 1);
-	      }
-	    else if ( par->pv[2]->value.i == eJPEGCompression ) {
-		stream_DCT_state *ss = (&benum->dct_stream_state);
-		stream_cursor_read r;
-		stream_cursor_write w;
-		if ( !benum->initialized )
-		  { 
-		      jpeg_decompress_data *jddp = &(benum->jdd);
-		      /* use the graphics library support for DCT streams */
-		      s_DCTD_template.set_defaults((stream_state *)ss);
-		      ss->report_error = stream_error;
-		      ss->data.decompress = jddp;
-		      jddp->memory = ss->jpeg_memory = benum->mem; 	/* set now for allocation */
-		      jddp->scanline_buffer = NULL;                     /* set this early for safe error exit */
-		      if ( gs_jpeg_create_decompress(ss) < 0 )
-			  return_error(errorInsufficientMemory);
-		      (*s_DCTD_template.init)((stream_state *)ss);
-		      jddp->template = s_DCTD_template;
-		      benum->initialized = true;
-		  }
-		r.ptr = data - 1;
-		r.limit = r.ptr + avail;
-		if ( pos_in_row < data_per_row )
-		  { /* Read more of the current row. */
-		    byte *data = *pdata;
-
-		    w.ptr = data + pos_in_row - 1;
-		    w.limit = data + data_per_row - 1;
-		    (*s_DCTD_template.process)((stream_state *)ss, &r, &w, false);
-		    used = w.ptr + 1 - data - pos_in_row;
-		    pos_in_row += used;
-		    par->source.position += used;
-		  }
-		if ( pos_in_row >= data_per_row && pos_in_row < input_per_row )
-		  { /* We've read all the real data; skip the padding. */
-		      int used = input_per_row - data_per_row;
-		      pos_in_row += used;
-		      par->source.position += used;
-		      r.ptr += used;
-		  }
-		used = r.ptr + 1 - data;
-		par->source.data = r.ptr + 1;
-		par->source.available = avail - used;
-		return (pos_in_row < input_per_row ? pxNeedData : 1);
-	      }
-	    else
-	      { /* Just read the input. */
-		int code;
-		if ( avail >= input_per_row && pos_in_row == 0 )
-		  { /* Use the data directly from the input buffer. */
-		    *pdata = (byte *)data;	/* actually const */
-		    used = input_per_row;
-		    code = 1;
-		  }
-		else
-		  { used = min(avail, input_per_row - pos_in_row);
-		    if ( pos_in_row < data_per_row )
-		      memcpy(*pdata + pos_in_row, data,
-			     min(used, data_per_row - pos_in_row));
-		    code = (pos_in_row + used < input_per_row ?
-			    pxNeedData : 1);
-		  }
-		par->source.position += used;
-		par->source.data = data + used;
-		par->source.available = avail - used;
-		return code;
-	      }
-	  }
+{	
+    switch( par->pv[2]->value.i ) {
+    case eRLECompression:
+        return read_rle_bitmap_data(benum, pdata, par);
+    case eJPEGCompression:
+        return read_jpeg_bitmap_data(benum, pdata, par);
+    case eDeltaRowCompression:
+        return read_deltarow_bitmap_data(benum, pdata, par);
+    default:
+        return read_uncompressed_bitmap_data(benum, pdata, par);
+    }
+    return -1; /* NOT REACHED */
 }
+
 
 /* ---------------- Image operators ---------------- */
 
@@ -353,22 +385,18 @@ pxBeginImage(px_args_t *par, px_state_t *pxs)
 
 	if ( pxenum == 0 )
 	  return_error(errorInsufficientMemory);
-	{ uint raster = round_up(benum.data_per_row, align_bitmap_mod);
-	  int count = 400 / raster;
-
-	  pxenum->num_rows = count = max(count, 1);
-	  pxenum->next_row = 0;
-	  pxenum->raster = raster;
-	  pxenum->rows = gs_alloc_byte_array(pxs->memory, count, raster,
-					     "pxReadImage(rows)");
-	  if ( pxenum->rows == 0 )
+	{ 
+            pxenum->raster = round_up(benum.data_per_row, align_bitmap_mod);
+            pxenum->row = gs_alloc_byte_array(pxs->memory, 1, pxenum->raster,
+                                              "pxReadImage(row)");
+	  if ( pxenum->row == 0 )
 	    code = gs_note_error(errorInsufficientMemory);
 	  else
 	    code = px_image_color_space(&pxenum->color_space, &pxenum->image,
 					&params, &pxgs->palette, pgs);
 	}
 	if ( code < 0 )
-	  { gs_free_object(pxs->memory, pxenum->rows, "pxReadImage(rows)");
+	  { gs_free_object(pxs->memory, pxenum->row, "pxReadImage(row)");
 	    gs_free_object(pxs->memory, pxenum, "pxReadImage(pxenum)");
 	    return code;
 	  }
@@ -390,7 +418,7 @@ pxBeginImage(px_args_t *par, px_state_t *pxs)
 	pxenum->image.CombineWithColor = true;
 	code = pl_begin_image(pgs, &pxenum->image, &pxenum->info);
 	if ( code < 0 )
-	  { gs_free_object(pxs->memory, pxenum->rows, "pxReadImage(rows)");
+	  { gs_free_object(pxs->memory, pxenum->row, "pxReadImage(row)");
 	    gs_free_object(pxs->memory, pxenum, "pxBeginImage(pxenum)");
 	    return code;
 	  }
@@ -405,51 +433,26 @@ const byte apxReadImage[] = {
 
 int
 pxReadImage(px_args_t *par, px_state_t *pxs)
-{	px_image_enum_t *pxenum = pxs->image_enum;
-	gx_device *dev = gs_currentdevice(pxs->pgs);
-
-	if ( par->pv[1]->value.i == 0 )
-	  return 0;		/* no data */
-	/* Make a quick check for the first call, when no data is available. */
-	if ( par->source.available == 0 )
-	  return pxNeedData;
-	if ( pxenum->num_rows == 1 )
-	  { /* We only had space to buffer a single row. */
-	    for ( ; ; )
-	      { byte *data = pxenum->rows;
-		int code = read_bitmap(&pxenum->benum, &data, par);
-
-		if ( code != 1 )
-		  return code;
-		code = (*dev_proc(dev, image_data))
-		  (dev, pxenum->info, (const byte **)&data, 0, pxenum->benum.data_per_row, 1);
-		if ( code < 0 )
-		  return code;
-		pxs->have_page = true;
-	      }
-	  }
-	else
-	  { /* Buffer multiple rows to reduce fixed overhead. */
-	    for ( ; ; )
-	      { byte *data = pxenum->rows + pxenum->next_row * pxenum->raster;
-	        byte *rdata = data;
-		int code = read_bitmap(&pxenum->benum, &rdata, par);
-
-		if ( code != 1 )
-		  return code;
-		if ( rdata != data )
-		  memcpy(data, rdata, pxenum->benum.data_per_row);
-		if ( ++(pxenum->next_row) == pxenum->num_rows )
-		  { code = (*dev_proc(dev, image_data))
-		      (dev, pxenum->info, (const byte **)&pxenum->rows, 0,
-		       pxenum->raster, pxenum->num_rows);
-		    pxenum->next_row = 0;
-		    if ( code < 0 )
-		      return code;
-		  }
-		pxs->have_page = true;
-	      }
-	  }
+{	
+    px_image_enum_t *pxenum = pxs->image_enum;
+    gx_device *dev = gs_currentdevice(pxs->pgs);
+    
+    if ( par->pv[1]->value.i == 0 )
+        return 0;		/* no data */
+    /* Make a quick check for the first call, when no data is available. */
+    if ( par->source.available == 0 )
+        return pxNeedData;
+    for ( ; ; ) {
+        int code = read_bitmap(&pxenum->benum, &pxenum->row, par);
+        if ( code != 1 )
+            return code;
+        code = (*dev_proc(dev, image_data))
+            (dev, pxenum->info, (const byte **)&pxenum->row,
+             0, pxenum->benum.data_per_row, 1);
+        if ( code < 0 )
+            return code;
+        pxs->have_page = true;
+    }
 }
 
 const byte apxEndImage[] = {0, 0};
@@ -457,19 +460,8 @@ int
 pxEndImage(px_args_t *par, px_state_t *pxs)
 {	gx_device *dev = gs_currentdevice(pxs->pgs);
 	px_image_enum_t *pxenum = pxs->image_enum;
-
-	if ( pxenum->next_row > 0 )
-	  { /* Output any remaining rows. */
-	    int code = (*dev_proc(dev, image_data))
-	      (dev, pxenum->info, (const byte **)&pxenum->rows, 0,
-	       pxenum->raster, pxenum->next_row);
-	    pxenum->next_row = 0;
-	    if ( code < 0 )
-	      return code;
-	    pxs->have_page = true;
-	  }
 	(*dev_proc(dev, end_image))(dev, pxenum->info, true);
-	gs_free_object(pxs->memory, pxenum->rows, "pxEndImage(rows)");
+	gs_free_object(pxs->memory, pxenum->row, "pxEndImage(row)");
 	gs_free_object(pxs->memory, pxenum, "pxEndImage(pxenum)");
 	pxs->image_enum = 0;
 	return 0;

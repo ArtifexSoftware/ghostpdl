@@ -607,6 +607,7 @@ px_set_paint(const px_paint_t *ppt, px_state_t *pxs)
 	return gs_setpattern(pgs, &ppt->value.pattern.color);
     case pxpSRGB: {
 	gs_client_color color;
+        gs_setcolorspace(pgs, pxs->pxgs->cie_color_space);
 	color.paint.values[0] = ppt->value.rgb[0];
 	color.paint.values[1] = ppt->value.rgb[1];
 	color.paint.values[2] = ppt->value.rgb[2];
@@ -722,10 +723,12 @@ build_sRGB_space(gs_color_space **ppcs, gs_memory_t *mem)
     if ( code < 0 )
 	return_error(errorInsufficientMemory);
 		
-    /* NB code sigh */
-    *(gs_cie_MatrixLMN(*ppcs)) = MatrixLMN;
-    *(gs_cie_DecodeLMN(*ppcs))= DecodeLMN;
-    (gs_cie_WhitePoint(*ppcs)) = WhitePoint;
+    {
+        gs_cie_abc *pabc = (*ppcs)->params.abc;
+        pabc->common.DecodeLMN = DecodeLMN;
+        pabc->common.MatrixLMN = MatrixLMN;
+        pabc->common.points.WhitePoint = WhitePoint;
+    }
     return 0;
 }
 
@@ -740,9 +743,7 @@ pxSetColorSpace(px_args_t *par, px_state_t *pxs)
 	    cspace = par->pv[1]->value.i;
 	/* work on srgb is still in progress so we map all srgb and
            crgb requests to rgb */
-	if ( cspace == eSRGB || cspace == eCRGB )
-	    cspace = eRGB;
-	else if ( ( par->pv[2] ) || ( par->pv[3] ) || ( par->pv[4] ) || ( par->pv[5] ) ) {
+	if ( ( par->pv[2] ) || ( par->pv[3] ) || ( par->pv[4] ) || ( par->pv[5] ) ) {
 
 	    if ( par->pv[2] )
 		dprintf( "Warning - PXL 2.0 XY Chromaticities not documented or supported\n" );
@@ -820,15 +821,16 @@ pxSetColorSpace(px_args_t *par, px_state_t *pxs)
 	return 0;
 }
 
-const byte apxSetHalftoneMethod[] = {
-  0, pxaDitherOrigin, pxaDeviceMatrix, pxaDitherMatrixDataType,
-  pxaDitherMatrixSize, pxaDitherMatrixDepth, 0
-};
+const byte apxSetHalftoneMethod[] = {0, pxaAllObjectTypes, pxaTextObjects,
+                                  pxaVectorObjects, pxaRasterObjects, 0};
+
 int
 pxSetHalftoneMethod(px_args_t *par, px_state_t *pxs)
 {	gs_state *pgs = pxs->pgs;
 	px_gstate_t *pxgs = pxs->pxgs;
 	pxeDitherMatrix_t method;
+
+        return 0;
 
 	if ( par->pv[1] )
 	  { /* Internal halftone */
@@ -938,3 +940,42 @@ int
 pxSetPenSource(px_args_t *par, px_state_t *pxs)
 {	return set_source(par, pxs, &pxs->pxgs->pen);
 }
+
+const byte apxSetColorTreatment[] = {pxaColorTreatment, 0, 0};
+
+int
+pxSetColorTreatment(px_args_t *par, px_state_t *pxs)
+{
+    dprintf ("SetColorTreatment not implemented\n");
+    return 0;
+}
+
+const byte apxSetNeutralAxis[] = {0, pxaAllObjectTypes, pxaTextObjects,
+                                  pxaVectorObjects, pxaRasterObjects, 0};
+
+int
+pxSetNeutralAxis(px_args_t *par, px_state_t *pxs)
+{
+    dprintf( "SetNeutralAxis, TBD per HP Documentation\n" );
+    return 0;
+}
+
+const byte apxSetColorTrapping[] = {pxaAllObjectTypes, 0, 0};
+
+int
+pxSetColorTrapping(px_args_t *par, px_state_t *pxs)
+{
+    dprintf( "SetColorTrapping, TBD per HP Documentation\n" );
+    return 0;
+}
+
+const byte apxSetAdaptiveHalftoning[] = 
+    {0, pxaAllObjectTypes, pxaTextObjects, pxaVectorObjects, pxaRasterObjects, 0};
+
+int
+pxSetAdaptiveHalftoning(px_args_t *par, px_state_t *pxs)
+{
+    dprintf( "SetAdaptiveHalftoning, TBD per HP Documentation\n" );
+    return 0;
+}
+

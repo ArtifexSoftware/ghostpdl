@@ -18,21 +18,21 @@
 #include "pxenum.h"
 #include "pxoper.h"
 #include "pxvalue.h"
-#include "pxptable.h"		/* requires pxenum.h, pxoper.h, pxvalue.h */
+#include "pxptable.h"           /* requires pxenum.h, pxoper.h, pxvalue.h */
 
 /* ---------------- Attribute values ---------------- */
 
-#define sc(sizes) {pxd_scalar|sizes}			/* scalar */
+#define sc(sizes) {pxd_scalar|sizes}                    /* scalar */
 #define scp(sizes,proc) {pxd_scalar|sizes, 0, proc}
 #define scub() {pxd_scalar|ub, 255}
-#define xy(sizes) {pxd_xy|sizes}			/* XY pair */
+#define xy(sizes) {pxd_xy|sizes}                        /* XY pair */
 #define xyp(sizes,proc) {pxd_xy|sizes, 0, proc}
-#define box(sizes) {pxd_box|sizes}			/* box */
-#define arr(sizes) {pxd_array|sizes}			/* array */
+#define box(sizes) {pxd_box|sizes}                      /* box */
+#define arr(sizes) {pxd_array|sizes}                    /* array */
 #define arrp(sizes,proc) {pxd_array|sizes, 0, proc}
-#define en(limit) {pxd_scalar|pxd_ubyte, (limit)-1}	/* enumeration */
+#define en(limit) {pxd_scalar|pxd_ubyte, (limit)-1}     /* enumeration */
 #define enp(limit,proc) {pxd_scalar|pxd_ubyte, (limit)-1, proc}
-#define zero en(1)	/* must be zero */
+#define zero en(1)      /* must be zero */
 #define ub pxd_ubyte
 #define us pxd_uint16
 #define ul pxd_uint32
@@ -48,40 +48,40 @@
 
 private int
 checkCharAngle(const px_value_t *pv)
-{	real v = real_value(pv, 0);
-	return ok_iff(v >= -360 && v <= 360);
+{       real v = real_value(pv, 0);
+        return ok_iff(v >= -360 && v <= 360);
 }
 private int
 checkCharBoldValue(const px_value_t *pv)
-{	return ok_iff(pv->value.r >= 0 && pv->value.r <= 1);
+{       return ok_iff(pv->value.r >= 0 && pv->value.r <= 1);
 }
 private int
 checkCharScale(const px_value_t *pv)
-{	real x = real_value(pv, 0), y = real_value(pv, 1);
-	return ok_iff(x >= -32768 && x <= 32767 && y >= -32768 && y <= 32767);
+{       real x = real_value(pv, 0), y = real_value(pv, 1);
+        return ok_iff(x >= -32768 && x <= 32767 && y >= -32768 && y <= 32767);
 }
 #define checkCharShear checkCharScale
 private int
 checkDestinationSize(const px_value_t *pv)
-{	return ok_iff(pv->value.ia[0] != 0 && pv->value.ia[1] != 0);
+{       return ok_iff(pv->value.ia[0] != 0 && pv->value.ia[1] != 0);
 }
 private int
 checkDitherMatrixDataType(const px_value_t *pv)
-{	return ok_iff(pv->value.i == eUByte);
+{       return ok_iff(pv->value.i == eUByte);
 }
 private int
 checkDitherMatrixDepth(const px_value_t *pv)
-{	return ok_iff(pv->value.i == e8Bit);
+{       return ok_iff(pv->value.i == e8Bit);
 }
 private int
 checkDitherMatrixSize(const px_value_t *pv)
-{	return ok_iff(pv->value.i >= 1 && pv->value.i <= 256);
+{       return ok_iff(pv->value.i >= 1 && pv->value.i <= 256);
 }
 private int
 checkGrayLevel(const px_value_t *pv)
-{	return ok_iff(pv->type & pxd_any_real ?
-		      pv->value.r >= 0 && pv->value.r <= 1 :
-		      true);
+{       return ok_iff(pv->type & pxd_any_real ?
+                      pv->value.r >= 0 && pv->value.r <= 1 :
+                      true);
 }
 
 private int
@@ -93,194 +93,215 @@ checkPageAngle(const px_value_t *pv)
 
 private int
 checkPageScale(const px_value_t *pv)
-{	real x = real_value(pv, 0), y = real_value(pv, 1);
-	return ok_iff(x >= 0 && x <= 32767 && y >= 0 && y <= 32767);
+{       real x = real_value(pv, 0), y = real_value(pv, 1);
+        return ok_iff(x >= 0 && x <= 32767 && y >= 0 && y <= 32767);
 }
 private int
 checkRGBColor(const px_value_t *pv)
-{	if ( pv->value.array.size != 3 )
-	  return_error(errorIllegalArraySize);
-	if ( pv->type & pxd_any_real )
-	  { /* Check for values between 0 and 1. */
-	    uint i;
-	    for ( i = 0; i < pv->value.array.size; ++i )
-	      { real v = real_elt(pv, i);
-		if ( v < 0.0 || v > 1.0 )
-		  return_error(errorIllegalAttributeValue);
-	      }
-	  }
-	return 0;
+{       if ( pv->value.array.size != 3 )
+          return_error(errorIllegalArraySize);
+        if ( pv->type & pxd_any_real )
+          { /* Check for values between 0 and 1. */
+            uint i;
+            for ( i = 0; i < pv->value.array.size; ++i )
+              { real v = real_elt(pv, i);
+                if ( v < 0.0 || v > 1.0 )
+                  return_error(errorIllegalAttributeValue);
+              }
+          }
+        return 0;
 }
 private int
 checkSourceHeight(const px_value_t *pv)
-{	return ok_iff(pv->value.i >= 1);
+{       return ok_iff(pv->value.i >= 1);
 }
 #define checkSourceWidth checkSourceHeight
 private int
 checkUnitsPerMeasure(const px_value_t *pv)
-{	real x = real_value(pv, 0), y = real_value(pv, 1);
-	return ok_iff(x > 0 && x <= 65535 && y > 0 && y <= 65535);
+{       real x = real_value(pv, 0), y = real_value(pv, 1);
+        return ok_iff(x > 0 && x <= 65535 && y > 0 && y <= 65535);
 }
 #undef ok_iff
 
 const px_attr_value_type_t px_attr_value_types[] = {
-  none,
-  none,
-  en(pxeColorDepth_next),		/* PaletteDepth = 2 */
-  en(pxeColorSpace_next),		/* ColorSpace */
-  zero,		/* NullBrush */
-  zero,		/* NullPen */
-  arr(ub),		/* PaletteData */
-  none,
-  sc(ss),		/* PatternSelectID = 8 */
-  scp(ub|rl, checkGrayLevel),		/* GrayLevel */
-  none,
-  arrp(ub|rl, checkRGBColor),		/* RGBColor = 11 */
-  xy(ss),		/* PatternOrigin */
-  xyp(us, checkDestinationSize),		/* NewDestinationSize */
-  arr(ub),                  /* PrimaryArray = 14 */
-  en(pxeColorDepth_next),   /* PrimaryDepth = 15 */
-  none,
-  en(pxeColorimetricColorSpace_next), /* ColorimetricColorSpace = 17 */
-  arr(rl),                            /* XYChromaticities = 18 NB - no limitation range according to the documentation */
-  arr(rl),                            /* WhiteReferencePoint = 19 NB - no limitation range according to the documentation */
-  arr(rl),                            /* CRGBMinMax = 20 NB - no limitation range according to the documentation */
-  arr(rl),                            /* GammaGain = 21 NB - no limitation range according to the documentation */
-  none,
-  none,
-  none,
-  none,
-  none,
-  none,
-  none,
-  none,
-  none,
-  none,
-  none,
-  en(pxeDitherMatrix_next),		/* DeviceMatrix = 33 */
-  enp(pxeDataType_next, checkDitherMatrixDataType),	/* DitherMatrixDataType */
-  xy(ub|us|ss),		/* DitherOrigin */
-  scub(),		/* MediaDestination */
-  {pxd_scalar|pxd_array|pxd_ubyte, 255}, /* MediaSize is protean - it
-					    can be either an array or
-					    scalar, so we don't use
-					    the macros that shouldn't
-					    be used in the first place
-					    :-^ */
-  scub(),		/* MediaSource */
-  arr(ub),		/* MediaType */
-  scub(),		/* Orientation -- illegal values only produce a warning! */
-  scp(us|ss, checkPageAngle),		/* PageAngle */
-  xy(ub|us|ss),		/* PageOrigin */
-  xyp(ub|us|rl, checkPageScale),		/* PageScale */
-  scub(),		/* ROP3 */
-  en(pxeTxMode_next),		/* TxMode */
-  none,
-  xy(us|rl),		/* CustomMediaSize = 47 */
-  en(pxeMeasure_next),		/* CustomMediaSizeUnits */
-  sc(us),		/* PageCopies */
-  xyp(us, checkDitherMatrixSize),		/* DitherMatrixSize */
-  enp(pxeColorDepth_next, checkDitherMatrixDepth),	/* DitherMatrixDepth */
-  en(pxeSimplexPageMode_next),		/* SimplexPageMode */
-  en(pxeDuplexPageMode_next),		/* DuplexPageMode */
-  en(pxeDuplexPageSide_next),		/* DuplexPageSide */
-  none5,
-  none5,
-  en(pxeArcDirection_next),	/* ArcDirection = 65 */
-  box(ub|us|ss),		/* BoundingBox */
-  sc(ub|us|ss),		/* DashOffset */
-  xy(ub|us),		/* EllipseDimension */
-  xy(ub|us|ss),		/* EndPoint */
-  en(pxeFillMode_next),		/* FillMode */
-  en(pxeLineCap_next),		/* LineCapStyle */
-  en(pxeLineJoin_next),		/* LineJoinStyle */
-  sc(ub|us),		/* MiterLength */
-  arr(ub|us|ss),	/* LineDashStyle */
-  sc(ub|us),		/* PenWidth */
-  xy(ub|us|ss),		/* Point */
-  sc(ub|us),		/* NumberOfPoints */
-  zero,		/* SolidLine */
-  xy(ub|us|ss),		/* StartPoint */
-  en(pxeDataType_next),		/* PointType */
-  xy(ub|us|ss),		/* ControlPoint1 */
-  xy(ub|us|ss),		/* ControlPoint2 */
-  en(pxeClipRegion_next),		/* ClipRegion */
-  en(pxeClipMode_next),		/* ClipMode */
-  none5,
-  none5,
-  none,
-  none,
-  none,
-  en(pxeColorDepth_next),		/* ColorDepth = 98 */
-  sc(us),	/* BlockHeight */
-  en(pxeColorMapping_next),		/* ColorMapping */
-  en(pxeCompressMode_next),		/* CompressMode */
-  box(us),		/* DestinationBox */
-  xyp(us, checkDestinationSize),		/* DestinationSize */
-  en(pxePatternPersistence_next),		/* PatternPersistence */
-  sc(ss),		/* PatternDefineID */
-  none,
-  scp(us, checkSourceHeight),		/* SourceHeight = 107 */
-  scp(us, checkSourceWidth),		/* SourceWidth */
-  sc(us),		/* StartLine */
-  scub(),                        		/* PadBytesMultiple */
-  sc(ul),                                       /* BlockByteLength */
-  none,
-  none,
-  none,
-  sc(us),		/* NumberOfScanLines = 115 */
-  none,
-  none,
-  none,
-  none,
-  none5,
-  none,
-  none,
-  none,
-  none,
-  arr(ub|us),		/* CommentData = 129 */
-  en(pxeDataOrg_next),		/* DataOrg */
-  none,
-  none,
-  none,
-  en(pxeMeasure_next),		/* Measure = 134 */
-  none,
-  en(pxeDataSource_next),		/* SourceType = 136 */
-  xyp(us|rl, checkUnitsPerMeasure),		/* UnitsPerMeasure */
-  none,
-  arr(ub|us),		/* StreamName = 139 */
-  sc(ul),		/* StreamDataLength */
-  none,
-  none,
-  en(pxeErrorReport_next),		/* ErrorReport = 143 */
-  none,
-  sc(ul),              /* VUExtension = 145 */
-  none,
-  sc(ub),              /* VUAttr1 = 147 */
-  none,
-  none,
-  none5,
-  none5,
-  none,
-  scp(us|ss|rl, checkCharAngle),		/* CharAngle = 161 */
-  sc(ub|us),		/* CharCode */
-	/* The spec says CharDataSize requires a uint16 argument, */
-	/* but the H-P driver (sometimes?) emits a uint32. */
-  sc(us|ul),		/* CharDataSize */
-  xyp(ub|us|rl, checkCharScale),		/* CharScale */
-  xyp(ub|us|ss|rl, checkCharShear),		/* CharShear */
-  sc(ub|us|rl),		/* CharSize */
-  sc(us),		/* FontHeaderLength */
-  arr(ub|us),		/* FontName */
-  zero,		/* FontFormat */
-  sc(us),		/* SymbolSet */
-  arr(ub|us),		/* TextData */
-  arr(ub),		/* CharSubModeArray */
-  en(pxeWritingMode_next),		/* WritingMode */
-  none,
-  arr(ub|us|ss),		/* XSpacingData = 175 */
-  arr(ub|us|ss),		/* YSpacingData */
-  scp(rl, checkCharBoldValue),	/* CharBoldValue */
+/* 0 */    none,                    
+/* 1 */    none,
+/* 2 */    en(pxeColorDepth_next),       /* PaletteDepth = 2 */
+/* 3 */    en(pxeColorSpace_next),              /* ColorSpace */
+/* 4 */    zero,                /* NullBrush */
+/* 5 */    zero,                /* NullPen */
+/* 6 */    arr(ub),             /* PaletteData */
+/* 7 */    none,
+/* 8 */    sc(ss),              /* PatternSelectID = 8 */
+/* 9 */    scp(ub|rl, checkGrayLevel),          /* GrayLevel */
+/* 10 */   none,
+/* 11 */   arrp(ub|rl, checkRGBColor),          /* RGBColor = 11 */
+/* 12 */   xy(ss),              /* PatternOrigin */
+/* 13 */   xyp(us, checkDestinationSize),               /* NewDestinationSize */
+/* 14 */   arr(ub),                  /* PrimaryArray = 14 */
+/* 15 */   en(pxeColorDepth_next),   /* PrimaryDepth = 15 */
+/* 16 */   none,
+/* 17 */   en(pxeColorimetricColorSpace_next), /* ColorimetricColorSpace = 17 */
+/* 18 */   arr(rl),  /* XYChromaticities = 18 */
+/* 19 */   arr(rl),  /* WhiteReferencePoint = 19 */
+/* 20 */   arr(rl),  /* CRGBMinMax = 20 */
+/* 21 */   arr(rl),  /* GammaGain = 21 */
+/* 22 */   none,
+/* 23 */   none,
+/* 24 */   none,
+/* 25 */   none,
+/* 26 */   none,
+/* 27 */   none,
+/* 28 */   none,
+/* 29 */   en(pxeColorTrapping_next), /* AllObjects NB ColorTrapping is largest enum */
+/* 30 */   en(pxeColorTrapping_next), /* TextObjects = 30 */
+/* 31 */   en(pxeColorTrapping_next), /* VectorObjects = 31 */
+/* 32 */   en(pxeColorTrapping_next), /* RasterObjects = 32 */
+/* 33 */   en(pxeDitherMatrix_next),  /* DeviceMatrix = 33 */
+/* 34 */   enp(pxeDataType_next, checkDitherMatrixDataType), /* DitherMatrixDataType */
+/* 35 */   xy(ub|us|ss),        /* DitherOrigin */
+/* 36 */   scub(),              /* MediaDestination */
+/* 37 */   {pxd_scalar|pxd_array|pxd_ubyte, 255}, /* MediaSize */
+/* 38 */   scub(),              /* MediaSource */
+/* 39 */   arr(ub),             /* MediaType */
+/* 40 */   scub(),              /* Orientation -- illegal values only produce a warning! */
+/* 41 */   scp(us|ss, checkPageAngle),          /* PageAngle */
+/* 42 */   xy(ub|us|ss),                /* PageOrigin */
+/* 43 */   xyp(ub|us|rl, checkPageScale),               /* PageScale */
+/* 44 */   scub(),              /* ROP3 */
+/* 45 */   en(pxeTxMode_next),          /* TxMode */
+/* 46 */   none,
+/* 47 */   xy(us|rl),           /* CustomMediaSize = 47 */
+/* 48 */   en(pxeMeasure_next),         /* CustomMediaSizeUnits */
+/* 49 */   sc(us),              /* PageCopies */
+/* 50 */   xyp(us, checkDitherMatrixSize),              /* DitherMatrixSize */
+/* 51 */   enp(pxeColorDepth_next, checkDitherMatrixDepth),     /* DitherMatrixDepth */
+/* 52 */   en(pxeSimplexPageMode_next),         /* SimplexPageMode */
+/* 53 */   en(pxeDuplexPageMode_next),          /* DuplexPageMode */
+/* 54 */   en(pxeDuplexPageSide_next),          /* DuplexPageSide */
+/* 55 */   none,
+/* 56 */   none,
+/* 57 */   none,
+/* 58 */   none,
+/* 59 */   none,
+/* 60 */   none,
+/* 61 */   none,
+/* 62 */   none,
+/* 63 */   none,
+/* 64 */   none,
+/* 65 */   en(pxeArcDirection_next),    /* ArcDirection = 65 */
+/* 66 */   box(ub|us|ss),               /* BoundingBox */
+/* 67 */   sc(ub|us|ss),                /* DashOffset */
+/* 68 */   xy(ub|us),           /* EllipseDimension */
+/* 69 */   xy(ub|us|ss),                /* EndPoint */
+/* 70 */   en(pxeFillMode_next),                /* FillMode */
+/* 71 */   en(pxeLineCap_next),         /* LineCapStyle */
+/* 72 */   en(pxeLineJoin_next),                /* LineJoinStyle */
+/* 73 */   sc(ub|us),           /* MiterLength */
+/* 74 */   arr(ub|us|ss),       /* LineDashStyle */
+/* 75 */   sc(ub|us),           /* PenWidth */
+/* 76 */   xy(ub|us|ss),                /* Point */
+/* 77 */   sc(ub|us),           /* NumberOfPoints */
+/* 78 */   zero,                /* SolidLine */
+/* 79 */   xy(ub|us|ss),                /* StartPoint */
+/* 80 */   en(pxeDataType_next),                /* PointType */
+/* 81 */   xy(ub|us|ss),                /* ControlPoint1 */
+/* 82 */   xy(ub|us|ss),                /* ControlPoint2 */
+/* 83 */   en(pxeClipRegion_next),              /* ClipRegion */
+/* 84 */   en(pxeClipMode_next),                /* ClipMode */
+/* 85 */   none,
+/* 86 */   none,
+/* 87 */   none,
+/* 88 */   none,
+/* 89 */   none,
+/* 90 */   none,
+/* 91 */   none,
+/* 92 */   none,
+/* 93 */   none,
+/* 94 */   none,
+/* 95 */   none,
+/* 96 */   none,
+/* 97 */   none,
+/* 98 */   en(pxeColorDepth_next),              /* ColorDepth = 98 */
+/* 99 */   sc(us),      /* BlockHeight */
+/* 100 */  en(pxeColorMapping_next),            /* ColorMapping */
+/* 101 */  en(pxeCompressMode_next),            /* CompressMode */
+/* 102 */  box(us),             /* DestinationBox */
+/* 103 */  xyp(us, checkDestinationSize),               /* DestinationSize */
+/* 104 */  en(pxePatternPersistence_next),              /* PatternPersistence */
+/* 105 */  sc(ss),              /* PatternDefineID */
+/* 106 */  none,
+/* 107 */  scp(us, checkSourceHeight),          /* SourceHeight = 107 */
+/* 108 */  scp(us, checkSourceWidth),           /* SourceWidth */
+/* 109 */  sc(us),              /* StartLine */
+/* 110 */  scub(),                                      /* PadBytesMultiple */
+/* 111 */  sc(ul),                                       /* BlockByteLength */
+/* 112 */  none,
+/* 113 */  none,
+/* 114 */  none,
+/* 115 */  sc(us),              /* NumberOfScanLines = 115 */
+/* 116 */  none,
+/* 117 */  none,
+/* 118 */  none,
+/* 119 */  none,
+/* 120 */  en(pxeColorTreatment),
+/* 121 */  none,
+/* 122 */  none,
+/* 123 */  none,
+/* 124 */  none,
+/* 125 */  none,
+/* 126 */  none,
+/* 127 */  none,
+/* 128 */  none,
+/* 129 */  arr(ub|us),          /* CommentData = 129 */
+/* 130 */  en(pxeDataOrg_next),         /* DataOrg */
+/* 131 */  none,
+/* 132 */  none,
+/* 133 */  none,
+/* 134 */  en(pxeMeasure_next),         /* Measure = 134 */
+/* 135 */  none,
+/* 136 */  en(pxeDataSource_next),              /* SourceType = 136 */
+/* 137 */  xyp(us|rl, checkUnitsPerMeasure),            /* UnitsPerMeasure */
+/* 138 */  none,
+/* 139 */  arr(ub|us),          /* StreamName = 139 */
+/* 140 */  sc(ul),              /* StreamDataLength */
+/* 141 */  none,
+/* 142 */  none,
+/* 143 */  en(pxeErrorReport_next),             /* ErrorReport = 143 */
+/* 144 */  none,
+/* 145 */  sc(ul),              /* VUExtension = 145 */
+/* 146 */  none,
+/* 147 */  sc(ub),              /* VUAttr1 = 147 */
+/* 148 */  none,
+/* 149 */  none,
+/* 150 */  none,
+/* 151 */  none,
+/* 152 */  none,
+/* 153 */  none,
+/* 154 */  none,
+/* 155 */  none,
+/* 156 */  none,
+/* 157 */  none,
+/* 158 */  none,
+/* 159 */  none,
+/* 160 */  none,
+/* 161 */  scp(us|ss|rl, checkCharAngle),               /* CharAngle = 161 */
+/* 162 */  sc(ub|us),           /* CharCode */
+/* 163 */  sc(us|ul),           /* CharDataSize HP spec says us - driver sometimes emits ul */
+/* 164 */  xyp(ub|us|rl, checkCharScale),               /* CharScale */
+/* 165 */  xyp(ub|us|ss|rl, checkCharShear),            /* CharShear */
+/* 166 */  sc(ub|us|rl),                /* CharSize */
+/* 167 */  sc(us),              /* FontHeaderLength */
+/* 168 */  arr(ub|us),          /* FontName */
+/* 169 */  zero,                /* FontFormat */
+/* 170 */  sc(us),              /* SymbolSet */
+/* 171 */  arr(ub|us),          /* TextData */
+/* 172 */  arr(ub),             /* CharSubModeArray */
+/* 173 */  en(pxeWritingMode_next),             /* WritingMode */
+/* 174 */  none,
+/* 175 */  arr(ub|us|ss),               /* XSpacingData = 175 */
+/* 176 */  arr(ub|us|ss),               /* YSpacingData */
+/* 177 */  scp(rl, checkCharBoldValue), /* CharBoldValue */
 };
 
 #undef v
@@ -317,9 +338,9 @@ const char *px_attribute_names[] = {
   "ColorimetricColorSpace", "XYChromaticities", "WhiteReferencePoint", "CRGBMinMax", "GammaGain",
 /*22*/
   0, 0, 0, 0,
-  0, 0, 0, 0,
+  0, 0, 0, "AllObjectTypes",
 /*30*/
-  0, 0, 0, "DeviceMatrix", "DitherMatrixDataType",
+  "TextObjects", "VectorObjects", "RasterObjects", "DeviceMatrix", "DitherMatrixDataType",
   "DitherOrigin", "MediaDestination", "MediaSize", "MediaSource", "MediaType",
 /*40*/
   "Orientation", "PageAngle", "PageOrigin", "PageScale", "ROP3",
@@ -350,7 +371,7 @@ const char *px_attribute_names[] = {
   0, 0, 0,
   "NumberOfScanLines", 0, 0, 0, 0,
 /*120*/
-  0, 0, 0, 0, 0,
+  "ColorTreatment", 0, 0, 0, 0,
   0, 0, 0, 0, "CommentData",
 /*130*/
   "DataOrg", 0, 0, 0, "Measure",
@@ -437,8 +458,8 @@ const char *px_operator_names[0x80] = {
 /*5x*/
   "ReadFontHeader", "EndFontHeader", "BeginChar", "ReadChar",
   "EndChar", "RemoveFont", 
-  "SetCharAttributes",
-  0,
+  0, /* "SetCharAttributes", */
+  "SetColorTreatment",
   0, 0, 0, "BeginStream",
   "ReadStream", "EndStream", "ExecStream", "RemoveStream",
 /*6x*/
@@ -450,15 +471,15 @@ const char *px_operator_names[0x80] = {
   "SetLineDash", "SetLineCap", "SetLineJoin", "SetMiterLimit",
   "SetPageDefaultCTM", "SetPageOrigin", "SetPageRotation", "SetPageScale",
   "SetPaintTxMode", "SetPenSource", "SetPenWidth", "SetROP",
-  "SetSourceTxMode", "SetCharBoldValue", 0, "SetClipMode",
+  "SetSourceTxMode", "SetCharBoldValue", "SetNeutralAxis", "SetClipMode",
 /*8x*/
-  "SetPathToClip", "SetCharSubMode", 0, 0,
+  "SetPathToClip", "SetCharSubMode", "BeginUserDefinedLineCap", "pxtEndUserDefinedLineCap",
   "CloseSubPath", "NewPath", "PaintPath", 0,
   0, 0, 0, 0,
   0, 0, 0, 0,
 /*9x*/
-  0, "ArcPath", 0, "BezierPath",
-  0, "BezierRelPath", "Chord", "ChordPath",
+  0, "ArcPath", "SetColorTrapping", "BezierPath",
+  "SetAdaptiveHalftoning", "BezierRelPath", "Chord", "ChordPath",
   "Ellipse", "EllipsePath", 0, "LinePath",
   0, "LineRelPath", "Pie", "PiePath",
 /*ax*/
@@ -470,7 +491,7 @@ const char *px_operator_names[0x80] = {
   "BeginImage", "ReadImage", "EndImage", "BeginRastPattern",
   "ReadRastPattern", "EndRastPattern", "BeginScan", 0,
   "EndScan", "ScanLineRel", 0, 0,
-  0, 0, 0, 0
+  0, 0, 0, "Passthrough"
 };
 
 /* ---------------- Operator definitions ---------------- */
@@ -483,7 +504,7 @@ const char *px_operator_names[0x80] = {
 private const byte apxBadOperator[] = {0, 0};
 private int
 pxBadOperator(px_args_t *par, px_state_t *pxs)
-{	return_error(errorIllegalTag);
+{       return_error(errorIllegalTag);
 }
 
 odef(pxBeginSession, apxBeginSession);
@@ -495,13 +516,15 @@ odef(pxComment, apxComment);
 odef(pxOpenDataSource, apxOpenDataSource);
 odef(pxCloseDataSource, apxCloseDataSource);
 odef(pxBeginFontHeader, apxBeginFontHeader);
+odef(pxBeginUserDefinedLineCap, apxBeginUserDefinedLineCap);
+odef(pxEndUserDefinedLineCap, apxEndUserDefinedLineCap);
 odef(pxReadFontHeader, apxReadFontHeader);
 odef(pxEndFontHeader, apxEndFontHeader);
 odef(pxBeginChar, apxBeginChar);
 odef(pxReadChar, apxReadChar);
 odef(pxEndChar, apxEndChar);
 odef(pxRemoveFont, apxRemoveFont);
-odef(pxSetCharAttributes, apxSetCharAttributes);
+/* odef(pxSetCharAttributes, apxSetCharAttributes); */
 odef(pxBeginStream, apxBeginStream);
 odef(pxReadStream, apxReadStream);
 odef(pxEndStream, apxEndStream);
@@ -510,6 +533,7 @@ odef(pxRemoveStream, apxRemoveStream);
 odef(pxPopGS, apxPopGS);
 odef(pxPushGS, apxPushGS);
 odef(pxSetClipReplace, apxSetClipReplace);
+odef(pxSetColorTreatment, apxSetColorTreatment);
 odef(pxSetBrushSource, apxSetBrushSource);
 odef(pxSetCharAngle, apxSetCharAngle);
 odef(pxSetCharScale, apxSetCharScale);
@@ -527,6 +551,7 @@ odef(pxSetLineDash, apxSetLineDash);
 odef(pxSetLineCap, apxSetLineCap);
 odef(pxSetLineJoin, apxSetLineJoin);
 odef(pxSetMiterLimit, apxSetMiterLimit);
+odef(pxSetNeutralAxis, apxSetNeutralAxis);
 odef(pxSetPageDefaultCTM, apxSetPageDefaultCTM);
 odef(pxSetPageOrigin, apxSetPageOrigin);
 odef(pxSetPageRotation, apxSetPageRotation);
@@ -569,6 +594,9 @@ odef(pxEndRastPattern, apxEndRastPattern);
 odef(pxBeginScan, apxBeginScan);
 odef(pxEndScan, apxEndScan);
 odef(pxScanLineRel, apxScanLineRel);
+odef(pxSetAdaptiveHalftoning, apxSetAdaptiveHalftoning);
+odef(pxPassthrough, apxPassthrough);
+odef(pxSetColorTrapping, apxSetColorTrapping);
 
 #define none {pxBadOperator, apxBadOperator}
 
@@ -597,9 +625,9 @@ const px_operator_definition_t px_operator_definitions[] = {
   {pxReadChar, apxReadChar},
   {pxEndChar, apxEndChar},
   {pxRemoveFont, apxRemoveFont},
-  {pxSetCharAttributes, apxSetCharAttributes},
+  none, /* {pxSetCharAttributes, apxSetCharAttributes}, */
   none,
-  none,
+  {pxSetColorTreatment, apxSetColorTreatment},
   none,
   none,
   {pxBeginStream, apxBeginStream},
@@ -639,13 +667,13 @@ const px_operator_definition_t px_operator_definitions[] = {
   {pxSetROP, apxSetROP},
   {pxSetSourceTxMode, apxSetSourceTxMode},
   {pxSetCharBoldValue, apxSetCharBoldValue},
-  none,
+  {pxSetNeutralAxis, apxSetNeutralAxis},
   {pxSetClipMode, apxSetClipMode},
 /*8x*/
   {pxSetPathToClip, apxSetPathToClip},
   {pxSetCharSubMode, apxSetCharSubMode},
-  none,
-  none,
+  {pxBeginUserDefinedLineCap, apxBeginUserDefinedLineCap},
+  {pxEndUserDefinedLineCap, apxEndUserDefinedLineCap},
   {pxCloseSubPath, apxCloseSubPath},
   {pxNewPath, apxNewPath},
   {pxPaintPath, apxPaintPath},
@@ -661,9 +689,9 @@ const px_operator_definition_t px_operator_definitions[] = {
 /*9x*/
   none,
   {pxArcPath, apxArcPath},
-  none,
+  {pxSetColorTrapping, apxSetColorTrapping},
   {pxBezierPath, apxBezierPath},
-  none,
+  {pxSetAdaptiveHalftoning, apxSetAdaptiveHalftoning},
   {pxBezierRelPath, apxBezierRelPath},
   {pxChord, apxChord},
   {pxChordPath, apxChordPath},
@@ -708,5 +736,5 @@ const px_operator_definition_t px_operator_definitions[] = {
   none,
   none,
   none,
-  none
+  {pxPassthrough, apxPassthrough}
 };
