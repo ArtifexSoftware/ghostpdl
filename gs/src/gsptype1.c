@@ -41,6 +41,11 @@
 #include "gsiparm4.h"
 #include "gsovrc.h"
 
+/* Temporary switches for experimanting with Adobe compatibility. */
+#define ADJUST_SCALE_FOR_THIN_LINES 0	/* Old code = 0 */
+#define ADJUST_SCALE_BY_GS_TRADITION 0	/* Old code = 1 */
+#define ADJUST_AS_ADOBE 1		/* Old code = 0 *//* This one is closer to Adobe. */
+
 /* GC descriptors */
 private_st_pattern1_template();
 private_st_pattern1_instance();
@@ -170,8 +175,13 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
 
 	/* If the step and the size agree to within 1/2 pixel, */
 	/* make them the same. */
-	inst.size.x = (int)(bbw + 0.8);		/* 0.8 is arbitrary */
-	inst.size.y = (int)(bbh + 0.8);
+	if (ADJUST_SCALE_BY_GS_TRADITION) {
+	    inst.size.x = (int)(bbw + 0.8);		/* 0.8 is arbitrary */
+	    inst.size.y = (int)(bbh + 0.8);
+	} else {
+	    inst.size.x = (int)ceil(bbw);
+	    inst.size.y = (int)ceil(bbh);
+	}
 
 	if (inst.size.x == 0 || inst.size.y == 0) {
 	    /*
@@ -185,7 +195,8 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
 		code = gs_note_error(gs_error_rangecheck);
 		goto fsaved;
 	    }
-	    if (mat.xy == 0 && mat.yx == 0 &&
+	    if (ADJUST_SCALE_BY_GS_TRADITION &&
+	        mat.xy == 0 && mat.yx == 0 &&
 		fabs(fabs(mat.xx) - bbw) < 0.5 &&
 		fabs(fabs(mat.yy) - bbh) < 0.5
 		) {
@@ -194,11 +205,49 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
 		code = compute_inst_matrix(&inst, saved, &bbox);
 		if (code < 0)
 		    goto fsaved;
+		if (ADJUST_SCALE_FOR_THIN_LINES) {
+		    /* To allow thin lines at a cell boundary 
+		       to be painted inside the cell,
+		       we adjust the scale so that 
+		       the scaled width is in fixed_1 smaller */
+		    gs_scale(saved, (fabs(inst.size.x) - 1.0 / fixed_scale) / fabs(inst.size.x),
+				    (fabs(inst.size.y) - 1.0 / fixed_scale) / fabs(inst.size.y));
+		}
 		if_debug2('t',
 			  "[t]adjusted XStep & YStep to size=(%d,%d)\n",
 			  inst.size.x, inst.size.y);
 		if_debug4('t', "[t]bbox=(%g,%g),(%g,%g)\n",
 			  bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y);
+	    } else if (ADJUST_AS_ADOBE) {
+		if (mat.xy == 0 && mat.yx == 0 &&
+		    fabs(fabs(mat.xx) - bbw) < 0.5 &&
+		    fabs(fabs(mat.yy) - bbh) < 0.5
+		    ) {
+		    if (inst.step_matrix.xx <= 2) { 
+			/* Prevent a degradation - see -r72 mspro.pdf */
+			gs_scale(saved, fabs(inst.size.x / mat.xx), 1);
+			inst.step_matrix.xx = (float)inst.size.x;
+		    } else {
+			inst.step_matrix.xx = (float)floor(inst.step_matrix.xx + 0.5);
+			/* To allow thin lines at a cell boundary 
+			   to be painted inside the cell,
+			   we adjust the scale so that 
+			   the scaled width is in fixed_1 smaller */
+			if (bbw >= inst.size.x - 1.0 / fixed_scale)
+			    gs_scale(saved, (fabs(inst.size.x) - 1.0 / fixed_scale) / fabs(inst.size.x), 1);
+		    }
+		    if (inst.step_matrix.yy <= 2) {
+			gs_scale(saved, 1, fabs(inst.size.y / mat.yy));
+			inst.step_matrix.yy = (float)inst.size.y;
+		    } else {
+			inst.step_matrix.yy = (float)floor(inst.step_matrix.yy + 0.5);
+			if (bbh >= inst.size.y - 1.0 / fixed_scale)
+			    gs_scale(saved, 1, (fabs(inst.size.y) - 1.0 / fixed_scale) / fabs(inst.size.y));
+		    }
+		    code = gs_bbox_transform(&inst.template.BBox, &ctm_only(saved), &bbox);
+		    if (code < 0)
+			goto fsaved;
+		}
 	    }
 	}
     }
@@ -215,8 +264,8 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
 	      inst.size.x, inst.size.y);
     /* Absent other information, instances always require a mask. */
     inst.uses_mask = true;
-    gx_translate_to_fixed(saved, float2fixed(mat.tx - bbox.p.x),
-			  float2fixed(mat.ty - bbox.p.y));
+    gx_translate_to_fixed(saved, float2fixed_rounded(mat.tx - bbox.p.x),
+			         float2fixed_rounded(mat.ty - bbox.p.y));
     mat.tx = bbox.p.x;
     mat.ty = bbox.p.y;
 #undef mat
