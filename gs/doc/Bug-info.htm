@@ -1,7 +1,9 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
 <title>Reporting Ghostscript problems</title>
 <!-- $RCSfile$ $Revision$ -->
+<link rel="stylesheet" type="text/css" href="gs.css" title="Ghostscript Style">
 </head>
 
 <body>
@@ -9,11 +11,7 @@
 
 <!-- [1.1 begin headline] ================================================== -->
 
-<table width="100%" border="0">
-<tr><th align="center" bgcolor="#CCCC00"><font size=6>
-Reporting Ghostscript problems
-</font>
-</table>
+<h1>Reporting Ghostscript problems</h1>
 
 <!-- [1.1 end headline] ==================================================== -->
 
@@ -55,26 +53,27 @@ href="New-user.htm#Commercial_use">licensing Ghostscript commercially</a>.
 <p>
 We currently have access to systems running Linux, Solaris, Microsoft
 Windows (various versions), and MacOS; gcc, Borland C++ Builder, Watcom C++,
-Microsoft Visual C++, and MetroWerks Code Warrior.  If your problem turns
+Microsoft Visual C++, and Metrowerks CodeWarrior.  If your problem turns
 out to be specific to some other hardware or software configuration, it may
 take longer to track down, since we will have to rely on other users to
 help.
 
-<h3>Check that you have a good copy of the most recent version.</h3>
+<h2>Check that you have a good copy of the most recent version.</h2>
 
 <p>
 Go to
 
 <blockquote>
-<a href="http://sourceforge.net/project/filelist.php?group_id=1897">
-http://sourceforge.net/project/filelist.php?group_id=1897</a>
+<a href="http://sourceforge.net/project/showfiles.php?group_id=1897"
+class="offsite">
+http://sourceforge.net/project/showfiles.php?group_id=1897</a>
 </blockquote>
 
 <p>
 and see if the version number of your Ghostscript installation is the
 highest number listed there in the applicable File Module.  The
 <b><tt>ghostscript</tt></b> module lists stable releases; the
-<b><tt>gs-test</tt></b> module lists developer and beta versions.  You can
+<b><tt>gs-beta</tt></b> module lists beta versions.  You can
 find the version number of your installation by executing
 
 <blockquote><pre>
@@ -95,18 +94,20 @@ there.  If it is, go on to the next step.
 Even if you are running the most recent version, it is possible that you may
 be running a modified copy.  We are confident that copies on the SourceForge
 site just mentioned, our other master distribution site on
-<b><tt>ftp.cs.wisc.edu</tt></b>, and CD-ROMs of commercial Linux
+<a href="ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/"
+class="offsite">mirror.cs.wisc.edu</a>, and CD-ROMs of commercial
+Linux
 distributions are good; if you got Ghostscript somewhere else, please update
 it from one of these places, and check whether the problem is still there
 before proceeding.
 
-<h3>Check whether your problem is already known.</h3>
+<h2>Check whether your problem is already known.</h2>
 
 <p>
 Go to 
 
 <blockquote>
-<a href="http://sourceforge.net/bugs/?group_id=1897">
+<a href="http://sourceforge.net/bugs/?group_id=1897" class="offsite">
 http://sourceforge.net/bugs/?group_id=1897</a>
 </blockquote>
 
@@ -114,7 +115,7 @@ http://sourceforge.net/bugs/?group_id=1897</a>
 and see whether your problem is already known.  If it is, you may want to
 add a follow-up comment to the report.  If it isn't, go on to the next step.
 
-<h3>Have you ever run Ghostscript successfully?</h3>
+<h2>Have you ever run Ghostscript successfully?</h2>
 
 <p>
 If your problem is connected with installing or configuring Ghostscript, and
@@ -127,7 +128,7 @@ href="news:comp.lang.postscript">comp.lang.postscript</a>.  If, after you
 find the solution, you have suggestions for improving the documentation,
 please let us know.
 
-<h3>Reproduce the problem with Ghostscript alone.</h3>
+<h2>Reproduce the problem with Ghostscript alone.</h2>
 
 <p>
 If you are running Ghostscript through some other piece of software, such as
@@ -159,7 +160,7 @@ alone.
 
 </ul>
 
-<h3>Check whether you are using a third-party printer driver.</h3>
+<h2>Check whether you are using a third-party printer driver.</h2>
 
 <p>
 The file <b><tt>src/devs.mak</tt></b> lists all the drivers about which we
@@ -168,31 +169,29 @@ other drivers.  If you are using a driver listed in the latter file, please
 try to reproduce the problem using a driver listed in the former.  If you
 can't, please contact the author of the problem driver.
 
-<h3>Send us a problem report.</h3>
+<h2>Send us a problem report.</h2>
 
 <p>
 Please go to the problem reporting form in <a
 href="Bug-form.htm">Bug-form.htm</a> and follow its instructions.
 
+<!-- [3.0 begin visible trailer]
+============================================= -->
 <hr>
 
-<font size=2>
+<p>
+<small>Copyright &copy; 2000 Aladdin Enterprises.  All
+rights reserved.</small>
 
-<p> Portions Copyright  &copy; 2001 artofcode LLC.
-<p> Portions Copyright  &copy; 1996, 2001 Artifex Software Inc.
-<p> Portions Copyright  &copy; 1988, 2000 Aladdin Enterprises.
-<p> This software is based in part on the work of the Independent JPEG Group.
-All Rights Reserved.
+<p>
+<small>This file is part of AFPL Ghostscript.  See the
+<a href="Public.htm">Aladdin Free Public License</a> (the "License") for
+full details of the terms of using, copying, modifying, and 
+redistributing AFPL Ghostscript.</small>
 
-<p> This software is distributed under license and may not be copied, modified
-or distributed except as expressly authorized under the terms of that
-license.  Refer to licensing information at http://www.artifex.com/ or
-contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-San Rafael, CA  94903, (415)492-9861, for further information.
- 
-Artifex version 6.50
+<p>
+<small>Ghostscript version 7.00, 8 April 2001
 
-</font>
 
 <!-- [3.0 end visible trailer] ============================================= -->
 

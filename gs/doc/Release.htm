@@ -1,8 +1,10 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
 <title>How to prepare a Ghostscript release</title>
 <!-- $RCSfile$ $Revision$ -->
 <!-- Originally: make.txt -->
+<link rel="stylesheet" type="text/css" href="gs.css" title="Ghostscript Style">
 </head>
 
 <body>
@@ -10,11 +12,7 @@
 
 <!-- [1.1 begin headline] ================================================== -->
 
-<table width="100%" border="0">
-<tr><th align="center" bgcolor="#CCCC00"><font size=6>
-How to prepare a Ghostscript release
-</font>
-</table>
+<h1>How to prepare a Ghostscript release</h1>
 
 <!-- [1.1 end headline] ==================================================== -->
 
@@ -27,21 +25,16 @@ How to prepare a Ghostscript release
 <li><a href="#Servers">Servers</a>
 <ul>
 <li><a href="#Development_files">Development sources and bug reports</a>
-<li><a href="#Distributions">Distributions</a>
+<li><a href="#Distribution">Distribution</a>
 </ul>
-<li><a href="#Adding_or_removing_files">Adding or removing files</a>
 <li><a href="#Making_distributions">Making distributions</a>
 <ul>
 <li><a href="#Preparing_source">Preparing the source code</a>
 <li><a href="#Testing">Testing</a>
-<ul>
 <li><a href="#Testing_on_Windows">Testing on Windows</a>
-</ul>
 <li><a href="#Finishing_up">Finishing up</a>
-<ul>
-<li><a href="#Tester_or_beta">Tester or beta distributions</a>
+<li><a href="#Beta_distributions">Beta distributions</a>
 <li><a href="#Public_releases">Public releases</a>
-</ul>
 </ul>
 <li><a href="#After_releasing">After releasing</a>
 <li><a href="#GNU_releases">GNU Ghostscript releases</a>
@@ -57,7 +50,7 @@ How to prepare a Ghostscript release
 <!-- [1.3 begin hint] ====================================================== -->
 
 <p>For other information, see the <a href="Readme.htm">Ghostscript
-overview</a> and the instructions on how to <a href="Build.htm">build
+overview</a> and the instructions on how to <a href="Make.htm">build
 Ghostscript</a>.
 
 <!-- [1.3 end hint] ======================================================== -->
@@ -68,16 +61,17 @@ Ghostscript</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h1><a name="Introduction"></a>Introduction</h1>
+<h2><a name="Introduction"></a>Introduction</h2>
 
 <p>
-This document describes the process that Aladdin Enterprises used to make
-new Ghostscript releases.  As time goes on, it will become a more suitable
-document for others wishing to prepare releases for distribution.  Please
-note that although the <a href="Public.htm">Aladdin Free Public License</a>
-allows anyone to prepare and distribute releases in accordance with its
-terms and conditions, this document is really meant only for developers
-working closely with artofcode LLC, the copyright holder of Ghostscript.
+This document describes the process that artofcode LLC, the copyright holder
+of Ghostscript, uses for making new Ghostscript releases.  As time goes on,
+it will become a more suitable document for others wishing to prepare
+releases for distribution.  Please note that although the <a
+href="Public.htm">Aladdin Free Public License</a> allows anyone to prepare
+and distribute releases in accordance with its terms and conditions, this
+document is really meant only for developers working closely with artofcode
+LLC.
 
 <p>
 This document is primarily about AFPL Ghostscript releases.  See the
@@ -115,7 +109,7 @@ beginning of the file).
 
 </ul>
 
-<h1><a name="Servers"></a>Servers</h1>
+<h2><a name="Servers"></a>Servers</h2>
 
 <p>
 The AFPL Ghostscript files are maintained on sites accessible to the
@@ -123,70 +117,47 @@ public.  One specific site hosts the active CVS repository for code, data,
 and documentation, and the bug report data base; several sites offer
 distributions with version numbers, intended for wider distribution.
 
-<h2><a name="Development_files"></a>Development sources and bug reports</h2>
+<h3><a name="Development_files"></a>Development sources and bug reports</h3>
 
 <p>
 The primary repository for AFPL Ghostscript is SourceForge (<a
-href="http://sourceforge.net"><tt>http://sourceforge.net</tt></a>).  Please
+href="http://sourceforge.net/"
+class="offsite">http://sourceforge.net/</a>). Please
 read the SourceForge AFPL Ghostscript home page (<a
-href=http://ghostscript.sourceforge.net><tt>http://ghostscript.sourceforge.net</tt></a>)
+href="http://sourceforge.net/projects/ghostscript/" 
+class="offsite">http://sourceforge.net/projects/ghostscript/</a>)
 first.  CVS access information is available at <a
-href="http://sourceforge.net/cvs/?group_id=1897"><tt>http://sourceforge.net/cvs/?group_id=1897</tt></a>.
+href="http://sourceforge.net/cvs/?group_id=1897" 
+class="offsite">http://sourceforge.net/cvs/?group_id=1897</a>.
 
-<h2><a name="Distributions"></a>Distributions</h2>
+<h3><a name="Distribution"></a>Distribution</h3>
 
 <p>
-Both stable and development releases are available from
-<blockquote><pre>
+Stable, beta, and development releases are all available from
+<blockquote>
 <a
-href="http://sourceforge.net/project/filelist.php?group_id=1897">http://sourceforge.net/project/filelist.php?group_id=1897</a>
-</pre></blockquote>
+href="http://sourceforge.net/project/showfiles.php?group_id=1897" 
+class="offsite">http://sourceforge.net/project/showfiles.php?group_id=1897</a>
+</blockquote>
 
 <p>
 Stable releases are also distributed from
-<blockquote><pre>
+
+<blockquote>
 <a
-href="ftp://ftp.cs.wisc.edu/ghost/aladdin/">ftp://ftp.cs.wisc.edu/ghost/aladdin/</a>
-</pre></blockquote>
+href="ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/AFPL/" 
+class="offsite">ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/AFPL/</a>
+</blockquote>
 
 <p>
 Development releases are also distributed from
-<blockquote><pre>
-<a href="ftp://ftp.cs.wisc.edu/ghost/aladdin/test/">ftp://ftp.cs.wisc.edu/ghost/aladdin/test/</a>
-</pre></blockquote>
 
-<h1><a name="Adding_or_removing_files"></a>Adding or removing files</h1>
+<blockquote>
+<a href="ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/AFPL/test/" 
+class="offsite">ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/AFPL/test/</a>
+</blockquote>
 
-<p>
-When adding or removing files, don't forget to invoke <b><tt>cvs
-add</tt></b> or <b><tt>cvs rm</tt></b>.
-
-<p>
-When adding or removing files other than .c or .h: If the files will be used
-at runtime, check the install list in <b><tt>unixinst.mak</tt></b>.
-
-<p>
-When adding .c files, update the relevant <b><tt>.mak</tt></b> file (usually
-<b><tt>devs.mak</tt></b>, <b><tt>int.mak</tt></b>, or
-<b><tt>lib.mak</tt></b>).
-
-<p>
-When adding operators, or adding or changing filters, update
-<b><tt>doc/Language.htm</tt></b> if desired.
-
-<p>
-When adding .h files, add a _h definition in the appropriate
-<b><tt>.mak</tt></b> file.
-
-<p>
-When adding or changing fonts, update <b><tt>lib/Fontmap.GS</tt></b>,
-<b><tt>fonts.mak</tt></b>, and possibly the compiled fonts in
-<b><tt>gs.mak</tt></b> and the examples in <b><tt>doc/Fonts.htm</tt></b>.
-
-<p>
-When adding .ps files, update <b><tt>doc/Psfiles.htm</tt></b>.
-
-<h1><a name="Making_distributions"></a>Making distributions</h1>
+<h2><a name="Making_distributions"></a>Making distributions</h2>
 
 <p>
 This document only discusses source distributions.  Source distributions
@@ -205,8 +176,9 @@ the <b><tt>toolbin/</tt></b> directory.  You will probably find it
 convenient to include this directory in the PATH, but the instructions below
 don't assume that you have done this.  To run the scripts, you will need
 reasonably current versions of Tcl, freely available from Scriptics (<a
+class="offsite" 
 href="http://www.scriptics.com"><tt>http://www.scriptics.com</tt></a>), and
-Python, freely available from <a
+Python, freely available from <a class="offsite"
 href="http://www.python.org"><tt>http://www.python.org</tt></a>.
 
 <p>
@@ -220,7 +192,7 @@ files for your environment.
 <b><tt>beta.msg</tt></b> - the announcement message for the release
 </pre></blockquote>
 
-<h2><a name="Preparing_source"></a>Preparing the source code</h2>
+<h3><a name="Preparing_source"></a>Preparing the source code</h3>
 
 <p>
 Update references to the date:
@@ -239,8 +211,9 @@ closed bug and the list of open bugs.
 
 <p>
 Check in <b><tt>gscdef.c</tt></b> that the definition of
-<b><tt>GS_PRODUCT</tt></b> includes the appropriate one of "TESTER RELEASE",
-"BETA RELEASE", or neither, and does not include "CVS PRE-RELEASE".
+<b><tt>GS_PRODUCT</tt></b> includes the appropriate one of "DEVELOPMENT
+RELEASE", "BETA RELEASE", or neither, and does not include "CVS
+PRE-RELEASE".
 
 <p>
 Check for patched configuration parameters, <b><tt>#define TEST</tt></b>s,
@@ -265,6 +238,7 @@ right information is in the following places:
 <li>revision date in <b><tt>man/*.1</tt></b>, <b><tt>doc/*.htm</tt></b>,
 <b><tt>version.mak</tt></b>, <b><tt>doc/gs-vms.hlp</tt></b>
 <li>copyright year (if necessary) in <b><tt>gscdef.c</tt></b>
+<li>third-party library version number in <b><tt>*.mak</tt></b>
 </ul>
 
 <p>
@@ -292,7 +266,16 @@ running:
 toolbin/gsmake.tcl check
 </pre></blockquote>
 
-<h2><a name="Testing"></a>Testing</h2>
+<p>
+Check that all source and .ps files are documented at least minimally by
+running:
+
+<blockquote><pre>
+toolbin/hrefcov.tcl +src
+toolbin/hrefcov.tcl +lib
+</pre></blockquote>
+
+<h3><a name="Testing"></a>Testing</h3>
 
 <p>
 Edit the makefile (presumably <b><tt>unix-gcc.mak</tt></b>) to set
@@ -361,7 +344,7 @@ to ensure the repository is up to date.
 Execute
 
 <blockquote><pre>
-toolbin/cvs2hist.py -v #.#[#] > doc/Changes.htm
+toolbin/cvs2hist.py -v #.## > doc/Changes.htm
 </pre></blockquote>
 
 <p>
@@ -406,18 +389,18 @@ This creates the files
 <b><tt>ghostscript-#.##gnu.tar.gz</tt></b> (GPL'ed files)
 </pre></blockquote>
 
-<h2><a name="Testing_on_Windows"></a>Testing on Windows</h2>
+<h3><a name="Testing_on_Windows"></a>Testing on Windows</h3>
 
 <p>
 For Windows testing, you will need, in addition to the files listed
-under <a href="Source_distributions">"Source distributions"</a> above:
+under "<a href="#Preparing_source">Preparing the source</a>" above:
 <blockquote><pre>
 <b><tt>toolbin/makewin</tt></b> (link to <b><tt>makeset.tcl</tt></b>)
 </pre></blockquote>
 
 <p>
-The following procedures are very Aladdin-specific; they rely on a large
-number of MS-DOS batch scripts that are not discussed here.
+The following procedures rely on a large number of MS-DOS batch scripts that
+are not discussed here: they are unlikely to be generally useful.
 
 <p>
 Mount the Windows partition on <b><tt>/c</tt></b>, and create the
@@ -444,7 +427,7 @@ gs###
 <p>
 The <b><tt>gs###.bat</tt></b> script creates some necessary directories,
 sets up <b><tt>PATH</tt></b> and <b><tt>GS_LIB</tt></b> for testing, and
-makes the <b><tt>gs#.#[#]</tt></b> directory current.
+makes the <b><tt>gs#.##</tt></b> directory current.
 
 <p>
 Build with the Borland compiler:
@@ -488,7 +471,7 @@ Boot back into Linux.  If testing in Windows revealed problems, edit the
 source files as necessary, and go back to <a
 href="#Preparing_source">"Preparing the source code."</a>
 
-<h2><a name="Finishing_up"></a>Finishing up</h2>
+<h3><a name="Finishing_up"></a>Finishing up</h3>
 
 <p>
 If you are maintaining local master copies, execute
@@ -505,7 +488,7 @@ the archives to it.
 Tag the source files with the release number by executing
 
 <blockquote><pre>
-cvs tag gs#_#[#]
+cvs tag gs#_##
 </pre></blockquote
 
 <p>
@@ -520,20 +503,20 @@ source release, not the current date.
 
 <p>
 If <b><tt>ansi2knr.c</tt></b> has changed, put it on
-<b><tt>ftp://ftp.cs.wisc.edu/ghost/ansi2knr.c</tt></b>.
+<b><tt>ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/ansi2knr.c</tt></b>.
 
 <p>
 If <b><tt>doc/C-style.htm</tt></b> has changed, put it on
-<b><tt>ftp://ftp.cs.wisc.edu/ghost/aladdin/C-style.htm</tt></b>.
+<b><tt>ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/AFPL/C-style.htm</tt></b>.
 
-<h3><a name="Tester_or_beta"></a>Tester or beta distributions</h3>
+<h3><a name="Beta_distributions"></a>Beta distributions</h3>
 
 <p>
 Do the steps for distributions in general.
 
 <p>
 Upload <b><tt>ghostscript-#.##.tar.*</tt></b> to
-<b><tt>ftp://ftp.cs.wisc.edu/ghost/aladdin/test</tt></b>.
+<b><tt>ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/AFPL/test</tt></b>.
 
 <p>
 Construct the e-mail announcement by editing <b><tt>beta.msg</tt></b>.
@@ -553,15 +536,72 @@ and "new features" and "known problems" lists in
 Do the steps for distributions in general.
 
 <p>
+Create a directory at
+<b><tt>ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/AFPL/gs###/</tt></b>.  In that
+directory, store the following files:
+
+<ul>
+
+<li>Standard distribution files:
+
+<blockquote><pre>
+<b><tt>ghostscript-#.##.tar.gz</tt></b>
+<b><tt>ghostscript-#.##.tar.bz2</tt></b>
+</pre></blockquote>
+
+<li>MS Windows source and executables:
+
+<blockquote><pre>
+<b><tt>gs###src.zip</tt></b>
+<b><tt>gs###w32.exe</tt></b>
+<b><tt>gs###w32.zip</tt></b>
+</pre></blockquote>
+
+<li>Third-party libraries, as links (upload these if not installed), where
+<b><tt>$$$</tt></b> et al. refer to the version number of the library, which
+should be the latest compatible release of the library and must be consistent
+with the values of <b><tt>JVERSION</tt></b> and <b><tt>PVERSION</tt></b> in 
+the makefiles:
+
+<blockquote><pre>
+<b><tt>jpegsrc.v$$.tar.gz</tt></b> -> <b><tt>../../3rdparty/jpegsrc.v$$.tar.gz</tt></b>
+<b><tt>libpng-$.$.$.tar.gz</tt></b> -> <b><tt>../../3rdparty/libpng-$.$.$.tar.gz</tt></b>
+<b><tt>zlib-$.$.$.tar.gz</tt></b> -> <b><tt>../../3rdparty/zlib-$.$.$.tar.gz</tt></b>
+<b><tt>jpegsr$$.zip</tt></b> -> <b><tt>../../3rdparty/jpegsr$$.zip</tt></b>
+<b><tt>lpng$$$.zip</tt></b> -> <b><tt>../../3rdparty/lpng$$$.zip</tt></b>
+<b><tt>zlib$$$.zip</tt></b> -> <b><tt>../../3rdparty/zlib$$$.zip</tt></b>
+</pre></blockquote>
+
+In any case, the names of the links in the distribution directory should reflect
+the original name of the upstream file.
+
+<li>Fonts, where <b><tt>$.$$</tt></b> refers to the most recent version
+number of the fonts:
+
+<blockquote><pre>
+<b><tt>ghostscript-fonts-other-$.$.tar.gz</tt></b> -> <b><tt>../fonts/ghostscript-fonts-other-$.$.tar.gz</tt></b>
+<b><tt>ghostscript-fonts-std-$.$.tar.gz</tt></b> -> <b><tt>../fonts/ghostscript-fonts-std-$.$.tar.gz</tt></b>
+</pre></blockquote>
+
+</ul>
+
+<p>
+(Note that the link names are somewhat inconsistent: some of them retain the
+version number of the file being referenced, and some of them use the
+Ghostscript version number.  This is a historical artifact that might be
+changed someday.)
+
+<p>
 E-mail the release announcement using:
 <blockquote><pre>
 To: gs-announce
 </pre></blockquote>
 
 <p>
-Edit the Web pages on the Wisconsin server to reflect the new release.
+Edit the Web pages in cvs and commit to reflect the new release.
+The Wisconsin server should update automatically.
 
-<h1><a name="After_releasing"></a>After releasing</h1>
+<h2><a name="After_releasing"></a>After releasing</h2>
 
 <p>
 Update the version number by incrementing it:
@@ -583,14 +623,14 @@ In <b><tt>gscdef.c</tt></b>, edit the definition of
 <p>
 Edit <b><tt>doc/News.htm</tt></b> to remove all the content.
 
-<h1><a name="GNU_releases"></a>GNU Ghostscript releases</h1>
+<h2><a name="GNU_releases"></a>GNU Ghostscript releases</h2>
 
 <p>
 artofcode LLC re-releases each tested AFPL Ghostscript version with
 the GPL, as GNU Ghostscript, when the next tested AFPL Ghostscript
 version comes out.
 
-<h2><a name="GNU_code"></a>GNU code</h2>
+<h3><a name="GNU_code"></a>GNU code</h3>
 
 <p>
 To make a GNU Ghostscript release from AFPL Ghostscript release #.##, run
@@ -622,23 +662,23 @@ Ghostscript.
 
 <p>
 Upload the file <b><tt>/tmp/gnu-gs-#.##.tar.gz</tt></b> to
-<b><tt>ftp://ftp.cs.wisc.edu/ghost/gnu/gs#.##/</tt></b>.  Delete the file
+<b><tt>ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/gnu/gs#.##/</tt></b>.  Delete the file
 after uploading.
 
-<h2><a name="GNU_after_releasing"></a>After releasing (GNU)</h2>
+<h3><a name="GNU_after_releasing"></a>After releasing (GNU)</h3>
 
 <p>
 E-mail the full URL and the <b><tt>md5sum</tt></b> of the new archive(s) to
 <a href="mailto:ftp-upload@gnu.org"><tt>ftp-upload@gnu.org</tt></a>.
 
-<h1><a name="Fonts"></a>Fonts</h1>
+<h2><a name="Fonts"></a>Fonts</h2>
 
 <p>
 artofcode LLC distributes a package of the base 35 PostScript fonts, and a
 package of other miscellaneous fonts.  As with the Ghostscript code, each
-package is released both with the Aladdin License and with the GPL; however,
-unlike the Ghostscript code, artofcode releases these versions simultaneously
-rather than with a one-version delay.
+package is released both with the AFPL and with the GPL; however, unlike the
+Ghostscript code, artofcode releases these versions simultaneously rather
+than with a one-version delay.
 
 <p>
 To make the font packages, run the command
@@ -651,17 +691,17 @@ toolbin/makefonts #.##
 This creates the following files:
 
 <blockquote><pre>
-ghostscript-fonts-std-#.#[#].tar.gz
-ghostscript-fonts-other-#.#[#].tar.gz
-gnu-gs-fonts-std-#.#[#].tar.gz
-gnu-gs-fonts-other-#.#[#].tar.gz
+ghostscript-fonts-std-#.##.tar.gz
+ghostscript-fonts-other-#.##.tar.gz
+gnu-gs-fonts-std-#.##.tar.gz
+gnu-gs-fonts-other-#.##.tar.gz
 </pre></blockquote>
 
 <p>
-The first two of these use the Aladdin License, and should be uploaded to
-<b><tt>ftp://ftp.cs.wisc.edu/ghost/aladdin/fonts/</tt></b>.  The other two
+The first two of these use the AFPL, and should be uploaded to
+<b><tt>ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/AFPL/fonts/</tt></b>.  The other two
 use the GPL, and should be uploaded to
-<b><tt>ftp://ftp.cs.wisc.edu/ghost/gnu/fonts/</tt></b>.  For the GNU
+<b><tt>ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/gnu/fonts/</tt></b>.  For the GNU
 release, also see <a href="#GNU_after_releasing">"After releasing
 (GNU)"</a>.
 
@@ -670,22 +710,18 @@ release, also see <a href="#GNU_after_releasing">"After releasing
 <!-- [3.0 begin visible trailer] =========================================== -->
 <hr>
 
-<font size=2>
-<p> Portions Copyright  &copy; 2001 artofcode LLC.
-<p> Portions Copyright  &copy; 1996, 2001 Artifex Software Inc.
-<p> Portions Copyright  &copy; 1988, 2000 Aladdin Enterprises.
-<p> This software is based in part on the work of the Independent JPEG Group.
-All Rights Reserved.
+<p>
+<small>Copyright &copy; 1999, 2000 Aladdin Enterprises.  All rights
+reserved.</small>
 
-<p> This software is distributed under license and may not be copied, modified
-or distributed except as expressly authorized under the terms of that
-license.  Refer to licensing information at http://www.artifex.com/ or
-contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-San Rafael, CA  94903, (415)492-9861, for further information.
- 
-Artifex version 6.50
+<p>
+<small>This file is part of AFPL Ghostscript.  See the <a
+href="Public.htm">Aladdin Free Public License</a> (the "License") for full
+details of the terms of using, copying, modifying, and redistributing
+AFPL Ghostscript.</small>
 
-</font>
+<p>
+<small>Ghostscript version 7.00, 8 April 2001
 
 <!-- [3.0 end visible trailer] ============================================= -->
 

@@ -1,8 +1,10 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
 <title>ps2pdf: PostScript-to-PDF converter</title>
 <!-- $RCSfile$ $Revision$ -->
 <!-- Originally: ps2pdf.txt -->
+<link rel="stylesheet" type="text/css" href="gs.css" title="Ghostscript Style">
 </head>
 
 <body>
@@ -10,11 +12,7 @@
 
 <!-- [1.1 begin headline] ================================================== -->
 
-<table width="100%" border="0">
-<tr><th align="center" bgcolor="#CCCC00"><font size=6>
-<b><tt>ps2pdf</tt></b>: PostScript-to-PDF converter
-</font>
-</table>
+<h1><tt>ps2pdf</tt>: PostScript-to-PDF converter</h1>
 
 <!-- [1.1 end headline] ==================================================== -->
 
@@ -47,7 +45,7 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h1><a name="Overview"></a>Overview</h1>
+<h2><a name="Overview"></a>Overview</h2>
 
 <b><tt>ps2pdf</tt></b> is a work-alike for nearly all the functionality (but
 not the user interface) of Adobe's Acrobat<small><sup>TM</sup></small>
@@ -66,7 +64,7 @@ Ghostscript as we distribute it.
 
 <hr>
 
-<h1><a name="Usage"></a>Usage</h1>
+<h2><a name="Usage"></a>Usage</h2>
 
 <p>
 The usage for <b><tt>ps2pdf</tt></b> is
@@ -128,7 +126,7 @@ executable.
 
 <hr>
 
-<h1><a name="Options"></a>Options</h1>
+<h2><a name="Options"></a>Options</h2>
 
 <p>
 The <em>options</em> in the command line may include any switches that may
@@ -190,64 +188,101 @@ wide variety of uses, possibly at the expense of a larger output file.
 <b><tt>ps2pdf</tt></b> recognizes all of the Acrobat Distiller 4 parameters
 documented in
 <a href="http://partners.adobe.com/asn/developer/acrosdk/DOCS/distparm.pdf">
-Adobe Technical Note #5151</a>.  The following have their proper effect,
-except as noted:
+Adobe Technical Note #5151</a>.  Cells in the table containing '=' mean that
+the value of the parameter is the same as in the "default" column.
 
 <blockquote><table cellpadding=0 cellspacing=0>
 <tr valign=bottom>
 	<th align=left>Parameter name
-	<td>&nbsp;&nbsp;
-	<th align=left>Initial value
 	<td>&nbsp;&nbsp;&nbsp;&nbsp;
 	<th align=left>Notes
-<tr>	<td colspan=5><hr>
-<tr valign=top><td><b><tt>ASCII85EncodePages</tt></b><td><td>false
-<tr valign=top><td><b><tt>AlwaysEmbed</tt></b><td><td>[]
-<tr valign=top><td><b><tt>AutoFilterColorImages</tt></b><td><td>true<td><td>1
-<tr valign=top><td><b><tt>AutoFilterGrayImages</tt></b><td><td>true<td><td>1
-<tr valign=top><td><b><tt>AutoRotatePages</tt></b><td><td>/None<td><td>
-<tr valign=top><td><b><tt>ColorACSImageDict</tt></b><td><td><< >>
-<tr valign=top><td><b><tt>ColorDownsampleThreshold</tt></b><td><td>1.5
-<tr valign=top><td><b><tt>ColorImageDepth</tt></b><td><td>-1
-<tr valign=top><td><b><tt>ColorImageDict</tt></b><td><td><< >>
-<tr valign=top><td><b><tt>ColorImageDownsampleType</tt></b><td><td>/Subsample<td><td>3
-<tr valign=top><td><b><tt>ColorImageResolution</tt></b><td><td>72
-<tr valign=top><td><b><tt>CompatibilityLevel</tt></b><td><td>1.3
-<tr valign=top><td><b><tt>CompressPages</tt></b><td><td>true
-<tr valign=top><td><b><tt>ConvertCMYKImagesToRGB</tt></b><td><td>true
-<tr valign=top><td><b><tt>CoreDistVersion</tt></b><td><td>4000
-<tr valign=top><td><b><tt>DefaultRenderingIntent</tt></b><td><td>/Default
-<tr valign=top><td><b><tt>DownsampleColorImages</tt></b><td><td>false
-<tr valign=top><td><b><tt>DownsampleGrayImages</tt></b><td><td>false
-<tr valign=top><td><b><tt>DownsampleMonoImages</tt></b><td><td>false
-<tr valign=top><td><b><tt>EmbedAllFonts</tt></b><td><td>true
-<tr valign=top><td><b><tt>EncodeColorImages</tt></b><td><td>true
-<tr valign=top><td><b><tt>EncodeGrayImages</tt></b><td><td>true
-<tr valign=top><td><b><tt>EncodeMonoImages</tt></b><td><td>true
-<tr valign=top><td><b><tt>GrayACSImageDict</tt></b><td><td><< >>
-<tr valign=top><td><b><tt>GrayDownsampleThreshold</tt></b><td><td>1.5
-<tr valign=top><td><b><tt>GrayImageDepth</tt></b><td><td>-1
-<tr valign=top><td><b><tt>GrayImageDict</tt></b><td><td><< >>
-<tr valign=top><td><b><tt>GrayImageDownsampleType</tt></b><td><td>/Subsample<td><td>3
-<tr valign=top><td><b><tt>GrayImageResolution</tt></b><td><td>72
-<tr valign=top><td><b><tt>LockDistillerParams</tt></b><td><td>false
-<tr valign=top><td><b><tt>LZWEncodePages</tt></b><td><td>false<td><td>2
-<tr valign=top><td><b><tt>MaxSubsetPct</tt></b><td><td>35
-<tr valign=top><td><b><tt>MonoDownsampleThreshold</tt></b><td><td>1.5
-<tr valign=top><td><b><tt>MonoImageDepth</tt></b><td><td>-1
-<tr valign=top><td><b><tt>MonoImageDict</tt></b><td><td><< >>
-<tr valign=top><td><b><tt>MonoImageDownsampleType</tt></b><td><td>/Subsample
-<tr valign=top><td><b><tt>MonoImageFilter</tt></b><td><td>/CCITTFaxEncode
-<tr valign=top><td><b><tt>MonoImageResolution</tt></b><td><td>300
-<tr valign=top><td><b><tt>NeverEmbed</tt></b><td><td>[]
-<tr valign=top><td><b><tt>OPM</tt></b><td><td>0
-<tr valign=top><td><b><tt>PreserveHalftoneInfo</tt></b><td><td>false
-<tr valign=top><td><b><tt>PreserveOverprintSettings</tt></b><td><td>false
-<tr valign=top><td><b><tt>TransferFunctionInfo</tt></b><td><td>/Apply<td><td>4
-<tr valign=top><td><b><tt>SubsetFonts</tt></b><td><td>true
-<tr valign=top><td><b><tt>UCRandBGInfo</tt></b><td><td>/Remove
-<tr valign=top><td><b><tt>UseFlateCompression</tt></b><td><td>true
+	<td>&nbsp;&nbsp;
+	<th align=left>default
+	<td>&nbsp;&nbsp;
+	<th align=left>screen
+	<td>&nbsp;&nbsp;
+	<th align=left>printer
+	<td>&nbsp;&nbsp;
+	<th align=left>prepress
+<tr>	<td colspan=11><hr>
+<tr valign=top><td><b><tt>ASCII85EncodePages</tt></b><td><td><td><td>false<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>AlwaysEmbed</tt></b><td><td><td><td>[]<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>AntiAliasColorImages</tt></b><td><td>(0)<td><td>false<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>AntiAliasGrayImages</tt></b><td><td>(0)<td><td>false<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>AntiAliasMonoImages</tt></b><td><td>(0)<td><td>false<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>AutoFilterColorImages</tt></b><td><td>(1)<td><td>true<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>AutoFilterGrayImages</tt></b><td><td>(1)<td><td>true<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>AutoPositionEPSFiles</tt></b><td><td>(0)<td><td>true<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>AutoRotatePages</tt></b><td><td><td><td>/PageByPage<td><td>/PageByPage<td><td>/None<td><td>/None
+<tr valign=top><td><b><tt>Binding</tt></b><td><td>(0)<td><td>/Left<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>CalCMYKProfile</tt></b><td><td>(0)<td><td>()<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>CalGrayProfile</tt></b><td><td>(0)<td><td>()<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>CalRGBProfile</tt></b><td><td>(0)<td><td>()<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>CannotEmbedFontPolicy</tt></b><td><td>(0)<td><td>/Warning<td><td>/Warning<td><td>/Warning<td><td>/Error
+<tr valign=top><td><b><tt>ColorACSImageDict</tt></b><td><td><td><td>(note 7)<td><td>(note 7)<td><td>(note 8)<td><td>(note 9)
+<tr valign=top><td><b><tt>ColorConversionStrategy</tt></b><td><td>(0,6)<td><td>/LeaveColorUnchanged<td><td>/sRGB<td><td>/UseDeviceIndependentColor<td><td>/LeaveColorUnchanged
+<tr valign=top><td><b><tt>ColorImageDepth</tt></b><td><td><td><td>-1<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>ColorImageDict</tt></b><td><td><td><td>(note 7)<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>ColorImageFilter</tt></b><td><td><td><td>/DCTEncode<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>ColorImageDownsampleThreshold</tt></b><td><td><td><td>1.5<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>ColorImageDownsampleType</tt></b><td><td>(3)<td><td>/Subsample<td><td>/Average<td><td>/Bicubic<td><td>/Bicubic
+<tr valign=top><td><b><tt>ColorImageResolution</tt></b><td><td><td><td>72<td><td>72<td><td>300<td><td>300
+<tr valign=top><td><b><tt>CompatibilityLevel</tt></b><td><td><td><td>1.3<td><td>1.2<td><td>1.3<td><td>1.3
+<tr valign=top><td><b><tt>CompressPages</tt></b><td><td><td><td>true<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>ConvertCMYKImagesToRGB</tt></b><td><td><td><td>true<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>ConvertImagesToIndexed</tt></b><td><td>(0)<td><td>true<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>CoreDistVersion</tt></b><td><td><td><td>4000<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>CreateJobTicket</tt></b><td><td>(0)<td><td>false<td><td>false<td><td>true<td><td>true
+<tr valign=top><td><b><tt>DefaultRenderingIntent</tt></b><td><td><td><td>/Default<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>DetectBlends</tt></b><td><td>(0)<td><td>true<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>DoThumbnails</tt></b><td><td>(0)<td><td>false<td><td>false<td><td>false<td><td>true
+<tr valign=top><td><b><tt>DownsampleColorImages</tt></b><td><td><td><td>false<td><td>true<td><td>false<td><td>false
+<tr valign=top><td><b><tt>DownsampleGrayImages</tt></b><td><td><td><td>false<td><td>true<td><td>false<td><td>false
+<tr valign=top><td><b><tt>DownsampleMonoImages</tt></b><td><td><td><td>false<td><td>true<td><td>false<td><td>false
+<tr valign=top><td><b><tt>EmbedAllFonts</tt></b><td><td><td><td>true<td><td>false<td><td>true<td><td>true
+<tr valign=top><td><b><tt>EmitDSCWarnings</tt></b><td><td>(0)<td><td>false<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>EncodeColorImages</tt></b><td><td><td><td>true<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>EncodeGrayImages</tt></b><td><td><td><td>true<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>EncodeMonoImages</tt></b><td><td><td><td>true<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>EndPage</tt></b><td><td>(0)<td><td>-1<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>GrayACSImageDict</tt></b><td><td><td><td>(note 7)<td><td>(note 7)<td><td>(note 8)<td><td>=
+<tr valign=top><td><b><tt>GrayImageDepth</tt></b><td><td><td><td>-1<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>GrayImageDict</tt></b><td><td><td><td>(note 7)<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>GrayImageDownsampleThreshold</tt></b><td><td><td><td>1.5<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>GrayImageDownsampleType</tt></b><td><td>(3)<td><td>/Subsample<td><td>/Average<td><td>/Bicubic<td><td>/Bicubic
+<tr valign=top><td><b><tt>GrayImageFilter</tt></b><td><td><td><td>/DCTEncode<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>GrayImageResolution</tt></b><td><td><td><td>72<td><td>72<td><td>300<td><td>300
+<tr valign=top><td><b><tt>ImageMemory</tt></b><td><td>(0)<td><td>500000<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>LockDistillerParams</tt></b><td><td><td><td>false<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>LZWEncodePages</tt></b><td><td>(2)<td><td>false<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>MaxSubsetPct</tt></b><td><td><td><td>100<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>MonoImageDepth</tt></b><td><td><td><td>-1<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>MonoImageDict</tt></b><td><td><td><td><<K -1>><td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>MonoImageDownsampleThreshold</tt></b><td><td><td><td>1.5<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>MonoImageDownsampleType</tt></b><td><td><td><td>/Subsample<td><td>/Average<td><td>/Bicubic<td><td>/Bicubic
+<tr valign=top><td><b><tt>MonoImageFilter</tt></b><td><td><td><td>/CCITTFaxEncode<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>MonoImageResolution</tt></b><td><td><td><td>300<td><td>300<td><td>1200<td><td>1200
+<tr valign=top><td><b><tt>NeverEmbed</tt></b><td><td><td><td>[]<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>OPM</tt></b><td><td><td><td>1<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>Optimize</tt></b><td><td>(0,5)<td><td>false<td><td>true<td><td>true<td><td>true
+<tr valign=top><td><b><tt>ParseDSCComments</tt></b><td><td><td><td>true<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>ParseDSCCommentsForDocInfo</tt></b><td><td><td><td>true<td><td>false<td><td>true<td><td>true
+<tr valign=top><td><b><tt>PreserveCopyPage</tt></b><td><td>(0)<td><td>true<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>PreserveEPSInfo</tt></b><td><td>(0)<td><td>true<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>PreserveHalftoneInfo</tt></b><td><td><td><td>false<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>PreserveOPIComments</tt></b><td><td>(0)<td><td>false<td><td>false<td><td>true<td><td>true
+<tr valign=top><td><b><tt>PreserveOverprintSettings</tt></b><td><td><td><td>false<td><td>false<td><td>true<td><td>true
+<tr valign=top><td><b><tt>sRGBProfile</tt></b><td><td>(0)<td><td>()<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>StartPage</tt></b><td><td>(0)<td><td>1<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>SubsetFonts</tt></b><td><td><td><td>true<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>TransferFunctionInfo</tt></b><td><td>(4)<td><td>/Preserve<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>UCRandBGInfo</tt></b><td><td><td><td>/Remove<td><td>/Remove<td><td>/Preserve<td><td>/Preserve
+<tr valign=top><td><b><tt>UseFlateCompression</tt></b><td><td><td><td>true<td><td>=<td><td>=<td><td>=
+<tr valign=top><td><b><tt>UsePrologue</tt></b><td><td>(0)<td><td>false<td><td>=<td><td>=<td><td>=
 </table></blockquote>
+
+<p>
+(note 0) This parameter can be set and queried, but currently has no effect.
 
 <p>
 (note 1) <b><tt>AutoFilterxxxImages</tt></b> doesn't examine the image to
@@ -273,40 +308,9 @@ corresponding parameter is set to <b><tt>/Preserve</tt></b>, the function
 setting is also copied into the PDF file.
 
 <p>
-The following are defined and can be set and queried, but do not have any
-effect:
-
-<blockquote><table cellpadding=0 cellspacing=0>
-<tr valign=bottom>
-	<th align=left>Parameter name
-	<td>&nbsp;&nbsp;
-	<th align=left>Initial value
-	<td>&nbsp;&nbsp;&nbsp;&nbsp;
-	<th align=left>Notes
-<tr>	<td colspan=5><hr>
-<tr valign=top><td><b><tt>AntiAliasColorImages</tt></b><td><td>false
-<tr valign=top><td><b><tt>AntiAliasGrayImages</tt></b><td><td>false
-<tr valign=top><td><b><tt>AntiAliasMonoImages</tt></b><td><td>false
-<tr valign=top><td><b><tt>Binding</tt></b><td><td>/Left
-<tr valign=top><td><b><tt>CalCMYKProfile</tt></b><td><td>()
-<tr valign=top><td><b><tt>CalGrayProfile</tt></b><td><td>()
-<tr valign=top><td><b><tt>CalRGBProfile</tt></b><td><td>()
-<tr valign=top><td><b><tt>CannotEmbedFontPolicy</tt></b><td><td>/OK
-<tr valign=top><td><b><tt>ColorConversionStrategy</tt></b><td><td>/LeaveColorUnchanged
-<tr valign=top><td><b><tt>ConvertImagesToIndexed</tt></b><td><td>false
-<tr valign=top><td><b><tt>DetectBlends</tt></b><td><td>true
-<tr valign=top><td><b><tt>DoThumbnails</tt></b><td><td>false
-<tr valign=top><td><b><tt>EndPage</tt></b><td><td>-1
-<tr valign=top><td><b><tt>ImageMemory</tt></b><td><td>500000
-<tr valign=top><td><b><tt>Optimize</tt></b><td><td>false<td><td>5
-<tr valign=top><td><b><tt>PreserveOPIComments</tt></b><td><td>false
-<tr valign=top><td><b><tt>sRGBProfile</tt></b><td><td>()
-<tr valign=top><td><b><tt>StartPage</tt></b><td><td>1
-</table></blockquote>
-
-<p>
 (note 5) Optimization (linearization) is implemented with a separate
-program, <b><tt>pdfopt</tt></b> <em>input.pdf</em> <em>output.pdf</em>.
+program, <b><tt>pdfopt</tt></b> <em>input.pdf</em> <em>output.pdf</em>; the
+<b><tt>Optimize</tt></b> parameter has no effect.
 
 <p>
 (note 6) Currently, colors for images and shadings are left in the color
@@ -321,34 +325,34 @@ color space specified by <b><tt>ProcessColorModel</tt></b> rather than
 always to <b><tt>/DeviceRGB</tt></b>.
 
 <p>
-The following "job control" parameters are recognized, but have no effect:
+(note 7) The default image parameter dictionary is
+<blockquote><b><tt>
+<< /QFactor 0.9 /Blend 1 /HSamples [2 1 1 2] /VSamples [2 1 1 2] >>
+</tt></b></blockquote>
 
-<blockquote><table cellpadding=0 cellspacing=0>
-<tr valign=bottom>
-	<th align=left>Parameter name
-	<td>&nbsp;&nbsp;
-	<th align=left>Initial value
-<tr>	<td colspan=5><hr>
-<tr valign=top><td><b><tt>AutoPositionEPSFiles</tt></b><td><td>false
-<tr valign=top><td><b><tt>CreateJobTicket</tt></b><td><td>false
-<tr valign=top><td><b><tt>EmitDSCWarnings</tt></b><td><td>false
-<tr valign=top><td><b><tt>ParseDSCComments</tt></b><td><td>false
-<tr valign=top><td><b><tt>ParseDSCCommentsForDocInfo</tt></b><td><td>false
-<tr valign=top><td><b><tt>PreserveCopyPage</tt></b><td><td>false
-<tr valign=top><td><b><tt>PreserveEPSInfo</tt></b><td><td>false
-<tr valign=top><td><b><tt>UsePrologue</tt></b><td><td>false
-</table></blockquote>
+<p>
+(note 8) The printer ACS image parameter dictionary is
+<blockquote><b><tt>
+<< /QFactor 0.55 /Blend 1 /HSamples [2 1 1 2] /VSamples [2 1 1 2] >>
+</tt></b></blockquote>
+
+<p>
+(note 9) The prepress ACS image parameter dictionary is
+<blockquote><b><tt>
+<< /QFactor 0.25 /HSamples [1 1 1 1] /VSamples [1 1 1 1] >>
+</tt></b></blockquote>
 
 <hr>
 
-<h1><a name="Limitations"></a>Limitations</h1>
+<h2><a name="Limitations"></a>Limitations</h2>
 
 <p>
 <b><tt>ps2pdf</tt></b> will sometimes convert text to high-resolution
-bitmapped fonts rather than to embedded outline fonts.  Currently, this will
-always occur when the PostScript file uses CID-keyed or double-byte fonts,
-when the input file uses <b><tt>kshow</tt></b>, or in some cases if it uses
-fonts with non-standard encodings; it may occur in other cases as well.
+bitmapped fonts rather than to embedded outline fonts.  This will occur when
+the PostScript file uses Type 3, CIDFontType 1, or CIDFontType 4 fonts, or
+Type 0 fonts that reference any of these; it may also occur in some cases if
+the input file uses fonts with non-standard encodings, or in some other rare
+cases.
 
 <p>
 The PDF output always represents the colors of text and graphics in
@@ -391,7 +395,7 @@ these statements only apply when the input file is already a PDF 1.4 file.)
 
 <hr>
 
-<h1><a name="Problems"></a>Known problems</h1>
+<h2><a name="Problems"></a>Known problems</h2>
 
 <p>
 Distiller parameters should only be saved by <b><tt>save</tt></b> and
@@ -403,13 +407,6 @@ Changing the value of the <b><tt>CompressPages</tt></b> parameter after any
 marks have been made on the page may cause a crash.
 
 <p>
-If you select the <b><tt>pdfwrite</tt></b> driver from the command line
-(<b><tt>-sDEVICE=pdfwrite</tt></b>), rather than using one of the
-<b><tt>ps2pdf</tt></b> scripts, the output may contain embedded fonts that
-are lacking some required information and that Acrobat Reader will not
-accept.
-
-<p>
 If the input file downloads Type 1 fonts incrementally, the output file may
 contain embedded fonts with some information missing from the
 FontDescriptor, which may crash Acrobat Reader 4 or produce incorrect
@@ -417,8 +414,8 @@ character spacing.
 
 <hr>
 
-<h1><a name="Ps2pdf_vs_AD"></a>Comparison of <b><tt>ps2pdf</tt></b> and
-Acrobat Distiller</h1>
+<h2><a name="Ps2pdf_vs_AD"></a>Comparison of <b><tt>ps2pdf</tt></b> and
+Acrobat Distiller</h2>
 
 <p>
 According to users, the greatest benefit of <b><tt>ps2pdf</tt></b> is that
@@ -451,7 +448,7 @@ output, especially if the input file involves pattern fills.
 
 <p>
 Many users report that the combination of <b><tt>ps2pdf</tt></b> with
-Acrobat is superior to using a generic PostScript viewer
+Acrobat Reader is superior to using a generic PostScript viewer
 (<b><tt>psview</tt></b> or <b><tt>ghostview</tt></b>), particularly for
 documents with many pages where the navigational support in PDF files
 reduces the overhead involved in navigating conventional PostScript
@@ -459,7 +456,7 @@ documents.
 
 <hr>
 
-<h1><a name="Acknowledgments"></a>Acknowledgments</h1>
+<h2><a name="Acknowledgments"></a>Acknowledgments</h2>
 
 <p>
 Thanks to George N. White III &lt;<a href="mailto:aa056@chebucto.ns.ca">aa056@chebucto.ns.ca</a>&gt; of the Ocean
@@ -477,22 +474,18 @@ href="http://www.sil.org">http://www.sil.org</a>&gt; for help with testing
 <!-- [3.0 begin visible trailer] =========================================== -->
 <hr>
 
-<font size=2>
-<p> Portions Copyright  &copy; 2001 artofcode LLC.
-<p> Portions Copyright  &copy; 1996, 2001 Artifex Software Inc.
-<p> Portions Copyright  &copy; 1988, 2000 Aladdin Enterprises.
-<p> This software is based in part on the work of the Independent JPEG Group.
-All Rights Reserved.
+<p>
+<small>Copyright &copy; 1996, 2000 Aladdin Enterprises.  All rights
+reserved.</small>
 
-<p> This software is distributed under license and may not be copied, modified
-or distributed except as expressly authorized under the terms of that
-license.  Refer to licensing information at http://www.artifex.com/ or
-contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-San Rafael, CA  94903, (415)492-9861, for further information.
- 
-Artifex version 6.50
+<p>
+<small>This file is part of AFPL Ghostscript.  See the
+<a href="Public.htm">Aladdin Free Public License</a> (the "License") for
+full details of the terms of using, copying, modifying, and redistributing
+AFPL Ghostscript.</small>
 
-</font>
+<p>
+<small>Ghostscript version 7.00, 8 April 2001
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
