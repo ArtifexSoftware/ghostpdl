@@ -36,6 +36,7 @@ set_stdfiles(FILE * stdfiles[3])
 #include "gsutil.h"		/* for bytes_compare */
 #include "gxdevice.h"
 #include "gxalloc.h"
+#include "gzstate.h"
 #include "errors.h"
 #include "oper.h"
 #include "iconf.h"		/* for gs_init_* imports */
@@ -805,6 +806,21 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
      * alloc_restore_all will close dynamically allocated devices.
      */
     tempnames = gs_main_tempnames(minst);
+    /* 
+     * Close the "main" device, because it may need to write out
+     * data before destruction. pdfwrite needs so.
+     */
+    if (minst->init_done >= 1) {
+	if (i_ctx_p->pgs != NULL && i_ctx_p->pgs->device != NULL) {
+	    gx_device *pdev = i_ctx_p->pgs->device;
+	    int code = gs_closedevice(pdev);
+	    
+	    if (code < 0)
+		eprintf2("ERROR %d closing the device.\n", code, i_ctx_p->pgs->device->dname);
+	    if (exit_status == 0)
+		exit_status = code;
+	}
+    }
     /* Flush stdout and stderr */
     if (minst->init_done >= 2)
       gs_main_run_string(minst, 

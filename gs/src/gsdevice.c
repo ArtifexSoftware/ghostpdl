@@ -401,6 +401,12 @@ gs_setdevice_no_init(gs_state * pgs, gx_device * dev)
      * Just set the device, possibly changing color space but no other
      * device parameters.
      */
+    if (pgs->device != NULL && pgs->device->rc.ref_count == 1) {
+	int code = gs_closedevice(pgs->device);
+
+	if (code < 0)
+	    return code;
+    }
     rc_assign(pgs->device, dev, "gs_setdevice_no_init");
     gs_state_update_device(pgs);
     return pgs->overprint ? gs_do_set_overprint(pgs) : 0;
@@ -471,9 +477,9 @@ gs_closedevice(gx_device * dev)
 
     if (dev->is_open) {
 	code = (*dev_proc(dev, close_device))(dev);
+	dev->is_open = false;
 	if (code < 0)
 	    return_error(code);
-	dev->is_open = false;
     }
     return code;
 }
