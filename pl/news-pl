@@ -7,6 +7,17 @@ This file, NEWS-PL, describes the changes in the most recent releases of
 Aladdin's library code that is shared between PCL5, HP-GL/2, HP RTL, and PCL
 XL, in reverse chronological order.
 
+Version 1.19 (xx/xx/xx)
+=======================
+
+Changes:
+
+- plmain.c: Adds include gsstruct.h
+
+TODO:
+
+- update include dependency lists in pl.mak
+
 Version 1.18 (8/6/98)
 =====================
 

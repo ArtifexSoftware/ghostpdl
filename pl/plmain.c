@@ -12,6 +12,7 @@
 #include "gstypes.h"
 #include "gsmemory.h"
 #include "gsmalloc.h"
+#include "gsstruct.h"
 #include "gp.h"
 #include "gsmatrix.h"
 #include "gscdefs.h"
