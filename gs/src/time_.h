@@ -25,6 +25,7 @@
  * The HAVE_SYS_TIME_H switch in gconfig_.h reflects this.
  */
 #ifdef HAVE_SYS_TIME_H
+# include <time.h>
 #  include <sys/time.h>
 #  if defined(Plan9) || defined(M_UNIX) || defined(_IBMR2) || defined(_SEQUENT_)	/* Plan 9, SCO, AIX and Sequent's DYNIX/ptx need both time.h and sys/time.h! */
 #    include <time.h>
