@@ -98,12 +98,14 @@ private const gs_param_item_t pdf_param_items[] = {
 
   Create shared resources for Indexed (and other) color spaces
   Remember image XObject IDs for sharing
-  Remember image and pattern MD5 fingerprints for sharing
+  Remember image and pattern MD5 fingerprints for sharing -- see
+    CD-ROM from dhoff@margnat.com
   Merge font subsets?  (k/ricktest.ps, from rick@dgii.com re file output
     size ps2pdf vs. pstoedit)
   Convert DeviceRGB or DeviceCMYK images to DeviceGray if all gray?
     (see k/gomez/mmtp*.ps -- does AD really do this?)
   Minimize tables for embedded TT fonts (requires renumbering glyphs)
+  Clip off image data outside bbox of clip path?
 
   Acrobat Distiller 3
   -------------------
@@ -112,7 +114,7 @@ private const gs_param_item_t pdf_param_items[] = {
 
   Embed CID fonts
   Compress TT, CFF, CID, and Type 1 fonts (with lenIV = -1) if CompressPages
-  Compress forms, patterns, Type 3 fonts, and Cos streams
+  Compress forms, Type 3 fonts, and Cos streams
 
   ---- Image parameters ----
 
