@@ -68,7 +68,7 @@ gs_private_st_ptrs1(st_gs_sampled_data_enum, gs_sampled_data_enum,
 private int cube_build_func0(const ref * pdict,
 	gs_function_Sd_params_t * params, gs_memory_t *mem);
 private int sampled_data_setup(i_ctx_t *i_ctx_p, gs_function_t *pfn,
-	const ref * pproc, int (*finish_proc)(P1(i_ctx_t *)),
+	const ref * pproc, int (*finish_proc)(i_ctx_t *),
 	gs_memory_t * mem);
 private int sampled_data_sample(i_ctx_t *i_ctx_p);
 private int sampled_data_continue(i_ctx_t *i_ctx_p);
@@ -379,7 +379,7 @@ fail:
  */
 private int
 sampled_data_setup(i_ctx_t *i_ctx_p, gs_function_t *pfn,
-	const ref * pproc, int (*finish_proc)(P1(i_ctx_t *)), gs_memory_t * mem)
+	const ref * pproc, int (*finish_proc)(i_ctx_t *), gs_memory_t * mem)
 {
     gs_sampled_data_enum *penum;
     int i;

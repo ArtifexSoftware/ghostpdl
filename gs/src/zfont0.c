@@ -42,13 +42,13 @@
 #include "store.h"
 
 /* Imported from zfcmap.c */
-int ztype0_get_cmap(P4(const gs_cmap_t ** ppcmap, const ref * pfdepvector,
-		       const ref * op, gs_memory_t *imem));
+int ztype0_get_cmap(const gs_cmap_t ** ppcmap, const ref * pfdepvector,
+		    const ref * op, gs_memory_t *imem);
 
 /* Forward references */
 private font_proc_define_font(ztype0_define_font);
 private font_proc_make_font(ztype0_make_font);
-private int ensure_char_entry(P5(i_ctx_t *, os_ptr, const char *, byte *, int));
+private int ensure_char_entry(i_ctx_t *, os_ptr, const char *, byte *, int);
 
 /* <string|name> <font_dict> .buildfont0 <string|name> <font> */
 /* Build a type 0 (composite) font. */

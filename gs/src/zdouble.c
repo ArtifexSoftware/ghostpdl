@@ -36,10 +36,10 @@
  */
 
 /* Forward references */
-private int double_params_result(P3(os_ptr, int, double *));
-private int double_params(P3(os_ptr, int, double *));
-private int double_result(P3(i_ctx_t *, int, double));
-private int double_unary(P2(i_ctx_t *, double (*)(P1(double))));
+private int double_params_result(os_ptr, int, double *);
+private int double_params(os_ptr, int, double *);
+private int double_result(i_ctx_t *, int, double);
+private int double_unary(i_ctx_t *, double (*)(double));
 
 #define dbegin_unary()\
 	os_ptr op = osp;\
@@ -153,7 +153,7 @@ zdtruncate(i_ctx_t *i_ctx_p)
 /* ------ Transcendental functions ------ */
 
 private int
-darc(i_ctx_t *i_ctx_p, double (*afunc)(P1(double)))
+darc(i_ctx_t *i_ctx_p, double (*afunc)(double))
 {
     dbegin_unary();
     return double_result(i_ctx_p, 1, (*afunc)(num) * radians_to_degrees);
@@ -212,7 +212,7 @@ zdexp(i_ctx_t *i_ctx_p)
 }
 
 private int
-dlog(i_ctx_t *i_ctx_p, double (*lfunc)(P1(double)))
+dlog(i_ctx_t *i_ctx_p, double (*lfunc)(double))
 {
     dbegin_unary();
     if (num <= 0.0)
@@ -530,7 +530,7 @@ double_result(i_ctx_t *i_ctx_p, int count, double result)
 
 /* Apply a unary function to a double operand. */
 private int
-double_unary(i_ctx_t *i_ctx_p, double (*func)(P1(double)))
+double_unary(i_ctx_t *i_ctx_p, double (*func)(double))
 {
     dbegin_unary();
     return double_result(i_ctx_p, 1, (*func)(num));

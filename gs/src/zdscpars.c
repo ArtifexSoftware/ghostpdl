@@ -103,7 +103,7 @@ typedef struct dsc_data_s {
 } dsc_data_t;
 
 /* Structure descriptors */
-private void dsc_finalize(P1(void *vptr));
+private void dsc_finalize(void *vptr);
 gs_private_st_simple_final(st_dsc_data_t, dsc_data_t, "dsc_data_struct", dsc_finalize);
 
 /* Define the key name for storing the instance pointer in a dictionary. */
@@ -349,7 +349,7 @@ dsc_viewing_orientation(gs_param_list *plist, const CDSC *pData)
 typedef struct cmd_list_s {
     int code;			/* Russell's DSC parser code (see dsc.h) */
     const char *comment_name;	/* A name to be returned to postscript caller */
-    int (*dsc_proc) (P2(gs_param_list *, const CDSC *));
+    int (*dsc_proc) (gs_param_list *, const CDSC *);
 				/* A routine for transferring parameter values
 				   from C data structure to postscript dictionary
 				   key/value pairs. */

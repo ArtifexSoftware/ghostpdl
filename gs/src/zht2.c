@@ -31,13 +31,12 @@
 #include "store.h"
 
 /* Forward references */
-private int dict_spot_params(P4(const ref *, gs_spot_halftone *,
-				ref *, ref *));
-private int dict_spot_results(P3(i_ctx_t *, ref *, const gs_spot_halftone *));
-private int dict_threshold_params(P3(const ref *, gs_threshold_halftone *,
-				     ref *));
-private int dict_threshold2_params(P4(const ref *, gs_threshold2_halftone *,
-				      ref *, gs_memory_t *));
+private int dict_spot_params(const ref *, gs_spot_halftone *, ref *, ref *);
+private int dict_spot_results(i_ctx_t *, ref *, const gs_spot_halftone *);
+private int dict_threshold_params(const ref *, gs_threshold_halftone *,
+				  ref *);
+private int dict_threshold2_params(const ref *, gs_threshold2_halftone *,
+				   ref *, gs_memory_t *);
 
 /* Dummy spot function */
 private float
@@ -47,8 +46,8 @@ spot1_dummy(floatp x, floatp y)
 }
 
 /* <dict> <dict5> .sethalftone5 - */
-private int sethalftone_finish(P1(i_ctx_t *));
-private int sethalftone_cleanup(P1(i_ctx_t *));
+private int sethalftone_finish(i_ctx_t *);
+private int sethalftone_cleanup(i_ctx_t *);
 private int
 zsethalftone5(i_ctx_t *i_ctx_p)
 {

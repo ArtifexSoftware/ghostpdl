@@ -77,7 +77,7 @@ zsetalpha(i_ctx_t *i_ctx_p)
  */
 
 /* Imported procedures */
-int zimage_multiple(P2(i_ctx_t *i_ctx_p, bool has_alpha));  /* in zcolor1.c */
+int zimage_multiple(i_ctx_t *i_ctx_p, bool has_alpha);  /* in zcolor1.c */
 
 /*
  * Define the operand and bookeeping structure for a compositing operation.
@@ -92,9 +92,9 @@ typedef struct alpha_composite_state_s {
 } alpha_composite_state_t;
 
 /* Forward references */
-private int begin_composite(P2(i_ctx_t *, alpha_composite_state_t *));
-private void end_composite(P2(i_ctx_t *, alpha_composite_state_t *));
-private int xywh_param(P2(os_ptr, double[4]));
+private int begin_composite(i_ctx_t *, alpha_composite_state_t *);
+private void end_composite(i_ctx_t *, alpha_composite_state_t *);
+private int xywh_param(os_ptr, double[4]);
 
 /* <width> <height> <bits/comp> <matrix> */
 /*      <datasrc_0> ... <datasrc_ncomp-1> true <ncomp> alphaimage - */
@@ -220,11 +220,11 @@ zdissolve(i_ctx_t *i_ctx_p)
 
 /* ------ Image reading ------ */
 
-private int device_is_true_color(P1(gx_device * dev));
+private int device_is_true_color(gx_device * dev);
 
 /* <x> <y> <width> <height> <matrix> .sizeimagebox */
 /*   <dev_x> <dev_y> <dev_width> <dev_height> <matrix> */
-private void box_confine(P3(int *pp, int *pq, int wh));
+private void box_confine(int *pp, int *pq, int wh);
 private int
 zsizeimagebox(i_ctx_t *i_ctx_p)
 {

@@ -76,8 +76,8 @@ const gx_io_device gs_iodev_stderr =
  */
 
 private int
-    s_stdin_read_process(P4(stream_state *, stream_cursor_read *,
-			    stream_cursor_write *, bool));
+    s_stdin_read_process(stream_state *, stream_cursor_read *,
+			 stream_cursor_write *, bool);
 
 private int
 stdin_init(gx_io_device * iodev, gs_memory_t * mem)

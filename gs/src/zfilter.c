@@ -169,7 +169,7 @@ zSFD(i_ctx_t *i_ctx_p)
 /* ------ Utilities ------ */
 
 /* Forward references */
-private int filter_ensure_buf(P4(stream **, uint, gs_ref_memory_t *, bool));
+private int filter_ensure_buf(stream **, uint, gs_ref_memory_t *, bool);
 
 /* Set up an input filter. */
 int

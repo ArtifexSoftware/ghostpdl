@@ -29,10 +29,10 @@
 /* <pagedict> <attrdict> <policydict> <keys> .matchmedia <key> true */
 /* <pagedict> <attrdict> <policydict> <keys> .matchmedia false */
 /* <pagedict> null <policydict> <keys> .matchmedia null true */
-private int zmatch_page_size(P8(const ref * pvreq, const ref * pvmed,
-				int policy, int orient, bool roll,
-				float *best_mismatch, gs_matrix * pmat,
-				gs_point * pmsize));
+private int zmatch_page_size(const ref * pvreq, const ref * pvmed,
+			     int policy, int orient, bool roll,
+			     float *best_mismatch, gs_matrix * pmat,
+			     gs_point * pmsize);
 typedef struct match_record_s {
     ref best_key, match_key;
     uint priority, no_match_priority;
@@ -265,11 +265,11 @@ zmatchpagesize(i_ctx_t *i_ctx_p)
     return 0;
 }
 /* Match the PageSize.  See below for details. */
-private bool match_page_size(P8(const gs_point * request,
-				const gs_rect * medium,
-				int policy, int orient, bool roll,
-				float *best_mismatch, gs_matrix * pmat,
-				gs_point * pmsize));
+private bool match_page_size(const gs_point * request,
+			     const gs_rect * medium,
+			     int policy, int orient, bool roll,
+			     float *best_mismatch, gs_matrix * pmat,
+			     gs_point * pmsize);
 private int
 zmatch_page_size(const ref * pvreq, const ref * pvmed,
 		 int policy, int orient, bool roll,
@@ -324,10 +324,10 @@ zmatch_page_size(const ref * pvreq, const ref * pvmed,
  * NOTE: The algorithm here doesn't work properly for variable-size media
  * when the match isn't exact.  We'll fix it if we ever need to.
  */
-private void make_adjustment_matrix(P5(const gs_point * request,
-				       const gs_rect * medium,
-				       gs_matrix * pmat,
-				       bool scale, int rotate));
+private void make_adjustment_matrix(const gs_point * request,
+				    const gs_rect * medium,
+				    gs_matrix * pmat,
+				    bool scale, int rotate);
 private bool
 match_page_size(const gs_point * request, const gs_rect * medium, int policy,
 		int orient, bool roll, float *best_mismatch, gs_matrix * pmat,

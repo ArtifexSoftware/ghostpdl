@@ -35,12 +35,12 @@
 #include "iimage.h"
 
 /* Forward references */
-private int image_setup(P5(i_ctx_t *i_ctx_p, os_ptr op, gs_image_t * pim,
-			   const gs_color_space * pcs, int npop));
-private int image_proc_process(P1(i_ctx_t *));
-private int image_file_continue(P1(i_ctx_t *));
-private int image_string_continue(P1(i_ctx_t *));
-private int image_cleanup(P1(i_ctx_t *));
+private int image_setup(i_ctx_t *i_ctx_p, os_ptr op, gs_image_t * pim,
+			const gs_color_space * pcs, int npop);
+private int image_proc_process(i_ctx_t *);
+private int image_file_continue(i_ctx_t *);
+private int image_string_continue(i_ctx_t *);
+private int image_cleanup(i_ctx_t *);
 
 /* <width> <height> <bits/sample> <matrix> <datasrc> image - */
 int

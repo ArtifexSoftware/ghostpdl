@@ -42,18 +42,18 @@ extern const gx_device gs_hit_device;
 extern const int gs_hit_detected;
 
 /* Forward references */
-private int upath_append(P2(os_ptr, i_ctx_t *));
-private int upath_stroke(P2(i_ctx_t *, gs_matrix *));
+private int upath_append(os_ptr, i_ctx_t *);
+private int upath_stroke(i_ctx_t *, gs_matrix *);
 
 /* ---------------- Insideness testing ---------------- */
 
 /* Forward references */
-private int in_test(P2(i_ctx_t *, int (*)(P1(gs_state *))));
-private int in_path(P3(os_ptr, i_ctx_t *, gx_device *));
-private int in_path_result(P3(i_ctx_t *, int, int));
-private int in_utest(P2(i_ctx_t *, int (*)(P1(gs_state *))));
-private int in_upath(P2(i_ctx_t *, gx_device *));
-private int in_upath_result(P3(i_ctx_t *, int, int));
+private int in_test(i_ctx_t *, int (*)(gs_state *));
+private int in_path(os_ptr, i_ctx_t *, gx_device *);
+private int in_path_result(i_ctx_t *, int, int);
+private int in_utest(i_ctx_t *, int (*)(gs_state *));
+private int in_upath(i_ctx_t *, gx_device *);
+private int in_upath_result(i_ctx_t *, int, int);
 
 /* <x> <y> ineofill <bool> */
 /* <userpath> ineofill <bool> */
@@ -129,7 +129,7 @@ zinustroke(i_ctx_t *i_ctx_p)
 
 /* Do the work of the non-user-path insideness operators. */
 private int
-in_test(i_ctx_t *i_ctx_p, int (*paintproc)(P1(gs_state *)))
+in_test(i_ctx_t *i_ctx_p, int (*paintproc)(gs_state *))
 {
     os_ptr op = osp;
     gx_device hdev;
@@ -217,7 +217,7 @@ in_path_result(i_ctx_t *i_ctx_p, int npop, int code)
 
 /* Do the work of the user-path insideness operators. */
 private int
-in_utest(i_ctx_t *i_ctx_p, int (*paintproc)(P1(gs_state *)))
+in_utest(i_ctx_t *i_ctx_p, int (*paintproc)(gs_state *))
 {
     gx_device hdev;
     int npop = in_upath(i_ctx_p, &hdev);
@@ -282,8 +282,8 @@ static const byte up_nargs[UPATH_MAX_OP + 1] = {
 };
 
 /* Declare operator procedures not declared in opextern.h. */
-int zsetbbox(P1(i_ctx_t *));
-private int zucache(P1(i_ctx_t *));
+int zsetbbox(i_ctx_t *);
+private int zucache(i_ctx_t *);
 
 #undef zp
 static const op_proc_t up_ops[UPATH_MAX_OP + 1] = {
@@ -398,8 +398,8 @@ zustrokepath(i_ctx_t *i_ctx_p)
 /* <with_ucache> upath <userpath> */
 /* We do all the work in a procedure that is also used to construct */
 /* the UnpaintedPath user path for ImageType 2 images. */
-int make_upath(P5(i_ctx_t *i_ctx_p, ref *rupath, gs_state *pgs, gx_path *ppath,
-		  bool with_ucache));
+int make_upath(i_ctx_t *i_ctx_p, ref *rupath, gs_state *pgs, gx_path *ppath,
+	       bool with_ucache);
 private int
 zupath(i_ctx_t *i_ctx_p)
 {

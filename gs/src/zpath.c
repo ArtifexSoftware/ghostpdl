@@ -25,10 +25,10 @@
 #include "store.h"
 
 /* Forward references */
-private int common_to(P2(i_ctx_t *,
-			 int (*)(P3(gs_state *, floatp, floatp))));
-private int common_curve(P2(i_ctx_t *,
-  int (*)(P7(gs_state *, floatp, floatp, floatp, floatp, floatp, floatp))));
+private int common_to(i_ctx_t *,
+		      int (*)(gs_state *, floatp, floatp));
+private int common_curve(i_ctx_t *,
+  int (*)(gs_state *, floatp, floatp, floatp, floatp, floatp, floatp));
 
 /* - newpath - */
 private int
@@ -84,7 +84,7 @@ zrlineto(i_ctx_t *i_ctx_p)
 /* Common code for [r](move/line)to */
 private int
 common_to(i_ctx_t *i_ctx_p,
-	  int (*add_proc)(P3(gs_state *, floatp, floatp)))
+	  int (*add_proc)(gs_state *, floatp, floatp))
 {
     os_ptr op = osp;
     double opxy[2];
@@ -115,7 +115,7 @@ zrcurveto(i_ctx_t *i_ctx_p)
 /* Common code for [r]curveto */
 private int
 common_curve(i_ctx_t *i_ctx_p,
-	     int (*add_proc)(P7(gs_state *, floatp, floatp, floatp, floatp, floatp, floatp)))
+	     int (*add_proc)(gs_state *, floatp, floatp, floatp, floatp, floatp, floatp))
 {
     os_ptr op = osp;
     double opxy[6];

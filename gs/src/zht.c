@@ -32,9 +32,9 @@
 #include "store.h"
 
 /* Forward references */
-private int screen_sample(P1(i_ctx_t *));
-private int set_screen_continue(P1(i_ctx_t *));
-private int screen_cleanup(P1(i_ctx_t *));
+private int screen_sample(i_ctx_t *);
+private int set_screen_continue(i_ctx_t *);
+private int screen_cleanup(i_ctx_t *);
 
 /* - .currenthalftone <dict> 0 */
 /* - .currenthalftone <frequency> <angle> <proc> 1 */
@@ -106,7 +106,7 @@ zcurrentscreenlevels(i_ctx_t *i_ctx_p)
 #define senum r_ptr(esp, gs_screen_enum)
 
 /* Forward references */
-private int setscreen_finish(P1(i_ctx_t *));
+private int setscreen_finish(i_ctx_t *);
 
 /* <frequency> <angle> <proc> setscreen - */
 private int
@@ -137,7 +137,7 @@ zsetscreen(i_ctx_t *i_ctx_p)
 int
 zscreen_enum_init(i_ctx_t *i_ctx_p, const gx_ht_order * porder,
 		  gs_screen_halftone * psp, ref * pproc, int npop,
-		  int (*finish_proc)(P1(i_ctx_t *)), gs_memory_t * mem)
+		  int (*finish_proc)(i_ctx_t *), gs_memory_t * mem)
 {
     gs_screen_enum *penum;
     int code;

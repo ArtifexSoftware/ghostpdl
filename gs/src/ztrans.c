@@ -39,7 +39,7 @@
 /* ------ Utilities ------ */
 
 private int
-set_float_value(i_ctx_t *i_ctx_p, int (*set_value)(P2(gs_state *, floatp)))
+set_float_value(i_ctx_t *i_ctx_p, int (*set_value)(gs_state *, floatp))
 {
     os_ptr op = osp;
     double value;
@@ -55,7 +55,7 @@ set_float_value(i_ctx_t *i_ctx_p, int (*set_value)(P2(gs_state *, floatp)))
 
 private int
 current_float_value(i_ctx_t *i_ctx_p,
-		    float (*current_value)(P1(const gs_state *)))
+		    float (*current_value)(const gs_state *))
 {
     os_ptr op = osp;
 
@@ -185,7 +185,7 @@ rect_param(gs_rect *prect, os_ptr op)
 
 private int
 mask_op(i_ctx_t *i_ctx_p,
-	int (*mask_proc)(P2(gs_state *, gs_transparency_channel_selector_t)))
+	int (*mask_proc)(gs_state *, gs_transparency_channel_selector_t))
 {
     int csel;
     int code = int_param(osp, 1, &csel);
@@ -244,7 +244,7 @@ zendtransparencygroup(i_ctx_t *i_ctx_p)
 }
 
 /* <paramdict> <llx> <lly> <urx> <ury> .begintransparencymask - */
-private int tf_using_function(P3(floatp, float *, void *));
+private int tf_using_function(floatp, float *, void *);
 private int
 zbegintransparencymask(i_ctx_t *i_ctx_p)
 {
@@ -326,8 +326,8 @@ zinittransparencymask(i_ctx_t *i_ctx_p)
 /* ------ Soft-mask images ------ */
 
 /* <dict> .image3x - */
-private int mask_dict_param(P5(os_ptr, image_params *, const char *, int,
-			       gs_image3x_mask_t *));
+private int mask_dict_param(os_ptr, image_params *, const char *, int,
+			    gs_image3x_mask_t *);
 private int
 zimage3x(i_ctx_t *i_ctx_p)
 {

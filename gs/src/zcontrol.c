@@ -27,16 +27,16 @@
 #include "store.h"
 
 /* Forward references */
-private int no_cleanup(P1(i_ctx_t *));
-private uint count_exec_stack(P2(i_ctx_t *, bool));
-private uint count_to_stopped(P2(i_ctx_t *, long));
-private int unmatched_exit(P2(os_ptr, op_proc_t));
+private int no_cleanup(i_ctx_t *);
+private uint count_exec_stack(i_ctx_t *, bool);
+private uint count_to_stopped(i_ctx_t *, long);
+private int unmatched_exit(os_ptr, op_proc_t);
 
 /* See the comment in opdef.h for an invariant which allows */
 /* more efficient implementation of for, loop, and repeat. */
 
 /* <[test0 body0 ...]> .cond - */
-private int cond_continue(P1(i_ctx_t *));
+private int cond_continue(i_ctx_t *);
 private int
 zcond(i_ctx_t *i_ctx_p)
 {
@@ -152,7 +152,7 @@ zexecn(i_ctx_t *i_ctx_p)
 }
 
 /* <obj> superexec - */
-private int end_superexec(P1(i_ctx_t *));
+private int end_superexec(i_ctx_t *);
 private int
 zsuperexec(i_ctx_t *i_ctx_p)
 {
@@ -186,8 +186,8 @@ end_superexec(i_ctx_t *i_ctx_p)
 /* 	After execution, the array will be placed on  the top of the	*/
 /*	operand stack (on top of any elemetns pushed by <executable>	*/
 /*	for both the normal case and for the error case.		*/
-private int end_runandhide(P1(i_ctx_t *));
-private int err_end_runandhide(P1(i_ctx_t *));
+private int end_runandhide(i_ctx_t *);
+private int err_end_runandhide(i_ctx_t *);
 private int
 zrunandhide(i_ctx_t *i_ctx_p)
 {
@@ -293,9 +293,9 @@ zifelse(i_ctx_t *i_ctx_p)
 
 /* <init> <step> <limit> <proc> for - */
 private int
-    for_pos_int_continue(P1(i_ctx_t *)),
-    for_neg_int_continue(P1(i_ctx_t *)),
-    for_real_continue(P1(i_ctx_t *));
+    for_pos_int_continue(i_ctx_t *),
+    for_neg_int_continue(i_ctx_t *),
+    for_real_continue(i_ctx_t *);
 int
 zfor(i_ctx_t *i_ctx_p)
 {
@@ -417,7 +417,7 @@ for_real_continue(i_ctx_t *i_ctx_p)
  *
  * NOTE: This computation must match the SAMPLE_LOOP_VALUE macro in gscie.h.
  */
-private int for_samples_continue(P1(i_ctx_t *));
+private int for_samples_continue(i_ctx_t *);
 /* <first> <count> <last> <proc> %for_samples - */
 int
 zfor_samples(i_ctx_t *i_ctx_p)
@@ -464,7 +464,7 @@ for_samples_continue(i_ctx_t *i_ctx_p)
 }
 
 /* <int> <proc> repeat - */
-private int repeat_continue(P1(i_ctx_t *));
+private int repeat_continue(i_ctx_t *);
 private int
 zrepeat(i_ctx_t *i_ctx_p)
 {
@@ -500,7 +500,7 @@ repeat_continue(i_ctx_t *i_ctx_p)
 }
 
 /* <proc> loop */
-private int loop_continue(P1(i_ctx_t *));
+private int loop_continue(i_ctx_t *);
 private int
 zloop(i_ctx_t *i_ctx_p)
 {
@@ -724,8 +724,8 @@ zcountexecstack1(i_ctx_t *i_ctx_p)
 /* <array> <include_marks> .execstack <subarray> */
 /* <array> execstack <subarray> */
 /* execstack is an operator solely for the sake of the Genoa tests. */
-private int execstack_continue(P1(i_ctx_t *));
-private int execstack2_continue(P1(i_ctx_t *));
+private int execstack_continue(i_ctx_t *);
+private int execstack2_continue(i_ctx_t *);
 private int
 push_execstack(i_ctx_t *i_ctx_p, os_ptr op1, bool include_marks,
 	       op_proc_t cont)
@@ -856,7 +856,7 @@ zquit(i_ctx_t *i_ctx_p)
 }
 
 /* - currentfile <file> */
-private ref *zget_current_file(P1(i_ctx_t *));
+private ref *zget_current_file(i_ctx_t *);
 private int
 zcurrentfile(i_ctx_t *i_ctx_p)
 {

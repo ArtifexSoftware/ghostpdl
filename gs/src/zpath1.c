@@ -28,9 +28,9 @@
 #include "store.h"
 
 /* Forward references */
-private int common_arc(P2(i_ctx_t *,
-	  int (*)(P6(gs_state *, floatp, floatp, floatp, floatp, floatp))));
-private int common_arct(P2(i_ctx_t *, float *));
+private int common_arc(i_ctx_t *,
+	  int (*)(gs_state *, floatp, floatp, floatp, floatp, floatp));
+private int common_arct(i_ctx_t *, float *);
 
 /* <x> <y> <r> <ang1> <ang2> arc - */
 int
@@ -49,7 +49,7 @@ zarcn(i_ctx_t *i_ctx_p)
 /* Common code for arc[n] */
 private int
 common_arc(i_ctx_t *i_ctx_p,
-      int (*aproc)(P6(gs_state *, floatp, floatp, floatp, floatp, floatp)))
+      int (*aproc)(gs_state *, floatp, floatp, floatp, floatp, floatp))
 {
     os_ptr op = osp;
     double xyra[5];		/* x, y, r, ang1, ang2 */
@@ -162,8 +162,8 @@ zpathbbox(i_ctx_t *i_ctx_p)
 }
 
 /* <moveproc> <lineproc> <curveproc> <closeproc> pathforall - */
-private int path_continue(P1(i_ctx_t *));
-private int path_cleanup(P1(i_ctx_t *));
+private int path_continue(i_ctx_t *);
+private int path_cleanup(i_ctx_t *);
 private int
 zpathforall(i_ctx_t *i_ctx_p)
 {
@@ -194,7 +194,7 @@ zpathforall(i_ctx_t *i_ctx_p)
     return o_push_estack;
 }
 /* Continuation procedure for pathforall */
-private void pf_push(P3(i_ctx_t *, gs_point *, int));
+private void pf_push(i_ctx_t *, gs_point *, int);
 private int
 path_continue(i_ctx_t *i_ctx_p)
 {

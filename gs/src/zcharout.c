@@ -276,8 +276,8 @@ zchar_set_cache(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
  * Get the CharString data corresponding to a glyph.  Return typecheck
  * if it isn't a string.
  */
-private bool charstring_is_notdef_proc(P1(const ref *));
-private int charstring_make_notdef(P2(gs_glyph_data_t *, gs_font *));
+private bool charstring_is_notdef_proc(const ref *);
+private int charstring_make_notdef(gs_glyph_data_t *, gs_font *);
 int
 zchar_charstring_data(gs_font *font, const ref *pgref, gs_glyph_data_t *pgd)
 {

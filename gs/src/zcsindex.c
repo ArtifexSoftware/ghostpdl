@@ -36,7 +36,7 @@
 extern const gs_color_space_type gs_color_space_type_Indexed;
 
 /* Forward references. */
-private int indexed_map1(P1(i_ctx_t *));
+private int indexed_map1(i_ctx_t *);
 
 /* <array> .setindexedspace - */
 /* The current color space is the base space for the indexed space. */

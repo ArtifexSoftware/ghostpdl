@@ -29,8 +29,8 @@
 #include "store.h"
 
 /* Forward references */
-private int cshow_continue(P1(i_ctx_t *));
-private int cshow_restore_font(P1(i_ctx_t *));
+private int cshow_continue(i_ctx_t *);
+private int cshow_restore_font(i_ctx_t *);
 
 /* <proc> <string> cshow - */
 private int

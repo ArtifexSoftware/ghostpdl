@@ -100,9 +100,9 @@ zsave(i_ctx_t *i_ctx_p)
 }
 
 /* <save> restore - */
-private int restore_check_operand(P3(os_ptr, alloc_save_t **, gs_dual_memory_t *));
-private int restore_check_stack(P3(const ref_stack_t *, const alloc_save_t *, bool));
-private void restore_fix_stack(P3(ref_stack_t *, const alloc_save_t *, bool));
+private int restore_check_operand(os_ptr, alloc_save_t **, gs_dual_memory_t *);
+private int restore_check_stack(const ref_stack_t *, const alloc_save_t *, bool);
+private void restore_fix_stack(ref_stack_t *, const alloc_save_t *, bool);
 int
 zrestore(i_ctx_t *i_ctx_p)
 {

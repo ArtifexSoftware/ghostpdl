@@ -35,12 +35,12 @@
 #include "store.h"		/* for make_null */
 
 /* Forward references */
-private int zcrd1_proc_params(P2(os_ptr op, ref_cie_render_procs * pcprocs));
-private int zcrd1_params(P4(os_ptr op, gs_cie_render * pcrd,
-			ref_cie_render_procs * pcprocs, gs_memory_t * mem));
-private int cache_colorrendering1(P4(i_ctx_t *i_ctx_p, gs_cie_render * pcrd,
-				     const ref_cie_render_procs * pcprocs,
-				     gs_ref_memory_t * imem));
+private int zcrd1_proc_params(os_ptr op, ref_cie_render_procs * pcprocs);
+private int zcrd1_params(os_ptr op, gs_cie_render * pcrd,
+			 ref_cie_render_procs * pcprocs, gs_memory_t * mem);
+private int cache_colorrendering1(i_ctx_t *i_ctx_p, gs_cie_render * pcrd,
+				  const ref_cie_render_procs * pcprocs,
+				  gs_ref_memory_t * imem);
 
 /* - currentcolorrendering <dict> */
 private int
@@ -247,7 +247,7 @@ zcrd1_params(os_ptr op, gs_cie_render * pcrd,
 }
 
 /* Cache the results of the color rendering procedures. */
-private int cie_cache_render_finish(P1(i_ctx_t *));
+private int cie_cache_render_finish(i_ctx_t *);
 private int
 cache_colorrendering1(i_ctx_t *i_ctx_p, gs_cie_render * pcrd,
 		      const ref_cie_render_procs * pcrprocs,
@@ -322,9 +322,9 @@ cie_cache_render_finish(i_ctx_t *i_ctx_p)
 
 /* Load the joint caches. */
 private int
-    cie_exec_tpqr(P1(i_ctx_t *)),
-    cie_post_exec_tpqr(P1(i_ctx_t *)),
-    cie_tpqr_finish(P1(i_ctx_t *));
+    cie_exec_tpqr(i_ctx_t *),
+    cie_post_exec_tpqr(i_ctx_t *),
+    cie_tpqr_finish(i_ctx_t *);
 int
 cie_cache_joint(i_ctx_t *i_ctx_p, const ref_cie_render_procs * pcrprocs,
 		const gs_cie_common *pcie, gs_state * pgs)

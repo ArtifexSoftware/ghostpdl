@@ -32,8 +32,8 @@
 #include "gsstate.h"
 
 /* Forward references */
-private int z2copy_gstate(P1(i_ctx_t *));
-private int push_callout(P2(i_ctx_t *, const char *));
+private int z2copy_gstate(i_ctx_t *);
+private int push_callout(i_ctx_t *, const char *);
 
 /* Extend the `copy' operator to deal with gstates. */
 /* This is done with a hack -- we know that gstates are the only */

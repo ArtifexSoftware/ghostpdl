@@ -39,10 +39,10 @@
 #include "store.h"
 
 /* Forward references */
-private bool map_glyph_to_char(P3(const ref *, const ref *, ref *));
-private int finish_show(P1(i_ctx_t *));
-private int op_show_cleanup(P1(i_ctx_t *));
-private int op_show_return_width(P3(i_ctx_t *, uint, double *));
+private bool map_glyph_to_char(const ref *, const ref *, ref *);
+private int finish_show(i_ctx_t *);
+private int op_show_cleanup(i_ctx_t *);
+private int op_show_return_width(i_ctx_t *, uint, double *);
 
 /* <string> show - */
 private int
@@ -202,8 +202,8 @@ finish_stringwidth(i_ctx_t *i_ctx_p)
 /* Common code for charpath and .charboxpath. */
 private int
 zchar_path(i_ctx_t *i_ctx_p,
-	   int (*begin)(P6(gs_state *, const byte *, uint,
-			   bool, gs_memory_t *, gs_text_enum_t **)))
+	   int (*begin)(gs_state *, const byte *, uint,
+			bool, gs_memory_t *, gs_text_enum_t **))
 {
     os_ptr op = osp;
     gs_text_enum_t *penum;

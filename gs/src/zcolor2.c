@@ -40,10 +40,10 @@
 #include "store.h"
 
 /* Forward references */
-private int store_color_params(P3(os_ptr, const gs_paint_color *,
-				  const gs_color_space *));
-private int load_color_params(P3(os_ptr, gs_paint_color *,
-				 const gs_color_space *));
+private int store_color_params(os_ptr, const gs_paint_color *,
+			       const gs_color_space *);
+private int load_color_params(os_ptr, gs_paint_color *,
+			      const gs_color_space *);
 
 /* Test whether a Pattern instance uses a base space. */
 inline private bool

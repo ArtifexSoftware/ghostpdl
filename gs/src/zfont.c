@@ -33,8 +33,8 @@
 #include "ivmspace.h"
 
 /* Forward references */
-private int make_font(P2(i_ctx_t *, const gs_matrix *));
-private void make_uint_array(P3(os_ptr, const uint *, int));
+private int make_font(i_ctx_t *, const gs_matrix *);
+private void make_uint_array(os_ptr, const uint *, int);
 
 /* The (global) font directory */
 gs_font_dir *ifont_dir = 0;	/* needed for buildfont */

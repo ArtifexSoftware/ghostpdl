@@ -37,8 +37,8 @@
 #include "store.h"
 
 /* <font> <code|name> <name> <glyph_index> .type42execchar - */
-private int type42_fill(P1(i_ctx_t *));
-private int type42_stroke(P1(i_ctx_t *));
+private int type42_fill(i_ctx_t *);
+private int type42_stroke(i_ctx_t *);
 private int
 ztype42execchar(i_ctx_t *i_ctx_p)
 {
@@ -131,8 +131,8 @@ ztype42execchar(i_ctx_t *i_ctx_p)
 }
 
 /* Continue after a CDevProc callout. */
-private int type42_finish(P2(i_ctx_t *i_ctx_p,
-			     int (*cont)(P1(gs_state *))));
+private int type42_finish(i_ctx_t *i_ctx_p,
+			  int (*cont)(gs_state *));
 private int
 type42_fill(i_ctx_t *i_ctx_p)
 {
@@ -146,7 +146,7 @@ type42_stroke(i_ctx_t *i_ctx_p)
 /* <font> <code|name> <name> <glyph_index> <sbx> <sby> %type42_{fill|stroke} - */
 /* <font> <code|name> <name> <glyph_index> %type42_{fill|stroke} - */
 private int
-type42_finish(i_ctx_t *i_ctx_p, int (*cont) (P1(gs_state *)))
+type42_finish(i_ctx_t *i_ctx_p, int (*cont) (gs_state *))
 {
     os_ptr op = osp;
     gs_font *pfont;

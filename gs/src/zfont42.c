@@ -32,9 +32,9 @@
 #include "store.h"
 
 /* Forward references */
-private int z42_string_proc(P4(gs_font_type42 *, ulong, uint, const byte **));
-private uint z42_get_glyph_index(P2(gs_font_type42 *, gs_glyph));
-private int z42_gdir_get_outline(P3(gs_font_type42 *, uint, gs_glyph_data_t *));
+private int z42_string_proc(gs_font_type42 *, ulong, uint, const byte **);
+private uint z42_get_glyph_index(gs_font_type42 *, gs_glyph);
+private int z42_gdir_get_outline(gs_font_type42 *, uint, gs_glyph_data_t *);
 private font_proc_enumerate_glyph(z42_enumerate_glyph);
 private font_proc_enumerate_glyph(z42_gdir_enumerate_glyph);
 private font_proc_encode_char(z42_encode_char);

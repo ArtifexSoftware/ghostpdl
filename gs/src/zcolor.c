@@ -31,7 +31,7 @@
 #include "icolor.h"
 
 /* Imported from gsht.c */
-void gx_set_effective_transfer(P1(gs_state *));
+void gx_set_effective_transfer(gs_state *);
 
 /* Define the number of stack slots needed for zcolor_remap_one. */
 const int zcolor_remap_one_ostack = 4;

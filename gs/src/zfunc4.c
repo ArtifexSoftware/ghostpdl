@@ -41,7 +41,7 @@
  *
  * The following list is taken directly from the PDF 1.3 documentation.
  */
-#define XOP(zfn) int zfn(P1(i_ctx_t *))
+#define XOP(zfn) int zfn(i_ctx_t *)
 XOP(zabs); XOP(zand); XOP(zatan); XOP(zbitshift);
 XOP(zceiling); XOP(zcos); XOP(zcvi); XOP(zcvr);
 XOP(zdiv); XOP(zexp); XOP(zfloor); XOP(zidiv);

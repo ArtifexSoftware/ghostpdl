@@ -30,7 +30,7 @@
 #include "ibnum.h"
 
 /* Forward references */
-private int gstate_unshare(P1(i_ctx_t *));
+private int gstate_unshare(i_ctx_t *);
 
 /* Structure descriptors */
 public_st_igstate_obj();
@@ -241,8 +241,8 @@ typedef struct local_rects_s {
 } local_rects_t;
 
 /* Forward references */
-private int rect_get(P3(local_rects_t *, os_ptr, gs_memory_t *));
-private void rect_release(P2(local_rects_t *, gs_memory_t *));
+private int rect_get(local_rects_t *, os_ptr, gs_memory_t *);
+private void rect_release(local_rects_t *, gs_memory_t *);
 
 /* <x> <y> <width> <height> .rectappend - */
 /* <numarray|numstring> .rectappend - */

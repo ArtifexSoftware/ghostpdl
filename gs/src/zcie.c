@@ -151,8 +151,8 @@ cie_points_param(const ref * pdref, gs_cie_wb * pwb)
 /* Process a 3- or 4-dimensional lookup table from a dictionary. */
 /* The caller has set pclt->n and pclt->m. */
 /* ptref is known to be a readable array of size at least n+1. */
-private int cie_3d_table_param(P4(const ref * ptable, uint count, uint nbytes,
-				  gs_const_string * strings));
+private int cie_3d_table_param(const ref * ptable, uint count, uint nbytes,
+			       gs_const_string * strings);
 int
 cie_table_param(const ref * ptref, gx_color_lookup_table * pclt,
 		gs_memory_t * mem)
@@ -287,13 +287,13 @@ cie_set_finish(i_ctx_t *i_ctx_p, gs_color_space * pcs,
 }
 
 /* Forward references */
-private int cache_common(P5(i_ctx_t *, gs_cie_common *, const ref_cie_procs *,
-			    void *, gs_ref_memory_t *));
-private int cache_abc_common(P5(i_ctx_t *, gs_cie_abc *, const ref_cie_procs *,
-				void *, gs_ref_memory_t *));
+private int cache_common(i_ctx_t *, gs_cie_common *, const ref_cie_procs *,
+			 void *, gs_ref_memory_t *);
+private int cache_abc_common(i_ctx_t *, gs_cie_abc *, const ref_cie_procs *,
+			     void *, gs_ref_memory_t *);
 
 /* <dict> .setciedefgspace - */
-private int cie_defg_finish(P1(i_ctx_t *));
+private int cie_defg_finish(i_ctx_t *);
 private int
 zsetciedefgspace(i_ctx_t *i_ctx_p)
 {
@@ -352,7 +352,7 @@ cie_defg_finish(i_ctx_t *i_ctx_p)
 }
 
 /* <dict> .setciedefspace - */
-private int cie_def_finish(P1(i_ctx_t *));
+private int cie_def_finish(i_ctx_t *);
 private int
 zsetciedefspace(i_ctx_t *i_ctx_p)
 {
@@ -411,7 +411,7 @@ cie_def_finish(i_ctx_t *i_ctx_p)
 }
 
 /* <dict> .setcieabcspace - */
-private int cie_abc_finish(P1(i_ctx_t *));
+private int cie_abc_finish(i_ctx_t *);
 private int
 zsetcieabcspace(i_ctx_t *i_ctx_p)
 {
@@ -454,7 +454,7 @@ cie_abc_finish(i_ctx_t *i_ctx_p)
 }
 
 /* <dict> .setcieaspace - */
-private int cie_a_finish(P1(i_ctx_t *));
+private int cie_a_finish(i_ctx_t *);
 private int
 zsetcieaspace(i_ctx_t *i_ctx_p)
 {
@@ -532,8 +532,8 @@ cache_common(i_ctx_t *i_ctx_p, gs_cie_common * pcie,
 /* ------ Internal routines ------ */
 
 /* Prepare to cache the values for one or more procedures. */
-private int cie_cache_finish1(P1(i_ctx_t *));
-private int cie_cache_finish(P1(i_ctx_t *));
+private int cie_cache_finish1(i_ctx_t *);
+private int cie_cache_finish(i_ctx_t *);
 int
 cie_prepare_cache(i_ctx_t *i_ctx_p, const gs_range * domain, const ref * proc,
 		  cie_cache_floats * pcache, void *container,

@@ -42,9 +42,9 @@
 extern const gs_color_space_type gs_color_space_type_Pattern;
 
 /* Forward references */
-private int zPaintProc(P2(const gs_client_color *, gs_state *));
-private int pattern_paint_prepare(P1(i_ctx_t *));
-private int pattern_paint_finish(P1(i_ctx_t *));
+private int zPaintProc(const gs_client_color *, gs_state *);
+private int pattern_paint_prepare(i_ctx_t *);
+private int pattern_paint_finish(i_ctx_t *);
 
 /* GC descriptors */
 private_st_int_pattern();
@@ -178,7 +178,7 @@ const op_def zpcolor_l2_op_defs[] =
 /* ------ Internal procedures ------ */
 
 /* Render the pattern by calling the PaintProc. */
-private int pattern_paint_cleanup(P1(i_ctx_t *));
+private int pattern_paint_cleanup(i_ctx_t *);
 private int
 zPaintProc(const gs_client_color * pcc, gs_state * pgs)
 {

@@ -54,8 +54,8 @@ typedef struct param_def_s {
 typedef struct long_param_def_s {
     param_def_common;
     long min_value, max_value;
-    long (*current)(P1(i_ctx_t *));
-    int (*set)(P2(i_ctx_t *, long));
+    long (*current)(i_ctx_t *);
+    int (*set)(i_ctx_t *, long);
 } long_param_def_t;
 
 #if arch_sizeof_long > arch_sizeof_int
@@ -66,14 +66,14 @@ typedef struct long_param_def_s {
 
 typedef struct bool_param_def_s {
     param_def_common;
-    bool (*current)(P1(i_ctx_t *));
-    int (*set)(P2(i_ctx_t *, bool));
+    bool (*current)(i_ctx_t *);
+    int (*set)(i_ctx_t *, bool);
 } bool_param_def_t;
 
 typedef struct string_param_def_s {
     param_def_common;
-    void (*current)(P2(i_ctx_t *, gs_param_string *));
-    int (*set)(P2(i_ctx_t *, gs_param_string *));
+    void (*current)(i_ctx_t *, gs_param_string *);
+    int (*set)(i_ctx_t *, gs_param_string *);
 } string_param_def_t;
 
 /* Define a parameter set (user or system). */
@@ -87,9 +87,9 @@ typedef struct param_set_s {
 } param_set;
 
 /* Forward references */
-private int setparams(P3(i_ctx_t *, gs_param_list *, const param_set *));
-private int currentparams(P2(i_ctx_t *, const param_set *));
-private int currentparam1(P2(i_ctx_t *, const param_set *));
+private int setparams(i_ctx_t *, gs_param_list *, const param_set *);
+private int currentparams(i_ctx_t *, const param_set *);
+private int currentparam1(i_ctx_t *, const param_set *);
 
 /* ------ Passwords ------ */
 

@@ -51,21 +51,21 @@ extern_gx_io_device_table();
 extern const char iodev_dtype_stdio[];
 
 /* Forward references: file name parsing. */
-private int parse_file_name(P2(const ref * op, gs_parsed_file_name_t * pfn));
-private int parse_real_file_name(P4(const ref * op,
-				    gs_parsed_file_name_t * pfn,
-				    gs_memory_t *mem, client_name_t cname));
-private int parse_file_access_string(P2(const ref *op, char file_access[4]));
+private int parse_file_name(const ref * op, gs_parsed_file_name_t * pfn);
+private int parse_real_file_name(const ref * op,
+				 gs_parsed_file_name_t * pfn,
+				 gs_memory_t *mem, client_name_t cname);
+private int parse_file_access_string(const ref *op, char file_access[4]);
 
 /* Forward references: other. */
-private int execfile_finish(P1(i_ctx_t *));
-private int execfile_cleanup(P1(i_ctx_t *));
-private int zopen_file(P5(i_ctx_t *, const gs_parsed_file_name_t *pfn,
-			  const char *file_access, stream **ps,
-			  gs_memory_t *mem));
+private int execfile_finish(i_ctx_t *);
+private int execfile_cleanup(i_ctx_t *);
+private int zopen_file(i_ctx_t *, const gs_parsed_file_name_t *pfn,
+		       const char *file_access, stream **ps,
+		       gs_memory_t *mem);
 private iodev_proc_open_file(iodev_os_open_file);
-private void file_init_stream(P5(stream *s, FILE *file, const char *fmode,
-				 byte *buffer, uint buffer_size));
+private void file_init_stream(stream *s, FILE *file, const char *fmode,
+			      byte *buffer, uint buffer_size);
 stream_proc_report_error(filter_report_error);
 
 /*
@@ -311,8 +311,8 @@ zdeletefile(i_ctx_t *i_ctx_p)
 }
 
 /* <template> <proc> <scratch> filenameforall - */
-private int file_continue(P1(i_ctx_t *));
-private int file_cleanup(P1(i_ctx_t *));
+private int file_continue(i_ctx_t *);
+private int file_cleanup(i_ctx_t *);
 private int
 zfilenameforall(i_ctx_t *i_ctx_p)
 {

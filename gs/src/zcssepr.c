@@ -39,7 +39,7 @@
 extern const gs_color_space_type gs_color_space_type_Separation;
 
 /* Forward references */
-private int separation_map1(P1(i_ctx_t *));
+private int separation_map1(i_ctx_t *);
 
 /* Define the separation cache size.  This makes many useful tint values */
 /* map to integer cache indices. */

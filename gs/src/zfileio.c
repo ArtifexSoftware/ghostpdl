@@ -32,11 +32,11 @@
 #include "estack.h"
 
 /* Forward references */
-private int write_string(P2(ref *, stream *));
-private int handle_read_status(P5(i_ctx_t *, int, const ref *, const uint *,
-				  op_proc_t));
-private int handle_write_status(P5(i_ctx_t *, int, const ref *, const uint *,
-				   op_proc_t));
+private int write_string(ref *, stream *);
+private int handle_read_status(i_ctx_t *, int, const ref *, const uint *,
+			       op_proc_t);
+private int handle_write_status(i_ctx_t *, int, const ref *, const uint *,
+				op_proc_t);
 
 /* ------ Operators ------ */
 
@@ -107,7 +107,7 @@ zwrite(i_ctx_t *i_ctx_p)
 }
 
 /* <file> <string> readhexstring <substring> <filled_bool> */
-private int zreadhexstring_continue(P1(i_ctx_t *));
+private int zreadhexstring_continue(i_ctx_t *);
 
 /* We keep track of the odd digit in the next byte of the string */
 /* beyond the bytes already used.  (This is just for convenience; */
@@ -193,7 +193,7 @@ zreadhexstring_continue(i_ctx_t *i_ctx_p)
 }
 
 /* <file> <string> writehexstring - */
-private int zwritehexstring_continue(P1(i_ctx_t *));
+private int zwritehexstring_continue(i_ctx_t *);
 private int
 zwritehexstring_at(i_ctx_t *i_ctx_p, os_ptr op, uint odd)
 {
@@ -272,7 +272,7 @@ zwritehexstring_continue(i_ctx_t *i_ctx_p)
 }
 
 /* <file> <string> readstring <substring> <filled_bool> */
-private int zreadstring_continue(P1(i_ctx_t *));
+private int zreadstring_continue(i_ctx_t *);
 private int
 zreadstring_at(i_ctx_t *i_ctx_p, os_ptr op, uint start)
 {
@@ -350,8 +350,8 @@ zwritestring(i_ctx_t *i_ctx_p)
 }
 
 /* <file> <string> readline <substring> <bool> */
-private int zreadline(P1(i_ctx_t *));
-private int zreadline_continue(P1(i_ctx_t *));
+private int zreadline(i_ctx_t *);
+private int zreadline_continue(i_ctx_t *);
 
 /*
  * We could handle readline the same way as readstring,
@@ -734,7 +734,7 @@ zunread(i_ctx_t *i_ctx_p)
 }
 
 /* <file> <obj> <==flag> .writecvp - */
-private int zwritecvp_continue(P1(i_ctx_t *));
+private int zwritecvp_continue(i_ctx_t *);
 private int
 zwritecvp_at(i_ctx_t *i_ctx_p, os_ptr op, uint start, bool first)
 {

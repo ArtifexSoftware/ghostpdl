@@ -40,7 +40,7 @@
   }
 
 /* Forward references */
-private int obj_le(P2(os_ptr, os_ptr));
+private int obj_le(os_ptr, os_ptr);
 
 /* <obj1> <obj2> eq <bool> */
 int

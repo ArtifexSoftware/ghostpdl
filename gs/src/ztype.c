@@ -39,8 +39,8 @@
  */
 
 /* Forward references */
-private int access_check(P3(i_ctx_t *, int, bool));
-private int convert_to_string(P2(os_ptr, os_ptr));
+private int access_check(i_ctx_t *, int, bool);
+private int convert_to_string(os_ptr, os_ptr);
 
 /*
  * Max and min integer values expressed as reals.

@@ -39,8 +39,8 @@ spot_dummy(floatp x, floatp y)
 }
 
 /* <red_freq> ... <gray_proc> setcolorscreen - */
-private int setcolorscreen_finish(P1(i_ctx_t *));
-private int setcolorscreen_cleanup(P1(i_ctx_t *));
+private int setcolorscreen_finish(i_ctx_t *);
+private int setcolorscreen_cleanup(i_ctx_t *);
 private int
 zsetcolorscreen(i_ctx_t *i_ctx_p)
 {

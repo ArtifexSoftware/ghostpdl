@@ -37,9 +37,9 @@
 /* more efficient implementation of forall. */
 
 /* Forward references */
-private int zcopy_integer(P1(i_ctx_t *));
-private int zcopy_interval(P1(i_ctx_t *));
-private int copy_interval(P5(i_ctx_t *, os_ptr, uint, os_ptr, client_name_t));
+private int zcopy_integer(i_ctx_t *);
+private int zcopy_interval(i_ctx_t *);
+private int copy_interval(i_ctx_t *, os_ptr, uint, os_ptr, client_name_t);
 
 /* <various1> <various2> copy <various> */
 /* <obj1> ... <objn> <int> copy <obj1> ... <objn> <obj1> ... <objn> */
@@ -390,11 +390,11 @@ zputinterval(i_ctx_t *i_ctx_p)
 /* <array|packedarray|string> <<element> proc> forall - */
 /* <dict> <<key> <value> proc> forall - */
 private int
-    array_continue(P1(i_ctx_t *)),
-    dict_continue(P1(i_ctx_t *)),
-    string_continue(P1(i_ctx_t *)),
-    packedarray_continue(P1(i_ctx_t *));
-private int forall_cleanup(P1(i_ctx_t *));
+    array_continue(i_ctx_t *),
+    dict_continue(i_ctx_t *),
+    string_continue(i_ctx_t *),
+    packedarray_continue(i_ctx_t *);
+private int forall_cleanup(i_ctx_t *);
 private int
 zforall(i_ctx_t *i_ctx_p)
 {

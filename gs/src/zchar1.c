@@ -130,30 +130,29 @@ gs_private_st_suffix_add1(st_gs_type1exec_state, gs_type1exec_state,
 			  i_ctx_p);
 
 /* Forward references */
-private int bbox_continue(P1(i_ctx_t *));
-private int nobbox_continue(P1(i_ctx_t *));
-private int type1_push_OtherSubr(P4(i_ctx_t *, const gs_type1exec_state *,
-				    int (*)(P1(i_ctx_t *)), const ref *));
-private int type1_call_OtherSubr(P4(i_ctx_t *, const gs_type1exec_state *,
-				    int (*)(P1(i_ctx_t *)), const ref *));
-private int type1_callout_dispatch(P3(i_ctx_t *, int (*)(P1(i_ctx_t *)),
-				      int));
-private int type1_continue_dispatch(P5(i_ctx_t *, gs_type1exec_state *,
-				       const ref *, ref *, int));
-private int op_type1_cleanup(P1(i_ctx_t *));
-private void op_type1_free(P1(i_ctx_t *));
+private int bbox_continue(i_ctx_t *);
+private int nobbox_continue(i_ctx_t *);
+private int type1_push_OtherSubr(i_ctx_t *, const gs_type1exec_state *,
+				 int (*)(i_ctx_t *), const ref *);
+private int type1_call_OtherSubr(i_ctx_t *, const gs_type1exec_state *,
+				 int (*)(i_ctx_t *), const ref *);
+private int type1_callout_dispatch(i_ctx_t *, int (*)(i_ctx_t *), int);
+private int type1_continue_dispatch(i_ctx_t *, gs_type1exec_state *,
+				    const ref *, ref *, int);
+private int op_type1_cleanup(i_ctx_t *);
+private void op_type1_free(i_ctx_t *);
 private void
-     type1_cis_get_metrics(P2(const gs_type1_state * pcis, double psbw[4]));
-private int bbox_getsbw_continue(P1(i_ctx_t *));
-private int type1exec_bbox(P3(i_ctx_t *, gs_type1exec_state *, gs_font *));
-private int bbox_finish_fill(P1(i_ctx_t *));
-private int bbox_finish_stroke(P1(i_ctx_t *));
-private int bbox_fill(P1(i_ctx_t *));
-private int bbox_stroke(P1(i_ctx_t *));
-private int nobbox_finish(P2(i_ctx_t *, gs_type1exec_state *));
-private int nobbox_draw(P2(i_ctx_t *, int (*)(P1(gs_state *))));
-private int nobbox_fill(P1(i_ctx_t *));
-private int nobbox_stroke(P1(i_ctx_t *));
+     type1_cis_get_metrics(const gs_type1_state * pcis, double psbw[4]);
+private int bbox_getsbw_continue(i_ctx_t *);
+private int type1exec_bbox(i_ctx_t *, gs_type1exec_state *, gs_font *);
+private int bbox_finish_fill(i_ctx_t *);
+private int bbox_finish_stroke(i_ctx_t *);
+private int bbox_fill(i_ctx_t *);
+private int bbox_stroke(i_ctx_t *);
+private int nobbox_finish(i_ctx_t *, gs_type1exec_state *);
+private int nobbox_draw(i_ctx_t *, int (*)(gs_state *));
+private int nobbox_fill(i_ctx_t *);
+private int nobbox_stroke(i_ctx_t *);
 
 /* <font> <code|name> <name> <charstring> .type1execchar - */
 private int
@@ -379,7 +378,7 @@ bbox_getsbw_continue(i_ctx_t *i_ctx_p)
 
 /* <font> <code|name> <name> <charstring> <sbx> <sby> %bbox_{fill|stroke} - */
 /* <font> <code|name> <name> <charstring> %bbox_{fill|stroke} - */
-private int bbox_finish(P2(i_ctx_t *, int (*)(P1(i_ctx_t *))));
+private int bbox_finish(i_ctx_t *, int (*)(i_ctx_t *));
 private int
 bbox_finish_fill(i_ctx_t *i_ctx_p)
 {
@@ -391,7 +390,7 @@ bbox_finish_stroke(i_ctx_t *i_ctx_p)
     return bbox_finish(i_ctx_p, bbox_stroke);
 }
 private int
-bbox_finish(i_ctx_t *i_ctx_p, int (*cont) (P1(i_ctx_t *)))
+bbox_finish(i_ctx_t *i_ctx_p, int (*cont) (i_ctx_t *))
 {
     os_ptr op = osp;
     gs_font *pfont;
@@ -480,7 +479,7 @@ bbox_continue(i_ctx_t *i_ctx_p)
  * of type1execchar are still on the o-stack.
  */
 private int
-bbox_draw(i_ctx_t *i_ctx_p, int (*draw)(P1(gs_state *)))
+bbox_draw(i_ctx_t *i_ctx_p, int (*draw)(gs_state *))
 {
     os_ptr op = osp;
     gs_rect bbox;
@@ -626,7 +625,7 @@ type1_continue_dispatch(i_ctx_t *i_ctx_p, gs_type1exec_state *pcxs,
  */
 private int
 type1_push_OtherSubr(i_ctx_t *i_ctx_p, const gs_type1exec_state *pcxs,
-		     int (*cont)(P1(i_ctx_t *)), const ref *pos)
+		     int (*cont)(i_ctx_t *), const ref *pos)
 {
     int i, n = pcxs->num_args;
 
@@ -650,7 +649,7 @@ type1_push_OtherSubr(i_ctx_t *i_ctx_p, const gs_type1exec_state *pcxs,
  */
 private int
 type1_call_OtherSubr(i_ctx_t *i_ctx_p, const gs_type1exec_state * pcxs,
-		     int (*cont) (P1(i_ctx_t *)),
+		     int (*cont) (i_ctx_t *),
 		     const ref * pos)
 {
     /* Move the Type 1 interpreter state to the heap. */
@@ -670,7 +669,7 @@ type1_call_OtherSubr(i_ctx_t *i_ctx_p, const gs_type1exec_state * pcxs,
 
 /* Continue from an OtherSubr callout while building the path. */
 private int
-type1_callout_dispatch(i_ctx_t *i_ctx_p, int (*cont)(P1(i_ctx_t *)),
+type1_callout_dispatch(i_ctx_t *i_ctx_p, int (*cont)(i_ctx_t *),
 		       int num_args)
 {
     ref other_subr;
@@ -785,7 +784,7 @@ nobbox_finish(i_ctx_t *i_ctx_p, gs_type1exec_state * pcxs)
 }
 /* Finish by popping the operands and filling or stroking. */
 private int
-nobbox_draw(i_ctx_t *i_ctx_p, int (*draw)(P1(gs_state *)))
+nobbox_draw(i_ctx_t *i_ctx_p, int (*draw)(gs_state *))
 {
     int code = draw(igs);
 

@@ -38,7 +38,7 @@
 #include "store.h"
 
 /* Forward references */
-private int shading_param(P2(const_os_ptr op, const gs_shading_t ** ppsh));
+private int shading_param(const_os_ptr op, const gs_shading_t ** ppsh);
 
 /* ---------------- Standard operators ---------------- */
 
@@ -143,8 +143,8 @@ shading_param(const_os_ptr op, const gs_shading_t ** ppsh)
 extern_st(st_color_space);
 
 typedef int (*build_shading_proc_t)
-     (P5(i_ctx_t *i_ctx_p, const ref *op, const gs_shading_params_t *params,
-	 gs_shading_t **ppsh, gs_memory_t *mem));
+     (i_ctx_t *i_ctx_p, const ref *op, const gs_shading_params_t *params,
+      gs_shading_t **ppsh, gs_memory_t *mem);
 
 /* Operators */
 

@@ -29,8 +29,8 @@
 
 /* <state> <from_string> <to_string> .type1encrypt <new_state> <substring> */
 /* <state> <from_string> <to_string> .type1decrypt <new_state> <substring> */
-private int type1crypt(P2(i_ctx_t *,
-			int (*)(P4(byte *, const byte *, uint, ushort *))));
+private int type1crypt(i_ctx_t *,
+		       int (*)(byte *, const byte *, uint, ushort *));
 private int
 ztype1encrypt(i_ctx_t *i_ctx_p)
 {
@@ -43,7 +43,7 @@ ztype1decrypt(i_ctx_t *i_ctx_p)
 }
 private int
 type1crypt(i_ctx_t *i_ctx_p,
-	   int (*proc)(P4(byte *, const byte *, uint, ushort *)))
+	   int (*proc)(byte *, const byte *, uint, ushort *))
 {
     os_ptr op = osp;
     crypt_state state;

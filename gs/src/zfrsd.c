@@ -116,11 +116,11 @@ zrsdparams(i_ctx_t *i_ctx_p)
  * Reusable streams are also reusable sources, but they look just like
  * ordinary file or string streams.
  */
-private int make_rss(P8(i_ctx_t *i_ctx_p, os_ptr op, const byte * data,
-			uint size, int space, long offset, long length,
-			bool is_bytestring));
-private int make_rfs(P5(i_ctx_t *i_ctx_p, os_ptr op, stream *fs,
-			long offset, long length));
+private int make_rss(i_ctx_t *i_ctx_p, os_ptr op, const byte * data,
+		     uint size, int space, long offset, long length,
+		     bool is_bytestring);
+private int make_rfs(i_ctx_t *i_ctx_p, os_ptr op, stream *fs,
+		     long offset, long length);
 private int
 zreusablestream(i_ctx_t *i_ctx_p)
 {

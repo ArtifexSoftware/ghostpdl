@@ -128,7 +128,7 @@ s_proc_set_defaults(stream_state * st)
 
 /* Forward references */
 private stream_proc_process(s_proc_read_process);
-private int s_proc_read_continue(P1(i_ctx_t *));
+private int s_proc_read_continue(i_ctx_t *);
 
 /* Stream templates */
 private const stream_template s_proc_read_template = {
@@ -248,7 +248,7 @@ s_proc_read_continue(i_ctx_t *i_ctx_p)
 /* Forward references */
 private stream_proc_flush(s_proc_write_flush);
 private stream_proc_process(s_proc_write_process);
-private int s_proc_write_continue(P1(i_ctx_t *));
+private int s_proc_write_continue(i_ctx_t *);
 
 /* Stream templates */
 private const stream_template s_proc_write_template = {
