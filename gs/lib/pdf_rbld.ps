@@ -238,8 +238,10 @@
   /post_eof_count determine_post_eof_count def
   % Start at the beginning of the file
   PDFfile 0 setfileposition
-  % Create a working string (and also store its length on stack)
-  1024 dup string
+  % Create a working string (and also store its length on stack).  We are
+  % using a maximum size string size the logic below wants a recovered object
+  % to fit into our working string.
+  65535 dup string
   { % Now loop through the entire file lloking for objects
     PDFfile fileposition		% save current file position
     % When we get near the end of the file, we use a smaller interval of
