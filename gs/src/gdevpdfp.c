@@ -86,6 +86,8 @@ private const gs_param_item_t pdf_param_items[] = {
     pi("NoEncrypt", gs_param_type_string, NoEncrypt),
 #if PS2WRITE
     pi("OrderResources", gs_param_type_bool, OrderResources),
+    pi("PatternImagemask", gs_param_type_bool, PatternImagemask),
+    pi("MaxClipPathSize", gs_param_type_int, MaxClipPathSize),
     pi("HaveCIDSystem", gs_param_type_bool, HaveCIDSystem),
     pi("PSVersion", gs_param_type_int, PSVersion),
 #endif

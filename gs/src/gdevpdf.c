@@ -200,6 +200,9 @@ const gx_device_pdf gs_pdfwrite_device =
  1,				/* FirstObjectNumber */
  1 /*true*/,			/* CompressFonts */
  0 /*false*/,			/* PrintStatistics */
+ 0 /*false*/,			/* OrderResources; */
+ 0 /*false*/,			/* PatternImagemask; */
+ 12000,				/* MaxClipPathSize */ /* HP LaserJet 1320 hangs with 14000. */
  4000,				/* MaxInlineImageSize */
  {0, 0},			/* OwnerPassword */
  {0, 0},			/* UserPassword */

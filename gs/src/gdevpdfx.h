@@ -456,6 +456,13 @@ struct gx_device_pdf_s {
     long FirstObjectNumber;
     bool CompressFonts;
     bool PrintStatistics;
+    bool OrderResources;   /* PS2WRITE only. */
+#if PS2WRITE
+    bool PatternImagemask; /* The target viewer|printer handles imagemask 
+			      with pattern color. */
+    long MaxClipPathSize;  /* The maximal number of elements of a clipping path
+			      that the target viewer|printer can handle. */
+#endif
     long MaxInlineImageSize;
     /* Encryption parameters */
     gs_const_string OwnerPassword;

@@ -549,6 +549,196 @@ write_mask(gx_device_pdf *pdev, gx_device_memory *mdev, gs_point *p)
     pdev->skip_colors = save_skip_color; 
     return code;
 }
+
+private void
+max_subimage_width(int width, byte *base, int x0, long count1, int *x1, long *count)
+{
+    long c = 0, c1 = count1 - 1;
+    int x = x0;
+    byte p = 1; /* The inverse of the previous bit. */
+    byte r;     /* The inverse of the current  bit. */
+    byte *q = base + (x / 8), m = 0x80 >> (x % 8);
+
+    for (; x < width; x++) {
+	r = !(*q & m);
+	if (p != r) {
+	    if (c >= c1) {
+		if (!r)
+		    goto ex; /* stop before the upgrade. */
+	    }
+	    c++;
+	}
+	p = r;
+	m >>= 1;
+	if (!m) {
+	    m = 0x80;
+	    q++;
+	}
+    }
+    if (p)
+	c++; /* Account the last downgrade. */
+ex:
+    *count = c;
+    *x1 = x;
+}
+
+private void
+compute_subimage(int width, int height, int raster, byte *base, 
+	    	 int x0, int y0, long MaxClipPathSize, int *x1, int *y1)
+{
+    /* Returns a semiopen range : [x0:x1)*[y0:y1). */
+    if (x0 != 0) {
+	long count;
+
+	/* A partial single scanline. */
+	max_subimage_width(width, base + y0 * raster, x0, MaxClipPathSize / 4, x1, &count);
+	*y1 = y0;
+    } else {
+	int xx, y = y0;
+	long count, count1 = MaxClipPathSize / 4;
+
+	for(; y < height && count1 > 0; y++) {
+	    max_subimage_width(width, base + y * raster, 0, count1, &xx, &count);
+	    if (xx < width) {
+		if (y == y0) {
+		    /* Partial single scanline. */
+		    *y1 = y + 1;
+		    *x1 = xx;
+		    return;
+		} else {
+		    /* Full lines before this scanline. */
+		    break;
+		}
+	    }
+	    count1 -= count;
+	}
+	*y1 = y;
+	*x1 = width;
+    }
+}
+
+private int
+image_line_to_clip(gx_device_pdf *pdev, byte *base, int x0, int x1, int y, bool started)
+{   /* returns the number of segments or error code. */
+    int x = x0, xx;
+    byte *q = base + (x / 8), m = 0x80 >> (x % 8);
+    long c = 0;
+
+    for (;;) {
+	/* Look for upgrade : */
+	for (; x < x1; x++) {
+	    if (*q & m)
+		break;
+	    m >>= 1;
+	    if (!m) {
+		m = 0x80;
+		q++;
+	    }
+	}
+	if (x == x1)
+	    return c;
+	xx = x;
+	/* Look for downgrade : */
+	for (; x < x1; x++) {
+	    if (!(*q & m))
+		break;
+	    m >>= 1;
+	    if (!m) {
+		m = 0x80;
+		q++;
+	    }
+	}
+	/* Found the interval [xx:x). */
+	if (!started)
+	    stream_puts(pdev->strm, "n\n");
+	pprintld2(pdev->strm, "%ld %ld m ", xx, y);
+	pprintld2(pdev->strm, "%ld %ld l ", x, y);
+	pprintld2(pdev->strm, "%ld %ld l ", x, y + 1);
+	pprintld2(pdev->strm, "%ld %ld l h\n", xx, y + 1);
+	c += 4;
+    }
+    return c;
+}
+
+private int
+mask_to_clip(gx_device_pdf *pdev, int width, int height, 
+	     int raster, byte *base, int x0, int y0, int x1, int y1)
+{
+    int y, code = 0;
+    bool has_segments = false;
+
+    for (y = y0; y < y1 && code >= 0; y++) {
+	code = image_line_to_clip(pdev, base + raster * y, x0, x1, y, has_segments);
+	if (code > 0)
+	    has_segments = true;
+    }
+    if (has_segments)
+	stream_puts(pdev->strm, "W n\n");
+    return code < 0 ? code : has_segments ? 1 : 0;
+}
+
+private int
+write_subimage(gx_device_pdf *pdev, gx_device_memory *mdev, int x, int y, int x1, int y1)
+{
+    gs_image_t image;
+    pdf_image_writer writer;
+    /* expand in 1 pixel to provide a proper color interpolation */
+    int X = max(0, x - 1);
+    int Y = max(0, y - 1);
+    int X1 = min(mdev->width, x1 + 1);
+    int Y1 = min(mdev->height, y1 + 1);
+    int code;
+
+    code = pdf_copy_color_data(pdev, mdev->base + mdev->raster * Y, X,  
+		mdev->raster, gx_no_bitmap_id, 
+		X, Y, X1 - X, Y1 - Y,
+		&image, &writer, 2);
+    if (code < 0)
+	return code;
+    if (!writer.pres)
+	return 0; /* inline image. */
+    return pdf_do_image(pdev, writer.pres, NULL, true);
+}
+
+private int 
+write_image_with_clip(gx_device_pdf *pdev, pdf_lcvd_t *cvd)
+{
+    int x = 0, y = 0;
+    int code, code1;
+
+    pprintg2(pdev->strm, "1 0 0 1 %g %g cm\n", cvd->p.x, cvd->p.y);
+    for(;;) {
+	int x1, y1;
+	
+	compute_subimage(cvd->mask.width, cvd->mask.height, 
+			 cvd->mask.raster, cvd->mask.base, 
+			 x, y, max(pdev->MaxClipPathSize, 100), &x1, &y1);
+	code = mask_to_clip(pdev, 
+			 cvd->mask.width, cvd->mask.height, 
+			 cvd->mask.raster, cvd->mask.base,
+			 x, y, x1, y1);
+	if (code < 0)
+	    return code;
+	if (code > 0) {
+	    code1 = write_subimage(pdev, &cvd->mdev, x, y, x1, y1);
+	    if (code1 < 0)
+		return code1;
+	}
+	if (x1 >= cvd->mdev.width && y1 >= cvd->mdev.height)
+	    break;
+	if (code > 0)
+	    stream_puts(pdev->strm, "Q q\n");
+	if (x1 == cvd->mask.width) {
+	    x = 0;
+	    y = y1;
+	} else {
+	    x = x1;
+	    y = y1;
+	}
+    }
+    return 0;
+}
+
 private int
 dump_image(gx_device_pdf *pdev, pdf_lcvd_t *cvd)
 {
@@ -557,7 +747,8 @@ dump_image(gx_device_pdf *pdev, pdf_lcvd_t *cvd)
     if (!cvd->path_is_empty) {
 	code = write_image(pdev, &cvd->mdev, &cvd->p);
 	cvd->path_is_empty = true;
-    } else if (!cvd->mask_is_empty) {
+    } else if (!cvd->mask_is_empty && pdev->PatternImagemask) {
+	/* Convert to imagemask with a pattern color. */
 	/* See also use_image_as_pattern in gdevpdfi.c . */
 	gs_imager_state s;
 	gs_pattern1_instance_t inst;
@@ -601,6 +792,9 @@ dump_image(gx_device_pdf *pdev, pdf_lcvd_t *cvd)
 	if (code >= 0)
 	    code = write_mask(pdev, &cvd->mask, &cvd->p);
 	cvd->mask_is_empty = true;
+    } else if (!cvd->mask_is_empty && !pdev->PatternImagemask) {
+	/* Convert to image with a clipping path. */
+	code = write_image_with_clip(pdev, cvd);
     }
     if (code > 0)
 	code = (*dev_proc(&cvd->mdev, fill_rectangle))((gx_device *)&cvd->mdev, 
