@@ -189,7 +189,8 @@ struct pcl_state_s {
     pcl_id_t        font_id;
     uint            character_code;
     pl_dict_t       soft_fonts;
-
+    uint            soft_font_count;
+    byte *          soft_font_char_data;
     /* PCL comparison guide - alphanumeric string id */
     alphanumeric_string_id_t    alpha_font_id;
     id_type_t                   font_id_type;
