@@ -249,6 +249,10 @@ struct gs_font_dir_s {
     /* User parameter AlignToPixels. */
 
     bool align_to_pixels;
+
+    /* A callback for converting glyphs to Unicode */
+    gs_char (*glyph_to_unicode)(void *table, gs_glyph glyph);
+    void *glyph_to_unicode_table; /* closure data */
 };
 
 #define private_st_font_dir()	/* in gsfont.c */\
@@ -258,8 +262,9 @@ struct gs_font_dir_s {
 /* Enumerate the pointers in a font directory, except for orig_fonts. */
 #define font_dir_do_ptrs(m)\
   /*m(-,orig_fonts)*/ m(0,scaled_fonts) m(1,fmcache.mdata)\
-  m(2,ccache.table) m(3,ccache.mark_glyph_data)
-#define st_font_dir_max_ptrs 4
+  m(2,ccache.table) m(3,ccache.mark_glyph_data)\
+  m(4,glyph_to_unicode_table)
+#define st_font_dir_max_ptrs 5
 
 /* Character cache procedures (in gxccache.c and gxccman.c) */
 int gx_char_cache_alloc(gs_memory_t * struct_mem, gs_memory_t * bits_mem,

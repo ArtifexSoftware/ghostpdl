@@ -43,15 +43,16 @@ private_st_pdf_outline_fonts();
 
 private
 ENUM_PTRS_WITH(pdf_font_resource_enum_ptrs, pdf_font_resource_t *pdfont)
-ENUM_PREFIX(st_pdf_resource, 10);
+ENUM_PREFIX(st_pdf_resource, 11);
 case 0: return ENUM_STRING(&pdfont->BaseFont);
 case 1: ENUM_RETURN(pdfont->FontDescriptor);
 case 2: ENUM_RETURN(pdfont->base_font);
 case 3: ENUM_RETURN(pdfont->copied_font);
 case 4: ENUM_RETURN(pdfont->Widths);
 case 5: ENUM_RETURN(pdfont->used);
-case 6: ENUM_RETURN(pdfont->ToUnicode);
-case 7: switch (pdfont->FontType) {
+case 6: ENUM_RETURN(pdfont->res_ToUnicode);
+case 7: ENUM_RETURN(pdfont->cmap_ToUnicode);
+case 8: switch (pdfont->FontType) {
  case ft_composite:
      ENUM_RETURN(pdfont->u.type0.DescendantFont);
  case ft_CID_encrypted:
@@ -60,7 +61,7 @@ case 7: switch (pdfont->FontType) {
  default:
      ENUM_RETURN(pdfont->u.simple.Encoding);
 }
-case 8: switch (pdfont->FontType) {
+case 9: switch (pdfont->FontType) {
  case ft_composite:
      return (pdfont->u.type0.cmap_is_standard ? ENUM_OBJ(0) :
 	     ENUM_CONST_STRING(&pdfont->u.type0.CMapName));
@@ -75,7 +76,7 @@ case 8: switch (pdfont->FontType) {
  default:
      ENUM_RETURN(0);
 }
-case 9: switch (pdfont->FontType) {
+case 10: switch (pdfont->FontType) {
  case ft_user_defined:
      ENUM_RETURN(pdfont->u.simple.s.type3.char_procs);
  case ft_CID_encrypted:
@@ -96,7 +97,8 @@ RELOC_PTRS_WITH(pdf_font_resource_reloc_ptrs, pdf_font_resource_t *pdfont)
     RELOC_VAR(pdfont->copied_font);
     RELOC_VAR(pdfont->Widths);
     RELOC_VAR(pdfont->used);
-    RELOC_VAR(pdfont->ToUnicode);
+    RELOC_VAR(pdfont->res_ToUnicode);
+    RELOC_VAR(pdfont->cmap_ToUnicode);
     switch (pdfont->FontType) {
     case ft_composite:
 	if (!pdfont->u.type0.cmap_is_standard)
@@ -336,6 +338,8 @@ font_resource_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
     pfres->Widths = widths;
     pfres->used = used;
     pfres->write_contents = write_contents;
+    pfres->res_ToUnicode = NULL;
+    pfres->cmap_ToUnicode = NULL;
     *ppfres = pfres;
     return 0;
  fail:

@@ -23,6 +23,9 @@
 #include "gxfont.h"
 #include "gxfont0.h"
 #include "gxfont0c.h"
+#include "gzpath.h"
+#include "gxchar.h"
+#include "gdevpsf.h"
 #include "gdevpdfx.h"
 #include "gdevpdtx.h"
 #include "gdevpdtd.h"
@@ -94,7 +97,7 @@ process_composite_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
 	    case 0:		/* no font change */
 	    case 1:		/* font change */
 		curr.returned.current_char = chr;
-		char_code = gx_current_char(&curr);
+		char_code = gx_current_char((gs_text_enum_t *)&curr);
 		new_font = curr.fstack.items[curr.fstack.depth].font;
 		if (new_font != prev_font)
 		    break;
@@ -351,7 +354,7 @@ process_cmap_text(gs_text_enum_t *pte, const void *vdata, void *vbuf, uint size)
 	     * and later replace with a standard name.
 	     * This is a temporary fix for SF bug #615994 "CMAP is corrupt".
 	     */
-	    is_identity = psf_is_identity_cmap(pcmap);
+	    is_identity = gs_cmap_is_identity(pcmap);
 	}
 	if (*pcmn == 0 && !is_identity) {		/* not standard */
 	    pcmres = pdf_find_resource_by_gs_id(pdev, resourceCMap, pcmap->id);
@@ -386,7 +389,7 @@ process_cmap_text(gs_text_enum_t *pte, const void *vdata, void *vbuf, uint size)
 		    if (code < 0)
 			return code;
 		}
-		pdfont->ToUnicode = pdev->Identity_ToUnicode_CMaps[pcmap->WMode];
+		pdfont->res_ToUnicode = pdev->Identity_ToUnicode_CMaps[pcmap->WMode];
 	    }
 	}
 	if (pcmres || is_identity) {

@@ -23,6 +23,7 @@
 #include "spprint.h"
 #include "spsdf.h"
 #include "gdevpsf.h"
+#include "memory_.h"
 
 /* ---------------- Utilities ---------------- */
 
@@ -211,48 +212,54 @@ psf_write_cmap(stream *s, const gs_cmap_t *pcmap,
 
     /* Write the header. */
 
-    stream_puts(s, "%!PS-Adobe-3.0 Resource-CMap\n");
-    stream_puts(s, "%%DocumentNeededResources: ProcSet (CIDInit)\n");
-    stream_puts(s, "%%IncludeResource: ProcSet (CIDInit)\n");
-    pput_string_entry(s, "%%BeginResource: CMap (", cmap_name);
-    pput_string_entry(s, ")\n%%Title: (", cmap_name);
-    pput_string_entry(s, " ", &pcidsi->Registry);
-    pput_string_entry(s, " ", &pcidsi->Ordering);
-    pprintd1(s, " %d)\n", pcidsi->Supplement);
-    pprintg1(s, "%%%%Version: %g\n", pcmap->CMapVersion);
+    if (!pcmap->ToUnicode) {
+	stream_puts(s, "%!PS-Adobe-3.0 Resource-CMap\n");
+	stream_puts(s, "%%DocumentNeededResources: ProcSet (CIDInit)\n");
+	stream_puts(s, "%%IncludeResource: ProcSet (CIDInit)\n");
+	pput_string_entry(s, "%%BeginResource: CMap (", cmap_name);
+	pput_string_entry(s, ")\n%%Title: (", cmap_name);
+	pput_string_entry(s, " ", &pcidsi->Registry);
+	pput_string_entry(s, " ", &pcidsi->Ordering);
+	pprintd1(s, " %d)\n", pcidsi->Supplement);
+	pprintg1(s, "%%%%Version: %g\n", pcmap->CMapVersion);
+    }
     stream_puts(s, "/CIDInit /ProcSet findresource begin\n");
     stream_puts(s, "12 dict begin\nbegincmap\n");
 
     /* Write the fixed entries. */
 
     pprintd1(s, "/CMapType %d def\n", pcmap->CMapType);
-    stream_puts(s, "/CMapName/");
-    put_name_chars(s, cmap_name->data, cmap_name->size);
-    stream_puts(s, " def\n/CIDSystemInfo");
-    if (pcmap->num_fonts == 1) {
-	cmap_put_system_info(s, pcidsi);
-    } else {
-	int i;
+    if (!pcmap->ToUnicode) {
+	pprintg1(s, "/CMapVersion %g def\n", pcmap->CMapVersion);
+	stream_puts(s, "/CMapName/");
+	put_name_chars(s, cmap_name->data, cmap_name->size);
+	stream_puts(s, " def\n");
+	stream_puts(s, "/CIDSystemInfo");
+	if (pcmap->num_fonts == 1) {
+	    cmap_put_system_info(s, pcidsi);
+	} else {
+	    int i;
 
-	pprintd1(s, " %d array\n", pcmap->num_fonts);
-	for (i = 0; i < pcmap->num_fonts; ++i) {
-	    pprintd1(s, "dup %d", i);
-	    cmap_put_system_info(s, pcidsi + i);
-	    stream_puts(s, "put\n");
+	    pprintd1(s, " %d array\n", pcmap->num_fonts);
+	    for (i = 0; i < pcmap->num_fonts; ++i) {
+		pprintd1(s, "dup %d", i);
+		cmap_put_system_info(s, pcidsi + i);
+		stream_puts(s, "put\n");
+	    }
 	}
-    }
-    pprintg1(s, "def\n/CMapVersion %g def\n", pcmap->CMapVersion);
-    if (uid_is_XUID(&pcmap->uid)) {
-	uint i, n = uid_XUID_size(&pcmap->uid);
-	const long *values = uid_XUID_values(&pcmap->uid);
+	stream_puts(s, " def\n");
+	if (uid_is_XUID(&pcmap->uid)) {
+	    uint i, n = uid_XUID_size(&pcmap->uid);
+	    const long *values = uid_XUID_values(&pcmap->uid);
 
-	stream_puts(s, "/XUID [");
-	for (i = 0; i < n; ++i)
-	    pprintld1(s, " %ld", values[i]);
-	stream_puts(s, "] def\n");
+	    stream_puts(s, "/XUID [");
+	    for (i = 0; i < n; ++i)
+		pprintld1(s, " %ld", values[i]);
+	    stream_puts(s, "] def\n");
+	}
+	pprintld1(s, "/UIDOffset %ld def\n", pcmap->UIDOffset);
+	pprintd1(s, "/WMode %d def\n", pcmap->WMode);
     }
-    pprintld1(s, "/UIDOffset %ld def\n", pcmap->UIDOffset);
-    pprintd1(s, "/WMode %d def\n", pcmap->WMode);
 
     /* Write the code space ranges. */
 
@@ -297,44 +304,11 @@ psf_write_cmap(stream *s, const gs_cmap_t *pcmap,
 
     stream_puts(s, "endcmap\n");
     stream_puts(s, "CMapName currentdict /CMap defineresource pop\nend end\n");
-    stream_puts(s, "%%EndResource\n");
-    stream_puts(s, "%%EOF\n");
+    if (!pcmap->ToUnicode) {
+	stream_puts(s, "%%EndResource\n");
+	stream_puts(s, "%%EOF\n");
+    }
 
     return 0;
 }
 
-/* Check for identity map. */
-bool
-psf_is_identity_cmap(const gs_cmap_t *pcmap)
-{
-    const cmap_operators_t *pcmo = &cmap_cid_operators;
-    const int which = 0, font_index = 0;
-    gs_cmap_lookups_enum_t lenum;
-    int code;
-
-    for (gs_cmap_lookups_enum_init(pcmap, which, &lenum);
-	 (code = gs_cmap_enum_next_lookup(&lenum)) == 0; ) {
-	if (lenum.entry.font_index != font_index)
-	    return false;
-	while (gs_cmap_enum_next_entry(&lenum) == 0) {
-	    ulong key = 0, value = 0;
-
-	    switch (lenum.entry.value_type) {
-	    case CODE_VALUE_CID:
-		break;
-	    case CODE_VALUE_CHARS:
-		return false; /* Not implemented yet. */
-	    case CODE_VALUE_GLYPH:
-		return false;
-	    default :
-		return false; /* Must not happen. */
-	    }
-	    if (lenum.entry.key_size != lenum.entry.value.size)
-		return false;
-	    if (memcmp(lenum.entry.key[0], lenum.entry.value.data, 
-		lenum.entry.key_size))
-		return false;
-	}
-    }
-    return true;
-}

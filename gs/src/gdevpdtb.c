@@ -639,3 +639,11 @@ pdf_write_CIDSet(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
     pdf_end_separate(pdev);
     return code;
 }
+
+/*
+ * Check whether a base font is standard.
+ */
+bool
+pdf_is_standard_font(pdf_base_font_t *bfont)
+{   return bfont->is_standard;
+}

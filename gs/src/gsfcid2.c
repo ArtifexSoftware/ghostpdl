@@ -252,7 +252,8 @@ tt_16bit_format4_enum_lookups(const gs_cmap_t *pcmap, int which,
 private const gs_cmap_procs_t tt_16bit_format4_procs = {
     tt_16bit_format4_decode_next,
     tt_16bit_format4_enum_ranges,
-    tt_16bit_format4_enum_lookups
+    tt_16bit_format4_enum_lookups,
+    gs_cmap_compute_identity
 };
 
 /*

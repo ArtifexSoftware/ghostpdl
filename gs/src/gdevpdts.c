@@ -174,7 +174,6 @@ private int
 add_text_delta_move(gx_device_pdf *pdev, const gs_matrix *pmat)
 {
     pdf_text_state_t *const pts = pdev->text->text_state;
-    const double precis = 0.001;
 
     if (matrix_is_compatible(pmat, &pts->in.matrix)) {
 	double dx = pmat->tx - pts->in.matrix.tx,
@@ -556,7 +555,7 @@ pdf_append_chars(gx_device_pdf * pdev, const byte * str, uint size,
     }
     while (left)
 	if (pts->buffer.count_chars == MAX_TEXT_BUFFER_CHARS ||
-	    nobreak && pts->buffer.count_chars + left > MAX_TEXT_BUFFER_CHARS) {
+	    (nobreak && pts->buffer.count_chars + left > MAX_TEXT_BUFFER_CHARS)) {
 	    int code = sync_text_state(pdev);
 
 	    if (code < 0)

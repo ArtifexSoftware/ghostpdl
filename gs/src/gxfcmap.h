@@ -145,6 +145,7 @@ typedef struct gs_cmap_s gs_cmap_t;
     long UIDOffset;\
     int WMode;\
     bool from_Unicode;		/* if true, characters are Unicode */\
+    bool ToUnicode;             /* if true, it is a ToUnicode CMap */\
     gs_glyph_name_proc_t glyph_name;  /* glyph name procedure for printing */\
     void *glyph_name_data;	/* closure data */\
     const gs_cmap_procs_t *procs
@@ -184,6 +185,12 @@ typedef struct gs_cmap_procs_s {
 
     void (*enum_lookups)(const gs_cmap_t *pcmap, int which,
 			 gs_cmap_lookups_enum_t *penum);
+
+    /*
+     * Check if the cmap is identity.
+     */
+
+    bool (*is_identity)(const gs_cmap_t *pcmap);
 
 } gs_cmap_procs_t;
 
@@ -308,5 +315,17 @@ void gs_cmap_ranges_enum_setup(gs_cmap_ranges_enum_t *penum,
 void gs_cmap_lookups_enum_setup(gs_cmap_lookups_enum_t *penum,
 				const gs_cmap_t *pcmap,
 				const gs_cmap_lookups_enum_procs_t *procs);
+
+/* 
+ * Check for identity CMap. Uses a fast check for special cases.
+ */
+bool gs_cmap_is_identity(const gs_cmap_t *pcmap);
+
+/* 
+ * For a random CMap, compute whether it is identity.
+ * It is not applicable to gs_cmap_ToUnicode_t due to
+ * different sizes of domain keys and range values.
+ */
+bool gs_cmap_compute_identity(const gs_cmap_t *pcmap);
 
 #endif /* gxfcmap_INCLUDED */

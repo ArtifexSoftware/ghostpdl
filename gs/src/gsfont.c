@@ -260,6 +260,8 @@ gs_font_dir_alloc2_limits(gs_memory_t * struct_mem, gs_memory_t * bits_mem,
     pdir->ssize = 0;
     pdir->smax = smax;
     pdir->align_to_pixels = true;
+    pdir->glyph_to_unicode = NULL;
+    pdir->glyph_to_unicode_table = NULL;
     return pdir;
 }
 
@@ -916,3 +918,4 @@ gs_no_glyph_name(gs_font *font, gs_glyph glyph, gs_const_string *pstr)
 {
     return_error(gs_error_undefined);
 }
+

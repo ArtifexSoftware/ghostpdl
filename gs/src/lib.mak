@@ -1981,7 +1981,7 @@ $(GLOBJ)gdevpsf2.$(OBJ) : $(GLSRC)gdevpsf2.c $(GXERR)\
 $(GLOBJ)gdevpsfm.$(OBJ) : $(GLSRC)gdevpsfm.c $(GXERR)\
  $(gdevpsf_h)\
  $(gxfcmap_h)\
- $(spprint_h) $(spsdf_h) $(stream_h)
+ $(spprint_h) $(spsdf_h) $(stream_h) $(memory__h)
 	$(GLCC) $(GLO_)gdevpsfm.$(OBJ) $(C_) $(GLSRC)gdevpsfm.c
 
 $(GLOBJ)gdevpsft.$(OBJ) : $(GLSRC)gdevpsft.c $(GXERR) $(memory__h)\

@@ -20,6 +20,7 @@
 #include "gx.h"
 #include "gxfcmap.h"
 #include "gxfont.h"
+#include "gscencs.h"
 #include "gdevpsf.h"
 #include "gdevpdfx.h"
 #include "gdevpdfo.h"		/* for object->written */
@@ -62,7 +63,7 @@ pdf_different_encoding_element(const pdf_font_resource_t *pdfont, int ch, int en
 {
     if (pdfont->u.simple.Encoding[ch].is_difference)
 	return 1;
-    else if (encoding_index >= 0) {
+    else if (encoding_index != ENCODING_INDEX_UNKNOWN) {
 	gs_glyph glyph0 = gs_c_known_encode(ch, encoding_index);
 	gs_glyph glyph1 = pdfont->u.simple.Encoding[ch].glyph;
 	gs_const_string str;
@@ -209,7 +210,7 @@ pdf_write_CIDFont_widths(gx_device_pdf *pdev,
     psf_glyph_enum_t genum;
     gs_glyph glyph;
     int dw = 0, dv = 0, prev = -2;
-    char *Widths_key = (wmode ? "/W2" : "/W");
+    const char *Widths_key = (wmode ? "/W2" : "/W");
     double *w = (wmode ? pdfont->u.cidfont.Widths2 : pdfont->Widths);
 
     /* Compute and write default width : */
@@ -407,6 +408,28 @@ pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 {
     stream *s;
 
+    if (pdfont->cmap_ToUnicode != NULL && pdfont->res_ToUnicode == NULL &&
+	    !gs_cmap_is_identity(pdfont->cmap_ToUnicode)) {
+	/*
+	 * The condition above slightly differs from PDF spec
+	 * (see the chapter "ToUnicode CMaps").
+	 * For Type 1 the spec requires to check whether all glyphs are
+	 * from Latin or Symbol character set. For True Type
+	 * it wants to check for 3 standard encodings, 
+	 * which only allowed with non-symbolic fonts.
+	 * We use a different condition because (1) currently
+	 * we don't have those sets in a simple form,
+	 * (2) we write True Types as symbolic fonts,
+	 * (3) we did not check whether Acrobat Reader actually
+	 * follows the spec.
+	 */
+	pdf_resource_t *prcmap;
+	int code = pdf_cmap_alloc(pdev, pdfont->cmap_ToUnicode, &prcmap);
+
+	if (code < 0)
+	    return code;
+        pdfont->res_ToUnicode = prcmap;
+    }
     pdf_open_separate(pdev, pdf_font_id(pdfont));
     s = pdev->strm;
     stream_puts(s, "<<");
@@ -417,9 +440,9 @@ pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
     if (pdfont->FontDescriptor)
 	pprintld1(s, "/FontDescriptor %ld 0 R",
 		  pdf_font_descriptor_id(pdfont->FontDescriptor));
-    if (pdfont->ToUnicode)
+    if (pdfont->res_ToUnicode)
 	pprintld1(s, "/ToUnicode %ld 0 R",
-		  pdf_resource_id((const pdf_resource_t *)pdfont->ToUnicode));
+		  pdf_resource_id((const pdf_resource_t *)pdfont->res_ToUnicode));
     if (pdev->CompatibilityLevel > 1.0)
 	stream_puts(s, "/Type/Font\n");
     else
@@ -527,12 +550,15 @@ pdf_write_cmap(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
 	return 0;
     pdf_open_separate(pdev, pres->object->id);
     s = pdev->strm;
-    pprintd1(s, "<</WMode %d/CMapName", pcmap->WMode);
-    pdf_put_name(pdev, pcmap->CMapName.data, pcmap->CMapName.size);
-    stream_puts(s, "/CIDSystemInfo");
-    code = pdf_write_cid_system_info(pdev, pcmap->CIDSystemInfo);
-    if (code < 0)
-	return code;
+    stream_puts(s, "<<");
+    if (!pcmap->ToUnicode) {
+	pprintd1(s, "/WMode %d/CMapName", pcmap->WMode);
+	pdf_put_name(pdev, pcmap->CMapName.data, pcmap->CMapName.size);
+	stream_puts(s, "/CIDSystemInfo");
+	code = pdf_write_cid_system_info(pdev, pcmap->CIDSystemInfo);
+	if (code < 0)
+	    return code;
+    }
     code = pdf_begin_data_stream(pdev, &writer,
 				 DATA_STREAM_NOT_BINARY |
 				 (pdev->CompressFonts ?

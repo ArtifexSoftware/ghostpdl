@@ -35,6 +35,7 @@
 /* Forward references */
 private int make_font(i_ctx_t *, const gs_matrix *);
 private void make_uint_array(os_ptr, const uint *, int);
+private int setup_unicode_decoder(i_ctx_t *i_ctx_p, ref *Decoding);
 
 /* The (global) font directory */
 gs_font_dir *ifont_dir = 0;	/* needed for buildfont */
@@ -195,6 +196,22 @@ zregisterfont(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+
+/* <Decoding> .setupUnicodeDecoder - */
+private int
+zsetupUnicodeDecoder(i_ctx_t *i_ctx_p)
+{   /* The allocation mode must be global. */
+    os_ptr op = osp;
+    int code;
+
+    check_type(*op, t_dictionary);
+    code = setup_unicode_decoder(i_ctx_p, op);
+    if (code < 0)
+	return code;
+    pop(1);
+    return 0;
+}
+
 /* ------ Initialization procedure ------ */
 
 const op_def zfont_op_defs[] =
@@ -208,6 +225,7 @@ const op_def zfont_op_defs[] =
     {"1setcacheparams", zsetcacheparams},
     {"0currentcacheparams", zcurrentcacheparams},
     {"1.registerfont", zregisterfont},
+    {"1.setupUnicodeDecoder", zsetupUnicodeDecoder},
     op_def_end(zfont_init)
 };
 
@@ -547,4 +565,60 @@ zfont_info(gs_font *font, const gs_point *pscale, int members,
 	zfont_info_has(pfontinfo, "FullName", &info->FullName))
 	info->members |= FONT_INFO_FULL_NAME;
     return code;
+}
+
+/* -------------------- Utilities --------------*/
+
+typedef struct gs_unicode_decoder_s {
+    ref data;
+} gs_unicode_decoder;
+
+/* GC procedures */
+private 
+CLEAR_MARKS_PROC(unicode_decoder_clear_marks)
+{   gs_unicode_decoder *const pptr = vptr;
+
+    r_clear_attrs(&pptr->data, l_mark);
+}
+private 
+ENUM_PTRS_WITH(unicode_decoder_enum_ptrs, gs_unicode_decoder *pptr) return 0;
+case 0:
+ENUM_RETURN_REF(&pptr->data);
+ENUM_PTRS_END
+private RELOC_PTRS_WITH(unicode_decoder_reloc_ptrs, gs_unicode_decoder *pptr);
+RELOC_REF_VAR(pptr->data);
+r_clear_attrs(&pptr->data, l_mark);
+RELOC_PTRS_END
+
+gs_private_st_complex_only(st_unicode_decoder, gs_unicode_decoder,\
+    "unicode_decoder", unicode_decoder_clear_marks, unicode_decoder_enum_ptrs, 
+    unicode_decoder_reloc_ptrs, 0);
+
+/* Get the Unicode value for a glyph. */
+private gs_char
+zfont_glyph_to_unicode(void *table, gs_glyph glyph)
+{
+    ref nref, *v;
+    const gs_unicode_decoder *pud = (gs_unicode_decoder *)table;
+
+    if (glyph >= gs_min_cid_glyph)
+	return GS_NO_CHAR; /* Unsupported */
+    name_index_ref(glyph, &nref);
+    if (dict_find(&pud->data, &nref, &v) > 0)
+	if (r_type(v) == t_integer)
+	    return v->value.intval;
+    return GS_NO_CHAR; /* Unknown glyph */
+}
+
+private int
+setup_unicode_decoder(i_ctx_t *i_ctx_p, ref *Decoding)
+{
+    gs_unicode_decoder *pud = gs_alloc_struct(imemory, gs_unicode_decoder, 
+                             &st_unicode_decoder, "setup_unicode_decoder");
+    if (pud == NULL)
+	return_error(e_VMerror);
+    ref_assign_new(&pud->data, Decoding);
+    ifont_dir->glyph_to_unicode = zfont_glyph_to_unicode;
+    ifont_dir->glyph_to_unicode_table = pud;
+    return 0;
 }

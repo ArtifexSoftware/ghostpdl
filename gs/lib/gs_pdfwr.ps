@@ -602,3 +602,14 @@ dup length .distillercommon length add dict begin
   } forall
 } repeat
 currentdict end .setdistillerparams
+
+systemdict /.setupUnicodeDecoder known {
+  /Unicode /Decoding resourcestatus {
+    pop pop
+    /Unicode /Decoding findresource .setupUnicodeDecoder
+  } {
+    QUIET not {
+      (WARNING: /Unicode /Decoding resource is not accessible but it is useful for generating ToUnicode CMap.) =
+    } if
+  } ifelse
+} if

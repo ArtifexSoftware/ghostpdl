@@ -231,11 +231,6 @@ typedef int (*psf_put_name_chars_proc_t)(stream *, const byte *, uint);
 int psf_write_cmap(stream *s, const gs_cmap_t *pcmap,
 		   psf_put_name_chars_proc_t put_name_chars,
 		   const gs_const_string *alt_cmap_name);
-/* 
- * Check for identity map. 
- */
-bool psf_is_identity_cmap(const gs_cmap_t *pcmap);
-
 /* ------ Exported by gdevpsft.c ------ */
 
 /*

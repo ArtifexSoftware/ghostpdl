@@ -128,4 +128,9 @@ int pdf_write_CharSet(gx_device_pdf *pdev, pdf_base_font_t *pbfont);
 int pdf_write_CIDSet(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
 		     long *pcidset_id);
 
+/*
+ * Check whether a base font is standard.
+ */
+bool pdf_is_standard_font(pdf_base_font_t *bfont);
+
 #endif /* gdevpdtb_INCLUDED */

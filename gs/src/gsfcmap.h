@@ -54,4 +54,15 @@ int gs_cmap_decode_next(const gs_cmap_t *pcmap, const gs_const_string *str,
 			uint *pindex, uint *pfidx,
 			gs_char *pchr, gs_glyph *pglyph);
 
+/*
+ * Allocate and initialize a ToUnicode CMap.
+ */
+int gs_cmap_ToUnicode_alloc(gs_memory_t *mem, int id, int num_codes, int key_size, 
+			    gs_cmap_t **ppcmap);
+
+/*
+ * Write a code pair to ToUnicode CMap.
+ */
+void gs_cmap_ToUnicode_add_pair(gs_cmap_t *pcmap, int code0, int code2);
+
 #endif /* gsfcmap_INCLUDED */

@@ -16,6 +16,7 @@
 
 /* $Id$ */
 /* CMap character decoding */
+#include <assert.h>
 #include "memory_.h"
 #include "gx.h"
 #include "gserrors.h"
@@ -155,9 +156,14 @@ identity_enum_lookups(const gs_cmap_t *pcmap, int which,
 			       (which ? &gs_cmap_no_lookups_procs :
 				&identity_lookup_procs));
 }
+private bool
+identity_is_identity(const gs_cmap_t *pcmap)
+{
+    return true;
+}
 
 private const gs_cmap_procs_t identity_procs = {
-    identity_decode_next, identity_enum_ranges, identity_enum_lookups
+    identity_decode_next, identity_enum_ranges, identity_enum_lookups, identity_is_identity
 };
 
 private int
@@ -206,6 +212,17 @@ gs_cmap_create_char_identity(gs_cmap_t **ppcmap, int num_bytes, int wmode,
     return gs_cmap_identity_alloc(ppcmap, num_bytes, 1, num_bytes,
 				  (wmode ? "Identity-BF-V" : "Identity-BF-H"),
 				  wmode, mem);
+}
+
+    /* ------ Check identity ------ */
+
+/*
+ * Check for identity CMap. Uses a fast check for special cases.
+ */
+int
+gs_cmap_is_identity(const gs_cmap_t *pcmap)
+{
+    return pcmap->procs->is_identity(pcmap);
 }
 
     /* ------ Decoding ------ */
@@ -339,4 +356,233 @@ gs_cmap_lookups_enum_setup(gs_cmap_lookups_enum_t *penum,
     penum->cmap = pcmap;
     penum->procs = procs;
     penum->index[0] = penum->index[1] = 0;
+}
+
+/* 
+ * For a random CMap, compute whether it is identity.
+ * It is not applicable to gs_cmap_ToUnicode_t due to
+ * different sizes of domain keys and range values.
+ */
+bool
+gs_cmap_compute_identity(const gs_cmap_t *pcmap)
+{
+    const int which = 0, font_index = 0;
+    gs_cmap_lookups_enum_t lenum;
+    int code;
+
+    for (gs_cmap_lookups_enum_init(pcmap, which, &lenum);
+	 (code = gs_cmap_enum_next_lookup(&lenum)) == 0; ) {
+	if (lenum.entry.font_index != font_index)
+	    return false;
+	while (gs_cmap_enum_next_entry(&lenum) == 0) {
+	    switch (lenum.entry.value_type) {
+	    case CODE_VALUE_CID:
+		break;
+	    case CODE_VALUE_CHARS:
+		return false; /* Not implemented yet. */
+	    case CODE_VALUE_GLYPH:
+		return false;
+	    default :
+		return false; /* Must not happen. */
+	    }
+	    if (lenum.entry.key_size != lenum.entry.value.size)
+		return false;
+	    if (memcmp(lenum.entry.key[0], lenum.entry.value.data, 
+		lenum.entry.key_size))
+		return false;
+	}
+    }
+    return true;
+}
+
+/* ================= ToUnicode CMap ========================= */
+
+/*
+ * This kind of CMaps keeps character a mapping from a random
+ * PS encoding to Unicode, being defined in PDF reference, "ToUnicode CMaps".
+ * It represents ranges in a closure data, without using 
+ * gx_cmap_lookup_range_t. A special function gs_cmap_ToUnicode_set
+ * allows to write code pairs into the closure data.
+ */
+
+private const int gs_cmap_ToUnicode_code_bytes = 2;
+
+typedef struct gs_cmap_ToUnicode_s {
+    GS_CMAP_COMMON;
+    int num_codes;
+    int key_size;
+    bool is_identity;
+} gs_cmap_ToUnicode_t;
+
+gs_private_st_suffix_add0(st_cmap_ToUnicode, gs_cmap_ToUnicode_t,
+    "gs_cmap_ToUnicode_t", cmap_ToUnicode_enum_ptrs, cmap_ToUnicode_reloc_ptrs,
+    st_cmap);
+
+private int
+gs_cmap_ToUnicode_next_range(gs_cmap_ranges_enum_t *penum)
+{   const gs_cmap_ToUnicode_t *cmap = (gs_cmap_ToUnicode_t *)penum->cmap;
+    if (penum->index == 0) {
+	memset(penum->range.first, 0, cmap->key_size);
+	memset(penum->range.last, 0xff, cmap->key_size);
+	penum->range.size = cmap->key_size; 
+	penum->index = 1;
+	return 0;
+    }
+    return 1;
+}
+
+private const gs_cmap_ranges_enum_procs_t gs_cmap_ToUnicode_range_procs = {
+    gs_cmap_ToUnicode_next_range
+};
+
+private int
+gs_cmap_ToUnicode_decode_next(const gs_cmap_t *pcmap, const gs_const_string *str,
+		     uint *pindex, uint *pfidx,
+		     gs_char *pchr, gs_glyph *pglyph)
+{
+    assert(0); /* Unsupported, because never used. */
+    return 0;
+}
+
+private void
+gs_cmap_ToUnicode_enum_ranges(const gs_cmap_t *pcmap, gs_cmap_ranges_enum_t *pre)
+{
+    gs_cmap_ranges_enum_setup(pre, pcmap, &gs_cmap_ToUnicode_range_procs);
+}
+
+private int
+gs_cmap_ToUnicode_next_lookup(gs_cmap_lookups_enum_t *penum)
+{   const gs_cmap_ToUnicode_t *cmap = (gs_cmap_ToUnicode_t *)penum->cmap;
+    
+    if (penum->index[0]++ > 0)
+	return 1;
+    penum->entry.value.data = penum->temp_value;
+    penum->entry.value.size = gs_cmap_ToUnicode_code_bytes;
+    penum->index[1] = 0;
+    penum->entry.key_is_range = true;
+    penum->entry.value_type = CODE_VALUE_CHARS;
+    penum->entry.key_size = cmap->key_size;
+    penum->entry.value.size = gs_cmap_ToUnicode_code_bytes;
+    penum->entry.font_index = 0;
+    return 0;
+}
+
+private int
+gs_cmap_ToUnicode_next_entry(gs_cmap_lookups_enum_t *penum)
+{   const gs_cmap_ToUnicode_t *cmap = (gs_cmap_ToUnicode_t *)penum->cmap;
+    const uchar *map = cmap->glyph_name_data;
+    const int num_codes = cmap->num_codes;
+    uint index = penum->index[1], i, j;
+    uchar c0, c1;
+    ushort c2;
+
+    /* Warning : this hardcodes gs_cmap_ToUnicode_num_code_bytes = 2 */
+    for (i = index; i < num_codes; i++)
+	if (map[i + i + 0] != 0 || map[i + i + 1] != 0)
+	    break;
+    if (i >= num_codes)
+	return 1;
+    c0 = map[i + i + 0];
+    c1 = map[i + i + 1];
+    for (j = i + 1, c2 = c1 + 1; j < num_codes; j++, c2++)
+	if (map[j + j + 0] != c0 || (ushort)map[j + j + 1] != c2)
+	    break;
+    penum->index[1] = j;
+    penum->entry.key[0][0] = (uchar)(i >> 8);
+    penum->entry.key[0][cmap->key_size - 1] = (uchar)(i & 0xFF);
+    penum->entry.key[1][0] = (uchar)(j >> 8);
+    penum->entry.key[1][cmap->key_size - 1] = (uchar)((j - 1) & 0xFF);
+    memcpy(penum->temp_value, map + i * gs_cmap_ToUnicode_code_bytes, 
+			gs_cmap_ToUnicode_code_bytes);
+    return 0;
+}
+
+private const gs_cmap_lookups_enum_procs_t gs_cmap_ToUnicode_lookup_procs = {
+    gs_cmap_ToUnicode_next_lookup, gs_cmap_ToUnicode_next_entry
+};
+
+private void
+gs_cmap_ToUnicode_enum_lookups(const gs_cmap_t *pcmap, int which,
+		      gs_cmap_lookups_enum_t *pre)
+{
+    gs_cmap_lookups_enum_setup(pre, pcmap,
+			       (which ? &gs_cmap_no_lookups_procs : /* fixme */
+				&gs_cmap_ToUnicode_lookup_procs));
+}
+
+private bool
+gs_cmap_ToUnicode_is_identity(const gs_cmap_t *pcmap)
+{   const gs_cmap_ToUnicode_t *cmap = (gs_cmap_ToUnicode_t *)pcmap;
+    return cmap->is_identity;
+}
+
+private const gs_cmap_procs_t gs_cmap_ToUnicode_procs = {
+    gs_cmap_ToUnicode_decode_next,
+    gs_cmap_ToUnicode_enum_ranges,
+    gs_cmap_ToUnicode_enum_lookups,
+    gs_cmap_ToUnicode_is_identity
+};
+
+/*
+ * Allocate and initialize a ToUnicode CMap.
+ */
+int
+gs_cmap_ToUnicode_alloc(gs_memory_t *mem, int id, int num_codes, int key_size, gs_cmap_t **ppcmap)
+{   int code;
+    uchar *map, *cmap_name = NULL;
+    gs_cmap_ToUnicode_t *cmap;
+    int name_len = 0;
+#   if 0
+	/* We don't write a CMap name to ToUnicode CMaps,
+	 * becsue (1) there is no conventional method for
+	 * generating them, and (2) Acrobat Reader ignores them.
+	 * But we'd like to keep this code until beta-testing completes,
+	 * and we ensure that other viewers do not need the names.
+	 */
+	char sid[10], *pref = "aux-";
+	int sid_len, pref_len = strlen(pref);
+    
+	sprintf(sid, "%d", id);
+	sid_len = strlen(sid);
+	name_len = pref_len + sid_len;
+	cmap_name = gs_alloc_string(mem, name_len, "gs_cmap_ToUnicode_alloc");
+	if (cmap_name == 0)
+	    return_error(gs_error_VMerror);
+	memcpy(cmap_name, pref, pref_len);
+	memcpy(cmap_name + pref_len, sid, sid_len);
+#   endif
+    code = gs_cmap_alloc(ppcmap, &st_cmap_ToUnicode,
+	      0, cmap_name, name_len, NULL, 0, &gs_cmap_ToUnicode_procs, mem);
+    if (code < 0)
+	return code;
+    map = (uchar *)gs_alloc_bytes(mem, num_codes * gs_cmap_ToUnicode_code_bytes, 
+                                  "gs_cmap_ToUnicode_alloc");
+    if (map == NULL)
+	return_error(gs_error_VMerror);
+    memset(map, 0, num_codes * gs_cmap_ToUnicode_code_bytes);
+    cmap = (gs_cmap_ToUnicode_t *)*ppcmap;
+    cmap->glyph_name_data = map;
+    cmap->CMapType = 2;
+    cmap->num_fonts = 1;
+    cmap->key_size = key_size;
+    cmap->num_codes = num_codes;
+    cmap->ToUnicode = true;
+    cmap->is_identity = true;
+    return 0;
+}
+
+/*
+ * Write a code pair to ToUnicode CMap.
+ */
+void
+gs_cmap_ToUnicode_add_pair(gs_cmap_t *pcmap, int code0, int code1)
+{   gs_cmap_ToUnicode_t *cmap = (gs_cmap_ToUnicode_t *)pcmap;
+    uchar *map = pcmap->glyph_name_data;
+    const int num_codes = ((gs_cmap_ToUnicode_t *)pcmap)->num_codes;
+    
+    if (code0 >= num_codes)
+	return; /* must not happen. */
+    map[code0 * gs_cmap_ToUnicode_code_bytes + 0] = (uchar)(code1 >> 8);
+    map[code0 * gs_cmap_ToUnicode_code_bytes + 1] = (uchar)(code1 & 0xFF);
+    cmap->is_identity &= (code0 == code1);
 }

@@ -161,7 +161,8 @@ struct pdf_font_resource_s {
     double *Widths;		/* [count] (not used for Type 0) */
     byte *used;			/* [ceil(count/8)] bitmap of chars/CIDs used */
 				/* (not used for Type 0 or Type 3) */
-    pdf_resource_t *ToUnicode;	/* CMap (not used for CIDFonts) */
+    pdf_resource_t *res_ToUnicode; /* CMap (not used for CIDFonts) */
+    gs_cmap_t *cmap_ToUnicode;	   /* CMap (not used for CIDFonts) */
     union {
 
 	struct /*type0*/ {
