@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
     
-    $Id: jbig2_huffman.c,v 1.4 2001/06/10 08:43:48 giles Exp $
+    $Id: jbig2_huffman.c,v 1.5 2001/06/12 09:09:04 giles Exp $
 */
 
 /* Huffman table decoding procedures 
@@ -342,13 +342,19 @@ jbig2_build_huffman_table (const Jbig2HuffmanParams *params)
 #ifdef TEST
 #include <stdio.h>
 
-static int32
+static uint32
 test_get_word (Jbig2WordStream *self, int offset)
 {
-  if (offset == 0)
-    return 0xe9cbf400;
-  else
-    return 0;
+	byte	stream[] = { 0xe9, 0xcb, 0xf4, 0x00 };
+	
+	/* assume stream[] is at least 4 bytes */
+	if (offset+3 > sizeof(stream))
+		return 0;
+	else
+		return ( (stream[offset] << 24) |
+				 (stream[offset+1] << 16) |
+				 (stream[offset+2] << 8) |
+				 (stream[offset+3]) );
 }
 
 int
@@ -361,25 +367,34 @@ main (int argc, char **argv)
   Jbig2WordStream ws;
   bool oob;
   int32 code;
-
+  
   b1 = jbig2_build_huffman_table (&jbig_huffman_params_A);
   b2 = jbig2_build_huffman_table (&jbig_huffman_params_B);
   b4 = jbig2_build_huffman_table (&jbig_huffman_params_D);
   ws.get_next_word = test_get_word;
   hs = jbig2_huffman_new (&ws);
 
+  printf("testing jbig2 huffmann decoding...");
+  printf("\t(should be 8 5 (oob) 8)\n");
+  
   code = jbig2_huffman_get (hs, b4, &oob);
-  printf ("%d %s\n", code, oob ? "OOB" : "");
-
+  if (oob) printf("(oob) ");
+    else printf("%d ", code);
+  
   code = jbig2_huffman_get (hs, b2, &oob);
-  printf ("%d %s\n", code, oob ? "OOB" : "");
-
+  if (oob) printf("(oob) ");
+    else printf("%d ", code);
+  
   code = jbig2_huffman_get (hs, b2, &oob);
-  printf ("%d %s\n", code, oob ? "OOB" : "");
-
-  code = jbig2_huffman_get (hs, b1, &oob);
-  printf ("%d %s\n", code, oob ? "OOB" : "");
-
+  if (oob) printf("(oob) ");
+    else printf("%d ", code);
+  
+    code = jbig2_huffman_get (hs, b1, &oob);
+  if (oob) printf("(oob) ");
+    else printf("%d ", code);
+  
+  printf("\n");
+  
   return 0;
 }
 #endif
