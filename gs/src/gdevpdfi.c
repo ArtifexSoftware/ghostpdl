@@ -635,7 +635,7 @@ pdf_image_end_image_data(gx_image_enum_common_t * info, bool draw_last,
     pdf_image_enum *pie = (pdf_image_enum *)info;
     int height = pie->writer.height;
     int data_height = height - pie->rows_left;
-    int code;
+    int code = 0;
 
     if (pie->writer.pres)
 	((pdf_x_object_t *)pie->writer.pres)->data_height = data_height;
