@@ -1243,10 +1243,20 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, gs_glyph glyph,
 	        /*
 		 * We will shift the glyph for the difference
 		 * between the side bearing from Metrics and one from 
-		 * the sbw of the outline.
+		 * the sbw of the outline. But glyph_info
+		 * returns zeros if side bearing isn't specified in Metrics.
+		 * Hopely it isn't zero when specified,
+		 * so checking it here.
 		 */
-		pwidths->v.x = info.v.x - v.x;
-		pwidths->v.y = info.v.y - v.y;
+		if (info.v.x != 0 || info.v.y != 0) {
+		    pwidths->v.x = info.v.x - v.x;
+		    pwidths->v.y = info.v.y - v.y;
+		} else {
+		    /* 
+		     * Probably there is no side bearing in Metrics, 
+		     * use zero shift.
+		     */
+		}
 	    } else {
 		/*
 		 * We need v vector from Metrics2, but glyph_info
@@ -1259,7 +1269,7 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, gs_glyph glyph,
 		    pwidths->v.y = info.v.y;
 		} else {
 		    /* 
-		     * Probably there is no Metrics2, use zeros.
+		     * Probably there is no Metrics2, use zero shift.
 		     * This may give a wrong result if side bearing in the 
 		     * outline specifies the shift for vertical writing.
 		     * Perhaps we never met such fonts.

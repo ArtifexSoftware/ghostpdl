@@ -406,7 +406,7 @@ gs_type42_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
     uint glyph_index = pfont->data.get_glyph_index(pfont, glyph);
     int default_members =
 	members & ~(GLYPH_INFO_WIDTHS | GLYPH_INFO_NUM_PIECES |
-		    GLYPH_INFO_PIECES);
+		    GLYPH_INFO_PIECES | GLYPH_INFO_OUTLINE_WIDTHS);
     gs_glyph_data_t outline;
     int code = 0;
 
@@ -431,11 +431,17 @@ gs_type42_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 		code = gs_type42_wmode_metrics(pfont, glyph_index, i, sbw);
 		if (code < 0)
 		    return code;
-		if (pmat)
+		if (pmat) {
 		    code = gs_point_transform(sbw[2], sbw[3], pmat,
 					      &info->width[i]);
-		else
+		    if (code < 0)
+			return code;
+		    code = gs_point_transform(sbw[0], sbw[1], pmat,
+					      &info->v);
+		} else {
 		    info->width[i].x = sbw[2], info->width[i].y = sbw[3];
+		    info->v.x = sbw[0], info->v.y = sbw[1];
+		}
 	    }
 	info->members |= members & GLYPH_INFO_WIDTH;
     }
