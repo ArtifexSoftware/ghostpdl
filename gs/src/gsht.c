@@ -221,15 +221,22 @@ gs_setscreenphase(gs_state * pgs, int x, int y, gs_color_select_t select)
     return code;
 }
 
+int
+gs_currentscreenphase_pis(const gs_imager_state * pis, gs_int_point * pphase,
+		      gs_color_select_t select)
+{
+    if (select < 0 || select >= gs_color_select_count)
+	return_error(gs_error_rangecheck);
+    *pphase = pis->screen_phase[select];
+    return 0;
+}
+
 /* .currentscreenphase */
 int
 gs_currentscreenphase(const gs_state * pgs, gs_int_point * pphase,
 		      gs_color_select_t select)
 {
-    if (select < 0 || select >= gs_color_select_count)
-	return_error(gs_error_rangecheck);
-    *pphase = pgs->screen_phase[select];
-    return 0;
+    return gs_currentscreenphase_pis((const gs_imager_state *)pgs, pphase, select);
 }
 
 /* currenthalftone */

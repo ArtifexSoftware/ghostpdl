@@ -75,7 +75,9 @@ void gs_state_set_client(gs_state *, void *, const gs_state_client_procs *);
 /* gzstate.h redefines the following: */
 #ifndef gs_state_client_data
 void *gs_state_client_data(const gs_state *);
-
 #endif
+
+/* Accessories. */
+gs_id gx_get_clip_path_id(gs_state *);
 
 #endif /* gxstate_INCLUDED */

@@ -1234,8 +1234,8 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_imager_state *pis,
 	    stream_puts(pdev->strm, bgs);
 	    stream_puts(pdev->strm, ucrs);
 	}
-	gs_currenthalftonephase((const gs_state *)pis, &phase);
-	gs_currenthalftonephase((const gs_state *)&pdev->state, &dev_phase);
+	gs_currentscreenphase_pis(pis, &phase, 0);
+	gs_currentscreenphase_pis(&pdev->state, &dev_phase, 0);
 	if (dev_phase.x != phase.x || dev_phase.y != phase.y) {
 	    code = pdf_open_gstate(pdev, ppres);
 	    if (code < 0)

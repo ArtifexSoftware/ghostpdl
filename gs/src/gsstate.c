@@ -1013,3 +1013,9 @@ gstate_copy(gs_state * pto, const gs_state * pfrom,
 	(pfrom->show_gstate == pfrom ? pto : 0);
     return 0;
 }
+
+/* Accessories. */
+gs_id gx_get_clip_path_id(gs_state *pgs)
+{
+    return pgs->clip_path->id;
+}

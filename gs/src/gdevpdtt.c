@@ -142,9 +142,19 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	     */
 	}
 	if (glyph != GS_NO_GLYPH && ch != GS_NO_CHAR) {
+	    gs_show_enum *penum_s;
+	    extern_st(st_gs_show_enum);
 	    gs_fixed_rect clip_box;
-	    gs_show_enum *const penum_s = (gs_show_enum *)penum->pte_default;
 
+	    if (penum->pte_default == NULL)
+		return_error(gs_error_unregistered); /* Must not happen. */
+	    /* Check to verify the structure type is really gs_show_enum */
+	    if (gs_object_type(penum->pte_default->memory, penum->pte_default) != &st_gs_show_enum) {
+		/* Must not happen with PS interpreter. 
+		   Other clients should conform. */
+		return_error(gs_error_unregistered); 
+	    }
+	    penum_s = (gs_show_enum *)penum->pte_default;
 	    code = font->procs.glyph_name(font, glyph, &gnstr);
 	    if (code < 0)
 		return_error(gs_error_unregistered); /* Must not happen. */
@@ -156,12 +166,21 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 		clip_box.q.x = float2fixed(pw[4]);
 		clip_box.q.y = float2fixed(pw[5]);
 	    } else {
+		/*
+		 * We have no character bbox, but we need one to install the clipping
+		 * to the graphic state of the PS interpreter. FontBBox looks likely
+		 * to provide it, but it is not neccesserily correct in the case 
+		 * of setcharwidth, because the latter doesn't assume a character caching 
+		 * (instead it assumes a direct rendering).
+		 * We hewristically estimate a bbox, which should be big enough 
+		 * for most cases.
+		 */
 		gs_font_base *bfont = (gs_font_base *)font;
 
-		clip_box.p.x = float2fixed(bfont->FontBBox.p.x);
-		clip_box.p.y = float2fixed(bfont->FontBBox.p.y);
-		clip_box.q.x = float2fixed(bfont->FontBBox.q.x);
-		clip_box.q.y = float2fixed(bfont->FontBBox.q.y);
+		clip_box.p.x = float2fixed(min(bfont->FontBBox.p.x, -bfont->FontBBox.q.x) * 2);
+		clip_box.p.y = float2fixed(min(bfont->FontBBox.p.y, -bfont->FontBBox.q.y) * 2);
+		clip_box.q.x = float2fixed(max(bfont->FontBBox.q.x, -bfont->FontBBox.p.x) * 2);
+		clip_box.q.y = float2fixed(max(bfont->FontBBox.q.y, -bfont->FontBBox.p.y) * 2);
 	    }
 	    code = gx_clip_to_rectangle(penum_s->pgs, &clip_box);
 	    if (code < 0)
@@ -170,6 +189,14 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 			pw, control, ch, &gnstr);
 	    if (code < 0)
 		return code;
+	    if (control == TEXT_SET_CHAR_WIDTH) {
+		/* Prevent writing the clipping path to charproc.
+		   See the comment above.
+		   Note that the clipping in the graphic state will be used while 
+		   fallbacks to default implementations of graphic objects. 
+		   Hopely such fallbacks are rare. */
+		pdev->clip_path_id = gx_get_clip_path_id(penum_s->pgs);
+	    }
 	    penum->charproc_accum = true;
 	    return code;
 	}
