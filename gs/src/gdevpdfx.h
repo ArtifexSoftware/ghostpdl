@@ -520,6 +520,7 @@ struct gx_device_pdf_s {
     gx_path *accum_char_proc_clip_path_save;
     gs_id accum_char_proc_clip_path_id_save;
     int accum_char_proc_vgstack_depth_save;
+    stream *accum_char_proc_strm_save;
 };
 
 #define is_in_page(pdev)\
@@ -542,8 +543,9 @@ struct gx_device_pdf_s {
  m(24,open_graphics) m(25,font_cache) m(26,clip_path)\
  m(27,PageLabels) m(28,PageLabels_current_label)\
  m(29,accum_char_proc_text_state_save)\
- m(30,accum_char_proc_clip_path_save)
-#define gx_device_pdf_num_ptrs 31
+ m(30,accum_char_proc_clip_path_save)\
+ m(31,accum_char_proc_strm_save)
+#define gx_device_pdf_num_ptrs 32
 #define gx_device_pdf_do_strings(m) /* do nothing */
 #define gx_device_pdf_num_strings 0
 #define st_device_pdf_max_ptrs\
@@ -638,6 +640,10 @@ extern const gs_memory_struct_type_t *const pdf_resource_type_structs[];
 long pdf_open_separate(gx_device_pdf * pdev, long id);
 long pdf_begin_separate(gx_device_pdf * pdev);
 
+/* Begin an aside (resource, annotation, ...). */
+int pdf_alloc_aside(gx_device_pdf * pdev, pdf_resource_t ** plist,
+		const gs_memory_struct_type_t * pst, pdf_resource_t **ppres,
+		long id);
 /* Begin an aside (resource, annotation, ...). */
 int pdf_begin_aside(gx_device_pdf * pdev, pdf_resource_t **plist,
 		    const gs_memory_struct_type_t * pst,

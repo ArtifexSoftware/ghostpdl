@@ -1523,7 +1523,6 @@ pdf_text_process(gs_text_enum_t *pte)
     PROCESS_TEXT_PROC((*process));
     int code = -1;		/* to force default implementation */
     gx_device_pdf *pdev = (gx_device_pdf *)penum->dev;
-    bool charproc = pdev->accum_char_proc;
 #define BUF_SIZE 100		/* arbitrary > 0 */
 
     /*

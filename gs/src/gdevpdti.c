@@ -19,14 +19,17 @@
 #include "memory_.h"
 #include "string_.h"
 #include "gx.h"
+#include "gxpath.h"
 #include "gserrors.h"
 #include "gsutil.h"
 #include "gdevpdfx.h"
+#include "gdevpdfg.h"
 #include "gdevpdtf.h"
 #include "gdevpdti.h"
 #include "gdevpdts.h"
 #include "gdevpdtw.h"
 #include "gdevpdtt.h"
+#include "gdevpdfo.h"
 
 /* ---------------- Private ---------------- */
 
@@ -39,12 +42,13 @@ struct pdf_char_proc_s {
     int y_offset;		/* of character (0,0) */
     gs_char char_code;
     gs_const_string char_name;
+    cos_stream_t *pcos;
 };
 
 /* The descriptor is public for pdf_resource_type_structs. */
-gs_public_st_suffix_add2_string1(st_pdf_char_proc, pdf_char_proc_t,
+gs_public_st_suffix_add3_string1(st_pdf_char_proc, pdf_char_proc_t,
   "pdf_char_proc_t", pdf_char_proc_enum_ptrs, pdf_char_proc_reloc_ptrs,
-  st_pdf_resource, font, char_next, char_name);
+  st_pdf_resource, font, char_next, pcos, char_name);
 
 /* Define the state structure for tracking bitmap fonts. */
 /*typedef struct pdf_bitmap_fonts_s pdf_bitmap_fonts_t;*/
@@ -127,7 +131,7 @@ pdf_write_contents_bitmap(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
     stream *s = pdev->strm;
     const pdf_char_proc_t *pcp;
     long diff_id = 0;
-    int code, i;
+    int code, charproc_id;
 
     if (pdfont->u.simple.s.type3.bitmap_font)
 	diff_id = pdev->text->bitmap_fonts->bitmap_encoding_id;
@@ -138,6 +142,7 @@ pdf_write_contents_bitmap(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
     code = pdf_write_encoding_ref(pdev, pdfont, diff_id);
     if (code < 0)
 	return code;
+    charproc_id = pdev->next_id;
     stream_puts(s, "/CharProcs <<");
     /* Write real characters. */
     for (pcp = pdfont->u.simple.s.type3.char_procs; pcp;
@@ -148,7 +153,8 @@ pdf_write_contents_bitmap(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 		      pdf_char_proc_id(pcp));
 	else {
 	    pdf_put_name(pdev, pcp->char_name.data, pcp->char_name.size);
-	    pprintld1(s, " %ld 0 R\n", pdf_char_proc_id(pcp));
+	    pprintld1(s, " %ld 0 R\n", charproc_id);
+	    charproc_id++;
 	}
     }
     stream_puts(s, ">>");
@@ -163,6 +169,18 @@ pdf_write_contents_bitmap(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
     if (code < 0)
 	return code;
     if (!pdfont->u.simple.s.type3.bitmap_font && diff_id > 0) {
+	s = pdev->strm;
+	for (pcp = pdfont->u.simple.s.type3.char_procs; pcp; 
+		pcp = pcp->char_next) {
+	    pcp->object->id = pdf_obj_ref(pdev);
+	    pcp->object->length = cos_stream_length(pcp->pcos);
+	    pprintld1(s, "%ld 0 obj\n", pdf_char_proc_id(pcp));
+	    pprintld1(s, "<</Length %ld>>stream\n", pcp->object->length);
+	    code = cos_stream_contents_write(pcp->pcos, pdev);
+	    if (code < 0)
+		return code;
+	    stream_puts(s, "endstream endobj\n");
+	}
 	code = pdf_write_encoding(pdev, pdfont, diff_id, 0);
 	if (code < 0)
 	    return code;
@@ -229,7 +247,7 @@ pdf_char_image_y_offset(const gx_device_pdf *pdev, int x, int y, int h)
 
 /* Begin a CharProc for a synthesized font. */
 private int
-pdf_begin_char_proc_gerneric(gx_device_pdf * pdev, pdf_font_resource_t *pdfont,
+pdf_begin_char_proc_generic(gx_device_pdf * pdev, pdf_font_resource_t *pdfont,
 		    gs_id id, gs_char char_code, gs_const_string *gnstr,
 		    pdf_char_proc_t ** ppcp, pdf_stream_position_t * ppos)
 {
@@ -246,6 +264,7 @@ pdf_begin_char_proc_gerneric(gx_device_pdf * pdev, pdf_font_resource_t *pdfont,
     pcp->char_next = pdfont->u.simple.s.type3.char_procs;
     pdfont->u.simple.s.type3.char_procs = pcp;
     pcp->char_code = char_code;
+    pcp->pcos = 0;
     if (gnstr == 0) {
 	pcp->char_name.data = 0; 
 	pcp->char_name.size = 0;
@@ -278,7 +297,7 @@ pdf_begin_char_proc(gx_device_pdf * pdev, int w, int h, int x_width,
     int char_code = assign_char_code(pdev, x_width);
     pdf_bitmap_fonts_t *const pbfs = pdev->text->bitmap_fonts; 
     pdf_font_resource_t *font = pbfs->open_font; /* Type 3 */
-    int code = pdf_begin_char_proc_gerneric(pdev, font, id, char_code, NULL, ppcp, ppos);
+    int code = pdf_begin_char_proc_generic(pdev, font, id, char_code, NULL, ppcp, ppos);
     
     if (code < 0)
 	return code;
@@ -375,7 +394,6 @@ pdf_install_charproc_accum(gx_device_pdf *pdev, gs_font *font, const double *pw,
 		gs_text_cache_control_t control, gs_char ch, gs_const_string *gnstr, 
 		gs_id *pid, pdf_stream_position_t *charproc_pos)
 {
-    pdf_char_proc_t *pcp;
     gs_id id = gs_next_ids(1);
     pdf_font_resource_t *pdfont;
     byte *glyph_usage;
@@ -422,9 +440,31 @@ pdf_install_charproc_accum(gx_device_pdf *pdev, gs_font *font, const double *pw,
     pdev->accum_char_proc_vgstack_depth_save = pdev->vgstack_depth;
     pdev->clip_path = 0;
     pdev->clip_path_id = pdev->no_clip_path_id;
-    code = pdf_begin_char_proc_gerneric(pdev, pdfont, id, ch, gnstr, &pcp, charproc_pos);
-    if (code < 0)
-	return code;
+    pdev->accum_char_proc_strm_save = pdev->strm;
+    {	
+	stream *s;
+	cos_stream_t *pcos = cos_stream_alloc(pdev, "pdf_install_charproc_accum");
+	pdf_resource_t *pres;
+	pdf_char_proc_t *pcp;
+
+	if (pcos == 0)
+	    return_error(gs_error_VMerror);
+	s = cos_write_stream_alloc(pcos, pdev, "pdf_install_charproc_accum");
+	if (s == 0)
+	    return_error(gs_error_VMerror);
+	pdev->strm = s;
+	code = pdf_alloc_aside(pdev, PDF_RESOURCE_CHAIN(pdev, resourceCharProc, id),
+		    pdf_resource_type_structs[resourceCharProc], &pres, id);
+	if (code < 0)
+	    return code;
+	pcp = (pdf_char_proc_t *) pres;
+	pcp->font = pdfont;
+	pcp->char_next = pdfont->u.simple.s.type3.char_procs;
+	pdfont->u.simple.s.type3.char_procs = pcp;
+	pcp->char_code = ch;
+	pcp->pcos = pcos;
+        pcp->char_name = *gnstr;
+    }
     *pid = id;
     pdev->accum_char_proc = true;
     pdev->context = PDF_IN_STREAM;
@@ -444,9 +484,10 @@ int
 pdf_end_charproc_accum(gx_device_pdf *pdev, gs_id id, pdf_stream_position_t *ppos) 
 {
     int code = pdf_open_contents(pdev, PDF_IN_STREAM), code1;
+    stream *s = pdev->strm;
 
     while (pdev->vgstack_depth > pdev->accum_char_proc_vgstack_depth_save) {
-	code1 = pdf_restore_viewer_state(pdev, pdev->strm);
+	code1 = pdf_restore_viewer_state(pdev, s);
 	if (code >= 0)
 	    code = code1;
     }
@@ -455,9 +496,9 @@ pdf_end_charproc_accum(gx_device_pdf *pdev, gs_id id, pdf_stream_position_t *ppo
     pdev->clip_path = pdev->accum_char_proc_clip_path_save;
     pdev->clip_path_id = pdev->accum_char_proc_clip_path_id_save;
     pdev->accum_char_proc_vgstack_depth_save = 0;
-    code1 = pdf_end_char_proc(pdev, ppos);
-    if (code >= 0)
-	code = code1;
+    sclose(s);
+    pdev->strm = pdev->accum_char_proc_strm_save;
+    pdev->accum_char_proc_strm_save = 0;
     pdev->context = pdev->accum_char_proc_context_save;
     pdf_text_state_copy(pdev->text->text_state, pdev->accum_char_proc_text_state_save);
     pdev->accum_char_proc = false;

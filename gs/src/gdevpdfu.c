@@ -395,7 +395,7 @@ pdf_begin_separate(gx_device_pdf * pdev)
 }
 
 /* Begin an aside (resource, annotation, ...). */
-private int
+int
 pdf_alloc_aside(gx_device_pdf * pdev, pdf_resource_t ** plist,
 		const gs_memory_struct_type_t * pst, pdf_resource_t **ppres,
 		long id)

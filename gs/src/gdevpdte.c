@@ -633,7 +633,6 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
     int code = 0;
     gs_point start, total;
     bool composite = (ppts->values.pdfont->FontType == ft_composite);
-    int index0 = pte->index;
 
     if (font->FontType == ft_user_defined) {
 	code = font_orig_scale((gs_font *)font, &scale);

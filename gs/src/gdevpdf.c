@@ -251,7 +251,8 @@ const gx_device_pdf gs_pdfwrite_device =
  0,				/* accum_char_proc_text_state_save */
  0,				/* accum_char_proc_clip_path_save */
  0,				/* accum_char_proc_clip_path_id_save */
- 0				/* accum_char_proc_vgstack_depth_save */
+ 0,				/* accum_char_proc_vgstack_depth_save */
+ 0				/* accum_char_proc_strm_save */
 };
 
 /* ---------------- Device open/close ---------------- */
