@@ -1172,6 +1172,22 @@ intersection_of_small_bars(const gs_fixed_point q[4], int i0, int i1, int i2, in
 }
 
 private inline void
+adjust_swapped_boundary(fixed *b, bool swap_axes)
+{
+    if (swap_axes) {
+	/*  Sinse the rasterizer algorithm assumes semi-open interval
+	    when computing pixel coverage, we should expand
+	    the right side of the area. Otherwise a dropout can happen :
+	    if the left neighbour is painted with !swap_axes,
+	    the left side of this area appears to be the left side 
+	    of the neighbour area, and the side is not included
+	    into both areas.
+	 */
+	*b += fixed_epsilon;
+    }
+}
+
+private inline void
 make_trapezoid(const gs_fixed_point q[4], 
 	int vi0, int vi1, int vi2, int vi3, fixed ybot, fixed ytop, 
 	bool swap_axes, bool orient, gs_fixed_edge *le, gs_fixed_edge *re)
@@ -1187,18 +1203,8 @@ make_trapezoid(const gs_fixed_point q[4],
 	re->start = q[vi0];
 	re->end = q[vi1];
     }
-    if (swap_axes) {
-	/*  Sinse the rasterizer algorithm assumes semi-open interval
-	    when computing pixel coverage, we should expand
-	    the right side of the area. Otherwise a dropout can happen :
-	    if the left neighbour is painted with !swap_axes,
-	    the left side of this area appears to be the left side 
-	    of the neighbour area, and the side is not included
-	    into both areas.
-	 */
-	re->start.x += fixed_epsilon;
-	re->end.x += fixed_epsilon;
-    }
+    adjust_swapped_boundary(&re->start.x, swap_axes);
+    adjust_swapped_boundary(&re->end.x, swap_axes);
 }
 
 private inline int 
@@ -1438,6 +1444,7 @@ decompose_linear_color(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge
 
 		v = clip.p.x; clip.p.x = clip.p.y; clip.p.y = v;
 		v = clip.q.x; clip.q.x = clip.q.y; clip.q.y = v;
+		adjust_swapped_boundary(&clip.q.x, swap_axes);
 	    }
 	    clip.p.y = max(clip.p.y, ybot);
 	    clip.q.y = min(clip.q.y, ytop);
@@ -1911,6 +1918,7 @@ try_device_linear_color(patch_fill_state_t *pfs, bool wedge,
 	frac31 fc[3][GX_DEVICE_COLOR_MAX_COMPONENTS];
 	gs_fill_attributes fa;
 	gx_device_color dc[3];
+	vd_save;
 
 	fa.clip = &pfs->rect;
 	fa.ht = NULL;
@@ -1933,9 +1941,12 @@ try_device_linear_color(patch_fill_state_t *pfs, bool wedge,
 	    return code;
 	dc2fc(pfs, dc[2].colors.pure, fc[2]);
 	draw_triangle(&p0->p, &p1->p, &p2->p, RGB(255, 0, 0));
+	if (!VD_TRACE_DOWN)
+	    vd_disable;
 	code = dev_proc(pdev, fill_linear_color_triangle)(pdev, &fa, 
 			&p0->p, &p1->p, &p2->p, 
 			fc[0], (wedge ? NULL : fc[1]), fc[2]);
+	vd_restore;
 	if (code == 1)
 	    return 0; /* The area is filled. */
 	if (code < 0)
@@ -2122,6 +2133,8 @@ mesh_padding(patch_fill_state_t *pfs, const gs_fixed_point *p0, const gs_fixed_p
     le.end.x = q1.x - adjust;
     re.end.x = q1.x + adjust;
     le.end.y = re.end.y = q1.y + adjust;
+    adjust_swapped_boundary(&re.start.x, swap_axes);
+    adjust_swapped_boundary(&re.end.x, swap_axes);
     return decompose_linear_color(pfs, &le, &re, le.start.y, le.end.y, swap_axes, cc0, cc1, 0);
 }
 

@@ -2510,7 +2510,7 @@ $(GLOBJ)gsptype2.$(OBJ) : $(GLSRC)gsptype2.c $(GX)\
 $(GLOBJ)gsshade.$(OBJ) : $(GLSRC)gsshade.c $(GXERR)\
  $(gscspace_h) $(gsstruct_h)\
  $(gxcspace_h) $(gxcpath_h) $(gxdcolor_h) $(gxdevcli_h) $(gxistate_h)\
- $(gxpaint_h) $(gxpath_h) $(gxshade_h)\
+ $(gxpaint_h) $(gxpath_h) $(gxshade_h) $(gxshade4_h)\
  $(gzcpath_h) $(gzpath_h)
 	$(GLCC) $(GLO_)gsshade.$(OBJ) $(C_) $(GLSRC)gsshade.c
 

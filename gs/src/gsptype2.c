@@ -191,37 +191,17 @@ gs_pattern2_set_color(const gs_client_color * pcc, gs_state * pgs)
     return code;
 }
 
-/* Fill path or rect, with adjustment, and with a PatternType 2 color. */
+/* Fill path or rect, and with a PatternType 2 color. */
 int
-gx_dc_pattern2_fill_path_adjusted(const gx_device_color * pdevc, 
+gx_dc_pattern2_fill_path(const gx_device_color * pdevc, 
                               gx_path * ppath, gs_fixed_rect * rect, 
                               gx_device * dev)
 {
     gs_pattern2_instance_t *pinst =
         (gs_pattern2_instance_t *)pdevc->ccolor.pattern;
-    gs_state *pgs = pinst->saved;
-    gs_point save_adjust;
-    int code;
 
-    /* We don't want any adjustment of the box. */
-    gs_currentfilladjust(pgs, &save_adjust);
-
-    /*
-     * We should set the fill adjustment to zero here, so that we don't
-     * get multiply-written pixels as a result of filling abutting
-     * triangles.  However, numerical inaccuracies in the shading
-     * algorithms can cause pixel dropouts, and a non-zero adjustment
-     * is by far the easiest way to work around them as a stopgap.
-     * NOTE: This makes shadings not interact properly with
-     * non-idempotent RasterOps (not a problem in practice, since
-     * PostScript doesn't have RasterOps and PCL doesn't have shadings).
-     */
-    gs_setfilladjust(pgs, 0.5, 0.5);
-    /****** DOESN'T HANDLE RASTER OP ******/
-    code = gs_shading_fill_path(pinst->template.Shading, ppath, rect, dev,
-                                (gs_imager_state *)pgs, true);
-    gs_setfilladjust(pgs, save_adjust.x, save_adjust.y);
-    return code;
+    return gs_shading_fill_path_adjusted(pinst->template.Shading, ppath, rect, dev,
+                                (gs_imager_state *)pinst->saved, true);
 }
 
 /* Fill a rectangle with a PatternType 2 color. */
@@ -236,7 +216,7 @@ gx_dc_pattern2_fill_rectangle(const gx_device_color * pdevc, int x, int y,
     rect.p.y = int2fixed(y);
     rect.q.x = int2fixed(x + w);
     rect.q.y = int2fixed(y + h);
-    return gx_dc_pattern2_fill_path_adjusted(pdevc, NULL, &rect,  dev);
+    return gx_dc_pattern2_fill_path(pdevc, NULL, &rect,  dev);
 }
 
 /* Compare two PatternType 2 colors for equality. */

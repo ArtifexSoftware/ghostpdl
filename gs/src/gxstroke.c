@@ -231,8 +231,8 @@ gx_default_stroke_path(gx_device * dev, const gs_imager_state * pis,
 {
     int code;
 
-    if (vd_allowed('s')) {
-	vd_get_dc('s');
+    if (vd_allowed('S')) {
+	vd_get_dc('S');
 	if (vd_enabled) {
 	    vd_set_shift(0, 100);
 	    vd_set_scale(0.03);
@@ -242,7 +242,7 @@ gx_default_stroke_path(gx_device * dev, const gs_imager_state * pis,
     }
     code = gx_stroke_path_only(ppath, (gx_path *) 0, dev, pis, params,
 			       pdcolor, pcpath);
-    if (vd_allowed('s'))
+    if (vd_allowed('S'))
 	vd_release_dc;
     return code;
 }

@@ -559,7 +559,7 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 
 	/* Do fill : */
 	if (code >= 0)
-	    code = gx_dc_pattern2_fill_path_adjusted(pdevc, &path_intersection, NULL,  pdev);
+	    code = gx_dc_pattern2_fill_path(pdevc, &path_intersection, NULL,  pdev);
 
 	/* Destruct local data and return :*/
 	gx_path_free(&path_intersection, "shading_fill_path_intersection");

@@ -28,6 +28,7 @@
 #include "gxpaint.h"
 #include "gxpath.h"
 #include "gxshade.h"
+#include "gxshade4.h"
 #include "gzpath.h"
 #include "gzcpath.h"
 
@@ -441,7 +442,7 @@ shading_path_add_box(gx_path *ppath, const gs_rect *pbox,
 }
 
 /* Fill a path with a shading. */
-int
+private int
 gs_shading_fill_path(const gs_shading_t *psh, /*const*/ gx_path *ppath,
 		     const gs_fixed_rect *prect, gx_device *orig_dev,
 		     gs_imager_state *pis, bool fill_background)
@@ -549,3 +550,33 @@ out:
 	gx_cpath_free(path_clip, "shading_fill_path(path_clip)");
     return code;
 }
+
+gs_shading_fill_path_adjusted(const gs_shading_t *psh, /*const*/ gx_path *ppath,
+		     const gs_fixed_rect *prect, gx_device *orig_dev,
+		     gs_imager_state *pis, bool fill_background)
+{   
+#if NEW_SHADINGS
+    int code = gs_shading_fill_path(psh, ppath, prect, orig_dev, pis, fill_background);
+#else
+    gs_point save_adjust;
+    int code;
+
+    gs_currentfilladjust(pis, &save_adjust);
+	/*
+	 * We should set the fill adjustment to zero here, so that we don't
+	 * get multiply-written pixels as a result of filling abutting
+	 * triangles.  However, numerical inaccuracies in the shading
+	 * algorithms can cause pixel dropouts, and a non-zero adjustment
+	 * is by far the easiest way to work around them as a stopgap.
+	 * NOTE: This makes shadings not interact properly with
+	 * non-idempotent RasterOps (not a problem in practice, since
+	 * PostScript doesn't have RasterOps and PCL doesn't have shadings).
+	 */
+	gs_setfilladjust(pis, 0.5, 0.5);
+	/****** DOESN'T HANDLE RASTER OP ******/
+    code = gs_shading_fill_path(psh, ppath, prect, orig_dev, pis, fill_background);
+    gs_setfilladjust(pis, save_adjust.x, save_adjust.y);
+#endif
+    return code;
+}
+
