@@ -1044,6 +1044,8 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 		if(pdev->version < psdf_version_level2_with_TT)
 		    return_error(gs_error_undefined);
 		break;
+	    default:
+		break;
 	}
     }
 #endif

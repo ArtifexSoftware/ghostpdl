@@ -746,6 +746,7 @@ process_text_return_width(const pdf_text_enum_t *pte, gs_font_base *font,
     return widths_differ;
 }
 
+#if !RIGHT_SBW
 /*
  * Retrieve glyph origing shift for WMode = 1 in design units.
  */
@@ -767,6 +768,7 @@ pdf_glyph_origin(pdf_font_resource_t *pdfont, int ch, int WMode, gs_point *p)
 	    break;
     }
 }
+#endif
 
 /*
  * Emulate TEXT_ADD_TO_ALL_WIDTHS and/or TEXT_ADD_TO_SPACE_WIDTH,
