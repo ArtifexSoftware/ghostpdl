@@ -253,12 +253,12 @@ zip: $(SETUP_XE) $(UNINSTALL_XE)
 	$(ZIP_XE) -9 -r gs$(GS_VERSION)w32.zip $(ZIPPROGFILE1)
 	$(ZIP_XE) -9 -r gs$(GS_VERSION)w32.zip $(ZIPPROGFILE2)
 	$(ZIP_XE) -9 -r gs$(GS_VERSION)w32.zip $(ZIPPROGFILE3)
+	$(ZIP_XE) -9 -r gs$(GS_VERSION)w32.zip $(ZIPPROGFILE4)
 	rem
 	rem	Don't flag error if Win32s spooler file is missing.
 	rem	This occurs when using MSVC++.
 	rem
-	-$(ZIP_XE) -9 -r gs$(GS_VERSION)w32.zip $(ZIPPROGFILE4)
-	$(ZIP_XE) -9 -r gs$(GS_VERSION)w32.zip $(ZIPPROGFILE5)
+	-$(ZIP_XE) -9 -r gs$(GS_VERSION)w32.zip $(ZIPPROGFILE5)
 	$(ZIP_XE) -9 -r gs$(GS_VERSION)w32.zip $(ZIPPROGFILE6)
 	$(ZIP_XE) -9 -r gs$(GS_VERSION)w32.zip $(ZIPPROGFILE7)
 	$(ZIP_XE) -9 -r gs$(GS_VERSION)w32.zip $(ZIPPROGFILE8)
