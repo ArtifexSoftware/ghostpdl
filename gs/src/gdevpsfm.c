@@ -302,3 +302,40 @@ psf_write_cmap(stream *s, const gs_cmap_t *pcmap,
 
     return 0;
 }
+
+/* Check for identity map. */
+bool
+psf_is_identity_cmap(const gs_cmap_t *pcmap)
+{
+    const cmap_operators_t *pcmo = &cmap_cid_operators;
+    const int which = 0, font_index = 0;
+    gs_cmap_lookups_enum_t lenum;
+    int code;
+
+    for (gs_cmap_lookups_enum_init(pcmap, which, &lenum);
+	 (code = gs_cmap_enum_next_lookup(&lenum)) == 0; ) {
+	if (lenum.entry.font_index != font_index)
+	    return false;
+	while (gs_cmap_enum_next_entry(&lenum) == 0) {
+	    int j;
+	    ulong key = 0, value = 0;
+
+	    switch (lenum.entry.value_type) {
+	    case CODE_VALUE_CID:
+		break;
+	    case CODE_VALUE_CHARS:
+		return false; /* Not implemented yet. */
+	    case CODE_VALUE_GLYPH:
+		return false;
+	    default :
+		return false; /* Must not happen. */
+	    }
+	    if (lenum.entry.key_size != lenum.entry.value.size)
+		return false;
+	    if (memcmp(lenum.entry.key[0], lenum.entry.value.data, 
+		lenum.entry.key_size))
+		return false;
+	}
+    }
+    return true;
+}

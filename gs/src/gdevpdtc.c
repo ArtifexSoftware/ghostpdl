@@ -266,6 +266,7 @@ process_cmap_text(gs_text_enum_t *pte, const void *vdata, void *vbuf, uint size)
     pdf_text_process_state_t text_state;
     gs_point wxy;
     int code;
+    bool is_identity = false;
 
     code = pdf_obtain_font_resource(pte, NULL, &pdfont);
     if (code < 0)
@@ -290,24 +291,6 @@ process_cmap_text(gs_text_enum_t *pte, const void *vdata, void *vbuf, uint size)
 	return_error(gs_error_rangecheck);
     }
 
-    /*
-     * If the CMap isn't standard, write it out if necessary.
-     */
-
-    for (; *pcmn != 0; ++pcmn)
-	if (pcmap->CMapName.size == strlen(*pcmn) &&
-	    !memcmp(*pcmn, pcmap->CMapName.data, pcmap->CMapName.size))
-	    break;
-    if (*pcmn == 0) {		/* not standard */
-	pcmres = pdf_find_resource_by_gs_id(pdev, resourceCMap, pcmap->id);
-	if (pcmres == 0) {
-	    /* Create and write the CMap object. */
-	    code = pdf_cmap_alloc(pdev, pcmap, &pcmres);
-	    if (code < 0)
-		return code;
-	}
-    }
-
     code = pdf_update_text_state(&text_state, penum, pdfont,
 				 &font->FontMatrix);
     if (code < 0)
@@ -324,51 +307,85 @@ process_cmap_text(gs_text_enum_t *pte, const void *vdata, void *vbuf, uint size)
 	)
 	return_error(gs_error_rangecheck);
 	    
-    if (pcmap->from_Unicode) {
-	gs_cmap_ranges_enum_t renum;
-
-	gs_cmap_ranges_enum_init(pcmap, &renum);
-	if (gs_cmap_enum_next_range(&renum) == 0 && renum.range.size == 2 &&
-	    gs_cmap_enum_next_range(&renum) == 1) {
-	    /*
-	     * Exactly one code space range, of size 2.  Add an identity
-	     * ToUnicode CMap.
+    if (!pdfont->u.type0.Encoding_name[0]) {
+	/*
+	 * If the CMap isn't standard, write it out if necessary.
+	 * (if pdfont->u.type0.Encoding_name is set, 
+	 * this is already done - see below).
+	 */
+	for (; *pcmn != 0; ++pcmn)
+	    if (pcmap->CMapName.size == strlen(*pcmn) &&
+		!memcmp(*pcmn, pcmap->CMapName.data, pcmap->CMapName.size))
+		break;
+	if (*pcmn == 0) {
+	    /* 
+	     * PScript5.dll Version 5.2 creates identity CMaps with
+	     * instandard name. Check this specially here
+	     * and later replace with a standard name.
+	     * This is a temporary fix for SF bug #615994 "CMAP is corrupt".
 	     */
-	    if (!pdev->Identity_ToUnicode_CMaps[pcmap->WMode]) {
-		/* Create and write an identity ToUnicode CMap now. */
-		gs_cmap_t *pidcmap;
-
-		code = gs_cmap_create_char_identity(&pidcmap, 2, pcmap->WMode,
-						    pdev->memory);
-		if (code < 0)
-		    return code;
-		pidcmap->CMapType = 2;	/* per PDF Reference */
-		code = pdf_cmap_alloc(pdev, pidcmap,
-				&pdev->Identity_ToUnicode_CMaps[pcmap->WMode]);
+	    is_identity = psf_is_identity_cmap(pcmap);
+	}
+	if (*pcmn == 0 && !is_identity) {		/* not standard */
+	    pcmres = pdf_find_resource_by_gs_id(pdev, resourceCMap, pcmap->id);
+	    if (pcmres == 0) {
+		/* Create and write the CMap object. */
+		code = pdf_cmap_alloc(pdev, pcmap, &pcmres);
 		if (code < 0)
 		    return code;
 	    }
-	    pdfont->ToUnicode = pdev->Identity_ToUnicode_CMaps[pcmap->WMode];
 	}
-    }
-    if (pcmres) {
-	uint size = pcmap->CMapName.size;
-	byte *chars = gs_alloc_string(pdev->pdf_memory, size,
-				      "pdf_font_resource_t(CMapName)");
+	if (pcmap->from_Unicode) {
+	    gs_cmap_ranges_enum_t renum;
 
-	if (chars == 0)
-	    return_error(gs_error_VMerror);
-	sprintf(pdfont->u.type0.Encoding_name, "%ld 0 R",
-		pdf_resource_id(pcmres));
-	pdfont->u.type0.CMapName.data = chars;
-	pdfont->u.type0.CMapName.size = size;
-    } else {
-	sprintf(pdfont->u.type0.Encoding_name, "/%s", *pcmn);
-	pdfont->u.type0.CMapName.data = (const byte *)*pcmn;
-	pdfont->u.type0.CMapName.size = strlen(*pcmn);
-	pdfont->u.type0.cmap_is_standard = true;
+	    gs_cmap_ranges_enum_init(pcmap, &renum);
+	    if (gs_cmap_enum_next_range(&renum) == 0 && renum.range.size == 2 &&
+		gs_cmap_enum_next_range(&renum) == 1) {
+		/*
+		 * Exactly one code space range, of size 2.  Add an identity
+		 * ToUnicode CMap.
+		 */
+		if (!pdev->Identity_ToUnicode_CMaps[pcmap->WMode]) {
+		    /* Create and write an identity ToUnicode CMap now. */
+		    gs_cmap_t *pidcmap;
+
+		    code = gs_cmap_create_char_identity(&pidcmap, 2, pcmap->WMode,
+							pdev->memory);
+		    if (code < 0)
+			return code;
+		    pidcmap->CMapType = 2;	/* per PDF Reference */
+		    code = pdf_cmap_alloc(pdev, pidcmap,
+				    &pdev->Identity_ToUnicode_CMaps[pcmap->WMode]);
+		    if (code < 0)
+			return code;
+		}
+		pdfont->ToUnicode = pdev->Identity_ToUnicode_CMaps[pcmap->WMode];
+	    }
+	}
+	if (pcmres || is_identity) {
+	    uint size = pcmap->CMapName.size;
+	    byte *chars = gs_alloc_string(pdev->pdf_memory, size,
+					  "pdf_font_resource_t(CMapName)");
+
+	    if (chars == 0)
+		return_error(gs_error_VMerror);
+	    memcpy(chars, pcmap->CMapName.data, size);
+	    if (is_identity)
+		strcpy(pdfont->u.type0.Encoding_name, 
+			(pcmap->WMode ? "/Identity-V" : "/Identity-H"));
+	    else
+		sprintf(pdfont->u.type0.Encoding_name, "%ld 0 R",
+			pdf_resource_id(pcmres));
+	    pdfont->u.type0.CMapName.data = chars;
+	    pdfont->u.type0.CMapName.size = size;
+	} else {
+	    sprintf(pdfont->u.type0.Encoding_name, "/%s", *pcmn);
+	    pdfont->u.type0.CMapName.data = (const byte *)*pcmn;
+	    pdfont->u.type0.CMapName.size = strlen(*pcmn);
+	    pdfont->u.type0.cmap_is_standard = true;
+	}
+	pdfont->u.type0.WMode = pcmap->WMode;
     }
-    pdfont->u.type0.WMode = pcmap->WMode;
 
     code = scan_cmap_text(pte, pfont, pdsubf, (gs_font_base *)subfont, &wxy);
     if (code < 0)
