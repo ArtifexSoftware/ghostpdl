@@ -200,11 +200,11 @@ debug_dump_one_ref(const ref * p)
 {
     uint attrs = r_type_attrs(p);
     uint type = r_type(p);
-    static const attr_print_mask apm[] = {
-	attr_print_masks,
+    static const ref_attr_print_mask_t apm[] = {
+	REF_ATTR_PRINT_MASKS,
 	{0, 0, 0}
     };
-    const attr_print_mask *ap = apm;
+    const ref_attr_print_mask_t *ap = apm;
 
     if (type >= tx_next_index)
 	dprintf1("0x%02x?? ", type);
