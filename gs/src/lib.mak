@@ -1486,7 +1486,7 @@ $(GLOBJ)gsropc.$(OBJ) : $(GLSRC)gsropc.c $(GXERR)\
 gxpageq_h=$(GLSRC)gxpageq.h $(gsmemory_h) $(gxband_h) $(gxsync_h)
 gdevprna_h=$(GLSRC)gdevprna.h $(gdevprn_h) $(gxsync_h)
 
-async_=$(GLOBJ)gdevprna.$(OBJ) $(GLOBJ)gxpageq.$(OBJ)
+async_=$(GLOBJ)gdevprna.$(OBJ) $(GLOBJ)gsnogc.$(OBJ) $(GLOBJ)gxpageq.$(OBJ)
 async_inc=$(GLD)clist.dev $(GLD)$(SYNC).dev
 $(GLD)async.dev : $(LIB_MAK) $(ECHOGS_XE) $(async_) $(async_inc)
 	$(SETMOD) $(GLD)async $(async_)
