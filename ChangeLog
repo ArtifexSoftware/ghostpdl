@@ -1,3 +1,40 @@
+Wed Jul 11 19:00:00 2001 GMT        Henry Stiles    henrys@artifex.com
+
+        * README [1.3]:
+        updates readme for quick build instructions.
+        
+        * tools/NEWS-TOOLS [1.12], pxl/NEWS-PXL [1.16], pl/NEWS-PL [1.15], 
+        pcl/NEWS-PCL [1.22], main/NEWS-MAIN [1.4], common/NEWS-COMMON [1.15]:
+        removed.
+        
+        * tools/makerelease.sh [1.5]:
+        modified to reflect single changelog file instead of numerous news files.
+        
+        * main/pcl6_gcc.mak [1.14]:
+        modified to use X11 libs in X11R6 or X11 directory.
+        
+        * Makefile [1.1]:
+        Top level makefile with install, test, and clean targets, contributed
+        by Jeff Haemer.
+        
+        * ChangeLog [1.1]:
+        Top level ChangeLog file this will replace all NEWS* files in the
+        release with one file.  The file is simply the output of
+        tools/cvs2log.py (formatted cvs log entries).
+        
+        * Makefile [1.2]:
+        modified to not blow away /windows/fonts for clean target.
+        
+
+Wed Jul 11 18:00:00 2001 GMT        Stefan Kemper    stefan@artifex.com
+
+        * doc/index.html [1.17]:
+        Simplified MSVC build instructions.
+        
+        * doc/index.html [1.18], doc/ghost64.gif [1.2]:
+        Replaced ghost gif with one that worked on windows.
+        
+
 Wed Jul 11 01:00:00 2001 GMT        Stefan Kemper    stefan@artifex.com
 
         * doc/pclfaq.htm [1.4]:
