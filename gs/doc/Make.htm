@@ -563,9 +563,6 @@ relatively small ones containing platform-specific information.
 <tr>	<td><b><tt>unixansi.mak</tt></b>
 	<td>&nbsp;
 	<td>Unix with ANSI C compilers other than gcc
-<tr>	<td><b><tt>unixtrad.mak</tt></b>
-	<td>&nbsp;
-	<td>Unix with "traditional C" compilers
 <tr>	<td><b><tt>watc.mak</tt></b>
 	<td>&nbsp;
 	<td>DOS with Watcom compilers
@@ -1592,9 +1589,6 @@ set up "<b><tt>makefile</tt></b>" like this.
 <tr>	<td>Non-gcc ANSI C compiler:
 	<td>&nbsp;
 	<td nowrap><b><tt>ln -s src/unixansi.mak makefile</tt></b>
-<tr>	<td>"Traditional" C compiler:
-	<td>&nbsp;
-	<td nowrap><b><tt>ln -s src/unixtrad.mak makefile</tt></b>
 </table></blockquote>
 
 <p>
@@ -1666,21 +1660,6 @@ environment.  Some Unix environments may require changing the
 <b><tt>LDFLAGS</tt></b> macro in the makefile; be sure to check the <a
 href="#Unix_build">Unix section</a> for your specific tools, operating
 system, and hardware.
-
-<p>
-Ghostscript uses ANSI syntax for function definitions. Because of this,
-when compiling with <b><tt>cc</tt></b> ("traditional" C), it must
-preprocess each <b><tt>.c</tt></b> file to convert it to the older syntax
-defined in Kernighan and Ritchie, which is what most current Unix compilers
-(other than gcc) support.  This step is automatically performed by a
-utility called <b><tt>ansi2knr</tt></b>, which is included in the
-Ghostscript distribution.  The makefile automatically builds
-<b><tt>ansi2knr</tt></b>.  The <b><tt>ansi2knr</tt></b> preprocessing step
-is included in the makefile rule for compiling <b><tt>.c</tt></b> files.
-<b><tt>ansi2knr</tt></b> creates a file called
-<b><tt>_temp_</tt></b><em>$$</em><b><tt>.c</tt></b> to hold the converted
-code, where <em>$$</em> is the process ID.  If for some reason you want to
-change this name, it is defined in a script file <b><tt>ccgs</tt></b>.
 
 <h3><a name="Shared_object"></a>Shared object</h3>
 To build Ghostscript as a shared object with gcc 
@@ -1801,10 +1780,10 @@ see the section about <a href="#VMS_build">building under OpenVMS</a> below.
 <h4><a name="FreeBSD"></a>FreeBSD</h4>
 
 <p>
-On FreeBSD systems, in the top-level makefile (<b><tt>unixansi.mak</tt></b>,
-<b><tt>unix-gcc.mak</tt></b>, or <b><tt>unixtrad.mak</tt></b>), change the
-value of <b><tt>STDLIBS</tt></b> from <b><tt>-lpthread -lm</tt></b> to
-<b><tt>-lc_r -lm</tt></b> before building.
+On FreeBSD systems, in the top-level makefile (<b><tt>unixansi.mak</tt></b>
+or <b><tt>unix-gcc.mak</tt></b>), change the value of
+<b><tt>STDLIBS</tt></b> from <b><tt>-lpthread -lm</tt></b> to <b><tt>-lc_r
+-lm</tt></b> before building.
 
 <h4><a name="Linux"></a>Linux</h4>
 
