@@ -112,8 +112,6 @@ adjust_render_rectangle(
     gs_setmatrix(pgs, &ident_mtx);
     code = gs_rectfill(pgs, &rect, 1);
     gs_setmatrix(pgs, &save_mtx);
-    if (code >= 0)
-        pcs->have_page = true;
     return code;
 }
 

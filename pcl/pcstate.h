@@ -107,9 +107,6 @@ struct pcl_state_s {
     pcl_margins_t   margins;            /* relative to print_direction */
     pcl_xfm_state_t xfm_state;
 
-    /* Internal variables */
-    bool            have_page;	        /* true ==> have written on page */
-
     /* Chapter 6 (pcursor.c) */
     coord           hmi_cp;
     coord           vmi_cp;

@@ -564,9 +564,6 @@ pcl_show_chars(
                 code = show_char_foreground(pcs, buff);
             if (code < 0)
                 break;
-	    /* Here we have data on the page unless it has been
-               clipped in device space - we don't handle that properly */
-	    pcs->have_page = true;
         }
 
         /* 

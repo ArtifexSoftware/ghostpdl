@@ -22,6 +22,7 @@
 #include "gspaint.h"
 #include "gxdevice.h"
 #include "gdevbbox.h"
+#include "gdevcmap.h"
 
 /*
  * The PCL printable region. HP always sets the boundary of this region to be
@@ -318,11 +319,9 @@ new_page_size(
 
     pcl_xfm_reset_pcl_pat_ref_pt(pcs);
 
-    /* the following sometimes erroneosuly sets have_page */
     if (!reset_initial)
         hpgl_do_reset(pcs, pcl_reset_page_params);
     gs_erasepage(pcs->pgs);
-    pcs->have_page = false;
 }
 
 /*
@@ -392,11 +391,9 @@ pcl_end_page(
     pcl_break_underline(pcs);	/* (could mark page) */
 
     if (condition != pcl_print_always) {
-	gx_device * dev = gs_currentdevice(pcs->pgs);
-
-	/* Check whether there are any marks on the page. */
-	if (!pcs->have_page)
-	    return 0;	/* definitely no marks */
+	/* I wish there was a kind and gentle way to get the bounding
+           box device... */
+	gx_device * dev = ((gx_device_cmap *)gs_currentdevice(pcs->pgs))->target;
 
 	/* Check whether we're working with a bbox device. */
 	if (strcmp(gs_devicename(dev), "bbox") == 0) {
@@ -436,8 +433,6 @@ pcl_end_page(
     (*end_page)(pcs, pcs->num_copies, true);
     pcl_set_drawing_color(pcs, pcl_pattern_solid_white, 0, false);
     code = gs_erasepage(pcs->pgs);
-    pcs->have_page = false;
-
     /*
      * Advance of a page may move from a page front to a page back. This may
      * change the applicable transformations.
@@ -930,8 +925,6 @@ pcpage_do_reset(
                           get_default_paper(pcs),
                           (type & pcl_reset_initial) != 0
                           );
-	pcs->have_page = false;
-
     } else if ((type & pcl_reset_overlay) != 0) {
 	pcs->perforation_skip = 1;
         pcs->xfm_state.print_dir = 0;

@@ -174,7 +174,6 @@ main(
 
     /* call once to set up the free list handlers */
     gs_reclaim(&inst.spaces, true);
-    pl_main_make_gstate(&inst, &pgs);
     pcl_set_target_device(pcls, inst.device);
     /* Insert a bounding box device so we can detect empty pages. */
     {
@@ -189,7 +188,7 @@ main(
         gx_device_bbox_init(bdev, inst.device);
         inst.device = (gx_device *)bdev;
     }
-
+    pl_main_make_gstate(&inst, &pgs);
     pcl_init_state(pcls, mem);
     gs_state_set_client(pgs, pcls, &pcl_gstate_procs);
     gs_clippath(pgs);

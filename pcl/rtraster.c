@@ -1235,7 +1235,6 @@ transfer_raster_row(
     const byte *    pdata = arg_data(pargs);
     int             code = 0;
 
-    pcs->have_page = true;  /* conservative */
     code = add_raster_plane(pdata, arg_data_size(pargs), true, pcs);
 
     /* process any planes that have not been provided; complete the row */
@@ -1270,7 +1269,6 @@ raster_y_offset(
 
     /* ignored outside of graphics mode */
     if ((prast != 0) && (uint_arg(pargs) > 0)) {
-        pcs->have_page = true;  /* conservative */
         return process_zero_rows(prast, uint_arg(pargs));
     } else
         return 0;
