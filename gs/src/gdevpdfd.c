@@ -17,6 +17,7 @@
 /* $Id$ */
 /* Path drawing procedures for pdfwrite driver */
 #include "math_.h"
+#include "memory_.h"
 #include "gx.h"
 #include "gxdevice.h"
 #include "gxfixed.h"
@@ -24,13 +25,16 @@
 #include "gxpaint.h"
 #include "gxcoord.h"
 #include "gxdevmem.h"
+#include "gxcolor2.h"
+#include "gxhldevc.h"
 #include "gserrors.h"
 #include "gsptype2.h"
 #include "gzpath.h"
 #include "gzcpath.h"
 #include "gdevpdfx.h"
 #include "gdevpdfg.h"
-#include "gxhldevc.h"
+#include "gdevpdfo.h"
+#include "gsutil.h"
 
 /* ---------------- Drawing ---------------- */
 
@@ -448,15 +452,32 @@ prepare_fill_with_clip(gx_device_pdf *pdev, const gs_imager_state * pis,
 
 typedef struct {
     gx_device_memory mdev;
+    gx_device_memory mask;
     dev_t_proc_fill_rectangle((*std_fill_rectangle), gx_device);
+    bool mask_is_empty;
+    bool path_is_empty;
+    bool mask_is_clean;
+    gs_point p;
 } pdf_lcvd_t;
 
-/* A special hackish proc for shifting a sdading raster. */
 private int 
 lcvd_fill_rectangle_shifted(gx_device *dev, int x, int y, int width, int height, gx_color_index color)
 {
     pdf_lcvd_t *cvd = (pdf_lcvd_t *)dev;
 
+    return cvd->std_fill_rectangle((gx_device *)&cvd->mdev, 
+	x - cvd->mdev.mapped_x, y - cvd->mdev.mapped_y, width, height, color);
+}
+private int 
+lcvd_fill_rectangle_shifted2(gx_device *dev, int x, int y, int width, int height, gx_color_index color)
+{
+    pdf_lcvd_t *cvd = (pdf_lcvd_t *)dev;
+    int code;
+
+    code = (*dev_proc(&cvd->mask, fill_rectangle))((gx_device *)&cvd->mask, 
+	x - cvd->mdev.mapped_x, y - cvd->mdev.mapped_y, width, height, (gx_color_index)1);
+    if (code < 0)
+	return code;
     return cvd->std_fill_rectangle((gx_device *)&cvd->mdev, 
 	x - cvd->mdev.mapped_x, y - cvd->mdev.mapped_y, width, height, color);
 }
@@ -476,6 +497,100 @@ lcvd_pattern_manage(gx_device *pdev1, gx_bitmap_id id,
     return 0;
 }
 private int
+write_image(gx_device_pdf *pdev, gx_device_memory *mdev, gs_point *p)
+{
+    gs_image_t image;
+    pdf_image_writer writer;
+    const int sourcex = 0;
+    int code;
+
+    if (p != NULL)
+	pprintg2(pdev->strm, "W n 1 0 0 1 %g %g cm\n", p->x, p->y);
+    code = pdf_copy_color_data(pdev, mdev->base, sourcex,  
+		mdev->raster, gx_no_bitmap_id, 0, 0, mdev->width, mdev->height,
+		&image, &writer, 2);
+    if (code == 1)
+	code = 0; /* Empty image. */
+    else if (code == 0)
+	code = pdf_do_image(pdev, writer.pres, NULL, true);
+    return code;
+}
+private int
+write_mask(gx_device_pdf *pdev, gx_device_memory *mdev, gs_point *p)
+{
+    const int sourcex = 0;
+    gs_id save_clip_id = pdev->clip_path_id;
+    bool save_skip_color = pdev->skip_colors;
+    int code;
+
+    pprintg2(pdev->strm, "1 0 0 1 %g %g cm\n", p->x, p->y);
+    pdev->clip_path_id = pdev->no_clip_path_id;
+    pdev->skip_colors = true;
+    code = gdev_pdf_copy_mono((gx_device *)pdev, mdev->base, sourcex,  
+		mdev->raster, gx_no_bitmap_id, 0, 0, mdev->width, mdev->height,
+		gx_no_color_index, (gx_color_index)0);
+    pdev->clip_path_id = save_clip_id;
+    pdev->skip_colors = save_skip_color; 
+    return code;
+}
+private int
+dump_image(gx_device_pdf *pdev, pdf_lcvd_t *cvd)
+{
+    int code = 0;
+
+    if (!cvd->path_is_empty) {
+	code = write_image(pdev, &cvd->mdev, &cvd->p);
+	cvd->path_is_empty = true;
+    } else if (!cvd->mask_is_empty) {
+	gs_imager_state s;
+	gs_pattern1_instance_t inst;
+	gs_id id = gs_next_ids(cvd->mdev.memory, 1);
+	cos_value_t v;
+	const pdf_resource_t *pres;
+
+	memset(&s, 0, sizeof(s));
+	s.ctm.xx = 1;
+	s.ctm.xy = 0;
+	s.ctm.yx = 0;
+	s.ctm.yy = 1;
+	s.ctm.tx = cvd->p.x;
+	s.ctm.ty = cvd->p.y;
+	memset(&inst, 0, sizeof(inst));
+	inst.saved = (gs_state *)&s; /* HACK : will use s.ctm only. */
+	inst.template.PaintType = 1;
+	inst.template.TilingType = 1;
+	inst.template.BBox.p.x = inst.template.BBox.p.y = 0;
+	inst.template.BBox.q.x = cvd->mdev.width;
+	inst.template.BBox.q.y = cvd->mdev.height;
+	inst.template.XStep = (float)cvd->mdev.width;
+	inst.template.YStep = (float)cvd->mdev.height;
+	code = (*dev_proc(pdev, pattern_manage))((gx_device *)pdev, 
+	    id, &inst, pattern_manage__start_accum);
+	if (code >= 0)
+	    code = write_image(pdev, &cvd->mdev, NULL);
+	pres = pdev->accumulating_substream_resource;
+	if (code >= 0)
+	    code = (*dev_proc(pdev, pattern_manage))((gx_device *)pdev, 
+		id, &inst, pattern_manage__finish_accum);
+	if (code >= 0)
+	    code = (*dev_proc(pdev, pattern_manage))((gx_device *)pdev, 
+		id, &inst, pattern_manage__load);
+	if (code >= 0)
+	    code = pdf_cs_Pattern_colored(pdev, &v);
+	if (code >= 0) {
+	    cos_value_write(&v, pdev);
+	    pprintld1(pdev->strm, " cs /R%ld scn ", pdf_resource_id(pres));
+	}
+	if (code >= 0)
+	    code = write_mask(pdev, &cvd->mask, &cvd->p);
+	cvd->mask_is_empty = true;
+    }
+    if (code > 0)
+	code = (*dev_proc(&cvd->mdev, fill_rectangle))((gx_device *)&cvd->mdev, 
+		0, 0, cvd->mdev.width, cvd->mdev.height, (gx_color_index)0);
+    return code;
+}
+private int
 lcvd_handle_fill_path_as_shading_coverage(gx_device *dev,
     const gs_imager_state *pis, gx_path *ppath,
     const gx_fill_params *params,
@@ -483,11 +598,44 @@ lcvd_handle_fill_path_as_shading_coverage(gx_device *dev,
 {
     pdf_lcvd_t *cvd = (pdf_lcvd_t *)dev;
     gx_device_pdf *pdev = (gx_device_pdf *)cvd->mdev.target;
+    int code;
 
-    gdev_vector_dopath((gx_device_vector *)pdev, ppath,
-			gx_path_type_fill | gx_path_type_optimize,
-			NULL);
-    stream_puts(pdev->strm, "h\n");
+    if (gx_path_is_null(ppath)) {
+	/* use the mask. */
+	if (!cvd->path_is_empty) {
+	    code = dump_image(pdev, cvd);
+	    if (code < 0)
+		return code;
+	    stream_puts(pdev->strm, "Q q\n");
+	    dev_proc(&cvd->mdev, fill_rectangle) = lcvd_fill_rectangle_shifted2;
+	}
+	if (!cvd->mask_is_clean || !cvd->path_is_empty) {
+	    code = (*dev_proc(&cvd->mask, fill_rectangle))((gx_device *)&cvd->mask, 
+			0, 0, cvd->mask.width, cvd->mask.height, (gx_color_index)0);
+	    if (code < 0)
+		return code;
+	    cvd->mask_is_clean = true;
+	}
+	cvd->path_is_empty = true;
+	cvd->mask_is_empty = false;
+    } else {
+	/* use the clipping. */
+	if (!cvd->mask_is_empty) {
+	    code = dump_image(pdev, cvd);
+	    if (code < 0)
+		return code;
+	    stream_puts(pdev->strm, "Q q\n");
+	    dev_proc(&cvd->mdev, fill_rectangle) = lcvd_fill_rectangle_shifted;
+	    cvd->mask_is_empty = true;
+	}
+	code = gdev_vector_dopath((gx_device_vector *)pdev, ppath,
+			    gx_path_type_fill | gx_path_type_optimize,
+			    NULL);
+	if (code < 0)
+	    return code;
+	stream_puts(pdev->strm, "h\n");
+	cvd->path_is_empty = false;
+    }
     return 0;
 }
 
@@ -549,8 +697,7 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 	    int sx, sy;
 	    gs_fixed_rect bbox, bbox1;
 	    gs_imager_state *pis1 = (gs_imager_state *)pis; /* Break 'const'. */
-	    const int sourcex = 0;
-	    gs_point p;
+	    bool need_mask = gx_dc_pattern2_can_overlap(pdcolor);
 
 	    code = gx_path_bbox(ppath, &bbox);
 	    if (code < 0)
@@ -571,34 +718,45 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 	    cvd.mdev.mapped_y = sy;
 	    cvd.mdev.bitmap_memory = pdev->memory;
 	    cvd.mdev.color_info = pdev->color_info;
+	    cvd.path_is_empty = true;
+	    cvd.mask_is_empty = true;
+	    cvd.mask_is_clean = false;
 	    code = (*dev_proc(&cvd.mdev, open_device))((gx_device *)&cvd.mdev);
 	    if (code < 0)
 		return code;
+	    code = (*dev_proc(&cvd.mdev, fill_rectangle))((gx_device *)&cvd.mdev, 
+			0, 0, cvd.mdev.width, cvd.mdev.height, (gx_color_index)0);
+	    if (code < 0)
+		return code;
+	    if (need_mask) {
+		/* Generate an imagemask using the shading coverage area as the mask,
+		   and a colored pattern with the shading image as the color.
+		*/
+		gs_make_mem_mono_device(&cvd.mask, pdev->memory, (gx_device *)pdev);
+		cvd.mask.width = cvd.mdev.width;
+		cvd.mask.height = cvd.mdev.height;
+		cvd.mask.bitmap_memory = pdev->memory;
+		code = (*dev_proc(&cvd.mask, open_device))((gx_device *)&cvd.mask);
+		if (code < 0)
+		    return code;
+	    }
 	    cvd.std_fill_rectangle = dev_proc(&cvd.mdev, fill_rectangle);
-	    dev_proc(&cvd.mdev, fill_rectangle) = lcvd_fill_rectangle_shifted;
+	    dev_proc(&cvd.mdev, fill_rectangle) = (need_mask ? lcvd_fill_rectangle_shifted2 
+							     : lcvd_fill_rectangle_shifted);
 	    dev_proc(&cvd.mdev, get_clipping_box) = lcvd_get_clipping_box_from_tadget;
 	    dev_proc(&cvd.mdev, pattern_manage) = lcvd_pattern_manage;
 	    dev_proc(&cvd.mdev, fill_path) = lcvd_handle_fill_path_as_shading_coverage;
 	    gs_distance_transform_inverse(sx * pdev->HWResolution[0] / 72, 
-					sy * pdev->HWResolution[0] / 72, &ctm_only(pis), &p);
+					sy * pdev->HWResolution[0] / 72, &ctm_only(pis), &cvd.p);
 	    stream_puts(pdev->strm, "q\n");
 	    code = gx_default_fill_path((gx_device *)&cvd.mdev, pis, ppath, params, pdcolor, pcpath);
 	    pis1->ctm = save_ctm;
-	    if (code == 0) {
-		gs_image_t image;
-		pdf_image_writer writer;
-
-		pprintg2(pdev->strm, "W n 1 0 0 1 %g %g cm\n", p.x, p.y);
-		code = pdf_copy_color_data(pdev, cvd.mdev.base, sourcex,  
-			    cvd.mdev.raster, gx_no_bitmap_id, 0, 0, cvd.mdev.width, cvd.mdev.height,
-			    &image, &writer, 2);
-		if (code == 1)
-		    code = 0; /* Empty image. */
-		else if (code == 0)
-		    code = pdf_do_image(pdev, writer.pres, NULL, true);
-		stream_puts(pdev->strm, "Q\n");
-	    }
+	    if (code == 0)
+		code = dump_image(pdev, &cvd);
+	    stream_puts(pdev->strm, "Q\n");
 	    (*dev_proc(&cvd.mdev, close_device))((gx_device *)&cvd.mdev);
+	    if (need_mask)
+		(*dev_proc(&cvd.mask, close_device))((gx_device *)&cvd.mask);
 	}
 	return code; 
     }

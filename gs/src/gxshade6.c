@@ -3810,29 +3810,28 @@ patch_fill(patch_fill_state_t *pfs, const patch_curve_t curve[4],
 	int64_t s2 = (int64_t)d12x * d23y - (int64_t)d12y * d23x;
 	int s = (s1 + s2 > 0 ? 1 : 3), i, j, k, jj, l = (s == 1 ? 0 : 1);
 
-	if (is_x_bended(&p) || is_y_bended(&p)) {
-	    /* fixme: this method can't give a correct rtesult
-	       with self_overlapped patches, because in this case
-	       boundaries of the coverage area are not boundaries of the patch.
-	       A coverage boundary may be a "twist line" of the patch coverage.
-	       Will fix later with masked images. */
-	    dlprintf("A self-overlapping tensor or Coons patch can't clip correctly.\n");
-	}
 	gx_path_init_local(&path, pdev->memory);
-	code = gx_path_add_point(&path, curve[0].vertex.p.x, curve[0].vertex.p.y);
-	for (i = k = 0; k < 4 && code >= 0; i = j, k++) {
-	    j = (i + s) % 4, jj = (s == 1 ? i : j);
-	    if (curve[jj].straight)
-		code = gx_path_add_line(&path, curve[j].vertex.p.x, 
-					       curve[j].vertex.p.y);
-	    else
-		code = gx_path_add_curve(&path, curve[jj].control[l].x, curve[jj].control[l].y, 
-						curve[jj].control[(l + 1) & 1].x, curve[jj].control[(l + 1) & 1].y,
-						curve[j].vertex.p.x, 
+	if (is_x_bended(&p) || is_y_bended(&p)) {
+	    /* The patch possibly is self-overlapping,
+	       so the patch coverage may fall outside the patch outline.
+	       In this case we pass an empty path,
+	       and the device must use a bitmap mask instead clipping. */
+	} else {
+    	    code = gx_path_add_point(&path, curve[0].vertex.p.x, curve[0].vertex.p.y);
+	    for (i = k = 0; k < 4 && code >= 0; i = j, k++) {
+		j = (i + s) % 4, jj = (s == 1 ? i : j);
+		if (curve[jj].straight)
+		    code = gx_path_add_line(&path, curve[j].vertex.p.x, 
 						curve[j].vertex.p.y);
+		else
+		    code = gx_path_add_curve(&path, curve[jj].control[l].x, curve[jj].control[l].y, 
+						    curve[jj].control[(l + 1) & 1].x, curve[jj].control[(l + 1) & 1].y,
+						    curve[j].vertex.p.x, 
+						    curve[j].vertex.p.y);
+	    }
+	    if (code >= 0)
+		code = gx_path_close_subpath(&path);
 	}
-	if (code >= 0)
-	    code = gx_path_close_subpath(&path);
 	if (code >= 0)
 	    code = (*dev_proc(pfs->dev, fill_path))(pdev, NULL, &path, NULL, NULL, NULL);
 	gx_path_free(&path, "patch_fill");

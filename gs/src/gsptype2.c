@@ -297,3 +297,21 @@ gx_dc_pattern2_get_bbox(const gx_device_color * pdevc, gs_fixed_rect *bbox)
 	return code;
     return 1;
 }
+
+/* Check device color for a possibly self-overlapping shading. */
+bool
+gx_dc_pattern2_can_overlap(const gx_device_color *pdevc)
+{
+    gs_pattern2_instance_t * pinst;
+
+    if (pdevc->type != &gx_dc_pattern2)
+	return false;
+    pinst = (gs_pattern2_instance_t *)pdevc->ccolor.pattern;
+    switch (pinst->template.Shading->head.type) {
+	case 3: case 6: case 7:
+	    return true;
+	default:
+	    return false;
+    }
+}
+

@@ -105,4 +105,7 @@ int gx_dc_pattern2_shade_bbox_transform2fixed(const gs_rect * rect,
 			   /* Get a shading bbox. Returns 1 on success. */
 int gx_dc_pattern2_get_bbox(const gx_device_color * pdevc, gs_fixed_rect *bbox);
 
+/* Check device color for a possibly self-overlapping shading. */
+bool gx_dc_pattern2_can_overlap(const gx_device_color *pdevc);
+
 #endif /* gsptype2_INCLUDED */
