@@ -510,7 +510,7 @@ hpgl_alternate_line_pattern_offset(hpgl_state_t *pgls, uint lines_filled)
     else
 	pgls->g.line.current.pattern_offset = 0.0;
 }
-	
+
 /*
  * HAS should replicate lines beginning at the anchor corner to +X and
  * +Y.  Not quite right - anchor corner not yet supported.
@@ -536,24 +536,27 @@ hpgl_polyfill(
     bool                        cross = (type == hpgl_FT_pattern_two_lines);
     const hpgl_hatch_params_t * params = (cross ? &pgls->g.fill.param.crosshatch
                                                 : &pgls->g.fill.param.hatch);
-    hpgl_real_t                 spacing = params->spacing;
+    gs_point                    spacing;
     hpgl_real_t                 direction = params->angle;
     float saved_line_pattern_offset = pgls->g.line.current.pattern_offset;
     int lines_filled = 0;
+    /* initilialize spacing between fill line vector */
+    spacing.x = spacing.y = params->spacing;
     /* save the pen position */
     hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_pos);
-    if (spacing == 0) {
+    if (params->spacing == 0) {
         /* Per TRM 22-12, use 1% of the P1/P2 distance. */
 	gs_matrix   mat;
 
 	hpgl_call(hpgl_compute_user_units_to_plu_ctm(pgls, &mat));
-	spacing = 0.01 * hpgl_compute_distance( pgls->g.P1.x,
-                                                pgls->g.P1.y,
-					        pgls->g.P2.x,
-                                                pgls->g.P2.y
+	spacing.x = spacing.y = 0.01 * hpgl_compute_distance( pgls->g.P1.x,
+							      pgls->g.P1.y,
+							      pgls->g.P2.x,
+							      pgls->g.P2.y
                                                 );
 	/****** WHAT IF ANISOTROPIC SCALING? ******/
-	spacing /= min(fabs(mat.xx), fabs(mat.yy));
+	spacing.x /= fabs(mat.xx);
+	spacing.y /= fabs(mat.yy);
     }
 
     /* get the bounding box */
@@ -576,7 +579,7 @@ hpgl_polyfill(
 
         hpgl_call(hpgl_compute_user_units_to_plu_ctm(pgls, &mat));
         line_width /= min(fabs(mat.xx), fabs(mat.yy));
-	if (line_width >= spacing) {
+	if (line_width >= spacing.x  || line_width >= spacing.y) {
             hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_polygon));
 	    return 0;
 	}
@@ -588,8 +591,8 @@ start:
     gs_sincos_degrees(direction, &sincos);
     if (sin_dir < 0)
 	sin_dir = -sin_dir, cos_dir = -cos_dir; /* ensure y_inc >= 0 */
-    x_fill_increment = (sin_dir != 0) ? fabs(spacing / sin_dir) : 0;
-    y_fill_increment = (cos_dir != 0) ? fabs(spacing / cos_dir) : 0;
+    x_fill_increment = (sin_dir != 0) ? fabs(spacing.x / sin_dir) : 0;
+    y_fill_increment = (cos_dir != 0) ? fabs(spacing.y / cos_dir) : 0;
     hpgl_call( hpgl_get_adjusted_corner( x_fill_increment,
                                          y_fill_increment,
                                          &bbox,
