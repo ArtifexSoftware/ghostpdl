@@ -116,7 +116,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     int code;
     
     max_id = 0;
-    for (index = 0; index < n_dicts; index ++) {
+    for (index = 0; index < n_dicts; index++) {
         max_id += dicts[index]->n_symbols;
     }
     jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
@@ -415,7 +415,25 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
         return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
                 "text region refers to no symbol dictionaries!");
     }
-    
+    if (dicts == NULL) {
+	return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+		"unable to retrive symbol dictionaries!"
+		" previous parsing error?");
+    } else {
+	int index;
+	if (dicts[0] == NULL) {
+	    return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, 
+			segment->number,
+                        "unable to find first referenced symbol dictionary!");
+	}
+	for (index = 1; index < n_dicts; index++)
+	    if (dicts[index] == NULL) {
+		jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
+			"unable to find all referenced symbol dictionaries!");
+	    n_dicts = index;
+	}
+    }
+
     page_image = ctx->pages[ctx->current_page].image;
     image = jbig2_image_new(ctx, region_info.width, region_info.height);
 
