@@ -264,8 +264,8 @@ bbox_open_device(gx_device * dev)
 	int code = (tdev == 0 ? 0 : (*dev_proc(tdev, open_device)) (tdev));
 	/* HACK handling is_open with forwarding devices is an
            architectual problem that we are not dealing with now. */
-	if (tdev != 0)
-	    tdev->is_open = true;
+	/*	if (tdev != 0)
+		tdev->is_open = true; */
 	bbox_copy_params(bdev, true);
 	return code;
     }
