@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2004, Ghostgum Software Pty Ltd.  All rights reserved.
+/* Copyright (C) 2001-2005, Ghostgum Software Pty Ltd.  All rights reserved.
 
    This software is provided AS-IS with no warranty, either express or
    implied.
@@ -1271,7 +1271,7 @@ display_free_bitmap(gx_device_display * ddev)
 private int 
 display_raster(gx_device_display *dev)
 {
-    int align = 4;
+    int align = 0;
     int bytewidth = dev->width * dev->color_info.depth/8;
     switch (dev->nFormat & DISPLAY_ROW_ALIGN_MASK) {
 	case DISPLAY_ROW_ALIGN_4:
@@ -1290,6 +1290,8 @@ display_raster(gx_device_display *dev)
 	    align = 64;
 	    break;
     }
+    if (align < ARCH_ALIGN_PTR_MOD)
+	align = ARCH_ALIGN_PTR_MOD;
     align -= 1;
     bytewidth = (bytewidth + align) & (~align);
     return bytewidth;
@@ -1593,6 +1595,7 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
     int bpc;	/* bits per component */
     int bpp;	/* bits per pixel */
     int maxvalue;
+    int align;
 
     switch (nFormat & DISPLAY_DEPTH_MASK) {
 	case DISPLAY_DEPTH_1:
@@ -1618,6 +1621,31 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
     }
     maxvalue = (1 << bpc) - 1;
     ddev->devn_params.bitspercomponent = bpc;
+
+    switch (ddev->nFormat & DISPLAY_ROW_ALIGN_MASK) {
+	case DISPLAY_ROW_ALIGN_DEFAULT:
+	    align = ARCH_ALIGN_PTR_MOD;
+	    break;
+	case DISPLAY_ROW_ALIGN_4:
+	    align = 4;
+	    break;
+	case DISPLAY_ROW_ALIGN_8:
+	    align = 8;
+	    break;
+	case DISPLAY_ROW_ALIGN_16:
+	    align = 16;
+	    break;
+	case DISPLAY_ROW_ALIGN_32:
+	    align = 32;
+	    break;
+	case DISPLAY_ROW_ALIGN_64:
+	    align = 64;
+	    break;
+	default:
+	    align = 0;	/* not permitted */
+    }
+    if (align < ARCH_ALIGN_PTR_MOD)
+	return_error(gs_error_rangecheck);
 
     switch (ddev->nFormat & DISPLAY_ALPHA_MASK) {
 	case DISPLAY_ALPHA_FIRST:

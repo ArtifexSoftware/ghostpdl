@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2004, Ghostgum Software Pty Ltd.  All rights reserved.
+/* Copyright (C) 2001-2005, Ghostgum Software Pty Ltd.  All rights reserved.
 
    This software is provided AS-IS with no warranty, either express or
    implied.
@@ -130,8 +130,11 @@ typedef enum {
 } DISPLAY_FORMAT_555;
 #define DISPLAY_555_MASK 0x00040000L
 
-/* Define the row alignment.  The default is 4 bytes, so 
- * DISPLAY_ROW_ALIGN_DEFAULT is the same as DISPLAY_ROW_ALIGN_4
+/* Define the row alignment, which must be equal to or greater than
+ * the size of a pointer.
+ * The default (DISPLAY_ROW_ALIGN_DEFAULT) is the size of a pointer, 
+ * 4 bytes (DISPLAY_ROW_ALIGN_4) on 32-bit systems or 8 bytes 
+ * (DISPLAY_ROW_ALIGN_8) on 64-bit systems.
  */
 typedef enum {
     DISPLAY_ROW_ALIGN_DEFAULT = (0<<20),
