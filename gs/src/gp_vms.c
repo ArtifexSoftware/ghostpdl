@@ -594,7 +594,7 @@ bool gp_file_name_is_empty_item_meanful(void)
 
 gp_file_name_combine_result
 gp_file_name_combine(const char *prefix, uint plen, const char *fname, uint flen, 
-		    bool no_neighbour, char *buffer, uint *blen)
+		    bool no_sibling, char *buffer, uint *blen)
 {
     /*
      * Reduce it to the MacOS case.
@@ -646,6 +646,6 @@ gp_file_name_combine(const char *prefix, uint plen, const char *fname, uint flen
     if (prefix[plen - 1] == ']')
         plen1 = plen - 1;
     return gp_file_name_combine_generic(prefix, plen1, 
-	    fname1, flen1, no_neighbour, buffer, blen);
+	    fname1, flen1, no_sibling, buffer, blen);
 }
 

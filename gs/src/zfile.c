@@ -951,16 +951,16 @@ make_stream_file(ref * pfile, stream * s, const char *access)
 
 private gp_file_name_combine_result 
 gp_file_name_combine_patch(const char *prefix, uint plen, const char *fname, uint flen, 
-			    bool no_neighbour, char *buffer, uint *blen)
+			    bool no_sibling, char *buffer, uint *blen)
 {
-    return gp_file_name_combine(prefix, plen, fname, flen, no_neighbour, buffer, blen);
+    return gp_file_name_combine(prefix, plen, fname, flen, no_sibling, buffer, blen);
 }
 
 #else
 
 private gp_file_name_combine_result 
 gp_file_name_combine_patch(const char *prefix, uint plen, const char *fname, uint flen, 
-			    bool no_neighbour, char *buffer, uint *blen)
+			    bool no_sibling, char *buffer, uint *blen)
 {
     /* This is a stub. */
     /* It will be replaced with a more intelligent code. */

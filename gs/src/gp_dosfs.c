@@ -207,8 +207,8 @@ bool gp_file_name_is_empty_item_meanful(void)
 
 gp_file_name_combine_result
 gp_file_name_combine(const char *prefix, uint plen, const char *fname, uint flen, 
-		    bool no_neighbour, char *buffer, uint *blen)
+		    bool no_sibling, char *buffer, uint *blen)
 {
     return gp_file_name_combine_generic(prefix, plen, 
-	    fname, flen, no_neighbour, buffer, blen);
+	    fname, flen, no_sibling, buffer, blen);
 }

@@ -135,7 +135,7 @@ search_separator(const char **ip, const char *ipe, const char *item, int directi
  */
 gp_file_name_combine_result
 gp_file_name_combine_generic(const char *prefix, uint plen, const char *fname, uint flen, 
-		    bool no_neighbour, char *buffer, uint *blen)
+		    bool no_sibling, char *buffer, uint *blen)
 {
     /*
      * THIS CODE IS SHARED FOR MULTIPLE PLATFORMS.
@@ -211,7 +211,7 @@ gp_file_name_combine_generic(const char *prefix, uint plen, const char *fname, u
 		    /* Falls through. */
 		case 0:
 		    /* We have no infix, start with parent. */
-		    if ((no_neighbour && ipe == fname + flen && flen != 0) || 
+		    if ((no_sibling && ipe == fname + flen && flen != 0) || 
 			    !gp_file_name_is_partent_allowed())
 			return gp_combine_cant_handle;
 		    /* Falls through. */
@@ -236,7 +236,7 @@ gp_file_name_combine_generic(const char *prefix, uint plen, const char *fname, u
 	    /* The cast above quiets a gcc warning. We believe it's a bug in the compiler. */
 	    /* Skip the input with separator. We cannot use slen on Mac OS. */
 	    ip += gs_file_name_check_separator(ip, ipe - ip, ip);
-	    if (no_neighbour) {
+	    if (no_sibling) {
 		const char *p = ip;
 
 		DISCARD(search_separator(&p, ipe, ip, 1));

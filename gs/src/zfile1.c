@@ -36,7 +36,7 @@ zfile_name_combine(i_ctx_t *i_ctx_p)
     const byte *prefix, *fname;
     byte *buffer;
     os_ptr op = osp;
-    bool no_neighbour;
+    bool no_sibling;
 
     check_type(op[ 0], t_boolean);
     check_type(op[-1], t_string);
@@ -49,9 +49,9 @@ zfile_name_combine(i_ctx_t *i_ctx_p)
 	return_error(e_VMerror);
     prefix = op[-2].value.const_bytes;
     fname =  op[-1].value.const_bytes;
-    no_neighbour = op[0].value.boolval;
+    no_sibling = op[0].value.boolval;
     if (gp_file_name_combine((const char *)prefix, plen, 
-			     (const char *)fname, flen, no_neighbour,
+			     (const char *)fname, flen, no_sibling,
 		             (char *)buffer, &blen) != gp_combine_success) {
 	make_bool(op, false);
     } else {
@@ -69,6 +69,17 @@ zfile_name_combine(i_ctx_t *i_ctx_p)
 /* This is compiled conditionally to let PS library to know
  * whether it works with the new gp_combine_file_name.
  */
+
+/* <string> .file_name_is_absolute <bool> */
+private int
+zfile_name_is_absolute(i_ctx_t *i_ctx_p)
+{   os_ptr op = osp;
+
+    check_type(op[0], t_string);
+    make_bool(op, (gp_file_name_root((const char *)op->value.const_bytes, 
+					r_size(op)) > 0));
+    return 0;
+}
 
 private int
 push_string(i_ctx_t *i_ctx_p, const char *v)
@@ -105,6 +116,7 @@ const op_def zfile1_op_defs[] =
 {
     {"0.file_name_combine", zfile_name_combine},
 #if NEW_COMBINE_PATH
+    {"0.file_name_is_absolute", zfile_name_is_absolute},
     {"0.file_name_separator", zfile_name_separator},
     {"0.file_name_directory_separator", zfile_name_directory_separator},
     {"0.file_name_parent", zfile_name_parent},
