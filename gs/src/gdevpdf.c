@@ -481,15 +481,14 @@ copy_padded(byte buf[32], gs_const_string *str)
 }
 
 private void
-Adobe_magic_loop_50(byte digest[16], byte buf[32])
+Adobe_magic_loop_50(byte digest[16], int key_length)
 {
     md5_state_t md5;
     int i;
 
     for (i = 0; i < 50; i++) {
-	memcpy(buf, digest, 16);
 	md5_init(&md5);
-	md5_append(&md5, buf, 16);
+	md5_append(&md5, digest, key_length);
 	md5_finish(&md5, digest);
     }
 }
@@ -550,7 +549,7 @@ pdf_compute_encryption_data(gx_device_pdf * pdev)
     md5_append(&md5, buf, sizeof(buf));
     md5_finish(&md5, digest);
     if (pdev->EncryptionR == 3)
-	Adobe_magic_loop_50(digest, buf);
+	Adobe_magic_loop_50(digest, pdev->KeyLength / 8);
     copy_padded(buf, &pdev->UserPassword);
     s_arcfour_set_key(&sarc4, digest, pdev->KeyLength / 8);
     s_arcfour_process_buffer(&sarc4, buf, sizeof(buf));
@@ -575,7 +574,7 @@ pdf_compute_encryption_data(gx_device_pdf * pdev)
 	}
     md5_finish(&md5, digest);
     if (pdev->EncryptionR == 3)
-	Adobe_magic_loop_50(digest, buf);
+	Adobe_magic_loop_50(digest, pdev->KeyLength / 8);
     memcpy(pdev->EncryptionKey, digest, pdev->KeyLength / 8);
     /* Compute U : */
     if (pdev->EncryptionR == 3) {
