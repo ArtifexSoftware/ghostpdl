@@ -378,6 +378,59 @@ currentdict /.useciecolorkeydict undef
   } ifelse
 } .bind odef		% bind in .setglobal
 
+
+% Define default device color spaces to allow substitution
+% on UseCIEColor == true :
+
+/DefaultGray
+[ /CIEBasedA
+  3 dict begin
+     /WhitePoint [ 0.9505 1.0 1.089 ] def
+     /DecodeLMN  [ { 1.8 exp } { 1.8 exp } { 1.8 exp } ] def
+     /MatrixLMN  [ 0.4439 0.2522 0.0436 0.3341 0.6371 0.1387 0.1725 0.1107 0.9067 ] def
+  currentdict end
+]
+/ColorSpace defineresource pop
+
+/DefaultRGB
+[ /CIEBasedABC
+  3 dict begin
+     /WhitePoint [ 0.9505 1.0 1.089 ] def
+     /DecodeLMN  [ { 1.8 exp } { 1.8 exp } { 1.8 exp } ]  def
+     /MatrixLMN  [ 0.4439 0.2522 0.0436 0.3341 0.6371 0.1387 0.1725 0.1107 0.9067 ] def
+  currentdict end
+]
+/ColorSpace defineresource pop
+
+/DefaultCMYK
+[ /CIEBasedDEFG
+  4 dict begin
+     /WhitePoint [ 0.9505 1.0 1.089 ] def
+     /Table [ 2 2 2 2
+            % Trivial table :
+            % [
+            %   [ < FFFFFF 000000 FFFF00 000000>
+            %     < FF00FF 000000 FF0000 000000> ]
+            %   [ < 00FFFF 000000 00FF00 000000>
+            %     < 0000FF 000000 000000 000000> ]
+            % ]
+
+            % AcrobatReader-compatible table :
+              [
+                [ < FFFFFF 000000 FFFF00 000000>
+                  < EA007F 000000 FC000F 000000> ]
+
+                [ < 00A0C8 000000 008436 000000>
+                  < 00007C 000000 000000 000000> ]
+              ]
+            ] def
+     /DecodeLMN [ { 1.8 exp } { 1.8 exp } { 1.8 exp } ] def
+     /MatrixLMN [ 0.4439 0.2522 0.0436 0.3341 0.6371 0.1387 0.1725 0.1107 0.9067 ] def
+  currentdict end
+]
+/ColorSpace defineresource pop
+
+
 % ------ DeviceN color space ------ %
 
 % This isn't quite right, because the ColorSpaceFamily resource will exist
