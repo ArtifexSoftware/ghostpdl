@@ -537,6 +537,8 @@ private void
 transpose_path(gx_path *path)
 {   segment *s = (segment *)path->first_subpath;
 
+    exch(path->bbox.p.x, path->bbox.p.y);
+    exch(path->bbox.q.x, path->bbox.q.y);
     for (; s; s = s->next) {
 	if (s->type == s_curve) {
 	    curve_segment *c = (curve_segment *)s;
@@ -559,7 +561,7 @@ stem_hint_handler(void *client_data, gx_san_sect *ss)
     t1_hinter_aux *h = (t1_hinter_aux *)client_data;
 
     return (h->transpose ? t1_hinter__hstem : t1_hinter__vstem)
-		(&h->super, ss->xl, ss->xl);
+		(&h->super, ss->xl, ss->xr);
 }
 
 private int grid_fit(gx_device_spot_analyzer *padev, gx_path *path, 
