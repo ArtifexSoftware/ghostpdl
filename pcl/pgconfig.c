@@ -452,12 +452,21 @@ hpgl_PS(hpgl_args_t *pargs, hpgl_state_t *pgls)
 
     if ( pgls->personality != rtl )
 	return 0;
-    for ( i = 0; i < 2 && hpgl_arg_real(pargs, &page_dims[i]); ++i )
-	; /* NOTHING */
-    if ( i == 1 )
-	page_dims[1] = page_dims[0];
-    else if ( i != 2 )
-	return e_Range;
+
+    /* check for pjl override of the arguments - this is custom code
+       for a customer and is not the normal interaction between PCL &
+       PJL */
+    if (!pjl_proc_compare(pgls->pjls, pjl_proc_get_envvar(pgls->pjls, "plotsizeoverride"), "on")) {
+        page_dims[0] = pjl_proc_vartof(pgls->pjls, pjl_proc_get_envvar(pgls->pjls, "plotsize1"));
+        page_dims[1] = pjl_proc_vartof(pgls->pjls, pjl_proc_get_envvar(pgls->pjls, "plotsize2"));
+    } else {
+        for ( i = 0; i < 2 && hpgl_arg_real(pargs, &page_dims[i]); ++i )
+            ; /* NOTHING */
+        if ( i == 1 )
+            page_dims[1] = page_dims[0];
+        else if ( i != 2 )
+            return e_Range;
+    }
     paper.height = plu_2_coord(page_dims[0]);
     paper.width = plu_2_coord(page_dims[1]);
     paper.offset_portrait = 0; 
