@@ -2172,6 +2172,26 @@ static int nInstrCount=0;
 /*                                                              */
 /****************************************************************/
 
+/* Skip the whole function definition. */
+  static void skip_FDEF( EXEC_OP )
+  {
+    /* We don't allow nested IDEFS & FDEFs.    */
+
+    while ( SKIP_Code() == SUCCESS )
+    {
+      switch ( CUR.opcode )
+      {
+      case 0x89:    /* IDEF */
+      case 0x2c:    /* FDEF */
+        CUR.error = TT_Err_Nested_DEFS;
+        return;
+
+      case 0x2d:   /* ENDF */
+        return;
+      }
+    }
+  }
+
 /*******************************************/
 /* FDEF[]    : Function DEFinition         */
 /* CodeRange : $2C                         */
@@ -2194,22 +2214,7 @@ static int nInstrCount=0;
     pRec->Start  = CUR.IP + 1;
     pRec->Active = TRUE;
 
-  /* Now skip the whole function definition. */
-  /* We don't allow nested IDEFS & FDEFs.    */
-
-    while ( SKIP_Code() == SUCCESS )
-    {
-      switch ( CUR.opcode )
-      {
-      case 0x89:    /* IDEF */
-      case 0x2c:    /* FDEF */
-        CUR.error = TT_Err_Nested_DEFS;
-        return;
-
-      case 0x2d:   /* ENDF */
-        return;
-      }
-    }
+    skip_FDEF(EXEC_ARG);
   }
 
 
@@ -2340,44 +2345,20 @@ static int nInstrCount=0;
 
   static void Ins_IDEF( INS_ARG )
   {
-    Int         A;
-    PDefRecord  pTDR;
-
-
-    A = 0;
-
-    while ( A < CUR.numIDefs )
-    {
-      pTDR = &CUR.IDefs[A];
-
-      if ( pTDR->Active == 0 )
+    if (CUR.countIDefs >= CUR.numIDefs || args[0] > 255)
+	CUR.error = TT_Err_Storage_Overflow;
+    else 
       {
+	PDefRecord  pTDR;
+
+	CUR.IDefPtr[(Byte)(args[0])] = CUR.countIDefs;
+	pTDR = &CUR.IDefs[CUR.countIDefs++];
         pTDR->Opc    = (Byte)(args[0]);
         pTDR->Start  = CUR.IP + 1;
         pTDR->Range  = CUR.curRange;
         pTDR->Active = TRUE;
-
-        A = CUR.numIDefs;
-
-        /* Now skip the whole function definition */
-        /* We don't allow nested IDEFs & FDEFs.   */
-
-        while ( SKIP_Code() == SUCCESS )
-        {
-          switch ( CUR.opcode )
-          {
-          case 0x89:   /* IDEF */
-          case 0x2c:   /* FDEF */
-            CUR.error = TT_Err_Nested_DEFS;
-            return;
-          case 0x2d:   /* ENDF */
-            return;
-          }
-        }
+	skip_FDEF(EXEC_ARG);
       }
-      else
-        A++;
-    }
   }
 
 
@@ -4763,8 +4744,42 @@ static int nInstrCount=0;
 
 
   static void  Ins_UNKNOWN( INS_ARG )
-  { (void)args;
-    CUR.error = TT_Err_Invalid_Opcode;
+  { /* Rewritten by igorm. */
+    Byte i;
+    TDefRecord*  def;
+    PCallRecord  call;
+
+    if (CUR.opcode > 255) {
+	CUR.error = TT_Err_Invalid_Opcode;
+	return;
+    }
+    i = CUR.IDefPtr[(Byte)CUR.opcode];
+
+    if (i >= CUR.numIDefs) 
+      {
+	CUR.error = TT_Err_Invalid_Opcode;
+	return;
+      }
+    def   = &CUR.IDefs[i];
+
+
+    if ( CUR.callTop >= CUR.callSize )
+    {
+      CUR.error = TT_Err_Stack_Overflow;
+      return;
+    }
+
+    call = CUR.callStack + CUR.callTop++;
+
+    call->Caller_Range = CUR.curRange;
+    call->Caller_IP    = CUR.IP+1;
+    call->Cur_Count    = 1;
+    call->Cur_Restart  = def->Start;
+
+    INS_Goto_CodeRange( def->Range, def->Start );
+
+    CUR.step_ins = FALSE;
+    return;
   }
 
 
