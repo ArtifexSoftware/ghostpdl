@@ -130,12 +130,15 @@ gx_device_text_begin(gx_device * dev, gs_imager_state * pis,
 	gx_path *tpath =
 	    ((text->operation & TEXT_DO_NONE) &&
 	     !(text->operation & TEXT_RETURN_WIDTH) ? 0 : path);
-	const gx_device_color *tcolor =
-	    (text->operation & TEXT_DO_DRAW ? pdcolor : 0);
 	const gx_clip_path *tcpath =
 	    (text->operation & TEXT_DO_DRAW ? pcpath : 0);
+
+	/* A high level device need to know an initial device color 
+	   for accumulates a charstring of a Type 3 font.
+	   Since the accumulation may happen while stringwidth. 
+	   we pass the device color unconditionally. */
 	return dev_proc(dev, text_begin)
-	    (dev, pis, text, font, tpath, tcolor, tcpath, mem, ppte);
+	    (dev, pis, text, font, tpath, pdcolor, tcpath, mem, ppte);
     }
 }
 
@@ -216,17 +219,22 @@ gs_text_begin(gs_state * pgs, const gs_text_params_t * text,
 	      gs_memory_t * mem, gs_text_enum_t ** ppte)
 {
     gx_clip_path *pcpath = 0;
+    int code;
 
     if (text->operation & TEXT_DO_DRAW) {
-	int code = gx_effective_clip_path(pgs, &pcpath);
-
-	if (code < 0)
-	    return code;
-	gx_set_dev_color(pgs);
-	code = gs_state_color_load(pgs);
+	code = gx_effective_clip_path(pgs, &pcpath);
 	if (code < 0)
 	    return code;
     }
+    /* We must load device color even with no TEXT_DO_DRAW,
+       because a high level device accumulates a charstring 
+       of a Type 3 font while stringwidth. 
+       Unfortunately we can't effectively know a leaf font type here,
+       so we load the color unconditionally . */
+    gx_set_dev_color(pgs);
+    code = gs_state_color_load(pgs);
+    if (code < 0)
+	return code;
     return gx_device_text_begin(pgs->device, (gs_imager_state *) pgs,
 				text, pgs->font, pgs->path, pgs->dev_color,
 				pcpath, mem, ppte);
