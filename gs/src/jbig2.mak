@@ -44,8 +44,6 @@ libjbig2_OBJS=\
         $(JBIG2OBJ)jbig2_generic.$(OBJ) \
         $(JBIG2OBJ)jbig2_huffman.$(OBJ) \
         $(JBIG2OBJ)jbig2_image.$(OBJ) \
-        $(JBIG2OBJ)jbig2_image_pbm.$(OBJ) \
-        $(JBIG2OBJ)jbig2_image_png.$(OBJ) \
         $(JBIG2OBJ)jbig2_mmr.$(OBJ) \
         $(JBIG2OBJ)jbig2_page.$(OBJ) \
         $(JBIG2OBJ)jbig2_segment.$(OBJ) \
