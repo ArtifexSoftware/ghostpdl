@@ -350,6 +350,10 @@ FILE_IMPLEMENTATION=stdio
 
 STDIO_IMPLEMENTATION= 
 
+# Override the default device.  This is set to 'display' by 
+# unix-dll.mak when building a shared object.
+DISPLAY_DEV=
+
 # Define the name table capacity size of 2^(16+n).
 # Setting this to a non-zero value will slow down the interpreter.
 

@@ -379,9 +379,6 @@ $(GLOBJ)gdevs3ga.$(OBJ) : $(GLSRC)gdevs3ga.c $(GDEV) $(gdevpcfb_h) $(gdevsvga_h)
 
 ### ------------------ Display device for DLL platforms ----------------- ###
 
-gdevdsp_h=$(GLSRC)gdevdsp.h
-gdevdsp2_h=$(GLSRC)gdevdsp2.h
-
 display_=$(GLOBJ)gdevdsp.$(OBJ)
 $(DD)display.dev : $(display_)
 	$(SETDEV) $(DD)display $(display_)

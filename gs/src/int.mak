@@ -1752,6 +1752,9 @@ $(PSOBJ)icontext.$(OBJ) : $(PSSRC)icontext.c $(GH)\
  $(stream_h)
 	$(PSCC) $(PSO_)icontext.$(OBJ) $(C_) $(PSSRC)icontext.c
 
+gdevdsp_h=$(GLSRC)gdevdsp.h
+gdevdsp2_h=$(GLSRC)gdevdsp2.h
+
 $(PSOBJ)idisp.$(OBJ) : $(PSSRC)idisp.c\
  $(iapi_h) $(ghost_h) $(gp_h)\
  $(imain_h) $(iminst_h) $(idisp_h)\
