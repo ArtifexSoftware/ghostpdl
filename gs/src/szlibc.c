@@ -85,7 +85,7 @@ void *
 s_zlib_alloc(void *zmem, uint items, uint size)
 {
     zlib_dynamic_state_t *const zds = zmem;
-    gs_memory_t *mem = zds->memory;
+    gs_memory_t *mem = zds->memory->stable_memory;
     zlib_block_t *block =
 	gs_alloc_struct(mem, zlib_block_t, &st_zlib_block,
 			"s_zlib_alloc(block)");
@@ -109,7 +109,7 @@ void
 s_zlib_free(void *zmem, void *data)
 {
     zlib_dynamic_state_t *const zds = zmem;
-    gs_memory_t *mem = zds->memory;
+    gs_memory_t *mem = zds->memory->stable_memory;
     zlib_block_t *block = zds->blocks;
 
     gs_free_object(mem, data, "s_zlib_free(data)");
