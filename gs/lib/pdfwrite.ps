@@ -77,14 +77,22 @@
 
 % ---------------- Scalars ---------------- %
 
-/pdfnamechars (!"$&'*+,-.0123456789:;=?@ABCDEFGHIJKLMNOPQRSTUVWXYZ\\^_`abcdefghijklmnopqrstuvwxyz|~) readonly def
+% Note that the '#' character isn't legal in a name unless it is a prefix
+% for a hex encoded character (for PDF 1.2 and later). The following assumes
+% that the names are already valid PDF 1.2+ names so that  we can treat the
+% '#' as a legal character. The next two hex characters are already in the
+% set of valid name characters. PDF 1.1 and earlier allowed spaces in names
+% which probably wouldn't make it past the tokenizer anyway.
+/pdfnamechars
+  (!"#$&'*+,-.0123456789:;=?@ABCDEFGHIJKLMNOPQRSTUVWXYZ\\^_`abcdefghijklmnopqrstuvwxyz|~)
+readonly def
 /pdfwritename {		% <name> pdfwritename -
   (/) ows .namestring {
     ( ) dup 0 4 -1 roll put
     //pdfnamechars 1 index search {
       pop pop pop
     } {
-      pop 256 add 16 =string cvrs
+      pop 0 get 256 add 16 =string cvrs
       dup 0 (#) 0 get put
     } ifelse ows
   } forall
