@@ -428,9 +428,9 @@ zbuildcmap(i_ctx_t *i_ctx_p)
 	goto fail;
     return zreadonly(i_ctx_p);
 fail:
-    free_code_map(&pcmap->notdef, imemory);
-    free_code_map(&pcmap->def, imemory);
     if (pcmap) {
+	free_code_map(&pcmap->notdef, imemory);
+	free_code_map(&pcmap->def, imemory);
 	ifree_object(pcmap->CIDSystemInfo, "zbuildcmap(CIDSystemInfo)");
 	ifree_object(pcmap, "zbuildcmap(cmap)");
     }
