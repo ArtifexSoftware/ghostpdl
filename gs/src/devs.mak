@@ -751,6 +751,29 @@ $(DD)pdfwrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pdfwrite_)\
 	$(ADDMOD) $(DD)pdfwrite -include $(GLD)psdf $(GLD)psf
 	$(ADDMOD) $(DD)pdfwrite -include $(PSD)dscparse $(PSD)macglyph
 
+$(DD)pdfwrite2.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pdfwritetwo_)\
+ $(GLD)cmyklib.dev $(GLD)cfe.dev $(GLD)lzwe.dev\
+ $(GLD)rle.dev $(GLD)sdcte.dev $(GLD)sdeparam.dev $(GLD)smd5.dev\
+ $(GLD)szlibe.dev $(GLD)psdf.dev $(GLD)psf.dev 
+	$(SETDEV2) $(DD)pdfwrite2 $(pdfwrite21_)
+	$(ADDMOD) $(DD)pdfwrite2 $(pdfwrite2_)
+	$(ADDMOD) $(DD)pdfwrite2 $(pdfwrite3_)
+	$(ADDMOD) $(DD)pdfwrite2 $(pdfwrite4_)
+	$(ADDMOD) $(DD)pdfwrite2 $(pdfwrite5_)
+	$(ADDMOD) $(DD)pdfwrite2 $(pdfwrite6_)
+	$(ADDMOD) $(DD)pdfwrite2 $(pdfwrite7_)
+	$(ADDMOD) $(DD)pdfwrite2 $(pdfwrite8_)
+	$(ADDMOD) $(DD)pdfwrite2 $(pdfwrite9_)
+	$(ADDMOD) $(DD)pdfwrite2 $(pdfwrite10_)
+	$(ADDMOD) $(DD)pdfwrite2 $(pdfwrite11_)
+	$(ADDMOD) $(DD)pdfwrite2 -ps gs_pdfwr
+	$(ADDMOD) $(DD)pdfwrite2 -ps gs_css_e gs_lgo_e gs_lgx_e gs_mex_e
+	$(ADDMOD) $(DD)pdfwrite2 -ps gs_wan_e
+	$(ADDMOD) $(DD)pdfwrite2 -include $(GLD)cmyklib $(GLD)cfe $(GLD)lzwe
+	$(ADDMOD) $(DD)pdfwrite2 -include $(GLD)rle $(GLD)sdcte $(GLD)sdeparam
+	$(ADDMOD) $(DD)pdfwrite2 -include $(GLD)smd5 $(GLD)szlibe
+	$(ADDMOD) $(DD)pdfwrite2 -include $(GLD)psdf $(GLD)psf
+
 gdevpdff_h=$(GLSRC)gdevpdff.h
 gdevpdfg_h=$(GLSRC)gdevpdfg.h $(gscspace_h)
 gdevpdfo_h=$(GLSRC)gdevpdfo.h $(gsparam_h)
