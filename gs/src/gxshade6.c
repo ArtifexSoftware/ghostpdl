@@ -156,6 +156,7 @@ init_patch_fill_state(patch_fill_state_t *pfs)
 	pfs->wedge_buf = NULL;
 #   endif
     pfs->fixed_flat = float2fixed(pfs->pis->flatness);
+    pfs->smoothness = pfs->pis->smoothness;
 }
 #endif
 
@@ -882,6 +883,9 @@ curve_samples(const gs_fixed_point *pole, int pole_step, fixed fixed_flat)
 private bool 
 intersection_of_big_bars(const gs_fixed_point q[4], int i0, int i1, int i2, int i3, fixed *ry, fixed *ey)
 {
+    /* fixme : This function is only used with QUADRANGLES || POLYGONAL_WEDGES.
+       Likely we won't use this mode.
+     */
     fixed dx1 = q[i1].x - q[i0].x, dy1 = q[i1].y - q[i0].y;
     fixed dx2 = q[i2].x - q[i0].x, dy2 = q[i2].y - q[i0].y;
     fixed dx3 = q[i3].x - q[i0].x, dy3 = q[i3].y - q[i0].y;
@@ -1104,7 +1108,7 @@ decompose_linear_color(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge
     if (ytop - ybot < pfs->fixed_flat) /* Prevent an infinite color decomposition. */
 	return constant_color_trapezoid(pfs, le, re, ybot, ytop, swap_axes, &c);
     else if (!is_color_monotonic(pfs, c0, c1) || 
-		color_span(pfs, c0, c1) > pfs->pis->smoothness || 
+		color_span(pfs, c0, c1) > pfs->smoothness || 
 		ytop - ybot > max_small_coord) {
 	fixed y = (ybot + ytop) / 2;
     
@@ -1872,8 +1876,8 @@ is_quadrangle_color_span_big(const patch_fill_state_t * pfs, const quadrangle_pa
     double m10 = color_span(pfs, &p->p[0][0]->c, &p->p[1][0]->c);
     double m11 = color_span(pfs, &p->p[0][0]->c, &p->p[1][1]->c);
 
-    if (m11 > pfs->pis->smoothness || m01 > pfs->pis->smoothness 
-				   || m10 > pfs->pis->smoothness) {
+    if (m11 > pfs->smoothness || m01 > pfs->smoothness 
+				   || m10 > pfs->smoothness) {
 	*uv = m01 > m10;
 	return true;
     }
@@ -1890,7 +1894,7 @@ is_quadrangle_color_linear(const patch_fill_state_t * pfs, const quadrangle_patc
 	patch_interpolate_color(&d0, &p->p[0][0]->c, &p->p[1][1]->c, pfs, 0.5); /* diagonal 1 */
 	patch_interpolate_color(&d1, &p->p[0][1]->c, &p->p[1][0]->c, pfs, 0.5); /* diagonal 2 */
 	D = color_span(pfs, &d0, &d1);
-	if (D <= pfs->pis->smoothness)
+	if (D <= pfs->smoothness)
 	    return true;
     }
     {	double d0001 = color_span(pfs, &p->p[0][0]->c, &p->p[0][1]->c);
@@ -1908,9 +1912,9 @@ is_quadrangle_color_linear(const patch_fill_state_t * pfs, const quadrangle_patc
 private inline bool
 is_color_span_v_big(const patch_fill_state_t * pfs, const tensor_patch *p)
 {
-    if (color_span(pfs, &p->c[0][0], &p->c[1][0]) > pfs->pis->smoothness)
+    if (color_span(pfs, &p->c[0][0], &p->c[1][0]) > pfs->smoothness)
 	return true;
-    if (color_span(pfs, &p->c[0][1], &p->c[1][1]) > pfs->pis->smoothness)
+    if (color_span(pfs, &p->c[0][1], &p->c[1][1]) > pfs->smoothness)
 	return true;
     return false;
 }
@@ -1965,7 +1969,7 @@ divide_quadrangle_by_parallels(patch_fill_state_t *pfs,
 	const shading_vertex_t *p0, const shading_vertex_t *p1, 
 	const shading_vertex_t *p2, const shading_vertex_t *p3, double d01)
 {
-    if (d01 < pfs->pis->smoothness ||
+    if (d01 < pfs->smoothness ||
 	    (any_abs(p1->p.x - p0->p.x) < fixed_1 && any_abs(p1->p.y - p0->p.y) < fixed_1 &&
 	     any_abs(p3->p.x - p2->p.x) < fixed_1 && any_abs(p3->p.y - p2->p.y) < fixed_1)) {
 	quadrangle_patch p;
@@ -1975,7 +1979,6 @@ divide_quadrangle_by_parallels(patch_fill_state_t *pfs,
 	p.p[1][1] = p2;
 	p.p[1][0] = p3;
 	return constant_color_quadrangle(pfs, &p, false);
-	/* fixme: this quadrangle isn't self-intersecting, so we could use a simpler function. */
     } else {
 	shading_vertex_t q0, q1;
 	int code;
@@ -2005,7 +2008,7 @@ divide_triangle_by_parallels(patch_fill_state_t *pfs,
 	double d01)
 {
     /* fixme : clone the case of small triangles. */
-    int n = (int)ceil(d01 / pfs->pis->smoothness), i;
+    int n = (int)ceil(d01 / pfs->smoothness), i;
     shading_vertex_t q0, q1;
     double t = 1.0 / n;
     int code;
@@ -2069,13 +2072,13 @@ triangle(patch_fill_state_t *pfs,
     double d20 = color_span(pfs, &p0->c, &p2->c);
 
     draw_triangle(&p0->p, &p1->p, &p2->p, RGB(255, 0, 0));
-    if (d01 < pfs->pis->smoothness && d12 < pfs->pis->smoothness && d20 < pfs->pis->smoothness)
+    if (d01 < pfs->smoothness && d12 < pfs->smoothness && d20 < pfs->smoothness)
 	return constant_color_triangle(pfs, p0, p1, p2);
-    if (d01 < pfs->pis->smoothness)
+    if (d01 < pfs->smoothness)
 	return divide_triangle_by_parallels(pfs, p0, p1, p2, (d12 + d20) / 2);
-    if (d12 < pfs->pis->smoothness)
+    if (d12 < pfs->smoothness)
 	return divide_triangle_by_parallels(pfs, p1, p2, p0, (d20 + d01) / 2);
-    if (d20 < pfs->pis->smoothness)
+    if (d20 < pfs->smoothness)
 	return divide_triangle_by_parallels(pfs, p2, p0, p1, (d01 + d12) / 2);
     if (any_abs(p1->p.x - p0->p.x) < fixed_1 && any_abs(p1->p.y - p0->p.y) < fixed_1)
 	return divide_triangle_by_parallels(pfs, p0, p1, p2, (d12 + d20) / 2);
@@ -2083,11 +2086,11 @@ triangle(patch_fill_state_t *pfs,
 	return divide_triangle_by_parallels(pfs, p1, p2, p0, (d20 + d01) / 2);
     if (any_abs(p0->p.x - p2->p.x) < fixed_1 && any_abs(p0->p.y - p2->p.y) < fixed_1)
 	return divide_triangle_by_parallels(pfs, p2, p0, p1, (d01 + d12) / 2);
-    if (d01 >= d12 && d01 >= d20 && d01 > pfs->pis->smoothness)
+    if (d01 >= d12 && d01 >= d20 && d01 > pfs->smoothness)
 	return divide_triangle(pfs, p0, p1, p2, d01, d12, d20);
-    if (d12 >= d20 && d12 >= d01 && d12 > pfs->pis->smoothness)
+    if (d12 >= d20 && d12 >= d01 && d12 > pfs->smoothness)
 	return divide_triangle(pfs, p1, p2, p0, d12, d20, d01);
-    if (d20 >= d12 && d20 >= d01 && d20 > pfs->pis->smoothness)
+    if (d20 >= d12 && d20 >= d01 && d20 > pfs->smoothness)
 	return divide_triangle(pfs, p2, p0, p1, d20, d01, d12);
     return constant_color_triangle(pfs, p0, p1, p2);
 }

@@ -54,7 +54,7 @@ mesh_init_fill_state(mesh_fill_state_t * pfs, const gs_shading_mesh_t * psh,
 }
 
 /* Initialize the recursion state for filling one triangle. */
-void
+private void
 shading_init_fill_triangle(mesh_fill_state_t * pfs,
   const shading_vertex_t *va, const shading_vertex_t *vb, const shading_vertex_t *vc,
   bool check_clipping)
@@ -62,10 +62,10 @@ shading_init_fill_triangle(mesh_fill_state_t * pfs,
     pfs->depth = 1;
     pfs->frames[0].va.p = va->p;
     patch_set_color_values(pfs, pfs->frames[0].va.cc, &va->c);
-    pfs->frames[0].vb.p = va->p;
-    patch_set_color_values(pfs, pfs->frames[0].vb.cc, &va->c);
-    pfs->frames[0].vc.p = va->p;
-    patch_set_color_values(pfs, pfs->frames[0].vc.cc, &va->c);
+    pfs->frames[0].vb.p = vb->p;
+    patch_set_color_values(pfs, pfs->frames[0].vb.cc, &vb->c);
+    pfs->frames[0].vc.p = vc->p;
+    patch_set_color_values(pfs, pfs->frames[0].vc.cc, &vc->c);
     pfs->frames[0].check_clipping = check_clipping;
 }
 void
@@ -375,7 +375,7 @@ Gt_fill_triangle(mesh_fill_state_t * pfs, const shading_vertex_t * va,
 	patch_fill_state_t pfs1;
 	int code;
 
-	memcpy(&pfs1, (shading_fill_state_t *)pfs, sizeof(shading_fill_state_t));
+ 	memcpy(&pfs1, (shading_fill_state_t *)pfs, sizeof(shading_fill_state_t));
 	pfs1.Function = pfs->pshm->params.Function;
 	init_patch_fill_state(&pfs1);
 	if (INTERPATCH_PADDING) {
