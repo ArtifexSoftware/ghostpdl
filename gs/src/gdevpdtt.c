@@ -1682,9 +1682,12 @@ pdf_text_process(gs_text_enum_t *pte)
 	gs_glyph glyphs[BUF_SIZE / sizeof(gs_glyph)];
     } buf;
 
-    code = pdf_prepare_text_drawing(pdev, pte->pis, pte->pdcolor, pte->pcpath, &pte->text);
-    if (code < 0)
-	return code;
+    if (!penum->pte_default || !penum->charproc_accum) {
+	/* Don't need to sync before exiting charproc. */
+	code = pdf_prepare_text_drawing(pdev, pte->pis, pte->pdcolor, pte->pcpath, &pte->text);
+	if (code < 0)
+	    return code;
+    }
     code = -1;		/* to force default implementation */
 
     /*
