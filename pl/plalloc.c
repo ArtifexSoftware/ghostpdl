@@ -140,7 +140,11 @@ void
 pl_mem_node_free_all_remaining()
 {
     if( PL_KEEP_GLOBAL_FREE_LIST ) {
-        static const bool print_recovered_block_info = (DEBUG && true);
+#       ifdef DEBUG
+            static const bool print_recovered_block_info = true;
+#       else
+            static const bool print_recovered_block_info = false;
+#       endif
         uint blk_count = 0;
 	uint size = 0;
 	uint total_size = 0;
