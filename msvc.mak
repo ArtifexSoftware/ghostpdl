@@ -4,7 +4,7 @@
 EXE=.exe
 OBJ=.obj
 NUL=
-CFLAGS=-nologo -W4 -Zi -DHAVE_STRING_H=1 -Ilibpng -Izlib
+CFLAGS=-nologo -W4 -Zi -DHAVE_STRING_H=1 -I../libpng -I../zlib
 CC=cl
 FE=-Fe
 
@@ -13,16 +13,16 @@ OBJS=getopt$(OBJ) getopt1$(OBJ) jbig2$(OBJ) jbig2_arith$(OBJ) \
  jbig2_huffman$(OBJ) jbig2_image$(OBJ) jbig2_image_pbm$(OBJ) \
  jbig2_image_png$(OBJ) jbig2_mmr$(OBJ) jbig2_page$(OBJ) \
  jbig2_segment$(OBJ) jbig2_symbol_dict$(OBJ) jbig2_text$(OBJ) \
- jbig2dec$(OBJ)
+ jbig2dec$(OBJ) sha1$(OBJ)
 
 HDRS=getopt.h jbig2.h jbig2_arith.h jbig2_arith_iaid.h jbig2_arith_int.h \
  jbig2_generic.h jbig2_huffman.h jbig2_hufftab.h jbig2_image.h \
- jbig2_mmr.h jbig2_priv.h jbig2_symbol_dict.h config_win32.h
+ jbig2_mmr.h jbig2_priv.h jbig2_symbol_dict.h config_win32.h sha1.h
 
 all: jbig2dec$(EXE)
 
 jbig2dec$(EXE): $(OBJS)
-	$(CC) $(CFLAGS) $(FE)jbig2dec$(EXE) $(OBJS) libpng\libpng.lib zlib\zlib.lib
+	$(CC) $(CFLAGS) $(FE)jbig2dec$(EXE) $(OBJS) ../libpng/libpng.lib ../zlib/zlib.lib
 
 getopt$(OBJ): getopt.c getopt.h
 	$(CC) $(CFLAGS) -c getopt.c
@@ -75,11 +75,8 @@ jbig2_text$(OBJ): jbig2_text.c $(HDRS)
 jbig2dec$(OBJ): jbig2dec.c $(HDRS)
 	$(CC) $(CFLAGS) -c jbig2dec.c
 
-pbm2png$(OBJ): pbm2png.c $(HDRS)
-	$(CC) $(CFLAGS) -c  pbm2png.c
-
-pbm2png$(EXE): pbm2png$(OBJ) jbig2_image$(OBJ)
-	$(CC) $(CFLAGS) $(FE)pbm2png$(EXE) pbm2png$(OBJ) jbig2_image$(OBJ) libpng\libpng.lib
+sha1$(OBJ): sha1.c $(HDRS)
+	$(CC) $(CFLAGS) -c sha1.c
 
 clean:
 	-del $(OBJS)
