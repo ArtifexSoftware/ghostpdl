@@ -276,7 +276,11 @@ pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
      * which will never embed the base 14 fonts, and 4.0 (PDF 1.3), which
      * doesn't treat them any differently from any other fonts.
      */
+#if 0	/**************** DOESN'T WORK ****************/
     if (pdev->CompatibilityLevel < 1.3) {
+#else
+    {
+#endif
 	/* Check whether the font is in the base 14. */
 	int index = pdf_find_standard_font(chars, size);
 
