@@ -20,6 +20,7 @@
 /* Utilities for PCL printers */
 #include "gdevprn.h"
 #include "gdevpcl.h"
+#include "math_.h"
 
 /* ------ Get paper size ------ */
 
@@ -27,17 +28,66 @@
 int
 gdev_pcl_paper_size(gx_device * dev)
 {
+    float width_inches = dev->width / dev->x_pixels_per_inch;
     float height_inches = dev->height / dev->y_pixels_per_inch;
+    /* The initial value for height_difference, and for code below, is
+       unnecessary and is here just to stop the compiler from
+       complaining about a possible uninitialized variable usage. */
+    float width_difference = -1.0, height_difference = -1.0;
+    float new_width_difference, new_height_difference;
+    int code = PAPER_SIZE_LETTER;
 
-    return
-	(height_inches >= 33.2 ? PAPER_SIZE_A0 :
-	 height_inches >= 23.5 ? PAPER_SIZE_A1 :
-	 height_inches >= 17.1 ? PAPER_SIZE_A2 :
-	 height_inches >= 16.6 ? PAPER_SIZE_LEDGER : /* see gdevpcl.h */
-	 height_inches >= 14.1 ? PAPER_SIZE_A3 :
-	 height_inches >= 11.8 ? PAPER_SIZE_LEGAL :
-	 height_inches >= 11.1 ? PAPER_SIZE_A4 :
-	 PAPER_SIZE_LETTER);
+    /* Since we're telling the printer when to eject and start a new
+       page, the paper height doesn't matter a great deal, as long as
+       we ensure that it's at least as high as we want our pages to
+       be.  However, the paper width is important, because on printers
+       which center the paper in the input tray, having the wrong
+       width will cause the image to appear in the wrong place on the
+       paper (perhaps even partially missing the paper completely).
+       Therefore, we choose our paper size by finding one whose width
+       and height are both equal to or greater than the desired width
+       and height and whose width is the closest to what we want.  We
+       only pay close attention to the height when the widths of two
+       different paper sizes are equal.
+
+       We use "foo - bar > -0.01" instead of "foo >= bar" to avoid
+       minor floating point and rounding errors.
+    */
+#define CHECK_PAPER_SIZE(w,h,c)							\
+    new_width_difference = w - width_inches;					\
+    new_height_difference = h - height_inches;					\
+    if ((new_width_difference > -0.01) && (new_height_difference > -0.01) &&	\
+	((width_difference == -1.0) ||						\
+	 (new_width_difference < width_difference) ||				\
+	 ((new_width_difference == width_difference) &&				\
+	  (new_height_difference < height_difference)))) {			\
+      width_difference = new_width_difference;					\
+      height_difference = new_height_difference;				\
+      code = c;									\
+    }
+
+    CHECK_PAPER_SIZE( 7.25, 10.5,  PAPER_SIZE_EXECUTIVE);
+    CHECK_PAPER_SIZE( 8.5 , 11.0,  PAPER_SIZE_LETTER);
+    CHECK_PAPER_SIZE( 8.5 , 14.0,  PAPER_SIZE_LEGAL);
+    CHECK_PAPER_SIZE(11.0 , 17.0,  PAPER_SIZE_LEDGER);
+    CHECK_PAPER_SIZE( 8.27, 11.69, PAPER_SIZE_A4);
+    CHECK_PAPER_SIZE(11.69, 16.54, PAPER_SIZE_A3);
+    CHECK_PAPER_SIZE(16.54, 23.39, PAPER_SIZE_A2);
+    CHECK_PAPER_SIZE(23.39, 33.11, PAPER_SIZE_A1);
+    CHECK_PAPER_SIZE(33.11, 46.81, PAPER_SIZE_A0);
+    CHECK_PAPER_SIZE( 7.16, 10.12, PAPER_SIZE_JIS_B5);
+    CHECK_PAPER_SIZE(10.12, 14.33, PAPER_SIZE_JIS_B4);
+    CHECK_PAPER_SIZE( 3.94,  5.83, PAPER_SIZE_JPOST);
+    CHECK_PAPER_SIZE( 5.83,  7.87, PAPER_SIZE_JPOSTD);
+    CHECK_PAPER_SIZE( 3.87,  7.5 , PAPER_SIZE_MONARCH);
+    CHECK_PAPER_SIZE( 4.12,  9.5 , PAPER_SIZE_COM10);
+    CHECK_PAPER_SIZE( 4.33,  8.66, PAPER_SIZE_DL);
+    CHECK_PAPER_SIZE( 6.38,  9.01, PAPER_SIZE_C5);
+    CHECK_PAPER_SIZE( 6.93,  9.84, PAPER_SIZE_B5);
+
+#undef CHECK_PAPER_SIZE
+
+    return code;
 }
 
 /* ------ Color mapping ------ */

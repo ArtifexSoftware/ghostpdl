@@ -30,6 +30,7 @@
  * manual, some documentation calls 11x17 "tabloid" and reserves the name
  * "ledger" for 17x11.
  */
+#define PAPER_SIZE_EXECUTIVE 1
 #define PAPER_SIZE_LETTER 2	/* 8.5" x 11" */
 #define PAPER_SIZE_LEGAL 3	/* 8.5" x 14" */
 #define PAPER_SIZE_LEDGER 6	/* 11" x 17" */
@@ -38,6 +39,15 @@
 #define PAPER_SIZE_A2 28
 #define PAPER_SIZE_A1 29
 #define PAPER_SIZE_A0 30
+#define PAPER_SIZE_JIS_B5 45
+#define PAPER_SIZE_JIS_B4 46
+#define PAPER_SIZE_JPOST 71
+#define PAPER_SIZE_JPOSTD 72
+#define PAPER_SIZE_MONARCH 80
+#define PAPER_SIZE_COM10 81
+#define PAPER_SIZE_DL 90
+#define PAPER_SIZE_C5 91
+#define PAPER_SIZE_B5 100
 
 /* Get the paper size code, based on width and height. */
 int gdev_pcl_paper_size(P1(gx_device *));
