@@ -888,7 +888,7 @@ private int FAPI_refine_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base *pbfont, 
     const char *decodingID = NULL;
     char *xlatmap = NULL;
     FAPI_server *I = pbfont->FAPI;
-    FAPI_font_scale font_scale = {{1, 0, 0, 1, 0, 0}, {0, 0}, {0, 0}, true};
+    FAPI_font_scale font_scale = {{1, 0, 0, 1, 0, 0}, {0, 0}, {1, 1}, true};
     int code;
 
     if (font_file_path != NULL && pbfont->FAPI_font_data == NULL)
@@ -1208,7 +1208,7 @@ private int FAPI_do_char(i_ctx_t *i_ctx_p, gs_font_base *pbfont, gx_device *dev,
     FAPI_char_ref cr = {0, false, NULL, 0, 0, 0, 0, 0, FAPI_METRICS_NOTDEF};
     const gs_matrix * ctm = &ctm_only(igs);
     int scale;
-    FAPI_font_scale font_scale = {{1, 0, 0, 1, 0, 0}, {0, 0}, {0, 0}, true};
+    FAPI_font_scale font_scale = {{1, 0, 0, 1, 0, 0}, {0, 0}, {1, 1}, true};
     FAPI_metrics metrics;
     FAPI_server *I = pbfont->FAPI;
     int client_char_code = 0;
@@ -1686,7 +1686,7 @@ private int do_FAPIpassfont(i_ctx_t *i_ctx_p, char *font_file_path, bool *succes
     int BBox[4];
     i_plugin_holder *h = i_plugin_get_list(i_ctx_p);
     char *xlatmap = NULL;
-    FAPI_font_scale font_scale = {{1, 0, 0, 1, 0, 0}, {0, 0}, {0, 0}, true};
+    FAPI_font_scale font_scale = {{1, 0, 0, 1, 0, 0}, {0, 0}, {1, 1}, true};
     const char *decodingID = NULL;
 
     if (code < 0)
