@@ -1,25 +1,25 @@
 /* Copyright (C) 1999, Ghostgum Software Pty Ltd.  All rights reserved.
-
-  This file is part of Aladdin Ghostscript.
   
-  This program is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public 
-  License (the "License") for full details.
-	
-  Every copy of Aladdin Ghostscript must include a copy of the License, 
-  normally in a plain ASCII text file named PUBLIC.  The License grants you 
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only 
-  under certain conditions described in the License.  Among other things, the 
-  License requires that the copyright notice and this notice be preserved on 
-  all copies.
+  This file is part of AFPL Ghostscript.
+  
+  AFPL Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author or
+  distributor accepts any responsibility for the consequences of using it, or
+  for whether it serves any particular purpose or works at all, unless he or
+  she says so in writing.  Refer to the Aladdin Free Public License (the
+  "License") for full details.
+  
+  Every copy of AFPL Ghostscript must include a copy of the License, normally
+  in a plain ASCII text file named PUBLIC.  The License grants you the right
+  to copy, modify and redistribute AFPL Ghostscript, but only under certain
+  conditions described in the License.  Among other things, the License
+  requires that the copyright notice and this notice be preserved on all
+  copies.
 */
 
 // $Id$
 //
 //
-// This is the setup program for Win32 Aladdin Ghostscript
+// This is the setup program for Win32 AFPL Ghostscript
 //
 // The starting point is a self extracting zip archive
 // with the following contents:
@@ -39,12 +39,12 @@
 // uninstall log files are to be placed.  
 // Subsequent lines contain files to be copied (but not directories).
 // For example, filelist.txt might contain:
-//   Aladdin Ghostscript 6.0
-//   gs6.0
-//   gs6.0\bin\gsdll32.dll
-//   gs6.0\lib\gs_init.ps
+//   AFPL Ghostscript 6.50
+//   gs6.50
+//   gs6.50\bin\gsdll32.dll
+//   gs6.50\lib\gs_init.ps
 // The file fontlist.txt might contain:
-//   Aladdin Ghostscript Fonts
+//   AFPL Ghostscript Fonts
 //   fonts
 //   fonts\n019003l.pfb
 //   fonts\n019023l.pfb
@@ -688,7 +688,7 @@ install_all()
 BOOL
 install_prog()
 {
-	char *regkey1 = "Aladdin Ghostscript";
+	char *regkey1 = "AFPL Ghostscript";
 	char regkey2[16];
 	char szDLL[MAXSTR];
 	char szLIB[MAXSTR];
@@ -1014,7 +1014,7 @@ BOOL make_filelist(int argc, char *argv[])
 		    if ((title == NULL) || (strlen(title) == 0) ||
 			(dir == NULL) || (strlen(dir) == 0) ||
 			(list == NULL) || (strlen(list) == 0)) {
-			message_box("Usage: setupgs -title \042Aladdin Ghostscript #.##\042 -dir \042gs#.##\042 -list \042filelist.txt\042 spec1 spec2 specn\n");
+			message_box("Usage: setupgs -title \042AFPL Ghostscript #.##\042 -dir \042gs#.##\042 -list \042filelist.txt\042 spec1 spec2 specn\n");
 			return FALSE;
 		    }
 		    if (fList == (FILE *)NULL) {

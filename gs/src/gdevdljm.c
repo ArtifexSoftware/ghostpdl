@@ -1,17 +1,17 @@
 /* Copyright (C) 2000 Aladdin Enterprises.  All rights reserved.
 
-   This program may be distributed as part of Aladdin Ghostscript, under the
+   This program may be distributed as part of AFPL Ghostscript, under the
    terms of the Aladdin Free Public License (the "License").
 
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No
+   AFPL Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No
    author or distributor accepts any responsibility for the consequences of
    using it, or for whether it serves any particular purpose or works at
    all, unless he or she says so in writing.  Refer to the License for full
    details.
 
-   Every copy of Aladdin Ghostscript must include a copy of the License,
+   Every copy of AFPL Ghostscript must include a copy of the License,
    normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   the right to copy, modify and redistribute AFPL Ghostscript, but only
    under certain conditions described in the License.  Among other things,
    the License requires that the copyright notice and this notice be
    preserved on all copies.
