@@ -72,6 +72,8 @@ metrics computed from FontBBox rather than the horizontal metrics.
 (PDF interpreter)
 	- The interpreter now skips to the next EOL after reading the data
 following the ID operator.
+	- The incorrectly named ViewerOrientation DSC comment is now
+corrected to ViewingOrientation.
 (Streams)
 	- All decoding filters that recognize an EOD in the source data
 must now have an init procedure that sets state->min_left = 1.
@@ -83,6 +85,9 @@ newly allocated and should be freed by the caller, like the get_outline
 procedure of Type 42 fonts (gs_type42_data).
 	- The ip_state structure is renamed ip_state_t, and has a new
 member, free_char_string.
+	- The incorrectly named ViewerOrientation DSC comment is now
+corrected to ViewingOrientation, and the viewer_orientation members of
+the DSC parsing structure are corrected to viewing_orientation.
 
 </pre>
 
