@@ -1255,15 +1255,16 @@ the top level directory using the following command:</li>
   the local (within the project) copy of the <b><tt>lib</tt></b> and <b><tt>fonts</tt></b>
   directories. This is convenient if any changes need to be made in these directories.
 
-<p> Setting <b><tt>DEBUG=1</tt></b> includes debugging features in the algotithm :
+<p> Setting <b><tt>DEBUG=1</tt></b> includes debugging features in the build:
 <ul>
 <li> It defines the C preprocessor symbol <b><tt>DEBUG</tt></b>. The latter includes
    tracing and self-validation code fragments into compilation.
-   Particularly it compiles a handling of <b><tt>-Z</tt></b> and <b><tt>-T</tt></b>
+   Particularly it enables the <b><tt>-Z</tt></b> and <b><tt>-T</tt></b>
    switches in Ghostscript.
 <li> It compiles code fragments for the C stack overflow checks.
 </ul>
-   Code runs some slower and becomes some larger.
+   Code produced with this option is somewhat larger and runs
+   somewhat slower.
 
 <p>Setting <b><tt>TDEBUG=1</tt></b> disables code optimization in the C compiler and
 includes symbol table information for the debugger.
@@ -1271,10 +1272,10 @@ Code becomes substantially slower and larger.
 
 <p> An optional setting <b><tt>DEBUGSYM=1</tt></b> is only useful with <b><tt>TDEBUG=0</tt></b>
 for advanced developers. It includes symbol table information for the debugger
-to the release build.
+in and optimized (release) build.
 <em>
 NOTE: The debug information generated for the optimized code may be
-significantly misleading. For inadvanced MSVC users we recommend TDEBUG=1.
+significantly misleading. For general MSVC users we recommend TDEBUG=1.
 </em>
 
 <h4><a name="Using_the_command_line"></a>Using the command line</h4>
