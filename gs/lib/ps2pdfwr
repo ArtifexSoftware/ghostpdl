@@ -13,7 +13,7 @@ do
 done
 
 if [ $# -lt 1 -o $# -gt 2 ]; then
-	echo "Usage: `basename $0` [options...] (input.ps|-) [output.pdf|-]" 1>&2
+	echo "Usage: `basename $0` [options...] (input.[e]ps|-) [output.pdf|-]" 1>&2
 	exit 1
 fi
 
@@ -23,6 +23,7 @@ if [ $# -eq 1 ]
 then
 	case "${infile}" in
 	  -)		outfile=- ;;
+	  *.eps)	base=`basename ${infile} .eps`; outfile=${base}.pdf ;;
 	  *.ps)		base=`basename ${infile} .ps`; outfile=${base}.pdf ;;
 	  *)		base=`basename ${infile}`; outfile=${base}.pdf ;;
 	esac

@@ -32,7 +32,7 @@ echo -c save pop -f %1 >>_.at2
 goto end
 
 :usage
-echo Usage: ps2pdf [options...] input.ps output.pdf
+echo Usage: ps2pdf [options...] input.[e]ps output.pdf
 goto end
 
 rem	Run ps2pdf on Windows NT.
@@ -46,7 +46,7 @@ goto run
 
 :ntusage
 echo Usage: ps2pdf input.ps [output.pdf]
-echo    or: ps2pdf [options...] input.ps output.pdf
+echo    or: ps2pdf [options...] input.[e]ps output.pdf
 goto end
 
 :nooutfile
