@@ -259,7 +259,7 @@ try:
             norm_entry(gscmd, f, params.device, params.resolution,
                        params.banding, datespec)
     for f in pdfset:
-        for params in gsparamsets.testparamsets:
+        for params in gsparamsets.pdftestparamsets:
             pdf_entry(gscmd, f, params.device, params.resolution,
                       params.banding, datespec)
     
