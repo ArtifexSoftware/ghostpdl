@@ -102,14 +102,14 @@ private int /* ESC & l <xoff_dp> U */
 pcl_left_offset_registration(pcl_args_t *pargs, pcl_state_t *pcls)
 {	pcls->left_offset_cp = float_arg(pargs) * 10; /* decipoints => cp */
 	pcl_compute_logical_page_size(pcls);
-	return pcl_set_ctm(pcls, true);
+	return 0;
 }
 
 private int /* ESC & l <yoff_dp> Z */
 pcl_top_offset_registration(pcl_args_t *pargs, pcl_state_t *pcls)
 {	pcls->top_offset_cp = float_arg(pargs) * 10; /* decipoints => cp */
 	pcl_compute_logical_page_size(pcls);
-	return pcl_set_ctm(pcls, true);
+	return 0;
 }
 
 private int /* ESC & a <side_enum> G */

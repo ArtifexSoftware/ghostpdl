@@ -298,7 +298,7 @@ pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 	  }
 	pfp = &pcls->font_selection[pcls->font_selected];
 	/**** WE COULD CACHE MORE AND DO LESS SETUP HERE ****/
-	pcl_set_ctm(pcls, true);
+	pcl_set_graphics_state(pcls, true);
 	gs_setfont(pgs, (gs_font *)pcls->font->pfont);
 	penum = gs_show_enum_alloc(mem, pgs, "pcl_plain_char");
 	if ( penum == 0 )
@@ -450,7 +450,7 @@ pcl_do_underline(pcl_state_t *pcls)
 	    gs_state *pgs = pcls->pgs;
 	    float y = pcls->underline_start.y + pcls->underline_position;
 
-	    pcl_set_ctm(pcls, true);
+	    pcl_set_graphics_state(pcls, true);
 	    /* TRM says (8-34) that underline is 3 dots.  In a victory for
 	     * common sense, it's not.  Rather, it's 0.01" (which *is* 3 dots
 	     * at 300 dpi only)  */

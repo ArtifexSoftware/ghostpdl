@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -8,15 +8,20 @@
 #ifndef pcdraw_INCLUDED
 #  define pcdraw_INCLUDED
 
-/* ------ Coordinate transformation ------ */
+/* ------ Coordinate system ------ */
 
 /* Set the CTM from the current left and top offset, orientation, */
 /* and (optionally) print direction. */
+/* We export this only for HP-GL/2. */
 int pcl_set_ctm(P2(pcl_state_t *pcls, bool print_direction));
 
 /* Compute the logical page size from physical size, orientation, */
 /* and offsets. */
 void pcl_compute_logical_page_size(P1(pcl_state_t *pcls));
+
+/* Set all necessary graphics state parameters for PCL drawing */
+/* (currently only CTM and clipping region). */
+int pcl_set_graphics_state(P2(pcl_state_t *pcls, bool print_direction));
 
 /* ------ Cursor ------ */
 

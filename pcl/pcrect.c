@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -48,6 +48,9 @@ pcl_fill_rect_area(pcl_args_t *pargs, pcl_state_t *pcls)
 				 &pcls->current_pattern_id) :
 	   pcl_set_drawing_color(pcls, type, &pcls->pattern_id));
 
+	if ( code < 0 )
+	  return code;
+	code = pcl_set_graphics_state(pcls, false);
 	if ( code < 0 )
 	  return code;
 	{ gs_rect r;

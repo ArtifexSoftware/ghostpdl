@@ -11,15 +11,37 @@
 #include "gsstate.h"
 #include "gscoord.h"
 #include "gsdcolor.h"
+#include "gxfixed.h"
+#include "gxpath.h"
 #include "pcommand.h"
 #include "pcstate.h"
 #include "pcfont.h"		/* for underline break/continue */
 #include "pcdraw.h"
 
-/* ------ Coordinate transformation ------ */
+/* ------ Coordinate system ------ */
+
+/* Compute the logical page size from physical size, orientation, */
+/* and offsets. */
+void
+pcl_compute_logical_page_size(pcl_state_t *pcls)
+{	const pcl_paper_size_t *psize = pcls->paper_size;
+
+	/**** SHOULD USE left/top_offset_cp ****/
+	if ( pcls->orientation & 1 )
+	  { pcls->logical_page_width =
+	      psize->height - 2 * psize->offset_landscape.x;
+	    pcls->logical_page_height = psize->width;
+	  }
+	else
+	  { pcls->logical_page_width =
+	      psize->width - 2 * psize->offset_portrait.x;
+	    pcls->logical_page_height = psize->height;
+	  }
+}
 
 /* Set the CTM from the current left and top offset, orientation, */
 /* and (optionally) print direction. */
+/* We export this only for HP-GL/2. */
 int
 pcl_set_ctm(pcl_state_t *pcls, bool print_direction)
 {	gs_state *pgs = pcls->pgs;
@@ -52,22 +74,29 @@ pcl_set_ctm(pcl_state_t *pcls, bool print_direction)
 	return 0;
 }
 
-/* Compute the logical page size from physical size, orientation, */
-/* and offsets. */
-void
-pcl_compute_logical_page_size(pcl_state_t *pcls)
+/* Set the clipping region to the PCL printable area. */
+private int
+pcl_set_clip(pcl_state_t *pcls)
 {	const pcl_paper_size_t *psize = pcls->paper_size;
-	/**** SHOULD USE left/top_offset_cp ****/
-	if ( pcls->orientation & 1 )
-	  { pcls->logical_page_width =
-	      psize->height - 2 * psize->offset_landscape.x;
-	    pcls->logical_page_height = psize->width;
-	  }
-	else
-	  { pcls->logical_page_width =
-	      psize->width - 2 * psize->offset_portrait.x;
-	    pcls->logical_page_height = psize->height;
-	  }
+	gs_fixed_rect box;
+
+	/* Per Figure 2-4 on page 2-9 of the PCL5 TRM, the printable area */
+	/* is always just 1/6" indented from the physical page. */
+	box.p.x = float2fixed(pcls->resolution.x / 6.0);
+	box.p.y = float2fixed(pcls->resolution.y / 6.0);
+	box.q.x = float2fixed(psize->width / 7200.0 * pcls->resolution.x)
+	  - box.p.x;
+	box.q.y = float2fixed(psize->height / 7200.0 * pcls->resolution.y)
+	  - box.p.y;
+	return gx_clip_to_rectangle(pcls->pgs, &box);
+}
+
+/* Set all necessary graphics state parameters for PCL drawing */
+/* (currently only CTM and clipping region). */
+int
+pcl_set_graphics_state(pcl_state_t *pcls, bool print_direction)
+{	int code = pcl_set_ctm(pcls, print_direction);
+	return (code < 0 ? code : pcl_set_clip(pcls));
 }
 
 /* ------ Cursor ------ */

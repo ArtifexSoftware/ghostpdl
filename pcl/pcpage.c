@@ -104,7 +104,7 @@ reset_text_length(pcl_state_t *pcls)
 /* The values are taken from the H-P manual and are in 1/300" units, */
 /* but the structure values are in centipoints (1/7200"). */
 #define p_size(w, h, offp, offl)\
-  { (w)*24, (h)*24, {(offp)*24, 0}, {(offl)*24, 0} }
+  { (w)*24L, (h)*24L, {(offp)*24L, 0}, {(offl)*24L, 0} }
 private const pcl_paper_size_t
   p_size_executive = p_size(2175, 3150, 75, 60),
   p_size_letter = p_size(2550, 3300, 75, 60),
@@ -150,7 +150,6 @@ pcl_page_size(pcl_args_t *pargs, pcl_state_t *pcls)
 	gx_device_set_media_size(gs_currentdevice(pcls->pgs),
 				 psize->width * 0.01,
 				 psize->height * 0.01);
-	pcl_set_ctm(pcls, true);
 	reset_margins(pcls);
 	reset_text_length(pcls);
 	pcl_home_cursor(pcls);
@@ -183,7 +182,6 @@ pcl_page_orientation(pcl_args_t *pargs, pcl_state_t *pcls)
 	if ( i > 3 )
 	  return 0;
 	pcls->orientation = i;
-	pcl_set_ctm(pcls, true);
 	reset_margins(pcls);
 	pcl_set_hmi(pcls, hmi_default, false);
 	pcls->vmi = vmi_default;
@@ -205,7 +203,7 @@ pcl_print_direction(pcl_args_t *pargs, pcl_state_t *pcls)
 	    return 0;
 	  }
 	pcls->print_direction = i / 90;
-	return pcl_set_ctm(pcls, true);
+	return 0;
 }
 
 private int /* ESC & a <col> L */

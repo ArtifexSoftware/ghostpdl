@@ -6,6 +6,16 @@
 This file, NEWS-5, describes the changes in the most recent releases of
 Aladdin's PCL 5 code, in reverse chronological order.
 
+Fileset of 3/4/97
+=================
+
+(LPD) Fixes bugs:
+	- PCL drawing didn't set the CTM and clipping region when it needed:
+it assumed (incorrectly) that they would stay unchanged between commands.
+(pcfont.c, pcjob.c, pcpage.c, pcrect.c, rtraster.c)
+	- Page clipping in PCL mode wasn't implemented.  (pcdraw.h,
+pcstate.h, pcdraw.c)
+
 Fileset of 3/3/97
 =================
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -283,7 +283,7 @@ pcl_begin_raster_graphics(pcl_state_t *pcls, int setting)
 	    /* Convert CAP to device coordinates, since it mustn't move. */
 	    gs_transform(pcls->pgs, (float)pcls->cap.x, (float)pcls->cap.y,
 			 &cap_dev);
-	    pcl_set_ctm(pcls, false);	/* false => ignore print direction */
+	    pcl_set_graphics_state(pcls, false);	/* false => ignore print direction */
 	    if ( across )	/* across_physical_page & landscape */
 	      gs_rotate(pcls->pgs, -90.0);
 	    gs_itransform(pcls->pgs, cap_dev.x, cap_dev.y, &cap_image);
@@ -612,7 +612,7 @@ end_raster_graphics(pcl_state_t *pcls)
 	    /* Convert CAP to device coordinates, since it mustn't move. */
 	    gs_transform(pcls->pgs, (float)pcls->cap.x, (float)pcls->cap.y,
 			 &cap_dev);
-	    pcl_set_ctm(pcls, true);	/* false => ignore print direction */
+	    pcl_set_graphics_state(pcls, true);	/* false => ignore print direction */
 	    gs_itransform(pcls->pgs, cap_dev.x, cap_dev.y, &cap_image);
 	    pcls->cap.x = (coord)cap_image.x;
 	    pcls->cap.y = (coord)cap_image.y;

@@ -34,9 +34,10 @@ typedef struct coord_point_s {
 /* Define the structure for paper size parameters. */
 /* Note that these values are all in centipoints. */
 typedef struct pcl_paper_size_s {
-  long width, height;
-  gs_int_point offset_portrait;
-  gs_int_point offset_landscape;
+  long width, height;		/* physical page size */
+  gs_int_point offset_portrait;	/* offsets of logical page from physical */
+				/* page in portrait orientations */
+  gs_int_point offset_landscape; /* ditto for landscape orientations */
 } pcl_paper_size_t;
 
 /* Define the parameters for one font set (primary or secondary). */
