@@ -249,6 +249,21 @@ int psf_write_truetype_font(P6(stream *s, gs_font_type42 *pfont, int options,
 			       gs_glyph *subset_glyphs, uint subset_size,
 			       const gs_const_string *alt_font_name));
 
+/*
+ * Write a "stripped" TrueType font definition.  All tables are written
+ * verbatim, except for deleting the bogus Adobe marker "tables" gdir, glyx,
+ * and locx, and also deleting glyf and loca.
+ * This procedure does not allocate or free any data.
+ *
+ * The purpose of "stripped" fonts is simply to store all of the non-glyph
+ * information from a TrueType-family font in a structure that can be easily
+ * stored, accessed, and eventually combined with the glyph information.
+ * The only intended client for this function is the font copying code in
+ * gxfcopy.c, q.v.  In particular, "stripped" fonts are not fully valid
+ * fonts because they lack glyph 0 (the .notdef glyph).
+ */
+int psf_write_truetype_stripped(stream *s, gs_font_type42 *pfont);
+
 #ifndef gs_font_cid2_DEFINED
 #  define gs_font_cid2_DEFINED
 typedef struct gs_font_cid2_s gs_font_cid2;
@@ -269,10 +284,15 @@ typedef struct gs_font_cid2_s gs_font_cid2;
  * included explicitly in the subset.
  * This procedure does not allocate or free any data.
  */
-#define WRITE_TRUETYPE_CID 0x1000 /* internal */
 int psf_write_cid2_font(P6(stream *s, gs_font_cid2 *pfont, int options,
 			   const byte *subset_glyphs, uint subset_size,
 			   const gs_const_string *alt_font_name));
+
+/*
+ * Write a "stripped" CIDFontType 2 font definition.  This is the same
+ * as an ordinary CIDFontType 2 definition, minus glyf and loca.
+ */
+int psf_write_cid2_stripped(stream *s, gs_font_cid2 *pfont);
 
 /* ------ Exported by gdevpsfx.c ------ */
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 1999, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1999, 2000, 2002 Aladdin Enterprises.  All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -30,6 +30,10 @@
 #include "stream.h"
 #include "spprint.h"
 #include "gdevpsf.h"
+
+/* Internally used options */
+#define WRITE_TRUETYPE_STRIPPED 0x1000	/* internal */
+#define WRITE_TRUETYPE_CID 0x2000 /* internal */
 
 #define MAX_COMPOSITE_PIECES 3	/* adhoc */
 
@@ -605,10 +609,12 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
     int indexToLocFormat;
     bool
 	writing_cid = (options & WRITE_TRUETYPE_CID) != 0,
-	have_cmap = writing_cid,
+	writing_stripped = (options & WRITE_TRUETYPE_STRIPPED) != 0,
+	no_generate = writing_cid | writing_stripped,
+	have_cmap = no_generate,
 	have_name = !(options & WRITE_TRUETYPE_NAME),
-	have_OS_2 = writing_cid,
-	have_post = writing_cid;
+	have_OS_2 = no_generate,
+	have_post = no_generate;
     uint cmap_length;
     ulong OS_2_start;
     uint OS_2_length = OS_2_LENGTH;
@@ -726,11 +732,6 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	    gs_glyph_data_free(&glyph_data, "psf_write_truetype_data");
 	}
     }
-    /* Acrobat Reader won't accept fonts with empty glyfs. */
-    if (glyf_length == 0)
-	glyf_length = 1;
-    if_debug2('l', "[l]max_glyph = %lu, glyf_length = %lu\n",
-	      (ulong)max_glyph, (ulong)glyf_length);
     /*
      * For subset fonts, we should trim the loca table so that it only
      * contains entries through max_glyph.  Unfortunately, this would
@@ -738,11 +739,21 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
      * hhea, hmtx, vdmx, vhea, vmtx, and possibly other tables.  This is way
      * more work than we want to do right now.
      */
-    /*loca_length = (max_glyph + 2) << 2;*/
-    loca_length = (numGlyphs + 1) << 2;
-    indexToLocFormat = (glyf_length > 0x1fffc);
-    if (!indexToLocFormat)
-	loca_length >>= 1;
+    if (writing_stripped) {
+	glyf_length = 0;
+	loca_length = 0;
+    } else {
+	/* Acrobat Reader won't accept fonts with empty glyfs. */
+	if (glyf_length == 0)
+	    glyf_length = 1;
+	/*loca_length = (max_glyph + 2) << 2;*/
+	loca_length = (numGlyphs + 1) << 2;
+	indexToLocFormat = (glyf_length > 0x1fffc);
+	if (!indexToLocFormat)
+	    loca_length >>= 1;
+    }
+    if_debug2('l', "[l]max_glyph = %lu, glyf_length = %lu\n",
+	      (ulong)max_glyph, (ulong)glyf_length);
 
     /*
      * If necessary, compute the length of the post table.  Note that we
@@ -771,7 +782,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
      */
 
     numTables_out = numTables + 3 /* head, glyf, loca */
-	+ !writing_cid		/* OS/2 */
+	+ !no_generate		/* OS/2 */
 	+ !have_cmap + !have_name + !have_post;
     if (numTables_out >= MAX_NUM_TABLES)
 	return_error(gs_error_limitcheck);
@@ -809,7 +820,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	    tab += 16;
 	}
 
-	if (!writing_cid) {
+	if (!no_generate) {
 	    offset = put_table(tab, "OS/2", 0L /****** NO CHECKSUM ******/,
 			       offset, OS_2_length);
 	    tab += 16;
@@ -880,96 +891,100 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	}
     }
 
-    /* Write glyf. */
+    if (!writing_stripped) {
 
-    if (is_subset)
+	/* Write glyf. */
+
+	if (is_subset)
+	    psf_enumerate_glyphs_reset(penum);
+	else
+	    psf_enumerate_glyphs_begin(penum, font, NULL, max_glyph + 1,
+				       GLYPH_SPACE_INDEX);
+	for (offset = 0; psf_enumerate_glyphs_next(penum, &glyph) != 1; ) {
+	    gs_glyph_data_t glyph_data;
+
+	    if ((code = pfont->data.get_outline(pfont,
+						glyph - gs_min_cid_glyph,
+						&glyph_data)) >= 0
+		) {
+		stream_write(s, glyph_data.bits.data, glyph_data.bits.size);
+		offset += glyph_data.bits.size;
+		if_debug2('L', "[L]glyf index = %u, size = %u\n",
+			  i, glyph_data.bits.size);
+		gs_glyph_data_free(&glyph_data, "psf_write_truetype_data");
+	    }
+	}
+	if_debug1('l', "[l]glyf final offset = %lu\n", offset);
+	/* Add a dummy byte if necessary to make glyf non-empty. */
+	while (offset < glyf_length)
+	    stream_putc(s, 0), ++offset;
+	put_pad(s, (uint)offset);
+
+	/* Write loca. */
+
 	psf_enumerate_glyphs_reset(penum);
-    else
-	psf_enumerate_glyphs_begin(penum, font, NULL, max_glyph + 1,
-				   GLYPH_SPACE_INDEX);
-    for (offset = 0; psf_enumerate_glyphs_next(penum, &glyph) != 1; ) {
-	gs_glyph_data_t glyph_data;
+	glyph_prev = gs_min_cid_glyph;
+	for (offset = 0; psf_enumerate_glyphs_next(penum, &glyph) != 1; ) {
+	    gs_glyph_data_t glyph_data;
 
-	if ((code = pfont->data.get_outline(pfont, glyph - gs_min_cid_glyph,
-					    &glyph_data)) >= 0
-	    ) {
-	    stream_write(s, glyph_data.bits.data, glyph_data.bits.size);
-	    offset += glyph_data.bits.size;
-	    if_debug2('L', "[L]glyf index = %u, size = %u\n",
-		      i, glyph_data.bits.size);
-	    gs_glyph_data_free(&glyph_data, "psf_write_truetype_data");
+	    for (; glyph_prev <= glyph; ++glyph_prev)
+		put_loca(s, offset, indexToLocFormat);
+	    if ((code = pfont->data.get_outline(pfont, glyph - gs_min_cid_glyph,
+						&glyph_data)) >= 0
+		) {
+		offset += glyph_data.bits.size;
+		gs_glyph_data_free(&glyph_data, "psf_write_truetype_data");
+	    }
+
 	}
-    }
-    if_debug1('l', "[l]glyf final offset = %lu\n", offset);
-    /* Add a dummy byte if necessary to make glyf non-empty. */
-    while (offset < glyf_length)
-	stream_putc(s, 0), ++offset;
-    put_pad(s, (uint)offset);
-
-    /* Write loca. */
-
-    psf_enumerate_glyphs_reset(penum);
-    glyph_prev = gs_min_cid_glyph;
-    for (offset = 0; psf_enumerate_glyphs_next(penum, &glyph) != 1; ) {
-	gs_glyph_data_t glyph_data;
-
-	for (; glyph_prev <= glyph; ++glyph_prev)
+	/* Pad to numGlyphs + 1 entries (including the trailing entry). */
+	for (; glyph_prev <= gs_min_cid_glyph + numGlyphs; ++glyph_prev)
 	    put_loca(s, offset, indexToLocFormat);
-	if ((code = pfont->data.get_outline(pfont, glyph - gs_min_cid_glyph,
-				    &glyph_data)) >= 0
-	    ) {
-	    offset += glyph_data.bits.size;
-	    gs_glyph_data_free(&glyph_data, "psf_write_truetype_data");
-	}
+	put_pad(s, loca_length);
 
-    }
-    /* Pad to numGlyphs + 1 entries (including the trailing entry). */
-    for (; glyph_prev <= gs_min_cid_glyph + numGlyphs; ++glyph_prev)
-	put_loca(s, offset, indexToLocFormat);
-    put_pad(s, loca_length);
+	/* If necessary, write cmap, name, and OS/2. */
 
-    /* If necessary, write cmap, name, and OS/2. */
-
-    if (!have_cmap)
-	write_cmap(s, font, TT_BIAS, 256, gs_min_cid_glyph + max_glyph,
-		   options, cmap_length);
-    if (!have_name)
-	write_name(s, &font_name);
+	if (!have_cmap)
+	    write_cmap(s, font, TT_BIAS, 256, gs_min_cid_glyph + max_glyph,
+		       options, cmap_length);
+	if (!have_name)
+	    write_name(s, &font_name);
 #if TT_GENERATE_OS_2
-    if (!have_OS_2)
-	write_OS_2(s, font, TT_BIAS, 256);
-    else
+	if (!have_OS_2)
+	    write_OS_2(s, font, TT_BIAS, 256);
+	else
 #endif
-	if (!have_cmap) {
-	/*
-	 * Adjust the first and last character indices in the OS/2 table
-	 * to reflect the values in the generated cmap.
+	    if (!have_cmap) {
+		/*
+		 * Adjust the first and last character indices in the OS/2 table
+		 * to reflect the values in the generated cmap.
 	 */
-	const byte *pos2;
-	ttf_OS_2_t os2;
+		const byte *pos2;
+		ttf_OS_2_t os2;
 
-	ACCESS(OS_2_start, OS_2_length, pos2);
-	memcpy(&os2, pos2, min(OS_2_length, sizeof(os2)));
-	update_OS_2(&os2, TT_BIAS, 256);
-	stream_write(s, &os2, OS_2_length);
-	put_pad(s, OS_2_length);
-    } else if (!writing_cid) {
-	/* Just copy the existing OS/2 table. */
-	write_range(s, pfont, OS_2_start, OS_2_length);
-	put_pad(s, OS_2_length);
-    }
+		ACCESS(OS_2_start, OS_2_length, pos2);
+		memcpy(&os2, pos2, min(OS_2_length, sizeof(os2)));
+		update_OS_2(&os2, TT_BIAS, 256);
+		stream_write(s, &os2, OS_2_length);
+		put_pad(s, OS_2_length);
+	    } else if (!writing_cid) {
+		/* Just copy the existing OS/2 table. */
+		write_range(s, pfont, OS_2_start, OS_2_length);
+		put_pad(s, OS_2_length);
+	    }
 
-    /* If necessary, write post. */
+	/* If necessary, write post. */
 
-    if (!have_post) {
-	if (options & WRITE_TRUETYPE_POST)
-	    write_post(s, font, &post);
-	else {
-	    byte post_initial[32 + 2];
+	if (!have_post) {
+	    if (options & WRITE_TRUETYPE_POST)
+		write_post(s, font, &post);
+	    else {
+		byte post_initial[32 + 2];
 
-	    memset(post_initial, 0, 32);
-	    put_u32(post_initial, 0x00030000);
-	    stream_write(s, post_initial, 32);
+		memset(post_initial, 0, 32);
+		put_u32(post_initial, 0x00030000);
+		stream_write(s, post_initial, 32);
+	    }
 	}
     }
 
@@ -1027,6 +1042,18 @@ psf_write_truetype_font(stream *s, gs_font_type42 *pfont, int options,
     return psf_write_truetype_data(s, pfont, options & ~WRITE_TRUETYPE_CID,
 				   &genum, subset_glyphs != 0, alt_font_name);
 }
+/* Write a stripped TrueType font. */
+int
+psf_write_truetype_stripped(stream *s, gs_font_type42 *pfont)
+{
+    psf_glyph_enum_t genum;
+    byte no_subset = 0;
+
+    psf_enumerate_bits_begin(&genum, (gs_font *)pfont, &no_subset, 0,
+			     GLYPH_SPACE_INDEX);
+    return psf_write_truetype_data(s, pfont, WRITE_TRUETYPE_STRIPPED,
+				   &genum, true, NULL);
+}
 
 /* Write a CIDFontType 2 font. */
 int
@@ -1043,4 +1070,20 @@ psf_write_cid2_font(stream *s, gs_font_cid2 *pfont, int options,
     return psf_write_truetype_data(s, (gs_font_type42 *)font,
 				   WRITE_TRUETYPE_CID, &genum,
 				   subset_bits != 0, alt_font_name);
+}
+
+/* Write a stripped CIDFontType 2 font. */
+int
+psf_write_cid2_stripped(stream *s, gs_font_cid2 *pfont)
+{
+    gs_font *const font = (gs_font *)pfont;
+    psf_glyph_enum_t genum;
+    byte no_subset = 0;
+
+    psf_enumerate_bits_begin(&genum, font, &no_subset, 0,
+			     GLYPH_SPACE_INDEX);
+    return psf_write_truetype_data(s, (gs_font_type42 *)font,
+				   WRITE_TRUETYPE_STRIPPED |
+				     WRITE_TRUETYPE_CID,
+				   &genum, true, NULL);
 }
