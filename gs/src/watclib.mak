@@ -39,16 +39,16 @@ NOPRIVATE=1
 GS=gslib
 
 !ifndef BINDIR
-BINDIR=.\debugobj
+BINDIR=.\obj
 !endif
 !ifndef GLSRCDIR
 GLSRCDIR=.\src
 !endif
 !ifndef GLGENDIR
-GLGENDIR=.\debugobj
+GLGENDIR=.\obj
 !endif
 !ifndef GLOBJDIR
-GLOBJDIR=.\debugobj
+GLOBJDIR=.\obj
 !endif
 
 # Do not edit the next group of lines.
