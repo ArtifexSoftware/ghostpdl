@@ -1213,7 +1213,7 @@ gx_ht_install(gs_state * pgs, const gs_halftone * pht,
      * Discard and unused components and the components array of the
      * operand device halftone
      */
-    gx_device_halftone_release(pdht, pgs->memory);
+    gx_device_halftone_release(pdht, pdht->rc.memory);
 
     if (new_ht != old_ht)
 	rc_decrement(old_ht, "gx_ht_install(old halftone)");
