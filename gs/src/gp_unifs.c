@@ -27,6 +27,8 @@
 #include "gsutil.h"		/* for string_match */
 #include "stat_.h"
 #include "dirent_.h"
+#include "unistd_.h"
+#include <stdlib.h>             /* for mkstemp/mktemp */
 #include <sys/param.h>		/* for MAXPATHLEN */
 
 /* Some systems (Interactive for example) don't define MAXPATHLEN,
@@ -70,8 +72,25 @@ gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
     if (*fname != 0 && fname[strlen(fname) - 1] == 'X')
 	strcat(fname, "-");
     strcat(fname, "XXXXXX");
+
+#ifdef HAVE_MKSTEMP
+    {
+	    int file;
+	    FILE *fp;
+
+	    file = mkstemp(fname);
+	    if (file < -1)
+		    return NULL;
+	    fp = fdopen(file, mode);
+	    if (fp == NULL)
+		    close(file);
+		    
+	    return fp;
+    }
+#else
     mktemp(fname);
     return gp_fopentemp(fname, mode);
+#endif
 }
 
 /* Open a file with the given name, as a stream of uninterpreted bytes. */

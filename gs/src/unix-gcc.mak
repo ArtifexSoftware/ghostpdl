@@ -103,6 +103,15 @@ GS_INIT=gs_init.ps
 
 GENOPT=
 
+# Choose capability options.
+
+# -DHAVE_MKSTEMP
+#	uses mkstemp instead of mktemp
+#		This gets rid of several security warnings that look
+#		ominous.  Enable this if you wish to get rid of them.
+
+CAPOPT= -DHAVE_MKSTEMP
+
 # Define the name of the executable file.
 
 GS=gs
@@ -410,7 +419,7 @@ AK=$(GLGENDIR)/cc.tr
 
 # Define the compilation rules and flags.
 
-CCFLAGS=$(GENOPT) $(CFLAGS)
+CCFLAGS=$(GENOPT) $(CAPOPT) $(CFLAGS)
 CC_=$(CC) `cat $(AK)` $(CCFLAGS)
 CCAUX=$(CC) `cat $(AK)`
 CC_LEAF=$(CC_) -fomit-frame-pointer
