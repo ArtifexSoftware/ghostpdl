@@ -333,7 +333,9 @@ private int
 
 /*
  * If a device has a linear and separable encode color function then
- * set up the comp_bits, comp_mask, and comp_shift fields.
+ * set up the comp_bits, comp_mask, and comp_shift fields.  Note:  This
+ * routine assumes that the colorant shift factor decreases with the
+ * component number.  See check_device_separable() for a general routine.
  */
 void
 set_linear_color_bits_mask_shift(gx_device * dev)
@@ -363,6 +365,113 @@ set_linear_color_bits_mask_shift(gx_device * dev)
 #undef comp_mask
 #undef comp_shift
 }
+
+/* Determine if a number is a power of two.  Works only for integers. */
+#define is_power_of_two(x) ((((x) - 1) & (x)) == 0)
+
+/*
+ * This routine attempts to determine if a device's encode_color procedure
+ * produces gx_color_index values which are 'separable'.  A 'separable' value
+ * means two things.  Each colorant has a group of bits in the gx_color_index
+ * value which is associated with the colorant.  These bits are separate.
+ * I.e. no bit is associated with more than one colorant.  If a colorant has
+ * a value of zero then the bits associated with that colorant are zero.
+ * These criteria allows the graphics library to build gx_color_index values
+ * from the colorant values and not using the encode_color routine. This is
+ * useful and necessary for overprinting, the WTS screeening, halftoning more
+ * than four colorants, and the fast shading logic.  However this information
+ * is not setup by the default device macros.  Thus we attempt to derive this
+ * information.
+ *
+ * This routine can be fooled.  However it usually errors on the side of
+ * assuing that a device is not separable.  In this case it does not create
+ * any new problems.  In theory it can be fooled into believing that a device
+ * is separable when it is not.  However we do not know of any real cases that
+ * will fool it.
+ */
+void
+check_device_separable(gx_device * dev)
+{
+    int i, j;
+    gx_device_color_info * pinfo = &(dev->color_info);
+    int num_components = pinfo->num_components;
+    byte comp_shift[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    byte comp_bits[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gx_color_index comp_mask[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gx_color_index color_index;
+    gx_color_index current_bits = 0;
+    gx_color_value colorants[GX_DEVICE_COLOR_MAX_COMPONENTS] = { 0 };
+
+    /* If this is already known then we do not need to do anything. */
+    if (pinfo->separable_and_linear != GX_CINFO_UNKNOWN_SEP_LIN)
+	return;
+    /* If there is not an encode_color_routine then we cannot proceed. */
+    if (dev_proc(dev, encode_color == NULL))
+	return;
+    /*
+     * If these values do not check then we should have an error.  However
+     * we do not know what to do so we are simply exitting and hoping that
+     * the device will clean up its values.
+     */
+    if (!pinfo->dither_grays || pinfo->dither_grays != (pinfo->max_gray + 1) ||
+	!pinfo->dither_colors || pinfo->dither_colors != (pinfo->max_color + 1))
+	return;
+    /*
+     * If num_gray or num_color is not a power of two then we assume that
+     * the device is not separable.  In theory this not a requirement but
+     * it has been true for all of the devices that we have seen so far.
+     * This assumption also makes the logic in the next section easier.
+     */
+    if (!is_power_of_two(pinfo->max_gray)
+		    || !is_power_of_two(pinfo->max_color))
+	return;
+    /*
+     * Use the encode_color routine to try to verify that the device is
+     * separable and to determine the shift count, etc. for each colorant.
+     */ 
+    color_index = dev_proc(dev, encode_color)(dev, colorants);
+    if (color_index != 0)
+	return;		/* Exit if zero colorants produce a non zero index */
+    for (i = 0; i < num_components; i ++) {
+	/* Check this colorant = max with all others = 0 */
+        for (j = 0; j < num_components; j ++)
+	    colorants[j] = 0;
+	colorants[i] = gx_max_color_value;
+	color_index = dev_proc(dev, encode_color)(dev, colorants);
+	if (color_index & current_bits)	/* Check for overlapping bits */
+	    return;
+	current_bits |= color_index;
+	comp_mask[i] = color_index;
+	/* Determine the shift count for the colorant */
+	for (j = 0; (color_index & 1) == 0; j++)
+	    color_index >>= 1;
+	comp_shift[i] = j;
+	/* Determine the bit count for the colorant */
+	for (j = 0; color_index != 0; j++)
+	    color_index >>= 1;
+	comp_bits[i] = j;
+	/*
+	 * We could verify that the bit count matches the dither_grays or
+	 * dither_colors values, but this is not really required unless we
+	 * are halftoning.  Thus we are allowing for non equal colorant sizes.
+	 */
+	/* Check for overlap with other colorant if they are all maxed */
+        for (j = 0; j < num_components; j ++)
+	    colorants[j] = gx_max_color_value;
+	colorants[i] = 0;
+	color_index = dev_proc(dev, encode_color)(dev, colorants);
+	if (color_index & comp_mask[i])	/* Check for overlapping bits */
+	    return;
+    }
+    /* If we get to here then the device is very likely to be separable. */
+    pinfo->separable_and_linear = GX_CINFO_SEP_LIN;
+    for (i = 0; i < num_components; i ++) {
+	pinfo->comp_shift[i] = comp_shift[i];
+	pinfo->comp_bits[i] = comp_bits[i];
+	pinfo->comp_mask[i] = comp_mask[i];
+    }
+}
+#undef is_power_of_two
 
 /* Fill in NULL procedures in a device procedure record. */
 void
@@ -513,10 +622,8 @@ gx_device_fill_in_procs(register gx_device * dev)
     set_dev_proc(dev, decode_color, get_decode_color(dev));
     fill_dev_proc(dev, map_color_rgb, gx_default_map_color_rgb);
 
-    /* initialiazation -- NB this chould be moved */
-    if ( dev->color_info.separable_and_linear == GX_CINFO_SEP_LIN ) {
-	set_linear_color_bits_mask_shift(dev);
-    }
+    /* Initialize the separable status if not known. */
+    check_device_separable(dev);
     /*
      * If the device is known not to support overprint mode, indicate this now.
      * Note that we do not insist that a device be use a strict DeviceCMYK
