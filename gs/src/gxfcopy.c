@@ -847,6 +847,7 @@ copy_font_type42(gs_font *font, gs_font *copied)
     memset(cfdata->data + cfdata->data_size - extra, 0, extra);
     copied42->data.get_metrics = copied_type42_get_metrics;
     copied42->data.get_glyph_index = copied_type42_get_glyph_index;
+    copied42->data.numGlyphs = font42->data.numGlyphs;
     return 0;
  fail2:
     gs_free_object(copied->memory, cfdata->data,
