@@ -538,6 +538,27 @@ create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
  * current_font, and pis->ctm.
  */
 private int
+transform_delta_inverse(const gs_point *pdelta, const gs_matrix *pmat,
+			gs_point *ppt)
+{
+    int code = gs_distance_transform_inverse(pdelta->x, pdelta->y, pmat, ppt);
+    gs_point delta;
+
+    if (code < 0)
+	return code;
+    if (ppt->y == 0)
+	return 0;
+    /* Check for numerical fuzz. */
+    code = gs_distance_transform(ppt->x, 0.0, pmat, &delta);
+    if (code < 0)
+	return 0;		/* punt */
+    if (fabs(delta.x - pdelta->x) < 0.01 && fabs(delta.y - pdelta->y) < 0.01) {
+	/* Close enough to y == 0: device space error < 0.01 pixel. */
+	ppt->y = 0;
+    }
+    return 0;
+}
+private int
 pdf_update_text_state(pdf_text_process_state_t *ppts,
 		      const pdf_text_enum_t *penum, const gs_matrix *pfmat)
 {
@@ -609,9 +630,9 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
     if (penum->text.operation & TEXT_ADD_TO_ALL_WIDTHS) {
 	gs_point pt;
 
-	gs_distance_transform_inverse(penum->text.delta_all.x,
-				      penum->text.delta_all.y,
-				      &smat, &pt);
+	code = transform_delta_inverse(&penum->text.delta_all, &smat, &pt);
+	if (code < 0)
+	    return code;
 	if (pt.y != 0)
 	    return_error(gs_error_rangecheck);
 	chars = pt.x * size;
@@ -621,9 +642,9 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
     if (penum->text.operation & TEXT_ADD_TO_SPACE_WIDTH) {
 	gs_point pt;
 
-	gs_distance_transform_inverse(penum->text.delta_space.x,
-				      penum->text.delta_space.y,
-				      &smat, &pt);
+	code = transform_delta_inverse(&penum->text.delta_space, &smat, &pt);
+	if (code < 0)
+	    return code;
 	if (pt.y != 0 || penum->text.space.s_char != 32)
 	    return_error(gs_error_rangecheck);
 	words = pt.x * size;
