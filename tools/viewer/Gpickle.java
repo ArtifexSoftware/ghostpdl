@@ -9,6 +9,7 @@
 import java.awt.*;
 import java.awt.image.*;
 import java.io.*;
+import java.util.*;
 import com.sun.image.codec.jpeg.*;
 
 /** Interface to pcl/pxl interpreter
@@ -19,15 +20,16 @@ import com.sun.image.codec.jpeg.*;
 
 public class Gpickle {
     /** debug printf control */
-    private static boolean debug = false; 
+    private static boolean debug = false;
     /** here are some defaults that might be overriden will probably be
     * overriden.
     */
     private double xRes = 75f;
     private double yRes = 75f;
     private String jobList = "startpage.pcl";
-    private int pageToDisplay = 1;
-    private int totalPageCount = -1;  // defaults to error
+    protected int pageToDisplay = 1;
+    /** This is a local counter */
+    private volatile int myTotalPageCount = -1;  // defaults to error
 
     /** We always use jpeg for output because java has good internal support for jpeg.
      */
@@ -43,11 +45,11 @@ public class Gpickle {
     private String rtl = "";
     private final static String cRTLstr = " -PRTL";
     public void setRTL( boolean on ) {
-	if (on)
-	   rtl = cRTLstr;
-	else
-	   rtl = "";
-    }	
+        if (on)
+           rtl = cRTLstr;
+        else
+           rtl = "";
+    }
     public boolean getRTL() {
        return( rtl.equals(cRTLstr) );
     }
@@ -55,27 +57,27 @@ public class Gpickle {
     private boolean bTextAlpha = true;
     private String textAlphaOptStr = " -dTextAlphaBits=2";
     public boolean getTextAlpha() {
-	return bTextAlpha;
+        return bTextAlpha;
     }
     public void setTextAlpha( boolean textAlpha ) {
-	bTextAlpha = textAlpha;
-	if ( bTextAlpha ) 
-	    textAlphaOptStr = " ";
-	else
-	    textAlphaOptStr =  " -dTextAlphaBits=2";
+        bTextAlpha = textAlpha;
+        if ( bTextAlpha )
+            textAlphaOptStr = " ";
+        else
+            textAlphaOptStr =  " -dTextAlphaBits=2";
     }
 
     private String deviceOptions =  " ";
 
-    /** GhostPrinter application path */ 
+    /** GhostPrinter application path */
     private String ghostAppStr;
 
     /** look for relative path executable first */
-    //private String ghostAppRelStr =  "../../main/obj/pcl6";
+    //private String ghostAppRelStr =  "../../language_switch/obj/pspcl6";
     private String ghostAppRelStr =  "../../main/obj/pcl6";
 
     /** look for executable in path next */
-    //private String ghostAppPathStr =  "pcl6";
+    //private String ghostAppPathStr =  "pspcl6";
     private String ghostAppPathStr =  "pcl6";
 
     /** find the GhostPrinter application
@@ -84,40 +86,40 @@ public class Gpickle {
      * adds .exe for windows executables
      */
     private void setGhostApp() {
-        ghostAppStr = ghostAppRelStr;
-	File testIt = new File(ghostAppStr);
-	if (!testIt.exists()) {
+        ghostAppStr = ghostAppRelStr; 
+        File testIt = new File(ghostAppStr);
+        if (!testIt.exists()) {
             ghostAppStr = ghostAppRelStr + ".exe";
-	    testIt = new File(ghostAppStr);
-	    if (!testIt.exists()) {
-		ghostAppStr = ghostAppPathStr;
+            testIt = new File(ghostAppStr);
+            if (!testIt.exists()) {
+                ghostAppStr = ghostAppPathStr;
                 testIt = new File(ghostAppStr);
-	        if (!testIt.exists()) {  
-		    ghostAppStr = ghostAppPathStr + ".exe";
-		    testIt = new File(ghostAppStr);
-		    if (!testIt.exists()) {  
-			System.out.println("Missing file " + ghostAppStr);
-			System.exit(1);
-		    }
-		}
-            }   
-	}
+                if (!testIt.exists()) {
+                    ghostAppStr = ghostAppPathStr + ".exe";
+                    testIt = new File(ghostAppStr);
+                    if (!testIt.exists()) {
+                        System.out.println("Missing file " + ghostAppStr);
+                        System.exit(1);
+                    }
+                }
+            }
+        }
     }
 
     /**
      * "command line" used to run interpreter.
      * NB Client should be able to modify settings.
      */
-    private String runString()
+    private String runString( int page )
     {
-	return ghostAppStr 
-	    + deviceOptions
-	    + rtl
-	    + textAlphaOptStr
-	    + " -dFirstPage=" + pageToDisplay + " -dLastPage="
-            + pageToDisplay
+        return ghostAppStr
+            + deviceOptions
+            + rtl
+            + textAlphaOptStr
+            + " -dFirstPage=" + page + " -dLastPage="
+            + page
             + " -r" + xRes + "x" + yRes
-	    + " -sDEVICE=" + deviceName
+            + " -sDEVICE=" + deviceName
             + " -dNOPAUSE "
             + " -sOutputFile=- " + jobList + " \n";
     }
@@ -127,8 +129,8 @@ public class Gpickle {
      */
     private String pageCountString()
     {
-	return ghostAppStr 
-	    + " -C -r25 -dNOPAUSE -sDEVICE=nullpage "
+        return ghostAppStr
+            + " -C -r25 -dNOPAUSE -sDEVICE=nullpage "
             + jobList;
     }
 
@@ -139,17 +141,12 @@ public class Gpickle {
     public int getPrinterPageCount()
     {
         Process p;
-        // if the page count is non-negative 0 it has already been set
-        // for this job so just return the cached value.
-        if ( this.totalPageCount >= 0 ) {
-            if ( debug ) System.out.println("cached page count= " + this.totalPageCount);
-            return this.totalPageCount;
-        }
 
-        this.totalPageCount = -1;
-	try {
-	    if ( debug ) System.out.println("pagecountstring=" + pageCountString());
-	    p = Runtime.getRuntime().exec(pageCountString());
+        myTotalPageCount = -1;
+	if ( debug ) System.out.println("Kill PageCount" + myTotalPageCount );
+        try {
+            if ( debug ) System.out.println("pagecountstring=" + pageCountString());
+            p = Runtime.getRuntime().exec(pageCountString());
             String line;
             BufferedReader br = new BufferedReader(new InputStreamReader(p.getErrorStream()));
             while ((line = br.readLine()) != null)
@@ -157,14 +154,15 @@ public class Gpickle {
                     // place after cursor after ':'
                     int index = line.indexOf(':') + 1;
                     // convert to integer
-                    this.totalPageCount = Integer.parseInt((line.substring(index)).trim());
-                    System.out.println(this.totalPageCount);
+                    myTotalPageCount = Integer.parseInt((line.substring(index)).trim());
+                    if (debug) System.out.println(myTotalPageCount);
                     // NB error checking ??
                 }
         } catch (Exception e) {
             System.out.println(e);
         }
-        return this.totalPageCount;
+	if ( debug ) System.out.println("Set PageCount" + myTotalPageCount );
+        return myTotalPageCount;
     }
 
     // public methods.
@@ -173,28 +171,84 @@ public class Gpickle {
        deviceOptions = options;
     }
 
+    /** size of page cache */
+    private final static int maxCached = 10;
+
+    /** cache of page images, circular queue. */ 
+    private BufferedImage[] pageCache;
+
+    /** hash of the options send to generate the page should be unique enough */
+    private int[] pageCacheHashCodes;
+
+    /** page number */
+    private int[] pageCacheNumber;
+
+    /** Next cache location to store into, circular queue. */
+    private int nextCache = 0;
+
+    /**
+    * run the pcl interpreter with the current settings and return a
+    * buffered image for the page.  Sets height and width as a side
+    * effect.
+    */
+    public BufferedImage getPrinterOutputPage( int page ) {
+	int hit = -1;
+	int i;
+
+	for (i = 0; i < maxCached; i++ ) {
+	    // search cache
+	    if ( pageCacheNumber[i] == page ) {
+		hit = i;
+	    }
+	}
+	int hashCode = runString( page ).hashCode();
+	BufferedImage bi = null;
+	if ( hit >= 0 ) {
+	    bi = pageCache[hit];
+	    if ( bi != null && hashCode == pageCacheHashCodes[hit]) {
+		// return cache hit 
+		if (debug) System.out.println("used cached page :" + page + " at "+ hit);
+		return bi;
+	    }
+	    // else right page but wrong file,resolution...
+	}
+	
+        bi = getPrinterOutputPageNoCache( page );
+        if ( bi == null )
+            return null;
+	
+	// store in cache
+        pageCache[nextCache] = bi;
+	pageCacheNumber[nextCache] = page;
+	pageCacheHashCodes[nextCache] = hashCode;
+	if (debug) System.out.println("cached page :" + page + " at "+ nextCache);
+	nextCache = (++nextCache) % maxCached;
+
+        return bi;
+    }
+
     /**
     * run the pcl interpreter with the current settings and return a
     * buffered image for the page.  Sets height and width as a side
     * effect.
     */
 
-    public BufferedImage getPrinterOutputPage()
+    public BufferedImage getPrinterOutputPageNoCache( int page )
     {
         int ch;
-	int i = 0;
-        Process p = null;     
+        int i = 0;
+        Process p = null;
 
-	try {
-	    if ( debug ) System.out.println("runstring=" + runString());
-	    p = Runtime.getRuntime().exec(runString());
-	    // read process output and return a buffered image.
-	    JPEGImageDecoder decoder = JPEGCodec.createJPEGDecoder(p.getInputStream());
-	    BufferedImage bim = decoder.decodeAsBufferedImage();
-	    this.height = bim.getHeight();
-	    this.width = bim.getWidth();
-	    return bim;
-	} catch (Exception e) {
+        try {
+            if (debug) System.out.println("runstring=" + runString( page ));
+            p = Runtime.getRuntime().exec(runString( page ));
+            // read process output and return a buffered image.
+            JPEGImageDecoder decoder = JPEGCodec.createJPEGDecoder(p.getInputStream());
+            BufferedImage bim = decoder.decodeAsBufferedImage();
+            this.height = bim.getHeight();
+            this.width = bim.getWidth();
+            return bim;
+        } catch (Exception e) {
             // exception but we have a real process - read for errors
             if ( p != null ) {
                 BufferedReader br = new BufferedReader(new InputStreamReader(p.getErrorStream()));
@@ -208,22 +262,24 @@ public class Gpickle {
             } else {
                 System.out.println(e);
             }
-	    return null;
-	}
+            return null;
+        }
     }
 
     /** A list of file names that comprise a job.
      * NB should be an array of String.
      */
     public void setJob(String jobList) {
-        this.totalPageCount = -1;
-	this.jobList = jobList;
+        if (debug) {
+	    System.out.println( "Set Job" );
+	    System.out.println( pageCache );
+	}
+        this.jobList = jobList;
     }
 
     public String getJob() {
-	return jobList;
+        return jobList;
     }
-
 
     /** NB needs error handling.
      * set x and y resolution.
@@ -231,8 +287,8 @@ public class Gpickle {
      */
     public void setRes(double xRes, double yRes)
     {
-	this.xRes = xRes;
-	this.yRes = yRes;
+        this.xRes = xRes;
+        this.yRes = yRes;
     }
 
     public double getResX() {
@@ -248,45 +304,50 @@ public class Gpickle {
      */
     public void setPageNumber(int page)
     {
-	this.pageToDisplay = page;
+        this.pageToDisplay = page;
+    }
+    public int getPageNumber() 
+    {
+	return pageToDisplay;
     }
 
     /** Accessor for image height.
      */
     public int getImgHeight()
     {
-	return height;
+        return height;
     }
     /** Accessor for image width.
-     */ 	
+     */
     public int getImgWidth()
     {
-	return width;
+        return width;
     }
 
-    public Gpickle() 
+    public Gpickle()
     {
-	setGhostApp();
+        pageCache = new BufferedImage[maxCached];
+        pageCacheHashCodes = new int [maxCached];
+	pageCacheNumber = new int [maxCached];
+        setGhostApp();
     }
 
     /** main for test purposes */
     public static void main( String[] args ) {
         debug = true;
-	Gpickle pcl = new Gpickle();
-	pcl.setRes(72, 72);
-	pcl.setPageNumber(5);
-	pcl.setJob("120pg.bin");
+        Gpickle pcl = new Gpickle();
+        pcl.setRes(72, 72);
+        pcl.setJob("120pg.bin");
         System.out.println(pcl.getPrinterPageCount());
-	System.out.println(pcl.getPrinterOutputPage());
-	System.out.println("Width = " + pcl.getImgWidth());
-	System.out.println("Height = " + pcl.getImgWidth());
-	Gpickle pxl = new Gpickle();
-	pcl.setPageNumber(5);
-	pxl.setJob("frs96.pxl");
+        System.out.println(pcl.getPrinterOutputPage( 5 ));
+        System.out.println("Width = " + pcl.getImgWidth());
+        System.out.println("Height = " + pcl.getImgWidth());
+        Gpickle pxl = new Gpickle();
+        pxl.setJob("frs96.pxl");
         System.out.println(pcl.getPrinterPageCount());
-	System.out.println(pxl.getPrinterOutputPage());
-	System.out.println("Width = " + pxl.getImgWidth());
-	System.out.println("Height = " + pxl.getImgWidth());
+        System.out.println(pxl.getPrinterOutputPage( 5 ));
+        System.out.println("Width = " + pxl.getImgWidth());
+        System.out.println("Height = " + pxl.getImgWidth());
 
     }
 }

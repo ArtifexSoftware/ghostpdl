@@ -1,3 +1,11 @@
+/* Portions Copyright (C) 2001 Artifex Software Inc.
+   
+   This software is distributed under license and may not be copied, modified
+   or distributed except as expressly authorized under the terms of that
+   license.  Refer to licensing information at http://www.artifex.com/ or
+   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
+   San Rafael, CA  94903, (415)492-9861, for further information. */
+
 import java.awt.image.*;
 
 
@@ -16,6 +24,8 @@ public class GpickleThread extends Gpickle implements Runnable {
 
   /** debug printf control */
   private final static boolean debug = true;
+  private final static boolean debugPerformance = debug && true;
+  private final static boolean debugSpew = debug && false;
 
   private long gotItTime = 0;
 
@@ -31,6 +41,20 @@ public class GpickleThread extends Gpickle implements Runnable {
   * we were busy, fetch it when we are not busy.
   */
   private volatile int nextPage = 0;
+
+  /** the page we are fetching now
+  */
+  private volatile int currentPage = 0;
+
+  /** NB since the pagecount thread is a different object than
+  * the page generator the caller must set this in both objects.
+  */
+  private volatile int totalPageCount = 0;
+
+  /** Enable/disable lookahead fetches.
+  * NB would be nice to look back when user is paging backwards.
+  */
+  public volatile boolean lookAhead = true;
 
   /** true if getting page count, false if getting a page */
   private volatile boolean getPageCount = false;
@@ -49,7 +73,7 @@ public class GpickleThread extends Gpickle implements Runnable {
      myThread.start();
   }
 
-  /** threads must run, this one runs the process in Gpickle
+  /** Threads must run, this one runs the process in Gpickle
    *  sends generated page to observer.
    *  one page per request
    */
@@ -65,33 +89,66 @@ public class GpickleThread extends Gpickle implements Runnable {
           }
 
 	  if (getPageCount) {
-	      // generate page and return it to the observer
+	      // generate count of pages in document and return it to the observer
+	
+	      if (debugSpew) System.out.println("Start Counting pages");
 	      observer.pageCountIsReady( getPrinterPageCount() );
-	      getPageCount = false;
-	  } 
-	  else {
-	      observer.imageIsReady( getPrinterOutputPage() );
+	      if (debugSpew) System.out.println("Finished Counting pages");
+	      synchronized(this) {
+		  getPageCount = false;
+		  goFlag = false;
+	      }
+	      continue; // wait for next call, avoiding lookahead logic below.
 	  }
-
-          if (debug) {
+	  else {
+	      // generate page and return it to the observer
+	      observer.imageIsReady( getPrinterOutputPage( currentPage ) );
+	  }
+          if (debugPerformance) {
              gotItTime = System.currentTimeMillis() - gotItTime;	
-             System.out.println("Render time is: " +  gotItTime + " milliseconds" );
+             System.out.println("Page " + currentPage + " User time: " +  
+				gotItTime + " milliseconds" );
           }
 
           synchronized(this) {
              // run once per page request
              goFlag = false;
+	
              if (nextPage > 0) {
-                // the last page asked for while I was busy
+		// the last page asked for while I was busy
+		// holding the the pageDown key down will get you the next page
+		// and one far into the document (nextPage)
                 startProduction( nextPage );
+		if (debugSpew) System.out.println("Getting Next asked for " +  getPageNumber() );
              }
+	     else if (lookAhead) {
+		 if ( currentPage < totalPageCount) {
+		     // look ahead fetches the next page into cache, not displayed;
+		     // hopefully completes while the user is viewing the current page
+		     if (debugSpew)
+			 System.out.println("Fetching ahead " +
+					    (currentPage + 1) +
+					    " totalpages " +
+					    totalPageCount);
+		     getPrinterOutputPage(currentPage + 1);
+		 }
+		 else {
+		     // if we don't know how many pages, then the page count is still running
+		     // wait until its done to start looking ahead.
+		     if (debugSpew)
+			 System.out.println("Bad totalPageCount" +
+					    (currentPage + 1) +
+					    " totalpages " +
+					    totalPageCount);
+		 }
+	     }
           }
         }
      } catch (InterruptedException e) {}
   }
 
-  /** let the thread run one loop
-   * looks kind of like the depreciated Thread.resume()
+  /** Let the thread run one loop.
+   * Looks kind of like the depreciated Thread.resume().
    */
   private synchronized void resume()
   {
@@ -100,40 +157,50 @@ public class GpickleThread extends Gpickle implements Runnable {
      notify();
   }
 
+  /** startProduction with the ability to disable lookAhead
+   * useful when user is zoom/translating on a page
+   */
+  public void startProduction( int pageNumber, boolean _lookAhead )
+  {
+      boolean caching = _lookAhead;
+
+      lookAhead = _lookAhead;
+      startProduction( pageNumber );
+      lookAhead = caching;
+  }
+
   /** if not generating then start generated requested page
    *  if already generating remember last request and return
    */
   public void startProduction( int pageNumber )
   {
-     if (debug) System.out.println("Request =" + pageNumber);	
+     if (debugSpew) System.out.println("Request =" + pageNumber);	
 
      if (goFlag) {   // one at a time please
         nextPage = pageNumber;
         return;
      }
-     setPageNumber(pageNumber);
+     currentPage = pageNumber;
 
-     if (debug) {
+     if (debugPerformance) {
         gotItTime = System.currentTimeMillis();	
-        System.out.println("Getting  =" + pageNumber);
      }
 
      resume(); // kickStartTread
-  }  
+  }
 
   /** if not generating then start generated requested pageCount
    */
   public void startCountingPages(  )
   {
-     if (debug) System.out.println("Request PageCount");	
-
+     if (debugSpew) System.out.println("Request PageCount");	
      if (goFlag) {   // one at a time please
+	 if (debugSpew) System.out.println("Request PageCount goFlag true");	
         return;
      }
-     
      getPageCount = true;
 
-     if (debug) {
+     if (debugSpew) {
         gotItTime = System.currentTimeMillis();	
         System.out.println("Getting Page Count");
      }
@@ -145,5 +212,14 @@ public class GpickleThread extends Gpickle implements Runnable {
      if (nextPage > 0)
         return true;
      return false;
+  }
+
+  /** Since muliple threads can view a single document, the caller must
+  * set the number of pages in the document for all threads.
+  * This page count is used to prevent look ahead past the end of document.
+  * It doesn't prevent the caller from doing this. 
+  */
+  public void setPageCount( int pageCount ) {
+      totalPageCount = pageCount;
   }
 }

@@ -100,9 +100,8 @@ public class Nav extends Gview  {
 
         double psfx = origX / origW * pageView.origW / pageView.origRes * pageView.desiredRes;
         double psfy = origY / origH * pageView.origH / pageView.origRes * pageView.desiredRes;
-	
+
 	pageView.translateTo( psfx, psfy );
-	repaint();
     }
 
     /** Paint low res image with red zoom box

@@ -537,7 +537,8 @@ public class Gview
 	pickle.startProduction( pageNumber );
     }
 
-     /** file open */
+    /** file open dialog 
+     */
     void fileOpen() {
         int result = chooser.showOpenDialog(null);
         File file = chooser.getSelectedFile();
@@ -549,6 +550,8 @@ public class Gview
         }
     }
 
+    /** Prints the current page, not the Job
+     */
     void filePrintPage() {
         PrinterJob job = PrinterJob.getPrinterJob();
         PageFormat pf = job.pageDialog(job.defaultPage());
@@ -691,9 +694,9 @@ public class Gview
 	}
     }
 
+    /** Avoid using this since mousePressed and mouseRelease are being used. */
     public void mouseClicked(MouseEvent e) {
     }
-
     public void mouseEntered(MouseEvent e) {
     }
     public void mouseExited(MouseEvent e) {
@@ -751,13 +754,6 @@ public class Gview
     /** decrease resolution by factor of 2 */
     protected void zoomOut( int x, int y ) {
 
-	/*
-	if ( desiredRes / 2.0 < startingRes) {
-	    origRes = desiredRes/2.0;
-	    createViewPort( 0.0, 0.0, 1.0, 1.0, origRes, origRes );
-	    return;
-	}
-        */
 	double x1 = origX = origX + (x * desiredRes / origRes);
         double y1 = origY = origY + (y * desiredRes / origRes);
 	
@@ -771,25 +767,25 @@ public class Gview
 
     /** Set zoom resolution to asked for resolution at 0,0
      */
-    protected void zoomToRes( double res ) {		   
+    protected void zoomToRes( double res ) {		
 	if ( res < startingRes) {
 	    desiredRes = res;
 	    origRes = desiredRes;
 	    createViewPort( 0.0, 0.0, 1.0, 1.0, origRes, origRes );
 	}
-	else if ( origRes < startingRes ) 
+	else if ( origRes < startingRes )
 	{
 	    origRes = startingRes;
 	    origX = 0;
 	    origY = 0;
-	    desiredRes = res / 2.0; 
-	    zoomIn(0,0);  // internal multiply by 2 gets back to asked for res    
+	    desiredRes = res / 2.0;
+	    zoomIn(0,0);  // internal multiply by 2 gets back to asked for res
 	}
 	else {
 	    origX = 0;
 	    origY = 0;
-	    desiredRes = res / 2.0; 
-	    zoomIn(0,0);  // internal multiply by 2 gets back to asked for res    
+	    desiredRes = res / 2.0;
+	    zoomIn(0,0);  // internal multiply by 2 gets back to asked for res
 	}
 	return;
     }
@@ -798,7 +794,7 @@ public class Gview
      */
     protected void zoomFactor( double factor ) {	
 	zoomToRes(desiredRes*factor);
-    }	   
+    }	
 
     /** Generate a new page with  translation, scale, resolution  */
     private void createViewPort( double tx,   double ty,
@@ -832,7 +828,8 @@ public class Gview
 	if ( debug ) System.out.println( options );
         pickle.setRes( resX, resY );
         pickle.setDeviceOptions( options  );
-        pickle.startProduction( pageNumber );
+	// disable lookahead for zoom and translate
+        pickle.startProduction( pageNumber, false);
     }
 
     /** main program */
@@ -871,37 +868,40 @@ public class Gview
     }
 
     /** setting page count so that multiple views can share the same page count result
+     *  Note that the page count is also set in the pickleTreads
      */
     protected synchronized void setPageCount( int pageCount ) {
 	totalPageCount = pageCount;
 	if ( totalPageCount < 0 ) {
 	    menuPageNum.setLabel("page# " + pageNumber + " of ?");
-	    setTitle("GhostPickle: " + 
-		     pickle.getJob() + 
+	    setTitle("GhostPickle: " +
+		     pickle.getJob() +
 		     " " +
-		     pageNumber + 
+		     pageNumber +
 		     " of ?");
 	}
 	else {
 	    menuPageNum.setLabel("page# " + pageNumber + " of " + totalPageCount);
-	    setTitle("GhostPickle: " + 
-		     pickle.getJob() + 
+	    setTitle("GhostPickle: " +
+		     pickle.getJob() +
 		     " " +
-		     pageNumber + 
-		     " of " + 
+		     pageNumber +
+		     " of " +
 		     totalPageCount);
 	}
+	pickle.setPageCount(pageCount);
+	pageCounter.setPageCount(pageCount);
     }
 
     /** Sets the job, opening/reopening the window based on resolution.
-     *  @param getPageCount determines if the page count should be computed.  
+     *  @param getPageCount determines if the page count should be computed.
      */
     protected void runJob(String[] args, double resolution, boolean getPageCount) {	
-	pickle.setJob(args[0]);  
+	pickle.setJob(args[0]);
         origRes = desiredRes = resolution;
 	pickle.setRes(desiredRes, desiredRes);
 
-	// set the total page count as unknown for now 
+	// set the total page count as unknown for now
 	if (getPageCount == true) {
 	    setPageCount(-1);
 	    // get the total page count for the job
@@ -913,10 +913,10 @@ public class Gview
 
 	pageNumber = 1;
 	pickle.setPageNumber(pageNumber);
-	currentPage = pickle.getPrinterOutputPage();
+	currentPage = pickle.getPrinterOutputPage( pageNumber );
 	setSize(pickle.getImgWidth(), pickle.getImgHeight());
 	origW = pickle.getImgWidth();
-	origH = pickle.getImgHeight();    	
+	origH = pickle.getImgHeight();  	
 	show();
 	repaint();
     }
