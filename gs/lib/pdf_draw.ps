@@ -700,15 +700,23 @@ end
 } bdef
 
 drawopdict begin
-  /Do
-    { PDFfile fileposition exch
-      dup Page /XObject rget not { /undefined cvx signalerror } if
+  /Do {
+    PDFfile fileposition exch
+    dup Page /XObject rget { 
       exch pop dup /Subtype get xobjectprocs exch get
 		% Don't leave extra objects on the stack while executing
 		% the definition of the form.
       3 -1 roll 2 .execn
-      PDFfile exch setfileposition
-    } bdef
+    } {
+		% This should cause an error, but Acrobat Reader can
+		% continue, so we do too.
+      (%stderr) (w) file
+      dup (****************Undefined XObject resource: ) writestring 
+      dup 3 -1 roll write===
+      flushfile
+    } ifelse
+    PDFfile exch setfileposition
+  } bdef
 end
 
 % ---------------- In-line images ---------------- %
