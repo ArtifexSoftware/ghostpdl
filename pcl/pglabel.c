@@ -312,7 +312,14 @@ hpgl_get_char_width(const hpgl_state_t *pgls, uint ch, hpgl_real_t *width)
     if ( pgls->g.character.size_mode == hpgl_size_not_set ) {
 	if ( pfs->params.proportional_spacing ) {
 	    code = pl_font_char_width(pfs->font, glyph, &gs_width);
-	    if ( code >= 0 ) {
+	    if ( !pl_font_is_scalable(pfs->font) ) {
+		if ( code == 0 ) 
+		    *width = gs_width.x	* inches_2_plu(1.0 / pfs->font->resolution.x); 
+		else
+		    *width = coord_2_plu(pl_fp_pitch_cp(&pfs->font->params)); 
+		goto add;
+	    }
+	    else if ( code >= 0 ) { 
 		*width = gs_width.x * hpgl_points_2_plu(pgls, pfs->params.height_4ths / 4.0);
 		goto add;
 	    }
