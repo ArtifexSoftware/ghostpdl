@@ -132,8 +132,8 @@ typedef struct { /* 1bit/pixel only, rows are byte-aligned. */
 typedef struct FAPI_server_s FAPI_server;
 #endif
 
-typedef int FAPI_descendent_code; /* Possible values are descendent font indices and 4 ones defined below. */
-#define FAPI_DESCENDENT_PREPARED -1
+typedef int FAPI_descendant_code; /* Possible values are descendant font indices and 4 ones defined below. */
+#define FAPI_DESCENDANT_PREPARED -1 /* See FAPI_prepare_font in zfapi.c . */
 #define FAPI_TOPLEVEL_PREPARED -2
 #define FAPI_TOPLEVEL_BEGIN -3
 #define FAPI_TOPLEVEL_COMPLETE -4
@@ -142,7 +142,7 @@ struct FAPI_server_s {
     i_plugin_instance ig;
     int frac_shift; /* The number of fractional bits in coordinates. */
     FAPI_retcode (*ensure_open)(FAPI_server *server);
-    FAPI_retcode (*get_scaled_font)(FAPI_server *server, FAPI_font *ff, int subfont, const FracInt matrix[6], const FracInt HWResolution[2], const char *xlatmap, bool bVertical, FAPI_descendent_code dc);
+    FAPI_retcode (*get_scaled_font)(FAPI_server *server, FAPI_font *ff, int subfont, const FracInt matrix[6], const FracInt HWResolution[2], const char *xlatmap, bool bVertical, FAPI_descendant_code dc);
     FAPI_retcode (*get_decodingID)(FAPI_server *server, FAPI_font *ff, const char **decodingID);
     FAPI_retcode (*get_font_bbox)(FAPI_server *server, FAPI_font *ff, int BBox[4]);
     FAPI_retcode (*get_font_proportional_feature)(FAPI_server *server, FAPI_font *ff, int subfont, bool *bProportional);

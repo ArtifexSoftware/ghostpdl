@@ -765,15 +765,15 @@ private int FAPI_prepare_font(i_ctx_t *i_ctx_p, FAPI_server *I, ref *pdr, gs_fon
     /* A renderer may need to access the top level font's data of 
      * a CIDFontType 0 (FontType 9) font while preparing its subfonts,
      * and/or perform a completion action with the top level font after
-     * its descendents are prepared. Therefore with such fonts
+     * its descendants are prepared. Therefore with such fonts
      * we first call get_scaled_font(..., FAPI_TOPLEVEL_BEGIN), then
-     * get_scaled_font(..., i) with eash descendent font index i,
+     * get_scaled_font(..., i) with eash descendant font index i,
      * and then get_scaled_font(..., FAPI_TOPLEVEL_COMPLETE).
      * For other fonts we don't call with 'i'.
      *
      * Actually server's data for top level CIDFontTYpe 0 non-disk fonts should not be important, 
      * because with non-disk fonts FAPI_do_char never deals with the top-level font, 
-     * but does with its descendents individually.
+     * but does with its descendants individually.
      * Therefore a recommendation for the renderer is don't build any special
      * data for the top-level non-disk font of CIDFontType 0, but return immediately
      * with success code and NULL data pointer.
@@ -812,7 +812,7 @@ private int FAPI_prepare_font(i_ctx_t *i_ctx_p, FAPI_server *I, ref *pdr, gs_fon
 	    pbfont->FAPI_font_data = 0;
 	    return code;
 	}
-    /* Prepare descendent fonts : */
+    /* Prepare descendant fonts : */
     if (font_file_path == NULL && ff.is_type1 && ff.is_cid) { /* Renderers should expect same condition. */
         gs_font_cid0 *pfcid = (gs_font_cid0 *)pbfont;
         gs_font_type1 **FDArray = pfcid->cidata.FDArray;
@@ -841,7 +841,7 @@ private int FAPI_prepare_font(i_ctx_t *i_ctx_p, FAPI_server *I, ref *pdr, gs_fon
 	                            NULL, false, i))) < 0)
 		break;
             pbfont1->FAPI_font_data = ff.server_font_data; /* Save it back to GS font. */
-	    /* Try to do something with the descendent font to ensure that it's working : */
+	    /* Try to do something with the descendant font to ensure that it's working : */
 	    if ((code = renderer_retcode(i_ctx_p, I, I->get_font_bbox(I, &ff, BBox_temp))) < 0)
 		break;
         }
@@ -1303,7 +1303,7 @@ retry_oversampling:
     if ((code = renderer_retcode(i_ctx_p, I, I->get_scaled_font(I, &ff, subfont, matrix, HWResolution, 
                                  NULL, bVertical, (!bCID || (pbfont->FontType != ft_encrypted  &&
 				                             pbfont->FontType != ft_encrypted2)
-					           ? FAPI_TOPLEVEL_PREPARED : FAPI_DESCENDENT_PREPARED)))) < 0)
+					           ? FAPI_TOPLEVEL_PREPARED : FAPI_DESCENDANT_PREPARED)))) < 0)
 	return code;
     /* fixme : it would be nice to call get_scaled_font at once for entire 'show' string. */
 
@@ -1487,7 +1487,7 @@ retry_oversampling:
 	    if (pbfont->FontType == 2) {
 		gs_font_type1 *pfont1 = (gs_font_type1 *)pbfont;
 
-		cr.aw_x = fapi_round(fixed2float(pfont1->data.defaultWidthX * scale));
+		cr.aw_x = pfont1->data.defaultWidthX << (I->frac_shift - _fixed_shift);
 		cr.metrics_scale = 1000;
 		cr.metrics_type = FAPI_METRICS_ADD;
 	    }

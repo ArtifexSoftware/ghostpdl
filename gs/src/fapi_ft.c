@@ -27,20 +27,14 @@ Started by Graham Asher, 6th June 2002.
 #include "ifapi.h"
 #include "write_t1.h"
 #include "write_t2.h"
-#include "gstypes.h"
-#include "gsmatrix.h"
-#include "gxfarith.h"
+#include "math_.h"
 
 /* FreeType headers */
-#define stream strm /* A hach to suppress compiler errors. 
-                       FT defines 'stream' as an argument.
-		       GS defines 'stream' as a type.
-		       Such conflict isn't allowed by ANSI C. */
 #include "freetype/freetype.h"
 #include "freetype/ftincrem.h"
 #include "freetype/ftglyph.h"
 #include "freetype/ftoutln.h"
-#undef stream
+#include "freetype/fttrigon.h"
 
 #include <assert.h>
 
@@ -339,25 +333,105 @@ static FAPI_retcode ensure_open(FAPI_server* a_server)
 	return 0;
 	}
 
+static void transform_concat(FT_Matrix* a_A,const FT_Matrix* a_B)
+	{
+	FT_Matrix result = *a_B;
+	FT_Matrix_Multiply(a_A,&result);
+	*a_A = result;
+	}
+
+/** Create a transform representing an angle defined as a vector. */
+static void make_rotation(FT_Matrix* a_transform,const FT_Vector* a_vector)
+	{
+	FT_Fixed length, cos, sin;
+	if (a_vector->x >= 0 && a_vector->y == 0)
+		{
+		a_transform->xx = a_transform->yy = 65536;
+		a_transform->xy = a_transform->yx = 0;
+		return;
+		}
+
+	length = FT_Vector_Length((FT_Vector*)a_vector);
+	cos = FT_DivFix(a_vector->x,length);
+	sin = FT_DivFix(a_vector->y,length);
+	a_transform->xx = a_transform->yy = cos;
+	a_transform->xy = -sin;
+	a_transform->yx = sin;
+	}
+
+/**
+Divide a transformation into a scaling part and a rotation-and-shear part.
+The scaling part is used for setting the pixel size for hinting.
+*/
+static void transform_decompose(FT_Matrix* a_transform,
+								FT_Fixed* a_x_scale,FT_Fixed* a_y_scale)
+	{
+	FT_Matrix rotation;
+	bool have_rotation = false;
+	FT_Vector v;
+
+	/*
+	Set v to the result of applying the matrix to the (1,0) vector
+	and reverse the direction of rotation by negating the y coordinate.
+	*/
+	v.x = a_transform->xx;
+	v.y = -a_transform->yx;
+	if (v.y || v.x < 0)
+		{
+		have_rotation = true;
+
+		/* Get the inverse of the rotation. */
+		make_rotation(&rotation,&v);
+
+		/* Remove the rotation. */
+		transform_concat(a_transform,&rotation);
+		}
+
+	/* Get the scales. */
+	*a_x_scale = a_transform->xx;
+	if (*a_x_scale < 0)
+		*a_x_scale = -*a_x_scale;
+	*a_y_scale = a_transform->yy;
+	if (*a_y_scale < 0)
+		*a_y_scale = -*a_y_scale;
+
+	/* Remove the scales. */
+	a_transform->xx = 65536;
+	a_transform->yx = FT_DivFix(a_transform->yx,*a_x_scale);
+	a_transform->xy = FT_DivFix(a_transform->xy,*a_y_scale);
+	a_transform->yy = 65536;
+
+	if (have_rotation)
+		{
+		/* Add back the rotation. */
+		rotation.xy = -rotation.xy;
+		rotation.yx = -rotation.yx;
+		transform_concat(a_transform,&rotation);
+		}
+	}
+
 /**
 Open a font and set its transformation matrix to a_matrix, which is a 6-element array representing an affine
 transform, and its resolution in dpi to a_resolution, which contains horizontal and vertical components.
 */
 static FAPI_retcode get_scaled_font(FAPI_server* a_server,FAPI_font* a_font,int a_subfont,const FracInt a_matrix[6],
-					const FracInt a_resolution[2],const char* a_map,bool a_vertical, FAPI_descendent_code dc)
+									const FracInt a_resolution[2],const char* a_map,bool a_vertical,
+									FAPI_descendant_code a_descendant_code)
 	{
 	FF_server* s = (FF_server*)a_server;
 	FF_face* face = (FF_face*)a_font->server_font_data;
 	FT_Error ft_error = 0;
 
+	/*
+	If this font is the top level font of an embedded CID type 0 font (font type 9)
+	do nothing. See the comment in FAPI_prepare_font. The descendant fonts are
+	passed in individually.
+	*/
 	if (a_font->is_cid && a_font->is_type1 && a_font->font_file_path == NULL &&
-            (dc == FAPI_TOPLEVEL_BEGIN || dc == FAPI_TOPLEVEL_COMPLETE)) {
-	    /* Don't need any processing for the top level font of a non-disk CIDFontType 0. 
-	       See comment in FAPI_prepare_font.
-	       Will do with its subfonts individually. 
-	     */
-	    return 0; 
-	}
+		(a_descendant_code == FAPI_TOPLEVEL_BEGIN ||
+		 a_descendant_code == FAPI_TOPLEVEL_COMPLETE))
+		return 0;
+
 	/* Create the face if it doesn't already exist. */
 	if (!face)
 		{
@@ -472,43 +546,32 @@ static FAPI_retcode get_scaled_font(FAPI_server* a_server,FAPI_font* a_font,int 
 		{
 		static const FT_Matrix ft_reflection = { 65536, 0, 0, -65536 };
 		FT_Matrix ft_transform;
-		gs_point up_vector;
-		gs_matrix transform;
-		double angle;
 		FT_F26Dot6 width, height;
 
 		/*
-		Get the rotational part of the font transform
-		by applying the transform to a unit vector pointing up.
+		Convert the GS transform into an FT transform.
 		Ignore the translation elements because they contain very large values
 		derived from the current transformation matrix and so are of no use.
 		*/
-		transform.xx = (float)(a_matrix[0] / 65536.0);
-		transform.xy = (float)(-a_matrix[1] / 65536.0);
-		transform.yx = (float)(a_matrix[2] / 65536.0);
-		transform.yy = (float)(-a_matrix[3] / 65536.0);
-		transform.tx = 0;
-		transform.ty = 0;
-		gs_point_transform(0,1,&transform,&up_vector);
-		gs_atan2_degrees(up_vector.x,up_vector.y,&angle);
-		angle = 360 - angle; /* Convert the angle to anticlockwise. */
+		ft_transform.xx = a_matrix[0];
+		ft_transform.xy = a_matrix[1];
+		ft_transform.yx = -a_matrix[2];
+		ft_transform.yy = -a_matrix[3];
 
-		/* Remove the rotation from the basic transform. */
-		if (angle)
-			gs_matrix_rotate(&transform,360 - angle,&transform);
+		/*
+		Split the transform into scale factors and a rotation-and-shear
+		transform.
+		*/
+		transform_decompose(&ft_transform,&width,&height);
 
 		/*
 		Convert width and height to 64ths of pixels and set the FreeType sizes.
 		If either width or height is zero set it to 1.
 		*/
-		if (transform.xx == 0)
-			transform.xx = 1;
-		if (transform.yy == 0)
-			transform.yy = 1;
-		width =	(FT_F26Dot6)(transform.xx * 64.0);
+		width >>= 10;
 		if (width < 0)
 			 width = -width;
-		height = (FT_F26Dot6)(transform.yy * 64.0);
+		height >>= 10;
 		if (height < 0)
 			height = -height;
 		ft_error = FT_Set_Char_Size(face->m_ft_face,width,height,
@@ -520,26 +583,9 @@ static FAPI_retcode get_scaled_font(FAPI_server* a_server,FAPI_font* a_font,int 
 			return ft_to_gs_error(ft_error);
 			}
 
-		/* Remove the width and height factors from the basic transform and add back the rotation. */
-		transform.xy /= transform.xx;
-		transform.yx /= transform.yy;
-		transform.xx = transform.yy = 1;
-		if (angle)
-			gs_matrix_rotate(&transform,angle,&transform);
-
 		/*
-		Set the FreeType font transformation to perform any slanting and rotation.
-		Scaling has already been performed by setting the character size.
-		Negate the xy and yx components of the transformation because
-		in the FreeType coordinate system y increases downwards.
-		*/
-		ft_transform.xx = (FT_Fixed)(transform.xx * 65536.0);
-		ft_transform.xy = -(FT_Fixed)(transform.xy * 65536.0);
-		ft_transform.yx = -(FT_Fixed)(transform.yx * 65536.0);
-		ft_transform.yy = (FT_Fixed)(transform.yy * 65536.0);
-
-		/*
-		Reflect the transform around (y=0) so that it produces a glyph that is upside down in FreeType terms, with its
+		Concatenate the transform to a reflection around (y=0) so that it
+		produces a glyph that is upside down in FreeType terms, with its
 		first row at the bottom. That is what GhostScript needs.
 		*/
 		FT_Matrix_Multiply(&ft_reflection,&ft_transform);
