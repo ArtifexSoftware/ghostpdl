@@ -138,7 +138,7 @@ JVERSION=6
 # incompatible with the JPEG standard.  See Make.htm for more details.
 
 # DON'T SET THIS TO 1!  See the comment just above.
-SHARE_JPEG=0
+SHARE_JPEG=1
 JPEG_NAME=jpeg
 
 # Define the directory where the PNG library sources are stored,
@@ -147,7 +147,7 @@ JPEG_NAME=jpeg
 # See libpng.mak for more information.
 
 PSRCDIR=libpng
-PVERSION=10003
+PVERSION=10005
 
 # Choose whether to use a shared version of the PNG library, and if so,
 # what its name is.
