@@ -747,6 +747,8 @@ void
 gs_main_finit(gs_main_instance * minst, int exit_status, int code)
 {
     i_ctx_t *i_ctx_p = minst->i_ctx_p;
+    int exit_code;
+    ref error_object;
 
     /*
      * Previous versions of this code closed the devices in the
@@ -754,6 +756,10 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
      * they cannot be opened, so they do not need to be closed;
      * alloc_restore_all will close dynamically allocated devices.
      */
+    /* Flush stdout and stderr */
+    gs_main_run_string(minst, 
+	"(%stdout) (w) file closefile (%stderr) (w) file closefile quit",
+	0 , &exit_code, &error_object);
     gp_readline_finit(minst->readline_data);
     if (gs_debug_c(':'))
 	print_resource_usage(minst, &gs_imemory, "Final");
