@@ -198,10 +198,11 @@ gs_end_transparency_group(gs_state *pgs)
     return 0;
 }
 
-private float
-transfer_identity(floatp x, void *proc_data)
+private int
+mask_transfer_identity(floatp in, float *out, void *proc_data)
 {
-    return x;
+    *out = in;
+    return 0;
 }
 void
 gs_trans_mask_params_init(gs_transparency_mask_params_t *ptmp,
@@ -209,7 +210,7 @@ gs_trans_mask_params_init(gs_transparency_mask_params_t *ptmp,
 {
     ptmp->subtype = subtype;
     ptmp->has_Background = false;
-    ptmp->TransferFunction = transfer_identity;
+    ptmp->TransferFunction = mask_transfer_identity;
     ptmp->TransferFunction_data = 0;
 }
 
@@ -222,7 +223,7 @@ gs_begin_transparency_mask(gs_state *pgs,
       subtype=%d has_Background=%d %s\n",
 	      (ulong)pgs, pbbox->p.x, pbbox->p.y, pbbox->q.x, pbbox->q.x,
 	      (int)ptmp->subtype, ptmp->has_Background,
-	      (ptmp->TransferFunction == transfer_identity ? "no TR" :
+	      (ptmp->TransferFunction == mask_transfer_identity ? "no TR" :
 	       "has TR"));
     /****** NYI ******/
     return 0;
