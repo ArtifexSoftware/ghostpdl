@@ -691,7 +691,30 @@ currentdict end def
   } if
 } bind def
 
-/CompleteImage  % <dict> CompleteImage <image_dict>
+/DebugImagePrinting  % <image_dict> DebugImagePrinting <image_dict>
+{
+  //PDFR_DEBUG {
+    (Image :) =
+    dup { exch //=only exec ( ) print == 
+	} forall
+  } if
+} bind def
+
+/CompleteImage  % <dict> CompleteInlineImage <image_dict>
+{
+  dup /Decode known not {
+    dup /ColorSpace //knownget exec { 
+	  //DecodeArrays exch get exec 
+	} {
+	  [0 1]
+	} ifelse
+	1 index exch /Decode exch put
+  } if
+  dup /ImageMatrix [2 index /Width get 0 0 5 index /Height get 0 0] put
+  //DebugImagePrinting exec
+} bind def
+
+/CompleteInlineImage  % <dict> CompleteInlineImage <image_dict>
 {
   dup /ImageType known not {
 	dup /ImageType 1 put
@@ -707,21 +730,27 @@ currentdict end def
 	exch
 	2 index 3 1 roll put
   } forall
-  dup /Decode known not {
-    dup /ColorSpace //knownget exec { 
-	  //DecodeArrays exch get exec 
-	} {
-	  [0 1]
-	} ifelse
-	1 index exch /Decode exch put
-  } if
-  dup /ImageMatrix [1 0 0 1 0 0] put
-  //PDFR_DEBUG {
-    (Image :) =
-    dup { exch //=only exec ( ) print == 
-	} forall
+  //CompleteImage exec
+} bind def
+
+/CompleteOutlineImage  % <dict> CompleteInlineImage <image_dict>
+{
+  dup /ImageType known not {
+	dup /ImageType 1 put
+	dup dup //MakeStreamReader exec /DataSource exch put
+    //CompleteImage exec
   } if
 } bind def
+
+/DoImage % <image_dict> DoImage -
+{
+  gsave
+  dup /ColorSpace //knownget exec { setcolorspace } if
+  dup /ImageMask //knownget exec not { false } if
+  { imagemask } { image } ifelse 
+  grestore
+} bind def
+
 
 % ===================== Interpret Data Streams ===============
 
@@ -971,6 +1000,27 @@ currentdict end def
   pop
 } bind def
 
+/CheckXObject  % <id> <obj> CheckHalftone <id> <obj>
+{ dup /Subtype get dup /Image ne exch dup /Form ne exch /PS ne and and {
+    mark (Resource ) 3 index ( must have /Subtype /Image or /Form or /PS.) //error exec
+  } if
+} bind def
+
+/DoXObject % <name> DoXObject -
+{
+  //PDFReader /CurrentObject get /Context get /Resources get 
+  /XObject //DoNothing //ResolveD exec
+  exch //CheckXObject //ResolveD exec
+  dup /Subtype get
+  dup /Image eq {
+    pop
+    //CompleteOutlineImage exec
+	//DoImage exec
+  } {
+    mark exch (unimplemented XObject type ) exch //error exec
+  } ifelse
+} bind def
+
 /Operators 50 dict begin
   /q /gsave load def
   /Q /grestore load def
@@ -1020,18 +1070,14 @@ currentdict end def
   /W* /eoclip load def
   /sh { ResolveShading shfill } bind def
 
-  /DO { DoXObject } bind def
+  /Do { //DoXObject exec } bind def
 
   /BI { currentglobal false setglobal << } bind def
   /ID { >>
 		dup /DataSource currentfile put
-        //CompleteImage exec
+        //CompleteInlineImage exec
 		exch setglobal
-		gsave
-		dup /ColorSpace //knownget exec { setcolorspace } if
-        dup /ImageMask //knownget exec not { false } if
-        { imagemask } { image } ifelse 
-		grestore
+		//DoImage exec
 	  } bind def
   /EI {} bind def
 
