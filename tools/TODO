@@ -10,7 +10,8 @@ o PCLXL 2.1. (henry, not started)
 o 80 resident pcl fonts using freetype scaler and Type 1 + TrueType
   font data. (henry, not started)
 o URW font character analysis. (henry, not started)
-o Microsoft Publishing symbol set 6J has incorrect entries plsymbol.c (stefan, started)
+o Verify all symbol sets are correct for both afga and urw.  (stefan, started :
+	5T, 6J -- done)
 o Vertical glyph substitutions - see fts 242* panels. (henry, not started)
 
 Language switching
