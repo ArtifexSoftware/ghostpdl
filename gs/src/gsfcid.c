@@ -177,9 +177,8 @@ gs_font_cid0_enumerate_glyph(gs_font *font, int *pindex,
     *pindex = 0;
     return 0;
 }
-/* Get the FontMatrix for the current type0 font 	*/
-/* Assumes that the glyph has already been accessed and	*/
-/* the index is valid.					*/
+
+/* Return the font from the FDArray at the given index */
 const gs_font *
 gs_cid0_indexed_font(const gs_font *font, int fidx)
 {
@@ -190,4 +189,21 @@ gs_cid0_indexed_font(const gs_font *font, int fidx)
         return 0;
     }
     return (const gs_font*) (pfont->cidata.FDArray[fidx]);
+}
+
+/* Check whether a CID font has a Type 2 subfont. */
+bool
+gs_cid0_has_type2(const gs_font *font)
+{
+    gs_font_cid0 *const pfont = (gs_font_cid0 *)font;
+    int i;
+
+    if (font->FontType != ft_CID_encrypted) {
+	eprintf1("Unexpected font type: %d\n", font->FontType);
+        return false;
+    }
+    for (i = 0; i < pfont->cidata.FDArray_size; i++)
+	if (((const gs_font *)pfont->cidata.FDArray[i])->FontType == ft_encrypted2)
+	    return true;
+    return false;
 }

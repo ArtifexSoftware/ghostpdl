@@ -168,4 +168,8 @@ bool gs_is_CIDSystemInfo_compatible(const gs_cid_system_info_t *info0,
 
 /* Return the font from the FDArray at the given index */
 const gs_font *gs_cid0_indexed_font(const gs_font *, int);
+
+/* Check whether a CID font has a Type 2 subfont. */
+bool gs_cid0_has_type2(const gs_font *font);
+
 #endif /* gxfcid_INCLUDED */

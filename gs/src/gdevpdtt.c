@@ -1023,6 +1023,30 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 	pdev->text->outline_fonts->standard_fonts;
     int code = 0;
 
+#if PS2WRITE
+    if (pdev->OrderResources) {
+	switch(font->FontType) {
+	    case ft_TrueType:
+		if(pdev->version < psdf_version_level2_with_TT)
+		    return_error(gs_error_undefined);
+		break;
+	    case ft_encrypted2:
+		return_error(gs_error_undefined);
+	    case ft_CID_encrypted:
+		if(!pdev->HaveCIDSystem)
+		    return_error(gs_error_undefined);
+		if (gs_cid0_has_type2(font))
+		    return_error(gs_error_undefined);
+		break;
+	    case ft_CID_TrueType:
+		if(!pdev->HaveCIDSystem)
+		    return_error(gs_error_undefined);
+		if(pdev->version < psdf_version_level2_with_TT)
+		    return_error(gs_error_undefined);
+		break;
+	}
+    }
+#endif
     embed = pdf_font_embed_status(pdev, base_font, &index, cgp->s, cgp->num_all_chars);
     if (embed == FONT_EMBED_STANDARD) {
 	pdf_standard_font_t *psf = &psfa[index];

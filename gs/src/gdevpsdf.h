@@ -201,6 +201,7 @@ typedef enum {
     psdf_version_level1 = 1000,	/* Red Book Level 1 */
     psdf_version_level1_color = 1100,	/* Level 1 + colorimage + CMYK color */
     psdf_version_level2 = 2000,	/* Red Book Level 2 */
+    psdf_version_level2_with_TT = 2010,	/* Adobe release 2010 with Type 42 fonts */
     psdf_version_level2_plus = 2017,	/* Adobe release 2017 */
     psdf_version_ll3 = 3010	/* LanguageLevel 3, release 3010 */
 } psdf_version;
@@ -212,6 +213,7 @@ typedef enum {
 	psdf_version version;\
 	bool binary_ok;		/* derived from ASCII85EncodePages */\
 	bool OrderResources;\
+	bool HaveCIDSystem;\
 	int  PSVersion;\
 	psdf_distiller_params params
 #else
@@ -231,6 +233,7 @@ typedef struct gx_device_psdf_s {
 	vector_initial_values,\
 	version,\
 	!(ascii),\
+	false,\
 	false,\
 	3010,\
 	 { psdf_general_param_defaults(ascii),\
