@@ -296,7 +296,13 @@ hpgl_RA(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	return 0;
 }
 
-/* RR dx,dy; */
+/**  RR dx,dy; 
+ *  
+ * The RQ command is also mapped here.  
+ * The clj4550 added the RQ command as a performance enhancement does the same thing as the 
+ * RR command without storing into the polygon buffer.  
+ * calling RR instead emulates this well.
+ */
 int
 hpgl_RR(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {		
@@ -333,6 +339,7 @@ pgpoly_do_registration(
 	  HPGL_COMMAND('P', 'M', hpgl_PM, hpgl_cdf_polygon|hpgl_cdf_lost_mode_cleared|hpgl_cdf_pcl_rtl_both),
 	  HPGL_COMMAND('R', 'A', hpgl_RA, hpgl_cdf_lost_mode_cleared|hpgl_cdf_pcl_rtl_both),
 	  HPGL_COMMAND('R', 'R', hpgl_RR, hpgl_cdf_lost_mode_cleared|hpgl_cdf_pcl_rtl_both),
+	  HPGL_COMMAND('R', 'Q', hpgl_RR, hpgl_cdf_lost_mode_cleared|hpgl_cdf_pcl_rtl_both),
 	  HPGL_COMMAND('W', 'G', hpgl_WG, hpgl_cdf_lost_mode_cleared|hpgl_cdf_pcl_rtl_both),
 	END_HPGL_COMMANDS
 	return 0;
