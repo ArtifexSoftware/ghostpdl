@@ -79,6 +79,11 @@ const char *const dprintf_file_only_format = "%10s(unkn): ";
  * Define the trace printout procedures.  We always include these, in case
  * other modules were compiled with DEBUG set.
  */
+void
+dflush(void)
+{
+    fflush(dstderr);
+}
 private const char *
 dprintf_file_tail(const char *file)
 {
@@ -384,7 +389,7 @@ debug_print_string(const byte * chrs, uint len)
 
     for (i = 0; i < len; i++)
 	dputc(chrs[i]);
-    fflush(dstderr);
+    dflush();
 }
 
 /*
@@ -851,9 +856,8 @@ double
 gs_sqrt(double x, const char *file, int line)
 {
     if (gs_debug_c('~')) {
-	fprintf(stdout, "[~]sqrt(%g) at %s:%d\n",
-		x, (const char *)file, line);
-	fflush(stdout);
+	dprintf3("[~]sqrt(%g) at %s:%d\n", x, (const char *)file, line);
+	dflush();
     }
     return orig_sqrt(x);
 }

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1990, 1993, 1996, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1990, 1993, 1996, 1999, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -22,20 +22,30 @@
 #ifndef gsio_INCLUDED
 #  define gsio_INCLUDED
 
-/* The library and interpreter never use stdin/out/err directly. */
+/*
+ * Define substitutes for stdin/out/err.  Eventually these will always be
+ * referenced through an instance structure.
+ */
 extern FILE *gs_stdio[3];
 #define gs_stdin (gs_stdio[0])
 #define gs_stdout (gs_stdio[1])
 #define gs_stderr (gs_stdio[2])
 
-/* Redefine all the relevant stdio functions to use the above. */
-/* Some functions we make illegal, rather than redefining them. */
+/*
+ * The library and interpreter must never use stdin/out/err directly.
+ * Make references to them illegal.
+ */
 #undef stdin
-#define stdin gs_stdin
+#define stdin stdin_not_available
 #undef stdout
-#define stdout gs_stdout
+#define stdout stdout_not_available
 #undef stderr
-#define stderr gs_stderr
+#define stderr stderr_not_available
+
+/*
+ * Redefine all the relevant stdio functions to reference stdin/out/err
+ * explicitly, or to be illegal.
+ */
 #undef fgetchar
 #define fgetchar() fgetc(stdin)
 #undef fputchar

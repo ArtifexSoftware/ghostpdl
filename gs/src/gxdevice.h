@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -31,6 +31,11 @@
  * for these.  (Eventually they should go away.)
  */
 #include "gsmalloc.h"
+/*
+ * Similarly, quite a few drivers reference stdout and/or stderr.
+ * (Eventually these references must go away.)
+ */
+#include "gxstdio.h"
 
 /*
  * NOTE: if you write code that creates device instances (either with

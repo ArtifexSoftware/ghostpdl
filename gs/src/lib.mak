@@ -119,6 +119,7 @@ gsrefct_h=$(GLSRC)gsrefct.h
 gsstype_h=$(GLSRC)gsstype.h
 gx_h=$(GLSRC)gx.h $(stdio__h) $(gdebug_h)\
  $(gserror_h) $(gsio_h) $(gsmemory_h) $(gstypes_h)
+gxstdio_h=$(GLSRC)gxstdio.h $(gsio_h)
 gxsync_h=$(GLSRC)gxsync.h $(gpsync_h) $(gsmemory_h)
 # Out of order
 gsmemlok_h=$(GLSRC)gsmemlok.h $(gsmemory_h) $(gxsync_h)
@@ -345,7 +346,7 @@ gxdevcli_h=$(GLSRC)gxdevcli.h $(std_h)\
  $(gxbitmap_h) $(gxcindex_h) $(gxcvalue_h) $(gxfixed_h)\
  $(gxtext_h)
 gxdevice_h=$(GLSRC)gxdevice.h $(stdio__h)\
- $(gsfname_h) $(gsmalloc_h) $(gsparam_h) $(gxdevcli_h)
+ $(gsfname_h) $(gsmalloc_h) $(gsparam_h) $(gxdevcli_h) $(gxstdio_h)
 gxdht_h=$(GLSRC)gxdht.h\
  $(gscsepnm_h) $(gsmatrix_h) $(gsrefct_h) $(gxarith_h) $(gxhttype_h)
 gxdither_h=$(GLSRC)gxdither.h $(gxfrac_h)

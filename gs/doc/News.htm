@@ -99,12 +99,14 @@ and graphics are removed.
 (Interpreter)
 	- The .fontproperties procedure in gs_fonts.ps now takes an
 additional argument.
+	- The interpreter must no longer reference stdin/out/err directly.
 (Library)
 	- The internal representation of CMaps is changed completely, and
 has several new required members.
 	- gs_cmap is renamed gs_cmap_t; gx_code_map is renamed
 gx_code_map_t.
 	- Clients creating CMaps must call gs_cmap_init to initialize them.
+	- The library must no longer reference stdin/out/err directly.
 
 </pre>
 

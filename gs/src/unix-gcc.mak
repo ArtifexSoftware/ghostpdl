@@ -344,6 +344,11 @@ DEVICE_DEVS=$(DD)x11.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev $(DD)x11gray2.dev $(
 #DEVICE_DEVS13=
 #DEVICE_DEVS14=
 #DEVICE_DEVS15=
+#DEVICE_DEVS16=
+#DEVICE_DEVS17=
+#DEVICE_DEVS18=
+#DEVICE_DEVS19=
+#DEVICE_DEVS20=
 
 DEVICE_DEVS1=$(DD)bmpmono.dev $(DD)bmpgray.dev $(DD)bmpsep1.dev $(DD)bmpsep8.dev $(DD)bmp16.dev $(DD)bmp256.dev $(DD)bmp16m.dev $(DD)bmp32b.dev
 DEVICE_DEVS2=$(DD)bmpamono.dev $(DD)bmpasep1.dev $(DD)bmpasep8.dev $(DD)bmpa16.dev $(DD)bmpa256.dev $(DD)bmpa16m.dev $(DD)bmpa32b.dev
