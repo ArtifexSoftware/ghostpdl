@@ -432,8 +432,7 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcs)
             switch ( data[3] ) {
             case 1:             /* uncompressed bitmap */
                 font_data_size = 16 + (((width + 7) >> 3) * height);
-                if ( count > font_data_size )
-                    return e_Range;
+                /* if count > font_data_size extra data is ignored, no error */
                 break;
             case 2:             /* compressed bitmap */
                 { uint y = 0;
