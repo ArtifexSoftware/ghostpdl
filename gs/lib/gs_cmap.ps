@@ -137,10 +137,10 @@
 } bind def
 
 /usecmap {		% <CMap_name> usecmap -
-  /CMap findresource
+  /CMap findresource dup
 		% Copy the top level of .CodeMapData
-  /.CodeMapData .CodeMapData copyarray def
-  /FontMatrices FontMatrices copyarray def
+  /.CodeMapData exch /.CodeMapData get copyarray def
+  /FontMatrices exch /FontMatrices get copyarray def
 } bind def
 
 /usefont {		% <fontID> usefont -
