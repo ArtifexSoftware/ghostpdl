@@ -416,6 +416,9 @@ typedef struct gx_ttfExport_s {
     gx_path *path;
     gs_fixed_point w;
     int error;
+#if TT_GRID_FITTING
+    bool monotonize;
+#endif
 } gx_ttfExport;
 
 private void gx_ttfExport__MoveTo(ttfExport *this, FloatPoint *p)
@@ -438,10 +441,22 @@ private void gx_ttfExport__CurveTo(ttfExport *this, FloatPoint *p0, FloatPoint *
 {
     gx_ttfExport *e = (gx_ttfExport *)this;
 
-    if (!e->error)
+    if (!e->error) {
+#	if TT_GRID_FITTING
+	    if (e->monotonize) {
+		curve_segment s;
+    
+		s.notes = sn_none;
+		s.p1.x = float2fixed(p0->x), s.p1.y = float2fixed(p0->y), 
+		s.p2.x = float2fixed(p1->x), s.p2.y = float2fixed(p1->y), 
+		s.pt.x = float2fixed(p2->x), s.pt.y = float2fixed(p2->y);
+		e->error = gx_curve_monotonize(e->path, &s);
+	    } else
+#	endif
 	e->error = gx_path_add_curve_notes(e->path, float2fixed(p0->x), float2fixed(p0->y), 
 				     float2fixed(p1->x), float2fixed(p1->y), 
 				     float2fixed(p2->x), float2fixed(p2->y), sn_none);
+    }
 }
 
 private void gx_ttfExport__Close(ttfExport *this)
@@ -690,6 +705,9 @@ int gx_ttf_outline(ttfFont *ttf, gx_ttfReader *r, gs_font_type42 *pfont, int gly
     e.path = path;
     e.w.x = 0;
     e.w.y = 0;
+#   if TT_GRID_FITTING
+	e.monotonize = auth;
+#   endif
     gx_ttfReader__Reset(r);
     ttfOutliner__init(&o, ttf, &r->super, &e.super, true, false, pfont->WMode != 0);
     switch(ttfOutliner__Outline(&o, glyph_index, subpix_origin.x, subpix_origin.y, &m1)) {

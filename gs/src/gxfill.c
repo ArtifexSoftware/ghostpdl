@@ -481,15 +481,7 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	/* Filling curves is possible. */
 #  ifdef FILL_TRAPEZOIDS
 	/* Not filling curves is also possible. */
-    if (fill_by_trapezoids && 
-	    (!CURVED_TRAPEZOID_FILL || adjust.x || adjust.y
-				    || (pis->ctm.xx != 0 && pis->ctm.xy != 0)
-				    || (pis->ctm.yx != 0 && pis->ctm.yy != 0)
-	      /* Curve monotonization can give a platform dependent result
-		 due to the floating point arithmetics used.
-	         For a while we allow it only for unrotated characters, 
-		 which should have monotonic curves only. */
-	    ))
+    if (fill_by_trapezoids && (!CURVED_TRAPEZOID_FILL || pis->accurate_curves))
 #  endif
 #endif
 #if !defined(FILL_CURVES) || defined(FILL_TRAPEZOIDS)
@@ -799,6 +791,7 @@ private inline int
 start_al_pair(line_list *ll, contour_cursor *q, contour_cursor *p)
 {
     int code;
+    const bool false_stub = false;
     
     if (q->monotonic)
 	code = add_y_line(q->prev, q->pseg, DIR_DOWN, ll);
@@ -811,7 +804,7 @@ start_al_pair(line_list *ll, contour_cursor *q, contour_cursor *p)
 	code = add_y_line(p->prev, p->pseg, DIR_UP, ll);
     else
 	code = add_y_curve_part(ll, p->prev, p->pseg, DIR_UP, p->fi, 
-			    p->more_flattened, p->more_flattened, false);
+			    p->more_flattened, false_stub, false);
     return code;
 }
 
@@ -820,6 +813,7 @@ private int
 start_al_pair_from_min(line_list *ll, contour_cursor *q)
 {
     int dir, code;
+    const bool false_stub = false;
 
     /* q stands at the first segment, which isn't last. */
     do {
@@ -831,12 +825,12 @@ start_al_pair_from_min(line_list *ll, contour_cursor *q)
 	    if (code < 0) 
 		return code; 
 	    code = add_y_curve_part(ll, q->prev, q->pseg, DIR_UP, q->fi, 
-			    q->more_flattened, q->more_flattened, false);
+			    q->more_flattened, false_stub, false);
 	    if (code < 0) 
 		return code; 
 	} else if (q->fi->fy0 < ll->ymin && q->fi->fy1 >= ll->ymin) {
 	    code = add_y_curve_part(ll, q->prev, q->pseg, DIR_UP, q->fi, 
-			    q->more_flattened, q->more_flattened, false);
+			    q->more_flattened, false_stub, false);
 	    if (code < 0) 
 		return code; 
 	} else if (q->fi->fy0 >= ll->ymin && q->fi->fy1 < ll->ymin) {
@@ -897,12 +891,13 @@ scan_contour(line_list *ll, contour_cursor *q)
     int code;
     bool only_horizontal = true, saved = false;
     const bool fill_by_trapezoids = ll->fill_by_trapezoids;
+    const bool false_stub = false;
     contour_cursor save_q;
 
     p.fi = &fi;
     save_q.dir = 2;
     ll->main_dir = DIR_HORIZONTAL;
-    for (; q->prev != q->pfirst; q->pseg = q->prev, q->prev = q->prev->prev) {
+    for (; ; q->pseg = q->prev, q->prev = q->prev->prev) {
 	init_contour_cursor(ll, q);
 	while(gx_flattened_iterator__next_filtered2(q->fi)) {
 	    q->first_flattened = false;
@@ -924,6 +919,8 @@ scan_contour(line_list *ll, contour_cursor *q)
 	    save_fi = *q->fi;
 	    saved = true;
 	}
+	if (q->prev == q->pfirst)
+	    break;
     }
     if (saved) {
 	*q = save_q;
@@ -979,12 +976,20 @@ scan_contour(line_list *ll, contour_cursor *q)
 		    return code;
 	    }	    
 	    if (p.fi->fy0 < ll->ymin && p.fi->fy1 >= ll->ymin) {
-		code = add_y_line(p.prev, p.pseg, DIR_UP, ll);
+		if (p.monotonic)
+		    code = add_y_line(p.prev, p.pseg, DIR_UP, ll);
+		else
+		    code = add_y_curve_part(ll, p.prev, p.pseg, DIR_UP, p.fi, 
+					p.more_flattened, false_stub, false);
 		if (code < 0)
 		    return code;
 	    }	    
 	    if (p.fi->fy0 >= ll->ymin && p.fi->fy1 < ll->ymin) {
-		code = add_y_line(p.prev, p.pseg, DIR_DOWN, ll);
+		if (p.monotonic)
+		    code = add_y_line(p.prev, p.pseg, DIR_DOWN, ll);
+		else
+		    code = add_y_curve_part(ll, p.prev, p.pseg, DIR_DOWN, p.fi, 
+					!p.first_flattened, !p.more_flattened, false);
 		if (code < 0)
 		    return code;
 	    }	    
@@ -1968,7 +1973,7 @@ coord_weight(const active_line *alp)
 /* Find intersections of active lines within the band. 
    Intersect and reorder them, and correct the bund top. */
 private void
-intersect_al(line_list *ll, fixed y, fixed *y_top, int draw)
+intersect_al(line_list *ll, fixed y, fixed *y_top, int draw, bool all_bands)
 {
     fixed x = min_fixed, y1 = *y_top;
     active_line *alp, *stopx = NULL;
@@ -1983,7 +1988,7 @@ intersect_al(line_list *ll, fixed y, fixed *y_top, int draw)
 	 */
     } else
 #endif
-    if (ll->pseudo_rasterization || draw >= 0) {
+    if (ll->pseudo_rasterization || draw >= 0 || all_bands) {
 	/*
 	 * Loop invariants:
 	 *	alp = endp->next;
@@ -2037,8 +2042,8 @@ intersect_al(line_list *ll, fixed y, fixed *y_top, int draw)
 	if (ll->x_list != NULL) {
 	    for (;;) {
 		fixed x1;
-		double sx; /* 'fixed' can overflow. We operate 7-bytes integers. */
-		int k, n;
+		double sx = 0xbaadf00d; /* 'fixed' can overflow. We operate 7-bytes integers. */
+		int k = 0xbaadf00d, n;
 
 		endp = ll->x_list;
 		x1 = endp->x_next;
@@ -2129,6 +2134,8 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
     const bool pseudo_rasterization = ll->pseudo_rasterization;
 #if TT_GRID_FITTING
     const bool all_bands = (is_spotan_device(dev));
+#else
+    const bool all_bands = false;
 #endif
 
     dev_proc_fill_rectangle((*fill_rect));
@@ -2254,7 +2261,7 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 	/* Now look for line intersections before y1. */
 	covering_pixel_centers = COVERING_PIXEL_CENTERS(y, y1, adjust_below, adjust_above);
 	if (!CURVED_TRAPEZOID_FILL || y != y1) {
-	    intersect_al(ll, y, &y1, (covering_pixel_centers ? 1 : -1)); /* May change y1. */
+	    intersect_al(ll, y, &y1, (covering_pixel_centers ? 1 : -1), all_bands); /* May change y1. */
 	    covering_pixel_centers = COVERING_PIXEL_CENTERS(y, y1, adjust_below, adjust_above);
 	}
 	/* Prepare dropout prevention. */
@@ -2264,11 +2271,7 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 		return code;
 	}
 	/* Fill a multi-trapezoid band for the active lines. */
-	if (covering_pixel_centers 
-#	    if TT_GRID_FITTING
-		|| all_bands
-#	    endif
-	    ) {
+	if (covering_pixel_centers || all_bands) {
 	    fixed xlbot = 0xbaadf00d, xltop = 0xbaadf00d; /* as of last "outside" line */
 	    int inside = 0;
 	    active_line *flp = NULL;

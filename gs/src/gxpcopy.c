@@ -29,8 +29,6 @@
 /* Forward declarations */
 private void adjust_point_to_tangent(segment *, const segment *,
 				     const gs_fixed_point *);
-private int monotonize_internal(gx_path *, const curve_segment *);
-
 /* Copy a path, optionally flattening or monotonizing it. */
 /* If the copy fails, free the new path. */
 int
@@ -77,7 +75,7 @@ gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
 
 		    if (fixed_flatness == max_fixed) {	/* don't flatten */
 			if (options & pco_monotonize)
-			    code = monotonize_internal(ppath, pc);
+			    code = gx_curve_monotonize(ppath, pc);
 			else
 			    code = gx_path_add_curve_notes(ppath,
 				     pc->p1.x, pc->p1.y, pc->p2.x, pc->p2.y,
@@ -646,8 +644,8 @@ gx_path_is_monotonic(const gx_path * ppath)
 
 /* Monotonize a curve, by splitting it if necessary. */
 /* In the worst case, this could split the curve into 9 pieces. */
-private int
-monotonize_internal(gx_path * ppath, const curve_segment * pc)
+int
+gx_curve_monotonize(gx_path * ppath, const curve_segment * pc)
 {
     fixed x0 = ppath->position.x, y0 = ppath->position.y;
     segment_notes notes = pc->notes;

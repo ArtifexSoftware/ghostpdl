@@ -161,6 +161,9 @@ int gx_curve_log2_samples(fixed, fixed, const curve_segment *, fixed);
  */
 int gx_curve_monotonic_points(fixed, fixed, fixed, fixed, double[2]);
 
+/* Monotonize a curve, by splitting it if necessary. */
+int gx_curve_monotonize(gx_path * ppath, const curve_segment * pc);
+
 /* Split a curve at an arbitrary value of t. */
 void gx_curve_split(fixed, fixed, const curve_segment *, double,
 		    curve_segment *, curve_segment *);
