@@ -164,14 +164,14 @@ rtmisc_do_registration(
         0, 'B',
         PCL_COMMAND( "Enter HP-GL/2 Mode",
                      rtl_enter_hpgl_mode,
-		     pca_neg_ok | pca_big_ok | pca_in_macro | pca_in_rtl
+		     pca_neg_ok | pca_big_ok | pca_in_rtl
                      )
     },
     {
         0, 'A',
 	PCL_COMMAND( "Enter PCL Mode",
                      rtl_enter_pcl_mode,
-		     pca_neg_ok | pca_big_ok | pca_in_macro | pca_in_rtl
+		     pca_neg_ok | pca_big_ok | pca_in_rtl
                      )
     },
     END_CLASS
