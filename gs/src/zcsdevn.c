@@ -42,6 +42,23 @@ private int ztransform_DeviceN(P5(const gs_device_n_params * params,
 				  const float *in, float *out,
 				  const gs_imager_state *pis, void *data));
 
+/*
+ * This routine is used as an interpeter callback function for the
+ * graphics library.  This routine translates a colorname_index value,
+ * (which is how the separation and DeviceN colorant names are passed
+ * to the graphics library) into a character string pointer and a
+ * string length.
+ */
+int gs_get_colorname_string(gs_separation_name colorname_index,
+			unsigned char **ppstr, unsigned int *pname_size)
+{
+    ref nref;
+
+    name_index_ref(colorname_index, &nref);
+    name_string_ref(&nref, &nref);
+    return obj_string_data(&nref, ppstr, pname_size);
+}
+
 /* <array> .setdevicenspace - */
 /* The current color space is the alternate space for the DeviceN space. */
 private int
@@ -117,6 +134,7 @@ zsetdevicenspace(i_ctx_t *i_ctx_p)
     cs.params.device_n.names = names;
     cs.params.device_n.num_components = num_components;
     cs.params.device_n.map = pmap;
+    cs.params.device_n.get_colorname_string = gs_get_colorname_string;
     pfn = ref_function(pcsa + 2);
     if (pfn)
 	gs_cspace_set_devn_function(&cs, pfn);

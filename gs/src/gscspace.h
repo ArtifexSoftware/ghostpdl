@@ -290,11 +290,23 @@ typedef struct gs_separation_params_s {
 #  define gs_device_n_map_DEFINED
 typedef struct gs_device_n_map_s gs_device_n_map;
 #endif
+
+/*
+ * Define callback function for graphics library to ask
+ * interpreter about character string representation of
+ * component names.  This is used for comparison of component
+ * names with similar objects like ProcessColorModel colorant
+ * names.
+ */
+typedef int (gs_callback_func_get_colorname_string)
+    (P3(gs_separation_name colorname, unsigned char **ppstr, unsigned int *plen));
+
 typedef struct gs_device_n_params_s {
     gs_separation_name *names;
     uint num_components;
     gs_base_color_space alt_space;
     gs_device_n_map *map;
+    gs_callback_func_get_colorname_string *get_colorname_string;
 } gs_device_n_params;
 
 #define gs_direct_cspace_params         \

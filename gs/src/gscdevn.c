@@ -326,17 +326,28 @@ gx_remap_concrete_DeviceN(const frac * pconc,
 private int
 gx_install_DeviceN(const gs_color_space * pcs, gs_state * pgs)
 {
-    /*
-     * Give an error if any of the separation names are duplicated.
-     * We can't check this any earlier.
-     */
     const gs_separation_name *names = pcs->params.device_n.names;
     uint i, j;
+    const char none_str[] = "None";
+    const int none_size = strlen(none_str);
+    /*
+     * Postscript does not accept /None as a color component but it is
+     * allowed in PDF so we accept it.  Except for /None, no components
+     * are allowed to have duplicated names.
+     */
+    for (i = 1; i < pcs->params.device_n.num_components; ++i) {
+	byte *pname;
+	uint name_size;
 
-    for (i = 1; i < pcs->params.device_n.num_components; ++i)
-	for (j = 0; j < i; ++j)
-	    if (names[i] == names[j])
-		return_error(gs_error_rangecheck);
+    	pcs->params.device_n.get_colorname_string(names[i], &pname, &name_size);
+	if (name_size != none_size ||
+	        (strncmp(none_str, (const char *) pname, name_size)!=0)) {
+	    for (j = 0; j < i; ++j) {
+	        if (names[i] == names[j])
+		    return_error(gs_error_rangecheck);
+            }
+        }
+    }
     return (*pcs->params.device_n.alt_space.type->install_cspace)
 	((const gs_color_space *) & pcs->params.device_n.alt_space, pgs);
 }
