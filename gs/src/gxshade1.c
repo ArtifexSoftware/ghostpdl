@@ -32,6 +32,7 @@
 #include "gxistate.h"
 #include "gxpath.h"
 #include "gxshade.h"
+#include "gxdevcli.h"
 
 /* ================ Utilities ================ */
 
@@ -117,12 +118,13 @@ typedef struct Fb_fill_state_s {
 #define CheckRET(a) { int code = a; if (code < 0) return code; }
 #define Exch(t,a,b) { t x; x = a; a = b; b = x; }
 
-private void
+private bool
 Fb_build_color_range(const Fb_fill_state_t * pfs, const Fb_frame_t * fp, 
 		     gs_paint_color * c_min, gs_paint_color * c_max)
 {
     int ci;
     const gs_client_color *cc = fp->cc;
+    bool big = false;
     for (ci = 0; ci < pfs->num_components; ++ci) {
 	float c0 = cc[0].paint.values[ci], c1 = cc[1].paint.values[ci],
 	      c2 = cc[2].paint.values[ci], c3 = cc[3].paint.values[ci];
@@ -137,7 +139,9 @@ Fb_build_color_range(const Fb_fill_state_t * pfs, const Fb_frame_t * fp,
 	    min23 = c3, max23 = c2;
 	c_max->values[ci] = max(max01, max23);
 	c_min->values[ci] = min(min01, min23);
+	big |= ((c_max->values[ci] - c_min->values[ci]) > pfs->cc_max_error[ci]);
     }
+    return !big;
 }
 
 private bool 
@@ -152,18 +156,6 @@ Fb_unite_color_range(const Fb_fill_state_t * pfs,
 	big |= ((c_max1->values[ci] - c_min1->values[ci]) > pfs->cc_max_error[ci]);
     }
     return !big;
-}
-
-private int
-Fb_device_region_size(const Fb_fill_state_t * pfs,   const Fb_frame_t * fp, 
-		      fixed *size_x, fixed *size_y)
-{   
-    gs_point p, q;
-    CheckRET(gs_distance_transform(fp->region.q.x - fp->region.p.x, 0, (gs_matrix *)&pfs->ptm, &p));
-    CheckRET(gs_distance_transform(0, fp->region.q.y - fp->region.p.y, (gs_matrix *)&pfs->ptm, &q));
-    *size_x = float2fixed(hypot(p.x , p.y));
-    *size_y = float2fixed(hypot(q.x , q.y));
-    return 0;
 }
 
 private int
@@ -263,15 +255,34 @@ Fb_fill_region_with_constant_color(const Fb_fill_state_t * pfs, const Fb_frame_t
 
 private int
 Fb_fill_region_lazy(Fb_fill_state_t * pfs)
-{   fixed minsize = fixed_1 * 7 / 10;
+{   fixed minsize = fixed_1 * 7 / 10; /* pixels */
+    float min_extreme_dist = 4; /* points */
+    fixed min_edist_x = float2fixed(min_extreme_dist * pfs->dev->HWResolution[0] / 72); 
+    fixed min_edist_y = float2fixed(min_extreme_dist * pfs->dev->HWResolution[1] / 72); 
+    min_edist_x = max(min_edist_x, minsize);
+    min_edist_y = max(min_edist_y, minsize);
     while (pfs->depth >= 0) {
 	Fb_frame_t * fp = &pfs->frames[pfs->depth];
 	fixed size_x, size_y;
+	bool single_extreme, single_pixel, small_color_diff = false;
 	switch (fp->state) {
 	    case 0:
 		fp->painted = false;
-		CheckRET(Fb_device_region_size(pfs, fp, &size_x, &size_y));
-		if (size_x < minsize && size_y < minsize ||
+		{   /* Region size in device space : */
+		    gs_point p, q;
+		    CheckRET(gs_distance_transform(fp->region.q.x - fp->region.p.x, 0, (gs_matrix *)&pfs->ptm, &p));
+		    CheckRET(gs_distance_transform(0, fp->region.q.y - fp->region.p.y, (gs_matrix *)&pfs->ptm, &q));
+		    size_x = float2fixed(hypot(p.x, p.y));
+		    size_y = float2fixed(hypot(q.x, q.y));
+		    single_extreme = (float2fixed(any_abs(p.x) + any_abs(q.x)) < min_edist_x && 
+		                      float2fixed(any_abs(p.y) + any_abs(q.y)) < min_edist_y);
+		    single_pixel = (size_x < minsize && size_y < minsize);
+		    /* Note: single_pixel implies single_extreme. */
+		}
+		if (single_extreme || pfs->depth >= Fb_max_depth - 1)
+		    small_color_diff = Fb_build_color_range(pfs, fp, &pfs->c_min, &pfs->c_max);
+		if (single_extreme && small_color_diff || 
+		    single_pixel ||
 		    pfs->depth >= Fb_max_depth - 1) {
 		    Fb_build_color_range(pfs, fp, &pfs->c_min, &pfs->c_max);
 		    -- pfs->depth;

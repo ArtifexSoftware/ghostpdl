@@ -500,6 +500,8 @@ gs_shading_fill_path(const gs_shading_t *psh, /*const*/ gx_path *ppath,
 	goto out;
     gx_make_clip_device(&path_dev, &path_clip->rect_list->list);
     path_dev.target = dev;
+    path_dev.HWResolution[0] = dev->HWResolution[0];
+    path_dev.HWResolution[1] = dev->HWResolution[1];
     dev = (gx_device *)&path_dev;
     dev_proc(dev, open_device)(dev);
     dev_proc(dev, get_clipping_box)(dev, &path_box);
