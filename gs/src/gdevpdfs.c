@@ -233,9 +233,9 @@ process_plain_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
 	 * This is only an issue with pdfwrite, other places use a correct int get_char(); 
 	 * how do I discover if non single byte encoding is being used? 
 	 */
-	if ( ((const char *)(vdata + pte->index))[0] == 0 ) {
+	if ( (((const char *)vdata + pte->index))[0] == 0 ) {
 	    for (i = 0; i < pte->text.size; i += 2) {
-		buf[i >> 1] = ((const char *)(vdata + pte->index))[i + 1];
+		buf[i >> 1] = (((const char *)vdata + pte->index))[i + 1];
 	    }	    
 	}
 	else
