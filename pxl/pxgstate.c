@@ -22,6 +22,7 @@
 #include "gsstruct.h"
 #include "pxoper.h"
 #include "pxstate.h"
+#include "pxparse.h"
 #include "gdebug.h"
 #include "gsstate.h"
 #include "gscoord.h"
@@ -410,12 +411,104 @@ pxPushGS(px_args_t *par, px_state_t *pxs)
 	return code;
 }
 
+/* To restore the interpreters to default state we assemble the
+   following pxl commands and execute them as a stream.
+
+ubyte 2 ColorSpace
+SetColorSpace
+
+ubyte_array [ uint16 3
+0000   00 00 00                                           ...
+] RGBColor
+SetBrushSource
+
+uint16 0 CharAngle
+SetCharAngle
+
+SetPageDefaultCTM
+ubyte_array [ uint16 3
+0000   00 00 00                                           ...
+
+] RGBColor
+SetPenSource
+
+ubyte 1 PenWidth
+SetPenWidth
+
+ubyte 0 TxMode
+SetSourceTxMode
+
+ubyte 0 TxMode
+SetPatternTxMode
+
+ubyte 252 ROP3
+SetROP
+
+ubyte 0 LineCapStyle
+SetLineCap
+
+ubyte 0 SolidLine
+SetLineDash
+
+ubyte 0 LineJoinStyle
+SetLineJoin
+
+uint16 10 MiterLength
+SetMiterLimit
+
+real32_xy 0.000000 0.000000 CharScale
+SetCharScale
+
+real32_xy 0.000000 0.000000 CharShear
+SetCharShear
+
+ubyte 0 DeviceMatrix
+SetHalftoneMethod
+
+ubyte 0 ClipMode
+SetClipMode
+
+SetClipToPage
+
+NewPath
+
+ubyte 0 FillMode
+SetFillMode
+
+*/
+
+/* assembled (little endian) stream */
+static byte pxSetDefaultGSstr[] = {
+    192,2,248,3,106,200,193,3,0,0,0,0,248,11,99,193,
+    0,0,248,161,100,116,200,193,3,0,0,0,0,248,11,121,192,1,248,75,122,192,
+    0,248,45,124,192,0,248,45,120,192,252,248,44,123,192,0,248,71,113,192,
+    0,248,78,112,192,0,248,72,114,193,10,0,248,73,115,213,0,0,0,0,0,0,0,0,
+    248,164,101,213,0,0,0,0,0,0,0,0,248,165,102,192,0,248,33,109,192,0,248,
+    84,127,105,133,192,0,248,70,110
+};
+
+
 const byte apxSetDefaultGS[] = {0, 0};
 int
 pxSetDefaultGS(px_args_t *par, px_state_t *pxs)
 {
-    px_gstate_reset(pxs->pxgs);
-    return 0;
+    px_parser_state_t *pst = par->parser;
+    px_parser_state_t st;
+    stream_cursor_read r;
+    int code;
+
+    st.memory = pxs->memory;
+    px_process_init(&st, false /* big_endian */);
+
+    st.macro_state = pst->macro_state | ptsExecStream;
+    r.ptr = pxSetDefaultGSstr - 1;
+    r.limit = r.ptr + sizeof(pxSetDefaultGSstr);
+
+    /* we don't expect this to fail */
+    code = px_process(&st, pxs, &r);
+
+    pst->macro_state = st.macro_state & ~ptsExecStream;
+    return code;
 }
 
 const byte apxSetClipReplace[] = {
