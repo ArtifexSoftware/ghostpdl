@@ -418,8 +418,7 @@ Objects:
 <li>Are aligned in storage to satisfy the most stringent alignment
 requirement imposed by the CPU or compiler;
 <li>Can be referenced only by pointers to their start, not to any internal
-location, unless special arrangements are made (see <a
-href="Movability_and_GC">below</a>);
+location, unless special arrangements are made;
 <li>May contain pointers to other objects, or to strings;
 <li>Have an associated <em>structure descriptor</em> that specifies their
 size (usually) and the location of any pointers contained within them.
@@ -640,7 +639,7 @@ Objects and strings may be freed automatically by a garbage collector.  See
 <h3><a name="malloc"></a>malloc</h3>
 
 <p>
-As mentioned <a href="Parent_hierarchy">above</a>, the ultimate ancestor of
+As mentioned <a href="#Parent_hierarchy">above</a>, the ultimate ancestor of
 all allocators with an expandable pool is one that calls
 <b><tt>malloc</tt></b>.
 
@@ -747,7 +746,7 @@ manager packs multiple composite objects (also called "ref-containing
 objects") into a single memory manager object, similar to the way the memory
 manager packs multiple objects into a chunk (see <a
 href="#Standard_implementation">above</a>).  See <a
-href="../src/gxalloc.c">src/gxalloc.c</a> for details.  Note that the
+href="../src/gxalloc.h">src/gxalloc.h</a> for details.  Note that the
 <b><tt>value.pdict</tt></b>, <b><tt>value.refs</tt></b>, or
 <b><tt>value.packed</tt></b> member of a ref must point to a PostScript
 composite object, and therefore can point into the middle of a memory
