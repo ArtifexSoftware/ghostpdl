@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.c,v 1.22 2002/06/21 19:10:02 giles Exp $
+    $Id: jbig2dec.c,v 1.23 2002/06/21 19:11:28 giles Exp $
 */
 
 #include <stdio.h>
@@ -38,119 +38,6 @@ typedef struct {
 	int verbose;
 	char *output_file;
 } jbig2dec_params_t;
-
-
-#ifdef DEAD_CODE
-
-static Jbig2Ctx_foo *
-jbig2_open (FILE *f)
-{
-  byte buf[9];
-  const byte header[8] = { 0x97, 0x4a, 0x42, 0x32, 0x0d, 0x0a, 0x1a, 0x0a };
-  Jbig2Ctx_foo *ctx;
-
-  /* Annex D.4 */
-  ctx = (Jbig2Ctx_foo *)malloc(sizeof(Jbig2Ctx_foo));
-  ctx->f = f;
-  ctx->eof = FALSE;
-  get_bytes(ctx, buf, 9, 0);
-  if (memcmp(buf, header, 8))
-    {
-      printf("not a JBIG2 file\n");
-      return NULL;
-    }
-  ctx->flags = buf[8];
-  if (ctx->flags & JBIG2_FILE_FLAGS_PAGECOUNT_UNKNOWN)
-    {
-      ctx->offset = 9;	/* number of pages unknown */
-	  ctx->n_pages = 0;
-    }
-  else
-    {
-      ctx->offset = 13;
-      ctx->n_pages = get_int32(ctx, 9);
-    }
-
-  if(!(ctx->flags & JBIG2_FILE_FLAGS_SEQUENTIAL_ACCESS)) {
-	printf("warning: random access header organization.\n");
-	printf("we don't handle that yet.\n");
-	free(ctx);
-	return NULL;
-  }
-	
-  return ctx;
-}
-
-static Jbig2Ctx_foo *
-jbig2_open_embedded (FILE *f_globals, FILE *f_page)
-{
-  Jbig2Ctx_foo *ctx;
-
-  ctx = (Jbig2Ctx_foo *)malloc(sizeof(Jbig2Ctx_foo));
-  ctx->f = f_globals;
-  ctx->eof = 0;
-  ctx->offset = 0;
-  return ctx;
-}
-
-static Jbig2SegmentHeader *
-jbig2_read_segment_header (Jbig2Ctx_foo *ctx)
-{
-  Jbig2SegmentHeader *result = (Jbig2SegmentHeader *)malloc(sizeof(Jbig2SegmentHeader));
-  int	offset = ctx->offset;
-  byte	rtscarf;
-  int32	rtscarf_long;
-  int	referred_to_segment_count;
-
-  /* 7.2.2 */
-  result->segment_number = get_int32(ctx, offset);
-
-  if (ctx->eof)
-    {
-      free(result);
-      return NULL;
-    }
-
-  /* 7.2.3 */
-  get_bytes(ctx, &result->flags, 1, offset + 4);
-
-  /* 7.2.4 */
-  get_bytes(ctx, &rtscarf, 1, offset + 5);
-  if ((rtscarf & 0xe0) == 0xe0)
-    {
-		/* FIXME: we break on non-seekable streams with this,
-		   but for now it's shorter */
-		rtscarf_long = get_int32(ctx, offset + 5);
-		referred_to_segment_count = (rtscarf_long & 0x1ffffffc) >> 2;
-		offset += 5 + 4 + (referred_to_segment_count + 1)/8;
-	}
-  else
-    {
-      referred_to_segment_count = (rtscarf >> 5);
-      offset += 6 + referred_to_segment_count;
-    }
-  result->referred_to_segment_count = referred_to_segment_count;
-  /* todo: read referred to segment numbers */
-
-  /* 7.2.6 */
-  if (result->flags & 0x40) {
-	result->page_association = get_int32(ctx, offset);
-	offset += 4;
-  } else {
-	byte spa;
-	get_bytes(ctx, &spa, 1, offset);
-	result->page_association = spa;
-	offset += 1;
-  }
-  
-  /* 7.2.7 */
-  result->data_length = get_int32 (ctx, offset);
-  ctx->offset = offset + 4;
-
-  return result;
-}
-
-#endif	/* DEAD_CODE */
 
 
 static int
