@@ -484,6 +484,13 @@ pcl_end_page(
 
     pcl_set_drawing_color(pcs, pcl_pattern_solid_white, 0, false);
     code = gs_erasepage(pcs->pgs);
+
+    /* force new logical page, allows external resolution changes.
+     * see -dFirstPage -dLastPage 
+     * NB would be faster if we didn't do this every page.
+     */
+    new_logical_page(pcs, pcs->xfm_state.lp_orient,
+		     pcs->xfm_state.paper_size, false);
     /*
      * Advance of a page may move from a page front to a page back. This may
      * change the applicable transformations.
