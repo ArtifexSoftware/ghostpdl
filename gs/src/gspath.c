@@ -354,7 +354,7 @@ gx_effective_clip_path(gs_state * pgs, gx_clip_path ** ppcpath)
 	    pgs->effective_clip_shared = false;
 	}
     }
-    pgs->effective_clip_id = pgs->clip_path->id;
+    pgs->effective_clip_id = pgs->effective_clip_path->id;
     pgs->effective_view_clip_id = view_clip_id;
     *ppcpath = pgs->effective_clip_path;
     return 0;
