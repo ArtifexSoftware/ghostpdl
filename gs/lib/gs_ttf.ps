@@ -871,14 +871,20 @@ end readonly def                % .loadttfontdict
 
 % ---------------- CIDFontType 2 font loading ---------------- %
 
-% Create a string with N CIDs from the top of the stack.
-% <cid1> ... <cidN> <N> .makecidmap <string>
-/.makecidmap {
-  dup 2 mul string dup 3 -1 roll 1 sub 2 mul -2 0 {
-		% Stack: cids str str i2
-    2 copy 5 index -8 bitshift put
-    1 add 4 -1 roll 16#ff and put dup
-  } for pop
+% Fill a string with sequential CIDs starting from the initial value.
+% <string> <value> .fill_identity_cmap <string>
+/.fill_identity_cmap {             % () v
+  1 index length 2 sub          % () v n-2
+  0 2 3 2 roll {                % () v 0 2 n-1
+      3 copy exch               % () v i () i v 
+      -8 bitshift               % () v i () i v>>8
+      put                       % () v i
+      3 copy 1 add              % () v i () v i+1
+      exch 255 and              % () v i () i+1 v&255
+      put                       % () v i 
+      pop 1 add                 % () v+1
+  } for
+  pop
 } bind def
 
 % -mark- <key> <value> ... .definettcidfont <font>
@@ -893,18 +899,18 @@ end readonly def                % .loadttfontdict
   /CharStrings mark /.notdef 0 .dicttomark
 		% The cmap isn't of any use even if it is present.
 		% Just construct an identity CIDMap covering all the glyphs.
-  mark 0 1 numloca 1 sub { } for
-  counttomark /cidcount exch def
-  cidcount maxstring le {
-		% Use a single string.
-    cidcount .makecidmap exch pop
+
+  /CIDCount numloca
+  /CIDMap numloca maxstring le {
+                % Use a single string.
+      numloca 2 mul string 0 .fill_identity_cmap
   } {
-		% We must use 2 strings.
-    maxstring .makecidmap counttomark 1 add 1 roll
-    counttomark .makecidmap exch pop exch 2 array astore
+                % We must use 2 strings.
+      maxstring 2 mul string 0 .fill_identity_cmap
+      numloca maxstring sub 2 mul string maxstring .fill_identity_cmap
+      2 array astore
   } ifelse
-  /CIDMap exch
-  /CIDCount cidcount
+
   /GDBytes 2
   .dicttomark
   end end dup /CIDFontName get exch /CIDFont defineresource
