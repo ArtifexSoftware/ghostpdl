@@ -405,10 +405,10 @@ int
 sclose(register stream * s)
 {
     stream_state *st;
-    int code = (*s->procs.close) (s);
+    int status = (*s->procs.close) (s);
 
-    if (code < 0)
-	return code;
+    if (status < 0)
+	return status;
     st = s->state;
     if (st != 0) {
 	stream_proc_release((*release)) = st->template->release;
@@ -419,7 +419,7 @@ sclose(register stream * s)
 	s->state = (stream_state *) s;
     }
     s_disable(s);
-    return code;
+    return status;
 }
 
 /*
@@ -572,7 +572,7 @@ sputs(register stream * s, const byte * str, uint wlen, uint * pn)
 }
 
 /* Skip ahead a specified distance in a read stream. */
-/* Return 0 or an exception code. */
+/* Return 0 or an exception status. */
 /* Store the number of bytes skipped in *pskipped. */
 int
 spskip(register stream * s, long nskip, long *pskipped)
@@ -586,14 +586,14 @@ spskip(register stream * s, long nskip, long *pskipped)
     }
     if (s_can_seek(s)) {
 	long pos = stell(s);
-	int code = sseek(s, pos + n);
+	int status = sseek(s, pos + n);
 
 	*pskipped = stell(s) - pos;
-	return code;
+	return status;
     }
     min_left = sbuf_min_left(s);
     while (sbufavailable(s) < n + min_left) {
-	int code;
+	int status;
 
 	n -= sbufavailable(s);
 	s->srptr = s->srlimit;
@@ -601,10 +601,10 @@ spskip(register stream * s, long nskip, long *pskipped)
 	    *pskipped = nskip - n;
 	    return s->end_status;
 	}
-	code = sgetc(s);
-	if (code < 0) {
+	status = sgetc(s);
+	if (status < 0) {
 	    *pskipped = nskip - n;
-	    return code;
+	    return status;
 	}
 	--n;
     }
