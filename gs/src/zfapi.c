@@ -1058,7 +1058,9 @@ private int FAPI_do_char(i_ctx_t *i_ctx_p, gs_font_base *pbfont, gx_device *dev,
     ref char_name, *SubfontId;
     int subfont = 0;
     bool is_TT_from_type42 = (pbfont->FontType == ft_TrueType && font_file_path == NULL);
-    bool is_embedded_type1 = (pbfont->FontType == ft_encrypted && font_file_path == NULL);
+    bool is_embedded_type1 = ((pbfont->FontType == ft_encrypted ||
+			       pbfont->FontType == ft_encrypted2) && 
+			      font_file_path == NULL);
     bool bCID = (IsCIDFont(pbfont) || charstring != NULL);
     bool bIsType1GlyphData = IsType1GlyphData(pbfont);
     FAPI_font ff = ff_stub;
