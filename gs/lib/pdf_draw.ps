@@ -668,7 +668,22 @@ end
       /MaskColor exch def
     } {
 		% Mask is a stream, another Image XObject.
+		% Stack: datasource imagemask(false) maskstreamdict
+      PDFfile fileposition exch
       dup length dict makeimagedict pop
+		% Stack: datasource imagemask(false) savedpos
+		% maskdict is currentdict
+      DataSource 3 index eq {
+		% In order to prevent the two data sources from being
+		% aliased, we need to make at least one a reusable stream.
+		% We pick the mask, since it's smaller (in case we need to
+		% read all its data now).
+	/DataSource DataSource mark
+	  /Intent 1
+	  /AsyncRead true
+	.dicttomark .reusablestreamdecode def
+      } if
+      PDFfile exch setfileposition
       currentdict end currentdict end
       5 dict begin
       /ImageType 3 def
@@ -676,17 +691,6 @@ end
       /DataDict exch def
       /MaskDict exch def
       /ColorSpace DataDict /ColorSpace get def
-      DataDict /DataSource get MaskDict /DataSource get eq {
-		% In order to prevent the two data sources from being
-		% aliased, we need to make at least one a reusable stream.
-		% We pick the mask, since it's smaller (in case we need to
-		% read all its data now).
-	MaskDict /DataSource 2 copy get mark
-	  /Intent 1
-	  /AsyncRead true
-	  /CloseSource true
-	.dicttomark .reusablestreamdecode put
-      } if
     } ifelse
   } if
 		% Stack: datasource imagemask
