@@ -29,6 +29,7 @@ class Entry:
 	data = {}
 	has_details = False
 	r = re.compile('^[ ]*DETAILS[ :]*$', re.I)
+	c = re.compile('^[ ]*EXPECTED DIFFERENCES[ :]*$', re.I) 
 	def reset(self):
 		self.data = {}
 		self.has_details = False
@@ -42,6 +43,7 @@ class Entry:
 		if not self.data.has_key('msg'): self.data['msg'] = []
 		self.data['msg'].append(value)
 		if self.r.search(value): self.has_details = True
+		if self.c.search(value): self.has_details = True
 	def write(self, file, details=True):
 		stamp = self.data['date'] + ' ' + self.data['time']
 		# construct the name anchor
