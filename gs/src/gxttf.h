@@ -22,6 +22,18 @@
 #ifndef gxttf_INCLUDED
 #  define gxttf_INCLUDED
 
+/* ------ Composite glyf component flags ------ */
+
+#define TT_CG_ARGS_ARE_WORDS     (1<<0)
+#define TT_CG_ARGS_ARE_XY_VALUES (1<<1)
+#define TT_CG_ROUND_XY_TO_GRID   (1<<2)
+#define TT_CG_HAVE_SCALE         (1<<3)
+#define TT_CG_MORE_COMPONENTS    (1<<5)
+#define TT_CG_HAVE_XY_SCALE      (1<<6)
+#define TT_CG_HAVE_2X2           (1<<7)
+#define TT_CG_HAVE_INSTRUCTIONS  (1<<8)
+#define TT_CG_USE_MY_METRICS     (1<<9)
+
 /* ------ head ------ */
 
 typedef struct ttf_head_s {

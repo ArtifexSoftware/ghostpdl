@@ -31,6 +31,7 @@
 #include "gxpath.h"
 #include "gxfont.h"
 #include "gxfont42.h"
+#include "gxttf.h"
 #include "gxistate.h"
 
 /* Structure descriptor */
@@ -153,16 +154,6 @@ gs_type42_font_init(gs_font_type42 * pfont)
 
 /* ---------------- Glyph level ---------------- */
 
-/* Define the bits in the component glyph flags. */
-#define cg_argsAreWords 1
-#define cg_argsAreXYValues 2
-#define cg_roundXYToGrid 4
-#define cg_haveScale 8
-#define cg_moreComponents 32
-#define cg_haveXYScale 64
-#define cg_have2x2 128
-#define cg_useMyMetrics 512
-
 /*
  * Parse the definition of one component of a composite glyph.  We don't
  * bother to parse the component index, since the caller can do this so
@@ -182,15 +173,15 @@ parse_component(const byte **pdata, uint *pflags, gs_matrix_fixed *psmat,
     flags = U16(gdata);
     gdata += 4;
     mat = *pmat;
-    if (flags & cg_argsAreXYValues) {
+    if (flags & TT_CG_ARGS_ARE_XY_VALUES) {
 	int arg1, arg2;
 	gs_fixed_point pt;
 
-	if (flags & cg_argsAreWords)
+	if (flags & TT_CG_ARGS_ARE_WORDS)
 	    arg1 = S16(gdata), arg2 = S16(gdata + 2), gdata += 4;
 	else
 	    arg1 = S8(gdata), arg2 = S8(gdata + 1), gdata += 2;
-	if (flags & cg_roundXYToGrid) {
+	if (flags & TT_CG_ROUND_XY_TO_GRID) {
 	    /* We should do something here, but we don't. */
 	}
 	gs_point_transform2fixed(pmat, arg1 * factor,
@@ -201,7 +192,7 @@ parse_component(const byte **pdata, uint *pflags, gs_matrix_fixed *psmat,
 	if (pmp)
 	    pmp[0] = pmp[1] = -1;
     } else {
-	if (flags & cg_argsAreWords) {
+	if (flags & TT_CG_ARGS_ARE_WORDS) {
 	    if (pmp)
 		pmp[0] = U16(gdata), pmp[1] = S16(gdata + 2);
 	    gdata += 4;
@@ -212,16 +203,16 @@ parse_component(const byte **pdata, uint *pflags, gs_matrix_fixed *psmat,
 	}
     }
 #define S2_14(p) (S16(p) / 16384.0)
-    if (flags & cg_haveScale) {
+    if (flags & TT_CG_HAVE_SCALE) {
 	scale_mat.xx = scale_mat.yy = S2_14(gdata);
 	scale_mat.xy = scale_mat.yx = 0;
 	gdata += 2;
-    } else if (flags & cg_haveXYScale) {
+    } else if (flags & TT_CG_HAVE_XY_SCALE) {
 	scale_mat.xx = S2_14(gdata);
 	scale_mat.yy = S2_14(gdata + 2);
 	scale_mat.xy = scale_mat.yx = 0;
 	gdata += 4;
-    } else if (flags & cg_have2x2) {
+    } else if (flags & TT_CG_HAVE_2X2) {
 	scale_mat.xx = S2_14(gdata);
 	scale_mat.xy = S2_14(gdata + 2);
 	scale_mat.yx = S2_14(gdata + 4);
@@ -278,7 +269,7 @@ total_points(gs_font_type42 *pfont, uint glyph_index)
 	    total += code;
 	    parse_component(&gdata, &flags, &mat, NULL, pfont, &mat);
 	}
-	while (flags & cg_moreComponents);
+	while (flags & TT_CG_MORE_COMPONENTS);
     }
     gs_glyph_data_free(&glyph_data, "total_points");
     return total;
@@ -339,12 +330,12 @@ parse_pieces(gs_font_type42 *pfont, gs_glyph glyph, gs_glyph *pieces,
     if (glyph_data.bits.size != 0 && S16(glyph_data.bits.data) == -1) {
 	/* This is a composite glyph. */
 	int i = 0;
-	uint flags = cg_moreComponents;
+	uint flags = TT_CG_MORE_COMPONENTS;
 	const byte *gdata = glyph_data.bits.data + 10;
 	gs_matrix_fixed mat;
 
 	memset(&mat, 0, sizeof(mat)); /* arbitrary */
-	for (i = 0; flags & cg_moreComponents; ++i) {
+	for (i = 0; flags & TT_CG_MORE_COMPONENTS; ++i) {
 	    if (pieces)
 		pieces[i] = U16(gdata + 2) + gs_min_cid_glyph;
 	    parse_component(&gdata, &flags, &mat, NULL, pfont, &mat);
@@ -524,12 +515,12 @@ default_get_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
 	    uint comp_index = U16(gdata + 2);
 
 	    parse_component(&gdata, &flags, &mat, NULL, pfont, &mat);
-	    if (flags & cg_useMyMetrics) {
+	    if (flags & TT_CG_USE_MY_METRICS) {
 		result = gs_type42_wmode_metrics(pfont, comp_index, wmode, sbw);
 		goto done;
 	    }
 	}
-	while (flags & cg_moreComponents);
+	while (flags & TT_CG_MORE_COMPONENTS);
     }
     result = simple_glyph_metrics(pfont, glyph_index, wmode, sbw);
  done:
@@ -863,7 +854,7 @@ append_component(uint glyph_index, const gs_matrix_fixed * pmat,
 		break;
 	    point_index += total_points(pfont, comp_index);
 	}
-	while (flags & cg_moreComponents);
+	while (flags & TT_CG_MORE_COMPONENTS);
     }
     gs_glyph_data_free(&glyph_data, "append_component");
     return code;
