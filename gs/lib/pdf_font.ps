@@ -452,7 +452,7 @@ end readonly def
    readfontfilter
 		% Some buggy embedded fonts leave extra junk on the stack,
 		% so we have to make a closure that records the stack depth
-		% in a fail-safe way.
+		% in a fail-safe way. Also restore dictstack depth.
    //systemdict begin
 		% The PDF specification is somewhat muddy about whether
 		% an embedded font's name is supposed to be the BaseFont
@@ -464,7 +464,8 @@ end readonly def
    /topFontDict null def
    /readtype1dictcopy currentdict def
     { run } aload pop count 1 sub 2 packedarray cvx exec
-   end end
+    % clean up the dictstack
+    { currentdict /topFontDict known not { end } { end end exit } ifelse } loop
    count exch sub { pop } repeat
    PDFfile 3 -1 roll setfileposition
    /BaseFont oget findfont
