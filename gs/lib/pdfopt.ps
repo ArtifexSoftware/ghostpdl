@@ -730,46 +730,63 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
   /bits OFile bitstream def
   /bwn { bits 3 1 roll bitwrite } def
 
-		% Least number of objects in a page:
-  FirstPageNs length OtherPageNs { length .min } forall
-  /minnop 1 index def 32 bwn
-		% Location of first page's Page object:
-  FirstPageNs 0 get omap XRef exch get 32 bwn
-		% Bits needed to represent greatest # of objects in a page:
-  FirstPageNs length OtherPageNs { length .max } forall
-  minnop sub bitsneeded /maxnopbits 1 index def 16 bwn
-		% Least length of a page:
+	% Calculate least length of a page.
   FirstPageLength OtherPageLengths { .min } forall
-  /minpl 1 index def 32 bwn
-		% Bits needed to represent the greatest page length:
-  FirstPageLength OtherPageLengths { .max } forall
-  minpl sub bitsneeded /maxplbits 1 index def 16 bwn
-		% Least start of Contents offset:
-  0		% (Acrobat requires that this be 0.)
-  /minsco 1 index def 32 bwn
-		% Bits needed to represent the greatest start of Contents
-		% offset:
-  0		% (Acrobat requires that this be 0?!)
-  /maxscobits 1 index def 16 bwn
-		% Least contents length:
+  /minpl exch def
+	% Calculate least contents length.
   FirstPageNs 0 get Objects exch lget contentslength
   OtherPageNs { 0 get Objects exch lget contentslength .min } forall
-  /mincl 1 index def 32 bwn
-		% Bits needed to represent the greatest Contents length:
+  /mincl exch def
+
+	% The Adobe documentation says that all versions of Acrobat
+	% require item 8 (mincl) to be zero.  Patch this here.
+  /mincl 0 def
+
+	% Calculate bits needed to represent greatest page length.
+  FirstPageLength OtherPageLengths { .max } forall
+  minpl sub bitsneeded /maxplbits exch def
+	% Calculate bits needed to represent the greatest Contents length.
   FirstPageNs 0 get Objects exch lget contentslength
   OtherPageNs { 0 get Objects exch lget contentslength .max } forall
-  mincl sub bitsneeded
-  /maxclbits 1 index def 16 bwn
-		% Bits needed to represent the greatest number of Shared
+  mincl sub bitsneeded /maxclbits exch def
+
+	% Per Adobe documentation, Acrobat requires that item 5 (maxplbits)
+	% be equal to item 9 (maxclbits).  Set both to the max of the two.
+  maxplbits maxclbits .max /maxplbits 1 index def /maxclbits exch def
+
+		% 1: Least number of objects in a page:
+  FirstPageNs length OtherPageNs { length .min } forall
+  /minnop 1 index def 32 bwn
+		% 2: Location of first page's Page object:
+  FirstPageNs 0 get omap XRef exch get 32 bwn
+		% 3: Bits needed to represent greatest # of objects in a page:
+  FirstPageNs length OtherPageNs { length .max } forall
+  minnop sub bitsneeded /maxnopbits 1 index def 16 bwn
+		% 4: Least length of a page:
+  minpl 32 bwn
+		% 5: Bits needed to represent the greatest page length:
+  maxplbits 16 bwn
+		% 6: Least start of Contents offset:
+  0		% (Acrobat requires that this be 0.)
+  /minsco 1 index def 32 bwn
+		% 7: Bits needed to represent the greatest start of Contents
+		% offset:
+  0		% (Acrobat ignores this.)
+  /maxscobits 1 index def 16 bwn
+		% 8: Least contents length:
+  mincl 32 bwn
+		% 9: Bits needed to represent the greatest Contents length:
+  maxclbits 16 bwn
+		% 10: Bits needed to represent the greatest number of Shared
   0		% Object references (we don't report any):
   /maxsorbits 1 index def 16 bwn
-		% Bits needed to identify a Shared Object (we don't
+		% 11: Bits needed to identify a Shared Object (we don't
   0		% report any):
   /sobits 1 index def 16 bwn
-		% Bits needed to represent numerator of fraction (only needed
-  0		% for Shared Object references, which we don't report):
+		% 12: Bits needed to represent numerator of fraction (only
+  0		% needed for Shared Object references, which we don't report):
   /numfbits 1 index def 16 bwn
-		% Denominator of fraction (only needed for Shared Object
+		% 13: Denominator of fraction (only needed for Shared Object
 		% references, which we don't report):
   255	% arbitrary
   /denf 1 index def 16 bwn
@@ -820,14 +837,14 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
 		% (not currently used):
   0 32 bwn
 		% Location of first object in Shared Objects section
-		% (not currently used):
-		% **** Acrobat always sets this to 16.
-  16 32 bwn
+		% (not currently used): If there are no shared objects,
+		% Acrobat sets this to the location of linearization
+		% parameters object (the very first object).
+  { pdfwriteheader } tomemory length 32 bwn
 		% Number of Shared Object entries for first page:
   FirstPageNs length 32 bwn
 		% Number of Shared Object entries for Shared Objects
 		% section (not currently used):
-		% **** Acrobat adds in the previous value.
   FirstPageNs length 32 bwn
 		% Bits needed to represent the greatest number of objects
 		% in a shared object group (always 0, because all groups
@@ -1053,6 +1070,9 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
   /XrefStart 1 index def
   XrefBeginLength add		% xref0start
   dup XrefBeginLength sub XrefLength add	% fileend
+	% Because of a bug, Acrobat Reader doesn't recognize any file
+	% shorter than 1K as linearized.  Patch this here.
+  1024 .max
   /FileLength 1 index def
   createLPDict
 

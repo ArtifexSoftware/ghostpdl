@@ -115,7 +115,9 @@ readonly def
   dup xcheck {
     aload pop //pdfwriteprocs exch get exec
   } {
-    ([) ows { pdfwritevalue (\n) ows } forall (]) ows
+	% Because of a bug in Acrobat's parser for linearization parameters,
+	% we have to include some whitespace after the opening [ (!).
+    ([ ) ows { pdfwritevalue (\n) ows } forall (]) ows
   } ifelse
 } def
 
