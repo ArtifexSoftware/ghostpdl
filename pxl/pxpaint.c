@@ -357,7 +357,6 @@ paint_path(px_state_t *pxs, bool reset)
 	    if ( save_path == 0 )
 	      return_error(errorInsufficientMemory);
 	    gx_path_assign_preserve(save_path, ppath);
-	    gx_path_alloc_shared(ppath, pxs->memory, "paint_path(ppath)");
 	  }
 	else
 	  gs_currentpoint(pgs, &cursor);
