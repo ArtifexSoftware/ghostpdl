@@ -463,9 +463,6 @@ struct gx_device_pdf_s {
     int PageLabels_current_page;
     cos_dict_t *PageLabels_current_label;
 };
-    cos_array_t *PageLabels;
-    int PageLabels_current_page;
-    cos_dict_t *PageLabels_current_label;
 
 #define is_in_page(pdev)\
   ((pdev)->contents_id != 0)
