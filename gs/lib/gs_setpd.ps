@@ -1,4 +1,4 @@
-%    Copyright (C) 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1994, 2000 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of AFPL Ghostscript.
 % 
@@ -730,7 +730,14 @@ DEBUG { (Installing.) = pstack flush } if
 % restored if it fails.
 
 /.execinstall {		% <proc> .execinstall -
+	% Because the interpreter optimizes tail calls, we can't just let
+	% the body of this procedure be 'exec', because that would lose
+	% the stack protection that is the whole reason for having the
+	% procedure in the first place.  Therefore, we add a couple of
+	% extra tokens to ensure that the operator procedure is still
+	% on the stack during the exec.
   exec
+  0 pop	% See above.
 } odef
 /.postinstall {		% mark ... <failed> <merged> .postinstall -
    matrix currentmatrix .setdefaultmatrix
