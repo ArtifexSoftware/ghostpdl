@@ -23,32 +23,33 @@
 languagelevel 2 .setlanguagelevel
 
 %========================= Process xlatmap ====================
-{ % We convert it into a plain text to simplify the processing in C :
-  % *(fontkind\0\0\ *(charmap\0decoding\0) ) \0
-  mark
-  (xlatmap) .runlibfile
-  ()
-  {                              % mark name array ... string
-    1 index mark eq {
-      exch pop exit
-    } if
-    2 index =string cvs concatstrings (\0\0) concatstrings
-    3 2 roll pop exch            % mark ... string array
-    dup length 1 sub 0 exch 2 exch
-    {                            % mark ... string array i
-      2 copy get                 % mark ... string array i cmap
-      4 3 roll exch concatstrings (\0) concatstrings 
-                                 % mark ... array i string
-      2 index 3 2 roll 1 add get % mark ... array string DecodingName
-      =string cvs concatstrings (\0) concatstrings
-                                 % mark ... array string
-      exch                       % mark ... string array
-    } for
-    pop                          % mark ... string
-  } loop                         % string
-  (\0) concatstrings
-  systemdict exch /.xlatmap exch put
-} bind exec
+% We convert it into a plain text to simplify the processing in C :
+% *(fontkind\0\0\ *(charmap\0decoding\0) ) \0
+mark
+%% Replace 1 (xlatmap)
+(xlatmap) .runlibfile
+()
+{                              % mark name array ... string
+  1 index mark eq {
+    exch pop exit
+  } if
+  2 index =string cvs concatstrings (\0\0) concatstrings
+  3 2 roll pop exch            % mark ... string array
+  dup length 1 sub 0 exch 2 exch
+  {                            % mark ... string array i
+    2 copy get                 % mark ... string array i cmap
+    4 3 roll exch concatstrings (\0) concatstrings 
+                               % mark ... array i string
+    2 index 3 2 roll 1 add get % mark ... array string DecodingName
+    =string cvs concatstrings (\0) concatstrings
+                               % mark ... array string
+    exch                       % mark ... string array
+  } for
+  pop                          % mark ... string
+} bind loop                         % string
+(\0) concatstrings
+systemdict exch /.xlatmap exch put
+
 
 
 %====================================================================
@@ -84,6 +85,7 @@ languagelevel 2 .setlanguagelevel
 
 /Config
 <<
+%% Replace 1 (FAPIconfig)
   (FAPIconfig) .runlibfile
 >> def
 

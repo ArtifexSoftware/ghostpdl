@@ -1038,7 +1038,7 @@ $(PSOBJ)zfzlib.$(OBJ) : $(PSSRC)zfzlib.c $(OP)\
 
 $(PSD)frsd.dev : $(INT_MAK) $(ECHOGS_XE) $(PSD)zfrsd.dev
 	$(SETMOD) $(PSD)frsd -include $(PSD)zfrsd
-	$(ADDMOD) $(PSD)frsd -ps gs_lev2 gs_res gs_resmp gs_frsd
+	$(ADDMOD) $(PSD)frsd -ps gs_lev2 gs_res gs_frsd
 
 zfrsd_=$(PSOBJ)zfrsd.$(OBJ)
 $(PSD)zfrsd.dev : $(INT_MAK) $(ECHOGS_XE) $(zfrsd_)
@@ -1078,7 +1078,7 @@ $(PSD)psl2int.dev : $(INT_MAK) $(ECHOGS_XE) $(psl2int_)\
 	$(SETMOD) $(PSD)psl2int $(psl2int_)
 	$(ADDMOD) $(PSD)psl2int -include $(PSD)dps2int $(PSD)usparam
 	$(ADDMOD) $(PSD)psl2int -oper zmisc2
-	$(ADDMOD) $(PSD)psl2int -ps gs_lev2 gs_res gs_resmp
+	$(ADDMOD) $(PSD)psl2int -ps gs_lev2 gs_res
 
 ivmem2_h=$(PSSRC)ivmem2.h
 
