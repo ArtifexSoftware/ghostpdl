@@ -2,7 +2,7 @@
 # $Id$
 # Convert PostScript to PDF without specifying CompatibilityLevel.
 
-OPTIONS=""
+OPTIONS="-dSAFER"
 while true
 do
 	case "$1" in

@@ -4,7 +4,7 @@
 
 if "%1"=="" goto usage
 if "%2"=="" goto usage
-echo -dNODISPLAY -dNOPAUSE -dBATCH >_.at
+echo -dNOPAUSE -dBATCH -dSAFER >_.at
 rem Watcom C deletes = signs, so use # instead.
 echo -dDEVICEWIDTH#250000 -dDEVICEHEIGHT#250000 >>_.at
 :cp

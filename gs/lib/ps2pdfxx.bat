@@ -6,7 +6,7 @@ rem The files that call this one (ps2pdf*.bat) write the command-line
 rem options into _.at, and then pass the last 2 (or fewer) arguments
 rem to this file.
 
-echo -q -dNOPAUSE -dBATCH -sDEVICE#pdfwrite >_.at2
+echo -q -dSAFER -dNOPAUSE -dBATCH -sDEVICE#pdfwrite >_.at2
 set PS2PDFGS=gswin32c
 
 if "%OS%"=="Windows_NT" goto nt

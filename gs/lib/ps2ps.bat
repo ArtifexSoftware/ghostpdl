@@ -4,7 +4,7 @@
 
 if "%1"=="" goto usage
 if "%2"=="" goto usage
-echo -dNODISPLAY -dNOPAUSE -dBATCH >_.at
+echo -dNODISPLAY -dNOPAUSE -dSAFER -dBATCH >_.at
 :cp
 if "%3"=="" goto doit
 echo %1 >>_.at

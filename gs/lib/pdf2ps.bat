@@ -4,7 +4,7 @@
 
 if "%1"=="" goto usage
 if "%2"=="" goto usage
-echo -dNOPAUSE -dBATCH -sDEVICE#pswrite >_.at
+echo -dNOPAUSE -dBATCH -dSAFER -sDEVICE#pswrite >_.at
 :cp
 if "%3"=="" goto doit
 echo %1 >>_.at

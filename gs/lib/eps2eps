@@ -17,4 +17,4 @@ if [ $# -ne 2 ]; then
 	exit 1
 fi
 
-exec gs -q -sDEVICE=epswrite -sOutputFile=$2 -dNOPAUSE -dBATCH $OPTIONS $1
+exec gs -q -sDEVICE=epswrite -sOutputFile=$2 -dNOPAUSE -dBATCH -dSAFER $OPTIONS $1

@@ -51,7 +51,7 @@ awk 'F==1	{
 		}
 	' U="$USERNAME$LOGNAME"  F=1 - F=2 ${infile} >$tmpfile
 
-gs -q -dNOPAUSE -r72 -sDEVICE=bit -sOutputFile=/dev/null $tmpfile ps2epsi.ps $tmpfile <${infile} 1>&2
+gs -q -dNOPAUSE -dSAFER -r72 -sDEVICE=bit -sOutputFile=/dev/null $tmpfile ps2epsi.ps $tmpfile <${infile} 1>&2
 rm -f $tmpfile
 
 (
