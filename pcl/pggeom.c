@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -11,78 +11,18 @@
 
 /* HAS most of these computations require more error checking */
 
- int
-hpgl_compute_arc_center(floatp x1, floatp y1, floatp x2, floatp y2, 
-			floatp x3, floatp y3, floatp *cx, floatp *cy)
+/* ------ Lines, angles, arcs, and chords ------ */
 
-{
-	floatp s12, s13, len1, len2, len3, dx12, dy12, dx13, dy13;
-	floatp resx, resy;
-
-	if ( x1 == x3 && y1 == y3 )
-	  return 0;
-
-	dx12 = x1 - x2;
-	dy12 = y1 - y2;
-	dx13 = x1 - x3;
-	dy13 = y1 - y3;
-
-	s12 = asin(dy12 / sqrt(dx12 * dx12 + dy12 * dy12));
-	s13 = asin(dy13 / sqrt(dx13 * dx13 + dy13 * dy13));
-	if ( fabs(s12 - s13) < .01 )
-	  return 0;
-
-	len1 = x1 * x1 + y1 * y1;
-	len2 = x2 * x2 + y2 * y2;
-	len3 = x3 * x3 + y3 * y3;
-
-	resy = (dx12 * (len3 - len1) - dx13 * (len2 - len1)) /
-		(2 * (dx13 * dy12 - dx12 * dy13));
-	if ( x1 != x3 )
-	  resx = (len3 + 2 * (resy) * dy13 - len1) / (2 * (-dx13));
-	else
-	  resx = (len2 + 2 * (resy) * dy12 - len1) / (2 * (-dx12));
-
-	*cx = resx;
-	*cy = resy;
-	return 1;
-}
-
-/* compute the angle between 0 to 2PI between 2 slopes */
+/* compute the angle between 0 and 2*PI given the slope */
 floatp
 hpgl_compute_angle(floatp dx, floatp dy) 
 {
-	floatp alpha;
+	floatp alpha = atan2(dy, dx);
 
-	if ( dx == 0 ) {
-	  if ( dy > 0 )
-	    alpha = (M_PI / 2.0);
-	  else
-	    alpha = 3 * (M_PI / 2.0);
-	} else if ( dy == 0 ) {
-	  if ( dx > 0 )
-	    alpha = 0;
-	  else
-	    alpha = M_PI;
-	} else {
-	  alpha = atan(dy / dx);	/* range = -PI/2 to PI/2 */
-	  if ( dx < 0 )
-	    alpha += M_PI;
-	  else if ( dy < 0 )
-	    alpha += (M_PI * 2.0);
-	}
-	return (alpha);
+	return (alpha < 0 ? alpha + M_PI * 2.0 : alpha);
 }
 
-/* returns true if counterclockwise.  Algorithm is the same as
-   counterclockwise calculation is gxstroke. */
-bool
-hpgl_compute_arc_direction(floatp start_x, floatp start_y, 
-			   floatp end_x, floatp end_y) 
-{
-	return((start_x * end_y) > (end_x * start_y)); 
-}
-
+/* normalize the chord angle to 0 - PI/2 */
 floatp
 hpgl_normalize_chord_angle(floatp angle)
 {
@@ -97,36 +37,102 @@ hpgl_normalize_chord_angle(floatp angle)
 	return angle;
 }
 
- int
+/* number of chord angles within the arc */
+int
 hpgl_compute_number_of_chords(floatp arc_angle, floatp chord_angle)
 {
-	floatp num_chords;
-
-	num_chords = ceil(arc_angle/chord_angle);
-	if ( num_chords < 0.0 ) num_chords = -num_chords;
-	return( (int)num_chords);
+	return (int)ceil(fabs(arc_angle / chord_angle));
 }
 
- floatp
+/* the arc angle as an integral multiple of the chord angle */
+floatp
 hpgl_adjust_arc_angle(int num_chords, floatp arc_angle)
 {
 	return(num_chords * arc_angle);
 }
 
- void
-hpgl_compute_arc_coords(floatp radius, floatp center_x, floatp center_y, 
-			floatp angle, floatp *x, floatp *y)
+/* compute the center of an arc given 3 points on the arc */
+int
+hpgl_compute_arc_center(floatp x1, floatp y1, floatp x2, floatp y2, 
+			floatp x3, floatp y3, floatp *pcx, floatp *pcy)
+
 {
-	*x = radius * cos(angle) + center_x;
-	*y = radius * sin(angle) + center_y;
+	floatp px2, py2, dx2, dy2, px3, py3, dx3, dy3;
+	double denom, t2;
+
+	/*
+	 * The center is the intersection of the perpendicular bisectors
+	 * of the 3 chords.  Any two will do for the computation.
+	 * (For greatest numerical stability, we should probably choose
+	 * the two outside chords, but this is a refinement that we will
+	 * leave for the future.)
+	 * We define each bisector by a line with the equations
+	 *	xi = pxi + ti * dxi
+	 *	yi = pyi + ti * dyi
+	 * where i is 2 or 3.
+	 */
+
+#define compute_bisector(px, py, dx, dy, xa, ya, xb, yb)\
+  (px = (xa + xb) / 2, py = (ya + yb) / 2,\
+   dx = (ya - yb), dy = (xb - xa) /* 90 degree rotation (either way is OK) */)
+
+	compute_bisector(px2, py2, dx2, dy2, x1, y1, x2, y2);
+	compute_bisector(px3, py3, dx3, dy3, x1, y1, x3, y3);
+
+#undef compute_bisector
+
+	/*
+	 * Now find the intersections by solving for t2 or t3:
+	 *	px2 + t2 * dx2 = px3 + t3 * dx3
+	 *	py2 + t2 * dy2 = py3 + t3 * dy3
+	 * i.e., in standard form,
+	 *	t2 * dx2 - t3 * dx3 = px3 - px2
+	 *	t2 * dy2 - t3 * dy3 = py3 - py2
+	 * The solution of
+	 *	a*x + b*y = c
+	 *	d*x + e*y = f
+	 * is
+	 *	denom = a*e - b*d
+	 *	x = (c*e - b*f) / denom
+	 *	y = (a*f - c*d) / denom
+	 */
+	denom = dx3 * dy2 - dx2 * dy3;
+	if ( denom < 1.0e-6 )
+	  return -1;		/* degenerate */
+
+	t2 = ((px3 - px2) * (-dy3) - (-dx3) * (py3 - py2)) / denom;
+	*pcx = px2 + t2 * dx2;
+	*pcy = py2 + t2 * dy2;
+	return 0;
 }
 
- void
+/* calculate rotation as clockwise (false) or counterclockwise (true). */
+/* Algorithm is the same as counterclockwise calculation in gxstroke. */
+bool
+hpgl_compute_arc_direction(floatp start_x, floatp start_y, 
+			   floatp end_x, floatp end_y) 
+{
+	return((start_x * end_y) > (end_x * start_y)); 
+}
+
+/* compute the coordinates of a point on an arc */
+int
+hpgl_compute_arc_coords(floatp radius, floatp center_x, floatp center_y, 
+			floatp angle, floatp *px, floatp *py)
+{
+	*px = radius * cos(angle) + center_x;
+	*py = radius * sin(angle) + center_y;
+	return 0;
+}
+
+/* given a start point, angle (degrees) and magnitude of a vector compute its
+   endpoints */
+int
 hpgl_compute_vector_endpoints(floatp magnitude, floatp x, floatp y, 
-			      floatp angle, floatp *endx, floatp *endy)
+			      floatp angle_degrees, floatp *endx, floatp *endy)
 
 {
-	hpgl_compute_arc_coords(magnitude, x, y, (angle * (M_PI/180.0)),
-				endx, endy);
-	return;
+	return hpgl_compute_arc_coords(magnitude, x, y,
+				       angle_degrees * (M_PI/180.0),
+				       endx, endy);
 }

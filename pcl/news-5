@@ -6,6 +6,30 @@
 This file, NEWS-5, describes the changes in the most recent releases of
 Aladdin's PCL 5 code, in reverse chronological order.
 
+Fileset of 3/3/97
+=================
+
+(LPD) Fixes bugs:
+	- The number-of-chords computation wasn't consistent for positive
+and negative angles.  (pggeom.c)
+	- The conversion factor from inches to plotter units was wrong.
+(pggeom.h)
+	- The HP-GL/2 translation for reverse landscape orientation was
+incorrect.  (pgdraw.c)
+	- The first point of HP-GL/2 beziers was defined incorrectly because
+of a typo.  (pgdraw.c)
+	- Entering polygon mode with PM[0] drew the current path instead of
+clearing it.  (pgpoly.c)
+	- The RA command didn't draw the rectangle or clear the path.
+(pgpoly.c)
+
+(LPD) Other changes:
+	- Replaces the calculation of the center of a 3-point arc with a
+simpler algorithm that doesn't use any transcendental functions.  (pggeom.c)
+	- Cleans up comments, coding style, and other minor issues in
+various files.  (pggeom.h, pgdraw.c, pgchar.c, pggeom.c, pgpoly.c,
+pgvector.c)
+
 Fileset of 2/26/97
 ==================
 

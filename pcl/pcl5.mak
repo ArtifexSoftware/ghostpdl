@@ -94,6 +94,7 @@ pcommand.$(OBJ): pcommand.c $(std_h)\
 
 pcdraw.$(OBJ): pcdraw.c $(std_h)\
  $(gscoord_h) $(gsdcolor_h) $(gsmatrix_h) $(gsmemory_h) $(gsstate_h) $(gstypes_h)\
+ $(gxfixed_h) $(gxpath_h)\
  $(pcdraw_h) $(pcommand_h) $(pcstate_h)
 
 #### PCL5 parsing

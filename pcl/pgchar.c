@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -101,12 +101,12 @@ hpgl_label_direction(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 {	hpgl_real_t run = 1, rise = 0;
 
 	if ( hpgl_arg_c_real(pargs, &run) )
-	  { double hypot;
+	  { double hyp;
 	    if ( !hpgl_arg_c_real(pargs, &rise) || (run == 0 && rise == 0) )
 	      return e_Range;
-	    hypot = sqrt(run * run + rise * rise);
-	    run /= hypot;
-	    rise /= hypot;
+	    hyp = hypot(run, rise);
+	    run /= hyp;
+	    rise /= hyp;
 	  }
 	pgls->g.character.direction.x = run;
 	pgls->g.character.direction.y = rise;

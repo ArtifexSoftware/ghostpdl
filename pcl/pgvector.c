@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -102,8 +102,8 @@ hpgl_arc_3_point(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 				      y_inter, x_end, y_end) ) 
 	  hpgl_add_arc_to_path(pgls, (x_start + x_inter) / 2.0,
 			       (y_start + y_inter) / 2.0,
-			       (sqrt((pow(x_inter - x_start,2) +
-				      (pow(y_inter - y_start,2)))) / 2.0),
+			       (hypot((x_inter - x_start),
+				      (y_inter - y_start)) / 2.0),
 			       0.0, 360.0, chord_angle);
 
 	else if ( hpgl_3_colinear_points(x_start, y_start, x_inter, 

@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -183,7 +183,7 @@ hpgl_set_ctm(hpgl_state_t *pgls)
 	  hpgl_real_t pic_w = centipoints_2_plu(pgls->g.picture_frame.width);
 	  hpgl_real_t pic_h = centipoints_2_plu(pgls->g.picture_frame.height);
 
-	  /* move the origin HAS *wrong* */
+	  /* move the origin */
 	  hpgl_call(gs_translate(pgls->pgs, 0, -(pic_h)));
 
 	  hpgl_call(gs_rotate(pgls->pgs, pgls->g.rotation));
@@ -201,7 +201,7 @@ hpgl_set_ctm(hpgl_state_t *pgls)
 	      hpgl_call(gs_translate(pgls->pgs, -(pic_w), -(pic_h)));
 	      break;
 	    case 270 :
-	      hpgl_call(gs_translate(pgls->pgs, 0, -(pic_h)));
+	      hpgl_call(gs_translate(pgls->pgs, -(pic_w), 0));
 	      break;
 	      }
 	}
@@ -275,10 +275,7 @@ hpgl_set_current_position(hpgl_state_t *pgls, gs_point *pt)
 	/* if no point is supplied use the current point */
 	if (!pt) 
 	  {
-	    /* don't assume the caller allocated space for pt */
-	    gs_point cur_pt;
-	    hpgl_call(gs_currentpoint(pgls->pgs, &cur_pt));
-	    pgls->g.pos = cur_pt;
+	    hpgl_call(gs_currentpoint(pgls->pgs, &pgls->g.pos));
 	  }
 	else
 	  pgls->g.pos = *pt;
@@ -383,7 +380,7 @@ hpgl_add_bezier_to_path(hpgl_state_t *pgls, floatp x1, floatp y1,
 			floatp x2, floatp y2, floatp x3, floatp y3, 
 			floatp x4, floatp y4)
 {
-	hpgl_call(hpgl_add_point_to_path(pgls, x1, x2, gs_moveto));
+	hpgl_call(hpgl_add_point_to_path(pgls, x1, y1, gs_moveto));
 	/* HAS we may need to flatten this here */
 	hpgl_call(gs_curveto(pgls->pgs, x2, y2, x3, y3, x4, y4));
 	/* set the state position */

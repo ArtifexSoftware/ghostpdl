@@ -184,27 +184,17 @@ hpgl_PM(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int op;
   
 	if ( hpgl_arg_c_int(pargs, &op) == 0 )
-	  {
-	    hpgl_args_setup(pargs);
-	    hpgl_args_add_int(pargs, 0);
-	    hpgl_PM(pargs, pgls);
-	    return 0;
-	  }
-
-	if (op < 0 || op > 2) return e_Range;
+	  op = 0;
 
 	switch( op )
 	  {
 	  case 0 : 
 	    /* clear the current path if there is one */
-	    hpgl_draw_current_path(pgls, hpgl_rm_vector);
-#ifdef NOPE
 	    hpgl_call(hpgl_clear_current_path(pgls));
 	    /* a side affect of polygon mode is to add the current
                state position to the polygon buffer.  We do a PU to
                guarantee the first point is a moveto.  HAS not sure if
                this is correct. */
-#endif
 	    hpgl_args_set_real(pargs, pgls->g.pos.x); 
 	    hpgl_args_add_real(pargs, pgls->g.pos.y);
 	    hpgl_call(hpgl_PU(pargs, pgls));
@@ -220,6 +210,8 @@ hpgl_PM(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	    hpgl_call(hpgl_close_current_path(pgls));
 	    /* return to vector mode */
 	    pgls->g.polygon_mode = false;
+	  default:
+	    return e_Range;
 	  }    
 	return 0;
 }
@@ -230,6 +222,7 @@ hpgl_RA(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
 	hpgl_save_pen_state(pgls);
 	hpgl_call(hpgl_rectangle(pargs, pgls, 0));
+	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_polygon));
 	hpgl_restore_pen_state(pgls);
 	return 0;
 }
