@@ -12,4 +12,4 @@ echo %1 >>_.at
 shift
 :bot
 if not "%3"=="" goto top
-ps2pdfxx %1 %2
+call ps2pdfxx %1 %2
