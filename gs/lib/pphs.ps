@@ -15,7 +15,7 @@
 % requires that the copyright notice and this notice be preserved on all
 % copies.
 
-% $id: pphs.ps $
+% $Id$
 % Print Linearized PDF hint streams
 
 % Utilities
@@ -71,6 +71,39 @@
   0 () /SubFileDecode filter
 } bind def
 
+/ptag {		% <pre-tag> <proc> <post-tag> ptag -
+  3 -1 roll print (: ) print
+  exch exec
+  (        % ) print =
+} bind def
+
+% Print the linearization parameters dictionary.
+/plpkeys <<
+  /E (end of p. 1 objects)
+  /L (total file length)
+  /H (PHS start + length)
+  /N (# of pages)
+  /O (p. 1 object #)
+  /T (offset of first main xref entry)
+>> def
+/plpdict {	% <dict> plpdict -
+  (<<) = plpkeys {
+    2 index 2 index .knownget {
+	% Stack: dict key label value
+      (  ) print 3 -1 roll ===only ( ) print ===only
+      (        % ) print =
+    } {
+      pop pop
+    } ifelse
+  } forall {
+    plpkeys 2 index known {
+      pop pop
+    } {
+      (  ) print exch ===only ( ) print ===
+    } ifelse
+  } forall (>>) =
+} bind def
+
 % Print the Page Offset Hint Table.
 /ppoht {	% <npages> <file> ppoht -
 
@@ -79,27 +112,27 @@
   /npages exch def
   readninit
 
-  (1: ) print f read4 =
-  (2: ) print f read4 =
-  (3: ) print f read2 dup = /nb3 exch def
-  (4: ) print f read4 =
-  (5: ) print f read2 dup = /nb5 exch def
-  (6: ) print f read4 =
-  (7: ) print f read2 dup = /nb7 exch def
-  (8: ) print f read4 =
-  (9: ) print f read2 dup = /nb9 exch def
-  (10: ) print f read2 dup = /nb10 exch def
-  (11: ) print f read2 dup = /nb11 exch def
-  (12: ) print f read2 dup = /nb12 exch def
-  (13: ) print f read2 =
+  (1) { f read4 =only } (least # objs/page) ptag
+  (2) { f read4 =only } (offset of p. 1 object) ptag
+  (3) { f read2 dup =only /nb3 exch def } (# bits for # objs/page delta) ptag
+  (4) { f read4 =only } (least # bytes/page) ptag
+  (5) { f read2 dup =only /nb5 exch def } (# bits for # bytes/page delta) ptag
+  (6) { f read4 =only } (least content stream offset) ptag
+  (7) { f read2 dup =only /nb7 exch def } (# bits for content stream offset delta) ptag
+  (8) { f read4 =only } (least content stream length) ptag
+  (9) { f read2 dup =only /nb9 exch def } (# bits for content stream length delta) ptag
+  (10) { f read2 dup =only /nb10 exch def } (# bits for # of shared obj refs) ptag
+  (11) { f read2 dup =only /nb11 exch def } (# bits for shared obj indices) ptag
+  (12) { f read2 dup =only /nb12 exch def } (# bits for shared obj ref pos numerators) ptag
+  (13) { f read2 =only } (shared obj ref pos denominator) ptag
 
-  (*1: ) print [ npages { f nb3 readn } repeat ] ==
-  (*2: ) print [ npages { f nb5 readn } repeat ] ==
-  (*3: ) print [ npages { f nb10 readn } repeat ] dup == /nso exch def
-  (*4: ) print [ nso { [ exch { f nb11 readn } repeat ] } forall ] ==
-  (*5: ) print [ nso { [ exch { f nb12 readn } repeat ] } forall ] ==
-  (*6: ) print [ npages { f nb7 readn } repeat ] ==
-  (*7: ) print [ npages { f nb9 readn } repeat ] ==
+  (*1) { [ npages { f nb3 readn } repeat ] ==only } (# objs/page deltas (see 1,3)) ptag
+  (*2) { [ npages { f nb5 readn } repeat ] ==only } (# bytes/page deltas (see 4,5)) ptag
+  (*3) { [ npages { f nb10 readn } repeat ] dup ==only /nso exch def } (# of shared obj refs (see 10)) ptag
+  (*4) { [ nso { [ exch { f nb11 readn } repeat ] } forall ] ==only } (shared obj indices (see 11)) ptag
+  (*5) { [ nso { [ exch { f nb12 readn } repeat ] } forall ] ==only } (shared obj ref pos numerators (see 12)) ptag
+  (*6) { [ npages { f nb7 readn } repeat ] ==only } (content stream offset deltas (see 6,7)) ptag
+  (*7) { [ npages { f nb9 readn } repeat ] ==only } (content stream length deltas (see 8,9)) ptag
 
   end		% temp dict
 
@@ -112,24 +145,24 @@
   /f exch def
   readninit
 
-  (1: ) print f read4 =
-  (2: ) print f read4 =
-  (3: ) print f read4 dup = /n3 exch def
-  (4: ) print f read4 dup = /n4 exch def
-  (5: ) print f read2 dup = /nb5 exch def
-  (6: ) print f read4 =
-  (7: ) print f read2 dup = /nb7 exch def
+  (1) { f read4 =only } (first shared obj #) ptag
+  (2) { f read4 =only } (first shared obj offset) ptag
+  (3) { f read4 dup =only /n3 exch def } (# of p. 1 shared objs) ptag
+  (4) { f read4 dup =only /n4 exch def } (total # of shared objs) ptag
+  (5) { f read2 dup =only /nb5 exch def } (# bits for # of shared objs/group) ptag
+  (6) { f read4 =only } (least shared obj group length) ptag
+  (7) { f read2 dup =only /nb7 exch def } (# bits for shared obj group length delta) ptag
 
   /nse n4 def
-  (*1: ) print [ nse { f nb7 readn } repeat ] ==
-  (*2: ) print [ nse { f 1 readn } repeat ] dup == /md5s exch def
+  (*1) { [ nse { f nb7 readn } repeat ] ==only } (shared obj group length deltas (see 6,7)) ptag
+  (*2) { [ nse { f 1 readn } repeat ] dup ==only /md5s exch def } (MD5 present?) ptag
   (*3:) = md5s {
     0 ne {
       (  ) print f 16 string readstring pop
       (%stdout) (w) file dup 3 -1 roll writehexstring closefile () =
     } if
   } forall
-  (*4: ) print [ nse { f nb5 readn } repeat ] ==
+  (*4) { [ nse { f nb5 readn } repeat ] ==only } (# objs/group (see 5)) ptag
 
   end		% temp dict
 
@@ -146,7 +179,7 @@
     (Not a linearized PDF file.) = stop
   } if
 
-  lpdict === flush
+  lpdict plpdict flush
 
 	% Read the primary hint stream.
   null {
@@ -158,7 +191,7 @@
   phsdict 0 known {
     phsdict 0 undef  phsdict /Length undef
   } if
-  phsdict === flush
+  (PHS: ) print phsdict === flush
   pdf 0 (endstream) /SubFileDecode filter
   dup 5000 string readstring pop exch closefile
   sread /phsdata exch def
@@ -170,7 +203,7 @@
     sread /phsdata exch def
   } if
 
-	% HACK: assume /P = 0
+	% Adobe says we can assume /P = 0.
   (Page Offset Hint Table:) =
   lpdict /N get
   phsdata phsdict /S get string readstring pop sread
