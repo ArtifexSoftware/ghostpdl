@@ -358,15 +358,14 @@ zbuildfont9(i_ctx_t *i_ctx_p)
     build_proc_refs build;
     int code = build_proc_name_refs(&build, NULL, "%Type9BuildGlyph");
     gs_font_cid_data common;
-    uint CIDMapOffset;
+    ref GlyphDirectory, GlyphData, DataSource;
     ref *prfda;
     gs_font_type1 **FDArray;
     uint FDArray_size;
     int FDBytes;
+    uint CIDMapOffset;
     gs_font_base *pfont;
     gs_font_cid0 *pfcid;
-    ref GlyphDirectory, GlyphData, DataSource;
-    ref *pGlyphData;
     uint i;
 
     /*
@@ -377,38 +376,42 @@ zbuildfont9(i_ctx_t *i_ctx_p)
      */
     if (code < 0 ||
 	(code = cid_font_data_param(op, &common, &GlyphDirectory)) < 0 ||
-	(code = dict_find_string(op, "GlyphData", &pGlyphData)) < 0 ||
 	(code = dict_find_string(op, "FDArray", &prfda)) < 0 ||
 	(code = dict_int_param(op, "FDBytes", 0, MAX_FDBytes, -1, &FDBytes)) < 0
 	)
 	return code;
-    GlyphData = *pGlyphData;
-    if (r_has_type(&GlyphData, t_integer)) {
-	ref *pds;
-	stream *discard;
+    if (r_has_type(&GlyphDirectory, t_null)) {
+	/* Standard CIDFont, require GlyphData and CIDMapOffset. */
+	ref *pGlyphData;
 
-	if ((code = dict_find_string(op, "DataSource", &pds)) < 0)
+	if ((code = dict_find_string(op, "GlyphData", &pGlyphData)) < 0 ||
+	    (code = dict_uint_param(op, "CIDMapOffset", 0, max_uint - 1,
+				    max_uint, &CIDMapOffset)) < 0)
 	    return code;
-	check_read_file(discard, pds);
-	DataSource = *pds;
+	GlyphData = *pGlyphData;
+	if (r_has_type(&GlyphData, t_integer)) {
+	    ref *pds;
+	    stream *discard;
+
+	    if ((code = dict_find_string(op, "DataSource", &pds)) < 0)
+		return code;
+	    check_read_file(discard, pds);
+	    DataSource = *pds;
+	} else {
+	    if (!r_has_type(&GlyphData, t_string) && !r_is_array(&GlyphData))
+		return_error(e_typecheck);
+	    make_null(&DataSource);
+	}
     } else {
-	if (!r_has_type(&GlyphData, t_string) && !r_is_array(&GlyphData))
-	    return_error(e_typecheck);
+	make_null(&GlyphData);
 	make_null(&DataSource);
+	CIDMapOffset = 0;
     }
     if (!r_is_array(prfda))
 	return_error(e_invalidfont);
     FDArray_size = r_size(prfda);
     if (FDArray_size == 0)
 	return_error(e_invalidfont);
-    if (r_has_type(&GlyphDirectory, t_null)) {
-	/* Standard CIDFont, require CIDMapOffset. */
-	if ((code = dict_uint_param(op, "CIDMapOffset", 0, max_uint - 1,
-				    max_uint, &CIDMapOffset)) < 0)
-	    return code;
-    } else {
-	CIDMapOffset = 0;
-    }
     FDArray = ialloc_struct_array(FDArray_size, gs_font_type1 *,
 				  &st_gs_font_type1_ptr_element,
 				  "buildfont9(FDarray)");

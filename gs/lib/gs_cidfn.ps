@@ -55,7 +55,11 @@
 % FDArray.
 
 dup 0 {
-  9 .checkfonttype { .completefont9 } if
+  9 .checkfonttype {
+    /CIDInit /ProcSet findresource begin
+    .completefont9
+    end
+  } if
   1 index exch .buildfont9 exch pop
 } bind put
 
@@ -69,7 +73,6 @@ dup 0 {
       /FontMatrix get [1000 0 0 1000 0 0] 1 index concatmatrix pop
     } forall
   } if
-
   dup /FDArray get {
 		% Read the Subrs if necessary.
     dup /Private get dup /Subrs known not {
@@ -279,7 +282,8 @@ currentdict end
 		% Stack: cidfont cid subfont charstring
   dup null eq { pop pop pop pop } {	%**** WRONG ****
     4 -1 roll pop
-    3 1 roll exch dup 4 -1 roll 0 0 moveto .type1execchar
+    3 1 roll exch dup 4 -1 roll 0 0 moveto
+    3 index /FontType get 2 eq { .type2execchar } { .type1execchar } ifelse
   } ifelse	%**** WRONG ****
   end
   .setglobal
