@@ -276,11 +276,7 @@ FONTPATH length 0 eq { (%END FONTPATH) .skipeof } if
 /.scanfontdir           % <dirname> .scanfontdir -
  { currentglobal exch true setglobal
    QUIET not { (Scanning ) print dup print ( for fonts...) print flush } if
-   (*) 1 index
-
-   .file_name_separator
-   dup (\\) eq { pop (\\\\) } if        % double \ for pattern match
-   concatstrings exch concatstrings
+   [ 1 index ] (*) .generate_dir_list_templates
    0 0 0 4 -1 roll      % found scanned files
     {           % stack: <fontcount> <scancount> <filecount> <filename>
       exch 1 add exch                   % increment filecount

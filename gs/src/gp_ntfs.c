@@ -99,7 +99,8 @@ gs_private_st_ptrs1(st_file_enum, struct file_enum_s, "file_enum",
 		    file_enum_enum_ptrs, file_enum_reloc_ptrs, pattern);
 
 /* Initialize an enumeration.  Note that * and ? in a directory */
-/* don't work, and \ is taken literally unless a second \ follows. */
+/* don't work with the OS call currently used. The '\' escape	*/
+/* character is removed for the 'Find...File' function.		*/
 file_enum *
 gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
 {
@@ -107,34 +108,35 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
     int pat_size = 2 * patlen + 1;
     char *pattern;
     int hsize = 0;
-    int i;
+    int i, j;
 
     if (pfen == 0)
 	return 0;
-
     /* pattern could be allocated as a string, */
     /* but it's simpler for GC and freeing to allocate it as bytes. */
-
     pattern = (char *)gs_alloc_bytes(mem, pat_size,
 				     "gp_enumerate_files(pattern)");
     if (pattern == 0)
 	return 0;
-    memcpy(pattern, pat, patlen);
-    /* find directory name = header */
-    for (i = 0; i < patlen; i++) {
-	switch (pat[i]) {
-	    case '\\':
-		if (i + 1 < patlen && pat[i + 1] == '\\')
-		    i++;
-		/* falls through */
-	    case ':':
-	    case '/':
-		hsize = i + 1;
+    /* translate the template into a pattern discarding the escape  */
+    /* char '\' (not needed by the OS Find...File logic). Note that */
+    /* a final '\' in the string is also discarded.		    */
+    for (i = 0, j=0; i < patlen; i++) {
+	if (pat[i] == '\\') {
+	    i++;
+	    if (i == patlen)
+		break;		/* '\' at end ignored */
 	}
+	pattern[j++]=pat[i];
     }
-    pattern[patlen] = 0;
+    /* Scan for last path separator to determine 'head_size' (directory part) */
+    for (i = 0; i < j; i++) {
+	if(pattern[i] == '/' || pattern[i] == '\\' || pattern[i] == ':')
+	hsize = i+1;
+    }
+    pattern[j] = 0;
     pfen->pattern = pattern;
-    pfen->patlen = patlen;
+    pfen->patlen = j;
     pfen->pat_size = pat_size;
     pfen->head_size = hsize;
     pfen->memory = mem;
