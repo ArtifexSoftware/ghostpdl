@@ -126,7 +126,7 @@ currentdict /runpdfstring .undef
    pdfdict begin
    pdfopen begin
    Trailer /Root oget /Pages oget /CropBox knownoget
-    { mark /CropBox 3 -1 roll /PAGES pdfmark
+    { oforce_array mark /CropBox 3 -1 roll /PAGES pdfmark
     }
    if
    /FirstPage where 
@@ -609,8 +609,8 @@ pdfdict begin
  } bind def
 
 % Display a given page.
-/boxrect		% [<llx> <lly> <urx> <ury>] boxrect <x> <y> <w> <h>
- { aload pop exch 3 index sub exch 2 index sub
+/boxrect		% <llx> <lly> <urx> <ury> boxrect <x> <y> <w> <h>
+ { exch 3 index sub exch 2 index sub
  } bind def
 /resolvedest {		% <name|string|other> resolvedest <other|null>
   dup type /nametype eq {
@@ -736,7 +736,7 @@ end readonly def
     dup /MediaBox pget pop	% There has to be a MediaBox
   } ifelse
   % stack: [<prevproc>] <pagedict> <Crop|Media Box>
-  exch pop			% done with the pagedict
+  exch pop oforce_array			% done with the pagedict
   systemdict /PDFFitPage known {
     PDFDEBUG { (Fiting PDF to imageable area of the page.) = flush } if
     currentpagedevice /.HWMargins get aload pop
@@ -770,12 +770,12 @@ end readonly def
 	% Stack: pagedict currentpagedict
   1 index /CropBox pget dup {exch pop} if systemdict /UseCropBox known and {
 			% Set the page size.
-    1 index /CropBox pget pop
+    1 index /CropBox pget pop oforce_elems
     boxrect 2 array astore /PageSize exch def pop pop
   } {
     1 index /MediaBox pget {
 			% Set the page size.
-      boxrect 2 array astore /PageSize exch def pop pop
+      oforce_elems boxrect 2 array astore /PageSize exch def pop pop
     } if
   } ifelse
   % Don't change the page size if we are going to fit the PDF to the page
@@ -813,6 +813,7 @@ end readonly def
 
 	% Copy the crop box.
     dup /CropBox knownoget {
+      oforce_array
 	% If the page has been rotated, rotate the CropBox.
       mark /CropBox 3 -1 roll
       3 index /Rotate pget {
@@ -843,7 +844,7 @@ end readonly def
    /TRDefault currenttransfer def
   matrix currentmatrix 2 dict
   2 index /CropBox knownoget {
-    boxrect 4 array astore 1 index /ClipRect 3 -1 roll put
+    oforce_elems boxrect 4 array astore 1 index /ClipRect 3 -1 roll put
   } if
   dictbeginpage setmatrix
   /DefaultQstate qstate store
@@ -860,7 +861,7 @@ end readonly def
       dup /Group knownoget {
 	1 index /CropBox knownoget not {
 	  1 index /MediaBox oget
-	} if .beginformgroup {
+	} if oforce_array .beginformgroup {
 	  showpagecontents
 	} .internalstopped {
 	  .discardtransparencygroup stop

@@ -325,6 +325,12 @@ pdfdict begin
 		% PDF linearization, we no longer do this.
   get oforce
 } bind def
+/oforce_array { % <array> oforce_array <array>
+  [ exch { oforce } forall ]
+} bind def
+/oforce_elems { % <array> oforce_elems <first> ... <last>
+  { oforce } forall
+} bind def
 % A null value in a dictionary is equivalent to an omitted key;
 % we must check for this specially.
 /knownoget {	% <dict> <key> knownoget <value> true
