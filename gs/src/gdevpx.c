@@ -1543,11 +1543,13 @@ pclxl_image_plane_data(gx_image_enum_common_t * info,
 		       int *rows_used)
 {
     pclxl_image_enum_t *pie = (pclxl_image_enum_t *) info;
-    /****** SHOULD DO SOMETHING WITH THESE: ******/
     int data_bit = planes[0].data_x * info->plane_depths[0];
     int width_bits = pie->width * info->plane_depths[0];
     int i;
 
+    /****** SHOULD HANDLE NON-BYTE-ALIGNED DATA ******/
+    if (width_bits != pie->bits_per_row || (data_bit & 7) != 0)
+	return_error(gs_error_rangecheck);
     if (height > pie->height - pie->y)
 	height = pie->height - pie->y;
     for (i = 0; i < height; pie->y++, ++i) {
@@ -1560,7 +1562,7 @@ pclxl_image_plane_data(gx_image_enum_common_t * info,
 	}
 	memcpy(pie->rows.data +
 	         pie->rows.raster * (pie->y - pie->rows.first_y),
-	       planes[0].data + planes[0].raster * i,
+	       planes[0].data + planes[0].raster * i + (data_bit >> 3),
 	       pie->rows.raster);
     }
     *rows_used = height;
