@@ -55,44 +55,23 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h1><a name="Version6.60"></a>Version 6.60 (2000-10-12)</h1>
+<h1><a name="Version6.60"></a>Version 6.60 (2000-xx-xx)</h1>
 
 <p>
 This fileset consists of xxx.
 
 <p>
-All problems registered on SourceForge numbered 110922 or lower are closed,
+All problems registered on SourceForge numbered xxx or lower are closed,
 except for the following: 101549, 101814, 101905, 101955, 102146, 102735,
 104118, 105289, 105558, 106340, 106652, 109350, 110445, 110898, 110922.
 
-<p>
-The following projects are in a partially completed state:
-
-<ul>
-
-<li>CID-keyed fonts in the PDF writer (gdevpdf[eftw].c) -- barely started.
-
-</ul>
-
 <pre>
 
-<h2><a name="6.24_Incompatible_changes"></a>Incompatible changes</h2>
+<h2><a name="6.60_Incompatible_changes"></a>Incompatible changes</h2>
 
-(Procedures)
-	- The -Zv and -ZV switches now trace alpha/transparency features.
-	- The program name is now AFPL Ghostscript rather than Aladdin
-Ghostscript.
-	- The default Windows installation directory is now c:\gs rather
-than c:\Aladdin.
-(Utilities)
-	- lib/pdfeof.ps is deleted; its functionality is included in the
-standard code.
-(Drivers)
-	- The X driver now implements sync_output using XSync(False) rather
-than XFlush().
-(Library)
-	- gdev_vector_dopath now never returns 1.
-	- Color space types now have a new, required, "equal" procedure.
+(PDF interpreter)
+	- The interpreter now skips to the next EOL after reading the data
+following the ID operator.
 
 </pre>
 

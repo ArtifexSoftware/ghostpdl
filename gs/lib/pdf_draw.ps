@@ -907,7 +907,19 @@ drawopdict begin
       exch unabbrevvalue def
     } repeat pop
     /File PDFsource def
-    currentdict makeimagekeys doimage
+    currentdict makeimagekeys doimage	
+	% The Adobe documentation says that the data following ID
+	% consists of "lines", and some PDF files (specifically, some files
+	% produced by PCL2PDF from Visual Software) contain garbage bytes
+	% between the last byte of valid data and an EOL.  Therefore, we
+	% skip such garbage bytes here.
+    {
+      PDFsource read {
+	dup 10 eq exch 13 eq or { exit } if
+      } {
+        exit
+      } ifelse
+    } loop
     PDFsource token pop /EI ne { /ID cvx /syntaxerror signalerror } if
   } bdef
 end
