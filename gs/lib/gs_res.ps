@@ -500,6 +500,7 @@ pop pop
             3 1 roll                                    % (scr) (c) (/) (n)
 	    concatstrings concatstrings                 % (scr) (c/n)
             /GenericResourceDir getsystemparam .file_name_is_absolute not {
+              /GenericResourceDir getsystemparam exch concatstrings
 	      findlibfile
 	      {                                         % (scr) (p/c/n) file
 	        pop exch copy true                      % (p/c/n) true

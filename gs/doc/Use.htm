@@ -777,21 +777,86 @@ Instead that, Ghostscript maintains a list of resource directories,
 and uses an extended method for finding resource files.
 
 <p>
-To find a resource file, Ghostscript concatenates together
+The search of a resource file depends on whether
+the value of the system parameter <b><tt>GenericResourceDir</tt></b>
+specifies an absolute path. The user may set it how explained in
+<a href="#Resource_related_parameters">Resource-related parameters</a>.
+
+<p>
+If the user doesn't set the system parameter <b><tt>GenericResourceDir</tt></b>,
+Ghostscript creates a default value for it with
+attaching the string <b><tt>../Resource</tt></b>
+to directory paths explained in 
+<a href="#Finding_files">How Ghostscript finds files</a>,
+except the current directory.
+The first successful combination is used.
+
+<p>
+If the value of the system parameter <b><tt>GenericResourceDir</tt></b>
+is an absolute path (it is so by default), 
+Ghostscript assumes a single resource directory.
+It concatenates :
 
 <ol>
-
-<li>the name of the resource category (for instance, <b><tt>ProcSet</tt></b>)
-
-<li>the value of the system parameter
-<b><tt>GenericResourcePathSep</tt></b> (initially
-"<b><tt>/</tt></b>" on Unix and Windows, "<b><tt>:</tt></b>" on MacOS, "<b><tt>]</tt></b>" on OpenVMS)
-
-<li>the name of the resource instance (for instance, <b><tt>CIDInit</tt></b>)
+<li>The value of the system parameter <b><tt>GenericResourceDir</tt></b>;
+<li>The name of the resource category (for instance, <b><tt>CMap</tt></b>);
+<li>The name of the resource instance (for instance, <b><tt>Identity-H</tt></b>).
 </ol>
 
-Then the result is combined with search directories as explained in
+<p>If the value of the system parameter <b><tt>GenericResourceDir</tt></b>
+is not an absolute path,
+Ghostscript assumes multiple resource directories.
+In this case it concatenates :
+
+<ol>
+<li>A directory listed in the section
+<a href="#Finding_files">How Ghostscript finds files</a>,
+except the current directory;
+
+<li>The value of the system parameter <b><tt>GenericResourceDir</tt></b>;
+
+<li>The name of the resource category (for instance, <b><tt>CMap</tt></b>);
+
+<li>The name of the resource instance (for instance, <b><tt>Identity-H</tt></b>)
+</ol>
+
+Due to possible variety of the part 1, the first successful combination is used.
+For example, if the value of the system parameter <b><tt>GenericResourceDir</tt></b>
+is the string  <b><tt>../Resource/</tt></b>
+(or its equivalent in the file path syntax of the underlying platform),
+Ghostscript searches for <b><tt>../Resource/CMap/Identity-H</tt></b>
+from all directories listed in 
 <a href="#Finding_files">How Ghostscript finds files</a>.
+So in this example, if the user on a Windows platform specifies
+the command line option <b><tt>-I.;../gs/lib;c:/gs8.50/lib</tt></b>,
+Ghostscript searches for <b><tt>../gs/Resource/CMap/Identity-H</tt></b> and
+then for <tt><b>c:/gs8.50/Resource/CMap/Identity-H</tt></b>.
+
+<p>
+To get a proper platform dependent syntax Ghostscript inserts 
+the value of the system parameter
+<b><tt>GenericResourcePathSep</tt></b> (initially
+"<b><tt>/</tt></b>" on Unix and Windows, "<b><tt>:</tt></b>" on MacOS,
+"<b><tt>]</tt></b>" on OpenVMS).
+Also string <b><tt>./Resource</tt></b> is replaced with a
+platform dependent equivalent. 
+
+<p>
+In the case of multiple resource directories,
+the default <b><tt>ResourceFileName</b></tt> procedure
+enumerates all available resource files for a specified
+category name and instance name, and here the behavoir may differ from
+Adobe implementations due to multiple 
+generations of the resource file may be available.
+
+<p>
+In the case of multiple resource directories,
+the default <b><tt>ResourceFileName</b></tt> procedure retrieves either a path 
+to the first avaliable resource,
+or a path starting with <b><tt>GenericResourceDir</tt></b>,
+if the resource is not available.
+Due to that Postscript installers of Postscript resources
+will overvrite an existing resource or add into the first resource directory.
 
 <p>
 To look up fonts, after exhausting the search method described in <a href="#Font_lookup">the
