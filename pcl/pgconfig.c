@@ -613,6 +613,47 @@ private int
 hpgl_BP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
     hpgl_args_t args;
+    int32 command = 0;
+    int32 value = 0;
+    bool more = true;
+
+
+    while (more) {
+        more = hpgl_arg_int(pgls->memory, pargs, &command);
+	if (!more) 
+	    break;
+	if (command == 1) {
+	    /* parse string */ 
+	    const byte *p = pargs->source.ptr;
+	    const byte *rlimit = pargs->source.limit;	    
+	    while ( p < rlimit ) {
+		switch ( *++p ) {
+		case ' ':
+		    /* Ignore spaces between command and opening ". */
+		    continue;	
+		case '"':
+		    if ( !pargs->phase ) {
+			/* begin string */
+			pargs->phase = 1;
+			continue;
+		    }
+		    else /* end string */
+			break;
+		default:
+		    if ( !pargs->phase ) 
+			break; 			/* ill formed command exit */
+		    else
+			continue;               /* character inside of string */
+		}
+		break;  /* error or trailing " exits */
+	    }
+	    pargs->source.ptr = p;
+	} 
+	else {
+	    more = hpgl_arg_int(pgls->memory, pargs, &value);
+	    /* BP command value pair is currently ignored */
+	}
+    }
 
     hpgl_args_setup(&args);
     hpgl_IN(&args, pgls);
