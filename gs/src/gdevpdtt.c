@@ -20,6 +20,8 @@
 #include "string_.h"
 #include "gx.h"
 #include "gserrors.h"
+#include "gscencs.h"
+#include "gscedata.h"
 #include "gxfcache.h"		/* for orig_fonts list */
 #include "gxfont.h"
 #include "gxfont0.h"
@@ -742,7 +744,7 @@ pdf_is_compatible_encoding(gx_device_pdf *pdev, pdf_font_resource_t *pdfont,
  * Find a font resource compatible with a given font. 
  */
 private int
-pdf_find_font_resource(gx_device_pdf *pdev, gs_font *font, 
+pdf_find_font_resource(gx_device_pdf *pdev, gs_font *font,
 		       pdf_resource_type_t type,
 		       pdf_font_resource_t **ppdfont, 
 		       gs_glyph *glyphs, gs_char *chars, int num_chars)
@@ -767,7 +769,7 @@ pdf_find_font_resource(gx_device_pdf *pdev, gs_font *font,
 		cfont = pdf_font_resource_font(pdfont->u.type0.DescendantFont, false);
 		if (font0->data.CMap->WMode != pdfont->u.type0.WMode)
 		    continue;
-	    } else 
+	    } else
 		cfont = pdf_font_resource_font(pdfont, false);
 	    if (chars != NULL &&
 		!pdf_is_compatible_encoding(pdev, pdfont, font, glyphs, chars, num_chars))
@@ -835,7 +837,7 @@ pdf_obtain_cidfont_resource(gx_device_pdf *pdev, gs_font *subfont,
 
     pdf_attached_font_resource(pdev, subfont, ppdsubf, NULL, NULL, NULL, NULL);
     if (*ppdsubf == NULL) {
-	code = pdf_find_font_resource(pdev, subfont, 
+	code = pdf_find_font_resource(pdev, subfont,
 				      resourceCIDFont, ppdsubf, 
 				      glyphs, NULL, num_glyphs); 
 	if (code < 0)
@@ -1157,9 +1159,59 @@ pdf_make_text_glyphs_table(const gs_text_enum_t *penum, const gs_string *pstr,
     return 0;
 }
 
+/* Build the glyph set of the glyphshow text, and re_encode the text. */
+private int
+pdf_make_text_glyphs_table_unencoded(gs_font *font, const gs_string *pstr, const gs_glyph *gdata, 
+		gs_glyph *glyphs, int glyphs_offset, gs_char *chars, 
+		int *num_all_chars, int *num_unused_chars, int *ps_encoding_index)
+{
+    int i, ei;
+    gs_char ch;
+    gs_const_string gname;
+
+    for (ei = 0; gs_c_known_encodings[ei]; ei++) {
+	*num_unused_chars = 0;
+	*num_all_chars = 0;
+	for (i = 0; i < pstr->size; i++) {
+	    gs_glyph glyph;
+
+	    {   
+		/* fixme: optimize: move this block outside the ei cycle. 
+		   Maybe pstr->data is a big enough buffer to store 
+		   all values of 'glyph', which currently are re-computed 
+		   for each ei. If the buffer is big enough, first
+		   convert all glyphs with with gs_c_name_glyph,
+		   then try all ei and encode with "pstr->data[i] = (byte)ch;" .*/
+		int code = font->procs.glyph_name(font, gdata[i], &gname);
+
+		if (code < 0)
+		    return code;
+		glyph = gs_c_name_glyph(gname.data, gname.size);
+		if (glyph == GS_NO_GLYPH)
+		    return_error(gs_error_rangecheck);
+	    }
+	    for (ch = 0; ch <= 255; ch++) /* fixme: optimize. A new function to gscencs.c . */
+		if (glyph == gs_c_known_encode(ch, ei))
+		    break;
+	    if (ch > 255)
+		break;
+	    pstr->data[i] = (byte)ch;
+	    store_glyphs(glyphs, glyphs_offset,	chars, glyphs_offset,
+			 NULL, 0,
+			 num_all_chars, num_unused_chars,
+			 ch, ch, gdata[i]);
+	}
+	*ps_encoding_index = ei;
+	if (i == pstr->size)
+	    return 0;
+    }
+    return_error(gs_error_rangecheck);
+}
+
+
 /* Get/make font resource for the font with a known encoding. */
 private int
-pdf_obtain_font_resource_encoded(gx_device_pdf *pdev, gs_font *font, 
+pdf_obtain_font_resource_encoded(gx_device_pdf *pdev, gs_font *font,
 	pdf_font_resource_t **ppdfont, int num_unused_chars, int num_all_chars,
 	gs_glyph *glyphs, int glyphs_offset, gs_char *chars)
 {
@@ -1263,6 +1315,22 @@ pdf_mark_text_glyphs(const gs_text_enum_t *penum, const gs_string *pstr,
     return 0;
 }
 
+/* Mark glyphs used in the glyphshow text with the font resource. */
+private int
+pdf_mark_text_glyphs_unencoded(const gs_text_enum_t *penum, const gs_string *pstr,
+	    byte *glyph_usage, int char_cache_size)
+{
+    int i;
+
+    for(i = 0; i < pstr->size; i++) {
+	byte ch = pstr->data[i];
+
+	if (ch >= char_cache_size)
+	    return_error(gs_error_rangecheck);
+	glyph_usage[ch / 8] |= 0x80 >> (ch & 7);
+    }
+    return 0;
+}
 
 /*
  * Create or find a font resource object for a text.
@@ -1308,6 +1376,58 @@ pdf_obtain_font_resource(const gs_text_enum_t *penum,
     if (code < 0)
 	return code;
     code = pdf_mark_text_glyphs(penum, pstr, glyph_usage, char_cache_size);
+    if (code < 0)
+	goto out;
+out:
+    if (glyphs != glyphs0)
+	gs_free_object(pdev->memory, glyphs, "pdf_encode_string");
+    return code;
+}
+
+/*
+ * Create or find a font resource object for a glyphshow text.
+ */
+int
+pdf_obtain_font_resource_unencoded(const gs_text_enum_t *penum, 
+	    const gs_string *pstr, pdf_font_resource_t **ppdfont, const gs_glyph *gdata)
+{
+    gx_device_pdf *pdev = (gx_device_pdf *)penum->dev;
+    gs_font *font = (gs_font *)penum->current_font;
+    int num_unused_chars, num_all_chars;
+    int glyphs_offset;
+    gs_glyph glyphs0[200], *glyphs = glyphs0;
+    gs_char *chars;
+    byte *glyph_usage = 0;
+    double *real_widths = 0;
+    int char_cache_size = 0, width_cache_size = 0;
+    int code, i, ps_encoding_index;
+
+    if (font->FontType == ft_composite) {
+	/* Must not happen, because we always split composite fonts into descendents. */
+	return_error(gs_error_unregistered);
+    }
+    code = pdf_attached_font_resource(pdev, font, ppdfont,
+			       &glyph_usage, &real_widths, &char_cache_size, &width_cache_size);
+    if (code < 0)
+	return code;
+    /* *ppdfont is NULL if no resource attached. */
+    code = pdf_alloc_text_glyphs_table(pdev, penum, pstr, glyphs0, sizeof(glyphs0), &glyphs, &glyphs_offset, &chars);
+    if (code < 0)
+	return code;
+    code = pdf_make_text_glyphs_table_unencoded(font, pstr, gdata, glyphs, glyphs_offset, chars, 
+			&num_all_chars, &num_unused_chars, &ps_encoding_index);
+    if (code < 0)
+	goto out;
+    code = pdf_obtain_font_resource_encoded(pdev, font, ppdfont, 
+		    num_unused_chars, num_all_chars,
+		    glyphs, glyphs_offset, chars);
+    if (code < 0)
+	goto out;
+    code = pdf_attached_font_resource(pdev, font, ppdfont, 
+			       &glyph_usage, &real_widths, &char_cache_size, &width_cache_size);
+    if (code < 0)
+	return code;
+    code = pdf_mark_text_glyphs_unencoded(penum, pstr, glyph_usage, char_cache_size);
     if (code < 0)
 	goto out;
 out:

@@ -244,7 +244,7 @@ PROCESS_TEXT_PROC(process_plain_text);
  * Encode and process a string with a simple gs_font.
  */
 int pdf_encode_process_string(pdf_text_enum_t *penum, gs_string *pstr,
-			      const gs_matrix *pfmat,
+			      const gs_glyph *gdata, const gs_matrix *pfmat,
 			      pdf_text_process_state_t *ppts);
 
 /*
