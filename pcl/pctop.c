@@ -489,8 +489,7 @@ pcl_impl_report_errors(
 	pl_interp_instance_t *instance,         /* interp instance to wrap up job in */
    int                  code,              /* prev termination status */
    long                 file_position,     /* file position of error, -1 if unknown */
-   bool                 force_to_cout,     /* force errors to cout */
-   FILE                 *cout              /* stream for back-channel reports */
+   bool                 force_to_cout      /* force errors to cout */
 )
 {
 	pcl_interp_instance_t *pcli = (pcl_interp_instance_t *)instance;
@@ -498,8 +497,7 @@ pcl_impl_report_errors(
 	uint count;
 
 	while ( (count = pcl_status_read(buf, sizeof(buf), &pcli->pcs)) != 0 )
-	  fwrite(buf, 1, count, cout);
-	fflush(cout);
+	  errwrite(pcli->memory, buf, count);
 
 	return 0;
 }
