@@ -110,11 +110,36 @@ zwritecmap(i_ctx_t *i_ctx_p)
     return code;
 }
 
+/* <file> <cid9font> .writefont9 - */
+private int
+zwritefont9(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    gs_font *pfont;
+    gs_font_cid0 *pfcid;
+    int code = font_param(op, &pfont);
+    stream *s;
+
+    if (code < 0)
+	return code;
+    if (pfont->FontType != ft_CID_encrypted)
+	return_error(e_invalidfont);
+    check_write_file(s, op - 1);
+    pfcid = (gs_font_cid0 *)pfont;
+    code = psf_write_cid0_font(s, pfcid,
+			       WRITE_TYPE2_NO_LENIV | WRITE_TYPE2_CHARSTRINGS,
+			       NULL, 0, NULL);
+    if (code >= 0)
+	pop(2);
+    return code;
+}
+
 /* ------ Initialization procedure ------ */
 
 const op_def zcidtest_op_defs[] =
 {
     {"1.wrapfont", zwrapfont},
     {"2.writecmap", zwritecmap},
+    {"2.writefont9", zwritefont9},
     op_def_end(0)
 };

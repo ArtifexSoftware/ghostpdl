@@ -1428,8 +1428,8 @@ $(PSOBJ)zfcid.$(OBJ) : $(PSSRC)zfcid.c $(OP)\
 	$(PSCC) $(PSO_)zfcid.$(OBJ) $(C_) $(PSSRC)zfcid.c
 
 $(PSOBJ)zfcid0.$(OBJ) : $(PSSRC)zfcid0.c $(OP) $(memory__h)\
- $(gsccode_h) $(gsmatrix_h) $(gsstruct_h) $(gxfcid_h) $(gxfont1_h)\
- $(gdevpsf_h)\
+ $(gsccode_h) $(gsmatrix_h) $(gsstruct_h)\
+ $(gxalloc_h) $(gxfcid_h) $(gxfont1_h)\
  $(stream_h)\
  $(bfont_h) $(files_h) $(ichar_h) $(ichar1_h) $(icid_h) $(idict_h) $(idparam_h)\
  $(ifcid_h) $(ifont1_h) $(ifont2_h) $(ifont42_h) $(store_h)
@@ -1443,12 +1443,13 @@ $(PSOBJ)zfcid1.$(OBJ) : $(PSSRC)zfcid1.c $(OP) $(memory__h)\
 
 # Testing only (CIDFont and CMap)
 
-cidtest_=$(PSOBJ)zcidtest.$(OBJ)
+cidtest_=$(PSOBJ)zcidtest.$(OBJ) $(GLOBJ)gsfont0c.$(OBJ)
 $(PSD)cidtest.dev : $(INT_MAK) $(ECHOGS_XE) $(cidtest_)\
- $(PSD)cidfont.dev $(PSD)cmapread.dev
+ $(PSD)cidfont.dev $(PSD)cmapread.dev $(GLD)psf.dev $(GLD)psf0lib.dev
 	$(SETMOD) $(PSD)cidtest $(cidtest_)
 	$(ADDMOD) $(PSD)cidtest -oper zcidtest
 	$(ADDMOD) $(PSD)cidtest -include $(PSD)cidfont $(PSD)cmapread
+	$(ADDMOD) $(PSD)cidtest -include $(GLD)psf $(GLD)psf0lib
 
 $(PSOBJ)zcidtest.$(OBJ) : $(PSSRC)zcidtest.c $(string__h) $(OP)\
  $(gdevpsf_h) $(gxfont_h) $(gxfont0c_h)\

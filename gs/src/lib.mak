@@ -1744,8 +1744,8 @@ $(GLOBJ)gsfont0.$(OBJ) : $(GLSRC)gsfont0.c $(GXERR) $(memory__h)\
  $(gxfont_h) $(gxfont0_h) $(gxdevice_h)
 	$(GLCC) $(GLO_)gsfont0.$(OBJ) $(C_) $(GLSRC)gsfont0.c
 
-# gsfont0c is not needed for the PS interpreter, but it is used by pdfwrite
-# and by the PCL interpreter.
+# gsfont0c is not needed for the PS interpreter, other than for testing,
+# but it is used by pdfwrite and by the PCL interpreter.
 $(GLOBJ)gsfont0c.$(OBJ) : $(GLSRC)gsfont0c.c $(GXERR) $(memory__h)\
  $(gxfont_h) $(gxfont0_h) $(gxfont0c_h) $(gxfcid_h) $(gxfcmap_h)
 	$(GLCC) $(GLO_)gsfont0c.$(OBJ) $(C_) $(GLSRC)gsfont0c.c
@@ -1881,7 +1881,7 @@ gdevpsf_h=$(GLSRC)gdevpsf.h $(gsccode_h) $(gsgdata_h)
 psf_1=$(GLOBJ)gdevpsf1.$(OBJ) $(GLOBJ)gdevpsf2.$(OBJ) $(GLOBJ)gdevpsfm.$(OBJ)
 psf_2=$(GLOBJ)gdevpsft.$(OBJ) $(GLOBJ)gdevpsfu.$(OBJ) $(GLOBJ)gdevpsfx.$(OBJ) $(GLOBJ)spsdf.$(OBJ)
 psf_=$(psf_1) $(psf_2)
-$(DD)psf.dev : $(LIB_MAK) $(ECHOGS_XE) $(psf_)
+$(GLD)psf.dev : $(LIB_MAK) $(ECHOGS_XE) $(psf_)
 	$(SETMOD) $(DD)psf $(psf_1)
 	$(ADDMOD) $(DD)psf -obj $(psf_2)
 
