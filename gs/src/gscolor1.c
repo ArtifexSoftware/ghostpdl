@@ -168,7 +168,8 @@ gs_setcolortransfer_remap(gs_state * pgs, gs_mapping_proc red_proc,
 	load_transfer_map(pgs, ptran->gray, 0.0);
 	gx_set_effective_transfer(pgs);
 	gx_unset_dev_color(pgs);
-    }
+    } else
+	gx_set_effective_transfer(pgs);
     return 0;
   fblue:
     rc_assign(ptran->green, old.green, "setcolortransfer");
