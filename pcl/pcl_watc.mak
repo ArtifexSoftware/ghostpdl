@@ -4,37 +4,118 @@
 # pcl_watc.mak
 # Top-level makefile for PCL5* on MS-DOS/Watcom platforms.
 
-# Define the name of this makefile.
-MAKEFILE=..\pcl\pcl_watc.mak
+# The build process will put all of its output in this directory:
+!ifndef GENDIR
+GENDIR=..\pcl\obj
+!endif
 
-# Directories
-GSDIR=\gs
-GSSRCDIR=\gs
+# The sources are taken from these directories:
+!ifndef GLSRCDIR
+GLSRCDIR=..\gs
+!endif
+!ifndef PLSRCDIR
 PLSRCDIR=..\pl
-PLGENDIR=..\pl
-PLOBJDIR=..\pl
+!endif
+!ifndef PCLSRCDIR
 PCLSRCDIR=..\pcl
-PCLGENDIR=..\pcl
-PCLOBJDIR=..\pcl
+!endif
+!ifndef COMMONDIR
 COMMONDIR=..\common
+!endif
+!ifndef JSRCDIR
+JSRCDIR=$(GLSRCDIR)\jpeg
+JVERSION=6
+!endif
+!ifndef PSRCDIR
+PSRCDIR=$(GLSRCDIR)\libpng
+PVERSION=96
+!endif
+!ifndef ZSRCDIR
+ZSRCDIR=$(GLSRCDIR)\zlib
+!endif
 
-TARGET_XE=pcl5
+
+# If you want to build the individual packages in their own directories,
+# you can define this here, although normally you won't need to do this:
+!ifndef GLGENDIR
+GLGENDIR=$(GENDIR)
+!endif
+!ifndef GLOBJDIR
+GLOBJDIR=$(GENDIR)
+!endif
+!ifndef PSGENDIR
+PSGENDIR=$(GENDIR)
+!endif
+!ifndef PSOBJDIR
+PSOBJDIR=$(GENDIR)
+!endif
+!ifndef PLGENDIR
+PLGENDIR=$(GENDIR)
+!endif
+!ifndef PLOBJDIR
+PLOBJDIR=$(GENDIR)
+!endif
+!ifndef PCLGENDIR
+PCLGENDIR=$(GENDIR)
+!endif
+!ifndef PCLOBJDIR
+PCLOBJDIR=$(GENDIR)
+!endif
+
+# Define the name of this makefile.
+MAKEFILE=$(PCLSRCDIR)\pcl_watc.mak
+
+# Language and configuration.  These are actually platform-independent,
+# but we define them here just to keep all parameters in one place.
+CONFIG=5
+TARGET_DEVS=$(PCLOBJDIR)$(D)pcl5c.dev $(PCLOBJDIR)$(D)hpgl2c.dev
+
+# Main file's name
+MAIN_OBJ=$(PCLOBJDIR)$(D)pcmain.$(OBJ)
+
+# Executable path\name w/o the .EXE extension
+!ifndef TARGET_XE
+TARGET_XE=$(PCLOBJDIR)\pcl5
+!endif
 
 # Debugging options
-DEBUG=1
-TDEBUG=1
+!ifndef DEBUG
+DEBUG=0
+!endif
+!ifndef TDEBUG
+TDEBUG=0
+!endif
+!ifndef NOPRIVATE
 NOPRIVATE=0
+!endif
 
 # Target options
-CPU_TYPE=386
+!ifndef CPU_TYPE
+CPU_TYPE=586
+!endif
+!ifndef FPU_TYPE
 FPU_TYPE=0
+!endif
 
 # Assorted definitions.  Some of these should probably be factored out....
-GS=gs386
-WCVERSION=10.0
+WCVERSION=10.695
 
-DEVICE_DEVS=$(DD)vga.dev $(DD)djet500.dev $(DD)ljet4.dev $(DD)pcxmono.dev $(DD)pcxgray.dev
+# For building on 16 bit platforms (which may not work anymore) use 'wmakel'
+MAKE=wmake
 
+!ifndef DEVICE_DEVS
+DEVICE_DEVS=$(DD)ljet4.dev\
+ $(DD)bmpamono.dev $(DD)bmpa16m.dev $(DD)bmpmono.dev $(DD)bmp16m.dev\
+ $(DD)pkmraw.dev $(DD)ppmraw.dev $(DD)pgmraw.dev $(DD)pbmraw.dev\
+ $(DD)pcx16.dev $(DD)pcx256.dev $(DD)bitcmyk.dev\
+ $(DD)cljet5.dev\
+ $(DD)pcxmono.dev $(DD)pcxcmyk.dev $(DD)pcxgray.dev\
+ $(DD)pbmraw.dev $(DD)pgmraw.dev $(DD)ppmraw.dev $(DD)pkmraw.dev\
+ $(DD)pxlmono.dev $(DD)pxlcolor.dev\
+ $(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev\
+ $(DD)tifflzw.dev $(DD)tiffpack.dev\
+ $(DD)tiff12nc.dev $(DD)tiff24nc.dev
+!endif
 # Generic makefile
 
 # GS options
@@ -49,6 +130,13 @@ FEATURE_DEVS    = $(DD)dps2lib.dev   \
                   $(DD)cielib.dev    \
                   $(DD)htxlib.dev    \
                   $(DD)devcmap.dev
+
+# make sure the target directories exist - use special Watcom .BEFORE
+.BEFORE
+	if not exist $(GLGENDIR) mkdir $(GLGENDIR)
+	if not exist $(GLOBJDIR) mkdir $(GLOBJDIR)
+	if not exist $(PSGENDIR) mkdir $(PSGENDIR)
+	if not exist $(PSOBJDIR) mkdir $(PSOBJDIR)
 
 !include $(COMMONDIR)\watc_top.mak
 
