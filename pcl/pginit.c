@@ -61,6 +61,8 @@ hpgl_default_coordinate_system(
     pcls->g.pos.x = 0.0;
     pcls->g.pos.y = 0.0;
     pcls->g.scaling_type = hpgl_scaling_none;
+    pcls->g.plot_size_vertical_specified = false;
+    pcls->g.plot_size_horizontal_specified = false;
     return;
 }
 
