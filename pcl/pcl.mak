@@ -55,15 +55,9 @@ pcl.clean: pcl.config-clean pcl.clean-not-config-clean
 pcl.clean-not-config-clean:
 	$(RM_) $(PCLOBJ)*.$(OBJ)
 
-# due to a deficiency of the current make system devices are built in
-# the current working directory.  Also all of the gs generated files
-# are not "cleaned" we hack around that problem here.
-pcl.config-clean:
+pcl.config-clean: clean_gs
 	$(RM_) $(PCLOBJ)*.dev
 	$(RM_) $(PCLOBJ)devs.tr5
-	$(MAKE) -f $(GLSRCDIR)$(D)ugcclib.mak \
-	GLSRCDIR='$(GLSRCDIR)' GLGENDIR='$(GLGENDIR)' \
-	GLOBJDIR='$(GLOBJDIR)' clean
 
 ################ Remaining task list:
 # PCL5C drawing commands
@@ -198,7 +192,7 @@ pcht_h      = $(PCLSRC)pcht.h     \
               $(pclookup_h)       \
               $(pcdither_h)
 
-pcindexed_h = $(PCLSRC)pcindexed.h\
+pcindxed_h = $(PCLSRC)pcindxed.h\
               $(gx_h)             \
               $(gsstruct_h)       \
               $(gsrefct_h)        \
@@ -219,7 +213,7 @@ pcpalet_h   = $(PCLSRC)pcpalet.h  \
               $(pclookup_h)       \
               $(pcdither_h)       \
               $(pccid_h)          \
-              $(pcindexed_h)      \
+              $(pcindxed_h)      \
               $(pcht_h)           \
               $(pccrd_h)
 
@@ -249,7 +243,7 @@ pcpatrn_h   = $(PCLSRC)pcpatrn.h  \
               $(gx_h)             \
               $(gsstruct_h)       \
               $(gsrefct_h)        \
-              $(pcindexed_h)      \
+              $(pcindxed_h)      \
               $(pccsbase_h)
 
 pcbiptrn_h  = $(PCLSRC)pcbiptrn.h \
@@ -273,10 +267,10 @@ pcursor_h   = $(PCLSRC)pcursor.h  \
               $(pcstate_h)        \
               $(pcommand_h)
 
-pcwhtindx_h = $(PCLSRC)pcwhtindx.h\
+pcwhtidx_h = $(PCLSRC)pcwhtidx.h\
               $(gx_h)             \
               $(gsbitmap_h)       \
-              $(pcindexed_h)
+              $(pcindxed_h)
 
 rtgmode_h   = $(PCLSRC)rtgmode.h  \
               $(rtrstst_h)        \
@@ -403,8 +397,8 @@ $(PCLOBJ)rtraster.$(OBJ): $(PCLSRC)rtraster.c   \
                           $(gsrop_h)            \
                           $(pcstate_h)          \
                           $(pcpalet_h)          \
-                          $(pcindexed_h)        \
-                          $(pcwhtindx_h)        \
+                          $(pcindxed_h)        \
+                          $(pcwhtidx_h)        \
                           $(pcdraw_h)           \
                           $(rtgmode_h)          \
                           $(rtrstcmp_h)         \
@@ -515,16 +509,16 @@ $(PCLOBJ)pcident.$(OBJ): $(PCLSRC)pcident.c \
                          $(pcident_h)
 	$(PCLCCC) $(PCLSRC)pcident.c $(PCLO_)pcident.$(OBJ)
 
-$(PCLOBJ)pcindexed.$(OBJ): $(PCLSRC)pcindexed.c \
+$(PCLOBJ)pcindxed.$(OBJ): $(PCLSRC)pcindxed.c \
                            $(gx_h)              \
                            $(math__h)           \
                            $(string__h)         \
                            $(pcmtx3_h)          \
                            $(pccid_h)           \
                            $(pccsbase_h)        \
-                           $(pcindexed_h)       \
+                           $(pcindxed_h)       \
                            $(pcpalet_h)
-	$(PCLCCC) $(PCLSRC)pcindexed.c $(PCLO_)pcindexed.$(OBJ)
+	$(PCLCCC) $(PCLSRC)pcindxed.c $(PCLO_)pcindxed.$(OBJ)
 
 $(PCLOBJ)pclookup.$(OBJ): $(PCLSRC)pclookup.c   \
                           $(pcpalet_h)          \
@@ -560,7 +554,7 @@ $(PCLOBJ)pcpatrn.$(OBJ): $(PCLSRC)pcpatrn.c \
                          $(pcpalet_h)       \
                          $(pcfrgrnd_h)      \
                          $(pcht_h)          \
-                         $(pcwhtindx_h)     \
+                         $(pcwhtidx_h)     \
                          $(pcpatrn_h)       \
                          $(pcbiptrn_h)      \
                          $(pcuptrn_h)       \
@@ -582,18 +576,18 @@ $(PCLOBJ)pcuptrn.$(OBJ): $(PCLSRC)pcuptrn.c \
                          $(gxdevice_h)      \
                          $(gxpcolor_h)      \
                          $(pldict_h)        \
-                         $(pcindexed_h)     \
+                         $(pcindxed_h)     \
                          $(pcpatrn_h)       \
                          $(pcbiptrn_h)      \
                          $(pcuptrn_h)
 	$(PCLCCC) $(PCLSRC)pcuptrn.c $(PCLO_)pcuptrn.$(OBJ)
 
-$(PCLOBJ)pcwhtindx.$(OBJ): $(PCLSRC)pcwhtindx.c \
+$(PCLOBJ)pcwhtidx.$(OBJ): $(PCLSRC)pcwhtidx.c \
                            $(pcstate_h)         \
                            $(pcpalet_h)         \
-                           $(pcindexed_h)       \
-                           $(pcwhtindx_h)
-	$(PCLCCC) $(PCLSRC)pcwhtindx.c $(PCLO_)pcwhtindx.$(OBJ)
+                           $(pcindxed_h)       \
+                           $(pcwhtidx_h)
+	$(PCLCCC) $(PCLSRC)pcwhtidx.c $(PCLO_)pcwhtidx.$(OBJ)
 
 # Chapter 6
 $(PCLOBJ)rtgmode.$(OBJ):  $(PCLSRC)rtgmode.c    \
@@ -604,7 +598,7 @@ $(PCLOBJ)rtgmode.$(OBJ):  $(PCLSRC)rtgmode.c    \
                           $(gsstate_h)          \
                           $(pcstate_h)          \
                           $(pcpatxfm_h)         \
-                          $(pcindexed_h)        \
+                          $(pcindxed_h)        \
                           $(pcpalet_h)          \
                           $(pcursor_h)          \
                           $(pcdraw_h)           \
@@ -627,11 +621,11 @@ rtlbasec_   = $(PCLOBJ)pcbiptrn.$(OBJ) $(PCLOBJ)pccid.$(OBJ)    \
               $(PCLOBJ)pccolor.$(OBJ) $(PCLOBJ)pccrd.$(OBJ)     \
               $(PCLOBJ)pccsbase.$(OBJ) $(PCLOBJ)pcdither.$(OBJ) \
               $(PCLOBJ)pcfrgrnd.$(OBJ) $(PCLOBJ)pcht.$(OBJ)     \
-              $(PCLOBJ)pcident.$(OBJ) $(PCLOBJ)pcindexed.$(OBJ) \
+              $(PCLOBJ)pcident.$(OBJ) $(PCLOBJ)pcindxed.$(OBJ) \
               $(PCLOBJ)pclookup.$(OBJ) $(PCLOBJ)pcmtx3.$(OBJ)   \
               $(PCLOBJ)pcpalet.$(OBJ) $(PCLOBJ)pcpatrn.$(OBJ)   \
               $(PCLOBJ)pcpatxfm.$(OBJ) $(PCLOBJ)pcuptrn.$(OBJ)  \
-              $(PCLOBJ)pcwhtindx.$(OBJ) $(PCLOBJ)rtgmode.$(OBJ) \
+              $(PCLOBJ)pcwhtidx.$(OBJ) $(PCLOBJ)rtgmode.$(OBJ) \
               $(PCLOBJ)rtrstcmp.$(OBJ)
 
 $(PCLOBJ)rtlbasec.dev: $(PCL_MAK) $(ECHOGS_XE) $(rtlbasec_) $(PCLOBJ)rtlbase.dev
