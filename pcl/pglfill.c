@@ -260,6 +260,7 @@ private const hpgl_line_type_t  hpgl_adaptive_pats[8] = {
 hpgl_set_line_pattern_defaults(hpgl_state_t *pgls)
 {
     pgls->g.line.current.pattern_length_relative = 0; /* relative */
+    pgls->g.line.current.pattern_length = 4.0; /* % of P1 P2 */
     pgls->g.line.current.is_solid = true;
     memcpy( &pgls->g.fixed_line_type,
 	    &hpgl_fixed_pats,
@@ -269,9 +270,12 @@ hpgl_set_line_pattern_defaults(hpgl_state_t *pgls)
 	    &hpgl_adaptive_pats,
 	    sizeof(hpgl_adaptive_pats)
 	    );
+
+    /* initialize the current pattern offset - this is not part of the
+       command but is used internally to modulate the phase of the
+       HPGL/2 vector fills.  NB - needs a new home. */
+    pgls->g.line.current.pattern_offset = 0.0;
 }
-
-
 
 /*
  * LT type[,length[,mode]];
@@ -285,57 +289,63 @@ hpgl_LT(
     hpgl_state_t *  pgls
 )
 {	
-    int             type = 0;
+    int             type;
 
-    /*
-     * Draw the current path for any LT command irrespective of whether
-     * or not the the LT changes anything
-     */
+    /* Draw the current path for any LT command irrespective of
+       whether or not the the LT changes anything */
     hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 
-    if (hpgl_arg_c_int(pargs, &type)) {
-
-	/*
-         * restore old saved line if we have a solid line,
-         * otherwise the instruction is ignored.
-         */
-	if (type == 99) {
-	    if (pgls->g.line.current.is_solid == true)
-		pgls->g.line.current = pgls->g.line.saved;
-	    return 0;
-        } else {	
-	    hpgl_real_t length_or_percent = 4.0;  /* units are mm or percentage */
-	    int         mode = 2;
-
-	    /* set the offset this is not part of the command but is
-               used internally (see pgstate.h) */
-	    pgls->g.line.current.pattern_offset = 0.0;
-	    /* NB this is luny unreadable logic */
-	    if ( (type < -8)                                                  ||
-                 (type > 8)                                                   ||
-		 ( hpgl_arg_c_real(pargs, &length_or_percent)                 &&
-		   ((length_or_percent <= 0)                                  || 
-                    (hpgl_arg_c_int(pargs, &mode) && ((mode & ~1) != 0))  )  )  )
-		return e_Range;
-	    
-	    if ( mode != 2 ) {
-		pgls->g.line.current.pattern_length_relative = mode;
-	    }
-	    if ( pgls->g.line.current.pattern_length_relative == 0 ) /* relative */
-		pgls->g.line.current.pattern_length = length_or_percent / 100.0;
-	    else /* absolute */
-		pgls->g.line.current.pattern_length = length_or_percent;
-	    pgls->g.line.current.is_solid = false;
-	}
-    } else {
-	/* no args save in case we get a 99 next and set the current
-           line to solid.  HP does not restore the state of the
-           current line pattern. */
+    /* no parameter defaults to solid line type - note line type 0 is
+       for dots, this is the no parameter default.  We keep the old
+       pattern parameters (no update) and save the current pattern
+       since type 99 can only be invoked if the current line is solid
+       (i.e. the 99 pattern only needs to be saved here */
+    if ( !hpgl_arg_c_int(pargs, &type) ) {
 	pgls->g.line.saved = pgls->g.line.current;
 	pgls->g.line.current.is_solid = true;
 	return 0;
     }
-    pgls->g.line.current.type = type;
+
+    /* 99 restores the previous line type if a solid line type is the
+       current selection (LT;) LT99 is ignored when a non-solid line
+       type is in effect, of course the previous line may have been a
+       solid line resulting in nop. */
+    if ( type == 99 && pgls->g.line.current.is_solid == true ) {
+	pgls->g.line.current = pgls->g.line.saved;
+	return 0;
+    }
+	
+    /* check line type range */
+    if ( type < -8 || type > 8 )
+	return e_Range;
+    /* Initialize, get and check pattern length and mode.  If the mode
+       is relative (0) the units are a % of the distance from P1 to P2
+       for the absolute mode units are millimeters */
+    {
+	/* initialize pattern lengths to current state values */
+	hpgl_real_t length = pgls->g.line.current.pattern_length;
+	int mode = pgls->g.line.current.pattern_length_relative;
+
+	/* get/check the pattern length and mode */
+	if ( hpgl_arg_c_real(pargs, &length) ) {
+	    if ( length <= 0 )
+		return e_Range;
+	    if ( hpgl_arg_c_int(pargs, &mode) )
+		if ( (mode != 0) && (mode != 1) )
+		    return e_Range;
+	}
+
+	/* if we are here this is a non-solid line and we should be
+           able to set the rest of the line parameter state values.
+           NB have not checked if some of these get set if there is a
+           range error for pattern length or mode.  An experiment for
+           another day... */
+	pgls->g.line.current.is_solid = false;
+        pgls->g.line.current.type = type;
+	pgls->g.line.current.pattern_length = length;
+	pgls->g.line.current.pattern_length_relative = mode;
+	pgls->g.line.current.type = type;
+    }
     return 0;
 }
 
