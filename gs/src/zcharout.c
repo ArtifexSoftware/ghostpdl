@@ -363,6 +363,9 @@ charstring_make_notdef(gs_glyph_data_t *pgd, gs_font *font)
  * Enumerate the next glyph from a directory.  This is essentially a
  * wrapper around dict_first/dict_next to implement the enumerate_glyph
  * font procedure.
+ *
+ * Note that *prdict will be null if the font is a subfont of a
+ * CIDFontType 0 CIDFont.
  */
 int
 zchar_enumerate_glyph(const ref *prdict, int *pindex, gs_glyph *pglyph)
@@ -370,6 +373,8 @@ zchar_enumerate_glyph(const ref *prdict, int *pindex, gs_glyph *pglyph)
     int index = *pindex - 1;
     ref elt[2];
 
+    if (!r_has_type(prdict, t_dictionary))
+	return 0;		/* *pindex was 0, is still 0 */
     if (index < 0)
 	index = dict_first(prdict);
 next:
