@@ -2,7 +2,7 @@
 <article>
 <artheader>
  <title>IJS Protocol Specification</title>
- <subtitle>Version 0.32 &mdash; 17 Jan 2002</subtitle>
+ <subtitle>Version 0.34 &mdash; 22 Feb 2002</subtitle>
  <!-- the date should be a <date> element, but I can't for the
       life of me figure out how to coax db2ps into actually
       rendering it -->
@@ -890,6 +890,15 @@ quality, or selecting a point along a speed/quality tradeoff. The
 details of these options vary widely from device to device. When made
 available through IJS, they should be grouped under the Quality:
 prefix.
+</para>
+
+<para>
+Parameters in the Quality: namespace are to be interpreted in the
+context of the device id (as defined by the DeviceManufacturer and
+DeviceModel parameters). In the context of different device id's,
+Quality: parameters with the same name may have entirely different
+meaning. This recommendation reflects the diversity of quality
+parameters and settings in devices and drivers.
 </para>
 
 <para>

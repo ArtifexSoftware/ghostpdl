@@ -1,5 +1,26 @@
-IJS 0.33
-22 Jan 2002
+IJS 0.35
+
+News as of 0.35:
+10 Feb 2004
+
+The autoconf build system has been moderized and we now use 
+libtool for portable shared library building. Thanks to Roger
+Leigh for helping with that.
+
+Also a bug with ColorSpace field was corrected, thanks to David 
+Suffield.
+
+News as of 0.34:
+22 Apr 2002
+
+The source files now have official MIT license banners. Thanks to
+www.opensource.org for hosting the ur-text of this license. Also
+some clarifications on namespace management in the spec.
+
+There is now an IJS website, graciously hosted by linuxprinting.org.
+http://www.linuxprinting.org/ijs/
+
+There have been some minor improvements in the makefile.
 
 News as of 0.33:
 
@@ -158,7 +179,8 @@ while communicating that it's not specific to HP printers.
 
 Licensing
 
-MIT. I want everybody to be able to use this.
+All source code in this distribution is released under the MIT
+License. I want everybody to be able to use this.
 
 
 More stuff to write:
