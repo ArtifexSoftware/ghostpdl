@@ -681,8 +681,11 @@ pcursor_do_copy(pcl_state_t *psaved,
 {
     /* don't restore the current cap.  The cap is not part of the
        state */
-    if ( operation & pcl_copy_after )
+    if ( operation & pcl_copy_after ) {
 	psaved->cap = pcs->cap;
+        /* NB doesn't belong here */
+        psaved->page_marked = pcs->page_marked;
+    }
     return 0;
 }
     
