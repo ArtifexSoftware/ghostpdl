@@ -20,6 +20,8 @@
 #include "pggeom.h"
 #include "pgmisc.h"
 #include "pcpatrn.h"
+#include "gspath.h"
+#include "gscoord.h"
 
 /* ------ Internal procedures ------ */
 
@@ -187,6 +189,53 @@ hpgl_FP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	return 0;
 }
 
+/* close a subpolygon; PM1 or CI inside of a polygon */
+int 
+hpgl_close_subpolygon(hpgl_state_t *pgls)
+{
+    gs_point first, last;
+    gs_point point;
+    gs_fixed_point first_device;
+    
+    if ( pgls->g.polygon_mode ) {
+
+	if ( gx_path_subpath_start_point(gx_current_path(pgls->pgs),
+					 &first_device) >= 0 ) {
+	    first.x = fixed2float(first_device.x);
+	    first.y = fixed2float(first_device.y);		  
+
+	    /* get gl/2 current position -- always current units */
+	    hpgl_call(hpgl_get_current_position(pgls, &last));
+	    /* convert to device space using the current ctm */
+	    hpgl_call(gs_transform(pgls->pgs, last.x, last.y, &last));
+	    /*
+	     * if the first and last are the same close the path (i.e
+	     * force gs to apply join and miter)
+	     */
+	    if (equal(first.x, last.x) && equal(first.y, last.y)) {
+		hpgl_call(gs_closepath(pgls->pgs));
+	    }
+	    else {
+		/* explicitly close the path if the pen has been down */
+		if ( pgls->g.have_drawn_in_path ) {
+		    hpgl_call(hpgl_close_current_path(pgls));
+		   
+		/* update current position to the first point in sub-path, 
+		 * should be the same as last point after close path
+		 * needed for relative moves after close of unclosed polygon
+		 */ 
+		hpgl_call(gs_itransform(pgls->pgs, first.x, first.y, &point));
+		hpgl_call(hpgl_set_current_position(pgls, &point)); 
+		hpgl_call(hpgl_update_carriage_return_pos(pgls));
+		}
+	    }
+	    /* remain in poly mode, this shouldn't be necessary */
+	    pgls->g.polygon_mode = true;
+	}
+	pgls->g.subpolygon_started = true;
+    }
+    return 0;
+}
 
 /* PM op; */
 int
@@ -211,38 +260,13 @@ hpgl_PM(hpgl_args_t *pargs, hpgl_state_t *pgls)
 				hpgl_pen_down | hpgl_pen_pos);
 	    break;
 	  case 1 :
-	      {
-	      gs_point first;
-	      gs_point point;
-	      gs_fixed_point first_device;
-	      bool have_sub_path = false;
-
-	      if ( gx_path_subpath_start_point(gx_current_path(pgls->pgs),
-					       &first_device) >= 0 ) {
-		  have_sub_path = true;
-		  first.x = fixed2float(first_device.x);
-		  first.y = fixed2float(first_device.y);		  
-	      }
-	      
-	      hpgl_call(hpgl_close_current_path(pgls));
-	      /* remain in poly mode, this shouldn't be necessary */
-	      pgls->g.polygon_mode = true;
-	      pgls->g.subpolygon_started = true;
-	      if ( have_sub_path ) { 
-		  /* update current position to the first point in sub-path, 
-		   * should be the same as last point after close path
-		   * needed for relative moves after close of unclosed polygon
-		   */ 
-		  hpgl_call(gs_itransform(pgls->pgs, first.x, first.y, &point));
-		  hpgl_call(hpgl_set_current_position(pgls, &point)); 
-		  hpgl_call(hpgl_update_carriage_return_pos(pgls));
-	      }
+	      hpgl_call(hpgl_close_subpolygon(pgls));
 	      break;
-	      }
 	  case 2 :
 	      if ( pgls->g.polygon_mode ) {
 		  /* explicitly close the path if the pen is down */
-		  if ( pgls->g.move_or_draw == hpgl_pen_down )
+		  if ( pgls->g.move_or_draw == hpgl_pen_down 
+		       && pgls->g.have_drawn_in_path )
 		      hpgl_call(hpgl_close_current_path(pgls));
 		  /* make a copy of the path and clear the current path */
 		  hpgl_call(hpgl_copy_current_path_to_polygon_buffer(pgls));

@@ -180,7 +180,6 @@ typedef struct pcl_hpgl_state_s {
         gs_point pos;
         /* used to track the line drawing state in hpgl */
         gs_point first_point;
-
 		/* Chapter 21 (pgpoly.c) */
 	struct polygon_ {
 	  hpgl_path_state_t buffer; /* path for polygon buffer */
@@ -309,8 +308,9 @@ typedef struct pcl_hpgl_state_s {
 	gs_point carriage_return_pos;
        /* extra pen state for routines that cannot use local variables
 	  because of longjmp parser braindamage. */
-       hpgl_pen_state_t pen_state;
-    bool subpolygon_started; /* true if we are just starting a subpolygon */
+        hpgl_pen_state_t pen_state;
+	bool subpolygon_started; /* true if we are just starting a subpolygon */
+	bool have_drawn_in_path; /* true if the pen has been down during this path */
 } pcl_hpgl_state_t;
 
 #define hpgl_pen_relative (1)

@@ -179,52 +179,53 @@ hpgl_plot(hpgl_args_t *pargs, hpgl_state_t *pgls, hpgl_plot_function_t func)
      * Since these commands take an arbitrary number of arguments,
      * we reset the argument bookkeeping after each group.
      */
+    /*    bool first_loop = true; */
     hpgl_real_t x, y;
-    if ( hpgl_plot_is_move(func) || pgls->g.subpolygon_started )
+    if ( hpgl_plot_is_move(func) && !pgls->g.polygon_mode ) {
 	hpgl_call(hpgl_close_path(pgls));
-
+    }
     while ( hpgl_arg_units(pargs, &x) && hpgl_arg_units(pargs, &y) ) {
+	/* move with arguments closes path */
+	if ( pargs->phase == 0 
+	     && (hpgl_plot_is_move(func) || pgls->g.subpolygon_started )) {
+	    hpgl_call(hpgl_close_path(pgls));
+	}
 	pargs->phase = 1;	/* we have arguments */
 	/* first point of a subpolygon is a pen up - absurd */
 	if ( pgls->g.subpolygon_started ) {
 	    hpgl_pen_state_t pen;	    
 	    pgls->g.subpolygon_started = false;
-	    
-	    hpgl_save_pen_state(pgls,
-				&pen,
-				hpgl_pen_down);
-	    pgls->g.move_or_draw = hpgl_plot_move;
+	    pgls->g.have_drawn_in_path = false;
 	    hpgl_call(hpgl_add_point_to_path(pgls, x, y, 
 					     hpgl_plot_move | pgls->g.relative_coords, 
 					     true));
-	    hpgl_restore_pen_state(pgls,
-				   &pen,
-				   hpgl_pen_down);	
 	}
-	else 
+	else {
 	    hpgl_call(hpgl_add_point_to_path(pgls, x, y, func, true));
+	    if ( hpgl_plot_is_draw(func) ) 
+		pgls->g.have_drawn_in_path = true;
+	}
 	/* Prepare for the next set of points. */
 	if ( pgls->g.symbol_mode != 0 )
 	    hpgl_call(hpgl_print_symbol_mode_char(pgls));
 	hpgl_args_init(pargs);
     }
 
-    /* check for no argument case */
-    if ( !pargs->phase) {
-	if ( hpgl_plot_is_relative(func) )
-	    /*hpgl_call(hpgl_add_point_to_path(pgls, 0.0, 0.0, func, true)) */;
-	else {
-	    gs_point cur_point;
-	    if ( !pgls->g.polygon_mode ) {
-		hpgl_call(hpgl_get_current_position(pgls, &cur_point));
-		hpgl_call(hpgl_add_point_to_path(pgls, cur_point.x,
-						 cur_point.y, func, true));
-	    }
-	}
+    /* check for no argument, no polygon, absolute will add a point to path case 
+     * NB stefan: need to find the test case
+     */
+    if ( !pargs->phase && hpgl_plot_is_absolute(func) && !pgls->g.polygon_mode ) {
+	gs_point cur_point;
+	hpgl_call(hpgl_get_current_position(pgls, &cur_point));
+	hpgl_call(hpgl_add_point_to_path(pgls, cur_point.x,
+					 cur_point.y, func, true));
     }
     if ( pgls->g.symbol_mode != 0 )
 	hpgl_call(hpgl_print_symbol_mode_char(pgls));
-    hpgl_call(hpgl_update_carriage_return_pos(pgls));
+
+    /* don't update if no arguments */     
+    if ( pargs->phase ) 
+	hpgl_call(hpgl_update_carriage_return_pos(pgls));
     return 0;
 }
 
@@ -282,10 +283,18 @@ hpgl_CI(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
 	hpgl_real_t radius, chord = 5;
 	bool reset_ctm = true;
-	gs_point pos = pgls->g.pos; /* center */
+	gs_point pos;
 
 	if ( !hpgl_arg_units(pargs, &radius) )
-	  return e_Range;
+	    return e_Range;
+	
+	/* close existing path iff a draw exists in polygon path */
+	if ( pgls->g.have_drawn_in_path && pgls->g.polygon_mode )
+	    hpgl_call(hpgl_close_subpolygon(pgls));
+
+	/* center; closing subpolygon can move center */
+	pos = pgls->g.pos; 
+
 	hpgl_arg_c_real(pargs, &chord);
 	/* draw the path here for line type 0, otherwise the first dot
            drawn in the circumference of the circle will be oriented
@@ -298,13 +307,20 @@ hpgl_CI(hpgl_args_t *pargs, hpgl_state_t *pgls)
 				       radius, 0.0, 360.0, chord, true,
 				       hpgl_plot_draw_absolute, reset_ctm));
 	if ( !pgls->g.polygon_mode )
-	  hpgl_call(hpgl_draw_arc(pgls));
-	/* move back to the center */
+	    hpgl_call(hpgl_draw_arc(pgls));
+
+	/* end path, start new path by moving back to the center */
+	hpgl_call(hpgl_close_current_path(pgls));
+	hpgl_call(hpgl_add_point_to_path(pgls, pos.x, pos.y, 
+					 hpgl_plot_move_absolute,
+					 true));  
+	pgls->g.have_drawn_in_path = false; /* prevent dot draw on close */
 	hpgl_call(hpgl_set_current_position(pgls, &pos));
+
 	if ( !pgls->g.polygon_mode )
 	    hpgl_call(hpgl_clear_current_path(pgls));
-	return 0;
 
+	return 0;
 }
 
 /* PA x,y...; */

@@ -109,4 +109,7 @@ int hpgl_close_current_path(P1(hpgl_state_t *pgls));
 /* adds a pcl point to the current path */
 int hpgl_add_pcl_point_to_path(P2(hpgl_state_t *pgls, const gs_point *pcl_point));
 
+/* closes a subpolygon; PM1 or CI */
+int hpgl_close_subpolygon(P1(hpgl_state_t *pgls));
+
 #endif                          /* pgdraw_INCLUDED */
