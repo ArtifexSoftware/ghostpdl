@@ -247,7 +247,7 @@ again:
 	goto again;
     else
 	status = ERRC;
-    process_interrupts();
+    process_interrupts(s->memory);
     return status;
 }
 
@@ -324,7 +324,7 @@ again:
     /* Some versions of the DEC C library on AXP architectures */
     /* give an error on write if the count is zero! */
     if (count == 0) {
-	process_interrupts();
+	process_interrupts((stream*)st->memory);
 	return 0;
     }
     /* See above regarding the Mac MetroWorks compiler. */
@@ -336,7 +336,7 @@ again:
 	goto again;
     else
 	status = ERRC;
-    process_interrupts();
+    process_interrupts((stream *)st->memory);
     return status;
 }
 

@@ -684,7 +684,7 @@ win_prn_destroytools(gx_device_win_prn * wdev)
 BOOL CALLBACK _export
 AbortProc(HDC hdcPrn, int code)
 {
-    process_interrupts();
+    process_interrupts(NULL);
     if (code == SP_OUTOFDISK)
 	return (FALSE);		/* cancel job */
     return (TRUE);

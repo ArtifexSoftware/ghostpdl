@@ -37,6 +37,10 @@
 int
 gp_check_interrupts(const gs_memory_t *mem)
 {
+    if(mem == NULL) {
+	/* MAJOR HACK will NOT work in multithreaded environment */
+	mem = gs_lib_ctx_get_non_gc_memory_t();
+    }
     if (mem && mem->gs_lib_ctx && mem->gs_lib_ctx->poll_fn)
 	return (*mem->gs_lib_ctx->poll_fn)(mem->gs_lib_ctx->caller_handle);
     return 0;

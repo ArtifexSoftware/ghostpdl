@@ -93,7 +93,7 @@ s_band_read_process(stream_state * st, stream_cursor_read * ignore_pr,
 	    }
 	    q += count;
 	    left -= count;
-	    process_interrupts();
+	    process_interrupts(st->memory);
 	    continue;
 	}
 rb:

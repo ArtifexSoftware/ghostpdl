@@ -564,7 +564,7 @@ gp_printfile_gs16spl(const char *filename, const char *port)
     hwndspl = FindWindow(NULL, "GS Win32s/Win16 spooler");
 
     while (IsWindow(hwndspl)) {
-	gp_check_interrupts();
+	gp_check_interrupts(NULL);
     }
 
     return 0;

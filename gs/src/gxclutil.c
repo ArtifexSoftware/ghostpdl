@@ -167,7 +167,7 @@ cmd_write_band(gx_device_clist_writer * cldev, int band_min, int band_max,
 	    pcl->head = pcl->tail = 0;
 	}
 	clist_fwrite_chars(&end, 1, cfile);
-	process_interrupts();
+	process_interrupts(cldev->memory);
 	code_b = clist_ferror_code(bfile);
 	code_c = clist_ferror_code(cfile);
 	if (code_b < 0)

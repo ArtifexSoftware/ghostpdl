@@ -139,7 +139,7 @@ top_up_cbuf(command_buf_t *pcb, const byte *cbp)
 	nread = 1;
     }
     set_cb_end(pcb, cb_top + nread);
-    process_interrupts();
+    process_interrupts(pcb->s->memory);
     return pcb->data;
 }
 

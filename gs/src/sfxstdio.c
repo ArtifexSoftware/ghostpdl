@@ -252,10 +252,10 @@ s_file_write_process(stream_state * st, stream_cursor_read * pr,
 	if (written < 0)
 	    written = 0;
 	pr->ptr += written;
-	process_interrupts();
+	process_interrupts(NULL);
 	return (ferror(file) ? ERRC : 0);
     } else {
-	process_interrupts();
+	process_interrupts(NULL);
 	return 0;
     }
 }

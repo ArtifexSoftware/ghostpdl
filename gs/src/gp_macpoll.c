@@ -44,7 +44,7 @@ extern HWND hwndtext;
  * Check messages and interrupts; return true if interrupted.
  * This is called frequently - it must be quick!
  */
-int gp_check_interrupts(void)
+int gp_check_interrupts(const gs_memory_t *mem)
 {
 	static unsigned long	lastYieldTicks = 0;
 	int iRetVal = 0;

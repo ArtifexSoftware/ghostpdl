@@ -388,7 +388,7 @@ GX_FILL_TRAPEZOID (gx_device * dev, const EDGE_TYPE * left,
 #undef VD_RECT_SWAPPED
 xit:	if (code < 0 && FILL_DIRECT)
 	    return_error(code);
-	return_if_interrupt();
+	return_if_interrupt(dev->memory);
 	return code;
     }
 }
