@@ -146,7 +146,7 @@ class _GSTextTestResult(unittest._TextTestResult):
     def printErrorList(self, flavor, errors):
         handoff = []
         for test, err in errors:
-            if issubclass(err[0], GSTestFailure):
+            if isinstance(err[0], GSTestFailure):
                 self.stream.writeln(self.separator1)
                 self.stream.writeln("%s: %s" % (flavor, self.getDescription(test)))
                 self.stream.writeln(self.separator2)
