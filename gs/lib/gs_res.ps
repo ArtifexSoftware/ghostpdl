@@ -744,7 +744,7 @@ userdict /.localcsdefaults false put
     Fontmap 1 index .knownget {
       {
 	dup type /nametype eq {
-	  .fontstatus { null exit } if
+	  .fontstatus { pop null exit } if
 	} {
 	  dup type /stringtype eq {
 	    findlibfile { closefile pop null exit } if pop
