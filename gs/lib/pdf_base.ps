@@ -494,15 +494,28 @@ pdfdict begin
 % especially since the PDF 1.2 specification states flatly that the only
 % legal terminators following the 'stream' keyword are \n or \r\n, both of
 % which are properly skipped and discarded by the token operator.
+% Unfortunately, this doesn't account for other whitespace characters that
+% may have preceded the EOL, such as spaces or tabs. Thus we back up one
+% character and scan until we find the \n terminator.
 /stream {	% <dict> stream <modified_dict>
   dup /F known dup PDFsource PDFfile eq or {
     not {
       dup /File PDFfile put
+      % make sure that we are just past the EOL \n character
+      PDFfile dup fileposition 1 sub setfileposition	% back up one
+      { PDFfile read pop dup 13 eq {
+	  % If there had been a \n, token would have advanced over it
+	  % thus, if the terminator was \r, we have a format error!
+	  (   **** PDF format error: stream operator not terminated by valid EOL.\n) pdfformaterror
+	  pop exit	% fileposition is OK (just past the \r).
+	} if 
+	10 eq { exit } if
+      } loop	% scan past \n
       dup /FilePosition PDFfile fileposition put
       DEBUG { (%FilePosition: ) print dup /FilePosition get == } if
     } if
     PDFfile fileposition 1 index /Length oget add
-      PDFfile exch setfileposition
+    PDFfile exch setfileposition
   } {
     pop
 	% We're already reading from a stream, which we can't reposition.
