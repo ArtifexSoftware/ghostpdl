@@ -34,6 +34,20 @@ void new_logical_page(P4(
     bool                        reset_initial
 ));
 
+ int
+pcl_getdevice_initial_matrix(P2(pcl_state_t *       pcs,
+				gs_matrix *         mat
+));
+
+ int
+pcl_current_bounding_box(P2(pcl_state_t *           pcs,
+			    gs_rect *               pbbox
+));
+
+bool pcl_page_marked(P1(
+    pcl_state_t *           pcs
+));;
+
 #define pcl_end_page_always(pcs)    pcl_end_page((pcs), pcl_print_always)
 #define pcl_end_page_if_marked(pcs) pcl_end_page((pcs), pcl_print_if_marked)
 

@@ -188,7 +188,7 @@ update_xfm_state(
                        );
     gs_matrix_multiply( &(pxfmst->pd2lp_mtx),
                         &(pxfmst->lp2dev_mtx),
-               !        &(pxfmst->pd2dev_mtx)
+                        &(pxfmst->pd2dev_mtx)
                         );
 
     /* calculate the print direction page size */
@@ -378,6 +378,53 @@ new_logical_page(
     new_page_size(pcs, psize, reset_initial);
 }
 
+ int
+pcl_current_bounding_box(pcl_state_t *           pcs,
+			 gs_rect *               pbbox)
+{
+    gx_device * dev = ((gx_device_cmap *)gs_currentdevice(pcs->pgs))->target;
+    /* Check whether we're working with a bbox device. */
+    if (strcmp(gs_devicename(dev), "bbox") == 0) {
+	gs_matrix mat;
+	/*
+	 * A bbox device can give us a definitive answer;
+	 * (otherwise we have to be conservative).
+	 */
+	gx_device_bbox_bbox((gx_device_bbox *)dev, pbbox);
+	/* wacko - NB fix this the coordinates come out wrong for
+           the 0 area case */
+	if ((pbbox->p.x >= pbbox->q.x) || (pbbox->p.y >= pbbox->q.y))
+	    return 0;
+	/* convert to device space */
+	gs_deviceinitialmatrix((gx_device *)dev, &mat);
+	gs_bbox_transform(pbbox, &mat, pbbox);
+    } else {
+	dprintf("Error bbox not installed\n");
+	return -1;
+    }
+    return 0;
+}
+
+/* returns the bounding box coordinates for the current device and a
+   boolean to indicate marked status. 0 - unmarked 1 - marked -1 error */
+ int
+pcl_page_marked(
+    pcl_state_t *           pcs
+)
+{
+    gs_rect bbox;
+    int code;
+    
+    code = pcl_current_bounding_box(pcs, &bbox);
+    if ( code < 0 )
+	return code;
+
+    if ((bbox.p.x >= bbox.q.x) || (bbox.p.y >= bbox.q.y))
+	return false;
+    else
+	return true;
+}
+    
 /*
  * End a page, either unconditionally or only if there are marks on it.
  * Return 1 if the page was actually printed and erased.
@@ -393,25 +440,11 @@ pcl_end_page(
 
     pcl_break_underline(pcs);	/* (could mark page) */
 
+    /* If we are conditionally printing (normal case) check if the
+       page is marked */
     if (condition != pcl_print_always) {
-	/* I wish there was a kind and gentle way to get the bounding
-           box device... */
-	gx_device * dev = ((gx_device_cmap *)gs_currentdevice(pcs->pgs))->target;
-
-	/* Check whether we're working with a bbox device. */
-	if (strcmp(gs_devicename(dev), "bbox") == 0) {
-	    gs_rect bbox;
-
-	    /*
-             * A bbox device can give us a definitive answer;
-	     * (otherwise we have to be conservative).
-             */
-	    gx_device_bbox_bbox((gx_device_bbox *)dev, &bbox);
-	    if ((bbox.p.x >= bbox.q.x) || (bbox.p.y >= bbox.q.y))
-		return 0;
-	}
-	else
-	    dprintf("Error bbox not installed\n");
+	if ( !pcl_page_marked(pcs) )
+	    return 0;
     }
 
     /* If there's an overlay macro, execute it now. */
