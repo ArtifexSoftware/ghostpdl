@@ -706,7 +706,16 @@ readonly def
       } ifelse
     } if
   } {
-    1 index /FontDescriptor oget /Flags get 4 and 0 ne % is_symbolic
+		                          % filepos fontres stream
+    1 index /FontDescriptor oget          % filepos fontres stream fd   
+    /Flags get 4 and 0 ne                 % filepos fontres stream is_symbolic
+    dup {
+      2 index null exch getencoding       % filepos fontres stream is_symbolic Encoding
+      dup 4 index exch                    % filepos fontres stream is_symbolic Encoding fontres Encoding
+      /prebuilt_encoding exch put         % filepos fontres stream is_symbolic Encoding
+    } {
+      null
+    } ifelse
     .loadpdfttfont
   } ifelse
   exch pop
@@ -1145,19 +1154,19 @@ readonly def
 % ---------------- Font lookup ---------------- %
 
 /fonttypeprocs mark		% <font-resource> -proc- <font>
-  /Type0 /buildType0 cvx
-  /Type1 /buildType1 cvx
-  /MMType1 1 index
-  /Type3 /buildType3 cvx
-  /TrueType /buildTrueType cvx
-  /CIDFontType0 /buildCIDType0 cvx
-  /CIDFontType2 /buildCIDType2 cvx
+  /Type0 //buildType0
+  /Type1 //buildType1
+  /MMType1 //buildType1
+  /Type3 //buildType3
+  /TrueType //buildTrueType
+  /CIDFontType0 //buildCIDType0
+  /CIDFontType2 //buildCIDType2
 .dicttomark readonly def
 
 /adjustfonttypes mark
-  /Type1 true
-  /MMType1 true
-  /TrueType true
+  /Type1 //adjustfont
+  /MMType1 //adjustfont
+  /TrueType //adjustfont
 .dicttomark readonly def
 
 /resourcefont			% <font-resource> resourcefont <font>
@@ -1196,7 +1205,7 @@ readonly def
 	% Stack: font-res font
     1 index 3 1 roll
     1 index /Subtype get
-    //adjustfonttypes exch known { adjustfont } { exch pop } ifelse
+    //adjustfonttypes exch .knownget { exec } { exch pop } ifelse
     dup 3 1 roll /PSFont exch put
   }
   ifelse

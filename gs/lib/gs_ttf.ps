@@ -106,27 +106,31 @@
 /maxstring 32000 def    % half the maximum length of a PostScript string,
 			% must be a multiple of 4 (for hmtx / loca / vmtx)
 
+/.invert_encoding   % <array> invert_encoding <dict>
+{ dup 256 dict exch
+  0 exch 1 exch length 1 sub {     % [] <> i
+    dup 3 index exch get           % [] <> i v
+    dup /.notdef ne {
+      exch 2 index 2 index .knownget {
+        dup type /arraytype eq {
+  	[ exch aload pop counttomark 2 add -1 roll ]
+        } {
+  	exch 2 array astore
+        } ifelse
+      } if 2 index 3 1 roll put
+    } {
+      pop pop
+    } ifelse
+  } for
+  exch pop
+} bind def
+
 % Define the Macintosh standard mapping from characters to glyph indices.
 /MacRomanEncoding dup .findencoding def
 /MacGlyphEncoding dup .findencoding def
 
 % Invert the MacRomanEncoding.
-/.romanmacdict 300 dict
-0 1 MacRomanEncoding length 1 sub {
-  MacRomanEncoding 1 index get
-		% Stack: dict index charname
-  dup /.notdef ne {
-    exch 2 index 2 index .knownget {
-      dup type /arraytype eq {
-	[ exch aload pop counttomark 2 add -1 roll ]
-      } {
-	exch 2 array astore
-      } ifelse
-    } if 2 index 3 1 roll put
-  } {
-    pop pop
-  } ifelse
-} for def
+/.romanmacdict MacRomanEncoding .invert_encoding def
 
 % Define remapping for misnamed glyphs in TrueType 'post' tables.
 % There are probably a lot more than this!
@@ -1201,7 +1205,7 @@ mark
 /.pdfcharkeys {
 	% The following algorithms are per the PDF Reference, Second Edition
 	% (PDF 1.3 reference manual).
-
+  
   is_symbolic {
     <00030001> .findcmap {
       %
@@ -1234,8 +1238,13 @@ mark
       % important for symbolic fonts in PDF.
       %
       <00010000> .findcmap {
-        .symbol_list .pdfmapchars
-        /Encoding /.GS_extended_SymbolEncoding .findencoding
+        prebuilt_encoding null ne {
+          prebuilt_encoding .invert_encoding .pdfmapchars
+          /Encoding prebuilt_encoding
+        } {
+          .symbol_list .pdfmapchars
+          /Encoding /.GS_extended_SymbolEncoding .findencoding
+        } ifelse
       } {
         % This is illegal with PDF spec.
         (   **** Warning: Embedded symbolic TT fonts must contain a cmap for Platform=1 Encoding=0.\n)
@@ -1269,8 +1278,9 @@ mark
   } ifelse
 } bind def
 
-% <file> <is_symbolic> .loadpdfttfont <type42font>
+% <file> <is_symbolic> <Encoding|null> .loadpdfttfont <type42font>
 /.loadpdfttfont {
+  /prebuilt_encoding exch def     % for .pdfcharkeys
   /is_symbolic exch def
   //false 0 .loadttfonttables
   .makesfnts
