@@ -25,6 +25,7 @@
 #include "gxfixed.h"		/* ditto */
 #include "gxmatrix.h"		/* for gzstate */
 #include "gzstate.h"
+#include "gscoord.h"		/* for currentmatrix, setmatrix */
 #include "gsline.h"		/* for prototypes */
 #include "gzline.h"
 
@@ -331,4 +332,20 @@ bool
 gs_currentdotlength_absolute(const gs_state * pgs)
 {
     return pgs_lp->dot_length_absolute;
+}
+
+/* setdotorientation */
+int
+gs_setdotorientation(gs_state *pgs)
+{
+    if (is_xxyy(&pgs->ctm) || is_xyyx(&pgs->ctm))
+	return gs_currentmatrix(pgs, &pgs_lp->dot_orientation);
+    return_error(gs_error_rangecheck);
+}
+
+/* dotorientation */
+int
+gs_dotorientation(gs_state *pgs)
+{
+    return gs_setmatrix(pgs, &pgs_lp->dot_orientation);
 }

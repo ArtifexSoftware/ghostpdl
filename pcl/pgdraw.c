@@ -283,6 +283,7 @@ hpgl_set_graphics_line_attribute_state(
     const float *           widths = pcl_palette_get_pen_widths(pgls->ppalet);
     floatp                  pen_wid = widths[pgls->g.pen.selected];
 
+    hpgl_call(gs_setdotorientation(pgls->pgs));
     /*
      * HP appears to use default line attributes if the the pen
      * width is less than or equal to .35mm or 14.0 plu.  This

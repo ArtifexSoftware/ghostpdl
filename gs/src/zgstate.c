@@ -373,6 +373,20 @@ zcurrentdotlength(register os_ptr op)
     return 0;
 }
 
+/* - .setdotorientation - */
+private int
+zsetdotorientation(os_ptr op)
+{
+    return gs_setdotorientation(igs);
+}
+
+/* - .dotorientation - */
+private int
+zdotorientation(os_ptr op)
+{
+    return gs_dotorientation(igs);
+}
+
 /* ------ Initialization procedure ------ */
 
 const op_def zgstate_op_defs[] =
@@ -387,6 +401,7 @@ const op_def zgstate_op_defs[] =
     {"0currentlinejoin", zcurrentlinejoin},
     {"0currentlinewidth", zcurrentlinewidth},
     {"0currentmiterlimit", zcurrentmiterlimit},
+    {"0.dotorientation", zdotorientation},
     {"0grestore", zgrestore},
     {"0grestoreall", zgrestoreall},
     {"0gsave", zgsave},
@@ -395,6 +410,7 @@ const op_def zgstate_op_defs[] =
     {"2setdash", zsetdash},
     {"1.setdashadapt", zsetdashadapt},
     {"2.setdotlength", zsetdotlength},
+    {"0.setdotorientation", zsetdotorientation},
     {"2.setfilladjust2", zsetfilladjust2},
     {"1setflat", zsetflat},
     {"1.setlinecap", zsetlinecap},

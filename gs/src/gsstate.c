@@ -696,6 +696,7 @@ gs_initgraphics(gs_state * pgs)
 	(code = gs_setdash(pgs, (float *)0, 0, 0.0)) < 0 ||
 	(gs_setdashadapt(pgs, false),
 	 (code = gs_setdotlength(pgs, 0.0, false))) < 0 ||
+	(code = gs_setdotorientation(pgs)) < 0 ||
 	(code = gs_setgray(pgs, 0.0)) < 0 ||
 	(code = gs_setmiterlimit(pgs, 10.0)) < 0
 	)

@@ -55,6 +55,8 @@ bool gs_currentdashadapt(P1(const gs_state *));
 int gs_setdotlength(P3(gs_state *, floatp, bool));
 float gs_currentdotlength(P1(const gs_state *));
 bool gs_currentdotlength_absolute(P1(const gs_state *));
+int gs_setdotorientation(P1(gs_state *));
+int gs_dotorientation(P1(gs_state *));
 
 /* Imager-level procedures */
 #ifndef gs_imager_state_DEFINED

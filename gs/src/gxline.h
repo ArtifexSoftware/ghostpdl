@@ -23,6 +23,7 @@
 #  define gxline_INCLUDED
 
 #include "gslparam.h"
+#include "gsmatrix.h"
 
 /* Line parameter structures */
 /* gx_dash_params are never instantiated by themselves. */
@@ -50,6 +51,8 @@ typedef struct gx_line_params_s {
     /* gs_stroke */
     float dot_length;
     bool dot_length_absolute;	/* if true, dot_length is 1/72" units */
+    gs_matrix dot_orientation;	/* dot length is aligned with (1,0); */
+				/* must be xxyy or xyyx */
     gx_dash_params dash;
 } gx_line_params;
 
@@ -70,6 +73,6 @@ int gx_set_dot_length(P3(gx_line_params *, floatp, bool));
 /* See gsline.c for the computation of miter_check. */
 #define gx_line_params_initial\
   0.0, gs_cap_butt, gs_join_miter, 10.0, 0.20305866, 0.0, 0/*false*/,\
-  { gx_dash_params_initial }
+  { identity_matrix_body }, { gx_dash_params_initial }
 
 #endif /* gxline_INCLUDED */

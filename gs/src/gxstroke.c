@@ -503,8 +503,8 @@ gx_stroke_path_only(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 		    break;
 		/*
 		 * Orient the dot according to the previous segment if
-		 * any, or else the next segment if any, or else a
-		 * vertical line.
+		 * any, or else the next segment if any, or else
+		 * according to the specified dot orientation.
 		 */
 		{
 		    const segment *end = psub->prev;
@@ -521,8 +521,15 @@ gx_stroke_path_only(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 		 * draw the dot like a very short line.
 		 */
 		udx = sx - x, udy = sy - y;
-		if ((udx | udy) == 0)
-		    udy = fixed_1;
+		if ((udx | udy) == 0) {
+		    if (is_fzero(pgs_lp->dot_orientation.xy)) {
+			/* Portrait orientation, dot length = X */
+			udy = fixed_1;
+		    } else {
+			/* Landscape orientation, dot length = Y */
+			udx = fixed_1;
+		    }
+		}
 		{
 		    double scale = device_dot_length /
 		    hypot((double)udx, (double)udy);
