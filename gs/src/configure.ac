@@ -121,7 +121,7 @@ AC_SUBST(PNGDIR)
 AC_SUBST(PNGDEVS)
 
 dnl look for IJS implementation
-AC_ARG_WITH(ijs, AC_HELP_STRING([--without-ijs],[disables IJS driver support]))
+AC_ARG_WITH(ijs, AC_HELP_STRING([--with-ijs],[include IJS driver support]))
 dnl set safe defaults
     IJSDIR=src
     IJSDEVS=''
