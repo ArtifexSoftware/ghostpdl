@@ -178,6 +178,8 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
 			       st, pim->Width, pim->Height, Colors, pbw);
 	if (code < 0)
 	    goto fail;
+	/* psdf_DCT_filter already did the psdf_encode_binary. */
+	return 0;
     }
     code = psdf_encode_binary(pbw, template, st);
     if (code >= 0)
