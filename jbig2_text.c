@@ -8,11 +8,12 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_text.c,v 1.4 2002/06/24 19:09:47 giles Exp $
+    $Id: jbig2_text.c,v 1.5 2002/06/24 23:28:13 giles Exp $
 */
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h> /* memset() */
 
 #ifdef HAVE_CONFIG_H
@@ -229,7 +230,7 @@ jbig2_read_text_info(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_d
     Jbig2SymbolDict **dicts;
     int n_dicts;
     uint32_t num_instances;
-    uint16_t segment_flags;
+    uint16_t flags;
     uint16_t huffman_flags;
     int8_t sbrat[4];
     int index;
@@ -242,19 +243,32 @@ jbig2_read_text_info(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_d
     offset += 17;
     
     /* 7.4.3.1.1 */
-    segment_flags = jbig2_get_int16(segment_data + offset);
+    flags = jbig2_get_int16(segment_data + offset);
     offset += 2;
     
-    if (segment_flags & 0x01)	/* Huffman coding */
+    params.SBHUFF = flags & 0x0001;
+    params.SBREFINE = flags & 0x0002;
+    params.REFCORNER = (flags & 0x0030) >> 4;
+    params.TRANSPOSED = flags & 0x0040;
+    params.SBCOMBOP = (flags & 0x00e0) >> 7;
+    params.SBDEFPIXEL = flags & 0x0100;
+    params.SBDSOFFSET = (flags & 0x7C00) >> 10;
+    params.SBRTEMPLATE = flags & 0x8000;
+    
+    if (params.SBHUFF)	/* Huffman coding */
       {
         /* 7.4.3.1.2 */
         huffman_flags = jbig2_get_int16(segment_data + offset);
         offset += 2;
+        
+        if (huffman_flags & 0x8000)
+            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
+                "reserved bit 15 of text region huffman flags is not zero");
       }
     else	/* arithmetic coding */
       {
         /* 7.4.3.1.3 */
-        if ((segment_flags & 0x02) && !(segment_flags & 0x80)) /* SBREFINE & !SBRTEMPLATE */
+        if ((params.SBREFINE) && !(params.SBRTEMPLATE))
           {
             sbrat[0] = segment_data[offset];
             sbrat[0] = segment_data[offset + 1];
@@ -267,10 +281,26 @@ jbig2_read_text_info(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_d
     num_instances = jbig2_get_int32(segment_data + offset);
     offset += 4;
     
-    /* 7.4.3.1.7 */
-    if (segment_flags & 0x01) {
+    if (params.SBHUFF) {
+        /* 7.4.3.1.5 */
+        /* todo: symbol ID huffman decoding table decoding */
+        
         jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
             "symbol id huffman table decoding NYI");
+            
+        /* 7.4.3.1.6 */
+        params.SBHUFFFS = (huffman_flags & 0x0003);
+        params.SBHUFFDS = (huffman_flags & 0x000c) >> 2;
+        params.SBHUFFDT = (huffman_flags & 0x0030) >> 4;
+        params.SBHUFFRDW = (huffman_flags & 0x00c0) >> 6;
+        params.SBHUFFRDH = (huffman_flags & 0x0300) >> 8;
+        params.SBHUFFRDX = (huffman_flags & 0x0c00) >> 10;
+        params.SBHUFFRDY = (huffman_flags & 0x3000) >> 12;
+        /* todo: conformance */
+        params.SBHUFFRSIZE = huffman_flags & 0x8000;
+        
+        /* 7.4.3.1.7 */
+        /* todo: symbol ID huffman table decoding */
     }
     
     jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,
@@ -282,15 +312,19 @@ jbig2_read_text_info(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_d
     /* compose the list of symbol dictionaries */
     n_dicts = 0;
     for (index = 0; index < segment->referred_to_segment_count; index++) {
-        if (ctx->segments[segment->referred_to_segments[index]]->flags & 63 == 0)
+        int sindex = segment->referred_to_segments[index];
+        if ((ctx->segments[sindex]->flags & 63) == 0)
             n_dicts++;
     }
     dicts = jbig2_alloc(ctx->allocator, sizeof(Jbig2SymbolDict *) * n_dicts);
     for (index = 0; index < segment->referred_to_segment_count; index++) {
+        int sindex = segment->referred_to_segments[index];
         int dindex = 0;
-        if (ctx->segments[segment->referred_to_segments[index]]->flags & 63 == 0)
-            dicts[dindex++] = (Jbig2SymbolDict *)ctx->segments[segment->referred_to_segments[index]]->result;
+        if ((ctx->segments[sindex]->flags & 63) == 0)
+            dicts[dindex++] = (Jbig2SymbolDict *)ctx->segments[sindex]->result;
     }
+    jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
+        "refers to %d symbol dictionaries", n_dicts);
     
     page_image = ctx->pages[ctx->current_page].image;
     image = jbig2_image_new(ctx, region_info.width, region_info.height);

@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2_priv.h,v 1.9 2002/06/24 15:51:57 giles Exp $
+    $Id: jbig2_priv.h,v 1.10 2002/06/24 23:28:13 giles Exp $
     
     shared library internals
 */
@@ -110,10 +110,10 @@ int jbig2_read_page_info (Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segm
 int jbig2_complete_page (Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data);
 
 typedef enum {
-    JBIG2_COMPOSE_OR,
-    JBIG2_COMPOSE_AND,
-    JBIG2_COMPOSE_XOR,
-    JBIG2_COMPOSE_XNOR
+    JBIG2_COMPOSE_OR = 0,
+    JBIG2_COMPOSE_AND = 1,
+    JBIG2_COMPOSE_XOR = 2,
+    JBIG2_COMPOSE_XNOR = 3
 } Jbig2ComposeOp;
 
 int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src, int x, int y, Jbig2ComposeOp op);

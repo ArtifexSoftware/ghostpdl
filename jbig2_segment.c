@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_segment.c,v 1.8 2002/06/24 18:44:45 giles Exp $
+    $Id: jbig2_segment.c,v 1.9 2002/06/24 23:28:13 giles Exp $
 */
 
 #include <stdio.h>
@@ -70,7 +70,6 @@ jbig2_parse_segment_header (Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size,
       referred_to_segments = jbig2_alloc(ctx->allocator, referred_to_segment_count * referred_to_segment_size);
     
       for (i = 0; i < referred_to_segment_count; i++) {
-        
         referred_to_segments[i] = 
           (referred_to_segment_size == 1) ? buf[offset] :
           (referred_to_segment_size == 2) ? jbig2_get_int16(buf+offset) :

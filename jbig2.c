@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2.c,v 1.9 2002/06/22 16:05:45 giles Exp $
+    $Id: jbig2.c,v 1.10 2002/06/24 23:28:13 giles Exp $
 */
 
 #include <stdint.h>
@@ -276,8 +276,8 @@ jbig2_write (Jbig2Ctx *ctx, const unsigned char *data, size_t size)
 	    return 0;
 	  code = jbig2_write_segment(ctx, segment, ctx->buf + ctx->buf_rd_ix);
 	  ctx->buf_rd_ix += segment->data_length;
-	  jbig2_free_segment(ctx, segment);
-	  ctx->segments[ctx->segment_index] = NULL;
+//	  jbig2_free_segment(ctx, segment);
+//	  ctx->segments[ctx->segment_index] = NULL;
 	  if (ctx->state == JBIG2_FILE_RANDOM_BODIES)
 	    {
 	      ctx->segment_index++;
