@@ -633,9 +633,9 @@ pdf_write_cmap(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
 	    return code;
     }
     code = pdf_begin_data_stream(pdev, &writer,
-				 DATA_STREAM_NOT_BINARY |
-				 (pdev->CompressFonts ?
-				  DATA_STREAM_COMPRESS : 0));
+				 DATA_STREAM_NOT_BINARY | DATA_STREAM_ENCRYPT |
+				 (pdev->CompressFonts ? 
+				  DATA_STREAM_COMPRESS : 0), pres->object->id);
     if (code < 0)
 	return code;
     code = psf_write_cmap(writer.binary.strm, pcmap,

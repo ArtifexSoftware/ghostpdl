@@ -483,7 +483,7 @@ pdf_enter_substream(gx_device_pdf *pdev, pdf_resource_type_t rtype,
     pdev->strm = s;
     code = pdf_begin_data_stream(pdev, &writer,
 			     DATA_STREAM_NOT_BINARY | DATA_STREAM_NOLENGTH |
-			     (pdev->CompressFonts ? DATA_STREAM_COMPRESS : 0));
+			     (pdev->CompressFonts ? DATA_STREAM_COMPRESS : 0), 0);
     if (code < 0) {
 	pdev->strm = save_strm;
 	return code;

@@ -473,11 +473,14 @@ pdf_end_write_image(gx_device_pdf * pdev, pdf_image_writer * piw)
 	return 0;
     } else {			/* in-line image */
 	stream *s = pdev->strm;
+	uint KeyLength = pdev->KeyLength;
 
 	stream_puts(s, "BI\n");
 	cos_stream_elements_write(piw->data, pdev);
 	stream_puts(s, (pdev->binary_ok ? "ID " : "ID\n"));
+	pdev->KeyLength = 0; /* Disable encryption for the inline image. */
 	cos_stream_contents_write(piw->data, pdev);
+	pdev->KeyLength = KeyLength;
 	pprints1(s, "\nEI%s\n", piw->end_string);
 	COS_FREE(piw->data, "pdf_end_write_image");
 	return 1;

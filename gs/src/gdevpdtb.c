@@ -156,9 +156,9 @@ pdf_begin_fontfile(gx_device_pdf *pdev, long FontFile_id,
 	stream_puts(pdev->strm, entries);
     if (len1 >= 0)
 	pprintld1(pdev->strm, "/Length1 %ld", len1);
-    return pdf_begin_data_stream(pdev, pdw, DATA_STREAM_BINARY |
+    return pdf_begin_data_stream(pdev, pdw, DATA_STREAM_BINARY | DATA_STREAM_ENCRYPT |
 				 (pdev->CompressFonts ?
-				  DATA_STREAM_COMPRESS : 0));
+				  DATA_STREAM_COMPRESS : 0), FontFile_id);
 }
 
 /* Finish writing FontFile* data. */

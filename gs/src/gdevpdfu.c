@@ -232,6 +232,13 @@ pdf_encrypt(gx_device_pdf * pdev, stream **s, gs_id object_id)
     if (s_add_filter(s, &s_arcfour_template, (stream_state *)ss, mem) == 0)
 	return_error(gs_error_VMerror);
     return 0;
+    /* IMPORTANT NOTE :
+       We don't encrypt streams written into temporary files,
+       because they can be used for comparizon
+       (for example, for merging equal images).
+       Instead that the encryption is applied in pdf_copy_data,
+       when the stream is copied to the output file.
+     */
 }
 
 /* Remove the encryption filter. */
@@ -1080,11 +1087,11 @@ int
 pdf_begin_data(gx_device_pdf *pdev, pdf_data_writer_t *pdw)
 {
     return pdf_begin_data_stream(pdev, pdw,
-				 DATA_STREAM_BINARY | DATA_STREAM_COMPRESS);
+				 DATA_STREAM_BINARY | DATA_STREAM_COMPRESS, 0);
 }
 int
 pdf_begin_data_stream(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
-		      int orig_options)
+		      int orig_options, gs_id object_id)
 {
     stream *s = pdev->strm;
     int options = orig_options;
@@ -1110,6 +1117,14 @@ pdf_begin_data_stream(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
 	pprintld1(s, "/Length %ld 0 R>>stream\n", length_id);
 	pdw->length_id = length_id;
     }
+    if (options & DATA_STREAM_ENCRYPT) {
+	code = pdf_encrypt(pdev, &s, object_id);
+	if (code < 0)
+	    return code;
+	pdev->strm = s;
+	pdw->encrypted = true;
+    } else
+    	pdw->encrypted = false;
     code = psdf_begin_binary((gx_device_psdf *)pdev, &pdw->binary);
     if (code < 0)
 	return code;
@@ -1131,6 +1146,8 @@ pdf_end_data(pdf_data_writer_t *pdw)
 
     if (code < 0)
 	return code;
+    if (pdw->encrypted)
+	pdf_encrypt_end(pdev);
     stream_puts(pdev->strm, "\nendstream\n");
     pdf_end_separate(pdev);
     pdf_open_separate(pdev, pdw->length_id);
@@ -1222,10 +1239,6 @@ pdf_function(gx_device_pdf *pdev, const gs_function_t *pfn,
 	s = cos_write_stream_alloc(pcos, pdev, "pdf_function");
 	if (s == 0)
 	    return_error(gs_error_VMerror);
-	pdev->strm = s;
-	code = pdf_encrypt(pdev, &s, pres->object->id);
-	if (code < 0)
-	    return code;
 	pdev->strm = s;
 	code = psdf_begin_binary((gx_device_psdf *)pdev, &writer);
 	if (code >= 0 && info.data_size > 30	/* 30 is arbitrary */

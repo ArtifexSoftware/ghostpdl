@@ -831,6 +831,7 @@ typedef struct pdf_data_writer_s {
     psdf_binary_writer binary;
     long start;
     long length_id;
+    bool encrypted;
 } pdf_data_writer_t;
 /*
  * Begin a data stream.  The client has opened the object and written
@@ -840,8 +841,9 @@ typedef struct pdf_data_writer_s {
 #define DATA_STREAM_BINARY 1	/* data are binary */
 #define DATA_STREAM_COMPRESS 2	/* OK to compress data */
 #define DATA_STREAM_NOLENGTH 4	/* Skip the length reference and filter names writing. */
+#define DATA_STREAM_ENCRYPT  8	/* Encrypt data. */
 int pdf_begin_data_stream(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
-			  int options);
+			  int options, gs_id object_id);
 /* begin_data = begin_data_binary with both options = true. */
 int pdf_begin_data(gx_device_pdf *pdev, pdf_data_writer_t *pdw);
 
