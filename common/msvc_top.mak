@@ -57,10 +57,12 @@ GLOBJ=$(GLOBJDIR)$(D)
 !include $(GLSRCDIR)\version.mak
 !include $(GLSRCDIR)\msvctail.mak
 
-# Build the required files in the GS directory.
-$(GENDIR)/ldl$(CONFIG).tr: $(MAKEFILE) $(AK)
+mkdirs:
 	-mkdir $(GLGENDIR)
 	-mkdir $(GLOBJDIR)
+
+# Build the required files in the GS directory.
+$(GENDIR)/ldl$(CONFIG).tr: $(MAKEFILE) mkdirs $(AK)
 	echo MSVC_VERSION=$(MSVC_VERSION) >$(GENDIR)\_vc_temp.mak
 	echo GLSRCDIR=$(GLSRCDIR) >>$(GENDIR)\_vc_temp.mak
 	echo GLGENDIR=$(GLGENDIR) >>$(GENDIR)\_vc_temp.mak
