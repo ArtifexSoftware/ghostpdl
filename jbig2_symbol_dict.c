@@ -135,6 +135,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
 	  /* 6.5.5 (4c.iv) */
 	  NSYMSDECODED = NSYMSDECODED + 1;
+	  printf ("%d of %d decoded\n", NSYMSDECODED, params->SDNUMNEWSYMS);
 	}
     }
 
@@ -164,14 +165,17 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2SegmentHeader *sh,
   params.SDTEMPLATE = (flags >> 10) & 3;
   params.SDRTEMPLATE = (flags >> 12) & 1;
 
+  if (params.SDHUFF)
+    return 0;
+
   /* FIXME: there are quite a few of these conditions to check */
   /* maybe #ifdef CONFORMANCE and a separate routine */
-  if(!params.SDHUFF && (flags & 0x0006))
+  if(!params.SDHUFF && (flags & 0x000c))
     {
       jbig2_error(ctx, JBIG2_SEVERITY_WARNING, sh->segment_number,
 		  "SDHUFF is zero, but contrary to spec SDHUFFDH is not.");
     }
-  if(!params.SDHUFF && (flags & 0x0018))
+  if(!params.SDHUFF && (flags & 0x0030))
     {
       jbig2_error(ctx, JBIG2_SEVERITY_WARNING, sh->segment_number,
 		  "SDHUFF is zero, but contrary to spec SDHUFFDW is not.");
