@@ -1,9 +1,21 @@
-%    Copyright (C) 1994, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1994, 2000 Aladdin Enterprises.  All rights reserved.
 % 
-% This software is licensed to a single customer by Artifex Software Inc.
-% under the terms of a specific OEM agreement.
+% This file is part of Aladdin Ghostscript.
+% 
+% Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+% or distributor accepts any responsibility for the consequences of using it,
+% or for whether it serves any particular purpose or works at all, unless he
+% or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+% License (the "License") for full details.
+% 
+% Every copy of Aladdin Ghostscript must include a copy of the License,
+% normally in a plain ASCII text file named PUBLIC.  The License grants you
+% the right to copy, modify and redistribute Aladdin Ghostscript, but only
+% under certain conditions described in the License.  Among other things, the
+% License requires that the copyright notice and this notice be preserved on
+% all copies.
 
-% $RCSfile$ $Revision$
+% $Id$
 % pdf_draw.ps
 % PDF drawing operations (graphics, text, and images).
 
@@ -21,17 +33,15 @@ pdfdict begin
 
 % ---------------- Functions ---------------- %
 
+% Note that resolvefunction converts a PDF Function to a PostScript Function;
+% resolve*fnproc converts a PDF function to a PostScript procedure.
+
 /fnrdict mark
   0 { .resolvefn0 }
   2 { }
   3 { .resolvefn3 }
   4 { .resolvefn4 }
 .dicttomark readonly def
-
-/.pdfbuildfunction {
-  DEBUG { (%Function: ) print dup === flush } if
-  .buildfunction
-} bdef
 
 /.resolvefn0 {
 		% Don't lose our place in PDFfile.
@@ -46,22 +56,17 @@ pdfdict begin
 		% Stack: filepos fndict data
   exch dup length 1 add dict .copydict
   dup /DataSource 4 -1 roll put
-  .pdfbuildfunction
   exch PDFfile exch setfileposition
 } bdef
 
 /.resolvefn3 {
   dup length dict .copydict
   dup /Functions 2 copy oget mark exch dup {
-    oforce resolvefunction
+    oforce .resolvefn
   } forall
   counttomark -1 roll astore exch pop put
 } bdef
 
-/tfopdict mark
-  /true /.true load
-  /false /.false load
-.dicttomark readonly def
 /.resolvefn4 {
   PDFfile fileposition exch
   dup true resolvestream 
@@ -75,24 +80,31 @@ pdfdict begin
     /rangecheck cvx signalerror
   } if
 		% Use .bind to avoid idiom recognition.
-		% Use tfopdict to bind true and false.
-  //tfopdict begin .bind end
+  .bind
   1 index /Function 3 -1 roll put
-  .pdfbuildfunction
   exch PDFfile exch setfileposition
 } bdef
 currentdict /tfopdict undef
 
-/resolvefunction {	% <fndict> resolvefunction <function>
+/.resolvefn {		% <fndict> .resolvefn <fndict'>
   dup /FunctionType oget //fnrdict exch get exec
 } bdef
 
-/resolveidfunction {
-  dup /Identity eq { pop { } } { resolvefunction } ifelse
+/resolvefunction {	% <fndict> resolvefunction <function>
+  .resolvefn
+  DEBUG { (%Function: ) print dup === flush } if
 } bdef
 
-/resolvedefaultfunction {	% <fndict> <default> resolved'f'n <function>
-  1 index /Default eq { exch pop } { pop resolveidfunction } ifelse
+/resolvefnproc {	% <fndict> resolvefnproc <proc>
+  resolvefunction .buildfunction
+} bdef
+
+/resolveidfnproc {	% <fndict> resolveidfnproc <proc>
+  dup /Identity eq { pop { } } { resolvefnproc } ifelse
+} bdef
+
+/resolvedefaultfnproc {	% <fndict> <default> resolved'fnproc <proc>
+  1 index /Default eq { exch pop } { pop resolveidfnproc } ifelse
 } bdef
 
 % ---------------- Shadings ---------------- %
@@ -112,12 +124,16 @@ currentdict /tfopdict undef
 
 /resolveshading {	% <shname> resolveshading <shading>
   Page /Shading rget {
+    PDFfile fileposition exch
     mark exch {
       oforce //shrdict 2 index .knownget { exec } if
     } forall .dicttomark
     dup /ShadingType get 4 ge {
-      dup dup true resolvestream /DataSource exch put
-    } if
+      dup dup true resolvestream
+		% Make a reusable stream so that the shading doesn't
+		% reposition PDFfile at unexpected times.
+      /ReusableStreamDecode filter /DataSource exch put
+    } if exch PDFfile exch setfileposition
   } {
     null
   } ifelse
@@ -189,11 +205,11 @@ currentdict /tfopdict undef
     oforce
     1 index /SpotFunction eq {
       dup type /nametype eq
-	{ //spotfunctions exch get } { resolvefunction }
+	{ //spotfunctions exch get } { resolvefnproc }
       ifelse
     } {
       1 index /TransferFunction eq {
-	resolveidfunction
+	resolveidfnproc
       } if
     } ifelse
   } forall .dicttomark
@@ -229,10 +245,10 @@ end
 
 % Each entry in this dictionary is
 %	<gsres> <value> -proc- <gsres>
-/gsbg { /BGDefault load resolvedefaultfunction setblackgeneration } bdef
-/gsucr { /UCRDefault load resolvedefaultfunction setundercolorremoval } bdef
+/gsbg { /BGDefault load resolvedefaultfnproc setblackgeneration } bdef
+/gsucr { /UCRDefault load resolvedefaultfnproc setundercolorremoval } bdef
 	%****** DOESN'T IMPLEMENT THE ARRAY (colortransfer) CASE YET ******
-/gstr { /TRDefault load resolvedefaultfunction settransfer } bdef
+/gstr { /TRDefault load resolvedefaultfnproc settransfer } bdef
 /gsparamdict mark
   /SA { setstrokeadjust }
   /op {
@@ -372,13 +388,13 @@ end
     } ifelse resolvecolorspace
   }
   /Separation {
-    aload pop exch oforce resolvecolorspace exch oforce resolvefunction
+    aload pop exch oforce resolvecolorspace exch oforce resolvefnproc
     4 array astore
   }
   /DeviceN {
     aload pop 3 -1 roll oforce
     3 -1 roll oforce resolvecolorspace
-    3 -1 roll oforce resolvefunction
+    3 -1 roll oforce resolvefnproc
     4 array astore
   }
   /Indexed {
@@ -473,11 +489,13 @@ end
 	% color and color space before running the PaintProc.
 	% There's no harm in doing this for colored patterns,
 	% so for simplicity, we always do it.
+  PDFfile fileposition 3 1 roll
   q
   null sc1 null SC1
   exch false resolvestream pdfopdict .pdfruncontext
   Q
   DEBUG { (%End PaintProc) = flush } if
+  PDFfile exch setfileposition
 } bdef
 
 /resolvepattern {	% <patternstreamdict> resolvepattern <patterndict>
@@ -560,18 +578,18 @@ end
 % Note that the keys in defaultdecodedict are resolved (PostScript, not PDF)
 % color space names.
 /defaultdecodedict mark
-  /DeviceGray { pop //01_1 }
-  /DeviceRGB { pop //01_3 }
-  /DeviceCMYK { pop //01_4 }
-  /CIEBasedA { 1 get /RangeA .knownget not { //01_1 } if }
-  /CIEBasedABC { 1 get /RangeABC .knownget not { //01_3 } if }
-  /Separation { pop //01_1 }
+  /DeviceGray { pop //01_1 } bind
+  /DeviceRGB { pop //01_3 } bind
+  /DeviceCMYK { pop //01_4 } bind
+  /CIEBasedA { 1 get /RangeA .knownget not { //01_1 } if } bind
+  /CIEBasedABC { 1 get /RangeABC .knownget not { //01_3 } if } bind
+  /Separation { pop //01_1 } bind
   /DeviceN {
-    dup 1 oget length [ exch {0 1} repeat ] readonly
-  }
+    1 oget length [ exch {0 1} repeat ] readonly
+  } bind
   /Indexed {
     pop [ 0 1 BitsPerComponent bitshift 1 sub ]
-  }
+  } bind
 .dicttomark readonly def
 
 /checkaltimage {	% <resdict> checkaltimage <resdict[']>
@@ -637,7 +655,9 @@ end
 } bdef
 
 /DoImage {
-  checkaltimage dup length 6 add dict makeimagedict doimage
+  checkaltimage dup length 6 add dict
+  1 index /Mask knownoget { 1 index exch /Mask exch put } if
+  makeimagedict doimage
 } bdef
 /doimage {	% <imagemask> doimage -
 		% imagedict is currentdict, gets popped from dstack
