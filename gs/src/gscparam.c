@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -51,7 +51,8 @@ const byte gs_param_type_base_sizes[] = {
  */
 struct gs_c_param_s {
     gs_c_param *next;
-    gs_param_name key;
+    gs_param_key_t key;
+    bool free_key;
     gs_c_param_value value;
     gs_param_type type;
     void *alternate_typed_data;
@@ -74,9 +75,10 @@ private gs_c_param *
 c_param_find(const gs_c_param_list *plist, gs_param_name pkey, bool any)
 {
     gs_c_param *pparam = plist->head;
+    uint len = strlen(pkey);
 
     for (; pparam != 0; pparam = pparam->next)
-	if (!strcmp(pparam->key, pkey))
+	if (pparam->key.size == len && !memcmp(pparam->key.data, pkey, len))
 	    return (pparam->type != gs_param_type_any || any ? pparam : 0);
     return 0;
 }
@@ -107,6 +109,7 @@ gs_c_param_list_write(gs_c_param_list * plist, gs_memory_t * mem)
     plist->target = 0;		/* not used for writing */
     plist->count = 0;
     plist->any_requested = false;
+    plist->persistent_keys = true;
     gs_c_param_list_write_more(plist);
 }
 
@@ -130,6 +133,7 @@ gs_c_param_list_write_more(gs_c_param_list * plist)
 void
 gs_c_param_list_release(gs_c_param_list * plist)
 {
+    gs_memory_t *mem = plist->memory;
     gs_c_param *pparam;
 
     while ((pparam = plist->head) != 0) {
@@ -148,16 +152,20 @@ gs_c_param_list_release(gs_c_param_list * plist)
 	    case gs_param_type_string_array:
 	    case gs_param_type_name_array:
 		if (!pparam->value.s.persistent)
-		    gs_free_const_object(plist->memory,
-					 pparam->value.s.data,
+		    gs_free_const_object(mem, pparam->value.s.data,
 					 "gs_c_param_list_release data");
 		break;
 	    default:
 		break;
 	}
-	gs_free_object(plist->memory, pparam->alternate_typed_data,
+	if (pparam->free_key) {
+	    /* We allocated this, so we must free it. */
+	    gs_free_const_string(mem, pparam->key.data, pparam->key.size,
+				 "gs_c_param_list_release key");
+	}
+	gs_free_object(mem, pparam->alternate_typed_data,
 		       "gs_c_param_list_release alternate data");
-	gs_free_object(plist->memory, pparam,
+	gs_free_object(mem, pparam,
 		       "gs_c_param_list_release entry");
 	plist->head = next;
 	plist->count--;
@@ -170,12 +178,30 @@ c_param_add(gs_c_param_list * plist, gs_param_name pkey)
 {
     gs_c_param *pparam =
 	gs_alloc_struct(plist->memory, gs_c_param, &st_c_param,
-			"c_param_write entry");
+			"c_param_add entry");
+    uint len = strlen(pkey);
 
     if (pparam == 0)
 	return 0;
     pparam->next = plist->head;
-    pparam->key = pkey;
+    if (!plist->persistent_keys) {
+	/* We must copy the key. */
+	byte *str = gs_alloc_string(plist->memory, len, "c_param_add key");
+
+	if (str == 0) {
+	    gs_free_object(plist->memory, pparam, "c_param_add entry");
+	    return 0;
+	}
+	memcpy(str, pkey, len);
+	pparam->key.data = str;
+	pparam->key.persistent = false; /* we will free it */
+	pparam->free_key = true;
+    } else {
+	pparam->key.data = (const byte *)pkey;
+	pparam->key.persistent = true;
+	pparam->free_key = false;
+    }
+    pparam->key.size = len;
     pparam->alternate_typed_data = 0;
     return pparam;
 }
@@ -264,8 +290,8 @@ c_param_begin_write_collection(gs_param_list * plist, gs_param_name pkey,
 {
     gs_c_param_list *const cplist = (gs_c_param_list *)plist;
     gs_c_param_list *dlist =
-	gs_alloc_struct(cplist->memory, gs_c_param_list, &st_c_param_list,
-			"c_param_begin_write_collection");
+	gs_c_param_list_alloc(cplist->memory,
+			      "c_param_begin_write_collection");
 
     if (dlist == 0)
 	return_error(gs_error_VMerror);
@@ -489,8 +515,7 @@ c_param_get_next_key(gs_param_list * plist, gs_param_enumerator_t * penum,
     if (pparam == 0)
 	return 1;
     penum->pvoid = pparam;
-    key->data = (const byte *)pparam->key;	/* was const char * */
-    key->size = strlen(pparam->key);
+    *key = pparam->key;
     return 0;
 }
 private int

@@ -1,4 +1,4 @@
-/* Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1999, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -146,8 +146,8 @@ int
 s_init_param_printer(printer_param_list_t *prlist,
 		     const param_printer_params_t * ppp, stream * s)
 {
-    prlist->procs = &printer_param_list_procs;
-    prlist->memory = 0;
+    gs_param_list_init((gs_param_list *)prlist, &printer_param_list_procs,
+		       NULL);
     prlist->strm = s;
     prlist->params = *ppp;
     prlist->any = false;

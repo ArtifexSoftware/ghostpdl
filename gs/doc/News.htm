@@ -72,6 +72,10 @@ sbcp.h.
 (Library)
 	- ImageType 4 images now give an error if a MaskColor value is out
 of the range of possible sample values.
+	- The definition of gs_param_key_t, the key type returned by
+parameter list enumeration, is changed.
+	- Implementors of parameter lists must now call gs_param_list_init
+to initialize the common members.
 
 </pre>
 

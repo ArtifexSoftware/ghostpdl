@@ -25,6 +25,73 @@
 #include "gsparam.h"
 #include "gsstruct.h"
 
+/* GC procedures */
+ENUM_PTRS_WITH(gs_param_typed_value_enum_ptrs, gs_param_typed_value *pvalue) return 0;
+    case 0:
+    switch (pvalue->type) {
+    case gs_param_type_string:
+	return ENUM_STRING(&pvalue->value.s);
+    case gs_param_type_name:
+	return ENUM_STRING(&pvalue->value.n);
+    case gs_param_type_int_array:
+	return ENUM_OBJ(pvalue->value.ia.data);
+    case gs_param_type_float_array:
+	return ENUM_OBJ(pvalue->value.fa.data);
+    case gs_param_type_string_array:
+	return ENUM_OBJ(pvalue->value.sa.data);
+    case gs_param_type_name_array:
+	return ENUM_OBJ(pvalue->value.na.data);
+    default:
+	return ENUM_OBJ(0);	/* don't stop early */
+    }
+ENUM_PTRS_END
+RELOC_PTRS_WITH(gs_param_typed_value_reloc_ptrs, gs_param_typed_value *pvalue) {
+    switch (pvalue->type) {
+    case gs_param_type_string:
+    case gs_param_type_name: {
+	gs_const_string str;
+
+	str.data = pvalue->value.s.data; /* n == s */
+	str.size = pvalue->value.s.size;
+	RELOC_CONST_STRING_VAR(str);
+	pvalue->value.s.data = str.data;
+	break;
+    }
+    case gs_param_type_int_array:
+	RELOC_VAR(pvalue->value.ia.data);
+	break;
+    case gs_param_type_float_array:
+	RELOC_VAR(pvalue->value.fa.data);
+	break;
+    case gs_param_type_string_array:
+	RELOC_VAR(pvalue->value.sa.data);
+	break;
+    case gs_param_type_name_array:
+	RELOC_VAR(pvalue->value.na.data);
+	break;
+    default:
+	break;
+    }
+}
+RELOC_PTRS_END
+
+/* Internal procedure to initialize the common part of a parameter list. */
+void
+gs_param_list_init(gs_param_list *plist, const gs_param_list_procs *procs,
+		   gs_memory_t *mem)
+{
+    plist->procs = procs;
+    plist->memory = mem;
+    plist->persistent_keys = true;
+}
+
+/* Set whether the keys for param_write_XXX are persistent. */
+void
+gs_param_list_set_persistent_keys(gs_param_list *plist, bool persistent)
+{
+    plist->persistent_keys = persistent;
+}
+
 /* Reset a gs_param_key_t enumerator to its initial state */
 void
 param_init_enumerator(gs_param_enumerator_t * enumerator)

@@ -22,6 +22,8 @@
 #ifndef gsparam_INCLUDED
 #  define gsparam_INCLUDED
 
+#include "gsstype.h"
+
 /*
  * Several interfaces use parameter dictionaries to communicate sets of
  * (key, value) pairs between a client and an object with complex state.
@@ -136,13 +138,21 @@ typedef union gs_param_value_s {
 
 /*
  * Define a structure containing a dynamically typed value (a value along
- * with its type).  Since parameter lists are transient, we don't bother
- * to create a GC descriptor for this.
+ * with its type).
  */
 typedef struct gs_param_typed_value_s {
     gs_param_value value;
     gs_param_type type;
 } gs_param_typed_value;
+/*
+ * Garbage collection of gs_param_values depends on the value type and on
+ * the 'd' member of the union.  We provide enum_ptrs and reloc_ptrs
+ * procedures that handle all the other cases -- i.e., cases other than
+ * heterogenous collections.
+ */
+struct_proc_enum_ptrs(gs_param_typed_value_enum_ptrs);
+struct_proc_reloc_ptrs(gs_param_typed_value_reloc_ptrs);
+#define gs_param_typed_value_max_ptrs 1
 
 /*
  * Define the representation alternatives for heterogenous collections.
@@ -187,7 +197,7 @@ typedef union gs_param_enumerator_s {
     void *pvoid;
     char *pchar;
 } gs_param_enumerator_t;
-typedef gs_const_string gs_param_key_t;
+typedef gs_param_string gs_param_key_t;
 
 /*
  * Define the object procedures.  Note that the same interface is used
@@ -413,14 +423,24 @@ int param_read_name_array(P3(gs_param_list *, gs_param_name,
 int param_write_name_array(P3(gs_param_list *, gs_param_name,
 			      const gs_param_string_array *));
 
-/* Define an abstract parameter dictionary.  Implementations are */
-/* concrete subclasses. */
+/*
+ * Define an abstract parameter list.  Implementations are concrete
+ * subclasses.
+ *
+ * The persisent_keys flag allows for both statically and dynamically
+ * allocated keys.  The default is static (the keys are normally C string
+ * literals).
+ */
 #define gs_param_list_common\
-	const gs_param_list_procs *procs;\
-	gs_memory_t *memory	/* for allocating coerced arrays */
+    const gs_param_list_procs *procs;\
+    gs_memory_t *memory;	/* for allocating coerced arrays */\
+    bool persistent_keys
 struct gs_param_list_s {
     gs_param_list_common;
 };
+
+/* Set whether the keys for param_write_XXX are persistent. */
+void gs_param_list_set_persistent_keys(P2(gs_param_list *, bool));
 
 /* Initialize a parameter list key enumerator. */
 void param_init_enumerator(P1(gs_param_enumerator_t * penum));
@@ -446,6 +466,10 @@ int gs_param_read_items(P3(gs_param_list * plist, void *obj,
 int gs_param_write_items(P4(gs_param_list * plist, const void *obj,
 			    const void *default_obj,
 			    const gs_param_item_t * items));
+
+/* Internal procedure to initialize the common part of a parameter list. */
+void gs_param_list_init(P3(gs_param_list *, const gs_param_list_procs *,
+			   gs_memory_t *));
 
 /*
  * Internal procedure to read a value, with coercion if requested, needed,
@@ -483,11 +507,11 @@ param_proc_requested(gs_param_requested_default);  /* always returns true */
 	    [Check code for <0]
 	}
  *
- * The default implementation also has the special property that it can
- * forward unrecognized param_read_ calls to another parameter list,
- * called the target.  This allows constructing incrementally modified
- * parameter lists.  Note that this is only relevant for put_params
- * (reading from the parameter list).
+ * This implementation also has the special property that it can forward
+ * unrecognized param_read_ calls to another parameter list, called the
+ * target.  This allows constructing incrementally modified parameter lists.
+ * Note that this is only relevant for put_params (reading from the
+ * parameter list).
  */
 
 typedef struct gs_c_param_s gs_c_param;	/* opaque here */

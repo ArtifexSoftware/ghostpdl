@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -61,8 +61,9 @@ ref_to_key(const ref * pref, gs_param_key_t * key, iparam_list *plist)
 	name_string_ref(pref, &nref);
 	key->data = nref.value.const_bytes;
 	key->size = r_size(&nref);
+	key->persistent = false; /* names may be freed */
     } else if (r_has_type(pref, t_integer)) {
-	char istr[22];		/* big enough for signed 64-bit value */
+	char istr[sizeof(long) * 8 / 3 + 2];
 	int len;
 	byte *buf;
 
@@ -74,6 +75,7 @@ ref_to_key(const ref * pref, gs_param_key_t * key, iparam_list *plist)
 	    return_error(e_VMerror);
 	key->data = buf;
 	key->size = len;
+	key->persistent = true;
     } else
 	return_error(e_typecheck);
     return 0;
@@ -350,8 +352,8 @@ private void
 ref_param_write_init(iparam_list * plist, const ref * pwanted,
 		     gs_ref_memory_t *imem)
 {
-    plist->procs = &ref_write_procs;
-    plist->memory = (gs_memory_t *)imem;
+    gs_param_list_init((gs_param_list *)plist, &ref_write_procs,
+		       (gs_memory_t *)imem);
     plist->ref_memory = imem;
     if (pwanted == 0)
 	make_null(&plist->u.w.wanted);
@@ -927,8 +929,8 @@ private int
 ref_param_read_init(iparam_list * plist, uint count, const ref * ppolicies,
 		    bool require_all, gs_ref_memory_t *imem)
 {
-    plist->procs = &ref_read_procs;
-    plist->memory = (gs_memory_t *)imem;
+    gs_param_list_init((gs_param_list *)plist, &ref_read_procs,
+		       (gs_memory_t *)imem);
     plist->ref_memory = imem;
     if (ppolicies == 0)
 	make_null(&plist->u.r.policies);
