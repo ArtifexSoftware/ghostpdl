@@ -70,7 +70,7 @@ typedef enum {
     CODE_VALUE_CID,		/* CIDs */
     CODE_VALUE_GLYPH,		/* glyphs */
     CODE_VALUE_CHARS,		/* character(s) */
-    CODE_VALUE_NOTDEF,		/* CID - for notdef(char|range) dst */
+    CODE_VALUE_NOTDEF		/* CID - for notdef(char|range) dst */
 #define CODE_VALUE_MAX CODE_VALUE_NOTDEF
 } gx_code_value_type_t;
 /* The strings in this structure are all const after initialization. */
