@@ -646,6 +646,7 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 	    pprintld1(pdev->strm, "%ld\n", end - start);
 	    pdf_end_separate(pdev);
 	}
+	pres->object->written = true; /* don't write at end of page */
     }
     /* Fill the rectangle with the Pattern. */
     {
