@@ -22,6 +22,9 @@
 % have the time, interest, or current expertise to keep this code working.
 % If you find bugs, please send proposed fixes to bug-gs@aladdin.com.
 %
+% Bug fix 2000-04-11 by lpd: if a font didn't have a FontName (which is the
+%   case for bitmap fonts produced by recent versions of dvips), setfont
+%   caused an error.
 % Bug fix 8/21/99 by lpd: many of the margin and width computations were
 %   wrong (off by 1).  The code only "worked" because the bugs were
 %   (mostly) in conservative directions.
@@ -74,10 +77,11 @@ ps2edict begin
  {
  % code here keeps a list of font names in dictionary epsifontdict
  /tmpfont exch def
- /tmpfontname tmpfont /FontName get def
- epsifontdict tmpfontname known not { epsifontdict tmpfontname 0 put } if
- epsifontdict tmpfontname
-	epsifontdict tmpfontname get 1 add put
+ tmpfont /FontName known {
+   /tmpfontname tmpfont /FontName get def
+   epsifontdict tmpfontname known not { epsifontdict tmpfontname 0 put } if
+   epsifontdict tmpfontname 2 copy get 1 add put
+ } if
  tmpfont setfont
  } bind def
 
