@@ -112,8 +112,9 @@ gs_type42_font_init(gs_font_type42 * pfont)
     {
 	static const byte version1_0[4] =
 	{0, 1, 0, 0};
-
-	if (memcmp(OffsetTable, version1_0, 4))
+          static const byte version_true[] = "true";
+	  if ( memcmp(OffsetTable, version1_0, 4) &&
+	       memcmp(OffsetTable, version_true, 4) )
 	    return_error(gs_error_invalidfont);
     }
     numTables = u16(OffsetTable + 4);
@@ -317,14 +318,22 @@ append_simple(const byte * glyph, const gs_matrix_fixed * pmat, gx_path * ppath,
 		    reps = (flags & gf_Repeat ? *pflags++ + 1 : 1);
 		}
 		if (flags & gf_xShort)
-		    dx = (flags & gf_xPos ? *pxc++ : -(int)*pxc++) / scale;
+		  {
+		    dx = *pxc++ / scale;
+		    if ( !(flags & gf_xPos) )
+		      dx = -dx;
+		  }
 		else if (!(flags & gf_xSame))
 		    dx = s16(pxc) / scale, pxc += 2;
 		else
 		    dx = 0;
 		if (flags & gf_yShort)
-		    dy = (flags & gf_yPos ? *pyc++ : -(int)*pyc++) / scale;
-		else if (!(flags & gf_ySame))
+		  {
+		    dy = *pyc++ / scale;
+		    if ( !(flags & gf_yPos) )
+		      dy = -dy;
+		  }
+		  else if ( !(flags & gf_ySame) )
 		    dy = s16(pyc) / scale, pyc += 2;
 		else
 		    dy = 0;
