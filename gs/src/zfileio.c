@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -577,6 +577,12 @@ zfileposition(i_ctx_t *i_ctx_p)
     stream *s;
 
     check_file(s, op);
+    /*
+     * The PLRM says fileposition must give an error for non-seekable
+     * streams.
+     */
+    if (!s_can_seek(s))
+	return_error(e_ioerror);
     make_int(op, stell(s));
     return 0;
 }
