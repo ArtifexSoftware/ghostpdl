@@ -4,6 +4,109 @@ ported directly from the latest aladdin release it is not documented
 here.  We provide a reference aladdin release number and the files.
 Please see News.htm for a detailed explanation of these changes.
 
+
+Version 5.55 (12/01/98) (released branch of ghostscript 5.50)
+=====================================================
+
+Wed Dec  2 01:28:00 1998  marcos  <marcos@artifex.com>
+
+	* unix-cc.mak, unix-gcc.mak, unixansi.mak:
+	changed FEATURE_DEVS to "psl3.dev pdf.dev ttfont.dev pipe.dev"
+
+	* version.mak: Changed date to 12/01/98.
+
+	* gdevprn.c:
+	Changed mdev->band back to prdev->is_open in gdev_prn_maybe_reallocate_memory()
+	to fix problem with 64 bit CPUs and banding mode.  This breaks PCL code
+	but works for PostScript (though it may not work for forwarding devices).
+
+Tue Dec  1 23:39:26 1998  henrys  <henrys@artifex.com>
+
+	* gxband.h: missing initialization value.
+
+Wed Nov 25 17:38:12 1998  ray  <ray@artifex.com>
+
+	* zlib.mak:
+	Change compile command line defines to be more flexible -- needed for build
+	under Watcom.
+
+	* wccommon.mak, unixhead.mak:
+	Add definitions for compile command line defines (used in zlib.mak)
+
+	* cp.bat: Change to make this pseudo "cp" run silently and get rid of
+	annoying and misleading "File not found." message.
+
+	* rm.bat: Change to make this pseudo "rm" run more quietly.
+
+	* openvms.mak:
+	Add definitions for compile command line defines (used in zlib.mak)
+
+Wed Nov 25 16:25:44 1998  marcos  <marcos@artifex.com>
+
+	* pdf_main.ps:
+	Fixed problem with /MediaBox with non-0 lower left corner (effected
+	budget2.pdf test file).
+
+	* gs_init.ps, version.mak: Changed version number to 5.55
+
+Tue Nov 24 06:42:42 1998  henrys  <henrys@artifex.com>
+
+	* pdf_main.ps:
+	Last change did not include another bug fix: currentpagedevice /OutputFile known not
+
+Tue Nov 24 06:04:56 1998  ray  <ray@artifex.com>
+
+	* wccommon.mak:
+	Fix for '&' wmake problem on Win95 and Win NT, and add support
+	for building using 32-bit Watcom compiler.
+
+	* stat_.h: Add __WATCOMC__ to the list of #defines for which st_blocks
+	is not a member of the structure.
+
+	* pdf_main.ps: Fix for (illegal) PDF files that have xref offset on the
+	same line as the "startxref" [ref #849].
+
+	* gstype42.c:
+	Fix for downloaded TrueType fonts that have an ID of "true"
+	(caused /invalidfont error.)
+	Also fix /limitcheck problem in some signed logic.
+
+	* gp_iwatc.c: Fix for compilers (Watcom under Windows) which don't
+	define "stdprn", but do support opening of "PRN".
+
+	* genconf.c:
+	Fix for build using Watcom wmake on Win 95, Win NT, where '&'
+	causes problem (background execution or split command lines).
+
+Mon Nov 23 22:10:47 1998  marcos  <marcos@artifex.com>
+
+	* lib.mak: added gsroptab to noroptab
+
+	* gximage1.c, gximono.c:
+	Patches from Peter to correct problems with dithered images.
+
+Wed Nov 18 07:53:57 1998  marcos  <marcos@artifex.com>
+
+	* pdf_main.ps: Fixes problem for rotated pdf files.
+
+	* gdevprna.c, gxdcolor.c, gximage1.c, gxclrast.c, gxclutil.c:
+	Changes made by Peter to fix banding problems discovered during
+	gs550c regression testing.  Fixes problem with banded and dithered files,
+	banded rgb files, and rotated PDF files.
+
+Tue Nov 17 12:49:50 1998  ghost  <ghost@artifex.com>
+
+	* gx.h: no-op with trivial edit
+
+Fri Nov 13 16:09:44 1998  henrys  <henrys@artifex.com>
+
+	* gxdither.c, gxclpath.c: cmyk patch for firstsnow.
+
+	* zchar1.c:
+	Some Type 1 fonts have a plausible but incorrect (too-small)
+	FontBBox, causing some characters to be clipped.
+
+
 Version 5.50b (11/06/98) (branch of ghostscript 5.50)
 =====================================================
 
