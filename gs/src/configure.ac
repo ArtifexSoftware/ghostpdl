@@ -86,7 +86,7 @@ dnl the flags we care about
 if test "$ac_cv_c_const" != yes; then
 	GCFLAGS="$GCFLAGS -Dconst="
 fi
-if test "$ac_cv_header_stdint_h" == yes; then
+if test "$ac_cv_header_stdint_h" = yes; then
 	GCFLAGS="$GCFLAGS -DHAVE_STDINT_H"
 fi
 
