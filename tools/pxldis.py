@@ -679,7 +679,7 @@ class pxl_dis:
         while src:
             s,src = src[:16],src[16:]
             hexa = ' '.join(["%02X"%ord(x) for x in s])
-            s = s.translate(''.join([(len(repr(chr(x)))==3) and chr(x) or '.' for x in range(256)]))
+            s = s.translate(''.join([(len(repr(chr(x)))==3) and (x != 47) and chr(x) or '.' for x in range(256)]))
             result += "%04X   %-*s   %s\n" % (N, 16*3, hexa, s)
             N+=16
         return result
