@@ -22,8 +22,9 @@
  *    geninit [-(I|i) <prefix>] <init-file.ps> <gconfig.h> -c <merged-init-file.c>
  *
  * The following special constructs are recognized in the input files:
- *	%% Replace <#lines> (<psfile>)
- *	%% Replace <#lines> INITFILES
+ *	%% Replace[%| ]<#lines> (<psfile>)
+ *	%% Replace[%| ]<#lines> INITFILES
+ * '%' after Replace means that the file to be included intact.
  * If the first non-comment, non-blank line in a file ends with the
  * LanguageLevel 2 constructs << or <~, its section of the merged file
  * will begin with
@@ -38,6 +39,7 @@
 #include <stdio.h>
 #include <stdlib.h>		/* for exit() */
 #include <string.h>
+#include <memory.h>
 
 /* Forward references */
 private FILE *prefix_open(const char *prefix, const char *inname);
@@ -78,10 +80,8 @@ or     geninit [-(I|i) lib/] gs_init.ps gconfig.h -c gs_init.c\n");
 	exit(1);
     }
     in = prefix_open(prefix, fin);
-    if (in == 0) {
-	fprintf(stderr, "Cannot open %s for reading.\n", fin);
+    if (in == 0)
 	exit(1);
-    }
     config = fopen(fconfig, "r");
     if (config == 0) {
 	fprintf(stderr, "Cannot open %s for reading.\n", fconfig);
@@ -103,20 +103,48 @@ or     geninit [-(I|i) lib/] gs_init.ps gconfig.h -c gs_init.c\n");
     return 0;
 }
 
+/* Translate a path from Postscript notation to platform notation. */
+
+private void
+translate_path(char *path)
+{
+    /* 
+     * It looks that we only need to do for Mac OS. 
+     * We don't support 16-bit DOS/Windows, which wants '\'.
+     * Win32 API supports '/'.
+     */
+#ifdef __MACOS__
+    if (path[0] == '.' && path[1] == '.' && path[2] == '/') {
+	char *p;
+
+	path[0] = path[1] = ':';
+	for (p = path + 2; p[1] ; p++)
+	    *p = (p[1] == '/' ? ':' : p[1]);
+	*p = 0;
+    }
+#endif
+}
+
 /* Open a file with a name prefix. */
 private FILE *
 prefix_open(const char *prefix, const char *inname)
 {
     char fname[LINE_SIZE + 1];
+    int prefix_length = strlen(prefix);
+    FILE *f;
 
-    if (strlen(prefix) + strlen(inname) > LINE_SIZE) {
+    if (prefix_length + strlen(inname) > LINE_SIZE) {
 	fprintf(stderr, "File name > %d characters, too long.\n",
 		LINE_SIZE);
 	exit(1);
     }
     strcpy(fname, prefix);
     strcat(fname, inname);
-    return fopen(fname, "r");
+    translate_path(fname + prefix_length);
+    f = fopen(fname, "r");
+    if (f == NULL)
+	fprintf(stderr, "Cannot open %s for reading.\n", fname);
+    return f;
 }
 
 /* Read a line from the input. */
@@ -192,20 +220,22 @@ wl(FILE * out, const char *str, bool to_c)
  * Note that this may store into the string.
  */
 private char *
-doit(char *line)
+doit(char *line, bool intact)
 {
     char *str = line;
     char *from;
     char *to;
     int in_string = 0;
 
+    if (intact)
+	return str;
     while (*str == ' ' || *str == '\t')		/* strip leading whitespace */
 	++str;
     if (*str == 0)		/* all whitespace */
 	return NULL;
     if (!strncmp(str, "%END", 4))	/* keep these for .skipeof */
 	return str;
-    if (str[0] == '%')		/* comment line */
+    if (str[0] == '%')    /* comment line */
 	return NULL;
     /*
      * Copy the string over itself removing:
@@ -317,7 +347,7 @@ flush_buf(FILE * out, char *buf, bool to_c)
 }
 private void
 mergefile(const char *prefix, const char *inname, FILE * in, FILE * config,
-	  FILE * out, bool to_c)
+	  FILE * out, bool to_c, bool intact)
 {
     char line[LINE_SIZE + 1];
     char buf[LINE_SIZE + 1];
@@ -330,22 +360,22 @@ mergefile(const char *prefix, const char *inname, FILE * in, FILE * config,
 	char psname[LINE_SIZE + 1];
 	int nlines;
 
-	if (!strncmp(line, "%% Replace ", 11) &&
+	if (!strncmp(line, "%% Replace", 10) &&
 	    sscanf(line + 11, "%d %s", &nlines, psname) == 2
 	    ) {
+	    bool do_intact = (line[10] == '%');
+
 	    flush_buf(out, buf, to_c);
 	    while (nlines-- > 0)
 		rl(in, line, LINE_SIZE);
 	    if (psname[0] == '(') {
 		FILE *ps;
-
+		
 		psname[strlen(psname) - 1] = 0;
 		ps = prefix_open(prefix, psname + 1);
-		if (ps == 0) {
-		    fprintf(stderr, "Cannot open %s for reading.\n", psname + 1);
+		if (ps == 0)
 		    exit(1);
-		}
-		mergefile(prefix, psname + 1, ps, config, out, to_c);
+		mergefile(prefix, psname + 1, ps, config, out, to_c, intact || do_intact);
 	    } else if (!strcmp(psname, "INITFILES")) {
 		/*
 		 * We don't want to bind config.h into geninit, so
@@ -359,11 +389,9 @@ mergefile(const char *prefix, const char *inname, FILE * in, FILE * config,
 
 			*quote = 0;
 			ps = prefix_open(prefix, psname + 9);
-			if (ps == 0) {
-			    fprintf(stderr, "Cannot open %s for reading.\n", psname + 9);
+			if (ps == 0)
 			    exit(1);
-			}
-			mergefile(prefix, psname + 9, ps, config, out, to_c);
+			mergefile(prefix, psname + 9, ps, config, out, to_c, false);
 		    }
 	    } else {
 		fprintf(stderr, "Unknown %%%% Replace %d %s\n",
@@ -376,7 +404,7 @@ mergefile(const char *prefix, const char *inname, FILE * in, FILE * config,
 	} else {
 	    int len;
 
-	    str = doit(line);
+	    str = doit(line, intact);
 	    if (str == 0)
 		continue;
 	    len = strlen(str);
@@ -432,7 +460,7 @@ merge_to_c(const char *prefix, const char *inname, FILE * in, FILE * config,
     fputs("/* Pre-compiled interpreter initialization string. */\n", out);
     fputs("\n", out);
     fputs("const unsigned char gs_init_string[] = {\n", out);
-    mergefile(prefix, inname, in, config, out, true);
+    mergefile(prefix, inname, in, config, out, true, false);
     fputs("10};\n", out);
     fputs("const unsigned int gs_init_string_sizeof = sizeof(gs_init_string);\n", out);
 }
@@ -446,5 +474,5 @@ merge_to_ps(const char *prefix, const char *inname, FILE * in, FILE * config,
 
     while ((rl(in, line, LINE_SIZE), line[0]))
 	fprintf(out, "%s\n", line);
-    mergefile(prefix, inname, in, config, out, false);
+    mergefile(prefix, inname, in, config, out, false, false);
 }
