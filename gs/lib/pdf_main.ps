@@ -112,29 +112,6 @@ currentdict /runpdfstring .undef
    /Page null def
    /DSCPageCount 0 def
    /PDFSave null def
-	% Color space substitution in PDF is handled somewhat differently
-	% than in PostScript. A given device color space will be substituted
-	% if the corresponding "Default..." entry exists in the Page's
-	% Resource dictionary (which might be inhereted); there is no
-	% UseCIEColor to enable/disable color mapping.
-	%
-	% This behavior is achieved by always setting UseCIEColor to true
-	% in the page device dictionary. If the value of this parameter was
-	% originally false (i.e.: the output device does not perform color
-	% space substitution by default), the instances DefaultGray,
-	% DefaultRGB, and DefaultCMYK of the (local) ColorSpace category
-	% are redefined to be DeviceGray, DeviceRGB, and DeviceCMYK,
-	% respectively. This is not done if UseCIEColor is true by default,
-	% as in that case color substitution is presumably desired even
-	% if the file does not request it.
-   currentpagedevice /UseCIEColor .knownget dup { pop } if not
-    { .currentglobal false .setglobal
-      /DefaultGray { /DeviceGray } cvlit /ColorSpace defineresource pop
-      /DefaultRGB { /DeviceRGB } cvlit /ColorSpace defineresource pop
-      /DefaultCMYK { /DeviceCMYK } cvlit /ColorSpace defineresource pop
-      .setglobal
-    }
-   if
    GS_PDF_ProcSet begin
    pdfdict begin
    pdfopen begin
@@ -250,6 +227,29 @@ pdfdict begin
 
 % Open a PDF file and read the header, trailer, and cross-reference.
 /pdfopen {		% <file> pdfopen <dict>
+	% Color space substitution in PDF is handled somewhat differently
+	% than in PostScript. A given device color space will be substituted
+	% if the corresponding "Default..." entry exists in the Page's
+	% Resource dictionary (which might be inhereted); there is no
+	% UseCIEColor to enable/disable color mapping.
+	%
+	% This behavior is achieved by always setting UseCIEColor to true
+	% in the page device dictionary. If the value of this parameter was
+	% originally false (i.e.: the output device does not perform color
+	% space substitution by default), the instances DefaultGray,
+	% DefaultRGB, and DefaultCMYK of the (local) ColorSpace category
+	% are redefined to be DeviceGray, DeviceRGB, and DeviceCMYK,
+	% respectively. This is not done if UseCIEColor is true by default,
+	% as in that case color substitution is presumably desired even
+	% if the file does not request it.
+   currentpagedevice /UseCIEColor .knownget dup { pop } if not
+    { .currentglobal false .setglobal
+      /DefaultGray { /DeviceGray } cvlit /ColorSpace defineresource pop
+      /DefaultRGB { /DeviceRGB } cvlit /ColorSpace defineresource pop
+      /DefaultCMYK { /DeviceCMYK } cvlit /ColorSpace defineresource pop
+      .setglobal
+    }
+   if
   pdfopenfile begin
   pdfopencache
   .writepdfmarks {
