@@ -1278,7 +1278,10 @@ private void t1_hinter__simplify_representation(t1_hinter * this)
         We don't need them so far.
         Replace 'moveto' with 'oncurve' :
     */
-    for (i = 0; i < this->contour_count; i++)
+    if (this->pole_count <= 1) {
+	return; /* An empty glyph (only a trailing moveto). */
+    }
+    for (i = 0; i <= this->contour_count; i++)
         if (this->pole[this->contour[i]].type == moveto)
             this->pole[this->contour[i]].type = oncurve;
     /* Remove hints which are disabled with !grid_fit_x, !grid_fit_y.
@@ -2117,10 +2120,10 @@ int t1_hinter__endglyph(t1_hinter * this)
 #	endif
     }
     t1_hinter__paint_raster_grid(this);
-    t1_hinter__simplify_representation(this);
     code = t1_hinter__add_trailing_moveto(this);
     if (code < 0)
 	goto exit;
+    t1_hinter__simplify_representation(this);
     t1_hinter__paint_glyph(this, false);
     if (!this->disable_hinting && (this->grid_fit_x || this->grid_fit_y)) {
 	if (this->FontType == 1)
