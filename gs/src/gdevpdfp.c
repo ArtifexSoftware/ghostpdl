@@ -40,7 +40,15 @@
 private const int CoreDistVersion = 4000;	/* Distiller 4.0 */
 private const gs_param_item_t pdf_param_items[] = {
 #define pi(key, type, memb) { key, type, offset_of(gx_device_pdf, memb) }
-    /* Acrobat Distiller 4 parameters */
+
+	/* Acrobat Distiller 4 parameters */
+
+    /*
+     * EndPage and StartPage are renamed because EndPage collides with
+     * a page device parameter.
+     */
+    pi("PDFEndPage", gs_param_type_int, EndPage),
+    pi("PDFStartPage", gs_param_type_int, StartPage),
     pi("Optimize", gs_param_type_bool, Optimize),
     pi("ParseDSCCommentsForDocInfo", gs_param_type_bool,
        ParseDSCCommentsForDocInfo),
@@ -51,7 +59,9 @@ private const gs_param_item_t pdf_param_items[] = {
     pi("AutoPositionEPSFile", gs_param_type_bool, AutoPositionEPSFile),
     pi("PreserveCopyPage", gs_param_type_bool, PreserveCopyPage),
     pi("UsePrologue", gs_param_type_bool, UsePrologue),
-    /* Ghostscript-specific parameters */
+
+	/* Ghostscript-specific parameters */
+
     pi("ReAssignCharacters", gs_param_type_bool, ReAssignCharacters),
     pi("ReEncodeCharacters", gs_param_type_bool, ReEncodeCharacters),
     pi("FirstObjectNumber", gs_param_type_long, FirstObjectNumber),
