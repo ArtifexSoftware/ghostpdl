@@ -253,7 +253,7 @@ $(PCLOBJ)pclfont.$(OBJ): $(PCLSRC)pclfont.c $(stdio__h) $(string__h)\
 $(PCLOBJ)pctext.$(OBJ): $(PCLSRC)pctext.c\
  $(std_h) $(stdio_h)\
  $(gdebug_h)\
- $(gscoord_h) $(gsline_h) $(gspaint_h) $(gspath_h) $(gspath2_h) $(gsrop) $(gsstate.h)\
+ $(gscoord_h) $(gsline_h) $(gspaint_h) $(gspath_h) $(gspath2_h) $(gsrop) $(gsstate_h)\
  $(gxchar_h) $(gxfont_h) $(gxstate_h)\
  $(plvalue_h)\
  $(pcdraw_h) $(pcfont_h) $(pcommand_h) $(pcstate_h)
@@ -325,7 +325,7 @@ $(PCLOBJ)pcl5.dev: $(PCL_MAK) $(ECHOGS_XE) $(PCL_COMMON) $(PCL5_OPS) $(PCLOBJ)pc
 	$(ADDMOD) $(PCLOBJ)pcl5 -include $(PCLOBJ)rtlbase
 	$(ADDMOD) $(PCLOBJ)pcl5 -init pcjob pcpage pcdraw pcfont pctext
 	$(ADDMOD) $(PCLOBJ)pcl5 -init pcsymbol pcsfont pcmacros
-	$(ADDMOD) $(PCLOBJ)pcl5 -init pcprint pcrect rtraster_pcl pcstatus
+	$(ADDMOD) $(PCLOBJ)pcl5 -init pcprint pcrect rtraster pcstatus
 	$(ADDMOD) $(PCLOBJ)pcl5 -init pcmisc
 	$(ADDMOD) $(PCLOBJ)pcl5 -init   pcursor
 
@@ -364,7 +364,7 @@ PCL5C_OPS=$(PCLOBJ)pccpalet.$(OBJ) $(PCLOBJ)pccrendr.$(OBJ) $(PCLOBJ)pccprint.$(
 $(PCLOBJ)pcl5c.dev: $(PCL_MAK) $(ECHOGS_XE) $(PCL5C_OPS) $(PCLOBJ)pcl5.dev $(PCLOBJ)rtlbasec.dev
 	$(SETMOD) $(PCLOBJ)pcl5c $(PCL5C_OPS)
 	$(ADDMOD) $(PCLOBJ)pcl5c -include $(PCLOBJ)pcl5 $(PCLOBJ)rtlbasec
-	$(ADDMOD) $(PCLOBJ)pcl5c -init pccpalet pccrendr pccprint rtcrastr_pcl
+	$(ADDMOD) $(PCLOBJ)pcl5c -init pccpalet pccrendr pccprint rtcrastr
 
 ################ HP-GL/2 ################
 
@@ -461,7 +461,7 @@ $(PCLOBJ)pglabel.$(OBJ): $(PCLSRC)pglabel.c\
  $(ctype__h) $(math__h) $(memory__h) $(stdio__h)\
  $(gdebug_h)\
  $(gschar_h) $(gscoord_h) $(gsline_h) $(gspath_h) $(gsutil_h)\
- $(gxfont_h) $(gxchar_h) $(gxstate.h)\
+ $(gxfont_h) $(gxchar_h) $(gxstate_h)\
  $(pcfsel_h) $(pcsymbol_h)\
  $(pgdraw_h) $(pgfont_h) $(pggeom_h) $(pginit_h) $(pgmand_h) $(pgmisc_h)\
  $(plvalue_h)
