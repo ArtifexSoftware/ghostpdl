@@ -43,16 +43,15 @@ private_st_pdf_outline_fonts();
 
 private
 ENUM_PTRS_WITH(pdf_font_resource_enum_ptrs, pdf_font_resource_t *pdfont)
-ENUM_PREFIX(st_pdf_resource, 11);
+ENUM_PREFIX(st_pdf_resource, 10);
 case 0: return ENUM_STRING(&pdfont->BaseFont);
 case 1: ENUM_RETURN(pdfont->FontDescriptor);
 case 2: ENUM_RETURN(pdfont->base_font);
-case 3: ENUM_RETURN(pdfont->copied_font);
-case 4: ENUM_RETURN(pdfont->Widths);
-case 5: ENUM_RETURN(pdfont->used);
-case 6: ENUM_RETURN(pdfont->res_ToUnicode);
-case 7: ENUM_RETURN(pdfont->cmap_ToUnicode);
-case 8: switch (pdfont->FontType) {
+case 3: ENUM_RETURN(pdfont->Widths);
+case 4: ENUM_RETURN(pdfont->used);
+case 5: ENUM_RETURN(pdfont->res_ToUnicode);
+case 6: ENUM_RETURN(pdfont->cmap_ToUnicode);
+case 7: switch (pdfont->FontType) {
  case ft_composite:
      ENUM_RETURN(pdfont->u.type0.DescendantFont);
  case ft_CID_encrypted:
@@ -61,7 +60,7 @@ case 8: switch (pdfont->FontType) {
  default:
      ENUM_RETURN(pdfont->u.simple.Encoding);
 }
-case 9: switch (pdfont->FontType) {
+case 8: switch (pdfont->FontType) {
  case ft_composite:
      return (pdfont->u.type0.cmap_is_standard ? ENUM_OBJ(0) :
 	     ENUM_CONST_STRING(&pdfont->u.type0.CMapName));
@@ -76,7 +75,7 @@ case 9: switch (pdfont->FontType) {
  default:
      ENUM_RETURN(0);
 }
-case 10: switch (pdfont->FontType) {
+case 9: switch (pdfont->FontType) {
  case ft_user_defined:
      ENUM_RETURN(pdfont->u.simple.s.type3.char_procs);
  case ft_CID_encrypted:
@@ -94,7 +93,6 @@ RELOC_PTRS_WITH(pdf_font_resource_reloc_ptrs, pdf_font_resource_t *pdfont)
     RELOC_STRING_VAR(pdfont->BaseFont);
     RELOC_VAR(pdfont->FontDescriptor);
     RELOC_VAR(pdfont->base_font);
-    RELOC_VAR(pdfont->copied_font);
     RELOC_VAR(pdfont->Widths);
     RELOC_VAR(pdfont->used);
     RELOC_VAR(pdfont->res_ToUnicode);
@@ -196,7 +194,7 @@ find_std_appearance(const gx_device_pdf *pdev, gs_font_base *bfont,
 
 	if (!psf->pdfont)
 	    continue;
-	cfont = psf->pdfont->copied_font;
+	cfont = pdf_font_resource_font(psf->pdfont);
 	if (has_uid) {
 	    /*
 	     * Require the UIDs to match.  The PostScript spec says this
@@ -440,8 +438,8 @@ pdf_font_id(const pdf_font_resource_t *pdfont)
 gs_font_base *
 pdf_font_resource_font(const pdf_font_resource_t *pdfont)
 {
-    if (pdfont->copied_font != 0)
-	return pdfont->copied_font;
+    if (pdfont->base_font != NULL)
+	return pdf_base_font_font(pdfont->base_font);
     if (pdfont->FontDescriptor == 0)
 	return 0;
     return pdf_font_descriptor_font(pdfont->FontDescriptor);
@@ -660,7 +658,6 @@ pdf_font_std_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 	return code;
     pdfont->BaseFont.data = (byte *)psfi->fname; /* break const */
     pdfont->BaseFont.size = strlen(psfi->fname);
-    pdfont->copied_font = pdf_base_font_font(pdfont->base_font);
     set_is_MM_instance(pdfont, pfont);
     psf->pdfont = pdfont;
     psf->orig_matrix = pfont->FontMatrix;

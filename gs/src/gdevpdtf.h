@@ -151,12 +151,10 @@ struct pdf_font_resource_s {
     pdf_font_descriptor_t *FontDescriptor; /* (not used for Type 0, Type 3, */
 				/* or standard 14 fonts) */
     /*
-     * Currently, the base_font and copied_font members are only used for
+     * The base_font member is only used for
      * the standard 14 fonts, which do not have a FontDescriptor.
-     * Eventually we may decide to use them for other types as well.
      */
     pdf_base_font_t *base_font;	/* == FontDescriptor->base_font */
-    gs_font_base *copied_font;	/* == base_font->copied */
     uint count;			/* # of chars/CIDs */
     double *Widths;		/* [count] (not used for Type 0) */
     byte *used;			/* [ceil(count/8)] bitmap of chars/CIDs used */
