@@ -80,6 +80,7 @@ pl_dict_free(pl_dict_t *pdict, pl_dict_entry_t **ppde, client_name_t cname)
 	if ( pde->key.size > pl_dict_max_short_key )
 	  gs_free_string(mem, (byte *)pde->key.data, pde->key.size, cname);
 	gs_free_object(mem, pde, cname);
+	pdict->entry_count--;
 }
 
 /* ---------------- API procedures ---------------- */
@@ -143,6 +144,7 @@ pl_dict_put(pl_dict_t *pdict, const byte *kdata, uint ksize, void *value)
 	    pde->value = value;
 	    pde->next = pdict->entries;
 	    pdict->entries = pde;
+	    pdict->entry_count++;
 	    return 0;
 	  }
 	/* Replace the value in an existing entry. */
@@ -164,6 +166,21 @@ pl_dict_undef(pl_dict_t *pdict, const byte *kdata, uint ksize)
 	  return false;
 	pl_dict_free(pdict, ppde, "pl_dict_undef");
 	return true;
+}
+
+/*
+ * Return the number of entries in a dictionary.
+ */
+uint
+pl_dict_length(const pl_dict_t *pdict, bool with_stack)
+{	uint count = pdict->entry_count;
+
+	if ( with_stack )
+	  { const pl_dict_t *pdcur;
+	    for ( pdcur = pdict->parent; pdcur != 0; pdcur = pdcur->parent )
+	      count += pdcur->entry_count;
+	  }
+	return count;
 }
 
 /*

@@ -2,15 +2,20 @@
 
 # Run some or all of a Genoa test suite, optionally checking for memory leaks.
 # Command line syntax:
-#	suite (--[no-]check | --[no-]debug | --[no-]print | --[no-]together | -<switch> |
+#	suite (--[no-]band | --[no-]check | --[no-]debug | --[no-]print | --[no-]together | -<switch> |
 #	   <dirname>[,<filename>] | <filename>)*
 
-proc pcl_args {print} {
+proc pcl_args {band print} {
+    set args [list -Z@:? -r600 -dNOPAUSE]
     if $print {
-	return [list -Z@:? -sDEVICE=ljet4 -r600 -sOutputFile=t.%03d.lj -dNOPAUSE -dMaxBitmap=500000 -dBufferSpace=500000]
+	lappend args -sDEVICE=ljet4 -sOutputFile=t.%03d.lj
     } else {
-	return [list -Z@:? -sDEVICE=pbmraw -r600 -sOutputFile=/dev/null -dNOPAUSE]
+	lappend args -sDEVICE=pbmraw -sOutputFile=/dev/null
     }
+    if $band {
+	lappend args -dMaxBitmap=500000 -dBufferSpace=500000
+    }
+    return $args
 }
 
 proc pcl_xe {file} {
@@ -27,13 +32,14 @@ proc catch_exec {command} {
     }
 }
 
+set __band 1
 set __check 0
 set __debug 0
 set __print 0
 set __together 0
 proc suite {files switches} {
-    global __check __print __together
-    set pcl_args [pcl_args $__print]
+    global __band __check __print __together
+    set pcl_args [pcl_args $__band $__print]
     if {!$__check && $__together} {
 	set max_files 240
 	set max_files1 [expr $max_files - 1]
@@ -86,7 +92,7 @@ foreach file $argv {
 		puts "Unknown switch $file"
 		exit 1
 	    }
-	} elseif [regexp {^--(.*)$} $file all var] {
+	} elseif {[regexp {^--(.*)$} $file all var]} {
 	    if [info exists __$var] {
 		set __$var 1
 	    } else {

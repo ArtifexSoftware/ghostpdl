@@ -2145,3 +2145,6 @@ const pl_symbol_map_t *pl_built_in_symbol_maps[] = {
   &map_13L_unicode,
   0                 /* end marker */
 };
+
+const int pl_built_in_symbol_map_count =
+  countof(pl_built_in_symbol_maps) - 1;

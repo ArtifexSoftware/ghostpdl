@@ -9,13 +9,17 @@
 #include <stdarg.h>		/* how to make this portable? */
 #include "string_.h"
 #include "pcommand.h"
-#include "pcfont.h"
 #include "pcstate.h"
+#include "pcfont.h"
+#include "pcsymbol.h"
 #include "stream.h"
 
 #define STATUS_BUFFER_SIZE 10000
 
 /* Internal routines */
+
+private int status_add_symbol_id(ushort *, int, ushort);
+
 
 /* Read out from the status buffer. */
 /* Return the number of bytes read. */
@@ -116,7 +120,7 @@ status_put_floating(stream *s, double v)
 
 /* Print font status information. */
 /* font_set = -1 for font list, 0 or 1 for current font. */
-private void
+private int
 status_put_font(stream *s, const pcl_state_t *pcls,
   uint font_id, uint internal_id,
   pl_font_t *plfont, int font_set, bool extended)
@@ -171,9 +175,20 @@ status_put_font(stream *s, const pcl_state_t *pcls,
 	  stprintf(s, "<Esc>%c%uX", paren, font_id);
 	stputs(s, "\"\r\n");
 	if ( !pl_font_is_bound(plfont) && font_set < 0 )
-	  { /* Unbound font, not current, put out compatible symbol sets.
-	     * Current fonts show the symbol set bound to them, above. */
+	  { int nid;
+	    ushort *idlist;
+
+	    idlist = (ushort *)gs_alloc_bytes(pcls->memory,
+		pl_built_in_symbol_map_count +
+		pl_dict_length(&pcls->symbol_sets, false),
+		"status_fonts(idlist)");
+	    if ( idlist == NULL )
+	      return e_Memory;
+	    nid = 0;
+	    /* Current fonts show the symbol set bound to them, above. */
 	    /* XXX This needs the big ugly symset compatibility table. */
+	    gs_free_object(pcls->memory, (void*)idlist,
+		"status_fonts(idlist)");
 	  }
 	if ( extended )
 	  { /* Put out the "internal ID number". */
@@ -220,6 +235,7 @@ status_put_font(stream *s, const pcl_state_t *pcls,
 		stprintf(s, "NAME=\"%.16s\"\r\n", hdr->FontName);
 	      }
 	  }
+	return 0;
 }
 
 /* Finish writing status. */
@@ -255,6 +271,7 @@ status_do_fonts(stream *s, const pcl_state_t *pcls,
 {	gs_const_string key;
 	void *value;
 	pl_dict_enum_t denum;
+	int res;
 
 	pl_dict_enum_begin(&pcls->soft_fonts, &denum);
 	while ( pl_dict_enum_next(&denum, &key, &value) )
@@ -262,8 +279,10 @@ status_do_fonts(stream *s, const pcl_state_t *pcls,
 	    if ( (((pl_font_t *)value)->storage & storage) != 0 ||
 		 (storage == 0 && pcls->font == value)
 	       )
-	      status_put_font(s, pcls, id, 0, (pl_font_t *)value,
+	      res = status_put_font(s, pcls, id, id, (pl_font_t *)value,
 		  (storage != 0 ? -1 : pcls->font_selected),  extended);
+	      if ( res != 0 )
+		return res;
 	  }
 	return 0;
 }
@@ -318,25 +337,115 @@ status_patterns(stream *s, const pcl_state_t *pcls,
 	return 0;
 }
 
+
+private bool	/* Is this symbol map supported by any relevant font? */
+status_check_symbol_set(const pcl_state_t *pcls, pl_symbol_map_t *mapp,
+  pcl_data_storage_t storage)
+{	gs_const_string key;
+	void *value;
+	pl_dict_enum_t fenum;
+
+	pl_dict_enum_begin(&pcls->soft_fonts, &fenum);
+	while ( pl_dict_enum_next(&fenum, &key, &value) )
+	  { pl_font_t *fp = (pl_font_t *)value;
+
+	    if ( fp->storage != storage )
+	      continue;
+	    if ( pcl_check_symbol_support(mapp->character_requirements,
+	        fp->character_complement) )
+	      return true;
+	  }
+	return false;
+}
+
+private int	/* add symbol set ID to list (insertion), return new length */
+status_add_symbol_id(ushort *idlist, int nid, ushort new_id)
+{	int i;
+	ushort *idp;
+	ushort t1, t2;
+
+	for ( i = 0, idp = idlist;  i < nid;  i++ )
+	  if ( new_id <= *idp )
+	    break;
+	if ( new_id == *idp )	/* duplicate item */
+	  return nid;
+	/* insert new_id in front of *idp */
+	for ( t1 = new_id;  i < nid;  i++ )
+	  {
+	    t2 = *idp;
+	    *idp++ = t1;
+	    t1 = t2;
+	  }
+	*idp = t1;
+	return nid + 1;
+}
+
 private int
 status_symbol_sets(stream *s, const pcl_state_t *pcls,
   pcl_data_storage_t storage)
 {	gs_const_string key;
 	void *value;
 	pl_dict_enum_t denum;
+	pl_symbol_map_t **maplp;
+	ushort *idlist;
+	int i, nid;
 
 	if ( storage == 0 )
 	  return 0;		/* no "currently selected" symbol set */
-	/**** DOESN'T FILTER PROPERLY, SEE p.16-22 ****/
+
+	/* Note carefully the meaning of this status inquiry.  First,
+	 * we return only symbol sets applicable to unbound fonts.  Second,
+	 * the "storage" value refers to the location of fonts. */
+
+	/* total up built-in symbol sets, downloaded ones */
+	nid = pl_built_in_symbol_map_count +
+	  pl_dict_length(&pcls->symbol_sets, false);
+	idlist = (ushort *)gs_alloc_bytes(pcls->memory, nid * sizeof(ushort),
+	    "status_symbol_sets(idlist)");
+	if ( idlist == NULL )
+	  return e_Memory;
+	nid = 0;
+
+	/* For each symbol set,
+	 *   for each font in appropriate storage,
+	 *     if the font supports that symbol set, list the symbol set
+	 *     and break (because we only need to find one such font). */
+
+	/* 1. Built-in symbol sets: NULL-terminated array of pointers. */
+	for ( maplp = pl_built_in_symbol_maps; *maplp; maplp++ )
+	  { pl_symbol_map_t *mapp = *maplp;
+	    /* XXX Need to see if this symbol set was overloaded. */
+	    if ( status_check_symbol_set(pcls, mapp, storage) )
+	      nid = status_add_symbol_id(idlist, nid,
+		  (mapp->id[0] << 8) + mapp->id[1]);
+	  }
+
+	/* 2. Downloaded symbol sets: dictionary */
 	pl_dict_enum_begin(&pcls->symbol_sets, &denum);
 	while ( pl_dict_enum_next(&denum, &key, &value) )
-	  if ( ((pcl_entity_t *)value)->storage & storage )
-	    { uint id = (key.data[0] << 8) + key.data[1];
-	      char id_string[6];
-	      sprintf(id_string, "%u%c", id >> 5, (id & 31) + 64);
-	      status_put_id(s, id_string);
-	    }
+	  { pcl_symbol_set_t *ssp = (pcl_symbol_set_t *)value;
+	    pl_glyph_vocabulary_t gx;
+
+	    for ( gx = 0; gx < plgv_next; gx++ )
+	      if ( ssp->maps[gx] != NULL &&
+		  status_check_symbol_set(pcls, ssp->maps[gx], storage) )
+		{
+		  nid = status_add_symbol_id(idlist, nid,
+		      (ssp->maps[gx]->id[0] << 8) + ssp->maps[gx]->id[1]);
+		  break;	/* one will suffice */
+		}
+	  }
+	for ( i = 0; i < nid; i++ )
+	  { char idstr[6];	/* ddddL and a null */
+	    int n, l;
+	    n = idlist[i] >> 6;
+	    l = (idlist[i] & 077) + 'A' - 1;
+	    sprintf(idstr, "%d%c", n, l);
+	    status_put_id(s, idstr);
+	  }
 	status_end_id_list(s);
+	gs_free_object(pcls->memory, (void*)idlist,
+	    "status_symbol_sets(idlist)");
 	return 0;
 }
 
@@ -442,7 +551,12 @@ pcl_inquire_readback_entity(pcl_args_t *pargs, pcl_state_t *pcls)
 	      }
 	  }
 	if ( code < 0 )
-	  stputs(&st, "ERROR=INVALID LOCATION\r\n");
+	  {
+	    if ( code == e_Memory )
+	      stputs(&st, "ERROR=INTERNAL ERROR\r\n");
+	    else
+	      stputs(&st, "ERROR=INVALID LOCATION\r\n");
+	  }
 	status_end(&st, pcls);
 	return 0;
 }
@@ -486,7 +600,7 @@ pcl_flush_all_pages(pcl_args_t *pargs, pcl_state_t *pcls)
 	    }
 	  case 1:
 	    { /* Flush all pages, including an incomplete one. */
-	      return pcl_end_page(pcls, false);
+	      return pcl_end_page_if_marked(pcls);
 	    }
 	  default:
 	    return e_Range;

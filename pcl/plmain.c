@@ -159,7 +159,7 @@ pl_main_process_options(pl_main_instance_t *pmi, char *argv[], int argc,
 		    int di;
 
 		    if ( pmi->device )
-		      { fputs("-sDEVICE= must precede -g, -r, -d, -s\n",
+		      { fputs("-sDEVICE= must precede any input files\n",
 			      stderr);
 		        exit(1);
 		      }

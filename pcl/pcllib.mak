@@ -1,4 +1,4 @@
-#    Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
 #    Unauthorized use, copying, and/or distribution prohibited.
 
 # makefile for PCL* interpreter libraries and for PJL
@@ -26,6 +26,7 @@ pjl.dev: $(PCLLIB_MAK) $(ECHOGS_XE) $(PJL)
 ################ Shared libraries ################
 
 pldict_h=pldict.h
+pldraw_h=pldraw.h $(gsiparam_h)
 plmain_h=plmain.h
 plsymbol_h=plsymbol.h
 plvalue_h=plvalue.h
@@ -36,7 +37,7 @@ plfont_h=plfont.h $(gsccode_h) $(plsymbol_h)
 
 plchar.$(OBJ): plchar.c $(AK) $(math__h) $(memory__h) $(stdio__h)\
  $(gdebug_h)\
- $(gschar_h) $(gscoord_h) $(gserror_h) $(gserrors_h) $(gsimage_h)\
+ $(gsbittab_h) $(gschar_h) $(gscoord_h) $(gserror_h) $(gserrors_h) $(gsimage_h)\
  $(gsmatrix_h) $(gsmemory_h) $(gspaint_h) $(gspath_h)\
  $(gsstate_h) $(gsstruct_h) $(gstypes_h)\
  $(gxarith_h) $(gxchar_h) $(gxfcache_h) $(gxdevice_h) $(gxdevmem_h)\
@@ -46,6 +47,10 @@ plchar.$(OBJ): plchar.c $(AK) $(math__h) $(memory__h) $(stdio__h)\
 pldict.$(OBJ): pldict.c $(AK) $(memory__h)\
  $(gsmemory_h) $(gsstruct_h) $(gstypes_h)\
  $(pldict_h)
+
+pldraw.$(OBJ): pldraw.c $(AK) $(std_h)\
+ $(gsmemory_h) $(gstypes_h) $(gxdevice_h) $(gzstate_h)\
+ $(pldraw_h)
 
 plfont.$(OBJ): plfont.c $(AK) $(memory__h) $(stdio__h)\
  $(gdebug_h)\
@@ -69,7 +74,7 @@ plvalue.$(OBJ): plvalue.c $(AK) $(std_h)\
 plvocab.$(OBJ): plvocab.c $(AK) $(stdpre_h)\
  $(plvocab_h)
 
-PCL_LIB1=plchar.$(OBJ) pldict.$(OBJ) plfont.$(OBJ)
+PCL_LIB1=plchar.$(OBJ) pldict.$(OBJ) pldraw.$(OBJ) plfont.$(OBJ)
 PCL_LIB2=plmain.$(OBJ) plsymbol.$(OBJ) plvalue.$(OBJ) plvocab.$(OBJ)
 PCL_LIB=$(PCL_LIB1) $(PCL_LIB2)
 

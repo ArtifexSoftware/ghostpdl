@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -60,12 +60,12 @@ pcl_compute_logical_page_size(pcl_state_t *pcls)
 	if ( pcls->orientation & 1 )
 	  { pcls->logical_page_width =
 	      psize->height - 2 * psize->offset_landscape.x;
-	    pcls->logical_page_height = psize->height;
+	    pcls->logical_page_height = psize->width;
 	  }
 	else
 	  { pcls->logical_page_width =
 	      psize->width - 2 * psize->offset_portrait.x;
-	    pcls->logical_page_height = psize->width;
+	    pcls->logical_page_height = psize->height;
 	  }
 }
 

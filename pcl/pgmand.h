@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -8,7 +8,7 @@
 #ifndef pgmand_INCLUDED
 #  define pgmand_INCLUDED
 #include <setjmp.h>
-#include "stdio_.h"
+#include "stdio_.h"		/* for gdebug.h */
 #include "gdebug.h"
 #include "pcommand.h"
 #include "pcstate.h"

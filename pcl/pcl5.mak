@@ -1,4 +1,4 @@
-#    Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
 #    Unauthorized use, copying, and/or distribution prohibited.
 
 # makefile for PCL5*, HP RTL, and HP-GL/2 interpreters
@@ -121,7 +121,7 @@ pcl5base.dev: $(PCL5_MAK) $(ECHOGS_XE) $(PCL5_OTHER) pcllib.dev pjl.dev
 
 # pgmand.h is here because it is needed for the enter/exit language
 # commands in HP RTL.
-pgmand_h=pgmand.h $(pcommand_h) $(pcstate_h)
+pgmand_h=pgmand.h $(stdio__h) $(gdebug_h) $(pcommand_h) $(pcstate_h)
 
 #### Monochrome commands
 # These are organized by chapter # in the PCL 5 Technical Reference Manual.
@@ -192,6 +192,7 @@ hprtlc.dev: $(PCL5_MAK) $(ECHOGS_XE) rtlbasec.dev
 # These are organized by chapter # in the PCL 5 Technical Reference Manual.
 
 pcfont_h=pcfont.h $(plfont_h)
+pcsymbol_h=pcsymbol.h $(plsymbol_h)
 
 # Chapter 4
 # Some of these replace implementations in rtmisc.c.
@@ -210,20 +211,22 @@ pcursor.$(OBJ): pcursor.c $(std_h)\
  $(pcdraw_h) $(pcommand_h) $(pcstate_h)
 
 # Chapter 8
-pcfont.$(OBJ): pcfont.c $(std_h)\
+pcfont.$(OBJ): pcfont.c $(std_h) $(stdio__h)\
  $(gschar_h) $(gscoord_h) $(gsfont_h) $(gsmatrix_h) $(gspath_h) $(gsstate_h)\
- $(pldict_h) $(plfont_h)\
- $(pcommand_h) $(pcstate_h)
+ $(gsutil_h)\
+ $(plvalue_h)\
+ $(pcdraw_h) $(pcfont_h) $(pcommand_h) $(pcstate_h) $(pcsymbol_h)
 
 # Chapter 10
 pcsymbol.$(OBJ): pcsymbol.c $(std_h)\
- $(pcommand_h) $(pcstate_h) $(plvalue_h)
+ $(plvalue_h)\
+ $(pcommand_h) $(pcfont_h) $(pcstate_h) $(pcsymbol_h)
 
 # Chapter 9 & 11
 pcsfont.$(OBJ): pcsfont.c $(stdio__h)\
  $(gsccode_h) $(gsmatrix_h) $(gsutil_h) $(gxfont_h) $(gxfont42_h)\
  $(pcommand_h) $(pcfont_h) $(pcstate_h)\
- $(pldict_h) $(plfont_h) $(plvalue_h)
+ $(pldict_h) $(plvalue_h)
 
 # Chapter 12
 pcmacros.$(OBJ): pcmacros.c $(std_h)\
@@ -249,7 +252,7 @@ pcrect.$(OBJ): pcrect.c $(math__h)\
 # Chapter 16
 pcstatus.$(OBJ): pcstatus.c $(memory__h) $(stdio__h) $(string__h)\
  $(stream_h)\
- $(pcfont_h) $(pcommand_h) $(pcstate_h)
+ $(pcfont_h) $(pcommand_h) $(pcstate_h) $(pcsymbol_h)
 
 # Chapter 24
 pcmisc.$(OBJ): pcmisc.c $(std_h) $(pcommand_h) $(pcstate_h)
@@ -313,7 +316,8 @@ pginit_h=pginit.h
 # Utilities
 
 pgdraw.$(OBJ): pgdraw.c $(math__h) $(stdio__h)\
- $(gdebug_h) $(gscoord_h) $(gspaint_h) $(gspath_h)\
+ $(gdebug_h) $(gscoord_h) $(gsmatrix_h) $(gsmemory_h) $(gspaint_h) $(gspath_h)\
+ $(gsstate_h) $(gstypes_h)\
  $(gxfixed_h) $(gxpath_h)\
  $(pcdraw_h)\
  $(pgdraw_h) $(pggeom_h) $(pgmand_h)
@@ -324,7 +328,8 @@ pggeom.$(OBJ): pggeom.c $(math__h) $(stdio__h)\
 # Initialize/reset.  We break this out simply because it's easier to keep
 # track of it this way.
 
-pginit.$(OBJ): pginit.c $(std_h) $(pginit_h) $(pgmand_h)
+pginit.$(OBJ): pginit.c $(std_h)\
+ $(pgdraw_h) $(pginit_h) $(pgmand_h)
 
 # Parsing
 
@@ -340,15 +345,19 @@ HPGL2_OTHER=pgdraw.$(OBJ) pggeom.$(OBJ) pginit.$(OBJ) pgparse.$(OBJ)
 # Chapter 18
 # These are PCL commands, but are only relevant to HP RTL and/or HP-GL/2.
 # Some of these are in rtmisc.c.
-pgframe.$(OBJ): pgframe.c $(std_h) $(pgmand_h)
+pgframe.$(OBJ): pgframe.c $(math__h)\
+ $(gsmatrix_h) $(gsmemory_h) $(gsstate_h) $(gstypes_h)\
+ $(pgdraw_h) $(pgmand_h)
 
 # Chapter 19
 pgconfig.$(OBJ): pgconfig.c $(std_h)\
- $(gscoord_h)\
- $(pginit_h) $(pgmand_h)
+ $(gscoord_h) $(gsmatrix_h) $(gsmemory_h) $(gsstate_h) $(gstypes_h)\
+ $(pggeom_h) $(pginit_h) $(pgmand_h)
 
 # Chapter 20
-pgvector.$(OBJ): pgvector.c $(stdio__h) $(gdebug_h) $(pgmand_h)
+pgvector.$(OBJ): pgvector.c $(math__h) $(stdio__h)\
+ $(gdebug_h) $(gscoord_h) $(gspath_h)\
+ $(pgdraw_h) $(pggeom_h) $(pgmand_h)
 
 # Chapter 21
 pgpoly.$(OBJ): pgpoly.c $(std_h) $(pgdraw_h) $(pggeom_h) $(pgmand_h)
@@ -356,7 +365,7 @@ pgpoly.$(OBJ): pgpoly.c $(std_h) $(pgdraw_h) $(pggeom_h) $(pgmand_h)
 # Chapter 22
 pglfill.$(OBJ): pglfill.c $(memory__h)\
  $(gstypes_h) $(gsuid_h) $(gxbitmap_h)\
- $(pgdraw_h) $(pginit_h) $(pgmand_h)
+ $(pgdraw_h) $(pggeom_h) $(pginit_h) $(pgmand_h)
 
 # Chapter 23
 pgchar.$(OBJ): pgchar.c $(math__h) $(stdio__h)\

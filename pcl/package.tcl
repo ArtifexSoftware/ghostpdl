@@ -25,13 +25,17 @@ proc glob-list {args} {
 }
 proc list-common {dir context} {
     set list [glob-list $dir/README $dir/*pcl.mak $dir/pcllib.mak]
-    if {$context != "license"} {lconcat list [glob-list $dir/*.tcl]}
     lconcat list [glob-list $dir/p\[jl\]*.\[ch\] $dir/uni*.h]
     return $list
 }
 proc list-pcl5-only {dir context} {
     set list [glob-list $dir/NEWS-5 $dir/pcl5.mak]
-    if {$context != "license"} {lconcat list [glob-list $dir/*_pcl]}
+    if {$context != "license"} {
+	lconcat list [glob-list $dir/*_pcl]
+	foreach f [glob $dir/*.tcl] {
+	    if {[string first $dir/px $f] < 0} {lappend list $f}
+	}
+    }
     lconcat list [glob-list $dir/p\[cg\]*.\[ch\] $dir/rt*.\[ch\]]
     return $list
 }
@@ -40,7 +44,12 @@ proc list-pcl5 {dir context} {
 }
 proc list-pclxl-only {dir context} {
     set list [glob-list $dir/NEWS-XL $dir/pclxl.mak]
-    if {$context != "license"} {lconcat list [glob-list $dir/*_pxl]}
+    if {$context != "license"} {
+	lconcat list [glob-list $dir/*_pxl]
+	foreach f [glob $dir/*.tcl] {
+	    if {[string first $dir/pc $f] < 0} {lappend list $f}
+	}
+    }
     lconcat list [glob-list $dir/pxasm $dir/px*.bat $dir/px*.\[ch\]\
 	    $dir/px*.ps $dir/*.pxs $dir/px*.txt]
     return $list

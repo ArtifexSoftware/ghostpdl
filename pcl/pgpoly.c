@@ -42,7 +42,7 @@ hpgl_rectangle(hpgl_args_t *pargs, hpgl_state_t *pgls, int flags)
 
 	  hpgl_args_set_real(pargs, x1); 
 	  hpgl_args_add_real(pargs, y2);
-	  hpgl_call(hpgl_PD(pargs, pgls));
+	  hpgl_call(hpgl_PU(pargs, pgls));
 
 	  hpgl_args_set_real(pargs, x2); 
 	  hpgl_args_add_real(pargs, y2);
@@ -98,6 +98,9 @@ hpgl_wedge(hpgl_args_t *pargs, hpgl_state_t *pgls)
 
 	  hpgl_compute_vector_endpoints(radius, pgls->g.pos.x, pgls->g.pos.y,
 				        (start+sweep), &x3, &y3);
+
+	  hpgl_args_set_real(pargs, startx);
+	  hpgl_args_add_real(pargs, starty);
 
 	  hpgl_args_set_real(pargs, x1);
 	  hpgl_args_add_real(pargs, y1);

@@ -5,30 +5,49 @@
 /* pcfont.c */
 /* PCL5 font selection and text printing commands */
 #include "std.h"
+/* XXX Tangled include mess:  We need pl_load_tt_font, which is only supplied
+ * by plfont.h if stdio.h is included, but pcstate.h back-door includes
+ * plfont.h, so we have to pull in stdio.h here even though it should only
+ * be down in the font-init-hack code. */
+#include "stdio_.h"
 #include "pcommand.h"
-#include "pcstate.h"
-#include "pldict.h"
 #include "plvalue.h"
+#include "pcstate.h"
 #include "pcfont.h"
 #include "pcdraw.h"
+#include "pcsymbol.h"
 #include "gsmatrix.h"
 #include "gschar.h"
 #include "gscoord.h"
 #include "gsfont.h"
 #include "gspath.h"
 #include "gsstate.h"
+#include "gsutil.h"
 
 /* XXX allow us to compile, but mark the points we'll need to fix later */
 #define	e_Screwup	e_Unimplemented
 
-/* Internal routines */
-
-/* Clear the font pointer cache after changing a font parameter. */
-private void
-decache_font(pcl_state_t *pcls, int set)
-{	pcls->font_selection[set].font = 0;
-	if ( pcls->font_selected == set )
-	  pcls->font = 0;
+/* Clear the font pointer cache after changing a font parameter.  set
+ * indicates which font (0/1 for primary/secondary).  -1 means both. */
+void
+pcl_decache_font(pcl_state_t *pcls, int set)
+{	
+	if ( set < 0 )
+	  {
+	    pcls->font_selection[0].font = NULL;
+	    pcls->font_selection[1].font = NULL;
+	    pcls->font = NULL;
+	    pcls->map = NULL;
+	  }
+	else
+	  {
+	    pcls->font_selection[set].font = NULL;
+	    if ( pcls->font_selected == set )
+	      {
+	        pcls->font = NULL;
+		pcls->map = NULL;
+	      }
+	  }
 }
 
 
@@ -52,23 +71,52 @@ typedef enum {
 typedef	int match_score_t[score_limit];
 
 
-/* Compute a font's score against selection parameters.  TRM 8-27. */
+/* Decide whether an unbound font supports a symbol set (mostly convenient
+ * setup for pcl_check_symbol_support(). */
+private bool
+check_support(const pcl_state_t *pcls, uint symbol_set, pl_font_t *fp,
+    pl_symbol_map_t **mapp)
+{
+	pl_glyph_vocabulary_t gv = fp->character_complement[7] & 07;
+	byte id[2];
+	pl_symbol_map_t *map;
+
+	id[0] = symbol_set >> 8;
+	id[1] = symbol_set;
+	if ( (map = pcl_find_symbol_map(pcls, id, gv)) == NULL )
+	  return false;
+	if ( pcl_check_symbol_support(map->character_requirements,
+	    fp->character_complement) )
+	  {
+	    *mapp = map;
+	    return true;
+	  }
+	else
+	  return false;
+}
+
+
+/* Compute a font's score against selection parameters.  TRM 8-27.
+ * Also set *mapp to the symbol map to be used if this font wins. */
 private void
 score_match(const pcl_state_t *pcls, const pcl_font_selection_t *pfs,
-    const pl_font_t *fp, match_score_t score)
+    const pl_font_t *fp, pl_symbol_map_t **mapp, match_score_t score)
 {
 	int tscore;
 
-	/* 1.  Symbol set. */
+	/* 1.  Symbol set.  2 for exact match or full support, 1 for
+	 * default supported, 0 for no luck. */
 	if ( pl_font_is_bound(fp) )
-	  score[score_symbol_set] =
-	      pfs->params.symbol_set == fp->params.symbol_set;
-	else
 	  {
-	    /* XXX Decide whether unbound font supports the requested
-	     * symbol set.  This requires the big ugly table.  */
-	    score[score_symbol_set] = 37;	/* plug */
+	    score[score_symbol_set] =
+		pfs->params.symbol_set == fp->params.symbol_set? 2:
+		    (fp->params.symbol_set == pcl_default_symbol_set_value);
+	    mapp = NULL;	/* bound fonts have no map */
 	  }
+	else
+	  score[score_symbol_set] =
+	    check_support(pcls, fp->params.symbol_set, fp, mapp)? 2:
+	      check_support(pcls, pcl_default_symbol_set_value, fp, mapp);
 
 	/* 2.  Spacing. */
 	score[score_spacing] =
@@ -190,6 +238,7 @@ recompute_font(pcl_state_t *pcls)
 	    gs_const_string key;
 	    void *value;
 	    pl_font_t *best_font;
+	    pl_symbol_map_t *mapp, *best_map;
 	    match_score_t best_match;
 
 	    /* Be sure we've got at least one font. */
@@ -197,20 +246,21 @@ recompute_font(pcl_state_t *pcls)
 	    if ( !pl_dict_enum_next(&dictp, &key, &value) )
 		return e_Screwup;
 	    best_font = (pl_font_t *)value;
-	    score_match(pcls, pfs, best_font, best_match);
+	    score_match(pcls, pfs, best_font, &best_map, best_match);
 
 	    while ( pl_dict_enum_next(&dictp, &key, &value) )
 	      { pl_font_t *fp = (pl_font_t *)value;
 		match_score_t match;
 		score_index_t i;
 
-		score_match(pcls, pfs, fp, match);
+		score_match(pcls, pfs, fp, &mapp, match);
 		for (i=0; i<score_limit; i++)
 		  if ( match[i] != best_match[i] )
 		    {
 		      if ( match[i] > best_match[i] )
 			{
 			  best_font = fp;
+			  best_map = mapp;
 			  memcpy((void*)best_match, (void*)match,
 			      sizeof(match));
 			}
@@ -218,8 +268,10 @@ recompute_font(pcl_state_t *pcls)
 		    }
 	      }
 	    pfs->font = best_font;
+	    pfs->map = best_map;
 	  }
 	pcls->font = pfs->font;
+	pcls->map = pfs->map;
 	return 0;
 }
 
@@ -374,7 +426,7 @@ pcl_symbol_set(pcl_args_t *pargs, pcl_state_t *pcls, int set)
 	if ( symset != pcls->font_selection[set].params.symbol_set )
 	  {
 	    pcls->font_selection[set].params.symbol_set = symset;
-	    decache_font(pcls, set);
+	    pcl_decache_font(pcls, set);
 	  }
 	return 0;
 }
@@ -396,7 +448,7 @@ pcl_spacing(pcl_args_t *pargs, pcl_state_t *pcls, int set)
 	if ( spacing != pcls->font_selection[set].params.proportional_spacing )
 	  {
 	    pcls->font_selection[set].params.proportional_spacing = spacing;
-	    decache_font(pcls, set);
+	    pcl_decache_font(pcls, set);
 	  }
 	return 0;
 }
@@ -418,7 +470,7 @@ pcl_pitch(pcl_args_t *pargs, pcl_state_t *pcls, int set)
 	if ( pitch_100ths != pcls->font_selection[set].params.pitch_100ths )
 	  {
 	    pcls->font_selection[set].params.pitch_100ths = pitch_100ths;
-	    decache_font(pcls, set);
+	    pcl_decache_font(pcls, set);
 	  }
 	return 0;
 }
@@ -440,7 +492,7 @@ pcl_height(pcl_args_t *pargs, pcl_state_t *pcls, int set)
 	if ( height_4ths != pcls->font_selection[set].params.height_4ths )
 	  {
 	    pcls->font_selection[set].params.height_4ths = height_4ths;
-	    decache_font(pcls, set);
+	    pcl_decache_font(pcls, set);
 	  }
 	return 0;
 }
@@ -460,7 +512,7 @@ pcl_style(pcl_args_t *pargs, pcl_state_t *pcls, int set)
 	if ( style != pcls->font_selection[set].params.style )
 	  {
 	    pcls->font_selection[set].params.style = style;
-	    decache_font(pcls, set);
+	    pcl_decache_font(pcls, set);
 	  }
 	return 0;
 }
@@ -484,7 +536,7 @@ pcl_stroke_weight(pcl_args_t *pargs, pcl_state_t *pcls, int set)
 	if ( weight != pcls->font_selection[set].params.stroke_weight )
 	  {
 	    pcls->font_selection[set].params.stroke_weight = weight;
-	    decache_font(pcls, set);
+	    pcl_decache_font(pcls, set);
 	  }
 	return 0;
 }
@@ -504,7 +556,7 @@ pcl_typeface(pcl_args_t *pargs, pcl_state_t *pcls, int set)
 	if ( typeface != pcls->font_selection[set].params.typeface_family )
 	  {
 	    pcls->font_selection[set].params.typeface_family = typeface;
-	    decache_font(pcls, set);
+	    pcl_decache_font(pcls, set);
 	  }
 	return 0;
 }
@@ -562,7 +614,7 @@ private int
 pcl_select_default_font(pcl_args_t *pargs, pcl_state_t *pcls, int set)
 {	if ( int_arg(pargs) != 3 )
 	  return e_Range;
-	decache_font(pcls, set);
+	pcl_decache_font(pcls, set);
 	return e_Unimplemented;
 }
 private int /* ESC ( 3 @ */
@@ -721,7 +773,9 @@ private void
 pcfont_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 {	if ( type & (pcl_reset_initial | pcl_reset_printer) )
 	  { pcls->font_selection[0].params.symbol_set = 277;	/* Roman-8 */
-	    pcls->font_selection[0].params.proportional_spacing = false;
+	    /* XXX There is some problem with fixed-pitch fonts; make the
+	     * default proportional until it's fixed. */
+	    pcls->font_selection[0].params.proportional_spacing = true;
 	    pcls->font_selection[0].params.pitch_100ths = 10*100;
 	    pcls->font_selection[0].params.height_4ths = 12*4;
 	    pcls->font_selection[0].params.style = 0;
@@ -740,6 +794,102 @@ pcfont_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 	    pl_dict_init(&pcls->hard_fonts, pcls->memory, pl_free_font);
 
 }
+
+/* Load some hard (built-in) fonts.  This must be done at initialization
+ * time, but after the state and memory are set up.  Return an indication
+ * of whether some fonts were successfully loaded.
+ * XXX The existing code is more than a bit of a hack; however it does
+ * allow us to see some text.  Approach: expect to find some fonts in the
+ * current directory (wherever the interpreter is executed) with names
+ * *.ttf.  Load whichever ones are found in the table below.  Probably
+ * very little of this code can be salvaged for later.
+ */
+bool
+pcl_load_hard_fonts(pcl_state_t *pcls)
+{
+#include <sys/types.h>
+#include <dirent.h>
+#include <string.h>
+
+#define	FONTDIR	"."
+	typedef struct font_hack {
+	  char *ext_name;
+	  pl_font_params_t params;
+	} font_hack_t;
+	font_hack_t hack_table[] = {
+	    /* Typeface family values are faked; they do not (necessarily)
+	     * match the actual fonts. */
+	    {"arial",	{0, 1, 0, 0, 0, 0, 16602} },
+	    {"arialbd",	{0, 1, 0, 0, 0, 3, 16602} },
+	    {"arialbi",	{0, 1, 0, 0, 1, 3, 16602} },
+	    {"ariali",	{0, 1, 0, 0, 1, 0, 16602} },
+	    {"cour",	{0, 0, 0, 0, 0, 0, 4099} },
+	    {"courbd",	{0, 0, 0, 0, 0, 3, 4099} },
+	    {"courbi",	{0, 0, 0, 0, 1, 3, 4099} },
+	    {"couri",	{0, 0, 0, 0, 1, 0, 4099} },
+	    {"times",	{0, 1, 0, 0, 0, 0, 16901} },
+	    {"timesbd",	{0, 1, 0, 0, 0, 3, 16901} },
+	    {"timesbi",	{0, 1, 0, 0, 1, 3, 16901} },
+	    {"timesi",	{0, 1, 0, 0, 1, 0, 16901} },
+	    {NULL,	{0, 0, 0, 0, 0, 0, 0} }
+	};
+	DIR *dp;
+	struct dirent *dep;
+	FILE *fnp;
+	pl_font_t *plfont;
+	font_hack_t *hackp;
+	int id = 0;
+	byte key[2];
+	bool found_some = false;
+
+	if ( (dp=opendir(FONTDIR)) == NULL )
+	  {
+#ifdef DEBUG
+	    perror(FONTDIR);
+#endif
+	    return false;
+	  }
+	while ( (dep=readdir(dp)) != NULL )
+	  { int dirlen = strlen(dep->d_name);
+	    if ( strcmp(".ttf", &dep->d_name[dirlen - 4]) == 0 )
+	      {
+		if ( (fnp=fopen(dep->d_name, "r")) == NULL )
+		  {
+#ifdef DEBUG
+		    perror(dep->d_name);
+#endif
+		    continue;
+		  }
+		if ( pl_load_tt_font(fnp, pcl_font_dir, pcls->memory,
+		    gs_next_ids(1), &plfont) < 0 )
+		  {
+#ifdef DEBUG
+		    lprintf1("Failed loading font %s\n", dep->d_name);
+#endif
+		    return false;
+		  }
+		plfont->storage = pcds_internal;
+		/* extraordinary hack: get the font characteristics from a
+		 * hardwired table; ignore the font if we don't know it. */
+		for ( hackp=hack_table; hackp->ext_name; hackp++ )
+		  {
+		    if ( strncmp(hackp->ext_name, dep->d_name, dirlen-4) == 0 )
+			break;
+		  }
+		if ( hackp->ext_name == NULL )
+		    continue;	/* not in table */
+		plfont->params = hackp->params;
+		id++;
+		key[0] = id >> 8;
+		key[1] = id;
+		pl_dict_put(&pcls->hard_fonts, key, 2, plfont);
+		found_some = true;
+	    }
+	}
+	closedir(dp);
+	return found_some;
+}
+
 const pcl_init_t pcfont_init = {
   pcfont_do_init, pcfont_do_reset
 };

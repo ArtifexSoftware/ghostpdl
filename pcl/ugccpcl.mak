@@ -1,4 +1,4 @@
-#    Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
 #    Unauthorized use, copying, and/or distribution prohibited.
 
 # makefile for PCL XL or PCL 5 interpreter, Unix/gcc platform.
@@ -93,7 +93,8 @@ ld$(LANGUAGE).tr: $(MAKEFILE) $(LANGUAGE).mak
 	  cl_impl=clmem \
 	  cl_filter_devs=zlib cl_filter_name=zlib \
 	  -f ugcclib.mak \
-	  ld$(CONFIG).tr gsfemu.o gsnogc.o gconfig$(CONFIG).o gscdefs$(CONFIG).o
+	  ld$(CONFIG).tr \
+	  gdevbbox.o gsfemu.o gsnogc.o gconfig$(CONFIG).o gscdefs$(CONFIG).o
 	cp $(GD)ld$(CONFIG).tr ld$(LANGUAGE).tr
 
 # Build the configuration file.
@@ -103,7 +104,7 @@ pconf$(CONFIG).h ldconf$(CONFIG).tr: $(TARGET_DEVS) $(GD)genconf$(XE)
 # Link a Unix executable.
 $(TARGET_XE): ld$(LANGUAGE).tr ldconf$(CONFIG).tr $(LANGUAGE).$(OBJ)
 	$(GD)echogs -w ldt.tr -n - $(CCLD) $(LDFLAGS) $(XLIBDIRS) -o $(TARGET_XE)
-	$(GD)echogs -a ldt.tr -n -s $(GD)gsnogc.o $(GD)gconfig$(CONFIG).o $(GD)gscdefs$(CONFIG).o -s
+	$(GD)echogs -a ldt.tr -n -s $(GD)gdevbbox.o $(GD)gsnogc.o $(GD)gconfig$(CONFIG).o $(GD)gscdefs$(CONFIG).o -s
 	$(GD)echogs -a ldt.tr -n -s $(XOBJS) -s
 	$(GD)echogs -w t.tr -n for f in -s
 	cat ld$(LANGUAGE).tr >>t.tr

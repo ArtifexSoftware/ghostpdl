@@ -29,6 +29,8 @@ hpgl_arc(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 	     )
 	  return e_Range;
 
+	hpgl_arg_c_real(pargs, &chord_angle);
+
 	x_current = pgls->g.pos.x;
 	y_current = pgls->g.pos.y;
 
@@ -296,7 +298,7 @@ int
 hpgl_PD(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
 	pgls->g.pen_down = true;
-	return hpgl_plot(pargs, pgls, gs_lineto);
+	return hpgl_plot(pargs, pgls, (pgls->g.relative) ? gs_rlineto : gs_lineto);
 }
 
 /* PE (flag|value|coord)*; */
@@ -334,7 +336,13 @@ hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
 		{ pargs->source.ptr = p - 1;
 		break;
 		}
-	      pgls->g.pen = pen;
+	      {
+		hpgl_args_t args;
+		hpgl_args_set_int(&args, pen);
+		/* Note SP is illegal in polygon mode we must handle that here */
+		if ( !pgls->g.polygon_mode )
+		  hpgl_call(hpgl_SP(&args, pgls))
+	      }
 	      }
 	      p = pargs->source.ptr;
 	      continue;
@@ -382,24 +390,29 @@ hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	      if ( (ch & 127) <= 32 || (ch & 127) == 127 )
 		continue;
 	      pargs->source.ptr = p - 1;
-	      { int32 xy[2];
-	      if ( !pe_args(pargs, xy, 2) )
-		break;
-	      /* HAS - I would prefer that this be handled with the
-                 parsing macros and hpgl_P[ARUD], but that would mess
-                 up the state of the parser.  The following is
-                 UNTESTED other than compilation */
+	      { 
+		int32 xy[2];
+		if ( !pe_args(pargs, xy, 2) )
+		  break;
+		{ 
+		  hpgl_args_t args;
+		
+		  /* set up the up and down state */
+		  hpgl_args_setup(&args);
+		  if ( pargs->phase & pe_pen_up ) 
+		    hpgl_call(hpgl_PU(&args, pgls))
+		  else
+		    hpgl_call(hpgl_PD(&args, pgls))
+		
+		  hpgl_args_set_real(&args, (floatp)xy[0]);
+		  hpgl_args_add_real(&args, (floatp)xy[1]);
 
-	      hpgl_add_point_to_path(pgls, (floatp)xy[0], (floatp)xy[1],
-				     ((pargs->phase & pe_absolute) ?
-				      ((pargs->phase & pe_pen_up) ?
-				       gs_moveto :
-				       gs_lineto) :
-				      (pargs->phase & pe_pen_up) ?
-				      gs_rmoveto :
-				      gs_rlineto));
-
-					 
+		  /* arbitrarily use PA or PR */
+		  if ( pargs->phase & pe_absolute )
+		    hpgl_call(hpgl_PA(&args, pgls))
+		  else
+		    hpgl_call(hpgl_PR(&args, pgls))
+		}
 	      }
 	      pargs->phase &= ~(pe_pen_up | pe_absolute);
 	      p = pargs->source.ptr;
@@ -474,7 +487,7 @@ int
 hpgl_PU(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
 	pgls->g.pen_down = false;
-	return hpgl_plot(pargs, pgls, gs_moveto);
+	return hpgl_plot(pargs, pgls, (pgls->g.relative) ? gs_rmoveto : gs_moveto);
 }
 
 /* RT xinter,yinter,xend,yend[,chord]; */

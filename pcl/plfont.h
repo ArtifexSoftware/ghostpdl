@@ -214,7 +214,7 @@ int pl_font_scan_segments(P6(pl_font_t *plfont, int fst_offset,
 
 /* Load a built-in (TrueType) font from external storage. */
 /* Attempt to define this only if we have stdio included. */
-#ifdef getc
+#ifdef EOF
 int pl_load_tt_font(P5(FILE *in, gs_font_dir *pdir, gs_memory_t *mem,
 		       long unique_id, pl_font_t **pplfont));
 #endif

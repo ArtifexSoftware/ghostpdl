@@ -5,6 +5,9 @@
 /* pcfont.h */
 /* Definitions for PCL5 fonts */
 
+#ifndef	pcfont_INCLUDED
+#define	pcfont_INCLUDED
+
 #include "plfont.h"
 
 /* Define the common structure of downloaded font headers. */
@@ -61,3 +64,13 @@ typedef struct pcl_resolution_bitmap_header_s {
   byte YResolution[2];
   char Copyright[1];
 } pcl_resolution_bitmap_header_t;
+
+/* Define our directory of fonts. */
+extern gs_font_dir *pcl_font_dir;
+
+/* Clear the font pointer cache.  Some non-font operations--removing a
+ * downloaded symbol set, or changing orientations--can cause this.
+ * set == -1 means all. */
+void pcl_decache_font(P2(pcl_state_t *pcls, int set));
+
+#endif		/* pcfont_INCLUDED */

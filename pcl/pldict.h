@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -31,6 +31,7 @@ typedef struct pl_dict_entry_s pl_dict_entry_t;
 typedef struct pl_dict_s pl_dict_t;
 struct pl_dict_s {
   pl_dict_entry_t *entries;
+  uint entry_count;
   pl_dict_value_free_proc_t free_proc;
   pl_dict_t *parent;		/* next dictionary up the stack */
   gs_memory_t *memory;
@@ -76,6 +77,11 @@ bool pl_dict_undef(P3(pl_dict_t *pdict, const byte *kdata, uint ksize));
  */
 #define pl_dict_parent(pdict) ((pdict)->parent)
 #define pl_dict_set_parent(pdict, pardict) ((pdict)->parent = (pardict))
+
+/*
+ * Return the number of entries in a dictionary.
+ */
+uint pl_dict_length(P2(const pl_dict_t *pdict, bool with_stack));
 
 /*
  * Enumerate a dictionary.  If entries are added during enumeration,

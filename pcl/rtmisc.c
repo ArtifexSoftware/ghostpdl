@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -17,7 +17,7 @@ extern const pcl_init_t *pcl_init_table[];
 private int /* ESC E */
 rtl_printer_reset(pcl_args_t *pargs, pcl_state_t *pcls)
 {	/* Print any partial page. */
-	{ int code = pcl_end_page(pcls, false);
+	{ int code = pcl_end_page_if_marked(pcls);
 	  if ( code < 0 )
 	    return code;
 	}

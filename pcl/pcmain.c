@@ -42,10 +42,13 @@ const pcl_init_t *pcl_init_table[] = {
 	    0
 };
 
+/* Define interim font initialization procedure */
+extern bool pcl_load_hard_fonts(pcl_state_t *);
+
 /* Pause at the end of each page. */
 private int
-pause_end_page(pcl_state_t *pcls)
-{	int code = pcl_default_end_page(pcls);
+pause_finish_page(pcl_state_t *pcls)
+{	int code = pcl_default_finish_page(pcls);
 	fprintf(stderr, "End of page, press <enter> to continue.\n");
 	getchar();
 	return code;
@@ -135,8 +138,16 @@ main(int argc, char *argv[])
 	      }
 	  pcl_do_resets(&state, pcl_reset_initial);
 	}
+	/* XXX This doesn't really belong here, but there is no proper
+	 * place for it.  It needs to happen after reset_initial, when
+	 * the state is established and memory is usable. */
+	if ( !pcl_load_hard_fonts(&state) )
+	  {
+	    lprintf("No built-in fonts found during initialization\n");
+	    exit(1);
+	  }
 	if ( inst.pause )
-	  state.end_page = pause_end_page;
+	  state.finish_page = pause_finish_page;
 
 	for ( ; i < argc; ++i )
 	  { /* Process one input file. */

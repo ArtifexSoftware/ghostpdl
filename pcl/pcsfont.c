@@ -9,7 +9,6 @@
 #include "pcfont.h"
 #include "pcstate.h"
 #include "pldict.h"
-#include "plfont.h"
 #include "plvalue.h"
 #include "gsccode.h"
 #include "gsmatrix.h"
@@ -17,15 +16,16 @@
 #include "gxfont.h"
 #include "gxfont42.h"
 
-/* Define our directory of fonts. */
-private gs_font_dir *pcl_font_dir;
-
 /* Define the downloaded character data formats. */
 typedef enum {
   pccd_bitmap = 4,
   pccd_intellifont = 10,
   pccd_truetype = 15
 } pcl_character_format;
+
+/* Formerly private, now shared with pcfont.h for initial hard fonts.
+ * XXX Should this be moved into the state? */
+gs_font_dir *pcl_font_dir;
 
 /* ------ Internal procedures ------ */
 
@@ -343,81 +343,6 @@ pcsfont_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 		 * look at soft fonts we'll want hard fonts afterward, but
 		 * not the reverse. */
 		pl_dict_set_parent(&pcls->soft_fonts, &pcls->hard_fonts);
-/* XXX =================================================================
- * Hack in some fonts.  This is not the right place to do this, let
- * alone the right way!  Expect to find some TT fonts in the current
- * directory; if so, pull in all we find and make them look like soft
- * fonts. */ 
-		{
-#include "stdio_.h"
-#include <sys/types.h>
-#include <dirent.h>
-#include <string.h>
-#define	FONTDIR	"."
-		    typedef struct font_hack {
-			char	*ext_name;
-			pl_font_params_t params;
-		    } font_hack_t;
-		    font_hack_t hack_table[] = {
-			/* (typeface family values are faked, do not
-			 * match the actual fonts) */
-			{"arial",	{0, 1, 0, 0, 0, 0, 16602} },
-			{"arialbd",	{0, 1, 0, 0, 0, 3, 16602} },
-			{"arialbi",	{0, 1, 0, 0, 1, 3, 16602} },
-			{"ariali",	{0, 1, 0, 0, 1, 0, 16602} },
-			{"cour",	{0, 0, 0, 0, 0, 0, 4099} },
-			{"courbd",	{0, 0, 0, 0, 0, 3, 4099} },
-			{"courbi",	{0, 0, 0, 0, 1, 3, 4099} },
-			{"couri",	{0, 0, 0, 0, 1, 0, 4099} },
-			{"times",	{0, 1, 0, 0, 0, 0, 16901} },
-			{"timesbd",	{0, 1, 0, 0, 0, 3, 16901} },
-			{"timesbi",	{0, 1, 0, 0, 1, 3, 16901} },
-			{"timesi",	{0, 1, 0, 0, 1, 0, 16901} },
-			{NULL,		{0, 0, 0, 0, 0, 0, 0} }
-		    };
-		    DIR		*dp;
-		    struct dirent *dep;
-		    FILE	*fnp;
-		    pl_font_t	*plfont;
-		    font_hack_t	*hackp;
-		    int		id = 0;
-		    byte	key[2];
-
-		    if ((dp=opendir(FONTDIR)) == NULL) {
-			perror(FONTDIR);
-			return;
-		    }
-		    while ((dep=readdir(dp)) != NULL) {
-			if (strcmp(".ttf", &dep->d_name[dep->d_reclen-4])
-				== 0) {
-
-			    if ((fnp=fopen(dep->d_name, "r")) == NULL) {
-				perror(dep->d_name);
-				continue;
-			    }
-			    pl_load_tt_font(fnp, pcl_font_dir, pcls->memory,
-				gs_next_ids(1), &plfont);
-			    plfont->storage = pcds_internal;
-			    /* extraordinary hack: get the font character-
-			     * istics from a hardwired table; ignore the
-			     * font if we don't know it. */
-			    for (hackp=hack_table; hackp->ext_name; hackp++) {
-				if (strncmp(hackp->ext_name, dep->d_name,
-					dep->d_reclen - 4) == 0)
-				    break;
-			    }
-			    if (hackp->ext_name == NULL)
-				continue;	/* not in table */
-			    plfont->params = hackp->params;
-			    id++;
-			    key[0] = id >> 8;
-			    key[1] = id;
-			    pl_dict_put(&pcls->soft_fonts, key, 2, plfont);
-			}
-		    }
-		    closedir(dp);
-		}
-/* XXX end of font-init hack to be removed. */
 	      }
 	    else
 	      { pcl_args_t args;

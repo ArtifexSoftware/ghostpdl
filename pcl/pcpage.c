@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -28,8 +28,8 @@
 /* End a page, either unconditionally or only if there are marks on it. */
 /* Return 1 if the page was actually printed and erased. */
 int
-pcl_end_page(pcl_state_t *pcls, bool always)
-{	if ( always || pcls->have_page )
+pcl_end_page(pcl_state_t *pcls, pcl_print_condition_t condition)
+{	if ( condition == pcl_print_always || pcls->have_page )
 	  { int code;
 	    /* If there's an overlay macro, execute it now. */
 	    if ( pcls->overlay_enabled )
@@ -46,7 +46,7 @@ pcl_end_page(pcl_state_t *pcls, bool always)
 		    pcls->overlay_enabled = true; /**** IN copy_after ****/
 		  }
 	      }
-	    (*pcls->end_page)(pcls);
+	    (*pcls->finish_page)(pcls);
 	    pcls->have_page = false;
 	    code = gs_erasepage(pcls->pgs);
 	    return (code < 0 ? code : 1);
@@ -54,7 +54,7 @@ pcl_end_page(pcl_state_t *pcls, bool always)
 	return 0;
 }
 int
-pcl_default_end_page(pcl_state_t *pcls)
+pcl_default_finish_page(pcl_state_t *pcls)
 {	return gs_output_page(pcls->pgs, pcls->num_copies, true);
 }
 
@@ -121,7 +121,7 @@ pcl_page_size(pcl_args_t *pargs, pcl_state_t *pcls)
 	  default:
 	    return 0;
 	  }
-	{ int code = pcl_end_page(pcls, false);
+	{ int code = pcl_end_page_if_marked(pcls);
 	  if ( code < 0 )
 	    return code;
 	}
@@ -145,7 +145,7 @@ pcl_paper_source(pcl_args_t *pargs, pcl_state_t *pcls)
 	/* Note: not all printers support all possible values. */
 	if ( i > 6 )
 	  return e_Range;
-	{ int code = pcl_end_page(pcls, true);
+	{ int code = pcl_end_page_if_marked(pcls);
 	  if ( code < 0 )
 	    return code;
 	  if ( i > 0 )
@@ -278,7 +278,7 @@ pcl_media_type(pcl_args_t *pargs, pcl_state_t *pcls)
 {	int type = int_arg(pargs);
 	if ( type > 4 )
 	  return e_Range;
-	{ int code = pcl_end_page(pcls, false);
+	{ int code = pcl_end_page_if_marked(pcls);
 	  if ( code < 0 )
 	    return code;
 	}
@@ -291,7 +291,7 @@ pcl_print_quality(pcl_args_t *pargs, pcl_state_t *pcls)
 {	int quality = int_arg(pargs);
 	if ( quality < -1 || quality > 1 )
 	  return e_Range;
-	{ int code = pcl_end_page(pcls, false);
+	{ int code = pcl_end_page_if_marked(pcls);
 	  if ( code < 0 )
 	    return code;
 	}
@@ -329,7 +329,7 @@ private void
 pcpage_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 {	if ( type & (pcl_reset_initial | pcl_reset_printer) )
 	  { if ( type & pcl_reset_initial )
-	      pcls->end_page = pcl_default_end_page;
+	      pcls->finish_page = pcl_default_finish_page;
 	    pcls->paper_size = &p_size_letter;
 	    pcls->manual_feed = false;
 	    pcls->paper_source = 0;		/* ??? */

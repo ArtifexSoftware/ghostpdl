@@ -53,6 +53,12 @@ hpgl_default_fill_pattern(hpgl_state_t *pgls, int index, bool free)
 	pgls->g.fill_pattern[index0].data = 0;
 }
 
+private void
+hpgl_clear_state(pcl_state_t *pcls)
+{
+	memset(&pcls->g, 0, sizeof(pcls->g));
+	return;
+}
 void
 hpgl_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 {		/* pgframe.c (Chapter 18) */
@@ -65,16 +71,21 @@ hpgl_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 	if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_cold ))
 	  {
 	    /* HAS should not have a path now ??? */
-	    hpgl_init_path(pcls);
+	    /* hpgl_init_path(pcls); */
+	    /* hpgl_init_state(pcls); */
+	    hpgl_clear_state(pcls);
+
+	    /* HACK to let command know we are executing it internally */
+	    pcls->g.pic_frame_anchor_implicit_exectution = true;
+	    arg_set_uint(&pcl_args, 0);
+	    pcl_set_pic_frame_anchor_point(&pcl_args, pcls);
+	    pcls->g.pic_frame_anchor_implicit_exectution = false;
 
 	    arg_set_float(&pcl_args, 0, 0);
 	    pcl_horiz_pic_frame_size_decipoints(&pcl_args, pcls);
 
 	    arg_set_float(&pcl_args, 0, 0);
 	    pcl_vert_pic_frame_size_decipoints(&pcl_args, pcls);
-
-	    arg_set_uint(&pcl_args, 0);
-	    pcl_set_pic_frame_anchor_point(&pcl_args, pcls);
 
 	    arg_set_float(&pcl_args, 0, 0);
 	    pcl_hpgl_plot_horiz_size(&pcl_args, pcls);
@@ -91,14 +102,17 @@ hpgl_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 	    
 	if ( type & (pcl_reset_page_params) )
 	  {
+	    pcls->g.pic_frame_anchor_implicit_exectution = true;
+	    arg_set_uint(&pcl_args, 0);
+	    pcl_set_pic_frame_anchor_point(&pcl_args, pcls);
+	    pcls->g.pic_frame_anchor_implicit_exectution = false;
+
 	    arg_set_float(&pcl_args, 0, 0);
 	    pcl_horiz_pic_frame_size_decipoints(&pcl_args, pcls);
 
 	    arg_set_float(&pcl_args, 0, 0);
 	    pcl_vert_pic_frame_size_decipoints(&pcl_args, pcls);
 
-	    arg_set_uint(&pcl_args, 0);
-	    pcl_set_pic_frame_anchor_point(&pcl_args, pcls);
 
 	    arg_set_float(&pcl_args, 0, 0);
 	    pcl_hpgl_plot_horiz_size(&pcl_args, pcls);

@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -93,7 +93,15 @@ typedef pcl_command_proc((*pcl_command_proc_t));
 int pcl_do_CR(P1(pcl_state_t *));
 int pcl_do_LF(P1(pcl_state_t *));
 pcl_command_proc(pcl_disable_display_functions);
-int pcl_end_page(P2(pcl_state_t *pcls, bool always));
+typedef enum {
+  pcl_print_always,
+  pcl_print_if_marked
+} pcl_print_condition_t;
+int pcl_end_page(P2(pcl_state_t *pcls, pcl_print_condition_t condition));
+#define pcl_end_page_always(pcls)\
+  pcl_end_page(pcls, pcl_print_always)
+#define pcl_end_page_if_marked(pcls)\
+  pcl_end_page(pcls, pcl_print_if_marked)
 int pcl_default_end_page(P1(pcl_state_t *pcls));
 uint pcl_status_read(P3(byte *data, uint max_data, pcl_state_t *pcls));
 /* Process a string of plain (printable) text. */

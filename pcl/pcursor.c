@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -20,7 +20,7 @@ pcl_do_CR(pcl_state_t *pcls)
 
 private int
 pcl_do_FF(pcl_state_t *pcls)
-{	int code = pcl_end_page(pcls, true);
+{	int code = pcl_end_page_always(pcls);
 	if ( code < 0 )
 	  return code;
 	pcls->cap.y = pcls->top_margin;

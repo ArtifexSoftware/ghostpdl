@@ -25,7 +25,8 @@ typedef enum {
 /*
  * The following structure is defined by PCL5.  See Figure 10-1 on p. 10-5
  * of the PCL5 Technical Reference Manual.  Note that a symbol set may have
- * two maps, one each for Unicode and MSL.
+ * two maps, one each for Unicode and MSL.  A symbol map is uniquely iden-
+ * tified by its id and format.
  */
 typedef struct pl_symbol_map_s {
   byte header_size[2];
@@ -41,6 +42,7 @@ typedef struct pl_symbol_map_s {
    */
   ushort codes[256];		/* may be more or less for downloaded maps */
 } pl_symbol_map_t;
+
 #define pl_symbol_map_vocabulary(map)\
   ((pl_glyph_vocabulary_t)((map)->character_requirements[7] & 7))
 
@@ -49,5 +51,6 @@ typedef struct pl_symbol_map_s {
  * a NULL.
  */
 extern const pl_symbol_map_t *pl_built_in_symbol_maps[];
+extern const int pl_built_in_symbol_map_count;
 
 #endif				/* plsymbol_INCLUDED */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -21,7 +21,7 @@ pcl_printer_reset(pcl_args_t *pargs, pcl_state_t *pcls)
 {	if ( pcls->macro_level )
 	  return e_Range;	/* not allowed inside macro */
 	/* Print any partial page. */
-	{ int code = pcl_end_page(pcls, false);
+	{ int code = pcl_end_page_if_marked(pcls);
 	  if ( code < 0 )
 	    return code;
 	}
@@ -121,7 +121,7 @@ pcl_duplex_page_side_select(pcl_args_t *pargs, pcl_state_t *pcls)
 	  return 0;
 	/* According to H-P documentation, this command ejects the page */
 	/* even if nothing has been printed on it. */
-	code = pcl_end_page(pcls, true);
+	code = pcl_end_page_always(pcls);
 	if ( code < 0 )
 	  return code;
 	if ( i > 0 && pcls->duplex )

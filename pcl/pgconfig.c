@@ -334,17 +334,27 @@ hpgl_PG(hpgl_args_t *pargs, hpgl_state_t *pgls)
 /* RO; */
 int
 hpgl_RO(hpgl_args_t *pargs, hpgl_state_t *pgls)
-{	int angle;
+{	int angle=0;
 
 	if ( hpgl_arg_c_int(pargs, &angle) )
-	  switch ( angle )
-	    {
-	    case 0: case 90: case 180: case 270:
-	      break;
-	    default:
-	      return e_Range;
-	    }
-	pgls->g.rotation = angle;
+	    switch ( angle )
+	      {
+	      case 0: case 90: case 180: case 270:
+		break;
+	      default:
+		return e_Range;
+	      }
+
+	/* new angle clears the pen.  Note that we delay rotating
+           system until the ctm is set up */
+        if ( angle != pgls->g.rotation )
+	  {
+	    /* HAS -- I believe we must maintain the device
+               coordinates of the current pen.  I need to check this */
+	    hpgl_draw_current_path(pgls, hpgl_rm_vector);
+	    pgls->g.rotation = angle;
+	  }
+	    
 	return 0;
 }
 

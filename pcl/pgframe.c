@@ -1,17 +1,16 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
 /* pgframe.c */
 /* PCL5/HP-GL/2 picture frame commands */
-#include "std.h"
+#include "math_.h"
 #include "pgmand.h"
 #include "pgdraw.h"
 #include "gstypes.h"		/* for gsstate.h */
 #include "gsmatrix.h"		/* for gsstate.h */
 #include "gsmemory.h"		/* for gsstate.h */
 #include "gsstate.h"            
-#include "math_.h"
 
 /* Import the RTL implementation of ESC % # A. */
 extern pcl_command_proc(rtl_enter_pcl_mode);
@@ -91,8 +90,17 @@ pcl_set_pic_frame_anchor_point(pcl_args_t *pargs, pcl_state_t *pcls)
 	if ( i != 0 )
 	  return 0;
 
-	pcls->g.picture_frame.anchor_point.x = pcls->cap.x;
-	pcls->g.picture_frame.anchor_point.y = pcls->cap.y;
+	if ( pcls->g.pic_frame_anchor_implicit_exectution )
+	  {
+	    pcls->g.picture_frame.anchor_point.x = pcls->left_margin;
+	    pcls->g.picture_frame.anchor_point.y = pcls->top_margin;
+	    return 0;
+	  }
+	else
+	  {
+	    pcls->g.picture_frame.anchor_point.x = pcls->cap.x;
+	    pcls->g.picture_frame.anchor_point.y = pcls->cap.y;
+	  }
 
 	{ 
 	  hpgl_args_t args;

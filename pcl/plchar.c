@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -19,7 +19,7 @@
 #include "gsimage.h"
 #include "gspaint.h"
 #include "gspath.h"
-# include "gsbittab.h"
+#include "gsbittab.h"
 #include "gxarith.h"		/* for igcd */
 #include "gxfont.h"
 #include "gxfont42.h"
@@ -123,10 +123,10 @@ pl_bitmap_char_width(const pl_font_t *plfont, const pl_symbol_map_t *map,
  * proportional to N (but takes W * N additional buffer space).
  */
 
-/* Allocate the line buffer for bolding.  We need 1 + N scan lines. */
+/* Allocate the line buffer for bolding.  We need 2 + bold scan lines. */
 private byte *
 alloc_bold_lines(gs_memory_t *mem, uint width, int bold, client_name_t cname)
-{	return gs_alloc_byte_array(mem, 1 + bold, bitmap_raster(width + bold),
+{	return gs_alloc_byte_array(mem, 2 + bold, bitmap_raster(width + bold),
 				   cname);
 }
 
@@ -137,6 +137,8 @@ bits_merge(byte *dest, const byte *src, uint nbytes)
 	const long *sp = (const long *)src;
 	uint n = (nbytes + sizeof(long) - 1) >> arch_log2_sizeof_long;
 
+	for ( ; n >= 4; sp += 4, dp += 4, n -= 4 )
+	  dp[0] |= sp[0], dp[1] |= sp[1], dp[2] |= sp[2], dp[3] |= sp[3];
 	for ( ; n; ++sp, ++dp, --n )
 	  *dp |= *sp;
 }
@@ -250,30 +252,66 @@ image_bitmap_char(gs_image_enum *ienum, const gs_image_t *pim,
 	    uint src_width = pim->Width - bold;
 	    uint src_height = pim->Height - bold;
 	    uint dest_raster = bitmap_raster(pim->Width);
+	    int n1 = bold + 1;
+#define merged_line(i) (bold_lines + ((i) % n1 + 1) * dest_raster)
 	    int y;
 
 	    planes[0] = bold_lines;
-	    for ( y = 0; y < pim->Height; ++y )
-	      { uint y0 = (y < bold ? 0 : y - bold);
-	        uint y1 = min(y + 1, src_height);
-		uint iy;
+	    for ( y = 0; y < pim->Height; ++y ) {
+	      int y0 = (y < bold ? 0 : y - bold);
+	      int y1 = min(y + 1, src_height);
 
-		if ( y < src_height )
-		  bits_smear_horizontally(bold_lines +
-					    (y % bold + 1) * dest_raster,
-					  bitmap_data + y * sraster,
-					  src_width, bold);
-		memcpy(bold_lines, bold_lines + (y0 % bold + 1) * dest_raster,
-		       dest_bytes);
-		for ( iy = y0 + 1; iy < y1; ++iy )
-		  bits_merge(bold_lines,
-			     bold_lines + (iy % bold + 1) * dest_raster,
-			     dest_bytes);
-		code = (*dev_proc(dev, image_data))
-		  (dev, iinfo, planes, 0, dest_bytes, 1);
-		if ( code != 0 )
-		  break;
+	      if ( y < src_height ) {
+		bits_smear_horizontally(merged_line(y),
+					bitmap_data + y * sraster,
+					src_width, bold);
+		{ /* Now re-establish the invariant -- see below. */
+		  int kmask = 1;
+
+		  for ( ; (y & kmask) == kmask && y - kmask >= y0;
+			kmask = (kmask << 1) + 1
+		      )
+		    bits_merge(merged_line(y - kmask),
+			       merged_line(y - (kmask >> 1)),
+			       dest_bytes);
+		}
 	      }
+
+	      /*
+	       * As of this point in the loop, we maintain the following
+	       * invariant to cache partial merges of groups of lines: for
+	       * each Y, y0 <= Y < y1, let K be the maximum k such that Y
+	       * mod 2^k = 0 and Y + 2^k < y1; then merged_line(Y) holds
+	       * the union of horizontally smeared source lines Y through
+	       * Y + 2^k - 1.  The idea behind this is similar to the idea
+	       * of quicksort.
+	       */
+
+	      { /* Now construct the output line. */
+		bool first = true;
+		int iy;
+
+		for ( iy = y1 - 1; iy >= y0; --iy ) {
+		  int kmask = 1;
+
+		  while ( (iy & kmask) == kmask && iy - kmask >= y0 )
+		    iy -= kmask, kmask <<= 1;
+		  if ( first ) {
+		    memcpy(bold_lines, merged_line(iy), dest_bytes);
+		    first = false;
+		  }
+		  else
+		    bits_merge(bold_lines, merged_line(iy), dest_bytes);
+		}
+	      }
+
+
+	      code = (*dev_proc(dev, image_data))
+		(dev, iinfo, planes, 0, dest_bytes, 1);
+	      if ( code != 0 )
+		break;
+	    }
+#undef merged_line
 	  }
 	else
 	  { /* Pass the entire image at once. */
@@ -907,7 +945,9 @@ pl_tt_finish_init(gs_font_type42 *pfont, bool downloaded)
 int
 pl_font_alloc_glyph_table(pl_font_t *plfont, uint num_glyphs, gs_memory_t *mem,
   client_name_t cname)
-{	uint size = num_glyphs + (num_glyphs >> 2) + 5;
+{	uint size =
+	  ((num_glyphs > 300 ? (num_glyphs = 300) : 0),
+	   num_glyphs + (num_glyphs >> 2) + 5);
 	pl_font_glyph_t *glyphs =
 	  gs_alloc_struct_array(mem, size, pl_font_glyph_t,
 				&st_pl_font_glyph_element, cname);
@@ -953,7 +993,9 @@ expand_glyph_table(pl_font_t *plfont, gs_memory_t *mem)
 int
 pl_tt_alloc_char_glyphs(pl_font_t *plfont, uint num_chars, gs_memory_t *mem,
   client_name_t cname)
-{	uint size = num_chars + (num_chars >> 2) + 5;
+{	uint size =
+	  ((num_chars > 300 ? (num_chars = 300) : 0),
+	   num_chars + (num_chars >> 2) + 5);
 	pl_tt_char_glyph_t *char_glyphs =
 	  (pl_tt_char_glyph_t *)
 	  gs_alloc_byte_array(mem, size, sizeof(pl_tt_char_glyph_t), cname);

@@ -1,10 +1,169 @@
-   Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+   Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 This file, NEWS-5, describes the changes in the most recent releases of
 Aladdin's PCL 5 code, in reverse chronological order.
+
+Fileset of 1/8/97
+=================
+
+PCL
+---
+
+Fixes bugs:
+	- (LPD) The Paper Source command (ESC & l <source> H) did an
+unconditional page eject instead of a conditional one.  (pcpage.c)
+	- (HAS) The computation of logical page size had the height and
+width interchanged.  (pcdraw.c)
+
+(LPD) Changes the second argument of pcl_end_page from a Boolean to an
+enumerated type for easier reading.  (pcommand.h, pcjob.c, pcpage.c,
+pcstatus.c, pcursor.c, rtmisc.c)
+
+(LPD) Changes the name of the end_page procedure in the PCL state to
+finish_page, to avoid confusion with pcl_end_page.  (pcstate.h, pcmain.c,
+pcpage.c)
+
+Sun Jan  5 1997 Dick Dunn (rcd@talisman.com)
+
+    pcl5.mak
+	Add definition, references to pcsymbol_h
+
+    pldict.h
+	Add pl_dict_length() to find active size of a dictionary
+
+    pldict.c
+	Add pl_dict_length() to find active size of a dictionary
+
+    plfont.h
+	Change condition on defining pl_load_tt_font to make it more robust.
+
+    plsymbol.h
+	Resolve common definitions of symbol maps _vs_ symbol sets.
+	Add a length value for built-in symbol maps.
+	Remove unneeded definitions.
+
+    plsymbol.c
+	Adapt to symbol-set/map distinction.
+	Add procedures to find a symbol map and to check whether a font
+	supports a symbol set.
+
+    pcfont.h
+	Make the decache-font procedure visible, since it must be called
+	from some non-font code that forces re-selection.
+
+    pcfont.c
+	Make pcl_decache_font global (above).
+	Implement correct tests for selection on symbol set.
+	Record symbol map to be used.
+	Move font-initialization hack here (from pcsfont.c).
+
+    pcsfont.c
+	Move font-initialization hack out to pcfont.c
+
+    pcstatus.c
+	Implement symbol-set listing.
+	Implement listing of symbol sets for font-extended.
+
+    pcsymbol.h
+	New file: definitions for PCL5 symbol sets, not shared with XL.
+
+    pcsymbol.c
+	Move local definition of symbol set out to pcsymbol.h.
+	Remove entity header from symbol set; reflects symbol set/map
+	distinction.
+	Decache fonts when symbol sets change.
+	Add procedures to find a symbol map and to check whether a font
+	supports a symbol set.
+
+    pcmain.c
+	Make built-in font initialization hack explicit.
+
+    pcstate.h
+	Add symbol maps to fonts selected and current font.
+
+HP-GL/2
+-------
+
+Sun Jan  5 21:09:50 1997  Henry Stiles  <henrys@meercat.dimensional.com>
+
+	* pgpoly.c (hpgl_wedge): added PU to current position at the
+	beginning of the wedge, this guarantess the path begins with a
+	moveto. 
+
+Sat Jan  4 01:16:45 1997  Henry Stiles  <henrys@meercat.dimensional.com>
+
+	* pgdraw.c (hpgl_set_clipping_region): disabled clipping region
+ 	temporarily as it does not seem to be interacting with rotation
+ 	correctly.
+
+	* pgframe.c (pcl_vert_pic_frame_size_decipoints): updated picture
+	frame implicit
+
+	* pgstate.h: added state variable to indicate implicit execution
+	of Set Picture Frame Anchor Point.  The semantics differ explicit
+	vs. implicit execution *** PETER *** you may want to handle this
+	differently.  Please let me know.
+
+Fri Jan  3 00:13:05 1997  Henry Stiles  <henrys@meercat.dimensional.com>
+
+	* pgdraw.c (hpgl_draw_current_path): removed unused variable which
+	was used by gs_currentpoint() which has been removed.
+	(hpgl_set_graphics_dash_state): fixed problem where gs dashed line
+	state was being maintained while the hpgl state line state changed
+	to solid.  *** PETER *** Should we do an "initgraphics" for
+	pcl/gl/2 resets?
+
+	* pgconfig.c (hpgl_RO): implemented, see code comments for
+	potential problem.
+
+	* pgstate.h: added state variable to indicate that we have the
+	initial moveto in the path.  (see previous entry for details)
+
+	* pgdraw.c (hpgl_draw_current_path): replaced call to get the
+ 	current point to use the state positiion in GL/2.  Change due to
+ 	preference, does not fix anything.
+	(hpgl_draw_current_path): RO implementation revealed problem with
+ 	clearing the current path with only a moveto.  Does not work with
+ 	gs graphics as the path does not get created until later.
+	(hpgl_add_point_to_path): added code to maintain state variable
+ 	pgls->g.have_first_moveto.
+
+	* pgconfig.c (hpgl_RO): added default angle of 0 degrees, the
+	previous arrangement had angle uninitialized if RO had no args.
+
+	* pgvector.c (hpgl_PE): **PETER** the PE command must save and
+ 	restore the !relative pen state! upon entry and completion.  I
+ 	have added hpgl_save(restore)_pen_relative_state to pgmand.h.  As
+	I understand things this must be done in the parser.  So I shall
+	leave it to you for now.
+	(hpgl_PE): corrected bug in PE code - the PE flag for SP must be
+	ignored in polygon mode as SP is an illegal command.
+
+
+Thu Jan  2 23:35:58 1997  Henry Stiles  <henrys@meercat.dimensional.com>
+
+	* pgstate.h (hpgl_save_pen_relative_state): provided parenthesis
+	and renamed macros to save and restore postion, relative state and
+	down state.
+
+	* pgvector.c (hpgl_PU): added check for relative state.
+	             (hpgl_PD):   "    "     "     "      "
+		     (hpgl_PE): removed comments about assuming the parser
+	             was not reentrant and reimplemented plotting commands
+	             for polyline encoded vectors.
+
+Mon Dec 30 14:27:16 1996  Henry Stiles  <henrys@meercat.dimensional.com>
+
+	* pgvector.c (hpgl_AA): strange intermittent bug with gdb and
+ 	longjmp.  It seems that if a breakpoint is set on a function that
+ 	calls the parser and the parser needs more data it appears to
+ 	longjmp back to the breakpoint in the debugger.  Disabling the
+ 	breakpoint fixes the problem.
+	             (hpgl_arc): missing parsing for chord angle.  Not
+ 	sure if I introduced this or if it was always that way.
 
 Fileset of 12/31/96
 ===================

@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -49,6 +49,8 @@ typedef struct pcl_font_selection_s {
   pl_font_params_t params;
     /* Font found by matching */
   pl_font_t *font;
+    /* The symbol map that goes with it. */
+  pl_symbol_map_t *map;
 } pcl_font_selection_t;
 
 /* Define the indices for PCL color spaces (e.g. for the CID command). */
@@ -241,7 +243,7 @@ struct pcl_state_s {
 	bool perforation_skip;
 	coord hmi, hmi_unrounded, vmi;
 	bool hmi_set;
-	int (*end_page)(P1(pcl_state_t *pcls));
+	int (*finish_page)(P1(pcl_state_t *pcls));
 		/* Internal variables */
 	bool have_page;		/* true if anything has been written on page */
 	coord_point logical_page_size;	/* size of logical page */
@@ -268,6 +270,7 @@ struct pcl_state_s {
 		/* Internal variables */
 	coord_point last_width;	/* escapement of last char (for BS) */
 	bool last_was_BS;	/* no printable chars since last BS */
+	pl_symbol_map_t *map;	/* map for current font (above) */
 
 		/* Chapter 10 (pcsymbol.c) */
 

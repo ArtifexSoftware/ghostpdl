@@ -8,22 +8,9 @@
 #include "plvalue.h"
 #include "pcommand.h"
 #include "pcstate.h"
+#include "pcfont.h"
+#include "pcsymbol.h"
 
-/* Define the header of a symbol set definition, */
-/* including the storage status that we prefix to it. */
-typedef struct pcl_symbol_set_s {
-  pcl_entity_common;
-	/* The next 18 bytes are defined by PCL5. */
-	/* See p. 10-5 of the PCL5 Technical Reference Manual. */
-  byte header_size[2];
-  byte id[2];
-  byte format;
-  byte type;
-  byte first_code[2];
-  byte last_code[2];
-  byte character_requirements[8];
-} pcl_symbol_set_t;
-#define symbol_set_extra offset_of(pcl_symbol_set_t, header_size)
 
 private int /* ESC * c <id> R */ 
 pcl_symbol_set_id_code(pcl_args_t *pargs, pcl_state_t *pcls)
@@ -35,23 +22,24 @@ pcl_symbol_set_id_code(pcl_args_t *pargs, pcl_state_t *pcls)
 private int /* ESC ( f <count> W */ 
 pcl_define_symbol_set(pcl_args_t *pargs, pcl_state_t *pcls)
 {	uint count = uint_arg(pargs);
-	const byte *data = arg_data(pargs);
+	const pl_symbol_map_t *psm = (pl_symbol_map_t *)arg_data(pargs);
 	uint header_size;
 	uint first_code, last_code;
 	gs_memory_t *mem = pcls->memory;
 	byte *header;
+	pcl_symbol_set_t *symsetp;
+	pl_glyph_vocabulary_t gv;
 
 	if ( count < 18 )
 	  return e_Range;
-#define pss ((const pcl_symbol_set_t *)(data - symbol_set_extra))
-	header_size = pl_get_uint16(pss->header_size);
+	header_size = pl_get_uint16(psm->header_size);
 	if ( header_size < 18 ||
-	     pss->id[0] != id_key(pcls->symbol_set_id)[0] ||
-	     pss->id[1] != id_key(pcls->symbol_set_id)[1] ||
-	     pss->type > 2
+	     psm->id[0] != id_key(pcls->symbol_set_id)[0] ||
+	     psm->id[1] != id_key(pcls->symbol_set_id)[1] ||
+	     psm->type > 2
 	   )
 	  return e_Range;
-	switch ( pss->format )
+	switch ( psm->format )
 	  {
 	  case 1:
 	  case 3:
@@ -59,22 +47,41 @@ pcl_define_symbol_set(pcl_args_t *pargs, pcl_state_t *pcls)
 	  default:
 	    return 0;
 	  }
-	first_code = pl_get_uint16(pss->first_code);
-	last_code = pl_get_uint16(pss->last_code);
+	first_code = pl_get_uint16(psm->first_code);
+	last_code = pl_get_uint16(psm->last_code);
+	gv = (psm->character_requirements[7] & 07)==1? plgv_Unicode: plgv_MSL;
 	if ( first_code > last_code ||
 	     count < 18 + (last_code - first_code + 1) * 2
 	   )
 	  return e_Range;
-	pl_dict_undef(&pcls->symbol_sets, id_key(pcls->symbol_set_id), 2);
-	header = gs_alloc_bytes(mem, symbol_set_extra + count,
-				"pcl_font_header(header)");
+	header = gs_alloc_bytes(mem, count, "pcl_font_header(header)");
 	if ( header == 0 )
 	  return_error(e_Memory);
-	memcpy(header + symbol_set_extra, data, count);
-	((pcl_symbol_set_t *)header)->storage = pcds_temporary;
-	pl_dict_put(&pcls->symbol_sets, id_key(pcls->symbol_set_id), 2, header);
+	memcpy(header, (void *)psm, count);
+
+	/* Symbol set may already exist; if so, we may be replacing one of
+	 * its existing maps or adding one for a new glyph vocabulary. */
+	if ( pl_dict_find(&pcls->symbol_sets, id_key(pcls->symbol_set_id), 2, 
+	    (void **)&symsetp) )
+	  {
+	    if ( symsetp->maps[gv] != NULL )
+	      gs_free_object(mem, symsetp->maps[gv], "symset map");
+	  }
+	else
+	  { pl_glyph_vocabulary_t gx;
+	    symsetp = (pcl_symbol_set_t *)gs_alloc_bytes(mem,
+		sizeof(pcl_symbol_set_t), "symset dict value");
+	    if ( !symsetp )
+	      return_error(e_Memory);
+	    for ( gx = 0; gx < plgv_next; gx++ )
+	      symsetp->maps[gx] = NULL;
+	    symsetp->storage = pcds_temporary;
+	    pl_dict_put(&pcls->symbol_sets, id_key(pcls->symbol_set_id), 2,
+		symsetp);
+	  }
+	symsetp->maps[gv] = (pl_symbol_map_t *)header;
+
 	return 0;
-#undef pss
 }
 
 private int /* ESC * c <ssc_enum> S */ 
@@ -87,7 +94,12 @@ pcl_symbol_set_control(pcl_args_t *pargs, pcl_state_t *pcls)
 	  {
 	  case 0:
 	    { /* Delete all user-defined symbol sets. */
+	      /* Note: When deleting symbol set(s), it is easier (safer?)
+	       * to decache and reselect fonts unconditionally.  (Consider,
+	       * for example, deleting a downloaded overload of a built-in
+	       * which might be the default ID.) */
 	      pl_dict_release(&pcls->symbol_sets);
+	      pcl_decache_font(pcls, -1);
 	    }
 	    return 0;
 	  case 1:
@@ -96,22 +108,26 @@ pcl_symbol_set_control(pcl_args_t *pargs, pcl_state_t *pcls)
 	      while ( pl_dict_enum_next(&denum, &key, &value) )
 		if ( ((pcl_symbol_set_t *)value)->storage == pcds_temporary )
 		  pl_dict_undef(&pcls->symbol_sets, key.data, key.size);
+	      pcl_decache_font(pcls, -1);
 	    }
 	    return 0;
 	  case 2:
 	    { /* Delete symbol set <symbol_set_id>. */
 	      pl_dict_undef(&pcls->symbol_sets, id_key(pcls->symbol_set_id), 2);
+	      pcl_decache_font(pcls, -1);
 	    }
 	    return 0;
 	  case 4:
 	    { /* Make <symbol_set_id> temporary. */
-	      if ( pl_dict_find(&pcls->symbol_sets, id_key(pcls->symbol_set_id), 2, &value) )
+	      if ( pl_dict_find(&pcls->symbol_sets,
+		  id_key(pcls->symbol_set_id), 2, &value) )
 		((pcl_symbol_set_t *)value)->storage = pcds_temporary;
 	    }
 	    return 0;
 	  case 5:
 	    { /* Make <symbol_set_id> permanent. */
-	      if ( pl_dict_find(&pcls->symbol_sets, id_key(pcls->symbol_set_id), 2, &value) )
+	      if ( pl_dict_find(&pcls->symbol_sets,
+		  id_key(pcls->symbol_set_id), 2, &value) )
 		((pcl_symbol_set_t *)value)->storage = pcds_permanent;
 	    }
 	    return 0;
@@ -129,12 +145,27 @@ pcsymbol_do_init(gs_memory_t *mem)
 	DEFINE_CLASS_COMMAND_ARGS('*', 'c', 'S', pcl_symbol_set_control, pca_neg_ignore|pca_big_ignore)
 	return 0;
 }
+
+private void	/* free any symbol maps as well as dict value entry */
+pcsymbol_dict_value_free(gs_memory_t *mem, void *value, client_name_t cname)
+{	pcl_symbol_set_t *ssp = (pcl_symbol_set_t *)value;
+	pl_glyph_vocabulary_t gx;
+
+	for ( gx = 0; gx < plgv_next; gx++ )
+	  {
+	    if ( ssp->maps[gx] != NULL )
+	      gs_free_object(mem, (void*)ssp->maps[gx], cname);
+	  }
+	gs_free_object(mem, value, cname);
+}
+
 private void
 pcsymbol_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 {	if ( type & (pcl_reset_initial | pcl_reset_printer) )
 	  { id_set_value(pcls->symbol_set_id, 0);
 	    if ( type & pcl_reset_initial )
-	      pl_dict_init(&pcls->symbol_sets, pcls->memory, NULL);
+	      pl_dict_init(&pcls->symbol_sets, pcls->memory,
+		  pcsymbol_dict_value_free);
 	    else
 	      { pcl_args_t args;
 	        arg_set_uint(&args, 1);	/* delete temporary symbol sets */
@@ -142,6 +173,7 @@ pcsymbol_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 	      }
 	  }
 }
+
 private int
 pcsymbol_do_copy(pcl_state_t *psaved, const pcl_state_t *pcls,
   pcl_copy_operation_t operation)
@@ -151,6 +183,48 @@ pcsymbol_do_copy(pcl_state_t *psaved, const pcl_state_t *pcls,
 	  }
 	return 0;
 }
+
+bool
+pcl_check_symbol_support(byte *symset_req, byte *font_sup)
+{	int i;
+
+	/* bottom 3 bits (of 64) have special interpretation */
+	if ( (~font_sup[7] & 07) != (symset_req[7] & 07) )
+  	  return false;		/* wrong glyph vocabulary */
+	/* if glyph vocabularies match, following will work on the
+	 * last 3 bits of last byte.  Note that the font-support bits
+	 * are inverted (0 means available). */
+	for ( i = 0; i < 7; i++ )
+	  if ( symset_req[i] & font_sup[i] )
+	    return false;		/* something needed, not present */
+	return true;
+}
+
+
+/* Find the symbol map for a particular symbol set and glyph vocabulary,
+ * if it exists.
+ * This should not be so hard!  It shouldn't take anything more than
+ * one dictionary "find"...but there's no way to initialize the symbol set
+ * dictionary properly with the built-in symbol sets.  When that can be
+ * fixed, this procedure should be replaced with inline lookup. */
+pl_symbol_map_t *
+pcl_find_symbol_map(const pcl_state_t *pcls, const byte *id,
+  pl_glyph_vocabulary_t gv)
+{	pcl_symbol_set_t *setp;
+	pl_symbol_map_t **maplp;
+	
+	if ( pl_dict_find(&pcls->symbol_sets, id, 2, (void **)&setp) &&
+	    setp->maps[gv] != NULL )
+	  return setp->maps[gv];
+	for ( maplp = pl_built_in_symbol_maps; *maplp; maplp++ )
+	  { pl_symbol_map_t *mapp = *maplp;
+	    if ( mapp->id[0] == id[0] && mapp->id[1] == id[1] &&
+	        (mapp->character_requirements[7] & 07) == gv )
+	      return mapp;
+	  }
+	return NULL;
+}
+
 const pcl_init_t pcsymbol_init = {
   pcsymbol_do_init, pcsymbol_do_reset, pcsymbol_do_copy
 };

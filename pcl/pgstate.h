@@ -57,8 +57,10 @@ typedef struct pcl_hpgl_state_s {
 		/* Chapter 20 (pgvector.c) */
 
 	bool pen_down;
+	bool have_first_moveto;  
 	bool last_pen_down;      /* previous state of pen */
 	bool relative;		/* true if relative coordinates */
+	bool last_relative;     /* previous relative state of pen */
         gs_point pos;
 	gs_point last_pos;
         /* used to track the line drawing state in hpgl */
@@ -171,17 +173,26 @@ typedef struct pcl_hpgl_state_s {
 	struct { hpgl_real_t rgb[3]; } pen_color[2];
 	uint number_of_pens;
 	struct { hpgl_real_t cmin, cmax; } color_range[3];
+        /* HAS - ** HACK *** indicates the current command is being
+           executed internally.  The picture frame anchor point has
+           different semantics if executed from within the interpreter */
+	bool pic_frame_anchor_implicit_exectution;
 
 } pcl_hpgl_state_t;
 
+#define hpgl_save_pen_relative_state(pgls) \
+  ((pgls)->g.last_relative = (pgls)->g.relative)
 
-#define hpgl_save_pen_status(pgls) \
+#define hpgl_restore_pen_relative_state(pgls) \
+  ((pgls)->g.relative = (pgls)->g.last_relative)
+
+#define hpgl_save_pen_down_state(pgls) \
   ((pgls)->g.last_pen_down = (pgls)->g.pen_down)
 
-/* HAS requires structure copy on assingment */
-#define hpgl_restore_pen_status(pgls) \
+#define hpgl_restore_pen_down_state(pgls) \
   ((pgls)->g.pen_down = (pgls)->g.last_pen_down)
 
+/* HAS requires structure copy on assingment */
 #define hpgl_save_pen_position(pgls) \
   ((pgls)->g.last_pos = (pgls)->g.pos)
 
@@ -189,8 +200,11 @@ typedef struct pcl_hpgl_state_s {
   ((pgls)->g.pos = (pgls)->g.last_pos)
 
 #define hpgl_save_pen_state(pgls) \
-  hpgl_save_pen_status(pgls), hpgl_save_pen_position(pgls)
+  (hpgl_save_pen_down_state(pgls), \
+   hpgl_save_pen_position(pgls), \
+   hpgl_save_pen_relative_state(pgls))
 
 #define hpgl_restore_pen_state(pgls) \
-  hpgl_restore_pen_status(pgls), hpgl_restore_pen_position(pgls)
-
+  (hpgl_restore_pen_down_state(pgls), \
+   hpgl_restore_pen_position(pgls), \
+   hpgl_restore_pen_relative_state(pgls))

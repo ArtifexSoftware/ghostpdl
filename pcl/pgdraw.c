@@ -50,6 +50,15 @@ hpgl_set_graphics_dash_state(hpgl_state_t *pgls)
 	float pattern[20];
 	int i;
 
+	/* handle the simple case (no dash) and return */
+	if ( pgls->g.line.is_solid ) 
+	  {
+	    /* use a 0 count pattern to turn off dashing in case it is
+               set */
+	    hpgl_call(gs_setdash(pgls->pgs, pattern, 0, 0));
+	    return 0;
+	  }
+
 	gs_setdashadapt(pgls->pgs, adaptive);
 	
 	if ( entry == 0 )
@@ -157,13 +166,12 @@ private int
 hpgl_set_graphics_state(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 {
 	/* do dash stuff */
-	if ( !pgls->g.line.is_solid ) 
-	  hpgl_call(hpgl_set_graphics_dash_state(pgls));
+	hpgl_call(hpgl_set_graphics_dash_state(pgls));
 
 	/* joins, caps, and line width */
 	hpgl_call(hpgl_set_graphics_line_attribute_state(pgls, render_mode));
 	
-	hpgl_call(hpgl_set_clipping_region(pgls));
+	/* hpgl_call(hpgl_set_clipping_region(pgls)); */
 
 	return 0;
 }
@@ -178,17 +186,38 @@ hpgl_set_ctm(hpgl_state_t *pgls)
 	/* scale for x and y plu's with a flip for y */
 	hpgl_call(gs_scale(pgls->pgs, (7200.0/1016.0), -(7200.0 / 1016.0)));
 
-	/* move the origin HAS *wrong* */
-	hpgl_call(gs_translate(pgls->pgs, 
-			       0, 
-			       -(centipoints_2_plu(pgls->logical_page_height))));
+	{
+	  hpgl_real_t pw = centipoints_2_plu(pgls->logical_page_width);
+	  hpgl_real_t ph = centipoints_2_plu(pgls->logical_page_height);
 
-	/* now move the origin to P1 */
+	  /* move the origin HAS *wrong* */
+	  hpgl_call(gs_translate(pgls->pgs, 0, -(ph)));
+
+	  /* account for rotated coordinate system */
+	  switch (pgls->g.rotation)
+	    {
+	    case 0 :
+	      hpgl_call(gs_translate(pgls->pgs, 0, 0));
+	      break;
+	    case 90 : 
+	      hpgl_call(gs_translate(pgls->pgs, pw, 0));
+	      break;
+	    case 180 :
+	      hpgl_call(gs_translate(pgls->pgs, pw, ph));
+	      break;
+	    case 270 :
+	      hpgl_call(gs_translate(pgls->pgs, 0, ph));
+	      break;
+	      }/* now move the origin to P1 */
+	}
+
+	hpgl_call(gs_rotate(pgls->pgs, pgls->g.rotation));
+
 	hpgl_call(gs_translate(pgls->pgs, pgls->g.P1.x, pgls->g.P1.y));
 
 	/* set up scaling wrt plot size and picture frame size.  HAS
-           we still have the line width issue when scaling is
-           assymetric !!  */
+	   we still have the line width issue when scaling is
+	   assymetric !!  */
 	hpgl_call(gs_scale(pgls->pgs, 
 			   (pgls->g.picture_frame.height /
 			    pgls->g.plot_height),
@@ -201,23 +230,33 @@ int
 hpgl_add_point_to_path(hpgl_state_t *pgls, floatp x, floatp y, 
 		       int (*gs_func)(gs_state *pgs, floatp x, floatp y))
 {	
-	if ( !(pgls->g.have_path) ) 
+	if ( !(pgls->g.have_first_moveto) ) 
 	  {
 	    /* initialize the first point so we can implicitly close
                the path when we stroke and set up the ctm */
 	    pgls->g.first_point.x = x;
 	    pgls->g.first_point.y = y;
 	    /* indicate that there is a current path */
-	    pgls->g.have_path = true;
+	    pgls->g.have_first_moveto = true;
 	    /* initialize the current transformation matrix -- see
                notes above on performance */
 	    hpgl_call(hpgl_set_ctm(pgls));
 	    hpgl_call(gs_newpath(pgls->pgs));
 	    hpgl_call(gs_moveto(pgls->pgs, x, y));
-	    hpgl_call(hpgl_set_ctm(pgls)); /* HAS remove this */
+	    /* HAS  HACK *** HACK **** HACK */
+	    /* we really do not want to indicate that we have a path
+               as the using gs graphics a path is not truly
+               created with the first moveto.  So we must indicate
+               that we have added the first moveto and subsequently
+               check for that condition.  Then we may set the "have_path" state */
 	  }
-	hpgl_call((*gs_func)(pgls->pgs, x, y));
-	/* update hpgl's state position */
+	else
+	  {
+	    hpgl_call((*gs_func)(pgls->pgs, x, y));
+	    /* update hpgl's state position */
+	    pgls->g.have_path = true;
+	  }
+	/* update the current position irrespective of path state */
 	pgls->g.pos.x = x;
 	pgls->g.pos.y = y;
 	return 0;
@@ -293,20 +332,13 @@ hpgl_add_bezier_to_path(hpgl_state_t *pgls, floatp x1, floatp y1,
 int
 hpgl_draw_current_path(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 {
-	/* get the last point in the current subpath, if there is no
-	   current point than we have nothing to do. */
-
-	gs_point pt;
-
 	if ( !pgls->g.have_path ) return 0;
-
-	hpgl_call(gs_currentpoint(pgls->pgs, &pt)); 
 
 	/* If the first point is coincident with the final point the
            path is closed implicitly.  HAS -- add epsilon */
 
-	if ( (pt.x == pgls->g.first_point.x) && 
-	     (pt.y == pgls->g.first_point.y) ) 
+	if ( (pgls->g.pos.x == pgls->g.first_point.x) && 
+	     (pgls->g.pos.y == pgls->g.first_point.y) ) 
 	  {
 	    hpgl_call(gs_closepath(pgls->pgs));
 	  }
@@ -321,6 +353,7 @@ hpgl_draw_current_path(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 	if ( render_mode == hpgl_rm_vector )
 	  hpgl_call(gs_stroke(pgls->pgs));
 
+	pgls->g.have_first_moveto = false;
 	pgls->g.have_path = false;
 	/* the page has been marked */
 	pgls->have_page = true;
