@@ -1197,6 +1197,14 @@ pdfmark_DOCVIEW(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	return pdfmark_put_pairs(pdev->Catalog, pairs, count);
 }
 
+/* [ /Label str1 /PlateColor str2 /PAGELABEL pdfmark */
+private int
+pdfmark_PAGELABEL(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
+		  const gs_matrix * pctm, const gs_param_string * no_objname)
+{
+    return 0;			/****** NOT IMPLEMENTED YET ******/
+}
+
 /* ---------------- Named object pdfmarks ---------------- */
 
 /* [ /BBox [llx lly urx ury] /_objdef {obj} /BP pdfmark */
@@ -1489,6 +1497,14 @@ pdfmark_PUTSTREAM(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     return code;
 }
 
+/* [ {array} value /APPEND pdfmark */
+private int
+pdfmark_APPEND(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
+	       const gs_matrix * pctm, const gs_param_string * objname)
+{
+    return 0;			/****** NOT IMPLEMENTED YET ******/
+}
+
 /* [ {array} index value ... /.PUTINTERVAL pdfmark */
 private int
 pdfmark_PUTINTERVAL(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
@@ -1536,7 +1552,7 @@ private int
 pdfmark_NamespacePush(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
 		      const gs_matrix *pctm, const gs_param_string *objname)
 {
-    return 0;
+    return 0;			/****** NOT IMPLEMENTED YET ******/
 }
 
 /* [ /NamespacePop pdfmark */
@@ -1544,7 +1560,7 @@ private int
 pdfmark_NamespacePop(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
 		     const gs_matrix *pctm, const gs_param_string *objname)
 {
-    return 0;
+    return 0;			/****** NOT IMPLEMENTED YET ******/
 }
 
 /* [ /_objdef {image} /NI pdfmark */
@@ -1552,7 +1568,49 @@ private int
 pdfmark_NI(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
 	   const gs_matrix *pctm, const gs_param_string *objname)
 {
-    return 0;
+    return 0;			/****** NOT IMPLEMENTED YET ******/
+}
+
+/* ---------------- Named content pdfmarks ---------------- */
+
+/* [ tag /MP pdfmark */
+private int
+pdfmark_MP(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
+	   const gs_matrix *pctm, const gs_param_string *objname)
+{
+    return 0;			/****** NOT IMPLEMENTED YET ******/
+}
+
+/* [ tag propdict /DP pdfmark */
+private int
+pdfmark_DP(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
+	   const gs_matrix *pctm, const gs_param_string *objname)
+{
+    return 0;			/****** NOT IMPLEMENTED YET ******/
+}
+
+/* [ tag /BMC pdfmark */
+private int
+pdfmark_BMC(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
+	    const gs_matrix *pctm, const gs_param_string *objname)
+{
+    return 0;			/****** NOT IMPLEMENTED YET ******/
+}
+
+/* [ tag propdict /BDC pdfmark */
+private int
+pdfmark_BDC(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
+	    const gs_matrix *pctm, const gs_param_string *objname)
+{
+    return 0;			/****** NOT IMPLEMENTED YET ******/
+}
+
+/* [ /EMC pdfmark */
+private int
+pdfmark_EMC(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
+	    const gs_matrix *pctm, const gs_param_string *objname)
+{
+    return 0;			/****** NOT IMPLEMENTED YET ******/
 }
 
 /* ---------------- Document structure pdfmarks ---------------- */
@@ -1562,7 +1620,7 @@ private int
 pdfmark_StRoleMap(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
 		  const gs_matrix *pctm, const gs_param_string *objname)
 {
-    return 0;
+    return 0;			/****** NOT IMPLEMENTED YET ******/
 }
 
 /* [ class1 {attrobj1} ... /StClassMap pdfmark */
@@ -1570,7 +1628,7 @@ private int
 pdfmark_StClassMap(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
 		   const gs_matrix *pctm, const gs_param_string *objname)
 {
-    return 0;
+    return 0;			/****** NOT IMPLEMENTED YET ******/
 }
 
 /*
@@ -1582,7 +1640,7 @@ private int
 pdfmark_StPNE(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
 	      const gs_matrix *pctm, const gs_param_string *objname)
 {
-    return 0;
+    return 0;			/****** NOT IMPLEMENTED YET ******/
 }
 
 /* [ [/Title string] [/Open bool] [action_pairs...] /StBookmarkRoot pdfmark */
@@ -1590,7 +1648,7 @@ private int
 pdfmark_StBookmarkRoot(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
 		       const gs_matrix *pctm, const gs_param_string *objname)
 {
-    return 0;
+    return 0;			/****** NOT IMPLEMENTED YET ******/
 }
 
 /* [ [/E {elt}] /StPush pdfmark */
@@ -1598,7 +1656,7 @@ private int
 pdfmark_StPush(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
 	       const gs_matrix *pctm, const gs_param_string *objname)
 {
-     return 0;
+    return 0;			/****** NOT IMPLEMENTED YET ******/
 }
 
 /* [ /StPop pdfmark */
@@ -1606,7 +1664,7 @@ private int
 pdfmark_StPop(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
 	      const gs_matrix *pctm, const gs_param_string *objname)
 {
-    return 0;
+    return 0;			/****** NOT IMPLEMENTED YET ******/
 }
 
 /* [ /StPopAll pdfmark */
@@ -1614,7 +1672,7 @@ private int
 pdfmark_StPopAll(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
 		 const gs_matrix *pctm, const gs_param_string *objname)
 {
-    return 0;
+    return 0;			/****** NOT IMPLEMENTED YET ******/
 }
 
 /* [ [/T tagname] [/At index] /StBMC pdfmark */
@@ -1622,7 +1680,7 @@ private int
 pdfmark_StBMC(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
 	      const gs_matrix *pctm, const gs_param_string *objname)
 {
-    return 0;
+    return 0;			/****** NOT IMPLEMENTED YET ******/
 }
 
 /* [ [/P propdict] [/T tagname] [/At index] /StBDC pdfmark */
@@ -1630,15 +1688,7 @@ private int
 pdfmark_StBDC(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
 	      const gs_matrix *pctm, const gs_param_string *objname)
 {
-    return 0;
-}
-
-/* [ /EMC pdfmark */
-private int
-pdfmark_EMC(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
-	    const gs_matrix *pctm, const gs_param_string *objname)
-{
-    return 0;
+    return 0;			/****** NOT IMPLEMENTED YET ******/
 }
 
 /* [ /Obj {obj} [/At index] /StOBJ pdfmark */
@@ -1646,7 +1696,7 @@ private int
 pdfmark_StOBJ(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
 	      const gs_matrix *pctm, const gs_param_string *objname)
 {
-    return 0;
+    return 0;			/****** NOT IMPLEMENTED YET ******/
 }
 
 /* [ /Obj {obj} /StAttr pdfmark */
@@ -1654,7 +1704,7 @@ private int
 pdfmark_StAttr(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
 	       const gs_matrix *pctm, const gs_param_string *objname)
 {
-    return 0;
+    return 0;			/****** NOT IMPLEMENTED YET ******/
 }
 
 /* [ /StoreName name /StStore pdfmark */
@@ -1662,7 +1712,7 @@ private int
 pdfmark_StStore(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
 		const gs_matrix *pctm, const gs_param_string *objname)
 {
-    return 0;
+    return 0;			/****** NOT IMPLEMENTED YET ******/
 }
 
 /* [ /StoreName name /StRetrieve pdfmark */
@@ -1670,7 +1720,7 @@ private int
 pdfmark_StRetrieve(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
 		   const gs_matrix *pctm, const gs_param_string *objname)
 {
-    return 0;
+    return 0;			/****** NOT IMPLEMENTED YET ******/
 }
 
 /* ---------------- Dispatch ---------------- */
@@ -1691,6 +1741,7 @@ private const pdfmark_name mark_names[] =
     {"PAGE",         pdfmark_PAGE,        0},
     {"DOCINFO",      pdfmark_DOCINFO,     0},
     {"DOCVIEW",      pdfmark_DOCVIEW,     0},
+    {"PAGELABEL",    pdfmark_PAGELABEL,   0},
 	/* Named objects. */
     {"BP",           pdfmark_BP,          PDFMARK_NAMEABLE},
     {"EP",           pdfmark_EP,          0},
@@ -1701,10 +1752,17 @@ private const pdfmark_name mark_names[] =
     {".PUTINTERVAL", pdfmark_PUTINTERVAL, PDFMARK_ODD_OK | PDFMARK_KEEP_NAME},
     {".PUTSTREAM",   pdfmark_PUTSTREAM,   PDFMARK_ODD_OK | PDFMARK_KEEP_NAME |
                                           PDFMARK_NO_REFS},
+    {"APPEND",       pdfmark_APPEND,      PDFMARK_KEEP_NAME},
     {"CLOSE",        pdfmark_CLOSE,       PDFMARK_ODD_OK | PDFMARK_KEEP_NAME},
     {"NamespacePush", pdfmark_NamespacePush, 0},
     {"NamespacePop", pdfmark_NamespacePop, 0},
     {"NI",           pdfmark_NI,          PDFMARK_NAMEABLE},
+	/* Marked content. */
+    {"MP",           pdfmark_MP,          PDFMARK_ODD_OK},
+    {"DP",           pdfmark_DP,          0},
+    {"BMC",          pdfmark_BMC,         PDFMARK_ODD_OK},
+    {"BDC",          pdfmark_BDC,         0},
+    {"EMC",          pdfmark_EMC,         0},
 	/* Document structure. */
     {"StRoleMap",    pdfmark_StRoleMap,   0},
     {"StClassMap",   pdfmark_StClassMap,  0},
@@ -1715,7 +1773,7 @@ private const pdfmark_name mark_names[] =
     {"StPopAll",     pdfmark_StPopAll,     0},
     {"StBMC",        pdfmark_StBMC,        0},
     {"StBDC",        pdfmark_StBDC,        0},
-    {"EMC",          pdfmark_EMC,          0},
+    /* EMC is listed under "Marked content" above. */
     {"StOBJ",        pdfmark_StOBJ,        0},
     {"StAttr",       pdfmark_StAttr,       0},
     {"StStore",      pdfmark_StStore,      0},
