@@ -729,8 +729,32 @@ mark
 % We must make RangePQR and RangeLMN large enough so that values computed by
 % the assumed encoding MatrixLMN don't get clamped.
    /RangePQR [0 0.9505 0 1 0 1.0890] readonly
+% This TransformPQR implements a relative colorimetric intent by scaling
+% the XYZ values relative to the white and black points.
    /TransformPQR
-     [ {exch pop exch pop exch pop exch pop} bind dup dup ] readonly
+     [ { 5 1 roll                    % p Ws Bs Wd Bd
+         4 {3 get 5 1 roll} repeat   % ws bs wd bd p 
+         3 index sub                 % ws bs wd bd p-bs 
+         1 index                     % ws bs wd bd p-bs bd
+         6 2 roll                    % p-bs bd ws bs wd bd 
+         sub                         % p-bs bd ws bs wd-bd 
+         5 1 roll                    % wd-bd p-bs bd ws bs  
+         sub                         % wd-bd p-bs bd ws-bs  
+         4 2 roll                    % bd ws-bs wd-bd p-bs 
+         mul                         % bd ws-bs (wd-bd)*(p-bs)
+         exch div add                % bd + (wd-bd)*(p-bs)/(ws-bs)
+       } bind
+       { 5 1 roll
+         4 {4 get 5 1 roll} repeat
+         3 index sub 1 index 6 2 roll sub 5 1 roll
+         sub 4 2 roll mul exch div add
+       } bind
+       { 5 1 roll
+         4 {5 get 5 1 roll} repeat
+         3 index sub 1 index 6 2 roll sub 5 1 roll
+         sub 4 2 roll mul exch div add
+       } bind
+     ] readonly
    /RangeLMN [0 0.9505 0 1 0 1.0890] readonly
    /MatrixABC
     [ 3.24063 -0.96893  0.05571
