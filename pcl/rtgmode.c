@@ -292,8 +292,9 @@ pcl_enter_graphics_mode(
     /* tansform the clipping window to raster space; udpate source dimensions */
     get_raster_print_rect(pcs->memory, &(pxfmst->lp_print_rect), &print_rect, &rst2lp);
 
-    src_wid = (uint)(floor(print_rect.q.x) - floor(print_rect.p.x));
-    src_hgt = (uint)(floor(print_rect.q.y) - floor(print_rect.p.y));
+    /* min size is 1 pixel */
+    src_wid = max(1, (uint)(floor(print_rect.q.x) - floor(print_rect.p.x)));
+    src_hgt = max(1, (uint)(floor(print_rect.q.y) - floor(print_rect.p.y));
     if (prstate->src_width_set && (src_wid > prstate->src_width))
         src_wid = prstate->src_width;
     if (prstate->src_height_set && (src_hgt > prstate->src_height))
