@@ -9,7 +9,6 @@
 #include "pcmtx3.h"
 #include "pccid.h"
 #include "pccsbase.h"
-#include "pcindxed.h"
 #include "pcpalet.h"
 
 /* default GL/2 pen width, in plotter units (1016 ploter units per inch) */
@@ -22,9 +21,6 @@ private const pcl_cid_hdr_t  dflt_cid_hdr = {
     1,                             /* bits per index */
     { 1, 1, 1 }                        /* bits per primary (3 components) */
 };
-
-/* the default indexed color space - fixed, 1-bit per index */
-pcl_cs_indexed_t *  pdflt_cs_indexed;
 
 /*
  * GC routines
@@ -899,6 +895,7 @@ pcl_cs_indexed_set_pen_width(
 
   int
 pcl_cs_indexed_build_cspace(
+    pcl_state_t *           pcs,
     pcl_cs_indexed_t **     ppindexed,
     const pcl_cid_data_t *  pcid,
     bool                    pfixed,
@@ -921,8 +918,8 @@ pcl_cs_indexed_build_cspace(
      */
     if (pfixed && (pcid->u.hdr.bits_per_index == dflt_cid_hdr.bits_per_index)) {
         is_default = true;
-        if (pdflt_cs_indexed != 0) {
-            pcl_cs_indexed_copy_from(*ppindexed, pdflt_cs_indexed);
+        if (pcs->pdflt_cs_indexed != 0) {
+            pcl_cs_indexed_copy_from(*ppindexed, pcs->pdflt_cs_indexed);
             return 0;
         }
     }
@@ -991,7 +988,7 @@ pcl_cs_indexed_build_cspace(
 
     /* record if this is the default */
     if (is_default)
-        pcl_cs_indexed_init_from(pdflt_cs_indexed, pindexed);
+        pcl_cs_indexed_init_from(pcs->pdflt_cs_indexed, pindexed);
 
     return 0;
 }
@@ -1004,23 +1001,23 @@ pcl_cs_indexed_build_cspace(
  */
   int
 pcl_cs_indexed_build_default_cspace(
+    pcl_state_t *               pcs,
     pcl_cs_indexed_t **         ppindexed,
     gs_memory_t *               pmem
 )
 {
-    if (pdflt_cs_indexed == 0) {
-        static pcl_cid_data_t    dflt_cid_data;
-
-        dflt_cid_data.len = 6;
-        dflt_cid_data.u.hdr = dflt_cid_hdr;
-        return pcl_cs_indexed_build_cspace( ppindexed,
-                                            &dflt_cid_data,
+    if (pcs->pdflt_cs_indexed == 0) {
+        pcs->dflt_cid_data.len = 6;
+        pcs->dflt_cid_data.u.hdr = dflt_cid_hdr;
+        return pcl_cs_indexed_build_cspace( pcs,
+					    ppindexed,
+                                            &pcs->dflt_cid_data,
                                             true,
                                             false,
                                             pmem
                                             );
     } else {
-        pcl_cs_indexed_copy_from(*ppindexed, pdflt_cs_indexed);
+        pcl_cs_indexed_copy_from(*ppindexed, pcs->pdflt_cs_indexed);
         return 0;
     }
 }
@@ -1094,7 +1091,7 @@ pcl_cs_indexed_install(
     int                 code = 0;
 
     if (pindexed == 0) {
-        code = pcl_cs_indexed_build_default_cspace(ppindexed, pcs->memory);
+        code = pcl_cs_indexed_build_default_cspace(pcs, ppindexed, pcs->memory);
         if (code < 0)
             return code;
         pindexed = *ppindexed;
@@ -1158,7 +1155,7 @@ pcl_cs_indexed_is_black(
  * BSS may not be initialized.
  */
   void
-pcl_cs_indexed_init(void)
+pcl_cs_indexed_init(pcl_state_t *pcs)
 {
-    pdflt_cs_indexed = 0;
+    pcs->pdflt_cs_indexed = 0;
 }

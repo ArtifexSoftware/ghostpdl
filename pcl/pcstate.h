@@ -88,6 +88,11 @@ void pcl_init_state(P2(pcl_state_t * pcs, gs_memory_t * pmem));
 typedef struct pcl_pattern_t pcl_pattern;
 #endif
 
+#ifndef pcl_cs_indexed_DEFINED
+#define pcl_cs_indexed_DEFINED
+typedef struct pcl_cs_indexed_s pcl_cs_indexed_t;
+#endif
+
 /*
  * Define the entire PCL/HPGL state.  The documentation for this is spread
  * out over the PCL reference manuals, and is incomplete, inconsistent, and
@@ -306,6 +311,8 @@ struct pcl_state_s {
     byte            dflt_rendering_remap[20]; /* NB not convinced this is necessary (review) */
     byte            rendering_remap[20];      /* remap the table of rendering methods */
     pcl_ht_t *      pdflt_ht;                 /* default halftone */
+    pcl_cs_indexed_t *pdflt_cs_indexed;
+    pcl_cid_data_t  dflt_cid_data;
     pcl_cs_base_t * pwhite_cs;
     pcl_frgrnd_t *  pdflt_frgrnd;
     pstack_entry_t *palette_stack;

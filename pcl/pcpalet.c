@@ -160,7 +160,8 @@ build_default_palette(
     if (pcs->pdflt_palette == 0) {
         code = alloc_palette(pcs, &ppalet, pmem);
         if (code == 0)
-            code = pcl_cs_indexed_build_default_cspace( &(ppalet->pindexed),
+            code = pcl_cs_indexed_build_default_cspace( pcs,
+							&(ppalet->pindexed),
                                                         pmem
                                                        );
         if ((code == 0) && (pcs->pcl_default_crd == 0))
@@ -193,7 +194,7 @@ build_default_palette(
 /*
  * Clear the palette stack.
  */
-  private void
+ void
 clear_palette_stack(
     pcl_state_t *       pcs,
     gs_memory_t *       pmem
@@ -417,7 +418,8 @@ pcl_palette_set_lookup_tbl(
     pcl_cspace_type_t   lktype;
 
     if ((code == 0) && (pcs->ppalet->pindexed == 0))
-        code = pcl_cs_indexed_build_default_cspace( &(pcs->ppalet->pindexed),
+        code = pcl_cs_indexed_build_default_cspace( pcs,
+						    &(pcs->ppalet->pindexed),
                                                     pcs->memory
                                                     );
     if ((code == 0) && (pcs->ppalet->pht == 0))
@@ -586,7 +588,8 @@ pcl_palette_set_cid(
         cstype_old = cstype_new;
 
     /* pcl_cspace_bnuild_indexed_cspace will release the old space */
-    code = pcl_cs_indexed_build_cspace( &(ppalet->pindexed),
+    code = pcl_cs_indexed_build_cspace( pcs,
+					&(ppalet->pindexed),
                                         pcid,
                                         fixed,
                                         gl2,
@@ -652,7 +655,8 @@ pcl_palette_check_complete(
         return code;
     ppalet = pcs->ppalet;
     if (ppalet->pindexed == 0)
-        code = pcl_cs_indexed_build_default_cspace( &(ppalet->pindexed),
+        code = pcl_cs_indexed_build_default_cspace( pcs,
+						    &(ppalet->pindexed),
                                                     pcs->memory
                                                     );
     if ((code == 0) && (ppalet->pcrd == 0)) {
@@ -932,7 +936,7 @@ palette_do_reset(
         pcs->palette_stack = 0;
         pcs->pcl_default_crd = 0;
         pcl_cs_base_init(pcs);
-        pcl_cs_indexed_init();
+        pcl_cs_indexed_init(pcs);
 
     } else if ((type & (pcl_reset_cold | pcl_reset_printer)) != 0) {
 
@@ -988,7 +992,7 @@ palette_do_copy(
     else if ((operation & pcl_copy_after) != 0) {
 	pcl_id_t    key;
         id_set_value(key, psaved->sel_palette_id);
-        pl_dict_put(&pcs->palette_store, id_key(key), 2, psaved->ppalet);
+        pl_dict_put((pcl_state_t *)&pcs->palette_store, id_key(key), 2, psaved->ppalet);
     }
     return 0;
 }

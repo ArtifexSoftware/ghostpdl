@@ -118,7 +118,7 @@ typedef struct pcl_cs_indexed_norm_s {
  * indexed color space.
  */
 
-typedef struct pcl_cs_indexed_s {
+struct pcl_cs_indexed_s {
     rc_header               rc;
     bool                    pfixed;
     pcl_cid_hdr_t           cid;
@@ -129,7 +129,12 @@ typedef struct pcl_cs_indexed_s {
     float                   pen_widths[pcl_cs_indexed_palette_size];
     pcl_cs_indexed_norm_t   norm[3];
     float                   Decode[6];
-} pcl_cs_indexed_t;
+};
+
+#ifndef pcl_cs_indexed_DEFINED
+#define pcl_cs_indexed_DEFINED
+typedef pcl_cs_indexed_s pcl_cs_indexed_t;
+#endif
 
 #define private_st_cs_indexed_t()                       \
     gs_private_st_composite( st_cs_indexed_t,           \
@@ -277,7 +282,8 @@ int pcl_cs_indexed_set_pen_width(P3(
  *
  * Returns 0 if successful, < 0 in case of error.
  */
-int pcl_cs_indexed_build_cspace(P5(
+int pcl_cs_indexed_build_cspace(P6(
+    pcl_state_t *           pcs,				   
     pcl_cs_indexed_t **     ppindexed,
     const pcl_cid_data_t *  pcid,
     bool                    fixed,
@@ -291,7 +297,8 @@ int pcl_cs_indexed_build_cspace(P5(
  *
  * Returns 0 on success, < 0 
  */
-int pcl_cs_indexed_build_default_cspace(P2(
+int pcl_cs_indexed_build_default_cspace(P3(
+    pcl_state_t *       pcs,
     pcl_cs_indexed_t ** ppindexed,
     gs_memory_t *       pmem
 ));
@@ -351,6 +358,6 @@ bool pcl_cs_indexed_is_black(P2(
  * One time initialization. This exists only because of the possibility that
  * BSS may not be initialized.
  */
-void    pcl_cs_indexed_init( void );
+void    pcl_cs_indexed_init(pcl_state_t *pcs);
 
 #endif		/* pcindexed_INCLUDED */
