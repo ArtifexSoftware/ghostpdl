@@ -593,10 +593,9 @@ pdfdict begin
 
 % Resolve a stream dictionary to a PostScript stream.
 % Streams with no filters require special handling:
-%	- If we are going to interpret their contents, we let endstream
-%	  terminate the interpretation loop;
-%	- If we are just going to read data from them, we impose
-%	  a SubFileDecode filter that reads just the requisite amount of data.
+%     - Whether we are going to interpret the stream, or If we are just
+%       going to read data from them, we impose a SubFileDecode filter
+%         that reads just the requisite amount of data.
 % Note that, in general, resolving a stream repositions PDFfile.
 % Clients must save and restore the position of PDFfile themselves.
 /resolvestream {	% <streamdict> <readdata?> resolvestream <stream>
@@ -623,15 +622,13 @@ pdfdict begin
 		% there is no specified filter.
       pop exch pop
 		% Stack: readdata? dict file/string
-      2 index {
-		% We're going to read data; use a SubFileDecode filter.
-	1 index /Length oget () /SubFileDecode filter
+      2 index 1 index type /filetype eq or {
+              % Use length for any files or reading data from any source.
+        1 index /Length knownoget not { 0 } if
       } {
-	dup type /filetype ne {
-		% Use a SubFileDecode filter to read from a string.
-	  0 () /SubFileDecode filter
-	} if
+      0       % Otherwise length of 0 for whole string
       } ifelse
+      2 index /IDFlag known { pop } { () /SubFileDecode filter } ifelse
     } {
       applyfilters
     } ifelse

@@ -996,10 +996,11 @@ end
 drawopdict begin
   /BI { mark } bdef
   /ID {
-    counttomark 2 idiv dup 6 add dict begin {
+    counttomark 2 idiv dup 7 add dict begin {
       exch //unabbrevkeydict 1 index .knownget { exch pop } if
       exch unabbrevvalue def
     } repeat pop
+    /IDFlag true def  % flag for stream processing.
     /File PDFsource def
     currentdict makeimagekeys doimage	
 	% The Adobe documentation says that the data following ID
