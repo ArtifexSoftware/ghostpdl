@@ -615,9 +615,9 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	gx_cpath_free(&cpath_intersection, "shading_fill_cpath_intersection");
     } else {
 	if ((params->adjust.x | params->adjust.y) == 0)
-	    vd_get_dc('f')
+	    vd_get_dc('f');
 	else
-	    vd_get_dc('F')
+	    vd_get_dc('F');
 	if (vd_enabled) {
 	    vd_set_shift(-700, -700);
 	    vd_set_scale(VD_SCALE);
