@@ -233,7 +233,7 @@ bitmap:	    pfont = gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
 	    if ( pfont == 0 )
 	      return_error(e_Memory);
 	    code = pl_fill_in_font((gs_font *)pfont, plfont, pcs->font_dir,
-				   mem);
+				   mem, "nameless_font");
 	    if ( code < 0 )
 	      return code;
 	    pl_fill_in_bitmap_font(pfont, gs_next_ids(1));
@@ -305,7 +305,7 @@ bitmap:	    pfont = gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
 		return code;
 	    }
 	    code = pl_fill_in_font((gs_font *)pfont, plfont, pcs->font_dir,
-				   mem);
+				   mem, "nameless_font");
 	    if ( code < 0 )
 	      return code;
 	    pl_fill_in_tt_font(pfont, NULL, gs_next_ids(1));
@@ -325,7 +325,7 @@ bitmap:	    pfont = gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
 	    if ( pfont == 0 )
 	      return_error(e_Memory);
 	    code = pl_fill_in_font((gs_font *)pfont, plfont, pcs->font_dir,
-				   mem);
+				   mem, "nameless_font");
 	    if ( code < 0 )
 	      return code;
 	    pl_fill_in_intelli_font(pfont, gs_next_ids(1));

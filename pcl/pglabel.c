@@ -203,7 +203,7 @@ hpgl_select_stick_font(hpgl_state_t *pgls)
 	    if ( pfont == 0 )
 	      return_error(e_Memory);
 	    code = pl_fill_in_font((gs_font *)pfont, font, pgls->font_dir,
-				   pgls->memory);
+				   pgls->memory, "nameless_font");
 	    if ( code < 0 )
 	      return code;
 	    if ( pfs->params.proportional_spacing )
@@ -658,7 +658,7 @@ hpgl_print_char(
         int             angle = -1;	/* a multiple of 90 if used */
         int             weight = pfs->params.stroke_weight;
 	gs_text_enum_t *penum;
-        byte            str[1];
+        byte            str[2];
         int             code;
         gs_point        start_pt, end_pt;
 	hpgl_real_t     space_width;
@@ -829,6 +829,7 @@ hpgl_print_char(
 	}
 
 	str[0] = ch;
+	str[1] = 0;
 
 	/* If SP is a control code, get the width of the space character. */
 	if (ch == ' ') {
