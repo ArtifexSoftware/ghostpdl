@@ -303,7 +303,10 @@ pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
 	    return FONT_EMBED_STANDARD;
     }
     /* Check the Embed lists. */
-    if (!embed_list_includes(&pdev->params.NeverEmbed, chars, size)) {
+    if (!embed_list_includes(&pdev->params.NeverEmbed, chars, size) ||
+	(index >= 0 && !embed_as_standard(pdev, font, index, psame))
+	/* Ignore NeverEmbed for a non-standard font with a standard name */
+	) {
 	if (pdev->params.EmbedAllFonts || font_is_symbolic(font) ||
 	    embed_list_includes(&pdev->params.AlwaysEmbed, chars, size))
 	    return FONT_EMBED_YES;
@@ -797,7 +800,7 @@ pdf_create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
 		  (ulong)pfd, pdf_resource_id((pdf_resource_t *)pfd));
 	ppf->FontDescriptor = pfd;
     } else {
-	int name_index = index;
+	int name_index = (!same ? -1 : index);
 
 	fdesc.rid = base_font->id;
 	fdesc.chars_count = pdf_font_chars_count(base_font);
@@ -810,7 +813,7 @@ pdf_create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
 		  "[_]created pdf_font_t 0x%lx, id %ld, FontDescriptor 0x%lx, id %ld (new)\n",
 		  (ulong)ppf, pdf_resource_id((pdf_resource_t *)ppf),
 		  (ulong)pfd, pdf_resource_id((pdf_resource_t *)pfd));
-	if (index < 0) {
+	if (name_index < 0) {
 	    int ignore_same;
 	    const gs_font_name *pfname = &base_font->font_name;
 
@@ -978,6 +981,8 @@ pdf_adjust_font_name(const gx_device_pdf *pdev, pdf_font_descriptor_t *pfd,
 		size = i + 1;
 	    }
 	    code = size != pfd->FontName.size;
+	    if (!code)
+		j = NUM_RESOURCE_CHAINS;
 	}
 	/*
 	 * Non-standard fonts with standard names must always use a suffix
@@ -1000,7 +1005,7 @@ pdf_adjust_font_name(const gx_device_pdf *pdev, pdf_font_descriptor_t *pfd,
 			goto found; /* do a double 'break' */
 		}
     found:			/* only used for double 'break' above */
-	if (j < NUM_RESOURCE_CHAINS) {
+	if (j < NUM_RESOURCE_CHAINS || !code) {
 	    /* Create a unique name. */
 	    char suffix[sizeof(long) * 2 + 2];
 	    uint suffix_size;
