@@ -106,7 +106,7 @@
   /FontMatrices FontMatrices .endmap def
   /CodeMap null def		% for .buildcmap
   currentdict end
- .buildcmap begin
+  .buildcmap begin
 } bind def
 
 /.putmore {		% <array> <i> <array2> .putmore <array> <i+len(array2)>
@@ -232,8 +232,8 @@
     counttomark -2 roll		% process in correct order
 		% Construct prefix, params, key, value, font_index
     <00 00 00 02> ()	% params, key
-    4 -1 roll .endmapvalue
-  } repeat pop
+    3 -1 roll .endmapvalue
+  } repeat
   counttomark 2 add -1 roll .appendmap
 } bind def
 
@@ -247,7 +247,7 @@
     3 1 roll dup length 1 eq {
       exch 0 get exch 0 get 1 exch {
 		% Stack: cid code
-        1 string dup 0 4 -1 roll put	% prefix
+	1 string dup 0 4 -1 roll put	% prefix
 	<00 00 00 02> ()	% params, keys
 	3 index .endmapvalue
 	6 -1 roll 1 add

@@ -80,7 +80,7 @@ acquire_code_ranges(gs_cmap_t *cmap, const ref * pref, gs_memory_t * mem)
 	return_error(e_VMerror);
     cmap->code_space.ranges = ranges;
     cmap->code_space.num_ranges = num_ranges;
-    for (i = 0; i < num_ranges; ++i) {
+    for (i = 0; i < num_ranges; ++i, ++ranges) {
 	ref rfirst, rlast;
 	int size;
 
