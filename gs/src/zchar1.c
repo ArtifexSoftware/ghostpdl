@@ -291,12 +291,8 @@ charstring_execchar(i_ctx_t *i_ctx_p, int font_type_mask)
 		return type1_call_OtherSubr(i_ctx_p, &cxs, nobbox_continue,
 					    &other_subr);
 	    case type1_result_sbw:	/* [h]sbw, just continue */
-		if (cxs.present != metricsSideBearingAndWidth) {
-		    if (!cxs.use_FontBBox_as_Metrics2)
- 		        type1_cis_get_metrics(pcis, cxs.sbw);
-	            else
-			cxs.present = metricsSideBearingAndWidth;
-		}
+		if (cxs.present != metricsSideBearingAndWidth)
+		    type1_cis_get_metrics(pcis, cxs.sbw);
 		opstr = 0;
 		goto icont;
 	}
