@@ -171,11 +171,6 @@ bmpa_reader_start_render_thread(gdev_prn_start_render_params *params)
 private int
 bmpa_reader_open_render_device(gx_device_printer *ppdev)
 {
-    gx_device_async * const prdev = (gx_device_async *)ppdev;
-
-    /* Do anything that needs to be done at open time here... */
-    prdev->copies_printed = 0;
-
     /* Cascade down to the default handler */
     return gdev_prn_async_render_open(ppdev);
 }
@@ -198,8 +193,7 @@ bmpa_reader_output_page(gx_device *pdev, int num_copies, int flush)
 }
 
 private int
-bmpa_reader_print_page_copies(gx_device_printer *pdev, FILE *prn_stream,
-			     int num_copies)
+bmpa_reader_print_page(gx_device_printer *pdev, FILE *prn_stream, int num_copies)
 {
     gx_device_async * const prdev = (gx_device_async *)pdev;
     gx_device * const dev = (gx_device *)pdev;
@@ -211,15 +205,6 @@ bmpa_reader_print_page_copies(gx_device_printer *pdev, FILE *prn_stream,
     byte *row = 0;
     byte *raster_data;
 
-    /*
-     * BMP format is single page, so discard all but 1st printable page
-     * This logic isn't quite right, since we can't truncate file if
-     * num_pages == 0.
-     */
-    if (prdev->copies_printed > 0)
-	return 0;
-
-    /* If there's data in buffer, need to process w/overlays */
     if (prdev->buffered_page_exists) {
 	code = bmpa_reader_buffer_page(pdev, prn_stream, num_copies);
 	goto done;
@@ -242,7 +227,6 @@ bmpa_reader_print_page_copies(gx_device_printer *pdev, FILE *prn_stream,
 
     /*
      * Write out the bands top to bottom.
-     * Finish the job even if num_copies == 0, to avoid invalid output file.
      */
     for (y = prdev->height - 1; y >= 0; y--) {
 	if ((code = dev_proc(dev, get_bits)(dev, y, row, &raster_data)) < 0)
@@ -254,9 +238,20 @@ bmpa_reader_print_page_copies(gx_device_printer *pdev, FILE *prn_stream,
     }
 done:
     gs_free((char *)row, bmp_raster, 1, "bmp file buffer");
-    if (code >= 0 && prdev->copies_printed > 0)
-	prdev->copies_printed = num_copies;
     prdev->buffered_page_exists = 0;
+    return code;
+}
+
+private int
+bmpa_reader_print_page_copies(gx_device_printer *pdev, FILE *prn_stream,
+			     int num_copies)
+{
+    int code = 0;
+    while ( num_copies-- ) {
+	code = bmpa_reader_print_page(pdev, prn_stream, num_copies);
+	if ( code < 0 )
+	    return (code);
+    }
     return code;
 }
 
@@ -267,10 +262,6 @@ bmpa_reader_buffer_page(gx_device_printer *pdev, FILE *file, int num_copies)
     gx_device_async * const prdev = (gx_device_async *)pdev;
     gx_device * const dev = (gx_device *)pdev;
     int code = 0;
-
-    /* BMP format is single page, so discard all but 1st page */
-    if (prdev->copies_printed > 0)
-	return 0;
 
     /* If there's no data in buffer, no need to do any overlays */
     if (!prdev->buffered_page_exists) {
@@ -351,8 +342,6 @@ bmpa_reader_buffer_page(gx_device_printer *pdev, FILE *file, int num_copies)
     }
 
  done:
-    if (code >= 0 && prdev->copies_printed > 0)
-	prdev->copies_printed = num_copies;
     prdev->buffered_page_exists = (code >= 0);
     return code;
 }
