@@ -2316,15 +2316,18 @@ divide_bar(patch_fill_state_t *pfs,
 }
 
 private inline void
-cc2fc(const patch_fill_state_t *pfs, const gs_client_color *c, 
+dc2fc(const patch_fill_state_t *pfs, gx_color_index c, 
 	    frac32 fc[GX_DEVICE_COLOR_MAX_COMPONENTS])
 {
     int j;
-    const frac32 frac32_1 = ~0;
+    const gx_device_color_info *cinfo = &pfs->dev->color_info;
 
-    for (j = 0; j < pfs->num_components; j++)
-	fc[j] = (frac32)((double)frac32_1 * c->paint.values[j] 
-			/ pfs->color_domain.paint.values[j]);
+    for (j = 0; j < pfs->num_components; j++) {
+	    int shift = cinfo->comp_shift[j];
+	    int bits = cinfo->comp_bits[j];
+
+	    fc[j] = (gx_color_index)(c >> shift) & ((1 << bits) - 1);
+    }
 }
 
 private int 
@@ -2335,11 +2338,9 @@ triangle_by_4(patch_fill_state_t *pfs,
 {
     shading_vertex_t p01, p12, p20;
     wedge_vertex_list_t L01, L12, L20, L[3];
+    bool subdivide_to_constant_color = true;
     int code;
 #   if USE_LINEAR_COLOR_PROCS
-	gx_device *pdev = pfs->dev;
-	frac32 fc[3][GX_DEVICE_COLOR_MAX_COMPONENTS];
-	gs_fill_attributes fa;
 	gs_direct_color_space *cs = 
 		(gs_direct_color_space *)pfs->direct_space; /* break 'const'. */
 #   endif
@@ -2353,33 +2354,51 @@ triangle_by_4(patch_fill_state_t *pfs,
 		    doesn't work: with display it appears ht_type_screen. */
 		&& cs_is_linear(cs, pfs->pis, pfs->dev, &p0->c.cc, 
 			    &p1->c.cc, &p2->c.cc, NULL, pfs->smoothness)) {
+	    gx_device *pdev = pfs->dev;
+	    frac32 fc[3][GX_DEVICE_COLOR_MAX_COMPONENTS];
+	    gs_fill_attributes fa;
+	    gx_device_color dc[3];
+
 	    fa.pdev = pdev;
 	    fa.clip = &pfs->rect;
 	    fa.ht = NULL; /* fixme */
 	    fa.swap_axes = false;
 	    fa.lop = 0; /* fixme */
-	    cc2fc(pfs, &p0->c.cc, fc[0]);
-	    cc2fc(pfs, &p1->c.cc, fc[1]);
-	    cc2fc(pfs, &p2->c.cc, fc[2]);
-	    code = dev_proc(pdev, fill_linear_color_triangle)(&fa, 
-			    &p0->p, &p1->p, &p2->p, fc[0], fc[1], fc[2]);
-	    if (code == 1)
-		return 0;
+	    code = patch_color_to_device_color(pfs, &p0->c, &dc[0]);
 	    if (code < 0)
 		return code;
-	} else
+	    code = patch_color_to_device_color(pfs, &p1->c, &dc[1]);
+	    if (code < 0)
+		return code;
+	    code = patch_color_to_device_color(pfs, &p2->c, &dc[2]);
+	    if (code < 0)
+		return code;
+	    if (dc[0].type == &gx_dc_type_data_pure) {
+		dc2fc(pfs, dc[0].colors.pure, fc[0]);
+		dc2fc(pfs, dc[1].colors.pure, fc[1]);
+		dc2fc(pfs, dc[2].colors.pure, fc[2]);
+		code = dev_proc(pdev, fill_linear_color_triangle)(&fa, 
+				&p0->p, &p1->p, &p2->p, fc[0], fc[1], fc[2]);
+		if (code == 1)
+		    return 0;
+		if (code < 0)
+		    return code;
+		subdivide_to_constant_color = false;
+	    }
+	}
 #   endif
-    if (pfs->Function != NULL) {
-	double d01 = color_span(pfs, &p1->c, &p0->c);
-	double d12 = color_span(pfs, &p2->c, &p1->c);
-	double d20 = color_span(pfs, &p0->c, &p2->c);
+    if (subdivide_to_constant_color)
+	if (pfs->Function != NULL) {
+	    double d01 = color_span(pfs, &p1->c, &p0->c);
+	    double d12 = color_span(pfs, &p2->c, &p1->c);
+	    double d20 = color_span(pfs, &p0->c, &p2->c);
 
-	if (d01 <= pfs->smoothness / COLOR_CONTIGUITY && 
-	    d12 <= pfs->smoothness / COLOR_CONTIGUITY && 
-	    d20 <= pfs->smoothness / COLOR_CONTIGUITY)
+	    if (d01 <= pfs->smoothness / COLOR_CONTIGUITY && 
+		d12 <= pfs->smoothness / COLOR_CONTIGUITY && 
+		d20 <= pfs->smoothness / COLOR_CONTIGUITY)
+		return constant_color_triangle(pfs, p2, p0, p1);
+	} else if (cd <= pfs->smoothness / COLOR_CONTIGUITY)
 	    return constant_color_triangle(pfs, p2, p0, p1);
-    } else if (cd <= pfs->smoothness / COLOR_CONTIGUITY)
-	return constant_color_triangle(pfs, p2, p0, p1);
     divide_bar(pfs, p0, p1, 2, &p01);
     divide_bar(pfs, p1, p2, 2, &p12);
     divide_bar(pfs, p2, p0, 2, &p20);
