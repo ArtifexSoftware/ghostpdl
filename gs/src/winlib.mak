@@ -63,8 +63,11 @@ XEAUX=.exe
 
 # We have to use a batch file for the equivalent of cp,
 # because the DOS COPY command copies the file write time, like cp -p.
+# We also have to use a batch file for for the equivalent of rm -f,
+# because the DOS ERASE command returns an error status if the file
+# doesn't exist.
 CP_=call $(GLSRCDIR)\cp.bat
-RM_=erase
+RM_=call $(GLSRCDIR)\rm.bat
 RMN_=call $(GLSRCDIR)\rm.bat
 
 # Define the generic compilation flags.
