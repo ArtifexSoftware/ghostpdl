@@ -115,8 +115,9 @@ ps_impl_allocate_interp_instance(
 )
 {
 	int code = 0, exit_code;
-	int argc = 3;
-	char *argv[] = { "", "-dNOPAUSE", "-dQUIET", ""};
+	int argc = 4;  
+	/* NB: DITHERPPI should be computed from the resolution */
+	const char *argv[] = { "", "-dNOPAUSE", "-dQUIET", "-dDITHERPPI=106", ""};
 
 	ps_interp_instance_t *psi  /****** SHOULD HAVE A STRUCT DESCRIPTOR ******/
 	    = (ps_interp_instance_t *)gs_alloc_bytes( mem,
@@ -211,6 +212,19 @@ ps_impl_set_device(
     return code;
 }
 
+/* fetch the gs_memory_t ptr so that the device and ps use the same 
+ * garbage collection aware a memory
+ */
+private int   
+ps_impl_get_device_memory(
+  pl_interp_instance_t   *instance,     /* interp instance to use */
+  gs_memory_t **pmem)
+{
+    ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
+    *pmem = (gs_memory_t*)&psi->minst->i_ctx_p->memory;
+    return 0;
+}
+  
 /* Prepare interp instance for the next "job" */
 private int	/* ret 0 ok, else -ve error code */
 ps_impl_init_job(
@@ -218,9 +232,12 @@ ps_impl_init_job(
 )
 {
     ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
-
+    static const char *buf = "false 0 startjob pop\n";  /* encapsulate the job */
+    int code, exit_code;
     /* starting a new job */
     psi->fresh_job = true;
+    
+    code = gsapi_run_string_continue(psi->minst, buf, strlen(buf), 0, &exit_code);
     return 0; 
 }
 
@@ -326,7 +343,7 @@ ps_impl_process_eof(
 )
 {
     int code = 0;
-    /* put endjob logic here (finish encapsulation) */
+
     return code;
 }
 
@@ -353,7 +370,9 @@ ps_impl_dnit_job(
 {
     int code = 0; 
     int exit_code = 0;
+    static const char *buf = "endjob\n";  /* restore to begin job state */
     ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
+
     /* take care of a stored pdf file */
     if ( psi->pdf_stream ) {
 	/* gp_file_name_sizeof + 7 is 
@@ -380,6 +399,8 @@ ps_impl_dnit_job(
         }
         code = 0;
     }
+
+    gsapi_run_string_continue(psi->minst, buf, strlen(buf), 0, &exit_code); /* .endjob */
     return 0; /* should be return zrestore(psi->minst->i_ctx_p); */
 }
 
@@ -475,4 +496,5 @@ const pl_interp_implementation_t ps_implementation = {
   ps_impl_remove_device,
   ps_impl_deallocate_interp_instance,
   ps_impl_deallocate_interp,
+  ps_impl_get_device_memory,
 };
