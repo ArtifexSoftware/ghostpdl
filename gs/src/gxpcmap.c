@@ -708,7 +708,9 @@ gs_pattern1_remap_color(const gs_client_color * pc, const gs_color_space * pcs,
     gs_pattern1_instance_t *pinst = (gs_pattern1_instance_t *)pc->pattern;
     int code;
 
+    /* Save original color space and color info into dev color */
     pdc->ccolor = *pc;
+    pdc->ccolor_valid = true;
     if (pinst == 0) {
 	/* Null pattern */
 	color_set_null_pattern(pdc);

@@ -214,7 +214,7 @@ gx_set_device_color_1(gs_state * pgs)
     gs_setoverprintmode(pgs, 0);
     gs_cspace_init_DeviceGray(&cs);
     gs_setcolorspace(pgs, &cs);
-    color_set_pure(pgs->dev_color, 1);
+    set_nonclient_dev_color(pgs->dev_color, 1);
     pgs->log_op = lop_default;
     /*
      * In the unlikely event that  overprint mode is in effect,

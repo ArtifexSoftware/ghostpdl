@@ -1192,7 +1192,7 @@ psw_copy_mono(gx_device * dev, const byte * data,
 	((gx_device *) vdev->bbox_device, data, data_x, raster, id,
 	 x, y, w, h, zero, one);
     if (one == gx_no_color_index) {
-	color_set_pure(&color, zero);
+	set_nonclient_dev_color(&color, zero);
 	code = gdev_vector_update_fill_color((gx_device_vector *) pdev,
 					     &color);
 	op = "If";
@@ -1204,7 +1204,7 @@ psw_copy_mono(gx_device * dev, const byte * data,
 	    if (code < 0)
 		return code;
 	}
-	color_set_pure(&color, one);
+	set_nonclient_dev_color(&color, one);
 	code = gdev_vector_update_fill_color((gx_device_vector *) pdev,
 					     &color);
 	op = ",";

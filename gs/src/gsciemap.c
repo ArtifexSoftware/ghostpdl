@@ -239,7 +239,7 @@ gx_remap_CIEABC(const gs_client_color * pc, const gs_color_space * pcs,
 		      frac2float(conc[2]), frac2float(conc[3]));
 	    gx_remap_concrete_cmyk(conc[0], conc[1], conc[2], conc[3],
 				   pdc, pis, dev, select);
-	    return 0;
+	    goto done;
 	default:	/* Can't happen. */
 	    return_error(gs_error_unknownerror);
 	case 3:
@@ -251,6 +251,12 @@ map3:
 	      frac2float(conc[2]));
     gx_remap_concrete_rgb(conc[0], conc[1], conc[2], pdc, pis,
 			  dev, select);
+done:
+    /* Save original color space and color info into dev color */
+    pdc->ccolor.paint.values[0] = pc->paint.values[0];
+    pdc->ccolor.paint.values[1] = pc->paint.values[1];
+    pdc->ccolor.paint.values[2] = pc->paint.values[2];
+    pdc->ccolor_valid = true;
     return 0;
 }
 int

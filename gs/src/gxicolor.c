@@ -171,7 +171,7 @@ image_render_color(gx_image_enum *penum_orig, const byte *buffer, int data_x,
     memset(&next, 0, sizeof(next));
     /* Ensure that we don't get any false dev_color_eq hits. */
     if (use_cache) {
-	color_set_pure(&empty_clue.dev_color, gx_no_color_index);
+	set_nonclient_dev_color(&empty_clue.dev_color, gx_no_color_index);
 	pic = &empty_clue;
     }
     cs_full_init_color(&cc, pcs);

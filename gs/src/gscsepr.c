@@ -318,10 +318,17 @@ gx_remap_Separation(const gs_client_color * pcc, const gs_color_space * pcs,
 	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
 		       gs_color_select_t select)
 {
+    int code = 0;
+
     if (pcs->params.separation.sep_type != SEP_NONE)
-	return gx_default_remap_color(pcc, pcs, pdc, pis, dev, select);
-    color_set_null(pdc);
-    return 0;
+	code = gx_default_remap_color(pcc, pcs, pdc, pis, dev, select);
+    else {
+        color_set_null(pdc);
+    }
+    /* Save original color space and color info into dev color */
+    pdc->ccolor.paint.values[0] = pcc->paint.values[0];
+    pdc->ccolor_valid = true;
+    return code;
 }
 
 private int

@@ -30,6 +30,7 @@
 #include "gsiparm4.h"
 #include "gxdcolor.h"
 #include "gxpcolor.h"
+#include "gxhldevc.h"
 
 /* Forward references */
 private image_enum_proc_plane_data(pdf_image_plane_data);

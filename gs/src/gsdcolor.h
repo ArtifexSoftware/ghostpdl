@@ -116,9 +116,21 @@ bool gx_saved_color_update(gx_device_color_saved *psc,
 
 #define color_is_pure(pdc) gx_dc_is_pure(pdc)
 #define color_writes_pure(pdc, lop) gx_dc_writes_pure(pdc, lop)
+/*
+ * Used to define 'pure' (solid - without halftoning or patterns) colors.
+ * This macro assumes the colorspace and client color information is already
+ * defined in the device color strucTure.  If not then see the next macro.
+ */
 #define color_set_pure(pdc, color)\
   ((pdc)->colors.pure = (color),\
    (pdc)->type = gx_dc_type_pure)
+/*
+ * Used to create special case device colors for which the colorspace
+ * and client colors are not already contained in the device color.
+ */
+#define set_nonclient_dev_color(pdc, color)\
+    color_set_pure(pdc, color);\
+    (pdc)->ccolor_valid = false
 
 /* Set the phase to an offset from the tile origin. */
 #define color_set_phase(pdc, px, py)\
@@ -301,6 +313,7 @@ struct gx_device_color_s {
 	} /*(colored) */ pattern;
     } colors;
     gs_int_point phase;
+    bool ccolor_valid;
     gs_client_color ccolor;	/* needed for remapping patterns, */
 				/* not set for non-pattern colors */
     struct _mask {
@@ -407,7 +420,7 @@ extern const gx_device_color_type_t *const gx_dc_type_pure;	/* gxdcolor.c */
 		 * a spurious external reference in Level 1 systems.
 		 */
 #ifndef gx_dc_type_pattern
-								    /*extern const gx_device_color_type_t * const gx_dc_type_pattern; *//* gspcolor.c */
+/*extern const gx_device_color_type_t * const gx_dc_type_pattern; *//* gspcolor.c */
 #endif
 #ifndef gx_dc_type_ht_binary
 extern const gx_device_color_type_t *const gx_dc_type_ht_binary;	/* gxht.c */

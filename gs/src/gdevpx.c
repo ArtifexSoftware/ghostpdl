@@ -1175,7 +1175,7 @@ pclxl_copy_mono(gx_device * dev, const byte * data, int data_x, int raster,
 	) {
 	gx_drawing_color dcolor;
 
-	color_set_pure(&dcolor, one);
+	set_nonclient_dev_color(&dcolor, one);
 	pclxl_setfillcolor(vdev, &dcolor);
 	if (pclxl_copy_text_char(xdev, data, raster, id, w, h) >= 0)
 	    return 0;

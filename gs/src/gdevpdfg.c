@@ -123,7 +123,7 @@ pdf_set_initial_color(gx_device_pdf * pdev, gx_device_color_saved *saved_fill_co
 
     pdev->black = gx_device_black((gx_device *)pdev);
     pdev->white = gx_device_white((gx_device *)pdev);
-    color_set_pure(&black, pdev->black);
+    set_nonclient_dev_color(&black, pdev->black);
     memset(&pdev->vg_initial.saved_fill_color, 0, sizeof(pdev->saved_fill_color));
     memset(&pdev->vg_initial.saved_stroke_color, 0, sizeof(pdev->saved_stroke_color));
     gx_saved_color_update(&pdev->vg_initial.saved_fill_color, &black);
@@ -259,7 +259,7 @@ pdf_set_pure_color(gx_device_pdf * pdev, gx_color_index color,
 {
     gx_drawing_color dcolor;
 
-    color_set_pure(&dcolor, color);
+    set_nonclient_dev_color(&dcolor, color);
     return pdf_reset_color(pdev, &dcolor, psc, ppscc);
 }
 

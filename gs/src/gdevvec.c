@@ -997,7 +997,11 @@ gdev_vector_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     /* Ignore the initial fill with white. */
     if (!vdev->in_page && color == vdev->white)
 	return 0;
-    color_set_pure(&dcolor, color);
+    /*
+     * The original colorspace and client color are unknown so use
+     * set_nonclient_dev_color instead of color_set_pure.
+     */
+    set_nonclient_dev_color(&dcolor, color);
     {
 	/* Make sure we aren't being clipped. */
 	int code = gdev_vector_update_clip_path(vdev, NULL);

@@ -298,7 +298,7 @@ pdf_put_uncolored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
     const gx_color_tile *m_tile = pdc->mask.m_tile;
     gx_drawing_color dc_pure;
 
-    color_set_pure(&dc_pure, gx_dc_pure_color(pdc));
+    set_nonclient_dev_color(&dc_pure, gx_dc_pure_color(pdc));
     if (!PATTERN_STREAM_ACCUMULATION && m_tile == 0) {
 	/*
 	 * If m_tile == 0, this uncolored Pattern is all 1's,

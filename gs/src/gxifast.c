@@ -150,11 +150,11 @@ gs_image_class_1_simple(gx_image_enum * penum)
 	penum->masked = true;
 	if (penum->mask_color.values[0] == 1) {
 	    /* if v0 == 1, 1 is transparent since v1 must be == 1 to be a valid range */
-	    color_set_pure(penum->map[0].inverted ? &penum->icolor0 : &penum->icolor1,
+	    set_nonclient_dev_color(penum->map[0].inverted ? &penum->icolor0 : &penum->icolor1,
 			gx_no_color_index);
 	} else if (penum->mask_color.values[1] == 0) {
 	    /* if v1 == 0, 0 is transparent since v0 must be == 0 to be a valid range */
-	    color_set_pure(penum->map[0].inverted ? &penum->icolor1 : &penum->icolor0,
+	    set_nonclient_dev_color(penum->map[0].inverted ? &penum->icolor1 : &penum->icolor0,
 			gx_no_color_index);
 	} else {
 	    /*

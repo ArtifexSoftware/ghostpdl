@@ -205,7 +205,8 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
     memset(&run, 0, sizeof(run));
     memset(&next, 0, sizeof(next));
     /* Ensure that we don't get any false dev_color_eq hits. */
-    color_set_pure(&devc1, gx_no_color_index);
+    set_nonclient_dev_color(&devc1, gx_no_color_index);
+    set_nonclient_dev_color(&devc2, gx_no_color_index);
     cs_full_init_color(&cc, pcs);
     run.v[0] = ~psrc[0];	/* force remap */
 

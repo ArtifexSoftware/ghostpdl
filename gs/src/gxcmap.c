@@ -37,7 +37,7 @@ public_st_device_color();
 private 
 ENUM_PTRS_WITH(device_color_enum_ptrs, gx_device_color *cptr)
 {
-    return ENUM_USING(*cptr->type->stype, vptr, size, index);
+	return ENUM_USING(*cptr->type->stype, vptr, size, index);
 }
 ENUM_PTRS_END
 private RELOC_PTRS_WITH(device_color_reloc_ptrs, gx_device_color *cptr)
@@ -493,12 +493,20 @@ gx_default_remap_color(const gs_client_color * pcc, const gs_color_space * pcs,
 {
     frac conc[GS_CLIENT_COLOR_MAX_COMPONENTS];
     const gs_color_space *pconcs;
+    int i = pcs->type->num_components(pcs);
     int code = (*pcs->type->concretize_color)(pcc, pcs, conc, pis);
 
     if (code < 0)
 	return code;
     pconcs = cs_concrete_space(pcs, pis);
-    return (*pconcs->type->remap_concrete_color)(conc, pconcs, pdc, pis, dev, select);
+    code = (*pconcs->type->remap_concrete_color)(conc, pconcs, pdc, pis, dev, select);
+
+    /* Save original color space and color info into dev color */
+    i = abs(i);
+    for (i--; i >= 0; i--)
+	pdc->ccolor.paint.values[i] = pcc->paint.values[i];
+    pdc->ccolor_valid = true;
+    return code;
 }
 
 /* Color remappers for the standard color spaces. */
@@ -537,6 +545,10 @@ gx_remap_DeviceGray(const gs_client_color * pc, const gs_color_space * pcs,
 {
     float ftemp;
     frac fgray = unit_frac(pc->paint.values[0], ftemp);
+
+    /* Save original color space and color info into dev color */
+    pdc->ccolor.paint.values[0] = pc->paint.values[0];
+    pdc->ccolor_valid = true;
 
     if (pis->alpha == gx_max_color_value)
 	(*pis->cmap_procs->map_gray)
@@ -582,6 +594,12 @@ gx_remap_DeviceRGB(const gs_client_color * pc, const gs_color_space * pcs,
     frac fred = unit_frac(pc->paint.values[0], ftemp), fgreen = unit_frac(pc->paint.values[1], ftemp),
          fblue = unit_frac(pc->paint.values[2], ftemp);
 
+    /* Save original color space and color info into dev color */
+    pdc->ccolor.paint.values[0] = pc->paint.values[0];
+    pdc->ccolor.paint.values[1] = pc->paint.values[1];
+    pdc->ccolor.paint.values[2] = pc->paint.values[2];
+    pdc->ccolor_valid = true;
+
     if (pis->alpha == gx_max_color_value)
 	gx_remap_concrete_rgb(fred, fgreen, fblue,
 			      pdc, pis, dev, select);
@@ -621,6 +639,13 @@ gx_remap_DeviceCMYK(const gs_client_color * pc, const gs_color_space * pcs,
 {
 /****** IGNORE alpha ******/
     float ft0, ft1, ft2, ft3;
+
+    /* Save original color space and color info into dev color */
+    pdc->ccolor.paint.values[0] = pc->paint.values[0];
+    pdc->ccolor.paint.values[1] = pc->paint.values[1];
+    pdc->ccolor.paint.values[2] = pc->paint.values[2];
+    pdc->ccolor.paint.values[3] = pc->paint.values[3];
+    pdc->ccolor_valid = true;
 
     gx_remap_concrete_cmyk((frac)unit_frac(pc->paint.values[0], ft0),
 			   (frac)unit_frac(pc->paint.values[1], ft1),

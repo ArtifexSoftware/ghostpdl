@@ -348,7 +348,7 @@ gx_begin_image3_generic(gx_device * dev,
 	gx_drawing_color dcolor;
 	gs_matrix m_mat;
 
-	color_set_pure(&dcolor, 1);
+	set_nonclient_dev_color(&dcolor, 1);
 	/*
 	 * Adjust the translation for rendering the mask to include a
 	 * negative translation by origin.{x,y} in device space.

@@ -36,6 +36,7 @@
 #include "gdevpdts.h"
 #include "gdevpdtt.h"
 #include "gdevpdti.h"
+#include "gxhldevc.h"
 
 /* ================ Text enumerator ================ */
 

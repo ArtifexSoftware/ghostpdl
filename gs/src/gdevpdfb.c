@@ -23,6 +23,7 @@
 #include "gdevpdfg.h"
 #include "gdevpdfo.h"		/* for data stream */
 #include "gxcspace.h"
+#include "gxhldevc.h"
 
 /* We need this color space type for constructing temporary color spaces. */
 extern const gs_color_space_type gs_color_space_type_Indexed;

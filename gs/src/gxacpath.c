@@ -177,7 +177,7 @@ gx_cpath_intersect_path_slow(gx_clip_path * pcpath, gx_path * ppath,
     int code;
 
     gx_cpath_accum_begin(&adev, pcpath->path.memory);
-    color_set_pure(&devc, 0);	/* arbitrary, but not transparent */
+    set_nonclient_dev_color(&devc, 0);	/* arbitrary, but not transparent */
     gs_set_logical_op_inline(pis, lop_default);
     params.rule = rule;
     params.adjust.x = params.adjust.y = fixed_half;

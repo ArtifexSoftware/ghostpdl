@@ -27,6 +27,7 @@
 #include "gzcpath.h"
 #include "gdevpdfx.h"
 #include "gdevpdfg.h"
+#include "gxhldevc.h"
 
 /* ---------------- Drawing ---------------- */
 
