@@ -564,7 +564,6 @@ private FAPI_retcode make_font_data(fapi_ufst_server *r, const char *font_file_p
         if (ff->is_type1) {
             int subrs_count  = ff->get_word(ff, FAPI_FONT_FEATURE_Subrs_count, 0);
             int subrs_length = ff->get_long(ff, FAPI_FONT_FEATURE_Subrs_total_size, 0);
-            int lenIV = ff->get_long(ff, FAPI_FONT_FEATURE_lenIV, 0);
             int subrs_area_size = subrs_count * 5 + subrs_length + 2;
             area_length += 360 + subrs_area_size; /* some inprecise - see pack_pseo_fhdr */
         } else {
@@ -691,7 +690,7 @@ private void prepare_typeface(fapi_ufst_server *r, ufst_common_font_data *d)
         r->fc.format |= FC_EXTERN_TYPE;
 }
 
-private FAPI_retcode get_scaled_font(FAPI_server *server, FAPI_font *ff, int subfont, const FracInt matrix[6], const FracInt HWResolution[2], const char *xlatmap, bool bVertical)
+private FAPI_retcode get_scaled_font(FAPI_server *server, FAPI_font *ff, int subfont, const FracInt matrix[6], const FracInt HWResolution[2], const char *xlatmap, bool bVertical, FAPI_descendent_code dc)
 {   fapi_ufst_server *r = If_to_I(server);
     FONTCONTEXT *fc = &r->fc;
     /*  Note : UFST doesn't provide handles for opened fonts,
@@ -705,6 +704,14 @@ private FAPI_retcode get_scaled_font(FAPI_server *server, FAPI_font *ff, int sub
     FAPI_retcode code;
     bool use_XL_format = ff->is_mtx_skipped;
 
+    if (ff->is_cid && ff->is_type1 && ff->font_file_path == NULL && 
+        (dc == FAPI_TOPLEVEL_BEGIN || dc == FAPI_TOPLEVEL_COMPLETE)) {
+	/* Don't need any processing for the top level font of a non-disk CIDFontType 0. 
+	   See comment in FAPI_prepare_font.
+	   Will do with its subfonts individually. 
+	 */
+	return 0; 
+    }
     ff->need_decrypt = 1;
     if (d == 0) {
         if ((code = make_font_data(r, ff->font_file_path, subfont, ff, &d)) != 0)

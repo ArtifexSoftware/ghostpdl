@@ -32,10 +32,15 @@ Started by Graham Asher, 6th June 2002.
 #include "gxfarith.h"
 
 /* FreeType headers */
+#define stream strm /* A hach to suppress compiler errors. 
+                       FT defines 'stream' as an argument.
+		       GS defines 'stream' as a type.
+		       Such conflict isn't allowed by ANSI C. */
 #include "freetype/freetype.h"
 #include "freetype/ftincrem.h"
 #include "freetype/ftglyph.h"
 #include "freetype/ftoutln.h"
+#undef stream
 
 #include <assert.h>
 
@@ -339,12 +344,20 @@ Open a font and set its transformation matrix to a_matrix, which is a 6-element 
 transform, and its resolution in dpi to a_resolution, which contains horizontal and vertical components.
 */
 static FAPI_retcode get_scaled_font(FAPI_server* a_server,FAPI_font* a_font,int a_subfont,const FracInt a_matrix[6],
-									const FracInt a_resolution[2],const char* a_map,bool a_vertical)
+					const FracInt a_resolution[2],const char* a_map,bool a_vertical, FAPI_descendent_code dc)
 	{
 	FF_server* s = (FF_server*)a_server;
 	FF_face* face = (FF_face*)a_font->server_font_data;
 	FT_Error ft_error = 0;
 
+	if (a_font->is_cid && a_font->is_type1 && a_font->font_file_path == NULL &&
+            (dc == FAPI_TOPLEVEL_BEGIN || dc == FAPI_TOPLEVEL_COMPLETE)) {
+	    /* Don't need any processing for the top level font of a non-disk CIDFontType 0. 
+	       See comment in FAPI_prepare_font.
+	       Will do with its subfonts individually. 
+	     */
+	    return 0; 
+	}
 	/* Create the face if it doesn't already exist. */
 	if (!face)
 		{
