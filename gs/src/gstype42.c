@@ -613,7 +613,8 @@ add_quadratic_curve(gx_path * const ppath, const gs_fixed_point * const a,
  */
 private int
 append_simple(const byte *gdata, float sbw[4], const gs_matrix_fixed *pmat,
-	      gx_path *ppath, gs_fixed_point *ppts, gs_font_type42 * pfont)
+	      gx_path *ppath, gs_fixed_point *ppts, gs_font_type42 * pfont,
+	      bool subglyph)
 {
     int numContours = S16(gdata);
     const byte *pends = gdata + 10;
@@ -655,6 +656,7 @@ append_simple(const byte *gdata, float sbw[4], const gs_matrix_fixed *pmat,
 
     {
 	uint i, np;
+	float offset = 0;
 	gs_fixed_point pt;
 	double factor = 1.0 / pfont->data.unitsPerEm;
 	/*
@@ -664,13 +666,12 @@ append_simple(const byte *gdata, float sbw[4], const gs_matrix_fixed *pmat,
 	byte flags = *pflags++;
 	uint reps = (flags & gf_Repeat ? *pflags++ + 1 : 1);
 
-	/*
-	 * The TrueType documentation gives no clue as to how the lsb
-	 * should affect placement of the outline.  Our best guess is
-	 * that the outline should be translated by lsb - xMin.
-	 */
-	gs_point_transform2fixed(pmat, sbw[0] - S16(gdata + 2) * factor,
-				 0.0, &pt);
+	if (!subglyph) {
+	    int xmin = S16(gdata + 2); /* We like to see it with debugger. */
+
+	    offset = sbw[0] - xmin * factor;
+	}
+	gs_point_transform2fixed(pmat, offset, 0.0, &pt);
 	for (i = 0, np = 0; i < numContours; ++i) {
 	    bool move = true;
 	    bool off_curve = false;
@@ -807,7 +808,7 @@ append_simple(const byte *gdata, float sbw[4], const gs_matrix_fixed *pmat,
 private int
 check_component(uint glyph_index, const gs_matrix_fixed *pmat,
 		gx_path *ppath, gs_font_type42 *pfont, gs_fixed_point *ppts,
-		gs_glyph_data_t *pgd)
+		gs_glyph_data_t *pgd, bool subglyph)
 {
     gs_glyph_data_t glyph_data;
     const byte *gdata;
@@ -824,7 +825,7 @@ check_component(uint glyph_index, const gs_matrix_fixed *pmat,
     numContours = S16(gdata);
     if (numContours >= 0) {
 	gs_type42_get_metrics(pfont, glyph_index, sbw);
-	code = append_simple(gdata, sbw, pmat, ppath, ppts, pfont);
+	code = append_simple(gdata, sbw, pmat, ppath, ppts, pfont, subglyph);
 	gs_glyph_data_free(&glyph_data, "check_component");
 	return (code < 0 ? code : 0); /* simple */
     }
@@ -836,13 +837,13 @@ check_component(uint glyph_index, const gs_matrix_fixed *pmat,
 private int
 append_component(uint glyph_index, const gs_matrix_fixed * pmat,
 		 gx_path * ppath, gs_fixed_point *ppts, int point_index,
-		 gs_font_type42 * pfont)
+		 gs_font_type42 * pfont, bool subglyph)
 {
     gs_glyph_data_t glyph_data;
     int code;
 
     code = check_component(glyph_index, pmat, ppath, pfont, ppts + point_index,
-			   &glyph_data);
+			   &glyph_data, subglyph);
     if (code != 1)
 	return code;
     /*
@@ -872,7 +873,7 @@ append_component(uint glyph_index, const gs_matrix_fixed * pmat,
 		gs_fixed_point diff;
 
 		code = append_component(comp_index, &mat, NULL, ppts,
-					point_index, pfont);
+					point_index, pfont, true);
 		if (code < 0)
 		    break;
 		diff.x = pfrom->x - pto->x;
@@ -881,7 +882,7 @@ append_component(uint glyph_index, const gs_matrix_fixed * pmat,
 		mat.ty = fixed2float(mat.ty_fixed += diff.y);
 	    }
 	    code = append_component(comp_index, &mat, ppath, ppts,
-				    point_index, pfont);
+				    point_index, pfont, true);
 	    if (code < 0)
 		break;
 	    point_index += total_points(pfont, comp_index);
@@ -897,7 +898,7 @@ append_outline(uint glyph_index, const gs_matrix_fixed * pmat,
 {
     gs_glyph_data_t glyph_data;
     int code =
-	check_component(glyph_index, pmat, ppath, pfont, NULL, &glyph_data);
+	check_component(glyph_index, pmat, ppath, pfont, NULL, &glyph_data, false);
 
     if (code != 1)
 	return code;
@@ -914,7 +915,7 @@ append_outline(uint glyph_index, const gs_matrix_fixed * pmat,
 	if (num_points <= MAX_STACK_PTS) {
 	    gs_fixed_point pts[MAX_STACK_PTS];
 
-	    code = append_component(glyph_index, pmat, ppath, pts, 0, pfont);
+	    code = append_component(glyph_index, pmat, ppath, pts, 0, pfont, false);
 	} else {
 	    gs_memory_t *mem = pfont->memory; /* any memory will do */
 	    gs_fixed_point *ppts = (gs_fixed_point *)
@@ -925,7 +926,7 @@ append_outline(uint glyph_index, const gs_matrix_fixed * pmat,
 		code = gs_note_error(gs_error_VMerror);
 	    else {
 		code = append_component(glyph_index, pmat, ppath, ppts, 0,
-					pfont);
+					pfont, false);
 		gs_free_object(mem, ppts, "append_outline");
 	    }
 	}
