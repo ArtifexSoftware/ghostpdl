@@ -862,7 +862,15 @@ nobbox_fill(i_ctx_t *i_ctx_p)
 private int
 nobbox_stroke(i_ctx_t *i_ctx_p)
 {
-    return nobbox_draw(i_ctx_p, gs_stroke);
+    /* As a compatibility to Adobe, use the exact "StrokeWidth".
+       Reset fill_adjust for that. */
+    int code;
+    gs_fixed_point fa = i_ctx_p->pgs->fill_adjust;
+
+    i_ctx_p->pgs->fill_adjust.x = i_ctx_p->pgs->fill_adjust.y = 0;
+    code = nobbox_draw(i_ctx_p, gs_stroke);
+    i_ctx_p->pgs->fill_adjust = fa;
+    return code;
 }
 
 /* <font> <array> .setweightvector - */
