@@ -209,6 +209,7 @@ const gx_device_pdf gs_pdfwrite_device =
  0,				/* open_font */
  0 /*false*/,			/* use_open_font */
  0,				/* embedded_encoding_id */
+ -1,				/* max_embedded_code */
  0,				/* random_offset */
  0,				/* next_id */
  0,				/* Catalog */

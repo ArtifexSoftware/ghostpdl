@@ -377,29 +377,10 @@ private int
 assign_char_code(gx_device_pdf * pdev)
 {
     pdf_font_t *font = pdev->open_font;
+    int c;
 
-    if (pdev->embedded_encoding_id == 0) {
-	long id = pdf_begin_separate(pdev);
-	stream *s = pdev->strm;
-	int i;
-
-	/*
-	 * Even though the PDF reference documentation says that a
-	 * BaseEncoding key is required unless the encoding is
-	 * "based on the base font's encoding" (and there is no base
-	 * font in this case), Acrobat 2.1 gives an error if the
-	 * BaseEncoding key is present.
-	 */
-	stream_puts(s, "<</Type/Encoding/Differences[0");
-	for (i = 0; i < 256; ++i) {
-	    if (!(i & 15))
-		stream_puts(s, "\n");
-	    pprintd1(s, "/a%d", i);
-	}
-	stream_puts(s, "\n] >>\n");
-	pdf_end_separate(pdev);
-	pdev->embedded_encoding_id = id;
-    }
+    if (pdev->embedded_encoding_id == 0)
+	pdev->embedded_encoding_id = pdf_obj_ref(pdev);
     if (font == 0 || font->num_chars == 256 || !pdev->use_open_font) {
 	/* Start a new synthesized font. */
 	int code = pdf_alloc_font(pdev, gs_no_id, &font, NULL, NULL);
@@ -418,7 +399,10 @@ assign_char_code(gx_device_pdf * pdev)
 	pdev->open_font = font;
 	pdev->use_open_font = true;
     }
-    return font->num_chars++;
+    c = font->num_chars++;
+    if (c > pdev->max_embedded_code)
+	pdev->max_embedded_code = c;
+    return c;
 }
 
 /* Begin a CharProc for a synthesized (bitmap) font. */

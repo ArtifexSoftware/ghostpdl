@@ -423,6 +423,7 @@ struct gx_device_pdf_s {
     pdf_font_t *open_font;	/* current Type 3 synthesized font */
     bool use_open_font;		/* if false, start new open_font */
     long embedded_encoding_id;
+    int max_embedded_code;	/* max Type 3 code used */
     long random_offset;		/* for generating subset prefixes */
     /* ................ */
     long next_id;

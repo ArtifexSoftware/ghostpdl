@@ -770,6 +770,8 @@ pdf_write_font_resources(gx_device_pdf *pdev)
 {
     int j;
 
+    /* Write the fonts and descriptors. */
+
     for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
 	pdf_font_t *ppf;
 	pdf_font_descriptor_t *pfd;
@@ -825,8 +827,32 @@ pdf_write_font_resources(gx_device_pdf *pdev)
 	    }
 	}
 
-
-
     }
+
+    /* If required, write the Encoding for Type 3 bitmap fonts. */
+
+    if (pdev->embedded_encoding_id) {
+	stream *s;
+	int i;
+
+	pdf_open_separate(pdev, pdev->embedded_encoding_id);
+	s = pdev->strm;
+	/*
+	 * Even though the PDF reference documentation says that a
+	 * BaseEncoding key is required unless the encoding is
+	 * "based on the base font's encoding" (and there is no base
+	 * font in this case), Acrobat 2.1 gives an error if the
+	 * BaseEncoding key is present.
+	 */
+	stream_puts(s, "<</Type/Encoding/Differences[0");
+	for (i = 0; i <= pdev->max_embedded_code; ++i) {
+	    if (!(i & 15))
+		stream_puts(s, "\n");
+	    pprintd1(s, "/a%d", i);
+	}
+	stream_puts(s, "\n] >>\n");
+	pdf_end_separate(pdev);
+    }
+
     return 0;
 }
