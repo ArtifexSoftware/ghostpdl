@@ -1061,5 +1061,7 @@ pdf_close(gx_device * dev)
     pdev->num_pages = 0;
 
     code1 = gdev_vector_close_file((gx_device_vector *) pdev);
-    return pdf_close_files(pdev, code1);
+    if (code >= 0)
+	code = code1;
+    return pdf_close_files(pdev, code);
 }

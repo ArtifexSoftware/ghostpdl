@@ -92,7 +92,20 @@ pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfon
     unicode = font->procs.decode_glyph((gs_font *)font, glyph);
     if (unicode != GS_NO_CHAR) {
 	if (pdfont->cmap_ToUnicode == NULL) {
-	    code = gs_cmap_ToUnicode_alloc(pdev->pdf_memory, pdfont->rid, 256, 1, 
+	    uint num_codes = 256, key_size = 1;
+	    
+	    if (font->FontType == ft_CID_encrypted) {
+		gs_font_cid0 *pfcid = (gs_font_cid0 *)font;
+
+		num_codes = pfcid->cidata.common.CIDCount;
+		key_size = 2;
+	    } else if (font->FontType == ft_CID_TrueType) {
+		gs_font_cid2 *pfcid = (gs_font_cid2 *)font;
+
+		num_codes = pfcid->cidata.common.CIDCount;
+		key_size = 2;
+	    }
+	    code = gs_cmap_ToUnicode_alloc(pdev->pdf_memory, pdfont->rid, num_codes, key_size, 
 					    &pdfont->cmap_ToUnicode);
 	    if (code < 0)
 		return code;

@@ -33,8 +33,6 @@
 #include "gdevpdts.h"
 #include "gdevpdtt.h"
 
-#define TEST_UNICODE_SUPPORT 1 /*  Debug purpose only. Coded for a particular customer. */
-
 /* ---------------- Non-CMap-based composite font ---------------- */
 
 /*
@@ -331,6 +329,7 @@ scan_cmap_text(pdf_text_enum_t *pte)
 	    int char_cache_size, width_cache_size;
 	    gs_font *subfont;
 	    uint cid;
+	    gs_char unicode_char;
 
 	    break_index = scan.index;
 	    break_xy_index = scan.xy_index;
@@ -344,17 +343,6 @@ scan_cmap_text(pdf_text_enum_t *pte)
 	    subfont = scan.fstack.items[scan.fstack.depth].font;
 	    font_index = scan.fstack.items[scan.fstack.depth].index;
 	    scan.xy_index++;
-#if	    TEST_UNICODE_SUPPORT
-	    {
-		gs_char unicode_char = subfont->procs.decode_glyph(subfont, glyph);
-
-    		if (unicode_char != GS_NO_CHAR) {
-		    unsigned int unicode_code = (unsigned int)unicode_char;
-
-		    DISCARD(unicode_code);
-		}
-	    }
-#endif
 	    switch (subfont->FontType) {
 	    case ft_CID_encrypted:
 	    case ft_CID_TrueType:
@@ -382,15 +370,18 @@ scan_cmap_text(pdf_text_enum_t *pte)
 	    code = pdf_obtain_cidfont_widths_arrays(pdev, pdsubf, wmode, &w, &v);
 	    if (code < 0)
 		return code;
-	    #if 0 /* don't need to copy noitdef, because gs_copy_font does that. */
-		if (!(pdsubf->used[0] & 0x80)) {
-		    /* A glyph for CID=0 must present as a .notdef character. */
-		    code = pdf_font_used_glyph(pfd, GS_MIN_CID_GLYPH, (gs_font_base *)subfont);
-		    if (code < 0)
-			return code;
-		    pdsubf->used[0] |= 0x80;
-		}
-	    #endif
+	    unicode_char = subfont->procs.decode_glyph(subfont, glyph);
+    	    if (unicode_char != GS_NO_CHAR) {
+		pdf_font_resource_t *pdfont;
+
+		code = pdf_obtain_parent_type0_font_resource(pdev, pdsubf, 
+				&font->data.CMap->CMapName, &pdfont);
+		if (code < 0)
+		    return code;
+		code = pdf_add_ToUnicode(pdev, subfont, pdfont, glyph, cid);
+		if (code < 0)
+		    return code;
+	    }
 	    /* We can't check pdsubf->used[cid >> 3] here,
 	       because it mixed data for different values of WMode. 
 	       Perhaps pdf_font_used_glyph returns fast with reused glyphs.

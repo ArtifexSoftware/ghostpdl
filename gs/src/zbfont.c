@@ -104,17 +104,22 @@ gs_font_map_glyph_by_dict(const ref *map, gs_glyph glyph)
     ref *v, n;
     if (glyph >= gs_min_cid_glyph) {
 	uint cid = glyph - gs_min_cid_glyph;
-	
-	make_int(&n, cid / 256);
-	if (dict_find(map, &n, &v) > 0) {
-	    ref vv;
 
-	    if (array_get(v, cid % 256, &vv) == 0 && r_type(&vv) == t_integer)
-		return vv.value.intval;
+	if (dict_find_string(map, "CIDCount", &v) > 0) {
+	    /* This is a CIDDEcoding resource. */
+	    make_int(&n, cid / 256);
+	    if (dict_find(map, &n, &v) > 0) {
+		ref vv;
+
+		if (array_get(v, cid % 256, &vv) == 0 && r_type(&vv) == t_integer)
+		    return vv.value.intval;
+	    }
+	    return GS_NO_CHAR; /* Absent in the map. */
 	}
-	return GS_NO_CHAR; /* Unimplemented. */
-    }
-    name_index_ref(glyph, &n);
+	/* This is GlyphNames2Unicode dictionary. */
+	make_int(&n, cid);
+    } else
+	name_index_ref(glyph, &n);
     if (dict_find(map, &n, &v) > 0) {
 	if (r_has_type(v, t_string)) {
 	    int i, l = r_size(v);
