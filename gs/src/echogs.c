@@ -25,7 +25,7 @@
  * cause type mismatches if const has been defined (usually with
  * -Dconst=), so it's only included if const is undefined.
  */
-extern int fputc(P2(int, FILE *)), fputs(P2(const char *, FILE *));
+extern int fputc(int, FILE *), fputs(const char *, FILE *);
 #endif
 
 /* Some systems have time_t in sys/types.h rather than time.h. */
@@ -82,7 +82,7 @@ extern int fputc(P2(int, FILE *)), fputs(P2(const char *, FILE *));
  * which writes 'a b'.
  */
 
-static int hputc(P2(int, FILE *)), hputs(P2(const char *, FILE *));
+static int hputc(int, FILE *), hputs(const char *, FILE *);
 
 int
 main(int argc, char *argv[])
@@ -101,8 +101,8 @@ main(int argc, char *argv[])
     char fname[FNSIZE];
     int newline = 1;
     int interact = 0;
-    int (*eputc)(P2(int, FILE *)) = fputc;
-    int (*eputs)(P2(const char *, FILE *)) = fputs;
+    int (*eputc)(int, FILE *) = fputc;
+    int (*eputs)(const char *, FILE *) = fputs;
 #define LINESIZE 1000
     char line[LINESIZE];
     char sw = 0, sp = 0, hexx = 0;
