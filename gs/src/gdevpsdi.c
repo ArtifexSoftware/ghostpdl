@@ -111,9 +111,9 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
 	 * is analyze the image to decide whether to use JPEG encoding
 	 * (DCTEncode with ACSDict) or the lossless filter.  However, since
 	 * we don't buffer the entire image, we'll make the choice on-fly,
-	 * forking the image data into 3 streams : (1) JPEG, (2) looseless,
+	 * forking the image data into 3 streams : (1) JPEG, (2) lossless,
 	 * (3) the compression chooser. In this case this function is
-	 * called 2 times with different values of the 'looseless' argument.
+	 * called 2 times with different values of the 'lossless' argument.
 	 */
         if (lossless) {
             orig_template = template = lossless_template;
