@@ -36,6 +36,7 @@ typedef struct font_data_s {
     ref BuildGlyph;
     ref Encoding;
     ref CharStrings;
+    ref GlyphNames2Unicode;
     union _fs {
 	struct _f1 {
 	    ref OtherSubrs;	/* from Private dictionary */

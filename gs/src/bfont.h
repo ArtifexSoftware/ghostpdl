@@ -76,5 +76,7 @@ int build_gs_sub_font(i_ctx_t *, const ref *, gs_font **,
 		      const build_proc_refs *, const ref *, ref *);
 int define_gs_font(gs_font *);
 gs_glyph zfont_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t ignored);
+gs_char gs_font_map_glyph_to_unicode(gs_font *font, gs_glyph glyph);
+const ref *zfont_get_to_unicode_map(gs_font_dir *dir);
 
 #endif /* bfont_INCLUDED */

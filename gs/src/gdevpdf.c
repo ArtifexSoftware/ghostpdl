@@ -541,7 +541,6 @@ pdf_open(gx_device * dev)
     pdev->PageLabels_current_page = 0;
     pdev->PageLabels_current_label = 0;
     pdev->open_graphics = 0;
-    pdev->warned_no_decoding = false;
     pdf_reset_page(pdev);
     return 0;
   fail:

@@ -98,6 +98,52 @@ zfont_glyph_name(gs_font *font, gs_glyph index, gs_const_string *pstr)
     return 0;
 }
 
+private gs_char 
+gs_font_map_glyph_by_dict(const ref *map, gs_glyph glyph)
+{
+    ref *v, n;
+    if (glyph >= gs_min_cid_glyph)
+	return GS_NO_CHAR; /* Unimplemented. */
+    name_index_ref(glyph, &n);
+    if (dict_find(map, &n, &v) > 0) {
+	if (r_has_type(v, t_string)) {
+	    int i, l = r_size(v);
+	    gs_char c = 0;
+
+	    for (i = 0; i < l; i++)
+		c = (c << 8) | v->value.const_bytes[i];
+	    return c;
+	}
+	if (r_type(v) == t_integer)
+	    return v->value.intval;
+    }
+    return GS_NO_CHAR; /* Absent in the map. */
+}
+
+/* Get Unicode UTC-16 code for a glyph. */
+gs_char 
+gs_font_map_glyph_to_unicode(gs_font *font, gs_glyph glyph)
+{
+    font_data *pdata = pfont_data(font);
+    const ref *UnicodeDecoding;
+
+    if (r_type(&pdata->GlyphNames2Unicode) == t_dictionary) {
+	gs_char c = gs_font_map_glyph_by_dict(&pdata->GlyphNames2Unicode, glyph);
+
+	if (c != GS_NO_CHAR)
+	    return c;
+	/* 
+	 * Fall through, because test.ps for SF bug #529103 requres 
+	 * to examine both tables. Due to that the Unicode Decoding resource 
+	 * can't be a default value for FontInfo.GlyphNames2Unicode .
+	 */
+    }
+    UnicodeDecoding = zfont_get_to_unicode_map(font->dir);
+    if (UnicodeDecoding != NULL && r_type(UnicodeDecoding) == t_dictionary)
+	return gs_font_map_glyph_by_dict(UnicodeDecoding, glyph);
+    return GS_NO_CHAR; /* No map. */
+}
+
 /* ------ Initialization procedure ------ */
 
 const op_def zbfont_op_defs[] =
@@ -171,6 +217,7 @@ build_gs_primitive_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base ** ppfont,
 {
     ref *pcharstrings = 0;
     ref CharStrings;
+    ref *pfontinfo, *g2u = NULL;
     gs_font_base *pfont;
     font_data *pdata;
     int code;
@@ -193,6 +240,11 @@ build_gs_primitive_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base ** ppfont,
 	 */
 	CharStrings = *pcharstrings;
     }
+    if (dict_find_string(op, "FontInfo", &pfontinfo) <= 0 ||
+	    !r_has_type(pfontinfo, t_dictionary) ||
+	    dict_find_string(pfontinfo, "GlyphNames2Unicode", &g2u) <= 0 ||
+	    !r_has_type(pfontinfo, t_dictionary))
+	g2u = NULL;
     code = build_gs_outline_font(i_ctx_p, op, ppfont, ftype, pstype, pbuild,
 				 options, build_gs_simple_font);
     if (code != 0)
@@ -209,6 +261,9 @@ build_gs_primitive_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base ** ppfont,
 	!dict_check_uid_param(op, &pfont->UID)
 	)
 	uid_set_invalid(&pfont->UID);
+
+    if (g2u != NULL)
+	ref_assign_new(&pdata->GlyphNames2Unicode, g2u);
     return 0;
 }
 

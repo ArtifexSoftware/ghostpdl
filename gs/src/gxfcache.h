@@ -250,8 +250,7 @@ struct gs_font_dir_s {
 
     bool align_to_pixels;
 
-    /* A callback for converting glyphs to Unicode */
-    gs_char (*glyph_to_unicode)(void *table, gs_glyph glyph);
+    /* A table for converting glyphs to Unicode */
     void *glyph_to_unicode_table; /* closure data */
 };
 

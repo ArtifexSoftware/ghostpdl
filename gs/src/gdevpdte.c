@@ -25,7 +25,6 @@
 #include "gxfont.h"
 #include "gxfont0.h"
 #include "gxfont0c.h"
-#include "gxfcache.h"
 #include "gxpath.h"		/* for getting current point */
 #include "gdevpsf.h"
 #include "gdevpdfx.h"
@@ -93,8 +92,8 @@ pdf_encode_string(gx_device_pdf *pdev, const pdf_text_enum_t *penum,
     gs_font *font = (gs_font *)penum->current_font;
     pdf_font_resource_t *pdfont = 0;
     gs_font_base *cfont;
-    gs_cmap_t *pcmap = NULL;
     int code, i;
+    bool need_ToUnicode;
    
 
     /*
@@ -104,31 +103,12 @@ pdf_encode_string(gx_device_pdf *pdev, const pdf_text_enum_t *penum,
     code = pdf_obtain_font_resource((const gs_text_enum_t *)penum, pstr, &pdfont);
     if (code < 0)
 	return code;
-    if ((pdfont->base_font == NULL || !pdf_is_standard_font(pdfont->base_font)) &&
-    	    pdfont->cmap_ToUnicode == NULL && 
-	    pdfont->u.simple.BaseEncoding == ENCODING_INDEX_UNKNOWN) {
-	/* 
-	 * Should pass here for any True Type, because we write them as symbolic fonts.
-	 * Also should pass here with Type 1 having an unknown encoding.
-	 */
-    	if (font->dir->glyph_to_unicode != NULL) {
-	    code = gs_cmap_ToUnicode_alloc(pdev->pdf_memory, pdfont->rid, 256, 1, &pcmap);
-	    if (code < 0)
-		return code;
-	    pdfont->cmap_ToUnicode = pcmap;
-	} else if (!pdev->warned_no_decoding) {
-	    char buf[100];
-	    int l = min(pdfont->BaseFont.size, sizeof(buf) - 1);
-
-	    pdev->warned_no_decoding = true;
-	    memcpy(buf, pdfont->BaseFont.data, l);
-	    buf[l] = 0;
-	    eprintf3("\n%s %s %s .\n",  
-	             "WARNING: /Unicode /Decoding resource in not accessible but",
-		     "it is neccessary for generating ToUncode CMap for the font", buf);
-	}
-    } else
-	pcmap = pdfont->cmap_ToUnicode;
+    /* 
+     * Any True Type need ToUnicode, because we write them as symbolic fonts.
+     * Also it is needed for Type 1, which has an unknown encoding.
+     */
+    need_ToUnicode = (pdfont->base_font == NULL || !pdf_is_standard_font(pdfont->base_font)) &&
+		     pdfont->u.simple.BaseEncoding == ENCODING_INDEX_UNKNOWN;
     cfont = pdf_font_resource_font(pdfont);
     for (i = 0; i < pstr->size; ++i) {
 	int ch = pstr->data[i];
@@ -157,17 +137,22 @@ pdf_encode_string(gx_device_pdf *pdev, const pdf_text_enum_t *penum,
 	    continue;	/* notdef */
 	if (code < 0)
 	    return code;
-	if (pcmap != 0) {
-	    gs_char unicode = (*font->dir->glyph_to_unicode)
-				    (font->dir->glyph_to_unicode_table, glyph);
-	    
-	    if (unicode != GS_NO_CHAR) {
-		/* 
-		 * WARNING : this assumes that pcmap points to gs_cmap_ToUnicode_t. 
-		 * This assumption is not checked dynamically. 
-		 */
-		gs_cmap_ToUnicode_add_pair(pcmap, ch, unicode);
+	if (need_ToUnicode) {
+	    gs_glyph_info_t info;
+
+	    code = font->procs.glyph_info((gs_font *)font, glyph, NULL, GLYPH_INFO_UTC16, &info);
+	    if (code != gs_error_undefined && code < 0)
+		return code;
+	    if (code != gs_error_undefined && info.unicode != GS_NO_CHAR) {
+		if (pdfont->cmap_ToUnicode == NULL) {
+		    code = gs_cmap_ToUnicode_alloc(pdev->pdf_memory, pdfont->rid, 256, 1, 
+						    &pdfont->cmap_ToUnicode);
+		    if (code < 0)
+			return code;
+		}
 	    }
+	    if (pdfont->cmap_ToUnicode != NULL)
+		gs_cmap_ToUnicode_add_pair(pdfont->cmap_ToUnicode, ch, info.unicode);
 	}
 	pet->glyph = glyph;
 	pet->str = gnstr;

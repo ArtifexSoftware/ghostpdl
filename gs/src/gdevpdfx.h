@@ -463,7 +463,6 @@ struct gx_device_pdf_s {
     cos_array_t *PageLabels;
     int PageLabels_current_page;
     cos_dict_t *PageLabels_current_label;
-    bool warned_no_decoding;
 };
 
 #define is_in_page(pdev)\

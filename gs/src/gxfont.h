@@ -150,8 +150,10 @@ typedef struct gs_glyph_info_s {
     gs_glyph *pieces;		/* pieces are stored here: the caller must */
 				/* preset pieces if INFO_PIECES is set. */
 #define GLYPH_INFO_OUTLINE_WIDTHS 32 /* return unmodified widths, see above */
-#define GLYPH_INFO_VVECTOR0 64
+#define GLYPH_INFO_VVECTOR0 64	
 #define GLYPH_INFO_VVECTOR1 128	/* must be VVECTOR0 << 1 */
+    gs_char unicode;		/* Unicode UTC-16 code for the glyph. */
+#define GLYPH_INFO_UTC16  256   
 } gs_glyph_info_t;
 
 /* Define the "object" procedures of fonts. */

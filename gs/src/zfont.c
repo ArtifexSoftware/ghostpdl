@@ -595,19 +595,12 @@ gs_private_st_complex_only(st_unicode_decoder, gs_unicode_decoder,\
     unicode_decoder_reloc_ptrs, 0);
 
 /* Get the Unicode value for a glyph. */
-private gs_char
-zfont_glyph_to_unicode(void *table, gs_glyph glyph)
+const ref *
+zfont_get_to_unicode_map(gs_font_dir *dir)
 {
-    ref nref, *v;
-    const gs_unicode_decoder *pud = (gs_unicode_decoder *)table;
-
-    if (glyph >= gs_min_cid_glyph)
-	return GS_NO_CHAR; /* Unsupported */
-    name_index_ref(glyph, &nref);
-    if (dict_find(&pud->data, &nref, &v) > 0)
-	if (r_type(v) == t_integer)
-	    return v->value.intval;
-    return GS_NO_CHAR; /* Unknown glyph */
+    const gs_unicode_decoder *pud = (gs_unicode_decoder *)dir->glyph_to_unicode_table;
+    
+    return (pud == NULL ? NULL : &pud->data);
 }
 
 private int
@@ -618,7 +611,6 @@ setup_unicode_decoder(i_ctx_t *i_ctx_p, ref *Decoding)
     if (pud == NULL)
 	return_error(e_VMerror);
     ref_assign_new(&pud->data, Decoding);
-    ifont_dir->glyph_to_unicode = zfont_glyph_to_unicode;
     ifont_dir->glyph_to_unicode_table = pud;
     return 0;
 }
