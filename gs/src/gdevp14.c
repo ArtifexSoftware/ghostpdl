@@ -1470,7 +1470,7 @@ private void
 pdf14_cmap_separation_direct(frac all, gx_device_color * pdc, const gs_imager_state * pis,
 		 gx_device * dev, gs_color_select_t select)
 {
-    int i;
+    int i, ncomps = dev->color_info.num_components;
     bool additive = dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE;
     frac comp_value = all;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
@@ -1495,6 +1495,16 @@ pdf14_cmap_separation_direct(frac all, gx_device_color * pdc, const gs_imager_st
         map_components_to_colorants(&comp_value, &(pis->color_component_map), cm_comps);
     }
 
+    /* apply the transfer function(s); convert to color values */
+    if (additive)
+        for (i = 0; i < ncomps; i++)
+            cv[i] = frac2cv(gx_map_color_frac(pis,
+	    			cm_comps[i], effective_transfer[i]));
+    else
+        for (i = 0; i < ncomps; i++)
+            cv[i] = frac2cv(frac_1 - gx_map_color_frac(pis,
+	    		(frac)(frac_1 - cm_comps[i]), effective_transfer[i]));
+
     /* encode as a color index */
     color = dev_proc(dev, encode_color)(dev, cv);
 
@@ -1509,12 +1519,23 @@ pdf14_cmap_devicen_direct(const frac * pcc,
     gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
     gs_color_select_t select)
 {
+    int i, ncomps = dev->color_info.num_components;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
 
     /* map to the color model */
     map_components_to_colorants(pcc, &(pis->color_component_map), cm_comps);;
+
+    /* apply the transfer function(s); convert to color values */
+    if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
+        for (i = 0; i < ncomps; i++)
+            cv[i] = frac2cv(gx_map_color_frac(pis,
+	    			cm_comps[i], effective_transfer[i]));
+    else
+        for (i = 0; i < ncomps; i++)
+            cv[i] = frac2cv(frac_1 - gx_map_color_frac(pis,
+	    		(frac)(frac_1 - cm_comps[i]), effective_transfer[i]));
 
     /* encode as a color index */
     color = dev_proc(dev, encode_color)(dev, cv);

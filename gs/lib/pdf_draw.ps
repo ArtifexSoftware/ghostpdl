@@ -358,7 +358,7 @@ end
 % ------ Transparency support ------ %
 
 /gssmask {
-  dup /None eq {
+  dup /None eq PDFusingtransparency not or {
     pop null
   } {
 	% Preprocess the SMask value into a parameter dictionary for
@@ -366,7 +366,10 @@ end
     mark exch		% Stack: mark smaskdict
     dup /S oget /Subtype exch 3 2 roll
 			% Stack: mark ... smaskdict
-    dup /BC knownoget { /Background exch 3 2 roll } if
+    dup /BC knownoget {
+      gsave aload pop setcolor [ currentgray ] grestore
+      /Background exch 3 2 roll
+    } if
     dup /TR knownoget {
       resolveidfnproc /TransferFunction exch 3 2 roll
     } if    

@@ -266,7 +266,7 @@ zbegintransparencymask(i_ctx_t *i_ctx_p)
     if ((code = enum_param(pparam, subtype_names)) < 0)
 	return code;
     gs_trans_mask_params_init(&params, code);
-    if ((code = dict_floats_param(dop, "Background", num_components,
+    if ((code = dict_floats_param(dop, "Background", 1,
 				  params.Background, NULL)) < 0
 	)
 	return code;
