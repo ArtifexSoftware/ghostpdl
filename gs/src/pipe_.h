@@ -35,8 +35,8 @@
  * we must omit the argument list.  Unfortunately, this sometimes causes
  * more trouble than it cures.
  */
-extern FILE *popen( /* P2(const char *, const char *) */ );
-extern int pclose(P1(FILE *));
+extern FILE *popen( /* const char *, const char * */ );
+extern int pclose(FILE *);
 #endif /* !__WIN32__ */
 
 #endif /* pipe__INCLUDED */

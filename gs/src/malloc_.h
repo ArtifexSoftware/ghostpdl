@@ -46,7 +46,7 @@ extern void free();
 /* (At least some versions of) Linux don't have a working realloc.... */
 #ifdef linux
 #  define malloc__need_realloc
-void *gs_realloc(P3(void *, size_t, size_t));
+void *gs_realloc(void *, size_t, size_t);
 
 #else
 #  define gs_realloc(ptr, old_size, new_size) realloc(ptr, new_size)

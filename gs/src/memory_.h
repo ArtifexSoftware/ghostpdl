@@ -94,22 +94,22 @@ extern bcopy(), bcmp(), bzero();
 #ifdef MEMORY__NEED_MEMMOVE
 #  undef memmove
 #  define memmove(dest,src,len) gs_memmove(dest,src,len)
-void *gs_memmove(P3(void *, const void *, size_t));
+void *gs_memmove(void *, const void *, size_t);
 #endif
 #ifdef MEMORY__NEED_MEMCPY
 #  undef memcpy
 #  define memcpy(dest,src,len) gs_memcpy(dest,src,len)
-void *gs_memcpy(P3(void *, const void *, size_t));
+void *gs_memcpy(void *, const void *, size_t);
 #endif
 #ifdef MEMORY__NEED_MEMSET
 #  undef memset
 #  define memset(dest,ch,len) gs_memset(dest,ch,len)
-void *gs_memset(P3(void *, int, size_t));
+void *gs_memset(void *, int, size_t);
 #endif
 #ifdef MEMORY__NEED_MEMCHR
 #  undef memchr
 #  define memchr(ptr,ch,len) gs_memchr(ptr,ch,len)
-void *gs_memchr(P3(const void *, int, size_t));
+void *gs_memchr(const void *, int, size_t);
 #endif
 
 #endif /* memory__INCLUDED */

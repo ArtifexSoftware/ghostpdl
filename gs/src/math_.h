@@ -75,7 +75,7 @@ extern double atan2(), ldexp();
 #endif
 
 /* Intercept calls on sqrt for debugging. */
-extern double gs_sqrt(P3(double, const char *, int));
+extern double gs_sqrt(double, const char *, int);
 #ifdef DEBUG
 #undef sqrt
 #define sqrt(x) gs_sqrt(x, __FILE__, __LINE__)
