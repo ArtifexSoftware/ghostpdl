@@ -18,6 +18,7 @@
 #include "gsstate.h"
 #include "gxfixed.h"
 #include "gxfcache.h"
+#include "gxdevice.h"
 
 /* Imported operators */
 px_operator_proc(pxCloseDataSource);
@@ -276,10 +277,15 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 	  ecode = px_put1(dev, &list, ecode);
 
 	  gs_c_param_list_write(&list, mem);
-	  fv[0] = pm->m_left * media_size_scale;
-	  fv[1] = pm->m_top * media_size_scale;
-	  fv[2] = pm->m_right * media_size_scale;
-	  fv[3] = pm->m_bottom * media_size_scale;
+
+	  /* be careful not to set up a clipping region beyond the
+             physical capabilites of the driver.  It seems like
+             pm->m_top and pm->m_bottom are reversed but this is
+             consistant with the way it was before. */
+	  fv[0] = max((dev->HWMargins[0]), (pm->m_left * media_size_scale));
+	  fv[1] = max((dev->HWMargins[1]), (pm->m_top * media_size_scale));
+	  fv[2] = max((dev->HWMargins[2]), (pm->m_right * media_size_scale));
+	  fv[3] = max((dev->HWMargins[3]), (pm->m_bottom * media_size_scale));
 	  fa.size = 4;
 	  code = param_write_float_array(plist, ".HWMargins", &fa);
 	  ecode = px_put1(dev, &list, ecode);
