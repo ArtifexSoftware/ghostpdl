@@ -468,6 +468,7 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 	pdf_reset_graphics(pdev);
 	return 0;
     }
+
     code = prepare_fill_with_clip(pdev, pis, &box, have_path, pdcolor, pcpath);
     if (code == gs_error_rangecheck) {
 	/* Fallback to the default implermentation for handling 
@@ -479,6 +480,11 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
     if (code == 1)
 	return 0; /* Nothing to paint. */
     code = pdf_setfillcolor((gx_device_vector *)pdev, pis, pdcolor);
+    if (code == gs_error_rangecheck) {
+	/* Fallback to the default implermentation for handling 
+	   a shading with CompatibilityLevel<=1.2 . */
+	return gx_default_fill_path((gx_device *)pdev, pis, ppath, params, pdcolor, pcpath);
+    }
     if (code < 0)
 	return code;
     if (have_path) {
