@@ -324,11 +324,25 @@ pdf_font_orig_matrix(const gs_font *font, gs_matrix *pmat)
     case ft_encrypted2:
     case ft_CID_encrypted:
 	/*
-	 * Type 1 fonts are supposed to use a standard FontMatrix of
-	 * [0.001 0 0 0.001 0 0], with a 1000-unit cell.  However,
-	 * Windows NT 4.0 creates Type 1 fonts, apparently derived from
-	 * TrueType fonts, that use a 2048-unit cell and corresponding
-	 * FontMatrix.  Detect and correct for this here.
+         * Type 1 fonts are supposed to use a standard FontMatrix of
+         * [0.001 0 0 0.001 0 0], with a 1000-unit cell.  However,
+         * Windows NT 4.0 creates Type 1 fonts, apparently derived from
+         * TrueType fonts, that use a 2048-unit cell and corresponding
+         * FontMatrix. 
+         *
+         * Also some PS programs perform font scaling by replacing
+         * FontMatrix like this :
+         *
+         *   /f12 /Times-Roman findfont
+         *   copyfont	  % (remove FID)
+         *   dup /FontMatrix [0.012 0 0 0.012 0 0] put
+         *   definefont
+         *   /f12 1 selectfont
+         *
+         * Such fonts are their own "base font", but the orig_matrix
+         * must still be set to 0.001, not 0.012 .
+         *
+         * Detect and correct for this here.
 	 */
 	{
 	    const gs_font *base_font = font;

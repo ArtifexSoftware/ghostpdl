@@ -1488,7 +1488,7 @@ process_text_return_width(const gs_text_enum_t *pte, gs_font *font,
 			  int *pindex, gs_point *pdpt)
 {
     int i, w;
-    double scale = (font->FontType == ft_TrueType ? 0.001 : 1.0);
+    gs_matrix smat;
     gs_point dpt;
     int num_spaces = 0;
     int space_char =
@@ -1508,7 +1508,8 @@ process_text_return_width(const gs_text_enum_t *pte, gs_font *font,
 	if (pstr->data[i] == space_char)
 	    ++num_spaces;
     }
-    gs_distance_transform(w * scale, 0.0, pfmat, &dpt);
+    pdf_font_orig_matrix(font, &smat);
+    gs_distance_transform(w / 1000.0 / smat.xx, 0.0, pfmat, &dpt);
     if (pte->text.operation & TEXT_ADD_TO_ALL_WIDTHS) {
 	int num_chars = pstr->size - pte->index;
 
