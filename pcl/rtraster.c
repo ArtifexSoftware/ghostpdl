@@ -761,10 +761,14 @@ process_zero_rows(
   
 /*
  * Process the next raster row.
+ *
+ * The compression mode is provided to allow this routine to fill in any
+ * missing rows. For adaptive compression (mode 5), this will be 0.
  */
   private int
 process_row(
-    pcl_raster_t *  prast
+    pcl_raster_t *  prast,
+    int             comp_mode   /* modified compression mode */
 )
 {
     int             nplanes = prast->nplanes;
@@ -775,6 +779,13 @@ process_row(
     /* check if there is anything to do */
     if (prast->rows_rendered >= prast->src_height)
         return 0;
+
+    /* handle any planes not provided */
+    for (i = prast->plane_index; i < nplanes; i++) {
+        static  const byte  dummy = 0;
+
+        (void)pcl_decomp_proc[comp_mode](prast->pseed_rows + i, &dummy, 0);
+    }
 
     /* create the image enumerator if it does not already exist */
     if (pen == 0) {
@@ -869,7 +880,7 @@ process_adaptive_compress(
             insize -= cnt;
             pin += cnt;
             prast->plane_index = 1;
-            code = process_row(prast);
+            code = process_row(prast, 0);
         } else if (cmd == 4)
             code = process_zero_rows(prast, param);
         else if (cmd == 5) {
@@ -885,15 +896,21 @@ process_adaptive_compress(
 
             if (param > rem_rows)
                 param = rem_rows;
-            prast->rows_rendered += param;
-            while ((param-- > 0) && (code >= 0)) {
-                uint    dummy;
+            if (prast->nplanes == 1) {
+                prast->rows_rendered += param;
+                while ((param-- > 0) && (code >= 0)) {
+                    uint    dummy;
 
-                code = gs_image_next(pen, pdata, row_size, &dummy);
-                if ((prast->gen_mask_row != 0) && (code >= 0))
-                    code = process_mask_row(prast);
+                    code = gs_image_next(pen, pdata, row_size, &dummy);
+                    if ((prast->gen_mask_row != 0) && (code >= 0))
+                        code = process_mask_row(prast);
+                }
+            } else {
+                prast->plane_index = 1;
+                while ( (param-- > 0) && ((code = process_row(prast, 0) >= 0)) )
+                    prast->plane_index = 1;
+                prast->plane_index = 0;
             }
-
         } else
             break;
     }
@@ -934,7 +951,7 @@ add_raster_plane(
      * behavior in this case.
      */
     nplanes = prast->nplanes;
-    if ( (comp_mode == ADAPTIVE_COMPRESS) && ((nplanes > 1) || !end_row) )
+    if ((comp_mode == ADAPTIVE_COMPRESS) && !end_row)
         return e_Range;
 
     /*
@@ -1233,19 +1250,14 @@ transfer_raster_row(
 )
 {
     const byte *    pdata = arg_data(pargs);
+    int             comp_mode = pcs->raster_state.compression_mode;
     int             code = 0;
 
     code = add_raster_plane(pdata, arg_data_size(pargs), true, pcs);
 
-    /* process any planes that have not been provided; complete the row */
-    if (pcs->raster_state.compression_mode != ADAPTIVE_COMPRESS && code >= 0) {
-        int     i, nplanes = pcur_raster->nplanes;
-
-        for (i = pcur_raster->plane_index; (i < nplanes) && (code >= 0); i++)
-            code = add_raster_plane(pdata, 0, false, pcs);
-        if (code >= 0)
-            code = process_row(pcur_raster);
-    }
+    /* complete the row (execpt for adaptive compression) */
+    if (comp_mode != ADAPTIVE_COMPRESS && code >= 0)
+        code = process_row(pcur_raster, comp_mode);
 
     return code;
 }
