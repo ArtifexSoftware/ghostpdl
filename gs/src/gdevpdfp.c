@@ -86,12 +86,12 @@ private const gs_param_item_t pdf_param_items[] = {
     pi("NoEncrypt", gs_param_type_string, NoEncrypt),
 #if PS2WRITE
     pi("OrderResources", gs_param_type_bool, OrderResources),
+#endif
     pi("PatternImagemask", gs_param_type_bool, PatternImagemask),
     pi("MaxClipPathSize", gs_param_type_int, MaxClipPathSize),
     pi("MaxShadingBitmapSize", gs_param_type_int, MaxShadingBitmapSize),
+    pi("HaveTrueTypes", gs_param_type_bool, HaveTrueTypes),
     pi("HaveCIDSystem", gs_param_type_bool, HaveCIDSystem),
-    pi("PSVersion", gs_param_type_int, PSVersion),
-#endif
 #undef pi
     gs_param_item_end
 };
@@ -383,15 +383,9 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
     ecode = gdev_psdf_put_params(dev, plist);
     if (ecode < 0)
 	goto fail;
-#if PS2WRITE
-    if (pdev->OrderResources) {
-	/*
-	    ps2write users may choose Postscript level arbitrary
-	    depending on the target printer.
-	*/
-	pdev->version = pdev->PSVersion;
+    if (pdev->HaveTrueTypes && pdev->version == psdf_version_level2) {
+	pdev->version = psdf_version_level2_with_TT ;
     }
-#endif
     /*
      * Acrobat Reader doesn't handle user-space coordinates larger than
      * MAX_USER_COORD.  To compensate for this, reduce the resolution so

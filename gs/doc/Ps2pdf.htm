@@ -252,7 +252,7 @@ The following options control a conversion into PDF 1.2:
 
 <dl>
 
-<dt><b><tt>-dPatternImagemask=</tt></b><em>bool</em>
+<dt><b><tt>-dPatternImagemask=</tt></b><em>boolean</em>
 <dd>With <b><tt>CompatibilityLevel &LT 1.3 </b></tt> it specifies whether the target viewer
 handles <b><tt>ImageMask</b></tt> with a pattern color. Some old viewers,
 such as Ghostscript 3.30 fail with such constructs.
@@ -287,6 +287,14 @@ Default value is <b><tt>256000</b></tt>.
 For the best quality one can set the maximal integer value,
 but the output file size may dramatically increase.
 Therefore the user should choose a compromise value.
+
+<dt><b><tt>-dHaveTrueTypes=</tt></b><em>boolean</em>
+<dd>With <b><tt>CompatibilityLevel &LT 1.3 </b></tt> it specifies 
+whether the target viewer can handle TrueType fonts.
+If not, TrueType fonts are being converted into raster fonts
+with resolution specified in </b></tt>HWResolution</b></tt>.
+With <b><tt>CompatibilityLevel &GT= 1.3 </b></tt> this option is being ignored.
+Default value is <b><tt>true</b></tt>.
 
 </dl>
 

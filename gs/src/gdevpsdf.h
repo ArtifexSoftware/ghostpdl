@@ -207,52 +207,30 @@ typedef enum {
 } psdf_version;
 
 /* Define the extended device structure. */
-#if PS2WRITE
 #define gx_device_psdf_common\
 	gx_device_vector_common;\
 	psdf_version version;\
 	bool binary_ok;		/* derived from ASCII85EncodePages */\
+	bool HaveTrueTypes;\
 	bool HaveCIDSystem;\
-	int  PSVersion;\
 	psdf_distiller_params params
-#else
-#define gx_device_psdf_common\
-	gx_device_vector_common;\
-	psdf_version version;\
-	bool binary_ok;		/* derived from ASCII85EncodePages */\
-	psdf_distiller_params params
-#endif
 
 typedef struct gx_device_psdf_s {
     gx_device_psdf_common;
 } gx_device_psdf;
 
-#if PS2WRITE
 #define psdf_initial_values(version, ascii)\
 	vector_initial_values,\
 	version,\
 	!(ascii),\
+	true,\
 	false,\
-	psdf_version_ll3,\
 	 { psdf_general_param_defaults(ascii),\
 	   psdf_color_image_param_defaults,\
 	   psdf_gray_image_param_defaults,\
 	   psdf_mono_image_param_defaults,\
 	   psdf_font_param_defaults\
 	 }
-#else
-#define psdf_initial_values(version, ascii)\
-	vector_initial_values,\
-	version,\
-	!(ascii),\
-	 { psdf_general_param_defaults(ascii),\
-	   psdf_color_image_param_defaults,\
-	   psdf_gray_image_param_defaults,\
-	   psdf_mono_image_param_defaults,\
-	   psdf_font_param_defaults\
-	 }
-#endif
-
 /* st_device_psdf is never instantiated per se, but we still need to */
 /* extern its descriptor for the sake of subclasses. */
 extern_st(st_device_psdf);
