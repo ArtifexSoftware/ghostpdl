@@ -135,6 +135,16 @@ int get_windows_name_from_tt_file(FILE *tt_file, gs_memory_t *mem, char *pfontfi
     /* null terminate the fontname string and return success.  Note
        the string can be 0 length if no fontname was found. */
     *ptr = '\0';
+
+    /* trim trailing white space */
+    {
+	int i = strlen(pfontfilename);
+	while (--i >= 0) {
+	    if (!isspace(pfontfilename[i]))
+		break;
+	}
+	pfontfilename[++i] = '\0';
+    }
     return 0;
 }
 
