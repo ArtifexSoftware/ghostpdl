@@ -22,6 +22,8 @@
 #include "gserrors.h"
 #include "gscencs.h"
 #include "gscedata.h"
+#include "gsmatrix.h"
+#include "gzstate.h"
 #include "gxfcache.h"		/* for orig_fonts list */
 #include "gxfont.h"
 #include "gxfont0.h"
@@ -171,7 +173,7 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	    for (i = 0; i < narg; i += 2) {
 		gs_point p;
 
-		gs_transform(penum_s->pgs, pw[i], pw[i + 1], &p);
+		gs_point_transform(pw[i], pw[i + 1], &ctm_only(penum_s->pgs), &p);
 		pw1[i] = p.x;
 		pw1[i + 1] = p.y;
 	    }

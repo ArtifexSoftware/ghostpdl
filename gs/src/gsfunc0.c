@@ -407,8 +407,7 @@ fn_Sd_is_monotonic(const gs_function_t * pfn_common,
     const gs_function_Sd_t *const pfn =
 	(const gs_function_Sd_t *)pfn_common;
     float e0, e1, w0, w1;
-    float r0[max_Sd_n], r1[max_Sd_n];
-    int code, i;
+    int i;
 
     /*
      * Testing this in general is very time-consuming, so we don't bother.

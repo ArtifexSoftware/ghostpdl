@@ -129,7 +129,6 @@ fn_ElIn_is_monotonic(const gs_function_t * pfn_common,
 {
     const gs_function_ElIn_t *const pfn =
 	(const gs_function_ElIn_t *)pfn_common;
-    int i, result;
 
     if (lower[0] > pfn->params.Domain[1] ||
 	upper[0] < pfn->params.Domain[0]

@@ -149,7 +149,6 @@ pdf_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 	cos_dict_t *pcd_XObject = cos_dict_alloc(pdev, "pdf_pattern(XObject)");
 	char key[MAX_REF_CHARS + 3];
 	cos_value_t v;
-	const cos_value_t *mask_r;
 
 	if (pcd_XObject == 0)
 	    return_error(gs_error_VMerror);

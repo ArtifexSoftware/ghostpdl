@@ -1012,7 +1012,6 @@ void ttfOutliner__DrawGlyphOutline(ttfOutliner *this)
 FontError ttfOutliner__Outline(ttfOutliner *this, int glyphIndex,
 	float orig_x, float orig_y, FloatMatrix *m1)
 {   ttfFont *pFont = this->pFont;
-    ttfExport *exp = this->exp;
     FontError error;
 
     this->post_transform = *m1;
