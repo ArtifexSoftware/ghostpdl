@@ -49,7 +49,7 @@ class Ghostscript:
 		if (self.band): bandsize = 10000
 		
 		cmd = self.command
-		cmd = cmd + ' -dQUIET -dNOPAUSE -dBATCH -K600000 '
+		cmd = cmd + ' -dQUIET -dNOPAUSE -dBATCH -K1000000 '
 		if self.dpi:
 			cmd = cmd + '-r%d ' % (self.dpi,)
 		cmd = cmd + '-dMaxBitmap=%d ' % (bandsize,)
