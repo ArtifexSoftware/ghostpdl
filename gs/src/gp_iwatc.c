@@ -80,9 +80,11 @@ gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
     FILE *pfile;
 
     if (strlen(fname) == 0 || !strcmp(fname, "PRN")) {
+#ifdef stdprn
 	if (!binary_mode)
 	    return stdprn;
-	if (gs_stdprn == 0) {	/* We have to effectively reopen the printer, */
+	if (gs_stdprn == 0) {
+	    /* We have to effectively reopen the printer, */
 	    /* because the Watcom library does \n -> \r\n */
 	    /* substitution on the stdprn stream. */
 	    int fno = dup(fileno(stdprn));
@@ -91,6 +93,11 @@ gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
 	    gs_stdprn = fdopen(fno, "wb");
 	}
 	pfile = gs_stdprn;
+#else	/* WATCOM doesn't know about stdprn device */
+	pfile = fopen("PRN", (binary_mode ? "wb" : "w"));
+	if (pfile == NULL)
+	    return NULL;
+#endif	/* defined(stdprn) */
     } else {
 	pfile = fopen(fname, (binary_mode ? "wb" : "w"));
 	if (pfile == NULL)
@@ -104,7 +111,9 @@ gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
 void
 gp_close_printer(FILE * pfile, const char *fname)
 {
+#ifdef stdprn
     if (pfile != stdprn)
+#endif	/* defined(stdprn) */
 	fclose(pfile);
     if (pfile == gs_stdprn)
 	gs_stdprn = 0;
@@ -167,3 +176,4 @@ gp_fopen(const char *fname, const char *mode)
 {
     return fopen(fname, mode);
 }
+
