@@ -40,7 +40,7 @@
 #include "gdevp14.h"
 #include "gsovrc.h"
 
-#define DUMP_TO_PNG
+/* #define DUMP_TO_PNG */
 
 #ifdef DUMP_TO_PNG
 #include "png_.h"
