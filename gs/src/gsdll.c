@@ -49,8 +49,10 @@
 /* MacGSView still requires that hwnd be exported
    through the old dll interface. We do that here,
    but expect to remove it when that client has been
-   ported to do the gsapi interface. */
+   ported to the gsapi interface. */
+#ifdef __MACOS__
 extern HWND hwndtext;
+#endif
 
 /****** SINGLE-INSTANCE HACK ******/
 /* GLOBAL WARNING */
@@ -88,8 +90,10 @@ gsdll_init(GSDLL_CALLBACK callback, HWND hwnd, int argc, char * argv[])
     /* ignore hwnd */
 
 /* rest of MacGSView compatibilty hack */
+#ifdef __MACOS__
 	hwndtext=hwnd;
-	
+#endif
+
 /****** SINGLE-INSTANCE HACK ******/
     pgsdll_callback = callback;
 /****** SINGLE-INSTANCE HACK ******/
