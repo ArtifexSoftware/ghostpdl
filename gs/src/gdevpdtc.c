@@ -218,6 +218,8 @@ scan_cmap_text(gs_text_enum_t *pte, gs_font_type0 *font /*fmap_CMap*/,
 		w += widths.real_width;
 	    } else
 		w += pdsubf->real_widths[cid];
+	    if (cid <= pdsubf->count)
+		pdsubf->used[cid >> 3] |= 0x80 >> (cid & 7);
 	}
     }
     if (font->WMode)
