@@ -52,10 +52,11 @@ Table of contents
 
              o Primarily for developers:
 
-                    C-style.htm    Htmstyle.htm   Ps-style.htm
-                    DLL.htm        Lib.htm        Release.htm
-                    Develop.htm    Maintain.htm   Source.htm
-                    Drivers.htm    Projects.htm   Xfonts.htm
+                    API.htm        Htmstyle.htm   Ps-style.htm
+                    C-style.htm    Lib.htm        Release.htm
+                    DLL.htm        Maintain.htm   Source.htm
+                    Develop.htm    Projects.htm   Xfonts.htm
+                    Drivers.htm
 
   ------------------------------------------------------------------------
 
@@ -145,9 +146,10 @@ license carefully, and you should also read
      can be distributed with a commercial product
 
 If you intend to use Ghostscript in the form of a dynamic link library (DLL)
-under OS/2 or Microsoft Windows, read
+under OS/2 or Microsoft Windows or in the form of shared object under Linux,
+read
 
-   * documentation on Ghostscript as a DLL
+   * documentation on Ghostscript Interpreter API
 
 If you want to use Ghostscript as part of another program -- as a callable
 PostScript language interpreter -- and not as a DLL or as a self-contained
@@ -219,6 +221,11 @@ Which document contains what?
 Here is the list in alphabetic order of Ghostscript documentation, with
 explanations of the contents.
 
+API.htm
+     On MS-Windows and OS/2, Ghostscript is compiled as a dynamic link
+     library (DLL). On Linux, Ghostscript can be compiled as a shared
+     object. This describes how to use it. For developers.
+
 Bug-form.htm
      A form to fill out and a-meil to report a problem with AFPL Ghostscript
      -- but remember that Ghostscript comes with NO WARRANTY and NO SUPPORT.
@@ -254,7 +261,7 @@ Current.htm
 DLL.htm
      On OS/2, MS Windows-16 and MS Windows-32 platforms, Ghostscript is
      compiled as a dynamic link library (DLL). This describes how to use it.
-     For developers.
+     For developers. This DLL interface is obsolete. Use API.htm instead.
 
 Develop.htm
      Code orientation for developers. Contains a detailed breakdown of the
@@ -400,4 +407,4 @@ This file is part of AFPL Ghostscript. See the Aladdin Free Public License
 (the "License") for full details of the terms of using, copying, modifying,
 and redistributing AFPL Ghostscript.
 
-Ghostscript version 6.60, 31 December 2000
+Ghostscript version 6.61, 21 February 2001
