@@ -1593,9 +1593,9 @@ copy_font_cid2(gs_font *font, gs_font *copied)
     gs_font_cid2 *copied2 = (gs_font_cid2 *)copied;
     gs_copied_font_data_t *const cfdata = cf_data(copied);
     int code;
-    int CIDCount = copied2->cidata.common.CIDCount;
+    int glyphs_size = cfdata->glyphs_size; /* See gs_copy_font, case ft_CID_TrueType. */
     ushort *CIDMap = (ushort *)
-	gs_alloc_byte_array(copied->memory, CIDCount, sizeof(ushort),
+	gs_alloc_byte_array(copied->memory, glyphs_size, sizeof(ushort),
 			    "copy_font_cid2(CIDMap");
 
     if (CIDMap == 0)
@@ -1608,7 +1608,7 @@ copy_font_cid2(gs_font *font, gs_font *copied)
 	return code;
     }
     cfdata->notdef = GS_MIN_CID_GLYPH;
-    memset(CIDMap, 0, CIDCount * sizeof(*CIDMap));
+    memset(CIDMap, 0, glyphs_size * sizeof(*CIDMap));
     cfdata->CIDMap = CIDMap;
     copied2->cidata.MetricsCount = 0;
     copied2->cidata.CIDMap_proc = copied_cid2_CIDMap_proc;
