@@ -633,18 +633,20 @@ dup length .distillercommon length add dict begin
 currentdict end .setdistillerparams
 
 1000 % priority
-{ currentglobal true setglobal
-  systemdict /.setupUnicodeDecoder known {
-    /Unicode /Decoding resourcestatus {
-      pop pop
-      /Unicode /Decoding findresource
-      .setupUnicodeDecoder
-    } {
-      QUIET not {
-        (WARNING: /Unicode /Decoding resource is not accessible but it is useful for generating ToUnicode CMap.) =
-      } if
-    } ifelse
+{ currentdevice .devicename /pdfwrite eq {
+    currentglobal true setglobal
+    systemdict /.setupUnicodeDecoder known {
+      /Unicode /Decoding resourcestatus {
+        pop pop
+        /Unicode /Decoding findresource
+        .setupUnicodeDecoder
+      } {
+        QUIET not {
+          (WARNING: /Unicode /Decoding resource is not accessible but it is useful for generating ToUnicode CMap.) =
+        } if
+      } ifelse
+    } if
+    setglobal
   } if
-  setglobal
 } bind .schedule_init
 
