@@ -1331,7 +1331,7 @@ $(PSD)sepr.dev : $(INT_MAK) $(ECHOGS_XE) $(seprread_)\
 $(PSOBJ)zcssepr.$(OBJ) : $(PSSRC)zcssepr.c $(OP) $(memory__h)\
  $(gscolor_h) $(gscsepr_h) $(gsmatrix_h) $(gsstruct_h)\
  $(gxcolor2_h) $(gxcspace_h) $(gxfixed_h)\
- $(ialloc_h) $(icsmap_h) $(estack_h) $(igstate_h) $(ivmspace_h) $(store_h)
+ $(ialloc_h) $(icsmap_h) $(estack_h) $(igstate_h) $(iname_h) $(ivmspace_h) $(store_h)
 	$(PSCC) $(PSO_)zcssepr.$(OBJ) $(C_) $(PSSRC)zcssepr.c
 
 # ---------------- Functions ---------------- #

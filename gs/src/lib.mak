@@ -275,7 +275,7 @@ gslib_h=$(GLSRC)gslib.h
 gslparam_h=$(GLSRC)gslparam.h
 gsmatrix_h=$(GLSRC)gsmatrix.h
 gspaint_h=$(GLSRC)gspaint.h
-gsparam_h=$(GLSRC)gsparam.h
+gsparam_h=$(GLSRC)gsparam.h $(gsstype_h)
 gsparams_h=$(GLSRC)gsparams.h $(gsparam_h) $(stream_h)
 gsparamx_h=$(GLSRC)gsparamx.h
 gspath2_h=$(GLSRC)gspath2.h
@@ -309,7 +309,6 @@ gxdevbuf_h=$(GLSRC)gxdevbuf.h $(gxrplane_h)
 gxdevrop_h=$(GLSRC)gxdevrop.h
 gxdevmem_h=$(GLSRC)gxdevmem.h $(gxrplane_h)
 gxdhtres_h=$(GLSRC)gxdhtres.h $(stdpre_h)
-gxfcmap_h=$(GLSRC)gxfcmap.h $(gsfcmap_h) $(gsuid_h)
 gxfont0_h=$(GLSRC)gxfont0.h
 gxfrac_h=$(GLSRC)gxfrac.h
 gxftype_h=$(GLSRC)gxftype.h
@@ -346,7 +345,8 @@ gxdevcli_h=$(GLSRC)gxdevcli.h $(std_h)\
  $(gxtext_h)
 gxdevice_h=$(GLSRC)gxdevice.h $(stdio__h)\
  $(gsfname_h) $(gsmalloc_h) $(gsparam_h) $(gxdevcli_h)
-gxdht_h=$(GLSRC)gxdht.h $(gscsepnm_h) $(gsrefct_h) $(gxarith_h) $(gxhttype_h)
+gxdht_h=$(GLSRC)gxdht.h\
+ $(gscsepnm_h) $(gsmatrix_h) $(gsrefct_h) $(gxarith_h) $(gxhttype_h)
 gxdither_h=$(GLSRC)gxdither.h $(gxfrac_h)
 gxclip2_h=$(GLSRC)gxclip2.h $(gxmclip_h)
 gxclipm_h=$(GLSRC)gxclipm.h $(gxmclip_h)
@@ -360,6 +360,7 @@ gscie_h=$(GLSRC)gscie.h $(gconfigv_h) $(gsrefct_h) $(gsstype_h) $(gxctable_h)
 gscrd_h=$(GLSRC)gscrd.h $(gscie_h)
 gscrdp_h=$(GLSRC)gscrdp.h $(gscie_h) $(gsparam_h)
 gscspace_h=$(GLSRC)gscspace.h $(gsmemory_h)
+gscdevn_h=$(GLSRC)gscdevn.h $(gscspace_h)
 gscindex_h=$(GLSRC)gscindex.h $(gscspace_h)
 gscolor2_h=$(GLSRC)gscolor2.h $(gscindex_h) $(gsptype1_h)
 gscsepr_h=$(GLSRC)gscsepr.h $(gscspace_h)
@@ -372,7 +373,8 @@ gxistate_h=$(GLSRC)gxistate.h $(gscsel_h) $(gsrefct_h) $(gsropt_h)\
 gxclist_h=$(GLSRC)gxclist.h $(gscspace_h)\
  $(gxband_h) $(gxbcache_h) $(gxclio_h) $(gxdevbuf_h) $(gxistate_h)\
  $(gxrplane_h)
-gxcolor2_h=$(GLSRC)gxcolor2.h $(gscolor2_h) $(gsrefct_h) $(gxbitmap_h)
+gxcolor2_h=$(GLSRC)gxcolor2.h\
+ $(gscolor2_h) $(gsmatrix_h) $(gsrefct_h) $(gxbitmap_h)
 gxcspace_h=$(GLSRC)gxcspace.h\
  $(gscspace_h) $(gsccolor_h) $(gscsel_h) $(gxfrac_h)
 gxht_h=$(GLSRC)gxht.h $(gsht1_h) $(gscsepnm_h) $(gsrefct_h) $(gxhttype_h) $(gxtmap_h)
@@ -1571,7 +1573,25 @@ $(GLOBJ)gxpageq.$(OBJ) : $(GLSRC)gxpageq.c $(GXERR)\
  $(gsstruct_h) $(gxdevice_h) $(gxclist_h) $(gxpageq_h)
 	$(GLCC) $(GLO_)gxpageq.$(OBJ) $(C_) $(GLSRC)gxpageq.c
 
+# ---------------- TrueType and PostScript Type 42 fonts ---------------- #
+
+ttflib_=$(GLOBJ)gstype42.$(OBJ)
+$(GLD)ttflib.dev : $(LIB_MAK) $(ECHOGS_XE) $(ttflib_)
+	$(SETMOD) $(GLD)ttflib $(ttflib_)
+
+gxfont42_h=$(GLSRC)gxfont42.h
+gxttf_h=$(GLSRC)gxttf.h
+
+$(GLOBJ)gstype42.$(OBJ) : $(GLSRC)gstype42.c $(GXERR) $(memory__h)\
+ $(gsccode_h) $(gsmatrix_h) $(gsstruct_h) $(gsutil_h)\
+ $(gxfixed_h) $(gxfont_h) $(gxfont42_h) $(gxistate_h) $(gxpath_h)
+	$(GLCC) $(GLO_)gstype42.$(OBJ) $(C_) $(GLSRC)gstype42.c
+
 # -------- Composite (PostScript Type 0) font support -------- #
+
+gxcid_h=$(GLSRC)gxcid.h $(gsstype_h)
+gxfcid_h=$(GLSRC)gxfcid.h $(gxcid_h) $(gxfont_h) $(gxfont42_h)
+gxfcmap_h=$(GLSRC)gxfcmap.h $(gsfcmap_h) $(gsuid_h)
 
 cmaplib_=$(GLOBJ)gsfcmap.$(OBJ)
 $(GLD)cmaplib.dev : $(LIB_MAK) $(ECHOGS_XE) $(cmaplib_)
@@ -1715,20 +1735,6 @@ $(GLOBJ)gstype2.$(OBJ) : $(GLSRC)gstype2.c $(GXERR) $(math__h) $(memory__h)\
  $(gxfont_h) $(gxfont1_h) $(gxistate_h) $(gxtype1_h)\
  $(gzpath_h)
 	$(GLCC) $(GLO_)gstype2.$(OBJ) $(C_) $(GLSRC)gstype2.c
-
-# ---------------- TrueType and PostScript Type 42 fonts ---------------- #
-
-ttflib_=$(GLOBJ)gstype42.$(OBJ)
-$(GLD)ttflib.dev : $(LIB_MAK) $(ECHOGS_XE) $(ttflib_)
-	$(SETMOD) $(GLD)ttflib $(ttflib_)
-
-gxfont42_h=$(GLSRC)gxfont42.h
-gxttf_h=$(GLSRC)gxttf.h
-
-$(GLOBJ)gstype42.$(OBJ) : $(GLSRC)gstype42.c $(GXERR) $(memory__h)\
- $(gsccode_h) $(gsmatrix_h) $(gsstruct_h) $(gsutil_h)\
- $(gxfixed_h) $(gxfont_h) $(gxfont42_h) $(gxistate_h) $(gxpath_h)
-	$(GLCC) $(GLO_)gstype42.$(OBJ) $(C_) $(GLSRC)gstype42.c
 
 # -------- Level 1 color extensions (CMYK color and colorimage) -------- #
 
@@ -1895,7 +1901,7 @@ $(GLD)seprlib.dev : $(LIB_MAK) $(ECHOGS_XE) $(seprlib_)
 	$(SETMOD) $(GLD)seprlib $(seprlib_)
 
 $(GLOBJ)gscsepr.$(OBJ) : $(GLSRC)gscsepr.c $(GXERR)\
- $(gscsepr_h) $(gsmatrix_h) $(gsrefct_h)\
+ $(gscsepr_h) $(gsfunc_h) $(gsmatrix_h) $(gsrefct_h)\
  $(gxcolor2_h) $(gxcspace_h) $(gxfixed_h) $(gzstate_h)
 	$(GLCC) $(GLO_)gscsepr.$(OBJ) $(C_) $(GLSRC)gscsepr.c
 
@@ -1919,11 +1925,11 @@ $(GLOBJ)gsdsrc.$(OBJ) : $(GLSRC)gsdsrc.c $(GX) $(memory__h)\
 	$(GLCC) $(GLO_)gsdsrc.$(OBJ) $(C_) $(GLSRC)gsdsrc.c
 
 $(GLOBJ)gsfunc.$(OBJ) : $(GLSRC)gsfunc.c $(GX)\
- $(gserrors_h) $(gxfunc_h)
+ $(gserrors_h) $(gsparam_h) $(gxfunc_h)
 	$(GLCC) $(GLO_)gsfunc.$(OBJ) $(C_) $(GLSRC)gsfunc.c
 
 $(GLOBJ)gsfunc0.$(OBJ) : $(GLSRC)gsfunc0.c $(GX) $(math__h)\
- $(gserrors_h) $(gsfunc0_h) $(gxfarith_h) $(gxfunc_h)
+ $(gserrors_h) $(gsfunc0_h) $(gsparam_h) $(gxfarith_h) $(gxfunc_h)
 	$(GLCC) $(GLO_)gsfunc0.$(OBJ) $(C_) $(GLSRC)gsfunc0.c
 
 # "Vanilla" Functions are no longer used at all.
@@ -1993,7 +1999,8 @@ $(GLD)dpnxtlib.dev : $(LIB_MAK) $(ECHOGS_XE) $(dpnxtlib_)
 # ================ PostScript LanguageLevel 3 support ================ #
 
 $(GLOBJ)gscdevn.$(OBJ) : $(GLSRC)gscdevn.c $(GXERR)\
- $(gsmatrix_h) $(gsrefct_h) $(gsstruct_h) $(gxcdevn_h) $(gxcspace_h)
+ $(gscdevn_h) $(gsmatrix_h) $(gsrefct_h) $(gsstruct_h)\
+ $(gxcdevn_h) $(gxcspace_h)
 	$(GLCC) $(GLO_)gscdevn.$(OBJ) $(C_) $(GLSRC)gscdevn.c
 
 $(GLOBJ)gsclipsr.$(OBJ) : $(GLSRC)gsclipsr.c $(GXERR)\
@@ -2036,7 +2043,7 @@ $(GLOBJ)gscolor3.$(OBJ) : $(GLSRC)gscolor3.c $(GXERR)\
 	$(GLCC) $(GLO_)gscolor3.$(OBJ) $(C_) $(GLSRC)gscolor3.c
 
 $(GLOBJ)gsfunc3.$(OBJ) : $(GLSRC)gsfunc3.c $(math__h) $(GXERR)\
- $(gsfunc3_h) $(gxfunc_h)
+ $(gsfunc3_h) $(gsparam_h) $(gxfunc_h)
 	$(GLCC) $(GLO_)gsfunc3.$(OBJ) $(C_) $(GLSRC)gsfunc3.c
 
 $(GLOBJ)gsptype2.$(OBJ) : $(GLSRC)gsptype2.c $(GX)\
