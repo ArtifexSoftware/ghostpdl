@@ -110,6 +110,7 @@ append(char **bp, const char *bpe, const char **ip, uint len)
  * Combine a file name with a prefix.
  * Concatenates two paths and reduce parent references and current 
  * directory references from the concatenation when possible.
+ * The trailing zero byte is being added.
  *
  * Examples : 
  *	"/gs/lib" + "../Resource/CMap/H" --> "/gs/Resource/CMap/H"
@@ -165,7 +166,7 @@ gp_file_name_combine_generic(const char *prefix, uint plen,
 	uint ilen;
 
 	for (slen = 0; ip < ipe; ip++)
-	    if((slen = gs_file_name_check_separator(ip, ipe - ip, item)))
+	    if((slen = gs_file_name_check_separator(ip, ipe - ip, item)) != 0)
 		break;
 	ilen = ip - item;
 	if (ilen == 0 && !gp_file_name_is_empty_item_meanful()) {
@@ -269,4 +270,51 @@ gp_file_name_combine_generic(const char *prefix, uint plen,
 	    }
 	}
     }
+}
+
+/*
+ * Reduces parent references and current directory references when possible.
+ * The trailing zero byte is being added.
+ *
+ * Examples : 
+ *	"/gs/lib/../Resource/CMap/H" --> "/gs/Resource/CMap/H"
+ *	"C:/gs/lib/../Resource/CMap/H" --> "C:/gs/Resource/CMap/H"
+ *	"hard disk:gs:lib::Resource:CMap:H" --> 
+ *		"hard disk:gs:Resource:CMap:H"
+ *	"DUA1:[GHOSTSCRIPT.LIB..RESOURCE.CMAP]H" --> 
+ *		"DUA1:[GHOSTSCRIPT.RESOURCE.CMAP]H"
+ *      "\\server\share/a/b///c/../d.e/./../x.e/././/../../y.z/v.v" --> 
+ *		"\\server\share/a/y.z/v.v"
+ *
+ */
+gp_file_name_combine_result
+gp_file_name_reduce(const char *fname, uint flen, char *buffer, uint *blen)
+{
+    return gp_file_name_combine(fname, flen, fname + flen, 0, buffer, blen);
+}
+
+/* 
+ * Answers whether a file name is absolute (starts from a root). 
+ */
+bool gp_file_name_is_absolute(const char *fname, uint flen)
+{
+    return (gp_file_name_root(fname, flen) > 0);
+}
+
+/* 
+ * Answers whether a reduced file name starts from parent. 
+ * This won't work with non-reduced file names.
+ */
+bool gp_file_name_is_from_parent(const char *fname, uint flen)
+{
+    uint plen = gp_file_name_root(fname, flen), slen;
+    const char *ip, *ipe;
+
+    if (plen > 0 || plen == flen)
+	return false;
+    ipe = fname + flen;
+    for (ip = fname; ip < ipe; ip++)
+	if((slen = gs_file_name_check_separator(ip, ipe - ip, fname)) != 0)
+	    break;
+    return gp_file_name_is_parent(fname, ip - fname);
 }

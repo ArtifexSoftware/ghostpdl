@@ -48,8 +48,26 @@ typedef enum {
  * Combine a file name with a prefix.
  * Concatenates two paths and reduce parent references and current 
  * directory references from the concatenation when possible.
+ * The trailing zero byte is being added.
  */
 gp_file_name_combine_result gp_file_name_combine_generic(const char *prefix, uint plen, 
 	    const char *fname, uint flen, char *buffer, uint *blen);
+
+/*
+ * Reduces parent references and current directory references when possible.
+ * The trailing zero byte is being added.
+ */
+gp_file_name_combine_result gp_file_name_reduce(const char *fname, uint flen, 
+		char *buffer, uint *blen);
+
+/* 
+ * Answers whether a file name is absolute (starts from a root). 
+ */
+bool gp_file_name_is_absolute(const char *fname, uint flen);
+
+/* 
+ * Answers whether a reduced file name starts from parent. 
+ */
+bool gp_file_name_is_from_parent(const char *fname, uint flen);
 
 #endif /* gpmisc_INCLUDED */

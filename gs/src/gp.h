@@ -218,6 +218,7 @@ const char *gp_file_name_concat_string(const char *prefix, uint plen);
  * Combine a file name with a prefix.
  * Concatenates two paths and reduce parten references and current 
  * directory references from the concatenation when possible.
+ * The trailing zero byte is being added.
  * Various platforms may share this code.
  */
 gp_file_name_combine_result gp_file_name_combine(const char *prefix, uint plen, 
