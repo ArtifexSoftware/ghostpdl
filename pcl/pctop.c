@@ -247,11 +247,6 @@ pcl_impl_allocate_interp_instance(
     pcli->bbox_device = bbox;
     pcli->memory = mem;
 
-    /* start off setting everything to 0.  NB this should not be here
-       at all, but I don't have time to analyze the consequences of
-       removing it. */
-    memset( &pcli->pcs, 0, sizeof(pcl_state_t) );
-
     /* initialize personality here - NB this needs to be associated
        with the language option. */
     pcli->pcs.personality = pcl5e;
