@@ -143,6 +143,9 @@ dljet_mono_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
     fputs("\033&l0o0l0E", prn_stream);
     fputs(page_init, prn_stream);
     fprintf(prn_stream, "\033&l%dX", num_copies);	/* # of copies */
+    if (features & PCL_CAN_SET_PAPER_SIZE){ 
+        fprintf(prn_stream, "\033&|%dA", paper_size); 
+    } 
 
     /* End raster graphics, position cursor at top. */
     fputs("\033*rB\033*p0x0Y", prn_stream);
