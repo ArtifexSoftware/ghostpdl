@@ -568,8 +568,8 @@ pdfdict begin
   } {
     {		% Stack: parms source filtername
       2 index 0 oget dup null eq { pop } {
-        exch dup /JBIG2Decode eq { exch jbig2cachectx exch } if
-      } ifelse filtername filter
+        exch filtername dup /JBIG2Decode eq { exch jbig2cachectx exch } if
+      } ifelse filter
       exch dup length 1 sub 1 exch getinterval exch
     }
   } ifelse forall exch pop
@@ -577,7 +577,7 @@ pdfdict begin
 
 % JBIG2 streams have an optional 'globals' stream obj for
 % sharing redundant data between page images. Here we resolve
-% that  stream reference (if any) and run it through the decoder,
+% that stream reference (if any) and run it through the decoder,
 % creating a special -jbig2globalctx- postscript object our
 % JBIG2Decode filter implementation looks for in the parm dict.
 /jbig2cachectx { % <parmdict> jbig2cachectx <parmdict>
