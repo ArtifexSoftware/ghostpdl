@@ -856,7 +856,7 @@ scan_contour(line_list *ll, contour_cursor *q)
 	    only_horizontal = false;
 	    break;
 	}
-	if (fill_by_trapezoids && !saved && q->dir != 2) {
+	if ((fill_by_trapezoids || SCANLINE_USES_ITERATOR) && !saved && q->dir != 2) {
 	    save_q = *q;
 	    save_fi = *q->fi;
 	    saved = true;
@@ -871,7 +871,7 @@ scan_contour(line_list *ll, contour_cursor *q)
     for (pseg = q->pfirst; pseg != q->plast; pseg = pseg->next) {
 	p.prev = pseg;
 	p.pseg = pseg->next;
-	if (!fill_by_trapezoids || !fo->pseudo_rasterization || only_horizontal
+	if (!fo->pseudo_rasterization || only_horizontal
 		|| p.prev->pt.x != p.pseg->pt.x || p.prev->pt.y != p.pseg->pt.y 
 		|| p.pseg->type == s_curve) {
 	    init_contour_cursor(ll, &p);
