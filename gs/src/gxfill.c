@@ -130,7 +130,7 @@ struct active_line_s {
  * Y value, or, of the x_current values are equal, greater Y values
  * (if any: this Y value might be the end of both lines).
  */
-private bool
+private int
 x_order(const active_line *lp1, const active_line *lp2)
 {
     bool s1;

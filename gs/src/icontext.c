@@ -244,8 +244,9 @@ context_state_store(gs_context_state_t * pcst)
     return 0;
 }
 
-/* Free the state of a context. */
-bool
+/* Free the contents of the state of a context, always to its local VM. */
+/* Return a mask of which of its VMs, if any, we freed. */
+int
 context_state_free(gs_context_state_t * pcst)
 {
     gs_ref_memory_t *mem = pcst->memory.space_local;
@@ -288,5 +289,5 @@ context_state_free(gs_context_state_t * pcst)
     }
 /****** FREE USERPARAMS ******/
     gs_interp_free_stacks(mem, pcst);
-    return false;
+    return 0;
 }

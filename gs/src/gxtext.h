@@ -1,4 +1,4 @@
-/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -202,7 +202,7 @@ struct gs_text_enum_procs_s {
      */
 
 #define text_enum_proc_is_width_only(proc)\
-  int proc(P1(const gs_text_enum_t *pte))
+  bool proc(P1(const gs_text_enum_t *pte))
 
     text_enum_proc_is_width_only((*is_width_only));
 
