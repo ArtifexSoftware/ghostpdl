@@ -215,8 +215,8 @@ gx_begin_image3x_generic(gx_device * dev,
 	gs_color_space *pmcs;
 
 	if (penum->mask[i].depth == 0) {	/* mask not supplied */
-	    midev[0] = 0;
-	    minfo[0] = 0;
+	    midev[i] = 0;
+	    minfo[i] = 0;
 	    continue;
 	}
 	pmcs =  gs_alloc_struct(mem, gs_color_space, &st_color_space,
@@ -370,9 +370,12 @@ check_image3x_extent(floatp mask_coeff, floatp data_coeff)
 	return false;
     return true;
 }
-/* Check mask parameters. */
-/* Reads ppcv->{matrix,corner,rect}, sets pmcv->{matrix,corner,rect} and */
-/* pmcs->{InterleaveType,width,height,full_height,data,y,skip}. */
+/*
+ * Check mask parameters.
+ * Reads ppcv->{matrix,corner,rect}, sets pmcv->{matrix,corner,rect} and
+ * pmcs->{InterleaveType,width,height,full_height,depth,data,y,skip}.
+ * If the mask is omitted, sets pmcs->depth = 0 and returns normally.
+ */
 private bool
 check_image3x_mask(const gs_image3x_t *pim, const gs_image3x_mask_t *pimm,
 		   const image3x_channel_values_t *ppcv,
@@ -382,8 +385,10 @@ check_image3x_mask(const gs_image3x_t *pim, const gs_image3x_mask_t *pimm,
     int mask_width = pimm->MaskDict.Width, mask_height = pimm->MaskDict.Height;
     int code;
 
-    if (pimm->MaskDict.BitsPerComponent == 0) /* mask missing */
+    if (pimm->MaskDict.BitsPerComponent == 0) { /* mask missing */
+	pmcs->depth = 0;
 	return 0;
+    }
     if (mask_height <= 0)
 	return_error(gs_error_rangecheck);
     switch (pimm->InterleaveType) {

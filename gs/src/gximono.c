@@ -159,7 +159,7 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
      * whether all tiles fit in the cache.  We may bypass the latter check
      * for masked images with a pure color.
      */
-    if (!gx_check_tile_cache_current(pis)) {
+    if (pis == 0 || !gx_check_tile_cache_current(pis)) {
         image_init_clues(penum, penum->bps, penum->spp);
     }
     tiles_fit = (pis && penum->device_color ? gx_check_tile_cache(pis) : false);

@@ -48,7 +48,11 @@ typedef struct gs_image3x_mask_s {
     int InterleaveType;
     float Matte[GS_CLIENT_COLOR_MAX_COMPONENTS];
     bool has_Matte;
-    /* Note that the ColorSpaces in the MaskDicts are ignored. */
+    /*
+     * Note that the ColorSpaces in the MaskDicts are ignored.
+     * Note also that MaskDict.BitsPerComponent may be zero, which
+     * indicates that the given mask is not supplied.
+     */
     gs_data_image_t MaskDict;
 } gs_image3x_mask_t;
 typedef struct gs_image3x_s {
