@@ -616,9 +616,15 @@ psf_convert_type1_to_type2(stream *s, const gs_const_string *pstr,
 	    }
 	    continue;
 	case CE_OFFSET + ce1_seac:
-	    /* Use the "seac hack": endchar + 4 or 5 operands = seac. */
-	    /* (Adobe does not document this.) */
-	    /* Remove the asb argument from the stack. */
+	    /*
+	     * It is an undocumented feature of the Type 2 CharString
+	     * format that endchar + 4 or 5 operands is equivalent to
+	     * seac with an implicit asb operand + endchar with 0 or 1
+	     * operands.  Remove the asb argument from the stack, but
+	     * adjust the adx argument to compensate for the fact that
+	     * Type 2 CharStrings don't have any concept of l.s.b.
+	     */
+	    csp[-3] -= csp[-4];
 	    memmove(csp - 4, csp - 3, sizeof(*csp) * 4);
 	    POP(1);
 	    /* (falls through) */
