@@ -583,6 +583,35 @@ $(PSOBJ)zht1.$(OBJ) : $(PSSRC)zht1.c $(OP) $(memory__h)\
  $(ialloc_h) $(estack_h) $(igstate_h) $(iht_h) $(store_h)
 	$(PSCC) $(PSO_)zht1.$(OBJ) $(C_) $(PSSRC)zht1.c
 
+# ---------------- DSC Parser ---------------- #
+
+# The basic DSC parsing facility, used both for Orientation detection
+# (to compensate for badly-written PostScript producers that don't emit
+# the necessary setpagedevice calls) and by the PDF writer.
+
+dscparse_h=$(PSSRC)dscparse.h
+
+$(PSOBJ)zdscpars.$(OBJ) : $(PSSRC)zdscpars.c $(GH) $(memory__h) $(string__h)\
+ $(dscparse_h) $(estack_h) $(ialloc_h) $(idict_h) $(iddict_h) $(iname_h)\
+ $(ivmspace_h) $(oper_h) $(store_h)\
+ $(gsstruct_h)
+	$(PSCC) $(PSO_)zdscpars.$(OBJ) $(C_) $(PSSRC)zdscpars.c
+
+$(PSOBJ)dscparse.$(OBJ) : $(PSSRC)dscparse.c $(dscparse_h)
+	$(PSCC) $(PSO_)dscparse.$(OBJ) $(C_) $(PSSRC)dscparse.c
+
+dscparse_=$(PSOBJ)zdscpars.$(OBJ) $(PSOBJ)dscparse.$(OBJ)
+
+$(PSD)dscparse.dev : $(INT_MAK) $(ECHOGS_XE) $(dscparse_)
+	$(SETMOD) $(PSD)dscparse -obj $(dscparse_)
+	$(ADDMOD) $(PSD)dscparse -oper zdscpars
+
+# A feature to pass the Orientation information from the DSC comments
+# to setpagedevice.
+
+$(PSD)usedsc.dev : $(INT_MAK) $(ECHOGS_XE) $(PSD)dscparse.dev
+	$(SETMOD) $(PSD)usedsc -include $(PSD)dscparse -ps gs_dscp
+
 # ---------------- HSB color ---------------- #
 
 hsb_=$(PSOBJ)zhsb.$(OBJ)
