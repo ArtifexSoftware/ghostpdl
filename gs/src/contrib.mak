@@ -28,100 +28,101 @@ CONTRIB_MAK=$(GLSRC)contrib.mak
 
 # Displays:
 #   MS-DOS (note: not usable with Desqview/X):
-# *	herc	Hercules Graphics display   [MS-DOS only]
-# *	pe	Private Eye display
+#	herc	Hercules Graphics display   [MS-DOS only]
+#	pe	Private Eye display
 #   Unix and VMS:
-# *	att3b1	AT&T 3b1/Unixpc monochrome display   [3b1 only]
-# *	sonyfb	Sony Microsystems monochrome display   [Sony only]
-# *	sunview  SunView window system   [SunOS only]
+#	att3b1	AT&T 3b1/Unixpc monochrome display   [3b1 only]
+#	sonyfb	Sony Microsystems monochrome display   [Sony only]
+#	sunview  SunView window system   [SunOS only]
 # Printers:
-# *	ap3250	Epson AP3250 printer
-# *	appledmp  Apple Dot Matrix Printer (should also work with Imagewriter)
-# *	bj10e	Canon BubbleJet BJ10e
-# *	bj200	Canon BubbleJet BJ200
-# *	bjc600   Canon Color BubbleJet BJC-600, BJC-4000 and BJC-70
+#	ap3250	Epson AP3250 printer
+#	appledmp  Apple Dot Matrix Printer (should also work with Imagewriter)
+#	bj10e	Canon BubbleJet BJ10e
+#	bj200	Canon BubbleJet BJ200
+#	bjc600   Canon Color BubbleJet BJC-600, BJC-4000 and BJC-70
 #               also good for Apple printers like the StyleWriter 2x00
-# *	bjc800   Canon Color BubbleJet BJC-800
-# *     ccr     CalComp Raster format
-# *	cdeskjet  H-P DeskJet 500C with 1 bit/pixel color
-# *	cdjcolor  H-P DeskJet 500C with 24 bit/pixel color and
+#	bjc800   Canon Color BubbleJet BJC-800
+#	ccr     CalComp Raster format
+#	cdeskjet  H-P DeskJet 500C with 1 bit/pixel color
+#	cdjcolor  H-P DeskJet 500C with 24 bit/pixel color and
 #		high-quality color (Floyd-Steinberg) dithering;
 #		also good for DeskJet 540C and Citizen Projet IIc (-r200x300)
-# *	cdjmono  H-P DeskJet 500C printing black only;
+#	cdjmono  H-P DeskJet 500C printing black only;
 #		also good for DeskJet 510, 520, and 540C (black only)
-# *	cdj500	H-P DeskJet 500C (same as cdjcolor)
-# *	cdj550	H-P DeskJet 550C/560C/660C/660Cse
-# *	cdj970	H-P DeskJet 970Cxi
-# *	cljet5	H-P Color LaserJet 5/5M (see below for some notes)
-# *	cljet5c  H-P Color LaserJet 5/5M (see below for some notes)
-# *	coslw2p  CoStar LabelWriter II II/Plus
-# *	coslwxl  CoStar LabelWriter XL
-# *	cp50	Mitsubishi CP50 color printer
-# *	declj250  alternate DEC LJ250 driver
-# *	djet500c  H-P DeskJet 500C alternate driver
+#	cdj500	H-P DeskJet 500C (same as cdjcolor)
+#	cdj550	H-P DeskJet 550C/560C/660C/660Cse
+#	cdj970	H-P DeskJet 970Cxi
+#	cljet5	H-P Color LaserJet 5/5M (see below for some notes)
+#	cljet5c  H-P Color LaserJet 5/5M (see below for some notes)
+#	coslw2p  CoStar LabelWriter II II/Plus
+#	coslwxl  CoStar LabelWriter XL
+#	cp50	Mitsubishi CP50 color printer
+#	declj250  alternate DEC LJ250 driver
+#	djet500c  H-P DeskJet 500C alternate driver
 #		(does not work on 550C or 560C)
-# *	dnj650c  H-P DesignJet 650C
+#	dnj650c  H-P DesignJet 650C
 #	epson	Epson-compatible dot matrix printers (9- or 24-pin)
-# *	eps9mid  Epson-compatible 9-pin, interleaved lines
+#	eps9mid  Epson-compatible 9-pin, interleaved lines
 #		(intermediate resolution)
-# *	eps9high  Epson-compatible 9-pin, interleaved lines
+#	eps9high  Epson-compatible 9-pin, interleaved lines
 #		(triple resolution)
-# *	epsonc	Epson LQ-2550 and Fujitsu 3400/2400/1200 color printers
-# *	hl1250  Brother HL-1250
-# *	hl7x0   Brother HL 720 and HL 730 (HL 760 is PCL compliant);
+#	epsonc	Epson LQ-2550 and Fujitsu 3400/2400/1200 color printers
+#	hl1250  Brother HL-1250
+#	hl7x0   Brother HL 720 and HL 730 (HL 760 is PCL compliant);
 #		also usable with the MFC6550MC Fax Machine.
-# *	ibmpro  IBM 9-pin Proprinter
-# *	imagen	Imagen ImPress printers
-# *	iwhi	Apple Imagewriter in high-resolution mode
-# *	iwlo	Apple Imagewriter in low-resolution mode
-# *	iwlq	Apple Imagewriter LQ in 320 x 216 dpi mode
-# *	jetp3852  IBM Jetprinter ink-jet color printer (Model #3852)
-# *	lbp8	Canon LBP-8II laser printer
-# *	lips3	Canon LIPS III laser printer in English (CaPSL) mode
-# *	lj250	DEC LJ250 Companion color printer
-# *	lj3100sw H-P LaserJet 3100 (requires installed HP-Software)
-# +	lj4dith  H-P LaserJet 4 with Floyd-Steinberg dithering
-# *	lp8000	Epson LP-8000 laser printer
-# *     lq850   Epson LQ850 printer at 360 x 360 DPI resolution;
+#	ibmpro  IBM 9-pin Proprinter
+#	imagen	Imagen ImPress printers
+#	iwhi	Apple Imagewriter in high-resolution mode
+#	iwlo	Apple Imagewriter in low-resolution mode
+#	iwlq	Apple Imagewriter LQ in 320 x 216 dpi mode
+#	jetp3852  IBM Jetprinter ink-jet color printer (Model #3852)
+#	lbp8	Canon LBP-8II laser printer
+#	lips3	Canon LIPS III laser printer in English (CaPSL) mode
+#	lj250	DEC LJ250 Companion color printer
+#	lj3100sw H-P LaserJet 3100 (requires installed HP-Software)
+#	lj4dith  H-P LaserJet 4 with Floyd-Steinberg dithering
+#	lp8000	Epson LP-8000 laser printer
+#	lq850   Epson LQ850 printer at 360 x 360 DPI resolution;
 #               also good for Canon BJ300 with LQ850 emulation
-# *	lxm5700m Lexmark 5700 monotone
-# *	m8510	C.Itoh M8510 printer
-# *	necp6	NEC P6/P6+/P60 printers at 360 x 360 DPI resolution
-# *	nwp533  Sony Microsystems NWP533 laser printer   [Sony only]
-# *	oki182	Okidata MicroLine 182
-# *	okiibm	Okidata MicroLine IBM-compatible printers
-# *	paintjet  alternate H-P PaintJet color printer
-# *	photoex  Epson Stylus Color Photo, Photo EX, Photo 700
-# *	pj	H-P PaintJet XL driver 
-# *	pjetxl	alternate H-P PaintJet XL driver
-# *	pjxl	H-P PaintJet XL color printer
-# *	pjxl300  H-P PaintJet XL300 color printer;
+#	lxm5700m Lexmark 5700 monotone
+#	m8510	C.Itoh M8510 printer
+#	necp6	NEC P6/P6+/P60 printers at 360 x 360 DPI resolution
+#	nwp533  Sony Microsystems NWP533 laser printer   [Sony only]
+#	oki182	Okidata MicroLine 182
+#	okiibm	Okidata MicroLine IBM-compatible printers
+#	paintjet  alternate H-P PaintJet color printer
+#	photoex  Epson Stylus Color Photo, Photo EX, Photo 700
+#	pj	H-P PaintJet XL driver 
+#	pjetxl	alternate H-P PaintJet XL driver
+#	pjxl	H-P PaintJet XL color printer
+#	pjxl300  H-P PaintJet XL300 color printer;
 #		also good for PaintJet 1200C and CopyJet
-# *	r4081	Ricoh 4081 laser printer
-# *	sj48	StarJet 48 inkjet printer
-# *	sparc	SPARCprinter
-# *	st800	Epson Stylus 800 printer
-# *	stcolor	Epson Stylus Color
-# *	t4693d2  Tektronix 4693d color printer, 2 bits per R/G/B component
-# *	t4693d4  Tektronix 4693d color printer, 4 bits per R/G/B component
-# *	t4693d8  Tektronix 4693d color printer, 8 bits per R/G/B component
-# *	tek4696  Tektronix 4695/4696 inkjet plotter
-# *	uniprint  Unified printer driver -- Configurable Color ESC/P-,
+#	r4081	Ricoh 4081 laser printer
+#	sj48	StarJet 48 inkjet printer
+#	sparc	SPARCprinter
+#	st800	Epson Stylus 800 printer
+#	stcolor	Epson Stylus Color
+#	t4693d2  Tektronix 4693d color printer, 2 bits per R/G/B component
+#	t4693d4  Tektronix 4693d color printer, 4 bits per R/G/B component
+#	t4693d8  Tektronix 4693d color printer, 8 bits per R/G/B component
+#	tek4696  Tektronix 4695/4696 inkjet plotter
+#	uniprint  Unified printer driver -- Configurable Color ESC/P-,
 #		ESC/P2-, HP-RTL/PCL mono/color driver
 # Fax systems:
-# *	dfaxhigh  DigiBoard, Inc.'s DigiFAX software format (high resolution)
-# *	dfaxlow  DigiFAX low (normal) resolution
+#	cfax	SFF format for CAPI fax interface
+#	dfaxhigh  DigiBoard, Inc.'s DigiFAX software format (high resolution)
+#	dfaxlow  DigiFAX low (normal) resolution
 # Other raster file formats and devices:
-# *	cif	CIF file format for VLSI
-# *	inferno  Inferno bitmaps
-# *	mgrmono  1-bit monochrome MGR devices
-# *	mgrgray2  2-bit gray scale MGR devices
-# *	mgrgray4  4-bit gray scale MGR devices
-# *	mgrgray8  8-bit gray scale MGR devices
-# *	mgr4	4-bit (VGA) color MGR devices
-# *	mgr8	8-bit color MGR devices
-# *	sgirgb	SGI RGB pixmap format
-# *	sunhmono  Harlequin variant of 1-bit Sun raster file
+#	cif	CIF file format for VLSI
+#	inferno  Inferno bitmaps
+#	mgrmono  1-bit monochrome MGR devices
+#	mgrgray2  2-bit gray scale MGR devices
+#	mgrgray4  4-bit gray scale MGR devices
+#	mgrgray8  8-bit gray scale MGR devices
+#	mgr4	4-bit (VGA) color MGR devices
+#	mgr8	8-bit color MGR devices
+#	sgirgb	SGI RGB pixmap format
+#	sunhmono  Harlequin variant of 1-bit Sun raster file
 
 # If you add drivers, it would be nice if you kept each list
 # in alphabetical order.
@@ -786,6 +787,20 @@ $(GLOBJ)gdevtknk.$(OBJ) : $(GLSRC)gdevtknk.c $(PDEVH) $(malloc__h)
 	$(GLCC) $(GLO_)gdevtknk.$(OBJ) $(C_) $(GLSRC)gdevtknk.c
 
 ###### ------------------------- Fax devices ------------------------- ######
+
+### ------------------------- CAPI fax devices -------------------------- ###
+### Note: this driver was contributed by a user: please contact           ###
+###       Peter Schaefer <peter.schaefer@gmx.de> if you have questions.   ###
+
+cfax_=$(GLOBJ)gdevcfax.$(OBJ)
+
+$(DD)cfax.dev : $(cfax_) $(DD)fax.dev
+	$(SETDEV) $(DD)cfax $(cfax_)
+	$(ADDMOD) $(DD)cfax -include $(DD)fax
+
+$(GLOBJ)gdevcfax.$(OBJ) : $(GLSRC)gdevcfax.c $(PDEVH)\
+ $(gdevfax_h) $(scfx_h) $(strimpl_h)
+	$(GLCC) $(GLO_)gdevcfax.$(OBJ) $(C_) $(GLSRC)gdevcfax.c
 
 ### ------------------------- The DigiFAX device ------------------------ ###
 ###    This driver outputs images in a format suitable for use with       ###
