@@ -15,9 +15,10 @@
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-int pcl_start_raster(P3(
+int pcl_start_raster(P4(
     uint                src_width,
     uint                src_height,
+    bool                region_marked,
     pcl_state_t *       pcs
 ));
 
