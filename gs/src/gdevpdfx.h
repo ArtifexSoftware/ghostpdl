@@ -389,7 +389,6 @@ struct gx_device_pdf_s {
      * EP nest, we delete the object from the pictures file at that time.
      */
     pdf_temp_file_t pictures;
-    long random_offset;		/* for generating subset prefixes */
     /* ................ */
     long next_id;
     /* The following 3 objects, and only these, are allocated */

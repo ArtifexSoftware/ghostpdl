@@ -111,7 +111,6 @@ pdf_add_subset_prefix(const gx_device_pdf *pdev, gs_string *pstr, gs_id rid)
     byte *data = gs_resize_string(pdev->pdf_memory, pstr->data, size,
 				  size + SUBSET_PREFIX_SIZE,
 				  "pdf_add_subset_prefix");
-    /* ulong v = (ulong)(pdev->random_offset + rand()); */
     ulong v = rid;
     int i;
 
