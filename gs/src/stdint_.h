@@ -21,10 +21,14 @@
 #  define stdint__INCLUDED
 
 /*
- * This is here primarily because we must include std.h before
- * any file that includes sys/types.h.
+ * ensure our standard defines have been included
  */
 #include "std.h"
+
+/* Define some stdint.h types. The jbig2dec headers and ttf bytecode
+ * interpreter require these and they're generally useful to have around
+ * now that there's a standard.
+ */
 
 /* Some systems are guaranteed to have stdint.h
  * but don't use the autoconf detection
@@ -35,13 +39,17 @@
 # endif
 #endif
 
-/* Define some stdint.h types. The jbig2dec headers require these and 
- * they're generally useful to have around now that there's a standard.
- */
-#ifdef HAVE_STDINT_H
+/* try a generic header first */
+#if defined(HAVE_STDINT_H)
 # include <stdint.h>
 # define STDINT_TYPES_DEFINED
-#else
+#elif defined(SYS_TYPES_HAS_STDINT_TYPES)
+# /* std.h will have included sys/types.h */
+# define STDINT_TYPES_DEFINED
+#endif
+
+/* try platform-specific defines */
+#ifndef STDINT_TYPES_DEFINED
 # if defined(__WIN32__) /* MSVC currently doesn't provide C99 headers */
    typedef signed char             int8_t;
    typedef short int               int16_t;
@@ -52,12 +60,10 @@
    typedef unsigned int            uint32_t;
    typedef unsigned __int64        uint64_t;
 #  define STDINT_TYPES_DEFINED
-# endif
-# if defined(__VMS) /* OpenVMS provides these types in inttypes.h */
+# elif defined(__VMS) /* OpenVMS provides these types in inttypes.h */
 #  include <inttypes.h>
 #  define STDINT_TYPES_DEFINED
-# endif
-# if defined(__CYGWIN__)
+# elif defined(__CYGWIN__)
    /* Cygwin defines the signed versions in sys/types.h */
    /* but uses a u_ prefix for the unsigned versions */
    typedef u_int8_t                uint8_t;
@@ -68,7 +74,7 @@
 # endif
    /* other archs may want to add defines here, 
       or use the fallbacks in std.h */
-#endif /* !HAVE_STDINT_H */
+#endif
 
 /* fall back to tests based on arch.h */
 #ifndef STDINT_TYPES_DEFINED
