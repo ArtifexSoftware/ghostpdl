@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-
+/*$Id$ */
 /* Special color mapping device */
 #include "gx.h"
 #include "gserrors.h"
@@ -38,6 +38,7 @@ public_st_device_cmap();
 private dev_proc_map_rgb_color(cmap_map_rgb_color);
 private dev_proc_map_rgb_alpha_color(cmap_map_rgb_alpha_color);
 private dev_proc_map_cmyk_color(cmap_map_cmyk_color);
+private dev_proc_get_params(cmap_get_params);
 private dev_proc_put_params(cmap_put_params);
 private dev_proc_begin_typed_image(cmap_begin_typed_image);
 
@@ -53,7 +54,8 @@ private const gx_device_cmap gs_cmap_device = {
 	gx_forward_tile_rectangle,
 	gx_forward_copy_mono,
 	gx_forward_copy_color,
-	0, 0, 0,
+	0, 0,
+	cmap_get_params,
 	cmap_put_params,
 	cmap_map_cmyk_color,
 	0, 0,
@@ -70,26 +72,8 @@ private const gx_device_cmap gs_cmap_device = {
     device_cmap_identity
 };
 
-/* Initialize the device. */
-int
-gdev_cmap_init(gx_device_cmap * dev, gx_device * target,
-	       gx_device_color_mapping_method_t method)
-{
-    int code;
-
-    gx_device_init((gx_device *) dev, (const gx_device *)&gs_cmap_device,
-		   target->memory, true);
-    dev->target = target;
-    gx_device_copy_params((gx_device *)dev, target);
-    gx_device_forward_fill_in_procs((gx_device_forward *) dev);
-    code = gdev_cmap_set_method(dev, method);
-    if (code < 0)
-	return code;
-    return 0;
-}
-
 /* Set the color mapping method. */
-int
+private int
 gdev_cmap_set_method(gx_device_cmap * cmdev,
 		     gx_device_color_mapping_method_t method)
 {
@@ -99,12 +83,17 @@ gdev_cmap_set_method(gx_device_cmap * cmdev,
      * If we're transforming the color, we may need to fool the graphics
      * core into not halftoning.
      */
-    set_dev_proc(cmdev, map_cmyk_color, gx_forward_map_cmyk_color);
+    set_dev_proc(cmdev, map_cmyk_color, gx_default_map_cmyk_color);
     set_dev_proc(cmdev, map_color_rgb, gx_forward_map_color_rgb);
 
     switch (method) {
 
 	case device_cmap_identity:
+	    /*
+	     * In this case, and only this case, we can allow the target's
+	     * color model to propagate here.
+	     */
+	    set_dev_proc(cmdev, map_cmyk_color, gx_forward_map_cmyk_color);
 	    cmdev->color_info.max_gray = target->color_info.max_gray;
 	    cmdev->color_info.max_color = target->color_info.max_color;
 	    cmdev->color_info.num_components =
@@ -121,14 +110,35 @@ gdev_cmap_set_method(gx_device_cmap * cmdev,
 	case device_cmap_snap_to_primaries:
 	case device_cmap_color_to_black_over_white:
 	    cmdev->color_info.max_gray = cmdev->color_info.max_color = 4095;
-	    cmdev->color_info.num_components =
-		target->color_info.num_components;
+	    /*
+	     * We have to be an RGB device, otherwise "primaries" doesn't
+	     * have the proper meaning.
+	     */
+	    cmdev->color_info.num_components = 3;
 	    break;
 
 	default:
 	    return_error(gs_error_rangecheck);
     }
     cmdev->mapping_method = method;
+    return 0;
+}
+
+/* Initialize the device. */
+int
+gdev_cmap_init(gx_device_cmap * dev, gx_device * target,
+	       gx_device_color_mapping_method_t method)
+{
+    int code;
+
+    gx_device_init((gx_device *) dev, (const gx_device *)&gs_cmap_device,
+		   target->memory, true);
+    dev->target = target;
+    gx_device_copy_params((gx_device *)dev, target);
+    gx_device_forward_fill_in_procs((gx_device_forward *) dev);
+    code = gdev_cmap_set_method(dev, method);
+    if (code < 0)
+	return code;
     return 0;
 }
 
@@ -233,19 +243,49 @@ cmap_map_cmyk_color(gx_device * dev, gx_color_value c,
 			      frac2cv(frac_rgb[2]));
 }
 
+/* Get parameters. */
+private int
+cmap_get_params(gx_device * dev, gs_param_list * plist)
+{
+    int code = gx_forward_get_params(dev, plist);
+    int ecode = code;
+    gx_device_cmap * const cmdev = (gx_device_cmap *)dev;
+    int cmm = cmdev->mapping_method;
+
+    if ((code = param_write_int(plist, "ColorMappingMethod", &cmm)) < 0)
+	ecode = code;
+    return ecode;
+}
+
 /* Update parameters; copy the device information back afterwards. */
 private int
 cmap_put_params(gx_device * dev, gs_param_list * plist)
 {
     int code = gx_forward_put_params(dev, plist);
+    int ecode = code;
+    gx_device_cmap * const cmdev = (gx_device_cmap *)dev;
+    int cmm = cmdev->mapping_method;
+    const char *param_name;
 
-    if (code >= 0) {
-	gx_device_cmap * const cmdev = (gx_device_cmap *)dev;
-
-	gx_device_copy_params(dev, cmdev->target);
-	code = gdev_cmap_set_method(cmdev, cmdev->mapping_method);
+    switch (code = param_read_int(plist, param_name = "ColorMappingMethod",
+				  &cmm)) {
+    case 0:
+	if (cmm < 0 || cmm > device_cmap_max_method) {
+	    code = gs_note_error(gs_error_rangecheck);
+	} else
+	    break;
+    default:
+	ecode = code;
+	param_signal_error(plist, param_name, ecode);
+	break;
+    case 1:
+	break;
     }
-    return code;
+    if (code >= 0) {
+	gx_device_copy_params(dev, cmdev->target);
+	gdev_cmap_set_method(cmdev, cmm);
+    }
+    return ecode;
 }
 
 /*
