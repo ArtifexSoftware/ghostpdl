@@ -296,7 +296,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
                                   err_cd,
                                   pname );
                     else {
-                        dprintf1( mem, "Loading %s\n", pname );
+                        dprintf2( mem, "Loading %s from fco %s\n", pname, plugins[k] );
                         uint    pitch_cp = (pfDesc->spaceBand * 100.0)
                             / pfDesc->scaleFactor + 0.5;
 
@@ -308,7 +308,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
                             pitch_cp = (pfDesc->spaceBand * 100 * 72.0)
                                          / (pfDesc->scaleFactor * 72.307) + 0.5;
                         }
-
+                        dprintf3( mem, "scale factor=%d, pitch (cp)=%d per_inch_x100=%d\n", pfDesc->scaleFactor, pitch_cp, (uint)(720000.0/pitch_cp));
                         if (resident_table[j].params.symbol_set != 0)
                             plfont->font_type = plft_8bit;
 
@@ -420,7 +420,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
                     else {
                         uint    pitch_cp = (pfDesc->spaceBand * 100.0)
                             / pfDesc->scaleFactor + 0.5;
-
+                        dprintf2( mem, "Loading %s from fco %s\n", pname, fcos[k] );
                         /* Record the differing points per inch value
                            for Intellifont derived fonts. */
 
@@ -429,7 +429,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
                             pitch_cp = (pfDesc->spaceBand * 100 * 72.0)
                                          / (pfDesc->scaleFactor * 72.307) + 0.5;
                         }
-
+                        dprintf3( mem, "scale factor=%d, pitch (cp)=%d per_inch_x100=%d\n", pfDesc->scaleFactor, pitch_cp, (uint)(720000.0/pitch_cp));
                         if (resident_table[j].params.symbol_set != 0)
                             plfont->font_type = plft_8bit;
 
