@@ -32,6 +32,7 @@ GLCC=$(CC_) $(GLCCFLAGS)
 GLICCCC=$(CC_) $(I_)$(GLI_) $(II)$(ICCI_)$(_I) $(ICCCF_) $(GLF_)
 GLJCC=$(CC_) $(I_)$(GLI_) $(II)$(JI_)$(_I) $(JCF_) $(GLF_)
 GLZCC=$(CC_) $(I_)$(GLI_) $(II)$(ZI_)$(_I) $(ZCF_) $(GLF_)
+GLJBIG2CC=$(CC_) $(I_)$(GLI_) $(II)$(JB2I_)$(_I) $(JB2CF_) $(GLF_)
 GLCCLEAF=$(CC_LEAF) $(I_)$(GLI_)$(_I) $(GLF_)
 # All top-level makefiles define GLD.
 #GLD=$(GLGEN)
@@ -1345,7 +1346,7 @@ $(GLD)sjbig2.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLD)libjbig2.dev $(sjbig2_)
 
 $(GLOBJ)sjbig2.$(OBJ) : $(GLSRC)sjbig2.c $(AK) \
  $(gserror_h) $(gserrors_h) $(gdebug_h) $(sjbig2_h) $(strimpl_h)
-	$(GLCC) $(GLO_)sjbig2.$(OBJ) $(C_) $(GLSRC)sjbig2.c
+	$(GLJBIG2CC) $(GLO_)sjbig2.$(OBJ) $(C_) $(GLSRC)sjbig2.c
 
 # ---------------- Pixel-difference filters ---------------- #
 # The Predictor facility of the LZW and Flate filters uses these.

@@ -32,6 +32,7 @@ PSI_=$(PSSRCDIR) $(II)$(PSGENDIR) $(II)$(GLI_)
 PSF_=
 PSCC=$(CC_) $(I_)$(PSI_)$(_I) $(PSF_)
 PSCCLEAF=$(CC_LEAF) $(I_)$(PSI_)$(_I) $(PSF_)
+PSJBIG2CC=$(CC_) $(I_)$(PSI_) $(II)$(JB2I_)$(_I) $(JB2CF_) $(PSF_)
 # All top-level makefiles define PSD.
 #PSD=$(PSGEN)
 
@@ -1296,7 +1297,7 @@ $(PSD)jbig2.dev : $(INT_MAK) $(ECHOGS_XE) $(fjbig2_) $(GLD)sjbig2.dev
 $(PSOBJ)zfjbig2.$(OBJ) : $(PSSRC)zfjbig2.c $(OP) $(memory__h)\
  $(gsstruct_h) $(gstypes_h) $(ialloc_h) $(idict_h) $(ifilter_h)\
  $(store_h) $(stream_h) $(strimpl_h) $(sjbig2_h)
-	$(PSCC) $(PSO_)zfjbig2.$(OBJ) $(C_) $(PSSRC)zfjbig2.c
+	$(PSJBIG2CC) $(PSO_)zfjbig2.$(OBJ) $(C_) $(PSSRC)zfjbig2.c
 
 
 # ---------------- Binary tokens ---------------- #

@@ -22,6 +22,7 @@
 # gs.mak and friends define the following:
 #	JBIG2OBJDIR - the output obj directory
 #	JBIG2GENDIR - generated (.dev) file directory
+#	JB2I_ and JB2CF_ - include dir and cflags
 # and the usual gs portability stuff.
 
 # This partial makefile compiles the jbig2dec library for use in
@@ -82,7 +83,7 @@ jbig2.config-clean :
 
 JBIG2DEP=$(AK)
 
-JBIG2_CC=$(CC_) $(CFLAGS) $(I_)$(JBIG2GENDIR) $(II)$(JBIG2SRCDIR)$(_I)
+JBIG2_CC=$(CC_) $(CFLAGS) $(I_)$(JBIG2GENDIR) $(II)$(JB2I_)$(_I) $(JB2CF_)
 JBIG2O_=$(O_)$(JBIG2OBJ)
 
 # switch in the version of libjbig2.dev we're actually using

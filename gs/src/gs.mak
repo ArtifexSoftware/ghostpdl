@@ -312,6 +312,8 @@ PCF_=$(D_)SHARE_LIBPNG=$(SHARE_LIBPNG)$(_D)
 ZI_=$(ZSRCDIR)
 ZF_=
 ZCF_=$(D_)SHARE_ZLIB=$(SHARE_ZLIB)$(_D)
+JB2I_=$(JBIG2SRCDIR)
+JB2CF_=
 
 ######################## How to define new 'features' #######################
 #
