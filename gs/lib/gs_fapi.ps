@@ -16,8 +16,8 @@
 % $Id$
 % Redefine Font and CIDFont categories with FAPI-handeled fonts.
 
-.FAPIavailable not {
-  currentfile closefile
+systemdict /.FAPIavailable known { .FAPIavailable } { false } ifelse not {
+  (%END FAPI) .skipeof
 } if
 
 languagelevel 2 .setlanguagelevel
@@ -578,3 +578,4 @@ odef odef odef odef odef odef
 
 .setlanguagelevel
 
+%END FAPI
