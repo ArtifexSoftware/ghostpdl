@@ -280,9 +280,7 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
                 if (image == NULL) {
 		    dprintf("unable to decode JPX image data.\n");
 		    return ERRC;
-                } else {
-		    dprintf("done.\n");
-		}
+                }
                 state->image = image;
                 state->offset = 0;
                 jas_stream_close(stream);
