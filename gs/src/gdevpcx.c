@@ -87,7 +87,7 @@ const gx_device_printer gs_pcx256_device =
 		 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 		 X_DPI, Y_DPI,
 		 0, 0, 0, 0,	/* margins */
-		 3, 8, 6, 6, 7, 7, pcx256_print_page)
+		 3, 8, 5, 5, 6, 6, pcx256_print_page)
 };
 
 /* 24-bit color, 3 8-bit planes. */

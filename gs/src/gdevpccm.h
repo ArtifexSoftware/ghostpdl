@@ -29,7 +29,7 @@ dev_proc_map_color_rgb(pc_4bit_map_color_rgb);
 /* Color mapping routines for 8-bit color (with a fixed palette). */
 dev_proc_map_rgb_color(pc_8bit_map_rgb_color);
 dev_proc_map_color_rgb(pc_8bit_map_color_rgb);
-#define dci_pc_8bit dci_values(3, 8, 6, 6, 7, 7)
+#define dci_pc_8bit dci_values(3, 8, 5, 5, 6, 6)
 
 /* Write the palette on a file. */
 int pc_write_palette(gx_device *, uint, FILE *);

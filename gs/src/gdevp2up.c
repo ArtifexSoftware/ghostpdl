@@ -55,7 +55,7 @@ gx_device_2up gs_pcx2up_device =
 		 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 		 X_DPI, Y_DPI,
 		 0, 0, 0, 0,	/* margins */
-		 3, 8, 6, 6, 7, 7, pcx2up_print_page)
+		 3, 8, 5, 5, 6, 6, pcx2up_print_page)
 };
 
 /* Open the device.  We reimplement this to force banding with */

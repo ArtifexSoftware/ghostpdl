@@ -94,7 +94,7 @@ cgm_device("cgmmono", 1, 1, 2,
 	   gx_default_map_rgb_color, gx_default_w_b_map_color_rgb);
 
 gx_device_cgm gs_cgm8_device =
-cgm_device("cgm8", 8, 6, 7,
+cgm_device("cgm8", 8, 5, 6,
 	   pc_8bit_map_rgb_color, pc_8bit_map_color_rgb);
 
 gx_device_cgm gs_cgm24_device =

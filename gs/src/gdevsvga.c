@@ -178,13 +178,13 @@ svga_close(gx_device * dev)
 /* for compatibility with the older display modes: */
 /* these are indexed as 0.0.R0.G0.B0.R1.G1.B1. */
 gx_color_index
-svga_map_rgb_color(gx_device * dev, gx_color_value r, gx_color_value g,
-		   gx_color_value b)
+svga_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
     ushort rgb;
+    gx_color_value r = cv[0], g = cv[1], b = cv[2];
 
     if (fb_dev->fixed_colors) {
-	gx_color_index ci = pc_8bit_map_rgb_color(dev, r, g, b);
+	gx_color_index ci = pc_8bit_map_rgb_color(dev, cv);
 
 	/* Here is where we should permute the index to match */
 	/* the old color map... but we don't yet. */
