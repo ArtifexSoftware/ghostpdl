@@ -1,7 +1,7 @@
 #!/bin/sh
 # Run this to set up the build system: configure, makefiles, etc.
 
-# $Id: autogen.sh,v 1.2 2002/07/08 13:40:15 giles Exp $
+# $Id: autogen.sh,v 1.3 2003/03/04 15:24:58 giles Exp $
 
 package="jbig2dec"
 AUTOMAKE_FLAGS="--foreign $AUTOMAKE_FLAGS"
@@ -19,10 +19,59 @@ cd "$srcdir"
 	exit 1
 }
 
+VERSIONGREP="sed -e s/.*[^0-9\.]\([0-9]\.[0-9]\).*/\1/"
+
+# do we need automake?
+if test -r Makefile.am; then
+  AM_NEEDED=`fgrep AUTOMAKE_OPTIONS Makefile.am | $VERSIONGREP`
+  if test -z $AM_NEEDED; then
+    echo -n "checking for automake..."
+    AUTOMAKE=automake
+    ACLOCAL=aclocal
+    if ($AUTOMAKE --version < /dev/null > /dev/null 2>&1); then
+      echo "no"
+      AUTOMAKE=
+    else
+      echo "yes"
+    fi
+  else
+    echo -n "checking for automake $AM_NEEDED or later..."
+    for am in automake-$AM_NEEDED automake$AM_NEEDED automake; do
+      ($am --version < /dev/null > /dev/null 2>&1) || continue
+      ver=`$am --version < /dev/null | head -1 | $VERSIONGREP`
+      if test 0$ver = 0$AM_NEEDED; then
+        AUTOMAKE=$am
+        echo $AUTOMAKE
+        break
+      fi
+    done
+    test -z $AUTOMAKE &&  echo "no"
+    echo -n "checking for aclocal $AM_NEEDED or later..."
+    for ac in aclocal-$AM_NEEDED aclocal$AM_NEEDED aclocal; do
+      ($ac --version < /dev/null > /dev/null 2>&1) || continue
+      ver=`$ac --version < /dev/null | head -1 | $VERSIONGREP`
+      if test 0$ver = $AM_NEEDED; then
+        ACLOCAL=$ac
+        echo $ACLOCAL
+        break
+      fi
+    done
+    test -z $ACLOCAL && echo "no"
+  fi
+  test -z $AUTOMAKE && {
+        echo
+        echo "You must have automake installed to compile $package."
+        echo "Download the appropriate package for your distribution,"
+        echo "or get the source tarball at ftp://ftp.gnu.org/pub/gnu/"
+	exit 1
+  }
+fi  
+
+
 echo "Generating configuration files for $package, please wait...."
 
-echo "  aclocal $ACLOCAL_FLAGS"
-aclocal $ACLOCAL_FLAGS
+echo "  $ACLOCAL $ACLOCAL_FLAGS"
+$ACLOCAL $ACLOCAL_FLAGS
 
 echo "  autoheader"
 autoheader
@@ -50,8 +99,8 @@ cat >config_types.h.in <<EOF
 #endif /* HAVE_STDINT_H */
 EOF
     
-echo "  automake --add-missing $AUTOMAKE_FLAGS"
-automake --add-missing $AUTOMAKE_FLAGS 
+echo "  $AUTOMAKE --add-missing $AUTOMAKE_FLAGS"
+$AUTOMAKE --add-missing $AUTOMAKE_FLAGS 
 echo "  running autoconf"
 
 autoconf
