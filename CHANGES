@@ -1,6 +1,8 @@
-Version 0.2 (not yet released)
+Version 0.2 (released 2003 April 17)
 
  * portability fixes
+ * support for metadata extension segments (latin-1 only)
+ * other bugfixes
 
 Version 0.1 (released 2002 August 6)
 
