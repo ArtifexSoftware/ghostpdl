@@ -1,3 +1,3 @@
 #!/bin/sh
 # $Id$
-exec gs -q -dNODISPLAY -- bdftops.ps "$@"
+exec gs -q -dBATCH -dNODISPLAY -- bdftops.ps "$@"
