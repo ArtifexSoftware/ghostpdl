@@ -333,7 +333,7 @@ s_handle_write_exception(i_ctx_t *i_ctx_p, int status, const ref * fop,
 	make_op_estack(esp - 4, s_proc_write_continue);
 	esp[-3] = *fop;
 	r_clear_attrs(esp - 3, a_executable);
-	make_true(esp - 1);
+	make_bool(esp - 1, !psst->eof);
     }
     esp[-2] = psst->proc;
     *esp = psst->data;
