@@ -166,9 +166,9 @@ const gx_device_pclxl gs_pxlcolor_device =
 /* ---------------- Output utilities ---------------- */
 
 /* Write a sequence of bytes. */
-#define put_lit(s, bytes) put_bytes(s, bytes, sizeof(bytes))
+#define put_lit(s, bytes) px_put_bytes(s, bytes, sizeof(bytes))
 private void
-put_bytes(stream * s, const byte * data, uint count)
+px_put_bytes(stream * s, const byte * data, uint count)
 {
     uint used;
 
@@ -348,7 +348,7 @@ pclxl_set_color_palette(gx_device_pclxl * xdev, pxeColorSpace_t color_space,
 	put_ub(s, color_space);
 	put_lit(s, csp_);
 	put_u(s, palette_size);
-	put_bytes(s, palette, palette_size);
+	px_put_bytes(s, palette, palette_size);
 	put_ac(s, pxaPaletteData, pxtSetColorSpace);
 	xdev->color_space = color_space;
 	xdev->palette.size = palette_size;
@@ -519,7 +519,7 @@ pclxl_flush_points(gx_device_pclxl * xdev)
 	      useb:put_np(s, count, data_type);
 		spputc(s, op);
 		put_data_length(s, count * 2);	/* 2 bytes per point */
-		put_bytes(s, diffs, count * 2);
+		px_put_bytes(s, diffs, count * 2);
 		goto zap;
 	    case points_curves:
 		op = pxtBezierPath;
@@ -659,7 +659,7 @@ pclxl_write_image_data(gx_device_pclxl * xdev, const byte * data, int data_bit,
 	    put_ub(s, eRLECompression);
 	    put_ac(s, pxaCompressMode, pxtReadImage);
 	    put_data_length(s, count);
-	    put_bytes(s, buf, count);
+	    px_put_bytes(s, buf, count);
 	}
 	return;
       ncfree:gs_free_object(xdev->v_memory, buf, "pclxl_write_image_data");
@@ -670,8 +670,8 @@ pclxl_write_image_data(gx_device_pclxl * xdev, const byte * data, int data_bit,
     put_ac(s, pxaCompressMode, pxtReadImage);
     put_data_length(s, num_bytes);
     for (i = 0; i < height; ++i) {
-	put_bytes(s, data + i * raster, width_bytes);
-	put_bytes(s, (const byte *)"\000\000\000\000", -width_bytes & 3);
+	px_put_bytes(s, data + i * raster, width_bytes);
+	px_put_bytes(s, (const byte *)"\000\000\000\000", -width_bytes & 3);
     }
 }
 
@@ -691,11 +691,11 @@ put_string(stream * s, const byte * data, uint len, bool wide)
     if (wide) {
 	spputc(s, pxt_uint16_array);
 	put_u(s, len);
-	put_bytes(s, data, len * 2);
+	px_put_bytes(s, data, len * 2);
     } else {
 	spputc(s, pxt_ubyte_array);
 	put_u(s, len);
-	put_bytes(s, data, len);
+	px_put_bytes(s, data, len);
     }
 }
 
@@ -772,11 +772,11 @@ pclxl_define_bitmap_char(gx_device_pclxl * xdev, uint ccode,
 	put_us(s, size);
     put_ac(s, pxaCharDataSize, pxtReadChar);
     put_data_length(s, size);
-    put_bytes(s, (const byte *)"\000\000\000\000\000\000", 6);
+    px_put_bytes(s, (const byte *)"\000\000\000\000\000\000", 6);
     put_us_be(s, width_bits);
     put_us_be(s, height);
     for (i = 0; i < height; ++i)
-	put_bytes(s, data + i * raster, width_bytes);
+	px_put_bytes(s, data + i * raster, width_bytes);
     spputc(s, pxtEndChar);
 }
 
@@ -1274,7 +1274,7 @@ pclxl_open_device(gx_device * dev)
 
 	/* We have to add 2 to the strlen because the next-to-last */
 	/* character is a null. */
-	put_bytes(s, (const byte *)file_header,
+	px_put_bytes(s, (const byte *)file_header,
 		  strlen(file_header) + 2);
 	put_usp(s, (uint) (dev->HWResolution[0] + 0.5),
 		(uint) (dev->HWResolution[1] + 0.5));
