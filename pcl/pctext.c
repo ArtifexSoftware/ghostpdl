@@ -385,16 +385,17 @@ pcl_get_width(pcl_state_t *pcs, gs_point *advance_vector, const gs_point *pscale
 		tmp -= fmod(tmp, (floatp)1.0);
 		tmp *= (floatp)pcs->uom_cp;
 		width = advance_vector->x * tmp;
+
 	    } else
 		width = advance_vector->x * pscale->x;
+	    width += (floatp)pcs->uom_cp / 2.0;
+	    width -= fmod(width, (floatp)pcs->uom_cp);
 	}
     } else if (is_space)
 	width = pcl_hmi(pcs);
     else
 	width = 0.0;
     /* round to nearest integral pcl units */
-    width += (floatp)pcs->uom_cp / 2.0;
-    width -= fmod(width, (floatp)pcs->uom_cp);
     return width;
 }
     
@@ -744,7 +745,7 @@ pcl_text(
 	} else
 	    scale.x = scale.y = pl_fp_pitch_cp(&pfp->params)
 	                         * (100.0 / pl_fp_pitch_cp(&pfp->font->params))
-	                         * inch2coord(ppi * 100.0);
+	                         * inch2coord(1.0 / (100.0 * ppi));
 	/*
 	 * Scalable fonts use an upright coordinate system,
 	 * the opposite from the usual PCL system.
