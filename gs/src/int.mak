@@ -1062,14 +1062,17 @@ $(PSOBJ)zfrsd.$(OBJ) : $(PSSRC)zfrsd.c $(OP) $(memory__h)\
 $(PSD)level2.dev : $(PSD)psl2.dev
 	$(CP_) $(PSD)psl2.dev $(PSD)level2.dev
 
+# We -include dpsand2 first so that geninit will have access to the
+# system name table as soon as possible.
 $(PSD)psl2.dev : $(INT_MAK) $(ECHOGS_XE)\
  $(PSD)cidfont.dev $(PSD)cie.dev $(PSD)cmapread.dev $(PSD)compfont.dev\
  $(PSD)dct.dev $(PSD)dpsand2.dev\
  $(PSD)filter.dev $(PSD)iodevice.dev $(PSD)pagedev.dev $(PSD)pattern.dev\
  $(PSD)psl1.dev $(GLD)psl2lib.dev $(PSD)psl2read.dev\
  $(PSD)sepr.dev $(PSD)type32.dev $(PSD)type42.dev
-	$(SETMOD) $(PSD)psl2 -include $(PSD)cidfont $(PSD)cie $(PSD)cmapread $(PSD)compfont
-	$(ADDMOD) $(PSD)psl2 -include $(PSD)dct $(PSD)dpsand2 $(PSD)filter $(PSD)iodevice
+	$(SETMOD) $(PSD)psl2 -include $(PSD)dpsand2
+	$(ADDMOD) $(PSD)psl2 -include $(PSD)cidfont $(PSD)cie $(PSD)cmapread $(PSD)compfont
+	$(ADDMOD) $(PSD)psl2 -include $(PSD)dct $(PSD)filter $(PSD)iodevice
 	$(ADDMOD) $(PSD)psl2 -include $(PSD)pagedev $(PSD)pattern $(PSD)psl1 $(GLD)psl2lib $(PSD)psl2read
 	$(ADDMOD) $(PSD)psl2 -include $(PSD)sepr $(PSD)type32 $(PSD)type42
 	$(ADDMOD) $(PSD)psl2 -emulator PostScript PostScriptLevel2
