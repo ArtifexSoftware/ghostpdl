@@ -229,6 +229,11 @@ int pdf_copy_mask_bits(stream *s, const byte *base, int sourcex,
 int pdf_copy_color_bits(stream *s, const byte *base, int sourcex,
 			int raster, int w, int h, int bytes_per_pixel);
 
+/* Complete image data. */
+int
+pdf_complete_image_data(gx_device_pdf *pdev, pdf_image_writer *piw, int data_h,
+			int width, int bits_per_pixel);
+
 /* Finish writing the binary image data. */
 int pdf_end_image_binary(gx_device_pdf *pdev, pdf_image_writer *piw,
 			 int data_h);

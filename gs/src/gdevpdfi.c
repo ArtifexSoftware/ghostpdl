@@ -623,6 +623,10 @@ pdf_image_end_image_data(gx_image_enum_common_t * info, bool draw_last,
 	pdf_put_image_matrix(pdev, &pie->mat,
 			     (height == 0 || data_height == 0 ? 1.0 :
 			      (double)data_height / height));
+    code = pdf_complete_image_data(pdev, &pie->writer, data_height,
+			pie->width, pie->bits_per_pixel);
+    if (code < 0)
+	return code;
     code = pdf_end_image_binary(pdev, &pie->writer, data_height);
     if (code < 0)
 	return code;

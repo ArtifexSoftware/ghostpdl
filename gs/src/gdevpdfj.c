@@ -334,23 +334,52 @@ pdf_begin_image_data(gx_device_pdf * pdev, pdf_image_writer * piw,
     return code;
 }
 
+/* Complete image data. */
+int
+pdf_complete_image_data(gx_device_pdf *pdev, pdf_image_writer *piw, int data_h,
+			int width, int bits_per_pixel)
+{
+    if (data_h != piw->height) {
+	if (piw->alt_writer_count > 1 ||
+	    piw->binary[0].strm->procs.process == s_DCTE_template.process) {
+	    /* 	Since DCTE can't safely close with incomplete data,
+		we add stub data to complete the stream.
+	    */
+	    int bytes_per_line = (width * bits_per_pixel + 7) / 8;
+	    int lines_left = piw->height - data_h;
+	    byte buf[256];
+	    const uint lb = sizeof(buf);
+	    int i, l, status;
+	    uint ignore;
+
+	    memset(buf, 128, lb);
+	    for (; lines_left; lines_left--) 
+		for (i = 0; i < piw->alt_writer_count; i++) {
+		    for (l = bytes_per_line; l > 0; l -= lb)
+			if ((status = sputs(piw->binary[i].strm, buf, min(l, lb), 
+					    &ignore)) < 0)
+			    return_error(gs_error_ioerror);
+		}
+	}
+    }
+    return 0;
+}
+
 /* Finish writing the binary image data. */
 int
 pdf_end_image_binary(gx_device_pdf *pdev, pdf_image_writer *piw, int data_h)
 {
-    int code;
+    int code, code1 = 0;
 
     if (piw->alt_writer_count > 1)
 	code = pdf_choose_compression(piw, true);
     else
 	code = psdf_end_binary(&piw->binary[0]);
-    if (code < 0)
-	return code;
     /* If the image ended prematurely, update the Height. */
     if (data_h != piw->height)
-	code = cos_dict_put_c_key_int(cos_stream_dict(piw->data),
+	code1 = cos_dict_put_c_key_int(cos_stream_dict(piw->data),
 				      piw->pin->Height, data_h);
-    return code;
+    return code < 0 ? code : code1;
 }
 
 /*
