@@ -67,6 +67,7 @@ private const gs_matrix3    dflt_MatrixLMN = { {  3.51, -1.07,  0.06 },
  */
   private int
 dflt_TransformPQR_proc(
+    const gs_memory_t   *mem,
     int                 cmp_indx,
     floatp              val,
     const gs_cie_wbsd * cs_wbsd,
