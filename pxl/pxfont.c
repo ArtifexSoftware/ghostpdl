@@ -192,7 +192,7 @@ px_define_font(px_font_t *pxfont, const byte *header, ulong size, gs_id id,
 	     header[5] != 0 /* variety */
 	   )
 	  return_error(mem, errorIllegalFontHeaderFields);
-	pxfont->header = header;
+	pxfont->header = (byte *)header; /* remove const cast */
 	pxfont->header_size = size;
 	{ static const pl_font_offset_errors_t errors = {
 	    errorIllegalFontData,
@@ -273,12 +273,76 @@ px_concat_font_name(char *message, uint max_message, const px_value_t *pfnv)
 	*mptr = 0;
 }
 
+/** Convert pxl text arguments into an array of gs_chars 
+ * caller must allocate the correct size array pchar and free it later
+ */
+private void
+px_str_to_gschars( px_args_t *par, px_state_t *pxs, gs_char *pchr)
+{
+    const px_value_t *pstr = par->pv[0];
+    const char *str = (const char *)pstr->value.array.data;
+    uint len = pstr->value.array.size;
+    int i;
+    gs_char chr;
+    gs_char mchr;
+    const pl_symbol_map_t *psm = pxs->pxgs->symbol_map;
+
+    if (pstr->type & pxd_ubyte) {
+	for (i=0; i < len; i++) {
+	    chr = str[i];
+	    mchr = pl_map_symbol(psm, chr, pxs->pxgs->base_font->storage == pxfsInternal);
+	    pchr[i] = mchr;
+	}
+    } else {
+	for (i=0; i < len; i++) {
+	    chr = uint16at(&str[i << 1], (pstr->type & pxd_big_endian));
+	    mchr = pl_map_symbol(psm, chr, pxs->pxgs->base_font->storage == pxfsInternal);
+	    pchr[i] = mchr;
+	}
+    }
+}
+
+/** gs_text_begin using gs_chars and x y widths 
+ */
+private 
+int
+pl_xyshow_begin(gs_state * pgs, const gs_char * str, uint size,
+		const float *x_widths, const float *y_widths,
+		uint widths_size, gs_memory_t * mem, gs_text_enum_t ** ppte)
+{
+    gs_text_params_t text;
+
+    text.operation = TEXT_FROM_CHARS | TEXT_REPLACE_WIDTHS |
+	TEXT_DO_DRAW /* | TEXT_RETURN_WIDTH */;
+    text.data.chars = str;
+    text.size = size;
+    text.x_widths = x_widths;
+    text.y_widths = y_widths;
+    text.widths_size = widths_size;
+    return gs_text_begin(pgs, &text, mem, ppte);
+}
+
+/** gs_text_begin using gs_chars and charpath 
+ */
+private 
+int
+pl_charpath_begin(gs_state * pgs, const gs_char * str, uint size, bool stroke_path,
+		  gs_memory_t * mem, gs_text_enum_t ** ppte)
+{
+    gs_text_params_t text;
+
+    text.operation = TEXT_FROM_CHARS | TEXT_RETURN_WIDTH |
+	(stroke_path ? TEXT_DO_TRUE_CHARPATH : TEXT_DO_FALSE_CHARPATH);
+    text.data.chars = str, 
+    text.size = size;
+    return gs_text_begin(pgs, &text, mem, ppte);
+}
+
+
 /* Paint text or add it to the path. */
 /* This procedure implements the Text and TextPath operators. */
 /* Attributes: pxaTextData, pxaXSpacingData, pxaYSpacingData. */
-private font_proc_next_char_glyph(px_next_char_8);
-private font_proc_next_char_glyph(px_next_char_16big);
-private font_proc_next_char_glyph(px_next_char_16little);
+
 int
 px_text(px_args_t *par, px_state_t *pxs, bool to_path)
 {
@@ -287,19 +351,17 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
     px_gstate_t *pxgs = pxs->pxgs;
     gs_text_enum_t *penum;
     const px_value_t *pstr = par->pv[0];
-    int index_shift = (pstr->type & pxd_ubyte ? 0 : 1);
     const char *str = (const char *)pstr->value.array.data;
     uint len = pstr->value.array.size;
     const px_value_t *pxdata = par->pv[1];
     const px_value_t *pydata = par->pv[2];
     gs_matrix save_ctm;
     gs_font *pfont = gs_currentfont(pgs);
-    font_proc_next_char_glyph((*save_next_char));
     int code = 0;
+    gs_char *pchr = 0;
 
     if ( pfont == 0 )
 	return_error(mem, errorNoCurrentFont);
-    save_next_char = pfont->procs.next_char_glyph;
 
     if ( (pxdata != 0 && pxdata->value.array.size != len) ||
 	 (pydata != 0 && pydata->value.array.size != len)
@@ -363,10 +425,11 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
     else 
 	pfont->WMode = 1; /* NB: ufst seg fault issues. */ 
     
-    pfont->procs.next_char_glyph =
-	(!index_shift ? px_next_char_8 :
-	 pstr->type & pxd_big_endian ? px_next_char_16big :
-	 px_next_char_16little);
+    pchr = (gs_char *)gs_alloc_byte_array(mem, len, sizeof(gs_char), "px_text gs_char[]");    
+    if (pchr == 0) 
+	return_error(mem, errorInsufficientMemory);
+    px_str_to_gschars(par, pxs, pchr);
+
     {
 	pl_font_t *plfont = (pl_font_t *)pfont->client_data;
 	plfont->bold_fraction = pxgs->char_bold_value * 1.625;
@@ -396,38 +459,22 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
 		}
 		else {
 		    /* rotated 90 pre move to translate rotation point */
-		    int highbyte = pstr->type & pxd_big_endian ? 0 : 1;
-
-		    if ( (byte)str[i*2+highbyte] > 0 ) { 	
-			code = gx_path_current_point(pgs->path, &origin);	
-			if ( code < 0 )
-			    break;
-			gs_distance_transform2fixed(mem, 
-						    (const gs_matrix_fixed *)&save_ctm,
-						    (pxdata ? real_elt(pxdata, i) : 0.0),
-						    (pydata ? real_elt(pydata, i) : 0.0),
-						    &dist);
-			code = gx_path_add_point(pgs->path,
-						 origin.x + dist.x, origin.y + dist.y);	
-			if ( code < 0 )
-			    break;
+		    code = gx_path_current_point(pgs->path, &origin);	
+		    if ( code < 0 )
+			break;
+		    gs_distance_transform2fixed(mem, 
+						(const gs_matrix_fixed *)&save_ctm,
+						(pxdata ? real_elt(pxdata, i) : 0.0),
+						(pydata ? real_elt(pydata, i) : 0.0),
+						&dist);
+		    code = gx_path_add_point(pgs->path,
+					     origin.x + dist.x, origin.y + dist.y);	
+		    if ( code < 0 )
+			break;
+		    if ( pchr[i] > 255 )
 			pxgs->writing_mode = 1;
-		    }
-		    else {   
-			code = gx_path_current_point(pgs->path, &origin);	
-			if ( code < 0 )
-			    break;
-			gs_distance_transform2fixed(mem,  
-						    (const gs_matrix_fixed *)&save_ctm,
-						    (pxdata ? real_elt(pxdata, i) : 0.0),
-						    (pydata ? real_elt(pydata, i) : 0.0),
-						    &dist);
-			code = gx_path_add_point(pgs->path,
-						 origin.x + dist.x, origin.y + dist.y);	
-			if ( code < 0 )
-			    break;
+		    else
 			pxgs->writing_mode = 0;
-		    }
 		}
 		pxgs->char_matrix_set = 0;
 		gs_setmatrix(pgs, &save_ctm);
@@ -438,8 +485,8 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
 	    if ( code < 0 )
 		break;
 		  
-	    code = gs_charpath_begin(pgs, str + (i << index_shift), 1, false,
-				     mem, &penum);
+	    code = pl_charpath_begin(pgs, &pchr[i], 1, false, mem, &penum);
+
 	    if ( code >= 0 )
 		code = gs_text_process(penum);
 	    gs_text_release(penum, "px_text");
@@ -474,7 +521,7 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
 	float *fvals = 0;
 	
 	if ( len > 0 ) {
-	    fvals = (float *)gs_alloc_byte_array(mem, len+1, sizeof(float) * 2, "pxtext");
+	    fvals = (float *)gs_alloc_byte_array(mem, len+1, sizeof(float) * 2, "px_text fvals");
 	    if ( fvals == 0 )
 		return_error(mem, errorInsufficientMemory);
 	}
@@ -539,7 +586,7 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
 		if ( preMove )
 		    gs_rmoveto(pxs->pgs, fvals[0], fvals[1]);
 		/* else post move using xyshow */
-		code = gs_xyshow_begin(pgs, &str[i*(index_shift+1)], 
+		code = pl_xyshow_begin(pgs, &pchr[i], 
 				       1, &fvals[2*preMove], &fvals[2*preMove], 
 				       2, mem, &penum);
 
@@ -566,64 +613,29 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
 					      device_distance.y, 
 					      &current_mat, 
 					      &font_distance);
-		fvals[i * 2] = font_distance.x;
-		fvals[i * 2 + 1] = font_distance.y;
+		fvals[i*2] = font_distance.x;
+		fvals[i*2 +1] = font_distance.y;  
+
 	    }
-	    code = gs_xyshow_begin(pgs, str, len, fvals, fvals, 
-				   len * 2, mem, &penum);
+	    // NB: this looks correct but pdfwrite isn't generating 
+	    // the correct information for text selection to compute spaces correctly.
+	    code = pl_xyshow_begin(pgs, pchr, len, fvals, fvals, 
+				   len, mem, &penum);
 	    if ( code >= 0 )
 		code = gs_text_process(penum);
 	    gs_text_release(penum, "pxtext");
 	}
 	if ( fvals ) 
-	    gs_free_object( mem, fvals, "pxtext" );
+	    gs_free_object( mem, fvals, "px_text fvals" );
     }
     gs_setmatrix(pgs, &save_ctm);
     pfont->WMode = 0;
-    pfont->procs.next_char_glyph = save_next_char;
+
+    gs_free_object( mem, pchr, "px_text gs_char" );
     return (code == gs_error_invalidfont ?
 	    gs_note_error(mem, errorBadFontData) : code);
 }
-/* Next-character procedures, with symbol mapping. */
-private gs_char
-map_symbol(uint chr, const gs_text_enum_t *penum)
-{	
-    px_gstate_t *pxgs = gs_state_client_data(((gs_show_enum *)penum)->pgs);
-    const pl_symbol_map_t *psm = pxgs->symbol_map;
-    return pl_map_symbol(psm, chr, pxgs->base_font->storage == pxfsInternal);
-}
 
-private int
-px_next_char_8(gs_text_enum_t *penum, gs_char *pchr, gs_glyph *pglyph)
-{	
-    *pglyph = gs_no_glyph;
-    if ( penum->index == penum->text.size )
-	return 2;
-    *pchr = map_symbol(penum->text.data.bytes[penum->index++], penum);
-    return 0;
-}
-
-/* 16bit char is always unicode */
-private int
-px_next_char_16big(gs_text_enum_t *penum, gs_char *pchr, gs_glyph *pglyph)
-{	
-    *pglyph = gs_no_glyph;
-    if ( penum->index == penum->text.size )
-	return 2;
-    *pchr = uint16at(&penum->text.data.bytes[penum->index++ << 1], true);
-    return 0;
-}
-
-/* 16bit char is always unicode */
-private int
-px_next_char_16little(gs_text_enum_t *penum, gs_char *pchr, gs_glyph *pglyph)
-{	
-    *pglyph = gs_no_glyph;
-    if ( penum->index == penum->text.size )
-	return 2;
-    *pchr = uint16at(&penum->text.data.bytes[penum->index++ << 1], false);
-    return 0;
-}
 
 /* ---------------- Operators ---------------- */
 
@@ -868,7 +880,7 @@ pxReadChar(px_args_t *par, px_state_t *pxs)
 	      code = gs_note_error(pxs->memory, errorUnsupportedCharacterFormat);
 	    }
 	  if ( code >= 0 )
-	    { code = pl_font_add_glyph(pxs->download_font, char_code, data);
+	    { code = pl_font_add_glyph(pxs->download_font, char_code, (byte *)data); /* const cast */
 	      if ( code < 0 )
 		code = gs_note_error(pxs->memory, errorInternalOverflow);
 	    }
