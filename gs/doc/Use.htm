@@ -45,6 +45,7 @@
 </ul>
 
 <li><a href="#EPS">Using Ghostscript with EPS files</a>
+<li><a href="#SPOT">Using Ghostscript with overprinting and spot colors</a>
 <li><a href="#Finding_files">How Ghostscript finds files</a>
 <ul>
 <li><a href="#PS_resources">Finding PostScript Level 2 resources</a>
@@ -144,7 +145,7 @@ program itself may differ among systems.  For instance, to invoke
 Ghostscript on unix-like systems type:
 
 <blockquote>
-	<b><tt><pre>gs</tt></b> [options] {filename 1} ... [options] {filename <em>N</em>} ...
+	<pre><b><tt>gs</tt></b> [options] {filename 1} ... [options] {filename <em>N</em>} ...
 </pre></blockquote>
 
 <p>Here are some basic examples. The details of how these work are described below.
@@ -624,6 +625,79 @@ is available from:
 <a href="http://partners.adobe.com/asn/developer/technotes/postscript.html"
 class="offsite">
 http://partners.adobe.com/asn/developer/technotes/postscript.html</a>
+
+<h2><a name="SPOT"></a>Using Ghostscript with overprinting and spot colors</h2>
+
+<p>
+In general with PostScript and PDF interpreters, the handling of
+<b>overprinting</b> and <b>spot colors</b> depends upon the
+process color model of the <a href="#Output_device">output device</a>. Devices
+that produce gray or RGB output have an <b>additive</b> process color model.
+Devices which produce CMYK output have a <b>subtractive</b> process color model.
+Devices may, or may not, have support for spot colors.
+
+<blockquote><i>
+Note: The differences in appearance of files with overprinting and spot colors
+caused by the differences in the color model of the output device are part of the
+PostScript and PDF specifications. They are not due to a limitation in the
+implementation of Ghostscript or its output devices.
+</i></blockquote>
+
+<p>
+With devices which use a subtractive process color model, both PostScript 
+and PDF allow the drawing of objects using colorants (inks) for one or more planes 
+without affecting the data for the remaining colorants. Thus the inks for one 
+object may <b><tt>overprint</tt></b> the inks for another object. In some cases 
+this produces a transparency like effect. (The effects of overprinting should 
+not be confused with the PDF 1.4 blending operations which are supported for
+all output devices.) Overprinting is not allowed for devices with an additive 
+process color model. With files that use overprinting, the appearance of the 
+resulting image can differ between devices which produce RGB output versus devices 
+which produce CMYK output. Ghostscript automatically overprints (if needed) 
+when the output device uses a subtractive process color model. For example, 
+if the file is using overprinting, differences can be seen in the appearance 
+of the output from the <a href="Devices.htm#TIFF">tiff24nc and tiff32nc devices</a>
+which use an RGB and a CMYK process color models. 
+
+<p>
+Most of the Ghostscript <a href="Devices.htm">output devices</a> do not have 
+file formats which support spot colors. Instead spot colors are converted using 
+the tint transform function contained within the color space definition.. However 
+there are several devices which have support for spot colors. The PSD format 
+(Adobe Photoshop) produced by the <a href="Devices.htm#PSD">psdcmyk device</a> 
+contains both the raster data plus an equivalent CMYK color for each spot color. 
+This allows Photoshop to simulate the appearance of the spot colors. The <a href="Devices.htm#display_device">display 
+device (MS Windows, OS/2, gtk+)</a> can be used with different color models: 
+Gray, RGB, CMYK only, or CMYK plus spot colors (separation). The display device, 
+when using its CMYK plus spot color (separation) mode, also uses an equivalent 
+CMYK color to simulate the appearance of the spot color. The
+<a href="Devices.htm#TIFF">tiffsep 
+device</a> creates output files for each separation (CMYK and any spot colors 
+present). It also creates a composite CMYK file using an equivalent CMYK color 
+to simulate the appearance of spot colors. The
+<a href="Devices.htm#XCF">xcfcmyk device</a> 
+creates output files with spot colors placed in separate alpha channels. (The 
+XCF file format does not currently directly support spot colors.)
+
+<p>
+Overprinting with spot colors is not allowed if the tint transform function 
+is being used to convert spot colors. Thus if spot colors are used with overprinting, 
+then the appearance of the result can differ between output devices. One result 
+would be obtained with a CMYK only device and another would be obtained with 
+a CMYK plus spot color device. In a worst case situation where a file has overprinting 
+with both process (CMYK) and spot colors, it is possible to get three different 
+appearances for the same input file using the
+<a href="Devices.htm#TIFF">tiff24nc</a> (RGB),
+<a href="Devices.htm#TIFF">tiff32nc</a> (CMYK), and
+<a href="Devices.htm#TIFF">tiffsep</a> (CMYK plus spot colors) devices.
+
+<blockquote><i>
+In Adobe Acrobat, viewing of the effects of overprinting is enabled by the
+'Overprint Preview' item in the 'Advanced' menu. This feature is not available
+in the free Acrobat Reader. The free Acrobat Reader also uses the tint transform
+functions to convert spot colors to the appropriate alternate color space.
+</i></blockquote>
+
 
 <hr>
 
