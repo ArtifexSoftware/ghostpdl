@@ -360,7 +360,9 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 		    "aggregate symbol coding (%d instances)", REFAGGNINST);
 
 		  if (REFAGGNINST > 1) {
-		      /* multiple symbols are like a text region */
+		      jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+			"aggregate coding with REFAGGNINST=%d", REFAGGNINST);
+		      /* todo: multiple symbols are like a text region */
 		  } else {
 		      /* 6.5.8.2.2 */
 		      bool SBHUFF = params->SDHUFF;
@@ -374,7 +376,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 			  /* todo */
 		      } else {
 			  code = jbig2_arith_int_decode(IAID, as, &ID);
-		          code = jbig2_arith_int_decode(IARDY, as, &RDX);
+		          code = jbig2_arith_int_decode(IARDX, as, &RDX);
 		          code = jbig2_arith_int_decode(IARDY, as, &RDY);
 		      }
 
