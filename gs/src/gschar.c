@@ -343,8 +343,7 @@ stringwidth_setup(gs_show_enum * penum, gs_state * pgs, const char *str,
 	return code;
     penum->level = pgs->level;	/* for level check in show_update */
     /* Set up a null device that forwards xfont requests properly. */
-    gs_make_null_device(dev_null, mem);
-    dev_null->target = gs_currentdevice_inline(pgs);
+    gs_make_null_device(dev_null, gs_currentdevice_inline(pgs), mem);
     pgs->ctm_default_set = false;
     penum->dev_null = dev_null;
     /* Account for the extra reference from the enumerator. */
