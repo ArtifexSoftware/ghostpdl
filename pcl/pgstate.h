@@ -225,6 +225,8 @@ typedef struct pcl_hpgl_state_s {
 	    uint pattern_id;
 	  } param;
 	} fill;
+        /* current bits of fraction for polyline encoded numbers */
+        int32 fraction_bits;
 	hpgl_render_fill_type_t fill_type;
 	hpgl_line_type_t fixed_line_type[8];
 	hpgl_line_type_t adaptive_line_type[8];
