@@ -69,8 +69,11 @@ hpgl_next_char(gs_show_enum *penum, const hpgl_state_t *pgls, gs_char *pchr)
 	  return 2;
 	p = penum->text.data.bytes;
 	if ( pgls->g.label.double_byte ) {
-	  if ( i + 1 >= size )
-	    return -1;
+	    if ( i + 1 >= size ) {
+		/* lose the first byte of 16bit terminator 
+		 */
+		return 2;
+	    }
 	  *pchr = (*p << 8) + p[1];
 	  penum->index = i + 2;
 	} else {
@@ -1305,12 +1308,32 @@ print:	     {
 	return 0;
 }
 
+
+/**
+ *  used by hpgl_LB() to find the end of a label
+ *  
+ * 8bit and 16bit label terminator check
+ *  (prev << 8) & curr -> 16 bit
+ *  have_16bits allows per byte call with true on 16bit boundary.
+ */ 
+private 
+bool is_terminator( hpgl_state_t *pgls, byte prev, byte curr, bool have_16bits )
+{
+    return 
+	pgls->g.label.double_byte ? 
+	( have_16bits && prev == 0 && curr == pgls->g.label.terminator ) :
+	( curr == pgls->g.label.terminator );
+}  
+
 /* LB ..text..terminator */
  int
 hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	const byte *p = pargs->source.ptr;
 	const byte *rlimit = pargs->source.limit;
 	bool print_terminator = pgls->g.label.print_terminator;
+	byte ch = 0xff;
+	byte prev_ch = 0xff;     /* for two byte terminators */ 
+	bool have_16bits = true; /* two byte terminators need 16 bits */
 
 	if ( pargs->phase == 0 )
 	  {
@@ -1324,12 +1347,15 @@ hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	  }
 
 	while ( p < rlimit )
-	  { byte ch = *++p;
+	  { 
+	    have_16bits = !have_16bits; 
+	    prev_ch = ch;           
+	    ch = *++p;          
 	    if_debug1('I',
 		      (ch == '\\' ? " \\%c" : ch >= 33 && ch <= 126 ? " %c" :
 		       " \\%03o"),
 		      ch);
-	    if ( ch == pgls->g.label.terminator )
+	    if ( is_terminator(pgls, prev_ch, ch, have_16bits) )
 	      {
 		if ( !print_terminator )
 		  {
