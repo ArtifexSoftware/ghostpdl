@@ -2078,9 +2078,10 @@ read_create_compositor(
      * change the target device.
      */
     code = dev_proc(tdev, create_compositor)(tdev, &tdev, pcomp, pis, mem);
-    if (code >= 0 && tdev != *ptarget)
+    if (code >= 0 && tdev != *ptarget) {
+        rc_increment(tdev);
         *ptarget = tdev;
-
+    }
     /* free the compositor object */
     if (pcomp != 0)
         gs_free_object(mem, pcomp, "read_create_compositor");
