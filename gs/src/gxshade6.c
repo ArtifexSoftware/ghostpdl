@@ -43,6 +43,7 @@ static bool dbg_nofill = false;
 static int dbg_patch_cnt = 0;
 static int dbg_quad_cnt = 0;
 static int dbg_triangle_cnt = 0;
+static int dbg_wedge_triangle_cnt = 0;
 #endif
 
 
@@ -939,7 +940,7 @@ private void
 draw_patch(const tensor_patch *p, bool interior, ulong rgbcolor)
 {
 #ifdef DEBUG
-#if 1 /* Disabled for a better view with a specific purpose. 
+#if 0 /* Disabled for a better view with a specific purpose. 
 	 Feel free to enable fo needed. */
     int i, step = (interior ? 1 : 3);
 
@@ -1684,6 +1685,9 @@ fill_triangle_wedge_aux(patch_fill_state_t *pfs,
     fixed dx = any_abs(q0->p.x - q1->p.x), dy = any_abs(q0->p.y - q1->p.y);
     bool swap_axes;
 
+#   if SKIP_TEST
+	dbg_wedge_triangle_cnt++;
+#   endif
     if (dx > dy) {
 	swap_axes = true;
 	qq0.x = q0->p.y;
@@ -1727,17 +1731,17 @@ fill_triangle_wedge(patch_fill_state_t *pfs,
 
 private inline int
 fill_triangle_wedge_from_list(patch_fill_state_t *pfs, 
-    const wedge_vertex_list_elem_t *beg, const wedge_vertex_list_elem_t *end,
+    const wedge_vertex_list_elem_t *beg, const wedge_vertex_list_elem_t *end, 
+    const wedge_vertex_list_elem_t *mid,
     const patch_color_t *c0, const patch_color_t *c1)
 {
     shading_vertex_t p[3];
 
-    assert(beg->next->next == end);
     p[0].p = beg->p;
     p[0].c = *c0; /* fixme : unhappy copying colors. */
     p[1].p = end->p;
     p[1].c = *c1;
-    p[2].p = beg->next->p;
+    p[2].p = mid->p;
     patch_interpolate_color(&p[2].c, c0, c1, pfs, 0.5);
     return fill_triangle_wedge(pfs, &p[0], &p[1], &p[2]);
 }
@@ -1750,7 +1754,7 @@ fill_wedge_from_list_rec(patch_fill_state_t *pfs,
     if (beg->next == end)
 	return 0;
     else if (beg->next->next == end) {
-	return fill_triangle_wedge_from_list(pfs, beg, end, c0, c1);
+	return fill_triangle_wedge_from_list(pfs, beg, end, beg->next, c0, c1);
     } else {
 	gs_fixed_point p;
 	wedge_vertex_list_elem_t *e;
@@ -1765,7 +1769,10 @@ fill_wedge_from_list_rec(patch_fill_state_t *pfs,
 	code = fill_wedge_from_list_rec(pfs, beg, e, c0, &c);
 	if (code < 0)
 	    return code;
-	return fill_wedge_from_list_rec(pfs, e, end, &c, c1);
+	code = fill_wedge_from_list_rec(pfs, e, end, &c, c1);
+	if (code < 0)
+	    return code;
+	return fill_triangle_wedge_from_list(pfs, beg, end, e, c0, c1);
     }
 }
 
@@ -3333,8 +3340,8 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 
 #if SKIP_TEST
     dbg_patch_cnt++;
-    if (dbg_patch_cnt != 67 && dbg_patch_cnt != 78)
-	return 0;
+    /*if (dbg_patch_cnt != 67 && dbg_patch_cnt != 78)
+	return 0;*/
 #endif
     /* We decompose the patch into tiny quadrangles,
        possibly inserting wedges between them against a dropout. */
