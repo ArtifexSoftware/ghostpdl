@@ -203,7 +203,6 @@ pdf_store_pattern1_params(gx_device_pdf *pdev, pdf_resource_t *pres,
     cos_dict_t *pcd = cos_stream_dict((cos_stream_t *)pres->object);
     cos_dict_t *pcd_Resources = cos_dict_alloc(pdev, "pdf_pattern(Resources)");
     char buf[60];
-    gs_point p;
     int code;
 
     if (pcd == NULL || pcd_Resources == NULL)
@@ -213,9 +212,8 @@ pdf_store_pattern1_params(gx_device_pdf *pdev, pdf_resource_t *pres,
 				  t->BBox.q.x, t->BBox.q.y);
     /* The graphics library assumes a shifted origin to provide 
        positive bitmap pixel indices. Compensate it now. */
-    gs_distance_transform(t->BBox.p.x, t->BBox.p.y, &smat, &p);
-    smat.tx = pinst->step_matrix.tx - p.x;
-    smat.ty = pinst->step_matrix.ty - p.y;
+    smat.tx += pinst->step_matrix.tx;
+    smat.ty += pinst->step_matrix.ty;
     smat.xx /= scale_x;
     smat.xy /= scale_x;
     smat.yx /= scale_y;
