@@ -188,7 +188,7 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_const_string * str,
 		return_error(gs_error_invalidfont);
 	    case c_callsubr:
 		c = fixed2int_var(*csp) + pdata->subroutineNumberBias;
-		code = (*pdata->procs->subr_data)
+		code = (*pdata->procs.subr_data)
 		    (pfont, c, false, &ipsp[1].char_string);
 		if (code < 0)
 		    return_error(code);
@@ -534,7 +534,7 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 				)
 				return_error(gs_error_invalidfont);
 			    n = fixed2int_var(csp[-1]);
-			    code = (*pdata->procs->push_values)
+			    code = (*pdata->procs.push_values)
 				(pcis->callback_data, csp - (n + 1), n);
 			    if (code < 0)
 				return_error(code);
@@ -558,7 +558,7 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 			    inext;
 			}
 			++csp;
-			code = (*pdata->procs->pop_value)
+			code = (*pdata->procs.pop_value)
 			    (pcis->callback_data, csp);
 			if (code < 0)
 			    return_error(code);

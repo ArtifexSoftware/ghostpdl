@@ -88,7 +88,7 @@ private int
 type1_callsubr(gs_type1_state *pcis, int index)
 {
     gs_font_type1 *pfont = pcis->pfont;
-    int code = pfont->data.procs->subr_data(pfont, index, false,
+    int code = pfont->data.procs.subr_data(pfont, index, false,
 			&pcis->ipstack[pcis->ips_count].char_string);
 
     if (code < 0)

@@ -43,7 +43,7 @@ psf_type1_glyph_data(gs_font_base *pbfont, gs_glyph glyph,
     gs_font_type1 *const pfont = (gs_font_type1 *)pbfont;
 
     *ppfont = pfont;
-    return pfont->data.procs->glyph_data(pfont, glyph, pstr);
+    return pfont->data.procs.glyph_data(pfont, glyph, pstr);
 }
 int
 psf_get_type1_glyphs(psf_outline_glyphs_t *pglyphs, gs_font_type1 *pfont,
@@ -240,13 +240,13 @@ write_Private(stream *s, gs_font_type1 *pfont,
 	gs_const_string str;
 
 	for (n = 0;
-	     (*pdata->procs->subr_data)(pfont, n, false, &str) !=
+	     (*pdata->procs.subr_data)(pfont, n, false, &str) !=
 	     gs_error_rangecheck;
 	    )
 	    ++n;
 	pprintd1(s, "/Subrs %d array\n", n);
 	for (i = 0; i < n; ++i)
-	    if ((*pdata->procs->subr_data)(pfont, i, false, &str) >= 0) {
+	    if ((*pdata->procs.subr_data)(pfont, i, false, &str) >= 0) {
 		char buf[50];
 
 		sprintf(buf, "dup %d %u -| ", i, str.size);
@@ -274,14 +274,14 @@ write_Private(stream *s, gs_font_type1 *pfont,
 	for (glyph = gs_no_glyph;
 	     (code = psf_enumerate_glyphs_next(&genum, &glyph)) != 1;
 	     )
-	    if (code == 0 && (*pdata->procs->glyph_data)(pfont, glyph, &gdata) >= 0)
+	    if (code == 0 && (*pdata->procs.glyph_data)(pfont, glyph, &gdata) >= 0)
 		++num_chars;
 	pprintd1(s, "2 index /CharStrings %d dict dup begin\n", num_chars);
 	psf_enumerate_glyphs_reset(&genum);
 	for (glyph = gs_no_glyph;
 	     (code = psf_enumerate_glyphs_next(&genum, &glyph)) != 1;
 	    )
-	    if (code == 0 && (*pdata->procs->glyph_data)(pfont, glyph, &gdata) >= 0) {
+	    if (code == 0 && (*pdata->procs.glyph_data)(pfont, glyph, &gdata) >= 0) {
 		uint gssize;
 		const char *gstr =
 		    (*pfont->procs.callbacks.glyph_name)(glyph, &gssize);

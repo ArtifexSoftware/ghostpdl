@@ -818,7 +818,7 @@ cff_write_Subrs_offsets(cff_writer_t *pcw, uint *pcount, gs_font_type1 *pfont)
     gs_const_string str;
 
     for (j = 0, offset = 1;
-	 (code = (*pfont->data.procs->subr_data)(pfont, j, false, &str)) !=
+	 (code = (*pfont->data.procs.subr_data)(pfont, j, false, &str)) !=
 	     gs_error_rangecheck;
 	 ++j) {
 	if (code >= 0 && str.size >= extra_lenIV)
@@ -840,7 +840,7 @@ cff_write_Subrs(cff_writer_t *pcw, uint subrs_count, uint subrs_size,
     cff_put_Index_header(pcw, subrs_count, subrs_size);
     cff_write_Subrs_offsets(pcw, &ignore_count, pfont);
     for (j = 0;
-	 (code = (*pfont->data.procs->subr_data)(pfont, j, false, &str)) !=
+	 (code = (*pfont->data.procs.subr_data)(pfont, j, false, &str)) !=
 	     gs_error_rangecheck;
 	 ++j) {
 	if (code >= 0)

@@ -224,7 +224,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_const_string * str,
 		return_error(gs_error_invalidfont);
 	    case c_callsubr:
 		c = fixed2int_var(*csp) + pdata->subroutineNumberBias;
-		code = (*pdata->procs->subr_data)
+		code = (*pdata->procs.subr_data)
 		    (pfont, c, false, &ipsp[1].char_string);
 	      subr:if (code < 0)
 		    return_error(code);
@@ -513,7 +513,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_const_string * str,
 		goto pushed;
 	    case c2_callgsubr:
 		c = fixed2int_var(*csp) + pdata->gsubrNumberBias;
-		code = (*pdata->procs->subr_data)
+		code = (*pdata->procs.subr_data)
 		    (pfont, c, true, &ipsp[1].char_string);
 		goto subr;
 	    case cx_escape:

@@ -371,7 +371,7 @@ gs_type1_seac(gs_type1_state * pcis, const fixed * cstack, fixed asb,
     pcis->save_adxy.y = cstack[1];
     pcis->os_count = 0;		/* clear */
     /* Ask the caller to provide the base character's CharString. */
-    code = (*pfont->data.procs->seac_data)
+    code = (*pfont->data.procs.seac_data)
 	(pfont, fixed2int_var(cstack[2]), NULL, &bcstr);
     if (code != 0)
 	return code;
@@ -422,7 +422,7 @@ gs_type1_endchar(gs_type1_state * pcis)
 	/* Remove any base character hints. */
 	reset_stem_hints(pcis);
 	/* Ask the caller to provide the accent's CharString. */
-	code = (*pfont->data.procs->seac_data)(pfont, achar, NULL, &astr);
+	code = (*pfont->data.procs.seac_data)(pfont, achar, NULL, &astr);
 	if (code < 0)
 	    return code;
 	/* Continue with the supplied string. */
@@ -505,7 +505,7 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	info->members = 0;
 
     if (default_members != members) {
-	if ((code = pdata->procs->glyph_data(pfont, glyph, &str)) < 0)
+	if ((code = pdata->procs.glyph_data(pfont, glyph, &str)) < 0)
 	    return code;		/* non-existent glyph */
     }
 
@@ -569,7 +569,7 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 		goto out;
 	    case c_callsubr:
 		c = fixed2int_var(*csp);
-		code = pdata->procs->subr_data
+		code = pdata->procs.subr_data
 		    (pfont, c, false, &ipsp[1].char_string);
 		if (code < 0)
 		    return_error(code);
@@ -608,11 +608,11 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 			gs_char bchar = fixed2int(csp[-1]);
 			gs_char achar = fixed2int(csp[0]);
 			int bcode =
-			    pdata->procs->seac_data(pfont, bchar,
-						    &pieces[0], NULL);
+			    pdata->procs.seac_data(pfont, bchar,
+						   &pieces[0], NULL);
 			int acode =
-			    pdata->procs->seac_data(pfont, achar,
-						    &pieces[1], NULL);
+			    pdata->procs.seac_data(pfont, achar,
+						   &pieces[1], NULL);
 
 			code = (bcode < 0 ? bcode : acode);
 		    }

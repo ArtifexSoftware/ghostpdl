@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -99,7 +99,7 @@ typedef struct gs_type1_data_procs_s {
  */
 struct gs_type1_data_s {
     /*int PaintType; *//* in gs_font_common */
-    const gs_type1_data_procs_t *procs;
+    gs_type1_data_procs_t procs;
     charstring_interpret_proc((*interpret));
     void *proc_data;		/* data for procs */
     int lenIV;			/* -1 means no encryption */

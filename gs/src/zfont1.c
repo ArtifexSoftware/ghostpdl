@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -18,6 +18,7 @@
 
 /*$Id$ */
 /* Type 1 and Type 4 font creation operators */
+#include "memory_.h"
 #include "ghost.h"
 #include "oper.h"
 #include "gxfixed.h"
@@ -190,7 +191,7 @@ charstring_font_init(gs_font_type1 *pfont, const charstring_font_refs_t *pfr,
     ref_assign(&pdata->u.type1.OtherSubrs, pfr->OtherSubrs);
     ref_assign(&pdata->u.type1.Subrs, pfr->Subrs);
     ref_assign(&pdata->u.type1.GlobalSubrs, pfr->GlobalSubrs);
-    pfont->data.procs = &z1_data_procs;
+    pfont->data.procs = z1_data_procs;
     pfont->data.proc_data = (char *)pdata;
     pfont->procs.font_info = z1_font_info;
     pfont->procs.same_font = z1_same_font;
@@ -362,7 +363,7 @@ z1_same_font(const gs_font *font, const gs_font *ofont, int mask)
 	const font_data *const podata = pfont_data(pofont1);
 
 	if ((check & (FONT_SAME_OUTLINES | FONT_SAME_METRICS)) &&
-	    pofont1->data.procs == &z1_data_procs &&
+	    !memcmp(&pofont1->data.procs, &z1_data_procs, sizeof(z1_data_procs)) &&
 	    obj_eq(&pdata->CharStrings, &podata->CharStrings) &&
 	    /*
 	     * We use same_font_dict for convenience: we know that
@@ -373,7 +374,7 @@ z1_same_font(const gs_font *font, const gs_font *ofont, int mask)
 	    same |= FONT_SAME_OUTLINES;
 
 	if ((check & FONT_SAME_METRICS) && (same & FONT_SAME_OUTLINES) &&
-	    pofont1->data.procs == &z1_data_procs &&
+	    !memcmp(&pofont1->data.procs, &z1_data_procs, sizeof(z1_data_procs)) &&
 	    /* Metrics may be affected by CDevProc, Metrics, Metrics2. */
 	    same_font_dict(pdata, podata, "Metrics") &&
 	    same_font_dict(pdata, podata, "Metrics2") &&
