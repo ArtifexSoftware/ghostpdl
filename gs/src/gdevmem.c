@@ -175,7 +175,7 @@ gs_make_mem_device(gx_device_memory * dev, const gx_device_memory * mdproto,
 				   (target == 0 || 
                                     dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE));
     }
-    gx_device_fill_in_procs(dev);
+    gx_device_fill_in_procs((gx_device *)dev);
 }
 /* Make a monobit memory device.  This is never a page device. */
 /* Note that white=0, black=1. */
@@ -188,7 +188,7 @@ gs_make_mem_mono_device(gx_device_memory * dev, gs_memory_t * mem,
     set_dev_proc(dev, get_page_device, gx_default_get_page_device);
     gx_device_set_target((gx_device_forward *)dev, target);
     gdev_mem_mono_set_inverted(dev, true);
-    gx_device_fill_in_procs(dev);
+    gx_device_fill_in_procs((gx_device *)dev);
 }
 
 /* Define whether a monobit memory device is inverted (black=1). */
