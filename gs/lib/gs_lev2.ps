@@ -405,6 +405,7 @@ end		% serverdict
 % it doesn't reset stdin/stdout.
 /.startnewjob {			% <exit_bool> <password_level>
 				%   .startnewjob -
+    clear cleardictstack
     serverdict /.jobsave get dup null eq { pop } { restore } ifelse
     exch {
 			% Unencapsulated job
@@ -422,7 +423,6 @@ end		% serverdict
       serverdict /.jobsavelevel 1 put
     } ifelse
 		% Reset the interpreter state.
-  clear cleardictstack
   initgraphics
   false setglobal
 } bind def
@@ -444,6 +444,14 @@ end		% serverdict
 	% to the interpreter that we are under control of a job server.
   .userdict /quit /stop load put
   { .startnewjob true } .startjob
+} odef
+
+/* The procedure to undo the job encapsulation 
+/.endjob {
+  clear cleardictstack
+  serverdict /.jobsave get dup null eq { pop } { restore } ifelse
+  serverdict /.jobsave null put
+  2 vmreclaim   % recover local and global VM
 } odef
 
 systemdict begin
