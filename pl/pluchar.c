@@ -336,7 +336,8 @@ pl_init_fc(
     gs_state *          pgs,
     int                 need_outline,
     FONTCONTEXT *       pfc,
-    bool                width_request)
+    bool                width_request,
+    bool                is_xl_format1)
 {
     gs_font *               pfont = plfont->pfont;
 
@@ -383,10 +384,15 @@ pl_init_fc(
     }
     /* support Format 16 headers (TrueType fonts only) */
     pfc->ExtndFlags = 0;
-    if (plfont->scaling_technology == plfst_TrueType && plfont->large_sizes) {
+    if ( is_xl_format1 ) {
+        pfc->ExtndFlags = EF_XLFONT_TYPE;
+        if ((pfont->WMode & 0x1) != 0)  /* vertical substitution */
+            pfc->ExtndFlags |= EF_VERTSUBS_TYPE;
+    }
+    else if (plfont->scaling_technology == plfst_TrueType && plfont->large_sizes) {
         pfc->ExtndFlags = EF_FORMAT16_TYPE | EF_GALLEYSEG_TYPE;;
         if ((pfont->WMode & 0x1) != 0)  /* vertical substitution */
-            pfc->ExtndFlags = EF_VERTSUBS_TYPE;
+            pfc->ExtndFlags |= EF_VERTSUBS_TYPE;
     }
     /* handle artificial emboldening */
     if (plfont->bold_fraction)
@@ -430,8 +436,10 @@ pl_purge_ufst_font(const pl_font_t * plfont)
     if (plfont->scaling_technology == plfst_MicroType)
         return;
 
-    pl_init_fc(plfont, NULL /* graphics state */, false /* needs outline */,
-               &fc, true /* requesting width */);
+    pl_init_fc(plfont, NULL /* graphics state */,
+               false /* needs outline */,
+               &fc, true /* requesting width */,
+               false /* is_xl_format1 (don't care) */ );
     fc.format |= FC_EXTERN_TYPE;
     if (plfont->scaling_technology == plfst_TrueType)
         fc.format |= FC_TT_TYPE;
@@ -1199,8 +1207,17 @@ pl_set_tt_font(
     int                 need_outline,
     FONTCONTEXT *       pfc )
 {
+    bool is_xl_format1 = false;
+    /* if this is an XL TT font rewrite the header so the agfa
+       rasterizer can properly parse the data */
+    if ( plfont->scaling_technology == plfst_TrueType && 
+         plfont->header[0] == 0 && plfont->header[1] != 0x8 ) {
+        plfont->header[1] = 0x8;
+        is_xl_format1 = true;
+    }
+
     pl_init_fc(plfont, pgs, need_outline, pfc,
-               /* width request iff */ pgs == NULL);
+               /* width request iff */  pgs == NULL, is_xl_format1);
     pfc->font_hdr = plfont->header;
     pfc->format |= FC_NON_Z_WIND | FC_EXTERN_TYPE | FC_TT_TYPE;
     return pl_set_ufst_font(plfont, pfc);
@@ -1258,9 +1275,6 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
     const pl_font_t *   plfont = (const pl_font_t *)pfont->client_data;
     FONTCONTEXT         fc;
 
-    if (plfont->scaling_technology == plfst_TrueType && plfont->large_sizes) {
-        dprintf( "UFST configuration does not properly support TT large sizes yet\n");
-    }
     if ( pl_set_tt_font( pgs,
                          plfont,
                          gs_show_in_charpath(penum),
@@ -1423,7 +1437,8 @@ pl_set_if_font(
     int                 need_outline,
     FONTCONTEXT *       pfc )
 {
-    pl_init_fc(plfont, pgs, need_outline, pfc, /* width request iff */ pgs == NULL);
+    pl_init_fc(plfont, pgs, need_outline, pfc, /* width request iff */ pgs == NULL,
+               /* is XL font */ false);
     memcpy(global_font_header_buffer, plfont->header, plfont->header_size);
 #if (BYTEORDER == LOHI)
     PCLswapHdr(FSA global_font_header_buffer);
@@ -1578,7 +1593,8 @@ pl_set_mt_font(
     int                 need_outline,
     FONTCONTEXT *       pfc )
 {
-    pl_init_fc(plfont, pgs, need_outline, pfc, /* width request iff */ pgs == NULL);
+    pl_init_fc(plfont, pgs, need_outline, pfc, /* width request iff */ pgs == NULL,
+               /* is XL font */ false);
     pfc->font_id = ((gs_font_base *)(plfont->pfont))->UID.id;
 #ifdef UFST_FROM_ROM
     pfc->format |= FC_ROM_TYPE;
