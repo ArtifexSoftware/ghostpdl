@@ -40,7 +40,8 @@
     <a href="#Paint">Paint</a>,
     <a href="#Clipping">Clipping</a>,
     <a href="#Other_graphics">Other graphics</a>,
-    <a href="#Driver_support">Driver support</a>
+    <a href="#Driver_support">Driver support</a>,
+    <a href="#FAPI_support_gx">Font API support</a>
 </ul>
 <li><a href="#Device_drivers">Device drivers</a>
 <ul>
@@ -1338,6 +1339,18 @@ Miscellaneous graphics state:
 
 </dl>
 
+<h4><a name="FAPI_support_gx"></a>Font API support</h4>
+
+<dl>
+
+<dt>
+UFST bridge:
+<dd>
+<a href="../src/gxfapi.c">src/gxfapi.c</a>,
+<a href="../src/gxfapi.h">src/gxfapi.h</a>.
+</dl>
+
+
 <h4><a name="Driver_support"></a>Driver support</h4>
 
 <dl>
@@ -2374,6 +2387,12 @@ Memory management (refs, GC, save/restore) -- see <a
 href="#PostScript_interpreter_extensions">below</a>.
 
 <dl>
+<dt>
+Font API :
+<dd>
+<a href="../src/ifapi.h">src/ifapi.h</a>,
+<a href="../src/zfapi.c">src/zfapi.c</a>.
+<a href="../src/fapiufst.c">src/fapiufst.c</a>,
 
 <dt>
 Miscellaneous support:
@@ -2393,7 +2412,9 @@ Miscellaneous support:
 <a href="../src/iutil.h">src/iutil.h</a>,
 <a href="../src/iutil2.c">src/iutil2.c</a>,
 <a href="../src/iutil2.h">src/iutil2.h</a>,
-<a href="../src/iutilasm.asm">src/iutilasm.asm</a>.
+<a href="../src/iutilasm.asm">src/iutilasm.asm</a>,
+<a href="../src/iplugin.c">src/iplugin.c</a>,
+<a href="../src/iplugin.h">src/iplugin.h</a>.
 
 </dl>
 

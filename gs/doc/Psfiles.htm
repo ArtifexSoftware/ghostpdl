@@ -23,6 +23,7 @@
 <blockquote><ul>
 <li><a href="#General">Generally used system files</a>
 <li><a href="#Obscure">More obscure system files</a>
+<li><a href="#Config">Configuration files</a>
 <li><a href="#PDF_specific">PDF-specific system files</a>
 <li><a href="#DPS_specific">Display PostScript-specific system files</a>
 <li><a href="#Art">Art and examples</a>
@@ -124,6 +125,16 @@ CIDFont--CMap) and creating the font automatically.
 </dl>
 
 <dl>
+<dt><a href="../lib/gs_ciddc.ps"><tt>gs_ciddc.ps</tt></a>
+<dd>Defines Decoding and CIDDecoding resource categories and related procsets.
+</dl>
+
+<dl>
+<dt><a href="../lib/gs_cidfm.ps"><tt>gs_cidfm.ps</tt></a>
+<dd>Provides resource mapping for CIDFont category.
+</dl>
+
+<dl>
 <dt><a href="../lib/gs_cidfn.ps"><tt>gs_cidfn.ps</tt></a>
 <dd><b><tt>ProcSet</tt></b> for implementing <b><tt>CIDFont</tt></b> and
 <b><tt>CIDMap</tt></b> resources.
@@ -144,6 +155,11 @@ Orientation according to the DSC comments.
 <dt><a href="../lib/gs_epsf.ps"><tt>gs_epsf.ps</tt></a>
 <dd>Allow the interpreter to recognize DOS EPSF file headers, and skip to the
 PostScript section of the file.
+</dl>
+
+<dl>
+<dt><a href="../lib/gs_fapi.ps"><tt>gs_fapi.ps</tt></a>
+<dd>Font API support.
 </dl>
 
 <dl>
@@ -175,6 +191,11 @@ procedures and miscellaneous initialization for the Level 2 functions.
 <dl>
 <dt><a href="../lib/gs_ll3.ps"><tt>gs_ll3.ps</tt></a>
 <dd>Initialize PostScript LanguageLevel 3 functions.
+</dl>
+
+<dl>
+<dt><a href="../lib/gs_resmp.ps"><tt>gs_resmp.ps</tt></a>
+<dd>A procset for redefining resource categories with a resource map.
 </dl>
 
 <dl>
@@ -222,6 +243,35 @@ feature.
 <dt><a href="../lib/gs_type1.ps"><tt>gs_type1.ps</tt></a>
 <dd><b><tt>gs_init.ps</tt></b> reads this in if the Ghostscript interpreter
 includes Type 1 font capability (which it normally does).
+</dl>
+
+<hr>
+
+<h2><a name="Config"></a>Configuration files</h2>
+
+<p>
+These files are found in the <b><tt>lib</tt></b> subdirectory of
+the Ghostscript source distribution. Users are allowed to modify them
+to configure Ghostscript.
+
+<dl>
+<dt><a href="../lib/Fontmap"><tt>Fontmap</tt></a>
+<dd>Font mapping table.
+</dl>
+
+<dl>
+<dt><a href="../lib/FAPIconfig"><tt>FAPIconfig</tt></a>
+<dd>A configuration file for Font API client.
+</dl>
+
+<dl>
+<dt><a href="../lib/FAPIfontmap"><tt>FAPIfontmap</tt></a>
+<dd>Font mapping table for Font-API-handled fonts.
+</dl>
+
+<dl>
+<dt><a href="../lib/FAPIcidfmap"><tt>FAPIcidfmap</tt></a>
+<dd>Font mapping table for Font-API-handled CID fonts.
 </dl>
 
 <hr>
