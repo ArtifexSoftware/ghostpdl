@@ -80,6 +80,10 @@ The following projects are in a partially completed state in the PDF writer:
 
 (Interpreter)
 	- By default, copydevice will only copy a device prototype.
+	- Some internal references to contexts in zcontext.c are changed
+from direct pointers to context indices.
+	- Renames internal types to add a _t: ctx_list, ctx_status,
+gs_context, gs_condition, gs_lock.
 (Library)
 	- By default, gs_copydevice[2] will only copy a device prototype.
 
