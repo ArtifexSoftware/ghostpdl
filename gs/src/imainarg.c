@@ -194,6 +194,8 @@ gs_main_init_with_args(gs_main_instance * minst, int argc, char *argv[])
     return gs_main_init2(minst);
 }
 
+
+
 /*
  * Run the 'start' procedure (after processing the command line).
  * Note that in case of error, this procedure exits rather than returning.
