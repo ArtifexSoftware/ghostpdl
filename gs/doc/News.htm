@@ -54,84 +54,72 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h3><a name="Version7.32"></a>Version 7.32 (cvs pre-release)</h3>
+<h3><a name="Version7.32"></a>Version 7.32 (2002-11-02)</h3>
 
 <p>
-This follows on the first beta release in preparation for 8.0. A great many
-bugs have been fixed since the 7.30 alpha release, and it should be
-stable for most users. Two features planned for 8.0 are not yet fully
-functional, however: subpixel positioning of antialiased text, and
-Well Tempered Screening (the latter can be enabled for experimentation,
-but does not work for 0 and 45 degree angles).
+This is the second beta release in preparation for 8.0. The most
+notable new feature is Well Tempered Screening, which now works for
+angles of 0 and 45 degrees as well.
 
 <p>
-The following SourceForge bug numbers were open at the time of the last release:
+To test WTS, set the UseWTS user parameter:
+
+<blockquote><pre>
+&lt;&lt; /UseWTS true &gt;&gt; setuserparams
+</pre></blockquote>
+
+<p>
+Also make sure you're not in a banding mode (setting
+<b><tt>-dMaxBitmap=500000000</tt></b> should work), and that your halftone
+dictionaries set /AccurateScreens.
+
+<p>
+A fair number of bugfixes have also made it into this release,
+including a fix for the slow rendering of PDF's in GhostView-derived
+viewers.
+
+<p>
+The following SourceForge bug numbers were open at the time of this release:
 405342,
 407342,
 414947,
 414985,
-434277,
 446344,
-446672,
 458261,
 458775,
 458780,
 459647,
-465720,
 465936,
-468762,
 484752,
 484753,
-485510,
 487953,
 493348,
 505429,
-508081,
-509646,
 510808,
-513905,
-517349,
 526099,
 526491,
-528647,
 530011,
-530588,
 535366,
 535752,
 535836,
 538033,
-538428,
 539239,
-542848,
-543185,
 546823,
-552989,
 554076,
 558151,
 558435,
 563287,
-567421,
-567773,
 569573,
 570772,
-572119,
 573744,
-576591,
-576591,
 578838,
 578865,
-583413,
 584990,
-591768,
 592160,
-592164,
 592837,
 592841,
 592925,
 592930,
-594582,
-595375,
-595378,
 595760,
 596009,
 598014,
@@ -140,70 +128,55 @@ The following SourceForge bug numbers were open at the time of the last release:
 601255,
 601336,
 601694,
-602739,
 602995,
-603577,
-603689,
 603934,
-604884,
-604886,
 605830,
 607425,
-607819,
 607850,
 608520,
 609488,
-609494,
-609809,
-610040,
 610356,
-610359,
 610478,
 610727,
-611463,
 611694,
 611701,
 611727,
 611898,
 612801,
-613165,
-613909,
-613909,
 614298,
-614299,
 615165,
-615620,
 615994,
 616970,
 616976,
 617077,
 617523,
-620420,
-620865,
-620968,
 621243,
 621246,
-621293,
 623122,
 623292,
 623989,
-624082,
-624168,
-624493,
-624515.
+624515,
+625085,
+626059,
+626295,
+626358,
+626419,
+626464,
+627545,
+628110,
+628542,
+628557,
+629116,
+629335,
+629961,
+631180,
+631974.
 
-<p>
-A few regressions remain. See the <a
-href="http://www.ghostscript.com/pipermail/gs-regression/2002-October/thread.html">archives</a>
-of the regression report for more details. Another known issue is slow
-rendering of PDF's from GSView and Ghostview family viewers.
 
 <h3><a name="7.32_Incompatible_changes"></a>Incompatible changes</h3>
 
 <p>
-The <b><tt>-dDOPS</tt></b> flag (to enable DoPS processing) is now
-disabled by default, as it is a more reasonable default. Thus, any
-files which depend on DoPS will now break unless this flag is set.
+The UseWTS user parameter has been added.
 
 <pre>
 </pre>
@@ -232,7 +205,7 @@ contact Artifex Software, Inc., 101 Lucas Valley Road #110,
 San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
 <p>
-<small>Ghostscript version 7.32, 17 October 2002
+<small>Ghostscript version 7.32, 2 November 2002
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
