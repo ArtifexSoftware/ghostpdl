@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <io.h>
 #include <fcntl.h>
+#include <process.h>
 #include "ierrors.h"
 #include "iapi.h"
 #include "vdtrace.h"

@@ -22,5 +22,6 @@
 
 extern struct vd_trace_interface_s visual_tracer;
 void visual_tracer_init(void);
+void visual_tracer_close(void);
 
 #endif /* dwtrace_INCLUDED */

@@ -124,7 +124,6 @@ static int display_open(void *handle, void *device)
 /* Device will not be closed until this function returns. */
 static int display_preclose(void *handle, void *device)
 {
-    IMAGE *img;
 #ifdef DISPLAY_DEBUG
     char buf[256];
     sprintf(buf, "display_preclose(0x%x, 0x$x)\n", handle, device);
@@ -477,7 +476,6 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int cmd
     
     if (dll_exit_status && !tw->quitnow) {
 	/* display error message in text window */
-	char buf[80];
 	MSG msg;
 	text_puts(tw, "\nClose this window with the close button on the title bar or the system menu.\n");
 	if (IsIconic(text_get_handle(tw)))

@@ -164,8 +164,6 @@ int
 image_size(IMAGE *img, int new_width, int new_height, int new_raster, 
     unsigned int new_format, void *pimage)
 {
-    int i;
-    int nColors;
     img->raster = new_raster;
     img->format = new_format;
     img->image = (unsigned char *)pimage;
@@ -378,7 +376,6 @@ static void
 create_window(IMAGE *img)
 {
     HMENU sysmenu;
-    HBRUSH hbrush;
     LOGBRUSH lb;
     char winposbuf[256];
     char window_title[256];
@@ -1248,7 +1245,6 @@ WndImg2Proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 
     }
 
-not_ours:
 	return DefWindowProc(hwnd, message, wParam, lParam);
 }
 

@@ -169,9 +169,6 @@ COMPILE_FOR_DLL=
 COMPILE_FOR_EXE=
 COMPILE_FOR_CONSOLE_EXE=
 
-# Specify warning message level
-WARNOPT=/W2
-
 # The /MT is for multi-threading.  We would like to make this an option,
 # but it's too much work right now.
 GENOPT=$(CP) $(CD) $(CT) $(CS) $(WARNOPT) /nologo /MT

@@ -251,6 +251,11 @@ CFLAGS=/DGX_COLOR_INDEX_TYPE="$(GX_COLOR_INDEX_TYPE)"
 CFLAGS=
 !endif
 
+# -W3 generates too much noise.
+!ifndef WARNOPT
+WARNOPT=-W2
+!endif
+
 #
 # Do not edit the next group of lines.
 

@@ -438,11 +438,10 @@ win_dib_make_dib(gx_device_win * dev, int orgx, int orgy, int wx, int wy)
     int palcount;
     int i;
     UINT lwidth;		/* line width in bytes rounded up to multiple of 4 bytes */
-
-#ifdef USE_SEGMENTS
     int loffset;		/* byte offset to start of line */
-    UINT lseg;			/* bytes remaining in this segment */
 
+#if USE_SEGMENTS
+    UINT lseg;			/* bytes remaining in this segment */
 #endif
 
     if (orgx + wx > wdev->width)
@@ -542,13 +541,12 @@ win_dib_alloc_bitmap(gx_device_win * dev, gx_device * param_dev)
     gx_device_memory mdev;
     HGLOBAL hmdata;
     byte FAR *base;
-    byte FAR *ptr_base;
     uint ptr_size;
     uint raster;
-
-#ifdef USE_SEGMENTS
     ulong data_size;
 
+#if USE_SEGMENTS
+   byte FAR *ptr_base;
 #endif
 
 #ifdef __WIN32__
