@@ -45,10 +45,66 @@
 
 
 % !!!!!!!!!!!!!  THIS REVISION IS INCOMPLETE !!!!!!!!!!!!!!!!!!!!
-% It only reads a PDF, but it does not do any attempt to interprete it.
+% !!!!!!!!!!!!! don't expect perfect results. !!!!!!!!!!!!!!!!!!!
 
 
 true setglobal
+
+% ====================== Error handler =======================
+% A general error handler prints an error to page.
+
+10 dict begin % A dictionary for local binding
+
+/this currentdict def
+/y 720 def
+/ebuf 200 string def
+/prnt {
+  36 //this /y get moveto /Courier 12 selectfont //ebuf cvs show
+  //this /y 2 copy get 12 sub put
+} bind def
+
+errordict /handleerror
+{ systemdict begin
+  $error begin
+  newerror
+  { (%%[ Error handled by opdfrerh.ps : ) print errorname //ebuf cvs print (; OffendingCommand: )
+    print /command load //ebuf cvs print ( ]%%) = flush
+    /newerror false store vmstatus pop pop 0 ne
+    { grestoreall
+    } if
+    errorname (VMerror) ne
+    { showpage
+    } if
+    initgraphics
+    0 720 moveto
+    errorname (VMerror) eq
+    { //this /ehsave known
+      { clear //this /ehsave get restore 2 vmreclaim
+      } if
+      vmstatus exch pop exch pop 
+    }
+    {
+      (ERROR: ) //prnt exec errorname //prnt exec
+      (OFFENDING COMMAND: ) //prnt exec
+      /command load //prnt exec
+      $error /ostack known {
+        (%%[STACK:) =
+        (STACK:) //prnt exec
+        $error /ostack get aload length {
+          dup = //prnt exec
+        } repeat
+      } if
+    } ifelse
+    //systemdict /showpage get exec
+    (%%]%) =
+  } if
+  end
+  end
+} bind readonly put
+
+end % A dictionary for local binding
+
+
 50 dict begin
 
 % ===================== Debugging =========================================
@@ -2762,6 +2818,21 @@ currentdict end def
   } forall
   currentdict end /Operators exch def
 } if
+
+% Functions for handling Ghostscript library files that define encodings.
+
+/.registerencoding
+{ pop pop
+} bind def
+
+/.defineencoding
+{ def
+} bind def
+
+/.findencoding
+{ load
+} bind def
+
 
 % Leaving the procset on the dictionary stack to provide 
 % definitions of obj, endobj, stream, endstream, R, xref.
