@@ -102,7 +102,7 @@ gs_test_device_filter_push(gs_device_filter_t *self, gs_memory_t *mem,
 	return_error(gs_error_VMerror);
     gx_device_init((gx_device *)fdev,
 		   (const gx_device *)&gs_test_device_filter_device, mem,
-		   true);
+		   false);
     gx_device_forward_fill_in_procs(fdev);
     gx_device_copy_params((gx_device *)fdev, target);
     gx_device_set_target(fdev, target);
@@ -115,7 +115,6 @@ gs_test_device_filter_pop(gs_device_filter_t *self, gs_memory_t *mem,
 			  gs_state *pgs, gx_device *dev)
 {
     gx_device_set_target((gx_device_forward *)dev, NULL);
-    gs_free_object(mem, dev, "gs_test_device_filter_pop");
     gs_free_object(mem, self, "gs_test_device_filter_pop");
     return 0;
 }
@@ -149,15 +148,16 @@ gs_push_device_filter(gs_memory_t *mem, gs_state *pgs, gs_device_filter_t *df)
 	return_error(gs_error_VMerror);
     rc_increment(pgs->device);
     dfs->next_device = pgs->device;
-    pgs->dfilter_stack = dfs;
     code = df->push(df, mem, &new_dev, pgs->device);
     if (code < 0) {
 	return code;
 	gs_free_object(mem, dfs, "gs_push_device_filter");
     }
     dfs->next = pgs->dfilter_stack;
+    pgs->dfilter_stack = dfs;
     dfs->df = df;
     gs_setdevice_no_init(pgs, new_dev);
+    rc_decrement_only(new_dev, "gs_push_device_filter");
     return code;
 }
 

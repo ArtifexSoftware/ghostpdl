@@ -237,7 +237,15 @@ gxclpath.c can handle this. GS chooses default halftone component
 for any non-standard separation name. 
 <p>
 SourceForge Bug #406643, Mar 7, 2001.
-<h3>                                              </h3>
+
+<h3> PDF 1.4 images don't deallocate all memory </h3>
+
+The pdf14_begin_typed_image() function in the PDF 1.4 device creates
+a marking device, but this is not freed on end_image. The garbage
+collector will free it, so it's not a real memory leak, but it would
+still be nicer to free it explicitly.
+
+<h3> </h3>
 
 <hr>
 

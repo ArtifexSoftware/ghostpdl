@@ -874,7 +874,13 @@ pdf14_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
     code = gx_default_begin_typed_image(mdev, pis, pmat, pic, prect, pdcolor,
 					pcpath, mem, pinfo);
 
-    rc_decrement_only(mdev, "pdf14_begin_typed_image");
+    /* We need to free the marking device on end of image. This probably
+       means implementing our own image enum, which primarily forwards
+       requests, but also frees the marking device on end_image. For
+       now, we'll just leak this - it will get cleaned up by the GC. */
+#if 0
+    pdf14_release_marking_device(mdev);
+#endif
 
     return code;
 }
@@ -1192,7 +1198,6 @@ gs_pdf14_device_filter_pop(gs_device_filter_t *self, gs_memory_t *mem,
     ((pdf14_device *)dev)->target = 0;
     rc_decrement_only(target, "gs_pdf14_device_filter_pop");
 
-    gs_free_object(mem, dev, "gs_pdf14_device_filter_pop");
     gs_free_object(mem, self, "gs_pdf14_device_filter_pop");
     return 0;
 }
