@@ -370,8 +370,14 @@ gx_begin_image3_generic(gx_device * dev,
     gs_image_t_init(&i_pixel, pim->ColorSpace);
     {
 	const gx_image_type_t *type1 = i_pixel.type;
+        const bool mask = i_pixel.ImageMask;
 
+        /* On gcc 2.95.4 for Alpha all structures are padded to 8 byte
+         * boundary but sizeof(bool) == 4. First member of the subclass
+         * is restored because it is overwritten by padding data.
+         */
 	*(gs_pixel_image_t *)&i_pixel = *(const gs_pixel_image_t *)pim;
+	i_pixel.ImageMask = mask;
 	i_pixel.type = type1;
     }
     code = make_mcde(dev, pis, pmat, (const gs_image_common_t *)&i_pixel,
