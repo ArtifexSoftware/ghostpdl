@@ -162,7 +162,7 @@ gsapi_run_string_begin(gs_main_instance *minst, int user_errors,
 	return e_Fatal;
 
     return gs_main_run_string_begin(minst, 
-	0, pexit_code, &minst->error_object);
+	user_errors, pexit_code, &minst->error_object);
 }
 
 
@@ -174,7 +174,7 @@ gsapi_run_string_continue(gs_main_instance *minst,
 	return e_Fatal;
 
     return gs_main_run_string_continue(minst,
-	str, length, 0, pexit_code, &minst->error_object);
+	str, length, user_errors, pexit_code, &minst->error_object);
 }
 
 GSDLLEXPORT int GSDLLAPI 
@@ -185,7 +185,7 @@ gsapi_run_string_end(gs_main_instance *minst,
 	return e_Fatal;
 
     return gs_main_run_string_end(minst,
-	0, pexit_code, &minst->error_object);
+	user_errors, pexit_code, &minst->error_object);
 }
 
 GSDLLEXPORT int GSDLLAPI 
@@ -196,7 +196,7 @@ gsapi_run_string_with_length(gs_main_instance *minst,
 	return e_Fatal;
 
     return gs_main_run_string_with_length(minst,
-	str, length, 0, pexit_code, &minst->error_object);
+	str, length, user_errors, pexit_code, &minst->error_object);
 }
 
 GSDLLEXPORT int GSDLLAPI 
