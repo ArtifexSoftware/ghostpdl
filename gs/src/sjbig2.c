@@ -19,7 +19,7 @@
 
 #include "stdint_.h"
 #include "memory_.h"
-#include "stdio_.h" /* for debug printouts */
+#include "stdio_.h" /* sprintf() for debug output */
 
 #include "gserrors.h"
 #include "gserror.h"
@@ -49,7 +49,7 @@ s_jbig2decode_error(void *error_callback_data, const char *msg, Jbig2Severity se
     char segment[22];
     
     switch (severity) {
-#ifdef DEBUG   /* verbose reporting when debugging */
+#ifdef JBIG2_DEBUG   /* verbose reporting when debugging */
         case JBIG2_SEVERITY_DEBUG:
             type = "DEBUG"; break;;
         case JBIG2_SEVERITY_INFO:
@@ -62,7 +62,7 @@ s_jbig2decode_error(void *error_callback_data, const char *msg, Jbig2Severity se
         case JBIG2_SEVERITY_WARNING:
             return 0;
             break;;
-#endif /* DEBUG */
+#endif /* JBIG2_DEBUG */
         case JBIG2_SEVERITY_FATAL:
             type = "FATAL ERROR decoding image:"; break;;
         default: type = "unknown message:"; break;;
@@ -217,6 +217,7 @@ s_jbig2decode_set_defaults(stream_state *ss)
     stream_jbig2decode_state *const state = (stream_jbig2decode_state *) ss;
     
     /* state->global_ctx is not owned by us */
+    state->global_ctx = NULL;
     state->decode_ctx = NULL;
     state->image = NULL;
     state->offset = 0;
