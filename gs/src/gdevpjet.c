@@ -102,17 +102,17 @@ pj_common_print_page(gx_device_printer *pdev, FILE *prn_stream, int y_origin,
 {
 #define DATA_SIZE (LINE_SIZE * 8)
 	byte *data =
-		(byte *)gs_malloc(DATA_SIZE, 1,
+	        (byte *)gs_malloc(pdev->memory, DATA_SIZE, 1,
 				  "paintjet_print_page(data)");
 	byte *plane_data =
-		(byte *)gs_malloc(LINE_SIZE * 3, 1,
+		(byte *)gs_malloc(pdev->memory, LINE_SIZE * 3, 1,
 				  "paintjet_print_page(plane_data)");
 	if ( data == 0 || plane_data == 0 )
 	{	if ( data )
-			gs_free((char *)data, DATA_SIZE, 1,
+			gs_free(pdev->memory, (char *)data, DATA_SIZE, 1,
 				"paintjet_print_page(data)");
 		if ( plane_data )
-			gs_free((char *)plane_data, LINE_SIZE * 3, 1,
+			gs_free(pdev->memory, (char *)plane_data, LINE_SIZE * 3, 1,
 				"paintjet_print_page(plane_data)");
 		return_error(gs_error_VMerror);
 	}
@@ -210,8 +210,8 @@ pj_common_print_page(gx_device_printer *pdev, FILE *prn_stream, int y_origin,
 	/* end the page */
 	fputs(end_page, prn_stream);
 
-	gs_free((char *)data, DATA_SIZE, 1, "paintjet_print_page(data)");
-	gs_free((char *)plane_data, LINE_SIZE * 3, 1, "paintjet_print_page(plane_data)");
+	gs_free(pdev->memory, (char *)data, DATA_SIZE, 1, "paintjet_print_page(data)");
+	gs_free(pdev->memory, (char *)plane_data, LINE_SIZE * 3, 1, "paintjet_print_page(plane_data)");
 
 	return 0;
 }

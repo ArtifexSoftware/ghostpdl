@@ -33,28 +33,28 @@
  * a symbol CHECK_INTERRUPTS.  Currently this is only the Microsoft
  * Windows platform.
  */
-int gs_return_check_interrupt(int code);
+int gs_return_check_interrupt(const gs_memory_t *mem, int code);
 
 #ifdef CHECK_INTERRUPTS
-int gp_check_interrupts(void);
-#  define process_interrupts() discard(gp_check_interrupts())
-#  define return_if_interrupt()\
-    { int icode_ = gp_check_interrupts();\
+int gp_check_interrupts(mem);
+#  define process_interrupts(mem) discard(gp_check_interrupts(mem))
+#  define return_if_interrupt(mem)\
+    { int icode_ = gp_check_interrupts(mem);	\
       if ( icode_ )\
 	return gs_note_error((icode_ > 0 ? gs_error_interrupt : icode_));\
     }
-#  define return_check_interrupt(code)\
-    return gs_return_check_interrupt(code)
-#  define set_code_on_interrupt(pcode)\
+#  define return_check_interrupt(mem, code)	\
+    return gs_return_check_interrupt(mem, code)
+#  define set_code_on_interrupt(mem, pcode)	\
     if (*(pcode) == 0)\
-     *(pcode) = (gp_check_interrupts() != 0) ? gs_error_interrupt : 0;
+     *(pcode) = (gp_check_interrupts(mem) != 0) ? gs_error_interrupt : 0;
 #else
-#  define gp_check_interrupts() 0
-#  define process_interrupts() DO_NOTHING
-#  define return_if_interrupt()	DO_NOTHING
-#  define return_check_interrupt(code)\
+#  define gp_check_interrupts(mem) 0
+#  define process_interrupts(mem) DO_NOTHING
+#  define return_if_interrupt(mem)	DO_NOTHING
+#  define return_check_interrupt(mem, code)	\
     return (code)
-#  define set_code_on_interrupt(pcode) DO_NOTHING
+#  define set_code_on_interrupt(mepcode) DO_NOTHING
 #endif
 
 #endif /* gpcheck_INCLUDED */

@@ -896,7 +896,7 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
     }
 
     /* now try to match the printer name against the [Devices] section */
-    if ((devices = gs_malloc(4096, 1, "win_pr2_getdc")) == (char *)NULL)
+    if ((devices = gs_malloc(wdev->memory, 4096, 1, "win_pr2_getdc")) == (char *)NULL)
 	return FALSE;
     GetProfileString("Devices", NULL, "", devices, 4096);
     p = devices;
@@ -907,7 +907,7 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
     }
     if (*p == '\0')
 	p = NULL;
-    gs_free(devices, 4096, 1, "win_pr2_getdc");
+    gs_free(wdev->memory, devices, 4096, 1, "win_pr2_getdc");
     if (p == NULL)
 	return FALSE;		/* doesn't match an available printer */
 
@@ -926,12 +926,12 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
 	if (!OpenPrinter(device, &hprinter, NULL))
 	    return FALSE;
 	size = DocumentProperties(NULL, hprinter, device, NULL, NULL, 0);
-	if ((podevmode = gs_malloc(size, 1, "win_pr2_getdc")) == (LPDEVMODE) NULL) {
+	if ((podevmode = gs_malloc(wdev->memory, size, 1, "win_pr2_getdc")) == (LPDEVMODE) NULL) {
 	    ClosePrinter(hprinter);
 	    return FALSE;
 	}
-	if ((pidevmode = gs_malloc(size, 1, "win_pr2_getdc")) == (LPDEVMODE) NULL) {
-	    gs_free(podevmode, size, 1, "win_pr2_getdc");
+	if ((pidevmode = gs_malloc(wdev->memory, size, 1, "win_pr2_getdc")) == (LPDEVMODE) NULL) {
+	    gs_free(wdev->memory, podevmode, size, 1, "win_pr2_getdc");
 	    ClosePrinter(hprinter);
 	    return FALSE;
 	}
@@ -956,12 +956,12 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
 	    return FALSE;
 	}
 	size = pfnExtDeviceMode(NULL, hlib, NULL, device, output, NULL, NULL, 0);
-	if ((podevmode = gs_malloc(size, 1, "win_pr2_getdc")) == (LPDEVMODE) NULL) {
+	if ((podevmode = gs_malloc(wdev->memory, size, 1, "win_pr2_getdc")) == (LPDEVMODE) NULL) {
 	    FreeLibrary(hlib);
 	    return FALSE;
 	}
-	if ((pidevmode = gs_malloc(size, 1, "win_pr2_getdc")) == (LPDEVMODE) NULL) {
-	    gs_free(podevmode, size, 1, "win_pr2_getdc");
+	if ((pidevmode = gs_malloc(wdev->memory, size, 1, "win_pr2_getdc")) == (LPDEVMODE) NULL) {
+	    gs_free(wdev->memory, podevmode, size, 1, "win_pr2_getdc");
 	    FreeLibrary(hlib);
 	    return FALSE;
 	}
@@ -972,7 +972,7 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
     /* now find out what paper sizes are available */
     devcapsize = pfnDeviceCapabilities(device, output, DC_PAPERSIZE, NULL, NULL);
     devcapsize *= sizeof(POINT);
-    if ((devcap = gs_malloc(devcapsize, 1, "win_pr2_getdc")) == (LPBYTE) NULL)
+    if ((devcap = gs_malloc(wdev->memory, devcapsize, 1, "win_pr2_getdc")) == (LPBYTE) NULL)
 	return FALSE;
     n = pfnDeviceCapabilities(device, output, DC_PAPERSIZE, devcap, NULL);
     paperwidth = (int)(wdev->MediaSize[0] * 254 / 72);
@@ -1006,27 +1006,27 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
 	    }
 	}
     }
-    gs_free(devcap, devcapsize, 1, "win_pr2_getdc");
+    gs_free(wdev->memory, devcap, devcapsize, 1, "win_pr2_getdc");
     
     /* get the dmPaperSize */
     devcapsize = pfnDeviceCapabilities(device, output, DC_PAPERS, NULL, NULL);
     devcapsize *= sizeof(WORD);
-    if ((devcap = gs_malloc(devcapsize, 1, "win_pr2_getdc")) == (LPBYTE) NULL)
+    if ((devcap = gs_malloc(wdev->memory, devcapsize, 1, "win_pr2_getdc")) == (LPBYTE) NULL)
 	return FALSE;
     n = pfnDeviceCapabilities(device, output, DC_PAPERS, devcap, NULL);
     if ((paperindex >= 0) && (paperindex < n))
 	papersize = ((WORD *) devcap)[paperindex];
-    gs_free(devcap, devcapsize, 1, "win_pr2_getdc");
+    gs_free(wdev->memory, devcap, devcapsize, 1, "win_pr2_getdc");
 
     /* get the paper name */
     devcapsize = pfnDeviceCapabilities(device, output, DC_PAPERNAMES, NULL, NULL);
     devcapsize *= 64;
-    if ((devcap = gs_malloc(devcapsize, 1, "win_pr2_getdc")) == (LPBYTE) NULL)
+    if ((devcap = gs_malloc(wdev->memory, devcapsize, 1, "win_pr2_getdc")) == (LPBYTE) NULL)
 	return FALSE;
     n = pfnDeviceCapabilities(device, output, DC_PAPERNAMES, devcap, NULL);
     if ((paperindex >= 0) && (paperindex < n))
 	strcpy(papername, devcap + paperindex * 64);
-    gs_free(devcap, devcapsize, 1, "win_pr2_getdc");
+    gs_free(wdev->memory, devcap, devcapsize, 1, "win_pr2_getdc");
 
     memcpy(pidevmode, podevmode, size);
 
@@ -1103,8 +1103,8 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
 	}
     }
 
-    gs_free(pidevmode, size, 1, "win_pr2_getdc");
-    gs_free(podevmode, size, 1, "win_pr2_getdc");
+    gs_free(wdev->memory, pidevmode, size, 1, "win_pr2_getdc");
+    gs_free(wdev->memory, podevmode, size, 1, "win_pr2_getdc");
 
     if (wdev->hdcprn != (HDC) NULL)
 	return TRUE;		/* success */

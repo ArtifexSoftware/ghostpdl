@@ -168,7 +168,7 @@ s_file_read_process(stream_state * st, stream_cursor_read * ignore_pr,
     if (count < 0)
 	count = 0;
     pw->ptr += count;
-    process_interrupts();
+    process_interrupts(s->memory);
     return (ferror(file) ? ERRC : feof(file) ? EOFC : status);
 }
 

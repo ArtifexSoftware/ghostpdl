@@ -210,12 +210,12 @@ gs_log_error(int err, const char *file, int line)
 
 /* Check for interrupts before a return. */
 int
-gs_return_check_interrupt(int code)
+gs_return_check_interrupt(const gs_memory_t *mem, int code)
 {
     if (code < 0)
 	return code;
     {
-	int icode = gp_check_interrupts();
+	int icode = gp_check_interrupts(mem);
 
 	return (icode == 0 ? code :
 		gs_note_error((icode > 0 ? gs_error_interrupt : icode)));

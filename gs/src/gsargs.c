@@ -108,7 +108,7 @@ arg_next(arg_list * pal, int *code)
 	if (c == endc) {
 	    if (in_quote) {
 		cstr[i] = 0;
-		outprintf("Unterminated quote in @-file: %s\n", cstr);
+		errprintf("Unterminated quote in @-file: %s\n", cstr);
 		*code = gs_error_Fatal;
 		return NULL;
 	    }
@@ -160,7 +160,7 @@ arg_next(arg_list * pal, int *code)
 	    /* This is different from the Unix shells. */
 	    if (i == arg_str_max - 1) {
 		cstr[i] = 0;
-		outprintf("Command too long: %s\n", cstr);
+		errprintf("Command too long: %s\n", cstr);
 		*code = gs_error_Fatal;
 		return NULL;
 	    }
@@ -171,7 +171,7 @@ arg_next(arg_list * pal, int *code)
 	/* c will become part of the argument */
 	if (i == arg_str_max - 1) {
 	    cstr[i] = 0;
-	    outprintf("Command too long: %s\n", cstr);
+	    errprintf("Command too long: %s\n", cstr);
 	    *code = gs_error_Fatal;
 	    return NULL;
 	}
@@ -196,7 +196,7 @@ arg_next(arg_list * pal, int *code)
 	result++;		/* skip @ */
 	f = (*pal->arg_fopen) (result, pal->fopen_data);
 	if (f == NULL) {
-	    outprintf("Unable to open command line file %s\n", result);
+	    errprintf("Unable to open command line file %s\n", result);
 	    *code = gs_error_Fatal;
 	    return NULL;
 	}

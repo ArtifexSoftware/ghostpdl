@@ -35,11 +35,10 @@
  */
 #ifdef CHECK_INTERRUPTS
 int
-gp_check_interrupts(void)
+gp_check_interrupts(const gs_memory_t *mem)
 {
-    gs_main_instance *minst = gs_main_instance_default();
-    if (minst && minst->poll_fn)
-	return (*minst->poll_fn)(minst->caller_handle);
+    if (mem && mem->gs_lib_ctx && mem->gs_lib_ctx->poll_fn)
+	return (*mem->gs_lib_ctx->poll_fn)(mem->gs_lib_ctx->caller_handle);
     return 0;
 }
 #endif

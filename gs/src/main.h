@@ -30,6 +30,10 @@
  * the interpreter.
  */
 
+// comment out the entire file
+#if 0 
+
+
 /* ================ Data elements ================ */
 
 /* Clients should never access these directly. */
@@ -100,7 +104,7 @@ void gs_debug_dump_stack(int code, ref * perror_object);
 
 /* ---------------- Termination ---------------- */
 
-#define gs_finit(status, code)\
-  gs_main_finit(gs_main_instance_default(), status, code)
+
+#endif // disable file
 
 #endif /* main_INCLUDED */

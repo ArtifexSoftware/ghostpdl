@@ -369,7 +369,7 @@ win_render_char(gx_xfont * xf, gx_xglyph xg, gx_device * dev,
 	h = bbox.q.y - bbox.p.y;
 	wbm = ROUND_UP(w, align_bitmap_mod * 8);
 	raster = wbm >> 3;
-	bits = gs_malloc(h, raster, "win_render_char");
+	bits = gs_malloc(dev->memory, h, raster, "win_render_char");
 	if (bits == 0)
 	    return gs_error_limitcheck;
 	hbm = CreateBitmap(wbm, h, 1, 1, NULL);
@@ -410,7 +410,7 @@ win_render_char(gx_xfont * xf, gx_xglyph xg, gx_device * dev,
 				  gx_no_color_index, color);
 	    }
 	}
-	gs_free(bits, h, raster, "win_render_char");
+	gs_free(dev->memory, bits, h, raster, "win_render_char");
     }
     return (code < 0 ? code : 0);
 }

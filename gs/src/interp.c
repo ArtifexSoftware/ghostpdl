@@ -1650,7 +1650,7 @@ res:
     } else
 	code = 0;
     ticks_left = gs_interp_time_slice_ticks;
-    set_code_on_interrupt(&code);
+    set_code_on_interrupt(imemory, &code);
     goto sched;
 
     /* Error exits. */

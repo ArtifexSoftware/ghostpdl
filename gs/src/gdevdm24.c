@@ -62,9 +62,9 @@ dot24_print_page (gx_device_printer *pdev, FILE *prn_stream, char *init_string, 
   int bits_per_column = (y_high ? 48 : 24);
   uint line_size = gdev_prn_raster (pdev);
   uint in_size = line_size * bits_per_column;
-  byte *in = (byte *) gs_malloc (in_size, 1, "dot24_print_page (in)");
+  byte *in = (byte *) gs_malloc (pdev->memory, in_size, 1, "dot24_print_page (in)");
   uint out_size = ((pdev->width + 7) & -8) * 3;
-  byte *out = (byte *) gs_malloc (out_size, 1, "dot24_print_page (out)");
+  byte *out = (byte *) gs_malloc (pdev->memory, out_size, 1, "dot24_print_page (out)");
   int y_passes = (y_high ? 2 : 1);
   int dots_per_space = xres / 10;	/* pica space = 1/10" */
   int bytes_per_space = dots_per_space * 3;
@@ -74,9 +74,9 @@ dot24_print_page (gx_device_printer *pdev, FILE *prn_stream, char *init_string, 
   if (in == 0 || out == 0)
     {
       if (out)
-	gs_free ((char *) out, out_size, 1, "dot24_print_page (out)");
+	gs_free (pdev->memory, (char *) out, out_size, 1, "dot24_print_page (out)");
       if (in)
-	gs_free ((char *) in, in_size, 1, "dot24_print_page (in)");
+	gs_free (pdev->memory, (char *) in, in_size, 1, "dot24_print_page (in)");
       return_error (gs_error_VMerror);
     }
 
@@ -227,8 +227,8 @@ dot24_print_page (gx_device_printer *pdev, FILE *prn_stream, char *init_string, 
   fputs ("\f\033@", prn_stream);
   fflush (prn_stream);
 
-  gs_free ((char *) out, out_size, 1, "dot24_print_page (out)");
-  gs_free ((char *) in, in_size, 1, "dot24_print_page (in)");
+  gs_free (pdev->memory, (char *) out, out_size, 1, "dot24_print_page (out)");
+  gs_free (pdev->memory, (char *) in, in_size, 1, "dot24_print_page (in)");
 
   return 0;
 }
