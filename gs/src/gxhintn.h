@@ -20,10 +20,10 @@
 #ifndef gxhintn_INCLUDED
 #  define gxhintn_INCLUDED
 
-#define FINE_STEM_COMPLEXES 0		/* A temporary development purpose. */
-#define ALIGN_BY_STEM_MIDDLE 0		/* A temporary development purpose. */
-#define OPPOSITE_STEM_COORD_BUG_FIX 0	/* A temporary development purpose. */
-#define TT_AUTOHINT_TOPZONE_BUG_FIX 0	/* A temporary development purpose. */
+#define FINE_STEM_COMPLEXES 1		/* A temporary development purpose. */
+#define ALIGN_BY_STEM_MIDDLE 1		/* A temporary development purpose. */
+#define OPPOSITE_STEM_COORD_BUG_FIX 1	/* A temporary development purpose. */
+#define TT_AUTOHINT_TOPZONE_BUG_FIX 1	/* A temporary development purpose. */
 
 
 #ifndef gs_type1_data_DEFINED
