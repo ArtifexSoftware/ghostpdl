@@ -129,6 +129,26 @@ zexecfunction(i_ctx_t *i_ctx_p)
     }
 }
 
+/*
+ * <proc> .isencapfunction bool
+ *
+ * This routine checks if a given Postscript procedure is an "encapsulated"
+ * function of the type made by .buildfunction.  These functions can then
+ * be executed without executing the interpreter.  These functions can be
+ * executed directly from within C code inside the graphics library.
+ */
+int
+zisencapfunction(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    gs_function_t *pfn;
+
+    check_proc(*op);
+    pfn = ref_function(op);
+    make_bool(op, pfn != NULL);
+    return 0;
+}
+
 /* ------ Procedures ------ */
 
 /* Build a function structure from a PostScript dictionary. */
@@ -257,5 +277,6 @@ const op_def zfunc_op_defs[] =
 {
     {"1.buildfunction", zbuildfunction},
     {"1%execfunction", zexecfunction},
+    {"1.isencapfunction", zisencapfunction},
     op_def_end(0)
 };

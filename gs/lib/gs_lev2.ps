@@ -613,45 +613,104 @@ currentdict end
 
 % ------ Color spaces ------ %
 
-% Attempt to convert a tint transformation procedure to a type 4 Function.
-% The value <m> is the number  of function inputs
-% The current color space defines the number of function output values.
+% This set of dictionaries and the following procedure (.getcsrange)
+% will determine an array of the allowed ranges for a given color space
+% specifier.  This color space is the alternate color space specified in
+% the descriptor array which is used to specify a Separation or a DeviceN
+% color space.
+
+% This dictionary used if the color space specified by a name.
+/namedcsranges 10 dict dup begin
+  /DeviceGray { [ 0 1 ] } bind def
+  /DeviceRGB { [ 0 1 0 1 0 1 ] } bind def
+  /DeviceCMYK { [ 0 1 0 1 0 1 0 1 ] } bind def
+  /CIEBasedA /DeviceGray load def
+  /CIEBasedABC /DeviceRGB load def
+  /CIEBasedDEF /DeviceRGB load def
+  /CIEBasedDEFG /DeviceCMYK load def
+  /ICCBased { /typecheck signalerror } bind def		% Must have description for ICCBased
+end def
+
+% This dictionary used if the color space specified by an array.
+/arraycsranges 10 dict dup begin
+  /DeviceGray { [ 0 1 ] } bind def
+  /DeviceRGB { [ 0 1 0 1 0 1 ] } bind def
+  /DeviceCMYK { [ 0 1 0 1 0 1 0 1 ] } bind def
+  /CIEBasedA { dup 1 get /RangeA .knownget not { [ 0 1 ] } if } bind def
+  /CIEBasedABC { dup 1 get /RangeABC .knownget not { [ 0 1 0 1 0 1 ] } if } bind def
+  /CIEBasedDEF { dup 1 get /RangeDEF .knownget not { [ 0 1 0 1 0 1 ] } if } bind def
+  /CIEBasedDEFG { dup 1 get /RangeDEFG .knownget not { [ 0 1 0 1 0 1 0 1 ] } if } bind def
+  /ICCBased {
+    dup 1 get dup /Range .knownget {
+      exch pop
+    }{
+      /N get [ exch {0 1} repeat ] readonly
+    } ifelse
+  } bind def
+end def
+
+% See comments before /namedcsranges
+/.getcsrange {				% <alt color space spec> .getcsrange <range array>
+  dup type /arraytype eq
+  {
+    dup 0 get arraycsranges exch get exec 
+  }
+  {
+    namedcsranges exch get exec
+  } ifelse
+  exch pop
+} bind def
+
+% Attempt to convert a tint transformation procedure to a function that
+% we can execute without the actually executing the interpreter in the
+% graphics library.
+% The value <m> is the number of function inputs
 % The current color space will be the alternate color space for the function.
-% If the conversion fails then build a color cube function.
+% Thus the current color space defines the number of function output values.
+%
+% There are three situations.  The PDF interpreter already produces encapsulated
+% functions that we can use as is.  Otherwise we try to convert the given
+% procedure into a type 4 function.  This works for most practical situations.
+% If all else fails then build a color cube (type 0 sampled) function..
 
 /.converttinttransform {	% [.. .. .. proc ] <m>
 				%   .converttinttransform [.. .. .. proc']
-  .currentglobal			% Save current global memory state
-  2 index gcheck .setglobal		% Set gobal mode to match the array's mode
-  4 dict				% Build a dictionary for our type 4 function
+  % PDF already has the tint transforms functions as encapsulated functions.
+  % If so then we do not need to do anything except clean up and exit.
+  1 index 3 get .isencapfunction 	% Check for encapsulated function
+  {				% Yes - clean up and exit
+    pop					% Clear <m> off stack
+  }
+  {				% No - try to build a type 4 function
+    .currentglobal			% Save current global memory state
+    2 index gcheck .setglobal		% Set gobal mode to match array's mode
+    6 dict				% Build a dictionary for our type 4
+    					% function.  We allow extra space since
+					% we may use dict for building cube
     dup /FunctionType 4 put		% Set FunctionType
     dup /Function 5 index 3 get put	% Set function expression
-		% Stack: orig m global func
     dup /Domain
     [ 5 index {0 1} repeat ] put	% set Domain values
     dup /Range
-    [ mark currentcolor counttomark
-    dup 2 add 1 roll cleartomark	% # of components in alternate space
-    {0 1} repeat ] put			% Set Range values
-  { .buildfunction } .internalstopped	% Try to build a type 4 function
-  dup
-  {				% type 4 function failed - Collect data for a color cube
-    pop					% Remove duplicate copy of stopped status
-    pop					% Remove invalid type 4 function
-    1 index				% Get number of inputs
-    mark currentcolor counttomark	% Count number of output colors
-    dup 2 add 1 roll cleartomark	% # of components in alternate space
-    4 index 3 get			% Get tint transform function
-    { .buildcolorcube } .internalstopped 
-  } if
-  {					% Color cube build failed
-    pop pop pop exch pop exch pop	% Remove unused parameters
-    .setglobal				% Restore global state
-  } {					% Function build succeeded - install function
-					% Stack: orig m global func
-    3 -1 roll pop			% Stack: orig global func
-    2 index 4 array copy dup 3 4 -1 roll put
-    exch .setglobal exch pop
+    7 index 2 get .getcsrange put	% Set Range values
+					% Stack: orig m global func_dict
+    { .buildfunction } .internalstopped	% Try to build a type 4 function
+    dup
+    {				% type 4 function failed - build a color cube
+      pop				% Remove dupicate stopped status
+      dup /Order 3 put			% Set Order
+      dup /BitsPerSample 16 put		% Set sample size
+					% Stack: orig m global func_dict
+      { .buildsampledfunction } .internalstopped 
+    } if
+    {				% Color cube build failed - clean up and exit
+      pop .setglobal pop 		% Remove unused parameters
+    }
+    {				% Function build succeeded - install function
+      3 -1 roll pop			% Stack: orig global func
+      2 index 4 array copy dup 3 4 -1 roll put
+      exch .setglobal exch pop
+    } ifelse
   } ifelse
 } bind def
 
