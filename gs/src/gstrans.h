@@ -42,11 +42,20 @@ bool gs_currenttextknockout(P1(const gs_state *));
 gs_transparency_state_type_t
     gs_current_transparency_type(P1(const gs_state *pgs));
 
+/*
+ * We have to abbreviate the procedure name because procedure names are
+ * only unique to 23 characters on VMS.
+ */
+void gs_trans_group_params_init(P1(gs_transparency_group_params_t *ptgp));
+
 int gs_begin_transparency_group(P3(gs_state *pgs,
 				   const gs_transparency_group_params_t *ptgp,
 				   const gs_rect *pbbox));
 
 int gs_end_transparency_group(P1(gs_state *pgs));
+
+void gs_trans_mask_params_init(P2(gs_transparency_mask_params_t *ptmp,
+				  gs_transparency_mask_subtype_t subtype));
 
 int gs_begin_transparency_mask(P3(gs_state *pgs,
 				  const gs_transparency_mask_params_t *ptmp,

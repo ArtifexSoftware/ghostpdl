@@ -89,6 +89,14 @@ gs_current_transparency_type(const gs_state *pgs)
 	    pgs->transparency_stack->type);
 }
 
+void
+gs_trans_group_params_init(gs_transparency_group_params_t *ptgp)
+{
+    ptgp->ColorSpace = 0;	/* bogus, but can't do better */
+    ptgp->Isolated = false;
+    ptgp->Knockout = false;
+}
+
 int
 gs_begin_transparency_group(gs_state *pgs,
 			    const gs_transparency_group_params_t *ptgp,
@@ -103,6 +111,20 @@ gs_end_transparency_group(gs_state *pgs)
 {
     /****** NYI ******/
     return 0;
+}
+
+private float
+transfer_identity(floatp x)
+{
+    return x;
+}
+void
+gs_trans_mask_params_init(gs_transparency_mask_params_t *ptmp,
+			  gs_transparency_mask_subtype_t subtype)
+{
+    ptmp->subtype = subtype;
+    ptmp->has_Background = false;
+    ptmp->TransferFunction = transfer_identity;
 }
 
 int

@@ -76,8 +76,9 @@ typedef struct gs_transparency_mask_s {
 #  define gs_color_space_DEFINED
 typedef struct gs_color_space_s gs_color_space;
 #endif
+/* (Update gs_trans_group_params_init if these change.) */
 typedef struct gs_transparency_group_params_s {
-    gs_color_space *ColorSpace;
+    const gs_color_space *ColorSpace;
     bool Isolated;
     bool Knockout;
 } gs_transparency_group_params_t;
@@ -87,6 +88,9 @@ typedef enum {
     TRANSPARENCY_MASK_Alpha,
     TRANSPARENCY_MASK_Luminosity
 } gs_transparency_mask_subtype_t;
+#define GS_TRANSPARENCY_MASK_SUBTYPE_NAMES\
+  "Alpha", "Luminosity"
+/* (Update gs_trans_mask_params_init if these change.) */
 typedef struct gs_transparency_mask_params_s {
     gs_transparency_mask_subtype_t subtype;
     bool has_Background;

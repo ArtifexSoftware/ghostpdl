@@ -62,6 +62,21 @@ current_float_value(i_ctx_t *i_ctx_p,
     return 0;
 }
 
+private int
+enum_param(const ref *pnref, const char *const names[])
+{
+    const char *const *p;
+    ref nsref;
+
+    name_string_ref(op, &nsref);
+    for (p = names; *p; ++p)
+	if (r_size(&nsref) == strlen(*p) &&
+	    !memcmp(*p, nsref.value.const_bytes, r_size(&nsref))
+	    )
+	    return p - blend_mode_names;
+    return_error(e_rangecheck);
+}
+
 /* ------ Graphics state operators ------ */
 
 private const char *const blend_mode_names[] = {
@@ -75,21 +90,14 @@ zsetblendmode(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     ref nsref;
     int code;
-    const char *const *p;
 
     check_type(*op, t_name);
-    name_string_ref(op, &nsref);
-    for (p = blend_mode_names; *p; ++p)
-	if (r_size(&nsref) == strlen(*p) &&
-	    !memcmp(*p, nsref.value.const_bytes, r_size(&nsref))
-	    ) {
-	    code = gs_setblendmode(igs, p - blend_mode_names);
-	    if (code < 0)
-		return code;
-	    pop(1);
-	    return 0;
-	}
-    return_error(e_rangecheck);
+    if ((code = enum_param(op, blend_mode_names)) < 0 ||
+	(code = gs_setblendmode(igs, code)) < 0
+	)
+	return code;
+    pop(1);
+    return 0;
 }
 
 /* - .currentblendmode <modename> */
@@ -195,14 +203,22 @@ private int
 zbegintransparencygroup(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
+    os_ptr dop = op - 4;
     gs_transparency_group_params_t params;
     gs_rect bbox;
     int code;
 
-    /****** NYI ******/
+    check_type(*dop, t_dictionary);
+    check_dict_read(*dop);
+    gs_trans_group_params_init(&params);
+    if ((code = dict_bool_param(dop, "Isolated", false, &params.Isolated)) < 0 ||
+	(code = dict_bool_param(dop, "Knockout", false, &params.Knockout)) < 0
+	)
+	return code;
     code = rect_param(&bbox, op);
     if (code < 0)
 	return code;
+    params.ColorSpace = gs_currentcolorspace(igs);
     code = gs_begin_transparency_group(igs, &params, &bbox);
     if (code < 0)
 	return code;
@@ -230,11 +246,36 @@ zendtransparencygroup(i_ctx_t *i_ctx_p)
 private int
 zbegintransparencymask(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+    os_ptr dop = op - 4;
     gs_transparency_mask_params_t params;
+    ref *pparam;
     gs_rect bbox;
+    int num_components =
+	gs_color_space_num_components(gs_currentcolorspace(igs));
     int code;
+    static const char *const subtype_names = {
+	GS_TRANSPARENCY_MASK_SUBTYPE_NAMES, 0
+    };
 
-    /****** NYI ******/
+    check_type(*dop, t_dictionary);
+    check_dict_read(*dop);
+    gs_trans_mask_params_init(&params);
+    if (dict_find_string(dop, "Subtype", &pparam) <= 0)
+	return_error(e_rangecheck);
+    if ((code = enum_param(pparam, subtype_names)) < 0)
+	return code;
+    params.subtype = subtype;
+    if ((code = dict_floats_param(dop, "Background", num_components,
+				  params.Background, NULL)) < 0
+	)
+	return code;
+    else if (code > 0)
+	params.has_Background = true;
+    /****** TransferFunction ******/
+    code = rect_param(&bbox, op);
+    if (code < 0)
+	return code;
     code = gs_begin_transparency_mask(igs, &params, &bbox);
     if (code < 0)
 	return code;
