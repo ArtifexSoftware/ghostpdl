@@ -112,8 +112,9 @@ s_exD_process(stream_state * st, stream_cursor_read * pr,
 	const byte *const decoder = scan_char_decoder;
 	int i;
 
-	if (rcount < 8)
-	    return 0;
+        if (rcount < 8 && !last)
+            return 0; 
+
 	/*
 	 * Adobe's documentation doesn't actually specify the test
 	 * that eexec should use, but we believe the following
@@ -121,7 +122,7 @@ s_exD_process(stream_state * st, stream_cursor_read * pr,
 	 * PostScript files encountered in practice:
 	 */
 	ss->binary = 0;
-	for (i = 1; i <= 8; i++)
+	for (i = min(8, rcount); i > 0; i--)
 	    if (!(decoder[p[i]] <= 0xf ||
 		  decoder[p[i]] == ctype_space)
 		) {
