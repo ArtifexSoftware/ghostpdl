@@ -28,9 +28,6 @@ hpgl_rectangle(hpgl_args_t *pargs, hpgl_state_t *pgls, int flags)
 	    y2 += pgls->g.pos.y;
 	  }
 	      
-	/* clear the current path if there is one */
-	hpgl_draw_current_path(pgls, hpgl_rm_vector);
-
 	hpgl_args_setup(pargs);
 	/* enter polygon mode. */
 	hpgl_call(hpgl_PM(pargs, pgls));
@@ -40,9 +37,9 @@ hpgl_rectangle(hpgl_args_t *pargs, hpgl_state_t *pgls, int flags)
 	  hpgl_real_t x1 = pgls->g.pos.x; 
 	  hpgl_real_t y1 = pgls->g.pos.y;
 
-	  hpgl_args_set_real(pargs, x1); 
+	  hpgl_args_set_real(pargs, x1);
 	  hpgl_args_add_real(pargs, y2);
-	  hpgl_call(hpgl_PU(pargs, pgls));
+	  hpgl_call(hpgl_PD(pargs, pgls));
 
 	  hpgl_args_set_real(pargs, x2); 
 	  hpgl_args_add_real(pargs, y2);
@@ -75,8 +72,6 @@ hpgl_wedge(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	   )
 	  return e_Range;
 
-	/* clear the current path if there is one */
-	hpgl_draw_current_path(pgls, hpgl_rm_vector);
 
 	/* enter polygon mode */
 	hpgl_args_setup(pargs);
@@ -98,9 +93,6 @@ hpgl_wedge(hpgl_args_t *pargs, hpgl_state_t *pgls)
 
 	  hpgl_compute_vector_endpoints(radius, pgls->g.pos.x, pgls->g.pos.y,
 				        (start+sweep), &x3, &y3);
-
-	  hpgl_args_set_real(pargs, startx);
-	  hpgl_args_add_real(pargs, starty);
 
 	  hpgl_args_set_real(pargs, x1);
 	  hpgl_args_add_real(pargs, y1);
@@ -134,7 +126,6 @@ hpgl_EA(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
 	
 	hpgl_save_pen_state(pgls);
-	pgls->g.pen_down = true;
 	hpgl_call(hpgl_rectangle(pargs, pgls, DO_EDGE));
 	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 	hpgl_restore_pen_state(pgls);
@@ -205,7 +196,19 @@ hpgl_PM(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	switch( op )
 	  {
 	  case 0 : 
+	    /* clear the current path if there is one */
+	    hpgl_draw_current_path(pgls, hpgl_rm_vector);
+#ifdef NOPE
 	    hpgl_call(hpgl_clear_current_path(pgls));
+	    /* a side affect of polygon mode is to add the current
+               state position to the polygon buffer.  We do a PU to
+               guarantee the first point is a moveto.  HAS not sure if
+               this is correct. */
+#endif
+	    hpgl_args_set_real(pargs, pgls->g.pos.x); 
+	    hpgl_args_add_real(pargs, pgls->g.pos.y);
+	    hpgl_call(hpgl_PU(pargs, pgls));
+
 	    pgls->g.polygon_mode = true;
 	    break;
 	  case 1 :
@@ -227,7 +230,6 @@ hpgl_RA(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
 	hpgl_save_pen_state(pgls);
 	hpgl_call(hpgl_rectangle(pargs, pgls, 0));
-	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_polygon));
 	hpgl_restore_pen_state(pgls);
 	return 0;
 }

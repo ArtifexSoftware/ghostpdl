@@ -176,8 +176,6 @@ typedef struct pcl_hpgl_state_s {
         /* HAS - ** HACK *** indicates the current command is being
            executed internally.  The picture frame anchor point has
            different semantics if executed from within the interpreter */
-	bool pic_frame_anchor_implicit_exectution;
-
 } pcl_hpgl_state_t;
 
 #define hpgl_save_pen_relative_state(pgls) \
@@ -208,3 +206,4 @@ typedef struct pcl_hpgl_state_s {
   (hpgl_restore_pen_down_state(pgls), \
    hpgl_restore_pen_position(pgls), \
    hpgl_restore_pen_relative_state(pgls))
+

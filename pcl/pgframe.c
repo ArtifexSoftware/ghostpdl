@@ -4,6 +4,7 @@
 
 /* pgframe.c */
 /* PCL5/HP-GL/2 picture frame commands */
+#include "std.h"
 #include "math_.h"
 #include "pgmand.h"
 #include "pgdraw.h"
@@ -62,7 +63,8 @@ pcl_vert_pic_frame_size_decipoints(pcl_args_t *pargs, pcl_state_t *pcls)
 	
 	/* default to pcl logical page */
 	if ( almost_equal(size, 0.0) )
-	  pcls->g.picture_frame.height = pcls->logical_page_height;
+	  pcls->g.picture_frame.height = pcls->text_length * 
+	    (float)(pcls->vmi / 48.0);
 	else
 	  pcls->g.picture_frame.height = size;
 
@@ -90,19 +92,10 @@ pcl_set_pic_frame_anchor_point(pcl_args_t *pargs, pcl_state_t *pcls)
 	if ( i != 0 )
 	  return 0;
 
-	if ( pcls->g.pic_frame_anchor_implicit_exectution )
-	  {
-	    pcls->g.picture_frame.anchor_point.x = pcls->left_margin;
-	    pcls->g.picture_frame.anchor_point.y = pcls->top_margin;
-	    return 0;
-	  }
-	else
-	  {
-	    pcls->g.picture_frame.anchor_point.x = pcls->cap.x;
-	    pcls->g.picture_frame.anchor_point.y = pcls->cap.y;
-	  }
+	pcls->g.picture_frame.anchor_point.x = pcls->cap.x;
+	pcls->g.picture_frame.anchor_point.y = pcls->cap.y;
 
-	{ 
+	{
 	  hpgl_args_t args;
 	  hpgl_args_setup(&args);
 	  hpgl_IP(&args, pcls);

@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -9,6 +9,14 @@
 #include "pginit.h"
 #include "pgdraw.h"
 
+/* called when there is a graphics error.  Keep a breakpoint on this function */
+#ifdef DEBUG
+void
+hpgl_error()
+{
+	return;
+}
+#endif
 /* ------ Internal procedures ------ */
 
 /* Reset a set of font parameters to their default values. */
@@ -42,6 +50,29 @@ hpgl_default_pen_color(hpgl_state_t *pgls, int pen)
 	  }
 }
 
+/* the following is not consistant with the general model as we
+   usually depend upon calling the commands directly to update
+   appropriate state variables, unfortunately we must guarantee a
+   reasonable picture frame, anchor point, and plot size for the rest
+   of the hpgl/2 code to function properly, and they must be provided
+   all at once.  For example documented side effects of changing the
+   vertical picture frame height are IP;IW;PM;PM2, but these commands
+   do not make sense if the horizontal picture frame has never been
+   set. */
+
+private void
+hpgl_default_coordinate_system(hpgl_state_t *pcls)
+{
+	pcls->g.plot_width = pcls->g.picture_frame.width = 
+	  pcls->logical_page_width;
+	pcls->g.plot_height = pcls->g.picture_frame.height = 
+	  pcls->text_length * ((float)pcls->vmi / 48.0);
+	pcls->g.picture_frame.anchor_point.x = pcls->left_margin;
+	pcls->g.picture_frame.anchor_point.y = pcls->top_margin;
+	pcls->g.plot_width = pcls->g.picture_frame.width;
+}
+
+	
 /* Reset a fill pattern to solid fill.  The index is 1-origin, */
 /* as for the RF command.  free = true means free the old pattern if any. */
 void
@@ -53,12 +84,18 @@ hpgl_default_fill_pattern(hpgl_state_t *pgls, int index, bool free)
 	pgls->g.fill_pattern[index0].data = 0;
 }
 
+/* fill the state with a bogus value -- debug only.  HAS fixme -- GL/2
+   interpreter actually depends on 0's being here.  It should not. */
 private void
 hpgl_clear_state(pcl_state_t *pcls)
 {
+
+#ifdef DEBUG
 	memset(&pcls->g, 0, sizeof(pcls->g));
+#endif
 	return;
 }
+
 void
 hpgl_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 {		/* pgframe.c (Chapter 18) */
@@ -70,55 +107,19 @@ hpgl_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 
 	if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_cold ))
 	  {
-	    /* HAS should not have a path now ??? */
-	    /* hpgl_init_path(pcls); */
-	    /* hpgl_init_state(pcls); */
 	    hpgl_clear_state(pcls);
-
-	    /* HACK to let command know we are executing it internally */
-	    pcls->g.pic_frame_anchor_implicit_exectution = true;
-	    arg_set_uint(&pcl_args, 0);
-	    pcl_set_pic_frame_anchor_point(&pcl_args, pcls);
-	    pcls->g.pic_frame_anchor_implicit_exectution = false;
-
-	    arg_set_float(&pcl_args, 0, 0);
-	    pcl_horiz_pic_frame_size_decipoints(&pcl_args, pcls);
-
-	    arg_set_float(&pcl_args, 0, 0);
-	    pcl_vert_pic_frame_size_decipoints(&pcl_args, pcls);
-
-	    arg_set_float(&pcl_args, 0, 0);
-	    pcl_hpgl_plot_horiz_size(&pcl_args, pcls);
-
-	    arg_set_float(&pcl_args, 0, 0);
-	    pcl_hpgl_plot_vert_size(&pcl_args, pcls);
-	    
+	    /* provide default anchor point, plot size and picture
+               frame size */
+	    hpgl_default_coordinate_system(pcls);
+	    /* execute IN */
 	    hpgl_args_setup(&hpgl_args);
 	    hpgl_IN(&hpgl_args, pcls);
 
-	    /* HAS reset pcl's logical page orientation should be done
-               in PCL */
 	  }   
 	    
 	if ( type & (pcl_reset_page_params) )
 	  {
-	    pcls->g.pic_frame_anchor_implicit_exectution = true;
-	    arg_set_uint(&pcl_args, 0);
-	    pcl_set_pic_frame_anchor_point(&pcl_args, pcls);
-	    pcls->g.pic_frame_anchor_implicit_exectution = false;
-
-	    arg_set_float(&pcl_args, 0, 0);
-	    pcl_horiz_pic_frame_size_decipoints(&pcl_args, pcls);
-
-	    arg_set_float(&pcl_args, 0, 0);
-	    pcl_vert_pic_frame_size_decipoints(&pcl_args, pcls);
-
-
-	    arg_set_float(&pcl_args, 0, 0);
-	    pcl_hpgl_plot_horiz_size(&pcl_args, pcls);
-
-	    arg_set_float(&pcl_args, 0, 0);
-	    pcl_hpgl_plot_vert_size(&pcl_args, pcls);
+	    hpgl_default_coordinate_system(pcls);
 
 	    hpgl_args_setup(&hpgl_args);
 	    hpgl_IW(&hpgl_args, pcls);

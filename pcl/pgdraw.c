@@ -152,13 +152,18 @@ hpgl_set_clipping_region(hpgl_state_t *pgls)
 				    &mat,
 				    &float_box));
 
+	/*	fprintf(stderr, 
+		"bounding box: %f %f %f %f rotation: %d\n", 
+		float_box.p.x, float_box.p.y, float_box.q.x, float_box.q.y, 
+		pgls->g.rotation); */
+		
 	/* HAS maybe a routine that does this?? */
 	fixed_box.p.x = float2fixed(float_box.p.x);
 	fixed_box.p.y = float2fixed(float_box.p.y);
 	fixed_box.q.x = float2fixed(float_box.q.x);
 	fixed_box.q.y = float2fixed(float_box.q.y);
-	
 	hpgl_call(gx_clip_to_rectangle(pgls->pgs, &fixed_box));
+
 	return 0;
 }
 
@@ -171,7 +176,7 @@ hpgl_set_graphics_state(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 	/* joins, caps, and line width */
 	hpgl_call(hpgl_set_graphics_line_attribute_state(pgls, render_mode));
 	
-	/* hpgl_call(hpgl_set_clipping_region(pgls)); */
+	hpgl_call(hpgl_set_clipping_region(pgls));
 
 	return 0;
 }
@@ -183,15 +188,31 @@ hpgl_set_ctm(hpgl_state_t *pgls)
   	/* set the default matrix */
 	pcl_set_ctm(pgls, false);
 	
+	/* translate the coordinate system to the anchor point */
+
+	if (pgls->g.rotation == 0)
+	  {
+	    hpgl_call(gs_translate(pgls->pgs, 
+				   pgls->g.picture_frame.anchor_point.x,
+				   pgls->g.picture_frame.anchor_point.y));
+	  }
+	else
+	  {
+	    hpgl_call(gs_translate(pgls->pgs, 
+				   -pgls->g.picture_frame.anchor_point.x,
+				   -pgls->g.picture_frame.anchor_point.y));
+	  }
 	/* scale for x and y plu's with a flip for y */
 	hpgl_call(gs_scale(pgls->pgs, (7200.0/1016.0), -(7200.0 / 1016.0)));
-
 	{
-	  hpgl_real_t pw = centipoints_2_plu(pgls->logical_page_width);
-	  hpgl_real_t ph = centipoints_2_plu(pgls->logical_page_height);
+	  /* picture frame dimensinsions in plu */
+	  hpgl_real_t pic_w = centipoints_2_plu(pgls->g.picture_frame.width);
+	  hpgl_real_t pic_h = centipoints_2_plu(pgls->g.picture_frame.height);
 
 	  /* move the origin HAS *wrong* */
-	  hpgl_call(gs_translate(pgls->pgs, 0, -(ph)));
+	  hpgl_call(gs_translate(pgls->pgs, 0, -(pic_h)));
+
+	  hpgl_call(gs_rotate(pgls->pgs, pgls->g.rotation));
 
 	  /* account for rotated coordinate system */
 	  switch (pgls->g.rotation)
@@ -200,24 +221,27 @@ hpgl_set_ctm(hpgl_state_t *pgls)
 	      hpgl_call(gs_translate(pgls->pgs, 0, 0));
 	      break;
 	    case 90 : 
-	      hpgl_call(gs_translate(pgls->pgs, pw, 0));
+	      hpgl_call(gs_translate(pgls->pgs, pic_w, 0));
 	      break;
 	    case 180 :
-	      hpgl_call(gs_translate(pgls->pgs, pw, ph));
+	      hpgl_call(gs_translate(pgls->pgs, -(pic_w), -(pic_h)));
 	      break;
 	    case 270 :
-	      hpgl_call(gs_translate(pgls->pgs, 0, ph));
+	      hpgl_call(gs_translate(pgls->pgs, 0, pic_h));
 	      break;
 	      }/* now move the origin to P1 */
 	}
-
-	hpgl_call(gs_rotate(pgls->pgs, pgls->g.rotation));
-
-	hpgl_call(gs_translate(pgls->pgs, pgls->g.P1.x, pgls->g.P1.y));
-
 	/* set up scaling wrt plot size and picture frame size.  HAS
 	   we still have the line width issue when scaling is
 	   assymetric !!  */
+
+	/* if any of these are zero something is wrong */
+        if ( (pgls->g.picture_frame.height == 0.0) ||
+	     (pgls->g.picture_frame.width == 0.0) ||
+	     (pgls->g.plot_width == 0.0) ||
+	     (pgls->g.plot_height == 0.0) )
+	  return 1;
+	
 	hpgl_call(gs_scale(pgls->pgs, 
 			   (pgls->g.picture_frame.height /
 			    pgls->g.plot_height),

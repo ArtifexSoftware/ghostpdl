@@ -55,10 +55,15 @@ void pl_dict_init(P3(pl_dict_t *pdict, gs_memory_t *memory,
 		     pl_dict_value_free_proc_t free_proc));
 
 /*
- * Look up an entry in a dictionary.  Return true and set *pvalue if found.
+ * Look up an entry in a dictionary, optionally searching the stack, and
+ * optionally returning a pointer to the actual dictionary where the
+ * entry was found.  Return true, setting *pvalue (and, if ppdict is not
+ * NULL, *ppdict), if found.
  */
-bool pl_dict_find(P4(pl_dict_t *pdict, const byte *kdata, uint ksize,
-		     void **pvalue));
+bool pl_dict_lookup(P6(pl_dict_t *pdict, const byte *kdata, uint ksize,
+		       void **pvalue, bool with_stack, pl_dict_t **ppdict));
+#define pl_dict_find(pdict, kdata, ksize, pvalue)\
+  pl_dict_lookup(pdict, kdata, ksize, pvalue, true, NULL)
 
 /*
  * Add an entry to a dictionary.  Return 1 if it replaces an existing entry.

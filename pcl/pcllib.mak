@@ -27,7 +27,7 @@ pjl.dev: $(PCLLIB_MAK) $(ECHOGS_XE) $(PJL)
 
 pldict_h=pldict.h
 pldraw_h=pldraw.h $(gsiparam_h)
-plmain_h=plmain.h
+plmain_h=plmain.h $(gsgc_h)
 plsymbol_h=plsymbol.h
 plvalue_h=plvalue.h
 plvocab_h=plvocab.h
@@ -60,7 +60,7 @@ plfont.$(OBJ): plfont.c $(AK) $(memory__h) $(stdio__h)\
  $(plfont_h) $(plvalue_h)
 
 plmain.$(OBJ): plmain.c $(AK) $(stdio__h) $(string__h)\
- $(gdebug_h) $(gscdefs_h) $(gsdevice_h) $(gslib_h)\
+ $(gdebug_h) $(gp_h) $(gscdefs_h) $(gsdevice_h) $(gslib_h)\
  $(gsmatrix_h) $(gsmemory_h) $(gsparam_h) $(gsstate_h) $(gstypes_h)\
  $(plmain_h)
 

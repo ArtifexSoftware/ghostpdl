@@ -193,13 +193,16 @@ bool hpgl_arg_units(P2(hpgl_args_t *pargs, hpgl_real_t *pu));
    function name is gcc specific. */
 
 #ifdef DEBUG
+extern void hpgl_error(void);
+
 #define hpgl_call(call)				\
 { 						\
   int code; 					\
-  if ((code = (call)) < 0)			\
+  if ((code = (call)) != 0)			\
     {						\
       dprintf4("hpgl call failed\n\tcalled from: %s\n\tfile: %s\n\tline: %d\n\terror code: %d\n", \
 	       __FUNCTION__, __FILE__, __LINE__, code);	\
+      hpgl_error();                             \
       return(code);				\
     }						\
 }

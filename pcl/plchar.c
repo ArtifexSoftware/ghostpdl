@@ -508,36 +508,21 @@ int gs_type42_append(P7(uint glyph_index, gs_imager_state *pis,
 int gs_type42_get_metrics(P3(gs_font_type42 *pfont, uint glyph_index,
   float psbw[4]));
 
-/* Encode a character using the TrueType cmap tables. */
-/* (We think this is never used for downloaded fonts.) */
-private gs_glyph
-pl_tt_cmap_encode_char(const gs_font_type42 *pfont, ulong cmap_offset,
-  uint cmap_len, gs_char chr)
-{	const byte *cmap;
-	const byte *cmap_sub;
-	const byte *table;
-
-	access(cmap_offset, cmap_len, cmap);
-	/* Since the Apple cmap format is of no help in determining */
-	/* the encoding, look for a Microsoft table; but if we can't */
-	/* find one, take the first one. */
-	cmap_sub = cmap + 4;
-	{ uint i;
-	  for ( i = 0; i < u16(cmap + 2); ++i )
-	    if ( u16(cmap_sub + i * 8) == 3 )
-	      { cmap_sub += i * 8;
-		break;
-	      }
-	}
-	{ uint offset = cmap_offset + u32(cmap_sub + 4);
-	  access(offset, cmap_offset + cmap_len - offset, table);
-	}
-	/* Dispatch according to the table type. */
+/*
+ * Map a key through a cmap sub-table.  We export this so we can use
+ * it someday for mapping between glyph vocabularies.  If the key is
+ * not mappable, return gs_error_undefined; if the sub-table type is
+ * unknown, return gs_error_invalidfont.
+ */
+int
+pl_cmap_lookup(uint key, const byte *table, uint *pvalue)
+{	/* Dispatch according to the table type. */
 	switch ( u16(table) )
 	  {
 	  case 0:
 	    {	/* Apple standard 1-to-1 mapping. */
-		return table[chr + 6];
+		*pvalue = table[key + 6];
+		break;
 	    }
 	  case 4:
 	    {	/* Microsoft/Adobe segmented mapping.  What a mess! */
@@ -554,33 +539,67 @@ pl_tt_cmap_encode_char(const gs_font_type42 *pfont, ulong cmap_offset,
 		    uint start = u16(startCount + i2);
 		    uint glyph;
 
-		    if ( chr < start )
-		      return 0;
-		    if ( chr > u16(endCount + i2) )
+		    if ( key < start )
+		      return_error(gs_error_undefined);
+		    if ( key > u16(endCount + i2) )
 		      continue;
 		    delta = s16(idDelta + i2);
 		    roff = s16(idRangeOffset + i2);
 		    if ( roff == 0 )
-		      return chr + delta;
+		      { *pvalue = key + delta;
+		        return 0;
+		      }
 		    glyph = u16(idRangeOffset + i2 + roff +
-				((chr - start) << 1));
-		    return (glyph == 0 ? 0 : glyph + delta);
+				((key - start) << 1));
+		    *pvalue = (glyph == 0 ? 0 : glyph + delta);
+		    return 0;
 		  }
-		return 0;		/* shouldn't happen */
+		return_error(gs_error_invalidfont);	/* shouldn't happen */
 	    }
 	  case 6:
 	    {	/* Single interval lookup. */
 		uint firstCode = u16(table + 6);
 		uint entryCount = u16(table + 8);
 
-		return (chr < firstCode || chr >= firstCode + entryCount ? 0 :
-			u16(table + 10 + ((chr - firstCode) << 1)));
+		if ( key < firstCode || key >= firstCode + entryCount )
+		  return_error(gs_error_undefined);
+		*pvalue = u16(table + 10 + ((key - firstCode) << 1));
+		break;
 	    }
 	  default:
-	    discard(gs_note_error(gs_error_invalidfont));
-	    return 0;
+	    return_error(gs_error_invalidfont);
 	  }
+	return 0;
+}
 
+/* Encode a character using the TrueType cmap tables. */
+/* (We think this is never used for downloaded fonts.) */
+private gs_glyph
+pl_tt_cmap_encode_char(const gs_font_type42 *pfont, ulong cmap_offset,
+  uint cmap_len, gs_char chr)
+{	const byte *cmap;
+	const byte *cmap_sub;
+	const byte *table;
+	uint value;
+	int code;
+
+	access(cmap_offset, cmap_len, cmap);
+	/* Since the Apple cmap format is of no help in determining */
+	/* the encoding, look for a Microsoft table; but if we can't */
+	/* find one, take the first one. */
+	cmap_sub = cmap + 4;
+	{ uint i;
+	  for ( i = 0; i < u16(cmap + 2); ++i )
+	    if ( u16(cmap_sub + i * 8) == 3 )
+	      { cmap_sub += i * 8;
+		break;
+	      }
+	}
+	{ uint offset = cmap_offset + u32(cmap_sub + 4);
+	  access(offset, cmap_offset + cmap_len - offset, table);
+	}
+	code = pl_cmap_lookup((uint)chr, table, &value);
+	return (code < 0 ? 0 : value);
 }
 
 /* Encode a character using the map built for downloaded TrueType fonts. */
@@ -945,9 +964,7 @@ pl_tt_finish_init(gs_font_type42 *pfont, bool downloaded)
 int
 pl_font_alloc_glyph_table(pl_font_t *plfont, uint num_glyphs, gs_memory_t *mem,
   client_name_t cname)
-{	uint size =
-	  ((num_glyphs > 300 ? (num_glyphs = 300) : 0),
-	   num_glyphs + (num_glyphs >> 2) + 5);
+{	uint size = num_glyphs + (num_glyphs >> 2) + 5;
 	pl_font_glyph_t *glyphs =
 	  gs_alloc_struct_array(mem, size, pl_font_glyph_t,
 				&st_pl_font_glyph_element, cname);
@@ -993,9 +1010,7 @@ expand_glyph_table(pl_font_t *plfont, gs_memory_t *mem)
 int
 pl_tt_alloc_char_glyphs(pl_font_t *plfont, uint num_chars, gs_memory_t *mem,
   client_name_t cname)
-{	uint size =
-	  ((num_chars > 300 ? (num_chars = 300) : 0),
-	   num_chars + (num_chars >> 2) + 5);
+{	uint size = num_chars + (num_chars >> 2) + 5;
 	pl_tt_char_glyph_t *char_glyphs =
 	  (pl_tt_char_glyph_t *)
 	  gs_alloc_byte_array(mem, size, sizeof(pl_tt_char_glyph_t), cname);
@@ -1030,7 +1045,7 @@ expand_char_glyph_table(pl_font_t *plfont, gs_memory_t *mem)
 	  return code;
 	for ( i = 0; i < old_table.size; ++i )
 	  if ( old_table.table[i].chr != gs_no_char )
-	    *pl_tt_lookup_char(plfont, old_table.table[i].glyph) =
+	    *pl_tt_lookup_char(plfont, old_table.table[i].chr) =
 	      old_table.table[i];
 	gs_free_object(mem, old_table.table, "expand_char_glyphs(old table)");
 	plfont->char_glyphs.used = old_table.used;

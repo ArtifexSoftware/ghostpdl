@@ -1,5 +1,7 @@
 #!/usr/bin/tclsh
-# Copyright (C) 1996 Aladdin Enterprises, Menlo Park, CA. All rights reserved.
+
+# Copyright (C) 1996, 1997 Aladdin Enterprises, Menlo Park, CA.
+# All rights reserved.
 
 # pcl/package.tcl
 # Make various packages and disk sets.
@@ -24,8 +26,8 @@ proc glob-list {args} {
     return $list
 }
 proc list-common {dir context} {
-    set list [glob-list $dir/README $dir/*pcl.mak $dir/pcllib.mak]
-    lconcat list [glob-list $dir/p\[jl\]*.\[ch\] $dir/uni*.h]
+    set list [glob-list $dir/README $dir/*pcl.mak $dir/pcllib.mak $dir/NEWS-PL]
+    lconcat list [glob-list $dir/p\[jl\]*.\[ch\]]
     return $list
 }
 proc list-pcl5-only {dir context} {

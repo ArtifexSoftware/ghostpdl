@@ -102,7 +102,7 @@ int pcl_end_page(P2(pcl_state_t *pcls, pcl_print_condition_t condition));
   pcl_end_page(pcls, pcl_print_always)
 #define pcl_end_page_if_marked(pcls)\
   pcl_end_page(pcls, pcl_print_if_marked)
-int pcl_default_end_page(P1(pcl_state_t *pcls));
+int pcl_default_finish_page(P1(pcl_state_t *pcls));
 uint pcl_status_read(P3(byte *data, uint max_data, pcl_state_t *pcls));
 /* Process a string of plain (printable) text. */
 int pcl_text(P3(const byte *str, uint size, pcl_state_t *pcls));

@@ -13,6 +13,8 @@
 #include "gsmatrix.h"		/* for gsdevice.h */
 #include "gsdevice.h"
 #include "gspaint.h"
+# include "gxdevice.h"
+# include "gdevbbox.h"
 
 /* Define the default margin and text length values. */
 #define left_margin_default 0
@@ -29,7 +31,21 @@
 /* Return 1 if the page was actually printed and erased. */
 int
 pcl_end_page(pcl_state_t *pcls, pcl_print_condition_t condition)
-{	if ( condition == pcl_print_always || pcls->have_page )
+{	if ( condition != pcl_print_always )
+	  { /* Check whether there are any marks on the page. */
+	    gx_device *dev = gs_currentdevice(pcls->pgs);
+	    if ( !pcls->have_page )	/* definitely no marks */
+	      return 0;
+	    /* Check whether we're working with a bbox device. */
+	    if ( !strcmp(gs_devicename(dev), "bbox") )
+	      { /* A bbox device can give us a definitive answer */
+		/* (otherwise we have to be conservative). */
+		gs_rect bbox;
+		gx_device_bbox_bbox((gx_device_bbox *)dev, &bbox);
+		if ( bbox.p.x >= bbox.q.x || bbox.p.y >= bbox.q.y )
+		  return 0;
+	      }
+	  }
 	  { int code;
 	    /* If there's an overlay macro, execute it now. */
 	    if ( pcls->overlay_enabled )
@@ -51,7 +67,6 @@ pcl_end_page(pcl_state_t *pcls, pcl_print_condition_t condition)
 	    code = gs_erasepage(pcls->pgs);
 	    return (code < 0 ? code : 1);
 	  }
-	return 0;
 }
 int
 pcl_default_finish_page(pcl_state_t *pcls)

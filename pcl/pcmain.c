@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -22,6 +22,8 @@
 #include "gscoord.h"
 #include "gspath.h"
 #include "gxalloc.h"
+# include "gxdevice.h"
+# include "gdevbbox.h"
 #include "pjparse.h"
 #include "plmain.h"
 
@@ -54,18 +56,6 @@ pause_finish_page(pcl_state_t *pcls)
 	return code;
 }
 
-#ifdef DEBUG
-/* Print memory usage. */
-private void
-print_memory(pcl_state_t *pcls)
-{	gs_memory_status_t status;
-
-	gs_memory_status(pcls->memory, &status);
-	dprintf2("Memory allocated = %lu, used = %lu\n",
-		 status.allocated, status.used);
-}
-#endif
-
 /* Define a minimal spot function. */
 private float
 cspotf(floatp x, floatp y)
@@ -77,7 +67,6 @@ int
 main(int argc, char *argv[])
 {	gs_ref_memory_t *imem;
 #define mem ((gs_memory_t *)imem)
-	vm_spaces spaces;
 	pl_main_instance_t inst;
 	int i;
 	gs_state *pgs;
@@ -91,13 +80,16 @@ main(int argc, char *argv[])
 	gs_debug_out = stdout;
 	imem = ialloc_alloc_state(&gs_memory_default, 20000);
 	imem->space = 0;		/****** WRONG ******/
-	{ int i;
-	  for ( i = 0; i < countof(spaces.indexed); ++i )
-	    spaces.indexed[i] = 0;
-	  spaces.named.local = spaces.named.global = imem;
+	pl_main_init(&inst, mem);
+	i = pl_main_process_options(&inst, argv, argc);
+	/* Insert a bounding box device so we can detect empty pages. */
+	{ gx_device_bbox *bdev =
+	    gs_alloc_struct_immovable(mem, gx_device_bbox, &st_device_bbox,
+				      "main(bbox device)");
+	  gx_device_fill_in_procs(inst.device);
+	  gx_device_bbox_init(bdev, inst.device);
+	  inst.device = (gx_device *)bdev;
 	}
-	pl_main_init(&inst);
-	i = pl_main_process_options(&inst, argv, argc, mem);
 	pl_main_make_gstate(&inst, &pgs);
 	/* Set the default CTM for H-P coordinates. */
 	gs_clippath(pgs);
@@ -161,8 +153,10 @@ main(int argc, char *argv[])
 	    bool in_pjl = true;
 
 #ifdef DEBUG
-	    dprintf1("Reading %s: ", arg);
-	    print_memory(&state);
+	    if ( gs_debug_c(':') )
+	      { dprintf1("%% Reading %s:\n", arg);
+	        pl_print_usage(mem, &inst, "Start");
+	      }
 #endif
 	    if ( in == 0 )
 	      { fprintf(stderr, "Unable to open %s for reading.\n", arg);
@@ -215,11 +209,10 @@ process:      if ( in_pjl )
 	      fwrite(buf, 1, count, stdout);
 	    fflush(stdout);
 	  }
-	  gs_reclaim(&spaces, true);
+	  gs_reclaim(&inst.spaces, true);
 	  }
 #ifdef DEBUG
-	dputs("At end of execution: ");
-	print_memory(&state);
+	pl_print_usage(mem, &inst, "Final");
 #endif
 	gs_lib_finit(0, 0);
 	exit(0);

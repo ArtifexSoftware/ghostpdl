@@ -468,7 +468,8 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcls, stream_cursor_read *pr)
 				  [chr < 33 ?
 				  pcl_control_command_indices[chr] :
 				  pcl_control_command_indices[1]];
-				if ( cdefn->proc == pcl_plain_char &&
+				if ( (cdefn == 0 ||
+				      cdefn->proc == pcl_plain_char) &&
 				     !pcls->parse_other &&
 				     !pcls->raster.graphics_mode
 				   )

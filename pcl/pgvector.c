@@ -209,18 +209,27 @@ hpgl_plot(hpgl_args_t *pargs, hpgl_state_t *pgls,
 	 */
 
 	hpgl_real_t x, y;
+	bool got_args = false;
 
 	while ( hpgl_arg_units(pargs, &x) && hpgl_arg_units(pargs, &y) ) 
 	  { 
 	    
+	    got_args = true;
 	    /* HAS If there are no arguments simply add the current point
 	       to the path */
 	    
-	    hpgl_add_point_to_path(pgls, x, y, gs_func);
+	    hpgl_call(hpgl_add_point_to_path(pgls, x, y, gs_func));
 	    
 	    /* Prepare for the next set of points. */
 	    hpgl_args_init(pargs);
 	  }
+
+	/* no argument case */
+	if ( !got_args) 
+	  hpgl_call(hpgl_add_point_to_path(pgls, 
+					   pgls->g.pos.x, 
+					   pgls->g.pos.y, gs_func));
+
 	return 0;
 }
 

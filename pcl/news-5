@@ -6,6 +6,50 @@
 This file, NEWS-5, describes the changes in the most recent releases of
 Aladdin's PCL 5 code, in reverse chronological order.
 
+Fileset of 1/13/97
+==================
+
+(LPD) Removes some code that has been moved to the pl* library, and adjusts
+some printouts to parallel PCL XL.  (pcmain.c)
+
+(LPD) Adds a bounding box device for accurate detection of empty pages.
+(pcmain.c, pcpage.c)
+
+HP-GL/2
+-------
+
+Thu Jan  9 19:03:31 1997  Henry Stiles  <henrys@meercat.dimensional.com>
+
+	* pgstate.h: removed implicit execution hack.
+
+	* pginit.c (hpgl_default_coordinate_system): added this function to
+	set up a default coordinate system for GL/2 see the lengthy
+	comment prior to the comment for details.
+	(hpgl_do_reset): rearranged initialization of coordinate system.
+	got rid of implicit execution business.
+
+Tue Jan  7 14:43:25 1997  Henry Stiles  <henrys@meercat.dimensional.com>
+
+	* pgframe.c (pcl_vert_pic_frame_size_decipoints): change to add
+	derive the vertical picture frame from the text length not the
+	logical page length as previously implemented.
+
+	* pgvector.c (hpgl_arc): added no argument case for P[ARDU].
+
+Mon Jan  6 00:42:47 1997  Henry Stiles  <henrys@meercat.dimensional.com>
+
+	* pgpoly.c (hpgl_EA): removed setting of pen_down in EA which was
+	causing stray lines in fts borders.
+
+Sun Jan  5 21:09:50 1997  Henry Stiles  <henrys@meercat.dimensional.com>
+
+	* pgmand.h (hpgl_call): added empty function hpgl_error() to be called
+	only when an error occurs.  Used for setting breakpoints - DEBUG only.
+
+	* pgpoly.c (hpgl_wedge): added PU to current position at the
+	beginning of the wedge, this guarantess the path begins with a
+	moveto. 
+
 Fileset of 1/8/97
 =================
 

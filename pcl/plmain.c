@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -9,6 +9,7 @@
 #include "gdebug.h"
 #include "gstypes.h"
 #include "gsmemory.h"
+#include "gp.h"
 #include "gsmatrix.h"
 #include "gscdefs.h"
 #include "gsdevice.h"
@@ -32,12 +33,27 @@ Options: -dNOPAUSE -E[#] -h -Z...\n\
 
 /* Initialize the instance parameters. */
 void
-pl_main_init(pl_main_instance_t *pmi)
-{	pmi->error_report = -1;
+pl_main_init(pl_main_instance_t *pmi, gs_memory_t *mem)
+{	pmi->memory = mem;
+	{ int i;
+	  for ( i = 0; i < countof(pmi->spaces.indexed); ++i )
+	    pmi->spaces.indexed[i] = 0;
+	  pmi->spaces.named.local = pmi->spaces.named.global =
+	    (gs_ref_memory_t *)mem;
+	}
+#ifdef DEBUG
+	gp_get_usertime(pmi->base_time);
+#endif
+	pmi->error_report = -1;
 	pmi->pause = true;
 	pmi->first_page = 1;
 	pmi->last_page = max_int;
 	pmi->device = 0;
+	pmi->page_count = 0;
+	{ gs_memory_status_t status;
+	  gs_memory_status(mem, &status);
+	  pmi->prev_allocated = status.allocated;
+	}
 }
 
 /* Create a default device if necessary. */
@@ -60,16 +76,15 @@ pl_main_create_device(pl_main_instance_t *pmi, int index)
 
 /* Process the options on the command line. */
 int
-pl_main_process_options(pl_main_instance_t *pmi, char *argv[], int argc,
-  gs_memory_t *memory)
-{	const gx_device **dev_list;
+pl_main_process_options(pl_main_instance_t *pmi, char *argv[], int argc)
+{	gs_memory_t *mem = pmi->memory;
+	const gx_device **dev_list;
 	int num_devs = gs_lib_device_list(&dev_list, NULL);
 	gs_c_param_list params;
 #define plist ((gs_param_list *)&params)
 	int i, code = 0;
 
-	pmi->memory = memory;
-	gs_c_param_list_write(&params, memory);
+	gs_c_param_list_write(&params, mem);
 	for ( i = 1; i < argc && argv[i][0] == '-'; ++i )
 	  { const char *arg = argv[i] + 2;
 
@@ -221,8 +236,56 @@ pl_main_make_gstate(pl_main_instance_t *pmi, gs_state **ppgs)
 	  return code;
 	pgs = gs_state_alloc(pmi->memory);
 	gs_setdevice_no_erase(pgs, pmi->device);	/* can't erase yet */
+	/* All H-P languages want accurate curves. */
+	gs_setaccuratecurves(pgs, true);
 	*ppgs = pgs;
 	return 0;
+}
+
+#ifdef DEBUG
+/* Print memory and time usage. */
+void
+pl_print_usage(gs_memory_t *mem, const pl_main_instance_t *pmi,
+  const char *msg)
+{	gs_memory_status_t status;
+	long utime[2];
+
+	gs_memory_status(mem, &status);
+	gp_get_usertime(utime);
+	dprintf5("%% %s time = %g, pages = %d, memory allocated = %lu, used = %lu\n",
+		 msg, utime[0] - pmi->base_time[0] +
+		   (utime[1] - pmi->base_time[1]) / 1000000000.0,
+		 pmi->page_count, status.allocated, status.used);
+}
+#endif
+
+/* Finish a page, possibly printing usage statistics and/or pausing. */
+int
+pl_finish_page(pl_main_instance_t *pmi, gs_state *pgs, int num_copies,
+  int flush)
+{	int code = 0;
+
+	++(pmi->page_count);
+	if ( pmi->page_count >= pmi->first_page &&
+	     pmi->page_count <= pmi->last_page
+	   )
+	  {
+#ifdef DEBUG
+	    if ( !pmi->pause && gs_debug_c(':') )
+	      pl_print_usage(pmi->memory, pmi, "render:");
+#endif
+	    code = gs_output_page(pgs, num_copies, flush);
+	    if ( pmi->pause )
+	      { fprintf(stderr, "End of page %d, press <enter> to continue.\n",
+			pmi->page_count);
+	        getchar();
+	      }
+#ifdef DEBUG
+	    else if ( gs_debug_c(':') )
+	      pl_print_usage(pmi->memory, pmi, " done :");
+#endif
+	  }
+	return code;
 }
 
 /* ---------------- Stubs ---------------- */

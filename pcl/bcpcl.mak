@@ -1,4 +1,4 @@
-#    Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
 #    Unauthorized use, copying, and/or distribution prohibited.
 
 # makefile for PCL XL interpreter, MS-DOS / Borland C platform.
@@ -34,6 +34,7 @@ INCDIR=c:\bc\include
 LIBDIR=c:\bc\lib
 AK=$(GD)ccf.tr turboc.cfg
 
+!include "$(GD)version.mak"
 !include "$(GD)tccommon.mak"
 !include "$(GD)bcflags.mak"
 CCC=$(COMPDIR)\$(COMP) -m$(MM) -zEGS_FAR_DATA @$(GD)ccf.tr -I$(GSDIR) -c

@@ -44,8 +44,8 @@ typedef enum {
 typedef struct pl_font_params_s {
   uint symbol_set;
   bool proportional_spacing;
-  uint pitch_100ths;
-  uint height_4ths;
+  uint pitch_100ths;		/* in scalable fonts, 100ths of an em */
+  uint height_4ths;		/* in scalable fonts, unused */
   uint style;
   int stroke_weight;
   uint typeface_family;
@@ -226,13 +226,13 @@ int pl_font_add_glyph(P3(pl_font_t *plfont, gs_glyph glyph, const byte *data));
 /* If the font is bound, the symbol set is ignored. */
 /* If the character is undefined, set the escapement to (0,0) and return 1. */
 /* If pwidth is NULL, don't store the escapement. */
-#define pl_font_char_width(plfont, maps, char_code, pwidth)\
-  (*(plfont)->char_width)(plfont, maps, char_code, pwidth)
+#define pl_font_char_width(plfont, maps, matrix, char_code, pwidth)\
+  (*(plfont)->char_width)(plfont, maps, matrix, char_code, pwidth)
 
 /* Determine whether a font, with a given symbol set, includes a given */
 /* character.  If the font is bound, the symbol set is ignored. */
-#define pl_font_includes_char(plfont, maps, char_code)\
-  (pl_font_char_width(plfont, maps, char_code, NULL) == 0)
+#define pl_font_includes_char(plfont, maps, matrix, char_code)\
+  (pl_font_char_width(plfont, maps, matrix, char_code, NULL) == 0)
 
 /* Free a font.  This is the freeing procedure in the font dictionary. */
 void pl_free_font(P3(gs_memory_t *mem, void *plf, client_name_t cname));

@@ -1,4 +1,4 @@
-#    Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
 #    Unauthorized use, copying, and/or distribution prohibited.
 
 # makefile for PCL XL interpreter, MS-DOS / Watcom C platform.
@@ -31,7 +31,7 @@ TARGET_XE=$(PCLXL)
 
 # Define Watcom options.
 
-DEVICE_DEVS=vga.dev djet500.dev ljet4.dev pcxmono.dev
+DEVICE_DEVS=vga.dev djet500.dev ljet4.dev pcxmono.dev pcxgray.dev
 
 MAKEFILE=watcpcl.mak
 
@@ -42,6 +42,7 @@ WCVERSION=10.0
 PLATOPT=-i=$(GSDIR)
 
 !include $(GSDIR)\wccommon.mak
+!include $(GSDIR)\version.mak
 
 .c.obj:
 	$(CCC) $<
@@ -54,11 +55,15 @@ ld$(LANGUAGE).tr: $(MAKEFILE) $(LANGUAGE).mak $(GSDIR)\echogs$(XE)
 	echo WCVERSION=$(WCVERSION) >$(GSDIR)\_wm_temp.mak
 	echo FEATURE_DEVS=$(FEATURE_DEVS) >>$(GSDIR)\_wm_temp.mak
 	echo DEVICE_DEVS=$(DEVICE_DEVS) >>$(GSDIR)\_wm_temp.mak
+	echo BAND_LIST_STORAGE=memory >>$(GSDIR)\_wm_temp.mak
+	echo BAND_LIST_COMPRESSOR=zlib >>$(GSDIR)\_wm_temp.mak
 	echo !include watclib.mak >>$(GSDIR)\_wm_temp.mak
 	cd >$(GSDIR)\_wm_dir.bat
 	cd $(GSDIR)
 	echogs$(XE) -w _wm_cdir.bat cd -s -r _wm_dir.bat
-	wmakel -u -n -h -f _wm_temp.mak CONFIG=$(CONFIG) ld$(CONFIG).tr gsnogc.$(OBJ) gconfig$(CONFIG).$(OBJ) gscdefs$(CONFIG).$(OBJ) >_wm_temp.bat
+	wmakel -u -n -h -f _wm_temp.mak CONFIG=$(CONFIG) gdevbbox.$(OBJ) gsargs.$(OBJ) gsnogc.$(OBJ) >_wm_temp.bat
+	call _wm_temp.bat
+	wmakel -u -n -h -f _wm_temp.mak CONFIG=$(CONFIG) ld$(CONFIG).tr gconfig$(CONFIG).$(OBJ) gscdefs$(CONFIG).$(OBJ) >_wm_temp.bat
 	call _wm_temp.bat
 	call _wm_cdir.bat
 	rem	Use type rather than copy to update the creation time
@@ -75,6 +80,8 @@ ldt.tr: $(MAKEFILE) ld$(LANGUAGE).tr ldconf$(CONFIG).tr
 	echo OPTION STACK=16k >>ldt.tr
 	echo PATH $(GSDIR) >>ldt.tr
 	$(CP_) ldt.tr+ld$(LANGUAGE).tr
+	echo FILE gdevbbox.$(OBJ) >>ldt.tr
+	echo FILE gsargs.$(OBJ) >>ldt.tr
 	echo FILE gsnogc.$(OBJ) >>ldt.tr
 	echo FILE gconfig$(CONFIG).$(OBJ) >>ldt.tr
 	echo FILE gscdefs$(CONFIG).$(OBJ) >>ldt.tr
