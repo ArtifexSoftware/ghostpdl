@@ -40,12 +40,13 @@ prn_device(prn_std_procs, "bmpmono",
 private const gx_device_procs bmpgray_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb);
-const gx_device_printer gs_bmpgray_device =
-prn_device(bmpgray_procs, "bmpgray",
+const gx_device_printer gs_bmpgray_device = {
+  prn_device_body(gx_device_printer, bmpgray_procs, "bmpgray",
 	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	   X_DPI, Y_DPI,
 	   0, 0, 0, 0,		/* margins */
-	   8, bmp_print_page);
+	   1, 8, 255, 0, 256, 0, bmp_print_page)
+};
 
 /* 1-bit-per-plane separated CMYK color. */
 
