@@ -410,13 +410,6 @@ pdf_string_to_cos_name(gx_device_pdf *pdev, const byte *str, uint len,
     return 0;
 }
 
-/* Print a Boolean using a format. */
-private void
-pprintb1(stream *s, const char *format, bool b)
-{
-    pprints1(s, format, (b ? "true" : "false"));
-}
-
 /* ---------------- Graphics state updating ---------------- */
 
 /* ------ Functions ------ */
@@ -537,7 +530,7 @@ pdf_write_transfer_map(gx_device_pdf *pdev, const gx_transfer_map *map,
     gs_function_free(pfn, false, mem);
     if (code < 0)
 	return code;
-    sprintf(ids, "%s %ld 0 R", key, id);
+    sprintf(ids, "%s%s%ld 0 R", key, (key[0] && key[0] != ' ' ? " " : ""), id);
     return 0;
 }
 private int
@@ -1075,17 +1068,25 @@ pdf_update_halftone(gx_device_pdf *pdev, const gs_imager_state *pis,
     }
     if (code < 0)
 	return code;
-    sprintf(hts, "/HT %ld 0 R", id);
+    sprintf(hts, "%ld 0 R", id);
     pdev->halftone_id = pis->dev_ht->id;
     return code;
 }
 
 /* ------ Graphics state updating ------ */
 
+private inline cos_dict_t *
+resource_dict(pdf_resource_t *pres)
+{
+    return (cos_dict_t *)pres->object;
+}
+
 /* Open an ExtGState. */
 private int
 pdf_open_gstate(gx_device_pdf *pdev, pdf_resource_t **ppres)
 {
+    int code;
+
     if (*ppres)
 	return 0;
     /*
@@ -1097,7 +1098,20 @@ pdf_open_gstate(gx_device_pdf *pdev, pdf_resource_t **ppres)
 	/* We apparently use gs_error_interrupt as a request to change context. */
 	return gs_error_interrupt;
     }
-    return pdf_begin_resource(pdev, resourceExtGState, gs_no_id, ppres);
+    code = pdf_alloc_resource(pdev, resourceExtGState, gs_no_id, ppres, -1L);
+    if (code < 0)
+	return code;
+    cos_become((*ppres)->object, cos_type_dict);
+    code = cos_dict_put_c_key_string(resource_dict(*ppres), "/Type", (const byte *)"/ExtGState", 10);
+    if (code < 0)
+	return code;
+    return 0;
+}
+
+private int 
+pdf_is_same_extgstate(gx_device_pdf * pdev, pdf_resource_t *pres0, pdf_resource_t *pres1)
+{
+    return true;
 }
 
 /* Finish writing an ExtGState. */
@@ -1105,20 +1119,31 @@ private int
 pdf_end_gstate(gx_device_pdf *pdev, pdf_resource_t *pres)
 {
     if (pres) {
+	pdf_resource_t *pres1 = pres;
 	int code;
 
-	stream_puts(pdev->strm, ">>\n");
-	code = pdf_end_resource(pdev);
-	pres->object->written = true; /* don't write at end of page */
+	code = pdf_find_same_resource(pdev, resourceExtGState, &pres, pdf_is_same_extgstate);
 	if (code < 0)
 	    return code;
+	if (code != 0) {
+	    code = pdf_cancel_resource(pdev, (pdf_resource_t *)pres1, resourceExtGState);
+	    if (code < 0)
+		return code;
+	} else {
+	    pdf_reserve_object_id(pdev, pres, gs_no_id);
+	    code = cos_write_object(pres->object, pdev);
+	    if (code < 0)
+		return code;
+	    pres->object->written = 1;
+	}
 	code = pdf_open_page(pdev, PDF_IN_STREAM);
 	if (code < 0)
 	    return code;
-	pprintld1(pdev->strm, "/R%ld gs\n", pdf_resource_id(pres));
 	code = pdf_add_resource(pdev, pdev->substream_Resources, "/ExtGState", pres);
 	if (code < 0)
 	    return code;
+	pprintld1(pdev->strm, "/R%ld gs\n", pdf_resource_id(pres));
+	pres->where_used |= pdev->used_mask;
     }
     return 0;
 }
@@ -1155,19 +1180,18 @@ pdf_update_transfer(gx_device_pdf *pdev, const gs_imager_state *pis,
 	int mask;
 
 	if (!multiple) {
-	    code = pdf_write_transfer(pdev, tm[pi],
-				      "/TR", trs);
+	    code = pdf_write_transfer(pdev, tm[pi], "", trs);
 	    if (code < 0)
 		return code;
 	    mask = code == 0;
 	} else {
-	    strcpy(trs, "/TR[");
+	    strcpy(trs, "[");
 	    mask = 0;
 	    for (i = 0; i < 4; ++i) 
 		if (tm[i] != NULL) {
 		    code = pdf_write_transfer_map(pdev,
 						  tm[i],
-						  0, true, "", trs + strlen(trs));
+						  0, true, " ", trs + strlen(trs));
 		    if (code < 0)
 			return code;
 		    mask |= (code == 0) << i;
@@ -1206,11 +1230,15 @@ pdf_update_alpha(gx_device_pdf *pdev, const gs_imager_state *pis,
     code = pdf_open_gstate(pdev, ppres);
     if (code < 0)
 	return code;
-    pprintb1(pdev->strm, "/AIS %s", ais);
+    code = cos_dict_put_c_key_bool(resource_dict(*ppres), "/AIS", ais);
+    if (code < 0)
+	return code;
     /* we never do the 'both' operations (b, B, b*, B*) so we set both */
     /* CA and ca the same so that we stay in sync with state.*.alpha   */
-    pprintg2(pdev->strm, "/CA %g /ca %g", alpha, alpha);
-    return 0;
+    code = cos_dict_put_c_key_real(resource_dict(*ppres), "/CA", alpha);
+    if (code < 0)
+	return code;
+    return cos_dict_put_c_key_real(resource_dict(*ppres), "/ca", alpha);
 }
 
 /*
@@ -1225,11 +1253,16 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_imager_state *pis,
     if (pdev->CompatibilityLevel >= 1.4) {
 	if (pdev->state.blend_mode != pis->blend_mode) {
 	    static const char *const bm_names[] = { GS_BLEND_MODE_NAMES };
+	    char buf[20];
 
 	    code = pdf_open_gstate(pdev, ppres);
 	    if (code < 0)
 		return code;
-	    pprints1(pdev->strm, "/BM/%s", bm_names[pis->blend_mode]);
+	    buf[0] = '/';
+	    strncpy(buf + 1, bm_names[pis->blend_mode], sizeof(buf) - 2);
+	    code = cos_dict_put_string_copy(resource_dict(*ppres), "/BM", buf);
+	    if (code < 0)
+		return code;
 	    pdev->state.blend_mode = pis->blend_mode;
 	}
 	code = pdf_update_alpha(pdev, pis, ppres);
@@ -1278,14 +1311,14 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_imager_state *pis,
 	if (pdev->params.UCRandBGInfo == ucrbg_Preserve) {
 	    if (pdev->black_generation_id != pis->black_generation->id) {
 		code = pdf_write_transfer_map(pdev, pis->black_generation,
-					      0, false, "/BG", bgs);
+					      0, false, "", bgs);
 		if (code < 0)
 		    return code;
 		pdev->black_generation_id = pis->black_generation->id;
 	    }
 	    if (pdev->undercolor_removal_id != pis->undercolor_removal->id) {
 		code = pdf_write_transfer_map(pdev, pis->undercolor_removal,
-					      -1, false, "/UCR", ucrs);
+					      -1, false, "", ucrs);
 		if (code < 0)
 		    return code;
 		pdev->undercolor_removal_id = pis->undercolor_removal->id;
@@ -1295,18 +1328,39 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_imager_state *pis,
 	    code = pdf_open_gstate(pdev, ppres);
 	    if (code < 0)
 		return code;
-	    stream_puts(pdev->strm, hts);
-	    stream_puts(pdev->strm, trs);
-	    stream_puts(pdev->strm, bgs);
-	    stream_puts(pdev->strm, ucrs);
+	}
+	if (hts[0]) {
+	    code = cos_dict_put_string_copy(resource_dict(*ppres), "/HT", hts);
+	    if (code < 0)
+		return code;
+	}
+	if (trs[0]) {
+	    code = cos_dict_put_string_copy(resource_dict(*ppres), "/TR", trs);
+	    if (code < 0)
+		return code;
+	}
+	if (bgs[0]) {
+	    code = cos_dict_put_string_copy(resource_dict(*ppres), "/BG", bgs);
+	    if (code < 0)
+		return code;
+	}
+	if (ucrs[0]) {
+	    code = cos_dict_put_string_copy(resource_dict(*ppres), "/UCR", ucrs);
+	    if (code < 0)
+		return code;
 	}
 	gs_currentscreenphase_pis(pis, &phase, 0);
 	gs_currentscreenphase_pis(&pdev->state, &dev_phase, 0);
 	if (dev_phase.x != phase.x || dev_phase.y != phase.y) {
+	    char buf[sizeof(int) * 3 + 5];
+
 	    code = pdf_open_gstate(pdev, ppres);
 	    if (code < 0)
 		return code;
-	    pprintd2(pdev->strm, "/HTP[%d %d]", phase.x, phase.y);
+	    sprintf(buf, "[%d %d]", phase.x, phase.y);
+	    code = cos_dict_put_string_copy(resource_dict(*ppres), "/HTP", buf);
+	    if (code < 0)
+		return code;
 	    gx_imager_setscreenphase(&pdev->state, phase.x, phase.y,
 				     gs_color_select_all);
 	}
@@ -1316,14 +1370,18 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_imager_state *pis,
 	    code = pdf_open_gstate(pdev, ppres);
 	    if (code < 0)
 		return code;
-	    pprintd1(pdev->strm, "/OPM %d", pdev->params.OPM);
+	    code = cos_dict_put_c_key_int(resource_dict(*ppres), "/OPM", pdev->params.OPM);
+	    if (code < 0)
+		return code;
 	    pdev->overprint_mode = pdev->params.OPM;
 	}
 	if (pdev->state.smoothness != pis->smoothness) {
 	    code = pdf_open_gstate(pdev, ppres);
 	    if (code < 0)
 		return code;
-	    pprintg1(pdev->strm, "/SM %g", pis->smoothness);
+	    code = cos_dict_put_c_key_real(resource_dict(*ppres), "/SM", pis->smoothness);
+	    if (code < 0)
+		return code;
 	    pdev->state.smoothness = pis->smoothness;
 	}
 	if (pdev->CompatibilityLevel >= 1.4) {
@@ -1331,7 +1389,9 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_imager_state *pis,
 		code = pdf_open_gstate(pdev, ppres);
 		if (code < 0)
 		    return code;
-		pprintb1(pdev->strm, "/TK %s", pis->text_knockout);
+		code = cos_dict_put_c_key_bool(resource_dict(*ppres), "/TK", pis->text_knockout);
+		if (code < 0)
+		    return code;
 		pdev->state.text_knockout = pis->text_knockout;
 	    }
 	}
@@ -1358,10 +1418,14 @@ pdf_try_prepare_fill(gx_device_pdf *pdev, const gs_imager_state *pis)
 	    return code;
 	/* PDF 1.2 only has a single overprint setting. */
 	if (pdev->CompatibilityLevel < 1.3) {
-	    pprintb1(pdev->strm, "/OP %s", pis->overprint);
+	    code = cos_dict_put_c_key_bool(resource_dict(pres), "/OP", pis->overprint);
+	    if (code < 0)
+		return code;
 	    pdev->stroke_overprint = pis->overprint;
 	} else {
-	    pprintb1(pdev->strm, "/op %s", pis->overprint);
+	    code = cos_dict_put_c_key_bool(resource_dict(pres), "/op", pis->overprint);
+	    if (code < 0)
+		return code;
 	}
 	pdev->fill_overprint = pis->overprint;
     }
@@ -1400,7 +1464,9 @@ pdf_try_prepare_stroke(gx_device_pdf *pdev, const gs_imager_state *pis)
 	code = pdf_open_gstate(pdev, &pres);
 	if (code < 0)
 	    return code;
-	pprintb1(pdev->strm, "/OP %s", pis->overprint);
+	code = cos_dict_put_c_key_bool(resource_dict(pres), "/OP", pis->overprint);
+	if (code < 0)
+	    return code;
 	pdev->stroke_overprint = pis->overprint;
 	if (pdev->CompatibilityLevel < 1.3) {
 	    /* PDF 1.2 only has a single overprint setting. */
@@ -1416,7 +1482,9 @@ pdf_try_prepare_stroke(gx_device_pdf *pdev, const gs_imager_state *pis)
 	code = pdf_open_gstate(pdev, &pres);
 	if (code < 0)
 	    return code;
-	pprintb1(pdev->strm, "/SA %s", pis->stroke_adjust);
+	code = cos_dict_put_c_key_bool(resource_dict(pres), "/SA", pis->stroke_adjust);
+	if (code < 0)
+	    return code;
 	pdev->state.stroke_adjust = pis->stroke_adjust;
     }
     return pdf_end_gstate(pdev, pres);

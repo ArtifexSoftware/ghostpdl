@@ -926,6 +926,13 @@ cos_dict_put_c_key_int(cos_dict_t *pcd, const char *key, int value)
     return cos_dict_put_c_key_string(pcd, key, (byte *)str, strlen(str));
 }
 int
+cos_dict_put_c_key_bool(cos_dict_t *pcd, const char *key, bool value)
+{
+    return cos_dict_put_c_key_string(pcd, key, 
+		(const byte *)(value ? "true" : "false"),
+			      (value ? 4 : 5));
+}
+int
 cos_dict_put_c_key_real(cos_dict_t *pcd, const char *key, floatp value)
 {
     byte str[50];		/****** ADHOC ******/
@@ -965,6 +972,11 @@ cos_dict_put_string(cos_dict_t *pcd, const byte *key_data, uint key_size,
 
     return cos_dict_put(pcd, key_data, key_size,
 			cos_string_value(&cvalue, value_data, value_size));
+}
+int
+cos_dict_put_string_copy(cos_dict_t *pcd, const char *key, const char *value)
+{
+    return cos_dict_put_c_key_string(pcd, key, (byte *)value, strlen(value));
 }
 int
 cos_dict_put_c_strings(cos_dict_t *pcd, const char *key, const char *value)

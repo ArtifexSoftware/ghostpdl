@@ -244,10 +244,12 @@ int cos_dict_put_no_copy(cos_dict_t *, const byte *, uint,
 int cos_dict_put_c_key(cos_dict_t *, const char *, const cos_value_t *);
 int cos_dict_put_c_key_string(cos_dict_t *, const char *, const byte *, uint);
 int cos_dict_put_c_key_int(cos_dict_t *, const char *, int);
+int cos_dict_put_c_key_bool(cos_dict_t *pcd, const char *key, bool value);
 int cos_dict_put_c_key_real(cos_dict_t *, const char *, floatp);
 int cos_dict_put_c_key_floats(cos_dict_t *, const char *, const float *, uint);
 int cos_dict_put_c_key_object(cos_dict_t *, const char *, cos_object_t *);
 int cos_dict_put_string(cos_dict_t *, const byte *, uint, const byte *, uint);
+int cos_dict_put_string_copy(cos_dict_t *pcd, const char *key, const char *value);
 int cos_dict_put_c_strings(cos_dict_t *, const char *, const char *);
 /* move all the elements from one dict to another */
 int cos_dict_move_all(cos_dict_t *, cos_dict_t *);
