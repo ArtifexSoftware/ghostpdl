@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.c,v 1.7 2001/06/14 08:25:01 giles Exp $
+    $Id: jbig2dec.c,v 1.8 2001/06/14 23:09:23 giles Exp $
 */
 
 #include <stdio.h>
@@ -21,13 +21,19 @@ typedef struct _Jbig2SegmentHeader Jbig2SegmentHeader;
 typedef struct _Jbig2SymbolDictionary Jbig2SymbolDictionary;
 typedef struct _Jbig2PageInfo Jbig2PageInfo;
 
+/* our main 'context' structure for decoding a jbig2 bitstream */
 struct _Jbig2Ctx {
   FILE *f;
   int offset;
-
-  byte flags;
+  
   int32 n_pages;
+  byte flags;
 };
+
+/* useful masks for parsing the flags field */
+#define JBIG2_FILE_FLAGS_SEQUENTIAL_ACCESS	0x01
+#define JBIG2_FILE_FLAGS_PAGECOUNT_UNKNOWN	0x02
+
 
 struct _Jbig2SegmentHeader {
   int32 segment_number;
@@ -105,7 +111,7 @@ jbig2_open (FILE *f)
       return NULL;
     }
   ctx->flags = buf[8];
-  if (ctx->flags & 2)
+  if (ctx->flags & JBIG2_FILE_FLAGS_PAGECOUNT_UNKNOWN)
     {
       ctx->offset = 9;	/* number of pages unknown */
 	  ctx->n_pages = 0;
@@ -115,6 +121,14 @@ jbig2_open (FILE *f)
       ctx->offset = 13;
       ctx->n_pages = get_int32 (ctx, 9);
 	}
+  
+  if(!ctx->flags & JBIG2_FILE_FLAGS_SEQUENTIAL_ACCESS) {
+	printf("warning: random access header organization.\n");
+	printf("we don't handle that yet.\n");
+	free(ctx);
+	return NULL;
+  }
+	
   return ctx;
 }
 
