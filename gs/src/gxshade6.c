@@ -1319,12 +1319,9 @@ dc2fc(const patch_fill_state_t *pfs, gx_color_index c,
     }
 }
 
-private inline bool
-is_color_linear(const patch_fill_state_t *pfs, const patch_color_t *c0, const patch_color_t *c1)
+private inline float
+function_linearity(const patch_fill_state_t *pfs, const patch_color_t *c0, const patch_color_t *c1)
 {
-    gs_direct_color_space *cs = 
-		(gs_direct_color_space *)pfs->direct_space; /* break 'const'. */
-    int code;
     float smoothness = max(pfs->smoothness, 1.0 / min_linear_grades), s = 0;
     /* Restrict the smoothness with 1/min_linear_grades, because cs_is_linear
        can't provide a better precision due to the color
@@ -1346,15 +1343,32 @@ is_color_linear(const patch_fill_state_t *pfs, const patch_color_t *c0, const pa
 		float s1 = any_abs(d) / pfs->color_domain.paint.values[i];
 
 		if (s1 > smoothness)
-		    return false;
+		    return s1;
 		if (s < s1)
 		    s = s1;
 	    }
 	}
-	smoothness -= s;
     }
+    return s;
+}
+
+private inline bool
+is_color_linear(const patch_fill_state_t *pfs, const patch_color_t *c0, const patch_color_t *c1)
+{
+    gs_direct_color_space *cs = 
+		(gs_direct_color_space *)pfs->direct_space; /* break 'const'. */
+    int code;
+    float smoothness = max(pfs->smoothness, 1.0 / min_linear_grades);
+    /* Restrict the smoothness with 1/min_linear_grades, because cs_is_linear
+       can't provide a better precision due to the color
+       representation with integers.
+     */
+    float s = function_linearity(pfs, c0, c1);
+
+    if (s > smoothness)
+	return false;
     code = cs_is_linear(cs, pfs->pis, pfs->dev, 
-	    &c0->cc, &c1->cc, NULL, NULL, smoothness);
+	    &c0->cc, &c1->cc, NULL, NULL, smoothness - s);
     if (code <= 0)
 	return false;
     return true;
@@ -1470,7 +1484,7 @@ wedge_trap_decompose(patch_fill_state_t *pfs, gs_fixed_point q[4],
 	return 0;
     dx1 = q[1].x - q[0].x, dy1 = q[1].y - q[0].y;
     dx2 = q[2].x - q[0].x, dy2 = q[2].y - q[0].y;
-#if 0
+#if 1
     if (!swap_axes)
 	vd_quad(q[0].x, q[0].y, q[1].x, q[1].y, q[3].x, q[3].y, q[2].x, q[2].y, 0, RGB(255, 0, 0));
     else
@@ -1695,8 +1709,10 @@ open_wedge_median(patch_fill_state_t *pfs, wedge_vertex_list_t *l,
 {
     if (!l->last_side) {
 	l->divided_left = true;
-	if (l->beg == NULL)
+	if (l->beg == NULL) {
+	    l->from_last_side = l->last_side;
 	    create_wedge_vertex_list(pfs, l, p0, p1);
+	}
 	assert(l->beg->p.x == p0->x);
 	assert(l->beg->p.y == p0->y);
 	assert(l->end->p.x == p1->x);
@@ -1706,6 +1722,7 @@ open_wedge_median(patch_fill_state_t *pfs, wedge_vertex_list_t *l,
 	l->divided_right = true;
 	if (l->beg == NULL) {
 	    create_wedge_vertex_list(pfs, l, p1, p0);
+	    l->from_last_side = l->last_side;
 	    return insert_wedge_vertex_list_elem(pfs, l, pm);
 	}
 	assert(l->beg->p.x == p1->x);
@@ -1839,9 +1856,27 @@ try_device_linear_color(patch_fill_state_t *pfs, bool wedge,
     if (!wedge) {
 	gs_direct_color_space *cs = 
 		(gs_direct_color_space *)pfs->direct_space; /* break 'const'. */
+	float smoothness = max(pfs->smoothness, 1.0 / min_linear_grades), s = 0;
+	/* Restrict the smoothness with 1/min_linear_grades, because cs_is_linear
+	   can't provide a better precision due to the color
+	   representation with integers.
+	 */
+	float s0, s1, s2, s01, s012;
 
+	s0 = function_linearity(pfs, &p0->c, &p1->c);
+	if (s0 > smoothness)
+	    return 1;
+	s1 = function_linearity(pfs, &p1->c, &p2->c);
+	if (s1 > smoothness)
+	    return 1;
+	s2 = function_linearity(pfs, &p2->c, &p0->c);
+	if (s2 > smoothness)
+	    return 1;
+	/* fixme: check an inner color ? */
+	s01 = max(s0, s1);
+	s012 = max(s01, s2);
 	code = cs_is_linear(cs, pfs->pis, pfs->dev, 
-			    &p0->c.cc, &p1->c.cc, &p2->c.cc, NULL, pfs->smoothness);
+			    &p0->c.cc, &p1->c.cc, &p2->c.cc, NULL, smoothness - s012);
 	if (code < 0)
 	    return code;
 	if (code == 0)
