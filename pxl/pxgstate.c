@@ -17,11 +17,13 @@
 #include "gsstate.h"
 #include "gscoord.h"
 #include "gxcspace.h"			/* must precede gscolor2.h */
+#include "gscie.h"
 #include "gsimage.h"
 #include "gspath.h"
 #include "gspath2.h"
 #include "gsrop.h"
 #include "gxstate.h"
+#include "gscolor2.h"
 
 /*
  * There is an apparent bug in the LJ5 and LJ6MP firmware that causes
@@ -346,43 +348,47 @@ px_initclip(px_state_t *pxs)
     return gx_clip_to_rectangle(pxs->pgs, &pxs->pxgs->initial_clip_rect);
 }
 
-/* ---------------- Utilities ---------------- */
-/* NB this should be fixed to use the new interface in gscspace.h */
-extern const gs_color_space_type
-      gs_color_space_type_DeviceGray, gs_color_space_type_DeviceRGB, gs_color_space_type_DeviceCMYK,
-      gs_color_space_type_Indexed;
 
 /* Set up the color space information for a bitmap image or pattern. */
 int
 px_image_color_space(gs_color_space *pcs, gs_image_t *pim,
   const px_bitmap_params_t *params, const gs_const_string *palette,
   const gs_state *pgs)
-{	int depth = params->depth;
+{	
 
-	switch ( params->color_space )
-	  {
-	  case eGray:
-	    gs_cspace_init_DeviceGray(pcs);
-	    break;
-	  case eRGB:
-	    gs_cspace_init_DeviceRGB(pcs);
-	    break;
-	  default:
-	    return_error(errorIllegalAttributeValue);
-	  }
-	if ( params->indexed )
-	  { pcs->params.indexed.base_space.type = pcs->type;
-	    pcs->params.indexed.hival = (1 << depth) - 1;
-	    pcs->params.indexed.lookup.table = *palette;
-	    pcs->params.indexed.use_proc = 0;
-	    pcs->type = &gs_color_space_type_Indexed;
-	  }
+    int depth = params->depth;
+    switch ( params->color_space ) {
+    case eGray:
+	gs_cspace_init_DeviceGray(pcs);
+	break;
+    case eRGB:
+	gs_cspace_init_DeviceRGB(pcs);
+	break;
+    case eSRGB:
+    case eCRGB:
+	/* CIE space already set up */
+	break;
+    default:
+	return_error(errorIllegalAttributeValue);
+    }
+    if ( params->indexed ) { 
+	pcs->params.indexed.base_space.type = pcs->type;
+	pcs->params.indexed.hival = (1 << depth) - 1;
+	pcs->params.indexed.lookup.table = *palette;
+	pcs->params.indexed.use_proc = 0;
+	pcs->type = &gs_color_space_type_Indexed;
+    }
+    if ( params->color_space == eSRGB || params->color_space == eCRGB ) {
+	px_gstate_t *pxgs = gs_state_client_data(pgs);
+	gs_image_t_init(pim, pxgs->cie_color_space);
+    } else {
 	gs_image_t_init_rgb(pim, (const gs_imager_state *)pgs);
 	pim->ColorSpace = pcs;
-	pim->BitsPerComponent = depth;
-	if ( params->indexed )
-	  pim->Decode[1] = (1 << depth) - 1;
-	return 0;
+    }
+    pim->BitsPerComponent = depth;
+    if ( params->indexed )
+	pim->Decode[1] = (1 << depth) - 1;
+    return 0;
 }
 
 /* Check the setting of the clipping region. */
@@ -476,7 +482,6 @@ pxSetCharAngle(px_args_t *par, px_state_t *pxs)
 	return 0;
 }
 
-#ifdef PXL2_0
 const byte apxSetCharAttributes[] = {
     pxaWritingMode, 0, 0
 };
@@ -484,10 +489,9 @@ int
 pxSetCharAttributes(px_args_t *par, px_state_t *pxs)
 {
     pxs->pxgs->writing_mode = par->pv[0]->value.i;
-    dprintf( "Warning - PXL 2.0 SetCharacterAttributes parsed but not implemented\n");
     return 0;
 }
-#endif
+
 const byte apxSetCharScale[] = {
   pxaCharScale, 0, 0
 };
