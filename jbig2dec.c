@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.c,v 1.23 2002/06/21 19:11:28 giles Exp $
+    $Id: jbig2dec.c,v 1.24 2002/06/22 09:58:26 giles Exp $
 */
 
 #include <stdio.h>
@@ -134,6 +134,31 @@ error_callback(void *error_callback_data, const char *buf, Jbig2Severity severit
     return 0;
 }
 
+static int
+write_page_image(jbig2dec_params_t *params, Jbig2Image *image)
+{
+      if (!strcmp(params->output_file, "-"))
+        {
+          fprintf(stderr, "writing decoded page to stdout\n");
+#ifdef HAVE_LIBPNG
+          jbig2_image_write_png(image, stdout);
+#else
+          jbig2_image_write_pbm(image, stdout);
+#endif
+        }
+      else
+        {
+          fprintf(stderr, "saving decoded page as '%s'\n", params->output_file);
+#ifdef HAVE_LIBPNG
+          jbig2_image_write_png_file(image, params->output_file);
+#else
+          jbig2_image_write_pbm_file(image, params->output_file);
+#endif
+        }
+        
+  return 0;
+}
+
 int
 main (int argc, char **argv)
 {
@@ -226,13 +251,8 @@ main (int argc, char **argv)
     Jbig2Image *image;
     
     while ((image = jbig2_get_page(ctx)) != NULL) {
-        fprintf(stderr, "saving decoded page as '%s'\n", params.output_file);
-#ifdef HAVE_LIBPNG
-        jbig2_image_write_png_file(image, params.output_file);
-#else
-        jbig2_image_write_pbm_file(image, params.output_file);
-#endif
-        jbig2_release_page(ctx, image);
+      write_page_image(&params, image);
+      jbig2_release_page(ctx, image);
     }
   }
   
