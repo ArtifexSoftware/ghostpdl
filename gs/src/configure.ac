@@ -28,7 +28,7 @@ dnl --------------------------------------------------
 
 AC_MSG_CHECKING([supported compiler flags])
 cflags_to_try="-Wall -Wstrict-prototypes -Wmissing-declarations \
--Wmissing-prototypes -Wqual-cast -Wwrite-strings \
+-Wmissing-prototypes -Wcast-qual -Wwrite-strings \
 -fno-builtin -fno-common"
 old_cflags=$CFLAGS
 echo
