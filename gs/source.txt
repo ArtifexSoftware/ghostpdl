@@ -1,0 +1,151 @@
+   Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+  
+  This file is part of Aladdin Ghostscript.
+  
+  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+  or distributor accepts any responsibility for the consequences of using it,
+  or for whether it serves any particular purpose or works at all, unless he
+  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+  License (the "License") for full details.
+  
+  Every copy of Aladdin Ghostscript must include a copy of the License,
+  normally in a plain ASCII text file named PUBLIC.  The License grants you
+  the right to copy, modify and redistribute Aladdin Ghostscript, but only
+  under certain conditions described in the License.  Among other things, the
+  License requires that the copyright notice and this notice be preserved on
+  all copies.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Id: source.txt 
+This file, source.txt, is a guide to the Ghostscript source code.
+
+For an overview of Ghostscript and a list of the documentation files, see
+README.
+
+Overview
+--------
+
+The Ghostscript source code is divided conceptually as follows:
+	PostScript interpreter:
+		PostScript operators (z*.[ch])
+		Other interpreter C code (i*.[ch])
+		PostScript code (gs_*.ps)
+	PDF interpreter: pdf_*.ps
+	Graphics library:
+		Main library code (g*.[ch])
+		Streams (s*.[ch])
+		Device drivers (gdev*.[ch])
+		Platform-dependent code (gp*.[ch])
+
+PostScript Interpreter
+----------------------
+
+gs.c is the main program for the interactive language interpreter; gserver.c
+is an alternative main program that is a rudimentary server.  If you
+configure Ghostscript as a server rather than an interactive program, you
+will use gserver.c instead of gs.c.
+
+Files named z*.c are Ghostscript operator files.  The names of the files
+generally follow the section headings of the operator summary in section 6.2
+of the PostScript Language Reference Manual.  Each operator xxx is
+implemented by a procedure named zxxx, e.g., zfill, zarray.
+
+Files named i*.c, and *.h other than g*.h, are the rest of the
+interpreter.  See the makefile for a little more information on how the
+files are divided functionally.
+
+The main loop of the PostScript interpreter is the interp procedure in
+interp.c.  When the interpreter is reading from an input file, it calls the
+token scanner in iscan*.c.
+
+idebug.c contains a lot of debugger-callable routines useful for printing
+out PostScript objects when debugging.
+
+PDF interpreter
+---------------
+
+The PDF interpreter is written entirely in PostScript.  Its main loop is the
+.pdfrun procedure in pdf_base.ps.
+
+When the PDF interpreter is configured into the build, it redefines the
+'run' operator to test whether the file is a PDF file.  This redefinition is
+near the beginning of pdf_main.ps.
+
+Graphics library
+----------------
+
+Files beginning with gs, gx, or gz (both .c and .h), other than gs.c and
+gserver.c, are the Ghostscript library.  Files beginning with gdev are
+device drivers or related code, also part of the library.  Other files
+beginning with g are library files that don't fall neatly into either the
+kernel or the driver category.
+
+Files named s*.[ch] are a flexible stream package, including the Level 2
+PostScript 'filters' supported by Ghostscript.  See stream.h, scommon.h, and
+strimpl.h for all the details.
+
+Drivers
+-------
+
+The interface between the graphics library and device drivers is the only
+really well documented one in all of Ghostscript: see drivers.txt.
+
+In addition to many real device and file format drivers listed in devs.mak
+and contrib.mak, there are a number of drivers used for internal purposes.
+You can search lib.mak for files named gdev*.c to find almost all of them.
+
+Drivers are divided into "printer" drivers, which support banding, and
+non-printer drivers, which don't.  The decision as to whether banding is
+required is made (by default, on the basis of how much memory is available)
+in the procedure gdev_prn_alloc in gdevprn.c: it implements this decision by
+filling the virtual procedure table for the printer device in one of two
+different ways.
+
+A good simple "printer" (bandable) driver to read is gdevmiff.c: it's only
+84 lines, of which half are boilerplate.  There are no simple non-printer
+drivers that actually drive devices: probably the simplest non-printer
+driver for reading purposes is gdevm8.c, which implements 8-bit-deep devices
+that just store the bits in memory.
+
+Platform-specific code
+----------------------
+
+There are very few platform dependencies in Ghostscript.  Ghostscript deals
+with them in 3 ways:
+
+	- Files named *_.h substitute for the corresponding <*.h> file
+	by adding conditionals that provide a uniform set of system APIs
+	on all platforms.
+
+	- The file arch.h contains a set of mechanically-discovered
+	platform properties like byte order, size of int, etc.
+	These properties, NOT the names of specific platforms, are used
+	to select between different algorithms or parameters at
+	compile time.
+
+	- Files named gp*.h define APIs that are intended to be
+	implemented differently on each platform, but whose specification
+	is common to all platforms.
+
+The platform-specific implementations of the gp*.h APIs have names of the
+form
+	gp_<platform>.c
+specifically (this list may be out of date):
+	gp_dosfb.c (MS-DOS)
+	gp_dosfs.c (MS-DOS and MS Windows)
+	gp_itbc.c (MS-DOS, Borland compilers)
+	gp_iwatc.c (MS-DOS, Watcom or Microsoft compiler)
+	gp_msdos.c (MS-DOS and MS Windows)
+	gp_ntfs.c (MS-Windows Win32s and Windows NT)
+	gp_os2.c (OS/2)
+	gp_os9.c (OS-9)
+	gp_unifs.c (Unix or OS-9)
+	gp_unix.c (Unix)
+	gp_sysv.c (System V Unix)
+	gp_vms.c (VMS)
+	gp_win32.c (MS-Windows Win32s and Windows NT)
+
+If you are going to extend Ghostscript to new machines or operating systems,
+you should check the *_.h files for ifdef's on things other than DEBUG, and
+you should probably count on making a new makefile and a new gp_xxx.c file.
