@@ -100,12 +100,12 @@ def update_ghostscript():
 	os.chdir(HEAD_DIR)
 	
 	os.unlink("%s/src/gscdef.c" % (HEAD_DIR,))
-	if os.system("cvs update -Pd >> CVS_LOG_STDOUT 2>> CVS_LOG_STDOUT") != 0: return -1
+	if os.system("cvs update -Pd >> " + CVS_LOG_STDOUT + " 2>> " + CVS_LOG_STDERR") != 0: return -1
 	change_gsproduct("%s/src/gscdef.c" % (HEAD_DIR,))
 	
 	if os.system("make clean > /dev/null 2> /dev/null") != 0: return -1
-	if os.system("make > MAKE_LOG_STDOUT 2> MAKE_LOG_STDOUT") != 0: return -1
-	if os.system("make install > INSTALL_LOG_STDOUT 2> INSTALL_LOG_STDOUT") != 0: return -1
+	if os.system("make > " + MAKE_LOG_STDOUT + " 2> " + MAKE_LOG_STDERR") != 0: return -1
+	if os.system("make install > " + INSTALL_LOG_STDOUT + " 2> " + INSTALL_LOG_STDERR") != 0: return -1
 
 	return 0
 
