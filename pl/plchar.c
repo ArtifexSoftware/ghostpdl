@@ -50,11 +50,6 @@
 # undef gs_show_move
 # define gs_show_move TEXT_PROCESS_INTERVENE
 
-/* Define whether to cache bitmap characters. */
-/* Logically this seems unnecessary, but it enables a much faster path */
-/* through the character rendering code. */
-#define CACHE_BITMAP_CHARS
-
 /* Define whether to cache TrueType characters. */
 /* This would only be disabled for debugging. */
 #define CACHE_TRUETYPE_CHARS
@@ -369,6 +364,7 @@ pl_bitmap_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
   gs_char chr, gs_glyph glyph)
 {	pl_font_t *plfont = (pl_font_t *)pfont->client_data;
 	const byte *cdata = pl_font_lookup_glyph(plfont, glyph)->data;
+	bool landscape = plfont->landscape;
 
 	if ( cdata == 0 )
 	  return 0;
@@ -387,18 +383,28 @@ pl_bitmap_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 	      params = cdata + 2;
 	      bitmap_data = cdata + 10;
 	      delta_x = 0;	/* irrelevant */
+	      lsb = s16(params);
+	      ascent = s16(params + 2);
 	    }
 	  else
 	    { /* PCL5 format */
 	      params = cdata + 6;
 	      bitmap_data = cdata + 16;
-	      delta_x =
-		(plfont->header[13] ? /* variable pitch */
-		 s16(params + 8) * 0.25 :
-		 s16(params) /*lsb*/ + u16(params + 4) /*width*/);
+	      if ( !landscape ) {
+		  delta_x = (plfont->header[13] ? /* variable pitch */
+			     s16(params + 8) * 0.25 :
+			     s16(params) /*lsb*/ + u16(params + 4) /*width*/);
+		  lsb = s16(params);
+		  ascent = s16(params + 2);
+
+	      } else {
+		  delta_x = (plfont->header[13] ?     /* variable pitch */
+			     s16(params + 8) * 0.25 :
+			     s16(params + 2) );       /* ascent */
+		  lsb = s16(params + 2) /* ascent top offset */ - u16(params + 6); /* Height */
+		  ascent = -s16(params);
+	      }
 	    }
-	  lsb = s16(params);
-	  ascent = s16(params + 2);
 	  ienum = gs_image_enum_alloc(pgs->memory, "pl_bitmap_build_char");
 	  if ( ienum == 0 )
 	    return_error(gs_error_VMerror);
@@ -406,9 +412,8 @@ pl_bitmap_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 	  image.Width = u16(params + 4);
 	  image.Height = u16(params + 6);
 	  /* Determine the amount of pseudo-bolding. */
-	  if ( pfont->WMode >> 1 )
-	    { float bold_fraction = (pfont->WMode >> 1) / 10e5;
-	      bold = (uint)(image.Height * bold_fraction + 0.5);
+	  if ( plfont->bold_fraction != 0 ) { 
+	      bold = (uint)(image.Height * plfont->bold_fraction + 0.5);
 	      bold_lines = alloc_bold_lines(pgs->memory, image.Width, bold,
 					    "pl_bitmap_build_char(bold_line)");
 	      if ( bold_lines == 0 )
@@ -422,22 +427,14 @@ pl_bitmap_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 	  else
 	    bold = 0;
 	  gs_make_identity(&image.ImageMatrix);
+	  if ( landscape ) {
+	      gs_matrix_rotate(&image.ImageMatrix, -90, &image.ImageMatrix);
+	      gs_matrix_translate(&image.ImageMatrix, image.Height, 0, &image.ImageMatrix);
+	  }
 	  image.ImageMatrix.tx -= lsb;
 	  image.ImageMatrix.ty += ascent;
 	  image.adjust = true;
-#ifdef CACHE_BITMAP_CHARS
-	  { float wbox[6];
-	    wbox[0] = delta_x;	/* wx */
-	    wbox[1] = 0;	/* wy */
-	    wbox[2] = lsb;	/* llx */
-	    wbox[3] = -ascent;	/* lly */
-	    wbox[4] = image.Width + lsb;	/* urx */
-	    wbox[5] = image.Height - ascent;	/* ury */
-	    code = gs_setcachedevice(penum, pgs, wbox);
-	  }
-#else
 	  code = gs_setcharwidth(penum, pgs, delta_x, 0);
-#endif
 	  if ( code < 0 )
 	    return code;
 	  code = image_bitmap_char(ienum, &image, bitmap_data,
@@ -828,9 +825,8 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 #define pbfont ((gs_font_base *)pfont)
 #define pfont42 ((gs_font_type42 *)pfont)
 	int code;
-	float bold_fraction =
-	  (gs_show_in_charpath(penum) != cpm_show ? 0.0 :
-	   (pfont->WMode >> 1) / 10e5);
+	pl_font_t *plfont = (pl_font_t *)pfont->client_data;
+	float bold_fraction = gs_show_in_charpath(penum) != cpm_show ? 0.0 : plfont->bold_fraction;
 	uint bold_added;
 	double scale;
 	float sbw[4], w2[6];

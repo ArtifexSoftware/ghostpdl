@@ -538,6 +538,11 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcs)
 		  pcs->soft_font_count = 0;
 	      }
 	  }
+	/* get and set the orientation field */
+        {
+	    pcl_font_header_t *header = (pcl_font_header_t *)plfont->header;
+	    plfont->landscape = (header->Orientation == 1);
+	}
 	return pl_font_add_glyph(plfont, pcs->character_code, char_data);
 #undef plfont
 }

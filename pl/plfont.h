@@ -155,7 +155,9 @@ struct pl_font_s {
   int (*char_metrics)(P3(const pl_font_t *plfont, uint char_code, float metrics[4]));
   bool large_sizes;	/* segment sizes are 32 bits if true, 16 if false */
 			/* (for segmented fonts only) */
-  struct { uint x, y; } resolution;	/* resolution (for bitmap fonts) */
+  struct { uint x, y; } resolution; /* resolution (for bitmap fonts) */
+  float bold_fraction;              /* for PXL algorithmic bolding */
+  bool landscape;                   /* true if pcl bitmap font designed in landscape */
   pl_font_params_t params;
   byte character_complement[8];	/* character complement (for unbound fonts) */
   struct o_ {

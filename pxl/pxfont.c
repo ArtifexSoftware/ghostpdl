@@ -339,9 +339,10 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
 	  (!index_shift ? px_next_char_8 :
 	   pstr->type & pxd_big_endian ? px_next_char_16big :
 	   px_next_char_16little);
-	pfont->WMode =
-	  (pxgs->char_sub_mode == eVerticalSubstitution ? 1 : 0) +
-	  ((int)(pxgs->char_bold_value * 10e5 * 1.625) * 2);
+	{
+	    pl_font_t *plfont = (pl_font_t *)pfont->client_data;
+	    plfont->bold_fraction = pxgs->char_bold_value * 1.625;
+	}
 	if ( to_path )
 	  { /* TextPath */
 	    /*

@@ -110,6 +110,8 @@ pl_alloc_font(gs_memory_t *mem, client_name_t cname)
 	    plfont->glyphs.table = 0;
 	    plfont->char_glyphs.table = 0;
 	    /* Initialize other defaults. */
+	    plfont->landscape = false;
+	    plfont->bold_fraction = 0;
 	    plfont->font_file = 0;
 	    plfont->resolution.x = plfont->resolution.y = 0;
 	    plfont->params.proportional_spacing = true;
@@ -146,6 +148,8 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
 	plfont->resolution = src->resolution;
 	plfont->params = src->params;
 	plfont->font_file_loaded = src->font_file_loaded;
+	plfont->landscape = src->landscape;
+	plfont->bold_fraction = src->bold_fraction;
 	{
 	  int i;
 	  for (i = 0; i < sizeof(src->character_complement); i++ )
