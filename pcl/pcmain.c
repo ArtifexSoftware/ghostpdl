@@ -208,23 +208,7 @@ main(
                                           );
     pcl_init_state(pcls, mem);
     gs_state_set_client(pgs, pcls, &pcl_gstate_procs);
-
-    /* Set the default CTM for H-P coordinates (centi-points, 7200 per inch. */
     gs_clippath(pgs);
-    {
-        gs_rect bbox;
-        gs_pathbbox(pgs, &bbox);
-    }
-    gs_newpath(pgs);
-    gs_scale(pgs, 0.01, -0.01);
-
-    {
-        gs_matrix   mat;
- 	gs_currentmatrix(pgs, &mat);
- 	gs_translate(pgs, 0.0, -(mat.ty / mat.yy));
-        gs_currentmatrix(pgs, &mat);
-        gs_setdefaultmatrix(pgs, &mat);
-    }
 
     /* PCL no longer uses the graphic library transparency mechanism */
     gs_setsourcetransparent(pgs, false);
@@ -341,6 +325,7 @@ process:
                 fwrite(buf, 1, count, stdout);
             fflush(stdout);
         }
+
         gs_reclaim(&inst.spaces, true);
     }
 
