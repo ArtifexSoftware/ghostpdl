@@ -267,6 +267,8 @@ psdf_begin_binary(gx_device_psdf * pdev, psdf_binary_writer * pbw)
 
     pbw->target = pdev->strm;
     pbw->dev = pdev;
+    pbw->A85E = 0;		/* for GC in case of failure */
+    pbw->strm = 0;		/* for GC in case of failure */
     /* If not binary, set up the encoding stream. */
     if (!pdev->binary_ok) {
 #define BUF_SIZE 100		/* arbitrary */
@@ -287,7 +289,6 @@ psdf_begin_binary(gx_device_psdf * pdev, psdf_binary_writer * pbw)
 #undef BUF_SIZE
 	pbw->strm = pbw->A85E = s;
     } else {
-	pbw->A85E = 0;		/* for GC */
 	pbw->strm = pdev->strm;
     }
     return 0;
