@@ -121,7 +121,8 @@ build_charstring_font(i_ctx_t *i_ctx_p, os_ptr op, build_proc_refs *pbuild,
 			    &pdata1->FamilyOtherBlues.values[0], NULL)) < 0 ||
 	(code = dict_bool_param(pprivate, "ForceBold", false,
 				&pdata1->ForceBold)) < 0 ||
-	(code = dict_int_param(pprivate, "LanguageGroup", 0, 1, 0,
+#define MaxLanguageGroup max_int	/* Type 1 Font only describes 0 and 1 */
+	(code = dict_int_param(pprivate, "LanguageGroup", 0, MaxLanguageGroup, 0,
 			       &pdata1->LanguageGroup)) < 0 ||
 	(code = pdata1->OtherBlues.count =
 	 dict_float_array_param(pprivate, "OtherBlues", max_OtherBlues * 2,
@@ -169,6 +170,15 @@ build_charstring_font(i_ctx_t *i_ctx_p, os_ptr op, build_proc_refs *pbuild,
 	if (pdata1->BlueScale * max_zone_height > 1.0)
 	    pdata1->BlueScale = 1.0 / max_zone_height;
     }
+    /*
+     * According to the same Adobe book, section 5.11, only values
+     * 0 and 1 are allowed for LanguageGroup and we have encountered
+     * fonts with other values. If the value is > 1, map it to 0
+     * so that the remainder of the graphics library won't see an
+     * unexpected value.
+     */
+     if( pdata1->LanguageGroup > 1 )
+         pdata1->LanguageGroup = 0;
     /* Do the work common to primitive font types. */
     code = build_gs_primitive_font(i_ctx_p, op, (gs_font_base **)&pfont, ftype,
 				   &st_gs_font_type1, pbuild, options);
