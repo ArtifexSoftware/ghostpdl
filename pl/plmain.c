@@ -452,8 +452,10 @@ pl_main(
     gs_c_param_list_release(&params);
     arg_finit(&args);
 
+#ifndef PSI_INCLUDED
     /* free iodev */
     gs_iodev_free(pjl_mem);
+#endif
    
     if ( gs_debug_c('A') )
 	dprintf(mem, "Final time" );
