@@ -598,6 +598,17 @@ the drivers in devs.mak which are maintained as part of the main Ghostscript
 code, are already fully re-entrant; making the remaining ones re-entrant
 should really be up to the driver author.</I>
 
+<h3>Ghostscript has no %ram% device.</h3>
+
+The %ram% device is documented in PS Supplement 3010 and 3011 dated August 30, 1999.
+This is probably not a major impediment to portability, but it would be handy.
+<p><I>
+On Unix, the suggested implementation would be to create a subdirectory
+of the temporary directory (usually /tmp), with the name chosen and the
+directory created in such a way as to avoid /tmp races and similar
+problems. Ghostscript should delete the subdirectory when it exits.
+</I>
+
 <!-- [2.0 end contents] ==================================================== -->
 
 <!-- [3.0 begin visible trailer] =========================================== -->
