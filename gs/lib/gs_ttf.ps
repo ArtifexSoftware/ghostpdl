@@ -423,7 +423,11 @@ def                % readtables
 		% Stack: f len str
   dup 0 4 -1 roll getinterval
 		% Stack: f str str1
-  3 -1 roll exch readstring pop pop
+	% Because of the absurd PostScript specification that gives an
+	% error for reading into an empty string, we have to check for
+	% this explicitly here.
+  3 -1 roll exch
+  dup () ne { readstring } if pop pop
 } bind def
 
 % Read a big table (one that may exceed 64K).
