@@ -97,7 +97,7 @@ pdf2dsc.ps pdfeof.ps pdfopt.ps ;\
 	$(SH) -c 'for f in $(PSLIBDIR)/gs_*.ps $(PSLIBDIR)/pdf_*.ps;\
 	do $(INSTALL_DATA) $$f $(gsdatadir)/lib ;\
 	done'
-	$(SH) -c 'for f in $(PSLIBDIR)/*.ppd $(PSLIBDIR)/*.upp $(PSLIBDIR)/*.xbm $(PSLIBDIR)/*.xpm;\
+	$(SH) -c 'for f in $(PSLIBDIR)/*.ppd $(PSLIBDIR)/*.rpd $(PSLIBDIR)/*.upp $(PSLIBDIR)/*.xbm $(PSLIBDIR)/*.xpm;\
 	do $(INSTALL_DATA) $$f $(gsdatadir)/lib ;\
 	done'
 	-mkdir $(docdir)

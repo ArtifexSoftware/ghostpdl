@@ -51,7 +51,8 @@ Details of Ghostscript output devices
 <li><a href="#HP_resolution_enhance">HP's resolution-enhanced mode for Inkjet printers</a>
 <li><a href="#HP_tips">General tips</a>
 </ul>
-<li><a href="#BJC">Canon BubbleJet (BJC) printers</a>
+<li><a href="#BJC_8200">Canon BJC-8200 printer</a>
+<li><a href="#BJC">Other Canon BubbleJet (BJC) printers</a>
 <ul>
 <li><a href="#BJC_history">History</a>
 <li><a href="#BJC_build">Configuring and building the BJC drivers</a>
@@ -1158,7 +1159,252 @@ findings back to me.
 
 <hr>
 
-<h1><a name="BJC"></a>Canon BubbleJet (BJC) printers</h1>
+<h1><a name="BJC_8200"></a>Canon BJC-8200 printer</h1>
+
+<p>
+This section was contributed by the author of the <b><tt>uniprint</tt></b>
+configuration files for the Canon BJC-8200, Stephan C. Buchert &lt;<a
+href="mailto:scb@stelab.nagoya-u.ac.jp">scb@stelab.nagoya-u.ac.jp</a>&gt;.
+These files also handle the Japanese Canon F850 printer.
+
+<p>
+DISCLAIMER: USAGE OF THIS PROGRAM IS NEITHER SUPPORTED NOR ENDORSED BY THE
+CANON CORPORATION. I WILL NOT BE LIABLE TO YOU FOR DAMAGES, INCLUDING ANY
+GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE
+OR INABILITY TO USE THE PROGRAM (INCLUDING BUT NOT LIMITED TO LOSS OF DATA
+OR DATA BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD
+PARTIES OR A FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER PROGRAMS),
+EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF
+SUCH DAMAGES.
+
+
+<h2>Introduction</h2>
+
+<p>
+The Canon Bubble Jet printer BJC-8200 is designed for printing digital
+photos and halftone images. Software drivers for Windows 95-2000 and Mac are
+usually included and can be downloaded from the Canon web sites like
+<a href="http://www.ccsi.canon.com/bjc/bjc8200/content.html#specs">
+http://www.ccsi.canon.com/bjc/bjc8200/content.html#specs</a> for the US
+market. If these drivers cannot be used for some reason, then at present
+Ghostscript is probably the alternative giving the best results.
+
+<p>
+The BJC-8200 has features not found among the specs of earlier bubble jet
+models (except the even more advanced BJC-8500) and is advertised to offer:
+
+<ol>
+
+<li>microfine droplet technology;
+
+<li>support for printing on a new type of paper, Photo Paper Pro;
+
+<li>a printhead capable of printing up to 1200 DpI;
+
+<li>individual ink tanks for 6 colors;
+
+<li>an internal status monitor reporting low ink back to a driver;
+
+<li>an optional color scanner cartridge for up to 600 DpI resolution.
+
+</ol>
+
+<p>
+Access to features 5 and 6 requires use of the original Canon drivers for
+the foreseeable future. This README is about getting the printer features
+1-3 working with Ghostscript. No (re)compilation of Ghostscript is normally
+required.
+
+<p>
+Ghostscript comes with a relatively highly configurable driver, called
+"uniprint," for printers which understand raster images in various propriety
+formats. Most options for this driver are usually organized into files
+having the suffix ".upp." Ghostscript versions >= 5.10 (or even earlier)
+include such uniprint control files for the Canon BJC-610. They work also
+well for some other Canon Bubble Jet models, for example for my
+BJC-35vII. But when using them for a BJC-8200 the result is unsatisfactory.
+
+<h2>The uniprint control files for the BJC-8200</h2>
+
+<p>
+After some experimenting with the options for uniprint I have obtained quite
+satisfactory prints with my printer(*). This distribution includes six new
+uniprint control files:
+
+<ul>
+<li>bj8pp12f.upp
+<li>bj8hg12f.upp
+<li>bj8gc12f.upp
+<li>bj8oh06n.upp
+<li>bj8ts06n.upp
+<li>bj8pa06n.upp
+</ul>
+
+<p>
+You can put them anywhere in the Ghostscript search path (type "gs -h" to
+see the path), but should perhaps add the files to the directory with the
+other *.upp files. This is "/usr/share/ghostscript/gs6.01/lib" in my RedHat
+6.1 Linux box with Aladdin Ghostscript 6.01.
+
+<p>
+Here is an explanation of my file name convention: the prefix "bj8" should
+perhaps be used for the Canon BJC-8200 and compatible (like the Japanese
+F850 and perhaps the non-Japanese BJC-8500) models. The next two letters
+indicate the print media:
+
+<ul>
+<li>pp "Photo Paper Pro"
+<li>hg "High Gloss Photo Film"
+<li>gc "Glossy Photo Cards"
+<li>oh "OHP transparencies"
+<li>ts "T-shirt transfer"
+<li>pa "Plain Paper"
+</ul>
+
+<p>
+The numbers at positions 6 and 7 indicate the resolution
+
+<ul>
+<li>12   1200x1200 DpIxDpI
+<li>06    600x600  DpIxDpI
+</ul>
+
+<p>
+The last letter stands for a quality factor that effects also the print
+speed (presumably related to the number of passes that the printhead makes).
+
+<ul>
+<li>f   highest quality
+<li>n   normal quality
+</ul>
+
+<p>
+Printing a postcard size (~10x15 cm^2) image at 1200x1200 DpI^2 takes about
+3 minutes. The output of Ghostscript is then typically 4-5 MByte. The
+bootleneck seems to be the transfer of the raster image in run-length
+encoded Canon format to the printer (via the parallel port on my system) or
+the printer's speed, not Ghostscript or the uniprint renderer.
+
+<h2>Further Optimization for the Canon BJC-8200</h2>
+
+So far I have only experimented with the printer initialization code at the
+beginning of each page (-dupBeginPageCommand) and the resolution (-r). Other
+options, particularly the transfer arrays (-dupBlackTransfer,
+-dupCyanTransfer, -dupMagentaTransfer, -dupYellowTransfer) and the margins
+(-dupMargins) were simply copied from the files for the BJC-610, but they
+may need to be changed for optimized performance.
+
+<p>
+Here is information useful for changing or adding uniprint control files for
+the BJC-8200:
+
+<p>
+In "-dupBeginPageCommand=..." use the line
+
+<blockquote>
+   1b28 64 0400 04b0 04b0
+</blockquote>
+
+<p>
+for 1200x1200 resolution, and
+
+<blockquote>
+   1b28 64 0400 0258 0258
+</blockquote>
+
+<p>
+for 600x600. The "-r" option in the control file must of course match this
+line. Other resolutions might work as well, but I didn't try.
+
+<p>
+Crucial are the numbers in the lines like
+
+<blockquote><pre>
+   1b28 63 0300 3005 04
+                   ^  ^
+       Plain Paper 0  4 Highest quality
+  OHP transparency 2  .
+  T-shirt transfer 3  .
+ Glossy Photo Film 5  .
+  High Gloss Paper 6  0 Lowest quality
+   Photo Paper Pro 9
+</pre></blockquote>
+
+<h2>Outlook</h2>
+
+<p>
+Presently uniprint can use the black (K), cyan (C), magenta (M), and yellow
+(Y) colors in the BJC-8200. The unused colors are photo (or light) cyan (c)
+and magenta (m). Also the Canon driver seems to use only CMYK, for example
+when printing on Photo Paper Pro in "Camera" or "SuperPhoto" mode. These
+modes supposedly produce prints of the best quality that the Canon driver
+can offer. Other Canon driver modes do use up to all six color cartridges
+(CMYKcm). Therefore expanding uniprints capabilities for six colors would be
+interesting, but it may not increase the output quality of 6-color printers
+such as the BJC-8200 drastically.
+
+<p>
+More control files for uniprint could be added in order to offer more
+versatility for controlling the BJC-8200 within a Ghostscript
+installation. The number of possible combinations for media type, resolution
+and print quality factor is very large, many combinations would not make
+much sense, many might be used here and there, but relatively rarely. The
+user would have to remember a name for each combination that is used.
+
+<p>
+A better way would be to let the user patch optionally a user owned or
+system wide uniprint control file before each print via some print
+tool. This is similar to the approach taken by Canon with their driver for
+Windows. Similarly a uniprint tool could also incorporate other functions
+such as printing test and demo pages and the low ink warning once the
+protocol for this is known. Clearly it would be difficult to code such a
+uniprint tool for all the platforms where Ghostscript is running.
+
+<h2>Usage on RedHat Linux</h2>
+
+<p>
+In order to install a BJC-8200 printer on a RedHat Linux system with
+RedHat's printtool, you need also to insert with a text editor the contents
+of the file <b><tt>bj8.rpd</tt></b> into the RedHat printer database
+<b><tt>/usr/lib/rhs/rhs-printfilters/printerdb</tt></b>. Insert it most
+appropriately after the section
+
+<blockquote><pre>
+StartEntry: U_CanonBJC610
+.
+.
+.
+EndEntry
+
+< --- insert here "bj8.rpd" from this distribution:
+< --- StartEntry: U_CanonBJC8200
+      .
+      .
+      .
+</pre></blockquote>
+
+<h2>Contacting the Author</h2>
+
+<p>
+E-mail address: &lt;<a
+href="mailto:scb@stelab.nagoya-u.ac.jp">scb@stelab.nagoya-u.ac.jp</a>&gt;
+
+<p>
+Footnotes:
+
+<p>
+(*) Actually I have a F850, not a BJC-8200. That model is sold for the
+Japanese market only. The specs and also the external look are the
+same as those of the BJC-8200 models for the American and European
+markets. I expect that the raster image mode which is used exclusively
+by Ghostscript is entirely compatible for both models.
+
+<p>
+Stephan C. Buchert
+
+<hr>
+
+<h1><a name="BJC"></a>Other Canon BubbleJet (BJC) printers</h1>
 
 <p>
 This section was contributed by the author of the drivers, Yves Arrouye
@@ -5067,7 +5313,7 @@ meet your needs.
 
 <font size=2>
 
-<p>Copyright &copy; 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+<p>Copyright &copy; 1996, 2000 Aladdin Enterprises.  All rights reserved.
 
 <p>This file is part of Aladdin Ghostscript.  See the
 <a href="Public.htm">Aladdin Free Public License</a> (the "License") for
@@ -5075,7 +5321,7 @@ full details of the terms of using, copying, modifying, and redistributing
 Aladdin Ghostscript.
 
 <p>
-Ghostscript version 6.0, 3 February 2000
+Ghostscript version 6.21, xx xxxxxx 2000
 
 </font>
 
