@@ -333,11 +333,7 @@ hpgl_set_graphics_line_attribute_state(
     const float *           widths = pcl_palette_get_pen_widths(pgls->ppalet);
     floatp                  pen_wid = widths[hpgl_get_selected_pen(pgls)];
 
-    /* fatten 0 width lines */
-    if ( pen_wid == 0 ) 
-	gs_setfilladjust(pgls->pgs, 0.5, 0.5);
-    else
-	gs_setfilladjust(pgls->pgs, 0.0, 0.0);
+    gs_setfilladjust(pgls->pgs, 0.5, 0.5);
 	    
     /*
      * HP appears to use default line attributes if the the pen
@@ -1029,14 +1025,10 @@ hpgl_add_point_to_path(
 
 	/* moveto the current position */
 	hpgl_call(hpgl_get_current_position(pgls, &current_pt));
-	if ( !pgls->g.line.current.is_solid && (pgls->g.line.current.type == 0) )
-	    
-	    hpgl_call_check_lost( gs_moveto( pgls->pgs, x, y ) );
-	else
-	    hpgl_call_check_lost( gs_moveto( pgls->pgs,
-					     current_pt.x,
-					     current_pt.y
-					     ) );
+	hpgl_call_check_lost( gs_moveto( pgls->pgs,
+					 current_pt.x,
+					 current_pt.y
+					 ) );
     }
     {
         int     code = (*gs_procs[func])(pgls->pgs, x, y);
@@ -1312,24 +1304,20 @@ hpgl_close_path(
 }
 
 
-/* Normally fill adjust is 0 with respect to the library's
-   implementation.  To implement centered we simply slide everything
-   up and left.  This is not exactly correct but produces the desired
-   results in most cases.  Note this routine is sensitive to scan
-   direction. */
+/* To implement centered we simply slide everything up and left.  This
+   is not exactly correct but produces the desired results in most
+   cases.  Note this routine is sensitive to the orientation of the
+   device */
  private int
-hpgl_set_pixel_placement(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
+hpgl_set_special_pixel_placement(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 {
-    
-    /* handle pcl centering here we should always have fill adjust set
-       to zero.  So we don't explicitly deal with the intersection
-       model here. */
     if ( pgls->pp_mode == 1 ) {
 	gs_matrix default_matrix;
 	gs_point distance, adjust;
 	gx_path *ppath = gx_current_path(pgls->pgs);
 	/* arbitrary just need the signs after transformation to
 	   device space */
+	gs_setfilladjust(pgls->pgs, 0, 0);
 	adjust.x = -1; 
 	adjust.y = -1;           
 	/* determine the adjustment in device space */
@@ -1429,6 +1417,8 @@ hpgl_draw_current_path(
 		if ((pgls->g.fill.type != hpgl_FT_pattern_one_line) &&
 		    (pgls->g.fill.type != hpgl_FT_pattern_two_lines)) {
 		    hpgl_call(hpgl_gsave(pgls));
+		    /* all character fills appear to have 0 fill adjustment */
+		    gs_setfilladjust(pgls->pgs, 0, 0);
 		    hpgl_call((*fill)(pgs));
 		    hpgl_call(hpgl_grestore(pgls));
 		}
@@ -1444,9 +1434,11 @@ hpgl_draw_current_path(
 		hpgl_call(gs_stroke(pgs));
 		break;
 	    }
+	    break;
 	}
+	break;
     case hpgl_rm_polygon:
-	hpgl_set_pixel_placement(pgls, hpgl_rm_polygon);
+	hpgl_set_special_pixel_placement(pgls, hpgl_rm_polygon);
 	if (pgls->g.fill_type == hpgl_even_odd_rule)
 	    hpgl_call(gs_eofill(pgs));
 	else    /* hpgl_winding_number_rule */
