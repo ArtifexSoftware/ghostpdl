@@ -310,4 +310,9 @@ int pl_load_resident_font_data_from_file(gs_memory_t *mem, pl_font_t *plfont);
 /* keep resident font data in its original file */
 int pl_store_resident_font_data_in_file(char *font_file, gs_memory_t *mem, pl_font_t *plfont);
 
+/* check if the font is zlib deflated.  This test is sufficient
+   because we are only checking if the header is a TT header or a zlib
+   compressed header, exclusively. */
+#define pl_is_tt_zlibC(header)\
+    ((header[0] & 0xf) == 8)
 #endif				/* plfont_INCLUDED */

@@ -31,7 +31,7 @@
 #include "plftable.h"
 #include "plvalue.h"
 #include "romfnttab.h"
-
+#include "zlib.h"
 
 /* Load some built-in fonts.  This must be done at initialization time, but
  * after the state and memory are set up.  Return an indication of whether
@@ -44,11 +44,84 @@
 
 /* Load a built-in (TrueType) font from external storage. */
 private int
+pl_append_tt_data(gs_memory_t *mem, char **ppheader, char *buffer, int length)
+{
+    if (*ppheader == NULL) {
+        *ppheader = gs_alloc_bytes(mem, length, "pl_append_tt_data");
+        if (*ppheader == NULL)
+            return -1;
+        memcpy(*ppheader, buffer, length);
+    }else {
+        uint size = gs_object_size(mem, *ppheader);
+        byte *new_header = gs_resize_object(mem, *ppheader, size + length,
+			   "pl_append_tt_data");
+        if (*ppheader == NULL)
+            return -1;
+        memcpy(new_header + size, buffer, length);
+        *ppheader = new_header;
+    }
+    return 0;
+}
+
+private int
 pl_load_romtt_font(gs_font_dir *pdir, gs_memory_t *mem, long unique_id, pl_font_t **pplfont, char *font_name, unsigned char *font_data)
 {	
+    bool compressed;
     int code;
     gs_font_type42 *pfont;
     pl_font_t *plfont;
+    char *uncompressed_header = NULL;
+    compressed = pl_is_tt_zlibC(font_data);
+
+    if (compressed) {
+        char buf[1024];
+        z_stream zs;
+        char *start = font_data;
+        zs.next_in = start;
+        zs.avail_in = 1024;
+        zs.next_out = &buf;
+        zs.avail_out = 1024;
+        zs.zalloc = Z_NULL;
+        zs.zfree = Z_NULL;
+        zs.opaque = Z_NULL;
+
+        code = inflateInit (&zs);
+        while ((code = inflate (&zs, Z_NO_FLUSH)) == Z_OK) {
+            if (zs.avail_out == 0) {
+                pl_append_tt_data(mem, &uncompressed_header, buf, 1024);
+                zs.next_out = &buf;
+                zs.avail_out = 1024;
+            }
+            if (zs.avail_in == 0) {
+                zs.avail_in = 1024;
+            }
+        }
+        while ((code = inflate (&zs, Z_FINISH)) == Z_OK) {
+            if (zs.avail_out == 0) {
+                pl_append_tt_data(mem, &uncompressed_header, buf, 1024);
+                zs.next_out = &buf;
+                zs.avail_out = 1024;
+            }
+            if (zs.avail_in == 0) {
+                zs.avail_in = 1024;
+            }
+        }
+        
+        if ( code != Z_OK && code != Z_STREAM_END ) {
+            dprintf1(mem, "fatal zlib failure code %d\n", code);
+            /* since this is fatal we don't cleanup */
+            return -1;
+        }
+        
+        code = inflateEnd(&zs);
+        if (code != Z_OK) {
+            dprintf1(mem, "fatal zlib failure code %d\n", code);
+            /* since this is fatal we don't cleanup */
+            return -1;
+        }
+                   
+    }
+        
     /* Make a Type 42 font out of the TrueType data. */
     pfont = gs_alloc_struct(mem, gs_font_type42, &st_gs_font_type42,
 			    "pl_fill_in_romtt_font(gs_font_type42)");
@@ -59,7 +132,7 @@ pl_load_romtt_font(gs_font_dir *pdir, gs_memory_t *mem, long unique_id, pl_font_
     else { /* Initialize general font boilerplate. */
 	code = pl_fill_in_font((gs_font *)pfont, plfont, pdir, mem, font_name);
 	if ( code >= 0 ) { /* Initialize TrueType font boilerplate. */
-	    plfont->header = font_data;
+	    plfont->header = compressed ? uncompressed_header : font_data;
 	    plfont->header_size = 0; /* nb clone fonts won't work */
 	    plfont->scaling_technology = plfst_TrueType;
 	    plfont->font_type = plft_Unicode;
