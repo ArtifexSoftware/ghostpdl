@@ -174,8 +174,11 @@ LIB_ONLY=$(GLOBJ)gslib.obj $(GLOBJ)gsnogc.obj $(GLOBJ)gconfig.obj $(GLOBJ)gscdef
 ll_tr=ll$(CONFIG).tr
 
 $(ll_tr): $(MAKEFILE)
-	echo SYSTEM NT >$(ll_tr)
-	echo OPTION STACK=32k >>$(ll_tr)
+	echo OPTION STACK=64k >$(ll_tr)
+!ifeq WAT32 0
+	echo SYSTEM DOS4G >>$(ll_tr)
+	echo OPTION STUB=$(STUB) >>$(ll_tr)
+!endif
 	echo FILE $(GLOBJ)gsnogc.obj >>$(ll_tr)
 	echo FILE $(GLOBJ)gconfig.obj >>$(ll_tr)
 	echo FILE $(GLOBJ)gscdefs.obj >>$(ll_tr)
