@@ -28,7 +28,6 @@
 #include "gpcheck.h"
 #include "gsparam.h"
 #include "gdevpccm.h"
-#include "iapi.h"
 #include "gsdll.h"
 
 /* Forward references */

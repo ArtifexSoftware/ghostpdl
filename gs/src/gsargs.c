@@ -22,7 +22,7 @@
 #include "gsexit.h"
 #include "gsmemory.h"
 #include "gsargs.h"
-#include "errors.h"
+#include "gserrors.h"
 
 /* Initialize an arg list. */
 void
@@ -109,7 +109,7 @@ arg_next(arg_list * pal, int *code)
 	    if (in_quote) {
 		cstr[i] = 0;
 		outprintf("Unterminated quote in @-file: %s\n", cstr);
-		*code = e_Fatal;
+		*code = gs_error_Fatal;
 		return NULL;
 	    }
 	    if (i == 0) {
@@ -161,7 +161,7 @@ arg_next(arg_list * pal, int *code)
 	    if (i == arg_str_max - 1) {
 		cstr[i] = 0;
 		outprintf("Command too long: %s\n", cstr);
-		*code = e_Fatal;
+		*code = gs_error_Fatal;
 		return NULL;
 	    }
 	    cstr[i++] = '\\';
@@ -172,7 +172,7 @@ arg_next(arg_list * pal, int *code)
 	if (i == arg_str_max - 1) {
 	    cstr[i] = 0;
 	    outprintf("Command too long: %s\n", cstr);
-	    *code = e_Fatal;
+	    *code = gs_error_Fatal;
 	    return NULL;
 	}
 	/* If input is coming from an @-file, allow quotes */
@@ -190,14 +190,14 @@ arg_next(arg_list * pal, int *code)
   at:if (pal->expand_ats && result[0] == '@') {
 	if (pal->depth == arg_depth_max) {
 	    lprintf("Too much nesting of @-files.\n");
-	    *code = e_Fatal;
+	    *code = gs_error_Fatal;
 	    return NULL;
 	}
 	result++;		/* skip @ */
 	f = (*pal->arg_fopen) (result, pal->fopen_data);
 	if (f == NULL) {
 	    outprintf("Unable to open command line file %s\n", result);
-	    *code = e_Fatal;
+	    *code = gs_error_Fatal;
 	    return NULL;
 	}
 	pal->depth++;

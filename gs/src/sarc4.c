@@ -19,7 +19,7 @@
 /* Arcfour cipher and filter implementation */
 
 #include "memory_.h"
-#include "errors.h"
+#include "gserrors.h"
 #include "gserror.h"
 #include "strimpl.h"
 #include "sarc4.h"
@@ -45,7 +45,7 @@ s_arcfour_set_key(stream_arcfour_state * state, const unsigned char *key,
     unsigned char s, *S = state->S;
 
     if (keylength < 1)
-	return_error(e_rangecheck);
+	return_error(gs_error_rangecheck);
 
     /* initialize to eponymous values */
     for (x = 0; x < 256; x++)

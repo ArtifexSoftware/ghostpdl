@@ -237,7 +237,7 @@ $(GLOBJ)gpmisc.$(OBJ) : $(GLSRC)gpmisc.c\
 $(GLOBJ)gsargs.$(OBJ) : $(GLSRC)gsargs.c\
  $(ctype__h) $(stdio__h) $(string__h)\
  $(gsargs_h) $(gsexit_h) $(gsmemory_h)\
- $(errors_h)
+ $(gserrors_h)
 	$(GLCC) $(GLO_)gsargs.$(OBJ) $(C_) $(GLSRC)gsargs.c
 
 # FPU emulation
@@ -1324,7 +1324,7 @@ $(GLD)sarc4.dev : $(LIB_MAK) $(ECHOGS_XE) $(sarc4_)
 	$(SETMOD) $(GLD)sarc4 $(sarc4_)
 
 $(GLOBJ)sarc4.$(OBJ) : $(GLSRC)sarc4.c $(AK) $(memory__h)\
- $(gserror_h) $(errors_h) $(sarc4_h) $(strimpl_h)
+ $(gserror_h) $(gserrors_h) $(sarc4_h) $(strimpl_h)
 	$(GLCC) $(GLO_)sarc4.$(OBJ) $(C_) $(GLSRC)sarc4.c
 
 # ---------------- Pixel-difference filters ---------------- #

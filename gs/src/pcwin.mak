@@ -34,18 +34,20 @@ gdevmswn_h=$(GLSRC)gdevmswn.h $(GDEVH)\
  $(dos__h) $(memory__h) $(string__h) $(windows__h)\
  $(gp_mswin_h)
 
+# This is deprecated and requires the interpreter / PSSRCDIR.
 $(GLOBJ)gdevmswn.$(OBJ): $(GLSRC)gdevmswn.c $(gdevmswn_h) $(gp_h) $(gpcheck_h)\
  $(gsdll_h) $(gsdllwin_h) $(gsparam_h) $(gdevpccm_h)
-	$(GLCCWIN) $(GLO_)gdevmswn.$(OBJ) $(C_) $(GLSRC)gdevmswn.c
+	$(GLCCWIN) -I$(PSSRCDIR) $(GLO_)gdevmswn.$(OBJ) $(C_) $(GLSRC)gdevmswn.c
 
 $(GLOBJ)gdevmsxf.$(OBJ): $(GLSRC)gdevmsxf.c $(ctype__h) $(math__h) $(memory__h) $(string__h)\
  $(gdevmswn_h) $(gsstruct_h) $(gsutil_h) $(gxxfont_h)
 	$(GLCCWIN) $(GLO_)gdevmsxf.$(OBJ) $(C_) $(GLSRC)gdevmsxf.c
 
 # An implementation using a DIB filled by an image device.
+# This is deprecated and requires the interpreter / PSSRCDIR.
 $(GLOBJ)gdevwdib.$(OBJ): $(GLSRC)gdevwdib.c\
  $(gdevmswn_h) $(gsdll_h) $(gsdllwin_h) $(gxdevmem_h)
-	$(GLCCWIN) $(GLO_)gdevwdib.$(OBJ) $(C_) $(GLSRC)gdevwdib.c
+	$(GLCCWIN) -I$(PSSRCDIR) $(GLO_)gdevwdib.$(OBJ) $(C_) $(GLSRC)gdevwdib.c
 
 mswindll1_=$(GLOBJ)gdevmswn.$(OBJ) $(GLOBJ)gdevmsxf.$(OBJ) $(GLOBJ)gdevwdib.$(OBJ)
 mswindll2_=$(GLOBJ)gdevemap.$(OBJ) $(GLOBJ)gdevpccm.$(OBJ)

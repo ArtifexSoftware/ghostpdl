@@ -164,10 +164,10 @@ CFLAGS=
 
 # ------ Platform-specific options ------ #
 
-# Define which major version of MSVC is being used (currently, 4 & 5 supported)
+# Define which major version of MSVC is being used (currently, 4, 5 & 6 supported)
 
 !ifndef MSVC_VERSION
-MSVC_VERSION = 5
+MSVC_VERSION = 6
 !endif
 
 # Define the drive, directory, and compiler name for the Microsoft C files.
