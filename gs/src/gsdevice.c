@@ -291,6 +291,33 @@ gs_opendevice(gx_device *dev)
     }
 }
 
+/* Set device parameters, updating a graphics state or imager state. */
+int
+gs_imager_putdeviceparams(gs_imager_state *pis, gx_device *dev,
+                        gs_param_list *plist)
+{
+    int code = gs_putdeviceparams(dev, plist);
+
+    if (code >= 0)
+      gx_set_cmap_procs(pis, dev);
+    return code;
+}
+private void
+gs_state_update_device(gs_state *pgs)
+{
+    gx_set_cmap_procs((gs_imager_state *)pgs, pgs->device);
+    gx_unset_dev_color(pgs);
+}
+int
+gs_state_putdeviceparams(gs_state *pgs, gs_param_list *plist)
+{
+    int code = gs_putdeviceparams(pgs->device, plist);
+
+    if (code >= 0)
+      gs_state_update_device(pgs);
+    return code;
+}
+
 /* Set the device in the graphics state */
 int
 gs_setdevice(gs_state * pgs, gx_device * dev)
@@ -342,8 +369,7 @@ gs_setdevice_no_init(gs_state * pgs, gx_device * dev)
      * device parameters.
      */
     rc_assign(pgs->device, dev, "gs_setdevice_no_init");
-    gx_set_cmap_procs((gs_imager_state *) pgs, dev);
-    gx_unset_dev_color(pgs);
+    gs_state_update_device(pgs);
     return 0;
 }
 
