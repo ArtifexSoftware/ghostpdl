@@ -115,7 +115,7 @@ pdfdict begin
 		% interpretation in all PostScript code.  Therefore, we
 		% check for them explicitly here instead.
     dup dup dup /true eq exch /false eq or exch /null eq or {
-      exch pop exch pop load
+      exch pop exch pop //systemdict exch get
     } {
       .pdftokenerror
     } ifelse
