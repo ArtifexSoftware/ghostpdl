@@ -786,7 +786,7 @@ private int t1_hinter__set_stem_snap(t1_hinter * this, float * value, int count,
     return 0;
 }
 
-private void enable_draw_import()
+private void enable_draw_import(void)
 {   /* CAUTION: can't close DC on import error */
     vd_get_dc('h');
     vd_set_shift(VD_SHIFT_X, VD_SHIFT_Y);

@@ -394,7 +394,6 @@ default_get_outline(gs_font_type42 * pfont, uint glyph_index,
 {
     int (*string_proc) (gs_font_type42 *, ulong, uint, const byte **) =
 	pfont->data.string_proc;
-    const byte *ploca;
     ulong glyph_start;
     uint glyph_length;
     int code;

@@ -338,7 +338,6 @@ scan_cmap_text(pdf_text_enum_t *pte)
 	    double *real_widths, *w, *v, *w0;
 	    int char_cache_size, width_cache_size;
 	    uint cid;
-	    gs_char unicode_char;
 
 	    break_index = scan.index;
 	    break_xy_index = scan.xy_index;

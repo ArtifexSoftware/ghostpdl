@@ -3159,11 +3159,12 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
 		    code = is_quadrangle_color_linear_by_diagonals(pfs, p);
 		    if (code < 0)
 			return code;
-		    if (!code)
+		    if (!code) {
 			if (d0001x + d1011x+ d0001y + d1011y > d0010x + d0111x + d0010y + d0111y)
 			    divide_u = true;
 			else
 			    divide_v = true;
+		    }
 		}
 		if (!divide_u && !divide_v)
 		    pfs->monotonic_color = true;
