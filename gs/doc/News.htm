@@ -55,12 +55,10 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h1><a name="Version6.22"></a>Version 6.22 (2000-07-05)</h1>
+<h1><a name="Version6.23"></a>Version 6.23 (2000-xx-xx)</h1>
 
 <p>
-This fileset consists mostly of bug fixes.  It also further improves the PDF
-writer, which now handles ImageType 3 images and PatternType 2 (shading)
-patterns.
+This fileset xxxxxx.
 
 <p>
 All problems registered on SourceForge numbered 108819 or lower are closed,
@@ -78,36 +76,7 @@ The following projects are in a partially completed state in the PDF writer:
 
 <pre>
 
-<h2><a name="6.22_Incompatible_changes"></a>Incompatible changes</h2>
-
-(Procedures)
-	- Versions now have odd numbers during development, even numbers
-when released.
-	- The TMPDIR environment variable, if set, now takes precedence
-over TEMP.
-	- On MS-DOS, MS Windows, and OS/2 platforms, the batch files that
-invoke Ghostscript now use a default name of gswin32 or gswin32c rather than
-simply gs.
-(Drivers)
-	- The PCL drivers now select a given paper size if the requested
-height is at least 0.1" greater than the height of the next smaller paper
-size, rather than if the requested height is at least as large as that of
-the given paper size.
-(Interpreter)
-	- user_names_p and system_names_p may now be NULL: clients must
-check this.
-	- scan_comment_proc and scan_dsc_proc are now deprecated, and will
-disappear in the near future.
-	- The values in psuserparams are now checking procedures rather
-than parameter values.
-	- Comments beginning with %! are treated as "DSC comments", like
-comments beginning with %%.
-(Library)
-	- The macro for declaring the fill_rectangle procedure of a shading
-is now upper-case.  The fill_rectangle procedure is now a member of a procs
-structure; there is a new macro for calling it.
-	- The parameter list and return value for gs_currentgray have
-changed.  This is very unfortunate, but it was unavoidable.
+<h2><a name="6.23_Incompatible_changes"></a>Incompatible changes</h2>
 
 </pre>
 
@@ -126,7 +95,7 @@ full details of the terms of using, copying, modifying, and redistributing
 Aladdin Ghostscript.
 
 <p>
-Ghostscript version 6.22, 5 July 2000
+Ghostscript version 6.23, xx xxxxxx 2000
 
 </font>
 
