@@ -21,10 +21,12 @@
 #  define gxshade4_INCLUDED
 
 /* Configuration flags for development needs only. Users should not modify them. */
-#define NEW_SHADINGS 0 /* Old code = 0, new code = 1. */
+#define NEW_SHADINGS 1 /* Old code = 0, new code = 1. */
 #define QUADRANGLES 0 /* 0 = decompose by triangles, 1 = by quadrangles. */
+#define DIVIDE_BY_PARALLELS 0 /* 1 - divide a triangle by parallels, 0 - in 4 triangles.  */
 #define POLYGONAL_WEDGES 0 /* 1 = polygons allowed, 0 = triangles only. */
 #define INTERPATCH_PADDING (fixed_1 / 8) /* Emulate a trapping for poorly designed documents. */
+#define COLOR_CONTIGUITY 1 /* A smothness divisor for triangulation. */
 #define TENSOR_SHADING_DEBUG 0
 #define VD_DRAW_CIRCLES 0
 #define VD_TRACE_DOWN 0
@@ -68,6 +70,7 @@ typedef struct patch_fill_state_s {
 #   endif
     gs_client_color color_domain;
     fixed fixed_flat;
+    double smoothness;
 #endif
 } patch_fill_state_t;
 
@@ -86,7 +89,7 @@ struct shading_vertex_s {
 };
 
 #if TENSOR_SHADING_DEBUG
-    extern int triangle_cnt;
+    extern int triangle_cnt, patch_cnt;
 #endif
 
 /* Initialize the fill state for triangle shading. */
