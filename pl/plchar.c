@@ -960,7 +960,7 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 	if ( bold_added )
 	  gs_grestore(pgs);
 	if ( code < 0 || !bold_added )
-	  return code;
+	  return (code < 0 ? code : 0);
 
 	/* Now smear the bitmap and copy it to the destination. */
 
@@ -1234,7 +1234,8 @@ pl_intelli_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 	  return code;
 	/* Since we don't take into account which side of the loops is */
 	/* outside, we take the easy way out.... */
-	return gs_eofill(pgs);
+	code = gs_eofill(pgs);
+	return (code < 0 ? code : 0);
 }
 
 
