@@ -2527,9 +2527,9 @@ currentdict end readonly def
 
 /ShowText  % <string> ShowText -
 { //GraphicState /TextRenderingMode get 0 eq {
-    //GraphicState /CharacterSpacing get 0
-    32
     //GraphicState /WordSpacing get 0
+    32
+    //GraphicState /CharacterSpacing get 0
     6 5 roll awidthshow
   } {
     //GraphicState /CharacterSpacing get 0 eq
@@ -2846,7 +2846,7 @@ currentdict end readonly def
   /Tm { //GraphicState /InitialTextMatrix get setmatrix
 	//TempMatrix astore concat
 	0 0 moveto } bind def
-  /T* { 0 //GraphicState /TextLeading get //Td exec } bind def
+  /T* { 0 //GraphicState /TextLeading get neg //Td exec } bind def
   /Tj { //ShowTextBeg exec  //ShowText exec  //ShowTextEnd exec } bind def
   /'  { //T* exec //ShowText exec } bind def
   /"  { 3 2 roll //Tw exec exch //Tc exec //' exec} bind def
