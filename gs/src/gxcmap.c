@@ -101,7 +101,9 @@ gx_color_index
 gx_error_encode_color(gx_device * dev, const gx_color_value colors[])
 {
 #ifdef DEBUG
-    dprintf("No encode_color proc defined for device.\n");
+    /* The "null" device is expected to be missing encode_color */
+    if (strcmp(dev->dname, "null") != 0)
+	dprintf("No encode_color proc defined for device.\n");
 #endif
     return gx_no_color_index;
 }
