@@ -600,8 +600,7 @@ pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page)
 
     /* Free unnamed resource objects, which can't be referenced again. */
 
-    for (i = 0; i < resourceFont; ++i)
-	pdf_free_resource_objects(pdev, i);
+    pdf_free_resource_objects(pdev, resourceXObject);
 
     page->procsets = pdev->procsets;
     return 0;

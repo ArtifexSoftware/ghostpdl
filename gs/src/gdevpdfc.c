@@ -874,6 +874,8 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	discard(COS_RESOURCE_VALUE(pvalue, pca));
     } else
 	discard(COS_OBJECT_VALUE(pvalue, pca));
+    if (pres != NULL)
+	pres->where_used |= pdev->used_mask;
     return 0;
 }
 
