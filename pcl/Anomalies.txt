@@ -621,18 +621,23 @@ Difference in specific tests of the PCL 5c FTS
     behavior, and the behavior of HP devices other than the CLJ 5/5M. The
     behavior of the CLJ 5/5M is apparently a bug.
         
+1372, 1382
+    small tail on beziers with triangular joins.  Not likely to occur.
+
 1402 (et. al.):
 
     The filling of GL/2 polygon regions with lines in the Artifex PCL 5c
     interpreter is not completely accurate. Line space and phasing are both
     incorrect. These bugs are present in many other GL/2 tests as well.
 
-1440 - 1446 (et. al.):
+1422, 1423, 1424, 1445, 1446, 1462, 1463, 1801, 1803, 1811, 1817, 1894, 1895, 1941, 1946,
+1950, 1951, 1960, 1961, 1962, 1963, 1964, 1965, 1966, 2210 (page 1), 2220 (page 2)
 
-    When using GL/2 line fills, the Artifex PCL 5c interpreter clips the
-    rendered representation of the line, rather than the path along which
-    the line is to be drawn. This difference is evident in the pie wedges
-    used in this set of tests, and many others.
+    Artifex GL/2 does not support line pattern fill phasing and when
+    using GL/2 line fills, the Artifex PCL 5c interpreter clips the
+    rendered representation of the line, rather than the path along
+    which the line is to be drawn. This difference is evident in the
+    pie wedges used in this set of tests, and many others.
 
 1463, 1463:
 
@@ -674,16 +679,6 @@ Difference in specific tests of the PCL 5c FTS
     not accurate. This is particularly noticeable for arbitrary transformations
     of text, as in the first two tests cited.
 
-1894, 1895 (et. al.):
-
-    For reasons that are not completely clear, the dashed lines used for
-    patterned line fills in this example are completely solid in the Artifex
-    PCL 5c interpreter. This is a bug.
-
-    In these and many other tests, the Artifex PCL 5c interpreter appears to
-    use the incorrect line pattern size (dash length). The cause of this
-    problem has not yet been determined.
-
 2003:
 
     The Artifex PCL 5c interpreter apparently misplaces the label origin for
@@ -694,7 +689,10 @@ Difference in specific tests of the PCL 5c FTS
 2040 - 2070:
 
     The GL/2 clipping behavior of the Artifex PCL 5c interpreter is not
-    identical to that of the CLJ 5/5M.
+    identical to that of the CLJ 5/5M.  In particular, the Artifex
+    interpreter clips in device space not source space as hp does.
+    The clipping of zero width lines is device dependant resulting in
+    several differences between HP and Artifex in these fts panels.
 
 2080:
 
@@ -736,6 +734,10 @@ Difference in specific tests of the PCL 5c FTS
     operator setfilladjust.  The HP command definition is not consistant with
     the behavior of the implementation and different devices (Color
     Laserjet & 6MP) produce different results for each of these test files.
+
+2180, 2190, 2200
+    These file set the top margin inside the imageable region.  We
+    clip to the imageable region.  Applications will not do this.
 
 2210 (fourth page):
 
