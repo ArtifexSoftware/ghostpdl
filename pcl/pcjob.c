@@ -18,6 +18,7 @@
 #include "gsmatrix.h"		/* for gsdevice.h */
 #include "gsdevice.h"
 #include "pcommand.h"
+#include "pcursor.h"            /* for pcl_home_cursor() */
 #include "pcstate.h"
 #include "pcparam.h"
 #include "pcdraw.h"

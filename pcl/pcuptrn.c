@@ -544,6 +544,7 @@ delete_cached_patterns_stub(
     return true;
 }
 
+ private int
 upattern_do_copy(pcl_state_t *psaved, const pcl_state_t *pcs,
   pcl_copy_operation_t operation)
 {	

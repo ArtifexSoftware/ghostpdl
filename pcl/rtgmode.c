@@ -302,11 +302,7 @@ pcl_enter_graphics_mode(
        marked */
     marked = true;
     if ( !pcs->source_transparent && pcs->pattern_transparent ) {
-	gs_matrix mat;
 	gs_rect page_bbox;
-	gs_rect rast_bbox;
-	gs_point initial_pt;
-	
 	code = pcl_current_bounding_box(pcs, &page_bbox);
 	if ( code < 0 )
 	    return code; /* a shouldn't happen */
