@@ -70,11 +70,11 @@ private int
 cp50_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {	
 	int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
-	byte *out = (byte *)gs_malloc(line_size, 1, "cp50_print_page(out)");
-    byte *r_plane = (byte *)gs_malloc(X_PIXEL*Y_PIXEL, 1, "cp50_print_page(r_plane)");
-    byte *g_plane = (byte *)gs_malloc(X_PIXEL*Y_PIXEL, 1, "cp50_print_page(g_plane)");
-    byte *b_plane = (byte *)gs_malloc(X_PIXEL*Y_PIXEL, 1, "cp50_print_page(b_plane)");
-    byte *t_plane = (byte *)gs_malloc(X_PIXEL*Y_PIXEL, 1, "cp50_print_page(t_plane)");
+	byte *out = (byte *)gs_malloc(pdev->memory, line_size, 1, "cp50_print_page(out)");
+    byte *r_plane = (byte *)gs_malloc(pdev->memory, X_PIXEL*Y_PIXEL, 1, "cp50_print_page(r_plane)");
+    byte *g_plane = (byte *)gs_malloc(pdev->memory, X_PIXEL*Y_PIXEL, 1, "cp50_print_page(g_plane)");
+    byte *b_plane = (byte *)gs_malloc(pdev->memory, X_PIXEL*Y_PIXEL, 1, "cp50_print_page(b_plane)");
+    byte *t_plane = (byte *)gs_malloc(pdev->memory, X_PIXEL*Y_PIXEL, 1, "cp50_print_page(t_plane)");
 	int lnum = FIRST_LINE;
 	int last = LAST_LINE;
     int lines = X_PIXEL;
@@ -89,19 +89,19 @@ cp50_print_page(gx_device_printer *pdev, FILE *prn_stream)
 	if ( out == 0 || r_plane == 0 || g_plane == 0 || b_plane == 0 || 
          t_plane == 0)
 	{	if ( out )
-			gs_free((char *)out, line_size, 1,
+			gs_free(pdev->memory, (char *)out, line_size, 1,
 				"cp50_print_page(out)");
         if (r_plane)
-            gs_free((char *)r_plane, X_PIXEL*Y_PIXEL, 1,
+            gs_free(pdev->memory, (char *)r_plane, X_PIXEL*Y_PIXEL, 1,
                 "cp50_print_page(r_plane)");
         if (g_plane)  
-            gs_free((char *)g_plane, X_PIXEL*Y_PIXEL, 1, 
+            gs_free(pdev->memory, (char *)g_plane, X_PIXEL*Y_PIXEL, 1, 
                 "cp50_print_page(g_plane)");
         if (b_plane)  
-            gs_free((char *)b_plane, X_PIXEL*Y_PIXEL, 1, 
+            gs_free(pdev->memory, (char *)b_plane, X_PIXEL*Y_PIXEL, 1, 
                 "cp50_print_page(b_plane)");
         if (t_plane)
-            gs_free((char *)t_plane, X_PIXEL*Y_PIXEL, 1, 
+            gs_free(pdev->memory, (char *)t_plane, X_PIXEL*Y_PIXEL, 1, 
                 "cp50_print_page(t_plane)");
 		return -1;
 	}
@@ -164,11 +164,11 @@ cp50_print_page(gx_device_printer *pdev, FILE *prn_stream)
     fwrite(t_plane, sizeof(char), X_PIXEL*Y_PIXEL, prn_stream);
 
 
-	gs_free((char *)out, line_size, 1, "cp50_print_page(out)");
-    gs_free((char *)r_plane, X_PIXEL*Y_PIXEL, 1, "cp50_print_page(r_plane)");
-    gs_free((char *)g_plane, X_PIXEL*Y_PIXEL, 1, "cp50_print_page(g_plane)");
-    gs_free((char *)b_plane, X_PIXEL*Y_PIXEL, 1, "cp50_print_page(b_plane)");
-    gs_free((char *)t_plane, X_PIXEL*Y_PIXEL, 1, "cp50_print_page(t_plane)");
+	gs_free(pdev->memory, (char *)out, line_size, 1, "cp50_print_page(out)");
+    gs_free(pdev->memory, (char *)r_plane, X_PIXEL*Y_PIXEL, 1, "cp50_print_page(r_plane)");
+    gs_free(pdev->memory, (char *)g_plane, X_PIXEL*Y_PIXEL, 1, "cp50_print_page(g_plane)");
+    gs_free(pdev->memory, (char *)b_plane, X_PIXEL*Y_PIXEL, 1, "cp50_print_page(b_plane)");
+    gs_free(pdev->memory, (char *)t_plane, X_PIXEL*Y_PIXEL, 1, "cp50_print_page(t_plane)");
 
 	return 0;
 }

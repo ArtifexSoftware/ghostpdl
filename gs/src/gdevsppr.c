@@ -131,7 +131,7 @@ sparc_print_page(gx_device_printer *pdev, FILE *prn)
     return -1;
     }
   out_size=lpvipage.bitmap_width*lpvipage.page_length;
-  out_buf=gs_malloc(out_size,1,"sparc_print_page: out_buf");
+  out_buf=gs_malloc(pdev->memory, out_size,1,"sparc_print_page: out_buf");
   gdev_prn_copy_scan_lines(pdev,0,out_buf,out_size);
   while (write(fileno(prn),out_buf,out_size)!=out_size)
     {
@@ -182,6 +182,6 @@ sparc_print_page(gx_device_printer *pdev, FILE *prn)
     errprintf("OK.\n");
     warning=0;
     }
-  gs_free(out_buf,out_size,1,"sparc_print_page: out_buf");
+  gs_free(pdev->memory, out_buf,out_size,1,"sparc_print_page: out_buf");
   return 0;
   }

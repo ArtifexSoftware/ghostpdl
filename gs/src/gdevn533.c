@@ -174,7 +174,7 @@ nwp533_print_page(gx_device_printer *dev, FILE *prn_stream)
     {
       line_size += 4 - (line_size % 4);
     }
-  in = (byte *) gs_malloc(line_size, 1, "nwp533_output_page(in)");
+  in = (byte *) gs_malloc(dev->memory, line_size, 1, "nwp533_output_page(in)");
  restart:
   if(ioctl(printer_file, LBIOCSTOP, 0) < 0)
     {
@@ -202,7 +202,7 @@ nwp533_print_page(gx_device_printer *dev, FILE *prn_stream)
       perror("Starting print");
       return_error(gs_error_ioerror);
     }
-  gs_free(in, line_size, 1, "nwp533_output_page(in)");
+  gs_free(dev->memory, in, line_size, 1, "nwp533_output_page(in)");
 
   return 0;
 }

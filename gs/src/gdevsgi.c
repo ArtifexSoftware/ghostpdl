@@ -69,8 +69,8 @@ private int
 sgi_begin_page(gx_device_printer *bdev, FILE *pstream, sgi_cursor *pcur)
 {
      uint line_size = gdev_mem_bytes_per_scan_line((gx_device_printer*)bdev);
-     byte *data = (byte*)gs_malloc(line_size, 1, "sgi_begin_page");
-     IMAGE *header= (IMAGE*)gs_malloc(sizeof(IMAGE),1,"sgi_begin_page");
+     byte *data = (byte*)gs_malloc(bdev->memory, line_size, 1, "sgi_begin_page");
+     IMAGE *header= (IMAGE*)gs_malloc(bdev->memory, sizeof(IMAGE),1,"sgi_begin_page");
      char filler= '\0';
      int i;
 
@@ -115,12 +115,12 @@ sgi_print_page(gx_device_printer *pdev, FILE *pstream)
        int code = sgi_begin_page(bdev, pstream, &cur);
        uint bpe, mask;
        int separation;
-       long *rowsizes=(long*)gs_malloc(4,3*bdev->height,"sgi_print_page");
+       long *rowsizes=(long*)gs_malloc(pdev->memory, 4,3*bdev->height,"sgi_print_page");
        byte *edata ;
        long lastval;
        int rownumber;
 #define aref2(a,b) a*bdev->height+b
-       edata =  (byte*)gs_malloc(cur.line_size, 1, "sgi_begin_page");
+       edata =  (byte*)gs_malloc(pdev->memory, cur.line_size, 1, "sgi_begin_page");
        if((code<0)||(rowsizes==(long*)NULL)||(edata==(byte*)NULL)) return(-1);
        fwrite(rowsizes,sizeof(long),3*bdev->height,pstream); /* rowstarts */
        fwrite(rowsizes,sizeof(long),3*bdev->height,pstream); /* rowsizes */
@@ -215,9 +215,9 @@ sgi_print_page(gx_device_printer *pdev, FILE *pstream)
 	    fputc((char)(lastval>>16),pstream);
 	    fputc((char)(lastval>>8),pstream);
 	    fputc((char)(lastval),pstream);}
-       gs_free((char*)cur.data, cur.line_size, 1,
+       gs_free(pdev->memory, (char*)cur.data, cur.line_size, 1,
 		 "sgi_print_page(done)");
-       gs_free((char*)edata, cur.line_size, 1, "sgi_print_page(done)");
-       gs_free((char*)rowsizes,4,3*bdev->height,"sgi_print_page(done)");
+       gs_free(pdev->memory, (char*)edata, cur.line_size, 1, "sgi_print_page(done)");
+       gs_free(pdev->memory, (char*)rowsizes,4,3*bdev->height,"sgi_print_page(done)");
        return (code < 0 ? code : 0);
 }

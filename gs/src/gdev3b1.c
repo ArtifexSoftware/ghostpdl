@@ -155,7 +155,7 @@ att3b1_open(gx_device *dev)
     }
 
     if (att3b1dev->screen != NULL) {
-	gs_free((char *)att3b1dev->screen,
+	gs_free(dev->memory, (char *)att3b1dev->screen,
 		att3b1dev->screen_size, 1, "att3b1_open");
 	att3b1dev->screen = 0;
 	att3b1dev->screen_size = 0;
@@ -180,7 +180,7 @@ att3b1_open(gx_device *dev)
     att3b1dev->screen_size = att3b1dev->line_size * att3b1dev->height;
 
     att3b1dev->screen =
-	(uchar *)gs_malloc(att3b1dev->screen_size, 1, "att3b1_open");
+	(uchar *)gs_malloc(dev->memory, att3b1dev->screen_size, 1, "att3b1_open");
     if (att3b1dev->screen == NULL) {
 	att3b1_close(dev);
 	return_error(gs_error_VMerror);
@@ -206,7 +206,7 @@ att3b1_close(gx_device *dev)
     }
 
     if (att3b1dev->screen != NULL) {
-	gs_free((char *)att3b1dev->screen,
+	gs_free(dev->memory, (char *)att3b1dev->screen,
 		att3b1dev->screen_size, 1, "att3b1_close");
 	att3b1dev->screen = 0;
 	att3b1dev->screen_size = 0;

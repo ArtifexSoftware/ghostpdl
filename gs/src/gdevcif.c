@@ -47,7 +47,7 @@ private int
 cif_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {	int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
 	int lnum;
-	byte *in = (byte *)gs_malloc(line_size, 1, "cif_print_page(in)");
+	byte *in = (byte *)gs_malloc(pdev->memory, line_size, 1, "cif_print_page(in)");
 	char *s;
 	int scanline, scanbyte;
 	int length, start; /* length is the number of successive 1 bits, */
@@ -60,12 +60,12 @@ cif_print_page(gx_device_printer *pdev, FILE *prn_stream)
 		length = strlen(pdev->fname) + 1;
 	else
 		length = s - pdev->fname;
-	s = (char *)gs_malloc(length, sizeof(char), "cif_print_page(s)");
+	s = (char *)gs_malloc(pdev->memory, length, sizeof(char), "cif_print_page(s)");
 
 	strncpy(s, pdev->fname, length);
 	*(s + length) = '\0';
 	fprintf(prn_stream, "DS1 25 1;\n9 %s;\nLCP;\n", s);
-	gs_free(s, length, 1, "cif_print_page(s)");
+	gs_free(pdev->memory, s, length, 1, "cif_print_page(s)");
 
    for (lnum = 0; lnum < pdev->height; lnum++) {   
       gdev_prn_copy_scan_lines(pdev, lnum, in, line_size);
@@ -94,6 +94,6 @@ cif_print_page(gx_device_printer *pdev, FILE *prn_stream)
 #endif
    }
 	fprintf(prn_stream, "DF;\nC1;\nE\n");
-	gs_free(in, line_size, 1, "cif_print_page(in)");
+	gs_free(pdev->memory, in, line_size, 1, "cif_print_page(in)");
 	return 0;
 }

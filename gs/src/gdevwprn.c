@@ -648,10 +648,10 @@ win_prn_maketools(gx_device_win_prn * wdev, HDC hdc)
     int i;
 
     wdev->hpensize = (1 << (wdev->color_info.depth)) * sizeof(HPEN);
-    wdev->hpens = (HPEN *) gs_malloc(1, wdev->hpensize,
+    wdev->hpens = (HPEN *) gs_malloc(wdev->memory, 1, wdev->hpensize,
 				     "win_prn_maketools(pens)");
     wdev->hbrushsize = (1 << (wdev->color_info.depth)) * sizeof(HBRUSH);
-    wdev->hbrushs = (HBRUSH *) gs_malloc(1, wdev->hbrushsize,
+    wdev->hbrushs = (HBRUSH *) gs_malloc(wdev->memory, 1, wdev->hbrushsize,
 					 "win_prn_maketools(brushes)");
     if (wdev->hpens && wdev->hbrushs) {
 	for (i = 0; i < wdev->nColors; i++)
@@ -675,9 +675,9 @@ win_prn_destroytools(gx_device_win_prn * wdev)
 	DeleteObject(wdev->hpens[i]);
 	DeleteObject(wdev->hbrushs[i]);
     }
-    gs_free((char *)wdev->hbrushs, 1, wdev->hbrushsize,
+    gs_free(wdev->memory, (char *)wdev->hbrushs, 1, wdev->hbrushsize,
 	    "win_prn_destroytools(brushes)");
-    gs_free((char *)wdev->hpens, 1, wdev->hpensize,
+    gs_free(wdev->memory, (char *)wdev->hpens, 1, wdev->hpensize,
 	    "win_prn_destroytools(pens)");
 }
 

@@ -362,7 +362,8 @@ hl7x0_print_page(gx_device_printer *pdev, FILE *printStream, int ptype,
   int num_rows = dev_print_scan_lines(pdev);
   int result;
   int sizeOfBuffer   = MaxLineLength(x_dpi) + 30; 
-  Byte * storage      = (Byte *) gs_malloc(sizeOfBuffer + line_size,
+  Byte * storage      = (Byte *) gs_malloc(pdev->memory, 
+					   sizeOfBuffer + line_size,
 					   1,
 					   "hl7x0_print_page");
 	/*	bool dup = pdev->Duplex; */
@@ -402,7 +403,7 @@ hl7x0_print_page(gx_device_printer *pdev, FILE *printStream, int ptype,
 	dumpToPrinter(&formFeedCommand, printStream);
 		
 	/* free temporary storage */
-	gs_free((char *)storage, storage_size_words, 1, "hl7X0_print_page");
+	gs_free(pdev->memory, (char *)storage, storage_size_words, 1, "hl7X0_print_page");
 
 	return 0; /* If we reach this line, it means there was no error */
 }

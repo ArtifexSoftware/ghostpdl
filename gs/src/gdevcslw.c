@@ -54,7 +54,7 @@ coslw_print_page(gx_device_printer * pdev, FILE * prn_stream)
     int line_size = gdev_mem_bytes_per_scan_line((gx_device *) pdev);
     int line_size_words = (line_size + W - 1) / W;
     uint storage_size_words = line_size_words * 8;	/* data, out_row, out_row_alt, prev_row */
-    word *storage = (ulong *) gs_malloc(storage_size_words, W,
+    word *storage = (ulong *) gs_malloc(pdev->memory, storage_size_words, W,
 					"coslw_print_page");
 
     word *data_words;
@@ -141,7 +141,7 @@ coslw_print_page(gx_device_printer * pdev, FILE * prn_stream)
     fputs("\033E", prn_stream);
 
     /* free temporary storage */
-    gs_free((char *)storage, storage_size_words, W, "coslw_print_page");
+    gs_free(pdev->memory, (char *)storage, storage_size_words, W, "coslw_print_page");
 
     return code;
 }

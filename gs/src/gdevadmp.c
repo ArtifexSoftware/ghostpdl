@@ -173,9 +173,9 @@ dmp_print_page(gx_device_printer *pdev, FILE *prn_stream)
 	/* Note that in_size is a multiple of 8. */
 	int in_size = line_size * 8;
   
-	byte *buf1 = (byte *)gs_malloc(in_size, 1, "dmp_print_page(buf1)");
-	byte *buf2 = (byte *)gs_malloc(in_size, 1, "dmp_print_page(buf2)");
-	byte *prn = (byte *)gs_malloc(3*in_size, 1, "dmp_print_page(prn)");
+	byte *buf1 = (byte *)gs_malloc(pdev->memory, in_size, 1, "dmp_print_page(buf1)");
+	byte *buf2 = (byte *)gs_malloc(pdev->memory, in_size, 1, "dmp_print_page(buf2)");
+	byte *prn = (byte *)gs_malloc(pdev->memory, 3*in_size, 1, "dmp_print_page(prn)");
   
 	byte *in = buf1;
 	byte *out = buf2;
@@ -185,13 +185,13 @@ dmp_print_page(gx_device_printer *pdev, FILE *prn_stream)
 	if ( buf1 == 0 || buf2 == 0 || prn == 0 )
 	{
 		if ( buf1 ) 
-			gs_free((char *)buf1, in_size, 1,
+			gs_free(pdev->memory, (char *)buf1, in_size, 1,
 			"dmp_print_page(buf1)");
 		if ( buf2 ) 
-			gs_free((char *)buf2, in_size, 1,
+			gs_free(pdev->memory, (char *)buf2, in_size, 1,
 			"dmp_print_page(buf2)");
 		if ( prn ) 
-			gs_free((char *)prn, in_size, 1,
+			gs_free(pdev->memory, (char *)prn, in_size, 1,
 			"dmp_print_page(prn)");
 		return_error(gs_error_VMerror);
 	}
@@ -401,8 +401,8 @@ dmp_print_page(gx_device_printer *pdev, FILE *prn_stream)
 	fputs("\033T16\f\033<\033B\033E", prn_stream);
 	fflush(prn_stream);
 
-	gs_free((char *)prn, in_size, 1, "dmp_print_page(prn)");
-	gs_free((char *)buf2, in_size, 1, "dmp_print_page(buf2)");
-	gs_free((char *)buf1, in_size, 1, "dmp_print_page(buf1)");
+	gs_free(pdev->memory, (char *)prn, in_size, 1, "dmp_print_page(prn)");
+	gs_free(pdev->memory, (char *)buf2, in_size, 1, "dmp_print_page(buf2)");
+	gs_free(pdev->memory, (char *)buf1, in_size, 1, "dmp_print_page(buf1)");
 	return 0;
 }

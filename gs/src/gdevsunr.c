@@ -69,7 +69,7 @@ sunhmono_print_page(gx_device_printer * pdev, FILE * prn_stream)
       errprintf("pdev->width:%d (%d/%d) gsLineBytes:%d rasLineBytes:%d\n",
       pdev->width, pdev->width/8, pdev->width%8,gsLineBytes,rasLineBytes);
     */
-    lineStorage = gs_malloc(gsLineBytes, 1, "rasterfile_print_page(in)");
+    lineStorage = gs_malloc(pdev->memory, gsLineBytes, 1, "rasterfile_print_page(in)");
     if (lineStorage == 0) {
 	code = gs_note_error(gs_error_VMerror);
 	goto out;
@@ -96,6 +96,6 @@ sunhmono_print_page(gx_device_printer * pdev, FILE * prn_stream)
     fwrite("};\n", 1, 3, prn_stream);
 out:
     /* Clean up... */
-    gs_free(lineStorage, gsLineBytes, 1, "rasterfile_print_page(in)");
+    gs_free(pdev->memory, lineStorage, gsLineBytes, 1, "rasterfile_print_page(in)");
     return code;
 }

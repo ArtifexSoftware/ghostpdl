@@ -164,7 +164,7 @@ getenv(const char * env) {
 //		FSMakeFSSpec(pFile.vRefNum, pFile.parID,thepfname, &pfile);
 		convertSpecToPath(&pFile, fpath, 256);
 //		sprintf(fpath,"%s",fpath);
-		p = (char*)gs_malloc(1, (size_t) ( 4*strlen(fpath) + 40), "getenv");
+		p = (char*)malloc(1, (size_t) ( 4*strlen(fpath) + 40), "getenv");
 		sprintf(p,"%s,%sGhostscript:lib,%sGhostscript:fonts",
 						(char *)&fpath[0],(char *)&fpath[0],
 						(char *)&fpath[0] );

@@ -1732,14 +1732,14 @@ double		psize;
 	   we need error buffers and stuff. All in all, we'll request
 	   about 1.5 ~ 2M. */
 		
-	if ( ! ( render = (RENDER *) gs_malloc( 1, sizeof( RENDER ), "PhotoEX" )))
+	if ( ! ( render = (RENDER *) gs_malloc( dev->memory, 1, sizeof( RENDER ), "PhotoEX" )))
 		
 		return_error( gs_error_VMerror );
 	
-	if ( ! ( render->dbuff = (byte *) gs_malloc( pixels, sizeof( long ), 
+	if ( ! ( render->dbuff = (byte *) gs_malloc( dev->memory, pixels, sizeof( long ), 
 			"PhotoEX" ) ) ) {
 			
-		gs_free( render, 1, sizeof( RENDER ), "PhotoEX" );
+		gs_free( dev->memory, render, 1, sizeof( RENDER ), "PhotoEX" );
 		return_error( gs_error_VMerror );
 	}
 	
@@ -1796,8 +1796,8 @@ double		psize;
 	
 	/* Release the memory and return */
 	
-	gs_free( render->dbuff, pixels, sizeof( long ), "PhotoEX" );
-	gs_free( render, 1, sizeof( RENDER ), "PhotoEX" );
+	gs_free( dev->memory, render->dbuff, pixels, sizeof( long ), "PhotoEX" );
+	gs_free( dev->memory, render, 1, sizeof( RENDER ), "PhotoEX" );
 	return( 0 );
 }
 

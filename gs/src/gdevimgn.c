@@ -355,7 +355,7 @@ imagen_print_page(gx_device_printer *pdev, FILE *prn_stream)
 { 
   int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev); 
   /* input buffer: one line of bytes rasterized by gs */
-  byte *in = (byte *)gs_malloc(BIGSIZE, line_size / BIGSIZE + 1,
+  byte *in = (byte *)gs_malloc(pdev->memory, BIGSIZE, line_size / BIGSIZE + 1,
 	"imagen_print_page(in)"); 
   /* output buffer: 32 lines, interleaved into imPress swatches */
   byte *out; 
@@ -401,10 +401,10 @@ imagen_print_page(gx_device_printer *pdev, FILE *prn_stream)
   DebugMsg(2,"Swatch count = %d\n",swatchCount);
   DebugMsg(2,"Line size = %d\n",line_size );
 
-  out = (byte *)gs_malloc(TotalBytesPerSw , swatchCount + 1, 
+  out = (byte *)gs_malloc(pdev->memory, TotalBytesPerSw , swatchCount + 1, 
 		    "imagen_print_page(out)"); 
 
-  swatchMap = (byte *)gs_malloc(BIGSIZE,swatchCount / BIGSIZE + 1,
+  swatchMap = (byte *)gs_malloc(pdev->memory, BIGSIZE,swatchCount / BIGSIZE + 1,
 	"imagen_print_page(swatchMap)" );
  
   if ( in == 0 || out == 0 ) 
@@ -553,10 +553,10 @@ imagen_print_page(gx_device_printer *pdev, FILE *prn_stream)
  
   fflush(prn_stream); 
  
-  gs_free((char *)swatchMap, BIGSIZE, swatchCount / BIGSIZE + 1,
+  gs_free(pdev->memory, (char *)swatchMap, BIGSIZE, swatchCount / BIGSIZE + 1,
 	"imagen_print_page(swatchMap)" );
-  gs_free((char *)out, TotalBytesPerSw, swatchCount+1, "imagen_print_page(out)"); 
-  gs_free((char *)in, BIGSIZE, line_size / BIGSIZE + 1, "imagen_print_page(in)"); 
+  gs_free(pdev->memory, (char *)out, TotalBytesPerSw, swatchCount+1, "imagen_print_page(out)"); 
+  gs_free(pdev->memory, (char *)in, BIGSIZE, line_size / BIGSIZE + 1, "imagen_print_page(in)"); 
   /* ----------------------------------------- */
 
   DebugMsg(1,"Debug: Grey: %d \n",totalGreySwatches);

@@ -107,7 +107,7 @@ mgr_begin_page(gx_device_mgr *bdev, FILE *pstream, mgr_cursor *pcur)
 {	struct b_header head;
 	uint line_size =
 		gdev_prn_raster((gx_device_printer *)bdev) + 3;
-	byte *data = (byte *)gs_malloc(line_size, 1, "mgr_begin_page");
+	byte *data = (byte *)gs_malloc(bdev, line_size, 1, "mgr_begin_page");
 	if ( data == 0 )
 		return_error(gs_error_VMerror);
 
@@ -131,7 +131,8 @@ mgr_begin_page(gx_device_mgr *bdev, FILE *pstream, mgr_cursor *pcur)
 private int
 mgr_next_row(mgr_cursor *pcur)
 {	if ( pcur->lnum >= pcur->dev->height )
-	   {	gs_free((char *)pcur->data, pcur->line_size, 1,
+	{	gs_free((gx_device_printer *)pcur->dev->memory,
+			(char *)pcur->data, pcur->line_size, 1,
 			"mgr_next_row(done)");
 		return 1;
 	   }
@@ -208,7 +209,7 @@ mgrN_print_page(gx_device_printer *pdev, FILE *pstream)
 	}
 
 	if ( bdev->mgr_depth != 8 )
-        	data = (byte *)gs_malloc(mgr_line_size, 1, "mgrN_print_page");
+	    data = (byte *)gs_malloc(pdev->memory, mgr_line_size, 1, "mgrN_print_page");
         
 	while ( !(code = mgr_next_row(&cur)) )
 	   {
@@ -243,7 +244,7 @@ mgrN_print_page(gx_device_printer *pdev, FILE *pstream)
 		}  
 	   }
 	if (bdev->mgr_depth != 8)
-        	gs_free((char *)data, mgr_line_size, 1, "mgrN_print_page(done)");
+	    gs_free(bdev->memory, (char *)data, mgr_line_size, 1, "mgrN_print_page(done)");
 
 	if (bdev->mgr_depth == 2) {
             for (i = 0; i < 4; i++) {
@@ -288,7 +289,7 @@ cmgrN_print_page(gx_device_printer *pdev, FILE *pstream)
 	if (bdev->mgr_depth == 4 && mgr_wide & 1)
             mgr_wide++;
 	mgr_line_size = mgr_wide / (8 / bdev->mgr_depth);
-       	data = (byte *)gs_malloc(mgr_line_size, 1, "cmgrN_print_page");
+       	data = (byte *)gs_malloc(pdev->memory, mgr_line_size, 1, "cmgrN_print_page");
 
        	if ( bdev->mgr_depth == 8 ) {
             memset( table, 0, sizeof(table) );
@@ -326,7 +327,7 @@ cmgrN_print_page(gx_device_printer *pdev, FILE *pstream)
 				break;
 		}  
 	   }
-       	gs_free((char *)data, mgr_line_size, 1, "cmgrN_print_page(done)");
+       	gs_free(bdev->memory, (char *)data, mgr_line_size, 1, "cmgrN_print_page(done)");
        	
 	if (bdev->mgr_depth == 4) {
             for (i = 0; i < 16; i++) {

@@ -190,8 +190,8 @@ lp8000_print_page(gx_device_printer *pdev, FILE *prn_stream)
         int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
         int in_size = line_size;
                               
-	byte *buf1 = (byte *)gs_malloc(in_size, 1, "lp8000_print_page(buf1)");
-        byte *buf2 = (byte *)gs_malloc(in_size, 1, "lp8000_print_page(buf2)");
+	byte *buf1 = (byte *)gs_malloc(pdev->memory, in_size, 1, "lp8000_print_page(buf1)");
+        byte *buf2 = (byte *)gs_malloc(pdev->memory, in_size, 1, "lp8000_print_page(buf2)");
         byte *in = buf1;
         byte *out = buf2;
                         
@@ -202,10 +202,10 @@ lp8000_print_page(gx_device_printer *pdev, FILE *prn_stream)
         
         if ( buf1 == 0 || buf2 == 0 )
         {       if ( buf1 )
-        	gs_free((char *)buf1, in_size, 1, "lp8000_print_page(buf1)");
+        	gs_free(pdev->memory, (char *)buf1, in_size, 1, "lp8000_print_page(buf1)");
                 
                 if ( buf2 )
-                gs_free((char *)buf2, in_size, 1, "lp8000_print_page(buf2)");
+                gs_free(pdev->memory, (char *)buf2, in_size, 1, "lp8000_print_page(buf2)");
           
           return_error(gs_error_VMerror);
       	}
@@ -404,7 +404,7 @@ Y coordinate of the printer equals (lnum - 60)
 	
 	fflush(prn_stream);
 	
-	gs_free((char *)buf2, in_size, 1, "lp8000_print_page(buf2)");
-	gs_free((char *)buf1, in_size, 1, "lp8000_print_page(buf1)");
+	gs_free(pdev->memory, (char *)buf2, in_size, 1, "lp8000_print_page(buf2)");
+	gs_free(pdev->memory, (char *)buf1, in_size, 1, "lp8000_print_page(buf1)");
 	return 0;
 }

@@ -700,10 +700,11 @@ pdf14_open(gx_device *dev)
 #ifdef DUMP_TO_PNG
 /* Dumps a planar RGBA image to a PNG file. */
 private int
-dump_planar_rgba(const byte *buf, int width, int height, int rowstride, int planestride)
+dump_planar_rgba(gs_memory_t *mem, 
+		 const byte *buf, int width, int height, int rowstride, int planestride)
 {
     int rowbytes = width << 2;
-    byte *row = gs_malloc(rowbytes, 1, "png raster buffer");
+    byte *row = gs_malloc(mem, rowbytes, 1, "png raster buffer");
     png_struct *png_ptr =
     png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
     png_info *info_ptr =
@@ -787,7 +788,7 @@ dump_planar_rgba(const byte *buf, int width, int height, int rowstride, int plan
   done:
     /* free the structures */
     png_destroy_write_struct(&png_ptr, &info_ptr);
-    gs_free(row, rowbytes, 1, "png raster buffer");
+    gs_free(mem, row, rowbytes, 1, "png raster buffer");
 
     fclose (file);
     return code;
@@ -825,7 +826,7 @@ pdf14_put_image(pdf14_device *pdev, gs_state *pgs, gx_device *target)
     gs_color_space cs;
 
 #ifdef DUMP_TO_PNG
-    dump_planar_rgba(buf_ptr, width, height,
+    dump_planar_rgba(pdev->memory, buf_ptr, width, height,
 		     buf->rowstride, buf->planestride);
 #endif
 
