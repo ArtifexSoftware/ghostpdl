@@ -137,6 +137,7 @@ currentdict /DELAYSAFER known { /DELAYSAFER true def /NOSAFER true def } if
   false
 } {
   currentdict /SAFER known
+  currentdict /PARANOIDSAFER known or	% PARANOIDSAFER is equivalent
 }
 ifelse def
 currentdict /SHORTERRORS known   /SHORTERRORS exch def
@@ -850,11 +851,13 @@ userdict /.currentresourcefile null put
 		   dup length =only (/) print dup maxlength =only
 		   dup wcheck not { ((ro)) print } if
 		 } if
+		 %%%XXX	dup %%%XXX
 		 /gcheck where {
 		   pop gcheck { ((G)) } { ((L)) } ifelse print
 		 } {
 		   pop
 		 } ifelse (--) print
+		 %%%XXX	{ exch = pop } forall (________________________________) = %%%XXX
 	       }
 	       {
 		 dup type /stringtype eq 2 index or
@@ -873,7 +876,7 @@ userdict /.currentresourcefile null put
        (\nOperand stack:) OSTACKPRINT /.printostack /ostack 4 index exec
        (\nExecution stack:) ESTACKPRINT /.printestack /estack 4 index exec
        (\nBacktrace:) true /.printbacktrace /backtrace 4 index exec
-       (\nDictionary stack:) false /.printdstack /dstack 4 index exec
+       (\nDictionary stack:) true /.printdstack /dstack 4 index exec
        () =
        pop	% printing procedure
 
@@ -1608,8 +1611,6 @@ readonly def
 	currentsystemparams /GenericResourceDir get 1 index exec 
 	currentsystemparams /FontResourceDir get exch exec
       ]
-      /PermitFileWriting [ ]
-      /PermitFileControl [ ]
       /LockFilePermissions true
     >> setuserparams
   }
