@@ -112,15 +112,17 @@ px_state_release(px_state_t *pxs)
 		   "px_state_release(pxs->error_page_show_enum)");
     gs_free_object(pxs->memory, pxs->font_dir->fmcache.mdata, "px_state_release");
 
-        /* free the blasted chunks */
+    /* free the blasted chunks */
     {
         gx_bits_cache_chunk *chunk = pxs->font_dir->ccache.chunks;
-        while( chunk != chunk->next ) {
-            gx_bits_cache_chunk *tmp_chunk = chunk->next->next;
-            gs_free_object(pxs->memory, chunk->next, "px_state_release");
-            chunk->next = tmp_chunk;
-        }
-        gs_free_object(pxs->memory, pxs->font_dir->ccache.chunks, "px_state_release");
+	gx_bits_cache_chunk *tmp_chunk = chunk;
+	while( pxs->font_dir->ccache.chunks != chunk->next ) {
+	    tmp_chunk = chunk->next;
+	    gs_free_object(pxs->memory, chunk->data, "px_state_release");
+	    gs_free_object(pxs->memory, chunk, "px_state_release");
+	    chunk = tmp_chunk;
+	}
+	gs_free_object(pxs->memory, chunk, "px_state_release");
     }
     gs_free_object(pxs->memory, pxs->font_dir->ccache.table, "px_state_release");
     /* free gs font dir */
