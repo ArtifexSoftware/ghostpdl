@@ -143,7 +143,7 @@ private const gx_device_memory mem_alpha_buffer_device =
 mem_device("image(alpha buffer)", 0, 1,
 	   gx_forward_map_rgb_color, gx_forward_map_color_rgb,
 	 mem_abuf_copy_mono, gx_default_copy_color, mem_abuf_fill_rectangle,
-	   gx_no_strip_copy_rop);
+	   gx_default_strip_copy_rop);
 
 /* Make an alpha-buffer memory device. */
 /* We use abuf instead of alpha_buffer because */
