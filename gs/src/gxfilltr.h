@@ -18,7 +18,7 @@
 /* Configurable algorithm for decompozing a spot into trapezoids. */
 
 /*
- * Since we need several statically defined variants of this agorithm,
+ * Since we need several statically defined variants of this algorithm,
  * we store it in .h file and include it several times into gxfill.c .
  * Configuration macros (template arguments) are :
  * 
@@ -184,6 +184,28 @@ TEMPLATE_spot_into_trapezoids (line_list *ll, fixed band_mask)
 		inside += alp->direction;
 		if (INSIDE_PATH_P(inside, rule))	/* not about to go out */
 		    continue;
+		/* We just went from inside to outside, 
+		   chech whether we'll immediately go inside. */
+		if (alp->next != NULL &&
+		    alp->x_current == alp->next->x_current &&
+		    alp->x_next == alp->next->x_next) {
+		    /* If the next trapezoid contacts this one, unite them.
+		       This simplifies data for the spot analyzer
+		       and reduces the number of trapezoids in the rasterization.
+		       Note that the topology possibly isn't exactly such
+		       as we generate by this uniting :
+		       Due to arithmetic errors in x_current, x_next
+		       we can unite things, which really are not contacting.
+		       But this level of the topology precision is enough for 
+		       the glyph grid fitting. 
+		       Also note that 
+		       while a rasterization with dropout prevention 
+		       it may cause a shift when choosing a pixel 
+		       to paint with a narrow trapezoid. */
+		    alp = alp->next;
+		    inside += alp->direction;
+		    continue;
+		}
 		/* We just went from inside to outside, so fill the region. */
 		INCR(band_fill);
 		if (FILL_ADJUST && !(flp->end.x == flp->start.x && alp->end.x == alp->start.x) && 
