@@ -123,6 +123,7 @@ pl_alloc_font(gs_memory_t *mem, client_name_t cname)
 	    /* Initialize other defaults. */
 	    plfont->landscape = false;
 	    plfont->bold_fraction = 0;
+	    plfont->is_xl_format1 = false;
 	    plfont->font_file = 0;
 	    plfont->resolution.x = plfont->resolution.y = 0;
 	    plfont->params.proportional_spacing = true;

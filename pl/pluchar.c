@@ -53,7 +53,7 @@
 /* 0 false lets ufst render downloaded truetype
  * 1 true lets artifex font scaler render downloaded truetype
  */
-#define AFS_FOR_DOWNLOADED_TRUETYPE 1
+#define AFS_FOR_DOWNLOADED_TRUETYPE 0
 #ifndef AFS_FOR_DOWNLOADED_TRUETYPE 
 #error
 #endif
@@ -1450,17 +1450,16 @@ pl_set_tt_font(
     int                 need_outline,
     FONTCONTEXT *       pfc )
 {
-    bool is_xl_format1 = false;
     /* if this is an XL TT font rewrite the header so the agfa
        rasterizer can properly parse the data */
     if ( plfont->scaling_technology == plfst_TrueType && 
          plfont->header[0] == 0 && plfont->header[1] != 0x8 ) {
         plfont->header[1] = 0x8;
-        is_xl_format1 = true;
+        plfont->is_xl_format1 = true;
     }
 
     pl_init_fc(plfont, pgs, need_outline, pfc,
-               /* width request iff */  pgs == NULL, is_xl_format1);
+               /* width request iff */  pgs == NULL, plfont->is_xl_format1);
     pfc->font_hdr = plfont->header;
     pfc->format |= FC_NON_Z_WIND | FC_EXTERN_TYPE | FC_TT_TYPE;
     return pl_set_ufst_font(plfont, pfc);
