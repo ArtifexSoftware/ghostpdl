@@ -135,15 +135,13 @@ $(PLOBJ)pldict.$(OBJ): $(PLSRC)pldict.c $(AK) $(memory__h)\
  $(pldict_h)
 	$(PLCCC) $(PLSRC)pldict.c $(PLO_)pldict.$(OBJ)
 
+$(PLOBJ)plht.$(OBJ): $(PLSRC)plht.c
+	$(PLCCC) $(PLSRC)plht.c $(PLO_)plht.$(OBJ)
+
 $(PLOBJ)pldraw.$(OBJ): $(PLSRC)pldraw.c $(AK) $(std_h)\
  $(gsmemory_h) $(gstypes_h) $(gxdevice_h) $(gzstate_h)\
  $(pldraw_h)
 	$(PLCCC) $(PLSRC)pldraw.c $(PLO_)pldraw.$(OBJ)
-
-$(PLOBJ)plfdraw.$(OBJ): $(PLSRC)plfdraw.c $(AK) $(std_h)\
- $(gsmemory_h) $(gstypes_h) $(gxdevice_h) $(gzstate_h)\
- $(pldraw_h)
-	$(PLCCC) $(PLSRC)plfdraw.c $(PLO_)plfdraw.$(OBJ)
 
 
 #artifex font module.
@@ -154,15 +152,6 @@ $(PLOBJ)plfont.$(OBJ): $(PLSRC)plfont.c $(AK) $(memory__h) $(stdio__h)\
  $(gxfont_h) $(gxfont42_h)\
  $(plfont_h) $(plvalue_h)
 	$(PLCCC) $(PLSRC)plfont.c $(PLO_)plfont.$(OBJ)
-
-#freetype font module.
-$(PLOBJ)plffont.$(OBJ): $(PLSRC)plffont.c $(AK) $(memory__h) $(stdio__h)\
- $(gdebug_h) $(gp_h)\
- $(gschar_h) $(gserror_h) $(gserrors_h) $(gsmatrix_h) $(gsmemory_h)\
- $(gsstate_h) $(gsstruct_h)\
- $(gschar_h) $(gsutil_h) $(gxfont_h) $(gxfont42_h)\
- $(plfont_h) $(plvalue_h)
-	$(PLCCC) $(FT_INCLUDES) $(PLSRC)plffont.c $(PLO_)plffont.$(OBJ)
 
 #ufst font module.
 $(PLOBJ)plufont.$(OBJ): $(PLSRC)plufont.c $(AK) $(memory__h) $(stdio__h)\
@@ -213,14 +202,6 @@ $(PLOBJ)plalloc.$(OBJ): $(PLSRC)plalloc.c $(AK) \
        $(gsmemory_h) $(gsstype_h) $(plalloc_h) $(plftable_h)
 	$(PLCCC) $(PLSRC)plalloc.c $(PLO_)plalloc.$(OBJ)
 
-# freetype font loading module.
-$(PLOBJ)plflfont.$(OBJ): $(PLSRC)plflfont.c $(PLSRC)pllfont.h  $(AK)\
-        $(ctype__h) $(stdio__h) $(string__h)\
-	$(gx_h) $(gp_h) $(gsccode_h) $(gserrors_h) $(gsmatrix_h) $(gsutil_h)\
-	$(gxfont_h) $(gxfont42_h) $(plfont_h) $(pldict_h) $(pllfont_h)\
-        $(plvalue_h) $(freetype_h)
-	$(PLCCC) $(FT_INCLUDES) $(PLSRC)plflfont.c $(PLO_)plflfont.$(OBJ)
-
 # ufst font loading module.
 $(PLOBJ)plulfont.$(OBJ): $(PLSRC)plulfont.c $(PLSRC)pllfont.h $(AK)\
         $(stdio_h) $(string__h) $(gsmemory_h) $(gstypes_h)\
@@ -235,7 +216,7 @@ $(PLOBJ)pllfont.$(OBJ): $(PLSRC)pllfont.c $(PLSRC)pllfont.h $(AK)\
 	$(gxfont_h) $(gxfont42_h) $(plfont_h) $(pldict_h)
 	$(PLCCC) $(PLSRC)pllfont.c $(PLO_)pllfont.$(OBJ)
 
-pl_obj1=$(PLOBJ)pldict.$(OBJ) $(PLOBJ)pldraw.$(OBJ) $(PLOBJ)plsymbol.$(OBJ) $(PLOBJ)plvalue.$(OBJ)
+pl_obj1=$(PLOBJ)pldict.$(OBJ) $(PLOBJ)pldraw.$(OBJ) $(PLOBJ)plsymbol.$(OBJ) $(PLOBJ)plvalue.$(OBJ) $(PLOBJ)plht.$(OBJ)
 pl_obj2=$(PLOBJ)plvocab.$(OBJ) $(PLOBJ)pltop.$(OBJ) $(PLOBJ)pltoputl.$(OBJ)
 pl_obj3=$(PLOBJ)plplatf.$(OBJ) $(PLOBJ)plalloc.$(OBJ)
 
