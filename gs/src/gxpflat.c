@@ -111,7 +111,7 @@ split_curve_midpoint(fixed x0, fixed y0, const curve_segment * pc,
 				 * on, but we could get infinite recursion that way....)
 				 */
 #define midpoint(a,b)\
-  (arith_rshift_1(a) + arith_rshift_1(b) + ((a) & (b) & 1) + 1)
+  (arith_rshift_1(a) + arith_rshift_1(b) + (((a) | (b)) & 1))
     fixed x12 = midpoint(pc->p1.x, pc->p2.x);
     fixed y12 = midpoint(pc->p1.y, pc->p2.y);
 

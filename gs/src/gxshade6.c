@@ -1544,7 +1544,6 @@ split_curve_s(const gs_fixed_point *pole, gs_fixed_point *q0, gs_fixed_point *q1
 {
     /*	This copies a code fragment from split_curve_midpoint,
         substituting another data type. 
-	Also fixed a bug in the macro "midpoint".
      */				
     /*
      * We have to define midpoint carefully to avoid overflow.
