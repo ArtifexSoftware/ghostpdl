@@ -57,14 +57,14 @@
  *
  * Returns 0 if successful, < 0 in the event of an error.
  */
-extern  int     pcl_cmap_map_raster(
+int pcl_cmap_map_raster(P6(
     const pcl_cs_indexed_t *    pindexed,
     int *                       pfirst_white,
     const gs_depth_bitmap *     pin_pixinfo,
     gs_depth_bitmap *           pout_pixinfo,
     bool                        must_copy,
     gs_memory_t *               pmem
-);
+));
 
 /*
  * An alternative interface to the remapping capability, this one more suited
@@ -88,17 +88,17 @@ extern  int     pcl_cmap_map_raster(
  * a null-pointer inline. Hence, the caller need not provide any other check
  * of whether or nor remapping is necessary.
  */
-extern  const void *    pcl_cmap_create_remap_ary(
+const void * pcl_cmap_create_remap_ary(P2(
     pcl_state_t *   pcs,
     int *           pfirst_white
-);
+));
 
-extern  void    pcl_cmap_int_apply_ary(
+void pcl_cmap_int_apply_ary(P4(
     const void *    vpmap,      /* remap array pointer */
     byte *          prast,      /* array of bytes to be mapped */
     int             b_per_p,    /* bits per pixel */
     int             npixels
-);
+));
 
 #define pcl_cmap_apply_remap_ary(pmap, prast, b_per_p, npixels)         \
     BEGIN                                                               \

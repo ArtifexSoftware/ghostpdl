@@ -9,6 +9,7 @@
 
 #include "gx.h"
 #include "gxdevice.h"
+#include "gdevcmap.h"
 #include "scommon.h"
 #include "gsdcolor.h"		/* for gx_ht_tile */
 #include "gschar.h"
@@ -23,6 +24,7 @@
 #include "pcpattyp.h"           /* pattern related structures */
 #include "pcdict.h"             /* PL dictionary key structure */
 #include "rtrstst.h"            /* raster state information */
+#include "pcht.h"
 /*#include "pgstate.h"*/	/* HP-GL/2 state, included below */
 #include "pjparse.h"
 
@@ -54,21 +56,21 @@ typedef struct gs_state_s   gs_state;
  * The routine pcl_init_gstate_stk must be called once a boot time to
  * intialize PCL graphics state stack tracking mechanism.
  */
-extern  int     pcl_gsave( pcl_state_t * pcs );
-extern  int     pcl_grestore( pcl_state_t * pcs );
-extern  void    pcl_init_gstate_stk( pcl_state_t * pcs );
+int pcl_gsave(P1(pcl_state_t * pcs));
+int pcl_grestore(P1(pcl_state_t * pcs));
+void pcl_init_gstate_stk(P1(pcl_state_t * pcs));
 
 /*
  * "Cold start" initialization for the graphic state.
  */
-extern  void    pcl_init_state( pcl_state_t * pcs, gs_memory_t * pmem );
+void pcl_init_state(P2(pcl_state_t * pcs, gs_memory_t * pmem));
 
 
 #include "pgstate.h"	    /* HP-GL/2 state */
 
 #ifndef pcl_pattern_data_DEFINED
-#define pcl_pattern_data_DEFINED
-typedef struct pcl_pattern_t pcl_pattern_s;
+#define pcl_ht_builtin_dither_DEFINED
+typedef struct pcl_pattern_t pcl_pattern;
 #endif
 
 /*
@@ -206,13 +208,13 @@ struct pcl_state_s {
     pl_dict_t           gl_patterns;
 #define PCL_NUM_SHADE_PATTERNS (7)         /* pcl support 7 shades of gray */
 #define PCL_NUM_CROSSHATCH_PATTERNS (6)    /* and 6 cross hatch patterns */
-    pcl_pattern_s *     bi_pattern_array[PCL_NUM_SHADE_PATTERNS + PCL_NUM_CROSSHATCH_PATTERNS];
+    pcl_pattern *     bi_pattern_array[PCL_NUM_SHADE_PATTERNS + PCL_NUM_CROSSHATCH_PATTERNS];
     int                 last_pcl_uptrn_id; /* optimizations for recording last patter */
-    pcl_pattern_s *     plast_pcl_uptrn;   /* and pattern id */
+    pcl_pattern *     plast_pcl_uptrn;   /* and pattern id */
     int                 last_gl2_RF_indx;
-    pcl_pattern_s *     plast_gl2_uptrn;
-    pcl_pattern_s *     psolid_pattern;    /* see documentation in pcbiptrn.c for these two */
-    pcl_pattern_s *	punsolid_pattern;
+    pcl_pattern *     plast_gl2_uptrn;
+    pcl_pattern *     psolid_pattern;    /* see documentation in pcbiptrn.c for these two */
+    pcl_pattern *	punsolid_pattern;
     bool                rotate_patterns;    /* rotate patterns with print direction in PCL */
     bool                source_transparent; /* (also in graphics state) */
     bool                pattern_transparent;/* (also in graphics state);
@@ -256,10 +258,31 @@ struct pcl_state_s {
     pcl_frgrnd_t *      pfrgrnd;
     pcl_gstate_ids_t *  pids;
 
+    /* internal dithers */
+    pcl_ht_builtin_dither_t  ordered_dither;
+    pcl_ht_builtin_dither_t  clustered_dither;
+    pcl_ht_builtin_dither_t  noise_dither;
+    /*
+     * The forwarding devices to preform any necessary color mapping. There are
+     * four of these: identity mapping, snap to primaries, map black to white and
+     * all other colors to black, and monochrome mapping. The devices are all
+     * identical except for the mapping method used.
+     *
+     * Several devices are required because the rendering method used by the
+     * foreground may not be the same as that used by the current palette.
+     */
+    gx_device_cmap  cmap_device_identity;
+    gx_device_cmap  cmap_device_snap_to_primaries;
+    gx_device_cmap  cmap_device_color_to_black_over_white;
+    gx_device_cmap  cmap_device_monochrome;
+    pcl_rend_info_t rendering_info[20];       /* rendering methods */
+    byte            dflt_rendering_remap[20]; /* NB not convinced this is necessary (review) */
+    byte            rendering_remap[20];      /* remap the table of rendering methods */
+    pcl_ht_t *      pdflt_ht;                 /* default halftone */
+
     /* Chapter C5 (pccprint.c) */
     byte            logical_op;	    /* (also in graphics state) */
     byte            pp_mode;        /* pixel placement mode */
-
     /* ---------------- HP-GL/2 state ---------------- */
     pcl_hpgl_state_t    g;	/* see pgstate.h */
     /* ---------------- PJL state -------------------- */

@@ -132,7 +132,7 @@ typedef struct pcl_palette_s    pcl_palette_t;
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-extern  int     pcl_palette_CR(
+int pcl_palette_CR(P7(
     pcl_state_t *   pcs,
     floatp          wht0,
     floatp          wht1,
@@ -140,7 +140,7 @@ extern  int     pcl_palette_CR(
     floatp          blk0,
     floatp          blk1,
     floatp          blk2
-);
+));
 
 /*
  * Set the number of entries in a color palette. This is needed only for the
@@ -149,7 +149,7 @@ extern  int     pcl_palette_CR(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-extern  int     pcl_palette_NP( pcl_state_t * pcs, int num_entries );
+int pcl_palette_NP(P2(pcl_state_t * pcs, int num_entries));
 
 /*
  * Set a pen width. Note that this does NOT change the palette id. This
@@ -157,7 +157,7 @@ extern  int     pcl_palette_NP( pcl_state_t * pcs, int num_entries );
  *
  * Returns 0 on success, < 0 in the even of an error;
  */
-extern  int     pcl_palette_PW( pcl_state_t * pcs, int pen, floatp width );
+int pcl_palette_PW(P3(pcl_state_t * pcs, int pen, floatp width));
 
 /*
  * Support for the GL/2 IN command. This is actually implemented in pccid.c,
@@ -170,10 +170,10 @@ extern  int     pcl_palette_PW( pcl_state_t * pcs, int pen, floatp width );
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-extern  int     pcl_palette_set_render_method(
+int pcl_palette_set_render_method(P2(
     pcl_state_t *    pcs,
     uint             render_method
-);
+));
 
 /*
  * Set gamma correction information for a palette.
@@ -189,7 +189,7 @@ extern  int     pcl_palette_set_render_method(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-extern  int     pcl_palette_set_gamma( pcl_state_t * pcs, float gamma );
+int pcl_palette_set_gamma(P2(pcl_state_t * pcs, float gamma));
 
 /*
  * Set color lookup table information for a palette.
@@ -206,10 +206,10 @@ extern  int     pcl_palette_set_gamma( pcl_state_t * pcs, float gamma );
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-extern  int     pcl_palette_set_lookup_tbl(
+int pcl_palette_set_lookup_tbl(P2(
     pcl_state_t *       pcs,
     pcl_lookup_tbl_t *  plktbl
-);
+));
 
 /*
  * Set an entry in a color palette.
@@ -217,11 +217,11 @@ extern  int     pcl_palette_set_lookup_tbl(
  * Returns 0 on success, < 0 in the event of an error. The returned code will
  * normally be ignored.
  */
-extern  int     pcl_palette_set_color( 
+int pcl_palette_set_color(P3(
     pcl_state_t *   pcs,
     int             indx,
     const float     comps[3]
-);
+));
 
 /*
  * Set a palette entry to its default color.
@@ -229,20 +229,20 @@ extern  int     pcl_palette_set_color(
  * Returns 0 on success, < 0 in the event of an error. The returned code will
  * normally be ignored.
  */
-extern  int     pcl_palette_set_default_color(
+int pcl_palette_set_default_color(P2(
     pcl_state_t *   pcs,
     int             indx
-);
+));
 
 /*
  * Set the user-defined dither matrix.
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-extern  int     pcl_palette_set_udither(
+int pcl_palette_set_udither(P2(
     pcl_state_t *   pcs,
     pcl_udither_t * pdither
-);
+));
 
 /*
  * Overwrite the current palette with new a new image data configuration.
@@ -259,22 +259,22 @@ extern  int     pcl_palette_set_udither(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-extern  int     pcl_palette_set_cid(
+int pcl_palette_set_cid(P4(
     pcl_state_t *       pcs,
     pcl_cid_data_t *    pcid,
     bool                fixed,
     bool                gl2
-);
+));
 
 /*
  * Set the view illuminant for a palette.
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-extern  int     pcl_palette_set_view_illuminant(
+int pcl_palette_set_view_illuminant(P2(
     pcl_state_t *       pcs,
     const gs_vector3 *  pwht_pt
-);
+));
 
 /*
  * Check that all parts of a PCL palette have been built. If not, build the
@@ -282,7 +282,7 @@ extern  int     pcl_palette_set_view_illuminant(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-extern  int     pcl_palette_check_complete( pcl_state_t * pcs );
+int pcl_palette_check_complete(P1(pcl_state_t * pcs));
 
 /*
  * Entry points to the palette-related commands.

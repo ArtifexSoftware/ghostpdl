@@ -134,7 +134,6 @@ pcstate_h   = $(PCLSRC)pcstate.h  \
 pccid_h     = $(PCLSRC)pccid.h    \
               $(gx_h)             \
               $(gsstruct_h)       \
-              $(pcstate_h)        \
               $(pcommand_h)
 
 pccrd_h     = $(PCLSRC)pccrd.h    \

@@ -35,8 +35,8 @@
 
 typedef ulong   pcl_gsid_t;
 
-extern  pcl_gsid_t  pcl_next_id( void );
+pcl_gsid_t  pcl_next_id( void );
 
-extern  void    pcl_init_id( void );
+void    pcl_init_id( void );
 
 #endif  /* pcident_INCLUDED */

@@ -7,7 +7,6 @@
 
 #include "gx.h"
 #include "gsstruct.h"
-#include "pcstate.h"
 #include "pcommand.h"
 
 typedef short           int16;
@@ -151,7 +150,7 @@ typedef struct pcl_cid_data_s {
  * Implement the GL/2 IN command. This is probably better done via a reset flag,
  * but currently there are no reset flags that propagate out of GL/2.
  */
-extern  int     pcl_cid_IN( pcl_state_t * pcs );
+int     pcl_cid_IN(P1(pcl_state_t * pcs));
 
 /*
  * Entry point for the configure image data code.

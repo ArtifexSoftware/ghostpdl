@@ -90,6 +90,8 @@ typedef enum {
     pcl_halftone_num
 } pcl_halftone_type_t;
 
+#ifndef pcl_ht_builtin_dither_DEFINED
+#define pcl_ht_builtin_dither_DEFINED
 typedef struct pcl_ht_builtin_dither_s {
     pcl_halftone_type_t type;
     union {
@@ -97,6 +99,7 @@ typedef struct pcl_ht_builtin_dither_s {
         pcl_ht_builtin_table_dither_t   tdither;
     }                   u;
 } pcl_ht_builtin_dither_t;
+#endif
 
 #define private_st_ht_builtin_dither_t()                    \
     gs_private_st_composite( st_ht_builtin_dither_t,        \
@@ -105,6 +108,45 @@ typedef struct pcl_ht_builtin_dither_s {
                              ht_dither_enum_ptrs,           \
                              ht_dither_reloc_ptrs           \
                              )
+
+/*
+ * Array of dithers and devices to be used for different rendering methods.
+ *
+ * The HT_FIXED flag indicates which methods may not be changed by the output
+ * device. The ordered, clustered ordered, and user-defined dithers (both
+ * color and monochrome versions) are in this category, because they must 
+ * have predictable matrices for the logical operations to produce predictable
+ * results.
+ *
+ * The HT_USERDEF flag indicates which methods make use of the user-defined
+ * dither matrix.
+ *
+ * The HT_DECSPACE flag indicates which methods may be used with device
+ * independent color spaces. If one of these methods is selected and a device
+ * independent color space is set, the default rendering method is used
+ * instead.
+ *
+ * The HT_IMONLY flag indicates that a rendering method applies only to
+ * images. ***This feature is currently not supported***
+ *
+ * For each rendering method there is an associated color mapping method, to
+ * be used with the devcmap color mapping device. A single device is used
+ * rather than one device for each different mapping, as the the graphic
+ * library provides no good technique for removing a device from a graphic
+ * state (this is typically done by grestore, as is the case for PostScript).
+ */
+
+#define HT_NONE         0x0
+#define HT_FIXED        0x1
+#define HT_USERDEF      0x2
+#define HT_DEVCSPACE    0x4
+#define HT_IMONLY       0x8
+
+typedef struct rend_info_s {
+    uint                                flags;
+    gx_device_cmap *                    pdev;
+    const pcl_ht_builtin_dither_t *     pbidither;
+} pcl_rend_info_t;
 
 /*
  * Client data structure for PCL halftones. This holds two pieces of
@@ -193,26 +235,10 @@ typedef struct pcl_ht_s         pcl_ht_t;
  * for special render methods. Currently it only creates the built-in dither
  * arrays.
  */
-extern  void    pcl_ht_init_render_methods(
+void pcl_ht_init_render_methods(P2(
     pcl_state_t *   pcs,
     gs_memory_t *   pmem
-);
-
-/*
- * Update built-in rendering information. Attempts to change information for
- * fixed rendering methods are ignored.
- */
-extern  void    pcl_ht_update_rendering_info(
-    int                               method,
-    const pcl_ht_builtin_dither_t *   pbidither
-);
-
-/*
- * Modify the rendering-method remap table. This table is used to set rendering
- * methods to match specific HP devices. The operand array is used to map 
- * requested rendering methods to the rendering method actually used.
- */
-extern  void     pcl_ht_update_rendering_remap( const byte * map );
+));
 
 /*
  * Set up normal or monochrome print mode. The latter is accomplished by
@@ -224,21 +250,21 @@ extern  void     pcl_ht_update_rendering_remap( const byte * map );
  * Note that the current rendering method must be set before this change
  * will take effect.
  */
-extern  void    pcl_ht_set_print_mode( bool monochrome );
+void pcl_ht_set_print_mode(P2(pcl_state_t *pcs, bool monochrome));
 
 /*
  * Set the render method.
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-extern  int     pcl_ht_set_render_method( pcl_ht_t ** ppht, uint render_method );
+int pcl_ht_set_render_method(P3(pcl_state_t *pcs, pcl_ht_t ** ppht, uint render_method));
 
 /*
  * Update the gamma parameter.
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-extern  int     pcl_ht_set_gamma( pcl_ht_t ** ppht, float gamma );
+int pcl_ht_set_gamma(P2(pcl_ht_t ** ppht, float gamma));
 
 /*
  * Update the color lookup table information. This takes action only for lookup
@@ -247,20 +273,20 @@ extern  int     pcl_ht_set_gamma( pcl_ht_t ** ppht, float gamma );
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-extern  int     pcl_ht_set_lookup_tbl(
+int pcl_ht_set_lookup_tbl(P2(
     pcl_ht_t **         ppht,
     pcl_lookup_tbl_t *  plktbl
-);
+));
 
 /*
  * Set the user-defined dither matrix for a halftone object.
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-extern  int     pcl_ht_set_udither(
+int     pcl_ht_set_udither(P2(
     pcl_ht_t **     ppht,
     pcl_udither_t * pdither
-);
+));
 
 /*
  * Update the current halftone for a change in the color space.
@@ -269,21 +295,23 @@ extern  int     pcl_ht_set_udither(
  * in which a device-independent color space is used with a rendering method
  * that is not compatible with device-independent color spaces.
  */
-extern  int     pcl_ht_update_cspace(
+int pcl_ht_update_cspace(P4(
+    pcl_state_t *       pcs,
     pcl_ht_t **         ppht,
     pcl_cspace_type_t   cstype_old,
     pcl_cspace_type_t   cstype_new
-);
+));
 
 /*
  * Create the default halftone, releasing the current halftone if it exists.
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-extern  int     pcl_ht_build_default_ht(
+int pcl_ht_build_default_ht(P3(
+    pcl_state_t *       pcs,
     pcl_ht_t **         ppht,
     gs_memory_t *       pmem
-);
+));
 
 /*
  * Set the given halftone into the graphic state. If the halftone doesn't
@@ -291,11 +319,11 @@ extern  int     pcl_ht_build_default_ht(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-extern  int     pcl_ht_set_halftone(
+int pcl_ht_set_halftone(P4(
+    pcl_state_t *        pcs,
     pcl_ht_t **          ppht,
     pcl_cspace_type_t    cstype,
-    bool                 for_image,
-    pcl_state_t *        pcs
-);
+    bool                 for_image
+));
 
 #endif  	/* pcht_INCLUDED */

@@ -84,7 +84,7 @@ set_ht_crd_from_palette(
     ppalet = pcs->ppalet;
 
     /* install crd and ht */
-    code = pcl_ht_set_halftone(&(ppalet->pht), cstype, false, pcs);
+    code = pcl_ht_set_halftone(pcs, &(ppalet->pht), cstype, false);
     if (code == 0)
         code = pcl_crd_set_crd(&(ppalet->pcrd), pcs);
     return code;
@@ -106,7 +106,7 @@ set_ht_crd_from_foreground(
     pcl_cspace_type_t   cstype = pcl_frgrnd_get_cspace(pfrgrnd);
 
     /* install crd and ht */
-    code = pcl_ht_set_halftone(&(pfrgrnd->pht), cstype, false, pcs);
+    code = pcl_ht_set_halftone(pcs, &(pfrgrnd->pht), cstype, false);
     if (code == 0)
         code = pcl_crd_set_crd(&(pfrgrnd->pcrd), pcs);
     return code;
@@ -848,11 +848,11 @@ pattern_set_white(
 
     /* build the pure white color space and default halftone if necessary */
     if ((code = pcl_cs_base_build_white_cspace(&pwhite_cs, pcs->memory)) >= 0)
-        code = pcl_ht_build_default_ht(&pdflt_ht, pcs->memory);
+        code = pcl_ht_build_default_ht(pcs, &pdflt_ht, pcs->memory);
 
     /* set the halftone and color space */
     if (code >= 0)
-        code = pcl_ht_set_halftone(&pdflt_ht, pcl_cspace_RGB, false, pcs);
+        code = pcl_ht_set_halftone(pcs, &pdflt_ht, pcl_cspace_RGB, false);
     pcl_ht_release(pdflt_ht);
     if (code >= 0)
         code = set_unpatterned_color(pcs, NULL, pwhite_cs, &white_paint);

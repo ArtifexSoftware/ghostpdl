@@ -177,7 +177,7 @@ build_default_palette(
         if (code == 0)
             pcl_crd_init_from(ppalet->pcrd, pcl_default_crd);
         if (code == 0)
-            code = pcl_ht_build_default_ht(&(ppalet->pht), pmem);
+            code = pcl_ht_build_default_ht(pcs, &(ppalet->pht), pmem);
         if (code < 0) {
             if (ppalet != 0)
                 free_palette(pmem, ppalet, "build default palette");
@@ -382,9 +382,9 @@ pcl_palette_set_render_method(
     int             code = unshare_palette(pcs);
 
     if ((code == 0) && (pcs->ppalet->pht == 0))
-        code = pcl_ht_build_default_ht(&(pcs->ppalet->pht), pcs->memory);
+        code = pcl_ht_build_default_ht(pcs, &(pcs->ppalet->pht), pcs->memory);
     if (code >= 0)
-        code = pcl_ht_set_render_method(&(pcs->ppalet->pht), render_method);
+        code = pcl_ht_set_render_method(pcs, &(pcs->ppalet->pht), render_method);
     if (code >= 0)
         pcs->render_mode = render_method;
     return code;
@@ -413,7 +413,7 @@ pcl_palette_set_gamma(
     int             code = unshare_palette(pcs);
 
     if ((code == 0) && (pcs->ppalet->pht == 0))
-        code = pcl_ht_build_default_ht(&(pcs->ppalet->pht), pcs->memory);
+        code = pcl_ht_build_default_ht(pcs, &(pcs->ppalet->pht), pcs->memory);
     if (code == 0)
         code = pcl_ht_set_gamma(&(pcs->ppalet->pht), gamma);
     return code;
@@ -448,7 +448,7 @@ pcl_palette_set_lookup_tbl(
                                                     pcs->memory
                                                     );
     if ((code == 0) && (pcs->ppalet->pht == 0))
-        code = pcl_ht_build_default_ht(&(pcs->ppalet->pht), pcs->memory);
+        code = pcl_ht_build_default_ht(pcs, &(pcs->ppalet->pht), pcs->memory);
     if (code < 0)
         return code;
 
@@ -569,7 +569,7 @@ pcl_palette_set_udither(
     int             code = unshare_palette(pcs);
 
     if ((code == 0) && (pcs->ppalet->pht == 0))
-        code = pcl_ht_build_default_ht(&(pcs->ppalet->pht), pcs->memory);
+        code = pcl_ht_build_default_ht(pcs, &(pcs->ppalet->pht), pcs->memory);
     if (code == 0)
         code = pcl_ht_set_udither(&(pcs->ppalet->pht), pdither);
     return code;
@@ -622,7 +622,7 @@ pcl_palette_set_cid(
 
     /* if a halftone exist, inform it of the update and discard lookup tables */
     if ((code == 0) && (ppalet->pht != 0)) {
-        code = pcl_ht_update_cspace(&(ppalet->pht), cstype_old, cstype_new);
+        code = pcl_ht_update_cspace(pcs, &(ppalet->pht), cstype_old, cstype_new);
         if (code == 0)
             code = pcl_ht_set_lookup_tbl(&(ppalet->pht), NULL);
     }
@@ -687,7 +687,7 @@ pcl_palette_check_complete(
             pcl_crd_init_from(pcs->ppalet->pcrd, pcl_default_crd);
     }
     if ((code == 0) && (ppalet->pht == 0))
-        code = pcl_ht_build_default_ht(&(ppalet->pht), pcs->memory);
+        code = pcl_ht_build_default_ht(pcs, &(ppalet->pht), pcs->memory);
     return code;
 }
 
@@ -865,7 +865,7 @@ set_print_mode(
     pcl_home_cursor(pcs);
 
     pcs->monochrome_mode = (mode == 1);
-    pcl_ht_set_print_mode(pcs->monochrome_mode);
+    pcl_ht_set_print_mode(pcs, pcs->monochrome_mode);
     return pcl_palette_set_render_method(pcs, pcs->render_mode);
 }
 

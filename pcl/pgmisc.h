@@ -8,7 +8,7 @@
 #ifndef pgmisc_INCLUDED
 #  define pgmisc_INCLUDED
 
-extern void hpgl_set_lost_mode(P2(hpgl_state_t *pgls, hpgl_lost_mode_t lost_mode));
+void hpgl_set_lost_mode(P2(hpgl_state_t *pgls, hpgl_lost_mode_t lost_mode));
 /* get the current setting of the edge pen set by CF, NB this should
    be in a different header file */
 int32 hpgl_get_character_edge_pen(P1(hpgl_state_t *pgls));
@@ -23,8 +23,8 @@ int32 hpgl_get_character_edge_pen(P1(hpgl_state_t *pgls));
 
 #ifdef DEBUG
 
-extern void hpgl_error(P0());
-extern int hpgl_print_error(P4(const char *function, const char *file, int line, int code));
+void hpgl_error(P0());
+int hpgl_print_error(P4(const char *function, const char *file, int line, int code));
 
 # ifdef __GNUC__
 #  define hpgl_call_note_error(code)\

@@ -13,12 +13,12 @@
 #include "pgmand.h"
 
 /* Reset a set of font parameters to their default values. */
-extern  void    hpgl_default_font_params(P1( pcl_font_selection_t * pfs ));
+void hpgl_default_font_params(P1( pcl_font_selection_t * pfs ));
 
 /* Reset all the fill patterns to solid fill. */
-extern  void    hpgl_default_all_fill_patterns(P1( hpgl_state_t * pgls ));
+void hpgl_default_all_fill_patterns(P1( hpgl_state_t * pgls ));
 
 /* Reset (parts of) the HP-GL/2 state. */
-extern  void    hpgl_do_reset(P2( pcl_state_t * pcs, pcl_reset_type_t type ));
+void hpgl_do_reset(P2( pcl_state_t * pcs, pcl_reset_type_t type ));
 
 #endif  	/* pginit_INCLUDED */

@@ -107,7 +107,7 @@ typedef struct pcl_frgrnd_s     pcl_frgrnd_t;
  * for palettes, and should only be called when the current palette is the
  * default 2-entry palette.
  */
-extern  int     pcl_frgrnd_set_default_foreground( pcl_state_t * pcs );
+int pcl_frgrnd_set_default_foreground(P1(pcl_state_t * pcs));
 
 /*
  * Entry point for the set-foreground related routines

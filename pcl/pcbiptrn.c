@@ -216,32 +216,39 @@ pcl_pattern_clear_bi_patterns(pcl_state_t *pcs)
 /* 
  * pcl patterns are always always 300 dpi but we use the device
  * resolution on devices lower than 300 dpi so we can at least see the
- * patterns on screen resolution devices.  NB this could probably be
- * done once but it is not very expensive.  Currently, we set the
- * resolution each time the pattern is built.  
+ * patterns on screen resolution devices.  We also provide a #define
+ * here for customers that wish to have better patterns at higher
+ * resolutions.
  */
+
+/* #define DEVICE_RES_PATTERNS */
 
  private int
 pcl_get_pattern_resolution(pcl_state_t *pcs, gs_point *pattern_res)
 {
-    gs_matrix mat;
-    gs_point device_res;
     /* default is 300 */
     pattern_res->x = 300;
     pattern_res->y = 300;
-    /* get the current resolutions based on the default centipoint
-       matrix */
-    gs_defaultmatrix(pcs->pgs, &mat);
-    /* if both are less than 300 dpi override the 300 dpi default */
-    device_res.x = fabs(mat.xx) * 7200;
-    device_res.y = fabs(mat.yy) * 7200;
-    if ( (device_res.x < 300) && (device_res.y < 300) ) {
+    /* get the current resolutions based on the device. */
+    {
+	gs_point device_res;
+	gx_device *pdev = gs_currentdevice(pcs->pgs);
+	device_res.x = pdev->HWResolution[0];
+	device_res.y = pdev->HWResolution[1];
+#ifdef DEVICE_RES_PATTERNS
 	pattern_res->x = device_res.x;
 	pattern_res->y = device_res.y;
+#else
+	/* if both are less than 300 dpi override the 300 dpi default. */
+	if ( (device_res.x < 300) && (device_res.y < 300) ) {
+	    pattern_res->x = device_res.x;
+	    pattern_res->y = device_res.y;
+	}
+#endif
     }
     return 0;
 }
-	 
+#undef DEVICE_RES_PATTERNS
 /*
  * Return the pointer to a built-in pattern, building it if inecessary.
  */

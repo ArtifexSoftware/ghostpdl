@@ -73,28 +73,28 @@ typedef union {
  *
  * Any of the three pointer operands may be the same.
  */
-extern  void    pcl_vec3_add( 
+void pcl_vec3_add(P3(
     const pcl_vec3_t *  pivec1,
     const pcl_vec3_t *  pivec2,
     pcl_vec3_t *        poutvec
-);
+));
 
-extern  void    pcl_vec3_sub(
+void pcl_vec3_sub(P3(
     const pcl_vec3_t *  pivec1,
     const pcl_vec3_t *  pivec2,
     pcl_vec3_t *        poutvec
-);
+));
 
 /*
  * Apply a matrix to a 3-dimensional row vector.
  *
  * The code will properly handle the case pinvec == poutvec.
  */
-extern  void    pcl_vec3_xform(
+void pcl_vec3_xform(P3(
     const pcl_vec3_t *  pinvec,
     pcl_vec3_t *        poutvec,
     const pcl_mtx3_t *  pmtx
-);
+));
 
 /*
  * Invert a 3 x 3 matrix.
@@ -103,10 +103,10 @@ extern  void    pcl_vec3_xform(
  *
  * Returns 0 on success, e_Range if the matrix provided is singular.
  */
-extern  int     pcl_mtx3_invert(
+int pcl_mtx3_invert(P2(
     const pcl_mtx3_t *  pinmtx,
     pcl_mtx3_t *        poutmtx
-);
+));
 
 /*
  * Add, subtract, and multiply two 3 x 3 matrices. These are not currently
@@ -114,36 +114,36 @@ extern  int     pcl_mtx3_invert(
  *
  * In all cases, any of the three pointers provided may be identical.
  */
-extern  void    pcl_mtx3_add(
+void pcl_mtx3_add(P3(
     const pcl_mtx3_t *  pinmtx1,
     const pcl_mtx3_t *  pinmtx2,
     pcl_mtx3_t *        poutmtx
-);
+));
 
-extern  void    pcl_mtx3_sub(
+void pcl_mtx3_sub(P3(
     const pcl_mtx3_t *  pinmtx1,
     const pcl_mtx3_t *  pinmtx2,
     pcl_mtx3_t *        poutmtx
-);
+));
 
-extern  void    pcl_mtx3_mul(
+void pcl_mtx3_mul(P3(
     const pcl_mtx3_t *  pinmtx1,
     const pcl_mtx3_t *  pinmtx2,
     pcl_mtx3_t *        poutmtx
-);
+));
 
 /*
  * Convert a pcl_mtx3_t structure to and from a gs_matrix3 struct. Identity
  * transformations are rare in PCL, so no attempt is made to identify them.
  */
-extern  void    pcl_mtx3_convert_to_gs(
+void pcl_mtx3_convert_to_gs(P2(
     const pcl_mtx3_t *  pinmtx,
     gs_matrix3 *        pgsmtx
-);
+));
 
-extern  void   pcl_mtx3_convert_from_gs(
+void   pcl_mtx3_convert_from_gs(P2(
     pcl_mtx3_t *        poutmtx,
     const gs_matrix3 *  pgsmtx
-);
+));
 
 #endif  	/* pcmtx3_INCLUDED */

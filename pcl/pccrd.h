@@ -104,7 +104,7 @@ extern  pcl_crd_t * pcl_default_crd;
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-extern  int     pcl_crd_build_default_crd( pcl_state_t * pcs );
+int pcl_crd_build_default_crd(P1(pcl_state_t *pcs));
 
 /*
  * Build a CRD with device-provided parameters, but with the default PCL
@@ -118,7 +118,7 @@ extern  int     pcl_crd_build_default_crd( pcl_state_t * pcs );
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-extern  int     pcl_crd_build_dev_crd(
+int pcl_crd_build_dev_crd(P12(
     gs_memory_t *                   pmem,
     const gs_vector3 *              BlackPoint,
     const gs_matrix3 *              MatrixPQR,
@@ -131,7 +131,7 @@ extern  int     pcl_crd_build_dev_crd(
     const gs_cie_render_proc3 *     EncodeABC,
     const gs_range3 *               RangeABC,
     const gs_cie_render_table_t *   RenderTable
-);
+));
 
 /*
  * Set the viewing illuminant.
@@ -142,10 +142,10 @@ extern  int     pcl_crd_build_dev_crd(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-extern  int     pcl_crd_set_view_illuminant( 
+int pcl_crd_set_view_illuminant(P2(
     pcl_crd_t **        ppcrd,
     const gs_vector3 *  pwht_pt
-);
+));
 
 /*
  * Set a color rendering dictionary into the graphic state. If the rendering
@@ -153,6 +153,6 @@ extern  int     pcl_crd_set_view_illuminant(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-extern  int     pcl_crd_set_crd( pcl_crd_t ** ppcrd, pcl_state_t * pcs );
+int pcl_crd_set_crd(P2(pcl_crd_t **ppcrd, pcl_state_t *pcs));
 
 #endif  	/* pccrd_INCLUDED */

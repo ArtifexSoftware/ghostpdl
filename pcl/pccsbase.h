@@ -106,11 +106,11 @@ typedef struct pcl_cs_base_s {
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-extern  int     pcl_cs_base_build_cspace(
+int pcl_cs_base_build_cspace(P3(
     pcl_cs_base_t **        ppbase,
     const pcl_cid_data_t *  pcid,
     gs_memory_t *           pmem
-);
+));
 
 /*
  * Build a special base color space, used for setting the color white.
@@ -119,10 +119,10 @@ extern  int     pcl_cs_base_build_cspace(
  *
  * This routine is usually called once at initialization.
  */
-extern  int     pcl_cs_base_build_white_cspace(
+int pcl_cs_base_build_white_cspace(P2(
     pcl_cs_base_t **    ppbase,
     gs_memory_t *       pmem
-);
+));
 
 /*
  * Update the lookup table information for a PCL base color space. This is
@@ -137,10 +137,10 @@ extern  int     pcl_cs_base_build_white_cspace(
  * color space, 0 if no modification occurred but there was no error, and < 0
  * in the event of an error.
  */
-extern  int     pcl_cs_base_update_lookup_tbl(
+int pcl_cs_base_update_lookup_tbl(P2(
     pcl_cs_base_t **    ppbase,
     pcl_lookup_tbl_t *  plktbl
-);
+));
 
 /*
  * Install a base color space into the graphic state.
@@ -150,15 +150,15 @@ extern  int     pcl_cs_base_update_lookup_tbl(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-extern  int     pcl_cs_base_install(
+int pcl_cs_base_install(P2(
     pcl_cs_base_t **    ppbase,
     pcl_state_t *       pcs
-);
+));
 
 /*
  * One-time initialization routine. This exists only to handle possible non-
  * initialization of BSS.
  */
-extern  void    pcl_cs_base_init( void );
+void pcl_cs_base_init( void );
 
 #endif  	/* pccsbase_INCLUDED */

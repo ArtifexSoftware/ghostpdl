@@ -15,20 +15,20 @@
  * downloaded symbol set, or changing orientations--can cause this.
  * set == -1 means all.
  */
-extern  void    pcl_decache_font( pcl_state_t * pcs, int set );
+void pcl_decache_font(P2(pcl_state_t * pcs, int set));
 
 /*
  * Recompute the font if necessary. This is exported for resetting HMI.
  */
-extern  int     pcl_recompute_font( pcl_state_t * pcs );
+int pcl_recompute_font(P1(pcl_state_t * pcs));
 
 /*
  * Recompute the font if the glyph is not found at the time of rendering
  */
-extern  int     pcl_recompute_substitute_font(
+int pcl_recompute_substitute_font(P2(
     pcl_state_t *   pcs,
     const uint      chr
-);
+));
 
 /*
  * Do any underlining just before a break in motion (vertical motion or
@@ -47,7 +47,7 @@ extern  int     pcl_recompute_substitute_font(
         pcs->underline_start = pcs->cap;    \
     END
 
-extern  void    pcl_do_underline(P1(pcl_state_t *pcs));
+void pcl_do_underline(P1(pcl_state_t *pcs));
 
 /* Define the common structure of downloaded font headers. */
 typedef struct pcl_font_header_s {

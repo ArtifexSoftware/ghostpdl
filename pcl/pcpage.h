@@ -11,7 +11,7 @@
 #include "pcommand.h"
 
 /* set the page output procedure */
-extern  void    pcl_set_end_page( int (*procp)(pcl_state_t *, int, int) );
+void pcl_set_end_page(P1(int (*procp)(pcl_state_t *, int, int)));
 
 /*
  * End a page, either unconditionally or only if there are marks on it.
@@ -22,10 +22,10 @@ typedef enum {
     pcl_print_if_marked
 } pcl_print_condition_t;
 
-extern  int     pcl_end_page(
+int pcl_end_page(P2(
     pcl_state_t *           pcs,
     pcl_print_condition_t   condition
-);
+));
 
 #define pcl_end_page_always(pcs)    pcl_end_page((pcs), pcl_print_always)
 #define pcl_end_page_if_marked(pcs) pcl_end_page((pcs), pcl_print_if_marked)

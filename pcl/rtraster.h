@@ -15,14 +15,14 @@
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-extern  int     pcl_start_raster(
+int pcl_start_raster(P3(
     uint                src_width,
     uint                src_height,
     pcl_state_t *       pcs
-);
+));
 
 /* complete a raster (when exiting raster graphics mode) */
-extern  void    pcl_complete_raster( void );
+void pcl_complete_raster(void);
 
 extern  const pcl_init_t    rtraster_init;
 
