@@ -289,7 +289,7 @@ $(GLGEN)watc_.dev: $(watc__) $(GLD)nosync.dev $(watc_inc)
 	$(ADDMOD) $(GLGEN)watc_ -include $(GLD)nosync $(watc_inc)
 
 $(GLOBJ)gp_iwatc.$(OBJ): $(GLSRC)gp_iwatc.c $(stat__h) $(string__h)\
- $(gx_h) $(gp_h)
+ $(gx_h) $(gp_h) $(gpmisc_h)
 	$(GLCC) $(GLO_)gp_iwatc.$(OBJ) $(C_) $(GLSRC)gp_iwatc.c
 
 $(GLOBJ)gp_mktmp.$(OBJ): $(GLSRC)gp_mktmp.c $(stat__h) $(string__h)

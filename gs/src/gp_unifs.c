@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -22,6 +22,7 @@
 #include "string_.h"
 #include "gx.h"
 #include "gp.h"
+#include "gpmisc.h"
 #include "gsstruct.h"
 #include "gsutil.h"		/* for string_match */
 #include "stat_.h"
@@ -58,7 +59,7 @@ gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
 {				/* The -8 is for XXXXXX plus a possible final / and -. */
     int len = gp_file_name_sizeof - strlen(prefix) - 8;
 
-    if (gp_getenv("TEMP", fname, &len) != 0)
+    if (gp_gettmpdir(fname, &len) != 0)
 	strcpy(fname, "/tmp/");
     else {
 	if (strlen(fname) != 0 && fname[strlen(fname) - 1] != '/')
@@ -70,7 +71,7 @@ gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
 	strcat(fname, "-");
     strcat(fname, "XXXXXX");
     mktemp(fname);
-    return fopen(fname, mode);
+    return gp_fopentemp(fname, mode);
 }
 
 /* Open a file with the given name, as a stream of uninterpreted bytes. */

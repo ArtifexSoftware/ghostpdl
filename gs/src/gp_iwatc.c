@@ -26,9 +26,9 @@
 #include "string_.h"
 #include "gx.h"
 #include "gp.h"
+#include "gpmisc.h"
 
 /* Library routines not declared in a standard header */
-extern char *getenv(P1(const char *));
 extern char *mktemp(P1(char *));	/* in gp_mktmp.c */
 
 /* Define a substitute for stdprn (see below). */
@@ -128,7 +128,7 @@ gp_open_scratch_file(const char *prefix, char *fname, const char *mode)
 {	      /* The -7 is for XXXXXXX */
     int len = gp_file_name_sizeof - strlen(prefix) - 7;
 
-    if (gp_getenv("TEMP", fname, &len) != 0)
+    if (gp_gettmpdir(fname, &len) != 0)
 	*fname = 0;
     else {
 	char *temp;
@@ -142,7 +142,7 @@ gp_open_scratch_file(const char *prefix, char *fname, const char *mode)
     strcat(fname, prefix);
     strcat(fname, "XXXXXX");
     mktemp(fname);
-    return fopen(fname, mode);
+    return gp_fopentemp(fname, mode);
 }
 
 

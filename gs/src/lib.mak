@@ -79,6 +79,7 @@ gscdefs_h=$(GLSRC)gscdefs.h $(gconfigv_h)
 
 vmsmath_h=$(GLSRC)vmsmath.h
 
+close__h=$(GLSRC)close_.h
 dos__h=$(GLSRC)dos_.h
 ctype__h=$(GLSRC)ctype_.h $(std_h)
 dirent__h=$(GLSRC)dirent_.h $(std_h) $(gconfig__h)
@@ -133,6 +134,7 @@ GXERR=$(GX) $(gserrors_h)
 
 ### Include files
 
+gpmisc_h=$(GLSRC)gpmisc.h
 gsbitmap_h=$(GLSRC)gsbitmap.h $(gsstype_h)
 gsbitops_h=$(GLSRC)gsbitops.h
 gsbittab_h=$(GLSRC)gsbittab.h
@@ -216,6 +218,11 @@ $(GLOBJ)gxsync.$(OBJ) : $(GLSRC)gxsync.c $(GXERR) $(memory__h)\
 	$(GLCC) $(GLO_)gxsync.$(OBJ) $(C_) $(GLSRC)gxsync.c
 
 ### Miscellaneous
+
+# Support for platform code
+$(GLOBJ)gpmisc.$(OBJ) : $(GLSRC)gpmisc.c $(close__h) $(stdio__h)\
+ $(gp_h) $(gpgetenv_h) $(gpmisc_h)
+	$(GLCC) $(GLO_)gpmisc.$(OBJ) $(C_) $(GLSRC)gpmisc.c
 
 # Command line argument list management
 $(GLOBJ)gsargs.$(OBJ) : $(GLSRC)gsargs.c $(ctype__h) $(stdio__h) $(string__h)\
@@ -888,7 +895,7 @@ $(GLOBJ)gdevemap.$(OBJ) : $(GLSRC)gdevemap.c $(AK) $(std_h)
 
 ###### Create a pseudo-"feature" for the entire graphics library.
 
-LIB0s=$(GLOBJ)stream.$(OBJ)
+LIB0s=$(GLOBJ)gpmisc.$(OBJ) $(GLOBJ)stream.$(OBJ)
 LIB1s=$(GLOBJ)gsalloc.$(OBJ) $(GLOBJ)gsalpha.$(OBJ)
 LIB2s=$(GLOBJ)gsbitops.$(OBJ) $(GLOBJ)gsbittab.$(OBJ)
 # Note: gschar.c is no longer required for a standard build;
@@ -1174,7 +1181,7 @@ $(GLD)smd5.dev : $(LIB_MAK) $(ECHOGS_XE) $(smd5_) $(md5_)
 	$(SETMOD) $(GLD)smd5 $(smd5_) $(md5_)
 
 $(GLOBJ)smd5.$(OBJ) : $(GLSRC)smd5.c $(AK) $(memory__h)\
- $(smd5_h) $(strimpl_h) $(GLSRC)md5.c
+ $(smd5_h) $(strimpl_h)
 	$(GLCC) $(GLO_)smd5.$(OBJ) $(C_) $(GLSRC)smd5.c
 
 # ---------------- Pixel-difference filters ---------------- #
@@ -2193,7 +2200,7 @@ $(GLOBJ)gp_dosfe.$(OBJ) : $(GLSRC)gp_dosfe.c $(AK)\
 
 # Unix(-like) file system, also used by Desqview/X.
 $(GLOBJ)gp_unifs.$(OBJ) : $(GLSRC)gp_unifs.c $(AK)\
- $(memory__h) $(string__h) $(gx_h) $(gp_h)\
+ $(memory__h) $(string__h) $(gx_h) $(gp_h) $(gpmisc_h)\
  $(gsstruct_h) $(gsutil_h) $(stat__h) $(dirent__h)
 	$(GLCC) $(GLO_)gp_unifs.$(OBJ) $(C_) $(GLSRC)gp_unifs.c
 

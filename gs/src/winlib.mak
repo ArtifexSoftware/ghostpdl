@@ -146,7 +146,7 @@ $(GLGEN)msw32nc_.dev: $(msw32nc__) $(ECHOGS_XE) $(msw32nc_inc)
 
 $(GLOBJ)gp_mswin.$(OBJ): $(GLSRC)gp_mswin.c $(AK) $(gp_mswin_h) \
  $(ctype__h) $(dos__h) $(malloc__h) $(memory__h) $(string__h) $(windows__h) \
- $(gx_h) $(gp_h) $(gpcheck_h) $(gserrors_h) $(gsexit_h)
+ $(gx_h) $(gp_h) $(gpcheck_h) $(gpmisc_h) $(gserrors_h) $(gsexit_h)
 	$(GLCCWIN) $(GLO_)gp_mswin.$(OBJ) $(C_) $(GLSRC)gp_mswin.c
 
 $(GLOBJ)gp_wgetv.$(OBJ): $(GLSRC)gp_wgetv.c $(AK) $(gscdefs_h)

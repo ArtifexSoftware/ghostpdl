@@ -51,6 +51,7 @@
 #include "gsmemory.h"
 #include "gsstruct.h"
 #include "gp.h"
+#include "gpmisc.h"
 #include "gsutil.h"
 #include "stdlib.h"		/* need _osmode, exit */
 #include "time_.h"
@@ -729,9 +730,11 @@ gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
 		     const char *mode)
 {
 #ifdef __IBMC__
-    char *temp = getenv("TEMP");
+    char *temp = getenv("TMPDIR");
     char *tname;
 
+    if (temp == 0)
+	temp = getenv("TEMP");
     *fname = 0;
     tname = _tempnam(temp, (char *)prefix);
     if (tname) {
@@ -743,7 +746,7 @@ gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
     /* The -7 is for XXXXXX plus a possible final \. */
     int len = gp_file_name_sizeof - strlen(prefix) - 7;
 
-    if (gp_getenv("TEMP", fname, &len) != 0)
+    if (gp_gettmpdir(fname, &len) != 0)
 	*fname = 0;
     else {
 	char last = '\\';
@@ -764,7 +767,7 @@ gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
     strcat(fname, "XXXXXX");
     mktemp(fname);
 #endif
-    return fopen(fname, mode);
+    return gp_fopentemp(fname, mode);
 }
 
 /* Open a file with the given name, as a stream of uninterpreted bytes. */

@@ -504,7 +504,7 @@ $(GLGEN)os2_.dev: $(os2__) $(GLD)nosync.dev
 
 $(GLOBJ)gp_os2.$(OBJ): $(GLSRC)gp_os2.c\
  $(dos__h) $(pipe__h) $(string__h) $(time__h)\
- $(gsdll_h) $(gx_h) $(gsexit_h) $(gsutil_h) $(gp_h)
+ $(gsdll_h) $(gx_h) $(gsexit_h) $(gsutil_h) $(gp_h) $(gpmisc_h)
 	$(GLCC) $(GLO_)gp_os2.$(OBJ) $(C_) $(GLSRC)gp_os2.c
 
 # -------------------------- Auxiliary programs --------------------------- #
