@@ -128,11 +128,11 @@ def BuildLog(log_date_command):
 	    if description != []:
 		# append these items in the sort order we'll want later on.
 		log.append(RcsDate2CtimeTuple(date), author, description,
-			   rcs_file[len(GetCVSRootDirName()):-3], revision[:-1])
+			   rcs_file[:-1], revision[:-1])
 	    reading_description = 0
 	    description = []
-	elif not reading_description and line[:len("RCS file: ")] == "RCS file: ":
-	    rcs_file = line[len("RCS file: "):]
+	elif not reading_description and line[:len("Working file: ")] == "Working file: ":
+	    rcs_file = line[len("Working file: "):]
 	elif not reading_description and line[:len("revision ")] == "revision ":
 	    revision = line[len("revision "):]
 	elif not reading_description and line[:len("date: ")] == "date: ":
