@@ -1452,6 +1452,7 @@ pl_set_tt_font(
     /* if this is an XL TT font rewrite the header so the agfa
        rasterizer can properly parse the data */
     if ( plfont->scaling_technology == plfst_TrueType && 
+         plfont->font_type == plft_16bit &&
          plfont->header[0] == 0 && plfont->header[1] != 0x8 ) {
         plfont->header[1] = 0x8;
         plfont->is_xl_format1 = true;
