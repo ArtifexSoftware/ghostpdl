@@ -72,7 +72,7 @@ struct gx_device_pbm_s {
 				/* 1 if gray (PGM or PPM only), */
 				/* 2 or 3 if colored (PPM only) */
     bool UsePlanarBuffer;	/* 0 if chunky buffer, 1 if planar */
-    int TrayOrientation;        /* 0 (defualt), 90, 180, 270 */
+    int TrayOrientation;        /* 0 (default), 90, 180, 270 */
     dev_proc_copy_alpha((*save_copy_alpha));
     dev_proc_begin_typed_image((*save_begin_typed_image));
 };
@@ -383,8 +383,15 @@ private int
 ppm_get_params(gx_device * pdev, gs_param_list * plist)
 {
     gx_device_pbm * const bdev = (gx_device_pbm *)pdev;
+    int code = gdev_prn_get_params_planar(pdev, plist, &bdev->UsePlanarBuffer);
+    int ecode;
 
-    return gdev_prn_get_params_planar(pdev, plist, &bdev->UsePlanarBuffer);
+    if (code < 0) {
+        if ((ecode = param_write_int(plist, "TrayOrientation", &bdev->TrayOrientation)) < 0) {
+	   code = ecode;
+	}
+    }
+    return code;
 }
 
 private int
@@ -410,6 +417,7 @@ ppm_put_params(gx_device * pdev, gs_param_list * plist)
         else {
             if ( t != ((gx_device_pbm *)pdev)->TrayOrientation) {
                 if ( t == 90 || t == 270 ) {
+		    /* page sizes don't rotate, height and width do rotate */
                     floatp tmp = pdev->height;
                     pdev->height = pdev->width;
                     pdev->width = tmp;
@@ -528,6 +536,7 @@ private void pbm_get_initial_matrix( gx_device *pdev, gs_matrix *pmat)
     floatp fs_res = pdev->HWResolution[0] / 72.0;
     floatp ss_res = pdev->HWResolution[1] / 72.0;
     
+    /* NB this device has no paper margins */
 
     switch(((gx_device_pbm *)pdev)->TrayOrientation) {
     case 0:
@@ -536,22 +545,22 @@ private void pbm_get_initial_matrix( gx_device *pdev, gs_matrix *pmat)
         pmat->yx = 0;
         pmat->yy = -ss_res;
         pmat->tx = 0;
-        pmat->ty = pdev->MediaSize[1];
+        pmat->ty = pdev->height;
         break;
     case 90:
         pmat->xx = 0;
         pmat->xy = -ss_res;
         pmat->yx = -fs_res;
         pmat->yy = 0;
-        pmat->tx = pdev->MediaSize[1];
-        pmat->ty = pdev->MediaSize[0];
+        pmat->tx = pdev->width;
+        pmat->ty = pdev->height;
         break;
     case 180:
         pmat->xx = -fs_res;
         pmat->xy = 0;
         pmat->yx = 0;
         pmat->yy = ss_res;
-        pmat->tx = pdev->MediaSize[0];
+        pmat->tx = pdev->width;
         pmat->ty = 0;
         break;
     case 270:
@@ -559,7 +568,6 @@ private void pbm_get_initial_matrix( gx_device *pdev, gs_matrix *pmat)
         pmat->xy = ss_res;
         pmat->yx = fs_res;
         pmat->yy = 0;
-        /* NB WRONG Doesn't account for paper size offsets */
         pmat->tx = 0;
         pmat->ty = 0;
         break;

@@ -36,6 +36,8 @@ typedef struct gx_device_jpeg_s {
     /** translation needs to have scalefactor multiplied in.
      */
     gs_point ViewTrans;
+
+    int TrayOrientation;        /* 0 (default), 90, 180, 270 */
 } gx_device_jpeg;
 
 /* The device descriptor */
@@ -151,6 +153,9 @@ jpeg_get_params(gx_device * dev, gs_param_list * plist)
 	code = ecode;
     if ((ecode = param_write_float(plist, "ViewTransY", &jdev->ViewTrans.y)) < 0)
 	code = ecode;
+    if ((ecode = param_write_int(plist, "TrayOrientation", &jdev->TrayOrientation)) < 0)
+        code = ecode;
+
 
     return code;
 }
@@ -166,6 +171,7 @@ jpeg_put_params(gx_device * dev, gs_param_list * plist)
     int jq = jdev->JPEGQ;
     float qf = jdev->QFactor;
     float fparam;
+    int t;
 
     switch (code = param_read_int(plist, (param_name = "JPEGQ"), &jq)) {
 	case 0:
@@ -238,7 +244,24 @@ jpeg_put_params(gx_device * dev, gs_param_list * plist)
 	ecode = code;
 	param_signal_error(plist, param_name, code);
     }
-
+    if ((code = param_read_int(plist, "TrayOrientation", &t)) != 1 ) {
+        if (code < 0)
+            ecode = code;
+        else if (t != 0 && t != 90 && t != 180 && t != 270)
+            param_signal_error(plist, "TrayOrientation",
+                               ecode = gs_error_rangecheck);
+        else {
+            if ( t != jdev->TrayOrientation) {
+                if ( t == 90 || t == 270 ) {
+		    /* page sizes don't rotate, height and width do rotate */
+                    floatp tmp = jdev->height;
+                    jdev->height = jdev->width;
+                    jdev->width = tmp;
+                }
+                jdev->TrayOrientation = t;
+            }
+        }
+    }
     if (ecode < 0)
 	return ecode;
     code = gdev_prn_put_params(dev, plist);
@@ -287,14 +310,45 @@ jpeg_get_initial_matrix(gx_device *dev, gs_matrix *pmat)
     floatp fs_res = (dev->HWResolution[0] / 72.0) * pdev->ViewScale.x; 
     floatp ss_res = (dev->HWResolution[1] / 72.0) * pdev->ViewScale.y; 
 
-    floatp h = dev->height; /* move 0,0 to top of "page" */ 
+    /* NB this device has no paper margins */
 
-    pmat->xx = fs_res;
-    pmat->xy = 0.0; 
-    pmat->yx = 0.0;
-    pmat->yy = -ss_res;
-    pmat->tx = -pdev->ViewTrans.x; 
-    pmat->ty = (h * pdev->ViewScale.y) - pdev->ViewTrans.y;
+    switch(pdev->TrayOrientation) {
+    case 0:
+        pmat->xx = fs_res;
+        pmat->xy = 0;
+        pmat->yx = 0;
+        pmat->yy = -ss_res;
+        pmat->tx = -pdev->ViewTrans.x;
+        pmat->ty = (pdev->height * pdev->ViewScale.y) - pdev->ViewTrans.y;
+        break;
+    case 90:
+        pmat->xx = 0;
+        pmat->xy = -ss_res;
+        pmat->yx = -fs_res;
+        pmat->yy = 0;
+        pmat->tx = (pdev->width * pdev->ViewScale.x) - pdev->ViewTrans.x;
+        pmat->ty = (pdev->height * pdev->ViewScale.y) - pdev->ViewTrans.y;
+        break;
+    case 180:
+        pmat->xx = -fs_res;
+        pmat->xy = 0;
+        pmat->yx = 0;
+        pmat->yy = ss_res;
+        pmat->tx = (pdev->width * pdev->ViewScale.x) - pdev->ViewTrans.x;
+        pmat->ty = -pdev->ViewTrans.x;
+        break;
+    case 270:
+        pmat->xx = 0;
+        pmat->xy = ss_res;
+        pmat->yx = fs_res;
+        pmat->yy = 0;
+        pmat->tx = -pdev->ViewTrans.x;
+        pmat->ty = -pdev->ViewTrans.y;
+        break;
+    default:
+        /* not reached */
+    }
+
 }
 
 /* Send the page to the file. */
