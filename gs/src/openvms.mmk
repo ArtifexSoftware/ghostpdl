@@ -138,9 +138,9 @@ JVERSION=6
 .ifdef SYSLIB
 PSRCDIR=sys$library:
 .else
-PSRCDIR=[--.libpng-1_2_7]
+PSRCDIR=[--.libpng-1_2_8]
 .endif
-PVERSION=10207
+PVERSION=10208
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
@@ -148,7 +148,7 @@ PVERSION=10207
 .ifdef SYSLIB
 ZSRCDIR=sys$library:
 .else
-ZSRCDIR=[--.zlib-1_1_4]
+ZSRCDIR=[--.zlib-1_2_1]
 .endif
 
 # Define the directory where the jbig2dec library sources are stored.
@@ -156,7 +156,7 @@ ZSRCDIR=[--.zlib-1_1_4]
 .ifdef SYSLIB
 JBIG2SRCDIR=sys$library:
 .else
-JBIG2SRCDIR=[--.jbig2dec-0_2]
+JBIG2SRCDIR=[--.jbig2dec-0_7]
 .endif
 
 # Define the directory where the icclib source are stored.

@@ -67,7 +67,7 @@ JVERSION=6
 PSRCDIR=libpng
 !endif
 !ifndef PVERSION
-PVERSION=10207
+PVERSION=10208
 !endif
 
 !ifndef ZSRCDIR

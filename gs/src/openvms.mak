@@ -126,18 +126,18 @@ JVERSION=6
 # You may need to change this if the libpng version changes.
 # See libpng.mak for more information.
 
-PSRCDIR=[.libpng-1_2_7]
-PVERSION=10207
+PSRCDIR=[.libpng-1_2_8]
+PVERSION=10208
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
 
-ZSRCDIR=[.zlib-1_1_4]
+ZSRCDIR=[.zlib-1_2_1]
 
 # Define the jbig2dec library source location.
 # See jbig2.mak for more information.
 
-JBIG2SRCDIR=[.jbig2dec-0_2]
+JBIG2SRCDIR=[.jbig2dec-0_7]
 
 # Define the directory where the icclib source are stored.
 # See icclib.mak for more information
