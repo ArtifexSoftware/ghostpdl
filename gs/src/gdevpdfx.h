@@ -178,6 +178,7 @@ typedef struct pdf_text_data_s pdf_text_data_t;  /* gdevpdft.h */
 
 /* Define an element of the graphics object accumulation (BP/EP) stack. */
 typedef struct pdf_graphics_save_s pdf_graphics_save_t;
+#   if !PATTERN_STREAM_ACCUMULATION
 struct pdf_graphics_save_s {
     pdf_graphics_save_t *prev;
     cos_stream_t *object;
@@ -186,6 +187,8 @@ struct pdf_graphics_save_s {
     pdf_procset_t save_procsets;
     long save_contents_id;
 };
+/* We don't disable pdf_graphics_save_t due to st_device_pdfwrite references it. */
+#   endif
 
 #define private_st_pdf_graphics_save()	/* in gdevpdfm.c */\
   gs_private_st_ptrs2(st_pdf_graphics_save, pdf_graphics_save_t,\

@@ -30,7 +30,9 @@
 
 /* GC descriptors */
 private_st_pdf_article();
+#if !PATTERN_STREAM_ACCUMULATION
 private_st_pdf_graphics_save();
+#endif
 
 /*
  * The pdfmark pseudo-parameter indicates the occurrence of a pdfmark
@@ -1371,10 +1373,32 @@ pdfmark_BP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	return_error(gs_error_rangecheck);
     if ((pdev->used_mask << 1) == 0)
 	return_error(gs_error_limitcheck);
+#   if !PATTERN_STREAM_ACCUMULATION
     code = pdf_make_named(pdev, objname, cos_type_stream,
 			  (cos_object_t **)&pcs, true);
     if (code < 0)
 	return code;
+#   else
+    {	pdf_resource_t *pres;
+	cos_value_t value;
+
+	code = pdf_open_page(pdev, PDF_IN_STREAM);
+	if (code < 0)
+	    return code;
+	code = pdf_enter_substream(pdev, resourceXObject, gs_no_id, &pres);
+	if (code < 0)
+	    return code;
+	pcs = (cos_stream_t *)pres->object;
+	pdev->substream_Resources = cos_stream_dict(pcs);
+	code = cos_dict_put(pdev->local_named_objects, objname->data,
+				objname->size, cos_object_value(&value, pres->object));
+	if (code < 0)
+	    return code;
+	pres->named = true;
+	pres->where_used = 0;	/* initially not used */
+	pcs->pres = pres;
+    }
+#   endif
     pcs->is_graphics = true;
     gs_bbox_transform(&bbox, pctm, &bbox);
     sprintf(bbox_str, "[%.8g %.8g %.8g %.8g]",
@@ -1389,6 +1413,7 @@ pdfmark_BP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 					  strlen(bbox_str))) < 0
 	)
 	return code;
+#   if !PATTERN_STREAM_ACCUMULATION
     pdgs = gs_alloc_struct(pdev->pdf_memory, pdf_graphics_save_t,
 			   &st_pdf_graphics_save, "pdfmark_BP");
     if (pdgs == 0)
@@ -1415,6 +1440,7 @@ pdfmark_BP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     pdev->procsets = 0;
     pdev->contents_id = pcs->id;
     pdev->used_mask <<= 1;
+#   endif
     return 0;
 }
 
@@ -1423,6 +1449,7 @@ private int
 pdfmark_EP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	   const gs_matrix * pctm, const gs_param_string * no_objname)
 {
+#   if !PATTERN_STREAM_ACCUMULATION
     pdf_graphics_save_t *pdgs = pdev->open_graphics;
     pdf_resource_t *pres;
     cos_stream_t *pcs;
@@ -1495,6 +1522,17 @@ pdfmark_EP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     }
     pdev->used_mask >>= 1;
     return code;
+#   else
+	int code;
+
+	code = pdf_add_procsets(pdev->substream_Resources, pdev->procsets);
+	if (code < 0)
+	    return code;
+	code = pdf_exit_substream(pdev);
+	if (code < 0)
+	    return code;
+	return 0;
+#   endif
 }
 
 /* [ {obj} /SP pdfmark */

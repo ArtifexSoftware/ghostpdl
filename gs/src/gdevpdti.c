@@ -490,6 +490,7 @@ pdf_enter_substream(gx_device_pdf *pdev, pdf_resource_type_t rtype,
     pdev->sbstack[sbstack_ptr].procsets = pdev->procsets;
     pdev->sbstack[sbstack_ptr].substream_Resources = pdev->substream_Resources;
     pdev->sbstack[sbstack_ptr].skip_colors = pdev->skip_colors;
+    pdev->skip_colors = false;
     pdev->sbstack_depth++;
     pdev->procsets = 0;
     pdev->context = PDF_IN_STREAM;
@@ -525,9 +526,12 @@ pdf_exit_substream(gx_device_pdf *pdev)
 	   into pdf_substream_save stack to simplify garbager descriptors. 
 	   Use a lower level functions instead that. */
 	int status = s_close_filters(&s, cos_write_stream_from_pipeline(s));
+	cos_stream_t *pcs = cos_stream_from_pipeline(s);
+
 
 	if (status < 0 && code >=0)
 	     code = gs_note_error(gs_error_ioerror);
+	pcs->is_open = false;
     }
     sclose(s);
     pdev->context = pdev->sbstack[sbstack_ptr].context;
