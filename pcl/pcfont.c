@@ -435,6 +435,7 @@ private char *    built_in_font_prefixes[] = {
     "/windows/system/",
     "/windows/fonts/",
     "/win95/fonts/",
+    "/winnt/fonts/",
     0
 };
 
