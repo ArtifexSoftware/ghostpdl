@@ -1,7 +1,8 @@
 # $Id$
 ## process this file with automake to generate Makefile.in
 
-AUTOMAKE_OPTIONS = foreign 1.7 dist-bzip2 # require automake 1.7
+# require automake 1.7
+AUTOMAKE_OPTIONS = foreign 1.7 dist-bzip2 dist-zip
 
 lib_LIBRARIES = libjbig2dec.a
 include_HEADERS = jbig2.h
