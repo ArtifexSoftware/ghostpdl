@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.c,v 1.30 2002/07/13 00:03:52 giles Exp $
+    $Id: jbig2dec.c,v 1.31 2002/07/13 00:32:13 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -60,12 +60,13 @@ print_usage (void)
     "  embedded streams.\n"
     "\n"
     "  available options:\n"
+    "    -h --help	this usage summary\n"
     "    -q --quiet     suppress diagnostic output\n"
-    "    -d --dump      print the structure of the jbig2 file,\n"
+    "    -d --dump      print the structure of the jbig2 file\n"
     "                   rather than explicitly decoding\n"
-    "    -o <file>	send decoded output to <file>. defaults to the same\n"
-    " 			filename as the input with a different extension.\n"
-    "    -h --help	this usage summary.\n"
+    "    -o <file>	send decoded output to <file>\n"
+    "                   Defaults to the the input with a different\n"
+    "                   extension. Pass '-' for stdout.\n"
     "\n"
   );
   
@@ -156,18 +157,20 @@ make_output_filename(const char *input_filename, const char *extension)
     }
     
     if (input_filename == NULL)
-      output_filename = "out";
-      
-    /* strip any leading path */
-    c = strrchr(input_filename, '/'); /* *nix */
-    if (c == NULL)
-      c = strrchr(input_filename, '\\'); /* win32/dos */
-    if (c != NULL)
-      c++; /* skip the path separator */
-    else
-      c = input_filename; /* no leading path */
+      c = "out";
+    else {  
+      /* strip any leading path */
+      c = strrchr(input_filename, '/'); /* *nix */
+      if (c == NULL)
+        c = strrchr(input_filename, '\\'); /* win32/dos */
+      if (c != NULL)
+        c++; /* skip the path separator */
+      else
+        c = input_filename; /* no leading path */
+    }
+
     /* make sure we haven't just stripped the last character */
-    if (*c = '\0')
+    if (*c == '\0')
       c = "out";
         
     /* strip the extension */
@@ -225,9 +228,6 @@ main (int argc, char **argv)
   jbig2dec_params_t params = {render,1,NULL};
   int filearg;
 
-  fprintf(stderr, "heisenbug detector: %s\n", make_output_filename(NULL, ".out"));
-  
-  
   filearg = parse_options(argc, argv, &params);
 
   switch (params.mode) {
