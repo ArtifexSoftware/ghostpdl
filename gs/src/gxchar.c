@@ -335,6 +335,25 @@ set_char_width(gs_show_enum *penum, gs_state *pgs, floatp wx, floatp wy)
 
     if (penum->width_status != sws_none && penum->width_status != sws_retry)
 	return_error(gs_error_undefined);
+    if (penum->fstack.depth > 0 && 
+	penum->fstack.items[penum->fstack.depth].font->FontType == ft_CID_encrypted) {
+    	/* We must not convert advance width with a CID font leaf's FontMatrix,
+	   because CDevProc is attached to the CID font rather than to its leaf.
+	   But show_state_setup sets CTM with the leaf's matrix.
+	   Compensate it here with inverse FontMatrix of the leaf.
+	   ( We would like to do without an inverse transform, but 
+	     we don't like to extend general gs_state or gs_show_enum
+	     for this particular reason. ) */
+	const gx_font_stack_item_t *pfsi = &penum->fstack.items[penum->fstack.depth];
+	gs_point p;
+
+	code = gs_distance_transform_inverse(wx, wy,
+		&gs_cid0_indexed_font(pfsi->font, pfsi->index)->FontMatrix, &p);
+	if (code < 0)
+	    return code;
+	wx = p.x; 
+	wy = p.y;
+    }
     if ((code = gs_distance_transform2fixed(&pgs->ctm, wx, wy, &penum->wxy)) < 0)
 	return code;
     /* Check whether we're setting the scalable width */
