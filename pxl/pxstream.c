@@ -161,8 +161,10 @@ pxExecStream(px_args_t *par, px_state_t *pxs)
              strncmp(def_data + 1, " HP-PCL XL", 10)
            )
           return_error(errorUnsupportedClassName);
-        /* support protocol level 1 and 2 */
-        if ( strncmp(def_data + 11, ";1;", 3) && strncmp(def_data + 11, ";2;", 3) )
+        /* support protocol level 1, 2 and 3 */
+        if ( strncmp(def_data + 11, ";1;", 3) && 
+             strncmp(def_data + 11, ";2;", 3) &&
+             strncmp(def_data + 11, ";3;", 3) )
             return_error(errorUnsupportedProtocol);
         start = memchr(def_data + 14, '\n', def_size - 14);
         if ( !start )
