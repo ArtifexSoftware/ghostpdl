@@ -112,7 +112,7 @@ GDEV=$(AK) $(ECHOGS_XE) $(GDEVH)
 # Fax file format:
 #   ****** NOTE: all of these drivers normally adjust the page size to match
 #   ****** one of the three CCITT standard sizes (U.S. letter with A4 width,
-#   ****** A4, or B4).  To suppress this, use 
+#   ****** A4, or B4).  To suppress this, use -dAdjustWidth=0.
 #	faxg3	Group 3 fax, with EOLs but no header or EOD
 #	faxg32d  Group 3 2-D fax, with EOLs but no header or EOD
 #	faxg4	Group 4 fax, with EOLs but no header or EOD
@@ -242,6 +242,7 @@ gdevdcrd_h=$(GLSRC)gdevdcrd.h
 gdevpccm_h=$(GLSRC)gdevpccm.h
 gdevpcfb_h=$(GLSRC)gdevpcfb.h $(dos__h)
 gdevpcl_h=$(GLSRC)gdevpcl.h
+gdevpsu_h=$(GLSRC)gdevpsu.h
 gdevsvga_h=$(GLSRC)gdevsvga.h
 # Out of order
 gdevdljm_h=$(GLSRC)gdevdljm.h $(gdevpcl_h)
@@ -269,6 +270,12 @@ $(GLOBJ)gdevdcrd.$(OBJ) : $(GLSRC)gdevdcrd.c $(AK)\
  $(gscrd_h) $(gscrdp_h) $(gserrors_h) $(gsparam_h) $(gscspace_h)\
  $(gx_h) $(gxdevcli_h) $(gdevdcrd_h)
 	$(GLCC) $(GLO_)gdevdcrd.$(OBJ) $(C_) $(GLSRC)gdevdcrd.c
+
+# Support for writing PostScript (high- or low-level).
+$(GLOBJ)gdevpsu.$(OBJ) : $(GLSRC)gdevpsu.c $(GX) $(math__h) $(time__h)\
+ $(gdevpsu_h) $(gscdefs_h) $(gxdevice_h)\
+ $(spprint_h) $(stream_h)
+	$(GLCC) $(GLO_)gdevpsu.$(OBJ) $(C_) $(GLSRC)gdevpsu.c
 
 ###### ------------------- MS-DOS display devices ------------------- ######
 
@@ -663,7 +670,7 @@ $(GLOBJ)gdevpsdu.$(OBJ) : $(GLSRC)gdevpsdu.c $(GXERR)\
 
 # PostScript and EPS writers
 
-pswrite_=$(GLOBJ)gdevps.$(OBJ) $(GLOBJ)scantab.$(OBJ) $(GLOBJ)sfilter2.$(OBJ)
+pswrite_=$(GLOBJ)gdevps.$(OBJ) $(GLOBJ)gdevpsu.$(OBJ) $(GLOBJ)scantab.$(OBJ) $(GLOBJ)sfilter2.$(OBJ)
 $(DD)epswrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pswrite_) $(GLD)psdf.dev
 	$(SETDEV2) $(DD)epswrite $(pswrite_)
 	$(ADDMOD) $(DD)epswrite -include $(GLD)psdf
@@ -677,7 +684,7 @@ $(GLOBJ)gdevps.$(OBJ) : $(GLSRC)gdevps.c $(GDEV)\
  $(gscdefs_h) $(gscspace_h) $(gsline_h) $(gsparam_h) $(gsiparam_h) $(gsmatrix_h)\
  $(gxdcolor_h) $(gxpath_h)\
  $(sa85x_h) $(sstring_h) $(strimpl_h)\
- $(gdevpsdf_h) $(spprint_h)
+ $(gdevpsdf_h) $(gdevpsu_h) $(spprint_h)
 	$(GLCC) $(GLO_)gdevps.$(OBJ) $(C_) $(GLSRC)gdevps.c
 
 # PDF writer
@@ -1162,12 +1169,14 @@ $(DD)png16m.dev : $(DEVS_MAK) $(libpng_dev) $(png_) $(GLD)page.dev
 ###   format.  They also can convert big, complex color PostScript files  ###
 ###   to (often) smaller and more easily printed bitmaps.                 ###
 
-# Monochrome, Level 1 output
-
 psim_=$(GLOBJ)gdevpsim.$(OBJ)
 
-$(GLOBJ)gdevpsim.$(OBJ) : $(GLSRC)gdevpsim.c $(PDEVH)
+$(GLOBJ)gdevpsim.$(OBJ) : $(GLSRC)gdevpsim.c $(PDEVH)\
+ $(gdevpsu_h)\
+ $(sa85x_h) $(srlx_h) $(stream_h) $(strimpl_h)
 	$(GLCC) $(GLO_)gdevpsim.$(OBJ) $(C_) $(GLSRC)gdevpsim.c
+
+# Monochrome, Level 1 output
 
 $(DD)psmono.dev : $(DEVS_MAK) $(psim_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)psmono $(psim_)
@@ -1177,14 +1186,8 @@ $(DD)psgray.dev : $(DEVS_MAK) $(psim_) $(GLD)page.dev
 
 # RGB, Level 2 output
 
-psci_=$(GLOBJ)gdevpsci.$(OBJ)
-
-$(GLOBJ)gdevpsci.$(OBJ) : $(GLSRC)gdevpsci.c $(PDEVH)\
- $(srlx_h) $(stream_h) $(strimpl_h)
-	$(GLCC) $(GLO_)gdevpsci.$(OBJ) $(C_) $(GLSRC)gdevpsci.c
-
-$(DD)psrgb.dev : $(DEVS_MAK) $(psci_) $(GLD)page.dev
-	$(SETPDEV2) $(DD)psrgb $(psci_)
+$(DD)psrgb.dev : $(DEVS_MAK) $(psim_) $(GLD)page.dev
+	$(SETPDEV2) $(DD)psrgb $(psim_)
 
 ### ---------------- Fax encoding ---------------- ###
 

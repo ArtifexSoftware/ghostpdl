@@ -37,6 +37,10 @@
 #include "sstring.h"
 #include "sa85x.h"
 #include "gdevpsdf.h"
+#include "gdevpsu.h"
+
+/* Current ProcSet version */
+#define PSWRITE_PROCSET_VERSION 1
 
 /* ---------------- Device definition ---------------- */
 
@@ -70,14 +74,12 @@ typedef struct psw_image_params_s {
 
 typedef struct gx_device_pswrite_s {
     gx_device_psdf_common;
-    /* Settable parameters */
+    /* LanguageLevel in pswrite_common is settable. */
+    gx_device_pswrite_common_t pswrite_common;
 #define LanguageLevel_default 2.0
 #define psdf_version_default psdf_version_level2
-    float LanguageLevel;
     /* End of parameters */
-    bool ProduceEPS;
     bool first_page;
-    long bbox_position;
     psdf_binary_writer *image_writer;
 #define image_stream image_writer->strm
 #define image_cache_size 197
@@ -141,8 +143,9 @@ const gx_device_pswrite gs_pswrite_device = {
 			     X_DPI, Y_DPI, 3, 24, 255, 255, 256, 256),
     psw_procs,
     psdf_initial_values(psdf_version_default, 1 /*true */ ),	/* (ASCII85EncodePages) */
-    LanguageLevel_default,		/* LanguageLevel */
-    0 /*false*/				/* ProduceEPS */
+    PSWRITE_COMMON_VALUES(LanguageLevel_default, /* LanguageLevel */
+			  0 /*false*/, /* ProduceEPS */
+			  PSWRITE_PROCSET_VERSION /* ProcSet_version */)
 };
 
 const gx_device_pswrite gs_epswrite_device = {
@@ -153,8 +156,9 @@ const gx_device_pswrite gs_epswrite_device = {
 			     X_DPI, Y_DPI, 3, 24, 255, 255, 256, 256),
     psw_procs,
     psdf_initial_values(psdf_version_default, 1 /*true */ ),	/* (ASCII85EncodePages) */
-    LanguageLevel_default,		/* LanguageLevel */
-    1 /*true*/				/* ProduceEPS */
+    PSWRITE_COMMON_VALUES(LanguageLevel_default, /* LanguageLevel */
+			  1 /*true*/, /* ProduceEPS */
+			  PSWRITE_PROCSET_VERSION /* ProcSet_version */)
 };
 
 /* Vector device implementation */
@@ -201,28 +205,12 @@ private const gx_device_vector_procs psw_vector_procs = {
 
 /* ---------------- File header ---------------- */
 
-private const char *const psw_ps_header[] = {
-    "%!PS-Adobe-3.0",
-    "%%Pages: (atend)",
-    0
-};
+/*
+ * NOTE: Increment PSWRITE_PROCSET_VERSION (above) whenever the following
+ * definitions change.
+ */
 
-private const char *const psw_eps_header[] = {
-    "%!PS-Adobe-3.0 EPSF-3.0",
-    0
-};
-
-private const char *const psw_header[] = {
-    "%%EndComments",
-    "%%BeginProlog",
- "% This copyright applies to everything between here and the %%EndProlog:",
-    "/pagesave null def",	/* establish binding */
-    0
-};
-
-private const char *const psw_prolog[] = {
-    "%%BeginResource: procset GS_pswrite_ProcSet",
-    "/GS_pswrite_ProcSet 80 dict dup begin",
+private const char *const psw_procset[] = {
     "/!{bind def}bind def/#{load def}!/N/counttomark #",
 	/* <rbyte> <gbyte> <bbyte> rG - */
 	/* <graybyte> G - */
@@ -270,29 +258,26 @@ private const char *const psw_prolog[] = {
     0
 };
 
-private const char *const psw_1_prolog[] = {
+private const char *const psw_1_procset[] = {
     0
 };
 
-private const char *const psw_1_x_prolog[] = {
+private const char *const psw_1_x_procset[] = {
 	/* <w> <h> <name> <length> <src> |X <w> <h> <data> */
 	/* <w> <h> <name> (<length>|) $X <w> <h> <data> */
     "/|X{exch string readhexstring |=}!/$X{+ @ |X}!",
 	/* - @X <hexsrc> */
     "/@X{{currentfile ( ) readhexstring pop}}!",
-	/* <w> <h> <sizename> PS - */
-    "/PS{1 index where{pop cvx exec pop pop}{pop/setpage where",
-    "{pop pageparams 3{exch pop}repeat setpage}{pop pop}ifelse}ifelse}!",
     0
 };
 
-private const char *const psw_1_5_prolog[] = {
+private const char *const psw_1_5_procset[] = {
 	/* <x> <y> <w> <h> <src> <bpc> Ic - */
     "/Ic{exch Ix false 3 colorimage}!",
     0
 };
 
-private const char *const psw_2_prolog[] = {
+private const char *const psw_2_procset[] = {
 	/* <src> <w> <h> -mark- ... F <g4src> */
 	/* <src> <w> <h> FX <g4src> */
     "/F{/Columns counttomark 3 add -2 roll/Rows exch/K -1/BlackIs1 true>>",
@@ -316,34 +301,7 @@ private const char *const psw_2_prolog[] = {
     0
 };
 
-private const char *const psw_end_prolog[] = {
-    "end readonly def",
-    "%%EndResource",
-    "%%EndProlog",
-    0
-};
-
-private void
-psw_put_lines(FILE *f, const char *const lines[])
-{
-    int i;
-
-    for (i = 0; lines[i] != 0; ++i)
-	fprintf(f, "%s\n", lines[i]);
-}
-
 /* ---------------- Utilities ---------------- */
-
-/* Print the bounding box. */
-private void
-psw_print_bbox(FILE *f, const gs_rect *pbbox)
-{
-    fprintf(f, "%%%%BoundingBox: %d %d %d %d\n",
-	    (int)floor(pbbox->p.x), (int)floor(pbbox->p.y),
-	    (int)ceil(pbbox->q.x), (int)ceil(pbbox->q.y));
-    fprintf(f, "%%%%HiResBoundingBox: %f %f %f %f\n",
-	    pbbox->p.x, pbbox->p.y, pbbox->q.x, pbbox->q.y);
-}
 
 /*
  * Output the file header.  This must write to a file, not a stream,
@@ -354,50 +312,21 @@ psw_begin_file(gx_device_pswrite *pdev, const gs_rect *pbbox)
 {
     FILE *f = pdev->file;
 
-    psw_put_lines(f, (pdev->ProduceEPS ? psw_eps_header : psw_ps_header));
-    if (pbbox)
-	psw_print_bbox(pdev->file, pbbox);
-    else if (ftell(pdev->file) < 0) {	/* File is not seekable. */
-	pdev->bbox_position = -1;
-	fputs("%%BoundingBox: (atend)\n", f);
-	fputs("%%HiResBoundingBox: (atend)\n", f);
-    } else {		/* File is seekable, leave room to rewrite bbox. */
-	pdev->bbox_position = ftell(f);
-	fputs("%...............................................................\n", f);
-	fputs("%...............................................................\n", f);
-    }
-    fprintf(f, "%%%%Creator: %s %ld (%s)\n", gs_product, (long)gs_revision,
-	    pdev->dname);
-    {
-	time_t t;
-	struct tm tms;
-
-	time(&t);
-	tms = *localtime(&t);
-	fprintf(f, "%%%%CreationDate: %d/%02d/%02d %02d:%02d:%02d\n",
-		tms.tm_year + 1900, tms.tm_mon + 1, tms.tm_mday,
-		tms.tm_hour, tms.tm_min, tms.tm_sec);
-    }
-    if (pdev->params.ASCII85EncodePages)
-	fputs("%%DocumentData: Clean7Bit\n", f);
-    if (pdev->LanguageLevel == 2.0)
-	fputs("%%LanguageLevel: 2\n", f);
-    else if (pdev->LanguageLevel == 1.5)
-	fputs("%%Extensions: CMYK\n", f);
-    psw_put_lines(f, psw_header);
-    fprintf(f, "%% %s\n", gs_copyright);
-    psw_put_lines(f, psw_prolog);
-    if (pdev->LanguageLevel < 1.5) {
-	psw_put_lines(f, psw_1_x_prolog);
-	psw_put_lines(f, psw_1_prolog);
-    } else if (pdev->LanguageLevel > 1.5) {
-	psw_put_lines(f, psw_1_5_prolog);
-	psw_put_lines(f, psw_2_prolog);
+    psw_begin_file_header(f, (gx_device *)pdev, pbbox,
+			  &pdev->pswrite_common,
+			  pdev->params.ASCII85EncodePages);
+    psw_print_lines(f, psw_procset);
+    if (pdev->pswrite_common.LanguageLevel < 1.5) {
+	psw_print_lines(f, psw_1_x_procset);
+	psw_print_lines(f, psw_1_procset);
+    } else if (pdev->pswrite_common.LanguageLevel > 1.5) {
+	psw_print_lines(f, psw_1_5_procset);
+	psw_print_lines(f, psw_2_procset);
     } else {
-	psw_put_lines(f, psw_1_x_prolog);
-	psw_put_lines(f, psw_1_5_prolog);
+	psw_print_lines(f, psw_1_x_procset);
+	psw_print_lines(f, psw_1_5_procset);
     }
-    psw_put_lines(f, psw_end_prolog);
+    psw_end_file_header(f);
     return 0;
 }
 
@@ -455,7 +384,7 @@ psw_image_stream_setup(gx_device_pswrite * pdev, bool binary_ok)
     int code;
     bool save = pdev->binary_ok;
 
-    if (pdev->LanguageLevel >= 2 || binary_ok) {
+    if (pdev->pswrite_common.LanguageLevel >= 2 || binary_ok) {
 	pdev->binary_ok = binary_ok;
 	code = psdf_begin_binary((gx_device_psdf *)pdev, pdev->image_writer);
     } else {
@@ -563,7 +492,7 @@ psw_image_write(gx_device_pswrite * pdev, const char *imagestr,
     }
     pprintd4(s, "%d %d %d %d ", x, y, width, height);
     encode = !pdev->binary_ok;
-    if (depth == 1 && width > 16 && pdev->LanguageLevel >= 2) {
+    if (depth == 1 && width > 16 && pdev->pswrite_common.LanguageLevel >= 2) {
 	/*
 	 * We should really look at the statistics of the image before
 	 * committing to using G4 encoding....
@@ -646,56 +575,11 @@ private int
 psw_beginpage(gx_device_vector * vdev)
 {
     stream *s = vdev->strm;
-    long page = vdev->PageCount + 1;
     gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
 
     if (pdev->first_page)
 	psw_begin_file(pdev, NULL);
-    pprintld2(s, "%%%%Page: %ld %ld\n%%%%BeginPageSetup\n", page, page);
-    /*
-     * Adobe's documentation says that page setup must be placed outside the
-     * save/restore that encapsulates the page contents, and that the
-     * showpage must be placed after the restore.  This means that to
-     * achieve page independence, *every* page's setup code must include a
-     * setpagedevice that sets *every* page device parameter that is changed
-     * on *any* page.  Currently, the only such parameter relevant to this
-     * driver is page size, but there might be more in the future.
-     */
-    pputs(s, "GS_pswrite_ProcSet begin\n");
-    if (!pdev->ProduceEPS) {
-	int width = (int)(vdev->width * 72.0 / vdev->HWResolution[0] + 0.5);
-	int height = (int)(vdev->height * 72.0 / vdev->HWResolution[1] + 0.5);
-
-	if (pdev->LanguageLevel > 1.5)
-	    pprintd2(s, "<< /PageSize [%d %d] >> setpagedevice\n",
-		     width, height);
-	else {
-	    typedef struct ps_ {
-		const char *size_name;
-		int width, height;
-	    } page_size;
-	    static const page_size sizes[] = {
-		{"/11x17", 792, 1224},
-		{"/a3", 842, 1190},
-		{"/a4", 595, 842},
-		{"/b5", 501, 709},
-		{"/ledger", 1224, 792},
-		{"/legal", 612, 1008},
-		{"/letter", 612, 792},
-		{"null", 0, 0}
-	    };
-	    const page_size *p = sizes;
-
-	    while (p->size_name[0] == '/' &&
-		   (p->width != width || p->height != height))
-		++p;
-	    pprintd2(s, "%d %d ", width, height);
-	    pprints1(s, "%s PS\n", p->size_name);
-	}
-    }
-    pputs(s, "/pagesave save store 100 dict begin\n");
-    pprintg2(s, "%g %g scale\n%%%%EndPageSetup\nq mark\n",
-	     72.0 / vdev->HWResolution[0], 72.0 / vdev->HWResolution[1]);
+    psw_write_page_header(s, (gx_device *)vdev, &pdev->pswrite_common, true);
     return 0;
 }
 
@@ -940,22 +824,6 @@ psw_open(gx_device * dev)
     return 0;
 }
 
-/*
- * Write the page trailer.  We do this directly to the file, rather than to
- * the stream, because we may have to do it during finalization.
- */
-private void
-psw_write_page_trailer(gx_device *dev, int num_copies, int flush)
-{
-    gx_device_vector *const vdev = (gx_device_vector *)dev;
-    FILE *f = vdev->file;
-
-    if (num_copies != 1)
-	fprintf(f, "userdict /#copies %d put\n", num_copies);
-    fprintf(f, "cleartomark end end pagesave restore %s\n%%%%PageTrailer\n",
-	    (flush ? "showpage" : "copypage"));
-}
-
 /* Wrap up ("output") a page. */
 private int
 psw_output_page(gx_device * dev, int num_copies, int flush)
@@ -965,7 +833,7 @@ psw_output_page(gx_device * dev, int num_copies, int flush)
     stream *s = gdev_vector_stream(vdev);
 
     sflush(s);			/* sync stream and file */
-    psw_write_page_trailer(dev, num_copies, flush);
+    psw_write_page_trailer(vdev->file, num_copies, flush);
     vdev->in_page = false;
     pdev->first_page = false;
     gdev_vector_reset(vdev);
@@ -990,7 +858,6 @@ psw_close(gx_device * dev)
     if (pdev->first_page & !vdev->in_page) {
 	/* Nothing has been written.  Write the file header now. */
 	psw_begin_file(pdev, &bbox);
-	fputs("%%Trailer\n%%Pages: 0\n", f);
     } else {
 	/* If there is an incomplete page, complete it now. */
 	if (vdev->in_page) {
@@ -1002,22 +869,11 @@ psw_close(gx_device * dev)
 
 	    if (s->swptr != s->cbuf - 1)
 		sflush(s);
-	    psw_write_page_trailer(dev, 1, 1);
+	    psw_write_page_trailer(vdev->file, 1, 1);
 	    dev->PageCount++;
 	}
-	fprintf(f, "%%%%Trailer\n%%%%Pages: %ld\n", dev->PageCount);
-	if (pdev->bbox_position >= 0) {
-	    long save_pos = ftell(f);
-
-	    fseek(f, pdev->bbox_position, SEEK_SET);
-	    psw_print_bbox(f, &bbox);
-	    fputc('%', f);
-	    fseek(f, save_pos, SEEK_SET);
-	} else
-	    psw_print_bbox(f, &bbox);
     }
-    if (!pdev->ProduceEPS)
-	fputs("%%EOF\n", f);
+    psw_end_file(f, dev, &pdev->pswrite_common, &bbox);
     gs_free_object(pdev->v_memory, pdev->image_writer,
 		   "psw_close(image_writer)");
     pdev->image_writer = 0;
@@ -1036,7 +892,7 @@ psw_get_params(gx_device * dev, gs_param_list * plist)
 
     if (code < 0)
 	return code;
-    if ((ecode = param_write_float(plist, "LanguageLevel", &pdev->LanguageLevel)) < 0)
+    if ((ecode = param_write_float(plist, "LanguageLevel", &pdev->pswrite_common.LanguageLevel)) < 0)
 	return ecode;
     return code;
 }
@@ -1049,7 +905,7 @@ psw_put_params(gx_device * dev, gs_param_list * plist)
     int code;
     gs_param_name param_name;
     gx_device_pswrite *const pdev = (gx_device_pswrite *)dev;
-    float ll = pdev->LanguageLevel;
+    float ll = pdev->pswrite_common.LanguageLevel;
     psdf_version save_version = pdev->version;
 
     switch (code = param_read_float(plist, (param_name = "LanguageLevel"), &ll)) {
@@ -1085,7 +941,7 @@ psw_put_params(gx_device * dev, gs_param_list * plist)
 	pdev->version = save_version;
 	return code;
     }
-    pdev->LanguageLevel = ll;
+    pdev->pswrite_common.LanguageLevel = ll;
     return code;
 }
 
@@ -1327,7 +1183,7 @@ psw_begin_image(gx_device * dev,
 	 */
 	switch (index) {
 	case gs_color_space_index_Indexed: {
-	    if (pdev->LanguageLevel < 2 || pcs->params.indexed.use_proc ||
+	    if (pdev->pswrite_common.LanguageLevel < 2 || pcs->params.indexed.use_proc ||
 		pim->Decode[0] != 0 ||
 		pim->Decode[1] != (1 << pim->BitsPerComponent) - 1
 		) {
@@ -1360,7 +1216,7 @@ psw_begin_image(gx_device * dev,
 	    goto fail;
 	}
     }
-    if (pdev->LanguageLevel < 2 && !pim->ImageMask) {
+    if (pdev->pswrite_common.LanguageLevel < 2 && !pim->ImageMask) {
 	/*
 	 * Restrict ourselves to Level 1 images: bits per component <= 8,
 	 * not indexed.
