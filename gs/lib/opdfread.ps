@@ -116,6 +116,9 @@ currentdict end def
 /PDFColorSpaces 50 dict def
 /FuncDataReader 10 dict def
 
+% Debug data :
+/StreamDumperBuffer //PDFR_DEBUG { 1024 } { 1 } ifelse string def
+
 % We need some structures in local VM, put then into the userdict :
 currentglobal false setglobal
 userdict /PDFR_InitialGS gstate put
@@ -420,8 +423,6 @@ currentdict end readonly def
     } ifelse
   } bind
 >> def
-
-/StreamDumperBuffer //PDFR_DEBUG { 1024 } { 1 } ifelse string def
 
 /MakeStreamDumper % <file> MakeStreamDumper <file>
 { % Debug purpose only.
@@ -1074,9 +1075,22 @@ currentdict end readonly def
   } if
 } bind def
 
+/SubstitutePDFColorSpaceRec  % <array> SubstitutePDFColorSpace <array>
+{ 0 % Will be bound below
+  exec
+} bind def
+
 /SubstitutePDFColorSpace % <array> SubstitutePDFColorSpace <array>
 { { 
     dup 0 get /Pattern eq {
+      dup length 1 gt {
+        dup 1 get xcheck {
+          dup 1 get exec
+	  1 index exch 1 exch 
+	  //SubstitutePDFColorSpaceRec exec
+	  put
+        } if
+      } if
       exit
     } if
     dup 0 get /Indexed eq {
@@ -1086,16 +1100,16 @@ currentdict end readonly def
       exit
     } if
     dup 0 get /CalGray eq {
-      1 get						% n dict
+      1 get						% dict
       dup /Gamma //knownget exec {
 	[ exch /exp load ] cvx
 	1 index exch /DecodeLMN exch put
       } if				
-      [ exch /CIEBasedA exch ]				% n []
+      [ exch /CIEBasedA exch ]				% []
       exit
     } if
     dup 0 get /CalRGB eq {
-      1 get						% n dict
+      1 get						% dict
       dup /Matrix //knownget exec { 
 	1 index exch /MatrixLMN exch put
       } if
@@ -1110,12 +1124,40 @@ currentdict end readonly def
 	3 array astore
 	1 index exch /DecodeLMN exch put
       } if				
-      [ exch /CIEBasedABC exch ]			% n []
+      [ exch /CIEBasedABC exch ]			% []
       exit
+    } if
+    dup 0 get /Lab eq {
+      1 get						% dict
+      begin
+        pstack
+        currentdict /Range //knownget exec { aload pop } { -100 100 -100 100 } ifelse
+	  0 100 6 2 roll 6 array astore 
+          /RangeABC exch def
+        /DecodeABC [{16 add 116 div} bind {500 div} bind {200 div} bind] def
+        /MatrixABC [1 1 1 1 0 0 0 0 -1] def
+        { dup 6 29 div ge {dup dup mul mul} {4 29 div sub 108 841 div mul} ifelse }
+        /DecodeLMN [
+          % Store white point implicitly inside procedures.
+          [ 3 index aload pop WhitePoint 0 get /mul load ] cvx
+          [ 4 index aload pop WhitePoint 1 get /mul load ] cvx
+          [ 5 index aload pop WhitePoint 2 get /mul load ] cvx
+        ] def pop
+	//PDFR_DEBUG {
+	  (Constructed from Lab <<) =
+	  currentdict { exch = == } forall
+	  (>>) =
+	} if
+        [ /CIEBasedABC currentdict ]			% []
+      end
+      exit
+      pop
     } if
     mark exch (Unimplemented color space ) exch //error exec
   } loop
 } bind def
+
+//SubstitutePDFColorSpaceRec 0 //SubstitutePDFColorSpace put
 
 /ResolveArrayElement  % <array> <index> ResolveArrayElement <array>
 { 2 copy get xcheck {
