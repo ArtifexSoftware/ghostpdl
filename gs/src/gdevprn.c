@@ -84,13 +84,27 @@ gdev_prn_setup_as_command_list(gx_device *pdev, gs_memory_t *buffer_memory,
     bool reallocate = *the_memory != 0;
     byte *base;
 
-    /* Try to allocate based simply on param-requested buffer size */
-    for ( space = space_params->BufferSpace; ; ) {
-	base = (reallocate ?
+    space = space_params->BufferSpace;
+    /* Adjust existing size (reallocate) or get new Buffer. If can't get */
+    /* requested size, and not constrained to 'exact', reduce space till */
+    /* allocation succeeds.						 */
+    for ( ; ; ) {
+	if (reallocate) 	    
+#if DO_NOT_REDUCE_BUFFER_SPACE
+    	    /* If 'reallocate' to smaller size, don't free up memory to	*/
+	    /* avoid creating sandbar that wouldn't allow the resize	*/
+	    /* back to larger size 					*/
+	    base = (space <= gs_object_size(buffer_memory, *the_memory)) ?
+		*the_memory :		/* just reuse the space */
 		gs_resize_object(buffer_memory, *the_memory, space,
-				 "cmd list buffer") :
-		gs_alloc_bytes(buffer_memory, space,
-			       "cmd list buffer"));
+				"cmd list buffer");
+#else	/* free up any space beyond what is needed			*/
+	    base = gs_resize_object(buffer_memory, *the_memory, space,
+				"cmd list buffer");
+#endif
+	else
+	    base = gs_alloc_bytes(buffer_memory, space,
+				"cmd list buffer");
 	if (base != 0)
 	    break;
 	if (bufferSpace_is_exact || (space >>= 1) < PRN_MIN_BUFFER_SPACE)
