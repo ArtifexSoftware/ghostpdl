@@ -307,7 +307,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		 */
 		if (csp >= cstack + 3) {
 		    check_first_operator(csp > cstack + 3);
-		    code = gs_type1_seac(pcis, cstack, pcis->lsb.x, ipsp);
+		    code = gs_type1_seac(pcis, cstack, 0, ipsp);
 		    if (code < 0)
 			return code;
 		    clear;
@@ -345,7 +345,17 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		return code;
 	    case cx_rmoveto:
 		/* See vmoveto above re closing the subpath. */
-		check_first_operator(csp > cstack + 1);
+		check_first_operator(!((csp - cstack) & 1));
+		if (csp > cstack + 1) {
+		  /* Some Type 2 charstrings omit the vstemhm operator before rmoveto, 
+		     even though this is only allowed before hintmask and cntrmask.
+		     Thanks to Felix Pahl.
+		   */
+		  type2_vstem(pcis, csp - 2, cstack);
+		  cstack [0] = csp [-1];
+		  cstack [1] = csp [ 0];
+		  csp = cstack + 1;
+		}
                 code = t1_hinter__rmoveto(h, csp[-1], *csp);
 		goto move;
 	    case cx_hmoveto:
@@ -416,9 +426,6 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		 * A hintmask at the beginning of the CharString is
 		 * equivalent to vstemhm + hintmask.  For simplicity, we use
 		 * this interpretation everywhere.
-		 *
-		 * Even though the Adobe documentation doesn't say this,
-		 * it appears that the same holds true for cntrmask.
 		 */
 	    case c2_cntrmask:
 		check_first_operator(!((csp - cstack) & 1));
