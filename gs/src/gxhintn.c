@@ -396,10 +396,10 @@ private void  t1_hinter__paint_raster_grid(t1_hinter * this)
 #ifdef VD_TRACE
     int i;
     double j; /* 'long' can overflow */
-    unsigned long c = RGB(192,192,192);
+    unsigned long c0 = RGB(192, 192, 192), c1 = RGB(64, 64, 64);
     t1_hinter_space_coord min_ox, max_ox, min_oy, max_oy;
-    long div_x = this->g2o_fraction * this->subpixels_x; 
-    long div_y = this->g2o_fraction * this->subpixels_y; 
+    long div_x = this->g2o_fraction, div_xx = div_x * this->subpixels_x; 
+    long div_y = this->g2o_fraction, div_yy = div_y * this->subpixels_y; 
     long ext_x = div_x * 5;
     long ext_y = div_y * 5;
 
@@ -424,17 +424,20 @@ private void  t1_hinter__paint_raster_grid(t1_hinter * this)
     /* Paint columns : */
     for (j = min_ox / div_x * div_x; j < (double)max_ox + div_x; j += div_x) {
         t1_glyph_space_coord gx0, gy0, gx1, gy1;
+	bool pix = ((int)j / div_xx * div_xx == (int)j);
 
         o2g_float(this, (int)j, min_oy, &gx0, &gy0); /* o2g may overflow here due to ext. */
         o2g_float(this, (int)j, max_oy, &gx1, &gy1);
-        vd_bar(gx0, gy0, gx1, gy1, 1, (!j ? 0 : c));
+        vd_bar(gx0, gy0, gx1, gy1, 1, (!j ? 0 : pix ? c1 : c0));
     }
     /* Paint rows : */
     for (j = min_oy / div_y * div_y; j < max_oy + div_y; j += div_y) {
         t1_glyph_space_coord gx0, gy0, gx1, gy1;
+	bool pix = ((int)j / div_yy * div_yy == (int)j);
+
         o2g_float(this, min_ox, (int)j, &gx0, &gy0);
         o2g_float(this, max_ox, (int)j, &gx1, &gy1);
-        vd_bar(gx0, gy0, gx1, gy1, 1, (!j ? 0 : c));
+        vd_bar(gx0, gy0, gx1, gy1, 1, (!j ? 0 : pix ? c1 : c0));
     }
 #endif
 }
@@ -1354,8 +1357,8 @@ private t1_zone * t1_hinter__find_zone(t1_hinter * this, t1_glyph_space_coord po
 
 private void t1_hinter__align_to_grid(t1_hinter * this, int32 unit, t1_glyph_space_coord *x, t1_glyph_space_coord *y)
 {   if (unit > 0) {
-	long div_x = unit * this->subpixels_x;
-	long div_y = unit * this->subpixels_y;
+	long div_x = unit * (this->align_to_subpixels ? 1 : this->subpixels_x);
+	long div_y = unit * (this->align_to_subpixels ? 1 : this->subpixels_y);
         t1_glyph_space_coord gx = *x, gy = *y;
         t1_hinter_space_coord ox, oy;
         int32 dx, dy;
