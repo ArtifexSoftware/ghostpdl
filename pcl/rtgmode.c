@@ -1,58 +1,3 @@
-/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights
-   reserved.  Unauthorized use, copying, and/or distribution
-   prohibited.  */
-
-/* rtgmode.c - PCL graphics (raster) mode */
-#include "gx.h"
-#include "math_.h"
-#include "gsmatrix.h"
-#include "gscoord.h"
-#include "gsstate.h"
-#include "pcstate.h"
-#include "pcpatxfm.h"
-#include "pcindxed.h"
-#include "pcpalet.h"
-#include "pcursor.h"
-#include "pcdraw.h"
-#include "rtraster.h"
-#include "rtrstcmp.h"
-#include "rtgmode.h"
-
-/*
- * Intersect a rectangle with the positive quadrant.
- */
-  private void
-intersect_with_positive_quadrant(
-    gs_rect *   prect
-)
-{
-    if (prect->p.x < 0.0) {
-        prect->p.x = 0.0;
-        prect->q.x = (prect->q.x < 0.0 ? 0.0 : prect->q.x);
-    }
-    if (prect->p.y < 0.0) {
-        prect->p.y = 0.0;
-        prect->q.y = (prect->q.y < 0.0 ? 0.0 : prect->q.y);
-    }
-}
-
-/*
- * Get the effective printing region in raster space
- */
-  private void
-get_raster_print_rect(
-    const gs_rect *      plp_print_rect,
-    gs_rect *            prst_print_rect,
-    const gs_matrix *    prst2lp
-)
-{
-    gs_matrix            lp2rst;
-
-    pcl_invert_mtx(prst2lp, &lp2rst);
-    pcl_transform_rect(plp_print_rect, prst_print_rect, &lp2rst);
-    intersect_with_positive_quadrant(prst_print_rect);
-}
-
 /*
  * Enter raster graphics mode.
  *
@@ -309,9 +254,9 @@ pcl_end_graphics_mode(
     /* transform the new point back to "pseudo print direction" space */
     pcl_invert_mtx(&(pcs->xfm_state.pd2dev_mtx), &dev2pd);
     gs_point_transform(cur_pt.x, cur_pt.y, &dev2pd, &cur_pt);
-    pcl_set_cap_x(pcs, (coord)cur_pt.x, false, false);
+    pcl_set_cap_x(pcs, (coord)(cur_pt.x + 0.5), false, false);
     return pcl_set_cap_y( pcs,
-                          (coord)cur_pt.y - pcs->margins.top,
+                          (coord)(cur_pt.y + 0.5) - pcs->margins.top,
                           false,
                           false,
                           false
