@@ -96,42 +96,6 @@ hpgl_NP(
 }
 
 /*
- * CR [b_red, w_red, b_green, w_green, b_blue, w_blue];
- */
-  private int
-hpgl_CR(
-    hpgl_args_t *   pargs,
-    hpgl_state_t *  pgls
-)
-{
-    hpgl_real_t     range[6];
-    int             i;
-
-    if ( pgls->personality == pcl5e )
-	return 0;
-
-    /* output any current path */
-    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
-
-    range[0] = range[2] = range[4] = 0;
-    range[1] = range[3] = range[5] = 255;
-    for (i = 0; (i < 6) && hpgl_arg_c_real(pgls->memory, pargs, &range[i]); ++i)
-	;
-    if ( (range[0] == range[1]) ||
-         (range[2] == range[3]) ||
-         (range[4] == range[5])   )
-	return e_Range;
-    return pcl_palette_CR( pgls,
-                           (floatp)range[1],
-                           (floatp)range[3],
-                           (floatp)range[5],
-                           (floatp)range[0],
-                           (floatp)range[2],
-                           (floatp)range[4]
-                           );
-}
-
-/*
  * Initialization. There is no reset or copy command, as those operations are
  * carried out by the palette mechanism.
  */
@@ -143,7 +107,6 @@ pgcolor_do_registration(
 {
     /* Register commands */
     DEFINE_HPGL_COMMANDS(mem)
-    HPGL_COMMAND('C', 'R', hpgl_CR, hpgl_cdf_pcl_rtl_both),
     HPGL_COMMAND('N', 'P', hpgl_NP, hpgl_cdf_pcl_rtl_both),
     HPGL_COMMAND('P', 'C', hpgl_PC, hpgl_cdf_pcl_rtl_both),
     END_HPGL_COMMANDS

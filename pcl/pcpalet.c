@@ -317,42 +317,6 @@ push_pop_palette(
 
 
 /*
- * Set the normalization values for an indexed color space. This is needed
- * only for the GL/2 CR command; PCL sets normalization information via the
- * configure image data command, which builds a new indexed color space.
- *
- * Returns 0 on success, < 0 in the event of an error.
- */
-  int
-pcl_palette_CR(
-    pcl_state_t *   pcs,
-    floatp          wht0,
-    floatp          wht1,
-    floatp          wht2,
-    floatp          blk0,
-    floatp          blk1,
-    floatp          blk2
-)
-{
-    int             code = unshare_palette(pcs);
-
-    /* if the default color space must be built, it is fixed, so don't bother */
-    if (pcs->ppalet->pindexed == 0)
-        return code;
-
-    if (code == 0)
-        code = pcl_cs_indexed_set_norm_and_Decode( &(pcs->ppalet->pindexed),
-                                                   wht0,
-                                                   wht1,
-                                                   wht2,
-                                                   blk0,
-                                                   blk1,
-                                                   blk2
-                                                   );
-    return code;
-}
-
-/*
  * Set the number of entries in a color palette. This is needed only for the
  * GL/2 NP command; PCL sets the number of entries in a palette via the
  * configure image data command, which creates a new indexed color space.
