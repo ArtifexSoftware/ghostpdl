@@ -614,12 +614,9 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	gx_path_free(&path_intersection, "shading_fill_path_intersection");
 	gx_cpath_free(&cpath_intersection, "shading_fill_cpath_intersection");
     } else {
-	if ((params->adjust.x | params->adjust.y) == 0)
-	    vd_get_dc('f');
-	else
-	    vd_get_dc('F');
+	vd_get_dc( (params->adjust.x | params->adjust.y)  ? 'F' : 'f');
 	if (vd_enabled) {
-	    vd_set_shift(-700, -700);
+	    vd_set_shift(0, 0);
 	    vd_set_scale(VD_SCALE);
 	    vd_set_origin(0, 0);
 	    vd_erase(RGB(192, 192, 192));
@@ -874,7 +871,6 @@ init_contour_cursor(line_list *ll, contour_cursor *q)
 
 	assert(gx_flattened_iterator__init(&q->fi, q->prev->pt.x, q->prev->pt.y, 
 					s, k, false));
-	q->first_flattened = true;
     } else {
 	q->dir = compute_dir(ll, q->prev->pt.y, q->pseg->pt.y);
 	gx_flattened_iterator__init_line(&q->fi, 
@@ -889,46 +885,48 @@ scan_contour(line_list *ll, contour_cursor *q)
     contour_cursor p;
     segment *pseg;
     int code;
-    bool only_horizontal = true;
+    bool only_horizontal = true, saved = false;
+    contour_cursor save_q;
 
+    save_q.dir = 2;
+    ll->main_dir = DIR_HORIZONTAL;
     for (; q->prev != q->pfirst; q->pseg = q->prev, q->prev = q->prev->prev) {
 	init_contour_cursor(ll, q);
 	if (!q->monotonic) {
 	    while(gx_flattened_iterator__next_filtered2(&q->fi)) {
 		q->first_flattened = false;
+		q->dir = compute_dir(ll, q->fi.fy0, q->fi.fy1);
+		ll->main_dir = (q->dir == DIR_DOWN ? DIR_DOWN : 
+				q->dir == DIR_UP ? DIR_UP : ll->main_dir);
 	    }
-	    q->more_flattened = false;
 	    q->dir = compute_dir(ll, q->fi.fy0, q->fi.fy1);
+	    q->more_flattened = false;
 	}
-#	if !CURVED_TRAPEZOID_FILL
+	ll->main_dir = (q->dir == DIR_DOWN ? DIR_DOWN : 
+			q->dir == DIR_UP ? DIR_UP : ll->main_dir);
+	if (!CURVED_TRAPEZOID_FILL || !ll->fill_by_trapezoids || 
+		ll->main_dir != DIR_HORIZONTAL) {
 	    only_horizontal = false;
 	    break;
-#	else
-	    if (!ll->fill_by_trapezoids) {
-		only_horizontal = false;
-		break;
-	    }
-	    if (q->dir != DIR_HORIZONTAL && q->dir != 2) {
-		only_horizontal = false;
-		break;
-	    }
-#	endif
+	}
+	if (ll->fill_by_trapezoids && !saved && q->dir != 2) {
+	    save_q = *q;
+	    saved = true;
+	}
     }
-    ll->main_dir = q->dir;
+    if (saved)
+	*q = save_q;
     for (pseg = q->pfirst; pseg != q->plast; pseg = pseg->next) {
 	p.prev = pseg;
 	p.pseg = pseg->next;
-	if (!ll->fill_by_trapezoids || only_horizontal
+	if (!ll->fill_by_trapezoids || !ll->pseudo_rasterization || only_horizontal
 		|| p.prev->pt.x != p.pseg->pt.x || p.prev->pt.y != p.pseg->pt.y 
 		|| p.pseg->type == s_curve) {
 	    init_contour_cursor(ll, &p);
 	    p.more_flattened = gx_flattened_iterator__next_filtered2(&p.fi);
 	    p.dir = compute_dir(ll, p.fi.fy0, p.fi.fy1);
 	    if (p.monotonic && p.dir == DIR_HORIZONTAL && 
-		    (
-#			if CURVED_TRAPEZOID_FILL0_COMPATIBLE
-			    !ll->pseudo_rasterization || !CURVED_TRAPEZOID_FILL || 
-#			endif
+		    (!ll->pseudo_rasterization || !CURVED_TRAPEZOID_FILL || 
 		     only_horizontal) &&
 		    fixed2int_pixround(p.pseg->pt.y - ll->adjust_below) <
 		    fixed2int_pixround(p.pseg->pt.y + ll->adjust_above)) {
@@ -1019,7 +1017,7 @@ add_y_list(gx_path * ppath, line_list *ll)
 	    ll->close_count++;
 	}
 	prev = plast->prev;
-	if (ll->fill_by_trapezoids && prev != pfirst &&
+	if (ll->pseudo_rasterization && prev != pfirst &&
 		prev->pt.x == plast->pt.x && prev->pt.y == plast->pt.y) {
 	    plast = prev;
 	    prev = prev->prev;
@@ -1571,32 +1569,37 @@ move_al_by_y(line_list *ll, fixed y1, fixed y)
     active_line *alp, *nlp;
 
 #   if CURVED_TRAPEZOID_FILL
-    for (alp = ll->x_list; alp != 0; alp = alp->next) {
-	assert(alp->end.y >= y && alp->start.y <= y);
-	if (alp->end.y == y1)
-	    if (alp->more_flattened) {
-		step_al(alp, true);
-		alp->x_next = alp->start.x;
-	    }
-    }
-#   endif
-    for (x = min_fixed, alp = ll->x_list; alp != 0; alp = nlp) {
+    for (alp = ll->x_list; alp != 0; alp = nlp) {
+	bool noend = false;
 	alp->x_current = alp->x_next;
 
 	nlp = alp->next;
-	if (
-#	    if CURVED_TRAPEZOID_FILL
-		alp->end.y > y1 
-#	    else
-		alp->end.y != y1 
-#	    endif
-		|| !end_x_line(alp, ll, true)) {
+	assert(alp->end.y >= y && alp->start.y <= y);
+	if (alp->end.y == y1 && alp->more_flattened) {
+	    step_al(alp, true);
+	    alp->x_current = alp->x_next = alp->start.x;
+	    noend = (alp->end.y >= alp->start.y);
+	}
+	if (alp->end.y > y1 || noend || !end_x_line(alp, ll, true)) {
 	    if (alp->x_next <= x)
 		resort_x_line(alp);
 	    else
 		x = alp->x_next;
 	}
     }
+#   else
+    for (x = min_fixed, alp = ll->x_list; alp != 0; alp = nlp) {
+	alp->x_current = alp->x_next;
+
+	nlp = alp->next;
+	if (alp->end.y != y1 || !end_x_line(alp, ll, true)) {
+	    if (alp->x_next <= x)
+		resort_x_line(alp);
+	    else
+		x = alp->x_next;
+	}
+    }
+#   endif
 }
 
 #if CURVED_TRAPEZOID_FILL
