@@ -453,17 +453,25 @@ end
 /.CheckResource
 	{ true
 	} bind
+/.vmused {
+		% - .vmused <usedvalue>
+		% usedvalue = vmstatus in global + vmstatus in local.
+  0 2 {
+    .currentglobal not .setglobal
+    vmstatus pop exch pop add
+  } repeat
+} bind def
 /.DoLoadResource {
 		% .LoadResource may push entries on the operand stack.
 		% It is an undocumented feature of Adobe implementations,
 		% which we must match for the sake of some badly written
 		% font downloading code, that such entries are popped
 		% automatically.
-	count 1 index cvlit vmstatus pop exch pop
+	count 1 index cvlit .vmused
 		% Stack: key count litkey memused
 	{.LoadResource} 4 1 roll 4 .execn
 		% Stack: ... count key memused
-	vmstatus pop exch pop exch sub
+	.vmused exch sub
 	1 index .getvminstance not {
 	  pop dup /undefinedresource signalerror	% didn't load
 	} if
