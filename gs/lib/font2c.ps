@@ -204,7 +204,7 @@ end
     } bind def
 % Write a packed string/name/null array.
    /wsna	% <name> <(string|name|null)*> wsna -
-    { (\tstatic const char ) ws exch wt ([] = {) wl
+    { (\tstatic const unsigned char ) ws exch wt ([] = {) wl
       { wsn } forall
       (\t0\n};) wl
     } bind def
@@ -292,11 +292,11 @@ end def
       /packedarraytype
 	/arraytype load def
       /realtype
-       { (\tmake_real\(&) ws exch wt (, ) ws
+       { (\tmake_real\(&) ws exch wt (, (float)) ws
          wt (\);) wl true
        } bind def
       /stringtype
-       { ({\tstatic const char s_[] = ) ws
+       { ({\tstatic const unsigned char s_[] = ) ws
          dup dup can_wcs { wcs } { wcca } ifelse
 	 (;) wl
 	 (\tmake_const_string\(&) ws exch wt
@@ -360,7 +360,7 @@ end def
      { { { type dup /nulltype eq exch /stringtype eq or } isall }
        { ({) ws dup (sa_) exch wsna
 	 (\tcode = (*pprocs->string_array_create)\(i_ctx_p, &) ws exch wt
-	 (, sa_, ) ws dup length wt (, ) ws wpa (\);) wl
+	 (, \(const char *\)sa_, ) ws dup length wt (, ) ws wpa (\);) wl
 	 (\tif ( code < 0 ) return code;) wl
 	 (}) wl true
        }
@@ -369,7 +369,7 @@ end def
      { { { type /nametype eq } isall }
        { ({) ws dup (na_) exch wsna
 	 (\tcode = (*pprocs->name_array_create)\(i_ctx_p, &) ws 1 index wt
-	 (, na_, ) ws dup length wt (\);) wl
+	 (, \(const char *\)na_, ) ws dup length wt (\);) wl
 	 (\tif ( code < 0 ) return code;) wl
 	 wap (}) wl true
        }
@@ -378,11 +378,11 @@ end def
      { { iswproc }
        { dup cvos
 		% Stack: name proc string
-	 ({\tstatic const char s_[] = ) ws
+	 ({\tstatic const unsigned char s_[] = ) ws
          dup dup can_wcs { wcs } { wcca } ifelse
 	 (;) wl
 	 (\tcode = (*pprocs->ref_from_string)\(i_ctx_p, &) ws 2 index wt
-	 (, s_, ) ws length wt (\);) wl
+	 (, \(const char *\)s_, ) ws length wt (\);) wl
 	 (\tif ( code < 0 ) return code;) wl
 	 wap (}) wl true
 	 wtempname deletefile
@@ -412,7 +412,7 @@ end def
       (\t { 0, 0, ) ws length wt (, ) ws 3 -1 roll wt (, ) ws
       dup wpa (, ) ws dup wva ( };) wl pop
       (\tcode = \(*pprocs->ref_dict_create\)\(i_ctx_p, &) ws wt
-      (, &keys_, str_keys_, v_\);) wl
+      (, &keys_, \(const char *\)str_keys_, v_\);) wl
       (\tif ( code < 0 ) return code;) wl
       (}) wl
       (}) wl
@@ -482,11 +482,11 @@ end def
    /CharStrings
     { ({) wl
       dup wcdkeys
-      (static const char values_[] = {) wl
+      (static const unsigned char values_[] = {) wl
        { wsn } cdforall
       (\t0\n};) wl
       (\tcode = \(*pprocs->string_dict_create\)\(i_ctx_p, &) ws wt
-      (, &keys_, str_keys_, values_\);) wl
+      (, &keys_, (const char *)str_keys_, \(const char *\)values_\);) wl
       (\tif ( code < 0 ) return code;) wl
       (}) wl
     } bind def
@@ -497,7 +497,7 @@ end def
       (static const ref_(float) values_[] = {) wl
       dup { (\t) ws wnums () wl } cdforall
       (\t0\n};) wl
-      (static const char lengths_[] = {) wl
+      (static const unsigned char lengths_[] = {) wl
        { (\t) ws dup isnumber
 	  { pop 0 }
 	  { length 1 add }
