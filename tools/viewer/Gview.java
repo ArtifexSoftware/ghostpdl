@@ -103,6 +103,7 @@ public class Gview
     private java.awt.MenuItem           menuZoom25;
     private java.awt.MenuItem           menuZoom72;
     private java.awt.MenuItem           menuZoom100;
+    private java.awt.MenuItem           menuZoom150;
     private java.awt.MenuItem           menuZoom300;
     private java.awt.MenuItem           menuZoom600;
     private java.awt.MenuItem           menuZoom1200;
@@ -212,8 +213,7 @@ public class Gview
 	menuOptTextAntiAlias.setLabel("TextAntiAlias");
         menuOptTextAntiAlias.addItemListener(new java.awt.event.ItemListener() {
 		public void itemStateChanged(java.awt.event.ItemEvent evt) {
-		    pickle.setTextAlpha( 
-					!menuOptTextAntiAlias.getState() );
+		    pickle.setTextAlpha( ! pickle.getTextAlpha() );
 		}
 	    }
 				       );
@@ -228,7 +228,6 @@ public class Gview
 		    public void itemStateChanged(java.awt.event.ItemEvent evt) {
 			// toggle rtl mode state 
 			pickle.setRTL( ! pickle.getRTL() );
-			// menuOptRTLMode.setEnabled(pickle.getRTL());
 		    }
 		}
 					   );
@@ -393,6 +392,17 @@ public class Gview
 				     );
 	menuZoomToDPI.add(menuZoom100);
 
+        menuZoom150 = new java.awt.MenuItem();
+	menuZoom150.setLabel("150 dpi");
+	menuZoom150.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+		    zoomToRes(150.0);
+		    menuDPI.setLabel("dpi: " + desiredRes);
+                }
+            }
+				     );
+	menuZoomToDPI.add(menuZoom150);
+
         menuZoom300 = new java.awt.MenuItem();
 	menuZoom300.setLabel("300 dpi");
 	menuZoom300.addActionListener(new java.awt.event.ActionListener() {
@@ -530,7 +540,7 @@ public class Gview
 	    popup.show(this, 50, 50);
 	    return;
 	}
-	else {
+	else { // default keystroke behaviour, brings up menu
 	   popup.show(this, 50, 50);
            return;
 	}
@@ -851,19 +861,8 @@ public class Gview
 				+ " , " + resY
 				);
 	}
-
-        String options =
-	    " -dViewTransX="
-	    + tx
-	    + " -dViewTransY="
-	    + ty
-	    + " -dViewScaleX="
-	    + sx
-	    + " -dViewScaleY="
-	    + sy;
-	if ( debug ) System.out.println( options );
         pickle.setRes( resX, resY );
-        pickle.setDeviceOptions( options  );
+        pickle.setTranslateScaleOptions( tx, ty, sx, sy  );
 	// disable lookahead for zoom and translate
         pickle.startProduction( pageNumber, false);
     }
@@ -871,12 +870,22 @@ public class Gview
     /** main program */
     public static void main( String[] args )
     {
-	if (args.length < 1) {
-	    args = new String[1];
-	    args[0] = new String("GhostPrinter.pcl");
+	Gview view = new Gview();
+
+	if (args.length < 1) {  
+	    File file = new File("GhostPrinter.pcl");
+	    if (file.exists()) {
+		// open demo file
+		args = new String[1];
+		args[0] = new String("GhostPrinter.pcl");
+	    }
 	}
 	System.out.print(usage());
-	Gview view = new Gview();
+
+	if (args.length < 1) {
+	    // no demo file start with file open
+	    view.fileOpen();
+	}
         view.runMain(args);
     }
 
