@@ -175,14 +175,14 @@ bbox_close_device(gx_device * dev)
 
 /* Bounding box utilities */
 
-private void near
+private void
 bbox_initialize(gs_fixed_rect * pr)
 {
     pr->p.x = pr->p.y = max_fixed;
     pr->q.x = pr->q.y = min_fixed;
 }
 
-private void near
+private void
 bbox_add_rect(gs_fixed_rect * pr, fixed x0, fixed y0, fixed x1, fixed y1)
 {
     if (x0 < pr->p.x)
@@ -194,12 +194,12 @@ bbox_add_rect(gs_fixed_rect * pr, fixed x0, fixed y0, fixed x1, fixed y1)
     if (y1 > pr->q.y)
 	pr->q.y = y1;
 }
-private void near
+private void
 bbox_add_point(gs_fixed_rect * pr, fixed x, fixed y)
 {
     bbox_add_rect(pr, x, y, x, y);
 }
-private void near
+private void
 bbox_add_int_rect(gs_fixed_rect * pr, int x0, int y0, int x1, int y1)
 {
     bbox_add_rect(pr, int2fixed(x0), int2fixed(y0), int2fixed(x1),
@@ -229,6 +229,14 @@ void
 gx_device_bbox_fwd_open_close(gx_device_bbox * dev, bool forward_open_close)
 {
     dev->forward_open_close = forward_open_close;
+}
+
+/* Release a bounding box device. */
+void
+gx_device_bbox_release(gx_device_bbox *dev)
+{
+    /* Just release the reference to the target. */
+    dev->target = NULL;
 }
 
 /* Read back the bounding box in 1/72" units. */
