@@ -1137,61 +1137,21 @@ PDF files.
 Occasionally you may try to read or print a <b><tt>*.pdf</tt></b> file that
 Ghostscript doesn't recognize as PDF, even though the same file
 <b><em>can</em></b> be opened and interpreted by an Adobe Acrobat viewer.
-This can happen when, for instance, a PDF file produced on a Macintosh is
-carelessly moved to another kind of system, leaving now-useless
-Macintosh-specific data before the standard header.  Ghostscript can't read
-these files because they don't conform to the PDF standard, Adobe's <a
-href="http://partners.adobe.com/asn/developer/acrosdk/docs/PDFRef.pdf"
-class="offsite"><cite>Portable
-Document Format Reference Manual</cite></a>, version 1.2, which states:
-
-<blockquote>
-The first line of a PDF file specifies the version number of the PDF
-specification to which the file adheres....  [T]he first line of a
-1.2-conforming PDF file should be <b><tt>%PDF-1.2</tt></b>.
-</blockquote>
+In many cases, this is because of incorrectly generated PDF. Acrobat
+tends to be very forgiving of invalid PDF files. Ghostscript tends to
+expect files to conform to the standard. For example, even though
+valid PDF files must begin with <b><tt>%PDF</tt></b>, Acrobat will
+scan the first 1000 bytes or so for this string, and ignore any preceding
+garbage.
 
 <p>
-However, in an appendix the manual also says that Adobe
-
-<blockquote>
-Acrobat viewers are very liberal in their check for a valid PDF header.
-All viewers allow the header to appear anywhere in the first 1,000 bytes of
-the file.
-</blockquote>
-
-<p>
-Ghostscript doesn't do this: it expects PDF files to conform to the
-standard, because that's how it recognizes them among other formats it
-handles, unlike Acrobat viewers which need deal only with PDF and can
-therefore afford to be more liberal with PDF.  So if you encounter a file
-with useless characters before the header and you want to use it with
-Ghostscript, you can fix it by stripping the extra characters from before
-the standard header.  The file should begin with exactly the characters
-
-<blockquote><b><tt>
-%PDF
-</tt></b></blockquote>
-
-<p>
-PDF files are binary, not text, so be careful to edit the file as a binary,
-not as text.  On Unix, after determining the length of the useless prefix
-string, which you can do with <b><tt>od</tt></b>, you can use
-<b><tt>tail</tt></b> to strip them off.  For instance:
-
-<blockquote>
-<b><tt>od -c Macintosh.pdf | more</tt></b> ;# <em>shows that
-<b><tt>%PDF</tt></b> occurs after a 128-byte prefix</em><br>
-then <b><tt>tail +128c Macintosh.pdf &gt; Legal.pdf</tt></b> or<br>
-<b><tt>tail -c +129 Macintosh.pdf &gt; Legal.pdf</tt></b> on POSIX
-systems.
-</blockquote>
-
-<p>
-On PCs and other systems you can use the <b><tt>hexl</tt></b> program
-distributed with GNU emacs to convert the PDF file to editable text form.
-After editing, <b><tt>hexl</tt></b> can convert the text form back to
-binary.
+In the past, Ghostscript's policy has been to simply fail with an
+error message when confronted with these files. This policy has, no
+doubt, encouraged PDF generators to be more careful. However, we now
+recognize that this behavior is not very friendly for people who just
+want to use Ghostscript to view or print PDF files. Our new policy is
+to try to render broken PDF's, and also to print a warning, so that
+Ghostscript is still useful as a sanity-check for invalid files.
 
 <hr>
 
@@ -1599,7 +1559,7 @@ Note that when passing arguments to batch files (as above) and also with the
 DOS executable <b><tt>gs386.exe</tt></b> build with the Watcom C/C++ compiler,
 you must use '<b><tt>#</tt></b>' rather than '<b><tt>=</tt></b>' between a
 command line switch and its argument, because of a strange design decision
-in the Wacom run-time library.
+in the Watcom run-time library.
 
 
 <hr>
