@@ -416,7 +416,7 @@ op_show_continue_dispatch(register os_ptr op, int code)
     switch (code) {
 	case 0: {		/* all done */
 	    os_ptr save_osp = osp;
-	    osp = op;
+	    osp = op;
 	    code = (*real_opproc(&seproc)) (op);
 	    op_show_free(code);
 	    if (code < 0) {
