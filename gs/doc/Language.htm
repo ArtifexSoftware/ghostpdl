@@ -1222,6 +1222,9 @@ and after <b><tt>.setsafe</tt></b> to return to <b>NOSAFER</b> mode, but care
 should be taken to ensure that the <i><tt>save</tt></i> object is not
 accessible to any procedures or file run in <b>SAFER</b> mode (see 
 <a href="#Runandhide"><b>.runandhide</b></a> above).
+<p>
+<b>Note: This uses setpagedevice to change .LockSafetyParams, so the page
+will be erased as a side effect of this operator</b>
 </dl>
 
 <dl>
