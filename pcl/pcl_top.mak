@@ -19,7 +19,7 @@ FEATURE_DEVS    = $(DD)dps2lib.dev   \
                   $(DD)devcmap.dev
 
 default: $(TARGET_XE)$(XE)
-	echo Done.
+	@echo Done.
 
 clean: config-clean clean-not-config-clean
 
@@ -36,9 +36,9 @@ config-clean: pl.config-clean pcl.config-clean
 PCLVERSION=1.05
 
 $(PCLSRC)pclver.h: $(PCLSRC)pcl_top.mak
-	$(PCLGEN)echogs$(XE) -e .h -w $(PCLSRC)pclver -n "#define PCLVERSION"
+	$(PCLGEN)echogs$(XE) -e .h -w $(PCLSRC)pclver -n -x 23 "define PCLVERSION"
 	$(PCLGEN)echogs$(XE) -e .h -a $(PCLSRC)pclver -s -x 22 $(PCLVERSION) -x 22
-	$(PCLGEN)echogs$(XE) -e .h -a $(PCLSRC)pclver -n "#define PCLBUILDDATE"
+	$(PCLGEN)echogs$(XE) -e .h -a $(PCLSRC)pclver -n -x 23 "define PCLBUILDDATE"
 	$(PCLGEN)echogs$(XE) -e .h -a $(PCLSRC)pclver -s -x 22 -d -x 22
 
 pclver_h=$(PCLSRC)pclver.h
