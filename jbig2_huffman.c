@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
     
-    $Id: jbig2_huffman.c,v 1.7 2001/07/05 22:37:44 giles Exp $
+    $Id: jbig2_huffman.c,v 1.8 2002/06/15 16:02:53 giles Exp $
 */
 
 /* Huffman table decoding procedures 
@@ -16,7 +16,8 @@
 
 #include <stdlib.h>
 
-#include "jbig2dec.h"
+#include "jbig2.h"
+#include "jbig2_priv.h"
 #include "jbig2_huffman.h"
 
 #define JBIG2_HUFFMAN_FLAGS_ISOOB 1
@@ -29,8 +30,8 @@ struct _Jbig2HuffmanState {
   /* The current bit offset is equal to (offset * 8) + offset_bits.
      The MSB of this_word is the current bit offset. The MSB of next_word
      is (offset + 4) * 8. */
-  uint32 this_word;
-  uint32 next_word;
+  uint32_t this_word;
+  uint32_t next_word;
   int offset_bits;
   int offset;
 
@@ -53,17 +54,17 @@ jbig2_huffman_new (Jbig2WordStream *ws)
   return result;
 }
 
-int32
+int32_t
 jbig2_huffman_get (Jbig2HuffmanState *hs,
 		   const Jbig2HuffmanTable *table, bool *oob)
 {
   Jbig2HuffmanEntry *entry;
   byte flags;
   int offset_bits = hs->offset_bits;
-  uint32 this_word = hs->this_word;
-  uint32 next_word;
+  uint32_t this_word = hs->this_word;
+  uint32_t next_word;
   int RANGELEN;
-  int32 result;
+  int32_t result;
 
   for (;;)
     { 
@@ -99,7 +100,7 @@ jbig2_huffman_get (Jbig2HuffmanState *hs,
   RANGELEN = entry->RANGELEN;
   if (RANGELEN > 0)
     {
-      int32 HTOFFSET;
+      int32_t HTOFFSET;
 
       HTOFFSET = this_word >> (32 - RANGELEN);
       if (flags & JBIG2_HUFFMAN_FLAGS_ISLOW)
@@ -213,7 +214,7 @@ jbig2_build_huffman_table (const Jbig2HuffmanParams *params)
 		{
 		  for (j = start_j; j < end_j; j++)
 		    {
-		      int32 HTOFFSET = (j >> (shift - RANGELEN)) &
+		      int32_t HTOFFSET = (j >> (shift - RANGELEN)) &
 			((1 << RANGELEN) - 1);
 		      if (eflags & JBIG2_HUFFMAN_FLAGS_ISLOW)
 			entries[j].u.RANGELOW = lines[CURTEMP].RANGELOW -
@@ -244,7 +245,7 @@ jbig2_build_huffman_table (const Jbig2HuffmanParams *params)
 const byte	test_stream[] = { 0xe9, 0xcb, 0xf4, 0x00 };
 const byte	test_tabindex[] = { 4, 2, 2, 1 };
 
-static uint32
+static uint32_t
 test_get_word (Jbig2WordStream *self, int offset)
 {
 	/* assume test_stream[] is at least 4 bytes */
@@ -264,7 +265,7 @@ main (int argc, char **argv)
   Jbig2HuffmanState *hs;
   Jbig2WordStream ws;
   bool oob;
-  int32 code;
+  int32_t code;
   
   tables[0] = NULL;
   tables[1] = jbig2_build_huffman_table (&jbig_huffman_params_A);

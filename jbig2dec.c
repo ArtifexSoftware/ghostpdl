@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.c,v 1.19 2002/06/15 14:12:50 giles Exp $
+    $Id: jbig2dec.c,v 1.20 2002/06/15 16:02:55 giles Exp $
 */
 
 #include <stdio.h>
@@ -40,7 +40,6 @@ typedef struct {
 
 
 #ifdef DEAD_CODE
-
 
 static Jbig2Ctx_foo *
 jbig2_open (FILE *f)

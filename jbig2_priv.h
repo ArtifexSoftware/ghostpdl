@@ -18,6 +18,9 @@ jbig2_error (Jbig2Ctx *ctx, Jbig2Severity severity, int32_t seg_idx,
 typedef uint8_t byte;
 typedef int bool;
 
+#define TRUE 1
+#define FALSE 0
+
 typedef struct _Jbig2Result Jbig2Result;
 
 /* The result of decoding a segment. See 0.1.5 */

@@ -8,14 +8,15 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_image_png.c,v 1.1 2002/05/08 02:36:04 giles Exp $
+    $Id: jbig2_image_png.c,v 1.2 2002/06/15 16:02:54 giles Exp $
 */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <png.h>
 
-#include "jbig2dec.h"
+#include "jbig2.h"
+#include "jbig2_priv.h"
 #include "jbig2_image.h"
 
 /* take an image structure and write it out in png format */

@@ -8,12 +8,14 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2.h,v 1.4 2002/02/19 07:09:16 giles Exp $
+    $Id: jbig2.h,v 1.5 2002/06/15 16:02:53 giles Exp $
 */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include <stdint.h>	// for C99 types -- need a more portable sol'n
 
 typedef enum {
   JBIG2_SEVERITY_DEBUG,
@@ -30,6 +32,8 @@ typedef struct _Jbig2Allocator Jbig2Allocator;
 typedef struct _Jbig2Ctx Jbig2Ctx;
 typedef struct _Jbig2GlobalCtx Jbig2GlobalCtx;
 typedef struct _Jbig2SegmentHeader Jbig2SegmentHeader;
+typedef struct _Jbig2PageInfo Jbig2PageInfo;
+typedef struct _Jbig2SymbolDictionary Jbig2SymbolDictionary;
 
 struct _Jbig2SegmentHeader {
   int32_t segment_number;
@@ -37,6 +41,15 @@ struct _Jbig2SegmentHeader {
   int referred_to_segment_count;
   int32_t page_association;
   int data_length;
+};
+
+struct _Jbig2PageInfo {
+	uint32_t	height, width;	/* in pixels */
+	uint32_t	x_resolution,
+                        y_resolution;	/* in pixels per meter */
+	uint16_t	stripe_size;
+	int		striped;
+	uint8_t		flags;
 };
 
 typedef int (*Jbig2ErrorCallback) (void *data,

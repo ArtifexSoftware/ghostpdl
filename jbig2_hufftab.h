@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
     
-    $Id: jbig2_hufftab.h,v 1.2 2001/08/13 19:50:52 giles Exp $
+    $Id: jbig2_hufftab.h,v 1.3 2002/06/15 16:02:54 giles Exp $
 */
 
 /* predefined Huffman table definitions 
@@ -24,7 +24,7 @@ typedef struct _Jbig2HuffmanParams Jbig2HuffmanParams;
 
 struct _Jbig2HuffmanEntry {
   union {
-    int32 RANGELOW;
+    int32_t RANGELOW;
     Jbig2HuffmanTable *ext_table;
   } u;
   byte PREFLEN;
