@@ -33,7 +33,7 @@ gdev_pcl_paper_size(gx_device * dev)
 	(height_inches >= 33.2 ? PAPER_SIZE_A0 :
 	 height_inches >= 23.5 ? PAPER_SIZE_A1 :
 	 height_inches >= 17.1 ? PAPER_SIZE_A2 :
-	 height_inches >= 16.6 ? PAPER_SIZE_LEDGER :
+	 height_inches >= 16.6 ? PAPER_SIZE_LEDGER : /* see gdevpcl.h */
 	 height_inches >= 14.1 ? PAPER_SIZE_A3 :
 	 height_inches >= 11.8 ? PAPER_SIZE_LEGAL :
 	 height_inches >= 11.1 ? PAPER_SIZE_A4 :

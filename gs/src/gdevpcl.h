@@ -23,7 +23,13 @@
 #ifndef gdevpcl_INCLUDED
 #  define gdevpcl_INCLUDED
 
-/* Define the PCL paper size codes. */
+/*
+ * Define the PCL paper size codes.  H-P's documentation and coding for the
+ * 11x17 size are inconsistent: some printers seem to accept code 11 as well
+ * as code 6, and while the definitions below match the PCL5 reference
+ * manual, some documentation calls 11x17 "tabloid" and reserves the name
+ * "ledger" for 17x11.
+ */
 #define PAPER_SIZE_LETTER 2	/* 8.5" x 11" */
 #define PAPER_SIZE_LEGAL 3	/* 8.5" x 14" */
 #define PAPER_SIZE_LEDGER 6	/* 11" x 17" */
