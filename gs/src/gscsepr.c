@@ -358,7 +358,7 @@ gx_remap_Separation(const gs_client_color * pcc, const gs_color_space * pcs,
 		       gs_color_select_t select)
 {   ref sname;
     int code;
-    if ((code = name_ref((const byte *)"None", 4, &sname, -1)) < 0)
+    if ((code = name_ref((const byte *)"None", 4, &sname, 0)) < 0)
 	return code;
     if (pcs->params.separation.sname != name_index(&sname))
 	return gx_default_remap_color(pcc, pcs, pdc, pis, dev, select);
@@ -377,7 +377,7 @@ gx_concretize_Separation(const gs_client_color *pc, const gs_color_space *pcs,
     (const gs_color_space *)&pcs->params.separation.alt_space;
     ref sname;
 
-    if ((code = name_ref((const byte *)"All", 3, &sname, -1)) < 0)
+    if ((code = name_ref((const byte *)"All", 3, &sname, 0)) < 0)
 	return code;
 
     if (pcs->params.separation.sname == name_index(&sname)) {

@@ -94,9 +94,9 @@ zsetseparationspace(i_ctx_t *i_ctx_p)
 	    break;
     }
 
-    if ((code = name_ref((const byte *)"All", 3, &tname1, -1)) < 0)
+    if ((code = name_ref((const byte *)"All", 3, &tname1, 0)) < 0)
 	return code;
-    if ((code = name_ref((const byte *)"None", 4, &tname2, -1)) < 0)
+    if ((code = name_ref((const byte *)"None", 4, &tname2, 0)) < 0)
 	return code;
     need_map = ( !name_eq(&sname, &tname1) && !name_eq(&sname, &tname2) );
 
