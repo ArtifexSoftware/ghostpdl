@@ -36,8 +36,13 @@ def weekday(year, month, day):
 # with.  No error checking here.  Precision to hours only.
 def RcsDate2CtimeTuple(date_data):
     import string
-    (date, time) = string.splitfields(date_data, ' ')
-    (year, month, day) = string.splitfields(date, '/')
+    tmp_date = string.splitfields(date_data, ' ')
+    date = tmp_date[0]
+    time = tmp_date[1]
+    try:
+        (year, month, day) = string.splitfields(date, '/')
+    except:
+        (year, month, day) = string.splitfields(date, '-')
     (hours, mins, secs) = string.splitfields(time, ':')
     year = string.atoi(year)
     month = string.atoi(month)
