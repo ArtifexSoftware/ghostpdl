@@ -36,10 +36,12 @@ typedef ulong gs_char;
  * glyph codes is divided into five sections:
  *
  *	- Codes >= GS_MIN_GLYPH_INDEX represent (non-negative) 
- *	  integers biased by GS_MIN_CID_GLYPH.  They represent either PostScript CIDs.
+ *	  integers biased by GS_MIN_CID_GLYPH.  They represent glyph indices
+ *	  of a specific font.
  *
  *	- Codes within [GS_MIN_CID_GLYPH, GS_MIN_GLYPH_INDEX) represent (non-negative) 
- *	  integers biased by GS_MIN_CID_GLYPH.  They represent either PostScript CIDs.
+ *	  integers biased by GS_MIN_CID_GLYPH.  They represent PostScript CIDs
+ *        of a specific Ordering.
  *
  *	- Codes < GS_MIN_CID_GLYPH represent named glyphs.  There are
  *	  three sub-sections:
