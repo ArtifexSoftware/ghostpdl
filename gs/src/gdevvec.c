@@ -1008,13 +1008,12 @@ gdev_vector_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 	return 0;
     color_set_pure(&dcolor, color);
     {
-	int code = update_fill(vdev, &dcolor, rop3_T);
+	/* Make sure we aren't being clipped. */
+	int code = gdev_vector_update_clip_path(vdev, NULL);
 
 	if (code < 0)
 	    return code;
-	/* Make sure we aren't being clipped. */
-	code = gdev_vector_update_clip_path(vdev, NULL);
-	if (code < 0)
+	if ((code = update_fill(vdev, &dcolor, rop3_T)) < 0)
 	    return code;
     }
     if (vdev->bbox_device) {
