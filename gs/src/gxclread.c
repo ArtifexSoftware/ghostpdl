@@ -371,9 +371,16 @@ clist_rasterize_lines(gx_device *dev, int y, int line_count,
 
     if (line_count > crdev->ymax - y)
 	line_count = crdev->ymax - y;
-    code = crdev->buf_procs.setup_buf_device
-	(bdev, mdata, raster, NULL, y - crdev->ymin, line_count,
-	 crdev->ymax - crdev->ymin);
+    {
+        byte **ptrs;
+        if ( gs_device_is_memory(bdev) && ((gx_device_memory *)bdev)->line_ptrs != NULL )
+            ptrs = ((gx_device_memory *)bdev)->line_ptrs;
+        else
+            ptrs = NULL;
+        code = crdev->buf_procs.setup_buf_device
+            (bdev, mdata, raster, ptrs, y - crdev->ymin,
+             line_count, crdev->ymax - crdev->ymin);
+    }
     if (code < 0)
 	return code;
 
