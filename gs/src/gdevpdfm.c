@@ -137,7 +137,7 @@ pdfmark_make_dest(char dstr[MAX_DEST_STRING], gx_device_pdf * pdev,
     int len;
 
     if (view_string.size == 0)
-	param_string_from_string(view_string, "[/XYZ 0 0 1]");
+	param_string_from_string(view_string, "[/XYZ null null null]");
     if (page == 0)
 	strcpy(dstr, "[null ");
     else if (pdfmark_find_key("/Action", pairs, count, &action) &&
