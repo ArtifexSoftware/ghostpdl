@@ -100,7 +100,9 @@ gx_default_decode_color(gx_device * dev, gx_color_index color, gx_color_value cv
 gx_color_index
 gx_error_encode_color(gx_device * dev, const gx_color_value colors[])
 {
+#ifdef DEBUG
     dprintf("No encode_color proc defined for device.\n");
+#endif
     return gx_no_color_index;
 }
 
@@ -109,7 +111,9 @@ gx_error_decode_color(gx_device * dev, gx_color_index cindex, gx_color_value col
 {
      int i=dev->color_info.num_components;
  
+#ifdef DEBUG
      dprintf("No decode_color proc defined for device.\n");
+#endif
      for(; i>=0; i--)
  	colors[i] = 0;
      return gs_error_rangecheck;
@@ -302,7 +306,9 @@ gx_error_get_color_mapping_procs(const gx_device * dev)
      * We should never get here.  If we do then we do not have a "get_color_mapping_procs"
      * routine for the device.
      */
+#ifdef DEBUG
     dprintf("No get_color_mapping_procs proc defined for device.\n");
+#endif
     return NULL;
 }
     
@@ -364,7 +370,9 @@ gx_error_get_color_comp_index(const gx_device * dev, const char * pname,
      * We should never get here.  If we do then we do not have a "get_color_comp_index"
      * routine for the device.
      */
+#ifdef DEBUG
     dprintf("No get_color_comp_index proc defined for device.\n");
+#endif
     return -1;			    /* Always return "unknown" component name */
 }
 
