@@ -8,15 +8,27 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.c,v 1.15 2002/02/19 07:09:16 giles Exp $
+    $Id: jbig2dec.c,v 1.16 2002/03/28 08:28:02 giles Exp $
 */
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <stdint.h>
+#include <string.h>
+#include <getopt.h>
 
 #include "jbig2.h"
+
+typedef enum {
+    usage,dump,render
+} jbig2dec_mode;
+
+typedef struct {
+	jbig2dec_mode mode;
+	int verbose;
+	char *output_file;
+} jbig2dec_params_t;
+
 
 #ifdef DEAD_CODE
 #include "jbig2dec.h"
@@ -448,7 +460,7 @@ dump_jbig2 (Jbig2Ctx_foo *ctx)
 #endif	/* DEAD_CODE */
 
 static int
-usage (void)
+print_usage (void)
 {
   fprintf(stderr,
     "Usage: jbig2dec file.jbig2\n"
@@ -466,6 +478,55 @@ usage (void)
 }
 
 static int
+parse_options(int argc, char *argv[], jbig2dec_params_t *params)
+{
+	static struct option long_options[] = {
+		{"quiet", 0, NULL, 'q'},
+		{"help", 0, NULL, 'h'},
+		{"dump", 0, NULL, 'd'},
+		{"output", 1, NULL, 'o'},
+		{NULL, 0, NULL, 0}
+	};
+	int option_idx = 1;
+	int option;
+
+	while (1) {
+		option = getopt_long(argc, argv,
+			"qhdo:", long_options, &option_idx);
+		if (option == -1) break;
+
+		fprintf(stderr, "option '%c' value '%s'\n", option, optarg);
+		switch (option) {
+			case 0:	// unknown long option
+				if (!params->verbose) fprintf(stdout,
+					"unrecognized option: --%s\n",
+					long_options[option_idx].name);
+					break;
+			case 'q':
+				params->verbose=0;
+				break;
+			case 'h':
+			case '?':
+				print_usage();
+				exit (0);
+			case 'd':
+				params->mode=dump;
+				break;
+			case 'o':
+				params->output_file = strdup(optarg);
+				break;
+			default:
+				if (!params->verbose) fprintf(stdout,
+					"unrecognized option: -%c\n", option);
+				break;
+		}
+	}
+	fprintf(stderr, "final option index %d out of %d\n", optind, argc);
+	return (optind);
+}
+
+
+static int
 error_callback(void *error_callback_data, const char *buf, Jbig2Severity severity,
 	       int32_t seg_idx)
 {
@@ -479,10 +540,14 @@ main (int argc, char **argv)
   FILE *f = NULL, *f_page = NULL;
   Jbig2Ctx *ctx;
   uint8_t buf[4096];
+  jbig2dec_params_t params = {usage,1,NULL};
+  int filearg;
 
-  if (argc == 2)
+  filearg = parse_options(argc, argv, &params);
+
+  if ((argc - filearg) == 1)
     {
-      char *fn = argv[1];
+      char *fn = argv[filearg];
 
       f = fopen(fn, "rb");
       if (f == NULL)
@@ -491,9 +556,10 @@ main (int argc, char **argv)
 	  return 1;
 	}
     }
-  else if (argc == 3)
+  else if ((argc - filearg) == 2)
     {
-      char *fn = argv[1], *fn_page = argv[2];
+      char *fn = argv[filearg];
+      char *fn_page = argv[filearg+1];
 
       f = fopen(fn, "rb");
       if (f == NULL)
@@ -510,7 +576,7 @@ main (int argc, char **argv)
 	}
     }
   else    
-    return usage();
+    return print_usage();
     
   ctx = jbig2_ctx_new(NULL, f_page != NULL ? JBIG2_OPTIONS_EMBEDDED : 0,
 		      NULL,
