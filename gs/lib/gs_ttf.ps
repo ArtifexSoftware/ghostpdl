@@ -102,7 +102,8 @@
 % If the post table is missing, we have to take a guess based on the cmap
 % table.
 
-/.loadttfontdict mark
+/.loadttfontdict 50 dict dup begin
+
 /orgXUID AladdinEnterprisesXUID def
 /maxstring 32000 def    % half the maximum length of a PostScript string,
 			% must be a multiple of 4 (for hmtx / loca / vmtx)
@@ -374,7 +375,7 @@ def                % readtables
   } ifelse
 } bind def
 
-.dicttomark readonly def                % .loadttfontdict
+end readonly def                % .loadttfontdict
 
 % <tab> .printtab -
 /.printtab {
