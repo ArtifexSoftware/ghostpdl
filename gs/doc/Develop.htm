@@ -1493,6 +1493,7 @@ Other raster file formats:
 <a href="../src/gdevbmpc.c">src/gdevbmpc.c</a>,
 <a href="../src/gdevjpeg.c">src/gdevjpeg.c</a>,
 <a href="../src/gdevmiff.c">src/gdevmiff.c</a>,
+<a href="../src/gdevp2up.c">src/gdevp2up.c</a>,
 <a href="../src/gdevpcx.c">src/gdevpcx.c</a>,
 <a href="../src/gdevpbm.c">src/gdevpbm.c</a>,
 <a href="../src/gdevpng.c">src/gdevpng.c</a>,
@@ -1533,8 +1534,84 @@ Other printers:
 <h4><a name="Contributed_drivers"></a>Contributed drivers</h4>
 
 <p>
-We don't attempt to list the contributed drivers here.  See <a
-href="../src/contrib.mak">src/contrib.mak</a>.
+This list is likely to be incomplete and inaccurate: see <a
+href="../src/contrib.mak">src/contrib.mak</a> for the real one.
+
+<dl>
+
+<dt>
+Display and window system drivers:
+<dd>
+<a href="../src/gdev3b1.c">src/gdev3b1.c</a>,
+<a href="../src/gdevherc.c">src/gdevherc.c</a>,
+<a href="../src/gdevpe.c">src/gdevpe.c</a>,
+<a href="../src/gdevsnfb.c">src/gdevsnfb.c</a>,
+<a href="../src/gdevsun.c">src/gdevsun.c</a>.
+
+<dt>
+Raster file output drivers:
+<dd>
+<a href="../src/gdevcfax.c">src/gdevcfax.c</a>,
+<a href="../src/gdevcif.c">src/gdevcif.c</a>,
+<a href="../src/gdevdfax.c">src/gdevdfax.c</a>,
+<a href="../src/gdevifno.c">src/gdevifno.c</a>,
+<a href="../src/gdevmgr.c">src/gdevmgr.c</a>,
+<a href="../src/gdevmgr.h">src/gdevmgr.h</a>,
+<a href="../src/gdevsgi.c">src/gdevsgi.c</a>,
+<a href="../src/gdevsgi.h">src/gdevsgi.h</a>,
+<a href="../src/gdevsunr.c">src/gdevsunr.c</a>.
+
+<dt>
+Printer drivers:
+<dd>
+<a href="../lib/bj8.rpd">lib/bj8.rpd</a>,
+<a href="../lib/cbjc600.ppd">lib/cbjc600.ppd</a>,
+<a href="../lib/cbjc800.ppd">lib/cbjc800.ppd</a>,
+<a href="../src/gdev3852.c">src/gdev3852.c</a>,
+<a href="../src/gdev4081.c">src/gdev4081.c</a>,
+<a href="../src/gdev4693.c">src/gdev4693.c</a>,
+<a href="../src/gdev8510.c">src/gdev8510.c</a>,
+<a href="../src/gdevadmp.c">src/gdevadmp.c</a>,
+<a href="../src/gdevbj10.c">src/gdevbj10.c</a>,
+<a href="../src/gdevbjc.h">src/gdevbjc.h</a>,
+<a href="../src/gdevbjcl.c">src/gdevbjcl.c</a>,
+<a href="../src/gdevbjcl.h">src/gdevbjcl.h</a>,
+<a href="../src/gdevccr.c">src/gdevccr.c</a>,
+<a href="../src/gdevcdj.c">src/gdevcdj.c</a>,
+<a href="../src/gdevclj.c">src/gdevclj.c</a>,
+<a href="../src/gdevcljc.c">src/gdevcljc.c</a>,
+<a href="../src/gdevcp50.c">src/gdevcp50.c</a>,
+<a href="../src/gdevcslw.c">src/gdevcslw.c</a>,
+<a href="../src/gdevdjtc.c">src/gdevdjtc.c</a>,
+<a href="../src/gdevdm24.c">src/gdevdm24.c</a>,
+<a href="../src/gdevepsc.c">src/gdevepsc.c</a>,
+<a href="../src/gdevepsn.c">src/gdevepsn.c</a>,
+<a href="../src/gdevescp.c">src/gdevescp.c</a>,
+<a href="../src/gdevhl7x.c">src/gdevhl7x.c</a>,
+<a href="../src/gdevimgn.c">src/gdevimgn.c</a>,
+<a href="../src/gdevl31s.c">src/gdevl31s.c</a>,
+<a href="../src/gdevlbp8.c">src/gdevlbp8.c</a>,
+<a href="../src/gdevlp8k.c">src/gdevlp8k.c</a>,
+<a href="../src/gdevlxm.c">src/gdevlxm.c</a>,
+<a href="../src/gdevn533.c">src/gdevn533.c</a>,
+<a href="../src/gdevo182.c">src/gdevo182.c</a>,
+<a href="../src/gdevokii.c">src/gdevokii.c</a>,
+<a href="../src/gdevpcl.c">src/gdevpcl.c</a>,
+<a href="../src/gdevpcl.h">src/gdevpcl.h</a>,
+<a href="../src/gdevphex.c">src/gdevphex.c</a>,
+<a href="../src/gdevpjet.c">src/gdevpjet.c</a>,
+<a href="../src/gdevsj48.c">src/gdevsj48.c</a>,
+<a href="../src/gdevsppr.c">src/gdevsppr.c</a>,
+<a href="../src/gdevstc.c">src/gdevstc.c</a>,
+<a href="../src/gdevstc.h">src/gdevstc.h</a>,
+<a href="../src/gdevstc1.c">src/gdevstc1.c</a>,
+<a href="../src/gdevstc2.c">src/gdevstc2.c</a>,
+<a href="../src/gdevstc3.c">src/gdevstc3.c</a>,
+<a href="../src/gdevstc4.c">src/gdevstc4.c</a>,
+<a href="../src/gdevtknk.c">src/gdevtknk.c</a>,
+<a href="../src/gdevupd.c">src/gdevupd.c</a>.
+
+</dl>
 
 <h3><a name="PostScript_interpreter"></a>PostScript interpreter</h3>
 
@@ -2118,6 +2195,20 @@ Font loading and support:
 <dd>
 
 <dl>
+
+<dt>
+Font name mapping:
+<dd>
+<a href="../lib/Fontmap">lib/Fontmap</a>,
+<a href="../lib/Fontmap.ATB">lib/Fontmap.ATB</a>,
+<a href="../lib/Fontmap.ATM">lib/Fontmap.ATM</a>,
+<a href="../lib/Fontmap.GS">lib/Fontmap.GS</a>,
+<a href="../lib/Fontmap.OS2">lib/Fontmap.OS2</a>,
+<a href="../lib/Fontmap.OSF">lib/Fontmap.OSF</a>,
+<a href="../lib/Fontmap.SGI">lib/Fontmap.SGI</a>,
+<a href="../lib/Fontmap.Sol">lib/Fontmap.Sol</a>,
+<a href="../lib/Fontmap.Ult">lib/Fontmap.Ult</a>,
+<a href="../lib/Fontmap.VMS">lib/Fontmap.VMS</a>.
 
 <dt>
 Generic:
