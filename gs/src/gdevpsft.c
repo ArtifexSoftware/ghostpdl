@@ -982,6 +982,14 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 		    put_pad(s, OS_2_length);
 		}
 	    break;
+	    case W('h','h','e','a'):
+	    case W('v','h','e','a'):
+		if (generate_mtx) {
+		    write_range(s, pfont, start, length - 2); /* 34 */
+		    put_ushort(s, mtx[tab[0] == 'v'].numMetrics);
+		    break;
+		}
+		/* falls through */
 	    default:
 		write_range(s, pfont, start, length);
 	    }
