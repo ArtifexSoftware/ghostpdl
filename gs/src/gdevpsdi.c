@@ -378,6 +378,8 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
 	} else {
 	    code = setup_image_compression(pbw, &params, pim, lossless);
 	}
+	if (code < 0)
+	    return code;
 	if (cmyk_to_rgb) {
 	    gs_memory_t *mem = pdev->v_memory;
 	    stream_C2R_state *ss = (stream_C2R_state *)
