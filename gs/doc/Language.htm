@@ -170,11 +170,6 @@ the <b><tt>pdf</tt></b> feature was selected when Ghostscript was built.
 Ghostscript currently does not implement the following PDF 1.3 facilities:
 
 <ul>
-<li>Masked images.
-
-<li>Type 2 (smooth shading) Pattern color spaces, although the
-<b><tt>sh</tt></b> operator for smooth-shaded fills is implemented.
-
 <li>Native <b><tt>Separation</tt></b> and <b><tt>DeviceN</tt></b> color
 spaces, as noted above for PostScript.
 
@@ -708,20 +703,14 @@ pushes false on the stack and returns, rather than causing an error.
 </dl>
 
 <dl>
-<dt><b><tt>&lt;file&gt; &lt;integer&gt; unread -</tt></b>
+<dt><b><tt>&lt;file&gt; &lt;integer&gt; .unread -</tt></b>
 <dd>Pushes back the last-read character onto the front of the file.  If the
 file is open only for writing, or if the integer argument is not the same
 as the last character read from the file, causes an <b><tt>ioerror</tt></b>
 error.  May also cause an <b><tt>ioerror</tt></b> if the last operation on
 the file was not a reading operation.
 </dl>
-
-<dl>
-<dt><b><tt>&lt;file&gt; &lt;device&gt; writeppmfile -</tt></b>
-<dd>Writes the contents of the device, which must be an image device, onto
-the file, in Portable PixMap (ppm) format.  Does not close the file.
-</dl>
-
+ 
 <p>
 Ghostscript also supports the following <b><tt>IODevice</tt></b> in
 addition to a subset of those defined in the Adobe documentation:
