@@ -1427,9 +1427,9 @@ one bit.  All the bits for each pixel are grouped together (this is
 sometimes called "chunky" or "Z" format).  For <b><tt>copy_color</tt></b>,
 the number of bits per pixel is given by the
 <b><tt>color_info.depth</tt></b> parameter in the device structure: the
-legal values are 1, 2, 4, 8, 16, 24, or 32.  The pixel values are device
-color codes (that is, whatever it is that <b><tt>encode_color</tt></b>
-returns).
+legal values are 1, 2, 4, 8, 16, 24, 32, 40, 48, 56, or 64.  The pixel
+values are device color codes (that is, whatever it is that
+<b><tt>encode_color</tt></b> returns).
 
 <dl>
 <dt><b><tt>int (*copy_color)(gx_device&nbsp;*,
