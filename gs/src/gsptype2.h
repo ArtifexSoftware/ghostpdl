@@ -23,6 +23,7 @@
 #  define gsptype2_INCLUDED
 
 #include "gspcolor.h"
+#include "gxfixed.h"
 
 /* ---------------- Types and structures ---------------- */
 
@@ -62,6 +63,14 @@ typedef struct gs_pattern2_instance_s {
     "gs_pattern2_instance_t", pattern2_instance_enum_ptrs,\
     pattern2_instance_reloc_ptrs)
 
+#ifndef gx_path_DEFINED
+typedef struct gx_path_s gx_path;
+#endif
+
+#ifndef gx_device_DEFINED
+typedef struct gx_device_s gx_device;
+#endif
+
 /* ---------------- Procedures ---------------- */
 
 /*
@@ -71,5 +80,14 @@ typedef struct gs_pattern2_instance_s {
 
 /* Initialize a PatternType 2 pattern. */
 void gs_pattern2_init(P1(gs_pattern2_template_t *));
+
+/* Check device color for Pattern Type 2. */
+bool gx_dc_is_pattern2_color(const gx_device_color *pdevc);
+
+/* Fill path or rect, with adjustment, and with a PatternType 2 color. */
+int gx_dc_pattern2_fill_path_adjusted(const gx_device_color * pdevc, 
+			      gx_path * ppath, gs_fixed_rect * rect, 
+			      gx_device * dev);
+
 
 #endif /* gsptype2_INCLUDED */

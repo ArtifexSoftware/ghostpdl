@@ -29,6 +29,7 @@
 #include "gxhttile.h"
 #include "gxistate.h"
 #include "gxpaint.h"		/* for prototypes */
+#include "gsptype2.h"
 
 /*
  * Define which fill algorithm(s) to use.  At least one of the following
@@ -331,11 +332,10 @@ gx_adjust_if_empty(const gs_fixed_rect * pbox, gs_fixed_point * adjust)
 }
 
 /*
- * Fill a path.  This is the default implementation of the driver
- * fill_path procedure.
+ * The general fill  path algorithm.
  */
-int
-gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
+private int
+gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 		     gx_path * ppath, const gx_fill_params * params,
 		 const gx_device_color * pdevc, const gx_clip_path * pcpath)
 {
@@ -562,6 +562,56 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
     }
 #endif
     return code;
+}
+
+/*
+ * Fill a path.  This is the default implementation of the driver
+ * fill_path procedure.
+ */
+int
+gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
+		     gx_path * ppath, const gx_fill_params * params,
+		 const gx_device_color * pdevc, const gx_clip_path * pcpath)
+{
+    if (gx_dc_is_pattern2_color(pdevc)) {
+	/*  Optimization for shading fill :
+	    The general path filling algorithm subdivides fill region with 
+	    trapezoid or rectangle subregions and then paints each subregion 
+	    with given color. If the color is shading, each subregion to be 
+	    subdivided into areas of constant color. But with radial 
+	    shading each area is a high order polygon, being 
+	    subdivided into smaller subregions, so as total number of
+	    subregions grows huge. Faster processing is done here by changing 
+	    the order of subdivision cycles : we first subdivide the shading into 
+	    areas of constant color, then apply the general path filling algorithm 
+	    (i.e. subdivide each area into trapezoids or rectangles), using the 
+	    filling path as clip mask.
+	*/
+
+	gx_clip_path cpath_intersection;
+	gx_path path_intersection;
+	int code;
+
+	/*  Shading fill algorithm uses "current path" parameter of the general
+	    path filling algorithm as boundary of constant color area,
+	    so we need to intersect the filling path with the clip path now,
+	    reducing the number of pathes passed to it :
+	*/
+	gx_path_init_local(&path_intersection, pdev->memory);
+	gx_cpath_init_local_shared(&cpath_intersection, pcpath, pdev->memory);
+	if ((code = gx_cpath_intersect(&cpath_intersection, ppath, params->rule, (gs_imager_state *)pis)) >= 0)
+	    code = gx_cpath_to_path(&cpath_intersection, &path_intersection);
+
+	/* Do fill : */
+	if (code >= 0)
+            code = gx_dc_pattern2_fill_path_adjusted(pdevc, &path_intersection, NULL,  pdev);
+
+	/* Destruct local data and return :*/
+	gx_path_free(&path_intersection, "shading_fill_path_intersection");
+	gx_cpath_free(&cpath_intersection, "shading_fill_cpath_intersection");
+	return code;
+    } 
+    return gx_general_fill_path(pdev, pis, ppath, params, pdevc, pcpath);
 }
 
 /* Initialize the line list for a path. */

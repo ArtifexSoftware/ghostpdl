@@ -456,6 +456,7 @@ siscale_h=$(GLSRC)siscale.h $(sisparam_h)
 gximage_h=$(GLSRC)gximage.h $(gsiparam_h)\
  $(gxcspace_h) $(gxdda_h) $(gxiclass_h) $(gxiparam_h) $(gxsample_h)\
  $(sisparam_h) $(strimpl_h)
+gsptype2_h=$(GLSRC)gsptype2.h $(gspcolor_h) $(gxfixed_h)
 
 ### Executable code
 
@@ -549,7 +550,7 @@ $(GLOBJ)gxdither.$(OBJ) : $(GLSRC)gxdither.c $(GX)\
 $(GLOBJ)gxfill.$(OBJ) : $(GLSRC)gxfill.c $(GXERR)\
  $(gsstruct_h)\
  $(gxdcolor_h) $(gxdevice_h) $(gxfixed_h) $(gxhttile_h)\
- $(gxistate_h) $(gxpaint_h)\
+ $(gxistate_h) $(gxpaint_h) $(gsptype2_h)\
  $(gzcpath_h) $(gzpath_h)
 	$(GLCC) $(GLO_)gxfill.$(OBJ) $(C_) $(GLSRC)gxfill.c
 
@@ -2211,7 +2212,6 @@ $(GLD)translib.dev : $(LIB_MAK) $(ECHOGS_XE) $(translib_) $(GLD)cspixlib.dev
 
 gscolor3_h=$(GLSRC)gscolor3.h
 gsfunc3_h=$(GLSRC)gsfunc3.h $(gsdsrc_h) $(gsfunc_h)
-gsptype2_h=$(GLSRC)gsptype2.h $(gspcolor_h)
 gsshade_h=$(GLSRC)gsshade.h\
  $(gsccolor_h) $(gscspace_h) $(gsdsrc_h) $(gsfunc_h) $(gsmatrix_h)\
  $(gxfixed_h)
