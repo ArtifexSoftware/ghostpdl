@@ -396,7 +396,7 @@ pl_init_fc(
             pfc->ExtndFlags |= EF_VERTSUBS_TYPE;
     }
     else if (plfont->scaling_technology == plfst_TrueType && plfont->large_sizes) {
-        pfc->ExtndFlags = EF_FORMAT16_TYPE | EF_GALLEYSEG_TYPE;;
+        pfc->ExtndFlags = EF_FORMAT16_TYPE | EF_GALLEYSEG_TYPE;
         if ((pfont->WMode & 0x1) != 0)  /* vertical substitution */
             pfc->ExtndFlags |= EF_VERTSUBS_TYPE;
     }
