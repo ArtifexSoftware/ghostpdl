@@ -33,24 +33,24 @@ typedef struct px_state_s px_state_t;
 /* Return 1 if the warning table overflowed. */
 /* If save_all is false, only remember the last warning with the same */
 /* first word as this one. */
-int px_record_warning(P3(const char *message, bool save_all, px_state_t *pxs));
+int px_record_warning(const char *message, bool save_all, px_state_t *pxs);
 
 /* Generate a line of an error message starting at internal position N; */
 /* return an updated value of N.  When done, return -1. */
 #define px_max_error_line 120
-int px_error_message_line(P6(char message[px_max_error_line+1], int N,
+int px_error_message_line(char message[px_max_error_line+1], int N,
   const char *subsystem, int code, const px_parser_state_t *st,
-  const px_state_t *pxs));
+  const px_state_t *pxs);
 
 /* Begin an error page.  Return the initial Y value. */
-int px_begin_error_page(P1(px_state_t *pxs));
+int px_begin_error_page(px_state_t *pxs);
 
 /* Print a message on an error page. */
 /* Return the updated Y value. */
-int px_error_page_show(P3(const char *message, int ytop, px_state_t *pxs));
+int px_error_page_show(const char *message, int ytop, px_state_t *pxs);
 
 /* Reset the warning table. */
-void px_reset_errors(P1(px_state_t *pxs));
+void px_reset_errors(px_state_t *pxs);
 
 /* ---------------- Error name table ---------------- */
 

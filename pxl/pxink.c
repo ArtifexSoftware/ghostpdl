@@ -43,8 +43,8 @@
 #define SET_COLOR_SPACE_NO_SET_BLACK
 
 /* Forward references */
-private int px_set_default_screen(P3(px_state_t *pxs, int method,
-				     const gs_point *origin));
+private int px_set_default_screen(px_state_t *pxs, int method,
+                                  const gs_point *origin);
 
 /* ---------------- Utilities ---------------- */
 

@@ -1070,7 +1070,7 @@ hpgl_add_point_to_path(
     bool                    set_ctm
 )
 {	
-    static int              (*const gs_procs[])(P3(gs_state *, floatp, floatp))
+    static int              (*const gs_procs[])(gs_state *, floatp, floatp)
                                 = { hpgl_plot_function_procedures };
 
     /*  HP lunacy... if we are starting a polygon path the path
@@ -1420,7 +1420,7 @@ hpgl_draw_current_path(
 	    /* Intellifonts require eofill, but TrueType require fill. */
 	    /****** HACK: look at the scaling technology of ******/
 	    /****** the current font to decide. ******/
-	    int     (*fill)(P1(gs_state *));
+	    int     (*fill)(gs_state *);
 
 	    if (pgls->g.font->scaling_technology == plfst_Intellifont)
 		fill = gs_eofill;

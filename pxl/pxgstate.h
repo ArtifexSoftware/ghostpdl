@@ -68,9 +68,9 @@ typedef struct px_pattern_s {
   gs_private_st_composite(st_px_pattern, px_pattern_t, "px_pattern_t",\
     px_pattern_enum_ptrs, px_pattern_reloc_ptrs);
 /* Define the freeing procedure for patterns in a dictionary. */
-void px_free_pattern(P3(gs_memory_t *, void *, client_name_t));
+void px_free_pattern(gs_memory_t *, void *, client_name_t);
 /* Purge the pattern cache up to a given persistence level. */
-void px_purge_pattern_cache(P2(px_state_t *, pxePatternPersistence_t));
+void px_purge_pattern_cache(px_state_t *, pxePatternPersistence_t);
 /* purge font cache - all characters */
 void px_purge_character_cache(px_state_t *pxs);
 
@@ -174,36 +174,36 @@ typedef struct px_gstate_s {
 #define px_gstate_num_string_ptrs 2
 
 /* Allocate a px_gstate_t. */
-px_gstate_t *px_gstate_alloc(P1(gs_memory_t *));
+px_gstate_t *px_gstate_alloc(gs_memory_t *);
 
 /* Initialize a px_gstate_t. */
-void px_gstate_init(P2(px_gstate_t *, gs_state *));
+void px_gstate_init(px_gstate_t *, gs_state *);
 
 /* Initialize the graphics state for a page. */
 /* Note that this takes a px_state_t, not a px_gstate_t. */
-int px_initgraphics(P1(px_state_t *));
+int px_initgraphics(px_state_t *);
 
 /* initialize the clipping region */
-int px_initclip(P1(px_state_t *pxs));
+int px_initclip(px_state_t *pxs);
 
 /* Reset a px_gstate_t, initially or at the beginning of a page. */
-void px_gstate_reset(P1(px_gstate_t *));
+void px_gstate_reset(px_gstate_t *);
 
 /* Set up the color space information for a bitmap image or pattern. */
-int px_image_color_space(P5(gs_color_space *pcs, gs_image_t *pim,
-			    const px_bitmap_params_t *params,
-			    const gs_const_string *palette,
-			    const gs_state *pgs));
+int px_image_color_space(gs_color_space *pcs, gs_image_t *pim,
+                         const px_bitmap_params_t *params,
+                         const gs_const_string *palette,
+                         const gs_state *pgs);
 
 /* Set the color in the graphics state to the pen or brush. */
-int px_set_paint(P2(const px_paint_t *ppt, px_state_t *pxs));
+int px_set_paint(const px_paint_t *ppt, px_state_t *pxs);
 
 /* Set the halftone in the graphics state to the most recently selected one. */
-int px_set_halftone(P1(px_state_t *pxs));
+int px_set_halftone(px_state_t *pxs);
 
 /* Adjust the paint reference counts in the graphics state. */
 /* These are exported by pxgstate.c for pxink.c. */
-void px_paint_rc_adjust(P3(px_paint_t *ppt, int delta, gs_memory_t *mem));
-void px_gstate_rc_adjust(P3(px_gstate_t *pxgs, int delta, gs_memory_t *mem));
+void px_paint_rc_adjust(px_paint_t *ppt, int delta, gs_memory_t *mem);
+void px_gstate_rc_adjust(px_gstate_t *pxgs, int delta, gs_memory_t *mem);
 
 #endif				/* pxstate_INCLUDED */

@@ -19,17 +19,17 @@
 #include "pcstate.h"
 
 /* compatibility function */
-int pcl_set_ctm(P2(pcl_state_t * pcs, bool print_direction));
+int pcl_set_ctm(pcl_state_t * pcs, bool print_direction);
 
 /* set CTM and clip rectangle for drawing PCL object */
-int pcl_set_graphics_state(P1(pcl_state_t * pcs));
+int pcl_set_graphics_state(pcl_state_t * pcs);
 
 /* set the current drawing color */
-int pcl_set_drawing_color(P4(
+int pcl_set_drawing_color(
     pcl_state_t *           pcs,
     pcl_pattern_source_t    type,
     int                     pcl_id,
     bool                    for_image
-));
+);
 
 #endif  	/* pcdraw_INCLUDED */

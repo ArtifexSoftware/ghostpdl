@@ -69,7 +69,7 @@ px_operator_proc(pxNewPath);
 /* Attributes: pxaEndPoint, pxaNumberOfPoints, pxaPointType. */
 private int
 add_lines(px_args_t *par, px_state_t *pxs,
-  int (*line_proc)(P3(gs_state *, floatp, floatp)))
+  int (*line_proc)(gs_state *, floatp, floatp))
 {	int code = 0;
 
 	if ( par->pv[0] )
@@ -131,7 +131,7 @@ add_lines(px_args_t *par, px_state_t *pxs,
 /* pxaControlPoint2, pxaEndPoint. */
 private int
 add_curves(px_args_t *par, px_state_t *pxs,
-  int (*curve_proc)(P7(gs_state *, floatp, floatp, floatp, floatp, floatp, floatp)))
+  int (*curve_proc)(gs_state *, floatp, floatp, floatp, floatp, floatp, floatp))
 {	int code = 0;
 
 	if ( par->pv[2] && par->pv[3] && par->pv[4] )
@@ -341,7 +341,7 @@ paint_path(px_state_t *pxs, bool reset)
 #  define save_for_stroke (!reset)
 #endif
 	if ( pxgs->brush.type != pxpNull )
-	  { int (*fill_proc)(P1(gs_state *)) =
+	  { int (*fill_proc)(gs_state *) =
 	      (pxgs->fill_mode == eEvenOdd ? gs_eofill : gs_fill);
 
 	    if ( (code = px_set_paint(&pxgs->brush, pxs)) < 0 )

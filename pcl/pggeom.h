@@ -39,23 +39,23 @@
   hypot((x1) - (x2), (y1) - (y2))
 
 /* compute the angle between 0 and 2*PI given the slope */
-floatp hpgl_compute_angle(P2(floatp dx, floatp dy));
+floatp hpgl_compute_angle(floatp dx, floatp dy);
 
 /* compute the center of an arc given 3 points on the arc */
-int hpgl_compute_arc_center(P8(floatp x1, floatp y1, floatp x2,
+int hpgl_compute_arc_center(floatp x1, floatp y1, floatp x2,
 			       floatp y2, floatp x3, floatp y3,
-			       floatp *pcx, floatp *pcy));
+			       floatp *pcx, floatp *pcy);
 
 /* compute the coordinates of a point on an arc */
-int hpgl_compute_arc_coords(P6(floatp radius, floatp center_x,
+int hpgl_compute_arc_coords(floatp radius, floatp center_x,
 			       floatp center_y, floatp angle,
-			       floatp *px, floatp *py));
+			       floatp *px, floatp *py);
 
 /* given a start point, angle (degrees) and magnitude of a vector compute its
    endpoints */
-int hpgl_compute_vector_endpoints(P6(floatp magnitude, floatp x, floatp y,
+int hpgl_compute_vector_endpoints(floatp magnitude, floatp x, floatp y,
 				     floatp angle_degrees, floatp *endx,
-				     floatp *endy));
+				     floatp *endy);
 
 /* ------ 3-point arcs ------ */
 

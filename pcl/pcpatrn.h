@@ -300,11 +300,11 @@ struct  pcl_ccolor_s {
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-int pcl_pattern_RF(P3(
+int pcl_pattern_RF(
     int                     ptrn_indx,    /* pattern index */
     const gs_depth_bitmap * ppixmap,      /* pixmap */
     pcl_state_t *           pcs
-));
+);
 
 /*
  * Procedure to get/set up the current graphic state for the proper "pattern"
@@ -541,17 +541,17 @@ typedef int     (*pcl_pattern_set_proc_t)( pcl_state_t *, int arg1, int arg2 );
  *
  * A return of NULL indicates a range check error.
  */
-pcl_pattern_set_proc_t pcl_pattern_get_proc_PCL(P1(
+pcl_pattern_set_proc_t pcl_pattern_get_proc_PCL(
     pcl_pattern_source_t   pattern_source
-));
+);
 
-pcl_pattern_set_proc_t pcl_pattern_get_proc_FT(P1(
+pcl_pattern_set_proc_t pcl_pattern_get_proc_FT(
     hpgl_FT_pattern_source_t    pattern_source
-));
+);
 
-pcl_pattern_set_proc_t pcl_pattern_get_proc_SV(P1(
+pcl_pattern_set_proc_t pcl_pattern_get_proc_SV(
     hpgl_SV_pattern_source_t    pattern_source
-));
+);
 
 /*
  * Entry point to pattern-related functions.

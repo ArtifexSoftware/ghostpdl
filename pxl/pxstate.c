@@ -25,7 +25,7 @@
 #include "gxfcache.h"
 
 /* Import the initialization procedure table from pxtop.c. */
-typedef int (*px_init_proc)(P1(px_state_t *));
+typedef int (*px_init_proc)(px_state_t *);
 extern const px_init_proc px_init_table[];
 
 /* GC descriptors */

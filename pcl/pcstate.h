@@ -87,14 +87,14 @@ typedef struct gs_state_s   gs_state;
  * The routine pcl_init_gstate_stk must be called once a boot time to
  * intialize PCL graphics state stack tracking mechanism.
  */
-int pcl_gsave(P1(pcl_state_t * pcs));
-int pcl_grestore(P1(pcl_state_t * pcs));
-void pcl_init_gstate_stk(P1(pcl_state_t * pcs));
-void pcl_free_gstate_stk(P1(pcl_state_t * pcs));
+int pcl_gsave(pcl_state_t * pcs);
+int pcl_grestore(pcl_state_t * pcs);
+void pcl_init_gstate_stk(pcl_state_t * pcs);
+void pcl_free_gstate_stk(pcl_state_t * pcs);
 /*
  * "Cold start" initialization for the graphic state.
  */
-void pcl_init_state(P2(pcl_state_t * pcs, gs_memory_t * pmem));
+void pcl_init_state(pcl_state_t * pcs, gs_memory_t * pmem);
 
 
 #include "pgstate.h"	    /* HP-GL/2 state */
@@ -130,10 +130,10 @@ struct pcl_state_s {
     gs_state *      pgs;
 
     /* Define an optional procedure for parsing non-ESC data. */
-    int             (*parse_other)(P3( void *                  parse_data,
+    int             (*parse_other)( void *                  parse_data,
                                        pcl_state_t *           pcs,
 			               stream_cursor_read *    pr
-                                       ));
+                                       );
     void *          parse_data;	        /* closure data for parse_other */
 
     /* Chapter 4 (pcjob.c) */
@@ -281,11 +281,11 @@ struct pcl_state_s {
     /* Chapter 24 (pcmisc.c) */
     bool            end_of_line_wrap;
     bool            display_functions;
-    int             (*configure_appletalk)(P4( const byte * key,
+    int             (*configure_appletalk)( const byte * key,
                                                uint         key_length,
 				               const byte * value,
                                                uint         value_length
-                                               ));
+                                               );
 
     /* Chapter C2/C3/C4 (pcpalet.c/pcindexed.c/pccsbase.c/etc.) */
     int                 sel_palette_id;
@@ -360,11 +360,11 @@ struct pcl_state_s {
 
 /* accessor functions for the pcl target device.  These live in
    pctop.c for now */
-int pcl_load_cartridge_fonts(P2(pcl_state_t *pcs, const char *pathname));
-int pcl_load_simm_fonts(P2(pcl_state_t *pcs, const char *pathname));
-int pcl_load_built_in_fonts(P2(pcl_state_t *pcs, const char *pathname));
+int pcl_load_cartridge_fonts(pcl_state_t *pcs, const char *pathname);
+int pcl_load_simm_fonts(pcl_state_t *pcs, const char *pathname);
+int pcl_load_built_in_fonts(pcl_state_t *pcs, const char *pathname);
 /* implicitly exit gl/2 whenever ESC E is found */
-int pcl_implicit_gl2_finish(P1(pcl_state_t *pcs));
-int pcl_do_printer_reset(P1(pcl_state_t *pcs));
-int pcl_end_page_top(P3(pcl_state_t *pcs, int num_copies, int flush));
+int pcl_implicit_gl2_finish(pcl_state_t *pcs);
+int pcl_do_printer_reset(pcl_state_t *pcs);
+int pcl_end_page_top(pcl_state_t *pcs, int num_copies, int flush);
 #endif 						/* pcstate_INCLUDED */

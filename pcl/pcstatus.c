@@ -519,8 +519,8 @@ status_fonts_extended(stream *s, pcl_state_t *pcs,
 {	return status_do_fonts(s, pcs, storage, true);
 }
 
-private int (*const status_write[])(P3(stream *s, pcl_state_t *pcs,
-				 pcl_data_storage_t storage)) = {
+private int (*const status_write[])(stream *s, pcl_state_t *pcs,
+				 pcl_data_storage_t storage) = {
   status_fonts, status_macros, status_patterns, status_symbol_sets,
   status_fonts_extended
 };

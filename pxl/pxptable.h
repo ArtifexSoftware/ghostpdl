@@ -27,7 +27,7 @@
  * 0 or an error code.
  */
 #define value_check_proc(proc)\
-  int proc(P1(const px_value_t *))
+  int proc(const px_value_t *)
 typedef struct px_attr_value_type_s {
   ushort mask;
   ushort limit;

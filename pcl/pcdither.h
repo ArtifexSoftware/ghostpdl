@@ -94,10 +94,10 @@ typedef struct pcl_udither_s {
  * Get a pointer to the appropriate portion of the dither table in a user
  * defined dither structure.
  */
-const byte *pcl_udither_get_threshold(P2(
+const byte *pcl_udither_get_threshold(
     const pcl_udither_t *   pdither,
     int                     indx
-));
+);
 
 /*
  * External access to the user-defined dither matrix machinery.

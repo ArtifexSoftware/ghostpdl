@@ -94,15 +94,15 @@ typedef struct {
 /* ---------------- Procedures ---------------- */
 
 /* Get numeric values from the input or an array. */
-uint uint16at(P2(const byte *p, bool big_endian));
-int sint16at(P2(const byte *p, bool big_endian));
-integer uint32at(P2(const byte *p, bool big_endian));
-integer sint32at(P2(const byte *p, bool big_endian));
-real real32at(P2(const byte *p, bool big_endian));
+uint uint16at(const byte *p, bool big_endian);
+int sint16at(const byte *p, bool big_endian);
+integer uint32at(const byte *p, bool big_endian);
+integer sint32at(const byte *p, bool big_endian);
+real real32at(const byte *p, bool big_endian);
 
 /* Get an element from an array. */
 /* The caller does all index and type checking. */
-integer integer_elt(P2(const px_value_t *pav, uint index));
-real real_elt(P2(const px_value_t *pav, uint index));
+integer integer_elt(const px_value_t *pav, uint index);
+real real_elt(const px_value_t *pav, uint index);
 
 #endif				/* pxvalue_INCLUDED */

@@ -80,7 +80,7 @@ struct px_state_s {
   pxeMediaDestination_t media_destination;
   pxeMediaType_t media_type;
   pxeMediaSize_t media_size;
-  int (*end_page)(P3(px_state_t *pxs, int num_copies, int flush));
+  int (*end_page)(px_state_t *pxs, int num_copies, int flush);
 	/* Pattern dictionary */
   px_dict_t page_pattern_dict;
 	/* Internal variables */
@@ -162,25 +162,25 @@ struct px_state_s {
 #define px_state_num_dicts 4
 
 /* Allocate a px_state_t. */
-px_state_t *px_state_alloc(P1(gs_memory_t *));
+px_state_t *px_state_alloc(gs_memory_t *);
 
 /* Release a px_state_t */
-void px_state_release(P1(px_state_t *pxs));
+void px_state_release(px_state_t *pxs);
 
 /* Do one-time state initialization. */
-void px_state_init(P2(px_state_t *, gs_state *));
+void px_state_init(px_state_t *, gs_state *);
 
 /* Define the default end-of-page procedure. */
-int px_default_end_page(P3(px_state_t *, int, int));
+int px_default_end_page(px_state_t *, int, int);
 
 /* Clean up after an error or UEL. */
-void px_state_cleanup(P1(px_state_t *));
+void px_state_cleanup(px_state_t *);
 
 /* Do one-time finalization. */
-void px_state_finit(P1(px_state_t *));
+void px_state_finit(px_state_t *);
 
 /* get media size */
-void px_get_default_media_size(P2(px_state_t *pxs, gs_point *pt));
+void px_get_default_media_size(px_state_t *pxs, gs_point *pt);
 
 
 #endif				/* pxstate_INCLUDED */

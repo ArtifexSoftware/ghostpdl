@@ -34,13 +34,13 @@ typedef enum {
 
 
 /* enter raster graphics mode */
-int     pcl_enter_graphics_mode(P2(
+int     pcl_enter_graphics_mode(
     pcl_state_t *       pcs,
     pcl_gmode_entry_t   mode
-));
+);
 
 /* exit raster graphics mode */
-int pcl_end_graphics_mode(P1(pcl_state_t * pcs));
+int pcl_end_graphics_mode(pcl_state_t * pcs);
 
 extern  const pcl_init_t    rtgmode_init;
 extern  const pcl_init_t    rtlrastr_init;

@@ -21,7 +21,7 @@ typedef enum {
 } hpgl_font_type_t;
 
 /* Enumerate the segments of a stick/arc character. */
-int hpgl_stick_arc_segments(P3(void *data, uint char_index, hpgl_font_type_t font_type));
+int hpgl_stick_arc_segments(void *data, uint char_index, hpgl_font_type_t font_type);
 
 /* Get the unscaled width of a stick/arc character. */
-int hpgl_stick_arc_width(P2(uint char_index, hpgl_font_type_t font_type));
+int hpgl_stick_arc_width(uint char_index, hpgl_font_type_t font_type);

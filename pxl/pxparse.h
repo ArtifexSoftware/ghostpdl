@@ -87,16 +87,16 @@ typedef struct px_state_s px_state_t;
 /* ---------------- Procedural interface ---------------- */
 
 /* Allocate a parser state. */
-px_parser_state_t *px_process_alloc(P1(gs_memory_t *memory));
+px_parser_state_t *px_process_alloc(gs_memory_t *memory);
 
 /* Release a parser state. */
-void px_process_release(P1(px_parser_state_t *st));
+void px_process_release(px_parser_state_t *st);
 
 /* Initialize the parser state. */
-void px_process_init(P2(px_parser_state_t *st, bool big_endian));
+void px_process_init(px_parser_state_t *st, bool big_endian);
 
 /* Process a buffer of PCL XL commands. */
-int px_process(P3(px_parser_state_t *st, px_state_t *pxs,
-		  stream_cursor_read *pr));
+int px_process(px_parser_state_t *st, px_state_t *pxs,
+		  stream_cursor_read *pr);
 
 #endif				/* pxparse_INCLUDED */

@@ -24,12 +24,12 @@
  * downloaded symbol set, or changing orientations--can cause this.
  * set == -1 means all.
  */
-void pcl_decache_font(P2(pcl_state_t * pcs, int set));
+void pcl_decache_font(pcl_state_t * pcs, int set);
 
 /*
  * Recompute the font if necessary. This is exported for resetting HMI.
  */
-int pcl_recompute_font(P1(pcl_state_t * pcs));
+int pcl_recompute_font(pcl_state_t * pcs);
 
 /*
  * Do any underlining just before a break in motion (vertical motion or
@@ -48,7 +48,7 @@ int pcl_recompute_font(P1(pcl_state_t * pcs));
         pcs->underline_start = pcs->cap;    \
     END
 
-void pcl_do_underline(P1(pcl_state_t *pcs));
+void pcl_do_underline(pcl_state_t *pcs);
 
 /* Define the common structure of downloaded font headers. */
 typedef struct pcl_font_header_s {
@@ -107,11 +107,11 @@ typedef struct pcl_resolution_bitmap_header_s {
 
 /* set the default font environment based on setting from the pjl
    interpreter */
-int pcl_set_current_font_environment(P1(pcl_state_t *pcs));
+int pcl_set_current_font_environment(pcl_state_t *pcs);
 
 /* debugging to to print font parameters */
 #ifdef DEBUG
-void dprint_font_params_t(P1(const pl_font_params_t *pfp));
+void dprint_font_params_t(const pl_font_params_t *pfp);
 #else
 #define dprint_font_params_t(p) DO_NOTHING
 #endif /* DEBUG */

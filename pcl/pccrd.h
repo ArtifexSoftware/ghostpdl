@@ -107,7 +107,7 @@ typedef struct pcl_crd_s        pcl_crd_t;
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-int pcl_crd_build_default_crd(P1(pcl_state_t *pcs));
+int pcl_crd_build_default_crd(pcl_state_t *pcs);
 
 /*
  * Set the viewing illuminant.
@@ -118,11 +118,11 @@ int pcl_crd_build_default_crd(P1(pcl_state_t *pcs));
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-int pcl_crd_set_view_illuminant(P3(
+int pcl_crd_set_view_illuminant(
     pcl_state_t *       pcs,
     pcl_crd_t **        ppcrd,
     const gs_vector3 *  pwht_pt
-));
+);
 
 /*
  * Set a color rendering dictionary into the graphic state. If the rendering
@@ -130,6 +130,6 @@ int pcl_crd_set_view_illuminant(P3(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-int pcl_crd_set_crd(P2(pcl_crd_t **ppcrd, pcl_state_t *pcs));
+int pcl_crd_set_crd(pcl_crd_t **ppcrd, pcl_state_t *pcs);
 
 #endif  	/* pccrd_INCLUDED */

@@ -366,7 +366,7 @@ pe_fixed2float(int32 x, int32 fbits)
     return ((floatp)x * (1.0 / (1 << fbits)));
 }
 
-private bool pe_args(P3(hpgl_args_t *, int32 *, int));
+private bool pe_args(hpgl_args_t *, int32 *, int);
 int
 hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	

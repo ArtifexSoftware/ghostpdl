@@ -35,28 +35,28 @@
  *     which the pcs->cap is maintained. If passing coordinates in the
  *     latter space, BE SURE TO SUBTRACT THE CURRENT TOP MARGIN.
  */
-void pcl_set_cap_x(P4(
+void pcl_set_cap_x(
     pcl_state_t *   pcs,
     coord           x,              /* position or distance */
     bool            relative,       /* x is distance (else position) */
     bool            use_margins     /* apply text margins */
-));
+);
 
-int pcl_set_cap_y(P5(
+int pcl_set_cap_y(
     pcl_state_t *   pcs,
     coord           y,                  /* position or distance */
     bool            relative,           /* y is distance (else position) */
     bool            use_margins,        /* apply text margins */
     bool            by_row              /* LF, half LF, or by row */
-));
+);
 
-void    pcl_do_CR(P1(pcl_state_t * pcs));
-int     pcl_do_FF(P1(pcl_state_t * pcs));
-int     pcl_do_LF(P1(pcl_state_t * pcs));
-void    pcl_home_cursor(P1(pcl_state_t * pcs));
+void    pcl_do_CR(pcl_state_t * pcs);
+int     pcl_do_FF(pcl_state_t * pcs);
+int     pcl_do_LF(pcl_state_t * pcs);
+void    pcl_home_cursor(pcl_state_t * pcs);
 
 /* Get the HMI.  This may require recomputing it from the font. */
-coord   pcl_updated_hmi(P1(pcl_state_t * pcs));
+coord   pcl_updated_hmi(pcl_state_t * pcs);
 
 #define pcl_hmi(pcs)                                                    \
     ((pcs)->hmi_cp == HMI_DEFAULT ? pcl_updated_hmi(pcs) : (pcs)->hmi_cp)

@@ -62,12 +62,12 @@ typedef struct pcl_value_s {
 typedef int32 pcl_fixed;	/* sign + 15 int + 16 fraction */
 typedef uint32 pcl_ufixed;	/* 16 int + 16 fraction */
 /* Get a command argument as an int, uint, or float. */
-int int_value(P1(const pcl_value_t *));
-uint uint_value(P1(const pcl_value_t *));
-float float_value(P1(const pcl_value_t *));
+int int_value(const pcl_value_t *);
+uint uint_value(const pcl_value_t *);
+float float_value(const pcl_value_t *);
 
 /* Convert a 32-bit IEEE float to the local representation. */
-float word2float(P1(uint32 word));
+float word2float(uint32 word);
 
 /* Define the argument passed to PCL commands. */
 typedef struct pcl_args_s {
@@ -103,14 +103,14 @@ typedef struct hpgl_args_s hpgl_parser_state_t;
 
 /* Define a command processing procedure. */
 #define pcl_command_proc(proc)\
-  int proc(P2(pcl_args_t *, pcl_state_t *))
+  int proc(pcl_args_t *, pcl_state_t *)
 typedef pcl_command_proc((*pcl_command_proc_t));
 
 /* Define a few exported processing procedures. */
 pcl_command_proc(pcl_disable_display_functions);
-uint pcl_status_read(P3(byte *data, uint max_data, pcl_state_t *pcs));
+uint pcl_status_read(byte *data, uint max_data, pcl_state_t *pcs);
 /* Process a string of plain (printable) text. */
-int pcl_text(P4(const byte *str, uint size, pcl_state_t *pcs, bool literal));
+int pcl_text(const byte *str, uint size, pcl_state_t *pcs, bool literal);
 /* Process a single text character.  This is almost never called. */
 pcl_command_proc(pcl_plain_char);
 
@@ -167,31 +167,31 @@ typedef struct {
 } pcl_grouped_command_definition_t;
 
 /* Register (a) command definition(s). */
-void pcl_define_control_command(P3(int/*char*/,
-				   const pcl_command_definition_t *, pcl_parser_state_t *));
+void pcl_define_control_command(int/*char*/,
+                                 const pcl_command_definition_t *, pcl_parser_state_t *);
 #define DEFINE_CONTROL(chr, cname, proc)\
 { static const pcl_command_definition_t defn_ = PCL_COMMAND(cname, proc, 0);\
   pcl_define_control_command(chr, &defn_, pcl_parser_state);\
 }
-void pcl_define_escape_command(P3(int/*char*/,
-				  const pcl_command_definition_t *, pcl_parser_state_t *));
+void pcl_define_escape_command(int/*char*/,
+                               const pcl_command_definition_t *, pcl_parser_state_t *);
 #define DEFINE_ESCAPE_ARGS(chr, cname, proc, acts)\
 { static const pcl_command_definition_t defn_ = PCL_COMMAND(cname, proc, acts);\
   pcl_define_escape_command(chr, &defn_, pcl_parser_state);\
 }
 #define DEFINE_ESCAPE(chr, cname, proc)\
   DEFINE_ESCAPE_ARGS(chr, cname, proc, 0)
-void pcl_define_class_command(P5(int/*char*/, int/*char*/, int/*char*/,
-				 const pcl_command_definition_t *, pcl_parser_state_t *));
+void pcl_define_class_command(int/*char*/, int/*char*/, int/*char*/,
+                              const pcl_command_definition_t *, pcl_parser_state_t *);
 #define DEFINE_CLASS_COMMAND_ARGS(cls, group, chr, cname, proc, acts)\
 { static const pcl_command_definition_t defn_ = PCL_COMMAND(cname, proc, acts);\
   pcl_define_class_command(cls, group, chr, &defn_, pcl_parser_state);\
 }
 #define DEFINE_CLASS_COMMAND(cls, group, chr, cname, proc)\
   DEFINE_CLASS_COMMAND_ARGS(cls, group, chr, cname, proc, 0)
-void pcl_define_class_commands(P3(int/*char*/,
-				  const pcl_grouped_command_definition_t *,
-				  pcl_parser_state_t *));
+void pcl_define_class_commands(int/*char*/,
+                               const pcl_grouped_command_definition_t *,
+                               pcl_parser_state_t *);
 #define DEFINE_CLASS(cls)\
 { const byte class_ = cls;\
   static const pcl_grouped_command_definition_t defs_[] = {
@@ -236,22 +236,22 @@ typedef enum {
 /* Define the structure for per-module implementation procedures. */
 typedef struct pcl_init_s {
 	/* Register commands */
-    int (*do_registration)(P2(pcl_parser_state_t *pcl_parser_state,
-			      gs_memory_t *mem));
+    int (*do_registration)(pcl_parser_state_t *pcl_parser_state,
+                           gs_memory_t *mem);
 	/* Initialize state at startup, printer reset, and other times. */
-    void (*do_reset)(P2(pcl_state_t *pcs, pcl_reset_type_t type));
+    void (*do_reset)(pcl_state_t *pcs, pcl_reset_type_t type);
 	/* Partially copy the state for macro call, overlay, and exit. */
-    int (*do_copy)(P3(pcl_state_t *psaved, const pcl_state_t *pcs,
-		      pcl_copy_operation_t operation));
+    int (*do_copy)(pcl_state_t *psaved, const pcl_state_t *pcs,
+                   pcl_copy_operation_t operation);
 } pcl_init_t;
 /* Define the table of pointers to init structures (in pcjob.c). */
 extern const pcl_init_t *pcl_init_table[];
 
 /* run the init code */
-int pcl_do_registrations(P2(pcl_state_t *pcs, pcl_parser_state_t *pst));
+int pcl_do_registrations(pcl_state_t *pcs, pcl_parser_state_t *pst);
 
 /* Run the reset code of all the modules. */
-int pcl_do_resets(P2(pcl_state_t *pcs, pcl_reset_type_t type));
+int pcl_do_resets(pcl_state_t *pcs, pcl_reset_type_t type);
 
 /* Define stored entity storage status. */
 /* Note that this is a mask, not an ordinal. */

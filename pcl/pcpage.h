@@ -20,7 +20,7 @@
 #include "pcommand.h"
 
 /* set the page output procedure */
-void pcl_set_end_page(P1(int (*procp)(pcl_state_t *, int, int)));
+void pcl_set_end_page(int (*procp)(pcl_state_t *, int, int));
 
 /*
  * End a page, either unconditionally or only if there are marks on it.
@@ -31,26 +31,27 @@ typedef enum {
     pcl_print_if_marked
 } pcl_print_condition_t;
 
-int pcl_end_page(P2(
+int pcl_end_page(
     pcl_state_t *           pcs,
     pcl_print_condition_t   condition
-));
+);
 
-void new_logical_page(P4(
+void new_logical_page(
     pcl_state_t *               pcs,
     int                         lp_orient,
     const pcl_paper_size_t *    psize,
     bool                        reset_initial
-));
+);
 
  int
-pcl_getdevice_initial_matrix(P2(pcl_state_t *       pcs,
-				gs_matrix *         mat
-));
+pcl_getdevice_initial_matrix(
+     pcl_state_t *       pcs,
+     gs_matrix *         mat
+);
 
-bool pcl_page_marked(P1(
+bool pcl_page_marked(
     pcl_state_t *           pcs
-));;
+);
 
 void pcl_mark_page_for_path(pcl_state_t *pcs);
 void pcl_mark_page_for_current_pos(pcl_state_t *pcs);

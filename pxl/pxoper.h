@@ -107,6 +107,6 @@ typedef struct px_args_s {
 
 /* Define the argument list for operators. */
 #define px_operator_proc(proc)\
-  int proc(P2(px_args_t *, px_state_t *))
+  int proc(px_args_t *, px_state_t *)
 
 #endif				/* pxoper_INCLUDED */

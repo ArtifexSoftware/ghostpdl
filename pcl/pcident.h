@@ -50,6 +50,6 @@ typedef ulong   pcl_gsid_t;
 typedef struct pcl_state_s pcl_state_t;
 #endif
 
-pcl_gsid_t  pcl_next_id(P1(pcl_state_t *pcs));
+pcl_gsid_t  pcl_next_id(pcl_state_t *pcs);
 
 #endif  /* pcident_INCLUDED */

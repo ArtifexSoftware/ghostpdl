@@ -24,11 +24,11 @@
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-int pcl_start_raster(P3(
+int pcl_start_raster(
     uint                src_width,
     uint                src_height,
     pcl_state_t *       pcs
-));
+);
 
 /* complete a raster (when exiting raster graphics mode) */
 void pcl_complete_raster(pcl_state_t *pcs);

@@ -20,8 +20,8 @@
 #include "pgmand.h"
 
 /* Fill in stick/arc font boilerplate. */
-void hpgl_fill_in_stick_font(P2(gs_font_base *pfont, long unique_id));
-void hpgl_fill_in_arc_font(P2(gs_font_base *pfont, long unique_id));
-void hpgl_initialize_stick_fonts( hpgl_state_t *pcs );
+void hpgl_fill_in_stick_font(gs_font_base *pfont, long unique_id);
+void hpgl_fill_in_arc_font(gs_font_base *pfont, long unique_id);
+void hpgl_initialize_stick_fonts(hpgl_state_t *pcs);
 
 #endif                       /* pgfont_INCLUDED */

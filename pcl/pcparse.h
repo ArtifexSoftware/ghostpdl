@@ -87,24 +87,24 @@ typedef struct pcl_macro_s {
 /* ---------------- Procedural interface ---------------- */
 
 /* Allocate a parser state. */
-pcl_parser_state_t *pcl_process_alloc(P1(gs_memory_t *memory));
+pcl_parser_state_t *pcl_process_alloc(gs_memory_t *memory);
 
 /* Initialize the PCL parser. */
-void pcl_process_init(P1(pcl_parser_state_t *pst));
+void pcl_process_init(pcl_parser_state_t *pst);
 
 /* Process a buffer of PCL commands. */
-int pcl_process(P3(pcl_parser_state_t *pst, pcl_state_t *pcs,
-		   stream_cursor_read *pr));
+int pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcs,
+                stream_cursor_read *pr);
 
 /* Execute a macro (in pcmacros.c). */
-int pcl_execute_macro(P5(const pcl_macro_t *pmac, pcl_state_t *pcs,
-			 pcl_copy_operation_t before, pcl_reset_type_t reset,
-			 pcl_copy_operation_t after));
+int pcl_execute_macro(const pcl_macro_t *pmac, pcl_state_t *pcs,
+                      pcl_copy_operation_t before, pcl_reset_type_t reset,
+                      pcl_copy_operation_t after);
 
-void pcparse_do_reset(P2(pcl_state_t *pcs, pcl_reset_type_t type));
+void pcparse_do_reset(pcl_state_t *pcs, pcl_reset_type_t type);
 
-int pcl_init_command_index(P2(pcl_parser_state_t *pcl_parser_state, pcl_state_t *pcs));
+int pcl_init_command_index(pcl_parser_state_t *pcl_parser_state, pcl_state_t *pcs);
 
 /* shutdown the pcl parser */
-int pcl_parser_shutdown(P2(pcl_parser_state_t *pcl_parser_state, gs_memory_t *mem));
+int pcl_parser_shutdown(pcl_parser_state_t *pcl_parser_state, gs_memory_t *mem);
 #endif				/* pcparse_INCLUDED */

@@ -167,7 +167,7 @@ hpgl_select_font_pri_alt(hpgl_state_t *pgls, int index)
 }
 
 /* forward decl */
-private int hpgl_recompute_font(P1(hpgl_state_t *pgls));
+private int hpgl_recompute_font(hpgl_state_t *pgls);
 
 /* Ensure a font is available. */
 private int

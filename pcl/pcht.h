@@ -245,10 +245,10 @@ typedef struct pcl_ht_s         pcl_ht_t;
  * for special render methods. Currently it only creates the built-in dither
  * arrays.
  */
-void pcl_ht_init_render_methods(P2(
+void pcl_ht_init_render_methods(
     pcl_state_t *   pcs,
     gs_memory_t *   pmem
-));
+);
 
 /*
  * Set up normal or monochrome print mode. The latter is accomplished by
@@ -260,14 +260,14 @@ void pcl_ht_init_render_methods(P2(
  * Note that the current rendering method must be set before this change
  * will take effect.
  */
-void pcl_ht_set_print_mode(P2(pcl_state_t *pcs, bool monochrome));
+void pcl_ht_set_print_mode(pcl_state_t *pcs, bool monochrome);
 
 /*
  * Set the render method.
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-int pcl_ht_set_render_method(P3(pcl_state_t *pcs, pcl_ht_t ** ppht, uint render_method));
+int pcl_ht_set_render_method(pcl_state_t *pcs, pcl_ht_t ** ppht, uint render_method);
 
 
 /** 
@@ -277,10 +277,10 @@ int pcl_ht_set_render_method(P3(pcl_state_t *pcs, pcl_ht_t ** ppht, uint render_
  * if the palette is color use the original "color" render_algorithm
  * degenerates to NOP if ENABLE_AUTO_GRAY_RENDER_METHODS is false
  */ 
-int pcl_ht_remap_render_method(P3(pcl_state_t * pcs,
-				  pcl_ht_t **ppht,
-				  bool is_gray
-				  ));
+int pcl_ht_remap_render_method(pcl_state_t * pcs,
+                               pcl_ht_t **ppht,
+                               bool is_gray
+                               );
 
 /**
  * Checks if all palette entries are gray iff enabled.
@@ -291,14 +291,14 @@ int pcl_ht_remap_render_method(P3(pcl_state_t * pcs,
  * all gray palette ONLY has meaning if ENABLE_AUTO_GRAY_RENDER_METHODS is true
  * otherwise this is a NOP that always returns false.
  */
-bool pcl_ht_is_all_gray_palette(P1(pcl_state_t *pcs));
+bool pcl_ht_is_all_gray_palette(pcl_state_t *pcs);
 
 /*
  * Update the gamma parameter.
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-int pcl_ht_set_gamma(P2(pcl_ht_t ** ppht, float gamma));
+int pcl_ht_set_gamma(pcl_ht_t ** ppht, float gamma);
 
 /*
  * Update the color lookup table information. This takes action only for lookup
@@ -307,20 +307,20 @@ int pcl_ht_set_gamma(P2(pcl_ht_t ** ppht, float gamma));
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-int pcl_ht_set_lookup_tbl(P2(
+int pcl_ht_set_lookup_tbl(
     pcl_ht_t **         ppht,
     pcl_lookup_tbl_t *  plktbl
-));
+);
 
 /*
  * Set the user-defined dither matrix for a halftone object.
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-int     pcl_ht_set_udither(P2(
+int     pcl_ht_set_udither(
     pcl_ht_t **     ppht,
     pcl_udither_t * pdither
-));
+);
 
 /*
  * Update the current halftone for a change in the color space.
@@ -329,23 +329,23 @@ int     pcl_ht_set_udither(P2(
  * in which a device-independent color space is used with a rendering method
  * that is not compatible with device-independent color spaces.
  */
-int pcl_ht_update_cspace(P4(
+int pcl_ht_update_cspace(
     pcl_state_t *       pcs,
     pcl_ht_t **         ppht,
     pcl_cspace_type_t   cstype_old,
     pcl_cspace_type_t   cstype_new
-));
+);
 
 /*
  * Create the default halftone, releasing the current halftone if it exists.
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-int pcl_ht_build_default_ht(P3(
+int pcl_ht_build_default_ht(
     pcl_state_t *       pcs,
     pcl_ht_t **         ppht,
     gs_memory_t *       pmem
-));
+);
 
 /*
  * Set the given halftone into the graphic state. If the halftone doesn't
@@ -353,11 +353,11 @@ int pcl_ht_build_default_ht(P3(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-int pcl_ht_set_halftone(P4(
+int pcl_ht_set_halftone(
     pcl_state_t *        pcs,
     pcl_ht_t **          ppht,
     pcl_cspace_type_t    cstype,
     bool                 for_image
-));
+);
 
 #endif  	/* pcht_INCLUDED */
