@@ -58,12 +58,12 @@ extern const char iodev_dtype_stdio[];
  */
 
 #define LINEEDIT_BUF_SIZE 20	/* initial size, not fixed size */
-private iodev_proc_open_device(lineedit_open);
+/*private iodev_proc_open_device(lineedit_open);*/ /* no longer used */
 const gx_io_device gs_iodev_lineedit =
     iodev_special("%lineedit%", iodev_no_init, iodev_no_open_device);
 
 #define STATEMENTEDIT_BUF_SIZE 50	/* initial size, not fixed size */
-private iodev_proc_open_device(statementedit_open);
+/*private iodev_proc_open_device(statementedit_open);*/ /* no longer used */
 const gx_io_device gs_iodev_statementedit =
     iodev_special("%statementedit%", iodev_no_init, iodev_no_open_device);
 
