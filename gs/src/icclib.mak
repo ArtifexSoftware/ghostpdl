@@ -51,12 +51,12 @@ ICCO_=$(O_)$(ICCOBJ)
 # We need D_, _D_, and _D because the OpenVMS compiler uses different
 # syntax from other compilers.
 # ICCI_ and ICCF_ are defined in gs.mak.
-ICC_INCL=$(I_)$(ICCI_)$(II)$(GLSRCDIR)$(II)$(GLGENDIR)$(_I)
+ICC_INCL=$(I_)$(ICCI_) $(II)$(GLSRCDIR) $(II)$(GLGENDIR)$(_I)
 ICC_CCFLAGS=$(ICC_INCL) $(ICCF_) 
 ICC_CC=$(CC_) $(ICC_CCFLAGS)
 
 # Define the name of this makefile.
-ICCLIB_MAK=$(GLSRCDIR)icclib.mak
+ICCLIB_MAK=$(GLSRC)icclib.mak
 
 icc.clean : icc.config-clean icc.clean-not-config-clean
 

@@ -2092,7 +2092,7 @@ icc_h=$(ICCI_)$(D)icc.h
 $(GLOBJ)gsicc.$(OBJ) : $(GLSRC)gsicc.c $(GXERR) $(math__h) $(memory__h)\
  $(gsstruct_h) $(stream_h) $(gxcspace_h) $(gxarith_h) $(gxcie_h)\
  $(gzstate_h) $(gs_stdio_h) $(icc_h) $(gsicc_h)
-	$(GLCC) $(GLO_)gsicc.$(OBJ) $(C_) $(I_)$(GLI_)$(II)$(ICCI_)$(_I) $(GLSRC)gsicc.c
+	$(GLCC) $(GLO_)gsicc.$(OBJ) $(C_) $(I_)$(GLI_) $(II)$(ICCI_)$(_I) $(GLSRC)gsicc.c
 
 # ---------------- Separation colors ---------------- #
 
