@@ -66,6 +66,8 @@ private const pjl_envir_var_t pjl_factory_defaults[] = {
     {"manualfeed", "off"},
     {"fontsource", "I"},
     {"fontnumber", "0"},
+    {"personality", "pcl5c"},
+    /*    {"personality", "rtl"}, */
     {"", ""}
 };
 

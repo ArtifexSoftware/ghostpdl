@@ -15,6 +15,8 @@
 #include "pginit.h"
 #include "pggeom.h"
 #include "pgmisc.h"
+#include "pcursor.h"
+#include "pcpage.h"
 #include "pcpalet.h"
 #include "pcdraw.h"
 
@@ -360,10 +362,13 @@ hpgl_IW(hpgl_args_t *pargs, hpgl_state_t *pgls)
 int
 hpgl_PG(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	return e_Unimplemented;
+    if ( pgls->personality == rtl ) {
+	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
+	hpgl_call(pcl_do_FF(pgls));
+    }
+    return 0;
 }
 
-#ifdef FUTURE_RTL_CONFIGURATION
 /* PS;  NB this is only a partial implementation. */
 int
 hpgl_PS(hpgl_args_t *pargs, hpgl_state_t *pgls)
@@ -372,19 +377,21 @@ hpgl_PS(hpgl_args_t *pargs, hpgl_state_t *pgls)
     /* we use the pcl paper handling machinery to set the plot size */
     pcl_paper_size_t paper;
     int i;
+
+    if ( pgls->personality != rtl )
+	return 0;
     for ( i = 0; i < 2 && hpgl_arg_real(pargs, &page_dims[i]); ++i )
 	; /* NOTHING */
     if ( i != 2 )
 	return e_Range;
-    paper.width = plu_2_coord(page_dims[0]);
-    paper.height = plu_2_coord(page_dims[1]);
+    paper.height = plu_2_coord(page_dims[0]);
+    paper.width = plu_2_coord(page_dims[1]);
     paper.offset_portrait = 0; 
     paper.offset_landscape = 0;
-    new_page_size(pgls, &paper, false);
+    new_logical_page(pgls, 0, &paper, false);
     return 0;
 }
 
-#endif /* FUTURE_RTL_CONFIGURATION */
 /* RO angle; */
 /* RO; */
 int
@@ -531,9 +538,7 @@ pgconfig_do_registration(
 	  HPGL_COMMAND('I', 'R', hpgl_IR, 0),
 	  HPGL_COMMAND('I', 'W', hpgl_IW, 0),
 	  HPGL_COMMAND('P', 'G', hpgl_PG, 0),
-#ifdef FUTURE_RTL_CONFIGURATION
 	  HPGL_COMMAND('P', 'S', hpgl_PS, 0),
-#endif /* FUTURE_RTL_CONFIGURATION */
 	  HPGL_COMMAND('R', 'O', hpgl_RO, 0),
 	  HPGL_COMMAND('R', 'P', hpgl_RP, 0),
 	  HPGL_COMMAND('S', 'C', hpgl_SC, 0),

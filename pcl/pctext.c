@@ -641,6 +641,10 @@ pcl_text(
     if (pcs->penum == 0)
         return e_Memory;
 
+    /* rtl files can have text in them - we don't print any characters
+       in rtl */
+    if (pcs->personality == rtl)
+	return 0;
     /* set up the current font and HMI */
     if ((pcs->font == 0) && ((code = pcl_recompute_font(pcs)) < 0))
         return code;

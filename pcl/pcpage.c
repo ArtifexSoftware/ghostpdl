@@ -145,8 +145,12 @@ update_xfm_state(
                        );
     pxfmst->lp2pg_mtx.tx += loff;
     pxfmst->lp2pg_mtx.ty += toff;
-    offset = ( (pxfmst->lp_orient & 0x1) != 0 ? psize->offset_landscape
-	       : psize->offset_portrait );
+    if ( pcs->personality == rtl )
+	offset = 0;
+    else
+	offset = ( (pxfmst->lp_orient & 0x1) != 0 ? psize->offset_landscape
+		   : psize->offset_portrait );
+    
     /* we need an extra 1/10 inch on each side to support 80
        characters vs. 78 at 10 cpi.  HP applies the change to Letter
        and A4.  We apply it to all paper sizes */
@@ -196,10 +200,17 @@ update_xfm_state(
 	   margins to be 1/6".  We set all margins to the the maximum of the
 	   PCL language defined 1/6" and the actual hardware margin.  If 1/6"
 	   is not available pcl will not work correctly all of the time. */
-	print_rect.p.x = max(PRINTABLE_MARGIN_CP, inch2coord(pdev->HWMargins[0] / 72.0));
-	print_rect.p.y = max(PRINTABLE_MARGIN_CP, inch2coord(pdev->HWMargins[1]) / 72.0);
-	print_rect.q.x = psize->width - max(PRINTABLE_MARGIN_CP, inch2coord(pdev->HWMargins[2] / 72.0));
-	print_rect.q.y = psize->height - max(PRINTABLE_MARGIN_CP, inch2coord(pdev->HWMargins[3] / 72.0));
+	if ( pcs->personality == rtl ) {
+	    print_rect.p.x = inch2coord(pdev->HWMargins[0] / 72.0);
+	    print_rect.p.y = inch2coord(pdev->HWMargins[1]) / 72.0;
+	    print_rect.q.x = psize->width - inch2coord(pdev->HWMargins[2] / 72.0);
+	    print_rect.q.y = psize->height - inch2coord(pdev->HWMargins[3] / 72.0);
+	} else {
+	    print_rect.p.x = max(PRINTABLE_MARGIN_CP, inch2coord(pdev->HWMargins[0] / 72.0));
+	    print_rect.p.y = max(PRINTABLE_MARGIN_CP, inch2coord(pdev->HWMargins[1]) / 72.0);
+	    print_rect.q.x = psize->width - max(PRINTABLE_MARGIN_CP, inch2coord(pdev->HWMargins[2] / 72.0));
+	    print_rect.q.y = psize->height - max(PRINTABLE_MARGIN_CP, inch2coord(pdev->HWMargins[3] / 72.0));
+	}
 	pcl_transform_rect(&print_rect, &dev_rect, &pg2dev);
 	pxfmst->dev_print_rect.p.x = float2fixed(round(dev_rect.p.x));
 	pxfmst->dev_print_rect.p.y = float2fixed(round(dev_rect.p.y));
@@ -343,7 +354,7 @@ new_page_size(
  * The last operand indicates if this routine is being called as part of
  * an initial resete.
  */
-  private void
+  void
 new_logical_page(
     pcl_state_t *               pcs,
     int                         lp_orient,

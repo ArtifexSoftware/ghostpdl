@@ -27,6 +27,13 @@ int pcl_end_page(P2(
     pcl_print_condition_t   condition
 ));
 
+void new_logical_page(P4(
+    pcl_state_t *               pcs,
+    int                         lp_orient,
+    const pcl_paper_size_t *    psize,
+    bool                        reset_initial
+));
+
 #define pcl_end_page_always(pcs)    pcl_end_page((pcs), pcl_print_always)
 #define pcl_end_page_if_marked(pcs) pcl_end_page((pcs), pcl_print_if_marked)
 

@@ -52,9 +52,16 @@ hpgl_default_coordinate_system(
     pcs->g.plot_width = pcs->g.picture_frame_width
                        = pcs->xfm_state.lp_size.x;
     pcs->g.plot_height = pcs->g.picture_frame_height 
-	                = pcs->xfm_state.lp_size.y - inch2coord(1.0);
-    pcs->g.picture_frame.anchor_point.x = pcs->margins.left;
-    pcs->g.picture_frame.anchor_point.y = pcs->margins.top;
+	                = pcs->xfm_state.lp_size.y;
+    if ( pcs->personality == rtl ) {
+	pcs->g.picture_frame.anchor_point.x = 0;
+	pcs->g.picture_frame.anchor_point.y = 0;
+    } else {
+	pcs->g.picture_frame.anchor_point.x = pcs->margins.left;
+	pcs->g.picture_frame.anchor_point.y = pcs->margins.top;
+	pcs->g.plot_height -= inch2coord(1.0);
+	pcs->g.picture_frame_height -= inch2coord(1.0);
+    }
     pcs->g.plot_size_vertical_specified = false;
     pcs->g.plot_size_horizontal_specified = false;
     /* The default coordinate system is absolute with the origin at 0,0 */

@@ -309,7 +309,7 @@ pcl_do_LF(
  * Unconditionally feed a page, and move the the "home" verical position on
  * the followin page.
  */
-  private int
+  int
 pcl_do_FF(
     pcl_state_t *   pcs
 )

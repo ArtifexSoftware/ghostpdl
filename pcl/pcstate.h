@@ -46,6 +46,14 @@ typedef enum id_type_enum {
     numeric_id
 } id_type_t;
 
+/* define different language personalities for dynamic configuration */
+typedef enum personality_enum {   /* NB  document */
+    pcl5c,
+    pcl5e,
+    rtl,
+    hpgl
+} pcl_personality_t;
+
 /*
  * Palette stack. This is implemented as a simple linked list.  NB
  * needs to be moved.  
@@ -334,6 +342,9 @@ struct pcl_state_s {
        library expects put_params to be applied to the real device and
        not pcl forwarding devices */
     gx_device *ptarget_device;
+    
+    /* the current language personality */
+    pcl_personality_t personality;
 };
 
 /* accessor functions for the pcl target device.  These live in

@@ -89,6 +89,30 @@ pcl_get_target_device(pcl_state_t *pcs)
     return pcs->ptarget_device;
 }
 
+/* NB needs to documentation */
+ private void
+pcl_set_personality(pcl_state_t *pcs)
+{
+    /* set up current personality */
+    private const struct {
+	const char *pjl_pers;
+	pcl_personality_t pcl_pers;
+    } pjl2pcl_personalities[] = {
+	{ "pcl5c", pcl5c },
+	{ "pcl5e", pcl5e },
+	{ "rtl", rtl },
+	{ "hpgl", hpgl }
+    };
+    int i;
+    pcs->personality = pcl5c;
+    for (i = 0; i < countof(pjl2pcl_personalities); i++)
+	if ( !pjl_compare(pjl_get_envvar(pcs->pjls, "personality"),
+			  pjl2pcl_personalities[i].pjl_pers) ) {
+	    pcs->personality = pjl2pcl_personalities[i].pcl_pers;
+		    break;
+	}
+}
+
   private int
 pcl_gstate_client_copy_for(
     void *                  to,
@@ -189,6 +213,7 @@ main(
 
     /* initialize pjl */
     pcs->pjls = pjl_process_init(mem);
+    pcl_set_personality(pcs);
     pcl_parser_state.hpgl_parser_state = &pgl_parser_state;
     {
 	/* Run initialization code. */

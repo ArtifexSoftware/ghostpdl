@@ -66,8 +66,11 @@ pcl_vert_pic_frame_size_decipoints(pcl_args_t *pargs, pcl_state_t *pcs)
     coord size = (coord)(float_arg(pargs) * 10.0); /* --> centipoints */
 	
     /* default to pcl logical page */
-    if ( size == 0 )
-	size = pcs->xfm_state.lp_size.y - inch2coord(1.0);
+    if ( size == 0 ) {
+	size = pcs->xfm_state.lp_size.y;
+	if ( pcs->personality != rtl )
+	    size -= inch2coord(1.0);
+    }
     pcs->g.picture_frame_height = size;
     pcl_set_picture_frame_side_effects(pcs);
     return 0;

@@ -42,6 +42,7 @@ int pcl_set_cap_y(P5(
 ));
 
 void    pcl_do_CR(P1(pcl_state_t * pcs));
+int     pcl_do_FF(P1(pcl_state_t * pcs));
 int     pcl_do_LF(P1(pcl_state_t * pcs));
 void    pcl_home_cursor(P1(pcl_state_t * pcs));
 
