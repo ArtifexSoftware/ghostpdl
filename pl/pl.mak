@@ -11,6 +11,7 @@
 PLSRC=$(PLSRCDIR)$(D)
 PLOBJ=$(PLOBJDIR)$(D)
 PLO_=$(O_)$(PLOBJ)
+GLGEN=$(GLGENDIR)$(D)
 
 PLCCC=$(CC_) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I) $(C_)
 
@@ -32,6 +33,19 @@ pltoputl_h=$(PLSRC)pltoputl.h $(scommon_h)
 
 ################ PJL ################
 
+
+PJLVERSION=1.10
+
+plver_h=$(PLSRC)plver.h
+
+$(PLSRC)plver.h: $(PLSRC)pl.mak
+	$(GLGEN)echogs$(XE) -e .h -w $(PLSRC)plver -n -x 23 "define PJLVERSION"
+	$(GLGEN)echogs$(XE) -e .h -a $(PLSRC)plver -s -x 22 $(PJLVERSION) -x 22
+	$(GLGEN)echogs$(XE) -e .h -a $(PLSRC)plver -n -x 23 "define PJLBUILDDATE"
+	$(GLGEN)echogs$(XE) -e .h -a $(PLSRC)plver -s -x 22 -d -x 22
+
+
+
 # Currently we only parse PJL enough to detect UELs.
 
 pjparse_h=$(PLSRC)pjparse.h
@@ -42,7 +56,7 @@ $(PLOBJ)pjparse.$(OBJ): $(PLSRC)pjparse.c $(memory__h)\
 	$(PLCCC) $(PLSRC)pjparse.c $(PLO_)pjparse.$(OBJ)
 
 $(PLOBJ)pjparsei.$(OBJ): $(PLSRC)pjparsei.c $(memory__h)\
- $(scommon_h) $(pjparsei_h) $(plparse_h) $(string__h) $(gserrors_h)
+ $(scommon_h) $(pjparsei_h) $(plparse_h) $(string__h) $(gserrors_h) $(plver_h)
 	$(PLCCC) $(PLSRC)pjparsei.c $(PLO_)pjparsei.$(OBJ)
 
 $(PLOBJ)pjtop.$(OBJ): $(PLSRC)pjtop.c $(AK) $(pjtop_h) $(string__h)

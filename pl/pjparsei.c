@@ -5,6 +5,7 @@
 #include "pjtop.h"
 #include "pjparse.h"
 #include "plparse.h"
+#include "plver.h"
 
 /*
  * PJL interpeter: derived from pl_interp_t
@@ -33,8 +34,8 @@ pjl_impl_characteristics(
   static pl_interp_characteristics_t pjl_characteristics = {
     "PJL",
     "Artifex",
-    0,
-    0,
+    PJLVERSION,
+    PJLBUILDDATE,
     17    /* sizeof min buffer == sizeof UEL */
   };
   return &pjl_characteristics;

@@ -127,13 +127,10 @@ void pl_print_usage(P3(gs_memory_t *mem, const pl_main_instance_t *pmi,
 #endif
 
 /* Process the options on the command line, including making the
-   initial device and setting its parameters.  Clients can also pass
-   in a version number and build date that will be printed as part of
-   the "usage" statement */
-int pl_main_process_options(P6(pl_main_instance_t *pmi, arg_list *pal,
+   initial device and setting its parameters.  */
+int pl_main_process_options(P4(pl_main_instance_t *pmi, arg_list *pal,
 			       gs_c_param_list *params,
-                               pl_interp_implementation_t const * const impl_array[],
-                               const char *version, const char *build_date));
+                               pl_interp_implementation_t const * const impl_array[]));
 
 /* Find default language implementation */
 pl_interp_implementation_t const *
@@ -236,10 +233,25 @@ main(
 	pl_interp_implementation_t const *desired_implementation;
 
 	/* Process any new options. May request new device. */
-	if (pl_main_process_options(&inst, &args, &params, pdl_implementation,
-				    pl_characteristics(&pjl_implementation)->version,
-				    pl_characteristics(&pjl_implementation)->build_date) < 0) {
+	if (argc==1 || pl_main_process_options(&inst, &args, &params, pdl_implementation) < 0) {
+	    int i;
+	    const gx_device **dev_list;
+	    int num_devs = gs_lib_device_list((const gx_device * const **)&dev_list, NULL);
+
 	    fprintf(gs_stderr, pl_usage, argv[0]);
+
+	    if (pl_characteristics(&pjl_implementation)->version)
+		fprintf(gs_stderr, "Version: %s\n", pl_characteristics(&pjl_implementation)->version);
+	    if (pl_characteristics(&pjl_implementation)->build_date)
+		fprintf(gs_stderr, "Build date: %s\n", pl_characteristics(&pjl_implementation)->build_date);
+	    fputs("Devices:", gs_stderr);
+	    for ( i = 0; i < num_devs; ++i ) {
+		if ( ( (i + 1) )  % 9 == 0 )
+		    fputs("\n", gs_stderr);
+		fprintf(gs_stderr, " %s", gs_devicename(dev_list[i]));
+	    }
+	    fputs("\n", gs_stderr);
+
 	    exit(1);
 	}
 
@@ -391,8 +403,10 @@ main(
         pl_print_usage(mem, &inst, "Final");
         dprintf1("%% Max allocated = %ld\n", gs_malloc_max);
     }
+/*
     if (gs_debug_c('!'))
         debug_dump_memory(imem, &dump_control_default);
+*/
 #endif
 
     /* release param list */
@@ -638,8 +652,7 @@ pl_main_arg_fopen(const char *fname, void *ignore_data)
 #define arg_heap_copy(str) arg_copy(str, &gs_memory_default)
 int
 pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
- gs_c_param_list *params, pl_interp_implementation_t const * const impl_array[],
- const char *version, const char *build_date)
+ gs_c_param_list *params, pl_interp_implementation_t const * const impl_array[])
 {	const gx_device **dev_list;
 	int num_devs = gs_lib_device_list((const gx_device * const **)&dev_list, NULL);
 	int code = 0;
@@ -802,20 +815,9 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 	      }
 	  }
 out:	if ( help )
-	  { int i;
+	  { 
 	    arg_finit(pal);
 	    gs_c_param_list_release(params);
-	    if (version)
-		fprintf(gs_stderr, "Version: %s\n", version);
-	    if (build_date)
-		fprintf(gs_stderr, "Build date: %s\n", build_date);
-	    fputs("Devices:", gs_stderr);
-	    for ( i = 0; i < num_devs; ++i ) {
-		if ( ( (i + 1) )  % 9 == 0 )
-		    fputs("\n", gs_stderr);
-		fprintf(gs_stderr, " %s", gs_devicename(dev_list[i]));
-	    }
-	    fputs("\n", gs_stderr);
 	    return -1;
 	  }
 	gs_c_param_list_read(params);

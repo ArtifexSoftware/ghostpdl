@@ -43,8 +43,8 @@ void pl_main_init(P2(pl_main_instance_t *pmi, gs_memory_t *memory));
    initial device and setting its parameters.  Clients can also pass
    in a version number and build date that will be printed as part of
    the "usage" statement */
-int pl_main_process_options(P6(pl_main_instance_t *pmi, arg_list *pal,
-			       char **argv, int argc, char *version, char *build_date));
+int pl_main_process_options(P4(pl_main_instance_t *pmi, arg_list *pal,
+			       char **argv, int argc));
 
 /* Allocate and initialize the first graphics state. */
 #ifndef gs_state_DEFINED
