@@ -408,8 +408,7 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
 	     */
 	    pdfmark_put_pair(pcd, pair);
 	    /* Break const so we can update the (copied) string. */
-	    pcv = (cos_value_t *)
-		cos_dict_find(pcd, (const byte *)"/Contents", 9);
+	    pcv = (cos_value_t *)cos_dict_find_c_key(pcd, "/Contents");
 	    cstr = pcv->contents.chars.data;
 	    /* Loop invariant: j <= i < csize. */
 	    for (i = j = 0; i < csize;)
@@ -842,7 +841,7 @@ pdfmark_ARTICLE(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     /* Find the article with this title, or create one. */
     for (part = pdev->articles; part != 0; part = part->next) {
 	const cos_value_t *a_title =
-	    cos_dict_find(part->contents, (const byte *)"/Title", 6);
+	    cos_dict_find_c_key(part->contents, "/Title");
 
 	if (a_title != 0 && !COS_VALUE_IS_OBJECT(a_title) &&
 	    !bytes_compare(a_title->contents.chars.data,
