@@ -114,7 +114,10 @@ gx_alloc_rop_texture_device(gx_device_rop_texture ** prsdev, gs_memory_t * mem,
 {
     *prsdev = gs_alloc_struct(mem, gx_device_rop_texture,
 			      &st_device_rop_texture, cname);
-    return (*prsdev == 0 ? gs_note_error(mem, gs_error_VMerror) : 0);
+    if (*prsdev == 0)
+      return_error(mem, gs_error_VMerror);
+    (*prsdev)->memory = mem;
+    return 0;
 }
 
 /* Initialize a RasterOp source device. */
@@ -124,7 +127,7 @@ gx_make_rop_texture_device(gx_device_rop_texture * dev, gx_device * target,
 {
     gx_device_init((gx_device *) dev,
 		   (const gx_device *)&gs_rop_texture_device,
-		   NULL, true);
+		   dev->memory, true);
     gx_device_set_target((gx_device_forward *)dev, target);
     /* Drawing operations are defaulted, non-drawing are forwarded. */
     gx_device_fill_in_procs((gx_device *) dev);
