@@ -226,6 +226,7 @@ private void display_free_bitmap(gx_device_display * dev);
 private int display_alloc_bitmap(gx_device_display *, gx_device *);
 private int display_set_color_format(gx_device_display *dev, int nFormat);
 private int display_set_separations(gx_device_display *dev);
+private int display_raster(gx_device_display *dev);
 
 /* Open the display driver. */
 private int
@@ -260,7 +261,7 @@ display_open(gx_device * dev)
 
     /* Tell caller the proposed device parameters */
     ccode = (*(ddev->callback->display_presize)) (ddev->pHandle, dev,
-	dev->width, dev->height, gdev_mem_raster(dev), ddev->nFormat);
+	dev->width, dev->height, display_raster(ddev), ddev->nFormat);
     if (ccode < 0) {
 	(*(ddev->callback->display_close))(ddev->pHandle, dev);
 	return_error(ccode);
@@ -275,7 +276,7 @@ display_open(gx_device * dev)
 
     /* Tell caller the device parameters */
     ccode = (*(ddev->callback->display_size)) (ddev->pHandle, dev,
-	dev->width, dev->height, gdev_mem_raster(dev), ddev->nFormat, 
+	dev->width, dev->height, display_raster(ddev), ddev->nFormat, 
 	ddev->mdev->base);
     if (ccode < 0) {
 	display_free_bitmap(ddev);
@@ -892,7 +893,7 @@ display_put_params(gx_device * dev, gs_param_list * plist)
 	 */
 	/* Tell caller we are about to change the device parameters */
 	if ((*ddev->callback->display_presize)(ddev->pHandle, dev,
-	    dev->width, dev->height, gdev_mem_raster(dev),
+	    dev->width, dev->height, display_raster(ddev),
 	    ddev->nFormat) < 0) {
 	    /* caller won't let us change the size */
 	    /* restore parameters then return an error */
@@ -918,7 +919,7 @@ display_put_params(gx_device * dev, gs_param_list * plist)
     
 	/* tell caller about the new size */
 	if ((*ddev->callback->display_size)(ddev->pHandle, dev, 
-	    dev->width, dev->height, gdev_mem_raster(dev),
+	    dev->width, dev->height, display_raster(ddev),
 	    ddev->nFormat, ddev->mdev->base) < 0)
 	    return_error(gs_error_rangecheck);
     }
@@ -1146,6 +1147,34 @@ display_free_bitmap(gx_device_display * ddev)
     }
 }
 
+/* calculate byte length of a row */
+private int 
+display_raster(gx_device_display *dev)
+{
+    int align = 4;
+    int bytewidth = dev->width * dev->color_info.depth/8;
+    switch (dev->nFormat & DISPLAY_ROW_ALIGN_MASK) {
+	case DISPLAY_ROW_ALIGN_4:
+	    align = 4;
+	    break;
+	case DISPLAY_ROW_ALIGN_8:
+	    align = 8;
+	    break;
+	case DISPLAY_ROW_ALIGN_16:
+	    align = 16;
+	    break;
+	case DISPLAY_ROW_ALIGN_32:
+	    align = 32;
+	    break;
+	case DISPLAY_ROW_ALIGN_64:
+	    align = 64;
+	    break;
+    }
+    align -= 1;
+    bytewidth = (bytewidth + align) & (~align);
+    return bytewidth;
+}
+
 /* Allocate the backing bitmap. */
 private int
 display_alloc_bitmap(gx_device_display * ddev, gx_device * param_dev)
@@ -1177,8 +1206,13 @@ display_alloc_bitmap(gx_device_display * ddev, gx_device * param_dev)
      */
     gx_device_retain((gx_device *)(ddev->mdev), true);
     
+    /* Memory device width may be larger than device width
+     * if row alignment is not 4.
+     */
     ddev->mdev->width = param_dev->width;
+    ddev->mdev->width = display_raster(ddev) * 8 / ddev->color_info.depth;
     ddev->mdev->height = param_dev->height;
+
     /* Tell the memory device to allocate the line pointers separately
      * so we can place the bitmap in special memory.
      */
@@ -1633,7 +1667,16 @@ test_mode test_modes[] = {
      DISPLAY_BIGENDIAN | DISPLAY_BOTTOMFIRST},
     {"32bit/pixel CMYK, bottom first",
      DISPLAY_COLORS_CMYK | DISPLAY_ALPHA_NONE | DISPLAY_DEPTH_8 | 
-     DISPLAY_BIGENDIAN | DISPLAY_BOTTOMFIRST}
+     DISPLAY_BIGENDIAN | DISPLAY_BOTTOMFIRST},
+    {"64bit/pixel separations, bottom first",
+     DISPLAY_COLORS_SEPARATIONS | DISPLAY_ALPHA_NONE | DISPLAY_DEPTH_8 | 
+     DISPLAY_BIGENDIAN | DISPLAY_BOTTOMFIRST},
+    {"1bit/pixel native, black is 1, 8 byte alignment",
+     DISPLAY_COLORS_NATIVE | DISPLAY_ALPHA_NONE | DISPLAY_DEPTH_1 | 
+     DISPLAY_LITTLEENDIAN | DISPLAY_BOTTOMFIRST | DISPLAY_ROW_ALIGN_8},
+    {"24bit/pixel color, bottom first, BGR24, 64 byte alignment",
+     DISPLAY_COLORS_RGB | DISPLAY_ALPHA_NONE | DISPLAY_DEPTH_8 | 
+     DISPLAY_LITTLEENDIAN | DISPLAY_BOTTOMFIRST | DISPLAY_ROW_ALIGN_64}
 };
 
 void

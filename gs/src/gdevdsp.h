@@ -128,6 +128,22 @@ typedef enum {
 } DISPLAY_FORMAT_555;
 #define DISPLAY_555_MASK 0x00040000L
 
+/* Define the row alignment.  The default is 4 bytes, so 
+ * DISPLAY_ROW_ALIGN_DEFAULT is the same as DISPLAY_ROW_ALIGN_4
+ */
+typedef enum {
+    DISPLAY_ROW_ALIGN_DEFAULT = (0<<20),
+    /* DISPLAY_ROW_ALIGN_1 = (1<<20), */ /* not currently possible */
+    /* DISPLAY_ROW_ALIGN_2 = (2<<20), */ /* not currently possible */
+    DISPLAY_ROW_ALIGN_4 = (3<<20),
+    DISPLAY_ROW_ALIGN_8 = (4<<20),
+    DISPLAY_ROW_ALIGN_16 = (5<<20),
+    DISPLAY_ROW_ALIGN_32 = (6<<20),
+    DISPLAY_ROW_ALIGN_64 = (7<<20)
+} DISPLAY_FORMAT_ROW_ALIGN;
+#define DISPLAY_ROW_ALIGN_MASK 0x00700000L
+
+
 #ifndef display_callback_DEFINED
 #define display_callback_DEFINED
 typedef struct display_callback_s display_callback;
