@@ -72,7 +72,7 @@
 # endif
 #endif	/* OS2 && __IBMC */
 
-#ifdef __MACINTOSH__
+#ifdef __MACOS__
 # pragma export on
 #endif
 
@@ -287,7 +287,7 @@ typedef void (GSDLLAPIPTR PFN_gsapi_set_visual_tracer)
     (struct vd_trace_interface_s *I);
 
 
-#ifdef __MACINTOSH__
+#ifdef __MACOS__
 #pragma export off
 #endif
 

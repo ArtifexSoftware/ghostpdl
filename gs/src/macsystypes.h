@@ -38,8 +38,9 @@ int myfprintf(FILE *file, const char *fmt, ...);
 int myfputs(const char *string, FILE *file);
 #endif
 
-#ifndef __MACINTOSH__
-#define __MACINTOSH__
+/* Metrowerks CodeWarrior should define this */
+#ifndef __MACOS__
+#define __MACOS__
 #endif
 
 #endif /* __sys_types_h__ */
