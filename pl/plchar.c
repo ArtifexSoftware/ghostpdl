@@ -1010,9 +1010,7 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
             ipx = (int)sbox.p.x, ipy = (int)sbox.p.y;
             iqx = (int)ceil(sbox.q.x), iqy = (int)ceil(sbox.q.y);
             /* Set up the memory device for the bitmap. */
-            gs_make_mem_mono_device(&mdev, NULL, pgs->device);
-            /* prevent freeing - shoule not be freed */
-            gx_device_retain((gx_device *)&mdev, true);
+            gs_make_mem_mono_device(&mdev, pgs->memory, pgs->device);
             bold_added = (int)ceil((iqy - ipy) * bold_fraction);
             mdev.width = iqx - ipx + bold_added;
             mdev.height = iqy - ipy;
