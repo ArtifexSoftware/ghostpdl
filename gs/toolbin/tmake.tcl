@@ -36,7 +36,7 @@ exec tclsh "$0" "$@"
 #	- No target is the target of more than one rule.
 
 # Define the backward-compatibility version of this file.
-set TMAKE_VERSION 105
+set TMAKE_VERSION 106
 
 #****** -j doesn't work yet ******#
 
@@ -52,11 +52,12 @@ set TMAKE_VERSION 105
 #	WARN_REDEFINED - warn about redefined variables
 #	WARN_MULTIPLE - warn about variables defined more than once,
 #	  even if the definitions are identical
-#	WARN_UNDEFINED - warn about undefined variables
+#	WARN_UNDEFINED - warn about undefined variables (every time)
+#	WARN_UNDEFINED_ONCE - warn about undefined variables (only once)
 
 set FLAGS [list\
     DEBUG DRYRUN IGNORE_ERRORS KEEP_GOING SILENT\
-	    WARN_MULTIPLE WARN_REDEFINED WARN_UNDEFINED\
+	    WARN_MULTIPLE WARN_REDEFINED WARN_UNDEFINED WARN_UNDEFINED_ONCE\
 ]
 set GLOBALS "$FLAGS\
     MAKEFLAGS MAX_JOBS MAX_LOAD\
@@ -103,16 +104,19 @@ proc init_runtime {} {
 }
 
 rename unknown old_unknown
-proc unknown_ {var} {
-    global WARN_UNDEFINED
+proc unknown_ {cmd var} {
+    global WARN_UNDEFINED WARN_UNDEFINED_ONCE LN
 
-    if {$WARN_UNDEFINED} {
-	puts "*** Warning: $var is not defined"
+    if {$WARN_UNDEFINED || $WARN_UNDEFINED_ONCE} {
+	puts "${LN}: warning: undefined variable `$var'"
+	set def $WARN_UNDEFINED_ONCE
+    } else {
+	set def 1
     }
-    V $var "" default
-    return 1
+    if {$def} {V $var "" default}
+    return ""
 }
-proc unknown@ {var} {
+proc unknown@ {cmd var} {
     if {[catch {tset $var [file mtime $var]}]} {
 	global N TARGET_FAILED
 
@@ -136,11 +140,10 @@ proc unknown@ {var} {
 	set TARGET_FAILED $var
 	return -errorcode error
     }
-    return 1
 }
 proc unknown {cmd args} {
     if {[regexp {^([_@])(.*)$} $cmd skip 1st var]} {
-	if {$args == "" && [unknown$1st $var]} {return [$cmd]}
+	if {$args == ""} {return [unknown$1st $cmd $var]}
     }
     eval old_unknown [concat [list $cmd] $args]
 }
@@ -153,6 +156,13 @@ proc var_value {var} {
     }
     return $value
 }
+proc unsubst_vars {defn} {
+    set result ""
+    while {[regexp {^((\\.|[^\\[])*)\[_([^]]*)\](.*)$} $defn skip before skip2 var defn]} {
+	set result "${result}${before}\$\($var\)"
+    }
+    return "${result}${defn}"
+}
 proc redefined {var value lnum} {
     global WARN_MULTIPLE WARN_REDEFINED
 
@@ -162,10 +172,18 @@ proc redefined {var value lnum} {
 	set old_lnum $_($var)
 	if {!(($old_lnum == "default" || $old_lnum == "implicit") && $lnum == "command-line")} {
 	    set old_value [var_value $var]
-	    puts "*** Warning: $var redefined from $old_value ($old_lnum) to $value ($lnum)"
+	    puts "${lnum}: warning: variable `$var' redefined as [unsubst_vars $value]"
+	    puts "${old_lnum}: variable `$var' previously defined as [unsubst_vars $old_value]"
 	}
     }
 }
+# Set the source line number.
+proc L {lnum} {
+    global LN
+
+    set LN $lnum
+}
+# Record a macro value.
 proc V {var value lnum} {
     global _
 
@@ -182,40 +200,40 @@ proc V {var value lnum} {
 	V $var $value $lnum
     }
 }
-proc P {var vexpr lnum} {
-    global _
+proc P {var vexpr} {
+    global _ LN
 
     if {![info exists _($var)]} {
 	ifdebug {puts "$var=$vexpr"}
-	set _($var) $lnum
+	set _($var) $LN
 	proc _$var {} "proc _$var {} \[list return $vexpr\];_$var"
     } elseif {[set old $_($var)] == "default"} {
 	unset _($var)
-	P $var $vexpr $lnum
+	P $var $vexpr
     } elseif {$old != "command-line"} {
-	redefined $var $vexpr $lnum
+	redefined $var $vexpr $LN
 	unset _($var)
-	P $var $vexpr $lnum
+	P $var $vexpr
     }
 }
 
 # Record the very first target as the default target.
-proc R {tl dl body lnum} {
+proc R {tl dl body} {
     global TARGETS
 
     if {$TARGETS == ""} {
 	lappend TARGETS [lindex $tl 0]
     }
-    proc R {tl dl body lnum} {
-	global C I N T
+    proc R {tl dl body} {
+	global C I N T LN
 
 	set C([incr I]) $body
 	foreach t [set T($I) $tl] {
-	    set N($t) $lnum
+	    set N($t) $LN
 	    proc @$t {} [list target $t $dl $I]
 	}
     }
-    R $tl $dl $body $lnum
+    R $tl $dl $body
 }
 proc tset {p t} {
     proc @$p {} [list return $t]
@@ -411,7 +429,7 @@ proc write_header {out fname} {
 
 # Write the definition of a macro.
 proc write_macro {out var defn linenum} {
-    puts $out "P $var {[quote $defn]} [list $linenum]"
+    puts $out "L [list $linenum];P $var {[quote $defn]}"
 }
 
 # Write an 'include'.
@@ -429,7 +447,7 @@ proc write_rule {out targets deps commands linenum} {
 	regsub {^(make|\$\(MAKE\)) } $c {tmake $(MAKEFLAGS) MAKELEVEL=$(MAKELEVEL_1) } c
 	append body " [quote $c]"
     }
-    puts $out "R [quote $targets] [quote [string trim $deps]] [list $body] [list $linenum]"
+    puts $out "L [list $linenum];R [quote $targets] [quote [string trim $deps]] [list $body]"
 }
 
 # ---------------- Top level ---------------- #
@@ -539,13 +557,14 @@ proc tmake_args {args} {
 	    --warn-multiply-defined-variables {set WARN_MULTIPLE 1}
 	    --warn-redefined-variables {set WARN_REDEFINED 1}
 	    --warn-undefined-variables {set WARN_UNDEFINED 1}
+	    --warn-undefined-variables-once {set WARN_UNDEFINED_ONCE 1}
 	    -* {
 		puts "Unknown option: $arg"
 		puts {Usage: tmake (<option> | <var>=<value> | <target>)*}
 		puts {Options:}
 		puts {	--compile-only -d -i -k -n -s}
 		puts {	--warn-multiply-defined-variables --warn-redefined-variables}
-		puts {	--warn-undefined-variables}
+		puts {	--warn-undefined-variables --warn-undefined-variables-once}
 		puts {	-f <file> -j <jobs> -l <load>}
 		exit
 	    }
