@@ -86,7 +86,7 @@ jbig2_default_error(void *data, const char *msg,
 }
 
 int
-jbig2_error(Jbig2Ctx *ctx, Jbig2Severity severity, int segment_number,
+jbig2_error(Jbig2Ctx *ctx, Jbig2Severity severity, int32_t segment_number,
 	     const char *fmt, ...)
 {
   char buf[1024];
