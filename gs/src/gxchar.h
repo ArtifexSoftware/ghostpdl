@@ -80,9 +80,7 @@ struct gs_show_enum_s {
     int ftx, fty;		/* transformed font translation */
     /* Following are updated dynamically */
     gs_glyph (*encode_char)(P3(gs_font *, gs_char, gs_glyph_space_t));  /* copied from font */
-    gs_log2_scale_point log2_suggested_scale;	/* suggested scaling */
-				/* factors for oversampling, */
-				/* based on FontBBox and CTM */
+    gs_log2_scale_point fapi_log2_scale; /* scaling factors for oversampling with FAPI, -1 = not valid */
     gx_device_memory *dev_cache;	/* cache device */
     gx_device_memory *dev_cache2;	/* underlying alpha memory device, */
 				/* if dev_cache is an alpha buffer */
@@ -125,5 +123,7 @@ cached_char *
 cached_char *
             gx_lookup_xfont_char(P6(const gs_state *, cached_fm_pair *, gs_char, gs_glyph, const gx_xfont_callbacks *, int));
 int gx_image_cached_char(P2(gs_show_enum *, cached_char *));
+void gx_compute_text_oversampling(P4(const gs_show_enum * penum, const gs_font *pfont, 
+                             int alpha_bits, gs_log2_scale_point *p_log2_scale));
 
 #endif /* gxchar_INCLUDED */

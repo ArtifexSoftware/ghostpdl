@@ -77,7 +77,7 @@ RELOC_PTRS_END
 private int continue_kshow(P1(gs_show_enum *));
 private int continue_show(P1(gs_show_enum *));
 private int continue_show_update(P1(gs_show_enum *));
-private void show_set_scale(P1(gs_show_enum *));
+private void show_set_scale(P2(const gs_show_enum *, gs_log2_scale_point *log2_scale));
 private int show_cache_setup(P1(gs_show_enum *));
 private int show_state_setup(P1(gs_show_enum *));
 private int show_origin_setup(P4(gs_state *, fixed, fixed, gs_char_path_mode));
@@ -107,6 +107,7 @@ gs_show_enum_alloc(gs_memory_t * mem, gs_state * pgs, client_name_t cname)
     penum->show_gstate = 0;
     penum->dev_cache = 0;
     penum->dev_cache2 = 0;
+    penum->fapi_log2_scale.x = penum->fapi_log2_scale.y = -1;
     penum->dev_null = 0;
     penum->fstack.depth = -1;
     return penum;
@@ -303,6 +304,38 @@ set_char_width(gs_show_enum *penum, gs_state *pgs, floatp wx, floatp wy)
     return !SHOW_IS_DRAWING(penum);
 }
 
+void
+gx_compute_text_oversampling(const gs_show_enum * penum, const gs_font *pfont, 
+                             int alpha_bits, gs_log2_scale_point *p_log2_scale)
+{
+    gs_log2_scale_point log2_scale;
+    show_set_scale(penum, &log2_scale);
+    /*
+     * If the device wants anti-aliased text,
+     * increase the sampling scale to ensure that
+     * if we want N bits of alpha, we generate
+     * at least 2^N sampled bits per pixel.
+     */
+    if (alpha_bits > 1) {
+	int more_bits =
+	alpha_bits - (log2_scale.x + log2_scale.y);
+
+	if (more_bits > 0) {
+	    if (log2_scale.x <= log2_scale.y) {
+		log2_scale.x += (more_bits + 1) >> 1;
+		log2_scale.y += more_bits >> 1;
+	    } else {
+		log2_scale.x += more_bits >> 1;
+		log2_scale.y += (more_bits + 1) >> 1;
+	    }
+	}
+    } else if (!OVERSAMPLE || pfont->PaintType != 0) {
+	/* Don't oversample artificially stroked fonts. */
+	log2_scale.x = log2_scale.y = 0;
+    }
+    *p_log2_scale = log2_scale;
+}
+
 /* Set up the cache device if relevant. */
 /* Return 1 if we just set up a cache device. */
 /* Used by setcachedevice and setcachedevice2. */
@@ -338,16 +371,16 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
 	const gs_font *pfont = pgs->font;
 	gs_font_dir *dir = pfont->dir;
 	gx_device *dev = gs_currentdevice_inline(pgs);
-	int alpha_bits =
-	(*dev_proc(dev, get_alpha_bits)) (dev, go_text);
+        int alpha_bits =
+        (*dev_proc(dev, get_alpha_bits)) (dev, go_text);
 	gs_log2_scale_point log2_scale;
-	static const fixed max_cdim[3] =
-	{
+        static const fixed max_cdim[3] =
+        {
 #define max_cd(n)\
 	    (fixed_1 << (arch_sizeof_short * 8 - n)) - (fixed_1 >> n) * 3
 	    max_cd(0), max_cd(1), max_cd(2)
 #undef max_cd
-	};
+        };
 	ushort iwidth, iheight;
 	cached_char *cc;
 	gs_fixed_rect clip_box;
@@ -385,13 +418,12 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
 	if (clr.y < cll.y)
 	    cll.y = clr.y, cur.y = cul.y;
 	/* Now cll and cur are the extrema of the box. */
-	cdim.x = cur.x - cll.x;
-	cdim.y = cur.y - cll.y;
-	show_set_scale(penum);
-	log2_scale.x = penum->log2_suggested_scale.x;
-	log2_scale.y = penum->log2_suggested_scale.y;
+        if (penum->fapi_log2_scale.x != -1)
+            log2_scale = penum->fapi_log2_scale;
+        else
+            gx_compute_text_oversampling(penum, pfont, alpha_bits, &log2_scale);
 #ifdef DEBUG
-	if (gs_debug_c('k')) {
+        if (gs_debug_c('k')) {
 	    dlprintf6("[k]cbox=[%g %g %g %g] scale=%dx%d\n",
 		      fixed2float(cll.x), fixed2float(cll.y),
 		      fixed2float(cur.x), fixed2float(cur.y),
@@ -399,31 +431,10 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
 	    dlprintf6("[p]  ctm=[%g %g %g %g %g %g]\n",
 		      pgs->ctm.xx, pgs->ctm.xy, pgs->ctm.yx, pgs->ctm.yy,
 		      pgs->ctm.tx, pgs->ctm.ty);
-	}
+        }
 #endif
-	/*
-	 * If the device wants anti-aliased text,
-	 * increase the sampling scale to ensure that
-	 * if we want N bits of alpha, we generate
-	 * at least 2^N sampled bits per pixel.
-	 */
-	if (alpha_bits > 1) {
-	    int more_bits =
-	    alpha_bits - (log2_scale.x + log2_scale.y);
-
-	    if (more_bits > 0) {
-		if (log2_scale.x <= log2_scale.y) {
-		    log2_scale.x += (more_bits + 1) >> 1;
-		    log2_scale.y += more_bits >> 1;
-		} else {
-		    log2_scale.x += more_bits >> 1;
-		    log2_scale.y += (more_bits + 1) >> 1;
-		}
-	    }
-	} else if (!OVERSAMPLE || pfont->PaintType != 0) {
-	    /* Don't oversample artificially stroked fonts. */
-	    log2_scale.x = log2_scale.y = 0;
-	}
+	cdim.x = cur.x - cll.x;
+	cdim.y = cur.y - cll.y;
 	if (cdim.x > max_cdim[log2_scale.x] ||
 	    cdim.y > max_cdim[log2_scale.y]
 	    )
@@ -1211,7 +1222,7 @@ show_state_setup(gs_show_enum * penum)
 
 /* Set the suggested oversampling scale for character rendering. */
 private void
-show_set_scale(gs_show_enum * penum)
+show_set_scale(const gs_show_enum * penum, gs_log2_scale_point *log2_scale)
 {
     /*
      * Decide whether to oversample.
@@ -1252,14 +1263,13 @@ show_set_scale(gs_show_enum * penum)
 		sx = 1;
 	    else if (sy == 0 && sx != 0)
 		sy = 1;
-	    penum->log2_suggested_scale.x = sx;
-	    penum->log2_suggested_scale.y = sy;
+	    log2_scale->x = sx;
+	    log2_scale->y = sy;
 	    return;
 	}
     }
     /* By default, don't scale. */
-    penum->log2_suggested_scale.x =
-	penum->log2_suggested_scale.y = 0;
+    log2_scale->x = log2_scale->y = 0;
 }
 
 /* Set up the cache device and related information. */
