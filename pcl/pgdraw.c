@@ -458,6 +458,7 @@ hpgl_draw_vector_absolute(
 				       hpgl_plot_draw_absolute,
                                        set_ctm
                                        ) );
+    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector_fill));
     return 0;
 }
 
@@ -636,7 +637,6 @@ start:
 	direction += 90;
 	goto start;
     }
-    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector_fill));
     hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_pos);
     return 0;
 
