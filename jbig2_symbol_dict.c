@@ -25,7 +25,6 @@
 
 #include <stddef.h>
 #include <string.h> /* memset() */
-#include <stdio.h> /* debugging, remove me! */
 
 #include "jbig2.h"
 #include "jbig2_priv.h"
@@ -62,12 +61,15 @@ typedef struct {
 
 #ifdef DUMP_SYMDICT
 void
-jbig2_dump_symbol_dict(Jbig2SymbolDict *dict)
+jbig2_dump_symbol_dict(Jbig2Ctx *ctx, Jbig2Segment *segment)
 {
+    Jbig2SymbolDict *dict = (Jbig2SymbolDict *)segment->result;
     int index;
     char filename[24];
     
-    fprintf(stderr, "dumping symbol dict as %d individual png files\n", dict->n_symbols);
+    if (dict == NULL) return;
+    jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,
+        "dumping symbol dict as %d individual png files\n", dict->n_symbols);
     for (index = 0; index < dict->n_symbols; index++) {
         snprintf(filename, sizeof(filename), "symbol_%04d.png", index);
 #ifdef HAVE_LIBPNG
@@ -340,18 +342,12 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
       m = params->SDINSYMS->n_symbols;
     else
       m = 0;
-    fprintf(stderr, "building export symbol dictionary\n");
-    fprintf(stderr, "\tinput: %d symbols, decoded: %d symbols\n",
-    	params->SDNUMINSYMS, NSYMSDECODED);
-    fprintf(stderr, "\tto export: %d symbols\n", params->SDNUMEXSYMS);
     while (j < params->SDNUMEXSYMS) {
       if (params->SDHUFF)
       	/* FIXME: implement reading from huff table B.1 */
         exrunlength = params->SDNUMEXSYMS;
       else
         code = jbig2_arith_int_decode(IAEX, as, &exrunlength);
-      fprintf(stderr, "  read runlength %d symbols (exflag = %d)\n",
-      	exrunlength, exflag);
       for(k = 0; k < exrunlength; k++)
         if (exflag) {
           SDEXSYMS->glyphs[j++] = (i < m) ? 
@@ -360,7 +356,6 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
           i++;
         }
         exflag = !exflag;
-        fprintf(stderr, " export index %d; import index %d\n", j, i);
     }
   }
   
@@ -480,7 +475,7 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
 				  segment->data_length - offset,
 				  GB_stats);
 #ifdef DUMP_SYMDICT
-  if (segment->result) jbig2_dump_symbol_dict(segment->result);
+  if (segment->result) jbig2_dump_symbol_dict(ctx, segment);
 #endif
 
   /* todo: retain or free GB_stats */
