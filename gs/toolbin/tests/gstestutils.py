@@ -182,7 +182,10 @@ class GSTestSuite(unittest.TestSuite):
 def gsRunTestsMain(addTests):
     import sys
     import gsconf
-    args = {'gsroot': gsconf.gsroot}
+    try:
+      args = {'gsroot': gsconf.gsroot}
+    except AttributeError:
+      args = {}
     gsTestParseArgv(args, sys.argv)
     suite = GSTestSuite()
     addTests(suite, **args)
