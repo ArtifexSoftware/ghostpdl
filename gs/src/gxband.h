@@ -49,7 +49,7 @@ typedef struct gx_band_page_info_s {
 				/* (actual values, no 0s) */
 } gx_band_page_info_t;
 #define PAGE_INFO_NULL_VALUES\
-  { 0 }, 0, { 0 }, 0, 0, { BAND_PARAMS_INITIAL_VALUES }
+  { 0 }, 0, { 0 }, 0, 0, 0, { BAND_PARAMS_INITIAL_VALUES }
 
 /*
  * By convention, the structure member containing the above is called
