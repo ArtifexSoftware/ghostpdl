@@ -586,6 +586,21 @@ zfileposition(i_ctx_t *i_ctx_p)
     make_int(op, stell(s));
     return 0;
 }
+/* <file> .fileposition <int> */
+private int
+zxfileposition(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    stream *s;
+
+    check_file(s, op);
+    /*
+     * This version of fileposition doesn't give the error, so we can
+     * use it to get the position of string or procedure streams.
+     */
+    make_int(op, stell(s));
+    return 0;
+}
 
 /* <file> <int> setfileposition - */
 private int
@@ -719,6 +734,7 @@ const op_def zfileio1_op_defs[] = {
     {"1closefile", zclosefile},
 		/* currentfile is in zcontrol.c */
     {"1echo", zecho},
+    {"1.fileposition", zxfileposition},
     {"1fileposition", zfileposition},
     {"0flush", zflush},
     {"1flushfile", zflushfile},
