@@ -862,6 +862,8 @@ gs_debug_dump_stack(int code, ref * perror_object)
     gs_main_dump_stack(gs_main_instance_default(), code, perror_object);
 }
 
+#ifndef PSI_INCLUDED 
+
 /* Provide a single point for all "C" stdout and stderr.
  * Eventually these will always be referenced through an instance structure. 
  * We don't know which instance is running (and currently only one
@@ -898,3 +900,4 @@ void errflush()
         fflush(minst->fstderr);
 }
 
+#endif
