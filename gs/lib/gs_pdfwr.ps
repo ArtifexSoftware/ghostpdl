@@ -526,8 +526,15 @@ currentdict /.pdfmarkparams .undef
     { /pdfwrite finddevice }
    ifelse
  } bind def
-/setdistillerparams {		% <dict> setdistillerparams -
-  .distillerdevice null false mark 4 index {
+
+% Some badly designed PostScript files only expect the current/set
+% distillerparams operators to exist in a distiller. Since we have
+% this as a runtime option, we enable these operators IFF the
+% currentdevice is pdfwrite. Also, we mask their existence in 
+% systemdict so that 'where' and 'known' don't show them unless
+% the currentdevice is pdfwrite.
+/.setdistillerparams {		% <dict> setdistillerparams -
+  .distillerdevice //null false mark 4 index {
     //.distillerparamkeys 2 index .knownget { exec } { pop pop } ifelse
   } forall .putdeviceparams
   dup type /booleantype ne {
@@ -536,7 +543,7 @@ currentdict /.pdfmarkparams .undef
     pop pop pop
   } ifelse
 } odef
-/currentdistillerparams {	% - currentdistillerparams <dict>
+/.currentdistillerparams {	% - currentdistillerparams <dict>
   .distillerdevice //.distillerparamkeys .getdeviceparams .dicttomark
 		% Patch StartPage and EndPage
 		% ****** NOTE: StartPage and EndPage are disabled because
@@ -545,11 +552,21 @@ currentdict /.pdfmarkparams .undef
 %  currentdict dup /PDFStartPage undef /PDFEndPage undef
 %  def def currentdict end
 } odef
+/setdistillerparams {
+  currentdevice .devicename /pdfwrite ne {
+    /setdistillerparams /undefined signalerror
+  } if
+  .setdistillerparams
+} bind odef
+/currentdistillerparams {
+  currentdevice .devicename /pdfwrite ne {
+    /currentdistillerparams /undefined signalerror
+  } if
+  .currentdistillerparams
+} bind odef
 
 % Patch 'where' so that the distillerparams operators are only visible
-% if the pdfwrite device is the current one, for the benefit of badly
-% designed PostScript files that "know" they have to do something different
-% if a distiller is processing them.
+% if the pdfwrite device is the current one.
 .wheredict /currentdistillerparams {
   currentdevice .devicename /pdfwrite eq {
     .where
@@ -558,6 +575,20 @@ currentdict /.pdfmarkparams .undef
   } ifelse
 } bind put
 .wheredict /setdistillerparams .wheredict /currentdistillerparams get put
+
+% Patch 'known' to hide the systemdict version of the set/currentdistillerparams
+% unless the currentdevice is pdfwrite.
+/known {
+  /currentdistillerparams 1 index eq /setdistillerparams 2 index eq or {
+    systemdict 2 index eq {	% only mask the operator in systemdict
+      known currentdevice .devicename /pdfwrite ne { pop false } if
+  } {
+    known
+  } ifelse
+  } {
+    known
+  } ifelse
+} bind odef
 
 % Set a predefined configuration if PDFSETTINGS is defined.
 /PDFSETTINGS where { pop /PDFSETTINGS load } { /default } ifelse
@@ -569,4 +600,4 @@ dup length .distillercommon length add dict begin
     systemdict 2 index known { pop pop } { def } ifelse
   } forall
 } repeat
-currentdict end setdistillerparams
+currentdict end .setdistillerparams
