@@ -1036,4 +1036,3 @@ FontError ttfOutliner__Outline(ttfOutliner *this, int glyphIndex,
 	return error;
     return error;
 }
-
