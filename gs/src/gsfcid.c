@@ -141,6 +141,9 @@ gs_font_cid0_enumerate_glyph(gs_font *font, int *pindex,
 	if (code < 0 || gstr.size == 0)
 	    continue;
 	*pglyph = glyph;
+	if (code > 0)
+	    gs_free_const_string(font->memory, gstr.data, gstr.size,
+				 "gs_font_cid0_enumerate_glyphs");
 	return 0;
     }
     *pindex = 0;

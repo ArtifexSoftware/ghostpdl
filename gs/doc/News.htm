@@ -75,6 +75,14 @@ following the ID operator.
 (Streams)
 	- All decoding filters that recognize an EOD in the source data
 must now have an init procedure that sets state->min_left = 1.
+(Library)
+	- The glyph_data, subr_data, and seac_data procedures in a Type 1
+font (gs_type1_data_procs), and the glyph_data procedure passed to
+psf_{check,get}_outline_glyphs, must now return 1 iff the outline string was
+newly allocated and should be freed by the caller, like the get_outline
+procedure of Type 42 fonts (gs_type42_data).
+	- The ip_state structure is renamed ip_state_t, and has a new
+member, free_char_string.
 
 </pre>
 

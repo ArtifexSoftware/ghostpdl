@@ -133,8 +133,10 @@ typedef struct {
     const byte *ip;
     crypt_state dstate;
     gs_const_string char_string;	/* original CharString or Subr, */
-    /* for GC */
-} ip_state;
+					/* for GC */
+    int free_char_string;		/* if > 0, free char_string */
+					/* after executing it */
+} ip_state_t;
 
 /* Get the next byte from a CharString.  It may or may not be encrypted. */
 #define charstring_this(ch, state, encrypted)\
@@ -175,7 +177,7 @@ struct gs_type1_state_s {
     /* The following are updated dynamically */
     fixed ostack[ostack_size];	/* the Type 1 operand stack */
     int os_count;		/* # of occupied stack entries */
-    ip_state ipstack[ipstack_size + 1];		/* control stack */
+    ip_state_t ipstack[ipstack_size + 1];	/* control stack */
     int ips_count;		/* # of occupied entries */
     int init_done;		/* -1 if not done & not needed, */
 				/* 0 if not done & needed, 1 if done */
@@ -317,7 +319,7 @@ int gs_type1_sbw(P5(gs_type1_state * pcis, fixed sbx, fixed sby,
 int gs_type1_blend(P3(gs_type1_state *pcis, fixed *csp, int num_results));
 
 int gs_type1_seac(P4(gs_type1_state * pcis, const fixed * cstack,
-		     fixed asb_diff, ip_state * ipsp));
+		     fixed asb_diff, ip_state_t * ipsp));
 
 int gs_type1_endchar(P1(gs_type1_state * pcis));
 

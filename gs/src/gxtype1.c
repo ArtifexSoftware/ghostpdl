@@ -75,7 +75,7 @@ private RELOC_PTRS_WITH(gs_type1_state_reloc_ptrs, gs_type1_state *pcis)
     RELOC_PTR(gs_type1_state, path);
     RELOC_PTR(gs_type1_state, callback_data);
     for (i = 0; i < pcis->ips_count; i++) {
-	ip_state *ipsp = &pcis->ipstack[i];
+	ip_state_t *ipsp = &pcis->ipstack[i];
 	int diff = ipsp->ip - ipsp->char_string.data;
 
 	RELOC_CONST_STRING_VAR(ipsp->char_string);
@@ -333,7 +333,7 @@ gs_type1_blend(gs_type1_state *pcis, fixed *csp, int num_results)
  */
 int
 gs_type1_seac(gs_type1_state * pcis, const fixed * cstack, fixed asb,
-	      ip_state * ipsp)
+	      ip_state_t * ipsp)
 {
     gs_font_type1 *pfont = pcis->pfont;
     gs_const_string bcstr;
@@ -347,12 +347,13 @@ gs_type1_seac(gs_type1_state * pcis, const fixed * cstack, fixed asb,
     pcis->save_adxy.y = cstack[1];
     pcis->os_count = 0;		/* clear */
     /* Ask the caller to provide the base character's CharString. */
-    code = (*pfont->data.procs.seac_data)
+    code = pfont->data.procs.seac_data
 	(pfont, fixed2int_var(cstack[2]), NULL, &bcstr);
-    if (code != 0)
+    if (code < 0)
 	return code;
     /* Continue with the supplied string. */
     ipsp->char_string = bcstr;
+    ipsp->free_char_string = code;
     return 0;
 }
 
@@ -398,12 +399,13 @@ gs_type1_endchar(gs_type1_state * pcis)
 	/* Remove any base character hints. */
 	reset_stem_hints(pcis);
 	/* Ask the caller to provide the accent's CharString. */
-	code = (*pfont->data.procs.seac_data)(pfont, achar, NULL, &astr);
+	code = pfont->data.procs.seac_data(pfont, achar, NULL, &astr);
 	if (code < 0)
 	    return code;
 	/* Continue with the supplied string. */
 	pcis->ips_count = 1;
 	pcis->ipstack[0].char_string = astr;
+	pcis->ipstack[0].free_char_string = code;
 	return 1;
     }
     if (pcis->hint_next != 0 || path_is_drawing(ppath))
@@ -469,7 +471,7 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
     int piece_members = members & (GLYPH_INFO_NUM_PIECES | GLYPH_INFO_PIECES);
     int width_members = members & (GLYPH_INFO_WIDTH0 << wmode);
     int default_members = members - (piece_members + width_members);
-    int code = 0;
+    int code = 0, gcode = 0;
     gs_const_string str;
 
     if (default_members) {
@@ -481,8 +483,8 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	info->members = 0;
 
     if (default_members != members) {
-	if ((code = pdata->procs.glyph_data(pfont, glyph, &str)) < 0)
-	    return code;		/* non-existent glyph */
+	if ((gcode = pdata->procs.glyph_data(pfont, glyph, &str)) < 0)
+	    return gcode;		/* non-existent glyph */
     }
 
     if (piece_members) {
@@ -504,8 +506,8 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	bool encrypted = pdata->lenIV >= 0;
 	fixed cstack[ostack_size];
 	fixed *csp;
-	ip_state ipstack[ipstack_size + 1];
-	ip_state *ipsp = &ipstack[0];
+	ip_state_t ipstack[ipstack_size + 1];
+	ip_state_t *ipsp = &ipstack[0];
 	const byte *cip;
 	crypt_state state;
 	int c;
@@ -555,9 +557,15 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 		--csp;
 		ipsp->ip = cip, ipsp->dstate = state;
 		++ipsp;
+		ipsp->free_char_string = code;
 		cip = ipsp->char_string.data;
 		goto call;
 	    case c_return:
+		if (ipsp->free_char_string > 0)
+		    gs_free_const_string(pfont->memory,
+					 ipsp->char_string.data,
+					 ipsp->char_string.size,
+					 "gs_type1_glyph_info");
 		--ipsp;
 		cip = ipsp->ip, state = ipsp->dstate;
 		goto top;
@@ -665,5 +673,8 @@ out:	info->members |= piece_members;
 	info->members |= width_members;
     }
 
+    if (gcode > 0)
+	gs_free_const_string(font->memory, str.data, str.size,
+			     "gs_type1_glyph_info");
     return code;
 }

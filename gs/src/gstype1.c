@@ -74,7 +74,7 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_const_string * str,
 #define ics5 fixed2int_var(cs5)
     cs_ptr csp;
 #define clear CLEAR_CSTACK(cstack, csp)
-    ip_state *ipsp = &pcis->ipstack[pcis->ips_count - 1];
+    ip_state_t *ipsp = &pcis->ipstack[pcis->ips_count - 1];
     register const byte *cip;
     register crypt_state state;
     register int c;
@@ -100,6 +100,7 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_const_string * str,
     if (str == 0)
 	goto cont;
     ipsp->char_string = *str;
+    ipsp->free_char_string = 0;	/* don't free caller-supplied strings */
     cip = str->data;
   call:state = crypt_charstring_seed;
     if (encrypted) {
@@ -188,16 +189,22 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_const_string * str,
 		return_error(gs_error_invalidfont);
 	    case c_callsubr:
 		c = fixed2int_var(*csp) + pdata->subroutineNumberBias;
-		code = (*pdata->procs.subr_data)
+		code = pdata->procs.subr_data
 		    (pfont, c, false, &ipsp[1].char_string);
 		if (code < 0)
 		    return_error(code);
 		--csp;
 		ipsp->ip = cip, ipsp->dstate = state;
 		++ipsp;
+		ipsp->free_char_string = code;
 		cip = ipsp->char_string.data;
 		goto call;
 	    case c_return:
+		if (ipsp->free_char_string > 0)
+		    gs_free_const_string(pfont->memory,
+					 ipsp->char_string.data,
+					 ipsp->char_string.size,
+					 "gs_type1_interpret");
 		--ipsp;
 		goto cont;
 	    case c_undoc15:

@@ -57,24 +57,29 @@ typedef struct gs_type1_data_s gs_type1_data;
 
 typedef struct gs_type1_data_procs_s {
 
-    /* Get the data for any glyph. */
+    /*
+     * Get the data for any glyph.  Return 1 if the string is newly
+     * allocated (using the font's allocator) and should be freed by the
+     * caller, 0 if the string should not be freed, < 0 on error.
+     */
 
-    int (*glyph_data) (P3(gs_font_type1 * pfont, gs_glyph glyph,
-			  gs_const_string * pgdata));
+    int (*glyph_data)(P3(gs_font_type1 * pfont, gs_glyph glyph,
+			 gs_const_string * pgdata));
 
-    /* Get the data for a Subr. */
+    /* Get the data for a Subr.  Return like glyph_data. */
 
-    int (*subr_data) (P4(gs_font_type1 * pfont, int subr_num, bool global,
-			 gs_const_string * psdata));
+    int (*subr_data)(P4(gs_font_type1 * pfont, int subr_num, bool global,
+			gs_const_string * psdata));
 
     /*
      * Get the data for a seac character, including the glyph and/or the
      * outline data.  Any of the pointers for the return values may be 0,
      * indicating that the corresponding value is not needed.
+     * Return like glyph_data.
      */
 
-    int (*seac_data) (P4(gs_font_type1 * pfont, int ccode,
-			 gs_glyph * pglyph, gs_const_string * pcdata));
+    int (*seac_data)(P4(gs_font_type1 * pfont, int ccode,
+			gs_glyph * pglyph, gs_const_string * pcdata));
 
     /*
      * Push (a) value(s) onto the client ('PostScript') stack during

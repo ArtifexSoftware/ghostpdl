@@ -55,7 +55,7 @@
       }\
   END
 private int
-type2_sbw(gs_type1_state * pcis, cs_ptr csp, cs_ptr cstack, ip_state * ipsp,
+type2_sbw(gs_type1_state * pcis, cs_ptr csp, cs_ptr cstack, ip_state_t * ipsp,
 	  bool explicit_width)
 {
     fixed wx;
@@ -69,7 +69,7 @@ type2_sbw(gs_type1_state * pcis, cs_ptr csp, cs_ptr cstack, ip_state * ipsp,
     gs_type1_sbw(pcis, fixed_0, fixed_0, wx, fixed_0);
     /* Back up the interpretation pointer. */
     {
-	ip_state *ipsp = &pcis->ipstack[pcis->ips_count - 1];
+	ip_state_t *ipsp = &pcis->ipstack[pcis->ips_count - 1];
 
 	ipsp->ip--;
 	decrypt_skip_previous(*ipsp->ip, ipsp->dstate);
@@ -131,7 +131,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_const_string * str,
     fixed cstack[ostack_size];
     cs_ptr csp;
 #define clear CLEAR_CSTACK(cstack, csp)
-    ip_state *ipsp = &pcis->ipstack[pcis->ips_count - 1];
+    ip_state_t *ipsp = &pcis->ipstack[pcis->ips_count - 1];
     register const byte *cip;
     register crypt_state state;
     register int c;
@@ -165,6 +165,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_const_string * str,
     if (str == 0)
 	goto cont;
     ipsp->char_string = *str;
+    ipsp->free_char_string = 0;	/* don't free caller-supplied strings */
     cip = str->data;
   call:state = crypt_charstring_seed;
     if (encrypted) {
@@ -224,16 +225,22 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_const_string * str,
 		return_error(gs_error_invalidfont);
 	    case c_callsubr:
 		c = fixed2int_var(*csp) + pdata->subroutineNumberBias;
-		code = (*pdata->procs.subr_data)
+		code = pdata->procs.subr_data
 		    (pfont, c, false, &ipsp[1].char_string);
 	      subr:if (code < 0)
 		    return_error(code);
 		--csp;
 		ipsp->ip = cip, ipsp->dstate = state;
 		++ipsp;
+		ipsp->free_char_string = code;
 		cip = ipsp->char_string.data;
 		goto call;
 	    case c_return:
+		if (ipsp->free_char_string > 0)
+		    gs_free_const_string(pfont->memory,
+					 ipsp->char_string.data,
+					 ipsp->char_string.size,
+					 "gs_type2_interpret");
 		--ipsp;
 		goto cont;
 	    case c_undoc15:
@@ -469,7 +476,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_const_string * str,
 		    ipsp->ip = cip;
 		    ipsp->dstate = state;
 		    if (c == c2_cntrmask) {
-/****** NYI ******/
+			/****** NYI ******/
 		    } else {	/* hintmask or equivalent */
 			if_debug0('1', "[1]hstem hints:\n");
 			enable_hints(&pcis->hstem_hints, mask);
@@ -546,7 +553,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_const_string * str,
 		goto pushed;
 	    case c2_callgsubr:
 		c = fixed2int_var(*csp) + pdata->gsubrNumberBias;
-		code = (*pdata->procs.subr_data)
+		code = pdata->procs.subr_data
 		    (pfont, c, true, &ipsp[1].char_string);
 		goto subr;
 	    case cx_escape:
