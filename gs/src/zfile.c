@@ -785,8 +785,8 @@ ztempfile(i_ctx_t *i_ctx_p)
 	gp_file_name_combine_result r;
 
 	code = gp_gettmpdir(tdir, &tlen);
-	if (code < 0 || tlen == 0 ) /* A compatibility to old gp_open_scratch_file. */
-	    strcpy(prefix, gp_file_name_current());
+	if (code < 0 || tlen == 0 || tdir[0] == 0)
+	    strcpy(tdir, gp_file_name_current());
 	else
 	    temp_dir = true;
         tlen = strlen(tdir);
