@@ -765,7 +765,7 @@ pdf_obtain_cidfont_widths_arrays(gx_device_pdf *pdev, pdf_font_resource_t *pdfon
 	return_error(gs_error_VMerror);
     }
     if (wmode)
-	memset(vv, 0, chars_count * sizeof(*vv));
+	memset(vv, 0, chars_count * 2 * sizeof(*vv));
     memset(ww, 0, chars_count * sizeof(*ww));
     if (wmode) {
 	pdfont->u.cidfont.Widths2 = *w = ww;	

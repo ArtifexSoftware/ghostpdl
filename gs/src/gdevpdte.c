@@ -387,16 +387,16 @@ pdf_char_widths(gx_device_pdf *const pdev,
     int code;
     byte *glyph_usage;
     double *real_widths;
-    int char_cache_size;
+    int char_cache_size, width_cache_size;
     pdf_font_resource_t *pdfont1;
 
     pdf_attached_font_resource(pdev, (gs_font *)font, &pdfont1, 
-				&glyph_usage, &real_widths, &char_cache_size);
+				&glyph_usage, &real_widths, &char_cache_size, &width_cache_size);
     if (pdfont1 != pdfont)
 	return_error(gs_error_unregistered); /* Must not happen. */
     if (ch < 0 || ch > 255)
 	return_error(gs_error_rangecheck);
-    if (ch > char_cache_size)
+    if (ch >= width_cache_size)
 	return_error(gs_error_unregistered); /* Must not happen. */
     if (pwidths == 0)
 	pwidths = &widths;

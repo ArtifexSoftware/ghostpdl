@@ -330,9 +330,10 @@ alloc_font_cache_elem_arrays(gx_device_pdf *pdev, pdf_font_cache_elem_t *e,
     len = (num_chars + 7) / 8;
     e->glyph_usage = gs_alloc_bytes(pdev->pdf_memory, 
 			len, "alloc_font_cache_elem_arrays");
-    e->real_widths = (double *)gs_alloc_bytes(pdev->pdf_memory, 
+
+    e->real_widths = (num_widths > 0 ? (double *)gs_alloc_bytes(pdev->pdf_memory, 
 			num_widths * sizeof(*e->real_widths), 
-			"alloc_font_cache_elem_arrays");
+			"alloc_font_cache_elem_arrays") : NULL);
     if (e->glyph_usage == NULL || e->real_widths == NULL) {
 	gs_free_object(pdev->pdf_memory, e->glyph_usage, 
 			    "pdf_attach_font_resource");
@@ -341,6 +342,7 @@ alloc_font_cache_elem_arrays(gx_device_pdf *pdev, pdf_font_cache_elem_t *e,
 	return_error(gs_error_VMerror);
     }
     e->num_chars = num_chars;
+    e->num_widths = num_widths;
     memset(e->glyph_usage, 0, len);
     memset(e->real_widths, 0, num_widths * sizeof(*e->real_widths));
     return 0;
@@ -353,7 +355,7 @@ alloc_font_cache_elem_arrays(gx_device_pdf *pdev, pdf_font_cache_elem_t *e,
 int
 pdf_attached_font_resource(gx_device_pdf *pdev, gs_font *font, 
 			    pdf_font_resource_t **pdfont, byte **glyph_usage, 
-			    double **real_widths, int *num_chars)
+			    double **real_widths, int *num_chars, int *num_widths)
 {
     pdf_font_cache_elem_t **e = pdf_locate_font_cache_elem(pdev, font);
 
@@ -371,6 +373,8 @@ pdf_attached_font_resource(gx_device_pdf *pdev, gs_font *font,
 	*real_widths = (e == NULL ? NULL : (*e)->real_widths);
     if (num_chars != NULL)
 	*num_chars = (e == NULL ? 0 : (*e)->num_chars);
+    if (num_widths != NULL)
+	*num_widths = (e == NULL ? 0 : (*e)->num_widths);
     return 0;
 }
 
@@ -626,7 +630,7 @@ pdf_obtain_cidfont_resource(gx_device_pdf *pdev, gs_font_type0 *font,
     gs_font *subfont = font->data.FDepVector[0];
     int code = 0;
 
-    pdf_attached_font_resource(pdev, subfont, ppdsubf, NULL, NULL, NULL);
+    pdf_attached_font_resource(pdev, subfont, ppdsubf, NULL, NULL, NULL, NULL);
     if (*ppdsubf == NULL) {
 	code = pdf_find_font_resource(pdev, subfont, 
 				      resourceCIDFont, ppdsubf, 
@@ -907,7 +911,7 @@ pdf_obtain_font_resource(const gs_text_enum_t *penum,
     gs_char *chars;
     byte *glyph_usage = 0;
     double *real_widths;
-    int char_cache_size;
+    int char_cache_size, width_cache_size;
     gs_char char_code, cid;
     gs_glyph glyph;
     gs_text_enum_t scan;
@@ -927,7 +931,7 @@ pdf_obtain_font_resource(const gs_text_enum_t *penum,
     }
     /* Get attached font resource (maybe NULL) */
     pdf_attached_font_resource(pdev, font, ppdfont,
-			       &glyph_usage, &real_widths, &char_cache_size);
+			       &glyph_usage, &real_widths, &char_cache_size, &width_cache_size);
     /* Allocate memory for the glyph set : */
     if (glyphs_offset * buf_elem_size > sizeof(glyphs0)) {
 	glyphs = (gs_glyph *)gs_alloc_bytes(pdev->memory, 
@@ -999,7 +1003,7 @@ pdf_obtain_font_resource(const gs_text_enum_t *penum,
 	    same_encoding = ((base_font->procs.same_font(base_font, font, 
 	                      FONT_SAME_ENCODING) & FONT_SAME_ENCODING) != 0);
 	/* Find or make font resource. */
-	pdf_attached_font_resource(pdev, base_font, ppdfont, NULL, NULL, NULL);
+	pdf_attached_font_resource(pdev, base_font, ppdfont, NULL, NULL, NULL, NULL);
 	if (*ppdfont != NULL && base_font != font) {
 	    if(!pdf_is_compatible_encoding(pdev, *ppdfont, 
 				    base_font, glyphs, chars, num_all_chars))
@@ -1039,7 +1043,7 @@ pdf_obtain_font_resource(const gs_text_enum_t *penum,
 	}
     }
     pdf_attached_font_resource(pdev, font, ppdfont, 
-			       &glyph_usage, &real_widths, &char_cache_size);
+			       &glyph_usage, &real_widths, &char_cache_size, &width_cache_size);
     /* Mark glyphs used in the text with the font resources. */
     scan = *penum;
     if (pstr != NULL) {
@@ -1056,7 +1060,7 @@ pdf_obtain_font_resource(const gs_text_enum_t *penum,
 	    continue;
 	if (code < 0)
 	    return code;
-	if (glyph_usage != 0 && cid > char_cache_size)
+	if (glyph_usage != 0 && cid >= char_cache_size)
 	    return_error(gs_error_unregistered); /* Must not happen. */
 	glyph_usage[cid / 8] |= 0x80 >> (cid & 7);
     }

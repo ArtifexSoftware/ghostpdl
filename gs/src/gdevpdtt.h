@@ -154,7 +154,7 @@ pdf_obtain_font_resource(const gs_text_enum_t *penum,
 int
 pdf_attached_font_resource(gx_device_pdf *pdev, gs_font *font,  
 			   pdf_font_resource_t **pdfont, byte **glyph_usage,
-			   double **real_widths, int *num_chars);
+			   double **real_widths, int *num_chars, int *num_widths);
 
 /*
  * Attach font resource to a font.

@@ -307,6 +307,7 @@ struct pdf_font_cache_elem_s {
     pdf_font_cache_elem_t *next;
     gs_id font_id;
     int num_chars;		/* safety purpose only */
+    int num_widths;		/* safety purpose only */
     struct pdf_font_resource_s *pdfont;
     byte *glyph_usage;
     double *real_widths;	/* [count] (not used for Type 0) */
