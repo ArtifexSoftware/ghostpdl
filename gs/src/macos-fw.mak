@@ -72,10 +72,8 @@ $(GS_SO_MAJOR): $(GS_SO_MAJOR_MINOR)
 	$(RM_) $(GS_SO_MAJOR)
 	ln -s $(GS_SONAME_MAJOR_MINOR) $(GS_SO_MAJOR)
 
-# Build the small Ghostscript loaders, with Gtk+ and without
-
-$(GSSOX_XE): $(GS_SO) $(GLSRC)dxmain.c
-	$(GLCC) -g `gtk-config --cflags` -o $(GSSOX_XE) $(GLSRC)dxmain.c -L$(BINDIR) -l$(GS) `gtk-config --libs`
+# Build the small Ghostscript loaders
+# it would be nice if we could link to the framework instead
 
 $(GSSOC_XE): $(GS_SO) $(GLSRC)dxmainc.c
 	$(GLCC) -g -o $(GSSOC_XE) $(GLSRC)dxmainc.c -L$(BINDIR) -l$(GS)
