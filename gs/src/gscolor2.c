@@ -25,7 +25,6 @@
 #include "gxcspace.h"		/* for gscolor2.h */
 #include "gxcolor2.h"
 #include "gzstate.h"
-#include "gxcspace.h"
 #include "gxpcolor.h"
 
 /* ---------------- General colors and color spaces ---------------- */

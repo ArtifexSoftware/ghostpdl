@@ -20,8 +20,8 @@
 #include "gx.h"
 #include "gp.h"			/* for gp_fmode_rb */
 #include "gpcheck.h"
-#include "gscdefs.h"		/* for image type table */
 #include "gserrors.h"
+#include "gscdefs.h"		/* for image type table */
 #include "gsbitops.h"
 #include "gsparams.h"
 #include "gsstate.h"		/* (should only be imager state) */
