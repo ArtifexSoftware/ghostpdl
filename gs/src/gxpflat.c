@@ -28,8 +28,8 @@
 /* Users should not modify them. */
 #   define CURVED_TRAPEZOID_FILL0_COMPATIBLE 1 /* Temporarily used for a backward compatibility. 
                                                The implementation of 0 is not completed yet. */
-#   define FLATTENED_ITERATOR_SELFTEST 1 /* Temporarily used for a debug purpose. */
-#   define FLATTENED_ITERATOR_HEAVY_SELFTEST 1 /* Temporarily used for a debug purpose. */
+#   define FLATTENED_ITERATOR_SELFTEST 0 /* Temporarily used for a debug purpose. */
+#   define FLATTENED_ITERATOR_HEAVY_SELFTEST 0 /* Temporarily used for a debug purpose. */
 
 
 /* ---------------- Curve flattening ---------------- */
@@ -345,7 +345,6 @@ gx_flattened_iterator__print_state(gx_flattened_iterator *this)
 
 /* Move to the next segment and store it to this->lx0, this->ly0, this->lx1, this->ly1 .
  * Return true iff there exist more segments.
- * Note : It can generate small or collinear segments. 
  */
 private inline bool
 gx_flattened_iterator__next(gx_flattened_iterator *this)
@@ -454,7 +453,6 @@ last:
 /* Move to the next segment uniting small segments,
  * and store it to this->gx0, this->gy0, this->gx1, this->gy1 .
  * Return true iff there exist more segments.
- * Note : It can generate nearly collinear segments. 
  */
 bool
 gx_flattened_iterator__next_filtered(gx_flattened_iterator *this)
@@ -492,18 +490,6 @@ gx_flattened_iterator__next_filtered(gx_flattened_iterator *this)
     }
 }
 
-/*
- * Check for nearly collinear segments -- 
- * those where one coordinate of all three points
- * (the two endpoints and the midpoint) lie within the same
- * half-pixel and both coordinates are monotonic.
- */
-private inline bool
-gx_check_nearly_collinear(fixed x0, fixed y0, fixed x1, fixed y1, fixed x2, fixed y2)
-{
-    return false;
-}
-
 private inline void
 gx_flattened_iterator__unaccum(gx_flattened_iterator *this)
 {
@@ -522,7 +508,6 @@ gx_flattened_iterator__unaccum(gx_flattened_iterator *this)
 /* Move back to the previous segment and store it to this->lx0, this->ly0, this->lx1, this->ly1 .
  * This only works for states reached with gx_flattened_iterator__next.
  * Return true iff there exist more segments.
- * Note : It can generate collinear segments. 
  */
 private inline bool
 gx_flattened_iterator__prev(gx_flattened_iterator *this)
@@ -583,12 +568,10 @@ gx_flattened_iterator__switch_to_backscan(gx_flattened_iterator *this)
 
 /* Move to the previous segment uniting small segments.
  * Return true iff there exist more segments.
- * Note : It can generate nearly collinear segments. 
  */
 bool
 gx_flattened_iterator__prev_filtered(gx_flattened_iterator *this)
 {
-#   if CURVED_TRAPEZOID_FILL0_COMPATIBLE
     /*	Stores the result to this->gx0, this->gy0, this->gx1, this->gy1 .
 	When returned, the base (unfiltered) iterator stands
 	on the segment, which's end point is the starting point
@@ -639,23 +622,6 @@ gx_flattened_iterator__prev_filtered(gx_flattened_iterator *this)
 	    }
 	}
     }
-#   else
-    /*	Stores the result to this->lx0, this->ly0, this->lx1, this->ly1 . */
-    fixed x1 = this->lx0, y1 = this->ly0;
-
-    for (;;) {
-	if (!gx_flattened_iterator__prev(this)) {
-	    this->lx1 = x1;
-	    this->ly1 = y1;
-	    return false;
-	}
-	if (!coord_near(x1, this->lx0) || !coord_near(y1, this->ly0)) {
-	    this->lx1 = x1;
-	    this->ly1 = y1;
-	    return true;
-	}
-    }
-#   endif
 }
 
 #if FLATTENED_ITERATOR_SELFTEST
@@ -714,10 +680,6 @@ gx_flattened_iterator__test_filtered(gx_flattened_iterator *this)
     memset(skip_points, 0, sizeof(skip_points));
     do {
 	more = gx_flattened_iterator__next_filtered(&fi);
-	if (ppt > points + 1 && more)
-	    if (gx_check_nearly_collinear(ppt[-2].x, ppt[-2].y, 
-			    ppt[-1].x, ppt[-1].y, fi.gx1, fi.gy1))
-		--ppt;		/* remove middle point */
 	ppt->x = fi.gx1;
 	ppt->y = fi.gy1;
 	ppt++;
@@ -727,19 +689,6 @@ gx_flattened_iterator__test_filtered(gx_flattened_iterator *this)
 	fixed x = fi.lx1, y = fi.ly1;
 
 	more = gx_flattened_iterator__next_filtered(&fi);
-	if (!first) {
-	    fi1 = fi;
-	    while (more) {
-		more = gx_flattened_iterator__next_filtered(&fi1);
-		if (!more) {
-		    more = true;
-		    break;
-		}
-		if (!gx_check_nearly_collinear(x, y, fi1.gx0, fi1.gy0, fi1.gx1, fi1.gy1)) 
-		    break;
-		fi = fi1;
-	    }
-	}
 	if (fi.i <= sizeof(skip_points) * 8)
 	    skip_points[fi.i >> 3] |= 1 << (fi.i & 7);
 	first = false;
