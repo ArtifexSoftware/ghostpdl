@@ -16,10 +16,14 @@
 
 /* $Id$ */
 /* Generic font and font cache interface */
-/* Requires gsmatrix.h */
 
 #ifndef gsfont_INCLUDED
 #  define gsfont_INCLUDED
+
+#ifndef gs_matrix_DEFINED
+#  define gs_matrix_DEFINED
+typedef struct gs_matrix_s gs_matrix;
+#endif
 
 /* A 'font directory' object (to avoid making fonts global). */
 /* 'directory' is something of a misnomer: this structure */
