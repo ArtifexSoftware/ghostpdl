@@ -41,8 +41,14 @@
 void
 pdf_reset_graphics(gx_device_pdf * pdev)
 {
-    color_set_pure(&pdev->fill_color, 0);	/* black */
-    color_set_pure(&pdev->stroke_color, 0);	/* ditto */
+    gx_color_index color = 0; /* black on DeviceGray and DeviceRGB */
+    if(pdev->color_info.num_components == 4) {
+        color = gx_map_cmyk_color((gx_device *)pdev,
+		      frac2cv(frac_0), frac2cv(frac_0),
+		      frac2cv(frac_0), frac2cv(frac_1));
+    }
+    color_set_pure(&pdev->fill_color, color);
+    color_set_pure(&pdev->stroke_color, color);
     pdev->state.flatness = -1;
     {
 	static const gx_line_params lp_initial = {
