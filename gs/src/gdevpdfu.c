@@ -1,4 +1,4 @@
-/* Copyright (C) 1999, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1999, 2000, 2001 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -231,8 +231,12 @@ none_to_stream(gx_device_pdf * pdev)
 	(*template->init) ((stream_state *) st);
 	pdev->strm = s = es;
     }
-    /* Scale the coordinate system. */
-    pprintg2(s, "%g 0 0 %g 0 0 cm\n",
+    /*
+     * Scale the coordinate system.  Use an extra level of q/Q for the
+     * sake of poorly designed PDF tools that assume that the contents
+     * stream restores the CTM.
+     */
+    pprintg2(s, "q %g 0 0 %g 0 0 cm\n",
 	     72.0 / pdev->HWResolution[0], 72.0 / pdev->HWResolution[1]);
     if (pdev->CompatibilityLevel >= 1.3) {
 	/* Set the default rendering intent. */
@@ -292,6 +296,8 @@ stream_to_none(gx_device_pdf * pdev)
     stream *s = pdev->strm;
     long length;
 
+    /* Close the extra q/Q for poorly designed PDF tools. */
+    stream_puts(s, "Q\n");
     if (pdev->compression == pdf_compress_Flate) {	/* Terminate the Flate filter. */
 	stream *fs = s->strm;
 
