@@ -22,30 +22,13 @@
 #
 # runs ghostscript regression tests
 
-import os
-import gstestutils
-import gsconf, gstestgs, gsparamsets
+import gstestutils, gsconf
 import check_all
 import gscheck_all
 
-# get a list of test files
-comparefiles = os.listdir(gsconf.comparefiledir)
-
 suite = gstestutils.GSTestSuite()
 
-# add compare tests
-def add_compare_test(suite, f, device, dpi, band):
-        suite.addTest(gstestgs.GSCompareTestCase(gs=gsconf.comparegs,
-						 file=gsconf.comparefiledir + f,
-						 device=device, dpi=dpi, band=band, gsoptions=gsconf.compareoptions,
-						 log_stdout=gsconf.log_stdout, log_stderr=gsconf.log_stderr, track_daily=1))
-
-for f in comparefiles:
-    if f[-3:] == '.ps' or f[-4:] == '.pdf' or f[-4:] == '.eps':
-	for params in gsparamsets.testparamsets:
-            add_compare_test(suite, f, params.device, params.resolution, params.banding)
-
-# Add other tests based on running Ghostscript.
+# Add tests based on running Ghostscript.
 gscheck_all.addTests(suite, gsroot=gsconf.gsroot)
 
 # Add tests not based on actually running Ghostscript.

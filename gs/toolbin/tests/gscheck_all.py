@@ -22,6 +22,7 @@
 from gstestutils import gsRunTestsMain
 
 def addTests(suite, **args):
+    import gscheck_raster; gscheck_raster.addTests(suite, **args)
     import gscheck_pdfwrite; gscheck_pdfwrite.addTests(suite, **args)
 
 if __name__ == "__main__":
