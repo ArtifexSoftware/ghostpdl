@@ -54,9 +54,10 @@ PSDOCDIR=$(PSLIBDIR)/../doc
 PSEXDIR=$(PSLIBDIR)/../examples
 PSMANDIR=$(PSLIBDIR)/../man
 
-MAN1_PAGES=gs gslp gsnd dvipdf eps2eps font2c pdf2dsc pdf2ps pdfopt \
+MAN1_PAGES=gs gslp gsnd dvipdf font2c pdf2dsc pdf2ps pdfopt \
 	   pf2afm pfbtopfa printafm ps2ascii ps2epsi \
 	   ps2pdf ps2pdfwr ps2ps wftopfa
+MAN1_PS2PS_LINKS=eps2eps
 MAN1_PS2PDF_LINKS=ps2pdf12 ps2pdf13
 MAN1_GSLP_LINKS=gsbj gsdj gsdj500 gslj
 # There's no point in providing a complete dependency list: we include
@@ -67,11 +68,17 @@ install-data: $(PSDOCDIR)/Use.htm $(PSEXDIR)/golfer.ps $(PSMANDIR)/gs.1
 	$(SH) -c 'for f in $(MAN1_PAGES) ;\
 	do if ( test -f $(PSMANDIR)/$$f.1 ); then $(INSTALL_DATA) $(PSMANDIR)/$$f.1 $(man1dir)/$$f.$(man1ext); fi;\
 	done'
+	$(SH) -c 'for f in $(MAN1_PS2PS_LINKS) ;\
+	do rm -f $(man1dir)/$$f.$(man1ext);\
+	ln -s $(man1dir)/ps2ps.1 $(man1dir)/$$f.$(man1ext);\
+ 	done'
 	$(SH) -c 'for f in $(MAN1_PS2PDF_LINKS) ;\
-	do rm -f $(man1dir)/$$f.$(man1ext); ln -s ps2pdf.1 $(man1dir)/$$f.$(man1ext);\
+	do rm -f $(man1dir)/$$f.$(man1ext);\
+	ln -s $(man1dir)/ps2pdf.1 $(man1dir)/$$f.$(man1ext);\
 	done'
 	$(SH) -c 'for f in $(MAN1_GSLP_LINKS) ;\
-	do rm -f $(man1dir)/$$f.$(man1ext); ln -s gslp.1 $(man1dir)/$$f.$(man1ext);\
+	do rm -f $(man1dir)/$$f.$(man1ext);\
+	ln -s $(man1dir)/gslp.1 $(man1dir)/$$f.$(man1ext);\
 	done'
 	-mkdir $(datadir)
 	-mkdir $(gsdir)
