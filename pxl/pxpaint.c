@@ -229,7 +229,7 @@ typedef struct px_arc_params_s {
 } px_arc_params_t;
 private int /* px_arc_type_t or error code */
 setup_arc(px_arc_params_t *params, const px_value_t *pbox,
-  const px_value_t *pp3, const px_value_t *pp4, const px_state_t *pxs)
+  const px_value_t *pp3, const px_value_t *pp4, const px_state_t *pxs, bool ellipse)
 {	real x1 = real_value(pbox, 0);
 	real y1 = real_value(pbox, 1);
 	real x2 = real_value(pbox, 2);
@@ -257,12 +257,24 @@ setup_arc(px_arc_params_t *params, const px_value_t *pbox,
 	params->origin.y = y1;
 	xr = (x2 - x1) * 0.5;
 	yr = (y2 - y1) * 0.5;
-	if ( xr == 0 && yr == 0 )
-	  { /* The bounding box is degenerate, set what we can and exit. */
-	    params->center.x = xc;
-	    params->center.y = yc;
-	    return arc_degenerate;
-	  }
+	/* From what we can gather ellipses are degenerate if both
+           width and height of the bounding box are 0.  Other objects
+           behave as expected.  A 0 area bounding box is degenerate */
+	if ( ellipse ) {
+	    /* The bounding box is degenerate, set what we can and exit. */
+	    if ( xr == 0 && yr == 0 ) {
+		params->center.x = xc;
+		params->center.y = yc;
+		return arc_degenerate;
+	    }
+	} else {
+	    if ( xr == 0 || yr == 0 ) {
+		params->center.x = xc;
+		params->center.y = yc;
+		return arc_degenerate;
+	    }
+	}
+    
 	if ( pp3 && pp4 )
 	  { real dx3 = real_value(pp3, 0) - xc;
 	    real dy3 = real_value(pp3, 1) - yc;
@@ -481,7 +493,7 @@ pxArcPath(px_args_t *par, px_state_t *pxs)
 	bool clockwise =
 	  (par->pv[3] != 0 && par->pv[3]->value.i == eClockWise);
 	px_arc_params_t params;
-	int code = setup_arc(&params, par->pv[0], par->pv[1], par->pv[2], pxs);
+	int code = setup_arc(&params, par->pv[0], par->pv[1], par->pv[2], pxs, false);
 	int rcode = code;
 
 	if ( code >= 0 && code != arc_degenerate )
@@ -537,7 +549,7 @@ const byte apxChordPath[] = {
 int
 pxChordPath(px_args_t *par, px_state_t *pxs)
 {	px_arc_params_t params;
-	int code = setup_arc(&params, par->pv[0], par->pv[1], par->pv[2], pxs);
+	int code = setup_arc(&params, par->pv[0], par->pv[1], par->pv[2], pxs, false);
 	int rcode = code;
 
 	/* See ArcPath above for the meaning of "clockwise". */
@@ -574,7 +586,7 @@ const byte apxEllipsePath[] = {
 int
 pxEllipsePath(px_args_t *par, px_state_t *pxs)
 {	px_arc_params_t params;
-	int code = setup_arc(&params, par->pv[0], NULL, NULL, pxs);
+	int code = setup_arc(&params, par->pv[0], NULL, NULL, pxs, true);
 	int rcode = code;
 	real a_start = 180.0;
 	real a_end = -180.0;
@@ -584,7 +596,6 @@ pxEllipsePath(px_args_t *par, px_state_t *pxs)
 	  { a_start = -180.0;
 	    a_end = 180.0;
 	  }
-
 	/* See ArcPath above for the meaning of "clockwise". */
 	if ( code < 0 || code == arc_degenerate ||
 	     (code = gs_arc_add(pxs->pgs, !params.reversed,
@@ -632,7 +643,7 @@ const byte apxPiePath[] = {
 int
 pxPiePath(px_args_t *par, px_state_t *pxs)
 {	px_arc_params_t params;
-	int code = setup_arc(&params, par->pv[0], par->pv[1], par->pv[2], pxs);
+	int code = setup_arc(&params, par->pv[0], par->pv[1], par->pv[2], pxs, false);
 	int rcode = code;
 
 	/* See ArcPath above for the meaning of "clockwise". */
