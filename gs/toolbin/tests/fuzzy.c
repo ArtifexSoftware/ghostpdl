@@ -38,6 +38,7 @@ typedef struct _FuzzyParams FuzzyParams;
 struct _FuzzyParams {
   int tolerance;    /* in pixel counts */
   int window_size;
+  bool report_coordinates;
 };
 
 typedef struct _FuzzyReport FuzzyReport;
@@ -482,7 +483,9 @@ fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
 		      out_buf[x * 3 + 1] = abs(rowmid1[x * 3 + 1]- rowmid2[x * 3 + 1]);
 		      out_buf[x * 3 + 2] = abs(rowmid1[x * 3 + 2]- rowmid2[x * 3 + 2]);
 		    }
-		    if (abs(x - x0) > 1 && y == y0 || y - y0 > 1) {
+		    if (fparams->report_coordinates && 
+			(abs(x - x0) > 1 && y == y0 || y - y0 > 1))
+		      {
 		        /* fixme : a contiguity test wanted. */
 			x0 = x; y0 = y;
 			mc++;
@@ -542,7 +545,7 @@ get_arg (int argc, char **argv, int *pi, const char *arg)
 int
 usage (void)
 {
-  printf ("Usage: fuzzy [-w window_size] [-t tolerance] a.ppm b.ppm [diff.ppm | diff.bmp]\n");
+  printf ("Usage: fuzzy [-w window_size] [-t tolerance] [-c] a.ppm b.ppm [diff.ppm | diff.bmp]\n");
   return 1;
 }
 
@@ -559,6 +562,7 @@ main (int argc, char **argv)
 
   fparams.tolerance = 2;
   fparams.window_size = 3;
+  fparams.report_coordinates = FALSE;
 
   for (i = 1; i < argc; i++)
     {
@@ -578,6 +582,9 @@ main (int argc, char **argv)
 	      break;
 	    case 't':
 	      fparams.tolerance = atoi (get_arg (argc, argv, &i, arg + 2));
+	      break;
+	    case 'c':
+	      fparams.report_coordinates = TRUE;
 	      break;
 	    default:
 	      return usage ();
