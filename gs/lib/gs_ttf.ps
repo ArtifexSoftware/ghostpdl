@@ -353,6 +353,10 @@
     pop MacGlyphEncoding
   }
   16#00020000  {	% Detailed map, required by Microsoft fonts.
+    dup length 36 lt {
+      DEBUG { (post format 2.0 invalid.) = flush } if
+      pop [ ]
+    } {
     /postglyphs exch def
       postglyphs 32 getu16 /numglyphs exch def
       /glyphnames numglyphs 2 mul 34 add def
@@ -379,6 +383,8 @@
 	  } ifelse
 	} ifelse
       } for ]
+    }
+    ifelse
   } bind
   16#00030000  {	% No map.
     pop [ ]
