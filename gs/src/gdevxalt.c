@@ -732,12 +732,6 @@ x_gray_alt_map_color(gx_device * dev, gx_color_index color,
 
 /* We encode a complemented alpha value in the top 8 bits of the */
 /* device color. */
-private int
-x_alpha_map_color_rgb(gx_device * dev, gx_color_index color,
-		      gx_color_value prgb[3])
-{
-    return gx_forward_map_color_rgb(dev, color & 0xffffff, prgb);
-}
 private gx_color_index
 x_alpha_map_rgb_alpha_color(gx_device * dev,
  gx_color_value r, gx_color_value g, gx_color_value b, gx_color_value alpha)
