@@ -288,9 +288,19 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                 code = t1_hinter__closepath(h);
 		goto cc;
 	    case c1_hsbw:
-                if (!h->seac_flag)
-                    code = t1_hinter__sbw(h, cs0, fixed_0, cs1, fixed_0);
-                else
+                if (!h->seac_flag) {
+		    fixed sbx = cs0, sby = fixed_0, wx = cs1, wy = fixed_0;
+
+		    if (pcis->sb_set) {
+			sbx = pcis->lsb.x;
+			sby = pcis->lsb.y;
+		    }
+		    if (pcis->width_set) {
+			wx = pcis->width.x;
+			wy = pcis->width.y;
+		    }
+		    code = t1_hinter__sbw(h, sbx, sby, wx, wy);
+                } else
                     code = t1_hinter__sbw_seac(h, pcis->adxy.x, pcis->adxy.y);
 		if (code < 0)
 		    return code;

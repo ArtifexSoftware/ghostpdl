@@ -57,8 +57,8 @@ private int
 type2_sbw(gs_type1_state * pcis, cs_ptr csp, cs_ptr cstack, ip_state_t * ipsp,
 	  bool explicit_width)
 {
-    fixed wx;
     t1_hinter *h = &pcis->h;
+    fixed sbx = fixed_0, sby = fixed_0, wx, wy = fixed_0;
     int code;
 
     if (explicit_width) {
@@ -67,7 +67,17 @@ type2_sbw(gs_type1_state * pcis, cs_ptr csp, cs_ptr cstack, ip_state_t * ipsp,
 	--csp;
     } else
 	wx = pcis->pfont->data.defaultWidthX;
-    code = t1_hinter__sbw(h, fixed_0, fixed_0, wx, fixed_0);
+    if (pcis->seac_accent < 0) {
+	if (pcis->sb_set) {
+	    sbx = pcis->lsb.x;
+	    sby = pcis->lsb.y;
+	}
+	if (pcis->width_set) {
+	    wx = pcis->width.x;
+	    wy = pcis->width.y;
+	}
+    }
+    code = t1_hinter__sbw(h, sbx, sby, wx, wy);
     if (code < 0)
 	return code;
     gs_type1_sbw(pcis, fixed_0, fixed_0, wx, fixed_0);

@@ -573,6 +573,7 @@ bbox_draw(i_ctx_t *i_ctx_p, int (*draw)(gs_state *), op_proc_t *exec_cont)
 	if (code < 0)
 	    return code;
 	cxs.present = code;
+	cxs.use_FontBBox_as_Metrics2 = false;
     }  else {
 	cxs.sbw[0] = penum->FontBBox_as_Metrics2.x / 2;
 	cxs.sbw[1] = penum->FontBBox_as_Metrics2.y;
