@@ -751,7 +751,8 @@ end
   dup /ImageMask knownoget dup { and } if {
 		% Image mask
 		% Decode is required for the PostScript image operators.
-    /Decode 2 copy knownoget not { //01_1 } if def
+                % AI8 writes bogus decode array [0 1 0 0 0 0 0 0]
+    /Decode 2 copy knownoget { 0 2 getinterval } { //01_1 } ifelse def
 		% BitsPerComponent may be missing for masks.
 		% The spec requires it, but some producers omit it, and
 		% Acrobat Reader doesn't care.
