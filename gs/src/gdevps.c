@@ -302,6 +302,9 @@ private const char *const psw_2_procset[] = {
     "/IC{3 1 roll 10 dict begin 1{/ImageType/Interpolate/Decode/DataSource",
     "/ImageMatrix/BitsPerComponent/Height/Width}{exch def}forall",
     "currentdict end image}!",
+    /* A hack for compatibility with interpreters, which don't consume 
+       ASCII85Decode EOD when reader stops immediately before it : */
+    "/~{@ read {pop} if}!",
     0
 };
 
