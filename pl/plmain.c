@@ -762,7 +762,6 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 		    char buffer[128];
 		    strncpy(buffer, arg, eqp - arg);
 		    buffer[eqp - arg] = '\0';
-		    dprintf1( "%s\n", buffer );
 		    code = param_write_int((gs_param_list *)params, arg_heap_copy(buffer), &vi);
 		}
 	    }
