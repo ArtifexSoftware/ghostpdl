@@ -925,18 +925,11 @@ gx_check_nearly_collinear_inline(fixed x0, fixed y0, fixed x1, fixed y1, fixed x
 #if MERGE_COLLINEAR_SEGMENTS
     /* fixme: optimise: don't check the coordinate order for monotonic curves. */
 #   define coords_in_order(v0, v1, v2) ( (((v1) - (v0)) ^ ((v2) - (v1))) >= 0 )
-    if (coord_near(x2, x1)) {	/* X coordinates are within a half-pixel. */
-	if (coord_near(x2, x0) &&
-		coords_in_order(x0, x1, x2) &&
-		coords_in_order(y0, y1, y2))
-	    return true;
-    }
-    if (coord_near(y2, y1)) { /* Y coordinates are within a half-pixel. */
-	if (coord_near(y2, y0) &&
-		coords_in_order(x0, x1, x2) &&
-		coords_in_order(y0, y1, y2))
-	    return true;
-    }
+    if ((coord_near(x2, x0) || coord_near(y2, y0))
+	    /* X or Y coordinates are within a half-pixel. */ &&
+	    coords_in_order(x0, x1, x2) &&
+	    coords_in_order(y0, y1, y2))
+	return true;
 #   undef coords_in_order
 #endif
     return false;
