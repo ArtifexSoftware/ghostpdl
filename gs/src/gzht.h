@@ -70,8 +70,9 @@ int gs_sethalftone_prepare(P3(gs_state *, gs_halftone *,
 
 /* Allocate and initialize a spot screen. */
 /* This is the first half of gs_screen_init_accurate/memory. */
+int gs_screen_order_alloc(P2(gx_ht_order *, gs_memory_t *));
 int gs_screen_order_init_memory(P5(gx_ht_order *, const gs_state *,
-				gs_screen_halftone *, bool, gs_memory_t *));
+				   gs_screen_halftone *, bool, gs_memory_t *));
 
 #define gs_screen_order_init(porder, pgs, phsp, accurate)\
   gs_screen_order_init_memory(porder, pgs, phsp, accurate, pgs->memory)
@@ -79,7 +80,7 @@ int gs_screen_order_init_memory(P5(gx_ht_order *, const gs_state *,
 /* Prepare to sample a spot screen. */
 /* This is the second half of gs_screen_init_accurate/memory. */
 int gs_screen_enum_init_memory(P5(gs_screen_enum *, const gx_ht_order *,
-				  gs_state *, gs_screen_halftone *,
+				  gs_state *, const gs_screen_halftone *,
 				  gs_memory_t *));
 
 #define gs_screen_enum_init(penum, porder, pgs, phsp)\

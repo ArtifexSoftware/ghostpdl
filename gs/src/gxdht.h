@@ -24,6 +24,7 @@
 
 #include "gsrefct.h"
 #include "gscsepnm.h"
+#include "gsmatrix.h"
 #include "gxarith.h"		/* for igcd */
 #include "gxhttype.h"
 
@@ -191,6 +192,11 @@ typedef struct gx_ht_order_procs_s {
 extern const gx_ht_order_procs_t ht_order_procs_table[2];
 #define ht_order_procs_default ht_order_procs_table[0]	/* bit_data is gx_ht_bit[] */
 #define ht_order_procs_short ht_order_procs_table[1]	/* bit_data is ushort[] */
+/* For screen/spot halftones, we must record additional parameters. */
+typedef struct gx_ht_order_screen_params_s {
+    gs_matrix matrix;		/* CTM when the function was sampled */
+    ulong max_size;		/* max bitmap size */
+} gx_ht_order_screen_params_t;
 struct gx_ht_order_s {
     gx_ht_cell_params_t params;	/* parameters defining the cells */
     ushort width;
@@ -208,6 +214,7 @@ struct gx_ht_order_s {
     void *bit_data;
     gx_ht_cache *cache;		/* cache to use */
     gx_transfer_map *transfer;	/* TransferFunction or 0 */
+    gx_ht_order_screen_params_t screen_params;
 };
 
 #define ht_order_is_complete(porder)\

@@ -202,29 +202,16 @@ gs_screen_init_memory(gs_screen_enum * penum, gs_state * pgs,
 /* Allocate and initialize a spot screen. */
 /* This is the first half of gs_screen_init_accurate. */
 int
-gs_screen_order_init_memory(gx_ht_order * porder, const gs_state * pgs,
-		gs_screen_halftone * phsp, bool accurate, gs_memory_t * mem)
+gs_screen_order_alloc(gx_ht_order *porder, gs_memory_t *mem)
 {
-    gs_matrix imat;
-    ulong max_size = pgs->ht_cache->bits_size;
-    uint num_levels;
+    uint num_levels = porder->params.W * porder->params.D;
     int code;
 
-    if (phsp->frequency < 0.1)
-	return_error(gs_error_rangecheck);
-    gs_deviceinitialmatrix(gs_currentdevice(pgs), &imat);
-    code = pick_cell_size(phsp, &imat, max_size,
-			  screen_min_screen_levels, accurate,
-			  &porder->params);
-    if (code < 0)
-	return code;
-    gx_compute_cell_values(&porder->params);
-    num_levels = porder->params.W * porder->params.D;
     if (!FORCE_STRIP_HALFTONES &&
 	((ulong)porder->params.W1 * bitmap_raster(porder->params.W) +
 	   num_levels * sizeof(*porder->levels) +
 	   porder->params.W * porder->params.W1 * sizeof(gx_ht_bit)) <=
-	max_size) {
+	porder->screen_params.max_size) {
 	/*
 	 * Allocate an order for the entire tile, but only sample one
 	 * strip.  Note that this causes the order parameters to be
@@ -242,9 +229,29 @@ gs_screen_order_init_memory(gx_ht_order * porder, const gs_state * pgs,
 				 porder->params.D, porder->params.S,
 				 num_levels, mem);
     }
+    return code;
+}
+int
+gs_screen_order_init_memory(gx_ht_order * porder, const gs_state * pgs,
+			    gs_screen_halftone * phsp, bool accurate,
+			    gs_memory_t * mem)
+{
+    gs_matrix imat;
+    ulong max_size = pgs->ht_cache->bits_size;
+    int code;
+
+    if (phsp->frequency < 0.1)
+	return_error(gs_error_rangecheck);
+    gs_deviceinitialmatrix(gs_currentdevice(pgs), &imat);
+    code = pick_cell_size(phsp, &imat, max_size,
+			  screen_min_screen_levels, accurate,
+			  &porder->params);
     if (code < 0)
 	return code;
-    return 0;
+    gx_compute_cell_values(&porder->params);
+    porder->screen_params.matrix = imat;
+    porder->screen_params.max_size = max_size;
+    return gs_screen_order_alloc(porder, mem);
 }
 
 /*
@@ -450,7 +457,8 @@ pick_cell_size(gs_screen_halftone * ph, const gs_matrix * pmat, ulong max_size,
 /* This is the second half of gs_screen_init_accurate. */
 int
 gs_screen_enum_init_memory(gs_screen_enum * penum, const gx_ht_order * porder,
-	       gs_state * pgs, gs_screen_halftone * phsp, gs_memory_t * mem)
+			   gs_state * pgs, const gs_screen_halftone * phsp,
+			   gs_memory_t * mem)
 {
     penum->pgs = pgs;		/* ensure clean for GC */
     penum->order = *porder;
