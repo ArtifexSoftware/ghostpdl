@@ -23,24 +23,24 @@ include $(GLSRCDIR)/lib.mak
 
 # Configure for debugging
 debug:
-	make -f $(MAKEFILE) GENOPT='-DDEBUG' CFLAGS='-g -O0 $(GCFLAGS) $(XCFLAGS)'
+	$(MAKE) -f $(MAKEFILE) GENOPT='-DDEBUG' CFLAGS='-g -O0 $(GCFLAGS) $(XCFLAGS)'
 
 # Configure for profiling
 pg-fp:
-	make -f $(MAKEFILE) GENOPT='' CFLAGS='-g -pg -O2 $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg'
+	$(MAKE) -f $(MAKEFILE) GENOPT='' CFLAGS='-g -pg -O2 $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg'
 pg-nofp:
-	make -f $(MAKEFILE) GENOPT='' GCFLAGS='-msoft-float $(GCFLAGS)' CFLAGS='-g -pg -O2 -msoft-float $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg' FPU_TYPE=-1 XOBJS='$(GLOBJDIR)/gsfemu.o'
+	$(MAKE) -f $(MAKEFILE) GENOPT='' GCFLAGS='-msoft-float $(GCFLAGS)' CFLAGS='-g -pg -O2 -msoft-float $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg' FPU_TYPE=-1 XOBJS='$(GLOBJDIR)/gsfemu.o'
 
 # Configure for debugging and no FPU (crude timing configuration)
 nofp:
-	make -f $(MAKEFILE) GCFLAGS='-msoft-float $(GCFLAGS)' CFLAGS='-g -O0 -msoft-float $(GCFLAGS) $(XCFLAGS)' FPU_TYPE=-1 XOBJS='$(GLOBJDIR)/gsfemu.o'
+	$(MAKE) -f $(MAKEFILE) GCFLAGS='-msoft-float $(GCFLAGS)' CFLAGS='-g -O0 -msoft-float $(GCFLAGS) $(XCFLAGS)' FPU_TYPE=-1 XOBJS='$(GLOBJDIR)/gsfemu.o'
 
 # Configure for optimization.
 product:
-	make -f $(MAKEFILE) GENOPT='' GCFLAGS='$(GCFLAGS)' CFLAGS='-O2 $(GCFLAGS) $(XCFLAGS)'
+	$(MAKE) -f $(MAKEFILE) GENOPT='' GCFLAGS='$(GCFLAGS)' CFLAGS='-O2 $(GCFLAGS) $(XCFLAGS)'
 
 clean_gs:
-	make -f $(GLSRCDIR)/ugcclib.mak \
+	$(MAKE) -f $(GLSRCDIR)/ugcclib.mak \
 	GLSRCDIR='$(GLSRCDIR)' GLGENDIR='$(GLGENDIR)' \
 	GLOBJDIR='$(GLOBJDIR)' clean
 	
@@ -51,11 +51,12 @@ clean_gs:
 $(GENDIR)/ldgs.tr: FORCE
 	-mkdir $(GLGENDIR)
 	-mkdir $(GLOBJDIR)
-	make \
+	$(MAKE) \
 	  GCFLAGS='$(GCFLAGS)' FPU_TYPE='$(FPU_TYPE)'\
 	  CONFIG='$(CONFIG)' FEATURE_DEVS='$(FEATURE_DEVS)' \
 	  XINCLUDE='$(XINCLUDE)' XLIBDIRS='$(XLIBDIRS)' XLIBDIR='$(XLIBDIR)' XLIBS='$(XLIBS)' \
           DEVICE_DEVS='$(DEVICE_DEVS) $(DD)bbox.dev' \
+	  SYNC='$(SYNC)' \
 	  BAND_LIST_STORAGE=memory BAND_LIST_COMPRESSOR=zlib \
 	  ZSRCDIR=$(ZSRCDIR) ZGENDIR=$(ZGENDIR) ZOBJDIR=$(ZOBJDIR) ZLIB_NAME=$(ZLIB_NAME) SHARE_ZLIB=$(SHARE_ZLIB) \
 	  JSRCDIR=$(JSRCDIR) JGENDIR=$(JGENDIR) JOBJDIR=$(JOBJDIR) \

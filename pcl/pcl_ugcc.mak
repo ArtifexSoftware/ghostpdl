@@ -84,6 +84,9 @@ FEATURE_DEVS    = $(DD)dps2lib.dev   \
                   $(DD)devcmap.dev   \
 		  $(DD)gsnogc.dev
 
+# posync for most unix variants bsd needs fbsdsync.
+SYNC=posync
+
 # Generic makefile
 include $(COMMONDIR)/ugcc_top.mak
 
