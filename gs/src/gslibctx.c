@@ -91,7 +91,7 @@ int outwrite(const gs_memory_t *mem, const char *str, int len)
 int errwrite(const gs_memory_t *mem, const char *str, int len)
 {    
     int code;
-    if (len == 0)
+    if (len == 0 || mem == 0)  /* silent NOP on null memory pointer */
 	return 0;
     if (mem->gs_lib_ctx->stderr_fn)
 	return (*mem->gs_lib_ctx->stderr_fn)(mem->gs_lib_ctx->caller_handle, str, len);
