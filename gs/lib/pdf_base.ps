@@ -169,13 +169,13 @@ pdfdict begin
 } bind def
 
 % Execute a file, like .pdfrun, for a marking context.
-% This temporarily rebinds LocalResources and DefaultMatrix.
+% This temporarily rebinds LocalResources and DefaultQstate.
 /.pdfruncontext {		% <resdict> <file> <opdict> .pdfruncontext -
-  /.pdfrun load LocalResources DefaultMatrix
+  /.pdfrun load LocalResources DefaultQstate
   /LocalResources 7 -1 roll store
-  /DefaultMatrix matrix currentmatrix store
+  /DefaultQstate qstate store
   3 .execn
-  /DefaultMatrix exch store
+  /DefaultQstate exch store
   /LocalResources exch store
 } bind def
 

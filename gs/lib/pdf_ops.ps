@@ -116,6 +116,20 @@ nodict readonly pop
   } if
 } bdef
 
+% Save PDF gstate
+/qstate {       % - qstate <qstate>
+  gstate
+} bdef
+
+% Set PDF gstate
+/setqstate {    % <qstate> setqstate -
+  { //false upath } stopped {
+    pop setgstate newpath
+  } {
+    exch setgstate newpath uappend
+  } ifelse
+} bdef
+
 % ---------------- Color setting ---------------- %
 
 /fcput		% <color> <colorspace> fcput -
@@ -291,7 +305,7 @@ nodict readonly pop
      } if
 
      dup /Matrix knownoget not { matrix } if
-     gsave DefaultMatrix setmatrix makepattern grestore setcolor
+     gsave DefaultQstate setqstate makepattern grestore setcolor
    } bdef
 end def
 /setgcolor	% (null | <color...>) <colorspace> setgcolor -

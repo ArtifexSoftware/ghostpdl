@@ -308,7 +308,7 @@ pdfdict begin
    pdfdict readonly pop		% can't do it any earlier than this
    15 dict begin
    /LocalResources 0 dict def
-   /DefaultMatrix null def	% establish binding
+   /DefaultQstate //null def	% establish binding
    /Printed where { pop } {
 		% Guess whether the output device is a printer.
      /Printed currentpagedevice /OutputFile known def
@@ -793,7 +793,9 @@ end readonly def
   2 index /CropBox knownoget {
     boxrect 4 array astore 1 index /ClipRect 3 -1 roll put
   } if
-  dictbeginpage /DefaultMatrix 1 index store setmatrix
+  dictbeginpage setmatrix
+  /DefaultQstate qstate store
+
   dup		  % for showing annotations below
   count 1 sub /pdfemptycount exch store
 	% If the page uses any transparency features, show it within
