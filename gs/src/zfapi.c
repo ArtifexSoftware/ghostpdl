@@ -1425,15 +1425,15 @@ private int do_FAPIpassfont(i_ctx_t *i_ctx_p, bool *success)
 	    continue;
         }
         pbfont->FAPI_font_data = ff.server_font_data;
-        ff.server_font_data = 0;
 	if (I->get_font_bbox(I, &ff, BBox)) { /* Try to do something to check whether the font is valid. */
             /* Failed, skip this renderer : */
             if (pbfont->FAPI_font_data != 0)
                 I->release_typeface(I, pbfont->FAPI_font_data);
+	    ff.server_font_data = 0;
             pbfont->FAPI_font_data = 0;
             continue;
         }
-        /* fixme : with CID fonts we need to test something more. */
+        /* fixme : with CID fonts we may need to test something more. */
         pbfont->FAPI = I; /* We found a good renderer, so go with it */
         if ((code = name_ref((const byte *)I->ig.d->subtype, strlen(I->ig.d->subtype), &FAPI_ID, false)) < 0)
 	    return code;
