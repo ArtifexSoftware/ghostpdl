@@ -306,8 +306,10 @@ mem_close(gx_device * dev)
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
 
-    if (mdev->bitmap_memory != 0)
+    if (mdev->bitmap_memory != 0) {
 	gs_free_object(mdev->bitmap_memory, mdev->base, "mem_close");
+	mdev->base = 0;
+    }
     return 0;
 }
 
