@@ -525,6 +525,8 @@ pcl_impl_remove_device(
 
 	/* return to the original graphic state w/color mapper, bbox, target */
 	error = pcl_grestore(&pcli->pcs);
+	/* free the pcl's gstate that mirrors the gs gstate */
+	pcl_free_gstate_stk(&pcli->pcs);
 #define DEVICE_NAME (gs_devicename(gs_currentdevice((pcli->pcs.pgs))))
 	PL_ASSERT(strcmp(DEVICE_NAME, "special color mapper") == 0);
 	if (code >= 0)
