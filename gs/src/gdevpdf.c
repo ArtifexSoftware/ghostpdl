@@ -479,6 +479,32 @@ pdf_dominant_rotation(const pdf_text_rotation_t *ptr)
     return angles[imax];
 }
 
+/* Write and release the Cos objects for page-specific resources. */
+private int
+pdf_write_resource_objects(gx_device_pdf *pdev, pdf_resource_type_t rtype)
+{
+    int j;
+
+    for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
+	pdf_resource_t **prev = &pdev->resources[rtype].chains[j];
+	pdf_resource_t *pres;
+
+	while ((pres = *prev) != 0) {
+	    if (pres->named) {
+		/* If named, might be used again. */
+		prev = &pres->next;
+	    } else {
+		if (!pres->object->written)
+		    cos_write_object(pres->object, pdev);
+		cos_free(pres->object, "pdf_write_resource_objects");
+		pres->object = 0;
+		*prev = pres->next;
+	    }
+	}
+    }
+    return 0;
+}
+
 /* Close the current page. */
 private int
 pdf_close_page(gx_device_pdf * pdev)
@@ -520,10 +546,9 @@ pdf_close_page(gx_device_pdf * pdev)
 	    int j;
 
 	    for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
-		pdf_resource_t **prev = &pdev->resources[i].chains[j];
-		pdf_resource_t *pres;
+		pdf_resource_t *pres = pdev->resources[i].chains[j];
 
-		while ((pres = *prev) != 0) {
+		for (; pres != 0; pres = pres->next) {
 		    if (pres->used_on_page) {
 			long id = pres->object->id;
 
@@ -535,20 +560,18 @@ pdf_close_page(gx_device_pdf * pdev)
 			}
 			pprintld2(s, "/R%ld\n%ld 0 R", id, id);
 		    }
-		    if (pres->named) {
-			/* Named resource, might be used again. */
-			prev = &pres->next;
-		    } else
-			*prev = pres->next;
 		}
 	    }
 	    if (any) {
 		pputs(s, ">>\n");
 		pdf_end_obj(pdev);
+		pdf_write_resource_objects(pdev, i);
 	    }
 	}
     }
+
     /* Record references to just those fonts used on this page. */
+
     {
 	bool any = false;
 	stream *s;
