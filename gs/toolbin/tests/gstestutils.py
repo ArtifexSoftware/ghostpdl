@@ -159,6 +159,7 @@ class _GSTextTestResult(unittest._TextTestResult):
                     self.stream.writeln(line)
             else:
                 handoff.append((test, err))
+            self.stream.writeln("")
         if len(handoff) > 0:
             unittest._TextTestResult.printErrorList(self, flavor, handoff)
 
