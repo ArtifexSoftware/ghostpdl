@@ -1233,7 +1233,7 @@ pdf_set_text_matrix(gx_device_pdf * pdev, const gs_matrix * pmat)
 		}
 	    }
 	    pdf_append_chars(pdev, &space_char, 1);
-	    pdev->text.current.x += dist.x * pmat->xx;
+	    pdev->text.current.x += dx * pmat->xx;
 	    pdev->text.use_leading = false;
 	    return 0;
 	}
@@ -1252,10 +1252,10 @@ pdf_set_text_matrix(gx_device_pdf * pdev, const gs_matrix * pmat)
 	    pdev->text.use_leading = true;
 	} else {
 	    /* Use Td. */
+	    set_text_distance(&dist, &pdev->text.line_start, pmat);
 	    pprintg2(s, "%g %g Td\n", dist.x, dist.y);
 	    pdev->text.use_leading = false;
 	}
-	set_text_distance(&dist, &pdev->text.line_start, pmat);
     } else {			/* Use Tm. */
 	code = pdf_open_page(pdev, PDF_IN_TEXT);
 	if (code < 0)
