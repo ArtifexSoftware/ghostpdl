@@ -48,20 +48,32 @@ jbig2_arith_int_decode(Jbig2ArithIntCtx *ctx, Jbig2ArithState *as,
 	{
 	  bit = jbig2_arith_decode(as, &IAx[PREV]);
 	  PREV = (PREV << 1) | bit;
+
 	  if (bit)
 	    {
 	      bit = jbig2_arith_decode(as, &IAx[PREV]);
 	      PREV = (PREV << 1) | bit;
-	      
+
 	      if (bit)
 		{
-		  n_tail = 32;
-		  offset = 4436;
+		  bit = jbig2_arith_decode(as, &IAx[PREV]);
+		  PREV = (PREV << 1) | bit;
+
+		  if (bit)
+		    {
+		      n_tail = 32;
+		      offset = 4436;
+		    }
+		  else
+		    {
+		      n_tail = 12;
+		      offset = 340;
+		    }
 		}
 	      else
 		{
-		  n_tail = 12;
-		  offset = 340;
+		  n_tail = 8;
+		  offset = 84;
 		}
 	    }
 	  else
