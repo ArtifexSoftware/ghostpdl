@@ -138,7 +138,7 @@ zbuildsampledfunction(i_ctx_t *i_ctx_p)
  * a data storage size less than or equal to the MAX_DATA_SIZE.
  */
 private bool
-valid_cube_size(int num_inputs, int num_outputs, int sample_size, int Size[])
+valid_cube_size(int num_inputs, int num_outputs, int sample_size, const int Size[])
 {
     int i, total_size = num_outputs * sample_size;
 
