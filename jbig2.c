@@ -1,7 +1,7 @@
 /*
     jbig2dec
     
-    Copyright (c) 2002 artofcode LLC.
+    Copyright (c) 2002-2003 artofcode LLC.
     
     This software is provided AS-IS with no warranty,
     either express or implied.
@@ -16,7 +16,7 @@
     Artifex Software, Inc.,  101 Lucas Valley Road #110, 
     San Rafael, CA  94903, U.S.A., +1(415)492-9861.
         
-    $Id: jbig2.c,v 1.18 2003/02/03 20:04:11 giles Exp $
+    $Id$
 */
 
 #ifdef HAVE_CONFIG_H
@@ -202,7 +202,7 @@ jbig2_data_in (Jbig2Ctx *ctx, const unsigned char *data, size_t size)
       do
 	buf_size <<= 1;
       while (buf_size < size);
-      ctx->buf = (byte *)jbig2_alloc (ctx->allocator, size);
+      ctx->buf = (byte *)jbig2_alloc(ctx->allocator, buf_size);
       ctx->buf_size = buf_size;
       ctx->buf_rd_ix = 0;
       ctx->buf_wr_ix = 0;
@@ -212,7 +212,7 @@ jbig2_data_in (Jbig2Ctx *ctx, const unsigned char *data, size_t size)
       if (ctx->buf_rd_ix <= (ctx->buf_size >> 1) &&
 	  ctx->buf_wr_ix - ctx->buf_rd_ix + size <= ctx->buf_size)
         {
-	  memcpy (ctx->buf, ctx->buf + ctx->buf_rd_ix,
+	  memmove(ctx->buf, ctx->buf + ctx->buf_rd_ix,
 		  ctx->buf_wr_ix - ctx->buf_rd_ix);
 	}
       else
@@ -223,17 +223,17 @@ jbig2_data_in (Jbig2Ctx *ctx, const unsigned char *data, size_t size)
 	  do
 	    buf_size <<= 1;
 	  while (buf_size < ctx->buf_wr_ix - ctx->buf_rd_ix + size);
-	  buf = (byte *)jbig2_alloc (ctx->allocator, buf_size);
-	  memcpy (buf, ctx->buf + ctx->buf_rd_ix,
+	  buf = (byte *)jbig2_alloc(ctx->allocator, buf_size);
+	  memcpy(buf, ctx->buf + ctx->buf_rd_ix,
 		  ctx->buf_wr_ix - ctx->buf_rd_ix);
-	  jbig2_free (ctx->allocator, ctx->buf);
+	  jbig2_free(ctx->allocator, ctx->buf);
 	  ctx->buf = buf;
 	  ctx->buf_size = buf_size;
 	}
       ctx->buf_wr_ix -= ctx->buf_rd_ix;
       ctx->buf_rd_ix = 0;
     }
-  memcpy (ctx->buf + ctx->buf_wr_ix, data, size);
+  memcpy(ctx->buf + ctx->buf_wr_ix, data, size);
   ctx->buf_wr_ix += size;
 
   /* data has now been added to buffer */
