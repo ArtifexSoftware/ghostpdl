@@ -593,7 +593,7 @@ $(GLOBJ)gxfill.$(OBJ) : $(GLSRC)gxfill.c $(GXERR)\
  $(gsstruct_h)\
  $(gxdcolor_h) $(gxdevice_h) $(gxfixed_h) $(gxhttile_h)\
  $(gxistate_h) $(gxpaint_h) $(gxfill_h) $(gxfdrop_h) $(gsptype2_h)\
- $(gzcpath_h) $(gzpath_h) $(gzspotan_h) $(gdevddrw_h) $(vdtrace_h)
+ $(gzcpath_h) $(gzpath_h) $(gzspotan_h) $(gdevddrw_h) $(memory__h) $(vdtrace_h)
 	$(GLCC) $(GLO_)gxfill.$(OBJ) $(C_) $(GLSRC)gxfill.c
 
 $(GLOBJ)gxfdrop.$(OBJ) : $(GLSRC)gxfdrop.c $(GXERR)\

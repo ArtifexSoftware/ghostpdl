@@ -29,6 +29,11 @@
 #include "gxfill.h"
 #include "vdtrace.h"
 
+#define INTERTRAP_STEM_BUG 0 /* We're not sure that 1 gives a 
+                                better painting with neighbour serifs.
+				Need more testing.
+				0 is compatible to the old code. */
+
 /*
  * Rather some margins are placed in virtual memory,
  * we never run garbager while some of them are allocated.
@@ -503,12 +508,43 @@ private int fill_margin(gx_device * dev, line_list * ll, margin_set *ms, int i0,
 		     */
 #		else
 		    if (sect[i].x0 > 0 && sect[i].x1 == fixed_1 && i + 1 < i1) {
+#			if INTERTRAP_STEM_BUG
+			int hhh = hh;
+#			endif
 			hh = (i + 1 < i1 ? compute_padding(&sect[i + 1]) : -2);
 			/* We could cache hh.
 			 * Delaying the optimization until the code is well tested.
 			 */
-		    } else if (sect[i].x0 == 0 && sect[i].x1 < fixed_1)
+#			if INTERTRAP_STEM_BUG
+			/* A bug in the old code. */
+			if (i > i0 && i + 1 < i1 && hh == -2 && 
+				compute_padding(&sect[i - 1]) == -2) {
+			    /* It can be either a thin stem going from left to up or down
+			       (See 'r' in 01-001.ps in 'General', ppmraw, 72dpi),
+			       or a serif from the left.
+			       Since it is between 2 trapezoids, it is better to paint it
+			       against a dropout. */
+			    hh = hhh;
+			}
+#			endif
+		    } else if (sect[i].x0 == 0 && sect[i].x1 < fixed_1) {
+#			if INTERTRAP_STEM_BUG
+			int hhh = hh;
+#			endif
 			hh = h;
+#			if INTERTRAP_STEM_BUG
+			/* A bug in the old code. */
+			if (i > i0 && i + 1 < i1 && hh == -2 && 
+				compute_padding(&sect[i - 1]) == -2) {
+			    /* It can be either a thin stem going from right to up or down
+			       (See 'r' in 01-001.ps in 'General', ppmraw, 72dpi),
+			       or a serif from the right.
+			       Since it is between 2 trapezoids, it is better to paint it. 
+			       against a dropout. */
+			    DO_NOTHING;
+			}
+#			endif
+		    }
 #		endif
 	    }
 #	endif
