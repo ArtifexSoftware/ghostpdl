@@ -15,6 +15,7 @@
 */
 
 /* $Id$ */
+
 /*
 Functions to serialize a type 1 font as PostScript code that can then be
 passed to FreeType via the FAPI FreeType bridge.
@@ -37,10 +38,10 @@ static void write_word_entry(FAPI_font* a_fapi_font,WRF_output* a_output,const c
 	WRF_wbyte(a_output,'/');
 	WRF_wstring(a_output,a_name);
 	WRF_wbyte(a_output,' ');
-	/* Get the value and convert it from unsigned to signed. */
+	/* Get the value and convert it from unsigned to signed by assigning it to a short. */
 	x = a_fapi_font->get_word(a_fapi_font,a_index,0);
 	/* Divide by the divisor to bring it back to font units. */
-	x /= a_divisor;
+	x = (short)(x / a_divisor);
 	WRF_wint(a_output,x);
 	WRF_wstring(a_output," def\n");
 	}
@@ -58,10 +59,10 @@ static void write_array_entry_with_count(FAPI_font* a_fapi_font,WRF_output* a_ou
 	WRF_wstring(a_output," [");
 	for (i = 0; i < a_count; i++)
 		{
-		/* Get the value and convert it from unsigned to signed. */
+		/* Get the value and convert it from unsigned to signed by assigning it to a short. */
 		short x = a_fapi_font->get_word(a_fapi_font,a_index,i);
 		/* Divide by the divisor to bring it back to font units. */
-		x /= a_divisor;
+		x = (short)(x / a_divisor);
 		WRF_wint(a_output,x);
 		WRF_wbyte(a_output,(byte)(i == a_count - 1 ? ']' : ' '));
 		}

@@ -15,6 +15,7 @@
 */
 
 /* $Id$ */
+
 /*
 Functions to serialize a type 1 font so that it can then be
 passed to FreeType via the FAPI FreeType bridge.
@@ -26,11 +27,6 @@ Started by Graham Asher, 9th August 2002.
 #include "stdio_.h"
 #include "iref.h"
 #include "idict.h"
-/*#include "iname.h"*/
-/*#include "errors.h"*/
-
-/* FreeType headers */
-//#include "src/psnames/pstables.h"
 
 #include <assert.h>
 
@@ -39,7 +35,7 @@ Public structures and functions in this file are prefixed with FF_ because they 
 the FAPI FreeType implementation.
 */
 
-static void write_4_byte_int(char* a_output,long a_int)
+static void write_4_byte_int(unsigned char* a_output,long a_int)
 	{
 	a_output[0] = (unsigned char)(a_int >> 24);
 	a_output[1] = (unsigned char)(a_int >> 16);
@@ -64,7 +60,7 @@ static void write_type2_int(WRF_output* a_output,long a_int)
 		}
 	else
 		{
-		char buffer[4];
+		unsigned char buffer[4];
 		WRF_wbyte(a_output,29);
 		write_4_byte_int(buffer,a_int);
 		WRF_wtext(a_output,buffer,4);
@@ -83,7 +79,7 @@ static void write_type2_float(WRF_output* a_output,double a_float)
 		{
 		char n = 0;
 		if (*p >= '0' && *p <= '9')
-			n = *p - '0';
+			n = (char)(*p - '0');
 		else if (*p == '.')
 			n = 0xA;
 		else if (*p == 'e' || *p == 'E')
@@ -105,7 +101,7 @@ static void write_type2_float(WRF_output* a_output,double a_float)
 			if (*p == 0)
 				WRF_wbyte(a_output,0xFF);
 			else
-				c = n << 4;
+				c = (char)(n << 4);
 			}
 		else
 			{
@@ -121,15 +117,15 @@ static void write_type2_float(WRF_output* a_output,double a_float)
 		}
 	}
 
-static void write_header(FAPI_font* a_fapi_font,WRF_output* a_output)
+static void write_header(WRF_output* a_output)
 	{
-	WRF_wtext(a_output,"\x1\x0\x4\x1",4);
+	WRF_wtext(a_output,(const unsigned char*)"\x1\x0\x4\x1",4);
 	}
 
-static void write_name_index(FAPI_font* a_fapi_font,WRF_output* a_output)
+static void write_name_index(WRF_output* a_output)
 	{
 	/* Write a dummy name of 'x'. */
-	WRF_wtext(a_output,"\x0\x1\x1\x1\x2""x",6);
+	WRF_wtext(a_output,(const unsigned char*)"\x0\x1\x1\x1\x2""x",6);
 	}
 
 static void write_word_entry(FAPI_font* a_fapi_font,WRF_output* a_output,int a_feature_id,
@@ -143,7 +139,7 @@ static void write_word_entry(FAPI_font* a_fapi_font,WRF_output* a_output,int a_f
 			/* Get the value and convert it from unsigned to signed. */
 			short x = a_fapi_font->get_word(a_fapi_font,a_feature_id,i);
 			/* Divide by the divisor to bring it back to font units. */
-			x /= a_divisor;
+			x = (short)(x / a_divisor);
 			write_type2_int(a_output,x);
 			}
 		if (a_two_byte_op)
@@ -166,7 +162,7 @@ static void write_delta_array_entry(FAPI_font* a_fapi_font,WRF_output* a_output,
 			/* Get the value and convert it from unsigned to signed. */
 			short value = a_fapi_font->get_word(a_fapi_font,a_feature_id,i); 
 			/* Divide by the divisor to bring it back to font units. */
-			value /= a_divisor;
+			value = (short)(value / a_divisor);
 			write_type2_int(a_output,value - prev_value);
 			prev_value = value;
 			}
@@ -198,7 +194,7 @@ static void write_font_dict_index(FAPI_font* a_fapi_font,WRF_output* a_output,
 		unsigned char** a_private_dict_length_ptr)
 	{
 	unsigned char* data_start = 0;
-	WRF_wtext(a_output,"\x0\x1\x2\x0\x1\x0\x0",7); /* count = 1, offset size = 2, first offset = 1, last offset = 0 (to be filled in later). */
+	WRF_wtext(a_output,(const unsigned char *)"\x0\x1\x2\x0\x1\x0\x0",7); /* count = 1, offset size = 2, first offset = 1, last offset = 0 (to be filled in later). */
 	if (a_output->m_pos)
 		data_start = a_output->m_pos;
 	write_word_entry(a_fapi_font,a_output,FAPI_FONT_FEATURE_FontBBox,4,false,5,1);
@@ -206,49 +202,36 @@ static void write_font_dict_index(FAPI_font* a_fapi_font,WRF_output* a_output,
 	write_type2_int(a_output,0); /* 0 = Standard Encoding. */
 	WRF_wbyte(a_output,16); /* 16 = opcode for 'encoding'. */
 	*a_charset_offset_ptr = a_output->m_pos;
-	WRF_wtext(a_output,"\x1d""xxxx",5); /* placeholder for the offset to the charset, which will be a 5-byte integer. */
+	WRF_wtext(a_output,(const unsigned char *)"\x1d""xxxx",5); /* placeholder for the offset to the charset, which will be a 5-byte integer. */
 	WRF_wbyte(a_output,15); /* opcode for 'charset' */
 	*a_charstrings_offset_ptr = a_output->m_pos;
-	WRF_wtext(a_output,"\x1d""xxxx",5); /* placeholder for the offset to the Charstrings index, which will be a 5-byte integer. */
+	WRF_wtext(a_output,(const unsigned char *)"\x1d""xxxx",5); /* placeholder for the offset to the Charstrings index, which will be a 5-byte integer. */
 	WRF_wbyte(a_output,17); /* opcode for 'Charstrings' */
 	*a_private_dict_length_ptr = a_output->m_pos;
-	WRF_wtext(a_output,"\x1d""xxxx\x1d""yyyy",10); /* placeholder for size and offset of Private dictionary, which will be 5-byte integers. */
+	WRF_wtext(a_output,(const unsigned char *)"\x1d""xxxx\x1d""yyyy",10); /* placeholder for size and offset of Private dictionary, which will be 5-byte integers. */
 	WRF_wbyte(a_output,18); /* opcode for 'Private' */
 	if (a_output->m_pos)
 		{
 		int last_offset = a_output->m_pos - data_start + 1;
-		data_start[-2] = last_offset >> 8;
-		data_start[-1] = last_offset & 0xFF;
+		data_start[-2] = (unsigned char)(last_offset >> 8);
+		data_start[-1] = (unsigned char)(last_offset & 0xFF);
 		}
 	}
 
-static const ref* get_charstring_dict(FAPI_font* a_fapi_font)
-	{
-	ref *pdr = (ref *)a_fapi_font->client_font_data2;
-	ref *charstring_dict = NULL;
-	int result = dict_find_string(pdr,"CharStrings",&charstring_dict);
-	if (result <= 0)
-		charstring_dict = NULL;
-	return charstring_dict;
-	}
-
 /**
-Write the character set.
-Return the number of characters.
+Write the character set. Return the number of characters.
+For the moment this is always 1. The number cannot be obtained
+via the FAPI interface, and FreeType doesn't need to know anything more
+than the fact that there is at least one character.
 */
-static int write_charset(FAPI_font* a_fapi_font,WRF_output* a_output,unsigned char* a_charset_offset_ptr)
+static int write_charset(WRF_output* a_output,unsigned char* a_charset_offset_ptr)
 	{
-	const ref* charstring_dict = get_charstring_dict(a_fapi_font);
-	int characters = dict_length(charstring_dict);
+	const int characters = 1;
 	int i = 0;
 
 	/* Write the offset to the start of the charset to the top dictionary. */
 	if (a_output->m_pos)
 		write_4_byte_int(a_charset_offset_ptr + 1,a_output->m_count);
-
-	assert(characters <= 256);
-	if (characters > 256)
-		characters = 256;
 
 	/*
 	Write the charset. Write one less than the number of characters,
@@ -270,7 +253,7 @@ static int write_charset(FAPI_font* a_fapi_font,WRF_output* a_output,unsigned ch
 Write a set of empty charstrings. The only reason for the existence of the charstrings index is to tell
 FreeType how many glyphs there are.
 */
-static void write_charstrings_index(FAPI_font* a_fapi_font,WRF_output* a_output,int a_characters,unsigned char* a_charstrings_offset_ptr)
+static void write_charstrings_index(WRF_output* a_output,int a_characters,unsigned char* a_charstrings_offset_ptr)
 	{
 	/* Write the offset to the charstrings index to the top dictionary. */
 	if (a_output->m_pos)
@@ -299,14 +282,14 @@ static void write_subrs_index(FAPI_font* a_fapi_font,WRF_output* a_output)
 		return;
 
 	WRF_wbyte(a_output,4); /* offset size = 4 bytes */
-	WRF_wtext(a_output,"\x0\x0\x0\x1",4); /* first offset = 1 */
+	WRF_wtext(a_output,(const unsigned char *)"\x0\x0\x0\x1",4); /* first offset = 1 */
 
 	if (a_output->m_pos)
 		cur_offset = a_output->m_pos;
 
 	/* Write dummy bytes for the offsets at the end of each data item. */
 	for (i = 0; i < count; i++)
-		WRF_wtext(a_output,"xxxx",4);
+		WRF_wtext(a_output,(const unsigned char *)"xxxx",4);
 
 	if (a_output->m_pos)
 		data_start = a_output->m_pos;
@@ -372,16 +355,16 @@ long FF_serialize_type2_font(FAPI_font* a_fapi_font,unsigned char* a_buffer,long
 	WRF_output output;
 	WRF_init(&output,a_buffer,a_buffer_size);
 
-	write_header(a_fapi_font,&output);
-	write_name_index(a_fapi_font,&output);
+	write_header(&output);
+	write_name_index(&output);
 	write_font_dict_index(a_fapi_font,&output,&charset_offset_ptr,&charstrings_offset_ptr,&private_dict_length_ptr);
 
   	/* Write an empty string index. */
-  	WRF_wtext(&output,"\x0\x0",2);
+  	WRF_wtext(&output,(const unsigned char *)"\x0\x0",2);
 
 	write_subrs_index(a_fapi_font,&output);
-	characters = write_charset(a_fapi_font,&output,charset_offset_ptr);
-	write_charstrings_index(a_fapi_font,&output,characters,charstrings_offset_ptr);
+	characters = write_charset(&output,charset_offset_ptr);
+	write_charstrings_index(&output,characters,charstrings_offset_ptr);
 	write_private_dict(a_fapi_font,&output,private_dict_length_ptr);
 
 	return output.m_count;

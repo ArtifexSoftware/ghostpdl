@@ -27,6 +27,9 @@ Started by Graham Asher, 6th June 2002.
 #include "ifapi.h"
 #include "write_t1.h"
 #include "write_t2.h"
+#include "gstypes.h"
+#include "gsmatrix.h"
+#include "gxfarith.h"
 
 /* FreeType headers */
 #include "freetype/freetype.h"
@@ -64,6 +67,8 @@ typedef struct FT_IncrementalRec_
 												/* If it is already in use glyph data is allocated on the heap. */
 	size_t m_glyph_data_length;					/* Length in bytes of m_glyph_data. */
 	bool m_glyph_data_in_use;					/* True if m_glyph_data is already in use. */
+	FT_Incremental_MetricsRec m_glyph_metrics;	/* Incremental glyph metrics supplied by GhostScript. */
+	unsigned long m_glyph_metrics_index;		/* m_glyph_metrics contains data for this glyph index unless it is 0xFFFFFFFF. */
     } FT_IncrementalRec;
 
 static FF_face* new_face(FT_Face a_ft_face,FT_Incremental_InterfaceRec* a_ft_inc_int,
@@ -99,6 +104,7 @@ static FT_IncrementalRec* new_inc_int_info(FAPI_font* a_fapi_font)
 		info->m_glyph_data = NULL;
 		info->m_glyph_data_length = 0;
 		info->m_glyph_data_in_use = false;
+		info->m_glyph_metrics_index = 0xFFFFFFFF;
 		}
 	return info;
 	}
@@ -173,13 +179,27 @@ static void free_fapi_glyph_data(FT_Incremental a_info,FT_Data* a_data)
 		a_info->m_glyph_data_in_use = false;
 	else
 		free((FT_Byte*)a_data->pointer);
-	} 
+	}
+
+static FT_Error get_fapi_glyph_metrics(FT_Incremental a_info,FT_UInt a_glyph_index,
+									   FT_Bool a_vertical,FT_Incremental_MetricsRec* a_metrics,
+									   FT_Bool* a_found)
+	{
+	if (a_info->m_glyph_metrics_index == a_glyph_index)
+		{
+		*a_metrics = a_info->m_glyph_metrics;
+		*a_found = 1;
+		}
+	else
+		*a_found = 0;
+	return 0;
+	}
 
 static const FT_Incremental_FuncsRec TheFAPIIncrementalInterfaceFuncs =
     {
     get_fapi_glyph_data,
 	free_fapi_glyph_data,
-    NULL
+    get_fapi_glyph_metrics
     };
 
 static FT_Incremental_InterfaceRec* new_inc_int(FAPI_font* a_fapi_font)
@@ -243,11 +263,36 @@ static FAPI_retcode load_glyph(FAPI_font* a_fapi_font,const FAPI_char_ref *a_cha
 	const void* saved_char_data = a_fapi_font->char_data;
 
     if (!a_char_ref->is_glyph_index)
-	    index = FT_Get_Char_Index(ft_face,index);
+		{
+		if (ft_face->num_charmaps)
+			index = FT_Get_Char_Index(ft_face,index);
+		else
+			{
+			/*
+			If there are no character maps and no glyph index, loading the glyph will still work
+			properly if both glyph data and metrics are supplied by the incremental interface.
+			In that case we use a dummy glyph index of the character code, which will be passed
+			back to FAPI_FF_get_glyph by get_fapi_glyph_data.
+			*/
+			index = 0;
+			if (!ft_face->num_charmaps && face->m_ft_inc_int && a_fapi_font->is_mtx_skipped)
+				index = a_char_ref->char_code;
+			}
+		}
 
 	/* Refresh the pointer to the FAPI_font held by the incremental interface. */
 	if (face->m_ft_inc_int)
 		face->m_ft_inc_int->object->m_fapi_font = a_fapi_font;
+
+	/* Store the overriding metrics if they have been supplied. */
+	if (a_fapi_font->is_mtx_skipped && face->m_ft_inc_int)
+		{
+		FT_Incremental_MetricsRec* m = &face->m_ft_inc_int->object->m_glyph_metrics;
+		m->bearing_x = a_char_ref->sb_x >> 16;
+		m->bearing_y = a_char_ref->sb_y >> 16;
+		m->advance = a_char_ref->aw_x >> 16;
+		face->m_ft_inc_int->object->m_glyph_metrics_index = index;
+		}
 
     ft_error = FT_Load_Glyph(ft_face,index,FT_LOAD_MONOCHROME | FT_LOAD_NO_SCALE);
     if (!ft_error && a_metrics)
@@ -320,7 +365,7 @@ static FAPI_retcode get_scaled_font(FAPI_server* a_server,FAPI_font* a_font,int 
 		else
 			{
 			FT_Open_Args open_args;
-			open_args.flags = ft_open_memory;
+			open_args.flags = FT_OPEN_MEMORY;
 
 			if (a_font->is_type1)
 				{
@@ -380,7 +425,7 @@ static FAPI_retcode get_scaled_font(FAPI_server* a_server,FAPI_font* a_font,int 
 
 			if (ft_inc_int)
 				{
-				open_args.flags = (FT_Open_Flags)(open_args.flags | ft_open_params);
+				open_args.flags = (FT_Open_Flags)(open_args.flags | FT_OPEN_PARAMS);
 				ft_param.tag = FT_PARAM_TAG_INCREMENTAL;
 				ft_param.data = ft_inc_int;
 				open_args.num_params = 1;
@@ -407,31 +452,86 @@ static FAPI_retcode get_scaled_font(FAPI_server* a_server,FAPI_font* a_font,int 
 
 	/*
 	Set the point size and transformation.
-	The matrix is scaled by the shift specified in the server, 16.
+	The matrix is scaled by the shift specified in the server, 16,
+	so we divide by 65536 when converting to a gs_matrix.
 	*/
 	if (face)
 		{
-		double width = a_matrix[0] / 65536.0;
-		double height = -a_matrix[3] / 65536.0;
-		FT_Matrix ft_matrix;
-		ft_error = FT_Set_Char_Size(face->m_ft_face,a_matrix[0] >> 10,-a_matrix[3] >> 10,
-									a_resolution[0] >> 16,a_resolution[1] >> 16);
-
-		/*+ check error code. */
-
-		ft_matrix.xx = (FT_Fixed)(a_matrix[0] / width);
-		ft_matrix.xy = (FT_Fixed)(a_matrix[1] / width);
-		ft_matrix.yx = (FT_Fixed)(a_matrix[2] / height);
-		ft_matrix.yy = (FT_Fixed)(a_matrix[3] / height);
+		static const FT_Matrix ft_reflection = { 65536, 0, 0, -65536 };
+		FT_Matrix ft_transform;
+		gs_point up_vector;
+		gs_matrix transform;
+		double angle;
+		FT_F26Dot6 width, height;
 
 		/*
-		Set the transform, ignoring the translation elements, 4 and 5, for now, because they contain very large values
+		Get the rotational part of the font transform
+		by applying the transform to a unit vector pointing up.
+		Ignore the translation elements because they contain very large values
 		derived from the current transformation matrix and so are of no use.
-
-		The transformation inverts the glyph, producing a glyph that is upside down in FreeType terms, with its
-		first row at the bottom. That is what GhostScript needs. 
 		*/
-		FT_Set_Transform(face->m_ft_face,&ft_matrix,NULL);
+		transform.xx = (float)(a_matrix[0] / 65536.0);
+		transform.xy = (float)(-a_matrix[1] / 65536.0);
+		transform.yx = (float)(a_matrix[2] / 65536.0);
+		transform.yy = (float)(-a_matrix[3] / 65536.0);
+		transform.tx = 0;
+		transform.ty = 0;
+		gs_point_transform(0,1,&transform,&up_vector);
+		gs_atan2_degrees(up_vector.x,up_vector.y,&angle);
+		angle = 360 - angle; /* Convert the angle to anticlockwise. */
+
+		/* Remove the rotation from the basic transform. */
+		if (angle)
+			gs_matrix_rotate(&transform,360 - angle,&transform);
+
+		/*
+		Convert width and height to 64ths of pixels and set the FreeType sizes.
+		If either width or height is zero set it to 1.
+		*/
+		if (transform.xx == 0)
+			transform.xx = 1;
+		if (transform.yy == 0)
+			transform.yy = 1;
+		width =	(FT_F26Dot6)(transform.xx * 64.0);
+		if (width < 0)
+			 width = -width;
+		height = (FT_F26Dot6)(transform.yy * 64.0);
+		if (height < 0)
+			height = -height;
+		ft_error = FT_Set_Char_Size(face->m_ft_face,width,height,
+									a_resolution[0] >> 16,a_resolution[1] >> 16);
+		if (ft_error)
+			{
+			delete_face(face);
+			a_font->server_font_data = NULL;
+			return ft_to_gs_error(ft_error);
+			}
+
+		/* Remove the width and height factors from the basic transform and add back the rotation. */
+		transform.xy /= transform.xx;
+		transform.yx /= transform.yy;
+		transform.xx = transform.yy = 1;
+		if (angle)
+			gs_matrix_rotate(&transform,angle,&transform);
+
+		/*
+		Set the FreeType font transformation to perform any slanting and rotation.
+		Scaling has already been performed by setting the character size.
+		Negate the xy and yx components of the transformation because
+		in the FreeType coordinate system y increases downwards.
+		*/
+		ft_transform.xx = (FT_Fixed)(transform.xx * 65536.0);
+		ft_transform.xy = -(FT_Fixed)(transform.xy * 65536.0);
+		ft_transform.yx = -(FT_Fixed)(transform.yx * 65536.0);
+		ft_transform.yy = (FT_Fixed)(transform.yy * 65536.0);
+
+		/*
+		Reflect the transform around (y=0) so that it produces a glyph that is upside down in FreeType terms, with its
+		first row at the bottom. That is what GhostScript needs.
+		*/
+		FT_Matrix_Multiply(&ft_reflection,&ft_transform);
+		
+		FT_Set_Transform(face->m_ft_face,&ft_transform,NULL);
 		}
 
 	return a_font->server_font_data ? 0 : -1;
@@ -462,9 +562,7 @@ static FAPI_retcode get_font_bbox(FAPI_server* a_server,FAPI_font* a_font,int a_
 	}
 
 /**
-DOCUMENTATION NEEDED
-
-I think this function returns a boolean value in a_proportional stating whether the font is proportional
+Return a boolean value in a_proportional stating whether the font is proportional
 or fixed-width.
 */
 static FAPI_retcode get_font_proportional_feature(FAPI_server* a_server,FAPI_font* a_font,int a_subfont,
@@ -502,8 +600,12 @@ static FAPI_retcode can_retrieve_char_by_name(FAPI_server* a_server,FAPI_font* a
 Return non-zero if the metrics can be replaced.
 */
 static FAPI_retcode can_replace_metrics(FAPI_server *a_server,FAPI_font *a_font,FAPI_char_ref *a_char_ref,int *a_result)
-	{   
-    *a_result = 0;
+	{
+	/*
+	Replace metrics only if the metrics are supplied in font units and
+	they are to be completely replaced, not added or partially replaced.
+	*/
+    *a_result = a_char_ref->metrics_scale == 0 && a_char_ref->metrics_type == FAPI_METRICS_REPLACE;
     return 0;
 	}
 
@@ -679,8 +781,8 @@ static const FAPI_server TheFreeTypeServer =
 plugin_instantiation_proc(gs_fapi_ft_instantiate);
 
 int gs_fapi_ft_instantiate(i_ctx_t *a_context,
-							i_plugin_client_memory *a_memory,
-							i_plugin_instance **a_plugin_instance)
+						   i_plugin_client_memory *a_memory,
+						   i_plugin_instance **a_plugin_instance)
 	{
 	FF_server *server = (FF_server *)a_memory->alloc(a_memory,
 		sizeof(FF_server),"FF_server");
