@@ -174,7 +174,7 @@ end	% type1imagepath_dict
 % Terminate the output
    mark /endchar ofilter charstack_write
 
-   ofilter fileposition ofilter closefile	% flush buffers
+   ofilter .fileposition ofilter closefile	% flush buffers
    ostring 0 3 -1 roll getinterval
    tsave restore
    end
