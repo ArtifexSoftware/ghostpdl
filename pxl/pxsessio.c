@@ -593,10 +593,12 @@ const byte apxEndPage[] = {
 };
 int
 pxEndPage(px_args_t *par, px_state_t *pxs)
-{	px_end_page_cleanup(pxs);
-	(*pxs->end_page)(pxs, (par->pv[0] ? par->pv[0]->value.i : pxs->copies), 1);
-	pxs->have_page = false;
-	return 0;
+{	
+    int code;
+    px_end_page_cleanup(pxs);
+    code = (*pxs->end_page)(pxs, (par->pv[0] ? par->pv[0]->value.i : pxs->copies), 1);
+    pxs->have_page = false;
+    return code;
 }
 /* The default end-page procedure just calls the device procedure. */
 int
