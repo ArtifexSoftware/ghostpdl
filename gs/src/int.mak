@@ -1824,8 +1824,8 @@ $(PSD)fapi.dev : $(INT_MAK) $(ECHOGS_XE) $(PSOBJ)zfapi.$(OBJ)\
 	$(ADDMOD) $(PSD)fapi -include $(PSD)fapiu$(UFST_BRIDGE)
 	$(ADDMOD) $(PSD)fapi -include $(PSD)fapif$(FT_BRIDGE)
 
-$(PSOBJ)zfapi.$(OBJ) : $(PSSRC)zfapi.c $(OP) $(math__h) $(memory__h) $(gp_h)\
- $(gscoord_h) $(gscrypt1_h) $(gsfont_h) $(gspaint_h) $(gspath_h)\
+$(PSOBJ)zfapi.$(OBJ) : $(PSSRC)zfapi.c $(OP) $(math__h) $(memory__h) $(string__h)\
+ $(gp_h) $(gscoord_h) $(gscrypt1_h) $(gsfont_h) $(gspaint_h) $(gspath_h)\
  $(gxchar_h) $(gxchrout_h) $(gxdevice_h) $(gxfcache_h) $(gxfcid_h)\
  $(gxfont_h) $(gxfont1_h) $(gxpath_h) $(gzstate_h) $(gdevpsf_h)\
  $(bfont_h) $(dstack_h) $(files_h) \

@@ -18,6 +18,7 @@
 /* BaseFont implementation for pdfwrite */
 #include "memory_.h"
 #include "ctype_.h"
+#include "string_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsutil.h"		/* for bytes_compare */

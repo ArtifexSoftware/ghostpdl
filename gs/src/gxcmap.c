@@ -192,7 +192,7 @@ static void
 cmyk_cs_to_gray_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
     out[0] = color_cmyk_to_gray(c, m, y, k, NULL);
-};
+}
 
 static void
 gray_cs_to_rgb_cm(gx_device * dev, frac gray, frac out[])
@@ -213,7 +213,7 @@ static void
 cmyk_cs_to_rgb_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
     color_cmyk_to_rgb(c, m, y, k, NULL, out);
-};
+}
 
 static void
 gray_cs_to_cmyk_cm(gx_device * dev, frac gray, frac out[])
@@ -261,7 +261,7 @@ cmyk_cs_to_cmyk_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
     out[1] = m;
     out[2] = y;
     out[3] = k;
-};
+}
 
 
 /* The list of default color space to color model conversion routines. */

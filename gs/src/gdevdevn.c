@@ -16,7 +16,9 @@
 
 /*$Id$ */
 /* Example DeviceN process color model devices. */
+
 #include "math_.h"
+#include "string_.h"
 #include "gdevprn.h"
 #include "gsparam.h"
 #include "gscrd.h"

@@ -1,4 +1,4 @@
-#    Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1989, 2000-2004 artofcode LLC. All rights reserved.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -912,7 +912,7 @@ $(GLOBJ)gdevpdt.$(OBJ) : $(GLSRC)gdevpdt.c $(gx_h) $(gxpath_h) $(memory__h)\
  $(gdevpdfx_h) $(gdevpdfg_h) $(gdevpdtf_h) $(gdevpdti_h) $(gdevpdts_h) $(gdevpdtx_h) $(gdevpdt_h)
 	$(GLCC) $(GLO_)gdevpdt.$(OBJ) $(C_) $(GLSRC)gdevpdt.c
 
-$(GLOBJ)gdevpdtb.$(OBJ) : $(GLSRC)gdevpdtb.c $(memory__h) $(ctype__h)\
+$(GLOBJ)gdevpdtb.$(OBJ) : $(GLSRC)gdevpdtb.c $(memory__h) $(ctype__h) $(string__h)\
  $(gx_h) $(gserrors_h) $(gsutil_h)\
  $(gxfcid_h) $(gxfcopy_h) $(gxfont_h) $(gxfont42_h)\
  $(gdevpsf_h) $(gdevpdfx_h) $(gdevpdtb_h)
@@ -1125,7 +1125,7 @@ $(DD)spotcmyk.dev : $(DEVS_MAK) $(devn_) $(GLD)page.dev
 $(DD)devicen.dev : $(DEVS_MAK) $(devn_) $(GLD)page.dev
 	$(SETDEV) $(DD)devicen $(devn_)
 
-$(GLOBJ)gdevdevn.$(OBJ) : $(GLSRC)gdevdevn.c $(PDEVH) $(math__h)\
+$(GLOBJ)gdevdevn.$(OBJ) : $(GLSRC)gdevdevn.c $(PDEVH) $(math__h) $(string__h)\
  $(gdevprn_h) $(gsparam_h) $(gscrd_h) $(gscrdp_h) $(gxlum_h) $(gdevdcrd_h)\
  $(gstypes_h) $(gxdcconv_h) $(gdevdevn_h)
 	$(GLCC) $(GLO_)gdevdevn.$(OBJ) $(C_) $(GLSRC)gdevdevn.c

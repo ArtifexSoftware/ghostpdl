@@ -890,6 +890,8 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
     }
     return 0;
 }
+
+int
 pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 		const gs_range_t **ppranges,
 		const gs_color_space *pcs,

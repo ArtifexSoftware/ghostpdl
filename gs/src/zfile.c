@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 2000, 2001 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 2000-2004, artofcode LLC.  All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.

@@ -17,6 +17,7 @@
 /*$Id$ */
 /* setscreen operator for Ghostscript library */
 #include "memory_.h"
+#include "string_.h"
 #include <stdlib.h>		/* for qsort */
 #include "gx.h"
 #include "gserrors.h"
