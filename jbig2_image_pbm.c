@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_image_pbm.c,v 1.3 2002/06/15 16:02:54 giles Exp $
+    $Id: jbig2_image_pbm.c,v 1.4 2002/06/17 16:30:20 giles Exp $
 */
 
 #include <stdio.h>
@@ -63,7 +63,7 @@ int jbig2_image_write_pbm(Jbig2Image *image, FILE *out)
 }
 
 /* take an image from a file in pbm format */
-Jbig2Image *jbig2_image_read_pbm_file(char *filename)
+Jbig2Image *jbig2_image_read_pbm_file(Jbig2Ctx *ctx, char *filename)
 {
     FILE *in;
     Jbig2Image *image;
@@ -73,13 +73,13 @@ Jbig2Image *jbig2_image_read_pbm_file(char *filename)
 		return NULL;
     }
     
-    image = jbig2_image_read_pbm(in);
+    image = jbig2_image_read_pbm(ctx, in);
     
     return (image);
 }
 
 // FIXME: should handle multi-image files
-Jbig2Image *jbig2_image_read_pbm(FILE *in)
+Jbig2Image *jbig2_image_read_pbm(Jbig2Ctx *ctx, FILE *in)
 {
     int i, dim[2];
     int stride, pbm_stride;
@@ -126,7 +126,7 @@ Jbig2Image *jbig2_image_read_pbm(FILE *in)
         }
     }
     // allocate image structure
-    image = jbig2_image_new(dim[0], dim[1]);
+    image = jbig2_image_new(ctx, dim[0], dim[1]);
     if (image == NULL) {
         fprintf(stderr, "could not allocate %dx%d image structure\n", dim[0], dim[1]);
         return NULL;
@@ -139,7 +139,7 @@ Jbig2Image *jbig2_image_read_pbm(FILE *in)
         fread(data, sizeof(byte), pbm_stride, in);
         if (feof(in)) {
             fprintf(stderr, "unexpected end of pbm file.\n");
-            jbig2_image_free(image);
+            jbig2_image_free(ctx, image);
             return NULL;
         }
         data += image->stride;
@@ -148,30 +148,3 @@ Jbig2Image *jbig2_image_read_pbm(FILE *in)
     // success
     return image;
 }
-
-#ifdef TEST
-int main(int argc, char *argv[])
-{
-	int	i,j;
-	Jbig2Image	*image;
-	uint32		*data;
-	char		*filename = "test.pbm";
-	
-	image = jbig2_image_new(384,51);
-	if (image == NULL) {
-		fprintf(stderr, "failed to create jbig2 image structure!\n");
-		exit(1);
-	}
-	
-	fprintf(stderr, "creating checkerboard test image '%s'\n", filename);
-	data = image->data;
-	for (j = 0; j < image->height; j++) {
-		for (i = 0; i < image->stride >> 2; i++) {
-			*data++ = ((j & 16) >> 4) ? 0x0000FFFF: 0xFFFF0000;
-		}
-	}
-	
-	return jbig2_image_write_pbm_file(image, filename);
-}
-
-#endif /* TEST */
