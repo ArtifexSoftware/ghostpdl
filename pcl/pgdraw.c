@@ -544,7 +544,6 @@ hpgl_get_adjusted_corner(
 {
     adjusted_anchor_corner->x = current_anchor_corner->x;
     adjusted_anchor_corner->y = current_anchor_corner->y;
-
     /* account for anchor corner greater than origin */
     if (x_fill_increment != 0) {
 	while (adjusted_anchor_corner->x > bbox->p.x)
@@ -587,6 +586,7 @@ hpgl_polyfill(
 #define cos_dir sincos.cos
 
     gs_rect                     bbox;
+    gs_matrix   user_to_plu_mat;
     hpgl_pen_state_t            saved_pen_state;
     hpgl_real_t                 x_fill_increment, y_fill_increment;
     hpgl_FT_pattern_source_t    type = pgls->g.fill.type;
@@ -601,32 +601,31 @@ hpgl_polyfill(
     spacing.x = spacing.y = params->spacing;
     /* save the pen position */
     hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_pos);
+    hpgl_call(hpgl_compute_user_units_to_plu_ctm(pgls, &user_to_plu_mat));
     if (params->spacing == 0) {
         /* Per TRM 22-12, use 1% of the P1/P2 distance. */
-	gs_matrix   mat;
-
-	hpgl_call(hpgl_compute_user_units_to_plu_ctm(pgls, &mat));
 	spacing.x = spacing.y = 0.01 * hpgl_compute_distance( pgls->g.P1.x,
 							      pgls->g.P1.y,
 							      pgls->g.P2.x,
 							      pgls->g.P2.y
                                                 );
-	spacing.x /= fabs(mat.xx);
-	spacing.y /= fabs(mat.yy);
+	spacing.x /= fabs(user_to_plu_mat.xx);
+	spacing.y /= fabs(user_to_plu_mat.yy);
     }
 
     /* For fill type 3 (hatch) we take the max spacing value for fill
        type 4 (crosshatch) we fill asymetrically. */
     if ( !cross )
-	spacing.x = spacing.y = max(spacing.x, spacing.y);
-
+	/* odd behavior NB we probably don't completely understand all
+           of the problems we are emulating here.  Orthogonal fills
+           appear to use the maximum spacing value for assymmetric
+           scaling, non-orthogonal fills use the average */
+	if ( !equal(fmod( direction, 90 ), 0 ) )
+	    spacing.x = spacing.y = (spacing.x + spacing.y) / 2.0;
+	else
+	    spacing.x = spacing.y = max(spacing.x, spacing.y);
     /* get the bounding box */
     hpgl_call(hpgl_polyfill_bbox(pgls, &bbox));
-
-    /*
-     * HAS calculate the offset for dashing - we do not need this for
-     * solid lines
-     */
     /*
      * if the line width exceeds the spacing we use the line width
      * to avoid overlapping of the fill lines.  HAS this can be
@@ -634,12 +633,10 @@ hpgl_polyfill(
      * duplicate alot of code.
      */
     {
-	gs_matrix       mat;
         const float *   widths = pcl_palette_get_pen_widths(pgls->ppalet);
         hpgl_real_t     line_width = widths[hpgl_get_selected_pen(pgls)];
 
-        hpgl_call(hpgl_compute_user_units_to_plu_ctm(pgls, &mat));
-        line_width /= min(fabs(mat.xx), fabs(mat.yy));
+        line_width /= min(fabs(user_to_plu_mat.xx), fabs(user_to_plu_mat.yy));
 	if (line_width >= spacing.x  || line_width >= spacing.y) {
             hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_polygon));
 	    return 0;
@@ -648,8 +645,33 @@ hpgl_polyfill(
 
     /* get rid of the current path */
     hpgl_call(hpgl_clear_current_path(pgls));
+
+    /* HP preserves angles in plotter units - find the equivalent
+       plotter unit angle in user space */
+
+    /* not necessery if direction is orthogonal */
+    if ( !equal(fmod( direction, 90 ), 0 ) ) {
+	hpgl_real_t slope, scaled_slope, direction_user;
+	gs_sincos_degrees(direction, &sincos);
+	/* take the tangent by dividing sin by cos.  Since we know
+	   the angle is non-orthogonal the cosine is non-zero */
+	slope = sin_dir / cos_dir;
+	/* scale the slope by the ratio of the scaling factors */
+	scaled_slope = (user_to_plu_mat.xx / user_to_plu_mat.yy) * slope;
+	/* preserved angle in user space */
+	direction_user = radians_to_degrees * atan(scaled_slope);
+	/* assert angles are equal if scaling is symmetric */
+	if ((equal(user_to_plu_mat.xx, user_to_plu_mat.yy)) &&
+	     (!equal(direction, direction_user)))
+	    dprintf2("Warning user space angle %f is not equal to plu angle %f\n", 
+		     direction, direction_user);
+	/* replace FT's parameter with the new angle */
+	direction = direction_user;
+    }
+
 start:
     lines_filled = 0;
+
     gs_sincos_degrees(direction, &sincos);
     if (sin_dir < 0)
 	sin_dir = -sin_dir, cos_dir = -cos_dir; /* ensure y_inc >= 0 */
