@@ -87,6 +87,8 @@ void image_16RGB555_to_24BGR(int width, unsigned char *dest,
     unsigned char *source);
 void image_16RGB565_to_24BGR(int width, unsigned char *dest, 
     unsigned char *source);
+void image_4CMYK_to_24BGR(int width, unsigned char *dest, 
+    unsigned char *source, IMAGE_DEVICEN *devicen, int devicen_gray);
 void image_32CMYK_to_24BGR(int width, unsigned char *dest, 
     unsigned char *source, IMAGE_DEVICEN *devicen, int devicen_gray);
 void image_devicen_to_24BGR(int width, unsigned char *dest, 
@@ -265,6 +267,14 @@ image_size(IMAGE *img, int new_width, int new_height, int new_raster,
 	    }
 	    break;
 	case DISPLAY_COLORS_CMYK:
+	    switch (img->format & DISPLAY_DEPTH_MASK) {
+		case DISPLAY_DEPTH_1:
+		case DISPLAY_DEPTH_8:
+		    /* we can convert these formats */
+		    break;
+		default:
+		    return DISPLAY_ERROR;
+	    }
 	    /* we can't display this natively */
 	    /* we will convert it just before displaying */
 	    img->bmih.biBitCount = 24;
@@ -752,6 +762,46 @@ image_16RGB565_to_24BGR(int width, unsigned char *dest, unsigned char *source)
     }
 }
 
+void
+image_4CMYK_to_24BGR(int width, unsigned char *dest, unsigned char *source,
+    IMAGE_DEVICEN *devicen, int devicen_gray)
+{
+    int i;
+    int cyan, magenta, yellow, black;
+    int vc = devicen[0].visible;
+    int vm = devicen[1].visible;
+    int vy = devicen[2].visible;
+    int vk = devicen[3].visible;
+    int vall = vc && vm && vy && vk;
+    int show_gray = (vc + vm + vy + vk == 1) && devicen_gray;
+    int value;
+    for (i=0; i<width; i++) {
+        value = source[i/2];
+	if (i & 0)
+	    value >>= 4;
+	cyan = ((value >> 3) & 1) * 255;
+	magenta = ((value >> 2) & 1) * 255;
+	yellow = ((value >> 1) & 1) * 255;
+	black = (value & 1) * 255;
+	if (!vall) {
+	    if (!vc)
+		cyan = 0;
+	    if (!vm)
+		magenta = 0;
+	    if (!vy)
+		yellow = 0;
+	    if (!vk)
+		black = 0;
+	    if (show_gray) {
+		black += cyan + magenta + yellow;
+		cyan = magenta = yellow = 0;
+	    }
+	}
+	*dest++ = (255 - yellow)  * (255 - black)/255; /* blue */
+	*dest++ = (255 - magenta) * (255 - black)/255; /* green */
+	*dest++ = (255 - cyan)    * (255 - black)/255; /* red */
+    }
+}
 
 /* convert one line of 32CMYK to 24BGR */
 void
@@ -904,10 +954,15 @@ printf("   d=0x%x s=0x%x\n", (int)d, (int)s);
 */
 	    break;
 	case DISPLAY_COLORS_CMYK:
-	    if ((img->format & DISPLAY_DEPTH_MASK) != DISPLAY_DEPTH_8)
+	    if ((img->format & DISPLAY_DEPTH_MASK) == DISPLAY_DEPTH_8)
+		image_32CMYK_to_24BGR(width, dest, source, 
+		    img->devicen, img->devicen_gray);
+	    else if ((img->format & DISPLAY_DEPTH_MASK) == DISPLAY_DEPTH_1) {
+		image_4CMYK_to_24BGR(width, dest, source, 
+		    img->devicen, img->devicen_gray);
+	    }
+	    else
 		return;
-	    image_32CMYK_to_24BGR(width, dest, source, 
-		img->devicen, img->devicen_gray);
 	    break;
 	case DISPLAY_COLORS_SEPARATION:
 	    if ((img->format & DISPLAY_DEPTH_MASK) != DISPLAY_DEPTH_8)

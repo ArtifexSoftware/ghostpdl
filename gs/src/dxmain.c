@@ -268,6 +268,15 @@ window_draw(GtkWidget *widget, GdkEventExpose *event, gpointer user_data)
 		    }
 		    break;
 		case DISPLAY_COLORS_CMYK:
+		    if (((depth == DISPLAY_DEPTH_1) || 
+		        (depth == DISPLAY_DEPTH_8)) && img->rgbbuf)
+			gdk_draw_rgb_image(widget->window, 
+			    widget->style->fg_gc[GTK_STATE_NORMAL],
+			    x, y, width, height,
+			    GDK_RGB_DITHER_MAX, 
+			    img->rgbbuf + x*3 + y*img->width*3, 
+			    img->width * 3);
+		    break;
 		case DISPLAY_COLORS_SEPARATION:
 		    if ((depth == DISPLAY_DEPTH_8) && img->rgbbuf)
 			gdk_draw_rgb_image(widget->window, 
@@ -591,7 +600,7 @@ static int display_size(void *handle, void *device, int width, int height,
 		return -1;	/* not supported */
 	    break;
 	case DISPLAY_COLORS_CMYK:
-	    if (depth == DISPLAY_DEPTH_8) {
+	    if ((depth == DISPLAY_DEPTH_1) || (depth == DISPLAY_DEPTH_8)) {
 		/* need to convert to 24RGB */
 		img->rgbbuf = (guchar *)malloc(width * height * 3);
 		if (img->rgbbuf == NULL)
@@ -893,6 +902,49 @@ static int display_sync(void *handle, void *device)
 			magenta = *s++;
 			yellow = *s++;
 			black = *s++;
+			if (!vall) {
+			    if (!vc)
+				cyan = 0;
+			    if (!vm)
+				magenta = 0;
+			    if (!vy)
+				yellow = 0;
+			    if (!vk)
+				black = 0;
+			    if (show_gray) {
+				black += cyan + magenta + yellow;
+				cyan = magenta = yellow = 0;
+			    }
+			}
+			*d++ = (255-cyan)    * (255-black) / 255; /* r */
+			*d++ = (255-magenta) * (255-black) / 255; /* g */
+			*d++ = (255-yellow)  * (255-black) / 255; /* b */
+		    }
+		}
+	    }
+	    else if (depth == DISPLAY_DEPTH_1) {
+	    	/* Separations */
+		int x, y;
+		int cyan, magenta, yellow, black;
+		unsigned char *s, *d;
+		int vc = img->devicen[0].visible;
+		int vm = img->devicen[1].visible;
+		int vy = img->devicen[2].visible;
+		int vk = img->devicen[3].visible;
+		int vall = vc && vm && vy && vk;
+		int show_gray = (vc + vm + vy + vk == 1) && img->devicen_gray;
+		int value;
+		for (y = 0; y<img->height; y++) {
+		    s = img->buf + y * img->rowstride;
+		    d = img->rgbbuf + y * img->width * 3;
+		    for (x=0; x<img->width; x++) {
+			value = s[x/2];
+			if (x & 0)
+			    value >>= 4;
+			cyan = ((value >> 3) & 1) * 255;
+			magenta = ((value >> 2) & 1) * 255;
+			yellow = ((value >> 1) & 1) * 255;
+			black = (value & 1) * 255;
 			if (!vall) {
 			    if (!vc)
 				cyan = 0;

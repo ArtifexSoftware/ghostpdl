@@ -779,7 +779,6 @@ display_put_params(gx_device * dev, gs_param_list * plist)
     gs_devn_params *pdevn_params = &ddev->devn_params;
     equivalent_cmyk_color_params *pequiv_colors = &ddev->equiv_cmyk_colors;
     /* Save current data in case we have a problem */
-    gx_device_color_info save_info = dev->color_info;
     gs_devn_params saved_devn_params = *pdevn_params;
     equivalent_cmyk_color_params saved_equiv_colors = *pequiv_colors;
 
@@ -1444,7 +1443,6 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
     int bpc;	/* bits per component */
     int bpp;	/* bits per pixel */
     int maxvalue;
-    int i;
 
     switch (nFormat & DISPLAY_DEPTH_MASK) {
 	case DISPLAY_DEPTH_1:
@@ -1469,6 +1467,7 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
 	    return_error(gs_error_rangecheck);
     }
     maxvalue = (1 << bpc) - 1;
+    ddev->devn_params.bitspercomponent = bpc;
 
     switch (ddev->nFormat & DISPLAY_ALPHA_MASK) {
 	case DISPLAY_ALPHA_FIRST:
@@ -1674,6 +1673,9 @@ test_mode test_modes[] = {
      DISPLAY_BIGENDIAN | DISPLAY_BOTTOMFIRST},
     {"64bit/pixel separations, bottom first",
      DISPLAY_COLORS_SEPARATIONS | DISPLAY_ALPHA_NONE | DISPLAY_DEPTH_8 | 
+     DISPLAY_BIGENDIAN | DISPLAY_BOTTOMFIRST},
+    {"4bit/pixel CMYK, bottom first",
+     DISPLAY_COLORS_CMYK | DISPLAY_ALPHA_NONE | DISPLAY_DEPTH_1 | 
      DISPLAY_BIGENDIAN | DISPLAY_BOTTOMFIRST},
     {"1bit/pixel native, black is 1, 8 byte alignment",
      DISPLAY_COLORS_NATIVE | DISPLAY_ALPHA_NONE | DISPLAY_DEPTH_1 | 
