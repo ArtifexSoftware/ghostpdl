@@ -266,6 +266,9 @@ private const char *const psw_prolog[] =
     "/+{dup type/nametype eq{2 index 7 add -3 bitshift 2 index mul}if}!",
 	/* <w> <h> <name> (<length>|) $ <w> <h> <data> */
     "/@/currentfile #/${+ @ |}!",
+	/* <file> <nbytes> <ncomp> B <proc_1> ... <proc_ncomp> true */
+    "/B{{2 copy string{readstring pop}aload pop 4 array astore cvx",
+    "3 1 roll}repeat pop pop true}!",
 	/* <x> <y> <w> <h> <bpc/inv> <src> Ix <w> <h> <bps/inv> <mtx> <src> */
     "/Ix{[1 0 0 1 11 -2 roll exch neg exch neg]exch}!",
 	/* <x> <y> <h> <src> , - */
@@ -1295,9 +1298,13 @@ psw_begin_image(gx_device * dev,
 	    else {
 		if (format == gs_image_format_chunky)
 		    pprints1(s, "%s false", source);
-		else
-		    pprints2(s, "%s %strue", source,
-			     "dup dup dup " + (16 - num_components * 4));
+		else {
+		    /* We have to use procedures. */
+		    pputs(s, source);
+		    pprintd2(s, " %d %d B",
+			     (pim->Width * pim->BitsPerComponent + 7) >> 3,
+			     num_components);
+		}
 		pprintd1(s, " %d colorimage\n", num_components);
 	    }
 	}
