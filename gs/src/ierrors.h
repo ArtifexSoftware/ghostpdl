@@ -17,8 +17,8 @@
 /* $Id$ */
 /* Definition of error codes */
 
-#ifndef errors_INCLUDED
-#  define errors_INCLUDED
+#ifndef ierrors_INCLUDED
+#  define ierrors_INCLUDED
 
 /*
  * DO NOT USE THIS FILE IN THE GRAPHICS LIBRARY.
@@ -165,4 +165,4 @@ extern const char *const gs_error_names[];
 #define ERROR_IS_INTERRUPT(ecode)\
   ((ecode) == e_interrupt || (ecode) == e_timeout)
 
-#endif /* errors_INCLUDED */
+#endif /* ierrors_INCLUDED */
