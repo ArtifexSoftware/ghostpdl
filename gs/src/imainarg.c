@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996-2003 artofcode LLC.  All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -19,6 +19,8 @@
 #include "ctype_.h"
 #include "memory_.h"
 #include "string_.h"
+#include <stdlib.h>	/* for qsort */
+
 #include "ghost.h"
 #include "gp.h"
 #include "gsargs.h"
@@ -859,6 +861,7 @@ private const char help_trailer[] = "\
 For more information, see %s.\n\
 Report bugs to %s, using the form in Bug-form.htm.\n";
 private const char help_devices[] = "Available devices:";
+private const char help_default_device[] = "Default output device:";
 private const char help_emulators[] = "Input formats:";
 private const char help_paths[] = "Search path:";
 
@@ -904,24 +907,56 @@ print_usage(const gs_main_instance *minst)
     outprintf("%s", help_usage2);
 }
 
+/* compare function for qsort */
+private int
+cmpstr(const void *v1, const void *v2)
+{
+//    return (strcmp((const char *)v1,(const char *)v2));
+    return (strcmp(v1,v2));
+}
+
 /* Print the list of available devices. */
 private void
 print_devices(const gs_main_instance *minst)
 {
+    outprintf("%s", help_default_device);
+    outprintf(" %s\n", gs_devicename(gs_getdevice(0)));
     outprintf("%s", help_devices);
     {
 	int i;
 	int pos = 100;
 	const gx_device *pdev;
+	const char **names;
+	size_t ndev = 0;
 
-	for (i = 0; (pdev = gs_getdevice(i)) != 0; i++) {
-	    const char *dname = gs_devicename(pdev);
-	    int len = strlen(dname);
+	for (i = 0; (pdev = gs_getdevice(i)) != 0; i++)
+	    ;
+	ndev = (size_t)i;
+	names = (const char **)gs_alloc_bytes(minst->heap, ndev * sizeof(const char*), "print_devices");
+	if (names == (const char **)NULL) { /* old-style unsorted device list */
+	    for (i = 0; (pdev = gs_getdevice(i)) != 0; i++) {
+		const char *dname = gs_devicename(pdev);
+		int len = strlen(dname);
 
-	    if (pos + 1 + len > 76)
-		outprintf("\n  "), pos = 2;
-	    outprintf(" %s", dname);
-	    pos += 1 + len;
+		if (pos + 1 + len > 76)
+		    outprintf("\n  "), pos = 2;
+		outprintf(" %s", dname);
+		pos += 1 + len;
+	    }
+	}
+	else {				/* new-style sorted device list */
+	    for (i = 0; (pdev = gs_getdevice(i)) != 0; i++)
+		names[i] = gs_devicename(pdev);
+	    qsort((void*)names, ndev, sizeof(const char*), cmpstr);
+	    for (i = 0; i < ndev; i++) {
+		int len = strlen(names[i]);
+
+		if (pos + 1 + len > 76)
+		    outprintf("\n  "), pos = 2;
+		outprintf(" %s", names[i]);
+		pos += 1 + len;
+	    }
+	    gs_free((char *)names, ndev * sizeof(const char*), 1, "print_devices");
 	}
     }
     outprintf("\n");
