@@ -29,7 +29,7 @@ import gsconf
 import os, sys
 import string
 
-file = sys.argv[1]
+file = os.path.basename(sys.argv[1])
 if len(sys.argv) > 2:
 	device = sys.argv[2]
 else:

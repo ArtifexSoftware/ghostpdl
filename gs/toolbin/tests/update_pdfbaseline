@@ -79,7 +79,7 @@ def make_pdfcompare_entry(ifile, device, dpi, band):
         print "error."
 
 
-f = sys.argv[1]
+f = os.path.basename(sys.argv[1])
 
 if f[-3:] == '.ps' or f[-4:] == '.pdf' or f[-4:] == '.eps':
     for params in gsparamsets.testparamsets:
