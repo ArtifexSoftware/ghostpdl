@@ -628,8 +628,8 @@ gx_stroke_path_only(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 		if (uniform != 0) {
 		    /* We can save a lot of work in this case. */
 		    /* We know orient != orient_other. */
-		    float dpx = udx, dpy = udy;
-		    float wl = device_line_width_scale /
+		    double dpx = udx, dpy = udy;
+		    double wl = device_line_width_scale /
 		    hypot(dpx, dpy);
 
 		    pl.e.cdelta.x = (fixed) (dpx * wl);

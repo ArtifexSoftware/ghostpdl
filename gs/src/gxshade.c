@@ -316,7 +316,7 @@ top:
     }
     if (psh->head.type == 2 || psh->head.type == 3) {
 	max_error *= 0.25;
-	num_colors *= 2.0;
+	num_colors *= 2;
     }
     if (max_error < 1.0 / num_colors)
 	max_error = 1.0 / num_colors;

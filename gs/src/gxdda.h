@@ -77,7 +77,7 @@ dda_state_struct(_a, fixed, uint) gx_dda_state_fixed;
   if ( (N) == 0 )\
     (dstep).dQ = 0, (dstep).dR = 0;\
   else if ( (D) < 0 )\
-   { (dstep).dQ = -(-(D) / (N));\
+   { (dstep).dQ = -(int)((uint)-(D) / (N));\
      if ( ((dstep).dR = -(D) % (N)) != 0 )\
        --(dstep).dQ, (dstep).dR = (N) - (dstep).dR;\
    }\

@@ -188,10 +188,10 @@ psdf_adjust_color_index(gx_device_vector *vdev, gx_color_index color)
  * Since we only have 8 bits of color to start with, round the
  * values to 3 digits for more compact output.
  */
-private double
-round_byte_color(int cv)
+private inline double
+round_byte_color(gx_color_index cv)
 {
-    return (int)(cv * (1000.0 / 255.0) + 0.5) / 1000.0;
+    return (int)((uint)cv * (1000.0 / 255.0) + 0.5) / 1000.0;
 }
 int
 psdf_set_color(gx_device_vector * vdev, const gx_drawing_color * pdc,

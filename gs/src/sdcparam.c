@@ -155,7 +155,7 @@ s_DCT_get_quantization_tables(gs_param_list * plist,
 	    default_table_ptrs = defaults->data.compress->cinfo.quant_tbl_ptrs;
 	}
     } else {
-	/**************** quant_tables.size NOT INITIALIZED ****************/
+	quant_tables.size = count_of(d_comp_info);
 	num_in_tables = quant_tables.size;
 	for (i = 0; i < num_in_tables; ++i)
 	    d_comp_info[i].quant_tbl_no = i;

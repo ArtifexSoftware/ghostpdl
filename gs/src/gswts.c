@@ -280,17 +280,17 @@ wts_cell_calc_h(double inc, int *px1, int *pxwidth, double *pp1, double memw)
 
     e1 = 1e5;
     e2 = 1e5;
-    for (uacc = ceil(minrep * inc); uacc <= floor(2 * minrep * inc); uacc++) {
+    for (uacc = (int)ceil(minrep * inc); uacc <= floor(2 * minrep * inc); uacc++) {
 	int mt;
 	double et;
 
-	mt = floor(uacc / inc + 1e-5);
+	mt = (int)floor(uacc / inc + 1e-5);
 	et = uacc / inc - mt + mt * 0.001;
 	if (et < e1) {
 	    e1 = et;
 	    m1 = mt;
 	}
-	mt = ceil(uacc / inc - 1e-5);
+	mt = (int)ceil(uacc / inc - 1e-5);
 	et = mt - uacc / inc + mt * 0.001;
 	if (et < e2) {
 	    e2 = et;
@@ -724,7 +724,7 @@ wts_pick_cell_size_j(double sratiox, double sratioy, double sangledeg,
 		     double memw)
 {
     gx_wts_cell_params_j_t *wcpj;
-    int code;
+    double code;
 
     wcpj = malloc(sizeof(gx_wts_cell_params_j_t));
     if (wcpj == NULL)
@@ -1195,10 +1195,10 @@ wts_screen_from_enum_j(const gs_wts_screen_enum_t *wse)
     wsj->base.cell_height = wsej->base.height;
     size = wsj->base.cell_width * wsj->base.cell_height;
     wsj->base.cell_shift = wsej->wcpj->shift;
-    wsj->pa = floor(wsej->wcpj->pa * (1 << 16) + 0.5);
-    wsj->pb = floor(wsej->wcpj->pb * (1 << 16) + 0.5);
-    wsj->pc = floor(wsej->wcpj->pc * (1 << 16) + 0.5);
-    wsj->pd = floor(wsej->wcpj->pd * (1 << 16) + 0.5);
+    wsj->pa = (int)floor(wsej->wcpj->pa * (1 << 16) + 0.5);
+    wsj->pb = (int)floor(wsej->wcpj->pb * (1 << 16) + 0.5);
+    wsj->pc = (int)floor(wsej->wcpj->pc * (1 << 16) + 0.5);
+    wsj->pd = (int)floor(wsej->wcpj->pd * (1 << 16) + 0.5);
     wsj->XA = wsej->wcpj->xa;
     wsj->YA = wsej->wcpj->ya;
     wsj->XB = wsej->wcpj->xb;

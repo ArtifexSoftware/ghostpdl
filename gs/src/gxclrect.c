@@ -583,8 +583,10 @@ clist_strip_copy_rop(gx_device * dev,
 	gx_color_index D = pcls->colors_used.or;
 	int code;
 
+	/* Reducing D, S, T to rop_operand (which apparently is 32 bit) appears safe
+	   due to 'all' a has smaller snumber of significant bits. */
 	pcls->colors_used.or =
-	    ((rop_proc_table[color_rop])(D, S, T) & all) | D;
+	    ((rop_proc_table[color_rop])((rop_operand)D, (rop_operand)S, (rop_operand)T) & all) | D;
 	pcls->colors_used.slow_rop |= slow_rop;
 	if (rop3_uses_T(rop)) {
 	    if (tcolors == 0 || tcolors[0] != tcolors[1]) {
