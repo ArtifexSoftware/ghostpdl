@@ -627,7 +627,8 @@ pdf_compute_BaseFont(gx_device_pdf *pdev, pdf_font_resource_t *pdfont, bool fini
     /* Compute names for subset fonts. */
     if (finish && pdfont->FontDescriptor != NULL &&
 	pdf_font_descriptor_is_subset(pdfont->FontDescriptor) &&
-	!pdf_has_subset_prefix(fname.data, fname.size)
+	!pdf_has_subset_prefix(fname.data, fname.size) &&
+	pdf_font_descriptor_embedding(pdfont->FontDescriptor)
 	) {
 	int code = pdf_add_subset_prefix(pdev, &fname, pdfont->used, pdfont->count);
 
