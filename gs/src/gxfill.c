@@ -1720,7 +1720,19 @@ intersect_al(line_list *ll, fixed y, fixed *y_top, int draw, bool all_bands)
 #define PSEUDO_RASTERIZATION 1
 #define FILL_ADJUST 0
 #define FILL_DIRECT 1
-#define FILL_PROC_NAME fill_loop_by_trapezoids__pr
+#define FILL_PROC_NAME fill_loop_by_trapezoids__pr_fd
+#include "gxfilltr.h"
+#undef IS_SPOTAN
+#undef PSEUDO_RASTERIZATION
+#undef FILL_ADJUST
+#undef FILL_DIRECT
+#undef FILL_PROC_NAME
+
+#define IS_SPOTAN 0
+#define PSEUDO_RASTERIZATION 1
+#define FILL_ADJUST 0
+#define FILL_DIRECT 0
+#define FILL_PROC_NAME fill_loop_by_trapezoids__pr_nd
 #include "gxfilltr.h"
 #undef IS_SPOTAN
 #undef PSEUDO_RASTERIZATION
@@ -1789,7 +1801,10 @@ fill_loop_by_trapezoids(line_list *ll, fixed band_mask)
     if (fo->is_spotan)
 	return fill_loop_by_trapezoids__spotan(ll, band_mask);
     if (fo->pseudo_rasterization)
-	return fill_loop_by_trapezoids__pr(ll, band_mask);
+	if (fo->fill_direct)
+	    return fill_loop_by_trapezoids__pr_fd(ll, band_mask);
+	else
+	    return fill_loop_by_trapezoids__pr_nd(ll, band_mask);
     if (fo->adjust_below | fo->adjust_above | fo->adjust_left | fo->adjust_right) {
 	if (fo->fill_direct)
 	    return fill_loop_by_trapezoids__aj_fd(ll, band_mask);
