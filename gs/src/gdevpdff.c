@@ -267,41 +267,48 @@ embed_list_includes(const gs_param_string_array *psa, const byte *chars,
 	    return true;
     return false;
 }
+private bool
+embed_as_standard(gx_device_pdf *pdev, const gs_font *font, int index,
+		  int *psame)
+{
+    if (font->is_resource) {
+	*psame = ~0;
+	return true;
+    } else if (font->FontType != ft_composite &&
+	       find_std_appearance(pdev, (const gs_font_base *)font, -1,
+				   psame) == index)
+	return true;
+    return false;
+}
 pdf_font_embed_t
 pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
 		      int *psame)
 {
     const byte *chars = font->font_name.chars;
     uint size = font->font_name.size;
+    int index = pdf_find_standard_font(chars, size);
 
     /*
      * The behavior of Acrobat Distiller changed between 3.0 (PDF 1.2),
      * which will never embed the base 14 fonts, and 4.0 (PDF 1.3), which
-     * doesn't treat them any differently from any other fonts.
+     * doesn't treat them any differently from any other fonts.  However,
+     * if any of the base 14 fonts is not embedded, it still requires
+     * special treatment.
      */
-    if (pdev->CompatibilityLevel < 1.3) {
-	/* Check whether the font is in the base 14. */
-	int index = pdf_find_standard_font(chars, size);
-
-	if (index >= 0) {
-	    *pindex = index;
-	    if (font->is_resource) {
-		*psame = ~0;
-		return FONT_EMBED_STANDARD;
-	    } else if (font->FontType != ft_composite &&
-		       find_std_appearance(pdev, (gs_font_base *)font, -1,
-					   psame) == index)
-		return FONT_EMBED_STANDARD;
-	}
-    }
-    *pindex = -1;
+    *pindex = index;
     *psame = 0;
+    if (pdev->CompatibilityLevel < 1.3) {
+	if (index >= 0 && embed_as_standard(pdev, font, index, psame))
+	    return FONT_EMBED_STANDARD;
+    }
     /* Check the Embed lists. */
-    if (embed_list_includes(&pdev->params.NeverEmbed, chars, size))
-	return FONT_EMBED_NO;
-    if (pdev->params.EmbedAllFonts || font_is_symbolic(font) ||
-	embed_list_includes(&pdev->params.AlwaysEmbed, chars, size))
-	return FONT_EMBED_YES;
+    if (!embed_list_includes(&pdev->params.NeverEmbed, chars, size)) {
+	if (pdev->params.EmbedAllFonts || font_is_symbolic(font) ||
+	    embed_list_includes(&pdev->params.AlwaysEmbed, chars, size))
+	    return FONT_EMBED_YES;
+    }
+    if (index >= 0 && embed_as_standard(pdev, font, index, psame))
+	return FONT_EMBED_STANDARD;
     return FONT_EMBED_NO;
 }
 

@@ -32,13 +32,6 @@
   /Times-Roman /Times-Bold /Times-Italic /Times-BoldItalic
   /Symbol /ZapfDingbats
 ] readonly def
-% **************** PATCH **************** %
-% Explicitly adding the standard fonts to NeverEmbed produces broken
-% PDF files, containing non-embedded fonts with names like /Times-Roman~1c.
-% (We have been struggling with this problem for literally years.)
-% Disable setting NeverEmbed until the problem is fixed.
-/.standardfonts [] def
-% **************** END PATCH **************** %
 
 % Parameters common to all non-default configurations.
 % Note that the default configuration overrides a few of these.
