@@ -148,6 +148,7 @@ alloc_indexed_map(gs_indexed_map ** ppmap, int nvals, gs_memory_t * pmem,
 	return_error(gs_error_VMerror);
     }
     pimap->rc.free = free_indexed_map;
+    pimap->proc_data = 0;	/* for GC */
     pimap->num_values = nvals;
     *ppmap = pimap;
     return 0;
