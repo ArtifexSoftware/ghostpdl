@@ -114,7 +114,9 @@
 <li><a href="#Uni_background">Notes on <b><tt>uniprint</tt></b>'s background</a>
 <li><a href="#Uni_make_pfile">Godzilla's guide to the creation of Unified Printer Parameter (<b><tt>.upp</tt></b>) files</a>
 <li><a href="#Uni_all_parameters">All parameters in brief</a>
-<li><a href="#Uni_honors"><b><tt>uniprint</tt></b>'s Roll of Honor</a>
+<li><a href="#Uni_honors"><b><tt>Uniprint</tt></b>'s Roll of Honor</a>
+<li><a href="#Uni_weaving_howto"><b><tt>Uniprint</tt></b> weaving parameters howto</a></li>
+<li><a href="#Uni_esc300">Extension to <b><tt>uniprint</tt></b> for the Epson Stylus Color 300</a></li>
 </ul>
 <li><a href="#SPARCprinter">Sun SPARCprinter</a>
 <ul>
@@ -4380,6 +4382,26 @@ gs @stc.upp -sOutputFile=/dev/lp1 tiger.ps -c quit
 	<td>&nbsp;
 	<td>Plain Paper
 <tr>	<td>&nbsp;
+<tr>	<th align=left colspan=6>Epson Stylus Color 300
+<tr valign=top>	<td>&nbsp;
+	<td><b><tt>stc300.upp</tt></b>
+	<td>&nbsp;
+	<td>360&times;360dpi
+	<td>&nbsp;
+	<td>32-bit CMYK, plain paper
+<tr valign=top>	<td>&nbsp;
+	<td><b><tt>stc300bl.upp</tt></b>
+	<td>&nbsp;
+	<td>180&times;180dpi
+	<td>&nbsp;
+	<td>black only, plain paper
+<tr valign=top>	<td>&nbsp;
+	<td><b><tt>stc300bm.upp</tt></b>
+	<td>&nbsp;
+	<td>360&times;360dpi
+	<td>&nbsp;
+	<td>black only, plain paper
+<tr>	<td>&nbsp;
 <tr>	<th align=left colspan=6>Epson Stylus Color 500 (good transfer curves for plain paper)
 <tr valign=top>	<td>&nbsp;
 	<td><b><tt>stc500p.upp</tt></b>
@@ -5328,7 +5350,658 @@ Germany<br>
 +49 203 376273 telephone (MET evening hours)<br>
 &lt;<a href="mailto:ghess@elmos.de">ghess@elmos.de</a>&gt;
 </address>
+<h3><a name="Uni_weaving_howto"></a><tt>Uniprint</tt> weaving parameters howto</h3>
+This section was contributed by Glenn Ramsey.<p>
+<p>I wrote this because the documentation was very brief and I really struggled
+with it for a while, but it is very simple once you understand what is going
+on.
+<p>This only describes how to work out the Y parameters, I haven't looked
+at the X parameters yet.
+<ol>
+<li>
+<b>Determine the nozzle geometry (upOutputPins)</b>
+<p>
+You need to know how many nozzles the printer has and the spacing between
+them. Usually you can find this out from the printer manual, or the printer
+supplier, but you may have to dissect a couple of printer output files
+produced with the driver supplied with the printer. There is a utility
+called escp2ras<a href="#escp2ras"><sup>*</sup></a> that will help with that.
+Sometimes the term pin is used instead of nozzle but they mean the same thing. 
+<p>The number of nozzles will be the value assigned to the upOutputPins
+parameter.
+<p>Actually you don't have to print with all the pins available but for
+the purpose of demonstration I'll assume that we are using them all.
+<p>
+<a name="escp2ras"></a>* escp2ras is available from Gunther Hess' page at <a href="http://www-md.e-technik.uni-rostock.de/ma/gunther/gs/index.html">http://www-md.e-technik.uni-rostock.de/ma/gunther/gs/index.html</a>
+</li>
+<p>
+<li><b>Determine how many passes are required (upWeaveYPasses)</b>
+<p>The number of passes required is going to depend on the required resolution
+and the nozzle spacing.
+<blockquote>
+<tt>passes = resolution * nozzle spacing
+</tt>
+</blockquote>
+This will be the value assigned to the upWeaveYPasses parameter.
+<p>For example if the desired resolution is 360 dpi and the nozzles are
+spaced at 1/90in then 360 * 1/90 = 4 passes are required. For 720 dpi 8
+passes would be required. The printer would, of course, have to be capable
+of moving the paper in increments of either 360 or 720 dpi too.
+</li>
+<p>
+<li>
+<b>Determine the normal Y feed increment (upWeaveYFeeds)</b>
+<p>
+You need to work out how much to feed the paper so that when the paper
+has moved by one head length in however many passes you have then each
+row space on the paper has been passed over by at least one nozzle. There
+will be one feed value for each pass and the feed values must comply with
+the following rules:
+<blockquote>
+<tt>
+<p>sum of feeds = passes * nozzles
+<br>feed%passes != 0 (feed is not exactly divisible by passes)
+<br>sum of (nozzles - feed) = 0
+</tt>
+</blockquote>
+<p>For example if passes=4 and nozzles=15, then sum of feeds=60. The feed
+values could be 1,1,1,57 or 15,15,15,15 or 14,15,18,13.
+<p>These values will be assigned to the upWeaveYFeeds parameter.
+<p>You would need to experiment to see what combination looks best on the
+printer.
+<p>I found it convenient to draw several lines of nozzles and then move
+them around to see how the different combinations would fill the paper.
+A computer drawing tool makes this easier than pencil and paper (I used
+Dia, a GNOME app). The number of nozzles would probably be be a good place
+to start.
+<p>Remember that if the number of passes is more than 1 then the feed increment
+will be less than the nozzle spacing and <tt>passes &times; feed increment size</tt>
+must equal the physical distance between each nozzle.
+</li>
+<p>
+<li>
+<b>Determine the beginning of page pins (upWeaveInitialPins)</b>
+<p>
+These values will be assigned to the upWeaveInitialPins parameter and are
+the numbers of nozzles to operate in each of the initial passes at the top
+of a page. The nozzles that the values refer to are the topmost nozzles
+on the head, nearest the top margin. If the image doesn't start at the
+top margin then uniprint doesn't use these feeds.
+<p>I don't know a mathematical relation for this except that at least one
+of the values must be the number of nozzles, but I'm sure that there must
+be one. I used a graphical method, the description that follows refers
+to the ascii diagram in below.
+<p>Draw a line of nozzles for each pass arranged as they would be using
+the normal Y feed increment determined in step 3. In the diagram below
+this would be passes 5-8.
+<p>Draw a line of nozzles that would print just before the first normal
+pass. The feed increment for this pass will be close to and most likely
+1 or 2 units less than the feed increment of the last normal pass. In the
+example below this line is pass 4 and the feed increment is 13 whereas
+the normal feed increment is 15.
+<p>Draw each pass before that with a small feed increment so that if all
+of the nozzles appearing above the first nozzle of the first normal pass
+operate then all of the spaces will be filled. This feed increment is usually
+1 except in cases where some jiggery pokery is going on to make the printer
+print at an apparent higher resolution than the nozzle diameter.
+<p>Now select the nozzles that will operate in each of theses initial passes
+so that the paper is filled. In each pass the nozzles must be adjacent
+to each other and at least one of the passes will have all the nozzles
+operating. I suspect that for each combination of normal Y feed increments
+there will only be one set of valid beginning of page increments.
+</li>
+</ol>
+<h4>Example: stc.upp from Aladdin Ghostscript 6.01</h4>
+15 nozzles spaced at 1/90 in, 360 dpi requires 4 passes.
+<blockquote><tt><pre>
+-dupWeaveYPasses=4
+-dupOutputPins=15
+-dupWeaveYFeeds="{15 15 15 15}"
+-dupWeaveInitialYFeeds="{1 1 1 13}"
+-dupWeaveInitialPins="{ 4 15 11 7}"
+</pre></tt></blockquote>
+The following diagram shows which nozzles operate during each pass.
+<br>Passes 1-4 are beginning of page passes and passes 5-8 are normal passes.
+<blockquote>
+<p>x=nozzle operates, o=nozzle not used in this pass<tt></tt>
+<p><tt>&nbsp; 1 2 3 4 5 6 7 8 - pass no</tt>
+<br><tt>0 x</tt>
+<br><tt>1&nbsp;&nbsp; x</tt>
+<br><tt>2&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>3&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>4 x</tt>
+<br><tt>5&nbsp;&nbsp; x</tt>
+<br><tt>6&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>7&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>8 x</tt>
+<br><tt>9&nbsp;&nbsp; x</tt>
+<br><tt>0&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>2 x</tt>
+<br><tt>3&nbsp;&nbsp; x</tt>
+<br><tt>4&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>6 o&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>7&nbsp;&nbsp; x</tt>
+<br><tt>8&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>9&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>0 o&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>1&nbsp;&nbsp; x</tt>
+<br><tt>2&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>3&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>4 o&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>5&nbsp;&nbsp; x</tt>
+<br><tt>6&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>7&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>8 o&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>9&nbsp;&nbsp; x</tt>
+<br><tt>0&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o&nbsp;&nbsp; x</tt>
+<br><tt>2 o&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>3&nbsp;&nbsp; x</tt>
+<br><tt>4&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o&nbsp;&nbsp; x</tt>
+<br><tt>6 o&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>7&nbsp;&nbsp; x</tt>
+<br><tt>8&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>9&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o&nbsp;&nbsp; x</tt>
+<br><tt>0 o&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>1&nbsp;&nbsp; x</tt>
+<br><tt>2&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>3&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o&nbsp;&nbsp; x</tt>
+<br><tt>4 o&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>5&nbsp;&nbsp; x</tt>
+<br><tt>6&nbsp;&nbsp;&nbsp;&nbsp; o&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+x</tt>
+<br><tt>7&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o&nbsp;&nbsp; x</tt>
+<br><tt>8 o&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>9&nbsp;&nbsp; x</tt>
+<br><tt>0&nbsp;&nbsp;&nbsp;&nbsp; o&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+x</tt>
+<br><tt>1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o&nbsp;&nbsp; x</tt>
+<br><tt>2 o&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>3&nbsp;&nbsp; x</tt>
+<br><tt>4&nbsp;&nbsp;&nbsp;&nbsp; o&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+x</tt>
+<br><tt>5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o&nbsp;&nbsp; x</tt>
+<br><tt>6 o&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>7&nbsp;&nbsp; x</tt>
+<br><tt>8&nbsp;&nbsp;&nbsp;&nbsp; o&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+x</tt>
+<br><tt>9&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; o&nbsp;&nbsp; x</tt>
+<br><tt>0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+x</tt>
+<br><tt>2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+x</tt>
+<br><tt>3&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+x</tt>
+<br><tt>6&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+x</tt>
+<br><tt>7&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>9&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+x</tt>
+<br><tt>0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+x</tt>
+<br><tt>1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>3&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+x</tt>
+<br><tt>4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+x</tt>
+<br><tt>5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>6</tt>
+<br><tt>7&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+x</tt>
+<br><tt>8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+x</tt>
+<br><tt>9&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>0</tt>
+<br><tt>1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+x</tt>
+<br><tt>2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+x</tt>
+<br><tt>3&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>4</tt>
+<br><tt>5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+x</tt>
+<br><tt>6&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+x</tt>
+<br><tt>7&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; x</tt>
+<br><tt>8</tt>
+<br><tt>9&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+x</tt>
+<br><tt>0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+x</tt>
+<br><tt>1</tt>
+<br><tt>2</tt>
+<br><tt>3&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+x</tt>
+<br><tt>4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+x</tt>
+<br><tt>5</tt>
+<br><tt>6</tt>
+<br><tt>7&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+x</tt>
+<br><tt>8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+x</tt>
+<br><tt>9</tt>
+<br><tt>0</tt>
+<br><tt>1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+x</tt>
+<br><tt>2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+x</tt>
+<br><tt>3</tt>
+<br><tt>4</tt>
+<br><tt>5&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+x</tt>
+<br><tt>6</tt>
+<br><tt>7</tt>
+<br><tt>8</tt>
+<br><tt>9&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+x</tt>
+<br><tt>0</tt>
+<br><tt>1</tt>
+<br><tt>2</tt>
+<br><tt>3&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+x</tt>
+<br><tt>4</tt>
+<br><tt>5</tt>
+<br><tt>6</tt>
+<br><tt>7&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+x</tt>
+</blockquote>
+<p>These parameters would also work:
+<blockquote><tt><pre>
+-dupWeaveYPasses=4
+-dupOutputPins=15
+-dupWeaveYFeeds="{14 15 18 13}"
+-dupWeaveInitialYFeeds="{1 1 1 13}"
+-dupWeaveInitialPins="{ 4 11 7 15}"
+</pre></tt></blockquote>
+<p>
+<hr>
+<h3><a name="Uni_esc300"></a>Extension to <tt>uniprint</tt> for the Epson Stylus Color 300</h3>
+This section was contributed by Glenn Ramsey.<p>
+The Epson Stylus Color 300 uses a different command set to other Epson
+Stylus Color printers that use the ESC/P2 language. As far as I can
+tell its commands are a subset of ESC/P2. In ESC/P2 the colour to be
+printed is selected by a 'set colour' command and then the data sent
+is only printed in that colour until the colour is changed with another
+'set colour' command. The Stylus Color 300 lacks this functionality.
+The data sent to the printer maps directly to the ink nozzles and colour
+of an output scan line in the printed output is determined by the position
+of the scan line within the data. This means that the driver must know
+how the nozzles are arranged and must format the output accordingly.
+The extension adds a format that I have called EscNozzleMap and adds some
+ additional parameters to uniprint.<br>
+<ul>
+  <li><b><tt>upOutputFormat</tt></b>selects the output method, and should be set to the value
+<b><tt>/EscNozzleMap</tt></b> to select this format.
+    <blockquote>
+      <table cellpadding="0" cellspacing="0">
+        <tbody>
+          <tr valign="Top">
+            <td><b><tt>/EscNozzleMap</tt></b></td>
+            <td>&nbsp;</td>
+            <td>produces output for the Epson Stylus Color 300
+	    </td>
+          </tr>
+         <tbody>
+       </table>
+     </blockquote>
+</ul>
 
+<blockquote>
+  <table cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <th colspan="5" bgcolor="#cccc00">
+        <hr><font size="+1"><b><tt>uniprint</tt></b> parameters for the
+        EscNozzleMap format</font>
+        <hr></th>
+      </tr>
+      <tr valign="Bottom">
+        <th align="Left">Parameter
+	</th>
+        <td>&nbsp;
+	</td>
+        <th align="Left">Type
+	</th>
+        <td>&nbsp;&nbsp;&nbsp;
+	</td>
+        <th align="Left">Use
+	</th>
+      </tr>
+      <tr>
+        <td colspan="5">
+        <hr></td>
+      </tr>
+      <tr valign="Top">
+        <td><b><tt>upNozzleMapRowsPerPass</tt></b></td>
+        <td>&nbsp;
+	</td>
+        <td>Int
+	</td>
+        <td>&nbsp;
+	</td>
+        <td>output rows to generate for each pass of the head
+	</td>
+      </tr>
+      <tr valign="Top">
+        <td><b><tt>upNozzleMapPatternRepeat</tt></b></td>
+        <td>&nbsp;
+	</td>
+        <td>Int
+	</td>
+        <td>&nbsp;
+	</td>
+        <td>no. of rows that correspond to the repeat pattern of the
+        nozzles 
+	</td>
+      </tr>
+      <tr valign="Top">
+        <td><b><tt>upNozzleMapRowMask</tt></b></td>
+        <td>&nbsp;
+	</td>
+        <td>Int[]
+	</td>
+        <td>&nbsp;
+	</td>
+        <td>mask indicating the colour of the nozzles
+	</td>
+      </tr>
+      <tr valign="Top">
+        <td><b><tt>upNozzleMapMaskScanOffset</tt></b></td>
+        <td>&nbsp;
+	</td>
+        <td>Int[]
+	</td>
+        <td>&nbsp;
+	</td>
+        <td>mask indicating the physical position of the nozzles
+	</td>
+      </tr>
+    </tbody>
+  </table>
+</blockquote>
+
+<h4>A more detailed description of the new parameters</h4>
+<ul>
+  <li><b><tt>upNozzleMapRowsPerPass</tt></b><br>
+  The number of rows of data that are required to address all nozzles for a
+  single pass of the head. There will always be this number of rows of output
+  data generated. I'd expect it to be the same as the total number of nozzles but
+  it wouldn't break the formatter if it wasn't. So if you wanted to print with
+  only the 10th nozzle then row 10 would contain data corresponding to the bit
+  pattern and all of the others would be padded with zeros.
+  </li>
+  <li><b><tt>upNozzleMapPatternRepeat</tt></b><br>
+  The number of nozzles in each repeated group on the printing head.
+  This parameter must correspond with the length of the upNozzleMapRowMask array.
+  </li>
+  <li><b><tt>upNozzleMapRowMask</tt></b><br>
+  An array of integers that defines the colour of the nozzles on the
+  head and whether the nozzles will be used to print. The array index
+  defines the row index for the nozzle in the output data
+  and the value defines the colour of the nozzle. The mapping
+  of colours to values is defined in the table below.
+        <blockquote>
+          <table cellpadding="0" cellspacing="0">
+            <tbody>
+              <tr valign="Bottom">
+                <th align="Left">colour
+	        </th>
+                <td>&nbsp;
+	        </td>
+                <th align="center">mask value
+	        </th>
+              </tr>
+              <tr>
+                <td colspan="5">
+                <hr></td>
+              </tr>
+              <tr valign="Top" align="middle">
+                <td><b><tt>K</tt></b></td>
+                <td>&nbsp;
+	        </td>
+                <td>1
+	        </td>
+              </tr>
+              <tr valign="Top" align="middle">
+                <td><b><tt>C</tt></b></td>
+                <td>&nbsp;
+	        </td>
+                <td>2
+              </tr>
+              <tr valign="Top" align="middle">
+                <td><b><tt>M</tt></b></td>
+                <td>&nbsp;
+	        </td>
+                <td>3
+                </td>
+              </tr>
+              <tr valign="Top" align="middle">
+                <td><b><tt>Y</tt></b></td>
+                <td>&nbsp;
+	        </td>
+                <td>4
+	        </td>
+              </tr>
+              <tr valign="Top" align="middle">
+                <td><b><tt>no data</tt></b></td>
+                <td>&nbsp;
+	        </td>
+                <td>0
+	        </td>
+              </tr>
+            </tbody>
+          </table>
+        </blockquote>
+  A value of 0 means that the nozzle is not used and the row in the output data will be
+  padded with zeros.<br>
+  </li>
+  <li><b><tt>upNozzleMapMaskScanOffset</tt></b><br>
+  An array of integers that defines the physical position of the nozzles relative
+  to the first nozzle in the repeated group. The relative distance is measured in
+  printed line widths and will be different for different printing resolutions.
+  This parameter is used because the physical spacing of the nozzles may not
+  correspond to their mapping in the output data. For example the ESC300 has nozzles
+  physically arranged something like this:
+  <table>
+    <tr>
+      <td bgcolor="#00ffff">&nbsp;
+      </td>
+      <td bgcolor="#ffff00">&nbsp;
+      </td>
+      <td bgcolor="#000000">&nbsp;
+      </td>
+      <td bgcolor="#ff00ff">&nbsp;
+      </td>
+      <td bgcolor="#000000">&nbsp;
+      </td>
+      <td>&nbsp;
+      </td>
+      <td bgcolor="#000000">&nbsp;
+      </td>
+      <td>&nbsp;
+      </td>
+      <td>&nbsp;
+      </td>
+      <td>&nbsp;
+      </td>
+      <td>&nbsp;
+      </td>
+      <td>&nbsp;
+      </td>
+      <td bgcolor="#00ffff">&nbsp;
+      </td>
+      <td bgcolor="#ffff00">&nbsp;
+      </td>
+      <td bgcolor="#000000">&nbsp;
+      </td>
+      <td bgcolor="#ff00ff">&nbsp;
+      </td>
+      <td bgcolor="#000000">&nbsp;
+      </td>
+      <td>&nbsp;
+      </td>
+      <td bgcolor="#000000">&nbsp;
+      </td>
+      <td bgcolor="#ffffff">&nbsp;
+      </td>
+    </tr>
+      <td>&nbsp;
+      </td>
+      <td>&nbsp;
+      </td>
+      <td>&nbsp;
+      </td>
+      <td>&nbsp;
+      </td>
+      <td>&nbsp;
+      </td>
+      <td>&nbsp;
+      </td>
+      <td bgcolor="#00ffff">&nbsp;
+      </td>
+      <td bgcolor="#ffff00">&nbsp;
+      </td>
+      <td bgcolor="#000000">&nbsp;
+      </td>
+      <td bgcolor="#ff00ff">&nbsp;
+      </td>
+      <td bgcolor="#000000">&nbsp;
+      </td>
+      <td>&nbsp;
+      </td>
+      <td bgcolor="#000000">&nbsp;
+      </td>
+      <td>&nbsp;
+      </td>
+      <td>&nbsp;
+      </td>
+      <td>&nbsp;
+      </td>
+      <td>&nbsp;
+      </td>
+      <td>&nbsp;
+      </td>
+      <td bgcolor="#00ffff">&nbsp;
+      </td>
+      <td bgcolor="#ffff00">&nbsp;
+      </td>
+      <td>etc ...
+      </td>
+
+    <tr>
+    </tr>    
+  </table>
+  There is a one nozzle width space between the last two nozzles in each group.
+  In the output data the data for the last nozzle in the group would be in row 5
+  (numbering starts at 0) but the nozzle is physically positioned at 6 spaces from
+  the first nozzle. 
+</ul>
+<h4>Example 1 - Epson Stylus Color 300 - 360 dpi colour</h4>
+<blockquote><pre>
+-dupWeaveYPasses=6
+-dupOutputPins=11
+-dupWeaveYFeeds="{ 11 11 11 11 11 11 }"
+-dupWeaveInitialYFeeds="{ 1 1 1 1 1 7 }"
+-dupWeaveInitialPins="{ 2 11 9 7 5 3 }"
+-dupNozzleMapRowsPerPass=64
+-dupNozzleMapPatternRepeat=6
+-dupNozzleMapRowMask="{ 2 4 1 3 0 0 }"
+-dupNozzleMapMaskScanOffset="{ 0 1 2 3 0 0 }"
+</pre></blockquote>
+The weaving parameters are the same as for any other uniprint driver
+but they must be consistent with the nozzle map parameters. In this printer
+the coloured nozzles are spaced at 1/60" so 6 passes are required for 360
+dpi resolution.
+<p>
+In the example there are 64 rows of data required for each head pass. Each
+row must be completely filled with data for each pass so if certain nozzles
+do not print in the pass then the rows for those nozzles will be padded
+with zeroes.
+<P>
+The row mask translates to "C Y K M 0 0" so in the output data rows 0,7,13,...
+will contain data for cyan, rows 1,8,14,... will contain data for yellow, etc. Rows 4,10,16,...
+and 5, 11,15,... will always be padded with zeroes. The <i>upNozzleMapPatternRepeat</i>
+parameter defines the length of the mask.
+<p>
+The row mask is repeated for each group of <i>upNozzleMapPatternRepeat</i> rows
+in the output data. In this case there are 64 rows so there will be 10 groups
+of "C Y K M 0 0" followed by "C Y K M" which is equivalent to 11 output
+pins.
+<P>
+The <i>upNozzleMaskScanOffset</i> array indicates how the data from the scan
+buffer is mapped to the output data. The data is presented to the formatter
+as a buffer of four colour scanlines. The index of the scanline being printed,
+lets call it y, always corresponds, in this example, to the physical position of
+the cyan nozzle but since the nozzles are not on the same horizontal
+line then the other colours for the current pass must come from other
+scanlines in the scan buffer. The example is { 0 1 2 3 0 0 }, this means that
+when printing a 4 colour image the magenta data would come from scanline y+3,
+the black from scanline y+2, etc. It would have been possible in this case
+to use the array index instead of the <i>upNozzleMaskScanOffset</i> parameter
+however the paramter is necessary to be able to use the full capability of the
+printer in black only mode.
+
+<h4>Example 2 - Epson Stylus Color 300 - 180 dpi black only</h4>
+<blockquote>
+<pre>
+-dupMargins="{ 9.0 39.96 9.0 9.0}"
+-dupWeaveYPasses=1
+-dupOutputPins=31
+-dupNozzleMapRowsPerPass=64
+-dupNozzleMapPatternRepeat=6
+-dupNozzleMapRowMask="{ 0 0 1 0 1 1}"
+-dupNozzleMapMaskScanOffset="{ 0 0 0 0 1 2 }"
+</pre>
+</blockquote>
+In this example there is no weaving.
+<p>
+The ESC300 has black nozzles evenly physically arranged as K K K but the data must
+be sent to the printer as 00K0KK. This is handled by the <i>upNozzleMapRowMask</i>
+and <i>upNozzleMaskScanOffset</i> arrays. The <i>upNozzleMapRowMask</i>  array is
+{ 0 0 1 0 1 1} which translates to { 0 0 K 0 K K } so rows 0, 1 and 3 will always
+contain zeros and the other rows will contain data.
+<p>
+The <i>upNozzleMaskScanOffset</i> array
+in this case is { 0 0 0 0 1 2 } so if the data for the 1st nozzle comes from row
+y in the scan buffer then the data for the 2nd and 3rd nozzles will come from rows
+y+1 and y+2.
+
+<h4>Example 3 - Epson Stylus Color 300 - 360 dpi black only</h4>
+<blockquote>
+<pre>
+-dupWeaveYPasses=2
+-dupOutputPins=31
+-dupWeaveYFeeds="{31 31}"
+-dupWeaveInitialYFeeds="{1 31}"
+-dupWeaveInitialPins="{16 31}"
+-dupNozzleMapRowsPerPass=64
+-dupNozzleMapPatternRepeat=6
+-dupNozzleMapRowMask="{ 0 0 1 0 1 1}"
+-dupNozzleMapMaskScanOffset="{ 0 0 0 0 2 4 }"
+</pre>
+</blockquote>
+In this example 2 weave passes are required to achieve the desired resolution.
+<p>
+The <i>upNozzleMaskScanOffset</i> array in this case is { 0 0 0 0 2 4 } because
+there are two weave passes so if the data for the first nozzle comes from row y
+in the scan buffer then the data for the 2nd and 3rd nozzles must come from rows
+y+(1*2) and y+(2*2).
+<p>
+<address>
+Glenn Ramsey<br>
+glennr@es.co.nz<br>
+February 2001
+</address>
+<br>
 <hr>
 
 <h2><a name="SPARCprinter"></a>Sun SPARCprinter</h2>
