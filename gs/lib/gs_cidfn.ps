@@ -1,4 +1,4 @@
-%    Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -362,7 +362,7 @@ dup null eq { pop pop pop pop } {	%**** WRONG ****
   3 -1 roll //.cid0buildstring cvs cvn 3 1 roll
   dup /CharStrings get 3 index 4 -1 roll put
   setfont
-  1000 0 setcharwidth	%**** WRONG ****
+  dup .glyphwidth setcharwidth
   0 0 moveto glyphshow
 } ifelse	%**** WRONG ****
   end

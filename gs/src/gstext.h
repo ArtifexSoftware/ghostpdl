@@ -1,4 +1,4 @@
-/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -226,6 +226,8 @@ int
 			 gs_memory_t *, gs_text_enum_t **)),
     gs_glyphpath_begin(P5(gs_state *, gs_glyph, bool,
 			  gs_memory_t *, gs_text_enum_t **)),
+    gs_glyphwidth_begin(P4(gs_state *, gs_glyph,
+			   gs_memory_t *, gs_text_enum_t **)),
     gs_charboxpath_begin(P6(gs_state *, const byte *, uint, bool,
 			    gs_memory_t *, gs_text_enum_t **));
 

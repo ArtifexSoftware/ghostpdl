@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -30,14 +30,11 @@
 #include "iname.h"
 #include "ibnum.h"
 
-/* <charname> glyphshow - */
+/* Common setup for glyphshow and .glyphwidth. */
 private int
-zglyphshow(i_ctx_t *i_ctx_p)
+glyph_show_setup(i_ctx_t *i_ctx_p, gs_glyph *pglyph)
 {
     os_ptr op = osp;
-    gs_glyph glyph;
-    gs_text_enum_t *penum;
-    int code;
 
     switch (gs_currentfont(igs)->FontType) {
 	case ft_CID_encrypted:
@@ -45,17 +42,46 @@ zglyphshow(i_ctx_t *i_ctx_p)
 	case ft_CID_TrueType:
 	case ft_CID_bitmap:
 	    check_int_leu(*op, gs_max_glyph - gs_min_cid_glyph);
-	    glyph = (gs_glyph) op->value.intval + gs_min_cid_glyph;
+	    *pglyph = (gs_glyph) op->value.intval + gs_min_cid_glyph;
 	    break;
 	default:
 	    check_type(*op, t_name);
-	    glyph = name_index(op);
+	    *pglyph = name_index(op);
     }
-    if ((code = op_show_enum_setup(i_ctx_p)) != 0 ||
+    return op_show_enum_setup(i_ctx_p);
+}
+
+/* <charname> glyphshow - */
+private int
+zglyphshow(i_ctx_t *i_ctx_p)
+{
+    gs_glyph glyph;
+    gs_text_enum_t *penum;
+    int code;
+
+    if ((code = glyph_show_setup(i_ctx_p, &glyph)) != 0 ||
 	(code = gs_glyphshow_begin(igs, glyph, imemory, &penum)) < 0)
 	return code;
     if ((code = op_show_finish_setup(i_ctx_p, penum, 1, NULL)) < 0) {
-	ifree_object(penum, "op_show_glyph");
+	ifree_object(penum, "zglyphshow");
+	return code;
+    }
+    return op_show_continue_pop(i_ctx_p, 1);
+}
+
+/* <charname> .glyphwidth <wx> <wy> */
+private int
+zglyphwidth(i_ctx_t *i_ctx_p)
+{
+    gs_glyph glyph;
+    gs_text_enum_t *penum;
+    int code;
+
+    if ((code = glyph_show_setup(i_ctx_p, &glyph)) != 0 ||
+	(code = gs_glyphwidth_begin(igs, glyph, imemory, &penum)) < 0)
+	return code;
+    if ((code = op_show_finish_setup(i_ctx_p, penum, 1, finish_stringwidth)) < 0) {
+	ifree_object(penum, "zglyphwidth");
 	return code;
     }
     return op_show_continue_pop(i_ctx_p, 1);
@@ -132,6 +158,7 @@ const op_def zcharx_op_defs[] =
 {
     op_def_begin_level2(),
     {"1glyphshow", zglyphshow},
+    {"1.glyphwidth", zglyphwidth},
     {"2xshow", zxshow},
     {"2xyshow", zxyshow},
     {"2yshow", zyshow},

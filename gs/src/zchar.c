@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -21,7 +21,7 @@
 #include "ghost.h"
 #include "oper.h"
 #include "gsstruct.h"
-# include "gstext.h"
+#include "gstext.h"
 #include "gxarith.h"
 #include "gxfixed.h"
 #include "gxmatrix.h"		/* for ifont.h */
@@ -43,7 +43,6 @@
 /* Forward references */
 private bool map_glyph_to_char(P3(const ref *, const ref *, ref *));
 private int finish_show(P1(i_ctx_t *));
-private int finish_stringwidth(P1(i_ctx_t *));
 private int op_show_cleanup(P1(i_ctx_t *));
 private int op_show_return_width(P3(i_ctx_t *, uint, double *));
 
@@ -188,7 +187,8 @@ zstringwidth(i_ctx_t *i_ctx_p)
 }
 /* Finishing procedure for stringwidth. */
 /* Pushes the accumulated width. */
-private int
+/* This is exported for .glyphwidth (in zcharx.c). */
+int
 finish_stringwidth(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -408,7 +408,8 @@ op_show_finish_setup(i_ctx_t *i_ctx_p, gs_text_enum_t * penum, int npop,
 	gs_text_params_t text;
 
 	if (!(penum->text.size == 1 &&
-	      penum->text.data.bytes[0] == (glyph & 0xff))
+	      penum->text.data.bytes[0] ==
+	        (gs_text_current_char(osenum) & 0xff))
 	    )
 	    return_error(e_rangecheck);
 	text = penum->text;

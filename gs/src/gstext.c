@@ -1,4 +1,4 @@
-/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -355,6 +355,17 @@ gs_glyphpath_begin(gs_state * pgs, gs_glyph glyph, bool stroke_path,
 
     text.operation = TEXT_FROM_SINGLE_GLYPH | TEXT_RETURN_WIDTH |
 	(stroke_path ? TEXT_DO_TRUE_CHARPATH : TEXT_DO_FALSE_CHARPATH);
+    text.data.d_glyph = glyph;
+    text.size = 1;
+    return gs_text_begin(pgs, &text, mem, ppte);
+}
+int
+gs_glyphwidth_begin(gs_state * pgs, gs_glyph glyph,
+		    gs_memory_t * mem, gs_text_enum_t ** ppte)
+{
+    gs_text_params_t text;
+
+    text.operation = TEXT_FROM_SINGLE_GLYPH | TEXT_DO_NONE | TEXT_RETURN_WIDTH;
     text.data.d_glyph = glyph;
     text.size = 1;
     return gs_text_begin(pgs, &text, mem, ppte);

@@ -1,4 +1,4 @@
-/* Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1999, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -146,6 +146,14 @@ gs_glyphpath_init(gs_show_enum * penum, gs_state * pgs, gs_glyph glyph,
 {
     gs_text_enum_t *pte;
     int code = gs_glyphpath_begin(pgs, glyph, stroke_path, pgs->memory, &pte);
+
+    return show_n_begin(penum, pgs, code, pte);
+}
+int
+gs_glyphwidth_init(gs_show_enum * penum, gs_state * pgs, gs_glyph glyph)
+{
+    gs_text_enum_t *pte;
+    int code = gs_glyphwidth_begin(pgs, glyph, pgs->memory, &pte);
 
     return show_n_begin(penum, pgs, code, pte);
 }

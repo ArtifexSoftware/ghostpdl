@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -47,7 +47,9 @@ gs_show_enum *gs_show_enum_alloc(P3(gs_memory_t *, gs_state *, client_name_t));
 void gs_show_enum_release(P2(gs_show_enum *, gs_memory_t *));
 
 /* Initialize a text enumeration. */
-int gs_show_n_init(P4(gs_show_enum *, gs_state *, const char *, uint)),
+int
+    /* PostScript operators */
+    gs_show_n_init(P4(gs_show_enum *, gs_state *, const char *, uint)),
     gs_ashow_n_init(P6(gs_show_enum *, gs_state *, floatp, floatp, const char *, uint)),
     gs_widthshow_n_init(P7(gs_show_enum *, gs_state *, floatp, floatp, gs_char, const char *, uint)),
     gs_awidthshow_n_init(P9(gs_show_enum *, gs_state *, floatp, floatp, gs_char, floatp, floatp, const char *, uint)),
@@ -56,7 +58,9 @@ int gs_show_n_init(P4(gs_show_enum *, gs_state *, const char *, uint)),
     gs_glyphshow_init(P3(gs_show_enum *, gs_state *, gs_glyph)), gs_cshow_n_init(P4(gs_show_enum *, gs_state *, const char *, uint)),
     gs_stringwidth_n_init(P4(gs_show_enum *, gs_state *, const char *, uint)),
     gs_charpath_n_init(P5(gs_show_enum *, gs_state *, const char *, uint, bool)),
+    /* Extensions */
     gs_glyphpath_init(P4(gs_show_enum *, gs_state *, gs_glyph, bool)),
+    gs_glyphwidth_init(P3(gs_show_enum *, gs_state *, gs_glyph)),
     gs_charboxpath_n_init(P5(gs_show_enum *, gs_state *, const char *, uint, bool));
 int gs_show_use_glyph(P2(gs_show_enum *, gs_glyph));
 

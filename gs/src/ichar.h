@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1996, 1997, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -67,6 +67,7 @@ int op_show_continue_pop(P2(i_ctx_t *, int));
 int op_show_continue_dispatch(P3(i_ctx_t *, int, int));
 int op_show_free(P2(i_ctx_t *, int));
 void glyph_ref(P2(gs_glyph, ref *));
+int finish_stringwidth(P1(i_ctx_t *));
 
 /* Exported by zchar.c for zcharout.c */
 bool zchar_show_width_only(P1(const gs_text_enum_t *));
