@@ -7,6 +7,105 @@ This file, NEWS-PL, describes the changes in the most recent releases of
 Aladdin's library code that is shared between PCL5, HP-GL/2, HP RTL, and PCL
 XL, in reverse chronological order.
 
+Version 1.34_alpha_sleet (10/30/2000)
+=====================================
+
+Wed Oct 25 04:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * plmain.c [1.28]:
+        Makes input buffer smaller for testing parsers on debug systems.  "NB"
+        about not observing the minimum buffer sizes of each language.
+        
+        * plchar.c [1.16]:
+        check to see if the glyph table exists before looking up the glyph.
+        
+
+Fri Sep 15 21:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pjparse.h [1.9], pjparse.c [1.14]:
+        Code and documentation for environment variable to specify directory
+        location of PCL and XL resident fonts.
+        
+
+Thu Sep 14 05:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * plmain.c [1.27]:
+        The PXL error page was not printing properly in some cases.  This
+        problem was introduced with the language switching code.
+        
+
+Sun Sep  3 18:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pjparse.c [1.13]:
+        Change to use `;' instead of ':' as a separator for the font path.
+        
+
+Mon Aug 14 20:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * plchar.c [1.15]:
+        The routines to build characters now only produce an error when they
+        receive a negative return value from the actual drawing routine.
+        Using the high high level drivers it is possible for the drawing
+        routines to return the value 1, indicating the last path operation was
+        a closepath.  The previous arrangement produced an error with any
+        non-zero code.  This fixes the problems with using the high level
+        devices: pswrite, pxlmono, and pxlcolor.
+        
+
+Mon Aug 14 19:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * plmain.c [1.26]:
+        corrects typo in the usage string.
+        
+
+Thu Jul 20 22:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * plchar.c [1.14]:
+        Corrects the metrics for newly implemented landscape oriented bitmap fonts.
+        
+
+Mon Jul 10 05:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * plfont.h [1.7], plfont.c [1.10], plchar.c [1.13]:
+        new support for pcl5e bitmap fonts that are designed in landscape
+        orientation.  Also, the bold fraction value is now handled without
+        overloading the font's WMode field eliminating an incompatibility with
+        the graphics library.
+        
+
+Sun Jul  2 06:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pltop.h [1.4], plmain.h [1.6], plmain.c [1.25]:
+        Modifications to support dynamic pcl personality selection.  PCL5C,
+        PCL5E and RTL can now be selected from the command line with the -P
+        option.  See the pcl documentation for usage details.
+        
+
+Sun Jun 11 19:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * plmain.c [1.24], plfont.h [1.6], plfont.c [1.9], plchar.c [1.12]:
+        Adds new interface so clients can unload resident font data.  Also
+        corrects left side bearing calculation for intellifonts which was
+        returning design units instead of fraction of the Em square resulting
+        in lost characters on several fts files (fts.1271).
+        
+
+Thu May 11 23:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * plfont.h [1.5], plfont.c [1.8], plchar.c [1.11]:
+        modified to support new simplified interface for getting the width and
+        metrics of characters.
+        
+
+Wed May 10 04:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pjparse.c [1.12]:
+        The pjl parser did not correctly parse an assignment statement unless
+        there was intervening spaces on each side of the '=' sign.  This was
+        initially noticed as a language switching bug, in fact the PJL
+        language assignment was not being interpreted correctly resulting in
+        choosing pcl instead of pxl.
+
 Version 1.33 (04/22/00)
 =======================
 

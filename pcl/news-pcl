@@ -10,6 +10,261 @@ generated from the revision control logs.  The dates provided for each
 entry are the dates the sources were committed to the source code
 repository.
 
+Version 1.34_alpha_sleet (10/30/2000)
+=====================================
+
+Sat Sep 16 01:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pglabel.c [1.33], pgfont.c [1.8], pgfdata.h [1.3], pgfdata.c [1.4], 
+        pgdraw.c [1.57]:
+        New arc and stick font data (john desrosiers), and rendering code.
+        
+        * pgfdata.c [1.5]:
+        fixes typo.
+        
+
+Thu Sep 14 06:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pctext.c [1.30]:
+        literal characters were not handled correctly when symbol set type 2
+        was in effect.  723iso.pcl.
+        
+
+Thu Sep 14 05:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pgvector.c [1.17]:
+        Transitions between absolute and relative coordinates were not handled
+        correctly in polyline encoded vectors.  The input file has been added
+        to the pcl bug data base - cdrbug.pcl.  Also, improves debug trace
+        output for polyline encoded vectors.
+        
+        * pcursor.c [1.17]:
+        Modified to position 75% VMI instead of 1 VMI below the top logical
+        page boundary.  Thanks to dan@artifex.com for this fix.  This code
+        (pcursor.c) has been rewritten 3 times and each iteration has had a
+        different class of problems.  This time the relationship between
+        perforation skip and the margins is confused.  The perforation skip
+        command's comment claims it resets the margins but it does not,
+        subsequently when setting the cursor we use the margins, partially use
+        the margins or completely ignore the margins based on what looks like
+        incomplete logic.  There is now a long discussion at the top of pcursor.c
+        that is supposed to explain all of this but at least part of it is
+        wrong.  This fix relates to case (h) in that documentation.
+        Perforation skip's interaction with the margins needs further review.
+        
+
+Sun Sep  3 19:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pcsfont.c [1.22]:
+        The universal type 16 font which supports both truetype and bitmap was
+        setting the resolution of truetype fonts as if they were type 16
+        bitmap fonts.
+        
+
+Sun Sep  3 18:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pcindxed.c [1.6]:
+        The default colorometric rgb palette was not initialized correctly.
+        
+        * pcparse.c [1.11]:
+        The pcl parser did not preserve the sign in the case of -0.
+        Consequently a relative move of 0 was being interpreted as an absolute
+        move.
+        
+
+Mon Aug 14 20:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pcpatrn.c [1.23]:
+        When building patterns it is necessary to also install the color space
+        in the graphics state, even though we pass the color space to the
+        procedure that makes the pattern.  This is necessary so that the CIE
+        code will be properly initialized.  Code added to make sure the color
+        space is installed.
+        
+
+Mon Aug 14 19:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pgconfig.c [1.22]:
+        GL/2 debug command ZZ added.  The command can be followed by the
+        regular gs -Z debug options.  Useful for systems that do not have the
+        standard command line code integrated.
+        
+        * pgfont.c [1.7]:
+        The routines to build characters now only produce an error when they
+        receive a negative return value from the actual drawing routine.
+        Using the high high level drivers it is possible for the drawing
+        routines to return the value 1, indicating the last path operation was
+        a closepath.  The previous arrangement produced an error with any
+        non-zero code.  This fixes the problems with using the high level
+        devices: pswrite, pxlmono, and pxlcolor.
+        
+
+Thu Aug 10 04:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pcpatxfm.c [1.8]:
+        pattern reference point in device space was not always initialized
+        properly.
+        
+
+Mon Aug  7 04:00:00 2000 GMT        Raymond Johnston    ray@meerkat
+
+        * pcfrgrnd.c [1.10]:
+        Fix for 'frgrnd_do_reset' that freed the base color space when it was still
+        being referenced by the palette. This does not seem to create a memory leak
+        but since the 'frgrnd' logic does not properly use reference counting to
+        track usage, there may still be potential problem. Passes FTS with no leak.
+        
+
+Tue Aug  1 16:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pgdraw.c [1.56], pctext.c [1.29], pcsfont.c [1.21], pcparse.c [1.10]:
+        Support for the double byte parsing.  Adds support for the bitmap
+        variant of Format 16.  Fixes many of the problems in the pcl5e fts
+        panels - 2420-2434.  Problems with use of the galley character and
+        vertical printing still remain to be fixed on these fts panels.
+        
+
+Mon Jul 31 16:00:00 2000 GMT        Raymond Johnston    ray@meerkat
+
+        * pclfont.c [1.12]:
+        Add #ifdef DEBUG around debug code to prevent undefined symbol.
+        
+
+Thu Jul 20 22:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pcpage.c [1.37]:
+        rewords a comment.
+        
+        * pgconfig.c [1.21]:
+        Required and initial setting for screened vectors.
+        
+
+Thu Jul 20 20:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pcfont.h [1.8]:
+        conditional compilation for debugging code.
+        
+
+Mon Jul 10 05:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pglabel.c [1.32]:
+        Fixes a position problem in gl/2 label code that resulted in the
+        incorrect y position of labels in some cases - fts.2370.
+        
+        * pcstate.h [1.25], pcpage.c [1.36]:
+        Apparently the logical page orientation can only be set once
+        subsequent orientation commands are ignored.  Also, changing the page
+        size changes the current orientation to portrait unless a logical page
+        orientation command has been explicitly issued.
+        
+        * pcsfont.c [1.20]:
+        new support for pcl5e bitmap fonts that are designed in landscape
+        orientation.  Also, the bold fraction value is now handled without
+        overloading the font's WMode field eliminating an incompatibility with
+        the graphics library.
+        
+
+Sun Jul  2 06:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * rtraster.c [1.22], pglfill.c [1.21], pgcolor.c [1.8], 
+        pctop.c [1.14], pcpatrn.c [1.22], pcpalet.c [1.18], pcpage.c [1.35], 
+        pclookup.c [1.5], pcfrgrnd.c [1.9], pccolor.c [1.8], pccid.c [1.12]:
+        Modifications to support dynamic pcl personality selection.  PCL5C,
+        PCL5E and RTL can now be selected from the command line with the -P
+        option.  See the pcl documentation for usage details.
+        
+
+Mon Jun 12 06:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pggeom.h [1.4]:
+        removes unused macro.
+        
+
+Sun Jun 11 23:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pglabel.c [1.31]:
+        Accounts for intellifont's convention of having 72.307 point == 1
+        inch.  A similar change was made in pctext.c for pcl but the change was
+        not made for gl/2 characters.
+        
+
+Sun Jun 11 19:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pglabel.c [1.30], pcsfont.c [1.19], pclfont.c [1.11], 
+        pcjob.c [1.18], pcfsel.c [1.15], pcfont.h [1.7], pcfont.c [1.26]:
+        Adds new interface so clients can unload resident font data.  Also
+        corrects left side bearing calculation for intellifonts which was
+        returning design units instead of fraction of the Em square resulting
+        in lost characters on several fts files (fts.1271).
+        
+
+Mon May 22 06:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pgdraw.c [1.55]:
+        fix to handle isotropic scaling where the sign of x-scaling is
+        different than the sign of the y-scaling.
+        
+        * rtmisc.c [1.13], pgframe.c [1.11], pgconfig.c [1.20]:
+        Fixes a regression introduced with the last change to pgconfig.c, the
+        previous change fixed a problem by setting the gl/2 ctm before SC was
+        executed.  This is not correct and it only fixed the problem by
+        accident.  This corrects that change and supplies the correct fix
+        which effectively sets the gl/2 ctm upon entering gl/2.
+        
+
+Sun May 21 07:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pgdraw.c [1.54]:
+        Scaled gl/2 vector fills are fixed.  There were three problems:
+        pattern lengths were being truncated to integers resulting in
+        misplaced dashes.  The discrepancy was so small it only became a
+        visible problem when crosshatching dashed lines.  The spacing values
+        were calculated incorrectly using Y scaling when X scaling is only
+        relevant.  Finally, isotropic scaling did not work correctly because
+        it incorrectly used the values of P1 and P2 to calculate pattern
+        length, instead of the isotropic scaling box.  This change fixes all
+        of the scaling problems throughout the "1600-1700" panels of the fts.
+        
+
+Thu May 11 23:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pglabel.c [1.29], pgfont.c [1.6], pctext.c [1.28]:
+        modified to support new simplified interface for getting the width and
+        metrics of characters.
+        
+
+Thu May 11 22:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pcfsel.h [1.7], pcfsel.c [1.14], pcfont.h [1.6], pcfont.c [1.25]:
+        removes obsolete glyph substitution code.
+        
+        * pglfill.c [1.20]:
+        The current line type was not initialized correctly.  This did not
+        result in a known problem.
+        
+
+Tue May  2 03:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pcht.c [1.18]:
+        hack to guarantee refence counts of the static color mapper devices
+        will not reach 0.
+        
+
+Mon May  1 16:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pgdraw.c [1.53]:
+        Relative dashed line pattern lengths were incorrect is scaling was
+        isotropic.  Normally the pattern length is 4% of the diagonal distance
+        between P1 and P2.  With isotropic scaling the pattern length is 4% of
+        the diagonal distance between the minimum and maximum scaling points.
+        Fixes wrong line pattern on fts 2290.
+        
+
+Sat Apr 22 07:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pcl.mak [1.36], NEWS-PCL [1.19]:
+        updated for version 1.33
+
 Version 1.33 (04/22/00)
 =======================
 

@@ -6,6 +6,114 @@
 This file, NEWS-XL, describes the changes in the most recent releases of
 Aladdin's PCL XL code, in reverse chronological order.
 
+Version 1.34_alpha_sleet (10/30/2000)
+=====================================
+
+Wed Oct 25 05:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pxink.c [1.9]:
+        Correction! much of the srgb setup discussed in the log entry for
+        pxgstate.c is actually done in this file pxink.c, includes: building
+        the srgb colorspace and building default color rendering dictionary
+        with an adjustable white point, obviously this uses the C base crd
+        machinery in the library.  Removes #define PXL2_0 used while level 2.0
+        code was unstable.  Procedure added to determine if a halftone is
+        necessary to replace a state variable maintained for the same purpose.
+        
+        * pxfont.c [1.7]:
+        support for 2.0 vertical printing mode.
+        
+        * pximage.c [1.5]:
+        PXL Level 2.0 jpeg filter added.  Removes #define PXL2_0 used while
+        level 2.0 code was unstable.
+        
+        * pxgstate.c [1.12]:
+        Removes #define PXL2_0 used while level 2.0 code was unstable.
+        Removes external declarations of gs_color_space_type{ }.  I am not
+        sure why this was in the code but apparently it is no longer needed.
+        Necessary changes to implement srgb for both images and vector
+        graphical objects.  For now srgb is mapped to device rgb until I can
+        figure out what the laserjet 4500 is actually doing.  There does not
+        appear to be any difference between using device rgb and srgb and the
+        cie associated attributes: XYChormaticies, White Reference Point
+        etc. seem to have no effect on the output.  Until I figure out what is
+        going on, the necessary matrices, encoding procedures and cie setup is
+        implemented but never "reached", because rgb is substituted for srgb.
+        Also, included in this checkin are changes for vertical writing mode.
+        
+        * pxptable.c [1.3]:
+        Removes #define PXL2_0 used while level 2.0 code.  Removes check for
+        non-orthogonal page angles.  Adds new attribute value types:
+        ColorimetricColorSpace, XYChromaticities, WhiteReferencePoint,
+        CRGBMinMax, and GammaGain.  Adds RemoveStream operator.  Multiple byte
+        padding is now checked by the operator implementation not the parser.
+        
+        * pxgstate.h [1.4]:
+        Adds srgb color space type and removes cached "needs_halftone" field.
+        There is now a private procedure pxink.c:px_needs_halftone instead of
+        the state variable.  Adds a cie color space pointer to pxl's graphics
+        state.
+        
+
+Wed Oct 25 04:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pxparse.h [1.3]:
+        workaround that needs further evaluation.  The parsers "left" buffer
+        had to be made very large (500 bytes) to support data left over by the
+        jpeg filter.  This needs to be evaluated further but is acceptable for
+        an alpha release.  Removes #define PXL2_0 used while level 2.0 code
+        was unstable.
+        
+        * pxstream.c [1.3]:
+        Support for PXL 2.0 operator RemoveStream.  Changes to allow both PXL
+        1.0 and 2.0 streams.  Removes #define PXL2_0 used while level 2.0 code
+        was unstable.
+        
+
+Fri Sep 15 21:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pxffont.c [1.8]:
+        Code and documentation for environment variable to specify directory
+        location of PCL and XL resident fonts.
+        
+
+Mon Jul 10 05:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pxfont.c [1.6]:
+        new support for pcl5e bitmap fonts that are designed in landscape
+        orientation.  Also, the bold fraction value is now handled without
+        overloading the font's WMode field eliminating an incompatibility with
+        the graphics library.
+        
+
+Wed May 31 01:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pxgstate.c [1.11]:
+        If the accumulated skip length is 0 disable dashing and use a true
+        solid line.
+        
+
+Sun May 21 07:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pximage.c [1.4]:
+        add level 2_0 conditional compilation directive.  Somehow I missed to
+        add this one last check in.
+        
+
+Thu May 11 23:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pxstream.c [1.2], pxptable.c [1.2], pxink.c [1.8], pximage.c [1.3], 
+        pxgstate.h [1.3], pxgstate.c [1.10]:
+        This checkin includes most of the functionality necessary to parse XL
+        level 2.0.  It is still experimental and incomplete, until it is
+        finished users will have to #define PXL2_0 to enable the new code.
+        
+
+Sat Apr 22 07:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pxl.mak [1.17], NEWS-PXL [1.13]:
+        updated for version 1.33
+
 Version 1.33 (04/22/00)
 =======================
 

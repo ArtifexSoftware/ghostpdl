@@ -6,6 +6,46 @@
 This file, NEWS-MAN, describes changes in the main component in
 reverse chronological order.
 
+Version 1.34_alpha_sleet (10/30/2000)
+=====================================
+
+Thu Sep 14 05:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pcl6_gcc.mak [1.5]:
+        Adds pcxcmyk device.
+        
+
+Mon Aug 14 19:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pcl6_gcc.mak [1.4]:
+        Adds pxlmonon and pxlcolor device.
+        
+
+Sun Aug  6 16:00:00 2000 GMT        Raymond Johnston    ray@meerkat
+
+        * pcl6_watc.mak [1.1]:
+        Create a make file for building PCL6 using Watcom, fix associated makefiles
+        
+
+Thu May 11 22:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * pcl6_gcc.mak [1.3]:
+        The PXL object directory was incorrectly specified and add sdctd.dev
+        for XL 2.0 jpeg filter.
+        
+
+Wed Apr 26 04:00:00 2000 GMT        Raymond Johnston    ray@meerkat
+
+        * pcl6_msvc.mak [1.1]:
+        Makefile for Microsoft Visual c. Tested with version 6.0
+        
+
+Sat Apr 22 07:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * NEWS-MAN [1.1]:
+        updated for version 1.33
+        
+
 Version 1.33 (04/22/00)
 =======================
 

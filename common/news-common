@@ -7,6 +7,28 @@ This file, NEWS-COM, describes the changes in the most recent releases of
 Aladdin's library code that is shared between all Aladdin products, in
 reverse chronological order.
 
+Version 1.34_alpha_sleet (10/30/2000)
+=====================================
+
+Tue Oct 17 17:00:00 2000 GMT        Raymond Johnston    ray@meerkat
+
+        * msvc_top.mak [1.14]:
+        Fix to allow 'main' make file to set up DEBUG, NOPRIVATE, and BANDLIST
+        values.
+        
+
+Sun Aug  6 16:00:00 2000 GMT        Raymond Johnston    ray@meerkat
+
+        * watc_top.mak [1.8]:
+        Create a make file for building PCL6 using Watcom, fix associated makefiles
+        
+
+Sat Apr 22 07:00:00 2000 GMT        Henry Stiles    henrys@meerkat
+
+        * NEWS-COM [1.12]:
+        updated for version 1.33
+        
+
 Version 1.33 (04/22/00)
 =======================
 
