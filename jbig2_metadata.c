@@ -13,7 +13,7 @@
     Artifex Software, Inc.,  101 Lucas Valley Road #110,
     San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
-    $Id: jbig2_metadata.c,v 1.2 2003/03/05 03:32:41 giles Exp $
+    $Id$
 */
 
 #ifdef HAVE_CONFIG_H
@@ -99,8 +99,8 @@ int jbig2_metadata_add(Jbig2Ctx *ctx, Jbig2Metadata *md,
 int jbig2_parse_comment_ascii(Jbig2Ctx *ctx, Jbig2Segment *segment,
                                const uint8_t *segment_data)
 {
-    char *s = (char *)segment_data + 4;
-    char *end = (char *)segment_data + segment->data_length;
+    char *s = (char *)(segment_data + 4);
+    char *end = (char *)(segment_data + segment->data_length);
     Jbig2Metadata *comment;
     char *key, *value;
     int key_length, value_length;
