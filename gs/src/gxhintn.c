@@ -242,18 +242,24 @@ private void fraction_matrix__set(fraction_matrix * this, const double_matrix * 
         fraction_matrix__drop_bits(this, matrix_exp - matrix_bits);
 }
 
-private inline void fraction_matrix__to_double(const fraction_matrix * this, double_matrix * pmat)
-{   pmat->xx = (double)this->xx / this->denominator;
+private inline int fraction_matrix__to_double(const fraction_matrix * this, double_matrix * pmat)
+{   
+    if (this->denominator == 0)
+	return_error(gs_error_rangecheck);
+    pmat->xx = (double)this->xx / this->denominator;
     pmat->xy = (double)this->xy / this->denominator;
     pmat->yx = (double)this->yx / this->denominator;
     pmat->yy = (double)this->yy / this->denominator;
+    return 0;
 }
 
 private int fraction_matrix__invert_to(const fraction_matrix * this, fraction_matrix * pmat)
 {   double_matrix m, M;
     int code;
 
-    fraction_matrix__to_double(this, &M);
+    code = fraction_matrix__to_double(this, &M);
+    if (code < 0)
+	return code;
     code = double_matrix__invert_to(&M, &m);
     if (code < 0)
 	return code;
@@ -546,6 +552,10 @@ private inline void t1_hinter__adjust_matrix_precision(t1_hinter * this, fixed x
 	this->g2o_fraction_bits -= 1;
 	this->g2o_fraction >>= 1;
     }
+    if (this->ctmf.denominator == 0) {
+	/* ctmf should be degenerate. */
+	this->ctmf.denominator = 1;
+    }
 }
 
 private inline void t1_hinter__set_origin(t1_hinter * this, fixed dx, fixed dy)
@@ -601,16 +611,21 @@ int t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm,
         fraction_matrix__drop_bits(&this->ctmf, this->g2o_fraction_bits - max_coord_bits);
         this->g2o_fraction_bits = max_coord_bits;
     }
-    code = fraction_matrix__invert_to(&this->ctmf, &this->ctmi); /* Note: ctmi is inversion of ctmf, not ctm. */
-    if (code < 0)
-	return code;
-    this->g2o_fraction = 1 << this->g2o_fraction_bits;
-    /* Note : possibly we'll adjust the matrix precision dynamically 
-       with adjust_matrix_precision while importing the glyph. */
-    if (this->g2o_fraction == 0)
-    	return_error(gs_error_limitcheck);
-    if (this->ctmf.denominator == 0 || this->ctmi.denominator == 0)
-    	return_error(gs_error_limitcheck); /* Must not pass here. */
+    if (this->ctmf.denominator != 0) {
+	code = fraction_matrix__invert_to(&this->ctmf, &this->ctmi); /* Note: ctmi is inversion of ctmf, not ctm. */
+	if (code < 0)
+	    return code;
+	this->g2o_fraction = 1 << this->g2o_fraction_bits;
+	/* Note : possibly we'll adjust the matrix precision dynamically 
+	   with adjust_matrix_precision while importing the glyph. */
+	if (this->g2o_fraction == 0)
+    	    return_error(gs_error_limitcheck);
+    }
+    if (this->ctmf.denominator == 0 || this->ctmi.denominator == 0) {
+	/* ctmf should be degenerate. */
+    	this->disable_hinting = true;
+	this->ctmf.denominator = 1;
+    }
     {   /* height_transform_coef is scaling factor for the
            distance between horizontal lines while transformation.
            width_transform_coef defines similarly.
@@ -618,7 +633,9 @@ int t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm,
         double_matrix m;
         double vp, sp, div_x, div_y;
 
-        fraction_matrix__to_double(&this->ctmf, &m);
+        code = fraction_matrix__to_double(&this->ctmf, &m);
+	if (code < 0)
+	    return code;
         vp = any_abs(m.xx * m.yy - m.yx * m.yx); 
         sp = any_abs(m.xx * m.yx + m.xy * m.yy);
         div_x = hypot(m.xx, m.xy);
@@ -2169,7 +2186,8 @@ int t1_hinter__endglyph(t1_hinter * this)
 	vd_erase(RGB(255, 255, 255));
 #	endif
     }
-    t1_hinter__paint_raster_grid(this);
+    if (this->g2o_fraction != 0)
+	t1_hinter__paint_raster_grid(this);
     code = t1_hinter__add_trailing_moveto(this);
     if (code < 0)
 	goto exit;
