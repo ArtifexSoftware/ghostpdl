@@ -110,7 +110,7 @@ const char *
 pprintg1(stream * s, const char *format, floatp v)
 {
     const char *fp = pprintf_scan(s, format);
-    char str[50];
+    char str[150];
 
 #ifdef DEBUG
     if (*fp == 0 || fp[1] != 'g')	/* shouldn't happen! */

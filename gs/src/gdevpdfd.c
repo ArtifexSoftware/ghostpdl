@@ -27,6 +27,7 @@
 #include "gxdevmem.h"
 #include "gxcolor2.h"
 #include "gxhldevc.h"
+#include "gsstate.h"
 #include "gserrors.h"
 #include "gsptype2.h"
 #include "gzpath.h"
@@ -534,7 +535,9 @@ write_image(gx_device_pdf *pdev, gx_device_memory *mdev, gs_matrix *m)
 
     
     if (m != NULL)
-	pdf_put_matrix(pdev, "W n ", m, " cm\n");
+	pdf_put_matrix(pdev, "W n\n", m, " cm\n");
+    else
+	stream_puts(pdev->strm, "W n\n");
     code = pdf_copy_color_data(pdev, mdev->base, sourcex,  
 		mdev->raster, gx_no_bitmap_id, 0, 0, mdev->width, mdev->height,
 		&image, &writer, 2);
@@ -552,7 +555,8 @@ write_mask(gx_device_pdf *pdev, gx_device_memory *mdev, gs_matrix *m)
     bool save_skip_color = pdev->skip_colors;
     int code;
 
-    pdf_put_matrix(pdev, NULL, m, " cm\n");
+    if (m != NULL)
+	pdf_put_matrix(pdev, NULL, m, " cm\n");
     pdev->clip_path_id = pdev->no_clip_path_id;
     pdev->skip_colors = true;
     code = gdev_pdf_copy_mono((gx_device *)pdev, mdev->base, sourcex,  
@@ -734,7 +738,8 @@ write_image_with_clip(gx_device_pdf *pdev, pdf_lcvd_t *cvd)
     int x = 0, y = 0;
     int code, code1;
 
-    pdf_put_matrix(pdev, NULL, &cvd->m, " cm\n");
+    if (cvd->write_matrix)
+	pdf_put_matrix(pdev, NULL, &cvd->m, " cm\n");
     for(;;) {
 	int x1, y1;
 	
@@ -773,7 +778,7 @@ pdf_dump_converted_image(gx_device_pdf *pdev, pdf_lcvd_t *cvd)
     int code = 0;
 
     if (!cvd->path_is_empty) {
-	code = write_image(pdev, &cvd->mdev, &cvd->m);
+	code = write_image(pdev, &cvd->mdev, (cvd->write_matrix ? &cvd->m : NULL));
 	cvd->path_is_empty = true;
     } else if (!cvd->mask_is_empty && pdev->PatternImagemask) {
 	/* Convert to imagemask with a pattern color. */
@@ -818,7 +823,7 @@ pdf_dump_converted_image(gx_device_pdf *pdev, pdf_lcvd_t *cvd)
 	    pprintld1(pdev->strm, " cs /R%ld scn ", pdf_resource_id(pres));
 	}
 	if (code >= 0)
-	    code = write_mask(pdev, cvd->mask, &cvd->m);
+	    code = write_mask(pdev, cvd->mask, (cvd->write_matrix ? &cvd->m : NULL));
 	cvd->mask_is_empty = true;
     } else if (!cvd->mask_is_empty && !pdev->PatternImagemask) {
 	/* Convert to image with a clipping path. */
@@ -860,6 +865,9 @@ lcvd_handle_fill_path_as_shading_coverage(gx_device *dev,
 	cvd->path_is_empty = true;
 	cvd->mask_is_empty = false;
     } else {
+	gs_matrix m;
+
+	gs_make_translation(cvd->path_offset.x, cvd->path_offset.y, &m);
 	/* use the clipping. */
 	if (!cvd->mask_is_empty) {
 	    code = pdf_dump_converted_image(pdev, cvd);
@@ -870,8 +878,7 @@ lcvd_handle_fill_path_as_shading_coverage(gx_device *dev,
 	    cvd->mask_is_empty = true;
 	}
 	code = gdev_vector_dopath((gx_device_vector *)pdev, ppath,
-			    gx_path_type_fill | gx_path_type_optimize,
-			    NULL);
+			    gx_path_type_fill | gx_path_type_optimize, &m);
 	if (code < 0)
 	    return code;
 	stream_puts(pdev->strm, "h\n");
@@ -962,6 +969,29 @@ pdf_remove_masked_image_converter(gx_device_pdf *pdev, pdf_lcvd_t *cvd, bool nee
 	gs_free_object(cvd->mask->memory, cvd->mask, "pdf_remove_masked_image_converter");
     }
 }
+
+private int
+path_scale(gx_path *path, double scalex, double scaley)
+{
+    segment *pseg = (segment *)path->first_subpath;
+
+    for (;pseg != NULL; pseg = pseg->next) {
+	pseg->pt.x = (fixed)floor(pseg->pt.x * scalex + 0.5);
+	pseg->pt.y = (fixed)floor(pseg->pt.y * scaley + 0.5);
+	if (pseg->type == s_curve) {
+	    curve_segment *s = (curve_segment *)pseg;
+
+	    s->p1.x = (fixed)floor(s->p1.x * scalex + 0.5);
+	    s->p1.y = (fixed)floor(s->p1.y * scaley + 0.5);
+	    s->p2.x = (fixed)floor(s->p2.x * scalex + 0.5);
+	    s->p2.y = (fixed)floor(s->p2.y * scaley + 0.5);
+	}
+    }
+    path->position.x = (fixed)floor(path->position.x * scalex + 0.5);
+    path->position.y = (fixed)floor(path->position.y * scaley + 0.5);
+    return 0;
+}
+
 /* ------ Driver procedures ------ */
 
 /* Fill a path. */
@@ -1019,10 +1049,19 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 	    int sx, sy;
 	    gs_fixed_rect bbox, bbox1;
 	    bool need_mask = gx_dc_pattern2_can_overlap(pdcolor);
-	    gs_matrix m;
+	    gs_matrix m, save_ctm = ctm_only(pis), ms, msi, mm;
 	    gs_point p;
 	    gs_int_point rect_size;
+	    /* double scalex = 1.9, scaley = 1.4; debug purpose only. */
+	    double scale, scalex = 1.0, scaley = 1.0;
+	    gx_drawing_color dc = *pdcolor;
+	    gs_pattern2_instance_t pi = *(gs_pattern2_instance_t *)dc.ccolor.pattern;
+	    gs_state *pgs = gs_state_copy(pi.saved, gs_state_memory(pi.saved));
 
+	    if (pgs == NULL)
+		return_error(gs_error_VMerror);
+	    dc.ccolor.pattern = (gs_pattern_instance_t *)&pi;
+	    pi.saved = pgs;
 	    code = gx_path_bbox(ppath, &bbox);
 	    if (code < 0)
 		return code;
@@ -1043,15 +1082,67 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 		return 0;
 	    m.tx = p.x;
 	    m.ty = p.y;
+	    scale = (double)rect_size.x * rect_size.y * pdev->color_info.num_components /
+		    pdev->MaxShadingBitmapSize;
+	    if (scale > 1) {
+		/* This section (together with the call to 'path_scale' below)
+		   sets up a downscaling when converting the shading into bitmap. 
+		   We used floating point numbers to debug it, but in production
+		   we prefer to deal only with integers being powers of 2
+		   in order to avoid possible distorsions when scaling paths.
+		*/
+		scalex = ceil(sqrt(scale));
+		scalex = scaley = 1 << ilog2((int)scalex);
+		if (scalex * scaley < scale)
+		    scalex *= 2;
+		if (scalex * scaley < scale)
+		    scaley *= 2;
+		rect_size.x = (int)floor(rect_size.x / scalex + 0.5);
+		rect_size.y = (int)floor(rect_size.y / scaley + 0.5);
+		gs_make_scaling(1.0 / scalex, 1.0 / scaley, &ms);
+		gs_make_scaling(scalex, scaley, &msi);
+		gs_matrix_multiply(&m, &msi, &m);
+		gs_matrix_multiply(&ctm_only(pis), &ms, &mm);
+		gs_setmatrix((gs_state *)pis, &mm);
+		gs_matrix_multiply(&ctm_only((gs_imager_state *)pgs), &ms, &mm);
+		gs_setmatrix((gs_state *)pgs, &mm);
+		m.tx /= scalex;
+		m.ty /= scaley;
+		cvd.path_offset.x = m.tx / scalex;
+		cvd.path_offset.y = m.ty / scaley;
+		sx = (int)floor(sx / scalex + 0.5);
+		sy = (int)floor(sy / scaley + 0.5);
+	    }
 	    code = pdf_setup_masked_image_converter(pdev, pdev->memory, &m, &pcvd, need_mask, sx, sy, 
 			    rect_size.x, rect_size.y, false);
 	    stream_puts(pdev->strm, "q\n");
-	    if (code >= 0)
-		code = gx_default_fill_path((gx_device *)&cvd.mdev, pis, ppath, params, pdcolor, pcpath);
-	    if (code == 0)
+	    if (code >= 0) {
+		pdf_put_matrix(pdev, NULL, &cvd.m, " cm q\n");
+		cvd.write_matrix = false;
+	    }
+	    if (code >= 0) {
+		/* See gx_default_fill_path. */
+		gx_clip_path cpath_intersection;
+		gx_path path_intersection;
+
+		gx_path_init_local(&path_intersection, pdev->memory);
+		gx_cpath_init_local_shared(&cpath_intersection, pcpath, pdev->memory);
+		if ((code = gx_cpath_intersect(&cpath_intersection, ppath, params->rule, (const gs_imager_state *)pis)) >= 0)
+		    code = gx_cpath_to_path(&cpath_intersection, &path_intersection);
+		if (code >= 0)
+		    code = path_scale(&path_intersection, scalex, scaley);
+		if (code >= 0)
+		    code = gx_dc_pattern2_fill_path(&dc, &path_intersection, NULL, (gx_device *)&cvd.mdev);
+		gx_path_free(&path_intersection, "shading_fill_path_intersection");
+		gx_cpath_free(&cpath_intersection, "shading_fill_cpath_intersection");
+	    }
+	    if (code >= 0) {
 		code = pdf_dump_converted_image(pdev, &cvd);
-	    stream_puts(pdev->strm, "Q\n");
+	    }
+	    stream_puts(pdev->strm, "Q Q\n");
 	    pdf_remove_masked_image_converter(pdev, &cvd, need_mask);
+	    gs_setmatrix((gs_state *)pis, &save_ctm);
+	    gs_state_free(pgs);
 	    return code; 
 	}
     }

@@ -463,6 +463,9 @@ struct gx_device_pdf_s {
 			      with pattern color. */
     long MaxClipPathSize;  /* The maximal number of elements of a clipping path
 			      that the target viewer|printer can handle. */
+    long MaxShadingBitmapSize; /* The maximal number of bytes in 
+			      a bitmap representation of a shading.
+			      (Bigger shadings to be downsampled). */
 #endif
     long MaxInlineImageSize;
     /* Encryption parameters */
@@ -913,7 +916,9 @@ typedef struct {
     bool mask_is_empty;
     bool path_is_empty;
     bool mask_is_clean;
+    bool write_matrix;
     gs_matrix m;
+    gs_point path_offset;
 } pdf_lcvd_t;
 
 #define public_st_pdf_lcvd_t()\
