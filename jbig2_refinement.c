@@ -406,7 +406,7 @@ jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
       "allocated %d x %d image buffer for region decode results",
           rsi.width, rsi.height);
 
-    stats_size = params.GRTEMPLATE ? 1 << 13 : 1 << 10;
+    stats_size = params.GRTEMPLATE ? 1 << 10 : 1 << 13;
     GB_stats = jbig2_alloc(ctx->allocator, stats_size);
     memset(GB_stats, 0, stats_size);
 
