@@ -20,6 +20,7 @@
 #include "gsmatrix.h"
 #include "gxstate.h"
 #include "gsdevice.h"
+#include "pcindxed.h"
 #include "pcommand.h"
 #include "pcparse.h"
 #include "pcstate.h"

@@ -16,6 +16,7 @@
 #include "gsmatrix.h"		/* for gsstate.h */
 #include "gsmemory.h"		/* for gsstate.h */
 #include "gsstate.h"            /* for gs_setlimitclamp */
+#include "pgfont.h"
 #include "pgmand.h"
 #include "pginit.h"
 #include "pgdraw.h"
