@@ -408,87 +408,95 @@ dash_pattern_eq(const float *stored, const gx_dash_params * set, floatp scale)
 
 /* Bring state up to date for stroking. */
 int
-gdev_vector_prepare_stroke(gx_device_vector * vdev, const gs_imager_state * pis,
-	  const gx_stroke_params * params, const gx_drawing_color * pdcolor,
+gdev_vector_prepare_stroke(gx_device_vector * vdev,
+			   const gs_imager_state * pis,	/* may be NULL */
+			   const gx_stroke_params * params, /* may be NULL */
+			   const gx_drawing_color * pdcolor, /* may be NULL */
 			   floatp scale)
 {
-    int pattern_size = pis->line_params.dash.pattern_size;
-    float dash_offset = pis->line_params.dash.offset * scale;
-    float half_width = pis->line_params.half_width * scale;
+    if (pis) {
+	int pattern_size = pis->line_params.dash.pattern_size;
+	float dash_offset = pis->line_params.dash.offset * scale;
+	float half_width = pis->line_params.half_width * scale;
 
-    if (pattern_size > max_dash)
-	return_error(gs_error_limitcheck);
-    if (dash_offset != vdev->state.line_params.dash.offset ||
-	pattern_size != vdev->state.line_params.dash.pattern_size ||
-	(pattern_size != 0 &&
-	 !dash_pattern_eq(vdev->dash_pattern, &pis->line_params.dash,
-			  scale))
-	) {
-	float pattern[max_dash];
-	int i, code;
+	if (pattern_size > max_dash)
+	    return_error(gs_error_limitcheck);
+	if (dash_offset != vdev->state.line_params.dash.offset ||
+	    pattern_size != vdev->state.line_params.dash.pattern_size ||
+	    (pattern_size != 0 &&
+	     !dash_pattern_eq(vdev->dash_pattern, &pis->line_params.dash,
+			      scale))
+	    ) {
+	    float pattern[max_dash];
+	    int i, code;
 
-	for (i = 0; i < pattern_size; ++i)
-	    pattern[i] = pis->line_params.dash.pattern[i] * scale;
-	code = (*vdev_proc(vdev, setdash))
-	    (vdev, pattern, pattern_size, dash_offset);
-	if (code < 0)
-	    return code;
-	memcpy(vdev->dash_pattern, pattern, pattern_size * sizeof(float));
+	    for (i = 0; i < pattern_size; ++i)
+		pattern[i] = pis->line_params.dash.pattern[i] * scale;
+	    code = (*vdev_proc(vdev, setdash))
+		(vdev, pattern, pattern_size, dash_offset);
+	    if (code < 0)
+		return code;
+	    memcpy(vdev->dash_pattern, pattern, pattern_size * sizeof(float));
 
-	vdev->state.line_params.dash.pattern_size = pattern_size;
-	vdev->state.line_params.dash.offset = dash_offset;
+	    vdev->state.line_params.dash.pattern_size = pattern_size;
+	    vdev->state.line_params.dash.offset = dash_offset;
+	}
+	if (half_width != vdev->state.line_params.half_width) {
+	    int code = (*vdev_proc(vdev, setlinewidth))
+		(vdev, half_width * 2);
+
+	    if (code < 0)
+		return code;
+	    vdev->state.line_params.half_width = half_width;
+	}
+	if (pis->line_params.miter_limit != vdev->state.line_params.miter_limit) {
+	    int code = (*vdev_proc(vdev, setmiterlimit))
+		(vdev, pis->line_params.miter_limit);
+
+	    if (code < 0)
+		return code;
+	    gx_set_miter_limit(&vdev->state.line_params,
+			       pis->line_params.miter_limit);
+	}
+	if (pis->line_params.cap != vdev->state.line_params.cap) {
+	    int code = (*vdev_proc(vdev, setlinecap))
+		(vdev, pis->line_params.cap);
+
+	    if (code < 0)
+		return code;
+	    vdev->state.line_params.cap = pis->line_params.cap;
+	}
+	if (pis->line_params.join != vdev->state.line_params.join) {
+	    int code = (*vdev_proc(vdev, setlinejoin))
+		(vdev, pis->line_params.join);
+
+	    if (code < 0)
+		return code;
+	    vdev->state.line_params.join = pis->line_params.join;
+	} {
+	    int code = gdev_vector_update_log_op(vdev, pis->log_op);
+
+	    if (code < 0)
+		return code;
+	}
     }
-    if (params->flatness != vdev->state.flatness) {
-	int code = (*vdev_proc(vdev, setflat)) (vdev, params->flatness);
+    if (params) {
+	if (params->flatness != vdev->state.flatness) {
+	    int code = (*vdev_proc(vdev, setflat)) (vdev, params->flatness);
 
-	if (code < 0)
-	    return code;
-	vdev->state.flatness = params->flatness;
+	    if (code < 0)
+		return code;
+	    vdev->state.flatness = params->flatness;
+	}
     }
-    if (half_width != vdev->state.line_params.half_width) {
-	int code = (*vdev_proc(vdev, setlinewidth))
-	    (vdev, half_width * 2);
+    if (pdcolor) {
+	if (!drawing_color_eq(pdcolor, &vdev->stroke_color)) {
+	    int code = (*vdev_proc(vdev, setstrokecolor)) (vdev, pdcolor);
 
-	if (code < 0)
-	    return code;
-	vdev->state.line_params.half_width = half_width;
-    }
-    if (pis->line_params.miter_limit != vdev->state.line_params.miter_limit) {
-	int code = (*vdev_proc(vdev, setmiterlimit))
-	    (vdev, pis->line_params.miter_limit);
-
-	if (code < 0)
-	    return code;
-	gx_set_miter_limit(&vdev->state.line_params,
-			   pis->line_params.miter_limit);
-    }
-    if (pis->line_params.cap != vdev->state.line_params.cap) {
-	int code = (*vdev_proc(vdev, setlinecap))
-	    (vdev, pis->line_params.cap);
-
-	if (code < 0)
-	    return code;
-	vdev->state.line_params.cap = pis->line_params.cap;
-    }
-    if (pis->line_params.join != vdev->state.line_params.join) {
-	int code = (*vdev_proc(vdev, setlinejoin))
-	    (vdev, pis->line_params.join);
-
-	if (code < 0)
-	    return code;
-	vdev->state.line_params.join = pis->line_params.join;
-    } {
-	int code = gdev_vector_update_log_op(vdev, pis->log_op);
-
-	if (code < 0)
-	    return code;
-    }
-    if (!drawing_color_eq(pdcolor, &vdev->stroke_color)) {
-	int code = (*vdev_proc(vdev, setstrokecolor)) (vdev, pdcolor);
-
-	if (code < 0)
-	    return code;
-	vdev->stroke_color = *pdcolor;
+	    if (code < 0)
+		return code;
+	    vdev->stroke_color = *pdcolor;
+	}
     }
     return 0;
 }

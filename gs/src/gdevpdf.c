@@ -407,6 +407,7 @@ pdf_reset_text(gx_device_pdf * pdev)
     pdev->text.word_spacing = 0;
     pdev->text.leading = 0;
     pdev->text.use_leading = false;
+    pdev->text.render_mode = 0;
 }
 
 /* Open the device. */
@@ -427,6 +428,7 @@ pdf_open(gx_device * dev)
     if (code < 0)
 	goto fail;
     gdev_vector_init((gx_device_vector *) pdev);
+    pdev->vec_procs = &pdf_vector_procs;
     pdev->fill_options = pdev->stroke_options = gx_path_type_optimize;
     /* Set in_page so the vector routines won't try to call */
     /* any vector implementation procedures. */

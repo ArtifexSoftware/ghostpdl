@@ -246,6 +246,7 @@ int gdev_vector_prepare_fill(P4(gx_device_vector * vdev,
 /* for the line width and dash offset explicitly. */
 /* May call setlinewidth, setlinecap, setlinejoin, setmiterlimit, */
 /* setdash, setflat, setstrokecolor, setlogop. */
+/* Any of pis, params, and pdcolor may be NULL. */
 int gdev_vector_prepare_stroke(P5(gx_device_vector * vdev,
 				  const gs_imager_state * pis,
 				  const gx_stroke_params * params,

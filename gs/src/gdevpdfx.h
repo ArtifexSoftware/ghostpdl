@@ -230,12 +230,13 @@ typedef struct pdf_std_font_s {
 } pdf_std_font_t;
 typedef struct pdf_text_state_s {
     /* State parameters */
-    float character_spacing;
-    pdf_font_t *font;
-    floatp size;
-    float word_spacing;
-    float leading;
+    float character_spacing;	/* Tc */
+    pdf_font_t *font;		/* for Tf */
+    floatp size;		/* for Tf */
+    float word_spacing;		/* Tw */
+    float leading;		/* TL */
     bool use_leading;		/* true => use ', false => use Tj */
+    int render_mode;		/* Tr */
     /* Bookkeeping */
     gs_matrix matrix;		/* relative to device space, not user space */
     gs_point line_start;
@@ -246,7 +247,7 @@ typedef struct pdf_text_state_s {
 } pdf_text_state_t;
 
 #define pdf_text_state_default\
-  0, NULL, 0, 0, 0, 0 /*false*/,\
+  0, NULL, 0, 0, 0, 0 /*false*/, 0,\
   { identity_matrix_body }, { 0, 0 }, { 0, 0 }, { 0 }, 0
 
 /* Resource lists */
@@ -464,6 +465,7 @@ dev_proc_copy_color(gdev_pdf_copy_color);
 dev_proc_fill_mask(gdev_pdf_fill_mask);
 dev_proc_strip_tile_rectangle(gdev_pdf_strip_tile_rectangle);
     /* In gdevpdfd.c */
+extern const gx_device_vector_procs pdf_vector_procs;
 dev_proc_fill_rectangle(gdev_pdf_fill_rectangle);
 dev_proc_fill_path(gdev_pdf_fill_path);
 dev_proc_stroke_path(gdev_pdf_stroke_path);

@@ -130,7 +130,7 @@ pdf_endpath(gx_device_vector * vdev, gx_path_type_t type)
     return 0;			/* always handled by caller */
 }
 
-private const gx_device_vector_procs pdf_vector_procs = {
+const gx_device_vector_procs pdf_vector_procs = {
 	/* Page management */
     NULL,
 	/* Imager state */
@@ -179,7 +179,6 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
 {
     stream *s = pdev->strm;
 
-    pdev->vec_procs = &pdf_vector_procs;
     if (pcpath == NULL) {
 	if (pdev->clip_path_id == pdev->no_clip_path_id)
 	    return 0;
@@ -275,7 +274,6 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
      */
     bool have_path;
 
-    pdev->vec_procs = &pdf_vector_procs;
     /*
      * Check for an empty clipping path.
      */
@@ -353,7 +351,6 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
     code = pdf_prepare_stroke(pdev, pis);
     if (code < 0)
 	return code;
-    pdev->vec_procs = &pdf_vector_procs;
     code = pdf_open_page(pdev, PDF_IN_STREAM);
     if (code < 0)
 	return code;

@@ -111,6 +111,8 @@ typedef struct pdf_text_process_state_s {
     float words;		/* scaled word spacing (Tw) */
     float size;			/* font size for Tf */
     gs_matrix text_matrix;	/* normalized FontMatrix * CTM for Tm */
+    int mode;			/* render mode (Tr) */
+    gs_font *font;
     pdf_font_t *pdfont;
 } pdf_text_process_state_t;
 
@@ -225,13 +227,7 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
 	   TEXT_ADD_TO_ALL_WIDTHS | TEXT_ADD_TO_SPACE_WIDTH |
 	   TEXT_REPLACE_WIDTHS |
 	   TEXT_DO_DRAW | TEXT_INTERVENE | TEXT_RETURN_WIDTH)) != 0 ||
-	gx_path_current_point(path, &cpt) < 0 ||
-	/*
-	 * It appears that no version of Acrobat Reader handles stroked
-	 * fonts properly: they all seem to ignore the PaintType.
-	 * Therefore, we can't handle any font with non-zero PaintType.
-	 */
-	font->PaintType != 0
+	gx_path_current_point(path, &cpt) < 0
 	)
 	return gx_default_text_begin(dev, pis, text, font, path, pdcolor,
 				     pcpath, mem, ppte);
@@ -659,6 +655,8 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
     ppts->words = words;
     ppts->size = size;
     ppts->text_matrix = tmat;
+    ppts->mode = (font->PaintType == 0 ? 0 : 1);
+    ppts->font = font;
     ppts->pdfont = ppf;
 
     return mask;
@@ -901,11 +899,11 @@ pdf_encode_char(gx_device_pdf *pdev, int chr, gs_font_base *bfont,
  */
 private int
 pdf_write_text_process_state(gx_device_pdf *pdev,
+			     const gs_text_enum_t *pte,	/* for pis */
 			     const pdf_text_process_state_t *ppts,
 			     const gs_const_string *pstr)
 {
     int code;
-    stream *s;
 
     pdf_set_font_and_size(pdev, ppts->pdfont, ppts->size);
     code = pdf_set_text_matrix(pdev, &ppts->text_matrix);
@@ -918,8 +916,7 @@ pdf_write_text_process_state(gx_device_pdf *pdev,
 	code = pdf_open_page(pdev, PDF_IN_TEXT);
 	if (code < 0)
 	    return code;
-	s = pdev->strm;
-	pprintg1(s, "%g Tc\n", ppts->chars);
+	pprintg1(pdev->strm, "%g Tc\n", ppts->chars);
 	pdev->text.character_spacing = ppts->chars;
     }
 
@@ -930,9 +927,36 @@ pdf_write_text_process_state(gx_device_pdf *pdev,
 	code = pdf_open_page(pdev, PDF_IN_TEXT);
 	if (code < 0)
 	    return code;
-	s = pdev->strm;
-	pprintg1(s, "%g Tw\n", ppts->words);
+	pprintg1(pdev->strm, "%g Tw\n", ppts->words);
 	pdev->text.word_spacing = ppts->words;
+    }
+    if (pdev->text.render_mode != ppts->mode) {
+	code = pdf_open_page(pdev, PDF_IN_TEXT);
+	if (code < 0)
+	    return code;
+	pprintd1(pdev->strm, "%d Tr\n", ppts->mode);
+	if (ppts->mode) {
+	    /* Also write all the parameters for stroking. */
+	    gs_imager_state *pis = pte->pis;
+	    float save_width = pis->line_params.half_width;
+
+	    pis->line_params.half_width = ppts->font->StrokeWidth / 2;
+	    code = pdf_prepare_stroke(pdev, pis);
+	    if (code >= 0) {
+		/*
+		 * See stream_to_text in gdevpdfu.c re the computation of
+		 * the scaling value.
+		 */
+		double scale = 72.0 / pdev->HWResolution[1];
+
+		code = gdev_vector_prepare_stroke((gx_device_vector *)pdev,
+						  pis, NULL, NULL, scale);
+	    }
+	    pis->line_params.half_width = save_width;
+	    if (code < 0)
+		return code;
+	}
+	pdev->text.render_mode = ppts->mode;
     }
 
     return 0;
@@ -1098,7 +1122,7 @@ pdf_text_process(gs_text_enum_t *pte)
      * assumes that a string-showing operator will follow.
      */
     if (index < str.size) {
-	code = pdf_write_text_process_state(pdev, &text_state, &str);
+	code = pdf_write_text_process_state(pdev, pte, &text_state, &str);
 	if (code < 0)
 	    goto dflt;
     }
@@ -1160,7 +1184,7 @@ pdf_text_process(gs_text_enum_t *pte)
 	     * to emulate them.
 	     */
 	    text_state.words = text_state.chars = 0;
-	    code = pdf_write_text_process_state(pdev, &text_state, &str);
+	    code = pdf_write_text_process_state(pdev, pte, &text_state, &str);
 	    if (code < 0)
 		goto dflt;
 	    code = process_text_add_width(pte, font, &text_state, &str,
