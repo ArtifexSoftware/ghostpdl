@@ -848,11 +848,11 @@ line_intersect(
 		  p_ptr pi)
 {				/* return intersection here */
     /* We don't have to do any scaling, the factors all work out right. */
-    float u1 = pd1->x, v1 = pd1->y;
-    float u2 = pd2->x, v2 = pd2->y;
+    double u1 = pd1->x, v1 = pd1->y;
+    double u2 = pd2->x, v2 = pd2->y;
     double denom = u1 * v2 - u2 * v1;
-    float xdiff = pp2->x - pp1->x;
-    float ydiff = pp2->y - pp1->y;
+    double xdiff = pp2->x - pp1->x;
+    double ydiff = pp2->y - pp1->y;
     double f1;
     double max_result = any_abs(denom) * (double)max_fixed;
 
