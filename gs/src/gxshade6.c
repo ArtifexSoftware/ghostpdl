@@ -2897,22 +2897,34 @@ make_quadrangle(const tensor_patch *p, shading_vertex_t qq[2][2],
 }
 
 private inline bool
-is_quadrangle_color_linear(const patch_fill_state_t *pfs, const quadrangle_patch *p)
+is_quadrangle_color_linear(const patch_fill_state_t *pfs, const quadrangle_patch *p, bool *uv)
 {
     if (pfs->unlinear)
 	return true; /* Disable this check. */
-    if (!is_color_linear(pfs, &p->p[0][0]->c, &p->p[0][1]->c))
+    if (!is_color_linear(pfs, &p->p[0][0]->c, &p->p[0][1]->c)) {
+	*uv = true;
 	return false;
-    if (!is_color_linear(pfs, &p->p[1][0]->c, &p->p[1][1]->c))
+    }
+    if (!is_color_linear(pfs, &p->p[1][0]->c, &p->p[1][1]->c)) {
+	*uv = true;
 	return false;
-    if (!is_color_linear(pfs, &p->p[0][0]->c, &p->p[1][0]->c))
+    }
+    if (!is_color_linear(pfs, &p->p[0][0]->c, &p->p[1][0]->c)) {
+	*uv = false;
 	return false;
-    if (!is_color_linear(pfs, &p->p[0][1]->c, &p->p[1][1]->c))
+    }
+    if (!is_color_linear(pfs, &p->p[0][1]->c, &p->p[1][1]->c)) {
+	*uv = false;
 	return false;
-    if (!is_color_linear(pfs, &p->p[0][0]->c, &p->p[1][1]->c))
+    }
+    if (!is_color_linear(pfs, &p->p[0][0]->c, &p->p[1][1]->c)) {
+	*uv = true;
 	return false;
-    if (!is_color_linear(pfs, &p->p[0][1]->c, &p->p[1][0]->c))
+    }
+    if (!is_color_linear(pfs, &p->p[0][1]->c, &p->p[1][0]->c)) {
+	*uv = false;
 	return false;
+    }
     return true;
 }
 
@@ -3034,7 +3046,7 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
 			    pfs->maybe_self_intersecting);
 	if (!pfs->monotonic_color)
 	    pfs->monotonic_color = is_quadrangle_color_monotonic(pfs, p, &color_u)
-				&& is_quadrangle_color_linear(pfs, p);
+				&& is_quadrangle_color_linear(pfs, p, &color_u);
 	if (!pfs->monotonic_color) {
 	    /* go to divide. */
 	} else switch(quadrangle_color_change(pfs, p, &color_u)) {
@@ -3252,10 +3264,20 @@ fill_stripe(patch_fill_state_t *pfs, const tensor_patch *p)
     code = fill_wedges(pfs, ku[0], kum, p->pole[0], 1, &p->c[0][0], &p->c[0][1], inpatch_wedge);
     if (code < 0)
 	return code;
-    code = fill_wedges(pfs, ku[3], kum, p->pole[3], 1, &p->c[1][0], &p->c[1][1], inpatch_wedge);
+    if (INTERPATCH_PADDING) {
+	vd_bar(p->pole[0][0].x, p->pole[0][0].y, p->pole[3][0].x, p->pole[3][0].y, 0, RGB(255, 0, 0));
+	code = mesh_padding(pfs, &p->pole[0][0], &p->pole[3][0], &p->c[0][0], &p->c[1][0]);
+	if (code < 0)
+	    return code;
+	vd_bar(p->pole[0][3].x, p->pole[0][3].y, p->pole[3][3].x, p->pole[3][3].y, 0, RGB(255, 0, 0));
+	code = mesh_padding(pfs, &p->pole[0][3], &p->pole[3][3], &p->c[0][1], &p->c[1][1]);
+	if (code < 0)
+	    return code;
+    }
+    code = decompose_stripe(pfs, p, kum);
     if (code < 0)
 	return code;
-    return decompose_stripe(pfs, p, kum);
+    return fill_wedges(pfs, ku[3], kum, p->pole[3], 1, &p->c[1][0], &p->c[1][1], inpatch_wedge);
 }
 
 private inline bool
@@ -3388,7 +3410,7 @@ is_patch_narrow(const patch_fill_state_t *pfs, const tensor_patch *p)
 }
 
 private int 
-fill_patch(patch_fill_state_t *pfs, const tensor_patch *p, int kv)
+fill_patch(patch_fill_state_t *pfs, const tensor_patch *p, int kv, int kv0, int kv1)
 {
     if (kv <= 1 && (is_patch_narrow(pfs, p) || 
 	    ((pfs->monotonic_color || is_color_monotonic_by_v(pfs, p)) && 
@@ -3399,28 +3421,55 @@ fill_patch(patch_fill_state_t *pfs, const tensor_patch *p, int kv)
 	return fill_stripe(pfs, p);
     } else {
 	tensor_patch s0, s1;
+        shading_vertex_t q0, q1, q2;
 	int code;
 
-	if (kv <= 1) {
-	    code = fill_wedges(pfs, 2, 1, &p->pole[0][0], 4, &p->c[0][0], &p->c[1][0], inpatch_wedge);
-	    if (code < 0)
-		return code;
-	    code = fill_wedges(pfs, 2, 1, &p->pole[0][3], 4, &p->c[0][1], &p->c[1][1], inpatch_wedge);
-	    if (code < 0)
-		return code;
-	} else {
-	    /* Nothing to do, because patch_fill processed wedges over kvm. */
-	    /* The wedges over kvm are not processed here,
-	       because with a non-monotonic curve it would cause 
-	       redundant filling of the wedge parts. 
-	       We prefer to consider such wedge as a poligon
-	       rather than a set of overlapping triangles. */
-	}
 	split_patch(pfs, &s0, &s1, p);
-	code = fill_patch(pfs, &s0, kv / 2);
+	if (kv0 <= 1) {
+	    q0.p = s0.pole[0][0];
+	    q0.c = s0.c[0][0];
+	    q1.p = s1.pole[3][0];
+	    q1.c = s1.c[1][0];
+	    q2.p = s0.pole[3][0];
+	    q2.c = s0.c[1][0];
+	    code = fill_triangle_wedge(pfs, &q0, &q1, &q2);
+	    if (code < 0)
+		return code;
+	}
+	if (kv1 <= 1) {
+	    q0.p = s0.pole[0][3];
+	    q0.c = s0.c[0][1];
+	    q1.p = s1.pole[3][3];
+	    q1.c = s1.c[1][1];
+	    q2.p = s0.pole[3][3];
+	    q2.c = s0.c[1][1];
+	    code = fill_triangle_wedge(pfs, &q0, &q1, &q2);
+	    if (code < 0)
+		return code;
+	}
+	code = fill_patch(pfs, &s0, kv / 2, kv0 / 2, kv1 / 2);
 	if (code < 0)
 	    return code;
-	return fill_patch(pfs, &s1, kv / 2);
+	return fill_patch(pfs, &s1, kv / 2, kv0 / 2, kv1 / 2);
+	/* fixme : To privide the precise filling order, we must
+	   decompose left and right wedges into pieces by intersections
+	   with stripes, and fill each piece with its stripe.
+	   A lazy wedge list would be fine for storing 
+	   the necessary information.
+
+	   If the patch is created from a radial shading,
+	   the wedge color appears a constant, so the filling order
+	   isn't important. The order is important for other 
+	   self-overlapping patches, but the visible effect is 
+	   just a slight norrowing the patch (as its lower layer appears
+	   visible through the upper layer near the side). 
+	   This kind of dropout isn't harmful, because
+	   contacring self-overlapping patches are painted 
+	   one after one by definition, so that a side coverage break
+	   appears unavoidable by definition.
+
+	   Delaying this improvement because it is low important.
+	 */
     }
 }
 
@@ -3551,16 +3600,7 @@ patch_fill(patch_fill_state_t *pfs, const patch_curve_t curve[4],
 #   if NOFILL_TEST
 	dbg_nofill = false;
 #   endif
-    code = fill_wedges(pfs, kv[0], kvm, &p.pole[0][0], 4, &p.c[0][0], &p.c[1][0], 
-		interpatch_padding | inpatch_wedge);
-    if (code >= 0)
-	code = fill_wedges(pfs, kv[3], kvm, &p.pole[0][3], 4, &p.c[0][1], &p.c[1][1], 
-		interpatch_padding | inpatch_wedge);
-    if (code >= 0)
-	code = fill_wedges(pfs, ku[0], kum, p.pole[0], 1, &p.c[0][0], &p.c[0][1], 
-		interpatch_padding | inpatch_wedge);
-    if (code >= 0)
-	code = fill_wedges(pfs, ku[3], kum, p.pole[3], 1, &p.c[1][0], &p.c[1][1], 
+    code = fill_wedges(pfs, ku[0], kum, p.pole[0], 1, &p.c[0][0], &p.c[0][1], 
 		interpatch_padding | inpatch_wedge);
     if (code >= 0) {
 	/* We would like to apply iterations for enumerating the kvm curve parts,
@@ -3571,11 +3611,14 @@ patch_fill(patch_fill_state_t *pfs, const patch_curve_t curve[4],
 	   the rounding errors do not depend on the direction. */
 #	if NOFILL_TEST
 	    dbg_nofill = false;
-	    code = fill_patch(pfs, &p, kvm);
+	    code = fill_patch(pfs, &p, kvm, kv[0], kv[3]);
 	    dbg_nofill = true;
 #	endif
-	code = fill_patch(pfs, &p, kvm);
+	code = fill_patch(pfs, &p, kvm, kv[0], kv[3]);
     }
+    if (code >= 0)
+	code = fill_wedges(pfs, ku[3], kum, p.pole[3], 1, &p.c[1][0], &p.c[1][1], 
+		interpatch_padding | inpatch_wedge);
     return code;
 }
 
