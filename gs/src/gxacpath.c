@@ -149,7 +149,7 @@ gx_cpath_accum_end(const gx_device_cpath_accum * padev, gx_clip_path * pcpath)
     }
     gx_cpath_set_outer_box(&apath);
     apath.path_valid = false;
-    apath.id = gs_next_ids(padev->memory, 1);	/* path changed => change id */
+    apath.id = gs_next_ids(padev->list_memory, 1);	/* path changed => change id */
     gx_cpath_assign_free(pcpath, &apath);
     return 0;
 }
@@ -247,7 +247,8 @@ accum_close(gx_device * dev)
 	gx_clip_rect *rp =
 	    (adev->list.count <= 1 ? &adev->list.single : adev->list.head);
 
-	dlprintf6(dev->memory, "[q]list at 0x%lx, count=%d, head=0x%lx, tail=0x%lx, xrange=(%d,%d):\n",
+	dlprintf6(adev->list_memory, 
+		  "[q]list at 0x%lx, count=%d, head=0x%lx, tail=0x%lx, xrange=(%d,%d):\n",
 		  (ulong) & adev->list, adev->list.count,
 		  (ulong) adev->list.head, (ulong) adev->list.tail,
 		  adev->list.xmin, adev->list.xmax);
@@ -256,9 +257,9 @@ accum_close(gx_device * dev)
 	    rp = rp->next;
 	}
     }
-    if (!clip_list_validate(dev->memory, &adev->list)) {
-	lprintf1(dev->memory, "[q]Bad clip list 0x%lx!\n", (ulong) & adev->list);
-	return_error(dev->memory, gs_error_Fatal);
+    if (!clip_list_validate(adev->list_memory, &adev->list)) {
+	lprintf1(adev->list_memory, "[q]Bad clip list 0x%lx!\n", (ulong) & adev->list);
+	return_error(adev->list_memory, gs_error_Fatal);
     }
 #endif
     return 0;
