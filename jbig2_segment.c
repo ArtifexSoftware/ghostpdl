@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_segment.c,v 1.18 2002/07/20 17:23:15 giles Exp $
+    $Id: jbig2_segment.c,v 1.19 2003/02/07 05:14:09 raph Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -80,7 +80,7 @@ jbig2_parse_segment_header (Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size,
         offset += referred_to_segment_size;
         jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, result->number,
             "segment %d refers to segment %d",
-            result->number, ctx->segments[referred_to_segments[i]]->number);
+            result->number, referred_to_segments[i]);
       }
       result->referred_to_segments = referred_to_segments;
     }
