@@ -34,9 +34,10 @@
 #undef ENTROPY_OPT_SUPPORTED
 #undef INPUT_SMOOTHING_SUPPORTED
 
-/****** Comment out the next two lines to add progressive decoding. ******/
-#undef D_MULTISCAN_FILES_SUPPORTED
-#undef D_PROGRESSIVE_SUPPORTED
+
+/* Progressive JPEG is required for PDF 1.3.
+ * Don't undefine D_MULTISCAN_FILES_SUPPORTED and D_PROGRESSIVE_SUPPORTED
+ */
 
 #undef BLOCK_SMOOTHING_SUPPORTED
 #undef IDCT_SCALING_SUPPORTED
