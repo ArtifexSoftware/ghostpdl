@@ -689,6 +689,18 @@ script in the Ghostscript fileset contains the necessary workarounds.
 
 <p>
 Put indentation points every 4 spaces, with 8 spaces = 1 tab stop.
+  
+<p>
+Don't indent the initial <b><tt>#</tt></b> of preprocessor commands.
+However, for nested preprocessor commands, do use indentation between the
+<b><tt>#</tt></b> and the command itself.  Use 2 spaces per level of
+nesting, e.g.:
+
+<blockquote>
+<b><tt>#ifndef&nbsp;xyz</tt></b><br>
+<b><tt>#&nbsp;&nbsp;define&nbsp;xyz&nbsp;0</tt></b><br>
+<b><tt>#endif</tt></b>
+</blockquote>
 
 <p>
 For assignments (including chain assignments), put the entire statement on
