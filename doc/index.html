@@ -8,18 +8,20 @@
 <body text="#000000" bgcolor="#FFFFFF" link="#0000EF" vlink="#51188E" alink="#FF0000">
 
 <h1>
-<img SRC="ghost64.gif" height=64 width=56> GhostPCL5e, GhostPCL5c, and
-GhostPXL</h1>
+<img SRC="ghost64.gif" height=64 width=56> Ghostscript PCL5e, Ghostscript
+PCL5c, and Ghostscript PXL</h1>
 
 <hr>
 <br>This page discusses configuration, compilation and running of the&nbsp;
-PCL family of products:&nbsp; GhostPCL5E, GhostPCL5c and GhostPXL.&nbsp;
-All of the PCL products use the Ghostscript Graphic Library for graphics,
-imaging and driver support.&nbsp; A brief tour of the <a href="http://www.cs.wisc.edu/~ghost/">Ghostscript
-documentation</a> will be helpful to understand this document.
-<p>GhostPCL6 consists of GhostPCL5e or GhostPCL5c, GhostPXL and a supporting
-language switching implementation which includes a partial implementation
-of the PJL interpreter.
+Ghostscript PCL family of products:&nbsp; Ghostscript PCL5E, Ghostscript
+PCL5c and Ghostscript PXL.&nbsp; All of the PCL products use the Ghostscript
+Graphic Library for graphics, imaging and driver support.&nbsp; A brief
+tour of the <a href="http://www.cs.wisc.edu/~ghost/">Ghostscript documentation
+(web)</a>&nbsp; <a href="../gs/doc/index.html">(local)</a> a will be helpful
+to understand this document.
+<p>Ghostscrrpt PCL6 consists of Ghostscript PCL5e or Ghostscript PCL5c,
+Ghostscript PXL and a supporting language switching implementation which
+includes a partial implementation of the PJL interpreter.
 <h2>
 Quick Start For Unix environment with GCC.</h2>
 <tt><font size=+0>mkdir -p /windows/fonts/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -288,7 +290,7 @@ Running the products.</h1>
 Twain</i>
 <p>All options supplied to the interpreter in the following examples are
 described in the&nbsp; <a href="http://www.cs.wisc.edu/~ghost/">Ghostscript
-documentation.</a>
+documentation.&nbsp; </a><a href="../gs/doc/index.html">(local)</a>
 <p><b>pcl6 -sDEVICE=x11 mypcl.pcl</b>
 <p>interpret a pcl file called mypcl.pcl and render to the x11 device.
 <p><b>pcl6 -sDEVICE=ljet4 -sOutputFile="| lpr" -dNOPAUSE mypcl.pcl</b>
@@ -308,8 +310,8 @@ about the available options and devices.
 <br>&nbsp;
 <h1>
 PCL Personality</h1>
-The following option is private to GhostPCL.
-<p>The PCL emulation comes in three flavors: PCL5E, PCL5C, and RTL.&nbsp;
+
+<p><br>The PCL emulation comes in three flavors: PCL5E, PCL5C, and RTL.&nbsp;
 The PCL5E personality thresholds colors to black and white irrespective
 of the color parameters of the output device.&nbsp; PCL5C is the color
 personality, used with a monochrome device it will grayscale colors.&nbsp;
@@ -328,10 +330,12 @@ set to PCL5C.&nbsp; RTL must be explicitly set on the command line.&nbsp;
 RTL always grayscales and never thresholds colors to black and white.
 <h2>
 Fonts</h2>
-Customers should obtain fonts from a third-party vendor such as&nbsp; <a href="http://www.agfa.com">Agfa</a>&nbsp;
-or&nbsp; <a href="http://www.bitstream.com">Bitstream</a> .&nbsp; The software
-can use Hewlett Packard FONTSMART version 1.5.&nbsp; Also, Windows TrueType
-fonts can be used as well but minor <a href="#PCL Code modifications to use Windows TrueType fonts">PCL
+Fonts are provided.&nbsp; These are searched for in either the /fonts,
+/windows/fonts, or a directory specfied with the FONTSOURCE environment
+variable. Fonts from a third-party vendor such as&nbsp; <a href="http://www.agfa.com">Agfa</a>&nbsp;
+or&nbsp; <a href="http://www.bitstream.com">Bitstream</a>&nbsp; may also
+be used..&nbsp; The software can use Hewlett Packard FONTSMART version
+1.5.&nbsp; Also, Windows TrueType fonts can be used as well but minor <a href="#PCL Code modifications to use Windows TrueType fonts">PCL
 code modifications</a> are required and the Windows TrueType fonts are
 not exactly like the fonts used in HP Laserjet 4, 5, &amp; 6 products.&nbsp;
 For desktop users an environment variable FONTSOURCE can be set to specify
@@ -350,7 +354,7 @@ Reporting bugs</h1>
 Use the <a href="http://meerkat.dimensional.com/pcldocs/pclbug.html">bug
 reporting form</a> .
 <p>A frequently asked question file is under construction&nbsp; <a href="pclfaq.htm">here.</a>
-<p>Please send comments about this documentation to <a href="mailto:henrys@artifex.com">Henry
-Stiles</a> .
+<p>Please send comments about this documentation to <a href="mailto::bug-pcl@ghostscript.com">bug-pcl@ghostscript.com</a>
+.
 </body>
 </html>
