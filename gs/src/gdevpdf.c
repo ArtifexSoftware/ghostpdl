@@ -197,7 +197,6 @@ const gx_device_pdf gs_pdfwrite_device =
  {{0}},				/* asides */
  {{0}},				/* streams */
  {{0}},				/* pictures */
- 0,				/* random_offset */
  0,				/* next_id */
  0,				/* Catalog */
  0,				/* Info */
@@ -466,39 +465,6 @@ pdf_reset_text(gx_device_pdf * pdev)
     pdf_reset_text_state(pdev->text);
 }
 
-/*
- * Read some random bytes from an external source of randomness, if
- * available.  Return the number of bytes read.
- */
-private int
-pdf_read_random(byte *data, int nbytes)
-{
-    /*
-     * If we're on a system that provides /dev/random, that's the best
-     * source of good random bits.  However, due to an apparent bug in
-     * Solaris 8, reading from /dev/random can cause blocking for
-     * hours (! - reported by a user), so we require a non-blocking
-     * read.
-     */
-    int count = 0;
-#ifdef O_NONBLOCK
-    static const char *const randoms[2] = {"/dev/urandom", "/dev/random"};
-    int i;
-
-    for (i = 0; i < countof(randoms); ++i) {
-	int rfd = open(randoms[i], O_RDONLY | O_NONBLOCK);
-
-	if (rfd < 0)
-	    continue;
-	count = read(rfd, data, nbytes);
-	close(rfd);
-	if (count == nbytes)
-	    break;
-    }
-#endif
-    return count;
-}
-
 /* Open the device. */
 private int
 pdf_open(gx_device * dev)
@@ -567,28 +533,6 @@ pdf_open(gx_device * dev)
     /* {global,local}_named_objects was initialized above */
     pdev->open_graphics = 0;
     pdf_reset_page(pdev);
-
-    /*
-     * We don't use rand() for generating subset prefixes, because it isn't
-     * random across runs (always starts at 1).  We don't seed rand() from a
-     * one-time source of randomness, because a library should never assume
-     * it can modify program-global state.  We don't use nrand48(), because
-     * it isn't standard enough.  So what we do is generate a one-time
-     * random offset, and combine that with the sequence produced by rand().
-     */
-    {
-	int count = pdf_read_random((byte *)&pdev->random_offset,
-				    sizeof(pdev->random_offset));
-
-	if (count != sizeof(pdev->random_offset)) {
-	    /* Hope that the clock is random enough. */
-	    long tm[2];
-
-	    gp_get_realtime(tm);
-	    pdev->random_offset = tm[0] + tm[1];
-	}
-    }
-
     return 0;
   fail:
     return pdf_close_files(pdev, code);
