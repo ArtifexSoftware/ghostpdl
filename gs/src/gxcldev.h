@@ -679,7 +679,6 @@ typedef enum {
     cmd_map_transfer_1,		/* transfer[1] */
     cmd_map_transfer_2,		/* transfer[2] */
     cmd_map_transfer_3,		/* transfer[3] */
-    cmd_map_ht_transfer,	/* transfer fn of most recent halftone order */
     cmd_map_black_generation,
     cmd_map_undercolor_removal
 } cmd_map_index;

@@ -217,7 +217,7 @@ private const byte *cmd_read_short_bits(command_buf_t *pcb, byte *data,
                                         int width_bytes, int height,
                                         uint raster, const byte *cbp);
 private int cmd_select_map(cmd_map_index, cmd_map_contents,
-                           gs_imager_state *, gx_ht_order *, int **,
+                           gs_imager_state *, int **,
                            frac **, uint *, gs_memory_t *);
 private int cmd_create_dev_ht(gx_device_halftone **, gs_memory_t *);
 private int cmd_resize_halftone(gx_device_halftone **, uint,
@@ -275,7 +275,6 @@ clist_playback_band(clist_playback_action playback_action,
     gx_fill_params fill_params;
     gx_stroke_params stroke_params;
     gs_halftone_type halftone_type;
-    gx_ht_order *porder;
     union im_ {
 	gs_image_common_t c;
 	gs_data_image_t d;
@@ -473,7 +472,7 @@ in:				/* Initialize for a new page. */
 
 					code = cmd_select_map(cb & 0xf, cont,
 							      &imager_state,
-							      porder, &pcomp_num,
+							      &pcomp_num,
 							      &mdata, &count, mem);
 
 					if (code < 0)
@@ -2166,8 +2165,7 @@ cmd_read_matrix(gs_matrix * pmat, const byte * cbp)
  */
 private int
 cmd_select_map(cmd_map_index map_index, cmd_map_contents cont,
-	       gs_imager_state * pis, gx_ht_order * porder,
-	       int ** pcomp_num, frac ** pmdata,
+	       gs_imager_state * pis, int ** pcomp_num, frac ** pmdata,
 	       uint * pcount, gs_memory_t * mem)
 {
     gx_transfer_map *map;
@@ -2224,14 +2222,6 @@ transfer2:  if (cont != cmd_map_other) {
 		return 0;
 	    }
 	    break;
-	case cmd_map_ht_transfer:
-	    if_debug0('L', " ht transfer");
-	    /* Halftone transfer maps are never shared, but */
-	    /* rc_unshare_struct is a good way to get one allocated */
-	    /* if it hasn't been yet. */
-	    pmap = &porder->transfer;
-	    cname = "cmd_select_map(ht transfer)";
-	    goto alloc;
 	case cmd_map_black_generation:
 	    if_debug0('L', " black generation");
 	    pmap = &pis->black_generation;
