@@ -40,7 +40,8 @@ private int push_callout(P2(i_ctx_t *, const char *));
 /* Extend the `copy' operator to deal with gstates. */
 /* This is done with a hack -- we know that gstates are the only */
 /* t_astruct subtype that implements copy. */
-private int
+/* We export this for recognition in FunctionType 4 functions. */
+int
 z2copy(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
