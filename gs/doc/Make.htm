@@ -56,6 +56,7 @@ How to build Ghostscript from source code
 <li><a href="#Self-extracting_executables">Making self-extracting executables</a>
 <li><a href="#Watcom_build">Watcom environment</a>
 <li><a href="#Cygwin32_build">Cygwin32 gcc</a>
+<li><a href="#IntelWin32_build">Intel C/C++ compiler</a>
 </ul>
 <li><a href="#Mac_build">How to build Ghostscript from source (Mac version)</a>
 <ul>
@@ -245,7 +246,7 @@ version-independent and should always provide the latest version.
 
 <tr>	<td valign=top>zlib (latest)
 	<td>&nbsp;
-	<td>	<a href="ftp://ftp.cdrom.com/pub/infozip/zlib/zlib.tar.gz">ftp://ftp.cdrom.com/pub/infozip/zlib/zlib.tar.gz</a><br>
+	<td>	<a href="ftp://ftp.cdrom.com/pub/infozip/zlib/zlib.tar.gz">ftp://ftp.cdromcom/pub/infozip/zlib/zlib.tar.gz</a><br>
 	<a href="ftp://ftp.cdrom.com/pub/infozip/zlib/zlib.zip">ftp://ftp.cdrom.com/pub/infozip/zlib/zlib.zip</a><br>
 	<a href="http://www.cdrom.com/pub/infozip/zlib/zlib.tar.gz">http://www.cdrom.com/pub/infozip/zlib/zlib.tar.gz</a><br>
 	<a href="http://www.cdrom.com/pub/infozip/zlib/zlib.zip">http://www.cdrom.com/pub/infozip/zlib/zlib.zip</a>
@@ -1137,9 +1138,11 @@ You should then run "<b><tt>_genarch.bat</tt></b>", wait until
 NOTE: We have received reports that the Microsoft Visual C++ 5.0 and 6.0
 compilers produce incorrect code for Ghostscript version 6.0 and later, from
 the same source code that compiles and runs correctly with other compilers.
-We strongly recommend using the Inprise (Borland) compiler rather than
-MSVC++ 5.0 or later.  (We use the Inprise compiler for the executables that
-we distribute ourselves.)
+We strongly recommend using the <a href="#Borland_build">Inprise (Borland)
+compiler</a> rather than MSVC++ 5.0 or later.  (We use the Inprise compiler
+for the executables that we distribute ourselves.) You may also want to try
+out the <a href="#IntelWin32_build">Intel&nbsp;C/C++ compiler</a>, which can
+be integrated into the Microsoft Visual C++ environment.
 
 <p>
 To compile Ghostscript with the Microsoft environment, you need Microsoft
@@ -1280,6 +1283,47 @@ redistribution as either the GNU
 or the Aladdin <a href="Public.htm">Free Public License</a>, so read their
 license carefully if you want to redistribute the results of using their
 compiler.
+
+<h2><a name="IntelWin32_build"></a>Intel C/C++ environment</h2>
+
+<p>
+Intel provides a C/C++ compiler that is compatible with the <a
+href="#Microsoft_build">Microsoft Visual&nbsp;C++ environment</a>. The main
+advantage of this compiler over MSVC&nbsp;5.0 and 6.0 is that it produces
+working code even when all optimizations are enabled and when stack checking
+is disabled.
+
+<p>
+To build Ghostscript using the Intel C/C++ compiler, you have to make the
+following small changes in the makefiles:
+
+<ul>
+<li>Find and change the second occurrence of
+"<b><tt>COMPILE_FULL_OPTIMIZED</tt></b>" to "<b><tt>/O2</tt></b>" in file
+<b><tt>msvccmd.mak</tt></b>.  <li>Override "<b><tt>TDEBUG</tt></b>",
+"<b><tt>COMP</tt></b>", and "<b><tt>COMPAUX</tt></b>" when invoking
+<b><tt>nmake</tt></b>.
+</ul>
+
+<p>
+More specifically, use "<b><tt>TDEBUG=0</tt></b>" and set both
+"<b><tt>COMP</tt></b>" and "<b><tt>COMPAUX</tt></b>" to the full path of
+<b><tt>icl</tt></b> (for example
+"<b><tt>COMP=C:\intel\compiler45\bin\icl</tt></b>" if the Intel&nbsp;C/C++
+compiler V4.5 was installed to <b><tt>C:\intel</tt></b>). It is suggested
+that you use a batch file to launch <b><tt>nmake</tt></b>, since the command
+line processes the "<b><tt>=</tt></b>" on its own. Also, you may need to
+execute <b><tt>vcvars32.bat</tt></b> and <b><tt>iccvars.bat</tt></b> to
+register the proper paths for the compiler, its include files and its
+libraries.
+
+<p>
+You can buy or download a 30-day evaluation version of the Intel&nbsp;C/C++
+compiler from Intel's Software Performance Tools web site:
+
+<blockquote>
+<a href="http://www.intel.com/vtune/">http://www.intel.com/vtune/</a>
+</blockquote>
 
 <hr>
 
