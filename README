@@ -3,18 +3,16 @@ License is in Public.htm
 
 We encourage you to read the documentation and licence information but
 the software can be quickly built and installed on many unix systems
-by executing these commands. (don't type '*')
+by executing these commands.  Do not type the number or the period
+before each command.
 
-make fonts *
-make pcl6 (make debug for a diagnostic system)
-make test
-make install *
+1. make fonts  # installs truetype fonts.
+2. make pcl6   # use make debug for a diagnostic system.
+3. make test   # run a pcl and pxl job using the default display device.
+4. make install
 
-* may require administrator privelages depending on the permissions of
-  the install locations
 
-`make test' will run the pcl6 interpreter with the X11 device in
-interactive mode.  You must press return after each page is displayed.
+1. and 4. may require administrator privelages.
 
 Note for cygwin users
 
@@ -24,7 +22,7 @@ make install
 The CYGWIN variable will not include devices that depend on threads or
 X11, neither are supported by the default cygwin system.
 
-Note for setting up different font scaler configurations:
+To build with a different font scaler use:
 
 make PL_SCALER=afs ... # build using the Artifex Font scaler also the default.
 make PL_SCALER=ufst ...# build with the AGFA Font Scaler.
