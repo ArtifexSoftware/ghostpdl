@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.c,v 1.4 2001/06/12 09:15:13 giles Exp $
+    $Id: jbig2dec.c,v 1.5 2001/06/12 09:56:33 giles Exp $
 */
 
 #include <stdio.h>
@@ -194,8 +194,8 @@ jbig2_read_symbol_dictionary (Jbig2Ctx *ctx)
 static void
 dump_symbol_dictionary (Jbig2SymbolDictionary *sd)
 {
-  printf ("segment type = symbol dictionary, flags = %04x, numexsyms = %d, numnewsyms = %d\n",
-	  sd->flags, sd->SDNUMEXSYMS, sd->SDNUMNEWSYMS);
+  printf ("symbol dictionary: flags = %04x, %d new symbols, %d exported\n",
+	  sd->flags, sd->SDNUMNEWSYMS, sd->SDNUMEXSYMS);
 }
 
 static bool
@@ -206,19 +206,83 @@ dump_segment (Jbig2Ctx *ctx)
   Jbig2SymbolDictionary *sd;
 
   sh = jbig2_read_segment_header (ctx);
-  offset = ctx->offset;
-  printf ("segment number = %d, flags = %02x, page %d, %d bytes\n",
-	  sh->segment_number, sh->flags, sh->page_association, sh->data_length);
+  
+  printf("segment %d (%d bytes)\t", sh->segment_number, sh->data_length);
   switch (sh->flags & 63)
     {
     case 0:
       sd = jbig2_read_symbol_dictionary (ctx);
+	  printf("\n");
       dump_symbol_dictionary (sd);
       break;
+	case 4:
+		printf("intermediate text region:");
+		break;
+	case 6:
+		printf("immediate text region:");
+		break;
+	case 7:
+		printf("immediate lossless text region:");
+		break;
+	case 16:
+		printf("pattern dictionary:");
+		break;
+	case 20:
+		printf("intermediate halftone region:");
+		break;
+	case 22:
+		printf("immediate halftone region:");
+		break;
+	case 23:
+		printf("immediate lossless halftone region:");
+		break;
+	case 36:
+		printf("intermediate generic region:");
+		break;
+	case 38:
+		printf("immediate generic region:");
+		break;
+	case 39:
+		printf("immediate lossless generic region:");
+		break;
+	case 40:
+		printf("intermediate generic refinement region:");
+		break;
+	case 42:
+		printf("immediate generic refinement region:");
+		break;
+	case 43:
+		printf("immediate lossless generic refinement region:");
+		break;
+	case 48:
+		printf("page information:");
+		break;
+	case 49:
+		printf("end of page");
+		break;
+	case 50:
+		printf("end of stripe");
+		break;
     case 51:
-      printf ("segment type = end of file\n");
+      printf ("end of file\n");
       return TRUE;
+	  break;
+	case 52:
+		printf("profiles:");
+		break;
+	case 53:
+		printf("tables:");
+		break;
+	case 62:
+		printf("extension:");
+		break;
+	default:
+		printf("UNKNOWN SEGMENT TYPE!!!");
     }
+	printf ("\tflags = %02x, page %d\n",
+	  sh->flags, sh->page_association);
+
+  offset = ctx->offset;
   ctx->offset = offset + sh->data_length;
   return FALSE;
 }
