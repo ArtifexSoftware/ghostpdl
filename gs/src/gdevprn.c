@@ -737,12 +737,36 @@ int
 gx_default_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 			     int num_copies)
 {
-    int i = num_copies;
+    int i = 1;
     int code = 0;
 
-    while (code >= 0 && i-- > 0)
+    for (; i < num_copies; ++i) {
+	int errcode, closecode;
+
 	code = (*pdev->printer_procs.print_page) (pdev, prn_stream);
-    return code;
+	if (code < 0)
+	    return code;
+	/*
+	 * Close and re-open the printer, to reset is_new and do the
+	 * right thing if we're producing multiple output files.
+	 * Code is mostly copied from gdev_prn_output_page.
+	 */
+	fflush(pdev->file);
+	errcode =
+	    (ferror(pdev->file) ? gs_note_error(gs_error_ioerror) : 0);
+	closecode = gdev_prn_close_printer((gx_device *)pdev);
+	pdev->PageCount++;
+	code = (errcode < 0 ? errcode : closecode < 0 ? closecode :
+		gdev_prn_open_printer((gx_device *)pdev, true));
+	if (code < 0) {
+	    pdev->PageCount -= i;
+	    return code;
+	}
+	prn_stream = pdev->file;
+    }
+    /* Print the last (or only) page. */
+    pdev->PageCount -= num_copies - 1;
+    return (*pdev->printer_procs.print_page) (pdev, prn_stream);
 }
 
 /*
