@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id$
+# $RCSfile$ $Revision$
 # Convert PDF to "optimized" form.
 
 OPTIONS="-dSAFER -dDELAYSAFER"

@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id$
+# $RCSfile$ $Revision$
 # "Distill" Encapsulated PostScript.
 
 OPTIONS="-dDEVICEWIDTH=250000 -dDEVICEHEIGHT=250000"

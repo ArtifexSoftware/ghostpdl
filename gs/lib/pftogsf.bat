@@ -1,5 +1,5 @@
 @echo off
-@rem $Id$
+@rem $RCSfile$ $Revision$
 
 rem ******************************
 rem * Convert .pf? files to .gsf *

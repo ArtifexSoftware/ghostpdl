@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id$
+# $RCSfile$ $Revision$
 #
 # BSD PRINT FILTER SETUP utility for Ghostscript - used and tested on
 # SunOS 4.1.3, but I hope it will be useful on other BSD systems

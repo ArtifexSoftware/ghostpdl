@@ -6,7 +6,7 @@
  * This software is provided "as is" without express or implied warranty.
  */
 
-/*$Id$*/
+/*$RCSfile$ $Revision$*/
 /* Driver for the Tektronix 4693d color plotter. */
 #include "gdevprn.h"
 #define prn_dev ((gx_device_printer *)dev) /* needed in 5.31 et seq */

@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id$
+# $RCSfile$ $Revision$
 # Convert .pfb fonts to .pfa format
 
 if [ $# -eq 2 ] 

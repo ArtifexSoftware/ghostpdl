@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id$
+# $RCSfile$ $Revision$
 
 # System V 3.2 lp interface for parallel, postscript printer
 # with ghostscript 2.5.n.

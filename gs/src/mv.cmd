@@ -1,2 +1,2 @@
 @rename %1 %2
-@rem $Id$
+@rem $RCSfile$ $Revision$

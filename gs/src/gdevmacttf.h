@@ -1,6 +1,6 @@
 /* Datatypes for simpler access to data structures in TrueType fonts */
 
-/* $Id$ */
+/* $RCSfile$ $Revision$ */
 
 #ifndef gdevmacttf_INCLUDED
 #  define gdevmacttf_INCLUDED

@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id$
+# $RCSfile$ $Revision$
 # Convert PostScript to PDF.
 
 # Currently, we produce PDF 1.2 by default, but this is not guaranteed

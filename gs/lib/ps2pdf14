@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id$
+# $RCSfile$ $Revision$
 # Convert PostScript to PDF 1.4 (Acrobat 5-and-later compatible).
 
 exec ps2pdfwr -dCompatibilityLevel=1.4 "$@"

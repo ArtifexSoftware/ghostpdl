@@ -31,7 +31,7 @@
    all copies.
 */
 
-/*$Id$ */
+/*$RCSfile$ $Revision$ */
 /* Practical Automation ATX-23, -24, and -38 driver */
 #include "math_.h"
 #include "gdevprn.h"

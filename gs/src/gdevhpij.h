@@ -22,7 +22,7 @@
 
 /*
  * gdevhpij.h
- * $Id$
+ * $RCSfile$ $Revision$
  */
 
 #ifndef gdevhpij_INCLUDED

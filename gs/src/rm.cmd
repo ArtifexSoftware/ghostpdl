@@ -1,5 +1,5 @@
 @echo off
-@rem $Id$
+@rem $RCSfile$ $Revision$
 :next
 if '%1'=='' goto exit
 if '%1'=='-f' goto sh

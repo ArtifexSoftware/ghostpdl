@@ -16,7 +16,7 @@
   all copies.
 */
 
-/* $Id$ */
+/* $RCSfile$ $Revision$ */
 
 //#include "MacHeaders"
 #include <Palettes.h>

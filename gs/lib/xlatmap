@@ -9,7 +9,7 @@
 % Please keep obvious format of this file.
 % Stings and manes must not contain zero bytes and must not be empty.
 
-% $Id$
+% $RCSfile$ $Revision$
 
 % The map contains entries for each kind of fonts, being handled by
 % any font rendering plugin. The key of the entry is

@@ -1,5 +1,5 @@
 @echo off
-@rem $Id$
+@rem $RCSfile$ $Revision$
 
 rem Convert PostScript to PDF 1.4 (Acrobat 5-and-later compatible).
 

@@ -1,5 +1,5 @@
 @echo off 
-@rem $Id$
+@rem $RCSfile$ $Revision$
 @rem Convert PDF to DSC
 
 if %1/==/ goto usage

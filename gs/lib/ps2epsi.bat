@@ -1,5 +1,5 @@
 @echo off 
-@rem $Id$
+@rem $RCSfile$ $Revision$
 
 if %1/==/ goto usage
 if %2/==/ goto usage

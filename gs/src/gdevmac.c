@@ -16,7 +16,7 @@
   all copies.
 */
 
-/* $Id$ */
+/* $RCSfile$ $Revision$ */
 
 #include "gdevmac.h"
 #include "gsparam.h"

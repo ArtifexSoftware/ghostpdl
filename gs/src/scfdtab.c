@@ -1,6 +1,6 @@
 /* Copyright (C) 1992, 1993, 1998, 1999 Aladdin Enterprises.  All rights reserved. */
 
-/* $Id$ */
+/* $RCSfile$ $Revision$ */
 /* Tables for CCITTFaxDecode filter. */
 
 /* This file was generated automatically.  It is governed by the same terms */
