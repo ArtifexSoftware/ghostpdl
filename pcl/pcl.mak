@@ -82,7 +82,6 @@ pcommand_h  = $(PCLSRC)pcommand.h \
 pcstate_h   = $(PCLSRC)pcstate.h  \
               $(gx_h)             \
 	      $(gxdevice_h)	  \
-	      $(gdevcmap_h)	  \
               $(scommon_h)        \
               $(gscspace_h)       \
               $(gscolor2_h)       \
@@ -472,7 +471,6 @@ $(PCLOBJ)pcht.$(OBJ): $(PCLSRC)pcht.c   \
                       $(gsdevice_h)     \
                       $(gsparam_h)      \
                       $(gxdevice_h)     \
-                      $(gdevcmap_h)     \
                       $(pcommand_h)     \
                       $(pcstate_h)      \
                       $(pcdither_h)     \
@@ -707,7 +705,6 @@ $(PCLOBJ)pcpage.$(OBJ): $(PCLSRC)pcpage.c   \
                         $(gspaint_h)        \
                         $(gxdevice_h)       \
                         $(gdevbbox_h)       \
-                        $(gdevcmap_h)       \
                         $(pjtop_h)
 	$(PCLCCC) $(PCLSRC)pcpage.c $(PCLO_)pcpage.$(OBJ)
 
