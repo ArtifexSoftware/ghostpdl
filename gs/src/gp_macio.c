@@ -911,9 +911,13 @@ static fond_table * parse_fond(FSSpec *spec)
 	   maps, as often occurs in font files (the suitcase version of Arial,
 	   for example) Thus, we try one, and then the other. */
 	 
-    result = FSpMakeFSRef(spec,&specref); 
+    result = FSpMakeFSRef(spec,&specref);
+#ifdef __CARBON__
    	if (result == noErr)
    		result = FSOpenResourceFile(&specref, 0, NULL, fsRdPerm, &ref);
+#else
+	result = bdNamErr; /* simulate failure of the carbon routine above */
+#endif
     if (result != noErr) {
 	    ref = FSpOpenResFile(spec, fsRdPerm);
 	    result = ResError();
