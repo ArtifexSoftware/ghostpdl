@@ -104,7 +104,7 @@ pcl_load_built_in_fonts(pcl_state_t *pcls, const char *pathname)
 		     face_val(266, agfa)}, cc_alphabetic},
 	{"albrxb", {0, 1, pitch_1, 0, style_word(0, 0, 0), 4,
 		    face_val(266, agfa)}, cc_alphabetic},
-	{"albrmd", {0, 1, pitch_1, 0, style_word(0, 0, 0), 0,
+	{"albrmd", {0, 1, pitch_1, 0, style_word(0, 0, 0), 1,
 		    face_val(266, agfa)}, cc_alphabetic},
 	{"mari", {0, 1, pitch_1, 0, style_word(0, 0, 0), 0,
 		  face_val(201, agfa)}, cc_alphabetic},
