@@ -786,7 +786,7 @@ $(GLOBJ)gdevpdfi.$(OBJ) : $(GLSRC)gdevpdfi.c\
  $(gx_h)\
  $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h)\
  $(gsdevice_h) $(gserrors_h) $(gsflip_h) $(gsiparm4_h)\
- $(gxcspace_h) $(gximage3_h)
+ $(gxcspace_h) $(gximage3_h) $(gximag3x_h)
 	$(GLCC) $(GLO_)gdevpdfi.$(OBJ) $(C_) $(GLSRC)gdevpdfi.c
 
 $(GLOBJ)gdevpdfj.$(OBJ) : $(GLSRC)gdevpdfj.c\

@@ -1635,7 +1635,7 @@ $(PSD)transpar.dev : $(INT_MAK) $(ECHOGS_XE)\
 
 $(PSOBJ)ztrans.$(OBJ) : $(PSSRC)ztrans.c $(OP) $(string__h)\
  $(gscolor2_h) $(gscspace_h) $(gsipar3x_h) $(gstrans_h) $(gxiparam_h)\
- $(idict_h) $(idparam_h) $(igstate_h) $(iimage_h) $(iimage2_h) $(iname_h)\
+ $(idict_h) $(idparam_h) $(ifunc_h) $(igstate_h) $(iimage_h) $(iimage2_h) $(iname_h)\
  $(store_h)
 	$(PSCC) $(PSO_)ztrans.$(OBJ) $(C_) $(PSSRC)ztrans.c
 

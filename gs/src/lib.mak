@@ -785,8 +785,8 @@ $(GLD)gsiodevs.dev : $(ECHOGS_XE) $(LIB_MAK) $(GLOBJ)gsiodevs.$(OBJ)\
 	$(ADDMOD) $(GLD)gsiodevs -include $(GLD)sfile
 	$(ADDMOD) $(GLD)gsiodevs -iodev stdin stdout stderr
 
-$(GLOBJ)gsiodevs.$(OBJ) : $(GLSRC)gsiodevs.c $(GXERR) $(errno__h) $(string__h)\
- $(gp_h) $(gscdefs_h) $(gsparam_h) $(gsstruct_h) $(gxiodev_h)
+$(GLOBJ)gsiodevs.$(OBJ) : $(GLSRC)gsiodevs.c $(GXERR)\
+ $(gxiodev_h) $(stream_h) $(strimpl_h)
 	$(GLCC) $(GLO_)gsiodevs.$(OBJ) $(C_) $(GLSRC)gsiodevs.c
 
 ###### Internal devices
@@ -2157,6 +2157,7 @@ $(GLOBJ)gstrans.$(OBJ) : $(GLSRC)gstrans.c $(GXERR)\
 	$(GLCC) $(GLO_)gstrans.$(OBJ) $(C_) $(GLSRC)gstrans.c
 
 $(GLOBJ)gximag3x.$(OBJ) : $(GLSRC)gximag3x.c $(GXERR) $(math__h) $(memory__h)\
+ $(gdevbbox_h)\
  $(gsbitops_h) $(gscpixel_h) $(gscspace_h) $(gsstruct_h)\
  $(gxdevice_h) $(gxdevmem_h) $(gximag3x_h) $(gxistate_h)
 	$(GLCC) $(GLO_)gximag3x.$(OBJ) $(C_) $(GLSRC)gximag3x.c
