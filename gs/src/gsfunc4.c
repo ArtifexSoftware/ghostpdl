@@ -727,22 +727,32 @@ fn_PtCr_make_scaled(const gs_function_PtCr_t *pfn, gs_function_PtCr_t **ppsfn,
     }
     memcpy(ops, pfn->params.ops.data, pfn->params.ops.size - 1); /* minus return */
     p = ops + pfn->params.ops.size - 1;
-    for (i = 0; i < n; ++i) {
+    for (i = n; --i >= 0; ) {
 	float base = pranges[i].rmin;
 	float factor = pranges[i].rmax - base;
 
-	p[0] = PtCr_byte; p[1] = (byte)n;
-	p[2] = PtCr_byte; p[3] = 1;
-	p[4] = PtCr_roll;
-	p[5] = PtCr_float; memcpy(p + 6, &factor, sizeof(float));
-	p += 6 + sizeof(float);
-	p[0] = PtCr_mul;
-	p[1] = PtCr_float; memcpy(p + 2, &base, sizeof(float));
-	p += 2 + sizeof(float);
-	p[0] = PtCr_add;
-	p += 1;
+	if (factor != 1) {
+	    p[0] = PtCr_float; memcpy(p + 1, &factor, sizeof(float));
+	    p += 1 + sizeof(float);
+	    *p++ = PtCr_mul;
+	}
+	if (base != 0) {
+	    p[0] = PtCr_float; memcpy(p + 1, &base, sizeof(float));
+	    p += 1 + sizeof(float);
+	    *p++ = PtCr_add;
+	}
+	if (n != 1) {
+	    p[0] = PtCr_byte; p[1] = (byte)n;
+	    p[2] = PtCr_byte; p[3] = 1;
+	    p[4] = PtCr_roll;
+	    p += 5;
+	}
     }
-    *p = PtCr_return;
+    *p++ = PtCr_return;
+    psfn->params.ops.size = p - ops;
+    psfn->params.ops.data =
+	gs_resize_string(mem, ops, opsize, psfn->params.ops.size,
+			 "fn_PtCr_make_scaled");
     *ppsfn = psfn;
     return 0;
 }
