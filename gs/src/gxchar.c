@@ -59,7 +59,7 @@ extern_st(st_gs_text_enum);
 extern_st(st_gs_state);		/* only for testing */
 private 
 ENUM_PTRS_BEGIN(show_enum_enum_ptrs)
-     return ENUM_USING(st_gs_text_enum, vptr, size, index);
+     return ENUM_USING(st_gs_text_enum, vptr, size, index - 5);
 ENUM_PTR(0, gs_show_enum, pgs);
 ENUM_PTR(1, gs_show_enum, show_gstate);
 ENUM_PTR3(2, gs_show_enum, dev_cache, dev_cache2, dev_null);
