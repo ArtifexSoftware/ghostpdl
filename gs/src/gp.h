@@ -47,19 +47,19 @@
  * do things like open display connections: that is the responsibility
  * of the display device driver.
  */
-void gp_init(P0());
+void gp_init(void);
 
 /*
  * This routine is called just before the program exits (normally or
  * abnormally).  It too should do as little as possible.
  */
-void gp_exit(P2(int exit_status, int code));
+void gp_exit(int exit_status, int code);
 
 /*
  * Exit the program.  Normally this just calls the `exit' library procedure,
  * but it does something different on a few platforms.
  */
-void gp_do_exit(P1(int exit_status));
+void gp_do_exit(int exit_status);
 
 /* ------ Miscellaneous ------ */
 
@@ -68,7 +68,7 @@ void gp_do_exit(P1(int exit_status));
  * If no string is available, return NULL.  The caller may assume
  * the string is allocated statically and permanently.
  */
-const char *gp_strerror(P1(int));
+const char *gp_strerror(int);
 
 /* ------ Date and time ------ */
 
@@ -76,13 +76,13 @@ const char *gp_strerror(P1(int));
  * Read the current time (in seconds since an implementation-defined epoch)
  * into ptm[0], and fraction (in nanoseconds) into ptm[1].
  */
-void gp_get_realtime(P1(long ptm[2]));
+void gp_get_realtime(long ptm[2]);
 
 /*
  * Read the current user CPU time (in seconds) into ptm[0],
  * and fraction (in nanoseconds) into ptm[1].
  */
-void gp_get_usertime(P1(long ptm[2]));
+void gp_get_usertime(long ptm[2]);
 
 /* ------ Reading lines from stdin ------ */
 
@@ -97,20 +97,20 @@ void gp_get_usertime(P1(long ptm[2]));
  * initialization.  *preadline_data is an opaque pointer that is passed
  * back to gp_readline and gp_readline_finit.
  */
-int gp_readline_init(P2(void **preadline_data, gs_memory_t *mem));
+int gp_readline_init(void **preadline_data, gs_memory_t *mem);
 
 /*
  * See srdline.h for the definition of sreadline_proc.
  */
-int gp_readline(P9(stream *s_in, stream *s_out, void *readline_data,
-		   gs_const_string *prompt, gs_string *buf,
-		   gs_memory_t *bufmem, uint *pcount, bool *pin_eol,
-		   bool (*is_stdin)(P1(const stream *))));
+int gp_readline(stream *s_in, stream *s_out, void *readline_data,
+		gs_const_string *prompt, gs_string *buf,
+		gs_memory_t *bufmem, uint *pcount, bool *pin_eol,
+		bool (*is_stdin)(const stream *));
 
 /*
  * Free a readline state.
  */
-void gp_readline_finit(P1(void *readline_data));
+void gp_readline_finit(void *readline_data);
 
 /* ------ Reading from stdin, unbuffered if possible ------ */
 
@@ -122,7 +122,7 @@ void gp_readline_finit(P1(void *readline_data));
  * If unbuffered is possible, fetch at least 1 byte (unless error or EOF) 
  * and any additional bytes that are available without blocking.
  */
-int gp_stdin_read(P4(char *buf, int len, int interactive, FILE *f));
+int gp_stdin_read(char *buf, int len, int interactive, FILE *f);
 
 /* ------ Screen management ------ */
 
@@ -131,7 +131,7 @@ int gp_stdin_read(P4(char *buf, int len, int interactive, FILE *f));
  */
 
 /* Get the environment variable that specifies the display to use. */
-const char *gp_getenv_display(P0());
+const char *gp_getenv_display(void);
 
 /* ------ File naming and accessing ------ */
 
@@ -168,30 +168,30 @@ extern const char gp_fmode_wb[];
 
 /* Create and open a scratch file with a given name prefix. */
 /* Write the actual file name at fname. */
-FILE *gp_open_scratch_file(P3(const char *prefix,
-			      char fname[gp_file_name_sizeof],
-			      const char *mode));
+FILE *gp_open_scratch_file(const char *prefix,
+			   char fname[gp_file_name_sizeof],
+			   const char *mode);
 
 /* Open a file with the given name, as a stream of uninterpreted bytes. */
-FILE *gp_fopen(P2(const char *fname, const char *mode));
+FILE *gp_fopen(const char *fname, const char *mode);
 
 /* Force given file into binary mode (no eol translations, etc) */
 /* if 2nd param true, text mode if 2nd param false */
-int gp_setmode_binary(P2(FILE * pfile, bool mode));
+int gp_setmode_binary(FILE * pfile, bool mode);
 
 /* Answer whether a file name contains a directory/device specification, */
 /* i.e. is absolute (not directory- or device-relative). */
-bool gp_file_name_is_absolute(P2(const char *fname, uint len));
+bool gp_file_name_is_absolute(const char *fname, uint len);
 
 /* Answer whether a file name contains a parent directory reference, */
 /* e.g., "../somefile". Currently used for security purposes. */
-bool gp_file_name_references_parent(P2(const char *fname, uint len));
+bool gp_file_name_references_parent(const char *fname, uint len);
 
 /* Answer the string to be used for combining a directory/device prefix */
 /* with a base file name. The prefix directory/device is examined to	*/
 /* determine if a separator is needed and may return an empty string	*/
 /* in some cases (platform dependent).					*/
-const char *gp_file_name_concat_string(P2(const char *prefix, uint plen));
+const char *gp_file_name_concat_string(const char *prefix, uint plen);
 
 /* ------ Printer accessing ------ */
 
@@ -209,7 +209,7 @@ const char *gp_file_name_concat_string(P2(const char *prefix, uint plen));
  * for spooling.  If the file name is null and no default printer is
  * available, this procedure returns 0.
  */
-FILE *gp_open_printer(P2(char fname[gp_file_name_sizeof], int binary_mode));
+FILE *gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode);
 
 /*
  * Close the connection to the printer.  Note that this is only called
@@ -218,7 +218,7 @@ FILE *gp_open_printer(P2(char fname[gp_file_name_sizeof], int binary_mode));
  * values of filedevice are handled by calling the fclose procedure
  * associated with that kind of "file".
  */
-void gp_close_printer(P2(FILE * pfile, const char *fname));
+void gp_close_printer(FILE * pfile, const char *fname);
 
 /* ------ File enumeration ------ */
 
@@ -238,8 +238,8 @@ typedef struct file_enum_s file_enum;
  * string of ?s should be interpreted as *.  Note that \ can appear in
  * the pattern also, as a quoting character.
  */
-file_enum *gp_enumerate_files_init(P3(const char *pat, uint patlen,
-				      gs_memory_t * memory));
+file_enum *gp_enumerate_files_init(const char *pat, uint patlen,
+				   gs_memory_t * memory);
 
 /*
  * Return the next file name in the enumeration.  The client passes in
@@ -248,7 +248,7 @@ file_enum *gp_enumerate_files_init(P3(const char *pat, uint patlen,
  * returns max length +1.  If there are no more files, the procedure
  * returns -1.
  */
-uint gp_enumerate_files_next(P3(file_enum * pfen, char *ptr, uint maxlen));
+uint gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen);
 
 /*
  * Clean up a file enumeration.  This is only called to abandon
@@ -256,6 +256,6 @@ uint gp_enumerate_files_next(P3(file_enum * pfen, char *ptr, uint maxlen));
  * no more files to enumerate.  This should deallocate the file_enum
  * structure and any subsidiary structures, strings, buffers, etc.
  */
-void gp_enumerate_files_close(P1(file_enum * pfen));
+void gp_enumerate_files_close(file_enum * pfen);
 
 #endif /* gp_INCLUDED */

@@ -30,12 +30,12 @@
  * this checks the TMPDIR and TEMP environment variables, in that order.
  * The return value and the setting of *ptr and *plen are as for gp_getenv.
  */
-int gp_gettmpdir(P2(char *ptr, int *plen));
+int gp_gettmpdir(char *ptr, int *plen);
 
 /*
  * Open a temporary file, using O_EXCL and S_IRWXU to prevent race
  * conditions and symlink attacks.
  */
-FILE *gp_fopentemp(P2(const char *fname, const char *mode));
+FILE *gp_fopentemp(const char *fname, const char *mode);
 
 #endif /* gpmisc_INCLUDED */

@@ -37,6 +37,6 @@
  * because of the terminating \0, the maximum string length is 1 less than
  * the size of the buffer.
  */
-int gp_getenv(P3(const char *key, char *ptr, int *plen));
+int gp_getenv(const char *key, char *ptr, int *plen);
 
 #endif /* gpgetenv_INCLUDED */

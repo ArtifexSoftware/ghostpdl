@@ -35,15 +35,15 @@ typedef struct {
     void *dummy_;
 } gp_semaphore;
 
-uint gp_semaphore_sizeof(P0());
+uint gp_semaphore_sizeof(void);
 /*
  * Hack: gp_semaphore_open(0) succeeds iff it's OK for the memory manager
  * to move a gp_semaphore in memory.
  */
-int gp_semaphore_open(P1(gp_semaphore * sema));
-int gp_semaphore_close(P1(gp_semaphore * sema));
-int gp_semaphore_wait(P1(gp_semaphore * sema));
-int gp_semaphore_signal(P1(gp_semaphore * sema));
+int gp_semaphore_open(gp_semaphore * sema);
+int gp_semaphore_close(gp_semaphore * sema);
+int gp_semaphore_wait(gp_semaphore * sema);
+int gp_semaphore_signal(gp_semaphore * sema);
 
 /*
  * Monitors support enter/leave semantics: at most one thread can have
@@ -53,21 +53,21 @@ typedef struct {
     void *dummy_;
 } gp_monitor;
 
-uint gp_monitor_sizeof(P0());
+uint gp_monitor_sizeof(void);
 /*
  * Hack: gp_monitor_open(0) succeeds iff it's OK for the memory manager
  * to move a gp_monitor in memory.
  */
-int gp_monitor_open(P1(gp_monitor * mon));
-int gp_monitor_close(P1(gp_monitor * mon));
-int gp_monitor_enter(P1(gp_monitor * mon));
-int gp_monitor_leave(P1(gp_monitor * mon));
+int gp_monitor_open(gp_monitor * mon);
+int gp_monitor_close(gp_monitor * mon);
+int gp_monitor_enter(gp_monitor * mon);
+int gp_monitor_leave(gp_monitor * mon);
 
 /*
  * A new thread starts by calling a procedure, passing it a void * that
  * allows it to gain access to whatever data it needs.
  */
-typedef void (*gp_thread_creation_callback_t) (P1(void *));
-int gp_create_thread(P2(gp_thread_creation_callback_t, void *));
+typedef void (*gp_thread_creation_callback_t) (void *);
+int gp_create_thread(gp_thread_creation_callback_t, void *);
 
 #endif /* !defined(gpsync_INCLUDED) */
