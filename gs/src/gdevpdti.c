@@ -620,6 +620,9 @@ pdf_is_same_charproc1(gx_device_pdf * pdev, pdf_char_proc_t *pcp0, pdf_char_proc
 {
     if (pcp0->char_code != pcp1->char_code)
 	return false; /* We need same encoding. */
+    if (pcp0->font->u.simple.Encoding[pcp0->char_code].glyph !=
+	pcp1->font->u.simple.Encoding[pcp1->char_code].glyph)
+	return false; /* We need same encoding. */
     if (bytes_compare(pcp0->char_name.data, pcp0->char_name.size, 
 		      pcp1->char_name.data, pcp1->char_name.size))
 	return false; /* We need same encoding. */

@@ -1217,6 +1217,7 @@ pdf_make_text_glyphs_table(const gs_text_enum_t *penum, const gs_string *pstr,
     if (pstr != NULL) {
 	scan.text.data.bytes = pstr->data;
 	scan.text.size = pstr->size;
+	scan.index = 0;
         /* if TEXT_FROM_CHARS the data was converted to bytes earlier */
         if ( scan.text.operation & TEXT_FROM_CHARS )
             scan.text.operation = ((scan.text.operation & ~TEXT_FROM_CHARS) | TEXT_FROM_STRING);
@@ -1384,6 +1385,7 @@ pdf_mark_text_glyphs(const gs_text_enum_t *penum, const gs_string *pstr,
     if (pstr != NULL) {
 	scan.text.data.bytes = pstr->data;
 	scan.text.size = pstr->size;
+	scan.index = 0;
         /* if TEXT_FROM_CHARS the data was converted to bytes earlier */
         if ( scan.text.operation & TEXT_FROM_CHARS )
             scan.text.operation = 
